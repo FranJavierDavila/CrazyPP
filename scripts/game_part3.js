@@ -66,6 +66,7 @@ class PingPongGame {
     this.btn4Prev = [false, false];
     this.connected = [false, false];
     this.sources = [null, null];
+    this.handOf = ['right', 'right'];   // lateralidad de cada mando
 
     // IA: lado CPU (-Z) y "jugador demo" en escritorio (+Z)
     this.ai = new OpponentAI(
@@ -161,10 +162,12 @@ class PingPongGame {
       const grip = this.renderer.xr.getControllerGrip(i);
       const targetRay = this.renderer.xr.getController(i);
 
-      // pala (solo visible en el mando activo)
+      // pala (solo visible en el mando activo). Sin desplazamiento: el punto
+      // de agarre de la pala coincide EXACTAMENTE con el del mando y la hoja
+      // sigue la dirección del mango (colisionador y visual alineados).
       const mount = new THREE.Group();
-      mount.quaternion.copy(MOUNT_QUAT);
-      mount.position.set(0, 0.012, 0.02);
+      mount.quaternion.copy(MOUNT_QUAT_RIGHT);
+      mount.position.set(0, 0, 0);
       mount.add(makePaddleVisual(this.paddleModelRef, 'grip'));
       mount.visible = i === this.paddleHand;
       grip.add(mount);
@@ -173,6 +176,8 @@ class PingPongGame {
       grip.addEventListener('connected', (e) => {
         this.connected[i] = true;
         this.sources[i] = e.data;
+        this.handOf[i] = e.data.handedness === 'left' ? 'left' : 'right';
+        this.paddleMounts[i].quaternion.copy(mountQuatFor(this.handOf[i]));
         if (e.data.handedness === 'right' && !this.manualHand) this.setPaddleHand(i);
         else if (!this.connected[this.paddleHand]) this.setPaddleHand(i);
       });
@@ -367,7 +372,7 @@ class PingPongGame {
       for (let i = 0; i < 2; i++) {
         const ps = this.controllerPaddles[i];
         const grip = this.grips[i];
-        tmpMountQ.copy(grip.quaternion).multiply(MOUNT_QUAT);
+        tmpMountQ.copy(grip.quaternion).multiply(mountQuatFor(this.handOf[i]));
         updatePaddleSim(ps, grip.position, tmpMountQ, now, dt);
         ps.active = this.connected[i];
       }
@@ -431,7 +436,7 @@ class PingPongGame {
             this.tossTimer += dt;
             this.preVy = this.ball.vel.y;
             if (this.tossMaxY < this.ball.pos.y) this.tossMaxY = this.ball.pos.y;
-            if (this.tossTimer > 6) {
+            if (this.tossTimer > 8) {
               this.resetToss();
               this.rules.message = 'Repite el lanzamiento';
             }
@@ -494,7 +499,7 @@ class PingPongGame {
     if (presenting && this.tossed && this.rules.state === 'serve' && this.rules.server === 'player') {
       for (const e of this.events) {
         if (e.type !== 'paddle' || e.who !== 'player') continue;
-        if (this.preVy > 0.05) {
+        if (this.preVy > 0.3) {          // margen ±30 ms alrededor del punto muerto
           e.consumed = true;
           this.resetToss();
           this.rules.message = 'Golpea la bola cuando CAE, no cuando sube';

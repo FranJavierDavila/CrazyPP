@@ -33,7 +33,12 @@ function loadPaddleModel() {
             o.castShadow = true;
             const mats = Array.isArray(o.material) ? o.material : [o.material];
             for (const m of mats) {
-              if (m && m.isMeshStandardMaterial) {
+              if (!m) continue;
+              // Doble cara: evita caras invertidas del GLB; la pala se ve bien
+              // por ambos lados (goma roja / madera) desde cualquier ángulo.
+              m.side = THREE.DoubleSide;
+              m.needsUpdate = true;
+              if (m.isMeshStandardMaterial) {
                 m.metalness = Math.min(m.metalness ?? 0, 0.35);
                 m.roughness = Math.max(m.roughness ?? 0.75, 0.45);
                 m.envMapIntensity = 0.9;
@@ -73,9 +78,9 @@ function makePaddleVisual(model, mode) {
     const blade = new THREE.Mesh(
       new THREE.CylinderGeometry(R, R, 0.014, 32),
       [
-        new THREE.MeshStandardMaterial({ color: 0xb98a5a, roughness: 0.7 }),
-        new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.95 }),
-        new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.95 }),
+        new THREE.MeshStandardMaterial({ color: 0xb98a5a, roughness: 0.7, side: THREE.DoubleSide }),
+        new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.95, side: THREE.DoubleSide }),
+        new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.95, side: THREE.DoubleSide }),
       ],
     );
     blade.rotation.x = Math.PI / 2;
@@ -113,7 +118,8 @@ const DIMS = {
   paddleRestitution: 0.78,
   bladeRadius: 0.0795,      // radio de la hoja (16 cm de diámetro)
   bladeCenterUp: 0.14,      // centro de la hoja sobre el punto de agarre
-  paddleHitCooldown: 0.10,
+  hitAssistRadius: 0.024,   // zona de impacto asistida alrededor de la hoja
+  paddleHitCooldown: 0.08,
   maxBallSpeed: 14,
   // --- efecto (spin) ---
   magnus: 0.0035,           // a = Cm·(ω × v)
@@ -125,7 +131,7 @@ const DIMS = {
   // --- saque (regla ITTF) ---
   tossMinRise: 0.14,        // lanzamiento mínimo ~16 cm (con margen)
   serveEndLineTol: 0.04,    // margen tras la línea de fondo
-  serveAssistVy: 1.9,       // vy mínimo del saque asistido con gatillo
+  serveAssistVy: 2.3,       // vy mínimo del saque asistido (toss más alto = más tiempo para golpear)
   // --- sala ---
   roomHalfX: 3.05,
   roomBackZ: 2.35,
@@ -134,8 +140,8 @@ const DIMS = {
 };
 
 const AI_PRESETS = {
-  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.20, minT: 0.62, maxT: 0.88, maxShotSpeed: 5.5, predictInterval: 0.16, smash: 0.05, short: 0.06 },
-  medium: { maxSpeed: 2.9, accel: 9,  errStd: 0.05,  missBase: 0.10, minT: 0.52, maxT: 0.78, maxShotSpeed: 7.5, predictInterval: 0.10, smash: 0.18, short: 0.10 },
+  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.11,  missBase: 0.22, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.06 },
+  medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.06,  missBase: 0.11, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.10 },
   hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.028, missBase: 0.04, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.12 },
 };
 
@@ -145,14 +151,21 @@ const COLORS = {
   ball: 0xfff8ef, accentAmber: 0xe8b45a, accentGreen: 0x7fb069,
 };
 
-// Montura de la pala sobre el mando: hoja hacia arriba (+Y) y cara hacia
-// delante (-Z del mando), ligeramente cerrada (0.10 rad) como en la postura
-// real de drive.
-const MOUNT_QUAT = (() => {
-  const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
-  const pitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.10);
-  return new THREE.Quaternion().multiplyQuaternions(pitch, yaw);
-})();
+// Montura de la pala sobre el mando (espacio "grip" de WebXR):
+//  · -Z_grip sale por la parte alta del mando siguiendo el mango -> la HOJA
+//    continúa la línea del mango: el AGARRE DEL MANDO COINCIDE con el AGARRE
+//    DE LA PALA (punto de agarre en el origen del grip, sin desplazamientos).
+//  · La cara queda casi vertical (roll ≈83° desde la cara del pulgar), la
+//    postura natural de preparación; espejo para la mano izquierda.
+const PALA_MOUNT_ROLL = Math.PI / 2 - 0.12;
+function makeMountQuat(roll) {
+  const pitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+  const rollQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), roll);
+  return new THREE.Quaternion().multiplyQuaternions(rollQ, pitch);
+}
+const MOUNT_QUAT_RIGHT = makeMountQuat(PALA_MOUNT_ROLL);
+const MOUNT_QUAT_LEFT = makeMountQuat(-PALA_MOUNT_ROLL);
+const mountQuatFor = (hand) => (hand === 'left' ? MOUNT_QUAT_LEFT : MOUNT_QUAT_RIGHT);
 const UP = new THREE.Vector3(0, 1, 0);
 
 /* =====================================================================
@@ -379,7 +392,7 @@ function collidePaddle(ball, pad, k, events) {
   const dNow = relNow.dot(pad.normal);
 
   const crossing = dPrev > 0 !== dNow > 0;
-  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.012;
+  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.022;
   if (!crossing && !touching) return;
 
   if (crossing) {
@@ -392,12 +405,13 @@ function collidePaddle(ball, pad, k, events) {
   // Coordenadas locales del cruce (origen = punto de agarre del mando)
   const lx = relNow.copy(crossPoint).sub(padPos).dot(pad.right);
   const ly = relNow.dot(pad.up);
-  // hoja: disco de radio R centradobladeCenterUp sobre el agarre
+  // hoja: disco de radio R centrado en bladeCenterUp sobre el agarre
+  // (+ zona de asistencia para que no haga falta milimetrar el golpe)
   const dyy = ly - DIMS.bladeCenterUp;
-  const reach = DIMS.bladeRadius + DIMS.ballRadius;
+  const reach = DIMS.bladeRadius + DIMS.ballRadius + DIMS.hitAssistRadius;
   const onBlade = lx * lx + dyy * dyy <= reach * reach;
   // mango: zona alrededor del propio agarre
-  const onHandle = Math.abs(lx) < 0.03 && ly > -0.07 && ly < 0.07;
+  const onHandle = Math.abs(lx) < 0.035 && ly > -0.08 && ly < 0.08;
   if (!onBlade && !onHandle) return;
 
   // Normal efectiva: la bola puede golpear cualquiera de las dos caras

@@ -110,3 +110,22 @@ Work Log:
 Stage Summary:
 - Descarga confirmada al día: download/pingpong-quest3-v2/index.html (+ .zip) = última versión con física aerodinámica ITTF, 480 Hz, tracking con ventana móvil y nitidez VR máxima
 - Preview funcionando sin errores
+
+---
+Task ID: 7
+Agent: Super Z (main agent)
+Task: Corregir pala (caras invertidas, agarre antinatural) y facilitar el golpeo (feedback del usuario)
+
+Work Log:
+- DOBLE CARA: loadPaddleModel ahora fuerza m.side = THREE.DoubleSide + needsUpdate en TODOS los materiales del GLB (y en la pala procedural de respaldo); elimina el problema de caras invertidas del modelo
+- MONTURA NATURAL: MOUNT_QUAT (hoja hacia +Y_grip, perpendicular al mango = "bandera") sustituido por montura alineada con el mango: RotX(-90°) lleva la hoja a -Z_grip (sale por la parte alta del mando siguiendo el mango) + roll ±(90°-0.12) para cara casi vertical, espejo por mano (MOUNT_QUAT_RIGHT/LEFT + mountQuatFor); handOf[i] se fija en 'connected' con e.data.handedness; mount.position (0,0.012,0.02) -> (0,0,0) para que colisionador y visual coincidan exactamente (el punto de agarre de la pala = origen del grip)
+- GOLPEO ASISTIDO: hitAssistRadius 0.024 (radio de impacto = hoja+bola+2,4 cm), grosor del plano de contacto 12->22 mm, zona del mango más amplia, cooldown 0.10->0.08, serveAssistVy 1.9->2.3 (toss más alto = más tiempo), validación "al caer" preVy 0.05->0.3 (margen ±30 ms alrededor del punto muerto), timeout de toss 6->8 s
+- IA más amable en easy (maxShotSpeed 5.5->4.8, errStd 0.11, missBase 0.22) y medium (maxShotSpeed 7.5->6.2, errStd 0.06, missBase 0.11)
+- Overlay: nota "Zona de impacto asistida: no hace falta milimetrar"
+- Rebuild (sintaxis OK, 1.51 MB), desplegado a public/game.html, verificado con agent-browser: cero errores de consola, demo IA vs IA progresa (1:0), palas GLB visibles por ambos lados; captura scripts/preview_v5_fixes.png
+- Reempaquetado download/pingpong-quest3-v2.zip y actualizado README (secciones v2.1)
+
+Stage Summary:
+- Pala sin caras invertidas (doble cara) y montada de forma natural: agarre del mando = agarre de la pala, hoja siguiendo el mango, montura espejo por mano
+- Golpeo y saque claramente más accesibles (hitbox ampliada, toss alto, validación permisiva) manteniendo la física realista
+- Descarga y preview actualizados y verificados sin errores

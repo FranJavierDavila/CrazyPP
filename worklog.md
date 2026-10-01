@@ -242,3 +242,20 @@ Stage Summary:
 - Fin de partido con fanfarria completa (sonido + banner 3D + confeti + vibración + mensaje festivo); revancha inmediata con el gatillo
 - Panel de ajuste de pala fuera de la mesa, a la izquierda del jugador
 - Descarga y preview actualizados y verificados sin errores
+
+---
+Task ID: 12
+Agent: main
+Task: Fix audio en VR (solo sonaba en navegador 2D) — usuario: "el sonido solo se escucha antes de la sesion de VR en el navegador normal"
+
+Work Log:
+- Diagnóstico: v2.7 ya tenía rescates (kick/watchdog/rebuild) pero SOLO actúan si el contexto NO está 'running'. Pista del usuario (sonido OK en 2D, silencio en VR) + histórico (v2.6 destruyó y recreó el contexto en el clic y aún así silencio en VR) => causa raíz: Quest Browser mantiene el contexto 'running' al pasar a inmersivo pero RE-ENRUTA su salida a un dispositivo no audible en el casco; ningún rescate lo detecta porque el estado es 'sano'
+- FIX: GameAudio._rebuild(reason, force) con flag force (salta throttle 1,2 s) + nuevo método público rebind(reason) (recreación INCONDICIONAL); onSessionStart ahora llama audio.rebind() (contexto nuevo creado DENTRO de la sesión XR => nace ligado a la salida activa del casco y 'running' por activación persistente del clic); onSessionEnd re-vincula a la salida 2D; mantenidos kicks a 400/1200/2500 ms, watchdog, kicks por selectstart/squeezestart
+- Verificado: el resto de tareas ya estaban hechas en v2.7 (fanfarria audio+banner+confeti, panel x=-1,04, saques IA largos v2.6 mediana 0,83 m) => sin cambios
+- agent-browser: demo #spectate en rally, cero errores de consola; rebind('test') ejecuta (rebuilds 9->15, estado 'suspended' esperado en headless sin dispositivo de audio); paddle/tableBounce sin excepciones; captura scripts/preview_v28_demo.png
+- Rebuild 1,56 MB (sintaxis OK) -> download/pingpong-quest3-v2/index.html + public/game.html; zip reempaquetado (820 KB, integridad OK); README sección v2.8
+
+Stage Summary:
+- Audio en VR reparado por re-vinculación de salida: recreación forzada del AudioContext en sessionstart (dentro de la sesión) y en sessionend; los rescates v2.7 quedan como red de seguridad
+- Fanfarria, panel de entrenamiento y saques largos confirmados intactos de v2.6/v2.7
+- Build v2.8 desplegado y verificado sin errores

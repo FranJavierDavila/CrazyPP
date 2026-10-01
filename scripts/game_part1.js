@@ -310,9 +310,9 @@ class GameAudio {
    *  gesto de usuario nace 'running': es el rescate definitivo cuando
    *  resume() deja de responder (bug conocido del Quest Browser en VR).
    *  Throttle 1,2 s para no agotar el pool de contextos del navegador. */
-  _rebuild(reason) {
+  _rebuild(reason, force = false) {
     const now = performance.now();
-    if (now - this._lastRebuild < 1200) return false;
+    if (!force && now - this._lastRebuild < 1200) return false;
     this._lastRebuild = now;
     try { this.ctx?.close?.(); } catch { /* ya estaba cerrado */ }
     this.ctx = null;
@@ -369,6 +369,18 @@ class GameAudio {
     if (this.ctx && this.ctx.state !== 'running') {
       this._rebuild('preparación VR (contexto enfermo)');
     }
+  }
+
+  /** RE-VINCULACIÓN FORZADA: destruye y recrea el contexto SIN importar su
+   *  estado. Clave para la Quest: al pasar a modo inmersivo el navegador
+   *  puede MANTENER el contexto 'running' pero re-enrutar su salida a un
+   *  dispositivo que ya no es audible dentro del visor -> silencio total
+   *  pese a que todos los rescates ven un estado 'running' sano. Un contexto
+   *  creado DENTRO de la sesión XR nace ligado a la salida activa del casco
+   *  (y como hubo clic/gesto previo, nace 'running'). */
+  rebind(reason) {
+    this.hadGesture = true;
+    this._rebuild(reason || 're-vinculación de salida', true);
   }
 
   /** Vigilancia periódica (llamada desde el bucle): si el contexto quedó

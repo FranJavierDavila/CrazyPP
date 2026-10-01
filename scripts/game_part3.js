@@ -481,10 +481,13 @@ class PingPongGame {
 
   onSessionStart = () => {
     this.recenterFrames = 25;
-    this.audio.ensure();
-    // Quest Browser: el contexto de audio puede quedar suspendido al entrar
-    // en la sesión inmersiva -> reactivar ahora y reintentar unas veces.
-    this.audio.kick();
+    // RE-VINCULACIÓN FORZADA al entrar en VR. En Quest Browser el contexto
+    // creado en 2D puede quedar 'running' PERO con la salida re-enrutada al
+    // pasar a inmersivo: silencio total en el visor aunque todos los rescates
+    // vean un estado 'sano'. Un contexto nuevo creado DENTRO de la sesión nace
+    // ligado a la salida activa del casco (y 'running' por activación previa).
+    this.audio.rebind('entrada en VR: salida re-vinculada al casco');
+    // Reintentos suaves por si el contexto nuevo nace suspendido.
     for (const t of [400, 1200, 2500]) window.setTimeout(() => this.audio.kick(), t);
     window.setTimeout(() => this.audio.serve(), 350);  // blip de confirmación
     console.info(
@@ -518,6 +521,9 @@ class PingPongGame {
   };
 
   onSessionEnd = () => {
+    // Salida de VR: el contexto quedaba ligado a la salida del casco ->
+    // re-vincular a la salida 2D del navegador (mismo problema a la inversa).
+    this.audio.rebind('salida de VR: salida re-vinculada al navegador');
     this.rules.startMatch();
     this.resetToss();
     this.aiToss = null;

@@ -16,6 +16,15 @@ const pcN = new THREE.Vector3();
 const pcC = new THREE.Vector3();
 const pcT = new THREE.Vector3();
 
+// temporales del MENÚ DE MUÑECA (v2.15, espacio mundo; no compartir)
+const muGrip = new THREE.Vector3();
+const muHead = new THREE.Vector3();
+const muDir = new THREE.Vector3();
+const muPos = new THREE.Vector3();
+const muQ = new THREE.Quaternion();
+const muRaycaster = new THREE.Raycaster();
+muRaycaster.far = 2.5;
+
 class PingPongGame {
   constructor(canvas, paddleModel, callbacks = {}) {
     this.canvas = canvas;
@@ -91,9 +100,11 @@ class PingPongGame {
     this.feedIdle = 0;
     this.panelDirty = true;
     this.btnPrev = {};
-    // flick LATERAL del stick = tema de sala (v2.14): estado por mando
-    this.stickNeut = [true, true];
-    this.lastThemeSwitch = 0;
+    // MENÚ DE MUÑECA (v2.15): un solo acceso a modo/dificultad/sala/ambiente
+    this.menuOpen = false;
+    this.menuHover = -1;
+    this.menuRects = [];
+    this._menuState = '';
     this.lastFeedTap = 0;
     // fanfarria de fin de partido (banner + confeti)
     this.fanfareWin = false;
@@ -150,6 +161,7 @@ class PingPongGame {
 
     this.buildScene(paddleModel);
     this.setupControllers();
+    this.buildMenu();
     // tema de sala persistente (v2.14): aplica antes del primer render
     this.theme = this.loadTheme();
     this.applyTheme(this.theme);
@@ -265,6 +277,7 @@ class PingPongGame {
   setupControllers() {
     this.paddleMounts = [];
     this.grips = [];
+    this.rays = [];          // espacios targetRay (el menú apunta con uno)
     for (let i = 0; i < 2; i++) {
       const grip = this.renderer.xr.getControllerGrip(i);
       const targetRay = this.renderer.xr.getController(i);
@@ -312,6 +325,7 @@ class PingPongGame {
       this.rig.add(grip);
       this.rig.add(targetRay);
       this.grips.push(grip);
+      this.rays.push(targetRay);
     }
   }
 
@@ -421,6 +435,7 @@ class PingPongGame {
 
   enterCalib() {
     this.calib = true;
+    this.closeMenu();            // el entrenamiento tiene su propio panel
     this.preCalibMode = this.mode;   // recordar el modo actual para volver a él
     this.calibPanel.group.visible = true;
     this.panelDirty = true;
@@ -643,6 +658,279 @@ class PingPongGame {
     ud.grid = grid;
   }
 
+  // ---------- Menú de muñeca (v2.15) ----------
+  // UN solo acceso a toda la configuración: B (mando derecho) abre un panel
+  // anclado a la muñeca libre; se apunta con ese mando y se elige con el
+  // GATILLO. Sustituye al stick-click (dificultad) y al flick (sala).
+
+  buildMenu() {
+    this.menuGroup = new THREE.Group();
+    this.menuCanvas = document.createElement('canvas');
+    this.menuCanvas.width = 512;
+    this.menuCanvas.height = 640;
+    this.menuTex = new THREE.CanvasTexture(this.menuCanvas);
+    this.menuTex.colorSpace = THREE.SRGBColorSpace;
+    this.menuMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.28, 0.35),
+      new THREE.MeshBasicMaterial({ map: this.menuTex, transparent: true, depthTest: false }),
+    );
+    this.menuMesh.renderOrder = 990;
+    this.menuGroup.add(this.menuMesh);
+
+    // cursor (punto) sobre el panel, se mueve con el rayo
+    this.menuDot = new THREE.Mesh(
+      new THREE.CircleGeometry(0.009, 24),
+      new THREE.MeshBasicMaterial({ color: 0xe8b45a, depthTest: false, transparent: true, opacity: 0.95 }),
+    );
+    this.menuDot.renderOrder = 991;
+    this.menuDot.visible = false;
+    this.menuGroup.add(this.menuDot);
+
+    this.menuGroup.visible = false;
+    this.scene.add(this.menuGroup);   // espacio MUNDO: inmune al recentrado
+
+    // línea guía desde el mando que apunta
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1),
+    ]);
+    this.menuLine = new THREE.Line(
+      lineGeo,
+      new THREE.LineBasicMaterial({ color: 0xe8b45a, transparent: true, opacity: 0.55 }),
+    );
+    this.menuLine.visible = false;
+    this.scene.add(this.menuLine);
+
+    this.drawMenu();
+  }
+
+  /** Pinta el panel y deja en menuRects las zonas clicables (px canvas). */
+  drawMenu() {
+    const c = this.menuCanvas.getContext('2d');
+    if (!c) return;
+    const W = 512, H = 640;
+    const rects = [];
+    const over = this.rules.state === 'over';
+
+    const rr = (x, y, w, h, r) => {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    };
+
+    // tarjeta
+    c.clearRect(0, 0, W, H);
+    rr(4, 4, W - 8, H - 8, 26);
+    c.fillStyle = 'rgba(11,14,18,0.94)';
+    c.fill();
+    c.strokeStyle = 'rgba(232,180,90,0.6)';
+    c.lineWidth = 3;
+    c.stroke();
+
+    // cabecera
+    c.fillStyle = '#f2f4f6';
+    c.font = '800 32px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText('MENÚ', 200, 46);
+    c.fillStyle = '#9aa7b4';
+    c.font = '600 15px system-ui, sans-serif';
+    c.fillText('apunta y elige con el GATILLO', 200, 76);
+    c.textAlign = 'right';
+    c.fillStyle = '#e8b45a';
+    c.font = '700 16px system-ui, sans-serif';
+    c.fillText('B · cerrar', W - 26, 46);
+
+    // botón genérico
+    const btn = (id, x, y, w, h, label, active, style) => {
+      const hovered = rects.length === this.menuHover || false;
+      rr(x, y, w, h, 12);
+      if (active) {
+        c.fillStyle = style === 'green' ? '#7fb069' : '#e8b45a';
+        c.fill();
+        c.fillStyle = '#10131a';
+      } else {
+        c.fillStyle = 'rgba(255,255,255,0.07)';
+        c.fill();
+        c.strokeStyle = hovered ? '#ffffff' : 'rgba(255,255,255,0.18)';
+        c.lineWidth = hovered ? 3 : 1.5;
+        if (style === 'green') c.strokeStyle = hovered ? '#bfe3a9' : 'rgba(127,176,105,0.55)';
+        c.stroke();
+        c.fillStyle = style === 'green' ? '#bfe3a9' : '#cfd8e0';
+      }
+      c.font = '700 20px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.fillText(label, x + w / 2, y + h / 2 + 1);
+      rects.push({ x, y, w, h, id });
+    };
+    const label = (txt, y) => {
+      c.fillStyle = '#9aa7b4';
+      c.font = '700 14px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.fillText(txt, 28, y);
+    };
+
+    // MODO
+    label('MODO DE JUEGO', 112);
+    btn('mode:match', 28, 122, 222, 48, 'Partido', this.mode === 'match');
+    btn('mode:survival', 262, 122, 222, 48, 'Supervivencia', this.mode === 'survival');
+
+    // DIFICULTAD
+    label('DIFICULTAD DE LA CPU', 192);
+    btn('diff:easy', 28, 202, 136, 48, 'Fácil', this.difficulty === 'easy');
+    btn('diff:medium', 188, 202, 136, 48, 'Media', this.difficulty === 'medium');
+    btn('diff:hard', 348, 202, 136, 48, 'Difícil', this.difficulty === 'hard');
+
+    // SALA (2×2)
+    label('SALA', 272);
+    const themes = [
+      ['theme:pabellon', 'Pabellón'], ['theme:neon', 'Neón'],
+      ['theme:atardecer', 'Atardecer'], ['theme:artico', 'Ártico'],
+    ];
+    themes.forEach(([id, name], i) => {
+      btn(id, 28 + (i % 2) * 234, 282 + Math.floor(i / 2) * 56, 222, 46,
+        name, this.theme === id.split(':')[1]);
+    });
+
+    // AMBIENTE
+    label('AMBIENTE DE TORNEO (sonido)', 412);
+    btn('amb:on', 28, 422, 222, 48, 'Sí', !!this.audio.ambience);
+    btn('amb:off', 262, 422, 222, 48, 'No', !this.audio.ambience);
+
+    // REVANCHA (solo con el partido terminado)
+    let yNext = 494;
+    if (over) {
+      btn('revancha', 28, yNext, 456, 52, 'REVANCHA', false, 'green');
+      yNext += 64;
+    }
+
+    // CERRAR
+    btn('close', 28, 572, 456, 48, 'Cerrar menú', false);
+
+    this.menuRects = rects;
+    this._menuState = this.rules.state;
+    this.menuTex.needsUpdate = true;
+  }
+
+  toggleMenu() {
+    if (this.calib) return;   // en entrenamiento manda el panel propio
+    this.menuOpen = !this.menuOpen;
+    this.menuGroup.visible = this.menuOpen;
+    this.menuLine.visible = false;
+    this.menuDot.visible = false;
+    this.menuHover = -1;
+    if (this.menuOpen) {
+      this.rules.message = 'Menú · apunta y pulsa el GATILLO';
+      this.drawMenu();
+      this.audio.playOsc(660, 990, 0.07, 'sine', 0.15, 0);
+      if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.4, 70);
+    } else {
+      this.audio.playOsc(990, 660, 0.06, 'sine', 0.1, 0);
+    }
+  }
+
+  closeMenu() {
+    if (this.menuOpen) this.toggleMenu();
+  }
+
+  /** Ancla el panel a la muñeca libre, lo orienta a la cara y hace el
+   *  hit-test del rayo de apuntado (hover + línea guía). */
+  updateMenu() {
+    const ci = 1 - this.paddleHand;
+    const grip = this.grips[ci];
+    const ray = this.rays[ci];
+    if (!this.connected[ci] || !grip || !ray) {
+      this.menuGroup.visible = false;
+      this.menuLine.visible = false;
+      return;
+    }
+    this.menuGroup.visible = true;
+
+    grip.getWorldPosition(muGrip);
+    this.camera.getWorldPosition(muHead);
+    muDir.copy(muHead).sub(muGrip);
+    const dist = Math.max(muDir.length(), 0.01);
+    muDir.normalize();
+    muPos.copy(muGrip).addScaledVector(muDir, Math.min(0.15, dist * 0.5));
+    muPos.y += 0.09;
+    this.menuGroup.position.copy(muPos);
+    this.menuGroup.lookAt(muHead);
+
+    // estado del partido cambió (p.ej. fin) → repintar botones
+    if (this.rules.state !== this._menuState) this.drawMenu();
+
+    // rayo de apuntado
+    ray.getWorldPosition(muGrip);
+    ray.getWorldQuaternion(muQ);
+    muDir.set(0, 0, -1).applyQuaternion(muQ);
+    muRaycaster.set(muGrip, muDir);
+    const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
+
+    this.menuLine.visible = true;
+    this.menuLine.position.copy(muGrip);
+    this.menuLine.quaternion.copy(muQ);
+    this.menuLine.scale.z = hit ? hit.distance : 0.5;
+
+    if (hit && hit.uv) {
+      const px = hit.uv.x * 512;
+      const py = (1 - hit.uv.y) * 640;
+      const idx = this.menuRects.findIndex((r) =>
+        px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h);
+      if (idx !== this.menuHover) {
+        this.menuHover = idx;
+        this.drawMenu();
+      }
+      // cursor sobre el panel (uv -> plano 0.28×0.35)
+      this.menuDot.visible = true;
+      this.menuDot.position.set((hit.uv.x - 0.5) * 0.28, (0.5 - hit.uv.y) * 0.35, 0.004);
+    } else {
+      if (this.menuHover !== -1) { this.menuHover = -1; this.drawMenu(); }
+      this.menuDot.visible = false;
+    }
+  }
+
+  menuClick(idx) {
+    const r = this.menuRects[idx];
+    if (!r) return;
+    const [ns, arg] = r.id.split(':');
+    switch (ns) {
+      case 'mode':
+        this.closeMenu();
+        this.switchMode(arg === 'survival' ? 'survival' : 'match');
+        break;
+      case 'diff': {
+        this.setDifficulty(arg);
+        const lb = { easy: 'Fácil', medium: 'Media', hard: 'Difícil' }[arg] || arg;
+        this.rules.message = `DIFICULTAD: ${lb.toUpperCase()}`;
+        this.audio.announce(`Dificultad ${lb}`, true);
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'theme':
+        this.setTheme(arg);        // anuncia, vibra y pinta el mensaje
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      case 'amb':
+        this.audio.setAmbience(arg === 'on');
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      case 'revancha':
+        this.closeMenu();
+        this.rules.startMatch(this.mode);
+        this.resetToss();
+        break;
+      case 'close':
+        this.closeMenu();
+        break;
+    }
+  }
+
   emitStats() {
     this.callbacks.onStats?.(this.stats.data);
   }
@@ -710,6 +998,10 @@ class PingPongGame {
     this.survivalRallies = 0;
     this.rules.startMatch(this.mode);
     this.applyAISkill();
+    // el menú empieza SIEMPRE cerrado en cada sesión
+    this.menuOpen = false;
+    if (this.menuGroup) this.menuGroup.visible = false;
+    if (this.menuLine) this.menuLine.visible = false;
     // RE-VINCULACIÓN al entrar en VR: el contexto creado en 2D puede perder la
     // salida al pasar a inmersivo. Se crea uno nuevo DENTRO de la sesión
     // (ligado a la salida activa del casco) y se adopta SOLO si arranca
@@ -808,6 +1100,11 @@ class PingPongGame {
       }
       return;
     }
+    // MENÚ ABIERTO: el gatillo solo hace clic en el panel (ni saque ni revancha)
+    if (this.menuOpen) {
+      if (i === 1 - this.paddleHand && this.menuHover >= 0) this.menuClick(this.menuHover);
+      return;
+    }
     if (this.rules.state === 'over') {
       this.rules.startMatch(this.mode);   // revancha en el MISMO modo de juego
       this.resetToss();
@@ -821,7 +1118,7 @@ class PingPongGame {
 
   /** Suelta la bola con la velocidad REAL de la mano (saque natural). */
   releaseBallHand(i) {
-    if (this.calib) return;
+    if (this.calib || this.menuOpen) return;
     if (this.rules.state !== 'serve' || this.rules.server !== 'player') return;
     if (this.tossed || i !== this.ballHand) return;
     if (!this.renderer.xr.isPresenting) return;
@@ -963,44 +1260,16 @@ class PingPongGame {
       else this.enterCalib();
     }
 
-    // 0.6) botón B (mando derecho): cambiar de modo de juego sin salir de VR
-    //      (Partido ⇄ Supervivencia; dentro del entrenamiento B cambia el agarre)
+    // 0.6) botón B (mando derecho): MENÚ DE MUÑECA — todo configurable desde
+    //      un panel anclado a la muñeca libre (modo, dificultad, sala, ambiente).
+    //      Dentro del entrenamiento B sigue cambiando el agarre.
     if (presenting && !this.calib &&
         this.readButton(this.handIndex('right'), 5)) {
-      this.switchMode(this.mode === 'survival' ? 'match' : 'survival');
+      this.toggleMenu();
     }
 
-    // 0.7) stick (PULSAR) en cualquier mando: ciclo de dificultad al vuelo
-    //      Fácil → Media → Difícil; la megafonía confirma el cambio
-    if (presenting && !this.calib &&
-        (this.readButton(0, 3) || this.readButton(1, 3))) {
-      const order = ['easy', 'medium', 'hard'];
-      const next = order[(order.indexOf(this.difficulty) + 1) % 3];
-      this.setDifficulty(next);
-      const label = { easy: 'Fácil', medium: 'Media', hard: 'Difícil' }[next];
-      this.rules.message = `DIFICULTAD: ${label.toUpperCase()}`;
-      this.audio.announce(`Dificultad ${label}`, true);
-      this.haptic(this.paddleHand, 0.45, 80);
-    }
-
-    // 0.8) flick LATERAL del stick (cualquier mando): tema de la sala.
-    //      Gestos distintos al CLICK (dificultad) y sin conflicto con el
-    //      entrenamiento, donde los sticks ajustan el agarre. Exige volver
-    //      al centro antes del siguiente flick y 250 ms entre cambios.
-    if (presenting && !this.calib) {
-      for (let i = 0; i < 2; i++) {
-        const ax = this.stickAxis(i);
-        const mag = Math.abs(ax.x);
-        if (this.stickNeut[i] && mag > 0.82 && mag > Math.abs(ax.y) * 1.4 &&
-            now - this.lastThemeSwitch > 0.25) {
-          this.stickNeut[i] = false;
-          this.lastThemeSwitch = now;
-          this.cycleTheme(ax.x > 0 ? 1 : -1);
-        } else if (mag < 0.3) {
-          this.stickNeut[i] = true;
-        }
-      }
-    }
+    // 0.7) menú abierto: anclar a la muñeca libre + rayo de apuntado
+    if (presenting && this.menuOpen) this.updateMenu();
 
     // 1) Palas de los mandos (solo en VR)
     if (presenting && this.grips) {

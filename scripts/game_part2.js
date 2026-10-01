@@ -908,8 +908,8 @@ function createCalibPanel() {
       ['X', 'volver al agarre natural'],
       ['GATILLO', 'lanzar bola de entrenamiento'],
       ['Y', 'volver al modo anterior'],
-      ['B (en juego)', 'partido ⇄ supervivencia'],
-      ['STICK ←→ (en juego)', 'tema de la sala'],
+      ['B (en juego)', 'abrir / cerrar el MENÚ'],
+      ['MENÚ', 'modo · dificultad · sala · ambiente'],
     ];
     let y = 224;
     for (const [k, v] of lines) {

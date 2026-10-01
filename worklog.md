@@ -451,3 +451,47 @@ Stage Summary:
   A/X=mano, gatillo/grip=saque). Sin errores de consola.
 - Pendiente de confirmación en visor: gesto de flick no dispara la dificultad
   por accidente y los 4 temas lucen en el Quest 3 (especialmente Neón en OLED).
+
+---
+Task ID: 19
+Agent: Super Z (main agent)
+Task: Menú de muñeca — consolidar TODA la configuración en un panel VR (v2.15)
+
+Work Log:
+- ELIMINADOS los gestos sueltos: stick-click de dificultad (0.7) y flick
+  lateral de sala (0.8) fuera del código; B ya no cambia de modo directo.
+- NUEVO MENÚ DE MUÑECA (game_part3.js): buildMenu crea panel 3D (0.28×0.35 m,
+  CanvasTexture 512×640, depthTest off + renderOrder alto) con cursor-punto y
+  línea guía de apuntado; vive en espacio MUNDO (inmune al recentrado del rig).
+- drawMenu pinta tarjeta redondeada con secciones: MODO (Partido/Supervivencia),
+  DIFICULTAD (Fácil/Media/Difícil), SALA (2×2: Pabellón/Neón/Atardecer/Ártico),
+  AMBIENTE DE TORNEO (Sí/No), REVANCHA (solo con state 'over') y Cerrar menú.
+  Estado activo en ámbar; hover con borde blanco; menuRects guarda zonas
+  clicables en px de canvas para el hit-test por UV.
+- Anclaje (updateMenu): panel flotando ~15 cm de la muñeca de la MANO LIBRE
+  (1 - paddleHand, salta sola al cambiar la pala de mano), mirando a la cabeza.
+  Raycaster desde el targetRay del mismo mando (this.rays guardado en
+  setupControllers); hover redibuja solo al cambiar de botón (barato).
+- INTERACCIÓN: B (derecho, fuera del entrenamiento) abre/cierra; dentro del
+  entrenamiento B sigue cambiando agarre (toggleMenu guardado por calib).
+  GATILLO con menú abierto = clic en panel (ni saque asistido ni revancha);
+  grip de soltar bola ignorado con menú abierto. Y sigue abriendo entrenamiento
+  (enterCalib cierra el menú). Al iniciar sesión el menú nace cerrado.
+- Clics: modo → switchMode + cierra; dificultad/tema/ambiente → aplican en
+  vivo (megafonía, mensaje, haptic según acción) y el menú queda abierto para
+  seguir probando; revancha → startMatch(this.mode) + cierra.
+- Textos: overlay reescrito (una sola línea MENÚ en ul.keys; REGLAS/EFECTO
+  restauradas tras editar), panel de entrenamiento con 'B (en juego): abrir /
+  cerrar el MENÚ' y resumen del menú. Chips 2D del overlay siguen funcionando.
+- Verificación headless (verify_v215.py): GLB ok, 0 errores; menú abre con los
+  12 botones esperados; clics diff:hard/theme:neon/amb:off aplican y persisten
+  (localStorage) sin cerrar; mode:survival aplica y CIERRA; REVANCHA aparece
+  solo con state 'over', reinicia y cierra; botón Cerrar funciona. Capturas
+  shot_v215_menu.png / _hover.png (panel sobre la mesa, hover en Difícil).
+
+Stage Summary:
+- v2.15 (index.html 2.08 MB): un solo punto de configuración en VR — B abre el
+  menú en la muñeca libre, gatillo elige. Mapa mental final: B=menú, Y=entreno,
+  A/X=mano de la pala, gatillo/grip=saque. Nada más que memorizar.
+- Pendiente de confirmación en visor: legibilidad del panel a distancia de
+  muñeca (0.28 m ancho) y que el rayo del mando libre apunte con comodidad.

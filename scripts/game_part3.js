@@ -102,7 +102,7 @@ class PingPongGame {
     this.btnPrev = {};
     // MENÚ DE MUÑECA (v2.15): un solo acceso a modo/dificultad/sala/ambiente
     this.menuOpen = false;
-    this.menuHover = -1;
+    this.menuHover = [-1, -1];   // hover INDEPENDIENTE por mando (v2.16)
     this.menuRects = [];
     this._menuState = '';
     this.lastFeedTap = 0;
@@ -660,8 +660,13 @@ class PingPongGame {
 
   // ---------- Menú de muñeca (v2.15) ----------
   // UN solo acceso a toda la configuración: B (mando derecho) abre un panel
-  // anclado a la muñeca libre; se apunta con ese mando y se elige con el
-  // GATILLO. Sustituye al stick-click (dificultad) y al flick (sala).
+  // anclado a la muñeca libre como una bandeja; se apunta con CUALQUIER mando
+  // (la pala incluye) y se elige con el GATILLO. Sustituye al stick-click
+  // (dificultad) y al flick (sala).
+  // v2.16: rayo, láser, cursor y hover INDEPENDIENTES por mando — antes solo
+  // el mando que aloja el panel podía seleccionar y apuntar con la pala no
+  // hacía nada. Anclaje: panel SOBRE la muñeca (pegado a la mano); la
+  // distancia de lectura la controla el propio brazo, no flota hacia la cara.
 
   buildMenu() {
     this.menuGroup = new THREE.Group();
@@ -677,28 +682,39 @@ class PingPongGame {
     this.menuMesh.renderOrder = 990;
     this.menuGroup.add(this.menuMesh);
 
-    // cursor (punto) sobre el panel, se mueve con el rayo
-    this.menuDot = new THREE.Mesh(
-      new THREE.CircleGeometry(0.009, 24),
-      new THREE.MeshBasicMaterial({ color: 0xe8b45a, depthTest: false, transparent: true, opacity: 0.95 }),
-    );
-    this.menuDot.renderOrder = 991;
-    this.menuDot.visible = false;
-    this.menuGroup.add(this.menuDot);
-
     this.menuGroup.visible = false;
     this.scene.add(this.menuGroup);   // espacio MUNDO: inmune al recentrado
 
-    // línea guía desde el mando que apunta
+    // UNA línea guía y UN cursor POR MANDO: cualquiera de los dos puede
+    // apuntar (el de la pala incluido) y el hover es independiente por mano.
     const lineGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1),
     ]);
-    this.menuLine = new THREE.Line(
-      lineGeo,
-      new THREE.LineBasicMaterial({ color: 0xe8b45a, transparent: true, opacity: 0.55 }),
-    );
-    this.menuLine.visible = false;
-    this.scene.add(this.menuLine);
+    this.menuLines = [];
+    this.menuDots = [];
+    for (let h = 0; h < 2; h++) {
+      const line = new THREE.Line(
+        lineGeo,
+        new THREE.LineBasicMaterial({
+          color: h === 0 ? 0xe8b45a : 0x7fd4e8, transparent: true, opacity: 0.6,
+        }),
+      );
+      line.visible = false;
+      line.frustumCulled = false;
+      this.scene.add(line);
+      this.menuLines.push(line);
+
+      const dot = new THREE.Mesh(
+        new THREE.CircleGeometry(0.009, 24),
+        new THREE.MeshBasicMaterial({
+          color: h === 0 ? 0xe8b45a : 0x7fd4e8, depthTest: false, transparent: true, opacity: 0.95,
+        }),
+      );
+      dot.renderOrder = 991;
+      dot.visible = false;
+      this.menuGroup.add(dot);
+      this.menuDots.push(dot);
+    }
 
     this.drawMenu();
   }
@@ -738,7 +754,7 @@ class PingPongGame {
     c.fillText('MENÚ', 200, 46);
     c.fillStyle = '#9aa7b4';
     c.font = '600 15px system-ui, sans-serif';
-    c.fillText('apunta y elige con el GATILLO', 200, 76);
+    c.fillText('apunta con la pala y elige con el GATILLO', 200, 76);
     c.textAlign = 'right';
     c.fillStyle = '#e8b45a';
     c.font = '700 16px system-ui, sans-serif';
@@ -746,7 +762,7 @@ class PingPongGame {
 
     // botón genérico
     const btn = (id, x, y, w, h, label, active, style) => {
-      const hovered = rects.length === this.menuHover || false;
+      const hovered = this.menuHover.includes(rects.length);   // hover de cualquier mano
       rr(x, y, w, h, 12);
       if (active) {
         c.fillStyle = style === 'green' ? '#7fb069' : '#e8b45a';
@@ -819,9 +835,9 @@ class PingPongGame {
     if (this.calib) return;   // en entrenamiento manda el panel propio
     this.menuOpen = !this.menuOpen;
     this.menuGroup.visible = this.menuOpen;
-    this.menuLine.visible = false;
-    this.menuDot.visible = false;
-    this.menuHover = -1;
+    for (const l of this.menuLines) l.visible = false;
+    for (const d of this.menuDots) d.visible = false;
+    this.menuHover = [-1, -1];
     if (this.menuOpen) {
       this.rules.message = 'Menú · apunta y pulsa el GATILLO';
       this.drawMenu();
@@ -836,60 +852,71 @@ class PingPongGame {
     if (this.menuOpen) this.toggleMenu();
   }
 
-  /** Ancla el panel a la muñeca libre, lo orienta a la cara y hace el
-   *  hit-test del rayo de apuntado (hover + línea guía). */
+  /** Ancla el panel a la muñeca libre (bandeja sobre la mano), lo orienta a
+   *  la cara y hace el hit-test del rayo de apuntado DE CADA MANDO: la pala
+   *  también puede seleccionar, cada mano tiene su láser y su hover. */
   updateMenu() {
     const ci = 1 - this.paddleHand;
     const grip = this.grips[ci];
-    const ray = this.rays[ci];
-    if (!this.connected[ci] || !grip || !ray) {
+    if (!this.connected[ci] || !grip) {
       this.menuGroup.visible = false;
-      this.menuLine.visible = false;
+      for (const l of this.menuLines) l.visible = false;
+      for (const d of this.menuDots) d.visible = false;
       return;
     }
     this.menuGroup.visible = true;
 
+    // --- anclaje: bandeja SOBRE la muñeca a distancia CONSTANTE (pegada a la
+    //     mano); la orientación sí sigue a la cara para leerla de frente.
+    //     Antes flotaba hacia la cabeza (0,15 m + 0,09 arriba) y quedaba
+    //     pegada a los ojos; la distancia de lectura la manda el brazo.
     grip.getWorldPosition(muGrip);
     this.camera.getWorldPosition(muHead);
-    muDir.copy(muHead).sub(muGrip);
-    const dist = Math.max(muDir.length(), 0.01);
-    muDir.normalize();
-    muPos.copy(muGrip).addScaledVector(muDir, Math.min(0.15, dist * 0.5));
-    muPos.y += 0.09;
+    muPos.copy(muGrip);
+    muPos.y += 0.16;
     this.menuGroup.position.copy(muPos);
     this.menuGroup.lookAt(muHead);
 
     // estado del partido cambió (p.ej. fin) → repintar botones
     if (this.rules.state !== this._menuState) this.drawMenu();
 
-    // rayo de apuntado
-    ray.getWorldPosition(muGrip);
-    ray.getWorldQuaternion(muQ);
-    muDir.set(0, 0, -1).applyQuaternion(muQ);
-    muRaycaster.set(muGrip, muDir);
-    const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
+    // --- rayo de apuntado INDEPENDIENTE por mando (ambos seleccionan)
+    let dirty = false;
+    for (let h = 0; h < 2; h++) {
+      const ray = this.rays[h];
+      const line = this.menuLines[h];
+      const dot = this.menuDots[h];
+      let idx = -1;
+      if (ray && this.connected[h]) {
+        ray.getWorldPosition(muGrip);
+        ray.getWorldQuaternion(muQ);
+        muDir.set(0, 0, -1).applyQuaternion(muQ);
+        muRaycaster.set(muGrip, muDir);
+        const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
 
-    this.menuLine.visible = true;
-    this.menuLine.position.copy(muGrip);
-    this.menuLine.quaternion.copy(muQ);
-    this.menuLine.scale.z = hit ? hit.distance : 0.5;
+        line.visible = true;
+        line.position.copy(muGrip);
+        line.quaternion.copy(muQ);
+        line.scale.z = hit ? hit.distance : 0.5;
 
-    if (hit && hit.uv) {
-      const px = hit.uv.x * 512;
-      const py = (1 - hit.uv.y) * 640;
-      const idx = this.menuRects.findIndex((r) =>
-        px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h);
-      if (idx !== this.menuHover) {
-        this.menuHover = idx;
-        this.drawMenu();
+        if (hit && hit.uv) {
+          const px = hit.uv.x * 512;
+          const py = (1 - hit.uv.y) * 640;
+          idx = this.menuRects.findIndex((r) =>
+            px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h);
+          // cursor sobre el panel (uv -> plano 0.28×0.35)
+          dot.visible = true;
+          dot.position.set((hit.uv.x - 0.5) * 0.28, (0.5 - hit.uv.y) * 0.35, 0.004);
+        } else {
+          dot.visible = false;
+        }
+      } else {
+        line.visible = false;    // mando ausente: sin láser (no dejarlo congelado)
+        dot.visible = false;
       }
-      // cursor sobre el panel (uv -> plano 0.28×0.35)
-      this.menuDot.visible = true;
-      this.menuDot.position.set((hit.uv.x - 0.5) * 0.28, (0.5 - hit.uv.y) * 0.35, 0.004);
-    } else {
-      if (this.menuHover !== -1) { this.menuHover = -1; this.drawMenu(); }
-      this.menuDot.visible = false;
+      if (idx !== this.menuHover[h]) { this.menuHover[h] = idx; dirty = true; }
     }
+    if (dirty) this.drawMenu();   // un solo repintado aunque ambas manos cambien
   }
 
   menuClick(idx) {
@@ -1001,7 +1028,8 @@ class PingPongGame {
     // el menú empieza SIEMPRE cerrado en cada sesión
     this.menuOpen = false;
     if (this.menuGroup) this.menuGroup.visible = false;
-    if (this.menuLine) this.menuLine.visible = false;
+    for (const l of this.menuLines || []) l.visible = false;
+    for (const d of this.menuDots || []) d.visible = false;
     // RE-VINCULACIÓN al entrar en VR: el contexto creado en 2D puede perder la
     // salida al pasar a inmersivo. Se crea uno nuevo DENTRO de la sesión
     // (ligado a la salida activa del casco) y se adopta SOLO si arranca
@@ -1100,9 +1128,12 @@ class PingPongGame {
       }
       return;
     }
-    // MENÚ ABIERTO: el gatillo solo hace clic en el panel (ni saque ni revancha)
+    // MENÚ ABIERTO: el gatillo de CUALQUIER mando hace clic en el panel
+    // (ni saque ni revancha). Antes solo valía el mando que aloja el panel:
+    // apuntar con la pala no hacía nada.
     if (this.menuOpen) {
-      if (i === 1 - this.paddleHand && this.menuHover >= 0) this.menuClick(this.menuHover);
+      const hov = this.menuHover[i];
+      if (hov >= 0) this.menuClick(hov);
       return;
     }
     if (this.rules.state === 'over') {

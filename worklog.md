@@ -495,3 +495,47 @@ Stage Summary:
   A/X=mano de la pala, gatillo/grip=saque. Nada más que memorizar.
 - Pendiente de confirmación en visor: legibilidad del panel a distancia de
   muñeca (0.28 m ancho) y que el rayo del mando libre apunte con comodidad.
+
+---
+Task ID: 20
+Agent: Super Z (main agent)
+Task: Corregir el menú de muñeca según feedback del visor (v2.16)
+
+Work Log:
+- FEEDBACK USUARIO: (1) el panel estaba muy cerca de la cara/despegado de la
+  mano; (2) imposible seleccionar: la otra mano tiene la pala y no había
+  forma de apuntar.
+- CAUSA RAÍZ 2: updateMenu raycasteaba SOLO con el mando que aloja el panel
+  (mano libre) y onSelectStart solo aceptaba clics de ese mando.
+- REDISEÑO (game_part3.js): rayo + láser + cursor + hover INDEPENDIENTES por
+  mando (menuLines[2], menuDots[2], menuHover[2]); gatillo de CUALQUIER mano
+  hace clic con el menú abierto; colores de láser por mano (ámbar/cian).
+  drawMenu pinta hover si CUALQUIER mano lo toca; un solo repintado por frame.
+- ANCLAJE: panel a distancia CONSTANTE 0,16 m sobre la muñeca libre (bandeja);
+  eliminado el desplazamiento hacia la cabeza (antes 0,15 hacia la cara +
+  0,09 arriba: se iba hasta 0,21-0,23 m con la mano baja). La orientación
+  sigue mirando a la cara y la distancia de lectura la manda el brazo.
+- Caso borde cerrado: mando desconectado con menú abierto apaga su láser
+  (antes quedaba congelado el visible=true del frame anterior).
+- Textos: overlay y subtítulo del panel ('apunta con la pala y elige con el
+  GATILLO'), README v2.16.
+- Verificación (verify_v216.py): 2 obstáculos técnicos resueltos — (a) los
+  espacios targetRay tienen matrixAutoUpdate=false y matrixWorld obsoleta en
+  2D: hay que componer ray.updateMatrix() y orientar con Matrix4.lookAt
+  (Object3D.lookAt lee la matriz vieja); (b) cámara de demo orbital:
+  congelada con monkey-patch de camera.getWorldPosition. 11 pruebas OK:
+  GLB, apertura, 12 botones, arrays 2/2, anclaje 0,16 m, hover de la PALA
+  (índice correcto, láser+cursor visibles), clic con gatillo de la pala
+  aplica Difícil y deja el menú abierto, hover independiente por mano, tema
+  Neón desde la mano libre persiste, modo cierra, REVANCHA condicional,
+  Cerrar apaga láseres. 0 errores de página. Capturas shot_v216_*.png.
+- Entrega: index.html reconstruido (2,08 MB), ZIP regenerado, capturas en
+  download/ (captura-v216-menu-*.png).
+
+Stage Summary:
+- v2.16: el menú de muñeca ya es seleccionable con la mano de la pala (láser
+  propio) y el panel vive pegado a la muñeca libre, no flotando hacia la
+  cara. Mapa de interacción intacto: B=menú, Y=entreno, A/X=mano,
+  gatillo/grip=saque; con menú abierto el gatillo elige desde cualquier mando.
+- Pendiente de confirmación en visor: distancia de lectura con el brazo en
+  reposo y comodidad del apuntado con la pala.

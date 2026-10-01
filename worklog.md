@@ -276,3 +276,21 @@ Stage Summary:
 - Red de seguridad completa en VR: rebind en sessionstart/sessionend, statechange observer, kicks (gatillo/grip), watchdog, reintento tardío 3,4 s y blip de confirmación audible al recuperar
 - El visor muestra el estado del audio (chip bajo el marcador) -> si el usuario lo vuelve a reportar, sabremos si dice OK (running) o reconectando (suspended)
 - Banner fin de partido centrado y sin espejo; victoria (dorado+confeti) y derrota (gris+Zzz) verificadas en demo
+
+---
+Task ID: 14
+Agent: main
+Task: Audio en VR suena SOLO con la ventana del navegador sin foco (v2.9: audio OK en VR, se apaga al entrar en la ventana de Chrome) — diagnóstico + rescates de foco
+
+Work Log:
+- Análisis de la pista del usuario: audio funciona en VR (v2.9 OK) pero se apaga al ENFOCAR la ventana del navegador; suena de nuevo al volver a la interfaz del sistema (Quest Link/menú). La sala sigue renderizando con el sonido apagado => la sesión XR sigue viva; no es sessionend. Revisión de GameAudio: no hay PannerNode/listener espacial (solo StereoPanner con guardas NaN) => hipótesis NaN-listener DESCARTADA. El código v2.9 es adoptar-solo-si-running (no puede autodestruir un contexto sano) => el muteo viene del sistema/navegador al cambiar el foco, con dos casos: (a) contexto suspendido (detectable) o (b) grafo zombi 'running' con reloj currentTime congelado (INDETECTABLE por el watchdog anterior)
+- GameAudio v5 (game_part1.js): (1) watchdog ampliado con detección de grafo zombi: en estado 'running' compara ctx.currentTime con el tick anterior (_lastCT/_ctAdvanced/_ctStalls); 4 ticks congelados (~2,8 s) => tryFreshRunning('reloj de audio congelado') (adoptar-solo-si-running, nunca queda peor); nuevo método clockAlive(); (2) window 'focus' => hadGesture + kick() + blipAlive() si running&&xrActive (feedback audible inmediato al enfocar: si OYE el blip la salida va, si no el contexto está muerto); (3) visibilitychange=>visible ahora además kick() completo (antes solo resume())
+- Indicador en pared v2 (game_part2.js): chip de audio con 2ª línea de diagnóstico técnico: 'T+/T- · ctx N · foco sí/NO · VR' (reloj avanza, nº contextos creados, document.hasFocus(), sesión XR); nuevo estado ámbar 'reloj parado — pulsa el gatillo' (running+reloj congelado); update(state, info) con firma por cambios (state|alive|focus|builds)
+- Bucle (game_part3.js): audioStatus.update() ahora pasa {alive: clockAlive(), builds: rebuilds, focus: document.hasFocus(), xr: isPresenting}
+- Banner derrota/victoria: ya corregido y verificado en v2.9 (textAlign center + FrontSide); el usuario no lo re-reporta => intacto
+- Verificación headless (agent-browser): cero errores de consola; demo #spectate con ctx running, rebuilds 1, clockAlive() true, chip de 2 líneas visible bajo el marcador (captura preview_v210_chip.png); prueba controlada de reloj falsado (_lastCT=999999): detecta 1 tick congelado (alive=false, stalls=1), _lastCT se actualiza cada tick (autolimitante), contador se auto-recupera y no lanza excepciones; la ruta completa tryFreshRunning ya validada en v2.9
+- Build 1,57 MB sintaxis OK -> download/pingpong-quest3-v2/index.html + public/game.html; zip reempaquetado LIMPIO (838 KB: solo index.html, eliminado assets/pala.glb residual que el HTML no referencia - GLB va embebido); zip integridad OK; README sección v2.10 con guía de lectura del chip
+Stage Summary:
+- El audio ya se autorepara si el navegador congela el grafo al cambiar el foco (grafo zombi), y al enfocar la ventana suena un blip de confirmación
+- El chip en pared permite distinguir sin consola: 'OK · T+ · foco sí' con silencio = enrutado del SISTEMA (Quest Link/navegador, fuera del alcance del juego) vs 'reconectando/reloj parado' = el juego lo recupera solo
+- Build v2.10 desplegado, zip limpio 838 KB, sin errores

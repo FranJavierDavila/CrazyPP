@@ -894,7 +894,9 @@ function createConfetti() {
 
 /** Mini-indicador del estado del audio (solo llama la atención si algo va
  *  mal): verde tenue "♪" cuando todo suena; ámbar/rojo con mensaje cuando el
- *  contexto está suspendido o mudo. Sirve de diagnóstico a la vista en VR. */
+ *  contexto está suspendido o mudo. Segunda línea de diagnóstico técnico:
+ *  reloj de audio (T+ avanza / T- congelado), nº de contextos creados, foco
+ *  de la ventana y sesión VR. Sirve de diagnóstico a la vista en VR. */
 function createAudioStatus() {
   const group = new THREE.Group();
   const canvas = document.createElement('canvas');
@@ -912,9 +914,13 @@ function createAudioStatus() {
   group.position.set(0, 1.44, DIMS.roomFrontZ + 0.9);
 
   let last = '';
-  const update = (state) => {
-    if (state === last) return;
-    last = state;
+  const update = (state, info) => {
+    const alive = !info || info.alive !== false;
+    const builds = info?.builds ?? 0;
+    const focus = !!(info && info.focus);
+    const sig = state + '|' + (alive ? 1 : 0) + '|' + (focus ? 1 : 0) + '|' + builds;
+    if (sig === last) return;
+    last = sig;
     ctx.clearRect(0, 0, 512, 88);
     ctx.fillStyle = 'rgba(8,10,13,0.72)';
     ctx.beginPath();
@@ -933,10 +939,20 @@ function createAudioStatus() {
     } else if (state !== 'running') {
       color = '#8b949c';
       label = '♪ audio: ' + state;
+    } else if (!alive) {
+      // estado 'running' pero reloj de audio congelado: grafo zombi
+      color = '#f0b429';
+      label = '♪ audio: reloj parado — pulsa el gatillo';
     }
     ctx.fillStyle = color;
-    ctx.font = '700 38px system-ui, sans-serif';
-    ctx.fillText(label, 256, 46);
+    ctx.font = '700 34px system-ui, sans-serif';
+    ctx.fillText(label, 256, 30);
+    // línea 2 · diagnóstico técnico (reportar esto si el sonido falla)
+    const bits = [alive ? 'T+' : 'T-', 'ctx ' + builds, 'foco ' + (focus ? 'sí' : 'NO')];
+    if (info?.xr) bits.push('VR');
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '600 25px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillText(bits.join(' · '), 256, 64);
     tex.needsUpdate = true;
   };
   update('running');

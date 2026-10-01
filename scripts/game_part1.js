@@ -258,11 +258,29 @@ class GameAudio {
     this.rebuilds = 0;
     this.xrActive = false;     // sesión XR inmersiva activa (lo marca el juego)
     this._lastAlive = 0;
+    this._lastCT = -1;         // último currentTime medido (watchdog)
+    this._ctAdvanced = true;   // ¿el reloj de audio avanza? (estado 'running' vivo)
+    this._ctStalls = 0;        // ticks consecutivos con el reloj congelado
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
+    // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
+    // contexto no arranca; nunca destruye uno sano).
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && this.ctx && this.ctx.state !== 'running') {
-        this.ctx.resume().catch(() => {});
+      if (!document.hidden) {
+        this.hadGesture = true;
+        this.kick();
+      }
+    });
+    // RECUPERACIÓN DEL FOCO DE LA VENTANA: al volver de la interfaz del
+    // sistema (Quest Link / menú universal) el navegador puede dejar el
+    // contexto suspendido o con la salida re-enrutada. Rescate suave + blip
+    // de confirmación: si el usuario OYE el blip al enfocar la ventana, la
+    // salida funciona; si no, el chip en pared dirá si el contexto vive.
+    window.addEventListener('focus', () => {
+      this.hadGesture = true;
+      this.kick();
+      if (this.ctx && this.ctx.state === 'running' && this.xrActive) {
+        this.blipAlive();
       }
     });
     // CUALQUIER toque en la página (menú 2D, dificultad, HUD…) es un gesto
@@ -456,9 +474,11 @@ class GameAudio {
     this.tryFreshRunning(reason || 're-vinculación de salida');
   }
 
-  /** Vigilancia periódica (llamada desde el bucle): si el contexto quedó
-   *  suspendido a mitad de partida (proximidad, notificación, cambio de app),
-   *  se reactiva solo; si resiste al resume(), se reconstruye (throttle). */
+  /** ¿El reloj de audio avanza? (false = estado 'running' pero grafo muerto) */
+  clockAlive() {
+    return this._ctAdvanced !== false;
+  }
+
   watchdog(dt) {
     this._wdAcc += dt;
     if (this._wdAcc < 0.7) return;
@@ -469,6 +489,20 @@ class GameAudio {
     }
     if (this.ctx.state === 'running') {
       this._wdFails = 0;
+      // DETECCIÓN DE GRAFO MUERTO: el estado dice 'running' pero el reloj
+      // de audio (currentTime) lleva congelado ~2,8 s (4 ticks). Algunos
+      // navegadores/VR dejan el contexto en ese estado zombi al cambiar el
+      // foco de la ventana o re-enrutar la salida. Recreación de rescate
+      // (adoptar-solo-si-running: nunca queda peor que antes).
+      const ct = this.ctx.currentTime;
+      this._ctAdvanced = Number.isFinite(ct) && ct > this._lastCT + 1e-4;
+      this._lastCT = ct;
+      if (this._ctAdvanced) {
+        this._ctStalls = 0;
+      } else if (++this._ctStalls >= 4 && this.hadGesture) {
+        this._ctStalls = 0;
+        this.tryFreshRunning('watchdog (reloj de audio congelado)');
+      }
       return;
     }
     this.ctx.resume().catch(() => {});

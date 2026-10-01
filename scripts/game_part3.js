@@ -686,9 +686,15 @@ class PingPongGame {
     const presenting = this.renderer.xr.isPresenting;
 
     // vigilancia del audio: si el contexto quedó suspendido a mitad de
-    // partida (proximidad del visor, notificación...), se reactiva solo
+    // partida (proximidad del visor, notificación...), o su reloj se
+    // congeló con estado 'running' (grafo zombi), se reactiva solo
     this.audio.watchdog(dt);
-    this.audioStatus.update(this.audio.ctx?.state || 'none');
+    this.audioStatus.update(this.audio.ctx?.state || 'none', {
+      alive: this.audio.clockAlive(),
+      builds: this.audio.rebuilds,
+      focus: document.hasFocus(),
+      xr: !!this.renderer.xr.isPresenting,
+    });
 
     if (presenting && this.recenterFrames > 0) {
       this.updateRecenter();

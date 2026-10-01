@@ -256,6 +256,8 @@ class GameAudio {
     this._lastRebuild = 0;
     this.hadGesture = false;   // ya hubo gesto de usuario (clic, gatillo XR…)
     this.rebuilds = 0;
+    this.xrActive = false;     // sesión XR inmersiva activa (lo marca el juego)
+    this._lastAlive = 0;
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     document.addEventListener('visibilitychange', () => {
@@ -270,6 +272,47 @@ class GameAudio {
     document.addEventListener('click', gesture, { passive: true });
   }
 
+  /** Cablea el grafo de salida (master -> compresor -> destino) y el buffer
+   *  de ruido SOBRE un contexto dado. */
+  _wire(ctx) {
+    this.master = ctx.createGain();
+    this.master.gain.value = 0.9;
+    // Compresor: golpes más presentes y audibles en el altavoz del visor
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.knee.value = 22;
+    comp.ratio.value = 5;
+    comp.attack.value = 0.002;
+    comp.release.value = 0.12;
+    this.master.connect(comp);
+    comp.connect(ctx.destination);
+    const len = Math.floor(ctx.sampleRate * 0.25);
+    this.noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = this.noiseBuffer.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  }
+
+  /** Observador de estado por contexto: reintenta y avisa al recover() global. */
+  _hookState(ctx) {
+    if (!ctx || ctx.__ppHooked) return;
+    ctx.__ppHooked = true;
+    ctx.addEventListener?.('statechange', () => {
+      if (this.ctx !== ctx) return;
+      console.info('[Audio] estado ->', ctx.state, this.xrActive ? '(VR)' : '(2D)');
+      if (ctx.state === 'running') {
+        this._wdFails = 0;
+        if (this.xrActive) this.blipAlive();  // el jugador OYE que el audio volvió
+      } else if (ctx.state === 'suspended' && this.xrActive) {
+        void ctx.resume().catch(() => {});
+        window.setTimeout(() => {
+          if (this.ctx === ctx && ctx.state !== 'running' && this.xrActive) {
+            this.tryFreshRunning('statechange (suspended en VR)');
+          }
+        }, 900);
+      }
+    });
+  }
+
   _create() {
     try {
       const Ctor = window.AudioContext || window.webkitAudioContext;
@@ -279,21 +322,8 @@ class GameAudio {
       } catch {
         this.ctx = new Ctor();
       }
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 0.9;
-      // Compresor: golpes más presentes y audibles en el altavoz del visor
-      const comp = this.ctx.createDynamicsCompressor();
-      comp.threshold.value = -16;
-      comp.knee.value = 22;
-      comp.ratio.value = 5;
-      comp.attack.value = 0.002;
-      comp.release.value = 0.12;
-      this.master.connect(comp);
-      comp.connect(this.ctx.destination);
-      const len = Math.floor(this.ctx.sampleRate * 0.25);
-      this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-      const data = this.noiseBuffer.getChannelData(0);
-      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      this._wire(this.ctx);
+      this._hookState(this.ctx);
       this.rebuilds++;
       console.info('[Audio] contexto creado · estado:', this.ctx.state);
       return true;
@@ -306,25 +336,70 @@ class GameAudio {
     }
   }
 
-  /** Destruye y recrea el grafo COMPLETO. Un contexto creado dentro de un
-   *  gesto de usuario nace 'running': es el rescate definitivo cuando
-   *  resume() deja de responder (bug conocido del Quest Browser en VR).
-   *  Throttle 1,2 s para no agotar el pool de contextos del navegador. */
-  _rebuild(reason, force = false) {
+  /** Crea un contexto NUEVO y lo adopta SOLO si consigue arrancar 'running'.
+   *  Si no lo consigue, lo descarta y CONSERVA el contexto anterior: el audio
+   *  NUNCA queda peor que antes del intento.
+   *  (v2.8 cerraba el contexto viejo ANTES de crear el nuevo; si el nuevo
+   *  nacía suspendido dentro de la sesión XR de la Quest, el resultado era
+   *  mudez total e irreversible. Con esta política eso es imposible.) */
+  tryFreshRunning(reason) {
     const now = performance.now();
-    if (!force && now - this._lastRebuild < 1200) return false;
+    if (now - this._lastRebuild < 900) return false;
     this._lastRebuild = now;
-    try { this.ctx?.close?.(); } catch { /* ya estaba cerrado */ }
-    this.ctx = null;
-    this.master = null;
-    this.noiseBuffer = null;
-    this._wdFails = 0;
-    const ok = this._create();
-    if (ok && this.ctx && this.ctx.state !== 'running') {
-      void this.ctx.resume().catch(() => {});
+    const old = this.ctx;
+    let fresh = null;
+    try {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return false;
+      try { fresh = new Ctor({ latencyHint: 'interactive' }); }
+      catch { fresh = new Ctor(); }
+    } catch (e) {
+      console.warn('[Audio] contexto nuevo falló:', e?.message);
+      return false;
     }
-    console.info('[Audio] contexto reconstruido ·', reason);
-    return ok;
+    this.rebuilds++;
+    console.info('[Audio] contexto nuevo ·', fresh.state, '·', reason);
+    this._hookState(fresh);
+    let done = false;
+    const adopt = () => {
+      if (done) return;
+      done = true;
+      this.master = null;
+      this.noiseBuffer = null;
+      if (old && old !== fresh) { try { old.close(); } catch { /* ya cerrado */ } }
+      this.ctx = fresh;
+      try { this._wire(fresh); } catch { /* playOsc/playNoise quedan inermes */ }
+      this._wdFails = 0;
+      console.info('[Audio] contexto NUEVO ADOPTADO (running) ·', reason);
+      if (this.xrActive) this.blipAlive();
+    };
+    const discard = () => {
+      if (done) return;
+      done = true;
+      try { fresh.close(); } catch { /* */ }
+      console.info('[Audio] contexto nuevo descartado · se conserva el anterior ·', reason);
+    };
+    const decide = () => {
+      if (done || !fresh) return;
+      if (fresh.state === 'running') { adopt(); return; }
+      void fresh.resume().catch(() => {});
+      window.setTimeout(() => {
+        if (done || !fresh) return;
+        if (fresh.state === 'running') adopt(); else discard();
+      }, 600);
+    };
+    decide();
+    return true;
+  }
+
+  /** Blip doble de confirmación: suena cuando el audio (re)arranca dentro de
+   *  la sesión VR, para que el jugador sepa que ya hay sonido otra vez. */
+  blipAlive() {
+    const now = performance.now();
+    if (now - this._lastAlive < 4000) return;
+    this._lastAlive = now;
+    this.playOsc(880, 1320, 0.14, 'sine', 0.35, 0);
+    window.setTimeout(() => this.playOsc(1320, 1760, 0.18, 'sine', 0.3, 0), 160);
   }
 
   ensure() {
@@ -356,7 +431,9 @@ class GameAudio {
     this.ensure();
     if (this.ctx && this.ctx.state !== 'running') {
       void this.ctx.resume().catch(() => {});
-      if (this.ctx.state !== 'running') this._rebuild('kick (resume sin efecto)');
+      // Intento recreativo SIN destruir el actual: si el nuevo arranca, se
+      // adopta; si no, se conserva el previo (nunca queda peor).
+      this.tryFreshRunning('kick (resume sin efecto)');
     }
   }
 
@@ -367,20 +444,16 @@ class GameAudio {
     this.hadGesture = true;
     this.ensure();
     if (this.ctx && this.ctx.state !== 'running') {
-      this._rebuild('preparación VR (contexto enfermo)');
+      this.tryFreshRunning('preparación VR (contexto enfermo)');
     }
   }
 
-  /** RE-VINCULACIÓN FORZADA: destruye y recrea el contexto SIN importar su
-   *  estado. Clave para la Quest: al pasar a modo inmersivo el navegador
-   *  puede MANTENER el contexto 'running' pero re-enrutar su salida a un
-   *  dispositivo que ya no es audible dentro del visor -> silencio total
-   *  pese a que todos los rescates ven un estado 'running' sano. Un contexto
-   *  creado DENTRO de la sesión XR nace ligado a la salida activa del casco
-   *  (y como hubo clic/gesto previo, nace 'running'). */
+  /** RE-VINCULACIÓN al entrar/salir de VR: crea un contexto nuevo dentro de
+   *  la sesión (nace ligado a la salida activa del casco) y lo adopta SOLO si
+   *  arranca 'running'; en caso contrario conserva el anterior. */
   rebind(reason) {
     this.hadGesture = true;
-    this._rebuild(reason || 're-vinculación de salida', true);
+    this.tryFreshRunning(reason || 're-vinculación de salida');
   }
 
   /** Vigilancia periódica (llamada desde el bucle): si el contexto quedó
@@ -401,7 +474,7 @@ class GameAudio {
     this.ctx.resume().catch(() => {});
     this._wdFails++;
     if (this._wdFails >= 5 && this.hadGesture) {
-      this._rebuild('watchdog (suspended persistente)');
+      this.tryFreshRunning('watchdog (suspended persistente)');
     }
   }
 

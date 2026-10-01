@@ -210,6 +210,10 @@ class PingPongGame {
     this.rig.add(this.fanfareBanner.group);
     this.confetti = createConfetti();
     this.rig.add(this.confetti.points);
+    // Mini-indicador del estado del audio (bajo el marcador): si el audio
+    // fallara en VR, el propio casco muestra "reconectando / pulsa gatillo".
+    this.audioStatus = createAudioStatus();
+    this.rig.add(this.audioStatus.group);
   }
 
   setupControllers() {
@@ -481,14 +485,20 @@ class PingPongGame {
 
   onSessionStart = () => {
     this.recenterFrames = 25;
-    // RE-VINCULACIÓN FORZADA al entrar en VR. En Quest Browser el contexto
-    // creado en 2D puede quedar 'running' PERO con la salida re-enrutada al
-    // pasar a inmersivo: silencio total en el visor aunque todos los rescates
-    // vean un estado 'sano'. Un contexto nuevo creado DENTRO de la sesión nace
-    // ligado a la salida activa del casco (y 'running' por activación previa).
+    // RE-VINCULACIÓN al entrar en VR: el contexto creado en 2D puede perder la
+    // salida al pasar a inmersivo. Se crea uno nuevo DENTRO de la sesión
+    // (ligado a la salida activa del casco) y se adopta SOLO si arranca
+    // 'running'; si no, se conserva el anterior (nunca queda peor).
+    this.audio.xrActive = true;
     this.audio.rebind('entrada en VR: salida re-vinculada al casco');
-    // Reintentos suaves por si el contexto nuevo nace suspendido.
+    // Reintentos suaves: si el contexto nuevo nace suspendido, kick() reanuda
+    // y el tardío prueba un contexto fresco (también adopta-solo-si-running).
     for (const t of [400, 1200, 2500]) window.setTimeout(() => this.audio.kick(), t);
+    window.setTimeout(() => {
+      if (this.audio.ctx?.state !== 'running') {
+        this.audio.tryFreshRunning('reintento tardío en VR');
+      }
+    }, 3400);
     window.setTimeout(() => this.audio.serve(), 350);  // blip de confirmación
     console.info(
       '[Audio] estado en VR:', this.audio.ctx?.state,
@@ -521,8 +531,9 @@ class PingPongGame {
   };
 
   onSessionEnd = () => {
-    // Salida de VR: el contexto quedaba ligado a la salida del casco ->
-    // re-vincular a la salida 2D del navegador (mismo problema a la inversa).
+    // Salida de VR: re-vincular el audio a la salida 2D del navegador
+    // (adoptar-solo-si-running; el contexto del casco se cierra tras el cambio).
+    this.audio.xrActive = false;
     this.audio.rebind('salida de VR: salida re-vinculada al navegador');
     this.rules.startMatch();
     this.resetToss();
@@ -677,6 +688,7 @@ class PingPongGame {
     // vigilancia del audio: si el contexto quedó suspendido a mitad de
     // partida (proximidad del visor, notificación...), se reactiva solo
     this.audio.watchdog(dt);
+    this.audioStatus.update(this.audio.ctx?.state || 'none');
 
     if (presenting && this.recenterFrames > 0) {
       this.updateRecenter();

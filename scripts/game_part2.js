@@ -731,8 +731,10 @@ function createFanfareBanner() {
   tex.colorSpace = THREE.SRGBColorSpace;
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(1.6, 0.8),
+    // FrontSide: de detrás se ve transparente (en la órbita de la demo) en
+    // lugar del texto en espejo; en VR el jugador siempre está de frente.
     new THREE.MeshBasicMaterial({
-      map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false,
+      map: tex, transparent: true, side: THREE.FrontSide, depthWrite: false,
     }),
   );
   group.add(mesh);
@@ -812,6 +814,7 @@ function createFanfareBanner() {
     }
 
     // título con sombra
+    ctx.textAlign = 'center';     // ¡CLAVE! sin esto el texto sale desde x=512
     ctx.shadowColor = win ? 'rgba(255,196,40,0.9)' : 'rgba(0,0,0,0.8)';
     ctx.shadowBlur = 26;
     ctx.fillStyle = win ? '#ffd35c' : '#aab4c0';
@@ -887,4 +890,55 @@ function createConfetti() {
   };
 
   return { points, update };
+}
+
+/** Mini-indicador del estado del audio (solo llama la atención si algo va
+ *  mal): verde tenue "♪" cuando todo suena; ámbar/rojo con mensaje cuando el
+ *  contexto está suspendido o mudo. Sirve de diagnóstico a la vista en VR. */
+function createAudioStatus() {
+  const group = new THREE.Group();
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 88;
+  const ctx = canvas.getContext('2d');
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.84, 0.145),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
+  );
+  group.add(mesh);
+  // Justo bajo el marcador (que está a y=1.95 con 0,85 m de alto)
+  group.position.set(0, 1.44, DIMS.roomFrontZ + 0.9);
+
+  let last = '';
+  const update = (state) => {
+    if (state === last) return;
+    last = state;
+    ctx.clearRect(0, 0, 512, 88);
+    ctx.fillStyle = 'rgba(8,10,13,0.72)';
+    ctx.beginPath();
+    ctx.roundRect(6, 6, 500, 76, 30);
+    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let color = '#69d97e';
+    let label = '♪ audio: OK';
+    if (state === 'suspended' || state === 'interrupted') {
+      color = '#f0b429';
+      label = '♪ audio: reconectando… (pulsa el gatillo)';
+    } else if (state === 'closed' || state === 'failed') {
+      color = '#ff6b57';
+      label = '♪ audio: mudo — pulsa el gatillo';
+    } else if (state !== 'running') {
+      color = '#8b949c';
+      label = '♪ audio: ' + state;
+    }
+    ctx.fillStyle = color;
+    ctx.font = '700 38px system-ui, sans-serif';
+    ctx.fillText(label, 256, 46);
+    tex.needsUpdate = true;
+  };
+  update('running');
+  return { group, update };
 }

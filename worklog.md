@@ -259,3 +259,20 @@ Stage Summary:
 - Audio en VR reparado por re-vinculación de salida: recreación forzada del AudioContext en sessionstart (dentro de la sesión) y en sessionend; los rescates v2.7 quedan como red de seguridad
 - Fanfarria, panel de entrenamiento y saques largos confirmados intactos de v2.6/v2.7
 - Build v2.8 desplegado y verificado sin errores
+
+---
+Task ID: 13
+Agent: main
+Task: Audio sigue mudo en VR tras v2.8 (usuario: "solo suena en la página antes de entrar en VR"; entra por Entrenar golpes -> loading -> silencio) + banner de derrota descentrado
+
+Work Log:
+- BANNER (bug encontrado): createFanfareBanner.draw() nunca fijaba ctx.textAlign -> título/marcador/subtítulo dibujados desde x=512 hacia la derecha (DERROTA se salía del lienzo). FIX: ctx.textAlign='center' antes del título. Además DoubleSide mostraba texto en ESPEJO desde atrás en la órbita de la demo -> FrontSide (invisible por detrás; en VR el jugador siempre está de frente). Verificado con game-over natural forzado: "DERROTA · 5-11" centrado en el panel (captura preview_v29_derrota5.png, vista espejo demuestra el centrado); victoria natural 11-6: confeti + HUD "¡VICTORIA! · 11-6 · gatillo: revancha" + banner escala pulsando ~1.0
+- AUDIO v4 (política adoptar-solo-si-running): la v2.8 rebind() cerraba el contexto viejo ANTES de crear el nuevo -> si el nuevo nacía suspendido dentro de la sesión XR (activación no concedida), mudez total irreversible. tryFreshRunning(reason): crea contexto nuevo, lo ADOPTA solo si alcanza 'running' (tras resume + 600 ms de gracia) y si no lo DESCARTA conservando el anterior -> imposible quedar peor; _wire(ctx) extraído (master+compresor+noiseBuffer sobre ctx dado); _hookState(ctx): observador statechange por contexto -> en VR: resume inmediato si suspended, reintento a 900 ms, blip al recuperar; blipAlive(): doble blip audible cuando el audio (re)arranca en VR (throttle 4 s); kick()/watchdog()/prepareVR()/rebind() migrados de _rebuild(destruía) a tryFreshRunning; xrActive flag desde part3; reintento tardío a 3400 ms en onSessionStart; xrActive=false en onSessionEnd
+- INDICADOR DE AUDIO EN VR: createAudioStatus() (part2) mini-panel 0,84x0,145 m bajo el marcador (y=1.44, roomFrontZ+0.9): verde "♪ audio: OK" / ámbar "♪ audio: reconectando… (pulsa el gatillo)" / rojo "mudo — pulsa el gatillo"; actualizado por poll cada frame en el bucle (this.audioStatus.update(ctx?.state)); si vuelve a fallar, el visor mismo muestra el estado -> diagnóstico sin consola
+- Verificación headless: cero errores de consola; tryFreshRunning/kick/rebind sin excepciones (estado suspended esperado sin dispositivo de audio); chip ámbar "reconectando…" visible en capturas (comportamiento correcto en headless); rebuild 1,57 MB sintaxis OK -> index.html + public/game.html; zip 820 KB integridad OK; README sección v2.9
+
+Stage Summary:
+- La mudez irreversible de v2.8 es imposible por diseño: todo rescate ahora es adoptar-si-running o conservar el previo
+- Red de seguridad completa en VR: rebind en sessionstart/sessionend, statechange observer, kicks (gatillo/grip), watchdog, reintento tardío 3,4 s y blip de confirmación audible al recuperar
+- El visor muestra el estado del audio (chip bajo el marcador) -> si el usuario lo vuelve a reportar, sabremos si dice OK (running) o reconectando (suspended)
+- Banner fin de partido centrado y sin espejo; victoria (dorado+confeti) y derrota (gris+Zzz) verificadas en demo

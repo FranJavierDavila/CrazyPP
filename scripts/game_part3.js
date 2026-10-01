@@ -90,6 +90,9 @@ class PingPongGame {
     this.panelDirty = true;
     this.btnPrev = {};
     this.lastFeedTap = 0;
+    // fanfarria de fin de partido (banner + confeti)
+    this.fanfareWin = false;
+    this.fanfareT = 0;
 
     // IA: lado CPU (-Z) y "jugador demo" en escritorio (+Z)
     this.ai = new OpponentAI(
@@ -191,14 +194,22 @@ class PingPongGame {
     this.scoreboardUpdate = sb.update;
     this.rig.add(sb.group);
 
-    // Panel de ajuste de pala (visible solo en el modo entrenamiento)
+    // Panel de ajuste de pala (visible solo en el modo entrenamiento).
+    // Fuera de la mesa a la IZQUIERDA (el borde de la mesa está en x=-0.76):
+    // el panel de 0,46 m girado 0,62 rad llega hasta x=-0,85, sin solapar.
     this.calibPanel = createCalibPanel();
     this.calibPanel.group.position.set(
-      -0.62, 1.42, DIMS.tableCenterZ + DIMS.tableHalfLength - 0.02,
+      -1.04, 1.42, DIMS.tableCenterZ + DIMS.tableHalfLength - 0.02,
     );
-    this.calibPanel.group.rotation.y = 0.5;
+    this.calibPanel.group.rotation.y = 0.62;
     this.calibPanel.group.visible = false;
     this.rig.add(this.calibPanel.group);
+
+    // Banner de fin de partido (¡VICTORIA! / DERROTA) + confeti 3D
+    this.fanfareBanner = createFanfareBanner();
+    this.rig.add(this.fanfareBanner.group);
+    this.confetti = createConfetti();
+    this.rig.add(this.confetti.points);
   }
 
   setupControllers() {
@@ -439,9 +450,11 @@ class PingPongGame {
   // ---------- API pública ----------
 
   async enterVR(startCalib = false) {
-    // contexto de audio NUEVO dentro de este clic (gesto de usuario): nace
-    // 'running' y no arrastra un contexto suspendido que ya no responde en VR
-    this.audio.rebuildFresh();
+    // Preparación de audio DENTRO de este clic (gesto de usuario): repara un
+    // contexto enfermo (suspendido/cerrado) recreándolo, pero NO destruye un
+    // contexto sano. Si la sesión XR lo suspende, el kick() recreativo de los
+    // gatillos/grips lo recupera dentro del propio gesto del mando.
+    this.audio.prepareVR();
     this.pendingCalib = !!startCalib;
     const xr = navigator.xr;
     if (!xr) throw new Error('Este navegador no soporta WebXR. Usa Meta Quest Browser.');
@@ -474,6 +487,10 @@ class PingPongGame {
     this.audio.kick();
     for (const t of [400, 1200, 2500]) window.setTimeout(() => this.audio.kick(), t);
     window.setTimeout(() => this.audio.serve(), 350);  // blip de confirmación
+    console.info(
+      '[Audio] estado en VR:', this.audio.ctx?.state,
+      '· recreaciones:', this.audio.rebuilds,
+    );
     // gatillo y grip DENTRO de la sesión son eventos de intención del usuario:
     // sirven para reactivar el audio si el navegador lo suspendió en VR
     const session = this.renderer.xr.getSession?.();
@@ -943,6 +960,22 @@ class PingPongGame {
       m.material.opacity = 0.55 * (1 - m.userData.t);
     }
 
+    // fanfarria de fin de partido: entra con rebote, pulsa y se retira al
+    // empezar la revancha (state deja de ser 'over')
+    if (this.fanfareBanner.group.visible) {
+      this.fanfareT += dt;
+      if (this.rules.state !== 'over') {
+        this.fanfareBanner.group.visible = false;
+      } else {
+        const s = Math.min(1, this.fanfareT / 0.45);
+        const ease = 1 - Math.pow(1 - s, 3);
+        const pulse = 1 + Math.sin(this.fanfareT * 5.2) * 0.045 * Math.max(0, 1 - this.fanfareT / 4);
+        this.fanfareBanner.group.scale.setScalar(0.2 + 0.8 * ease * pulse);
+        this.fanfareBanner.group.rotation.y = Math.sin(this.fanfareT * 1.3) * 0.06;
+      }
+    }
+    this.confetti.update(dt, this.fanfareBanner.group.visible && this.fanfareWin);
+
     if (this.calib && this.panelDirty) {
       this.calibPanel.update({ name: this.gripName, off: this.gripOffset });
       this.panelDirty = false;
@@ -1193,7 +1226,28 @@ class PingPongGame {
           else this.setupDemoServe();
           break;
         case 'game-over':
+          this.startFanfare(it.winner === 'player');
           break;
+      }
+    }
+  }
+
+  /** Fanfarria de fin de partido: sonido + banner 3D + confeti + vibración. */
+  startFanfare(win) {
+    this.fanfareWin = win;
+    this.fanfareT = 0;
+    this.audio.fanfare(win);
+    this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi);
+    this.fanfareBanner.group.visible = true;
+    this.fanfareBanner.group.scale.setScalar(0.2);
+    if (this.renderer.xr.isPresenting) {
+      if (win) {
+        this.haptic(this.paddleHand, 0.55, 90);
+        window.setTimeout(() => this.haptic(this.paddleHand, 0.75, 90), 150);
+        window.setTimeout(() => this.haptic(this.paddleHand, 1.0, 170), 300);
+      } else {
+        this.haptic(this.paddleHand, 0.3, 260);
+        window.setTimeout(() => this.haptic(this.paddleHand, 0.22, 380), 300);
       }
     }
   }

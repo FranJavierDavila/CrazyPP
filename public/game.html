@@ -435,6 +435,10 @@ class GameAudio {
     this.master = null;
     this.noiseBuffer = null;
     this._wdAcc = 0;
+    this._wdFails = 0;
+    this._lastRebuild = 0;
+    this.hadGesture = false;   // ya hubo gesto de usuario (clic, gatillo XR…)
+    this.rebuilds = 0;
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     document.addEventListener('visibilitychange', () => {
@@ -442,15 +446,17 @@ class GameAudio {
         this.ctx.resume().catch(() => {});
       }
     });
+    // CUALQUIER toque en la página (menú 2D, dificultad, HUD…) es un gesto
+    // válido para reactivar el audio: vía de rescate principal fuera de VR.
+    const gesture = () => { this.hadGesture = true; this.kick(); };
+    document.addEventListener('pointerdown', gesture, { passive: true });
+    document.addEventListener('click', gesture, { passive: true });
   }
-  ensure() {
-    if (this.ctx) {
-      if (this.ctx.state !== 'running') void this.ctx.resume();
-      return;
-    }
+
+  _create() {
     try {
       const Ctor = window.AudioContext || window.webkitAudioContext;
-      if (!Ctor) return;
+      if (!Ctor) return false;
       try {
         this.ctx = new Ctor({ latencyHint: 'interactive' });
       } catch {
@@ -471,96 +477,154 @@ class GameAudio {
       this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const data = this.noiseBuffer.getChannelData(0);
       for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-    } catch {
+      this.rebuilds++;
+      console.info('[Audio] contexto creado · estado:', this.ctx.state);
+      return true;
+    } catch (e) {
+      console.warn('[Audio] no se pudo crear el contexto:', e?.message);
       this.ctx = null;
+      this.master = null;
+      this.noiseBuffer = null;
+      return false;
     }
   }
-  /** Reactiva el audio SIEMPRE antes de sonar: en Quest el contexto puede
-   *  quedar suspendido al entrar/salir de la sesión inmersiva. */
-  kick() {
-    this.ensure();
-    if (this.ctx && this.ctx.state !== 'running') {
-      this.ctx.resume().catch(() => {});
-    }
-  }
-  /** Contexto NUEVO creado dentro de un gesto de usuario (clic ENTRAR EN VR):
-   *  nace 'running' y evita arrastrar un contexto viejo suspendido/'interrupted'
-   *  que ya no responde a resume() dentro de la sesión inmersiva. */
-  rebuildFresh() {
+
+  /** Destruye y recrea el grafo COMPLETO. Un contexto creado dentro de un
+   *  gesto de usuario nace 'running': es el rescate definitivo cuando
+   *  resume() deja de responder (bug conocido del Quest Browser en VR).
+   *  Throttle 1,2 s para no agotar el pool de contextos del navegador. */
+  _rebuild(reason) {
+    const now = performance.now();
+    if (now - this._lastRebuild < 1200) return false;
+    this._lastRebuild = now;
     try { this.ctx?.close?.(); } catch { /* ya estaba cerrado */ }
     this.ctx = null;
     this.master = null;
     this.noiseBuffer = null;
     this._wdFails = 0;
+    const ok = this._create();
+    if (ok && this.ctx && this.ctx.state !== 'running') {
+      void this.ctx.resume().catch(() => {});
+    }
+    console.info('[Audio] contexto reconstruido ·', reason);
+    return ok;
+  }
+
+  ensure() {
+    if (this.ctx) {
+      const st = this.ctx.state;
+      if (st === 'running') return;
+      // 'closed'/'failed': un resume() ya no sirve NUNCA -> recrear.
+      // (Antes este caso quedaba en silencio para siempre: la causa raíz
+      // del "no suena nada".)
+      if (st === 'closed' || st === 'failed') {
+        this.ctx = null;
+        this.master = null;
+        this.noiseBuffer = null;
+        this._create();
+        return;
+      }
+      void this.ctx.resume().catch(() => {});
+      return;
+    }
+    this._create();
+  }
+
+  /** Reactiva el audio SIEMPRE antes de sonar. Si tras el resume() el
+   *  contexto sigue sin arrancar y ya hubo gesto de usuario, se RECONSTRUYE
+   *  dentro de ese gesto: un AudioContext nuevo creado durante el gatillo
+   *  de la Quest nace 'running'. */
+  kick() {
+    this.hadGesture = true;
     this.ensure();
     if (this.ctx && this.ctx.state !== 'running') {
       void this.ctx.resume().catch(() => {});
+      if (this.ctx.state !== 'running') this._rebuild('kick (resume sin efecto)');
     }
   }
+
+  /** Preparación AL PULSAR ENTRAR EN VR (gesto garantizado): repara un
+   *  contexto enfermo y deja uno 'running' antes de la sesión inmersiva.
+   *  NO destruye un contexto sano (era contraproducente en la Quest). */
+  prepareVR() {
+    this.hadGesture = true;
+    this.ensure();
+    if (this.ctx && this.ctx.state !== 'running') {
+      this._rebuild('preparación VR (contexto enfermo)');
+    }
+  }
+
   /** Vigilancia periódica (llamada desde el bucle): si el contexto quedó
    *  suspendido a mitad de partida (proximidad, notificación, cambio de app),
-   *  se reactiva solo. Si ni así responde (bug conocido del navegador de la
-   *  Quest), se reconstruye el AudioContext desde cero: ya hubo gesto de
-   *  usuario (botón ENTRAR EN VR), así que el nuevo nace activo. Sin esto,
-   *  el sonido "desaparece" en VR. */
+   *  se reactiva solo; si resiste al resume(), se reconstruye (throttle). */
   watchdog(dt) {
     this._wdAcc += dt;
     if (this._wdAcc < 0.7) return;
     this._wdAcc = 0;
-    if (!this.ctx || this.ctx.state === 'running') {
+    if (!this.ctx) {
+      if (this.hadGesture) this._create();
+      return;
+    }
+    if (this.ctx.state === 'running') {
       this._wdFails = 0;
       return;
     }
     this.ctx.resume().catch(() => {});
-    this._wdFails = (this._wdFails || 0) + 1;
-    if (this._wdFails >= 5) {
-      try { this.ctx.close(); } catch { /* ya está muerto */ }
-      this.ctx = null;
-      this._wdFails = 0;
-      this.ensure();
-      console.info('Audio: contexto reconstruido tras quedar suspendido');
+    this._wdFails++;
+    if (this._wdFails >= 5 && this.hadGesture) {
+      this._rebuild('watchdog (suspended persistente)');
     }
   }
+
   panNode(pan) {
     if (!this.ctx || !this.master) return null;
     const p = this.ctx.createStereoPanner();
-    p.pan.value = Math.max(-1, Math.min(1, pan));
+    // NaN/Infinity -> 0 (un valor no finito aquí LANZA y mata el frame)
+    p.pan.value = Number.isFinite(pan) ? Math.max(-1, Math.min(1, pan)) : 0;
     p.connect(this.master);
     return p;
   }
+
   playOsc(freq, endFreq, dur, type, gain, pan) {
-    this.kick();
-    if (!this.ctx) return;
-    const dest = this.panNode(pan);
-    if (!dest) return;
-    const t = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(Math.max(20, freq), t);
-    osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t + dur);
-    g.gain.setValueAtTime(gain, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(g); g.connect(dest);
-    osc.start(t); osc.stop(t + dur + 0.02);
+    try {
+      this.kick();
+      if (!this.ctx || !this.master) return;
+      if (![freq, endFreq, dur, gain].every(Number.isFinite)) return;
+      const dest = this.panNode(pan);
+      if (!dest) return;
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(Math.max(20, freq), t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t + dur);
+      g.gain.setValueAtTime(Math.max(0.001, gain), t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g); g.connect(dest);
+      osc.start(t); osc.stop(t + dur + 0.02);
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }
+
   playNoise(dur, filterFreq, q, gain, pan, type = 'bandpass') {
-    this.kick();
-    if (!this.ctx || !this.noiseBuffer) return;
-    const dest = this.panNode(pan);
-    if (!dest) return;
-    const t = this.ctx.currentTime;
-    const src = this.ctx.createBufferSource();
-    src.buffer = this.noiseBuffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = type;
-    filter.frequency.value = filterFreq;
-    filter.Q.value = q;
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(gain, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(filter); filter.connect(g); g.connect(dest);
-    src.start(t); src.stop(t + dur + 0.02);
+    try {
+      this.kick();
+      if (!this.ctx || !this.noiseBuffer) return;
+      if (![dur, filterFreq, q, gain].every(Number.isFinite)) return;
+      const dest = this.panNode(pan);
+      if (!dest) return;
+      const t = this.ctx.currentTime;
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.noiseBuffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = type;
+      filter.frequency.value = filterFreq;
+      filter.Q.value = q;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(Math.max(0.001, gain), t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(filter); filter.connect(g); g.connect(dest);
+      src.start(t); src.stop(t + dur + 0.02);
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }
   paddle(pan, strength) {
     const s = Math.max(0.15, Math.min(1, strength));
@@ -591,6 +655,69 @@ class GameAudio {
       this.playOsc(440, 440, 0.12, 'sine', 0.28, 0.3);
       window.setTimeout(() => this.playOsc(330, 330, 0.2, 'sine', 0.28, 0.3), 110);
     }
+  }
+
+  /** FANFARRIA de fin de partido.
+   *  Victoria: arpegio mayor ascendente (C5-E5-G5) + acorde final brillante
+   *  con capa de octava y platillo -> "¡ta-da!".
+   *  Derrota: "trombón triste" descendente (bend hacia abajo + lowpass). */
+  fanfare(win) {
+    try {
+      this.kick();
+      if (!this.ctx || !this.master) return;
+      const t0 = this.ctx.currentTime + 0.06;
+      const seq = win
+        ? [
+            [523.25, 0.00, 0.17, 0.30],
+            [659.25, 0.14, 0.17, 0.30],
+            [783.99, 0.28, 0.17, 0.32],
+            [1046.50, 0.42, 0.75, 0.34],
+            [1318.51, 0.42, 0.75, 0.20],
+            [1567.98, 0.62, 0.55, 0.14],
+          ]
+        : [
+            [329.63, 0.00, 0.32, 0.28],
+            [293.66, 0.32, 0.32, 0.28],
+            [261.63, 0.64, 0.32, 0.28],
+            [246.94, 0.96, 0.32, 0.26],
+            [220.00, 1.28, 0.95, 0.30],
+          ];
+      for (const [f, dt, dur, vol] of seq) {
+        const t = t0 + dt;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = win ? 'triangle' : 'sawtooth';
+        o.frequency.setValueAtTime(f, t);
+        if (!win) o.frequency.linearRampToValueAtTime(f * 0.93, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.02);
+        g.gain.setValueAtTime(vol, t + Math.max(0.03, dur - 0.07));
+        g.gain.linearRampToValueAtTime(0.0001, t + dur);
+        o.connect(g);
+        if (win) {
+          g.connect(this.master);
+        } else {
+          const lp = this.ctx.createBiquadFilter();
+          lp.type = 'lowpass';
+          lp.frequency.value = 900;
+          g.connect(lp); lp.connect(this.master);
+        }
+        o.start(t); o.stop(t + dur + 0.05);
+        if (win) {
+          // capa de brillo una octava arriba
+          const o2 = this.ctx.createOscillator();
+          const g2 = this.ctx.createGain();
+          o2.type = 'sine';
+          o2.frequency.setValueAtTime(f * 2, t);
+          g2.gain.setValueAtTime(0.0001, t);
+          g2.gain.linearRampToValueAtTime(vol * 0.32, t + 0.02);
+          g2.gain.linearRampToValueAtTime(0.0001, t + dur);
+          o2.connect(g2); g2.connect(this.master);
+          o2.start(t); o2.stop(t + dur + 0.05);
+        }
+      }
+      if (win) this.playNoise(0.4, 6200, 0.7, 0.2, 0, 'highpass');
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }
 }
 
@@ -1315,7 +1442,9 @@ class Rules {
           this.state = 'over';
           this.stateTimer = 8;
           const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
-          this.message = winner === 'player' ? '¡Has ganado el partido!' : 'La CPU gana el partido';
+          this.message = winner === 'player'
+            ? `¡VICTORIA! · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`
+            : `DERROTA · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`;
           intents.push({ type: 'game-over', winner });
         } else {
           this.state = 'serve';
@@ -1843,6 +1972,179 @@ function createCalibPanel() {
   return { group, update };
 }
 
+/* =====================================================================
+ *  FANFARRIA DE FIN DE PARTIDO · banner 3D flotante sobre la red con el
+ *  resultado (¡VICTORIA! en dorado / DERROTA en gris azulado) y lluvia de
+ *  confeti 3D cuando se gana. Se muestra durante todo el estado 'over'.
+ * ===================================================================== */
+function createFanfareBanner() {
+  const group = new THREE.Group();
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.6, 0.8),
+    new THREE.MeshBasicMaterial({
+      map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false,
+    }),
+  );
+  group.add(mesh);
+  group.position.set(0, 1.78, DIMS.tableCenterZ);
+  group.visible = false;
+  group.renderOrder = 5;
+
+  function draw(win, pScore, aScore) {
+    ctx.clearRect(0, 0, 1024, 512);
+    // panel con borde festivo
+    ctx.fillStyle = win ? 'rgba(43,26,4,0.94)' : 'rgba(12,16,22,0.94)';
+    ctx.strokeStyle = win ? '#ffd35c' : '#5b6673';
+    ctx.lineWidth = 14;
+    roundRectPath(ctx, 14, 14, 996, 484, 40);
+    ctx.fill();
+    ctx.stroke();
+
+    // confeti estático dibujado en el canvas (victoria)
+    if (win) {
+      const cols = ['#ffd35c', '#ff6b57', '#57c7ff', '#7be07b', '#e57be0', '#ffffff'];
+      let seed = 7;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      for (let i = 0; i < 46; i++) {
+        ctx.save();
+        ctx.translate(rnd() * 1024, rnd() * 512);
+        ctx.rotate(rnd() * Math.PI);
+        ctx.fillStyle = cols[i % cols.length];
+        ctx.globalAlpha = 0.85;
+        ctx.fillRect(-7, -3, 14, 6);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // coronas (victoria) o nubes (derrota) dibujadas con paths
+    const drawCrown = (cx, cy, s) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.fillStyle = win ? '#ffd35c' : '#5b6673';
+      ctx.beginPath();
+      ctx.moveTo(-s, s * 0.55);
+      ctx.lineTo(-s, -s * 0.45);
+      ctx.lineTo(-s * 0.5, 0);
+      ctx.lineTo(0, -s * 0.75);
+      ctx.lineTo(s * 0.5, 0);
+      ctx.lineTo(s, -s * 0.45);
+      ctx.lineTo(s, s * 0.55);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, -s * 0.85, s * 0.14, 0, Math.PI * 2);
+      ctx.arc(-s * 0.52, -s * 0.55, s * 0.12, 0, Math.PI * 2);
+      ctx.arc(s * 0.52, -s * 0.55, s * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+    const drawZzz = (cx, cy) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.fillStyle = '#7d8894';
+      ctx.font = '900 64px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.75;
+      ctx.fillText('Z', 0, 0);
+      ctx.font = '900 46px system-ui, sans-serif';
+      ctx.fillText('Z', 42, -30);
+      ctx.font = '900 32px system-ui, sans-serif';
+      ctx.fillText('Z', 74, -54);
+      ctx.restore();
+    };
+    if (win) {
+      drawCrown(150, 170, 58);
+      drawCrown(874, 170, 58);
+    } else {
+      drawZzz(150, 175);
+      drawZzz(874, 175);
+    }
+
+    // título con sombra
+    ctx.shadowColor = win ? 'rgba(255,196,40,0.9)' : 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 26;
+    ctx.fillStyle = win ? '#ffd35c' : '#aab4c0';
+    ctx.font = '900 150px system-ui, sans-serif';
+    ctx.fillText(win ? '¡VICTORIA!' : 'DERROTA', 512, 250);
+    ctx.shadowBlur = 0;
+
+    // marcador final
+    ctx.fillStyle = '#f2f4f6';
+    ctx.font = '800 78px system-ui, sans-serif';
+    ctx.fillText(`${pScore} - ${aScore}`, 512, 360);
+
+    // subtítulo
+    ctx.fillStyle = win ? 'rgba(255,224,150,0.95)' : '#939ea9';
+    ctx.font = '600 42px system-ui, sans-serif';
+    ctx.fillText(
+      win ? '¡Partidazo! · gatillo para la revancha' : 'La próxima será tuya · gatillo: revancha',
+      512, 440,
+    );
+
+    tex.needsUpdate = true;
+  }
+
+  return { group, draw };
+}
+
+function createConfetti() {
+  const N = 120;
+  const pos = new Float32Array(N * 3);
+  const col = new Float32Array(N * 3);
+  const fall = new Float32Array(N);
+  const sway = new Float32Array(N);
+  const phase = new Float32Array(N);
+  const palette = [
+    [1.0, 0.83, 0.36], [1.0, 0.42, 0.34], [0.34, 0.78, 1.0],
+    [0.48, 0.88, 0.48], [0.9, 0.48, 0.88], [1.0, 1.0, 1.0],
+  ];
+  const topY = 2.3;
+  const floorY = 0.8;
+  const reset = (i, first) => {
+    pos[i * 3] = (Math.random() * 2 - 1) * 0.95;
+    pos[i * 3 + 1] = first ? floorY + Math.random() * (topY - floorY) : topY;
+    pos[i * 3 + 2] = DIMS.tableCenterZ + (Math.random() * 2 - 1) * 1.15;
+    fall[i] = 0.45 + Math.random() * 0.55;
+    sway[i] = 0.12 + Math.random() * 0.2;
+    phase[i] = Math.random() * Math.PI * 2;
+    const c = palette[(Math.random() * palette.length) | 0];
+    col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
+  };
+  for (let i = 0; i < N; i++) reset(i, true);
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const points = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 0.03, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false,
+  }));
+  points.visible = false;
+  points.renderOrder = 6;
+
+  let t = 0;
+  const update = (dt, active) => {
+    if (!active) { points.visible = false; return; }
+    points.visible = true;
+    t += dt;
+    for (let i = 0; i < N; i++) {
+      pos[i * 3 + 1] -= fall[i] * dt;
+      pos[i * 3] += Math.sin(t * 2.4 + phase[i]) * sway[i] * dt;
+      pos[i * 3 + 2] += Math.cos(t * 1.8 + phase[i]) * sway[i] * dt * 0.6;
+      if (pos[i * 3 + 1] < floorY) reset(i, false);
+    }
+    geo.attributes.position.needsUpdate = true;
+  };
+
+  return { points, update };
+}
+
 
 /* =====================================================================
  *  ORQUESTADOR · sesión WebXR, mandos Quest 3, saque con mano libre,
@@ -1936,6 +2238,9 @@ class PingPongGame {
     this.panelDirty = true;
     this.btnPrev = {};
     this.lastFeedTap = 0;
+    // fanfarria de fin de partido (banner + confeti)
+    this.fanfareWin = false;
+    this.fanfareT = 0;
 
     // IA: lado CPU (-Z) y "jugador demo" en escritorio (+Z)
     this.ai = new OpponentAI(
@@ -2037,14 +2342,22 @@ class PingPongGame {
     this.scoreboardUpdate = sb.update;
     this.rig.add(sb.group);
 
-    // Panel de ajuste de pala (visible solo en el modo entrenamiento)
+    // Panel de ajuste de pala (visible solo en el modo entrenamiento).
+    // Fuera de la mesa a la IZQUIERDA (el borde de la mesa está en x=-0.76):
+    // el panel de 0,46 m girado 0,62 rad llega hasta x=-0,85, sin solapar.
     this.calibPanel = createCalibPanel();
     this.calibPanel.group.position.set(
-      -0.62, 1.42, DIMS.tableCenterZ + DIMS.tableHalfLength - 0.02,
+      -1.04, 1.42, DIMS.tableCenterZ + DIMS.tableHalfLength - 0.02,
     );
-    this.calibPanel.group.rotation.y = 0.5;
+    this.calibPanel.group.rotation.y = 0.62;
     this.calibPanel.group.visible = false;
     this.rig.add(this.calibPanel.group);
+
+    // Banner de fin de partido (¡VICTORIA! / DERROTA) + confeti 3D
+    this.fanfareBanner = createFanfareBanner();
+    this.rig.add(this.fanfareBanner.group);
+    this.confetti = createConfetti();
+    this.rig.add(this.confetti.points);
   }
 
   setupControllers() {
@@ -2285,9 +2598,11 @@ class PingPongGame {
   // ---------- API pública ----------
 
   async enterVR(startCalib = false) {
-    // contexto de audio NUEVO dentro de este clic (gesto de usuario): nace
-    // 'running' y no arrastra un contexto suspendido que ya no responde en VR
-    this.audio.rebuildFresh();
+    // Preparación de audio DENTRO de este clic (gesto de usuario): repara un
+    // contexto enfermo (suspendido/cerrado) recreándolo, pero NO destruye un
+    // contexto sano. Si la sesión XR lo suspende, el kick() recreativo de los
+    // gatillos/grips lo recupera dentro del propio gesto del mando.
+    this.audio.prepareVR();
     this.pendingCalib = !!startCalib;
     const xr = navigator.xr;
     if (!xr) throw new Error('Este navegador no soporta WebXR. Usa Meta Quest Browser.');
@@ -2320,6 +2635,10 @@ class PingPongGame {
     this.audio.kick();
     for (const t of [400, 1200, 2500]) window.setTimeout(() => this.audio.kick(), t);
     window.setTimeout(() => this.audio.serve(), 350);  // blip de confirmación
+    console.info(
+      '[Audio] estado en VR:', this.audio.ctx?.state,
+      '· recreaciones:', this.audio.rebuilds,
+    );
     // gatillo y grip DENTRO de la sesión son eventos de intención del usuario:
     // sirven para reactivar el audio si el navegador lo suspendió en VR
     const session = this.renderer.xr.getSession?.();
@@ -2789,6 +3108,22 @@ class PingPongGame {
       m.material.opacity = 0.55 * (1 - m.userData.t);
     }
 
+    // fanfarria de fin de partido: entra con rebote, pulsa y se retira al
+    // empezar la revancha (state deja de ser 'over')
+    if (this.fanfareBanner.group.visible) {
+      this.fanfareT += dt;
+      if (this.rules.state !== 'over') {
+        this.fanfareBanner.group.visible = false;
+      } else {
+        const s = Math.min(1, this.fanfareT / 0.45);
+        const ease = 1 - Math.pow(1 - s, 3);
+        const pulse = 1 + Math.sin(this.fanfareT * 5.2) * 0.045 * Math.max(0, 1 - this.fanfareT / 4);
+        this.fanfareBanner.group.scale.setScalar(0.2 + 0.8 * ease * pulse);
+        this.fanfareBanner.group.rotation.y = Math.sin(this.fanfareT * 1.3) * 0.06;
+      }
+    }
+    this.confetti.update(dt, this.fanfareBanner.group.visible && this.fanfareWin);
+
     if (this.calib && this.panelDirty) {
       this.calibPanel.update({ name: this.gripName, off: this.gripOffset });
       this.panelDirty = false;
@@ -3039,7 +3374,28 @@ class PingPongGame {
           else this.setupDemoServe();
           break;
         case 'game-over':
+          this.startFanfare(it.winner === 'player');
           break;
+      }
+    }
+  }
+
+  /** Fanfarria de fin de partido: sonido + banner 3D + confeti + vibración. */
+  startFanfare(win) {
+    this.fanfareWin = win;
+    this.fanfareT = 0;
+    this.audio.fanfare(win);
+    this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi);
+    this.fanfareBanner.group.visible = true;
+    this.fanfareBanner.group.scale.setScalar(0.2);
+    if (this.renderer.xr.isPresenting) {
+      if (win) {
+        this.haptic(this.paddleHand, 0.55, 90);
+        window.setTimeout(() => this.haptic(this.paddleHand, 0.75, 90), 150);
+        window.setTimeout(() => this.haptic(this.paddleHand, 1.0, 170), 300);
+      } else {
+        this.haptic(this.paddleHand, 0.3, 260);
+        window.setTimeout(() => this.haptic(this.paddleHand, 0.22, 380), 300);
       }
     }
   }

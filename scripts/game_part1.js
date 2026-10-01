@@ -252,6 +252,10 @@ class GameAudio {
     this.master = null;
     this.noiseBuffer = null;
     this._wdAcc = 0;
+    this._wdFails = 0;
+    this._lastRebuild = 0;
+    this.hadGesture = false;   // ya hubo gesto de usuario (clic, gatillo XR…)
+    this.rebuilds = 0;
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     document.addEventListener('visibilitychange', () => {
@@ -259,15 +263,17 @@ class GameAudio {
         this.ctx.resume().catch(() => {});
       }
     });
+    // CUALQUIER toque en la página (menú 2D, dificultad, HUD…) es un gesto
+    // válido para reactivar el audio: vía de rescate principal fuera de VR.
+    const gesture = () => { this.hadGesture = true; this.kick(); };
+    document.addEventListener('pointerdown', gesture, { passive: true });
+    document.addEventListener('click', gesture, { passive: true });
   }
-  ensure() {
-    if (this.ctx) {
-      if (this.ctx.state !== 'running') void this.ctx.resume();
-      return;
-    }
+
+  _create() {
     try {
       const Ctor = window.AudioContext || window.webkitAudioContext;
-      if (!Ctor) return;
+      if (!Ctor) return false;
       try {
         this.ctx = new Ctor({ latencyHint: 'interactive' });
       } catch {
@@ -288,96 +294,154 @@ class GameAudio {
       this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const data = this.noiseBuffer.getChannelData(0);
       for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-    } catch {
+      this.rebuilds++;
+      console.info('[Audio] contexto creado · estado:', this.ctx.state);
+      return true;
+    } catch (e) {
+      console.warn('[Audio] no se pudo crear el contexto:', e?.message);
       this.ctx = null;
+      this.master = null;
+      this.noiseBuffer = null;
+      return false;
     }
   }
-  /** Reactiva el audio SIEMPRE antes de sonar: en Quest el contexto puede
-   *  quedar suspendido al entrar/salir de la sesión inmersiva. */
-  kick() {
-    this.ensure();
-    if (this.ctx && this.ctx.state !== 'running') {
-      this.ctx.resume().catch(() => {});
-    }
-  }
-  /** Contexto NUEVO creado dentro de un gesto de usuario (clic ENTRAR EN VR):
-   *  nace 'running' y evita arrastrar un contexto viejo suspendido/'interrupted'
-   *  que ya no responde a resume() dentro de la sesión inmersiva. */
-  rebuildFresh() {
+
+  /** Destruye y recrea el grafo COMPLETO. Un contexto creado dentro de un
+   *  gesto de usuario nace 'running': es el rescate definitivo cuando
+   *  resume() deja de responder (bug conocido del Quest Browser en VR).
+   *  Throttle 1,2 s para no agotar el pool de contextos del navegador. */
+  _rebuild(reason) {
+    const now = performance.now();
+    if (now - this._lastRebuild < 1200) return false;
+    this._lastRebuild = now;
     try { this.ctx?.close?.(); } catch { /* ya estaba cerrado */ }
     this.ctx = null;
     this.master = null;
     this.noiseBuffer = null;
     this._wdFails = 0;
+    const ok = this._create();
+    if (ok && this.ctx && this.ctx.state !== 'running') {
+      void this.ctx.resume().catch(() => {});
+    }
+    console.info('[Audio] contexto reconstruido ·', reason);
+    return ok;
+  }
+
+  ensure() {
+    if (this.ctx) {
+      const st = this.ctx.state;
+      if (st === 'running') return;
+      // 'closed'/'failed': un resume() ya no sirve NUNCA -> recrear.
+      // (Antes este caso quedaba en silencio para siempre: la causa raíz
+      // del "no suena nada".)
+      if (st === 'closed' || st === 'failed') {
+        this.ctx = null;
+        this.master = null;
+        this.noiseBuffer = null;
+        this._create();
+        return;
+      }
+      void this.ctx.resume().catch(() => {});
+      return;
+    }
+    this._create();
+  }
+
+  /** Reactiva el audio SIEMPRE antes de sonar. Si tras el resume() el
+   *  contexto sigue sin arrancar y ya hubo gesto de usuario, se RECONSTRUYE
+   *  dentro de ese gesto: un AudioContext nuevo creado durante el gatillo
+   *  de la Quest nace 'running'. */
+  kick() {
+    this.hadGesture = true;
     this.ensure();
     if (this.ctx && this.ctx.state !== 'running') {
       void this.ctx.resume().catch(() => {});
+      if (this.ctx.state !== 'running') this._rebuild('kick (resume sin efecto)');
     }
   }
+
+  /** Preparación AL PULSAR ENTRAR EN VR (gesto garantizado): repara un
+   *  contexto enfermo y deja uno 'running' antes de la sesión inmersiva.
+   *  NO destruye un contexto sano (era contraproducente en la Quest). */
+  prepareVR() {
+    this.hadGesture = true;
+    this.ensure();
+    if (this.ctx && this.ctx.state !== 'running') {
+      this._rebuild('preparación VR (contexto enfermo)');
+    }
+  }
+
   /** Vigilancia periódica (llamada desde el bucle): si el contexto quedó
    *  suspendido a mitad de partida (proximidad, notificación, cambio de app),
-   *  se reactiva solo. Si ni así responde (bug conocido del navegador de la
-   *  Quest), se reconstruye el AudioContext desde cero: ya hubo gesto de
-   *  usuario (botón ENTRAR EN VR), así que el nuevo nace activo. Sin esto,
-   *  el sonido "desaparece" en VR. */
+   *  se reactiva solo; si resiste al resume(), se reconstruye (throttle). */
   watchdog(dt) {
     this._wdAcc += dt;
     if (this._wdAcc < 0.7) return;
     this._wdAcc = 0;
-    if (!this.ctx || this.ctx.state === 'running') {
+    if (!this.ctx) {
+      if (this.hadGesture) this._create();
+      return;
+    }
+    if (this.ctx.state === 'running') {
       this._wdFails = 0;
       return;
     }
     this.ctx.resume().catch(() => {});
-    this._wdFails = (this._wdFails || 0) + 1;
-    if (this._wdFails >= 5) {
-      try { this.ctx.close(); } catch { /* ya está muerto */ }
-      this.ctx = null;
-      this._wdFails = 0;
-      this.ensure();
-      console.info('Audio: contexto reconstruido tras quedar suspendido');
+    this._wdFails++;
+    if (this._wdFails >= 5 && this.hadGesture) {
+      this._rebuild('watchdog (suspended persistente)');
     }
   }
+
   panNode(pan) {
     if (!this.ctx || !this.master) return null;
     const p = this.ctx.createStereoPanner();
-    p.pan.value = Math.max(-1, Math.min(1, pan));
+    // NaN/Infinity -> 0 (un valor no finito aquí LANZA y mata el frame)
+    p.pan.value = Number.isFinite(pan) ? Math.max(-1, Math.min(1, pan)) : 0;
     p.connect(this.master);
     return p;
   }
+
   playOsc(freq, endFreq, dur, type, gain, pan) {
-    this.kick();
-    if (!this.ctx) return;
-    const dest = this.panNode(pan);
-    if (!dest) return;
-    const t = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(Math.max(20, freq), t);
-    osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t + dur);
-    g.gain.setValueAtTime(gain, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(g); g.connect(dest);
-    osc.start(t); osc.stop(t + dur + 0.02);
+    try {
+      this.kick();
+      if (!this.ctx || !this.master) return;
+      if (![freq, endFreq, dur, gain].every(Number.isFinite)) return;
+      const dest = this.panNode(pan);
+      if (!dest) return;
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(Math.max(20, freq), t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t + dur);
+      g.gain.setValueAtTime(Math.max(0.001, gain), t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g); g.connect(dest);
+      osc.start(t); osc.stop(t + dur + 0.02);
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }
+
   playNoise(dur, filterFreq, q, gain, pan, type = 'bandpass') {
-    this.kick();
-    if (!this.ctx || !this.noiseBuffer) return;
-    const dest = this.panNode(pan);
-    if (!dest) return;
-    const t = this.ctx.currentTime;
-    const src = this.ctx.createBufferSource();
-    src.buffer = this.noiseBuffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = type;
-    filter.frequency.value = filterFreq;
-    filter.Q.value = q;
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(gain, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(filter); filter.connect(g); g.connect(dest);
-    src.start(t); src.stop(t + dur + 0.02);
+    try {
+      this.kick();
+      if (!this.ctx || !this.noiseBuffer) return;
+      if (![dur, filterFreq, q, gain].every(Number.isFinite)) return;
+      const dest = this.panNode(pan);
+      if (!dest) return;
+      const t = this.ctx.currentTime;
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.noiseBuffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = type;
+      filter.frequency.value = filterFreq;
+      filter.Q.value = q;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(Math.max(0.001, gain), t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(filter); filter.connect(g); g.connect(dest);
+      src.start(t); src.stop(t + dur + 0.02);
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }
   paddle(pan, strength) {
     const s = Math.max(0.15, Math.min(1, strength));
@@ -408,6 +472,69 @@ class GameAudio {
       this.playOsc(440, 440, 0.12, 'sine', 0.28, 0.3);
       window.setTimeout(() => this.playOsc(330, 330, 0.2, 'sine', 0.28, 0.3), 110);
     }
+  }
+
+  /** FANFARRIA de fin de partido.
+   *  Victoria: arpegio mayor ascendente (C5-E5-G5) + acorde final brillante
+   *  con capa de octava y platillo -> "¡ta-da!".
+   *  Derrota: "trombón triste" descendente (bend hacia abajo + lowpass). */
+  fanfare(win) {
+    try {
+      this.kick();
+      if (!this.ctx || !this.master) return;
+      const t0 = this.ctx.currentTime + 0.06;
+      const seq = win
+        ? [
+            [523.25, 0.00, 0.17, 0.30],
+            [659.25, 0.14, 0.17, 0.30],
+            [783.99, 0.28, 0.17, 0.32],
+            [1046.50, 0.42, 0.75, 0.34],
+            [1318.51, 0.42, 0.75, 0.20],
+            [1567.98, 0.62, 0.55, 0.14],
+          ]
+        : [
+            [329.63, 0.00, 0.32, 0.28],
+            [293.66, 0.32, 0.32, 0.28],
+            [261.63, 0.64, 0.32, 0.28],
+            [246.94, 0.96, 0.32, 0.26],
+            [220.00, 1.28, 0.95, 0.30],
+          ];
+      for (const [f, dt, dur, vol] of seq) {
+        const t = t0 + dt;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = win ? 'triangle' : 'sawtooth';
+        o.frequency.setValueAtTime(f, t);
+        if (!win) o.frequency.linearRampToValueAtTime(f * 0.93, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.02);
+        g.gain.setValueAtTime(vol, t + Math.max(0.03, dur - 0.07));
+        g.gain.linearRampToValueAtTime(0.0001, t + dur);
+        o.connect(g);
+        if (win) {
+          g.connect(this.master);
+        } else {
+          const lp = this.ctx.createBiquadFilter();
+          lp.type = 'lowpass';
+          lp.frequency.value = 900;
+          g.connect(lp); lp.connect(this.master);
+        }
+        o.start(t); o.stop(t + dur + 0.05);
+        if (win) {
+          // capa de brillo una octava arriba
+          const o2 = this.ctx.createOscillator();
+          const g2 = this.ctx.createGain();
+          o2.type = 'sine';
+          o2.frequency.setValueAtTime(f * 2, t);
+          g2.gain.setValueAtTime(0.0001, t);
+          g2.gain.linearRampToValueAtTime(vol * 0.32, t + 0.02);
+          g2.gain.linearRampToValueAtTime(0.0001, t + dur);
+          o2.connect(g2); g2.connect(this.master);
+          o2.start(t); o2.stop(t + dur + 0.05);
+        }
+      }
+      if (win) this.playNoise(0.4, 6200, 0.7, 0.2, 0, 'highpass');
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }
 }
 

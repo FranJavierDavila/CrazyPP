@@ -186,7 +186,9 @@ class Rules {
           this.state = 'over';
           this.stateTimer = 8;
           const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
-          this.message = winner === 'player' ? '¡Has ganado el partido!' : 'La CPU gana el partido';
+          this.message = winner === 'player'
+            ? `¡VICTORIA! · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`
+            : `DERROTA · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`;
           intents.push({ type: 'game-over', winner });
         } else {
           this.state = 'serve';
@@ -712,4 +714,177 @@ function createCalibPanel() {
   }
 
   return { group, update };
+}
+
+/* =====================================================================
+ *  FANFARRIA DE FIN DE PARTIDO · banner 3D flotante sobre la red con el
+ *  resultado (¡VICTORIA! en dorado / DERROTA en gris azulado) y lluvia de
+ *  confeti 3D cuando se gana. Se muestra durante todo el estado 'over'.
+ * ===================================================================== */
+function createFanfareBanner() {
+  const group = new THREE.Group();
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.6, 0.8),
+    new THREE.MeshBasicMaterial({
+      map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false,
+    }),
+  );
+  group.add(mesh);
+  group.position.set(0, 1.78, DIMS.tableCenterZ);
+  group.visible = false;
+  group.renderOrder = 5;
+
+  function draw(win, pScore, aScore) {
+    ctx.clearRect(0, 0, 1024, 512);
+    // panel con borde festivo
+    ctx.fillStyle = win ? 'rgba(43,26,4,0.94)' : 'rgba(12,16,22,0.94)';
+    ctx.strokeStyle = win ? '#ffd35c' : '#5b6673';
+    ctx.lineWidth = 14;
+    roundRectPath(ctx, 14, 14, 996, 484, 40);
+    ctx.fill();
+    ctx.stroke();
+
+    // confeti estático dibujado en el canvas (victoria)
+    if (win) {
+      const cols = ['#ffd35c', '#ff6b57', '#57c7ff', '#7be07b', '#e57be0', '#ffffff'];
+      let seed = 7;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      for (let i = 0; i < 46; i++) {
+        ctx.save();
+        ctx.translate(rnd() * 1024, rnd() * 512);
+        ctx.rotate(rnd() * Math.PI);
+        ctx.fillStyle = cols[i % cols.length];
+        ctx.globalAlpha = 0.85;
+        ctx.fillRect(-7, -3, 14, 6);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // coronas (victoria) o nubes (derrota) dibujadas con paths
+    const drawCrown = (cx, cy, s) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.fillStyle = win ? '#ffd35c' : '#5b6673';
+      ctx.beginPath();
+      ctx.moveTo(-s, s * 0.55);
+      ctx.lineTo(-s, -s * 0.45);
+      ctx.lineTo(-s * 0.5, 0);
+      ctx.lineTo(0, -s * 0.75);
+      ctx.lineTo(s * 0.5, 0);
+      ctx.lineTo(s, -s * 0.45);
+      ctx.lineTo(s, s * 0.55);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, -s * 0.85, s * 0.14, 0, Math.PI * 2);
+      ctx.arc(-s * 0.52, -s * 0.55, s * 0.12, 0, Math.PI * 2);
+      ctx.arc(s * 0.52, -s * 0.55, s * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+    const drawZzz = (cx, cy) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.fillStyle = '#7d8894';
+      ctx.font = '900 64px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.75;
+      ctx.fillText('Z', 0, 0);
+      ctx.font = '900 46px system-ui, sans-serif';
+      ctx.fillText('Z', 42, -30);
+      ctx.font = '900 32px system-ui, sans-serif';
+      ctx.fillText('Z', 74, -54);
+      ctx.restore();
+    };
+    if (win) {
+      drawCrown(150, 170, 58);
+      drawCrown(874, 170, 58);
+    } else {
+      drawZzz(150, 175);
+      drawZzz(874, 175);
+    }
+
+    // título con sombra
+    ctx.shadowColor = win ? 'rgba(255,196,40,0.9)' : 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 26;
+    ctx.fillStyle = win ? '#ffd35c' : '#aab4c0';
+    ctx.font = '900 150px system-ui, sans-serif';
+    ctx.fillText(win ? '¡VICTORIA!' : 'DERROTA', 512, 250);
+    ctx.shadowBlur = 0;
+
+    // marcador final
+    ctx.fillStyle = '#f2f4f6';
+    ctx.font = '800 78px system-ui, sans-serif';
+    ctx.fillText(`${pScore} - ${aScore}`, 512, 360);
+
+    // subtítulo
+    ctx.fillStyle = win ? 'rgba(255,224,150,0.95)' : '#939ea9';
+    ctx.font = '600 42px system-ui, sans-serif';
+    ctx.fillText(
+      win ? '¡Partidazo! · gatillo para la revancha' : 'La próxima será tuya · gatillo: revancha',
+      512, 440,
+    );
+
+    tex.needsUpdate = true;
+  }
+
+  return { group, draw };
+}
+
+function createConfetti() {
+  const N = 120;
+  const pos = new Float32Array(N * 3);
+  const col = new Float32Array(N * 3);
+  const fall = new Float32Array(N);
+  const sway = new Float32Array(N);
+  const phase = new Float32Array(N);
+  const palette = [
+    [1.0, 0.83, 0.36], [1.0, 0.42, 0.34], [0.34, 0.78, 1.0],
+    [0.48, 0.88, 0.48], [0.9, 0.48, 0.88], [1.0, 1.0, 1.0],
+  ];
+  const topY = 2.3;
+  const floorY = 0.8;
+  const reset = (i, first) => {
+    pos[i * 3] = (Math.random() * 2 - 1) * 0.95;
+    pos[i * 3 + 1] = first ? floorY + Math.random() * (topY - floorY) : topY;
+    pos[i * 3 + 2] = DIMS.tableCenterZ + (Math.random() * 2 - 1) * 1.15;
+    fall[i] = 0.45 + Math.random() * 0.55;
+    sway[i] = 0.12 + Math.random() * 0.2;
+    phase[i] = Math.random() * Math.PI * 2;
+    const c = palette[(Math.random() * palette.length) | 0];
+    col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
+  };
+  for (let i = 0; i < N; i++) reset(i, true);
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const points = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 0.03, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false,
+  }));
+  points.visible = false;
+  points.renderOrder = 6;
+
+  let t = 0;
+  const update = (dt, active) => {
+    if (!active) { points.visible = false; return; }
+    points.visible = true;
+    t += dt;
+    for (let i = 0; i < N; i++) {
+      pos[i * 3 + 1] -= fall[i] * dt;
+      pos[i * 3] += Math.sin(t * 2.4 + phase[i]) * sway[i] * dt;
+      pos[i * 3 + 2] += Math.cos(t * 1.8 + phase[i]) * sway[i] * dt * 0.6;
+      if (pos[i * 3 + 1] < floorY) reset(i, false);
+    }
+    geo.attributes.position.needsUpdate = true;
+  };
+
+  return { points, update };
 }

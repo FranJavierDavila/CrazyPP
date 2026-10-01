@@ -223,3 +223,22 @@ Stage Summary:
 - Audio: contexto nuevo dentro del gesto de entrada + reactivación con gatillo/grip en sesión = cadena completa de gestos para VR
 - CPU saca y juega en largo con margen anti-LET real; adiós a los saques que mueren botando
 - Descarga y preview actualizados y verificados sin errores
+
+---
+Task ID: 13
+Agent: Super Z (main agent)
+Task: Sonido completamente muerto, panel de entrenamiento sobre la mesa y fanfarria de fin de partido
+
+Work Log:
+- AUDIO MUERTO (causa raíz encontrada y reparada): (1) GameAudio.ensure() no reparaba contextos en estado 'closed'/'failed' - hacía resume() (que falla en silencio) y NUNCA recreaba: silencio permanente tras cualquier close() (el rebuildFresh de v2.6 podía dejar el sistema en ese estado); (2) kick() solo hacía resume(): si el contexto quedaba "zombie" (resume promete pero no arranca), ningún gesto lo recuperaba; (3) rebuildFresh() en enterVR destruía un contexto SANO antes de entrar en XR (contraproducente en Quest)
+- GameAudio v3 (defensa en profundidad): ensure() recrea ante 'closed'/'failed'; _rebuild(reason) con throttle 1,2 s (cierra -> recrea grafo completo: master+compresor+noiseBuffer); kick() ahora RECREA el contexto si tras resume() sigue sin running y hubo gesto (los gatillos XR son gestos: el contexto nuevo nace 'running'); prepareVR() en enterVR repara enfermos SIN destruir sanos; watchdog() reconstruye tras 5 fallos con hadGesture; gesto global pointerdown/click en document (hadGesture + kick) reactiva el audio con cualquier toque del menú 2D; playOsc/playNoise/panNode blindados: Number.isFinite en TODOS los parámetros (NaN lanzaba TypeError y mataba el frame entero) + try/catch total (el audio NUNCA rompe el bucle); logs [Audio] (estado al crear/reconstruir y al entrar en VR)
+- FANFARRIA DE FIN DE PARTIDO: GameAudio.fanfare(win) - victoria: arpegio mayor C5-E5-G5 + acorde final C6 con capa de octava y platillo (highpass noise); derrota: "trombón triste" de 5 notas descendentes con bend -7% y lowpass 900 Hz; Rules: mensaje final festivo con marcador ("¡VICTORIA! · 11-4 · gatillo: revancha"); banner 3D createFanfareBanner (1,6x0,8 m sobre la red a y=1,78, CanvasTexture 1024x512: título con sombra, coronas o Zzz dibujados con paths, confeti estático, marcador final y subtítulo) con animación de entrada elástica + pulso + vaivén, visible durante todo el estado 'over'; confeti 3D createConfetti (120 partículas vertexColors con caída+vaivén y reciclado, solo en victoria); háptica: victoria 3 pulsos crecientes (0,55/0,75/1,0), derrota 2 pulsos graves; gancho en processIntents case 'game-over' -> startFanfare()
+- PANEL DE ENTRENAMIENTO: desplazado de x=-0,62 a x=-1,04 (borde derecho del panel en -0,853 vs borde de mesa -0,7625: 9 cm FUERA de la mesa) y rotación 0,5 -> 0,62 rad (encarado al jugador desde su nueva posición); verificado numérica y visualmente
+- Verificación headless: contexto 'running' tras clic (hadGesture OK); guardas NaN probadas (paddle/tableBounce/net/thud/fanfare con NaN no lanzan); reparación real: ctx.close() -> estado 'closed' -> kick() -> 'running' con recreate (la causa raíz queda reparada); fanfarria victoria natural (11-4 forzado): msg "¡VICTORIA! · 11-4", banner visible, confeti activo, escala animándose; derrota natural (6-11): msg "DERROTA · 6-11", banner gris sin confeti; capturas scripts/preview_v10_fanfarria_victoria.png, preview_v10_fanfarria_derrota.png, preview_v10_panel_izquierda.png, preview_v10_gameover_natural.png; demo IA vs IA estable, cero errores de consola
+- Rebuild 1,56 MB (sintaxis OK), desplegado a public/game.html, zip reempaquetado (834 KB, integridad OK), README con secciones v2.7
+
+Stage Summary:
+- El audio ya no puede quedar muerto: estados cerrados/rotos se recrean solos, los gestos (gatillo XR, toques 2D) lo reconstruyen al vuelo y ningún valor inválido rompe el frame
+- Fin de partido con fanfarria completa (sonido + banner 3D + confeti + vibración + mensaje festivo); revancha inmediata con el gatillo
+- Panel de ajuste de pala fuera de la mesa, a la izquierda del jugador
+- Descarga y preview actualizados y verificados sin errores

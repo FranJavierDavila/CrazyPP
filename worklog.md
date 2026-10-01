@@ -186,3 +186,21 @@ Work Log:
 Stage Summary:
 - Vibración háptica fiable y proporcional en cada golpeo del jugador, con autotest al entrar en VR
 - Descarga y preview actualizados y verificados sin errores
+
+---
+Task ID: 11
+Agent: Super Z (main agent)
+Task: Las palas no deben atravesar la mesa (ni red ni suelo) - feedback de inmersión
+
+Work Log:
+- Causa: la pala del jugador sigue al mando sin restricciones (el mando puede bajar de la superficie dentro de la huella de la mesa) y la pala IA/demo seguía la bola sin límite vertical
+- Nuevo clampPaddlePose(pos, q, fromGrip) en game_part3: geometría exacta de pala (hoja = disco fino R=79,5 mm + mango; punto más bajo = centro_y - R·sqrt(1-n_y²) - halfT·|n_y|, más el mango como cilindro), con dos modos de ancla: mango (jugador, incluye offset de calibración) y centro de hoja (IA/demo)
+- Resolución: 1) losa de mesa por mínima penetración (empuja arriba a superficie+4 mm o deja pasar por debajo si venía de abajo; con la mano bajo la mesa se mueve LIBRE, sin saltos); 2) red como losa vertical (empuja al lado del ancla, no del centro de hoja - corregido tras test); 3) suelo a +15 mm
+- Integración: jugador = clamp de grip.position ANTES de updatePaddleSim (física y visual sincronizados, la montura es hija del grip); IA/demo = clamp en las 4 salidas de updateAIPaddlePose (swing, impacto, preparación, rally)
+- Correcciones durante verificación: (a) en modo IA el ancla ya es el centro de hoja (no sumar mango->hoja D=0,1303); (b) signo del empuje de red basado en el ancla
+- Verificación headless: 8 tests geométricos OK (solape desde arriba +8 mm exactos, mano bajo mesa libre, red empuja al lado correcto -1,3828, suelo +15 mm, IA hundida sube hasta apoyar mango, fuera de huella intacto, idempotente, cara plana IA a superficie+espesor); demo 1:0, palas a y=1,05 sobre la mesa, cero errores; captura scripts/preview_v9_noclip.png
+- Rebuild 1.54 MB (sintaxis OK), preview actualizado, zip reempaquetado (checksum OK), README sección v2.5
+
+Stage Summary:
+- Pala jugador/IA/demo ya no penetra mesa, red ni suelo; resolución por mínima penetración sin teletransportes (mano bajo la mesa libre)
+- Física y visual de la pala permanecen alineados; descarga y preview verificados sin errores

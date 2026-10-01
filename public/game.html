@@ -1816,6 +1816,12 @@ const poseE = new THREE.Euler();
 const poseQ = new THREE.Quaternion();
 const poseD = new THREE.Vector3();
 
+// temporales del anti-clipping de palas (mesa / red / suelo)
+const pcA = new THREE.Vector3();
+const pcN = new THREE.Vector3();
+const pcC = new THREE.Vector3();
+const pcT = new THREE.Vector3();
+
 class PingPongGame {
   constructor(canvas, paddleModel, callbacks = {}) {
     this.canvas = canvas;
@@ -2472,6 +2478,8 @@ class PingPongGame {
         const ps = this.controllerPaddles[i];
         const grip = this.grips[i];
         tmpMountQ.copy(grip.quaternion).multiply(mountQuatFor(this.handOf[i])).multiply(this.gripOffsetQ);
+        // la pala nunca atraviesa la mesa: se frena sobre la superficie
+        this.clampPaddlePose(grip.position, tmpMountQ, true);
         updatePaddleSim(ps, grip.position, tmpMountQ, now, dt);
         ps.active = this.connected[i];
         // margen de detección extra SOLO mientras la bola del saque vuela:
@@ -2843,6 +2851,7 @@ class PingPongGame {
         poseQ.setFromEuler(poseE);
         mesh.position.set(bx + (cx - bx) * e, by + (cy - by) * e, bz + (cz - bz) * e);
         mesh.quaternion.copy(poseQ);
+        this.clampPaddlePose(mesh.position, mesh.quaternion, false);
         return;
       }
       if (strikeT > 0) {
@@ -2855,6 +2864,7 @@ class PingPongGame {
         poseE.set(0.18, faceYaw, 0, 'YXZ');
         poseQ.setFromEuler(poseE);
         mesh.quaternion.copy(poseQ);
+        this.clampPaddlePose(mesh.position, mesh.quaternion, false);
         return;
       }
       // preparación: pala al lado de la bola, cara abierta hacia arriba
@@ -2862,12 +2872,70 @@ class PingPongGame {
       poseE.set(-0.5, faceYaw, 0, 'YXZ');
       poseQ.setFromEuler(poseE);
       mesh.quaternion.copy(poseQ);
+      this.clampPaddlePose(mesh.position, mesh.quaternion, false);
       return;
     }
 
     // rally / espera
     mesh.position.set(ai.pos.x, ai.pos.y, ai.pos.z);
     mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
+    this.clampPaddlePose(mesh.position, mesh.quaternion, false);
+  }
+
+  // ---------- Anti-clipping: la pala no atraviesa mesa, red ni suelo ----------
+  // Desplaza pos (ancla de la pala) lo mínimo necesario para que la hoja
+  // (disco fino orientado) y el mango no penetren la geometría.
+  //   fromGrip=true  -> ancla en el mango (pala del jugador: eje hoja -Z,
+  //                     normal de cara +Y local, incluye offset de calibración)
+  //   fromGrip=false -> ancla en el centro de la hoja (IA/demo: eje +Y, normal +Z)
+  clampPaddlePose(pos, q, fromGrip) {
+    const R = DIMS.bladeRadius, halfT = 0.004, hR = 0.014;
+    const D = 0.1303;                                  // mango -> centro de hoja
+    pcA.set(0, fromGrip ? 0 : 1, fromGrip ? -1 : 0).applyQuaternion(q);  // eje hoja
+    pcN.set(0, fromGrip ? 1 : 0, fromGrip ? 0 : 1).applyQuaternion(q);   // normal cara
+    pcC.copy(pos);
+    if (fromGrip) {
+      // ancla en el mango: centro de hoja = pos + offset + eje_hoja·D
+      pcT.set(this.gripOffset.px, this.gripOffset.py, this.gripOffset.pz).applyQuaternion(q);
+      pcC.add(pcT).addScaledVector(pcA, D);
+    }
+    // (fromGrip=false: pos ya ES el centro de la hoja)
+
+    // semianchura del disco proyectada en cada eje (espesor incluido)
+    const spanX = R * Math.sqrt(Math.max(0, 1 - pcN.x * pcN.x)) + halfT * Math.abs(pcN.x);
+    const spanY = R * Math.sqrt(Math.max(0, 1 - pcN.y * pcN.y)) + halfT * Math.abs(pcN.y);
+    const spanZ = R * Math.sqrt(Math.max(0, 1 - pcN.z * pcN.z)) + halfT * Math.abs(pcN.z);
+
+    // punto más bajo de la pala (hoja + mango)
+    const handleDown = hR * Math.sqrt(Math.max(0, 1 - pcA.y * pcA.y));
+    let low = pcC.y - spanY;
+    low = fromGrip
+      ? Math.min(low, Math.min(pos.y, pcC.y) - handleDown)
+      : Math.min(low, pcC.y - D * Math.max(0, pcA.y) - handleDown);
+
+    // 1) losa de la mesa: solo si la pala la SOLAPA (con la mano bajo la
+    //    mesa se mueve libre, sin saltos); resuelve por mínima penetración
+    const skin = 0.004;
+    const slabBottom = DIMS.tableTopY - DIMS.tableThickness;
+    const overTable = Math.abs(pcC.x) < DIMS.tableHalfWidth + R * 0.85 &&
+      Math.abs(pcC.z - DIMS.tableCenterZ) < DIMS.tableHalfLength + R * 0.85;
+    if (overTable && low < DIMS.tableTopY && pcC.y + spanY > slabBottom) {
+      const up = (DIMS.tableTopY + skin) - low;
+      const down = (pcC.y + spanY + skin) - slabBottom;
+      if (down < up) { pos.y -= down; pcC.y -= down; low -= down; }
+      else           { pos.y += up;   pcC.y += up;   low += up;   }
+    }
+
+    // 2) red: losa vertical en z = C (tampoco la atraviesa al llegarse)
+    const depth = 0.008 + spanZ - Math.abs(pcC.z - DIMS.tableCenterZ);
+    if (depth > 0 &&
+        Math.abs(pcC.x) < DIMS.netHalfWidth + spanX &&
+        pcC.y - spanY < DIMS.netTopY && pcC.y + spanY > DIMS.tableTopY) {
+      pos.z += (pos.z >= DIMS.tableCenterZ ? 1 : -1) * depth;
+    }
+
+    // 3) suelo
+    if (low < 0.015) pos.y += 0.015 - low;
   }
 
   updateBlobShadow() {

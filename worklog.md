@@ -94,3 +94,19 @@ Work Log:
 Stage Summary:
 - Física de nivel simulador: aerodinámica ITTF real compartida por física y IA, integración 480 Hz, tracking de mandos con ventana móvil + efecto de muñeca, nitidez máxima en el visor
 - Reglas/saque/palas GLB sin cambios; todo verificado sin errores
+
+---
+Task ID: 6
+Agent: Super Z (main agent)
+Task: Actualizar la descarga (petición literal del usuario: "actualiza la descarga")
+
+Work Log:
+- Verificado que el código fuente (game_part1/2/3.js) contiene las mejoras de precisión/calidad de Task 5 (applyAerodynamics k=0.142, sub-pasos 1/480, setFoveation(0), setFramebufferScaleFactor(1.7))
+- Reconstrucción determinista con build_html.py: sintaxis OK, index.html 1.51 MB
+- Diff contra el index.html del zip existente: IDÉNTICO (la descarga ya estaba sincronizada con la última build)
+- Redesplegado a public/game.html (preview raíz) y verificado con agent-browser: cero errores de consola, demo IA vs IA activa, marcador 1:0 con mensaje "doble bote: la CPU no llegó"
+- Reempaquetado download/pingpong-quest3-v2.zip (solo index.html, 818 KB) y captura scripts/download_final_check.png
+
+Stage Summary:
+- Descarga confirmada al día: download/pingpong-quest3-v2/index.html (+ .zip) = última versión con física aerodinámica ITTF, 480 Hz, tracking con ventana móvil y nitidez VR máxima
+- Preview funcionando sin errores

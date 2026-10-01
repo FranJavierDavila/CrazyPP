@@ -9,6 +9,7 @@ const AI_TOSS_T = 0.55;        // duración del lanzamiento (y swing) del saque 
 const poseE = new THREE.Euler();
 const poseQ = new THREE.Quaternion();
 const poseD = new THREE.Vector3();
+const swingV = new THREE.Vector3();   // vector del follow-through (v2.17)
 
 // temporales del anti-clipping de palas (mesa / red / suelo)
 const pcA = new THREE.Vector3();
@@ -685,24 +686,28 @@ class PingPongGame {
     this.menuGroup.visible = false;
     this.scene.add(this.menuGroup);   // espacio MUNDO: inmune al recentrado
 
-    // UNA línea guía y UN cursor POR MANDO: cualquiera de los dos puede
+    // UN HAZ LÁSER y UN cursor POR MANDO: cualquiera de los dos puede
     // apuntar (el de la pala incluido) y el hover es independiente por mano.
-    const lineGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1),
-    ]);
+    // v2.17: cilindro fino en vez de THREE.Line — las líneas dibujan 1 px y
+    // en el visor eran invisibles (por eso solo se veía el resaltado).
+    const beamGeo = new THREE.CylinderGeometry(0.0022, 0.0022, 1, 8, 1, true);
+    beamGeo.rotateX(Math.PI / 2);      // eje del cilindro -> Z
+    beamGeo.translate(0, 0, -0.5);     // nace en el origen y crece hacia -Z
     this.menuLines = [];
     this.menuDots = [];
     for (let h = 0; h < 2; h++) {
-      const line = new THREE.Line(
-        lineGeo,
-        new THREE.LineBasicMaterial({
-          color: h === 0 ? 0xe8b45a : 0x7fd4e8, transparent: true, opacity: 0.6,
+      const beam = new THREE.Mesh(
+        beamGeo,
+        new THREE.MeshBasicMaterial({
+          color: h === 0 ? 0xe8b45a : 0x7fd4e8,
+          transparent: true, opacity: 0.85, depthTest: false,
         }),
       );
-      line.visible = false;
-      line.frustumCulled = false;
-      this.scene.add(line);
-      this.menuLines.push(line);
+      beam.renderOrder = 940;          // sobre la escena, bajo el panel (990)
+      beam.visible = false;
+      beam.frustumCulled = false;
+      this.scene.add(beam);
+      this.menuLines.push(beam);
 
       const dot = new THREE.Mesh(
         new THREE.CircleGeometry(0.009, 24),
@@ -894,11 +899,6 @@ class PingPongGame {
         muRaycaster.set(muGrip, muDir);
         const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
 
-        line.visible = true;
-        line.position.copy(muGrip);
-        line.quaternion.copy(muQ);
-        line.scale.z = hit ? hit.distance : 0.5;
-
         if (hit && hit.uv) {
           const px = hit.uv.x * 512;
           const py = (1 - hit.uv.y) * 640;
@@ -910,6 +910,15 @@ class PingPongGame {
         } else {
           dot.visible = false;
         }
+
+        line.visible = true;
+        line.position.copy(muGrip);
+        line.quaternion.copy(muQ);
+        line.scale.z = hit ? hit.distance : 0.5;
+        // el haz engorda al pasar sobre un botón (feedback extra)
+        const thick = idx >= 0 ? 1.7 : 1;
+        line.scale.x = thick;
+        line.scale.y = thick;
       } else {
         line.visible = false;    // mando ausente: sin láser (no dejarlo congelado)
         dot.visible = false;
@@ -1352,6 +1361,15 @@ class PingPongGame {
     }
     if (aiHit) {
       this.ball.vel.copy(aiHit);
+      // registro opcional para tests headless (solo si un test lo activa)
+      if (window.__logAiHits) {
+        (window.__aiHits = window.__aiHits || []).push({
+          from: [+this.ball.pos.x.toFixed(3), +this.ball.pos.y.toFixed(3),
+                 +this.ball.pos.z.toFixed(3)],
+          v: [+aiHit.x.toFixed(3), +aiHit.y.toFixed(3), +aiHit.z.toFixed(3)],
+          spin: [+this.ball.spin.x.toFixed(1), +this.ball.spin.y.toFixed(1)],
+        });
+      }
       this.processIntents(this.rules.registerPaddleHit('ai'));
       this.audio.paddle(
         THREE.MathUtils.clamp(this.ball.pos.x / 2.5, -1, 1),
@@ -1597,6 +1615,11 @@ class PingPongGame {
       this.calibPanel.update({ name: this.gripName, off: this.gripOffset });
       this.panelDirty = false;
     }
+    // gancho de diagnóstico (solo lectura en tests headless; no afecta al juego)
+    if (typeof window !== 'undefined' && window.__wantSolverHook && !window.__solverHook) {
+      window.__solverHook = { computeShotVelocityReal, predictStrike, stepPhysics,
+        DIMS, applyAerodynamics };
+    }
     this.scoreboardUpdate({
       player: this.rules.scorePlayer,
       ai: this.rules.scoreAi,
@@ -1739,9 +1762,33 @@ class PingPongGame {
       return;
     }
 
-    // rally / espera
-    mesh.position.set(ai.pos.x, ai.pos.y, ai.pos.z);
-    mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
+    // rally / espera (v2.17: movimiento natural — preparación, swing de
+    // follow-through tras el golpeo y micro-balanceo de espera)
+    if (ai.swing) {
+      const sw = ai.swing;
+      const p = Math.min(1, sw.t / sw.dur);
+      // follow-through: arranca con energía y frena (ease-out potente)
+      const e = 1 - Math.pow(1 - p, 2.4);
+      const amp = 0.26 * sw.speed;
+      swingV.copy(sw.dir).multiplyScalar(amp * e);
+      mesh.position.set(
+        sw.contact.x + swingV.x,
+        Math.max(0.42, sw.contact.y + swingV.y * 0.55 + 0.05 * (1 - e)),
+        sw.contact.z + swingV.z,
+      );
+      // cara que se cierra al terminar el acompañamiento
+      poseE.set(0.10 + 0.28 * (1 - e), faceYaw, 0, 'YXZ');
+      poseQ.setFromEuler(poseE);
+      mesh.quaternion.slerp(poseQ, Math.min(1, dt * 16));
+    } else {
+      const bob = Math.sin(performance.now() / 1000 * 3.0 + (who === 'ai' ? 0 : 2.1)) * 0.012;
+      mesh.position.set(
+        ai.pos.x + ai.prep.x,
+        Math.max(0.42, ai.pos.y + ai.prep.y + bob),
+        ai.pos.z + ai.prep.z,
+      );
+      mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
+    }
     this.clampPaddlePose(mesh.position, mesh.quaternion, false);
   }
 

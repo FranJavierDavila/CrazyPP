@@ -1,0 +1,81 @@
+[
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.351,
+   "z": -0.92
+  },
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "timeout"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "timeout"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.138,
+   "z": -0.606
+  },
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.326,
+   "z": -0.907
+  },
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "timeout"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo \u00b7 7 golpes"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU no la devolvi\u00f3 \u00b7 7 golpes"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo \u00b7 7 golpes"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo \u00b7 7 golpes"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo \u00b7 7 golpes"
+ }
+]

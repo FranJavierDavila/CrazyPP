@@ -215,9 +215,9 @@ const DIMS = {
 };
 
 const AI_PRESETS = {
-  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.11,  missBase: 0.22, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.03 },
-  medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.06,  missBase: 0.11, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.05 },
-  hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.028, missBase: 0.04, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
+  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.15, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.03 },
+  medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.05,  missBase: 0.08, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.05 },
+  hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.024, missBase: 0.03, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
 };
 
 /** Escala un preset de IA por un factor de habilidad k (0,7…2,2):
@@ -1239,8 +1239,12 @@ function stepPhysics(dt, ball, paddles, events) {
   }
 }
 
-/** Predice el MEJOR punto de golpeo de la bola en el campo de `sign`. */
-function predictStrike(ball, sign) {
+/** Predice el MEJOR punto de golpeo de la bola en el campo de `sign`.
+ *  v2.17: `bounced` (ya botó en este campo, lo da rules.validBounce) siembra
+ *  el contador de botes — antes, tras el bote la simulación no encontraba
+ *  candidatos futuros y devolvía null: la IA se quedaba CIEGA justo cuando
+ *  debía golpear y la bola se le pasaba (los fallos "no llega"). */
+function predictStrike(ball, sign, bounced) {
   const C = DIMS.tableCenterZ;
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const pos = ball.pos.clone();
@@ -1248,7 +1252,7 @@ function predictStrike(ball, sign) {
   const spin = ball.spin ? ball.spin.clone() : new THREE.Vector3();
   const h = 1 / 240;
   let t = 0;
-  let myBounces = 0;
+  let myBounces = (bounced && (pos.z - C) * sign > 0) ? 1 : 0;
   let best = null;
   let bestScore = -Infinity;
   let planePoint = null;
@@ -1325,6 +1329,133 @@ function computeShotVelocity(from, target, tIn, maxSpeed) {
   const sp = v.length();
   if (sp > maxSpeed) v.multiplyScalar(maxSpeed / sp);
   return v;
+}
+
+/* ---------- Solver de tiro con FÍSICA REAL (v2.17) ----------
+ * computeShotVelocity resuelve la parábola balística PURA (solo gravedad),
+ * pero la bola real sufre arrastre cuadrático del aire y Magnus del efecto:
+ * los tiros caían 15-27 cm cortos y la CPU parecía que "calculaba mal".
+ * Este solver siembra la solución balística y la corrige por SIMULACIÓN con
+ * las mismas ecuaciones de la física del juego hasta botar en el objetivo
+ * (±4 cm) con holgura de red garantizada. Solo se ejecuta al golpear la IA
+ * (unas pocas veces por segundo): ~4000 pasos de simulación por golpe. */
+const _svPos = new THREE.Vector3();
+const _svVel = new THREE.Vector3();
+const _svSpin = new THREE.Vector3();
+const _svRes = { land: null, t: 0, netY: null, crossed: false, fell: null };
+function simulateBounceUntilTable(from, vel, spin, maxT, out) {
+  const topR = DIMS.tableTopY + DIMS.ballRadius;
+  const C = DIMS.tableCenterZ;
+  const h = 1 / 240;
+  const pos = _svPos.copy(from);
+  const v = _svVel.copy(vel);
+  const s = _svSpin.copy(spin);
+  let t = 0;
+  let netY = null;
+  let crossed = false;
+  out.land = null;
+  out.fell = null;
+  out.netY = null;
+  out.crossed = false;
+  while (t < maxT) {
+    const prevY = pos.y;
+    const prevZ = pos.z;
+    v.y += DIMS.gravity * h;
+    applyAerodynamics(v, s, h);
+    pos.addScaledVector(v, h);
+    t += h;
+    if (!crossed && (prevZ - C) * (pos.z - C) <= 0 && prevZ !== pos.z) {
+      const f = (C - prevZ) / (pos.z - prevZ);
+      netY = prevY + (pos.y - prevY) * f;
+      crossed = true;
+    }
+    if (v.y < 0 && prevY >= topR && pos.y < topR &&
+        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+      out.land = pos.clone();
+      out.t = t;
+      out.netY = netY;
+      out.crossed = crossed;
+      return out;
+    }
+    if (pos.y < DIMS.ballRadius) {
+      out.fell = pos.clone();
+      out.t = t;
+      out.netY = netY;
+      out.crossed = crossed;
+      return out;
+    }
+  }
+  out.t = t;
+  out.netY = netY;
+  out.crossed = crossed;
+  return out;
+}
+
+function computeShotVelocityReal(from, target, tIn, maxSpeed, spin) {
+  const T = Math.max(0.3, tIn);
+  const topR = DIMS.tableTopY + DIMS.ballRadius;
+  const v = new THREE.Vector3(
+    (target.x - from.x) / T,
+    (topR - from.y) / T - 0.5 * DIMS.gravity * T,
+    (target.z - from.z) / T,
+  );
+  const d0 = Math.hypot(target.x - from.x, target.z - from.z) || 1e-6;
+  const ux = (target.x - from.x) / d0;
+  const uz = (target.z - from.z) / d0;
+  const NET_OK = DIMS.netTopY + 0.085;   // margen anti-cinta holgado
+  // v2.17b: se guarda el MEJOR iterado (mínimo error de bote con red
+  // superada) — las correcciones pueden oscilar con el clamp de velocidad y
+  // devolver el último no era fiable (tiros que morían en la red).
+  let bestV = null;
+  let bestErr = Infinity;
+  const cand = new THREE.Vector3();
+  for (let it = 0; it < 16; it++) {
+    const sp0 = v.length();
+    if (sp0 > maxSpeed) v.multiplyScalar(maxSpeed / sp0);
+    simulateBounceUntilTable(from, v, spin, 1.7, _svRes);
+    if (_svRes.netY !== null && _svRes.netY < NET_OK) {
+      v.y += (NET_OK + 0.01 - _svRes.netY) * 1.8;   // más lift para pasar la red
+      continue;
+    }
+    if (!_svRes.land) {
+      if (!_svRes.crossed) {
+        v.y += 0.3;                       // ni cruzó: más de todo
+        v.x *= 1.06;
+        v.z *= 1.06;
+      } else if (_svRes.fell && (_svRes.fell.z - target.z) * uz < 0) {
+        // se quedó corta al caer al suelo: la siguiente iteración decide
+      } else {
+        v.x *= 0.94;                      // se fue larga: frenar
+        v.z *= 0.94;
+      }
+      continue;
+    }
+    const ex = _svRes.land.x - target.x;
+    const ez = _svRes.land.z - target.z;
+    const err = Math.hypot(ex, ez);
+    if (err < bestErr) {
+      bestErr = err;
+      bestV = cand.copy(v);
+    }
+    if (err < 0.015) break;               // clavado: no hace falta seguir
+    const e = ex * ux + ez * uz;          // error a lo largo (>0: se pasó)
+    const l = ex * -uz + ez * ux;         // error perpendicular
+    const f = THREE.MathUtils.clamp(1 - 0.85 * e / d0, 0.7, 1.5);
+    v.x *= f;
+    v.z *= f;
+    v.x += l * uz / T;
+    v.z -= l * ux / T;
+  }
+  const out = bestV ? bestV : v;
+  // seguridad final: el tiro DEBE pasar la red; si no, loft extra y re-sim
+  for (let k = 0; k < 4; k++) {
+    simulateBounceUntilTable(from, out, spin, 1.7, _svRes);
+    if (_svRes.netY === null || _svRes.netY >= DIMS.netTopY + 0.02) break;
+    out.y += (DIMS.netTopY + 0.05 - _svRes.netY) * 1.6;
+  }
+  const sp1 = out.length();
+  if (sp1 > maxSpeed) out.multiplyScalar(maxSpeed / sp1);
+  return out;
 }
 
 /**

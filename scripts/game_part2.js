@@ -262,6 +262,8 @@ class OpponentAI {
     this.hitCooldown = 0;
     this.errX = 0;
     this.errY = 0;
+    this.swing = null;   // animación de follow-through del último golpe (v2.17)
+    this.prep = new THREE.Vector3();   // retroceso de preparación (visual)
   }
 
   setConfig(cfg) { this.cfg = cfg; }
@@ -275,6 +277,10 @@ class OpponentAI {
 
   update(dt, ball, ctx) {
     this.hitCooldown -= dt;
+    if (this.swing) {
+      this.swing.t += dt;
+      if (this.swing.t > this.swing.dur) this.swing = null;
+    }
     const C = DIMS.tableCenterZ;
     const sign = this.sign;
     const toward = ball.vel.z * sign > 0;
@@ -283,11 +289,23 @@ class OpponentAI {
       this.predictTimer -= dt;
       if (this.predictTimer <= 0) {
         this.predictTimer = this.cfg.predictInterval;
-        const strike = predictStrike(ball, sign);
+        const strike = predictStrike(ball, sign, ctx.validBounce);
+        if (window.__aiDbg) {
+          if (strike) window.__aiDbg.ok++;
+          else window.__aiDbg.null++;
+        }
         if (strike) {
-          this.predict.copy(strike.point);
-          this.errX = gauss() * this.cfg.errStd;
-          this.errY = gauss() * this.cfg.errStd * 0.6;
+          if (!this.predictValid) {
+            // bola NUEVA viniendo: el error de puntería se sortea UNA sola vez
+            // y se mantiene durante todo el rallye (antes se re-sorteba cada
+            // re-predicción y la pala temblaba persiguiendo objetivos distintos)
+            this.errX = gauss() * this.cfg.errStd;
+            this.errY = gauss() * this.cfg.errStd * 0.6;
+            this.predict.copy(strike.point);
+          } else {
+            // refinamiento de la MISMA bola: suavizar, sin saltos
+            this.predict.lerp(strike.point, 0.45);
+          }
           this.predictValid = true;
         } else {
           this.predictValid = false;
@@ -295,6 +313,20 @@ class OpponentAI {
       }
     } else {
       this.predictValid = false;
+    }
+
+    // preparación visual del golpe: la pala se retrae un poco al acercarse la
+    // bola a su punto de contacto (solo estético: ai.pos sigue siendo el
+    // punto lógico de detección)
+    if (this.predictValid && ctx.canHit) {
+      tmpT.copy(this.predict).sub(this.pos);
+      const dl = tmpT.length();
+      const w = THREE.MathUtils.clamp(1 - dl / 0.9, 0, 1) * 0.55;
+      tmpT.normalize().multiplyScalar(-0.09 * w);
+      this.prep.copy(tmpT);
+      this.prep.y = 0.045 * w;
+    } else {
+      this.prep.multiplyScalar(Math.max(0, 1 - dt * 5));
     }
 
     if (ctx.holdTarget) {
@@ -331,7 +363,7 @@ class OpponentAI {
     this.pos.addScaledVector(this.vel, dt);
 
     if (!ctx.canHit || !ctx.validBounce || !toward || this.hitCooldown > 0) return null;
-    const reach = 0.185;
+    const reach = 0.21;
     if (this.pos.distanceToSquared(ball.pos) > reach * reach) return null;
     if ((ball.pos.z - C) * sign < 0.04) return null;
     if (ball.pos.y < DIMS.tableTopY - 0.08 || ball.pos.y > 1.65) return null;
@@ -407,22 +439,35 @@ class OpponentAI {
     tx = THREE.MathUtils.clamp(tx, -0.55, 0.55);
     if (kind === 'dejada') tx *= 0.6;   // las dejadas buscan precisión, no ángulo
 
-    const tz = DIMS.tableCenterZ - sign * depthRel * DIMS.tableHalfLength;
+    // profundidad SIEMPRE dentro de la mesa (antes algunos tiros apuntaban
+    // hasta un 112% de la media mesa y solo entraban por accidente con el arrastre)
+    const depth = Math.min(depthRel, 0.94) * DIMS.tableHalfLength;
+    const tz = DIMS.tableCenterZ - sign * depth;
     const maxV = kind === 'smash'
       ? this.cfg.maxShotSpeed * 1.15
       : this.cfg.maxShotSpeed * speedMul;
 
     tmpTarget.set(tx, DIMS.tableTopY + DIMS.ballRadius, tz);
-    const v = computeShotVelocity(ball.pos, tmpTarget, T, maxV);
+    // el giro se decide ANTES: el solver necesita el spin para el Magnus
+    const spinY = (Math.random() - 0.5) * 6;
+    const shotSpin = _aiSpin.set(spinX, spinY, 0);
+    // FÍSICA REAL (v2.17): tiro corregido por simulación (arrastre + Magnus):
+    // bota donde apunta en vez de 15-27 cm corto
+    const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
+    ball.spin.copy(shotSpin);
 
-    ball.spin.set(
-      spinX,
-      (Math.random() - 0.5) * 6,
-      0,
-    );
+    // swing visual: follow-through del golpe en la dirección del tiro
+    this.swing = {
+      t: 0,
+      dur: 0.3,
+      contact: ball.pos.clone(),
+      dir: new THREE.Vector3(v.x, 0, v.z).normalize(),
+      speed: THREE.MathUtils.clamp(v.length() / 6, 0.6, 1.5),
+    };
     return v;
   }
 }
+const _aiSpin = new THREE.Vector3();
 
 /* =====================================================================
  *  ESCENA · sala, mesa reglamentaria, bola con estela, rival con cuerpo,

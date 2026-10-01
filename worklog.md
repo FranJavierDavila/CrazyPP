@@ -539,3 +539,52 @@ Stage Summary:
   gatillo/grip=saque; con menú abierto el gatillo elige desde cualquier mando.
 - Pendiente de confirmación en visor: distancia de lectura con el brazo en
   reposo y comodidad del apuntado con la pala.
+
+---
+Task ID: 21
+Agent: Super Z (main agent)
+Task: v2.17 — haz del menú visible + IA reconstruida (feedback de visor)
+
+Work Log:
+- FEEDBACK: (1) panel mejor pero el haz mando->botón no se ve, solo el
+  resaltado; (2) la CPU golpea mal, falla mucho, parece calcular mal las
+  trayectorias y mueve la pala de forma robótica.
+- LÁSER (part3): THREE.Line dibuja 1 px — invisible en el visor. Sustituido
+  por cilindro de 2,2 mm (geometry rotada a -Z, nace en el mando),
+  depthTest false, renderOrder 940, opacity 0.85, se engorda x1.7 sobre
+  hover. Colores por mano (ámbar/cian) mantenidos.
+- IA · DIAGNÓSTICO (tests headless con física replicada en Python + recorder
+  in-page): (a) computeShotVelocity resolvía la parábola SIN arrastre/Magnus
+  → tiros 15-27 cm cortos y muertes en la red por el lift; (b) predictStrike
+  devolvía null tras el bote (no sembraba botes ya ocurridos) → la IA se
+  quedaba CIEGA justo al golpear ("no llega"); (c) errX/errY se re-sorteba
+  cada re-predicción (0.1 s) → pala temblorosa; (d) sin swing: la pala se
+  desliza; (e) depthRel hasta 1.12 apuntaba FUERA de la mesa.
+- IA · SOLVER (part1, computeShotVelocityReal): siembra balística + 16
+  iteraciones de corrección simulando con la física REAL (240 Hz, aero,
+  bote); guarda el MEJOR iterado (err mínimo con red superada; el último
+  podía oscilar con el clamp de velocidad); verificación final anti-red con
+  loft extra; margen anti-cinta 8.5 cm; clamp de profundidad 0.94.
+- IA · RESTO: predictStrike(ball, sign, bounced) siembra myBounces=1 cuando
+  rules.validBounce (adiós a la ceguera); errores estables por bola entrante
+  + lerp 0.45 de refinamiento; swing de follow-through (0.3 s, ease-out
+  2.4, amplitud según velocidad del tiro) disparado en cada golpeo;
+  preparación (retroceso ≤9 cm al acercarse la bola) y bob de espera;
+  reach 0.185→0.21; presets: missBase easy/med/hard 0.22/0.11/0.04 →
+  0.15/0.08/0.03, errStd 0.11/0.06/0.028 → 0.09/0.05/0.024.
+- VERIFICACIÓN CUANTITATIVA (test_ai_returns.py, 14 tiros sintéticos
+  calibrados con física real hacia el campo CPU): v2.16 → ~7-20% devueltos
+  con ~35% de tiros a su propia red; v2.17c → **13/14 (93%)**, botes
+  profundos 0.81-1.33 m, 2 rozadas de cinta, 1 bola ganadora. Regresión del
+  menú (verify_v216.py) TODO OK, 0 errores de página. Hook de diagnóstico
+  opt-in (__wantSolverHook/__logAiHits/__aiDbg) añadido para futuros tests.
+- Entrega: index.html 2.09 MB, capturas captura-v217-menu-haz*.png, ZIP
+  regenerado, README actualizado.
+
+Stage Summary:
+- v2.17: la CPU devuelve el 93% de las bolas con tiros que botan donde
+  apunta (física real en el solver), se mueve con preparación/swing/bob y
+  el menú muestra un haz láser grueso y visible desde cualquier mando.
+- Pendiente visor: sensación de dificultad (media ahora devuelve mucho más;
+  la adaptativa + supervivencia siguen escalando), legibilidad del haz y
+  naturalidad del swing.

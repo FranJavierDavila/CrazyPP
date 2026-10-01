@@ -163,8 +163,8 @@ HTML = """<!DOCTYPE html>
     <h1>🏓 PING PONG <span>XR</span></h1>
     <div class="tag">Reglas ITTF · saque con mano libre y física real · pala 3D · Meta Quest 3</div>
     <ul class="keys">
-      <li><b>SAQUE</b> La bola descansa en tu <b>mano libre</b>. Aprieta <b>GRIP</b> y suéltalo hacia arriba: la bola sale con la velocidad real de tu mano. (Gatillo = saque asistido)</li>
-      <li><b>GOLPE</b> Golpea la bola <b>al caer</b> con la pala (otro mando), desde detrás de la línea de fondo. Zona de impacto asistida: no hace falta milimetrar. El saque debe botar en <b>tu campo</b> y luego en el del rival.</li>
+      <li><b>SAQUE</b> La bola descansa en tu <b>mano libre</b>. Aprieta <b>GRIP</b> y suéltalo hacia arriba: oirás un <b>pitido</b> en el punto muerto — golpea entonces (o al caer). (Gatillo = saque asistido)</li>
+      <li><b>GOLPE</b> Golpea la bola con la pala (otro mando) desde detrás de la línea de fondo. Zona de impacto muy asistida, aún mayor en el saque: no hace falta milimetrar. El saque debe botar en <b>tu campo</b> y luego en el del rival.</li>
       <li><b>A / X</b> Cambia la pala de mano en cualquier momento</li>
       <li><b>REGLAS</b> Rozar la red en saque y pasar = <b>LET</b> (se repite) · volear antes del bote o dar doble golpe = falta · partido a 11 con ventaja de 2</li>
       <li><b>EFECTO</b> Barre la pala de abajo a arriba al golpear para dar lift; de arriba abajo para cortar</li>

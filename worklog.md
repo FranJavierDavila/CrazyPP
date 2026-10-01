@@ -149,3 +149,23 @@ Stage Summary:
 - Pala corregida a nivel geometría (normales/winding) + doble cara: sin artefactos
 - Sistema completo de agarres con nombre (persistente) + modo entrenamiento con máquina de bolas y panel de ajuste en VR
 - Audio reforzado para VR (kick+reintentos) y detección de golpeo mucho más generosa
+
+---
+Task ID: 9
+Agent: Super Z (main agent)
+Task: Saque IA realista, golpeos sólidos, saque natural fácil y sonido estable en VR (feedback del usuario)
+
+Work Log:
+- SAQUE IA (posición ilógica + canto): causa raíz = aiPaddleMesh.lookAt(ball.pos) con la bola justo encima (caso degenerado de lookAt -> volteo/canto) y bola anclada a ai.pos (donde la pillara el punto). Nuevo sistema: setupAIServe/setupDemoServe fijan spot reglamentario (0,3 m tras la línea de fondo, x aleatoria ±0,2 m) y postura lateral; la IA camina al stance (holdTarget en OpponentAI.update), sostiene la bola y lanza tras llegar (o a los 3 s); updateAIPaddlePose sustituye a lookAt: euler con yaw limitado (±66° hacia el rival) y pitch acotado; animación de saque completa (postura cara abierta -> swing p^1.7 siguiendo la bola -> instante de impacto con cara cerrada, flash 0,22 s); demoPaddleMesh oculto en VR (era una pala fantasma tras el jugador)
+- GOLPEOS SÓLIDOS: transferencia de velocidad pala->bola (+0,22·v_pala en la dirección de salida), restitución 0,78->0,85, velocidad mínima de salida 1,5->2,3 (DIMS.minExitSpeed), y en rally los golpes del jugador que salen hacia atrás o sin fuerza (vz>0,5 o |v|<2,2) se enderezan 40-60% hacia el campo rival con computeShotVelocity
+- SAQUE NATURAL FÁCIL: ventana de validación ±30 ms -> preVy<=0,6 (punto muerto ±60 ms y toda la caída), pitido GameAudio.tick() + vibración + destello de la bola en el punto muerto (apexSignaled/apexPulse), margen extra de detección solo en saque (pad.extraReach=serveExtraReach 0,06; plano de contacto +45 mm), tolerancia de línea de fondo 4->10 cm, toss asistido 2,3->2,6 m/s, y SOLIDEZ por simulación: tras el golpe válido, simulateServePath valida; si falla, se mezcla 65% con findServeVelocity (y si aún falla, trayectoria completa) -> el saque siempre cumple el doble bote conservando parte del toque
+- SONIDO VR: confirmado en headless el contexto suspendido; watchdog(dt) cada 0,7 s reanuda el contexto y, si tras 5 intentos no responde, cierra y RECONSTRUYE el AudioContext (master 0,9 + DynamicsCompressor -16/5:1), más visibilitychange->resume; verificado por consola "Audio: contexto reconstruido tras quedar suspendido"
+- Overlay: instrucciones actualizadas (pitido del punto muerto, zona extra en saque)
+- Rebuild (1,54 MB, sintaxis OK), desplegado a public/game.html; verificado con agent-browser: cero errores; monitor de saques: spot IA (0,01,1,02,-3,27) reglamentario, bola clavada al spot, quaternion de pose {x:-0.25,0,0,w:0.97} (cara abierta, sin canto); swing registrado de backswing (1,17/-3,39, qw=0.92) a contacto siguiendo la bola (qw=1); demo 5:5 y 2:1 en ciclos largos; capturas scripts/preview_v7_swing.png y preview_v7_final.png
+- Reempaquetado download/pingpong-quest3-v2.zip (1,53 MB, solo index.html) y README con secciones v2.3
+
+Stage Summary:
+- La CPU saca desde una posición reglamentaria con animación natural (postura lateral, toss, swing, cara cerrada en el impacto): sin canto ni posiciones raras
+- Golpeos con cuerpo: la velocidad de la mano se transfiere a la bola, salida mínima mayor y los golpes muertos se enderezan; el saque es casi imposible de fallar tras el lanzamiento (pitido + vibración + trayectoria garantizada por simulación)
+- El audio ya no desaparece en VR: watchdog que reanuda y reconstruye el contexto + compresor y más volumen
+- Descarga y preview actualizados y verificados sin errores

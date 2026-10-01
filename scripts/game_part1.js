@@ -188,10 +188,12 @@ const DIMS = {
   airDragK: 0.142,
   tableRestitution: 0.88,   // ITTF: rebote ~23 cm desde 30.5 cm (e ≈ 0.87)
   tableFriction: 0.94,
-  paddleRestitution: 0.78,
+  paddleRestitution: 0.85,  // goma viva: los golpes salen con cuerpo
   bladeRadius: 0.0795,      // radio de la hoja (16 cm de diámetro)
   bladeCenterUp: 0.14,      // centro de la hoja sobre el punto de agarre
-  hitAssistRadius: 0.038,   // margen generoso de detección alrededor de la hoja
+  hitAssistRadius: 0.05,    // margen generoso de detección alrededor de la hoja
+  serveExtraReach: 0.06,    // margen EXTRA solo durante el saque (bola lanzada)
+  minExitSpeed: 2.3,        // velocidad mínima de salida tras golpear (solidez)
   paddleHitCooldown: 0.08,
   maxBallSpeed: 14,
   // --- efecto (spin) ---
@@ -203,8 +205,8 @@ const DIMS = {
   paddleWristSpin: 0.16,    // contribución de la rotación de la muñeca
   // --- saque (regla ITTF) ---
   tossMinRise: 0.14,        // lanzamiento mínimo ~16 cm (con margen)
-  serveEndLineTol: 0.04,    // margen tras la línea de fondo
-  serveAssistVy: 2.3,       // vy mínimo del saque asistido (toss más alto = más tiempo para golpear)
+  serveEndLineTol: 0.10,    // margen tras la línea de fondo (indulgente)
+  serveAssistVy: 2.6,       // vy mínimo del saque asistido (toss más alto = más tiempo para golpear)
   // --- sala ---
   roomHalfX: 3.05,
   roomBackZ: 2.35,
@@ -249,19 +251,39 @@ class GameAudio {
     this.ctx = null;
     this.master = null;
     this.noiseBuffer = null;
+    this._wdAcc = 0;
+    // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
+    // visor; al volver, el contexto de audio queda a veces suspendido.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && this.ctx && this.ctx.state !== 'running') {
+        this.ctx.resume().catch(() => {});
+      }
+    });
   }
   ensure() {
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      if (this.ctx.state !== 'running') void this.ctx.resume();
       return;
     }
     try {
       const Ctor = window.AudioContext || window.webkitAudioContext;
       if (!Ctor) return;
-      this.ctx = new Ctor();
+      try {
+        this.ctx = new Ctor({ latencyHint: 'interactive' });
+      } catch {
+        this.ctx = new Ctor();
+      }
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.5;
-      this.master.connect(this.ctx.destination);
+      this.master.gain.value = 0.9;
+      // Compresor: golpes más presentes y audibles en el altavoz del visor
+      const comp = this.ctx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 22;
+      comp.ratio.value = 5;
+      comp.attack.value = 0.002;
+      comp.release.value = 0.12;
+      this.master.connect(comp);
+      comp.connect(this.ctx.destination);
       const len = Math.floor(this.ctx.sampleRate * 0.25);
       this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const data = this.noiseBuffer.getChannelData(0);
@@ -276,6 +298,30 @@ class GameAudio {
     this.ensure();
     if (this.ctx && this.ctx.state !== 'running') {
       this.ctx.resume().catch(() => {});
+    }
+  }
+  /** Vigilancia periódica (llamada desde el bucle): si el contexto quedó
+   *  suspendido a mitad de partida (proximidad, notificación, cambio de app),
+   *  se reactiva solo. Si ni así responde (bug conocido del navegador de la
+   *  Quest), se reconstruye el AudioContext desde cero: ya hubo gesto de
+   *  usuario (botón ENTRAR EN VR), así que el nuevo nace activo. Sin esto,
+   *  el sonido "desaparece" en VR. */
+  watchdog(dt) {
+    this._wdAcc += dt;
+    if (this._wdAcc < 0.7) return;
+    this._wdAcc = 0;
+    if (!this.ctx || this.ctx.state === 'running') {
+      this._wdFails = 0;
+      return;
+    }
+    this.ctx.resume().catch(() => {});
+    this._wdFails = (this._wdFails || 0) + 1;
+    if (this._wdFails >= 5) {
+      try { this.ctx.close(); } catch { /* ya está muerto */ }
+      this.ctx = null;
+      this._wdFails = 0;
+      this.ensure();
+      console.info('Audio: contexto reconstruido tras quedar suspendido');
     }
   }
   panNode(pan) {
@@ -338,6 +384,8 @@ class GameAudio {
     this.playOsc(140, 90, 0.09, 'sine', 0.28 * s, pan);
   }
   serve() { this.playNoise(0.14, 650, 0.8, 0.16, 0); }
+  /** Pitido corto del punto muerto del saque (señal para golpear). */
+  tick() { this.playOsc(1320, 1150, 0.05, 'sine', 0.22, 0); }
   point(win) {
     if (win) {
       this.playOsc(660, 660, 0.12, 'sine', 0.3, -0.3);
@@ -468,6 +516,8 @@ function applyBounceSpin(vel, spin) {
 
 function collidePaddle(ball, pad, k, events) {
   padPos.copy(pad.prev).lerp(pad.pos, k);
+  // margen extra de detección (solo en el saque: bola recién lanzada)
+  const extra = pad.extraReach || 0;
 
   relPrev.copy(tmpPrev).sub(padPos);
   const dPrev = relPrev.dot(pad.normal);
@@ -475,7 +525,7 @@ function collidePaddle(ball, pad, k, events) {
   const dNow = relNow.dot(pad.normal);
 
   const crossing = dPrev > 0 !== dNow > 0;
-  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.03;
+  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.03 + (extra ? 0.045 : 0);
   if (!crossing && !touching) return;
 
   if (crossing) {
@@ -491,10 +541,10 @@ function collidePaddle(ball, pad, k, events) {
   // hoja: disco de radio R centrado en bladeCenterUp sobre el agarre
   // (+ zona de asistencia para que no haga falta milimetrar el golpe)
   const dyy = ly - DIMS.bladeCenterUp;
-  const reach = DIMS.bladeRadius + DIMS.ballRadius + DIMS.hitAssistRadius;
+  const reach = DIMS.bladeRadius + DIMS.ballRadius + DIMS.hitAssistRadius + extra;
   const onBlade = lx * lx + dyy * dyy <= reach * reach;
   // mango: zona alrededor del propio agarre
-  const onHandle = Math.abs(lx) < 0.045 && ly > -0.10 && ly < 0.10;
+  const onHandle = Math.abs(lx) < 0.05 && ly > -0.12 && ly < 0.12;
   if (!onBlade && !onHandle) return;
 
   // Normal efectiva: la bola puede golpear cualquiera de las dos caras
@@ -507,9 +557,14 @@ function collidePaddle(ball, pad, k, events) {
   // Reflexión con pala "infinitamente masiva" en movimiento
   ball.vel.addScaledVector(tmpN, -(1 + DIMS.paddleRestitution) * vRelN);
 
-  // Velocidad mínima de salida para jugabilidad
+  // Golpe con CUERPO: transfiere parte de la velocidad de la pala en la
+  // dirección de salida (acelerar la mano = bola más rápida, siempre)
+  const padN = pad.vel.dot(tmpN);
+  if (padN > 0) ball.vel.addScaledVector(tmpN, padN * 0.22);
+
+  // Velocidad mínima de salida para jugabilidad (golpes siempre sólidos)
   const vn = ball.vel.dot(tmpN);
-  if (vn < 1.5) ball.vel.addScaledVector(tmpN, 1.5 - vn);
+  if (vn < DIMS.minExitSpeed) ball.vel.addScaledVector(tmpN, DIMS.minExitSpeed - vn);
 
   // Límite de velocidad
   const sp = ball.vel.length();

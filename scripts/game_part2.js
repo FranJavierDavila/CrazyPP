@@ -266,7 +266,10 @@ class OpponentAI {
       this.predictValid = false;
     }
 
-    if (this.predictValid) {
+    if (ctx.holdTarget) {
+      // saque propio: caminar a la posición reglamentaria y esperar allí
+      tmpT.copy(ctx.holdTarget);
+    } else if (this.predictValid) {
       const baseline = C + sign * DIMS.tableHalfLength;
       let inDist = (this.predict.z - baseline) * -sign;
       inDist = THREE.MathUtils.clamp(inDist, -0.45, DIMS.tableHalfLength + 0.15);

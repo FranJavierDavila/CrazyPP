@@ -137,8 +137,8 @@
     <h1>🏓 PING PONG <span>XR</span></h1>
     <div class="tag">Reglas ITTF · saque con mano libre y física real · pala 3D · Meta Quest 3</div>
     <ul class="keys">
-      <li><b>SAQUE</b> La bola descansa en tu <b>mano libre</b>. Aprieta <b>GRIP</b> y suéltalo hacia arriba: la bola sale con la velocidad real de tu mano. (Gatillo = saque asistido)</li>
-      <li><b>GOLPE</b> Golpea la bola <b>al caer</b> con la pala (otro mando), desde detrás de la línea de fondo. Zona de impacto asistida: no hace falta milimetrar. El saque debe botar en <b>tu campo</b> y luego en el del rival.</li>
+      <li><b>SAQUE</b> La bola descansa en tu <b>mano libre</b>. Aprieta <b>GRIP</b> y suéltalo hacia arriba: oirás un <b>pitido</b> en el punto muerto — golpea entonces (o al caer). (Gatillo = saque asistido)</li>
+      <li><b>GOLPE</b> Golpea la bola con la pala (otro mando) desde detrás de la línea de fondo. Zona de impacto muy asistida, aún mayor en el saque: no hace falta milimetrar. El saque debe botar en <b>tu campo</b> y luego en el del rival.</li>
       <li><b>A / X</b> Cambia la pala de mano en cualquier momento</li>
       <li><b>REGLAS</b> Rozar la red en saque y pasar = <b>LET</b> (se repite) · volear antes del bote o dar doble golpe = falta · partido a 11 con ventaja de 2</li>
       <li><b>EFECTO</b> Barre la pala de abajo a arriba al golpear para dar lift; de arriba abajo para cortar</li>
@@ -371,10 +371,12 @@ const DIMS = {
   airDragK: 0.142,
   tableRestitution: 0.88,   // ITTF: rebote ~23 cm desde 30.5 cm (e ≈ 0.87)
   tableFriction: 0.94,
-  paddleRestitution: 0.78,
+  paddleRestitution: 0.85,  // goma viva: los golpes salen con cuerpo
   bladeRadius: 0.0795,      // radio de la hoja (16 cm de diámetro)
   bladeCenterUp: 0.14,      // centro de la hoja sobre el punto de agarre
-  hitAssistRadius: 0.038,   // margen generoso de detección alrededor de la hoja
+  hitAssistRadius: 0.05,    // margen generoso de detección alrededor de la hoja
+  serveExtraReach: 0.06,    // margen EXTRA solo durante el saque (bola lanzada)
+  minExitSpeed: 2.3,        // velocidad mínima de salida tras golpear (solidez)
   paddleHitCooldown: 0.08,
   maxBallSpeed: 14,
   // --- efecto (spin) ---
@@ -386,8 +388,8 @@ const DIMS = {
   paddleWristSpin: 0.16,    // contribución de la rotación de la muñeca
   // --- saque (regla ITTF) ---
   tossMinRise: 0.14,        // lanzamiento mínimo ~16 cm (con margen)
-  serveEndLineTol: 0.04,    // margen tras la línea de fondo
-  serveAssistVy: 2.3,       // vy mínimo del saque asistido (toss más alto = más tiempo para golpear)
+  serveEndLineTol: 0.10,    // margen tras la línea de fondo (indulgente)
+  serveAssistVy: 2.6,       // vy mínimo del saque asistido (toss más alto = más tiempo para golpear)
   // --- sala ---
   roomHalfX: 3.05,
   roomBackZ: 2.35,
@@ -432,19 +434,39 @@ class GameAudio {
     this.ctx = null;
     this.master = null;
     this.noiseBuffer = null;
+    this._wdAcc = 0;
+    // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
+    // visor; al volver, el contexto de audio queda a veces suspendido.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && this.ctx && this.ctx.state !== 'running') {
+        this.ctx.resume().catch(() => {});
+      }
+    });
   }
   ensure() {
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      if (this.ctx.state !== 'running') void this.ctx.resume();
       return;
     }
     try {
       const Ctor = window.AudioContext || window.webkitAudioContext;
       if (!Ctor) return;
-      this.ctx = new Ctor();
+      try {
+        this.ctx = new Ctor({ latencyHint: 'interactive' });
+      } catch {
+        this.ctx = new Ctor();
+      }
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.5;
-      this.master.connect(this.ctx.destination);
+      this.master.gain.value = 0.9;
+      // Compresor: golpes más presentes y audibles en el altavoz del visor
+      const comp = this.ctx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 22;
+      comp.ratio.value = 5;
+      comp.attack.value = 0.002;
+      comp.release.value = 0.12;
+      this.master.connect(comp);
+      comp.connect(this.ctx.destination);
       const len = Math.floor(this.ctx.sampleRate * 0.25);
       this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const data = this.noiseBuffer.getChannelData(0);
@@ -459,6 +481,30 @@ class GameAudio {
     this.ensure();
     if (this.ctx && this.ctx.state !== 'running') {
       this.ctx.resume().catch(() => {});
+    }
+  }
+  /** Vigilancia periódica (llamada desde el bucle): si el contexto quedó
+   *  suspendido a mitad de partida (proximidad, notificación, cambio de app),
+   *  se reactiva solo. Si ni así responde (bug conocido del navegador de la
+   *  Quest), se reconstruye el AudioContext desde cero: ya hubo gesto de
+   *  usuario (botón ENTRAR EN VR), así que el nuevo nace activo. Sin esto,
+   *  el sonido "desaparece" en VR. */
+  watchdog(dt) {
+    this._wdAcc += dt;
+    if (this._wdAcc < 0.7) return;
+    this._wdAcc = 0;
+    if (!this.ctx || this.ctx.state === 'running') {
+      this._wdFails = 0;
+      return;
+    }
+    this.ctx.resume().catch(() => {});
+    this._wdFails = (this._wdFails || 0) + 1;
+    if (this._wdFails >= 5) {
+      try { this.ctx.close(); } catch { /* ya está muerto */ }
+      this.ctx = null;
+      this._wdFails = 0;
+      this.ensure();
+      console.info('Audio: contexto reconstruido tras quedar suspendido');
     }
   }
   panNode(pan) {
@@ -521,6 +567,8 @@ class GameAudio {
     this.playOsc(140, 90, 0.09, 'sine', 0.28 * s, pan);
   }
   serve() { this.playNoise(0.14, 650, 0.8, 0.16, 0); }
+  /** Pitido corto del punto muerto del saque (señal para golpear). */
+  tick() { this.playOsc(1320, 1150, 0.05, 'sine', 0.22, 0); }
   point(win) {
     if (win) {
       this.playOsc(660, 660, 0.12, 'sine', 0.3, -0.3);
@@ -651,6 +699,8 @@ function applyBounceSpin(vel, spin) {
 
 function collidePaddle(ball, pad, k, events) {
   padPos.copy(pad.prev).lerp(pad.pos, k);
+  // margen extra de detección (solo en el saque: bola recién lanzada)
+  const extra = pad.extraReach || 0;
 
   relPrev.copy(tmpPrev).sub(padPos);
   const dPrev = relPrev.dot(pad.normal);
@@ -658,7 +708,7 @@ function collidePaddle(ball, pad, k, events) {
   const dNow = relNow.dot(pad.normal);
 
   const crossing = dPrev > 0 !== dNow > 0;
-  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.03;
+  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.03 + (extra ? 0.045 : 0);
   if (!crossing && !touching) return;
 
   if (crossing) {
@@ -674,10 +724,10 @@ function collidePaddle(ball, pad, k, events) {
   // hoja: disco de radio R centrado en bladeCenterUp sobre el agarre
   // (+ zona de asistencia para que no haga falta milimetrar el golpe)
   const dyy = ly - DIMS.bladeCenterUp;
-  const reach = DIMS.bladeRadius + DIMS.ballRadius + DIMS.hitAssistRadius;
+  const reach = DIMS.bladeRadius + DIMS.ballRadius + DIMS.hitAssistRadius + extra;
   const onBlade = lx * lx + dyy * dyy <= reach * reach;
   // mango: zona alrededor del propio agarre
-  const onHandle = Math.abs(lx) < 0.045 && ly > -0.10 && ly < 0.10;
+  const onHandle = Math.abs(lx) < 0.05 && ly > -0.12 && ly < 0.12;
   if (!onBlade && !onHandle) return;
 
   // Normal efectiva: la bola puede golpear cualquiera de las dos caras
@@ -690,9 +740,14 @@ function collidePaddle(ball, pad, k, events) {
   // Reflexión con pala "infinitamente masiva" en movimiento
   ball.vel.addScaledVector(tmpN, -(1 + DIMS.paddleRestitution) * vRelN);
 
-  // Velocidad mínima de salida para jugabilidad
+  // Golpe con CUERPO: transfiere parte de la velocidad de la pala en la
+  // dirección de salida (acelerar la mano = bola más rápida, siempre)
+  const padN = pad.vel.dot(tmpN);
+  if (padN > 0) ball.vel.addScaledVector(tmpN, padN * 0.22);
+
+  // Velocidad mínima de salida para jugabilidad (golpes siempre sólidos)
   const vn = ball.vel.dot(tmpN);
-  if (vn < 1.5) ball.vel.addScaledVector(tmpN, 1.5 - vn);
+  if (vn < DIMS.minExitSpeed) ball.vel.addScaledVector(tmpN, DIMS.minExitSpeed - vn);
 
   // Límite de velocidad
   const sp = ball.vel.length();
@@ -1302,7 +1357,10 @@ class OpponentAI {
       this.predictValid = false;
     }
 
-    if (this.predictValid) {
+    if (ctx.holdTarget) {
+      // saque propio: caminar a la posición reglamentaria y esperar allí
+      tmpT.copy(ctx.holdTarget);
+    } else if (this.predictValid) {
       const baseline = C + sign * DIMS.tableHalfLength;
       let inDist = (this.predict.z - baseline) * -sign;
       inDist = THREE.MathUtils.clamp(inDist, -0.45, DIMS.tableHalfLength + 0.15);
@@ -1751,7 +1809,12 @@ function createCalibPanel() {
  *  háptica y bucle principal
  * ===================================================================== */
 const BALL_HAND_LIFT = 0.08;   // bola "apoyada" sobre la palma de la mano libre
-const SERVE_AI_LIFT = 0.16;    // bola en la "mano" de la IA
+const AI_TOSS_T = 0.55;        // duración del lanzamiento (y swing) del saque de la IA
+
+// temporales del sistema de pose de las palas IA (no compartir con física)
+const poseE = new THREE.Euler();
+const poseQ = new THREE.Quaternion();
+const poseD = new THREE.Vector3();
 
 class PingPongGame {
   constructor(canvas, paddleModel, callbacks = {}) {
@@ -1851,12 +1914,25 @@ class PingPongGame {
     this.tossReleaseY = 0;
     this.tossMaxY = 0;
     this.preVy = 0;
+    this.apexSignaled = false;
+    this.apexPulse = 0;
     this.aiToss = null;
     this.demoToss = null;
+    // saque de la IA / demo: posición reglamentaria fija + postura lateral
+    this.aiServeSpot = new THREE.Vector3();
+    this.aiServeStance = new THREE.Vector3();
+    this.demoServeSpot = new THREE.Vector3();
+    this.demoServeStance = new THREE.Vector3();
+    this.aiServeWait = 0;
+    this.demoServeWait = 0;
+    this.aiStrikeT = 0;
+    this.demoStrikeT = 0;
 
     this.buildScene(paddleModel);
     this.setupControllers();
     this.rules.startMatch();
+    this.setupAIServe();
+    this.setupDemoServe();
     this.emitGrips();   // poblar el selector de agarres del menú
 
     window.addEventListener('resize', this.onResize);
@@ -2096,7 +2172,8 @@ class PingPongGame {
     this.rules.startMatch();
     this.resetToss();
     this.ai.reset();
-    this.aiServeTimer = 1.3;
+    this.setupAIServe();
+    this.setupDemoServe();
     this.haptic(this.paddleHand, 0.4);
   }
 
@@ -2198,8 +2275,8 @@ class PingPongGame {
     this.resetToss();
     this.aiToss = null;
     this.demoToss = null;
-    this.aiServeTimer = 1.3;
-    this.demoServeTimer = 1.4;
+    this.setupAIServe();
+    this.setupDemoServe();
     this.callbacks.onXRState?.(true);
     if (this.pendingCalib) {
       this.pendingCalib = false;
@@ -2219,6 +2296,7 @@ class PingPongGame {
   resetToss() {
     this.tossed = false;
     this.tossTimer = 0;
+    this.apexSignaled = false;
     this.gripDown[0] = false;
     this.gripDown[1] = false;
   }
@@ -2274,11 +2352,12 @@ class PingPongGame {
     }
     this.tossed = true;
     this.tossTimer = 0;
+    this.apexSignaled = false;
     this.tossReleaseY = this.ball.pos.y;
     this.tossMaxY = this.ball.pos.y;
     this.ball.vel.copy(v);
     this.ball.spin.set(0, 0, 0);
-    this.rules.message = '¡Golpea la bola al caer!';
+    this.rules.message = '¡Golpea al oír el pitido (punto muerto) o al caer!';
     this.audio.serve();
     this.haptic(i, 0.45);
   }
@@ -2302,6 +2381,10 @@ class PingPongGame {
     this.lastTime = now;
 
     const presenting = this.renderer.xr.isPresenting;
+
+    // vigilancia del audio: si el contexto quedó suspendido a mitad de
+    // partida (proximidad del visor, notificación...), se reactiva solo
+    this.audio.watchdog(dt);
 
     if (presenting && this.recenterFrames > 0) {
       this.updateRecenter();
@@ -2329,12 +2412,17 @@ class PingPongGame {
 
     // 1) Palas de los mandos (solo en VR)
     if (presenting && this.grips) {
+      const servingToss = !this.calib && this.tossed &&
+        this.rules.state === 'serve' && this.rules.server === 'player';
       for (let i = 0; i < 2; i++) {
         const ps = this.controllerPaddles[i];
         const grip = this.grips[i];
         tmpMountQ.copy(grip.quaternion).multiply(mountQuatFor(this.handOf[i])).multiply(this.gripOffsetQ);
         updatePaddleSim(ps, grip.position, tmpMountQ, now, dt);
         ps.active = this.connected[i];
+        // margen de detección extra SOLO mientras la bola del saque vuela:
+        // golpear de forma natural no exige milimetrar la muñeca
+        ps.extraReach = servingToss ? DIMS.serveExtraReach : 0;
       }
     }
 
@@ -2344,17 +2432,21 @@ class PingPongGame {
     const oppPadX = presenting
       ? (playerPad.active ? playerPad.pos.x : 0)
       : this.demoAI.pos.x;
+    const aiServing = !this.calib && this.rules.state === 'serve' && this.rules.server === 'ai';
     const aiHit = this.calib ? null : this.ai.update(dt, this.ball, {
       canHit,
       validBounce: this.rules.validBounce,
       oppPadX,
+      holdTarget: aiServing ? this.aiServeStance : null,
     });
     let demoHit = null;
     if (!presenting) {
+      const demoServing = !this.calib && this.rules.state === 'serve' && this.rules.server === 'player';
       demoHit = this.demoAI.update(dt, this.ball, {
         canHit,
         validBounce: this.rules.validBounce,
         oppPadX: this.ai.pos.x,
+        holdTarget: demoServing ? this.demoServeStance : null,
       });
     }
     if (aiHit) {
@@ -2394,44 +2486,59 @@ class PingPongGame {
           } else {
             // bola lanzada: física real
             this.tossTimer += dt;
-            this.preVy = this.ball.vel.y;
+            const vy = this.ball.vel.y;
+            if (this.preVy > 0 && vy <= 0 && !this.apexSignaled) {
+              // PUNTO MUERTO: señal clara para golpear de forma natural
+              this.apexSignaled = true;
+              this.apexPulse = 1;
+              this.audio.tick();
+              this.haptic(this.paddleHand, 0.22);
+            }
+            this.preVy = vy;
             if (this.tossMaxY < this.ball.pos.y) this.tossMaxY = this.ball.pos.y;
             if (this.tossTimer > 8) {
               this.resetToss();
               this.rules.message = 'Repite el lanzamiento';
             }
           }
-        } else if (!this.demoToss) {
-          holdLock = true;
-          this.ball.vel.set(0, 0, 0);
-          this.ball.spin.set(0, 0, 0);
-          this.ball.pos.copy(this.demoAI.pos);
-          this.ball.pos.y += SERVE_AI_LIFT;
-          this.demoServeTimer -= dt;
-          if (this.demoServeTimer <= 0) {
-            this.demoToss = { timer: 0.5 };
-            this.ball.vel.set(0, 2.3, 0.02);
-            this.audio.serve();
-          }
         } else {
-          this.preVy = this.ball.vel.y;
-          this.demoToss.timer -= dt;
-          if (this.demoToss.timer <= 0) {
-            this.demoToss = null;
-            this.serveFromAI('player');
+          // ESPECTADOR: la demo saca desde su posición reglamentaria
+          if (!this.demoToss) {
+            holdLock = true;
+            this.ball.vel.set(0, 0, 0);
+            this.ball.spin.set(0, 0, 0);
+            this.ball.pos.copy(this.demoServeSpot);
+            this.demoServeWait += dt;
+            const near = this.demoAI.pos.distanceTo(this.demoServeStance) < 0.09;
+            if (near || this.demoServeWait > 3) this.demoServeTimer -= dt;
+            if (this.demoServeTimer <= 0) {
+              this.demoToss = { timer: AI_TOSS_T };
+              this.ball.vel.set(0, DIMS.serveAssistVy, -0.05);
+              this.audio.serve();
+            }
+          } else {
+            this.preVy = this.ball.vel.y;
+            this.demoToss.timer -= dt;
+            if (this.demoToss.timer <= 0) {
+              this.demoToss = null;
+              this.demoStrikeT = 0.22;
+              this.serveFromAI('player');
+            }
           }
         }
       } else if (!this.aiToss) {
-        // la CPU sostiene la bola y luego la lanza
+        // la CPU camina a su posición de saque, sostiene la bola y la lanza:
+        // nada de sacar desde donde la pilló el punto anterior
         holdLock = true;
         this.ball.vel.set(0, 0, 0);
         this.ball.spin.set(0, 0, 0);
-        this.ball.pos.copy(this.ai.pos);
-        this.ball.pos.y += SERVE_AI_LIFT;
-        this.aiServeTimer -= dt;
+        this.ball.pos.copy(this.aiServeSpot);
+        this.aiServeWait += dt;
+        const near = this.ai.pos.distanceTo(this.aiServeStance) < 0.09;
+        if (near || this.aiServeWait > 3) this.aiServeTimer -= dt;
         if (this.aiServeTimer <= 0) {
-          this.aiToss = { timer: 0.5 };
-          this.ball.vel.set(0, 2.3, -0.02);
+          this.aiToss = { timer: AI_TOSS_T };
+          this.ball.vel.set(0, DIMS.serveAssistVy, 0.05);
           this.audio.serve();
         }
       } else {
@@ -2439,6 +2546,7 @@ class PingPongGame {
         this.aiToss.timer -= dt;
         if (this.aiToss.timer <= 0) {
           this.aiToss = null;
+          this.aiStrikeT = 0.22;
           this.serveFromAI('ai');
         }
       }
@@ -2455,14 +2563,14 @@ class PingPongGame {
       stepPhysics(dt, this.ball, pads, this.events);
     }
 
-    // 5) Golpe de saque del jugador: validar regla ITTF
+    // 5) Golpe de saque del jugador: validar regla ITTF (con margen amplio)
     if (presenting && !this.calib && this.tossed && this.rules.state === 'serve' && this.rules.server === 'player') {
       for (const e of this.events) {
         if (e.type !== 'paddle' || e.who !== 'player') continue;
-        if (this.preVy > 0.3) {          // margen ±30 ms alrededor del punto muerto
+        if (this.preVy > 0.6) {          // margen ±60 ms alrededor del punto muerto
           e.consumed = true;
           this.resetToss();
-          this.rules.message = 'Golpea la bola cuando CAE, no cuando sube';
+          this.rules.message = 'Golpea la bola en el punto muerto o al caer';
           break;
         }
         if (this.tossMaxY - this.tossReleaseY < DIMS.tossMinRise) {
@@ -2480,6 +2588,18 @@ class PingPongGame {
         // golpe de saque válido
         e.consumed = true;
         this.tossed = false;
+        // SOLIDEZ: si la trayectoria real no cumpliría el saque (bote propio
+        // + bote rival), se endereza conservando parte del toque del jugador.
+        const fix = findServeVelocity(this.ball.pos, 1);
+        if (!simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1).ok) {
+          this.ball.vel.lerp(fix.v, 0.65);
+          this.ball.spin.lerp(fix.spin, 0.5);
+          if (!simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1).ok) {
+            this.ball.vel.copy(fix.v);
+            this.ball.spin.copy(fix.spin);
+          }
+        }
+        if (this.ball.vel.length() < 3.2) this.ball.vel.setLength(3.2);
         this.rules.beginServeRally('player');
         this.haptic(e.paddleIndex ?? this.paddleHand, 0.6);
         break;
@@ -2496,6 +2616,24 @@ class PingPongGame {
       }
     }
 
+    // 5.5) Golpeos sólidos en el rally: si tras golpear el jugador la bola
+    // marcha hacia atrás o queda sin fuerza, se endereza hacia el campo
+    // rival (nunca bolas muertas ni golpes "esponja").
+    if (presenting && this.rules.state === 'rally') {
+      for (const e of this.events) {
+        if (e.type !== 'paddle' || e.who !== 'player' || e.consumed) continue;
+        const v = this.ball.vel;
+        if (v.z > 0.5 || v.length() < 2.2) {
+          const tz = DIMS.tableCenterZ - DIMS.tableHalfLength * (0.4 + Math.random() * 0.35);
+          const tx = THREE.MathUtils.clamp(v.x * 0.4 + (Math.random() - 0.5) * 0.35, -0.52, 0.52);
+          tmpTarget.set(tx, DIMS.tableTopY + DIMS.ballRadius, tz);
+          const fixed = computeShotVelocity(this.ball.pos, tmpTarget, 0.72, DIMS.maxBallSpeed);
+          v.lerp(fixed, v.z > 0.5 ? 0.6 : 0.4);
+        }
+        break;
+      }
+    }
+
     // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido)
     if (!this.calib) {
       this.processIntents(this.rules.handleEvents(this.events));
@@ -2508,19 +2646,20 @@ class PingPongGame {
     this.ballMesh.position.copy(this.ball.pos);
     this.ballMesh.rotation.x += this.ball.spin.x * dt * 0.05;
     this.ballMesh.rotation.y += this.ball.spin.y * dt * 0.05;
+    this.apexPulse = Math.max(0, this.apexPulse - dt * 2.2);
     const ballHeld = holdLock;
     this.ballMesh.material.emissiveIntensity = ballHeld
       ? 0.75 + Math.sin(now * 6) * 0.25
-      : 0.35;
+      : 0.35 + this.apexPulse * 1.2;
     this.trailUpdate();
     this.updateBlobShadow();
 
-    this.aiPaddleMesh.position.copy(this.ai.pos);
-    this.aiPaddleMesh.lookAt(this.ball.pos);
-    this.aiPaddleMesh.rotateX(0.18);
-    this.demoPaddleMesh.position.copy(this.demoAI.pos);
-    this.demoPaddleMesh.lookAt(this.ball.pos);
-    this.demoPaddleMesh.rotateX(0.18);
+    // poses de las palas IA: postura natural, saque con toss y swing real
+    this.aiStrikeT = Math.max(0, this.aiStrikeT - dt);
+    this.demoStrikeT = Math.max(0, this.demoStrikeT - dt);
+    this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
+    this.demoPaddleMesh.visible = !presenting;
+    if (!presenting) this.updateAIPaddlePose(this.demoPaddleMesh, this.demoAI, 'player', dt);
 
     for (const m of this.markers) {
       if (!m.visible) continue;
@@ -2566,6 +2705,36 @@ class PingPongGame {
     this.rig.rotation.y = Math.atan2(f.x, f.z) - Math.PI;
   }
 
+  /**
+   * Posición de saque reglamentaria de la IA/demo: bola tras la línea de
+   * fondo (0,3 m) a una altura natural y pala a su lado derecho (postura
+   * lateral real). Cada saque varía la posición lateral.
+   */
+  setupAIServe() {
+    const s = this.ai.sign;                    // -1 (fondo -Z)
+    const x = (Math.random() * 2 - 1) * 0.2;
+    this.aiServeSpot.set(x, 1.02, DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.3));
+    this.aiServeStance.set(
+      x + s * 0.17, 1.0,
+      DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.44),
+    );
+    this.aiServeTimer = 0.9 + Math.random() * 0.6;
+    this.aiServeWait = 0;
+    this.aiStrikeT = 0;
+  }
+  setupDemoServe() {
+    const s = this.demoAI.sign;                // +1 (fondo +Z)
+    const x = (Math.random() * 2 - 1) * 0.2;
+    this.demoServeSpot.set(x, 1.02, DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.3));
+    this.demoServeStance.set(
+      x + s * 0.17, 1.0,
+      DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.44),
+    );
+    this.demoServeTimer = 1.0 + Math.random() * 0.6;
+    this.demoServeWait = 0;
+    this.demoStrikeT = 0;
+  }
+
   /** Saque de una IA: trayectoria válida por simulación (bote propio + rival). */
   serveFromAI(side) {
     const ownSign = side === 'ai' ? -1 : 1;
@@ -2574,6 +2743,77 @@ class PingPongGame {
     this.ball.spin.copy(spin);
     this.rules.beginServeRally(side);
     this.audio.serve();
+  }
+
+  /**
+   * Pose de la pala de la IA. Nada de lookAt hacia la bola: con la bola justo
+   * encima (fase de saque) lookAt es degenerado y volteaba la pala mostrando
+   * el canto. Ahora la orientación es por euler con yaw limitado y pitch
+   * acotado, y el saque tiene animación completa: postura lateral con la cara
+   * abierta -> swing acelerado hasta el punto de contacto -> cara cerrada.
+   */
+  updateAIPaddlePose(mesh, ai, who, dt) {
+    const s = ai.sign;                       // -1 = CPU, +1 = demo
+    const faceYaw = s < 0 ? 0 : Math.PI;     // mirar hacia el campo contrario
+    const stance = who === 'ai' ? this.aiServeStance : this.demoServeStance;
+    const spot = who === 'ai' ? this.aiServeSpot : this.demoServeSpot;
+    const toss = who === 'ai' ? this.aiToss : this.demoToss;
+    const strikeT = who === 'ai' ? this.aiStrikeT : this.demoStrikeT;
+    const serving = !this.calib && this.rules.state === 'serve' && this.rules.server === who;
+
+    // postura base: cara hacia el rival, levemente cerrada; sigue la bola solo
+    // en horizontal y con el pitch acotado (sin volteos ni canto visible)
+    poseD.copy(this.ball.pos).sub(ai.pos);
+    let yaw = Math.atan2(poseD.x, poseD.z);
+    let dy = yaw - faceYaw;
+    while (dy > Math.PI) dy -= 2 * Math.PI;
+    while (dy < -Math.PI) dy += 2 * Math.PI;
+    yaw = faceYaw + THREE.MathUtils.clamp(dy, -1.15, 1.15);
+    const hd = Math.hypot(poseD.x, poseD.z);
+    const pitch = THREE.MathUtils.clamp(-Math.atan2(poseD.y, Math.max(0.05, hd)) * 0.5, -0.55, 0.4) + 0.14;
+    poseE.set(pitch, yaw, 0, 'YXZ');
+    poseQ.setFromEuler(poseE);
+
+    if (serving) {
+      if (toss) {
+        // swing: de la postura abierta (arriba-atrás) al contacto con la bola
+        const p = 1 - Math.max(0, toss.timer) / AI_TOSS_T;
+        const e = Math.pow(p, 1.7);            // aceleración natural del brazo
+        const bx = spot.x + s * 0.24;
+        const by = spot.y + 0.15;
+        const bz = spot.z + s * 0.12;
+        const cx = this.ball.pos.x + s * 0.05;
+        const cy = this.ball.pos.y - 0.02;
+        const cz = this.ball.pos.z + s * 0.05;
+        poseE.set(-0.8 + 0.98 * e, faceYaw, 0, 'YXZ');
+        poseQ.setFromEuler(poseE);
+        mesh.position.set(bx + (cx - bx) * e, by + (cy - by) * e, bz + (cz - bz) * e);
+        mesh.quaternion.copy(poseQ);
+        return;
+      }
+      if (strikeT > 0) {
+        // instante del impacto: cara ligeramente cerrada junto a la bola
+        mesh.position.set(
+          this.ball.pos.x + s * 0.05,
+          this.ball.pos.y - 0.03,
+          this.ball.pos.z + s * 0.05,
+        );
+        poseE.set(0.18, faceYaw, 0, 'YXZ');
+        poseQ.setFromEuler(poseE);
+        mesh.quaternion.copy(poseQ);
+        return;
+      }
+      // preparación: pala al lado de la bola, cara abierta hacia arriba
+      mesh.position.copy(stance);
+      poseE.set(-0.5, faceYaw, 0, 'YXZ');
+      poseQ.setFromEuler(poseE);
+      mesh.quaternion.copy(poseQ);
+      return;
+    }
+
+    // rally / espera
+    mesh.position.set(ai.pos.x, ai.pos.y, ai.pos.z);
+    mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
   }
 
   updateBlobShadow() {
@@ -2611,15 +2851,15 @@ class PingPongGame {
           this.resetToss();
           this.aiToss = null;
           this.demoToss = null;
-          if (this.rules.server === 'ai') this.aiServeTimer = 1.2;
-          else this.demoServeTimer = 1.2;
+          if (this.rules.server === 'ai') this.setupAIServe();
+          else this.setupDemoServe();
           break;
         case 'serve':
           this.resetToss();
           this.aiToss = null;
           this.demoToss = null;
-          if (it.server === 'ai') this.aiServeTimer = 1.3 + Math.random() * 0.6;
-          else this.demoServeTimer = 1.4;
+          if (it.server === 'ai') this.setupAIServe();
+          else this.setupDemoServe();
           break;
         case 'game-over':
           break;

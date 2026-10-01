@@ -246,6 +246,57 @@ const COLORS = {
   ball: 0xfff8ef, accentAmber: 0xe8b45a, accentGreen: 0x7fb069,
 };
 
+/* =====================================================================
+ *  TEMAS DE SALA (v2.14): ambientes visuales intercambiables al vuelo.
+ *  Cada tema redefine suelo/paredes/techo/paneles de luz/tira LED/rejilla,
+ *  las tres luces de la escena, el fondo y la niebla. La mesa, las vallas
+ *  LED y la bola NO cambian (legibilidad del juego).
+ *  Ciclo en VR: flick LATERAL del stick (los ejes están libres; el click
+ *  de stick ya es dificultad, B modo, Y entrenamiento, A/X mano de la pala).
+ * ===================================================================== */
+const ROOM_THEMES = [
+  {
+    key: 'pabellon', name: 'Pabellón', emoji: '🏓',
+    floor: 0x37302b, gridC: 0x4a4038, gridG: 0x2c2622,
+    wall: 0x1a1e23, ceil: 0x14171b, panel: 0xf5efe2,
+    strip: 0xe8b45a, ring: 0xe8b45a,
+    bg: 0x0b0e11, fogNear: 9, fogFar: 18,
+    hemiSky: 0xffe6c4, hemiGround: 0x35271b, hemiInt: 0.95,
+    dirCol: 0xfff1dc, dirInt: 2.4, spotCol: 0xffe2b8, spotInt: 0.5,
+    envInt: 0.75,
+  },
+  {
+    key: 'neon', name: 'Neón', emoji: '💜',
+    floor: 0x10121f, gridC: 0x2b3f8f, gridG: 0x181d3a,
+    wall: 0x0a0c16, ceil: 0x05060d, panel: 0xbfe3ff,
+    strip: 0x35f0ff, ring: 0xff3fa4,
+    bg: 0x04050b, fogNear: 10, fogFar: 20,
+    hemiSky: 0x8ab5ff, hemiGround: 0x0a0e1a, hemiInt: 0.7,
+    dirCol: 0xbfd4ff, dirInt: 1.7, spotCol: 0x57c7ff, spotInt: 0.75,
+    envInt: 0.45,
+  },
+  {
+    key: 'atardecer', name: 'Atardecer', emoji: '🌅',
+    floor: 0x4a3527, gridC: 0x7a5136, gridG: 0x402c1e,
+    wall: 0x3a2430, ceil: 0x241a22, panel: 0xffd9a8,
+    strip: 0xff8a5c, ring: 0xffb070,
+    bg: 0x1a0f14, fogNear: 9, fogFar: 18,
+    hemiSky: 0xffc08a, hemiGround: 0x4a2330, hemiInt: 1.0,
+    dirCol: 0xffb070, dirInt: 2.1, spotCol: 0xff9a6a, spotInt: 0.6,
+    envInt: 0.8,
+  },
+  {
+    key: 'artico', name: 'Ártico', emoji: '❄️',
+    floor: 0x2e3a42, gridC: 0x55707f, gridG: 0x2c3a44,
+    wall: 0x1c2830, ceil: 0x111a20, panel: 0xffffff,
+    strip: 0x8fd3e8, ring: 0xbfe3ff,
+    bg: 0x0d1418, fogNear: 9, fogFar: 19,
+    hemiSky: 0xeaf4ff, hemiGround: 0x2a3a44, hemiInt: 1.0,
+    dirCol: 0xffffff, dirInt: 2.3, spotCol: 0xdff0ff, spotInt: 0.55,
+    envInt: 0.85,
+  },
+];
+
 // Montura de la pala sobre el mando (espacio "grip" de WebXR):
 //  · -Z_grip sale por la parte alta del mando siguiendo el mango -> la HOJA
 //    continúa la línea del mango: el AGARRE DEL MANDO COINCIDE con el AGARRE

@@ -445,7 +445,12 @@ function createRoom() {
   grid.position.set(0, 0.002, zC);
   g.add(grid);
 
+  // refs para los TEMAS DE SALA (v2.14): applyTheme recolorea en vivo
+  g.userData.floorMat = floorMat;
+  g.userData.grid = grid;
+
   const wallMat = new THREE.MeshStandardMaterial({ color: COLORS.wall, roughness: 1 });
+  g.userData.wallMat = wallMat;
   const mkWall = (w, h, pos, rotY) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
     m.position.copy(pos);
@@ -465,8 +470,10 @@ function createRoom() {
   ceil.rotation.x = Math.PI / 2;
   ceil.position.set(0, DIMS.roomHeight, zC);
   g.add(ceil);
+  g.userData.ceilMat = ceil.material;
 
   const panelMat = new THREE.MeshBasicMaterial({ color: 0xf5efe2 });
+  g.userData.panelMat = panelMat;
   for (const px of [-1.4, 1.4]) {
     const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.4), panelMat);
     panel.rotation.x = Math.PI / 2;
@@ -475,6 +482,7 @@ function createRoom() {
   }
 
   const stripMat = new THREE.MeshBasicMaterial({ color: COLORS.accentAmber });
+  g.userData.stripMat = stripMat;
   for (const sx of [-cx + 0.02, cx - 0.02]) {
     const strip = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, depth * 0.9), stripMat);
     strip.position.set(sx, 2.1, zC);
@@ -490,6 +498,7 @@ function createRoom() {
   ring.rotation.x = -Math.PI / 2;
   ring.position.set(0, 0.004, 0);
   g.add(ring);
+  g.userData.ringMat = ring.material;
 
   // ---------- VALLAS PUBLICITARIAS (v2.11 · ambiente de torneo) ----------
   // Vallas bajas tipo LED alrededor de la pista (van DENTRO de la sala:
@@ -900,6 +909,7 @@ function createCalibPanel() {
       ['GATILLO', 'lanzar bola de entrenamiento'],
       ['Y', 'volver al modo anterior'],
       ['B (en juego)', 'partido ⇄ supervivencia'],
+      ['STICK ←→ (en juego)', 'tema de la sala'],
     ];
     let y = 224;
     for (const [k, v] of lines) {

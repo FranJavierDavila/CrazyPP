@@ -69,14 +69,14 @@ HTML = """<!DOCTYPE html>
   }
   .diffrow { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
   .diffrow .lbl { font-size: 13px; color: #9aa7b4; margin-right: 4px; }
-  .diff {
+  .diff, .them {
     flex: 1; padding: 9px 0; font-size: 14px; font-weight: 600;
     color: #cfd8e0; background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px;
     cursor: pointer; transition: all 0.15s;
   }
-  .diff:hover { border-color: rgba(232, 180, 90, 0.5); }
-  .diff.active { color: #10131a; background: #e8b45a; border-color: #e8b45a; }
+  .diff:hover, .them:hover { border-color: rgba(232, 180, 90, 0.5); }
+  .diff.active, .them.active { color: #10131a; background: #e8b45a; border-color: #e8b45a; }
   #status { font-size: 13.5px; color: #8d9aa8; min-height: 20px; margin-bottom: 12px; line-height: 1.5; }
   #vrbtn {
     width: 100%; padding: 16px; font-size: 17px; font-weight: 800; letter-spacing: 1.2px;
@@ -218,6 +218,7 @@ HTML = """<!DOCTYPE html>
       <li><b>GOLPE</b> Golpea la bola con la pala (otro mando) desde detrás de la línea de fondo. Zona de impacto muy asistida, aún mayor en el saque: no hace falta milimetrar. El saque debe botar en <b>tu campo</b> y luego en el del rival.</li>
       <li><b>A / X</b> Cambia la pala de mano en cualquier momento</li>
       <li><b>STICK ⬇</b> Pulsa el stick de un mando en VR: cambia la dificultad (Fácil → Media → Difícil) al vuelo, con aviso por megafonía</li>
+      <li><b>SALA</b> Mueve el stick a izquierda/derecha (flick) en VR: cambia el ambiente — <b>Pabellón</b> · <b>Neón</b> · <b>Atardecer</b> · <b>Ártico</b> — y se recuerda para la próxima sesión</li>
       <li><b>B · MODO</b> En VR: cambia al instante entre <b>Partido</b> y <b>Supervivencia</b> con el botón B del mando derecho (el marcador lo anuncia). Y abre el entrenamiento y al volver retomas el modo en el que estabas.</li>
       <li><b>REGLAS</b> Rozar la red en saque y pasar = <b>LET</b> (se repite) · volear antes del bote o dar doble golpe = falta · partido a 11 con ventaja de 2</li>
       <li><b>EFECTO</b> Barre la pala de abajo a arriba al golpear para dar lift; de arriba abajo para cortar</li>
@@ -228,6 +229,13 @@ HTML = """<!DOCTYPE html>
       <button class="diff" data-diff="easy">Fácil</button>
       <button class="diff active" data-diff="medium">Media</button>
       <button class="diff" data-diff="hard">Difícil</button>
+    </div>
+    <div class="diffrow">
+      <span class="lbl">SALA</span>
+      <button class="them active" data-theme="pabellon">🏓 Pabellón</button>
+      <button class="them" data-theme="neon">💜 Neón</button>
+      <button class="them" data-theme="atardecer">🌅 Atardecer</button>
+      <button class="them" data-theme="artico">❄️ Ártico</button>
     </div>
     <div class="grips">
       <div class="grips-head">

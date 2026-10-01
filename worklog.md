@@ -410,3 +410,44 @@ Stage Summary:
   y panel de progreso en el overlay. Sin errores de consola.
 - Pendiente de confirmación en visor: buttons[3] (stick click) en Quest
   Browser y celebraciones de logro dentro del casco.
+
+---
+Task ID: 18
+Agent: Super Z (main agent)
+Task: Temas de sala intercambiables en VR (v2.14)
+
+Work Log:
+- Nuevo ROOM_THEMES en game_part1.js: 4 ambientes completos (Pabellón clásico,
+  Neón arcade, Atardecer, Ártico). Cada tema define suelo/paredes/techo/
+  paneles de luz/tira LED/anillo, colores de la rejilla, las 3 luces
+  (hemi/direccional/focos), fondo+niebla y environmentIntensity. La mesa,
+  bola, marcador y vallas LED no cambian (legibilidad del juego).
+- createRoom (game_part2.js): expone refs en roomGroup.userData (floorMat,
+  wallMat, ceilMat, panelMat, stripMat, ringMat, grid) para recolorear en vivo.
+- Game (game_part3.js): loadTheme/setTheme/cycleTheme/applyTheme + rebuildGrid
+  (la GridHelper hornea colores en vértices: se sustituye y se dispone la vieja).
+  Persistencia localStorage 'ppxr_theme' con validación de clave; en passthrough
+  (inAR) solo toca luces (fondo/niebla quedan null y la sala oculta).
+- CONTROL: flick LATERAL del stick (cualquier mando, fuera del entrenamiento)
+  cicla el tema. Ejes de stick estaban libres (el click ya es dificultad);
+  umbral |x|>0.82 con |x|>|y|*1.4, retorno a centro y 250 ms entre cambios.
+  Megafonía "Sala X", mensaje del marcador "SALA: X" y haptic.
+- Overlay: fila SALA con 4 chips (clase .them, independiente de .diff para no
+  pisar el .active de dificultad), callback onTheme para sincronizar cuando el
+  cambio llega del flick en VR, repintado al arrancar con el tema persistido.
+  Ayuda: nueva línea SALA en ul.keys y línea nueva en el panel de entrenamiento
+  ('STICK ←→ (en juego)', 'tema de la sala').
+- Verificación headless (verify_v214.py + shot_v214.py): GLB ok (regresión),
+  0 errores de página; temas cambian materiales/luces/fondo y la rejilla se
+  reconstruye bien; cycleTheme envuelve en ambas direcciones; persistencia
+  tras reload (artico -> #1c2830/#0d1418); chips sincronizados y clic de chip
+  aplica tema. Capturas de los 4 temas en modo espectador (shot_v214_*.png):
+  transformaciones claramente distintas y coherentes.
+
+Stage Summary:
+- v2.14 (index.html 2.07 MB): 4 salas intercambiables al vuelo con flick del
+  stick, persistentes entre sesiones y elegibles también desde el overlay 2D.
+  Sin tocar controles existentes (click stick=dificultad, B=modo, Y=entreno,
+  A/X=mano, gatillo/grip=saque). Sin errores de consola.
+- Pendiente de confirmación en visor: gesto de flick no dispara la dificultad
+  por accidente y los 4 temas lucen en el Quest 3 (especialmente Neón en OLED).

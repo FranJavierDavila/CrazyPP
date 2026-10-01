@@ -91,6 +91,9 @@ class PingPongGame {
     this.feedIdle = 0;
     this.panelDirty = true;
     this.btnPrev = {};
+    // flick LATERAL del stick = tema de sala (v2.14): estado por mando
+    this.stickNeut = [true, true];
+    this.lastThemeSwitch = 0;
     this.lastFeedTap = 0;
     // fanfarria de fin de partido (banner + confeti)
     this.fanfareWin = false;
@@ -147,6 +150,9 @@ class PingPongGame {
 
     this.buildScene(paddleModel);
     this.setupControllers();
+    // tema de sala persistente (v2.14): aplica antes del primer render
+    this.theme = this.loadTheme();
+    this.applyTheme(this.theme);
     this.rules.startMatch();
     this.setupAIServe();
     this.setupDemoServe();
@@ -163,10 +169,13 @@ class PingPongGame {
 
   buildScene(paddleModel) {
     // Luz cálida de pabellón (v2.11): hemisférica ámbar + direccional suave
+    // (refs guardadas: los TEMAS DE SALA v2.14 las recolorean en vivo)
     const hemi = new THREE.HemisphereLight(0xffe6c4, 0x35271b, 0.95);
     this.rig.add(hemi);
+    this.hemi = hemi;
 
     const dir = new THREE.DirectionalLight(0xfff1dc, 2.4);
+    this.dirLight = dir;
     dir.position.set(2.2, 3.6, 0.6);
     dir.castShadow = true;
     dir.shadow.mapSize.set(2048, 2048);
@@ -182,10 +191,12 @@ class PingPongGame {
     this.rig.add(dir.target);
 
     // focos cálidos sobre la mesa (ambiente de torneo)
+    this.spots = [];
     for (const px of [-1.15, 1.15]) {
       const spot = new THREE.PointLight(0xffe2b8, 0.5, 6.5, 1.6);
       spot.position.set(px, 2.65, DIMS.tableCenterZ + 0.7);
       this.rig.add(spot);
+      this.spots.push(spot);
     }
 
     // La sala guarda referencia: en passthrough (immersive-ar) se oculta
@@ -543,6 +554,95 @@ class PingPongGame {
     this.applyAISkill();
   }
 
+  // ---------- Temas de sala (v2.14) ----------
+
+  loadTheme() {
+    try {
+      const k = localStorage.getItem('ppxr_theme');
+      if (k && ROOM_THEMES.some((t) => t.key === k)) return k;
+    } catch { /* almacenamiento no disponible */ }
+    return 'pabellon';
+  }
+
+  /** Cambia el tema visual de la sala. silent=true (overlay 2D) aplica sin
+   *  megafonía; el flick en VR anuncia y vibra. Persiste en localStorage. */
+  setTheme(key, silent = false) {
+    const t = ROOM_THEMES.find((x) => x.key === key);
+    if (!t || key === this.theme) return;
+    this.theme = key;
+    try { localStorage.setItem('ppxr_theme', key); } catch { /* */ }
+    this.applyTheme(key);
+    this.callbacks.onTheme?.(key);
+    if (!silent) {
+      this.rules.message = `SALA: ${t.name.toUpperCase()}`;
+      this.audio.announce(`Sala ${t.name}`, true);
+      if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.5, 90);
+    }
+  }
+
+  cycleTheme(dir) {
+    const i = ROOM_THEMES.findIndex((t) => t.key === this.theme);
+    const next = ROOM_THEMES[(i + dir + ROOM_THEMES.length) % ROOM_THEMES.length];
+    this.setTheme(next.key);
+  }
+
+  /** Recolorea sala + luces + fondo/niebla con el tema dado. En passthrough
+   *  (inAR) la sala está oculta y el fondo es null: solo toca las luces. */
+  applyTheme(key) {
+    const t = ROOM_THEMES.find((x) => x.key === key) || ROOM_THEMES[0];
+    const ud = this.roomGroup?.userData;
+    if (ud) {
+      ud.floorMat?.color.set(t.floor);
+      ud.wallMat?.color.set(t.wall);
+      ud.ceilMat?.color.set(t.ceil);
+      ud.panelMat?.color.set(t.panel);
+      ud.stripMat?.color.set(t.strip);
+      ud.ringMat?.color.set(t.ring);
+      if (ud.grid) this.rebuildGrid(t);
+    }
+    if (this.hemi) {
+      this.hemi.color.set(t.hemiSky);
+      this.hemi.groundColor.set(t.hemiGround);
+      this.hemi.intensity = t.hemiInt;
+    }
+    if (this.dirLight) {
+      this.dirLight.color.set(t.dirCol);
+      this.dirLight.intensity = t.dirInt;
+    }
+    for (const s of this.spots || []) {
+      s.color.set(t.spotCol);
+      s.intensity = t.spotInt;
+    }
+    this.scene.environmentIntensity = t.envInt;
+    if (!this.inAR) {
+      if (this.scene.background?.isColor) this.scene.background.set(t.bg);
+      if (this.scene.fog) {
+        this.scene.fog.color.set(t.bg);
+        this.scene.fog.near = t.fogNear;
+        this.scene.fog.far = t.fogFar;
+      }
+    }
+  }
+
+  /** La rejilla del suelo hornea sus colores en los vértices: se reemplaza. */
+  rebuildGrid(t) {
+    const ud = this.roomGroup.userData;
+    const old = ud.grid;
+    if (old) {
+      this.roomGroup.remove(old);
+      old.geometry?.dispose?.();
+      old.material?.dispose?.();
+    }
+    const zC = (DIMS.roomBackZ + DIMS.roomFrontZ) / 2;
+    const depth = DIMS.roomBackZ - DIMS.roomFrontZ;
+    const grid = new THREE.GridHelper(
+      Math.max(DIMS.roomHalfX * 2, depth), 20, t.gridC, t.gridG,
+    );
+    grid.position.set(0, 0.002, zC);
+    this.roomGroup.add(grid);
+    ud.grid = grid;
+  }
+
   emitStats() {
     this.callbacks.onStats?.(this.stats.data);
   }
@@ -881,6 +981,25 @@ class PingPongGame {
       this.rules.message = `DIFICULTAD: ${label.toUpperCase()}`;
       this.audio.announce(`Dificultad ${label}`, true);
       this.haptic(this.paddleHand, 0.45, 80);
+    }
+
+    // 0.8) flick LATERAL del stick (cualquier mando): tema de la sala.
+    //      Gestos distintos al CLICK (dificultad) y sin conflicto con el
+    //      entrenamiento, donde los sticks ajustan el agarre. Exige volver
+    //      al centro antes del siguiente flick y 250 ms entre cambios.
+    if (presenting && !this.calib) {
+      for (let i = 0; i < 2; i++) {
+        const ax = this.stickAxis(i);
+        const mag = Math.abs(ax.x);
+        if (this.stickNeut[i] && mag > 0.82 && mag > Math.abs(ax.y) * 1.4 &&
+            now - this.lastThemeSwitch > 0.25) {
+          this.stickNeut[i] = false;
+          this.lastThemeSwitch = now;
+          this.cycleTheme(ax.x > 0 ? 1 : -1);
+        } else if (mag < 0.3) {
+          this.stickNeut[i] = true;
+        }
+      }
     }
 
     // 1) Palas de los mandos (solo en VR)
@@ -1606,6 +1725,13 @@ statsResetBtn.addEventListener('click', () => {
   renderStats(g.stats.data);
 });
 
+// Chips de TEMAS DE SALA del overlay (se sincronizan también con el flick
+// del stick en VR vía callback onTheme)
+const themBtns = [...document.querySelectorAll('[data-theme]')];
+const renderTheme = (key) => {
+  themBtns.forEach((b) => b.classList.toggle('active', b.dataset.theme === key));
+};
+
 // Cargar el modelo de la pala antes de arrancar la escena
 loadPaddleModel().then((paddleModel) => {
   const game = new PingPongGame(document.getElementById('c'), paddleModel, {
@@ -1621,6 +1747,9 @@ loadPaddleModel().then((paddleModel) => {
     onStats(stats) {
       renderStats(stats);
     },
+    onTheme(key) {
+      renderTheme(key);
+    },
     onXRState(inVR) {
       if (inVR) {
         overlay.classList.add('hidden');
@@ -1633,6 +1762,7 @@ loadPaddleModel().then((paddleModel) => {
   });
   window.__game = game;
   renderStats(game.stats.data);   // pintar el progreso persistente al arrancar
+  renderTheme(game.theme);        // pintar el tema de sala persistente
   // gancho de depuración para pruebas headless (física de saque y constantes)
   window.__ppDebug = { findServeVelocity, simulateServePath, DIMS };
 
@@ -1747,6 +1877,11 @@ loadPaddleModel().then((paddleModel) => {
       btn.classList.add('active');
       game.setDifficulty(btn.dataset.diff);
     });
+  });
+
+  // Temas de sala: aplicar en vivo (silent: el cambio ya se VE al instante)
+  themBtns.forEach((btn) => {
+    btn.addEventListener('click', () => game.setTheme(btn.dataset.theme, true));
   });
 });
 

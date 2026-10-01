@@ -1381,3 +1381,104 @@ function findServeVelocity(from, ownSign) {
   const v = computeShotVelocity(from, new THREE.Vector3(0, topR, tz), 1.05, 5.5);
   return { v, spin };
 }
+
+/* =====================================================================
+ *  ESTADÍSTICAS Y LOGROS · progreso persistente en localStorage
+ *  Se guardan victorias, rachas, saques directos y el mejor rallye; los
+ *  logros se desbloquean una sola vez (guardan su fecha) y se celebran
+ *  con megafonía + confeti dentro y fuera del visor.
+ * ===================================================================== */
+const ACHIEVEMENTS = [
+  { key: 'primera',  emoji: '🥇', name: 'Primera victoria', desc: 'Gana tu primer partido' },
+  { key: 'racha3',   emoji: '🔥', name: 'En racha',         desc: '3 victorias seguidas' },
+  { key: 'gigante',  emoji: '💪', name: 'Gigante',          desc: 'Vence en dificultad Difícil' },
+  { key: 'maraton',  emoji: '🏃', name: 'Maratonista',      desc: 'Rallye de 20 o más golpes' },
+  { key: 'superviv', emoji: '⏱️', name: 'Superviviente',    desc: '25 o más golpes en Supervivencia' },
+  { key: 'aces10',   emoji: '🎯', name: 'Saque directo',    desc: '10 saques ganados sin respuesta' },
+];
+
+class GameStats {
+  constructor() {
+    this.KEY = 'ppxr_stats_v1';
+    this.data = {
+      won: 0, lost: 0, streak: 0, bestStreak: 0,
+      pointsWon: 0, pointsLost: 0, aces: 0, bestRally: 0,
+      winsByDiff: { easy: 0, medium: 0, hard: 0 },
+      ach: {},
+    };
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        Object.assign(this.data, saved);
+        this.data.winsByDiff = Object.assign({ easy: 0, medium: 0, hard: 0 }, saved.winsByDiff || {});
+        this.data.ach = saved.ach || {};
+      }
+    } catch { /* datos corruptos: se recrean limpios */ }
+  }
+
+  save() {
+    try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch { /* */ }
+  }
+
+  unlock(key) {
+    if (this.data.ach[key]) return false;
+    this.data.ach[key] = Date.now();
+    this.save();
+    return true;
+  }
+
+  /** Punto de PARTIDO (a 11). Devuelve las claves de logros nuevos. */
+  recordPoint(winner, rallyHits) {
+    const out = [];
+    if (winner === 'player') {
+      this.data.pointsWon++;
+      // SAQUE DIRECTO (ace): solo tocó la bola el sacador
+      if (rallyHits === 1) {
+        this.data.aces++;
+        if (this.data.aces >= 10 && this.unlock('aces10')) out.push('aces10');
+      }
+    } else {
+      this.data.pointsLost++;
+    }
+    out.push(...this.recordRally(rallyHits));
+    this.save();
+    return out;
+  }
+
+  /** Rallye terminado en cualquier modo. Devuelve logros nuevos. */
+  recordRally(rallyHits) {
+    const out = [];
+    const n = rallyHits || 0;
+    if (n > this.data.bestRally) this.data.bestRally = n;
+    if (n >= 20 && this.unlock('maraton')) out.push('maraton');
+    return out;
+  }
+
+  /** Rallye de SUPERVIVENCIA: récord histórico + logro dedicado. */
+  recordSurvivalRally(golpes, bestEver) {
+    const out = this.recordRally(golpes);
+    if (bestEver >= 25 && this.unlock('superviv')) out.push('superviv');
+    this.save();
+    return out;
+  }
+
+  /** Fin de PARTIDO. Devuelve logros nuevos. */
+  recordMatch(win, difficulty) {
+    const out = [];
+    if (win) {
+      this.data.won++;
+      this.data.streak++;
+      if (this.data.streak > this.data.bestStreak) this.data.bestStreak = this.data.streak;
+      this.data.winsByDiff[difficulty] = (this.data.winsByDiff[difficulty] || 0) + 1;
+      if (this.unlock('primera')) out.push('primera');
+      if (this.data.streak >= 3 && this.unlock('racha3')) out.push('racha3');
+      if (difficulty === 'hard' && this.unlock('gigante')) out.push('gigante');
+    } else {
+      this.data.lost++;
+      this.data.streak = 0;
+    }
+    this.save();
+    return out;
+  }
+}

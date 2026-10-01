@@ -158,6 +158,29 @@ HTML = """<!DOCTYPE html>
   }
   #ambbtn:hover { border-color: rgba(232, 180, 90, 0.5); }
 
+  /* ---------- Estadísticas y logros ---------- */
+  .stats {
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px;
+    padding: 12px 14px; margin-bottom: 16px;
+  }
+  .stats-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .stats-head .lbl { font-size: 12px; color: #9aa7b4; letter-spacing: 1px; }
+  .stats-head .mini { flex: 0 0 auto; padding: 4px 12px; }
+  .stats-line { font-size: 13.5px; color: #cfd8e0; line-height: 1.55; margin-bottom: 9px; }
+  .achrow { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ach {
+    font-size: 11.5px; padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.10); color: #5c6672;
+    background: rgba(255, 255, 255, 0.03); cursor: default;
+  }
+  .ach.on {
+    color: #e8b45a; border-color: rgba(232, 180, 90, 0.5);
+    background: rgba(232, 180, 90, 0.08);
+  }
+
   /* ---------- HUD (modo espectador) ---------- */
   #hud {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
@@ -194,6 +217,7 @@ HTML = """<!DOCTYPE html>
       <li><b>SAQUE</b> La bola descansa en tu <b>mano libre</b>. Aprieta <b>GRIP</b> y suéltalo hacia arriba: oirás un <b>pitido</b> en el punto muerto — golpea entonces (o al caer). (Gatillo = saque asistido)</li>
       <li><b>GOLPE</b> Golpea la bola con la pala (otro mando) desde detrás de la línea de fondo. Zona de impacto muy asistida, aún mayor en el saque: no hace falta milimetrar. El saque debe botar en <b>tu campo</b> y luego en el del rival.</li>
       <li><b>A / X</b> Cambia la pala de mano en cualquier momento</li>
+      <li><b>STICK ⬇</b> Pulsa el stick de un mando en VR: cambia la dificultad (Fácil → Media → Difícil) al vuelo, con aviso por megafonía</li>
       <li><b>B · MODO</b> En VR: cambia al instante entre <b>Partido</b> y <b>Supervivencia</b> con el botón B del mando derecho (el marcador lo anuncia). Y abre el entrenamiento y al volver retomas el modo en el que estabas.</li>
       <li><b>REGLAS</b> Rozar la red en saque y pasar = <b>LET</b> (se repite) · volear antes del bote o dar doble golpe = falta · partido a 11 con ventaja de 2</li>
       <li><b>EFECTO</b> Barre la pala de abajo a arriba al golpear para dar lift; de arriba abajo para cortar</li>
@@ -217,6 +241,14 @@ HTML = """<!DOCTYPE html>
         <button class="mini" id="gripDel">Borrar</button>
         <button class="mini" id="gripReset">Natural</button>
       </div>
+    </div>
+    <div class="stats">
+      <div class="stats-head">
+        <span class="lbl">TU PROGRESO</span>
+        <button class="mini" id="statsReset">Borrar</button>
+      </div>
+      <div class="stats-line" id="statsLine">—</div>
+      <div class="achrow" id="achRow"></div>
     </div>
     <div id="status">Comprobando compatibilidad con WebXR…</div>
     <button id="survbtn" disabled>🏆 SUPERVIVENCIA EN VR · ¿cuántos golpes aguantas?</button>

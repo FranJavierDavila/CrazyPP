@@ -117,6 +117,8 @@ class PingPongGame {
     try {
       this.survivalBest = Math.max(0, parseInt(localStorage.getItem('ppxr_surv_best') || '0', 10) || 0);
     } catch { this.survivalBest = 0; }
+    this.stats = new GameStats();  // victorias, rachas y logros persistentes
+    this.confettiBurst = 0;        // ráfaga de confeti al desbloquear logros
     this.events = [];
     this.lastTime = -1;
     this.orbitAngle = 0.7;
@@ -541,6 +543,26 @@ class PingPongGame {
     this.applyAISkill();
   }
 
+  emitStats() {
+    this.callbacks.onStats?.(this.stats.data);
+  }
+
+  /** Celebración de logro(s) desbloqueado(s): megafonía, confeti y vibración. */
+  celebrate(keys) {
+    if (!keys || !keys.length) return;
+    for (const k of keys) {
+      const d = ACHIEVEMENTS.find((a) => a.key === k);
+      if (!d) continue;
+      this.rules.message = `LOGRO · ${d.name}`;
+      this.audio.announce(`¡Logro desbloqueado: ${d.name}!`, true);
+    }
+    this.confettiBurst = 2.4;
+    if (this.renderer.xr.isPresenting) {
+      this.haptic(this.paddleHand, 0.7, 100);
+      window.setTimeout(() => this.haptic(this.paddleHand, 0.5, 120), 180);
+    }
+  }
+
   /** Nivel EFECTIVO de la CPU = preset base de la dificultad × habilidad:
    *  (1) IA ADAPTATIVA: si vas ganando, aprieta; si vas perdiendo, afloja
    *      (rallyes igualados); (2) SUPERVIVENCIA: acelera un 8% por rallye
@@ -848,6 +870,19 @@ class PingPongGame {
       this.switchMode(this.mode === 'survival' ? 'match' : 'survival');
     }
 
+    // 0.7) stick (PULSAR) en cualquier mando: ciclo de dificultad al vuelo
+    //      Fácil → Media → Difícil; la megafonía confirma el cambio
+    if (presenting && !this.calib &&
+        (this.readButton(0, 3) || this.readButton(1, 3))) {
+      const order = ['easy', 'medium', 'hard'];
+      const next = order[(order.indexOf(this.difficulty) + 1) % 3];
+      this.setDifficulty(next);
+      const label = { easy: 'Fácil', medium: 'Media', hard: 'Difícil' }[next];
+      this.rules.message = `DIFICULTAD: ${label.toUpperCase()}`;
+      this.audio.announce(`Dificultad ${label}`, true);
+      this.haptic(this.paddleHand, 0.45, 80);
+    }
+
     // 1) Palas de los mandos (solo en VR)
     if (presenting && this.grips) {
       const servingToss = !this.calib && this.tossed &&
@@ -1133,7 +1168,11 @@ class PingPongGame {
         this.fanfareBanner.group.rotation.y = Math.sin(this.fanfareT * 1.3) * 0.06;
       }
     }
-    this.confetti.update(dt, this.fanfareBanner.group.visible && this.fanfareWin);
+    if (this.confettiBurst > 0) this.confettiBurst = Math.max(0, this.confettiBurst - dt);
+    this.confetti.update(
+      dt,
+      (this.fanfareBanner.group.visible && this.fanfareWin) || this.confettiBurst > 0,
+    );
 
     if (this.calib && this.panelDirty) {
       this.calibPanel.update({ name: this.gripName, off: this.gripOffset });
@@ -1383,6 +1422,8 @@ class PingPongGame {
             }
             this.survivalRallies = this.rules.rallyesSurvived;
             this.applyAISkill();   // la CPU acelera rallye a rallye
+            this.celebrate(this.stats.recordSurvivalRally(golpes, this.survivalBest));
+            this.emitStats();
             if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.25, 70);
           } else {
             // PARTIDO: punto + adaptativa + ambiente de torneo
@@ -1396,6 +1437,8 @@ class PingPongGame {
               this.haptic(this.paddleHand, it.winner === 'player' ? 0.85 : 0.4, it.winner === 'player' ? 110 : 60);
             }
             this.applyAISkill();   // IA adaptativa según el marcador
+            this.celebrate(this.stats.recordPoint(it.winner, it.rallyHits || 0));
+            this.emitStats();
           }
           break;
         }
@@ -1429,6 +1472,8 @@ class PingPongGame {
               : `Partido para la máquina. ${this.rules.scoreAi} a ${this.rules.scorePlayer}`,
             true,
           );
+          this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));
+          this.emitStats();
           break;
       }
     }
@@ -1528,6 +1573,39 @@ function refreshGrips(list, active) {
   if (active && list.includes(active)) gripSel.value = active;
 }
 
+// UI de estadísticas y logros (progreso persistente)
+const statsLine = document.getElementById('statsLine');
+const achRow = document.getElementById('achRow');
+function renderStats(s) {
+  if (!s || !statsLine || !achRow) return;
+  statsLine.textContent =
+    `${s.won} victorias · ${s.lost} derrotas · racha ${s.streak} (máx. ${s.bestStreak})` +
+    ` · mejor rallye ${s.bestRally} · saques directos ${s.aces}`;
+  achRow.innerHTML = '';
+  for (const a of ACHIEVEMENTS) {
+    const chip = document.createElement('span');
+    chip.className = 'ach' + (s.ach && s.ach[a.key] ? ' on' : '');
+    chip.title = a.desc;
+    chip.textContent = `${a.emoji} ${a.name}`;
+    achRow.appendChild(chip);
+  }
+}
+const statsResetBtn = document.getElementById('statsReset');
+statsResetBtn.addEventListener('click', () => {
+  const g = window.__game;
+  if (!g) return;
+  g.stats.data = {
+    won: 0, lost: 0, streak: 0, bestStreak: 0,
+    pointsWon: 0, pointsLost: 0, aces: 0, bestRally: 0,
+    winsByDiff: { easy: 0, medium: 0, hard: 0 },
+    ach: {},
+  };
+  g.stats.save();
+  g.survivalBest = 0;
+  try { localStorage.removeItem('ppxr_surv_best'); } catch { /* */ }
+  renderStats(g.stats.data);
+});
+
 // Cargar el modelo de la pala antes de arrancar la escena
 loadPaddleModel().then((paddleModel) => {
   const game = new PingPongGame(document.getElementById('c'), paddleModel, {
@@ -1540,6 +1618,9 @@ loadPaddleModel().then((paddleModel) => {
     onGrips(list, active) {
       refreshGrips(list, active);
     },
+    onStats(stats) {
+      renderStats(stats);
+    },
     onXRState(inVR) {
       if (inVR) {
         overlay.classList.add('hidden');
@@ -1551,6 +1632,7 @@ loadPaddleModel().then((paddleModel) => {
     },
   });
   window.__game = game;
+  renderStats(game.stats.data);   // pintar el progreso persistente al arrancar
   // gancho de depuración para pruebas headless (física de saque y constantes)
   window.__ppDebug = { findServeVelocity, simulateServePath, DIMS };
 

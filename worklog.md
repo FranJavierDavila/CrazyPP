@@ -370,3 +370,43 @@ Stage Summary:
   y cambio de modo en VR: B = Partido ⇄ Supervivencia, Y = entrenamiento que ahora SÍ devuelve
   al modo previo. glb_shrink.py corregido; glb_repair.py nuevo (reutilizable para validar GLB).
 - Pendiente de confirmación del usuario en el visor: pala GLB visible y B/Y en el juego real.
+
+---
+Task ID: 17
+Agent: Super Z (main agent)
+Task: Dificultad en VR + estadísticas y logros persistentes (v2.13)
+
+Work Log:
+- DIFICULTAD EN VR: pulsar el STICK de cualquier mando (buttons[3], fuera del
+  entrenamiento) cicla Fácil → Media → Difícil al vuelo; setDifficulty ya
+  recalibra la IA (applyAISkill), la megafonía anuncia, hay haptic y el
+  marcador muestra "DIFICULTAD: X" hasta el siguiente estado. Sin conflicto
+  con B (modo), Y (entrenamiento) ni A/X (cambio de pala).
+- ESTADÍSTICAS (game_part1.js): nueva clase GameStats + ACHIEVEMENTS (6 logros:
+  Primera victoria, En racha (3 seguidas), Gigante (victoria en Difícil),
+  Maratonista (rallye 20+), Superviviente (25+ en Supervivencia), Saque
+  directo (10 aces)). Persistencia en localStorage 'ppxr_stats_v1' con
+  carga tolerante a datos corruptos.
+- Integración en processIntents (game_part3.js): 'point' de partido registra
+  punto (con detección de ace: rallyHits===1) y rallye; 'point' de
+  supervivencia registra rallye + récord; 'game-over' registra V/D, racha y
+  victoria por dificultad. El intent 'point' de partido ahora incluye
+  rallyHits (game_part2.js).
+- celebrate(): al desbloquear, megafonía + mensaje "LOGRO · X" en el marcador
+  + ráfaga de confeti (confettiBurst 2.4 s integrado en confetti.update) +
+  doble vibración en VR.
+- Overlay (build_html.py): caja "TU PROGRESO" con línea de estadísticas y 6
+  chips de logro (dorados al desbloquearse, tooltip con la descripción) +
+  botón Borrar (limpia stats y ppxr_surv_best). Nueva línea de ayuda del
+  STICK. Callback onStats → renderStats, con repintado al arrancar.
+- Verificación headless (verify_v213.py): GLB ok (regresión), desbloqueo de
+  5 logros secuenciado correcto, aces, persistencia localStorage, 6 chips
+  (5 activos tras el test), presets easy/hard cambian la config de la IA,
+  reset limpia todo. Captura preview_v213_stats.png.
+
+Stage Summary:
+- v2.13 (index.html 2.06 MB): dificultad cambiable en VR con el stick,
+  progresión persistente con 6 logros celebrados por megafonía+confeti,
+  y panel de progreso en el overlay. Sin errores de consola.
+- Pendiente de confirmación en visor: buttons[3] (stick click) en Quest
+  Browser y celebraciones de logro dentro del casco.

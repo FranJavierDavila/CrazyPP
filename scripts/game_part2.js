@@ -100,7 +100,7 @@ class Rules {
     this.stateTimer = 2.2;
     const rallyTxt = this.rallyHits >= 6 ? ` · ${this.rallyHits} golpes` : '';
     this.message = winner === 'player' ? `¡Punto para ti! · ${cause}${rallyTxt}` : `Punto para la CPU · ${cause}${rallyTxt}`;
-    return [{ type: 'point', winner, cause }];
+    return [{ type: 'point', winner, cause, rallyHits: this.rallyHits }];
   }
 
   retryServe(cause) {

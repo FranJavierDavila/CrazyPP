@@ -463,6 +463,7 @@ class PingPongGame {
     this.audio.kick();
     for (const t of [400, 1200, 2500]) window.setTimeout(() => this.audio.kick(), t);
     window.setTimeout(() => this.audio.serve(), 350);  // blip de confirmación
+    this.hapticProbe();
     this.rules.startMatch();
     this.ai.reset();
     this.demoAI.reset();
@@ -556,14 +557,67 @@ class PingPongGame {
     this.haptic(i, 0.45);
   }
 
-  haptic(index, strength) {
-    const gp = this.sources[index]?.gamepad;
-    const act = gp?.hapticActuators?.[0];
+  // Vibración háptica robusta (Quest Browser): el XRInputSource guardado en
+  // 'connected' puede quedar obsoleto (el gamepad se re-crea al cambiar de
+  // modo, con hand tracking, etc.), así que se resuelve el mando EN VIVO
+  // desde la sesión XR y se prueban las distintas APIs de actuador.
+  haptic(index, strength, ms = 45) {
+    const s = Math.min(1, Math.max(0.2, strength));
+    const hand = this.handOf?.[index] || (index === 0 ? 'right' : 'left');
+    const gps = [];
+    // 1) fuente en vivo de la sesión (fuente de verdad)
     try {
-      act?.pulse?.(Math.min(1, Math.max(0.2, strength)), 45);
-    } catch {
-      /* algunos navegadores no lo soportan */
+      const live = this.renderer.xr.getSession?.()?.inputSources;
+      if (live) {
+        for (const src of live) {
+          if (!src.gamepad) continue;
+          if (src.handedness === hand) gps.unshift(src.gamepad);
+          else if (src.handedness === 'none') gps.push(src.gamepad);
+        }
+      }
+    } catch { /* sesión cerrada entre frames */ }
+    // 2) referencia cacheada del evento 'connected'
+    if (this.sources[index]?.gamepad) gps.push(this.sources[index].gamepad);
+    for (const gp of gps) {
+      const acts = [];
+      if (Array.isArray(gp.hapticActuators) && gp.hapticActuators[0]) acts.push(gp.hapticActuators[0]);
+      else if (gp.hapticActuator) acts.push(gp.hapticActuator);
+      if (gp.vibrationActuator) acts.push(gp.vibrationActuator);
+      for (const act of acts) {
+        try {
+          if (typeof act.pulse === 'function' && act.pulse(s, ms) !== false) return true;
+        } catch { /* probar siguiente API */ }
+        try {
+          if (typeof act.playEffect === 'function') {
+            act.playEffect('dual-rumble', { startDelay: 0, duration: ms, weakMagnitude: s, strongMagnitude: s });
+            return true;
+          }
+        } catch { /* probar siguiente actuador */ }
+      }
     }
+    return false;
+  }
+
+  // Diagnóstico único al entrar en VR: confirma con un pulso cada mando con
+  // actuador (se SIENTE la vibración de prueba) y lo registra en consola.
+  hapticProbe() {
+    window.setTimeout(() => {
+      let n = 0;
+      try {
+        const live = this.renderer.xr.getSession?.()?.inputSources;
+        if (live) {
+          for (const src of live) {
+            if (!src.gamepad) continue;
+            const act = (Array.isArray(src.gamepad.hapticActuators) && src.gamepad.hapticActuators[0])
+              || src.gamepad.hapticActuator || src.gamepad.vibrationActuator || null;
+            const usable = !!(act && (typeof act.pulse === 'function' || typeof act.playEffect === 'function'));
+            console.log(`[Haptics] ${src.handedness}: actuador=${act ? 'sí' : 'no'} usable=${usable}`);
+            if (usable) { n++; this.haptic(src.handedness === 'left' ? 1 : 0, 0.5, 120); }
+          }
+        }
+      } catch { /* sin sesión */ }
+      console.log(`[Haptics] ${n} mando(s) con vibración disponible`);
+    }, 700);
   }
 
   // ---------- Bucle principal ----------
@@ -795,7 +849,7 @@ class PingPongGame {
         }
         if (this.ball.vel.length() < 3.2) this.ball.vel.setLength(3.2);
         this.rules.beginServeRally('player');
-        this.haptic(e.paddleIndex ?? this.paddleHand, 0.6);
+        this.haptic(e.paddleIndex ?? this.paddleHand, 0.8, 90);
         break;
       }
       // lanzamiento fallido: la bola tocó algo sin ser golpeada
@@ -1038,7 +1092,7 @@ class PingPongGame {
         case 'point':
           this.audio.point(it.winner === 'player');
           if (this.renderer.xr.isPresenting) {
-            this.haptic(this.paddleHand, it.winner === 'player' ? 0.8 : 0.35);
+            this.haptic(this.paddleHand, it.winner === 'player' ? 0.85 : 0.4, it.winner === 'player' ? 110 : 60);
           }
           break;
         case 'retry-serve':
@@ -1081,8 +1135,10 @@ class PingPongGame {
           break;
         case 'paddle':
           this.audio.paddle(pan, Math.min(1, e.speed / 9));
+          // vibración clara del mando al golpear la bola (el canto, los
+          // bloqueos y los golpeos suaves también se sienten)
           if (e.paddleIndex !== undefined && e.paddleIndex >= 0) {
-            this.haptic(e.paddleIndex, Math.min(1, e.speed / 8));
+            this.haptic(e.paddleIndex, Math.min(1, 0.5 + e.speed / 9), 70);
           }
           break;
       }

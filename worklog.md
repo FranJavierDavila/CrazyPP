@@ -169,3 +169,20 @@ Stage Summary:
 - Golpeos con cuerpo: la velocidad de la mano se transfiere a la bola, salida mínima mayor y los golpes muertos se enderezan; el saque es casi imposible de fallar tras el lanzamiento (pitido + vibración + trayectoria garantizada por simulación)
 - El audio ya no desaparece en VR: watchdog que reanuda y reconstruye el contexto + compresor y más volumen
 - Descarga y preview actualizados y verificados sin errores
+
+---
+Task ID: 10
+Agent: Super Z (main agent)
+Task: Vibración háptica del mando al golpear la pelota (petición del usuario)
+
+Work Log:
+- Diagnóstico: ya existían llamadas haptic() en golpeos/toss/mesa/puntos, pero usaban el XRInputSource cacheado del evento 'connected'; en Quest Browser ese gamepad se re-crea (hand tracking, cambios de modo) y hapticActuators queda obsoleto/inexistente -> no se sentía nada
+- haptic(index, strength, ms) reescrito: resuelve el mando EN VIVO desde renderer.xr.getSession().inputSources por handedness (fallback a la caché) y prueba en cadena pulse(intensity,ms) -> playEffect('dual-rumble') -> vibrationActuator.playEffect; saturación 0.2-1 y return boolean
+- hapticProbe() en sessionstart (+700 ms): pulso de prueba de 120 ms en cada mando con actuador (se SIENTE al entrar en VR) + log [Haptics] por mando con disponibilidad
+- Intensidades: golpeo de pala = 0.5 + velocidad/9 (mínimo perceptible 0.63, saque 0.8/90 ms, punto ganado 0.85/110 ms); los golpeos de la IA (paddleIndex -1) no vibran
+- Verificación headless con actuadores simulados: rutas pulse/playEffect/vibrationActuator OK, sin actuador devuelve false sin excepción, clamp OK; demo IA vs IA progresa (1:0), evento de golpeo simulado del jugador dispara haptic(0,1,70)/(0,0.63,70) y el de la IA no vibra; cero errores de consola; captura scripts/preview_v8_haptics.png
+- Rebuild 1.54 MB (sintaxis OK), desplegado a public/game.html y reempaquetado download/pingpong-quest3-v2.zip; README con sección v2.4
+
+Stage Summary:
+- Vibración háptica fiable y proporcional en cada golpeo del jugador, con autotest al entrar en VR
+- Descarga y preview actualizados y verificados sin errores

@@ -94,6 +94,42 @@ HTML = """<!DOCTYPE html>
   .hint { margin-top: 14px; font-size: 12px; line-height: 1.65; color: #75828f; }
   .hint b { color: #9aa7b4; }
 
+  /* ---------- Agarres guardados ---------- */
+  .grips {
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px;
+    padding: 12px 14px; margin-bottom: 16px;
+  }
+  .grips-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .grips-head .lbl { font-size: 12px; color: #9aa7b4; letter-spacing: 1px; white-space: nowrap; }
+  #gripName {
+    flex: 1; min-width: 0; background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px;
+    color: #e9edf2; padding: 7px 10px; font-size: 13px; outline: none;
+  }
+  .grips-row { display: flex; gap: 6px; }
+  #gripSel {
+    flex: 1.4; min-width: 0; background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px;
+    color: #e9edf2; padding: 7px 8px; font-size: 13px;
+  }
+  .mini {
+    flex: 1; padding: 7px 4px; font-size: 12px; font-weight: 600; color: #cfd8e0;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px; cursor: pointer; white-space: nowrap;
+  }
+  .mini:hover { border-color: rgba(232, 180, 90, 0.5); }
+  #trainbtn {
+    width: 100%; padding: 12px; font-size: 14px; font-weight: 700;
+    color: #e8b45a; background: rgba(232, 180, 90, 0.10);
+    border: 1px solid rgba(232, 180, 90, 0.45); border-radius: 11px;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  #trainbtn:hover:not(:disabled) { background: rgba(232, 180, 90, 0.18); }
+  #trainbtn:disabled {
+    color: #6b7683; background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12); cursor: not-allowed;
+  }
+
   /* ---------- HUD (modo espectador) ---------- */
   #hud {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
@@ -132,6 +168,7 @@ HTML = """<!DOCTYPE html>
       <li><b>A / X</b> Cambia la pala de mano en cualquier momento</li>
       <li><b>REGLAS</b> Rozar la red en saque y pasar = <b>LET</b> (se repite) · volear antes del bote o dar doble golpe = falta · partido a 11 con ventaja de 2</li>
       <li><b>EFECTO</b> Barre la pala de abajo a arriba al golpear para dar lift; de arriba abajo para cortar</li>
+      <li><b>ENTRENAR</b> En VR pulsa <b>Y</b> (en cualquier momento): máquina de bolas + panel para ajustar la pala con los sticks. Guarda tus agarres con nombre y cárgalos siempre.</li>
     </ul>
     <div class="diffrow">
       <span class="lbl">DIFICULTAD</span>
@@ -139,7 +176,21 @@ HTML = """<!DOCTYPE html>
       <button class="diff active" data-diff="medium">Media</button>
       <button class="diff" data-diff="hard">Difícil</button>
     </div>
+    <div class="grips">
+      <div class="grips-head">
+        <span class="lbl">AGARRES DE PALA</span>
+        <input id="gripName" type="text" maxlength="24" placeholder="Nombre para guardar el ajuste actual" />
+      </div>
+      <div class="grips-row">
+        <select id="gripSel"></select>
+        <button class="mini" id="gripLoad">Cargar</button>
+        <button class="mini" id="gripSave">Guardar</button>
+        <button class="mini" id="gripDel">Borrar</button>
+        <button class="mini" id="gripReset">Natural</button>
+      </div>
+    </div>
     <div id="status">Comprobando compatibilidad con WebXR…</div>
+    <button id="trainbtn" disabled>ENTRENAR GOLPES EN VR · ajustar pala</button>
     <button id="vrbtn" disabled>ENTRAR EN VR</button>
     <button id="spectate">Ver demo en pantalla (sin visor)</button>
     <div class="hint">

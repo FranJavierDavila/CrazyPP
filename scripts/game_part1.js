@@ -21,6 +21,74 @@ function decodeB64(b64) {
   return bytes.buffer;
 }
 
+/**
+ * Corrige mallas del GLB con winding/normales invertidos (cara interna hacia
+ * fuera): calcula el volumen firmado y, si es negativo, invierte el orden de
+ * los triángulos y niega las normales. Así la iluminación, las sombras y los
+ * contornos de la pala se ven SIEMPRE correctos, sin depender del exportador.
+ */
+function fixInvertedMeshes(root) {
+  let fixed = 0;
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const bc = new THREE.Vector3();
+  root.traverse((o) => {
+    if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;
+    const geo = o.geometry;
+    const pos = geo.attributes.position;
+    const idx = geo.index;
+    const triCount = Math.floor((idx ? idx.count : pos.count) / 3);
+    if (!triCount) return;
+
+    let vol = 0;
+    for (let i = 0; i < triCount; i++) {
+      const i0 = idx ? idx.getX(i * 3) : i * 3;
+      const i1 = idx ? idx.getX(i * 3 + 1) : i * 3 + 1;
+      const i2 = idx ? idx.getX(i * 3 + 2) : i * 3 + 2;
+      a.fromBufferAttribute(pos, i0);
+      b.fromBufferAttribute(pos, i1);
+      c.fromBufferAttribute(pos, i2);
+      vol += a.dot(bc.copy(b).cross(c)) / 6;   // volumen firmado
+    }
+    if (vol > -1e-10) return;                  // bien orientada o abierta: nada
+
+    if (idx) {
+      const arr = idx.array;
+      for (let i = 0; i < triCount; i++) {
+        const s = i * 3;
+        const t = arr[s + 1];
+        arr[s + 1] = arr[s + 2];
+        arr[s + 2] = t;
+      }
+      idx.needsUpdate = true;
+    } else {
+      for (const name of Object.keys(geo.attributes)) {
+        const attr = geo.attributes[name];
+        const v = attr.array;
+        const it = attr.itemSize;
+        for (let i = 0; i < triCount; i++) {
+          const o1 = (i * 3 + 1) * it;
+          const o2 = (i * 3 + 2) * it;
+          for (let k = 0; k < it; k++) {
+            const t = v[o1 + k];
+            v[o1 + k] = v[o2 + k];
+            v[o2 + k] = t;
+          }
+        }
+        attr.needsUpdate = true;
+      }
+    }
+    const nor = geo.attributes.normal;
+    if (nor) {
+      for (let i = 0; i < nor.count; i++) {
+        nor.setXYZ(i, -nor.getX(i), -nor.getY(i), -nor.getZ(i));
+      }
+      nor.needsUpdate = true;
+    }
+    fixed++;
+  });
+  return fixed;
+}
+
 /** Carga el GLB incrustado; devuelve el modelo o null (fallback procedural). */
 function loadPaddleModel() {
   return new Promise((resolve) => {
@@ -28,6 +96,10 @@ function loadPaddleModel() {
       const loader = new GLTFLoader();
       loader.parse(decodeB64(PALA_GLB_B64), '', (gltf) => {
         const model = gltf.scene;
+        const fixedMeshes = fixInvertedMeshes(model);
+        if (fixedMeshes) {
+          console.info(`Pala: ${fixedMeshes} malla(s) con winding/normales invertidos corregida(s)`);
+        }
         model.traverse((o) => {
           if (o.isMesh) {
             o.castShadow = true;
@@ -37,6 +109,7 @@ function loadPaddleModel() {
               // Doble cara: evita caras invertidas del GLB; la pala se ve bien
               // por ambos lados (goma roja / madera) desde cualquier ángulo.
               m.side = THREE.DoubleSide;
+              m.shadowSide = THREE.DoubleSide;
               m.needsUpdate = true;
               if (m.isMeshStandardMaterial) {
                 m.metalness = Math.min(m.metalness ?? 0, 0.35);
@@ -118,7 +191,7 @@ const DIMS = {
   paddleRestitution: 0.78,
   bladeRadius: 0.0795,      // radio de la hoja (16 cm de diámetro)
   bladeCenterUp: 0.14,      // centro de la hoja sobre el punto de agarre
-  hitAssistRadius: 0.024,   // zona de impacto asistida alrededor de la hoja
+  hitAssistRadius: 0.038,   // margen generoso de detección alrededor de la hoja
   paddleHitCooldown: 0.08,
   maxBallSpeed: 14,
   // --- efecto (spin) ---
@@ -197,6 +270,14 @@ class GameAudio {
       this.ctx = null;
     }
   }
+  /** Reactiva el audio SIEMPRE antes de sonar: en Quest el contexto puede
+   *  quedar suspendido al entrar/salir de la sesión inmersiva. */
+  kick() {
+    this.ensure();
+    if (this.ctx && this.ctx.state !== 'running') {
+      this.ctx.resume().catch(() => {});
+    }
+  }
   panNode(pan) {
     if (!this.ctx || !this.master) return null;
     const p = this.ctx.createStereoPanner();
@@ -205,6 +286,7 @@ class GameAudio {
     return p;
   }
   playOsc(freq, endFreq, dur, type, gain, pan) {
+    this.kick();
     if (!this.ctx) return;
     const dest = this.panNode(pan);
     if (!dest) return;
@@ -220,6 +302,7 @@ class GameAudio {
     osc.start(t); osc.stop(t + dur + 0.02);
   }
   playNoise(dur, filterFreq, q, gain, pan, type = 'bandpass') {
+    this.kick();
     if (!this.ctx || !this.noiseBuffer) return;
     const dest = this.panNode(pan);
     if (!dest) return;
@@ -392,7 +475,7 @@ function collidePaddle(ball, pad, k, events) {
   const dNow = relNow.dot(pad.normal);
 
   const crossing = dPrev > 0 !== dNow > 0;
-  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.022;
+  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.03;
   if (!crossing && !touching) return;
 
   if (crossing) {
@@ -411,7 +494,7 @@ function collidePaddle(ball, pad, k, events) {
   const reach = DIMS.bladeRadius + DIMS.ballRadius + DIMS.hitAssistRadius;
   const onBlade = lx * lx + dyy * dyy <= reach * reach;
   // mango: zona alrededor del propio agarre
-  const onHandle = Math.abs(lx) < 0.035 && ly > -0.08 && ly < 0.08;
+  const onHandle = Math.abs(lx) < 0.045 && ly > -0.10 && ly < 0.10;
   if (!onBlade && !onHandle) return;
 
   // Normal efectiva: la bola puede golpear cualquiera de las dos caras

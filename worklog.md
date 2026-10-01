@@ -129,3 +129,23 @@ Stage Summary:
 - Pala sin caras invertidas (doble cara) y montada de forma natural: agarre del mando = agarre de la pala, hoja siguiendo el mango, montura espejo por mano
 - Golpeo y saque claramente más accesibles (hitbox ampliada, toss alto, validación permisiva) manteniendo la física realista
 - Descarga y preview actualizados y verificados sin errores
+
+---
+Task ID: 8
+Agent: Super Z (main agent)
+Task: Normales del GLB, agarres configurables con entrenamiento, sonido en VR y golpeo aún más fácil
+
+Work Log:
+- NORMALES GLB: nueva fixInvertedMeshes(root) en loadPaddleModel — calcula el volumen firmado de cada malla y si es negativo (interior-exterior) invierte el winding (index o no-indexado) y niega las normales; shadowSide = DoubleSide en los materiales; consola informa "N malla(s) corregida(s)". La pala se ve bien sin problemas de normales en cara y contorno
+- AGARRES CONFIGURABLES: sistema de presets {px,py,pz,rx,ry,rz} sobre la montura natural, persistidos en localStorage (ppxr_grips_v1); UI en el overlay (nombre + select Cargar/Guardar/Borrar/Natural) y métodos saveCurrentGrip/loadGripByName/deleteGripByName/resetGripNatural; sync overlay<->VR vía callback onGrips
+- MODO ENTRENAMIENTO (VR): botón "ENTRENAR GOLPES EN VR · ajustar pala" (entra en VR directo al modo) o pulsar Y en cualquier momento; panel 3D (createCalibPanel, CanvasTexture 512², se redibuja solo si hay cambios) con nombre del agarre, valores y controles; sticks: derecha gira/inclina la cara, izquierda mueve, +GRIP rueda/acercar; A guarda, B carga siguiente, X reset natural, gatillo lanza bola; MÁQUINA DE BOLAS: findServeVelocity alimenta saques reglamentarios (dos botes) cuando la bola está muerta o por tiempo; sin marcador (reglas en pausa); Y sale al partido
+- SONIDO EN VR: GameAudio.kick() (ensure + resume) llamado en CADA reproducción; en sessionstart kick + reintentos 400/1200/2500 ms + blip de confirmación a 350 ms; corrige el contexto suspendido de Quest Browser
+- GOLPEO MÁS FÁCIL: hitAssistRadius 0.024->0.038 (radio de detección ≈13,8 cm), plano de contacto 22->30 mm, mango 45x200 mm
+- Overlay: sección AGARRES DE PALA + botón ENTRENAR + instrucción Y del modo entrenamiento
+- Rebuild (1.53 MB, sintaxis OK), desplegado a public/game.html; verificado con agent-browser: cero errores, demo 1:0, agarres guardar/cargar/borrar OK (offsets restaurados exactos), panel renderiza, máquina de bolas lanza saque válido (3,3 m/s); captura scripts/preview_v6_grips.png
+- Reempaquetado download/pingpong-quest3-v2.zip
+
+Stage Summary:
+- Pala corregida a nivel geometría (normales/winding) + doble cara: sin artefactos
+- Sistema completo de agarres con nombre (persistente) + modo entrenamiento con máquina de bolas y panel de ajuste en VR
+- Audio reforzado para VR (kick+reintentos) y detección de golpeo mucho más generosa

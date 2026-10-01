@@ -68,6 +68,18 @@ class PingPongGame {
     this.sources = [null, null];
     this.handOf = ['right', 'right'];   // lateralidad de cada mando
 
+    // Ajuste del agarre (offsets sobre la montura natural) y modo entrenamiento
+    this.gripOffset = { px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 };
+    this.gripOffsetQ = new THREE.Quaternion();
+    this.gripName = 'Natural';
+    this.calib = false;
+    this.pendingCalib = false;
+    this.feedTimer = 1.5;
+    this.feedIdle = 0;
+    this.panelDirty = true;
+    this.btnPrev = {};
+    this.lastFeedTap = 0;
+
     // IA: lado CPU (-Z) y "jugador demo" en escritorio (+Z)
     this.ai = new OpponentAI(
       AI_PRESETS.medium, -1,
@@ -97,6 +109,7 @@ class PingPongGame {
     this.buildScene(paddleModel);
     this.setupControllers();
     this.rules.startMatch();
+    this.emitGrips();   // poblar el selector de agarres del menú
 
     window.addEventListener('resize', this.onResize);
     this.renderer.xr.addEventListener('sessionstart', this.onSessionStart);
@@ -153,6 +166,15 @@ class PingPongGame {
     const sb = createScoreboard();
     this.scoreboardUpdate = sb.update;
     this.rig.add(sb.group);
+
+    // Panel de ajuste de pala (visible solo en el modo entrenamiento)
+    this.calibPanel = createCalibPanel();
+    this.calibPanel.group.position.set(
+      -0.62, 1.42, DIMS.tableCenterZ + DIMS.tableHalfLength - 0.02,
+    );
+    this.calibPanel.group.rotation.y = 0.5;
+    this.calibPanel.group.visible = false;
+    this.rig.add(this.calibPanel.group);
   }
 
   setupControllers() {
@@ -177,7 +199,7 @@ class PingPongGame {
         this.connected[i] = true;
         this.sources[i] = e.data;
         this.handOf[i] = e.data.handedness === 'left' ? 'left' : 'right';
-        this.paddleMounts[i].quaternion.copy(mountQuatFor(this.handOf[i]));
+        this.applyGripOffset();
         if (e.data.handedness === 'right' && !this.manualHand) this.setPaddleHand(i);
         else if (!this.connected[this.paddleHand]) this.setPaddleHand(i);
       });
@@ -222,10 +244,175 @@ class PingPongGame {
 
   get ballHand() { return 1 - this.paddleHand; }
 
+  // ---------- Agarres guardados y modo entrenamiento ----------
+
+  loadGripsStore() {
+    try { return JSON.parse(localStorage.getItem('ppxr_grips_v1') || '{}') || {}; }
+    catch { return {}; }
+  }
+  saveGripsStore(store) {
+    try { localStorage.setItem('ppxr_grips_v1', JSON.stringify(store)); } catch { /* sin storage */ }
+  }
+  gripList() { return Object.keys(this.loadGripsStore()); }
+  emitGrips() { this.callbacks.onGrips?.(this.gripList(), this.gripName); }
+
+  /** Aplica el offset de agarre a la montura (visual) y a la base física. */
+  applyGripOffset(off = this.gripOffset) {
+    this.gripOffset = off;
+    this.gripOffsetQ.setFromEuler(new THREE.Euler(off.rx, off.ry, off.rz, 'XYZ'));
+    for (let i = 0; i < 2; i++) {
+      const m = this.paddleMounts[i];
+      if (m) {
+        m.quaternion.copy(mountQuatFor(this.handOf[i])).multiply(this.gripOffsetQ);
+        m.position.set(off.px, off.py, off.pz);
+      }
+    }
+    for (const ps of this.controllerPaddles) {
+      ps.quatInit = false;
+      ps.velBuf.length = 0;
+    }
+    this.panelDirty = true;
+  }
+
+  saveCurrentGrip(name) {
+    const store = this.loadGripsStore();
+    const clean = (name || '').trim() || ('Agarre ' + (Object.keys(store).length + 1));
+    store[clean] = { ...this.gripOffset };
+    this.saveGripsStore(store);
+    this.gripName = clean;
+    this.panelDirty = true;
+    this.emitGrips();
+    return clean;
+  }
+  loadGripByName(name) {
+    const g = this.loadGripsStore()[name];
+    if (!g) return false;
+    this.applyGripOffset({ px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0, ...g });
+    this.gripName = name;
+    this.panelDirty = true;
+    this.emitGrips();
+    return true;
+  }
+  deleteGripByName(name) {
+    const store = this.loadGripsStore();
+    if (!store[name]) return;
+    delete store[name];
+    this.saveGripsStore(store);
+    if (this.gripName === name) this.gripName = 'Natural';
+    this.panelDirty = true;
+    this.emitGrips();
+  }
+  cycleGripVR() {
+    const names = this.gripList();
+    if (!names.length) return;
+    const i = Math.max(0, names.indexOf(this.gripName));
+    this.loadGripByName(names[(i + 1) % names.length]);
+    this.audio.serve();
+  }
+  resetGripNatural() {
+    this.applyGripOffset({ px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 });
+    this.gripName = 'Natural';
+    this.panelDirty = true;
+    this.emitGrips();
+  }
+
+  handIndex(hand) { return this.handOf[0] === hand ? 0 : 1; }
+  readButton(i, b) {
+    const gp = this.sources[i]?.gamepad;
+    const pressed = !!gp?.buttons?.[b]?.pressed;
+    const key = i + ':' + b;
+    const edge = pressed && !this.btnPrev[key];
+    this.btnPrev[key] = pressed;
+    return edge;
+  }
+  stickAxis(i) {
+    const gp = this.sources[i]?.gamepad;
+    if (!gp || !gp.axes || gp.axes.length < 4) return { x: 0, y: 0 };
+    return { x: gp.axes[2] || 0, y: gp.axes[3] || 0 };
+  }
+
+  enterCalib() {
+    this.calib = true;
+    this.calibPanel.group.visible = true;
+    this.panelDirty = true;
+    this.resetToss();
+    this.aiToss = null;
+    this.demoToss = null;
+    this.feedTimer = 1.1;
+    this.feedIdle = 0;
+    this.haptic(this.paddleHand, 0.5);
+  }
+  exitCalib() {
+    this.calib = false;
+    this.calibPanel.group.visible = false;
+    this.rules.startMatch();
+    this.resetToss();
+    this.ai.reset();
+    this.aiServeTimer = 1.3;
+    this.haptic(this.paddleHand, 0.4);
+  }
+
+  /** Máquina de bolas: saque reglamentario (bote propio + bote rival) hacia
+   *  el campo del jugador, para entrenar golpes con el agarre ajustado. */
+  feedPracticeBall() {
+    this.feedTimer = 2.2 + Math.random() * 1.5;
+    this.feedIdle = 0;
+    this.resetToss();
+    this.ball.pos.set(
+      (Math.random() * 2 - 1) * 0.15,
+      1.02,
+      DIMS.tableCenterZ - DIMS.tableHalfLength - 0.28,
+    );
+    const { v, spin } = findServeVelocity(this.ball.pos, -1);
+    this.ball.vel.copy(v);
+    this.ball.spin.copy(spin);
+    this.audio.serve();
+  }
+
+  updateCalibration(dt) {
+    const Li = this.handIndex('left');
+    const Ri = this.handIndex('right');
+    const L = this.stickAxis(Li);
+    const R = this.stickAxis(Ri);
+    const gripL = !!this.sources[Li]?.gamepad?.buttons?.[1]?.pressed;
+    const gripR = !!this.sources[Ri]?.gamepad?.buttons?.[1]?.pressed;
+    const dz = (v) => (Math.abs(v) < 0.16 ? 0 : v);
+    const adj = (cur, delta) => Math.max(-1.2, Math.min(1.2, cur + delta));
+    const off = this.gripOffset;
+    const rot = 1.1 * dt;
+    const pos = 0.13 * dt;
+    let moved = false;
+    if (dz(R.x)) { off.ry = adj(off.ry, dz(R.x) * rot); moved = true; }
+    if (dz(R.y)) { off.rx = adj(off.rx, -dz(R.y) * rot); moved = true; }
+    if (gripR && dz(R.x)) { off.rz = adj(off.rz, dz(R.x) * rot); moved = true; }
+    if (dz(L.x)) { off.px = adj(off.px, dz(L.x) * pos); moved = true; }
+    if (dz(L.y)) { off.py = adj(off.py, -dz(L.y) * pos); moved = true; }
+    if (gripL && dz(L.y)) { off.pz = adj(off.pz, -dz(L.y) * pos); moved = true; }
+    if (moved) this.applyGripOffset();
+
+    if (this.readButton(Ri, 4)) {                       // A: guardar
+      this.saveCurrentGrip(this.gripName === 'Natural' ? '' : this.gripName);
+      this.audio.point(true);
+    }
+    if (this.readButton(Ri, 5)) this.cycleGripVR();     // B: siguiente agarre
+    if (this.readButton(Li, 4)) this.resetGripNatural(); // X: agarre natural
+
+    // máquina de bolas: alimenta cuando la bola está muerta o por tiempo
+    this.feedTimer -= dt;
+    const b = this.ball;
+    const restingFloor = b.pos.y < DIMS.ballRadius + 0.04 && Math.abs(b.vel.y) < 0.6;
+    const onTable = Math.abs(b.pos.x) < DIMS.tableHalfWidth + 0.05 &&
+      Math.abs(b.pos.z - DIMS.tableCenterZ) < DIMS.tableHalfLength + 0.05;
+    const restingTable = onTable && b.pos.y < DIMS.tableTopY + 0.06 && b.vel.length() < 0.45;
+    this.feedIdle = (restingFloor || restingTable) ? this.feedIdle + dt : 0;
+    if (this.feedIdle > 0.8 || this.feedTimer <= 0) this.feedPracticeBall();
+  }
+
   // ---------- API pública ----------
 
-  async enterVR() {
+  async enterVR(startCalib = false) {
     this.audio.ensure();
+    this.pendingCalib = !!startCalib;
     const xr = navigator.xr;
     if (!xr) throw new Error('Este navegador no soporta WebXR. Usa Meta Quest Browser.');
     const session = await xr.requestSession('immersive-vr', {
@@ -252,6 +439,11 @@ class PingPongGame {
   onSessionStart = () => {
     this.recenterFrames = 25;
     this.audio.ensure();
+    // Quest Browser: el contexto de audio puede quedar suspendido al entrar
+    // en la sesión inmersiva -> reactivar ahora y reintentar unas veces.
+    this.audio.kick();
+    for (const t of [400, 1200, 2500]) window.setTimeout(() => this.audio.kick(), t);
+    window.setTimeout(() => this.audio.serve(), 350);  // blip de confirmación
     this.rules.startMatch();
     this.ai.reset();
     this.demoAI.reset();
@@ -261,6 +453,10 @@ class PingPongGame {
     this.aiServeTimer = 1.3;
     this.demoServeTimer = 1.4;
     this.callbacks.onXRState?.(true);
+    if (this.pendingCalib) {
+      this.pendingCalib = false;
+      this.enterCalib();
+    }
   };
 
   onSessionEnd = () => {
@@ -284,6 +480,15 @@ class PingPongGame {
     this.audio.ensure();
     if (!this.renderer.xr.isPresenting) return;
 
+    // en modo ajuste, el gatillo lanza una bola de entrenamiento
+    if (this.calib) {
+      const now = performance.now() / 1000;
+      if (now - this.lastFeedTap > 0.3) {
+        this.lastFeedTap = now;
+        this.feedPracticeBall();
+      }
+      return;
+    }
     if (this.rules.state === 'over') {
       this.rules.startMatch();
       this.resetToss();
@@ -297,6 +502,7 @@ class PingPongGame {
 
   /** Suelta la bola con la velocidad REAL de la mano (saque natural). */
   releaseBallHand(i) {
+    if (this.calib) return;
     if (this.rules.state !== 'serve' || this.rules.server !== 'player') return;
     if (this.tossed || i !== this.ballHand) return;
     if (!this.renderer.xr.isPresenting) return;
@@ -355,7 +561,7 @@ class PingPongGame {
     }
 
     // 0) botón A/X: el mando donde se pulsa pasa a llevar la pala
-    if (presenting) {
+    if (presenting && !this.calib) {
       for (let i = 0; i < 2; i++) {
         const gp = this.sources[i]?.gamepad;
         const b4 = !!gp?.buttons?.[4]?.pressed;
@@ -367,12 +573,18 @@ class PingPongGame {
       }
     }
 
+    // 0.5) botón Y (mando izquierdo): modo ajuste de pala + entrenamiento
+    if (presenting && this.readButton(this.handIndex('left'), 5)) {
+      if (this.calib) this.exitCalib();
+      else this.enterCalib();
+    }
+
     // 1) Palas de los mandos (solo en VR)
     if (presenting && this.grips) {
       for (let i = 0; i < 2; i++) {
         const ps = this.controllerPaddles[i];
         const grip = this.grips[i];
-        tmpMountQ.copy(grip.quaternion).multiply(mountQuatFor(this.handOf[i]));
+        tmpMountQ.copy(grip.quaternion).multiply(mountQuatFor(this.handOf[i])).multiply(this.gripOffsetQ);
         updatePaddleSim(ps, grip.position, tmpMountQ, now, dt);
         ps.active = this.connected[i];
       }
@@ -384,7 +596,7 @@ class PingPongGame {
     const oppPadX = presenting
       ? (playerPad.active ? playerPad.pos.x : 0)
       : this.demoAI.pos.x;
-    const aiHit = this.ai.update(dt, this.ball, {
+    const aiHit = this.calib ? null : this.ai.update(dt, this.ball, {
       canHit,
       validBounce: this.rules.validBounce,
       oppPadX,
@@ -416,7 +628,7 @@ class PingPongGame {
 
     // 3) Preparación del saque
     let holdLock = false;
-    if (this.rules.state === 'serve') {
+    if (this.rules.state === 'serve' && !this.calib) {
       if (this.rules.server === 'player') {
         if (presenting) {
           if (!this.tossed) {
@@ -496,7 +708,7 @@ class PingPongGame {
     }
 
     // 5) Golpe de saque del jugador: validar regla ITTF
-    if (presenting && this.tossed && this.rules.state === 'serve' && this.rules.server === 'player') {
+    if (presenting && !this.calib && this.tossed && this.rules.state === 'serve' && this.rules.server === 'player') {
       for (const e of this.events) {
         if (e.type !== 'paddle' || e.who !== 'player') continue;
         if (this.preVy > 0.3) {          // margen ±30 ms alrededor del punto muerto
@@ -536,11 +748,13 @@ class PingPongGame {
       }
     }
 
-    // 6) Reglas y eventos
-    const intents = this.rules.handleEvents(this.events);
-    this.processIntents(intents);
-    this.processIntents(this.rules.update(dt));
+    // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido)
+    if (!this.calib) {
+      this.processIntents(this.rules.handleEvents(this.events));
+      this.processIntents(this.rules.update(dt));
+    }
     this.processEvents(this.events);
+    if (this.calib) this.updateCalibration(dt);
 
     // 7) Sincronizar visuales
     this.ballMesh.position.copy(this.ball.pos);
@@ -571,11 +785,15 @@ class PingPongGame {
       m.material.opacity = 0.55 * (1 - m.userData.t);
     }
 
+    if (this.calib && this.panelDirty) {
+      this.calibPanel.update({ name: this.gripName, off: this.gripOffset });
+      this.panelDirty = false;
+    }
     this.scoreboardUpdate({
       player: this.rules.scorePlayer,
       ai: this.rules.scoreAi,
       server: this.rules.server,
-      message: this.rules.message,
+      message: this.calib ? 'ENTRENAMIENTO · Y: volver al partido' : this.rules.message,
     });
     this.syncDom();
 
@@ -708,11 +926,26 @@ class PingPongGame {
 const overlay = document.getElementById('overlay');
 const statusEl = document.getElementById('status');
 const vrbtn = document.getElementById('vrbtn');
+const trainBtn = document.getElementById('trainbtn');
 const spectateBtn = document.getElementById('spectate');
 const hud = document.getElementById('hud');
 const hudScore = document.getElementById('hud-score');
 const hudMsg = document.getElementById('hud-msg');
 const hudInfo = document.getElementById('hud-info');
+
+// UI de agarres guardados (localStorage del navegador de la Quest)
+const gripSel = document.getElementById('gripSel');
+const gripNameInput = document.getElementById('gripName');
+function refreshGrips(list, active) {
+  gripSel.innerHTML = '';
+  for (const n of list) {
+    const o = document.createElement('option');
+    o.value = n;
+    o.textContent = n;
+    gripSel.appendChild(o);
+  }
+  if (active && list.includes(active)) gripSel.value = active;
+}
 
 // Cargar el modelo de la pala antes de arrancar la escena
 loadPaddleModel().then((paddleModel) => {
@@ -722,6 +955,9 @@ loadPaddleModel().then((paddleModel) => {
     },
     onMessage(message) {
       hudMsg.textContent = message;
+    },
+    onGrips(list, active) {
+      refreshGrips(list, active);
     },
     onXRState(inVR) {
       if (inVR) {
@@ -741,6 +977,7 @@ loadPaddleModel().then((paddleModel) => {
       .then((ok) => {
         if (ok) {
           vrbtn.disabled = false;
+          trainBtn.disabled = false;
           statusEl.textContent = '✅ Visor compatible detectado. Ponte las gafas y pulsa el botón.';
         } else {
           statusEl.textContent = '🖥️ Sin visor VR: disfruta del modo espectador (IA contra IA).';
@@ -764,6 +1001,35 @@ loadPaddleModel().then((paddleModel) => {
         vrbtn.disabled = false;
         statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar la sesión VR.');
       });
+  });
+
+  // Entrenamiento en VR: máquina de bolas + ajuste del agarre con panel 3D
+  trainBtn.addEventListener('click', () => {
+    trainBtn.disabled = true;
+    statusEl.textContent = 'Iniciando VR en modo entrenamiento…';
+    game.enterVR(true)
+      .then(() => {
+        trainBtn.disabled = false;
+      })
+      .catch((err) => {
+        trainBtn.disabled = false;
+        statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar la sesión VR.');
+      });
+  });
+
+  // Guardar / cargar / borrar agarres desde el menú
+  document.getElementById('gripSave').addEventListener('click', () => {
+    game.saveCurrentGrip(gripNameInput.value);
+    gripNameInput.value = '';
+  });
+  document.getElementById('gripLoad').addEventListener('click', () => {
+    game.loadGripByName(gripSel.value);
+  });
+  document.getElementById('gripDel').addEventListener('click', () => {
+    game.deleteGripByName(gripSel.value);
+  });
+  document.getElementById('gripReset').addEventListener('click', () => {
+    game.resetGripNatural();
   });
 
   document.querySelectorAll('.diff').forEach((btn) => {

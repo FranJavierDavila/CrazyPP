@@ -626,3 +626,85 @@ function createScoreboard() {
   update({ player: 0, ai: 0, server: 'player', message: '' });
   return { group, update };
 }
+
+/* =====================================================================
+ *  PANEL DE AJUSTE DE PALA (modo entrenamiento en VR)
+ *  Texto dinámico en CanvasTexture: nombre del agarre, valores actuales
+ *  y controles. Solo se redibuja cuando cambian los valores.
+ * ===================================================================== */
+function roundRectPath(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+function createCalibPanel() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const g2 = canvas.getContext('2d');
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false,
+  });
+  const group = new THREE.Group();
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.46), mat);
+  group.add(plane);
+
+  function update(d) {
+    g2.clearRect(0, 0, 512, 512);
+    g2.fillStyle = 'rgba(13,17,23,0.93)';
+    g2.strokeStyle = 'rgba(232,180,90,0.85)';
+    g2.lineWidth = 4;
+    roundRectPath(g2, 8, 8, 496, 496, 24);
+    g2.fill();
+    g2.stroke();
+
+    g2.textAlign = 'left';
+    g2.fillStyle = '#e8b45a';
+    g2.font = 'bold 40px system-ui, sans-serif';
+    g2.fillText('AJUSTE DE PALA', 34, 66);
+    g2.fillStyle = '#9aa7b4';
+    g2.font = '24px system-ui, sans-serif';
+    g2.fillText('Agarre: ' + d.name, 34, 104);
+
+    const o = d.off;
+    const deg = (r) => ((r * 180) / Math.PI).toFixed(0);
+    const mm = (m) => Math.round(m * 1000);
+    g2.fillStyle = '#cfd8e0';
+    g2.font = '21px ui-monospace, monospace';
+    g2.fillText(`pos  ${mm(o.px)} · ${mm(o.py)} · ${mm(o.pz)} mm`, 34, 146);
+    g2.fillText(`gir  ${deg(o.rx)}° · ${deg(o.ry)}° · ${deg(o.rz)}°`, 34, 176);
+
+    const lines = [
+      ['STICK D', 'girar / inclinar la cara'],
+      ['GRIP D + stick D', 'rodar la pala'],
+      ['STICK I', 'mover la pala'],
+      ['GRIP I + stick I', 'acercar / alejar'],
+      ['A', 'guardar este agarre'],
+      ['B', 'cargar el siguiente'],
+      ['X', 'volver al agarre natural'],
+      ['GATILLO', 'lanzar bola de entrenamiento'],
+      ['Y', 'salir al partido'],
+    ];
+    let y = 224;
+    for (const [k, v] of lines) {
+      g2.fillStyle = '#e8b45a';
+      g2.font = 'bold 20px system-ui, sans-serif';
+      g2.fillText(k, 34, y);
+      g2.fillStyle = '#aeb9c5';
+      g2.font = '20px system-ui, sans-serif';
+      g2.fillText(v, 196, y);
+      y += 29;
+    }
+    tex.needsUpdate = true;
+  }
+
+  return { group, update };
+}

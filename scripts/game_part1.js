@@ -105,20 +105,23 @@ const DIMS = {
   ballRadius: 0.02,
   tableCenterZ: -1.6,
   gravity: -9.81,
-  airDrag: 0.12,
-  tableRestitution: 0.88,
+  // AERODINÁMICA REAL (bola reglamentaria de 40 mm y 2,7 g):
+  // arrastre cuadrático a = k·|v|·v  con k = ½·ρ·Cd·A/m (ρ=1.225, Cd=0.5)
+  airDragK: 0.142,
+  tableRestitution: 0.88,   // ITTF: rebote ~23 cm desde 30.5 cm (e ≈ 0.87)
   tableFriction: 0.94,
   paddleRestitution: 0.78,
   bladeRadius: 0.0795,      // radio de la hoja (16 cm de diámetro)
   bladeCenterUp: 0.14,      // centro de la hoja sobre el punto de agarre
-  paddleHitCooldown: 0.14,
-  maxBallSpeed: 12,
+  paddleHitCooldown: 0.10,
+  maxBallSpeed: 14,
   // --- efecto (spin) ---
-  magnus: 0.0035,
+  magnus: 0.0035,           // a = Cm·(ω × v)
   bounceSpinKick: 0.012,
-  spinImpulse: 9,
-  spinMax: 90,
+  spinImpulse: 10,
+  spinMax: 110,             // ≈ 1.050 rpm
   spinDecayAir: 0.3,
+  paddleWristSpin: 0.16,    // contribución de la rotación de la muñeca
   // --- saque (regla ITTF) ---
   tossMinRise: 0.14,        // lanzamiento mínimo ~16 cm (con margen)
   serveEndLineTol: 0.04,    // margen tras la línea de fondo
@@ -256,7 +259,7 @@ class GameAudio {
  *  caras) y rebotes en TODA la mesa: cara superior, cantos, parte
  *  inferior y red.
  * ===================================================================== */
-const MAX_SUBSTEP_DT = 1 / 240;
+const MAX_SUBSTEP_DT = 1 / 480;
 const tmpPrev = new THREE.Vector3();
 const padPos = new THREE.Vector3();
 const relPrev = new THREE.Vector3();
@@ -269,7 +272,11 @@ const tmpS = new THREE.Vector3();
 const tmpT = new THREE.Vector3();
 const tmpD = new THREE.Vector3();
 const tmpV = new THREE.Vector3();
-const tmpQ = new THREE.Quaternion();
+const tmpSurf = new THREE.Vector3();
+const tmpR = new THREE.Vector3();
+const tmpDeltaQ = new THREE.Quaternion();
+const tmpMountQ = new THREE.Quaternion();
+const VEL_WINDOW = 0.07;   // ventana de suavizado de velocidad del mando (s)
 const tmpTarget = new THREE.Vector3();
 const tmpShoulder = new THREE.Vector3();
 const tmpDir = new THREE.Vector3();
@@ -279,6 +286,11 @@ function createPaddleSim(who, index) {
     pos: new THREE.Vector3(),
     prev: new THREE.Vector3(),
     vel: new THREE.Vector3(),
+    omega: new THREE.Vector3(),
+    prevQuat: new THREE.Quaternion(),
+    quatInit: false,
+    velBuf: [],
+    prevT: -1,
     normal: new THREE.Vector3(0, 0, 1),
     right: new THREE.Vector3(1, 0, 0),
     up: new THREE.Vector3(0, 1, 0),
@@ -293,6 +305,62 @@ function setPaddleBasis(p, q) {
   p.normal.set(0, 0, 1).applyQuaternion(q);
   p.right.set(1, 0, 0).applyQuaternion(q);
   p.up.set(0, 1, 0).applyQuaternion(q);
+}
+
+/** Aerodinámica (arrastre + Magnus + decaimiento del giro) compartida
+ *  por la física real y TODOS los simuladores: una sola ecuación. */
+function applyAerodynamics(vel, spin, h) {
+  const sp = vel.length();
+  if (sp > 1e-6) vel.multiplyScalar(Math.max(0, 1 - DIMS.airDragK * sp * h));
+  if (spin.lengthSq() > 1e-4) {
+    tmpM.crossVectors(spin, vel).multiplyScalar(DIMS.magnus * h);
+    vel.add(tmpM);
+    spin.multiplyScalar(Math.max(0, 1 - DIMS.spinDecayAir * h));
+  }
+}
+
+/**
+ * Seguimiento de precisión del mando:
+ *  - velocidad lineal = media móvil en una ventana de 70 ms (estable ante
+ *    el jitter del tracking, imprescindible para golpes reproducibles);
+ *  - velocidad angular (rad/s) a partir del delta de cuaterniones, para
+ *    poder dar efecto con la muñeca como con una pala real.
+ */
+function updatePaddleSim(ps, pos, quat, now, dt) {
+  ps.prev.copy(ps.pos);
+  ps.pos.copy(pos);
+  setPaddleBasis(ps, quat);
+
+  if (ps.prevT > 0 && dt > 0) {
+    tmpV.copy(ps.pos).sub(ps.prev).divideScalar(dt);
+    ps.velBuf.push({ t: now, x: tmpV.x, y: tmpV.y, z: tmpV.z });
+  }
+  while (ps.velBuf.length && now - ps.velBuf[0].t > VEL_WINDOW) ps.velBuf.shift();
+  if (ps.velBuf.length) {
+    tmpV.set(0, 0, 0);
+    for (const s of ps.velBuf) {
+      tmpV.x += s.x; tmpV.y += s.y; tmpV.z += s.z;
+    }
+    tmpV.divideScalar(ps.velBuf.length);
+    ps.vel.lerp(tmpV, 0.7);
+  }
+
+  if (!ps.quatInit) {
+    ps.prevQuat.copy(quat);
+    ps.quatInit = true;
+  }
+  tmpDeltaQ.copy(ps.prevQuat).invert().premultiply(quat);
+  if (tmpDeltaQ.w < 0) tmpDeltaQ.set(-tmpDeltaQ.x, -tmpDeltaQ.y, -tmpDeltaQ.z, -tmpDeltaQ.w);
+  const ang = 2 * Math.acos(Math.min(1, tmpDeltaQ.w));
+  if (ang > 1e-4 && dt > 0) {
+    const s = Math.sqrt(Math.max(1e-12, 1 - tmpDeltaQ.w * tmpDeltaQ.w));
+    tmpV.set(tmpDeltaQ.x / s, tmpDeltaQ.y / s, tmpDeltaQ.z / s).multiplyScalar(ang / dt);
+    ps.omega.lerp(tmpV, 0.5);
+  } else {
+    ps.omega.multiplyScalar(Math.max(0, 1 - dt * 8));
+  }
+  ps.prevQuat.copy(quat);
+  ps.prevT = now;
 }
 
 /** Efecto del giro al botar en la mesa: topspin acelera, backspin frena, lateral desvía. */
@@ -351,8 +419,11 @@ function collidePaddle(ball, pad, k, events) {
   if (sp > DIMS.maxBallSpeed) ball.vel.multiplyScalar(DIMS.maxBallSpeed / sp);
 
   // Efecto según el movimiento de la pala: barrer hacia arriba = lift,
-  // hacia los lados = sidespin, hacia abajo = slice
-  tmpS.copy(pad.vel).cross(tmpN).multiplyScalar(DIMS.spinImpulse);
+  // hacia los lados = sidespin, hacia abajo = slice. Se usa la velocidad
+  // de la SUPERFICIE de contacto (lineal + rotación de la muñeca).
+  tmpSurf.copy(pad.omega).cross(tmpR.copy(pad.up).multiplyScalar(DIMS.bladeCenterUp))
+    .multiplyScalar(DIMS.paddleWristSpin).add(pad.vel);
+  tmpS.copy(tmpSurf).cross(tmpN).multiplyScalar(DIMS.spinImpulse);
   if (tmpS.length() > DIMS.spinMax) tmpS.setLength(DIMS.spinMax);
   ball.spin.copy(tmpS);
 
@@ -486,7 +557,7 @@ function collideWorld(ball, events) {
 }
 
 function stepPhysics(dt, ball, paddles, events) {
-  const n = Math.max(1, Math.min(48, Math.ceil(dt / MAX_SUBSTEP_DT)));
+  const n = Math.max(1, Math.min(96, Math.ceil(dt / MAX_SUBSTEP_DT)));
   const h = dt / n;
 
   for (let i = 0; i < n; i++) {
@@ -498,12 +569,7 @@ function stepPhysics(dt, ball, paddles, events) {
     const prevZ = ball.pos.z;
 
     ball.vel.y += DIMS.gravity * h;
-    if (ball.spin.lengthSq() > 0.5) {
-      tmpM.crossVectors(ball.spin, ball.vel).multiplyScalar(DIMS.magnus * h);
-      ball.vel.add(tmpM);
-    }
-    ball.vel.multiplyScalar(Math.max(0, 1 - DIMS.airDrag * h));
-    ball.spin.multiplyScalar(Math.max(0, 1 - DIMS.spinDecayAir * h));
+    applyAerodynamics(ball.vel, ball.spin, h);
     ball.pos.addScaledVector(ball.vel, h);
 
     for (const pad of paddles) {
@@ -524,24 +590,19 @@ function predictStrike(ball, sign) {
   const pos = ball.pos.clone();
   const vel = ball.vel.clone();
   const spin = ball.spin ? ball.spin.clone() : new THREE.Vector3();
-  const h = 1 / 120;
+  const h = 1 / 240;
   let t = 0;
   let myBounces = 0;
   let best = null;
   let bestScore = -Infinity;
   let planePoint = null;
   const planeZ = C - sign * (DIMS.tableHalfLength + 0.18);
-  const pm = new THREE.Vector3();
 
   while (t < 2.2) {
     const prevY = pos.y;
     const prevZ = pos.z;
     vel.y += DIMS.gravity * h;
-    if (spin.lengthSq() > 0.5) {
-      pm.crossVectors(spin, vel);
-      vel.addScaledVector(pm, DIMS.magnus * h);
-    }
-    vel.multiplyScalar(Math.max(0, 1 - DIMS.airDrag * h));
+    applyAerodynamics(vel, spin, h);
     pos.addScaledVector(vel, h);
     t += h;
 
@@ -620,22 +681,17 @@ function simulateServePath(from, v0, spin, ownSign) {
   const pos = from.clone();
   const vel = v0.clone();
   const sp = spin.clone();
-  const h = 1 / 120;
+  const h = 1 / 240;
   let t = 0;
   let ownBounce = false;
   let oppBounce = false;
   let netTouch = false;
-  const pm = new THREE.Vector3();
 
   while (t < 3.2) {
     const prevY = pos.y;
     const prevZ = pos.z;
     vel.y += DIMS.gravity * h;
-    if (sp.lengthSq() > 0.5) {
-      pm.crossVectors(sp, vel);
-      vel.addScaledVector(pm, DIMS.magnus * h);
-    }
-    vel.multiplyScalar(Math.max(0, 1 - DIMS.airDrag * h));
+    applyAerodynamics(vel, sp, h);
     pos.addScaledVector(vel, h);
     t += h;
 

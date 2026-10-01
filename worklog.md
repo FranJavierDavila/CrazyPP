@@ -78,3 +78,19 @@ Work Log:
 Stage Summary:
 - El preview (raíz) y el entregable Netlify Drop muestran ahora solo las palas: la del rival la mueve la IA, sin avatar humanoide
 - Física, reglas ITTF, saque con mano libre y marcador sin cambios
+
+---
+Task ID: 5
+Agent: Super Z (main agent)
+Task: Dotar al juego de la mayor precisión y calidad posible
+
+Work Log:
+- FÍSICA: arrastre lineal (0.12) sustituido por aerodinámica real de bola ITTF (40 mm/2,7 g): arrastre cuadrático a = k·|v|·v con k=0.142 (½·ρ·Cd·A/m, ρ=1.225, Cd=0.5) + Magnus; nueva función applyAerodynamics() usada por stepPhysics, predictStrike y simulateServePath (una sola ecuación para física real y simuladores de IA); sub-pasos 240 Hz -> 480 Hz (cap 96); h de predictores 1/120 -> 1/240; maxBallSpeed 12->14, spinMax 90->110, spinImpulse 9->10, cooldown 0.14->0.10
+- TRACKING: nueva updatePaddleSim(): velocidad del mando por media móvil en ventana de 70 ms (estable ante jitter) y velocidad angular (rad/s) por delta de cuaterniones; el efecto del golpe ahora usa la velocidad de superficie (lineal + ω×r de la muñeca, paddleWristSpin 0.16); reset completo al cambiar de mano
+- CALIDAD VR: renderer.xr.setFoveation(0) + setFramebufferScaleFactor(1.7) (nitidez en toda la lente), outputColorSpace SRGB, exposición 1.05, environmentIntensity 0.5->0.75, sombras 1024->2048, bola 24x16 -> 48x32 segmentos
+- Verificación agent-browser: sin errores de consola; demo IA vs IA progresa en ambos sentidos (1:0 -> 2:0 -> 2:1) con saques válidos y faltas naturales; el solver de saque (findServeVelocity) se adapta a la nueva aerodinámica; captura scripts/preview_v4_quality.png
+- Reconstruido index.html (1.51 MB), desplegado en public/game.html (preview raíz) y reempaquetado download/pingpong-quest3-v2.zip; README actualizado
+
+Stage Summary:
+- Física de nivel simulador: aerodinámica ITTF real compartida por física y IA, integración 480 Hz, tracking de mandos con ventana móvil + efecto de muñeca, nitidez máxima en el visor
+- Reglas/saque/palas GLB sin cambios; todo verificado sin errores

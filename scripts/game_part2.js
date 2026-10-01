@@ -495,7 +495,7 @@ function createTable() {
 
 function createBall() {
   const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(DIMS.ballRadius, 24, 16),
+    new THREE.SphereGeometry(DIMS.ballRadius, 48, 32),
     new THREE.MeshStandardMaterial({
       color: COLORS.ball, roughness: 0.35, emissive: 0x555044, emissiveIntensity: 0.35,
     }),

@@ -22,9 +22,15 @@ class PingPongGame {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.xr.enabled = true;
     this.renderer.xr.setReferenceSpaceType('local-floor');
+    // Nitidez máxima en el visor: sin foveación (borde nítido en toda la
+    // lente) y framebuffer sobredimensionado (Quest 3 tiene GPU de sobra
+    // para esta escena).
+    this.renderer.xr.setFoveation(0);
+    this.renderer.xr.setFramebufferScaleFactor(1.7);
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0b0e11);
@@ -36,7 +42,7 @@ class PingPongGame {
     try {
       const pmrem = new THREE.PMREMGenerator(this.renderer);
       this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-      this.scene.environmentIntensity = 0.5;
+      this.scene.environmentIntensity = 0.75;
     } catch { /* si falla, iluminación clásica */ }
 
     this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 60);
@@ -107,7 +113,7 @@ class PingPongGame {
     const dir = new THREE.DirectionalLight(0xffffff, 2.4);
     dir.position.set(2.2, 3.6, 0.6);
     dir.castShadow = true;
-    dir.shadow.mapSize.set(1024, 1024);
+    dir.shadow.mapSize.set(2048, 2048);
     dir.shadow.camera.left = -3;
     dir.shadow.camera.right = 3;
     dir.shadow.camera.top = 3;
@@ -202,6 +208,10 @@ class PingPongGame {
       const ps = this.controllerPaddles[k];
       ps.prev.copy(ps.pos);
       ps.vel.set(0, 0, 0);
+      ps.omega.set(0, 0, 0);
+      ps.velBuf.length = 0;
+      ps.quatInit = false;
+      ps.prevT = -1;
     }
   }
 
@@ -357,14 +367,8 @@ class PingPongGame {
       for (let i = 0; i < 2; i++) {
         const ps = this.controllerPaddles[i];
         const grip = this.grips[i];
-        ps.prev.copy(ps.pos);
-        ps.pos.copy(grip.position);
-        tmpQ.copy(grip.quaternion).multiply(MOUNT_QUAT);
-        setPaddleBasis(ps, tmpQ);
-        if (dt > 0) {
-          tmpV.copy(ps.pos).sub(ps.prev).divideScalar(dt);
-          ps.vel.lerp(tmpV, 0.55);
-        }
+        tmpMountQ.copy(grip.quaternion).multiply(MOUNT_QUAT);
+        updatePaddleSim(ps, grip.position, tmpMountQ, now, dt);
         ps.active = this.connected[i];
       }
     }

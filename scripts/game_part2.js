@@ -316,7 +316,9 @@ class OpponentAI {
     let tx = away * (0.16 + Math.random() * 0.38) + gauss() * this.cfg.errStd * 0.8;
     tx = THREE.MathUtils.clamp(tx, -0.55, 0.55);
     const drop = Math.random() < this.cfg.short;
-    const depthRel = drop ? 0.25 + Math.random() * 0.25 : 0.55 + Math.random() * 0.65;
+    // juego en largo: bolas de fondo (62%-117% hacia la línea del rival);
+    // las cortas son excepción y ya no tan pegadas a la red
+    const depthRel = drop ? 0.32 + Math.random() * 0.2 : 0.62 + Math.random() * 0.5;
     const tz = C - sign * depthRel * DIMS.tableHalfLength;
 
     const high = ball.pos.y > 1.15;

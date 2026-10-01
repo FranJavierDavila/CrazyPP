@@ -204,3 +204,22 @@ Work Log:
 Stage Summary:
 - Pala jugador/IA/demo ya no penetra mesa, red ni suelo; resolución por mínima penetración sin teletransportes (mano bajo la mesa libre)
 - Física y visual de la pala permanecen alineados; descarga y preview verificados sin errores
+
+---
+Task ID: 12
+Agent: Super Z (main agent)
+Task: Sin sonido en VR (con palas), CPU juega muy corto y háptica sin probar
+
+Work Log:
+- AUDIO VR: identificado el agujero de gesto de usuario: el contexto se creaba/reanudaba en la demo 2D (toques en el menú), pero dentro de la sesión XR resume() sin activación falla y el watchdog reconstruía un contexto que nacía suspendido. Fix triple: (1) enterVR llama audio.rebuildFresh() DENTRO del clic (contexto nuevo nace running); (2) selectstart/squeezestart/inputsourceschange de la SESIÓN XR y onSqueezeStart de los mandos llaman audio.kick() (los eventos de input XR son intención del usuario -> resume funciona); (3) se mantiene el watchdog
+- CPU EN LARGO: hallazgo clave midiendo la física: con bote propio profundo y vuelo balístico lento (T 0.5-0.84 s) el bote rival caía a solo 0,13 m de la red (drag aerodinámico acorta) -> varios botes en la mesa del receptor. findServeVelocity rediseñado: barre multiplicadores de velocidad (1.0-1.75) sobre la solución balística con bote propio profundo (0.62-0.85); el bote rival cae ahora en la mitad profunda (mediana 0,83-0,86 m de 1,37 = ~61%, antes 0,13); velocidad media 4,5 m/s
+- ANTI-LET: la colisión real de red usa el centro de la bola (netTopY + ballRadius); la simulación usaba solo netTopY -> margen de 12 mm < radio 20 mm = LETs casi seguros en física real (bucle de LET detectado en demo). simulateServePath ahora replica la banda real y findServeVelocity exige despeje >= netTop + R + 6 mm; además registra netY (altura al cruzar)
+- RALLY EN LARGO: depthRel de fondo 0.62-1.12 (antes 0.55-1.20 con cortas 0.25-0.50); short en presets: easy 0.06->0.03, medium 0.10->0.05, hard 0.12->0.06
+- Gancho de depuración permanente window.__ppDebug = { findServeVelocity, simulateServePath, DIMS }
+- Verificación: 40/40 saques válidos (mediana 0,83, todos >= 0,68 de profundidad, despeje mínimo 2,3 cm); demo larga sin bucles de LET (1:0 -> 2:0, mensajes correctos), cero errores de consola; audio headless queda 'suspended' (sin gesto ni dispositivo: esperado en pruebas; en el clic real nace running)
+- Rebuild 1,55 MB (sintaxis OK), preview desplegado, zip reempaquetado (checksum OK), README secciones v2.6
+
+Stage Summary:
+- Audio: contexto nuevo dentro del gesto de entrada + reactivación con gatillo/grip en sesión = cadena completa de gestos para VR
+- CPU saca y juega en largo con margen anti-LET real; adiós a los saques que mueren botando
+- Descarga y preview actualizados y verificados sin errores

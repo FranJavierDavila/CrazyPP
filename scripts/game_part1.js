@@ -215,9 +215,9 @@ const DIMS = {
 };
 
 const AI_PRESETS = {
-  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.11,  missBase: 0.22, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.06 },
-  medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.06,  missBase: 0.11, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.10 },
-  hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.028, missBase: 0.04, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.12 },
+  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.11,  missBase: 0.22, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.03 },
+  medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.06,  missBase: 0.11, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.05 },
+  hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.028, missBase: 0.04, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
 };
 
 const COLORS = {
@@ -298,6 +298,20 @@ class GameAudio {
     this.ensure();
     if (this.ctx && this.ctx.state !== 'running') {
       this.ctx.resume().catch(() => {});
+    }
+  }
+  /** Contexto NUEVO creado dentro de un gesto de usuario (clic ENTRAR EN VR):
+   *  nace 'running' y evita arrastrar un contexto viejo suspendido/'interrupted'
+   *  que ya no responde a resume() dentro de la sesión inmersiva. */
+  rebuildFresh() {
+    try { this.ctx?.close?.(); } catch { /* ya estaba cerrado */ }
+    this.ctx = null;
+    this.master = null;
+    this.noiseBuffer = null;
+    this._wdFails = 0;
+    this.ensure();
+    if (this.ctx && this.ctx.state !== 'running') {
+      void this.ctx.resume().catch(() => {});
     }
   }
   /** Vigilancia periódica (llamada desde el bucle): si el contexto quedó
@@ -838,6 +852,7 @@ function simulateServePath(from, v0, spin, ownSign) {
   let ownBounce = false;
   let oppBounce = false;
   let netTouch = false;
+  let netY = null;   // altura al cruzar el plano de la red (margen anti-LET)
 
   while (t < 3.2) {
     const prevY = pos.y;
@@ -860,14 +875,18 @@ function simulateServePath(from, v0, spin, ownSign) {
         ownBounce = true;
       } else {
         oppBounce = true;
-        return { ok: ownBounce && !netTouch, ownBounce, oppBounce, netTouch, t };
+        return { ok: ownBounce && !netTouch, ownBounce, oppBounce, netTouch, t, oppZ: pos.z, oppX: pos.x, netY };
       }
     }
-    // red
+    // red (misma banda que la colisión real: el centro de la bola toca cuando
+    // está por debajo de netTopY + ballRadius)
     if ((prevZ - C > 0) !== (pos.z - C > 0)) {
-      if (Math.abs(pos.x) <= DIMS.netHalfWidth && pos.y < DIMS.netTopY && pos.y > DIMS.tableTopY) {
-        netTouch = true;
-        if (pos.y < DIMS.netTopY - 0.01) return { ok: false }; // se queda en la malla
+      if (Math.abs(pos.x) <= DIMS.netHalfWidth) {
+        netY = netY === null ? pos.y : Math.max(netY, pos.y);
+        if (pos.y < DIMS.netTopY + DIMS.ballRadius && pos.y > DIMS.tableTopY) {
+          netTouch = true;
+          if (pos.y < DIMS.netTopY - 0.01) return { ok: false }; // se queda en la malla
+        }
       }
     }
     // suelo sin bote rival
@@ -876,31 +895,50 @@ function simulateServePath(from, v0, spin, ownSign) {
   return { ok: false };
 }
 
-/** Busca (por simulación) una velocidad de saque válida: bote propio y bote rival. */
+/** Busca (por simulación) una velocidad de saque válida: bote propio y bote
+ *  rival. Fase 1: saques RÁPIDOS con bote propio profundo -> el bote rival cae
+ *  en el último tercio del campo contrario (saque largo, como los reales).
+ *  Fase 2: relaja la profundidad. El saque lento bota y muere en la mesa del
+ *  rival: por eso se empieza por los vuelos rápidos. */
 function findServeVelocity(from, ownSign) {
   const C = DIMS.tableCenterZ;
   const topR = DIMS.tableTopY + DIMS.ballRadius;
+  const HL = DIMS.tableHalfLength;
   // topspin hacia la red (como un saque real con efecto)
   const spin = new THREE.Vector3(-ownSign * 9, (Math.random() - 0.5) * 4, 0);
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const depths = attempt === 0 ? [0.5, 0.65, 0.8] : [0.35, 0.5, 0.7, 0.9];
-    const times = attempt === 0 ? [0.62, 0.72, 0.84] : [0.55, 0.68, 0.8, 0.95];
+  for (let phase = 0; phase < 2; phase++) {
+    const minOppDepth = phase === 0 ? HL * 0.5 : 0;
+    // bote propio profundo y vuelo rápido: el arrastre aerodinámico frena la
+    // bola, así que se barre un factor multiplicador de la velocidad balística
+    // hasta que el bote rival cae en la mitad profunda del campo contrario
+    const depths = phase === 0 ? [0.78, 0.7, 0.84] : [0.6, 0.7, 0.5, 0.8];
+    const times = phase === 0 ? [0.3, 0.24, 0.36, 0.2] : [0.3, 0.4, 0.5, 0.62, 0.75];
+    const mults = phase === 0 ? [1.0, 1.15, 1.3, 1.45, 1.6, 1.75] : [1.0];
     for (const depth of depths) {
       for (const T of times) {
-        const p1 = new THREE.Vector3(
-          (Math.random() * 2 - 1) * 0.22,
-          topR,
-          C + ownSign * depth,
-        );
-        const v = computeShotVelocity(from, p1, T, 6.5);
-        const res = simulateServePath(from, v, spin, ownSign);
-        if (res.ok) return { v, spin };
+        for (const m of mults) {
+          const p1 = new THREE.Vector3(
+            (Math.random() * 2 - 1) * 0.22,
+            topR,
+            C + ownSign * depth,
+          );
+          const v = computeShotVelocity(from, p1, T, 99).multiplyScalar(m);
+          if (v.length() > 9.5) continue;
+          const res = simulateServePath(from, v, spin, ownSign);
+          // despeje real sobre la cinta: el centro debe pasar por encima de
+          // netTop + radio de bola + 6 mm -> evita LETs al rozar en la física
+          // real (480 Hz) lo que la simulación daba por válido
+          if (res.ok && Math.abs(res.oppZ - C) >= minOppDepth &&
+              (res.netY === null || res.netY >= DIMS.netTopY + DIMS.ballRadius + 0.006)) {
+            return { v, spin };
+          }
+        }
       }
     }
   }
   // Fallback: saque alto y profundo (casi siempre válido)
-  const tz = C - ownSign * (DIMS.tableHalfLength * 0.75);
+  const tz = C - ownSign * (HL * 0.75);
   const v = computeShotVelocity(from, new THREE.Vector3(0, topR, tz), 1.05, 5.5);
   return { v, spin };
 }

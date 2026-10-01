@@ -235,7 +235,10 @@ class PingPongGame {
       const onSelect = () => this.onSelectStart(i);
       grip.addEventListener('selectstart', onSelect);
       targetRay.addEventListener('selectstart', onSelect);
-      const onSqueezeStart = () => { this.gripDown[i] = true; };
+      const onSqueezeStart = () => {
+        this.audio.kick();       // el grip también reactiva el audio en VR
+        this.gripDown[i] = true;
+      };
       const onSqueezeEnd = () => {
         if (this.gripDown[i]) this.releaseBallHand(i);
         this.gripDown[i] = false;
@@ -436,7 +439,9 @@ class PingPongGame {
   // ---------- API pública ----------
 
   async enterVR(startCalib = false) {
-    this.audio.ensure();
+    // contexto de audio NUEVO dentro de este clic (gesto de usuario): nace
+    // 'running' y no arrastra un contexto suspendido que ya no responde en VR
+    this.audio.rebuildFresh();
     this.pendingCalib = !!startCalib;
     const xr = navigator.xr;
     if (!xr) throw new Error('Este navegador no soporta WebXR. Usa Meta Quest Browser.');
@@ -469,6 +474,16 @@ class PingPongGame {
     this.audio.kick();
     for (const t of [400, 1200, 2500]) window.setTimeout(() => this.audio.kick(), t);
     window.setTimeout(() => this.audio.serve(), 350);  // blip de confirmación
+    // gatillo y grip DENTRO de la sesión son eventos de intención del usuario:
+    // sirven para reactivar el audio si el navegador lo suspendió en VR
+    const session = this.renderer.xr.getSession?.();
+    if (session && !this.__audioHooks) {
+      this.__audioHooks = true;
+      const kickAudio = () => this.audio.kick();
+      session.addEventListener('selectstart', kickAudio);
+      session.addEventListener('squeezestart', kickAudio);
+      session.addEventListener('inputsourceschange', kickAudio);
+    }
     this.hapticProbe();
     this.rules.startMatch();
     this.ai.reset();
@@ -1276,6 +1291,8 @@ loadPaddleModel().then((paddleModel) => {
     },
   });
   window.__game = game;
+  // gancho de depuración para pruebas headless (física de saque y constantes)
+  window.__ppDebug = { findServeVelocity, simulateServePath, DIMS };
 
   // Compatibilidad WebXR
   if (navigator.xr && navigator.xr.isSessionSupported) {

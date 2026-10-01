@@ -45,3 +45,19 @@ Stage Summary:
 - Flujo usuario: arrastrar carpeta/zip a Netlify Drop -> abrir URL HTTPS en Meta Quest Browser -> ENTRAR EN VR -> jugar con mandos (gatillo saca, pala anclada al mando, vibración en impactos)
 - Sin visor: modo espectador IA vs IA con cámara orbital y HUD
 - Verificado en headless: cero errores, física/reglas/IA/scoring operativos
+
+---
+Task ID: 3
+Agent: Super Z (main agent)
+Task: El usuario no veía las nuevas palas GLB en el preview — integrar el juego v2 terminado en la raíz del preview
+
+Work Log:
+- Diagnóstico: el preview (Caddy -> next dev :3000) servía la app Next.js antigua (palas procedurales), mientras que el juego v2 con pala GLB solo existía como HTML autónomo en download/pingpong-quest3-v2/index.html
+- Verificado el v2: GLTFLoader + GLB del usuario incrustado en base64 (1.5 MB), sintaxis JS OK (node --check)
+- Integración: copiado a public/game.html y añadida rewrite en next.config.ts (beforeFiles: "/" -> "/game.html"); next dev la aplicó en caliente
+- Verificación con agent-browser: raíz HTTP 200 sirve el v2 (1.506.717 B); demo IA vs IA jugando (marcador 0:0 -> 1:0 -> 2:2), mensajes de saque/bote/punto en vivo; ambas palas son el GLB (goma roja vista de frente, madera vista por detrás); cero errores de consola
+- Actualizado download/README.md (v2: pala GLB incrustada, saque con mano libre, regla de dos botes, LET, faltas) y creado download/pingpong-quest3-v2.zip (solo index.html, 820 KB)
+
+Stage Summary:
+- El preview en la raíz ahora muestra el juego v2 completo (pala GLB real, saque con mano libre y física, regla ITTF de dos botes, LET, rival con cuerpo)
+- Entregable Netlify Drop sin cambios: download/pingpong-quest3-v2/index.html (autocontenido) o .zip

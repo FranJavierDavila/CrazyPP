@@ -22,11 +22,15 @@ class Rules {
     this.validBounce = false;       // ya botó en el campo del receptor
     this.netTouched = false;
     this.rallyHits = 0;
+    this.mode = 'match';            // 'match' (a 11) | 'survival' (rallyes infinitos)
+    this.rallyesSurvived = 0;       // solo supervivencia: rallyes terminados
   }
 
   other(s) { return s === 'player' ? 'ai' : 'player'; }
 
-  startMatch() {
+  startMatch(mode) {
+    this.mode = mode === 'survival' ? 'survival' : 'match';
+    this.rallyesSurvived = 0;
     this.scorePlayer = 0;
     this.scoreAi = 0;
     this.totalPoints = 0;
@@ -40,7 +44,9 @@ class Rules {
     this.validBounce = false;
     this.netTouched = false;
     this.rallyHits = 0;
-    this.message = 'Tu saque · la bola espera en tu mano libre';
+    this.message = this.mode === 'survival'
+      ? 'SUPERVIVENCIA · aguanta el rallye más largo'
+      : 'Tu saque · la bola espera en tu mano libre';
   }
 
   /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea). */
@@ -74,6 +80,19 @@ class Rules {
   }
 
   applyPoint(winner, cause) {
+    if (this.mode === 'survival') {
+      // SUPERVIVENCIA: no hay puntos; lo que cuenta es el rallye terminado.
+      // La CPU acelera con cada rallye (lo gestiona el juego con el intent).
+      this.totalPoints++;
+      this.rallyesSurvived++;
+      this.state = 'point';
+      this.stateTimer = 1.7;
+      const golpes = this.rallyHits;
+      this.message = golpes >= 8
+        ? `¡Rallye de ${golpes} golpes! · ${cause}`
+        : `Rallye de ${golpes} ${golpes === 1 ? 'golpe' : 'golpes'} · ${cause}`;
+      return [{ type: 'point', winner, cause, survival: true, rallyHits: golpes }];
+    }
     if (winner === 'player') this.scorePlayer++;
     else this.scoreAi++;
     this.totalPoints++;
@@ -179,6 +198,16 @@ class Rules {
     if (this.state === 'point') {
       this.stateTimer -= dt;
       if (this.stateTimer <= 0) {
+        if (this.mode === 'survival') {
+          // SUPERVIVENCIA: nunca se acaba el partido; bola nueva y a seguir
+          this.state = 'serve';
+          this.server = this.computeNextServer();
+          this.message = this.server === 'player'
+            ? 'Nueva bola en tu mano · ¡aguanta el rallye!'
+            : 'Saque de la CPU… acelera cada vez más';
+          intents.push({ type: 'serve', server: this.server });
+          return intents;
+        }
         const finished =
           (this.scorePlayer >= 11 || this.scoreAi >= 11) &&
           Math.abs(this.scorePlayer - this.scoreAi) >= 2;
@@ -312,28 +341,83 @@ class OpponentAI {
     this.hitCooldown = 0.55;
     if (Math.random() < pMiss) return null;
 
+    // ---------- SELECCIÓN DE GOLPE (v2.11 · IA lista) ----------
+    // Cuatro golpes según la situación: remate a bolas altas, dejada corta
+    // si el rival está lejos de la mesa, push con slice a bolas bajas y
+    // drive con lift (topspin) como golpe por defecto. Más un bloqueo
+    // rápido para devolver bolas fuertes sin regalar velocidad.
+    const oppDeep = ctx.oppPadZ !== undefined
+      ? ((ctx.oppPadZ - DIMS.tableCenterZ) * -sign > DIMS.tableHalfLength * 0.3)
+      : (Math.random() < 0.35);
+    const high = ball.pos.y > 1.15;
+    const low = ball.pos.y < DIMS.tableTopY + 0.16;
+    let kind = 'drive';
+    const rShot = Math.random();
+    if (high && rShot < this.cfg.smash) {
+      kind = 'smash';
+    } else if (oppDeep && !low && (ctx.rallyHits || 0) >= 2 && rShot < this.cfg.smash + 0.32) {
+      kind = 'dejada';
+    } else if (low && rShot < 0.5) {
+      kind = 'push';
+    } else if (ballSpeed > 6.5 && rShot < 0.3) {
+      kind = 'bloqueo';
+    }
+
+    let depthRel, T, spinX, speedMul = 1;
+    switch (kind) {
+      case 'smash':
+        // palo seco y profundo: el punto suele acabar aquí
+        depthRel = 0.72 + Math.random() * 0.32;
+        T = this.cfg.minT * 0.8;
+        spinX = -sign * (16 + Math.random() * 8);          // lift fuerte
+        break;
+      case 'dejada':
+        // bola corta y flotada con slice para que "frene" al botar
+        depthRel = 0.16 + Math.random() * 0.1;
+        T = Math.max(this.cfg.minT, 0.92 + Math.random() * 0.25);
+        spinX = sign * (6 + Math.random() * 5);            // slice (backspin)
+        speedMul = 0.55;
+        break;
+      case 'push':
+        depthRel = 0.55 + Math.random() * 0.3;
+        T = this.cfg.minT + 0.14 + Math.random() * 0.2;
+        spinX = sign * (5 + Math.random() * 6);            // slice
+        speedMul = 0.8;
+        break;
+      case 'bloqueo':
+        depthRel = 0.66 + Math.random() * 0.3;
+        T = this.cfg.minT * 0.92;
+        spinX = -sign * (10 + Math.random() * 6);
+        speedMul = 0.92;
+        break;
+      default: // drive con lift: juego en largo (62%-112% hacia la línea)
+        depthRel = 0.62 + Math.random() * 0.5;
+        T = this.cfg.minT + Math.random() * (this.cfg.maxT - this.cfg.minT);
+        spinX = -sign * (9 + Math.random() * 9);
+    }
+
     const away = ctx.oppPadX !== undefined
       ? -Math.sign(ctx.oppPadX || (Math.random() - 0.5))
       : (Math.random() < 0.5 ? -1 : 1);
     let tx = away * (0.16 + Math.random() * 0.38) + gauss() * this.cfg.errStd * 0.8;
+    // sorpresa: 14% de golpes "al cuerpo" (hacia su lado actual)
+    if (kind !== 'dejada' && Math.random() < 0.14) {
+      tx = -away * (0.05 + Math.random() * 0.12);
+    }
     tx = THREE.MathUtils.clamp(tx, -0.55, 0.55);
-    const drop = Math.random() < this.cfg.short;
-    // juego en largo: bolas de fondo (62%-117% hacia la línea del rival);
-    // las cortas son excepción y ya no tan pegadas a la red
-    const depthRel = drop ? 0.32 + Math.random() * 0.2 : 0.62 + Math.random() * 0.5;
-    const tz = C - sign * depthRel * DIMS.tableHalfLength;
+    if (kind === 'dejada') tx *= 0.6;   // las dejadas buscan precisión, no ángulo
 
-    const high = ball.pos.y > 1.15;
-    const smash = high && Math.random() < this.cfg.smash;
-    const T = smash ? this.cfg.minT * 0.8 : this.cfg.minT + Math.random() * (this.cfg.maxT - this.cfg.minT);
-    const maxV = smash ? this.cfg.maxShotSpeed * 1.15 : this.cfg.maxShotSpeed;
+    const tz = DIMS.tableCenterZ - sign * depthRel * DIMS.tableHalfLength;
+    const maxV = kind === 'smash'
+      ? this.cfg.maxShotSpeed * 1.15
+      : this.cfg.maxShotSpeed * speedMul;
 
     tmpTarget.set(tx, DIMS.tableTopY + DIMS.ballRadius, tz);
     const v = computeShotVelocity(ball.pos, tmpTarget, T, maxV);
 
     ball.spin.set(
-      -sign * (8 + Math.random() * 8),
-      (Math.random() - 0.5) * 8,
+      spinX,
+      (Math.random() - 0.5) * 6,
       0,
     );
     return v;
@@ -406,6 +490,61 @@ function createRoom() {
   ring.rotation.x = -Math.PI / 2;
   ring.position.set(0, 0.004, 0);
   g.add(ring);
+
+  // ---------- VALLAS PUBLICITARIAS (v2.11 · ambiente de torneo) ----------
+  // Vallas bajas tipo LED alrededor de la pista (van DENTRO de la sala:
+  // en passthrough se ocultan con ella).
+  const mkAd = (txt, bg, fg) => {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 96;
+    const a = c.getContext('2d');
+    if (a) {
+      a.fillStyle = bg;
+      a.fillRect(0, 0, 512, 96);
+      a.fillStyle = fg;
+      a.font = '900 58px system-ui, sans-serif';
+      a.textAlign = 'center';
+      a.textBaseline = 'middle';
+      a.fillText(txt, 256, 52);
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.35, 0.26),
+      new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }),
+    );
+    m.position.y = 0.13;
+    return m;
+  };
+  const ads = [
+    ['PING PONG XR', '#101418', '#e8b45a'],
+    ['ARENA 480 Hz', '#e8b45a', '#101418'],
+    ['MAGNUS SPORT', '#2f4a2a', '#9fd98a'],
+    ['TOPSPIN CLUB', '#12324a', '#57c7ff'],
+    ['QUEST 3 CUP', '#101418', '#f2f4f6'],
+    ['EFECTO · SPIN', '#3a1c14', '#ff8a5c'],
+    ['ITTF ARENA', '#1c1c2e', '#c9b3ff'],
+  ];
+  let adIdx = 0;
+  const placeAd = (x, z, rotY) => {
+    const [txt, bg, fg] = ads[adIdx % ads.length];
+    adIdx++;
+    const m = mkAd(txt, bg, fg);
+    m.position.x = x;
+    m.position.z = z;
+    m.rotation.y = rotY;
+    g.add(m);
+  };
+  // laterales (mirando a la mesa)
+  placeAd(-1.95, -0.9, Math.PI / 2);
+  placeAd(-1.95, -2.5, Math.PI / 2);
+  placeAd(1.95, -0.9, -Math.PI / 2);
+  placeAd(1.95, -2.5, -Math.PI / 2);
+  // fondo de la CPU (mirando al jugador)
+  placeAd(-0.8, -4.35, 0);
+  placeAd(0.8, -4.35, 0);
+  // detrás del jugador
+  placeAd(0, 2.1, Math.PI);
 
   return g;
 }
@@ -511,21 +650,58 @@ function createBall() {
 
   const TRAIL_N = 22;
   const positions = new Float32Array(TRAIL_N * 3);
+  const colors = new Float32Array(TRAIL_N * 3);
+  const ages = new Float32Array(TRAIL_N);
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   const trail = new THREE.Points(
     geo,
     new THREE.PointsMaterial({
-      color: 0xffffff, size: 0.016, transparent: true, opacity: 0.35, depthWrite: false,
+      color: 0xffffff, size: 0.02, transparent: true, opacity: 0.55,
+      vertexColors: true, depthWrite: false,
     }),
   );
   let idx = 0;
-  const trailUpdate = () => {
+  const tmpSpinCross = new THREE.Vector3();
+  /** Estela "de retransmisión": color según el EFECTO de la bola.
+   *  naranja = lift/topspin (la Magnus la hunde), azul = slice/backspin
+   *  (flota), violeta = lateral. Se desvanece con la edad del punto. */
+  const trailUpdate = (ball, dt) => {
     positions[idx * 3] = mesh.position.x;
     positions[idx * 3 + 1] = mesh.position.y;
     positions[idx * 3 + 2] = mesh.position.z;
+    ages[idx] = 0;
+    let r = 0.75, g = 0.75, b = 0.75;
+    if (ball && ball.spin && ball.vel) {
+      tmpSpinCross.crossVectors(ball.spin, ball.vel);   // dirección de la Magnus
+      const lift = tmpSpinCross.y;                      // + flota · - se hunde
+      const force = Math.min(1, Math.abs(lift) / 9);
+      if (force > 0.06) {
+        if (lift < 0) {        // topspin → naranja
+          r = 0.55 + 0.45 * force; g = 0.32 * force; b = 0.12 * force;
+        } else {               // backspin → azul
+          r = 0.16 * force; g = 0.55 * force; b = 0.55 + 0.45 * force;
+        }
+      }
+      const side = Math.abs(ball.spin.y) / 18;
+      if (side > 0.35 && force <= 0.06) {   // lateral → violeta
+        r = 0.55; g = 0.3; b = 0.75;
+      }
+    }
+    colors[idx * 3] = r;
+    colors[idx * 3 + 1] = g;
+    colors[idx * 3 + 2] = b;
     idx = (idx + 1) % TRAIL_N;
+    for (let i = 0; i < TRAIL_N; i++) {
+      ages[i] += dt;
+      const fade = Math.max(0, 1 - ages[i] / 0.42);
+      colors[i * 3] *= 0.86 + 0.14 * fade;
+      colors[i * 3 + 1] *= 0.86 + 0.14 * fade;
+      colors[i * 3 + 2] *= 0.86 + 0.14 * fade;
+    }
     geo.attributes.position.needsUpdate = true;
+    geo.attributes.color.needsUpdate = true;
   };
 
   return { mesh, trail, trailUpdate };
@@ -583,7 +759,9 @@ function createScoreboard() {
 
   let last = '';
   const update = (d) => {
-    const key = `${d.player}|${d.ai}|${d.server}|${d.message}`;
+    const key = d.mode === 'survival'
+      ? `S|${d.rally}|${d.rallyes}|${d.best}|${d.server}|${d.message}`
+      : `${d.player}|${d.ai}|${d.server}|${d.message}`;
     if (key === last) return;
     last = key;
 
@@ -593,9 +771,31 @@ function createScoreboard() {
     ctx.lineWidth = 10;
     ctx.strokeRect(10, 10, 1004, 492);
 
+    ctx.textAlign = 'center';
+
+    if (d.mode === 'survival') {
+      // ---------- MODO SUPERVIVENCIA ----------
+      ctx.fillStyle = '#e8b45a';
+      ctx.font = '700 40px system-ui, sans-serif';
+      ctx.fillText('S U P E R V I V E N C I A', 512, 78);
+
+      ctx.fillStyle = '#f2f4f6';
+      ctx.font = '800 210px system-ui, sans-serif';
+      ctx.fillText(String(d.rally || 0), 512, 315);
+
+      ctx.fillStyle = '#c8ced4';
+      ctx.font = '600 44px system-ui, sans-serif';
+      ctx.fillText(`golpes del rallye`, 512, 390);
+
+      ctx.fillStyle = '#8b949c';
+      ctx.font = '500 40px system-ui, sans-serif';
+      ctx.fillText(`rallyes ${d.rallyes || 0}  ·  récord ${d.best || 0}`, 512, 452);
+      tex.needsUpdate = true;
+      return;
+    }
+
     ctx.fillStyle = '#8b949c';
     ctx.font = '600 34px system-ui, sans-serif';
-    ctx.textAlign = 'center';
     ctx.fillText('P I N G   P O N G   X R', 512, 70);
 
     ctx.textAlign = 'left';
@@ -630,7 +830,7 @@ function createScoreboard() {
     tex.needsUpdate = true;
   };
 
-  update({ player: 0, ai: 0, server: 'player', message: '' });
+  update({ player: 0, ai: 0, server: 'player', message: '', mode: 'match', rally: 0, rallyes: 0, best: 0 });
   return { group, update };
 }
 

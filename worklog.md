@@ -311,3 +311,23 @@ Stage Summary:
 - AUDIO EN VR: CASO CERRADO Y CONFIRMADO POR EL USUARIO en el entorno objetivo (Quest 3 + Meta Quest Browser)
 - Quest Link + Chrome de escritorio no es la vía soportada: documentado en README
 - v2.10 desplegada como versión final de esta ronda, lista para seguir con nuevas mejoras
+
+---
+Task ID: 15
+Agent: main
+Task: v2.11 "torneo completo" — IA lista + adaptativa, modo Supervivencia, passthrough opcional, ambiente de torneo y polish 3D (elección del usuario vía AskUserQuestion)
+
+Work Log:
+- IA LISTA (game_part2.js OpponentAI): selección de golpe por situación: smash (bola alta y>1.15, T=minT*0.8, lift 16-24), dejada (rival detrás de media mesa + rally>=2: depth 0.16-0.26, T 0.92-1.17, slice -6..-11, vel 55%), push (bola baja: slice, vel 80%), bloqueo (bola entrante >6.5 m/s: profundo y rápido) y drive con lift como base (depth 0.62-1.12); 14% de golpes "al cuerpo" (hacia el lado del rival); dejadas más centradas (tx*0.6) para no fallar; spin.y lateral reducido a ±3
+- IA ADAPTATIVA (game_part1 scalePreset + game_part3 applyAISkill): nivel efectivo = preset base × k; k = 1 + diff*0.055 (ganando, hasta +22%) o diff*0.05 (perdiendo, clamp 0.8); modo supervivencia multiplica k por 1+rallyes*0.08 (cap 2.1); scalePreset escala maxSpeed/accel/errStd/missBase/minT/maxT/maxShotSpeed/predictInterval/smash con clamps; verificado headless: 5-1 → k=1.22, 1-5 → k=0.80, supervivencia 8 rallyes → 1.64
+- MODO SUPERVIVENCIA: Rules.startMatch(mode) + mode 'survival' en applyPoint (sin puntos: message "Rallye de N golpes", intent {survival, rallyHits}) y update (point→serve directo, NUNCA game-over); marcador con layout propio (SUP + rallye grande + rallyes + récord); récord en localStorage 'ppxr_surv_best' (guardado al batirlo con ovación applause(true) + announce); botón #survbtn en menú → enterVR(false,false,'survival'); la CPU acelera vía applyAISkill tras cada rallye
+- PASSTHROUGH OPCIONAL: renderer alpha:true; enterVR(startCalib, useAR, mode) → requestSession('immersive-ar') ; onSessionStart detecta environmentBlendMode!=='opaque' → oculta roomGroup, background y fog, muestra shadowCatcher (ShadowMaterial 0.32) para sombra sobre el suelo real; onSessionEnd restaura todo; botón #arbtn (solo si isSessionSupported('immersive-ar')); verificado: roomVisible/shadowCatcher estados correctos en 2D
+- AMBIENTE DE TORNEO (game_part1 GameAudio): startMurmur/stopMurmur (ruido rosa grumoso 2s loop + lowpass 520 + LFO 0.13Hz), applause(big) (2 capas estéreo, envolvente spiky 72 puntos via setValueCurveAtTime), ohh() (2 sierras 112/138Hz con formantes 470/920Hz, throttle 3.5s), announce(text,force) (chime 660/990Hz + speechSynthesis es-ES pitch 0.78, throttle 6s, force en bienvenidas/récord/game-over); setAmbience persiste 'ppxr_amb_v1'; cableado: murmullo al entrar en VR (900ms), bienvenida (1.4s), aplauso al punto del jugador, ohh en red y en faltas del jugador, megafonía en cada saque ("5-3, saque para ti"), ovación+megafonía en récord y game-over; botón #ambbtn SÍ/NO
+- POLISH 3D: luz hemisférica cálida 0xffe6c4/0x35271b + direccional 0xfff1dc + 2 PointLights ámbar sobre la mesa; 7 vallas publicitarias LED (CanvasTexture 512x96, MeshBasic DoubleSide) dentro del roomGroup (laterales x=±1.95, fondo CPU z=-4.35, tras el jugador z=2.1); estela de bola por efecto: 22 puntos vertexColors, color por dirección de Magnus (spin×vel .y): naranja topspin / azul backspin / violeta lateral, fade por edad (0.42s); trailUpdate(ball,dt)
+- GLB: se restauró assets/pala.glb desde upload/ping_pong_paddle.glb (5MB) y se REOPTIMIZÓ con scripts/glb_shrink.py (texturas 1024² → 512², PNG conservando alfa, geometría intacta) → 1.41 MB; index.html 2.05 MB
+- Verificación headless: cero errores de consola; smoke tests (adaptativa k, supervivencia intents/messages, ambiente toggle+persist, nuevos métodos de audio sin excepciones); demo #spectate con vallas visibles y rally OK; marcador supervivencia dibujado (capturas preview_v211_demo.png, preview_v211_survival.png); zip 1.40 MB integridad OK; README v2.11
+
+Stage Summary:
+- v2.11 completa: IA con 5 golpes y adaptativa, supervivencia con récord persistente, passthrough opcional, ambiente de torneo completo (público+megafonía) y sala de pabellón con vallas y estela de efecto
+- GLB reoptimizado (1.41MB) tras pérdida accidental del comprimido: nuevo script reutilizable glb_shrink.py
+- Build desplegado en preview y zip listo para el casco

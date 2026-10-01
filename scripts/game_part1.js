@@ -220,6 +220,26 @@ const AI_PRESETS = {
   hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.028, missBase: 0.04, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
 };
 
+/** Escala un preset de IA por un factor de habilidad k (0,7…2,2):
+ *  k > 1 → más rápida, precisa y agresiva; k < 1 → más lenta y falona.
+ *  Se usa para la IA ADAPTATIVA (según el marcador) y el modo SUPERVIVENCIA
+ *  (la CPU acelera rallye a rallye). Devuelve un preset NUEVO. */
+function scalePreset(cfg, k) {
+  const kk = THREE.MathUtils.clamp(k, 0.7, 2.2);
+  return {
+    maxSpeed: cfg.maxSpeed * THREE.MathUtils.clamp(kk, 0.55, 1.9),
+    accel: Math.min(30, cfg.accel * Math.pow(kk, 1.4)),
+    errStd: cfg.errStd / Math.max(0.6, Math.pow(kk, 0.8)),
+    missBase: THREE.MathUtils.clamp(cfg.missBase * Math.max(0.25, 2 - kk), 0.005, 0.45),
+    minT: THREE.MathUtils.clamp(cfg.minT / Math.max(0.6, Math.pow(kk, 0.5)), 0.24, 1.0),
+    maxT: THREE.MathUtils.clamp(cfg.maxT / Math.max(0.6, Math.pow(kk, 0.5)), 0.4, 1.3),
+    maxShotSpeed: cfg.maxShotSpeed * THREE.MathUtils.clamp(kk, 0.5, 1.8),
+    predictInterval: cfg.predictInterval / Math.max(0.6, Math.pow(kk, 0.8)),
+    smash: THREE.MathUtils.clamp(cfg.smash * Math.max(0.5, kk), 0.01, 0.75),
+    short: cfg.short,
+  };
+}
+
 const COLORS = {
   tableBlue: 0x17539e, tableEdge: 0x0e3a73, frame: 0x22262b,
   floor: 0x37302b, wall: 0x1a1e23,
@@ -261,6 +281,13 @@ class GameAudio {
     this._lastCT = -1;         // último currentTime medido (watchdog)
     this._ctAdvanced = true;   // ¿el reloj de audio avanza? (estado 'running' vivo)
     this._ctStalls = 0;        // ticks consecutivos con el reloj congelado
+    // --- ambiente de torneo (v2.11) ---
+    this.ambience = true;      // murmullo + aplausos + megafonía
+    try { this.ambience = localStorage.getItem('ppxr_amb_v1') !== '0'; } catch { /* */ }
+    this._amb = null;          // nodos del murmullo en marcha
+    this._ambBuffer = null;    // buffer de ruido "grumoso" reutilizable
+    this._lastOhh = 0;
+    this._lastAnnounce = 0;
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
@@ -654,6 +681,172 @@ class GameAudio {
       }
       if (win) this.playNoise(0.4, 6200, 0.7, 0.2, 0, 'highpass');
     } catch { /* el audio NUNCA rompe el bucle del juego */ }
+  }
+
+  /* ================= AMBIENTE DE TORNEO (v2.11) ================= */
+
+  /** Activa/desactiva el ambiente (murmullo + aplausos + megafonía).
+   *  Se guarda en localStorage para recordar la preferencia. */
+  setAmbience(on) {
+    this.ambience = !!on;
+    try { localStorage.setItem('ppxr_amb_v1', this.ambience ? '1' : '0'); } catch { /* */ }
+    if (!this.ambience) this.stopMurmur();
+  }
+
+  /** Murmullo de público de fondo: bucle de ruido filtrado con vaivén lento.
+   *  Se arranca al entrar en VR y se detiene al salir / apagar el ambiente. */
+  startMurmur() {
+    try {
+      this.kick();
+      if (!this.ctx || !this.master || this._amb || !this.ambience) return;
+      if (!this._ambBuffer) {
+        const len = Math.floor(this.ctx.sampleRate * 2);
+        const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        let acc = 0;
+        for (let i = 0; i < len; i++) {
+          // ruido rosa "grumoso": media móvil = murmullo, no siseo
+          acc = acc * 0.92 + (Math.random() * 2 - 1) * 0.08;
+          d[i] = acc * 8;
+        }
+        this._ambBuffer = buf;
+      }
+      const src = this.ctx.createBufferSource();
+      src.buffer = this._ambBuffer;
+      src.loop = true;
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 520;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 1.5);
+      const lfo = this.ctx.createOscillator();
+      lfo.frequency.value = 0.13;
+      const lfoG = this.ctx.createGain();
+      lfoG.gain.value = 0.02;
+      lfo.connect(lfoG); lfoG.connect(g.gain);
+      src.connect(lp); lp.connect(g); g.connect(this.master);
+      src.start();
+      lfo.start();
+      this._amb = { src, lfo, gain: g };
+    } catch { /* nunca rompe el juego */ }
+  }
+
+  stopMurmur() {
+    const amb = this._amb;
+    if (!amb || !this.ctx) return;
+    this._amb = null;
+    try {
+      const t = this.ctx.currentTime;
+      amb.gain.gain.cancelScheduledValues(t);
+      amb.gain.gain.setValueAtTime(amb.gain.gain.value, t);
+      amb.gain.gain.linearRampToValueAtTime(0.0001, t + 0.8);
+      window.setTimeout(() => {
+        try { amb.src.stop(); amb.lfo.stop(); } catch { /* ya parado */ }
+      }, 900);
+    } catch { /* */ }
+  }
+
+  /** APLAUSOS sintetizados: ruido con envolvente "espiky" aleatoria
+   *  (cientos de micro-chasquidos = público aplaudiendo). big = ovación. */
+  applause(big) {
+    try {
+      this.kick();
+      if (!this.ctx || !this.master || !this.noiseBuffer || !this.ambience) return;
+      if (![this.ctx.currentTime].every(Number.isFinite)) return;
+      const t = this.ctx.currentTime + 0.02;
+      const dur = big ? 2.6 : 1.15;
+      const vol = big ? 0.5 : 0.3;
+      for (let layer = 0; layer < (big ? 2 : 1); layer++) {
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.noiseBuffer;
+        src.loop = true;
+        const bp = this.ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 1500 + Math.random() * 700;
+        bp.Q.value = 0.55;
+        const g = this.ctx.createGain();
+        const N = 72;
+        const curve = new Float32Array(N);
+        for (let i = 0; i < N; i++) {
+          const spiky = Math.random() < 0.55 ? Math.random() : Math.random() * 0.3;
+          curve[i] = spiky;
+        }
+        // arranque rápido y cola que se apaga
+        for (let i = 0; i < N; i++) {
+          const f = i / (N - 1);
+          curve[i] *= Math.min(1, f * 6) * (1 - f * f);
+        }
+        const t0 = t + layer * 0.18;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.setValueCurveAtTime(curve.map((v) => Math.max(0.0001, v * vol)), t0, dur * 0.82);
+        g.gain.setValueAtTime(0.0001, t0 + dur * 0.82 + 0.01);
+        g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+        const pan = this.ctx.createStereoPanner();
+        pan.pan.value = layer === 0 ? -0.35 : 0.35;
+        src.connect(bp); bp.connect(g); g.connect(pan); pan.connect(this.master);
+        src.start(t0);
+        src.stop(t0 + dur + 0.15);
+      }
+    } catch { /* */ }
+  }
+
+  /** "Ohh" del público (red, bola fuera…): dos sierras graves con formantes
+   *  de vocal, hinchándose y apagándose. Throttle interno de 3,5 s. */
+  ohh() {
+    try {
+      const now = performance.now();
+      if (now - this._lastOhh < 3500) return;
+      this._lastOhh = now;
+      this.kick();
+      if (!this.ctx || !this.master || !this.ambience) return;
+      const t = this.ctx.currentTime + 0.02;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.15, t + 0.24);
+      g.gain.setValueAtTime(0.15, t + 0.42);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+      for (const [f0, fq, q] of [[112, 470, 2.2], [138, 920, 2.6]]) {
+        const o = this.ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.linearRampToValueAtTime(f0 * 0.82, t + 0.95);
+        const bp = this.ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = fq;
+        bp.Q.value = q;
+        o.connect(bp); bp.connect(g);
+        o.start(t); o.stop(t + 1.05);
+      }
+      g.connect(this.master);
+    } catch { /* */ }
+  }
+
+  /** MEGAFONÍA del marcador: chime de torneo + voz ("5-3, saque para ti").
+   *  Usa speechSynthesis si está disponible (en la Quest, es-ES); si no,
+   *  queda el chime + el texto en el marcador. Throttle de 6 s salvo force. */
+  announce(text, force) {
+    try {
+      const now = performance.now();
+      if (!force && now - this._lastAnnounce < 6000) return;
+      this._lastAnnounce = now;
+      if (!this.ambience) return;
+      this.playOsc(660, 660, 0.12, 'sine', 0.2, 0);
+      window.setTimeout(() => this.playOsc(990, 990, 0.16, 'sine', 0.2, 0), 140);
+      const ss = window.speechSynthesis;
+      if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return;
+      ss.cancel();
+      const u = new SpeechSynthesisUtterance(String(text));
+      u.lang = 'es-ES';
+      u.rate = 0.98;
+      u.pitch = 0.78;
+      u.volume = 0.95;
+      try {
+        const v = ss.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith('es'));
+        if (v) u.voice = v;
+      } catch { /* voz por defecto */ }
+      ss.speak(u);
+    } catch { /* */ }
   }
 }
 

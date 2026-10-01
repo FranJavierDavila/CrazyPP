@@ -129,6 +129,34 @@ HTML = """<!DOCTYPE html>
     color: #6b7683; background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.12); cursor: not-allowed;
   }
+  #survbtn {
+    width: 100%; padding: 12px; font-size: 14px; font-weight: 700;
+    color: #9fd98a; background: rgba(127, 176, 105, 0.10);
+    border: 1px solid rgba(127, 176, 105, 0.45); border-radius: 11px;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  #survbtn:hover:not(:disabled) { background: rgba(127, 176, 105, 0.18); }
+  #survbtn:disabled {
+    color: #6b7683; background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12); cursor: not-allowed;
+  }
+  .row2 { display: flex; gap: 10px; margin-bottom: 10px; }
+  #arbtn {
+    flex: 1; padding: 11px 6px; font-size: 12.5px; font-weight: 700;
+    color: #8fd3e8; background: rgba(87, 199, 255, 0.08);
+    border: 1px solid rgba(87, 199, 255, 0.4); border-radius: 11px; cursor: pointer;
+  }
+  #arbtn:hover:not(:disabled) { background: rgba(87, 199, 255, 0.16); }
+  #arbtn:disabled {
+    color: #6b7683; background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12); cursor: not-allowed;
+  }
+  #ambbtn {
+    flex: 1; padding: 11px 6px; font-size: 12.5px; font-weight: 700;
+    color: #cfd8e0; background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 11px; cursor: pointer;
+  }
+  #ambbtn:hover { border-color: rgba(232, 180, 90, 0.5); }
 
   /* ---------- HUD (modo espectador) ---------- */
   #hud {
@@ -190,8 +218,13 @@ HTML = """<!DOCTYPE html>
       </div>
     </div>
     <div id="status">Comprobando compatibilidad con WebXR…</div>
+    <button id="survbtn" disabled>🏆 SUPERVIVENCIA EN VR · ¿cuántos golpes aguantas?</button>
     <button id="trainbtn" disabled>ENTRENAR GOLPES EN VR · ajustar pala</button>
     <button id="vrbtn" disabled>ENTRAR EN VR</button>
+    <div class="row2">
+      <button id="arbtn" disabled>🏠 PASSTHROUGH · tu habitación</button>
+      <button id="ambbtn">🔊 Ambiente de torneo: SÍ</button>
+    </div>
     <button id="spectate">Ver demo en pantalla (sin visor)</button>
     <div class="hint">
       <b>En el visor:</b> sube esta carpeta a <b>Netlify Drop</b> y abre el enlace con el

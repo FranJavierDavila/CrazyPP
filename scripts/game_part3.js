@@ -25,6 +25,7 @@ class PingPongGame {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
+      alpha: true,   // necesario para passthrough (immersive-ar)
       powerPreference: 'high-performance',
       preserveDrawingBuffer: true,
     });
@@ -105,6 +106,16 @@ class PingPongGame {
     );
 
     this.difficulty = 'medium';
+    // --- modos de juego (v2.11) ---
+    this.mode = 'match';          // 'match' | 'survival' (en curso)
+    this.pendingMode = 'match';   // modo que se aplicará al entrar en VR
+    this.pendingAR = false;       // próxima sesión en passthrough (immersive-ar)
+    this.inAR = false;            // sesión actual ES passthrough
+    this.adaptive = true;         // IA adaptativa según el marcador
+    this.survivalRallies = 0;     // rallyes completados en la sesión actual
+    try {
+      this.survivalBest = Math.max(0, parseInt(localStorage.getItem('ppxr_surv_best') || '0', 10) || 0);
+    } catch { this.survivalBest = 0; }
     this.events = [];
     this.lastTime = -1;
     this.orbitAngle = 0.7;
@@ -148,10 +159,11 @@ class PingPongGame {
   // ---------- Construcción ----------
 
   buildScene(paddleModel) {
-    const hemi = new THREE.HemisphereLight(0xdfe8f0, 0x30271f, 0.85);
+    // Luz cálida de pabellón (v2.11): hemisférica ámbar + direccional suave
+    const hemi = new THREE.HemisphereLight(0xffe6c4, 0x35271b, 0.95);
     this.rig.add(hemi);
 
-    const dir = new THREE.DirectionalLight(0xffffff, 2.4);
+    const dir = new THREE.DirectionalLight(0xfff1dc, 2.4);
     dir.position.set(2.2, 3.6, 0.6);
     dir.castShadow = true;
     dir.shadow.mapSize.set(2048, 2048);
@@ -166,8 +178,28 @@ class PingPongGame {
     dir.target.position.set(0, 0.7, DIMS.tableCenterZ);
     this.rig.add(dir.target);
 
-    this.rig.add(createRoom());
+    // focos cálidos sobre la mesa (ambiente de torneo)
+    for (const px of [-1.15, 1.15]) {
+      const spot = new THREE.PointLight(0xffe2b8, 0.5, 6.5, 1.6);
+      spot.position.set(px, 2.65, DIMS.tableCenterZ + 0.7);
+      this.rig.add(spot);
+    }
+
+    // La sala guarda referencia: en passthrough (immersive-ar) se oculta
+    this.roomGroup = createRoom();
+    this.rig.add(this.roomGroup);
     this.rig.add(createTable());
+
+    // receptor de sombras para passthrough (sombra de mesa/bola sobre el suelo real)
+    this.shadowCatcher = new THREE.Mesh(
+      new THREE.PlaneGeometry(7, 9),
+      new THREE.ShadowMaterial({ opacity: 0.32 }),
+    );
+    this.shadowCatcher.rotation.x = -Math.PI / 2;
+    this.shadowCatcher.position.set(0, 0.001, (DIMS.roomBackZ + DIMS.roomFrontZ) / 2);
+    this.shadowCatcher.receiveShadow = true;
+    this.shadowCatcher.visible = false;
+    this.rig.add(this.shadowCatcher);
 
     const { mesh, trail, trailUpdate } = createBall();
     this.ballMesh = mesh;
@@ -453,24 +485,45 @@ class PingPongGame {
 
   // ---------- API pública ----------
 
-  async enterVR(startCalib = false) {
+  async enterVR(startCalib = false, useAR = false, mode = 'match') {
     // Preparación de audio DENTRO de este clic (gesto de usuario): repara un
     // contexto enfermo (suspendido/cerrado) recreándolo, pero NO destruye un
     // contexto sano. Si la sesión XR lo suspende, el kick() recreativo de los
     // gatillos/grips lo recupera dentro del propio gesto del mando.
     this.audio.prepareVR();
     this.pendingCalib = !!startCalib;
+    this.pendingAR = !!useAR;
+    this.pendingMode = mode === 'survival' ? 'survival' : 'match';
     const xr = navigator.xr;
     if (!xr) throw new Error('Este navegador no soporta WebXR. Usa Meta Quest Browser.');
-    const session = await xr.requestSession('immersive-vr', {
-      optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'],
-    });
+    const session = await xr.requestSession(
+      useAR ? 'immersive-ar' : 'immersive-vr',
+      { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'dom-overlay'] },
+    );
     await this.renderer.xr.setSession(session);
   }
 
   setDifficulty(d) {
     this.difficulty = d;
-    this.ai.setConfig(AI_PRESETS[d]);
+    this.applyAISkill();
+  }
+
+  /** Nivel EFECTIVO de la CPU = preset base de la dificultad × habilidad:
+   *  (1) IA ADAPTATIVA: si vas ganando, aprieta; si vas perdiendo, afloja
+   *      (rallyes igualados); (2) SUPERVIVENCIA: acelera un 8% por rallye
+   *      completado hasta doblar su velocidad. */
+  applyAISkill() {
+    const base = AI_PRESETS[this.difficulty] || AI_PRESETS.medium;
+    let k = 1;
+    if (this.adaptive) {
+      const diff = this.rules.scorePlayer - this.rules.scoreAi;
+      k += diff > 0 ? Math.min(diff, 6) * 0.055 : Math.max(diff, -6) * 0.05;
+    }
+    if (this.mode === 'survival') {
+      k *= Math.min(2.1, 1 + this.survivalRallies * 0.08);
+    }
+    this.aiSkillK = THREE.MathUtils.clamp(k, 0.7, 2.2);
+    this.ai.setConfig(scalePreset(base, this.aiSkillK));
   }
 
   // ---------- Eventos XR ----------
@@ -485,6 +538,23 @@ class PingPongGame {
 
   onSessionStart = () => {
     this.recenterFrames = 25;
+    // ---- PASSTHROUGH (immersive-ar): ocultar sala virtual, fondo y niebla
+    const session = this.renderer.xr.getSession?.();
+    this.inAR = !!(session && session.environmentBlendMode &&
+      session.environmentBlendMode !== 'opaque');
+    if (this.inAR) {
+      this._savedBg = this.scene.background;
+      this._savedFog = this.scene.fog;
+      this.scene.background = null;
+      this.scene.fog = null;
+      this.roomGroup.visible = false;
+      this.shadowCatcher.visible = true;
+    }
+    // ---- modo de juego (normal / supervivencia)
+    this.mode = this.pendingMode;
+    this.survivalRallies = 0;
+    this.rules.startMatch(this.mode);
+    this.applyAISkill();
     // RE-VINCULACIÓN al entrar en VR: el contexto creado en 2D puede perder la
     // salida al pasar a inmersivo. Se crea uno nuevo DENTRO de la sesión
     // (ligado a la salida activa del casco) y se adopta SOLO si arranca
@@ -506,7 +576,6 @@ class PingPongGame {
     );
     // gatillo y grip DENTRO de la sesión son eventos de intención del usuario:
     // sirven para reactivar el audio si el navegador lo suspendió en VR
-    const session = this.renderer.xr.getSession?.();
     if (session && !this.__audioHooks) {
       this.__audioHooks = true;
       const kickAudio = () => this.audio.kick();
@@ -514,8 +583,14 @@ class PingPongGame {
       session.addEventListener('squeezestart', kickAudio);
       session.addEventListener('inputsourceschange', kickAudio);
     }
+    // AMBIENTE DE TORNEO: murmullo del público + megafonía de bienvenida
+    window.setTimeout(() => this.audio.startMurmur(), 900);
+    window.setTimeout(() => {
+      this.audio.announce(this.mode === 'survival'
+        ? 'Modo supervivencia. ¡Aguanta el rallye!'
+        : 'Bienvenido al partido. ¡Buena suerte!', true);
+    }, 1400);
     this.hapticProbe();
-    this.rules.startMatch();
     this.ai.reset();
     this.demoAI.reset();
     this.resetToss();
@@ -535,6 +610,19 @@ class PingPongGame {
     // (adoptar-solo-si-running; el contexto del casco se cierra tras el cambio).
     this.audio.xrActive = false;
     this.audio.rebind('salida de VR: salida re-vinculada al navegador');
+    // fin del ambiente de torneo
+    this.audio.stopMurmur();
+    try { window.speechSynthesis?.cancel(); } catch { /* */ }
+    // restaurar la sala virtual si la sesión fue passthrough
+    if (this.inAR) {
+      this.scene.background = this._savedBg;
+      this.scene.fog = this._savedFog;
+      this.roomGroup.visible = true;
+      this.shadowCatcher.visible = false;
+      this.inAR = false;
+    }
+    this.mode = 'match';
+    this.pendingMode = 'match';
     this.rules.startMatch();
     this.resetToss();
     this.aiToss = null;
@@ -744,11 +832,16 @@ class PingPongGame {
     const oppPadX = presenting
       ? (playerPad.active ? playerPad.pos.x : 0)
       : this.demoAI.pos.x;
+    const oppPadZ = presenting
+      ? (playerPad.active ? playerPad.pos.z : DIMS.tableCenterZ + DIMS.tableHalfLength + 0.4)
+      : this.demoAI.pos.z;
     const aiServing = !this.calib && this.rules.state === 'serve' && this.rules.server === 'ai';
     const aiHit = this.calib ? null : this.ai.update(dt, this.ball, {
       canHit,
       validBounce: this.rules.validBounce,
       oppPadX,
+      oppPadZ,
+      rallyHits: this.rules.rallyHits,
       holdTarget: aiServing ? this.aiServeStance : null,
     });
     let demoHit = null;
@@ -758,6 +851,8 @@ class PingPongGame {
         canHit,
         validBounce: this.rules.validBounce,
         oppPadX: this.ai.pos.x,
+        oppPadZ: this.ai.pos.z,
+        rallyHits: this.rules.rallyHits,
         holdTarget: demoServing ? this.demoServeStance : null,
       });
     }
@@ -963,7 +1058,7 @@ class PingPongGame {
     this.ballMesh.material.emissiveIntensity = ballHeld
       ? 0.75 + Math.sin(now * 6) * 0.25
       : 0.35 + this.apexPulse * 1.2;
-    this.trailUpdate();
+    this.trailUpdate(this.ball, dt);
     this.updateBlobShadow();
 
     // poses de las palas IA: postura natural, saque con toss y swing real
@@ -1009,6 +1104,10 @@ class PingPongGame {
       ai: this.rules.scoreAi,
       server: this.rules.server,
       message: this.calib ? 'ENTRENAMIENTO · Y: volver al partido' : this.rules.message,
+      mode: this.mode,
+      rally: this.rules.rallyHits,
+      rallyes: this.survivalRallies,
+      best: this.survivalBest,
     });
     this.syncDom();
 
@@ -1229,12 +1328,37 @@ class PingPongGame {
   processIntents(intents) {
     for (const it of intents) {
       switch (it.type) {
-        case 'point':
-          this.audio.point(it.winner === 'player');
-          if (this.renderer.xr.isPresenting) {
-            this.haptic(this.paddleHand, it.winner === 'player' ? 0.85 : 0.4, it.winner === 'player' ? 110 : 60);
+        case 'point': {
+          if (it.survival) {
+            // SUPERVIVENCIA: récord de rallye + la CPU acelera cada rallye
+            const golpes = it.rallyHits || 0;
+            if (golpes > this.survivalBest) {
+              this.survivalBest = golpes;
+              try { localStorage.setItem('ppxr_surv_best', String(this.survivalBest)); } catch { /* */ }
+              this.audio.applause(true);
+              this.audio.announce(`¡Rallye de ${golpes} golpes! Nuevo récord`, true);
+              if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.9, 150);
+            } else if (golpes >= 8) {
+              this.audio.applause(false);
+            }
+            this.survivalRallies = this.rules.rallyesSurvived;
+            this.applyAISkill();   // la CPU acelera rallye a rallye
+            if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.25, 70);
+          } else {
+            // PARTIDO: punto + adaptativa + ambiente de torneo
+            this.audio.point(it.winner === 'player');
+            if (it.winner === 'player') {
+              this.audio.applause(false);
+            } else if (it.cause && /red|fuera|pared/.test(it.cause)) {
+              this.audio.ohh();
+            }
+            if (this.renderer.xr.isPresenting) {
+              this.haptic(this.paddleHand, it.winner === 'player' ? 0.85 : 0.4, it.winner === 'player' ? 110 : 60);
+            }
+            this.applyAISkill();   // IA adaptativa según el marcador
           }
           break;
+        }
         case 'retry-serve':
           this.resetToss();
           this.aiToss = null;
@@ -1248,9 +1372,23 @@ class PingPongGame {
           this.demoToss = null;
           if (it.server === 'ai') this.setupAIServe();
           else this.setupDemoServe();
+          // MEGAFONÍA: el marcador anuncia el resultado y quién saca
+          if (this.rules.mode !== 'survival') {
+            const s = this.rules;
+            this.audio.announce(
+              `${s.scorePlayer} a ${s.scoreAi}, saque para ${it.server === 'player' ? 'ti' : 'la máquina'}`,
+            );
+          }
           break;
         case 'game-over':
           this.startFanfare(it.winner === 'player');
+          this.audio.applause(it.winner === 'player');
+          this.audio.announce(
+            it.winner === 'player'
+              ? `¡Victoria del jugador! ${this.rules.scorePlayer} a ${this.rules.scoreAi}`
+              : `Partido para la máquina. ${this.rules.scoreAi} a ${this.rules.scorePlayer}`,
+            true,
+          );
           break;
       }
     }
@@ -1287,6 +1425,7 @@ class PingPongGame {
           break;
         case 'net':
           this.audio.net(pan);
+          this.audio.ohh();   // el público reacciona a la red
           break;
         case 'floor':
           this.audio.thud(pan, Math.min(1, e.speed / 5));
@@ -1327,6 +1466,9 @@ const statusEl = document.getElementById('status');
 const vrbtn = document.getElementById('vrbtn');
 const trainBtn = document.getElementById('trainbtn');
 const spectateBtn = document.getElementById('spectate');
+const survBtn = document.getElementById('survbtn');
+const arBtn = document.getElementById('arbtn');
+const ambBtn = document.getElementById('ambbtn');
 const hud = document.getElementById('hud');
 const hudScore = document.getElementById('hud-score');
 const hudMsg = document.getElementById('hud-msg');
@@ -1379,6 +1521,7 @@ loadPaddleModel().then((paddleModel) => {
         if (ok) {
           vrbtn.disabled = false;
           trainBtn.disabled = false;
+          survBtn.disabled = false;
           statusEl.textContent = '✅ Visor compatible detectado. Ponte las gafas y pulsa el botón.';
         } else {
           statusEl.textContent = '🖥️ Sin visor VR: disfruta del modo espectador (IA contra IA).';
@@ -1387,6 +1530,9 @@ loadPaddleModel().then((paddleModel) => {
       .catch(() => {
         statusEl.textContent = '🖥️ WebXR no disponible aquí: modo espectador activo.';
       });
+    navigator.xr.isSessionSupported('immersive-ar')
+      .then((ok) => { arBtn.disabled = !ok; })
+      .catch(() => { arBtn.disabled = true; });
   } else {
     statusEl.textContent = '🖥️ Este navegador no soporta WebXR: modo espectador activo.';
   }
@@ -1416,6 +1562,46 @@ loadPaddleModel().then((paddleModel) => {
         trainBtn.disabled = false;
         statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar la sesión VR.');
       });
+  });
+
+  // SUPERVIVENCIA: la CPU acelera rallye a rallye, ¿cuántos golpes aguantas?
+  survBtn.addEventListener('click', () => {
+    survBtn.disabled = true;
+    statusEl.textContent = 'Iniciando VR en modo supervivencia…';
+    game.enterVR(false, false, 'survival')
+      .then(() => {
+        survBtn.disabled = false;
+      })
+      .catch((err) => {
+        survBtn.disabled = false;
+        statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar la sesión VR.');
+      });
+  });
+
+  // PASSTHROUGH: juega en TU habitación real (immersive-ar)
+  arBtn.addEventListener('click', () => {
+    arBtn.disabled = true;
+    statusEl.textContent = 'Iniciando passthrough…';
+    game.enterVR(false, true)
+      .then(() => {
+        arBtn.disabled = false;
+      })
+      .catch((err) => {
+        arBtn.disabled = false;
+        statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar el passthrough.');
+      });
+  });
+
+  // Ambiente de torneo (murmullo + aplausos + megafonía): SÍ/NO
+  const ambLabel = () => {
+    ambBtn.textContent = game.audio.ambience
+      ? '🔊 Ambiente de torneo: SÍ'
+      : '🔇 Ambiente de torneo: NO';
+  };
+  ambLabel();
+  ambBtn.addEventListener('click', () => {
+    game.audio.setAmbience(!game.audio.ambience);
+    ambLabel();
   });
 
   // Guardar / cargar / borrar agarres desde el menú

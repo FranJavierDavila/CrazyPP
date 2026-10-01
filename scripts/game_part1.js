@@ -1,0 +1,698 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* =====================================================================
+ *  MODELO DE PALA (GLB del usuario, incrustado en base64)
+ *  Ejes del modelo: hoja hacia +Y, mango hacia -Y, cara normal ±Z.
+ *  Escala 0.026 m/unidad -> hoja de 16 cm, pala completa de 26 cm.
+ * ===================================================================== */
+const PALA_GLB_B64 = '__PALA_GLB_B64__';
+
+const PALA_SCALE = 0.026;
+// punto de agarre (centro del mango) y centro de la hoja en coordenadas del modelo
+const PALA_GRIP_Y = -2.9;
+const PALA_BLADE_Y = 2.1115;
+
+function decodeB64(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+/** Carga el GLB incrustado; devuelve el modelo o null (fallback procedural). */
+function loadPaddleModel() {
+  return new Promise((resolve) => {
+    try {
+      const loader = new GLTFLoader();
+      loader.parse(decodeB64(PALA_GLB_B64), '', (gltf) => {
+        const model = gltf.scene;
+        model.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            for (const m of mats) {
+              if (m && m.isMeshStandardMaterial) {
+                m.metalness = Math.min(m.metalness ?? 0, 0.35);
+                m.roughness = Math.max(m.roughness ?? 0.75, 0.45);
+                m.envMapIntensity = 0.9;
+              }
+            }
+          }
+        });
+        resolve(model);
+      }, (err) => {
+        console.error('No se pudo cargar el GLB de la pala:', err);
+        resolve(null);
+      });
+    } catch (e) {
+      console.error('Error decodificando el GLB:', e);
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Instancia de la pala.
+ *  mode='grip'  -> el punto de agarre queda en el origen (para el mando)
+ *  mode='center'-> el centro de la hoja queda en el origen (para la IA)
+ */
+function makePaddleVisual(model, mode) {
+  const g = new THREE.Group();
+  if (model) {
+    const inst = model.clone(true);
+    inst.scale.setScalar(PALA_SCALE);
+    inst.position.y = mode === 'grip'
+      ? -PALA_GRIP_Y * PALA_SCALE
+      : -PALA_BLADE_Y * PALA_SCALE;
+    g.add(inst);
+  } else {
+    // fallback: pala procedural si el GLB no cargara
+    const R = 0.0795;
+    const blade = new THREE.Mesh(
+      new THREE.CylinderGeometry(R, R, 0.014, 32),
+      [
+        new THREE.MeshStandardMaterial({ color: 0xb98a5a, roughness: 0.7 }),
+        new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.95 }),
+        new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.95 }),
+      ],
+    );
+    blade.rotation.x = Math.PI / 2;
+    blade.position.y = mode === 'grip' ? 0.14 : 0;
+    blade.castShadow = true;
+    g.add(blade);
+    const handle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.03, 0.02, 0.1),
+      new THREE.MeshStandardMaterial({ color: 0x8a6540, roughness: 0.8 }),
+    );
+    handle.position.set(0, mode === 'grip' ? 0.02 : -0.12, -0.055);
+    g.add(handle);
+  }
+  return g;
+}
+
+/* =====================================================================
+ *  CONSTANTES (unidades SI · mesa reglamentaria ITTF)
+ * ===================================================================== */
+const DIMS = {
+  tableTopY: 0.76,
+  tableHalfLength: 1.37,
+  tableHalfWidth: 0.7625,
+  tableThickness: 0.05,
+  netTopY: 0.9125,
+  netHalfWidth: 0.915,
+  ballRadius: 0.02,
+  tableCenterZ: -1.6,
+  gravity: -9.81,
+  airDrag: 0.12,
+  tableRestitution: 0.88,
+  tableFriction: 0.94,
+  paddleRestitution: 0.78,
+  bladeRadius: 0.0795,      // radio de la hoja (16 cm de diámetro)
+  bladeCenterUp: 0.14,      // centro de la hoja sobre el punto de agarre
+  paddleHitCooldown: 0.14,
+  maxBallSpeed: 12,
+  // --- efecto (spin) ---
+  magnus: 0.0035,
+  bounceSpinKick: 0.012,
+  spinImpulse: 9,
+  spinMax: 90,
+  spinDecayAir: 0.3,
+  // --- saque (regla ITTF) ---
+  tossMinRise: 0.14,        // lanzamiento mínimo ~16 cm (con margen)
+  serveEndLineTol: 0.04,    // margen tras la línea de fondo
+  serveAssistVy: 1.9,       // vy mínimo del saque asistido con gatillo
+  // --- sala ---
+  roomHalfX: 3.05,
+  roomBackZ: 2.35,
+  roomFrontZ: -5.55,
+  roomHeight: 2.85,
+};
+
+const AI_PRESETS = {
+  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.20, minT: 0.62, maxT: 0.88, maxShotSpeed: 5.5, predictInterval: 0.16, smash: 0.05, short: 0.06 },
+  medium: { maxSpeed: 2.9, accel: 9,  errStd: 0.05,  missBase: 0.10, minT: 0.52, maxT: 0.78, maxShotSpeed: 7.5, predictInterval: 0.10, smash: 0.18, short: 0.10 },
+  hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.028, missBase: 0.04, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.12 },
+};
+
+const COLORS = {
+  tableBlue: 0x17539e, tableEdge: 0x0e3a73, frame: 0x22262b,
+  floor: 0x37302b, wall: 0x1a1e23,
+  ball: 0xfff8ef, accentAmber: 0xe8b45a, accentGreen: 0x7fb069,
+};
+
+// Montura de la pala sobre el mando: hoja hacia arriba (+Y) y cara hacia
+// delante (-Z del mando), ligeramente cerrada (0.10 rad) como en la postura
+// real de drive.
+const MOUNT_QUAT = (() => {
+  const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+  const pitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.10);
+  return new THREE.Quaternion().multiplyQuaternions(pitch, yaw);
+})();
+const UP = new THREE.Vector3(0, 1, 0);
+
+/* =====================================================================
+ *  AUDIO · sintetizado con Web Audio (sin assets externos)
+ * ===================================================================== */
+class GameAudio {
+  constructor() {
+    this.ctx = null;
+    this.master = null;
+    this.noiseBuffer = null;
+  }
+  ensure() {
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      return;
+    }
+    try {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return;
+      this.ctx = new Ctor();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.5;
+      this.master.connect(this.ctx.destination);
+      const len = Math.floor(this.ctx.sampleRate * 0.25);
+      this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const data = this.noiseBuffer.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    } catch {
+      this.ctx = null;
+    }
+  }
+  panNode(pan) {
+    if (!this.ctx || !this.master) return null;
+    const p = this.ctx.createStereoPanner();
+    p.pan.value = Math.max(-1, Math.min(1, pan));
+    p.connect(this.master);
+    return p;
+  }
+  playOsc(freq, endFreq, dur, type, gain, pan) {
+    if (!this.ctx) return;
+    const dest = this.panNode(pan);
+    if (!dest) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(Math.max(20, freq), t);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t + dur);
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g); g.connect(dest);
+    osc.start(t); osc.stop(t + dur + 0.02);
+  }
+  playNoise(dur, filterFreq, q, gain, pan, type = 'bandpass') {
+    if (!this.ctx || !this.noiseBuffer) return;
+    const dest = this.panNode(pan);
+    if (!dest) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = type;
+    filter.frequency.value = filterFreq;
+    filter.Q.value = q;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(filter); filter.connect(g); g.connect(dest);
+    src.start(t); src.stop(t + dur + 0.02);
+  }
+  paddle(pan, strength) {
+    const s = Math.max(0.15, Math.min(1, strength));
+    this.playNoise(0.05, 1400, 1.2, 0.55 * s, pan);
+    this.playOsc(190 - 40 * s, 110, 0.09, 'triangle', 0.5 * s, pan);
+  }
+  tableBounce(pan, strength) {
+    const s = Math.max(0.1, Math.min(1, strength));
+    this.playOsc(950, 700, 0.05, 'sine', 0.4 * s, pan);
+    this.playNoise(0.02, 3000, 2, 0.18 * s, pan);
+  }
+  net(pan) {
+    this.playOsc(210, 150, 0.1, 'sine', 0.35, pan);
+    this.playNoise(0.06, 420, 1, 0.25, pan, 'lowpass');
+  }
+  thud(pan, strength) {
+    const s = Math.max(0.05, Math.min(1, strength));
+    this.playOsc(140, 90, 0.09, 'sine', 0.28 * s, pan);
+  }
+  serve() { this.playNoise(0.14, 650, 0.8, 0.16, 0); }
+  point(win) {
+    if (win) {
+      this.playOsc(660, 660, 0.12, 'sine', 0.3, -0.3);
+      window.setTimeout(() => this.playOsc(880, 880, 0.18, 'sine', 0.3, -0.3), 110);
+    } else {
+      this.playOsc(440, 440, 0.12, 'sine', 0.28, 0.3);
+      window.setTimeout(() => this.playOsc(330, 330, 0.2, 'sine', 0.28, 0.3), 110);
+    }
+  }
+}
+
+/* =====================================================================
+ *  FÍSICA · integración semi-implícita con sub-pasos fijos (1/240 s),
+ *  efecto (spin) con fuerza de Magnus, colisión barrida pala-bola (dos
+ *  caras) y rebotes en TODA la mesa: cara superior, cantos, parte
+ *  inferior y red.
+ * ===================================================================== */
+const MAX_SUBSTEP_DT = 1 / 240;
+const tmpPrev = new THREE.Vector3();
+const padPos = new THREE.Vector3();
+const relPrev = new THREE.Vector3();
+const relNow = new THREE.Vector3();
+const crossPoint = new THREE.Vector3();
+const relVel = new THREE.Vector3();
+const tmpN = new THREE.Vector3();
+const tmpM = new THREE.Vector3();
+const tmpS = new THREE.Vector3();
+const tmpT = new THREE.Vector3();
+const tmpD = new THREE.Vector3();
+const tmpV = new THREE.Vector3();
+const tmpQ = new THREE.Quaternion();
+const tmpTarget = new THREE.Vector3();
+const tmpShoulder = new THREE.Vector3();
+const tmpDir = new THREE.Vector3();
+
+function createPaddleSim(who, index) {
+  return {
+    pos: new THREE.Vector3(),
+    prev: new THREE.Vector3(),
+    vel: new THREE.Vector3(),
+    normal: new THREE.Vector3(0, 0, 1),
+    right: new THREE.Vector3(1, 0, 0),
+    up: new THREE.Vector3(0, 1, 0),
+    cooldown: 0,
+    who,
+    index,
+    active: false,
+  };
+}
+
+function setPaddleBasis(p, q) {
+  p.normal.set(0, 0, 1).applyQuaternion(q);
+  p.right.set(1, 0, 0).applyQuaternion(q);
+  p.up.set(0, 1, 0).applyQuaternion(q);
+}
+
+/** Efecto del giro al botar en la mesa: topspin acelera, backspin frena, lateral desvía. */
+function applyBounceSpin(vel, spin) {
+  vel.x -= DIMS.bounceSpinKick * spin.z;
+  vel.z += DIMS.bounceSpinKick * spin.x;
+  spin.multiplyScalar(0.72);
+}
+
+function collidePaddle(ball, pad, k, events) {
+  padPos.copy(pad.prev).lerp(pad.pos, k);
+
+  relPrev.copy(tmpPrev).sub(padPos);
+  const dPrev = relPrev.dot(pad.normal);
+  relNow.copy(ball.pos).sub(padPos);
+  const dNow = relNow.dot(pad.normal);
+
+  const crossing = dPrev > 0 !== dNow > 0;
+  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.012;
+  if (!crossing && !touching) return;
+
+  if (crossing) {
+    const t = Math.min(1, Math.max(0, dPrev / (dPrev - dNow)));
+    crossPoint.copy(tmpPrev).lerp(ball.pos, t);
+  } else {
+    crossPoint.copy(ball.pos);
+  }
+
+  // Coordenadas locales del cruce (origen = punto de agarre del mando)
+  const lx = relNow.copy(crossPoint).sub(padPos).dot(pad.right);
+  const ly = relNow.dot(pad.up);
+  // hoja: disco de radio R centradobladeCenterUp sobre el agarre
+  const dyy = ly - DIMS.bladeCenterUp;
+  const reach = DIMS.bladeRadius + DIMS.ballRadius;
+  const onBlade = lx * lx + dyy * dyy <= reach * reach;
+  // mango: zona alrededor del propio agarre
+  const onHandle = Math.abs(lx) < 0.03 && ly > -0.07 && ly < 0.07;
+  if (!onBlade && !onHandle) return;
+
+  // Normal efectiva: la bola puede golpear cualquiera de las dos caras
+  relVel.copy(ball.vel).sub(pad.vel);
+  tmpN.copy(pad.normal);
+  if (relVel.dot(tmpN) > 0) tmpN.negate();
+  const vRelN = relVel.dot(tmpN);
+  if (vRelN >= 0) return;
+
+  // Reflexión con pala "infinitamente masiva" en movimiento
+  ball.vel.addScaledVector(tmpN, -(1 + DIMS.paddleRestitution) * vRelN);
+
+  // Velocidad mínima de salida para jugabilidad
+  const vn = ball.vel.dot(tmpN);
+  if (vn < 1.5) ball.vel.addScaledVector(tmpN, 1.5 - vn);
+
+  // Límite de velocidad
+  const sp = ball.vel.length();
+  if (sp > DIMS.maxBallSpeed) ball.vel.multiplyScalar(DIMS.maxBallSpeed / sp);
+
+  // Efecto según el movimiento de la pala: barrer hacia arriba = lift,
+  // hacia los lados = sidespin, hacia abajo = slice
+  tmpS.copy(pad.vel).cross(tmpN).multiplyScalar(DIMS.spinImpulse);
+  if (tmpS.length() > DIMS.spinMax) tmpS.setLength(DIMS.spinMax);
+  ball.spin.copy(tmpS);
+
+  // Colocar la bola sobre la cara de contacto
+  const front = DIMS.ballRadius + 0.002;
+  ball.pos
+    .copy(padPos)
+    .addScaledVector(tmpN, front)
+    .addScaledVector(pad.right, lx)
+    .addScaledVector(pad.up, ly);
+
+  pad.cooldown = DIMS.paddleHitCooldown;
+  events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index });
+}
+
+function collideTable(ball, prevY, events) {
+  const topR = DIMS.tableTopY + DIMS.ballRadius;
+  const { pos, vel, spin } = ball;
+  const C = DIMS.tableCenterZ;
+  const inX = Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5;
+  const inZ = Math.abs(pos.z - C) <= DIMS.tableHalfLength;
+
+  if (vel.y < 0 && prevY >= topR && pos.y < topR && inX && inZ) {
+    pos.y = topR;
+    const impact = -vel.y;
+    vel.y = impact * DIMS.tableRestitution;
+    vel.x *= DIMS.tableFriction;
+    vel.z *= DIMS.tableFriction;
+    applyBounceSpin(vel, spin);
+    events.push({ type: 'table', side: pos.z > C ? 'player' : 'ai', speed: impact, pos: pos.clone() });
+    return;
+  }
+
+  const botY = DIMS.tableTopY - DIMS.tableThickness - DIMS.ballRadius;
+  if (vel.y > 0 && prevY <= botY && pos.y > botY && inX && inZ) {
+    pos.y = botY;
+    vel.y = -vel.y * 0.45;
+    spin.multiplyScalar(0.5);
+    return;
+  }
+
+  const insideSlab =
+    Math.abs(pos.x) < DIMS.tableHalfWidth + DIMS.ballRadius &&
+    Math.abs(pos.z - C) < DIMS.tableHalfLength + DIMS.ballRadius &&
+    pos.y > DIMS.tableTopY - DIMS.tableThickness - DIMS.ballRadius &&
+    pos.y < topR;
+  if (insideSlab) {
+    const penX = DIMS.tableHalfWidth + DIMS.ballRadius - Math.abs(pos.x);
+    const penZ = DIMS.tableHalfLength + DIMS.ballRadius - Math.abs(pos.z - C);
+    if (penX < penZ) {
+      pos.x += Math.sign(pos.x) * penX;
+      vel.x *= -0.45;
+    } else {
+      pos.z = C + Math.sign(pos.z - C) * (DIMS.tableHalfLength + DIMS.ballRadius);
+      vel.z *= -0.45;
+    }
+    spin.multiplyScalar(0.6);
+    // Regla ITTF: tocar el canto cuenta como bote válido
+    events.push({ type: 'table', side: pos.z > C ? 'player' : 'ai', speed: 1.5, pos: pos.clone() });
+  }
+}
+
+function collideNet(ball, prevZ, events) {
+  const { pos, vel, spin } = ball;
+  const nz = DIMS.tableCenterZ;
+  const from = prevZ - nz;
+  const to = pos.z - nz;
+  if (from > 0 === to > 0) return;
+  if (Math.abs(pos.x) > DIMS.netHalfWidth) return;
+  if (pos.y <= DIMS.tableTopY || pos.y >= DIMS.netTopY + DIMS.ballRadius) return;
+
+  if (pos.y < DIMS.netTopY) {
+    pos.z = nz + Math.sign(from) * (DIMS.ballRadius + 0.004);
+    vel.z *= -0.18;
+    vel.x *= 0.55;
+    vel.y *= 0.75;
+    spin.multiplyScalar(0.4);
+    events.push({ type: 'net', speed: Math.abs(vel.z), pos: pos.clone() });
+  } else {
+    vel.z *= 0.35;
+    vel.y *= 0.4;
+    spin.multiplyScalar(0.5);
+    events.push({ type: 'net', speed: Math.abs(vel.z), pos: pos.clone() });
+  }
+}
+
+function collideWorld(ball, events) {
+  const { pos, vel, spin } = ball;
+  const r = DIMS.ballRadius;
+
+  if (pos.y < r && vel.y < 0) {
+    const impact = -vel.y;
+    pos.y = r;
+    vel.y = impact * 0.45;
+    vel.x *= 0.85;
+    vel.z *= 0.85;
+    spin.multiplyScalar(0.35);
+    events.push({ type: 'floor', speed: impact, pos: pos.clone() });
+  }
+  if (pos.y > DIMS.roomHeight - r && vel.y > 0) {
+    pos.y = DIMS.roomHeight - r;
+    vel.y *= -0.4;
+    events.push({ type: 'wall', speed: Math.abs(vel.y), pos: pos.clone() });
+  }
+  for (const sx of [-1, 1]) {
+    if (pos.x * sx > DIMS.roomHalfX - r && vel.x * sx > 0) {
+      pos.x = sx * (DIMS.roomHalfX - r);
+      vel.x *= -0.4;
+      events.push({ type: 'wall', speed: Math.abs(vel.x), pos: pos.clone() });
+    }
+  }
+  if (pos.z > DIMS.roomBackZ - r && vel.z > 0) {
+    pos.z = DIMS.roomBackZ - r;
+    vel.z *= -0.4;
+    events.push({ type: 'wall', speed: Math.abs(vel.z), pos: pos.clone() });
+  }
+  if (pos.z < DIMS.roomFrontZ + r && vel.z < 0) {
+    pos.z = DIMS.roomFrontZ + r;
+    vel.z *= -0.4;
+    events.push({ type: 'wall', speed: Math.abs(vel.z), pos: pos.clone() });
+  }
+
+  if (
+    Math.abs(pos.x) > 30 || Math.abs(pos.z) > 30 || pos.y < -5 ||
+    !Number.isFinite(pos.x) || !Number.isFinite(pos.y) || !Number.isFinite(pos.z)
+  ) {
+    pos.set(0, 0.5, DIMS.tableCenterZ);
+    vel.set(0, 0, 0);
+    events.push({ type: 'floor', speed: 1, pos: pos.clone() });
+  }
+}
+
+function stepPhysics(dt, ball, paddles, events) {
+  const n = Math.max(1, Math.min(48, Math.ceil(dt / MAX_SUBSTEP_DT)));
+  const h = dt / n;
+
+  for (let i = 0; i < n; i++) {
+    const k = (i + 0.5) / n;
+    for (const p of paddles) if (p.cooldown > 0) p.cooldown -= h;
+
+    tmpPrev.copy(ball.pos);
+    const prevY = ball.pos.y;
+    const prevZ = ball.pos.z;
+
+    ball.vel.y += DIMS.gravity * h;
+    if (ball.spin.lengthSq() > 0.5) {
+      tmpM.crossVectors(ball.spin, ball.vel).multiplyScalar(DIMS.magnus * h);
+      ball.vel.add(tmpM);
+    }
+    ball.vel.multiplyScalar(Math.max(0, 1 - DIMS.airDrag * h));
+    ball.spin.multiplyScalar(Math.max(0, 1 - DIMS.spinDecayAir * h));
+    ball.pos.addScaledVector(ball.vel, h);
+
+    for (const pad of paddles) {
+      if (!pad.active || pad.cooldown > 0) continue;
+      collidePaddle(ball, pad, k, events);
+    }
+
+    collideTable(ball, prevY, events);
+    collideNet(ball, prevZ, events);
+    collideWorld(ball, events);
+  }
+}
+
+/** Predice el MEJOR punto de golpeo de la bola en el campo de `sign`. */
+function predictStrike(ball, sign) {
+  const C = DIMS.tableCenterZ;
+  const topR = DIMS.tableTopY + DIMS.ballRadius;
+  const pos = ball.pos.clone();
+  const vel = ball.vel.clone();
+  const spin = ball.spin ? ball.spin.clone() : new THREE.Vector3();
+  const h = 1 / 120;
+  let t = 0;
+  let myBounces = 0;
+  let best = null;
+  let bestScore = -Infinity;
+  let planePoint = null;
+  const planeZ = C - sign * (DIMS.tableHalfLength + 0.18);
+  const pm = new THREE.Vector3();
+
+  while (t < 2.2) {
+    const prevY = pos.y;
+    const prevZ = pos.z;
+    vel.y += DIMS.gravity * h;
+    if (spin.lengthSq() > 0.5) {
+      pm.crossVectors(spin, vel);
+      vel.addScaledVector(pm, DIMS.magnus * h);
+    }
+    vel.multiplyScalar(Math.max(0, 1 - DIMS.airDrag * h));
+    pos.addScaledVector(vel, h);
+    t += h;
+
+    if (vel.y < 0 && prevY >= topR && pos.y < topR &&
+        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+      pos.y = topR;
+      vel.y *= -DIMS.tableRestitution;
+      vel.x *= DIMS.tableFriction;
+      vel.z *= DIMS.tableFriction;
+      applyBounceSpin(vel, spin);
+      if ((pos.z - C) * sign > 0) {
+        myBounces++;
+        if (myBounces >= 2) return { point: pos.clone(), t, urgent: true };
+      }
+    }
+    if ((prevZ - C > 0) !== (pos.z - C > 0) && pos.y < DIMS.netTopY && pos.y > DIMS.tableTopY &&
+        Math.abs(pos.x) <= DIMS.netHalfWidth) return best;
+    if (pos.y < DIMS.ballRadius * 1.5) return best;
+    if (!planePoint && (pos.z - planeZ) * sign <= 0 && t > 0.05) planePoint = pos.clone();
+
+    if (myBounces >= 1 && (pos.z - C) * sign > 0 && Math.abs(pos.z - C) < DIMS.tableHalfLength + 0.8) {
+      if (pos.y > 0.55 && pos.y < 1.5) {
+        const score = 1.4 - Math.abs(pos.y - 1.02) - t * 0.25;
+        if (score > bestScore) {
+          bestScore = score;
+          best = { point: pos.clone(), t };
+        }
+      }
+    }
+  }
+  return best || (planePoint ? { point: planePoint, t: 1 } : null);
+}
+
+/** Velocidad parabólica hasta `target`, garantizando que pasa la red. */
+function computeShotVelocity(from, target, tIn, maxSpeed) {
+  const T = Math.max(0.3, tIn);
+  const ty = DIMS.tableTopY + DIMS.ballRadius;
+  let vy = (ty - from.y) / T - 0.5 * DIMS.gravity * T;
+  let vx = (target.x - from.x) / T;
+  let vz = (target.z - from.z) / T;
+
+  const nz = DIMS.tableCenterZ;
+  if (vz !== 0) {
+    const t0 = (nz - from.z) / vz;
+    if (t0 > 0 && t0 < T) {
+      let y0 = from.y + vy * t0 + 0.5 * DIMS.gravity * t0 * t0;
+      let tries = 0;
+      while (y0 < DIMS.netTopY + 0.07 && tries < 3) {
+        const T2 = T + 0.09 * (tries + 1);
+        vy = (ty - from.y) / T2 - 0.5 * DIMS.gravity * T2;
+        vx = (target.x - from.x) / T2;
+        vz = (target.z - from.z) / T2;
+        const t02 = (nz - from.z) / vz;
+        y0 = t02 > 0 ? from.y + vy * t02 + 0.5 * DIMS.gravity * t02 * t02 : DIMS.netTopY + 1;
+        tries++;
+      }
+      if (y0 < DIMS.netTopY + 0.06) {
+        vy += (DIMS.netTopY + 0.08 - y0) * 2;
+      }
+    }
+  }
+
+  const v = new THREE.Vector3(vx, vy, vz);
+  const sp = v.length();
+  if (sp > maxSpeed) v.multiplyScalar(maxSpeed / sp);
+  return v;
+}
+
+/**
+ * Simula un saque completo (bote propio -> red -> bote rival) con las
+ * mismas constantes que la física real. Devuelve el resultado y dónde botó.
+ */
+function simulateServePath(from, v0, spin, ownSign) {
+  const C = DIMS.tableCenterZ;
+  const topR = DIMS.tableTopY + DIMS.ballRadius;
+  const pos = from.clone();
+  const vel = v0.clone();
+  const sp = spin.clone();
+  const h = 1 / 120;
+  let t = 0;
+  let ownBounce = false;
+  let oppBounce = false;
+  let netTouch = false;
+  const pm = new THREE.Vector3();
+
+  while (t < 3.2) {
+    const prevY = pos.y;
+    const prevZ = pos.z;
+    vel.y += DIMS.gravity * h;
+    if (sp.lengthSq() > 0.5) {
+      pm.crossVectors(sp, vel);
+      vel.addScaledVector(pm, DIMS.magnus * h);
+    }
+    vel.multiplyScalar(Math.max(0, 1 - DIMS.airDrag * h));
+    pos.addScaledVector(vel, h);
+    t += h;
+
+    // bote en la mesa
+    if (vel.y < 0 && prevY >= topR && pos.y < topR &&
+        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+      pos.y = topR;
+      vel.y *= -DIMS.tableRestitution;
+      vel.x *= DIMS.tableFriction;
+      vel.z *= DIMS.tableFriction;
+      applyBounceSpin(vel, sp);
+      if ((pos.z - C) * ownSign > 0) {
+        if (ownBounce) return { ok: false };           // volvió a botar en el propio
+        ownBounce = true;
+      } else {
+        oppBounce = true;
+        return { ok: ownBounce && !netTouch, ownBounce, oppBounce, netTouch, t };
+      }
+    }
+    // red
+    if ((prevZ - C > 0) !== (pos.z - C > 0)) {
+      if (Math.abs(pos.x) <= DIMS.netHalfWidth && pos.y < DIMS.netTopY && pos.y > DIMS.tableTopY) {
+        netTouch = true;
+        if (pos.y < DIMS.netTopY - 0.01) return { ok: false }; // se queda en la malla
+      }
+    }
+    // suelo sin bote rival
+    if (pos.y < DIMS.ballRadius) return { ok: false };
+  }
+  return { ok: false };
+}
+
+/** Busca (por simulación) una velocidad de saque válida: bote propio y bote rival. */
+function findServeVelocity(from, ownSign) {
+  const C = DIMS.tableCenterZ;
+  const topR = DIMS.tableTopY + DIMS.ballRadius;
+  // topspin hacia la red (como un saque real con efecto)
+  const spin = new THREE.Vector3(-ownSign * 9, (Math.random() - 0.5) * 4, 0);
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const depths = attempt === 0 ? [0.5, 0.65, 0.8] : [0.35, 0.5, 0.7, 0.9];
+    const times = attempt === 0 ? [0.62, 0.72, 0.84] : [0.55, 0.68, 0.8, 0.95];
+    for (const depth of depths) {
+      for (const T of times) {
+        const p1 = new THREE.Vector3(
+          (Math.random() * 2 - 1) * 0.22,
+          topR,
+          C + ownSign * depth,
+        );
+        const v = computeShotVelocity(from, p1, T, 6.5);
+        const res = simulateServePath(from, v, spin, ownSign);
+        if (res.ok) return { v, spin };
+      }
+    }
+  }
+  // Fallback: saque alto y profundo (casi siempre válido)
+  const tz = C - ownSign * (DIMS.tableHalfLength * 0.75);
+  const v = computeShotVelocity(from, new THREE.Vector3(0, topR, tz), 1.05, 5.5);
+  return { v, spin };
+}

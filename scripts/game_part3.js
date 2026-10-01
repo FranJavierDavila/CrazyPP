@@ -85,6 +85,7 @@ class PingPongGame {
     this.gripOffsetQ = new THREE.Quaternion();
     this.gripName = 'Natural';
     this.calib = false;
+    this.preCalibMode = 'match';  // modo al que se vuelve al salir del entrenamiento
     this.pendingCalib = false;
     this.feedTimer = 1.5;
     this.feedIdle = 0;
@@ -407,6 +408,7 @@ class PingPongGame {
 
   enterCalib() {
     this.calib = true;
+    this.preCalibMode = this.mode;   // recordar el modo actual para volver a él
     this.calibPanel.group.visible = true;
     this.panelDirty = true;
     this.resetToss();
@@ -419,12 +421,43 @@ class PingPongGame {
   exitCalib() {
     this.calib = false;
     this.calibPanel.group.visible = false;
-    this.rules.startMatch();
+    // Volver al modo en el que estábamos antes de entrenar (partido o
+    // supervivencia) — antes siempre se caía a un partido nuevo, perdiendo
+    // la sesión de supervivencia en curso.
+    const back = this.preCalibMode === 'survival' ? 'survival' : 'match';
+    this.preCalibMode = 'match';
+    this.mode = back;
+    this.rules.startMatch(back);
+    this.applyAISkill();
     this.resetToss();
+    this.aiToss = null;
+    this.demoToss = null;
     this.ai.reset();
     this.setupAIServe();
     this.setupDemoServe();
     this.haptic(this.paddleHand, 0.4);
+  }
+
+  /** CAMBIO DE MODO EN VR (botón B del mando derecho): Partido ⇄ Supervivencia
+ *  sin salir de la sesión. Reinicia el encuentro en el nuevo modo, reancla la
+ *  IA y anuncia el cambio por megafonía. En entrenamiento no actúa: allí B
+ *  recorre los agarres guardados. */
+  switchMode(mode) {
+    if (this.calib || this.mode === mode) return;
+    this.mode = mode;
+    this.survivalRallies = 0;
+    this.rules.startMatch(mode);
+    this.applyAISkill();
+    this.resetToss();
+    this.aiToss = null;
+    this.demoToss = null;
+    this.ai.reset();
+    this.setupAIServe();
+    this.setupDemoServe();
+    this.audio.announce(mode === 'survival'
+      ? 'Modo supervivencia. ¡Aguanta el rallye!'
+      : 'Modo partido. ¡Buena suerte!', true);
+    this.haptic(this.paddleHand, 0.6, 130);
   }
 
   /** Máquina de bolas: saque reglamentario (bote propio + bote rival) hacia
@@ -654,7 +687,7 @@ class PingPongGame {
       return;
     }
     if (this.rules.state === 'over') {
-      this.rules.startMatch();
+      this.rules.startMatch(this.mode);   // revancha en el MISMO modo de juego
       this.resetToss();
       return;
     }
@@ -806,6 +839,13 @@ class PingPongGame {
     if (presenting && this.readButton(this.handIndex('left'), 5)) {
       if (this.calib) this.exitCalib();
       else this.enterCalib();
+    }
+
+    // 0.6) botón B (mando derecho): cambiar de modo de juego sin salir de VR
+    //      (Partido ⇄ Supervivencia; dentro del entrenamiento B cambia el agarre)
+    if (presenting && !this.calib &&
+        this.readButton(this.handIndex('right'), 5)) {
+      this.switchMode(this.mode === 'survival' ? 'match' : 'survival');
     }
 
     // 1) Palas de los mandos (solo en VR)
@@ -1103,7 +1143,7 @@ class PingPongGame {
       player: this.rules.scorePlayer,
       ai: this.rules.scoreAi,
       server: this.rules.server,
-      message: this.calib ? 'ENTRENAMIENTO · Y: volver al partido' : this.rules.message,
+      message: this.calib ? 'ENTRENAMIENTO · Y: volver al modo anterior' : this.rules.message,
       mode: this.mode,
       rally: this.rules.rallyHits,
       rallyes: this.survivalRallies,

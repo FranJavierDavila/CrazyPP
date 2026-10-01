@@ -231,7 +231,7 @@ class Rules {
     } else if (this.state === 'over') {
       this.stateTimer -= dt;
       if (this.stateTimer <= 0) {
-        this.startMatch();
+        this.startMatch(this.mode);   // reinicio automático en el MISMO modo
         intents.push({ type: 'serve', server: this.server });
       }
     }
@@ -898,7 +898,8 @@ function createCalibPanel() {
       ['B', 'cargar el siguiente'],
       ['X', 'volver al agarre natural'],
       ['GATILLO', 'lanzar bola de entrenamiento'],
-      ['Y', 'salir al partido'],
+      ['Y', 'volver al modo anterior'],
+      ['B (en juego)', 'partido ⇄ supervivencia'],
     ];
     let y = 224;
     for (const [k, v] of lines) {

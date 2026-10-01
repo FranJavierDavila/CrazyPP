@@ -51,7 +51,7 @@ for i, bv in enumerate(old_views):
             report.append((i, f"SIN CAMBIOS ({e})"))
     pad = (-len(new_bin)) % 4
     new_bin += b"\x00" * pad
-    nv = {"byteOffset": len(new_bin), "byteLength": len(raw)}
+    nv = {"buffer": bv.get("buffer", 0), "byteOffset": len(new_bin), "byteLength": len(raw)}
     if "byteStride" in bv and i not in img_views:
         nv["byteStride"] = bv["byteStride"]
     if "name" in bv:
@@ -74,7 +74,7 @@ out = bytearray()
 out += struct.pack("<III", 0x46546c67, 2, total)
 out += struct.pack("<II", len(json_bytes), 0x4E4F534A)
 out += json_bytes
-out += struct.pack("<II", len(new_bin), 0x494E4942)
+out += struct.pack("<II", len(new_bin), 0x004E4942)  # "BIN\0" — ¡el tipo de chunk BIN del spec glTF!
 out += new_bin
 open(dst, "wb").write(bytes(out))
 

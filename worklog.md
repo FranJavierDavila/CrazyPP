@@ -331,3 +331,42 @@ Stage Summary:
 - v2.11 completa: IA con 5 golpes y adaptativa, supervivencia con récord persistente, passthrough opcional, ambiente de torneo completo (público+megafonía) y sala de pabellón con vallas y estela de efecto
 - GLB reoptimizado (1.41MB) tras pérdida accidental del comprimido: nuevo script reutilizable glb_shrink.py
 - Build desplegado en preview y zip listo para el casco
+
+---
+Task ID: 16
+Agent: Super Z (main agent)
+Task: Reparar la pala GLB rota + permitir cambiar de modo de juego en VR (reportado por el usuario)
+
+Work Log:
+- DIAGNÓSTICO GLB: el usuario tenía razón, la pala GLB no cargaba (fallback procedural activo).
+  Tres daños causados por scripts/glb_shrink.py en la Task 15:
+  1) Chunk BIN con tipo inválido 0x494E4942 ("BINI") en vez de 0x004E4942 ("BIN\0") del spec glTF.
+  2) buffers[0].byteLength desincronizado con el chunk BIN real.
+  3) 20 bufferViews reconstruidos SIN el campo obligatorio "buffer": 0 (crasheaba GLTFLoader:
+     "Cannot read properties of undefined (reading 'type')" en loadBuffer), y 5 imágenes JPEG
+     re-guardadas como PNG con mimeType incorrecto (PIL pierde .format tras resize).
+- Corregido glb_shrink.py (tipo de chunk + campo buffer) para usos futuros.
+- Nuevo scripts/glb_repair.py: parchea tipo de chunk, sincroniza byteLength, añade buffer:0 a
+  cada bufferView, corrige mimeTypes por firma real de bytes y valida chunks/accesorios/mallas.
+- assets/pala.glb reparado y validado (1,411,116 bytes; 24 bufferViews; 20 imágenes OK).
+- MODO DE JUEGO: no se podía salir de un modo a otro en VR (solo desde el overlay 2D).
+  - Nuevo switchMode(mode) en game_part3.js: reinicia en el nuevo modo, sincroniza IA (applyAISkill),
+    anuncia por megafonía y vibra.
+  - Botón B (mando derecho, button 5) FUERA del entrenamiento: alterna Partido ⇄ Supervivencia.
+    Dentro del entrenamiento B sigue cambiando el agarre (sin conflicto).
+  - Y (izquierdo) entra en entrenamiento recordando preCalibMode; al salir vuelve al modo anterior
+    (antes siempre caía a un partido normal y desincronizaba this.mode vs rules.mode).
+  - exitCalib ahora llama applyAISkill() y restaura aiToss/demoToss.
+  - Revancha con gatillo y auto-reinicio tras 'over' mantienen el MISMO modo (rules.startMatch(this.mode)).
+  - Textos: panel de entrenamiento ('Y: volver al modo anterior', nueva línea 'B (en juego):
+    partido ⇄ supervivencia'), overlay con sección B·MODO, hint del marcador actualizado.
+- Verificación headless (Playwright, scripts/verify_v212.py + shot_v212.py):
+  - GLB cargado: 5 mallas BufferGeometry del modelo real, CERO errores de consola.
+  - switchMode('survival') → mode=rules=survival; switchMode('match') → ambos match. OK.
+  - Capturas: preview_v212_demo_nova.png / nova2.png — palas GLB con goma roja y mango de madera.
+
+Stage Summary:
+- index.html reconstruido (2.05 MB) en download/pingpong-quest3-v2/ con la pala GLB funcional
+  y cambio de modo en VR: B = Partido ⇄ Supervivencia, Y = entrenamiento que ahora SÍ devuelve
+  al modo previo. glb_shrink.py corregido; glb_repair.py nuevo (reutilizable para validar GLB).
+- Pendiente de confirmación del usuario en el visor: pala GLB visible y B/Y en el juego real.

@@ -135,22 +135,13 @@ class PingPongGame {
     this.markerIdx = 0;
     for (const m of this.markers) this.rig.add(m);
 
-    // Pala de la IA y del jugador demo: modelo GLB con la hoja en el origen
+    // Pala de la IA y del jugador demo: modelo GLB con la hoja en el origen.
+    // Sin cuerpos: solo la pala flotante del rival (más limpio y no estorba).
     this.aiPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.aiPaddleMesh);
-    this.aiAvatar = createOpponent(0x2b4a7a);
-    this.aiAvatar.group.position.set(0, 0, DIMS.tableCenterZ - DIMS.tableHalfLength - 0.45);
-    this.aiAvatar.homeZ = this.aiAvatar.group.position.z;
-    this.rig.add(this.aiAvatar.group);
 
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
-    this.demoAvatar = createOpponent(0x7a2b4a);
-    this.demoAvatar.group.position.set(0, 0, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.85);
-    this.demoAvatar.homeZ = this.demoAvatar.group.position.z;
-    this.demoAvatar.group.rotation.y = Math.PI;
-    this.demoAvatar.group.visible = false;
-    this.rig.add(this.demoAvatar.group);
 
     const sb = createScoreboard();
     this.scoreboardUpdate = sb.update;
@@ -560,11 +551,6 @@ class PingPongGame {
     this.demoPaddleMesh.lookAt(this.ball.pos);
     this.demoPaddleMesh.rotateX(0.18);
 
-    this.updateAvatar(this.aiAvatar, this.ai.pos, dt, now);
-    this.aiAvatar.group.visible = true;
-    this.demoAvatar.group.visible = !presenting;
-    if (!presenting) this.updateAvatar(this.demoAvatar, this.demoAI.pos, dt, now);
-
     for (const m of this.markers) {
       if (!m.visible) continue;
       m.userData.t += dt * 2.4;
@@ -613,25 +599,6 @@ class PingPongGame {
     this.ball.spin.copy(spin);
     this.rules.beginServeRally(side);
     this.audio.serve();
-  }
-
-  /** Cuerpo del rival: pies siguen la pala, brazo procedural hacia la pala. */
-  updateAvatar(av, paddlePos, dt, time) {
-    const targetX = THREE.MathUtils.clamp(paddlePos.x, -0.62, 0.62);
-    av.group.position.x += (targetX - av.group.position.x) * Math.min(1, dt * 5);
-    const zTarget = av.homeZ + (paddlePos.z - av.homeZ) * 0.35;
-    av.group.position.z += (zTarget - av.group.position.z) * Math.min(1, dt * 4);
-    av.group.position.y = Math.sin(time * 1.8 + av.phase) * 0.008;
-
-    tmpShoulder.set(0.21, 1.30, 0.02);
-    av.group.localToWorld(tmpShoulder);
-    tmpDir.copy(paddlePos).sub(tmpShoulder);
-    const len = THREE.MathUtils.clamp(tmpDir.length() - 0.10, 0.18, 0.55);
-    if (tmpDir.lengthSq() > 1e-8) tmpDir.normalize();
-    av.upper.position.copy(tmpShoulder).addScaledVector(tmpDir, len * 0.5 + 0.02);
-    av.upper.quaternion.setFromUnitVectors(UP, tmpDir);
-    av.upper.scale.set(1, len / 0.352, 1);
-    av.hand.position.copy(paddlePos).addScaledVector(tmpDir, -0.03);
   }
 
   updateBlobShadow() {

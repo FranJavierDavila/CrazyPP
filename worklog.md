@@ -61,3 +61,20 @@ Work Log:
 Stage Summary:
 - El preview en la raíz ahora muestra el juego v2 completo (pala GLB real, saque con mano libre y física, regla ITTF de dos botes, LET, rival con cuerpo)
 - Entregable Netlify Drop sin cambios: download/pingpong-quest3-v2/index.html (autocontenido) o .zip
+
+---
+Task ID: 4
+Agent: Super Z (main agent)
+Task: Eliminar los cuerpos de los avatares — el usuario quiere solo las palas ("los cuerpos molestan")
+
+Work Log:
+- Localizado createOpponent() en scripts/game_part2.js (torso, caderas, piernas, zapatos, cabeza, pelo, brazo procedural) y sus usos en scripts/game_part3.js (creación de aiAvatar/demoAvatar, llamadas a updateAvatar en el bucle y el método updateAvatar)
+- Verificado que las palas de IA/demo son independientes de los cuerpos (se posicionan directamente desde ai.pos/demoAI.pos), así que quitar los cuerpos no afecta a la IA, el saque ni las colisiones
+- Eliminado: función createOpponent completa, bloques de creación de avatares en buildScene, llamadas updateAvatar + método updateAvatar
+- Reconstruido index.html con build_html.py (sintaxis OK, 1.50 MB, GLB incrustado intacto); sin referencias colgantes (rg limpia)
+- Desplegado a public/game.html; verificado en agent-browser: escena sin cuerpos, las dos palas GLB flotantes visibles y siguiendo la IA, rally vivo (1:0), cero errores de consola; captura scripts/preview_v3_nobody.png
+- Actualizados download/pingpong-quest3-v2.zip y download/README.md (nueva viñeta "Solo palas, sin cuerpos")
+
+Stage Summary:
+- El preview (raíz) y el entregable Netlify Drop muestran ahora solo las palas: la del rival la mueve la IA, sin avatar humanoide
+- Física, reglas ITTF, saque con mano libre y marcador sin cambios

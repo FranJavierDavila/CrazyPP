@@ -524,62 +524,6 @@ function createBall() {
   return { mesh, trail, trailUpdate };
 }
 
-function createOpponent(shirtColor) {
-  const group = new THREE.Group();
-  const shirt = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.75 });
-  const skin = new THREE.MeshStandardMaterial({ color: 0xd9b08c, roughness: 0.6 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x1c2127, roughness: 0.8 });
-
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.155, 0.34, 6, 16), shirt);
-  torso.position.y = 1.08;
-  torso.castShadow = true;
-  group.add(torso);
-
-  const hips = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.16, 0.20), dark);
-  hips.position.y = 0.84;
-  group.add(hips);
-
-  for (const sx of [-0.09, 0.09]) {
-    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.062, 0.52, 4, 10), dark);
-    leg.position.set(sx, 0.42, 0);
-    leg.castShadow = true;
-    group.add(leg);
-    const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.11, 0.06, 0.20),
-      new THREE.MeshStandardMaterial({ color: 0xe8e6e0, roughness: 0.6 }),
-    );
-    shoe.position.set(sx, 0.03, -0.03);
-    group.add(shoe);
-  }
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.105, 20, 16), skin);
-  head.position.y = 1.52;
-  head.castShadow = true;
-  group.add(head);
-
-  const hair = new THREE.Mesh(
-    new THREE.SphereGeometry(0.108, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
-    dark,
-  );
-  hair.position.y = 1.528;
-  group.add(hair);
-
-  const brow = new THREE.Mesh(
-    new THREE.BoxGeometry(0.13, 0.028, 0.015),
-    new THREE.MeshStandardMaterial({ color: 0x10141a, roughness: 0.3, metalness: 0.3 }),
-  );
-  brow.position.set(0, 1.545, 0.098);
-  group.add(brow);
-
-  const upper = new THREE.Mesh(new THREE.CapsuleGeometry(0.036, 0.28, 4, 10), skin);
-  upper.castShadow = true;
-  group.add(upper);
-  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), skin);
-  group.add(hand);
-
-  return { group, upper, hand, phase: Math.random() * 6 };
-}
-
 function createBlobShadow() {
   const m = new THREE.Mesh(
     new THREE.CircleGeometry(0.05, 20),

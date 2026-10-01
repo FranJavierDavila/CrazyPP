@@ -1356,62 +1356,6 @@ function createBall() {
   return { mesh, trail, trailUpdate };
 }
 
-function createOpponent(shirtColor) {
-  const group = new THREE.Group();
-  const shirt = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.75 });
-  const skin = new THREE.MeshStandardMaterial({ color: 0xd9b08c, roughness: 0.6 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x1c2127, roughness: 0.8 });
-
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.155, 0.34, 6, 16), shirt);
-  torso.position.y = 1.08;
-  torso.castShadow = true;
-  group.add(torso);
-
-  const hips = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.16, 0.20), dark);
-  hips.position.y = 0.84;
-  group.add(hips);
-
-  for (const sx of [-0.09, 0.09]) {
-    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.062, 0.52, 4, 10), dark);
-    leg.position.set(sx, 0.42, 0);
-    leg.castShadow = true;
-    group.add(leg);
-    const shoe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.11, 0.06, 0.20),
-      new THREE.MeshStandardMaterial({ color: 0xe8e6e0, roughness: 0.6 }),
-    );
-    shoe.position.set(sx, 0.03, -0.03);
-    group.add(shoe);
-  }
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.105, 20, 16), skin);
-  head.position.y = 1.52;
-  head.castShadow = true;
-  group.add(head);
-
-  const hair = new THREE.Mesh(
-    new THREE.SphereGeometry(0.108, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
-    dark,
-  );
-  hair.position.y = 1.528;
-  group.add(hair);
-
-  const brow = new THREE.Mesh(
-    new THREE.BoxGeometry(0.13, 0.028, 0.015),
-    new THREE.MeshStandardMaterial({ color: 0x10141a, roughness: 0.3, metalness: 0.3 }),
-  );
-  brow.position.set(0, 1.545, 0.098);
-  group.add(brow);
-
-  const upper = new THREE.Mesh(new THREE.CapsuleGeometry(0.036, 0.28, 4, 10), skin);
-  upper.castShadow = true;
-  group.add(upper);
-  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), skin);
-  group.add(hand);
-
-  return { group, upper, hand, phase: Math.random() * 6 };
-}
-
 function createBlobShadow() {
   const m = new THREE.Mesh(
     new THREE.CircleGeometry(0.05, 20),
@@ -1653,22 +1597,13 @@ class PingPongGame {
     this.markerIdx = 0;
     for (const m of this.markers) this.rig.add(m);
 
-    // Pala de la IA y del jugador demo: modelo GLB con la hoja en el origen
+    // Pala de la IA y del jugador demo: modelo GLB con la hoja en el origen.
+    // Sin cuerpos: solo la pala flotante del rival (más limpio y no estorba).
     this.aiPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.aiPaddleMesh);
-    this.aiAvatar = createOpponent(0x2b4a7a);
-    this.aiAvatar.group.position.set(0, 0, DIMS.tableCenterZ - DIMS.tableHalfLength - 0.45);
-    this.aiAvatar.homeZ = this.aiAvatar.group.position.z;
-    this.rig.add(this.aiAvatar.group);
 
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
-    this.demoAvatar = createOpponent(0x7a2b4a);
-    this.demoAvatar.group.position.set(0, 0, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.85);
-    this.demoAvatar.homeZ = this.demoAvatar.group.position.z;
-    this.demoAvatar.group.rotation.y = Math.PI;
-    this.demoAvatar.group.visible = false;
-    this.rig.add(this.demoAvatar.group);
 
     const sb = createScoreboard();
     this.scoreboardUpdate = sb.update;
@@ -2078,11 +2013,6 @@ class PingPongGame {
     this.demoPaddleMesh.lookAt(this.ball.pos);
     this.demoPaddleMesh.rotateX(0.18);
 
-    this.updateAvatar(this.aiAvatar, this.ai.pos, dt, now);
-    this.aiAvatar.group.visible = true;
-    this.demoAvatar.group.visible = !presenting;
-    if (!presenting) this.updateAvatar(this.demoAvatar, this.demoAI.pos, dt, now);
-
     for (const m of this.markers) {
       if (!m.visible) continue;
       m.userData.t += dt * 2.4;
@@ -2131,25 +2061,6 @@ class PingPongGame {
     this.ball.spin.copy(spin);
     this.rules.beginServeRally(side);
     this.audio.serve();
-  }
-
-  /** Cuerpo del rival: pies siguen la pala, brazo procedural hacia la pala. */
-  updateAvatar(av, paddlePos, dt, time) {
-    const targetX = THREE.MathUtils.clamp(paddlePos.x, -0.62, 0.62);
-    av.group.position.x += (targetX - av.group.position.x) * Math.min(1, dt * 5);
-    const zTarget = av.homeZ + (paddlePos.z - av.homeZ) * 0.35;
-    av.group.position.z += (zTarget - av.group.position.z) * Math.min(1, dt * 4);
-    av.group.position.y = Math.sin(time * 1.8 + av.phase) * 0.008;
-
-    tmpShoulder.set(0.21, 1.30, 0.02);
-    av.group.localToWorld(tmpShoulder);
-    tmpDir.copy(paddlePos).sub(tmpShoulder);
-    const len = THREE.MathUtils.clamp(tmpDir.length() - 0.10, 0.18, 0.55);
-    if (tmpDir.lengthSq() > 1e-8) tmpDir.normalize();
-    av.upper.position.copy(tmpShoulder).addScaledVector(tmpDir, len * 0.5 + 0.02);
-    av.upper.quaternion.setFromUnitVectors(UP, tmpDir);
-    av.upper.scale.set(1, len / 0.352, 1);
-    av.hand.position.copy(paddlePos).addScaledVector(tmpDir, -0.03);
   }
 
   updateBlobShadow() {

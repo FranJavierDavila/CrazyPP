@@ -294,3 +294,20 @@ Stage Summary:
 - El audio ya se autorepara si el navegador congela el grafo al cambiar el foco (grafo zombi), y al enfocar la ventana suena un blip de confirmación
 - El chip en pared permite distinguir sin consola: 'OK · T+ · foco sí' con silencio = enrutado del SISTEMA (Quest Link/navegador, fuera del alcance del juego) vs 'reconectando/reloj parado' = el juego lo recupera solo
 - Build v2.10 desplegado, zip limpio 838 KB, sin errores
+
+---
+Task ID: 14-bis
+Agent: main
+Task: Cierre del caso audio — usuario confirma: "si la pruebo directamente sin link se escucha perfectamente"
+
+Work Log:
+- Confirmación del usuario: en Meta Quest Browser del casco (SIN Quest Link) el audio funciona perfectamente => la causa del muteo por foco era el ENRUTADO DE AUDIO DE QUEST LINK (sistema: Link/Windows re-enruta/silencia el audio de la página al enfocar su ventana), no el juego
+- Cadena de causalidad final: v2.8/v2.9 arreglaron la mudez real en VR (re-vinculación de salida + adoptar-solo-si-running); el síntoma restante (silencio al enfocar la ventana) era exclusivo de la vía Quest Link + Chrome de escritorio
+- v2.10 queda igualmente como blindaje: rescate de grafo zombi (reloj congelado), rescate en focus/visibilitychange, blip de confirmación y chip de diagnóstico en pared (T+/T- · ctx · foco · VR)
+- README actualizado con advertencia: probar SIEMPRE en el navegador del casco, no vía Quest Link (nota con la firma del chip que delata el muteo de Link)
+- Sin cambios de código ni rebuild (solo documentación); zip intacto (838 KB, index.html autocontenido)
+
+Stage Summary:
+- AUDIO EN VR: CASO CERRADO Y CONFIRMADO POR EL USUARIO en el entorno objetivo (Quest 3 + Meta Quest Browser)
+- Quest Link + Chrome de escritorio no es la vía soportada: documentado en README
+- v2.10 desplegada como versión final de esta ronda, lista para seguir con nuevas mejoras

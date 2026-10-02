@@ -893,3 +893,61 @@ Stage Summary:
 - Pendiente visor: confirmar en el Quest 3 la dicción (sin cortes), la
   naturalidad del golpeo y el menú; sigue pendiente la parte estética
   ("vidilla" del entorno) como siguiente fase.
+
+---
+Task ID: 27
+Agent: Super Z (main agent)
+Task: v2.24 — puntero del menú sin espejo vertical, fin de la doble pulsación (casillas/teclado) y multijugador utilizable
+
+Work Log:
+- FEEDBACK: (1) casillas marcadas en amarillo que "no se pueden desmarcar ni
+  cambian de estado"; (2) al apuntar con la mano de la pala la intersección
+  es correcta en horizontal pero INVERTIDA en vertical; (3) en el menú
+  multijugador el puntero no apunta bien y CREAR SALA / INTRODUCIR CÓDIGO
+  tienen zonas pulsables desplazadas; (4) CREAR SALA no hace nada (no se ve
+  el código); (5) el teclado del código DUPLICA cada tecla.
+- CAUSA RAÍZ #1 (clics dobles): three.js (WebXRController.dispatchEvent,
+  r170 verificado en el fuente) entrega selectstart/squeezestart por TODOS
+  los espacios del mismo inputSource (targetRay, grip, hand). El juego
+  registraba selectstart en grip Y targetRay (y squeeze en ambos) → cada
+  pulsación entraba DOS veces: toggles 2×=estado original ("parecen
+  muertos"), teclado letra×2, hostRoom×2 (teardown destruía la sala que se
+  creaba). FIX: listener ÚNICO por evento (select→targetRay,
+  squeeze→grip) + guardia temporal 70 ms por mando en onSelectStart
+  (_lastSelect).
+- CAUSA RAÍZ #2 (espejo vertical): el cursor del panel se pintaba con
+  (0.5 - uv.y)*0.35 → coordenada Y invertida respecto al impacto real (el
+  hit-testing con (1-uv.y)*640 SÍ era correcto). El usuario apunta con el
+  punto → clics en el botón equivocado → percibe "zonas desplazadas" y
+  "CREAR SALA no hace nada" (el espejo de los botones cae en zona vacía).
+  FIX: dot.position.y = (uv.y - 0.5)*0.35 + descarte de intersecciones
+  degeneradas (hit.distance > 0.02).
+- HARDENING NetLink: hostRoom ignora si status creating/waiting; joinRoom
+  ignora si joining/online (re-entrada imposible por más vías).
+- VERIFICACIÓN (verify_v224.py, TODO OK): estáticos (1 listener select
+  targetRay / 0 grip; squeeze grip=1/targetRay=0; fórmula del cursor;
+  guardias); rayos sintéticos: apuntando a 'mode:match' (arriba) hover+dot
+  EXACTOS (±0.004 m, dot.y=+0.097) y a 'close' (abajo) dot.y=-0.113 — sin
+  espejo; toggles: entrega duplicada simulada = UNA basculación (amb/voz/
+  trail) y la pulsación siguiente restaura; voz persiste (ppxr_voz_v1);
+  teclado: net:join abre el teclado y A,B,2,C,D → 'AB2CD' (sin duplicar),
+  del → 'AB2C'; crear sala: clic (duplicado incluido) → 'creating' →
+  'waiting' con código de 5 (BYVTF) dibujado grande y botón CANCELAR SALA.
+  Regresiones: verify_v218 TODO OK (15 botones, saque fácil), verify_v219
+  TODO OK (sala FFM6H, protocolo), verify_v220 TODO OK (1 fuente, 2.86 s),
+  verify_v222 TODO OK (gate, orientación), verify_v223 TODO OK, test_ai_
+  returns exit 0 (12-13/14, varianza del modelo de error). 0 errores página.
+- Capturas: captura-v224-cursor.png (punto + borde blanco EXACTAMENTE sobre
+  'Cerrar menú' — prueba visual del anti-espejo), captura-v224-menu.png,
+  captura-v224-multi.png. Nota técnica: con isPresenting simulado el render
+  va por la ruta XR → frames negros; las capturas desactivan isPresenting
+  solo para el render.
+- BUILD: index.html 2.56 MB (sintaxis OK); ZIP regenerado; README v2.24.
+
+Stage Summary:
+- v2.24: el menú es totalmente utilizable — el punto sigue al láser (sin
+  espejo), cada clic cuenta UNA vez (casillas vivas, teclado limpio) y
+  CREAR SALA muestra el código para invitar a un amigo.
+- Pendiente visor: que el usuario pruebe el flujo de dos jugadores
+  (crear sala → código → unirse) y confirme dicción v2.23 en el casco.
+- Siguiente fase declarada: estética del entorno ("vidilla").

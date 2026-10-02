@@ -146,6 +146,13 @@ class PingPongGame {
     this.menuRects = [];
     this._menuState = '';
     this.lastFeedTap = 0;
+    // v2.24: three.js emite selectstart/squeezestart por TODOS los espacios
+    // del mismo mando (targetRay, grip y hand — WebXRController.dispatchEvent).
+    // Con listeners duplicados cada pulsación disparaba onSelectStart DOS
+    // veces: los basculantes volvían a su estado (parecían muertos) y el
+    // teclado del código escribía cada letra por duplicado. Además del
+    // listener único, guardia temporal por mando.
+    this._lastSelect = [0, 0];
     // ESTELA de la bola (v2.18): conmutable desde el menú y persistente
     try { this.showTrail = localStorage.getItem('ppxr_trail_v1') !== '0'; } catch { this.showTrail = true; }
     // MULTIJUGADOR ONLINE (v2.19): P2P por WebRTC (PeerJS) + voz
@@ -355,8 +362,11 @@ class PingPongGame {
         this.sources[i] = null;
       });
 
+      // v2.24: UN SOLO listener por evento. Antes 'selectstart' estaba en
+      // grip Y targetRay (y el squeeze en ambos): three.js despacha el evento
+      // de sesión a todos los espacios del mando, así que cada pulsación
+      // entraba DOS veces → toggles sin efecto y letras duplicadas.
       const onSelect = () => this.onSelectStart(i);
-      grip.addEventListener('selectstart', onSelect);
       targetRay.addEventListener('selectstart', onSelect);
       const onSqueezeStart = () => {
         this.audio.kick();       // el grip también reactiva el audio en VR
@@ -368,8 +378,6 @@ class PingPongGame {
       };
       grip.addEventListener('squeezestart', onSqueezeStart);
       grip.addEventListener('squeezeend', onSqueezeEnd);
-      targetRay.addEventListener('squeezestart', onSqueezeStart);
-      targetRay.addEventListener('squeezeend', onSqueezeEnd);
 
       this.rig.add(grip);
       this.rig.add(targetRay);
@@ -1175,14 +1183,20 @@ class PingPongGame {
         muRaycaster.set(muGrip, muDir);
         const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
 
-        if (hit && hit.uv) {
+        // v2.24: se descartan intersecciones degeneradas (el mando tocando el
+        // propio plano del panel, distancia ~0) para no pintar un cursor falso.
+        if (hit && hit.uv && hit.distance > 0.02) {
           const px = hit.uv.x * 512;
           const py = (1 - hit.uv.y) * 640;
           idx = this.menuRects.findIndex((r) =>
             px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h);
-          // cursor sobre el panel (uv -> plano 0.28×0.35)
+          // cursor sobre el panel (uv -> plano 0.28×0.35).
+          // v2.24 FIX: el eje Y del plano es uv.y=1 ARRIBA (+0.175). Antes se
+          // pintaba (0.5 - uv.y) y el punto aparecía ESPEJADO en vertical:
+          // el usuario apuntaba con el punto (no con el impacto real) y los
+          // clics caían en el botón equivocado ("zonas desplazadas").
           dot.visible = true;
-          dot.position.set((hit.uv.x - 0.5) * 0.28, (0.5 - hit.uv.y) * 0.35, 0.004);
+          dot.position.set((hit.uv.x - 0.5) * 0.28, (hit.uv.y - 0.5) * 0.35, 0.004);
         } else {
           dot.visible = false;
         }
@@ -1465,6 +1479,12 @@ class PingPongGame {
     if (this.disposed) return;
     this.audio.ensure();
     if (!this.renderer.xr.isPresenting) return;
+    // v2.24: guardia anti-duplicado por mando (three.js puede entregar el
+    // mismo 'selectstart' por varios espacios; dos disparos reales humanos
+    // nunca distan < 70 ms). Sin esto, cada clic entraba 2 veces.
+    const nowSel = performance.now() / 1000;
+    if (nowSel - (this._lastSelect[i] || 0) < 0.07) return;
+    this._lastSelect[i] = nowSel;
 
     // en modo ajuste, el gatillo lanza una bola de entrenamiento
     if (this.calib) {

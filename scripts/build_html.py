@@ -3,6 +3,10 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.24: cursor del menú SIN espejo vertical (apuntar con el punto = acertar);
+#        selectstart/squeeze en un solo espacio + guardia anti-doble pulsación
+#        (fin de las casillas "muertas", del teclado que duplicaba letras y de
+#        la doble llamada a crear sala); guardias de re-entrada en NetLink.
 # v2.23: voz en UN buffer compuesto (sin cortes entre cifras) + ducking del
 #        ambiente; pala de la IA con golpes de derecha/revés y hoja que gira;
 #        menú con hover en activos, casillas ☑/☐ y área táctil ampliada.

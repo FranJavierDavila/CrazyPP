@@ -1351,6 +1351,9 @@ class NetLink {
   /* ---------------- crear sala (anfitrión) ---------------- */
   hostRoom() {
     if (!this.available()) { this.setStatus('error', 'Red no disponible en este navegador'); return; }
+    // v2.24: guardia de re-entrada (evita destruir una sala que ya se está
+    // creando si el evento llega duplicado o se insiste a cañón)
+    if (this.status === 'creating' || this.status === 'waiting') return;
     this.teardown();
     this.role = 'host';
     this.code = this.genCode();
@@ -1363,6 +1366,7 @@ class NetLink {
   /* ---------------- unirse con código (invitado) ---------------- */
   joinRoom(code) {
     if (!this.available()) { this.setStatus('error', 'Red no disponible en este navegador'); return; }
+    if (this.status === 'joining' || this.status === 'online') return;   // v2.24
     this.teardown();
     this.role = 'guest';
     this.code = (code || '').toUpperCase().trim();

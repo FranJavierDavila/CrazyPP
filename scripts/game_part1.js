@@ -317,6 +317,51 @@ const UP = new THREE.Vector3(0, 1, 0);
 /* =====================================================================
  *  AUDIO · sintetizado con Web Audio (sin assets externos)
  * ===================================================================== */
+
+/* ----- v2.20 · PLAN DE VOZ del megáfono ------------------------------
+ * Cada anuncio del juego se traduce a una secuencia de fragmentos del
+ * banco de voz (VOICE_B64 en game_voice.js). Las claves de VOICE_FULL y
+ * VOICE_ACH están NORMALIZADAS (minúsculas, sin acentos ni signos).
+ * -------------------------------------------------------------------- */
+const VOICE_FULL = {
+  'modo supervivencia aguanta el rallye': ['modo_supervivencia'],
+  'modo partido buena suerte': ['modo_partido'],
+  'bienvenido al partido buena suerte': ['bienvenido'],
+  'rival conectado a jugar': ['rival_conectado'],
+  'rival desconectado': ['rival_desconectado'],
+  'sala pabellon': ['sala_pabellon'],
+  'sala neon': ['sala_neon'],
+  'sala atardecer': ['sala_atardecer'],
+  'sala artico': ['sala_artico'],
+  'dificultad facil': ['dificultad_facil'],
+  'dificultad media': ['dificultad_media'],
+  'dificultad dificil': ['dificultad_dificil'],
+};
+const VOICE_ACH = {
+  'primera victoria': 'ach_primera',
+  'en racha': 'ach_racha',
+  'gigante': 'ach_gigante',
+  'maratonista': 'ach_maraton',
+  'superviviente': 'ach_superviv',
+  'saque directo': 'ach_aces',
+};
+const VOICE_NUM = {};
+for (let vi = 0; vi <= 29; vi++) VOICE_NUM[vi] = `n${vi}`;
+VOICE_NUM[30] = 'n30'; VOICE_NUM[40] = 'n40'; VOICE_NUM[50] = 'n50';
+VOICE_NUM[60] = 'n60'; VOICE_NUM[70] = 'n70'; VOICE_NUM[80] = 'n80';
+VOICE_NUM[90] = 'n90';
+
+/** Número 0-99 -> fragmentos (0-29 directos; 30-99 decenas + 'y' + unidad). */
+function voiceNumPlan(n) {
+  n = Math.floor(Number(n));
+  if (!Number.isFinite(n) || n < 0 || n > 99) return null;
+  if (VOICE_NUM[n]) return [VOICE_NUM[n]];
+  const d = Math.floor(n / 10) * 10;
+  const u = n % 10;
+  if (!VOICE_NUM[d] || !VOICE_NUM[u]) return null;
+  return [VOICE_NUM[d], 'y', VOICE_NUM[u]];
+}
+
 class GameAudio {
   constructor() {
     this.ctx = null;
@@ -339,6 +384,10 @@ class GameAudio {
     this._ambBuffer = null;    // buffer de ruido "grumoso" reutilizable
     this._lastOhh = 0;
     this._lastAnnounce = 0;
+    // v2.20: banco de voz (AudioBuffer por fragmento, válido SOLO en su ctx)
+    this.vb = null;
+    this.vbGain = null;
+    this.vbCtx = null;
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
@@ -386,6 +435,8 @@ class GameAudio {
     this.noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = this.noiseBuffer.getChannelData(0);
     for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    // v2.20: (re)cargar el banco de voz para este contexto (asíncrono)
+    this._loadVoice(ctx);
   }
 
   /** Observador de estado por contexto: reintenta y avisa al recover() global. */
@@ -873,9 +924,140 @@ class GameAudio {
     } catch { /* */ }
   }
 
+  /* ---------- v2.20 · VOZ REAL DEL MEGÁFONO ----------
+   * Meta Quest Browser NO reproduce speechSynthesis durante la sesión
+   * inmersiva (en la pestaña 2D del escritorio sí). La voz del marcador
+   * pasa a ser audio real (VOICE_B64 · Piper es-ES → Opus) por WebAudio,
+   * la misma vía que ya se oye en el visor (efectos, chimes, público). */
+
+  /** Decodifica el banco de voz para el contexto dado. Los AudioBuffer
+   *  solo son válidos en SU contexto: se recarga en cada _wire() (nuevo
+   *  contexto al entrar/salir de VR). Normalización de pico 0.60. */
+  _loadVoice(ctx) {
+    this.vb = null; this.vbGain = null; this.vbCtx = ctx;
+    if (typeof VOICE_B64 === 'undefined' || !ctx || !ctx.decodeAudioData) return;
+    const keys = Object.keys(VOICE_B64);
+    if (!keys.length) return;
+    const bank = new Map();
+    const gains = new Map();
+    let pend = keys.length;
+    const done = () => {
+      if (pend > 0) return;
+      if (this.vbCtx === ctx && bank.size) {
+        this.vb = bank;
+        this.vbGain = gains;
+        console.info('[Audio] banco de voz listo ·', bank.size, 'fragmentos');
+      }
+    };
+    for (const k of keys) {
+      try {
+        const bin = atob(VOICE_B64[k]);
+        const ab = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) ab[i] = bin.charCodeAt(i);
+        const onOk = (buf) => {
+          try {
+            let peak = 0;
+            const ch = buf.getChannelData(0);
+            for (let i = 0; i < ch.length; i += 16) {
+              const v = Math.abs(ch[i]);
+              if (v > peak) peak = v;
+            }
+            bank.set(k, buf);
+            gains.set(k, peak > 1e-4 ? Math.min(2.4, Math.max(0.35, 0.6 / peak)) : 1);
+          } catch { /* */ }
+          pend--; done();
+        };
+        const onErr = () => { pend--; done(); };
+        try { ctx.decodeAudioData(ab.buffer, onOk, onErr); }
+        catch { onErr(); }
+      } catch { pend--; done(); }
+    }
+  }
+
+  /** Normaliza texto para comparar: minúsculas, sin acentos ni signos. */
+  _normVoice(s) {
+    return String(s).toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  /** Texto del anuncio -> plan [{k, gap}] de fragmentos, o null si el
+   *  texto no está cubierto por el banco (respaldo speechSynthesis). */
+  voicePlan(text) {
+    try {
+      const s = this._normVoice(text);
+      if (!s) return null;
+      const P = (keys, gaps) => keys.map((k, i) => ({ k, gap: (gaps && gaps[i]) || 0.075 }));
+      const full = VOICE_FULL[s];
+      if (full) return P(full);
+      let m;
+      // ¡Logro desbloqueado: <nombre>!
+      m = s.match(/^logro desbloqueado (.+)$/);
+      if (m) {
+        const ach = VOICE_ACH[m[1]];
+        return ach ? P(['logro_desbloqueado', ach], [0.2]) : null;
+      }
+      // ¡Rallye de <N> golpes! Nuevo récord
+      m = s.match(/^rallye de (\d+) golpes nuevo record$/);
+      if (m) {
+        const num = voiceNumPlan(m[1]);
+        return num ? P(['rallye_de', ...num, 'golpes', 'nuevo_record'], [0.05, 0.05, 0.32]) : null;
+      }
+      // <p> a <q>, saque para ti / tu rival / la máquina
+      m = s.match(/^(\d+) a (\d+) saque para (ti|tu rival|la maquina)$/);
+      if (m) {
+        const n1 = voiceNumPlan(m[1]);
+        const n2 = voiceNumPlan(m[2]);
+        const quien = m[3] === 'ti' ? 'saque_para_ti'
+          : m[3] === 'tu rival' ? 'saque_para_rival' : 'saque_para_maquina';
+        return (n1 && n2) ? P([...n1, 'a', ...n2, quien], [0.07, 0.07, 0.3]) : null;
+      }
+      // ¡Victoria! <p> a <q>
+      m = s.match(/^victoria (\d+) a (\d+)$/);
+      if (m) {
+        const n1 = voiceNumPlan(m[1]);
+        const n2 = voiceNumPlan(m[2]);
+        return (n1 && n2) ? P(['victoria', ...n1, 'a', ...n2], [0.12, 0.07, 0.07]) : null;
+      }
+      // Partido para la CPU / tu rival. <p> a <q>
+      m = s.match(/^partido para (la cpu|tu rival) (\d+) a (\d+)$/);
+      if (m) {
+        const n1 = voiceNumPlan(m[2]);
+        const n2 = voiceNumPlan(m[3]);
+        const quien = m[1] === 'tu rival' ? 'partido_para_rival' : 'partido_para_cpu';
+        return (n1 && n2) ? P([quien, ...n1, 'a', ...n2], [0.3, 0.07, 0.07]) : null;
+      }
+      return null;
+    } catch { return null; }
+  }
+
+  /** Encadena los fragmentos del plan sobre this.master (tras el chime).
+   *  Devuelve true si todo el plan quedó programado. */
+  speakPlan(plan) {
+    try {
+      if (!plan || !plan.length || !this.ctx || !this.master) return false;
+      if (!this.vb || this.vbCtx !== this.ctx) return false;
+      let t = this.ctx.currentTime + 0.34;   // deja sonar el chime primero
+      for (const a of plan) {
+        const buf = this.vb.get(a.k);
+        if (!buf) return false;
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        const g = this.ctx.createGain();
+        g.gain.value = (this.vbGain && this.vbGain.get(a.k)) || 1;
+        src.connect(g);
+        g.connect(this.master);
+        src.start(t);
+        t += buf.duration + (a.gap || 0.075);
+      }
+      return true;
+    } catch { return false; }
+  }
+
   /** MEGAFONÍA del marcador: chime de torneo + voz ("5-3, saque para ti").
-   *  Usa speechSynthesis si está disponible (en la Quest, es-ES); si no,
-   *  queda el chime + el texto en el marcador. Throttle de 6 s salvo force. */
+   *  v2.20: voz por WebAudio (clips del banco), audible en VR; si falta un
+   *  fragmento o el banco no está listo, respaldo speechSynthesis (2D).
+   *  Throttle de 6 s salvo force. */
   announce(text, force) {
     try {
       const now = performance.now();
@@ -884,6 +1066,8 @@ class GameAudio {
       if (!this.ambience) return;
       this.playOsc(660, 660, 0.12, 'sine', 0.2, 0);
       window.setTimeout(() => this.playOsc(990, 990, 0.16, 'sine', 0.2, 0), 140);
+      const plan = this.voicePlan(text);
+      if (plan && this.speakPlan(plan)) return;
       const ss = window.speechSynthesis;
       if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return;
       ss.cancel();

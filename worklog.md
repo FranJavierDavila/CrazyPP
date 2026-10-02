@@ -645,3 +645,62 @@ Stage Summary:
   todo dentro del mismo HTML autocontenido (PeerJS inline).
 - Pendiente de visor: probar el online entre dos visores reales (latencia,
   permiso de micro en Meta Quest Browser) y la sensación del saque nuevo.
+
+---
+Task ID: 23
+Agent: Super Z (main agent)
+Task: v2.20 — la voz del megáfono (marcador) audible dentro de la experiencia VR
+
+Work Log:
+- FEEDBACK: "la voz que da los puntos solo la escucho en la página del
+  ordenador". Causa raíz: el megáfono usaba window.speechSynthesis, que el
+  Meta Quest Browser NO reproduce durante la sesión inmersiva (sí en la
+  pestaña 2D); el chime sí se oía porque va por WebAudio (misma vía que los
+  efectos, que funcionan en VR).
+- SOLUCIÓN: voz real incrustada. 67 fragmentos es-ES generados con Piper TTS
+  (modelo es_ES-davefx-medium, binario oficial 2023.11.14-2) → Opus 28k mono
+  con ffmpeg (235 KB) → scripts/game_voice.js (315 KB base64, const
+  VOICE_B64). Átomos: números 0-29 + decenas + 'y'/'a', frases completas
+  (bienvenida, modos, rival conectado/desconectado, salas ×4, dificultades
+  ×3, victoria, partido para CPU/rival, saque para ti/rival/máquina, logro
+  desbloqueado, rallye de/golpes/nuevo récord) y los 6 nombres de logros.
+- TROPIEZOS: z-ai TTS/ASR (SDK) no pronuncia español usable (7 voces
+  probadas; verificado con ASR: "Atardecer"→"ata yi manakot"); piper-tts
+  1.8.0 pip produce audio estirado corrupto con onnxruntime 1.30 → binario
+  oficial de piper OK. El binario lee el texto por STDIN (argumento
+  positional se cuelga). ASR de palabras aisladas falla por falta de
+  contexto (transcribe fonéticamente en otro idioma) → validación final con
+  clip-lista: "cinco a tres"→"5a3", "rallye de veinte golpes"→"de 20
+  golpes", números→dígitos correctos: pronunciación VALIDADA. Rate limit
+  429 del ASR: reintentos con backoff (asr_check.py).
+- CÓDIGO (game_part1.js): tablas VOICE_FULL/VOICE_ACH/VOICE_NUM +
+  voiceNumPlan (0-99 compuesto) a nivel de módulo; GameAudio._loadVoice(ctx)
+  decodifica VOICE_B64 con normalización de pico 0.60 por fragmento (se
+  engancha en _wire → se recarga con cada contexto nuevo al entrar/salir de
+  VR); _normVoice/voicePlan (texto→plan [{k,gap}] o null) y speakPlan
+  (encadena BufferSources sobre this.master tras el chime); announce()
+  prioriza el banco (WebAudio, audible en VR) y solo usa speechSynthesis
+  como respaldo 2D si falta un fragmento (sin doble voz).
+- BUILD: build_html.py incluye game_voice.js como primera parte. index.html
+  2.21 → 2.54 MB.
+- VERIFICACIÓN (verify_v220.py): TODO OK — banco 67/67 decodificado en el
+  AudioContext real (Opus OK, sampleRate 44100, ganancias finitas);
+  voicePlan cubre 30/32 frases de prueba (100% de las que emite el juego;
+  2 casos de respaldo correctos); announce('5 a 3, saque para ti') programa
+  exactamente 4 BufferSources encadenadas y NO llama a speechSynthesis;
+  texto desconocido cae al respaldo; regresión menú OK; 0 errores de página.
+  Regresiones completas: verify_v218.py TODO OK, verify_v219.py TODO OK,
+  test_ai_returns.py 12/14→14/14, 14/14 (la variación es estocástica: seed
+  salado por hash() de Python; sin regresión).
+- ENTREGA: index.html 2.54 MB, ZIP regenerado (3.0 MB, integridad OK),
+  README con sección v2.20. scripts nuevos: gen_voice.py, build_voice.py,
+  asr_check.py, verify_v220.py.
+
+Stage Summary:
+- v2.20: la megafonía del marcador ("5 a 3, saque para ti", victoria,
+  logros, récord…) ya se oye DENTRO del visor de la Quest 3: clips es-ES
+  reales por WebAudio en vez del TTS del navegador; speechSynthesis queda
+  como respaldo en escritorio.
+- Pendiente de visor: confirmar con el usuario que la voz ya suena en VR
+  (volumen/claridad en el altavoz del casco) y seguir con la fase online
+  real (dos visores, latencia, permiso de micro).

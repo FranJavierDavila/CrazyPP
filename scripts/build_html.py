@@ -3,7 +3,9 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
-PARTS = [f"{BASE}/scripts/game_part{i}.js" for i in (1, 2, 3)]
+# v2.20: game_voice.js (banco de voz Piper/Opus en base64) va PRIMERO
+PARTS = ([f"{BASE}/scripts/game_voice.js"]
+         + [f"{BASE}/scripts/game_part{i}.js" for i in (1, 2, 3)])
 GLB = f"{BASE}/download/pingpong-quest3-v2/assets/pala.glb"
 OUT_DIR = f"{BASE}/download/pingpong-quest3-v2"
 OUT = f"{OUT_DIR}/index.html"

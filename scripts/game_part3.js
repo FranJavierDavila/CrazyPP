@@ -10,14 +10,43 @@ const poseE = new THREE.Euler();
 const poseQ = new THREE.Quaternion();
 const poseD = new THREE.Vector3();
 const swingV = new THREE.Vector3();   // vector del follow-through (v2.17)
-// v2.22 · orientación realista de la cara de la pala (base ortonormal)
+// v2.22 · orientación de la cara de la pala (base ortonormal)
 const aimV = new THREE.Vector3();     // dirección deseada de la normal de cara
 const aimX = new THREE.Vector3();     // eje lateral del marco de la cara
 const aimY = new THREE.Vector3();     // eje "arriba" de la hoja
 const aimM = new THREE.Matrix4();     // base -> cuaternión
 const aimUP = new THREE.Vector3(0, 1, 0);
 const aimRollQ = new THREE.Quaternion();
+const aimPitchQ = new THREE.Quaternion();
 const AIM_Z = new THREE.Vector3(0, 0, 1);   // normal local de la cara (IA)
+const AIM_XA = new THREE.Vector3(1, 0, 0);  // eje local X (pitch de muñeca)
+// v2.23 · POSE POR GOLPE: la pala se compone desde DOS direcciones mundiales
+// (eje de la hoja mango→punta + normal de la cara) y un roll de muñeca.
+const AIM_FWD = new THREE.Vector3();      // hacia el campo contrario
+const AIM_RIGHT = new THREE.Vector3();    // lado de la mano derecha del jugador
+const AIM_BLADE = new THREE.Vector3();    // eje de la hoja deseado
+const AIM_FACE = new THREE.Vector3();     // normal de la cara deseada
+const AIM_BX = new THREE.Vector3();
+const AIM_BY = new THREE.Vector3();
+const AIM_BZ = new THREE.Vector3();
+
+/** Firma de cada golpe (v2.23) — hace que la pala GIRE como la giraría un
+ *  jugador real en vez de quedarse vertical:
+ *  side0  inclinación de la punta hacia el lado del golpe en el contacto
+ *  side1  cruce de la punta al lado contrario al terminar el follow-through
+ *  fwd0/fwd1  inclinación de la hoja hacia delante (tap vertical en la
+ *             cortada, barrido diagonal en el drive)
+ *  clos0  cierre de la cara en el contacto (+ liftado · − cortada/slice)
+ *  clos1  cierre extra durante el follow-through
+ *  rise   elevación del brazo al terminar
+ *  cross  cruce del cuerpo (posición) al terminar */
+const SWING_POSE = {
+  drive:   { side0: 0.55, side1: 0.42, fwd0: 0.20, fwd1: 0.34, clos0: 0.14, clos1: 0.20, rise: 0.13, cross: 1.0 },
+  smash:   { side0: 0.50, side1: 0.36, fwd0: 0.15, fwd1: 0.40, clos0: 0.24, clos1: 0.16, rise: 0.07, cross: 1.0 },
+  push:    { side0: 0.42, side1: 0.26, fwd0: 0.06, fwd1: 0.16, clos0: -0.16, clos1: -0.08, rise: 0.05, cross: 0.6 },
+  dejada:  { side0: 0.50, side1: 0.30, fwd0: 0.10, fwd1: 0.20, clos0: -0.12, clos1: -0.04, rise: 0.12, cross: 0.7 },
+  bloqueo: { side0: 0.30, side1: 0.18, fwd0: 0.10, fwd1: 0.15, clos0: 0.05, clos1: 0.03, rise: 0.04, cross: 0.5 },
+};
 
 // temporales del anti-clipping de palas (mesa / red / suelo)
 const pcA = new THREE.Vector3();
@@ -825,7 +854,7 @@ class PingPongGame {
       c.fillStyle = '#9aa7b4';
       c.font = '500 16px system-ui, sans-serif';
       c.fillText(voz, 256, 214);
-      btn('net:mic', 28, 240, 222, 48, `Voz: ${net.micOn ? 'Sí' : 'No'}`, net.micOn && net.voiceState === 'on');
+      btn('net:mic', 28, 240, 222, 48, `Voz: ${net.micOn ? 'Sí' : 'No'}`, net.micOn && net.voiceState === 'on', undefined, !!net.micOn);
       btn('net:hangup', 262, 240, 222, 48, 'COLGAR', false);
       c.fillStyle = '#9aa7b4';
       c.font = '500 15px system-ui, sans-serif';
@@ -960,12 +989,24 @@ class PingPongGame {
     c.fillText('B · cerrar', W - 26, 46);
 
     // botón genérico (compartido por todas las páginas)
-    const btn = (id, x, y, w, h, label, active, style) => {
-      const hovered = rects.includes !== undefined && this.menuHover.includes(rects.length);
+    // v2.23: (1) los botones ACTIVOS también responden al apuntado (antes
+    // las casillas marcadas parecían muertas: sin hover ni respuesta);
+    // (2) los basculantes llevan CASILLA explícita ☑/☐ que refleja su
+    // estado; (3) la zona táctil es más grande que el dibujo (los botones
+    // de ~2 cm eran imposibles de puntear con el láser en el visor).
+    const btn = (id, x, y, w, h, label, active, style, check) => {
+      const hovered = this.menuHover.includes(rects.length);
       rr(x, y, w, h, 12);
       if (active) {
-        c.fillStyle = style === 'green' ? '#7fb069' : '#e8b45a';
+        c.fillStyle = style === 'green'
+          ? (hovered ? '#93c97e' : '#7fb069')
+          : (hovered ? '#f4ca79' : '#e8b45a');
         c.fill();
+        if (hovered) {
+          c.strokeStyle = '#ffffff';
+          c.lineWidth = 3;
+          c.stroke();
+        }
         c.fillStyle = '#10131a';
       } else {
         c.fillStyle = 'rgba(255,255,255,0.07)';
@@ -978,8 +1019,27 @@ class PingPongGame {
       }
       c.font = '700 20px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText(label, x + w / 2, y + h / 2 + 1);
-      rects.push({ x, y, w, h, id });
+      let tx = x + w / 2;
+      if (check !== undefined) {
+        const bs = 9, bx = x + 18, by = y + h / 2;
+        c.lineWidth = 2;
+        if (check) {
+          c.fillStyle = active ? 'rgba(16,19,26,0.88)' : 'rgba(207,216,224,0.92)';
+          c.fillRect(bx - bs, by - bs, bs * 2, bs * 2);
+          c.strokeStyle = active ? '#e8b45a' : '#10131a';
+          c.beginPath();
+          c.moveTo(bx - 5, by + 0.5);
+          c.lineTo(bx - 1.5, by + 4.5);
+          c.lineTo(bx + 5.5, by - 4.5);
+          c.stroke();
+        } else {
+          c.strokeStyle = active ? 'rgba(16,19,26,0.8)' : 'rgba(255,255,255,0.55)';
+          c.strokeRect(bx - bs, by - bs, bs * 2, bs * 2);
+        }
+        tx += 13;
+      }
+      c.fillText(label, tx, y + h / 2 + 1);
+      rects.push({ x: x - 5, y: y - 3, w: w + 10, h: h + 6, id });
     };
     this._menuBtn = btn;
     this._menuRects = rects;
@@ -1027,12 +1087,13 @@ class PingPongGame {
         name, this.theme === id.split(':')[1]);
     });
 
-    // EXTRAS (v2.18; v2.22 añade el MEGÁFONO del marcador): basculantes,
-    // cada uno persistente. Fila 1: ambiente + estela; fila 2: megáfono.
+    // EXTRAS (v2.18; v2.22 añade el MEGÁFONO; v2.23: casillas ☑/☐): los
+    // tres basculantes muestran su estado con la casilla y responden al
+    // apuntado aunque estén activos.
     label('EXTRAS', 356);
-    btn('amb', 28, 366, 222, 40, `Ambiente: ${this.audio.ambience ? 'Sí' : 'No'}`, !!this.audio.ambience);
-    btn('trail', 262, 366, 222, 40, `Estela: ${this.showTrail ? 'Sí' : 'No'}`, !!this.showTrail);
-    btn('voz', 28, 412, 456, 40, `Megáfono del marcador: ${this.audio.voice ? 'Sí' : 'No'}`, !!this.audio.voice);
+    btn('amb', 28, 366, 222, 40, `Ambiente: ${this.audio.ambience ? 'Sí' : 'No'}`, !!this.audio.ambience, undefined, !!this.audio.ambience);
+    btn('trail', 262, 366, 222, 40, `Estela: ${this.showTrail ? 'Sí' : 'No'}`, !!this.showTrail, undefined, !!this.showTrail);
+    btn('voz', 28, 414, 456, 40, `Megáfono del marcador: ${this.audio.voice ? 'Sí' : 'No'}`, !!this.audio.voice, undefined, !!this.audio.voice);
 
     // REVANCHA (solo con el partido terminado)
     let yNext = 460;
@@ -1174,13 +1235,18 @@ class PingPongGame {
         this.drawMenu();
         break;
       case 'mode':
-        this.closeMenu();
+        // v2.23: ya NO cierra el menú — el cambio se VE (la casilla marcada
+        // salta de botón) y el mensaje dice cómo seguir. Antes el menú se
+        // cerraba y el usuario no sabía si el modo había cambiado.
         if (this.net.online && this.net.role === 'guest') {
           this.net.sendMode(arg === 'survival' ? 'survival' : 'match');
           this.rules.message = 'Pidiendo cambio de modo al anfitrión…';
         } else {
           this.switchMode(arg === 'survival' ? 'survival' : 'match');
+          this.rules.message = `Modo: ${arg === 'survival' ? 'SUPERVIVENCIA' : 'PARTIDO'} · cierra el menú para jugar`;
         }
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
         break;
       case 'diff': {
         if (this.net.online) {
@@ -1976,8 +2042,10 @@ class PingPongGame {
     const s = this.ai.sign;                    // -1 (fondo -Z)
     const x = (Math.random() * 2 - 1) * 0.2;
     this.aiServeSpot.set(x, 1.02, DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.3));
+    // v2.23: postura diestra — el cuerpo queda al OTRO lado de la bola, que
+    // sale junto a la mano derecha (coherente con el swing del saque)
     this.aiServeStance.set(
-      x + s * 0.17, 1.0,
+      x - s * 0.17, 1.0,
       DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.44),
     );
     this.aiServeTimer = 0.9 + Math.random() * 0.6;
@@ -1989,7 +2057,7 @@ class PingPongGame {
     const x = (Math.random() * 2 - 1) * 0.2;
     this.demoServeSpot.set(x, 1.02, DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.3));
     this.demoServeStance.set(
-      x + s * 0.17, 1.0,
+      x - s * 0.17, 1.0,
       DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.44),
     );
     this.demoServeTimer = 1.0 + Math.random() * 0.6;
@@ -2008,49 +2076,55 @@ class PingPongGame {
   }
 
   /**
-   * Pose de la pala de la IA. La orientación NO es lookAt directo (con la
-   * bola justo encima es degenerado y voltea la pala): v2.22 construye la
-   * base ortonormal de la cara con guiñada y elevación acotadas (faceTo) y
-   * roll de muñeca; el saque mantiene su animación completa (postura con la
-   * cara siguiendo el lanzamiento -> swing -> cara hacia la salida).
+   * Pose de la pala de la IA (v2.23) y de la demo. ANTES se construía la
+   * rotación con el mango siempre hacia abajo (base con eje Y vertical):
+   * la pala quedaba una pared vertical perpetua. AHORA se compone desde dos
+   * direcciones independientes — el EJE DE LA HOJA (mango→punta) y la NORMAL
+   * DE LA CARA — más un roll de muñeca:
+   *  · espera: hoja inclinada hacia delante y hacia el lado de la bola.
+   *  · saque: postura diestra (bola junto a la mano derecha), cara abierta
+   *    bajo la bola que va cerrando al golpear.
+   *  · rallye: la punta carga hacia el lado del golpe (derecha/revés según
+   *    de dónde venga la bola), la cara se CIERRA con liftado y se ABRE con
+   *    cortada, y el follow-through CRUZA el cuerpo girando la hoja —
+   *    golpes de izquierda y de derecha creíbles, hoja vertical u horizontal
+   *    según el golpe.
    */
-  /** v2.22 · ORIENTACIÓN REALISTA de la pala de la IA (y de la demo):
-   *  como golpearía un jugador real — la cara "mira" a la bola en la
-   *  preparación y el saque, en el impacto apunta hacia donde va a salir la
-   *  bola abriéndose con cortada y cerrándose con liftado (según spin.x),
-   *  y el follow-through cierra la cara con un roll de muñeca propio de cada
-   *  golpe (swing.roll). Nunca más una pared vertical perpetua. */
   updateAIPaddlePose(mesh, ai, who, dt) {
     const s = ai.sign;                       // -1 = CPU, +1 = demo
-    const faceYaw = s < 0 ? 0 : Math.PI;     // mirar hacia el campo contrario
+    AIM_FWD.set(0, 0, s < 0 ? 1 : -1);       // hacia el campo contrario
+    AIM_RIGHT.set(s, 0, 0);                  // mano derecha: -X (CPU) / +X (demo)
     const stance = who === 'ai' ? this.aiServeStance : this.demoServeStance;
     const spot = who === 'ai' ? this.aiServeSpot : this.demoServeSpot;
     const toss = who === 'ai' ? this.aiToss : this.demoToss;
     const strikeT = who === 'ai' ? this.aiStrikeT : this.demoStrikeT;
     const serving = !this.calib && this.rules.state === 'serve' && this.rules.server === who;
+    const fhServe = 1;   // postura de saque diestra (la bola sale a la derecha)
 
-    /** Construye en poseQ la rotación cuya normal de cara (+Z local) apunta
-     *  hacia dir, con el mango hacia abajo y un roll de muñeca alrededor de
-     *  esa normal. Acota la guiñada (±1.3 rad alrededor de faceYaw) y la
-     *  elevación (−0.5..0.72 rad): posturas creíbles, sin contorsiones. */
-    const faceTo = (dir, roll) => {
-      aimV.copy(dir);
-      if (aimV.lengthSq() < 1e-8) aimV.set(Math.sin(faceYaw), 0, Math.cos(faceYaw));
-      aimV.normalize();
-      const yw = Math.atan2(aimV.x, aimV.z);
-      let dyw = yw - faceYaw;
-      while (dyw > Math.PI) dyw -= 2 * Math.PI;
-      while (dyw < -Math.PI) dyw += 2 * Math.PI;
-      dyw = THREE.MathUtils.clamp(dyw, -1.3, 1.3);
-      const el = THREE.MathUtils.clamp(Math.asin(aimV.y), -0.5, 0.72);
-      const ce = Math.cos(el);
-      aimV.set(Math.sin(faceYaw + dyw) * ce, Math.sin(el), Math.cos(faceYaw + dyw) * ce);
-      aimX.crossVectors(aimUP, aimV);
-      if (aimX.lengthSq() < 1e-8) aimX.set(Math.sin(faceYaw), 0, Math.cos(faceYaw));
-      aimX.normalize();
-      aimY.crossVectors(aimV, aimX).normalize();
-      aimM.makeBasis(aimX, aimY, aimV);
+    /** poseQ = base ortonormal del disco de la pala a partir del eje de hoja
+     *  (+Y local: mango→punta) y la normal de cara (+Z local), más DOS giros
+     *  de muñeca en espacio LOCAL: pitch alrededor de X (cerrar la cara =
+     *  topspin · abrirla = slice) y roll alrededor de Z. El pitch se aplica
+     *  DESPUÉS de ortogonalizar: la apertura/cierre no se deforma nunca. */
+    const bladePose = (bladeDir, faceDir, roll, pitch) => {
+      AIM_BY.copy(bladeDir);
+      if (AIM_BY.lengthSq() < 1e-8) AIM_BY.set(0, 1, 0);
+      AIM_BY.normalize();
+      AIM_BZ.copy(faceDir);
+      if (AIM_BZ.lengthSq() < 1e-8) AIM_BZ.copy(AIM_FWD);
+      AIM_BZ.addScaledVector(AIM_BY, -AIM_BZ.dot(AIM_BY));   // cara ⟂ hoja
+      if (AIM_BZ.lengthSq() < 1e-7) {          // cara degenerada (paralela)
+        AIM_BZ.copy(AIM_FWD).addScaledVector(AIM_BY, -AIM_FWD.dot(AIM_BY));
+      }
+      AIM_BZ.normalize();
+      AIM_BX.crossVectors(AIM_BY, AIM_BZ).normalize();
+      AIM_BZ.crossVectors(AIM_BX, AIM_BY);     // re-ortogonaliza (base exacta)
+      aimM.makeBasis(AIM_BX, AIM_BY, AIM_BZ);
       poseQ.setFromRotationMatrix(aimM);
+      if (pitch) {
+        aimPitchQ.setFromAxisAngle(AIM_XA, pitch);
+        poseQ.multiply(aimPitchQ);
+      }
       if (roll) {
         aimRollQ.setFromAxisAngle(AIM_Z, roll);
         poseQ.multiply(aimRollQ);
@@ -2060,7 +2134,7 @@ class PingPongGame {
 
     if (serving) {
       if (toss) {
-        // swing: de la postura abierta (arriba-atrás) al contacto con la bola
+        // swing del saque: de la postura cargada (derecha-arriba) al contacto
         const p = 1 - Math.max(0, toss.timer) / AI_TOSS_T;
         const e = Math.pow(p, 1.7);            // aceleración natural del brazo
         const bx = spot.x + s * 0.24;
@@ -2070,59 +2144,91 @@ class PingPongGame {
         const cy = this.ball.pos.y - 0.02;
         const cz = this.ball.pos.z + s * 0.05;
         mesh.position.set(bx + (cx - bx) * e, by + (cy - by) * e, bz + (cz - bz) * e);
-        // la cara SIGUE LA BOLA durante todo el lanzamiento (como un jugador
-        // real que no pierde la bola de vista) y llega al contacto con ella;
-        // en la preparación la cara está más abierta y girada (backswing)
-        aimV.copy(this.ball.pos).sub(mesh.position);
-        faceTo(aimV, s * 0.2 * (1 - e));
+        // HOJA: punta cargada al lado derecho y girando hacia delante al golpear
+        AIM_BLADE.set(0, 1 - 0.42 * e, 0)
+          .addScaledVector(AIM_RIGHT, fhServe * (0.55 * (1 - e) + 0.12 * e))
+          .addScaledVector(AIM_FWD, 0.2 + 0.35 * e);
+        // CARA: por DEBAJO de la bola (mirándola) y cerrando al golpear;
+        // el pitch de muñeca abre la cara al principio y la cierra al final
+        AIM_FACE.copy(this.ball.pos).sub(mesh.position);
+        if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
+        AIM_FACE.normalize();
+        bladePose(AIM_BLADE, AIM_FACE, fhServe * 0.2 * (1 - e), -0.2 * (1 - e) + 0.06 * e);
         mesh.quaternion.copy(poseQ);
         this.clampPaddlePose(mesh.position, mesh.quaternion, false);
         return;
       }
       if (strikeT > 0) {
-        // instante del impacto: la cara apunta hacia donde sale el SAQUE
-        // (velocidad real ya enderezada por el solver del saque)
+        // instante del impacto: cara hacia donde sale el SAQUE (hoja aún
+        // inclinada hacia delante, acabando de barrer bajo la bola)
         mesh.position.set(
           this.ball.pos.x + s * 0.05,
           this.ball.pos.y - 0.03,
           this.ball.pos.z + s * 0.05,
         );
-        faceTo(this.ball.vel, 0.08);
+        AIM_FACE.copy(this.ball.vel);
+        if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
+        AIM_FACE.normalize();
+        // v2.23: hoja ⟂ a la salida (mango arriba, guiño al lado del saque):
+        // la cara queda EXACTAMENTE hacia donde vuela la bola
+        AIM_BLADE.set(0, 1, 0)
+          .addScaledVector(AIM_FACE, -AIM_FACE.y)
+          .addScaledVector(AIM_RIGHT, fhServe * 0.25);
+        bladePose(AIM_BLADE, AIM_FACE, 0.12, 0.05);
         mesh.quaternion.copy(poseQ);
         this.clampPaddlePose(mesh.position, mesh.quaternion, false);
         return;
       }
-      // preparación: pala al lado de la bola, cara abierta mirándola
+      // preparación del saque: pala cargada al lado derecho, punta arriba y
+      // cara abierta MIRANDO a la bola (como el jugador que espera el bote)
       mesh.position.copy(stance);
-      aimV.copy(this.ball.pos).sub(mesh.position);
-      faceTo(aimV, s * 0.16);
+      AIM_FACE.copy(this.ball.pos).sub(mesh.position);
+      if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
+      AIM_FACE.normalize();
+      AIM_BLADE.set(0, 0.9, 0)
+        .addScaledVector(AIM_FWD, 0.3)
+        .addScaledVector(AIM_RIGHT, fhServe * 0.55);
+      bladePose(AIM_BLADE, AIM_FACE, fhServe * 0.18, -0.18);
       mesh.quaternion.copy(poseQ);
       this.clampPaddlePose(mesh.position, mesh.quaternion, false);
       return;
     }
 
-    // rally / espera (v2.17: movimiento natural — v2.22: cara realista)
+    // rally / espera (v2.17: movimiento natural — v2.23: golpes con lado y giro)
     if (ai.swing) {
       const sw = ai.swing;
       const p = Math.min(1, sw.t / sw.dur);
       // follow-through: arranca con energía y frena (ease-out potente)
       const e = 1 - Math.pow(1 - p, 2.4);
+      const K = SWING_POSE[sw.kind] || SWING_POSE.drive;
+      const fh = sw.fh || 1;
       const amp = 0.26 * sw.speed;
       swingV.copy(sw.dir).multiplyScalar(amp * e);
+      // cruce del cuerpo: el brazo termina al OTRO lado (de derecha a izquierda
+      // en el drive, al revés en el revés)
+      swingV.addScaledVector(AIM_RIGHT, -fh * 0.13 * K.cross * e);
       mesh.position.set(
         sw.contact.x + swingV.x,
-        Math.max(0.42, sw.contact.y + swingV.y * 0.55 + 0.05 * (1 - e)),
+        Math.max(0.42, sw.contact.y + swingV.y * 0.55 + 0.05 * (1 - e) + K.rise * e),
         sw.contact.z + swingV.z,
       );
-      // LA CARA ACOMPAÑA EL TIRO: normal hacia donde vuela la bola, abierta
-      // si lleva cortada y cerrada si lleva liftada (spin.x según el campo al
-      // que se ataca); mientras el brazo termina, la cara se cierra un poco
-      // más y la muñeca gira (roll propio del golpe)
-      const tilt = THREE.MathUtils.clamp(0.2 + s * this.ball.spin.x * 0.12, 0.03, 0.5);
-      aimV.copy(this.ball.vel).normalize();
-      aimV.y += tilt - 0.24 * e;             // cierra en el follow-through
-      faceTo(aimV, (sw.roll || 0) * (0.35 + 0.85 * e));
-      mesh.quaternion.slerp(poseQ, Math.min(1, dt * 14));
+      // HOJA: la punta parte cargada hacia el lado del golpe y CRUZA al lado
+      // contrario mientras el brazo termina (el giro que le faltaba a la pala);
+      // la inclinación hacia delante es PROPIA de cada golpe (tap vertical en
+      // la cortada, barrido diagonal en el drive)
+      AIM_BLADE.set(0, 1 - 0.3 * e, 0)
+        .addScaledVector(AIM_FWD, K.fwd0 + K.fwd1 * e)
+        .addScaledVector(AIM_RIGHT, fh * (K.side0 * (1 - e) - K.side1 * e));
+      // CARA: hacia donde vuela la bola; el PITCH de muñeca la CIERRA con
+      // liftado (topspin) y la ABRE con cortada (slice), cerrándose un poco
+      // más durante el follow-through (firma de cada golpe)
+      AIM_FACE.copy(sw.vdir || this.ball.vel);
+      if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
+      AIM_FACE.normalize();
+      bladePose(AIM_BLADE, AIM_FACE,
+        (sw.roll || 0) * (0.35 + 0.85 * e) + fh * (0.24 - 0.46 * e),
+        K.clos0 + K.clos1 * e);
+      mesh.quaternion.slerp(poseQ, Math.min(1, dt * 18));
     } else {
       const bob = Math.sin(performance.now() / 1000 * 3.0 + (who === 'ai' ? 0 : 2.1)) * 0.012;
       mesh.position.set(
@@ -2130,11 +2236,19 @@ class PingPongGame {
         Math.max(0.42, ai.pos.y + ai.prep.y + bob),
         ai.pos.z + ai.prep.z,
       );
-      // espera: la cara MIRA A LA BOLA que llega (postura de jugador real,
-      // que ofrece la cara al balón) con un vaivén de muñeca relajado
-      aimV.copy(this.ball.pos).sub(mesh.position);
-      const sway = Math.sin(performance.now() / 1000 * 1.7 + (who === 'ai' ? 1.3 : 4.2)) * 0.05;
-      faceTo(aimV, sway);
+      // espera: postura de jugador real — hoja delante, inclinada hacia el
+      // lado donde está la bola (nunca una pared vertical), cara ofrecida al
+      // balón (algo abierta si viene baja, cerrada si viene alta) y vaivén
+      // de muñeca relajado
+      const side = THREE.MathUtils.clamp((this.ball.pos.x - mesh.position.x) * s * 2.6, -1, 1);
+      AIM_BLADE.set(0, 1, 0)
+        .addScaledVector(AIM_FWD, 0.32)
+        .addScaledVector(AIM_RIGHT, side * 0.3);
+      AIM_FACE.copy(AIM_FWD).multiplyScalar(0.85);
+      AIM_FACE.x += (this.ball.pos.x - mesh.position.x) * 0.7;
+      const sway = Math.sin(performance.now() / 1000 * 1.7 + (who === 'ai' ? 1.3 : 4.2)) * 0.06;
+      // bola alta: cara algo cerrada por encima · bola baja: cara abierta
+      bladePose(AIM_BLADE, AIM_FACE, sway, this.ball.pos.y > 1.25 ? 0.1 : -0.12);
       mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
     }
     this.clampPaddlePose(mesh.position, mesh.quaternion, false);

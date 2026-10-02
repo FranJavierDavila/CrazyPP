@@ -812,3 +812,84 @@ Stage Summary:
 - Pendiente visor: confirmar sensación del golpeo de la IA y claridad de la
   nueva dicción en el casco; sigue pendiente la confirmación de la voz en
   VR (v2.20). Siguiente fase: estética/"vidilla" del entorno.
+
+---
+Task ID: 26
+Agent: Super Z (main agent)
+Task: v2.23 — cifras del megáfono sin cortes ni ruidos + pala de la IA que
+golpea de derecha y revés girando la hoja + menú con casillas vivas
+
+Work Log:
+- FEEDBACK: (1) "el audio se sigue cortando, los números deben escucharse
+  con total claridad sin ruidos ni cortes"; (2) "la pala no se mueve de
+  forma natural y prácticamente siempre permanece vertical; lo suyo es que
+  golpee de izquierda y de derechas rotando la pala para que el golpe tenga
+  sentido, vertical o más horizontal según proceda"; (3) "el menú tiene
+  marcadas casillas que no son seleccionables ni cambian visualmente de
+  estado".
+- (1) CAUSA REAL: v2.22 encadenaba N AudioBufferSourceNodes con offsets —
+  cada frontera entre fuentes era un mini-corte audible en el visor, y el
+  silencio real entre cifras sumaba cola recortada + gap + pre-roll ≈ 0,14 s.
+  FIX v2.23: speakPlan COMPONE UN SOLO AudioBuffer: copia cada fragmento
+  (recortado por vbTrim con pre 10 ms / cola 30 ms, normalizado por vbGain)
+  con micro-fades de 4 ms (entrada) y 9 ms (salida) — cero chasquidos en las
+  juntas — y lo reproduce con UNA única fuente (src.start simple). Gaps del
+  plan ahora EXACTOS: intra-cifra 0,036-0,042 s → silencio real medido
+  0,045-0,053 s; pausa de frase 0,26 s → 0,276 s. El chime conserva su hueco
+  (cabecera 0,34 s dentro del buffer). Ganancia del megáfono 1.12.
+- (1b) DUCKING: nuevo bus this.ambBus (murmullo + aplausos + "ohh" van a él)
+  en _wire; announce() lo baja a 0.24 con rampa de 0,22 s y lo restaura con
+  setTargetAtTime al terminar la locución (usando this._voiceDur) — las
+  cifras se oyen por ENCIMA del pabellón. Re-entradas seguras
+  (cancelScheduledValues antes de cada rampa).
+- (2) CAUSA: faceTo (v2.22) construía la base con el eje Y local ≈ vertical
+  SIEMPRE (mango abajo) → pala vertical perpetua. FIX v2.23:
+  updateAIPaddlePose REESCRITA con bladePose(bladeDir, faceDir, roll, pitch):
+  la orientación se compone desde el EJE DE LA HOJA (mango→punta) y la
+  NORMAL DE LA CARA como direcciones independientes, más pitch de muñeca
+  alrededor del eje local X (cierra/abre la cara DESPUÉS de ortogonalizar:
+  no se deforma) y roll alrededor de Z.
+  · OpponentAI decide el LADO del golpe (fhSide: +1 derecha, -1 revés) al
+    aparecer la bola (dx respecto al cuerpo * sign, zona muerta 5 cm con
+    sesgo diestro 55 %) y lo mantiene durante el rallye de esa bola; la
+    preparación (prep) además CARGA 7,5 cm hacia el lado del golpe.
+  · El swing lleva kind/fh/vdir; SWING_POSE define la firma de cada golpe
+    (side0/side1 carga y cruce de la punta, fwd0/fwd1 inclinación de la
+    hoja, clos0/clos1 cierre de la cara, rise, cross): drive diagonal que
+    cruza el cuerpo (hoja 45°→66°), push de hoja casi vertical con cara
+    abierta, smash cerrado, dejada abierta y alta, bloqueo compacto.
+  · Saque diestro: la postura pasa al lado contrario de la bola (stance
+    x - s*0.17) y el impacto deriva la hoja ⟂ a la salida → la cara queda
+    EXACTA hacia donde vuela (serveDot = 1.00).
+  · Espera: hoja inclinada 14° hacia delante/lado de la bola (no pared),
+    cara ofrecida con pitch según altura de la bola.
+- (3) CAUSA: el hover SOLO dibujaba borde en botones inactivos (los marcados
+  no respondían visualmente) y los rects eran exactamente el dibujo (2 cm
+  imposibles de puntear). FIX: hover también en activos (borde blanco +
+  brillo del relleno), casilla ☑/☐ dibujada en los basculantes (amb, trail,
+  voz, net:mic), rects inflados +10×6 px (táctil > dibujo) y case 'mode' YA
+  NO CIERRA el menú (el cambio se ve; mensaje "cierra el menú para jugar").
+  Fila voz movida a y=414 por el padding.
+- VERIFICACIÓN (verify_v223.py TODO OK): voz = 1 fuente compuesta, gaps
+  [0.045, 0.053, ...] con pausa de frase 0.276, peak 0.724 (sin saturación),
+  cabecera 0.347; ducking 0.24 → 1.0; gate del megáfono intacto; pose de la
+  pala: idleTilt 14.1° (no vertical), drive fh punta -0.62→+0.47 (cruce),
+  hoja 45°→66°, cara cerrada con liftado (-0.38) y abierta con cortada
+  (+0.34 relativa), revés espejo, brazo cruza el cuerpo, postura de saque
+  diestra (±0.17); menú: 15 botones TODOS con feedback de píxeles al
+  apuntarlos (1332-18231 px), área táctil 146×48, modo/dificultad cambian
+  con el menú abierto, persistencias OK. Regresiones: verify_v218 TODO OK,
+  verify_v219 TODO OK (sala P2P), verify_v220 TODO OK (67/67, actualizada a
+  1 fuente), verify_v222 TODO OK (serveDot 1.00, idleTilt 11.3°),
+  test_ai_returns 14/14 (100 %). 0 errores de página.
+- BUILD: index.html 2.56 MB; capturas captura-v223-pala-{espera,swing}.png y
+  captura-v223-menu{,-hover}.png; ZIP regenerado; README sección v2.23.
+
+Stage Summary:
+- v2.23: las cifras suenan fluidas y por encima del pabellón (buffer
+  compuesto + ducking), la IA golpea de derecha y revés con la hoja girando
+  y la cara abriendo/cerrando según el efecto, y el menú responde también en
+  sus casillas marcadas con área táctil holgada.
+- Pendiente visor: confirmar en el Quest 3 la dicción (sin cortes), la
+  naturalidad del golpeo y el menú; sigue pendiente la parte estética
+  ("vidilla" del entorno) como siguiente fase.

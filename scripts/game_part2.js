@@ -268,6 +268,10 @@ class OpponentAI {
     this.errY = 0;
     this.swing = null;   // animación de follow-through del último golpe (v2.17)
     this.prep = new THREE.Vector3();   // retroceso de preparación (visual)
+    // v2.23: lado del golpe en curso — +1 derecha (forehand), -1 revés.
+    // Se sortea al APARECER la bola (con la posición del cuerpo aún lejos del
+    // punto de contacto) y se mantiene durante todo el rallye de esa bola.
+    this.fhSide = 1;
   }
 
   setConfig(cfg) { this.cfg = cfg; }
@@ -306,6 +310,12 @@ class OpponentAI {
             this.errX = gauss() * this.cfg.errStd;
             this.errY = gauss() * this.cfg.errStd * 0.6;
             this.predict.copy(strike.point);
+            // v2.23: ¿golpe de DERECHA o de REVÉS? Según el lado en que queda
+            // la bola respecto al cuerpo al empezar a reaccionar (con sign:
+            // positivo = lado de la mano derecha). Con bola centrada, se
+            // prefiere la derecha como un jugador diestro.
+            const dxf = (strike.point.x - this.pos.x) * sign;
+            this.fhSide = Math.abs(dxf) > 0.05 ? (dxf > 0 ? 1 : -1) : (Math.random() < 0.55 ? 1 : -1);
           } else {
             // refinamiento de la MISMA bola: suavizar, sin saltos
             this.predict.lerp(strike.point, 0.45);
@@ -321,14 +331,17 @@ class OpponentAI {
 
     // preparación visual del golpe: la pala se retrae un poco al acercarse la
     // bola a su punto de contacto (solo estético: ai.pos sigue siendo el
-    // punto lógico de detección)
+    // punto lógico de detección). v2.23: además se CARGA hacia el lado del
+    // golpe (unidad de giro real: la pala va por delante del cuerpo hacia el
+    // lado de la bola) para que el swing parta de una preparación creíble.
     if (this.predictValid && ctx.canHit) {
       tmpT.copy(this.predict).sub(this.pos);
       const dl = tmpT.length();
       const w = THREE.MathUtils.clamp(1 - dl / 0.9, 0, 1) * 0.55;
-      tmpT.normalize().multiplyScalar(-0.09 * w);
+      tmpT.normalize().multiplyScalar(-0.075 * w);
       this.prep.copy(tmpT);
       this.prep.y = 0.045 * w;
+      this.prep.x += sign * this.fhSide * 0.075 * w;   // carga al lado del golpe
     } else {
       this.prep.multiplyScalar(Math.max(0, 1 - dt * 5));
     }
@@ -460,16 +473,22 @@ class OpponentAI {
     const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
     ball.spin.copy(shotSpin);
 
-    // swing visual: follow-through del golpe en la dirección del tiro
+    // swing visual: follow-through del golpe en la dirección del tiro.
+    // v2.23: lleva TAMBIÉN el tipo de golpe, el lado (derecha/revés) y la
+    // velocidad de salida 3D — la pose de la pala los usa para girar la hoja,
+    // abrir/cerrar la cara y cruzar el cuerpo como un jugador real.
     this.swing = {
       t: 0,
       dur: 0.3,
       contact: ball.pos.clone(),
       dir: new THREE.Vector3(v.x, 0, v.z).normalize(),
+      vdir: v.clone().normalize(),
       speed: THREE.MathUtils.clamp(v.length() / 6, 0.6, 1.5),
-      // v2.22: roll de muñeca propio de cada golpe (la cara acompaña el tiro
+      // roll de muñeca propio de cada golpe (la cara acompaña el tiro
       // con un giro natural, nunca dos golpes idénticos)
       roll: (Math.random() - 0.5) * 0.34,
+      kind,                       // drive/smash/push/dejada/bloqueo
+      fh: this.fhSide || 1,       // +1 derecha · -1 revés
     };
     return v;
   }

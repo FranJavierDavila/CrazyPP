@@ -7,7 +7,7 @@
   - voicePlan(): TODAS las frases que emite el juego → plan correcto
     (frases completas, temas, dificultades, 6 logros, marcador, victoria,
     rallye con números compuestos 30-99, fuera de rango → respaldo)
-  - speakPlan(): programa BufferSources encadenadas con huecos crecientes
+  - speakPlan(): v2.23 compone UN solo AudioBuffer (una única fuente)
   - announce(): usa el banco y NO llama a speechSynthesis; con texto
     desconocido cae al respaldo sin crash
   - regresión ligera del menú (pestañas, estela, ambiente)
@@ -141,7 +141,7 @@ async def main():
             g.audio.announce('5 a 3, saque para ti', true);
             g.audio.ctx.createBufferSource = orig;
             if (ss) delete ss.speak;
-            return { scheduled, ssCalled, starts, ok: scheduled === 4 && !ssCalled };
+            return { scheduled, ssCalled, starts, ok: scheduled === 1 && !ssCalled };
         }""")
         if not sched.get("ok"):
             fails.append(f"announce con banco: {json.dumps(sched)}")

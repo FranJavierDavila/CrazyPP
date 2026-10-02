@@ -410,6 +410,8 @@ class GameAudio {
     // y cola silenciosas que, sumadas a los gaps, creaban pausas artificiales
     // — el "corte" antes de la segunda cifra del marcador).
     this.vbTrim = null;
+    // v2.23: duración de la última locución compuesta (para el ducking)
+    this._voiceDur = 0;
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
@@ -453,6 +455,12 @@ class GameAudio {
     comp.release.value = 0.12;
     this.master.connect(comp);
     comp.connect(ctx.destination);
+    // v2.23 · BUS del ambiente (murmullo, aplausos, "ohh"): se agrupa para
+    // poder AGACHARLO (ducking) mientras el megáfono dice las cifras — los
+    // números se oyen por ENCIMA del pabellón, sin ruido de fondo.
+    this.ambBus = ctx.createGain();
+    this.ambBus.gain.value = 1;
+    this.ambBus.connect(this.master);
     const len = Math.floor(ctx.sampleRate * 0.25);
     this.noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = this.noiseBuffer.getChannelData(0);
@@ -856,7 +864,7 @@ class GameAudio {
       const lfoG = this.ctx.createGain();
       lfoG.gain.value = 0.02;
       lfo.connect(lfoG); lfoG.connect(g.gain);
-      src.connect(lp); lp.connect(g); g.connect(this.master);
+      src.connect(lp); lp.connect(g); g.connect(this.ambBus || this.master);
       src.start();
       lfo.start();
       this._amb = { src, lfo, gain: g };
@@ -915,7 +923,7 @@ class GameAudio {
         g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
         const pan = this.ctx.createStereoPanner();
         pan.pan.value = layer === 0 ? -0.35 : 0.35;
-        src.connect(bp); bp.connect(g); g.connect(pan); pan.connect(this.master);
+        src.connect(bp); bp.connect(g); g.connect(pan); pan.connect(this.ambBus || this.master);
         src.start(t0);
         src.stop(t0 + dur + 0.15);
       }
@@ -949,7 +957,7 @@ class GameAudio {
         o.connect(bp); bp.connect(g);
         o.start(t); o.stop(t + 1.05);
       }
-      g.connect(this.master);
+      g.connect(this.ambBus || this.master);
     } catch { /* */ }
   }
 
@@ -1008,8 +1016,8 @@ class GameAudio {
               while (i0 < n && Math.abs(ch[i0]) < thr) i0++;
               while (i1 > i0 && Math.abs(ch[i1]) < thr) i1--;
               if (i1 > i0) {
-                const t0 = Math.max(0, i0 / sr - 0.012);   // pre-roll corto
-                const t1 = Math.min(buf.duration, i1 / sr + 0.055); // cola natural
+                const t0 = Math.max(0, i0 / sr - 0.010);   // pre-roll corto
+                const t1 = Math.min(buf.duration, i1 / sr + 0.030); // cola natural
                 if (t1 - t0 > 0.04) trims.set(k, [t0, t1]);
               }
             } catch { /* sin recorte: se reproduce el buffer entero */ }
@@ -1036,7 +1044,9 @@ class GameAudio {
     try {
       const s = this._normVoice(text);
       if (!s) return null;
-      const P = (keys, gaps) => keys.map((k, i) => ({ k, gap: (gaps && gaps[i]) || 0.06 }));
+      // v2.23: gaps intra-frase MUY cortos — con el buffer compuesto el silencio
+      // entre palabras es EXACTAMENTE este (sin colas de Piper añadidas).
+      const P = (keys, gaps) => keys.map((k, i) => ({ k, gap: (gaps && gaps[i]) || 0.042 }));
       const full = VOICE_FULL[s];
       if (full) return P(full);
       let m;
@@ -1044,13 +1054,13 @@ class GameAudio {
       m = s.match(/^logro desbloqueado (.+)$/);
       if (m) {
         const ach = VOICE_ACH[m[1]];
-        return ach ? P(['logro_desbloqueado', ach], [0.2]) : null;
+        return ach ? P(['logro_desbloqueado', ach], [0.18]) : null;
       }
       // ¡Rallye de <N> golpes! Nuevo récord
       m = s.match(/^rallye de (\d+) golpes nuevo record$/);
       if (m) {
         const num = voiceNumPlan(m[1]);
-        return num ? P(['rallye_de', ...num, 'golpes', 'nuevo_record'], [0.05, 0.05, 0.32]) : null;
+        return num ? P(['rallye_de', ...num, 'golpes', 'nuevo_record'], [0.03, 0.03, 0.26]) : null;
       }
       // <p> a <q>, saque para ti / tu rival / la máquina
       m = s.match(/^(\d+) a (\d+) saque para (ti|tu rival|la maquina)$/);
@@ -1059,14 +1069,14 @@ class GameAudio {
         const n2 = voiceNumPlan(m[2]);
         const quien = m[3] === 'ti' ? 'saque_para_ti'
           : m[3] === 'tu rival' ? 'saque_para_rival' : 'saque_para_maquina';
-        return (n1 && n2) ? P([...n1, 'a', ...n2, quien], [0.07, 0.07, 0.3]) : null;
+        return (n1 && n2) ? P([...n1, 'a', ...n2, quien], [0.036, 0.036, 0.26]) : null;
       }
       // ¡Victoria! <p> a <q>
       m = s.match(/^victoria (\d+) a (\d+)$/);
       if (m) {
         const n1 = voiceNumPlan(m[1]);
         const n2 = voiceNumPlan(m[2]);
-        return (n1 && n2) ? P(['victoria', ...n1, 'a', ...n2], [0.12, 0.07, 0.07]) : null;
+        return (n1 && n2) ? P(['victoria', ...n1, 'a', ...n2], [0.1, 0.036, 0.036]) : null;
       }
       // Partido para la CPU / tu rival. <p> a <q>
       m = s.match(/^partido para (la cpu|tu rival) (\d+) a (\d+)$/);
@@ -1074,37 +1084,67 @@ class GameAudio {
         const n1 = voiceNumPlan(m[2]);
         const n2 = voiceNumPlan(m[3]);
         const quien = m[1] === 'tu rival' ? 'partido_para_rival' : 'partido_para_cpu';
-        return (n1 && n2) ? P([quien, ...n1, 'a', ...n2], [0.3, 0.07, 0.07]) : null;
+        return (n1 && n2) ? P([quien, ...n1, 'a', ...n2], [0.26, 0.036, 0.036]) : null;
       }
       return null;
     } catch { return null; }
   }
 
-  /** Encadena los fragmentos del plan sobre this.master (tras el chime).
-   *  v2.22: usa los recortes de silencio (vbTrim): reproduce solo el tramo
-   *  con voz de cada buffer, de modo que los gaps del plan son las ÚNICAS
-   *  pausas — la dicción queda compacta y natural.
-   *  Devuelve true si todo el plan quedó programado. */
+  /** Locución del plan. v2.23 · BUFFER COMPUESTO: en lugar de encadenar N
+   *  AudioBufferSourceNodes (cada frontera era un mini-corte audible en el
+   *  visor — el "corte antes de la segunda cifra"), se COPIA cada fragmento
+   *  (recortado por vbTrim, normalizado y con micro-fades de 4/9 ms para
+   *  eliminar chasquidos en las juntas) dentro de UN solo AudioBuffer que se
+   *  reproduce con UNA única fuente: cero discontinuidades de planificación,
+   *  cifras fluidas y las pausas EXACTAS del plan. */
   speakPlan(plan) {
     try {
       if (!plan || !plan.length || !this.ctx || !this.master) return false;
       if (!this.vb || this.vbCtx !== this.ctx) return false;
-      let t = this.ctx.currentTime + 0.34;   // deja sonar el chime primero
+      const sr = this.ctx.sampleRate;
+      const HEAD = 0.34;                      // deja sonar el chime primero
+      const items = [];
+      let total = HEAD;
       for (const a of plan) {
         const buf = this.vb.get(a.k);
         if (!buf) return false;
         const tr = (this.vbTrim && this.vbTrim.get(a.k)) || null;
         const off = tr ? tr[0] : 0;
         const dur = tr ? Math.max(0.04, tr[1] - tr[0]) : buf.duration;
-        const src = this.ctx.createBufferSource();
-        src.buffer = buf;
-        const g = this.ctx.createGain();
-        g.gain.value = (this.vbGain && this.vbGain.get(a.k)) || 1;
-        src.connect(g);
-        g.connect(this.master);
-        src.start(t, off, dur);
-        t += dur + (a.gap || 0.06);
+        const g = (this.vbGain && this.vbGain.get(a.k)) || 1;
+        items.push({ buf, off, dur, g, gap: a.gap || 0.042 });
+        total += dur + (a.gap || 0.042);
       }
+      const n = Math.ceil((total + 0.12) * sr);
+      const out = this.ctx.createBuffer(1, n, sr);
+      const dst = out.getChannelData(0);
+      const fIn = Math.max(1, Math.floor(0.004 * sr));
+      const fOut = Math.max(1, Math.floor(0.009 * sr));
+      let w = Math.floor(HEAD * sr);
+      for (const it of items) {
+        const src = it.buf.getChannelData(0);
+        const r = it.buf.sampleRate / sr;     // re-muestreo lineal si difiere
+        const i0 = Math.floor(it.off * it.buf.sampleRate);
+        const len = Math.min(Math.floor(it.dur * it.buf.sampleRate), src.length - i0);
+        for (let i = 0; i < len; i++) {
+          const s = src[i0 + i] * it.g;
+          let env = 1;
+          if (i < fIn) env = i / fIn;         // fade-in: adiós los chasquidos
+          const rem = len - 1 - i;
+          if (rem < fOut) env = Math.min(env, rem / fOut);   // fade-out
+          const wi = w + Math.round(i / r);
+          if (wi >= 0 && wi < n) dst[wi] += s * env;
+        }
+        w += Math.round(len / r) + Math.floor(it.gap * sr);
+      }
+      this._voiceDur = Math.max(0.4, w / sr - HEAD);
+      const src = this.ctx.createBufferSource();
+      src.buffer = out;
+      const g = this.ctx.createGain();
+      g.gain.value = 1.12;                    // megáfono: por encima de la sala
+      src.connect(g);
+      g.connect(this.master);
+      src.start(this.ctx.currentTime + 0.02);
       return true;
     } catch { return false; }
   }
@@ -1114,6 +1154,8 @@ class GameAudio {
    *  fragmento o el banco no está listo, respaldo speechSynthesis (2D).
    *  v2.22: el conmutador del megáfono (audio.voice) lo silencia TODO
    *  (chime incluido), independiente del ambiente de torneo.
+   *  v2.23: DUCKING — el ambiente (murmullo/aplausos) baja a un 24% durante
+   *  la locución: las cifras se oyen con claridad total, sin ruido de fondo.
    *  Throttle de 6 s salvo force. */
   announce(text, force) {
     try {
@@ -1121,10 +1163,30 @@ class GameAudio {
       if (!force && now - this._lastAnnounce < 6000) return;
       this._lastAnnounce = now;
       if (!this.voice || !this.ambience) return;
+      const duckOn = () => {
+        const b = this.ambBus;
+        if (!b || !this.ctx) return;
+        const t = this.ctx.currentTime;
+        const gg = b.gain;
+        gg.cancelScheduledValues(t);
+        gg.setValueAtTime(Math.min(1, gg.value || 1), t);
+        gg.linearRampToValueAtTime(0.24, t + 0.22);
+      };
+      const duckOff = (delay) => {
+        const b = this.ambBus;
+        if (!b || !this.ctx) return;
+        b.gain.setTargetAtTime(1, this.ctx.currentTime + delay, 0.45);
+      };
       this.playOsc(660, 660, 0.12, 'sine', 0.2, 0);
       window.setTimeout(() => this.playOsc(990, 990, 0.16, 'sine', 0.2, 0), 140);
       const plan = this.voicePlan(text);
-      if (plan && this.speakPlan(plan)) return;
+      if (plan && this.speakPlan(plan)) {
+        duckOn();
+        duckOff(0.4 + (this._voiceDur || 2.5));
+        return;
+      }
+      duckOn();
+      duckOff(3.4);                       // respaldo: duración estimada
       const ss = window.speechSynthesis;
       if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return;
       ss.cancel();

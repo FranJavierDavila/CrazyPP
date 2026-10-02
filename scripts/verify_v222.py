@@ -132,13 +132,10 @@ async def main():
                      off0: caps.length ? caps[0].off : -1 };
         }""")
         print("cadena:", json.dumps(chain))
-        if not chain["ok"] or chain["n"] != 4:
-            fails.append(f"speakPlan no programó el plan (ok={chain['ok']}, n={chain['n']})")
-        if not (0 < chain["off0"] <= 0.5) or chain["durTrim"] >= chain["durFull"]:
-            fails.append(f"el primer fragmento no está recortado (off={chain['off0']}, dur={chain['durTrim']} vs {chain['durFull']})")
-        # la pausa antes de la segunda cifra (gap tras 'a') debe ser corta
-        if len(chain["gaps"]) >= 2 and (chain["gaps"][0] > 0.12 or chain["gaps"][1] > 0.12):
-            fails.append(f"pausas aún largas entre cifras: {chain['gaps']}")
+        # v2.23: speakPlan compone UN AudioBuffer con UNA fuente (los gaps se
+        # miden sobre las muestras del buffer en verify_v223.py)
+        if not chain["ok"] or chain["n"] != 1:
+            fails.append(f"speakPlan no produjo la fuente compuesta (ok={chain['ok']}, n={chain['n']})")
 
         # ---------- 1b) GATE del megáfono en announce() ----------
         gate = await page.evaluate("""() => {
@@ -168,7 +165,7 @@ async def main():
         print("gate:", json.dumps(gate))
         if gate["offSources"] != 0 or gate["offSS"]:
             fails.append(f"con megáfono OFF todavía suena algo: {gate}")
-        if gate["onSources"] < 4:
+        if gate["onSources"] < 1:
             fails.append(f"con megáfono ON no hay voz: {gate}")
 
         # ---------- 3) ORIENTACIÓN DE LA PALA DE LA IA ----------
@@ -179,6 +176,9 @@ async def main():
             const bp = g.ball.pos.clone(), bv = g.ball.vel.clone(), bs = g.ball.spin.clone();
             const out = {};
             const normalOf = () => new V(0, 0, 1).applyQuaternion(g.aiPaddleMesh.quaternion);
+            // v2.23: la señal anti-vertical es la HOJA (eje local +Y), no la cara
+            const bladeOf = () => new V(0, 1, 0).applyQuaternion(g.aiPaddleMesh.quaternion);
+            const tiltDeg = (v) => +(Math.acos(Math.max(-1, Math.min(1, v.y))) * 180 / Math.PI).toFixed(1);
 
             // A) ESPERA: la cara mira a la bola (converge con slerp)
             g.rules.state = 'rally';
@@ -188,7 +188,7 @@ async def main():
             const nA = normalOf();
             const dA = g.ball.pos.clone().sub(g.aiPaddleMesh.position).normalize();
             out.idleDot = +nA.dot(dA).toFixed(3);
-            out.idleNy = +nA.y.toFixed(3);
+            out.idleTilt = tiltDeg(bladeOf());
 
             // B) FOLLOW-THROUGH: cara hacia donde vuela la bola (topspin -> cerrada pero acompañando)
             g.ball.vel.set(1, 0.6, 6); g.ball.spin.set(3, 0, 0);
@@ -225,7 +225,8 @@ async def main():
         }""")
         print("orientación:", json.dumps(ori))
         if ori["idleDot"] < 0.75: fails.append(f"en espera la cara no mira a la bola (dot={ori['idleDot']})")
-        if ori["idleNy"] <= 0.03: fails.append(f"en espera la cara sigue vertical (ny={ori['idleNy']})")
+        if not (8 <= ori["idleTilt"] <= 45):
+            fails.append(f"en espera la hoja sigue vertical o se desmadra: {ori['idleTilt']}°")
         if ori["swingDot"] < 0.8: fails.append(f"en el follow-through la cara no acompaña el tiro (dot={ori['swingDot']})")
         if ori["serveDot"] < 0.9: fails.append(f"en el impacto la cara no apunta a la salida (dot={ori['serveDot']})")
         if ori["tossDot"] < 0.75: fails.append(f"en el lanzamiento la cara no sigue la bola (dot={ori['tossDot']})")

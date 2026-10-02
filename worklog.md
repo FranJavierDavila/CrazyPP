@@ -1028,3 +1028,53 @@ Stage Summary:
   confirmar (1) lado de mesa, (2) voz mutua, (3) marcador y megafonía en
   ambos cascos.
 - Siguiente fase declarada: estética del entorno ("vidilla").
+
+---
+Task ID: 29
+Agent: Super Z (main agent)
+Task: v2.26 — recomprobación del multijugador (petición expresa) + carteles
+oficiales de victoria/derrota con el arte adjuntado por el usuario
+
+Work Log:
+- El usuario pidió: (1) nueva comprobación del funcionamiento multijugador,
+  (2) sustituir los mensajes y carteles de victoria/derrota por sus imágenes
+  (upload/victoria.png, upload/derrota.png — arte "CRAZY PING PONG").
+- RECOMPROBACIÓN MULTIJUGADOR: verify_v225.py re-ejecutada COMPLETA sobre la
+  build nueva (estáticos + protocolo host/invitado por fases + voz P2P) TODO
+  OK; regresiones v218/v219/v220/v222/v223/v224 TODO OK; test_ai_returns
+  13/14 (93%, baseline). 0 errores de página en todas.
+- CARTELES v2.26:
+  * prepare_posters.py: PNG 1536x1024 (1,8 MB c/u) -> JPEG 1024x683 q82
+    (~120 KB c/u), aspecto 3:2 exacto del arte.
+  * createFanfareBanner (game_part2.js) reescrita: canvas 1024x683 (antes
+    1024x512), plano 1,5x1,0 m (antes 1,6x0,8), imágenes incrustadas via
+    placeholders __POSTER_WIN_B64__/__POSTER_LOSE_B64__ que build_html.py
+    sustituye por data URLs JPEG (HTML autocontenido, 2,57 -> 2,89 MB);
+    preload con repintado en onload; chip inferior con marcador final +
+    "gatillo: revancha"; panel de respaldo si la imagen tarda (mismo texto).
+  * Mensajes de fin de partido alineados con el arte: "¡HAS GANADO! · X-Y ·
+    gatillo: revancha" / "¡HAS PERDIDO! · ..." en Rules.update (anfitrión) y
+    applySync (invitado, perspectiva remapeada). La megafonía de voz no
+    cambia (el banco ya cubre "¡Victoria!" / "Partido para...").
+  * Gancho de diagnóstico: createFanfareBanner devuelve también el canvas
+    (solo lectura) para los tests.
+- verify_v226.py (nueva): estáticos (2 data URLs, mensajes x2 en ambas ramas,
+  sin restos de "¡VICTORIA!/DERROTA", plano 3:2, gancho) + headless: fin de
+  partido real 11-4 y 6-11 (applyPoint -> update(2.5) -> processIntents),
+  mensaje correcto ANTES del intento de logro (el logro pisa el mensaje en
+  el HUD: comportamiento existente v2.13), cartel visible con fanfareWin
+  correcto, canvas con arte real (franja superior azul dominante: victoria
+  48/129/230, derrota 37/83/177), revancha retira el cartel (bucle animate),
+  invitado ve "¡HAS PERDIDO! · 5-11" con marcador 5-11, capturas
+  captura-v226-victoria.png / captura-v226-derrota.png (14-15% cielo azul).
+- BUILD: index.html 2,89 MB; ZIP regenerado (3,26 MB, integridad OK);
+  README con sección v2.26.
+
+Stage Summary:
+- v2.26: fin de partido con el arte oficial del usuario en 3D (victoria y
+  derrota), mensajes coherentes en ambos roles y el multijugador re-verificado
+  de punta a punta sobre esta build (todas las suites en verde).
+- Pendiente visor: repetir partida online real y confirmar (1) lados, (2)
+  voz mutua, (3) megafonía; el cartel nuevo se ve al acabar cualquier modo.
+- Siguiente fase declarada: estética del entorno ("vidilla": público, vallas,
+  marcas en el suelo, mejor iluminación).

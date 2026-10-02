@@ -3,6 +3,9 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.26: CARTELES OFICIALES de fin de partido — ¡HAS GANADO! / ¡HAS PERDIDO!
+#        (arte JPEG incrustado en base64 en el cartel 3D + chip de marcador y
+#        revancha) y mensajes de texto alineados; respaldo si la imagen tarda.
 # v2.25: RIGOR MULTIJUGADOR — emisión en CRUDO y espejo 180° UNA vez en
 #        recepción (fin del doble espejo: el rival ya no aparece en tu mismo
 #        lado); spin espejado; sincronía por PUNTO DE VISTA en el invitado
@@ -22,6 +25,9 @@ BASE = "/home/z/my-project"
 PARTS = ([f"{BASE}/scripts/game_voice.js"]
          + [f"{BASE}/scripts/game_part{i}.js" for i in (1, 2, 3)])
 GLB = f"{BASE}/download/pingpong-quest3-v2/assets/pala.glb"
+# v2.26: carteles de fin de partido (JPEG 1024x683, ~120 KB cada uno)
+POSTER_WIN = f"{BASE}/scripts/poster_win.jpg"
+POSTER_LOSE = f"{BASE}/scripts/poster_lose.jpg"
 OUT_DIR = f"{BASE}/download/pingpong-quest3-v2"
 OUT = f"{OUT_DIR}/index.html"
 
@@ -34,8 +40,10 @@ if "</script>" in peerjs_js.lower():
     print("ERROR: peerjs.min.js contiene </script>")
     sys.exit(1)
 
-# --- validación de sintaxis con node (sustituyendo el placeholder) ---
+# --- validación de sintaxis con node (sustituyendo los placeholders) ---
 check = js.replace("__PALA_GLB_B64__", "Zm9v")
+check = check.replace("__POSTER_WIN_B64__", "data:image/jpeg;base64,Zm9v")
+check = check.replace("__POSTER_LOSE_B64__", "data:image/jpeg;base64,Zm9v")
 with open("/tmp/game_check.mjs", "w", encoding="utf-8") as f:
     f.write(check)
 r = subprocess.run(["node", "--check", "/tmp/game_check.mjs"], capture_output=True, text=True)
@@ -47,6 +55,15 @@ print("sintaxis OK")
 # --- incrustar GLB ---
 b64 = base64.b64encode(open(GLB, "rb").read()).decode("ascii")
 js = js.replace("__PALA_GLB_B64__", b64)
+
+# --- v2.26: incrustar carteles oficiales (data URLs JPEG) ---
+for ph, path in (("__POSTER_WIN_B64__", POSTER_WIN), ("__POSTER_LOSE_B64__", POSTER_LOSE)):
+    pb = "data:image/jpeg;base64," + base64.b64encode(open(path, "rb").read()).decode("ascii")
+    js = js.replace(ph, pb)
+for ph in ("__POSTER_WIN_B64__", "__POSTER_LOSE_B64__", "__PALA_GLB_B64__"):
+    if ph in js:
+        print(f"ERROR: placeholder sin sustituir {ph}")
+        sys.exit(1)
 
 HTML = """<!DOCTYPE html>
 <html lang="es">

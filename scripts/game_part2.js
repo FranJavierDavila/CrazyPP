@@ -219,9 +219,10 @@ class Rules {
           this.state = 'over';
           this.stateTimer = 8;
           const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
+          // v2.26: mensajes alineados con los carteles oficiales
           this.message = winner === 'player'
-            ? `¡VICTORIA! · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`
-            : `DERROTA · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`;
+            ? `¡HAS GANADO! · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`
+            : `¡HAS PERDIDO! · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`;
           intents.push({ type: 'game-over', winner });
         } else {
           this.state = 'serve';
@@ -1009,22 +1010,26 @@ function createCalibPanel() {
 }
 
 /* =====================================================================
- *  FANFARRIA DE FIN DE PARTIDO · banner 3D flotante sobre la red con el
- *  resultado (¡VICTORIA! en dorado / DERROTA en gris azulado) y lluvia de
- *  confeti 3D cuando se gana. Se muestra durante todo el estado 'over'.
+ *  FANFARRIA DE FIN DE PARTIDO · cartel 3D flotante sobre la red con el
+ *  ARTE OFICIAL del juego (v2.26: imágenes ¡HAS GANADO! / ¡HAS PERDIDO!
+ *  incrustadas en base64) + chip con el marcador final y la revancha.
+ *  Lluvia de confeti 3D cuando se gana. Se muestra en todo el estado 'over'.
+ *  Si la imagen aún no está decodificada (primer instante) se dibuja un
+ *  panel de respaldo con el mismo texto; al cargar se repinta sola.
  * ===================================================================== */
 function createFanfareBanner() {
+  const W = 1024, H = 683;                 // aspecto 3:2 = el del cartel oficial
   const group = new THREE.Group();
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext('2d');
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.6, 0.8),
+    new THREE.PlaneGeometry(1.5, 1.0),
     // FrontSide: de detrás se ve transparente (en la órbita de la demo) en
-    // lugar del texto en espejo; en VR el jugador siempre está de frente.
+    // lugar del arte en espejo; en VR el jugador siempre está de frente.
     new THREE.MeshBasicMaterial({
       map: tex, transparent: true, side: THREE.FrontSide, depthWrite: false,
     }),
@@ -1034,103 +1039,72 @@ function createFanfareBanner() {
   group.visible = false;
   group.renderOrder = 5;
 
+  // v2.26: carteles oficiales incrustados (build_html.py sustituye los
+  // placeholders por data URLs JPEG). Preload + repintado al decodificar.
+  const posters = {};
+  let lastArgs = null;
+  for (const [key, url] of [
+    ['win', '__POSTER_WIN_B64__'],
+    ['lose', '__POSTER_LOSE_B64__'],
+  ]) {
+    const img = new Image();
+    img.onload = () => {
+      posters[key] = img;
+      if (group.visible && lastArgs) draw(...lastArgs);
+    };
+    img.src = url;
+  }
+
   function draw(win, pScore, aScore) {
-    ctx.clearRect(0, 0, 1024, 512);
-    // panel con borde festivo
-    ctx.fillStyle = win ? 'rgba(43,26,4,0.94)' : 'rgba(12,16,22,0.94)';
-    ctx.strokeStyle = win ? '#ffd35c' : '#5b6673';
-    ctx.lineWidth = 14;
-    roundRectPath(ctx, 14, 14, 996, 484, 40);
+    lastArgs = [win, pScore, aScore];
+    ctx.clearRect(0, 0, W, H);
+    const img = posters[win ? 'win' : 'lose'];
+    if (img) {
+      // cartel oficial a sangre completa (mismo aspecto: sin deformar ni recortar)
+      ctx.drawImage(img, 0, 0, W, H);
+    } else {
+      // respaldo (imagen aún decodificando): panel con el mismo mensaje
+      ctx.fillStyle = win ? 'rgba(43,26,4,0.94)' : 'rgba(12,16,22,0.94)';
+      ctx.strokeStyle = win ? '#ffd35c' : '#ff5b4d';
+      ctx.lineWidth = 14;
+      roundRectPath(ctx, 14, 14, W - 28, H - 28, 40);
+      ctx.fill();
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.shadowColor = win ? 'rgba(255,196,40,0.9)' : 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 26;
+      ctx.fillStyle = win ? '#ffd35c' : '#ff6a5b';
+      ctx.font = '900 128px system-ui, sans-serif';
+      ctx.fillText(win ? '¡HAS GANADO!' : '¡HAS PERDIDO!', W / 2, H / 2 - 40);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#f2f4f6';
+      ctx.font = '800 78px system-ui, sans-serif';
+      ctx.fillText(`${pScore} - ${aScore}`, W / 2, H / 2 + 90);
+    }
+
+    // chip inferior con el marcador final y la revancha (legible sobre el arte)
+    const txt = `${pScore} - ${aScore} · gatillo: revancha`;
+    ctx.font = '800 44px system-ui, sans-serif';
+    const tw = ctx.measureText(txt).width;
+    const cw = tw + 56, ch = 72;
+    const cx = W / 2, cy = H - 58;
+    ctx.fillStyle = win ? 'rgba(12,20,34,0.82)' : 'rgba(8,10,16,0.82)';
+    ctx.strokeStyle = win ? 'rgba(255,211,92,0.9)' : 'rgba(255,107,91,0.9)';
+    ctx.lineWidth = 5;
+    roundRectPath(ctx, cx - cw / 2, cy - ch / 2, cw, ch, 36);
     ctx.fill();
     ctx.stroke();
-
-    // confeti estático dibujado en el canvas (victoria)
-    if (win) {
-      const cols = ['#ffd35c', '#ff6b57', '#57c7ff', '#7be07b', '#e57be0', '#ffffff'];
-      let seed = 7;
-      const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-      for (let i = 0; i < 46; i++) {
-        ctx.save();
-        ctx.translate(rnd() * 1024, rnd() * 512);
-        ctx.rotate(rnd() * Math.PI);
-        ctx.fillStyle = cols[i % cols.length];
-        ctx.globalAlpha = 0.85;
-        ctx.fillRect(-7, -3, 14, 6);
-        ctx.restore();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // coronas (victoria) o nubes (derrota) dibujadas con paths
-    const drawCrown = (cx, cy, s) => {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.fillStyle = win ? '#ffd35c' : '#5b6673';
-      ctx.beginPath();
-      ctx.moveTo(-s, s * 0.55);
-      ctx.lineTo(-s, -s * 0.45);
-      ctx.lineTo(-s * 0.5, 0);
-      ctx.lineTo(0, -s * 0.75);
-      ctx.lineTo(s * 0.5, 0);
-      ctx.lineTo(s, -s * 0.45);
-      ctx.lineTo(s, s * 0.55);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, -s * 0.85, s * 0.14, 0, Math.PI * 2);
-      ctx.arc(-s * 0.52, -s * 0.55, s * 0.12, 0, Math.PI * 2);
-      ctx.arc(s * 0.52, -s * 0.55, s * 0.12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    };
-    const drawZzz = (cx, cy) => {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.fillStyle = '#7d8894';
-      ctx.font = '900 64px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.globalAlpha = 0.75;
-      ctx.fillText('Z', 0, 0);
-      ctx.font = '900 46px system-ui, sans-serif';
-      ctx.fillText('Z', 42, -30);
-      ctx.font = '900 32px system-ui, sans-serif';
-      ctx.fillText('Z', 74, -54);
-      ctx.restore();
-    };
-    if (win) {
-      drawCrown(150, 170, 58);
-      drawCrown(874, 170, 58);
-    } else {
-      drawZzz(150, 175);
-      drawZzz(874, 175);
-    }
-
-    // título con sombra
-    ctx.textAlign = 'center';     // ¡CLAVE! sin esto el texto sale desde x=512
-    ctx.shadowColor = win ? 'rgba(255,196,40,0.9)' : 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 26;
-    ctx.fillStyle = win ? '#ffd35c' : '#aab4c0';
-    ctx.font = '900 150px system-ui, sans-serif';
-    ctx.fillText(win ? '¡VICTORIA!' : 'DERROTA', 512, 250);
-    ctx.shadowBlur = 0;
-
-    // marcador final
-    ctx.fillStyle = '#f2f4f6';
-    ctx.font = '800 78px system-ui, sans-serif';
-    ctx.fillText(`${pScore} - ${aScore}`, 512, 360);
-
-    // subtítulo
-    ctx.fillStyle = win ? 'rgba(255,224,150,0.95)' : '#939ea9';
-    ctx.font = '600 42px system-ui, sans-serif';
-    ctx.fillText(
-      win ? '¡Partidazo! · gatillo para la revancha' : 'La próxima será tuya · gatillo: revancha',
-      512, 440,
-    );
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(txt, cx, cy + 2);
+    ctx.textBaseline = 'alphabetic';
 
     tex.needsUpdate = true;
   }
 
-  return { group, draw };
+  // canvas expuesto SOLO lectura (diagnóstico/verificación headless)
+  return { group, draw, canvas };
 }
 
 function createConfetti() {
@@ -1742,9 +1716,10 @@ class NetLink {
         : `Saque de ${r.opp()}…`;
     } else if (r.state === 'over') {
       const won = my > op;
+      // v2.26: mensajes alineados con los carteles oficiales
       r.message = won
-        ? `¡VICTORIA! · ${my}-${op} · gatillo: revancha`
-        : `DERROTA · ${my}-${op} · gatillo: revancha`;
+        ? `¡HAS GANADO! · ${my}-${op} · gatillo: revancha`
+        : `¡HAS PERDIDO! · ${my}-${op} · gatillo: revancha`;
     }
     if (r.state !== 'point') this.lastPoint = null;
     if (r.state !== 'serve') this.lastRetry = null;

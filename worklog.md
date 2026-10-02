@@ -951,3 +951,80 @@ Stage Summary:
 - Pendiente visor: que el usuario pruebe el flujo de dos jugadores
   (crear sala → código → unirse) y confirme dicción v2.23 en el casco.
 - Siguiente fase declarada: estética del entorno ("vidilla").
+
+---
+Task ID: 28
+Agent: Super Z (main agent)
+Task: v2.25 — rigor multijugador: jugadores en el mismo lado, audio muerto
+en online (voz entre jugadores + sonidos + megafonía del invitado)
+
+Work Log:
+- FEEDBACK de la primera partida real online: (1) "el audio no funciona — no
+  escucho nuestras voces ni los sonidos de la partida"; (2) "está
+  instanciando a los jugadores en el mismo lado de la mesa". El usuario pide
+  rigor total en multijugador.
+- CAUSA RAÍZ #1 (mismo lado / bolas fantasma): el espejo de 180° en Y
+  alrededor del centro de la mesa (involución (x,z)->(-x,-3.2-z)) se
+  aplicaba DOS veces: NetLink.tick()/sendHit() emitían con posToNet/
+  vecToNet/quatToNet Y los tres puntos de recepción (part3 render de pala
+  remota, applyBallStream, drainNetwork) volvían a aplicar posFromNet/
+  quatFromNet. Doble involución = identidad: la pala rival se pintaba EXACTO
+  donde está la propia y las bolas del rival seguían trayectorias espejadas
+  dos veces. FIX: emisión EN CRUDO (rawPos/rawQuat) y espejo UNA sola vez al
+  recibir; nuevos helpers NetLink.rawPos/rawQuat/spinFromNet; añadido el
+  espejado del SPIN (pseudovector (-x,y,-z)) que antes viajaba crudo.
+- CAUSA RAÍZ #2 (perspectiva invertida): applySync aplicaba etiquetas
+  host-relativas ('player'=anfitrión) sin remapear: el invitado veía el
+  marcador invertido, se creía sacador cuando sacaba el anfitrión (AMBOS
+  sostenían y lanzaban la bola: caos total en el arranque de cada punto),
+  celebraba los puntos del rival y copiaba mensajes del anfitrión en su
+  perspectiva. FIX: applySync remapea por punto de vista (sp<->sa, server
+  invertido, ganador invertido), regenera MENSAJES locales y remapea causas
+  con NetLink.CAUSE_SWAP (4 pares exactos de Rules, semántica verificada);
+  el punto viaja ESTRUCTURADO (y.pt {w,c,rh}) send-once capturado en
+  processIntents del anfitrión; el LET viaja como causa neutra (y.rt).
+- CAUSA RAÍZ #3 (invitado mudo en megafonía): el invitado no ejecuta el
+  árbitro (reglas sombra) así que nunca disparaba announce/chime/fanfarria.
+  FIX: applySync genera la megafonía local ("3 a 2, saque para ti"), chime
+  ganado/perdido, "ohh" según causa, fanfarria + announce + stats
+  (recordMatch) en fin de partido con perspectiva remapeada.
+- CAUSA RAÍZ #4 (voz entre jugadores): la llamada WebRTC la iniciaba el
+  ANFITRIÓN hacia ROOM_PREFIX+code... ¡su PROPIO peer id! (bucle hacia sí
+  mismo; el invitado nunca recibía llamada). FIX: la inicia el INVITADO
+  (conoce el código) y el anfitrión responde en peer.on('call'). Además:
+  micrófono TEMPRANO en hostRoom/joinRoom (gesto 2D del menú, fuera de VR —
+  pedirlo en plena sesión XR cambia la ruta de audio de Android y mataba el
+  WebAudio del juego), initVoiceWithCap() con TOPE de 4 s (getUserMedia
+  puede colgarse: verificado en el entorno headless) con stream SILENTE de
+  respaldo (createMediaStreamDestination) para que la voz del rival llegue
+  aunque el micro muera, y kick() de rescate de audio al abrir la sesión y
+  al llegar el stream remoto.
+- Extra: owner cambia AL INSTANTE en el invitado al recibir un golpeo (sin
+  esperar sync) y _pendingHits solo se encola en el anfitrión (fuga de
+  memoria eliminada); estado sombra del invitado arranca con server='ai'.
+- VERIFICACIÓN (verify_v225.py, TODO OK): estáticos (peer.call solo en rama
+  invitado; initVoice temprano x3; rawPos/rawQuat en tick y sendHit;
+  spinFromNet en ambas recepciones; guardia de fuga; CAUSE_SWAP). Protocolo
+  con cable virtual FakeConn<->FakeConn por fases host/invitado: pose en
+  crudo (0.2,1.0,-0.3); golpeo rival (0.3,1.0,-0.3) -> (-0.3,1.0,-2.9) lado
+  LEJANO; spin (0.4,1,-0.2)->(-0.4,1,0.2); pala remota z=-2.85 + quat 180°;
+  bote del sacador -> side 'player' correcto; punto estructurado send-once;
+  marcador sombra 0-1 con chime perdedor; "0 a 1, saque para ti"; causa
+  remapeada "doble bote: no llegaste"; derrota con fanfarria false +
+  "Partido para tu rival"; voz: llamada al ID de sala con stream (tope 4 s
+  disparado con stream silencioso en headless); respuesta anfitrión con
+  voiceState 'on'. Regresiones: v218 OK, v219 OK (sección 6 actualizada a la
+  nueva semántica de perspectiva), v220 OK, v222 OK, v223 OK, v224 OK,
+  test_ai_returns 13/14 (93%). 0 errores de página.
+- BUILD: index.html 2,57 MB; ZIP regenerado; README con sección v2.25;
+  captura-v225-banco.png.
+
+Stage Summary:
+- v2.25: el protocolo multijugador es coherente por primera vez — cada
+  jugador en su lado, bolas y efectos en el marco correcto, marcador/saque/
+  puntos desde la perspectiva de cada casco, megafonía y sonidos en ambos
+  lados y voz entre jugadores con degradación elegante.
+- Pendiente visor: repetir la partida online real de dos jugadores y
+  confirmar (1) lado de mesa, (2) voz mutua, (3) marcador y megafonía en
+  ambos cascos.
+- Siguiente fase declarada: estética del entorno ("vidilla").

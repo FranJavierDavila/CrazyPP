@@ -3,6 +3,13 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.25: RIGOR MULTIJUGADOR — emisión en CRUDO y espejo 180° UNA vez en
+#        recepción (fin del doble espejo: el rival ya no aparece en tu mismo
+#        lado); spin espejado; sincronía por PUNTO DE VISTA en el invitado
+#        (marcador/saque/ganador/causas/mensajes) + megafonía local; voz
+#        WebRTC iniciada por el INVITADO al ID de sala (antes autocall) con
+#        micro temprano en 2D, tope de 4 s y stream silencioso de respaldo;
+#        owner instantáneo y sin fuga de _pendingHits.
 # v2.24: cursor del menú SIN espejo vertical (apuntar con el punto = acertar);
 #        selectstart/squeeze en un solo espacio + guardia anti-doble pulsación
 #        (fin de las casillas "muertas", del teclado que duplicaba letras y de

@@ -1258,11 +1258,24 @@ function createAudioStatus() {
  *  - Canal de datos: poses de pala (20 Hz), estado de la bola (el dueño la
  *    simula y la emite), eventos de física y estado del partido.
  *  - VOZ: llamada de medios WebRTC entre ambos (micrófono del navegador).
+ *    v2.25: la LLAMA el INVITADO al ID de la sala (el anfitrión responde).
+ *    Antes llamaba el anfitrión a su PROPIO id: bucle hacia sí mismo y el
+ *    rival sin voz. El micrófono se pide al crear/unirse (gesto 2D del menú,
+ *    fuera de VR): el cambio de ruta de audio de Android ocurre ANTES de la
+ *    sesión inmersiva y el WebAudio del juego no se queda mudo.
  *  Autoridad: el ANFITRIÓN lleva las reglas y el marcador; el invitado
- *  recibe el estado (reglas sombra). Marco de coordenadas: el mundo del
- *  anfitrión es la referencia; el otro extremo aplica rotación de 180° en Y
- *  alrededor del CENTRO de la mesa, de modo que ambos ven la mesa con su
- *  campo cerca (+z) y al rival al fondo.
+ *  recibe el estado (reglas sombra). Marco de coordenadas:
+ *  · EMISIÓN en CRUDO (posiciones locales tal cual) y RECEPCIÓN con UNA
+ *    rotación de 180° en Y alrededor del centro de la mesa: (x,z)->(-x,-3.2-z).
+ *    v2.25: ANTES se transformaba al emitir Y también al recibir — doble
+ *    espejo: el rival aparecía en TU mismo lado y las bolas eran fantasmas.
+ *    La involución aplicada UNA vez es el cambio de marco correcto (ambos
+ *    mundos son copias idénticas que se miran de frente).
+ *  · SINCRONÍA POR PUNTO DE VISTA: el anfitrión etiqueta los datos desde SU
+ *    perspectiva ('player'=anfitrión). En el invitado 'player' soy YO, así
+ *    que applySync intercambia marcador y sacador, remapea las causas de los
+ *    puntos y genera megafonía local (antes el invitado callaba y veía el
+ *    marcador invertido).
  * ===================================================================== */
 class NetLink {
   constructor(game) {
@@ -1290,6 +1303,10 @@ class NetLink {
     this._lastSyncKey = '';
     this._overKey = '';
     this._retryIds = 0;
+    // v2.25: paquete de PUNTO/LET pendiente de adjuntar al próximo sync
+    // (el anfitrión lo captura en processIntents; send-once)
+    this.lastPoint = null;   // { w:'player'|'ai', c:causa, rh:n }
+    this.lastRetry = null;   // causa del LET (texto neutro)
   }
 
   available() { return typeof Peer !== 'undefined'; }
@@ -1309,13 +1326,41 @@ class NetLink {
   mySide() { return this.role === 'host' ? 'host' : 'guest'; }
   oppSide() { return this.role === 'host' ? 'guest' : 'host'; }
 
-  /* --- transformación de marcos: mi marco <-> marco del anfitrión -------
+  /* --- transformación de marcos: mi marco <-> marco del rival -----------
    * Rotación de 180° en Y alrededor del centro de la mesa: (x,z) -> (-x, -3.2-z).
-   * Es una involución: la misma función convierte en ambos sentidos. */
+   * Es una involución. v2.25: se aplica UNA sola vez y SOLO al RECIBIR —
+   * se emite en crudo (posiciones locales) y el otro extremo la aplica al
+   * pintar la pala rival, aplicar la bola por red y validar golpeos/botes. */
   static posToNet(p) { return [-p.x, p.y, -3.2 - p.z]; }
   static posFromNet(a, out) { out.set(-a[0], a[1], -3.2 - a[2]); return out; }
   static vecToNet(v) { return [-v.x, v.y, -v.z]; }
   static vecFromNet(a, out) { out.set(-a[0], a[1], -a[2]); return out; }
+  /** v2.25: helpers de EMISIÓN en crudo (THREE -> array plano). */
+  static rawPos(p) { return [p.x, p.y, p.z]; }
+  static rawQuat(q) { return [q.x, q.y, q.z, q.w]; }
+  /** v2.25: el spin TAMBIÉN se espeja al recibir (pseudovector bajo giro
+   *  propio de 180° en Y: (-x, y, -z)) — si no, el efecto Magnus curvaría
+   *  la bola al revés en el marco del receptor. */
+  static spinFromNet(a, out) { out.set(-a[0], a[1], -a[2]); return out; }
+
+  /* v2.25 · REMAPEO DE CAUSAS por punto de vista. El anfitrión redacta la
+   * causa del punto desde SU perspectiva ('tu rival' = el invitado). En el
+   * invitado la frase debe contarme la historia INVERSA.
+   * Pares exactos producidos por Rules (host-relativo <-> invitado): */
+  static CAUSE_SWAP = [
+    ['golpeaste tu propio campo', 'tu rival golpeó su campo'],
+    ['doble bote: no llegaste', 'doble bote: tu rival no llegó'],
+    ['la bola volvió a tu campo', 'la bola volvió al campo de tu rival'],
+    ['no la devolviste', 'tu rival no la devolvió'],
+  ];
+  static remapCause(c, forGuest) {
+    if (!forGuest || !c) return c || '';
+    for (const [a, b] of NetLink.CAUSE_SWAP) {
+      if (c === a) return b;
+      if (c === b) return a;
+    }
+    return c;   // causas neutras (doble golpe, LET, saque fuera…)
+  }
   static quatFromNet(a, out) {
     // q_local = qRotY180 * q_remote
     out.set(a[0], a[1], a[2], a[3]);
@@ -1358,6 +1403,11 @@ class NetLink {
     this.role = 'host';
     this.code = this.genCode();
     this.setStatus('creating', 'Creando sala…');
+    // v2.25: micrófono TEMPRANO, en este gesto 2D del menú (fuera de VR).
+    // Pedirlo en plena sesión XR provoca el cambio de ruta de audio de
+    // Android en el casco y dejaba el WebAudio del juego mudo. Si se
+    // deniega, se sigue sin voz (igual que antes).
+    this.initVoice().catch(() => { /* sin voz, sin problema */ });
     this.openPeer(NetLink.ROOM_PREFIX + this.code, () => {
       this.setStatus('waiting', `Sala ${this.code} · esperando al rival…`);
     });
@@ -1375,6 +1425,8 @@ class NetLink {
       return;
     }
     this.setStatus('joining', `Conectando a la sala ${this.code}…`);
+    // v2.25: micrófono temprano (mismo motivo que en hostRoom)
+    this.initVoice().catch(() => { /* sin voz, sin problema */ });
     this.openPeer(null, () => {
       const conn = this.peer.connect(NetLink.ROOM_PREFIX + this.code, { reliable: true });
       this.wireConn(conn);
@@ -1393,14 +1445,16 @@ class NetLink {
       if (this.conn && this.conn.open) { conn.close(); return; }  // una sala = un rival
       this.wireConn(conn);
     });
-    this.peer.on('call', (call) => {           // voz entrante (invitado)
+    this.peer.on('call', (call) => {           // voz entrante (anfitrión)
       this.call = call;
-      const answer = () => {
-        try { call.answer(this.micStream || undefined); this.wireCall(call); }
+      const answer = (stream) => {
+        try { call.answer(stream || undefined); this.wireCall(call); }
         catch { try { call.answer(); this.wireCall(call); } catch { /* */ } }
       };
-      if (this.micStream) answer();
-      else this.initVoice().then(answer).catch(answer);
+      if (this.micStream) answer(this.micStream);
+      // v2.25: con tope — si el micro no responde, se responde igualmente
+      // (con silencio) para que la voz del otro llegue
+      else this.initVoiceWithCap().then(answer).catch(() => answer());
     });
     this.peer.on('error', (err) => {
       const t = err?.type || '';
@@ -1434,15 +1488,20 @@ class NetLink {
       this.owner = 'host';       // el saque inicial siempre es del anfitrión
       this.setStatus('online', '¡Rival conectado!');
       this.game?.startOnlineSession();
+      this.game?.audio?.kick();  // v2.25: rescate de audio al abrir la sesión
       this.initVoice().catch(() => { /* sin voz, sin problema */ });
-      if (this.role === 'host' && this.peer) {
-        // el anfitrión llama con su micrófono; el invitado responde en 'call'
-        this.initVoice().then(() => {
-          if (this.micStream && this.peer) {
-            const c = this.peer.call(NetLink.ROOM_PREFIX + this.code, this.micStream);
+      if (this.role === 'guest' && this.peer) {
+        // v2.25: la llamada de voz la INICIA EL INVITADO hacia el ID de la
+        // sala (el anfitrión responde en peer.on('call')). Antes la iniciaba
+        // el anfitrión hacia su PROPIO id: bucle consigo mismo y el rival
+        // sin voz ni en un sentido ni en el otro. Con tope de micro: si
+        // getUserMedia cuelga, se llama con el stream silencioso.
+        this.initVoiceWithCap().then((stream) => {
+          if (this.peer && this.online) {
+            const c = this.peer.call(NetLink.ROOM_PREFIX + this.code, stream || undefined);
             if (c) this.wireCall(c);
           }
-        }).catch(() => { /* */ });
+        });
       }
     });
     conn.on('data', (d) => this.onData(d));
@@ -1462,6 +1521,9 @@ class NetLink {
         this.remoteAudio.srcObject = remote;
         this.remoteAudio.play?.().catch(() => { /* */ });
       } catch { /* */ }
+      // v2.25: al llegar la voz del rival el sistema puede haber re-enrutado
+      // la salida (foco de audio de Android): rescate suave del WebAudio.
+      this.game?.audio?.kick();
       this.game?.onNetStatus?.();
     });
     call.on('close', () => { if (this.voiceState === 'on') this.voiceState = 'off'; });
@@ -1488,6 +1550,46 @@ class NetLink {
     }
   }
 
+  /** v2.25: stream SILENTE de respaldo (sin micrófono). Si getUserMedia se
+   *  queda colgado o se deniega, la llamada igualmente se establece y la
+   *  voz del RIVAL se oye (solo no se transmitirá la nuestra). */
+  silentStream() {
+    if (this._silent) return this._silent;
+    try {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return null;
+      const ctx = new Ctor();
+      const dst = ctx.createMediaStreamDestination();
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      g.gain.value = 0;                     // silencio total
+      osc.connect(g); g.connect(dst);
+      osc.start();
+      this._silent = dst.stream;
+      return this._silent;
+    } catch { return null; }
+  }
+
+  /** v2.25: initVoice con TOPE de 4 s. Algunos navegadores dejan
+   *  getUserMedia colgado sin responder nunca: sin este tope, la llamada de
+   *  voz no llegara a iniciarse jamás y nadie oirá a nadie. Al vencer el
+   *  tope se sigue con el stream silencioso. */
+  initVoiceWithCap() {
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (s, st) => {
+        if (done) return;
+        done = true;
+        window.clearTimeout(t);
+        if (st) this.voiceState = st;
+        this.game?.onNetStatus?.();
+        resolve(s || this.silentStream());
+      };
+      const t = window.setTimeout(() => finish(this.micStream, this.micStream ? 'on' : 'error'), 4000);
+      this.initVoice().then((s) => finish(s)).catch(() => finish(null, 'denied'));
+    });
+  }
+
   toggleMic() {
     this.micOn = !this.micOn;
     if (this.micStream) this.micStream.getAudioTracks().forEach((t) => { t.enabled = this.micOn; });
@@ -1508,13 +1610,14 @@ class NetLink {
     const pad = g.controllerPaddles[g.paddleHand];
     const pkt = { k: 'p', pad: null, b: null, e: null };
     if (pad?.active && g.grips[g.paddleHand]) {
-      pkt.pad = NetLink.posToNet(g.grips[g.paddleHand].position)
-        .concat(NetLink.quatToNet(g.grips[g.paddleHand].quaternion));
+      // v2.25: EMISIÓN EN CRUDO — el receptor aplica el espejo UNA vez
+      const gp = g.grips[g.paddleHand];
+      pkt.pad = NetLink.rawPos(gp.position).concat(NetLink.rawQuat(gp.quaternion));
     }
     if (this.owner === this.mySide()) {
       pkt.b = {
-        p: NetLink.posToNet(g.ball.pos),
-        v: NetLink.vecToNet(g.ball.vel),
+        p: NetLink.rawPos(g.ball.pos),
+        v: NetLink.rawPos(g.ball.vel),
         s: [+g.ball.spin.x.toFixed(2), +g.ball.spin.y.toFixed(2), +g.ball.spin.z.toFixed(2)],
       };
     }
@@ -1525,6 +1628,9 @@ class NetLink {
         st: r.state, sv: r.server, sp: r.scorePlayer, sa: r.scoreAi,
         ms: r.message, md: r.mode, ow: this.owner, rh: r.rallyHits,
       };
+      // v2.25: causa estructural del último punto / LET (send-once)
+      if (this.lastPoint) { pkt.y.pt = this.lastPoint; this.lastPoint = null; }
+      if (this.lastRetry) { pkt.y.rt = this.lastRetry; this.lastRetry = null; }
       if (r.state === 'over') pkt.y.wn = r.scorePlayer > r.scoreAi ? 'player' : 'ai';
     }
     this.send(pkt);
@@ -1541,15 +1647,16 @@ class NetLink {
     }
   }
 
-  /** Anuncia un golpeo local (tras aplicar la velocidad ya corregida). */
+  /** Anuncia un golpeo local (tras aplicar la velocidad ya corregida).
+   *  v2.25: emisión EN CRUDO — el receptor aplica el espejo UNA vez. */
   sendHit(isServe) {
     if (!this.online) return;
     const g = this.game;
     this.owner = this.mySide();
     this.send({
       k: 'h', sv: isServe ? 1 : 0,
-      p: NetLink.posToNet(g.ball.pos),
-      v: NetLink.vecToNet(g.ball.vel),
+      p: NetLink.rawPos(g.ball.pos),
+      v: NetLink.rawPos(g.ball.vel),
       s: [+g.ball.spin.x.toFixed(2), +g.ball.spin.y.toFixed(2), +g.ball.spin.z.toFixed(2)],
     });
   }
@@ -1572,7 +1679,15 @@ class NetLink {
       if (d.y) this.applySync(d.y);
       return;
     }
-    if (d.k === 'h') { this._pendingHits.push(d); return; }
+    if (d.k === 'h') {
+      // v2.25: solo el anfitrión encola golpeos para validarlos. En el
+      // invitado un golpeo del anfitrión significa "la bola ahora es suya":
+      // se cambia el dueño AL INSTANTE (sin esperar al siguiente sync) y no
+      // se encola (antes crecía sin límite en el invitado: fuga de memoria).
+      if (this.role === 'host') this._pendingHits.push(d);
+      else if (this.owner !== 'host') this.owner = 'host';
+      return;
+    }
     if (d.k === 'r') {    // el invitado pide revancha
       if (this.role === 'host') this.game.startOnlineMatch();
       return;
@@ -1586,28 +1701,86 @@ class NetLink {
     if (d.k === 'bye') this.onPeerGone('El rival cerró la sala');
   }
 
-  /** Invitado: estado del partido recibido del anfitrión (reglas sombra). */
+  /** Estado del partido recibido del anfitrión (reglas sombra).
+   *  v2.25 · SINCRONÍA POR PUNTO DE VISTA: el anfitrión etiqueta TODO desde
+   *  su perspectiva ('player'=anfitrión, 'ai'=invitado). En el invitado esas
+   *  etiquetas significan lo contrario ('player' soy YO), así que se
+   *  intercambian marcador y sacador y se remapea el ganador. Antes el
+   *  invitado veía el marcador invertido, sostenía la bola cuando sacaba el
+   *  rival y celebraba los puntos del otro. Los MENSAJES del anfitrión están
+   *  en su perspectiva: se regeneran localmente, nunca se copian. */
   applySync(y) {
     const g = this.game;
     const r = g.rules;
     this.owner = y.ow || 'host';
-    const key = `${y.st}|${y.sp}|${y.sa}|${y.sv}|${y.ms}`;
-    const prevSp = r.scorePlayer, prevSa = r.scoreAi;
-    r.state = y.st; r.server = y.sv;
-    r.scorePlayer = y.sp; r.scoreAi = y.sa;
-    r.message = y.ms; r.mode = y.md; r.rallyHits = y.rh || 0;
+    const guest = this.role === 'guest';
+    const my = guest ? y.sa : y.sp;        // MI marcador
+    const op = guest ? y.sp : y.sa;        // el del rival
+    const srv = (guest ? y.sv === 'ai' : y.sv === 'player') ? 'player' : 'ai';
+    const prevMy = r.scorePlayer, prevOp = r.scoreAi;
+    const prevState = r.state, prevMode = r.mode;
+    r.state = y.st; r.server = srv;
+    r.scorePlayer = my; r.scoreAi = op;
+    r.mode = y.md; r.rallyHits = y.rh || 0;
     g.mode = y.md; g.pendingMode = y.md;
-    if ((y.sp !== prevSp || y.sa !== prevSa) && y.st !== 'over') {
-      const iWon = y.sp > prevSp;
+    if (y.pt) this.lastPoint = y.pt;
+    if (y.rt) this.lastRetry = y.rt;
+
+    // ---- MENSAJES LOCALES (perspectiva propia; nunca el texto del rival) --
+    if (r.state === 'point' && this.lastPoint) {
+      const lp = this.lastPoint;
+      const wLocal = guest ? (lp.w === 'player' ? 'ai' : 'player') : lp.w;
+      const c = NetLink.remapCause(lp.c, guest);
+      const rallyTxt = lp.rh >= 6 ? ` · ${lp.rh} golpes` : '';
+      r.message = wLocal === 'player'
+        ? `¡Punto para ti! · ${c}${rallyTxt}`
+        : `Punto para ${r.opp()} · ${c}${rallyTxt}`;
+    } else if (r.state === 'serve') {
+      if (this.lastRetry) r.message = `${this.lastRetry} · repite el saque`;
+      else r.message = srv === 'player'
+        ? 'Tu saque · GATILLO para lanzar y golpear'
+        : `Saque de ${r.opp()}…`;
+    } else if (r.state === 'over') {
+      const won = my > op;
+      r.message = won
+        ? `¡VICTORIA! · ${my}-${op} · gatillo: revancha`
+        : `DERROTA · ${my}-${op} · gatillo: revancha`;
+    }
+    if (r.state !== 'point') this.lastPoint = null;
+    if (r.state !== 'serve') this.lastRetry = null;
+
+    // ---- SONIDO/MEGAFONÍA LOCAL (el invitado antes callaba en online) -----
+    if ((my !== prevMy || op !== prevOp) && r.state !== 'over') {
+      const iWon = my > prevMy;
       g.audio.point(iWon);
       if (iWon) g.audio.applause(false);
+      else if (this.lastPoint?.c && /red|fuera|pared/.test(this.lastPoint.c)) g.audio.ohh();
+      if (g.renderer.xr.isPresenting) {
+        g.haptic(g.paddleHand, iWon ? 0.85 : 0.4, iWon ? 110 : 60);
+      }
     }
+    if (r.state === 'serve' && prevState !== 'serve' && r.mode !== 'survival') {
+      g.audio.announce(`${r.scorePlayer} a ${r.scoreAi}, saque para ${srv === 'player' ? 'ti' : 'tu rival'}`);
+    }
+    if (prevMode !== r.mode && (r.mode === 'match' || r.mode === 'survival')) {
+      g.audio.announce(r.mode === 'survival'
+        ? 'Modo supervivencia. ¡Aguanta el rallye!'
+        : 'Modo partido. ¡Buena suerte!', true);
+    }
+
+    // ---- FIN DE PARTIDO con perspectiva remapeada ----
     if (y.st === 'over' && y.wn) {
-      const k = `${y.wn}|${y.sp}-${y.sa}`;
+      const k = `${y.wn}|${my}-${op}`;
       if (k !== this._overKey) {
         this._overKey = k;
-        g.startFanfare(y.wn === 'player');
-        g.audio.applause(y.wn === 'player');
+        const iWon = guest ? y.wn === 'ai' : y.wn === 'player';
+        g.startFanfare(iWon);
+        g.audio.applause(iWon);
+        g.audio.announce(iWon
+          ? `¡Victoria! ${r.scorePlayer} a ${r.scoreAi}`
+          : `Partido para ${r.opp()}. ${r.scoreAi} a ${r.scorePlayer}`, true);
+        g.celebrate(g.stats.recordMatch(iWon, g.difficulty));
+        g.emitStats();
       }
     } else {
       this._overKey = '';
@@ -1624,7 +1797,7 @@ class NetLink {
     ball.pos.lerp(tmp, f);
     NetLink.vecFromNet(s.v, tmp);
     ball.vel.lerp(tmp, 1 - Math.exp(-10 * dt));
-    if (s.s) ball.spin.set(s.s[0], s.s[1], s.s[2]);
+    if (s.s) NetLink.spinFromNet(s.s, ball.spin);   // v2.25: spin espejado
     return true;
   }
 
@@ -1650,7 +1823,7 @@ class NetLink {
         const g = game;
         NetLink.posFromNet(h.p, g.ball.pos);
         NetLink.vecFromNet(h.v, g.ball.vel);
-        if (h.s) g.ball.spin.set(h.s[0], h.s[1], h.s[2]);
+        if (h.s) NetLink.spinFromNet(h.s, g.ball.spin);   // v2.25: espejado
         this.owner = 'guest';
         g.audio.paddle(
           THREE.MathUtils.clamp(g.ball.pos.x / 2.5, -1, 1),
@@ -1684,9 +1857,11 @@ class NetLink {
     try { this.micStream?.getTracks().forEach((t) => t.stop()); } catch { /* */ }
     if (this.remoteAudio) { try { this.remoteAudio.srcObject = null; } catch { /* */ } }
     this.conn = null; this.call = null; this.peer = null; this.micStream = null;
+    this._silent = null;
     this.online = false;
     this.remotePaddle = null; this.remoteBall = null;
     this._outEvs = []; this._inEvs = []; this._pendingHits = [];
+    this.lastPoint = null; this.lastRetry = null;   // v2.25
     this.voiceState = 'off';
     this.owner = 'host';
   }

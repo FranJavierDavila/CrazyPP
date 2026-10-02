@@ -169,19 +169,31 @@ async def main():
             fails.append(f"registro de golpeo rival: {json.dumps(proto)}")
 
         # --- 6) sync al invitado (reglas sombra) — probamos applySync directo ---
+        # v2.25: SINCRONÍA POR PUNTO DE VISTA. El anfitrión envía etiquetas
+        # host-relativas ('player'=anfitrión). En el invitado se intercambian:
+        # sp<->sa y server invertido. Con y={sv:'ai', sp:1, sa:0}: el anfitrión
+        # va 1-0 abajo... en marcos del anfitrión "ai" (invitado) marca 0 y
+        # "player" (anfitrión) 1; el invitado ve MI marcador = y.sa = 0 y saca
+        # el invitado (sv 'ai' en marco del anfitrión = invitado = yo).
         sync = await page.evaluate("""() => {
             const g = window.__game;
             const net = g.net;
             net.role = 'guest';       // fingir el lado invitado para applySync
             const before = { sp: g.rules.scorePlayer, mode: g.mode };
-            net.applySync({ st: 'rally', sv: 'player', sp: 1, sa: 0,
-                            ms: '¡Punto para ti!', md: 'match', ow: 'guest', rh: 2 });
-            const after = { sp: g.rules.scorePlayer, st: g.rules.state,
+            net.applySync({ st: 'rally', sv: 'ai', sp: 1, sa: 0,
+                            md: 'match', ow: 'guest', rh: 2 });
+            const after = { sp: g.rules.scorePlayer, sa: g.rules.scoreAi,
+                            st: g.rules.state, srv: g.rules.server,
                             mode: g.mode, owner: net.owner };
             net.role = 'host';        // restaurar
             return { before, after };
         }""")
-        if sync["after"]["sp"] != 1 or sync["after"]["st"] != "rally":
+        # en el invitado: scorePlayer (yo) = y.sa = 0; scoreAi (rival) = y.sp = 1
+        if sync["after"]["sp"] != 0 or sync["after"]["sa"] != 1:
+            fails.append(f"marcador sombra sin perspectiva: {json.dumps(sync)}")
+        if sync["after"]["srv"] != "player":
+            fails.append(f"sacador sombra sin perspectiva: {json.dumps(sync)}")
+        if sync["after"]["st"] != "rally":
             fails.append(f"reglas sombra no aplicadas: {json.dumps(sync)}")
         if sync["after"]["owner"] != "guest": fails.append(f"owner por sync: {json.dumps(sync)}")
 

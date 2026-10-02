@@ -560,6 +560,10 @@ class PingPongGame {
     if (this.net.role === 'host') {
       this.startOnlineMatch();
     } else {
+      // v2.25: el primer saque es del anfitrión — el estado sombra del
+      // invitado arranca ya en perspectiva correcta (antes el primer paquete
+      // de sync tardaba ~50 ms y el invitado veía un "tu saque" falso)
+      this.rules.server = 'ai';
       this.rules.message = '¡Conectado! Esperando al anfitrión…';
     }
   }
@@ -2356,6 +2360,11 @@ class PingPongGame {
     for (const it of intents) {
       switch (it.type) {
         case 'point': {
+          // v2.25: el anfitrión captura el punto ESTRUCTURADO para el
+          // invitado (con su causa host-relativa; el invitado la remapea)
+          if (this.net.online && this.net.role === 'host' && !it.survival) {
+            this.net.lastPoint = { w: it.winner, c: it.cause || '', rh: it.rallyHits || 0 };
+          }
           if (it.survival) {
             // SUPERVIVENCIA: récord de rallye + la CPU acelera cada rallye
             const golpes = it.rallyHits || 0;
@@ -2391,6 +2400,10 @@ class PingPongGame {
           break;
         }
         case 'retry-serve':
+          // v2.25: el LET viaja al invitado (causa neutra) para su mensaje
+          if (this.net.online && this.net.role === 'host') {
+            this.net.lastRetry = it.cause || '';
+          }
           this.resetToss();
           this.aiToss = null;
           this.demoToss = null;

@@ -110,6 +110,19 @@ function loadPaddleModel() {
               // por ambos lados (goma roja / madera) desde cualquier ángulo.
               m.side = THREE.DoubleSide;
               m.shadowSide = THREE.DoubleSide;
+              // v2.21 · TRANSPARENCIA FANTASMA: los exportadores suelen marcar
+              // BLEND aunque la textura sea RGB sin canal alfa y el alfa base
+              // sea 1. GLTFLoader entonces fija transparent=true Y
+              // depthWrite=false (three#17706): la pala se dibuja en el pase
+              // transparente sin escribir profundidad y, con doble cara, se
+              // ven las caras internas (efecto radiografía / "invertida").
+              // Si no hay transparencia real, devolvemos el material al pase
+              // opaco con depthWrite=true. Es el arreglo definitivo del
+              // "efecto invertido" reportado desde la v1.
+              if (m.transparent && m.opacity >= 1 && !m.alphaTest) {
+                m.transparent = false;
+                m.depthWrite = true;
+              }
               m.needsUpdate = true;
               if (m.isMeshStandardMaterial) {
                 m.metalness = Math.min(m.metalness ?? 0, 0.35);

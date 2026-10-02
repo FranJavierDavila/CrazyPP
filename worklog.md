@@ -704,3 +704,53 @@ Stage Summary:
 - Pendiente de visor: confirmar con el usuario que la voz ya suena en VR
   (volumen/claridad en el altavoz del casco) y seguir con la fase online
   real (dos visores, latencia, permiso de micro).
+
+---
+Task ID: 24
+Agent: Super Z (main agent)
+Task: v2.21 — fin del "efecto invertido" de la pala (transparencia fantasma del GLB)
+
+Work Log:
+- FEEDBACK: "la pala sigue estando mal… asegurar que las caras no se viesen
+  invertidas, el efecto sigue estando presente; una solución es renderizar
+  por el lado frontal y el reverso". El DoubleSide ya estaba desde v2.13 y
+  fixInvertedMeshes (volumen firmado) desde la versión siguiente → la causa
+  era OTRA.
+- AUDITORÍA GEOMÉTRICA (glb_face_audit.py): winding (volumen firmado) y
+  alineación de normales de las 5 primitivas PERFECTOS (ndot ≈ 1.00,
+  0 problemas) → descartado el modelo.
+- AUDITORÍA DE MATERIALES (glb_material_audit.py): los 5 materiales
+  (rubber/trim/paddle/inner_padding/handle) exportados con alphaMode=BLEND
+  pese a texturas RGB SIN canal alfa y alfa base 1 (transparencia fantasma
+  del exportador).
+- CONFIRMACIÓN EN VIVO (diag_pala_faces.py sobre index.html): GLTFLoader
+  three 0.170 con BLEND fija transparent=true Y depthWrite=false
+  (three#17706, comprobado en el fuente del CDN, línea 3581) → la pala se
+  dibuja sin escribir profundidad: con DoubleSide se ven caras internas y
+  traseras mezcladas por orden de dibujo (efecto radiografía).
+- FIX EN DOS CAPAS: (1) glb_fix_blend.py reescribe el JSON del GLB a
+  alphaMode=OPAQUE (5 materiales, padding de espacios según spec, BIN
+  intacto, 1.411.380 → 1.411.384 bytes) — copia de seguridad
+  scripts/pala.glb.bak; (2) guardia en runtime en loadPaddleModel
+  (game_part1.js): si m.transparent && opacity>=1 && !alphaTest →
+  transparent=false + depthWrite=true. DoubleSide + shadowSide SE MANTIENEN
+  (petición explícita del usuario: renderizar frontal y reverso).
+- BUILD: build_html.py → index.html 2.54 MB (sintaxis OK).
+- VERIFICACIÓN: diag en vivo → 5/5 materiales transparent=False,
+  depthWrite=True, side=DoubleSide; capturas del canvas (toDataURL,
+  bypassing overlay DOM): frontal, reverso, 2 rasantes y canto — hoja
+  COMPLETA (adiós la media luna), oclusión correcta de red/mesa, banda del
+  canto limpia. Regresiones: verify_v220.py TODO OK (voz 67/67), 
+  verify_v219.py TODO OK (sala P2P RZJ9N, protocolo), verify_v218.py TODO
+  OK (menú 14 botones, saque fácil). 0 errores de página.
+- ENTREGA: ZIP regenerado (3,0 MB, integridad OK), README sección v2.21,
+  4 capturas download/captura-v221-pala-*.png.
+
+Stage Summary:
+- v2.21: la pala se ve SIEMPRE correcta (anverso/reverso/canto/rasantes):
+  la causa real era alphaMode=BLEND ficticio → depthWrite=false del
+  GLTFLoader; ya no hay radiografía ni caras internas, con DoubleSide
+  conservado.
+- Pendiente visor: que el usuario confirme voz v2.20 en VR + pala limpia.
+- Siguiente fase (petición del usuario): parte estética "vidilla" del
+  entorno (iluminación, materiales, detalles de sala).

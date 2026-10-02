@@ -3,6 +3,7 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.21: GLB de la pala con materiales OPAQUE (fin del efecto radiografía);
 # v2.20: game_voice.js (banco de voz Piper/Opus en base64) va PRIMERO
 PARTS = ([f"{BASE}/scripts/game_voice.js"]
          + [f"{BASE}/scripts/game_part{i}.js" for i in (1, 2, 3)])

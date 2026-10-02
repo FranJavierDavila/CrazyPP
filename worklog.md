@@ -754,3 +754,61 @@ Stage Summary:
 - Pendiente visor: que el usuario confirme voz v2.20 en VR + pala limpia.
 - Siguiente fase (petición del usuario): parte estética "vidilla" del
   entorno (iluminación, materiales, detalles de sala).
+
+---
+Task ID: 25
+Agent: Super Z (main agent)
+Task: v2.22 — pala de la IA con golpeo realista + conmutador del megáfono + dicción natural (sin cortes entre cifras)
+
+Work Log:
+- FEEDBACK: (1) "la pala de la máquina se oriente de forma realista al
+  golpear, como un jugador real; ahora golpea con la pala perpendicular al
+  suelo"; (2) conmutador para activar/desactivar los audios del narrador;
+  (3) "en todas las pistas de audio hay un pequeño corte antes de decir la
+  segunda cifra".
+- (3) CAUSA: los clips de Piper traían 0,1-0,3 s de silencio por lado;
+  verificado midiendo el banco: 23,74 s de silencio sobre 72,31 s (33 %).
+  FIX: _loadVoice (game_part1.js) ahora calcula por fragmento el tramo con
+  voz [t0,t1] (umbral relativo al pico 7%, pre-roll 12 ms, cola 55 ms) y lo
+  guarda en audio.vbTrim; speakPlan reproduce src.start(t, off, dur) con ese
+  tramo y avanza t += dur + gap → las ÚNICAS pausas son las del plan. Gaps
+  inter-palabra 0,075 → 0,06 s. Verificado con hook de
+  AudioBufferSourceNode.start: "5 a 3, saque para ti" → 4 fuentes, gaps
+  reales [0.07, 0.07, 0.2999]; "cinco" 0,82 s → 0,42 s.
+- (2) FIX: audio.voice (persistente ppvr_voz_v1... clave 'ppxr_voz_v1') +
+  setVoice() espejo de setAmbience; announce() gatea con
+  if (!this.voice || !this.ambience) return (megáfono OFF = sin chime ni
+  voz ni respaldo). Menú EXTRAS: nuevo botón 'voz' "Megáfono del marcador:
+  Sí/No" (fila propia a 412); layout compactado (SALA 242, EXTRAS 356, filas
+  h40-42, revancha/pestañas/cerrar 460+) — todo cabe con margen (cerrar
+  termina en 548 sin revancha, 602 con ella). menuClick case 'voz'.
+- (1) FIX: updateAIPaddlePose (game_part3.js) reescrito: helper faceTo(dir,
+  roll) construye la base ortonormal de la cara (normal +Z hacia dir, mango
+  abajo) con guiñada ±1.3 rad alrededor de faceYaw y elevación [-0.5, 0.72],
+  roll de muñeca alrededor de la normal (quaternion local Z). Ramas: espera
+  → cara MIRA la bola (+ vaivén); saque-toss → cara SIGUE el lanzamiento;
+  saque-impacto → cara hacia la velocidad de salida; follow-through → cara
+  acompaña ball.vel con apertura por spin.x (cortada abre, liftado cierra,
+  signo según el campo atacado: tilt=clamp(0.2+s·spin.x·0.12)) y cierre
+  progresivo (−0.24·e) + roll creciente del swing. OpponentAI.swing gana
+  roll aleatorio ±0.17 rad (game_part2.js). Online sin cambios (pose real
+  por red). Temps nuevos: aimV/aimX/aimY/aimM/aimUP/aimRollQ/AIM_Z.
+- VERIFICACIÓN (verify_v222.py, TODO OK): menú 15 botones con 'voz' y
+  persistencia; gate del megáfono (OFF → 0 fuentes y sin speechSynthesis;
+  ON → 4); vbTrim 67/67 válido, 23,74 s recortados; cadena con offsets>0 y
+  gaps ≤0.12 entre cifras; orientación: idleDot=1.0/ny=0.046 (cara a la bola
+  e inclinada), swingDot=1.0, serveDot=1.0, tossDot=1.0. Regresiones:
+  verify_v220 TODO OK, verify_v218 TODO OK, verify_v219 TODO OK,
+  test_ai_returns 14/14. Capturas: menu_v222 (sin desbordes), ia_espera e
+  ia_swing (postura natural visible). 0 errores de página.
+- BUILD: index.html 2.55 MB; ZIP 3,0 MB integridad OK; README sección
+  v2.22; capturas download/captura-v222-*.png.
+
+Stage Summary:
+- v2.22: la IA golpea "de verdad" (cara mirando bola/salida, abre-cierra
+  con el efecto, muñeca con roll), el narrador tiene conmutador propio en
+  EXTRAS y la dicción es compacta (adiós el corte antes de la segunda
+  cifra: 23,7 s de silencio muerto eliminados del banco).
+- Pendiente visor: confirmar sensación del golpeo de la IA y claridad de la
+  nueva dicción en el casco; sigue pendiente la confirmación de la voz en
+  VR (v2.20). Siguiente fase: estética/"vidilla" del entorno.

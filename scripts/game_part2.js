@@ -467,6 +467,9 @@ class OpponentAI {
       contact: ball.pos.clone(),
       dir: new THREE.Vector3(v.x, 0, v.z).normalize(),
       speed: THREE.MathUtils.clamp(v.length() / 6, 0.6, 1.5),
+      // v2.22: roll de muñeca propio de cada golpe (la cara acompaña el tiro
+      // con un giro natural, nunca dos golpes idénticos)
+      roll: (Math.random() - 0.5) * 0.34,
     };
     return v;
   }

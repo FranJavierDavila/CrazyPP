@@ -10,6 +10,14 @@ const poseE = new THREE.Euler();
 const poseQ = new THREE.Quaternion();
 const poseD = new THREE.Vector3();
 const swingV = new THREE.Vector3();   // vector del follow-through (v2.17)
+// v2.22 · orientación realista de la cara de la pala (base ortonormal)
+const aimV = new THREE.Vector3();     // dirección deseada de la normal de cara
+const aimX = new THREE.Vector3();     // eje lateral del marco de la cara
+const aimY = new THREE.Vector3();     // eje "arriba" de la hoja
+const aimM = new THREE.Matrix4();     // base -> cuaternión
+const aimUP = new THREE.Vector3(0, 1, 0);
+const aimRollQ = new THREE.Quaternion();
+const AIM_Z = new THREE.Vector3(0, 0, 1);   // normal local de la cara (IA)
 
 // temporales del anti-clipping de palas (mesa / red / suelo)
 const pcA = new THREE.Vector3();
@@ -1003,39 +1011,40 @@ class PingPongGame {
     btn('mode:survival', 262, 120, 222, 44, 'Supervivencia', this.mode === 'survival');
 
     // DIFICULTAD
-    label('DIFICULTAD DE LA CPU', 184);
-    btn('diff:easy', 28, 194, 136, 44, 'Fácil', this.difficulty === 'easy');
-    btn('diff:medium', 188, 194, 136, 44, 'Media', this.difficulty === 'medium');
-    btn('diff:hard', 348, 194, 136, 44, 'Difícil', this.difficulty === 'hard');
+    label('DIFICULTAD DE LA CPU', 176);
+    btn('diff:easy', 28, 186, 136, 42, 'Fácil', this.difficulty === 'easy');
+    btn('diff:medium', 188, 186, 136, 42, 'Media', this.difficulty === 'medium');
+    btn('diff:hard', 348, 186, 136, 42, 'Difícil', this.difficulty === 'hard');
 
     // SALA (2×2)
-    label('SALA', 258);
+    label('SALA', 242);
     const themes = [
       ['theme:pabellon', 'Pabellón'], ['theme:neon', 'Neón'],
       ['theme:atardecer', 'Atardecer'], ['theme:artico', 'Ártico'],
     ];
     themes.forEach(([id, name], i) => {
-      btn(id, 28 + (i % 2) * 234, 268 + Math.floor(i / 2) * 52, 222, 44,
+      btn(id, 28 + (i % 2) * 234, 252 + Math.floor(i / 2) * 50, 222, 42,
         name, this.theme === id.split(':')[1]);
     });
 
-    // EXTRAS (v2.18): ambiente de torneo y estela de la bola, cada uno un
-    // botón basculante en la misma fila.
-    label('EXTRAS', 384);
-    btn('amb', 28, 394, 222, 44, `Ambiente: ${this.audio.ambience ? 'Sí' : 'No'}`, !!this.audio.ambience);
-    btn('trail', 262, 394, 222, 44, `Estela: ${this.showTrail ? 'Sí' : 'No'}`, !!this.showTrail);
+    // EXTRAS (v2.18; v2.22 añade el MEGÁFONO del marcador): basculantes,
+    // cada uno persistente. Fila 1: ambiente + estela; fila 2: megáfono.
+    label('EXTRAS', 356);
+    btn('amb', 28, 366, 222, 40, `Ambiente: ${this.audio.ambience ? 'Sí' : 'No'}`, !!this.audio.ambience);
+    btn('trail', 262, 366, 222, 40, `Estela: ${this.showTrail ? 'Sí' : 'No'}`, !!this.showTrail);
+    btn('voz', 28, 412, 456, 40, `Megáfono del marcador: ${this.audio.voice ? 'Sí' : 'No'}`, !!this.audio.voice);
 
     // REVANCHA (solo con el partido terminado)
-    let yNext = 454;
+    let yNext = 460;
     if (over) {
-      btn('revancha', 28, yNext, 456, 50, 'REVANCHA', false, 'green');
-      yNext += 62;
+      btn('revancha', 28, yNext, 456, 46, 'REVANCHA', false, 'green');
+      yNext += 54;
     }
 
     // pestañas + cerrar (v2.19)
-    btn('tab:main', 28, yNext, 222, 42, 'AJUSTES', true);
-    btn('tab:multi', 262, yNext, 222, 42, 'MULTIJUGADOR', false);
-    btn('close', 28, yNext + 52, 456, 46, 'Cerrar menú', false);
+    btn('tab:main', 28, yNext, 222, 40, 'AJUSTES', true);
+    btn('tab:multi', 262, yNext, 222, 40, 'MULTIJUGADOR', false);
+    btn('close', 28, yNext + 46, 456, 42, 'Cerrar menú', false);
 
     this.menuRects = rects;
     this._menuState = this.rules.state;
@@ -1204,6 +1213,15 @@ class PingPongGame {
         if (this.trailObj) this.trailObj.visible = this.showTrail;
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
         this.rules.message = this.showTrail ? 'Estela de la bola: Sí' : 'Estela de la bola: No';
+        this.drawMenu();
+        break;
+      }
+      case 'voz': {
+        // v2.22: megáfono del marcador (narrador) sí/no, persistente e
+        // independiente del ambiente de torneo
+        this.audio.setVoice(!this.audio.voice);
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.rules.message = this.audio.voice ? 'Megáfono del marcador: Sí' : 'Megáfono del marcador: No';
         this.drawMenu();
         break;
       }
@@ -1990,12 +2008,18 @@ class PingPongGame {
   }
 
   /**
-   * Pose de la pala de la IA. Nada de lookAt hacia la bola: con la bola justo
-   * encima (fase de saque) lookAt es degenerado y volteaba la pala mostrando
-   * el canto. Ahora la orientación es por euler con yaw limitado y pitch
-   * acotado, y el saque tiene animación completa: postura lateral con la cara
-   * abierta -> swing acelerado hasta el punto de contacto -> cara cerrada.
+   * Pose de la pala de la IA. La orientación NO es lookAt directo (con la
+   * bola justo encima es degenerado y voltea la pala): v2.22 construye la
+   * base ortonormal de la cara con guiñada y elevación acotadas (faceTo) y
+   * roll de muñeca; el saque mantiene su animación completa (postura con la
+   * cara siguiendo el lanzamiento -> swing -> cara hacia la salida).
    */
+  /** v2.22 · ORIENTACIÓN REALISTA de la pala de la IA (y de la demo):
+   *  como golpearía un jugador real — la cara "mira" a la bola en la
+   *  preparación y el saque, en el impacto apunta hacia donde va a salir la
+   *  bola abriéndose con cortada y cerrándose con liftado (según spin.x),
+   *  y el follow-through cierra la cara con un roll de muñeca propio de cada
+   *  golpe (swing.roll). Nunca más una pared vertical perpetua. */
   updateAIPaddlePose(mesh, ai, who, dt) {
     const s = ai.sign;                       // -1 = CPU, +1 = demo
     const faceYaw = s < 0 ? 0 : Math.PI;     // mirar hacia el campo contrario
@@ -2005,18 +2029,34 @@ class PingPongGame {
     const strikeT = who === 'ai' ? this.aiStrikeT : this.demoStrikeT;
     const serving = !this.calib && this.rules.state === 'serve' && this.rules.server === who;
 
-    // postura base: cara hacia el rival, levemente cerrada; sigue la bola solo
-    // en horizontal y con el pitch acotado (sin volteos ni canto visible)
-    poseD.copy(this.ball.pos).sub(ai.pos);
-    let yaw = Math.atan2(poseD.x, poseD.z);
-    let dy = yaw - faceYaw;
-    while (dy > Math.PI) dy -= 2 * Math.PI;
-    while (dy < -Math.PI) dy += 2 * Math.PI;
-    yaw = faceYaw + THREE.MathUtils.clamp(dy, -1.15, 1.15);
-    const hd = Math.hypot(poseD.x, poseD.z);
-    const pitch = THREE.MathUtils.clamp(-Math.atan2(poseD.y, Math.max(0.05, hd)) * 0.5, -0.55, 0.4) + 0.14;
-    poseE.set(pitch, yaw, 0, 'YXZ');
-    poseQ.setFromEuler(poseE);
+    /** Construye en poseQ la rotación cuya normal de cara (+Z local) apunta
+     *  hacia dir, con el mango hacia abajo y un roll de muñeca alrededor de
+     *  esa normal. Acota la guiñada (±1.3 rad alrededor de faceYaw) y la
+     *  elevación (−0.5..0.72 rad): posturas creíbles, sin contorsiones. */
+    const faceTo = (dir, roll) => {
+      aimV.copy(dir);
+      if (aimV.lengthSq() < 1e-8) aimV.set(Math.sin(faceYaw), 0, Math.cos(faceYaw));
+      aimV.normalize();
+      const yw = Math.atan2(aimV.x, aimV.z);
+      let dyw = yw - faceYaw;
+      while (dyw > Math.PI) dyw -= 2 * Math.PI;
+      while (dyw < -Math.PI) dyw += 2 * Math.PI;
+      dyw = THREE.MathUtils.clamp(dyw, -1.3, 1.3);
+      const el = THREE.MathUtils.clamp(Math.asin(aimV.y), -0.5, 0.72);
+      const ce = Math.cos(el);
+      aimV.set(Math.sin(faceYaw + dyw) * ce, Math.sin(el), Math.cos(faceYaw + dyw) * ce);
+      aimX.crossVectors(aimUP, aimV);
+      if (aimX.lengthSq() < 1e-8) aimX.set(Math.sin(faceYaw), 0, Math.cos(faceYaw));
+      aimX.normalize();
+      aimY.crossVectors(aimV, aimX).normalize();
+      aimM.makeBasis(aimX, aimY, aimV);
+      poseQ.setFromRotationMatrix(aimM);
+      if (roll) {
+        aimRollQ.setFromAxisAngle(AIM_Z, roll);
+        poseQ.multiply(aimRollQ);
+      }
+      return poseQ;
+    };
 
     if (serving) {
       if (toss) {
@@ -2029,37 +2069,39 @@ class PingPongGame {
         const cx = this.ball.pos.x + s * 0.05;
         const cy = this.ball.pos.y - 0.02;
         const cz = this.ball.pos.z + s * 0.05;
-        poseE.set(-0.8 + 0.98 * e, faceYaw, 0, 'YXZ');
-        poseQ.setFromEuler(poseE);
         mesh.position.set(bx + (cx - bx) * e, by + (cy - by) * e, bz + (cz - bz) * e);
+        // la cara SIGUE LA BOLA durante todo el lanzamiento (como un jugador
+        // real que no pierde la bola de vista) y llega al contacto con ella;
+        // en la preparación la cara está más abierta y girada (backswing)
+        aimV.copy(this.ball.pos).sub(mesh.position);
+        faceTo(aimV, s * 0.2 * (1 - e));
         mesh.quaternion.copy(poseQ);
         this.clampPaddlePose(mesh.position, mesh.quaternion, false);
         return;
       }
       if (strikeT > 0) {
-        // instante del impacto: cara ligeramente cerrada junto a la bola
+        // instante del impacto: la cara apunta hacia donde sale el SAQUE
+        // (velocidad real ya enderezada por el solver del saque)
         mesh.position.set(
           this.ball.pos.x + s * 0.05,
           this.ball.pos.y - 0.03,
           this.ball.pos.z + s * 0.05,
         );
-        poseE.set(0.18, faceYaw, 0, 'YXZ');
-        poseQ.setFromEuler(poseE);
+        faceTo(this.ball.vel, 0.08);
         mesh.quaternion.copy(poseQ);
         this.clampPaddlePose(mesh.position, mesh.quaternion, false);
         return;
       }
-      // preparación: pala al lado de la bola, cara abierta hacia arriba
+      // preparación: pala al lado de la bola, cara abierta mirándola
       mesh.position.copy(stance);
-      poseE.set(-0.5, faceYaw, 0, 'YXZ');
-      poseQ.setFromEuler(poseE);
+      aimV.copy(this.ball.pos).sub(mesh.position);
+      faceTo(aimV, s * 0.16);
       mesh.quaternion.copy(poseQ);
       this.clampPaddlePose(mesh.position, mesh.quaternion, false);
       return;
     }
 
-    // rally / espera (v2.17: movimiento natural — preparación, swing de
-    // follow-through tras el golpeo y micro-balanceo de espera)
+    // rally / espera (v2.17: movimiento natural — v2.22: cara realista)
     if (ai.swing) {
       const sw = ai.swing;
       const p = Math.min(1, sw.t / sw.dur);
@@ -2072,10 +2114,15 @@ class PingPongGame {
         Math.max(0.42, sw.contact.y + swingV.y * 0.55 + 0.05 * (1 - e)),
         sw.contact.z + swingV.z,
       );
-      // cara que se cierra al terminar el acompañamiento
-      poseE.set(0.10 + 0.28 * (1 - e), faceYaw, 0, 'YXZ');
-      poseQ.setFromEuler(poseE);
-      mesh.quaternion.slerp(poseQ, Math.min(1, dt * 16));
+      // LA CARA ACOMPAÑA EL TIRO: normal hacia donde vuela la bola, abierta
+      // si lleva cortada y cerrada si lleva liftada (spin.x según el campo al
+      // que se ataca); mientras el brazo termina, la cara se cierra un poco
+      // más y la muñeca gira (roll propio del golpe)
+      const tilt = THREE.MathUtils.clamp(0.2 + s * this.ball.spin.x * 0.12, 0.03, 0.5);
+      aimV.copy(this.ball.vel).normalize();
+      aimV.y += tilt - 0.24 * e;             // cierra en el follow-through
+      faceTo(aimV, (sw.roll || 0) * (0.35 + 0.85 * e));
+      mesh.quaternion.slerp(poseQ, Math.min(1, dt * 14));
     } else {
       const bob = Math.sin(performance.now() / 1000 * 3.0 + (who === 'ai' ? 0 : 2.1)) * 0.012;
       mesh.position.set(
@@ -2083,6 +2130,11 @@ class PingPongGame {
         Math.max(0.42, ai.pos.y + ai.prep.y + bob),
         ai.pos.z + ai.prep.z,
       );
+      // espera: la cara MIRA A LA BOLA que llega (postura de jugador real,
+      // que ofrece la cara al balón) con un vaivén de muñeca relajado
+      aimV.copy(this.ball.pos).sub(mesh.position);
+      const sway = Math.sin(performance.now() / 1000 * 1.7 + (who === 'ai' ? 1.3 : 4.2)) * 0.05;
+      faceTo(aimV, sway);
       mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
     }
     this.clampPaddlePose(mesh.position, mesh.quaternion, false);

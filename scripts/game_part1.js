@@ -393,6 +393,11 @@ class GameAudio {
     // --- ambiente de torneo (v2.11) ---
     this.ambience = true;      // murmullo + aplausos + megafonía
     try { this.ambience = localStorage.getItem('ppxr_amb_v1') !== '0'; } catch { /* */ }
+    // --- v2.22 · MEGÁFONO del marcador: conmutador propio e independiente ---
+    // (chime + voz del narrador). Difiere del ambiente: puedes tener el
+    // pabellón en silencio pero con el marcador hablando, o al revés.
+    this.voice = true;
+    try { this.voice = localStorage.getItem('ppxr_voz_v1') !== '0'; } catch { /* */ }
     this._amb = null;          // nodos del murmullo en marcha
     this._ambBuffer = null;    // buffer de ruido "grumoso" reutilizable
     this._lastOhh = 0;
@@ -401,6 +406,10 @@ class GameAudio {
     this.vb = null;
     this.vbGain = null;
     this.vbCtx = null;
+    // v2.22: recorte de silencios [t0, t1] por fragmento (Piper deja cabecera
+    // y cola silenciosas que, sumadas a los gaps, creaban pausas artificiales
+    // — el "corte" antes de la segunda cifra del marcador).
+    this.vbTrim = null;
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
@@ -808,6 +817,13 @@ class GameAudio {
     if (!this.ambience) this.stopMurmur();
   }
 
+  /** v2.22 · Conmutador del megáfono del marcador (chime + voz del narrador),
+   *  persistente e independiente del ambiente de torneo. */
+  setVoice(on) {
+    this.voice = !!on;
+    try { localStorage.setItem('ppxr_voz_v1', this.voice ? '1' : '0'); } catch { /* */ }
+  }
+
   /** Murmullo de público de fondo: bucle de ruido filtrado con vaivén lento.
    *  Se arranca al entrar en VR y se detiene al salir / apagar el ambiente. */
   startMurmur() {
@@ -947,19 +963,21 @@ class GameAudio {
    *  solo son válidos en SU contexto: se recarga en cada _wire() (nuevo
    *  contexto al entrar/salir de VR). Normalización de pico 0.60. */
   _loadVoice(ctx) {
-    this.vb = null; this.vbGain = null; this.vbCtx = ctx;
+    this.vb = null; this.vbGain = null; this.vbTrim = null; this.vbCtx = ctx;
     if (typeof VOICE_B64 === 'undefined' || !ctx || !ctx.decodeAudioData) return;
     const keys = Object.keys(VOICE_B64);
     if (!keys.length) return;
     const bank = new Map();
     const gains = new Map();
+    const trims = new Map();
     let pend = keys.length;
     const done = () => {
       if (pend > 0) return;
       if (this.vbCtx === ctx && bank.size) {
         this.vb = bank;
         this.vbGain = gains;
-        console.info('[Audio] banco de voz listo ·', bank.size, 'fragmentos');
+        this.vbTrim = trims;
+        console.info('[Audio] banco de voz listo ·', bank.size, 'fragmentos · silencios recortados');
       }
     };
     for (const k of keys) {
@@ -977,6 +995,24 @@ class GameAudio {
             }
             bank.set(k, buf);
             gains.set(k, peak > 1e-4 ? Math.min(2.4, Math.max(0.35, 0.6 / peak)) : 1);
+            // v2.22 · RECORTE DE SILENCIOS: Piper deja ~0,1-0,3 s de silencio
+            // a cada lado de cada fragmento; al encadenarlos se acumulaba una
+            // pausa artificial (el "corte" antes de la segunda cifra).
+            // Detectamos el primer/último muestra con voz y guardamos [t0,t1];
+            // speakPlan reproducirá solo ese tramo.
+            try {
+              const sr = buf.sampleRate || 44100;
+              const thr = Math.max(0.012, peak * 0.07);   // umbral relativo al pico
+              const n = ch.length;
+              let i0 = 0, i1 = n - 1;
+              while (i0 < n && Math.abs(ch[i0]) < thr) i0++;
+              while (i1 > i0 && Math.abs(ch[i1]) < thr) i1--;
+              if (i1 > i0) {
+                const t0 = Math.max(0, i0 / sr - 0.012);   // pre-roll corto
+                const t1 = Math.min(buf.duration, i1 / sr + 0.055); // cola natural
+                if (t1 - t0 > 0.04) trims.set(k, [t0, t1]);
+              }
+            } catch { /* sin recorte: se reproduce el buffer entero */ }
           } catch { /* */ }
           pend--; done();
         };
@@ -1000,7 +1036,7 @@ class GameAudio {
     try {
       const s = this._normVoice(text);
       if (!s) return null;
-      const P = (keys, gaps) => keys.map((k, i) => ({ k, gap: (gaps && gaps[i]) || 0.075 }));
+      const P = (keys, gaps) => keys.map((k, i) => ({ k, gap: (gaps && gaps[i]) || 0.06 }));
       const full = VOICE_FULL[s];
       if (full) return P(full);
       let m;
@@ -1045,6 +1081,9 @@ class GameAudio {
   }
 
   /** Encadena los fragmentos del plan sobre this.master (tras el chime).
+   *  v2.22: usa los recortes de silencio (vbTrim): reproduce solo el tramo
+   *  con voz de cada buffer, de modo que los gaps del plan son las ÚNICAS
+   *  pausas — la dicción queda compacta y natural.
    *  Devuelve true si todo el plan quedó programado. */
   speakPlan(plan) {
     try {
@@ -1054,14 +1093,17 @@ class GameAudio {
       for (const a of plan) {
         const buf = this.vb.get(a.k);
         if (!buf) return false;
+        const tr = (this.vbTrim && this.vbTrim.get(a.k)) || null;
+        const off = tr ? tr[0] : 0;
+        const dur = tr ? Math.max(0.04, tr[1] - tr[0]) : buf.duration;
         const src = this.ctx.createBufferSource();
         src.buffer = buf;
         const g = this.ctx.createGain();
         g.gain.value = (this.vbGain && this.vbGain.get(a.k)) || 1;
         src.connect(g);
         g.connect(this.master);
-        src.start(t);
-        t += buf.duration + (a.gap || 0.075);
+        src.start(t, off, dur);
+        t += dur + (a.gap || 0.06);
       }
       return true;
     } catch { return false; }
@@ -1070,13 +1112,15 @@ class GameAudio {
   /** MEGAFONÍA del marcador: chime de torneo + voz ("5-3, saque para ti").
    *  v2.20: voz por WebAudio (clips del banco), audible en VR; si falta un
    *  fragmento o el banco no está listo, respaldo speechSynthesis (2D).
+   *  v2.22: el conmutador del megáfono (audio.voice) lo silencia TODO
+   *  (chime incluido), independiente del ambiente de torneo.
    *  Throttle de 6 s salvo force. */
   announce(text, force) {
     try {
       const now = performance.now();
       if (!force && now - this._lastAnnounce < 6000) return;
       this._lastAnnounce = now;
-      if (!this.ambience) return;
+      if (!this.voice || !this.ambience) return;
       this.playOsc(660, 660, 0.12, 'sine', 0.2, 0);
       window.setTimeout(() => this.playOsc(990, 990, 0.16, 'sine', 0.2, 0), 140);
       const plan = this.voicePlan(text);

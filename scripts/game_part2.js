@@ -12,7 +12,7 @@ class Rules {
     this.server = 'player';
     this.scorePlayer = 0;
     this.scoreAi = 0;
-    this.message = 'Tu saque · la bola espera en tu mano libre';
+    this.message = T('serve_wait');
     this.totalPoints = 0;
     this.stateTimer = 0;
     this.lastHitter = null;
@@ -24,11 +24,11 @@ class Rules {
     this.rallyHits = 0;
     this.mode = 'match';            // 'match' (a 11) | 'survival' (rallyes infinitos)
     this.rallyesSurvived = 0;       // solo supervivencia: rallyes terminados
-    this.oppLabel = 'la CPU';       // v2.19: 'tu rival' en online
+    this.oppLabel = 'cpu';          // v2.27: CLAVE ('cpu'|'rival') -> T('opp_…')
   }
 
   /** Nombre del oponente para los mensajes (CPU o humano remoto). */
-  opp() { return this.oppLabel || 'la CPU'; }
+  opp() { return T('opp_' + (this.oppLabel || 'cpu')); }
 
   other(s) { return s === 'player' ? 'ai' : 'player'; }
 
@@ -49,8 +49,8 @@ class Rules {
     this.netTouched = false;
     this.rallyHits = 0;
     this.message = this.mode === 'survival'
-      ? 'SUPERVIVENCIA · aguanta el rallye más largo'
-      : 'Tu saque · la bola espera en tu mano libre';
+      ? T('surv_start')
+      : T('serve_wait');
   }
 
   /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea). */
@@ -69,11 +69,11 @@ class Rules {
     if (this.state !== 'rally') return [];
     // Nadie puede golpear dos veces seguidas (doble golpe = falta)
     if (who === this.lastHitter) {
-      return this.applyPoint(this.other(who), 'doble golpe');
+      return this.applyPoint(this.other(who), 'dblhit');
     }
     // Volea: golpear antes de que la bote en su campo el receptor
     if (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce)) {
-      return this.applyPoint(this.lastHitter, 'golpe antes del bote');
+      return this.applyPoint(this.lastHitter, 'volley');
     }
     this.lastHitter = who;
     this.mustBounceOpp = true;
@@ -92,9 +92,10 @@ class Rules {
       this.state = 'point';
       this.stateTimer = 1.7;
       const golpes = this.rallyHits;
+      const causeTxt = T('cause_' + cause, { opp: this.opp() });
       this.message = golpes >= 8
-        ? `¡Rallye de ${golpes} golpes! · ${cause}`
-        : `Rallye de ${golpes} ${golpes === 1 ? 'golpe' : 'golpes'} · ${cause}`;
+        ? T('rally_big', { n: golpes, cause: causeTxt })
+        : T('rally_n', { n: golpes, s: T(golpes === 1 ? 'word_hit' : 'word_hits'), cause: causeTxt });
       return [{ type: 'point', winner, cause, survival: true, rallyHits: golpes }];
     }
     if (winner === 'player') this.scorePlayer++;
@@ -102,14 +103,17 @@ class Rules {
     this.totalPoints++;
     this.state = 'point';
     this.stateTimer = 2.2;
-    const rallyTxt = this.rallyHits >= 6 ? ` · ${this.rallyHits} golpes` : '';
-    this.message = winner === 'player' ? `¡Punto para ti! · ${cause}${rallyTxt}` : `Punto para ${this.opp()} · ${cause}${rallyTxt}`;
+    const rallyTxt = this.rallyHits >= 6 ? T('rally_suffix', { n: this.rallyHits }) : '';
+    const causeTxt = T('cause_' + cause, { opp: this.opp() });
+    this.message = winner === 'player'
+      ? T('point_you', { cause: causeTxt, rally: rallyTxt })
+      : T('point_opp', { opp: this.opp(), cause: causeTxt, rally: rallyTxt });
     return [{ type: 'point', winner, cause, rallyHits: this.rallyHits }];
   }
 
   retryServe(cause) {
     this.state = 'serve';
-    this.message = `${cause} · repite el saque`;
+    this.message = T('retry_serve', { cause: T('cause_' + cause) });
     return [{ type: 'retry-serve', cause }];
   }
 
@@ -148,30 +152,30 @@ class Rules {
               this.mustBounceOpp = true;
               this.netTouched = false;
             } else {
-              intents.push(...this.applyPoint(opp, 'saque sin bote propio'));
+              intents.push(...this.applyPoint(opp, 'serve_no_own'));
             }
           } else if (this.mustBounceOpp) {
             if (e.side === opp) {
               this.validBounce = true;
               if (this.isServeBall && this.netTouched) {
                 // LET: rozó la red en saque pero pasó y botó bien
-                intents.push(...this.retryServe('LET · la bola rozó la red'));
+                intents.push(...this.retryServe('let'));
               } else {
                 this.mustBounceOpp = false;
                 this.netTouched = false;
               }
             } else {
               const cause = this.isServeBall
-                ? 'el saque no pasó la red'
-                : own === 'player' ? 'golpeaste tu propio campo' : `${this.opp()} golpeó su campo`;
+                ? 'serve_net'
+                : own === 'player' ? 'own_you' : 'own_opp';
               intents.push(...this.applyPoint(opp, cause));
             }
           } else if (this.validBounce) {
             if (e.side === opp) {
-              const cause = own === 'player' ? `doble bote: ${this.opp()} no llegó` : 'doble bote: no llegaste';
+              const cause = own === 'player' ? 'dbl_opp' : 'dbl_you';
               intents.push(...this.applyPoint(own, cause));
             } else {
-              const cause = own === 'player' ? 'la bola volvió a tu campo' : `la bola volvió al campo de ${this.opp()}`;
+              const cause = own === 'player' ? 'back_you' : 'back_opp';
               intents.push(...this.applyPoint(opp, cause));
             }
           }
@@ -182,11 +186,11 @@ class Rules {
           if (!this.lastHitter) break;
           if (this.serveOwnPending || this.mustBounceOpp) {
             const cause = this.isServeBall
-              ? (this.netTouched ? 'saque a la red' : 'saque fuera')
-              : (this.netTouched ? 'se quedó en la red' : (e.type === 'wall' ? 'a la pared' : 'bola fuera'));
+              ? (this.netTouched ? 'serve_net_touch' : 'serve_out')
+              : (this.netTouched ? 'net_stay' : (e.type === 'wall' ? 'wall' : 'out'));
             intents.push(...this.applyPoint(this.other(this.lastHitter), cause));
           } else {
-            const cause = this.lastHitter === 'player' ? `${this.opp()} no la devolvió` : 'no la devolviste';
+            const cause = this.lastHitter === 'player' ? 'noret_opp' : 'noret_you';
             intents.push(...this.applyPoint(this.lastHitter, cause));
           }
           break;
@@ -207,8 +211,8 @@ class Rules {
           this.state = 'serve';
           this.server = this.computeNextServer();
           this.message = this.server === 'player'
-            ? 'Nueva bola · GATILLO para lanzar y golpear'
-            : `Saque de ${this.opp()}… acelera cada vez más`;
+            ? T('surv_new')
+            : T('surv_opp', { opp: this.opp() });
           intents.push({ type: 'serve', server: this.server });
           return intents;
         }
@@ -219,17 +223,17 @@ class Rules {
           this.state = 'over';
           this.stateTimer = 8;
           const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
-          // v2.26: mensajes alineados con los carteles oficiales
+          // v2.26: mensajes alineados con los carteles oficiales (v2.27: i18n)
           this.message = winner === 'player'
-            ? `¡HAS GANADO! · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`
-            : `¡HAS PERDIDO! · ${this.scorePlayer}-${this.scoreAi} · gatillo: revancha`;
+            ? T('over_win', { p: this.scorePlayer, q: this.scoreAi })
+            : T('over_lose', { p: this.scorePlayer, q: this.scoreAi });
           intents.push({ type: 'game-over', winner });
         } else {
           this.state = 'serve';
           this.server = this.computeNextServer();
           this.message = this.server === 'player'
-            ? 'Tu saque · GATILLO para lanzar y golpear'
-            : `Saque de ${this.opp()}…`;
+            ? T('serve_go')
+            : T('serve_opp', { opp: this.opp() });
           intents.push({ type: 'serve', server: this.server });
         }
       }
@@ -858,7 +862,7 @@ function createScoreboard() {
       // ---------- MODO SUPERVIVENCIA ----------
       ctx.fillStyle = '#e8b45a';
       ctx.font = '700 40px system-ui, sans-serif';
-      ctx.fillText('S U P E R V I V E N C I A', 512, 78);
+      ctx.fillText(T('sb_surv'), 512, 78);
 
       ctx.fillStyle = '#f2f4f6';
       ctx.font = '800 210px system-ui, sans-serif';
@@ -866,11 +870,11 @@ function createScoreboard() {
 
       ctx.fillStyle = '#c8ced4';
       ctx.font = '600 44px system-ui, sans-serif';
-      ctx.fillText(`golpes del rallye`, 512, 390);
+      ctx.fillText(T('sb_rally_hits'), 512, 390);
 
       ctx.fillStyle = '#8b949c';
       ctx.font = '500 40px system-ui, sans-serif';
-      ctx.fillText(`rallyes ${d.rallyes || 0}  ·  récord ${d.best || 0}`, 512, 452);
+      ctx.fillText(T('sb_rallies', { r: d.rallyes || 0, b: d.best || 0 }), 512, 452);
       tex.needsUpdate = true;
       return;
     }
@@ -882,7 +886,7 @@ function createScoreboard() {
     ctx.textAlign = 'left';
     ctx.fillStyle = '#e8b45a';
     ctx.font = '700 52px system-ui, sans-serif';
-    ctx.fillText('TÚ', 150, 170);
+    ctx.fillText(T('sb_you'), 150, 170);
     if (d.server === 'player') {
       ctx.beginPath();
       ctx.arc(118, 152, 13, 0, Math.PI * 2);
@@ -891,7 +895,8 @@ function createScoreboard() {
     ctx.textAlign = 'right';
     ctx.fillStyle = '#7fb069';
     ctx.font = '700 52px system-ui, sans-serif';
-    ctx.fillText('CPU', 874, 170);
+    // v2.27: RIVAL en online (antes decía CPU siempre); texto por idioma
+    ctx.fillText(T(d.oppLabel === 'rival' ? 'sb_rival' : 'sb_cpu'), 874, 170);
     if (d.server === 'ai') {
       ctx.beginPath();
       ctx.arc(906, 152, 13, 0, Math.PI * 2);
@@ -1011,12 +1016,17 @@ function createCalibPanel() {
 
 /* =====================================================================
  *  FANFARRIA DE FIN DE PARTIDO · cartel 3D flotante sobre la red con el
- *  ARTE OFICIAL del juego (v2.26: imágenes ¡HAS GANADO! / ¡HAS PERDIDO!
- *  incrustadas en base64) + chip con el marcador final y la revancha.
- *  Lluvia de confeti 3D cuando se gana. Se muestra en todo el estado 'over'.
- *  Si la imagen aún no está decodificada (primer instante) se dibuja un
- *  panel de respaldo con el mismo texto; al cargar se repinta sola.
+ *  ARTE OFICIAL del juego (v2.26: imágenes ¡HAS GANADO! / ¡HAS PERDIDO!;
+ *  v2.27: versión por idioma — castellano e inglés incrustados en base64)
+ *  + chip con el marcador final y la revancha. Lluvia de confeti 3D cuando
+ *  se gana. Se muestra en todo el estado 'over'. Si la imagen aún no está
+ *  decodificada (primer instante) se dibuja un panel de respaldo con el
+ *  mismo texto; al cargar se repinta sola.
  * ===================================================================== */
+const POSTER_SRC = {
+  es: { win: '__POSTER_WIN_B64__', lose: '__POSTER_LOSE_B64__' },
+  en: { win: '__POSTER_WIN_EN_B64__', lose: '__POSTER_LOSE_EN_B64__' },
+};
 function createFanfareBanner() {
   const W = 1024, H = 683;                 // aspecto 3:2 = el del cartel oficial
   const group = new THREE.Group();
@@ -1039,31 +1049,35 @@ function createFanfareBanner() {
   group.visible = false;
   group.renderOrder = 5;
 
-  // v2.26: carteles oficiales incrustados (build_html.py sustituye los
-  // placeholders por data URLs JPEG). Preload + repintado al decodificar.
+  // v2.27: carteles por IDIOMA (carga diferida; cadena vacía = sin arte:
+  // se usa el panel de respaldo dibujado en el canvas).
   const posters = {};
   let lastArgs = null;
-  for (const [key, url] of [
-    ['win', '__POSTER_WIN_B64__'],
-    ['lose', '__POSTER_LOSE_B64__'],
-  ]) {
+  const ensurePoster = (lang, key) => {
+    if (posters[key + ':' + lang] !== undefined) return;
+    const url = (POSTER_SRC[lang] || POSTER_SRC.es)[key] || '';
+    posters[key + ':' + lang] = null;         // marcado: en curso/sin arte
+    if (!url) return;
     const img = new Image();
     img.onload = () => {
-      posters[key] = img;
-      if (group.visible && lastArgs) draw(...lastArgs);
+      posters[key + ':' + lang] = img;
+      if (group.visible && lastArgs) draw(...lastArgs);   // repinta si está en pantalla
     };
     img.src = url;
-  }
+  };
 
   function draw(win, pScore, aScore) {
     lastArgs = [win, pScore, aScore];
+    const lang = (typeof TLang === 'function') ? TLang() : 'es';
+    const key = win ? 'win' : 'lose';
+    ensurePoster(lang, key);
     ctx.clearRect(0, 0, W, H);
-    const img = posters[win ? 'win' : 'lose'];
+    const img = posters[key + ':' + lang];
     if (img) {
       // cartel oficial a sangre completa (mismo aspecto: sin deformar ni recortar)
       ctx.drawImage(img, 0, 0, W, H);
     } else {
-      // respaldo (imagen aún decodificando): panel con el mismo mensaje
+      // respaldo (imagen aún decodificando o arte ausente): panel con el mismo mensaje
       ctx.fillStyle = win ? 'rgba(43,26,4,0.94)' : 'rgba(12,16,22,0.94)';
       ctx.strokeStyle = win ? '#ffd35c' : '#ff5b4d';
       ctx.lineWidth = 14;
@@ -1075,7 +1089,7 @@ function createFanfareBanner() {
       ctx.shadowBlur = 26;
       ctx.fillStyle = win ? '#ffd35c' : '#ff6a5b';
       ctx.font = '900 128px system-ui, sans-serif';
-      ctx.fillText(win ? '¡HAS GANADO!' : '¡HAS PERDIDO!', W / 2, H / 2 - 40);
+      ctx.fillText(T(win ? 'fanf_win' : 'fanf_lose'), W / 2, H / 2 - 40);
       ctx.shadowBlur = 0;
       ctx.fillStyle = '#f2f4f6';
       ctx.font = '800 78px system-ui, sans-serif';
@@ -1083,7 +1097,7 @@ function createFanfareBanner() {
     }
 
     // chip inferior con el marcador final y la revancha (legible sobre el arte)
-    const txt = `${pScore} - ${aScore} · gatillo: revancha`;
+    const txt = T('fanf_chip', { p: pScore, q: aScore });
     ctx.font = '800 44px system-ui, sans-serif';
     const tw = ctx.measureText(txt).width;
     const cw = tw + 56, ch = 72;
@@ -1103,8 +1117,13 @@ function createFanfareBanner() {
     tex.needsUpdate = true;
   }
 
+  // v2.27: al cambiar el idioma con el cartel en pantalla se repinta en el idioma nuevo
+  function langChanged() {
+    if (group.visible && lastArgs) draw(...lastArgs);
+  }
+
   // canvas expuesto SOLO lectura (diagnóstico/verificación headless)
-  return { group, draw, canvas };
+  return { group, draw, canvas, langChanged };
 }
 
 function createConfetti() {
@@ -1288,6 +1307,11 @@ class NetLink {
   static CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // sin 0/O/1/I/L
   static ROOM_PREFIX = 'ppxr3-';
   static TABLE_CZ = -1.6;   // DIMS.tableCenterZ (eje de giro del espejo)
+  // v2.27: causas que provocan el "ohh" del público (antes un regex sobre el
+  // texto; ahora claves — válido en ambos idiomas)
+  static OHH_CAUSES = new Set([
+    'let', 'serve_net', 'serve_net_touch', 'serve_out', 'net_stay', 'wall', 'out',
+  ]);
 
   genCode() {
     let s = '';
@@ -1322,10 +1346,12 @@ class NetLink {
    * invitado la frase debe contarme la historia INVERSA.
    * Pares exactos producidos por Rules (host-relativo <-> invitado): */
   static CAUSE_SWAP = [
-    ['golpeaste tu propio campo', 'tu rival golpeó su campo'],
-    ['doble bote: no llegaste', 'doble bote: tu rival no llegó'],
-    ['la bola volvió a tu campo', 'la bola volvió al campo de tu rival'],
-    ['no la devolviste', 'tu rival no la devolvió'],
+    // v2.27: las causas viajan como CLAVES (neutras por idioma); aquí solo
+    // se intercambian las que cambian de perspectiva (yo <-> mi rival).
+    ['own_you', 'own_opp'],
+    ['dbl_you', 'dbl_opp'],
+    ['back_you', 'back_opp'],
+    ['noret_you', 'noret_opp'],
   ];
   static remapCause(c, forGuest) {
     if (!forGuest || !c) return c || '';
@@ -1369,36 +1395,36 @@ class NetLink {
 
   /* ---------------- crear sala (anfitrión) ---------------- */
   hostRoom() {
-    if (!this.available()) { this.setStatus('error', 'Red no disponible en este navegador'); return; }
+    if (!this.available()) { this.setStatus('error', T('net_unavailable')); return; }
     // v2.24: guardia de re-entrada (evita destruir una sala que ya se está
     // creando si el evento llega duplicado o se insiste a cañón)
     if (this.status === 'creating' || this.status === 'waiting') return;
     this.teardown();
     this.role = 'host';
     this.code = this.genCode();
-    this.setStatus('creating', 'Creando sala…');
+    this.setStatus('creating', T('status_creating'));
     // v2.25: micrófono TEMPRANO, en este gesto 2D del menú (fuera de VR).
     // Pedirlo en plena sesión XR provoca el cambio de ruta de audio de
     // Android en el casco y dejaba el WebAudio del juego mudo. Si se
     // deniega, se sigue sin voz (igual que antes).
     this.initVoice().catch(() => { /* sin voz, sin problema */ });
     this.openPeer(NetLink.ROOM_PREFIX + this.code, () => {
-      this.setStatus('waiting', `Sala ${this.code} · esperando al rival…`);
+      this.setStatus('waiting', T('status_waiting', { c: this.code }));
     });
   }
 
   /* ---------------- unirse con código (invitado) ---------------- */
   joinRoom(code) {
-    if (!this.available()) { this.setStatus('error', 'Red no disponible en este navegador'); return; }
+    if (!this.available()) { this.setStatus('error', T('net_unavailable')); return; }
     if (this.status === 'joining' || this.status === 'online') return;   // v2.24
     this.teardown();
     this.role = 'guest';
     this.code = (code || '').toUpperCase().trim();
     if (!/^[A-Z0-9]{5}$/.test(this.code)) {
-      this.setStatus('error', 'Código no válido (5 caracteres)');
+      this.setStatus('error', T('invalid_code'));
       return;
     }
-    this.setStatus('joining', `Conectando a la sala ${this.code}…`);
+    this.setStatus('joining', T('status_joining', { c: this.code }));
     // v2.25: micrófono temprano (mismo motivo que en hostRoom)
     this.initVoice().catch(() => { /* sin voz, sin problema */ });
     this.openPeer(null, () => {
@@ -1411,7 +1437,7 @@ class NetLink {
     try {
       this.peer = id ? new Peer(id) : new Peer();
     } catch (e) {
-      this.setStatus('error', 'No se pudo iniciar la red: ' + e.message);
+      this.setStatus('error', T('net_fail', { m: e.message }));
       return;
     }
     this.peer.on('open', () => { this._retryIds = 0; onReady && onReady(); });
@@ -1438,16 +1464,16 @@ class NetLink {
         try { this.peer.destroy(); } catch { /* */ }
         this.peer = null;
         this.openPeer(NetLink.ROOM_PREFIX + this.code, () => {
-          this.setStatus('waiting', `Sala ${this.code} · esperando al rival…`);
+          this.setStatus('waiting', T('status_waiting', { c: this.code }));
         });
         return;
       }
       if (t === 'peer-unavailable') {
-        this.setStatus('error', `No hay ninguna sala ${this.code}`);
+        this.setStatus('error', T('room_not_found', { c: this.code }));
       } else if (t === 'network' || t === 'server-error' || t === 'socket-error') {
-        this.setStatus('error', 'Sin conexión con el servidor de salas');
+        this.setStatus('error', T('no_lobby_server'));
       } else if (this.status !== 'online') {
-        this.setStatus('error', 'Error de red: ' + t);
+        this.setStatus('error', T('mj_error') + ': ' + t);
       }
     });
     this.peer.on('disconnected', () => {
@@ -1460,7 +1486,7 @@ class NetLink {
     conn.on('open', () => {
       this.online = true;
       this.owner = 'host';       // el saque inicial siempre es del anfitrión
-      this.setStatus('online', '¡Rival conectado!');
+      this.setStatus('online', T('opp_connected'));
       this.game?.startOnlineSession();
       this.game?.audio?.kick();  // v2.25: rescate de audio al abrir la sesión
       this.initVoice().catch(() => { /* sin voz, sin problema */ });
@@ -1479,8 +1505,8 @@ class NetLink {
       }
     });
     conn.on('data', (d) => this.onData(d));
-    conn.on('close', () => this.onPeerGone('El rival se ha ido'));
-    conn.on('error', () => this.onPeerGone('Conexión perdida'));
+    conn.on('close', () => this.onPeerGone(T('peer_gone')));
+    conn.on('error', () => this.onPeerGone(T('conn_lost')));
   }
 
   wireCall(call) {
@@ -1672,7 +1698,7 @@ class NetLink {
       }
       return;
     }
-    if (d.k === 'bye') this.onPeerGone('El rival cerró la sala');
+    if (d.k === 'bye') this.onPeerGone(T('peer_closed'));
   }
 
   /** Estado del partido recibido del anfitrión (reglas sombra).
@@ -1704,43 +1730,43 @@ class NetLink {
     if (r.state === 'point' && this.lastPoint) {
       const lp = this.lastPoint;
       const wLocal = guest ? (lp.w === 'player' ? 'ai' : 'player') : lp.w;
-      const c = NetLink.remapCause(lp.c, guest);
-      const rallyTxt = lp.rh >= 6 ? ` · ${lp.rh} golpes` : '';
+      const c = T('cause_' + NetLink.remapCause(lp.c, guest), { opp: r.opp() });
+      const rallyTxt = lp.rh >= 6 ? T('rally_suffix', { n: lp.rh }) : '';
       r.message = wLocal === 'player'
-        ? `¡Punto para ti! · ${c}${rallyTxt}`
-        : `Punto para ${r.opp()} · ${c}${rallyTxt}`;
+        ? T('point_you', { cause: c, rally: rallyTxt })
+        : T('point_opp', { opp: r.opp(), cause: c, rally: rallyTxt });
     } else if (r.state === 'serve') {
-      if (this.lastRetry) r.message = `${this.lastRetry} · repite el saque`;
+      if (this.lastRetry) r.message = T('retry_serve', { cause: T('cause_' + this.lastRetry, { opp: r.opp() }) });
       else r.message = srv === 'player'
-        ? 'Tu saque · GATILLO para lanzar y golpear'
-        : `Saque de ${r.opp()}…`;
+        ? T('serve_go')
+        : T('serve_opp', { opp: r.opp() });
     } else if (r.state === 'over') {
       const won = my > op;
-      // v2.26: mensajes alineados con los carteles oficiales
+      // v2.26/2.27: mensajes alineados con los carteles oficiales, en el idioma local
       r.message = won
-        ? `¡HAS GANADO! · ${my}-${op} · gatillo: revancha`
-        : `¡HAS PERDIDO! · ${my}-${op} · gatillo: revancha`;
+        ? T('over_win', { p: my, q: op })
+        : T('over_lose', { p: my, q: op });
     }
     if (r.state !== 'point') this.lastPoint = null;
     if (r.state !== 'serve') this.lastRetry = null;
 
     // ---- SONIDO/MEGAFONÍA LOCAL (el invitado antes callaba en online) -----
+    const OHH_CAUSES = NetLink.OHH_CAUSES;
     if ((my !== prevMy || op !== prevOp) && r.state !== 'over') {
       const iWon = my > prevMy;
       g.audio.point(iWon);
       if (iWon) g.audio.applause(false);
-      else if (this.lastPoint?.c && /red|fuera|pared/.test(this.lastPoint.c)) g.audio.ohh();
+      else if (this.lastPoint?.c && OHH_CAUSES.has(this.lastPoint.c)) g.audio.ohh();
       if (g.renderer.xr.isPresenting) {
         g.haptic(g.paddleHand, iWon ? 0.85 : 0.4, iWon ? 110 : 60);
       }
     }
     if (r.state === 'serve' && prevState !== 'serve' && r.mode !== 'survival') {
-      g.audio.announce(`${r.scorePlayer} a ${r.scoreAi}, saque para ${srv === 'player' ? 'ti' : 'tu rival'}`);
+      g.audio.announce(T('ann_score', { p: r.scorePlayer, q: r.scoreAi,
+        who: srv === 'player' ? T('who_you') : T('opp_rival') }));
     }
     if (prevMode !== r.mode && (r.mode === 'match' || r.mode === 'survival')) {
-      g.audio.announce(r.mode === 'survival'
-        ? 'Modo supervivencia. ¡Aguanta el rallye!'
-        : 'Modo partido. ¡Buena suerte!', true);
+      g.audio.announce(r.mode === 'survival' ? T('mode_survival') : T('mode_match'), true);
     }
 
     // ---- FIN DE PARTIDO con perspectiva remapeada ----
@@ -1752,8 +1778,8 @@ class NetLink {
         g.startFanfare(iWon);
         g.audio.applause(iWon);
         g.audio.announce(iWon
-          ? `¡Victoria! ${r.scorePlayer} a ${r.scoreAi}`
-          : `Partido para ${r.opp()}. ${r.scoreAi} a ${r.scorePlayer}`, true);
+          ? T('ann_victory', { p: r.scorePlayer, q: r.scoreAi })
+          : T('ann_match_end', { opp: r.opp(), p: r.scoreAi, q: r.scorePlayer }), true);
         g.celebrate(g.stats.recordMatch(iWon, g.difficulty));
         g.emitStats();
       }

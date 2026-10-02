@@ -540,8 +540,8 @@ class PingPongGame {
     this.setupAIServe();
     this.setupDemoServe();
     this.audio.announce(mode === 'survival'
-      ? 'Modo supervivencia. ¡Aguanta el rallye!'
-      : 'Modo partido. ¡Buena suerte!', true);
+      ? T('mode_survival')
+      : T('mode_match'), true);
     this.haptic(this.paddleHand, 0.6, 130);
   }
 
@@ -552,11 +552,11 @@ class PingPongGame {
   startOnlineSession() {
     if (this.calib) this.exitCalib();
     this.closeMenu();
-    this.rules.oppLabel = 'tu rival';
+    this.rules.oppLabel = 'rival';   // v2.27: clave (T('opp_rival'))
     this.resetToss();
     this.aiToss = null;
     this.demoToss = null;
-    this.audio.announce('Rival conectado. ¡A jugar!', true);
+    this.audio.announce(T('opp_connected'), true);
     if (this.net.role === 'host') {
       this.startOnlineMatch();
     } else {
@@ -564,7 +564,7 @@ class PingPongGame {
       // invitado arranca ya en perspectiva correcta (antes el primer paquete
       // de sync tardaba ~50 ms y el invitado veía un "tu saque" falso)
       this.rules.server = 'ai';
-      this.rules.message = '¡Conectado! Esperando al anfitrión…';
+      this.rules.message = T('online_first');
     }
   }
 
@@ -574,17 +574,17 @@ class PingPongGame {
     this.rules.startMatch(this.mode);
     this.net.owner = 'host';
     this.resetToss();
-    this.rules.message = 'Partido online · tu saque (GATILLO para lanzar)';
+    this.rules.message = T('online_serve');
   }
 
   /** El rival se desconecta: vuelta al juego local contra la CPU. */
   onNetEnded(msg) {
-    this.rules.oppLabel = 'la CPU';
+    this.rules.oppLabel = 'cpu';
     this.resetToss();
     this.aiToss = null;
     this.rules.startMatch(this.mode);
-    this.rules.message = `${msg || 'Rival desconectado'} · partido local reiniciado`;
-    this.audio.announce('Rival desconectado', true);
+    this.rules.message = T('net_ended', { msg: msg || T('opp_disconnected') });
+    this.audio.announce(T('opp_disconnected'), true);
   }
 
   /** El estado de la red cambió (repinta el menú si está abierto). */
@@ -693,8 +693,9 @@ class PingPongGame {
     this.applyTheme(key);
     this.callbacks.onTheme?.(key);
     if (!silent) {
-      this.rules.message = `SALA: ${t.name.toUpperCase()}`;
-      this.audio.announce(`Sala ${t.name}`, true);
+      const roomName = t.nameKey ? T(t.nameKey) : t.name;
+      this.rules.message = T('msg_room', { r: roomName.toUpperCase() });
+      this.audio.announce(T('ann_room', { room: roomName }), true);
       if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.5, 90);
     }
   }
@@ -828,13 +829,17 @@ class PingPongGame {
   }
 
 
-  /** Zona inferior común del menú: pestañas + cerrar (v2.19). */
+  /** Zona inferior común del menú: pestañas + cerrar (v2.19) + IDIOMA (v2.27). */
   drawMenuBottom(yTabs, rects) {
     const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
-    btn('tab:main', 28, yTabs, 222, 42, 'AJUSTES', this.menuPage === 'main');
-    btn('tab:multi', 262, yTabs, 222, 42, 'MULTIJUGADOR', this.menuPage !== 'main');
-    btn('close', 28, yTabs + 52, 456, 46, 'Cerrar menú', false);
+    // v2.27: selector de idioma ES/EN a la derecha de las pestañas (sin
+    // cambiar la altura del panel; los 4 caben en la fila)
+    btn('tab:main', 28, yTabs, 158, 42, T('tab_settings'), this.menuPage === 'main');
+    btn('tab:multi', 194, yTabs, 158, 42, T('tab_multi'), this.menuPage !== 'main');
+    btn('lang:es', 360, yTabs, 56, 42, 'ES', TLang() === 'es');
+    btn('lang:en', 424, yTabs, 60, 42, 'EN', TLang() === 'en');
+    btn('close', 28, yTabs + 52, 456, 46, T('close_menu'), false);
   }
 
   /** Página MULTIJUGADOR: crear/unirse por código, estado y voz (v2.19). */
@@ -848,70 +853,70 @@ class PingPongGame {
     c.fillStyle = '#9aa7b4';
     c.font = '700 14px system-ui, sans-serif';
     c.textAlign = 'left';
-    c.fillText('JUEGA CONTRA OTRA PERSONA POR INTERNET', 28, 112);
+    c.fillText(T('mj_head'), 28, 112);
 
     if (st === 'online') {
       c.fillStyle = '#7fb069';
       c.font = '800 30px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText('CONECTADO', 256, 152);
+      c.fillText(T('mj_connected'), 256, 152);
       c.fillStyle = '#cfd8e0';
       c.font = '600 18px system-ui, sans-serif';
-      c.fillText(`rival: ${net.code} · ${this.rules.state === 'over' ? 'partido terminado' : 'jugando'}`, 256, 186);
+      c.fillText(T('mj_rival', { code: net.code, st: this.rules.state === 'over' ? T('mj_over') : T('mj_playing') }), 256, 186);
       const voz = net.voiceState === 'on'
-        ? (net.micOn ? 'Voz activa (micrófono abierto)' : 'Voz activa (tu micro está en silencio)')
-        : net.voiceState === 'asking' ? 'Pidiendo micrófono…'
-        : net.voiceState === 'denied' ? 'Micrófono denegado'
-        : 'Sin voz (pulsa Voz para activarla)';
+        ? (net.micOn ? T('voz_on_mic') : T('voz_on_silent'))
+        : net.voiceState === 'asking' ? T('voz_asking')
+        : net.voiceState === 'denied' ? T('voz_denied')
+        : T('voz_off');
       c.fillStyle = '#9aa7b4';
       c.font = '500 16px system-ui, sans-serif';
       c.fillText(voz, 256, 214);
-      btn('net:mic', 28, 240, 222, 48, `Voz: ${net.micOn ? 'Sí' : 'No'}`, net.micOn && net.voiceState === 'on', undefined, !!net.micOn);
-      btn('net:hangup', 262, 240, 222, 48, 'COLGAR', false);
+      btn('net:mic', 28, 240, 222, 48, T('btn_voz', { v: net.micOn ? T('yes') : T('no') }), net.micOn && net.voiceState === 'on', undefined, !!net.micOn);
+      btn('net:hangup', 262, 240, 222, 48, T('btn_hangup'), false);
       c.fillStyle = '#9aa7b4';
       c.font = '500 15px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText('La revancha está en la pestaña AJUSTES.', 256, 330);
+      c.fillText(T('mj_rematch_hint'), 256, 330);
     } else if (st === 'waiting') {
       c.fillStyle = '#e8b45a';
       c.font = '700 18px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText('CÓDIGO DE LA SALA', 256, 146);
+      c.fillText(T('mj_room_code'), 256, 146);
       c.fillStyle = '#f2f4f6';
       c.font = '900 72px ui-monospace, monospace';
       c.fillText(net.code, 256, 210);
       c.fillStyle = '#9aa7b4';
       c.font = '500 16px system-ui, sans-serif';
-      c.fillText('Esperando al rival… comparte este código', 256, 258);
-      btn('net:cancel', 28, 290, 456, 48, 'CANCELAR SALA', false);
+      c.fillText(T('mj_waiting'), 256, 258);
+      btn('net:cancel', 28, 290, 456, 48, T('btn_cancel_room'), false);
     } else if (st === 'creating' || st === 'joining') {
       c.fillStyle = '#e8b45a';
       c.font = '700 24px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText(st === 'creating' ? 'Creando sala…' : `Conectando a ${net.code}…`, 256, 180);
-      btn('net:cancel', 28, 240, 456, 48, 'CANCELAR', false);
+      c.fillText(st === 'creating' ? T('mj_creating') : T('mj_connecting', { code: net.code }), 256, 180);
+      btn('net:cancel', 28, 240, 456, 48, T('btn_cancel'), false);
     } else if (st === 'error') {
       c.fillStyle = '#ff6b57';
       c.font = '700 22px system-ui, sans-serif';
       c.textAlign = 'center';
-      wrapText(c, net.statusMsg || 'Error de red', 256, 150, 440, 28);
-      btn('net:host', 28, 240, 222, 48, 'REINTENTAR', false);
-      btn('net:cancel', 262, 240, 222, 48, 'VOLVER', false);
+      wrapText(c, net.statusMsg || T('mj_error'), 256, 150, 440, 28);
+      btn('net:host', 28, 240, 222, 48, T('btn_retry'), false);
+      btn('net:cancel', 262, 240, 222, 48, T('btn_back'), false);
     } else {
       // off
       c.fillStyle = '#cfd8e0';
       c.font = '600 18px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText('Crea una sala o únete con un código.', 256, 152);
-      btn('net:host', 28, 200, 456, 52, 'CREAR SALA (código para tu rival)', false, 'green');
-      btn('net:join', 28, 268, 456, 52, 'INTRODUCIR CÓDIGO DE UN AMIGO', false);
+      c.fillText(T('mj_off_hint'), 256, 152);
+      btn('net:host', 28, 200, 456, 52, T('btn_host'), false, 'green');
+      btn('net:join', 28, 268, 456, 52, T('btn_join'), false);
     }
 
     c.fillStyle = '#75828f';
     c.font = '500 14px system-ui, sans-serif';
     c.textAlign = 'center';
-    c.fillText('P2P directo (WebRTC). Necesita internet en ambos visores.', 256, 396);
-    c.fillText('La voz usa el micrófono: acepta el permiso del navegador.', 256, 420);
+    c.fillText(T('mj_p2p'), 256, 396);
+    c.fillText(T('mj_mic_hint'), 256, 420);
     this.drawMenuBottom(454, rects);
   }
 
@@ -925,7 +930,7 @@ class PingPongGame {
     c.fillStyle = '#9aa7b4';
     c.font = '700 14px system-ui, sans-serif';
     c.textAlign = 'left';
-    c.fillText('CÓDIGO DE LA SALA DE TU AMIGO', 28, 112);
+    c.fillText(T('join_title'), 28, 112);
 
     // 5 huecos del código
     for (let i = 0; i < 5; i++) {
@@ -954,8 +959,8 @@ class PingPongGame {
       btn(`key:${CHARS[i]}`, 28 + col * 66, 210 + row * 50, 60, 44, CHARS[i], false);
     }
     btn('key:del', 28 + 5 * 66, 210 + 4 * 50, 60, 44, '⌫', false);
-    btn('key:ok', 28, 470, 222, 48, 'CONECTAR', this._joinCode.length === 5, 'green');
-    btn('key:cancel', 262, 470, 222, 48, 'VOLVER', false);
+    btn('key:ok', 28, 470, 222, 48, T('btn_connect'), this._joinCode.length === 5, 'green');
+    btn('key:cancel', 262, 470, 222, 48, T('btn_back'), false);
     this.drawMenuBottom(528, rects);
   }
 
@@ -991,14 +996,14 @@ class PingPongGame {
     c.font = '800 32px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText('MENÚ', 200, 46);
+    c.fillText(T('menu_title'), 200, 46);
     c.fillStyle = '#9aa7b4';
     c.font = '600 15px system-ui, sans-serif';
-    c.fillText('apunta con la pala y elige con el GATILLO', 200, 76);
+    c.fillText(T('menu_hint'), 200, 76);
     c.textAlign = 'right';
     c.fillStyle = '#e8b45a';
     c.font = '700 16px system-ui, sans-serif';
-    c.fillText('B · cerrar', W - 26, 46);
+    c.fillText(T('menu_b'), W - 26, 46);
 
     // botón genérico (compartido por todas las páginas)
     // v2.23: (1) los botones ACTIVOS también responden al apuntado (antes
@@ -1078,46 +1083,45 @@ class PingPongGame {
     }
 
     // MODO (v2.18: filas compactas para dejar sitio a EXTRAS)
-    label('MODO DE JUEGO', 110);
-    btn('mode:match', 28, 120, 222, 44, 'Partido', this.mode === 'match');
-    btn('mode:survival', 262, 120, 222, 44, 'Supervivencia', this.mode === 'survival');
+    label(T('mode_label'), 110);
+    btn('mode:match', 28, 120, 222, 44, T('mode_match'), this.mode === 'match');
+    btn('mode:survival', 262, 120, 222, 44, T('mode_survival'), this.mode === 'survival');
 
     // DIFICULTAD
-    label('DIFICULTAD DE LA CPU', 176);
-    btn('diff:easy', 28, 186, 136, 42, 'Fácil', this.difficulty === 'easy');
-    btn('diff:medium', 188, 186, 136, 42, 'Media', this.difficulty === 'medium');
-    btn('diff:hard', 348, 186, 136, 42, 'Difícil', this.difficulty === 'hard');
+    label(T('diff_label'), 176);
+    btn('diff:easy', 28, 186, 136, 42, T('diff_easy_btn'), this.difficulty === 'easy');
+    btn('diff:medium', 188, 186, 136, 42, T('diff_medium_btn'), this.difficulty === 'medium');
+    btn('diff:hard', 348, 186, 136, 42, T('diff_hard_btn'), this.difficulty === 'hard');
 
     // SALA (2×2)
-    label('SALA', 242);
+    label(T('room_label'), 242);
     const themes = [
-      ['theme:pabellon', 'Pabellón'], ['theme:neon', 'Neón'],
-      ['theme:atardecer', 'Atardecer'], ['theme:artico', 'Ártico'],
+      ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
+      ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
     ];
     themes.forEach(([id, name], i) => {
       btn(id, 28 + (i % 2) * 234, 252 + Math.floor(i / 2) * 50, 222, 42,
         name, this.theme === id.split(':')[1]);
     });
 
-    // EXTRAS (v2.18; v2.22 añade el MEGÁFONO; v2.23: casillas ☑/☐): los
-    // tres basculantes muestran su estado con la casilla y responden al
-    // apuntado aunque estén activos.
-    label('EXTRAS', 356);
-    btn('amb', 28, 366, 222, 40, `Ambiente: ${this.audio.ambience ? 'Sí' : 'No'}`, !!this.audio.ambience, undefined, !!this.audio.ambience);
-    btn('trail', 262, 366, 222, 40, `Estela: ${this.showTrail ? 'Sí' : 'No'}`, !!this.showTrail, undefined, !!this.showTrail);
-    btn('voz', 28, 414, 456, 40, `Megáfono del marcador: ${this.audio.voice ? 'Sí' : 'No'}`, !!this.audio.voice, undefined, !!this.audio.voice);
+    // EXTRAS (v2.18; v2.22 añade el MEGÁFONO; v2.27: IDIOMA en las pestañas)
+    label(T('extras_label'), 356);
+    const yn = (v) => (v ? T('yes') : T('no'));
+    btn('amb', 28, 366, 222, 40, T('btn_amb', { v: yn(this.audio.ambience) }), !!this.audio.ambience, undefined, !!this.audio.ambience);
+    btn('trail', 262, 366, 222, 40, T('btn_trail', { v: yn(this.showTrail) }), !!this.showTrail, undefined, !!this.showTrail);
+    btn('voz', 28, 414, 456, 40, T('btn_mic', { v: yn(this.audio.voice) }), !!this.audio.voice, undefined, !!this.audio.voice);
 
     // REVANCHA (solo con el partido terminado)
     let yNext = 460;
     if (over) {
-      btn('revancha', 28, yNext, 456, 46, 'REVANCHA', false, 'green');
+      btn('revancha', 28, yNext, 456, 46, T('btn_rematch'), false, 'green');
       yNext += 54;
     }
 
-    // pestañas + cerrar (v2.19)
-    btn('tab:main', 28, yNext, 222, 40, 'AJUSTES', true);
-    btn('tab:multi', 262, yNext, 222, 40, 'MULTIJUGADOR', false);
-    btn('close', 28, yNext + 46, 456, 42, 'Cerrar menú', false);
+    // pestañas + idioma (v2.27) + cerrar
+    btn('tab:main', 28, yNext, 222, 40, T('tab_settings'), true);
+    btn('tab:multi', 262, yNext, 222, 40, T('tab_multi'), false);
+    btn('close', 28, yNext + 46, 456, 42, T('close_menu'), false);
 
     this.menuRects = rects;
     this._menuState = this.rules.state;
@@ -1132,7 +1136,7 @@ class PingPongGame {
     for (const d of this.menuDots) d.visible = false;
     this.menuHover = [-1, -1];
     if (this.menuOpen) {
-      this.rules.message = 'Menú · apunta y pulsa el GATILLO';
+      this.rules.message = T('menu_open');
       this.drawMenu();
       this.audio.playOsc(660, 990, 0.07, 'sine', 0.15, 0);
       if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.4, 70);
@@ -1232,6 +1236,17 @@ class PingPongGame {
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
         break;
+      case 'lang':
+        // v2.27: selector de idioma en el menú (ES/EN) — cambia textos,
+        // banco de voz del megáfono y cartel; persistente.
+        if (arg === 'es' || arg === 'en') {
+          setLang(arg, this);
+          this.rules.message = '';
+          this.syncDom();
+          this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        }
+        this.drawMenu();
+        break;
       case 'net':
         if (arg === 'host') { this.menuPage = 'multi'; this.net.hostRoom(); }
         else if (arg === 'join') { this.menuPage = 'join'; this._joinCode = ''; }
@@ -1258,24 +1273,24 @@ class PingPongGame {
         // cerraba y el usuario no sabía si el modo había cambiado.
         if (this.net.online && this.net.role === 'guest') {
           this.net.sendMode(arg === 'survival' ? 'survival' : 'match');
-          this.rules.message = 'Pidiendo cambio de modo al anfitrión…';
+          this.rules.message = T('msg_guest_mode');
         } else {
           this.switchMode(arg === 'survival' ? 'survival' : 'match');
-          this.rules.message = `Modo: ${arg === 'survival' ? 'SUPERVIVENCIA' : 'PARTIDO'} · cierra el menú para jugar`;
+          this.rules.message = T('msg_mode_changed', { m: arg === 'survival' ? T('mode_surv_word') : T('mode_match_word') });
         }
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
         break;
       case 'diff': {
         if (this.net.online) {
-          this.rules.message = 'En online no hay CPU · la dificultad no aplica';
+          this.rules.message = T('msg_no_cpu');
           this.drawMenu();
           break;
         }
         this.setDifficulty(arg);
-        const lb = { easy: 'Fácil', medium: 'Media', hard: 'Difícil' }[arg] || arg;
-        this.rules.message = `DIFICULTAD: ${lb.toUpperCase()}`;
-        this.audio.announce(`Dificultad ${lb}`, true);
+        const lb = { easy: T('diff_easy_btn'), medium: T('diff_medium_btn'), hard: T('diff_hard_btn') }[arg] || arg;
+        this.rules.message = T('msg_diff', { d: lb.toUpperCase() });
+        this.audio.announce(T(arg === 'easy' ? 'diff_easy' : arg === 'medium' ? 'diff_medium' : 'diff_hard'), true);
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
         this.drawMenu();
         break;
@@ -1296,7 +1311,7 @@ class PingPongGame {
         try { localStorage.setItem('ppxr_trail_v1', this.showTrail ? '1' : '0'); } catch { /* */ }
         if (this.trailObj) this.trailObj.visible = this.showTrail;
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
-        this.rules.message = this.showTrail ? 'Estela de la bola: Sí' : 'Estela de la bola: No';
+        this.rules.message = T('msg_trail', { v: this.showTrail ? T('yes') : T('no') });
         this.drawMenu();
         break;
       }
@@ -1305,7 +1320,7 @@ class PingPongGame {
         // independiente del ambiente de torneo
         this.audio.setVoice(!this.audio.voice);
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
-        this.rules.message = this.audio.voice ? 'Megáfono del marcador: Sí' : 'Megáfono del marcador: No';
+        this.rules.message = T('msg_mic', { v: this.audio.voice ? T('yes') : T('no') });
         this.drawMenu();
         break;
       }
@@ -1334,7 +1349,7 @@ class PingPongGame {
       const d = ACHIEVEMENTS.find((a) => a.key === k);
       if (!d) continue;
       this.rules.message = `LOGRO · ${d.name}`;
-      this.audio.announce(`¡Logro desbloqueado: ${d.name}!`, true);
+      this.audio.announce(T('ann_ach', { name: d.name }), true);
     }
     this.confettiBurst = 2.4;
     if (this.renderer.xr.isPresenting) {
@@ -1427,8 +1442,8 @@ class PingPongGame {
     window.setTimeout(() => this.audio.startMurmur(), 900);
     window.setTimeout(() => {
       this.audio.announce(this.mode === 'survival'
-        ? 'Modo supervivencia. ¡Aguanta el rallye!'
-        : 'Bienvenido al partido. ¡Buena suerte!', true);
+        ? T('mode_survival')
+        : T('welcome'), true);
     }, 1400);
     this.hapticProbe();
     this.ai.reset();
@@ -1551,7 +1566,7 @@ class PingPongGame {
     this.tossMaxY = this.ball.pos.y;
     this.ball.vel.copy(v);
     this.ball.spin.set(0, 0, 0);
-    this.rules.message = '¡Golpea la bola hacia la mesa con la pala!';
+    this.rules.message = T('hint_hit');
     this.audio.serve();
     this.haptic(i, 0.45);
   }
@@ -1877,13 +1892,13 @@ class PingPongGame {
         if (this.tossMaxY - this.tossReleaseY < DIMS.tossMinRise) {
           e.consumed = true;
           this.resetToss();
-          this.rules.message = 'Lanza la bola un poco más arriba';
+          this.rules.message = T('hint_toss_high');
           break;
         }
         if (this.ball.pos.z < DIMS.tableCenterZ + DIMS.tableHalfLength - DIMS.serveEndLineTol) {
           e.consumed = true;
           this.resetToss();
-          this.rules.message = 'Saca desde detrás de la línea de fondo';
+          this.rules.message = T('hint_behind');
           break;
         }
         // golpe de saque válido
@@ -1911,7 +1926,7 @@ class PingPongGame {
         for (const e of this.events) {
           if (e.type === 'table' || e.type === 'floor' || e.type === 'wall') {
             this.resetToss();
-            this.rules.message = 'Bola caída · repite el lanzamiento';
+            this.rules.message = T('hint_dropped');
             break;
           }
         }
@@ -2028,7 +2043,8 @@ class PingPongGame {
       player: this.rules.scorePlayer,
       ai: this.rules.scoreAi,
       server: this.rules.server,
-      message: this.calib ? 'ENTRENAMIENTO · Y: volver al modo anterior' : this.rules.message,
+      message: this.calib ? T('calib_msg') : this.rules.message,
+      oppLabel: this.rules.oppLabel,
       mode: this.mode,
       rally: this.rules.rallyHits,
       rallyes: this.survivalRallies,
@@ -2372,7 +2388,7 @@ class PingPongGame {
               this.survivalBest = golpes;
               try { localStorage.setItem('ppxr_surv_best', String(this.survivalBest)); } catch { /* */ }
               this.audio.applause(true);
-              this.audio.announce(`¡Rallye de ${golpes} golpes! Nuevo récord`, true);
+              this.audio.announce(T('ann_rally_record', { n: golpes }), true);
               if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.9, 150);
             } else if (golpes >= 8) {
               this.audio.applause(false);
@@ -2387,7 +2403,7 @@ class PingPongGame {
             this.audio.point(it.winner === 'player');
             if (it.winner === 'player') {
               this.audio.applause(false);
-            } else if (it.cause && /red|fuera|pared/.test(it.cause)) {
+            } else if (it.cause && NetLink.OHH_CAUSES.has(it.cause)) {
               this.audio.ohh();
             }
             if (this.renderer.xr.isPresenting) {
@@ -2424,9 +2440,10 @@ class PingPongGame {
           // MEGAFONÍA: el marcador anuncia el resultado y quién saca
           if (this.rules.mode !== 'survival') {
             const s = this.rules;
-            this.audio.announce(
-              `${s.scorePlayer} a ${s.scoreAi}, saque para ${it.server === 'player' ? 'ti' : (this.net.online ? 'tu rival' : 'la máquina')}`,
-            );
+            this.audio.announce(T('ann_score', {
+              p: s.scorePlayer, q: s.scoreAi,
+              who: it.server === 'player' ? T('who_you') : T(this.net.online ? 'opp_rival' : 'opp_machine'),
+            }));
           }
           break;
         case 'game-over':
@@ -2434,8 +2451,8 @@ class PingPongGame {
           this.audio.applause(it.winner === 'player');
           this.audio.announce(
             it.winner === 'player'
-              ? `¡Victoria! ${this.rules.scorePlayer} a ${this.rules.scoreAi}`
-              : `Partido para ${this.rules.opp()}. ${this.rules.scoreAi} a ${this.rules.scorePlayer}`,
+              ? T('ann_victory', { p: this.rules.scorePlayer, q: this.rules.scoreAi })
+              : T('ann_match_end', { opp: this.rules.opp(), p: this.rules.scoreAi, q: this.rules.scorePlayer }),
             true,
           );
           this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));
@@ -2544,9 +2561,10 @@ const statsLine = document.getElementById('statsLine');
 const achRow = document.getElementById('achRow');
 function renderStats(s) {
   if (!s || !statsLine || !achRow) return;
-  statsLine.textContent =
-    `${s.won} victorias · ${s.lost} derrotas · racha ${s.streak} (máx. ${s.bestStreak})` +
-    ` · mejor rallye ${s.bestRally} · saques directos ${s.aces}`;
+  statsLine.textContent = T('stats_line', {
+    won: s.won, lost: s.lost, streak: s.streak, best: s.bestStreak,
+    rally: s.bestRally, aces: s.aces,
+  });
   achRow.innerHTML = '';
   for (const a of ACHIEVEMENTS) {
     const chip = document.createElement('span');
@@ -2603,18 +2621,23 @@ loadPaddleModel().then((paddleModel) => {
         hud.classList.remove('show');
       } else {
         overlay.classList.remove('hidden');
-        statusEl.textContent = 'Pausa · pulsa ENTRAR EN VR para continuar la partida.';
+        statusEl.textContent = T('status_pause');
       }
     },
   });
   window.__game = game;
   window.__NetLink = NetLink;   // accesible para pruebas headless (módulo ES)
+  // v2.27: ganchos de i18n para pruebas headless (el módulo no expone globales)
+  window.__T = T; window.__TLang = TLang; window.__setLang = setLang;
+  window.__applyLangDOM = applyLangDOM;
   renderStats(game.stats.data);   // pintar el progreso persistente al arrancar
   renderTheme(game.theme);        // pintar el tema de sala persistente
   // gancho de depuración para pruebas headless (física de saque y constantes)
   window.__ppDebug = { findServeVelocity, simulateServePath, DIMS };
 
-  // Compatibilidad WebXR
+  // Compatibilidad WebXR (v2.27: textos por idioma con re-aplicación en caliente)
+  let lastStatusKey = 'status_vr_checking';
+  const setStatusKey = (k) => { lastStatusKey = k; statusEl.textContent = T(k); };
   if (navigator.xr && navigator.xr.isSessionSupported) {
     navigator.xr.isSessionSupported('immersive-vr')
       .then((ok) => {
@@ -2622,87 +2645,96 @@ loadPaddleModel().then((paddleModel) => {
           vrbtn.disabled = false;
           trainBtn.disabled = false;
           survBtn.disabled = false;
-          statusEl.textContent = '✅ Visor compatible detectado. Ponte las gafas y pulsa el botón.';
+          setStatusKey('status_vr_ok');
         } else {
-          statusEl.textContent = '🖥️ Sin visor VR: disfruta del modo espectador (IA contra IA).';
+          setStatusKey('status_no_vr');
         }
       })
       .catch(() => {
-        statusEl.textContent = '🖥️ WebXR no disponible aquí: modo espectador activo.';
+        setStatusKey('status_no_webxr');
       });
     navigator.xr.isSessionSupported('immersive-ar')
       .then((ok) => { arBtn.disabled = !ok; })
       .catch(() => { arBtn.disabled = true; });
   } else {
-    statusEl.textContent = '🖥️ Este navegador no soporta WebXR: modo espectador activo.';
+    setStatusKey('status_no_2d');
   }
 
   vrbtn.addEventListener('click', () => {
     vrbtn.disabled = true;
-    statusEl.textContent = 'Iniciando sesión VR…';
+    setStatusKey('status_starting_vr');
     game.enterVR()
       .then(() => {
         vrbtn.disabled = false;
       })
       .catch((err) => {
         vrbtn.disabled = false;
-        statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar la sesión VR.');
+        statusEl.textContent = '⚠️ ' + (err?.message || T('status_vr_fail'));
       });
   });
 
   // Entrenamiento en VR: máquina de bolas + ajuste del agarre con panel 3D
   trainBtn.addEventListener('click', () => {
     trainBtn.disabled = true;
-    statusEl.textContent = 'Iniciando VR en modo entrenamiento…';
+    setStatusKey('status_starting_train');
     game.enterVR(true)
       .then(() => {
         trainBtn.disabled = false;
       })
       .catch((err) => {
         trainBtn.disabled = false;
-        statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar la sesión VR.');
+        statusEl.textContent = '⚠️ ' + (err?.message || T('status_vr_fail'));
       });
   });
 
   // SUPERVIVENCIA: la CPU acelera rallye a rallye, ¿cuántos golpes aguantas?
   survBtn.addEventListener('click', () => {
     survBtn.disabled = true;
-    statusEl.textContent = 'Iniciando VR en modo supervivencia…';
+    setStatusKey('status_starting_surv');
     game.enterVR(false, false, 'survival')
       .then(() => {
         survBtn.disabled = false;
       })
       .catch((err) => {
         survBtn.disabled = false;
-        statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar la sesión VR.');
+        statusEl.textContent = '⚠️ ' + (err?.message || T('status_vr_fail'));
       });
   });
 
   // PASSTHROUGH: juega en TU habitación real (immersive-ar)
   arBtn.addEventListener('click', () => {
     arBtn.disabled = true;
-    statusEl.textContent = 'Iniciando passthrough…';
+    setStatusKey('status_starting_ar');
     game.enterVR(false, true)
       .then(() => {
         arBtn.disabled = false;
       })
       .catch((err) => {
         arBtn.disabled = false;
-        statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar el passthrough.');
+        statusEl.textContent = '⚠️ ' + (err?.message || T('status_ar_fail'));
       });
   });
 
   // Ambiente de torneo (murmullo + aplausos + megafonía): SÍ/NO
   const ambLabel = () => {
-    ambBtn.textContent = game.audio.ambience
-      ? '🔊 Ambiente de torneo: SÍ'
-      : '🔇 Ambiente de torneo: NO';
+    ambBtn.textContent = game.audio.ambience ? T('amb_yes') : T('amb_no');
   };
   ambLabel();
   ambBtn.addEventListener('click', () => {
     game.audio.setAmbience(!game.audio.ambience);
     ambLabel();
   });
+
+  // v2.27 · SELECTOR DE IDIOMA (overlay 2D): persistente + re-render de lo vivo
+  document.querySelectorAll('[data-lang]').forEach((b) => {
+    b.addEventListener('click', () => setLang(b.dataset.lang, game));
+  });
+  document.addEventListener('pp-lang', () => {
+    ambLabel();
+    statusEl.textContent = T(lastStatusKey);
+    renderStats(game.stats.data);
+  });
+  applyLangDOM();   // primera pintura del overlay en el idioma guardado
 
   // Guardar / cargar / borrar agarres desde el menú
   document.getElementById('gripSave').addEventListener('click', () => {

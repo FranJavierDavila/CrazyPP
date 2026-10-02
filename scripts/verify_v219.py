@@ -133,7 +133,7 @@ async def main():
                      owner: g.net.owner, msg: g.rules.message };
         }""")
         if not onl["online"] or onl["role"] != "host": fails.append(f"conexión no establecida: {onl}")
-        if onl["opp"] != "tu rival": fails.append(f"oppLabel: {onl}")
+        if onl["opp"] != "rival": fails.append(f"oppLabel: {onl}")
         if onl["state"] != "serve": fails.append(f"partido online no arrancado: {onl}")
         if onl["owner"] != "host": fails.append(f"dueño de la bola: {onl}")
 
@@ -237,7 +237,7 @@ async def main():
                      state: g.rules.state, st: g.net.status };
         }""")
         if end["online"]: fails.append(f"sigue online tras colgar: {end}")
-        if end["opp"] != "la CPU": fails.append(f"oppLabel tras colgar: {end}")
+        if end["opp"] != "cpu": fails.append(f"oppLabel tras colgar: {end}")
 
         # --- 9) teclado del código: cancelar sala, escribir ABC29 y conectar ---
         await page.evaluate("""() => { const g = window.__game; if (g.menuOpen) g.toggleMenu();
@@ -267,7 +267,7 @@ async def main():
         }""")
         if not ok or joined["role"] != "guest" or joined["online"] is not True:
             fails.append(f"unirse con código: {json.dumps(joined)}")
-        if joined["opp"] != "tu rival": fails.append(f"invitado oppLabel: {joined}")
+        if joined["opp"] != "rival": fails.append(f"invitado oppLabel: {joined}")
 
         # --- 10) voz: toggle de micro en página multi (invitado online) ---
         await page.evaluate("""() => {
@@ -295,7 +295,7 @@ async def main():
         await page.wait_for_timeout(80)
         end2 = await page.evaluate("""() => ({ online: window.__game.net.online,
                                                opp: window.__game.rules.oppLabel })""")
-        if end2["online"] or end2["opp"] != "la CPU":
+        if end2["online"] or end2["opp"] != "cpu":
             fails.append(f"colgar invitado: {end2}")
 
         # --- 12) capturas de las páginas del menú ---

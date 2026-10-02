@@ -269,7 +269,7 @@ const COLORS = {
  * ===================================================================== */
 const ROOM_THEMES = [
   {
-    key: 'pabellon', name: 'Pabellón', emoji: '🏓',
+    key: 'pabellon', name: 'Pabellón', nameKey: 'theme_pabellon', emoji: '🏓',
     floor: 0x37302b, gridC: 0x4a4038, gridG: 0x2c2622,
     wall: 0x1a1e23, ceil: 0x14171b, panel: 0xf5efe2,
     strip: 0xe8b45a, ring: 0xe8b45a,
@@ -279,7 +279,7 @@ const ROOM_THEMES = [
     envInt: 0.75,
   },
   {
-    key: 'neon', name: 'Neón', emoji: '💜',
+    key: 'neon', name: 'Neón', nameKey: 'theme_neon', emoji: '💜',
     floor: 0x10121f, gridC: 0x2b3f8f, gridG: 0x181d3a,
     wall: 0x0a0c16, ceil: 0x05060d, panel: 0xbfe3ff,
     strip: 0x35f0ff, ring: 0xff3fa4,
@@ -289,7 +289,7 @@ const ROOM_THEMES = [
     envInt: 0.45,
   },
   {
-    key: 'atardecer', name: 'Atardecer', emoji: '🌅',
+    key: 'atardecer', name: 'Atardecer', nameKey: 'theme_atardecer', emoji: '🌅',
     floor: 0x4a3527, gridC: 0x7a5136, gridG: 0x402c1e,
     wall: 0x3a2430, ceil: 0x241a22, panel: 0xffd9a8,
     strip: 0xff8a5c, ring: 0xffb070,
@@ -299,7 +299,7 @@ const ROOM_THEMES = [
     envInt: 0.8,
   },
   {
-    key: 'artico', name: 'Ártico', emoji: '❄️',
+    key: 'artico', name: 'Ártico', nameKey: 'theme_artico', emoji: '❄️',
     floor: 0x2e3a42, gridC: 0x55707f, gridG: 0x2c3a44,
     wall: 0x1c2830, ceil: 0x111a20, panel: 0xffffff,
     strip: 0x8fd3e8, ring: 0xbfe3ff,
@@ -331,32 +331,60 @@ const UP = new THREE.Vector3(0, 1, 0);
  *  AUDIO · sintetizado con Web Audio (sin assets externos)
  * ===================================================================== */
 
-/* ----- v2.20 · PLAN DE VOZ del megáfono ------------------------------
+/* ----- v2.20/2.27 · PLAN DE VOZ del megáfono --------------------------
  * Cada anuncio del juego se traduce a una secuencia de fragmentos del
- * banco de voz (VOICE_B64 en game_voice.js). Las claves de VOICE_FULL y
- * VOICE_ACH están NORMALIZADAS (minúsculas, sin acentos ni signos).
+ * banco de voz (VOICE_B64 castellano / VOICE_B64_EN inglés — MISMAS
+ * claves, distinto audio). Los patrones de texto dependen del idioma
+ * activo (TLang()): VOICE_FULL/VOICE_ACH por idioma. Claves NORMALIZADAS
+ * (minúsculas, sin acentos ni signos).
  * -------------------------------------------------------------------- */
 const VOICE_FULL = {
-  'modo supervivencia aguanta el rallye': ['modo_supervivencia'],
-  'modo partido buena suerte': ['modo_partido'],
-  'bienvenido al partido buena suerte': ['bienvenido'],
-  'rival conectado a jugar': ['rival_conectado'],
-  'rival desconectado': ['rival_desconectado'],
-  'sala pabellon': ['sala_pabellon'],
-  'sala neon': ['sala_neon'],
-  'sala atardecer': ['sala_atardecer'],
-  'sala artico': ['sala_artico'],
-  'dificultad facil': ['dificultad_facil'],
-  'dificultad media': ['dificultad_media'],
-  'dificultad dificil': ['dificultad_dificil'],
+  es: {
+    'modo supervivencia aguanta el rallye': ['modo_supervivencia'],
+    'modo partido buena suerte': ['modo_partido'],
+    'bienvenido al partido buena suerte': ['bienvenido'],
+    'rival conectado a jugar': ['rival_conectado'],
+    'rival desconectado': ['rival_desconectado'],
+    'sala pabellon': ['sala_pabellon'],
+    'sala neon': ['sala_neon'],
+    'sala atardecer': ['sala_atardecer'],
+    'sala artico': ['sala_artico'],
+    'dificultad facil': ['dificultad_facil'],
+    'dificultad media': ['dificultad_media'],
+    'dificultad dificil': ['dificultad_dificil'],
+  },
+  en: {
+    'survival mode keep the rally going': ['modo_supervivencia'],
+    'match mode good luck': ['modo_partido'],
+    'welcome to the match good luck': ['bienvenido'],
+    'opponent connected let s play': ['rival_conectado'],
+    'opponent disconnected': ['rival_desconectado'],
+    'gym arena': ['sala_pabellon'],
+    'neon arena': ['sala_neon'],
+    'sunset arena': ['sala_atardecer'],
+    'arctic arena': ['sala_artico'],
+    'easy difficulty': ['dificultad_facil'],
+    'medium difficulty': ['dificultad_media'],
+    'hard difficulty': ['dificultad_dificil'],
+  },
 };
 const VOICE_ACH = {
-  'primera victoria': 'ach_primera',
-  'en racha': 'ach_racha',
-  'gigante': 'ach_gigante',
-  'maratonista': 'ach_maraton',
-  'superviviente': 'ach_superviv',
-  'saque directo': 'ach_aces',
+  es: {
+    'primera victoria': 'ach_primera',
+    'en racha': 'ach_racha',
+    'gigante': 'ach_gigante',
+    'maratonista': 'ach_maraton',
+    'superviviente': 'ach_superviv',
+    'saque directo': 'ach_aces',
+  },
+  en: {
+    'first victory': 'ach_primera',
+    'on a roll': 'ach_racha',
+    'giant': 'ach_gigante',
+    'marathoner': 'ach_maraton',
+    'survivor': 'ach_superviv',
+    'ace serve': 'ach_aces',
+  },
 };
 const VOICE_NUM = {};
 for (let vi = 0; vi <= 29; vi++) VOICE_NUM[vi] = `n${vi}`;
@@ -364,15 +392,16 @@ VOICE_NUM[30] = 'n30'; VOICE_NUM[40] = 'n40'; VOICE_NUM[50] = 'n50';
 VOICE_NUM[60] = 'n60'; VOICE_NUM[70] = 'n70'; VOICE_NUM[80] = 'n80';
 VOICE_NUM[90] = 'n90';
 
-/** Número 0-99 -> fragmentos (0-29 directos; 30-99 decenas + 'y' + unidad). */
-function voiceNumPlan(n) {
+/** Número 0-99 -> fragmentos. v2.27: por idioma — castellano con 'y'
+ *  (treinta y cinco), inglés sin ella (thirty five). */
+function voiceNumPlan(n, lang) {
   n = Math.floor(Number(n));
   if (!Number.isFinite(n) || n < 0 || n > 99) return null;
   if (VOICE_NUM[n]) return [VOICE_NUM[n]];
   const d = Math.floor(n / 10) * 10;
   const u = n % 10;
   if (!VOICE_NUM[d] || !VOICE_NUM[u]) return null;
-  return [VOICE_NUM[d], 'y', VOICE_NUM[u]];
+  return (lang === 'en') ? [VOICE_NUM[d], VOICE_NUM[u]] : [VOICE_NUM[d], 'y', VOICE_NUM[u]];
 }
 
 class GameAudio {
@@ -961,19 +990,34 @@ class GameAudio {
     } catch { /* */ }
   }
 
-  /* ---------- v2.20 · VOZ REAL DEL MEGÁFONO ----------
+  /* ---------- v2.20/2.27 · VOZ REAL DEL MEGÁFONO ----------
    * Meta Quest Browser NO reproduce speechSynthesis durante la sesión
    * inmersiva (en la pestaña 2D del escritorio sí). La voz del marcador
-   * pasa a ser audio real (VOICE_B64 · Piper es-ES → Opus) por WebAudio,
-   * la misma vía que ya se oye en el visor (efectos, chimes, público). */
+   * pasa a ser audio real (banco de voz Piper es-ES/en-US → Opus) por
+   * WebAudio, la misma vía que ya se oye en el visor (efectos, chimes,
+   * público). v2.27: el banco se elige según el idioma (VOICE_B64S) y se
+   * puede recargar en caliente al cambiar de idioma (reloadVoice). */
 
-  /** Decodifica el banco de voz para el contexto dado. Los AudioBuffer
-   *  solo son válidos en SU contexto: se recarga en cada _wire() (nuevo
-   *  contexto al entrar/salir de VR). Normalización de pico 0.60. */
+  /** Banco de voz base64 del idioma activo (con respaldos por si falta). */
+  _voiceBank() {
+    const banks = (typeof VOICE_B64S !== 'undefined') ? VOICE_B64S
+      : { es: (typeof VOICE_B64 !== 'undefined' ? VOICE_B64 : null), en: (typeof VOICE_B64_EN !== 'undefined' ? VOICE_B64_EN : null) };
+    return banks[TLang()] || banks.es || banks.en || null;
+  }
+
+  /** v2.27: recarga del banco de voz (cambio de idioma en caliente). */
+  reloadVoice() {
+    if (this.ctx) this._loadVoice(this.ctx);
+  }
+
+  /** Decodifica el banco de voz del idioma activo para el contexto dado.
+   *  Los AudioBuffer solo son válidos en SU contexto: se recarga en cada
+   *  _wire() (nuevo contexto al entrar/salir de VR). Normalización 0.60. */
   _loadVoice(ctx) {
     this.vb = null; this.vbGain = null; this.vbTrim = null; this.vbCtx = ctx;
-    if (typeof VOICE_B64 === 'undefined' || !ctx || !ctx.decodeAudioData) return;
-    const keys = Object.keys(VOICE_B64);
+    const BANK = this._voiceBank();
+    if (!BANK || !ctx || !ctx.decodeAudioData) return;
+    const keys = Object.keys(BANK);
     if (!keys.length) return;
     const bank = new Map();
     const gains = new Map();
@@ -985,12 +1029,12 @@ class GameAudio {
         this.vb = bank;
         this.vbGain = gains;
         this.vbTrim = trims;
-        console.info('[Audio] banco de voz listo ·', bank.size, 'fragmentos · silencios recortados');
+        console.info('[Audio] banco de voz listo (' + TLang() + ') ·', bank.size, 'fragmentos · silencios recortados');
       }
     };
     for (const k of keys) {
       try {
-        const bin = atob(VOICE_B64[k]);
+        const bin = atob(BANK[k]);
         const ab = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) ab[i] = bin.charCodeAt(i);
         const onOk = (buf) => {
@@ -1039,7 +1083,9 @@ class GameAudio {
   }
 
   /** Texto del anuncio -> plan [{k, gap}] de fragmentos, o null si el
-   *  texto no está cubierto por el banco (respaldo speechSynthesis). */
+   *  texto no está cubierto por el banco (respaldo speechSynthesis).
+   *  v2.27: patrones POR IDIOMA (el texto llega en el idioma activo); los
+   *  planes resultantes usan claves compartidas es/en. */
   voicePlan(text) {
     try {
       const s = this._normVoice(text);
@@ -1047,26 +1093,68 @@ class GameAudio {
       // v2.23: gaps intra-frase MUY cortos — con el buffer compuesto el silencio
       // entre palabras es EXACTAMENTE este (sin colas de Piper añadidas).
       const P = (keys, gaps) => keys.map((k, i) => ({ k, gap: (gaps && gaps[i]) || 0.042 }));
-      const full = VOICE_FULL[s];
+      const lang = (typeof TLang === 'function') ? TLang() : 'es';
+      const num = (v) => voiceNumPlan(v, lang);
+      const full = (VOICE_FULL[lang] || VOICE_FULL.es)[s];
       if (full) return P(full);
       let m;
+      if (lang === 'en') {
+        // Achievement unlocked: <name>
+        m = s.match(/^achievement unlocked (.+)$/);
+        if (m) {
+          const ach = (VOICE_ACH.en || {})[m[1]];
+          return ach ? P(['logro_desbloqueado', ach], [0.18]) : null;
+        }
+        // Rally of <N> hits. New record!
+        m = s.match(/^rally of (\d+) hits new record$/);
+        if (m) {
+          const n1 = num(m[1]);
+          return n1 ? P(['rallye_de', ...n1, 'golpes', 'nuevo_record'], [0.03, 0.03, 0.26]) : null;
+        }
+        // <p> to <q>, serve for you / your opponent / the machine
+        m = s.match(/^(\d+) to (\d+) serve for (you|your opponent|the machine)$/);
+        if (m) {
+          const n1 = num(m[1]);
+          const n2 = num(m[2]);
+          const who = m[3] === 'you' ? 'saque_para_ti'
+            : m[3] === 'your opponent' ? 'saque_para_rival' : 'saque_para_maquina';
+          return (n1 && n2) ? P([...n1, 'a', ...n2, who], [0.036, 0.036, 0.26]) : null;
+        }
+        // Victory! <p> to <q>
+        m = s.match(/^victory (\d+) to (\d+)$/);
+        if (m) {
+          const n1 = num(m[1]);
+          const n2 = num(m[2]);
+          return (n1 && n2) ? P(['victoria', ...n1, 'a', ...n2], [0.1, 0.036, 0.036]) : null;
+        }
+        // Match for the machine / your opponent. <q> to <p>
+        m = s.match(/^match for (the machine|your opponent) (\d+) to (\d+)$/);
+        if (m) {
+          const n1 = num(m[2]);
+          const n2 = num(m[3]);
+          const who = m[1] === 'your opponent' ? 'partido_para_rival' : 'partido_para_cpu';
+          return (n1 && n2) ? P([who, ...n1, 'a', ...n2], [0.26, 0.036, 0.036]) : null;
+        }
+        return null;
+      }
+      // ---- castellano ----
       // ¡Logro desbloqueado: <nombre>!
       m = s.match(/^logro desbloqueado (.+)$/);
       if (m) {
-        const ach = VOICE_ACH[m[1]];
+        const ach = (VOICE_ACH.es || {})[m[1]];
         return ach ? P(['logro_desbloqueado', ach], [0.18]) : null;
       }
       // ¡Rallye de <N> golpes! Nuevo récord
       m = s.match(/^rallye de (\d+) golpes nuevo record$/);
       if (m) {
-        const num = voiceNumPlan(m[1]);
-        return num ? P(['rallye_de', ...num, 'golpes', 'nuevo_record'], [0.03, 0.03, 0.26]) : null;
+        const n1 = num(m[1]);
+        return n1 ? P(['rallye_de', ...n1, 'golpes', 'nuevo_record'], [0.03, 0.03, 0.26]) : null;
       }
       // <p> a <q>, saque para ti / tu rival / la máquina
       m = s.match(/^(\d+) a (\d+) saque para (ti|tu rival|la maquina)$/);
       if (m) {
-        const n1 = voiceNumPlan(m[1]);
-        const n2 = voiceNumPlan(m[2]);
+        const n1 = num(m[1]);
+        const n2 = num(m[2]);
         const quien = m[3] === 'ti' ? 'saque_para_ti'
           : m[3] === 'tu rival' ? 'saque_para_rival' : 'saque_para_maquina';
         return (n1 && n2) ? P([...n1, 'a', ...n2, quien], [0.036, 0.036, 0.26]) : null;
@@ -1074,15 +1162,15 @@ class GameAudio {
       // ¡Victoria! <p> a <q>
       m = s.match(/^victoria (\d+) a (\d+)$/);
       if (m) {
-        const n1 = voiceNumPlan(m[1]);
-        const n2 = voiceNumPlan(m[2]);
+        const n1 = num(m[1]);
+        const n2 = num(m[2]);
         return (n1 && n2) ? P(['victoria', ...n1, 'a', ...n2], [0.1, 0.036, 0.036]) : null;
       }
       // Partido para la CPU / tu rival. <p> a <q>
       m = s.match(/^partido para (la cpu|tu rival) (\d+) a (\d+)$/);
       if (m) {
-        const n1 = voiceNumPlan(m[2]);
-        const n2 = voiceNumPlan(m[3]);
+        const n1 = num(m[2]);
+        const n2 = num(m[3]);
         const quien = m[1] === 'tu rival' ? 'partido_para_rival' : 'partido_para_cpu';
         return (n1 && n2) ? P([quien, ...n1, 'a', ...n2], [0.26, 0.036, 0.036]) : null;
       }
@@ -1191,12 +1279,14 @@ class GameAudio {
       if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return;
       ss.cancel();
       const u = new SpeechSynthesisUtterance(String(text));
-      u.lang = 'es-ES';
+      // v2.27: idioma del respaldo según el selector
+      const loc = (typeof TLang === 'function' && TLang() === 'en') ? 'en-US' : 'es-ES';
+      u.lang = loc;
       u.rate = 0.98;
       u.pitch = 0.78;
       u.volume = 0.95;
       try {
-        const v = ss.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith('es'));
+        const v = ss.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith(loc.slice(0, 2)));
         if (v) u.voice = v;
       } catch { /* voz por defecto */ }
       ss.speak(u);
@@ -1885,14 +1975,22 @@ function findServeVelocity(from, ownSign) {
  *  logros se desbloquean una sola vez (guardan su fecha) y se celebran
  *  con megafonía + confeti dentro y fuera del visor.
  * ===================================================================== */
+// v2.27: los nombres/descripciones se resuelven con T() en el punto de uso
+// (renderStats, celebrate) — así cambian de idioma sin tocar los datos.
 const ACHIEVEMENTS = [
-  { key: 'primera',  emoji: '🥇', name: 'Primera victoria', desc: 'Gana tu primer partido' },
-  { key: 'racha3',   emoji: '🔥', name: 'En racha',         desc: '3 victorias seguidas' },
-  { key: 'gigante',  emoji: '💪', name: 'Gigante',          desc: 'Vence en dificultad Difícil' },
-  { key: 'maraton',  emoji: '🏃', name: 'Maratonista',      desc: 'Rallye de 20 o más golpes' },
-  { key: 'superviv', emoji: '⏱️', name: 'Superviviente',    desc: '25 o más golpes en Supervivencia' },
-  { key: 'aces10',   emoji: '🎯', name: 'Saque directo',    desc: '10 saques ganados sin respuesta' },
+  { key: 'primera',  emoji: '🥇', nameKey: 'ach_first',    descKey: 'ach_first_d' },
+  { key: 'racha3',   emoji: '🔥', nameKey: 'ach_streak',   descKey: 'ach_streak_d' },
+  { key: 'gigante',  emoji: '💪', nameKey: 'ach_giant',    descKey: 'ach_giant_d' },
+  { key: 'maraton',  emoji: '🏃', nameKey: 'ach_marathon', descKey: 'ach_marathon_d' },
+  { key: 'superviv', emoji: '⏱️', nameKey: 'ach_survivor', descKey: 'ach_survivor_d' },
+  { key: 'aces10',   emoji: '🎯', nameKey: 'ach_aces',     descKey: 'ach_aces_d' },
 ];
+// accesibilidad de compatibilidad: name/desc dinámicos (por si algún código
+// antiguo los lee) — se actualizan al idioma activo en cada arranque.
+for (const a of ACHIEVEMENTS) {
+  Object.defineProperty(a, 'name', { get() { return T(this.nameKey); } });
+  Object.defineProperty(a, 'desc', { get() { return T(this.descKey); } });
+}
 
 class GameStats {
   constructor() {

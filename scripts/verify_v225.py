@@ -141,7 +141,7 @@ async def main():
         if host["server"] != "player" or host["state"] != "serve":
             fails.append(f"anfitrión no arranca con su saque: {json.dumps(host)}")
         if host["owner"] != "host": fails.append(f"owner inicial: {json.dumps(host)}")
-        if host["opp"] != "tu rival": fails.append(f"oppLabel online: {json.dumps(host)}")
+        if host["opp"] != "rival": fails.append(f"oppLabel online: {json.dumps(host)}")
 
         # A1) tick del anfitrión: pose EN CRUDO + sync host-relativo
         a1 = await page.evaluate("""() => {
@@ -230,7 +230,7 @@ async def main():
         a5 = await page.evaluate("""() => {
             const g = window.__game;
             const net = g.net;
-            g.processIntents(g.rules.applyPoint('player', 'doble golpe'));
+            g.processIntents(g.rules.applyPoint('player', 'dblhit'));
             const capt = net.lastPoint;
             net.tick(0.05);
             const withPt = net.conn.sent.find((m) => m.y && m.y.pt) || null;
@@ -244,7 +244,7 @@ async def main():
                      ann: g.__ann.slice(), sp: g.rules.scorePlayer,
                      srv: g.rules.server, owner: net.owner };
         }""")
-        if not a5["capt"] or a5["capt"]["w"] != "player" or a5["capt"]["c"] != "doble golpe":
+        if not a5["capt"] or a5["capt"]["w"] != "player" or a5["capt"]["c"] != "dblhit":
             fails.append(f"el punto no se captura estructurado: {json.dumps(a5['capt'])}")
         if not a5["ptSent"]: fails.append(f"el punto no viaja en el sync: {a5['ptSent']}")
         if a5["sentAgain"]: fails.append("el punto se envía más de una vez (send-once roto)")
@@ -287,7 +287,7 @@ async def main():
             const net = g.net;
             net.onData({ k: 'p', y: { st: 'point', sv: 'player', sp: 1, sa: 0,
                                       md: 'match', ow: 'host', rh: 2,
-                                      pt: { w: 'player', c: 'doble golpe', rh: 2 } } });
+                                      pt: { w: 'player', c: 'dblhit', rh: 2 } } });
             return { sp: g.rules.scorePlayer, sa: g.rules.scoreAi,
                      msg: g.rules.message,
                      pts: g.__points.slice(), msgState: g.rules.state };
@@ -356,18 +356,18 @@ async def main():
             const net = g.net;
             net.onData({ k: 'p', y: { st: 'point', sv: 'player', sp: 2, sa: 0,
                                       md: 'match', ow: 'host', rh: 5,
-                                      pt: { w: 'player', c: 'doble bote: tu rival no llegó', rh: 5 } } });
+                                      pt: { w: 'player', c: 'dbl_opp', rh: 5 } } });
             const N = window.__NetLink;
             return { msg: g.rules.message, sp: g.rules.scorePlayer, sa: g.rules.scoreAi,
-                     swap1: N.remapCause('no la devolviste', true),
-                     swap2: N.remapCause('golpeaste tu propio campo', true),
-                     neutral: N.remapCause('doble golpe', true) };
+                     swap1: N.remapCause('noret_you', true),
+                     swap2: N.remapCause('own_you', true),
+                     neutral: N.remapCause('dblhit', true) };
         }""")
         if b6["msg"] != "Punto para tu rival · doble bote: no llegaste":
             fails.append(f"causa remapeada incorrecta: '{b6['msg']}'")
         if b6["sp"] != 0 or b6["sa"] != 2:
             fails.append(f"marcador 0-2 sin perspectiva: {json.dumps(b6)}")
-        if b6["swap1"] != "tu rival no la devolvió" or b6["swap2"] != "tu rival golpeó su campo" or b6["neutral"] != "doble golpe":
+        if b6["swap1"] != "noret_opp" or b6["swap2"] != "own_opp" or b6["neutral"] != "dblhit":
             fails.append(f"tabla de causas: {json.dumps(b6)}")
 
         # B7) fin de partido ganado por el anfitrión (host-rel 'player'): el

@@ -1078,3 +1078,77 @@ Stage Summary:
   voz mutua, (3) megafonía; el cartel nuevo se ve al acabar cualquier modo.
 - Siguiente fase declarada: estética del entorno ("vidilla": público, vallas,
   marcas en el suelo, mejor iluminación).
+
+---
+Task ID: 30
+Agent: Super Z (main agent)
+Task: v2.27 — selector de idioma castellano/inglés (todos los textos y TODOS
+los audios), revisando el cambio en toda la estructura
+
+Work Log:
+- BANCO DE VOZ INGLÉS: descargado modelo Piper en_US-lessac-medium (63 MB,
+  HuggingFace); gen_voice_en.py genera 67 átomos con las MISMAS claves que el
+  banco español (n0-n90, "y"="to", frases, logros, salas, dificultades) ->
+  ogg_en/ (211 KB) + game_voice_en.js (282 KB). Los planes de voz son
+  idénticos para ambos bancos (claves compartidas).
+- game_i18n.js (NUEVO, carga PRIMERA): diccionario ~160 claves x es/en
+  (mensajes del árbitro, causas, anuncios, menú, multijugador, teclado,
+  estados de red, marcador 3D, cartel, logros, stats, overlay 2D completo),
+  T(clave,{params}), TLang(), setLang() con persistencia localStorage
+  'pp_lang' (defecto: castellano) y applyLangDOM() para el overlay.
+- game_part1.js: VOICE_FULL/VOICE_ACH POR IDIOMA; voiceNumPlan(lang) (sin 'y'
+  en inglés); voicePlan(text) con patrones es/en ("Victory! 11 to 4" ->
+  [victoria,n11,a,n4], "3 to 3, serve for you" -> [...]); _voiceBank()
+  elige VOICE_B64/VOICE_B64_EN según idioma + reloadVoice() en caliente;
+  speechSynthesis de respaldo con u.lang es-ES/en-US; ROOM_THEMES con
+  nameKey; ACHIEVEMENTS con nameKey/descKey + getters T().
+- game_part2.js: las CAUSAS de punto viajan como CLAVES por la red (dblhit,
+  volley, serve_no_own, let, serve_net, own_you/own_opp, dbl_you/dbl_opp,
+  back_you/back_opp, serve_net_touch, serve_out, net_stay, wall, out,
+  noret_you/noret_opp) — CAUSE_SWAP ahora intercambia claves (perspectiva
+  invitado intacta); OHH_CAUSES como Set de claves (sustituye al regex
+  /red|fuera|pared/); Rules/applySync generan mensajes con T (perspectiva
+  remapeada intacta); oppLabel como CLAVE ('cpu'|'rival'); estados de red
+  con T; marcador 3D con T (YOU/CPU/RIVAL, supervivencia) y oppLabel del
+  juego; cartel de fin de partido POR IDIOMA (POSTER_SRC es/en con carga
+  diferida y langChanged() para repintar; panel de respaldo con T).
+- game_part3.js: menú de muñeca 100% T (títulos, modo, dificultad, salas,
+  extras, multijugador, teclado, mensajes de clic); selector de idioma
+  ES/EN en la fila de pestañas de TODAS las páginas (case 'lang' ->
+  setLang + repintado); anuncios (sala, dificultad, bienvenida, rally
+  récord, marcador, victoria/derrota) con T; partidas online (conectado,
+  saque, desconexión) con T; estados DOM (compatibilidad, arranques, fallos)
+  con setStatusKey + re-aplicación en 'pp-lang'; renderStats con stats_line;
+  ganchos __T/__TLang/__setLang para pruebas headless.
+- build_html.py: overlay 2D con data-i18n/data-i18n-html/data-i18n-ph +
+  fila selector (ESPAÑOL/ENGLISH, CSS .langrow) ; PARTS = i18n + 2 bancos de
+  voz + part1-3; placeholders __POSTER_*_EN_B64__ (vacío = respaldo sin arte).
+- CARTELES INGLESES: editados con IA (image-edit) conservando el arte del
+  usuario: YOU WON! / YOU LOST! (1344x768 -> cover 1024x683 JPEG q82, 124/109
+  KB). El cartel EN se pinta al cambiar de idioma (y el ES al volver).
+- VERIFICACIÓN (verify_v227.py TODO OK): estáticos; por defecto castellano
+  (mensaje/anuncio/banco 67 claves); setLang('en') -> mensajes del árbitro
+  en inglés ("Point for you! · you didn't return it", "YOU WON! · 11-4 ·
+  trigger: rematch"), voicePlan EN correcto, banco de voz cambió, overlay
+  re-traducido (ENTER VR / Easy), persistencia pp_lang='en', cartel con arte
+  EN (franja azul); invitado EN ("YOU LOST! · 5-11 · trigger: rematch");
+  vuelta a castellano en caliente. Capturas: captura-v227-menu-en.png (menú
+  VR en inglés), captura-v227-victoria-en.png (cartel YOU WON! + chip
+  "11 - 7 · trigger: rematch"), captura-v227-overlay-en.png (overlay).
+- REGRESIONES actualizadas a la semántica de claves (patch_v225.py + parches
+  en v219/v226: oppLabel clave, remapCause con claves, gancho del cartel):
+  v219/v220/v221-v226 TODO OK; v222/v223/v224/v218 TODO OK; IA 13/14.
+  0 errores de página en todas.
+- BUILD: index.html 3,53 MB; ZIP 3,71 MB (integridad OK); README con sección
+  v2.27 (selector, textos, audios, carteles bilingües, protocolo por claves).
+- Detalle final: botón ESPAÑOL del overlay (antes CASTELLANO se salía del
+  ancho) y re-verificación v227+v226 TODO OK tras el ajuste.
+
+Stage Summary:
+- v2.27: el juego está BILINGÜE — selector al inicio (2D) y en el menú de
+  muñeca; cambia textos de TODA la estructura y la VOZ del megáfono (banco
+  Piper inglés de 67 clips); cartel oficial por idioma; persistente y con
+  cambio en caliente dentro y fuera del visor.
+- Pendiente visor: probar el selector en el casco y una partida online con
+  cada idioma (la voz del megáfono debe sonar en el idioma elegido).
+- Siguiente fase declarada: estética del entorno ("vidilla").

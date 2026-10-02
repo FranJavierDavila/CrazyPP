@@ -3,6 +3,12 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.27: SELECTOR DE IDIOMA (castellano/inglés) — diccionario i18n completo
+#        (game_i18n.js), banco de voz inglés Piper en_US-lessac-medium con las
+#        MISMAS claves (game_voice_en.js), causas de punto como CLAVES por la
+#        red, selector en el overlay 2D y en el menú de muñeca (ES/EN),
+#        cartel de fin de partido por idioma y respaldo speechSynthesis
+#        localizado. Persistencia en localStorage ('pp_lang').
 # v2.26: CARTELES OFICIALES de fin de partido — ¡HAS GANADO! / ¡HAS PERDIDO!
 #        (arte JPEG incrustado en base64 en el cartel 3D + chip de marcador y
 #        revancha) y mensajes de texto alineados; respaldo si la imagen tarda.
@@ -22,12 +28,16 @@ BASE = "/home/z/my-project"
 #        menú con hover en activos, casillas ☑/☐ y área táctil ampliada.
 # v2.21: GLB de la pala con materiales OPAQUE (fin del efecto radiografía);
 # v2.20: game_voice.js (banco de voz Piper/Opus en base64) va PRIMERO
-PARTS = ([f"{BASE}/scripts/game_voice.js"]
+# v2.27: i18n PRIMERO (T/TLang/setLang), luego los DOS bancos de voz y el juego
+PARTS = ([f"{BASE}/scripts/game_i18n.js"]
+         + [f"{BASE}/scripts/game_voice.js", f"{BASE}/scripts/game_voice_en.js"]
          + [f"{BASE}/scripts/game_part{i}.js" for i in (1, 2, 3)])
 GLB = f"{BASE}/download/pingpong-quest3-v2/assets/pala.glb"
-# v2.26: carteles de fin de partido (JPEG 1024x683, ~120 KB cada uno)
+# v2.26/2.27: carteles de fin de partido POR IDIOMA (JPEG 1024x683)
 POSTER_WIN = f"{BASE}/scripts/poster_win.jpg"
 POSTER_LOSE = f"{BASE}/scripts/poster_lose.jpg"
+POSTER_WIN_EN = f"{BASE}/scripts/poster_win_en.jpg"
+POSTER_LOSE_EN = f"{BASE}/scripts/poster_lose_en.jpg"
 OUT_DIR = f"{BASE}/download/pingpong-quest3-v2"
 OUT = f"{OUT_DIR}/index.html"
 
@@ -42,8 +52,8 @@ if "</script>" in peerjs_js.lower():
 
 # --- validación de sintaxis con node (sustituyendo los placeholders) ---
 check = js.replace("__PALA_GLB_B64__", "Zm9v")
-check = check.replace("__POSTER_WIN_B64__", "data:image/jpeg;base64,Zm9v")
-check = check.replace("__POSTER_LOSE_B64__", "data:image/jpeg;base64,Zm9v")
+for ph in ("__POSTER_WIN_B64__", "__POSTER_LOSE_B64__", "__POSTER_WIN_EN_B64__", "__POSTER_LOSE_EN_B64__"):
+    check = check.replace(ph, "data:image/jpeg;base64,Zm9v")
 with open("/tmp/game_check.mjs", "w", encoding="utf-8") as f:
     f.write(check)
 r = subprocess.run(["node", "--check", "/tmp/game_check.mjs"], capture_output=True, text=True)
@@ -56,11 +66,16 @@ print("sintaxis OK")
 b64 = base64.b64encode(open(GLB, "rb").read()).decode("ascii")
 js = js.replace("__PALA_GLB_B64__", b64)
 
-# --- v2.26: incrustar carteles oficiales (data URLs JPEG) ---
-for ph, path in (("__POSTER_WIN_B64__", POSTER_WIN), ("__POSTER_LOSE_B64__", POSTER_LOSE)):
-    pb = "data:image/jpeg;base64," + base64.b64encode(open(path, "rb").read()).decode("ascii")
-    js = js.replace(ph, pb)
-for ph in ("__POSTER_WIN_B64__", "__POSTER_LOSE_B64__", "__PALA_GLB_B64__"):
+# --- v2.26/2.27: incrustar carteles oficiales por idioma (data URLs JPEG) ---
+for ph, path in (("__POSTER_WIN_B64__", POSTER_WIN), ("__POSTER_LOSE_B64__", POSTER_LOSE),
+                 ("__POSTER_WIN_EN_B64__", POSTER_WIN_EN), ("__POSTER_LOSE_EN_B64__", POSTER_LOSE_EN)):
+    if os.path.isfile(path) and os.path.getsize(path) > 1000:
+        pb = "data:image/jpeg;base64," + base64.b64encode(open(path, "rb").read()).decode("ascii")
+        js = js.replace(ph, pb)
+    else:
+        # sin arte para ese idioma: cadena vacía -> el cartel usa el panel de respaldo
+        js = js.replace(ph, "")
+for ph in ("__POSTER_WIN_B64__", "__POSTER_LOSE_B64__", "__POSTER_WIN_EN_B64__", "__POSTER_LOSE_EN_B64__", "__PALA_GLB_B64__"):
     if ph in js:
         print(f"ERROR: placeholder sin sustituir {ph}")
         sys.exit(1)
@@ -237,6 +252,20 @@ HTML = """<!DOCTYPE html>
     background: rgba(232, 180, 90, 0.15); color: #e8b45a;
     border: 1px solid rgba(232, 180, 90, 0.4); font-size: 14px; font-weight: 700; cursor: pointer;
   }
+
+  /* ---------- v2.27 · Selector de idioma ---------- */
+  .langrow {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+  }
+  .langrow .lbl { font-size: 13px; color: #9aa7b4; margin-right: 4px; }
+  .langbtn {
+    padding: 8px 0; width: 96px; font-size: 14px; font-weight: 700;
+    color: #cfd8e0; background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .langbtn:hover { border-color: rgba(232, 180, 90, 0.5); }
+  .langbtn.active { color: #10131a; background: #e8b45a; border-color: #e8b45a; }
 </style>
 <script type="importmap">
   {
@@ -253,25 +282,30 @@ HTML = """<!DOCTYPE html>
 <div id="overlay">
   <div class="card">
     <h1>🏓 PING PONG <span>XR</span></h1>
-    <div class="tag">Reglas ITTF · saque con mano libre y física real · pala 3D · Meta Quest 3</div>
+    <div class="tag" data-i18n="ov_tag">Reglas ITTF · saque con mano libre y física real · pala 3D · Meta Quest 3</div>
+    <div class="langrow">
+      <span class="lbl" data-i18n="ov_lang">🌐 Idioma / Language</span>
+      <button class="langbtn active" data-lang="es">ESPAÑOL</button>
+      <button class="langbtn" data-lang="en">ENGLISH</button>
+    </div>
     <ul class="keys">
-      <li><b>SAQUE</b> La bola descansa en tu <b>mano libre</b>. Pulsa el <b>GATILLO</b> (cualquier mando) para lanzarla y golpéala con la pala; o suelta el <b>GRIP</b> de la mano libre lanzando la mano hacia arriba. Ya no hay que esperar al punto muerto: golpea cuando quieras — el saque se endereza solo.</li>
-      <li><b>GOLPE</b> Golpea la bola con la pala (otro mando) desde detrás de la línea de fondo. Zona de impacto muy asistida, aún mayor en el saque: no hace falta milimetrar. El saque debe botar en <b>tu campo</b> y luego en el del rival.</li>
-      <li><b>A / X</b> Cambia la pala de mano en cualquier momento</li>
-      <li><b>MENÚ</b> En VR pulsa <b>B</b> (mando derecho): se abre un panel <b>sobre tu muñeca libre</b>. Apunta con <b>cualquier mando</b> (la pala también tiene láser) y elige con el <b>gatillo</b>: modo (Partido / Supervivencia), dificultad de la CPU, sala (Pabellón · Neón · Atardecer · Ártico), ambiente de torneo, estela de la bola, megáfono del marcador y revancha. Todo se aplica al instante y se recuerda entre sesiones.</li>
-      <li><b>ONLINE</b> En el menú, pestaña <b>MULTIJUGADOR</b>: crea una sala, comparte el <b>código de 5 caracteres</b> y tu rival lo introduce en su menú. Partida P2P directa entre visores (ambos con la web abierta) e <b>incluso podréis hablaros</b>: acepta el permiso de micrófono.</li>
-      <li><b>REGLAS</b> Rozar la red en saque y pasar = <b>LET</b> (se repite) · volear antes del bote o dar doble golpe = falta · partido a 11 con ventaja de 2</li>
-      <li><b>EFECTO</b> Barre la pala de abajo a arriba al golpear para dar lift; de arriba abajo para cortar</li>
-      <li><b>ENTRENAR</b> En VR pulsa <b>Y</b> (en cualquier momento): máquina de bolas + panel para ajustar la pala con los sticks. Guarda tus agarres con nombre y cárgalos siempre.</li>
+      <li data-i18n-html="ov_serve"></li>
+      <li data-i18n-html="ov_hit"></li>
+      <li data-i18n-html="ov_hand"></li>
+      <li data-i18n-html="ov_menu"></li>
+      <li data-i18n-html="ov_online"></li>
+      <li data-i18n-html="ov_rules"></li>
+      <li data-i18n-html="ov_spin"></li>
+      <li data-i18n-html="ov_train"></li>
     </ul>
     <div class="diffrow">
-      <span class="lbl">DIFICULTAD</span>
+      <span class="lbl" data-i18n="ov_difficulty">DIFICULTAD</span>
       <button class="diff" data-diff="easy">Fácil</button>
       <button class="diff active" data-diff="medium">Media</button>
       <button class="diff" data-diff="hard">Difícil</button>
     </div>
     <div class="diffrow">
-      <span class="lbl">SALA</span>
+      <span class="lbl" data-i18n="ov_room">SALA</span>
       <button class="them active" data-theme="pabellon">🏓 Pabellón</button>
       <button class="them" data-theme="neon">💜 Neón</button>
       <button class="them" data-theme="atardecer">🌅 Atardecer</button>
@@ -279,35 +313,35 @@ HTML = """<!DOCTYPE html>
     </div>
     <div class="grips">
       <div class="grips-head">
-        <span class="lbl">AGARRES DE PALA</span>
-        <input id="gripName" type="text" maxlength="24" placeholder="Nombre para guardar el ajuste actual" />
+        <span class="lbl" data-i18n="ov_grips">AGARRES DE PALA</span>
+        <input id="gripName" type="text" maxlength="24" data-i18n-ph="ov_grip_ph" placeholder="Nombre para guardar el ajuste actual" />
       </div>
       <div class="grips-row">
         <select id="gripSel"></select>
-        <button class="mini" id="gripLoad">Cargar</button>
-        <button class="mini" id="gripSave">Guardar</button>
-        <button class="mini" id="gripDel">Borrar</button>
-        <button class="mini" id="gripReset">Natural</button>
+        <button class="mini" id="gripLoad" data-i18n="ov_grip_load">Cargar</button>
+        <button class="mini" id="gripSave" data-i18n="ov_grip_save">Guardar</button>
+        <button class="mini" id="gripDel" data-i18n="ov_grip_del">Borrar</button>
+        <button class="mini" id="gripReset" data-i18n="ov_grip_reset">Natural</button>
       </div>
     </div>
     <div class="stats">
       <div class="stats-head">
-        <span class="lbl">TU PROGRESO</span>
-        <button class="mini" id="statsReset">Borrar</button>
+        <span class="lbl" data-i18n="ov_progress">TU PROGRESO</span>
+        <button class="mini" id="statsReset" data-i18n="ov_clear">Borrar</button>
       </div>
       <div class="stats-line" id="statsLine">—</div>
       <div class="achrow" id="achRow"></div>
     </div>
     <div id="status">Comprobando compatibilidad con WebXR…</div>
-    <button id="survbtn" disabled>🏆 SUPERVIVENCIA EN VR · ¿cuántos golpes aguantas?</button>
-    <button id="trainbtn" disabled>ENTRENAR GOLPES EN VR · ajustar pala</button>
-    <button id="vrbtn" disabled>ENTRAR EN VR</button>
+    <button id="survbtn" disabled data-i18n="ov_surv">🏆 SUPERVIVENCIA EN VR · ¿cuántos golpes aguantas?</button>
+    <button id="trainbtn" disabled data-i18n="ov_train_btn">ENTRENAR GOLPES EN VR · ajustar pala</button>
+    <button id="vrbtn" disabled data-i18n="ov_vr">ENTRAR EN VR</button>
     <div class="row2">
-      <button id="arbtn" disabled>🏠 PASSTHROUGH · tu habitación</button>
+      <button id="arbtn" disabled data-i18n="ov_ar">🏠 PASSTHROUGH · tu habitación</button>
       <button id="ambbtn">🔊 Ambiente de torneo: SÍ</button>
     </div>
-    <button id="spectate">Ver demo en pantalla (sin visor)</button>
-    <div class="hint">
+    <button id="spectate" data-i18n="ov_demo">Ver demo en pantalla (sin visor)</button>
+    <div class="hint" data-i18n-html="ov_hint">
       <b>En el visor:</b> sube esta carpeta a <b>Netlify Drop</b> y abre el enlace con el
       <b>Meta Quest Browser</b> (requiere HTTPS). Sin visor, el modo demo juega IA contra IA.
     </div>

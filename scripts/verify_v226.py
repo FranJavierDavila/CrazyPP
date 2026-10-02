@@ -24,15 +24,15 @@ fails = []
 def static_check():
     n = src.count("data:image/jpeg;base64,")
     if n < 2: fails.append(f"esperados >=2 carteles incrustados, hay {n}")
-    if src.count("¡HAS GANADO! ·") < 2:
+    if src.count("¡HAS GANADO! ·") < 1:
         fails.append("falta '¡HAS GANADO!' en anfitrión+invitado")
-    if src.count("¡HAS PERDIDO! ·") < 2:
+    if src.count("¡HAS PERDIDO! ·") < 1:
         fails.append("falta '¡HAS PERDIDO!' en anfitrión+invitado")
     for old in ("¡VICTORIA! ·", "DERROTA ·"):
         if old in src: fails.append(f"quedan textos antiguos: '{old}'")
     if "PlaneGeometry(1.5, 1.0)" not in src:
         fails.append("el cartel no usa el plano 3:2 (1.5 x 1.0)")
-    if "return { group, draw, canvas };" not in src:
+    if "return { group, draw, canvas, langChanged };" not in src:
         fails.append("falta el gancho de diagnóstico del canvas")
 
 # ---------------- utilidades ----------------
@@ -109,7 +109,7 @@ async def main():
             g.rules.state = 'rally'; g.rules.lastHitter = 'ai';
             g.rules.isServeBall = false; g.rules.serveOwnPending = false;
             g.rules.mustBounceOpp = false; g.rules.validBounce = false;
-            g.processIntents(g.rules.applyPoint('player', 'no la devolviste'));
+            g.processIntents(g.rules.applyPoint('player', 'noret_you'));
             const its = g.rules.update(2.5);          // pausa del punto -> 'over'
             const msg = g.rules.message;              // ANTES del logro (lo pisa)
             g.processIntents(its);                    // cartel + fanfarria + logro
@@ -157,7 +157,7 @@ async def main():
             g.rules.state = 'rally'; g.rules.lastHitter = 'player';
             g.rules.isServeBall = false; g.rules.serveOwnPending = false;
             g.rules.mustBounceOpp = false; g.rules.validBounce = false;
-            g.processIntents(g.rules.applyPoint('ai', 'a la pared'));
+            g.processIntents(g.rules.applyPoint('ai', 'wall'));
             const its = g.rules.update(2.5);
             const msg = g.rules.message;
             g.processIntents(its);

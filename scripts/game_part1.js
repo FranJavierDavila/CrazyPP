@@ -192,7 +192,7 @@ const DIMS = {
   bladeRadius: 0.0795,      // radio de la hoja (16 cm de diámetro)
   bladeCenterUp: 0.14,      // centro de la hoja sobre el punto de agarre
   hitAssistRadius: 0.05,    // margen generoso de detección alrededor de la hoja
-  serveExtraReach: 0.06,    // margen EXTRA solo durante el saque (bola lanzada)
+  serveExtraReach: 0.09,    // margen EXTRA solo durante el saque (bola lanzada) — v2.18 más fácil
   minExitSpeed: 2.3,        // velocidad mínima de salida tras golpear (solidez)
   paddleHitCooldown: 0.08,
   maxBallSpeed: 14,
@@ -203,10 +203,10 @@ const DIMS = {
   spinMax: 110,             // ≈ 1.050 rpm
   spinDecayAir: 0.3,
   paddleWristSpin: 0.16,    // contribución de la rotación de la muñeca
-  // --- saque (regla ITTF) ---
-  tossMinRise: 0.14,        // lanzamiento mínimo ~16 cm (con margen)
-  serveEndLineTol: 0.10,    // margen tras la línea de fondo (indulgente)
-  serveAssistVy: 2.6,       // vy mínimo del saque asistido (toss más alto = más tiempo para golpear)
+  // --- saque (regla ITTF relajada v2.18: varios usuarios lo encuentran duro) ---
+  tossMinRise: 0.06,        // lanzamiento mínimo ~6 cm (casi cualquier lanzamiento vale)
+  serveEndLineTol: 0.25,    // margen tras la línea de fondo (muy indulgente)
+  serveAssistVy: 3.1,       // vy mínimo del saque asistido (toss más alto = más tiempo para golpear)
   // --- sala ---
   roomHalfX: 3.05,
   roomBackZ: 2.35,
@@ -1236,6 +1236,18 @@ function stepPhysics(dt, ball, paddles, events) {
     collideTable(ball, prevY, events);
     collideNet(ball, prevZ, events);
     collideWorld(ball, events);
+  }
+}
+
+/** v2.19 (online): test de contacto pala-bola SIN integrar la bola — cuando
+ *  la bola la simula el rival (llega por red), cada lado solo comprueba si SU
+ *  pala toca la bola. tmpPrev hace de posición previa para el CCD. */
+function testPaddleContact(ball, prevPos, paddles, events) {
+  for (const p of paddles) if (p.cooldown > 0) p.cooldown -= 0.016;
+  tmpPrev.copy(prevPos);
+  for (const pad of paddles) {
+    if (!pad.active || pad.cooldown > 0) continue;
+    collidePaddle(ball, pad, 0.5, events);
   }
 }
 

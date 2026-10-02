@@ -24,6 +24,8 @@ const muDir = new THREE.Vector3();
 const muPos = new THREE.Vector3();
 const muQ = new THREE.Quaternion();
 const muRaycaster = new THREE.Raycaster();
+const netTmpP = new THREE.Vector3();   // v2.19: poses del rival por red
+const netTmpQ = new THREE.Quaternion();
 muRaycaster.far = 2.5;
 
 class PingPongGame {
@@ -107,6 +109,13 @@ class PingPongGame {
     this.menuRects = [];
     this._menuState = '';
     this.lastFeedTap = 0;
+    // ESTELA de la bola (v2.18): conmutable desde el menú y persistente
+    try { this.showTrail = localStorage.getItem('ppxr_trail_v1') !== '0'; } catch { this.showTrail = true; }
+    // MULTIJUGADOR ONLINE (v2.19): P2P por WebRTC (PeerJS) + voz
+    this.net = new NetLink(this);
+    this.menuPage = 'main';       // 'main' | 'multi' | 'join' (teclado)
+    this._joinCode = '';
+    this._localHit = false;       // golpeo propio pendiente de enviar este frame
     // fanfarria de fin de partido (banner + confeti)
     this.fanfareWin = false;
     this.fanfareT = 0;
@@ -231,6 +240,8 @@ class PingPongGame {
     const { mesh, trail, trailUpdate } = createBall();
     this.ballMesh = mesh;
     this.trailUpdate = trailUpdate;
+    this.trailObj = trail;
+    trail.visible = this.showTrail !== false;   // v2.18: interruptor de estela
     this.ballMesh.position.copy(this.ball.pos);
     this.rig.add(mesh);
     this.rig.add(trail);
@@ -489,6 +500,49 @@ class PingPongGame {
     this.haptic(this.paddleHand, 0.6, 130);
   }
 
+  /* ---------- v2.19 · SESIÓN ONLINE (PeerJS P2P) ----------
+   * El anfitrión lleva las reglas y el marcador; el invitado recibe el
+   * estado por red (reglas sombra). Cada lado simula la bola cuando es su
+   * dueño (último golpeador / sacador) y la emite a 20 Hz. */
+  startOnlineSession() {
+    if (this.calib) this.exitCalib();
+    this.closeMenu();
+    this.rules.oppLabel = 'tu rival';
+    this.resetToss();
+    this.aiToss = null;
+    this.demoToss = null;
+    this.audio.announce('Rival conectado. ¡A jugar!', true);
+    if (this.net.role === 'host') {
+      this.startOnlineMatch();
+    } else {
+      this.rules.message = '¡Conectado! Esperando al anfitrión…';
+    }
+  }
+
+  /** Partido online nuevo (anfitrión, o revancha pedida por el invitado). */
+  startOnlineMatch() {
+    if (this.net.role !== 'host') { this.net.sendRematch(); return; }
+    this.rules.startMatch(this.mode);
+    this.net.owner = 'host';
+    this.resetToss();
+    this.rules.message = 'Partido online · tu saque (GATILLO para lanzar)';
+  }
+
+  /** El rival se desconecta: vuelta al juego local contra la CPU. */
+  onNetEnded(msg) {
+    this.rules.oppLabel = 'la CPU';
+    this.resetToss();
+    this.aiToss = null;
+    this.rules.startMatch(this.mode);
+    this.rules.message = `${msg || 'Rival desconectado'} · partido local reiniciado`;
+    this.audio.announce('Rival desconectado', true);
+  }
+
+  /** El estado de la red cambió (repinta el menú si está abierto). */
+  onNetStatus() {
+    if (this.menuOpen) this.drawMenu();
+  }
+
   /** Máquina de bolas: saque reglamentario (bote propio + bote rival) hacia
    *  el campo del jugador, para entrenar golpes con el agarre ajustado. */
   feedPracticeBall() {
@@ -724,6 +778,138 @@ class PingPongGame {
     this.drawMenu();
   }
 
+
+  /** Zona inferior común del menú: pestañas + cerrar (v2.19). */
+  drawMenuBottom(yTabs, rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    btn('tab:main', 28, yTabs, 222, 42, 'AJUSTES', this.menuPage === 'main');
+    btn('tab:multi', 262, yTabs, 222, 42, 'MULTIJUGADOR', this.menuPage !== 'main');
+    btn('close', 28, yTabs + 52, 456, 46, 'Cerrar menú', false);
+  }
+
+  /** Página MULTIJUGADOR: crear/unirse por código, estado y voz (v2.19). */
+  drawMenuMulti() {
+    const c = this.menuCanvas.getContext('2d');
+    const rects = this._menuRects;
+    const btn = this._menuBtn;
+    const net = this.net;
+    const st = net.online ? 'online' : net.status;
+
+    c.fillStyle = '#9aa7b4';
+    c.font = '700 14px system-ui, sans-serif';
+    c.textAlign = 'left';
+    c.fillText('JUEGA CONTRA OTRA PERSONA POR INTERNET', 28, 112);
+
+    if (st === 'online') {
+      c.fillStyle = '#7fb069';
+      c.font = '800 30px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.fillText('CONECTADO', 256, 152);
+      c.fillStyle = '#cfd8e0';
+      c.font = '600 18px system-ui, sans-serif';
+      c.fillText(`rival: ${net.code} · ${this.rules.state === 'over' ? 'partido terminado' : 'jugando'}`, 256, 186);
+      const voz = net.voiceState === 'on'
+        ? (net.micOn ? 'Voz activa (micrófono abierto)' : 'Voz activa (tu micro está en silencio)')
+        : net.voiceState === 'asking' ? 'Pidiendo micrófono…'
+        : net.voiceState === 'denied' ? 'Micrófono denegado'
+        : 'Sin voz (pulsa Voz para activarla)';
+      c.fillStyle = '#9aa7b4';
+      c.font = '500 16px system-ui, sans-serif';
+      c.fillText(voz, 256, 214);
+      btn('net:mic', 28, 240, 222, 48, `Voz: ${net.micOn ? 'Sí' : 'No'}`, net.micOn && net.voiceState === 'on');
+      btn('net:hangup', 262, 240, 222, 48, 'COLGAR', false);
+      c.fillStyle = '#9aa7b4';
+      c.font = '500 15px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.fillText('La revancha está en la pestaña AJUSTES.', 256, 330);
+    } else if (st === 'waiting') {
+      c.fillStyle = '#e8b45a';
+      c.font = '700 18px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.fillText('CÓDIGO DE LA SALA', 256, 146);
+      c.fillStyle = '#f2f4f6';
+      c.font = '900 72px ui-monospace, monospace';
+      c.fillText(net.code, 256, 210);
+      c.fillStyle = '#9aa7b4';
+      c.font = '500 16px system-ui, sans-serif';
+      c.fillText('Esperando al rival… comparte este código', 256, 258);
+      btn('net:cancel', 28, 290, 456, 48, 'CANCELAR SALA', false);
+    } else if (st === 'creating' || st === 'joining') {
+      c.fillStyle = '#e8b45a';
+      c.font = '700 24px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.fillText(st === 'creating' ? 'Creando sala…' : `Conectando a ${net.code}…`, 256, 180);
+      btn('net:cancel', 28, 240, 456, 48, 'CANCELAR', false);
+    } else if (st === 'error') {
+      c.fillStyle = '#ff6b57';
+      c.font = '700 22px system-ui, sans-serif';
+      c.textAlign = 'center';
+      wrapText(c, net.statusMsg || 'Error de red', 256, 150, 440, 28);
+      btn('net:host', 28, 240, 222, 48, 'REINTENTAR', false);
+      btn('net:cancel', 262, 240, 222, 48, 'VOLVER', false);
+    } else {
+      // off
+      c.fillStyle = '#cfd8e0';
+      c.font = '600 18px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.fillText('Crea una sala o únete con un código.', 256, 152);
+      btn('net:host', 28, 200, 456, 52, 'CREAR SALA (código para tu rival)', false, 'green');
+      btn('net:join', 28, 268, 456, 52, 'INTRODUCIR CÓDIGO DE UN AMIGO', false);
+    }
+
+    c.fillStyle = '#75828f';
+    c.font = '500 14px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.fillText('P2P directo (WebRTC). Necesita internet en ambos visores.', 256, 396);
+    c.fillText('La voz usa el micrófono: acepta el permiso del navegador.', 256, 420);
+    this.drawMenuBottom(454, rects);
+  }
+
+  /** Página JOIN: teclado en el panel para escribir el código (v2.19). */
+  drawMenuJoin() {
+    const c = this.menuCanvas.getContext('2d');
+    const rects = this._menuRects;
+    const btn = this._menuBtn;
+    const CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // sin 0/O/1/I/L
+
+    c.fillStyle = '#9aa7b4';
+    c.font = '700 14px system-ui, sans-serif';
+    c.textAlign = 'left';
+    c.fillText('CÓDIGO DE LA SALA DE TU AMIGO', 28, 112);
+
+    // 5 huecos del código
+    for (let i = 0; i < 5; i++) {
+      const x = 28 + i * 96;
+      c.beginPath();
+      if (c.roundRect) c.roundRect(x, 124, 74, 66, 12);
+      else c.rect(x, 124, 74, 66);
+      c.fillStyle = 'rgba(255,255,255,0.06)';
+      c.fill();
+      c.strokeStyle = i === this._joinCode.length ? '#e8b45a' : 'rgba(255,255,255,0.18)';
+      c.lineWidth = i === this._joinCode.length ? 3 : 1.5;
+      c.stroke();
+      const ch = this._joinCode[i];
+      if (ch) {
+        c.fillStyle = '#f2f4f6';
+        c.font = '800 44px ui-monospace, monospace';
+        c.textAlign = 'center';
+        c.fillText(ch, x + 37, 158);
+      }
+    }
+
+    // teclado 7×5
+    c.textAlign = 'center';
+    for (let i = 0; i < CHARS.length; i++) {
+      const col = i % 7, row = Math.floor(i / 7);
+      btn(`key:${CHARS[i]}`, 28 + col * 66, 210 + row * 50, 60, 44, CHARS[i], false);
+    }
+    btn('key:del', 28 + 5 * 66, 210 + 4 * 50, 60, 44, '⌫', false);
+    btn('key:ok', 28, 470, 222, 48, 'CONECTAR', this._joinCode.length === 5, 'green');
+    btn('key:cancel', 262, 470, 222, 48, 'VOLVER', false);
+    this.drawMenuBottom(528, rects);
+  }
+
   /** Pinta el panel y deja en menuRects las zonas clicables (px canvas). */
   drawMenu() {
     const c = this.menuCanvas.getContext('2d');
@@ -765,9 +951,9 @@ class PingPongGame {
     c.font = '700 16px system-ui, sans-serif';
     c.fillText('B · cerrar', W - 26, 46);
 
-    // botón genérico
+    // botón genérico (compartido por todas las páginas)
     const btn = (id, x, y, w, h, label, active, style) => {
-      const hovered = this.menuHover.includes(rects.length);   // hover de cualquier mano
+      const hovered = rects.includes !== undefined && this.menuHover.includes(rects.length);
       rr(x, y, w, h, 12);
       if (active) {
         c.fillStyle = style === 'green' ? '#7fb069' : '#e8b45a';
@@ -787,6 +973,8 @@ class PingPongGame {
       c.fillText(label, x + w / 2, y + h / 2 + 1);
       rects.push({ x, y, w, h, id });
     };
+    this._menuBtn = btn;
+    this._menuRects = rects;
     const label = (txt, y) => {
       c.fillStyle = '#9aa7b4';
       c.font = '700 14px system-ui, sans-serif';
@@ -794,42 +982,60 @@ class PingPongGame {
       c.fillText(txt, 28, y);
     };
 
-    // MODO
-    label('MODO DE JUEGO', 112);
-    btn('mode:match', 28, 122, 222, 48, 'Partido', this.mode === 'match');
-    btn('mode:survival', 262, 122, 222, 48, 'Supervivencia', this.mode === 'survival');
+    if (this.menuPage === 'multi') {
+      this.drawMenuMulti();
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this.menuTex.needsUpdate = true;
+      return;
+    }
+    if (this.menuPage === 'join') {
+      this.drawMenuJoin();
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this.menuTex.needsUpdate = true;
+      return;
+    }
+
+    // MODO (v2.18: filas compactas para dejar sitio a EXTRAS)
+    label('MODO DE JUEGO', 110);
+    btn('mode:match', 28, 120, 222, 44, 'Partido', this.mode === 'match');
+    btn('mode:survival', 262, 120, 222, 44, 'Supervivencia', this.mode === 'survival');
 
     // DIFICULTAD
-    label('DIFICULTAD DE LA CPU', 192);
-    btn('diff:easy', 28, 202, 136, 48, 'Fácil', this.difficulty === 'easy');
-    btn('diff:medium', 188, 202, 136, 48, 'Media', this.difficulty === 'medium');
-    btn('diff:hard', 348, 202, 136, 48, 'Difícil', this.difficulty === 'hard');
+    label('DIFICULTAD DE LA CPU', 184);
+    btn('diff:easy', 28, 194, 136, 44, 'Fácil', this.difficulty === 'easy');
+    btn('diff:medium', 188, 194, 136, 44, 'Media', this.difficulty === 'medium');
+    btn('diff:hard', 348, 194, 136, 44, 'Difícil', this.difficulty === 'hard');
 
     // SALA (2×2)
-    label('SALA', 272);
+    label('SALA', 258);
     const themes = [
       ['theme:pabellon', 'Pabellón'], ['theme:neon', 'Neón'],
       ['theme:atardecer', 'Atardecer'], ['theme:artico', 'Ártico'],
     ];
     themes.forEach(([id, name], i) => {
-      btn(id, 28 + (i % 2) * 234, 282 + Math.floor(i / 2) * 56, 222, 46,
+      btn(id, 28 + (i % 2) * 234, 268 + Math.floor(i / 2) * 52, 222, 44,
         name, this.theme === id.split(':')[1]);
     });
 
-    // AMBIENTE
-    label('AMBIENTE DE TORNEO (sonido)', 412);
-    btn('amb:on', 28, 422, 222, 48, 'Sí', !!this.audio.ambience);
-    btn('amb:off', 262, 422, 222, 48, 'No', !this.audio.ambience);
+    // EXTRAS (v2.18): ambiente de torneo y estela de la bola, cada uno un
+    // botón basculante en la misma fila.
+    label('EXTRAS', 384);
+    btn('amb', 28, 394, 222, 44, `Ambiente: ${this.audio.ambience ? 'Sí' : 'No'}`, !!this.audio.ambience);
+    btn('trail', 262, 394, 222, 44, `Estela: ${this.showTrail ? 'Sí' : 'No'}`, !!this.showTrail);
 
     // REVANCHA (solo con el partido terminado)
-    let yNext = 494;
+    let yNext = 454;
     if (over) {
-      btn('revancha', 28, yNext, 456, 52, 'REVANCHA', false, 'green');
-      yNext += 64;
+      btn('revancha', 28, yNext, 456, 50, 'REVANCHA', false, 'green');
+      yNext += 62;
     }
 
-    // CERRAR
-    btn('close', 28, 572, 456, 48, 'Cerrar menú', false);
+    // pestañas + cerrar (v2.19)
+    btn('tab:main', 28, yNext, 222, 42, 'AJUSTES', true);
+    btn('tab:multi', 262, yNext, 222, 42, 'MULTIJUGADOR', false);
+    btn('close', 28, yNext + 52, 456, 46, 'Cerrar menú', false);
 
     this.menuRects = rects;
     this._menuState = this.rules.state;
@@ -933,11 +1139,46 @@ class PingPongGame {
     if (!r) return;
     const [ns, arg] = r.id.split(':');
     switch (ns) {
+      case 'tab':
+        this.menuPage = arg === 'multi' ? 'multi' : 'main';
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      case 'net':
+        if (arg === 'host') { this.menuPage = 'multi'; this.net.hostRoom(); }
+        else if (arg === 'join') { this.menuPage = 'join'; this._joinCode = ''; }
+        else if (arg === 'cancel') { this.net.cancel(); }
+        else if (arg === 'hangup') { this.net.hangup(); }
+        else if (arg === 'mic') { this.net.toggleMic(); if (!this.net.micStream) this.net.initVoice().catch(() => {}); }
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      case 'key':
+        if (arg === 'del') this._joinCode = this._joinCode.slice(0, -1);
+        else if (arg === 'ok') {
+          if (this._joinCode.length === 5) {
+            this.menuPage = 'multi';
+            this.net.joinRoom(this._joinCode);
+          }
+        } else if (arg === 'cancel') { this.menuPage = 'multi'; }
+        else if (this._joinCode.length < 5) this._joinCode += arg;
+        this.drawMenu();
+        break;
       case 'mode':
         this.closeMenu();
-        this.switchMode(arg === 'survival' ? 'survival' : 'match');
+        if (this.net.online && this.net.role === 'guest') {
+          this.net.sendMode(arg === 'survival' ? 'survival' : 'match');
+          this.rules.message = 'Pidiendo cambio de modo al anfitrión…';
+        } else {
+          this.switchMode(arg === 'survival' ? 'survival' : 'match');
+        }
         break;
       case 'diff': {
+        if (this.net.online) {
+          this.rules.message = 'En online no hay CPU · la dificultad no aplica';
+          this.drawMenu();
+          break;
+        }
         this.setDifficulty(arg);
         const lb = { easy: 'Fácil', medium: 'Media', hard: 'Difícil' }[arg] || arg;
         this.rules.message = `DIFICULTAD: ${lb.toUpperCase()}`;
@@ -952,14 +1193,27 @@ class PingPongGame {
         this.drawMenu();
         break;
       case 'amb':
-        this.audio.setAmbience(arg === 'on');
+        this.audio.setAmbience(!this.audio.ambience);   // v2.18: basculante
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
         this.drawMenu();
         break;
+      case 'trail': {
+        // v2.18: mostrar/ocultar la estela de la bola (persistente)
+        this.showTrail = !this.showTrail;
+        try { localStorage.setItem('ppxr_trail_v1', this.showTrail ? '1' : '0'); } catch { /* */ }
+        if (this.trailObj) this.trailObj.visible = this.showTrail;
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.rules.message = this.showTrail ? 'Estela de la bola: Sí' : 'Estela de la bola: No';
+        this.drawMenu();
+        break;
+      }
       case 'revancha':
         this.closeMenu();
-        this.rules.startMatch(this.mode);
-        this.resetToss();
+        if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
+        else {
+          this.rules.startMatch(this.mode);
+          this.resetToss();
+        }
         break;
       case 'close':
         this.closeMenu();
@@ -1150,9 +1404,11 @@ class PingPongGame {
       this.resetToss();
       return;
     }
-    // gatillo en la mano de la bola = saque asistido (con impulso mínimo)
-    if (this.rules.state === 'serve' && this.rules.server === 'player' && !this.tossed && i === this.ballHand) {
-      this.tossFromHand(i, true);
+    // gatillo en CUALQUIER mando = saque asistido (v2.18: la gente buscaba el
+    // gatillo en la mano de la pala y no pasaba nada). El lanzamiento usa
+    // siempre la mano que SUJETA la bola.
+    if (this.rules.state === 'serve' && this.rules.server === 'player' && !this.tossed) {
+      this.tossFromHand(this.ballHand, true);
     }
   }
 
@@ -1187,7 +1443,7 @@ class PingPongGame {
     this.tossMaxY = this.ball.pos.y;
     this.ball.vel.copy(v);
     this.ball.spin.set(0, 0, 0);
-    this.rules.message = '¡Golpea al oír el pitido (punto muerto) o al caer!';
+    this.rules.message = '¡Golpea la bola hacia la mesa con la pala!';
     this.audio.serve();
     this.haptic(i, 0.45);
   }
@@ -1311,6 +1567,9 @@ class PingPongGame {
     // 0.7) menú abierto: anclar a la muñeca libre + rayo de apuntado
     if (presenting && this.menuOpen) this.updateMenu();
 
+    // 0.8) v2.19: red online — emitir pose/bola/sync a 20 Hz
+    if (this.net.online) this.net.tick(dt);
+
     // 1) Palas de los mandos (solo en VR)
     if (presenting && this.grips) {
       const servingToss = !this.calib && this.tossed &&
@@ -1329,7 +1588,7 @@ class PingPongGame {
       }
     }
 
-    // 2) IA(s)
+    // 2) IA(s) — en online el rival es humano y llega por red (v2.19)
     const canHit = this.rules.state === 'rally';
     const playerPad = this.controllerPaddles[this.paddleHand];
     const oppPadX = presenting
@@ -1339,7 +1598,9 @@ class PingPongGame {
       ? (playerPad.active ? playerPad.pos.z : DIMS.tableCenterZ + DIMS.tableHalfLength + 0.4)
       : this.demoAI.pos.z;
     const aiServing = !this.calib && this.rules.state === 'serve' && this.rules.server === 'ai';
-    const aiHit = this.calib ? null : this.ai.update(dt, this.ball, {
+    const aiHit = (this.calib || this.net.online)
+      ? null
+      : this.ai.update(dt, this.ball, {
       canHit,
       validBounce: this.rules.validBounce,
       oppPadX,
@@ -1445,6 +1706,8 @@ class PingPongGame {
             }
           }
         }
+      } else if (this.net.online) {
+        // v2.19: saque del rival humano — la bola llega por su emisión de red
       } else if (!this.aiToss) {
         // la CPU camina a su posición de saque, sostiene la bola y la lanza:
         // nada de sacar desde donde la pilló el punto anterior
@@ -1473,29 +1736,40 @@ class PingPongGame {
 
     // 4) Física (solo la pala del mando activo colisiona)
     this.events.length = 0;
+    this._localHit = false;
+    if (this.net.online) this.net.drainNetwork(this);   // v2.19: rival por red
     if (!holdLock) {
       const pads = [];
       if (presenting) {
         const ps = this.controllerPaddles[this.paddleHand];
         if (ps.active) pads.push(ps);
       }
-      stepPhysics(dt, this.ball, pads, this.events);
+      if (this.net.online && this.net.owner !== this.net.mySide()) {
+        // v2.19: la bola la simula el rival — seguir su emisión y solo
+        // comprobar el contacto de MI pala contra ella
+        const prevB = this._netPrevBall || (this._netPrevBall = new THREE.Vector3());
+        prevB.copy(this.ball.pos);
+        if (this.net.applyBallStream(this.ball, dt)) {
+          testPaddleContact(this.ball, prevB, pads, this.events);
+          for (const e of this.events) {
+            if (e.type === 'paddle') { this._localHit = true; break; }
+          }
+        }
+      } else {
+        stepPhysics(dt, this.ball, pads, this.events);
+      }
     }
 
-    // 5) Golpe de saque del jugador: validar regla ITTF (con margen amplio)
+    // 5) Golpe de saque del jugador: validar regla ITTF RELAJADA (v2.18).
+    //    Se eliminó la exigencia del punto muerto: cualquier contacto tras el
+    //    lanzamiento es válido (el asistente endereza la trayectoria igual).
     if (presenting && !this.calib && this.tossed && this.rules.state === 'serve' && this.rules.server === 'player') {
       for (const e of this.events) {
         if (e.type !== 'paddle' || e.who !== 'player') continue;
-        if (this.preVy > 0.6) {          // margen ±60 ms alrededor del punto muerto
-          e.consumed = true;
-          this.resetToss();
-          this.rules.message = 'Golpea la bola en el punto muerto o al caer';
-          break;
-        }
         if (this.tossMaxY - this.tossReleaseY < DIMS.tossMinRise) {
           e.consumed = true;
           this.resetToss();
-          this.rules.message = 'Lanza la bola al menos 16 cm hacia arriba';
+          this.rules.message = 'Lanza la bola un poco más arriba';
           break;
         }
         if (this.ball.pos.z < DIMS.tableCenterZ + DIMS.tableHalfLength - DIMS.serveEndLineTol) {
@@ -1520,6 +1794,7 @@ class PingPongGame {
         }
         if (this.ball.vel.length() < 3.2) this.ball.vel.setLength(3.2);
         this.rules.beginServeRally('player');
+        if (this.net.online) { this.net.sendHit(true); this._localHit = false; }
         this.haptic(e.paddleIndex ?? this.paddleHand, 0.8, 90);
         break;
       }
@@ -1553,12 +1828,21 @@ class PingPongGame {
       }
     }
 
-    // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido)
-    if (!this.calib) {
+    // 5.6) v2.19 online: anunciar MI golpeo al rival (con la velocidad final,
+    //      ya enderezada por el asistente del 5.5)
+    if (this.net.online && this._localHit) {
+      this._localHit = false;
+      this.net.sendHit(false);
+    }
+
+    // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido;
+    //    en online el INVITADO no puntúa: el marcador llega del anfitrión)
+    if (!this.calib && !(this.net.online && this.net.role === 'guest')) {
       this.processIntents(this.rules.handleEvents(this.events));
       this.processIntents(this.rules.update(dt));
     }
     this.processEvents(this.events);
+    if (this.net.online) this.net.collectEvents(this.events);
     if (this.calib) this.updateCalibration(dt);
 
     // 7) Sincronizar visuales
@@ -1570,13 +1854,25 @@ class PingPongGame {
     this.ballMesh.material.emissiveIntensity = ballHeld
       ? 0.75 + Math.sin(now * 6) * 0.25
       : 0.35 + this.apexPulse * 1.2;
-    this.trailUpdate(this.ball, dt);
+    if (this.showTrail) this.trailUpdate(this.ball, dt);   // v2.18: se puede ocultar
     this.updateBlobShadow();
 
     // poses de las palas IA: postura natural, saque con toss y swing real
     this.aiStrikeT = Math.max(0, this.aiStrikeT - dt);
     this.demoStrikeT = Math.max(0, this.demoStrikeT - dt);
-    this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
+    if (this.net.online) {
+      // v2.19: la pala del rival humano llega por red (marco espejo 180° en Y)
+      const rp = this.net.remotePaddle;
+      if (rp) {
+        NetLink.posFromNet(rp.p, netTmpP);
+        NetLink.quatFromNet(rp.q, netTmpQ);
+        this.aiPaddleMesh.position.copy(netTmpP);
+        this.aiPaddleMesh.quaternion.copy(netTmpQ);
+      }
+      this.aiPaddleMesh.visible = true;
+    } else {
+      this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
+    }
     this.demoPaddleMesh.visible = !presenting;
     if (!presenting) this.updateAIPaddlePose(this.demoPaddleMesh, this.demoAI, 'player', dt);
 
@@ -1912,20 +2208,25 @@ class PingPongGame {
           this.resetToss();
           this.aiToss = null;
           this.demoToss = null;
-          if (this.rules.server === 'ai') this.setupAIServe();
-          else this.setupDemoServe();
+          if (!this.net.online) {
+            if (this.rules.server === 'ai') this.setupAIServe();
+            else this.setupDemoServe();
+          }
           break;
         case 'serve':
           this.resetToss();
           this.aiToss = null;
           this.demoToss = null;
-          if (it.server === 'ai') this.setupAIServe();
+          if (this.net.online) {
+            // v2.19: la bola del saque la lleva quien saca (humano remoto o yo)
+            this.net.owner = it.server === 'player' ? this.net.mySide() : this.net.oppSide();
+          } else if (it.server === 'ai') this.setupAIServe();
           else this.setupDemoServe();
           // MEGAFONÍA: el marcador anuncia el resultado y quién saca
           if (this.rules.mode !== 'survival') {
             const s = this.rules;
             this.audio.announce(
-              `${s.scorePlayer} a ${s.scoreAi}, saque para ${it.server === 'player' ? 'ti' : 'la máquina'}`,
+              `${s.scorePlayer} a ${s.scoreAi}, saque para ${it.server === 'player' ? 'ti' : (this.net.online ? 'tu rival' : 'la máquina')}`,
             );
           }
           break;
@@ -1934,8 +2235,8 @@ class PingPongGame {
           this.audio.applause(it.winner === 'player');
           this.audio.announce(
             it.winner === 'player'
-              ? `¡Victoria del jugador! ${this.rules.scorePlayer} a ${this.rules.scoreAi}`
-              : `Partido para la máquina. ${this.rules.scoreAi} a ${this.rules.scorePlayer}`,
+              ? `¡Victoria! ${this.rules.scorePlayer} a ${this.rules.scoreAi}`
+              : `Partido para ${this.rules.opp()}. ${this.rules.scoreAi} a ${this.rules.scorePlayer}`,
             true,
           );
           this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));
@@ -2108,6 +2409,7 @@ loadPaddleModel().then((paddleModel) => {
     },
   });
   window.__game = game;
+  window.__NetLink = NetLink;   // accesible para pruebas headless (módulo ES)
   renderStats(game.stats.data);   // pintar el progreso persistente al arrancar
   renderTheme(game.theme);        // pintar el tema de sala persistente
   // gancho de depuración para pruebas headless (física de saque y constantes)

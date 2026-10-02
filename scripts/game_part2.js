@@ -24,7 +24,11 @@ class Rules {
     this.rallyHits = 0;
     this.mode = 'match';            // 'match' (a 11) | 'survival' (rallyes infinitos)
     this.rallyesSurvived = 0;       // solo supervivencia: rallyes terminados
+    this.oppLabel = 'la CPU';       // v2.19: 'tu rival' en online
   }
+
+  /** Nombre del oponente para los mensajes (CPU o humano remoto). */
+  opp() { return this.oppLabel || 'la CPU'; }
 
   other(s) { return s === 'player' ? 'ai' : 'player'; }
 
@@ -99,7 +103,7 @@ class Rules {
     this.state = 'point';
     this.stateTimer = 2.2;
     const rallyTxt = this.rallyHits >= 6 ? ` · ${this.rallyHits} golpes` : '';
-    this.message = winner === 'player' ? `¡Punto para ti! · ${cause}${rallyTxt}` : `Punto para la CPU · ${cause}${rallyTxt}`;
+    this.message = winner === 'player' ? `¡Punto para ti! · ${cause}${rallyTxt}` : `Punto para ${this.opp()} · ${cause}${rallyTxt}`;
     return [{ type: 'point', winner, cause, rallyHits: this.rallyHits }];
   }
 
@@ -159,15 +163,15 @@ class Rules {
             } else {
               const cause = this.isServeBall
                 ? 'el saque no pasó la red'
-                : own === 'player' ? 'golpeaste tu propio campo' : 'la CPU golpeó su campo';
+                : own === 'player' ? 'golpeaste tu propio campo' : `${this.opp()} golpeó su campo`;
               intents.push(...this.applyPoint(opp, cause));
             }
           } else if (this.validBounce) {
             if (e.side === opp) {
-              const cause = own === 'player' ? 'doble bote: la CPU no llegó' : 'doble bote: no llegaste';
+              const cause = own === 'player' ? `doble bote: ${this.opp()} no llegó` : 'doble bote: no llegaste';
               intents.push(...this.applyPoint(own, cause));
             } else {
-              const cause = own === 'player' ? 'la bola volvió a tu campo' : 'la bola volvió al campo de la CPU';
+              const cause = own === 'player' ? 'la bola volvió a tu campo' : `la bola volvió al campo de ${this.opp()}`;
               intents.push(...this.applyPoint(opp, cause));
             }
           }
@@ -182,7 +186,7 @@ class Rules {
               : (this.netTouched ? 'se quedó en la red' : (e.type === 'wall' ? 'a la pared' : 'bola fuera'));
             intents.push(...this.applyPoint(this.other(this.lastHitter), cause));
           } else {
-            const cause = this.lastHitter === 'player' ? 'la CPU no la devolvió' : 'no la devolviste';
+            const cause = this.lastHitter === 'player' ? `${this.opp()} no la devolvió` : 'no la devolviste';
             intents.push(...this.applyPoint(this.lastHitter, cause));
           }
           break;
@@ -203,8 +207,8 @@ class Rules {
           this.state = 'serve';
           this.server = this.computeNextServer();
           this.message = this.server === 'player'
-            ? 'Nueva bola en tu mano · ¡aguanta el rallye!'
-            : 'Saque de la CPU… acelera cada vez más';
+            ? 'Nueva bola · GATILLO para lanzar y golpear'
+            : `Saque de ${this.opp()}… acelera cada vez más`;
           intents.push({ type: 'serve', server: this.server });
           return intents;
         }
@@ -223,8 +227,8 @@ class Rules {
           this.state = 'serve';
           this.server = this.computeNextServer();
           this.message = this.server === 'player'
-            ? 'Tu saque · la bola espera en tu mano libre'
-            : 'Saque de la CPU…';
+            ? 'Tu saque · GATILLO para lanzar y golpear'
+            : `Saque de ${this.opp()}…`;
           intents.push({ type: 'serve', server: this.server });
         }
       }
@@ -877,8 +881,16 @@ function createScoreboard() {
     ctx.fillText(`${d.player} : ${d.ai}`, 512, 340);
 
     ctx.fillStyle = '#c8ced4';
-    ctx.font = '500 40px system-ui, sans-serif';
-    const msg = d.message.length > 46 ? d.message.slice(0, 46) : d.message;
+    // v2.18: el mensaje se auto-ajusta (fuente menor) en vez de recortarse a
+    // ciegas: en el visor los textos largos se salían del marco del panel.
+    let msg = d.message || '';
+    if (msg.length > 72) msg = msg.slice(0, 71) + '…';
+    let msgFs = 40;
+    ctx.font = `500 ${msgFs}px system-ui, sans-serif`;
+    while (msgFs > 22 && ctx.measureText(msg).width > 920) {
+      msgFs -= 2;
+      ctx.font = `500 ${msgFs}px system-ui, sans-serif`;
+    }
     ctx.fillText(msg, 512, 440);
 
     tex.needsUpdate = true;
@@ -956,7 +968,9 @@ function createCalibPanel() {
       ['B (en juego)', 'abrir / cerrar el MENÚ'],
       ['MENÚ', 'modo · dificultad · sala · ambiente'],
     ];
-    let y = 224;
+    // v2.18: re-espaciado — con paso 29 la última línea caía en y=514 (fuera
+    // del canvas de 512 px) y el texto se salía del panel lateral.
+    let y = 214;
     for (const [k, v] of lines) {
       g2.fillStyle = '#e8b45a';
       g2.font = 'bold 20px system-ui, sans-serif';
@@ -964,7 +978,7 @@ function createCalibPanel() {
       g2.fillStyle = '#aeb9c5';
       g2.font = '20px system-ui, sans-serif';
       g2.fillText(v, 196, y);
-      y += 29;
+      y += 25;
     }
     tex.needsUpdate = true;
   }
@@ -1213,4 +1227,441 @@ function createAudioStatus() {
   };
   update('running');
   return { group, update };
+}
+
+/* =====================================================================
+ *  MULTIJUGADOR ONLINE (v2.19) · P2P WebRTC vía PeerJS (sin servidor propio)
+ *  - El anfitrión crea una sala con código de 5 caracteres (id ppxr3-CODE).
+ *  - El invitado introduce el código con un teclado dibujado en el menú.
+ *  - Canal de datos: poses de pala (20 Hz), estado de la bola (el dueño la
+ *    simula y la emite), eventos de física y estado del partido.
+ *  - VOZ: llamada de medios WebRTC entre ambos (micrófono del navegador).
+ *  Autoridad: el ANFITRIÓN lleva las reglas y el marcador; el invitado
+ *  recibe el estado (reglas sombra). Marco de coordenadas: el mundo del
+ *  anfitrión es la referencia; el otro extremo aplica rotación de 180° en Y
+ *  alrededor del CENTRO de la mesa, de modo que ambos ven la mesa con su
+ *  campo cerca (+z) y al rival al fondo.
+ * ===================================================================== */
+class NetLink {
+  constructor(game) {
+    this.game = game;
+    this.peer = null;
+    this.conn = null;          // DataConnection
+    this.call = null;          // MediaConnection (voz)
+    this.micStream = null;
+    this.remoteAudio = null;   // <audio autoplay> con la voz del rival
+    this.role = null;          // 'host' | 'guest'
+    this.status = 'off';       // off|creating|waiting|joining|online|error
+    this.code = '';            // código de sala (propio o introducido)
+    this.online = false;
+    this.micOn = true;
+    this.voiceState = 'off';   // off|asking|on|denied|error
+    this.statusMsg = '';
+    this.owner = 'host';       // quién simula la bola ('host'|'guest')
+    this.remotePaddle = null;  // { p:[x,y,z], q:[x,y,z,w], t }
+    this.remoteBall = null;    // { p:[x,y,z], v:[x,y,z], s:[x,y,z], t }
+    this.remoteBallT = 0;
+    this._outEvs = [];         // eventos locales pendientes de enviar
+    this._inEvs = [];          // eventos del rival pendientes de aplicar
+    this._pendingHits = [];    // golpeos del rival pendientes (host)
+    this._sendAcc = 0;
+    this._lastSyncKey = '';
+    this._overKey = '';
+    this._retryIds = 0;
+  }
+
+  available() { return typeof Peer !== 'undefined'; }
+
+  static CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // sin 0/O/1/I/L
+  static ROOM_PREFIX = 'ppxr3-';
+  static TABLE_CZ = -1.6;   // DIMS.tableCenterZ (eje de giro del espejo)
+
+  genCode() {
+    let s = '';
+    for (let i = 0; i < 5; i++) {
+      s += NetLink.CODE_CHARS[Math.floor(Math.random() * NetLink.CODE_CHARS.length)];
+    }
+    return s;
+  }
+
+  mySide() { return this.role === 'host' ? 'host' : 'guest'; }
+  oppSide() { return this.role === 'host' ? 'guest' : 'host'; }
+
+  /* --- transformación de marcos: mi marco <-> marco del anfitrión -------
+   * Rotación de 180° en Y alrededor del centro de la mesa: (x,z) -> (-x, -3.2-z).
+   * Es una involución: la misma función convierte en ambos sentidos. */
+  static posToNet(p) { return [-p.x, p.y, -3.2 - p.z]; }
+  static posFromNet(a, out) { out.set(-a[0], a[1], -3.2 - a[2]); return out; }
+  static vecToNet(v) { return [-v.x, v.y, -v.z]; }
+  static vecFromNet(a, out) { out.set(-a[0], a[1], -a[2]); return out; }
+  static quatFromNet(a, out) {
+    // q_local = qRotY180 * q_remote
+    out.set(a[0], a[1], a[2], a[3]);
+    // qRotY180 = giro de 180° en Y = (0, 1, 0, 0)
+    const qx = out.x, qy = out.y, qz = out.z, qw = out.w;
+    const rx = 0, ry = 1, rz = 0, rw = 0;
+    out.set(
+      rw * qx + rx * qw + ry * qz - rz * qy,
+      rw * qy - rx * qz + ry * qw + rz * qx,
+      rw * qz + rx * qy - ry * qx + rz * qw,
+      rw * qw - rx * qx - ry * qy - rz * qz,
+    );
+    return out;
+  }
+  static quatToNet(q) {
+    // qRotY180 = giro de 180° en Y = (0, 1, 0, 0)
+    const rx = 0, ry = 1, rz = 0, rw = 0;
+    const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
+    return [
+      rw * qx + rx * qw + ry * qz - rz * qy,
+      rw * qy - rx * qz + ry * qw + rz * qx,
+      rw * qz + rx * qy - ry * qx + rz * qw,
+      rw * qw - rx * qx - ry * qy - rz * qz,
+    ];
+  }
+
+  setStatus(st, msg) {
+    this.status = st;
+    if (msg !== undefined) this.statusMsg = msg || '';
+    this.game?.onNetStatus?.();
+  }
+
+  /* ---------------- crear sala (anfitrión) ---------------- */
+  hostRoom() {
+    if (!this.available()) { this.setStatus('error', 'Red no disponible en este navegador'); return; }
+    this.teardown();
+    this.role = 'host';
+    this.code = this.genCode();
+    this.setStatus('creating', 'Creando sala…');
+    this.openPeer(NetLink.ROOM_PREFIX + this.code, () => {
+      this.setStatus('waiting', `Sala ${this.code} · esperando al rival…`);
+    });
+  }
+
+  /* ---------------- unirse con código (invitado) ---------------- */
+  joinRoom(code) {
+    if (!this.available()) { this.setStatus('error', 'Red no disponible en este navegador'); return; }
+    this.teardown();
+    this.role = 'guest';
+    this.code = (code || '').toUpperCase().trim();
+    if (!/^[A-Z0-9]{5}$/.test(this.code)) {
+      this.setStatus('error', 'Código no válido (5 caracteres)');
+      return;
+    }
+    this.setStatus('joining', `Conectando a la sala ${this.code}…`);
+    this.openPeer(null, () => {
+      const conn = this.peer.connect(NetLink.ROOM_PREFIX + this.code, { reliable: true });
+      this.wireConn(conn);
+    });
+  }
+
+  openPeer(id, onReady) {
+    try {
+      this.peer = id ? new Peer(id) : new Peer();
+    } catch (e) {
+      this.setStatus('error', 'No se pudo iniciar la red: ' + e.message);
+      return;
+    }
+    this.peer.on('open', () => { this._retryIds = 0; onReady && onReady(); });
+    this.peer.on('connection', (conn) => {     // lado anfitrión
+      if (this.conn && this.conn.open) { conn.close(); return; }  // una sala = un rival
+      this.wireConn(conn);
+    });
+    this.peer.on('call', (call) => {           // voz entrante (invitado)
+      this.call = call;
+      const answer = () => {
+        try { call.answer(this.micStream || undefined); this.wireCall(call); }
+        catch { try { call.answer(); this.wireCall(call); } catch { /* */ } }
+      };
+      if (this.micStream) answer();
+      else this.initVoice().then(answer).catch(answer);
+    });
+    this.peer.on('error', (err) => {
+      const t = err?.type || '';
+      if (t === 'unavailable-id' && this.role === 'host' && this._retryIds < 4) {
+        this._retryIds++;
+        this.code = this.genCode();
+        try { this.peer.destroy(); } catch { /* */ }
+        this.peer = null;
+        this.openPeer(NetLink.ROOM_PREFIX + this.code, () => {
+          this.setStatus('waiting', `Sala ${this.code} · esperando al rival…`);
+        });
+        return;
+      }
+      if (t === 'peer-unavailable') {
+        this.setStatus('error', `No hay ninguna sala ${this.code}`);
+      } else if (t === 'network' || t === 'server-error' || t === 'socket-error') {
+        this.setStatus('error', 'Sin conexión con el servidor de salas');
+      } else if (this.status !== 'online') {
+        this.setStatus('error', 'Error de red: ' + t);
+      }
+    });
+    this.peer.on('disconnected', () => {
+      try { this.peer.reconnect(); } catch { /* */ }
+    });
+  }
+
+  wireConn(conn) {
+    this.conn = conn;
+    conn.on('open', () => {
+      this.online = true;
+      this.owner = 'host';       // el saque inicial siempre es del anfitrión
+      this.setStatus('online', '¡Rival conectado!');
+      this.game?.startOnlineSession();
+      this.initVoice().catch(() => { /* sin voz, sin problema */ });
+      if (this.role === 'host' && this.peer) {
+        // el anfitrión llama con su micrófono; el invitado responde en 'call'
+        this.initVoice().then(() => {
+          if (this.micStream && this.peer) {
+            const c = this.peer.call(NetLink.ROOM_PREFIX + this.code, this.micStream);
+            if (c) this.wireCall(c);
+          }
+        }).catch(() => { /* */ });
+      }
+    });
+    conn.on('data', (d) => this.onData(d));
+    conn.on('close', () => this.onPeerGone('El rival se ha ido'));
+    conn.on('error', () => this.onPeerGone('Conexión perdida'));
+  }
+
+  wireCall(call) {
+    call.on('stream', (remote) => {
+      this.voiceState = 'on';
+      try {
+        if (!this.remoteAudio) {
+          this.remoteAudio = document.createElement('audio');
+          this.remoteAudio.autoplay = true;
+          document.body.appendChild(this.remoteAudio);
+        }
+        this.remoteAudio.srcObject = remote;
+        this.remoteAudio.play?.().catch(() => { /* */ });
+      } catch { /* */ }
+      this.game?.onNetStatus?.();
+    });
+    call.on('close', () => { if (this.voiceState === 'on') this.voiceState = 'off'; });
+  }
+
+  async initVoice() {
+    if (this.micStream) return this.micStream;
+    this.voiceState = 'asking';
+    this.game?.onNetStatus?.();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: false,
+      });
+      this.micStream = stream;
+      stream.getAudioTracks().forEach((t) => { t.enabled = this.micOn; });
+      this.voiceState = 'on';
+      this.game?.onNetStatus?.();
+      return stream;
+    } catch (e) {
+      this.voiceState = 'denied';
+      this.game?.onNetStatus?.();
+      throw e;
+    }
+  }
+
+  toggleMic() {
+    this.micOn = !this.micOn;
+    if (this.micStream) this.micStream.getAudioTracks().forEach((t) => { t.enabled = this.micOn; });
+    return this.micOn;
+  }
+
+  send(msg) {
+    try { if (this.conn && this.conn.open) this.conn.send(msg); } catch { /* */ }
+  }
+
+  /* --------------- bucle: emitir pose/bola/eventos/sync (20 Hz) --------------- */
+  tick(dt) {
+    if (!this.online) return;
+    this._sendAcc += dt;
+    if (this._sendAcc < 0.05) return;
+    this._sendAcc = 0;
+    const g = this.game;
+    const pad = g.controllerPaddles[g.paddleHand];
+    const pkt = { k: 'p', pad: null, b: null, e: null };
+    if (pad?.active && g.grips[g.paddleHand]) {
+      pkt.pad = NetLink.posToNet(g.grips[g.paddleHand].position)
+        .concat(NetLink.quatToNet(g.grips[g.paddleHand].quaternion));
+    }
+    if (this.owner === this.mySide()) {
+      pkt.b = {
+        p: NetLink.posToNet(g.ball.pos),
+        v: NetLink.vecToNet(g.ball.vel),
+        s: [+g.ball.spin.x.toFixed(2), +g.ball.spin.y.toFixed(2), +g.ball.spin.z.toFixed(2)],
+      };
+    }
+    if (this._outEvs.length) { pkt.e = this._outEvs; this._outEvs = []; }
+    if (this.role === 'host') {
+      const r = g.rules;
+      pkt.y = {
+        st: r.state, sv: r.server, sp: r.scorePlayer, sa: r.scoreAi,
+        ms: r.message, md: r.mode, ow: this.owner, rh: r.rallyHits,
+      };
+      if (r.state === 'over') pkt.y.wn = r.scorePlayer > r.scoreAi ? 'player' : 'ai';
+    }
+    this.send(pkt);
+  }
+
+  /** Recoge los eventos de física del ÚLTIMO frame (el dueño los emite). */
+  collectEvents(events) {
+    if (!this.online) return;
+    for (const e of events) {
+      if (e.type === 'table') this._outEvs.push(['T', e.pos.x, e.pos.y, e.pos.z]);
+      else if (e.type === 'net') this._outEvs.push(['N', e.pos.x, e.pos.y, e.pos.z]);
+      else if (e.type === 'floor') this._outEvs.push(['F', e.pos.x, e.pos.y, e.pos.z]);
+      else if (e.type === 'wall') this._outEvs.push(['W', e.pos.x, e.pos.y, e.pos.z]);
+    }
+  }
+
+  /** Anuncia un golpeo local (tras aplicar la velocidad ya corregida). */
+  sendHit(isServe) {
+    if (!this.online) return;
+    const g = this.game;
+    this.owner = this.mySide();
+    this.send({
+      k: 'h', sv: isServe ? 1 : 0,
+      p: NetLink.posToNet(g.ball.pos),
+      v: NetLink.vecToNet(g.ball.vel),
+      s: [+g.ball.spin.x.toFixed(2), +g.ball.spin.y.toFixed(2), +g.ball.spin.z.toFixed(2)],
+    });
+  }
+
+  sendRematch() { this.send({ k: 'r' }); }
+  sendMode(md) { this.send({ k: 'm', md }); }
+
+  /* --------------- recepción --------------- */
+  onData(d) {
+    if (!d || typeof d !== 'object') return;
+    if (d.k === 'p') {
+      if (d.pad) {
+        this.remotePaddle = { p: d.pad.slice(0, 3), q: d.pad.slice(3, 7), t: performance.now() };
+      }
+      if (d.b) {
+        this.remoteBall = d.b;
+        this.remoteBallT = performance.now();
+      }
+      if (d.e) this._inEvs.push(...d.e);
+      if (d.y) this.applySync(d.y);
+      return;
+    }
+    if (d.k === 'h') { this._pendingHits.push(d); return; }
+    if (d.k === 'r') {    // el invitado pide revancha
+      if (this.role === 'host') this.game.startOnlineMatch();
+      return;
+    }
+    if (d.k === 'm') {
+      if (this.role === 'host' && (d.md === 'match' || d.md === 'survival')) {
+        this.game.switchMode(d.md);
+      }
+      return;
+    }
+    if (d.k === 'bye') this.onPeerGone('El rival cerró la sala');
+  }
+
+  /** Invitado: estado del partido recibido del anfitrión (reglas sombra). */
+  applySync(y) {
+    const g = this.game;
+    const r = g.rules;
+    this.owner = y.ow || 'host';
+    const key = `${y.st}|${y.sp}|${y.sa}|${y.sv}|${y.ms}`;
+    const prevSp = r.scorePlayer, prevSa = r.scoreAi;
+    r.state = y.st; r.server = y.sv;
+    r.scorePlayer = y.sp; r.scoreAi = y.sa;
+    r.message = y.ms; r.mode = y.md; r.rallyHits = y.rh || 0;
+    g.mode = y.md; g.pendingMode = y.md;
+    if ((y.sp !== prevSp || y.sa !== prevSa) && y.st !== 'over') {
+      const iWon = y.sp > prevSp;
+      g.audio.point(iWon);
+      if (iWon) g.audio.applause(false);
+    }
+    if (y.st === 'over' && y.wn) {
+      const k = `${y.wn}|${y.sp}-${y.sa}`;
+      if (k !== this._overKey) {
+        this._overKey = k;
+        g.startFanfare(y.wn === 'player');
+        g.audio.applause(y.wn === 'player');
+      }
+    } else {
+      this._overKey = '';
+    }
+  }
+
+  /** Aplica la bola recibida por red (solo cuando el dueño es el rival). */
+  applyBallStream(ball, dt) {
+    const s = this.remoteBall;
+    if (!s) return false;
+    const tmp = this._tv || (this._tv = new THREE.Vector3());
+    NetLink.posFromNet(s.p, tmp);
+    const f = 1 - Math.exp(-14 * dt);
+    ball.pos.lerp(tmp, f);
+    NetLink.vecFromNet(s.v, tmp);
+    ball.vel.lerp(tmp, 1 - Math.exp(-10 * dt));
+    if (s.s) ball.spin.set(s.s[0], s.s[1], s.s[2]);
+    return true;
+  }
+
+  /** Host: aplica golpeos pendientes del invitado; ambos: suena la bola rival. */
+  drainNetwork(game) {
+    // eventos del rival (botes/red/suelo): al marco LOCAL
+    if (this._inEvs.length) {
+      const C = NetLink.TABLE_CZ;
+      const evs = this._inEvs; this._inEvs = [];
+      for (const [t, x, y, z] of evs) {
+        const lx = -x, lz = -3.2 - z;
+        const pos = new THREE.Vector3(lx, y, lz);
+        if (t === 'T') game.events.push({ type: 'table', side: lz > C ? 'player' : 'ai', speed: 1.5, pos });
+        else if (t === 'N') game.events.push({ type: 'net', speed: 1.5, pos });
+        else if (t === 'F') game.events.push({ type: 'floor', speed: 1.5, pos });
+        else if (t === 'W') game.events.push({ type: 'wall', speed: 1.5, pos });
+      }
+    }
+    // golpeos del rival (solo el anfitrión valida y puntúa)
+    if (this.role === 'host' && this._pendingHits.length) {
+      const hits = this._pendingHits; this._pendingHits = [];
+      for (const h of hits) {
+        const g = game;
+        NetLink.posFromNet(h.p, g.ball.pos);
+        NetLink.vecFromNet(h.v, g.ball.vel);
+        if (h.s) g.ball.spin.set(h.s[0], h.s[1], h.s[2]);
+        this.owner = 'guest';
+        g.audio.paddle(
+          THREE.MathUtils.clamp(g.ball.pos.x / 2.5, -1, 1),
+          Math.min(1, g.ball.vel.length() / 9),
+        );
+        g.haptic(g.paddleHand, 0.3, 40);
+        if (h.sv) g.rules.beginServeRally('ai');
+        else g.processIntents(g.rules.registerPaddleHit('ai'));
+      }
+    }
+  }
+
+  onPeerGone(msg) {
+    const wasOnline = this.online;
+    this.teardown();
+    this.setStatus('off', wasOnline ? msg : '');
+    if (wasOnline) this.game?.onNetEnded?.(msg);
+  }
+
+  cancel() {
+    this.teardown();
+    this.setStatus('off', '');
+  }
+
+  hangup() { this.send({ k: 'bye' }); this.onPeerGone('Has cerrado la conexión'); }
+
+  teardown() {
+    try { this.conn?.close(); } catch { /* */ }
+    try { this.call?.close(); } catch { /* */ }
+    try { this.peer?.destroy(); } catch { /* */ }
+    try { this.micStream?.getTracks().forEach((t) => t.stop()); } catch { /* */ }
+    if (this.remoteAudio) { try { this.remoteAudio.srcObject = null; } catch { /* */ } }
+    this.conn = null; this.call = null; this.peer = null; this.micStream = null;
+    this.online = false;
+    this.remotePaddle = null; this.remoteBall = null;
+    this._outEvs = []; this._inEvs = []; this._pendingHits = [];
+    this.voiceState = 'off';
+    this.owner = 'host';
+  }
 }

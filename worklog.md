@@ -588,3 +588,60 @@ Stage Summary:
 - Pendiente visor: sensación de dificultad (media ahora devuelve mucho más;
   la adaptativa + supervivencia siguen escalando), legibilidad del haz y
   naturalidad del swing.
+
+---
+Task ID: 22
+Agent: Super Z (main agent)
+Task: v2.18 (saque fácil + panel desbordado + estela) y v2.19 (multijugador online + voz)
+
+Work Log:
+- FEEDBACK de varios usuarios: (1) saque difícil, (2) panel lateral con texto
+  sobrepasado, (3) falta opción para ocultar la estela; después, añados
+  grandes: (4) jugar contra otra persona en remoto y (5) voz entre ambos.
+- v2.18 · SAQUE: gatillo de CUALQUIER mando lanza (antes solo mano libre);
+  eliminada la puerta del punto muerto (cualquier contacto tras el toss vale,
+  el asistente findServeVelocity endereza igual); tossMinRise 0.14→0.06;
+  serveAssistVy 2.6→3.1 (más tiempo de vuelo); serveExtraReach 0.06→0.09;
+  serveEndLineTol 0.10→0.25; mensajes reescritos ("¡Golpea la bola hacia la
+  mesa!", "Tu saque · GATILLO para lanzar y golpear").
+- v2.18 · PANELES: createCalibPanel re-espaciado (y 224→214, paso 29→25; la
+  última línea caía en y=514 fuera del canvas 512); marcador: mensaje con
+  auto-ajuste de fuente (measureText, 40→22 px) en vez del recorte a 46 chars.
+- v2.18 · ESTELA: showTrail persistente (ppxr_trail_v1), trailObj.visible,
+  fila EXTRAS en el menú con [Ambiente][Estela] basculantes; menú compactado
+  (cierre en y≤568).
+- v2.19 · RED (NetLink en part2, PeerJS 1.5.4 incrustado en el HTML): salas
+  'ppxr3-XXXXX' (código sin 0/O/1/I); anfitrión autoridad de reglas, invitado
+  con reglas sombra (applySync); dueño de la bola = último golpeador, emite a
+  20 Hz pos/vel/spin; el no-dueño sigue la emisión (lerp) y solo testa el
+  contacto de SU pala (testPaddleContact nuevo en part1); espejo de mundo =
+  rotación 180° en Y sobre el centro de mesa (x,z → -x, -3.2-z), quaternion
+  premultiplicado por (0,1,0,0) [corregido: era 90° por error]; golpes viajan
+  como {k:'h'} y el anfitrión los valida/registra; eventos T/N/F/W marcados
+  _net para no hacer eco; revancha y cambio de modo del invitado por mensajes;
+  desconexión → partido local con 'la CPU'.
+- v2.19 · VOZ: getUserMedia(audio) al conectar + peer.call (anfitrión llama,
+  invitado responde); <audio autoplay> para el remoto; Voz: Sí/No (tracks
+  enabled); estados asking/on/denied en el panel; sin micrófono se juega igual.
+- v2.19 · MENÚ: páginas main/multi/join con pestañas [AJUSTES][MULTIJUGADOR];
+  página multi con código grande, estado y voz; página join con 5 huecos +
+  teclado 7×5 (31 teclas + ⌫) + CONECTAR/VOLVER; difficulty no-op online.
+- VERIFICACIÓN: verify_v218.py (12 pruebas OK: saque fácil con gatillo de la
+  pala vy=3.1, extraReach 0.09 solo en saque, estela alterna/persiste, marcador
+  largo, calib, regresión menú v2.16) + verify_v219.py (12 pruebas OK con Peer
+  simulado: sala, conexión, protocolo con espejo, sync invitado, ida/vuelta de
+  espejo pos+quat, teclado ABC29→conectado como invitado, voz, colgar×2).
+  test_ai_returns.py: 13/14 (93%) sin regresión. Capturas captura-v219-*.
+- Nota de entorno: en headless, los timers anidados con SwiftShader no disparan
+  de forma fiable — el mock de Peer usa queueMicrotask (artefacto del test,
+  no del juego). Bug real encontrado y corregido: quaternion del espejo.
+- Entrega: index.html 2.21 MB (PeerJS incrustado), ZIP, README v2.18-v2.19,
+  capturas captura-v219-menu-{ajustes,multi,teclado}.png.
+
+Stage Summary:
+- v2.18: el saque lo saca cualquiera (gatillo en ambos mandos, sin punto
+  muerto, margen +50%); el panel lateral ya no corta texto; estela opcional.
+- v2.19: partidas P2P por código de sala de 5 caracteres + voz integrada,
+  todo dentro del mismo HTML autocontenido (PeerJS inline).
+- Pendiente de visor: probar el online entre dos visores reales (latencia,
+  permiso de micro en Meta Quest Browser) y la sensación del saque nuevo.

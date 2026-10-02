@@ -10,6 +10,13 @@ OUT = f"{OUT_DIR}/index.html"
 
 js = "\n\n".join(open(p, encoding="utf-8").read() for p in PARTS)
 
+# --- PeerJS inline (multijugador v2.19) ---
+PEERJS = f"{BASE}/scripts/peerjs.min.js"
+peerjs_js = open(PEERJS, encoding="utf-8").read()
+if "</script>" in peerjs_js.lower():
+    print("ERROR: peerjs.min.js contiene </script>")
+    sys.exit(1)
+
 # --- validación de sintaxis con node (sustituyendo el placeholder) ---
 check = js.replace("__PALA_GLB_B64__", "Zm9v")
 with open("/tmp/game_check.mjs", "w", encoding="utf-8") as f:
@@ -214,10 +221,11 @@ HTML = """<!DOCTYPE html>
     <h1>🏓 PING PONG <span>XR</span></h1>
     <div class="tag">Reglas ITTF · saque con mano libre y física real · pala 3D · Meta Quest 3</div>
     <ul class="keys">
-      <li><b>SAQUE</b> La bola descansa en tu <b>mano libre</b>. Aprieta <b>GRIP</b> y suéltalo hacia arriba: oirás un <b>pitido</b> en el punto muerto — golpea entonces (o al caer). (Gatillo = saque asistido)</li>
+      <li><b>SAQUE</b> La bola descansa en tu <b>mano libre</b>. Pulsa el <b>GATILLO</b> (cualquier mando) para lanzarla y golpéala con la pala; o suelta el <b>GRIP</b> de la mano libre lanzando la mano hacia arriba. Ya no hay que esperar al punto muerto: golpea cuando quieras — el saque se endereza solo.</li>
       <li><b>GOLPE</b> Golpea la bola con la pala (otro mando) desde detrás de la línea de fondo. Zona de impacto muy asistida, aún mayor en el saque: no hace falta milimetrar. El saque debe botar en <b>tu campo</b> y luego en el del rival.</li>
       <li><b>A / X</b> Cambia la pala de mano en cualquier momento</li>
-      <li><b>MENÚ</b> En VR pulsa <b>B</b> (mando derecho): se abre un panel <b>sobre tu muñeca libre</b>. Apunta con <b>cualquier mando</b> (la pala también tiene láser) y elige con el <b>gatillo</b>: modo (Partido / Supervivencia), dificultad de la CPU, sala (Pabellón · Neón · Atardecer · Ártico), ambiente de torneo y revancha. Todo se aplica al instante y se recuerda entre sesiones.</li>
+      <li><b>MENÚ</b> En VR pulsa <b>B</b> (mando derecho): se abre un panel <b>sobre tu muñeca libre</b>. Apunta con <b>cualquier mando</b> (la pala también tiene láser) y elige con el <b>gatillo</b>: modo (Partido / Supervivencia), dificultad de la CPU, sala (Pabellón · Neón · Atardecer · Ártico), ambiente de torneo, estela de la bola y revancha. Todo se aplica al instante y se recuerda entre sesiones.</li>
+      <li><b>ONLINE</b> En el menú, pestaña <b>MULTIJUGADOR</b>: crea una sala, comparte el <b>código de 5 caracteres</b> y tu rival lo introduce en su menú. Partida P2P directa entre visores (ambos con la web abierta) e <b>incluso podréis hablaros</b>: acepta el permiso de micrófono.</li>
       <li><b>REGLAS</b> Rozar la red en saque y pasar = <b>LET</b> (se repite) · volear antes del bote o dar doble golpe = falta · partido a 11 con ventaja de 2</li>
       <li><b>EFECTO</b> Barre la pala de abajo a arriba al golpear para dar lift; de arriba abajo para cortar</li>
       <li><b>ENTRENAR</b> En VR pulsa <b>Y</b> (en cualquier momento): máquina de bolas + panel para ajustar la pala con los sticks. Guarda tus agarres con nombre y cárgalos siempre.</li>
@@ -281,11 +289,15 @@ HTML = """<!DOCTYPE html>
 <script type="module">
 __GAME_JS__
 </script>
+<!-- v2.19: PeerJS incrustado (P2P WebRTC para multijugador + voz) -->
+<script>
+__PEERJS_JS__
+</script>
 </body>
 </html>
 """
 
-html = HTML.replace("__GAME_JS__", js)
+html = HTML.replace("__GAME_JS__", js).replace("__PEERJS_JS__", peerjs_js)
 os.makedirs(OUT_DIR, exist_ok=True)
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)

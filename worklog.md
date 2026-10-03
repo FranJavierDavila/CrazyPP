@@ -1352,3 +1352,22 @@ Stage Summary:
   (solo música) y que el campo no muestra ningún estímulo extra.
 - Siguiente fase declarada: estética del entorno ("vidilla": público, mejor
   iluminación) SIN carteles con mensajes.
+
+---
+Task ID: 33
+Agent: Super Z (main agent)
+Task: v2.31 — Rescate definitivo del audio en VR (Quest: ni música, ni efectos, ni narrador dentro del visor; la háptica sí funcionaba)
+
+Work Log:
+- Diagnóstico: el contexto de audio nace fuera de la sesión (tap en la portada) y al entrar en inmersivo la Quest re-asigna la salida; el contexto queda 'running' pero MUDO. Todos los rescates previos (kick/watchdog/tryFreshRunning) solo actuaban si el estado NO era 'running' -> un 'running'-pero-mudo nunca se reemplazaba. Confirmado con diffs git (v2.27→v2.30 no tocaron la ruta XR de audio; el problema venía del arranque v2.28 + política del navegador).
+- game_part1.js (GameAudio): nuevo flag vrBound (contexto confirmado dentro del casco); markVRStart(); nudgeSink() con ctx.setSinkId('') (re-apunta la salida al dispositivo vigente sin destruir nada); gestureKick() para gestos XR (re-crea el contexto dentro del gesto si !vrBound aunque el actual esté 'running'); adopt() rearranca música y murmullo al cerrar el contexto viejo; ventana de decisión de tryFreshRunning 600→1200 ms; _loadMusic decodifica UNA sola vez (eliminada la carrera _musicLoading que dejaba la música sin cargar si el contexto cambiaba durante el fetch).
+- game_part3.js: enterVR() re-crea el contexto tras setSession DENTRO de la ventana de activación del tap (capa principal); onSessionStart usa markVRStart() + rebind condicional (!vrBound); hooks XR (selectstart/squeezestart/inputsourceschange) y onSelectStart llaman gestureKick(); onSessionEnd resetea vrBound; reintento tardío 3400 ms también si !vrBound.
+- build_html.py: cabecera v2.31; rebuild index.html (5,66 MB, sintaxis OK).
+- verify_v231.py (nuevo): 32 comprobaciones — estáticos (nuevos métodos, enterVR en-gesto, hooks XR, música single-decode, adopt() rearranca, 1200 ms) + funcionales (gestureKick 2D no recrea; VR simulado recrea y adopta con vrBound=true; throttle evita churn; onSessionEnd limpia; música reutiliza buffer) + regresión portada/menú. TODO OK.
+- Regresiones: verify_v229 TODO OK · verify_v230 TODO OK · test_ai_returns 13/14 (baseline).
+- ZIP regenerado (5,31 MB, unzip -t OK, marcadores v2.31 dentro) y README actualizado (sección v2.31).
+
+Stage Summary:
+- v2.31 cerrada: 4 capas de rescate de audio en VR (contexto en el gesto de solicitud, setSinkId, gestureKick en gestos XR, prueba de sonido manual) + música/murmullo a prueba de swaps de contexto.
+- Entregado download/pingpong-quest3-v2.zip (index.html v2.31 + assets/pala.glb).
+- Pendiente (deuda): replicación P2P de SFX/voces por DataConnection y spawn host/guest en lados opuestos; siguiente fase declarada: embellecer el entorno (público, vallas decorativas, líneas de suelo, iluminación).

@@ -3,6 +3,21 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.31: RESCATE DEFINITIVO DEL AUDIO EN VR (Quest). Síntoma: dentro del
+#        visor ni música, ni efectos, ni narrador (la háptica sí). Causa: el
+#        contexto de audio nace fuera de la sesión (tap de la portada) y al
+#        entrar en inmersivo la Quest re-asigna la salida de audio; el
+#        contexto queda 'running' pero MUDO, y todos los rescates anteriores
+#        solo actuaban si el estado NO era 'running' — uno 'running'-pero-
+#        mudo nunca se reemplazaba. Capas nuevas: (1) re-creación del
+#        contexto DENTRO del gesto de solicitud de la sesión (enterVR, tras
+#        setSession: aún dentro de la activación del tap), (2) setSinkId('')
+#        re-apunta el contexto vivo a la salida vigente, (3) gestureKick() en
+#        gatillo/grip/input: si no hay contexto confirmado (vrBound) se
+#        re-crea dentro del gesto XR aunque el actual diga 'running', (4)
+#        ventana de decisión de tryFreshRunning 600->1200 ms, (5) la música
+#        se decodifica UNA vez (el buffer sirve para cualquier contexto) y
+#        música+murmullo rearrancan solos al adoptar un contexto nuevo.
 # v2.30: PORTADA SIN PARTIDA — en 2D no se juega nada de fondo: sin demo
 #        IA vs IA, sin narrador cantando puntos, sin física ni sonidos; solo
 #        escena + cámara orbital + música. FUERA el botón "Ver demo en

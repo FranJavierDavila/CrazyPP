@@ -671,6 +671,18 @@ class PingPongGame {
       { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'dom-overlay'] },
     );
     await this.renderer.xr.setSession(session);
+    // v2.31 · RE-VÍNCULO DENTRO DEL GESTO (capa principal del rescate de
+    // audio en VR): requestSession+setSession resuelven todavía dentro de la
+    // ventana de activación del tap sobre JUGAR EN VR. Un contexto creado
+    // AQUÍ nace 'running' y ligado a la salida vigente (el casco). Si
+    // sessionstart ya adoptó uno 'running', vrBound lo evita: no hay churn.
+    if (!this.audio.vrBound) {
+      this.audio.rebind('entrada en VR: contexto dentro del gesto de solicitud');
+    }
+    this.audio.nudgeSink();
+    // Primer gatillo de la sesión = segunda oportunidad dentro de gesto real:
+    // los hooks XR (selectstart/squeezestart) llaman gestureKick(), que
+    // re-crea el contexto si sigue sin estar confirmado (vrBound).
   }
 
   setDifficulty(d) {
@@ -1672,17 +1684,19 @@ class PingPongGame {
       this.drawMenu();
     }
     this.rules.message = T('menu_open');
-    // RE-VINCULACIÓN al entrar en VR: el contexto creado en 2D puede perder la
-    // salida al pasar a inmersivo. Se crea uno nuevo DENTRO de la sesión
-    // (ligado a la salida activa del casco) y se adopta SOLO si arranca
-    // 'running'; si no, se conserva el anterior (nunca queda peor).
-    this.audio.xrActive = true;
-    this.audio.rebind('entrada en VR: salida re-vinculada al casco');
+    // RE-VINCULACIÓN al entrar en VR: el contexto creado en 2D puede perder
+    // la salida al pasar a inmersivo ('running' pero MUDO). v2.31:
+    // markVRStart() re-apunta la salida al dispositivo vigente (setSinkId) y
+    // se re-crea el contexto SOLO si aún no hay uno confirmado (vrBound).
+    this.audio.markVRStart();
+    if (!this.audio.vrBound) {
+      this.audio.rebind('entrada en VR: salida re-vinculada al casco');
+    }
     // Reintentos suaves: si el contexto nuevo nace suspendido, kick() reanuda
     // y el tardío prueba un contexto fresco (también adopta-solo-si-running).
     for (const t of [400, 1200, 2500]) window.setTimeout(() => this.audio.kick(), t);
     window.setTimeout(() => {
-      if (this.audio.ctx?.state !== 'running') {
+      if (this.audio.ctx?.state !== 'running' || !this.audio.vrBound) {
         this.audio.tryFreshRunning('reintento tardío en VR');
       }
     }, 3400);
@@ -1695,13 +1709,16 @@ class PingPongGame {
       '· recreaciones:', this.audio.rebuilds,
     );
     // gatillo y grip DENTRO de la sesión son eventos de intención del usuario:
-    // sirven para reactivar el audio si el navegador lo suspendió en VR
+    // sirven para reactivar el audio si el navegador lo suspendió en VR.
+    // v2.31: gestureKick() — si el audio sigue sin estar confirmado en el
+    // casco (vrBound), RE-CREA el contexto dentro de este gesto aunque el
+    // actual diga 'running' (un contexto nacido fuera puede ser mudo).
     // v2.29: por SESIÓN (antes, el guardia __audioHooks persistía y al
     // re-entrar en VR con una sesión NUEVA el selectstart ya no reactivaba
     // el audio -> mudez hasta reiniciar la página)
     if (session && this.__audioHooksSession !== session) {
       this.__audioHooksSession = session;
-      const kickAudio = () => this.audio.kick();
+      const kickAudio = () => this.audio.gestureKick();
       session.addEventListener('selectstart', kickAudio);
       session.addEventListener('squeezestart', kickAudio);
       session.addEventListener('inputsourceschange', kickAudio);
@@ -1732,6 +1749,7 @@ class PingPongGame {
     // Salida de VR: re-vincular el audio a la salida 2D del navegador
     // (adoptar-solo-si-running; el contexto del casco se cierra tras el cambio).
     this.audio.xrActive = false;
+    this.audio.vrBound = false;   // v2.31: sin contexto confirmado hasta la próxima sesión
     this.audio.rebind('salida de VR: salida re-vinculada al navegador');
     // v2.29: la música del menú se apaga al salir de VR (la portada reanuda
     // la suya vía __ppMusic.resume dentro de onXRState)
@@ -1772,7 +1790,7 @@ class PingPongGame {
 
   onSelectStart(i) {
     if (this.disposed) return;
-    this.audio.ensure();
+    this.audio.gestureKick();   // v2.31: gesto XR = rescate de audio si hace falta
     if (!this.renderer.xr.isPresenting) return;
     // v2.24: guardia anti-duplicado por mando (three.js puede entregar el
     // mismo 'selectstart' por varios espacios; dos disparos reales humanos

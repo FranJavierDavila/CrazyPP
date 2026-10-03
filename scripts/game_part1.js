@@ -421,6 +421,13 @@ class GameAudio {
     this.hadGesture = false;   // ya hubo gesto de usuario (clic, gatillo XR…)
     this.rebuilds = 0;
     this.xrActive = false;     // sesión XR inmersiva activa (lo marca el juego)
+    // v2.31 · ¿hay ya un contexto CONFIRMADO dentro del casco? Un contexto
+    // creado fuera de la sesión puede quedar 'running' pero MUDO en VR (la
+    // Quest cambia el dispositivo de salida al entrar en inmersivo). Los
+    // rescates antiguos solo actuaban si el estado NO era 'running': un
+    // 'running'-pero-mudo nunca se reemplazaba -> silencio total y eterno.
+    this.vrBound = false;
+    this.ambWanted = false;    // v2.31: el murmullo debe seguir tras un swap de contexto
     this._lastAlive = 0;
     this._lastCT = -1;         // último currentTime medido (watchdog)
     this._ctAdvanced = true;   // ¿el reloj de audio avanza? (estado 'running' vivo)
@@ -459,6 +466,7 @@ class GameAudio {
     this._musicSrc = null;
     this._musicGain = null;
     this._musicLoading = false;
+    this._musicCtx = null;   // v2.31: solo informativo (el buffer sirve para cualquier ctx)
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
@@ -525,6 +533,47 @@ class GameAudio {
    * de VR, rescate del watchdog) el _wire() la recarga y la reanuda sola.
    * Preferencia compartida con el botón 🔊 de la portada (pp_music). */
 
+  /** v2.31 · INICIO DE SESIÓN INMERSIVA: marca XR activa y re-apunta la
+   *  salida del contexto vigente al dispositivo por defecto (el casco). */
+  markVRStart() {
+    this.xrActive = true;
+    this.nudgeSink();
+  }
+
+  /** v2.31 · Re-liga el contexto a la SALIDA POR DEFECTO ACTUAL. Al entrar
+   *  en VR la Quest cambia el dispositivo de audio; un contexto creado antes
+   *  puede quedar anclado a la salida 2D (sigue 'running' pero MUDO).
+   *  setSinkId('') re-apunta al dispositivo vigente (el casco) SIN necesitar
+   *  gesto ni recrear nada. Si no está soportado, no hace nada. */
+  nudgeSink() {
+    try {
+      if (this.ctx && this.ctx.state === 'running' &&
+          typeof this.ctx.setSinkId === 'function') {
+        const p = this.ctx.setSinkId('');
+        if (p && p.catch) p.catch(() => { /* sin efecto */ });
+        console.info("[Audio] setSinkId('') — salida re-apuntada al dispositivo por defecto");
+      }
+    } catch { /* no soportado: sin efecto */ }
+  }
+
+  /** v2.31 · GESTO XR (gatillo/grip/input conectado): activación de usuario
+   *  garantizada DENTRO de la sesión. Si el audio aún no está confirmado en
+   *  el casco (vrBound) se RE-CREA el contexto aquí aunque el actual diga
+   *  'running': uno nacido fuera de la sesión puede estar 'running' y ser
+   *  mudo; uno nacido en el gesto nace 'running' y ligado al casco. */
+  gestureKick() {
+    this.hadGesture = true;
+    this.ensure();
+    if (this.xrActive && !this.vrBound) {
+      this.rebind('gesto XR: contexto re-creado dentro del casco');
+      return;
+    }
+    if (this.ctx && this.ctx.state !== 'running') {
+      void this.ctx.resume().catch(() => {});
+      this.tryFreshRunning('kick (resume sin efecto)');
+    }
+  }
+
   /** Conmutador de música (menú Opciones y botón 🔊 de la portada). */
   setMusic(on) {
     this.musicOn = !!on;
@@ -545,12 +594,16 @@ class GameAudio {
     if (w) this.startMusic(); else this.stopMusic();
   }
 
-  /** Descarga y decodifica la pista para el contexto dado (una sola vez). */
-  _loadMusic(ctx) {
-    if (!ctx || this._musicLoading) return;
-    if (this._musicBuf && this._musicCtx === ctx) return;
+  /** Descarga y decodifica la pista (UNA sola vez: el AudioBuffer sirve
+   *  para CUALQUIER contexto — BufferSource remuestrea solo; v2.31 elimina
+   *  la carrera _musicLoading que dejaba la música sin cargar si el contexto
+   *  cambiaba mientras llegaba el fetch, p. ej. al entrar en VR). */
+  _loadMusic() {
+    if (this._musicBuf || this._musicLoading) return;
     const url = (typeof window !== 'undefined') ? window.__PP_MUSIC_URL : null;
     if (!url || typeof fetch !== 'function') return;
+    const ctx = this.ctx;
+    if (!ctx) return;
     this._musicLoading = true;
     fetch(url).then((r) => r.arrayBuffer()).then((ab) =>
       new Promise((res, rej) => {
@@ -558,9 +611,8 @@ class GameAudio {
       }),
     ).then((buf) => {
       this._musicBuf = buf;
-      this._musicCtx = ctx;
       console.info('[Audio] música lista (' + (buf.duration || 0).toFixed(1) + ' s)');
-      if (this.ctx === ctx && this.musicWanted && this.musicOn) this.startMusic();
+      if (this.ctx && this.musicWanted && this.musicOn) this.startMusic();
     }).catch(() => { /* sin música: nunca rompe el juego */ })
       .finally(() => { this._musicLoading = false; });
   }
@@ -571,7 +623,7 @@ class GameAudio {
       this.kick();
       if (!this.ctx || !this.master || !this.musicOn || !this.musicWanted) return;
       if (this.musicPlaying) return;
-      if (!this._musicBuf || this._musicCtx !== this.ctx) { this._loadMusic(this.ctx); return; }
+      if (!this._musicBuf) { this._loadMusic(); return; }
       const src = this.ctx.createBufferSource();
       src.buffer = this._musicBuf;
       src.loop = true;
@@ -682,6 +734,15 @@ class GameAudio {
       this.ctx = fresh;
       try { this._wire(fresh); } catch { /* playOsc/playNoise quedan inermes */ }
       this._wdFails = 0;
+      // v2.31: el contexto antiguo se CERRÓ — su música y su murmullo
+      // murieron con él. Rearrancarlos en el nuevo (si tocaba haberlos).
+      this.musicPlaying = false;
+      if (this._amb) { this._amb = null; }
+      if (this.musicWanted && this.musicOn) this.startMusic();
+      if (this.ambWanted && this.ambience) {
+        window.setTimeout(() => this.startMurmur(), 250);
+      }
+      if (this.xrActive) this.vrBound = true;   // confirmado DENTRO del casco
       console.info('[Audio] contexto NUEVO ADOPTADO (running) ·', reason);
       if (this.xrActive) this.blipAlive();
     };
@@ -695,10 +756,12 @@ class GameAudio {
       if (done || !fresh) return;
       if (fresh.state === 'running') { adopt(); return; }
       void fresh.resume().catch(() => {});
+      // v2.31: 1200 ms (600 se quedaba corto en la Quest; el resume del
+      // contexto recién creado puede tardar más en decidirse)
       window.setTimeout(() => {
         if (done || !fresh) return;
         if (fresh.state === 'running') adopt(); else discard();
-      }, 600);
+      }, 1200);
     };
     decide();
     return true;
@@ -999,6 +1062,7 @@ class GameAudio {
   startMurmur() {
     try {
       this.kick();
+      this.ambWanted = true;   // v2.31: debe sobrevivir a un swap de contexto
       if (!this.ctx || !this.master || this._amb || !this.ambience) return;
       if (!this._ambBuffer) {
         const len = Math.floor(this.ctx.sampleRate * 2);
@@ -1034,6 +1098,7 @@ class GameAudio {
   }
 
   stopMurmur() {
+    this.ambWanted = false;   // v2.31
     const amb = this._amb;
     if (!amb || !this.ctx) return;
     this._amb = null;

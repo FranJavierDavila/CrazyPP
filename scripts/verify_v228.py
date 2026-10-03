@@ -61,14 +61,14 @@ async def main():
                    heroOk: !!hero && hero.src.startsWith('data:image/jpeg'),
                    actLang: act ? act.dataset.lang : null,
                    status: st, playEs, playEn,
-                   demo: !!document.getElementById('spectate'),
+                   demoGone: !document.getElementById('spectate'),   // v2.30
                    mute: !!document.getElementById('mutebtn') };
         }""")
         check(not land["hidden"], "portada visible al cargar")
         check(land["heroOk"], "hero con arte JPEG incrustado")
         check(land["actLang"] == "es", "idioma por defecto ES activo")
         check(land["playEs"] != "none" and land["playEn"] == "none", "botón JUGAR (ES)")
-        check(land["demo"] and land["mute"], "enlace demo + botón música presentes")
+        check(land["demoGone"] and land["mute"], "v2.30: sin demo + botón música presentes")
         await page.screenshot(path="/home/z/my-project/download/captura-v228-portada-es.png")
 
         # cambio de idioma con la pala EN
@@ -79,7 +79,7 @@ async def main():
           playEs: getComputedStyle(document.getElementById('playEs')).display,
           playEn: getComputedStyle(document.getElementById('playEn')).display,
           lang: window.__TLang(), stored: localStorage.getItem('pp_lang'),
-          demo: document.getElementById('spectate').textContent,
+          demoGone: !document.getElementById('spectate'),   // v2.30
         })""")
         check(en["act"] == "en" and en["lang"] == "en" and en["stored"] == "en",
               "pala EN selecciona inglés y persiste")
@@ -172,8 +172,11 @@ async def main():
         check(startRes["stateAfter"] in ("serve", "rally"), "EMPEZAR deja el partido en marcha")
 
         # gate del saque IA comprobado con el bucle real
+        # (v2.30: en 2D el juego está en pausa — el gate se prueba con el
+        #  modo de pruebas __pp2DPlay, igual que un partido en VR)
         gate = await page.evaluate("""() => new Promise((res) => {
             const g = window.__game;
+            window.__pp2DPlay = true;
             g.rules.startMatch('match');
             g.rules.server = 'ai';
             g.aiServeTimer = 0.4; g.aiServeWait = 9; g.aiToss = null;

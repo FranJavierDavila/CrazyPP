@@ -156,10 +156,10 @@ async def main():
             playEs: getComputedStyle(document.getElementById('playEs')).display,
             playEn: getComputedStyle(document.getElementById('playEn')).display,
             langBtnActive: document.querySelector('[data-lang=en]').classList.contains('active'),
-            demo: document.getElementById('spectate').textContent,
+            demoGone: !document.getElementById('spectate'),   // v2.30: demo retirada
         })""")
         if dom["playEs"] != "none" or dom["playEn"] == "none" or not dom["langBtnActive"] \
-                or dom["demo"] != "Watch demo on screen (no headset)":
+                or not dom["demoGone"]:
             fails.append(f"portada EN: {json.dumps(dom)}")
 
         # anuncio EN cubierto por el banco en inglés

@@ -576,60 +576,9 @@ function createRoom() {
   g.add(ring);
   g.userData.ringMat = ring.material;
 
-  // ---------- VALLAS PUBLICITARIAS (v2.11 · ambiente de torneo) ----------
-  // Vallas bajas tipo LED alrededor de la pista (van DENTRO de la sala:
-  // en passthrough se ocultan con ella).
-  const mkAd = (txt, bg, fg) => {
-    const c = document.createElement('canvas');
-    c.width = 512; c.height = 96;
-    const a = c.getContext('2d');
-    if (a) {
-      a.fillStyle = bg;
-      a.fillRect(0, 0, 512, 96);
-      a.fillStyle = fg;
-      a.font = '900 58px system-ui, sans-serif';
-      a.textAlign = 'center';
-      a.textBaseline = 'middle';
-      a.fillText(txt, 256, 52);
-    }
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    const m = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.35, 0.26),
-      new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }),
-    );
-    m.position.y = 0.13;
-    return m;
-  };
-  const ads = [
-    ['PING PONG XR', '#101418', '#e8b45a'],
-    ['ARENA 480 Hz', '#e8b45a', '#101418'],
-    ['MAGNUS SPORT', '#2f4a2a', '#9fd98a'],
-    ['TOPSPIN CLUB', '#12324a', '#57c7ff'],
-    ['QUEST 3 CUP', '#101418', '#f2f4f6'],
-    ['EFECTO · SPIN', '#3a1c14', '#ff8a5c'],
-    ['ITTF ARENA', '#1c1c2e', '#c9b3ff'],
-  ];
-  let adIdx = 0;
-  const placeAd = (x, z, rotY) => {
-    const [txt, bg, fg] = ads[adIdx % ads.length];
-    adIdx++;
-    const m = mkAd(txt, bg, fg);
-    m.position.x = x;
-    m.position.z = z;
-    m.rotation.y = rotY;
-    g.add(m);
-  };
-  // laterales (mirando a la mesa)
-  placeAd(-1.95, -0.9, Math.PI / 2);
-  placeAd(-1.95, -2.5, Math.PI / 2);
-  placeAd(1.95, -0.9, -Math.PI / 2);
-  placeAd(1.95, -2.5, -Math.PI / 2);
-  // fondo de la CPU (mirando al jugador)
-  placeAd(-0.8, -4.35, 0);
-  placeAd(0.8, -4.35, 0);
-  // detrás del jugador
-  placeAd(0, 2.1, Math.PI);
+  // v2.30: FUERA las vallas publicitarias del suelo — no aportan nada y
+  // distraen al jugador (petición expresa: "fuera todos los carteles del
+  // suelo con los mensajes"). La pista queda limpia.
 
   return g;
 }
@@ -1175,73 +1124,6 @@ function createConfetti() {
   };
 
   return { points, update };
-}
-
-/** Mini-indicador del estado del audio (solo llama la atención si algo va
- *  mal): verde tenue "♪" cuando todo suena; ámbar/rojo con mensaje cuando el
- *  contexto está suspendido o mudo. Segunda línea de diagnóstico técnico:
- *  reloj de audio (T+ avanza / T- congelado), nº de contextos creados, foco
- *  de la ventana y sesión VR. Sirve de diagnóstico a la vista en VR. */
-function createAudioStatus() {
-  const group = new THREE.Group();
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 88;
-  const ctx = canvas.getContext('2d');
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.84, 0.145),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
-  );
-  group.add(mesh);
-  // Justo bajo el marcador (que está a y=1.95 con 0,85 m de alto)
-  group.position.set(0, 1.44, DIMS.roomFrontZ + 0.9);
-
-  let last = '';
-  const update = (state, info) => {
-    const alive = !info || info.alive !== false;
-    const builds = info?.builds ?? 0;
-    const focus = !!(info && info.focus);
-    const sig = state + '|' + (alive ? 1 : 0) + '|' + (focus ? 1 : 0) + '|' + builds;
-    if (sig === last) return;
-    last = sig;
-    ctx.clearRect(0, 0, 512, 88);
-    ctx.fillStyle = 'rgba(8,10,13,0.72)';
-    ctx.beginPath();
-    ctx.roundRect(6, 6, 500, 76, 30);
-    ctx.fill();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    let color = '#69d97e';
-    let label = '♪ audio: OK';
-    if (state === 'suspended' || state === 'interrupted') {
-      color = '#f0b429';
-      label = '♪ audio: reconectando… (pulsa el gatillo)';
-    } else if (state === 'closed' || state === 'failed') {
-      color = '#ff6b57';
-      label = '♪ audio: mudo — pulsa el gatillo';
-    } else if (state !== 'running') {
-      color = '#8b949c';
-      label = '♪ audio: ' + state;
-    } else if (!alive) {
-      // estado 'running' pero reloj de audio congelado: grafo zombi
-      color = '#f0b429';
-      label = '♪ audio: reloj parado — pulsa el gatillo';
-    }
-    ctx.fillStyle = color;
-    ctx.font = '700 34px system-ui, sans-serif';
-    ctx.fillText(label, 256, 30);
-    // línea 2 · diagnóstico técnico (reportar esto si el sonido falla)
-    const bits = [alive ? 'T+' : 'T-', 'ctx ' + builds, 'foco ' + (focus ? 'sí' : 'NO')];
-    if (info?.xr) bits.push('VR');
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.font = '600 25px ui-monospace, SFMono-Regular, Menlo, monospace';
-    ctx.fillText(bits.join(' · '), 256, 64);
-    tex.needsUpdate = true;
-  };
-  update('running');
-  return { group, update };
 }
 
 /* =====================================================================

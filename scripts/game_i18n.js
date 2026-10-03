@@ -244,9 +244,8 @@ const I18N_STRINGS = {
     ov_train_btn: 'ENTRENAR GOLPES EN VR · ajustar pala',
     ov_vr: 'ENTRAR EN VR',
     ov_ar: '🏠 PASSTHROUGH · tu habitación',
-    ov_demo: 'Ver demo en pantalla (sin visor)',
     music_title: 'Música (portada y menú VR)',
-    ov_hint: '<b>En el visor:</b> sube esta carpeta a <b>Netlify Drop</b> y abre el enlace con el <b>Meta Quest Browser</b> (requiere HTTPS). Sin visor, el modo demo juega IA contra IA.',
+    ov_hint: '<b>En el visor:</b> sube esta carpeta a <b>Netlify Drop</b> y abre el enlace con el <b>Meta Quest Browser</b> (requiere HTTPS).',
     ov_lang: '🌐 Idioma / Language',
   },
 
@@ -465,9 +464,8 @@ const I18N_STRINGS = {
     ov_train_btn: 'TRAIN SHOTS IN VR · adjust paddle',
     ov_vr: 'ENTER VR',
     ov_ar: '🏠 PASSTHROUGH · your room',
-    ov_demo: 'Watch demo on screen (no headset)',
     music_title: 'Music (landing and VR menu)',
-    ov_hint: '<b>On the headset:</b> upload this folder to <b>Netlify Drop</b> and open the link with the <b>Meta Quest Browser</b> (HTTPS required). Without a headset, demo mode plays AI vs AI.',
+    ov_hint: '<b>On the headset:</b> upload this folder to <b>Netlify Drop</b> and open the link with the <b>Meta Quest Browser</b> (HTTPS required).',
     ov_lang: '🌐 Language / Idioma',
   },
 };

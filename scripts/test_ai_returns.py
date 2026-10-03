@@ -71,7 +71,14 @@ async def main():
         page.on("pageerror", lambda e: errors.append(str(e)))
         await page.goto(f"file://{HTML}")
         await page.wait_for_timeout(4200)
-        await page.click("#spectate")
+        # v2.30: la portada 2D ya no juega sola — el rally sintético necesita
+        # el modo de pruebas __pp2DPlay (IA + física + reglas en 2D)
+        await page.evaluate("() => { window.__pp2DPlay = true; }")
+        await page.evaluate("""() => {
+            // el HUD de espectador se retiró (v2.30); nada más que hacer
+            const g = window.__game;
+            g.rules.startMatch();
+        }""")
         await page.wait_for_timeout(500)
 
         for i in range(TRIALS):

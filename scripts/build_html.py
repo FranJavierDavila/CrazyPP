@@ -3,6 +3,14 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.30: PORTADA SIN PARTIDA — en 2D no se juega nada de fondo: sin demo
+#        IA vs IA, sin narrador cantando puntos, sin física ni sonidos; solo
+#        escena + cámara orbital + música. FUERA el botón "Ver demo en
+#        pantalla (sin visor)" y su HUD. FUERA el panel "♪ audio" bajo el
+#        marcador (estímulo de depuración que desconcentraba) y FUERA las
+#        vallas publicitarias del suelo (carteles con mensajes). La partida
+#        solo existe dentro del visor (window.__pp2DPlay=true reactiva el
+#        rally 2D SOLO en pruebas headless).
 # v2.29: COLISIÓN PRECISA EN GOLPEOS RÁPIDOS (cooldown 0,24 s contra el doble
 #        golpe fantasma, base de la pala interpolada en el barrido, velocidad
 #        de pala más ágil y con techo, sin eventos pala+mesa en el mismo
@@ -260,21 +268,7 @@ HTML = """<!DOCTYPE html>
   #mutebtn:hover { background: rgba(255,255,255,0.16); }
   #mutebtn.off { opacity: 0.55; }
 
-  /* ---------- HUD (modo espectador) ---------- */
-  #hud {
-    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
-    z-index: 15; display: none; align-items: center; gap: 12px;
-    background: rgba(15, 19, 25, 0.88); border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 999px; padding: 9px 10px 9px 18px;
-  }
-  #hud.show { display: flex; }
-  #hud-score { font-weight: 800; font-size: 16px; color: #f2f4f6; letter-spacing: 1px; }
-  #hud-msg { font-size: 13px; color: #aeb9c5; max-width: 46vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #hud-info {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: rgba(232, 180, 90, 0.15); color: #e8b45a;
-    border: 1px solid rgba(232, 180, 90, 0.4); font-size: 14px; font-weight: 700; cursor: pointer;
-  }
+  /* v2.30: eliminado el HUD del modo espectador (la demo se retiró) */
 </style>
 <script type="importmap">
   {
@@ -321,8 +315,6 @@ HTML = """<!DOCTYPE html>
 
     <div id="status">Comprobando compatibilidad con WebXR…</div>
     <div class="footer">
-      <button id="spectate" class="footlink" data-i18n="ov_demo">Ver demo en pantalla (sin visor)</button>
-      <span class="dot">·</span>
       <button id="arbtn" class="footlink" data-i18n="ov_ar">🏠 PASSTHROUGH · tu habitación</button>
     </div>
   </main>
@@ -330,11 +322,7 @@ HTML = """<!DOCTYPE html>
   <button id="mutebtn" data-i18n-title="music_title">🔊</button>
 </div>
 
-<div id="hud">
-  <span id="hud-score">0 : 0</span>
-  <span id="hud-msg">…</span>
-  <button id="hud-info" title="Información">i</button>
-</div>
+<!-- v2.30: eliminado el HUD del modo espectador (la demo se retiró) -->
 
 <script type="module">
 __GAME_JS__

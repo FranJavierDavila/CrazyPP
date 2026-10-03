@@ -330,10 +330,9 @@ class PingPongGame {
     this.rig.add(this.fanfareBanner.group);
     this.confetti = createConfetti();
     this.rig.add(this.confetti.points);
-    // Mini-indicador del estado del audio (bajo el marcador): si el audio
-    // fallara en VR, el propio casco muestra "reconectando / pulsa gatillo".
-    this.audioStatus = createAudioStatus();
-    this.rig.add(this.audioStatus.group);
+    // v2.30: FUERA el mini-indicador "♪ audio" bajo el marcador — era un
+    // estímulo de depuración que desconcentraba al jugador (el diagnóstico
+    // del audio sigue disponible vía consola/tereados, no en el campo visual).
   }
 
   setupControllers() {
@@ -1920,17 +1919,16 @@ class PingPongGame {
     this.lastTime = now;
 
     const presenting = this.renderer.xr.isPresenting;
+    // v2.30 · PORTADA SIN PARTIDA: en 2D (sin visor) el juego está EN PAUSA —
+    // solo escena + cámara orbital + música. Sin IA, sin demo, sin física,
+    // sin reglas, sin sonidos ni narrador. window.__pp2DPlay=true reactiva
+    // el rallies 2D SOLO para las pruebas headless.
+    const active = presenting || this.net.online || window.__pp2DPlay === true;
 
     // vigilancia del audio: si el contexto quedó suspendido a mitad de
     // partida (proximidad del visor, notificación...), o su reloj se
     // congeló con estado 'running' (grafo zombi), se reactiva solo
     this.audio.watchdog(dt);
-    this.audioStatus.update(this.audio.ctx?.state || 'none', {
-      alive: this.audio.clockAlive(),
-      builds: this.audio.rebuilds,
-      focus: document.hasFocus(),
-      xr: !!this.renderer.xr.isPresenting,
-    });
 
     if (presenting && this.recenterFrames > 0) {
       this.updateRecenter();
@@ -1989,6 +1987,7 @@ class PingPongGame {
     }
 
     // 2) IA(s) — en online el rival es humano y llega por red (v2.19)
+    //    v2.30: en portada 2D (inactiva) NADIE juega: sin IA ni demo.
     const canHit = this.rules.state === 'rally';
     const playerPad = this.controllerPaddles[this.paddleHand];
     const oppPadX = presenting
@@ -1998,7 +1997,7 @@ class PingPongGame {
       ? (playerPad.active ? playerPad.pos.z : DIMS.tableCenterZ + DIMS.tableHalfLength + 0.4)
       : this.demoAI.pos.z;
     const aiServing = !this.calib && this.rules.state === 'serve' && this.rules.server === 'ai';
-    const aiHit = (this.calib || this.net.online)
+    const aiHit = (!active || this.calib || this.net.online)
       ? null
       : this.ai.update(dt, this.ball, {
       canHit,
@@ -2008,18 +2007,6 @@ class PingPongGame {
       rallyHits: this.rules.rallyHits,
       holdTarget: aiServing ? this.aiServeStance : null,
     });
-    let demoHit = null;
-    if (!presenting) {
-      const demoServing = !this.calib && this.rules.state === 'serve' && this.rules.server === 'player';
-      demoHit = this.demoAI.update(dt, this.ball, {
-        canHit,
-        validBounce: this.rules.validBounce,
-        oppPadX: this.ai.pos.x,
-        oppPadZ: this.ai.pos.z,
-        rallyHits: this.rules.rallyHits,
-        holdTarget: demoServing ? this.demoServeStance : null,
-      });
-    }
     if (aiHit) {
       this.ball.vel.copy(aiHit);
       // registro opcional para tests headless (solo si un test lo activa)
@@ -2037,18 +2024,12 @@ class PingPongGame {
         Math.min(1, aiHit.length() / 9),
       );
     }
-    if (demoHit) {
-      this.ball.vel.copy(demoHit);
-      this.processIntents(this.rules.registerPaddleHit('player'));
-      this.audio.paddle(
-        THREE.MathUtils.clamp(this.ball.pos.x / 2.5, -1, 1),
-        Math.min(1, demoHit.length() / 9),
-      );
-    }
+    // v2.30: el "jugador demo" del escritorio se retiró — nadie golpea por
+    // el lado del jugador en la portada.
 
     // 3) Preparación del saque
     let holdLock = false;
-    if (this.rules.state === 'serve' && !this.calib) {
+    if (active && this.rules.state === 'serve' && !this.calib) {
       if (this.rules.server === 'player') {
         if (presenting) {
           if (!this.tossed) {
@@ -2136,11 +2117,18 @@ class PingPongGame {
       }
     }
 
-    // 4) Física (solo la pala del mando activo colisiona)
+    // 4) Física (solo la pala del mando activo colisiona).
+    //    v2.30: en portada 2D inactiva la bola queda POSADA en la mesa —
+    //    nada de rallies de fondo, sonidos ni narración.
     this.events.length = 0;
     this._localHit = false;
-    if (this.net.online) this.net.drainNetwork(this);   // v2.19: rival por red
-    if (!holdLock) {
+    if (!active) {
+      holdLock = true;
+      this.ball.vel.set(0, 0, 0);
+      this.ball.spin.set(0, 0, 0);
+      this.ball.pos.set(0, DIMS.tableTopY + DIMS.ballRadius, DIMS.tableCenterZ + 0.25);
+    } else if (this.net.online) this.net.drainNetwork(this);   // v2.19: rival por red
+    if (active && !holdLock) {
       const pads = [];
       if (presenting) {
         const ps = this.controllerPaddles[this.paddleHand];
@@ -2238,8 +2226,10 @@ class PingPongGame {
     }
 
     // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido;
-    //    en online el INVITADO no puntúa: el marcador llega del anfitrión)
-    if (!this.calib && !(this.net.online && this.net.role === 'guest')) {
+    //    en online el INVITADO no puntúa: el marcador llega del anfitrión).
+    //    v2.30: en portada 2D inactiva el árbitro tampoco corre — ni puntos
+    //    ni megafonía de fondo.
+    if (active && !this.calib && !(this.net.online && this.net.role === 'guest')) {
       this.processIntents(this.rules.handleEvents(this.events));
       this.processIntents(this.rules.update(dt));
     }
@@ -2814,12 +2804,9 @@ class PingPongGame {
 const overlay = document.getElementById('overlay');
 const statusEl = document.getElementById('status');
 const vrbtn = document.getElementById('vrbtn');
-const spectateBtn = document.getElementById('spectate');
 const arBtn = document.getElementById('arbtn');
-const hud = document.getElementById('hud');
-const hudScore = document.getElementById('hud-score');
-const hudMsg = document.getElementById('hud-msg');
-const hudInfo = document.getElementById('hud-info');
+// v2.30: fuera el botón "Ver demo en pantalla (sin visor)" y su HUD — la
+// portada ya no juega ninguna partida de fondo (solo escena + música).
 const playEs = document.getElementById('playEs');
 const playEn = document.getElementById('playEn');
 
@@ -2859,12 +2846,7 @@ function wrapText(c, text, x, y, maxW, lh) {
 // Cargar el modelo de la pala antes de arrancar la escena
 loadPaddleModel().then((paddleModel) => {
   const game = new PingPongGame(document.getElementById('c'), paddleModel, {
-    onScore(player, ai) {
-      hudScore.textContent = `${player} : ${ai}`;
-    },
-    onMessage(message) {
-      hudMsg.textContent = message;
-    },
+    // v2.30: sin HUD de espectador — onScore/onMessage ya no tienen destino 2D
     onGrips(list, active) {
       refreshGrips(list, active);
     },
@@ -2875,7 +2857,6 @@ loadPaddleModel().then((paddleModel) => {
     onXRState(inVR) {
       if (inVR) {
         overlay.classList.add('hidden');
-        hud.classList.remove('show');
         window.__ppMusic?.pause();    // v2.28: la música de portada se queda fuera
       } else {
         overlay.classList.remove('hidden');
@@ -2954,10 +2935,4 @@ loadPaddleModel().then((paddleModel) => {
   applyLangDOM();   // primera pintura de la portada en el idioma guardado
 });
 
-spectateBtn.addEventListener('click', () => {
-  overlay.classList.add('hidden');
-  hud.classList.add('show');
-});
-hudInfo.addEventListener('click', () => {
-  overlay.classList.remove('hidden');
-});
+// v2.30: eliminados los listeners de la demo (#spectate) y del HUD — ya no existen.

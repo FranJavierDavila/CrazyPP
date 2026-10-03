@@ -1293,3 +1293,62 @@ Stage Summary:
   la prueba de sonido y el comportamiento de la música dentro del menú.
 - Siguiente fase declarada: estética del entorno ("vidilla": público, vallas,
   marcas en el suelo, mejor iluminación).
+
+---
+Task ID: 33
+Agent: Super Z (main agent)
+Task: v2.30 — portada sin partida de fondo, fuera la demo y su HUD, fuera el
+panel de audio del marcador y fuera las vallas del suelo (petición expresa:
+"cero estímulos que desconcentre al jugador")
+
+Work Log:
+- PORTADA SIN PARTIDA (game_part3.js): nuevo gate `active = presenting ||
+  net.online || window.__pp2DPlay` en el bucle. En 2D (sin visor) el juego
+  queda EN PAUSA: sin IA, sin demo, sin física, sin árbitro, sin sonidos ni
+  narrador; la bola permanece posada en la mesa y solo corren escena, cámara
+  orbital y música. La partida solo existe dentro del visor.
+- DEMO RETIRADA: eliminado el bloque del "jugador demo" (demoHit y su
+  golpeo), el botón #spectate ("Ver demo en pantalla (sin visor)"), su HUD
+  (#hud/#hud-score/#hud-msg/#hud-info + CSS + listeners) y los callbacks 2D
+  onScore/onMessage. La maquinaria del saque demo queda solo para el modo de
+  pruebas (inaccesible en producción).
+- PANEL DE AUDIO FUERA (game_part2/3.js): eliminado createAudioStatus (el
+  cartel "♪ audio: OK / reconectando…" bajo el marcador, residuo de debug
+  que aparecía en partido/entrenamiento/supervivencia) y su llamada en el
+  bucle. El diagnóstico interno del audio (watchdog, kick, rebuild) sigue
+  intacto — solo desaparece el estímulo visual.
+- VALLAS DEL SUELO FUERA (game_part2.js): eliminada la sección completa de
+  vallas publicitarias (7 carteles con mensajes: PING PONG XR, ARENA 480 Hz,
+  MAGNUS SPORT, TOPSPIN CLUB, QUEST 3 CUP, EFECTO·SPIN, ITTF ARENA).
+- I18N (game_i18n.js): retiradas las claves ov_demo (es/en) y la mención a la
+  demo en ov_hint.
+- MODO PRUEBAS: window.__pp2DPlay=true reactiva el rally 2D SOLO para tests
+  headless; test_ai_returns.py adaptado (usa el flag en vez de #spectate);
+  verify_v228.py adaptado (gate del saque IA con el flag); verify_v227.py
+  adaptado (comprueba AUSENCIA del botón demo).
+- VERIFICACIÓN (verify_v230.py, TODO OK): estáticos (sin #spectate, sin HUD,
+  sin ov_demo, sin createAudioStatus/audioStatus, sin vallas, sección
+  eliminada); portada inactiva — bola parada (v=0) que NO se mueve en 2,5 s,
+  marcador 0-0 constante, 0 sonidos de pala/saque, 0 anuncios/chimes, música
+  activa; VR simulado — la CPU saca (2 saques) y hay juego real; modo pruebas
+  2D reactiva el rally; menú acordeón intacto; 0 errores de página. Captura
+  captura-v230-portada.png.
+- REGRESIONES sobre la build final: v224 TODO OK, v225 (multijugador) TODO
+  OK, v229 (colisión+audio) TODO OK, v227 (idioma) TODO OK, v228 (arranque)
+  TODO OK tras adaptar el gate del saque al modo de pruebas;
+  test_ai_returns 11-13/14 entre ejecuciones (varianza del seed salgado;
+  baseline 13/14 reproducido).
+- BUILD: index.html 5,65 MB; ZIP regenerado 5,31 MB (integridad OK; solo un
+  comentario del código menciona #spectate — sin referencias funcionales);
+  README con sección v2.30.
+
+Stage Summary:
+- v2.30: la portada es un escaparate en calma — arte, cámara orbital y
+  música, sin partidas fantasma ni narrador; dentro del visor, el campo está
+  limpio: sin panel de audio, sin carteles del suelo; el jugador solo ve lo
+  que importa (mesa, bola, marcador y menú).
+- ZIP listo para Netlify Drop: download/pingpong-quest3-v2.zip (v2.30).
+- Pendiente visor: confirmar en la Quest que la portada queda silenciosa
+  (solo música) y que el campo no muestra ningún estímulo extra.
+- Siguiente fase declarada: estética del entorno ("vidilla": público, mejor
+  iluminación) SIN carteles con mensajes.

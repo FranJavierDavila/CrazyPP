@@ -207,7 +207,13 @@ const DIMS = {
   hitAssistRadius: 0.05,    // margen generoso de detección alrededor de la hoja
   serveExtraReach: 0.09,    // margen EXTRA solo durante el saque (bola lanzada) — v2.18 más fácil
   minExitSpeed: 2.3,        // velocidad mínima de salida tras golpear (solidez)
-  paddleHitCooldown: 0.08,
+  // v2.29: 0,08 s permitía el DOBLE GOLPE fantasma en golpeos rápidos: la
+  // pala alcanzaba a la bola, la sobrepasaba y al frenar el brazo ésta
+  // recruzaba el plano por DETRÁS cuando el cooldown ya había caducado ->
+  // segundo "tok" y bola disparada hacia atrás. 0,24 s lo elimina (la
+  // re-ida legítima de tu propio golpeo nunca baja de ~0,5 s).
+  paddleHitCooldown: 0.24,
+  paddleVelClamp: 12,       // v2.29: techo de velocidad de pala (picos de tracking)
   maxBallSpeed: 14,
   // --- efecto (spin) ---
   magnus: 0.0035,           // a = Cm·(ω × v)
@@ -441,6 +447,18 @@ class GameAudio {
     this.vbTrim = null;
     // v2.23: duración de la última locución compuesta (para el ducking)
     this._voiceDur = 0;
+    // v2.29 · MÚSICA DE FONDO EN VR (menú principal): el mismo tema de la
+    // portada (star) decodificado a AudioBuffer y en bucle por WebAudio —
+    // así sobrevive a los re-vínculos de contexto y suena por el altavoz del
+    // casco. Respeta la MISMA preferencia que el botón 🔊 de la portada.
+    this.musicOn = true;
+    try { this.musicOn = localStorage.getItem('pp_music') !== '0'; } catch { /* */ }
+    this.musicWanted = false;   // ¿el juego la pide ahora? (menú abierto)
+    this.musicPlaying = false;
+    this._musicBuf = null;
+    this._musicSrc = null;
+    this._musicGain = null;
+    this._musicLoading = false;
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
@@ -496,6 +514,94 @@ class GameAudio {
     for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
     // v2.20: (re)cargar el banco de voz para este contexto (asíncrono)
     this._loadVoice(ctx);
+    // v2.29: (re)cargar la música para este contexto y reanudarla si toca
+    this._loadMusic(ctx);
+  }
+
+  /* ---------- v2.29 · MÚSICA DE FONDO EN VR (menú principal) ----------
+   * La pista de la portada (star, data URL audio/ogg incrustado) se
+   * decodifica al contexto ACTIVO y suena en bucle mientras el menú esté
+   * abierto, con fundidos suaves. Al re-vincular el audio (entrada/salida
+   * de VR, rescate del watchdog) el _wire() la recarga y la reanuda sola.
+   * Preferencia compartida con el botón 🔊 de la portada (pp_music). */
+
+  /** Conmutador de música (menú Opciones y botón 🔊 de la portada). */
+  setMusic(on) {
+    this.musicOn = !!on;
+    try { localStorage.setItem('pp_music', this.musicOn ? '1' : '0'); } catch { /* */ }
+    if (!this.musicOn) this.stopMusic();
+    else if (this.musicWanted) this.startMusic();
+  }
+
+  /** El juego marca si la música debe sonar ahora (menú abierto en VR). */
+  setMusicWanted(wanted) {
+    const w = !!wanted;
+    if (w === this.musicWanted) {
+      if (w && !this.musicPlaying && this.musicOn) this.startMusic();
+      if (!w && this.musicPlaying) this.stopMusic();
+      return;
+    }
+    this.musicWanted = w;
+    if (w) this.startMusic(); else this.stopMusic();
+  }
+
+  /** Descarga y decodifica la pista para el contexto dado (una sola vez). */
+  _loadMusic(ctx) {
+    if (!ctx || this._musicLoading) return;
+    if (this._musicBuf && this._musicCtx === ctx) return;
+    const url = (typeof window !== 'undefined') ? window.__PP_MUSIC_URL : null;
+    if (!url || typeof fetch !== 'function') return;
+    this._musicLoading = true;
+    fetch(url).then((r) => r.arrayBuffer()).then((ab) =>
+      new Promise((res, rej) => {
+        try { ctx.decodeAudioData(ab, res, rej); } catch (e) { rej(e); }
+      }),
+    ).then((buf) => {
+      this._musicBuf = buf;
+      this._musicCtx = ctx;
+      console.info('[Audio] música lista (' + (buf.duration || 0).toFixed(1) + ' s)');
+      if (this.ctx === ctx && this.musicWanted && this.musicOn) this.startMusic();
+    }).catch(() => { /* sin música: nunca rompe el juego */ })
+      .finally(() => { this._musicLoading = false; });
+  }
+
+  /** Bucle de música con fundido de entrada (ganancia 0,26). */
+  startMusic() {
+    try {
+      this.kick();
+      if (!this.ctx || !this.master || !this.musicOn || !this.musicWanted) return;
+      if (this.musicPlaying) return;
+      if (!this._musicBuf || this._musicCtx !== this.ctx) { this._loadMusic(this.ctx); return; }
+      const src = this.ctx.createBufferSource();
+      src.buffer = this._musicBuf;
+      src.loop = true;
+      const g = this.ctx.createGain();
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.26, t + 0.9);
+      src.connect(g); g.connect(this.master);
+      src.start(t);
+      this._musicSrc = src;
+      this._musicGain = g;
+      this.musicPlaying = true;
+    } catch { /* nunca rompe el juego */ }
+  }
+
+  /** Fundido de salida (0,7 s) y parada. */
+  stopMusic() {
+    const src = this._musicSrc;
+    const g = this._musicGain;
+    this._musicSrc = null;
+    this._musicGain = null;
+    this.musicPlaying = false;
+    if (!src || !this.ctx) return;
+    try {
+      const t = this.ctx.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.26), t);
+      g.gain.linearRampToValueAtTime(0.0001, t + 0.7);
+      window.setTimeout(() => { try { src.stop(); } catch { /* ya parada */ } }, 800);
+    } catch { /* */ }
   }
 
   /** Observador de estado por contexto: reintenta y avisa al recover() global. */
@@ -606,6 +712,33 @@ class GameAudio {
     this._lastAlive = now;
     this.playOsc(880, 1320, 0.14, 'sine', 0.35, 0);
     window.setTimeout(() => this.playOsc(1320, 1760, 0.18, 'sine', 0.3, 0), 160);
+  }
+
+  /** v2.29 · PRUEBA DE SONIDO del menú (Opciones): arpegio ascendente bien
+   *  audible. Si el jugador NO lo oye y vuelve a pulsar (< 5 s), se interpreta
+   *  como "no oigo nada": re-vinculación de la salida (contexto nuevo dentro
+   *  del gesto del gatillo) + blip de confirmación. Auto-reparación en la
+   *  mano del propio jugador, sin depender de la consola. */
+  testSound() {
+    const now = performance.now();
+    const silent = (now - (this._lastSndTest || 0)) < 5000;
+    this._lastSndTest = now;
+    if (silent) {
+      // reparación: la pulsación del gatillo es un gesto válido -> un ctx
+      // nuevo creado aquí nace 'running' (se adopta SOLO si arranca)
+      this.rebind('prueba de sonido: el jugador no la oyó');
+      window.setTimeout(() => {
+        this.blipAlive();
+        this.playOsc(660, 660, 0.14, 'sine', 0.4, 0);
+        window.setTimeout(() => this.playOsc(990, 990, 0.18, 'sine', 0.4, 0), 150);
+      }, 250);
+      return true;   // true = se intentó reparar
+    }
+    this.playOsc(523, 523, 0.16, 'sine', 0.45, 0);
+    window.setTimeout(() => this.playOsc(659, 659, 0.16, 'sine', 0.45, 0), 170);
+    window.setTimeout(() => this.playOsc(784, 784, 0.24, 'sine', 0.45, 0), 340);
+    window.setTimeout(() => this.playOsc(1047, 1047, 0.3, 'sine', 0.3, 0), 510);
+    return false;
   }
 
   ensure() {
@@ -1250,7 +1383,9 @@ class GameAudio {
       const now = performance.now();
       if (!force && now - this._lastAnnounce < 6000) return;
       this._lastAnnounce = now;
-      if (!this.voice || !this.ambience) return;
+      // v2.29: el megáfono SOLO depende de su propio interruptor — antes,
+      // apagar el AMBIENTE silenciaba también la voz del marcador.
+      if (!this.voice) return;
       const duckOn = () => {
         const b = this.ambBus;
         if (!b || !this.ctx) return;
@@ -1317,7 +1452,13 @@ const tmpSurf = new THREE.Vector3();
 const tmpR = new THREE.Vector3();
 const tmpDeltaQ = new THREE.Quaternion();
 const tmpMountQ = new THREE.Quaternion();
-const VEL_WINDOW = 0.07;   // ventana de suavizado de velocidad del mando (s)
+const VEL_WINDOW = 0.045;  // v2.29: ventana MÁS CORTA (menos retraso en swings rápidos)
+// v2.29: base del paso anterior para la colisión barrida CON ROTACIÓN
+// (antes solo se interpolaba la posición: en saques con mucha rotación de
+// muñeca la hoja "giraba" entre subpasos y el cruce se detectaba tarde)
+const ipNormal = new THREE.Vector3();
+const ipRight = new THREE.Vector3();
+const ipUp = new THREE.Vector3();
 const tmpTarget = new THREE.Vector3();
 const tmpShoulder = new THREE.Vector3();
 const tmpDir = new THREE.Vector3();
@@ -1327,6 +1468,7 @@ function createPaddleSim(who, index) {
     pos: new THREE.Vector3(),
     prev: new THREE.Vector3(),
     vel: new THREE.Vector3(),
+    velInst: new THREE.Vector3(),   // v2.29: velocidad instantánea (sin media móvil)
     omega: new THREE.Vector3(),
     prevQuat: new THREE.Quaternion(),
     quatInit: false,
@@ -1335,6 +1477,10 @@ function createPaddleSim(who, index) {
     normal: new THREE.Vector3(0, 0, 1),
     right: new THREE.Vector3(1, 0, 0),
     up: new THREE.Vector3(0, 1, 0),
+    // v2.29: base del frame anterior (colisión barrida con rotación)
+    prevNormal: new THREE.Vector3(0, 0, 1),
+    prevRight: new THREE.Vector3(1, 0, 0),
+    prevUp: new THREE.Vector3(0, 1, 0),
     cooldown: 0,
     who,
     index,
@@ -1369,11 +1515,18 @@ function applyAerodynamics(vel, spin, h) {
  */
 function updatePaddleSim(ps, pos, quat, now, dt) {
   ps.prev.copy(ps.pos);
+  // v2.29: conservar la base ORIENTADA del frame anterior (barrido con giro)
+  ps.prevNormal.copy(ps.normal);
+  ps.prevRight.copy(ps.right);
+  ps.prevUp.copy(ps.up);
   ps.pos.copy(pos);
   setPaddleBasis(ps, quat);
 
   if (ps.prevT > 0 && dt > 0) {
     tmpV.copy(ps.pos).sub(ps.prev).divideScalar(dt);
+    // v2.29: velocidad INSTANTÁNEA disponible (con techo anti-picos)
+    ps.velInst.copy(tmpV);
+    if (ps.velInst.length() > DIMS.paddleVelClamp) ps.velInst.setLength(DIMS.paddleVelClamp);
     ps.velBuf.push({ t: now, x: tmpV.x, y: tmpV.y, z: tmpV.z });
   }
   while (ps.velBuf.length && now - ps.velBuf[0].t > VEL_WINDOW) ps.velBuf.shift();
@@ -1383,7 +1536,10 @@ function updatePaddleSim(ps, pos, quat, now, dt) {
       tmpV.x += s.x; tmpV.y += s.y; tmpV.z += s.z;
     }
     tmpV.divideScalar(ps.velBuf.length);
-    ps.vel.lerp(tmpV, 0.7);
+    // v2.29: respuesta más ágil (lerp 0,85) y techo de velocidad: el impulso
+    // deja de llegar "esponja" en swings rápidos sin meter jitter de tracking
+    ps.vel.lerp(tmpV, 0.85);
+    if (ps.vel.length() > DIMS.paddleVelClamp) ps.vel.setLength(DIMS.paddleVelClamp);
   }
 
   if (!ps.quatInit) {
@@ -1413,13 +1569,19 @@ function applyBounceSpin(vel, spin) {
 
 function collidePaddle(ball, pad, k, events) {
   padPos.copy(pad.prev).lerp(pad.pos, k);
+  // v2.29: base ORIENTADA interpolada prev->actual (nlerp; el giro entre
+  // frames es pequeño). Sin esto, un swing rápido giraba la hoja "a saltos"
+  // y el cruce del plano se detectaba tarde o en el sitio equivocado.
+  ipNormal.copy(pad.prevNormal).lerp(pad.normal, k).normalize();
+  ipRight.copy(pad.prevRight).lerp(pad.right, k).normalize();
+  ipUp.copy(pad.prevUp).lerp(pad.up, k).normalize();
   // margen extra de detección (solo en el saque: bola recién lanzada)
   const extra = pad.extraReach || 0;
 
   relPrev.copy(tmpPrev).sub(padPos);
-  const dPrev = relPrev.dot(pad.normal);
+  const dPrev = relPrev.dot(ipNormal);
   relNow.copy(ball.pos).sub(padPos);
-  const dNow = relNow.dot(pad.normal);
+  const dNow = relNow.dot(ipNormal);
 
   const crossing = dPrev > 0 !== dNow > 0;
   const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.03 + (extra ? 0.045 : 0);
@@ -1433,8 +1595,8 @@ function collidePaddle(ball, pad, k, events) {
   }
 
   // Coordenadas locales del cruce (origen = punto de agarre del mando)
-  const lx = relNow.copy(crossPoint).sub(padPos).dot(pad.right);
-  const ly = relNow.dot(pad.up);
+  const lx = relNow.copy(crossPoint).sub(padPos).dot(ipRight);
+  const ly = relNow.dot(ipUp);
   // hoja: disco de radio R centrado en bladeCenterUp sobre el agarre
   // (+ zona de asistencia para que no haga falta milimetrar el golpe)
   const dyy = ly - DIMS.bladeCenterUp;
@@ -1446,7 +1608,7 @@ function collidePaddle(ball, pad, k, events) {
 
   // Normal efectiva: la bola puede golpear cualquiera de las dos caras
   relVel.copy(ball.vel).sub(pad.vel);
-  tmpN.copy(pad.normal);
+  tmpN.copy(ipNormal);
   if (relVel.dot(tmpN) > 0) tmpN.negate();
   const vRelN = relVel.dot(tmpN);
   if (vRelN >= 0) return;
@@ -1481,11 +1643,12 @@ function collidePaddle(ball, pad, k, events) {
   ball.pos
     .copy(padPos)
     .addScaledVector(tmpN, front)
-    .addScaledVector(pad.right, lx)
-    .addScaledVector(pad.up, ly);
+    .addScaledVector(ipRight, lx)
+    .addScaledVector(ipUp, ly);
 
   pad.cooldown = DIMS.paddleHitCooldown;
   events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index });
+  return true;
 }
 
 function collideTable(ball, prevY, events) {
@@ -1621,10 +1784,15 @@ function stepPhysics(dt, ball, paddles, events) {
     applyAerodynamics(ball.vel, ball.spin, h);
     ball.pos.addScaledVector(ball.vel, h);
 
+    // v2.29: si la pala golpea en este subpaso, la bola se RECOLOCA sobre la
+    // cara de la pala: evaluar mesa/red/suelo EN ESTE MISMO subpaso producía
+    // eventos dobles (pala+canto) y rebotes fantasma. Se aplazan al siguiente.
+    let padHit = false;
     for (const pad of paddles) {
       if (!pad.active || pad.cooldown > 0) continue;
-      collidePaddle(ball, pad, k, events);
+      if (collidePaddle(ball, pad, k, events)) padHit = true;
     }
+    if (padHit) continue;
 
     collideTable(ball, prevY, events);
     collideNet(ball, prevZ, events);

@@ -3,6 +3,14 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.29: COLISIÓN PRECISA EN GOLPEOS RÁPIDOS (cooldown 0,24 s contra el doble
+#        golpe fantasma, base de la pala interpolada en el barrido, velocidad
+#        de pala más ágil y con techo, sin eventos pala+mesa en el mismo
+#        subpaso) + AUDITORÍA DE AUDIO (megáfono independiente del ambiente,
+#        hooks de reactivación por SESIÓN XR, prueba de sonido con
+#        auto-reparación en Opciones) + MÚSICA DE FONDO EN VR (el tema star
+#        suena en bucle mientras el menú principal esté abierto, y en la
+#        portada; preferencia compartida pp_music).
 # v2.28: NUEVO ARRANQUE — portada web animada minimalista (arte de cabecera
 #        CRAZY PING PONG, palas con bandera como selector de idioma y el gran
 #        botón cartoon JUGAR/PLAY EN VR que entra directamente en VR; música
@@ -335,14 +343,18 @@ __GAME_JS__
 <script>
 __PEERJS_JS__
 </script>
-<!-- v2.28: música de la portada (arranca con el primer gesto; botón 🔊) -->
+<!-- v2.28/2.29: música de la portada Y del menú VR (arranca con el primer
+     gesto; botón 🔊; el juego la decodifica a WebAudio dentro de VR) -->
 <script>
 (function () {
   var state = { audio: null, on: true, started: false };
   try { state.on = localStorage.getItem('pp_music') !== '0'; } catch (e) { /* */ }
+  // v2.29: la MISMA pista la usa el juego dentro de VR (WebAudio)
+  window.__PP_MUSIC_URL = '__MUSIC_B64__';
   function el() {
     if (!state.audio) {
-      state.audio = new Audio('__MUSIC_B64__');
+      // una sola copia incrustada: __PP_MUSIC_URL (también la usa el juego en VR)
+      state.audio = new Audio(window.__PP_MUSIC_URL);
       state.audio.loop = true;
       state.audio.volume = 0.5;
     }
@@ -359,6 +371,8 @@ __PEERJS_JS__
   });
   var mb = document.getElementById('mutebtn');
   function paint() {
+    // v2.29: relee la preferencia (el menú de VR puede haberla cambiado)
+    try { state.on = localStorage.getItem('pp_music') !== '0'; } catch (e) { /* */ }
     if (!mb) return;
     mb.textContent = state.on ? '\\uD83D\\uDD0A' : '\\uD83D\\uDD07';
     mb.classList.toggle('off', !state.on);
@@ -373,11 +387,17 @@ __PEERJS_JS__
       else if (state.audio) state.audio.pause();
       paint();
     });
+    document.addEventListener('pp-lang', paint);
   }
-  // la sesión VR pausa la música; al volver a la portada se reanuda
+  // la sesión VR pausa la música de portada (dentro suena la de WebAudio);
+  // al volver a la portada se reanuda respetando la preferencia MÁS RECIENTE
   window.__ppMusic = {
     pause: function () { if (state.audio) state.audio.pause(); },
-    resume: function () { if (state.on && state.started) start(); },
+    resume: function () {
+      try { state.on = localStorage.getItem('pp_music') !== '0'; } catch (e) { /* */ }
+      paint();
+      if (state.on && state.started) start();
+    },
   };
 })();
 </script>

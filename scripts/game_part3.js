@@ -1313,7 +1313,13 @@ class PingPongGame {
         y += 74;
         btn('voz', 56, y, 912, 62, T('btn_mic', { v: yn(this.audio.voice) }), !!this.audio.voice, undefined, !!this.audio.voice, 24);
         y += 74;
+        btn('music', 56, y, 912, 62, T('btn_music', { v: yn(this.audio.musicOn) }), !!this.audio.musicOn, undefined, !!this.audio.musicOn, 24);
+        y += 74;
         btn('trail', 56, y, 912, 62, T('btn_trail', { v: yn(this.showTrail) }), !!this.showTrail, undefined, !!this.showTrail, 24);
+        y += 74;
+        // v2.29: prueba de sonido con AUTO-REPARACIÓN (segunda pulsación
+        // seguida = "no oigo nada" -> re-vincula la salida de audio)
+        btn('sndtest', 56, y, 912, 62, T('btn_sndtest'), false, undefined, undefined, 24);
         y += 74;
       }
       y += 14;
@@ -1345,8 +1351,12 @@ class PingPongGame {
       this.drawMenu();
       this.audio.playOsc(660, 990, 0.07, 'sine', 0.15, 0);
       if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.4, 70);
+      // v2.29: música de fondo mientras el menú esté abierto (fundido de entrada)
+      this.audio.setMusicWanted(true);
     } else {
       this.audio.playOsc(990, 660, 0.06, 'sine', 0.1, 0);
+      // v2.29: al cerrar el menú la música se apaga con fundido (partido en marcha)
+      this.audio.setMusicWanted(false);
     }
   }
 
@@ -1554,6 +1564,22 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'music': {
+        // v2.29: música de fondo (portada + menú en VR), preferencia
+        // compartida con el botón 🔊 de la portada
+        this.audio.setMusic(!this.audio.musicOn);
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.rules.message = T('msg_music', { v: this.audio.musicOn ? T('yes') : T('no') });
+        this.drawMenu();
+        break;
+      }
+      case 'sndtest': {
+        // v2.29: prueba de sonido; la 2ª pulsación seguida repara el audio
+        const repaired = this.audio.testSound();
+        this.rules.message = repaired ? T('msg_sndrepair') : T('msg_sndtest');
+        this.drawMenu();
+        break;
+      }
       case 'revancha':
         this.closeMenu();
         if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
@@ -1662,14 +1688,20 @@ class PingPongGame {
       }
     }, 3400);
     window.setTimeout(() => this.audio.serve(), 350);  // blip de confirmación
+    // v2.29: la MÚSICA del menú arranca dentro de VR (bucle WebAudio del
+    // contexto del casco; el tema de la portada 2D queda pausado)
+    this.audio.setMusicWanted(true);
     console.info(
       '[Audio] estado en VR:', this.audio.ctx?.state,
       '· recreaciones:', this.audio.rebuilds,
     );
     // gatillo y grip DENTRO de la sesión son eventos de intención del usuario:
     // sirven para reactivar el audio si el navegador lo suspendió en VR
-    if (session && !this.__audioHooks) {
-      this.__audioHooks = true;
+    // v2.29: por SESIÓN (antes, el guardia __audioHooks persistía y al
+    // re-entrar en VR con una sesión NUEVA el selectstart ya no reactivaba
+    // el audio -> mudez hasta reiniciar la página)
+    if (session && this.__audioHooksSession !== session) {
+      this.__audioHooksSession = session;
       const kickAudio = () => this.audio.kick();
       session.addEventListener('selectstart', kickAudio);
       session.addEventListener('squeezestart', kickAudio);
@@ -1702,6 +1734,9 @@ class PingPongGame {
     // (adoptar-solo-si-running; el contexto del casco se cierra tras el cambio).
     this.audio.xrActive = false;
     this.audio.rebind('salida de VR: salida re-vinculada al navegador');
+    // v2.29: la música del menú se apaga al salir de VR (la portada reanuda
+    // la suya vía __ppMusic.resume dentro de onXRState)
+    this.audio.setMusicWanted(false);
     // fin del ambiente de torneo
     this.audio.stopMurmur();
     try { window.speechSynthesis?.cancel(); } catch { /* */ }

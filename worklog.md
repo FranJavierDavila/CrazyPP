@@ -1237,3 +1237,59 @@ Stage Summary:
   el panel grande (legibilidad a 1,08 m, flotación, acordeón, Crazy).
 - Siguiente fase declarada: estética del entorno ("vidilla": público, vallas,
   marcas en el suelo, mejor iluminación).
+
+---
+Task ID: 32
+Agent: Super Z (main agent)
+Task: v2.29 — colisión precisa en golpeos rápidos, auditoría a fondo del audio
+y música de fondo en la portada + menú VR; cierre de versión y ZIP para
+descarga (petición expresa del usuario: "actualiza para poder descargar el zip")
+
+Work Log:
+- Implementación v2.29 (sesión previa, presente en game_part1.js /
+  game_part3.js / game_i18n.js / build_html.py) y CIERRE en esta sesión:
+  verificación completa, README, worklog y regeneración del ZIP.
+- COLISIÓN (game_part1.js):
+  * paddleHitCooldown 0,24 s por pala: un swing que sobrepasa la bola no
+    re-registra contacto fantasma (adiós al "doble golpe" del saque rápido).
+  * Barrido pala-bola con base de pala INTERPOLADA dentro del subpaso
+    (prevNormal/ipNormal): los cruzamientos a máxima velocidad se detectan en
+    el instante justo.
+  * paddleVelClamp + ventana de velocidad 45 ms (velInst): mando más ágil en
+    smashes y sin velocidades irreales por jitter del tracking.
+  * Un solo contacto por subpaso: nunca eventos pala+mesa simultáneos.
+- AUDIO:
+  * Megáfono desacoplado del ambiente (ya no comparten gate: "if (!this.voice)
+    return;" independiente).
+  * Hooks de reactivación por sesión XR (__audioHooksSession): rescate del
+    AudioContext al abrir/cerrar la sesión inmersiva.
+  * Prueba de sonido con AUTO-REPARACIÓN en Opciones (btn_sndtest): la 2ª
+    pulsación reconstruye contexto/ganancias/nodos (msg_sndrepair).
+- MÚSICA VR: la pista star.ogg (__PP_MUSIC_URL, incrustada UNA vez) suena en
+  bucle en la portada y dentro del visor mientras el menú principal está
+  abierto; se desvanece al empezar a jugar y vuelve al cerrar el menú;
+  preferencia compartida pp_music (portada 🔊 y Opciones → Música).
+- VERIFICACIÓN (verify_v229.py, TODO OK): estáticos (cooldown, clamp,
+  interpolación, música deduplicada, megáfono libre); física unit vía
+  __solverHook — smash con follow-through = EXACTAMENTE 1 evento 'paddle' en
+  1,2 s y salida hacia la mesa (vz=-11,10), swing con rotación registra UNA
+  vez, 0 eventos pala+mesa simultáneos; audio — contexto 'running',
+  setMusicWanted enciende/apaga el bucle, pp_music persiste, prueba de sonido
+  repara (2ª pulsación re-vincula); menú — acordeón intacto, Opciones con
+  Música y Probar sonido; portada con hero+pista+botón; 0 errores de página.
+- REGRESIONES sobre la build final: v224 (menú) TODO OK, v225 (multijugador)
+  TODO OK, test_ai_returns 13/14 (93%, baseline).
+- BUILD: index.html 5,65 MB (10:22); ZIP regenerado 5,31 MB con
+  index.html v2.29 + assets/pala.glb, integridad verificada (unzip -t OK y
+  marcadores v2.29 presentes dentro del ZIP); README con sección v2.29.
+
+Stage Summary:
+- v2.29: golpeos rápidos bajo control (un impacto, detectado en el instante
+  justo, sin fantasmas ni eventos pisados), audio auditado con rescate por
+  sesión y auto-reparación manual, y la música del usuario como hilo sonoro
+  de portada y menú VR con un solo interruptor.
+- ZIP listo para Netlify Drop: download/pingpong-quest3-v2.zip (v2.29).
+- Pendiente visor: probar en la Quest el saque rápido (sin doble golpe),
+  la prueba de sonido y el comportamiento de la música dentro del menú.
+- Siguiente fase declarada: estética del entorno ("vidilla": público, vallas,
+  marcas en el suelo, mejor iluminación).

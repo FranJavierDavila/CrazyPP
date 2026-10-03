@@ -96,14 +96,25 @@ async def main():
             g.connected[0] = true; g.connected[1] = true;
             g.toggleMenu();
         }""")
-        ids = (await page.evaluate("() => window.__game.menuRects.map((r) => r.id)"))
-        for need in ('tab:main', 'tab:multi', 'close', 'trail', 'amb'):
+        ids = (await page.evaluate("""() => {
+            const g = window.__game;
+            const click = (id) => g.menuClick(g.menuRects.findIndex((r) => r.id === id));
+            if (g.menuSec !== 'match') click('sec:match');
+            const idsMatch = g.menuRects.map((r) => r.id);
+            click('sec:opts');
+            const idsOpts = g.menuRects.map((r) => r.id);
+            click('sec:match');
+            return idsMatch.concat(idsOpts);
+        }"""))
+        for need in ('tab:multi', 'close', 'start'):
             if need not in ids: fails.append(f"falta {need} en página principal")
+        for need in ('trail', 'amb'):
+            if need not in ids: fails.append(f"falta {need} en OPCIONES")
 
         # --- 3) pestaña MULTIJUGADOR: crear sala con Peer simulado ---
         if not await click_rect(page, 'tab:multi'): fails.append("pestaña multi no clicable")
         mids = await page.evaluate("() => window.__game.menuRects.map((r) => r.id)")
-        for need in ('net:host', 'net:join', 'tab:main', 'close'):
+        for need in ('net:host', 'net:join', 'tab:main'):
             if need not in mids: fails.append(f"falta {need} en página multi")
         if not await click_rect(page, 'net:host'): fails.append("botón CREAR SALA no está")
         await page.wait_for_timeout(80)
@@ -241,14 +252,16 @@ async def main():
 
         # --- 9) teclado del código: cancelar sala, escribir ABC29 y conectar ---
         await page.evaluate("""() => { const g = window.__game; if (g.menuOpen) g.toggleMenu();
-                                       g.rules.state = 'serve'; g.toggleMenu(); }""")
+                                       g.rules.state = 'serve'; g.toggleMenu();
+                                       if (g.menuPage !== 'main') g.menuClick(g.menuRects.findIndex((r) => r.id === 'tab:main'));
+                                       if (g.menuSec !== 'match') g.menuClick(g.menuRects.findIndex((r) => r.id === 'sec:match')); }""")
         if not await click_rect(page, 'tab:multi'): fails.append("tab multi (2ª vez)")
         mids2 = await page.evaluate("() => window.__game.menuRects.map((r) => r.id)")
         # tras colgar el estado es 'off': sin net:cancel, con net:host y net:join
         if 'net:join' not in mids2: fails.append(f"multi sin net:join: {mids2}")
         if not await click_rect(page, 'net:join'): fails.append("ir al teclado")
         jids = await page.evaluate("() => window.__game.menuRects.map((r) => r.id)")
-        for need in ('key:A', 'key:9', 'key:del', 'key:ok', 'key:cancel', 'close'):
+        for need in ('key:A', 'key:9', 'key:del', 'key:ok', 'key:cancel', 'tab:main'):
             if need not in jids: fails.append(f"falta tecla {need}")
         for ch in ('A', 'B', 'C', '2', '3'):
             await click_rect(page, f'key:{ch}')

@@ -174,11 +174,15 @@ async def main():
             const g = window.__game;
             g.connected[0] = true; g.connected[1] = true;
             g.toggleMenu();
-            const ids = g.menuRects.map((r) => r.id);
+            const click = (id) => g.menuClick(g.menuRects.findIndex((r) => r.id === id));
+            if (g.menuSec !== 'match') click('sec:match');
+            const idsMatch = g.menuRects.map((r) => r.id);
+            click('sec:opts');
+            const idsOpts = g.menuRects.map((r) => r.id);
             g.toggleMenu();
-            return { ids, trail: g.showTrail };
+            return { ids: idsMatch.concat(idsOpts), trail: g.showTrail };
         }""")
-        for need in ('tab:main', 'tab:multi', 'close', 'trail', 'amb'):
+        for need in ('start', 'tab:multi', 'close', 'trail', 'amb'):
             if need not in reg["ids"]: fails.append(f"regresión menú: falta {need}")
 
         await browser.close()

@@ -3,30 +3,21 @@
 import base64, subprocess, sys, os
 
 BASE = "/home/z/my-project"
+# v2.28: NUEVO ARRANQUE — portada web animada minimalista (arte de cabecera
+#        CRAZY PING PONG, palas con bandera como selector de idioma y el gran
+#        botón cartoon JUGAR/PLAY EN VR que entra directamente en VR; música
+#        de portada star.mp3 comprimida) y MENÚ PRINCIPAL EN VR como gran
+#        panel flotante delante del jugador: cabecera con el arte + palas de
+#        idioma y cuerpo en ACORDEÓN (Jugar Partido / Entrenar / Supervivencia
+#        / Crazy "Sorpresas pronto.." / Opciones), una sola sección abierta.
 # v2.27: SELECTOR DE IDIOMA (castellano/inglés) — diccionario i18n completo
 #        (game_i18n.js), banco de voz inglés Piper en_US-lessac-medium con las
 #        MISMAS claves (game_voice_en.js), causas de punto como CLAVES por la
-#        red, selector en el overlay 2D y en el menú de muñeca (ES/EN),
-#        cartel de fin de partido por idioma y respaldo speechSynthesis
+#        red, cartel de fin de partido por idioma y respaldo speechSynthesis
 #        localizado. Persistencia en localStorage ('pp_lang').
-# v2.26: CARTELES OFICIALES de fin de partido — ¡HAS GANADO! / ¡HAS PERDIDO!
-#        (arte JPEG incrustado en base64 en el cartel 3D + chip de marcador y
-#        revancha) y mensajes de texto alineados; respaldo si la imagen tarda.
+# v2.26: CARTELES OFICIALES de fin de partido (arte JPEG incrustado).
 # v2.25: RIGOR MULTIJUGADOR — emisión en CRUDO y espejo 180° UNA vez en
-#        recepción (fin del doble espejo: el rival ya no aparece en tu mismo
-#        lado); spin espejado; sincronía por PUNTO DE VISTA en el invitado
-#        (marcador/saque/ganador/causas/mensajes) + megafonía local; voz
-#        WebRTC iniciada por el INVITADO al ID de sala (antes autocall) con
-#        micro temprano en 2D, tope de 4 s y stream silencioso de respaldo;
-#        owner instantáneo y sin fuga de _pendingHits.
-# v2.24: cursor del menú SIN espejo vertical (apuntar con el punto = acertar);
-#        selectstart/squeeze en un solo espacio + guardia anti-doble pulsación
-#        (fin de las casillas "muertas", del teclado que duplicaba letras y de
-#        la doble llamada a crear sala); guardias de re-entrada en NetLink.
-# v2.23: voz en UN buffer compuesto (sin cortes entre cifras) + ducking del
-#        ambiente; pala de la IA con golpes de derecha/revés y hoja que gira;
-#        menú con hover en activos, casillas ☑/☐ y área táctil ampliada.
-# v2.21: GLB de la pala con materiales OPAQUE (fin del efecto radiografía);
+#        recepción; sincronía por PUNTO DE VISTA en el invitado.
 # v2.20: game_voice.js (banco de voz Piper/Opus en base64) va PRIMERO
 # v2.27: i18n PRIMERO (T/TLang/setLang), luego los DOS bancos de voz y el juego
 PARTS = ([f"{BASE}/scripts/game_i18n.js"]
@@ -38,6 +29,15 @@ POSTER_WIN = f"{BASE}/scripts/poster_win.jpg"
 POSTER_LOSE = f"{BASE}/scripts/poster_lose.jpg"
 POSTER_WIN_EN = f"{BASE}/scripts/poster_win_en.jpg"
 POSTER_LOSE_EN = f"{BASE}/scripts/poster_lose_en.jpg"
+# v2.28: assets del nuevo arranque (portada + menú VR)
+LA = f"{BASE}/scripts/launch_assets"
+HERO = f"{LA}/hero.jpg"
+PAD_ES = f"{LA}/pad_es.png"
+PAD_EN = f"{LA}/pad_en.png"
+PLAY_ES = f"{LA}/play_es.png"
+PLAY_EN = f"{LA}/play_en.png"
+MUSIC = f"{LA}/star.ogg"
+MENU_LOGO = f"{LA}/menulogo.jpg"
 OUT_DIR = f"{BASE}/download/pingpong-quest3-v2"
 OUT = f"{OUT_DIR}/index.html"
 
@@ -52,7 +52,8 @@ if "</script>" in peerjs_js.lower():
 
 # --- validación de sintaxis con node (sustituyendo los placeholders) ---
 check = js.replace("__PALA_GLB_B64__", "Zm9v")
-for ph in ("__POSTER_WIN_B64__", "__POSTER_LOSE_B64__", "__POSTER_WIN_EN_B64__", "__POSTER_LOSE_EN_B64__"):
+for ph in ("__POSTER_WIN_B64__", "__POSTER_LOSE_B64__", "__POSTER_WIN_EN_B64__",
+           "__POSTER_LOSE_EN_B64__", "__MENU_LOGO_B64__"):
     check = check.replace(ph, "data:image/jpeg;base64,Zm9v")
 with open("/tmp/game_check.mjs", "w", encoding="utf-8") as f:
     f.write(check)
@@ -66,16 +67,23 @@ print("sintaxis OK")
 b64 = base64.b64encode(open(GLB, "rb").read()).decode("ascii")
 js = js.replace("__PALA_GLB_B64__", b64)
 
-# --- v2.26/2.27: incrustar carteles oficiales por idioma (data URLs JPEG) ---
+def data_url(path, mime):
+    return f"data:{mime};base64," + base64.b64encode(open(path, "rb").read()).decode("ascii")
+
+# --- v2.26/2.27: carteles oficiales por idioma (data URLs JPEG) ---
 for ph, path in (("__POSTER_WIN_B64__", POSTER_WIN), ("__POSTER_LOSE_B64__", POSTER_LOSE),
                  ("__POSTER_WIN_EN_B64__", POSTER_WIN_EN), ("__POSTER_LOSE_EN_B64__", POSTER_LOSE_EN)):
     if os.path.isfile(path) and os.path.getsize(path) > 1000:
-        pb = "data:image/jpeg;base64," + base64.b64encode(open(path, "rb").read()).decode("ascii")
-        js = js.replace(ph, pb)
+        js = js.replace(ph, data_url(path, "image/jpeg"))
     else:
         # sin arte para ese idioma: cadena vacía -> el cartel usa el panel de respaldo
         js = js.replace(ph, "")
-for ph in ("__POSTER_WIN_B64__", "__POSTER_LOSE_B64__", "__POSTER_WIN_EN_B64__", "__POSTER_LOSE_EN_B64__", "__PALA_GLB_B64__"):
+
+# --- v2.28: arte de la cabecera del menú VR (recorte del logo) ---
+js = js.replace("__MENU_LOGO_B64__", data_url(MENU_LOGO, "image/jpeg"))
+
+for ph in ("__POSTER_WIN_B64__", "__POSTER_LOSE_B64__", "__POSTER_WIN_EN_B64__",
+           "__POSTER_LOSE_EN_B64__", "__MENU_LOGO_B64__", "__PALA_GLB_B64__"):
     if ph in js:
         print(f"ERROR: placeholder sin sustituir {ph}")
         sys.exit(1)
@@ -85,157 +93,164 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ping Pong XR · Meta Quest 3</title>
-<meta name="description" content="Tenis de mesa realista en WebXR para Meta Quest 3: saque con mano libre, reglas ITTF y pala 3D real." />
+<title>CRAZY PING PONG · Meta Quest 3</title>
+<meta name="description" content="Tenis de mesa arcade en WebXR para Meta Quest 3: partido, entrenamiento, supervivencia y multijugador online P2P." />
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; overflow: hidden; background: #0b0e11; }
+  html, body { height: 100%; overflow: hidden; background: #050810; }
   body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #e9edf2; }
   #c { position: fixed; inset: 0; display: block; pointer-events: none; }
 
-  /* ---------- Overlay de bienvenida ---------- */
+  /* ================= v2.28 · PORTADA ANIMADA ================= */
   #overlay {
     position: fixed; inset: 0; z-index: 20;
     display: flex; align-items: center; justify-content: center;
-    background: rgba(6, 9, 13, 0.62); backdrop-filter: blur(7px);
+    background: radial-gradient(120% 90% at 50% 8%, #0b2050 0%, #071229 52%, #050810 100%);
     transition: opacity 0.45s ease;
   }
   #overlay.hidden { opacity: 0; pointer-events: none; }
-  .card {
-    width: min(600px, calc(100% - 36px));
-    max-height: calc(100% - 30px);
-    overflow-y: auto;
-    background: rgba(15, 19, 25, 0.93);
-    border: 1px solid rgba(232, 180, 90, 0.35);
-    border-radius: 20px; padding: 28px 32px 24px;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
-  }
-  .card h1 { font-size: 30px; letter-spacing: 0.5px; }
-  .card h1 span { color: #e8b45a; }
-  .tag { margin: 6px 0 16px; font-size: 14px; color: #9aa7b4; }
-  ul.keys { list-style: none; margin-bottom: 16px; }
-  ul.keys li { font-size: 14px; line-height: 1.75; color: #cfd8e0; margin-bottom: 7px; }
-  ul.keys b {
-    display: inline-block; min-width: 74px; text-align: center;
-    color: #e8b45a; font-weight: 600;
-    background: rgba(232, 180, 90, 0.1);
-    border: 1px solid rgba(232, 180, 90, 0.4);
-    border-radius: 7px; padding: 1px 8px; margin-right: 8px;
-    font-size: 13px;
-  }
-  .diffrow { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-  .diffrow .lbl { font-size: 13px; color: #9aa7b4; margin-right: 4px; }
-  .diff, .them {
-    flex: 1; padding: 9px 0; font-size: 14px; font-weight: 600;
-    color: #cfd8e0; background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px;
-    cursor: pointer; transition: all 0.15s;
-  }
-  .diff:hover, .them:hover { border-color: rgba(232, 180, 90, 0.5); }
-  .diff.active, .them.active { color: #10131a; background: #e8b45a; border-color: #e8b45a; }
-  #status { font-size: 13.5px; color: #8d9aa8; min-height: 20px; margin-bottom: 12px; line-height: 1.5; }
-  #vrbtn {
-    width: 100%; padding: 16px; font-size: 17px; font-weight: 800; letter-spacing: 1.2px;
-    color: #10131a; background: linear-gradient(135deg, #f0c069, #e8b45a);
-    border: none; border-radius: 13px; cursor: pointer; margin-bottom: 10px;
-  }
-  #vrbtn:hover:not(:disabled) { filter: brightness(1.08); }
-  #vrbtn:disabled { background: rgba(255, 255, 255, 0.08); color: #6b7683; cursor: not-allowed; }
-  #spectate {
-    width: 100%; padding: 12px; font-size: 14px; font-weight: 600;
-    color: #aeb9c5; background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 11px; cursor: pointer;
-  }
-  #spectate:hover { border-color: rgba(255, 255, 255, 0.4); }
-  .hint { margin-top: 14px; font-size: 12px; line-height: 1.65; color: #75828f; }
-  .hint b { color: #9aa7b4; }
 
-  /* ---------- Agarres guardados ---------- */
-  .grips {
-    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px;
-    padding: 12px 14px; margin-bottom: 16px;
+  /* arte de fondo difuminado (Ken Burns lento) */
+  .bgblur {
+    position: absolute; inset: -90px; z-index: 0;
+    background-image: url("__HERO_B64__");
+    background-size: cover; background-position: center 38%;
+    filter: blur(16px) brightness(0.42) saturate(1.25);
+    animation: kenburns 30s ease-in-out infinite alternate;
   }
-  .grips-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .grips-head .lbl { font-size: 12px; color: #9aa7b4; letter-spacing: 1px; white-space: nowrap; }
-  #gripName {
-    flex: 1; min-width: 0; background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px;
-    color: #e9edf2; padding: 7px 10px; font-size: 13px; outline: none;
+  @keyframes kenburns {
+    from { transform: scale(1.06) translate(-1.2%, -1%); }
+    to   { transform: scale(1.22) translate(1.4%, 1.6%); }
   }
-  .grips-row { display: flex; gap: 6px; }
-  #gripSel {
-    flex: 1.4; min-width: 0; background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px;
-    color: #e9edf2; padding: 7px 8px; font-size: 13px;
+  /* haces de luz de pabellón barriendo el fondo */
+  .rays {
+    position: absolute; top: -30%; height: 170%; width: 34vw; z-index: 0;
+    background: linear-gradient(90deg, transparent 6%, rgba(96,166,255,0.13) 50%, transparent 94%);
+    transform: rotate(14deg); filter: blur(3px);
+    animation: sweep 10s ease-in-out infinite alternate;
   }
-  .mini {
-    flex: 1; padding: 7px 4px; font-size: 12px; font-weight: 600; color: #cfd8e0;
-    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 8px; cursor: pointer; white-space: nowrap;
+  .rays.r1 { left: 8vw; }
+  .rays.r2 { right: 8vw; transform: rotate(-15deg); animation-delay: -4.5s; animation-duration: 12s; }
+  @keyframes sweep {
+    from { opacity: 0.25; transform: rotate(11deg) translateX(-4vw); }
+    to   { opacity: 0.8;  transform: rotate(17deg) translateX(5vw); }
   }
-  .mini:hover { border-color: rgba(232, 180, 90, 0.5); }
-  #trainbtn {
-    width: 100%; padding: 12px; font-size: 14px; font-weight: 700;
-    color: #e8b45a; background: rgba(232, 180, 90, 0.10);
-    border: 1px solid rgba(232, 180, 90, 0.45); border-radius: 11px;
-    cursor: pointer; margin-bottom: 10px;
+  /* bolas flotantes que cruzan la escena */
+  .bball {
+    position: absolute; z-index: 1; border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #ffffff 0%, #e8ecf2 55%, #b9c2cf 100%);
+    box-shadow: 0 0 22px rgba(255,255,255,0.55);
+    animation: flyball linear infinite;
   }
-  #trainbtn:hover:not(:disabled) { background: rgba(232, 180, 90, 0.18); }
-  #trainbtn:disabled {
-    color: #6b7683; background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.12); cursor: not-allowed;
+  .bball.b1 { width: 26px; height: 26px; top: 62%; animation-duration: 9.5s; }
+  .bball.b2 { width: 15px; height: 15px; top: 24%; animation-duration: 13s; animation-delay: -6s; opacity: 0.85; }
+  .bball.b3 { width: 11px; height: 11px; top: 78%; animation-duration: 16s; animation-delay: -3s; opacity: 0.6; }
+  @keyframes flyball {
+    0%   { transform: translate(-8vw, 6vh); opacity: 0; }
+    8%   { opacity: 1; }
+    50%  { transform: translate(46vw, -9vh); }
+    92%  { opacity: 1; }
+    100% { transform: translate(108vw, 5vh); opacity: 0; }
   }
-  #survbtn {
-    width: 100%; padding: 12px; font-size: 14px; font-weight: 700;
-    color: #9fd98a; background: rgba(127, 176, 105, 0.10);
-    border: 1px solid rgba(127, 176, 105, 0.45); border-radius: 11px;
-    cursor: pointer; margin-bottom: 10px;
+  /* estrellitas doradas titilando */
+  .star { position: absolute; z-index: 1; width: 7px; height: 7px; border-radius: 50%;
+    background: #ffd257; box-shadow: 0 0 10px #ffd257; animation: twinkle 3.2s ease-in-out infinite; }
+  .star.s1 { left: 12%; top: 18%; } .star.s2 { left: 85%; top: 26%; animation-delay: -1.1s; }
+  .star.s3 { left: 22%; top: 74%; animation-delay: -2s; } .star.s4 { left: 76%; top: 70%; animation-delay: -0.6s; }
+  .star.s5 { left: 50%; top: 12%; animation-delay: -2.6s; } .star.s6 { left: 38%; top: 86%; animation-delay: -1.7s; }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; transform: scale(0.7); }
+    50% { opacity: 0.95; transform: scale(1.25); }
   }
-  #survbtn:hover:not(:disabled) { background: rgba(127, 176, 105, 0.18); }
-  #survbtn:disabled {
-    color: #6b7683; background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.12); cursor: not-allowed;
-  }
-  .row2 { display: flex; gap: 10px; margin-bottom: 10px; }
-  #arbtn {
-    flex: 1; padding: 11px 6px; font-size: 12.5px; font-weight: 700;
-    color: #8fd3e8; background: rgba(87, 199, 255, 0.08);
-    border: 1px solid rgba(87, 199, 255, 0.4); border-radius: 11px; cursor: pointer;
-  }
-  #arbtn:hover:not(:disabled) { background: rgba(87, 199, 255, 0.16); }
-  #arbtn:disabled {
-    color: #6b7683; background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.12); cursor: not-allowed;
-  }
-  #ambbtn {
-    flex: 1; padding: 11px 6px; font-size: 12.5px; font-weight: 700;
-    color: #cfd8e0; background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 11px; cursor: pointer;
-  }
-  #ambbtn:hover { border-color: rgba(232, 180, 90, 0.5); }
 
-  /* ---------- Estadísticas y logros ---------- */
-  .stats {
-    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px;
-    padding: 12px 14px; margin-bottom: 16px;
+  .stage { position: relative; z-index: 2; display: flex; flex-direction: column;
+    align-items: center; gap: 22px; width: 100%; padding: 18px;
+    max-height: 100%; overflow-y: auto; }
+
+  /* cabecera: arte oficial del juego flotando */
+  .hero-wrap { animation: heroFloat 6s ease-in-out infinite; }
+  .hero-wrap img {
+    display: block; width: min(680px, 90vw); border-radius: 26px;
+    border: 2px solid rgba(232, 180, 90, 0.45);
+    box-shadow: 0 30px 90px rgba(2, 8, 24, 0.75), 0 0 46px rgba(59, 130, 246, 0.35);
+    animation: heroGlow 6s ease-in-out infinite;
   }
-  .stats-head {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px;
+  @keyframes heroFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
   }
-  .stats-head .lbl { font-size: 12px; color: #9aa7b4; letter-spacing: 1px; }
-  .stats-head .mini { flex: 0 0 auto; padding: 4px 12px; }
-  .stats-line { font-size: 13.5px; color: #cfd8e0; line-height: 1.55; margin-bottom: 9px; }
-  .achrow { display: flex; flex-wrap: wrap; gap: 6px; }
-  .ach {
-    font-size: 11.5px; padding: 4px 9px; border-radius: 8px; white-space: nowrap;
-    border: 1px solid rgba(255, 255, 255, 0.10); color: #5c6672;
-    background: rgba(255, 255, 255, 0.03); cursor: default;
+  @keyframes heroGlow {
+    0%, 100% { box-shadow: 0 30px 90px rgba(2, 8, 24, 0.75), 0 0 46px rgba(59, 130, 246, 0.35); }
+    50% { box-shadow: 0 30px 90px rgba(2, 8, 24, 0.75), 0 0 70px rgba(96, 166, 255, 0.55); }
   }
-  .ach.on {
-    color: #e8b45a; border-color: rgba(232, 180, 90, 0.5);
-    background: rgba(232, 180, 90, 0.08);
+
+  /* selector de idioma: dos palas con bandera */
+  .padrow { display: flex; gap: 26px; }
+  .padbtn {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.055); border: 2px solid rgba(255,255,255,0.16);
+    border-radius: 22px; padding: 12px 24px 9px; cursor: pointer;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s, background 0.18s;
   }
+  .padbtn img {
+    width: 84px; height: 84px; object-fit: contain;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.55));
+    animation: padBob 3.6s ease-in-out infinite;
+  }
+  .padbtn[data-lang="en"] img { animation-delay: -1.8s; }
+  @keyframes padBob {
+    0%, 100% { transform: rotate(-5deg) translateY(0); }
+    50% { transform: rotate(5deg) translateY(-4px); }
+  }
+  .padbtn .padlbl { font-size: 13px; font-weight: 800; letter-spacing: 2.2px; color: #9aa7b4; }
+  .padbtn:hover { transform: translateY(-4px); border-color: rgba(232,180,90,0.55); }
+  .padbtn.active {
+    border-color: #e8b45a; background: rgba(232, 180, 90, 0.12);
+    box-shadow: 0 0 26px rgba(232, 180, 90, 0.35);
+  }
+  .padbtn.active .padlbl { color: #ffd257; }
+  .padbtn.active img { filter: drop-shadow(0 0 16px rgba(232,180,90,0.65)) drop-shadow(0 6px 14px rgba(0,0,0,0.55)); }
+
+  /* gran botón cartoon JUGAR / PLAY EN VR */
+  #vrbtn { background: none; border: none; cursor: pointer; margin-top: 4px; }
+  #vrbtn img {
+    display: block; width: min(360px, 76vw);
+    filter: drop-shadow(0 14px 26px rgba(0,0,0,0.6));
+    animation: playPulse 1.9s ease-in-out infinite, playWiggle 4.8s ease-in-out infinite;
+    transition: transform 0.18s;
+  }
+  #vrbtn:hover img { transform: scale(1.1); }
+  #vrbtn:active img { transform: scale(0.97); }
+  @keyframes playPulse {
+    0%, 100% { filter: drop-shadow(0 14px 26px rgba(0,0,0,0.6)) drop-shadow(0 0 12px rgba(232,180,90,0.25)); }
+    50% { filter: drop-shadow(0 14px 26px rgba(0,0,0,0.6)) drop-shadow(0 0 34px rgba(232,180,90,0.6)); }
+  }
+  @keyframes playWiggle {
+    0%, 84%, 100% { rotate: 0deg; }
+    88% { rotate: -2.4deg; }
+    92% { rotate: 2.2deg; }
+    96% { rotate: -1.2deg; }
+  }
+
+  #status { font-size: 13.5px; color: #8d9aa8; min-height: 20px; text-align: center;
+    max-width: 720px; line-height: 1.5; }
+  .footer { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #75828f; }
+  .footlink {
+    background: none; border: none; cursor: pointer; font-size: 13px; color: #8fd3e8;
+    text-decoration: underline dotted; padding: 2px 4px;
+  }
+  .footlink:hover { color: #b7e7f5; }
+  .footlink:disabled { color: #5c6672; text-decoration: none; cursor: not-allowed; }
+  .dot { color: #4a5560; }
+
+  #mutebtn {
+    position: fixed; right: 16px; bottom: 14px; z-index: 30;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.28);
+    font-size: 20px; cursor: pointer; transition: all 0.15s;
+  }
+  #mutebtn:hover { background: rgba(255,255,255,0.16); }
+  #mutebtn.off { opacity: 0.55; }
 
   /* ---------- HUD (modo espectador) ---------- */
   #hud {
@@ -252,20 +267,6 @@ HTML = """<!DOCTYPE html>
     background: rgba(232, 180, 90, 0.15); color: #e8b45a;
     border: 1px solid rgba(232, 180, 90, 0.4); font-size: 14px; font-weight: 700; cursor: pointer;
   }
-
-  /* ---------- v2.27 · Selector de idioma ---------- */
-  .langrow {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
-  }
-  .langrow .lbl { font-size: 13px; color: #9aa7b4; margin-right: 4px; }
-  .langbtn {
-    padding: 8px 0; width: 96px; font-size: 14px; font-weight: 700;
-    color: #cfd8e0; background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px;
-    cursor: pointer; transition: all 0.15s;
-  }
-  .langbtn:hover { border-color: rgba(232, 180, 90, 0.5); }
-  .langbtn.active { color: #10131a; background: #e8b45a; border-color: #e8b45a; }
 </style>
 <script type="importmap">
   {
@@ -280,72 +281,45 @@ HTML = """<!DOCTYPE html>
 <canvas id="c"></canvas>
 
 <div id="overlay">
-  <div class="card">
-    <h1>🏓 PING PONG <span>XR</span></h1>
-    <div class="tag" data-i18n="ov_tag">Reglas ITTF · saque con mano libre y física real · pala 3D · Meta Quest 3</div>
-    <div class="langrow">
-      <span class="lbl" data-i18n="ov_lang">🌐 Idioma / Language</span>
-      <button class="langbtn active" data-lang="es">ESPAÑOL</button>
-      <button class="langbtn" data-lang="en">ENGLISH</button>
+  <div class="bgblur"></div>
+  <div class="rays r1"></div>
+  <div class="rays r2"></div>
+  <span class="bball b1"></span>
+  <span class="bball b2"></span>
+  <span class="bball b3"></span>
+  <span class="star s1"></span><span class="star s2"></span><span class="star s3"></span>
+  <span class="star s4"></span><span class="star s5"></span><span class="star s6"></span>
+
+  <main class="stage">
+    <div class="hero-wrap">
+      <img src="__HERO_B64__" alt="CRAZY PING PONG" />
     </div>
-    <ul class="keys">
-      <li data-i18n-html="ov_serve"></li>
-      <li data-i18n-html="ov_hit"></li>
-      <li data-i18n-html="ov_hand"></li>
-      <li data-i18n-html="ov_menu"></li>
-      <li data-i18n-html="ov_online"></li>
-      <li data-i18n-html="ov_rules"></li>
-      <li data-i18n-html="ov_spin"></li>
-      <li data-i18n-html="ov_train"></li>
-    </ul>
-    <div class="diffrow">
-      <span class="lbl" data-i18n="ov_difficulty">DIFICULTAD</span>
-      <button class="diff" data-diff="easy">Fácil</button>
-      <button class="diff active" data-diff="medium">Media</button>
-      <button class="diff" data-diff="hard">Difícil</button>
+
+    <div class="padrow">
+      <button class="padbtn" data-lang="es">
+        <img id="padEs" src="__PAD_ES_B64__" alt="Español" />
+        <span class="padlbl">ESPAÑOL</span>
+      </button>
+      <button class="padbtn" data-lang="en">
+        <img id="padEn" src="__PAD_EN_B64__" alt="English" />
+        <span class="padlbl">ENGLISH</span>
+      </button>
     </div>
-    <div class="diffrow">
-      <span class="lbl" data-i18n="ov_room">SALA</span>
-      <button class="them active" data-theme="pabellon">🏓 Pabellón</button>
-      <button class="them" data-theme="neon">💜 Neón</button>
-      <button class="them" data-theme="atardecer">🌅 Atardecer</button>
-      <button class="them" data-theme="artico">❄️ Ártico</button>
-    </div>
-    <div class="grips">
-      <div class="grips-head">
-        <span class="lbl" data-i18n="ov_grips">AGARRES DE PALA</span>
-        <input id="gripName" type="text" maxlength="24" data-i18n-ph="ov_grip_ph" placeholder="Nombre para guardar el ajuste actual" />
-      </div>
-      <div class="grips-row">
-        <select id="gripSel"></select>
-        <button class="mini" id="gripLoad" data-i18n="ov_grip_load">Cargar</button>
-        <button class="mini" id="gripSave" data-i18n="ov_grip_save">Guardar</button>
-        <button class="mini" id="gripDel" data-i18n="ov_grip_del">Borrar</button>
-        <button class="mini" id="gripReset" data-i18n="ov_grip_reset">Natural</button>
-      </div>
-    </div>
-    <div class="stats">
-      <div class="stats-head">
-        <span class="lbl" data-i18n="ov_progress">TU PROGRESO</span>
-        <button class="mini" id="statsReset" data-i18n="ov_clear">Borrar</button>
-      </div>
-      <div class="stats-line" id="statsLine">—</div>
-      <div class="achrow" id="achRow"></div>
-    </div>
+
+    <button id="vrbtn" aria-label="Jugar en VR">
+      <img id="playEs" src="__PLAY_ES_B64__" alt="JUGAR EN VR" />
+      <img id="playEn" src="__PLAY_EN_B64__" alt="PLAY IN VR" style="display:none" />
+    </button>
+
     <div id="status">Comprobando compatibilidad con WebXR…</div>
-    <button id="survbtn" disabled data-i18n="ov_surv">🏆 SUPERVIVENCIA EN VR · ¿cuántos golpes aguantas?</button>
-    <button id="trainbtn" disabled data-i18n="ov_train_btn">ENTRENAR GOLPES EN VR · ajustar pala</button>
-    <button id="vrbtn" disabled data-i18n="ov_vr">ENTRAR EN VR</button>
-    <div class="row2">
-      <button id="arbtn" disabled data-i18n="ov_ar">🏠 PASSTHROUGH · tu habitación</button>
-      <button id="ambbtn">🔊 Ambiente de torneo: SÍ</button>
+    <div class="footer">
+      <button id="spectate" class="footlink" data-i18n="ov_demo">Ver demo en pantalla (sin visor)</button>
+      <span class="dot">·</span>
+      <button id="arbtn" class="footlink" data-i18n="ov_ar">🏠 PASSTHROUGH · tu habitación</button>
     </div>
-    <button id="spectate" data-i18n="ov_demo">Ver demo en pantalla (sin visor)</button>
-    <div class="hint" data-i18n-html="ov_hint">
-      <b>En el visor:</b> sube esta carpeta a <b>Netlify Drop</b> y abre el enlace con el
-      <b>Meta Quest Browser</b> (requiere HTTPS). Sin visor, el modo demo juega IA contra IA.
-    </div>
-  </div>
+  </main>
+
+  <button id="mutebtn" data-i18n-title="music_title">🔊</button>
 </div>
 
 <div id="hud">
@@ -361,11 +335,72 @@ __GAME_JS__
 <script>
 __PEERJS_JS__
 </script>
+<!-- v2.28: música de la portada (arranca con el primer gesto; botón 🔊) -->
+<script>
+(function () {
+  var state = { audio: null, on: true, started: false };
+  try { state.on = localStorage.getItem('pp_music') !== '0'; } catch (e) { /* */ }
+  function el() {
+    if (!state.audio) {
+      state.audio = new Audio('__MUSIC_B64__');
+      state.audio.loop = true;
+      state.audio.volume = 0.5;
+    }
+    return state.audio;
+  }
+  function start() {
+    if (!state.on) return;
+    var a = el();
+    var p = a.play();
+    if (p && p.catch) p.catch(function () { /* el gesto llega después */ });
+  }
+  document.addEventListener('pointerdown', function () {
+    if (!state.started) { state.started = true; start(); }
+  });
+  var mb = document.getElementById('mutebtn');
+  function paint() {
+    if (!mb) return;
+    mb.textContent = state.on ? '\\uD83D\\uDD0A' : '\\uD83D\\uDD07';
+    mb.classList.toggle('off', !state.on);
+  }
+  if (mb) {
+    paint();
+    mb.addEventListener('click', function (e) {
+      e.stopPropagation();
+      state.on = !state.on;
+      try { localStorage.setItem('pp_music', state.on ? '1' : '0'); } catch (err) { /* */ }
+      if (state.on) { state.started = true; start(); }
+      else if (state.audio) state.audio.pause();
+      paint();
+    });
+  }
+  // la sesión VR pausa la música; al volver a la portada se reanuda
+  window.__ppMusic = {
+    pause: function () { if (state.audio) state.audio.pause(); },
+    resume: function () { if (state.on && state.started) start(); },
+  };
+})();
+</script>
 </body>
 </html>
 """
 
 html = HTML.replace("__GAME_JS__", js).replace("__PEERJS_JS__", peerjs_js)
+
+# --- v2.28: assets de la portada (data URLs) ---
+html = html.replace("__HERO_B64__", data_url(HERO, "image/jpeg"))
+html = html.replace("__PAD_ES_B64__", data_url(PAD_ES, "image/png"))
+html = html.replace("__PAD_EN_B64__", data_url(PAD_EN, "image/png"))
+html = html.replace("__PLAY_ES_B64__", data_url(PLAY_ES, "image/png"))
+html = html.replace("__PLAY_EN_B64__", data_url(PLAY_EN, "image/png"))
+html = html.replace("__MUSIC_B64__", data_url(MUSIC, "audio/ogg"))
+
+for ph in ("__HERO_B64__", "__PAD_ES_B64__", "__PAD_EN_B64__", "__PLAY_ES_B64__",
+           "__PLAY_EN_B64__", "__MUSIC_B64__", "__GAME_JS__", "__PEERJS_JS__"):
+    if ph in html:
+        print(f"ERROR: placeholder sin sustituir {ph}")
+        sys.exit(1)
+
 os.makedirs(OUT_DIR, exist_ok=True)
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)

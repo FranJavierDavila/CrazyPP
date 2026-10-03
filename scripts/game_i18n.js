@@ -131,8 +131,22 @@ const I18N_STRINGS = {
     mj_mic_hint: 'La voz usa el micrófono: acepta el permiso del navegador.',
     join_title: 'CÓDIGO DE LA SALA DE TU AMIGO',
     btn_connect: 'CONECTAR',
+    // ---- v2.28 · MENÚ PRINCIPAL (gran panel flotante con acordeón)
+    sec_match: 'JUGAR PARTIDO',
+    sec_train: 'ENTRENAR',
+    sec_surv: 'SUPERVIVENCIA',
+    sec_crazy: 'CRAZY',
+    sec_opts: 'OPCIONES',
+    btn_start: '▶  EMPEZAR PARTIDO',
+    btn_start_surv: '▶  EMPEZAR SUPERVIVENCIA',
+    btn_train_go: '▶  ENTRENAR GOLPES',
+    crazy_msg: '¡Sorpresas pronto..! 🎁',
+    best_surv: 'Récord: {n} golpes',
+    online_lbl: 'ONLINE · contra otra persona',
+    train_hint: 'Máquina de bolas + panel para ajustar tu pala con los sticks.',
+    surv_hint: 'La CPU acelera cada vez · ¿cuántos golpes aguantas?',
     // ---- mensajes de estado (panel / menú)
-    menu_open: 'Menú · apunta y pulsa el GATILLO',
+    menu_open: 'Menú principal · apunta y pulsa el GATILLO',
     msg_guest_mode: 'Pidiendo cambio de modo al anfitrión…',
     msg_mode_changed: 'Modo: {m} · cierra el menú para jugar',
     mode_surv_word: 'SUPERVIVENCIA',
@@ -188,7 +202,7 @@ const I18N_STRINGS = {
     ach_aces_d: '10 saques ganados sin respuesta',
     stats_line: '{won} victorias · {lost} derrotas · racha {streak} (máx. {best}) · mejor rallye {rally} · saques directos {aces}',
     // ---- overlay 2D (estado y controles)
-    status_pause: 'Pausa · pulsa ENTRAR EN VR para continuar la partida.',
+    status_pause: 'Pausa · pulsa el botón para volver a VR.',
     status_vr_checking: 'Comprobando compatibilidad con WebXR…',
     status_vr_ok: '✅ Visor compatible detectado. Ponte las gafas y pulsa el botón.',
     status_no_vr: '🖥️ Sin visor VR: disfruta del modo espectador (IA contra IA).',
@@ -226,6 +240,7 @@ const I18N_STRINGS = {
     ov_vr: 'ENTRAR EN VR',
     ov_ar: '🏠 PASSTHROUGH · tu habitación',
     ov_demo: 'Ver demo en pantalla (sin visor)',
+    music_title: 'Música de la portada',
     ov_hint: '<b>En el visor:</b> sube esta carpeta a <b>Netlify Drop</b> y abre el enlace con el <b>Meta Quest Browser</b> (requiere HTTPS). Sin visor, el modo demo juega IA contra IA.',
     ov_lang: '🌐 Idioma / Language',
   },
@@ -338,8 +353,21 @@ const I18N_STRINGS = {
     mj_p2p: 'Direct P2P (WebRTC). Needs internet on both headsets.',
     mj_mic_hint: 'Voice uses the microphone: accept the browser permission.',
     join_title: 'YOUR FRIEND’S ROOM CODE',
-    btn_connect: 'CONNECT',
-    menu_open: 'Menu · aim and press the TRIGGER',
+    // ---- v2.28 · MAIN MENU (big floating panel with accordion)
+    sec_match: 'PLAY MATCH',
+    sec_train: 'TRAINING',
+    sec_surv: 'SURVIVAL',
+    sec_crazy: 'CRAZY',
+    sec_opts: 'OPTIONS',
+    btn_start: '▶  START MATCH',
+    btn_start_surv: '▶  START SURVIVAL',
+    btn_train_go: '▶  PRACTICE SHOTS',
+    crazy_msg: 'Surprises coming soon..! 🎁',
+    best_surv: 'Best: {n} hits',
+    online_lbl: 'ONLINE · vs another player',
+    train_hint: 'Ball machine + panel to tune your paddle with the sticks.',
+    surv_hint: 'The CPU speeds up every rally · how many can you return?',
+    menu_open: 'Main menu · aim and press the TRIGGER',
     msg_guest_mode: 'Asking the host to change mode…',
     msg_mode_changed: 'Mode: {m} · close the menu to play',
     mode_surv_word: 'SURVIVAL',
@@ -390,7 +418,7 @@ const I18N_STRINGS = {
     ach_aces: 'Ace serve',
     ach_aces_d: '10 serves won unanswered',
     stats_line: '{won} wins · {lost} losses · streak {streak} (max {best}) · best rally {rally} · aces {aces}',
-    status_pause: 'Paused · press ENTER VR to continue the match.',
+    status_pause: 'Paused · press the button to return to VR.',
     status_vr_checking: 'Checking WebXR compatibility…',
     status_vr_ok: '✅ Compatible headset detected. Put it on and press the button.',
     status_no_vr: '🖥️ No VR headset: enjoy spectator mode (AI vs AI).',
@@ -428,6 +456,7 @@ const I18N_STRINGS = {
     ov_vr: 'ENTER VR',
     ov_ar: '🏠 PASSTHROUGH · your room',
     ov_demo: 'Watch demo on screen (no headset)',
+    music_title: 'Landing page music',
     ov_hint: '<b>On the headset:</b> upload this folder to <b>Netlify Drop</b> and open the link with the <b>Meta Quest Browser</b> (HTTPS required). Without a headset, demo mode plays AI vs AI.',
     ov_lang: '🌐 Language / Idioma',
   },
@@ -462,6 +491,9 @@ function applyLangDOM() {
     });
     document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
       el.placeholder = T(el.getAttribute('data-i18n-ph'));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+      el.title = T(el.getAttribute('data-i18n-title'));
     });
     document.documentElement.lang = __ppLang;
     // botones ES/EN del overlay

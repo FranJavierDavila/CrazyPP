@@ -34,6 +34,7 @@ async def main():
             if (g.menuOpen) g.toggleMenu();
             g.toggleMenu();
             g.drawMenu();
+            g.menuClick(g.menuRects.findIndex((r) => r.id === 'sec:opts'));   // v2.28 acordeón
             const ids = g.menuRects.map((r) => r.id);
             const voz = g.menuRects.find((r) => r.id === 'voz');
             return { open: g.menuOpen, n: ids.length, hasVoz: !!voz,
@@ -44,7 +45,7 @@ async def main():
         print("menú:", json.dumps({k: menu[k] for k in ("open", "n", "hasVoz", "vozY", "closeY")}))
         if not menu["open"]: fails.append("el menú no se abre")
         if not menu["hasVoz"]: fails.append("falta el botón 'voz' (megáfono)")
-        if menu["closeY"] + 42 > 636: fails.append(f"CERRAR se sale del panel: y={menu['closeY']}")
+        if menu["closeY"] + 68 > 1532: fails.append(f"CERRAR se sale del panel: y={menu['closeY']}")
 
         click_voz = await page.evaluate("""() => {
             const g = window.__game;

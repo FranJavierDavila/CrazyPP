@@ -32,8 +32,8 @@ def static_check():
     if n_sq_gr != 1 or n_sq_tr != 0: fails.append(f"squeeze mal registrado: grip={n_sq_gr} targetRay={n_sq_tr}")
     if "(0.5 - hit.uv.y)" in src:
         fails.append("el cursor sigue con la fórmula espejada (0.5 - hit.uv.y)")
-    if "(hit.uv.y - 0.5) * 0.35" not in src:
-        fails.append("no se encuentra la fórmula corregida (hit.uv.y - 0.5) * 0.35")
+    if "(hit.uv.y - 0.5) * 1.08" not in src:
+        fails.append("no se encuentra la fórmula corregida (hit.uv.y - 0.5) * 1.08")
     if "this._lastSelect[i] = nowSel" not in src:
         fails.append("falta la guardia temporal anti-duplicado en onSelectStart")
     if "this.status === 'creating' || this.status === 'waiting'" not in src:
@@ -47,10 +47,13 @@ JS_HELPERS = """
   const g = window.__game;
   g.renderer.xr.isPresenting = true;          // simular sesión XR
   g.connected = [true, true];                 // mandos presentes (para updateMenu)
-  g.camera.position.set(0, 0.16, 0.75);       // de frente al panel (sin tilte)
-  g.camera.lookAt(0, 0.16, 0);
+  g.camera.position.set(0, 1.4, 0.9);         // de frente al panel (sin tilte)
+  g.camera.lookAt(0, 1.3, -1);
   g.camera.updateMatrixWorld(true);
   if (!g.menuOpen) g.toggleMenu();
+  g.anchorMenu();                             // v2.28: panel DELANTE de la cabeza
+  g._menuAnchorUntil = 0;                     // test determinista: sin flotación
+  g.drawMenu();
   return true;
 }
 """
@@ -61,13 +64,19 @@ JS_AIM = """(rectId) => {
   const r = g.menuRects.find((q) => q.id === rectId);
   if (!r) return { ok: false, why: 'no rect ' + rectId };
   const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
-  const ux = cx / 512, uy = 1 - cy / 640;
-  const lx = (ux - 0.5) * 0.28, ly = (uy - 0.5) * 0.35;
-  // rayo vertical -Z que atraviesa ese punto exacto del plano.
+  const ux = cx / 1024, uy = 1 - cy / 1536;
+  const lx = (ux - 0.5) * 0.72, ly = (uy - 0.5) * 1.08;
+  // rayo vertical -Z que atraviesa ese punto exacto del plano del panel
+  // (v2.28: el panel está DELANTE del jugador; su centro es menuGroup.position,
+  // con yaw ~0 porque la cámara mira recto hacia él).
   // OJO: three.js pone matrixAutoUpdate=false en los controladores XR ->
   // hay que reactivarlo para que el position.set() tenga efecto.
+  // re-anclar en cada apuntado (congelar la flotación) y refrescar matrices
+  g.anchorMenu();
+  g._menuAnchorUntil = 0;
+  g.menuGroup.updateMatrixWorld(true);
   g.rays[0].matrixAutoUpdate = true;
-  g.rays[0].position.set(lx, ly + 0.16, 0.5);
+  g.rays[0].position.set(lx, g.menuGroup.position.y + ly, 0.5);
   g.rays[0].quaternion.set(0, 0, 0, 1);
   g.rig.updateMatrixWorld(true);
   g.menuHover = [-1, -1];
@@ -100,13 +109,13 @@ async def main():
 
         # ---------- 1) CURSOR SIN ESPEJO VERTICAL ----------
         await page.evaluate(JS_HELPERS)
-        # arriba del panel: modo:match (y≈120-164 canvas)
-        aim = await page.evaluate(JS_AIM, "mode:match")
-        print("aim mode:match:", json.dumps(aim))
+        # arriba del panel: 'start' (sección JUGAR PARTIDO desplegada)
+        aim = await page.evaluate(JS_AIM, "start")
+        print("aim start:", json.dumps(aim))
         if not aim.get("ok"):
             fails.append("no se pudo apuntar (rect no encontrado): " + str(aim))
         else:
-            if aim["hoverId"] != "mode:match":
+            if aim["hoverId"] != "start":
                 fails.append(f"el hover NO cae en el botón apuntado: {aim['hoverId']}")
             if not aim["dot"]:
                 fails.append("el cursor no aparece sobre el panel")
@@ -155,7 +164,12 @@ async def main():
                 g.menuHover = [idx(id), -1];
                 g.onSelectStart(0); g.onSelectStart(0);
             };
-            g.menuPage = 'main'; g.drawMenu();
+            g.menuPage = 'main';
+            if (g.menuSec !== 'opts') {
+                const i = g.menuRects.findIndex((r) => r.id === 'sec:opts');
+                if (i >= 0) g.menuClick(i);
+            }
+            g.drawMenu();
             const amb0 = g.audio.ambience;
             press('amb');
             out.ambAfterDouble = g.audio.ambience; out.amb0 = amb0;

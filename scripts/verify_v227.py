@@ -150,14 +150,17 @@ async def main():
         if not (art_en["b"] > 110 and art_en["b"] > art_en["r"] + 30):
             fails.append(f"cartel EN sin arte (RGB {art_en})")
 
-        # overlay 2D re-traducido (botones data-i18n)
+        # portada 2.28 re-traducida: el gran botón cartoon JUGAR/PLAY cambia
+        # de imagen (los botones data-i18n de la tarjeta antigua ya no existen)
         dom = await page.evaluate("""() => ({
-            vr: document.getElementById('vrbtn').textContent,
-            diff: document.querySelector('[data-diff=easy]').textContent,
+            playEs: getComputedStyle(document.getElementById('playEs')).display,
+            playEn: getComputedStyle(document.getElementById('playEn')).display,
             langBtnActive: document.querySelector('[data-lang=en]').classList.contains('active'),
+            demo: document.getElementById('spectate').textContent,
         })""")
-        if dom["vr"] != "ENTER VR" or dom["diff"] != "Easy" or not dom["langBtnActive"]:
-            fails.append(f"overlay EN: {json.dumps(dom)}")
+        if dom["playEs"] != "none" or dom["playEn"] == "none" or not dom["langBtnActive"] \
+                or dom["demo"] != "Watch demo on screen (no headset)":
+            fails.append(f"portada EN: {json.dumps(dom)}")
 
         # anuncio EN cubierto por el banco en inglés
         ann_en = await page.evaluate("""() => {
@@ -192,15 +195,15 @@ async def main():
 
         # ============ 5) VUELTA A CASTELLANO ============
         back = await page.evaluate("""() => {
+            window.__setLang('es', window.__game);
             const g = window.__game;
-            window.__setLang('es', g);
             const msgServe = (g.rules.startMatch('match'), g.rules.message);
             return { msgServe, lang: window.__TLang(), stored: localStorage.getItem('pp_lang'),
-                     vr: document.getElementById('vrbtn').textContent };
+                     playEs: getComputedStyle(document.getElementById('playEs')).display };
         }""")
         if back["msgServe"] != "Tu saque · la bola espera en tu mano libre":
             fails.append(f"vuelta a ES: '{back['msgServe']}'")
-        if back["lang"] != "es" or back["stored"] != "es" or back["vr"] != "ENTRAR EN VR":
+        if back["lang"] != "es" or back["stored"] != "es" or back["playEs"] == "none":
             fails.append(f"vuelta a ES estado: {json.dumps(back)}")
 
         # captura del overlay en inglés para revisión visual

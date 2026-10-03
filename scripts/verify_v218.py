@@ -21,8 +21,8 @@ JS_AIM = """(targetId) => {
     const idx = g.menuRects.findIndex((r) => r.id === targetId);
     if (idx < 0) return { ok: false, why: 'rect no encontrado: ' + targetId };
     const r = g.menuRects[idx];
-    const u = ((r.x + r.w / 2) / 512 - 0.5) * 0.28;
-    const v = (0.5 - (r.y + r.h / 2) / 640) * 0.35;
+    const u = ((r.x + r.w / 2) / 1024 - 0.5) * 0.72;
+    const v = (0.5 - (r.y + r.h / 2) / 1536) * 1.08;
     const wp = new V3(u, v, 0);
     g.menuGroup.updateMatrixWorld(true);
     wp.applyMatrix4(g.menuGroup.matrixWorld);
@@ -70,22 +70,36 @@ async def main():
             const g = window.__game;
             g.toggleMenu();
             g.updateMenu();
-            const ids = g.menuRects.map((r) => r.id);
+            const click = (id) => g.menuClick(g.menuRects.findIndex((r) => r.id === id));
+            const ids0 = g.menuRects.map((r) => r.id);
+            if (g.menuSec !== 'match') click('sec:match');
+            const idsMatch = g.menuRects.map((r) => r.id);
+            click('sec:opts');
+            const idsOpts = g.menuRects.map((r) => r.id);
             const trailRect = g.menuRects.find((r) => r.id === 'trail');
-            return { open: g.menuOpen, n: ids.length, ids,
+            return { open: g.menuOpen, base: ids0, match: idsMatch, opts: idsOpts,
                      trailY: trailRect ? trailRect.y : -1,
                      closeY: g.menuRects.find((r) => r.id === 'close')?.y ?? -1 };
         }""")
-        need = ['mode:match', 'mode:survival', 'diff:easy', 'diff:medium', 'diff:hard',
-                'theme:pabellon', 'theme:neon', 'theme:atardecer', 'theme:artico',
-                'amb', 'trail', 'close']
+        # v2.28: ACORDEÓN — los botones viven en su sección (expandimos para verlos)
+        needBase = ['sec:match', 'sec:train', 'sec:surv', 'sec:crazy', 'sec:opts',
+                    'lang:es', 'lang:en', 'start', 'close']
+        needMatch = ['start', 'diff:easy', 'diff:medium', 'diff:hard',
+                     'net:host', 'net:join']
+        needOpts = ['theme:pabellon', 'theme:neon', 'theme:atardecer', 'theme:artico',
+                    'amb', 'trail', 'voz']
         if not m["open"]: fails.append("el menú no se abre")
-        for r in need:
-            if r not in m["ids"]: fails.append(f"falta botón {r}")
-        for old in ('amb:on', 'amb:off'):
-            if old in m["ids"]: fails.append(f"botón antiguo {old} sigue en el menú")
-        # el panel completo debe caber en el canvas de 640 px
-        if m["closeY"] + 48 > 636: fails.append(f"CERRAR se sale del panel: y={m['closeY']}")
+        for r in needBase:
+            if r not in m["base"]: fails.append(f"falta botón {r}")
+        for r in needMatch:
+            if r not in m["match"]: fails.append(f"falta botón {r} en JUGAR PARTIDO")
+        for r in needOpts:
+            if r not in m["opts"]: fails.append(f"falta botón {r} en OPCIONES")
+        for old in ('mode:match', 'mode:survival', 'amb:on', 'amb:off'):
+            if old in m["base"] + m["match"] + m["opts"]:
+                fails.append(f"botón antiguo {old} sigue en el menú")
+        # el panel completo debe caber en el canvas de 1536 px
+        if m["closeY"] + 68 > 1532: fails.append(f"CERRAR se sale del panel: y={m['closeY']}")
 
         # --- 3) SAQUE FÁCIL: gatillo de la PALA lanza (no solo la mano de la bola) ---
         serve = await page.evaluate("""() => {
@@ -129,9 +143,11 @@ async def main():
         if consts["rally"] != 0:
             fails.append(f"extraReach fuera del saque: {consts}")
 
-        # --- 5) ESTELA: clic alterna, aplica y persiste ---
+        # --- 5) ESTELA: clic alterna, aplica y persiste (sección OPCIONES) ---
         tr = await page.evaluate("""() => {
             const g = window.__game;
+            if (!g.menuOpen) g.toggleMenu();
+            if (g.menuSec !== 'opts') g.menuClick(g.menuRects.findIndex((r) => r.id === 'sec:opts'));
             const before = g.showTrail;
             const idx = g.menuRects.findIndex((r) => r.id === 'trail');
             g.menuClick(idx);
@@ -146,9 +162,11 @@ async def main():
         if tr["saved"] != ('1' if tr["after"] else '0'): fails.append(f"estela no persiste: {tr}")
         if tr["back"] != tr["before"]: fails.append("estela no vuelve al alternar dos veces")
 
-        # --- 6) AMBIENTE basculante ---
+        # --- 6) AMBIENTE basculante (sección OPCIONES) ---
         amb = await page.evaluate("""() => {
             const g = window.__game;
+            if (!g.menuOpen) g.toggleMenu();
+            if (g.menuSec !== 'opts') g.menuClick(g.menuRects.findIndex((r) => r.id === 'sec:opts'));
             const b = !!g.audio.ambience;
             const idx = g.menuRects.findIndex((r) => r.id === 'amb');
             g.menuClick(idx);
@@ -188,6 +206,7 @@ async def main():
         await page.evaluate("""() => {
             const g = window.__game;
             if (!g.menuOpen) g.toggleMenu();
+            if (g.menuSec !== 'match') g.menuClick(g.menuRects.findIndex((r) => r.id === 'sec:match'));
             g.updateMenu();
         }""")
         aim = await page.evaluate(f"""() => {{
@@ -213,6 +232,7 @@ async def main():
             if (g.menuOpen) g.toggleMenu();   // cerrar: al abrir se repinta
             g.rules.state = 'over';
             g.toggleMenu();
+            if (g.menuSec !== 'match') g.menuClick(g.menuRects.findIndex((r) => r.id === 'sec:match'));
             const hasR = g.menuRects.some((r) => r.id === 'revancha');
             const idx = g.menuRects.findIndex((r) => r.id === 'revancha');
             g.menuClick(idx);
@@ -241,7 +261,7 @@ async def main():
         await browser.close()
 
     print("errores página:", errors if errors else "ninguno")
-    print("menú:", json.dumps({k: m[k] for k in ("open", "n", "trailY", "closeY")}))
+    print("menú:", json.dumps({k: m[k] for k in ("open", "trailY", "closeY")}))
     print("saque fácil:", json.dumps(serve))
     print("extraReach:", json.dumps(consts))
     if fails:

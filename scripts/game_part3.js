@@ -2,6 +2,10 @@
  *  ORQUESTADOR · sesión WebXR, mandos Quest 3, saque con mano libre,
  *  háptica y bucle principal
  * ===================================================================== */
+// v2.28: arte de la cabecera del MENÚ PRINCIPAL (data URL JPEG incrustado
+// por build_html.py — recorte del logo CRAZY PING PONG del arte del juego)
+const MENU_LOGO_SRC = '__MENU_LOGO_B64__';
+
 const BALL_HAND_LIFT = 0.08;   // bola "apoyada" sobre la palma de la mano libre
 const AI_TOSS_T = 0.55;        // duración del lanzamiento (y swing) del saque de la IA
 
@@ -158,6 +162,8 @@ class PingPongGame {
     // MULTIJUGADOR ONLINE (v2.19): P2P por WebRTC (PeerJS) + voz
     this.net = new NetLink(this);
     this.menuPage = 'main';       // 'main' | 'multi' | 'join' (teclado)
+    this.menuSec = 'match';       // v2.28: sección ABIERTA del acordeón
+    this._menuAnchorUntil = 0;    // v2.28: flotación inicial del panel
     this._joinCode = '';
     this._localHit = false;       // golpeo propio pendiente de enviar este frame
     // fanfarria de fin de partido (banner + confeti)
@@ -763,25 +769,25 @@ class PingPongGame {
     ud.grid = grid;
   }
 
-  // ---------- Menú de muñeca (v2.15) ----------
-  // UN solo acceso a toda la configuración: B (mando derecho) abre un panel
-  // anclado a la muñeca libre como una bandeja; se apunta con CUALQUIER mando
-  // (la pala incluye) y se elige con el GATILLO. Sustituye al stick-click
-  // (dificultad) y al flick (sala).
-  // v2.16: rayo, láser, cursor y hover INDEPENDIENTES por mando — antes solo
-  // el mando que aloja el panel podía seleccionar y apuntar con la pala no
-  // hacía nada. Anclaje: panel SOBRE la muñeca (pegado a la mano); la
-  // distancia de lectura la controla el propio brazo, no flota hacia la cara.
+  // ---------- MENÚ PRINCIPAL (v2.28) ----------
+  // UN gran panel flotante DELANTE del jugador (antes: bandeja de muñeca).
+  // Se abre SOLO al entrar en VR y con B (mando derecho). Cabecera con el
+  // arte del juego + dos palas con bandera (selector de idioma); cuerpo en
+  // ACORDEÓN: solo UNA sección desplegada cada vez (Jugar Partido /
+  // Entrenar / Supervivencia / Crazy / Opciones). Se apunta con CUALQUIER
+  // mando (la pala incluida) y se elige con el GATILLO.
+  // v2.16: rayo, láser, cursor y hover INDEPENDIENTES por mando se mantienen.
 
   buildMenu() {
     this.menuGroup = new THREE.Group();
     this.menuCanvas = document.createElement('canvas');
-    this.menuCanvas.width = 512;
-    this.menuCanvas.height = 640;
+    this.menuCanvas.width = 1024;
+    this.menuCanvas.height = 1536;
     this.menuTex = new THREE.CanvasTexture(this.menuCanvas);
     this.menuTex.colorSpace = THREE.SRGBColorSpace;
+    this.menuTex.anisotropy = 4;
     this.menuMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.28, 0.35),
+      new THREE.PlaneGeometry(0.72, 1.08),
       new THREE.MeshBasicMaterial({ map: this.menuTex, transparent: true, depthTest: false }),
     );
     this.menuMesh.renderOrder = 990;
@@ -789,6 +795,18 @@ class PingPongGame {
 
     this.menuGroup.visible = false;
     this.scene.add(this.menuGroup);   // espacio MUNDO: inmune al recentrado
+
+    // v2.28: arte de la cabecera + palas de idioma (data URLs; los PNG viven
+    // en la portada 2D, de donde se leen las mismas imágenes)
+    this.menuLogo = new Image();
+    this.menuLogo.onload = () => { if (this.menuOpen) this.drawMenu(); };
+    this.menuLogo.src = MENU_LOGO_SRC;
+    this.padES = new Image();
+    this.padES.onload = () => { if (this.menuOpen) this.drawMenu(); };
+    this.padES.src = (document.getElementById('padEs') || {}).src || '';
+    this.padEN = new Image();
+    this.padEN.onload = () => { if (this.menuOpen) this.drawMenu(); };
+    this.padEN.src = (document.getElementById('padEn') || {}).src || '';
 
     // UN HAZ LÁSER y UN cursor POR MANDO: cualquiera de los dos puede
     // apuntar (el de la pala incluido) y el hover es independiente por mano.
@@ -829,146 +847,212 @@ class PingPongGame {
   }
 
 
-  /** Zona inferior común del menú: pestañas + cerrar (v2.19) + IDIOMA (v2.27). */
-  drawMenuBottom(yTabs, rects) {
+  /** Cabecera común de TODAS las páginas (v2.28): franja azul con el arte
+   *  del juego a la izquierda y las DOS PALAS DE IDIOMA a la derecha. */
+  drawMenuHeader(rects) {
     const c = this.menuCanvas.getContext('2d');
-    const btn = this._menuBtn;
-    // v2.27: selector de idioma ES/EN a la derecha de las pestañas (sin
-    // cambiar la altura del panel; los 4 caben en la fila)
-    btn('tab:main', 28, yTabs, 158, 42, T('tab_settings'), this.menuPage === 'main');
-    btn('tab:multi', 194, yTabs, 158, 42, T('tab_multi'), this.menuPage !== 'main');
-    btn('lang:es', 360, yTabs, 56, 42, 'ES', TLang() === 'es');
-    btn('lang:en', 424, yTabs, 60, 42, 'EN', TLang() === 'en');
-    btn('close', 28, yTabs + 52, 456, 46, T('close_menu'), false);
+    const g = c.createLinearGradient(0, 16, 0, 198);
+    g.addColorStop(0, '#1d5ad4');
+    g.addColorStop(1, '#0c2e83');
+    c.beginPath();
+    if (c.roundRect) c.roundRect(16, 16, 992, 182, 24);
+    else c.rect(16, 16, 992, 182);
+    c.fillStyle = g;
+    c.fill();
+    c.strokeStyle = 'rgba(232,180,90,0.55)';
+    c.lineWidth = 2;
+    c.stroke();
+    // arte del juego (logo CRAZY PING PONG)
+    if (this.menuLogo.complete && this.menuLogo.naturalWidth) {
+      const lh = 152;
+      const lw = lh * (this.menuLogo.naturalWidth / this.menuLogo.naturalHeight);
+      c.drawImage(this.menuLogo, 44, 31, lw, lh);
+    } else {
+      c.fillStyle = '#f2f4f6';
+      c.font = '800 46px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillText('CRAZY PING PONG', 48, 108);
+    }
+    this._langPaddle(rects, 'es', 746, 48);
+    this._langPaddle(rects, 'en', 874, 48);
   }
 
-  /** Página MULTIJUGADOR: crear/unirse por código, estado y voz (v2.19). */
-  drawMenuMulti() {
+  /** Pala-bandera del selector de idioma (v2.28): anillo dorado si activa. */
+  _langPaddle(rects, lang, x, y) {
     const c = this.menuCanvas.getContext('2d');
-    const rects = this._menuRects;
+    const img = lang === 'es' ? this.padES : this.padEN;
+    const act = TLang() === lang;
+    const hovered = this.menuHover.includes(rects.length);
+    const S = 118;
+    c.save();
+    c.beginPath();
+    c.arc(x + S / 2, y + S / 2, S / 2 - 2, 0, Math.PI * 2);
+    c.closePath();
+    c.fillStyle = 'rgba(255,255,255,0.12)';
+    c.fill();
+    c.strokeStyle = act ? '#ffd257' : 'rgba(255,255,255,0.4)';
+    c.lineWidth = act ? 6 : 3;
+    c.stroke();
+    c.clip();
+    if (img && img.complete && img.naturalWidth) {
+      const k = Math.max(S / img.naturalWidth, S / img.naturalHeight) * 0.96;
+      const w = img.naturalWidth * k;
+      const h = img.naturalHeight * k;
+      c.drawImage(img, x + (S - w) / 2, y + (S - h) / 2, w, h);
+    } else {
+      c.fillStyle = '#f2f4f6';
+      c.font = '800 40px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(lang.toUpperCase(), x + S / 2, y + S / 2 + 4);
+    }
+    c.restore();
+    if (hovered) {
+      c.beginPath();
+      c.arc(x + S / 2, y + S / 2, S / 2 + 4, 0, Math.PI * 2);
+      c.closePath();
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = 5;
+      c.stroke();
+    }
+    rects.push({ x: x - 6, y: y - 6, w: S + 12, h: S + 12, id: 'lang:' + lang });
+  }
+
+  /** Página MULTIJUGADOR: crear/unirse por código, estado y voz (v2.19;
+   *  v2.28 reescala al panel grande 1024×1536). */
+  drawMenuMulti(rects) {
+    const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
+    const label = this._menuLabel;
     const net = this.net;
     const st = net.online ? 'online' : net.status;
 
-    c.fillStyle = '#9aa7b4';
-    c.font = '700 14px system-ui, sans-serif';
-    c.textAlign = 'left';
-    c.fillText(T('mj_head'), 28, 112);
+    this.drawMenuHeader(rects);
+    label(T('mj_head'), 244, 26);
 
     if (st === 'online') {
       c.fillStyle = '#7fb069';
-      c.font = '800 30px system-ui, sans-serif';
+      c.font = '800 52px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText(T('mj_connected'), 256, 152);
+      c.textBaseline = 'middle';
+      c.fillText(T('mj_connected'), 512, 336);
       c.fillStyle = '#cfd8e0';
-      c.font = '600 18px system-ui, sans-serif';
-      c.fillText(T('mj_rival', { code: net.code, st: this.rules.state === 'over' ? T('mj_over') : T('mj_playing') }), 256, 186);
+      c.font = '600 28px system-ui, sans-serif';
+      c.fillText(T('mj_rival', { code: net.code, st: this.rules.state === 'over' ? T('mj_over') : T('mj_playing') }), 512, 396);
       const voz = net.voiceState === 'on'
         ? (net.micOn ? T('voz_on_mic') : T('voz_on_silent'))
         : net.voiceState === 'asking' ? T('voz_asking')
         : net.voiceState === 'denied' ? T('voz_denied')
         : T('voz_off');
       c.fillStyle = '#9aa7b4';
-      c.font = '500 16px system-ui, sans-serif';
-      c.fillText(voz, 256, 214);
-      btn('net:mic', 28, 240, 222, 48, T('btn_voz', { v: net.micOn ? T('yes') : T('no') }), net.micOn && net.voiceState === 'on', undefined, !!net.micOn);
-      btn('net:hangup', 262, 240, 222, 48, T('btn_hangup'), false);
+      c.font = '500 24px system-ui, sans-serif';
+      c.fillText(voz, 512, 440);
+      btn('net:mic', 56, 486, 448, 76, T('btn_voz', { v: net.micOn ? T('yes') : T('no') }), net.micOn && net.voiceState === 'on', undefined, !!net.micOn, 26);
+      btn('net:hangup', 520, 486, 448, 76, T('btn_hangup'), false, undefined, undefined, 26);
       c.fillStyle = '#9aa7b4';
-      c.font = '500 15px system-ui, sans-serif';
+      c.font = '500 22px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText(T('mj_rematch_hint'), 256, 330);
+      c.textBaseline = 'middle';
+      c.fillText(T('mj_rematch_hint'), 512, 606);
     } else if (st === 'waiting') {
       c.fillStyle = '#e8b45a';
-      c.font = '700 18px system-ui, sans-serif';
+      c.font = '700 30px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText(T('mj_room_code'), 256, 146);
+      c.textBaseline = 'middle';
+      c.fillText(T('mj_room_code'), 512, 316);
       c.fillStyle = '#f2f4f6';
-      c.font = '900 72px ui-monospace, monospace';
-      c.fillText(net.code, 256, 210);
+      c.font = '900 124px ui-monospace, monospace';
+      c.fillText(net.code, 512, 420);
       c.fillStyle = '#9aa7b4';
-      c.font = '500 16px system-ui, sans-serif';
-      c.fillText(T('mj_waiting'), 256, 258);
-      btn('net:cancel', 28, 290, 456, 48, T('btn_cancel_room'), false);
+      c.font = '500 24px system-ui, sans-serif';
+      c.fillText(T('mj_waiting'), 512, 512);
+      btn('net:cancel', 56, 566, 912, 76, T('btn_cancel_room'), false, undefined, undefined, 26);
     } else if (st === 'creating' || st === 'joining') {
       c.fillStyle = '#e8b45a';
-      c.font = '700 24px system-ui, sans-serif';
+      c.font = '700 34px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText(st === 'creating' ? T('mj_creating') : T('mj_connecting', { code: net.code }), 256, 180);
-      btn('net:cancel', 28, 240, 456, 48, T('btn_cancel'), false);
+      c.textBaseline = 'middle';
+      c.fillText(st === 'creating' ? T('mj_creating') : T('mj_connecting', { code: net.code }), 512, 340);
+      btn('net:cancel', 56, 420, 912, 76, T('btn_cancel'), false, undefined, undefined, 26);
     } else if (st === 'error') {
       c.fillStyle = '#ff6b57';
-      c.font = '700 22px system-ui, sans-serif';
+      c.font = '700 30px system-ui, sans-serif';
       c.textAlign = 'center';
-      wrapText(c, net.statusMsg || T('mj_error'), 256, 150, 440, 28);
-      btn('net:host', 28, 240, 222, 48, T('btn_retry'), false);
-      btn('net:cancel', 262, 240, 222, 48, T('btn_back'), false);
+      c.textBaseline = 'middle';
+      wrapText(c, net.statusMsg || T('mj_error'), 512, 330, 880, 42);
+      btn('net:host', 56, 450, 448, 76, T('btn_retry'), false, undefined, undefined, 26);
+      btn('net:cancel', 520, 450, 448, 76, T('btn_back'), false, undefined, undefined, 26);
     } else {
       // off
       c.fillStyle = '#cfd8e0';
-      c.font = '600 18px system-ui, sans-serif';
+      c.font = '600 28px system-ui, sans-serif';
       c.textAlign = 'center';
-      c.fillText(T('mj_off_hint'), 256, 152);
-      btn('net:host', 28, 200, 456, 52, T('btn_host'), false, 'green');
-      btn('net:join', 28, 268, 456, 52, T('btn_join'), false);
+      c.textBaseline = 'middle';
+      c.fillText(T('mj_off_hint'), 512, 316);
+      btn('net:host', 56, 366, 912, 86, T('btn_host'), false, 'green', undefined, 27);
+      btn('net:join', 56, 472, 912, 86, T('btn_join'), false, undefined, undefined, 27);
     }
 
     c.fillStyle = '#75828f';
-    c.font = '500 14px system-ui, sans-serif';
+    c.font = '500 21px system-ui, sans-serif';
     c.textAlign = 'center';
-    c.fillText(T('mj_p2p'), 256, 396);
-    c.fillText(T('mj_mic_hint'), 256, 420);
-    this.drawMenuBottom(454, rects);
+    c.textBaseline = 'middle';
+    c.fillText(T('mj_p2p'), 512, 640);
+    c.fillText(T('mj_mic_hint'), 512, 678);
+    btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
   }
 
-  /** Página JOIN: teclado en el panel para escribir el código (v2.19). */
-  drawMenuJoin() {
+  /** Página JOIN: teclado en el panel para escribir el código (v2.19;
+   *  v2.28 reescala al panel grande 1024×1536). */
+  drawMenuJoin(rects) {
     const c = this.menuCanvas.getContext('2d');
-    const rects = this._menuRects;
     const btn = this._menuBtn;
+    const label = this._menuLabel;
     const CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // sin 0/O/1/I/L
 
-    c.fillStyle = '#9aa7b4';
-    c.font = '700 14px system-ui, sans-serif';
-    c.textAlign = 'left';
-    c.fillText(T('join_title'), 28, 112);
+    this.drawMenuHeader(rects);
+    label(T('join_title'), 240, 26);
 
     // 5 huecos del código
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
     for (let i = 0; i < 5; i++) {
-      const x = 28 + i * 96;
+      const x = 56 + i * 186;
       c.beginPath();
-      if (c.roundRect) c.roundRect(x, 124, 74, 66, 12);
-      else c.rect(x, 124, 74, 66);
+      if (c.roundRect) c.roundRect(x, 268, 156, 112, 16);
+      else c.rect(x, 268, 156, 112);
       c.fillStyle = 'rgba(255,255,255,0.06)';
       c.fill();
       c.strokeStyle = i === this._joinCode.length ? '#e8b45a' : 'rgba(255,255,255,0.18)';
-      c.lineWidth = i === this._joinCode.length ? 3 : 1.5;
+      c.lineWidth = i === this._joinCode.length ? 5 : 2;
       c.stroke();
       const ch = this._joinCode[i];
       if (ch) {
         c.fillStyle = '#f2f4f6';
-        c.font = '800 44px ui-monospace, monospace';
-        c.textAlign = 'center';
-        c.fillText(ch, x + 37, 158);
+        c.font = '800 68px ui-monospace, monospace';
+        c.fillText(ch, x + 78, 324);
       }
     }
 
     // teclado 7×5
-    c.textAlign = 'center';
     for (let i = 0; i < CHARS.length; i++) {
       const col = i % 7, row = Math.floor(i / 7);
-      btn(`key:${CHARS[i]}`, 28 + col * 66, 210 + row * 50, 60, 44, CHARS[i], false);
+      btn(`key:${CHARS[i]}`, 56 + col * 128, 430 + row * 96, 118, 86, CHARS[i], false, undefined, undefined, 34);
     }
-    btn('key:del', 28 + 5 * 66, 210 + 4 * 50, 60, 44, '⌫', false);
-    btn('key:ok', 28, 470, 222, 48, T('btn_connect'), this._joinCode.length === 5, 'green');
-    btn('key:cancel', 262, 470, 222, 48, T('btn_back'), false);
-    this.drawMenuBottom(528, rects);
+    btn('key:del', 56 + 4 * 128, 430 + 4 * 96, 118, 86, '⌫', false, undefined, undefined, 34);
+    btn('key:ok', 56, 940, 448, 82, T('btn_connect'), this._joinCode.length === 5, 'green', undefined, 28);
+    btn('key:cancel', 520, 940, 448, 82, T('btn_back'), false, undefined, undefined, 28);
+    btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
   }
 
-  /** Pinta el panel y deja en menuRects las zonas clicables (px canvas). */
+  /** Pinta el panel y deja en menuRects las zonas clicables (px canvas).
+   *  v2.28: página principal en ACORDEÓN — las secciones se contraen y solo
+   *  se despliega la que se selecciona (menuSec). */
   drawMenu() {
     const c = this.menuCanvas.getContext('2d');
     if (!c) return;
-    const W = 512, H = 640;
+    const W = 1024, H = 1536;
     const rects = [];
     const over = this.rules.state === 'over';
 
@@ -984,144 +1068,264 @@ class PingPongGame {
 
     // tarjeta
     c.clearRect(0, 0, W, H);
-    rr(4, 4, W - 8, H - 8, 26);
-    c.fillStyle = 'rgba(11,14,18,0.94)';
+    rr(8, 8, W - 16, H - 16, 36);
+    c.fillStyle = 'rgba(10,13,20,0.95)';
     c.fill();
     c.strokeStyle = 'rgba(232,180,90,0.6)';
-    c.lineWidth = 3;
+    c.lineWidth = 4;
     c.stroke();
 
-    // cabecera
-    c.fillStyle = '#f2f4f6';
-    c.font = '800 32px system-ui, sans-serif';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(T('menu_title'), 200, 46);
-    c.fillStyle = '#9aa7b4';
-    c.font = '600 15px system-ui, sans-serif';
-    c.fillText(T('menu_hint'), 200, 76);
-    c.textAlign = 'right';
-    c.fillStyle = '#e8b45a';
-    c.font = '700 16px system-ui, sans-serif';
-    c.fillText(T('menu_b'), W - 26, 46);
-
     // botón genérico (compartido por todas las páginas)
-    // v2.23: (1) los botones ACTIVOS también responden al apuntado (antes
-    // las casillas marcadas parecían muertas: sin hover ni respuesta);
-    // (2) los basculantes llevan CASILLA explícita ☑/☐ que refleja su
-    // estado; (3) la zona táctil es más grande que el dibujo (los botones
-    // de ~2 cm eran imposibles de puntear con el láser en el visor).
-    const btn = (id, x, y, w, h, label, active, style, check) => {
+    // v2.23: activos responden al apuntado, casilla ☑/☐ explícita y zona
+    // táctil más grande que el dibujo. v2.28: fuentes grandes (fsize) para
+    // el panel grande.
+    const btn = (id, x, y, w, h, label2, active, style, check, fsize) => {
       const hovered = this.menuHover.includes(rects.length);
-      rr(x, y, w, h, 12);
+      rr(x, y, w, h, 14);
       if (active) {
         c.fillStyle = style === 'green'
           ? (hovered ? '#93c97e' : '#7fb069')
-          : (hovered ? '#f4ca79' : '#e8b45a');
+          : style === 'surv'
+            ? (hovered ? '#ffa25e' : '#f0873f')
+            : (hovered ? '#f4ca79' : '#e8b45a');
         c.fill();
         if (hovered) {
           c.strokeStyle = '#ffffff';
-          c.lineWidth = 3;
+          c.lineWidth = 4;
           c.stroke();
         }
-        c.fillStyle = '#10131a';
+        c.fillStyle = style === 'surv' ? '#1a1006' : '#10131a';
       } else {
         c.fillStyle = 'rgba(255,255,255,0.07)';
         c.fill();
         c.strokeStyle = hovered ? '#ffffff' : 'rgba(255,255,255,0.18)';
-        c.lineWidth = hovered ? 3 : 1.5;
+        c.lineWidth = hovered ? 4 : 2;
         if (style === 'green') c.strokeStyle = hovered ? '#bfe3a9' : 'rgba(127,176,105,0.55)';
+        if (style === 'surv') c.strokeStyle = hovered ? '#ffc09a' : 'rgba(240,135,63,0.55)';
         c.stroke();
-        c.fillStyle = style === 'green' ? '#bfe3a9' : '#cfd8e0';
+        c.fillStyle = style === 'green' ? '#bfe3a9'
+          : style === 'surv' ? '#ffc09a' : '#cfd8e0';
       }
-      c.font = '700 20px system-ui, sans-serif';
+      c.font = `700 ${fsize || 26}px system-ui, sans-serif`;
       c.textAlign = 'center';
+      c.textBaseline = 'middle';
       let tx = x + w / 2;
       if (check !== undefined) {
-        const bs = 9, bx = x + 18, by = y + h / 2;
-        c.lineWidth = 2;
+        const bs = 13, bx = x + 26, by = y + h / 2;
+        c.lineWidth = 3;
         if (check) {
           c.fillStyle = active ? 'rgba(16,19,26,0.88)' : 'rgba(207,216,224,0.92)';
           c.fillRect(bx - bs, by - bs, bs * 2, bs * 2);
           c.strokeStyle = active ? '#e8b45a' : '#10131a';
           c.beginPath();
-          c.moveTo(bx - 5, by + 0.5);
-          c.lineTo(bx - 1.5, by + 4.5);
-          c.lineTo(bx + 5.5, by - 4.5);
+          c.moveTo(bx - 7, by + 1);
+          c.lineTo(bx - 2, by + 6);
+          c.lineTo(bx + 7.5, by - 6);
           c.stroke();
         } else {
           c.strokeStyle = active ? 'rgba(16,19,26,0.8)' : 'rgba(255,255,255,0.55)';
           c.strokeRect(bx - bs, by - bs, bs * 2, bs * 2);
         }
-        tx += 13;
+        tx += 18;
       }
-      c.fillText(label, tx, y + h / 2 + 1);
+      c.fillText(label2, tx, y + h / 2 + 1);
       rects.push({ x: x - 5, y: y - 3, w: w + 10, h: h + 6, id });
     };
     this._menuBtn = btn;
     this._menuRects = rects;
-    const label = (txt, y) => {
-      c.fillStyle = '#9aa7b4';
-      c.font = '700 14px system-ui, sans-serif';
-      c.textAlign = 'left';
-      c.fillText(txt, 28, y);
+    const label = (txt, y, size = 24, col = '#9aa7b4', align = 'left') => {
+      c.fillStyle = col;
+      c.font = `700 ${size}px system-ui, sans-serif`;
+      c.textAlign = align;
+      c.textBaseline = 'middle';
+      c.fillText(txt, align === 'center' ? 512 : 56, y);
     };
+    this._menuLabel = label;
 
     if (this.menuPage === 'multi') {
-      this.drawMenuMulti();
+      this.drawMenuMulti(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
       this.menuTex.needsUpdate = true;
       return;
     }
     if (this.menuPage === 'join') {
-      this.drawMenuJoin();
+      this.drawMenuJoin(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
       this.menuTex.needsUpdate = true;
       return;
     }
 
-    // MODO (v2.18: filas compactas para dejar sitio a EXTRAS)
-    label(T('mode_label'), 110);
-    btn('mode:match', 28, 120, 222, 44, T('mode_match'), this.mode === 'match');
-    btn('mode:survival', 262, 120, 222, 44, T('mode_survival'), this.mode === 'survival');
+    this.drawMenuHeader(rects);
 
-    // DIFICULTAD
-    label(T('diff_label'), 176);
-    btn('diff:easy', 28, 186, 136, 42, T('diff_easy_btn'), this.difficulty === 'easy');
-    btn('diff:medium', 188, 186, 136, 42, T('diff_medium_btn'), this.difficulty === 'medium');
-    btn('diff:hard', 348, 186, 136, 42, T('diff_hard_btn'), this.difficulty === 'hard');
-
-    // SALA (2×2)
-    label(T('room_label'), 242);
-    const themes = [
-      ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
-      ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
+    // ---------- ACORDEÓN (v2.28) ----------
+    // Encabezados SIEMPRE visibles; solo la sección elegida (menuSec)
+    // despliega su contenido. Pulsar su cabecera la abre (o la cierra si ya
+    // estaba abierta) y CONTRAE las demás.
+    const diffName = { easy: T('diff_easy_btn'), medium: T('diff_medium_btn'), hard: T('diff_hard_btn') }[this.difficulty] || '';
+    const themeDef = ROOM_THEMES.find((t) => t.key === this.theme);
+    const themeName = themeDef ? (themeDef.nameKey ? T(themeDef.nameKey) : themeDef.name) : '';
+    const SECS = [
+      ['match', T('sec_match'), this.net.online ? T('tab_multi') : diffName],
+      ['train', T('sec_train'), ''],
+      ['surv', T('sec_surv'), this.survivalBest > 0 ? T('best_surv', { n: this.survivalBest }) : ''],
+      ['crazy', T('sec_crazy'), ''],
+      ['opts', T('sec_opts'), themeName],
     ];
-    themes.forEach(([id, name], i) => {
-      btn(id, 28 + (i % 2) * 234, 252 + Math.floor(i / 2) * 50, 222, 42,
-        name, this.theme === id.split(':')[1]);
-    });
+    let y = 232;
+    for (const [key, title, hint] of SECS) {
+      const open = this.menuSec === key;
+      const hov = this.menuHover.includes(rects.length);
+      rr(40, y, 944, 86, 20);
+      c.fillStyle = open
+        ? (hov ? 'rgba(232,180,90,0.30)' : 'rgba(232,180,90,0.16)')
+        : (hov ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.06)');
+      c.fill();
+      c.strokeStyle = open ? 'rgba(232,180,90,0.85)'
+        : hov ? '#ffffff' : 'rgba(255,255,255,0.2)';
+      c.lineWidth = open ? 4 : hov ? 4 : 2;
+      c.stroke();
+      c.fillStyle = open ? '#ffd257' : '#f2f4f6';
+      c.font = '800 30px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillText(title, 68, y + 44);
+      if (hint) {
+        c.fillStyle = open ? 'rgba(255,210,87,0.75)' : '#75828f';
+        c.font = '600 22px system-ui, sans-serif';
+        c.textAlign = 'right';
+        c.fillText(hint.length > 22 ? hint.slice(0, 21) + '…' : hint, 908, y + 44);
+      }
+      // chevron ▸ / ▾
+      c.fillStyle = '#e8b45a';
+      c.beginPath();
+      if (open) {
+        c.moveTo(930, y + 38);
+        c.lineTo(950, y + 38);
+        c.lineTo(940, y + 52);
+      } else {
+        c.moveTo(934, y + 34);
+        c.lineTo(948, y + 44);
+        c.lineTo(934, y + 54);
+      }
+      c.closePath();
+      c.fill();
+      rects.push({ x: 40, y: y - 3, w: 944, h: 92, id: 'sec:' + key });
+      y += 86 + 10;
 
-    // EXTRAS (v2.18; v2.22 añade el MEGÁFONO; v2.27: IDIOMA en las pestañas)
-    label(T('extras_label'), 356);
-    const yn = (v) => (v ? T('yes') : T('no'));
-    btn('amb', 28, 366, 222, 40, T('btn_amb', { v: yn(this.audio.ambience) }), !!this.audio.ambience, undefined, !!this.audio.ambience);
-    btn('trail', 262, 366, 222, 40, T('btn_trail', { v: yn(this.showTrail) }), !!this.showTrail, undefined, !!this.showTrail);
-    btn('voz', 28, 414, 456, 40, T('btn_mic', { v: yn(this.audio.voice) }), !!this.audio.voice, undefined, !!this.audio.voice);
+      if (!open) continue;
 
-    // REVANCHA (solo con el partido terminado)
-    let yNext = 460;
-    if (over) {
-      btn('revancha', 28, yNext, 456, 46, T('btn_rematch'), false, 'green');
-      yNext += 54;
+      // ---- contenido de la sección desplegada ----
+      if (key === 'match') {
+        if (over) {
+          btn('revancha', 56, y, 912, 70, T('btn_rematch'), false, 'green', undefined, 30);
+          y += 82;
+        }
+        btn('start', 56, y, 912, 86, T('btn_start'), false, 'green', undefined, 33);
+        y += 98;
+        label(T('diff_label'), y + 14, 22);
+        y += 34;
+        btn('diff:easy', 56, y, 292, 58, T('diff_easy_btn'), this.difficulty === 'easy', undefined, undefined, 24);
+        btn('diff:medium', 360, y, 292, 58, T('diff_medium_btn'), this.difficulty === 'medium', undefined, undefined, 24);
+        btn('diff:hard', 664, y, 292, 58, T('diff_hard_btn'), this.difficulty === 'hard', undefined, undefined, 24);
+        y += 72;
+        label(T('online_lbl'), y + 14, 22);
+        y += 34;
+        const st = this.net.online ? 'online' : this.net.status;
+        if (st === 'off') {
+          btn('net:host', 56, y, 912, 64, T('btn_host'), false, undefined, undefined, 25);
+          y += 76;
+          btn('net:join', 56, y, 912, 64, T('btn_join'), false, undefined, undefined, 25);
+          y += 76;
+        } else if (st === 'waiting') {
+          label(`${T('mj_room_code')}: ${this.net.code} · ${T('mj_waiting')}`, y + 16, 24, '#e8b45a');
+          y += 42;
+          btn('net:cancel', 56, y, 912, 60, T('btn_cancel_room'), false, undefined, undefined, 24);
+          y += 72;
+        } else if (st === 'creating' || st === 'joining') {
+          label(st === 'creating' ? T('mj_creating') : T('mj_connecting', { code: this.net.code }), y + 16, 24, '#e8b45a');
+          y += 42;
+          btn('net:cancel', 56, y, 912, 60, T('btn_cancel'), false, undefined, undefined, 24);
+          y += 72;
+        } else if (st === 'error') {
+          label(this.net.statusMsg || T('mj_error'), y + 16, 24, '#ff6b57');
+          y += 42;
+          btn('net:host', 56, y, 448, 60, T('btn_retry'), false, undefined, undefined, 24);
+          btn('net:cancel', 520, y, 448, 60, T('btn_back'), false, undefined, undefined, 24);
+          y += 72;
+        } else if (st === 'online') {
+          btn('net:mic', 56, y, 448, 64, T('btn_voz', { v: this.net.micOn ? T('yes') : T('no') }), this.net.micOn && this.net.voiceState === 'on', undefined, !!this.net.micOn, 24);
+          btn('net:hangup', 520, y, 448, 64, T('btn_hangup'), false, undefined, undefined, 24);
+          y += 76;
+        }
+        // acceso a la página completa de multijugador (voz, código grande)
+        btn('tab:multi', 56, y, 912, 60, T('tab_multi'), false, undefined, undefined, 24);
+        y += 72;
+      } else if (key === 'train') {
+        btn('traingo', 56, y, 912, 86, T('btn_train_go'), false, 'green', undefined, 32);
+        y += 100;
+        c.fillStyle = '#9aa7b4';
+        c.font = '500 23px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        wrapText(c, T('train_hint'), 512, y + 22, 860, 32);
+        y += 76;
+      } else if (key === 'surv') {
+        btn('survgo', 56, y, 912, 86, T('btn_start_surv'), false, 'surv', undefined, 30);
+        y += 100;
+        c.fillStyle = '#9aa7b4';
+        c.font = '500 23px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        wrapText(c, T('surv_hint'), 512, y + 22, 860, 32);
+        y += 44;
+        label(this.survivalBest > 0 ? T('best_surv', { n: this.survivalBest }) : '', y + 34, 24, '#f0873f', 'center');
+        y += 60;
+      } else if (key === 'crazy') {
+        rr(56, y, 912, 128, 20);
+        c.fillStyle = 'rgba(232,180,90,0.12)';
+        c.fill();
+        c.strokeStyle = 'rgba(232,180,90,0.5)';
+        c.lineWidth = 2;
+        c.setLineDash([14, 10]);
+        c.stroke();
+        c.setLineDash([]);
+        c.fillStyle = '#ffd98a';
+        c.font = '800 40px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(T('crazy_msg'), 512, y + 64);
+        y += 142;
+      } else if (key === 'opts') {
+        label(T('room_label'), y + 14, 22);
+        y += 34;
+        const themes = [
+          ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
+          ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
+        ];
+        themes.forEach(([id, name], i) => {
+          btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 70, 448, 60, name, this.theme === id.split(':')[1], undefined, undefined, 24);
+        });
+        y += 140;
+        const yn = (v) => (v ? T('yes') : T('no'));
+        btn('amb', 56, y, 912, 62, T('btn_amb', { v: yn(this.audio.ambience) }), !!this.audio.ambience, undefined, !!this.audio.ambience, 24);
+        y += 74;
+        btn('voz', 56, y, 912, 62, T('btn_mic', { v: yn(this.audio.voice) }), !!this.audio.voice, undefined, !!this.audio.voice, 24);
+        y += 74;
+        btn('trail', 56, y, 912, 62, T('btn_trail', { v: yn(this.showTrail) }), !!this.showTrail, undefined, !!this.showTrail, 24);
+        y += 74;
+      }
+      y += 14;
     }
 
-    // pestañas + idioma (v2.27) + cerrar
-    btn('tab:main', 28, yNext, 222, 40, T('tab_settings'), true);
-    btn('tab:multi', 262, yNext, 222, 40, T('tab_multi'), false);
-    btn('close', 28, yNext + 46, 456, 42, T('close_menu'), false);
+    // cierre inferior (siempre visible)
+    btn('close', 56, 1392, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
+    c.fillStyle = '#5c6672';
+    c.font = '500 20px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(T('menu_hint'), 512, 1484);
 
     this.menuRects = rects;
     this._menuState = this.rules.state;
@@ -1136,6 +1340,7 @@ class PingPongGame {
     for (const d of this.menuDots) d.visible = false;
     this.menuHover = [-1, -1];
     if (this.menuOpen) {
+      this.anchorMenu();          // v2.28: DELANTE del jugador, no en la muñeca
       this.rules.message = T('menu_open');
       this.drawMenu();
       this.audio.playOsc(660, 990, 0.07, 'sine', 0.15, 0);
@@ -1149,30 +1354,28 @@ class PingPongGame {
     if (this.menuOpen) this.toggleMenu();
   }
 
-  /** Ancla el panel a la muñeca libre (bandeja sobre la mano), lo orienta a
-   *  la cara y hace el hit-test del rayo de apuntado DE CADA MANDO: la pala
-   *  también puede seleccionar, cada mano tiene su láser y su hover. */
-  updateMenu() {
-    const ci = 1 - this.paddleHand;
-    const grip = this.grips[ci];
-    if (!this.connected[ci] || !grip) {
-      this.menuGroup.visible = false;
-      for (const l of this.menuLines) l.visible = false;
-      for (const d of this.menuDots) d.visible = false;
-      return;
-    }
-    this.menuGroup.visible = true;
-
-    // --- anclaje: bandeja SOBRE la muñeca a distancia CONSTANTE (pegada a la
-    //     mano); la orientación sí sigue a la cara para leerla de frente.
-    //     Antes flotaba hacia la cabeza (0,15 m + 0,09 arriba) y quedaba
-    //     pegada a los ojos; la distancia de lectura la manda el brazo.
-    grip.getWorldPosition(muGrip);
+  /** v2.28: coloca el gran panel DELANTE de la cabeza (1,08 m), un poco por
+   *  debajo de la línea de ojos, mirando a la cara. Durante ~1,8 s sigue
+   *  suavemente a la cabeza (flotación) y después queda FIJO en el mundo. */
+  anchorMenu() {
     this.camera.getWorldPosition(muHead);
-    muPos.copy(muGrip);
-    muPos.y += 0.16;
-    this.menuGroup.position.copy(muPos);
+    this.camera.getWorldQuaternion(muQ);
+    muDir.set(0, 0, -1).applyQuaternion(muQ);
+    muDir.y = 0;
+    if (muDir.lengthSq() < 1e-6) muDir.set(0, 0, -1);
+    muDir.normalize();
+    this.menuGroup.position.copy(muHead).addScaledVector(muDir, 1.08);
+    this.menuGroup.position.y = Math.max(0.85, muHead.y - 0.05);
     this.menuGroup.lookAt(muHead);
+    this._menuAnchorUntil = performance.now() / 1000 + 1.8;
+  }
+
+  /** Coloca el panel (flotación inicial) y hace el hit-test del rayo de
+   *  apuntado DE CADA MANDO: la pala también puede seleccionar, cada mano
+   *  tiene su láser y su hover (v2.16, se mantiene en v2.28). */
+  updateMenu() {
+    // flotación inicial: el panel acompaña a la cabeza antes de fijarse
+    if ((performance.now() / 1000) < (this._menuAnchorUntil || 0)) this.anchorMenu();
 
     // estado del partido cambió (p.ej. fin) → repintar botones
     if (this.rules.state !== this._menuState) this.drawMenu();
@@ -1194,17 +1397,14 @@ class PingPongGame {
         // v2.24: se descartan intersecciones degeneradas (el mando tocando el
         // propio plano del panel, distancia ~0) para no pintar un cursor falso.
         if (hit && hit.uv && hit.distance > 0.02) {
-          const px = hit.uv.x * 512;
-          const py = (1 - hit.uv.y) * 640;
+          const px = hit.uv.x * 1024;
+          const py = (1 - hit.uv.y) * 1536;
           idx = this.menuRects.findIndex((r) =>
             px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h);
-          // cursor sobre el panel (uv -> plano 0.28×0.35).
-          // v2.24 FIX: el eje Y del plano es uv.y=1 ARRIBA (+0.175). Antes se
-          // pintaba (0.5 - uv.y) y el punto aparecía ESPEJADO en vertical:
-          // el usuario apuntaba con el punto (no con el impacto real) y los
-          // clics caían en el botón equivocado ("zonas desplazadas").
+          // cursor sobre el panel (uv -> plano 0.72×1.08). El eje Y del plano
+          // es uv.y=1 ARRIBA (v2.24: nunca se pinta espejado en vertical).
           dot.visible = true;
-          dot.position.set((hit.uv.x - 0.5) * 0.28, (hit.uv.y - 0.5) * 0.35, 0.004);
+          dot.position.set((hit.uv.x - 0.5) * 0.72, (hit.uv.y - 0.5) * 1.08, 0.004);
         } else {
           dot.visible = false;
         }
@@ -1231,20 +1431,64 @@ class PingPongGame {
     if (!r) return;
     const [ns, arg] = r.id.split(':');
     switch (ns) {
-      case 'tab':
-        this.menuPage = arg === 'multi' ? 'multi' : 'main';
-        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+      case 'sec':
+        // v2.28 ACORDEÓN: abrir la sección elegida y CONTRAER las demás
+        // (pulsar de nuevo la abierta la contrae: todas cerradas)
+        this.menuSec = this.menuSec === arg ? '' : arg;
+        // CRAZY: al pulsarlo, directamente el mensaje (modo en desarrollo)
+        if (arg === 'crazy' && this.menuSec === 'crazy') {
+          this.rules.message = T('crazy_msg');
+          this.audio.playOsc(880, 1320, 0.09, 'triangle', 0.14, 0);
+          window.setTimeout(() => {
+            if (!this.disposed) this.audio.playOsc(1100, 1660, 0.12, 'triangle', 0.12, 0);
+          }, 110);
+        } else {
+          this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        }
         this.drawMenu();
         break;
+      case 'start':
+        // ARRANQUE RÁPIDO: partido contra la CPU (o revancha online)
+        if (this.net.online) {
+          this.startOnlineMatch();   // anfitrión reinicia; invitado pide revancha
+        } else {
+          if (this.mode !== 'match') this.switchMode('match');
+          else { this.rules.startMatch('match'); this.resetToss(); }
+        }
+        this.closeMenu();
+        break;
+      case 'survgo':
+        // SUPERVIVENCIA desde el menú (el invitado online lo pide por red)
+        if (this.net.online) {
+          if (this.net.role === 'guest') this.net.sendMode('survival');
+          this.rules.message = T('msg_guest_mode');
+          this.drawMenu();
+          break;
+        }
+        if (this.mode !== 'survival') this.switchMode('survival');
+        else { this.rules.startMatch('survival'); this.resetToss(); }
+        this.closeMenu();
+        break;
+      case 'traingo':
+        // ENTRENAR desde el menú: máquina de bolas + panel de agarre
+        this.closeMenu();
+        this.enterCalib();
+        break;
       case 'lang':
-        // v2.27: selector de idioma en el menú (ES/EN) — cambia textos,
-        // banco de voz del megáfono y cartel; persistente.
+        // v2.27: selector de idioma (palas con bandera en la cabecera) —
+        // cambia textos, banco de voz del megáfono y cartel; persistente.
         if (arg === 'es' || arg === 'en') {
           setLang(arg, this);
           this.rules.message = '';
           this.syncDom();
           this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         }
+        this.drawMenu();
+        break;
+      case 'tab':
+        // v2.28: pestaña 'multi' abre la página completa; 'main' vuelve
+        this.menuPage = arg === 'multi' ? 'multi' : 'main';
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
         break;
       case 'net':
@@ -1265,20 +1509,6 @@ class PingPongGame {
           }
         } else if (arg === 'cancel') { this.menuPage = 'multi'; }
         else if (this._joinCode.length < 5) this._joinCode += arg;
-        this.drawMenu();
-        break;
-      case 'mode':
-        // v2.23: ya NO cierra el menú — el cambio se VE (la casilla marcada
-        // salta de botón) y el mensaje dice cómo seguir. Antes el menú se
-        // cerraba y el usuario no sabía si el modo había cambiado.
-        if (this.net.online && this.net.role === 'guest') {
-          this.net.sendMode(arg === 'survival' ? 'survival' : 'match');
-          this.rules.message = T('msg_guest_mode');
-        } else {
-          this.switchMode(arg === 'survival' ? 'survival' : 'match');
-          this.rules.message = T('msg_mode_changed', { m: arg === 'survival' ? T('mode_surv_word') : T('mode_match_word') });
-        }
-        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
         break;
       case 'diff': {
@@ -1405,11 +1635,18 @@ class PingPongGame {
     this.survivalRallies = 0;
     this.rules.startMatch(this.mode);
     this.applyAISkill();
-    // el menú empieza SIEMPRE cerrado en cada sesión
-    this.menuOpen = false;
-    if (this.menuGroup) this.menuGroup.visible = false;
-    for (const l of this.menuLines || []) l.visible = false;
-    for (const d of this.menuDots || []) d.visible = false;
+    // v2.28: el MENÚ PRINCIPAL recibe al jugador — gran panel flotante
+    // delante con JUGAR PARTIDO ya desplegado: un gatillo y estás jugando.
+    // El saque de la CPU queda congelado mientras el menú esté abierto.
+    this.menuPage = 'main';
+    this.menuSec = 'match';
+    this.menuOpen = true;
+    if (this.menuGroup) {
+      this.menuGroup.visible = true;
+      this.anchorMenu();
+      this.drawMenu();
+    }
+    this.rules.message = T('menu_open');
     // RE-VINCULACIÓN al entrar en VR: el contexto creado en 2D puede perder la
     // salida al pasar a inmersivo. Se crea uno nuevo DENTRO de la sesión
     // (ligado a la salida activa del casco) y se adopta SOLO si arranca
@@ -1483,6 +1720,11 @@ class PingPongGame {
     this.aiToss = null;
     this.demoToss = null;
     this.demoServeTimer = 1.4;
+    // v2.28: sin sesión XR el menú principal no se pinta en el mundo 2D
+    this.menuOpen = false;
+    if (this.menuGroup) this.menuGroup.visible = false;
+    for (const l of this.menuLines || []) l.visible = false;
+    for (const d of this.menuDots || []) d.visible = false;
     this.callbacks.onXRState?.(false);
   };
 
@@ -1840,7 +2082,9 @@ class PingPongGame {
         this.ball.pos.copy(this.aiServeSpot);
         this.aiServeWait += dt;
         const near = this.ai.pos.distanceTo(this.aiServeStance) < 0.09;
-        if (near || this.aiServeWait > 3) this.aiServeTimer -= dt;
+        // v2.28: con el menú principal abierto la CPU NO saca — el partido
+        // espera al primer EMPEZAR/cierre del menú
+        if (!this.menuOpen && (near || this.aiServeWait > 3)) this.aiServeTimer -= dt;
         if (this.aiServeTimer <= 0) {
           this.aiToss = { timer: AI_TOSS_T };
           this.ball.vel.set(0, DIMS.serveAssistVy, 0.05);
@@ -2527,75 +2771,55 @@ class PingPongGame {
 }
 
 /* =====================================================================
- *  INTERFAZ · overlay, botón VR, dificultad y HUD
+ *  INTERFAZ · PORTADA ANIMADA + botón JUGAR EN VR + HUD (v2.28)
+ *  Portada minimalista: arte de cabecera, palas de idioma y el gran botón
+ *  cartoon JUGAR/PLAY EN VR. La dificultad, las salas, el online y los
+ *  ajustes viven DENTRO del menú principal de VR (panel flotante acordeón).
  * ===================================================================== */
 const overlay = document.getElementById('overlay');
 const statusEl = document.getElementById('status');
 const vrbtn = document.getElementById('vrbtn');
-const trainBtn = document.getElementById('trainbtn');
 const spectateBtn = document.getElementById('spectate');
-const survBtn = document.getElementById('survbtn');
 const arBtn = document.getElementById('arbtn');
-const ambBtn = document.getElementById('ambbtn');
 const hud = document.getElementById('hud');
 const hudScore = document.getElementById('hud-score');
 const hudMsg = document.getElementById('hud-msg');
 const hudInfo = document.getElementById('hud-info');
+const playEs = document.getElementById('playEs');
+const playEn = document.getElementById('playEn');
 
-// UI de agarres guardados (localStorage del navegador de la Quest)
-const gripSel = document.getElementById('gripSel');
-const gripNameInput = document.getElementById('gripName');
-function refreshGrips(list, active) {
-  gripSel.innerHTML = '';
-  for (const n of list) {
-    const o = document.createElement('option');
-    o.value = n;
-    o.textContent = n;
-    gripSel.appendChild(o);
-  }
-  if (active && list.includes(active)) gripSel.value = active;
-}
-
-// UI de estadísticas y logros (progreso persistente)
-const statsLine = document.getElementById('statsLine');
-const achRow = document.getElementById('achRow');
-function renderStats(s) {
-  if (!s || !statsLine || !achRow) return;
-  statsLine.textContent = T('stats_line', {
-    won: s.won, lost: s.lost, streak: s.streak, best: s.bestStreak,
-    rally: s.bestRally, aces: s.aces,
-  });
-  achRow.innerHTML = '';
-  for (const a of ACHIEVEMENTS) {
-    const chip = document.createElement('span');
-    chip.className = 'ach' + (s.ach && s.ach[a.key] ? ' on' : '');
-    chip.title = a.desc;
-    chip.textContent = `${a.emoji} ${a.name}`;
-    achRow.appendChild(chip);
+// v2.28: el gran botón cartoon cambia JUGAR <-> PLAY según el idioma
+function renderPlayBtn() {
+  const en = TLang() === 'en';
+  if (playEs && playEn) {
+    playEs.style.display = en ? 'none' : '';
+    playEn.style.display = en ? '' : 'none';
   }
 }
-const statsResetBtn = document.getElementById('statsReset');
-statsResetBtn.addEventListener('click', () => {
-  const g = window.__game;
-  if (!g) return;
-  g.stats.data = {
-    won: 0, lost: 0, streak: 0, bestStreak: 0,
-    pointsWon: 0, pointsLost: 0, aces: 0, bestRally: 0,
-    winsByDiff: { easy: 0, medium: 0, hard: 0 },
-    ach: {},
-  };
-  g.stats.save();
-  g.survivalBest = 0;
-  try { localStorage.removeItem('ppxr_surv_best'); } catch { /* */ }
-  renderStats(g.stats.data);
-});
 
-// Chips de TEMAS DE SALA del overlay (se sincronizan también con el flick
-// del stick en VR vía callback onTheme)
-const themBtns = [...document.querySelectorAll('[data-theme]')];
-const renderTheme = (key) => {
-  themBtns.forEach((b) => b.classList.toggle('active', b.dataset.theme === key));
-};
+// v2.28: la portada ya no muestra agarres ni estadísticas — los callbacks
+// se conservan (el progreso sigue persistiendo y anunciándose en el juego)
+function refreshGrips() { /* el ajuste de agarres vive en VR (Entrenar) */ }
+function renderStats() { /* el progreso persiste; sin chips en la portada */ }
+
+// wrapText: parte un texto en líneas ajustadas al ancho dado. El menú lo
+// usaba desde v2.19 SIN DEFINIR (bug latente en el estado de error de red):
+// corregido en v2.28.
+function wrapText(c, text, x, y, maxW, lh) {
+  const words = String(text || '').split(/\s+/);
+  let line = '';
+  let yy = y;
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (c.measureText(test).width > maxW && line) {
+      c.fillText(line, x, yy);
+      line = w;
+      yy += lh;
+    } else line = test;
+  }
+  if (line) c.fillText(line, x, yy);
+  return yy;
+}
 
 // Cargar el modelo de la pala antes de arrancar la escena
 loadPaddleModel().then((paddleModel) => {
@@ -2612,16 +2836,16 @@ loadPaddleModel().then((paddleModel) => {
     onStats(stats) {
       renderStats(stats);
     },
-    onTheme(key) {
-      renderTheme(key);
-    },
+    onTheme() { /* los chips de tema eran de la tarjeta antigua (2D) */ },
     onXRState(inVR) {
       if (inVR) {
         overlay.classList.add('hidden');
         hud.classList.remove('show');
+        window.__ppMusic?.pause();    // v2.28: la música de portada se queda fuera
       } else {
         overlay.classList.remove('hidden');
         statusEl.textContent = T('status_pause');
+        window.__ppMusic?.resume();   // de vuelta en la portada suena otra vez
       }
     },
   });
@@ -2630,139 +2854,69 @@ loadPaddleModel().then((paddleModel) => {
   // v2.27: ganchos de i18n para pruebas headless (el módulo no expone globales)
   window.__T = T; window.__TLang = TLang; window.__setLang = setLang;
   window.__applyLangDOM = applyLangDOM;
-  renderStats(game.stats.data);   // pintar el progreso persistente al arrancar
-  renderTheme(game.theme);        // pintar el tema de sala persistente
   // gancho de depuración para pruebas headless (física de saque y constantes)
   window.__ppDebug = { findServeVelocity, simulateServePath, DIMS };
+  renderPlayBtn();
 
-  // Compatibilidad WebXR (v2.27: textos por idioma con re-aplicación en caliente)
+  // Compatibilidad WebXR (estado bajo el gran botón de la portada)
   let lastStatusKey = 'status_vr_checking';
   const setStatusKey = (k) => { lastStatusKey = k; statusEl.textContent = T(k); };
+  let xrOK = false;
   if (navigator.xr && navigator.xr.isSessionSupported) {
     navigator.xr.isSessionSupported('immersive-vr')
       .then((ok) => {
-        if (ok) {
-          vrbtn.disabled = false;
-          trainBtn.disabled = false;
-          survBtn.disabled = false;
-          setStatusKey('status_vr_ok');
-        } else {
-          setStatusKey('status_no_vr');
-        }
+        xrOK = ok;
+        setStatusKey(ok ? 'status_vr_ok' : 'status_no_vr');
       })
       .catch(() => {
         setStatusKey('status_no_webxr');
       });
-    navigator.xr.isSessionSupported('immersive-ar')
-      .then((ok) => { arBtn.disabled = !ok; })
-      .catch(() => { arBtn.disabled = true; });
+    if (arBtn) {
+      navigator.xr.isSessionSupported('immersive-ar')
+        .then((ok) => { arBtn.disabled = !ok; })
+        .catch(() => { arBtn.disabled = true; });
+    }
   } else {
     setStatusKey('status_no_2d');
   }
 
+  // GRAN BOTÓN CARTOON (v2.28): entra en VR directamente. Sin visor avisa y
+  // deja el modo demo al alcance (enlace discreto del pie de portada).
   vrbtn.addEventListener('click', () => {
-    vrbtn.disabled = true;
+    game.audio.ensure();
+    if (!navigator.xr || !navigator.xr.isSessionSupported) {
+      setStatusKey('status_no_vr');
+      return;
+    }
+    if (!xrOK) { setStatusKey('status_no_vr'); return; }
     setStatusKey('status_starting_vr');
     game.enterVR()
-      .then(() => {
-        vrbtn.disabled = false;
-      })
       .catch((err) => {
-        vrbtn.disabled = false;
         statusEl.textContent = '⚠️ ' + (err?.message || T('status_vr_fail'));
       });
   });
 
-  // Entrenamiento en VR: máquina de bolas + ajuste del agarre con panel 3D
-  trainBtn.addEventListener('click', () => {
-    trainBtn.disabled = true;
-    setStatusKey('status_starting_train');
-    game.enterVR(true)
-      .then(() => {
-        trainBtn.disabled = false;
-      })
-      .catch((err) => {
-        trainBtn.disabled = false;
-        statusEl.textContent = '⚠️ ' + (err?.message || T('status_vr_fail'));
-      });
-  });
+  // PASSTHROUGH: juega en TU habitación real (enlace discreto del pie)
+  if (arBtn) {
+    arBtn.addEventListener('click', () => {
+      if (arBtn.disabled) return;
+      setStatusKey('status_starting_ar');
+      game.enterVR(false, true)
+        .catch((err) => {
+          statusEl.textContent = '⚠️ ' + (err?.message || T('status_ar_fail'));
+        });
+    });
+  }
 
-  // SUPERVIVENCIA: la CPU acelera rallye a rallye, ¿cuántos golpes aguantas?
-  survBtn.addEventListener('click', () => {
-    survBtn.disabled = true;
-    setStatusKey('status_starting_surv');
-    game.enterVR(false, false, 'survival')
-      .then(() => {
-        survBtn.disabled = false;
-      })
-      .catch((err) => {
-        survBtn.disabled = false;
-        statusEl.textContent = '⚠️ ' + (err?.message || T('status_vr_fail'));
-      });
-  });
-
-  // PASSTHROUGH: juega en TU habitación real (immersive-ar)
-  arBtn.addEventListener('click', () => {
-    arBtn.disabled = true;
-    setStatusKey('status_starting_ar');
-    game.enterVR(false, true)
-      .then(() => {
-        arBtn.disabled = false;
-      })
-      .catch((err) => {
-        arBtn.disabled = false;
-        statusEl.textContent = '⚠️ ' + (err?.message || T('status_ar_fail'));
-      });
-  });
-
-  // Ambiente de torneo (murmullo + aplausos + megafonía): SÍ/NO
-  const ambLabel = () => {
-    ambBtn.textContent = game.audio.ambience ? T('amb_yes') : T('amb_no');
-  };
-  ambLabel();
-  ambBtn.addEventListener('click', () => {
-    game.audio.setAmbience(!game.audio.ambience);
-    ambLabel();
-  });
-
-  // v2.27 · SELECTOR DE IDIOMA (overlay 2D): persistente + re-render de lo vivo
+  // v2.27 · SELECTOR DE IDIOMA (palas con bandera de la portada + menú VR)
   document.querySelectorAll('[data-lang]').forEach((b) => {
     b.addEventListener('click', () => setLang(b.dataset.lang, game));
   });
   document.addEventListener('pp-lang', () => {
-    ambLabel();
+    renderPlayBtn();
     statusEl.textContent = T(lastStatusKey);
-    renderStats(game.stats.data);
   });
-  applyLangDOM();   // primera pintura del overlay en el idioma guardado
-
-  // Guardar / cargar / borrar agarres desde el menú
-  document.getElementById('gripSave').addEventListener('click', () => {
-    game.saveCurrentGrip(gripNameInput.value);
-    gripNameInput.value = '';
-  });
-  document.getElementById('gripLoad').addEventListener('click', () => {
-    game.loadGripByName(gripSel.value);
-  });
-  document.getElementById('gripDel').addEventListener('click', () => {
-    game.deleteGripByName(gripSel.value);
-  });
-  document.getElementById('gripReset').addEventListener('click', () => {
-    game.resetGripNatural();
-  });
-
-  document.querySelectorAll('.diff').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.diff').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      game.setDifficulty(btn.dataset.diff);
-    });
-  });
-
-  // Temas de sala: aplicar en vivo (silent: el cambio ya se VE al instante)
-  themBtns.forEach((btn) => {
-    btn.addEventListener('click', () => game.setTheme(btn.dataset.theme, true));
-  });
+  applyLangDOM();   // primera pintura de la portada en el idioma guardado
 });
 
 spectateBtn.addEventListener('click', () => {

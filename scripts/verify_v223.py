@@ -266,22 +266,29 @@ async def main():
         if not (0.1 <= pose["aiStanceRel"] <= 0.25) or not (-0.25 <= pose["demoStanceRel"] <= -0.1):
             fails.append(f"la postura de saque no es diestra: ai={pose['aiStanceRel']} demo={pose['demoStanceRel']}")
 
-        # ---------- 5) MENÚ: hover en TODOS, casillas, área táctil, estado ----------
+        # ---------- 5) MENÚ v2.28: acordeón, hover en TODOS, área táctil, estado ----------
         menu = await page.evaluate("""() => {
             const g = window.__game;
             if (g.menuOpen) g.toggleMenu();
             g.mode = 'match'; g.difficulty = 'medium';
             g.toggleMenu();
             g.drawMenu();
-            const out = { ids: g.menuRects.map((r) => r.id) };
-            // área táctil ampliada
+            const mc = (id) => g.menuClick(g.menuRects.findIndex((r) => r.id === id));
+            const openSec = (s) => {
+                if (g.menuSec !== s) mc('sec:' + s);
+                g.drawMenu();
+                return g.menuRects.map((r) => r.id);
+            };
+            const idsMatch = openSec('match');
             const easy = g.menuRects.find((r) => r.id === 'diff:easy');
-            out.easyW = easy.w; out.easyH = easy.h;
+            const out = { idsMatch, idsOpts: openSec('opts'),
+                          easyW: easy ? easy.w : -1, easyH: easy ? easy.h : -1 };
             // hover: TODOS los botones (activos incluidos) deben cambiar píxeles
             const c2 = g.menuCanvas.getContext('2d');
-            const snap = () => c2.getImageData(0, 0, 512, 640).data;
+            const snap = () => c2.getImageData(0, 0, 1024, 1536).data;
             g.menuHover = [-1, -1]; g.drawMenu();
             const base = snap();
+            const idsHover = g.menuRects.map((r) => r.id);
             const diffs = [];
             for (let i = 0; i < g.menuRects.length; i++) {
                 g.menuHover = [i, -1]; g.drawMenu();
@@ -294,46 +301,58 @@ async def main():
                 diffs.push(n);
                 g.menuHover = [-1, -1];
             }
-            out.diffs = diffs;
-            // efectos de estado (el menú SIGUE abierto en modo/dificultad)
-            const idx = (id) => g.menuRects.findIndex((r) => r.id === id);
-            g.menuClick(idx('mode:survival'));
+            out.idsHover = idsHover; out.diffs = diffs;
+            // v2.28: EMPEZAR SUPERVIVENCIA cambia el modo y CIERRA el menú
+            openSec('surv');          // v2.28: EMPEZAR SUPERVIVENCIA vive en su sección
+            mc('survgo');
             out.modeAfter = g.mode; out.openAfterMode = g.menuOpen;
-            g.menuClick(idx('mode:match'));
-            g.menuClick(idx('diff:hard'));
+            g.toggleMenu();                       // reabrir
+            openSec('match');                     // (reabre con la última sección)
+            mc('diff:hard');
             out.diffAfter = g.difficulty; out.openAfterDiff = g.menuOpen;
-            g.menuClick(idx('diff:medium'));
+            mc('diff:medium');
+            openSec('opts');
             const amb0 = g.audio.ambience;
-            g.menuClick(idx('amb'));
-            out.ambAfter = g.audio.ambience; out.ambChanged = g.audio.ambience !== amb0;
-            g.menuClick(idx('amb'));   // dejar como estaba
+            mc('amb');
+            out.ambChanged = g.audio.ambience !== amb0;
+            mc('amb');
             const voz0 = g.audio.voice;
-            g.menuClick(idx('voz'));
+            mc('voz');
             out.vozAfter = g.audio.voice; out.vozPersist = localStorage.getItem('ppxr_voz_v1');
-            g.menuClick(idx('voz'));
-            g.menuClick(idx('trail'));
+            mc('voz');
+            mc('trail');
             out.trailAfter = g.showTrail;
-            g.menuClick(idx('trail'));
-            g.menuClick(idx('tab:multi'));
+            mc('trail');
+            openSec('match');
+            mc('tab:multi');
             out.pageAfterTab = g.menuPage;
-            g.menuClick(idx('tab:main'));
-            g.menuClick(idx('close'));
+            mc('tab:main');
+            mc('close');
             out.openAfterClose = g.menuOpen;
+            g.mode = 'match';   // dejar el estado limpio para el resto del test
             return out;
         }""")
-        print("menú:", json.dumps(menu, ensure_ascii=False))
-        need = ['mode:match', 'mode:survival', 'diff:easy', 'diff:medium', 'diff:hard',
-                'theme:pabellon', 'theme:neon', 'theme:atardecer', 'theme:artico',
-                'amb', 'trail', 'voz', 'tab:main', 'tab:multi', 'close']
-        for nid in need:
-            if nid not in menu["ids"]:
-                fails.append(f"falta el botón {nid}")
-        if menu["easyW"] != 146 or menu["easyH"] != 48:
-            fails.append(f"el área táctil no está ampliada: {menu['easyW']}×{menu['easyH']} (esperado 146×48)")
-        dead = [menu["ids"][i] for i, d in enumerate(menu["diffs"]) if d < 40]
+        print("menú:", json.dumps({k: menu[k] for k in ("easyW", "easyH", "modeAfter",
+                                                       "openAfterMode", "diffAfter",
+                                                       "pageAfterTab", "openAfterClose")},
+                                 ensure_ascii=False))
+        print("pre:", json.dumps(menu.get("pre"), ensure_ascii=False))
+        needMatch = ['start', 'diff:easy', 'diff:medium', 'diff:hard',
+                     'net:host', 'net:join', 'tab:multi', 'close']
+        needOpts = ['theme:pabellon', 'theme:neon', 'theme:atardecer', 'theme:artico',
+                    'amb', 'trail', 'voz']
+        for nid in needMatch:
+            if nid not in menu["idsMatch"]:
+                fails.append(f"falta el botón {nid} en JUGAR PARTIDO")
+        for nid in needOpts:
+            if nid not in menu["idsOpts"]:
+                fails.append(f"falta el botón {nid} en OPCIONES")
+        if menu["easyW"] != 302 or menu["easyH"] != 64:
+            fails.append(f"el área táctil no está ampliada: {menu['easyW']}×{menu['easyH']} (esperado 302×64)")
+        dead = [menu["idsHover"][i] for i, d in enumerate(menu["diffs"]) if d < 40]
         if dead:
             fails.append(f"botones sin feedback visual al apuntarlos: {dead}")
-        if menu["modeAfter"] != 'survival' or not menu["openAfterMode"]:
+        if menu["modeAfter"] != 'survival' or menu["openAfterMode"]:
             fails.append(f"el modo no cambia visiblemente: {menu['modeAfter']} open={menu['openAfterMode']}")
         if menu["diffAfter"] != 'hard' or not menu["openAfterDiff"]:
             fails.append(f"la dificultad no cambia visiblemente: {menu['diffAfter']} open={menu['openAfterDiff']}")
@@ -342,6 +361,7 @@ async def main():
         if menu["vozPersist"] not in ('0', '1'):
             fails.append("el megáfono no persiste")
         if menu["pageAfterTab"] != 'multi':
+            fails.append("las pestañas no navegan")
             fails.append("las pestañas no navegan")
         if menu["openAfterClose"]:
             fails.append("Cerrar menú no cierra")

@@ -1152,3 +1152,88 @@ Stage Summary:
 - Pendiente visor: probar el selector en el casco y una partida online con
   cada idioma (la voz del megáfono debe sonar en el idioma elegido).
 - Siguiente fase declarada: estética del entorno ("vidilla").
+---
+Task ID: 31
+Agent: Super Z (main agent)
+Task: v2.28 — nuevo arranque del juego: portada web animada (arte + palas de
+idioma + gran botón cartoon + música) y MENÚ PRINCIPAL EN VR como gran panel
+flotante con acordeón (petición expresa del usuario)
+
+Work Log:
+- ASSETS (prepare_launch_assets.py): Cabecera.png -> hero.jpg 1280px (161 KB)
+  + recorte del logo completo para la cabecera del menú (menulogo.jpg 840x388,
+  82 KB; el primer recorte en franja 1024x220 cortaba "PING PONG" y se
+  descartó); palas de bandera 160x160 PNG (12/18 KB); botones JUGAR/PLAY
+  recortados al bbox (~90 KB); star.mp3 (89,7 s, 2 MB) -> star.ogg q2 (929 KB).
+- I18N (game_i18n.js): claves nuevas es/en — sec_match/train/surv/crazy/opts,
+  btn_start, btn_start_surv, btn_train_go, crazy_msg ("¡Sorpresas pronto..! 🎁"),
+  best_surv, online_lbl, train_hint, surv_hint; status_pause reescrito;
+  soporte data-i18n-title en applyLangDOM (+ music_title).
+- game_part3.js (reescritura del menú):
+  * buildMenu: lienzo 512x640 -> 1024x1536; plano 0,28x0,35 -> 0,72x1,08 m;
+    imágenes del logo y las palas cargadas desde los data URLs de la portada
+    (#padEs/#padEn) con repintado en onload.
+  * Cabecera común (drawMenuHeader): franja azul degradada + arte del juego +
+    DOS palas de bandera con anillo dorado en la activa (rects lang:es/en).
+  * Página principal en ACORDEÓN (menuSec, defecto 'match'): cabeceras
+    siempre visibles con chevron y pista (dificultad / récord / sala); solo UNA
+    sección abierta; segunda pulsación contrae. JUGAR PARTIDO: REVANCHA (si
+    over) + ▶ EMPEZAR PARTIDO + dificultad + bloque ONLINE integrado (crear/
+    unirse/estado/voz) + acceso a la página completa; ENTRENAR: ▶ ENTRENAR
+    GOLPES (enterCalib); SUPERVIVENCIA: ▶ EMPEZAR + récord; CRAZY: mensaje al
+    pulsarla ("¡Sorpresas pronto..! 🎁" + jingle); OPCIONES: salas 2x2 +
+    ambiente + megáfono + estela. Cierre inferior fijo + "B · cerrar".
+  * multi/join reescalados al panel grande (código a 124 px, teclado 118x86,
+    volver al pie); el idioma vive ahora en la cabecera.
+  * Anclaje: updateMenu ya NO se cuelga de la muñeca libre — anchorMenu()
+    coloca el panel DELANTE de la cabeza (1,08 m, y = cabeza - 0,05, mín.
+    0,85) con flotación de 1,8 s (re-ancla en updateMenu mientras dure la
+    ventana) y queda fijo en el mundo; sin dependencia del segundo mando.
+  * Arranque: onSessionStart abre SOLO el menú (menuSec 'match') y congela el
+    saque de la CPU mientras esté abierto (gate en el tick de aiServeTimer);
+    onSessionEnd lo cierra. menuClick: casos nuevos sec/start/survgo/traingo;
+    'mode:*' retirado (survgo respeta el camino de invitado online).
+  * CORRECCIÓN LATENTE: wrapText se USABA desde v2.19 (estado de error de red
+    del menú) pero NUNCA estuvo definida — definida a nivel de módulo.
+  * Interfaz 2D: portada minimalista; retirados los listeners de la tarjeta
+    antigua (agarres, stats, dificultad, salas, amb, train/surv); el gran
+    botón (#vrbtn) entra en VR con guardia de compatibilidad; renderPlayBtn()
+    intercambia JUGAR/PLAY con el idioma; onXRState pausa/reanuda la música.
+- build_html.py: plantilla nueva (título "CRAZY PING PONG"); CSS de portada
+  animada (Ken Burns difuminado, haces de luz, 3 bolas flotantes, 6 estrellas,
+  hero flotante con glow, palas que se balancean, botón que late y se sacude,
+  botón 🔊, pie discreto); script de música no-módulo (primer gesto, loop,
+  volumen 0,5, persistencia pp_music, hook window.__ppMusic.pause/resume);
+  placeholders nuevos __HERO/PAD_ES/PAD_EN/PLAY_ES/PLAY_EN/MUSIC/MENU_LOGO__
+  (el logo también en game_part3.js). index.html 3,53 -> 5,65 MB.
+- VERIFICACIÓN (verify_v228.py TODO OK): estáticos (assets incrustados, sin
+  restos de la tarjeta antigua); portada (hero, idioma por defecto ES, palas
+  activas, JUGAR/PLAY conmuta y persiste, demo+🔊 presentes); menú (1024x1536,
+  plano 0,72x1,08, acordeón con UNA sección, contenido contraído, CRAZY con
+  mensaje directo, segunda pulsación contrae, EMPEZAR cierra y arranca, gate
+  del saque IA congelado/reanudado, multi/join completos, 0 errores de página).
+  Capturas: captura-v228-portada-es/en.png + captura-v228-menu-es/en.png.
+- REGRESIONES adaptadas a la semántica del acordeón (los clics expanden su
+  sección primero; 'mode:*' -> 'survgo'/'start'; 'close' multi -> 'tab:main';
+  dimensiones del plano en los helpers de apuntado 1024x1536 / 0,72x1,08;
+  ventana de flotación congelada en los tests para que el rayo sea
+  determinista): v218 v219 v220 v222 v223 v224 TODO OK (v224 estable en 3
+  ejecuciones); v225 (multijugador completo), v226 (carteles), v227 (idioma)
+  TODO OK sobre la build final; IA 13/14 (93%, baseline).
+- BUGS encontrados por los tests durante el desarrollo: cabecera de sección
+  ABIERTA sin feedback de hover (corregido: relleno + tramo blancos al
+  apuntar); el bucle 2D orbitaba la cámara entre evaluates y arruinaba las
+  capturas (capturas en un solo evaluate); 'survgo' vive en su sección (el
+  test lo buscaba en MATCH).
+- BUILD: index.html 5,65 MB; ZIP regenerado 5,31 MB (integridad OK); README
+  con sección v2.28 (portada, menú, arranque rápido, wrapText).
+
+Stage Summary:
+- v2.28: el arranque es un escaparate — portada animada con el arte oficial,
+  palas de idioma y un gran botón cartoon que mete en VR de un clic; dentro,
+  un menú principal flotante estilo consola (cabecera con el arte + acordeón
+  de una sola sección) que te deja jugar con un solo gatillo.
+- Pendiente visor: comprobar en la Quest la portada (música, animaciones) y
+  el panel grande (legibilidad a 1,08 m, flotación, acordeón, Crazy).
+- Siguiente fase declarada: estética del entorno ("vidilla": público, vallas,
+  marcas en el suelo, mejor iluminación).

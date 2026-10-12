@@ -1436,3 +1436,18 @@ Work Log:
 
 Stage Summary:
 - El usuario puede descargar todo desde la vista previa: /descargas (centro con botones) y /descargas/<archivo> (enlace directo). La raíz de la vista previa sigue mostrando el juego.
+
+---
+Task ID: 38
+Agent: Super Z (main agent)
+Task: Auditoría del peso del ZIP del juego (duda usuario: 5,3 MB vs supuesta versión previa de 70 MB) y blindaje del release V2.124.
+
+Work Log:
+- SHA256 calculado; ZIP íntegro: index.html 5.656.513 B + assets/pala.glb 1.411.384 B, sin referencias externas rotas (autónomo).
+- Análisis del build: 1 pista de audio embebida (1,21 MB base64), 11 imágenes embebidas (1,41 MB), speechSynthesis para el narrador, 16 marcadores v2.31.
+- Historial de tamaños trazado en worklog completo: el juego NUNCA pesó 70 MB (0,8 MB en v2.3 → 3,0 MB v2.18 → 5,31 MB desde v2.28, constante hasta V2.124).
+- Origen de los archivos de decenas de MB: toolchain Piper en scripts/voice/ (modelos .onnx de 60 MB ×2, binarios 25 MB, runtime) — herramientas de desarrollo para generar los clips de voz, jamás distribuidas con el juego.
+- Blindaje: creados download/SHA256SUMS.txt y download/RELEASE-V2.124.txt (manifiesto de versión, contenido, hashes e historial de verificación); copiados a public/descargas/ (servidos por la preview, verificado 200).
+
+Stage Summary:
+- Queda demostrado con datos que el ZIP de 5,31 MB ES el juego completo V2.124; los >70 MB corresponden a material de desarrollo ajeno al juego. Release V2.124 sellado con hashes SHA256 publicados.

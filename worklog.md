@@ -1410,3 +1410,15 @@ Stage Summary:
 - El editor implementa exactamente lo que promete la guía: 7 fases, 6 estados, revisión de 7 chequeos, plantillas no destructivas y paquetes de pruebas/definitivo con instrucciones para Netlify Drop y la Quest 3.
 - Lección técnica: en formularios declarativos con data-ruta, las rutas de colecciones deben nombrar el array real; y probar SIEMPRE el ZIP generado con unzip -t (el EOCD es traicionero).
 - Pendiente posible: integrar la carga de campeonato.json en el juego (menú → caja importada), y versión imprimible A4 de la guía si se pide.
+
+---
+Task ID: 36
+Agent: Super Z (main agent)
+Task: Verificación final de integridad y entrega de los archivos de descarga solicitados.
+
+Work Log:
+- unzip -t sobre ambos ZIP: sin errores (pingpong-quest3-v2.zip y editor-campeonatos.zip íntegros).
+- Marcadores de versión confirmados extrayendo contenido: index.html del juego con 16 ocurrencias v2.31 (build = V2.124 definitiva); editor con título "Crazy Ping Pong · Editor de campeonatos · V2.124".
+
+Stage Summary:
+- Descargas confirmadas en /home/z/my-project/download/: guia-campeonatos-crazy-pingpong.pdf (14 págs) + .html, pingpong-quest3-v2.zip (juego V2.124, 5,31 MB), editor-campeonatos.zip (Taller, 26,6 KB). Todo listo para el usuario.

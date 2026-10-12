@@ -1371,3 +1371,22 @@ Stage Summary:
 - v2.31 cerrada: 4 capas de rescate de audio en VR (contexto en el gesto de solicitud, setSinkId, gestureKick en gestos XR, prueba de sonido manual) + música/murmullo a prueba de swaps de contexto.
 - Entregado download/pingpong-quest3-v2.zip (index.html v2.31 + assets/pala.glb).
 - Pendiente (deuda): replicación P2P de SFX/voces por DataConnection y spawn host/guest en lados opuestos; siguiente fase declarada: embellecer el entorno (público, vallas decorativas, líneas de suelo, iluminación).
+
+---
+Task ID: 34
+Agent: Super Z (main agent)
+Task: Documento maquetado (PDF + HTML) "Guía sin tecnicismos" de Crazy Ping Pong V2.124: cómo se crean nuevos campeonatos, dónde se prueban y desde dónde se juega al juego final, paso a paso para público no técnico.
+
+Work Log:
+- Contexto recuperado: juego CRAZY PING PONG (WebXR, Meta Quest 3); despliegue real vía Netlify Drop + Meta Quest Browser (README v2.31); campeonatos actuales Partido/Entrenamiento/Supervivencia + Crazy en preparación; sistema modular de campeonatos diseñado en la sesión previa (asistente de 7 fases, ciclo de 6 estados, validación previa).
+- Ruta PDF skill → Creative Flow (guide/handbook). Leídos SKILL.md, briefs/creative-flow.md, configs/fonts.md.
+- Outline de 11 secciones: portada, mapa 3 zonas (Taller/Laboratorio/Estadio), regla de oro, 7 fases de creación, 6 estados, laboratorio de pruebas (paquete → Netlify Drop → Quest 3 → checklist de 8 puntos), estadio (publicar + jugar en Quest 2 minutos), red de seguridad (7 chequeos), chuleta, glosario, contraportada.
+- HTML maquetado 720x1020: Baloo 2 + Nunito Sans + Noto Color Emoji, paleta crema/azul #0E2A47/naranja #F97316, tarjetas con break-inside:avoid, stepper de estados, checklist, chuleta con chips, glosario a 2 columnas.
+- BUGS resueltos: (1) cover_validate en documento flujo → validar portada standalone (extracción temporal) y corregir solapes reales (título dividido en 2 líneas hermana, gaps 42-44px); (2) Paged.js rompe @font-face (fuentes caían a Liberation) → solución: fuentes base64 data-URI inline + render con --nopaged (Chromium nativo); (3) rutas relativas de woff2 sin prefijo fonts/ corregidas antes de incrustar; (4) strong azul sobre fondo azul oscuro en portada y callouts → blanco/naranja; (5) chips de la chuleta desbordaban → inline-block con wrap; (6) página 14 en blanco por padding-bottom 44px que desbordaba el fragmento → 8px; (7) rayas/puntos medios a inicio de línea ligados con &nbsp;; (8) body background = crema para evitar bandas oscuras al paginar con Paged/Chromium.
+- QA final: pdf_qa.py --no-tables PASS completo (sin blanks, sin overflow, fill OK, full-bleed portada, márgenes simétricos, puntuación OK); 0 caracteres U+FFFD; metadatos Title/Author/Subject/Creator establecidos.
+- Entregables: download/guia-campeonatos-crazy-pingpong.pdf (14 págs, 1,0 MB) + download/guia-campeonatos-crazy-pingpong.html (autónomo, fuentes incrustadas). Limpieza: download/fonts/ eliminado (innecesario, fuentes inline).
+
+Stage Summary:
+- Guía maquetada lista para compartir con personal no técnico: explica con analogías (restaurante, cajas, pasaporte) cómo se crea un campeonato (7 fases asistidas), dónde se prueba (URL privada de pruebas + Quest 3 + lista de comprobación) y dónde se juega (URL definitiva + Meta Quest Browser + ENTRAR EN VR), con chuleta de 1 página y glosario.
+- Lecciones técnicas para futuras builds de este proyecto: con html2pdf-next.js, incrustar SIEMPRE las fuentes como data-URI y usar --nopaged para documentos con @font-face propias; validar portadas por separado.
+- Pendiente posible: versión imprimible A4 si el usuario la pide.

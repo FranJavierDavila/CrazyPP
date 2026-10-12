@@ -1390,3 +1390,23 @@ Stage Summary:
 - Guía maquetada lista para compartir con personal no técnico: explica con analogías (restaurante, cajas, pasaporte) cómo se crea un campeonato (7 fases asistidas), dónde se prueba (URL privada de pruebas + Quest 3 + lista de comprobación) y dónde se juega (URL definitiva + Meta Quest Browser + ENTRAR EN VR), con chuleta de 1 página y glosario.
 - Lecciones técnicas para futuras builds de este proyecto: con html2pdf-next.js, incrustar SIEMPRE las fuentes como data-URI y usar --nopaged para documentos con @font-face propias; validar portadas por separado.
 - Pendiente posible: versión imprimible A4 si el usuario la pide.
+
+---
+Task ID: 35
+Agent: Super Z (main agent)
+Task: Entrega de descargas — documentos (PDF/HTML guía), ZIP del juego final V2.124 y ZIP del editor de campeonatos (el Taller), construido y probado de cero.
+
+Work Log:
+- Verificación inicial: la guía (guia-campeonatos-crazy-pingpong.pdf, 14 págs + .html autónomo) y el ZIP del juego (pingpong-quest3-v2.zip, build v2.31 = V2.124 del usuario; 16 marcadores v2.31, vrBound/markVRStart dentro, unzip -t OK) estaban íntegros en download/.
+- El editor NO existía (solo diseñado en la especificación y descrito en la guía) → construido en esta sesión como app HTML autónoma (vanilla JS, sin dependencias, fuentes Google CDN con fallback): download/editor-campeonatos/index.html (90 KB).
+- Fuente en scripts/editor_src/ (head/style/body/app1/app2/app3) + scripts/build_editor.py (ensamblado + sanity de llaves). Bugs de generación corregidos: helper campoArea roto, campo duplicado "premier", emoji pegado en DIFICULTADES.
+- Funcionalidad alineada 1:1 con la guía: asistente de 7 fases (Ficha con auto-etiqueta slug, Rival con 3 deslizadores de personalidad y cerebro base, Superpoderes con aviso-consulta al elegir efecto nuevo, Materiales con inventario derivado + generar/aportar ≤600 KB, Pruebas de habilidad, Sala con música propia, Montaje con resumen); ciclo de 6 estados (Borrador→…→Desactivado) con tira de pasaporte; revisión automática de 7 chequeos (caja completa, materiales, etiqueta única contra reservadas y otras cajas, encaje, referencias, intocables, partida de control); diario de bordo (localStorage); plantillas-copia de Partido/Entrenamiento/Supervivencia (originales jamás modificados); autosave + persistencia; export: caja .json, paquete-pruebas-<etiqueta>.zip y paquete-definitivo-<etiqueta>.zip con campeonato.json + LEEME.txt (pasos del Laboratorio/Estadio + checklist de 8 puntos).
+- BUGS encontrados y corregidos durante las pruebas con agent-browser: (1) data-ruta de tarjetas repetibles ("sp.0.x") no apuntaba al array real → deepSet escribía en objetos basura y ningún campo de superpoder/reto persistía → rutas "superpoderes.i.x"/"retos.i.x" + saneo de claves viejas; (2) selects con doble listener (input+change) apilaban modales → un solo listener; (3) EOCD del ZIP con tamaño/offset del directorio central intercambiados → ZIP corrupto → corregido; validado con unzip -t + JSON + acentos/emoji UTF-8 vía scripts/test_zip_editor.mjs.
+- Verificación agent-browser completa, 0 errores de consola: flujo feliz (crear de cero → 7 fases → revisión OK → «Listo para probar» → checklist 8 puntos → descargas paquete-pruebas-orbita-cero.zip y paquete-definitivo-orbita-cero.zip capturadas), ruta bloqueada (caja a medias → modal que lista fases pendientes 1/2/4/5/6), ruta con fallos (etiqueta reservada «partido» → 2 chequeos en rojo → estado vuelve a preparación → corregido → revisión OK), persistencia tras reload (estado listo + 6 pasos hechos), diario con 6 entradas, duplicar/eliminar en Inicio. Capturas: editor-captura-inicio.png, -fase1.png, -fase7.png.
+- Empaquetado: download/editor-campeonatos.zip (index.html en raíz, listo para Netlify Drop, unzip -t OK). README.md con nueva sección «Descargas del proyecto (V2.124)» (tabla de los 6 entregables + el viaje Taller→Laboratorio→Estadio).
+
+Stage Summary:
+- Descargas completas en /home/z/my-project/download/: guia-campeonatos-crazy-pingpong.pdf + .html (documentos), pingpong-quest3-v2.zip (juego final V2.124), editor-campeonatos.zip + editor-campeonatos/index.html (el Taller), editor-captura-*.png (vistas), README.md actualizado.
+- El editor implementa exactamente lo que promete la guía: 7 fases, 6 estados, revisión de 7 chequeos, plantillas no destructivas y paquetes de pruebas/definitivo con instrucciones para Netlify Drop y la Quest 3.
+- Lección técnica: en formularios declarativos con data-ruta, las rutas de colecciones deben nombrar el array real; y probar SIEMPRE el ZIP generado con unzip -t (el EOCD es traicionero).
+- Pendiente posible: integrar la carga de campeonato.json en el juego (menú → caja importada), y versión imprimible A4 de la guía si se pide.

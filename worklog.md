@@ -1422,3 +1422,17 @@ Work Log:
 
 Stage Summary:
 - Descargas confirmadas en /home/z/my-project/download/: guia-campeonatos-crazy-pingpong.pdf (14 págs) + .html, pingpong-quest3-v2.zip (juego V2.124, 5,31 MB), editor-campeonatos.zip (Taller, 26,6 KB). Todo listo para el usuario.
+
+---
+Task ID: 37
+Agent: Super Z (main agent)
+Task: Acceso descargable a los archivos vía vista previa web — centro de descargas en la app Next.js.
+
+Work Log:
+- Detectado que la raíz "/" está reescrita a /game.html (juego) por next.config.ts; no se toca.
+- Copiados los 5 entregables a public/descargas/ (PDF guía, HTML guía, ZIP juego V2.124, ZIP editor, README.md).
+- Creada página src/app/descargas/page.tsx: centro de descargas en español con 5 tarjetas (botón Descargar + "Ver en pestaña nueva" para la guía), sección "El viaje en 3 paradas" (Taller→Laboratorio→Estadio). page.tsx raíz restaurado a PingPongCanvas.
+- Verificación curl: / sigue sirviendo el juego; /descargas devuelve la página con 5 botones; los 5 archivos responden 200 con tamaños exactos (5.314.125 B juego, 1.045.485 B PDF, 1.443.933 B HTML, 26.613 B editor, 41.523 B README).
+
+Stage Summary:
+- El usuario puede descargar todo desde la vista previa: /descargas (centro con botones) y /descargas/<archivo> (enlace directo). La raíz de la vista previa sigue mostrando el juego.

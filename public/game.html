@@ -14870,7 +14870,13 @@ window.__PP_CORE = {
   'use strict';
   if (window.__PP_LIVE) return;
 
-  const QUERY = '/?XTransformPort=3004';
+  // Relay alternativo para despliegues propios: index.html?relay=http://IP:3004
+  // (o localStorage.ppLiveRelay). Vacío = misma origin (sandbox: gateway :3004).
+  const RELAY = (() => {
+    try {
+      return (new URLSearchParams(location.search).get('relay') || localStorage.getItem('ppLiveRelay') || '').trim().replace(/\/+$/, '');
+    } catch (e) { return ''; }
+  })();
   const PATH = '/live/socket.io';
   const HZ_MS = 33;                       // ~30 Hz
   const CZ = -1.6;                        // centro de mesa del mundo del juego
@@ -14882,16 +14888,26 @@ window.__PP_CORE = {
   let badgeDom = null, vrTex = null, vrCtx = null, vrMesh = null;
   const _vec = { x: 0, y: 0, z: 0 }, _qua = [0, 0, 0, 1];
 
+  // Con relay alternativo, los enlaces a la TV (overlay) heredan ?relay=…
+  if (RELAY) {
+    document.addEventListener('click', (ev) => {
+      const a = ev.target && ev.target.closest ? ev.target.closest('a[href*="tv.html"]') : null;
+      if (!a || a.href.indexOf('relay=') !== -1) return;
+      try { const u = new URL(a.href); u.searchParams.set('relay', RELAY); a.href = String(u); } catch (e) { /* */ }
+    }, true);
+  }
+
   function conn() {
     if (sock) return sock;
     if (typeof io !== 'function') return null;   // vendor no cargó: sin TV, sin errores
     try {
       // La query XTransformPort va en la OPCIÓN query: engine.io no la
       // propaga a la URL del WebSocket si solo va en la URI (el upgrade
-      // quedaría colgado en el proxy).
-      sock = io('/', {
+      // quedaría colgado en el proxy). Con RELAY propio la conexión va
+      // directa y sin esa query.
+      sock = io(RELAY || '/', {
         path: PATH,
-        query: { XTransformPort: '3004' },
+        query: RELAY ? {} : { XTransformPort: '3004' },
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 10,

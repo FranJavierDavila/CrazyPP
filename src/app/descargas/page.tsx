@@ -3,6 +3,30 @@ import TvLiveBanner from "./TvLiveBanner";
 export default function Descargas() {
   const files = [
     {
+      emoji: "📺",
+      nombre: "Juego + CRAZY TV — V3.0.4-EXP·TV1 (paquete completo)",
+      detalle:
+        "Tu V3.0.3 intacta más la rama experimental de TV en vivo: la Quest emite sus partidas como canales y cualquiera las mira desde el móvil sin visor. Incluye tv.html, el relay Node (live-service), guía de despliegue y los 5 campeonatos.",
+      tamano: "103 MB · ZIP · experimental",
+      href: "/descargas/crazypp-v304-exp-tv1-COMPLETO.zip",
+      ver: null,
+      color: "from-rose-500/20 to-transparent",
+      borde: "border-rose-500/40",
+      boton: "bg-rose-500 hover:bg-rose-400",
+    },
+    {
+      emoji: "🪶",
+      nombre: "V3.0.4-EXP·TV1 — versión ligera (sin campeonatos)",
+      detalle:
+        "El mismo paquete para subir rápido a Netlify Drop y probar la TV: juego + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo.",
+      tamano: "7,8 MB · ZIP · experimental",
+      href: "/descargas/crazypp-v304-exp-tv1-ligera.zip",
+      ver: null,
+      color: "from-rose-500/20 to-transparent",
+      borde: "border-rose-500/40",
+      boton: "bg-rose-500 hover:bg-rose-400",
+    },
+    {
       emoji: "📄",
       nombre: "Guía de campeonatos (PDF)",
       detalle:
@@ -79,10 +103,9 @@ export default function Descargas() {
             </span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
-            Todos los archivos de la versión definitiva{" "}
-            <strong className="text-slate-200">V2.124</strong>: la guía paso a
-            paso, el juego final y el editor de campeonatos. Pulsa un botón y
-            listo.
+            Todo el proyecto: la versión estable <strong className="text-slate-200">V2.124</strong> (guía, juego y
+            editor) y el paquete experimental <strong className="text-rose-300">V3.0.4-EXP·TV1</strong> con CRAZY TV,
+            la TV en vivo de tus partidas. Pulsa un botón y listo.
           </p>
         </header>
 

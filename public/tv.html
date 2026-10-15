@@ -237,13 +237,21 @@ const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const canalDirecto = params.get('canal');
 
+/* Relay alternativo para despliegues propios: tv.html?relay=http://IP:3004
+ * (o localStorage.ppLiveRelay). Vacío = misma origin (sandbox: gateway :3004). */
+const RELAY = (() => {
+  try { return (params.get('relay') || localStorage.getItem('ppLiveRelay') || '').trim().replace(/\/+$/, ''); }
+  catch (e) { return ''; }
+})();
+
 /* ─────────── Conexión al relay (misma origin, vía gateway) ───────────
  * La query XTransformPort va en la OPCIÓN query (no en la URI): el
  * engine.io no la propaga a la URL del WebSocket si solo va en la URI
- * y el upgrade queda colgado en el proxy. */
-const sock = io('/', {
+ * y el upgrade queda colgado en el proxy. Con RELAY propio la conexión
+ * va directa y sin esa query. */
+const sock = io(RELAY || '/', {
   path: '/live/socket.io',
-  query: { XTransformPort: '3004' },
+  query: RELAY ? {} : { XTransformPort: '3004' },
   transports: ['websocket', 'polling'],
   reconnection: true,
 });
@@ -265,7 +273,7 @@ sock.on('channels', (chs) => { listaCanales = chs || []; renderGuia(); });   // 
 // Respuesta REST de respaldo cada 5 s (si el push falla)
 setInterval(async () => {
   try {
-    const r = await fetch('/api/channels?XTransformPort=3004', { cache: 'no-store' });
+    const r = await fetch(RELAY ? RELAY + '/api/channels' : '/api/channels?XTransformPort=3004', { cache: 'no-store' });
     const j = await r.json();
     if (j && j.channels && !visor.activo) { listaCanales = j.channels; renderGuia(); }
   } catch { /* */ }
@@ -293,6 +301,9 @@ function renderGuia() {
         <p>Cuando un jugador arranque una partida o un campeonato desde el visor
         (Quest&nbsp;3), su mesa aparecerá aquí como un canal de TV. Entra más tarde
         o deja esta página abierta: se actualiza sola.</p>
+        <p style="opacity:.65;font-size:13px;margin-top:10px">${RELAY
+          ? ('Relay conectado: <b>' + RELAY.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</b>')
+          : '¿Tu propio servidor? Abre esta página con <b>?relay=http://IP:3004</b>'}</p>
       </div>`;
     return;
   }

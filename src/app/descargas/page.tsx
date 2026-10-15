@@ -3,12 +3,24 @@ import TvLiveBanner from "./TvLiveBanner";
 export default function Descargas() {
   const files = [
     {
-      emoji: "📺",
-      nombre: "Juego + CRAZY TV — V3.0.4-EXP·TV1 (paquete completo)",
+      emoji: "☁️",
+      nombre: "Juego + CRAZY TV — V3.0.5-FIS1 (paquete Cloudflare)",
       detalle:
-        "La V3.0.3 del juego intacta más la rama experimental de TV en vivo: la Quest emite sus partidas como canales y cualquiera las mira desde el móvil sin visor. Incluye tv.html, el relay Node (live-service), la guía de despliegue y los 5 campeonatos.",
-      tamano: "103 MB · ZIP · experimental",
-      href: "/descargas/crazypp-v304-exp-tv1-COMPLETO.zip",
+        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con física viva y palas con carácter + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
+      tamano: "103 MB · ZIP · Cloudflare Pages",
+      href: "/descargas/crazypp-v305-fis1-CLOUDFLARE.zip",
+      ver: null,
+      color: "from-sky-500/20 to-transparent",
+      borde: "border-sky-500/40",
+      boton: "bg-sky-500 hover:bg-sky-400",
+    },
+    {
+      emoji: "📺",
+      nombre: "Juego + CRAZY TV — V3.0.5-FIS1 (paquete completo)",
+      detalle:
+        "La V3.0.5-FIS1 íntegra: FÍSICA VIVA (la goma roza y arrastra la bola, el canto pega sordo, el topspin patea al botar y el backspin frena en seco) y PALAS CON CARÁCTER (las skins del entrenamiento ya son juego). Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+      tamano: "103 MB · ZIP · completo",
+      href: "/descargas/crazypp-v305-fis1-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -16,15 +28,27 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.0.4-EXP·TV1 — versión ligera (sin campeonatos)",
+      nombre: "V3.0.5-FIS1 — versión ligera (sin campeonatos)",
       detalle:
-        "El mismo paquete para subir rápido a Netlify Drop y probar la TV: juego + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo.",
-      tamano: "7,8 MB · ZIP · experimental",
-      href: "/descargas/crazypp-v304-exp-tv1-ligera.zip",
+        "El mismo paquete para subir rápido a Netlify Drop: juego con física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo. Tampoco vale para Cloudflare directo (lleva TypeScript).",
+      tamano: "7,8 MB · ZIP · Netlify",
+      href: "/descargas/crazypp-v305-fis1-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
       boton: "bg-rose-500 hover:bg-rose-400",
+    },
+    {
+      emoji: "📡",
+      nombre: "Relay TV en solitario — para GitHub / Railway (mini)",
+      detalle:
+        "Solo el live-service (12 KB): los 4 ficheros que van a tu repo de GitHub para Railway. Descomprime y arrastra el CONTENIDO de live-service/ a la raíz del repo. Para el canal DEMO: npm install → set RELAY_URL=https://tu-relay.up.railway.app → npm run demo.",
+      tamano: "12 KB · ZIP · solo live-service",
+      href: "/descargas/crazypp-live-service-SOLO.zip",
+      ver: null,
+      color: "from-sky-500/20 to-transparent",
+      borde: "border-sky-500/40",
+      boton: "bg-sky-500 hover:bg-sky-400",
     },
   ];
 
@@ -43,10 +67,13 @@ export default function Descargas() {
             </span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
-            El paquete actual es la rama experimental{" "}
-            <strong className="text-rose-300">V3.0.4-EXP·TV1</strong>: tu juego
-            V3.0.3 más <strong className="text-slate-200">CRAZY TV</strong>, la
-            TV en vivo de tus partidas. Pulsa un botón y listo.
+            El paquete actual es la{" "}
+            <strong className="text-amber-300">V3.0.5-FIS1</strong>: CRAZY TV
+            más <strong className="text-slate-200">FÍSICA VIVA</strong> (goma
+            con fricción real, punto dulce, bote con deslizamiento) y{" "}
+            <strong className="text-slate-200">PALAS CON CARÁCTER</strong> (las
+            skins del entrenamiento ya influyen en el juego). Pulsa un botón y
+            listo.
           </p>
         </header>
 
@@ -97,7 +124,7 @@ export default function Descargas() {
               {
                 n: "1",
                 t: "Sube la web",
-                d: "Arrastra el ZIP descomprimido a Netlify Drop: index.html es el juego y tv.html la TV. Con la versión ligera vas más rápido.",
+                d: "Arrastra el ZIP descomprimido a Cloudflare Pages o Netlify Drop: index.html es el juego y tv.html la TV. Para Cloudflare usa el paquete Cloudflare; para Netlify, el ligero va más rápido.",
               },
               {
                 n: "2",
@@ -127,12 +154,13 @@ export default function Descargas() {
           <p className="mt-5 text-center text-sm text-slate-500">
             Pasos detallados, HTTPS y solución de problemas: mira el{" "}
             <strong className="text-slate-300">LEEME-DESPLIEGUE.txt</strong>{" "}
-            que viene dentro de cualquiera de los dos paquetes.
+            que viene dentro de cualquiera de los paquetes.
           </p>
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.0.4-EXP·TV1 · WebXR · CRAZY TV · Meta Quest 3
+          Crazy Ping Pong V3.0.5-FIS1 · WebXR · Física viva · Palas con
+          carácter · CRAZY TV · Meta Quest 3
         </footer>
       </div>
     </main>

@@ -1529,3 +1529,59 @@ Stage Summary:
 - El panel y el juego volverán al reiniciar el sandbox: start.sh levanta Next (:3000), el gateway (:81) y el relay de TV (:3004) supervisados por pid 1. El usuario debe pulsar el botón REINICIAR y abrir <preview>/descargas.
 - El canal DEMO (mock host) no se auto-arranca: si se quiere demo sin Quest tras el reinicio, lanzar node scripts/mock_host.mjs.
 - Lección: no correr el juego en WebGL por software ni servir el zip grande mientras se compila en dev en sandboxes de 4 GB (riesgo OOM del supervisor).
+
+---
+Task ID: 63
+Agent: Super Z (main)
+Task: RECUPERACIÓN total del trabajo FIS1 tras reinicio del sandbox + acceso al centro de descargas
+
+Work Log:
+- INCIDENTE: el reinicio del sandbox (caddy 20:31) restauró un snapshot de las 10:47:
+  se perdieron los commits c32c549 (FIS1 P1+P2), e6c6148 (palas con carácter) y
+  4021544 (centro de descargas v305); .git rodado atrás, sin remote, sin restos en
+  disco (fsck sin objetos huérfanos, tool-results vacío)
+- RECUPERACIÓN desde el contexto de la conversación (diseño + código leído antes):
+  · P1 GOLPE VIVO re-implementado en collidePaddle: punto dulce offC (0 centro →
+    1 canto; anillo de saque 0,55 · mango 0,8), restitución ×(1 − 0,35·offC²/ctl),
+    bamboleo de canto, REVERSIÓN PARCIAL del spin entrante (×−0,35) + brush legacy,
+    FRICCIÓN TANGENCIAL de goma (m_eff = 2/5·m cascarón, grip 0,45 · spin del perk,
+    tope de Coulomb mu·(1+e)·|vRelN|) que ARRASTRA la bola y añade Δω = −(3/2r)·(N×Δv)
+  · P2 BOTE FÍSICO: nueva bounceOnTable(vel, spin, impact) slip-coupled compartida
+    por collideTable + predictStrike (IA) + simulateServePath (solver): u = v + ω×rc,
+    Δv = −u·0,4·grip con grip 0,22→0,60 según impacto y tope de Coulomb, Δω cascarón
+    (2/3·m·r²); legacy exacto intacto con DIMS.physicsRealism = 0
+  · PALAS CON CARÁCTER re-insertadas 1:1 (PADDLE_PERKS, __PP_SET_PADDLE_SKIN,
+    paddlePerkFor, perks aplicados en el golpe, i18n perk_* es/en, etiquetas en las
+    tarjetas del hub + leyenda del carácter, caras del Pro Carbon teñidas ppFace,
+    sincronía localStorage ppxr_train_v1 → __PP_SET_PADDLE_SKIN)
+  · VERSION 3.0.5-FIS1 + changelog completo; DIMS.physicsRealism = 1 · paddlePerks = 1
+- Banco de pruebas RECONSTRUIDO (scripts/bench_fisica_v305.mjs): extrae las funciones
+  REALES de game.html con stub THREE.Vector3 → 30/30 OK (drag/Magnus, legacy byte-
+  exacto, golpe vivo, bote slip, IA/saque alineados, interruptores, 6 pieles con
+  carácter y Pro Carbon por caras). Números medidos: brush 3 m/s → 596 rpm + drag vy
+  +0,43; bloqueo topspin +80 → −20,4 (reversión); topspin −70 → −106,9 al botar;
+  backspin 4,00 → 3,21 y ω 70 → 11,7; lateral desvía 0,41 m/s
+- QA headless (scripts/qa_fis1_smoke.py): badge V3.0.5-FIS1 en portada, 6 pieles
+  expuestas, skin del perfil sincronizada (arcoiris), DIMS fis=1 perks=1, 0 pageerrors
+  (download/qa_fis1_portada.png + qa_fis1_hub_perks.png)
+- Centro de descargas reconstruido: release-v305/ (LEEME adaptado + CHULETA-DIRECTO +
+  build_zip.py) → 4 ZIP v305-fis1 (COMPLETO 102,9 MB · ligera 7,8 MB · CLOUDFLARE
+  102,9 MB chequeo anti-TS limpio · SOLO-RELAY 12 KB), VERSION.txt con SHA256,
+  copiados a download/ y public/descargas/
+- Hub /descargas (page.tsx) re-escrito a V3.0.5-FIS1 con 4 tarjetas; QA visual
+  (qa_descargas_v305.py): 4 enlaces correctos, 6 menciones FIS1, 0 rastros v304,
+  0 pageerrors, captura download/qa_fis1_descargas_hub.png — RESULTADO: OK
+- Incidente extra reparado: el reinicio rompió node_modules/lightningcss
+  (lightningcss-linux-x64-gnu@1.30.2 ausente) → instalado + .next limpiada +
+  dev server reiniciado; /descargas y /game.html = 200 vía dev :3000 y gateway :81
+- Lección: el sandbox puede RODAR ATRÁS el .git con un reinicio — commitear Y empujar
+  a remoto (GitHub) tras cada hito; los assets gitignoreados (ZIPs) se regeneran con
+  scripts/release-v305/build_zip.py
+
+Stage Summary:
+- V3.0.5-FIS1 COMPLETA de nuevo en main: física viva (P1+P2) + palas con carácter +
+  centro de descargas sirviendo los 4 paquetes; banco 30/30; QA verde
+- Los hashes de los ZIP cambian respecto a la build perdida (index e8f0ee98eb47…) —
+  misma versión, código reconstruido equivalente verificado por banco propio
+- Pendiente del dueño: probar en casco FIS1 + pieles; al confirmar, desplegar el
+  paquete que toque y volver a conectar el remote de GitHub para push de seguridad

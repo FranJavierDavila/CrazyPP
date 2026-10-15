@@ -1,3 +1,5 @@
+import TvLiveBanner from "./TvLiveBanner";
+
 export default function Descargas() {
   const files = [
     {
@@ -83,6 +85,9 @@ export default function Descargas() {
             listo.
           </p>
         </header>
+
+        {/* CRAZY TV · emisiones en vivo */}
+        <TvLiveBanner />
 
         {/* Tarjetas de descarga */}
         <section className="mt-10 space-y-4">

@@ -1,0 +1,155 @@
+{
+  "id": "valle_neon",
+  "version": 1,
+  "contract": 1,
+  "estado": "publicado",
+  "title": {
+    "es": "Valle Neón"
+  },
+  "description": {
+    "es": "Un valle tropical cerrado al anochecer donde las dianas flotan entre luces de neón y el rival ZETA-7 defiende su corona de champán."
+  },
+  "rival": {
+    "id": "valle_neon_rival",
+    "name": "ZETA-7",
+    "kind": "stock",
+    "states": [
+      "idle",
+      "duelo",
+      "derrotado",
+      "triunfante"
+    ],
+    "oppLabel": "rival",
+    "personalidad": {
+      "agresividad": 3,
+      "precision": 3,
+      "constancia": 3,
+      "caracter": "frio",
+      "celebracion": "Lanza confeti morado y exclama ¡KRAKEN!",
+      "cerebro": "equilibrado"
+    }
+  },
+  "storage": "pp_champ_valle_neon_*",
+  "assets": "Taller V3.0.3: rival + estados (idle/duelo/derrotado/triunfante), sala_*.jpg (6 planos), decor1/2.png, power_*.png, insignia.png, bso",
+  "audio": {
+    "music": "assets/bso.wav",
+    "musicVolume": 0.18
+  },
+  "powers": [
+    {
+      "kind": "confeti",
+      "name": "Confeti morado",
+      "icon": "assets/power_0.png",
+      "cooldown": 18,
+      "duration": 6,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.35
+    },
+    {
+      "kind": "globos",
+      "name": "Globos de champán",
+      "icon": "assets/power_1.png",
+      "cooldown": 20,
+      "duration": 8,
+      "warn": 2,
+      "activacion": "puntos",
+      "cadaCuantos": 3
+    }
+  ],
+  "stages": [
+    {
+      "id": "duelo1",
+      "name": "Duelo 1",
+      "kind": "duelo"
+    },
+    {
+      "id": "prueba1",
+      "name": "Dianas del cañón",
+      "kind": "objetos",
+      "rules": {
+        "modo": "objetivos",
+        "objetivo": 6,
+        "puntos": 2,
+        "premio": "Trofeo del Valle"
+      }
+    },
+    {
+      "id": "duelo2",
+      "name": "Duelo 2",
+      "kind": "duelo"
+    },
+    {
+      "id": "prueba2",
+      "name": "Moscas veloces",
+      "kind": "objetos",
+      "rules": {
+        "modo": "movimiento",
+        "objetivo": 4,
+        "puntos": 3,
+        "premio": "Insignia Mosca"
+      }
+    },
+    {
+      "id": "final",
+      "name": "DUELO FINAL",
+      "kind": "duelo"
+    }
+  ],
+  "decor": {
+    "pieces": [
+      {
+        "file": "assets/decor1.png",
+        "h": 1.15,
+        "x": -2.5,
+        "z": -2.45,
+        "sway": 0.45
+      },
+      {
+        "file": "assets/decor2.png",
+        "h": 0.85,
+        "x": 2.15,
+        "z": -2.45,
+        "sway": 0.3
+      }
+    ]
+  },
+  "room": {
+    "floor": "assets/sala_floor.jpg",
+    "ceil": "assets/sala_ceil.jpg",
+    "back": "assets/sala_back.jpg",
+    "front": "assets/sala_front.jpg",
+    "left": "assets/sala_left.jpg",
+    "right": "assets/sala_right.jpg"
+  },
+  "trophy": {
+    "name": {
+      "es": "Insignia Valle Neón",
+      "en": "Valle Neón badge"
+    }
+  },
+  "taller": {
+    "editor": "V3.0.3",
+    "dificultad": "media",
+    "retos": [
+      {
+        "nombre": "Dianas del cañón",
+        "tipo": "objetivos",
+        "objetivo": 6,
+        "puntos": 2,
+        "premio": "Trofeo del Valle"
+      },
+      {
+        "nombre": "Moscas veloces",
+        "tipo": "movimiento",
+        "objetivo": 4,
+        "puntos": 3,
+        "premio": "Insignia Mosca"
+      }
+    ],
+    "generado": "2026-10-14T22:39:58.004Z"
+  },
+  "notes": [
+    "v1 · Campeonato creado con El Taller V3.0.3: manifest, módulo y assets generados automáticamente."
+  ]
+}

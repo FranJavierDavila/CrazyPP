@@ -1,0 +1,181 @@
+{
+  "id": "locura",
+  "version": 20,
+  "title": {
+    "es": "Campeonato de la Locura",
+    "en": "Championship of Madness"
+  },
+  "rival": {
+    "id": "clown",
+    "name": "CLOWN",
+    "kind": "payaso loco",
+    "states": [
+      "present",
+      "idle",
+      "focused",
+      "surprised",
+      "hungry",
+      "panic",
+      "laughing",
+      "defeated",
+      "victory",
+      "crazy",
+      "picando",
+      "loosing"
+    ]
+  },
+  "structure": "v2.69 · ARQUITECTURA (5 etapas + trofeo, identica a magia): etapa 1 LUCHA contra CLOWN Nv. 1 (partida a 11) · etapa 2 PRUEBA de habilidad: ARKANOID, romper el muro de ladrillos · etapa 3 LUCHA contra CLOWN Nv. 2 (mas dificil, x1.22) · etapa 4 PRUEBA: ARKANOID 2, muro de ladrillos rojos y azules con pistola laser · etapa 5 LUCHA FINAL contra CLOWN Nv. 3 (JEFE, x1.5 + superpoderes + bola doble). Al vencer se termina el campeonato y se consigue el LOGRO: la insignia 'Campeon de la Locura' pasa al ranking como elemento grafico del palmares y la copa vive en la sala. El mapa de la pared izquierda va descubriendo las etapas al superarlas.",
+  "rewards": {
+    "wins": "cada victoria desbloquea el siguiente paso del camino (MEGA PALA al vencer al Clown; PISTOLA al superar la prueba ARKANOID)",
+    "champion": "insignia Campeon de la Locura en el ranking + copa dorada permanente en la sala"
+  },
+  "trophy": {
+    "name": {
+      "es": "Insignia Campeon de la Locura",
+      "en": "Champion of Madness badge"
+    }
+  },
+  "storage": "pp_arcade_*",
+  "procedural": {
+    "art": false,
+    "audio": false,
+    "binaryAssets": 28
+  },
+  "assets": "assets/ (12 poses webp del artista + superpoder.webp + regalo.webp + mapa.webp + tapa.webp + poster_pistola.webp + viento.webp + reloj.webp + extra.webp + pistol.glb + risas.mp3 + bso.ogg) + room/ 6 JPEG de la carpa (suelo, techo, fondo, frente, izquierda, derecha)",
+  "cfg": {
+    "id": "clown",
+    "name": "CLOWN",
+    "championship": "Campeonato de la Locura",
+    "championship_en": "Championship of Madness",
+    "version": 11,
+    "spriteWidth": 2.1,
+    "baseY": 0.52,
+    "z": -3.82,
+    "giftBox": {
+      "w": 2.1,
+      "h": 1.05,
+      "z": -3.5,
+      "x": 1.26
+    },
+    "rival": {
+      "followK": 0,
+      "followMax": 0
+    },
+    "powers": [
+      {
+        "kind": "confetti",
+        "duration": 8.0
+      },
+      {
+        "kind": "redball",
+        "duration": 8.0,
+        "scale": 2.0,
+        "speedMul": 0.62,
+        "gravityMul": 0.55
+      }
+    ],
+    "powerTrigger": {
+      "chance": 0.32,
+      "cooldown": 13.0,
+      "minRallyHits": 1,
+      "warn": 2.0
+    },
+    "playerPower": {
+      "kind": "mega_pala",
+      "reachMul": 1.38,
+      "duration": 8.0,
+      "trigger": "crazy_combo_rally6"
+    },
+    "thresholds": {
+      "picandoRallyHits": 7,
+      "loosingDiff": 6,
+      "comboRally": 6,
+      "surprisedRally": 3
+    },
+    "powerBanner": "superpoder.webp",
+    "music": "bso.ogg",
+    "musicVolume": 0.18,
+    "champId": "clown",
+    "_comment": "v2.71 · configuracion del Campeonato de la Locura, AHORA en este manifest (bloque cfg, misma filosofia que el bloque level de magia: el artista ajusta SIN tocar codigo). Antes vivia en data.json, retirado. REGLA FIJA de duelos: el rival se coloca a ~0,50 m a la DERECHA del borde derecho de la mesa (giftBox.x = ancho_mesa/2 + 0,50) y su regalo flota ~0,50 m por detras del borde lejano (giftBox.z). Las 12 poses son assets/<estado>.webp."
+  },
+  "note": "v2.85: DECORADO DE SALA propio («room» en el módulo) — el núcleo (createChampRoom, nuevo en 2.85.0) viste los 6 PLANOS de la sala (suelo, techo y 4 paredes) con el arte de assets/room/ SOLO mientras este campeonato está activo; al salir, la sala vuelve EXACTAMENTE a su tema clásico (dispose de GPU). Medidas reales de los planos para rediseñar el arte: suelo/techo 6,10 × 7,90 m · paredes trasera y frontal 6,10 × 2,85 m · laterales 7,90 × 2,85 m. La sala del CLOWN es ahora UNA GRAN CARPA DE CIRCO: pista de serrín con anillo y estrella, cúpula de lona a franjas rojas/cremas con mástil y banderines, entrada con taquilla y póster de payaso, escenario con telones y focos, gradas con público, puestos y trapecio. variants.final: en la etapa 4 (DUELO FINAL vs. el JEFE) la carpa se tiñe de penumbra roja (_setStage → champRoom.useVariant).v2.78: el control de BANDA SONORA sale del menu de este campeonato — ahora es el ajuste GLOBAL «Música de los campeonatos (todos por igual)» del nucleo (primera fila de la seccion CAMPEONATOS), mismo canal pp_arcade_vol de siempre. El menuItem arcmus se retira; menuAction redirige a lo mismo por compatibilidad. v2.75: INSIGNIA del campeonato (insignia.png, arte del artista): al completar el camino se gana el logro y la insignia preside el panel de ranking (flanqueando el titulo) y la fila del campeon en la tabla RANKING MUNDIAL (columna LOGROS, nucleo). v2.74: (1) EL MAPA DE LA PARED VUELVE — entrar con la etapa en una PRUEBA (1/3) saltaba directo a la prueba sin encender el mapa y desaparecía en toda la sesión; ahora se enciende en TODAS las entradas. (2) PISTOLA REAL del artista en el ARKANOID 2: pistol.glb (el mismo modelo que magia monta desde v2.61) sustituye a la pistola minúscula de respaldo; el LÁSER sale de la BOCA DEL CAÑÓN y el azul se convierte en rojo (lógica intacta). (3) El menú CAMPEONATOS muestra SÓLO campeonatos: fuera los accesos «PRUEBA: ARKANOID/ARKANOID 2» (el camino entra solo en las pruebas). LEY: si algo funciona, permanece. v2.71: configuracion unificada (data.json -> bloque cfg de este manifest; sin ficheros redundantes) y REGLA FIJA de posicion del rival en duelos: ~50 cm a la derecha del borde derecho de la mesa y ~50 cm por detras del borde lejano (el CLOWN acompana al WIZARD en la misma norma). Resto igual: primer campeonato en CARPETA AUTOCONTENIDA (championships/locura/), descubierto por championships.json (entrada eager). Cada VICTORIA se publica en el RANKING MUNDIAL (p = rondas ganadas; logros insignia/copa). Registros en pp_arcade_*.",
+  "note_v296": "v2.96: REJUGAR etapas superadas — apunta con la pala a un nodo ya superado del mapa (anillo azul) y tira del gatillo: esa etapa se relanza con el progreso real congelado; al acabar el intento el camino vuelve a donde estaba. resetRecords también limpia rejugadas colgadas.",
+  "note_dbg": "v2.108 · MODO DEPURACIÓN «foro3d»: nombre del jugador = foro3d → el mapa levanta todas las tapas y el gatillo salta a cualquier etapa sin requisitos (vía rejugada, progreso real congelado). El núcleo no persiste registros de este jugador (pp_champ_*/pp_arcade_*/stats), no publica ranking mundial ni telemetría, y muestra rótulo «MODO DEPURACIÓN» (2D portada + 3D visor).",
+  "note_v2120": "v2.120 (módulo v13) AUDITORÍA + 2 SUPERPODERES NUEVOS: (1) LLUVIA DE GLOBOS — 6 globos de 3 colores suben y flotan sobre tu campo 9 s, revientan con la bola (mini-confeti + pop) y renacen (powerglobos.png en el cartel); (2) MAREO TOTAL — el mundo se tambalea 7 s (vaivén suave del rig, 6,3°/2,6°, con envolvente; la base se restaura exacta) (powergiro.png); bolsa del Clown = MÁXIMO 4: Nv.1/2 confeti+bola loca+globos+mareo · Nv.3 bola loca+split+globos+mareo (el confeti cede su turno en Nv. 3); (3) el cartel SUPER POWER!! muestra el icono del poder; (4) auditoría: confettiBurst se apaga al terminar el poder, rayos láser purgados al salir, guard anti-NaN en viento, clon del split con malla perezosa.",
+  "note_v2121": "v2.121 (módulo v14) FIXES DE LOS 2 PODERES NUEVOS + MINIATURAS: (1) GLOBOS — la banda era z positiva (+0,10..+1,15) = detrás de la cabeza del jugador (la mesa está en z<0): invisibles en el visor; ahora flotan sobre TU CAMPO (z −1,50..+0,05, como el confeti) y renacen sobre la mesa (y 0,84), no atravesándola; (2) MAREO — ±6,3° a 0,5 Hz era imperceptible en la Quest: vaivén que se nota (yaw ±9,7° a 0,62 Hz + roll ±4,3° a 0,41 Hz, solo rotación, confort VR intacto); (3) MINIATURAS para los clásicos: confeti, bola loca y split estrenan powerconfeti.png, powerbola.png y powersplit.png en el cartel.",
+  "note_v2122": "v2.122 (módulo v15) AUDITORÍA DE MÚSICA — UNA MELODÍA SIEMPRE: revisión de los 4 canales del campeonato (BSO del núcleo, música del menú VR, risas y jingles): sin solapos — la BSO sóla suena durante la partida (setArcWanted), se apaga al salir y al terminar, y el menú del núcleo la silencia con el duck (v2.37) que ahora el núcleo FUERZA en startMusic (invariante v2.122). El arkanoid mantiene la BSO de fondo (una sola melodía). Sin cambios de jugabilidad ni de arte.",
+  "note_v2124": "v2.124 (módulo v16) MAREO TOTAL DEFINITIVO: vaivén POR DELTAS (cada frame se suma la diferencia y se retira la del anterior) — inmune a cualquier otra escritura del rig (recentrado, anclajes) y sin saltos; y amplitud INCONFUNDIBLE en los tres ejes: yaw ±0,20 rad (11,5°) a 0,62 Hz + pitch ±0,06 rad (3,4°) a 0,33 Hz + roll ±0,09 rad (5,2°) a 0,41 Hz, misma envolvente seno^0,8 de 7 s. Solo rotación (cero traslación, confort VR). El propietario siguió sin percibir la calibración v2.121 en el casco.",
+  "contract": 1,
+  "estado": "publicado",
+  "description": {
+    "es": "Enféntate del PAYASO LOCO en su carpa de circo: cinco etapas de ping pong caótico con confeti, bola roja fantasma, bolas dobles, globos que marean y el arkanoid del circo. Gana el trofeo de La Locura.",
+    "en": "Face the CRAZY CLOWN in his circus tent: five chaotic ping pong stages with confetti, ghost red ball, double balls, dizzy balloons and the circus arkanoid. Win the Mad Cup."
+  },
+  "powers": [
+    {
+      "kind": "confeti",
+      "name": "Confeti caótico",
+      "chance": 0.3,
+      "duration": 8
+    },
+    {
+      "kind": "bola",
+      "name": "Bola roja loca",
+      "chance": 0.3
+    },
+    {
+      "kind": "split",
+      "name": "Bola doble",
+      "chance": 0.25
+    },
+    {
+      "kind": "burla",
+      "name": "Burla (cartones del clown)",
+      "chance": 0.22,
+      "duration": 9
+    },
+    {
+      "kind": "globos",
+      "name": "Globos",
+      "chance": 0.25
+    }
+  ],
+  "stages": [
+    {
+      "id": "etapa1",
+      "name": "Duelo inicial",
+      "kind": "duelo"
+    },
+    {
+      "id": "etapa2",
+      "name": "Arkanoid del circo",
+      "kind": "arkanoid"
+    },
+    {
+      "id": "etapa3",
+      "name": "Duelo caliente",
+      "kind": "duelo"
+    },
+    {
+      "id": "etapa4",
+      "name": "Arkanoid II",
+      "kind": "arkanoid"
+    },
+    {
+      "id": "etapa5",
+      "name": "Jefe final",
+      "kind": "duelo"
+    }
+  ],
+  "audio": {
+    "music": "assets/bso.ogg",
+    "musicVolume": 0.18
+  },
+  "notes": [
+    "2026-10-12: migrado al esquema v2.125 (contract 1) — sin cambios de comportamiento",
+    "2026-10-13: módulo v18 — MAREO retirado y sustituido por BURLA (rayo arcoíris + 5 cartones burlescos con comodín) a petición del artista/dueño."
+  ],
+  "note_v2126": "v2.126 (módulo v17) · LOS 2 PODERES NUEVOS, A PRUEBA DE TODO: (1) LANZAMIENTO GARANTIZADO — el efecto entra aunque el punto muera durante el aviso (antes cualquier estado ≠ rally se comía el poder en silencio: el dueño lo vivía como «globos/mareo no funcionan»); (2) BOLSA ROTATORIA — todos los poderes salen antes de repetir, así GLOBOS y MAREO aparecen seguro en los primeros anuncios de la sesión; (3) POP de globos más generoso (radio 0,155→0,185 m: la bola rápida tunelaba el margen y no reventaba ninguno).",
+  "note_v2127": "v2.127 (módulo v18) · BURLA sustituye a MAREO (el dueño: «el superpoder del clown de mareo no funciona»): rayo de luz arcoíris que impacta en puntos distintos de la mesa con un pequeño destello arcoíris y en cada impacto se planta un CARTÓN VERTICAL de ~50 cm (25×50) con el clown burlesco (arte nuevo burla1-4.png + burlacomodin.png); el cartón está presente 2 s y desaparece; son BARRERAS: la bola que los cruza se frena (cae muerta) y el cartón estalla en partículas arcoíris; el COMODÍN (~1 de cada 5, clown de espaldas) deja pasar la bola, que se pone NEGRA y MÁS GRANDE, y si la golpeas con la pala estalla en cintas negras: PUNTO GANADOR; icono nuevo powerburla.png (medallón arcoíris, sustituye a powergiro.png); bolsa: Nv.1/2 confeti+bola loca+globos+burla · Nv.3 bola loca+split+globos+burla; pool precalentado en build() (regla Quest: nada se crea por partida).",
+  "note_v2133": "v2.133 (módulo v19) · LA BOLA DOBLE YA SE VE (el dueño: «el poder que saca dos bolas no funciona»): la malla del clon se creaba SÓLO en el primer build() del ARKANOID y el split sólo existe en la bolsa del Nv. 3 (etapa 5 JEFE) — llegando al duelo final con sesión fresca (etapa guardada, recarga, salto de depuración o rejugada por el mapa) el arkanoid nunca se había construido y el clon corría físico INVISIBLE: el cartel prometía «¡la bola se divide en dos!» y la segunda bola jamás aparecía. FIX: cloneMesh + _makeCloneMesh al CONSTRUCTOR del arkanoid (una vez por sesión, regla Quest) y el split en punto muerto se RE-ARMA 1,2 s para entrar en el PRÓXIMO rallye (antes nacía y moría en el primer frame)."
+}

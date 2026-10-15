@@ -1,0 +1,139 @@
+{
+  "id": "magia",
+  "version": 28,
+  "title": {
+    "es": "Nuevo truco de Magia",
+    "en": "New Magic Trick"
+  },
+  "rival": {
+    "id": "wizard",
+    "name": "WIZARD",
+    "oppLabel": "wizard",
+    "kind": "mago arcano",
+    "states": [
+      "present",
+      "idle",
+      "focused",
+      "surprised",
+      "hungry",
+      "panic",
+      "laughing",
+      "defeated",
+      "victory",
+      "crazy",
+      "picando",
+      "loosing"
+    ]
+  },
+  "structure": "v2.70 · ARQUITECTURA (5 etapas + trofeo, identica a La Locura): etapa 1 DUELO contra WIZARD Nv. 1 (partida a 11) · etapa 2 PRUEBA de habilidad: destruir el ORBE MAGICO · etapa 3 DUELO contra WIZARD Nv. 2 (mas dificil, x1.22) · etapa 4 PRUEBA: destruir OTRO ORBE mas COMPLEJO (ladrillos mas finos, capa extra, sin prorrogas) · etapa 5 DUELO FINAL contra WIZARD Nv. 3 (JEFE, x1.5). Al vencer se termina el campeonato y se consigue el LOGRO: la insignia/trofeo 'Varita Dorada' pasa al ranking como elemento grafico del palmares y vive en la sala. El mapa de la pared izquierda va descubriendo las 5 etapas al superarlas. El mago NO participa en las pruebas del orbe (v2.63).",
+  "level": {
+    "brickSize": 0.125,
+    "radiusOuter": 4.6,
+    "radiusMid": 3.0,
+    "radiusCore": 1.5,
+    "timeStart": 120,
+    "timeBonus": 60,
+    "maxExtensions": 2,
+    "alertThreshold": 30,
+    "clockBlockLife": 4,
+    "clockRetryDelay": 9,
+    "lastBricksPercent": 5,
+    "maxBalls": 2,
+    "respawnDelay": 0.9,
+    "restitution": 1.0,
+    "energyLossPerHit": 1.0,
+    "maxChain": 6,
+    "minChainSpeed": 1.2,
+    "minReturnSpeed": 2.8,
+    "minBounceHeight": 0.45,
+    "bombChance": 0.18,
+    "bombEvery": 30,
+    "blastRadius": 0.55,
+    "blastMax": 60,
+    "attractionStrength": 0.35,
+    "attractionMaxAngle": 15,
+    "attractionRange": 6,
+    "montajeTime": 7.0,
+    "layerPoints": [
+      30,
+      20,
+      10
+    ],
+    "chainBonus": 5,
+    "star3Frac": 0.25,
+    "star2Frac": 0.08,
+    "_comment": "radios en LADRILLOS (v2.71: pueden ser DECIMALES — la rejilla usa distancia <= radio); brickSize en metros; timeStart/timeBonus/alertThreshold/clockBlockLife/clockRetryDelay en segundos; attractionMaxAngle en grados; layerPoints = [nucleo, medio, exterior]; star3Frac/star2Frac = fracción de tiempo restante para 3 y 2 estrellas. v2.71: el orbe NORMAL mide lo mismo pero con LA MITAD de ladrillos (0,125 m y radios 4,6/3,0/1,5 = 437 vs 925) — etapa 2 más sencilla (petición del artista). La variante COMPLEJA mantiene su rejilla histórica (fijada en el código: 0,088/7/4/2 ≈ 1419)."
+  },
+  "rewards": {
+    "level": "PISTOLA MÁGICA durante el nivel (mano libre: gatillo = disparo)",
+    "champion": "trofeo Varita Dorada en la sala"
+  },
+  "trophy": {
+    "name": {
+      "es": "Varita Dorada",
+      "en": "Golden Wand"
+    }
+  },
+  "storage": "pp_champ_magia_*",
+  "procedural": {
+    "art": false,
+    "audio": false,
+    "binaryAssets": 27
+  },
+  "assets": "assets/ (12 poses webp del artista + regalo.webp + mapa.webp + superpoder.webp + portals.webp + tapa.webp + reloj.png + pistol.glb + risas.mp3 + bso.mp3) + room/ 6 JPEG del laboratorio (suelo, techo, fondo, frente, izquierda, derecha)",
+  "note": "v2.85: DECORADO DE SALA propio («room» en el módulo) — el núcleo (createChampRoom, nuevo en 2.85.0) viste los 6 PLANOS de la sala (suelo, techo y 4 paredes) con el arte de assets/room/ SOLO mientras este campeonato está activo; al salir, la sala vuelve EXACTAMENTE a su tema clásico (dispose de GPU). Medidas reales de los planos para rediseñar el arte: suelo/techo 6,10 × 7,90 m · paredes trasera y frontal 6,10 × 2,85 m · laterales 7,90 × 2,85 m. La sala del WIZARD es ahora EL LABORATORIO DEL ALQUIMISTA: losas de piedra con círculo mágico luminoso, bóveda de vigas de roble con lámpara de velas y sigilo arcano, estanterías de pociones con ventana de luna, pizarrón de fórmulas y chimenea con caldero, arco con espejo arcano y mesas de alquimia con cuervo. variants.final: en la etapa 4 (DUELO FINAL vs. el JEFE) el laboratorio se baña en luz arcana violeta (_setStage → champRoom.useVariant).v2.81: TROQUELES DE CARTÓN PROPIOS del campeonato — el módulo declara «decor» (castillo 1,30 m en -2,55/-2,50 · mesita de alquimia 0,75 m en -2,15/-0,68 · mundo 1,25 m en 1,95/-0,75 · atril 1,05 m en 2,45/-2,35) con los PNG del artista recortados a SU transparencia (0 px de margen, championships/magia/assets/decor/); posiciones medidas contra la sala: no tapan panel RANKING, rival, orbe, portal, mapa ni el trofeo Varita Dorada. Al activar Magia se retira el set de La Locura y viceversa (dispose de GPU). champ_rank v 2.81.0. Sin cambios de jugabilidad. v2.78: ESFERA del mago un 33% MAS GRANDE (0,85 -> 1,13 m), alineada con el CENTRO del personaje y con la PARTE BAJA TOCANDO EL SUELO (centro a size/2 y sin el duelDy: la base queda anclada al suelo) para tapar al mago de verdad, peticion del artista. La BSO del campeonato sigue el AJUSTE GLOBAL del nucleo («Música de los campeonatos», pp_arcade_vol) con sincronizacion EN VIVO (_syncMusicGain): antes iba a volumen fijo 0.15. Sin mas cambios de jugabilidad ni de arte. v2.77: TELEMETRIA COMPLETA — el campeonato ya reporta el AVANCE DE ETAPA (stage, igual que La Locura) y el CAMPEON GANADO (champion: Varita Dorada conseguida por primera vez); el payload champ_rank actualiza su version a 2.77.0. Sin cambios de jugabilidad ni de arte. v2.75: (1) AJUSTE del artista en duelos — el WIZARD se coloca 25 cm mas a la DERECHA y 25 cm mas ARRIBA de la REGLA FIJA (v2.71); la esfera y el aro de chispas lo acompanan (composicion intacta); el aro de chispas giratorio sobre su cabeza (el circulito que gira) es ahora 1,5 VECES mas grande; (2) INSIGNIA del campeonato (insignia.png, arte del artista): al completar el camino se gana el logro y la insignia preside el panel de ranking (flanqueando el titulo) y la fila del campeon en la tabla RANKING MUNDIAL (columna LOGROS, nucleo). v2.73: (1) mapa.webp NUEVO del artista — los nodos de las PRUEBAS (2 y 4) muestran ahora los orbes (posiciones de circulos identicas, los marcadores de progreso no cambian); (2) ESFERA del mago arreglada — gira SOBRE SI MISMA (en su plano) y queda SIEMPRE perpendicular a la camara (billboard de guiñada), tapa la parte baja del mago desde cualquier angulo, y el WIZARD sube ~15 cm en los duelos (la esfera lo acompania); (3) ESTRELLAS de la mesa y del corredor corregidas — el poligono de 5 puntas estaba mal construido (salia una mancha), ahora estrella de verdad con halo; (4) portals.webp NUEVO del artista en todos sus usos (portal del fondo, mini-portales y portales de mesa); (5) PORTALES MAGICOS del superpoder MAS GRANDES y en la PARTE CENTRAL de la mesa (agujero 0,19 m, anillo 0,62 m, casi en el eje flanqueando la red). v2.71: (1) REGLA FIJA de duelos — el WIZARD en persona se coloca ~50 cm a la DERECHA del borde derecho de la mesa (nunca centrado tras ella) y recupera SU ESFERA (regalo.webp) delante, tapando su mitad inferior y GIRANDO sobre su centro; (2) SUPERPODERES del WIZARD recuperados en duelos (aviso SUPERPODER 2 s + bola arcano morada x2 / lluvia mágica, motor idéntico al del CLOWN); (3) orbe NORMAL de la etapa 2 con LA MITAD de ladrillos y dianas más grandes; (4) limpieza TOTAL entre etapas (sin ladrillos/glow/láser flotantes) + salvaguarda de finalización cuando el orbe llega a cero. Config del artista en el bloque level (mismo patrón que el cfg de La Locura). El ranking mundial puntúa VICTORIAS DE DUELO (duelwins). Registros en pp_champ_magia_*. v2.72: LOS SUPERPODERES PROPIOS del WIZARD vuelven a los duelos (los originales, no los del Clown) — BOLA LOCA (la bola crece x1.65, cambia de color sin parar y navega con movimiento algo erratico: vaiven lateral + rafagas aleatorias) y PORTALES MAGICOS (dos agujeros sobre la mesa, uno a cada lado de la red, con el anillo portals.webp girando encima; la bola que bota dentro de un agujero sale disparada por el otro, con destello, zap y empujon hacia el centro). Mismo motor de dos fases: aviso SUPERPODER 2 s con la partida congelada, cooldown 13 s, max 1 por rallye. startOrb tambien limpia poderes al derivar a la prueba.",
+  "note_v296": "v2.96: REJUGAR etapas superadas — apunta con la pala a un nodo ya superado del mapa (anillo azul) y tira del gatillo: esa etapa se relanza con el progreso real congelado; al acabar el intento el camino vuelve a donde estaba. resetRecords también limpia rejugadas colgadas.",
+  "note_dbg": "v2.108 · MODO DEPURACIÓN «foro3d»: nombre del jugador = foro3d → el mapa levanta todas las tapas y el gatillo salta a cualquier etapa sin requisitos (vía rejugada, progreso real congelado). El núcleo no persiste registros de este jugador (pp_champ_*/pp_arcade_*/stats), no publica ranking mundial ni telemetría, y muestra rótulo «MODO DEPURACIÓN» (2D portada + 3D visor).",
+  "note_v2120": "v2.120 (módulo v23) AUDITORÍA + 2 SUPERPODERES NUEVOS: (1) BOLA DE FUEGO — la bola arde 8 s: tinta brasa + estela aditiva de 16 sprites (powerfuego.png en el cartel); (2) NOCHE ARCANA — el salón se apaga 7 s (exposición animada, nunca a ciegas) y la bola se vuelve luna arcana con halo que la persigue (powersombras.png); bolsa del Wizard = 4 (bola loca, portales, fuego, sombras); (3) el cartel muestra el icono del poder; (4) auditoría: guard anti-NaN en la atracción del orbe, aviso de prórroga por cruce de umbral (valores decimales del manifest ya no lo saltan), listener pp-lang con nombre, conteo de bolas sin filter por frame.",
+  "note_v2121": "v2.121 (módulo v24) MINIATURAS PARA LOS PODERES CLÁSICOS: el Wizard estrena powerloca.png (bola loca iridiscente) y powerportal.png (portales gemelos) — los 4 poderes lucen ahora SU icono propio en el cartel (powerloca, powerportal, powerfuego, powersombras). Cero cambios de gameplay.",
+  "note_v2122": "v2.122 (módulo v25) AUDITORÍA DE MÚSICA — UNA MELODÍA SIEMPRE: la BSO del Wizard (bso.mp3, ranura _mus propia) ya respeta el duck del menú por _syncMusicGain (v2.78) y el núcleo 2.122.0 FUERZA ese duck al arrancar la música del menú (invariante UNA MELODÍA). Sin segunda fuente melódica en el campeonato (fuego, sombras, portales y risa son efectos puntuales). Sin cambios de jugabilidad ni de arte.",
+  "note_v2124": "v2.124 (módulo v26) AUDITORÍA DE MÚSICA II: la BSO propia (motor v2.78) RESUCITA sola tras cada re-creación del contexto de audio (salir/entrar de VR, rescate del watchdog) — antes la referencia quedaba apuntando al contexto cerrado y el duelo seguía sin música hasta el próximo arranque; y ahora ENTRA CON FUNDIDO de 0,8 s (antes arrancaba a volumen pleno en el mismo tick que el fade-out de la música del menú: medio segundo de dos melodías pisándose). El núcleo 2.124.0 completa la invariante UNA MELODÍA por los dos sentidos. Sin cambios de jugabilidad ni de arte.",
+  "note_v2125": "decodeAudioData en FORMA PROMESA con copia slice(0) (la forma callback puede no dispararse jamas con la GPU saturada). _startMusic: si la BSO del nucleo (Locura) esta sonando, la nuestra no entra (UNA MELODIA en ambos sentidos, simetrico al musicOff() que el nucleo invoca al arrancar la suya).",
+  "contract": 1,
+  "estado": "publicado",
+  "description": {
+    "es": "Duelo de ping pong contra el MAGO ARCANO en su laboratorio de alquimista: orbe mágico con poderes (fantasmas, portales, fuego), cinco etapas y el trofeo del Hechicero.",
+    "en": "Ping pong duel against the ARCANE WIZARD in his alchemist lab: magic orb with powers (ghosts, portals, fire), five stages and the Sorcerer trophy."
+  },
+  "powers": [
+    {
+      "kind": "orbe",
+      "name": "Orbe mágico",
+      "chance": 0.3
+    }
+  ],
+  "stages": [
+    {
+      "id": "etapa1",
+      "name": "Duelo inicial",
+      "kind": "duelo"
+    },
+    {
+      "id": "etapa2",
+      "name": "Orbe arkanoid",
+      "kind": "objetos"
+    },
+    {
+      "id": "etapa3",
+      "name": "Duelo caliente",
+      "kind": "duelo"
+    },
+    {
+      "id": "etapa4",
+      "name": "Orbe II",
+      "kind": "objetos"
+    },
+    {
+      "id": "etapa5",
+      "name": "Jefe final",
+      "kind": "duelo"
+    }
+  ],
+  "audio": {
+    "music": "assets/bso.mp3",
+    "musicVolume": 0.18
+  },
+  "notes": [
+    "2026-10-12: migrado al esquema v2.125 (contract 1) — sin cambios de comportamiento"
+  ]
+}

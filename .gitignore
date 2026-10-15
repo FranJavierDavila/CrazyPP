@@ -55,3 +55,8 @@ server.log
 # CRAZY PP · no versionar entregables ni transitorios
 download/
 tool-results/
+
+# CRAZY PP · entregables y transitorios fuera del repo
+public/descargas/
+scripts/staging-*/
+scripts/voice/

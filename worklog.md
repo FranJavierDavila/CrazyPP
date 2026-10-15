@@ -1512,3 +1512,20 @@ Stage Summary:
 - Repo adelgazado 445 MB (.git 142 MB) y disco en 2,8 GB usados de 9,9 GB. Los entregables se regeneran con scripts/release-v304/build_zip.py si hiciera falta (no dependen del repo).
 - La copia de seguridad del dueño download/v303/crazypp-v303.zip (99 MB, V3.0.3 original) sigue intacta fuera del repo; puede eliminarse bajo petición si se prefiere más espacio.
 - Pendiente sugerido: prueba real en Quest + relay externo (Railway/Render), y merge de exp/live-tv a main cuando se apruebe.
+
+---
+Task ID: 50
+Agent: Super Z (main agent)
+Task: "no tengo acceso al panel de descargas" — diagnóstico y recuperación del entorno.
+
+Work Log:
+- Causa raíz: el next-server original (pid 1587, 2,8 GB RSS) fue OOM-killed por el kernel (dmesg 8107s: "Out of memory: Killed process 1587"); el supervisor del entorno (.zscripts/start.sh, pid 899) quedó ZOMBIE → nadie reinicia Next/mini-servicios → gateway :81 devuelve 502 y el usuario no ve ni el juego ni /descargas.
+- Intentos de recuperación en sesión: .zscripts/dev.sh (bloqueado en bun install), arranque directo bun run dev (200 en su llamada, muerto al corte), setsid+nohup+disown (igual), canario control (sleep 600 SOBREVIVE al corte → no hay segador genérico), supervisor while-loop con relanzamiento (nunca llegó a disparar: bun/node/bash mueren externamente en el corte entre llamadas, sin OOM ni crash registrado; sleep sobrevive).
+- Conclusión empírica: los procesos bun/node/bash arrancados desde las llamadas de tool son eliminados al finalizar cada llamada; solo el árbol supervisado por pid 1 (start.sh del entorno) puede mantener el dev server. Al estar su supervisor zombie, la vía correcta es el REINICIO del sandbox (botón reiniciar), que re-ejecuta start.sh → dev.sh (bun install + db:push + next dev :3000 + mini-services → relay :3004).
+- Limpieza: restos de sleep/bun/next eliminados; dev.log conserva el registro del incidente. Sin cambios de código: game.html, tv.html, page.tsx, zips y worklog intactos (el estado del repo es el del commit 2bd87ac).
+- Nota: el OOM original coincidió con la prueba del juego en WebGL por software (Chrome 150% CPU) + descargas del zip de 103 MB en un sandbox de 4 GB.
+
+Stage Summary:
+- El panel y el juego volverán al reiniciar el sandbox: start.sh levanta Next (:3000), el gateway (:81) y el relay de TV (:3004) supervisados por pid 1. El usuario debe pulsar el botón REINICIAR y abrir <preview>/descargas.
+- El canal DEMO (mock host) no se auto-arranca: si se quiere demo sin Quest tras el reinicio, lanzar node scripts/mock_host.mjs.
+- Lección: no correr el juego en WebGL por software ni servir el zip grande mientras se compila en dev en sandboxes de 4 GB (riesgo OOM del supervisor).

@@ -1585,3 +1585,19 @@ Stage Summary:
   misma versión, código reconstruido equivalente verificado por banco propio
 - Pendiente del dueño: probar en casco FIS1 + pieles; al confirmar, desplegar el
   paquete que toque y volver a conectar el remote de GitHub para push de seguridad
+
+---
+Task ID: 63-b
+Agent: Super Z (main)
+Task: Acceso al centro de descargas — dejar todos los servicios en verde tras el reinicio
+
+Work Log:
+- Relay de TV :3004 caído tras el reinicio (node_modules de mini-services/live-service
+  borrados): bun install + bun run dev → /api/health {"ok":true,"channels":0}
+- Barrido de salud: gateway :81 → /descargas, /game.html, /tv.html = 200;
+  los 4 ZIP v305-fis1 responden 206 (descargables)
+- La URL de preview la asigna la plataforma (fuera del sandbox): no derivable desde
+  dentro; el usuario accede con su enlace de preview habitual + /descargas
+
+Stage Summary:
+- Centro de descargas operativo y saludable: hub + 4 paquetes + juego FIS1 + TV relay

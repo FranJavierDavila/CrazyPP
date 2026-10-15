@@ -1494,3 +1494,21 @@ Stage Summary:
 - El paquete es AUTÓNOMO fuera del sandbox: juego + TV + relay Node (npm install && node server.mjs) + mock host de demo + guía de despliegue con solución de mixed content y nginx; parámetro ?relay= conecta cualquier hosting estático con su relay.
 - SHA256 del index.html empaquetado: 1ded849d348a… (idéntico byte a byte al QA de la sesión Task 47).
 - Pendiente sugerido: prueba real en Quest del anfitrión + espectador móvil fuera de localhost (Railway/Render para HTTPS del relay), y decidir merge de exp/live-tv a main cuando se apruebe.
+
+---
+Task ID: 49
+Agent: Super Z (main agent)
+Task: Supresión de la era V2.124 obsoleta del centro de descargas y adelgazamiento del repositorio ("el centro de descargas mantiene la V2.124 obsoleta... suprimirse para aligerar espacio").
+
+Work Log:
+- Diagnóstico de peso: .git = 587 MB con blobs grandes versionados (public/descargas/crazypp zip 98,1 MB auto-commiteado, scripts/staging-v304 completo 104 MB/346 ficheros, toolchain scripts/voice Piper 207 MB en disco/667 ficheros en historial, entregables V2.124 de download/ y public/descargas/).
+- src/app/descargas/page.tsx reescrito: solo las 2 tarjetas V3.0.4-EXP·TV1 (COMPLETO 103 MB + ligera 7,8 MB, rosa), cabecera y pie sin V2.124, sección "El viaje en 3 paradas" sustituida por "Cómo usar el paquete (3 paradas)" (Netlify Drop → relay/mock_host → jugar y emitir con ?relay=), remite al LEEME-DESPLIEGUE.txt del paquete.
+- Borrados en disco (−311 MB): public/descargas/{README.md, RELEASE-V2.124.txt, SHA256SUMS.txt, editor-campeonatos.zip, guia-*.html/.pdf, pingpong-quest3-v2.zip}; download/{los mismos + pingpong-quest3(.zip y /), pingpong-quest3-v2(/), editor-campeonatos(/), editor-captura-*.png, captura-v2*.png ×30}; scripts/staging-v304/; scripts/voice/. CONSERVADOS: download/v303/ (V3.0.3 original del dueño, copia de seguridad), download/capturas/ (QA actual CRAZY TV), download/crazypp-v304-*.zip, demo pngs sueltos.
+- Git: .gitignore += public/descargas/, scripts/staging-*/, scripts/voice/; git rm --cached de download, tool-results, scripts/voice, scripts/staging-v304, public/descargas; commit 2bd87ac; filter-branch --index-filter --prune-empty sobre TODAS las ramas (main + exp/live-tv, 56 commits) purgando esas rutas del historial; refs/original eliminadas, reflog expire --expire=now, gc --aggressive --prune=now.
+- Verificación: .git 587 MB → 142 MB (−445 MB); git fsck limpio; 0 restos versionados de las rutas purgadas; árbol intacto (game.html, tv.html, page.tsx, zips, v303). /descargas 200 con 0 menciones V2.124 y 2 tarjetas nuevas; los 4 ficheros antiguos dan 404; COMPLETO.zip sigue sirviéndose (206 por rango).
+
+Stage Summary:
+- El centro de descargas (/descargas) queda limpio: solo el paquete experimental actual (2 tarjetas + banner CRAZY TV en vivo). Toda la era V2.124 suprimida de enlaces, disco e historial git.
+- Repo adelgazado 445 MB (.git 142 MB) y disco en 2,8 GB usados de 9,9 GB. Los entregables se regeneran con scripts/release-v304/build_zip.py si hiciera falta (no dependen del repo).
+- La copia de seguridad del dueño download/v303/crazypp-v303.zip (99 MB, V3.0.3 original) sigue intacta fuera del repo; puede eliminarse bajo petición si se prefiere más espacio.
+- Pendiente sugerido: prueba real en Quest + relay externo (Railway/Render), y merge de exp/live-tv a main cuando se apruebe.

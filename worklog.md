@@ -1474,3 +1474,23 @@ Stage Summary:
 - El canal demo (demo-qa · «DEMO · Rally sintético (QA)») queda emitido en la parrilla para probar la TV sin necesidad de la Quest.
 - Versionado: la rama experimental se sella V3.0.4-EXP.TV1 (visible en #verBadge, menú VR y drawMenuHeader); la base restaurada V3.0.3 del dueño queda intacta en download/v303/crazypp-v303.zip (102.833.068 B).
 - Pendiente sugerido: probar en el casco real (entrar en VR y mirar la parrilla desde el móvil), afinar posición del sello VR si el dueño lo desea, y decidir el merge a main cuando se apruebe la rama.
+
+---
+Task ID: 48
+Agent: Super Z (main agent)
+Task: Entrega del desarrollo V3.0.4-EXP·TV1 en ZIP para subir ("me puedes facilitar el desarrollos en zip para subir?").
+
+Work Log:
+- Parche de PORTABILIDAD añadido antes de empaquetar (para que el ZIP funcione fuera del sandbox): game.html (__PP_LIVE) y tv.html aceptan ahora ?relay=http://IP:3004 (o localStorage.ppLiveRelay) para conectar a un relay propio distinto del origen; con RELAY vacío el comportamiento es idéntico al QA anterior (gateway XTransformPort). El botón "TV en vivo" del overlay hereda el relay automáticamente (delegación de click probada en origen real: /tv.html → /tv.html?relay=http%3A%2F%2F…). tv.html muestra pista en la parrilla vacía (relay conectado / cómo pasar ?relay=).
+- QA del parche: qa_sintaxis_live.py OK (7 scripts); tv.html por gateway :81 sin regresión (conn 1, canal demo visible); tv.html?relay=http://localhost:3004 conecta DIRECTA al relay (uri confirmada, canal demo visible) — valida la forma io('http://host:3004',{path:'/live/socket.io'}) que usa el juego con RELAY. E2E del juego completo no viable en sandbox 4 GB (WebGL software, Chrome 150% CPU): __PP_LIVE + forcePublish verificados presentes antes de la saturación.
+- live-service portable creado: scripts/release-v304/server.mjs (puerto de index.ts a Node ESM puro, LIVE_PORT por env, misma lógica 1:1), package.json con npm start/demo, tools/mock_host.mjs (import absoluto → 'socket.io-client'), LEEME.md con tabla del protocolo.
+- Ensamblador persistido scripts/release-v304/build_zip.py: staging limpio → index.html (=game.html, diff verificado idéntico), tv.html, assets/, championships/ (5), vendor/socket.io.min.js, live-service/, extras-nextjs/ (descargas page + TvLiveBanner + api/channels con LEEME), LEEME-DESPLIEGUE.txt (opción A Netlify / opción B relay, mixed content HTTPS, nginx snippet, chuleta, problemas frecuentes) y VERSION.txt con SHA256.
+- ZIPs generados y verificados (unzip -t sin errores): download/crazypp-v304-exp-tv1-COMPLETO.zip (102,9 MB, 378 ficheros, espejo del formato v303 del dueño + TV + relay) y download/crazypp-v304-exp-tv1-ligera.zip (7,8 MB, championships/ con nota PON-AQUI-LOS-CAMPEONATOS.txt). Copiados a public/descargas/.
+- Centro de descargas /descargas actualizado: 2 tarjetas nuevas en rosa (COMPLETO 103 MB + ligera 7,8 MB) al frente, cabecera mencionando V3.0.4-EXP·TV1. Verificado por gateway :81: página 200, zips 200/206 (rango OK), ligera servida con tamaño exacto 7.763.213 B.
+- Commit f4f3f9d en la línea del repo (game.html, tv.html, page.tsx, worklog).
+
+Stage Summary:
+- El dueño puede subir el desarrollo: download/crazypp-v304-exp-tv1-COMPLETO.zip (102,9 MB — el paquete de referencia, espejo de su v303) o la ligera (7,8 MB para Netlify rápido). Descargables también en la preview: /descargas (tarjetas rosa) o /descargas/<nombre>.zip.
+- El paquete es AUTÓNOMO fuera del sandbox: juego + TV + relay Node (npm install && node server.mjs) + mock host de demo + guía de despliegue con solución de mixed content y nginx; parámetro ?relay= conecta cualquier hosting estático con su relay.
+- SHA256 del index.html empaquetado: 1ded849d348a… (idéntico byte a byte al QA de la sesión Task 47).
+- Pendiente sugerido: prueba real en Quest del anfitrión + espectador móvil fuera de localhost (Railway/Render para HTTPS del relay), y decidir merge de exp/live-tv a main cuando se apruebe.

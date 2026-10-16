@@ -1641,3 +1641,25 @@ Stage Summary:
 - La V3.0.8-TRN1 («v3.8») es la NUEVA BASE de trabajo: integra el rediseño del saque y los fixes de entrenamiento que teníamos pendientes (hechos por el otro hilo), conserva FIS1 + palas + CRAZY TV + intro oficial, y pasa el QA completo en nuestro entorno.
 - Pendiente sobre esta base (lista histórica del dueño aún no implementada): Host Hall (estancia del anfitrión con logros), cilindro residual en el mango de la pala, y la asistencia del saque por DIFICULTAD (fácil > medio > alto) — la cascada actual es fija en entrenamiento.
 - Sugerido: regenerar paquetes v308 + hub /descargas cuando el dueño lo pida (el hub sigue sirviendo v306).
+
+---
+Task ID: 68
+Agent: Super Z (main)
+Task: "adelante" — sobre la base V3.0.8-TRN1 del dueño: Host Hall + asistencia del saque por dificultad + cilindro del mango fuera + paquetes/hub V3.0.9-HALL1.
+
+Work Log:
+- EXPLORACIÓN: la mesa, la IA, el marcador y TODA la sala viven DENTRO del rig (rig.add(tableGroup) — así el recentrado gira la cancha entera); el menú bloquea gatillo/grip (menuOpen); dificultad = setDifficulty('easy'|'medium'|'hard') → applyAISkill (sin persistencia previa); cascada del saque en el núcleo (L~12267) y en el entrenamiento (serveAssist L~13780) con palancas DIMS.serveExtraReach/serveAssistVy; el cilindro = la «cinta de agarre» de refreshMounts (CylinderGeometry 0.0128/0.0138/0.048 en el mango).
+- CILINDRO FUERA: refreshMounts ya no añade el cilindro (el mango se viste con su material «handle»); la pala Pro Carbon sigue montando su GLB. Verificado en el fichero servido (geometría ausente).
+- SAQUE POR DIFICULTAD: const SERVE_ASSIST_TIERS {easy: lerp 0.62/0.88, reach 0.13, vy 3.5 · medium: 0.45/0.75, 0.09, 3.10 (= TRN1) · hard: 0.30/0.55, 0.06, 2.70} + Game.serveTier(). Aplicado en 7 palancas: cascada núcleo, cascada entrenamiento, extraReach núcleo, drillReach entrenamiento, vy de tossFromHand, umbral «natural» de releaseBallHand y serveTossFromTee del módulo. La legalidad (tossMinRise, línea de fondo) intacta. La dificultad ahora SE PERSISTE (ppxr_dif) y carga en el arranque. Los tosses de la IA/demo siguen con DIMS.serveAssistVy (no escalan).
+- HOST HALL (V3.0.9-HALL1): createHall() — estancia 6.8×7 m a 13 m de la cancha (z -22…-15): suelo tarima + alfombra, 4 paredes, techo, 2 lámparas emisivas + 2 PointLight cálidos, peana con bola de exhibición, cartel «HALL DEL ANFITRIÓN» (canvas con fit por measureText), puerta «A LA CANCHA ›», 3 estantes. Pared de trofeos que se REDIBUJA sola (drawHall en cada enterHall): fila CAMPEONATOS con marcos por entrada del ChampLoader (championFlag → insignia.png con caché + placa dorada de reserva; fila se reconstruye si cambia el catálogo), fila de los 6 LOGROS CRAZY como medalliones canvas (dorado conseguido/gris pendiente) y placas PRO CIRCUITO (Σ★ + X/9) + PIEL DE PALA (X/6 con los 6 puntos de color). i18n es/en (hall_*).
+- FLUJO: onSessionStart → enterHall() (rig a z -16.2; SE OCULTAN tableGroup/aiPaddleMesh/demoPaddleMesh/scoreboardGroup — el mundo vive en el rig, lección clave; la bola se queda: se lleva en la mano libre con cinemática local); guardián en el bucle (presenting && inHall && !menuOpen && !calib && !champs.active → exitHall) devuelve a la cancha al arrancar un modo/entreno/campeonato o cerrar el menú; onSessionEnd → exitHall(); enterHall NO actúa en passthrough (inAR) ni online.
+- BUGS pillados en camino: (1) la mesa aparecía DENTRO del hall (rig mueve el mundo) → ocultación de muebles; (2) cartel con texto recortado → fit de fuente; QA visual por render manual (clon de cámara G.camera.clone + renderer.render + toDataURL — window.THREE no está expuesto).
+- VERSION 3.0.9-HALL1 + changelog completo + badge estático. __ppDebug += serveTiers. window.__PP_GAME ya existía para QA.
+- QA verde: qa_hall1_v309.py (badge, tiers exactos + serveTier por dificultad + persistencia, enter/exitHall con rig/visibilidades/mensaje, fila campeonatos montada, cilindro ausente, 0 pageerrors) + qa_hall1_foto.py (render 3D del hall: estancia cálida, cartel completo, trofeos, 0 pageerrors) + qa_descargas_v309.py (4 enlaces v309, 12 menciones, 0 residuos, ZIPs 200).
+- release-v309/ (build_zip.py + LEEME reescrito con las 3 novedades + CHULETA): 4 ZIP (COMPLETO 106.549.823 B · ligera 11.439.106 B · CLOUDFLARE 106.538.271 B anti-TS limpio · SOLO-RELAY 6 KB zip) — page.tsx actualizado ANTES de empaquetar (lección Task 66 aplicada; extras verificados dentro: 6 menciones 3.0.9). Copiados a download/ y public/descargas/; zips v306 retirados (hub limpio con v309).
+- Gateway :81: /descargas 200, /game.html 200.
+
+Stage Summary:
+- V3.0.9-HALL1 completa sobre la base del dueño: hall del anfitrión con pared de trofeos viva, saque asistido por dificultad (fácil > medio > alto) y el cilindro del mango eliminado — con la TRN1 intacta (saque real, zonas, sparring, PRO CIRCUITO, FIS1, TV, intro oficial).
+- Centro de descargas sirviendo la V3.0.9-HALL1 en 4 paquetes.
+- Pendiente del dueño: prueba en casco del hall (flujo menú→cancha) y de las 3 dificultades del saque; siguiente iteración decorativa del hall si quiere más hitos representados.

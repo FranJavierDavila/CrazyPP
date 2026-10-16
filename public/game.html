@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.0.9-HALL1</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.1.0-SRV2</span>
     </div>
   </main>
 
@@ -461,6 +461,8 @@ const I18N_STRINGS = {
     hall_circ: 'PRO CIRCUITO',
     hall_palas: 'PIEL DE PALA',
     hall_door: 'A LA CANCHA ›',
+    hall_home_btn: '⌂ VOLVER AL HALL',
+    hall_home_hint: 'El hall es tu casa: ajustes y cambio de modo viven allí',
     opp_connected: 'Rival conectado. ¡A jugar!',
     opp_disconnected: 'Rival desconectado',
     diff_easy: 'Dificultad fácil',
@@ -862,6 +864,8 @@ const I18N_STRINGS = {
     welcome_menu: 'Welcome to Crazy Ping Pong, choose a game mode',
     hall_sign: 'HOST HALL',
     hall_welcome: 'Welcome to your hall · pick a mode on the panel',
+    hall_home_btn: '⌂ BACK TO HALL',
+    hall_home_hint: 'The hall is home: settings and mode changes live there',
     hall_champs: 'CHAMPIONSHIPS WON',
     hall_achs: 'CRAZY ACHIEVEMENTS',
     hall_circ: 'PRO CIRCUIT',
@@ -1770,7 +1774,7 @@ function setLang(l, game) {
  *        la prueba al momento; la misma pulsación no filtra al juego).
  * ===================================================================== */
 const __PP_TELE = (() => {
-  const VERSION = '3.0.9-HALL1';   // v3.0.9-HALL1 · HALL DEL ANFITRIÓN — entrar en VR ya NO te planta en la cancha vacía: la sesión NACE en la ESTANCIA DEL ANFITRIÓN, una sala cálida de madera a 13 m de la cancha donde el menú principal te recibe delante y la pared de trofeos se decora SOLA con lo conseguido: insignias de los campeonatos ganados (championships/<id>/assets/insignia.png, marcos que se encienden), los 6 logros CRAZY del núcleo como medalliones (dorado conseguido / gris pendiente) y las placas del PRO CIRCUITO (estrellas ★, logros X/9 y vitrina con las 6 pieles de pala) · al arrancar un modo (o cerrar el menú) el guardián del bucle devuelve a la cancha en el acto: nada se juega en el hall · ASISTENCIA DEL SAQUE POR DIFICULTAD: la cascada del saque (enderezado 45 % → 75 %), el margen extra de contacto durante el vuelo del lanzamiento y la subida mínima del lanzamiento asistido ESCALAN con la CPU elegida — FÁCIL perdona (62 % → 88 %, 13 cm, vy 3,5), MEDIO es la referencia probada de la TRN1 (45 % → 75 %, 9 cm, vy 3,1) y DIFÍCIL te deja el saque casi entero (30 % → 55 %, 6 cm, vy 2,7) — la legalidad (altura del lanzamiento, línea de fondo) NO cambia: son reglas, no asistencia, y la dificultad se RECUERDA entre sesiones (ppxr_dif) · EL CILINDRO DEL MANGO, FUERA: la «cinta de agarre» que la piel de pala arrastraba sobre el mango (un cilindro flotante) se retira — el mango se viste con su material «handle» como las palas reales · antes v3.0.8-TRN1 · SENTIMIENTO DE JUEGO (el pilar) — SAQUE REAL EN EL ENTRENAMIENTO: la bola de t4a/t4b descansa en la MANO LIBRE (misma cinemática que un partido: copia la mano + BALL_HAND_LIFT), se lanza con el GESTO NATURAL (soltar el grip usa la velocidad real de la mano vía releaseBallHand, o el gatillo como ayuda) y NUNCA se lanza sola (fuera el auto-toss de 1,1 s: el jugador decide el momento), el GOLPEO del saque recibe la MISMA asistencia en cascada del núcleo (45 % → 75 % → solver con hint del swing, validando altura de lanzamiento y línea de fondo: adiós al «saque imposible» del entrenamiento), ZONAS OBJETIVO FIELES al juez en t1a (la zona dorada ya NO pinta la franja central que el árbitro rechaza: lo pintado = lo juzgado) y texto OBJETIVO reescalado con measureText para no cortarse, MÁQUINA DE SPARRING: los feeds de t1a/t1b/t2a/t2b/t5a son tiros directos y profundos resueltos con Magnus (adiós a las bolas lentas y cortas flotantes del solver de saque) · antes v3.0.7-PLAY1 · PRO CIRCUITO — GAMIFICACIÓN del PRO TRAINING como CAPA DE LECTURA del juez (el criterio y la física quedan INTACTOS): COMBO ×2/×3 por rachas de 4/8 golpes (multiplica SOLO los puntos del golpe, el bonus de completado sigue íntegro; con gamify=0 el flujo de puntos es idéntico al anterior), ESTRELLAS 1-3★ por prueba guardadas en el perfil (3★ completar sin fallos de la ronda, 2★ con ≤2 fallos, 1★ completada; metrónomo por hitos: rally 30/50/100), PRECISIÓN % de la ronda en el panel y mejor precisión por prueba en las tarjetas, LOGROS (9: rachas de 10 y 20, perfecto, cinco perfectos, circuito completo, metrónomo 50 y 100, triple combo y leyenda) con toast y fanfarria propia, barra de progreso al siguiente nivel + fila de logros en el PERFIL del hub, CELEBRACIÓN 3D de partículas al completar (pool único reutilizado, coste ínfimo en Quest) y sonidos de combo ascendentes · interruptor DIMS.trainGamify (0 = modo puro profesional, sin capa de juego) · antes v3.0.6-SRV1 · v3.0.6-SRV1 · SAQUE VIVO + ENTRENAMIENTO REPARADO — SAQUE: la asistencia hereda el TOQUE del jugador (dirección y energía del swing vía hint al solver; cascada 45 % → 75 % → solver en vez de sustituir el 65-100 %: adiós al saque «enlatado» de ~5 m/s siempre igual), el roce de red con doble bote válido se CONSERVA (+0,35 vy en vez de reemplazar), INMUNIDAD de contacto en los primeros milímetros del lanzamiento (con las manos juntas el roce prematuro anulaba el saque y la bola chispazaba a la mano: «casi imposible»), velocidad final acotada 3,2-8,8 m/s · PRO TRAINING t4a/t4b: soporte de saque DETRÁS de la línea de fondo a la altura de la mano (antes flotaba sobre la mesa, inalcanzable), la bola se LANZA sola a los 1,1 s o con el GATILLO (nueva rama en onSelectStart + serveTrigger del módulo), se golpea EN EL AIRE con el margen ampliado del saque, ciclo completo gestionado por el módulo (el feed temporizado ya no roba la bola en vuelo), juez t4a: el PRIMER bote rival en la zona pintada y el segundo en el campo rival (exigir ambos en 51 cm era casi imposible), textos es/en del panel actualizados · t1b JUNTO A LA LÍNEA: la franja FONDO se pintaba en el lado CONTRARIO (eje Z del lienzo invertido respecto a mz(): cubría toda la mesa menos la franja) — ahora patrón rect(mz(z0), mz(z1)−mz(z0)) como t4a/t4b y etiqueta en su sitio · INTRO: assets/intro.mp4 era byte-idéntico al intro del campeonato ESTACIÓN ORBITAL — sustituido por el INTRO OFICIAL de CRAZY PING PONG (vídeo del dueño, 10 s · 1080p) · antes v3.0.5-FIS1 · PALAS CON CARÁCTER — las skins del PRO TRAINING ya son JUEGO: cada goma modula la pala del jugador (la IA siempre juega neutra) · FUEGO = OFENSIVA (+12 % potencia, +8 % efecto, el canto castiga más) · HIELO = DEFENSIVA (+30 % control: el canto perdona y el bote sale más seguro) · ORO = POTENCIA (golpes más fuertes, algo menos de efecto) · ARCOÍRIS = EFECTO (+22 % de brush y agarre: imprime muchísimo giro) · PRO CARBON = DOBLE GOMA por CARAS como las palas reales roja/negra (cara A goma de GIRO · cara B goma DURA de potencia) con las dos caras TEÑIDAS en el visor para reconocerlas · Clásica = neutra de referencia · interruptor DIMS.paddlePerks (0 = todas las palas neutras) · FÍSICA VIVA — P1 GOLPE: goma con FRICCIÓN TANGENCIAL real (impulso de contacto con I de cascarón: rozar ARRASTRA la bola, no sólo le da efecto) + REVERSIÓN PARCIAL del spin entrante al bloquear (el bloque de un topspin ya no «limpia» el efecto) + PUNTO DULCE de la hoja (el canto pega sordo: −35 %·offC² de restitución, bamboleo disperso en el borde y menos efecto; el anillo de asistencia del saque con penalización suave fija) · P2 BOTE FÍSICO: impulso tangencial con DESLIZAMIENTO y tope de Coulomb COMPARTIDO por la física real y todos los predictores (IA + solver de saque): el TOPSPIN patea al botar y gana giro, el BACKSPIN frena en seco y la mesa se le come el efecto, el lateral desvía, y todo ESCALA con la velocidad de impacto (grip 0,22→0,60) · interruptor DIMS.physicsRealism (0 = física legacy exacta de v2.x) · antes v3.0.4-EXP.TV1 (rama exp/live-tv absorbida en main) · v3.0.4-EXP · RAMA EXPERIMENTAL «LIVE-TV» — espectador nativo: la partida del anfitrión sale como CANAL DE TV (mini-servicio relay :3004 vía gateway) y cualquier navegador sin visor la ve en directo (/tv.html): estado 30 Hz + eventos hit/bounce/net/point/game-over, sello «● EN VIVO» en el pabellón y en 2D, guía de canales con espectadores en tiempo real, sin coste térmico en la Quest (un emit cada 33 ms, cero render extra) · CINE EN CASA: CRAZY TV v1.0 (tv.html) con interpolación 120 ms, 6 cámaras (TV/J1/J2/cenital/cine/libre), estela de bola, repeticiones automáticas en cámara lenta de cada punto + manual (R), pausa (Espacio), HUD con km/h del último golpe y sonido sintetizado en cliente (0 bytes de audio por la red) · el módulo live es EXTERNO al núcleo (window.__PP_LIVE, 3 taps de una línea: animate/processIntents/fin) — la sala solo lee, jamás escribe · antes v3.0.3 · SALIDA DEL ENTRENAMIENTO AL HUB (Y y «PARAR» vuelven al hub, no al menú principal) · SKINS DE PALA DE VERDAD — texturas reales (goma con pips, carbono, oro, holográfica) sobre los materiales REALES del GLB + piel «Pro Carbon» que SUSTITUYE EL MODELO 3D por un GLB externo (assets/pala/pala_pro.glb; la pala base también carga desde assets/pala/pala.glb con el incrustado de reserva) · ESTANQUEIDAD TOTAL del entrenamiento (salir con Y, cambiar de modo, entrar en VR o lanzar un campeonato RECOCGE su escena — nunca más paneles flotando) · «Valle Neón» del Taller PUBLICADO en el menú como ejemplo vivo · antes v3.0.2 · FIXES del entrenamiento probados por el dueño: metrónomo (el rally NUNCA contaba — juez sin rama t5a — y el beat ROBABA la bola en vuelo: ahora sólo sustituye cuando la anterior repose, y el fallo sin devolución cierra el rally), PASE BAJO (el feed ×1.08 aplanaba el saque resuelto y se estrellaba en la red — feeds con el saque legal estándar), t4a (el juez no verificaba la zona pintada), t4b (fallo «larga»→«corta») y zonas MÁS VISIBLES (trazos gruesos/opacos, objetivo dorado 0.85, centro prohibido con borde) · antes v3.0.1 · FIX del casco: grupo de entrenamiento DENTRO del rig (el recentrado lo giraba — marcas desfasadas de la bola), iconos de efecto PEGADOS a las caras reales de la hoja y cinta de agarre sobre el MANGO real (geometría del GLB medida) · antes v3.0 · PRO TRAINING — hub de entrenamiento profesional (window.__PP_TRAIN), feedback técnico, puntos y skins · antes v2.141 · OESTE «LOS CAJONES DEL ORO» + PARADAS CON NOMBRE — ajustes del dueño sobre la v2.140 (etapa 4 «ASALTO AL TREN»): (1) LINGOTES SOBRE DOS GRANDES CAJONES — «los lingotes van a caer a ambos lados de la mesa pero cerca del centro de las ventanas, en el suelo, sobre dos grandes cajones de madera (podemos usar alguno de los que ya colocamos para destruir, los que no tienen el dibujo del candado)»: DOS cajones limpios del artista (cubo1/cubo2, sin candado) ACHATADOS (el doble de anchos: huella 0,72 m · la mitad de altos: 0,18 m) sobre el suelo del vagón, uno a cada lado de la mesa y CERCA DEL CENTRO DE LAS VENTANAS laterales (centros medidos sobre el arte 2395×864: izquierda u=0,472 → z -1,38 · derecha u=0,501 → z -1,59; x ±1,35 entre mesa y pared). En su cara superior se apilan los lingotes: rejilla 3×3 POR CAJÓN con hueco uniforme (sep 0,19 × 0,095 para un lingote 0,17×0,08), capas EXACTAS (altura real del GLB + 1,5 mm — unos perfectamente encima de otros) y una PEQUEÑA VARIACIÓN de colocación (±7 mm · ±3 mm · ±1,7° de yaw, holguras que NUNCA llegan a tocar al vecino) «para que no parezca tan perfecta»; cada lingote alterna IZQ/DER y ocupa el PRIMER hueco libre de SU cajón — si el forajido roba uno, SU hueco VUELVE a la lista (nada se solapa ni se mete unos dentro de otros). (2) PARADAS CON NOMBRE Y ARTE PROPIO — «primera parada nombre Bravos, imagen parada1.png, segunda parada nombre GOLD DUST, imagen parada2.png, tercera parada nombre Silver Creek, imagen parada3.png. Estos son los nombres que deberá decir la voz en las llegadas y las salidas»: stationNames = BRAVOS (depósito de salida) · BRAVOS · GOLD DUST · SILVER CREEK, y PARADA1.png se actualiza con el arte nuevo del dueño (1024×512, estación BRAVOS). MEGAFONÍA: 4 ÁTOMOS NUEVOS por idioma (mega_salida/llega_gd·sc — misma receta Piper es_ES-davefx / en_US-lessac → OGG Opus 28k, ES literal elegido por ASR, consistente con «Dry Gulch» de v2.140) con sus 8 entradas VOICE_FULL — la normalización de los textos del módulo sigue coincidiendo EXACTA. SUELO del vagón: room/vagon/suelo.jpg se actualiza con la TARIMA nueva del dueño (1296×1678, mismo mapeo 1:1). NORMAS de la etapa y avisos al día (el lingote se apila SOBRE LOS GRANDES CAJONES junto a las ventanas). Módulo OESTE v48 (manifest 48). Núcleo: solo banco de voz + planes + marcador · antes v2.140 · v2.140 · OESTE «EL VAGÓN A PUNTO» — 4 observaciones del dueño en el casco (etapa 4 «ASALTO AL TREN»): (1) BOTES FANTASMA junto a la red («si la pelota bota en el campo enemigo cerca de la red viene devuelta al jugador como si rebotase contra algo invisible»): el bote arkanoi de v2.113 tenía su frontera zonaZ en -2,2 y dejaba 60 cm de MESA RIVAL dentro de la zona del jugador — cualquier bote lento ahí era SECUESTRADO (ápice 1,45 m + vel.z +0,95 hacia el jugador). FIX: zonaZ = red (-1,6): el bote gestionado sólo vive en el campo del JUGADOR; en campo enemigo la bola SIGUE SU TRAYECTORIA física (si muere botando, la recoge el vórtice de siempre — quieta 0,9 s → respawn). (2) LINGOTES APILADOS EN EL SUELO («mejor que se apilen a ambos lados del suelo visibles por la cámara… deben estar unos perfectamente encima de otros»): fuera de la mesa rival — DOS pilas SIMÉTRICAS en el suelo del vagón junto a la red (x ±1,10…±1,38 · z -1,00…-0,82), el lingote alterna IZQUIERDA/DERECHA y llena capas de 6 (2 columnas × 3 filas); al completar un plano se apila ENCIMA con la altura REAL del lingote (medida del prototipo GLB al cargar + 1,5 mm de holgura — nada de offsets fijos: la 2.ª capa de v2.111 flotaba a +0,095 y DESALINEADA en z) y yaw 0 al aterrizar (antes giraba ±40°): pilas limpias y legibles. (3) SUELO DEL VAGÓN con la TARIMA del dueño (room/vagon/suelo.jpg 1296×1678, mapeo 1:1 al plano 6,10×7,90 — tablas transversales a la marcha): fuera la arena procedural de v2.111. (4) MEGAFONÍA DE ESTACIÓN — voz pregrabada del banco (misma receta Piper es_ES-davefx/en_US-lessac → OGG Opus 28k) por la vía announce → voicePlan → speakPlan (WebAudio VR-SAFE, con el CHIME del megáfono y ducking del ambiente): SALIDAS «Pasajeros al tren, partimos hacia…» [destino]; a los 30 s del final del trayecto «En menos de 25 segundos llegaremos a…» [estación] (UNA vez por trayecto); ARRIBO CON ORO «¡Cargamento de oro a buen recaudo!» + PANEL recompensa.png (pop elástico, patrón insignia, se ve toda la parada); ARRIBO SIN ORO panel forajido_robo.png + LAS RISAS DEL FORAJIDO (risas_forajido.mp3 del dueño, precargadas al entrar al vagón y con reintento en el step). FRASES i18n es/en (tren_mega_salida/llega/oro) con los NOMBRES de las estaciones interpolados (BRAVOS·DRY GULCH·PERDIDO) y 7 ÁTOMOS NUEVOS por idioma (mega_salida/llega_dg·pd·br + mega_oro) con sus 14 entradas VOICE_FULL — la normalización de los textos del módulo coincide EXACTA (verificada con la réplica de _normVoice en el QA). NORMAS de la etapa actualizadas: los lingotes se apilan en el SUELO del vagón. Módulo OESTE v47 (manifest v47). Núcleo: solo banco de voz + planes + marcador · antes v2.139 · BIENVENIDA HABLADA — el dueño: «que al iniciar el juego en VR nos abriese con el siguiente mensaje de voz para la bienvenida (en castellano o inglés según el idioma)» → al ENTRAR EN VR el megáfono dice «Bienvenido a Crazy Ping Pong, escoge una modalidad de juego» (EN: «Welcome to Crazy Ping Pong, choose a game mode») justo cuando el MENÚ PRINCIPAL abre y recibe al jugador (el anuncio del modo sigue sonando al escogerla/cambiarla) · DOS ÁTOMOS NUEVOS en el banco de voz (bienvenida_modo es/en) con la receta Piper de siempre (es_ES-davefx-medium · en_US-lessac-medium → OGG Opus 28k mono) — la marca se sintetiza con grafía fonética «Kreisi Ping Pong» porque el modelo es-ES leyendo «Crazy» salía «cricket» (verificado por ASR sobre los dos candidatos; el EN la lee bien literal) · RUTA 100 % VR-SAFE: VOICE_FULL → speakPlan por WebAudio (la misma vía del megáfono, audible dentro de la sesión inmersiva donde speechSynthesis NO funciona), respaldo speechSynthesis 2D intacto · i18n: clave nueva welcome_menu en las dos mesas · núcleo: solo el anuncio de sessionstart + banco + planes · antes v2.138 · OESTE «TÚNEL A ESCALA» + EL MAPA DEL CLOWN — el dueño revisa el casco: «has reducido las entradas y las salidas pero no la imagen repetida central del túnel… es preciso ponerlas todas al mismo factor» y las bocas «han quedado muy pequeñas… ser algo mayores para que no se vean los cortes por abajo de la ventana (quizás unos 1,8 metros o así)» · FACTOR ÚNICO f = 1,8/3,4 = 0,529 en TODO el rig del túnel: BOCAS (tunelboca.png) 1,2 → 1,8 m (bocaY 1,8 intacto — los cortes inferior 0,9 y superior 2,7 salen del hueco de la ventana y 1,08-2,55: ya no se ve NINGÚN corte) y BANDA interior (tunel.png repetida) 6,0 → 3,176 m con centro TU.bandaY 2,65 → 2,257 (el centro antiguo escalado anclado al CENTRO de la ventana 1,815: la franja visible del arte conserva su centro — 36 % de su altura — y la banda cubre la ventana entera sin cortes) · secuencia boca→banda→boca COSIDA intacta (todo se deriva de bh/len), copias 2 → 4 por la MISMA regla len/(h×2,35) y fases POR DISTANCIA intactas · módulo OESTE v46 (manifest v46) · MAPA DEL CLOWN (el reenvío que en V2.137 se pisó con el del wizard): arte nuevo 1380×752 con GLOBOS numerados (1/3/5 clowns · 2/4 arkanoid) sobre medallones redondos → locura/assets/mapa.webp reemplazado (q92, 183 KB) y NODOS re-medidos con Hough + banda de COBERTURA ANGULAR dorada (inmune al pelo naranja, los globos 3/5 y el camino, que engañaban al ajuste de círculo): centros 226,253 · 453,507 · 700,256 · 959,508 · 1208,322 · anillos r 114/119/109/121/107 con la MISMA regla del wizard (r = 120×banda/107,5) · TAPAS «?» con centro y escala PROPIOS por nodo (tx/ty/ts, backward-compat — patrón MAGIA v28) para cubrir cada medallón ENTERO con margen (ts 0,94/0,86/0,95/0,85): los globos numerados ASOMAN, como las estrellas del Oeste · módulo de La Locura v20 (manifest v20) · núcleo: solo marcador · antes v2.137 · MAGIA «MAPA NUEVO DEL WIZARD» — el dueño reenvía el Mapa.png del wizard (1380×752, el MISMO lienzo del arte anterior) → mapa.webp reemplazado · el arte estrena nodos NUMERADOS con espiral azul (1/3/5 magos · 2/4 orbes · el 5 dentro de la burbuja, SIN anillo dorado) y centros algo movidos → nodesPx RE-MEDIDOS con Hough + bbox dorado + perfil radial (r = 120×banda/107,5 para que el anillo del nodo actual abrace el borde dorado: 229,258/456,508/701,253/966,506/1232,162 · r 126/131/122/132/126) · las TAPAS «?» estrenan centro y escala PROPIOS por nodo (tx/ty/ts) para cubrir anillo + espiral numerada ENTERAS — un dígito cortado por el medallón se lee roto — sin tocar la mecánica de tapas/anillo · módulo MAGIA v28 (manifest v28) · núcleo: solo marcador · antes v2.136 · OESTE «EL TÚNEL COMO ANTES + MAPA NUEVO» — el dueño: la profundidad del túnel de v2.134 «ha estropeado las imágenes de entrada y de salida que teníamos colocadas y espejadas» · CAUSA RAÍZ reproducida: las bocas (tunelboca.png) vivían DENTRO de los SUBGRUPOS inclinados de v2.134 y el reparto de la textura recorría sólo tunelGrp.children — ya no encontraba las bocas: arcos SIN arte (planos transparentes invisibles) y además TORCIDOS por la rotación ∓0,24 rad · FIX (petición: «dejarlas como antes solo que sean más pequeñas para que parezca que están más lejos»): las 3 piezas del túnel vuelven a ser HIJAS DIRECTAS de tunelGrp y COPLANARES a x 3,55 (sin rotación — el espejado v2.119 entrada normal/salida espejada se lee como siempre) y las BOCAS bajan 3,4 → 1,2 m centradas en la ventana (bocaY 1,72 → 1,8): caben ENTERAS dentro del hueco (y 1,08-2,55) y se leen como un PORTAL LEJANO; la secuencia boca→banda→boca sigue COSIDA (todo se deriva de bh) y las fases por DISTANCIA intactas · el reparto de la textura ahora usa traverse() — la textura llega aunque las bocas vuelvan a vivir en subgrupos (a prueba de futuro) · MAPA DE ETAPAS NUEVO: el dueño reenvía mapa.png (1699×926 — nodo 2 SAGEBRUSH, nodo 4 TREN+ORO, medallones más grandes ~230-265 px) → mapa.webp reemplazado, NODOS re-medidos con scripts/mide_nodos.py (los nodos 1/3/5 bajan 26/36/24 px), TAPAS 240×248 → 284×292 (cubren los medallones enteros) y anillo del nodo actual r 95 → 110 (abraza el borde dorado) · módulo OESTE v45 (manifest v45) · núcleo: sin cambios de comportamiento · antes v2.135 · CARTELES DE NORMAS con el ARTE DEL ARTISTA — el dueño manda 3 marcos nuevos (clown_normas.png, Wizard_normas.png, forajido_normas.png) para «usar de carteles cuando se explican las normas de juego de las diferentes etapas» y pide «que los textos estén bien colocados, que entren en el espacio interior de los carteles y que se lean perfectamente» · showInstrucciones() estrena PIEL DE ARTE por campeonato: La Locura viste el marco de CIRCO con el clown asomando, Magia el marco ARCANO con el Wizard y el Salvaje Oeste el marco BRONCE con el forajido (Estación Orbital conserva su panel espacial dibujado) · las 3 imágenes viven en championships/<id>/assets/normas_*.png y PRECARGAN al arrancar (NORMAS_SKIN); si alguna no llegó, caja de seguridad a la piel dibujada de siempre · LIENZO 1280×640 = proporción 2:1 NATIVA del arte en un panel de 3,8×1,9 m: el marco NO se deforma (antes el arte se estiraba 1,28× vertical) · maquetación DENTRO del hueco interior medido sobre el arte (rect por campeonato con margen de seguridad: el personaje asoma por el centro superior y las manos agarran el marco) — TÍTULO oro/crema con contorno y sombra, filete dorado con rombo, y cuerpo ENVUELTO con measureText (NUNCA se corta) en 1 columna si cabe cómodo o 2 COLUMNAS equilibradas con separador central cuando el texto es largo (las normas del ASEDIO, las más largas, entran de sobra) · VELO oscuro suave + sombra de texto: legibilidad perfecta sobre la pizarra/el pergamino oscuro/la piedra sin tapar el arte · botón EMPEZAR pinzado al MARCO BAJO del cartel (fuera del hueco: las normas lo ocupan entero), mismo raycast del v2.130 · estacion sin cambios · núcleo: sólo showInstrucciones/_instrArte — sin cambios de física ni de módulos · antes v2.134 · SALVAJE OESTE «EL TREN A PUNTO» — 5 observaciones del dueño en el casco (etapa 4 «ASALTO AL TREN»): (1) PARADAS SIN REPETIR — la estación de SALIDA (BRAVOS) lucía PARADA1.png, la MISMA imagen que la parada 1 (el dueño: «las imágenes de dos paradas se están repitiendo»); ahora la salida carga SU arte PARADA0.png nuevo (render estación depósito con placa BRAVOS, recorte por inundación + bolsas de cielo limpiadas) y las 4 estaciones del trayecto lucen imágenes distintas (estacionY añade la cota 0) · (2) MÁS VEGETACIÓN en la IMAGEN EXTERIOR del parallax («la veo un poco escasa de elementos») — arbustos/cactus/rocas del propio artista (16 sprites RGBA) compuestos sobre el suelo de arena de las DOS panorámicas p1_paisajedesierto1/2 con perspectiva (pies más abajo = más grandes), racimos + solitarios, volteo aleatorio y bruma cálida de distancia; la franja inferior de 64 px queda VIRGEN (el EXT=190 de _buildPano estira las últimas 60 filas y deformaría lo que caiga ahí) — scripts/make_vegetacion_p1.py con respaldo en scripts/backup_p1_v2133/ · (3) TÚNEL CON PROFUNDIDAD («los separaría un poco… ahora mismo está muy pegado») — las 3 piezas del túnel (boca·banda·boca) vivían COPLANARES a 0,5 m de la ventana: ahora cada pared se monta en un SUBGRUPO con rotación Y ∓0,24 rad (13,7°) y arranca más lejos (TU.x 3,55→3,75) — la boca queda junto a la ventana y el interior SE PIERDE A LO LEJOS: se ve DENTRO del túnel; la costura boca→banda→boca y el viaje por distancia quedan intactos (la rotación arrastra el conjunto) · (4) LA PARED DEL FONDO REBOTA («así pueden golpear las cajas desde atrás») — la bola que sobrevuela la pirámide ya no muere al pasar z=-5,5: REBOTA en el frontal del vagón (z=-5,55, restitución 0,72, _paredRebote con chispazo de polvo + golpe seco de madera) y vuelve hacia las cajas; lo mismo las EXTRAS del vórtice · (5) SUPERPODERES DE VERDAD sobre la mesa — X3: las 3 bolas salen con TIRO BALÍSTICO (_apuntaBalistica, receta del lingote con roz compensado) a cajas apiladas REALES de la pirámide (vivas+asentadas+sin candado abierto) repartidas izquierda·centro·derecha y escalonadas en ola (T 0,52/0,61/0,70): el impacto queda ASEGURADO; fuerza el tope del pool (_naceExtraEn fuerza); sin apiladas apuntan al centro del muelle donde nace la pirámide siguiente · DINAMITA: CADENA — la bola-bomba ya no muere en la 1.ª detonación: su SERIE toma la FOTO de las cajas activas al activarse y la bola ESTALLA SIEMPRE que toca caja, rebota y sale CAZANDO la caja viva más cercana con tiro balístico hasta agotar TODAS las de la foto («una secuencia de explosiones que acaban con todas las cajas activas en ese momento»), con brote final al cerrar la cadena; VIGILANTE anti-atasco: 3,2 s sin estallar → re-apunte automático; la cadena muere con la bola (kill/muereExtra limpian la serie) · módulo OESTE v44 (manifest v44) · núcleo sin cambios de comportamiento para locura/magia/EO · antes v2.133 ·  LA LOCURA: la BOLA DOBLE del CLOWN ya SE VE — el dueño en el casco: «el poder que saca dos bolas no funciona». Causa raíz reproducida headless: la MALLA del clon se creaba SÓLO dentro del primer build() del ARKANOID (prueba de las etapas 2/4) y el split sólo existe en la bolsa del Nv.3 (etapa 5, DUELO JEFE): llegando al duelo final con sesión fresca (etapa guardada, recarga de página, salto de depuración o rejugada por el mapa) el arkanoid nunca se había construido → el clon corría físico INVISIBLE (la «malla perezosa» de v2.120 dependía de _makeCloneMesh, definido también sólo en build) — el cartel prometía «¡LA BOLA SE DIVIDE EN DOS!», la bola oficial se ponía blanca y la segunda bola JAMÁS aparecía · FIX: cloneMesh + _makeCloneMesh al CONSTRUCTOR del arkanoid (UNA vez por sesión, regla Quest de pools intacta) y el lazy de _startSplit queda como cinturón · además el split ya no se desperdicia en punto muerto: si el aviso termina sin rallye (saque/reposo) se RE-ARMA 1,2 s y entra en el PRÓXIMO rallye (antes nacía y updateSplit lo mataba en el primer frame: cartel sin efecto) · módulo de La Locura v19 (manifest v19) · QA por ruta natural: bolsa por nivel (split sólo en Nv.3), clon VISIBLE con malla y física real, salvación del punto con el clon, re-arma en saque, smoke 0 pageerrors · antes v2.132 · ESTACIÓN ORBITAL «LOS PODERES YA MANDAN» — informe del casco: superpoderes que no saltaban y prueba de asteroides injugable · (1) DISPARO REDUNDANTE de los 4 poderes del AX-9: se queda el gancho por PUNTO (onPoint) y el MÓDULO añade en su update() el disparo por RALLY (bola viniendo al jugador, edge vel.z>0.35, patrón Locura que sí funciona en el casco) + GARANTÍA a los 22 s de duelo sin poderes (fuerza el aviso) + reintento más ágil (fallo 4 s, post-poder 10-15 s, primer poder a 6 s) · (2) CARTEL DEL SUPERPODER con el IDENTIFICADOR que el jugador espera: panel flotante junto al AX-9 con el medallón del poder (powerestrellas/meteoritos/tractor/cero) + nombre en grande; fase AVISO ámbar «AX-9 PREPARA…» y fase ACTIVA cian «¡SUPERPODER!» con pulso · (3) EFECTOS BLINDADOS: _poderArrancar en try/catch (un efecto que falle cierra el poder limpio — antes una excepción dejaba _act pegado y bloqueaba la bolsa para siempre) · (4) PRUEBA «DIANAS ORBITALES» JUGABLE: la bola de espera estaba en z=-0.90 (0,67 m DENTRO de la mesa — inalcanzable con la pala: «imposible destruir los asteroides») → ahora espera en z=-0.50 pegada al borde del jugador (convención Magia tableNearZ−0.38) y apex 0.42 · (5) DIANAS 3D DE VERDAD (adiós a los sprites «cutres»): asteroide = icosaedro con ruido determinista por vértice + 2 piedras satélite, caja blindada = contenedor metálico con aristas ámbar + núcleo brillante + escudo esférico que destella, dron = fuselaje con cabina cian + 4 rotores girando; colisión esférica y barrido anti-túnel intactos; dispose completo al reintentar · (6) QA v2.132 POR LA RUTA NATURAL: puntos por processIntents+applyPoint reales (sin forzar Math.random), ticks del módulo entre puntos, poder verificado con cartel + objetos visibles, prueba con colisión REAL (bola lanzada a diana, daño y destrucción por el barrido), garantía temporal verificada con mala suerte estirada · módulo estacion_orbital v3.2 (manifest v5) · núcleo sin cambios de comportamiento para locura/magia/oeste · antes v2.131 · v2.131 · FIX RAÍZ de Estación Orbital «sin superpoderes en 1/3/5 y sin pruebas en 2/4»: el módulo nunca ponía rules.state='champtest' en la SALA y el núcleo sólo enruta el gatillo al campeonato con ese estado (convención oeste/magia: árbitro dormido en la sala) — el gatillo ejecutaba el SAQUE CLÁSICO: partidos normales sin duelo real (sin powers: ctrl.state jamás llegó a 'duelo') y serveTrigger jamás llamado (sin pruebas). Ahora EO duerme al árbitro en TODA transición a sala/prueba (startChamp con bola aparcada, _empezarPrueba también bajo el panel EMPEZAR, _despuesDePrueba, onMatchOver normal y REJUGADA — que ahora SÍ cierra el duelo y limpia _replay, antes quedaba pegado al duelo real siguiente), reenter condicional (duelo='serve', resto='champtest') y leave restituye al árbitro (convención magia, antes salir de EO dejaba el núcleo en champtest) · la pala IA sólo existe en DUELO (update del módulo tras las escrituras del núcleo; en sala manda el standee del AX-9) · módulo estacion_orbital v3.1 · núcleo sin cambios de comportamiento para locura/magia/oeste · antes v2.130 · QUITARNE — 4 ajustes de la revisión del jugador: (1) CARTÓ CON «EMPEZAR»: las instrucciones de las PRUEBAS DE HABILIDAD (estructura común de todos los campeonatos) ya no se van solas — esperan al botón EMPEZAR del panel (mesh hijo con raycast, resaltado al apuntar; en 2D/QA queda el desvanecido automático); call sites de locura/magia/oeste/estacion_orbital actualizados · (2) INTRO DE CAMPEONATO: vídeo de la HISTORIA DEL RIVAL (~29 s, opcional) con GRAN botón JUGAR debajo — ChampLoader.launch() lo inyecta tras start() en TODOS los campeonatos (showChampIntro: pantalla 2,56 m con VideoTexture + póster de reserva si falta assets/intro.mp4; gatillo solo sobre el botón; BSO del núcleo con duck y BSO privada de los módulos silenciada vía hook champIntroPause) + 4 vídeos nuevos (escenas PIL + zoompan + xfade + BSO, ~0,6–1,3 MB por campeonato) · (3) MAGIA: el cartel «VS WIZARD / ¡EL ORBE MÁGICO!» bajado de 2,95 a 2,55 m (su borde superior 3,18 quedaba DENTRO del techo de 2,85 m); La Locura baja 2,62→2,58 (rozaba) · (4) ESTACIÓN ORBITAL pulida: AX-9 recolocado a la DERECHA de la mesa (x 1,26 = DUEL_X convención, antes centrado detrás), troquel-satélite FUERA de la mesa (2,45/−0,85, antes solapado en 0/−2,8), cartel de etapa a la PARED FRONTAL (−1,78/1,42/−5,44 — antes flotaba sobre la mesa tapando al rival), typo GATILGO→GATILLO, MAPA DEL CAMPEONATO en la pared izquierda (arte 1380×752 + clase MapaEO con anillo/tapas/REJUGA v2.96, zona calma reservada en el arte de la pared) y ARTE V2: sala con ASPECTO REAL por plano (suelo/techo 1024×1328, frontales 1536×718, laterales 1536×554 — el núcleo estira la textura), oclusión ambiental, doble bisel, ventanales con nebulosa multicapa y planeta anillado, esclusa con rueda, cápsulas de hibernación, brazo robótico, consolas con gráficas, señalética con tildes, troqueles cohete/rover/satélite redibujados y AX-9 rediseñado (degradados con máscaras, rim light, 5 expresiones) · antes v2.129 · ESTACIÓN ORBITAL «PLANTILLA FINAL» — el campeonato plantilla se upgrades a camino COMPLETO de 5 etapas (duelo ×0.90 → PRUEBA «Cinturón de asteroides» → duelo ×1.12 → PRUEBA «Tormenta de meteoritos» → DUELO FINAL ×1.42 → insignia ¡CONSEGUIDO!) · PRUEBAS «DIANAS ORBITALES» con motor propio en el módulo: física del núcleo vía stepPhysics + colisionador extra por SUBPASO (anti-túnel ball.__exPrev, patrón orbe de Magia), árbitro dormido en 'champtest', ignoreNet durante la prueba (precedente ARKANOID), bola en bote-en-espera hasta el primer golpe (v2.61 de magia), HUD holográfico (reloj + dianas), banner de resultado, cartel explicativo ANTES de entrar (regla v2.106) con PIEL NUEVA «estacion» (panel espacial estrellado) · dianas-sprite del artista: asteroide (1 golpe), caja blindada (2 golpes: escudo chispea) y dron móvil (+4 s de reloj) · 4 SUPERPODERES del AX-9 con bolsa rotatoria (v2.126) y aviso de dos fases: LLUVIA DE ESTRELLAS (confeti con textura de estrella), METEORITOS (3 rocas caen a TU campo y BLOQUEAN la bola con rebote — patrón Burla v2.127 del segmento prev→actual), RAYO TRACTOR (haz verde del rival que curva la bola hacia el eje central) y GRAVEDAD CERO (la bola flota en ondas verticales + motas a la deriva) · ARTE completo generado (PIL): sala de 6 planos (ventanales al espacio con planeta anillado, esclusa con válvula, cápsulas de sueño, brazo robótico, consolas), ANDROIDE AX-9 en 5 estados (robot flotante con anillo antigrav: rival/idle/duelo/derrotado/triunfante), troqueles cohete/rover/satélite y 4 medallones de poder (familia powerburla) · dron vigía patrullando la sala · progreso de ETAPA persistente (pp_champ_estacion_orbital_stage) · la prueba perdida se REPITE (flujo amable de la plantilla) · antes v2.128 · INSIGNIA «¡CONSEGUIDO!» — al ganar el DUELO FINAL de un campeonato el núcleo planta en la sala un PANEL GRANDE con la insignia del campeonato (championships/<id>/assets/insignia.png), el texto gigante ¡CONSEGUIDO! y fanfarria + confeti (window.__PP_CORE.showChampConseguido(id): locura/magia/oeste conectados) · MENÚ: los campeonatos vencidos lucen la cinta dorada «★ SUPERADO» (tarjetas CAMPEONATOS + subtítulo del hub) via ChampLoader.championFlag (isChampion() del módulo o convención <base>trophy/<base>champ) · INSIGNIA como LOGRO en el ranking: filas campeonas con insignia también en el panel 2D de la portada · campeonato SUPERADO queda ABIERTO: rejuego libre de etapas (mapa + gatillo, v2.96) · Estación Orbital gana flujo de CAMPEÓN (3 duelos → insignia + registro pp_champ_estacion_orbital_champ + fila 🏆 en el ranking) · antes v2.127 · BURLA sustituye a MAREO (el superpoder del Clown que «no funciona»): rayo de luz arcoíris que impacta en puntos distintos de la mesa con destello arcoíris, plantando un CARTÓN VERTICAL de ~50 cm con el clown burlesco (burla1-4.png del artista) durante 2 s; los cartones son BARRERAS que frenan la bola y estallan en partículas arcoíris; el COMODÍN (burlacomodin.png, ~1 de cada 5) deja pasar la bola, que se pone NEGRA y MÁS GRANDE: golpéala y estalla en cintas negras — PUNTO GANADOR; icono powerburla.png en el cartel · módulo de La Locura v18 · también: PARADA1-3.png nuevas del Oeste (arte del artista) y Estación Orbital PUBLICADA en el zip oficial (en V2.126 el zip salió con la plantilla desactivada y por eso no aparecía en el menú del casco) · antes v2.126 · PODERES DEL CLOWN A PRUEBA DE TODO: (1) LANZAMIENTO GARANTIZADO — el efecto entra aunque el punto muera durante el aviso (antes cualquier estado ≠ rally se comía el poder en silencio: el dueño lo vivía como «globos/mareo no funcionan») · (2) BOLSA ROTATORIA — todos los poderes salen antes de repetir · (3) POP de globos más generoso · TORMENTA visible + AUDIO blindado: (1) la tormenta de arena del Oeste ya no nace detrás del jugador (franja z del confeti) y rodante.png recupera su alfa real (fondo blanco + tablero falso fuera) · (2) decodeAudioData en forma promesa con copia: la música del vagón del Tren ya no muere · (3) invariante UNA MELODÍA extendido a las BSO privadas de los módulos · antes v2.124 · MAREO del Clown + invariante bidireccional AUDITORÍA DE MÚSICA II + MAREO: (1) invariante UNA MELODÍA bidireccional (la BSO retira la música del menú y en la portada la BSO espera) · (2) la BSO propia de Magia/Oeste resucita tras cada re-creación del contexto (salir/entrar de VR) y entra con fundido · (3) MAREO TOTAL del Clown: vaivén por deltas (inmune a escrituras del rig) y amplitud inconfundible (yaw ±11,5° + pitch ±3,4° + roll ±5,2°) · antes v2.123 · MENÚ: opciones contraídas
+  const VERSION = '3.1.0-SRV2';   // v3.1.0-SRV2 · SAQUE VR REALISTA CON ASISTENCIA LIMITADA (requisito del dueño) — el gesto manda · A) sujeción/lanzamiento: soltar el grip lanza la bola con la velocidad EXACTA de la mano (fuera la «subida mínima» escondida al soltar flojo, que reescribía el gesto; la ayuda explícita sigue siendo el GATILLO, con subida por dificultad) · B) detección del impacto: CCD FINA en 2 pasadas (el TOI se reevalúa contra el plano REAL de la pala en el instante del cruce) y tolerancias espaciales PEQUEÑAS y configurables (skin 2 cm, +2,2 cm sólo en el vuelo del saque; margen extra del saque REBAJADO a 6/4,5/2,8 cm por dificultad — la tolerancia ya no crea golpes a distancia) · C) respuesta física: el impulso sale SIEMPRE del modelo real (orientación de la cara, velocidad lineal+angular, restitución, fricción, punto dulce) — pala mal orientada = salida lateral/débil/fallida, sin sustituciones; en el vuelo del saque el suelo de salida baja a 0,65 m/s (un roce sale flojo y el árbitro lo juzga: fuera el 3,2 m/s forzado que disfrazaba roces) · D) asistencia progresiva ACOTADA: FUERA la cascada 45 % → 75 % → solver que sustituía el golpeo; ahora sólo se MEZCLA (máx 35 % en medio, decaída lineal) hacia una referencia legal con el toque del swing si el error angular de la salida real entra en el margen (17° medio, 24° fácil, 12° difícil) — un saque ya legal, un LET o un roce NO se tocan y un mal gesto JAMÁS se convierte en válido · E) validación: el árbitro juzga el vuelo REAL (bote propio → bote rival → LET/falta) · F) todo configurable en SERVE_TUNE (window.__ppDebug.serveTune vivo desde consola), telemetría del último saque (__ppDebug.lastServe) y laboratorio QA (__PP_SERVE_LAB, 9 casos del requisito) · EL HALL ES EL HUB: cerrar el menú dentro del hall YA NO saca a la cancha (el menú vive en el hall y los arranques de modo son quienes llevan a ella) y en partida el menú añade «⌂ VOLVER AL HALL» (también en el hub de entrenamiento) que recoge todo y te planta en la estancia con el menú abierto · fix: arrancar un entrenamiento desde el hall te dejaba ATRAPADO en la estancia · antes v3.0.9-HALL1 · HALL DEL ANFITRIÓN — entrar en VR ya NO te planta en la cancha vacía: la sesión NACE en la ESTANCIA DEL ANFITRIÓN, una sala cálida de madera a 13 m de la cancha donde el menú principal te recibe delante y la pared de trofeos se decora SOLA con lo conseguido: insignias de los campeonatos ganados (championships/<id>/assets/insignia.png, marcos que se encienden), los 6 logros CRAZY del núcleo como medalliones (dorado conseguido / gris pendiente) y las placas del PRO CIRCUITO (estrellas ★, logros X/9 y vitrina con las 6 pieles de pala) · al arrancar un modo (o cerrar el menú) el guardián del bucle devuelve a la cancha en el acto: nada se juega en el hall · ASISTENCIA DEL SAQUE POR DIFICULTAD: la cascada del saque (enderezado 45 % → 75 %), el margen extra de contacto durante el vuelo del lanzamiento y la subida mínima del lanzamiento asistido ESCALAN con la CPU elegida — FÁCIL perdona (62 % → 88 %, 13 cm, vy 3,5), MEDIO es la referencia probada de la TRN1 (45 % → 75 %, 9 cm, vy 3,1) y DIFÍCIL te deja el saque casi entero (30 % → 55 %, 6 cm, vy 2,7) — la legalidad (altura del lanzamiento, línea de fondo) NO cambia: son reglas, no asistencia, y la dificultad se RECUERDA entre sesiones (ppxr_dif) · EL CILINDRO DEL MANGO, FUERA: la «cinta de agarre» que la piel de pala arrastraba sobre el mango (un cilindro flotante) se retira — el mango se viste con su material «handle» como las palas reales · antes v3.0.8-TRN1 · SENTIMIENTO DE JUEGO (el pilar) — SAQUE REAL EN EL ENTRENAMIENTO: la bola de t4a/t4b descansa en la MANO LIBRE (misma cinemática que un partido: copia la mano + BALL_HAND_LIFT), se lanza con el GESTO NATURAL (soltar el grip usa la velocidad real de la mano vía releaseBallHand, o el gatillo como ayuda) y NUNCA se lanza sola (fuera el auto-toss de 1,1 s: el jugador decide el momento), el GOLPEO del saque recibe la MISMA asistencia en cascada del núcleo (45 % → 75 % → solver con hint del swing, validando altura de lanzamiento y línea de fondo: adiós al «saque imposible» del entrenamiento), ZONAS OBJETIVO FIELES al juez en t1a (la zona dorada ya NO pinta la franja central que el árbitro rechaza: lo pintado = lo juzgado) y texto OBJETIVO reescalado con measureText para no cortarse, MÁQUINA DE SPARRING: los feeds de t1a/t1b/t2a/t2b/t5a son tiros directos y profundos resueltos con Magnus (adiós a las bolas lentas y cortas flotantes del solver de saque) · antes v3.0.7-PLAY1 · PRO CIRCUITO — GAMIFICACIÓN del PRO TRAINING como CAPA DE LECTURA del juez (el criterio y la física quedan INTACTOS): COMBO ×2/×3 por rachas de 4/8 golpes (multiplica SOLO los puntos del golpe, el bonus de completado sigue íntegro; con gamify=0 el flujo de puntos es idéntico al anterior), ESTRELLAS 1-3★ por prueba guardadas en el perfil (3★ completar sin fallos de la ronda, 2★ con ≤2 fallos, 1★ completada; metrónomo por hitos: rally 30/50/100), PRECISIÓN % de la ronda en el panel y mejor precisión por prueba en las tarjetas, LOGROS (9: rachas de 10 y 20, perfecto, cinco perfectos, circuito completo, metrónomo 50 y 100, triple combo y leyenda) con toast y fanfarria propia, barra de progreso al siguiente nivel + fila de logros en el PERFIL del hub, CELEBRACIÓN 3D de partículas al completar (pool único reutilizado, coste ínfimo en Quest) y sonidos de combo ascendentes · interruptor DIMS.trainGamify (0 = modo puro profesional, sin capa de juego) · antes v3.0.6-SRV1 · v3.0.6-SRV1 · SAQUE VIVO + ENTRENAMIENTO REPARADO — SAQUE: la asistencia hereda el TOQUE del jugador (dirección y energía del swing vía hint al solver; cascada 45 % → 75 % → solver en vez de sustituir el 65-100 %: adiós al saque «enlatado» de ~5 m/s siempre igual), el roce de red con doble bote válido se CONSERVA (+0,35 vy en vez de reemplazar), INMUNIDAD de contacto en los primeros milímetros del lanzamiento (con las manos juntas el roce prematuro anulaba el saque y la bola chispazaba a la mano: «casi imposible»), velocidad final acotada 3,2-8,8 m/s · PRO TRAINING t4a/t4b: soporte de saque DETRÁS de la línea de fondo a la altura de la mano (antes flotaba sobre la mesa, inalcanzable), la bola se LANZA sola a los 1,1 s o con el GATILLO (nueva rama en onSelectStart + serveTrigger del módulo), se golpea EN EL AIRE con el margen ampliado del saque, ciclo completo gestionado por el módulo (el feed temporizado ya no roba la bola en vuelo), juez t4a: el PRIMER bote rival en la zona pintada y el segundo en el campo rival (exigir ambos en 51 cm era casi imposible), textos es/en del panel actualizados · t1b JUNTO A LA LÍNEA: la franja FONDO se pintaba en el lado CONTRARIO (eje Z del lienzo invertido respecto a mz(): cubría toda la mesa menos la franja) — ahora patrón rect(mz(z0), mz(z1)−mz(z0)) como t4a/t4b y etiqueta en su sitio · INTRO: assets/intro.mp4 era byte-idéntico al intro del campeonato ESTACIÓN ORBITAL — sustituido por el INTRO OFICIAL de CRAZY PING PONG (vídeo del dueño, 10 s · 1080p) · antes v3.0.5-FIS1 · PALAS CON CARÁCTER — las skins del PRO TRAINING ya son JUEGO: cada goma modula la pala del jugador (la IA siempre juega neutra) · FUEGO = OFENSIVA (+12 % potencia, +8 % efecto, el canto castiga más) · HIELO = DEFENSIVA (+30 % control: el canto perdona y el bote sale más seguro) · ORO = POTENCIA (golpes más fuertes, algo menos de efecto) · ARCOÍRIS = EFECTO (+22 % de brush y agarre: imprime muchísimo giro) · PRO CARBON = DOBLE GOMA por CARAS como las palas reales roja/negra (cara A goma de GIRO · cara B goma DURA de potencia) con las dos caras TEÑIDAS en el visor para reconocerlas · Clásica = neutra de referencia · interruptor DIMS.paddlePerks (0 = todas las palas neutras) · FÍSICA VIVA — P1 GOLPE: goma con FRICCIÓN TANGENCIAL real (impulso de contacto con I de cascarón: rozar ARRASTRA la bola, no sólo le da efecto) + REVERSIÓN PARCIAL del spin entrante al bloquear (el bloque de un topspin ya no «limpia» el efecto) + PUNTO DULCE de la hoja (el canto pega sordo: −35 %·offC² de restitución, bamboleo disperso en el borde y menos efecto; el anillo de asistencia del saque con penalización suave fija) · P2 BOTE FÍSICO: impulso tangencial con DESLIZAMIENTO y tope de Coulomb COMPARTIDO por la física real y todos los predictores (IA + solver de saque): el TOPSPIN patea al botar y gana giro, el BACKSPIN frena en seco y la mesa se le come el efecto, el lateral desvía, y todo ESCALA con la velocidad de impacto (grip 0,22→0,60) · interruptor DIMS.physicsRealism (0 = física legacy exacta de v2.x) · antes v3.0.4-EXP.TV1 (rama exp/live-tv absorbida en main) · v3.0.4-EXP · RAMA EXPERIMENTAL «LIVE-TV» — espectador nativo: la partida del anfitrión sale como CANAL DE TV (mini-servicio relay :3004 vía gateway) y cualquier navegador sin visor la ve en directo (/tv.html): estado 30 Hz + eventos hit/bounce/net/point/game-over, sello «● EN VIVO» en el pabellón y en 2D, guía de canales con espectadores en tiempo real, sin coste térmico en la Quest (un emit cada 33 ms, cero render extra) · CINE EN CASA: CRAZY TV v1.0 (tv.html) con interpolación 120 ms, 6 cámaras (TV/J1/J2/cenital/cine/libre), estela de bola, repeticiones automáticas en cámara lenta de cada punto + manual (R), pausa (Espacio), HUD con km/h del último golpe y sonido sintetizado en cliente (0 bytes de audio por la red) · el módulo live es EXTERNO al núcleo (window.__PP_LIVE, 3 taps de una línea: animate/processIntents/fin) — la sala solo lee, jamás escribe · antes v3.0.3 · SALIDA DEL ENTRENAMIENTO AL HUB (Y y «PARAR» vuelven al hub, no al menú principal) · SKINS DE PALA DE VERDAD — texturas reales (goma con pips, carbono, oro, holográfica) sobre los materiales REALES del GLB + piel «Pro Carbon» que SUSTITUYE EL MODELO 3D por un GLB externo (assets/pala/pala_pro.glb; la pala base también carga desde assets/pala/pala.glb con el incrustado de reserva) · ESTANQUEIDAD TOTAL del entrenamiento (salir con Y, cambiar de modo, entrar en VR o lanzar un campeonato RECOCGE su escena — nunca más paneles flotando) · «Valle Neón» del Taller PUBLICADO en el menú como ejemplo vivo · antes v3.0.2 · FIXES del entrenamiento probados por el dueño: metrónomo (el rally NUNCA contaba — juez sin rama t5a — y el beat ROBABA la bola en vuelo: ahora sólo sustituye cuando la anterior repose, y el fallo sin devolución cierra el rally), PASE BAJO (el feed ×1.08 aplanaba el saque resuelto y se estrellaba en la red — feeds con el saque legal estándar), t4a (el juez no verificaba la zona pintada), t4b (fallo «larga»→«corta») y zonas MÁS VISIBLES (trazos gruesos/opacos, objetivo dorado 0.85, centro prohibido con borde) · antes v3.0.1 · FIX del casco: grupo de entrenamiento DENTRO del rig (el recentrado lo giraba — marcas desfasadas de la bola), iconos de efecto PEGADOS a las caras reales de la hoja y cinta de agarre sobre el MANGO real (geometría del GLB medida) · antes v3.0 · PRO TRAINING — hub de entrenamiento profesional (window.__PP_TRAIN), feedback técnico, puntos y skins · antes v2.141 · OESTE «LOS CAJONES DEL ORO» + PARADAS CON NOMBRE — ajustes del dueño sobre la v2.140 (etapa 4 «ASALTO AL TREN»): (1) LINGOTES SOBRE DOS GRANDES CAJONES — «los lingotes van a caer a ambos lados de la mesa pero cerca del centro de las ventanas, en el suelo, sobre dos grandes cajones de madera (podemos usar alguno de los que ya colocamos para destruir, los que no tienen el dibujo del candado)»: DOS cajones limpios del artista (cubo1/cubo2, sin candado) ACHATADOS (el doble de anchos: huella 0,72 m · la mitad de altos: 0,18 m) sobre el suelo del vagón, uno a cada lado de la mesa y CERCA DEL CENTRO DE LAS VENTANAS laterales (centros medidos sobre el arte 2395×864: izquierda u=0,472 → z -1,38 · derecha u=0,501 → z -1,59; x ±1,35 entre mesa y pared). En su cara superior se apilan los lingotes: rejilla 3×3 POR CAJÓN con hueco uniforme (sep 0,19 × 0,095 para un lingote 0,17×0,08), capas EXACTAS (altura real del GLB + 1,5 mm — unos perfectamente encima de otros) y una PEQUEÑA VARIACIÓN de colocación (±7 mm · ±3 mm · ±1,7° de yaw, holguras que NUNCA llegan a tocar al vecino) «para que no parezca tan perfecta»; cada lingote alterna IZQ/DER y ocupa el PRIMER hueco libre de SU cajón — si el forajido roba uno, SU hueco VUELVE a la lista (nada se solapa ni se mete unos dentro de otros). (2) PARADAS CON NOMBRE Y ARTE PROPIO — «primera parada nombre Bravos, imagen parada1.png, segunda parada nombre GOLD DUST, imagen parada2.png, tercera parada nombre Silver Creek, imagen parada3.png. Estos son los nombres que deberá decir la voz en las llegadas y las salidas»: stationNames = BRAVOS (depósito de salida) · BRAVOS · GOLD DUST · SILVER CREEK, y PARADA1.png se actualiza con el arte nuevo del dueño (1024×512, estación BRAVOS). MEGAFONÍA: 4 ÁTOMOS NUEVOS por idioma (mega_salida/llega_gd·sc — misma receta Piper es_ES-davefx / en_US-lessac → OGG Opus 28k, ES literal elegido por ASR, consistente con «Dry Gulch» de v2.140) con sus 8 entradas VOICE_FULL — la normalización de los textos del módulo sigue coincidiendo EXACTA. SUELO del vagón: room/vagon/suelo.jpg se actualiza con la TARIMA nueva del dueño (1296×1678, mismo mapeo 1:1). NORMAS de la etapa y avisos al día (el lingote se apila SOBRE LOS GRANDES CAJONES junto a las ventanas). Módulo OESTE v48 (manifest 48). Núcleo: solo banco de voz + planes + marcador · antes v2.140 · v2.140 · OESTE «EL VAGÓN A PUNTO» — 4 observaciones del dueño en el casco (etapa 4 «ASALTO AL TREN»): (1) BOTES FANTASMA junto a la red («si la pelota bota en el campo enemigo cerca de la red viene devuelta al jugador como si rebotase contra algo invisible»): el bote arkanoi de v2.113 tenía su frontera zonaZ en -2,2 y dejaba 60 cm de MESA RIVAL dentro de la zona del jugador — cualquier bote lento ahí era SECUESTRADO (ápice 1,45 m + vel.z +0,95 hacia el jugador). FIX: zonaZ = red (-1,6): el bote gestionado sólo vive en el campo del JUGADOR; en campo enemigo la bola SIGUE SU TRAYECTORIA física (si muere botando, la recoge el vórtice de siempre — quieta 0,9 s → respawn). (2) LINGOTES APILADOS EN EL SUELO («mejor que se apilen a ambos lados del suelo visibles por la cámara… deben estar unos perfectamente encima de otros»): fuera de la mesa rival — DOS pilas SIMÉTRICAS en el suelo del vagón junto a la red (x ±1,10…±1,38 · z -1,00…-0,82), el lingote alterna IZQUIERDA/DERECHA y llena capas de 6 (2 columnas × 3 filas); al completar un plano se apila ENCIMA con la altura REAL del lingote (medida del prototipo GLB al cargar + 1,5 mm de holgura — nada de offsets fijos: la 2.ª capa de v2.111 flotaba a +0,095 y DESALINEADA en z) y yaw 0 al aterrizar (antes giraba ±40°): pilas limpias y legibles. (3) SUELO DEL VAGÓN con la TARIMA del dueño (room/vagon/suelo.jpg 1296×1678, mapeo 1:1 al plano 6,10×7,90 — tablas transversales a la marcha): fuera la arena procedural de v2.111. (4) MEGAFONÍA DE ESTACIÓN — voz pregrabada del banco (misma receta Piper es_ES-davefx/en_US-lessac → OGG Opus 28k) por la vía announce → voicePlan → speakPlan (WebAudio VR-SAFE, con el CHIME del megáfono y ducking del ambiente): SALIDAS «Pasajeros al tren, partimos hacia…» [destino]; a los 30 s del final del trayecto «En menos de 25 segundos llegaremos a…» [estación] (UNA vez por trayecto); ARRIBO CON ORO «¡Cargamento de oro a buen recaudo!» + PANEL recompensa.png (pop elástico, patrón insignia, se ve toda la parada); ARRIBO SIN ORO panel forajido_robo.png + LAS RISAS DEL FORAJIDO (risas_forajido.mp3 del dueño, precargadas al entrar al vagón y con reintento en el step). FRASES i18n es/en (tren_mega_salida/llega/oro) con los NOMBRES de las estaciones interpolados (BRAVOS·DRY GULCH·PERDIDO) y 7 ÁTOMOS NUEVOS por idioma (mega_salida/llega_dg·pd·br + mega_oro) con sus 14 entradas VOICE_FULL — la normalización de los textos del módulo coincide EXACTA (verificada con la réplica de _normVoice en el QA). NORMAS de la etapa actualizadas: los lingotes se apilan en el SUELO del vagón. Módulo OESTE v47 (manifest v47). Núcleo: solo banco de voz + planes + marcador · antes v2.139 · BIENVENIDA HABLADA — el dueño: «que al iniciar el juego en VR nos abriese con el siguiente mensaje de voz para la bienvenida (en castellano o inglés según el idioma)» → al ENTRAR EN VR el megáfono dice «Bienvenido a Crazy Ping Pong, escoge una modalidad de juego» (EN: «Welcome to Crazy Ping Pong, choose a game mode») justo cuando el MENÚ PRINCIPAL abre y recibe al jugador (el anuncio del modo sigue sonando al escogerla/cambiarla) · DOS ÁTOMOS NUEVOS en el banco de voz (bienvenida_modo es/en) con la receta Piper de siempre (es_ES-davefx-medium · en_US-lessac-medium → OGG Opus 28k mono) — la marca se sintetiza con grafía fonética «Kreisi Ping Pong» porque el modelo es-ES leyendo «Crazy» salía «cricket» (verificado por ASR sobre los dos candidatos; el EN la lee bien literal) · RUTA 100 % VR-SAFE: VOICE_FULL → speakPlan por WebAudio (la misma vía del megáfono, audible dentro de la sesión inmersiva donde speechSynthesis NO funciona), respaldo speechSynthesis 2D intacto · i18n: clave nueva welcome_menu en las dos mesas · núcleo: solo el anuncio de sessionstart + banco + planes · antes v2.138 · OESTE «TÚNEL A ESCALA» + EL MAPA DEL CLOWN — el dueño revisa el casco: «has reducido las entradas y las salidas pero no la imagen repetida central del túnel… es preciso ponerlas todas al mismo factor» y las bocas «han quedado muy pequeñas… ser algo mayores para que no se vean los cortes por abajo de la ventana (quizás unos 1,8 metros o así)» · FACTOR ÚNICO f = 1,8/3,4 = 0,529 en TODO el rig del túnel: BOCAS (tunelboca.png) 1,2 → 1,8 m (bocaY 1,8 intacto — los cortes inferior 0,9 y superior 2,7 salen del hueco de la ventana y 1,08-2,55: ya no se ve NINGÚN corte) y BANDA interior (tunel.png repetida) 6,0 → 3,176 m con centro TU.bandaY 2,65 → 2,257 (el centro antiguo escalado anclado al CENTRO de la ventana 1,815: la franja visible del arte conserva su centro — 36 % de su altura — y la banda cubre la ventana entera sin cortes) · secuencia boca→banda→boca COSIDA intacta (todo se deriva de bh/len), copias 2 → 4 por la MISMA regla len/(h×2,35) y fases POR DISTANCIA intactas · módulo OESTE v46 (manifest v46) · MAPA DEL CLOWN (el reenvío que en V2.137 se pisó con el del wizard): arte nuevo 1380×752 con GLOBOS numerados (1/3/5 clowns · 2/4 arkanoid) sobre medallones redondos → locura/assets/mapa.webp reemplazado (q92, 183 KB) y NODOS re-medidos con Hough + banda de COBERTURA ANGULAR dorada (inmune al pelo naranja, los globos 3/5 y el camino, que engañaban al ajuste de círculo): centros 226,253 · 453,507 · 700,256 · 959,508 · 1208,322 · anillos r 114/119/109/121/107 con la MISMA regla del wizard (r = 120×banda/107,5) · TAPAS «?» con centro y escala PROPIOS por nodo (tx/ty/ts, backward-compat — patrón MAGIA v28) para cubrir cada medallón ENTERO con margen (ts 0,94/0,86/0,95/0,85): los globos numerados ASOMAN, como las estrellas del Oeste · módulo de La Locura v20 (manifest v20) · núcleo: solo marcador · antes v2.137 · MAGIA «MAPA NUEVO DEL WIZARD» — el dueño reenvía el Mapa.png del wizard (1380×752, el MISMO lienzo del arte anterior) → mapa.webp reemplazado · el arte estrena nodos NUMERADOS con espiral azul (1/3/5 magos · 2/4 orbes · el 5 dentro de la burbuja, SIN anillo dorado) y centros algo movidos → nodesPx RE-MEDIDOS con Hough + bbox dorado + perfil radial (r = 120×banda/107,5 para que el anillo del nodo actual abrace el borde dorado: 229,258/456,508/701,253/966,506/1232,162 · r 126/131/122/132/126) · las TAPAS «?» estrenan centro y escala PROPIOS por nodo (tx/ty/ts) para cubrir anillo + espiral numerada ENTERAS — un dígito cortado por el medallón se lee roto — sin tocar la mecánica de tapas/anillo · módulo MAGIA v28 (manifest v28) · núcleo: solo marcador · antes v2.136 · OESTE «EL TÚNEL COMO ANTES + MAPA NUEVO» — el dueño: la profundidad del túnel de v2.134 «ha estropeado las imágenes de entrada y de salida que teníamos colocadas y espejadas» · CAUSA RAÍZ reproducida: las bocas (tunelboca.png) vivían DENTRO de los SUBGRUPOS inclinados de v2.134 y el reparto de la textura recorría sólo tunelGrp.children — ya no encontraba las bocas: arcos SIN arte (planos transparentes invisibles) y además TORCIDOS por la rotación ∓0,24 rad · FIX (petición: «dejarlas como antes solo que sean más pequeñas para que parezca que están más lejos»): las 3 piezas del túnel vuelven a ser HIJAS DIRECTAS de tunelGrp y COPLANARES a x 3,55 (sin rotación — el espejado v2.119 entrada normal/salida espejada se lee como siempre) y las BOCAS bajan 3,4 → 1,2 m centradas en la ventana (bocaY 1,72 → 1,8): caben ENTERAS dentro del hueco (y 1,08-2,55) y se leen como un PORTAL LEJANO; la secuencia boca→banda→boca sigue COSIDA (todo se deriva de bh) y las fases por DISTANCIA intactas · el reparto de la textura ahora usa traverse() — la textura llega aunque las bocas vuelvan a vivir en subgrupos (a prueba de futuro) · MAPA DE ETAPAS NUEVO: el dueño reenvía mapa.png (1699×926 — nodo 2 SAGEBRUSH, nodo 4 TREN+ORO, medallones más grandes ~230-265 px) → mapa.webp reemplazado, NODOS re-medidos con scripts/mide_nodos.py (los nodos 1/3/5 bajan 26/36/24 px), TAPAS 240×248 → 284×292 (cubren los medallones enteros) y anillo del nodo actual r 95 → 110 (abraza el borde dorado) · módulo OESTE v45 (manifest v45) · núcleo: sin cambios de comportamiento · antes v2.135 · CARTELES DE NORMAS con el ARTE DEL ARTISTA — el dueño manda 3 marcos nuevos (clown_normas.png, Wizard_normas.png, forajido_normas.png) para «usar de carteles cuando se explican las normas de juego de las diferentes etapas» y pide «que los textos estén bien colocados, que entren en el espacio interior de los carteles y que se lean perfectamente» · showInstrucciones() estrena PIEL DE ARTE por campeonato: La Locura viste el marco de CIRCO con el clown asomando, Magia el marco ARCANO con el Wizard y el Salvaje Oeste el marco BRONCE con el forajido (Estación Orbital conserva su panel espacial dibujado) · las 3 imágenes viven en championships/<id>/assets/normas_*.png y PRECARGAN al arrancar (NORMAS_SKIN); si alguna no llegó, caja de seguridad a la piel dibujada de siempre · LIENZO 1280×640 = proporción 2:1 NATIVA del arte en un panel de 3,8×1,9 m: el marco NO se deforma (antes el arte se estiraba 1,28× vertical) · maquetación DENTRO del hueco interior medido sobre el arte (rect por campeonato con margen de seguridad: el personaje asoma por el centro superior y las manos agarran el marco) — TÍTULO oro/crema con contorno y sombra, filete dorado con rombo, y cuerpo ENVUELTO con measureText (NUNCA se corta) en 1 columna si cabe cómodo o 2 COLUMNAS equilibradas con separador central cuando el texto es largo (las normas del ASEDIO, las más largas, entran de sobra) · VELO oscuro suave + sombra de texto: legibilidad perfecta sobre la pizarra/el pergamino oscuro/la piedra sin tapar el arte · botón EMPEZAR pinzado al MARCO BAJO del cartel (fuera del hueco: las normas lo ocupan entero), mismo raycast del v2.130 · estacion sin cambios · núcleo: sólo showInstrucciones/_instrArte — sin cambios de física ni de módulos · antes v2.134 · SALVAJE OESTE «EL TREN A PUNTO» — 5 observaciones del dueño en el casco (etapa 4 «ASALTO AL TREN»): (1) PARADAS SIN REPETIR — la estación de SALIDA (BRAVOS) lucía PARADA1.png, la MISMA imagen que la parada 1 (el dueño: «las imágenes de dos paradas se están repitiendo»); ahora la salida carga SU arte PARADA0.png nuevo (render estación depósito con placa BRAVOS, recorte por inundación + bolsas de cielo limpiadas) y las 4 estaciones del trayecto lucen imágenes distintas (estacionY añade la cota 0) · (2) MÁS VEGETACIÓN en la IMAGEN EXTERIOR del parallax («la veo un poco escasa de elementos») — arbustos/cactus/rocas del propio artista (16 sprites RGBA) compuestos sobre el suelo de arena de las DOS panorámicas p1_paisajedesierto1/2 con perspectiva (pies más abajo = más grandes), racimos + solitarios, volteo aleatorio y bruma cálida de distancia; la franja inferior de 64 px queda VIRGEN (el EXT=190 de _buildPano estira las últimas 60 filas y deformaría lo que caiga ahí) — scripts/make_vegetacion_p1.py con respaldo en scripts/backup_p1_v2133/ · (3) TÚNEL CON PROFUNDIDAD («los separaría un poco… ahora mismo está muy pegado») — las 3 piezas del túnel (boca·banda·boca) vivían COPLANARES a 0,5 m de la ventana: ahora cada pared se monta en un SUBGRUPO con rotación Y ∓0,24 rad (13,7°) y arranca más lejos (TU.x 3,55→3,75) — la boca queda junto a la ventana y el interior SE PIERDE A LO LEJOS: se ve DENTRO del túnel; la costura boca→banda→boca y el viaje por distancia quedan intactos (la rotación arrastra el conjunto) · (4) LA PARED DEL FONDO REBOTA («así pueden golpear las cajas desde atrás») — la bola que sobrevuela la pirámide ya no muere al pasar z=-5,5: REBOTA en el frontal del vagón (z=-5,55, restitución 0,72, _paredRebote con chispazo de polvo + golpe seco de madera) y vuelve hacia las cajas; lo mismo las EXTRAS del vórtice · (5) SUPERPODERES DE VERDAD sobre la mesa — X3: las 3 bolas salen con TIRO BALÍSTICO (_apuntaBalistica, receta del lingote con roz compensado) a cajas apiladas REALES de la pirámide (vivas+asentadas+sin candado abierto) repartidas izquierda·centro·derecha y escalonadas en ola (T 0,52/0,61/0,70): el impacto queda ASEGURADO; fuerza el tope del pool (_naceExtraEn fuerza); sin apiladas apuntan al centro del muelle donde nace la pirámide siguiente · DINAMITA: CADENA — la bola-bomba ya no muere en la 1.ª detonación: su SERIE toma la FOTO de las cajas activas al activarse y la bola ESTALLA SIEMPRE que toca caja, rebota y sale CAZANDO la caja viva más cercana con tiro balístico hasta agotar TODAS las de la foto («una secuencia de explosiones que acaban con todas las cajas activas en ese momento»), con brote final al cerrar la cadena; VIGILANTE anti-atasco: 3,2 s sin estallar → re-apunte automático; la cadena muere con la bola (kill/muereExtra limpian la serie) · módulo OESTE v44 (manifest v44) · núcleo sin cambios de comportamiento para locura/magia/EO · antes v2.133 ·  LA LOCURA: la BOLA DOBLE del CLOWN ya SE VE — el dueño en el casco: «el poder que saca dos bolas no funciona». Causa raíz reproducida headless: la MALLA del clon se creaba SÓLO dentro del primer build() del ARKANOID (prueba de las etapas 2/4) y el split sólo existe en la bolsa del Nv.3 (etapa 5, DUELO JEFE): llegando al duelo final con sesión fresca (etapa guardada, recarga de página, salto de depuración o rejugada por el mapa) el arkanoid nunca se había construido → el clon corría físico INVISIBLE (la «malla perezosa» de v2.120 dependía de _makeCloneMesh, definido también sólo en build) — el cartel prometía «¡LA BOLA SE DIVIDE EN DOS!», la bola oficial se ponía blanca y la segunda bola JAMÁS aparecía · FIX: cloneMesh + _makeCloneMesh al CONSTRUCTOR del arkanoid (UNA vez por sesión, regla Quest de pools intacta) y el lazy de _startSplit queda como cinturón · además el split ya no se desperdicia en punto muerto: si el aviso termina sin rallye (saque/reposo) se RE-ARMA 1,2 s y entra en el PRÓXIMO rallye (antes nacía y updateSplit lo mataba en el primer frame: cartel sin efecto) · módulo de La Locura v19 (manifest v19) · QA por ruta natural: bolsa por nivel (split sólo en Nv.3), clon VISIBLE con malla y física real, salvación del punto con el clon, re-arma en saque, smoke 0 pageerrors · antes v2.132 · ESTACIÓN ORBITAL «LOS PODERES YA MANDAN» — informe del casco: superpoderes que no saltaban y prueba de asteroides injugable · (1) DISPARO REDUNDANTE de los 4 poderes del AX-9: se queda el gancho por PUNTO (onPoint) y el MÓDULO añade en su update() el disparo por RALLY (bola viniendo al jugador, edge vel.z>0.35, patrón Locura que sí funciona en el casco) + GARANTÍA a los 22 s de duelo sin poderes (fuerza el aviso) + reintento más ágil (fallo 4 s, post-poder 10-15 s, primer poder a 6 s) · (2) CARTEL DEL SUPERPODER con el IDENTIFICADOR que el jugador espera: panel flotante junto al AX-9 con el medallón del poder (powerestrellas/meteoritos/tractor/cero) + nombre en grande; fase AVISO ámbar «AX-9 PREPARA…» y fase ACTIVA cian «¡SUPERPODER!» con pulso · (3) EFECTOS BLINDADOS: _poderArrancar en try/catch (un efecto que falle cierra el poder limpio — antes una excepción dejaba _act pegado y bloqueaba la bolsa para siempre) · (4) PRUEBA «DIANAS ORBITALES» JUGABLE: la bola de espera estaba en z=-0.90 (0,67 m DENTRO de la mesa — inalcanzable con la pala: «imposible destruir los asteroides») → ahora espera en z=-0.50 pegada al borde del jugador (convención Magia tableNearZ−0.38) y apex 0.42 · (5) DIANAS 3D DE VERDAD (adiós a los sprites «cutres»): asteroide = icosaedro con ruido determinista por vértice + 2 piedras satélite, caja blindada = contenedor metálico con aristas ámbar + núcleo brillante + escudo esférico que destella, dron = fuselaje con cabina cian + 4 rotores girando; colisión esférica y barrido anti-túnel intactos; dispose completo al reintentar · (6) QA v2.132 POR LA RUTA NATURAL: puntos por processIntents+applyPoint reales (sin forzar Math.random), ticks del módulo entre puntos, poder verificado con cartel + objetos visibles, prueba con colisión REAL (bola lanzada a diana, daño y destrucción por el barrido), garantía temporal verificada con mala suerte estirada · módulo estacion_orbital v3.2 (manifest v5) · núcleo sin cambios de comportamiento para locura/magia/oeste · antes v2.131 · v2.131 · FIX RAÍZ de Estación Orbital «sin superpoderes en 1/3/5 y sin pruebas en 2/4»: el módulo nunca ponía rules.state='champtest' en la SALA y el núcleo sólo enruta el gatillo al campeonato con ese estado (convención oeste/magia: árbitro dormido en la sala) — el gatillo ejecutaba el SAQUE CLÁSICO: partidos normales sin duelo real (sin powers: ctrl.state jamás llegó a 'duelo') y serveTrigger jamás llamado (sin pruebas). Ahora EO duerme al árbitro en TODA transición a sala/prueba (startChamp con bola aparcada, _empezarPrueba también bajo el panel EMPEZAR, _despuesDePrueba, onMatchOver normal y REJUGADA — que ahora SÍ cierra el duelo y limpia _replay, antes quedaba pegado al duelo real siguiente), reenter condicional (duelo='serve', resto='champtest') y leave restituye al árbitro (convención magia, antes salir de EO dejaba el núcleo en champtest) · la pala IA sólo existe en DUELO (update del módulo tras las escrituras del núcleo; en sala manda el standee del AX-9) · módulo estacion_orbital v3.1 · núcleo sin cambios de comportamiento para locura/magia/oeste · antes v2.130 · QUITARNE — 4 ajustes de la revisión del jugador: (1) CARTÓ CON «EMPEZAR»: las instrucciones de las PRUEBAS DE HABILIDAD (estructura común de todos los campeonatos) ya no se van solas — esperan al botón EMPEZAR del panel (mesh hijo con raycast, resaltado al apuntar; en 2D/QA queda el desvanecido automático); call sites de locura/magia/oeste/estacion_orbital actualizados · (2) INTRO DE CAMPEONATO: vídeo de la HISTORIA DEL RIVAL (~29 s, opcional) con GRAN botón JUGAR debajo — ChampLoader.launch() lo inyecta tras start() en TODOS los campeonatos (showChampIntro: pantalla 2,56 m con VideoTexture + póster de reserva si falta assets/intro.mp4; gatillo solo sobre el botón; BSO del núcleo con duck y BSO privada de los módulos silenciada vía hook champIntroPause) + 4 vídeos nuevos (escenas PIL + zoompan + xfade + BSO, ~0,6–1,3 MB por campeonato) · (3) MAGIA: el cartel «VS WIZARD / ¡EL ORBE MÁGICO!» bajado de 2,95 a 2,55 m (su borde superior 3,18 quedaba DENTRO del techo de 2,85 m); La Locura baja 2,62→2,58 (rozaba) · (4) ESTACIÓN ORBITAL pulida: AX-9 recolocado a la DERECHA de la mesa (x 1,26 = DUEL_X convención, antes centrado detrás), troquel-satélite FUERA de la mesa (2,45/−0,85, antes solapado en 0/−2,8), cartel de etapa a la PARED FRONTAL (−1,78/1,42/−5,44 — antes flotaba sobre la mesa tapando al rival), typo GATILGO→GATILLO, MAPA DEL CAMPEONATO en la pared izquierda (arte 1380×752 + clase MapaEO con anillo/tapas/REJUGA v2.96, zona calma reservada en el arte de la pared) y ARTE V2: sala con ASPECTO REAL por plano (suelo/techo 1024×1328, frontales 1536×718, laterales 1536×554 — el núcleo estira la textura), oclusión ambiental, doble bisel, ventanales con nebulosa multicapa y planeta anillado, esclusa con rueda, cápsulas de hibernación, brazo robótico, consolas con gráficas, señalética con tildes, troqueles cohete/rover/satélite redibujados y AX-9 rediseñado (degradados con máscaras, rim light, 5 expresiones) · antes v2.129 · ESTACIÓN ORBITAL «PLANTILLA FINAL» — el campeonato plantilla se upgrades a camino COMPLETO de 5 etapas (duelo ×0.90 → PRUEBA «Cinturón de asteroides» → duelo ×1.12 → PRUEBA «Tormenta de meteoritos» → DUELO FINAL ×1.42 → insignia ¡CONSEGUIDO!) · PRUEBAS «DIANAS ORBITALES» con motor propio en el módulo: física del núcleo vía stepPhysics + colisionador extra por SUBPASO (anti-túnel ball.__exPrev, patrón orbe de Magia), árbitro dormido en 'champtest', ignoreNet durante la prueba (precedente ARKANOID), bola en bote-en-espera hasta el primer golpe (v2.61 de magia), HUD holográfico (reloj + dianas), banner de resultado, cartel explicativo ANTES de entrar (regla v2.106) con PIEL NUEVA «estacion» (panel espacial estrellado) · dianas-sprite del artista: asteroide (1 golpe), caja blindada (2 golpes: escudo chispea) y dron móvil (+4 s de reloj) · 4 SUPERPODERES del AX-9 con bolsa rotatoria (v2.126) y aviso de dos fases: LLUVIA DE ESTRELLAS (confeti con textura de estrella), METEORITOS (3 rocas caen a TU campo y BLOQUEAN la bola con rebote — patrón Burla v2.127 del segmento prev→actual), RAYO TRACTOR (haz verde del rival que curva la bola hacia el eje central) y GRAVEDAD CERO (la bola flota en ondas verticales + motas a la deriva) · ARTE completo generado (PIL): sala de 6 planos (ventanales al espacio con planeta anillado, esclusa con válvula, cápsulas de sueño, brazo robótico, consolas), ANDROIDE AX-9 en 5 estados (robot flotante con anillo antigrav: rival/idle/duelo/derrotado/triunfante), troqueles cohete/rover/satélite y 4 medallones de poder (familia powerburla) · dron vigía patrullando la sala · progreso de ETAPA persistente (pp_champ_estacion_orbital_stage) · la prueba perdida se REPITE (flujo amable de la plantilla) · antes v2.128 · INSIGNIA «¡CONSEGUIDO!» — al ganar el DUELO FINAL de un campeonato el núcleo planta en la sala un PANEL GRANDE con la insignia del campeonato (championships/<id>/assets/insignia.png), el texto gigante ¡CONSEGUIDO! y fanfarria + confeti (window.__PP_CORE.showChampConseguido(id): locura/magia/oeste conectados) · MENÚ: los campeonatos vencidos lucen la cinta dorada «★ SUPERADO» (tarjetas CAMPEONATOS + subtítulo del hub) via ChampLoader.championFlag (isChampion() del módulo o convención <base>trophy/<base>champ) · INSIGNIA como LOGRO en el ranking: filas campeonas con insignia también en el panel 2D de la portada · campeonato SUPERADO queda ABIERTO: rejuego libre de etapas (mapa + gatillo, v2.96) · Estación Orbital gana flujo de CAMPEÓN (3 duelos → insignia + registro pp_champ_estacion_orbital_champ + fila 🏆 en el ranking) · antes v2.127 · BURLA sustituye a MAREO (el superpoder del Clown que «no funciona»): rayo de luz arcoíris que impacta en puntos distintos de la mesa con destello arcoíris, plantando un CARTÓN VERTICAL de ~50 cm con el clown burlesco (burla1-4.png del artista) durante 2 s; los cartones son BARRERAS que frenan la bola y estallan en partículas arcoíris; el COMODÍN (burlacomodin.png, ~1 de cada 5) deja pasar la bola, que se pone NEGRA y MÁS GRANDE: golpéala y estalla en cintas negras — PUNTO GANADOR; icono powerburla.png en el cartel · módulo de La Locura v18 · también: PARADA1-3.png nuevas del Oeste (arte del artista) y Estación Orbital PUBLICADA en el zip oficial (en V2.126 el zip salió con la plantilla desactivada y por eso no aparecía en el menú del casco) · antes v2.126 · PODERES DEL CLOWN A PRUEBA DE TODO: (1) LANZAMIENTO GARANTIZADO — el efecto entra aunque el punto muera durante el aviso (antes cualquier estado ≠ rally se comía el poder en silencio: el dueño lo vivía como «globos/mareo no funcionan») · (2) BOLSA ROTATORIA — todos los poderes salen antes de repetir · (3) POP de globos más generoso · TORMENTA visible + AUDIO blindado: (1) la tormenta de arena del Oeste ya no nace detrás del jugador (franja z del confeti) y rodante.png recupera su alfa real (fondo blanco + tablero falso fuera) · (2) decodeAudioData en forma promesa con copia: la música del vagón del Tren ya no muere · (3) invariante UNA MELODÍA extendido a las BSO privadas de los módulos · antes v2.124 · MAREO del Clown + invariante bidireccional AUDITORÍA DE MÚSICA II + MAREO: (1) invariante UNA MELODÍA bidireccional (la BSO retira la música del menú y en la portada la BSO espera) · (2) la BSO propia de Magia/Oeste resucita tras cada re-creación del contexto (salir/entrar de VR) y entra con fundido · (3) MAREO TOTAL del Clown: vaivén por deltas (inmune a escrituras del rig) y amplitud inconfundible (yaw ±11,5° + pitch ±3,4° + roll ±5,2°) · antes v2.123 · MENÚ: opciones contraídas
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
   // la build dentro del casco sin depender del nombre del zip.
@@ -2473,16 +2477,56 @@ const AI_PRESETS = {
 
 /* v3.0.9-HALL1 · ASISTENCIA DEL SAQUE POR DIFICULTAD — el pilar «sentirse
  * dueño del juego» escala con la CPU elegida: en FÁCIL el saque perdona
- * (más ayuda), en DIFÍCIL casi no endereza (el saque es TUYO). Cuatro
- * palancas: lerp1/lerp2 = cascada de enderezado del golpeo (45 % → 75 %
- * en medio, la referencia probada en casco de la TRN1), reach = margen
- * extra de contacto mientras la bola del lanzamiento vuela, y vy = subida
- * mínima del saque asistido (gatillo / suelta floja). La legalidad NO
- * cambia: tossMinRise y línea de fondo son reglas, no asistencia. */
+ * (más ayuda), en DIFÍCIL casi no endereza (el saque es TUYO). Palancas
+ * (v3.1.0-SRV2): reach = margen extra de contacto mientras la bola del
+ * lanzamiento vuela (REBAJADO: la tolerancia no puede crear golpes a
+ * distancia — la CCD fina es la que garantiza el contacto real), vy =
+ * subida mínima del saque asistido SOLO con el gatillo (soltar el grip es
+ * SIEMPRE el gesto real), angleMul/assistMul = margen angular e intensidad
+ * de la asistencia progresiva (v3.1.0-SRV2). La legalidad NO cambia:
+ * tossMinRise y línea de fondo son reglas, no asistencia. */
 const SERVE_ASSIST_TIERS = {
-  easy:   { lerp1: 0.62, lerp2: 0.88, reach: 0.13, vy: 3.5 },
-  medium: { lerp1: 0.45, lerp2: 0.75, reach: 0.09, vy: 3.10 },
-  hard:   { lerp1: 0.30, lerp2: 0.55, reach: 0.06, vy: 2.70 },
+  easy:   { reach: 0.060, vy: 3.5,  angleMul: 1.4,  assistMul: 1.35 },
+  medium: { reach: 0.045, vy: 3.10, angleMul: 1.0,  assistMul: 1.0  },
+  hard:   { reach: 0.028, vy: 2.70, angleMul: 0.7,  assistMul: 0.6  },
+};
+
+/* =====================================================================
+ *  v3.1.0-SRV2 · SAQUE VR REALISTA CON ASISTENCIA LIMITADA — parámetros
+ *  del requisito del dueño (F: todo configurable). Filosofía:
+ *    · El IMPULSO sale SIEMPRE del modelo de contacto real (collidePaddle:
+ *      orientación real de la cara, velocidad lineal+angular, restitución,
+ *      fricción, punto dulce). NUNCA se sustituye por una velocidad ideal.
+ *    · La tolerancia de contacto es PEQUEÑA (compensa el tracking, no
+ *      inventa golpes a distancia) y la CCD fina (TOI en 2 pasadas con el
+ *      plano interpolado) hace que el contacto REAL no se pierda nunca.
+ *    · La asistencia es PROGRESIVA y ACOTADA: mezcla hacia una referencia
+ *      legal sólo si la salida real queda dentro de un margen angular
+ *      pequeño, con peso que decae linealmente hasta 0 en el margen. Un
+ *      saque claramente mal orientado NO se convierte en válido jamás.
+ *    · La VALIDACIÓN es del árbitro (rules): bote propio → bote rival →
+ *      LET/falta con la trayectoria REAL post-impacto.
+ *  window.__ppDebug.serveTune expone este objeto VIVO: se puede ajustar
+ *  desde la consola sin reconstruir (QA y puesta a punto en casco).
+ * ===================================================================== */
+const SERVE_TUNE = {
+  // --- B · tolerancias de contacto (CCD bola-pala) ---
+  skin: 0.02,             // margen normal del plano de la hoja (antes 0.03 fijo)
+  skinServe: 0.022,       // margen normal EXTRA durante el vuelo del saque (antes +0.045)
+  assistInPlane: 0.05,    // radio de asistencia en el plano de la hoja (rally, = hitAssistRadius)
+  serveFlightAssist: 0.032, // radio en el plano durante el vuelo del saque (antes heredaba 0.05)
+  serveMinExit: 0.65,     // suelo de salida tras un roce en saque (m/s); el rally mantiene minExitSpeed
+  // --- C/D · asistencia progresiva acotada ---
+  assistAngle: 0.30,      // margen angular a plena asistencia en MEDIUM (rad ≈ 17°) × tier.angleMul
+  assistMax: 0.35,        // mezcla máxima hacia la referencia legal con error → 0 (medium) × tier.assistMul
+  assistMinSpeed: 1.2,    // por debajo de esta salida (m/s) no hay asistencia: un roce es un roce
+  // --- A · filtrado de velocidad de la mano (updatePaddleSim) ---
+  velWindow: 0.045,       // ventana de la media móvil (s) — antes VEL_WINDOW fijo
+  velLerp: 0.85,          // respuesta del filtro — antes lerp fijo
+  // --- E · límites post-impacto del saque ---
+  serveMaxSpeed: 8.8,     // techo del saque (antes fijo)
+  serveMinSpeed: 0,       // suelo del saque: 0 = DESACTIVADO (antes 3.2 forzados: disfrazaba roces)
+  debug: 1,               // 1 = registra el último saque en window.__ppDebug.lastServe
 };
 
 /** Escala un preset de IA por un factor de habilidad k (0,7…2,2):
@@ -4240,7 +4284,7 @@ const tmpSurf = new THREE.Vector3();
 const tmpR = new THREE.Vector3();
 const tmpDeltaQ = new THREE.Quaternion();
 const tmpMountQ = new THREE.Quaternion();
-const VEL_WINDOW = 0.045;  // v2.29: ventana MÁS CORTA (menos retraso en swings rápidos)
+const VEL_WINDOW = 0.045;  // v3.1.0-SRV2: el filtro vivo es SERVE_TUNE.velWindow (mismo valor)
 // v2.29: base del paso anterior para la colisión barrida CON ROTACIÓN
 // (antes solo se interpolaba la posición: en saques con mucha rotación de
 // muñeca la hoja "giraba" entre subpasos y el cruce se detectaba tarde)
@@ -4323,16 +4367,17 @@ function updatePaddleSim(ps, pos, quat, now, dt) {
     if (ps.velInst.length() > DIMS.paddleVelClamp) ps.velInst.setLength(DIMS.paddleVelClamp);
     ps.velBuf.push({ t: now, x: tmpV.x, y: tmpV.y, z: tmpV.z });
   }
-  while (ps.velBuf.length && now - ps.velBuf[0].t > VEL_WINDOW) ps.velBuf.shift();
+  while (ps.velBuf.length && now - ps.velBuf[0].t > SERVE_TUNE.velWindow) ps.velBuf.shift();
   if (ps.velBuf.length) {
     tmpV.set(0, 0, 0);
     for (const s of ps.velBuf) {
       tmpV.x += s.x; tmpV.y += s.y; tmpV.z += s.z;
     }
     tmpV.divideScalar(ps.velBuf.length);
-    // v2.29: respuesta más ágil (lerp 0,85) y techo de velocidad: el impulso
-    // deja de llegar "esponja" en swings rápidos sin meter jitter de tracking
-    ps.vel.lerp(tmpV, 0.85);
+    // v2.29: respuesta más ágil (lerp configurable v3.1.0-SRV2) y techo de
+    // velocidad: el impulso deja de llegar "esponja" en swings rápidos sin
+    // meter jitter de tracking
+    ps.vel.lerp(tmpV, SERVE_TUNE.velLerp);
     if (ps.vel.length() > DIMS.paddleVelClamp) ps.vel.setLength(DIMS.paddleVelClamp);
   }
 
@@ -4454,8 +4499,11 @@ function collidePaddle(ball, pad, k, events) {
   ipNormal.copy(pad.prevNormal).lerp(pad.normal, k).normalize();
   ipRight.copy(pad.prevRight).lerp(pad.right, k).normalize();
   ipUp.copy(pad.prevUp).lerp(pad.up, k).normalize();
-  // margen extra de detección (solo en el saque: bola recién lanzada)
+  // v3.1.0-SRV2 · margen extra de detección SOLO en el vuelo del saque
+  // (bola recién lanzada): tolerancia PEQUEÑA — es la CCD fina la que
+  // garantiza el contacto real, no un radio gigante que golpea a distancia.
   const extra = pad.extraReach || 0;
+  const inPlane = pad.serveFlight ? SERVE_TUNE.serveFlightAssist : DIMS.hitAssistRadius;
 
   relPrev.copy(tmpPrev).sub(padPos);
   const dPrev = relPrev.dot(ipNormal);
@@ -4463,11 +4511,26 @@ function collidePaddle(ball, pad, k, events) {
   const dNow = relNow.dot(ipNormal);
 
   const crossing = dPrev > 0 !== dNow > 0;
-  const touching = Math.abs(dNow) <= DIMS.ballRadius + 0.03 + (extra ? 0.045 : 0);
+  const touching = Math.abs(dNow) <= DIMS.ballRadius + SERVE_TUNE.skin +
+    (extra ? SERVE_TUNE.skinServe : 0);
   if (!crossing && !touching) return;
 
   if (crossing) {
-    const t = Math.min(1, Math.max(0, dPrev / (dPrev - dNow)));
+    // v3.1.0-SRV2 · CCD en 2 PASADAS: la 1ª resuelve el TOI contra el plano
+    // interpolado a k; la 2ª reevalúa el TOI contra el plano REAL en ese
+    // instante (la pala se movió y giró entre prev y pos). Con swings de
+    // 12 m/s el error de la 1ª pasada era de milímetros — ahora el punto de
+    // contacto es el geométricamente correcto: tolerancia temporal sin trampas.
+    let t = Math.min(1, Math.max(0, dPrev / (dPrev - dNow)));
+    ipNormal.copy(pad.prevNormal).lerp(pad.normal, t).normalize();
+    ipRight.copy(pad.prevRight).lerp(pad.right, t).normalize();
+    ipUp.copy(pad.prevUp).lerp(pad.up, t).normalize();
+    padPos.copy(pad.prev).lerp(pad.pos, t);
+    relPrev.copy(tmpPrev).sub(padPos);
+    const dP2 = relPrev.dot(ipNormal);
+    relNow.copy(ball.pos).sub(padPos);
+    const dN2 = relNow.dot(ipNormal);
+    if (dP2 > 0 !== dN2 > 0) t = Math.min(1, Math.max(0, dP2 / (dP2 - dN2)));
     crossPoint.copy(tmpPrev).lerp(ball.pos, t);
   } else {
     crossPoint.copy(ball.pos);
@@ -4477,9 +4540,10 @@ function collidePaddle(ball, pad, k, events) {
   const lx = relNow.copy(crossPoint).sub(padPos).dot(ipRight);
   const ly = relNow.dot(ipUp);
   // hoja: disco de radio R centrado en bladeCenterUp sobre el agarre
-  // (+ zona de asistencia para que no haga falta milimetrar el golpe)
+  // (+ zona de asistencia para que no haga falta milimetrar el golpe;
+  //  v3.1.0-SRV2: durante el vuelo del saque la zona es MÁS PEQUEÑA)
   const dyy = ly - DIMS.bladeCenterUp;
-  const reach = DIMS.bladeRadius + DIMS.ballRadius + DIMS.hitAssistRadius + extra;
+  const reach = DIMS.bladeRadius + DIMS.ballRadius + inPlane + extra;
   const onBlade = lx * lx + dyy * dyy <= reach * reach;
   // mango: zona alrededor del propio agarre
   const onHandle = Math.abs(lx) < 0.05 && ly > -0.12 && ly < 0.12;
@@ -4527,9 +4591,13 @@ function collidePaddle(ball, pad, k, events) {
     ball.vel.z += (Math.random() * 2 - 1) * j;
   }
 
-  // Velocidad mínima de salida para jugabilidad (golpes siempre sólidos)
+  // Velocidad mínima de salida para jugabilidad (golpes siempre sólidos).
+  // v3.1.0-SRV2 · en el VUELO DEL SAQUE el suelo es serveMinExit: un roce
+  // sale flojo y el árbitro lo juzga (falta) — el suelo pleno de 2,3 m/s
+  // disfrazaba los roces como saques válidos.
   const vn = ball.vel.dot(tmpN);
-  if (vn < DIMS.minExitSpeed) ball.vel.addScaledVector(tmpN, DIMS.minExitSpeed - vn);
+  const exitFloor = pad.serveFlight ? SERVE_TUNE.serveMinExit : DIMS.minExitSpeed;
+  if (vn < exitFloor) ball.vel.addScaledVector(tmpN, exitFloor - vn);
 
   // Límite de velocidad
   const sp = ball.vel.length();
@@ -5110,6 +5178,68 @@ function findServeVelocity(from, ownSign, hint) {
   const tz = C - ownSign * (HL * 0.75);
   const v = computeShotVelocity(from, new THREE.Vector3(0, topR, tz), 1.05, 5.5);
   return { v, spin };
+}
+
+/* =====================================================================
+ *  v3.1.0-SRV2 · ASISTENCIA PROGRESIVA ACOTADA DEL SAQUE (requisito del
+ *  dueño, punto D) — reemplaza a la cascada 45 % → 75 % → solver, que
+ *  SUSTITUÍA el golpeo real por la velocidad del solver (exactamente lo
+ *  que el requisito prohíbe: «no aplicar una fuerza correctora que
+ *  redirija automáticamente la bola»).
+ *
+ *  Contrato (UNA sola pieza compartida por el núcleo y el entrenamiento):
+ *    1) Si la trayectoria REAL ya es un saque legal (bote propio + bote
+ *       rival) NO se toca nada: el gesto manda al 100 %.
+ *    2) Si es un LET (doble bote válido con roce de red) tampoco: la regla
+ *       es «repetir saque», no corregir.
+ *    3) Si no es legal, se mide el ERROR ANGULAR entre la salida real y
+ *       una referencia legal con el toque del swing (findServeVelocity con
+ *       hint). Error 0 → mezcla máxima (assistMax × tier.assistMul);
+ *       decae LINEALMENTE hasta 0 en el margen (assistAngle ×
+ *       tier.angleMul); fuera del margen o bajo assistMinSpeed NO se
+ *       corrige nada. La mezcla nunca itera ni valida después: lo que
+ *       queda vuela y el árbitro juzga (punto E del requisito).
+ *  Devuelve telemetría {err, w, sim} para QA/ajuste (window.__ppDebug.
+ *  lastServe cuando SERVE_TUNE.debug). `from` = ball.pos, muta ball.
+ * ===================================================================== */
+function applyServeProgressiveAssist(ball, pad, tier) {
+  const tune = SERVE_TUNE;
+  const out = { err: -1, w: 0, sim: null };
+  if (tune.assistMax <= 0 || tune.assistAngle <= 0) return out;
+  const sim = simulateServePath(ball.pos, ball.vel, ball.spin, 1);
+  out.sim = sim;
+  if (sim.ok) { out.err = 0; return out; }                       // legal: sin tocar
+  if (sim.ownBounce && sim.oppBounce) { out.err = 0; return out; } // LET: regla, no corrección
+  const sp = ball.vel.length();
+  if (sp < 1e-3) { out.err = 9; return out; }
+  // referencia legal con la energía del swing (hint: dirección lateral y
+  // ritmo heredados del gesto — asistencia «con toque», nunca enlatada)
+  const ref = findServeVelocity(ball.pos, 1, pad ? {
+    x: ball.pos.x * 0.35 + pad.vel.x * 0.22,
+    spd: pad.vel.length(),
+  } : null);
+  const err = ball.vel.angleTo(ref.v);   // rad, 0…π
+  out.err = err;
+  const margin = tune.assistAngle * ((tier && tier.angleMul) || 1);
+  if (err >= margin) return out;                                 // fuera del margen: NADA
+  if (sp < tune.assistMinSpeed) return out;                      // roce: NADA
+  const w = tune.assistMax * ((tier && tier.assistMul) || 1) * (1 - err / margin);
+  out.w = w;
+  ball.vel.lerp(ref.v, w);
+  ball.spin.lerp(ref.spin, w * 0.5);
+  return out;
+}
+function __ppServeTelemetry(res, extra) {
+  if (!SERVE_TUNE.debug) return;
+  try {
+    window.__ppDebug.lastServe = Object.assign({ t: performance.now() / 1000,
+      err: res && res.err != null ? +res.err.toFixed(4) : null,
+      w: res && res.w ? +res.w.toFixed(4) : 0,
+      simOk: !!(res && res.sim && res.sim.ok),
+      netTouch: !!(res && res.sim && res.sim.netTouch),
+      ownBounce: !!(res && res.sim && res.sim.ownBounce),
+      oppBounce: !!(res && res.sim && res.sim.oppBounce) }, extra || {});
+  } catch (e) { /* nunca rompe */ }
 }
 
 /* =====================================================================
@@ -8072,6 +8202,7 @@ class ChampLoader {
     if (g.closeTrainingV3) g.closeTrainingV3();   // v3.0.3 · estanqueidad
     if (!/^[a-z0-9_-]+$/i.test(id)) return;
     if (g.net.online) { g.rules.message = T('msg_guest_mode'); return; }
+    g.exitHall();             // v3.1.0-SRV2: un campeonato se juea en la cancha
     // v2.69: import + init viven en preload() (compartido con el arranque
     // eager); aquí sólo falta arrancar. Excluyente con TODO campeonato.
     const m = await this.preload(id);
@@ -9090,6 +9221,7 @@ class PingPongGame {
   switchMode(mode) {
     this.closeTrainingV3();   // v3.0.3 · estanqueidad
     if (this.calib || this.mode === mode) return;
+    this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
     this.mode = mode;
     this.survivalRallies = 0;
     this.rules.startMatch(mode);
@@ -9112,6 +9244,7 @@ class PingPongGame {
    * dueño (último golpeador / sacador) y la emite a 20 Hz. */
   startOnlineSession() {
     if (this.calib) this.exitCalib();
+    this.exitHall();          // v3.1.0-SRV2: la sesión online se juea en la cancha
     this.closeMenu();
     this.rules.oppLabel = 'rival';   // v2.27: clave (T('opp_rival'))
     this.resetToss();
@@ -10073,6 +10206,20 @@ class PingPongGame {
 
     y += 130;
 
+    // v3.1.0-SRV2 · EL HALL ES EL HUB: en plena partida (o campeonato) el
+    // menú ofrece la vuelta a la estancia del anfitrión — el hall es donde
+    // se cambian ajustes y modalidad. En el propio hall NO aparece (ya
+    // estás en casa) ni en online (el hall no existe allí).
+    if (!this.inHall && !this.net.online) {
+      btn('homehall', 40, y, 944, 64, T('hall_home_btn'), false, undefined, undefined, 27);
+      c.fillStyle = '#5c6672';
+      c.font = '500 17px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(T('hall_home_hint'), 512, y + 80);
+      y += 100;
+    }
+
     // v2.123 · OPCIONES CONTRAÍDAS: una sola TARJETA (misma estética que el
     // resto del HUB) que abre la página AJUSTES, donde vive TODO: sala,
     // música, ambiente, megáfono, vibración, estela, consejos, nombre…
@@ -10491,10 +10638,30 @@ class PingPongGame {
         // v3.0 · PRO TRAINING: acciones del hub de entrenamiento
         if (window.__PP_TRAIN) window.__PP_TRAIN.menuAction(this, arg);
         break;
+      case 'homehall': {
+        // v3.1.0-SRV2 · EL HALL ES EL HUB: en partida/entrenamiento/campeonato
+        // el menú ofrece la vuelta a la estancia del anfitrión — allí se
+        // cambian ajustes y modalidad. Se recoge TODO lo activo de forma
+        // estanca, se resetea el saque (la bola vuelve a la mano libre) y el
+        // menú queda ABIERTO delante: el hall es donde se decide el siguiente
+        // paso. Online no actúa (el hall no existe en passthrough/red).
+        if (this.net.online) break;
+        this.closeTrainingV3();
+        if (this.calib) this.exitCalib();   // recoge panel/entrenamiento y restaura
+        if (this.champs) this.champs.leaveAll();
+        this.resetToss();
+        this.aiToss = null;
+        this.demoToss = null;
+        this.enterHall();
+        if (!this.menuOpen) this.toggleMenu();
+        else { this.anchorMenu(); this.drawMenu(); }
+        break;
+      }
       case 'start':
         // ARRANQUE RÁPIDO: partido contra la CPU (o revancha online)
         this.closeTrainingV3();   // v3.0.3 · estanqueidad
         if (this.champs) this.champs.leaveAll();   // v2.53: y el campeonato externo
+        this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
         if (this.net.online) {
           this.startOnlineMatch();   // anfitrión reinicia; invitado pide revancha
         } else {
@@ -10507,6 +10674,7 @@ class PingPongGame {
         // SUPERVIVENCIA desde el menú (el invitado online lo pide por red)
         this.closeTrainingV3();   // v3.0.3 · estanqueidad
         if (this.champs) this.champs.leaveAll();   // v2.53
+        this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
         if (this.net.online) {
           if (this.net.role === 'guest') this.net.sendMode('survival');
           this.rules.message = T('msg_guest_mode');
@@ -11129,9 +11297,11 @@ class PingPongGame {
 
   /** Suelta la bola con la velocidad REAL de la mano (saque natural).
    *  v2.44 · LANZAMIENTO LIBRE RECUPERADO: soltar el grip SIEMPRE lanza la
-   *  bola al aire — si la mano sube con fuerza sale natural; si la sueltas
-   *  sin impulso, el asistente le da la subida mínima (nunca se rechaza el
-   *  gesto). Luego la golpeas con la pala cuando quieras. */
+   *  bola al aire. v3.1.0-SRV2 (requisito A): la velocidad inicial es
+   *  EXACTAMENTE la de la mano — el asistente ya no da «subida mínima» al
+   *  soltar flojo (eso reescribía el gesto); si la mano no impulsa, la bola
+   *  cae y se repite. La ayuda explícita es el GATILLO (tossFromHand
+   *  asistido). Luego la golpeas con la pala cuando quieras. */
   releaseBallHand(i) {
     // v3.0.8-TRN1 · ENTRENAMIENTO t4a/t4b: soltar el grip con la bola en la
     // mano libre LANZA el saque del módulo (el mismo gesto natural que un
@@ -11155,11 +11325,13 @@ class PingPongGame {
     if (!this.renderer.xr.isPresenting) return;
     const hand = this.controllerPaddles[i];
     if (!hand.active) return;
-    const v = hand.vel;
-    // lanzamiento natural si la mano sube; ASISTIDO si la sueltas flojas
-    // (v3.0.9-HALL1: el umbral de «natural» también escala con la dificultad)
-    const natural = v.y > this.serveTier().vy * 0.75 || v.length() > 1.6;
-    this.tossFromHand(i, !natural);
+    // v3.1.0-SRV2 · LANZAMIENTO SIEMPRE NATURAL al soltar el grip (requisito
+    // A: «se liberará con una velocidad inicial calculada a partir del
+    // movimiento de la mano… no se debe reposicionar ni redirigir la bola»).
+    // El asistente NO reescribe el gesto: si la mano no sube, la bola cae y
+    // se repite. La subida mínima asistida queda SOLO en el gatillo
+    // (tossFromHand con assisted=true), que es la ayuda explícita.
+    this.tossFromHand(i, false);
   }
 
   tossFromHand(i, assisted) {
@@ -12279,14 +12451,14 @@ class PingPongGame {
       this.recenterFrames--;
     }
 
-    // v3.0.9-HALL1 · GUARDIÁN DEL HALL: la estancia es la ANTESALA — en
-    // cuanto el menú se cierra (modo arrancado, entrenamiento, campeonato
-    // o cierre manual con B) el jugador vuelve a la cancha. Nada se juega
-    // dentro del hall.
-    if (presenting && this.inHall && !this.menuOpen && !this.calib &&
-        !(this.champs && this.champs.active)) {
-      this.exitHall();
-    }
+    // v3.1.0-SRV2 · EL HALL ES EL HUB (requisito del dueño): cerrar el menú
+    // DENTRO del hall NO saca de la estancia — el menú «vive» en el hall y
+    // allí se abren modos y ajustes. El guardián antiguo (exitHall en cuanto
+    // el menú se cerraba) se elimina: salir al cancha es ahora EXPLÍCITO,
+    // en los ARRANQUES DE MODO (switchMode, 'start', 'survgo', sesión
+    // online, champs.launch y startMode/startCalib del entrenamiento), que
+    // llaman exitHall() ellos mismos. En partida, el menú ofrece el botón
+    // «⌂ VOLVER AL HALL» para regresar (cambia de modalidad allí).
 
     // 0) botón A/X: el mando donde se pulsa pasa a llevar la pala
     if (presenting && !this.calib) {
@@ -12353,9 +12525,11 @@ class PingPongGame {
         ps.active = this.connected[i];
         // margen de detección extra SOLO mientras la bola del saque vuela:
         // golpear de forma natural no exige milimetrar la muñeca
-        // v3.0.9-HALL1: el margen escala con la dificultad (fácil 13 cm,
-        // medio 9 cm como siempre, difícil 6 cm)
+        // v3.1.0-SRV2: margen REBAJADO y pequeño (fácil 6 cm, medio 4,5 cm,
+        // difícil 2,8 cm) — la CCD fina garantiza el contacto real; un radio
+        // grande creaba golpes a distancia, prohibidos por el requisito
         ps.extraReach = servingToss ? this.serveTier().reach : 0;
+        ps.serveFlight = servingToss;   // v3.1.0-SRV2: tolerancias y suelo de saque
       }
     }
 
@@ -12583,42 +12757,21 @@ class PingPongGame {
         // golpe de saque válido
         e.consumed = true;
         this.tossed = false;
-        // SOLIDEZ con TOQUE DEL JUGADOR (v3.0.6-SRV1): la trayectoria propia se
-        // respeta SIEMPRE que sea legal. La asistencia sólo endereza lo mínimo
-        // en cascada (45 % → 75 % → solver) y hereda la energía y la dirección
-        // del swing (hint). Antes se sustituía el 65-100 % del golpeo en cuanto
-        // la simulación estricta fallaba: el saque salía «enlatado» (~5 m/s
-        // siempre igual), desconectado del gesto — la queja «se siente mal».
-        const sim = simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1);
-        if (!sim.ok) {
-          const hitPad = this.controllerPaddles[e.paddleIndex ?? this.paddleHand];
-          const fix = findServeVelocity(this.ball.pos, 1, hitPad ? {
-            x: this.ball.pos.x * 0.35 + hitPad.vel.x * 0.22,
-            spd: hitPad.vel.length(),
-          } : null);
-          // v3.0.9-HALL1 · cascada por DIFICULTAD (fácil endereza más,
-          // difícil casi nada — medio = la referencia de la TRN1)
-          const tier = this.serveTier();
-          if (sim.ownBounce && sim.oppBounce) {
-            // doble bote válido con roce de red (sería LET): se conserva el
-            // golpe del jugador y se gana un poco de altura para que el roce
-            // sea excepcional en el vuelo real
-            this.ball.vel.y += 0.35;
-          } else {
-            this.ball.vel.lerp(fix.v, tier.lerp1);
-            this.ball.spin.lerp(fix.spin, 0.35);
-            if (!simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1).ok) {
-              this.ball.vel.lerp(fix.v, tier.lerp2);
-              this.ball.spin.lerp(fix.spin, 0.6);
-              if (!simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1).ok) {
-                this.ball.vel.copy(fix.v);
-                this.ball.spin.copy(fix.spin);
-              }
-            }
-          }
+        // v3.1.0-SRV2 · IMPULSO REAL + ASISTENCIA PROGRESIVA ACOTADA
+        // (requisito del dueño A-E). La salida ya la ha calculado el modelo
+        // de contacto REAL (collidePaddle: orientación de la cara, restitución,
+        // fricción, punto dulce) — aquí NO se sustituye por nada:
+        //   · sin suelo de velocidad (el 3,2 m/s forzado disfrazaba roces);
+        //   · sin cascada 45 % → 75 % → solver (sustituía el golpeo);
+        //   · sólo la mezcla ACOTADA si la salida real está cerca de servir.
+        // La legalidad la juzga el árbitro con el vuelo real (bote propio →
+        // bote rival → LET/falta en rules.handleEvents).
+        const hitPad = this.controllerPaddles[e.paddleIndex ?? this.paddleHand];
+        if (this.ball.vel.length() > SERVE_TUNE.serveMaxSpeed) {
+          this.ball.vel.setLength(SERVE_TUNE.serveMaxSpeed);
         }
-        if (this.ball.vel.length() < 3.2) this.ball.vel.setLength(3.2);
-        if (this.ball.vel.length() > 8.8) this.ball.vel.setLength(8.8);
+        const _res = applyServeProgressiveAssist(this.ball, hitPad, this.serveTier());
+        __ppServeTelemetry(_res, { src: 'core', tier: this.difficulty });
         this.rules.beginServeRally('player');
         if (this.net.online) { this.net.sendHit(true); this._localHit = false; }
         this.haptic(e.paddleIndex ?? this.paddleHand, 0.8, 90);
@@ -12777,7 +12930,12 @@ class PingPongGame {
     // gancho de diagnóstico (solo lectura en tests headless; no afecta al juego)
     if (typeof window !== 'undefined' && window.__wantSolverHook && !window.__solverHook) {
       window.__solverHook = { computeShotVelocityReal, predictStrike, stepPhysics,
-        DIMS, applyAerodynamics };
+        DIMS, applyAerodynamics,
+        // v3.1.0-SRV2 · piezas del saque realista para QA (los 9 casos del
+        // requisito): colisión real, validación y asistencia acotada
+        collidePaddle, testPaddleContact, createPaddleSim,
+        simulateServePath, findServeVelocity, applyServeProgressiveAssist,
+        SERVE_TUNE, SERVE_ASSIST_TIERS };
     }
     this.scoreboardUpdate({
       player: this.rules.scorePlayer,
@@ -13528,8 +13686,62 @@ loadPaddleModel().then((paddleModel) => {
   window.__T = T; window.__TLang = TLang; window.__setLang = setLang;
   window.__applyLangDOM = applyLangDOM;
   // gancho de depuración para pruebas headless (física de saque y constantes)
+  // v3.1.0-SRV2: SERVE_TUNE es VIVO (ajustable desde consola sin recargar) y
+  // lastServe guarda la telemetría del último saque (error angular, mezcla
+  // aplicada y veredicto del simulador) para QA y puesta a punto en casco.
   window.__ppDebug = { findServeVelocity, simulateServePath, DIMS,
-  serveTiers: SERVE_ASSIST_TIERS };
+  serveTiers: SERVE_ASSIST_TIERS, serveTune: SERVE_TUNE, lastServe: null,
+  applyServeProgressiveAssist };
+  // v3.1.0-SRV2 · LABORATORIO DE SAQUE (QA headless de los 9 casos del
+  // requisito): monta una pala sintética contra una bola sintética y pasa
+  // por la MISMA collidePaddle + asistencia que el juego real. Devuelve
+  // {hit, event, faceSide, exitVel, exitSpeed, offC…} — sin tocar el juego.
+  window.__PP_SERVE_LAB = (o) => {
+    o = o || {};
+    // geometría por defecto = SAQUE: goma mirando a la red (yaw 180°),
+    // pala swingueando hacia la red (−z) y bola flotando delante de la goma
+    const yaw = THREE.MathUtils.degToRad(o.yawDeg != null ? o.yawDeg : 180);
+    const pitch = THREE.MathUtils.degToRad(o.pitchDeg || 0);
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+    const pad = createPaddleSim('player', 0);
+    pad.active = true; pad.cooldown = 0;
+    pad.serveFlight = o.serveFlight !== false;
+    pad.extraReach = o.extraReach != null ? o.extraReach :
+      (o.serveFlight === false ? 0 : SERVE_ASSIST_TIERS.medium.reach);
+    setPaddleBasis(pad, q);
+    pad.pos.set(o.padX || 0.30, o.padY || 1.05, o.padZ == null ? -0.60 : o.padZ);
+    pad.prev.copy(pad.pos);
+    pad.vel.set(o.padVelX || 0, o.padVelY || 0, o.padVelZ == null ? -2.6 : o.padVelZ);
+    pad.omega.set(0, 0, 0);
+    // bola DELANTE de la goma (en el lado que mira la goma): n = normal real
+    const n = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
+    const dist = o.dist != null ? o.dist : 0.05;
+    const bp = pad.pos.clone().addScaledVector(n, dist);
+    bp.x += o.offX || 0; bp.y += o.offY || 0;
+    const bv = new THREE.Vector3(o.ballVelX || 0, o.ballVelY == null ? -0.2 : o.ballVelY,
+      o.ballVelZ == null ? -0.1 : o.ballVelZ);
+    const ball = { pos: bp, vel: bv.clone(), spin: new THREE.Vector3(),
+      radius: DIMS.ballRadius };
+    const prevPos = bp.clone();
+    const dt = o.dt || 1 / 72;
+    prevPos.addScaledVector(bv, -dt);          // dónde estaba la bola un frame atrás
+    const events = [];
+    testPaddleContact(ball, prevPos, [pad], events);
+    const out = { hit: events.some((e) => e.type === 'paddle'),
+      events: events.map((e) => e.type),
+      exitVel: ball.vel.toArray(),
+      exitSpeed: +ball.vel.length().toFixed(3),
+      exitZ: +ball.vel.z.toFixed(3) };
+    if (o.assist) {
+      out.assist = applyServeProgressiveAssist(ball, pad,
+        SERVE_ASSIST_TIERS[o.tier || 'medium']);
+      out.assist.err = out.assist.err != null ? +out.assist.err.toFixed(4) : null;
+      out.assist.w = +out.assist.w.toFixed(4);
+      out.sim = out.assist.sim;
+      out.finalSpeed = +ball.vel.length().toFixed(3);
+    }
+    return out;
+  };
   // v2.57: puente de PRUEBAS headless — referencia al juego (los campeonatos
   // externos se lanzan desde él; no cambia ningún comportamiento)
   window.__PP_GAME = game;
@@ -14222,11 +14434,13 @@ loadPaddleModel().then((paddleModel) => {
       st.phase = 'tee';
       st.teeT = 0;
     }
-    /** v3.0.8-TRN1 · Lanzamiento con el GESTO DEL JUGADOR: usa la velocidad
-     *  REAL de la mano libre (toss natural, como el núcleo) y sólo si la
-     *  suelta floja da la subida mínima asistida. Nada de tiros automáticos:
-     *  el jugador decide el momento (gatillo o abrir el grip). */
-    function serveTossFromTee() {
+    /** v3.0.8-TRN1 · Lanzamiento con el GESTO DEL JUGADOR. v3.1.0-SRV2
+     *  (requisito A): abrir el grip (serveRelease) lanza con la velocidad
+     *  REAL de la mano libre — sin subida mínima escondida; el GATILLO
+     *  (serveTrigger) es la ayuda explícita y da la subida asistida por
+     *  dificultad. `assisted` separa los dos caminos. Nada de tiros
+     *  automáticos: el jugador decide el momento. */
+    function serveTossFromTee(assisted) {
       if (st.phase !== 'tee') return;
       const b = G.ball;
       const bh = G.controllerPaddles && G.controllerPaddles[G.ballHand];
@@ -14235,13 +14449,17 @@ loadPaddleModel().then((paddleModel) => {
       const v = new THREE.Vector3(0, vyMin, 0);
       if (bh && bh.active) {
         v.copy(bh.vel);
-        const natural = bh.vel.y > vyMin * 0.75 || bh.vel.length() > 1.6;
-        if (!natural) { v.y = Math.max(v.y, vyMin); v.x *= 0.4; v.z *= 0.4; }
+        if (assisted) {
+          // gatillo: la bola SIEMPRE sube lo suficiente para golpearla
+          if (v.y < vyMin) v.y = vyMin;
+          v.x *= 0.4; v.z *= 0.4;
+        }
+        // seguridad común: deriva horizontal acotada y tope de subida (~1 m)
         v.x = THREE.MathUtils.clamp(v.x, -1.2, 1.2);
         v.z = THREE.MathUtils.clamp(v.z, -1.2, 1.2);
       }
-      if (v.y < vyMin) v.y = vyMin;
-      if (v.y > 4.6) v.y = 4.6;   // tope: un toss controlable (~1 m)
+      if (assisted && v.y < vyMin) v.y = vyMin;
+      if (v.y > 4.6) v.y = 4.6;
       b.vel.copy(v);
       b.spin.set(0, 0, 0);
       st.tossReleaseY = b.pos.y; st.tossMaxY = b.pos.y;
@@ -14252,21 +14470,26 @@ loadPaddleModel().then((paddleModel) => {
       try { G.haptic(G.ballHand, 0.45); } catch (e) { /* */ }
     }
     /** margen de detección ampliado SOLO mientras la bola del entrenamiento
-     *  vuela tras el lanzamiento (el núcleo lo pone a 0 cada frame en calib). */
+     *  vuela tras el lanzamiento (el núcleo lo pone a 0 cada frame en calib).
+     *  v3.1.0-SRV2: también activa el flag serveFlight (tolerancias y suelo
+     *  de saque en collidePaddle). */
     function drillReach(on) {
       if (!G || !G.controllerPaddles) return;
       const reach = (G.serveTier ? G.serveTier().reach : DIMS.serveExtraReach);
       for (const ps of G.controllerPaddles) {
-        if (ps) ps.extraReach = on ? reach : 0;
+        if (ps) { ps.extraReach = on ? reach : 0; ps.serveFlight = on; }
       }
     }
 
-    /** v3.0.8-TRN1 · ASISTENCIA DEL GOLPEO DE SAQUE en el entrenamiento:
-     *  EXACTAMENTE la misma que aplica el núcleo en partido (valida la altura
-     *  del lanzamiento y la línea de fondo; si el golpeo en seco no produce
-     *  un saque legal, cascada 45 % → 75 % → solver heredando el toque del
-     *  swing vía hint). Sin ella el entrenamiento exigía un golpeo perfecto
-     *  en seco: «el saque es imposible». Devuelve true si el saque sigue vivo. */
+    /** v3.0.8-TRN1 · ASISTENCIA DEL GOLPEO DE SAQUE en el entrenamiento.
+     *  v3.1.0-SRV2 · EXACTAMENTE la pieza nueva del núcleo: impulso real
+     *  (collidePaddle ya actuó con la orientación de la cara) + asistencia
+     *  PROGRESIVA ACOTADA (applyServeProgressiveAssist: mezcla hacia una
+     *  referencia legal sólo dentro del margen angular, decaída lineal,
+     *  NUNCA convierte un mal gesto en saque válido). Fuera la cascada
+     *  45 % → 75 % → solver y el suelo de 3,2 m/s. Sin asistencia el
+     *  entrenamiento exigía un golpeo perfecto en seco: «el saque es
+     *  imposible». Devuelve true si el saque sigue vivo. */
     function serveAssist() {
       const b = G.ball;
       const rise = (st.tossMaxY || 0) - (st.tossReleaseY || 0);
@@ -14280,32 +14503,13 @@ loadPaddleModel().then((paddleModel) => {
         serveTee();
         return false;
       }
-      const sim = simulateServePath(b.pos, b.vel, b.spin, 1);
-      if (!sim.ok) {
-        const pad = G.controllerPaddles ? G.controllerPaddles[G.paddleHand] : null;
-        const fix = findServeVelocity(b.pos, 1, pad ? {
-          x: b.pos.x * 0.35 + pad.vel.x * 0.22,
-          spd: pad.vel.length(),
-        } : null);
-        // v3.0.9-HALL1 · misma cascada POR DIFICULTAD que el partido
-        const tier = (G.serveTier ? G.serveTier() : { lerp1: 0.45, lerp2: 0.75 });
-        if (sim.ownBounce && sim.oppBounce) {
-          b.vel.y += 0.35;   // roce de red con doble bote válido: se conserva
-        } else {
-          b.vel.lerp(fix.v, tier.lerp1);
-          b.spin.lerp(fix.spin, 0.35);
-          if (!simulateServePath(b.pos, b.vel, b.spin, 1).ok) {
-            b.vel.lerp(fix.v, tier.lerp2);
-            b.spin.lerp(fix.spin, 0.6);
-            if (!simulateServePath(b.pos, b.vel, b.spin, 1).ok) {
-              b.vel.copy(fix.v);
-              b.spin.copy(fix.spin);
-            }
-          }
-        }
+      if (b.vel.length() > SERVE_TUNE.serveMaxSpeed) {
+        b.vel.setLength(SERVE_TUNE.serveMaxSpeed);
       }
-      if (b.vel.length() < 3.2) b.vel.setLength(3.2);
-      if (b.vel.length() > 8.8) b.vel.setLength(8.8);
+      const pad = G.controllerPaddles ? G.controllerPaddles[G.paddleHand] : null;
+      const tier = (G.serveTier ? G.serveTier() : SERVE_ASSIST_TIERS.medium);
+      const res = applyServeProgressiveAssist(b, pad, tier);
+      __ppServeTelemetry(res, { src: 'train', mode: active, tier: G.difficulty });
       try { G.haptic(G.paddleHand, 0.8, 90); } catch (e) { /* */ }
       return true;
     }
@@ -14859,6 +15063,7 @@ loadPaddleModel().then((paddleModel) => {
       active = id;
       const M = MODES[id];
       if (!game.calib) game.enterCalib();      // aísla: sin árbitro, sin IA, sin marcador
+      game.exitHall();                          // v3.1.0-SRV2: un modo se juea en la cancha
       game.trainV3 = id;                        // el núcleo desactiva su rutina de calib
       game.trainV3Hub = true;                   // v3.0.3 · salida con Y → hub de entrenamiento
       game.calibPanel.group.visible = false;    // el panel de agarre fuera en los modos
@@ -14899,6 +15104,7 @@ loadPaddleModel().then((paddleModel) => {
       active = null;
       if (grp) { grp.visible = false; applyModeScene(); }
       if (game.trainV3) game.trainV3 = null;
+      game.exitHall();                        // v3.1.0-SRV2: el ajuste vive en la cancha
       game.trainV3Hub = true;                 // v3.0.3 · salida con Y → hub
       game.enterCalib();
     }
@@ -15466,8 +15672,13 @@ loadPaddleModel().then((paddleModel) => {
           ? window.__PP_PADDLE_PERKS[S.skin] : null;
         if (PT) label(t(PT.tag) + ' — ' + t(PT.tag + '_d'), ySk + 106, 14, PT.col);
       }
-      // botón parar si hay modo activo
-      if (active) btn('trv3:stop', X0, 1380, 944, 76, t('parar'), false, 'surv', undefined, 28);
+      // botón parar si hay modo activo + vuelta al HALL (v3.1.0-SRV2: el
+      // hall es el hub — desde el propio hub de entrenamiento se sale a la
+      // estancia sin pasar por el menú principal)
+      if (active) btn('trv3:stop', X0, 1380, 452, 76, t('parar'), false, 'surv', undefined, 28);
+      if (!game.inHall && !game.net.online) {
+        btn('homehall', active ? X1 : X0, 1380, 452, 76, T('hall_home_btn'), false, undefined, undefined, 26);
+      }
     }
   
     function drawArea(game, c, rects, btn, label) {
@@ -15596,8 +15807,8 @@ loadPaddleModel().then((paddleModel) => {
   
     return {
       tick, startMode, stopMode, startCalib, menuAction, applySkin, teardown,
-      serveTrigger: () => { try { serveTossFromTee(); } catch (e) { /* nunca rompe */ } },
-      serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(); } catch (e) { /* nunca rompe */ } },
+      serveTrigger: () => { try { serveTossFromTee(true); } catch (e) { /* nunca rompe */ } },
+      serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(false); } catch (e) { /* nunca rompe */ } },
       drawHub, drawArea,
       get state() { return { active, pts: S.pts, best: S.best, skin: S.skin, unlocked: S.unlocked.slice(),
         stars: Object.assign({}, S.stars), acc: Object.assign({}, S.acc),

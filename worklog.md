@@ -1701,3 +1701,21 @@ Stage Summary:
 - V3.1.0-SRV2 COMPLETA Y DESPLEGADA: saque VR realista con asistencia limitada (el gesto manda; sin correcciones ocultas; asistencia acotada que jamás convierte un mal gesto en saque válido) + hall como hub de navegación + los 3 fixes de QA (telemetría completa, fallback legal, enfoque mínimo real). Centro de descargas sirviendo los 4 paquetes v310-srv2. FIS1/TRN1/PLAY1/HALL1/intro/TV intactos (DIMS fis=1 perks=1 gam=1).
 - Lección reforzada: 3er rollback del sandbox que se come entregables gitignored (ZIPs) — el push anti-rollback SIGUE pendiente de que el dueño facilite un remote git.
 - Pendiente del dueño: prueba en casco del saque realista (sentir el gesto manda: soltar grip = lanzamiento real, gatillo = ayuda) y del flujo hall↔partida con «⌂ VOLVER AL HALL».
+
+---
+Task ID: 71
+Agent: Super Z (main)
+Task: "actualiza el centro de descargas" — verificación punta a punta de que el centro sirve la V3.1.0-SRV2 (saque VR realista + hall como hub) lista para prueba en casco.
+
+Work Log:
+- Estado del repo intacto tras la Task 70: HEAD 2787815, árbol limpio; public/game.html con const VERSION = '3.1.0-SRV2'; hub page.tsx con 6 menciones 3.1.0 y 0 residuos v309 (la QA cuenta 12 apariciones renderizadas).
+- 4 ZIP v310-srv2 presentes con tamaños EXACTOS de Task 70 tanto en download/ como en public/descargas/ (COMPLETO 106.559.804 B · ligera 11.449.087 B · CLOUDFLARE 106.548.099 B · SOLO 6.089 B).
+- Salud de servicios sin reinicios: dev :3000 → 200; gateway :81 /descargas → 200; /game.html sirviendo badge+VERSION 3.1.0-SRV2; relay TV :3004 {"ok":true}.
+- QA re-ejecutada AHORA: qa_descargas_v310.py → RESULTADO OK (4 enlaces v310 exactos, 12 menciones 3.1.0 + 7 SAQUE, 0 enlaces residuales v309, 4 ZIP HTTP 200 con tamaños correctos, 0 pageerrors, captura download/qa_srv2_descargas_hub.png).
+- QA del juego completa re-ejecutada: qa_srv2_v310.py → RESULTADO OK — los 9 casos del requisito de saque (gesto legal intacto w=0, timing 6 cm/1,2 cm tolerado, cruce TOI, cara al cielo nunca corregida, goma fuera, canto conecta sordo, swing flojo sin conversión, sin contacto = caída libre, red/sin bote propio/bola muerta no ok) + ley de asistencia D (0°→0,35 · 8°→0,187 decae · 45°→0 · fácil perdona 20°, duro 0) + flujo del hall completo (nacer en hall, cerrar menú sigues en hall, arrancar modo sale a cancha, ⌂ VOLVER AL HALL vuelve y abre el menú, en el hall el Home NO aparece) + regresión (DIMS fis=1 perks=1 gam=1, tiers [0.06,0.045,0.028,1,1.35], badge DOM, 0 pageerrors).
+- Verificación en vivo vía gateway :81: los 4 ZIP HTTP 200 byte a byte (106.559.804 / 11.449.087 / 106.548.099 / 6.089 B) y /assets/intro.mp4 200 con 5.779.719 B (intro oficial byte-perfecta).
+- Anti-rollback: git remote SIGUE vacío (gh CLI no disponible en el sandbox) — push de seguridad pendiente de que el dueño facilite un remote.
+
+Stage Summary:
+- Centro de descargas CONFIRMADO sirviendo la V3.1.0-SRV2 en 4 paquetes, doble QA verde hoy mismo (hub + juego completo con los 9 casos de saque y el flujo del hall), gateway/dev/relay en vivo: el dueño puede descargar y probar en el Quest 3 sin más pasos.
+- Pendiente del dueño: prueba en casco del saque realista (soltar grip = lanzamiento real; el gesto manda, sin correcciones ocultas) y del flujo hall↔partida con «⌂ VOLVER AL HALL»; URL de remote git para el push anti-rollback.

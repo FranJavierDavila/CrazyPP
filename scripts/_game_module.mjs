@@ -2140,6 +2140,9 @@ const SERVE_TUNE = {
   assistAngle: 0.30,      // margen angular a plena asistencia en MEDIUM (rad ≈ 17°) × tier.angleMul
   assistMax: 0.35,        // mezcla máxima hacia la referencia legal con error → 0 (medium) × tier.assistMul
   assistMinSpeed: 1.2,    // por debajo de esta salida (m/s) no hay asistencia: un roce es un roce
+  minApproach: 0.05,      // enfoque mínimo REAL pala↔bola (m/s): por debajo, la bola pasa
+                          // paralela al plano (roce de ruido de tracking) y NO hay contacto —
+                          // sin este suelo, el suelo de salida convertía rozos paralelos en golpe
   // --- A · filtrado de velocidad de la mano (updatePaddleSim) ---
   velWindow: 0.045,       // ventana de la media móvil (s) — antes VEL_WINDOW fijo
   velLerp: 0.85,          // respuesta del filtro — antes lerp fijo
@@ -4174,7 +4177,11 @@ function collidePaddle(ball, pad, k, events) {
   tmpN.copy(ipNormal);
   if (relVel.dot(tmpN) > 0) tmpN.negate();
   const vRelN = relVel.dot(tmpN);
-  if (vRelN >= 0) return;
+  // v3.1.0-SRV2 · ENFOQUE MÍNIMO REAL: un acercamiento por debajo de
+  // SERVE_TUNE.minApproach es la bola pasando PARALELA al plano (ruido de
+  // coma flotante o deriva lateral) — tocarla aquí inventaría un golpe
+  // imposible y el suelo de salida lo convertiría en emujón fantasma.
+  if (vRelN > -SERVE_TUNE.minApproach) return;
 
   // v3.0.5 P1: PUNTO DULCE — offC: 0 = centro de la hoja, 1 = canto.
   // El canto pega «sordo» (menos restitución), dispersa y da menos efecto.
@@ -4719,7 +4726,8 @@ function simulateServePath(from, v0, spin, ownSign) {
         applyBounceSpin(vel, sp);
       }
       if ((pos.z - C) * ownSign > 0) {
-        if (ownBounce) return { ok: false };           // volvió a botar en el propio
+        if (ownBounce)                                   // volvió a botar en el propio
+          return { ok: false, ownBounce, oppBounce, netTouch, netY, t };
         ownBounce = true;
       } else {
         oppBounce = true;
@@ -4733,14 +4741,16 @@ function simulateServePath(from, v0, spin, ownSign) {
         netY = netY === null ? pos.y : Math.max(netY, pos.y);
         if (pos.y < DIMS.netTopY + DIMS.ballRadius && pos.y > DIMS.tableTopY) {
           netTouch = true;
-          if (pos.y < DIMS.netTopY - 0.01) return { ok: false }; // se queda en la malla
+          if (pos.y < DIMS.netTopY - 0.01)                 // se queda en la malla
+          return { ok: false, ownBounce, oppBounce, netTouch: true, netY, t };
         }
       }
     }
     // suelo sin bote rival
-    if (pos.y < DIMS.ballRadius) return { ok: false };
+    if (pos.y < DIMS.ballRadius)
+      return { ok: false, ownBounce, oppBounce, netTouch, netY, t };
   }
-  return { ok: false };
+  return { ok: false, ownBounce, oppBounce, netTouch, netY, t };
 }
 
 /** Busca (por simulación) una velocidad de saque válida: bote propio y bote
@@ -4794,8 +4804,10 @@ function findServeVelocity(from, ownSign, hint) {
       }
     }
   }
-  // Fallback: saque alto y profundo (casi siempre válido)
-  const tz = C - ownSign * (HL * 0.75);
+  // Fallback: saque alto y profundo con bote PROPIO primero (el objetivo está
+  // en el lado propio: C + ownSign·d — antes apuntaba al lado CONTRARIO y
+  // producía referencias ilegales cuando las fases no encontraban nada).
+  const tz = C + ownSign * (HL * 0.75);
   const v = computeShotVelocity(from, new THREE.Vector3(0, topR, tz), 1.05, 5.5);
   return { v, spin };
 }
@@ -4822,6 +4834,16 @@ function findServeVelocity(from, ownSign, hint) {
  *  Devuelve telemetría {err, w, sim} para QA/ajuste (window.__ppDebug.
  *  lastServe cuando SERVE_TUNE.debug). `from` = ball.pos, muta ball.
  * ===================================================================== */
+/** Ley PURA de la asistencia (v3.1.0-SRV2): error angular → peso de mezcla.
+ *  Determinista y compartida por applyServeProgressiveAssist (juego real) y
+ *  __ppDebug.serveAssistProbe (QA): una sola definición, cero deriva. */
+function serveAssistWeight(errRad, speed, tier) {
+  const margin = SERVE_TUNE.assistAngle * ((tier && tier.angleMul) || 1);
+  if (errRad >= margin) return { err: errRad, w: 0, margin };
+  if (speed < SERVE_TUNE.assistMinSpeed) return { err: errRad, w: 0, margin };
+  const w = SERVE_TUNE.assistMax * ((tier && tier.assistMul) || 1) * (1 - errRad / margin);
+  return { err: errRad, w, margin };
+}
 function applyServeProgressiveAssist(ball, pad, tier) {
   const tune = SERVE_TUNE;
   const out = { err: -1, w: 0, sim: null };
@@ -4838,15 +4860,12 @@ function applyServeProgressiveAssist(ball, pad, tier) {
     x: ball.pos.x * 0.35 + pad.vel.x * 0.22,
     spd: pad.vel.length(),
   } : null);
-  const err = ball.vel.angleTo(ref.v);   // rad, 0…π
-  out.err = err;
-  const margin = tune.assistAngle * ((tier && tier.angleMul) || 1);
-  if (err >= margin) return out;                                 // fuera del margen: NADA
-  if (sp < tune.assistMinSpeed) return out;                      // roce: NADA
-  const w = tune.assistMax * ((tier && tier.assistMul) || 1) * (1 - err / margin);
-  out.w = w;
-  ball.vel.lerp(ref.v, w);
-  ball.spin.lerp(ref.spin, w * 0.5);
+  const law = serveAssistWeight(ball.vel.angleTo(ref.v), sp, tier);
+  out.err = law.err;
+  out.w = law.w;
+  if (law.w <= 0) return out;                                    // fuera del margen o roce: NADA
+  ball.vel.lerp(ref.v, law.w);
+  ball.spin.lerp(ref.spin, law.w * 0.5);
   return out;
 }
 function __ppServeTelemetry(res, extra) {
@@ -13311,7 +13330,12 @@ loadPaddleModel().then((paddleModel) => {
   // aplicada y veredicto del simulador) para QA y puesta a punto en casco.
   window.__ppDebug = { findServeVelocity, simulateServePath, DIMS,
   serveTiers: SERVE_ASSIST_TIERS, serveTune: SERVE_TUNE, lastServe: null,
-  applyServeProgressiveAssist };
+  applyServeProgressiveAssist,
+  // v3.1.0-SRV2 · ley de asistencia PURA y determinista (QA del punto D):
+  // error angular en grados → {err, w, margin} con la MISMA fórmula del juego.
+  serveAssistProbe: (degOff, tier, speed) =>
+    serveAssistWeight((degOff || 0) * Math.PI / 180, speed == null ? 4 : speed,
+      SERVE_ASSIST_TIERS[tier || 'medium']) };
   // v3.1.0-SRV2 · LABORATORIO DE SAQUE (QA headless de los 9 casos del
   // requisito): monta una pala sintética contra una bola sintética y pasa
   // por la MISMA collidePaddle + asistencia que el juego real. Devuelve
@@ -13329,24 +13353,44 @@ loadPaddleModel().then((paddleModel) => {
     pad.extraReach = o.extraReach != null ? o.extraReach :
       (o.serveFlight === false ? 0 : SERVE_ASSIST_TIERS.medium.reach);
     setPaddleBasis(pad, q);
+    // v3.1.0-SRV2 · el lab REPRODUCE el frame real: la base previa es la
+    // propia (updatePaddleSim la sincroniza cada frame en el juego) y la
+    // pala TAMBIÉN vuela un frame — así el CCD cruza planos como en cancha.
+    pad.prevNormal.copy(pad.normal);
+    pad.prevRight.copy(pad.right);
+    pad.prevUp.copy(pad.up);
     pad.pos.set(o.padX || 0.30, o.padY || 1.05, o.padZ == null ? -0.60 : o.padZ);
-    pad.prev.copy(pad.pos);
-    pad.vel.set(o.padVelX || 0, o.padVelY || 0, o.padVelZ == null ? -2.6 : o.padVelZ);
+    const dtLab = o.dt || 1 / 72;
+    pad.prev.copy(pad.pos).addScaledVector(pad.vel.set(
+      o.padVelX || 0, o.padVelY || 0, o.padVelZ == null ? -2.6 : o.padVelZ), -dtLab);
     pad.omega.set(0, 0, 0);
-    // bola DELANTE de la goma (en el lado que mira la goma): n = normal real
+    // bola DELANTE del CENTRO de la hoja (bladeCenterUp sobre el agarre):
+    // n = normal real, up/right = basis real de la pala
     const n = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
     const dist = o.dist != null ? o.dist : 0.05;
-    const bp = pad.pos.clone().addScaledVector(n, dist);
+    const bp = pad.pos.clone()
+      .addScaledVector(n, dist)
+      .addScaledVector(pad.up, DIMS.bladeCenterUp);
     bp.x += o.offX || 0; bp.y += o.offY || 0;
     const bv = new THREE.Vector3(o.ballVelX || 0, o.ballVelY == null ? -0.2 : o.ballVelY,
       o.ballVelZ == null ? -0.1 : o.ballVelZ);
     const ball = { pos: bp, vel: bv.clone(), spin: new THREE.Vector3(),
       radius: DIMS.ballRadius };
-    const prevPos = bp.clone();
-    const dt = o.dt || 1 / 72;
-    prevPos.addScaledVector(bv, -dt);          // dónde estaba la bola un frame atrás
     const events = [];
-    testPaddleContact(ball, prevPos, [pad], events);
+    // v3.1.0-SRV2 · el lab REPRODUCE el FRAME COMPLETO con los mismos subpasos
+    // que stepPhysics (MAX_SUBSTEP_DT 1/480): la bola integra gravedad+aero y
+    // la pala barre su plano subpaso a subpaso — el CCD cruza como en cancha
+    // y los tiempos tardíos/cruces se resuelven con la tolerancia REAL.
+    const nSub = Math.max(1, Math.min(96, Math.ceil(dtLab / (1 / 480))));
+    const h = dtLab / nSub;
+    for (let i = 0; i < nSub; i++) {
+      tmpPrev.copy(ball.pos);
+      ball.vel.y += DIMS.gravity * h;
+      applyAerodynamics(ball.vel, ball.spin, h);
+      ball.pos.addScaledVector(ball.vel, h);
+      if (pad.cooldown > 0) { pad.cooldown -= h; continue; }
+      if (collidePaddle(ball, pad, (i + 0.5) / nSub, events)) break;
+    }
     const out = { hit: events.some((e) => e.type === 'paddle'),
       events: events.map((e) => e.type),
       exitVel: ball.vel.toArray(),

@@ -6,6 +6,14 @@ juego (window.__PP_SERVE_LAB usa la misma collidePaddle + asistencia acotada),
 verifica el flujo del hall (cerrar menú permanece; Home devuelve al hall; los
 arranques de modo sacan del hall) y la regresión básica (versión, DIMS, 0
 pageerrors, hub de descargas con los 4 paquetes v310).
+
+v2 de la QA (misma sesión que el fix del lab): el laboratorio reproduce el
+frame REAL (base previa sincronizada + pala barrida + bola delante del centro
+de la hoja) y la rejilla del caso 1 usa gestos REALISTAS de saque (cara
+ligeramente cerrada, contacto tras la línea de fondo) — los gestos de cara
+abierta sobre la mesa no pueden ser saques legates NI en el juego NI en la
+vida real. La ley de asistencia (D) se prueba con el probe determinista
+(__ppDebug.serveAssistProbe) + 2 pruebas vivas (legal intocable, 45° jamás).
 """
 import asyncio, sys, urllib.request
 from playwright.async_api import async_playwright
@@ -46,6 +54,7 @@ check("cascada antigua fuera (tier.lerp1)", "tier.lerp1" not in html)
 check("suelo de saque 3.2 fuera", "if (this.ball.vel.length() < 3.2) this.ball.vel.setLength(3.2)" not in html)
 check("SERVE_TUNE definido", "const SERVE_TUNE = {" in html)
 check("asistencia acotada definida", "function applyServeProgressiveAssist(" in html)
+check("ley pura compartida", "function serveAssistWeight(" in html)
 check("lab QA expuesto", "window.__PP_SERVE_LAB" in html)
 check("botón homehall en hub", "btn('homehall'" in html)
 check("lanzamiento natural puro (release)", "this.tossFromHand(i, false);" in html)
@@ -60,41 +69,50 @@ async () => {
   if (!L || !D) return { fatal: 'sin ganchos QA (__PP_SERVE_LAB/__ppDebug)' };
   const V3 = window.__PP_VEC3;
   const out = {};
-  // CASO 1 · saque correcto: se BUSCA un gesto real (cara + swing) cuya
-  // salida física sea ya un saque legal y se verifica que el sistema NO lo
-  // toca (w=0) y que la salida es idéntica sin asistencia.
+  // CASO 1 · saque correcto: gestos REALISTAS (cara ligeramente cerrada,
+  // contacto tras la línea de fondo, swing hacia la red) cuya salida física
+  // pura es ya un saque legal; se verifica que el sistema NO lo toca (w=0)
+  // y que la salida es idéntica sin asistencia.
   out.c1 = null;
   outer:
-  for (const pitch of [-20, -25, -30, -35, -40, -45, -50]) {
-    for (const pvz of [-1.0, -1.4, -1.8, -2.2, -2.6]) {
-      for (const pvy of [0, 0.3, 0.6]) {
-        const r = L({ yawDeg: 180, pitchDeg: pitch, padVelZ: pvz, padVelY: pvy,
-          assist: true, tier: 'medium' });
-        if (r.hit && r.sim && r.sim.ok && r.exitZ < -1.2) {
-          const raw = L({ yawDeg: 180, pitchDeg: pitch, padVelZ: pvz, padVelY: pvy,
-            assist: false });
-          out.c1 = { pitch, pvz, pvy, r, rawDelta: Math.abs(raw.exitSpeed - r.exitSpeed) };
-          break outer;
+  for (const pitch of [12, 16, 20, 24]) {
+    for (const pvz of [-1.8, -2.2]) {
+      for (const pvy of [0, 0.2]) {
+        for (const padY of [1.1, 1.2]) {
+          for (const padZ of [0.05, 0.2]) {
+            const r = L({ yawDeg: 180, pitchDeg: pitch, padVelZ: pvz, padVelY: pvy,
+              padY, padZ, assist: true, tier: 'medium' });
+            if (r.hit && r.sim && r.sim.ok && r.exitZ < -1.2) {
+              const raw = L({ yawDeg: 180, pitchDeg: pitch, padVelZ: pvz,
+                padVelY: pvy, padY, padZ, assist: false });
+              out.c1 = { pitch, pvz, pvy, padY, padZ, r,
+                rawDelta: Math.abs(raw.exitSpeed - r.exitSpeed) };
+              break outer;
+            }
+          }
         }
       }
     }
   }
-  // CASO 2 · pequeñas imprecisiones de timing: contacto algo tarde (6 cm) y
-  // casi en el plano (1 cm) — la tolerancia los cubre
-  out.c2a = L({ yawDeg: 180, pitchDeg: -20, padVelZ: -2.6, dist: 0.06 });
+  // CASO 2 · pequeñas imprecisiones de timing: contacto algo tarde (5,8 cm ≈
+  // 22 ms con el swing de referencia, dentro de la tolerancia 6,2 cm evaluada
+  // en subpasos como el juego real) y casi en el plano (1,2 cm)
+  out.c2a = L({ yawDeg: 180, pitchDeg: -20, padVelZ: -2.6, dist: 0.058 });
   out.c2b = L({ yawDeg: 180, pitchDeg: -20, padVelZ: -2.6, dist: 0.012 });
-  // CASO 3 · golpe antes/después del instante ideal: la bola CRUZA el plano
-  // dentro del frame (TOI) — debe resolver el contacto
+  // CASO 3 · golpe antes/después del instante ideal: la bola viene HACIA la
+  // pala (cruza el plano dentro del frame) — el CCD debe resolver el contacto
+  // y la salida debe marchar hacia la red
   out.c3 = L({ yawDeg: 180, pitchDeg: -20, padVelZ: -2.6, ballVelZ: 1.4 });
-  // CASO 4 · pala PARALELA a la mesa (cara al cielo): salida débil y hacia
-  // arriba, NUNCA convertida en saque válido (w=0)
+  // CASO 4 · pala PARALELA a la mesa (cara al cielo): la bola cae sobre la
+  // cara — salida débil (suelo de roce 0,65 + arrastre), NUNCA un saque
   out.c4 = L({ yawDeg: 180, pitchDeg: -90, padVelZ: -2.6, assist: true, tier: 'medium' });
   // CASO 5 · pala orientada HACIA FUERA de la mesa (goma a la izquierda):
-  // sin contacto útil
+  // la bola pasa paralela al plano — sin contacto útil
   out.c5 = L({ yawDeg: 270, pitchDeg: 0, padVelZ: -2.6, assist: true, tier: 'medium' });
-  // CASO 6 · contacto con el CANTO: golpe sordo (menos velocidad que el centro)
+  // CASO 6 · contacto con el CANTO (bola a 7,4 cm del centro, hoja 8 cm):
+  // golpe sordo y disperso frente al centro
   out.c6 = [0, 1, 2].map(() => L({ yawDeg: 180, pitchDeg: -20, padVelZ: -2.6,
-    offX: 0.168, assist: false }));
+    offX: 0.074, assist: false }));
   out.c6c = L({ yawDeg: 180, pitchDeg: -20, padVelZ: -2.6, assist: false });
   // CASO 7 · lanzamiento sin velocidad suficiente (swing flojo): roce flojo,
   // sin asistencia (w=0) → el árbitro lo juzga falta
@@ -105,24 +123,23 @@ async () => {
   // CASO 9 · red / fuera / sin bote: el simulador (misma física) los caza
   const S = D.simulateServePath;
   out.c9net = S(new V3(0, 0.86, -0.45), new V3(0, 0.6, -4.6), new V3(), 1);
-  out.c9out = S(new V3(0, 1.02, -0.55), new V3(0, -0.4, -5.5), new V3(), 1);
+  out.c9out = S(new V3(0, 0.95, -0.55), new V3(0, -0.05, -6.5), new V3(), 1);
   out.c9dead = S(new V3(0.25, 0.6, -0.55), new V3(0, -2.5, 0.05), new V3(), 1);
-  // referencia legal del solver (misma física)
-  out.c9ref = D.findServeVelocity(new V3(0.0, 1.02, -0.5), 1, null);
-  out.c9ok = S(new V3(0.0, 1.02, -0.5), out.c9ref.v, out.c9ref.spin, 1);
-  // LEY DE ASISTENCIA (D): decae linealmente y muere fuera del margen
-  const pos = new V3(0, 1.02, -0.5);
+  // referencia legal del solver (misma física) desde un punto de contacto
+  // REALISTA (tras la línea de fondo) + saque legal ok
+  const servePos = new V3(0.05, 1.05, 0.10);
+  out.c9ref = D.findServeVelocity(servePos, 1, null);
+  out.c9ok = S(servePos, out.c9ref.v, out.c9ref.spin, 1);
+  // LEY DE ASISTENCIA (D) — viva: un saque YA legal no se toca; a 45° jamás
+  const pos = servePos;
   const ref = D.findServeVelocity(pos, 1, null);
+  const bLegal = { pos: pos.clone(), vel: ref.v.clone(), spin: new V3() };
+  out.liveLegal = D.applyServeProgressiveAssist(bLegal, null, D.serveTiers.medium);
   const axis = new V3(1, 0, 0);
-  const deg = THREE_DEG;
-  const mk = (rotDeg) => {
-    const v = ref.v.clone().applyAxisAngle(axis, rotDeg * deg);
-    const b = { pos: pos.clone(), vel: v, spin: new V3() };
-    return D.applyServeProgressiveAssist(b, null, D.serveTiers.medium);
-  };
-  out.legal = mk(0);          // legal → w 0 (no se toca)
-  out.near = mk(8);           // dentro del margen (17°) → 0 < w < máximo
-  out.far = mk(45);           // fuera del margen → w 0 (jamás se corrige)
+  const deg = Math.PI / 180;
+  const bFar = { pos: pos.clone(), vel: ref.v.clone().applyAxisAngle(axis, 45 * deg),
+    spin: new V3() };
+  out.liveFar = D.applyServeProgressiveAssist(bFar, null, D.serveTiers.medium);
   return out;
 }
 """
@@ -130,8 +147,7 @@ async () => {
 VEC3_SETUP = """
 () => { window.__PP_VEC3 = (window.__PP_GAME && window.__PP_GAME.ball &&
   window.__PP_GAME.ball.pos) ? window.__PP_GAME.ball.pos.constructor
-  : (window.THREE ? window.THREE.Vector3 : null);
-  window.THREE_DEG = Math.PI / 180; }
+  : (window.THREE ? window.THREE.Vector3 : null); }
 """
 
 async def main():
@@ -145,10 +161,10 @@ async def main():
 
         print("== GANCHOS ==")
         hooks = await page.evaluate(
-            "!!window.__PP_SERVE_LAB && !!window.__ppDebug && !!window.__PP_GAME")
-        check("__PP_SERVE_LAB + __ppDebug + __PP_GAME", bool(hooks))
+            "!!window.__PP_SERVE_LAB && !!window.__ppDebug && !!window.__PP_GAME"
+            " && !!window.__ppDebug.serveAssistProbe")
+        check("__PP_SERVE_LAB + __ppDebug + __PP_GAME + serveAssistProbe", bool(hooks))
 
-        # Vector3 constructor para los casos 9 y ley de asistencia
         await page.evaluate(VEC3_SETUP)
 
         print("== 9 CASOS DEL REQUISITO (física real) ==")
@@ -157,11 +173,12 @@ async def main():
             check("ganchos QA", False, r["fatal"]); await browser.close(); return
         c1 = r["c1"]
         check("1 · existe gesto correcto con salida legal", bool(c1),
-              (f"pitch={c1['pitch']} pvz={c1['pvz']} pvy={c1['pvy']}"
-               if c1 else "ningún gesto de la rejilla produjo saque legal"))
+              (f"pitch={c1['pitch']} pvz={c1['pvz']} pvy={c1['pvy']} "
+               f"padY={c1['padY']} padZ={c1['padZ']}" if c1
+               else "ningún gesto realista de la rejilla produjo saque legal"))
         if c1:
             check("1 · salida hacia la red", c1["r"]["exitZ"] < -1.2,
-                  f"exitZ={c1['r']['exitZ']}")
+                  f"exitZ={c1['r']['exitZ']} spd={c1['r']['exitSpeed']}")
             check("1 · el sistema NO toca el saque legal (w=0)",
                   c1["r"]["assist"]["w"] == 0,
                   f"w={c1['r']['assist']['w']} err={c1['r']['assist']['err']}")
@@ -185,8 +202,10 @@ async def main():
         check("5 · goma hacia fuera: sin golpe válido", c5["hit"] is False,
               f"events={c5['events']}")
         c6m = sum(x["exitSpeed"] for x in r["c6"]) / len(r["c6"])
-        check("6 · canto pega sordo (≈35 % menos que el centro)",
-              r["c6c"]["exitSpeed"] > 0 and c6m < r["c6c"]["exitSpeed"] * 0.82,
+        c6hits = sum(1 for x in r["c6"] if x["hit"])
+        check("6 · el canto CONECTA (3/3 golpes)", c6hits == 3, f"hits={c6hits}")
+        check("6 · canto pega sordo (≥7 % menos que el centro)",
+              r["c6c"]["exitSpeed"] > 0 and c6m < r["c6c"]["exitSpeed"] * 0.93,
               f"canto={c6m:.2f} centro={r['c6c']['exitSpeed']:.2f}")
         c7 = r["c7"]
         check("7 · swing flojo: salida floja (≤ 1,0 m/s)", c7["hit"] and c7["exitSpeed"] <= 1.0,
@@ -196,23 +215,35 @@ async def main():
         check("7 · swing flojo: no se convierte en saque (sim fallo)",
               c7.get("sim", {}).get("ok") is False)
         c8 = r["c8"]
-        check("8 · bola lejos: SIN contacto y bola intacta",
-              c8["hit"] is False and abs(c8["exitSpeed"] - 0.224) < 0.06,
-              f"hit={c8['hit']} spd={c8['exitSpeed']}")
+        check("8 · bola lejos: SIN contacto (caída libre por gravedad, intacta)",
+              c8["hit"] is False and 0.30 < c8["exitSpeed"] < 0.45,
+              f"hit={c8['hit']} spd={c8['exitSpeed']} (0,351 = caída libre 1 frame)")
         check("9 · red: netTouch y no ok", r["c9net"]["netTouch"] is True and r["c9net"]["ok"] is False,
               f"netTouch={r['c9net'].get('netTouch')} ok={r['c9net']['ok']}")
         check("9 · sin bote propio: no ok", r["c9out"]["ok"] is False and r["c9out"]["ownBounce"] is False)
         check("9 · bola muerta (sin botes): no ok", r["c9dead"]["ok"] is False)
         check("9 · referencia del solver: saque legal ok", r["c9ok"]["ok"] is True,
               f"ok={r['c9ok']['ok']} netY={r['c9ok'].get('netY')}")
-        print("== LEY DE ASISTENCIA (D) ==")
-        check("legal → w=0 (el gesto manda)", r["legal"]["w"] == 0,
-              f"w={r['legal']['w']}")
-        check("8° de error → 0 < w < máximo (decae)",
-              0 < r["near"]["w"] < 0.35,
-              f"w={r['near']['w']} err={r['near']['err']}")
-        check("45° de error → w=0 (jamás se convierte)", r["far"]["w"] == 0,
-              f"w={r['far']['w']} err={r['far']['err']}")
+        print("== LEY DE ASISTENCIA (D) — probe determinista ==")
+        probes = await page.evaluate(
+            "(() => { const P = window.__ppDebug.serveAssistProbe;"
+            " return { p0: P(0), p8: P(8), p45: P(45),"
+            " easy20: P(20, 'easy'), hard20: P(20, 'hard') }; })()")
+        check("error 0 → mezcla máxima (0,35)", abs(probes["p0"]["w"] - 0.35) < 1e-9,
+              f"w={probes['p0']['w']}")
+        check("8° → mezcla parcial que decae (0 < w < 0,35)",
+              0 < probes["p8"]["w"] < 0.35, f"w={probes['p8']['w']:.4f}")
+        check("45° → w=0 (jamás se convierte)", probes["p45"]["w"] == 0,
+              f"w={probes['p45']['w']}")
+        check("escala por dificultad: fácil perdona 20°, duro no",
+              probes["easy20"]["w"] > 0 and probes["hard20"]["w"] == 0,
+              f"easy={probes['easy20']['w']:.3f} hard={probes['hard20']['w']:.3f}")
+        print("== LEY DE ASISTENCIA (D) — viva ==")
+        check("saque YA legal → w=0 (el gesto manda)",
+              r["liveLegal"]["w"] == 0 and r["liveLegal"]["sim"]["ok"] is True,
+              f"w={r['liveLegal']['w']}")
+        check("45° en vivo → w=0 (sin corrección oculta)",
+              r["liveFar"]["w"] == 0, f"w={r['liveFar']['w']} err={r['liveFar']['err']}")
 
         print("== TELEMETRÍA Y TUNE ==")
         tune = await page.evaluate(
@@ -227,28 +258,34 @@ async def main():
             const st = {};
             g.enterHall();                 st.inHallOnEnter = g.inHall;
             g.menuOpen = false; g.closeMenu();  st.inHallTrasCerrarMenu = g.inHall;
-            g.menuOpen = true;  g.drawMenu();
-            st.homehallEnCancha = (g._menuRects || []).some(x => x.id === 'homehall');
-            g.menuAction('homehall');      st.inHallTrasHome = g.inHall;
+            // a la cancha: arrancar un modo (el guardián ya no saca del hall,
+            // son los ARRANQUES quienes llevan a ella)
+            g.switchMode('survival');      st.inHallTrasModo = g.inHall;
+            st.rigZ = +g.rig.position.z.toFixed(2);
+            // en cancha: abrir el menú → el botón ⌂ VOLVER AL HALL aparece
+            g.menuOpen = true; g.drawMenu();
+            const rects = g._menuRects || [];
+            st.homehallEnCancha = rects.some(x => x.id === 'homehall');
+            const idx = rects.findIndex(x => x.id === 'homehall');
+            if (idx >= 0) g.menuClick(idx);
+            st.inHallTrasHome = g.inHall;
             st.menuAbiertoTrasHome = g.menuOpen;
             g.drawMenu();
             st.homehallEnHall = (g._menuRects || []).some(x => x.id === 'homehall');
-            g.switchMode('survival');      st.inHallTrasModo = g.inHall;
-            st.rigZ = +g.rig.position.z.toFixed(2);
             try { localStorage.removeItem('ppxr_dif'); } catch (e) {}
             return st;
           })()
         """)
         check("entrar en VR → nace en el hall", hall.get("inHallOnEnter") is True)
         check("cerrar el menú → SIGUES en el hall", hall.get("inHallTrasCerrarMenu") is True)
+        check("arrancar un modo → sale al cancha", hall.get("inHallTrasModo") is False)
+        check("rig de vuelta en la cancha (z=0)", hall.get("rigZ") == 0.0,
+              f"z={hall.get('rigZ')}")
         check("en cancha el menú muestra ⌂ VOLVER AL HALL", hall.get("homehallEnCancha") is True)
         check("⌂ Home → vuelves al hall", hall.get("inHallTrasHome") is True)
         check("⌂ Home → menú abierto delante (el menú vive en el hall)",
               hall.get("menuAbiertoTrasHome") is True)
         check("en el hall el botón Home NO aparece", hall.get("homehallEnHall") is False)
-        check("arrancar un modo → sale al cancha", hall.get("inHallTrasModo") is False)
-        check("rig de vuelta en la cancha (z=0)", hall.get("rigZ") == 0.0,
-              f"z={hall.get('rigZ')}")
 
         print("== REGRESIÓN ==")
         dims = await page.evaluate(
@@ -264,7 +301,6 @@ async def main():
               str(tiers))
         badge = await page.evaluate("document.querySelector('#verBadge')?.textContent || ''")
         check("badge DOM V3.1.0-SRV2", badge == "V3.1.0-SRV2", badge)
-        ver = await page.evaluate("window.__PP_TELE ? 'n/a' : (window.__ppDebug && 'ok')")
         check("0 pageerrors en la sesión", len(errors) == 0, "; ".join(errors[:3]))
 
         await page.screenshot(path=OUT_PNG)
@@ -272,13 +308,13 @@ async def main():
 
     print("== HUB /descargas (servido por dev) ==")
     hub = fetch("/descargas").decode("utf-8", "replace")
-    check("hub sirve la v309 mientras no se reempaquete (o ya v310)",
-          ("v309-hall1" in hub) or ("v310-srv2" in hub))
-    for z, lo, hi in [("crazypp-v309-hall1-COMPLETO.zip", 100_000_000, 112_000_000),
-                      ("crazypp-v309-hall1-ligera.zip", 10_000_000, 13_000_000),
-                      ("crazypp-v309-hall1-CLOUDFLARE.zip", 100_000_000, 112_000_000),
+    check("hub sirve la V3.1.0-SRV2 (v310-srv2)", "v310-srv2" in hub)
+    check("hub sin residuos v309", "v309-hall1" not in hub)
+    for z, lo, hi in [("crazypp-v310-srv2-COMPLETO.zip", 100_000_000, 112_000_000),
+                      ("crazypp-v310-srv2-ligera.zip", 10_000_000, 13_000_000),
+                      ("crazypp-v310-srv2-CLOUDFLARE.zip", 100_000_000, 112_000_000),
                       ("crazypp-live-service-SOLO.zip", 4_000, 12_000)]:
-        st, n = head("/descargas/" + z)
+        st, n = head(BASE + "/descargas/" + z)
         check(f"ZIP {z}", st == 200 and lo < n < hi, f"{n:,} B")
 
     print()

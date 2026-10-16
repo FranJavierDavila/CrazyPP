@@ -1679,3 +1679,25 @@ Work Log:
 Stage Summary:
 - Centro de descargas CONFIRMADO sirviendo la V3.0.9-HALL1 en 4 paquetes, QA verde hoy mismo, gateway y juego en vivo: el dueño puede descargar y probar en el Quest 3 sin más pasos.
 - Pendiente del dueño: URL de remote git (GitHub u otro) para activar el push anti-rollback; prueba en casco del hall y de las 3 dificultades del saque.
+
+---
+Task ID: 70
+Agent: Super Z (main)
+Task: "continua" — completar y desplegar la V3.1.0-SRV2 (saque VR realista con asistencia limitada + hall como hub): la implementación hallada en el árbol (commit 3ebc657, de otro hilo) no pasaba su propia QA; se diagnosticó, se arregló, se empaquetó y se desplegó.
+
+Work Log:
+- ESTADO DE PARTIDA: public/game.html ya traía VERSION 3.1.0-SRV2 (commit 3ebc657 con qa_srv2_v310.py) pero la QA propia daba 5 fallos + 1 crash. El hub /descargas seguía en v309 y los ZIP habían DESAPARECIDO (otro rollback del sandbox se comió download/ y public/descargas/ — ambos gitignored; el código fuente quedó intacto).
+- DIAGNÓSTICO de los fallos: (1) el LABORATORIO __PP_SERVE_LAB no sincronizaba la base previa de la pala (prevNormal/prevRight/prevUp) ni barría la pala ni evaluaba en subpasos — casos 3/4/5/6 evaluaban contactos con normales fantasma; (2) caso 5 REAL: ruido de coma flotante en el enfoque (vRelN −4,5e-16) + el suelo de salida 0,65 convertían un roce paralelo en emujón fantasma; (3) simulateServePath devolvía {ok:false} pelado sin telemetría (crash KeyError netTouch); (4) la rejilla del caso 1 usaba gestos irreales (cara abierta sobre la mesa: física correcta, QA imposible); (5) BUG REAL del solver: el fallback de findServeVelocity apuntaba al lado CONTRARIO (C − ownSign·d) → referencias ilegales cuando las fases fallaban.
+- FIXES EN EL JUEGO (public/game.html): simulateServePath devuelve telemetría completa (ownBounce/oppBounce/netTouch/netY/t) en TODOS los returns; ley de asistencia extraída a serveAssistWeight (función PURA compartida juego/QA) + probe determinista __ppDebug.serveAssistProbe; enfoque mínimo REAL en collidePaddle (SERVE_TUNE.minApproach = 0,05 m/s, configurable — requisito F) que mata los contactos por ruido; fallback del solver a lado PROPIO (C + ownSign·d).
+- FIXES DEL LAB: reproduce el FRAME COMPLETO como stepPhysics (subpasos 1/480, gravedad+aero, pala barrida, base previa sincronizada) y coloca la bola delante del CENTRO de la hoja (bladeCenterUp) — los contactos ahora son los geométricamente reales.
+- QA REESCRITA (qa_srv2_v310.py v2): los 9 casos del requisito contra física real con gestos REALISTAS (búsqueda previa scripts/qa_srv2_grid_search.py: cara cerrada +12°…+24°, contacto tras la línea de fondo → salidas 3,2-3,4 m/s con bote propio+red+bote rival LEGALES — la física pura SÍ sirve saques legales). Ley de asistencia con probe determinista (0°→w 0,35 · 8°→0,187 decae · 45°→0 · easy/hard escalan) + pruebas vivas (legal intocable w=0; 45° jamás corregido). Flujo del hall completo con menuClick (⌂ homehall: aparece EN cancha, desaparece en el hall, vuelve al hall con menú abierto). RESULTADO OK completo.
+- HUB /descargas → V3.1.0-SRV2 (page.tsx: 12 menciones 3.1.0, tarjetas con la filosofía del saque y el hall-hub, 0 residuos v309) ANTES de empaquetar (lección Task 66).
+- release-v310/ creado (build_zip.py con verificación DURA de identidad VERSION+badge+hub, intro oficial 5.779.719 B sha 3f58e634, chequeo anti-TS, verificación de extras empaquetados ≥4 menciones 3.1.0; LEEME-DESPLIEGUE.txt con la filosofía A-F y afinación en consola; CHULETA-DIRECTO.txt v310). Relay copiado intacto de v309.
+- 4 ZIP generados y verificados (unzip -t limpio): COMPLETO 106.559.804 B · ligera 11.449.087 B · CLOUDFLARE 106.548.099 B (anti-TS limpio) · SOLO 6.089 B. Copiados a download/ y public/descargas/. VERSION.txt con SHA256.
+- QA FINAL TODO VERDE: qa_srv2_v310.py RESULTADO OK (9 casos + ley + hall + regresión + 4 ZIP v310 con tamaño exacto) y qa_descargas_v310.py RESULTADO OK (4 enlaces v310, 12 menciones, 0 residuos, 4 ZIP 200 exactos, 0 pageerrors, capturas download/qa_srv2_portada.png + qa_srv2_descargas_hub.png).
+- Gateway :81 en vivo: /descargas 200, /game.html 200 sirviendo V3.1.0-SRV2 (badge+VERSION), /assets/intro.mp4 200. Relay TV :3004 {"ok":true}. Dev :3000 200.
+
+Stage Summary:
+- V3.1.0-SRV2 COMPLETA Y DESPLEGADA: saque VR realista con asistencia limitada (el gesto manda; sin correcciones ocultas; asistencia acotada que jamás convierte un mal gesto en saque válido) + hall como hub de navegación + los 3 fixes de QA (telemetría completa, fallback legal, enfoque mínimo real). Centro de descargas sirviendo los 4 paquetes v310-srv2. FIS1/TRN1/PLAY1/HALL1/intro/TV intactos (DIMS fis=1 perks=1 gam=1).
+- Lección reforzada: 3er rollback del sandbox que se come entregables gitignored (ZIPs) — el push anti-rollback SIGUE pendiente de que el dueño facilite un remote git.
+- Pendiente del dueño: prueba en casco del saque realista (sentir el gesto manda: soltar grip = lanzamiento real, gatillo = ayuda) y del flujo hall↔partida con «⌂ VOLVER AL HALL».

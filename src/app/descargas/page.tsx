@@ -4,23 +4,23 @@ export default function Descargas() {
   const files = [
     {
       emoji: "☁️",
-      nombre: "Juego + CRAZY TV — V3.0.9-HALL1 (paquete Cloudflare)",
+      nombre: "Juego + CRAZY TV — V3.1.0-SRV2 (paquete Cloudflare)",
       detalle:
-        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con HALL DEL ANFITRIÓN, saque por dificultad, física viva y palas con carácter + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
+        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con SAQUE VR REALISTA (el gesto manda), HALL como hub de navegación, física viva y palas con carácter + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
       tamano: "106,5 MB · ZIP · Cloudflare Pages",
-      href: "/descargas/crazypp-v309-hall1-CLOUDFLARE.zip",
+      href: "/descargas/crazypp-v310-srv2-CLOUDFLARE.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",
       borde: "border-sky-500/40",
       boton: "bg-sky-500 hover:bg-sky-400",
     },
     {
-      emoji: "🏛️",
-      nombre: "Juego + CRAZY TV — V3.0.9-HALL1 (paquete completo)",
+      emoji: "🎯",
+      nombre: "Juego + CRAZY TV — V3.1.0-SRV2 (paquete completo)",
       detalle:
-        "La V3.0.9-HALL1 íntegra: HALL DEL ANFITRIÓN (la sesión VR nace en una estancia cálida que se decora sola con tus insignias, logros, estrellas del PRO CIRCUITO y pieles), ASISTENCIA DEL SAQUE POR DIFICULTAD (fácil perdona · medio es la referencia · difícil es tu saque), el intro oficial, FÍSICA VIVA y PALAS CON CARÁCTER. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+        "La V3.1.0-SRV2 íntegra: SAQUE VR REALISTA CON ASISTENCIA LIMITADA (soltar el grip lanza con la velocidad EXACTA de la mano · CCD fina de impacto · el impulso sale SIEMPRE del modelo real · asistencia progresiva acotada que jamás convierte un mal gesto en saque válido · el árbitro juzga el vuelo real · todo configurable en SERVE_TUNE) + EL HALL ES EL HUB (cerrar el menú te queda en el hall y en partida el menú añade «⌂ VOLVER AL HALL»). Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
       tamano: "106,5 MB · ZIP · completo",
-      href: "/descargas/crazypp-v309-hall1-COMPLETO.zip",
+      href: "/descargas/crazypp-v310-srv2-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -28,11 +28,11 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.0.9-HALL1 — versión ligera (sin campeonatos)",
+      nombre: "V3.1.0-SRV2 — versión ligera (sin campeonatos)",
       detalle:
-        "El mismo paquete para subir rápido a Netlify Drop: juego con hall del anfitrión, saque por dificultad, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo. Tampoco vale para Cloudflare directo (lleva TypeScript).",
+        "El mismo paquete para subir rápido a Netlify Drop: juego con saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo. Tampoco vale para Cloudflare directo (lleva TypeScript).",
       tamano: "11,4 MB · ZIP · Netlify",
-      href: "/descargas/crazypp-v309-hall1-ligera.zip",
+      href: "/descargas/crazypp-v310-srv2-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -68,15 +68,16 @@ export default function Descargas() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
             El paquete actual es la{" "}
-            <strong className="text-amber-300">V3.0.9-HALL1</strong>: al entrar
-            en VR ya no apareces en la cancha sino en el{" "}
-            <strong className="text-slate-200">HALL DEL ANFITRIÓN</strong> (una
-            estancia que se decora con tus logros), el saque ahora asiste según
-            la dificultad (fácil &gt; medio &gt; alto) y siguen el intro oficial,
-            CRAZY TV en directo, la{" "}
-            <strong className="text-slate-200">FÍSICA VIVA</strong> y las{" "}
-            <strong className="text-slate-200">PALAS CON CARÁCTER</strong>. Pulsa
-            un botón y listo.
+            <strong className="text-amber-300">V3.1.0-SRV2</strong>: el saque es
+            ahora <strong className="text-slate-200">VR REALISTA</strong> (el
+            gesto manda: sujeción, lanzamiento, impacto CCD y respuesta física
+            real, con asistencia limitada que jamás disfraza un mal saque) y el
+            hall es el <strong className="text-slate-200">HUB del juego</strong>
+            (cerrar el menú te queda en el hall; en partida, «⌂ VOLVER AL
+            HALL»). Siguen el hall del anfitrión, el intro oficial, CRAZY TV en
+            directo, la <strong className="text-slate-200">FÍSICA VIVA</strong> y
+            las <strong className="text-slate-200">PALAS CON CARÁCTER</strong>.
+            Pulsa un botón y listo.
           </p>
         </header>
 
@@ -162,8 +163,8 @@ export default function Descargas() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.0.9-HALL1 · WebXR · Hall del anfitrión · Saque por
-          dificultad · Física viva · CRAZY TV · Meta Quest 3
+          Crazy Ping Pong V3.1.0-SRV2 · WebXR · Saque VR realista · Hall como
+          hub · Física viva · CRAZY TV · Meta Quest 3
         </footer>
       </div>
     </main>

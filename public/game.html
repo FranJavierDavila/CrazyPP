@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.0.6-SRV1</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.0.8-TRN1</span>
     </div>
   </main>
 
@@ -1756,7 +1756,7 @@ function setLang(l, game) {
  *        la prueba al momento; la misma pulsación no filtra al juego).
  * ===================================================================== */
 const __PP_TELE = (() => {
-  const VERSION = '3.0.6-SRV1';   // v3.0.6-SRV1 · INTRO OFICIAL — el visor 🎬 INTRO de la portada reproduce ya el MONTAJE OFICIAL definitivo del proyecto (1080p30 + AAC, 10 s) sustituyendo el vídeo provisional · remux FASTSTART (moov delante de mdat): la reproducción arranca al instante sin esperar a descargar los 5,8 MB completos — importante en el casco, donde la portada 2D se ve al quitarse el visor · el reproductor y su flujo (botón 🎬 INTRO → overlay → cierre) no cambian: misma fuente assets/intro.mp4 · empaquetado release-v306 (COMPLETO · ligera · CLOUDFLARE · SOLO-RELAY) con el intro oficial dentro · antes v3.0.5-FIS1 · PALAS CON CARÁCTER — las skins del PRO TRAINING ya son JUEGO: cada goma modula la pala del jugador (la IA siempre juega neutra) · FUEGO = OFENSIVA (+12 % potencia, +8 % efecto, el canto castiga más) · HIELO = DEFENSIVA (+30 % control: el canto perdona y el bote sale más seguro) · ORO = POTENCIA (golpes más fuertes, algo menos de efecto) · ARCOÍRIS = EFECTO (+22 % de brush y agarre: imprime muchísimo giro) · PRO CARBON = DOBLE GOMA por CARAS como las palas reales roja/negra (cara A goma de GIRO · cara B goma DURA de potencia) con las dos caras TEÑIDAS en el visor para reconocerlas · Clásica = neutra de referencia · interruptor DIMS.paddlePerks (0 = todas las palas neutras) · FÍSICA VIVA — P1 GOLPE: goma con FRICCIÓN TANGENCIAL real (impulso de contacto con I de cascarón: rozar ARRASTRA la bola, no sólo le da efecto) + REVERSIÓN PARCIAL del spin entrante al bloquear (el bloque de un topspin ya no «limpia» el efecto) + PUNTO DULCE de la hoja (el canto pega sordo: −35 %·offC² de restitución, bamboleo disperso en el borde y menos efecto; el anillo de asistencia del saque con penalización suave fija) · P2 BOTE FÍSICO: impulso tangencial con DESLIZAMIENTO y tope de Coulomb COMPARTIDO por la física real y todos los predictores (IA + solver de saque): el TOPSPIN patea al botar y gana giro, el BACKSPIN frena en seco y la mesa se le come el efecto, el lateral desvía, y todo ESCALA con la velocidad de impacto (grip 0,22→0,60) · interruptor DIMS.physicsRealism (0 = física legacy exacta de v2.x) · antes v3.0.4-EXP.TV1 (rama exp/live-tv absorbida en main) · v3.0.4-EXP · RAMA EXPERIMENTAL «LIVE-TV» — espectador nativo: la partida del anfitrión sale como CANAL DE TV (mini-servicio relay :3004 vía gateway) y cualquier navegador sin visor la ve en directo (/tv.html): estado 30 Hz + eventos hit/bounce/net/point/game-over, sello «● EN VIVO» en el pabellón y en 2D, guía de canales con espectadores en tiempo real, sin coste térmico en la Quest (un emit cada 33 ms, cero render extra) · CINE EN CASA: CRAZY TV v1.0 (tv.html) con interpolación 120 ms, 6 cámaras (TV/J1/J2/cenital/cine/libre), estela de bola, repeticiones automáticas en cámara lenta de cada punto + manual (R), pausa (Espacio), HUD con km/h del último golpe y sonido sintetizado en cliente (0 bytes de audio por la red) · el módulo live es EXTERNO al núcleo (window.__PP_LIVE, 3 taps de una línea: animate/processIntents/fin) — la sala solo lee, jamás escribe · antes v3.0.3 · SALIDA DEL ENTRENAMIENTO AL HUB (Y y «PARAR» vuelven al hub, no al menú principal) · SKINS DE PALA DE VERDAD — texturas reales (goma con pips, carbono, oro, holográfica) sobre los materiales REALES del GLB + piel «Pro Carbon» que SUSTITUYE EL MODELO 3D por un GLB externo (assets/pala/pala_pro.glb; la pala base también carga desde assets/pala/pala.glb con el incrustado de reserva) · ESTANQUEIDAD TOTAL del entrenamiento (salir con Y, cambiar de modo, entrar en VR o lanzar un campeonato RECOCGE su escena — nunca más paneles flotando) · «Valle Neón» del Taller PUBLICADO en el menú como ejemplo vivo · antes v3.0.2 · FIXES del entrenamiento probados por el dueño: metrónomo (el rally NUNCA contaba — juez sin rama t5a — y el beat ROBABA la bola en vuelo: ahora sólo sustituye cuando la anterior repose, y el fallo sin devolución cierra el rally), PASE BAJO (el feed ×1.08 aplanaba el saque resuelto y se estrellaba en la red — feeds con el saque legal estándar), t4a (el juez no verificaba la zona pintada), t4b (fallo «larga»→«corta») y zonas MÁS VISIBLES (trazos gruesos/opacos, objetivo dorado 0.85, centro prohibido con borde) · antes v3.0.1 · FIX del casco: grupo de entrenamiento DENTRO del rig (el recentrado lo giraba — marcas desfasadas de la bola), iconos de efecto PEGADOS a las caras reales de la hoja y cinta de agarre sobre el MANGO real (geometría del GLB medida) · antes v3.0 · PRO TRAINING — hub de entrenamiento profesional (window.__PP_TRAIN), feedback técnico, puntos y skins · antes v2.141 · OESTE «LOS CAJONES DEL ORO» + PARADAS CON NOMBRE — ajustes del dueño sobre la v2.140 (etapa 4 «ASALTO AL TREN»): (1) LINGOTES SOBRE DOS GRANDES CAJONES — «los lingotes van a caer a ambos lados de la mesa pero cerca del centro de las ventanas, en el suelo, sobre dos grandes cajones de madera (podemos usar alguno de los que ya colocamos para destruir, los que no tienen el dibujo del candado)»: DOS cajones limpios del artista (cubo1/cubo2, sin candado) ACHATADOS (el doble de anchos: huella 0,72 m · la mitad de altos: 0,18 m) sobre el suelo del vagón, uno a cada lado de la mesa y CERCA DEL CENTRO DE LAS VENTANAS laterales (centros medidos sobre el arte 2395×864: izquierda u=0,472 → z -1,38 · derecha u=0,501 → z -1,59; x ±1,35 entre mesa y pared). En su cara superior se apilan los lingotes: rejilla 3×3 POR CAJÓN con hueco uniforme (sep 0,19 × 0,095 para un lingote 0,17×0,08), capas EXACTAS (altura real del GLB + 1,5 mm — unos perfectamente encima de otros) y una PEQUEÑA VARIACIÓN de colocación (±7 mm · ±3 mm · ±1,7° de yaw, holguras que NUNCA llegan a tocar al vecino) «para que no parezca tan perfecta»; cada lingote alterna IZQ/DER y ocupa el PRIMER hueco libre de SU cajón — si el forajido roba uno, SU hueco VUELVE a la lista (nada se solapa ni se mete unos dentro de otros). (2) PARADAS CON NOMBRE Y ARTE PROPIO — «primera parada nombre Bravos, imagen parada1.png, segunda parada nombre GOLD DUST, imagen parada2.png, tercera parada nombre Silver Creek, imagen parada3.png. Estos son los nombres que deberá decir la voz en las llegadas y las salidas»: stationNames = BRAVOS (depósito de salida) · BRAVOS · GOLD DUST · SILVER CREEK, y PARADA1.png se actualiza con el arte nuevo del dueño (1024×512, estación BRAVOS). MEGAFONÍA: 4 ÁTOMOS NUEVOS por idioma (mega_salida/llega_gd·sc — misma receta Piper es_ES-davefx / en_US-lessac → OGG Opus 28k, ES literal elegido por ASR, consistente con «Dry Gulch» de v2.140) con sus 8 entradas VOICE_FULL — la normalización de los textos del módulo sigue coincidiendo EXACTA. SUELO del vagón: room/vagon/suelo.jpg se actualiza con la TARIMA nueva del dueño (1296×1678, mismo mapeo 1:1). NORMAS de la etapa y avisos al día (el lingote se apila SOBRE LOS GRANDES CAJONES junto a las ventanas). Módulo OESTE v48 (manifest 48). Núcleo: solo banco de voz + planes + marcador · antes v2.140 · v2.140 · OESTE «EL VAGÓN A PUNTO» — 4 observaciones del dueño en el casco (etapa 4 «ASALTO AL TREN»): (1) BOTES FANTASMA junto a la red («si la pelota bota en el campo enemigo cerca de la red viene devuelta al jugador como si rebotase contra algo invisible»): el bote arkanoi de v2.113 tenía su frontera zonaZ en -2,2 y dejaba 60 cm de MESA RIVAL dentro de la zona del jugador — cualquier bote lento ahí era SECUESTRADO (ápice 1,45 m + vel.z +0,95 hacia el jugador). FIX: zonaZ = red (-1,6): el bote gestionado sólo vive en el campo del JUGADOR; en campo enemigo la bola SIGUE SU TRAYECTORIA física (si muere botando, la recoge el vórtice de siempre — quieta 0,9 s → respawn). (2) LINGOTES APILADOS EN EL SUELO («mejor que se apilen a ambos lados del suelo visibles por la cámara… deben estar unos perfectamente encima de otros»): fuera de la mesa rival — DOS pilas SIMÉTRICAS en el suelo del vagón junto a la red (x ±1,10…±1,38 · z -1,00…-0,82), el lingote alterna IZQUIERDA/DERECHA y llena capas de 6 (2 columnas × 3 filas); al completar un plano se apila ENCIMA con la altura REAL del lingote (medida del prototipo GLB al cargar + 1,5 mm de holgura — nada de offsets fijos: la 2.ª capa de v2.111 flotaba a +0,095 y DESALINEADA en z) y yaw 0 al aterrizar (antes giraba ±40°): pilas limpias y legibles. (3) SUELO DEL VAGÓN con la TARIMA del dueño (room/vagon/suelo.jpg 1296×1678, mapeo 1:1 al plano 6,10×7,90 — tablas transversales a la marcha): fuera la arena procedural de v2.111. (4) MEGAFONÍA DE ESTACIÓN — voz pregrabada del banco (misma receta Piper es_ES-davefx/en_US-lessac → OGG Opus 28k) por la vía announce → voicePlan → speakPlan (WebAudio VR-SAFE, con el CHIME del megáfono y ducking del ambiente): SALIDAS «Pasajeros al tren, partimos hacia…» [destino]; a los 30 s del final del trayecto «En menos de 25 segundos llegaremos a…» [estación] (UNA vez por trayecto); ARRIBO CON ORO «¡Cargamento de oro a buen recaudo!» + PANEL recompensa.png (pop elástico, patrón insignia, se ve toda la parada); ARRIBO SIN ORO panel forajido_robo.png + LAS RISAS DEL FORAJIDO (risas_forajido.mp3 del dueño, precargadas al entrar al vagón y con reintento en el step). FRASES i18n es/en (tren_mega_salida/llega/oro) con los NOMBRES de las estaciones interpolados (BRAVOS·DRY GULCH·PERDIDO) y 7 ÁTOMOS NUEVOS por idioma (mega_salida/llega_dg·pd·br + mega_oro) con sus 14 entradas VOICE_FULL — la normalización de los textos del módulo coincide EXACTA (verificada con la réplica de _normVoice en el QA). NORMAS de la etapa actualizadas: los lingotes se apilan en el SUELO del vagón. Módulo OESTE v47 (manifest v47). Núcleo: solo banco de voz + planes + marcador · antes v2.139 · BIENVENIDA HABLADA — el dueño: «que al iniciar el juego en VR nos abriese con el siguiente mensaje de voz para la bienvenida (en castellano o inglés según el idioma)» → al ENTRAR EN VR el megáfono dice «Bienvenido a Crazy Ping Pong, escoge una modalidad de juego» (EN: «Welcome to Crazy Ping Pong, choose a game mode») justo cuando el MENÚ PRINCIPAL abre y recibe al jugador (el anuncio del modo sigue sonando al escogerla/cambiarla) · DOS ÁTOMOS NUEVOS en el banco de voz (bienvenida_modo es/en) con la receta Piper de siempre (es_ES-davefx-medium · en_US-lessac-medium → OGG Opus 28k mono) — la marca se sintetiza con grafía fonética «Kreisi Ping Pong» porque el modelo es-ES leyendo «Crazy» salía «cricket» (verificado por ASR sobre los dos candidatos; el EN la lee bien literal) · RUTA 100 % VR-SAFE: VOICE_FULL → speakPlan por WebAudio (la misma vía del megáfono, audible dentro de la sesión inmersiva donde speechSynthesis NO funciona), respaldo speechSynthesis 2D intacto · i18n: clave nueva welcome_menu en las dos mesas · núcleo: solo el anuncio de sessionstart + banco + planes · antes v2.138 · OESTE «TÚNEL A ESCALA» + EL MAPA DEL CLOWN — el dueño revisa el casco: «has reducido las entradas y las salidas pero no la imagen repetida central del túnel… es preciso ponerlas todas al mismo factor» y las bocas «han quedado muy pequeñas… ser algo mayores para que no se vean los cortes por abajo de la ventana (quizás unos 1,8 metros o así)» · FACTOR ÚNICO f = 1,8/3,4 = 0,529 en TODO el rig del túnel: BOCAS (tunelboca.png) 1,2 → 1,8 m (bocaY 1,8 intacto — los cortes inferior 0,9 y superior 2,7 salen del hueco de la ventana y 1,08-2,55: ya no se ve NINGÚN corte) y BANDA interior (tunel.png repetida) 6,0 → 3,176 m con centro TU.bandaY 2,65 → 2,257 (el centro antiguo escalado anclado al CENTRO de la ventana 1,815: la franja visible del arte conserva su centro — 36 % de su altura — y la banda cubre la ventana entera sin cortes) · secuencia boca→banda→boca COSIDA intacta (todo se deriva de bh/len), copias 2 → 4 por la MISMA regla len/(h×2,35) y fases POR DISTANCIA intactas · módulo OESTE v46 (manifest v46) · MAPA DEL CLOWN (el reenvío que en V2.137 se pisó con el del wizard): arte nuevo 1380×752 con GLOBOS numerados (1/3/5 clowns · 2/4 arkanoid) sobre medallones redondos → locura/assets/mapa.webp reemplazado (q92, 183 KB) y NODOS re-medidos con Hough + banda de COBERTURA ANGULAR dorada (inmune al pelo naranja, los globos 3/5 y el camino, que engañaban al ajuste de círculo): centros 226,253 · 453,507 · 700,256 · 959,508 · 1208,322 · anillos r 114/119/109/121/107 con la MISMA regla del wizard (r = 120×banda/107,5) · TAPAS «?» con centro y escala PROPIOS por nodo (tx/ty/ts, backward-compat — patrón MAGIA v28) para cubrir cada medallón ENTERO con margen (ts 0,94/0,86/0,95/0,85): los globos numerados ASOMAN, como las estrellas del Oeste · módulo de La Locura v20 (manifest v20) · núcleo: solo marcador · antes v2.137 · MAGIA «MAPA NUEVO DEL WIZARD» — el dueño reenvía el Mapa.png del wizard (1380×752, el MISMO lienzo del arte anterior) → mapa.webp reemplazado · el arte estrena nodos NUMERADOS con espiral azul (1/3/5 magos · 2/4 orbes · el 5 dentro de la burbuja, SIN anillo dorado) y centros algo movidos → nodesPx RE-MEDIDOS con Hough + bbox dorado + perfil radial (r = 120×banda/107,5 para que el anillo del nodo actual abrace el borde dorado: 229,258/456,508/701,253/966,506/1232,162 · r 126/131/122/132/126) · las TAPAS «?» estrenan centro y escala PROPIOS por nodo (tx/ty/ts) para cubrir anillo + espiral numerada ENTERAS — un dígito cortado por el medallón se lee roto — sin tocar la mecánica de tapas/anillo · módulo MAGIA v28 (manifest v28) · núcleo: solo marcador · antes v2.136 · OESTE «EL TÚNEL COMO ANTES + MAPA NUEVO» — el dueño: la profundidad del túnel de v2.134 «ha estropeado las imágenes de entrada y de salida que teníamos colocadas y espejadas» · CAUSA RAÍZ reproducida: las bocas (tunelboca.png) vivían DENTRO de los SUBGRUPOS inclinados de v2.134 y el reparto de la textura recorría sólo tunelGrp.children — ya no encontraba las bocas: arcos SIN arte (planos transparentes invisibles) y además TORCIDOS por la rotación ∓0,24 rad · FIX (petición: «dejarlas como antes solo que sean más pequeñas para que parezca que están más lejos»): las 3 piezas del túnel vuelven a ser HIJAS DIRECTAS de tunelGrp y COPLANARES a x 3,55 (sin rotación — el espejado v2.119 entrada normal/salida espejada se lee como siempre) y las BOCAS bajan 3,4 → 1,2 m centradas en la ventana (bocaY 1,72 → 1,8): caben ENTERAS dentro del hueco (y 1,08-2,55) y se leen como un PORTAL LEJANO; la secuencia boca→banda→boca sigue COSIDA (todo se deriva de bh) y las fases por DISTANCIA intactas · el reparto de la textura ahora usa traverse() — la textura llega aunque las bocas vuelvan a vivir en subgrupos (a prueba de futuro) · MAPA DE ETAPAS NUEVO: el dueño reenvía mapa.png (1699×926 — nodo 2 SAGEBRUSH, nodo 4 TREN+ORO, medallones más grandes ~230-265 px) → mapa.webp reemplazado, NODOS re-medidos con scripts/mide_nodos.py (los nodos 1/3/5 bajan 26/36/24 px), TAPAS 240×248 → 284×292 (cubren los medallones enteros) y anillo del nodo actual r 95 → 110 (abraza el borde dorado) · módulo OESTE v45 (manifest v45) · núcleo: sin cambios de comportamiento · antes v2.135 · CARTELES DE NORMAS con el ARTE DEL ARTISTA — el dueño manda 3 marcos nuevos (clown_normas.png, Wizard_normas.png, forajido_normas.png) para «usar de carteles cuando se explican las normas de juego de las diferentes etapas» y pide «que los textos estén bien colocados, que entren en el espacio interior de los carteles y que se lean perfectamente» · showInstrucciones() estrena PIEL DE ARTE por campeonato: La Locura viste el marco de CIRCO con el clown asomando, Magia el marco ARCANO con el Wizard y el Salvaje Oeste el marco BRONCE con el forajido (Estación Orbital conserva su panel espacial dibujado) · las 3 imágenes viven en championships/<id>/assets/normas_*.png y PRECARGAN al arrancar (NORMAS_SKIN); si alguna no llegó, caja de seguridad a la piel dibujada de siempre · LIENZO 1280×640 = proporción 2:1 NATIVA del arte en un panel de 3,8×1,9 m: el marco NO se deforma (antes el arte se estiraba 1,28× vertical) · maquetación DENTRO del hueco interior medido sobre el arte (rect por campeonato con margen de seguridad: el personaje asoma por el centro superior y las manos agarran el marco) — TÍTULO oro/crema con contorno y sombra, filete dorado con rombo, y cuerpo ENVUELTO con measureText (NUNCA se corta) en 1 columna si cabe cómodo o 2 COLUMNAS equilibradas con separador central cuando el texto es largo (las normas del ASEDIO, las más largas, entran de sobra) · VELO oscuro suave + sombra de texto: legibilidad perfecta sobre la pizarra/el pergamino oscuro/la piedra sin tapar el arte · botón EMPEZAR pinzado al MARCO BAJO del cartel (fuera del hueco: las normas lo ocupan entero), mismo raycast del v2.130 · estacion sin cambios · núcleo: sólo showInstrucciones/_instrArte — sin cambios de física ni de módulos · antes v2.134 · SALVAJE OESTE «EL TREN A PUNTO» — 5 observaciones del dueño en el casco (etapa 4 «ASALTO AL TREN»): (1) PARADAS SIN REPETIR — la estación de SALIDA (BRAVOS) lucía PARADA1.png, la MISMA imagen que la parada 1 (el dueño: «las imágenes de dos paradas se están repitiendo»); ahora la salida carga SU arte PARADA0.png nuevo (render estación depósito con placa BRAVOS, recorte por inundación + bolsas de cielo limpiadas) y las 4 estaciones del trayecto lucen imágenes distintas (estacionY añade la cota 0) · (2) MÁS VEGETACIÓN en la IMAGEN EXTERIOR del parallax («la veo un poco escasa de elementos») — arbustos/cactus/rocas del propio artista (16 sprites RGBA) compuestos sobre el suelo de arena de las DOS panorámicas p1_paisajedesierto1/2 con perspectiva (pies más abajo = más grandes), racimos + solitarios, volteo aleatorio y bruma cálida de distancia; la franja inferior de 64 px queda VIRGEN (el EXT=190 de _buildPano estira las últimas 60 filas y deformaría lo que caiga ahí) — scripts/make_vegetacion_p1.py con respaldo en scripts/backup_p1_v2133/ · (3) TÚNEL CON PROFUNDIDAD («los separaría un poco… ahora mismo está muy pegado») — las 3 piezas del túnel (boca·banda·boca) vivían COPLANARES a 0,5 m de la ventana: ahora cada pared se monta en un SUBGRUPO con rotación Y ∓0,24 rad (13,7°) y arranca más lejos (TU.x 3,55→3,75) — la boca queda junto a la ventana y el interior SE PIERDE A LO LEJOS: se ve DENTRO del túnel; la costura boca→banda→boca y el viaje por distancia quedan intactos (la rotación arrastra el conjunto) · (4) LA PARED DEL FONDO REBOTA («así pueden golpear las cajas desde atrás») — la bola que sobrevuela la pirámide ya no muere al pasar z=-5,5: REBOTA en el frontal del vagón (z=-5,55, restitución 0,72, _paredRebote con chispazo de polvo + golpe seco de madera) y vuelve hacia las cajas; lo mismo las EXTRAS del vórtice · (5) SUPERPODERES DE VERDAD sobre la mesa — X3: las 3 bolas salen con TIRO BALÍSTICO (_apuntaBalistica, receta del lingote con roz compensado) a cajas apiladas REALES de la pirámide (vivas+asentadas+sin candado abierto) repartidas izquierda·centro·derecha y escalonadas en ola (T 0,52/0,61/0,70): el impacto queda ASEGURADO; fuerza el tope del pool (_naceExtraEn fuerza); sin apiladas apuntan al centro del muelle donde nace la pirámide siguiente · DINAMITA: CADENA — la bola-bomba ya no muere en la 1.ª detonación: su SERIE toma la FOTO de las cajas activas al activarse y la bola ESTALLA SIEMPRE que toca caja, rebota y sale CAZANDO la caja viva más cercana con tiro balístico hasta agotar TODAS las de la foto («una secuencia de explosiones que acaban con todas las cajas activas en ese momento»), con brote final al cerrar la cadena; VIGILANTE anti-atasco: 3,2 s sin estallar → re-apunte automático; la cadena muere con la bola (kill/muereExtra limpian la serie) · módulo OESTE v44 (manifest v44) · núcleo sin cambios de comportamiento para locura/magia/EO · antes v2.133 ·  LA LOCURA: la BOLA DOBLE del CLOWN ya SE VE — el dueño en el casco: «el poder que saca dos bolas no funciona». Causa raíz reproducida headless: la MALLA del clon se creaba SÓLO dentro del primer build() del ARKANOID (prueba de las etapas 2/4) y el split sólo existe en la bolsa del Nv.3 (etapa 5, DUELO JEFE): llegando al duelo final con sesión fresca (etapa guardada, recarga de página, salto de depuración o rejugada por el mapa) el arkanoid nunca se había construido → el clon corría físico INVISIBLE (la «malla perezosa» de v2.120 dependía de _makeCloneMesh, definido también sólo en build) — el cartel prometía «¡LA BOLA SE DIVIDE EN DOS!», la bola oficial se ponía blanca y la segunda bola JAMÁS aparecía · FIX: cloneMesh + _makeCloneMesh al CONSTRUCTOR del arkanoid (UNA vez por sesión, regla Quest de pools intacta) y el lazy de _startSplit queda como cinturón · además el split ya no se desperdicia en punto muerto: si el aviso termina sin rallye (saque/reposo) se RE-ARMA 1,2 s y entra en el PRÓXIMO rallye (antes nacía y updateSplit lo mataba en el primer frame: cartel sin efecto) · módulo de La Locura v19 (manifest v19) · QA por ruta natural: bolsa por nivel (split sólo en Nv.3), clon VISIBLE con malla y física real, salvación del punto con el clon, re-arma en saque, smoke 0 pageerrors · antes v2.132 · ESTACIÓN ORBITAL «LOS PODERES YA MANDAN» — informe del casco: superpoderes que no saltaban y prueba de asteroides injugable · (1) DISPARO REDUNDANTE de los 4 poderes del AX-9: se queda el gancho por PUNTO (onPoint) y el MÓDULO añade en su update() el disparo por RALLY (bola viniendo al jugador, edge vel.z>0.35, patrón Locura que sí funciona en el casco) + GARANTÍA a los 22 s de duelo sin poderes (fuerza el aviso) + reintento más ágil (fallo 4 s, post-poder 10-15 s, primer poder a 6 s) · (2) CARTEL DEL SUPERPODER con el IDENTIFICADOR que el jugador espera: panel flotante junto al AX-9 con el medallón del poder (powerestrellas/meteoritos/tractor/cero) + nombre en grande; fase AVISO ámbar «AX-9 PREPARA…» y fase ACTIVA cian «¡SUPERPODER!» con pulso · (3) EFECTOS BLINDADOS: _poderArrancar en try/catch (un efecto que falle cierra el poder limpio — antes una excepción dejaba _act pegado y bloqueaba la bolsa para siempre) · (4) PRUEBA «DIANAS ORBITALES» JUGABLE: la bola de espera estaba en z=-0.90 (0,67 m DENTRO de la mesa — inalcanzable con la pala: «imposible destruir los asteroides») → ahora espera en z=-0.50 pegada al borde del jugador (convención Magia tableNearZ−0.38) y apex 0.42 · (5) DIANAS 3D DE VERDAD (adiós a los sprites «cutres»): asteroide = icosaedro con ruido determinista por vértice + 2 piedras satélite, caja blindada = contenedor metálico con aristas ámbar + núcleo brillante + escudo esférico que destella, dron = fuselaje con cabina cian + 4 rotores girando; colisión esférica y barrido anti-túnel intactos; dispose completo al reintentar · (6) QA v2.132 POR LA RUTA NATURAL: puntos por processIntents+applyPoint reales (sin forzar Math.random), ticks del módulo entre puntos, poder verificado con cartel + objetos visibles, prueba con colisión REAL (bola lanzada a diana, daño y destrucción por el barrido), garantía temporal verificada con mala suerte estirada · módulo estacion_orbital v3.2 (manifest v5) · núcleo sin cambios de comportamiento para locura/magia/oeste · antes v2.131 · v2.131 · FIX RAÍZ de Estación Orbital «sin superpoderes en 1/3/5 y sin pruebas en 2/4»: el módulo nunca ponía rules.state='champtest' en la SALA y el núcleo sólo enruta el gatillo al campeonato con ese estado (convención oeste/magia: árbitro dormido en la sala) — el gatillo ejecutaba el SAQUE CLÁSICO: partidos normales sin duelo real (sin powers: ctrl.state jamás llegó a 'duelo') y serveTrigger jamás llamado (sin pruebas). Ahora EO duerme al árbitro en TODA transición a sala/prueba (startChamp con bola aparcada, _empezarPrueba también bajo el panel EMPEZAR, _despuesDePrueba, onMatchOver normal y REJUGADA — que ahora SÍ cierra el duelo y limpia _replay, antes quedaba pegado al duelo real siguiente), reenter condicional (duelo='serve', resto='champtest') y leave restituye al árbitro (convención magia, antes salir de EO dejaba el núcleo en champtest) · la pala IA sólo existe en DUELO (update del módulo tras las escrituras del núcleo; en sala manda el standee del AX-9) · módulo estacion_orbital v3.1 · núcleo sin cambios de comportamiento para locura/magia/oeste · antes v2.130 · QUITARNE — 4 ajustes de la revisión del jugador: (1) CARTÓ CON «EMPEZAR»: las instrucciones de las PRUEBAS DE HABILIDAD (estructura común de todos los campeonatos) ya no se van solas — esperan al botón EMPEZAR del panel (mesh hijo con raycast, resaltado al apuntar; en 2D/QA queda el desvanecido automático); call sites de locura/magia/oeste/estacion_orbital actualizados · (2) INTRO DE CAMPEONATO: vídeo de la HISTORIA DEL RIVAL (~29 s, opcional) con GRAN botón JUGAR debajo — ChampLoader.launch() lo inyecta tras start() en TODOS los campeonatos (showChampIntro: pantalla 2,56 m con VideoTexture + póster de reserva si falta assets/intro.mp4; gatillo solo sobre el botón; BSO del núcleo con duck y BSO privada de los módulos silenciada vía hook champIntroPause) + 4 vídeos nuevos (escenas PIL + zoompan + xfade + BSO, ~0,6–1,3 MB por campeonato) · (3) MAGIA: el cartel «VS WIZARD / ¡EL ORBE MÁGICO!» bajado de 2,95 a 2,55 m (su borde superior 3,18 quedaba DENTRO del techo de 2,85 m); La Locura baja 2,62→2,58 (rozaba) · (4) ESTACIÓN ORBITAL pulida: AX-9 recolocado a la DERECHA de la mesa (x 1,26 = DUEL_X convención, antes centrado detrás), troquel-satélite FUERA de la mesa (2,45/−0,85, antes solapado en 0/−2,8), cartel de etapa a la PARED FRONTAL (−1,78/1,42/−5,44 — antes flotaba sobre la mesa tapando al rival), typo GATILGO→GATILLO, MAPA DEL CAMPEONATO en la pared izquierda (arte 1380×752 + clase MapaEO con anillo/tapas/REJUGA v2.96, zona calma reservada en el arte de la pared) y ARTE V2: sala con ASPECTO REAL por plano (suelo/techo 1024×1328, frontales 1536×718, laterales 1536×554 — el núcleo estira la textura), oclusión ambiental, doble bisel, ventanales con nebulosa multicapa y planeta anillado, esclusa con rueda, cápsulas de hibernación, brazo robótico, consolas con gráficas, señalética con tildes, troqueles cohete/rover/satélite redibujados y AX-9 rediseñado (degradados con máscaras, rim light, 5 expresiones) · antes v2.129 · ESTACIÓN ORBITAL «PLANTILLA FINAL» — el campeonato plantilla se upgrades a camino COMPLETO de 5 etapas (duelo ×0.90 → PRUEBA «Cinturón de asteroides» → duelo ×1.12 → PRUEBA «Tormenta de meteoritos» → DUELO FINAL ×1.42 → insignia ¡CONSEGUIDO!) · PRUEBAS «DIANAS ORBITALES» con motor propio en el módulo: física del núcleo vía stepPhysics + colisionador extra por SUBPASO (anti-túnel ball.__exPrev, patrón orbe de Magia), árbitro dormido en 'champtest', ignoreNet durante la prueba (precedente ARKANOID), bola en bote-en-espera hasta el primer golpe (v2.61 de magia), HUD holográfico (reloj + dianas), banner de resultado, cartel explicativo ANTES de entrar (regla v2.106) con PIEL NUEVA «estacion» (panel espacial estrellado) · dianas-sprite del artista: asteroide (1 golpe), caja blindada (2 golpes: escudo chispea) y dron móvil (+4 s de reloj) · 4 SUPERPODERES del AX-9 con bolsa rotatoria (v2.126) y aviso de dos fases: LLUVIA DE ESTRELLAS (confeti con textura de estrella), METEORITOS (3 rocas caen a TU campo y BLOQUEAN la bola con rebote — patrón Burla v2.127 del segmento prev→actual), RAYO TRACTOR (haz verde del rival que curva la bola hacia el eje central) y GRAVEDAD CERO (la bola flota en ondas verticales + motas a la deriva) · ARTE completo generado (PIL): sala de 6 planos (ventanales al espacio con planeta anillado, esclusa con válvula, cápsulas de sueño, brazo robótico, consolas), ANDROIDE AX-9 en 5 estados (robot flotante con anillo antigrav: rival/idle/duelo/derrotado/triunfante), troqueles cohete/rover/satélite y 4 medallones de poder (familia powerburla) · dron vigía patrullando la sala · progreso de ETAPA persistente (pp_champ_estacion_orbital_stage) · la prueba perdida se REPITE (flujo amable de la plantilla) · antes v2.128 · INSIGNIA «¡CONSEGUIDO!» — al ganar el DUELO FINAL de un campeonato el núcleo planta en la sala un PANEL GRANDE con la insignia del campeonato (championships/<id>/assets/insignia.png), el texto gigante ¡CONSEGUIDO! y fanfarria + confeti (window.__PP_CORE.showChampConseguido(id): locura/magia/oeste conectados) · MENÚ: los campeonatos vencidos lucen la cinta dorada «★ SUPERADO» (tarjetas CAMPEONATOS + subtítulo del hub) via ChampLoader.championFlag (isChampion() del módulo o convención <base>trophy/<base>champ) · INSIGNIA como LOGRO en el ranking: filas campeonas con insignia también en el panel 2D de la portada · campeonato SUPERADO queda ABIERTO: rejuego libre de etapas (mapa + gatillo, v2.96) · Estación Orbital gana flujo de CAMPEÓN (3 duelos → insignia + registro pp_champ_estacion_orbital_champ + fila 🏆 en el ranking) · antes v2.127 · BURLA sustituye a MAREO (el superpoder del Clown que «no funciona»): rayo de luz arcoíris que impacta en puntos distintos de la mesa con destello arcoíris, plantando un CARTÓN VERTICAL de ~50 cm con el clown burlesco (burla1-4.png del artista) durante 2 s; los cartones son BARRERAS que frenan la bola y estallan en partículas arcoíris; el COMODÍN (burlacomodin.png, ~1 de cada 5) deja pasar la bola, que se pone NEGRA y MÁS GRANDE: golpéala y estalla en cintas negras — PUNTO GANADOR; icono powerburla.png en el cartel · módulo de La Locura v18 · también: PARADA1-3.png nuevas del Oeste (arte del artista) y Estación Orbital PUBLICADA en el zip oficial (en V2.126 el zip salió con la plantilla desactivada y por eso no aparecía en el menú del casco) · antes v2.126 · PODERES DEL CLOWN A PRUEBA DE TODO: (1) LANZAMIENTO GARANTIZADO — el efecto entra aunque el punto muera durante el aviso (antes cualquier estado ≠ rally se comía el poder en silencio: el dueño lo vivía como «globos/mareo no funcionan») · (2) BOLSA ROTATORIA — todos los poderes salen antes de repetir · (3) POP de globos más generoso · TORMENTA visible + AUDIO blindado: (1) la tormenta de arena del Oeste ya no nace detrás del jugador (franja z del confeti) y rodante.png recupera su alfa real (fondo blanco + tablero falso fuera) · (2) decodeAudioData en forma promesa con copia: la música del vagón del Tren ya no muere · (3) invariante UNA MELODÍA extendido a las BSO privadas de los módulos · antes v2.124 · MAREO del Clown + invariante bidireccional AUDITORÍA DE MÚSICA II + MAREO: (1) invariante UNA MELODÍA bidireccional (la BSO retira la música del menú y en la portada la BSO espera) · (2) la BSO propia de Magia/Oeste resucita tras cada re-creación del contexto (salir/entrar de VR) y entra con fundido · (3) MAREO TOTAL del Clown: vaivén por deltas (inmune a escrituras del rig) y amplitud inconfundible (yaw ±11,5° + pitch ±3,4° + roll ±5,2°) · antes v2.123 · MENÚ: opciones contraídas
+  const VERSION = '3.0.8-TRN1';   // v3.0.8-TRN1 · SENTIMIENTO DE JUEGO (el pilar) — SAQUE REAL EN EL ENTRENAMIENTO: la bola de t4a/t4b descansa en la MANO LIBRE (misma cinemática que un partido: copia la mano + BALL_HAND_LIFT), se lanza con el GESTO NATURAL (soltar el grip usa la velocidad real de la mano vía releaseBallHand, o el gatillo como ayuda) y NUNCA se lanza sola (fuera el auto-toss de 1,1 s: el jugador decide el momento), el GOLPEO del saque recibe la MISMA asistencia en cascada del núcleo (45 % → 75 % → solver con hint del swing, validando altura de lanzamiento y línea de fondo: adiós al «saque imposible» del entrenamiento), ZONAS OBJETIVO FIELES al juez en t1a (la zona dorada ya NO pinta la franja central que el árbitro rechaza: lo pintado = lo juzgado) y texto OBJETIVO reescalado con measureText para no cortarse, MÁQUINA DE SPARRING: los feeds de t1a/t1b/t2a/t2b/t5a son tiros directos y profundos resueltos con Magnus (adiós a las bolas lentas y cortas flotantes del solver de saque) · antes v3.0.7-PLAY1 · PRO CIRCUITO — GAMIFICACIÓN del PRO TRAINING como CAPA DE LECTURA del juez (el criterio y la física quedan INTACTOS): COMBO ×2/×3 por rachas de 4/8 golpes (multiplica SOLO los puntos del golpe, el bonus de completado sigue íntegro; con gamify=0 el flujo de puntos es idéntico al anterior), ESTRELLAS 1-3★ por prueba guardadas en el perfil (3★ completar sin fallos de la ronda, 2★ con ≤2 fallos, 1★ completada; metrónomo por hitos: rally 30/50/100), PRECISIÓN % de la ronda en el panel y mejor precisión por prueba en las tarjetas, LOGROS (9: rachas de 10 y 20, perfecto, cinco perfectos, circuito completo, metrónomo 50 y 100, triple combo y leyenda) con toast y fanfarria propia, barra de progreso al siguiente nivel + fila de logros en el PERFIL del hub, CELEBRACIÓN 3D de partículas al completar (pool único reutilizado, coste ínfimo en Quest) y sonidos de combo ascendentes · interruptor DIMS.trainGamify (0 = modo puro profesional, sin capa de juego) · antes v3.0.6-SRV1 · v3.0.6-SRV1 · SAQUE VIVO + ENTRENAMIENTO REPARADO — SAQUE: la asistencia hereda el TOQUE del jugador (dirección y energía del swing vía hint al solver; cascada 45 % → 75 % → solver en vez de sustituir el 65-100 %: adiós al saque «enlatado» de ~5 m/s siempre igual), el roce de red con doble bote válido se CONSERVA (+0,35 vy en vez de reemplazar), INMUNIDAD de contacto en los primeros milímetros del lanzamiento (con las manos juntas el roce prematuro anulaba el saque y la bola chispazaba a la mano: «casi imposible»), velocidad final acotada 3,2-8,8 m/s · PRO TRAINING t4a/t4b: soporte de saque DETRÁS de la línea de fondo a la altura de la mano (antes flotaba sobre la mesa, inalcanzable), la bola se LANZA sola a los 1,1 s o con el GATILLO (nueva rama en onSelectStart + serveTrigger del módulo), se golpea EN EL AIRE con el margen ampliado del saque, ciclo completo gestionado por el módulo (el feed temporizado ya no roba la bola en vuelo), juez t4a: el PRIMER bote rival en la zona pintada y el segundo en el campo rival (exigir ambos en 51 cm era casi imposible), textos es/en del panel actualizados · t1b JUNTO A LA LÍNEA: la franja FONDO se pintaba en el lado CONTRARIO (eje Z del lienzo invertido respecto a mz(): cubría toda la mesa menos la franja) — ahora patrón rect(mz(z0), mz(z1)−mz(z0)) como t4a/t4b y etiqueta en su sitio · INTRO: assets/intro.mp4 era byte-idéntico al intro del campeonato ESTACIÓN ORBITAL — sustituido por el INTRO OFICIAL de CRAZY PING PONG (vídeo del dueño, 10 s · 1080p) · antes v3.0.5-FIS1 · PALAS CON CARÁCTER — las skins del PRO TRAINING ya son JUEGO: cada goma modula la pala del jugador (la IA siempre juega neutra) · FUEGO = OFENSIVA (+12 % potencia, +8 % efecto, el canto castiga más) · HIELO = DEFENSIVA (+30 % control: el canto perdona y el bote sale más seguro) · ORO = POTENCIA (golpes más fuertes, algo menos de efecto) · ARCOÍRIS = EFECTO (+22 % de brush y agarre: imprime muchísimo giro) · PRO CARBON = DOBLE GOMA por CARAS como las palas reales roja/negra (cara A goma de GIRO · cara B goma DURA de potencia) con las dos caras TEÑIDAS en el visor para reconocerlas · Clásica = neutra de referencia · interruptor DIMS.paddlePerks (0 = todas las palas neutras) · FÍSICA VIVA — P1 GOLPE: goma con FRICCIÓN TANGENCIAL real (impulso de contacto con I de cascarón: rozar ARRASTRA la bola, no sólo le da efecto) + REVERSIÓN PARCIAL del spin entrante al bloquear (el bloque de un topspin ya no «limpia» el efecto) + PUNTO DULCE de la hoja (el canto pega sordo: −35 %·offC² de restitución, bamboleo disperso en el borde y menos efecto; el anillo de asistencia del saque con penalización suave fija) · P2 BOTE FÍSICO: impulso tangencial con DESLIZAMIENTO y tope de Coulomb COMPARTIDO por la física real y todos los predictores (IA + solver de saque): el TOPSPIN patea al botar y gana giro, el BACKSPIN frena en seco y la mesa se le come el efecto, el lateral desvía, y todo ESCALA con la velocidad de impacto (grip 0,22→0,60) · interruptor DIMS.physicsRealism (0 = física legacy exacta de v2.x) · antes v3.0.4-EXP.TV1 (rama exp/live-tv absorbida en main) · v3.0.4-EXP · RAMA EXPERIMENTAL «LIVE-TV» — espectador nativo: la partida del anfitrión sale como CANAL DE TV (mini-servicio relay :3004 vía gateway) y cualquier navegador sin visor la ve en directo (/tv.html): estado 30 Hz + eventos hit/bounce/net/point/game-over, sello «● EN VIVO» en el pabellón y en 2D, guía de canales con espectadores en tiempo real, sin coste térmico en la Quest (un emit cada 33 ms, cero render extra) · CINE EN CASA: CRAZY TV v1.0 (tv.html) con interpolación 120 ms, 6 cámaras (TV/J1/J2/cenital/cine/libre), estela de bola, repeticiones automáticas en cámara lenta de cada punto + manual (R), pausa (Espacio), HUD con km/h del último golpe y sonido sintetizado en cliente (0 bytes de audio por la red) · el módulo live es EXTERNO al núcleo (window.__PP_LIVE, 3 taps de una línea: animate/processIntents/fin) — la sala solo lee, jamás escribe · antes v3.0.3 · SALIDA DEL ENTRENAMIENTO AL HUB (Y y «PARAR» vuelven al hub, no al menú principal) · SKINS DE PALA DE VERDAD — texturas reales (goma con pips, carbono, oro, holográfica) sobre los materiales REALES del GLB + piel «Pro Carbon» que SUSTITUYE EL MODELO 3D por un GLB externo (assets/pala/pala_pro.glb; la pala base también carga desde assets/pala/pala.glb con el incrustado de reserva) · ESTANQUEIDAD TOTAL del entrenamiento (salir con Y, cambiar de modo, entrar en VR o lanzar un campeonato RECOCGE su escena — nunca más paneles flotando) · «Valle Neón» del Taller PUBLICADO en el menú como ejemplo vivo · antes v3.0.2 · FIXES del entrenamiento probados por el dueño: metrónomo (el rally NUNCA contaba — juez sin rama t5a — y el beat ROBABA la bola en vuelo: ahora sólo sustituye cuando la anterior repose, y el fallo sin devolución cierra el rally), PASE BAJO (el feed ×1.08 aplanaba el saque resuelto y se estrellaba en la red — feeds con el saque legal estándar), t4a (el juez no verificaba la zona pintada), t4b (fallo «larga»→«corta») y zonas MÁS VISIBLES (trazos gruesos/opacos, objetivo dorado 0.85, centro prohibido con borde) · antes v3.0.1 · FIX del casco: grupo de entrenamiento DENTRO del rig (el recentrado lo giraba — marcas desfasadas de la bola), iconos de efecto PEGADOS a las caras reales de la hoja y cinta de agarre sobre el MANGO real (geometría del GLB medida) · antes v3.0 · PRO TRAINING — hub de entrenamiento profesional (window.__PP_TRAIN), feedback técnico, puntos y skins · antes v2.141 · OESTE «LOS CAJONES DEL ORO» + PARADAS CON NOMBRE — ajustes del dueño sobre la v2.140 (etapa 4 «ASALTO AL TREN»): (1) LINGOTES SOBRE DOS GRANDES CAJONES — «los lingotes van a caer a ambos lados de la mesa pero cerca del centro de las ventanas, en el suelo, sobre dos grandes cajones de madera (podemos usar alguno de los que ya colocamos para destruir, los que no tienen el dibujo del candado)»: DOS cajones limpios del artista (cubo1/cubo2, sin candado) ACHATADOS (el doble de anchos: huella 0,72 m · la mitad de altos: 0,18 m) sobre el suelo del vagón, uno a cada lado de la mesa y CERCA DEL CENTRO DE LAS VENTANAS laterales (centros medidos sobre el arte 2395×864: izquierda u=0,472 → z -1,38 · derecha u=0,501 → z -1,59; x ±1,35 entre mesa y pared). En su cara superior se apilan los lingotes: rejilla 3×3 POR CAJÓN con hueco uniforme (sep 0,19 × 0,095 para un lingote 0,17×0,08), capas EXACTAS (altura real del GLB + 1,5 mm — unos perfectamente encima de otros) y una PEQUEÑA VARIACIÓN de colocación (±7 mm · ±3 mm · ±1,7° de yaw, holguras que NUNCA llegan a tocar al vecino) «para que no parezca tan perfecta»; cada lingote alterna IZQ/DER y ocupa el PRIMER hueco libre de SU cajón — si el forajido roba uno, SU hueco VUELVE a la lista (nada se solapa ni se mete unos dentro de otros). (2) PARADAS CON NOMBRE Y ARTE PROPIO — «primera parada nombre Bravos, imagen parada1.png, segunda parada nombre GOLD DUST, imagen parada2.png, tercera parada nombre Silver Creek, imagen parada3.png. Estos son los nombres que deberá decir la voz en las llegadas y las salidas»: stationNames = BRAVOS (depósito de salida) · BRAVOS · GOLD DUST · SILVER CREEK, y PARADA1.png se actualiza con el arte nuevo del dueño (1024×512, estación BRAVOS). MEGAFONÍA: 4 ÁTOMOS NUEVOS por idioma (mega_salida/llega_gd·sc — misma receta Piper es_ES-davefx / en_US-lessac → OGG Opus 28k, ES literal elegido por ASR, consistente con «Dry Gulch» de v2.140) con sus 8 entradas VOICE_FULL — la normalización de los textos del módulo sigue coincidiendo EXACTA. SUELO del vagón: room/vagon/suelo.jpg se actualiza con la TARIMA nueva del dueño (1296×1678, mismo mapeo 1:1). NORMAS de la etapa y avisos al día (el lingote se apila SOBRE LOS GRANDES CAJONES junto a las ventanas). Módulo OESTE v48 (manifest 48). Núcleo: solo banco de voz + planes + marcador · antes v2.140 · v2.140 · OESTE «EL VAGÓN A PUNTO» — 4 observaciones del dueño en el casco (etapa 4 «ASALTO AL TREN»): (1) BOTES FANTASMA junto a la red («si la pelota bota en el campo enemigo cerca de la red viene devuelta al jugador como si rebotase contra algo invisible»): el bote arkanoi de v2.113 tenía su frontera zonaZ en -2,2 y dejaba 60 cm de MESA RIVAL dentro de la zona del jugador — cualquier bote lento ahí era SECUESTRADO (ápice 1,45 m + vel.z +0,95 hacia el jugador). FIX: zonaZ = red (-1,6): el bote gestionado sólo vive en el campo del JUGADOR; en campo enemigo la bola SIGUE SU TRAYECTORIA física (si muere botando, la recoge el vórtice de siempre — quieta 0,9 s → respawn). (2) LINGOTES APILADOS EN EL SUELO («mejor que se apilen a ambos lados del suelo visibles por la cámara… deben estar unos perfectamente encima de otros»): fuera de la mesa rival — DOS pilas SIMÉTRICAS en el suelo del vagón junto a la red (x ±1,10…±1,38 · z -1,00…-0,82), el lingote alterna IZQUIERDA/DERECHA y llena capas de 6 (2 columnas × 3 filas); al completar un plano se apila ENCIMA con la altura REAL del lingote (medida del prototipo GLB al cargar + 1,5 mm de holgura — nada de offsets fijos: la 2.ª capa de v2.111 flotaba a +0,095 y DESALINEADA en z) y yaw 0 al aterrizar (antes giraba ±40°): pilas limpias y legibles. (3) SUELO DEL VAGÓN con la TARIMA del dueño (room/vagon/suelo.jpg 1296×1678, mapeo 1:1 al plano 6,10×7,90 — tablas transversales a la marcha): fuera la arena procedural de v2.111. (4) MEGAFONÍA DE ESTACIÓN — voz pregrabada del banco (misma receta Piper es_ES-davefx/en_US-lessac → OGG Opus 28k) por la vía announce → voicePlan → speakPlan (WebAudio VR-SAFE, con el CHIME del megáfono y ducking del ambiente): SALIDAS «Pasajeros al tren, partimos hacia…» [destino]; a los 30 s del final del trayecto «En menos de 25 segundos llegaremos a…» [estación] (UNA vez por trayecto); ARRIBO CON ORO «¡Cargamento de oro a buen recaudo!» + PANEL recompensa.png (pop elástico, patrón insignia, se ve toda la parada); ARRIBO SIN ORO panel forajido_robo.png + LAS RISAS DEL FORAJIDO (risas_forajido.mp3 del dueño, precargadas al entrar al vagón y con reintento en el step). FRASES i18n es/en (tren_mega_salida/llega/oro) con los NOMBRES de las estaciones interpolados (BRAVOS·DRY GULCH·PERDIDO) y 7 ÁTOMOS NUEVOS por idioma (mega_salida/llega_dg·pd·br + mega_oro) con sus 14 entradas VOICE_FULL — la normalización de los textos del módulo coincide EXACTA (verificada con la réplica de _normVoice en el QA). NORMAS de la etapa actualizadas: los lingotes se apilan en el SUELO del vagón. Módulo OESTE v47 (manifest v47). Núcleo: solo banco de voz + planes + marcador · antes v2.139 · BIENVENIDA HABLADA — el dueño: «que al iniciar el juego en VR nos abriese con el siguiente mensaje de voz para la bienvenida (en castellano o inglés según el idioma)» → al ENTRAR EN VR el megáfono dice «Bienvenido a Crazy Ping Pong, escoge una modalidad de juego» (EN: «Welcome to Crazy Ping Pong, choose a game mode») justo cuando el MENÚ PRINCIPAL abre y recibe al jugador (el anuncio del modo sigue sonando al escogerla/cambiarla) · DOS ÁTOMOS NUEVOS en el banco de voz (bienvenida_modo es/en) con la receta Piper de siempre (es_ES-davefx-medium · en_US-lessac-medium → OGG Opus 28k mono) — la marca se sintetiza con grafía fonética «Kreisi Ping Pong» porque el modelo es-ES leyendo «Crazy» salía «cricket» (verificado por ASR sobre los dos candidatos; el EN la lee bien literal) · RUTA 100 % VR-SAFE: VOICE_FULL → speakPlan por WebAudio (la misma vía del megáfono, audible dentro de la sesión inmersiva donde speechSynthesis NO funciona), respaldo speechSynthesis 2D intacto · i18n: clave nueva welcome_menu en las dos mesas · núcleo: solo el anuncio de sessionstart + banco + planes · antes v2.138 · OESTE «TÚNEL A ESCALA» + EL MAPA DEL CLOWN — el dueño revisa el casco: «has reducido las entradas y las salidas pero no la imagen repetida central del túnel… es preciso ponerlas todas al mismo factor» y las bocas «han quedado muy pequeñas… ser algo mayores para que no se vean los cortes por abajo de la ventana (quizás unos 1,8 metros o así)» · FACTOR ÚNICO f = 1,8/3,4 = 0,529 en TODO el rig del túnel: BOCAS (tunelboca.png) 1,2 → 1,8 m (bocaY 1,8 intacto — los cortes inferior 0,9 y superior 2,7 salen del hueco de la ventana y 1,08-2,55: ya no se ve NINGÚN corte) y BANDA interior (tunel.png repetida) 6,0 → 3,176 m con centro TU.bandaY 2,65 → 2,257 (el centro antiguo escalado anclado al CENTRO de la ventana 1,815: la franja visible del arte conserva su centro — 36 % de su altura — y la banda cubre la ventana entera sin cortes) · secuencia boca→banda→boca COSIDA intacta (todo se deriva de bh/len), copias 2 → 4 por la MISMA regla len/(h×2,35) y fases POR DISTANCIA intactas · módulo OESTE v46 (manifest v46) · MAPA DEL CLOWN (el reenvío que en V2.137 se pisó con el del wizard): arte nuevo 1380×752 con GLOBOS numerados (1/3/5 clowns · 2/4 arkanoid) sobre medallones redondos → locura/assets/mapa.webp reemplazado (q92, 183 KB) y NODOS re-medidos con Hough + banda de COBERTURA ANGULAR dorada (inmune al pelo naranja, los globos 3/5 y el camino, que engañaban al ajuste de círculo): centros 226,253 · 453,507 · 700,256 · 959,508 · 1208,322 · anillos r 114/119/109/121/107 con la MISMA regla del wizard (r = 120×banda/107,5) · TAPAS «?» con centro y escala PROPIOS por nodo (tx/ty/ts, backward-compat — patrón MAGIA v28) para cubrir cada medallón ENTERO con margen (ts 0,94/0,86/0,95/0,85): los globos numerados ASOMAN, como las estrellas del Oeste · módulo de La Locura v20 (manifest v20) · núcleo: solo marcador · antes v2.137 · MAGIA «MAPA NUEVO DEL WIZARD» — el dueño reenvía el Mapa.png del wizard (1380×752, el MISMO lienzo del arte anterior) → mapa.webp reemplazado · el arte estrena nodos NUMERADOS con espiral azul (1/3/5 magos · 2/4 orbes · el 5 dentro de la burbuja, SIN anillo dorado) y centros algo movidos → nodesPx RE-MEDIDOS con Hough + bbox dorado + perfil radial (r = 120×banda/107,5 para que el anillo del nodo actual abrace el borde dorado: 229,258/456,508/701,253/966,506/1232,162 · r 126/131/122/132/126) · las TAPAS «?» estrenan centro y escala PROPIOS por nodo (tx/ty/ts) para cubrir anillo + espiral numerada ENTERAS — un dígito cortado por el medallón se lee roto — sin tocar la mecánica de tapas/anillo · módulo MAGIA v28 (manifest v28) · núcleo: solo marcador · antes v2.136 · OESTE «EL TÚNEL COMO ANTES + MAPA NUEVO» — el dueño: la profundidad del túnel de v2.134 «ha estropeado las imágenes de entrada y de salida que teníamos colocadas y espejadas» · CAUSA RAÍZ reproducida: las bocas (tunelboca.png) vivían DENTRO de los SUBGRUPOS inclinados de v2.134 y el reparto de la textura recorría sólo tunelGrp.children — ya no encontraba las bocas: arcos SIN arte (planos transparentes invisibles) y además TORCIDOS por la rotación ∓0,24 rad · FIX (petición: «dejarlas como antes solo que sean más pequeñas para que parezca que están más lejos»): las 3 piezas del túnel vuelven a ser HIJAS DIRECTAS de tunelGrp y COPLANARES a x 3,55 (sin rotación — el espejado v2.119 entrada normal/salida espejada se lee como siempre) y las BOCAS bajan 3,4 → 1,2 m centradas en la ventana (bocaY 1,72 → 1,8): caben ENTERAS dentro del hueco (y 1,08-2,55) y se leen como un PORTAL LEJANO; la secuencia boca→banda→boca sigue COSIDA (todo se deriva de bh) y las fases por DISTANCIA intactas · el reparto de la textura ahora usa traverse() — la textura llega aunque las bocas vuelvan a vivir en subgrupos (a prueba de futuro) · MAPA DE ETAPAS NUEVO: el dueño reenvía mapa.png (1699×926 — nodo 2 SAGEBRUSH, nodo 4 TREN+ORO, medallones más grandes ~230-265 px) → mapa.webp reemplazado, NODOS re-medidos con scripts/mide_nodos.py (los nodos 1/3/5 bajan 26/36/24 px), TAPAS 240×248 → 284×292 (cubren los medallones enteros) y anillo del nodo actual r 95 → 110 (abraza el borde dorado) · módulo OESTE v45 (manifest v45) · núcleo: sin cambios de comportamiento · antes v2.135 · CARTELES DE NORMAS con el ARTE DEL ARTISTA — el dueño manda 3 marcos nuevos (clown_normas.png, Wizard_normas.png, forajido_normas.png) para «usar de carteles cuando se explican las normas de juego de las diferentes etapas» y pide «que los textos estén bien colocados, que entren en el espacio interior de los carteles y que se lean perfectamente» · showInstrucciones() estrena PIEL DE ARTE por campeonato: La Locura viste el marco de CIRCO con el clown asomando, Magia el marco ARCANO con el Wizard y el Salvaje Oeste el marco BRONCE con el forajido (Estación Orbital conserva su panel espacial dibujado) · las 3 imágenes viven en championships/<id>/assets/normas_*.png y PRECARGAN al arrancar (NORMAS_SKIN); si alguna no llegó, caja de seguridad a la piel dibujada de siempre · LIENZO 1280×640 = proporción 2:1 NATIVA del arte en un panel de 3,8×1,9 m: el marco NO se deforma (antes el arte se estiraba 1,28× vertical) · maquetación DENTRO del hueco interior medido sobre el arte (rect por campeonato con margen de seguridad: el personaje asoma por el centro superior y las manos agarran el marco) — TÍTULO oro/crema con contorno y sombra, filete dorado con rombo, y cuerpo ENVUELTO con measureText (NUNCA se corta) en 1 columna si cabe cómodo o 2 COLUMNAS equilibradas con separador central cuando el texto es largo (las normas del ASEDIO, las más largas, entran de sobra) · VELO oscuro suave + sombra de texto: legibilidad perfecta sobre la pizarra/el pergamino oscuro/la piedra sin tapar el arte · botón EMPEZAR pinzado al MARCO BAJO del cartel (fuera del hueco: las normas lo ocupan entero), mismo raycast del v2.130 · estacion sin cambios · núcleo: sólo showInstrucciones/_instrArte — sin cambios de física ni de módulos · antes v2.134 · SALVAJE OESTE «EL TREN A PUNTO» — 5 observaciones del dueño en el casco (etapa 4 «ASALTO AL TREN»): (1) PARADAS SIN REPETIR — la estación de SALIDA (BRAVOS) lucía PARADA1.png, la MISMA imagen que la parada 1 (el dueño: «las imágenes de dos paradas se están repitiendo»); ahora la salida carga SU arte PARADA0.png nuevo (render estación depósito con placa BRAVOS, recorte por inundación + bolsas de cielo limpiadas) y las 4 estaciones del trayecto lucen imágenes distintas (estacionY añade la cota 0) · (2) MÁS VEGETACIÓN en la IMAGEN EXTERIOR del parallax («la veo un poco escasa de elementos») — arbustos/cactus/rocas del propio artista (16 sprites RGBA) compuestos sobre el suelo de arena de las DOS panorámicas p1_paisajedesierto1/2 con perspectiva (pies más abajo = más grandes), racimos + solitarios, volteo aleatorio y bruma cálida de distancia; la franja inferior de 64 px queda VIRGEN (el EXT=190 de _buildPano estira las últimas 60 filas y deformaría lo que caiga ahí) — scripts/make_vegetacion_p1.py con respaldo en scripts/backup_p1_v2133/ · (3) TÚNEL CON PROFUNDIDAD («los separaría un poco… ahora mismo está muy pegado») — las 3 piezas del túnel (boca·banda·boca) vivían COPLANARES a 0,5 m de la ventana: ahora cada pared se monta en un SUBGRUPO con rotación Y ∓0,24 rad (13,7°) y arranca más lejos (TU.x 3,55→3,75) — la boca queda junto a la ventana y el interior SE PIERDE A LO LEJOS: se ve DENTRO del túnel; la costura boca→banda→boca y el viaje por distancia quedan intactos (la rotación arrastra el conjunto) · (4) LA PARED DEL FONDO REBOTA («así pueden golpear las cajas desde atrás») — la bola que sobrevuela la pirámide ya no muere al pasar z=-5,5: REBOTA en el frontal del vagón (z=-5,55, restitución 0,72, _paredRebote con chispazo de polvo + golpe seco de madera) y vuelve hacia las cajas; lo mismo las EXTRAS del vórtice · (5) SUPERPODERES DE VERDAD sobre la mesa — X3: las 3 bolas salen con TIRO BALÍSTICO (_apuntaBalistica, receta del lingote con roz compensado) a cajas apiladas REALES de la pirámide (vivas+asentadas+sin candado abierto) repartidas izquierda·centro·derecha y escalonadas en ola (T 0,52/0,61/0,70): el impacto queda ASEGURADO; fuerza el tope del pool (_naceExtraEn fuerza); sin apiladas apuntan al centro del muelle donde nace la pirámide siguiente · DINAMITA: CADENA — la bola-bomba ya no muere en la 1.ª detonación: su SERIE toma la FOTO de las cajas activas al activarse y la bola ESTALLA SIEMPRE que toca caja, rebota y sale CAZANDO la caja viva más cercana con tiro balístico hasta agotar TODAS las de la foto («una secuencia de explosiones que acaban con todas las cajas activas en ese momento»), con brote final al cerrar la cadena; VIGILANTE anti-atasco: 3,2 s sin estallar → re-apunte automático; la cadena muere con la bola (kill/muereExtra limpian la serie) · módulo OESTE v44 (manifest v44) · núcleo sin cambios de comportamiento para locura/magia/EO · antes v2.133 ·  LA LOCURA: la BOLA DOBLE del CLOWN ya SE VE — el dueño en el casco: «el poder que saca dos bolas no funciona». Causa raíz reproducida headless: la MALLA del clon se creaba SÓLO dentro del primer build() del ARKANOID (prueba de las etapas 2/4) y el split sólo existe en la bolsa del Nv.3 (etapa 5, DUELO JEFE): llegando al duelo final con sesión fresca (etapa guardada, recarga de página, salto de depuración o rejugada por el mapa) el arkanoid nunca se había construido → el clon corría físico INVISIBLE (la «malla perezosa» de v2.120 dependía de _makeCloneMesh, definido también sólo en build) — el cartel prometía «¡LA BOLA SE DIVIDE EN DOS!», la bola oficial se ponía blanca y la segunda bola JAMÁS aparecía · FIX: cloneMesh + _makeCloneMesh al CONSTRUCTOR del arkanoid (UNA vez por sesión, regla Quest de pools intacta) y el lazy de _startSplit queda como cinturón · además el split ya no se desperdicia en punto muerto: si el aviso termina sin rallye (saque/reposo) se RE-ARMA 1,2 s y entra en el PRÓXIMO rallye (antes nacía y updateSplit lo mataba en el primer frame: cartel sin efecto) · módulo de La Locura v19 (manifest v19) · QA por ruta natural: bolsa por nivel (split sólo en Nv.3), clon VISIBLE con malla y física real, salvación del punto con el clon, re-arma en saque, smoke 0 pageerrors · antes v2.132 · ESTACIÓN ORBITAL «LOS PODERES YA MANDAN» — informe del casco: superpoderes que no saltaban y prueba de asteroides injugable · (1) DISPARO REDUNDANTE de los 4 poderes del AX-9: se queda el gancho por PUNTO (onPoint) y el MÓDULO añade en su update() el disparo por RALLY (bola viniendo al jugador, edge vel.z>0.35, patrón Locura que sí funciona en el casco) + GARANTÍA a los 22 s de duelo sin poderes (fuerza el aviso) + reintento más ágil (fallo 4 s, post-poder 10-15 s, primer poder a 6 s) · (2) CARTEL DEL SUPERPODER con el IDENTIFICADOR que el jugador espera: panel flotante junto al AX-9 con el medallón del poder (powerestrellas/meteoritos/tractor/cero) + nombre en grande; fase AVISO ámbar «AX-9 PREPARA…» y fase ACTIVA cian «¡SUPERPODER!» con pulso · (3) EFECTOS BLINDADOS: _poderArrancar en try/catch (un efecto que falle cierra el poder limpio — antes una excepción dejaba _act pegado y bloqueaba la bolsa para siempre) · (4) PRUEBA «DIANAS ORBITALES» JUGABLE: la bola de espera estaba en z=-0.90 (0,67 m DENTRO de la mesa — inalcanzable con la pala: «imposible destruir los asteroides») → ahora espera en z=-0.50 pegada al borde del jugador (convención Magia tableNearZ−0.38) y apex 0.42 · (5) DIANAS 3D DE VERDAD (adiós a los sprites «cutres»): asteroide = icosaedro con ruido determinista por vértice + 2 piedras satélite, caja blindada = contenedor metálico con aristas ámbar + núcleo brillante + escudo esférico que destella, dron = fuselaje con cabina cian + 4 rotores girando; colisión esférica y barrido anti-túnel intactos; dispose completo al reintentar · (6) QA v2.132 POR LA RUTA NATURAL: puntos por processIntents+applyPoint reales (sin forzar Math.random), ticks del módulo entre puntos, poder verificado con cartel + objetos visibles, prueba con colisión REAL (bola lanzada a diana, daño y destrucción por el barrido), garantía temporal verificada con mala suerte estirada · módulo estacion_orbital v3.2 (manifest v5) · núcleo sin cambios de comportamiento para locura/magia/oeste · antes v2.131 · v2.131 · FIX RAÍZ de Estación Orbital «sin superpoderes en 1/3/5 y sin pruebas en 2/4»: el módulo nunca ponía rules.state='champtest' en la SALA y el núcleo sólo enruta el gatillo al campeonato con ese estado (convención oeste/magia: árbitro dormido en la sala) — el gatillo ejecutaba el SAQUE CLÁSICO: partidos normales sin duelo real (sin powers: ctrl.state jamás llegó a 'duelo') y serveTrigger jamás llamado (sin pruebas). Ahora EO duerme al árbitro en TODA transición a sala/prueba (startChamp con bola aparcada, _empezarPrueba también bajo el panel EMPEZAR, _despuesDePrueba, onMatchOver normal y REJUGADA — que ahora SÍ cierra el duelo y limpia _replay, antes quedaba pegado al duelo real siguiente), reenter condicional (duelo='serve', resto='champtest') y leave restituye al árbitro (convención magia, antes salir de EO dejaba el núcleo en champtest) · la pala IA sólo existe en DUELO (update del módulo tras las escrituras del núcleo; en sala manda el standee del AX-9) · módulo estacion_orbital v3.1 · núcleo sin cambios de comportamiento para locura/magia/oeste · antes v2.130 · QUITARNE — 4 ajustes de la revisión del jugador: (1) CARTÓ CON «EMPEZAR»: las instrucciones de las PRUEBAS DE HABILIDAD (estructura común de todos los campeonatos) ya no se van solas — esperan al botón EMPEZAR del panel (mesh hijo con raycast, resaltado al apuntar; en 2D/QA queda el desvanecido automático); call sites de locura/magia/oeste/estacion_orbital actualizados · (2) INTRO DE CAMPEONATO: vídeo de la HISTORIA DEL RIVAL (~29 s, opcional) con GRAN botón JUGAR debajo — ChampLoader.launch() lo inyecta tras start() en TODOS los campeonatos (showChampIntro: pantalla 2,56 m con VideoTexture + póster de reserva si falta assets/intro.mp4; gatillo solo sobre el botón; BSO del núcleo con duck y BSO privada de los módulos silenciada vía hook champIntroPause) + 4 vídeos nuevos (escenas PIL + zoompan + xfade + BSO, ~0,6–1,3 MB por campeonato) · (3) MAGIA: el cartel «VS WIZARD / ¡EL ORBE MÁGICO!» bajado de 2,95 a 2,55 m (su borde superior 3,18 quedaba DENTRO del techo de 2,85 m); La Locura baja 2,62→2,58 (rozaba) · (4) ESTACIÓN ORBITAL pulida: AX-9 recolocado a la DERECHA de la mesa (x 1,26 = DUEL_X convención, antes centrado detrás), troquel-satélite FUERA de la mesa (2,45/−0,85, antes solapado en 0/−2,8), cartel de etapa a la PARED FRONTAL (−1,78/1,42/−5,44 — antes flotaba sobre la mesa tapando al rival), typo GATILGO→GATILLO, MAPA DEL CAMPEONATO en la pared izquierda (arte 1380×752 + clase MapaEO con anillo/tapas/REJUGA v2.96, zona calma reservada en el arte de la pared) y ARTE V2: sala con ASPECTO REAL por plano (suelo/techo 1024×1328, frontales 1536×718, laterales 1536×554 — el núcleo estira la textura), oclusión ambiental, doble bisel, ventanales con nebulosa multicapa y planeta anillado, esclusa con rueda, cápsulas de hibernación, brazo robótico, consolas con gráficas, señalética con tildes, troqueles cohete/rover/satélite redibujados y AX-9 rediseñado (degradados con máscaras, rim light, 5 expresiones) · antes v2.129 · ESTACIÓN ORBITAL «PLANTILLA FINAL» — el campeonato plantilla se upgrades a camino COMPLETO de 5 etapas (duelo ×0.90 → PRUEBA «Cinturón de asteroides» → duelo ×1.12 → PRUEBA «Tormenta de meteoritos» → DUELO FINAL ×1.42 → insignia ¡CONSEGUIDO!) · PRUEBAS «DIANAS ORBITALES» con motor propio en el módulo: física del núcleo vía stepPhysics + colisionador extra por SUBPASO (anti-túnel ball.__exPrev, patrón orbe de Magia), árbitro dormido en 'champtest', ignoreNet durante la prueba (precedente ARKANOID), bola en bote-en-espera hasta el primer golpe (v2.61 de magia), HUD holográfico (reloj + dianas), banner de resultado, cartel explicativo ANTES de entrar (regla v2.106) con PIEL NUEVA «estacion» (panel espacial estrellado) · dianas-sprite del artista: asteroide (1 golpe), caja blindada (2 golpes: escudo chispea) y dron móvil (+4 s de reloj) · 4 SUPERPODERES del AX-9 con bolsa rotatoria (v2.126) y aviso de dos fases: LLUVIA DE ESTRELLAS (confeti con textura de estrella), METEORITOS (3 rocas caen a TU campo y BLOQUEAN la bola con rebote — patrón Burla v2.127 del segmento prev→actual), RAYO TRACTOR (haz verde del rival que curva la bola hacia el eje central) y GRAVEDAD CERO (la bola flota en ondas verticales + motas a la deriva) · ARTE completo generado (PIL): sala de 6 planos (ventanales al espacio con planeta anillado, esclusa con válvula, cápsulas de sueño, brazo robótico, consolas), ANDROIDE AX-9 en 5 estados (robot flotante con anillo antigrav: rival/idle/duelo/derrotado/triunfante), troqueles cohete/rover/satélite y 4 medallones de poder (familia powerburla) · dron vigía patrullando la sala · progreso de ETAPA persistente (pp_champ_estacion_orbital_stage) · la prueba perdida se REPITE (flujo amable de la plantilla) · antes v2.128 · INSIGNIA «¡CONSEGUIDO!» — al ganar el DUELO FINAL de un campeonato el núcleo planta en la sala un PANEL GRANDE con la insignia del campeonato (championships/<id>/assets/insignia.png), el texto gigante ¡CONSEGUIDO! y fanfarria + confeti (window.__PP_CORE.showChampConseguido(id): locura/magia/oeste conectados) · MENÚ: los campeonatos vencidos lucen la cinta dorada «★ SUPERADO» (tarjetas CAMPEONATOS + subtítulo del hub) via ChampLoader.championFlag (isChampion() del módulo o convención <base>trophy/<base>champ) · INSIGNIA como LOGRO en el ranking: filas campeonas con insignia también en el panel 2D de la portada · campeonato SUPERADO queda ABIERTO: rejuego libre de etapas (mapa + gatillo, v2.96) · Estación Orbital gana flujo de CAMPEÓN (3 duelos → insignia + registro pp_champ_estacion_orbital_champ + fila 🏆 en el ranking) · antes v2.127 · BURLA sustituye a MAREO (el superpoder del Clown que «no funciona»): rayo de luz arcoíris que impacta en puntos distintos de la mesa con destello arcoíris, plantando un CARTÓN VERTICAL de ~50 cm con el clown burlesco (burla1-4.png del artista) durante 2 s; los cartones son BARRERAS que frenan la bola y estallan en partículas arcoíris; el COMODÍN (burlacomodin.png, ~1 de cada 5) deja pasar la bola, que se pone NEGRA y MÁS GRANDE: golpéala y estalla en cintas negras — PUNTO GANADOR; icono powerburla.png en el cartel · módulo de La Locura v18 · también: PARADA1-3.png nuevas del Oeste (arte del artista) y Estación Orbital PUBLICADA en el zip oficial (en V2.126 el zip salió con la plantilla desactivada y por eso no aparecía en el menú del casco) · antes v2.126 · PODERES DEL CLOWN A PRUEBA DE TODO: (1) LANZAMIENTO GARANTIZADO — el efecto entra aunque el punto muera durante el aviso (antes cualquier estado ≠ rally se comía el poder en silencio: el dueño lo vivía como «globos/mareo no funcionan») · (2) BOLSA ROTATORIA — todos los poderes salen antes de repetir · (3) POP de globos más generoso · TORMENTA visible + AUDIO blindado: (1) la tormenta de arena del Oeste ya no nace detrás del jugador (franja z del confeti) y rodante.png recupera su alfa real (fondo blanco + tablero falso fuera) · (2) decodeAudioData en forma promesa con copia: la música del vagón del Tren ya no muere · (3) invariante UNA MELODÍA extendido a las BSO privadas de los módulos · antes v2.124 · MAREO del Clown + invariante bidireccional AUDITORÍA DE MÚSICA II + MAREO: (1) invariante UNA MELODÍA bidireccional (la BSO retira la música del menú y en la portada la BSO espera) · (2) la BSO propia de Magia/Oeste resucita tras cada re-creación del contexto (salir/entrar de VR) y entra con fundido · (3) MAREO TOTAL del Clown: vaivén por deltas (inmune a escrituras del rig) y amplitud inconfundible (yaw ±11,5° + pitch ±3,4° + roll ±5,2°) · antes v2.123 · MENÚ: opciones contraídas
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
   // la build dentro del casco sin depender del nombre del zip.
@@ -2425,6 +2425,11 @@ const DIMS = {
   physicsRealism: 1,        // P1 golpe vivo + P2 bote físico slip-coupled
   paddlePerks: 1,           // PALAS CON CARÁCTER: las skins del entrenamiento
                             // modulan la goma del jugador (0 = todas neutras)
+  // --- v3.0.7-PLAY1 · PRO CIRCUITO -------------------------------------
+  // Gamificación del PRO TRAINING como CAPA de lectura (combos, estrellas,
+  // precisión, logros, celebración): NUNCA toca juez, física ni feeds.
+  // 0 = modo puro profesional (solo puntos y récords, como siempre).
+  trainGamify: 1,
   // P1 · goma (contacto pala-bola) — impulso tangencial con I de cascarón:
   rubberGrip: 0.45,         // agarre de la goma (1 = frenaría el deslizamiento entero)
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
@@ -5026,13 +5031,25 @@ function simulateServePath(from, v0, spin, ownSign) {
  *  rival. Fase 1: saques RÁPIDOS con bote propio profundo -> el bote rival cae
  *  en el último tercio del campo contrario (saque largo, como los reales).
  *  Fase 2: relaja la profundidad. El saque lento bota y muere en la mesa del
- *  rival: por eso se empieza por los vuelos rápidos. */
-function findServeVelocity(from, ownSign) {
+ *  rival: por eso se empieza por los vuelos rápidos.
+ *  v3.0.6-SRV1 · `hint` (opcional, SOLO asistencia del saque humano): {x, spd}
+ *  — el objetivo lateral y el tiempo de vuelo heredan la dirección y la
+ *  energía del swing del jugador (asistencia con «toque», no saque enlatado).
+ *  Sin hint (IA, máquina de entrenamiento) el comportamiento es el de siempre. */
+function findServeVelocity(from, ownSign, hint) {
   const C = DIMS.tableCenterZ;
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const HL = DIMS.tableHalfLength;
   // topspin hacia la red (como un saque real con efecto)
   const spin = new THREE.Vector3(-ownSign * 9, (Math.random() - 0.5) * 4, 0);
+  // hint del swing: objetivo lateral del gesto + ritmo (swing rápido = saque
+  // tenso; swing suave = saque cómodo). TB escala los tiempos de vuelo.
+  const hx = hint
+    ? THREE.MathUtils.clamp(hint.x, -0.42, 0.42)
+    : (Math.random() * 2 - 1) * 0.22;
+  const tb = hint
+    ? THREE.MathUtils.clamp(1.7 / Math.max(1, hint.spd), 0.78, 1.45)
+    : 1;
 
   for (let phase = 0; phase < 2; phase++) {
     const minOppDepth = phase === 0 ? HL * 0.5 : 0;
@@ -5043,13 +5060,10 @@ function findServeVelocity(from, ownSign) {
     const times = phase === 0 ? [0.3, 0.24, 0.36, 0.2] : [0.3, 0.4, 0.5, 0.62, 0.75];
     const mults = phase === 0 ? [1.0, 1.15, 1.3, 1.45, 1.6, 1.75] : [1.0];
     for (const depth of depths) {
-      for (const T of times) {
+      for (const T0 of times) {
+        const T = T0 * tb;
         for (const m of mults) {
-          const p1 = new THREE.Vector3(
-            (Math.random() * 2 - 1) * 0.22,
-            topR,
-            C + ownSign * depth,
-          );
+          const p1 = new THREE.Vector3(hx, topR, C + ownSign * depth);
           const v = computeShotVelocity(from, p1, T, 99).multiplyScalar(m);
           if (v.length() > 9.5) continue;
           const res = simulateServePath(from, v, spin, ownSign);
@@ -10781,6 +10795,14 @@ class PingPongGame {
       this.champs.serveTrigger(i);
       return;
     }
+    // v3.0.6-SRV1 · PRO TRAINING: el gatillo lanza la bola del soporte de
+    // saque (t4a/t4b). En entrenamiento el árbitro duerme y su rules.state
+    // es un RESIDUO del modo anterior: esta rama debe correr ANTES para que
+    // el gatillo no dispare el saque del núcleo contra el soporte del módulo.
+    if (this.calib && this.trainV3 && window.__PP_TRAIN && window.__PP_TRAIN.serveTrigger) {
+      try { window.__PP_TRAIN.serveTrigger(); } catch (e) { /* nunca rompe */ }
+      return;
+    }
     if (this.rules.state === 'over') {
       this.rules.startMatch(this.mode);   // revancha en el MISMO modo de juego
       this.resetToss();
@@ -10800,6 +10822,14 @@ class PingPongGame {
    *  sin impulso, el asistente le da la subida mínima (nunca se rechaza el
    *  gesto). Luego la golpeas con la pala cuando quieras. */
   releaseBallHand(i) {
+    // v3.0.8-TRN1 · ENTRENAMIENTO t4a/t4b: soltar el grip con la bola en la
+    // mano libre LANZA el saque del módulo (el mismo gesto natural que un
+    // partido). El módulo decide: en fase 'tee' lanza con la velocidad real
+    // de la mano; en cualquier otra fase ignora el gesto.
+    if (this.calib && this.trainV3 && window.__PP_TRAIN && window.__PP_TRAIN.serveRelease) {
+      if (i === this.ballHand) { try { window.__PP_TRAIN.serveRelease(i); } catch (e) { /* nunca rompe */ } }
+      return;
+    }
     if (this.calib || this.menuOpen) return;
     // v2.45/2.69 · PRUEBA (1 y 2 o la del campeonato de carpeta): soltar
     // el grip con la bola en la mano libre SIRVE IGUAL QUE EN UNA PARTIDA
@@ -12159,6 +12189,16 @@ class PingPongGame {
         const ps = this.controllerPaddles[this.paddleHand];
         if (ps.active) pads.push(ps);
       }
+      // v3.0.6-SRV1 · INMUNIDAD del inicio del lanzamiento: mientras la bola
+      // sube los primeros milímetros del toss, la pala NO colisiona. Antes,
+      // con las manos juntas (postura natural de saque), un roce prematuro
+      // anulaba el saque y la bola CHISPAZABA de vuelta a la mano: el bucle
+      // «lanzamiento anulado» que hacía el saque casi imposible. La misma
+      // subida continúa y el golpeo legítimo llega unos cm más arriba.
+      const tossImmune = this.tossed && this.rules.state === 'serve' &&
+        this.rules.server === 'player' && !this.calib &&
+        ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise;
+      if (tossImmune) pads.length = 0;
       if (this.net.online && this.net.owner !== this.net.mySide()) {
         // v2.19: la bola la simula el rival — seguir su emisión y solo
         // comprobar el contacto de MI pala contra ella
@@ -12218,18 +12258,39 @@ class PingPongGame {
         // golpe de saque válido
         e.consumed = true;
         this.tossed = false;
-        // SOLIDEZ: si la trayectoria real no cumpliría el saque (bote propio
-        // + bote rival), se endereza conservando parte del toque del jugador.
-        const fix = findServeVelocity(this.ball.pos, 1);
-        if (!simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1).ok) {
-          this.ball.vel.lerp(fix.v, 0.65);
-          this.ball.spin.lerp(fix.spin, 0.5);
-          if (!simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1).ok) {
-            this.ball.vel.copy(fix.v);
-            this.ball.spin.copy(fix.spin);
+        // SOLIDEZ con TOQUE DEL JUGADOR (v3.0.6-SRV1): la trayectoria propia se
+        // respeta SIEMPRE que sea legal. La asistencia sólo endereza lo mínimo
+        // en cascada (45 % → 75 % → solver) y hereda la energía y la dirección
+        // del swing (hint). Antes se sustituía el 65-100 % del golpeo en cuanto
+        // la simulación estricta fallaba: el saque salía «enlatado» (~5 m/s
+        // siempre igual), desconectado del gesto — la queja «se siente mal».
+        const sim = simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1);
+        if (!sim.ok) {
+          const hitPad = this.controllerPaddles[e.paddleIndex ?? this.paddleHand];
+          const fix = findServeVelocity(this.ball.pos, 1, hitPad ? {
+            x: this.ball.pos.x * 0.35 + hitPad.vel.x * 0.22,
+            spd: hitPad.vel.length(),
+          } : null);
+          if (sim.ownBounce && sim.oppBounce) {
+            // doble bote válido con roce de red (sería LET): se conserva el
+            // golpe del jugador y se gana un poco de altura para que el roce
+            // sea excepcional en el vuelo real
+            this.ball.vel.y += 0.35;
+          } else {
+            this.ball.vel.lerp(fix.v, 0.45);
+            this.ball.spin.lerp(fix.spin, 0.35);
+            if (!simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1).ok) {
+              this.ball.vel.lerp(fix.v, 0.75);
+              this.ball.spin.lerp(fix.spin, 0.6);
+              if (!simulateServePath(this.ball.pos, this.ball.vel, this.ball.spin, 1).ok) {
+                this.ball.vel.copy(fix.v);
+                this.ball.spin.copy(fix.spin);
+              }
+            }
           }
         }
         if (this.ball.vel.length() < 3.2) this.ball.vel.setLength(3.2);
+        if (this.ball.vel.length() > 8.8) this.ball.vel.setLength(8.8);
         this.rules.beginServeRally('player');
         if (this.net.online) { this.net.sendHit(true); this._localHit = false; }
         this.haptic(e.paddleIndex ?? this.paddleHand, 0.8, 90);
@@ -13015,6 +13076,9 @@ loadPaddleModel().then((paddleModel) => {
     const DEF = {
       pts: 0, best: {}, done: {}, unlocked: ['clasica'],
       skin: 'clasica', fb: { marks: 1, line: 1, spin: 1 },
+      // v3.0.7-PLAY1 · PRO CIRCUITO: estrellas/precisión por prueba, logros
+      // y mejor combo alcanzado (todo derivado del juez, nunca al revés)
+      stars: {}, acc: {}, ach: {}, comboBest: 0,
     };
     let S = (() => {
       try {
@@ -13064,8 +13128,16 @@ loadPaddleModel().then((paddleModel) => {
         ok_zona: '¡ZONA!', ok_banda: '¡A LA LÍNEA!', ok_bajo: '¡PASE BAJO!', ok_globo: '¡GLOBO!', ok_leido: '¡BIEN LEÍDO!', ok_bloqueo: '¡BLOQUEO!', ok_doble: '¡DOBLE BOTE!', ok_fondo: '¡AL FONDO!', ok_beat: '¡RITMO!',
         mal_alto: 'MUY ALTO · te rematan', mal_corta: 'CORTA · al centro', mal_red: 'A LA RED', mal_fuera: 'FUERA', mal_larga: 'LARGO', mal_pierde: 'SE PIERDE',
         hecho: '¡COMPLETADO! +{n} pts', nuevo_skin: 'PIEL NUEVA: {s} · elígela en el hub', hito: '¡HITO {n} RALLY! +{n2} pts',
-        sirve: 'Pulsa el gatillo y golpea la bola para sacar', fin_rally: 'Rally terminado: {n}',
+        sirve: 'Bola en tu mano libre · suéltala (o gatillo) y golpéala en el aire',
+        toss_alto: 'Lanza la bola un poco más arriba', fuera_linea: 'Saca desde detrás de la línea de fondo',
+        fin_rally: 'Rally terminado: {n}',
         lvl0: 'Novato', lvl1: 'Amateur', lvl2: 'Competidor', lvl3: 'Maestro', lvl4: 'Leyenda',
+        combo: 'COMBO ×{n}', acc: 'Precisión', logros: 'LOGROS', max: 'MÁX',
+        nuevo_logro: '¡LOGRO: {a}!',
+        ach_r10: 'RACHA DE 10', ach_r20: 'RACHA DE 20', ach_p1: 'PERFECTO',
+        ach_p5: 'CINCO PERFECTOS', ach_all9: 'CIRCUITO COMPLETO',
+        ach_m50: 'METRÓNOMO 50', ach_m100: 'METRÓNOMO 100',
+        ach_x3: 'TRIPLE COMBO', ach_leg: 'LEYENDA',
       },
       en: {
         hub_t: 'PRO TRAINING', hub_s: 'High performance center · CRAZY PING PONG',
@@ -13100,8 +13172,16 @@ loadPaddleModel().then((paddleModel) => {
         ok_zona: 'ZONE!', ok_banda: 'ON THE LINE!', ok_bajo: 'LOW PASS!', ok_globo: 'LOB!', ok_leido: 'WELL READ!', ok_bloqueo: 'BLOCK!', ok_doble: 'DOUBLE BOUNCE!', ok_fondo: 'DEEP!', ok_beat: 'RHYTHM!',
         mal_alto: 'TOO HIGH · they smash', mal_corta: 'SHORT · center', mal_red: 'INTO THE NET', mal_fuera: 'OUT', mal_larga: 'LONG', mal_pierde: 'LOST',
         hecho: 'COMPLETED! +{n} pts', nuevo_skin: 'NEW SKIN: {s} · pick it in the hub', hito: 'MILESTONE {n} RALLY! +{n2} pts',
-        sirve: 'Pull the trigger and hit the ball to serve', fin_rally: 'Rally over: {n}',
+        sirve: 'Ball resting on your free hand · release it (or trigger) and hit it in the air',
+        toss_alto: 'Toss the ball a bit higher', fuera_linea: 'Serve from behind the end line',
+        fin_rally: 'Rally over: {n}',
         lvl0: 'Rookie', lvl1: 'Amateur', lvl2: 'Contender', lvl3: 'Master', lvl4: 'Legend',
+        combo: 'COMBO ×{n}', acc: 'Accuracy', logros: 'BADGES', max: 'MAX',
+        nuevo_logro: 'BADGE: {a}!',
+        ach_r10: 'STREAK OF 10', ach_r20: 'STREAK OF 20', ach_p1: 'PERFECT',
+        ach_p5: 'FIVE PERFECTS', ach_all9: 'FULL CIRCUIT',
+        ach_m50: 'METRONOME 50', ach_m100: 'METRONOME 100',
+        ach_x3: 'TRIPLE COMBO', ach_leg: 'LEGEND',
       },
     };
     const t = (k, vars) => {
@@ -13116,6 +13196,107 @@ loadPaddleModel().then((paddleModel) => {
       { min: 800, k: 'lvl3' }, { min: 1500, k: 'lvl4' },
     ];
     const levelOf = (p) => { let l = LEVELS[0]; for (const it of LEVELS) if (p >= it.min) l = it; return l; };
+
+    /* =================================================================
+     *  v3.0.7-PLAY1 · PRO CIRCUITO — capa de GAMIFICACIÓN de lectura
+     *  -----------------------------------------------------------------
+     *  Observa los eventos del JUEZ (okHit/failHit/hitos) y añade:
+     *    · COMBO ×2/×3 por rachas de 4/8 (multiplica SOLO los puntos del
+     *      golpe; el bonus de completado y el criterio quedan intactos)
+     *    · ESTRELLAS 1-3★ por prueba: 3★ sin fallos en la ronda, 2★ con ≤2,
+     *      1★ completada (metrónomo: hitos de rally 30/50/100)
+     *    · PRECISIÓN % de la ronda (aciertos / intentos)
+     *    · LOGROS (9) con toast y fanfarria propia
+     *    · CELEBRACIÓN 3D de partículas al completar (un solo pool reutilizado)
+     *  NUNCA toca física, juez, feeds ni reglas. Interruptor DIMS.trainGamify.
+     *  ================================================================= */
+    const GAMF = () => (typeof DIMS !== 'undefined' && DIMS.trainGamify === 0) ? 0 : 1;
+    const ACHS = ['r10', 'r20', 'p1', 'p5', 'all9', 'm50', 'm100', 'x3', 'leg'];
+    function grant(id) {
+      if (!GAMF() || S.ach[id]) return;
+      S.ach[id] = 1; save(); panelDirty = true;
+      toast(t('nuevo_logro', { a: t('ach_' + id) }), true);
+      G.audio.playOsc(520, 780, 0.09, 'triangle', 0.13, 0);
+      G.audio.playOsc(780, 1170, 0.09, 'triangle', 0.13, 0.1);
+      G.audio.playOsc(1170, 1560, 0.14, 'triangle', 0.13, 0.2);
+    }
+    function comboMul() {
+      if (!GAMF() || !active) return 1;
+      return comboMulN(active === 't5a' ? st.rally : st.streak);
+    }
+    function comboMulN(r) { return r >= 8 ? 3 : (r >= 4 ? 2 : 1); }
+    function starsFor(faults) { return faults === 0 ? 3 : (faults <= 2 ? 2 : 1); }
+    function recordStars(mode, n) {
+      if (!GAMF() || !n) return;
+      if ((S.stars[mode] || 0) < n) { S.stars[mode] = n; save(); panelDirty = true; }
+    }
+    function recordAcc(mode, pct) {
+      if (!GAMF() || !isFinite(pct)) return;
+      if ((S.acc[mode] || 0) < pct) { S.acc[mode] = pct; save(); panelDirty = true; }
+    }
+    function checkStreakAch() {
+      const r = active === 't5a' ? st.rally : st.streak;
+      if (r >= 10) grant('r10');
+      if (r >= 20) grant('r20');
+    }
+    function checkGlobalAch() {
+      const modes = Object.keys(MODES);
+      if (modes.every((m) => (S.stars[m] || 0) >= 1)) grant('all9');
+      if (modes.filter((m) => S.stars[m] === 3).length >= 5) grant('p5');
+      if (S.pts >= 1500) grant('leg');
+    }
+    function checkComboAch(mul) {
+      if (mul > (S.comboBest || 0)) { S.comboBest = mul; save(); }
+      if (mul >= 3) grant('x3');
+    }
+    // celebración 3D: UN solo pool de partículas reutilizado (coste ínfimo)
+    let burstPts = null, burstVel = null, burstLife = 0, burstT = 0;
+    function burst(pos, big) {
+      if (!GAMF() || !grp) return;
+      const N = big ? 150 : 90;
+      if (!burstPts) {
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+        burstVel = new Float32Array(N * 3);
+        burstPts = new THREE.Points(geo, new THREE.PointsMaterial({
+          color: 0xffd76a, size: 0.028, transparent: true, opacity: 0.95,
+          depthWrite: false, blending: THREE.AdditiveBlending,
+        }));
+        burstPts.visible = false;
+        burstPts.renderOrder = 6;
+        grp.add(burstPts);
+      }
+      const p = burstPts.geometry.attributes.position.array;
+      for (let i = 0; i < N; i++) {
+        p[i * 3] = pos.x; p[i * 3 + 1] = pos.y; p[i * 3 + 2] = pos.z;
+        const a = Math.random() * Math.PI * 2, up = 0.8 + Math.random() * 1.7;
+        const sp = (0.7 + Math.random() * 1.1) * (big ? 1.25 : 1);
+        burstVel[i * 3] = Math.cos(a) * sp;
+        burstVel[i * 3 + 1] = up;
+        burstVel[i * 3 + 2] = Math.sin(a) * sp * 0.7;
+      }
+      burstPts.geometry.setDrawRange(0, N);
+      burstPts.geometry.attributes.position.needsUpdate = true;
+      burstPts.material.opacity = 0.95;
+      burstPts.material.color.setHex(big ? 0xffe9a8 : 0xffd76a);
+      burstPts.visible = true;
+      burstLife = big ? 1.5 : 1.15; burstT = 0;
+    }
+    function burstTick(dt) {
+      if (!burstPts || !burstPts.visible) return;
+      burstT += dt;
+      const n = burstPts.geometry.drawRange.count;
+      const p = burstPts.geometry.attributes.position.array;
+      for (let i = 0; i < n * 3; i += 3) {
+        p[i] += burstVel[i] * dt;
+        p[i + 1] += burstVel[i + 1] * dt;
+        p[i + 2] += burstVel[i + 2] * dt;
+        burstVel[i + 1] -= 3.4 * dt;
+      }
+      burstPts.geometry.attributes.position.needsUpdate = true;
+      burstPts.material.opacity = Math.max(0, 0.95 * (1 - burstT / burstLife));
+      if (burstT >= burstLife) burstPts.visible = false;
+    }
   
     /* v3.0.3 · SKINS DE PALA DE VERDAD — nada de aros ni cintas: cada piel
      * define TEXTURAS REALES (goma con pips en relieve, carbono, oro
@@ -13175,6 +13356,8 @@ loadPaddleModel().then((paddleModel) => {
       target: null, toast: '', toastT: 0, feedT: 0, beat: 0, shotRec: false,
       aiTouched: false,   // v3.0.2 · la bola ya botó en el campo rival tras el golpe (metrónomo)
       shotPts: [], spinIconT: 0, spinIconCol: null, done: 0,
+      tossReleaseY: 0, tossMaxY: 0,   // v3.0.8-TRN1 · validación del lanzamiento (como el núcleo)
+      roundHits: 0, roundFaults: 0,   // v3.0.7-PLAY1 · precisión de la ronda en curso
     };
   
     /* ---------------- constantes geométricas locales ---------------- */
@@ -13425,6 +13608,28 @@ loadPaddleModel().then((paddleModel) => {
         g.fillStyle = '#8fa0b8';
         g.font = '600 24px system-ui, sans-serif';
         g.fillText(t('hud_total') + ' ' + S.pts, W - 34, H - 32);
+        // v3.0.7-PLAY1 · PRO CIRCUITO: combo, estrellas del modo y precisión
+        if (GAMF()) {
+          const mul = comboMul();
+          if (mul > 1) {
+            g.textAlign = 'center';
+            g.fillStyle = mul >= 3 ? '#ffb84d' : '#ffd76a';
+            g.font = '900 ' + (46 + mul * 6) + 'px system-ui, sans-serif';
+            g.fillText('×' + mul, W / 2 + 250, 216);
+          }
+          const stN = S.stars[active] || 0;
+          g.textAlign = 'right';
+          g.fillStyle = '#f0c85a';
+          g.font = '800 30px system-ui, sans-serif';
+          g.fillText('\u2605'.repeat(stN) + '\u2606'.repeat(3 - stN), W - 34, 52);
+          const tries = st.roundHits + st.roundFaults;
+          if (tries > 0 && active !== 't5a') {
+            const acc = Math.round(st.roundHits / tries * 100);
+            g.fillStyle = '#8fa0b8';
+            g.font = '600 20px system-ui, sans-serif';
+            g.fillText(t('acc') + ' ' + acc + '%', W - 34, 96);
+          }
+        }
       }
       panelTex.needsUpdate = true;
     }
@@ -13482,6 +13687,17 @@ loadPaddleModel().then((paddleModel) => {
         // tiro resuelto con efecto REAL (arrastre + Magnus simulados)
         v = computeShotVelocityReal(b.pos, opts.target, opts.tIn || 0.62, opts.max || 8.5, opts.spin);
         sp = opts.spin;
+      } else if (opts.rally) {
+        // v3.0.8-TRN1 · BOLA DE SPARRING: tiro directo y profundo al campo del
+        // jugador, resuelto con Magnus (despeje de red garantizado). Antes la
+        // máquina alimentaba con SAQUES del solver: cuando la fase rápida
+        // fallaba caían bolas lentas y cortas («tiradas cortas a la red»).
+        // Ahora viven en la zona media-profunda, como un rival real.
+        const tx = (Math.random() * 2 - 1) * 0.24;
+        const tz = C() + HL() * (0.52 + Math.random() * 0.26);
+        v = computeShotVelocityReal(b.pos, new THREE.Vector3(tx, 0, tz),
+          0.56 + Math.random() * 0.10, opts.max || 7.8, new THREE.Vector3());
+        sp = new THREE.Vector3();
       } else {
         const r = findServeVelocity(b.pos, -1);
         v = r.v; sp = r.spin;
@@ -13493,15 +13709,113 @@ loadPaddleModel().then((paddleModel) => {
       resetSessJudge();
       st.beat = 0;
     }
-    /** Bola en el soporte de saque (fija hasta que el jugador la golpea). */
+    /** v3.0.8-TRN1 · SOPORTE DE SAQUE natural: la bola espera EN LA MANO
+     *  LIBRE del jugador (antes flotaba fija detrás de la línea de fondo y
+     *  antes aún SOBRE la mesa, inalcanzable). Se lanza SOLO con el gesto del
+     *  jugador — soltar el grip (velocidad real de la mano) o el gatillo —
+     *  y luego se golpea en el aire con el margen ampliado del saque. */
     function serveTee() {
       const b = G.ball;
       G.resetToss();
-      b.pos.set(0.03, TOP() + 0.15, C() + 1.04);
+      // v3.0.8-TRN1 · SAQUE REAL: la bola descansa EN LA MANO LIBRE (misma
+      // cinemática que el núcleo en partido: copia la mano + BALL_HAND_LIFT).
+      // Sólo si no hay mano activa (1 mando / escritorio) flota en el punto
+      // de apoyo clásico detrás de la línea de fondo.
       b.vel.set(0, 0, 0);
       b.spin.set(0, 0, 0);
+      const bh = G.controllerPaddles && G.controllerPaddles[G.ballHand];
+      if (bh && bh.active) {
+        b.pos.copy(bh.pos);
+        b.pos.y += BALL_HAND_LIFT;
+      } else {
+        b.pos.set(0.30, 1.05, C() + HL() + 0.35);
+      }
+      st.tossReleaseY = b.pos.y; st.tossMaxY = b.pos.y;
       resetSessJudge();
       st.phase = 'tee';
+      st.teeT = 0;
+    }
+    /** v3.0.8-TRN1 · Lanzamiento con el GESTO DEL JUGADOR: usa la velocidad
+     *  REAL de la mano libre (toss natural, como el núcleo) y sólo si la
+     *  suelta floja da la subida mínima asistida. Nada de tiros automáticos:
+     *  el jugador decide el momento (gatillo o abrir el grip). */
+    function serveTossFromTee() {
+      if (st.phase !== 'tee') return;
+      const b = G.ball;
+      const bh = G.controllerPaddles && G.controllerPaddles[G.ballHand];
+      const v = new THREE.Vector3(0, DIMS.serveAssistVy, 0);
+      if (bh && bh.active) {
+        v.copy(bh.vel);
+        const natural = bh.vel.y > DIMS.serveAssistVy * 0.75 || bh.vel.length() > 1.6;
+        if (!natural) { v.y = Math.max(v.y, DIMS.serveAssistVy); v.x *= 0.4; v.z *= 0.4; }
+        v.x = THREE.MathUtils.clamp(v.x, -1.2, 1.2);
+        v.z = THREE.MathUtils.clamp(v.z, -1.2, 1.2);
+      }
+      if (v.y < DIMS.serveAssistVy) v.y = DIMS.serveAssistVy;
+      if (v.y > 4.6) v.y = 4.6;   // tope: un toss controlable (~1 m)
+      b.vel.copy(v);
+      b.spin.set(0, 0, 0);
+      st.tossReleaseY = b.pos.y; st.tossMaxY = b.pos.y;
+      st.phase = 'toss';
+      st.tossT = 0;
+      st.teeT = 0;
+      G.audio.serve();
+      try { G.haptic(G.ballHand, 0.45); } catch (e) { /* */ }
+    }
+    /** margen de detección ampliado SOLO mientras la bola del entrenamiento
+     *  vuela tras el lanzamiento (el núcleo lo pone a 0 cada frame en calib). */
+    function drillReach(on) {
+      if (!G || !G.controllerPaddles) return;
+      for (const ps of G.controllerPaddles) {
+        if (ps) ps.extraReach = on ? DIMS.serveExtraReach : 0;
+      }
+    }
+
+    /** v3.0.8-TRN1 · ASISTENCIA DEL GOLPEO DE SAQUE en el entrenamiento:
+     *  EXACTAMENTE la misma que aplica el núcleo en partido (valida la altura
+     *  del lanzamiento y la línea de fondo; si el golpeo en seco no produce
+     *  un saque legal, cascada 45 % → 75 % → solver heredando el toque del
+     *  swing vía hint). Sin ella el entrenamiento exigía un golpeo perfecto
+     *  en seco: «el saque es imposible». Devuelve true si el saque sigue vivo. */
+    function serveAssist() {
+      const b = G.ball;
+      const rise = (st.tossMaxY || 0) - (st.tossReleaseY || 0);
+      if (rise < DIMS.tossMinRise) {
+        toast(t('toss_alto'), false);
+        serveTee();
+        return false;
+      }
+      if (b.pos.z < C() + HL() - DIMS.serveEndLineTol) {
+        toast(t('fuera_linea'), false);
+        serveTee();
+        return false;
+      }
+      const sim = simulateServePath(b.pos, b.vel, b.spin, 1);
+      if (!sim.ok) {
+        const pad = G.controllerPaddles ? G.controllerPaddles[G.paddleHand] : null;
+        const fix = findServeVelocity(b.pos, 1, pad ? {
+          x: b.pos.x * 0.35 + pad.vel.x * 0.22,
+          spd: pad.vel.length(),
+        } : null);
+        if (sim.ownBounce && sim.oppBounce) {
+          b.vel.y += 0.35;   // roce de red con doble bote válido: se conserva
+        } else {
+          b.vel.lerp(fix.v, 0.45);
+          b.spin.lerp(fix.spin, 0.35);
+          if (!simulateServePath(b.pos, b.vel, b.spin, 1).ok) {
+            b.vel.lerp(fix.v, 0.75);
+            b.spin.lerp(fix.spin, 0.6);
+            if (!simulateServePath(b.pos, b.vel, b.spin, 1).ok) {
+              b.vel.copy(fix.v);
+              b.spin.copy(fix.spin);
+            }
+          }
+        }
+      }
+      if (b.vel.length() < 3.2) b.vel.setLength(3.2);
+      if (b.vel.length() > 8.8) b.vel.setLength(8.8);
+      try { G.haptic(G.paddleHand, 0.8, 90); } catch (e) { /* */ }
+      return true;
     }
   
     /* ---------------- puntuación y avisos ---------------- */
@@ -13525,9 +13839,22 @@ loadPaddleModel().then((paddleModel) => {
     }
     function okHit(key, pts) {
       st.streak++; st.done++;
-      addPts(pts);
-      toast(t(key), true);
-      G.audio.playOsc(760, 1180, 0.07, 'sine', 0.13, 0);
+      st.roundHits++;
+      // v3.0.7-PLAY1 · COMBO: los puntos del golpe se multiplican por la
+      // racha (×2 a partir de 4, ×3 a partir de 8). Con gamify=0 mul es 1
+      // y el flujo de puntos es IDÉNTICO al de v3.0.6.
+      const mul = comboMul();
+      const mulPrev = comboMulN((active === 't5a' ? st.rally : st.streak) - 1);
+      addPts(pts * mul);
+      checkComboAch(mul);
+      checkStreakAch();
+      if (mul > mulPrev) {
+        toast(t('combo', { n: mul }), true);
+        G.audio.playOsc(760 + mul * 160, 1180 + mul * 260, 0.09, 'sine', 0.14, 0);
+      } else {
+        toast(t(key), true);
+        G.audio.playOsc(760, 1180, 0.07, 'sine', 0.13, 0);
+      }
       const M = MODES[active];
       const hitGoal = active === 't5a'
         ? (st.rally === 30 || st.rally === 50 || st.rally === 100)
@@ -13536,10 +13863,31 @@ loadPaddleModel().then((paddleModel) => {
         const bonus = active === 't5a' ? (st.rally === 30 ? 15 : st.rally === 50 ? 25 : 50) : M.bonus;
         addPts(bonus);
         if (active === 't5a') recordBest(active, st.rally);
+        // v3.0.7-PLAY1 · estrellas + precisión + celebración al completar
+        let suffix = '';
+        if (GAMF()) {
+          if (active === 't5a') {
+            const stR = st.rally >= 100 ? 3 : (st.rally >= 50 ? 2 : 1);
+            recordStars('t5a', stR);
+            if (st.rally >= 50) grant('m50');
+            if (st.rally >= 100) grant('m100');
+          } else {
+            const tries = st.roundHits + st.roundFaults;
+            const acc = tries ? Math.round(st.roundHits / tries * 100) : 100;
+            const stars = starsFor(st.roundFaults);
+            recordStars(active, stars);
+            recordAcc(active, acc);
+            if (stars === 3) grant('p1');
+            suffix = '  ' + '\u2605'.repeat(stars) + '\u2606'.repeat(3 - stars);
+          }
+          burst({ x: 0, y: TOP() + 0.5, z: C() }, active !== 't5a' && st.roundFaults === 0);
+          checkGlobalAch();
+        }
         toast(active === 't5a'
           ? t('hito', { n: st.rally, n2: bonus })
-          : t('hecho', { n: bonus }), true);
+          : t('hecho', { n: bonus }) + suffix, true);
         st.streak = 0; st.done = 0;
+        if (active !== 't5a') { st.roundHits = 0; st.roundFaults = 0; }
         G.audio.playOsc(660, 990, 0.1, 'triangle', 0.14, 0.0);
         G.audio.playOsc(880, 1320, 0.1, 'triangle', 0.14, 0.11);
         G.audio.playOsc(990, 1760, 0.14, 'triangle', 0.14, 0.22);
@@ -13551,6 +13899,7 @@ loadPaddleModel().then((paddleModel) => {
     }
     function failHit(key) {
       st.streak = 0;
+      st.roundFaults++;
       if (active === 't5a' && st.rally > 0) {
         recordBest(active, st.rally);
         toast(t('fin_rally', { n: st.rally }), false);
@@ -13596,33 +13945,55 @@ loadPaddleModel().then((paddleModel) => {
         g.fillText('EVITA', 0, 0);
         g.restore();
         // zona objetivo dorada
+        // v3.0.8-TRN1 · ZONA FIEL AL JUEZ: lo pintado ES lo juzgado. Antes la
+        // zona dorada cubría toda la mitad (incluida la franja central que
+        // zoneOf() rechaza como 'C' EVITA) y el texto OBJETIVO a 64 px se
+        // salía del rectángulo (se cortaba). Ahora la zona empieza donde el
+        // juez acepta (|x| ≥ 15 cm) y el texto se reescala con measureText
+        // para caber SIEMPRE dentro del área concreta.
         if (st.target) {
           const zr = st.target.z === 'deep' ? [C() - HL(), C() - HL() / 2] : [C() - HL() / 2, C() - HL() / 4];
-          const xr = st.target.x < 0 ? [-HW(), 0] : [0, HW()];
-          g.fillStyle = 'rgba(242,193,78,0.85)';
-          g.fillRect(mx(xr[0]), mz(zr[0]), mx(xr[1]) - mx(xr[0]), mz(zr[1]) - mz(zr[0]));
+          const xr = st.target.x < 0 ? [-HW(), -0.15] : [0.15, HW()];
+          const zx0 = mx(xr[0]), zx1 = mx(xr[1]), zy0 = mz(zr[0]), zy1 = mz(zr[1]);
+          g.fillStyle = 'rgba(242,193,78,0.88)';
+          g.fillRect(zx0, zy0, zx1 - zx0, zy1 - zy0);
           g.strokeStyle = '#ffd257'; g.lineWidth = 10;
-          g.strokeRect(mx(xr[0]) + 5, mz(zr[0]) + 5, mx(xr[1]) - mx(xr[0]) - 10, mz(zr[1]) - mz(zr[0]) - 10);
+          g.strokeRect(zx0 + 5, zy0 + 5, zx1 - zx0 - 10, zy1 - zy0 - 10);
           g.strokeStyle = 'rgba(60,36,0,0.9)'; g.lineWidth = 3;
-          g.strokeRect(mx(xr[0]) + 12, mz(zr[0]) + 12, mx(xr[1]) - mx(xr[0]) - 24, mz(zr[1]) - mz(zr[0]) - 24);
-          g.fillStyle = '#1a1408'; g.font = '900 64px system-ui, sans-serif';
-          g.textAlign = 'center';
+          g.strokeRect(zx0 + 12, zy0 + 12, zx1 - zx0 - 24, zy1 - zy0 - 24);
           g.save();
-          g.translate((mx(xr[0]) + mx(xr[1])) / 2, (mz(zr[0]) + mz(zr[1])) / 2);
+          g.translate((zx0 + zx1) / 2, (zy0 + zy1) / 2);
           g.rotate(Math.PI);
-          g.fillText('OBJETIVO', 0, 20);
+          const ztW = Math.abs(zx1 - zx0) - 26, ztH = Math.abs(zy1 - zy0) - 18;
+          let ztSize = Math.min(58, Math.floor(ztH * 0.62));
+          g.font = '900 ' + ztSize + 'px system-ui, sans-serif';
+          const ztText = 'OBJETIVO';
+          const ztWid = g.measureText(ztText).width;
+          if (ztWid > ztW) ztSize = Math.max(20, Math.floor(ztSize * ztW / ztWid));
+          g.font = '900 ' + ztSize + 'px system-ui, sans-serif';
+          g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.lineWidth = 6; g.strokeStyle = 'rgba(40,24,0,0.85)';
+          g.strokeText(ztText, 0, 0);
+          g.fillStyle = '#1a1408';
+          g.fillText(ztText, 0, 0);
+          g.textBaseline = 'alphabetic';
           g.restore();
         }
       } else if (mode === 't1b') {
         // bandas: laterales 10 cm + fondo 12 cm
+        // v3.0.6-SRV1 · FIX zona FONDO: el eje Z del lienzo está INVERTIDO
+        // respecto a mz() (fila 0 = red, fila H = fondo rival); pintar desde
+        // la fila 0 cubría TODA la mesa MENOS la franja objetivo. Con el mismo
+        // patrón rect(mz(z0), mz(z1)−mz(z0)) de t4a/t4b la franja cae EXACTA.
         g.fillStyle = 'rgba(99,179,237,0.8)';
         g.fillRect(0, 0, mx(-HW() + 0.10), H);
         g.fillRect(mx(HW() - 0.10), 0, W - mx(HW() - 0.10), H);
-        g.fillRect(0, 0, W, mz(C() - HL() + 0.12));
+        const zb = [C() - HL(), C() - HL() + 0.12];   // franja de fondo real
+        g.fillRect(0, mz(zb[0]), W, mz(zb[1]) - mz(zb[0]));
         g.strokeStyle = '#9fd4ff'; g.lineWidth = 9;
         g.strokeRect(4.5, 4.5, W - 9, H - 9);
         g.fillStyle = '#0c1826'; g.font = '900 40px system-ui, sans-serif'; g.textAlign = 'center';
-        g.save(); g.translate(W / 2, 44); g.rotate(Math.PI); g.fillText('FONDO', 0, 0); g.restore();
+        g.save(); g.translate(W / 2, (mz(zb[0]) + mz(zb[1])) / 2); g.rotate(Math.PI); g.fillText('FONDO', 0, 0); g.restore();
       } else if (mode === 't4a') {
         // zona de doble bote junto a la red (lado rival)
         const zr = [C() - 0.56, C() - 0.05];
@@ -13664,11 +14035,11 @@ loadPaddleModel().then((paddleModel) => {
     function modeFeed() {
       // alimentación específica por modo (máquina o soporte de saque)
       if (active === 't1a' || active === 't1b' || active === 't2a' || active === 't2b' || active === 't5a') {
-        // v3.0.2 · FIX red: en t2a se multiplicaba la velocidad resuelta ×1.08
-        // y el saque (despeje justo sobre la cinta) se estrellaba contra la red.
-        // TODOS los feeds salen con el saque legal resuelto (despeje garantizado);
-        // la dificultad de cada modo vive en lo que devuelve EL JUGADOR.
-        feedToPlayer({});
+        // v3.0.8-TRN1 · MÁQUINA DE SPARRING: bolas de rally directas y
+        // profundas (tiro resuelto con Magnus, despeje de red garantizado)
+        // en vez de saques del solver que a veces caían lentos y cortos. La
+        // dificultad de cada modo sigue viviendo en lo que devuelve EL JUGADOR.
+        feedToPlayer({ rally: true, max: active === 't5a' ? 7.2 : 7.8 });
         st.phase = 'rally';
         if (active === 't5a') st.live = true;   // el beat vigila el fallo aunque el jugador no la toque
       } else if (active === 't3a') {
@@ -13733,15 +14104,17 @@ loadPaddleModel().then((paddleModel) => {
       } else if (active === 't3b') {
         okHit(MODES[active].ok, MODES[active].pts);       // bote rival = bloqueo válido
       } else if (active === 't4a') {
-        // v3.0.2 · FIX: el juez NO verificaba la zona marcada (contaba 2 botes
-        // rivales en cualquier sitio). Ahora cada bote debe caer DENTRO de la
-        // zona pintada (51 cm junto a la red, el mismo rect del overlay).
+        // v3.0.2 · el juez verifica la zona pintada (51 cm junto a la red).
+        // v3.0.6-SRV1 · SOLO el PRIMER bote rival debe caer en la zona (saque
+        // corto); el SEGUNDO basta con que bote en el campo rival: exigir los
+        // DOS dentro de 51 cm era casi imposible (el 2.º bote de un saque
+        // corto real siempre cae más hondo que el 1.º).
         const inZone = Math.abs(p.x) < HW() && p.z > C() - 0.56 && p.z < C() - 0.05;
-        if (!inZone) { st.done = 0; failHit('mal_larga'); }
-        else {
-          st.aiBounce++;
-          if (st.aiBounce >= 2) okHit(MODES[active].ok, MODES[active].pts);
-          else st.live = true;                               // espera el 2.º bote
+        if (st.aiBounce === 0) {
+          if (!inZone) { st.done = 0; failHit('mal_larga'); }
+          else { st.aiBounce = 1; st.live = true; }          // espera el 2.º bote
+        } else {
+          okHit(MODES[active].ok, MODES[active].pts);        // doble bote ✓
         }
       } else if (active === 't4b') {
         const deep = p.z < C() - HL() + 0.15;
@@ -13801,8 +14174,23 @@ loadPaddleModel().then((paddleModel) => {
       const evs = G.events || [];
       for (const ev of evs) {
         if (ev.type === 'paddle' && ev.who === 'player') {
+          // v3.0.8-TRN1 · en fase 'tee' la bola está EN LA MANO LIBRE: un roce
+          // de la pala no es un golpeo (se ignora). Y en los primeros mm del
+          // lanzamiento tampoco (misma inmunidad que el núcleo: manos juntas).
+          if (st.phase === 'tee') continue;
+          if (st.phase === 'toss' &&
+              (st.tossMaxY - st.tossReleaseY) < DIMS.tossMinRise) continue;
           st.hitPos = ev.pos ? ev.pos.clone() : null;
-          if (st.phase === 'tee') st.phase = 'serve';
+          // v3.0.6-SRV1 · 'toss' se añade: el golpe válido llega con la bola EN
+          // EL AIRE (soporte → lanzamiento → golpeo, como el saque real).
+          if (st.phase === 'toss') {
+            drillReach(false);          // margen ampliado SOLO durante el vuelo
+            // v3.0.8-TRN1 · asistencia del saque idéntica a la de PARTIDO
+            // (validación de lanzamiento + cascada 45 % → 75 % → solver con
+            // hint del swing). Si el lanzamiento no vale, vuelta al soporte.
+            if (!serveAssist()) continue;
+            st.phase = 'serve';
+          }
           st.live = true; st.apex = G.ball.pos.y; st.aiBounce = 0;
           st.aiTouched = false;
           st.cross = null; st.deadT = 0; st.shotRec = true; st.shotPts.length = 0;
@@ -13844,14 +14232,46 @@ loadPaddleModel().then((paddleModel) => {
         } else st.deadT = 0;
       }
       sampleCross();
-      // 3) soporte de saque fijo hasta el golpe
-      if ((active === 't4a' || active === 't4b') && st.phase === 'tee') {
-        b.pos.set(0.03, TOP() + 0.15, C() + 1.04);
-        b.vel.set(0, 0, 0);
-        b.spin.set(0, 0, 0);
+      // 3) SAQUE (t4a/t4b) · ciclo COMPLETO en el módulo: soporte →
+      // lanzamiento → golpeo en el aire → punto → nuevo soporte. El paso 4 NO
+      // alimenta t4 (antes el feed temporizada ROBABA la bola en pleno vuelo,
+      // la misma clase de bug que el metrónomo sufría en v3.0.2).
+      if (active === 't4a' || active === 't4b') {
+        if (st.phase === 'tee') {
+          // v3.0.8-TRN1 · bola EN LA MANO LIBRE (cinemática pura, como el
+          // núcleo en partido): sigue a la mano frame a frame y espera el
+          // gesto del jugador (soltar grip o gatillo). NUNCA se lanza sola:
+          // el auto-toss de 1,1 s robaba el control y rompía la sensación.
+          b.vel.set(0, 0, 0);
+          b.spin.set(0, 0, 0);
+          const bh = G.controllerPaddles && G.controllerPaddles[G.ballHand];
+          if (bh && bh.active) {
+            b.pos.copy(bh.pos);
+            b.pos.y += BALL_HAND_LIFT;
+          } else {
+            b.pos.set(0.30, 1.05, C() + HL() + 0.35);
+          }
+          st.tossReleaseY = b.pos.y; st.tossMaxY = b.pos.y;
+          st.teeT += dt;
+        } else if (st.phase === 'toss') {
+          // vuelo del lanzamiento: margen de golpeo ampliado (el núcleo lo
+          // repone a 0 cada frame en calib; aquí se vuelve a activar)
+          drillReach(true);
+          st.tossT += dt;
+          if (b.pos.y > st.tossMaxY) st.tossMaxY = b.pos.y;
+          const fellBack = b.vel.y < 0 && b.pos.y < 1.02;
+          if (st.tossT > 4 || fellBack || ballDead()) {
+            drillReach(false);
+            serveTee();                            // reintentar desde el soporte
+          }
+        } else if (!st.live) {
+          // punto cerrado (el juez ya puntuó o falló) → nuevo soporte
+          st.wait -= dt;
+          if (st.wait <= 0) serveTee();
+        }
       }
-      // 4) alimentación temporizada
-      if (!st.live) {
+      // 4) alimentación temporizada (t4a/t4b la lleva el soporte del paso 3)
+      if (!st.live && !(active === 't4a' || active === 't4b')) {
         st.wait -= dt;
         if (st.wait <= 0) { modeFeed(); st.wait = active === 't5a' ? 1.65 : 2.2; }
       } else if (active === 't5a') {
@@ -13951,6 +14371,8 @@ loadPaddleModel().then((paddleModel) => {
       game.trainV3Hub = true;                   // v3.0.3 · salida con Y → hub de entrenamiento
       game.calibPanel.group.visible = false;    // el panel de agarre fuera en los modos
       st.streak = 0; st.done = 0; st.sessPts = 0; st.rally = 0;
+      st.roundHits = 0; st.roundFaults = 0;   // v3.0.7-PLAY1 · ronda limpia
+      if (burstPts) burstPts.visible = false; // sin celebración de la sesión anterior
       // v3.0.2 · reset COMPLETO de la sesión (antes live/phase/aiTouched
       // quedaban sucios del modo anterior y el modo nuevo arrancaba mal):
       st.live = false; st.phase = 'feed'; st.aiTouched = false;
@@ -13967,6 +14389,7 @@ loadPaddleModel().then((paddleModel) => {
      *  para la estanqueidad total de los módulos. */
     function teardown(game) {
       active = null;
+      drillReach(false);   // v3.0.6-SRV1 · margen de saque fuera al recoger
       if (grp) grp.visible = false;
       applyModeScene();
       const g = game || G;
@@ -14413,6 +14836,29 @@ loadPaddleModel().then((paddleModel) => {
       c.fillText(S.pts + ' ' + t('pts'), 800, 82);
       c.fillStyle = '#8fa0b8'; c.font = '600 20px system-ui, sans-serif';
       c.fillText(t('nivel') + ' · ' + t(lvl.k), 800, 112);
+      // v3.0.7-PLAY1 · barra de progreso al siguiente nivel + LOGROS n/9
+      if (GAMF()) {
+        const li = LEVELS.indexOf(lvl), nx = LEVELS[li + 1] || null;
+        const bw = 240, bx = 800 - bw, by = 134;
+        const prog = nx ? Math.min(1, (S.pts - lvl.min) / (nx.min - lvl.min)) : 1;
+        c.fillStyle = 'rgba(255,255,255,0.14)';
+        c.fillRect(bx, by, bw, 7);
+        c.fillStyle = nx ? '#f0c85a' : '#68d391';
+        c.fillRect(bx, by, Math.max(4, bw * prog), 7);
+        c.font = '600 15px system-ui, sans-serif';
+        c.fillStyle = '#7d8ea6';
+        c.fillText(nx ? (S.pts + ' / ' + nx.min) : t('max'), 800, by + 22);
+        const got = ACHS.filter((a) => S.ach[a]).length;
+        c.font = '700 15px system-ui, sans-serif';
+        c.fillStyle = '#a9b8cc';
+        c.fillText(t('logros') + ' ' + got + '/' + ACHS.length, 800, by + 44);
+        for (let i = 0; i < ACHS.length; i++) {
+          const cx = bx + i * ((bw - 8) / (ACHS.length - 1));
+          c.beginPath(); c.arc(cx, by + 62, 6, 0, Math.PI * 2);
+          c.fillStyle = S.ach[ACHS[i]] ? '#f0c85a' : 'rgba(255,255,255,0.16)';
+          c.fill();
+        }
+      }
       // tarjetas de áreas (2 × 3)
       const CW = 456, CH = 150, GX = 32, GY = 16, X0 = 40, X1 = X0 + CW + GX;
       let y = 190;
@@ -14576,6 +15022,16 @@ loadPaddleModel().then((paddleModel) => {
         if (l2) c.fillText(l2, 68, y + 110);
         c.fillStyle = '#f0c85a'; c.font = '700 20px system-ui, sans-serif';
         c.fillText((S.best[id] ? t('mejor') + ': ' + S.best[id] + '  ·  ' : '') + t('obj') + ': ' + M.n, 68, y + 142);
+        // v3.0.7-PLAY1 · estrellas logradas + mejor precisión de la prueba
+        if (GAMF()) {
+          const stN = S.stars[id] || 0;
+          c.textAlign = 'right';
+          let meta = '\u2605'.repeat(stN) + '\u2606'.repeat(3 - stN);
+          if (S.acc[id]) meta += '  ' + S.acc[id] + '%';
+          c.fillStyle = stN ? '#f0c85a' : 'rgba(255,255,255,0.35)';
+          c.font = '800 22px system-ui, sans-serif';
+          c.fillText(meta, 950, y + 142);
+        }
         c.textAlign = 'right';
         c.fillStyle = isOn ? '#f0c85a' : '#ffffff';
         c.font = '900 26px system-ui, sans-serif';
@@ -14629,6 +15085,7 @@ loadPaddleModel().then((paddleModel) => {
       if (!G || G.disposed) return;
       try {
         cosmeticsTick(dt);
+        burstTick(dt);
         if (active && G.trainV3 && G.calib) trainTick(dt);
         // detección de efecto del jugador en CUALQUIER modo (iconos en caras)
         if (faceIcons.length && G.events && G.events.length) {
@@ -14652,10 +15109,15 @@ loadPaddleModel().then((paddleModel) => {
   
     return {
       tick, startMode, stopMode, startCalib, menuAction, applySkin, teardown,
+      serveTrigger: () => { try { serveTossFromTee(); } catch (e) { /* nunca rompe */ } },
+      serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(); } catch (e) { /* nunca rompe */ } },
       drawHub, drawArea,
-      get state() { return { active, pts: S.pts, best: S.best, skin: S.skin, unlocked: S.unlocked.slice() }; },
+      get state() { return { active, pts: S.pts, best: S.best, skin: S.skin, unlocked: S.unlocked.slice(),
+        stars: Object.assign({}, S.stars), acc: Object.assign({}, S.acc),
+        ach: Object.assign({}, S.ach), comboBest: S.comboBest || 0,
+        round: { hits: st.roundHits, faults: st.roundFaults } }; },
       __debug: { S, st, MODES },
-    __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel },
+    __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel, serveAssist },
     };
   })();
   window.__PP_TRAIN = PP_TRAIN;

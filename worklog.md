@@ -1623,3 +1623,21 @@ Stage Summary:
 - Centro de descargas ACTUALIZADO y sirviendo la V3.0.6-SRV1: hub con 4 tarjetas (COMPLETO 🎬 106,5 MB · ligera 11,4 MB · CLOUDFLARE 106,5 MB · SOLO-RELAY 12 KB) + intro oficial byte-identica al trabajo perdido.
 - Pendiente desde la ronda anterior SIN CODIFICAR (el dueño lo sabe): rediseño del saque (grip-hold + trigger-toss + tolerancia de impacto por dificultad), fix de zonas objetivo, bola de saque en mano vacía, cilindro del mango fuera, Host Hall.
 - Lección reforzada: configurar remote GitHub y empujar tras cada hito — este es el 2º rollback que se come trabajo.
+
+---
+Task ID: 67
+Agent: Super Z (main)
+Task: "te puedo pasar la copia local de la versión v3.8, para que trabajes a partir de esa" — descarga WeTransfer + adopción de la V3.0.8-TRN1 como nueva base.
+
+Work Log:
+- Descarga de https://we.tl/t-qP4PVEvzS6DFtDRi: we.tl → wetransfer.com/downloads/58bdd35d…20261016140628/572722; la API ui daba 404 pero la v4 (POST /api/v4/transfers/<id>/download con {"intent":"entire_transfer","security_hash":"572722"}) entregó direct_link. Fichero: crazypp-v308-trn1-CLOUDFLARE.zip (106.531.244 B, unzip -t limpio) → upload/.
+- Identidad: NO es la v3.8 del dueño con numeración propia — es una V3.0.8-TRN1 en NUESTRO formato CLOUDFLARE, construida 2026-10-16 10:27-10:30 por otro hilo de trabajo, con linaje V3.0.5-FIS1 → V3.0.6-SRV1 (SAQUE VIVO + PRO TRAINING reparado) → V3.0.7-PLAY1 (PRO CIRCUITO, trainGamify) → V3.0.8-TRN1 (saque real en entrenamiento: bola en mano libre, grip suelta con velocidad REAL de la mano, gatillo asistido, cascada 45%→75% + solver, sin auto-toss; zonas objetivo fieles al juez t1a + texto OBJETIVO sin cortar; máquina de sparring con Magnus en t1a/t1b/t2a/t2b/t5a).
+- Integridad verificada: sha256 index.html = 58a42a0daaf79525… (EXACTO al de VERSION.txt del paquete); tv.html y socket.io.min.js = nuestros mismos hashes; assets/intro.mp4 = 5.779.719 B sha 3f58e634eec39d66 (el intro OFICIAL restaurado hoy en Task 66 — sobrevivió al otro hilo).
+- Flags presentes: __PP_LIVE (7), physicsRealism (7), paddlePerks (4), trainGamify (4), __PP_TRAIN (18), __PP_SET_PADDLE_SKIN (4), introvid (3), lógica grip/handVel del saque real (4).
+- Adopción: backup de la v306 en download/game_v306_backup.html (además queda en git); index.html v308 → public/game.html (6.289.855 B). .gitignore += upload/*.zip (el zip de 106 MB no entra al repo; el staging de extracción queda en scripts/staging-v308-in, ya ignorado por scripts/staging-*).
+- QA adaptado (scripts/qa_trn1_v308.py): badge V3.0.8-TRN1 + __PP_VERSION, DIMS fis=1 perks=1 gamify=1, __PP_TRAIN/__PP_LIVE/setSkin/6 pieles, intro oficial servida 200 + 5.779.719 B + sha 3f58e634, visor abre con duration 10,048 s, 0 pageerrors → RESULTADO OK. Gateway :81 sirve el juego v308 (200). Capturas download/qa_trn1_portada.png + qa_trn1_intro.png.
+
+Stage Summary:
+- La V3.0.8-TRN1 («v3.8») es la NUEVA BASE de trabajo: integra el rediseño del saque y los fixes de entrenamiento que teníamos pendientes (hechos por el otro hilo), conserva FIS1 + palas + CRAZY TV + intro oficial, y pasa el QA completo en nuestro entorno.
+- Pendiente sobre esta base (lista histórica del dueño aún no implementada): Host Hall (estancia del anfitrión con logros), cilindro residual en el mango de la pala, y la asistencia del saque por DIFICULTAD (fácil > medio > alto) — la cascada actual es fija en entrenamiento.
+- Sugerido: regenerar paquetes v308 + hub /descargas cuando el dueño lo pida (el hub sigue sirviendo v306).

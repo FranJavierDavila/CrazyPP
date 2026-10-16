@@ -1601,3 +1601,25 @@ Work Log:
 
 Stage Summary:
 - Centro de descargas operativo y saludable: hub + 4 paquetes + juego FIS1 + TV relay
+
+---
+Task ID: 66
+Agent: Super Z (main)
+Task: "actualiza el centro de descargas" — RECUPERACIÓN de la V3.0.6-SRV1 perdida (Tasks 64/65 borradas por rollback del sandbox) + hub al día.
+
+Work Log:
+- DIAGNÓSTICO: el sandbox rodó atrás otra vez — HEAD 7dcd694 (63-b, v3.0.5-FIS1), sin remote git (no hubo push de seguridad). Perdidas las Tasks 64/65: game.html V3.0.6-SRV1, intro oficial en assets, release-v306, hub v306 y QA. Único superviviente: upload/intro.mp4 (el original subido por el dueño, 5.779.719 B, sin faststart).
+- INTRO OFICIAL reconstruida BYTE-PERFECTA: ffmpeg -c copy -movflags +faststart sobre upload/intro.mp4 → public/assets/intro.mp4 = 5.779.719 B, md5 bb916024eb73dca656079e58cdc94e72 — EXACTO al verificado en la Task 65 perdida (la remux reproduce el mismo resultado). Átomos: ftyp → moov → free → mdat (faststart confirmado). H.264 1080p30 + AAC, 10,048 s.
+- game.html: VERSION 3.0.5-FIS1 → 3.0.6-SRV1 con changelog nuevo (INTRO OFICIAL + faststart + empaquetado v306); badge estático de portada V3.0.4-EXP·TV1 → V3.0.6-SRV1 (el JS ya lo sincroniza desde VERSION: window.__PP_VERSION + verBadge).
+- release-v306/ creado: build_zip.py (con verificación DURA del intro: 5.779.719 B exactos o aborta), LEEME-DESPLIEGUE.txt reescrito para v306 (intro oficial como novedad + FIS1 conservada), CHULETA-DIRECTO v306, y los 4 ficheros del relay copiados de v305 (intactos).
+- 4 ZIP generados y verificados (unzip -t limpio): COMPLETO 106.533.658 B · ligera 11.422.941 B · CLOUDFLARE 106.522.273 B (chequeo anti-TS/package.json limpio) · SOLO-RELAY 6.089 B zip (12.194 B sin comprimir — el "12 KB" de siempre es el tamaño lógico). VERSION.txt con SHA256 de index/tv/intro/server/socket.io. Copiados a download/ y public/descargas/.
+- Hub /descargas (page.tsx): cabecera + 4 tarjetas + footer a V3.0.6-SRV1 (COMPLETO pasa a emoji 🎬 y describe el INTRO OFICIAL; tamaños 106,5 / 11,4 MB). 0 restos v305 en enlaces.
+- INCIDENTE detectado y corregido: la 1ª pasada de build_zip.py empaquetó extras-nextjs/descargas/page.tsx con la v305 (edité page.tsx DESPUÉS de construir) → reempaquetado verificado (el page.tsx dentro del COMPLETO ahora tiene 6 menciones 3.0.6). Lección: bump del hub SIEMPRE antes de build_zip.
+- QA verde: qa_srv1_v306.py (badge V3.0.6-SRV1, __PP_VERSION, video src assets/intro.mp4, intro servido 5.779.719 B + sha 3f58e634eec39d66, visor abre con duration 10,048 s, DIMS FIS1 intactos fis=1 perks=1, 0 pageerrors) y qa_descargas_v306.py (4 enlaces v306 exactos, 12 menciones 3.0.6, 5 INTRO, 0 enlaces v305, 4 ZIP HTTP 200 con tamaños en rango, 0 pageerrors). Gateway :81 sirve hub 200, game 200, ZIPs 206.
+- Capturas: download/qa_srv1_portada.png, qa_srv1_intro.png, qa_srv1_descargas_hub.png.
+- Commit de esta Task INCLUYE upload/intro.mp4 (el máster) como seguro anti-rollback.
+
+Stage Summary:
+- Centro de descargas ACTUALIZADO y sirviendo la V3.0.6-SRV1: hub con 4 tarjetas (COMPLETO 🎬 106,5 MB · ligera 11,4 MB · CLOUDFLARE 106,5 MB · SOLO-RELAY 12 KB) + intro oficial byte-identica al trabajo perdido.
+- Pendiente desde la ronda anterior SIN CODIFICAR (el dueño lo sabe): rediseño del saque (grip-hold + trigger-toss + tolerancia de impacto por dificultad), fix de zonas objetivo, bola de saque en mano vacía, cilindro del mango fuera, Host Hall.
+- Lección reforzada: configurar remote GitHub y empujar tras cada hito — este es el 2º rollback que se come trabajo.

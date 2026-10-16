@@ -1663,3 +1663,19 @@ Stage Summary:
 - V3.0.9-HALL1 completa sobre la base del dueño: hall del anfitrión con pared de trofeos viva, saque asistido por dificultad (fácil > medio > alto) y el cilindro del mango eliminado — con la TRN1 intacta (saque real, zonas, sparring, PRO CIRCUITO, FIS1, TV, intro oficial).
 - Centro de descargas sirviendo la V3.0.9-HALL1 en 4 paquetes.
 - Pendiente del dueño: prueba en casco del hall (flujo menú→cancha) y de las 3 dificultades del saque; siguiente iteración decorativa del hall si quiere más hitos representados.
+
+---
+Task ID: 69
+Agent: Super Z (main)
+Task: "actualiza el centro de descargas para probar" — verificación punta a punta de que el centro sirve la V3.0.9-HALL1 lista para prueba en casco.
+
+Work Log:
+- Estado del repo intacto tras los hilos anteriores: HEAD 7b394b2 (Task 68), árbol limpio, sin restaurar nada.
+- Verificado: public/game.html VERSION 3.0.9-HALL1; hub page.tsx con 6 menciones 3.0.9 y 0 residuos v306/07/08; 4 ZIP v309-hall1 presentes y con tamaños exactos de Task 68 tanto en download/ como en public/descargas/ (COMPLETO 106.549.823 B · ligera 11.439.106 B · CLOUDFLARE 106.538.271 B · SOLO 6.089 B).
+- QA re-ejecutada AHORA: qa_descargas_v309.py → RESULTADO OK (4 enlaces v309 exactos, 12 menciones 3.0.9, 0 enlaces residuales, 4 ZIP HTTP 200 con tamaños correctos, 0 pageerrors, captura download/qa_hall1_descargas_hub.png).
+- Gateway :81 en vivo: /descargas 200, /game.html 200 sirviendo badge + const VERSION 3.0.9-HALL1, /assets/intro.mp4 200 con 5.779.719 B (intro oficial byte-perfecta). Dev :3000 200.
+- Anti-rollback: git remote SIGUE vacío y gh CLI no disponible en el sandbox — no se pudo configurar el push de seguridad (pendiente de que el dueño facilite un remote).
+
+Stage Summary:
+- Centro de descargas CONFIRMADO sirviendo la V3.0.9-HALL1 en 4 paquetes, QA verde hoy mismo, gateway y juego en vivo: el dueño puede descargar y probar en el Quest 3 sin más pasos.
+- Pendiente del dueño: URL de remote git (GitHub u otro) para activar el push anti-rollback; prueba en casco del hall y de las 3 dificultades del saque.

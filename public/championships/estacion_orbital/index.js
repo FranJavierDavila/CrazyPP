@@ -1,6 +1,36 @@
 /* ============================================================================
  *  Estación Orbital (estacion_orbital) — v3.1 «PLANTILLA FINAL» (V2.131)
  *  ----------------------------------------------------------------------------
+ *  v3.2.1 (ORB2) · AJUSTE FINO DEL DECORADO (informe del dueño en casco):
+ *    (1) ASTRO al sitio de la casa: convención FORAJIDO (oeste v2.87) —
+ *        plano de CUERPO ENTERO de 2,15 m (personaje visible ≈ 1,8 m), PIES
+ *        EN EL SUELO, junto al fondo a la derecha (x 1,62 · z −4,5). Antes
+ *        flotaba 1,75 m junto a la mesa (z −3,5): se leía «metido en la
+ *        pared derecha» y más bajo que el resto de rivales.
+ *    (2) MAPA: nodos re-medidos sobre el arte del dueño (el nodo 5 estaba
+ *        ~70 px ALTO: y 266 → 335) y tapas del tamaño del arte (240 px
+ *        base, lección v2.136 del oeste: los medallones miden ~215-235 px
+ *        y las tapas de 165 px NO los cubrían).
+ *    (3) CARTEL DE SUPERPODER = el de la CASA: port 1:1 del ArcadePowerSign
+ *        de La Locura (v2.40/v2.88) — arte SuperPower!! ENFRENTE DEL JUGADOR
+ *        A LA ALTURA DE LA RED (netTopY+0,14, 30 cm hacia el jugador),
+ *        coreografía ≈2 s (entra por la izquierda, vaivén con HALO que
+ *        respira, sale por la derecha) + MEDALLÓN CIRCULAR del poder
+ *        (power*.png) junto al arte. Fuera el panel provisional.
+ *    (4) PODERES ENCIMA DE LA MESA: meteoritos (x ±0,60 · z −1,45..−0,45),
+ *        haz del tractor SOBRE tu campo (z −1,05, punta en la superficie),
+ *        motas de gravedad cero y lluvia de estrellas repartidas por TU
+ *        campo. Antes beam/motas/rocas se iban al origen o tras la red y
+ *        «no tenían efectos».
+ *    (5) EXPRESIONES DEL ASTRO por momento de partida (motor del clown de
+ *        La Locura, mismos umbrales): anotas tú → surprised/angry (combo),
+ *        anota él → laughing/crazy (racha), rallye largo → picando, va
+ *        perdiendo → loosing, match-point en contra → panic, duelo →
+ *        duelo, fin → derrotado/triunfante. Sin recargas si el estado no
+ *        cambia (la vigilancia corre cada frame).
+ *    (6) CARTEL DE BIENVENIDA fuera de la pared del fondo (z −5,44 →
+ *        −5,28: antes quedaba a 11 cm del muro y se leía «metido»).
+ *  ----------------------------------------------------------------------------
  *  v3.2.0 (ORB1) · DECORADO REAL DEL DUEÑO + MUROS ORBITALES: (1) SALA con
  *    el arte del dueño en los 6 planos (literas, ventanal con la Tierra,
  *    esclusa, suelo y techo — patrón vagón del Oeste). (2) RIVAL ASTRO con
@@ -2385,6 +2415,279 @@ class EOArkanoid {
 }
 
 /* ============================================================================
+ *  PwSignEO (v3.2.1) — ANUNCIO ÉPICO de «SUPER POWER!!» · port 1:1 del
+ *  ArcadePowerSign de La Locura (v2.40 → v2.88), petición del dueño:
+ *  «aparece enfrente nuestra a la altura de la red la imagen SuperPower.png
+ *  con un símbolo que identifica el superpoder dentro de un círculo próximo».
+ *    · Anclado a la RED (bajo el rig, con la mesa): centro a netTopY + 0,14,
+ *      30 cm hacia el jugador; gira en XZ para mirar a la cámara.
+ *    · Coreografía ≈ 2 s: ENTRADA rápida desde la izquierda (0 → 0,40 s),
+ *      PARADA con leve vaivén y HALO DE CONTORNO dorado que respira (hasta
+ *      1,45 s), SALIDA rápida por la derecha (1,45 → 1,90 s).
+ *    · ICONO CIRCULAR (medallón power*.png del poder anunciado) bajo el
+ *      arte, a la derecha — el identificador de la casa (v2.120).
+ *  ========================================================================== */
+class PwSignEO {
+  constructor(ctrl) {
+    this.game = ctrl.game;
+    this.ctrl = ctrl;
+    this.t = -1;                       // -1 = oculto
+    this.T_IN = 0.40;                  // entrada rápida desde un lado
+    this.T_HOLD = 1.45;                // hasta aquí: parada con vaivén
+    this.T_OUT = 1.90;                 // salida rápida por el lado contrario
+    this.inited = false;
+    this.iconCache = null;
+  }
+
+  build() {
+    if (this.inited) return;
+    this.inited = true;
+    const g = this.game;
+
+    this.group = new THREE.Group();    // ancla a la RED (posición/rotación)
+    this.pivot = new THREE.Group();    // coreografía local del cartel
+    this.group.add(this.pivot);
+
+    // arte del cartel (superpower.png de la casa, el sello de locura/magia/oeste)
+    this.mat = new THREE.MeshBasicMaterial({
+      transparent: true, depthWrite: false, depthTest: false, opacity: 0,
+    });
+    this.mat.renderOrder = 49;
+    this.plane = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.502), this.mat);
+    this.plane.renderOrder = 49;
+    this.pivot.add(this.plane);
+
+    // HALO DE CONTORNO — la silueta REAL del arte (su canal alfa) estampada
+    // con sombra difusa dorada + halo ámbar exterior (v2.40 de locura).
+    this.haloMat = new THREE.MeshBasicMaterial({
+      transparent: true, depthWrite: false, depthTest: false,
+      blending: THREE.AdditiveBlending, opacity: 0,
+    });
+    this.haloMat.renderOrder = 48;
+    this.halo = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.502), this.haloMat);
+    this.halo.renderOrder = 48;
+    this.halo.scale.setScalar(1.2);
+    this.pivot.add(this.halo);
+
+    this.group.visible = false;
+    // v2.88: bajo el RIG (con la mesa) — anclado a la RED en vez de a la
+    // cabeza (a la altura de la red, lejos de la cara del jugador).
+    g.rig.add(this.group);
+
+    try {
+      const img = new Image();
+      img.onload = () => {
+        const tex = new THREE.Texture();
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.image = img;
+        tex.needsUpdate = true;
+        this.mat.map = tex;
+        this.mat.needsUpdate = true;
+        // aspecto real del arte (1408×768 → 1.833): alto acorde
+        const ar = img.width / Math.max(1, img.height);
+        const fit = Math.min(1, 1.833 / Math.max(0.5, ar));
+        this.plane.scale.set(1, fit, 1);
+        this.halo.scale.set(1.2, 1.2 * fit, 1);
+        this._buildHaloFrom(img, 512, Math.max(64, Math.round(512 / Math.max(0.5, ar))));
+        try { this.ctrl._ownTex.add(tex); } catch (e) { /* */ }
+      };
+      img.onerror = () => this._fallbackArt();
+      img.src = this.ctrl._A('superpower.png');
+    } catch (e) { this._fallbackArt(); }
+
+    this.iconCache = new Map();
+  }
+
+  /** Halo a partir de la silueta (alfa) del arte — dos pasadas de sombra
+   *  difusa: núcleo dorado pegado al contorno + halo ámbar ancho (aditivo). */
+  _buildHaloFrom(src, w, h) {
+    try {
+      const mk = (blur, color) => {
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const c = cv.getContext('2d');
+        c.shadowColor = color;
+        c.shadowBlur = blur;
+        c.shadowOffsetX = 0;
+        c.shadowOffsetY = 0;
+        for (let i = 0; i < 3; i++) c.drawImage(src, 0, 0, w, h);
+        return cv;
+      };
+      const wide = mk(Math.max(14, Math.round(h * 0.16)), 'rgba(255,150,40,0.85)');
+      const core = mk(Math.max(8, Math.round(h * 0.07)), 'rgba(255,214,110,0.95)');
+      const c2 = core.getContext('2d');
+      c2.globalCompositeOperation = 'lighter';
+      c2.drawImage(wide, 0, 0);
+      const tex = new THREE.CanvasTexture(core);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.haloMat.map = tex;
+      this.haloMat.needsUpdate = true;
+      try { this.ctrl._ownTex.add(tex); } catch (e) { /* */ }
+    } catch (e) { console.warn('[pwSignEO.halo]', e); }
+  }
+
+  _fallbackArt() {
+    // sin arte: letrero dibujado "SUPER POWER!!" con brillo (respaldo locura)
+    try {
+      const cv = document.createElement('canvas');
+      cv.width = 1024; cv.height = 512;
+      const g = cv.getContext('2d');
+      g.fillStyle = 'rgba(10,16,38,0.85)';
+      g.beginPath();
+      if (g.roundRect) g.roundRect(24, 24, 976, 464, 56); else g.rect(24, 24, 976, 464);
+      g.fill();
+      g.lineWidth = 14;
+      g.strokeStyle = '#e8b45a';
+      g.stroke();
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.shadowColor = '#ffd257';
+      g.shadowBlur = 34;
+      g.fillStyle = '#ffd257';
+      g.font = '900 190px system-ui, sans-serif';
+      g.fillText('SUPER', 512, 190);
+      g.fillStyle = '#bfe3ff';
+      g.font = '900 170px system-ui, sans-serif';
+      g.fillText('POWER!!', 512, 380);
+      const tex = new THREE.CanvasTexture(cv);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.mat.map = tex;
+      this.mat.needsUpdate = true;
+      this._buildHaloFrom(cv, 512, 256);
+      try { this.ctrl._ownTex.add(tex); } catch (e) { /* */ }
+    } catch (e) { console.warn('[pwSignEO.fallback]', e); }
+  }
+
+  /** show(iconUrl): lanza la coreografía y muestra el ICONO del poder. */
+  show(iconUrl) {
+    if (!this.inited) this.build();
+    this.t = 0;
+    this.group.visible = true;
+    this._iconShow(iconUrl);
+    // parte del lado IZQUIERDO, sin arte visible aún (v2.40)
+    if (this.pivot) {
+      this.pivot.position.set(-1.15, 0, 0);
+      this.pivot.rotation.z = 0;
+      this.pivot.scale.setScalar(0.92);
+    }
+    this.mat.opacity = 0;
+    this.haloMat.opacity = 0;
+  }
+
+  /** Icono circular bajo el cartel (textura perezosa en caché, v2.120). */
+  _iconShow(iconUrl) {
+    if (!iconUrl) {
+      if (this.iconPlane) this.iconPlane.visible = false;
+      return;
+    }
+    if (!this.iconPlane) {
+      this.iconPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.30, 0.30),
+        new THREE.MeshBasicMaterial({
+          transparent: true, depthWrite: false, depthTest: false,
+          opacity: 0,
+        }));
+      // el renderOrder va en el OBJETO (el del material se ignora en el
+      // orden transparente) — si no, el propio cartel lo tapaba
+      this.iconPlane.renderOrder = 51;
+      this.iconPlane.position.set(0.30, -0.16, 0.012);
+      this.pivot.add(this.iconPlane);
+    }
+    const mat = this.iconPlane.material;
+    let tex = this.iconCache.get(iconUrl);
+    if (!tex) {
+      tex = new THREE.TextureLoader().load(iconUrl, () => {
+        if (mat) mat.needsUpdate = true;
+      }, undefined, () => { /* sin icono: oculto */ });
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.iconCache.set(iconUrl, tex);
+    }
+    mat.map = tex;
+    mat.opacity = 1;
+    mat.needsUpdate = true;
+    this.iconPlane.visible = true;
+  }
+
+  hide() {
+    this.t = -1;
+    if (this.group) this.group.visible = false;
+    if (this.iconPlane) this.iconPlane.visible = false;
+  }
+
+  update(dt) {
+    if (this.t < 0 || !this.group || !this.group.visible) return;
+    this.t += dt;
+    // el icono acompaña SIEMPRE al fundido del cartel (v2.120)
+    if (this.iconPlane && this.iconPlane.visible) {
+      this.iconPlane.material.opacity = this.mat.opacity;
+    }
+    // v2.88: anclado a la RED — centro del cartel a la altura de la red
+    // (netTopY + 0,14), 30 cm del lado del jugador; gira en XZ para mirar
+    // al jugador.
+    const D = this.ctrl.D;
+    if (D) {
+      this.group.position.set(0, D.netTopY + 0.14, D.tableCenterZ + 0.30);
+      try {
+        const c = this.game.camera;
+        if (c) {
+          const dx = c.position.x - this.group.position.x;
+          const dz = c.position.z - this.group.position.z;
+          if (Math.abs(dx) > 1e-4 || Math.abs(dz) > 1e-4) {
+            this.group.rotation.y = Math.atan2(dx, dz);
+          }
+        }
+      } catch (e) { /* se queda mirando al lado del jugador (+Z) */ }
+    }
+    // v2.40 · COREOGRAFÍA: entrada rápida desde la IZQUIERDA → parada con
+    // leve vaivén y halo que respira → salida rápida por la DERECHA.
+    const t = this.t;
+    const X = 1.15;                    // media anchura del recorrido lateral (m)
+    if (t < this.T_IN) {
+      const k = t / this.T_IN;
+      const e = 1 - Math.pow(1 - k, 3);           // easeOutCubic
+      this.pivot.position.x = -X * (1 - e);
+      this.pivot.rotation.z = (1 - e) * 0.1;
+      this.pivot.scale.setScalar(0.92 + 0.08 * e);
+      this.mat.opacity = Math.min(1, t / 0.12);
+    } else if (t < this.T_HOLD) {
+      this.pivot.position.x = Math.sin(t * 6.4) * 0.012;
+      this.pivot.rotation.z = Math.sin(t * 5.1) * 0.035;
+      this.pivot.scale.setScalar(1 + Math.sin(t * 8.2) * 0.022);
+      this.mat.opacity = 1;
+    } else if (t < this.T_OUT) {
+      const k = (t - this.T_HOLD) / (this.T_OUT - this.T_HOLD);
+      const e = k * k * k;                        // easeInCubic
+      this.pivot.position.x = X * e;
+      this.pivot.rotation.z = -0.06 * e;
+      this.pivot.scale.setScalar(1);
+      this.mat.opacity = k > 0.72 ? Math.max(0, 1 - (k - 0.72) / 0.28) : 1;
+    } else {
+      this.hide();
+      return;
+    }
+    // halo: entra con el cartel y respira mientras está parado
+    const breathe = 0.78 + Math.sin(t * 9.0) * 0.22;
+    this.haloMat.opacity = this.mat.opacity *
+      (t < this.T_IN ? 0.4 : breathe) * 0.9;
+    if (t >= this.T_OUT - 0.12) {
+      this.haloMat.opacity *= Math.max(0, (this.T_OUT - t) / 0.12);
+    }
+  }
+
+  /** Dispose completo (regla Quest: nada queda colgado al salir). */
+  dispose() {
+    try { if (this.group && this.group.parent) this.group.parent.remove(this.group); } catch (e) { /* */ }
+    if (this.iconCache) {
+      for (const t of this.iconCache.values()) { try { t.dispose(); } catch (e) { /* */ } }
+      this.iconCache = null;
+    }
+    this.group = null; this.pivot = null; this.plane = null; this.halo = null;
+    this.iconPlane = null;
+    this.inited = false; this.t = -1;
+  }
+}
+
+/* ============================================================================
  *  StockController — SALA · CAMINO DE 5 ETAPAS · SUPERPODERES
  *  ============================================================================ */
 class StockController {
@@ -2415,6 +2718,12 @@ class StockController {
     this._warn = null;             // { def, t } aviso de dos fases
     this._act = null;              // poder activo { def, t, ... }
     this._t = 0;
+    // v3.2.1: cartel SuperPower de la casa + expresiones del ASTRO
+    this.pwSign = null;
+    this._rivalEstado = '';        // último estado aplicado (anti-recarga)
+    this._exprT = 0;               // transitorio de expresión restante
+    this._streakP = 0; this._streakAi = 0;
+    this._picandoDone = false;
   }
 
   _A(p) { return new URL('./assets/' + p, import.meta.url).href; }
@@ -2431,13 +2740,17 @@ class StockController {
   build() {
     const g = this.game;
     const D = this.D;
-    const zRival = D.tableCenterZ - 1.9;
 
-    // RIVAL: standee del ANDROIDE AX-9 (assets/rival.webp, arte PIL v3)
-    // v2.130 · POSICIÓN DEL RIVAL (convención de TODOS los campeonatos):
-    // un poco a la DERECHA de la mesa (x = halfWidth + 0,5 ≈ 1,26, la misma
-    // DUEL_X de Magia), NO centrado detrás de la mesa. Girado 12° hacia
-    // el centro para que la cara mire a la mesa.
+    // RIVAL: standee del ASTRO (assets/rival.webp, arte del dueño)
+    // v3.2.1 · POSICIÓN DEL RIVAL = convención FORAJIDO (oeste v2.87, informe
+    // del dueño: «está mal colocado metiéndose dentro de la pared derecha y
+    // debería estar sobre la misma altura que otros rivales como forajido»):
+    // CUERPO ENTERO con el plano de 2,15 m del Oeste (personaje visible
+    // ≈ 1,8 m — el arte 512×1024 del ASTRO es exactamente la proporción 0,5
+    // del forajido), PIES EN EL SUELO (baseY = alto/2) y su mismo spot:
+    // junto al fondo, lado derecho (x 1,62 · z −4,5). Sin giros: de cara,
+    // como el forajido. Antes: plano de 1,75 m flotando a media sala
+    // (x 1,26 · z −3,5), que se leía metido en la pared derecha y bajo.
     const texRival = new THREE.TextureLoader().load(this._A('rival.webp'));
     texRival.colorSpace = THREE.SRGBColorSpace;
     this._ownTex.add(texRival);
@@ -2445,10 +2758,12 @@ class StockController {
     const rivalMat = new THREE.MeshBasicMaterial({
       map: texRival, transparent: true, alphaTest: 0.25, depthWrite: false,
     });
-    this.rivalMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.75), rivalMat);
-    this.rivalMesh.position.set((D.tableHalfWidth || 0.7625) + 0.5, 0.875, zRival);
-    this.rivalMesh.rotation.y = -0.22;
+    const RIV_H = 2.15;                       // convención OESTE.spriteHeight
+    this.rivalMesh = new THREE.Mesh(new THREE.PlaneGeometry(RIV_H * 0.5, RIV_H), rivalMat);
+    this.rivalMesh.position.set(1.62, RIV_H / 2, (D.tableCenterZ || -1.6) - 2.9);
+    this.rivalMesh.renderOrder = 6;
     this.group.add(this.rivalMesh);
+    this._rivalEstado = '';
     this.rivalEstado('idle');
 
     // CARTEL de bienvenida (redibujable por etapa)
@@ -2461,8 +2776,8 @@ class StockController {
     this.cartelTex = this._ct(this.cartelCv);
     this.cartel = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.575),
       new THREE.MeshBasicMaterial({ map: this.cartelTex, depthWrite: false }));
-    this.cartel.position.set(-2.2, 1.46, -5.44);
-    this.cartel.rotation.set(0, 0.12, 0);
+    this.cartel.position.set(-2.2, 1.5, -5.28);
+    this.cartel.rotation.set(0, 0.1, 0);
     this.group.add(this.cartel);
     this._pintaCartel();
 
@@ -2528,36 +2843,13 @@ class StockController {
       }
     }
 
-    // CARTEL DEL SUPERPODER (v3.2): el «identificador» que el jugador espera
-    // — panel flotante junto al AX-9 con el MEDALLÓN del poder + nombre.
-    // Fase AVISO (ámbar, «AX-9 PREPARA…») y fase ACTIVA (cian, ¡NOMBRE!).
-    if (!this.powerSign) {
-      this._psCv = document.createElement('canvas');
-      this._psCv.width = 512; this._psCv.height = 256;
-      this._psTex = this._ct(this._psCv);
-      this.powerSign = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.525),
-        new THREE.MeshBasicMaterial({ map: this._psTex, transparent: true, depthWrite: false }));
-      // flotando a la DERECHA de la mesa (lado del rival), sobre la altura de
-      // la cabeza y girado hacia el jugador: visible sin tapar la mesa
-      this.powerSign.position.set(1.02, 1.88, D.tableCenterZ - 1.05);
-      this.powerSign.rotation.y = -0.42;
-      this.powerSign.renderOrder = 35;
-      this.powerSign.visible = false;
-      this.group.add(this.powerSign);
-      this._psIcons = {};
-      for (const p of CFG.poderes) {
-        try {
-          const img = new Image();
-          // v3.2: CFG.icon trae 'assets/…' y _A() YA antepone './assets/' —
-          // sin el strip salía 'assets/assets/…' (404s del QA)
-          img.src = this._A(String(p.icon || '').replace(/^assets\//, ''));
-          this._psIcons[p.name] = img;
-        } catch (e) { /* sin icono: círculo de color */ }
-      }
-      // v3.2.0: el arte «Super Power!!» de la casa (mismo sello que
-      // los otros campeonatos) como fondo del cartel del superpoder
-      this._psBanner = new Image();
-      this._psBanner.src = this._A('superpower.png');
+    // CARTEL DEL SUPERPODER (v3.2.1): el ANUNCIO OFICIAL de la casa —
+    // port del ArcadePowerSign de La Locura (arte SuperPower!! a la altura
+    // de la red + medallón circular del poder). Informe del dueño: el panel
+    // provisional «no es como en el resto de campeonatos».
+    if (!this.pwSign) {
+      this.pwSign = new PwSignEO(this);
+      this.pwSign.build();
     }
 
     // MAPA DEL CAMPEONATO en la pared izquierda (convención de la casa):
@@ -2604,12 +2896,72 @@ class StockController {
   }
 
   rivalEstado(estado) {
-    // assets/<estado>.webp si existe; si no, mantiene el actual
+    // assets/<estado>.webp si existe; si no, mantiene el actual.
+    // v3.2.1: si el estado no cambia NO recarga — el motor de expresiones
+    // vigila cada frame y reasignar el mismo webp 60 veces/s no es gratis
+    // (decode + subida a GPU en Quest).
+    if (this._rivalEstado === estado) return;
+    this._rivalEstado = estado;
     try {
       const img = new Image();
       img.onload = () => { this._rival.image = img; this._rival.needsUpdate = true; };
       img.src = this._A(estado + '.webp');
-    } catch (e) { /* sin estado: sigue */ }
+    } catch (e) { this._rivalEstado = ''; }
+  }
+
+  /* — v3.2.1 · EXPRESIONES DEL ASTRO (motor del clown de La Locura) ———
+   *  Mismos umbrales que el ArcadeController (picando 7 golpes de rallye,
+   *  combo 6, sorpresa 3, ventaja 6, pánico a 10): el ARTE manda, sin voz.
+   *  Transitorios con retorno a la cara base del duelo; el aviso de
+   *  superpoder ('crazy') tiene prioridad y el final ('derrotado'/'
+   *  triunfante') no se pisa. */
+  _exprSet(est, t) { this._exprT = t || 0; this.rivalEstado(est); }
+  _exprBase() {
+    const r = this.game.rules;
+    const dif = (r.scorePlayer | 0) - (r.scoreAi | 0);
+    if (dif >= 6) return 'loosing';                 // el ASTRO lo está pasando mal
+    if ((r.scorePlayer | 0) >= 10) return 'panic';  // match-point en contra
+    return 'duelo';                                 // cara de duelo (base)
+  }
+  _exprOnPoint(it) {
+    if (this.state !== 'duelo' || !it || it.survival) return;
+    if (it.winner === 'player') {
+      this._streakP = (this._streakP || 0) + 1; this._streakAi = 0;
+      const hits = it.rallyHits | 0;
+      if (hits >= 6) {
+        // COMBO del jugador: el ASTRO se ENFADA (como el clown)
+        this._exprSet('angry', 2.6);
+      } else {
+        this._exprSet('surprised', hits >= 3 ? 1.7 : 1.2);
+      }
+    } else {
+      this._streakAi = (this._streakAi || 0) + 1; this._streakP = 0;
+      if (this._streakAi >= 2) this._exprSet('crazy', 3.4);   // enloquece
+      else this._exprSet('laughing', 2.4);                    // se ríe de ti
+    }
+  }
+  _exprUpdate(dt) {
+    if (this.state !== 'duelo') { this._exprT = 0; return; }
+    const g = this.game;
+    const r = g.rules;
+    if (r.state === 'over') return;       // 'derrotado'/'triunfante' mandan
+    if (this._exprT > 0) {                // transitorio en curso
+      this._exprT -= dt;
+      if (this._exprT <= 0) this.rivalEstado(this._exprBase());
+      return;
+    }
+    if (this._warn || this._act) return;  // 'crazy' del aviso de poder manda
+    if (r.state === 'rally') {
+      if ((r.rallyHits | 0) >= 7 && !this._picandoDone) {
+        this._picandoDone = true;         // rallye largo: ¡se pone picado!
+        this._exprSet('picando', 2.2);
+      } else {
+        this.rivalEstado(this._exprBase());
+      }
+    } else {
+      this._picandoDone = false;
+      this.rivalEstado(this._exprBase());
+    }
   }
 
   /* ------------------------------ MÚSICA --------------------------------
@@ -2750,6 +3102,7 @@ class StockController {
       }
     } catch (e0) { /* */ }
     if (this.mapa) this.mapa.dispose();       // v2.130: sin restos GPU
+    if (this.pwSign) this.pwSign.dispose();   // v3.2.1: cartel SuperPower fuera
     if (this.group.parent) this.group.parent.remove(this.group);
     if (this.beam) this.beam.visible = false;
     if (this.motas) for (const m of this.motas) m.s.material.opacity = 0;
@@ -2803,6 +3156,9 @@ class StockController {
     this._dueloT = 0;             // v3.2: relojes del disparo redundante
     this._lastPowerT = 0;
     this._toward = false;
+    // v3.2.1: expresiones del ASTRO a cero en cada duelo
+    this._streakP = 0; this._streakAi = 0;
+    this._exprT = 0; this._picandoDone = false;
   }
   _showInstr(et) {
     try {
@@ -3205,6 +3561,7 @@ class StockController {
     return (et && et.aiMul) || 1;
   }
   onPoint(it) {
+    this._exprOnPoint(it);   // v3.2.1: expresión según quién anota
     // superpoder: probabilidad por punto jugado (motor de dos fases).
     // v3.2: es UNO de los dos caminos — el otro (principal en el casco)
     // vive en _poderUpdate: disparo por RALLY + garantía temporal.
@@ -3330,10 +3687,10 @@ class StockController {
     try { if (g.aiPaddleMesh) g.aiPaddleMesh.visible = (this.state === 'duelo'); } catch (e) { /* */ }
     // v3.2.0: pistola láser del MURO 2 (montaje/visibilidad/fade de rayos)
     if (this.arkanoid && this.arkanoid.active) this._gunUpdate(dt);
-    // v3.2: pulso del cartel del superpoder (llama la atención sin gritar)
-    if (this.powerSign && this.powerSign.visible) {
-      this.powerSign.scale.setScalar(1 + Math.sin(this._t * 5.5) * 0.035);
-    }
+    // v3.2.1: coreografía del cartel SuperPower (ancla a la red + vaivén)
+    if (this.pwSign) this.pwSign.update(dt);
+    // v3.2.1: EXPRESIONES DEL ASTRO según el momento de la partida
+    this._exprUpdate(dt);
     // dron vigía patrullando la sala
     if (this.dron && this.state !== 'duelo') {
       this.dron.position.x = 1.35 + Math.sin(this._t * 0.6) * 0.55;
@@ -3468,16 +3825,20 @@ class StockController {
       } else if (def.name === 'Rayo tractor') {
         const D = this.D;
         this.beam.visible = true;
-        this.beam.position.set(0, 1.62, D.tableCenterZ - 1.62);
-        this.beam.scale.set(1, 1.62, 1);           // largo del cono
+        // v3.2.1: el haz baja SOBRE TU CAMPO (z −1,05, entre la red y el
+        // borde cercano) con la punta tocando la superficie de la mesa —
+        // antes flotaba en z −3,22, tras el borde lejano (fuera de mesa)
+        this.beam.position.set(0, 1.9, (D.tableCenterZ || -1.6) + 0.55);
+        this.beam.scale.set(1, 1.14, 1);           // cono: 1,9 m → punta en 0,76
         this.beam.rotation.z = 0;
         try { g.audio.playOsc(90, 55, 0.6, 'sawtooth', 0.12, 0); } catch (e) { /* */ }
       } else if (def.name === 'Gravedad cero') {
         const D = this.D;
         for (const m of this.motas) {
-          m.x = (Math.random() * 2 - 1) * 1.1;
-          m.y = 0.8 + Math.random() * 1.2;
-          m.z = D.tableCenterZ - 0.8 + Math.random() * 1.6;
+          // v3.2.1: motas flotando sobre TU campo, dentro de la mesa
+          m.x = (Math.random() * 2 - 1) * 0.70;
+          m.y = 0.85 + Math.random() * 0.95;
+          m.z = (D.tableCenterZ || -1.6) + 0.15 + Math.random() * 1.1;
           m.s.material.opacity = 0;
         }
         try { g.audio.playOsc(320, 720, 0.7, 'sine', 0.08, 0); } catch (e) { /* */ }
@@ -3522,56 +3883,21 @@ class StockController {
     this._confeti = null;
   }
 
-  /* — v3.2 · CARTEL DEL SUPERPODER (identificador del poder en curso) ——
-   *  Panel canvas 512×256: medallón del poder (assets/power*.png) + nombre
-   *  en grande + banda de fase. _psMuestra(def, activa) pinta y muestra;
-   *  _psOculta() lo retira. El pulso vive en update(). */
+  /* — v3.2.1 · CARTEL DEL SUPERPODER (anuncio oficial de la casa) ————
+   *  Fase AVISO: PwSignEO lanza la coreografía «Super Power!!» con el
+   *  medallón circular del poder (~2 s — el efecto se suelta al terminar,
+   *  patrón locura v2.36). Fase ACTIVA: sin cartel — el efecto YA es el
+   *  aviso (así lo hacen locura/magia/oeste). */
   _psMuestra(def, activa) {
-    if (!this.powerSign) return;
-    const c = this._psCv.getContext('2d');
-    c.clearRect(0, 0, 512, 256);
-    // v3.2.0 · LA ETIQUETA DE LA CASA: el cartel «Super Power!!» del
-    // artista (superpower.png, el mismo arte que lucen locura/magia/oeste)
-    // como fondo del panel, con MINIATURA del poder + nombre en la banda.
-    const art = this._psBanner;
-    if (art && art.complete && art.naturalWidth) {
-      const ar = art.naturalWidth / art.naturalHeight;
-      let w = 512, h = w / ar;
-      if (h > 256) { h = 256; w = h * ar; }
-      c.drawImage(art, (512 - w) / 2, (256 - h) / 2, w, h);
-    } else {
-      c.fillStyle = 'rgba(8,14,26,0.92)';
-      c.beginPath();
-      if (c.roundRect) c.roundRect(8, 8, 496, 240, 30); else c.rect(8, 8, 496, 240);
-      c.fill();
-    }
-    // banda inferior legible sobre el arte
-    c.fillStyle = activa ? 'rgba(6,46,62,0.90)' : 'rgba(92,50,8,0.90)';
-    c.fillRect(0, 198, 512, 58);
-    c.strokeStyle = activa ? '#59e6ff' : '#ffb347';
-    c.lineWidth = 6;
-    c.beginPath(); c.moveTo(0, 198); c.lineTo(512, 198); c.stroke();
+    if (!this.pwSign || activa) return;
+    let icon = '';
     try {
-      const img = this._psIcons && this._psIcons[def.name];
-      if (img && img.complete && img.naturalWidth) {
-        c.drawImage(img, 12, 204, 46, 46);
-      } else {
-        c.fillStyle = activa ? '#59e6ff' : '#ffb347';
-        c.beginPath(); c.arc(35, 227, 22, 0, 7); c.fill();
-      }
-    } catch (e) { /* */ }
-    c.textAlign = 'left';
-    const nm = String(def.name || '').toUpperCase();
-    c.fillStyle = '#ffffff';
-    c.font = 'bold ' + (nm.length > 15 ? 26 : 32) + 'px Trebuchet MS, sans-serif';
-    c.fillText(nm, 70, 240);
-    c.fillStyle = activa ? '#aef3ff' : '#ffe0b0';
-    c.font = 'bold 19px Trebuchet MS, sans-serif';
-    c.fillText(activa ? '¡ESQUIVA LA TRAMPA!' : String(CFG.rival).toUpperCase() + ' PREPARA…', 70, 216);
-    this._psTex.needsUpdate = true;
-    this.powerSign.visible = true;
+      // CFG.icon trae 'assets/…' y _A() YA antepone './assets/' (v3.2)
+      icon = this._A(String(def.icon || '').replace(/^assets\//, ''));
+    } catch (e) { /* sin icono: cartel solo */ }
+    this.pwSign.show(icon || null);
   }
-  _psOculta() { if (this.powerSign) this.powerSign.visible = false; }
+  _psOculta() { if (this.pwSign) this.pwSign.hide(); }
 
   /* — LLUVIA DE ESTRELLAS (confeti con estrellas, convención del núcleo) — */
   _confetiStart(p) {
@@ -3597,14 +3923,17 @@ class StockController {
   _confetiStep(dt, a) {
     const c = this._confeti;
     if (!c) return;
+    const D = this.D;
     c.t += dt;
     const dentro = c.t < c.dur;
     for (const p of this._poolConfeti) {
       if (!p.on && dentro && Math.random() < dt * 8) {
         p.on = true;
-        p.x = (Math.random() * 2 - 1) * 1.2;
+        p.x = (Math.random() * 2 - 1) * 0.85;
         p.y = 2.0 + Math.random() * 0.4;
-        p.z = -1.50 + Math.random() * 1.55;        // TU campo (convención núcleo)
+        // v3.2.1: TU CAMPO y ENCIMA de la mesa (antes −1,50..+0,05 llovía
+        // detrás del jugador y se perdía fuera de la mesa)
+        p.z = (D.tableCenterZ || -1.6) + 0.15 + Math.random() * 1.15;
         p.vy = -(0.35 + Math.random() * 0.3);
         p.vr = (Math.random() - 0.5) * 6;
       }
@@ -3629,8 +3958,11 @@ class StockController {
       const r = this.rocas.find((x) => !x.on);
       if (r) {
         r.on = true; r.cayendo = true;
-        r.x = (Math.random() * 2 - 1) * 0.95;
-        r.z = -1.45 + Math.random() * 1.35;        // TU campo
+        // v3.2.1: nacimiento ENCIMA de la mesa, en TU campo (antes x ±0,95
+        // y z hasta −0,10: parte de las rocas caía FUERA de la mesa —
+        // «no tienen efectos», informe del dueño)
+        r.x = (Math.random() * 2 - 1) * 0.60;
+        r.z = (D.tableCenterZ || -1.6) + 0.15 + Math.random() * 1.0;
         r.y = 2.7 + Math.random() * 0.4;
         r.vy = -2.6;
         r.vida = 0;
@@ -3740,32 +4072,36 @@ class StockController {
 /* ============================================================================
  *  MapaEO (v2.130) — el MAPA DEL CAMPEONATO en la PARED IZQUIERDA (convención
  *  de la casa: misma posición/escala que WizardMap del mago y el mapa del
- *  Oeste: −2,98 / 1,5 / −0,9 mirando al centro; arte 1380×752). Ruta de 5
+ *  Oeste: −2,98 / 1,5 / −0,9 mirando al centro; arte 1376×768). Ruta de 5
  *  nodos + insignia final, TAPAS sobre los nodos futuros, anillo dorado en
  *  el nodo vigente, hover azul al apuntar con la pala y REJUGA por gatillo
  *  (contrato replayMap del núcleo, v2.96 — el campeonato superado queda
  *  ABIERTO). PERFECTAMENTE ESTÁTICO salvo el anillo.
- *  Nodos medidos sobre el arte oficial (scripts/make_art_eo_v2.py):
- *   0 DUELO 1 (210,260,r100) · 1 CINTURÓN (455,500,r120) · 2 DUELO 2
- *   (700,260,r100) · 3 TORMENTA (945,500,r120) · 4 DUELO FINAL (1190,260,r100)
+ *  v3.2.1 · NODOS RE-MEDIDOS sobre el arte del dueño (mapa.png 1376×768,
+ *  medido sobre la imagen: el nodo 5 del arte está MÁS ABAJO de lo que
+ *  se creía — y 266 → 335 — y los medallones reales miden ~215-235 px):
+ *   0 DUELO 1 (222,260,r108) · 1 MURO 1 (460,500,r112) · 2 DUELO 2
+ *   (725,255,r112) · 3 MURO 2 (962,510,r118) · 4 DUELO FINAL (1197,335,r115)
+ *  TAPAS de 240 px base (lección v2.136 del Oeste: la tapa cubre el
+ *  medallón ENTERA — las de 165 px dejaban ver los bordes del arte).
  * ========================================================================== */
 class MapaEO {
   constructor(ctrl) {
     this.ctrl = ctrl;
     this.game = ctrl.game;
     this.nodesPx = [
-      { x: 210, y: 266, r: 100, tapa: false, ts: 1.0 },
-      { x: 455, y: 511, r: 120, tapa: true, ts: 1.2 },
-      { x: 700, y: 266, r: 100, tapa: true, ts: 1.0 },
-      { x: 945, y: 511, r: 120, tapa: true, ts: 1.2 },
-      { x: 1190, y: 266, r: 100, tapa: true, ts: 1.0 },
+      { x: 222,  y: 260, r: 108, tapa: false, ts: 1.0 },
+      { x: 460,  y: 500, r: 112, tapa: true,  ts: 1.12 },
+      { x: 725,  y: 255, r: 112, tapa: true,  ts: 1.0 },
+      { x: 962,  y: 510, r: 118, tapa: true,  ts: 1.12 },
+      { x: 1197, y: 335, r: 115, tapa: true,  ts: 1.02 },
     ];
     this.currentIdx = 0;
     this.IMG_W = 1376;               // v3.2.0: mapa nuevo del dueño
     this.IMG_H = 768;
     this.PW = 1.68;
     this.PH = 1.68 * 768 / 1376;
-    this.TAPA_W = 165 / 1380 * this.PW;
+    this.TAPA_W = 240 / 1376 * this.PW;
     this.TAPA_H = this.TAPA_W;
     this.inited = false;
   }

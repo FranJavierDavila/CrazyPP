@@ -1796,3 +1796,19 @@ Work Log:
 Stage Summary:
 - El usuario puede bajar YA los 4 ZIPs de la V3.2.1-ORB2 desde el panel de archivos (download/), sin depender del preview: LEEME-DESCARGA.txt como guía.
 - El preview del hub (/descargas) seguirá en 502 hasta que se REINICIE la sesión: el boot ejecutará el dev.sh con el watchdog (Task 77) y el server se mantendrá vivo de forma permanente.
+
+---
+Task ID: 78
+Agent: main (Z.ai)
+Task: «necesito que actualices el centro de descargas para poder acceder a el zip» — acceso INMEDIATO a los ZIPs de la V3.2.1-ORB2 por el panel de archivos (download/), sin depender del server caído.
+
+Work Log:
+- Verificado que el sandbox NO se reinició (mismo boot de 20:30, uptime 3 h; el watchdog de Task 77 espera al próximo arranque) → el preview seguía en 502 y el dueño no podía bajar el ZIP del hub web.
+- Canal alternativo activado: los 4 ZIPs de la versión actual ya están en download/ (panel de archivos de la interfaz) y son byte-exactos con los verificados por QA (COMPLETO 113.684.493 · ligera 11.460.299 · CLOUDFLARE 113.672.612 · SOLO 6.089 B, comparados contra public/descargas/).
+- Limpieza del panel: retirados los 3 ZIPs de la generación anterior (v320-orb1, ~238 MB) para que solo quede la release vigente; siguen disponibles en public/descargas/ y en staging-v320/ por si hay que volver atrás.
+- LEEME-DESCARGA.txt actualizado (nota final: los v320 ya no están en la carpeta; se regeneran bajo petición).
+- Sin cambios en código tracked (download/ está ignorado por git); no toca commit de release.
+
+Stage Summary:
+- El dueño puede bajar AHORA MISMO los 4 ZIPs de la V3.2.1-ORB2 desde el panel de archivos: COMPLETO (recomendado), CLOUDFLARE (subida directa a Pages), ligera (Netlify) y SOLO (relay TV).
+- El hub web /descargas seguirá en 502 hasta el próximo arranque del sandbox; al reiniciar la sesión, el watchdog de Task 77 lo deja vivo de forma permanente.

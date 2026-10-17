@@ -137,18 +137,35 @@ DEV_PID=$!
 log_step_end "Starting Next.js dev server"
 
 log_step_start "Waiting for Next.js dev server"
-wait_for_service "localhost" "3000" "Next.js dev server"
+# Con set -e un fallo aquí mataría el script antes de llegar al watchdog:
+# si el server no sube a la primera, el watchdog de abajo lo reanimará.
+wait_for_service "localhost" "3000" "Next.js dev server" \
+	|| echo "[DEV] aviso: el server no respondió en 60 s; el watchdog lo reanimará"
 log_step_end "Waiting for Next.js dev server"
 
 log_step_start "Health check"
 echo "[BUN] Performing health check..."
-curl -fsS localhost:3000 >/dev/null
+curl -fsS localhost:3000 >/dev/null \
+		|| echo "[DEV] health check falló; el watchdog lo cubrirá"
 echo "[BUN] Health check passed"
 log_step_end "Health check"
 
 start_mini_services
 
+# ── Watchdog del dev server ──────────────────────────────────────────
+# El server de Next muere en idle y el preview se queda en 502 para
+# siempre: el boot lo arranca una vez y nada lo reanima. Este bucle
+# (hijo del boot, como el relay de mini-services, que sí sobrevive
+# toda la vida del sandbox) rearranca next dev cada vez que muera.
+# El trap cleanup de arriba solo actúa con INT/TERM (apagado real).
 echo "Next.js dev server is running in background (PID: $DEV_PID)."
-echo "Use 'kill $DEV_PID' to stop it."
-disown "$DEV_PID" 2>/dev/null || true
-unset DEV_PID
+echo "[WATCHDOG] activo: si el server muere se rearranca automáticamente"
+while true; do
+	sleep 15
+	if ! kill -0 "$DEV_PID" 2>/dev/null; then
+		echo "[WATCHDOG] $(date '+%F %T') next dev (PID $DEV_PID) murió — reanimando..."
+		bun run dev &
+		DEV_PID=$!
+		sleep 5
+	fi
+done

@@ -43,7 +43,7 @@ export default function Descargas() {
       nombre: "Relay TV en solitario — para GitHub / Railway (mini)",
       detalle:
         "Solo el live-service (12 KB): los 4 ficheros que van a tu repo de GitHub para Railway. Descomprime y arrastra el CONTENIDO de live-service/ a la raíz del repo. Para el canal DEMO: npm install → set RELAY_URL=https://tu-relay.up.railway.app → npm run demo.",
-      tamano: "12 KB · ZIP · solo live-service",
+      tamano: "6 KB · ZIP · solo live-service",
       href: "/descargas/crazypp-live-service-SOLO.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",

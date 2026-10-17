@@ -1,154 +1,172 @@
 {
- "id": "estacion_orbital",
- "version": 5,
- "contract": 1,
- "estado": "publicado",
- "title": {
-  "es": "Estación Orbital",
-  "en": "Orbital Station"
- },
- "description": {
-  "es": "El camino completo: 2 duelos, 2 pruebas de habilidad y el DUELO FINAL contra el androide AX-9 en su estación espacial.",
-  "en": "The full path: 2 duels, 2 skill tests and the FINAL DUEL against android AX-9 aboard his space station."
- },
- "rival": {
-  "id": "estacion_orbital_rival",
-  "name": "Androide AX-9",
-  "kind": "stock",
-  "states": [
-   "idle",
-   "duelo",
-   "derrotado",
-   "triunfante"
+  "id": "estacion_orbital",
+  "version": 6,
+  "contract": 1,
+  "estado": "publicado",
+  "title": {
+    "es": "Estación Orbital",
+    "en": "Orbital Station"
+  },
+  "description": {
+    "es": "El camino completo: 2 duelos, 2 MUROS ORBITALES (arkanoid) y el DUELO FINAL contra el ASTRO a bordo de su estación espacial.",
+    "en": "The full path: 2 duels, 2 ORBITAL WALLS (arkanoid) and the FINAL DUEL against the ASTRO aboard his space station."
+  },
+  "rival": {
+    "id": "estacion_orbital_rival",
+    "name": "ASTRO",
+    "kind": "stock",
+    "states": [
+      "idle",
+      "duelo",
+      "focused",
+      "surprised",
+      "panic",
+      "laughing",
+      "loosing",
+      "picando",
+      "crazy",
+      "angry",
+      "victory",
+      "defeated",
+      "triunfante",
+      "derrotado"
+    ],
+    "oppLabel": "rival"
+  },
+  "storage": "pp_champ_estacion_orbital_*",
+  "assets": "arte del dueño v3.2.0: sala de 6 planos (izquierda/derecha 2395×864, fondo/frente 1849×864, suelo/techo 1296×1678), ASTRO en 12 poses 512×1024 (rival + <estado>.webp, convención clown), mapa.png 1376×768 del dueño, normas_astro.png 1024×512 (plantilla de carteles), superpower.png (etiqueta Super Power!! de la casa), decor/escena_cohete-astro-lander-telescopio.png (recortables del suelo), pistol.glb (láser del MURO 2), asteroide/asteroide2/caja/dron.png (poder meteoritos + dron vigía), 4 medallones de poder, insignia.png, tapa.png, bso.wav",
+  "audio": {
+    "music": "assets/bso.wav",
+    "musicVolume": 0.18
+  },
+  "powers": [
+    {
+      "kind": "confeti",
+      "name": "Lluvia de estrellas",
+      "icon": "assets/powerestrellas.png",
+      "chance": 0.3,
+      "cooldown": 24.0,
+      "duration": 8.0
+    },
+    {
+      "kind": "custom",
+      "name": "Meteoritos",
+      "module": "StockController._meteorStep",
+      "icon": "assets/powermeteoritos.png",
+      "chance": 0.26,
+      "cooldown": 30.0,
+      "duration": 11.0,
+      "warn": 2.0
+    },
+    {
+      "kind": "custom",
+      "name": "Rayo tractor",
+      "module": "StockController._tractorStep",
+      "icon": "assets/powertractor.png",
+      "chance": 0.24,
+      "cooldown": 32.0,
+      "duration": 7.0,
+      "warn": 2.0
+    },
+    {
+      "kind": "custom",
+      "name": "Gravedad cero",
+      "module": "StockController._ceroStep",
+      "icon": "assets/powercero.png",
+      "chance": 0.22,
+      "cooldown": 34.0,
+      "duration": 8.0,
+      "warn": 2.0
+    }
   ],
-  "oppLabel": "rival"
- },
- "storage": "pp_champ_estacion_orbital_*",
- "assets": "arte completo v3: rival.webp + estados ['idle','duelo','derrotado','triunfante'], bso.wav, sala_*.jpg (6 planos PIL), decor/troquel1-3.png, powerestrellas/powermeteoritos/powertractor/powercero.png, asteroide/asteroide2/caja/dron.png (dianas), insignia.png",
- "audio": {
-  "music": "assets/bso.wav",
-  "musicVolume": 0.18
- },
- "powers": [
-  {
-   "kind": "confeti",
-   "name": "Lluvia de estrellas",
-   "icon": "assets/powerestrellas.png",
-   "chance": 0.3,
-   "cooldown": 24.0,
-   "duration": 8.0
+  "stages": [
+    {
+      "id": "duelo1",
+      "name": "Duelo 1",
+      "kind": "duelo"
+    },
+    {
+      "id": "muro1",
+      "name": "Arkanoid orbital",
+      "kind": "arkanoid"
+    },
+    {
+      "id": "duelo2",
+      "name": "Duelo 2",
+      "kind": "duelo"
+    },
+    {
+      "id": "muro2",
+      "name": "Arkanoid II",
+      "kind": "arkanoid"
+    },
+    {
+      "id": "final",
+      "name": "DUELO FINAL",
+      "kind": "duelo"
+    }
+  ],
+  "decor": {
+    "pieces": [
+      {
+        "file": "assets/decor/escena_cohete.png",
+        "h": 1.15,
+        "x": -2.55,
+        "z": -2.5,
+        "sway": 0.5
+      },
+      {
+        "file": "assets/decor/escena_astro.png",
+        "h": 1.0,
+        "x": 2.1,
+        "z": -2.5,
+        "sway": 0.3
+      },
+      {
+        "file": "assets/decor/escena_lander.png",
+        "h": 0.95,
+        "x": 2.45,
+        "z": -0.85,
+        "sway": 0.4
+      },
+      {
+        "file": "assets/decor/escena_telescopio.png",
+        "h": 0.62,
+        "x": -2.45,
+        "z": -0.85,
+        "sway": 0.35
+      }
+    ]
   },
-  {
-   "kind": "custom",
-   "name": "Meteoritos",
-   "module": "StockController._meteorStep",
-   "icon": "assets/powermeteoritos.png",
-   "chance": 0.26,
-   "cooldown": 30.0,
-   "duration": 11.0,
-   "warn": 2.0
+  "room": {
+    "floor": "assets/sala_floor.jpg",
+    "ceil": "assets/sala_ceil.jpg",
+    "back": "assets/sala_back.jpg",
+    "front": "assets/sala_front.jpg",
+    "left": "assets/sala_left.jpg",
+    "right": "assets/sala_right.jpg"
   },
-  {
-   "kind": "custom",
-   "name": "Rayo tractor",
-   "module": "StockController._tractorStep",
-   "icon": "assets/powertractor.png",
-   "chance": 0.24,
-   "cooldown": 32.0,
-   "duration": 7.0,
-   "warn": 2.0
+  "rewards": {
+    "wins": "pp_champ_estacion_orbital_wins",
+    "champion": "pp_champ_estacion_orbital_champ"
   },
-  {
-   "kind": "custom",
-   "name": "Gravedad cero",
-   "module": "StockController._ceroStep",
-   "icon": "assets/powercero.png",
-   "chance": 0.22,
-   "cooldown": 34.0,
-   "duration": 8.0,
-   "warn": 2.0
-  }
- ],
- "stages": [
-  {
-   "id": "duelo1",
-   "name": "Duelo 1",
-   "kind": "duelo"
+  "trophy": {
+    "name": {
+      "es": "Copa Estación Orbital",
+      "en": "Orbital Station Cup"
+    }
   },
-  {
-   "id": "cinturon",
-   "name": "Cinturón de asteroides",
-   "kind": "objetos"
+  "duelo": {
+    "aiMul": 0.9
   },
-  {
-   "id": "duelo2",
-   "name": "Duelo 2",
-   "kind": "duelo"
-  },
-  {
-   "id": "tormenta",
-   "name": "Tormenta de meteoritos",
-   "kind": "objetos"
-  },
-  {
-   "id": "final",
-   "name": "DUELO FINAL",
-   "kind": "duelo"
-  }
- ],
- "decor": {
-  "pieces": [
-   {
-    "file": "assets/decor/troquel1.png",
-    "h": 1.2,
-    "x": -2.3,
-    "z": -2.75,
-    "sway": 0.5
-   },
-   {
-    "file": "assets/decor/troquel2.png",
-    "h": 0.8,
-    "x": 2.1,
-    "z": -2.5,
-    "sway": 0.3
-   },
-   {
-    "file": "assets/decor/troquel3.png",
-    "h": 1,
-    "x": 0,
-    "z": -2.8,
-    "sway": 0.4
-   }
+  "tema": "espacio",
+  "notes": [
+    "2026-10-12: demo de la plataforma (ciclo borrador→publicado→desactivado verificado). Activar: estado=publicado + genera_indice.",
+    "2026-10-13: activado (publicado) en V2.126 para que sea visible en el menú; sirve de plantilla para nuevos campeonatos.",
+    "2026-10-13 v2.128: flujo de CAMPEÓN (3 duelos → insignia ¡CONSEGUIDO! del núcleo + registro pp_champ_estacion_orbital_champ + fila 🏆 en el ranking) · restauración de progreso (victorias) · insignia.png propia (arte del núcleo) · isChampion() para la cinta ★ SUPERADO del menú · campeonato superado queda ABIERTO.",
+    "2026-10-13 v3 (V2.129) · PLANTILLA FINAL: camino de 5 ETAPAS (duelo ×0.90 → PRUEBA Cinturón de asteroides → duelo ×1.12 → PRUEBA Tormenta de meteoritos → DUELO FINAL ×1.42). Pruebas «Dianas Orbitales» con motor propio: física del núcleo (stepPhysics + colisionador extra por subpaso, anti-túnel con ball.__exPrev, patrón orbe de magia), árbitro dormido en 'champtest', ignoreNet durante la prueba (precedente ARKANOID), bola en bote-en-espera (v2.61 de magia), HUD holográfico con reloj+dianas, banner de resultado, cartel explicativo del núcleo ANTES de cada prueba (regla v2.106), dianas-sprite del artista (asteroide/caja blindada 2 golpes/dron que da +4 s). 4 SUPERPODERES del AX-9 con bolsa rotatoria (v2.126) y aviso de dos fases: Lluvia de estrellas (confeti con estrellas), Meteoritos (rocas caen a tu campo y BLOQUEAN la bola, patrón Burla v2.127 del segmento prev→actual), Rayo tractor (haz que curva la bola al eje central), Gravedad cero (ondas verticales sobre la bola). ARTE completo PIL: sala de 6 planos (ventanales con planeta anillado, esclusa, cápsulas de sueño, brazo robótico), AX-9 en 5 estados (robot flotante con anillo antigrav), troqueles cohete/rover/satélite y 4 medallones de poder. Progreso de ETAPA persistente (pp_champ_estacion_orbital_stage). La prueba perdida se REPITE (sin retroceder al duelo previo: flujo amable de la plantilla). Insignia/¡CONSEGUIDO!/★ SUPERADO/ranking de v2.128 intactos.",
+    "2026-10-13 v3.1 (V2.131) · FIX RAÍZ del informe «sin superpoderes en 1/3/5 ni pruebas en 2/4»: el módulo nunca ponía rules.state='champtest' en la SALA y el núcleo sólo enruta el gatillo con ese estado — el gatillo hacía el saque clásico (partidos normales sin duelo real). Ahora el árbitro duerme en toda transición a sala/prueba (startChamp + bola aparcada, _empezarPrueba, _despuesDePrueba, onMatchOver normal y rejugada que ahora sí cierra y limpia _replay), reenter condicional y leave restituye al árbitro (convención magia). Pala IA sólo en DUELO.",
+    "v3.2 (V2.132): disparo redundante de superpoderes (rally + garantía 22 s), cartel del superpoder con medallón, efectos blindados, dianas 3D y bola de espera alcanzable (z -0.50).",
+    "2026-10-17 v3.2.0 (ORB1) · DECORADO REAL DEL DUEÑO + MUROS ORBITALES — restaurada la base V3.1.2-CCD1 (paquete CLOUDFLARE del dueño, byte-exacto) tras el rollback del sandbox y vestido completo con su arte: (1) SALA de 6 planos con el arte del dueño (izquierda/derecha con literas y ventanal a la Tierra, frente con esclusa, fondo, suelo y techo con luminarias; JPG q85, patrón vagón del Oeste). (2) RIVAL ASTRO: 12 poses del artista en webp (convención clown assets/<estado>.webp — astro_angry llegó aparte y era el «techo.png» escondido dentro de astro.zip, mismo md5) + estados nuevos cableados: duelo=focused, superpoder=crazy, fin de poder=duelo; manifiesto con la familia completa (idle/duelo/focused/surprised/panic/laughing/loosing/picando/crazy/angry/victory/defeated + alias triunfante/derrotado). (3) MAPA NUEVO del dueño (1376×768) en la pared izquierda: nodos re-medidos (y 260→266, 500→511) y —dato clave— el arte dibuja las etapas 2 y 4 como MUROS DE LADRILLOS (misma iconografía que el mapa del clown) → las pruebas del camino son ahora MUROS ORBITALES: PORT ÍNTEGRO del ARKANOID de La Locura (clase EOArkanoid + pegamento de pistola), variante 1 clásica (30 ladrillos rojos, 2 min, 5 vidas) y variante 2 (54 rojos/azules + PISTOLA LÁSER pistol.glb con raycast, ladrillo negro +1 min, abanico anti-atasco), _finish/_afterResult adaptados al camino EO (_pruebaFin/_despuesDePrueba, rejugada v2.96 respetada) y export testActive/testStep enrutando al muro primero (DIANAS queda como motor legacy). (4) CARTELES DE NORMAS con la plantilla del artista: NORMAS_SKIN.defs.estacion (normas_astro.png, hueco 152..872 × 152..432) — los carteles explicativos de los MUROS visten el arte real. (5) CARTEL DE SUPERPODER con la ETIQUETA DE LA CASA superpower.png (mismo arte «Super Power!!» que locura/magia/oeste) + miniatura del poder (medallón) + nombre y fase. (6) RECORTABLES reales del dueño por el suelo (escena_cohete/astro/lander/telescopio — fuera los troqueles placeholder). (7) Rival renombrado a ASTRO (arte del dueño); texts CFG.rival actualizados. Núcleo: solo badge/VERSION + NORMAS_SKIN (física CCD/SRV2/FEEL1 INTACTA). Módulo v3.2.0 (manifest v6)."
   ]
- },
- "room": {
-  "floor": "assets/sala_floor.jpg",
-  "ceil": "assets/sala_ceil.jpg",
-  "back": "assets/sala_back.jpg",
-  "front": "assets/sala_front.jpg",
-  "left": "assets/sala_left.jpg",
-  "right": "assets/sala_right.jpg"
- },
- "rewards": {
-  "wins": "pp_champ_estacion_orbital_wins",
-  "champion": "pp_champ_estacion_orbital_champ"
- },
- "trophy": {
-  "name": {
-   "es": "Copa Estación Orbital",
-   "en": "Orbital Station Cup"
-  }
- },
- "duelo": {
-  "aiMul": 0.9
- },
- "tema": "espacio",
- "notes": [
-  "2026-10-12: demo de la plataforma (ciclo borrador→publicado→desactivado verificado). Activar: estado=publicado + genera_indice.",
-  "2026-10-13: activado (publicado) en V2.126 para que sea visible en el menú; sirve de plantilla para nuevos campeonatos.",
-  "2026-10-13 v2.128: flujo de CAMPEÓN (3 duelos → insignia ¡CONSEGUIDO! del núcleo + registro pp_champ_estacion_orbital_champ + fila 🏆 en el ranking) · restauración de progreso (victorias) · insignia.png propia (arte del núcleo) · isChampion() para la cinta ★ SUPERADO del menú · campeonato superado queda ABIERTO.",
-  "2026-10-13 v3 (V2.129) · PLANTILLA FINAL: camino de 5 ETAPAS (duelo ×0.90 → PRUEBA Cinturón de asteroides → duelo ×1.12 → PRUEBA Tormenta de meteoritos → DUELO FINAL ×1.42). Pruebas «Dianas Orbitales» con motor propio: física del núcleo (stepPhysics + colisionador extra por subpaso, anti-túnel con ball.__exPrev, patrón orbe de magia), árbitro dormido en 'champtest', ignoreNet durante la prueba (precedente ARKANOID), bola en bote-en-espera (v2.61 de magia), HUD holográfico con reloj+dianas, banner de resultado, cartel explicativo del núcleo ANTES de cada prueba (regla v2.106), dianas-sprite del artista (asteroide/caja blindada 2 golpes/dron que da +4 s). 4 SUPERPODERES del AX-9 con bolsa rotatoria (v2.126) y aviso de dos fases: Lluvia de estrellas (confeti con estrellas), Meteoritos (rocas caen a tu campo y BLOQUEAN la bola, patrón Burla v2.127 del segmento prev→actual), Rayo tractor (haz que curva la bola al eje central), Gravedad cero (ondas verticales sobre la bola). ARTE completo PIL: sala de 6 planos (ventanales con planeta anillado, esclusa, cápsulas de sueño, brazo robótico), AX-9 en 5 estados (robot flotante con anillo antigrav), troqueles cohete/rover/satélite y 4 medallones de poder. Progreso de ETAPA persistente (pp_champ_estacion_orbital_stage). La prueba perdida se REPITE (sin retroceder al duelo previo: flujo amable de la plantilla). Insignia/¡CONSEGUIDO!/★ SUPERADO/ranking de v2.128 intactos.",
-  "2026-10-13 v3.1 (V2.131) · FIX RAÍZ del informe «sin superpoderes en 1/3/5 ni pruebas en 2/4»: el módulo nunca ponía rules.state='champtest' en la SALA y el núcleo sólo enruta el gatillo con ese estado — el gatillo hacía el saque clásico (partidos normales sin duelo real). Ahora el árbitro duerme en toda transición a sala/prueba (startChamp + bola aparcada, _empezarPrueba, _despuesDePrueba, onMatchOver normal y rejugada que ahora sí cierra y limpia _replay), reenter condicional y leave restituye al árbitro (convención magia). Pala IA sólo en DUELO.",
-  "v3.2 (V2.132): disparo redundante de superpoderes (rally + garantía 22 s), cartel del superpoder con medallón, efectos blindados, dianas 3D y bola de espera alcanzable (z -0.50)."
- ]
 }

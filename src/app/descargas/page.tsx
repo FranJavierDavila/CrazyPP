@@ -4,11 +4,11 @@ export default function Descargas() {
   const files = [
     {
       emoji: "☁️",
-      nombre: "Juego + CRAZY TV — V3.1.0-SRV2 (paquete Cloudflare)",
+      nombre: "Juego + CRAZY TV — V3.2.0-ORB1 (paquete Cloudflare)",
       detalle:
-        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con SAQUE VR REALISTA (el gesto manda), HALL como hub de navegación, física viva y palas con carácter + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
-      tamano: "106,5 MB · ZIP · Cloudflare Pages",
-      href: "/descargas/crazypp-v310-srv2-CLOUDFLARE.zip",
+        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con la ESTACIÓN ORBITAL vestida con el arte del dueño (sala, ASTRO, mapa, normas y MUROS ORBITALES tipo arkanoid), PRECISIÓN CCD en el contacto, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
+      tamano: "113,7 MB · ZIP · Cloudflare Pages",
+      href: "/descargas/crazypp-v320-orb1-CLOUDFLARE.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",
       borde: "border-sky-500/40",
@@ -16,11 +16,11 @@ export default function Descargas() {
     },
     {
       emoji: "🎯",
-      nombre: "Juego + CRAZY TV — V3.1.0-SRV2 (paquete completo)",
+      nombre: "Juego + CRAZY TV — V3.2.0-ORB1 (paquete completo)",
       detalle:
-        "La V3.1.0-SRV2 íntegra: SAQUE VR REALISTA CON ASISTENCIA LIMITADA (soltar el grip lanza con la velocidad EXACTA de la mano · CCD fina de impacto · el impulso sale SIEMPRE del modelo real · asistencia progresiva acotada que jamás convierte un mal gesto en saque válido · el árbitro juzga el vuelo real · todo configurable en SERVE_TUNE) + EL HALL ES EL HUB (cerrar el menú te queda en el hall y en partida el menú añade «⌂ VOLVER AL HALL»). Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
-      tamano: "106,5 MB · ZIP · completo",
-      href: "/descargas/crazypp-v310-srv2-COMPLETO.zip",
+        "La V3.2.0-ORB1 íntegra: DECORADO REAL DE LA ESTACIÓN ORBITAL (los 6 planos de la sala con el arte del dueño, patrón vagón del Oeste) · el rival ASTRO con sus 12 poses (convención clown: focused en duelo, crazy con el superpoder, defeated al caer) · MUROS ORBITALES en las etapas 2 y 4: el arkanoid de La Locura con pistola láser pistol.glb en la variante 2 · mapa nuevo del dueño con nodos re-medidos · cartel de normas con la plantilla del artista (normas_astro.png) · cartel de superpoder con la etiqueta de la casa (superpower.png) + miniatura · recortables reales por el suelo · y TODO lo anterior: PRECISIÓN CCD SDF en el contacto de la pala (v3.1.2-CCD1), saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+      tamano: "113,7 MB · ZIP · completo",
+      href: "/descargas/crazypp-v320-orb1-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -28,11 +28,11 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.1.0-SRV2 — versión ligera (sin campeonatos)",
+      nombre: "V3.2.0-ORB1 — versión ligera (sin campeonatos)",
       detalle:
-        "El mismo paquete para subir rápido a Netlify Drop: juego con saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo. Tampoco vale para Cloudflare directo (lleva TypeScript).",
-      tamano: "11,4 MB · ZIP · Netlify",
-      href: "/descargas/crazypp-v310-srv2-ligera.zip",
+        "El mismo paquete para subir rápido a Netlify Drop: juego con la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital con su decorado real). Tampoco vale para Cloudflare directo (lleva TypeScript).",
+      tamano: "11,5 MB · ZIP · Netlify",
+      href: "/descargas/crazypp-v320-orb1-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -68,16 +68,18 @@ export default function Descargas() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
             El paquete actual es la{" "}
-            <strong className="text-amber-300">V3.1.0-SRV2</strong>: el saque es
-            ahora <strong className="text-slate-200">VR REALISTA</strong> (el
-            gesto manda: sujeción, lanzamiento, impacto CCD y respuesta física
-            real, con asistencia limitada que jamás disfraza un mal saque) y el
-            hall es el <strong className="text-slate-200">HUB del juego</strong>
-            (cerrar el menú te queda en el hall; en partida, «⌂ VOLVER AL
-            HALL»). Siguen el hall del anfitrión, el intro oficial, CRAZY TV en
-            directo, la <strong className="text-slate-200">FÍSICA VIVA</strong> y
-            las <strong className="text-slate-200">PALAS CON CARÁCTER</strong>.
-            Pulsa un botón y listo.
+            <strong className="text-amber-300">V3.2.0-ORB1</strong>: la{" "}
+            <strong className="text-slate-200">ESTACIÓN ORBITAL</strong> estrena
+            su <strong className="text-slate-200">DECORADO REAL</strong> (el
+            arte del dueño en los 6 planos de la sala, el rival ASTRO con sus
+            12 poses, el mapa nuevo y los recortables del suelo), sus pruebas
+            2 y 4 son ya{" "}
+            <strong className="text-slate-200">MUROS ORBITALES</strong> (el
+            arkanoid de La Locura con pistola láser) y el cartel de superpoder
+            luce la etiqueta de la casa. Y bajo todo ello sigue la{" "}
+            <strong className="text-slate-200">PRECISIÓN CCD</strong> en el
+            contacto de la pala, el saque VR realista, el hall como hub, la
+            física viva y las palas con carácter. Pulsa un botón y listo.
           </p>
         </header>
 
@@ -163,8 +165,8 @@ export default function Descargas() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.1.0-SRV2 · WebXR · Saque VR realista · Hall como
-          hub · Física viva · CRAZY TV · Meta Quest 3
+          Crazy Ping Pong V3.2.0-ORB1 · WebXR · Decorado orbital real · Muros
+          arkanoid · Precisión CCD · CRAZY TV · Meta Quest 3
         </footer>
       </div>
     </main>

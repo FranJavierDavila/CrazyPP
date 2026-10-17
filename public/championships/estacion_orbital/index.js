@@ -1,6 +1,18 @@
 /* ============================================================================
  *  Estación Orbital (estacion_orbital) — v3.1 «PLANTILLA FINAL» (V2.131)
  *  ----------------------------------------------------------------------------
+ *  v3.2.0 (ORB1) · DECORADO REAL DEL DUEÑO + MUROS ORBITALES: (1) SALA con
+ *    el arte del dueño en los 6 planos (literas, ventanal con la Tierra,
+ *    esclusa, suelo y techo — patrón vagón del Oeste). (2) RIVAL ASTRO con
+ *    las 12 poses del artista (convención clown assets/<estado>.webp; en
+ *    duelo focused, con superpoder crazy, al caer defeated). (3) MAPA nuevo
+ *    (1376×768) que define las pruebas como MUROS → port del ARKANOID de
+ *    La Locura (2 variantes + pistola láser) con cartel explicativo sobre
+ *    la plantilla del artista (normas_astro.png vía NORMAS_SKIN). (4) CARTEL
+ *    DE SUPERPODER con la etiqueta de la casa (superpower.png) + miniatura
+ *    del poder. (5) RECORTABLES reales por el suelo (cohete, astro, lander,
+ *    telescopio). La física CCD/SRV2/FEEL1 del núcleo: INTACTA.
+ *  ----------------------------------------------------------------------------
  *  v3.2 (V2.132) · «LOS PODERES YA MANDAN» — informe del casco: sin cartels
  *    de superpoder y efectos que no llegan + prueba con la bola inalcanzable.
  *    (1) DISPARO REDUNDANTE: el gancho por PUNTO (onPoint) se queda, pero
@@ -53,6 +65,7 @@
  *  decor por export, __PP_WORLD.submit, haptic, ignoreNet (documentado).
  *  ========================================================================== */
 import * as THREE from 'three';   // importmap del núcleo: MISMA instancia
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';   // v3.2.0: pistol.glb del MURO 2
 
 const CORE = (typeof window !== 'undefined' && window.__PP_CORE) || null;
 const GAME = { g: null };
@@ -64,14 +77,14 @@ const tx = (es, en) => (TL === 'en' ? (en || es) : es);
 
 /* ----------------------------- CONFIGURACIÓN ----------------------------- */
 const CFG = {
-  rival: 'Androide AX-9',
+  rival: 'ASTRO',   // v3.2.0: el astronauta del arte del dueño
   puntos: 11,
   /* Camino de 5 etapas (índices de etapa 0..4) */
   etapas: [
     { kind: 'duelo', id: 'duelo1', name: 'Duelo 1', aiMul: 0.90 },
-    { kind: 'prueba', id: 'cinturon', name: 'Cinturón de asteroides' },
+    { kind: 'prueba', id: 'muro1', name: 'Arkanoid orbital' },   // v3.2.0: MURO según el mapa del dueño
     { kind: 'duelo', id: 'duelo2', name: 'Duelo 2', aiMul: 1.12 },
-    { kind: 'prueba', id: 'tormenta', name: 'Tormenta de meteoritos' },
+    { kind: 'prueba', id: 'muro2', name: 'Arkanoid II' },   // v3.2.0: MURO rojo/azul + láser
     { kind: 'duelo', id: 'final', name: 'DUELO FINAL', aiMul: 1.42 },
   ],
   /* Superpoderes del AX-9 (máx 4 del esquema) — bolsa rotatoria */
@@ -104,6 +117,195 @@ const DIANAS = {
  * asteroides»). Ahora espera pegada al borde del jugador, convención Magia
  * (tableNearZ - 0.38 → usamos -0.50, aún más amable). */
 const HOLD = { x: 0.26, z: -0.50, T: 0.95, H: 0.42 };   // bote-en-espera
+
+/* ============================================================================
+ *  v3.2.0 · MUROS ORBITALES — port del ARKANOID de La Locura (QA de casas)
+ *  ----------------------------------------------------------------------------
+ *  El mapa nuevo del dueño dibuja las etapas 2 y 4 como MUROS DE LADRILLOS
+ *  (misma iconografía que el mapa del clown): el camino de la plantilla
+ *  pasa de las DIANAS a los MUROS. Variante 1: muro clásico de 30 ladrillos
+ *  rojos (2 min, 5 vidas). Variante 2: 54 ladrillos rojos/azules + PISTOLA
+ *  LÁSER pistol.glb en la mano libre (el azul explota y queda rojo; el rojo
+ *  es inmune; los rojos vivos se vuelven azules con el tiempo; ladrillo
+ *  negro del tiempo extra = +1 min). Física del núcleo intacta vía
+ *  stepPhysics + colisionador extra por subpaso (anti-túnel).
+ *  ========================================================================== */
+const __CORE = (typeof window !== 'undefined' && window.__PP_CORE) || null;
+const T = (k) => ((__CORE && __CORE.T) ? __CORE.T(k) : k);
+const DIMS = (CORE && CORE.DIMS) || {
+  tableHalfWidth: 0.7625, tableTopY: 0.76, tableCenterZ: -1.6,
+  tableHalfLength: 1.37, ballRadius: 0.02, gravity: 9.6,
+};
+const stepPhysics = (CORE && CORE.stepPhysics) || null;
+let GUN_ART_URL = '';
+const GUN_MOUNT_PITCH = 0;
+const GUN_MUZZLE = new THREE.Vector3(0.0003, 0.092, -0.163);
+
+function arcadeCanvas(w, h) {
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  return cv;
+}
+
+const ARK_CFG = {
+  // v2.42 · TODO ALINEADO CON LA MESA (DIMS): el muro ocupa el ancho EXACTO
+  // de la mesa y está ENRASADO con su borde de fondo; las 3 paredes del
+  // perímetro nacen EN LOS BORDES de la mesa (laterales ±tableHalfWidth,
+  // fondo en el borde lejano) y la red se retira (también sus físicas).
+  // v2.44 · PAREDES LATERALES +30 cm HACIA EL JUGADOR (sideZ0 = red + 0,30):
+  // los cristales llegan MÁS CERCA del jugador y la bola ya no se cuela por
+  // los laterales de su campo.
+  cols: 6, rows: 5, gap: 0.014, depth: 0.12,
+  bw: (DIMS.tableHalfWidth * 2 - 5 * 0.014) / 6,   // 0,2425 m: muro = ancho de mesa
+  bh: 0.165,
+  baseY: DIMS.tableTopY + 0.005,     // APOYADO en la superficie de la mesa
+  sideX: DIMS.tableHalfWidth,        // 0,7625 — cristales EN el borde de la mesa
+  // v2.47 · MISMAS DIMENSIONES DE MUROS QUE EL ARKANOID 2 (petición expresa):
+  // los cristales del ARKANOID 1 llegan también a red + 80 cm, así ambos
+  // niveles comparten el recinto EXACTO (visual y colisión con this.C).
+  sideZ0: DIMS.tableCenterZ + 0.80,  // v2.47: red + 80 cm — IGUAL que ARK2
+  sideZ1: DIMS.tableCenterZ - DIMS.tableHalfLength,  // -2,97 — borde de FONDO
+  backY: 1.5,        // pared del fondo: 1,5 m SOBRE la mesa (sostiene el póster)
+  glassY: 1.05,      // cristales laterales: 1,05 m SOBRE la mesa
+  // FÍSICA = la de una PARTIDA NORMAL (DIMS.gravity + aerodinámica + Magnus
+  // + MISMO golpeo de pala). La mesa otorga FUERZA MÍNIMA de bote (la bola
+  // nunca queda muerta) y el recinto pierde energía de forma realista.
+  apexMin: 0.38,     // bote mínimo que la mesa OTORGA (sobre la superficie)
+  brickRest: 0.86,   // pérdida de la componente normal en el ladrillo
+  wallRest: 0.82,    // pérdida en las paredes perimetrales
+  time: 120,         // 2 minutos
+  lives: 5,          // 5 saques
+  serveAutoT: 12,    // saque automático si no actúas (bola nunca atascada)
+  variant: 1,        // v2.44: ARKANOID clásico (30 ladrillos rojos + póster)
+};
+
+/* ---------- v2.44 · ARKANOID 2 (variante 2 del camino) -----------------
+ * · MUCHOS más ladrillos (9 x 6 = 54) y 2,5 minutos.
+ * · Ladrillos ROJOS (sólo la PALA los rompe) y AZULES (sólo el LÁSER los
+ *   destruye: al impactar, el azul EXPLOTA y queda ROJO, no desaparece).
+ * · Parte de los ladrillos nacen AZULES; y los ROJOS que quedan vivos se
+ *   van VOLVIENDO AZULES con el tiempo (uno cada pocos segundos).
+ * · La pistola láser (pistola.glb) va TODO EL RATO en la mano libre:
+ *   sólo desaparece el instante del saque (esa mano lanza la bola).
+ * · SIN póster-escondite del superpoder tras el muro: pared neutra.
+ * · Cristales laterales OTRO +30 cm hacia el jugador (red + 0,60). */
+const ARK2_CFG = Object.assign({}, ARK_CFG, {
+  variant: 2,
+  cols: 9, rows: 6, gap: 0.012,
+  bw: (DIMS.tableHalfWidth * 2 - 8 * 0.012) / 9,   // 0,1586 m
+  bh: 0.15,
+  // v2.46 · +20 cm MÁS: red + 80 cm (30+30+20). Y ojo: la colisión del
+  // perímetro usa SIEMPRE this.C (antes _extraCollide leía ARK_CFG fijo y
+  // los 50 cm nuevos NO colisionaban — bug del "cristal sin comportamiento").
+  sideZ0: DIMS.tableCenterZ + 0.80,  // v2.46: red + 80 cm hacia ti
+  time: 150,         // 2,5 minutos (muro del doble de ladrillos)
+  lives: 5,
+  blueStart: 0.30,   // ~30% de los ladrillos nacen AZULES
+  convertFirst: 12,  // gracia (s) antes de la conversión temporal
+  convertEvery: 7,   // cada 7 s un ROJO vivo pasa a AZUL
+});
+ARK_CFG.z = ARK_CFG.sideZ1 + ARK_CFG.depth / 2 + 0.004;
+ARK2_CFG.z = ARK2_CFG.sideZ1 + ARK2_CFG.depth / 2 + 0.004;
+
+/* ---------- texturas del muro v2.41 (biselado + flash de destrucción) -- */
+function arkBrickTexture() {
+  const cv = arcadeCanvas(128, 64);
+  const g2 = cv.getContext('2d');
+  // textura en ESCALA DE GRISES: el color del material la multiplica
+  const grd = g2.createLinearGradient(0, 0, 0, 64);
+  grd.addColorStop(0, '#c9c9c9');
+  grd.addColorStop(0.16, '#ffffff');      // bisel superior iluminado
+  grd.addColorStop(0.52, '#a2a2a2');
+  grd.addColorStop(0.88, '#6e6e6e');      // sombra inferior
+  grd.addColorStop(1, '#585858');
+  g2.fillStyle = grd;
+  g2.fillRect(0, 0, 128, 64);
+  g2.strokeStyle = 'rgba(0,0,0,0.6)';
+  g2.lineWidth = 5;
+  g2.strokeRect(0, 0, 128, 64);
+  g2.strokeStyle = 'rgba(255,255,255,0.35)';
+  g2.lineWidth = 2;
+  g2.strokeRect(4, 4, 120, 56);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function arkFlashTexture() {
+  const cv = arcadeCanvas(128, 128);
+  const g2 = cv.getContext('2d');
+  const grd = g2.createRadialGradient(64, 64, 4, 64, 64, 62);
+  grd.addColorStop(0, 'rgba(255,240,200,0.95)');
+  grd.addColorStop(0.4, 'rgba(255,190,110,0.55)');
+  grd.addColorStop(1, 'rgba(255,150,60,0)');
+  g2.fillStyle = grd;
+  g2.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/* v2.44 · textura de las PARTÍCULAS DE VIENTO del abanico (chorro suave) */
+function arkWindTexture() {
+  const cv = arcadeCanvas(64, 64);
+  const g2 = cv.getContext('2d');
+  const grd = g2.createRadialGradient(32, 32, 2, 32, 32, 30);
+  grd.addColorStop(0, 'rgba(235,250,255,0.95)');
+  grd.addColorStop(0.45, 'rgba(160,225,255,0.5)');
+  grd.addColorStop(1, 'rgba(140,210,255,0)');
+  g2.fillStyle = grd;
+  g2.beginPath();
+  g2.ellipse(32, 32, 32, 20, 0, 0, Math.PI * 2);
+  g2.fill();
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/* v2.45 · textura del vidrio ESCARCHADO de las paredes laterales: base
+ * helada + moteado determinista + panel vertical + brillo diagonal. Da
+ * cuerpo al cristal (antes opacity 0,12 liso = "no hay nada"). */
+function arkGlassTexture() {
+  const cv = arcadeCanvas(256, 256);
+  const g2 = cv.getContext('2d');
+  const grd = g2.createLinearGradient(0, 0, 0, 256);
+  grd.addColorStop(0, '#eaf7fc');
+  grd.addColorStop(0.5, '#cfe9f2');
+  grd.addColorStop(1, '#b6dae7');
+  g2.fillStyle = grd;
+  g2.fillRect(0, 0, 256, 256);
+  // escarcha (pseudoaleatorio determinista)
+  for (let i = 0; i < 460; i++) {
+    const x = (i * 97 + 31) % 256, y = (i * 173 + 57) % 256;
+    g2.fillStyle = (i % 2) ? 'rgba(255,255,255,0.5)' : 'rgba(110,165,190,0.3)';
+    g2.beginPath();
+    g2.arc(x, y, 1 + (i % 3) * 0.7, 0, Math.PI * 2);
+    g2.fill();
+  }
+  // banda de brillo diagonal
+  const sh = g2.createLinearGradient(0, 256, 256, 0);
+  sh.addColorStop(0.32, 'rgba(255,255,255,0)');
+  sh.addColorStop(0.5, 'rgba(255,255,255,0.45)');
+  sh.addColorStop(0.68, 'rgba(255,255,255,0)');
+  g2.fillStyle = sh;
+  g2.fillRect(0, 0, 256, 256);
+ // junta central del panel de vidrio
+  g2.strokeStyle = 'rgba(40,80,100,0.45)';
+  g2.lineWidth = 3;
+  g2.beginPath(); g2.moveTo(128, 0); g2.lineTo(128, 256); g2.stroke();
+  g2.strokeStyle = 'rgba(255,255,255,0.55)';
+  g2.lineWidth = 1;
+  g2.beginPath(); g2.moveTo(131, 0); g2.lineTo(131, 256); g2.stroke();
+  g2.beginPath(); g2.moveTo(125, 0); g2.lineTo(125, 256); g2.stroke();
+  // marco sutil
+  g2.strokeStyle = 'rgba(30,60,80,0.5)';
+  g2.lineWidth = 6;
+  g2.strokeRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 
 /* ------------------------- TEXTURAS DE CANVAS ---------------------------- */
 function _texEstrella() {
@@ -776,6 +978,1412 @@ function stepPhysicsSafe(dt, ball, pads, evs, extra) {
   catch (e) { console.warn('[estacion.stepPhysics]', e); }
 }
 
+class EOArkanoid {
+  constructor(ctrl) {
+    this.ctrl = ctrl;
+    this.game = ctrl.game;
+    this.active = false;
+    this.inited = false;
+    this.variant = 1;          // v2.44: 1 = clásico · 2 = ARKANOID 2 (rojos/azules)
+    this.C = ARK_CFG;          // config ACTIVA (se fija en start())
+    this.phase = 'idle';       // intro | serve | play | result
+    this.phaseT = 0;
+    this.time = ARK_CFG.time;
+    this.lives = ARK_CFG.lives;
+    this.bricksLeft = 0;
+    this._hudDirty = true;
+    this._lastSec = -1;
+    this._warn60 = false;
+    this._banner = null;
+    this._msg = '';
+    this._msgT = 0;
+    this._dying = [];
+    this._debris = [];
+    this._flashes = [];        // v2.41: flashes de destrucción (pool)
+    this._netParts = null;     // v2.41: malla/banda/postes de la red
+    this._serveT = 0;          // v2.41: tiempo esperando el saque
+    this._crossed = false;     // v2.41: la bola cruzó la red en este intento
+    this._stuckT = 0;          // v2.42: anti-atasco (bola no jugable)
+    this._tokCd = 0;           // v2.42: anti-spam del «tok» de las paredes
+    // v2.44 · conversión temporal ROJO->AZUL (sólo variante 2)
+    this._convT = 0;
+    // v2.46 · LADRILLO NEGRO del TIEMPO EXTRA (sólo variante 2): aparece
+    // en los últimos 30 s en huecos de ladrillos destruidos, salta cada 2 s
+    // y al destruirlo (bola o láser) regala +1 minuto (UNA sola vez).
+    this._timeBrick = null;    // { slot, t, min, max } — activo o null
+    this._timeUsed = false;    // el +1 min ya se cogió en esta prueba
+    this._time30 = false;      // el aviso sonoro de apremio ya sonó
+    this._extraFx = null;      // { pos, t } — plano "+1 MIN" flotando
+    // v2.44 · ABANICO (corriente de aire para desatascar la bola)
+    this._fanSamp = [];        // muestras {t, vx} de la velocidad lateral
+    this._fanT = 0;            // segundos restantes de viento activo
+    this._fanCd = 0;           // cooldown del abanico
+    this._fanKick = 0;         // impulso acumulado (0..1) hasta el empujón
+    this._fanBlowT = 0;        // temporizador del soplido sonoro
+    this._fanHintDone = false; // el aviso del gesto sólo se muestra una vez
+    this._wind = [];           // partículas de viento (pool)
+    // v2.42: hook de colisiones ARKANOID por SUBPASO de la física NORMAL
+    this._extra = (ball) => this._extraCollide(ball);
+    this._spot = new THREE.Vector3();
+    this._tmpA = new THREE.Vector3();
+    this._tmpB = new THREE.Vector3();
+    // v2.133 · BOLA CLON del superpoder (CLOWN Nv. 3: bola doble) — la malla
+    // se crea AQUÍ (constructor: UNA vez por sesión) y NO en build(): el
+    // split sólo sale en el DUELO JEFE (Nv. 3) y llegando a la etapa 5 con
+    // sesión fresca el arkanoid nunca llegó a construirse → clon físico e
+    // INVISIBLE (reporte del dueño: «el poder de dos bolas no funciona»). Regla
+    // Quest intacta: nada se crea por partida (esto corre una vez, al montar).
+    const g0 = this.game;
+    this.cloneMesh = new THREE.Mesh(
+      g0.ballMesh ? g0.ballMesh.geometry
+        : new THREE.SphereGeometry(DIMS.ballRadius, 24, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0xffffff, roughness: 0.3, emissive: 0xbfd4ff, emissiveIntensity: 0.55,
+      }));
+    this.cloneMesh.castShadow = true;
+    this.cloneMesh.visible = false;
+    g0.rig.add(this.cloneMesh);
+    // cinturón y tirantes: _startSplit puede exigir la malla en cualquier
+    // momento (idempotente) — antes vivía SÓLO en el primer build()
+    this._makeCloneMesh = () => {
+      if (this.cloneMesh) return;
+      const gg = this.game;
+      this.cloneMesh = new THREE.Mesh(
+        gg.ballMesh ? gg.ballMesh.geometry
+          : new THREE.SphereGeometry(DIMS.ballRadius, 24, 16),
+        new THREE.MeshStandardMaterial({
+          color: 0xffffff, roughness: 0.3, emissive: 0xbfd4ff,
+          emissiveIntensity: 0.55,
+        }));
+      this.cloneMesh.castShadow = true;
+      this.cloneMesh.visible = false;
+      gg.rig.add(this.cloneMesh);
+    };
+  }
+
+  build() {
+    // v2.44: build con RECONSTRUCCIÓN por variante — el ARKANOID 2 cambia
+    // muro (54 ladrillos rojos/azules), perímetro (cristales +60 cm) y
+    // pared del fondo (sin póster). Se rellena sólo si cambia la variante.
+    if (this.inited && this._builtV === this.variant) return;
+    const g = this.game;
+    const first = !this.inited;
+    this.inited = true;
+    const C = this.C;
+    const W = C.cols * C.bw + (C.cols - 1) * C.gap;
+    const H = C.rows * C.bh + (C.rows - 1) * C.gap;
+    this.wallW = W; this.wallH = H;
+
+    if (first) {
+      // contenedores y materiales compartidos del decorado arcade
+      this.railMat = new THREE.MeshStandardMaterial({
+        color: 0xe8b45a, roughness: 0.4, metalness: 0.3, emissive: 0x3d2c08,
+      });
+      this.darkMat = new THREE.MeshStandardMaterial({
+        color: 0x1b2233, roughness: 0.85, metalness: 0.08,
+      });
+      // v2.45 · CRISTALES con textura de vidrio ESCARCHADO: el material
+      // semitransparente se ve LA PARED (moteado + paneles + brillo), no un
+      // cristal invisible — se nota que hay un muro contra el que golpear.
+      this.glassMat = new THREE.MeshStandardMaterial({
+        color: 0xd6eef6, map: arkGlassTexture(), transparent: true,
+        opacity: 0.52, roughness: 0.32, metalness: 0.06,
+        side: THREE.DoubleSide, depthWrite: false,
+      });
+      this.fieldGroup = new THREE.Group();
+      this.wallGroup = new THREE.Group();
+      g.rig.add(this.fieldGroup);   // v2.44: anclado al rig (espacio de la mesa)
+      g.rig.add(this.wallGroup);
+      // textura de los ladrillos + materiales por COLOR (rojo/azul)
+      const brickTex = arkBrickTexture();
+      this.redMats = [0xd94f3d, 0xcf4536, 0xe25a46].map((c) =>
+        new THREE.MeshStandardMaterial({
+          color: c, map: brickTex, roughness: 0.55, metalness: 0.05,
+          emissive: 0x2a0705,
+        }));
+      this.blueMats = [0x2f7fd4, 0x2a6fbe, 0x3a8ce4].map((c) =>
+        new THREE.MeshStandardMaterial({
+          color: c, map: brickTex, roughness: 0.42, metalness: 0.12,
+          emissive: 0x061c38,
+        }));
+      this.brickGeo = new THREE.BoxGeometry(C.bw, C.bh, C.depth);
+      // pools de escombros y flashes (compartidos)
+      const dGeo = new THREE.BoxGeometry(0.05, 0.05, 0.05);
+      for (let i = 0; i < 30; i++) {
+        const dm = new THREE.Mesh(dGeo, this.redMats[0]);
+        dm.visible = false;
+        this.wallGroup.add(dm);
+        this._debris.push({ mesh: dm, vel: new THREE.Vector3(), life: 0 });
+      }
+      const flashTex = arkFlashTexture();
+      for (let i = 0; i < 6; i++) {
+        const fm = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.55, 0.55),
+          new THREE.MeshBasicMaterial({
+            map: flashTex, transparent: true, opacity: 0, depthWrite: false,
+            blending: THREE.AdditiveBlending,
+          }));
+        fm.visible = false;
+        fm.renderOrder = 9;
+        this.wallGroup.add(fm);
+        this._flashes.push({ mesh: fm, t: 0 });
+      }
+      // v2.44 · PARTÍCULAS DE VIENTO del abanico (pool aditivo)
+      const wTex = arkWindTexture();
+      for (let i = 0; i < 26; i++) {
+        const wm = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.05, 0.05),
+          new THREE.MeshBasicMaterial({
+            map: wTex, transparent: true, opacity: 0, depthWrite: false,
+            blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+          }));
+        wm.visible = false;
+        wm.renderOrder = 8;
+        g.rig.add(wm);
+        this._wind.push({ mesh: wm, vel: new THREE.Vector3(), life: 0 });
+      }
+      // v2.133: la BOLA CLON (split) vive en el CONSTRUCTOR — aquí ya no se
+      // crea (llegar al duelo JEFE sin build del arkanoid dejaba el clon
+      // invisible). _makeCloneMesh sigue disponible como cinturón.
+      // identificación de la RED (plano + banda + postes) para ocultarla
+      this._netParts = g.tableGroup.children.filter((m) =>
+        Math.abs(m.position.z - DIMS.tableCenterZ) < 0.02 &&
+        m.position.y > DIMS.tableTopY + 0.01);
+      // HUD (tiempo + ladrillos + vidas + banners)
+      this.hudCv = arcadeCanvas(1024, 214);
+      this.hudTex = new THREE.CanvasTexture(this.hudCv);
+      this.hudTex.colorSpace = THREE.SRGBColorSpace;
+      this.hudGroup = new THREE.Group();
+      this.hudPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.4, 2.4 * 214 / 1024),
+        new THREE.MeshBasicMaterial({
+          map: this.hudTex, transparent: true, depthWrite: false,
+        }),
+      );
+      this.hudGroup.add(this.hudPlane);
+      this.hudGroup.position.set(0, 2.56, C.z + 0.05);
+      this.hudGroup.visible = false;
+      g.rig.add(this.hudGroup);   // v2.44: anclado al rig (espacio de la mesa)
+    } else {
+      // reconstrucción: vaciar los grupos de la variante anterior
+      this._clearGroup(this.fieldGroup);
+      this._clearGroup(this.wallGroup);
+      // el tamaño de los ladrillos cambia entre variantes
+      if (this.brickGeo) this.brickGeo.dispose();
+      this.brickGeo = new THREE.BoxGeometry(C.bw, C.bh, C.depth);
+    }
+    this._builtV = this.variant;
+    this.bricks = [];
+
+    /* ---- PERÍMETRO = BORDES DE LA MESA (fieldGroup) ------------------ */
+    // pared del FONDO (tras el muro): nace en el suelo; sostiene el PÓSTER
+    // de la variante (v2.45: AMBAS variantes tienen arte — en la 1 el
+    // superpoder, en la 2 la imagen del VIENTO del jugador).
+    const wallH = DIMS.tableTopY + C.backY;
+    const backWall = new THREE.Mesh(
+      new THREE.BoxGeometry(2 * C.sideX + 0.12, wallH, 0.08), this.darkMat);
+    backWall.position.set(0, wallH / 2, C.sideZ1 - 0.04);
+    this.fieldGroup.add(backWall);
+    {
+      // v2.45 · PÓSTER tras el muro: DETRÁS de los ladrillos y DELANTE de la
+      // pared del fondo (a 1 mm), como en el ARKANOID 1 — el arte cambia
+      // según la variante (superpoder · viento.png).
+      const pw = W - 0.05, ph = pw * 768 / 1365;
+      this.posterMat = new THREE.MeshBasicMaterial({
+        color: 0x23282e, depthWrite: false,
+      });
+      this.poster = new THREE.Mesh(
+        new THREE.PlaneGeometry(pw, ph), this.posterMat);
+      this.poster.position.set(0, C.baseY + H / 2, C.sideZ1 + 0.001);
+      this.fieldGroup.add(this.poster);
+      // arte embebido (data URL) — llega asíncrono
+      const purl = (this.variant === 1) ?
+        (typeof window !== 'undefined' && window.__PP_GUNPOSTER_URL) :
+        (typeof window !== 'undefined' && window.__PP_WIND_URL);
+      if (purl) {
+        const pimg = new Image();
+        pimg.onload = () => {
+          const ptex = new THREE.Texture();
+          ptex.colorSpace = THREE.SRGBColorSpace;
+          ptex.image = pimg;
+          ptex.needsUpdate = true;
+          this.posterMat.map = ptex;
+          this.posterMat.color.setHex(0xffffff);
+          this.posterMat.needsUpdate = true;
+        };
+        pimg.src = purl;
+      }
+    }
+    // v2.46 · LADRILLO NEGRO del TIEMPO EXTRA: malla negra + reloj.png
+    // superpuesto (aparece en huecos de ladrillos destruidos en los últimos
+    // 30 s del ARKANOID 2) y plano extra.png "+1 MIN" que flota al reventar.
+    this.blackMat = this.blackMat || new THREE.MeshStandardMaterial({
+      color: 0x0b0b0e, roughness: 0.35, metalness: 0.5,
+      emissive: 0x16181d, emissiveIntensity: 0.5,
+    });
+    this.timeMesh = new THREE.Mesh(this.brickGeo, this.blackMat);
+    this.timeMesh.castShadow = true;
+    this.timeMesh.visible = false;
+    this.wallGroup.add(this.timeMesh);
+    this.timeClockMat = this.timeClockMat || new THREE.MeshBasicMaterial({
+      transparent: true, depthWrite: false, side: THREE.FrontSide,
+    });
+    this.timeClock = new THREE.Mesh(
+      new THREE.PlaneGeometry(C.bw * 0.62, C.bw * 0.62), this.timeClockMat);
+    this.timeClock.visible = false;
+    this.timeClock.renderOrder = 6;
+    this.wallGroup.add(this.timeClock);
+    if (!this._relojLoading) {
+      this._relojLoading = true;
+      const rurl = (typeof window !== 'undefined' && window.__PP_RELOJ_URL);
+      if (rurl) {
+        const rimg = new Image();
+        rimg.onload = () => {
+          const rt = new THREE.Texture();
+          rt.colorSpace = THREE.SRGBColorSpace;
+          rt.image = rimg;
+          rt.needsUpdate = true;
+          this.timeClockMat.map = rt;
+          this.timeClockMat.needsUpdate = true;
+        };
+        rimg.src = rurl;
+      }
+    }
+    this.extraGeo = this.extraGeo || new THREE.PlaneGeometry(0.34, 0.34);
+    this.extraMat = this.extraMat || new THREE.MeshBasicMaterial({
+      transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide,
+    });
+    this.extraPlane = new THREE.Mesh(this.extraGeo, this.extraMat);
+    this.extraPlane.visible = false;
+    this.extraPlane.renderOrder = 8;
+    this.wallGroup.add(this.extraPlane);
+    if (!this._extraLoading) {
+      this._extraLoading = true;
+      const eurl = (typeof window !== 'undefined' && window.__PP_EXTRA_URL);
+      if (eurl) {
+        const eimg = new Image();
+        eimg.onload = () => {
+          const et = new THREE.Texture();
+          et.colorSpace = THREE.SRGBColorSpace;
+          et.image = eimg;
+          et.needsUpdate = true;
+          this.extraMat.map = et;
+          this.extraMat.needsUpdate = true;
+        };
+        eimg.src = eurl;
+      }
+    }
+    // 2 PAREDES LATERALES de cristal (marco ámbar + rodapié + remate),
+    // EN EL BORDE de la mesa (4 mm fuera para no z-fight con el canto).
+    // v2.44: longitud C.sideZ0 - C.sideZ1 — con la extensión hacia el
+    // jugador (30 cm en la variante 1, 60 cm en la 2) ya NO hay huecos.
+    const sl = C.sideZ0 - C.sideZ1;
+    const sz = (C.sideZ0 + C.sideZ1) / 2;
+    const glassH = DIMS.tableTopY + C.glassY;
+    // v2.46 · MARCOS FINOS (2,2 cm) y centrados FUERA del plano del vidrio:
+    // antes (5 cm, centrados EN la pared) tapaban las esquinas de los
+    // ladrillos de los extremos del muro.
+    for (const sx of [-C.sideX - 0.013, C.sideX + 0.013]) {
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(sl, glassH), this.glassMat);
+      pane.rotation.y = Math.PI / 2;
+      pane.position.set(sx, glassH / 2, sz);
+      this.fieldGroup.add(pane);
+      const foot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.022, 0.035, sl), this.darkMat);
+      foot.position.set(sx, 0.0175, sz);
+      this.fieldGroup.add(foot);
+      const cap = new THREE.Mesh(
+        new THREE.BoxGeometry(0.022, 0.022, sl), this.railMat);
+      cap.position.set(sx, glassH - 0.011, sz);
+      this.fieldGroup.add(cap);
+      for (const pz of [C.sideZ0 - 0.011, C.sideZ1 + 0.011]) {
+        const post = new THREE.Mesh(
+          new THREE.BoxGeometry(0.022, glassH, 0.022), this.railMat);
+        post.position.set(sx, glassH / 2, pz);
+        this.fieldGroup.add(post);
+      }
+    }
+
+    /* ---- MURO DE LADRILLOS (wallGroup): SOBRE la mesa, ENRASADO ------ */
+    // v2.46 · estructura FINA: pilares de 2,2 cm PEGADOS AL CANTO EXTERIOR
+    // (antes 6 cm centrados dentro del muro = tapaban los ladrillos de los
+    // extremos) y listón superior fino sin voladizo.
+    const stand = new THREE.Mesh(
+      new THREE.BoxGeometry(W, 0.03, C.depth + 0.02), this.darkMat);
+    stand.position.set(0, C.baseY - 0.016, C.z);
+    this.wallGroup.add(stand);
+    const mkRail = (w, h, x, y, d) => {
+      const r = new THREE.Mesh(new THREE.BoxGeometry(w, h, d || 0.05), this.railMat);
+      r.position.set(x, y, C.z);
+      this.wallGroup.add(r);
+    };
+    mkRail(W, 0.016, 0, C.baseY + H + 0.008, 0.04);
+    for (const px of [-W / 2 - 0.011, W / 2 + 0.011]) {
+      const pil = new THREE.Mesh(
+        new THREE.BoxGeometry(0.022, H + 0.02, C.depth), this.railMat);
+      pil.position.set(px, C.baseY + (H + 0.02) / 2, C.z);
+      this.wallGroup.add(pil);
+    }
+    // LADRILLOS — variante 1: todos ROJOS · variante 2: rojos + azules
+    for (let r = 0; r < C.rows; r++) {
+      for (let c = 0; c < C.cols; c++) {
+        const blue = this.variant === 2 &&
+          ((r * 7 + c * 5 + 3) % 10) < Math.round(C.blueStart * 10);
+        const m = new THREE.Mesh(this.brickGeo,
+          blue ? this.blueMats[(r * 3 + c) % 3] : this.redMats[(r * 3 + c) % 3]);
+        const x = -W / 2 + C.bw / 2 + c * (C.bw + C.gap);
+        const y = C.baseY + C.bh / 2 + r * (C.bh + C.gap);
+        m.position.set(x, y, C.z);
+        m.castShadow = true;
+        this.wallGroup.add(m);
+        this.bricks.push({
+          mesh: m, home: m.position.clone(), alive: true,
+          state: blue ? 'blue' : 'red',   // v2.44: color lógico del ladrillo
+          matIdx: (r * 3 + c) % 3,        // v2.44: tono dentro de su paleta
+          min: new THREE.Vector3(x - C.bw / 2, y - C.bh / 2, C.z - C.depth / 2),
+          max: new THREE.Vector3(x + C.bw / 2, y + C.bh / 2, C.z + C.depth / 2),
+        });
+      }
+    }
+    this.wallGroup.visible = false;
+    this.fieldGroup.visible = false;
+    this._hudDirty = true;
+  }
+
+  /** Vacía un grupo (v2.44: reconstrucción entre variantes). */
+  _clearGroup(gr) {
+    if (!gr) return;
+    for (let i = gr.children.length - 1; i >= 0; i--) {
+      const ch = gr.children[i];
+      const isPool = this._debris.some((d) => d.mesh === ch) ||
+        this._flashes.some((f) => f.mesh === ch);
+      if (isPool) continue;   // los pools sobreviven a la reconstrucción
+      gr.remove(ch);
+    }
+  }
+
+  /* ---------------- ciclo de vida ---------------- */
+
+  start() {
+    const g = this.game;
+    // v2.44: la ETAPA del camino elige la variante (3 = ARKANOID 2)
+    this.variant = (this.ctrl && this.ctrl.stage >= 3) ? 2 : 1;
+    this.C = this.variant === 2 ? ARK2_CFG : ARK_CFG;
+    this.build();
+    if (this.active) return;
+    this.active = true;
+    this.phase = 'intro';
+    this.phaseT = 2.6;
+    this.time = this.C.time;
+    this._lastSec = Math.ceil(this.time) + 1;
+    this._warn60 = false;
+    this.lives = this.C.lives;
+    // v2.44: estado de la conversión temporal y del abanico
+    this._convT = 0;
+    this._fanSamp.length = 0;
+    this._fanT = 0; this._fanCd = 0; this._fanKick = 0; this._fanBlowT = 0;
+    // v2.46: el ladrillo negro del tiempo vuelve a estar disponible en cada
+    // intento (UNO por prueba); fuera restos del intento anterior
+    this._timeBrick = null;
+    this._timeUsed = false;
+    this._time30 = false;
+    this._extraFx = null;
+    if (this.timeMesh) this.timeMesh.visible = false;
+    if (this.timeClock) this.timeClock.visible = false;
+    if (this.extraPlane) this.extraPlane.visible = false;
+    this.bricksLeft = this.bricks.length;
+    for (const b of this.bricks) {
+      b.alive = true;
+      b.mesh.visible = true;
+      b.mesh.scale.setScalar(1);
+      b.mesh.rotation.set(0, 0, 0);
+      b.mesh.position.copy(b.home);
+      // v2.44: el material refleja el color lógico (rojo/azul al reiniciar)
+      b.mesh.material = b.state === 'blue' ? this.blueMats[b.matIdx] : this.redMats[b.matIdx];
+    }
+    this._dying.length = 0;
+    for (const d of this._debris) d.mesh.visible = false;
+    for (const f of this._flashes) { f.t = 0; f.mesh.visible = false; }
+    for (const w of this._wind) { w.life = 0; w.mesh.visible = false; }
+    this._banner = this.variant === 2
+      ? { title: T('ark2_title'), sub: T('ark2_intro'), col: '#ffd257' }
+      : { title: T('ark_title'), sub: T('ark_intro'), col: '#ffd257' };
+    this._msg = '';
+    this._msgT = 0;
+    this._hudDirty = true;
+    // v2.41: la MESA SIGUE en escena (¡el muro se apoya en ella!) pero SIN
+    // RED: esta variante se juega sin red. Marcador y pala IA fuera.
+    g.tableGroup.visible = true;
+    g.scoreboardGroup.visible = false;
+    g.aiPaddleMesh.visible = false;
+    for (const m of this._netParts || []) m.visible = false;
+    g.fanfareBanner.group.visible = false;
+    g.confettiBurst = 0;
+    g.ballMesh.scale.setScalar(1);        // v2.42: bola NORMAL (ni x2 ni roja)
+    g.ball.ignoreNet = true;              // v2.42: la mesa va SIN red (ni físicas)
+    g.ball.vel.set(0, 0, 0);
+    g.ball.spin.set(0, 0, 0);
+    this._crossed = false;
+    this._stuckT = 0;
+    this._tokCd = 0;
+    const a = this.ctrl;
+    if (a.rivalMesh) a.rivalMesh.visible = false;  // v3.2.0: el ASTRO no juega el muro
+    if (a.cartel) a.cartel.visible = false;
+    if (a.powerSign) a.powerSign.visible = false;
+    g.rules.state = 'arkanoid';           // el árbitro queda en pausa
+    g.rules.message = T('ark_title');
+    this.wallGroup.visible = true;
+    this.fieldGroup.visible = true;
+    this.hudGroup.visible = true;
+    // jingle de arranque
+    g.audio.playOsc(523, 523, 0.11, 'square', 0.11, 0);
+    window.setTimeout(() => g.audio.playOsc(659, 659, 0.11, 'square', 0.11, 0), 130);
+    window.setTimeout(() => g.audio.playOsc(784, 784, 0.2, 'square', 0.12, 0), 260);
+    if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.5, 120);
+  }
+
+  /** Reanudar al volver a VR: el árbitro vuelve a pausa y SAQUE de nuevo
+   *  SIN coste de vida (el tiempo y los ladrillos quedan como estaban). */
+  reenter() {
+    if (!this.active) return;
+    const g = this.game;
+    g.rules.state = 'arkanoid';
+    g.tableGroup.visible = true;
+    g.scoreboardGroup.visible = false;
+    g.aiPaddleMesh.visible = false;
+    for (const m of this._netParts || []) m.visible = false;
+    if (this.phase === 'play' || this.phase === 'intro') {
+      this.phase = 'serve';
+      this._serveT = 0;
+      this._msg = T('ark_serve_hint');
+    }
+    this._hudDirty = true;
+  }
+
+  /** Devuelve la escena a la normalidad (mesa CON red, marcador, rival). */
+  stop() {
+    this.active = false;
+    this.phase = 'idle';
+    if (!this.inited) return;
+    const g = this.game;
+    this.wallGroup.visible = false;
+    this.fieldGroup.visible = false;
+    this.hudGroup.visible = false;
+    for (const b of this.bricks) {
+      b.alive = true;
+      b.mesh.visible = true;
+      b.mesh.scale.setScalar(1);
+      b.mesh.rotation.set(0, 0, 0);
+      b.mesh.position.copy(b.home);
+    }
+    this._dying.length = 0;
+    for (const d of this._debris) d.mesh.visible = false;
+    for (const f of this._flashes) { f.t = 0; f.mesh.visible = false; }
+    // v2.46: fuera el ladrillo negro del tiempo y el "+1 MIN"
+    this._timeBrick = null;
+    this._extraFx = null;
+    if (this.timeMesh) this.timeMesh.visible = false;
+    if (this.timeClock) this.timeClock.visible = false;
+    if (this.extraPlane) this.extraPlane.visible = false;
+    // v2.41: la red vuelve a la mesa
+    for (const m of this._netParts || []) m.visible = true;
+    g.tableGroup.visible = true;
+    g.scoreboardGroup.visible = true;
+    g.aiPaddleMesh.visible = true;
+    g.ballMesh.scale.setScalar(1);
+    g.ball.ignoreNet = false;             // v2.42: la red vuelve a colisionar
+    g.ball.vel.set(0, 0, 0);
+    g.ball.spin.set(0, 0, 0);
+  }
+
+  /* ---------------- bucle de la prueba ---------------- */
+
+  step(dt) {
+    if (!this.active || !this.inited) return;
+    const g = this.game;
+    const ball = g.ball;
+    if (this.phase === 'intro') {
+      this.phaseT -= dt;
+      this._holdBallInHand();       // v2.41: la bola espera en tu mano libre
+      if (this.phaseT <= 0) this._enterServe();
+    } else if (this.phase === 'serve') {
+      // v2.41: SAQUE de partida normal — bola en la mano libre, gatillo
+      // para lanzarla. Sin acción, saque automático (nunca se atasca).
+      this._serveT += dt;
+      this._holdBallInHand();
+      if (!this._msg) {
+        this._msg = T('ark_serve_hint');
+        this._hudDirty = true;
+      }
+      if (this._serveT > this.C.serveAutoT) {
+        this._msg = T('ark_autoserve');
+        this.serveTrigger(true);
+      }
+    } else if (this.phase === 'play') {
+      this._tokCd = Math.max(0, this._tokCd - dt);
+      this.time -= dt;
+      if (this.time <= 0) {
+        this.time = 0;
+        this._hudDirty = true;
+        this._finish(false, 'time');
+        return;
+      }
+      const sec = Math.ceil(this.time);
+      if (sec <= 60 && !this._warn60) {
+        // AVISO: se baja de 1 minuto (doble pitido)
+        this._warn60 = true;
+        this._hudDirty = true;
+        g.audio.playOsc(880, 880, 0.12, 'square', 0.16, 0);
+        window.setTimeout(() => g.audio.playOsc(880, 880, 0.12, 'square', 0.16, 0), 190);
+      }
+      if (sec !== this._lastSec) {
+        this._lastSec = sec;
+        this._hudDirty = true;
+        if (this._warn60 && sec > 10) {
+          g.audio.playOsc(760, 760, 0.045, 'sine', 0.07, 0);
+        }
+        if (sec <= 10 && sec >= 1) {
+          // ALARMA: últimos 10 segundos
+          g.audio.playOsc(980, 620, 0.16, 'sawtooth', 0.2, 0);
+          if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.3, 60);
+        }
+      }
+      // v2.46 · APREMIO: al entrar en los ÚLTIMOS 30 s suena un aviso de
+      // urgencia (tres dobles-bips) y se activa el ladrillo negro del
+      // TIEMPO EXTRA. Una sola vez: con el +1 min cogido, no repite.
+      if (this.variant === 2 && sec <= 30 && !this._time30) {
+        this._time30 = true;
+        this._hudDirty = true;
+        for (let k = 0; k < 3; k++) {
+          window.setTimeout(() => {
+            g.audio.playOsc(640, 980, 0.09, 'square', 0.13, 0);
+          }, k * 230);
+          window.setTimeout(() => {
+            g.audio.playOsc(640, 980, 0.09, 'square', 0.13, 0);
+          }, k * 230 + 105);
+        }
+      }
+      // v2.44 · CONVERSIÓN TEMPORAL ROJO->AZUL (sólo variante 2): cada pocos
+      // segundos UN ladrillo ROJO vivo pasa a AZUL. Los AZULES NUNCA se
+      // eligen (el bug del ladrillo negro: azul elegido = se rompía la
+      // lógica); sólo los ROJOS son candidatos.
+      if (this.variant === 2 && this.C.convertEvery) {
+        this._convT += dt;
+        if (this._convT >= this.C.convertEvery) {
+          this._convT -= this.C.convertEvery;
+          if (this._convT < 0) this._convT = 0;
+          this._convertRandomRed();
+        }
+      }
+      // v2.46 · LADRILLO NEGRO del tiempo extra (aparición y saltos)
+      this._timeUpdate(dt);
+      // v2.44 · ABANICO: corriente de aire para empujar la bola al muro
+      this._fanUpdate(dt);
+      this._physics(dt);
+      if (!this.active) return;             // pudo terminar dentro
+      if (this.bricksLeft <= 0) {
+        this._finish(true);
+        return;
+      }
+    } else if (this.phase === 'result') {
+      this.phaseT -= dt;
+      if (this.phaseT <= 0) {
+        this._afterResult();
+        return;
+      }
+    }
+    this._anims(dt);
+    if (this._msgT > 0) {
+      this._msgT -= dt;
+      if (this._msgT <= 0) { this._msg = ''; this._hudDirty = true; }
+    }
+    if (this._hudDirty) this._hud();
+  }
+
+  /* ---------------- saque (v2.41: como en partida normal) ---------------- */
+
+  /** Fallback del punto de saque (sin mano activa): igual que el del
+   *  juego normal (bola sobre la línea de fondo de tu campo). */
+  _serveSpot() {
+    return this._spot.set(0.3, 1.05,
+      DIMS.tableCenterZ + DIMS.tableHalfLength + 0.4);
+  }
+
+  /** La bola "apoyada" en la mano libre (igual que el saque normal). */
+  _holdBallInHand() {
+    const g = this.game;
+    const bh = g.controllerPaddles && g.controllerPaddles[g.ballHand];
+    g.ball.vel.set(0, 0, 0);
+    g.ball.spin.set(0, 0, 0);
+    if (bh && bh.active && bh.pos) {
+      g.ball.pos.copy(bh.pos);
+      g.ball.pos.y += 0.08;                     // BALL_HAND_LIFT
+    } else {
+      g.ball.pos.copy(this._serveSpot());
+    }
+  }
+
+  _enterServe() {
+    this.phase = 'serve';
+    this._serveT = 0;
+    this._msg = T('ark_serve_hint');
+    this._hudDirty = true;
+  }
+
+  /** v2.41 · GATILLO = lanzamiento asistido (mismo gesto que el saque
+   *  asistido de una partida normal): la bola sale de la mano libre y la
+   *  golpeas con la pala; la física de la prueba la mantiene viva hasta
+   *  que la devuelvas al muro. force = saque automático (ignora la mano). */
+  serveTrigger(force) {
+    if (!this.active || this.phase !== 'serve') return;
+    const g = this.game;
+    const hand = g.controllerPaddles && g.controllerPaddles[g.ballHand];
+    const v = (!force && hand && hand.active && hand.vel)
+      ? this._tmpA.copy(hand.vel)
+      : this._tmpA.set(0, 0, 0);
+    if (v.y < DIMS.serveAssistVy) {
+      v.y = DIMS.serveAssistVy;
+      v.x *= 0.4;
+      v.z *= 0.4;
+    }
+    // v2.42: asistencia de alcance como en el SAQUE NORMAL (bola recién
+    // lanzada); se retira en el primer golpeo de pala
+    const ps2 = g.controllerPaddles && g.controllerPaddles[g.paddleHand];
+    if (ps2) ps2.extraReach = DIMS.serveExtraReach;
+    this.phase = 'play';
+    this._lastSec = Math.ceil(this.time) + 1;
+    this._crossed = false;
+    this._msg = '';
+    this._hudDirty = true;
+    g.ball.vel.copy(v);
+    g.ball.spin.set(0, 0, 0);
+    g.audio.serve();
+    g.rules.message = T('hint_hit');
+    if (g.renderer.xr.isPresenting) g.haptic(g.ballHand, 0.45);
+  }
+
+  /* ------------- física (v2.42: la de una PARTIDA NORMAL) ------------- */
+
+  /** FÍSICA DE PARTIDA NORMAL: MISMA integración (gravedad real, arrastre
+   *  aerodinámico, Magnus), MISMO golpeo de pala (colocas la bola igual que
+   *  en un rally: la pala manda) y MISMA mesa. Los eventos van al array del
+   *  juego, así que processEvents() suena solo (pala, mesa, suelo) y el
+   *  árbitro los ignora (estado 'arkanoid'). Lo ÚNICO añadido son las
+   *  colisiones del recinto, por SUBPASO (this._extra): ladrillos que se
+   *  rompen, 3 paredes perimetrales y bote MÍNIMO de mesa. */
+  _physics(dt) {
+    const g = this.game;
+    const ps = g.controllerPaddles && g.controllerPaddles[g.paddleHand];
+    const pads = (ps && ps.active) ? [ps] : [];
+    stepPhysics(dt, g.ball, pads, g.events, this._extra);
+    // el alcance extra del SAQUE se retira en el primer golpeo de pala
+    if (ps && ps.extraReach) {
+      for (const e of g.events) {
+        if (e.type === 'paddle') { ps.extraReach = 0; break; }
+      }
+    }
+    // marcador de cruce (para el coste de vida justo)
+    if (!this._crossed && g.ball.pos.z < this.C.sideZ0 - 0.05) {
+      this._crossed = true;
+    }
+    this._checkLost(dt);
+  }
+
+  /** Bola perdida: al SUELO o por detrás del jugador (SOLO si cruzó al
+   *  campo rival en este intento) o ATASCADA (bola casi parada en zona
+   *  rival — p. ej. sobre el muro — o bajo la mesa). Sin cruce previo no
+   *  hay coste: saque nuevo sin perder vida (toss fallado, p. ej.). */
+  _checkLost(dt) {
+    const g = this.game;
+    const p = g.ball.pos, v = g.ball.vel;
+    let lost = false;
+    for (const e of g.events) {
+      if (e.type === 'floor') { lost = true; break; }
+    }
+    if (!lost) {
+      const ps = g.controllerPaddles && g.controllerPaddles[g.paddleHand];
+      const lostZ = Math.min(2.05, (ps && ps.active && ps.pos)
+        ? THREE.MathUtils.clamp(ps.pos.z, -0.5, 1.2) + 0.8 : 1.4);
+      if (this._crossed && p.z > lostZ && v.z > 0) lost = true;
+    }
+    if (!lost && v.length() < 0.6 &&
+        (p.z < this.C.sideZ0 || p.y < DIMS.tableTopY - 0.06)) {
+      this._stuckT += dt;
+      if (this._stuckT > 1.5) lost = true;
+    } else {
+      this._stuckT = 0;
+    }
+    if (!lost) return;
+    if (this._crossed) this._lifeLost();
+    else { this._crossed = false; this._enterServe(); }
+  }
+
+  /** v2.42 · COLISIONES ARKANOID (por SUBPASO de la física normal):
+   *  1) perímetro EN LOS BORDES DE LA MESA — 2 cristales laterales + pared
+   *     del fondo (donde brilla el póster del superpoder): reflexión física
+   *     con pequeña pérdida;  2) la MESA OTORGA FUERZA MÍNIMA de bote (la
+   *  bola nunca queda muerta sobre la superficie);  3) LADRILLOS: esfera vs
+   *  AABB con reflexión ESPECULAR (físicamente correcta: un golpe en la cara
+   *  frontal vuelve hacia el jugador, como devolvería cualquier superficie
+   *  rígida) + destrucción con efecto. */
+  _extraCollide(ball) {
+    const p = ball.pos, v = ball.vel;
+    const r = DIMS.ballRadius;           // bola NORMAL de 40 mm
+    // v2.46 · SIEMPRE la config de la VARIANTE activa: antes leía ARK_CFG
+    // fijo y en el ARKANOID 2 la zona ampliada de los cristales (red +80 cm)
+    // se veía pero NO colisionaba más allá de red +30 cm.
+    const C = this.C;
+    if (p.z < C.sideZ0) {
+      // --- laterales: EXACTAMENTE en los bordes de la mesa
+      if (p.x < -C.sideX + r) {
+        p.x = -C.sideX + r;
+        if (v.x < 0) { v.x = -v.x * C.wallRest; this._wallTok(p.x); }
+      } else if (p.x > C.sideX - r) {
+        p.x = C.sideX - r;
+        if (v.x > 0) { v.x = -v.x * C.wallRest; this._wallTok(p.x); }
+      }
+      // --- pared del FONDO (tras el muro: el póster del superpoder)
+      if (p.z < C.sideZ1 + 0.032) {
+        p.z = C.sideZ1 + 0.032;
+        if (v.z < 0) { v.z = -v.z * C.wallRest; this._wallTok(0); }
+      }
+    }
+    // --- MESA con FUERZA MÍNIMA: tras el bote normal de collideTable, si
+    // la subida no alcanzaría apexMin se OTORGA la energía que falte
+    if (v.y >= 0 && p.y <= DIMS.tableTopY + r + 0.004 &&
+        Math.abs(p.x) <= DIMS.tableHalfWidth &&
+        Math.abs(p.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength) {
+      const need = Math.sqrt(2 * Math.abs(DIMS.gravity) * C.apexMin);
+      if (v.y < need) v.y = need;
+    }
+    // --- LADRILLOS: esfera vs AABB — reflexión especular + rotura
+    const r2 = (r + 0.002) * (r + 0.002);
+    for (const b of this.bricks) {
+      if (!b.alive) continue;
+      if (p.z - r > b.max.z || p.z + r < b.min.z) continue;
+      if (p.x - r > b.max.x || p.x + r < b.min.x) continue;
+      if (p.y - r > b.max.y || p.y + r < b.min.y) continue;
+      const cx = THREE.MathUtils.clamp(p.x, b.min.x, b.max.x);
+      const cy = THREE.MathUtils.clamp(p.y, b.min.y, b.max.y);
+      const cz = THREE.MathUtils.clamp(p.z, b.min.z, b.max.z);
+      let nx = p.x - cx, ny = p.y - cy, nz = p.z - cz;
+      const d2 = nx * nx + ny * ny + nz * nz;
+      if (d2 > r2) continue;
+      if (d2 > 1e-9) {
+        const d = Math.sqrt(d2);
+        nx /= d; ny /= d; nz /= d;
+        p.x = cx + nx * (r + 0.003);
+        p.y = cy + ny * (r + 0.003);
+        p.z = cz + nz * (r + 0.003);
+      } else {
+        // centro dentro del ladrillo: eje de MÍNIMA penetración
+        const dxs = Math.min(p.x - b.min.x, b.max.x - p.x);
+        const dys = Math.min(p.y - b.min.y, b.max.y - p.y);
+        const dzs = Math.min(p.z - b.min.z, b.max.z - p.z);
+        nx = 0; ny = 0; nz = 0;
+        if (dzs <= dxs && dzs <= dys) {
+          nz = (p.z - (b.min.z + b.max.z) / 2) >= 0 ? 1 : -1;
+          p.z = nz > 0 ? b.max.z + r + 0.003 : b.min.z - r - 0.003;
+        } else if (dxs <= dys) {
+          nx = (p.x - (b.min.x + b.max.x) / 2) >= 0 ? 1 : -1;
+          p.x = nx > 0 ? b.max.x + r + 0.003 : b.min.x - r - 0.003;
+        } else {
+          ny = (p.y - (b.min.y + b.max.y) / 2) >= 0 ? 1 : -1;
+          p.y = ny > 0 ? b.max.y + r + 0.003 : b.min.y - r - 0.003;
+        }
+      }
+      const vn = v.x * nx + v.y * ny + v.z * nz;
+      if (vn < 0) {
+        // reflexión especular y pérdida SOLO de la componente normal
+        v.x -= 2 * vn * nx;
+        v.y -= 2 * vn * ny;
+        v.z -= 2 * vn * nz;
+        const vno = v.x * nx + v.y * ny + v.z * nz;
+        v.x -= nx * vno * (1 - C.brickRest);
+        v.y -= ny * vno * (1 - C.brickRest);
+        v.z -= nz * vno * (1 - C.brickRest);
+      }
+      // v2.44 · LÓGICA POR COLOR: la PALA (bola) sólo rompe los ROJOS; los
+      // AZULES REBOTAN (metálico: «clink») — sólo el LÁSER los destruye
+      // (explosión y quedan ROJOS, no desaparecen).
+      if (b.state === 'blue') {
+        this._brickClink(b);
+      } else {
+        this._breakBrick(b);
+      }
+      break;   // un ladrillo por subpaso
+    }
+    // v2.46 · LADRILLO NEGRO del tiempo extra: la bola también lo revienta
+    // (misma reflexión especular que los ladrillos + recompensa de +1 min)
+    if (this._timeBrick) {
+      const tb = this._timeBrick;
+      if (p.z - r <= tb.max.z && p.z + r >= tb.min.z &&
+          p.x - r <= tb.max.x && p.x + r >= tb.min.x &&
+          p.y - r <= tb.max.y && p.y + r >= tb.min.y) {
+        const cx = THREE.MathUtils.clamp(p.x, tb.min.x, tb.max.x);
+        const cy = THREE.MathUtils.clamp(p.y, tb.min.y, tb.max.y);
+        const cz = THREE.MathUtils.clamp(p.z, tb.min.z, tb.max.z);
+        let nx = p.x - cx, ny = p.y - cy, nz = p.z - cz;
+        const d2 = nx * nx + ny * ny + nz * nz;
+        if (d2 <= r2) {
+          if (d2 > 1e-9) {
+            const d = Math.sqrt(d2);
+            nx /= d; ny /= d; nz /= d;
+            p.x = cx + nx * (r + 0.003);
+            p.y = cy + ny * (r + 0.003);
+            p.z = cz + nz * (r + 0.003);
+          } else {
+            nz = 1;
+            p.z = tb.max.z + r + 0.003;
+          }
+          const vn = v.x * nx + v.y * ny + v.z * nz;
+          if (vn < 0) {
+            v.x -= 2 * vn * nx;
+            v.y -= 2 * vn * ny;
+            v.z -= 2 * vn * nz;
+            const vno = v.x * nx + v.y * ny + v.z * nz;
+            v.x -= nx * vno * (1 - C.brickRest);
+            v.y -= ny * vno * (1 - C.brickRest);
+            v.z -= nz * vno * (1 - C.brickRest);
+          }
+          this._breakTimeBrick();
+        }
+      }
+    }
+  }
+
+  /** Golpecito sonoro de las paredes del perímetro (v2.41, con anti-spam). */
+  _wallTok(x) {
+    if (this._tokCd > 0) return;
+    this._tokCd = 0.07;
+    const g = this.game;
+    g.audio.playOsc(320, 210, 0.06, 'triangle', 0.1,
+      THREE.MathUtils.clamp(x / 2, -1, 1));
+  }
+
+  /** v2.44 · «clink» metálico de la bola contra un ladrillo AZUL (no rompe). */
+  _brickClink(b) {
+    if (this._tokCd > 0) return;
+    this._tokCd = 0.09;
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(b.mesh.position.x / 2.5, -1, 1);
+    g.audio.playOsc(1250, 900, 0.05, 'square', 0.09, pan);
+    this._flash(b.mesh.position);
+  }
+
+  /** v2.44 · LÁSER impacta en un ladrillo: aplica SU lógica.
+   *  AZUL  -> destruido por el láser: EXPLOTA y queda ROJO (no desaparece).
+   *  ROJO  -> inmune al láser (sólo la pala lo rompe): chispa y «tick». */
+  laserHit(b) {
+    if (!b || !b.alive) return false;
+    if (b.state === 'blue') {
+      this._laserConvert(b);
+      return true;
+    }
+    this._laserSpark(b);
+    return false;
+  }
+
+  /** v2.44 · el láser CONVIERTE el azul en rojo: explosión + cambio de color. */
+  _laserConvert(b) {
+    const g = this.game;
+    b.state = 'red';
+    b.mesh.material = this.redMats[b.matIdx];
+    this._flash(b.mesh.position);
+    // ráfaga de escombros azules (visual: la explosión del láser)
+    let spawned = 0;
+    for (const d of this._debris) {
+      if (d.life > 0) continue;
+      d.life = 0.45 + Math.random() * 0.2;
+      d.mesh.visible = true;
+      d.mesh.material = this.blueMats[b.matIdx];
+      d.mesh.position.copy(b.mesh.position);
+      d.mesh.position.x += (Math.random() - 0.5) * 0.2;
+      d.mesh.position.y += (Math.random() - 0.5) * 0.12;
+      d.vel.set((Math.random() - 0.5) * 2.0, Math.random() * 1.4,
+        0.8 + Math.random() * 1.4);
+      if (++spawned >= 5) break;
+    }
+    const pan = THREE.MathUtils.clamp(b.mesh.position.x / 2.5, -1, 1);
+    g.audio.playNoise(0.12, 900, 0.9, 0.16, pan);
+    g.audio.playOsc(880, 220, 0.16, 'sawtooth', 0.14, pan);
+    if (g.renderer.xr.isPresenting) g.haptic(g.ballHand, 0.35, 55);
+    this._hudDirty = true;
+  }
+
+  /** v2.44 · chispa del láser sobre un ROJO (no hace nada: es inmune). */
+  _laserSpark(b) {
+    const g = this.game;
+    this._flash(b.mesh.position);
+    const pan = THREE.MathUtils.clamp(b.mesh.position.x / 2.5, -1, 1);
+    g.audio.playOsc(1600, 1200, 0.04, 'square', 0.07, pan);
+  }
+
+  /** v2.44 · conversión temporal: UN ladrillo ROJO vivo pasa a AZUL.
+   *  Sólo se eligen ROJOS (los azules ya lo están: nunca «negros»). */
+  _convertRandomRed() {
+    if (this.variant !== 2) return;
+    const cands = this.bricks.filter((b) => b.alive && b.state === 'red');
+    if (!cands.length) return;
+    const b = cands[(Math.random() * cands.length) | 0];
+    b.state = 'blue';
+    b.mesh.material = this.blueMats[b.matIdx];
+    this._flash(b.mesh.position);
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(b.mesh.position.x / 2.5, -1, 1);
+    g.audio.playOsc(520, 880, 0.14, 'sine', 0.09, pan);
+    this._hudDirty = true;
+  }
+
+  /* ---------------------------------------------------------------------
+   * v2.46 · LADRILLO NEGRO del TIEMPO EXTRA (sólo ARKANOID 2): cuando el
+   * contador baja de 30 s (con sonido de APREMIO) aparece en un hueco de
+   * ladrillo ya destruido con un reloj superpuesto, se queda 2 s y SALTA a
+   * otro hueco libre distinto. La bola o el láser lo revientan: escombros
+   * NEGROS, +1 MINUTO de tiempo y el cartel extra.png flotando. UNO solo
+   * por prueba: cogido éste, nunca vuelve a aparecer.
+   * ------------------------------------------------------------------- */
+  _timeUpdate(dt) {
+    if (this.variant !== 2) return;
+    if (!this._timeUsed && this.time <= 30 && !this._timeBrick) {
+      this._timeSpawn();
+    }
+    if (!this._timeBrick) return;
+    this._timeBrick.t += dt;
+    if (this._timeBrick.t >= 2) this._timeJump();
+  }
+
+  _freeSlots() {
+    return this.bricks.filter((b) => !b.alive);
+  }
+
+  _timeSpawn() {
+    // v2.46: blindaje — si el extra ya se cogió (o ya está en escena),
+    // NUNCA vuelve a aparecer aunque se llame directamente
+    if (this._timeUsed || this._timeBrick) return;
+    const free = this._freeSlots();
+    if (!free.length) return;          // sin huecos destruidos: no aparece
+    this._timePlace(free[(Math.random() * free.length) | 0]);
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(this.timeMesh.position.x / 2.5, -1, 1);
+    g.audio.playOsc(980, 620, 0.12, 'square', 0.11, pan);
+  }
+
+  _timePlace(b) {
+    this._timeBrick = { slot: b, t: 0, min: b.min, max: b.max };
+    this.timeMesh.visible = true;
+    this.timeMesh.scale.setScalar(1);
+    this.timeMesh.rotation.set(0, 0, 0);
+    this.timeMesh.position.copy(b.home);
+    this.timeClock.visible = true;     // reloj ANCLADO al ladrillo especial
+    this.timeClock.position.copy(b.home);
+    this.timeClock.position.z += this.C.depth / 2 + 0.003;
+  }
+
+  _timeJump() {
+    const cur = this._timeBrick.slot;
+    const free = this._freeSlots().filter((b) => b !== cur);
+    if (!free.length) { this._timeBrick.t = 0; return; }  // sólo un hueco
+    this._flash(cur.home);             // destello en el hueco que abandona
+    this._timePlace(free[(Math.random() * free.length) | 0]);
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(this.timeMesh.position.x / 2.5, -1, 1);
+    g.audio.playOsc(760, 1150, 0.07, 'sine', 0.08, pan);
+  }
+
+  /** La bola o el láser revientan el ladrillo negro: escombros NEGROS,
+   *  +1 MINUTO y el plano extra.png "+1 MIN" que sube y se desvanece. */
+  _breakTimeBrick() {
+    if (!this._timeBrick) return;
+    const g = this.game;
+    const pos = this.timeMesh.position.clone();
+    this._timeBrick = null;
+    this._timeUsed = true;             // sólo UN tiempo extra por prueba
+    this.timeMesh.visible = false;
+    this.timeClock.visible = false;
+    this.time += 60;                   // +1 MINUTO al contador
+    this._hudDirty = true;
+    let spawned = 0;
+    for (const d of this._debris) {
+      if (d.life > 0) continue;
+      d.life = 0.55 + Math.random() * 0.25;
+      d.mesh.visible = true;
+      d.mesh.material = this.blackMat; // trocitos NEGROS
+      d.mesh.position.copy(pos);
+      d.mesh.position.x += (Math.random() - 0.5) * 0.2;
+      d.mesh.position.y += (Math.random() - 0.5) * 0.12;
+      d.vel.set((Math.random() - 0.5) * 2.2, Math.random() * 1.5,
+        0.7 + Math.random() * 1.5);
+      if (++spawned >= 6) break;
+    }
+    this._flash(pos);
+    // "+1 MIN" un poco DELANTE del muro: sube despacio y se apaga en 2 s
+    this._extraFx = { pos, t: 0 };
+    this.extraPlane.visible = true;
+    this.extraPlane.position.copy(pos);
+    this.extraPlane.position.z += 0.09;
+    this.extraPlane.material.opacity = 1;
+    const pan = THREE.MathUtils.clamp(pos.x / 2.5, -1, 1);
+    g.audio.playNoise(0.1, 1800, 1.0, 0.12, pan);
+    g.audio.playOsc(520, 1040, 0.16, 'sine', 0.16, pan);
+    window.setTimeout(() => g.audio.playOsc(780, 1560, 0.22, 'sine', 0.16, pan), 140);
+    this._msg = T('ark_extra_min');
+    this._msgT = 2.0;
+    if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.5, 70);
+  }
+
+  /* ---------------------------------------------------------------------
+   * v2.44 · ABANICAR — anti-atasco divertido: si mueves la pala RÁPIDO de
+   * derecha a izquierda (y viceversa) se genera una CORRIENTE DE AIRE que
+   * empuja la bola hacia el muro como si la hubieras golpeado. Sirve para
+   * alcanzar bolas botando lejos de la mesa (zona inaccesible).
+   * · Detección: 2+ inversiones laterales fuertes (|vx| > 1,2 m/s) en 0,55 s.
+   * · Efecto: aceleración sostenida hacia el muro + EMPUJÓN final tipo golpe.
+   * · Feedback: partículas de viento pala->bola + sonido de soplido.
+   * ------------------------------------------------------------------- */
+  _fanUpdate(dt) {
+    const g = this.game;
+    this._fanCd = Math.max(0, this._fanCd - dt);
+    const ps = g.controllerPaddles && g.controllerPaddles[g.paddleHand];
+    const ball = g.ball;
+    if (!ball || !ball.pos) return;
+
+    // 1) muestrear la velocidad lateral de la pala (ventana de 0,55 s)
+    const nowT = performance.now() / 1000;
+    if (ps && ps.active && ps.vel) {
+      this._fanSamp.push({ t: nowT, vx: ps.vel.x });
+      while (this._fanSamp.length && nowT - this._fanSamp[0].t > 0.55) {
+        this._fanSamp.shift();
+      }
+      if (this._fanCd <= 0 && this._fanT <= 0) {
+        // contar INVERSIONES de dirección con impulso suficiente
+        let flips = 0;
+        let lastSign = 0;
+        for (const s of this._fanSamp) {
+          if (Math.abs(s.vx) < 1.2) continue;
+          const sg = Math.sign(s.vx);
+          if (lastSign && sg !== lastSign) flips++;
+          lastSign = sg;
+        }
+        if (flips >= 2) {
+          // ¡ABANICO! corriente de aire activa durante 1,2 s
+          this._fanT = 1.2;
+          this._fanCd = 3.2;
+          this._fanKick = 0;
+          this._fanBlowT = 0;
+          if (!this._fanHintDone) {
+            this._fanHintDone = true;
+            this._msg = T('fan_hint');
+            this._msgT = 2.2;
+            this._hudDirty = true;
+          }
+        }
+      }
+    }
+
+    // 2) mientras sopla el viento: acelerar la bola hacia el muro
+    if (this._fanT > 0) {
+      this._fanT -= dt;
+      // sólo si la bola está en la zona alejada (no al alcance de la pala)
+      const p = ball.pos;
+      const padPos = (ps && ps.active && ps.pos) ? ps.pos : null;
+      const far = !padPos || p.distanceTo(padPos) > 0.45;
+      if (far && p.z < this.C.sideZ0 + 0.2) {
+        this._tmpA.set(
+          THREE.MathUtils.clamp(p.x, -this.C.sideX * 0.6, this.C.sideX * 0.6),
+          DIMS.tableTopY + 0.35,
+          this.C.sideZ1 + 0.4,
+        ).sub(p);
+        if (this._tmpA.lengthSq() > 1e-6) {
+          this._tmpA.normalize();
+          ball.vel.addScaledVector(this._tmpA, 2.6 * dt);   // corriente continua
+          if (p.y < DIMS.tableTopY + 0.15) ball.vel.y += 1.4 * dt;
+          // EMPUJÓN final tipo golpe (acumulado ~0,8 s de viento)
+          this._fanKick += dt;
+          if (this._fanKick >= 0.8) {
+            this._fanT = 0;
+            const sp = Math.max(3.4, ball.vel.length() * 1.15);
+            ball.vel.copy(this._tmpA).multiplyScalar(sp);
+            if (ball.vel.y < 1.4) ball.vel.y = 1.4;
+            g.audio.playNoise(0.28, 700, 0.7, 0.2, 0);
+            g.audio.playOsc(300, 140, 0.2, 'triangle', 0.1, 0);
+          }
+        }
+      }
+      // soplido en bucle corto mientras dura la corriente
+      this._fanBlowT -= dt;
+      if (this._fanBlowT <= 0) {
+        this._fanBlowT = 0.16;
+        g.audio.playNoise(0.15, 520, 0.6, 0.07, 0);
+      }
+      // 3) partículas de viento: nacen en la pala y vuelan hacia la bola
+      if (ps && ps.active && ps.pos) {
+        let spawned = 0;
+        for (const w of this._wind) {
+          if (w.life > 0) continue;
+          w.life = 0.4 + Math.random() * 0.18;
+          w.mesh.visible = true;
+          w.mesh.position.copy(ps.pos);
+          w.mesh.position.y += 0.05;
+          this._tmpB.copy(ball.pos).sub(w.mesh.position);
+          if (this._tmpB.lengthSq() > 1e-8) this._tmpB.normalize();
+          else this._tmpB.set(0, 1, 0);   // v2.120: sin NaN si la bola está encima
+          w.vel.copy(this._tmpB).multiplyScalar(2.4 + Math.random() * 1.4);
+          w.vel.x += (Math.random() - 0.5) * 0.7;
+          w.vel.y += (Math.random() - 0.5) * 0.5;
+          w.vel.z += (Math.random() - 0.5) * 0.7;
+          if (++spawned >= 2) break;
+        }
+      }
+    }
+
+    // 4) animación de las partículas (siempre)
+    for (const w of this._wind) {
+      if (w.life <= 0) continue;
+      w.life -= dt;
+      if (w.life <= 0) { w.mesh.visible = false; continue; }
+      w.mesh.position.addScaledVector(w.vel, dt);
+      const k = Math.min(1, w.life / 0.4);
+      w.mesh.material.opacity = 0.75 * k;
+      w.mesh.scale.setScalar(0.7 + (1 - k) * 1.6);
+      w.mesh.quaternion.copy(g.camera ? g.camera.quaternion : new THREE.Quaternion());
+    }
+  }
+
+  /** Flash de destrucción (v2.41): estallido aditivo en el ladrillo roto. */
+  _flash(pos) {
+    for (const f of this._flashes) {
+      if (f.t > 0) continue;
+      f.t = 0.0001;
+      f.mesh.visible = true;
+      f.mesh.position.copy(pos);
+      f.mesh.scale.setScalar(0.5);
+      return;
+    }
+  }
+
+  _breakBrick(b) {
+    const g = this.game;
+    b.alive = false;
+    this.bricksLeft--;
+    this._dying.push({ mesh: b.mesh, t: 0, spin: (Math.random() - 0.5) * 3 });
+    this._flash(b.mesh.position);            // v2.41: estallido de luz
+    // escombros
+    let spawned = 0;
+    for (const d of this._debris) {
+      if (d.life > 0) continue;
+      d.life = 0.55 + Math.random() * 0.25;
+      d.mesh.visible = true;
+      // v2.45 · ESCOMBROS DEL COLOR DEL LADRILLO: rojos → trocitos ROJOS
+      // (los azules ya sueltan trocitos AZULES en _laserConvert)
+      d.mesh.material = this.redMats[b.matIdx];
+      d.mesh.position.copy(b.mesh.position);
+      d.mesh.position.x += (Math.random() - 0.5) * 0.3;
+      d.mesh.position.y += (Math.random() - 0.5) * 0.15;
+      d.vel.set((Math.random() - 0.5) * 2.4, Math.random() * 1.6,
+        0.6 + Math.random() * 1.6);
+      if (++spawned >= 6) break;
+    }
+    const pan = THREE.MathUtils.clamp(b.mesh.position.x / 2.5, -1, 1);
+    g.audio.playNoise(0.07, 1500, 1.2, 0.15, pan);
+    g.audio.playOsc(620 + b.mesh.position.y * 120, 260, 0.09, 'square', 0.13, pan);
+    if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.4, 50);
+    this._hudDirty = true;
+  }
+
+  _lifeLost() {
+    const g = this.game;
+    this.lives--;
+    this._hudDirty = true;
+    if (this.lives > 0) {
+      this._msg = T('ark_life', { n: this.lives });
+      this._msgT = 1.6;
+      g.audio.playOsc(392, 240, 0.24, 'triangle', 0.15, 0);
+      // v2.41: SAQUE de partida normal (bola en la mano libre)
+      this._crossed = false;
+      this._enterServe();
+      this._msg = T('ark_life', { n: this.lives });   // sobre el hint
+      this._msgT = 1.6;
+    } else {
+      this._finish(false, 'lives');
+    }
+  }
+
+  _finish(win, reason) {
+    const g = this.game;
+    const a = this.ctrl;
+    this.phase = 'result';
+    this.phaseT = win ? 4.4 : 3.6;
+    if (win) {
+      // v3.2.0 · CAMINO EO: la prueba superada AVANZA la etapa (persiste
+      // _pruebaFin) y la rejugada deja el camino como estaba (v2.96).
+      if (a._replay) {
+        this._banner = { title: this.variant === 2 ? T('ark2_win') : T('ark_win'),
+          sub: T('replay_done'), col: '#7fb069' };
+        try { g.audio.announce(T('replay_done'), true); } catch (e) { /* */ }
+      } else {
+        a._pruebaFin(true);
+        const sig = CFG.etapas[Math.min(a.stage, CFG.etapas.length - 1)];
+        this._banner = {
+          title: this.variant === 2 ? T('ark2_win') : T('ark_win'),
+          sub: tx('Siguiente: ' + sig.name, 'Next: ' + sig.name), col: '#7fb069',
+        };
+        try { g.audio.announce(this._banner.sub, true); } catch (e) { /* */ }
+      }
+      g.confettiBurst = 3;
+      g.audio.fanfare(true);
+      if (g.renderer.xr.isPresenting) {
+        g.haptic(g.paddleHand, 0.8, 140);
+        window.setTimeout(() => g.haptic(g.paddleHand, 0.5, 130), 220);
+      }
+    } else {
+      // derrota: la etapa se REPITE (flujo amable de la plantilla EO)
+      if (a._replay) {
+        this._banner = { title: reason === 'lives' ? T('ark_nolives') : T('ark_timeup'),
+          sub: T('replay_done'), col: '#e06c5a' };
+      } else {
+        this._banner = {
+          title: reason === 'lives' ? T('ark_nolives') : T('ark_timeup'),
+          sub: tx('La prueba se repite: vuelve a intentarlo cuando quieras',
+                  'The test repeats: try again any time'), col: '#e06c5a',
+        };
+        a._pruebaFin(false);
+      }
+      g.audio.fanfare(false);
+    }
+    this._hudDirty = true;
+    if (a.mapaa) a.mapaa.refresh();
+  }
+
+  _afterResult() {
+    const a = this.ctrl;
+    this.stop();
+    // v3.2.0: la SALA retoma el camino (cartel, mapa, árbitro dormido,
+    // música) — el flujo propio de la plantilla Estación Orbital.
+    a._despuesDePrueba();
+  }
+
+  /* ---------------- animaciones y HUD ---------------- */
+
+  _anims(dt) {
+    // v2.41: flashes de destrucción (estallido aditivo que crece y muere)
+    for (const f of this._flashes) {
+      if (f.t <= 0) continue;
+      f.t += dt;
+      const k = f.t / 0.22;
+      if (k >= 1) { f.t = 0; f.mesh.visible = false; continue; }
+      f.mesh.material.opacity = 0.85 * (1 - k);
+      f.mesh.scale.setScalar(0.5 + k * 1.1);
+    }
+    for (let i = this._dying.length - 1; i >= 0; i--) {
+      const d = this._dying[i];
+      d.t += dt * 3.4;
+      if (d.t >= 1) {
+        d.mesh.visible = false;
+        this._dying.splice(i, 1);
+        continue;
+      }
+      d.mesh.scale.setScalar(Math.max(0.01, 1 - d.t));
+      d.mesh.rotation.z += d.spin * dt;
+      d.mesh.rotation.x += d.spin * 0.6 * dt;
+    }
+    for (const d of this._debris) {
+      if (d.life <= 0) continue;
+      d.life -= dt;
+      if (d.life <= 0) { d.mesh.visible = false; continue; }
+      d.vel.y += DIMS.gravity * 0.72 * dt;   // v2.42: gravedad REAL (escombros)
+      d.mesh.position.addScaledVector(d.vel, dt);
+      d.mesh.rotation.x += dt * 6;
+      d.mesh.rotation.y += dt * 4.4;
+      d.mesh.scale.setScalar(Math.max(0.05, Math.min(1, d.life * 2.2)));
+    }
+    // v2.46 · "+1 MIN" (extra.png): sube despacio y se desvanece en 2 s
+    if (this._extraFx && this.extraPlane) {
+      const g = this.game;
+      const fx = this._extraFx;
+      fx.t += dt;
+      const k = fx.t / 2;
+      if (k >= 1) {
+        this._extraFx = null;
+        this.extraPlane.visible = false;
+      } else {
+        this.extraPlane.position.y = fx.pos.y + 0.16 * k;
+        this.extraPlane.material.opacity =
+          k < 0.15 ? k / 0.15 : Math.max(0, 1 - (k - 0.15) / 0.85);
+        this.extraPlane.quaternion.copy(
+          g.camera ? g.camera.quaternion : new THREE.Quaternion());
+      }
+    }
+  }
+
+  _hud() {
+    this._hudDirty = false;
+    const cv = this.hudCv, g2 = cv.getContext('2d');
+    const W = 1024, H = 214;
+    g2.clearRect(0, 0, W, H);
+    // tarjeta
+    g2.fillStyle = 'rgba(8,14,30,0.92)';
+    g2.strokeStyle = 'rgba(232,180,90,0.9)';
+    g2.lineWidth = 7;
+    g2.beginPath();
+    const rr = 30;
+    g2.moveTo(rr, 6); g2.arcTo(W - 6, 6, W - 6, H - 6, rr);
+    g2.arcTo(W - 6, H - 6, 6, H - 6, rr);
+    g2.arcTo(6, H - 6, 6, 6, rr);
+    g2.arcTo(6, 6, W - 6, 6, rr);
+    g2.closePath(); g2.fill(); g2.stroke();
+
+    const banner = this._banner;
+    if (banner && (this.phase === 'intro' || this.phase === 'result')) {
+      g2.textAlign = 'center'; g2.textBaseline = 'middle';
+      g2.fillStyle = banner.col;
+      g2.font = '900 78px system-ui, sans-serif';
+      g2.fillText(banner.title, 512, this.phase === 'intro' ? 88 : 84);
+      g2.fillStyle = '#dfe6ec';
+      g2.font = '600 40px system-ui, sans-serif';
+      g2.fillText(banner.sub, 512, this.phase === 'intro' ? 160 : 156);
+      this.hudTex.needsUpdate = true;
+      return;
+    }
+    // línea de juego: tiempo · ladrillos · vidas
+    const sec = Math.max(0, Math.ceil(this.time));
+    const mm = Math.floor(sec / 60), ss = sec % 60;
+    const tcol = sec <= 10 ? '#ff5a48' : sec <= 60 ? '#ffd257' : '#eef2f6';
+    g2.textAlign = 'left'; g2.textBaseline = 'middle';
+    g2.fillStyle = tcol;
+    g2.font = '900 86px ui-monospace, SFMono-Regular, Menlo, monospace';
+    g2.fillText(`${mm}:${ss < 10 ? '0' : ''}${ss}`, 56, 104);
+    g2.fillStyle = '#9aa7b4';
+    g2.font = '700 26px system-ui, sans-serif';
+    g2.fillText(T('hud_time'), 58, 172);
+    g2.textAlign = 'center';
+    g2.fillStyle = '#eef2f6';
+    g2.font = '800 52px system-ui, sans-serif';
+    g2.fillText(`${this.bricks.length - this.bricksLeft} / ${this.bricks.length}`, 512, 96);
+    g2.fillStyle = '#9aa7b4';
+    g2.font = '700 26px system-ui, sans-serif';
+    g2.fillText(T('hud_bricks'), 512, 166);
+    // vidas
+    g2.textAlign = 'right';
+    const full = ARK_CFG.lives, lost = full - Math.max(0, this.lives);
+    let dots = '';
+    for (let i = 0; i < full; i++) dots += i < (full - lost) ? '\u25CF ' : '\u25CB ';
+    g2.fillStyle = this.lives <= 1 ? '#ff5a48' : '#7fb069';
+    g2.font = '800 46px system-ui, sans-serif';
+    g2.fillText(dots.trim(), 972, 96);
+    g2.fillStyle = '#9aa7b4';
+    g2.font = '700 26px system-ui, sans-serif';
+    g2.fillText(T('hud_lives'), 970, 166);
+    if (this._msg) {
+      g2.textAlign = 'center';
+      g2.fillStyle = '#ffd257';
+      g2.font = '800 40px system-ui, sans-serif';
+      g2.fillText(this._msg, 512, 40);
+    }
+    this.hudTex.needsUpdate = true;
+  }
+}
+
 /* ============================================================================
  *  StockController — SALA · CAMINO DE 5 ETAPAS · SUPERPODERES
  *  ============================================================================ */
@@ -787,7 +2395,12 @@ class StockController {
     this.stage = 0;                // etapa del camino (0..4)
     this.victorias = 0;
     this._champion = false;        // v2.128: insignia ¡CONSEGUIDO! ganada
-    this.prueba = new DianasOrbitales(this);
+    this.prueba = new DianasOrbitales(this);   // motor legacy (sin uso desde v3.2.0)
+    // v3.2.0: MUROS ORBITALES (port del ARKANOID de La Locura)
+    this.arkanoid = new EOArkanoid(this);
+    this._beams = []; this._gunArt = [];
+    this._gunLast = 0; this._gunHintDone = false;
+    this._gunArtModel = null; this._gunArtLoading = false; this._gunMuzzle = null;
     // restauración v2.128 + v3 (ahora también la ETAPA del camino)
     try { this.victorias = parseInt(localStorage.getItem('pp_champ_estacion_orbital_wins') || '0', 10) || 0; } catch (e) { /* */ }
     try { this._champion = localStorage.getItem('pp_champ_estacion_orbital_champ') === '1'; } catch (e) { /* */ }
@@ -941,6 +2554,10 @@ class StockController {
           this._psIcons[p.name] = img;
         } catch (e) { /* sin icono: círculo de color */ }
       }
+      // v3.2.0: el arte «Super Power!!» de la casa (mismo sello que
+      // los otros campeonatos) como fondo del cartel del superpoder
+      this._psBanner = new Image();
+      this._psBanner.src = this._A('superpower.png');
     }
 
     // MAPA DEL CAMPEONATO en la pared izquierda (convención de la casa):
@@ -1116,6 +2733,14 @@ class StockController {
     this.musicOff();
     this._poderClear();
     this.prueba.stop();
+    if (this.arkanoid) this.arkanoid.stop();   // v3.2.0: fuera el muro
+    this._purgeBeams();                        // v2.120: sin rayos huérfanos
+    this._restoreGun();                        // v3.2.0: monturas al estado core
+    try {
+      if (this.game.gunMounts) {
+        for (const gm of this.game.gunMounts) if (gm) gm.visible = false;
+      }
+    } catch (e) { /* */ }
     // v3.1 (V2.131) · restitución del ÁRBITRO al salir (convención magia):
     // si el campeonato se abandona desde la sala/prueba el núcleo quedaría
     // con rules.state='champtest' para siempre (menú sin árbitro).
@@ -1149,6 +2774,8 @@ class StockController {
 
   /* --------- CAMINO DE 5 ETAPAS (duelo → prueba → … → DUELO FINAL) ------ */
   serveTrigger() {
+    // v3.2.0: en PRUEBA el gatillo lanza el SAQUE del muro (EOArkanoid)
+    if (this.arkanoid && this.arkanoid.active) { this.arkanoid.serveTrigger(); return; }
     if (this.state !== 'sala') return;
     const et = this._etapa();
     if (et.kind === 'prueba') this._empezarPrueba(et);
@@ -1199,6 +2826,8 @@ class StockController {
 
   _empezarPrueba(et) {
     const g = this.game;
+    // v3.2.0 · MUROS ORBITALES: las pruebas del camino son ahora ARKANOID
+    if (et.id === 'muro1' || et.id === 'muro2') { this._empezarMuro(et); return; }
     const compleja = et.id === 'tormenta';
     this.state = 'prueba';
     // v3.1 (V2.131): el árbitro duerme YA (también durante el panel de
@@ -1238,6 +2867,54 @@ class StockController {
     this._instrK = null;
     this._arrancarPrueba(compleja);
   }
+  /* — v3.2.0 · MUROS ORBITALES: cartel explicativo (piel del artista vía
+   *  NORMAS_SKIN) + arranque del EOArkanoid ——————————————— */
+  _empezarMuro(et) {
+    const g = this.game;
+    this.state = 'prueba';
+    g.rules.state = 'champtest';       // árbitro dormido durante el cartel
+    this.cartel.visible = false;
+    this.rivalEstado('idle');
+    if (this._instrK !== et.id) {
+      this._instrK = et.id;
+      try {
+        const es2 = (et.id === 'muro2');
+        g.showInstrucciones(
+          tx('PRUEBA · ' + et.name.toUpperCase(), 'SKILL TEST · ' + et.name.toUpperCase()),
+          es2 ? [
+            tx('Muro de 54 ladrillos: los ROJOS sólo caen con la PALA; los AZULES sólo con el LÁSER (explotan y quedan rojos).',
+               '54-brick wall: RED bricks fall to the PADDLE only; BLUE ones to the LASER only (they blow up and turn red).'),
+            tx('La PISTOLA LÁSER va en tu mano libre. 2 min 30 s y 5 vidas; los rojos vivos se vuelven azules con el tiempo.',
+               'The LASER PISTOL rides your free hand. 2 min 30 s, 5 lives; live reds turn blue over time.'),
+          ] : [
+            tx('Rompe TODOS los ladrillos del muro golpeando la bola con las palas: el rebote es real, calcula los ángulos.',
+               'Break EVERY wall brick by hitting the ball with your paddles: real bounces, work the angles.'),
+            tx('Tienes 2 minutos y 5 vidas (saques). Cada ladrillo roto suma.',
+               '2 minutes and 5 lives (serves). Every broken brick counts.'),
+          ],
+          7.5,
+          () => {
+            this._instrK = null;          // próxima entrada re-explica (regla v2.106)
+            try { this._arrancarMuro(et); } catch (e) { /* */ }
+          },
+          'estacion',
+          { empezar: true });   // v2.130: espera al botón EMPEZAR (común)
+        return;
+      } catch (e) { this._instrK = null; }   // sin núcleo de carteles: arranca igual
+    }
+    this._instrK = null;
+    this._arrancarMuro(et);
+  }
+  _arrancarMuro(et) {
+    const g = this.game;
+    this._poderClear();
+    this.state = 'prueba';
+    g.rules.state = 'arkanoid';        // el núcleo enruta testStep/gatillo/láser
+    this.arkanoid.variant = (et.id === 'muro2') ? 2 : 1;
+    this.arkanoid.start();
+    this.musicOn();
+  }
+
   _arrancarPrueba(compleja) {
     const g = this.game;
     this._poderClear();
@@ -1278,6 +2955,248 @@ class StockController {
     g.rules.message = tx('Siguiente: ' + et.name, 'Next: ' + et.name);
     this.rivalEstado('idle');
     this.musicOn();
+  }
+
+  /* ===================== v3.2.0 · PISTOLA LÁSER (MURO 2) ==================
+   *  Port del pegamento de La Locura (v2.44/2.74): getter de armado,
+   *  disparo con RAYCAST real sobre los ladrillos, carga perezosa del
+   *  pistol.glb del artista, encaje normalizado y visibilidad por frame. */
+  get gunArmed() {
+    const g = this.game;
+    const ark = this.arkanoid;
+    return !!(this.state === 'prueba' && ark && ark.active && ark.variant === 2 &&
+      ark.phase === 'play' &&
+      g.gunMounts && g.gunMounts[1 - g.paddleHand] &&
+      g.gunMounts[1 - g.paddleHand].visible);
+  }
+
+  fireGun(i) {
+    const g = this.game;
+    const mount = g.gunMounts && g.gunMounts[i];
+    if (!mount) return;
+    const now = performance.now() / 1000;
+    if (now - this._gunLast < 0.16) return;
+    this._gunLast = now;
+    const pos = new THREE.Vector3();
+    const q = new THREE.Quaternion();
+    mount.getWorldPosition(pos);
+    mount.getWorldQuaternion(q);
+    const dir = new THREE.Vector3(0, Math.sin(GUN_MOUNT_PITCH), -Math.cos(GUN_MOUNT_PITCH))
+      .applyQuaternion(q).normalize();
+    pos.add((this._gunMuzzle || GUN_MUZZLE).clone().applyQuaternion(q));
+    // RAYCAST: el primer ladrillo que cruza el haz recibe SU lógica
+    let hitDist = 6.0;
+    let hitBrick = null;
+    let hitTime = false;
+    const hitPoint = new THREE.Vector3();
+    const ark = this.arkanoid;
+    if (ark && ark.active && ark.bricks && ark.bricks.length) {
+      const ray = new THREE.Raycaster(pos, dir, 0, 6.0);
+      const meshes = ark.bricks.filter((b) => b.alive).map((b) => b.mesh);
+      if (ark._timeBrick && ark.timeMesh) meshes.push(ark.timeMesh);
+      const hits = ray.intersectObjects(meshes, false);
+      if (hits.length) {
+        hitDist = hits[0].distance;
+        hitPoint.copy(hits[0].point);
+        hitBrick = ark.bricks.find((b) => b.mesh === hits[0].object) || null;
+        hitTime = !hitBrick && hits[0].object === ark.timeMesh;
+      }
+    }
+    const mid = pos.clone().addScaledVector(dir, hitDist / 2);
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0042, 0.0042, hitDist, 6, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.95,
+        depthWrite: false, blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+      }),
+    );
+    beam.position.copy(mid);
+    beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    const glow = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.012, hitDist, 8, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0x66d9ff, transparent: true, opacity: 0.4,
+        depthWrite: false, blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+      }),
+    );
+    glow.position.copy(mid);
+    glow.quaternion.copy(beam.quaternion);
+    g.scene.add(beam);
+    g.scene.add(glow);
+    this._beams.push({ mesh: beam, glow, t: 0 });
+    if (hitBrick) {
+      g.rig.updateWorldMatrix(true, false);
+      const lp = g.rig.worldToLocal(hitPoint.clone());
+      ark._flash(lp);
+      ark.laserHit(hitBrick);
+    } else if (hitTime) {
+      g.rig.updateWorldMatrix(true, false);
+      const lp = g.rig.worldToLocal(hitPoint.clone());
+      ark._flash(lp);
+      ark._breakTimeBrick();
+    }
+    g.audio.playOsc(1760, 320, 0.1, 'sawtooth', 0.07, 0);
+    g.audio.playOsc(2640, 660, 0.08, 'sine', 0.045, 0);
+    g.audio.playNoise(0.05, 3400, 2.2, 0.035, 0);
+    if (g.renderer.xr.isPresenting) g.haptic(i, 0.4, 60);
+  }
+
+  _loadGunArt() {
+    const g = this.game;
+    if (!g.gunMounts) return;
+    if (this._gunArtModel) { this._attachGunArt(); return; }
+    if (!GUN_ART_URL || this._gunArtLoading) return;
+    this._gunArtLoading = true;
+    try {
+      new GLTFLoader().load(GUN_ART_URL, (gltf) => {
+        this._gunArtLoading = false;
+        try {
+          const model = this._normalizeGun(gltf.scene);
+          if (!model) return;
+          this._gunArtModel = model;
+          this._attachGunArt();
+          console.info('[estacion] pistol.glb del artista montada (MURO 2)');
+        } catch (e) { console.warn('[estacion] pistola: normalización KO', e); }
+      }, undefined, () => {
+        this._gunArtLoading = false;
+        console.warn('[estacion] pistol.glb no disponible — se mantiene la del core');
+      });
+    } catch (e) { this._gunArtLoading = false; }
+  }
+
+  _normalizeGun(scene) {
+    const box = new THREE.Box3().setFromObject(scene);
+    if (box.isEmpty()) return null;
+    const size = box.getSize(new THREE.Vector3());
+    const root = new THREE.Group();
+    root.add(scene);
+    const ax = [['x', size.x], ['y', size.y], ['z', size.z]].sort((a, b) => b[1] - a[1]);
+    if (ax[0][0] === 'x') scene.rotation.y = Math.PI / 2;
+    else if (ax[0][0] === 'y') scene.rotation.x = -Math.PI / 2;
+    const s2 = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+    const ax2 = [['x', s2.x], ['y', s2.y]].sort((a, b) => b[1] - a[1])[0][0];
+    if (ax2 === 'x') scene.rotateZ(Math.PI / 2);
+    const s3 = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+    const len = Math.max(s3.x, s3.y, s3.z) || 1;
+    root.scale.setScalar(0.32 / len);
+    try {
+      root.updateMatrixWorld(true);
+      const lv = new THREE.Vector3(), tv = new THREE.Vector3();
+      let found = false;
+      root.traverse((o) => {
+        if (!o.isMesh || !o.geometry || !o.geometry.attributes) return;
+        const pa = o.geometry.attributes.position;
+        if (!pa) return;
+        for (let i2 = 0; i2 < pa.count; i2++) {
+          tv.fromBufferAttribute(pa, i2).applyMatrix4(o.matrixWorld);
+          if (!found || tv.y < lv.y) { lv.copy(tv); found = true; }
+        }
+      });
+      if (found && lv.z < 0) root.rotation.y += Math.PI;
+    } catch (e) { /* orientación original si el barrido falla */ }
+    const b4 = new THREE.Box3().setFromObject(root);
+    const c = b4.getCenter(new THREE.Vector3());
+    root.position.set(-c.x, -b4.min.y - 0.055, -c.z);
+    try {
+      const bFin = new THREE.Box3().setFromObject(root);
+      const dimF = bFin.getSize(new THREE.Vector3());
+      this._gunMuzzle = new THREE.Vector3(0, dimF.y - 0.075, bFin.min.z + 0.015);
+    } catch (e) { this._gunMuzzle = new THREE.Vector3(0, 0.02, -0.16); }
+    try {
+      const fin = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+      window.__PP_EO_GUN_INFO = {
+        len: +fin.z.toFixed(3), alto: +fin.y.toFixed(3), ancho: +fin.x.toFixed(3),
+      };
+    } catch (e) { /* */ }
+    return root;
+  }
+
+  _attachGunArt() {
+    const g = this.game;
+    if (!g.gunMounts || !this._gunArtModel) return;
+    this._restoreGun();
+    for (const gm of g.gunMounts) {
+      if (!gm) continue;
+      for (const ch of gm.children) ch.visible = false;
+      const art = this._gunArtModel.clone(true);
+      art.userData.__eoArt = true;
+      gm.add(art);
+      this._gunArt.push({ mount: gm, art });
+    }
+  }
+
+  _restoreGun() {
+    for (const rec of this._gunArt || []) {
+      const gm = rec.mount;
+      if (!gm) continue;
+      gm.remove(rec.art);
+      for (const ch of gm.children) ch.visible = true;
+    }
+    this._gunArt = [];
+  }
+
+  _gunUpdate(dt) {
+    const g = this.game;
+    const ark = this.arkanoid;
+    const ark2On = !!(ark && ark.active && ark.variant === 2 &&
+      g.renderer && g.renderer.xr && g.renderer.xr.isPresenting);
+    const holdPhase = ark && (ark.phase === 'serve' || ark.phase === 'intro' ||
+      ark.phase === 'result');
+    const armed = ark2On && !holdPhase;
+    if (armed && !this._gunHintDone) {
+      this._gunHintDone = true;
+      try { g.rules.message = T('ark_gun_on'); } catch (e) { /* */ }
+    }
+    if (ark2On && !this._gunArtModel) this._loadGunArt();
+    if (ark2On && this._gunArtModel && (this._gunArt || []).length === 0) {
+      this._attachGunArt();
+    }
+    if (g.gunMounts) {
+      for (let k = 0; k < 2; k++) {
+        if (g.gunMounts[k]) g.gunMounts[k].visible = armed && k === g.ballHand;
+      }
+    }
+    for (let i = this._beams.length - 1; i >= 0; i--) {
+      const b = this._beams[i];
+      b.t += dt;
+      const f = 1 - b.t / 0.16;
+      if (f <= 0) {
+        for (const m of [b.mesh, b.glow]) {
+          if (!m) continue;
+          g.scene.remove(m);
+          m.geometry.dispose();
+          m.material.dispose();
+        }
+        this._beams.splice(i, 1);
+        continue;
+      }
+      b.mesh.material.opacity = 0.95 * f;
+      if (b.glow) b.glow.material.opacity = 0.4 * f;
+    }
+  }
+
+  _purgeBeams() {
+    if (!this._beams || !this._beams.length) return;
+    const g = this.game;
+    for (const b of this._beams) {
+      for (const m of [b.mesh, b.glow]) {
+        if (!m) continue;
+        g.scene.remove(m);
+        try { m.geometry.dispose(); } catch (e) { /* */ }
+        try { m.material.dispose(); } catch (e) { /* */ }
+      }
+    }
+    this._beams.length = 0;
+  }
+
+  /** v3.2.0 · objeto de PRUEBA activo: el muro primero, las DIANAS legacy
+   *  después (el contrato testActive/testStep del núcleo no cambia). */
+  _testActivo() {
+    if (this.arkanoid && this.arkanoid.active) return this.arkanoid;
+    if (this.prueba && this.prueba.stepActive && this.prueba.stepActive()) return this.prueba;
+    return null;
   }
 
   aiMul() {
@@ -1409,6 +3328,8 @@ class StockController {
     // standee del AX-9 y en la prueba juegas sólo contra las dianas (se
     // ejecuta tras las escrituras de visibilidad del núcleo en el frame)
     try { if (g.aiPaddleMesh) g.aiPaddleMesh.visible = (this.state === 'duelo'); } catch (e) { /* */ }
+    // v3.2.0: pistola láser del MURO 2 (montaje/visibilidad/fade de rayos)
+    if (this.arkanoid && this.arkanoid.active) this._gunUpdate(dt);
     // v3.2: pulso del cartel del superpoder (llama la atención sin gritar)
     if (this.powerSign && this.powerSign.visible) {
       this.powerSign.scale.setScalar(1 + Math.sin(this._t * 5.5) * 0.035);
@@ -1458,6 +3379,7 @@ class StockController {
       this.game.rules.message = tx(CFG.rival + ' prepara: ¡' + def.name + '!',
         CFG.rival + ' readies: ' + def.name + '!');
       this._psMuestra(def, false);          // v3.2: CARTEL con el identificador
+    this.rivalEstado('crazy');            // v3.2.0: ¡el ASTRO se revuelve!
       try { this.game.audio.playOsc(180, 320, 0.3, 'sawtooth', 0.10, 0); } catch (e) { /* */ }
     } else {
       this._bolsa.unshift(def);       // devuélvelo: no salió esta vez
@@ -1585,6 +3507,7 @@ class StockController {
     this._act = null;
     this._powerCd = 10 + Math.random() * 5;      // v3.2: antes 12+8 (más ágil)
     this._psOculta();                            // v3.2: fuera el cartel
+    if (this.state === 'duelo') this.rivalEstado('duelo');   // v3.2.0: cara de duelo
   }
   _poderClear() {
     const g = this.game;
@@ -1607,42 +3530,44 @@ class StockController {
     if (!this.powerSign) return;
     const c = this._psCv.getContext('2d');
     c.clearRect(0, 0, 512, 256);
-    c.fillStyle = 'rgba(8,14,26,0.92)';
-    c.beginPath();
-    if (c.roundRect) c.roundRect(8, 8, 496, 240, 30); else c.rect(8, 8, 496, 240);
-    c.fill();
+    // v3.2.0 · LA ETIQUETA DE LA CASA: el cartel «Super Power!!» del
+    // artista (superpower.png, el mismo arte que lucen locura/magia/oeste)
+    // como fondo del panel, con MINIATURA del poder + nombre en la banda.
+    const art = this._psBanner;
+    if (art && art.complete && art.naturalWidth) {
+      const ar = art.naturalWidth / art.naturalHeight;
+      let w = 512, h = w / ar;
+      if (h > 256) { h = 256; w = h * ar; }
+      c.drawImage(art, (512 - w) / 2, (256 - h) / 2, w, h);
+    } else {
+      c.fillStyle = 'rgba(8,14,26,0.92)';
+      c.beginPath();
+      if (c.roundRect) c.roundRect(8, 8, 496, 240, 30); else c.rect(8, 8, 496, 240);
+      c.fill();
+    }
+    // banda inferior legible sobre el arte
+    c.fillStyle = activa ? 'rgba(6,46,62,0.90)' : 'rgba(92,50,8,0.90)';
+    c.fillRect(0, 198, 512, 58);
     c.strokeStyle = activa ? '#59e6ff' : '#ffb347';
-    c.lineWidth = 8;
-    c.beginPath();
-    if (c.roundRect) c.roundRect(8, 8, 496, 240, 30); else c.rect(8, 8, 496, 240);
-    c.stroke();
+    c.lineWidth = 6;
+    c.beginPath(); c.moveTo(0, 198); c.lineTo(512, 198); c.stroke();
     try {
       const img = this._psIcons && this._psIcons[def.name];
       if (img && img.complete && img.naturalWidth) {
-        c.drawImage(img, 28, 48, 160, 160);
+        c.drawImage(img, 12, 204, 46, 46);
       } else {
         c.fillStyle = activa ? '#59e6ff' : '#ffb347';
-        c.beginPath(); c.arc(108, 128, 74, 0, 7); c.fill();
-        c.fillStyle = 'rgba(8,14,26,0.85)';
-        c.beginPath(); c.arc(108, 128, 52, 0, 7); c.fill();
-        c.fillStyle = activa ? '#59e6ff' : '#ffb347';
-        c.font = 'bold 64px Trebuchet MS, sans-serif';
-        c.textAlign = 'center';
-        c.fillText('!', 108, 152);
-        c.textAlign = 'left';
+        c.beginPath(); c.arc(35, 227, 22, 0, 7); c.fill();
       }
     } catch (e) { /* */ }
     c.textAlign = 'left';
-    c.fillStyle = activa ? '#59e6ff' : '#ffb347';
-    c.font = 'bold 33px Trebuchet MS, sans-serif';
-    c.fillText(activa ? '¡SUPERPODER!' : 'AX-9 PREPARA…', 210, 76);
-    c.fillStyle = '#ffffff';
     const nm = String(def.name || '').toUpperCase();
-    c.font = 'bold ' + (nm.length > 14 ? 36 : 45) + 'px Trebuchet MS, sans-serif';
-    c.fillText(nm, 210, 136);
-    c.fillStyle = '#9fb8d8';
-    c.font = '25px Trebuchet MS, sans-serif';
-    c.fillText(activa ? '¡Esquiva la trampa!' : '¡Atento a la mesa!', 210, 190);
+    c.fillStyle = '#ffffff';
+    c.font = 'bold ' + (nm.length > 15 ? 26 : 32) + 'px Trebuchet MS, sans-serif';
+    c.fillText(nm, 70, 240);
+    c.fillStyle = activa ? '#aef3ff' : '#ffe0b0';
+    c.font = 'bold 19px Trebuchet MS, sans-serif';
+    c.fillText(activa ? '¡ESQUIVA LA TRAMPA!' : String(CFG.rival).toUpperCase() + ' PREPARA…', 70, 216);
     this._psTex.needsUpdate = true;
     this.powerSign.visible = true;
   }
@@ -1829,17 +3754,17 @@ class MapaEO {
     this.ctrl = ctrl;
     this.game = ctrl.game;
     this.nodesPx = [
-      { x: 210, y: 260, r: 100, tapa: false, ts: 1.0 },
-      { x: 455, y: 500, r: 120, tapa: true, ts: 1.2 },
-      { x: 700, y: 260, r: 100, tapa: true, ts: 1.0 },
-      { x: 945, y: 500, r: 120, tapa: true, ts: 1.2 },
-      { x: 1190, y: 260, r: 100, tapa: true, ts: 1.0 },
+      { x: 210, y: 266, r: 100, tapa: false, ts: 1.0 },
+      { x: 455, y: 511, r: 120, tapa: true, ts: 1.2 },
+      { x: 700, y: 266, r: 100, tapa: true, ts: 1.0 },
+      { x: 945, y: 511, r: 120, tapa: true, ts: 1.2 },
+      { x: 1190, y: 266, r: 100, tapa: true, ts: 1.0 },
     ];
     this.currentIdx = 0;
-    this.IMG_W = 1380;
-    this.IMG_H = 752;
+    this.IMG_W = 1376;               // v3.2.0: mapa nuevo del dueño
+    this.IMG_H = 768;
     this.PW = 1.68;
-    this.PH = 1.68 * 752 / 1380;
+    this.PH = 1.68 * 768 / 1376;
     this.TAPA_W = 165 / 1380 * this.PW;
     this.TAPA_H = this.TAPA_W;
     this.inited = false;
@@ -1993,7 +3918,7 @@ function D_z(ctrl) {
 /* ====================== MÓDULO (contrato ChampLoader) ==================== */
 export default {
   id: 'estacion_orbital',
-  decor: {"pieces": [{"file": "assets/decor/troquel1.png", "h": 1.2, "x": -2.55, "z": -2.5, "sway": 0.5}, {"file": "assets/decor/troquel2.png", "h": 0.8, "x": 2.1, "z": -2.5, "sway": 0.3}, {"file": "assets/decor/troquel3.png", "h": 1, "x": 2.45, "z": -0.85, "sway": 0.4}]},
+  decor: {"pieces": [{"file": "assets/decor/escena_cohete.png", "h": 1.15, "x": -2.55, "z": -2.5, "sway": 0.5}, {"file": "assets/decor/escena_astro.png", "h": 1.0, "x": 2.1, "z": -2.5, "sway": 0.3}, {"file": "assets/decor/escena_lander.png", "h": 0.95, "x": 2.45, "z": -0.85, "sway": 0.4}, {"file": "assets/decor/escena_telescopio.png", "h": 0.62, "x": -2.45, "z": -0.85, "sway": 0.35}]},   // v3.2.0: recortables reales del dueño
   room: {"floor": "assets/sala_floor.jpg", "ceil": "assets/sala_ceil.jpg", "back": "assets/sala_back.jpg", "front": "assets/sala_front.jpg", "left": "assets/sala_left.jpg", "right": "assets/sala_right.jpg"},
   get controller() { return CTRL; },
   /** v2.128: ¿campeonato superado? (cinta ★ SUPERADO del menú) */
@@ -2013,6 +3938,8 @@ export default {
     CTRL.manifest = ctx.manifest || null;   // el núcleo lo entrega (v2.125)
     // v3: física del núcleo para las PRUEBAS (patrón orbe de magia)
     STEP = window.__PP_CORE.stepPhysics || null;
+    // v3.2.0: pistola real del artista para el MURO 2 (ARKANOID II)
+    try { GUN_ART_URL = new URL('./assets/pistol.glb', import.meta.url).href; } catch (e) { /* */ }
     if (!STEP) console.warn('[estacion_orbital] stepPhysics no disponible: las pruebas de habilidad quedan inoperativas');
     TL = (window.__PP_CORE.lang && window.__PP_CORE.lang() === 'en') ? 'en' : 'es';
     const onLang = () => {
@@ -2028,17 +3955,24 @@ export default {
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
   aiMul() { return CTRL ? CTRL.aiMul() : 1; },
   serveTrigger(i) { if (CTRL) CTRL.serveTrigger(i); },
-  reenter() { if (CTRL) CTRL.reenter(); },
+  reenter() {   // v3.2.0: en pleno muro, reanuda la prueba
+    if (CTRL && CTRL.arkanoid && CTRL.arkanoid.active) {
+      try { CTRL.arkanoid.reenter(); } catch (e) { /* */ }
+      return;
+    }
+    if (CTRL) CTRL.reenter();
+  },
   // v2.130 · REJUGADA por el mapa del camino (pared izquierda)
   replayMap() { return CTRL ? CTRL.replayMap() : null; },
   replayHover(idx) { if (CTRL) CTRL.replayHover(idx); },
   replayLaunch(idx) { if (CTRL) CTRL.replayLaunch(idx); },
   musicOff() { if (CTRL) CTRL.musicOff(); },   // invariante UNA MELODÍA v2.125
   /** v3: PRUEBA activa → el núcleo NO integra la bola y llama testStep. */
-  testActive() { return !!(CTRL && CTRL.prueba && CTRL.prueba.stepActive()); },
+  testActive() { return !!(CTRL && CTRL._testActivo()); },   // v3.2.0: muro primero
   testStep(dt) {
-    if (CTRL && CTRL.prueba && CTRL.prueba.stepActive()) {
-      try { CTRL.prueba.step(dt); }
+    const o = CTRL && CTRL._testActivo();
+    if (o) {
+      try { o.step(dt); }
       catch (e) { console.warn('[estacion.testStep]', e); }
     }
   },

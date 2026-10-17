@@ -1719,3 +1719,25 @@ Work Log:
 Stage Summary:
 - Centro de descargas CONFIRMADO sirviendo la V3.1.0-SRV2 en 4 paquetes, doble QA verde hoy mismo (hub + juego completo con los 9 casos de saque y el flujo del hall), gateway/dev/relay en vivo: el dueño puede descargar y probar en el Quest 3 sin más pasos.
 - Pendiente del dueño: prueba en casco del saque realista (soltar grip = lanzamiento real; el gesto manda, sin correcciones ocultas) y del flujo hall↔partida con «⌂ VOLVER AL HALL»; URL de remote git para el push anti-rollback.
+
+---
+Task ID: 75
+Agent: main (Z.ai)
+Task: Restaurar la V3.1.2-CCD1 del dueño (tras rollback del sandbox) y vestir el campeonato ESTACIÓN ORBITAL con su arte real → release V3.2.0-ORB1
+
+Work Log:
+- Contexto: el sandbox sufrió un ROLLBACK. Los commits 0739969 (CCD) y cd8ad9a (Task 74) ya no existen ni en el objeto-store (sin remote, irrecuperables); el estado vivo era V3.1.1-SRV3 (commit UUID 2c6aa74) + el set de assets orbitales extraído en upload/_ext/.
+- El DUEÑO reenvió su V3.1.2 por WeTransfer (https://we.tl/t-GDFyA4AxKEKthCCq): scripts/fetch_wetransfer_v312.mjs (nuevo) la descargó íntegra — crazypp-v312-ccd1-CLOUDFLARE.zip, 106.558.660 B byte-exacto (sha256 beca519a…), index a3dc91af…, intro oficial 3f58e634… 5.779.719 B.
+- Restauración adoptada como base (commit c9f71ba): game.html V3.1.2-CCD1 (CCD SDF + gracia de saque + bote honesto + prompt B), tv.html, championships/ (5), assets/, vendor/ — verificado en :3000 y :81.
+- Arte del dueño convertido (scripts/make_art_eo_v320.py): sala de 6 planos JPG q85 (izquierda/derecha 2395×864→1920, fondo/frente 1849×864→1600, suelo y techo 1296×1678 nativos — techo = el reenvío fresco del dueño), 12 poses ASTRO webp q88 (convención clown; astro_angry.png resultó ser byte-idéntico al «techo.png» escondido en astro.zip, md5 802a3324…), superpower.png (etiqueta «Super Power!!» de locura), mapa.png del dueño (1376×768), normas_astro.png (1024×512), 4 recortables decor/, pistol.glb; troqueles placeholder retirados.
+- Port del ARKANOID de La Locura al módulo orbital (scripts/port_arkanoid_eo.py, 33 reemplazos verificados uno a uno): el MAPA NUEVO del dueño dibuja las etapas 2 y 4 como MUROS (misma iconografía que el mapa del clown) → clase EOArkanoid (1467-2927 de locura) con _finish/_afterResult adaptados al camino EO (_pruebaFin/_despuesDePrueba, rejugada v2.96 respetada), ARK_CFG/ARK2_CFG + texturas canvas, pistola láser completa (gunArmed/fireGun con raycast/_loadGunArt/_normalizeGun/_gunUpdate/_purgeBeams, GUN_ART_URL=pistol.glb), _empezarMuro/_arrancarMuro (rules.state='arkanoid'), export testActive/testStep enrutando al muro (DIANAS queda como motor legacy), poses crazy en superpoder + vuelta a duelo, MapaEO re-medido (1376×768, y 260→266/500→511), rival renombrado a ASTRO. Módulo 3.980 líneas, node --check OK.
+- Núcleo (game.html): VERSION '3.2.0-ORB1' + bloque de comentario ORB1 + badge; NORMAS_SKIN.defs.estacion (normas_astro.png, hueco medido 152..872 × 152..432) — los carteles explicativos de los muros visten el arte real del dueño. Física CCD/SRV2/FEEL1 INTACTA.
+- manifest.json v6: rival ASTRO con 14 estados, etapas muro1/muro2 (kind arkanoid), decor 4 recortables, assets/notes documentados.
+- Cadena de release: scripts/release-v320/ (build_zip.py + LEEME-DESPLIEGUE + CHULETA) → 4 ZIPs: COMPLETO 113.678.115 B · ligera 11.459.500 B · CLOUDFLARE 113.666.291 B · SOLO 6.089 B (byte-exactos vía dev y gateway). Hub /descargas → V3.2.0-ORB1 (tarjetas, cabecera y footer con el decorado + herencia CCD).
+- QA Playwright doble EN VERDE: qa_orbital_v320.py (34 OK · 0 fallos: versión/badge/DIMS/labs CCD+SERVE, NORMAS_SKIN estacion con imagen precargada, registro 5 campeonatos, módulo con EOArkanoid/muro1/muro2/superpower/GUN, manifest v6 ASTRO, 42 assets 200, troquel1 404, intro byte-perfecta, 0 pageerrors dev+gateway) y qa_descargas_v320.py (25 OK · 0 fallos: 9 enlaces v320, 12 menciones 3.2.0-ORB1, keywords del decorado, sin residuos v310/v312, ZIPs byte-exactos por :3000 y :81, 4 botones, 0 pageerrors). Capturas: download/qa_v320_portada.png y download/qa_v320_descargas_hub.png.
+
+Stage Summary:
+- V3.2.0-ORB1 EN PRODUCCIÓN: :3000 y :81 sirven 3.2.0-ORB1 con la estación vestida (sala del dueño, ASTRO, mapa, normas, muros arkanoid con láser, superpower de la casa, recortables).
+- La línea perdida por el rollback queda RESTAURADA y superada: base CCD1 del dueño (byte-exacto) + decorado ORB1 encima; el historial git vuelve a ser lineal y limpio.
+- QA doble verde a la primera (34+25 checks); los 4 ZIPs v320-orb1 en download/ y public/descargas/ (fuera de git, práctica del repo).
+- Pendiente del dueño: prueba en casco (muros/láser/poses/skin de normas + precisión CCD) y URL del git remote para el push anti-rollback (este rollback ha demostrado que es crítico).

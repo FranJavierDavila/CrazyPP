@@ -1781,3 +1781,18 @@ Stage Summary:
 - Fix durable del 502: el próximo arranque del sandbox (reinicio de sesión o reciclaje) sube el juego con watchdog y lo MANTIENE vivo; si el server muere en idle se reanima solo en ≤20 s.
 - Corrección del sandbox: los servidores NO sobreviven entre comandos de tool — cualquier QA que necesite :3000 debe arrancarlo dentro del mismo comando (patrón confirmado una vez más).
 - Pendiente del dueño: reiniciar la sesión para ver el hub en el preview; etapas 2/4 del orbital a la espera de sus nuevas mecánicas; URL del git remote para el push anti-rollback.
+
+---
+Task ID: 78
+Agent: main (Z.ai)
+Task: «necesito que actualices el centro de descargas para poder acceder a el zip» — habilitar el acceso real al ZIP de la V3.2.1-ORB2.
+
+Work Log:
+- Verificado que el sandbox NO se reinició (boot-timeline sigue en 20:30, sin watchdog, :3000 muerto, gateway :81 en 502): el usuario no pudo usar el preview.
+- Integridad de los 4 ZIPs v321-orb2 confirmada (central directory OK: COMPLETO 393 ficheros, CLOUDFLARE 380, ligera 28, SOLO 6).
+- Llamado Complete(web_dev) para intentar que la plataforma levantara el server: NO lo hace en este entorno (:3000 siguió muerto tras 70 s).
+- Vía de acceso directo habilitada: los 4 ZIPs ya estaban en download/ (única carpata accesible por el panel de archivos del usuario) + añadido download/LEEME-DESCARGA.txt con qué ZIP usar para cada caso (Cloudflare/Netlify/repo Railway) y los 3 pasos de despliegue.
+
+Stage Summary:
+- El usuario puede bajar YA los 4 ZIPs de la V3.2.1-ORB2 desde el panel de archivos (download/), sin depender del preview: LEEME-DESCARGA.txt como guía.
+- El preview del hub (/descargas) seguirá en 502 hasta que se REINICIE la sesión: el boot ejecutará el dev.sh con el watchdog (Task 77) y el server se mantendrá vivo de forma permanente.

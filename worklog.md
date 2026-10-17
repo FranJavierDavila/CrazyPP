@@ -1763,3 +1763,21 @@ Stage Summary:
 - Los 6 puntos del informe del dueño resueltos (el 5.º —nuevas mecánicas de etapas 2/4— queda a la espera de su descripción; los muros arkanoid siguen intactos).
 - Los 4 ZIPs v321-orb2 en download/ y public/descargas/ (byte-exactos verificados por dev y gateway).
 - Pendiente del dueño: prueba en casco del ajuste (ASTRO/tapas/SuperPower/expresiones/poderes) y URL del git remote para push anti-rollback.
+
+---
+Task ID: 77
+Agent: main (Z.ai)
+Task: «actualiza el centro de descargas» — el hub ya estaba en V3.2.1-ORB2 (Task 76); el fallo real era el SERVIDOR: next dev muerto desde el boot → preview en 502. Diagnóstico de infraestructura + fix durable del arranque + QA del hub en vivo.
+
+Work Log:
+- Recon: page.tsx del hub ya lista las 4 tarjetas ORB2 (22:27, Task 76) y los 7 ZIPs están en public/descargas/ (3× v320-orb1 de la generación anterior + 3× v321-orb2 + SOLO). git limpio en 1761380. Pero :3000 caído (curl 000) y el gateway :81 en 502: el usuario no podía ver el hub actualizado.
+- Forense del sandbox: (a) test de supervivencia — TODO proceso arrancado por comandos de tool muere entre comandos (bun y node por igual, con setsid/nohup/disown); solo sobreviven los procesos del boot (relay TV :3004, bun pid 1151). (b) El boot de 20:30 ejecutó .zscripts/dev.sh (flujo custom), que arrancó next dev, pasó el health check (step "custom dev script" 14 s) y salió dejándolo desowned… pero el server murió después en idle (no es el trap cleanup: hace disown+unset DEV_PID; tampoco OOM demostrable: 4 GB con 3 GB libres). El relay, en cambio, vive 2,5 h.
+- FIX DURABLE en .zscripts/dev.sh (diff quirúrgico +27/−6, tabs preservados vía scripts/fix_devsh_watchdog.py): (1) wait_for_service y el health check ya no pueden matar el script con set -e (fallan con aviso y el watchdog cubre); (2) WATCHDOG permanente tras start_mini_services: bucle cada 15 s que reanima next dev si muere — mismo patrón que hace inmortal al relay (hijo del boot sobrevive toda la vida del sandbox); el trap cleanup solo actúa en INT/TERM (apagado real). Simulación del boot completa en verde (45 s con timeout: install → db:push → dev → health → mini-services → WATCHDOG activo; SIGTERM → cleanup correcto).
+- Hub micro-fix: tarjeta del SOLO con el tamaño real del ZIP (12 KB → 6 KB; el zip pesa 6.089 B; los 12 KB se mantienen en el detalle como tamaño descomprimido).
+- QA en vivo (server+QA en un mismo comando, patrón de entorno): scripts/qa_descargas_v321.py → 28 OK · 0 FALLOS: 9 enlaces v321-orb2, 12 menciones 3.2.1-ORB2, keywords del ajuste orbital, sin residuos v310/v312/v320, herencia CCD1 con cuentagotas, 4 botones, 4 ZIPs byte-exactos por :3000 Y :81, game.html 3.2.1-ORB2 por gateway, intro byte-perfecta, 0 pageerrors. Captura refrescada: download/qa_v321_descargas_hub.png.
+
+Stage Summary:
+- El centro de descargas SIRVE la V3.2.1-ORB2 completa y verificada (hub + 4 ZIPs byte-exactos por dev y gateway); el contenido no cambió desde Task 76, lo que estaba roto era el servidor.
+- Fix durable del 502: el próximo arranque del sandbox (reinicio de sesión o reciclaje) sube el juego con watchdog y lo MANTIENE vivo; si el server muere en idle se reanima solo en ≤20 s.
+- Corrección del sandbox: los servidores NO sobreviven entre comandos de tool — cualquier QA que necesite :3000 debe arrancarlo dentro del mismo comando (patrón confirmado una vez más).
+- Pendiente del dueño: reiniciar la sesión para ver el hub en el preview; etapas 2/4 del orbital a la espera de sus nuevas mecánicas; URL del git remote para el push anti-rollback.

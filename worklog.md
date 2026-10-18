@@ -2137,3 +2137,5 @@ Stage Summary:
 - FASE 6 COMPLETADA: el MOMENTO FIRMA del juego (el aviso «¡Super Power!!» con su coreografía y halo) tiene UNA sola fuente — un bug del tablón se arregla UNA vez y sirven los 4 campeonatos; las DOS coreografías (clásica y v2.40) viajan intactas y el QA verifica la coreografía de cada módulo por nombre.
 - V3.6.4-SDK4 EN PRODUCCIÓN: 4 ZIPs byte-exactos, QA quíntuple verde (431 checks) + smoke, golden 8f8b1ea1…. Cero cambios de gameplay.
 - Pendiente del dueño: prueba en casco opcional (el cartel debe verse EXACTAMENTE igual en los 4) · SDK v1.x: Rival/HUD + SFX de arsenal del orbital · P1/P2 del roadmap.
+- CIERRE (deploy_pages.py --push --release --backup): rama pages en GitHub (commit encadenado) · main→proyecto al día · Release v3.6.4-SDK4 con los 4 ZIPs · PAGES EN VIVO VERIFICADA (verify_pages_live.py 3.6.4-SDK4: 17 peticiones OK · 0 fallos · 0 pageerrors) — la FASE 6 ya es jugable en https://franjavierdavila.github.io/CrazyPP/.
+

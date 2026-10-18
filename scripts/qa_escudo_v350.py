@@ -36,11 +36,12 @@ async def main():
         page.on('pageerror', lambda e: errors.append(str(e)))
 
         print('== PORTADA (dev :3000) ==')
-        await page.goto(BASE + '/game.html', wait_until='networkidle')
+        await page.goto(BASE + '/game.html', wait_until='domcontentloaded')
+        await page.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.6.2-SDK2', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.6.3-SDK3', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.6.2-SDK2' in badge, f'badge 2D = {badge!r}')
+        chk('V3.6.3-SDK3' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("!!window.__PP_SERVE_LAB"), 'SERVE lab intacto (SRV2)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),
@@ -264,8 +265,9 @@ async def main():
         pg2 = await browser.new_page(viewport={'width': 1280, 'height': 800})
         errors2 = []
         pg2.on('pageerror', lambda e: errors2.append(str(e)))
-        await pg2.goto(GW + '/game.html', wait_until='networkidle')
-        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.2-SDK2', 'gateway: __PP_VERSION 3.6.2-SDK2')
+        await pg2.goto(GW + '/game.html', wait_until='domcontentloaded')
+        await pg2.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
+        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.3-SDK3', 'gateway: __PP_VERSION 3.6.3-SDK3')
         chk(await pg2.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"), 'gateway: puente CCD')
         chk(await pg2.evaluate("!!window.__PP_GAME"), 'gateway: juego arranca')
         chk(not errors2, f'0 pageerrors gateway ({len(errors2)}): {errors2[:2]}')

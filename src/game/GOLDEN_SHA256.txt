@@ -1,2 +1,4 @@
-# SHA256 del game.html que produjo esta división (v3.6.2-SDK2, Task 92)
-d3ffbb94d904b943a9289cb07e82870d557387c876493527d994a35bba485633
+# SHA256 del game.html que produjo esta división (v3.6.3-SDK3, Task 94 ·
+# FASE 5: createMusic; cambio legítimo de la v3.6.2-SDK2 d3ffbb94…, solo
+# el sello de versión — el núcleo no cambia en esta fase)
+da2105aedaa899a078a1fd91624c7d87c0429f3f9e0b3165b5e9ed5291f360b6

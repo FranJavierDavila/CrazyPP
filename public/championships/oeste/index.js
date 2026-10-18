@@ -462,9 +462,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // v3.6.2-SDK2 · FASE 4 de la modularización P0: kernel compartido de los 5
 // campeonatos (championships/sdk/champ_sdk.js). Los 4 motores SFX one-shot
 // y los 3 congelados delegan en él (el fix «forma promesa» v2.125 llegó a
-// estar copiado 6 veces en este módulo). La MÚSICA en bucle (BSO del saloon
-// y vagón) conserva su motor propio hasta que el SDK estrene createMusic.
-import { createSfx, congela, getCore } from '../sdk/champ_sdk.js';
+// estar copiado 6 veces en este módulo). Desde el SDK v1.2.0 también la
+// MÚSICA en bucle (BSO del saloon y vagón) vive en el SDK (createMusic).
+import { createSfx, createMusic, congela, getCore } from '../sdk/champ_sdk.js';
 
 /* Parámetros de la sala (mismo patrón que MAGIA en el módulo del mago). */
 const OESTE = {
@@ -7399,9 +7399,9 @@ class TrenAction {
     this._flechas = [];        // flechas en vuelo { grp, t, dur, from, to }
     this._indFrame = 0; this._indFrameT = 0;
     this._flechaRobo = [];
-    /* v2.111 · MÚSICA DEL VAGÓN (vagon.mp3) */
-    this._musWanted = false; this._musBuf = null; this._musBusy = false;
-    this._mus = null;
+    /* v2.111 · MÚSICA DEL VAGÓN (vagon.mp3) — v3.6.3-SDK3: el estado vive
+     * en el SDK (createMusic, variante «direct»). */
+    this.__musSDKv = null;
     /* v2.112 · VÓRTICE efímero + bote a altura constante */
     this._portalT = 0; this._portalK = 0; this._prevVy = 0;
     /* v2.115 · PELOTAS CADA SEGUNDO (pool multi-bola) */
@@ -9257,69 +9257,29 @@ class TrenAction {
       return (A.arcMute || A._arcDucked) ? 0.0001 : Math.max(0.0001, A.arcVol);
     } catch (e) { return 0.15; }
   }
-  _musicStart() {
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running') return;
-      this._musWanted = true;
-      if (!this._musBuf && !this._musBusy) {
-        this._musBusy = true;
-        const url = this.ctrl.manifest && this.ctrl.manifest.vagonMusicUrl;
-        if (!url) { this._musBusy = false; return; }
-        // v3.6.2-SDK2: la MÚSICA en bucle conserva su motor propio (el SDK
-        // v1.x la unificará con createMusic); el fix v2.125 ya vive aquí.
-        fetch(url)
-          .then((r) => r.arrayBuffer())
-          .then((ab) => new Promise((res, rej) => {
-            // v2.125: FORMA PROMESA — la forma callback de decodeAudioData
-            // puede quedarse SIN llamar a sus callbacks (constatado en
-            // Chromium con la GPU saturada): la música del vagón moría y
-            // _musBusy quedaba colgado para siempre.
-            try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
-          }))
-          .then((buf) => {
-            this._musBuf = buf; this._musBusy = false;
-            if (this._musWanted) this._musicPlay();
-          })
-          .catch(() => { this._musBusy = false; });
-      } else if (this._musBuf && !this._mus) {
-        this._musicPlay();
-      }
-    } catch (e) { /* sin música: nunca rompe */ }
-  }
-  _musicPlay() {
-    try {
-      if (this._mus || !this._musBuf) return;
-      const actx = this.game.audio.ctx;
-      const gain = actx.createGain();
-      gain.gain.value = this._musicVol();
-      gain.connect(actx.destination);
-      const src = actx.createBufferSource();
-      src.buffer = this._musBuf;
-      src.loop = true;
-      src.connect(gain);
-      src.start();
-      this._mus = { gain, src };
-    } catch (e) { this._mus = null; }
-  }
-  _musicSync() {
-    if (!this._mus || !this._mus.gain) return;
-    try {
-      const want = this._musicVol();
-      if (Math.abs((this._mus.gain.gain.value || 0) - want) > 0.001) {
-        this._mus.gain.gain.value = want;
-      }
-    } catch (e) { /* */ }
-  }
-  _musicStop() {
-    this._musWanted = false;
-    if (this._mus) {
-      try { this._mus.src.stop(); } catch (e) { /* */ }
-      try { this._mus.gain.disconnect(); } catch (e) { /* */ }
-      this._mus = null;
+  /* v3.6.3-SDK3 · MOTOR DEL VAGÓN (SDK v1.2.0, createMusic): variante
+   * «direct» del motor v2.111 que sustituye — sin fundido, sin gate
+   * arcPlaying, sync directo sin rampa y sin resurrección. La exclusivi-
+   * dad con la BSO del saloon (antes, la ranura _mus compartida) se
+   * reproduce con excluso(): si la BSO suena, el vagón no entra. */
+  get _musSDKv() {
+    if (!this.__musSDKv) {
+      this.__musSDKv = createMusic(() => this.game, {
+        url: () => this.ctrl.manifest && this.ctrl.manifest.vagonMusicUrl,
+        vol: () => this._musicVol(),
+        fadeIn: 0,
+        syncMode: 'direct',
+        gateStart: false,
+        gateOn: false,
+        renace: false,
+        excluso: () => this.ctrl._musSDK.sonando(),
+      });
     }
+    return this.__musSDKv;
   }
+  _musicStart() { this._musSDKv.on(); }
+  _musicSync() { this._musSDKv.sync(); }
+  _musicStop() { this._musSDKv.off(); }
 
   /* ------------------------------- ciclo ---------------------------------- */
   start() {
@@ -9921,7 +9881,7 @@ class TrenAction {
     this._fjUpdate(dt);
     /* ==== v2.119 · EL INDIO CABALGANTE (grupos 1-3, flecha ladrona) ==== */
     this._indUpdate(dt);
-    if (this._mus) this._musicSync();
+    this._musicSync();   // v3.6.3-SDK3: el SDK guarda si suena (no-op si no)
     if (this.ctrl.fx) this.ctrl.fx.update(dt);
   }
 
@@ -11139,7 +11099,7 @@ class ForajidoStand {
     this.spriteBaseY = OESTE.spriteHeight / 2;
     this._t = 0;
     this._ballSaved = null;
-    this._mus = null; this._musWanted = false; this._musicBuf = null; this._musicBusy = false;
+    this.__musSDK = null;   // v3.6.3-SDK3: el estado de la BSO vive en el SDK (createMusic)
     this._netParts = null;
     this._woodSaved = null; this._woodTex = null; this._woodFrameMat = null; this._woodFrameCol = 0;   // v2.87 mesa de madera
     this.tapas = []; this.mapaMarker = null;            // v2.83
@@ -12005,69 +11965,29 @@ class ForajidoStand {
 
   /* ------------------------------ MÚSICA -------------------------------
    * Motor v2.78 del mago, intacto: BSO en bucle que sigue el AJUSTE GLOBAL
-   * del núcleo («Música de los campeonatos», pp_arcade_vol) EN VIVO. */
+   * del núcleo («Música de los campeonatos», pp_arcade_vol) EN VIVO.
+   * v3.6.3-SDK3: el motor vive en el SDK (createMusic v1.2.0) — fundido de
+   * entrada 0,8 s, resurrección v2.124, UNA MELODÍA con arcPlaying, sync
+   * en vivo con rampa 0,15 s y decode v2.125, UNA sola fuente. */
   musicOn() {
     // v2.111: durante el vagón manda vagon.mp3 (TrenAction) — la BSO del
     // saloon no debe solaparse si el núcleo re-invoca musicOn().
     if (this._stageMode === 'tren') return;
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running') return;
-      // v2.124: la BSO muere con cada re-creación del contexto (salir/entrar
-      // de VR, rescate del watchdog): si la referencia apunta a un contexto
-      // ya cerrado, se suelta para que _startMusic pueda revivirla.
-      if (this._mus && this._mus.src.context !== actx) this._mus = null;
-      this._musWanted = true;
-      if (!this._musicBuf && !this._musicBusy) this._loadMusic(actx);
-      else if (this._musicBuf && !this._mus) this._startMusic(actx);
-    } catch (e) { /* sin BSO: nunca rompe */ }
+    this._musSDK.on();
   }
-  _loadMusic(actx) {
-    try {
-      const url = this.manifest && this.manifest.musicUrl;
-      if (!url || this._musicBusy) return;
-      this._musicBusy = true;
-      // v3.6.2-SDK2: la BSO en bucle conserva su motor propio (fundido 0,8 s,
-      // resurrección de contexto y UNA MELODÍA con el núcleo); el SDK v1.x la
-      // unificará con createMusic. El fix v2.125 ya vive aquí.
-      fetch(url)
-        .then((r) => r.arrayBuffer())
-        .then((ab) => new Promise((res, rej) => {
-          // v2.125: forma promesa (la callback puede no dispararse jamás)
-          try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
-        }))
-        .then((buf) => {
-          this._musicBuf = buf; this._musicBusy = false;
-          if (this._musWanted) this._startMusic(actx);
-        })
-        .catch(() => { this._musicBusy = false; });
-    } catch (e) { /* */ }
-  }
-  _startMusic(actx) {
-    try {
-      if (this._mus || !this._musicBuf) return;
-      // v2.125: si la BSO del NÚCLEO está sonando (La Locura), la nuestra no
-      // entra — UNA MELODÍA también en este sentido (el núcleo ya hace lo
-      // propio llamando a musicOff() de este módulo cuando arranca la suya).
-      const A0 = this.game && this.game.audio;
-      if (A0 && A0.arcPlaying) return;
-      const gain = actx.createGain();
-      // v2.124: ENTRADA CON FUNDIDO (0,8 s) — antes arrancaba a volumen pleno
-      // en el mismo tick que el fade-out de la música del menú (al abrir un
-      // duelo): medio segundo de dos melodías pisándose.
-      const t0 = actx.currentTime;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.linearRampToValueAtTime(this._musicEffVol(), t0 + 0.8);
-      this._musRamp = t0 + 0.8;
-      gain.connect(actx.destination);
-      const src2 = actx.createBufferSource();
-      src2.buffer = this._musicBuf;
-      src2.loop = true;
-      src2.connect(gain);
-      src2.start();
-      this._mus = { gain, src: src2 };
-    } catch (e) { /* */ }
+  /* Motor de la BSO: instancia perezosa del SDK (createMusic). Los knobs
+   * son los del motor v2.78+v2.124 que sustituye y van POR DEFECTO en el
+   * SDK: fadeIn 0,8 con ancla, syncMode 'ramp' (0,15 s), gateStart
+   * arcPlaying, renace (resurrección v2.124) y parada instantánea. */
+  get _musSDK() {
+    if (!this.__musSDK) {
+      this.__musSDK = createMusic(() => this.game, {
+        url: () => this.manifest && this.manifest.musicUrl,
+        vol: () => this._musicEffVol(),
+        puede: () => this._stageMode !== 'tren',
+      });
+    }
+    return this.__musSDK;
   }
   _musicEffVol() {
     try {
@@ -12077,38 +11997,12 @@ class ForajidoStand {
     } catch (e) { return OESTE.musicVol; }
   }
   _syncMusicGain() {
-    try {
-      const A = this.game && this.game.audio;
-      // v2.124: RESURRECCIÓN — si el contexto cambió (re-bind de VR), la BSO
-      // renace sola aquí. En el TREN no: ahí manda vagon.mp3 (regla v2.122).
-      if (this._mus && A && A.ctx && this._mus.src.context !== A.ctx) {
-        this._mus = null;
-        if (this._musWanted && this._musicBuf && A.ctx.state === 'running'
-          && this._stageMode !== 'tren') {
-          this._startMusic(A.ctx);
-          return;
-        }
-      }
-      if (!this._mus || !this._mus.gain) return;
-      const g = this._mus.gain.gain;
-      const eff = this._musicEffVol();
-      // v2.124: durante el fundido de entrada no se retoca la ganancia
-      if (this._musRamp && A && A.ctx && A.ctx.currentTime < this._musRamp) return;
-      if (A && A.ctx && Math.abs((g.value || 0) - eff) > 0.001) {
-        const t = A.ctx.currentTime;
-        g.cancelScheduledValues(t);
-        g.setValueAtTime(Math.max(0.0001, g.value || 0.0001), t);
-        g.linearRampToValueAtTime(eff, t + 0.15);
-      }
-    } catch (e) { /* nunca rompe el juego */ }
+    // sincronía en vivo + resurrección v2.124: delegadas en el SDK
+    this._musSDK.sync();
   }
   musicOff() {
-    this._musWanted = false;
-    if (this._mus) {
-      try { this._mus.src.stop(); } catch (e) { /* */ }
-      try { this._mus.gain.disconnect(); } catch (e) { /* */ }
-      this._mus = null;
-    }
+    // parada instantánea, como siempre: delega en el SDK
+    this._musSDK.off();
   }
 
   /* --------------------------- CICLO DE SALA --------------------------- */
@@ -12754,7 +12648,7 @@ class ForajidoStand {
     if (this.powerSign) this.powerSign.update(dt);
     this._syncMusicGain();
     // revancha (gatillo en «over» del núcleo): la BSO vuelve al servir
-    if (!this._mus && g.rules.state === 'serve') this.musicOn();
+    if (!this._musSDK.sonando() && g.rules.state === 'serve') this.musicOn();
   }
 
   /* ================= SUPERPODERES (motor de dos fases v2.71) ============== */

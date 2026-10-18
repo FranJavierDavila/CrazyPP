@@ -113,11 +113,18 @@ FASES COMPLETADAS (plan P0 acordado con el dueño)
     congelados + puente; manifest v49), magia (risa del mago +
     congelado + puente; v29), locura (el congelado patrón v2.40 que
     nació ahí + puente; v21) y valle_neon (puente; v2). Conducta
-    idéntica: volúmenes, anti-spam y paneo intactos; la música en
-    bucle conserva su motor propio hasta createMusic (SDK v1.x).
+    idéntica: volúmenes, anti-spam y paneo intactos.
+  · Fase 5 (V3.6.3-SDK3): el SDK v1.2.0 estrena createMusic() — los
+    tres motores de MÚSICA en bucle que seguían duplicados (BSO del
+    saloon v2.78+v2.124 y música del vagón v2.111 en el Oeste, BSO de
+    Magia v30, WAV de Valle Neón v3) convergen en UNA máquina de
+    estados con variantes por opciones y conducta idéntica: fundidos,
+    sincronía en vivo con el ajuste global, UNA MELODÍA, resurrección
+    de contexto (v2.124) y parada instantánea o con fundido. El fix
+    v2.125 del decodeAudioData ya vive UNA sola vez también para la
+    música (ningún módulo conserva decodeAudioData propio).
 PRÓXIMA FASE
-  · SDK v1.x: createMusic (unificar los bucles BSO/vagón/valle) y
-    Sala6/Rival/HUD compartidos. Los «candidatos SDK» de
+  · SDK v1.x: Sala6/Rival/HUD compartidos. Los «candidatos SDK» de
     DEPENDENCIAS.md marcan el camino en el núcleo.
   · Cada fase conserva la cadena de release: game.html sigue siendo
     un único fichero autocontenido para los ZIPs.

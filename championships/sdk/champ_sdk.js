@@ -1,5 +1,5 @@
 /* ============================================================================
- *  CRAZY PING PONG · SDK DE CAMPEONATOS (champ_sdk.js) — v1.2.0
+ *  CRAZY PING PONG · SDK DE CAMPEONATOS (champ_sdk.js) — v1.3.0
  * ----------------------------------------------------------------------------
  *  FASE 3 del plan de modularización P0 (acordado con el dueño).
  *  v1.1.0 (FASE 4): precarga() (pedir+decodificar sin sonar, para los
@@ -12,6 +12,11 @@
  *  original: fundido de entrada, sincronía en vivo con el ajuste global
  *  del núcleo, UNA MELODÍA, resurrección de contexto (v2.124) y parada
  *  instantánea o con fundido.
+ *  v1.3.0 (FASE 6): createPowerSign() — el cartel de SUPERPODER («¡Super
+ *  Power!!») que los 4 campeonatos con duelos copiaban (Forajido/Wizard/
+ *  Arcade/PwSignEO) converge en UNA fábrica con DOS coreografías exactas
+ *  («clasica» v2.120 de oeste/magia y «v240» de locura/orbital, con su
+ *  halo que respira) y knobs por módulo (arte, respaldo, ownTex, dims).
  *
  *  POR QUÉ EXISTE — LA FAMILIA DE BUGS:
  *  Los 5 campeonatos son módulos autocontenidos que reimplementaban una y
@@ -46,7 +51,7 @@
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.2.0';
+const SDK_VERSION = '1.3.0';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -354,4 +359,398 @@ export function createMusic(getGame, opts) {
   return { on, off, sync, sonando, estado };
 }
 
-export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic };
+/* — CARTEL DE SUPERPODER (createPowerSign · v1.3.0 · FASE 6) ——————————
+ *  El tablón «¡Super Power!!» que los 4 campeonatos con duelos copiaban
+ *  (ForajidoPowerSign oeste · WizardPowerSign magia · ArcadePowerSign
+ *  locura · PwSignEO orbital) converge en UNA fábrica con DOS coreografías
+ *  EXACTAS y knobs por módulo. Conducta idéntica por variante:
+ *    · «clasica» (v2.120 — oeste y magia, verbatim): entrada por la
+ *      izquierda (1,4 m, rot 0,22, easeOutCubic) → parada con vaivén
+ *      (sin 5.2/3.4/4.1) → salida por la derecha (1,5·e², rot −0,24,
+ *      fundido 1−e). Sin escala, sin halo.
+ *    · «v240» (locura + orbital, verbatim): entrada con escala 0,92→1 y
+ *      opacidad t/0,12 → vaivén (sin 6.4/5.1/8.2) → salida easeInCubic
+ *      con recorte de opacidad en k>0,72 + HALO DE CONTORNO que respira
+ *      (0,78±0,22 @9 Hz, salto 0,4 en la entrada, apagón final 0,12 s).
+ *  El anclado a la RED (netTopY+0,14 · tableCenterZ+0,30 · mira al
+ *  jugador girando en XZ — v2.88) y el icono circular del poder
+ *  anunciado (v2.120, cache perezosa) son COMUNES a las 4.
+ *
+ *  Uso desde un campeonato (la clase del módulo queda en un delegador):
+ *      this._impl = createPowerSign(THREE, () => this.game, {
+ *        coreo: 'clasica' | 'v240',
+ *        arte: 'plano' | 'canvas1024' | 'fit1833',
+ *        url: () => urlDelArte,
+ *        fallbackURL: () => dataURL,        // sólo magia (canvas1024)
+ *        pintar: (aplicar) => void,         // sólo oeste (respaldo pintado)
+ *        dims: () => ({ netTopY, tableCenterZ }),
+ *        onTex: (tex) => void,              // sólo orbital (ownTex)
+ *      });
+ *
+ *  opts (los por defecto = clasica sin halo):
+ *    coreo       'clasica'|'v240'  — coreografía del tablón
+ *    arte        'plano'|'canvas1024'|'fit1833' — cómo se aplica el arte
+ *    url         () => string      — arte del cartel (superpoder.webp/png)
+ *    fallbackURL () => string      — arte de respaldo como imagen (magia)
+ *    pintar      (aplicar) => void — respaldo pintado por el módulo (oeste)
+ *    dims        () => D|null      — dimensiones del núcleo (netTopY/tableCenterZ)
+ *    onTex       (tex) => void     — registro de texturas propias (orbital)
+ *  THREE se pasa como PRIMER parámetro a propósito: el SDK sigue sin
+ *  dependencias (el campeonato ya lo importa). */
+export function createPowerSign(THREE, getGame, opts) {
+  const o = opts || {};
+  const V240 = o.coreo === 'v240';
+  const HALO = !!o.halo;
+  const ARTE = o.arte || 'plano';
+  const T_IN = 0.40, T_HOLD = 1.45, T_OUT = 1.90;
+  let group = null, pivot = null, mat = null, plane = null;
+  let haloMat = null, halo = null, iconPlane = null;
+  let inited = false;
+  let t = -1;                                  // -1 = oculto
+  const iconCache = new Map();
+
+  function gg() { return (typeof getGame === 'function') ? getGame() : getGame; }
+  function dims() { try { return o.dims ? o.dims() : null; } catch (e) { return null; } }
+
+  /* v2.40: HALO DE CONTORNO — la silueta REAL del arte (su canal alfa)
+   * estampada con sombra difusa dorada + halo ámbar exterior, en aditivo. */
+  function construirHalo() {
+    haloMat = new THREE.MeshBasicMaterial({
+      transparent: true, depthWrite: false, depthTest: false,
+      blending: THREE.AdditiveBlending, opacity: 0,
+    });
+    haloMat.renderOrder = 48;
+    halo = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.502), haloMat);
+    halo.renderOrder = 48;
+    halo.scale.setScalar(1.2);
+    pivot.add(halo);
+  }
+  function haloDesde(src, w, h) {
+    try {
+      const mk = (blur, color) => {
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const c = cv.getContext('2d');
+        c.shadowColor = color;
+        c.shadowBlur = blur;
+        c.shadowOffsetX = 0;
+        c.shadowOffsetY = 0;
+        for (let i = 0; i < 3; i++) c.drawImage(src, 0, 0, w, h);
+        return cv;
+      };
+      const wide = mk(Math.max(14, Math.round(h * 0.16)), 'rgba(255,150,40,0.85)');
+      const core = mk(Math.max(8, Math.round(h * 0.07)), 'rgba(255,214,110,0.95)');
+      const c2 = core.getContext('2d');
+      c2.globalCompositeOperation = 'lighter';
+      c2.drawImage(wide, 0, 0);
+      const tex = new THREE.CanvasTexture(core);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      haloMat.map = tex;
+      haloMat.needsUpdate = true;
+      if (o.onTex) { try { o.onTex(tex); } catch (e) { /* */ } }
+    } catch (e) { console.warn('[powerSign.halo]', e); }
+  }
+
+  /* Respaldo BUILTIN «SUPER POWER!!» (el pintor de locura, adoptado por el
+   * orbital — idéntico, con guard de roundRect por cortesía del orbital). */
+  function pintorSuperPower() {
+    const cv = document.createElement('canvas');
+    cv.width = 1024; cv.height = 512;
+    const g = cv.getContext('2d');
+    g.fillStyle = 'rgba(10,16,38,0.85)';
+    g.beginPath();
+    if (g.roundRect) g.roundRect(24, 24, 976, 464, 56); else g.rect(24, 24, 976, 464);
+    g.fill();
+    g.lineWidth = 14;
+    g.strokeStyle = '#e8b45a';
+    g.stroke();
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.shadowColor = '#ffd257';
+    g.shadowBlur = 34;
+    g.fillStyle = '#ffd257';
+    g.font = '900 190px system-ui, sans-serif';
+    g.fillText('SUPER', 512, 190);
+    g.fillStyle = '#bfe3ff';
+    g.font = '900 170px system-ui, sans-serif';
+    g.fillText('POWER!!', 512, 380);
+    return cv;
+  }
+
+  function build() {
+    if (inited) return;
+    inited = true;
+    group = new THREE.Group();     // ancla a la RED (posición/rotación)
+    pivot = new THREE.Group();     // coreografía local del cartel
+    group.add(pivot);
+    mat = new THREE.MeshBasicMaterial({
+      transparent: true, depthWrite: false, depthTest: false, opacity: 0,
+    });
+    mat.renderOrder = 49;
+    plane = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.502), mat);
+    plane.renderOrder = 49;
+    pivot.add(plane);
+    if (HALO) construirHalo();
+    group.visible = false;
+    // v2.88: bajo el RIG (con la mesa) — anclado a la RED, no a la cabeza
+    const g = gg();
+    if (g && g.rig) g.rig.add(group);
+    cargarArte();
+  }
+
+  function cargarArte() {
+    try {
+      const url = o.url ? o.url() : '';
+      if (ARTE === 'canvas1024') {
+        /* magia: el arte se re-renderiza a un canvas de 1024 de ancho y el
+         * plano se reescala al aspecto real (0,92·H/W sobre 0,502). */
+        const apply = (img) => {
+          if (!mat) return;
+          const ar = img.width / Math.max(1, img.height);
+          const W = 1024, H = Math.max(64, Math.round(1024 / Math.max(0.5, ar)));
+          const cv = document.createElement('canvas');
+          cv.width = W; cv.height = H;
+          const c = cv.getContext('2d');
+          if (c) {
+            c.clearRect(0, 0, W, H);
+            c.drawImage(img, 0, 0, W, H);
+          }
+          const tex = new THREE.CanvasTexture(cv);
+          tex.colorSpace = THREE.SRGBColorSpace;
+          mat.map = tex;
+          mat.needsUpdate = true;
+          plane.scale.set(1, (0.92 * H / W) / 0.502, 1);
+        };
+        const img = new Image();
+        img.onload = () => apply(img);
+        img.onerror = () => {
+          const fb = new Image();
+          fb.onload = () => apply(fb);
+          fb.src = o.fallbackURL ? o.fallbackURL() : '';
+        };
+        img.src = url || (o.fallbackURL ? o.fallbackURL() : '');
+      } else {
+        /* plano (oeste: textura directa sin reescala) y fit1833 (locura +
+         * orbital: alto acorde al aspecto real 1408×768 → 1,833 + halo). */
+        const img = new Image();
+        img.onload = () => {
+          const tex = new THREE.Texture();
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.image = img;
+          tex.needsUpdate = true;
+          if (ARTE === 'fit1833') {
+            const ar = img.width / Math.max(1, img.height);
+            const fit = Math.min(1, 1.833 / Math.max(0.5, ar));
+            plane.scale.set(1, fit, 1);
+            if (HALO) halo.scale.set(1.2, 1.2 * fit, 1);
+            haloDesde(img, 512, Math.max(64, Math.round(512 / Math.max(0.5, ar))));
+          }
+          mat.map = tex;
+          mat.needsUpdate = true;
+          if (o.onTex) { try { o.onTex(tex); } catch (e) { /* */ } }
+        };
+        img.onerror = () => {
+          if (ARTE === 'fit1833') {
+            const cv = pintorSuperPower();
+            const tex = new THREE.CanvasTexture(cv);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            mat.map = tex;
+            mat.needsUpdate = true;
+            haloDesde(cv, 512, 256);
+            if (o.onTex) { try { o.onTex(tex); } catch (e) { /* */ } }
+          } else if (o.pintar) {
+            o.pintar((tex2) => {
+              mat.map = tex2;
+              mat.needsUpdate = true;
+            });
+          }
+        };
+        img.src = url;
+      }
+    } catch (e) {
+      if (ARTE !== 'canvas1024' && o.pintar) {
+        try { o.pintar((tex2) => { mat.map = tex2; mat.needsUpdate = true; }); } catch (e2) { /* */ }
+      }
+    }
+  }
+
+  /* v2.88: ANCLADO A LA RED — centro del cartel a la altura de la red
+   * (netTopY + 0,14), 30 cm del lado del jugador; gira en XZ para mirar
+   * al jugador. IGUAL en los cuatro (petición del artista). */
+  function anclado() {
+    const g = gg();
+    const D = dims();
+    if (!D || !group) return;
+    group.position.set(0, D.netTopY + 0.14, D.tableCenterZ + 0.30);
+    try {
+      const c = g && g.camera;
+      if (c) {
+        const dx = c.position.x - group.position.x;
+        const dz = c.position.z - group.position.z;
+        if (Math.abs(dx) > 1e-4 || Math.abs(dz) > 1e-4) {
+          group.rotation.y = Math.atan2(dx, dz);
+        }
+      }
+    } catch (e) { /* se queda mirando al lado del jugador (+Z) */ }
+  }
+
+  /* v2.120 · show(iconUrl): muestra el cartel + el ICONO del poder. */
+  function show(iconUrl) {
+    if (!inited) build();
+    t = 0;
+    group.visible = true;
+    iconShow(iconUrl);
+    if (V240) {
+      // v2.40: parte del lado IZQUIERDO, sin arte visible aún
+      if (pivot) {
+        pivot.position.set(-1.15, 0, 0);
+        pivot.rotation.z = 0;
+        pivot.scale.setScalar(0.92);
+      }
+      mat.opacity = 0;
+      haloMat.opacity = 0;
+    } else {
+      anclado();
+    }
+  }
+
+  /* Icono circular bajo el cartel (textura perezosa en caché, v2.120). */
+  function iconShow(iconUrl) {
+    if (!iconUrl) {
+      if (iconPlane) iconPlane.visible = false;
+      return;
+    }
+    if (!iconPlane) {
+      iconPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.30, 0.30),
+        new THREE.MeshBasicMaterial({
+          transparent: true, depthWrite: false, depthTest: false,
+          opacity: 0,
+        }));
+      // v2.120: el renderOrder va en el OBJETO (el del material se ignora
+      // en el orden transparente) — si no, el tablón lo tapaba
+      iconPlane.renderOrder = 51;
+      iconPlane.position.set(0.30, -0.16, 0.012);
+      pivot.add(iconPlane);
+    }
+    const imat = iconPlane.material;
+    let tex = iconCache.get(iconUrl);
+    if (!tex) {
+      tex = new THREE.TextureLoader().load(iconUrl, () => {
+        if (imat) imat.needsUpdate = true;
+      }, undefined, () => { /* sin icono: oculto */ });
+      tex.colorSpace = THREE.SRGBColorSpace;
+      iconCache.set(iconUrl, tex);
+    }
+    imat.map = tex;
+    imat.opacity = 1;
+    imat.needsUpdate = true;
+    iconPlane.visible = true;
+  }
+
+  function hide() {
+    if (V240) {
+      t = -1;
+      if (group) group.visible = false;
+      if (iconPlane) iconPlane.visible = false;
+    } else {
+      if (group) group.visible = false;
+      if (iconPlane) iconPlane.visible = false;
+      t = -1;
+      if (mat) mat.opacity = 0;
+    }
+  }
+
+  function update(dt) {
+    if (V240) {
+      if (t < 0 || !group || !group.visible) return;
+      t += dt;
+      // v2.120: el icono acompaña SIEMPRE al fundido del cartel
+      if (iconPlane && iconPlane.visible) {
+        iconPlane.material.opacity = mat.opacity;
+      }
+      anclado();
+      // v2.40 · COREOGRAFÍA: entrada rápida desde la IZQUIERDA → parada con
+      // leve vaivén y halo que respira → salida rápida por la DERECHA.
+      const X = 1.15;                  // media anchura del recorrido lateral (m)
+      if (t < T_IN) {
+        const k = t / T_IN;
+        const e = 1 - Math.pow(1 - k, 3);          // easeOutCubic
+        pivot.position.x = -X * (1 - e);
+        pivot.rotation.z = (1 - e) * 0.1;
+        pivot.scale.setScalar(0.92 + 0.08 * e);
+        mat.opacity = Math.min(1, t / 0.12);
+      } else if (t < T_HOLD) {
+        pivot.position.x = Math.sin(t * 6.4) * 0.012;
+        pivot.rotation.z = Math.sin(t * 5.1) * 0.035;
+        pivot.scale.setScalar(1 + Math.sin(t * 8.2) * 0.022);
+        mat.opacity = 1;
+      } else if (t < T_OUT) {
+        const k = (t - T_HOLD) / (T_OUT - T_HOLD);
+        const e = k * k * k;                       // easeInCubic
+        pivot.position.x = X * e;
+        pivot.rotation.z = -0.06 * e;
+        pivot.scale.setScalar(1);
+        mat.opacity = k > 0.72 ? Math.max(0, 1 - (k - 0.72) / 0.28) : 1;
+      } else {
+        hide();
+        return;
+      }
+      // halo de contorno: entra con el cartel y respira mientras está parado
+      const breathe = 0.78 + Math.sin(t * 9.0) * 0.22;
+      haloMat.opacity = mat.opacity * (t < T_IN ? 0.4 : breathe) * 0.9;
+      if (t >= T_OUT - 0.12) {
+        haloMat.opacity *= Math.max(0, (T_OUT - t) / 0.12);
+      }
+    } else {
+      if (t < 0 || !group.visible) return;
+      t += dt;
+      anclado();
+      const P = pivot;
+      // v2.120: el icono acompaña SIEMPRE al fundido del tablón
+      if (iconPlane && iconPlane.visible) {
+        iconPlane.material.opacity = mat.opacity;
+      }
+      if (t <= T_IN) {
+        const k = 1 - Math.pow(1 - t / T_IN, 3);
+        P.position.set(-1.4 * (1 - k), 0, 0);
+        P.rotation.z = 0.22 * (1 - k);
+        mat.opacity = k;
+      } else if (t <= T_HOLD) {
+        const k = (t - T_IN) / (T_HOLD - T_IN);
+        P.position.set(Math.sin(k * 5.2) * 0.055, Math.sin(k * 3.4) * 0.03, 0);
+        P.rotation.z = Math.sin(k * 4.1) * 0.03;
+        mat.opacity = 1;
+      } else if (t <= T_OUT) {
+        const k = (t - T_HOLD) / (T_OUT - T_HOLD);
+        const e = k * k;
+        P.position.set(1.5 * e, 0, 0);
+        P.rotation.z = -0.24 * e;
+        mat.opacity = 1 - e;
+      } else {
+        group.visible = false;
+        t = -1;
+        mat.opacity = 0;
+      }
+    }
+  }
+
+  /* Dispose completo (regla Quest: nada queda colgado al salir — el
+   * orbital lo llevaba; ahora lo tienen los cuatro). */
+  function dispose() {
+    try { if (group && group.parent) group.parent.remove(group); } catch (e) { /* */ }
+    for (const tt of iconCache.values()) { try { tt.dispose(); } catch (e) { /* */ } }
+    iconCache.clear();
+    group = null; pivot = null; plane = null; halo = null;
+    iconPlane = null;
+    inited = false; t = -1;
+  }
+
+  return {
+    build, show, hide, update, dispose, T_IN, T_HOLD, T_OUT,
+    // acceso de solo lectura al grupo (QA/depuración: ctrl.pwSign.group.visible)
+    get group() { return group; },
+  };
+}
+
+export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createPowerSign };

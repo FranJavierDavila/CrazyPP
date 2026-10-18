@@ -1,6 +1,6 @@
 {
   "id": "magia",
-  "version": 30,
+  "version": 31,
   "title": {
     "es": "Nuevo truco de Magia",
     "en": "New Magic Trick"
@@ -136,6 +136,7 @@
   "notes": [
     "2026-10-12: migrado al esquema v2.125 (contract 1) — sin cambios de comportamiento",
     "2026-10-19 v3.6.2-SDK2 · FASE 4 de la modularización P0 · SDK DE CAMPEONATOS: la risa del mago y el congelado del aviso de superpoder delegan en championships/sdk/champ_sdk.js v1.1.0 con conducta idéntica (anti-spam de 3,2 s intacto; el panNode(0) era paneo centrado sin efecto audible, y ahora la risa respeta además el silencio del arcade como en el orbital y La Locura); el puente al núcleo pasa a getCore(). La BSO en bucle conserva su motor propio hasta createMusic.",
-    "2026-10-19 v3.6.3-SDK3 · FASE 5 de la modularización P0 · createMusic (SDK v1.2.0): la BSO del Wizard (motor v2.78+v2.124) se migra al motor único del SDK con conducta idéntica — fundido de entrada 0,8 s, sincronía en vivo con el ajuste global, UNA MELODÍA, resurrección de contexto y parada instantánea; el fix v2.125 del decodeAudioData vive en UNA sola fuente."
+    "2026-10-19 v3.6.3-SDK3 · FASE 5 de la modularización P0 · createMusic (SDK v1.2.0): la BSO del Wizard (motor v2.78+v2.124) se migra al motor único del SDK con conducta idéntica — fundido de entrada 0,8 s, sincronía en vivo con el ajuste global, UNA MELODÍA, resurrección de contexto y parada instantánea; el fix v2.125 del decodeAudioData vive en UNA sola fuente.",
+    "2026-10-19 v3.6.4-SDK4 · FASE 6 de la modularización P0 · createPowerSign (SDK v1.3.0): el cartel del Wizard (v2.120) se migra a la fábrica única del SDK con su coreografía «clasica» exacta, el arte por canvas 1024 con respaldo a paintPowerBanner() y el icono del poder anunciado."
   ]
 }

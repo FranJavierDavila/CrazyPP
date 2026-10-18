@@ -168,7 +168,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // congelado del aviso delegan en él (el fix «forma promesa» v2.125 llegó a
 // estar copiado 2 veces aquí). Desde el SDK v1.2.0 también la BSO en bucle
 // vive en el SDK (createMusic).
-import { createSfx, createMusic, congela, getCore } from '../sdk/champ_sdk.js';
+import { createSfx, createMusic, createPowerSign, congela, getCore } from '../sdk/champ_sdk.js';
 
 /* Primitivas del NÚCLEO vía window.__PP_CORE (v2.53). ChampLoader importa
  * este módulo SOLO tras cargar el juego, así que el puente ya está puesto. */
@@ -1042,159 +1042,26 @@ class WizardPowerSign {
   constructor(ctrl) {
     this.ctrl = ctrl;
     this.game = ctrl.game;
-    this.t = -1;
-    this.T_IN = 0.40; this.T_HOLD = 1.45; this.T_OUT = 1.90;
-  }
-  build() {
-    if (this.inited) return;
-    this.inited = true;
-    this.group = new THREE.Group();
-    this.pivot = new THREE.Group();
-    this.group.add(this.pivot);
-    this.mat = new THREE.MeshBasicMaterial({
-      transparent: true, depthWrite: false, depthTest: false, opacity: 0,
+    // v3.6.4-SDK4 · FASE 6: la fábrica del SDK (createPowerSign) sustituye
+    // la copia — UNA sola fuente para el tablón de superpoder (WizardPowerSign).
+    this._impl = createPowerSign(THREE, () => this.game, {
+      coreo: 'clasica',
+      arte: 'canvas1024',
+      url: () => this.ctrl.manifest && this.ctrl.manifest.powerUrl,
+      fallbackURL: () => paintPowerBanner(),
+      dims: () => (window.__PP_CORE && window.__PP_CORE.DIMS) || null,
     });
-    this.mat.renderOrder = 49;
-    this.plane = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.502), this.mat);
-    this.plane.renderOrder = 49;
-    this.pivot.add(this.plane);
-    this.group.visible = false;
-    // v2.88: bajo el RIG (con la mesa) — el anclaje a la escena no seguía el
-    // recentrado de la Quest y el anclaje a la cámara pegaba el cartel a la
-    // cara del jugador.
-    this.game.rig.add(this.group);
-    this._loadArt();
+    this.T_IN = this._impl.T_IN;
+    this.T_HOLD = this._impl.T_HOLD;
+    this.T_OUT = this._impl.T_OUT;
   }
-  _loadArt() {
-    const apply = (img) => {
-      const ar = img.width / Math.max(1, img.height);
-      const W = 1024, H = Math.max(64, Math.round(1024 / Math.max(0.5, ar)));
-      const cv = document.createElement('canvas');
-      cv.width = W; cv.height = H;
-      const c = cv.getContext('2d');
-      if (c) {
-        c.clearRect(0, 0, W, H);
-        c.drawImage(img, 0, 0, W, H);
-      }
-      const tex = new THREE.CanvasTexture(cv);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      this.mat.map = tex;
-      this.mat.needsUpdate = true;
-      this.plane.scale.set(1, (0.92 * H / W) / 0.502, 1);
-    };
-    const img = new Image();
-    img.onload = () => apply(img);
-    img.onerror = () => {
-      const fb = new Image();
-      fb.onload = () => apply(fb);
-      fb.src = paintPowerBanner();
-    };
-    img.src = this.ctrl.manifest.powerUrl || paintPowerBanner();
-  }
-  /** v2.120 · show(iconUrl): acepta el icono del poder anunciado. */
-  show(iconUrl) {
-    if (!this.inited) this.build();
-    this.t = 0;
-    this.group.visible = true;
-    this._iconShow(iconUrl);
-    this._anclado();
-  }
-  /** v2.120 · icono circular del superpoder anunciado (powerfuego/
-   *  powersombras) bajo el cartel; textura perezosa en caché. */
-  _iconShow(iconUrl) {
-    if (!iconUrl) {
-      if (this.iconPlane) this.iconPlane.visible = false;
-      return;
-    }
-    if (!this.iconPlane) {
-      this.iconPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.30, 0.30),
-        new THREE.MeshBasicMaterial({
-          transparent: true, depthWrite: false, depthTest: false,
-          opacity: 0, renderOrder: 50,
-        }));
-      // v2.120: el renderOrder va en el OBJETO (el del material se ignora
-      // en el orden transparente) — si no, el tablón lo tapaba
-      this.iconPlane.renderOrder = 51;
-      this.iconPlane.position.set(0.30, -0.16, 0.012);
-      this.pivot.add(this.iconPlane);
-      this.iconCache = new Map();
-    }
-    const mat = this.iconPlane.material;
-    let tex = this.iconCache.get(iconUrl);
-    if (!tex) {
-      tex = new THREE.TextureLoader().load(iconUrl, () => {
-        if (mat) mat.needsUpdate = true;
-      }, undefined, () => { /* sin icono: oculto */ });
-      tex.colorSpace = THREE.SRGBColorSpace;
-      this.iconCache.set(iconUrl, tex);
-    }
-    mat.map = tex;
-    mat.opacity = 1;
-    mat.needsUpdate = true;
-    this.iconPlane.visible = true;
-  }
-  _anclado() {
-    const g = this.game;
-    // v2.88: ANCLADO A LA RED — centro del cartel a la altura de la red
-    // (netTopY + 0,14), 30 cm del lado del jugador; gira en XZ para mirar
-    // al jugador. Igual en los TRES campeonatos (petición del artista:
-    // «a la altura de la red… que no esté tan cerca del jugador»). Igual
-    // que ForajidoPowerSign del oeste.
-    const D = (window.__PP_CORE && window.__PP_CORE.DIMS) || null;
-    if (!D || !this.group) return;
-    this.group.position.set(0, D.netTopY + 0.14, D.tableCenterZ + 0.30);
-    try {
-      const c = g.camera;
-      if (c) {
-        const dx = c.position.x - this.group.position.x;
-        const dz = c.position.z - this.group.position.z;
-        if (Math.abs(dx) > 1e-4 || Math.abs(dz) > 1e-4) {
-          this.group.rotation.y = Math.atan2(dx, dz);
-        }
-      }
-    } catch (e) { /* se queda mirando al lado del jugador (+Z) */ }
-  }
-  update(dt) {
-    if (this.t < 0 || !this.group.visible) return;
-    this.t += dt;
-    this._anclado();
-    const T1 = this.T_IN, T2 = this.T_HOLD, T3 = this.T_OUT;
-    const P = this.pivot;
-    // v2.120: el icono acompaña SIEMPRE al fundido del cartel
-    if (this.iconPlane && this.iconPlane.visible) {
-      this.iconPlane.material.opacity = this.mat.opacity;
-    }
-    if (this.t <= T1) {
-      const k = 1 - Math.pow(1 - this.t / T1, 3);
-      P.position.set(-1.4 * (1 - k), 0, 0);
-      P.rotation.z = 0.22 * (1 - k);
-      this.mat.opacity = k;
-    } else if (this.t <= T2) {
-      const k = (this.t - T1) / (T2 - T1);
-      P.position.set(Math.sin(k * 5.2) * 0.055, Math.sin(k * 3.4) * 0.03, 0);
-      P.rotation.z = Math.sin(k * 4.1) * 0.03;
-      this.mat.opacity = 1;
-    } else if (this.t <= T3) {
-      const k = (this.t - T2) / (T3 - T2);
-      const e = k * k;
-      P.position.set(1.5 * e, 0, 0);
-      P.rotation.z = -0.24 * e;
-      this.mat.opacity = 1 - e;
-    } else {
-      this.group.visible = false;
-      this.t = -1;
-      this.mat.opacity = 0;
-    }
-  }
-  hide() {
-    if (this.group) this.group.visible = false;
-    if (this.iconPlane) this.iconPlane.visible = false;   // v2.120
-    this.t = -1;
-    if (this.mat) this.mat.opacity = 0;
-  }
+  build() { this._impl.build(); }
+  show(iconUrl) { this._impl.show(iconUrl); }
+  hide() { this._impl.hide(); }
+  update(dt) { this._impl.update(dt); }
+  dispose() { this._impl.dispose(); }
+  get group() { return this._impl.group; }   // acceso QA/interno (solo lectura)
 }
-
 /* ============================================================================
  *  WizardMap (v2.60) — el MISMO póster del artista anclado a la PARED
  *  IZQUIERDA, ahora con la ruta NUEVA de 2 paradas: ORBE MÁGICO → TROFEO.

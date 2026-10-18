@@ -1851,3 +1851,21 @@ Stage Summary:
 - La mecánica respeta el guion del dueño al completo (núcleo caótico, esferas, compuertas con progresión grande→pequeñas/móviles, alarmas+vibraciones+cambios de gravedad, burla/sorpresa del ASTRO, puntuación por impactos).
 - La etapa 4 sigue siendo el ARKANOID II con láser; a la espera de que el dueño describa SU sustituta.
 - Pendiente del dueño: prueba en casco del Reactor (dificultad del arco, tamaños de compuerta, umbrales de expresiones) y URL del git remote para el push anti-rollback.
+
+---
+Task ID: 81
+Agent: main (Z.ai)
+Task: «necesito que me des acceso en el centro de descargas a la version v.3.3» — restauración del acceso a la V3.3.0-NUC1: el reciclaje del sandbox (boot 08:04) borró los ZIPs no-trackeados (download/ y public/descargas/); el código de la v3.3 estaba a salvo en git (Task 80).
+
+Work Log:
+- Recon: la V3.3.0-NUC1 (Reactor de energía inestable como etapa 2) ya estaba implementada y commiteada (Task 80, 80a012b). El server vive de nuevo sin intervención (boot 08:04 ejecuta el dev.sh con el watchdog de Task 77: :3000 y :81 en 200 — confirma que el guardián del relay retirado en Task 80 ya no hace falta).
+- Diagnóstico del vacío: el reciclaje borró download/ y public/descargas/ (ambas en .gitignore) → el hub enlazaba 4 ZIPs inexistentes y el dueño no podía bajar la v3.3. Además 34 ficheros con cambio de modo 644→755 por el reciclaje.
+- Modos restaurados a 644 → git limpio (0 cambios de código).
+- Reconstrucción byte-perfecta de los 4 ZIPs con scripts/release-v330/build_zip.py (sobrevivió en git): COMPLETO 113.733.778 B · ligera 11.460.200 B · CLOUDFLARE 113.721.926 B · SOLO 6.089 B — tamaños IDÉNTICOS a la release original; unzip -t OK en los 4; nucleo_gravedad_lp.glb y el hub v330 verificados dentro del COMPLETO; copiados a download/ y public/descargas/.
+- download/LEEME-DESCARGA.txt regenerado para la v3.3: qué ZIP usar en cada caso (Cloudflare/Netlify/Railway), despliegue en 3 pasos, nota Quest HTTPS y nota de versiones anteriores regenerables bajo petición (scripts/release-v321, release-v320).
+- QA Playwright DOBLE EN VERDE sobre el server vivo: qa_descargas_v330.py (32 OK · 0 fallos: 9 enlaces v330-nuc1, 12 menciones 3.3.0-NUC1, keywords del Reactor, sin residuos de 5 versiones, 4 botones, 4 ZIPs byte-exactos por :3000 Y :81, game.html 3.3.0-NUC1 por gateway, módulo orbital con Reactor y sin muro1, intro byte-perfecta, 0 pageerrors) y qa_reactor_nuc1.py (57 OK · 0 fallos: mecánica COMPLETA en escena en vivo — núcleo en (0·1,62·−3,35), lanzamiento en arco vy 5,43, golpeo de pala, estabilización por cruce, fallo con alarma/burla/gravedad, fase A compuerta grande, victoria→vuelta a sala, muro2 variante 2 intacto — manifest v8, 10 assets 200, GLB byte-exacto 183.560 B, gateway limpio). Capturas refrescadas: download/qa_nuc1_descargas_hub.png y qa_nuc1_portada.png.
+
+Stage Summary:
+- El centro de descargas vuelve a dar acceso COMPLETO a la V3.3.0-NUC1: hub /descargas en vivo con 4 botones operativos (ZIPs byte-exactos por dev y gateway) + respaldo en el panel de archivos download/ con LEEME-DESCARGA.txt.
+- Lección registrada: los reciclajes del sandbox BORRAN lo no-trackeado — ya han sido dos (v320 y ahora). La cadena de release íntegra vive en git (scripts/release-v330/) y permite regenerar byte-perfecto en minutos.
+- Pendiente del dueño: prueba en casco del Reactor y URL del git remote para el push anti-rollback (crítico: es la tercera vez que el entorno pierde datos).

@@ -1,6 +1,6 @@
 {
   "id": "estacion_orbital",
-  "version": 8,
+  "version": 9,
   "contract": 1,
   "estado": "publicado",
   "title": {
@@ -8,8 +8,8 @@
     "en": "Orbital Station"
   },
   "description": {
-    "es": "El camino completo: 2 duelos, 2 MUROS ORBITALES (arkanoid) y el DUELO FINAL contra el ASTRO a bordo de su estación espacial.",
-    "en": "The full path: 2 duels, 2 ORBITAL WALLS (arkanoid) and the FINAL DUEL against the ASTRO aboard his space station."
+    "es": "El camino completo: 2 duelos, el REACTOR DE ENERGÍA INESTABLE, el REACTOR DE IMPULSO (cubos cuánticos, pistola láser, dianas y perturbaciones) y el DUELO FINAL contra el ASTRO a bordo de su estación espacial.",
+    "en": "The full path: 2 duels, the UNSTABLE POWER REACTOR, the IMPULSE REACTOR (quantum cubes, laser pistol, targets and perturbations) and the FINAL DUEL against the ASTRO aboard his space station."
   },
   "rival": {
     "id": "estacion_orbital_rival",
@@ -34,7 +34,7 @@
     "oppLabel": "rival"
   },
   "storage": "pp_champ_estacion_orbital_*",
-  "assets": "arte del dueño v3.2.0: sala de 6 planos (izquierda/derecha 2395×864, fondo/frente 1849×864, suelo/techo 1296×1678), ASTRO en 12 poses 512×1024 (rival + <estado>.webp, convención clown), mapa.png 1376×768 del dueño, normas_astro.png 1024×512 (plantilla de carteles), superpower.png (etiqueta Super Power!! de la casa), decor/escena_cohete-astro-lander-telescopio.png (recortables del suelo), pistol.glb (láser del MURO 2), asteroide/asteroide2/caja/dron.png (poder meteoritos + dron vigía), 4 medallones de poder, insignia.png, tapa.png, bso.wav",
+  "assets": "arte del dueño v3.2.0: sala de 6 planos (izquierda/derecha 2395×864, fondo/frente 1849×864, suelo/techo 1296×1678), ASTRO en 12 poses 512×1024 (rival + <estado>.webp, convención clown), mapa.png 1376×768 del dueño, normas_astro.png 1024×512 (plantilla de carteles), superpower.png (etiqueta Super Power!! de la casa), decor/escena_cohete-astro-lander-telescopio.png (recortables del suelo), pistol.glb (láser del MURO 2), asteroide/asteroide2/caja/dron.png (poder meteoritos + dron vigía), 4 medallones de poder, insignia.png, tapa.png, bso.wav, REACTOR DE IMPULSO: reactor_impulso/ con 6 imágenes de la sala del dueño (frente/fondo/techo/suelo JPG + izquierda/derecha PNG), diana_quantica.png, base.png y pantallainfo.png",
   "audio": {
     "music": "assets/bso.wav",
     "musicVolume": 0.18
@@ -97,9 +97,10 @@
       "kind": "duelo"
     },
     {
-      "id": "muro2",
-      "name": "Arkanoid II",
-      "kind": "arkanoid"
+      "id": "impulso",
+      "name": "Reactor de impulso",
+      "kind": "impulso",
+      "nota": "v3.4.0: destruye los cubos cuánticos con la pelota (3 oleadas de 3/5/7, 120 s cada una) desde la base flotante y desata perturbaciones (Gravedad 0, Atractor, Supergravedad) acertando las dianas con el láser. Sustituye al ARKANOID II (muro2)."
     },
     {
       "id": "final",
@@ -170,6 +171,7 @@
     "v3.2 (V2.132): disparo redundante de superpoderes (rally + garantía 22 s), cartel del superpoder con medallón, efectos blindados, dianas 3D y bola de espera alcanzable (z -0.50).",
     "2026-10-17 v3.2.0 (ORB1) · DECORADO REAL DEL DUEÑO + MUROS ORBITALES — restaurada la base V3.1.2-CCD1 (paquete CLOUDFLARE del dueño, byte-exacto) tras el rollback del sandbox y vestido completo con su arte: (1) SALA de 6 planos con el arte del dueño (izquierda/derecha con literas y ventanal a la Tierra, frente con esclusa, fondo, suelo y techo con luminarias; JPG q85, patrón vagón del Oeste). (2) RIVAL ASTRO: 12 poses del artista en webp (convención clown assets/<estado>.webp — astro_angry llegó aparte y era el «techo.png» escondido dentro de astro.zip, mismo md5) + estados nuevos cableados: duelo=focused, superpoder=crazy, fin de poder=duelo; manifiesto con la familia completa (idle/duelo/focused/surprised/panic/laughing/loosing/picando/crazy/angry/victory/defeated + alias triunfante/derrotado). (3) MAPA NUEVO del dueño (1376×768) en la pared izquierda: nodos re-medidos (y 260→266, 500→511) y —dato clave— el arte dibuja las etapas 2 y 4 como MUROS DE LADRILLOS (misma iconografía que el mapa del clown) → las pruebas del camino son ahora MUROS ORBITALES: PORT ÍNTEGRO del ARKANOID de La Locura (clase EOArkanoid + pegamento de pistola), variante 1 clásica (30 ladrillos rojos, 2 min, 5 vidas) y variante 2 (54 rojos/azules + PISTOLA LÁSER pistol.glb con raycast, ladrillo negro +1 min, abanico anti-atasco), _finish/_afterResult adaptados al camino EO (_pruebaFin/_despuesDePrueba, rejugada v2.96 respetada) y export testActive/testStep enrutando al muro primero (DIANAS queda como motor legacy). (4) CARTELES DE NORMAS con la plantilla del artista: NORMAS_SKIN.defs.estacion (normas_astro.png, hueco 152..872 × 152..432) — los carteles explicativos de los MUROS visten el arte real. (5) CARTEL DE SUPERPODER con la ETIQUETA DE LA CASA superpower.png (mismo arte «Super Power!!» que locura/magia/oeste) + miniatura del poder (medallón) + nombre y fase. (6) RECORTABLES reales del dueño por el suelo (escena_cohete/astro/lander/telescopio — fuera los troqueles placeholder). (7) Rival renombrado a ASTRO (arte del dueño); texts CFG.rival actualizados. Núcleo: solo badge/VERSION + NORMAS_SKIN (física CCD/SRV2/FEEL1 INTACTA). Módulo v3.2.0 (manifest v6).",
     "2026-10-18 v3.2.1 (ORB2) · AJUSTE FINO del decorado por informe del dueño en casco: (1) ASTRO a la convención FORAJIDO (oeste v2.87): plano de cuerpo entero 2,15 m (proporción 0,5, arte 512×1024), pies en el suelo, mismo spot del forajido (x 1,62 · z −4,5) y de cara — antes flotaba 1,75 m a media sala (x 1,26 · z −3,5) «metiéndose en la pared derecha» y más bajo que el resto de rivales. (2) MAPA: nodos re-medidos sobre el arte (nodo 5 y 266→335: estaba ~70 px alto) y TAPAS de 240 px base con ts por nodo (los medallones reales miden ~215-235 px; las tapas de 165 px no los cubrían) — las etapas aún por disputar quedan cubiertas con la tapa.png de la casa. (3) CARTEL DE SUPERPODER = el de la CASA: port 1:1 del ArcadePowerSign de La Locura (clase PwSignEO): arte superpower.png ENFRENTE DEL JUGADOR A LA ALTURA DE LA RED (netTopY+0,14, 30 cm hacia el jugador, mirando a la cámara), coreografía ≈2 s (entra por la izquierda, vaivén, halo de contorno que respira, sale por la derecha) + medallón CIRCULAR del poder junto al arte; fuera el panel provisional que flotaba junto al rival. (4) PODERES ENCIMA DE LA MESA: meteoritos x ±0,60 / z −1,45..−0,45, haz del tractor sobre tu campo (z −1,05, punta en la superficie 0,76), motas de gravedad cero y lluvia de estrellas repartidas por TU campo — antes beam/motas/rocas caían fuera de la mesa «sin efectos». (5) EXPRESIONES DEL ASTRO por momento de partida (motor del clown de La Locura, mismos umbrales: combo 6 → angry, punto rival → laughing/crazy con racha 2, rallye 7 → picando, ventaja 6 → loosing, match-point en contra → panic, base duelo, final derrotado/triunfante) con guard anti-recarga en rivalEstado (la vigilancia corre cada frame). (6) CARTEL DE BIENVENIDA fuera de la pared del fondo (z −5,44 → −5,28; antes a 11 cm del muro se leía metido en él). Núcleo: solo badge/VERSION 3.2.1-ORB2 (física CCD/SRV2/FEEL1 INTACTA). Módulo v3.2.1 (manifest v7).",
-    "2026-10-18 v3.3.0-NUC1: la etapa 2 del camino es el REACTOR DE ENERGÍA INESTABLE (núcleo de gravedad + esferas de plasma + compuertas); el muro arkanoid queda sólo en la etapa 4."
+    "2026-10-18 v3.3.0-NUC1: la etapa 2 del camino es el REACTOR DE ENERGÍA INESTABLE (núcleo de gravedad + esferas de plasma + compuertas); el muro arkanoid queda sólo en la etapa 4.",
+    "2026-10-18 v3.4.0-IMP1: la etapa 4 del camino es el REACTOR DE IMPULSO (mecánica del dueño): sala propia de 6 imágenes, núcleo azul/rojo, 3 oleadas de cubos cuánticos (3/5/7, 120 s independientes) destruidos con la pelota desde la base flotante (sin mesa), pistola láser contra dianas cuánticas (1 s visibles / 1 s de espera) que desatan perturbaciones (Gravedad 0, Atractor con destrucción en cadena, Supergravedad) con cambio automático cada 30 s, pantalla suspendida del techo con oleada/tiempo/cubos/estado/perturbación, ventanas con velocidad lumínica, y derrota con astro_laughing frente al jugador. El ARKANOID II queda fuera del camino."
   ]
 }

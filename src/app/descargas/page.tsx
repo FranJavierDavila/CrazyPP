@@ -4,23 +4,23 @@ export default function Descargas() {
   const files = [
     {
       emoji: "☁️",
-      nombre: "Juego + CRAZY TV — V3.3.0-NUC1 (paquete Cloudflare)",
+      nombre: "Juego + CRAZY TV — V3.4.0-IMP1 (paquete Cloudflare)",
       detalle:
-        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con el REACTOR DE ENERGÍA INESTABLE estrenando la etapa 2 (núcleo de gravedad con rotación caótica, esferas de plasma y compuertas de energía), la ESTACIÓN ORBITAL afinada, PRECISIÓN CCD en el contacto, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
+        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con el REACTOR DE IMPULSO estrenando la etapa 4 (cubos cuánticos, pistola láser, dianas y perturbaciones), el REACTOR DE ENERGÍA INESTABLE en la etapa 2, la ESTACIÓN ORBITAL afinada, PRECISIÓN CCD en el contacto, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
       tamano: "113,7 MB · ZIP · Cloudflare Pages",
-      href: "/descargas/crazypp-v330-nuc1-CLOUDFLARE.zip",
+      href: "/descargas/crazypp-v340-imp1-CLOUDFLARE.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",
       borde: "border-sky-500/40",
       boton: "bg-sky-500 hover:bg-sky-400",
     },
     {
-      emoji: "🎯",
-      nombre: "Juego + CRAZY TV — V3.3.0-NUC1 (paquete completo)",
+      emoji: "🧊",
+      nombre: "Juego + CRAZY TV — V3.4.0-IMP1 (paquete completo)",
       detalle:
-        "La V3.3.0-NUC1 íntegra: ETAPA 2 NUEVA — REACTOR DE ENERGÍA INESTABLE — el NÚCLEO DE GRAVEDAD (arte GLB del dueño) gira de forma caótica tras la mesa y lanza ESFERAS DE PLASMA que debes golpear con la pala para meterlas en las COMPUERTAS de energía: primero una compuerta GRANDE, luego pequeñas y móviles; cada acierto estabiliza el reactor, cada fallo dispara alarmas, vibraciones y CAMBIOS DE GRAVEDAD, y el ASTRO se burla al fallar y se sorprende con tus rachas · el ARKANOID II con pistola láser sigue en la etapa 4 · ESTACIÓN ORBITAL afinada (ASTRO en su sitio, mapa con tapas, SuperPower!! a la altura de la red, expresiones y poderes sobre la mesa) · PRECISIÓN CCD SDF en el contacto, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+        "La V3.4.0-IMP1 íntegra: ETAPA 4 NUEVA — REACTOR DE IMPULSO — sala propia de 6 imágenes del dueño SIN mesa: la BASE FLOTANTE repone la pelota, el núcleo alterna ESTABLE (azul) e INESTABLE (rojo con alarma) y expulsa CUBOS CUÁNTICOS en 3 oleadas de 3, 5 y 7 con 2 minutos por oleada; los destruyes con la bola y con la PISTOLA LÁSER de la mano libre aciertas las DIANAS cuánticas (1 s visibles / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0, Atractor (¡un golpe los destruye todos!) y Supergravedad, con cambio automático cada 30 s; pantalla suspendida del techo con oleada, tiempo, cubos y estado; al perder, el ASTRO se ríe frente a ti · el REACTOR DE ENERGÍA INESTABLE sigue en la etapa 2 · ESTACIÓN ORBITAL afinada · PRECISIÓN CCD SDF en el contacto, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
       tamano: "113,7 MB · ZIP · completo",
-      href: "/descargas/crazypp-v330-nuc1-COMPLETO.zip",
+      href: "/descargas/crazypp-v340-imp1-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -28,11 +28,11 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.3.0-NUC1 — versión ligera (sin campeonatos)",
+      nombre: "V3.4.0-IMP1 — versión ligera (sin campeonatos)",
       detalle:
-        "El mismo paquete para subir rápido a Netlify Drop: juego con el Reactor de energía inestable, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital). Tampoco vale para Cloudflare directo (lleva TypeScript).",
+        "El mismo paquete para subir rápido a Netlify Drop: juego con el Reactor de impulso y el Reactor de energía inestable, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital con sus dos reactores). Tampoco vale para Cloudflare directo (lleva TypeScript).",
       tamano: "11,5 MB · ZIP · Netlify",
-      href: "/descargas/crazypp-v330-nuc1-ligera.zip",
+      href: "/descargas/crazypp-v340-imp1-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -42,7 +42,7 @@ export default function Descargas() {
       emoji: "📡",
       nombre: "Relay TV en solitario — para GitHub / Railway (mini)",
       detalle:
-        "Solo el live-service (12 KB): los 4 ficheros que van a tu repo de GitHub para Railway. Descomprime y arrastra el CONTENIDO de live-service/ a la raíz del repo. Para el canal DEMO: npm install → set RELAY_URL=https://tu-relay.up.railway.app → npm run demo.",
+        "Solo el live-service (6 KB): los 4 ficheros que van a tu repo de GitHub para Railway. Descomprime y arrastra el CONTENIDO de live-service/ a la raíz del repo. Para el canal DEMO: npm install → set RELAY_URL=https://tu-relay.up.railway.app → npm run demo.",
       tamano: "6 KB · ZIP · solo live-service",
       href: "/descargas/crazypp-live-service-SOLO.zip",
       ver: null,
@@ -68,16 +68,19 @@ export default function Descargas() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
             El paquete actual es la{" "}
-            <strong className="text-amber-300">V3.3.0-NUC1</strong>: la etapa 2
+            <strong className="text-amber-300">V3.4.0-IMP1</strong>: la etapa 4
             de la <strong className="text-slate-200">ESTACIÓN ORBITAL</strong>{" "}
             estrena el{" "}
-            <strong className="text-slate-200">REACTOR DE ENERGÍA INESTABLE</strong>
-            : el núcleo de gravedad gira de forma caótica y lanza esferas de
-            plasma que devuelves con la pala a las{" "}
-            <strong className="text-slate-200">compuertas</strong> de energía;
-            cada acierto estabiliza el reactor y cada fallo sacude la nave con
-            alarmas y cambios de gravedad, mientras el ASTRO se burla o se
-            sorprende. Y bajo todo ello siguen la{" "}
+            <strong className="text-slate-200">REACTOR DE IMPULSO</strong>: sin
+            mesa — una <strong className="text-slate-200">base flotante</strong>{" "}
+            repone la pelota, el núcleo expulsa{" "}
+            <strong className="text-slate-200">cubos cuánticos</strong> en 3
+            oleadas y tú los destruyes con la bola mientras la{" "}
+            <strong className="text-slate-200">pistola láser</strong> acierta
+            dianas que desatan perturbaciones (Gravedad 0, Atractor,
+            Supergravedad). Y bajo todo ello siguen el{" "}
+            <strong className="text-slate-200">Reactor de energía inestable</strong>{" "}
+            de la etapa 2, la{" "}
             <strong className="text-slate-200">PRECISIÓN CCD</strong> en el
             contacto de la pala, el saque VR realista, el hall como hub, la
             física viva y las palas con carácter. Pulsa un botón y listo.
@@ -166,8 +169,8 @@ export default function Descargas() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.3.0-NUC1 · WebXR · Reactor de energía inestable ·
-          Estación Orbital · Precisión CCD · CRAZY TV · Meta Quest 3
+          Crazy Ping Pong V3.4.0-IMP1 · WebXR · Reactor de impulso · Estación
+          Orbital · Precisión CCD · CRAZY TV · Meta Quest 3
         </footer>
       </div>
     </main>

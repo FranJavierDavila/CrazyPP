@@ -1980,3 +1980,18 @@ Work Log:
 Stage Summary:
 - El centro de descargas vuelve a servir la V3.6.0-SUP1 COMPLETA: hub /descargas en vivo + 4 ZIPs byte-exactos por dev y gateway + respaldo en download/ con LEEME.
 - Tercera pérdida por reciclaje — el patrón se confirma: TODO el release vive en git y se regenera en minutos. Sigue PENDIENTE del dueño la URL del git remote para el push anti-rollback.
+
+---
+Task ID: 88
+Agent: main (Z.ai)
+Task: PUSH ANTI-ROLLBACK — el dueño aporta el git remote (github.com/FranJavierDavila) y el token PAT; el proyecto completo sale del sandbox por primera vez.
+
+Work Log:
+- Reconocimiento del remoto: crazypp NO estaba vacío — contenía el RELAY de la CRAZY TV (server.mjs/package.json/mock_host.mjs, 4 commits «Add files via upload») para Railway, con un server.mjs DISTINTO al nuestro (fafe1b27 vs e53fe648): se decide push NO destructivo a rama nueva «proyecto», preservando main del relay.
+- Configuración: origin → https://github.com/FranJavierDavila/CrazyPP.git (URL canónica tras renombrado del dueño). Sin gh CLI ni SSH: push HTTPS con PAT de acceso fino (solo repo crazypp, Contents RW) vía credential helper efímero (el token NO se escribe en ningún fichero).
+- Push: main → proyecto (new branch) OK con http.postBuffer 500 MB; exp/live-tv → exp/live-tv OK. Verificación ls-remote: proyecto = fef3492 (idéntico al main local, 83 commits, Tasks 1-87), exp/live-tv = 7251878, main = ca53ffea INTOCTO.
+- Comprometido el registro en worklog y re-pushed a proyecto para que el respaldo incluya su propia crónica.
+
+Stage Summary:
+- RESPALDO ANTI-ROLLBACK OPERATIVO: la historia completa (83 commits) vive en github.com/FranJavierDavila/CrazyPP rama «proyecto»; el relay Railway sigue en «main». Restauración tras reciclaje: git clone -b proyecto https://github.com/FranJavierDavila/CrazyPP.git.
+- Pendiente: dueño puede borrar el PAT ya (expira en 7 días); si se quiere futuro push se pide token nuevo; opción de repo privado a valorar por el dueño.

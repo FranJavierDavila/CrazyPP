@@ -1,0 +1,177 @@
+{
+  "id": "oeste",
+  "version": 49,
+  "title": {
+    "es": "Campeonato del Salvaje Oeste",
+    "en": "Wild West Championship"
+  },
+  "rival": {
+    "id": "forajido",
+    "name": "FORAJIDO",
+    "oppLabel": "forajido",
+    "kind": "forajido del salvaje oeste",
+    "states": [
+      "present",
+      "idle",
+      "focused",
+      "surprised",
+      "angry",
+      "panic",
+      "laughing",
+      "defeated",
+      "victory",
+      "crazy",
+      "picando",
+      "loosing"
+    ]
+  },
+  "structure": "v4 (DUELO Nv. 1 + SUPERPODERES) + CAMINO COMPLETO (5 etapas: 1 DUELO · 2 ASEDIO · 3 DUELO 2 · 4 TREN · 5 FINAL). ETAPA 2 «ASEDIO AL ESCONDITE» 3.1 (v2.99): 3 EDIFICIOS INTERACTIVOS del artista (Fachada1 delante — PERFORABLE con el rotura.png del artista como transparencia—, Interior1 detrás, forajido ENTRE ambos) + PUEBLO LEJANO de ambientación (pueblohorizonte.png). Bomba-bomba CADA 1 SEGUNDO en la mesita; cada impacto ABRE UN BOQUETE en la fachada (se ve el interior) con trocitos; DIANA delante de la fachada sobre las ZONAS VERDES de zonas1.jpg (ático/entreplanta/planta baja, sin repetir fachadas agujereadas); al acertar sale OTRO boquete y el FORAJIDO se planta DE PIE en la calle: estático, mirándote, CORAZÓN en el pecho y SU REVÓLVER apuntándote — a los 2 s DISPARA (sangre en la cara) salvo que le des al corazón. 3 OLEADAS de 2 minutos (3/4/5 forajidos) con cartel de oleada (oleada1/2/3.png + oleada.mp3: entra con efecto de velocidad, flota 4 s, sale; 5 s en pausa) y ALARMA a los 20 s del final. Asistente de puntería en TODAS las dianas. Decorado 100% FIJO (cactus, rocas, huesos y torre en planos orientados una vez).",
+  "level": {
+    "brickSize": 0.125,
+    "radiusOuter": 4.6,
+    "radiusMid": 3.0,
+    "radiusCore": 1.5,
+    "timeStart": 120,
+    "timeBonus": 60,
+    "maxExtensions": 2,
+    "alertThreshold": 30,
+    "clockBlockLife": 4,
+    "clockRetryDelay": 9,
+    "lastBricksPercent": 5,
+    "maxBalls": 2,
+    "respawnDelay": 0.9,
+    "restitution": 1.0,
+    "energyLossPerHit": 1.0,
+    "maxChain": 6,
+    "minChainSpeed": 1.2,
+    "minReturnSpeed": 2.8,
+    "minBounceHeight": 0.45,
+    "bombChance": 0.18,
+    "bombEvery": 30,
+    "blastRadius": 0.55,
+    "blastMax": 60,
+    "attractionStrength": 0.35,
+    "attractionMaxAngle": 15,
+    "attractionRange": 6,
+    "montajeTime": 7.0,
+    "layerPoints": [
+      30,
+      20,
+      10
+    ],
+    "chainBonus": 5,
+    "star3Frac": 0.25,
+    "star2Frac": 0.08,
+    "_comment": "PROVISIONAL: copia del bloque «level» del mago (mismo patrón que el cfg de La Locura) como punto de partida para las 2 PRUEBAS. El artista lo ajustará sin tocar código, igual que en Magia. Las PRUEBAS del Oeste aún no están construidas (v1)."
+  },
+  "rewards": {
+    "level": "REVÓLVER del forajido en la mano libre durante el nivel, como la pistola mágica del mago — usará el modelo pistol.glb actual (ya copiado a assets/pistol.glb) hasta que el artista haga uno propio estilo oeste",
+    "champion": "POR DEFINIR (propuesta: Estrella del Sheriff en la sala)"
+  },
+  "trophy": {
+    "name": {
+      "es": "Estrella del Sheriff",
+      "en": "Sheriff Star"
+    }
+  },
+  "storage": "pp_champ_oeste_*",
+  "procedural": {
+    "art": false,
+    "audio": false,
+    "binaryAssets": 38
+  },
+  "assets": "assets/ (12 poses webp + duelo.webp + 5 poses de zona del DUELO + diana.webp + mapa.webp + tapa.webp + insignia.png + bso.mp3 + risas.mp3 + pistol.glb + REVOLVER.glb + SMALL_TNT.glb + decor/ 5 PNG recortados: saloon, cactus, carruaje, sebusca, arbusto) + room/ 6 JPEG del saloon",
+  "pendientes_artista": "v4.95 · Recibido e integrado: revolver.glb (✓ Disparo certero), small_tnt.glb (✓ Dinamita), superpoderes (✓), arte del DUELO con 5 zonas + diana.webp (✓ duelo y asedio), insignia.png (✓ campeón). ETAPA 2 ASEDIO 2.0 COMPLETA con escenario procedural del pueblo (✓ v2.95). Lo que el módulo AÚN NECESITA: (1) PRUEBA 2 «Asalto al Tren» RECONSTRUIDA como VAGÓN INTERIOR (v2.109) — falta el ARTE POR PLANOS del parallax: parallax/plano1..4.png (montañas / colinas+estructuras / postes+terreno / arbustos+rocas, el artista los pasa por planos); (2) sonidos reales de duelo del artista (ahora sintetizados); (3) PORTALES oeste (portals.webp); (4) trofeo Estrella del Sheriff (arte si existe); (5) revólver propio estilo oeste (opcional: revolver.glb ya integrado).",
+  "note": "v2.86 (módulo v4): DUELO Nv. 1 JUGABLE — la sala de espera sigue intacta y el GATILLO empieza el duelo a 11 contra el forajido en persona (IA del núcleo ×1,0), con el arbusto como tapador. ESTRENO de los 2 SUPERPODERES del forajido con el motor de dos fases de La Locura y Magia: «Disparo certero» (revólver que desenfunda, apunta y dispara una bala que dobla la velocidad de la bola, la desvía ligeramente y la deja oscura y chispeante) y «Dinamita» (cartucho con la mecha encendida que cae en la mesa del jugador: golpéalo en vuelo con la pala o dispárale una vez toque la mesa con la pistola de la mano libre; 3 s de mecha, cuenta atrás, bullet time de 0,85 s, humo cartoon y manchón quemado de ~6 s; si estalla, la bola se pierde y el punto es del forajido). El núcleo 2.86.0 NO cambia de comportamiento (additivo: sólo versión — todo vive en el módulo).",
+  "note_v287": "v2.87 (módulo v5): (1) FORAJIDO EN PROPORCIÓN ORIGINAL — el arte 512x1024 es de CUERPO ENTERO y se montaba con la rama fija 1,4×1,75 de los bustos: comprimido y flotando a 1 m del suelo. Ahora la ALTURA manda (plano de 2,15 m → personaje visible ≈ 1,8 m), el ancho sale del aspecto real de cada pose y la BASE toca el suelo en sala y duelo (dy=0). El mago y La Locura conservan su composición de busto flotante intacta. (2) MESA DE MADERA DEL SALOON — superficie de tablones (textura procedural, 5 tablones a lo largo de la mesa) + marco y patas en madera oscura; se aplica al ENTRAR al campeonato y la mesa azul reglamentaria vuelve al SALIR (patrón _tableMagicOn/Off del mago; física intacta). Núcleo 2.87.0: sólo versión + nombres aditivos ppTableApron/ppTableLeg.",
+  "note_v289": "v2.89 (módulo v7): (1) DISPARO CERTERO = DUELO con el arte nuevo del artista (duelo.webp + 5 poses de zona + diana.webp): aviso de siempre → el forajido desenfunda DELANTE de él, la bola se CONGELA (freezeT reposado durante la ventana de 3 s), la PALA del jugador se convierte en el MISMO revólver (revolver.glb en gunMounts[paddleHand], pala oculta, puerta aditiva paddleGunArmed del núcleo para el gatillo de ESA mano) y aparece la DIANA sobre el cuerpo (5 zonas de duelo_zonas.jpg, y 1.78/1.47/1.14/0.80/0.42, vaivén ±0.12 m y salto de zona cada ~0.95 s, cuenta atrás 3·2·1 sobre ella). ACIERTO (rayo vs esfera r=0.17, disparos libres cada 0.16 s): pose de la zona alcanzada 1.8 s + la bola retoma SU recorrido original (freezeT=0) + pala de vuelta. FALLO (3 s): el forajido encara la bola congelada y dispara (estampido fuerte + humo del cañón + bala trazadora) → la bola se RE-DIRIGE a un punto de bote de NUESTRA mesa a x1.85 (cap maxBallSpeed·0.95), queda casi NEGRA (0x181310) y retoma el juego. (2) BOLA BLANCA del campeonato (0xf3eee2) para distinguirla sobre la mesa de madera. (3) DINAMITA IMPOSIBLE DE PERDER: 0.27 m, brillo propio 0x8a3410 en todos sus materiales, HALO aditivo que viaja con el cartucho, PointLight cálida en la mesa durante la mecha y reserva de cajas brillante. (4) CORTINA DE HUMO DENSA al explotar: 11-14 puffs grises (renderOrder 15) sobre la explosión, pico de opacidad ~0.5-0.72, dura ~6 s como el manchón y se desvanece (dificulta algo ver la bola). Núcleo 2.89.0: VERSION + getter aditivo paddleGunArmed + puerta del gatillo en onSelectStart.",
+  "note_v291": "v2.91 (módulo v9): (1) REVÓLVER BIEN ORIENTADO — la boca del cañón se GARANTIZA por medición de vértices en espacio LOCAL del arte (extremo Z opuesto al puño): si cayera en +Z (mirando al jugador) el modelo gira 180°; medición en la caché y re-chequeo al empuñar (fuera la heurística frágil del «y medio» que lo dejaba apuntando al revés). (2) LÁSER WYSIWYG REAL — _gunRay reconstruye boca y eje con art.localToWorld + cuaternión mundial del ARTE: el punto del láser y el disparo salen EXACTOS de la punta del cañón visible, cero desfase (v2.90 medía en mundo y lo usaba como espacio de montura). (3) ¡BANG! del oeste en CADA disparo del duelo + fogonazo en la boca (fuera el 'pew'). (4) SECUENCIA de IMPACTO al acertar: pose de zona 4 s con el forajido TEMIENDO y LLORANDO (tres sollozos sintetizados) y luego 1 s de fundido: la imagen se oscurece hasta el negro y de él va apareciendo la pose normal (focused).",
+  "duelo_zonas": "5 zonas sobre el cuerpo del forajido (duelo_zonas.jpg del artista): 1 ARRIBA sombrero/cabeza (y 1.78) → Forajido_duelo_Arriba.png · 2 ALTO hombros/pecho alto (1.47) → _Alto.png · 3 CENTRO pecho/brazos (1.14) → _Centro.png · 4 ABAJO-CENTRO cintura/caderas (0.80) → _AbajoCentro.png · 5 ABAJO piernas/botas (0.42) → _Abajo.png. La diana salta entre zonas y SIEMPRE queda sobre el cuerpo; al acertar se muestra la pose de la zona.",
+  "note_v292": "v2.92 · Los DOS revólveres apuntan bien: el del forajido encara al jugador (rotación π; el muzzle del fogonazo/humo/bala pasa a +Z) y el del jugador apunta al contrincante (boca en +Z del grip; láser WYSIWYG con el giro incluido). La salva de dinamita ya no frena la partida: fuera el PointLight por cartucho posado (recompilación de shaders = saltos en la Quest), brasa simulada con el halo aditivo, cero asignaciones por frame en mecha/láser, beam por pool y tic-tac de mecha limitado.",
+  "note_v295": "v2.95 (módulo v13): RECONSTRUCCIÓN de la PRUEBA 1 «Asedio al Escondite» — fuera la barricada de barriles; ahora es la AVENIDA del pueblo: 6 ZONAS de escondite (4 puertas + 2 ventanas de dos plantas) tras troqueles de fachada que revientan en astillas; bola-bomba negra con mecha (chispa y bufido); diana.webp del artista con halo aditivo; forajidos con pose de duelo al destaparse y pose defeated al caer (desplome + desvanecido); manchones de sangre en modo PERSISTENTE (SangreManchon.trigger(n, true): no se borran, opacidad 0.52, se acumulan con _heridas y se retiran al cerrar la etapa); el reloj de 3:00 corre también durante las ventanas de disparo.",
+  "note_v296": "v2.96 (módulo v14): REJUGAR etapas superadas — apunta con la pala a un nodo ya superado del mapa de la sala (el anillo salta y se tiñe azul, el cartel muestra «REJUGAR ETAPA N»), tira del gatillo y esa etapa se relanza; el progreso real se conserva al terminar (ni avanza ni retrocede). Y «Eliminar registros» ahora SÍ reinicia el campeonato VIVO a la etapa 1 (antes sólo vaciaba el storage: la sala seguía donde estaba).",
+  "note_v297": "v2.97 (módulo v15): DINAMITA que se TUMBA (aterriza con bote y rueda de costado mientras arde la mecha), bola-bomba JUNTO AL CANTO del jugador, dianas DELANTE de los troqueles y más grandes, y el pueblo del ASEDIO reconstruido con arte IA detallado: 8 fachadas con cartel (funeraria/hotel/saloon/almacén/banco/barbería/iglesia/herrería), depósito de agua, cactus, buitres, esqueleto de bisonte, rocas, cielo, mesas rojizas, pueblo lejano, arena y avenida — con respaldo procedural. Los troqueles de las ventanas de hotel/almacén se pegan a la ventana pintada (fx desacopla fachada y zona).",
+  "note_v298": "v2.98: ASEDIO 3.0: dos palas (una por mano), mesita de madera en vez de mesa, bola-bomba cada 2 s con giro natural, explosiones en pared/suelo, forajido de pie y estático con el corazón en el pecho, dos revólveres de 1 disparo, asistente de puntería, cielo con cúpula y montañas 360°, sin buitres.",
+  "note_v299": "v2.99 (módulo v17): ASEDIO 3.1 — el artista no le gustó el pueblo procedural: 3 EDIFICIOS IGUALES interactivos con su arte (fachada + interior + zonas verdes), PUEBLO LEJANO de ambientación, fachadas que SE AGUJEREAN con el rotura.png (transparencia real: se ve el interior), bombas cada 1 s, OLEADAS de 2 min (3/4/5) con carteles + oleada.mp3 + alarma de 20 s, forajido en la calle con revólver que dispara a los 2 s, asistente también en fachadas y DECORADO 100% FIJO (adiós billboards).",
+  "note_v2100": "v2.100 (módulo v18): MIRILLA SIEMPRE VISIBLE — el artista no la veía (retícula roja sobre ladrillo rojo): ahora lleva PLACA crema de alto contraste con borde oscuro, la retícula es más GRANDE (0,52→0,64 · halo 0,84→1,00) y un FARO de luz dorado sube desde el escondite y ASOMA SOBRE LOS TEJADOS. Además la mirilla se centra EN LA LÍNEA VERDE de zonas1.jpg (donde aparece el forajido), no a la altura del pecho. En el núcleo: el HAZ de la pala del selector de etapas sólo sale cuando el rayo TOCA el mapa (nunca apuntando a otro lado, jamás en el asedio).",
+  "note_v2101": "v2.101 (módulo v19): (1) FUERA el MURO INVISIBLE — el núcleo colisionaba en x=±3,05 (roomHalfX) y las dianas de los edificios extremos eran INALCANZABLES (la bola explotaba antes); el asedio juega con ball.ignoreWalls y mandan los límites propios (sideX 4,35). (2) La DIANA SE MUDA de sitio cada 20 s (polvo + zona libre). (3) HUMO BAJO LA MESITA eliminado: la bola aparcada en (0,-10,0) disparaba el teletransporte de seguridad del núcleo (evento 'floor' fantasma en (0, 0.5, -1.6)) y la módulo explotaba allí — ahora se aparca en (0,-4,0) y se tragan los eventos viejos del mismo paso de física. (4) FORAJIDO más pequeño (1,78→1,52 m) acorde a las casas (corazón 1,08 · revólver 0,92). (5) CARTUCHO DE DINAMITA ESCONDIDO (small_tnt.glb de la etapa 1) detrás de una casa al azar por oleada: se ve por los boquetes (brasa + halo renderOrder -1), un boquete cercano lo DESTAPA (siseo) y una bola que entre por un agujero y le dé REVIENTA MEDIA CASA: elipse de transparencia 1,9×1,9 m con borde dentado + chapas, ráfaga de 9 explosiones pequeñas próximas, doble estruendo y LOS DOS MANDOS TIEMBLAN (haptic 0 y 1: 520 ms + pulsos por explosión). La bola también PUEDE ATRAVESAR los boquetes: si falla al cartucho estalla DENTRO (polvo visible sólo por los agujeros) y las zonas de la casa demolida quedan PROHIBIDAS.",
+  "note_v2102": "v2.102 (módulo v20): (1) ASISTENTE ELÍPTICO en la diana del asedio — el drag aéreo dejaba las bombas 1-1,5 m POR DEBAJO de la mirilla y el forajido no salía aunque el artista acertara (sólo caían 2 forajidos por oleada): la onda expansiva de la bomba ahora cubre un óvalo de ±0,62 m de ancho y +0,65/-1,25 m de alto alrededor de la mirilla. (2) SEÑAL de la dinamita escondida: FARO ROJO pulsante (mezcla normal, bien visible contra el cielo claro) sobre el tejado de la casa que la guarda + siseo de mecha cada 3-6 s (dorado = mirilla · rojo = dinamita). (3) _duckEnd ya no pisa la fase de derrota si no quedan escondites.",
+  "note_v2103": "v2.103: DESCUBRIMIENTO en 2 fases del forajido (su imagen se funde a NEGRO y aparece Forajido_focused.png apuntando), corazón-diana a MEDIA TALLA (0,15) y PARPADEANTE, revólver del forajido encarándote con encaro VERIFICADO (se mide la boca del cañón en el mundo), DISPARO con humo + BALA trazadora hasta la cara (la sangre llega con la bala) y CASAS MÚLTIPLES del artista: fachada2-4/interior2-4 con las líneas verdes de zonas2-4.jpg; 3 casas DIFERENTES por oleada y, cuando lleguen las 9, las 3 oleadas no repetirán ninguna casa.",
+  "note_v2104": "v2.104: SETOS SECOS RODANTES (regalo.png) que cruzan el pueblo de derecha a izquierda empujados por el viento (entran y se pierden FUERA de campo, talla al azar — pequeño = rápido — girando sobre sí mismos y apareciendo cada cierto tiempo al azar), FACHADA TRASERA DESTRUIBLE (un impacto sobre zona ya agujereada rompe la zona correspondiente del interior: hueco real de lado a lado) y CASAS 5-7 del artista con las líneas verdes de zonas6-7.jpg medidas píxel a píxel (zonas5.jpg no llegó: casa 5 con filas provisionales).",
+  "note_v2105": "v2.105: ¡MECÁNICA SORPRESA «LA ESTRELLA DEL SHERIFF»! 2-3 veces por oleada una estrella dorada aparece flotando delante de una casa (gira, brilla, suelta chispas y parpadea al acabar); si la aciertas con una bomba el sheriff DESTAPA AL FORAJIDO al instante (revólveres cargados sin acertar la diana) y regala +12 s de reloj. Además, CASAS 8-9 del artista (Saloon Coyote Run y Grand Frontier Opera House) con las líneas verdes de zonas8-9.jpg medidas píxel a píxel y zonas5.jpg DEFINITIVA para la capilla: el pool llega a 9 casas y el reparto 3-3-3 ya no repite NINGUNA entre las 3 oleadas.",
+  "note_v2106": "v2.106 (módulo v25): EL PUEBLO A PUNTO. (1) OLEADAS: la oleada dura los 2 MINUTOS COMPLETOS — el cupo (3/4/5) ya no corta la partida (alcanzado el cupo siguen saliendo forajidos); al agotarse el reloj de la 3ª, VICTORIA; la diana reutiliza zonas agujereadas en vez de perder la prueba. (2) TRANSICIÓN DE OLEADA ESPECTACULAR: fundido del escenario a NEGRO (0,5 s), cartel de oleada cruzando a oscuras (renderOrder sobre el negro) mientras las casas se REHACEN en negro, y el pueblo NUEVO reaparece (0,6 s). (3) GRÁFICOS: casas 3,3×3,35 m (antes 2,9), hundidas 10 cm (LLEGAN AL SUELO: adiós hueco y dinamita visible), separadas ±3,45 m (adiós caras coplanares/parpadeo); LINEA DE CASAS nueva del artista (lineapueblo.webp) MÁS GRANDE (7,2 m) y más lejana (-23,5), fuera la antigua con alfa corrupto y segunda fila fantasma; costura cielo-montañas CURADA (montes.webp sin alfa → fundido de alfa arriba/abajo al cargar); NUBES a la deriva en el horizonte; setos rodantes con el giro CORREGIDO (ruedan, no patinan); estrella del sheriff con el arte nuevo (estrella_sheriff.png) + depthTest off + precalentamiento (nunca 'sólo el halo'). (4) FORAJIDO: desvanecimiento por SILUETA (alfa real, fuera el plano negro rectangular); descubierto = 2 s; CORAZÓN en posición aleatoria del cuerpo; DISPARO con humo de pistola (fx.smokeGun, bocanada baja en la boca del cañón), bala trazadora más visible, MÁS SANGRE, vibración en LOS DOS mandos y GRITO sintetizado; el TNT escondido es más alcanzable (hitR 0,55 / hitH 1,10). (5) DUELO (superpoder dinamita etapas 1/3/5): el cartucho queda TOTALMENTE ESTÁTICO al tocar la mesa (fuera volteo/bote/rodadura) y LA BOLA TAMBIÉN LO DETONA (barrido del recorrido del frame). (6) DERROTA del asedio: Forajido_lauging riéndose, fundido a negro, Forajido_victory y risas_pueblo.mp3 (asset nuevo). (7) CARTELES EXPLICATIVOS antes de TODAS las pruebas (asedio y tren aquí; arkanoid y orbe en sus módulos) con maquetación cuidada (envuelto con measureText, sin cortes), vía núcleo showInstrucciones().",
+  "note_dbg": "v2.108 · MODO DEPURACIÓN «foro3d»: nombre del jugador = foro3d → el mapa levanta todas las tapas y el gatillo salta a cualquier etapa sin requisitos (vía rejugada, progreso real congelado). El núcleo no persiste registros de este jugador (pp_champ_*/pp_arcade_*/stats), no publica ranking mundial ni telemetría, y muestra rótulo «MODO DEPURACIÓN» (2D portada + 3D visor).",
+  "note_v2109": "v2.109 (módulo v28): RECONSTRUCCIÓN COMPLETA de la PRUEBA 2 «Asalto al Tren» — EL VAGÓN DE MERCANCÍAS (arte del artista en room/vagon/: suelo, techo, frontal de cajas, trasera con puerta y dos laterales con VENTANAS recortadas alfa píxel a píxel — derecha x[805,1595] y[165,545] · izquierda x[715,1545] y[150,505], r 44). La escena se CIERRA sobre el jugador: nada tiembla dentro, las ventanas son la ÚNICA referencia de movimiento. Fuera corre el desierto en 4 PLANOS DE PARALLAX con los multiplicadores del artista (P1 montañas 0,05× a 140 m · P2 colinas/estructuras 0,15× a 70 m · P3 postes/terreno 0,40× a 28 m · P4 arbustos/rocas 1,00× a 9 m; nubes 0,02×) — cada plano se centra en el cono visible de su ventana y su horizonte cae a la altura del ojo (1,6 m). Si existen assets/parallax/plano1..4.png se usan en cuanto el artista los pase (fallback: siluetas procedurales). El trayecto son 3 PARADAS de 2 MINUTOS máximo: el tren nace DETENIDO en la estación 1 (BRAVOS), silba y arranca (0,55 m/s² hasta 2,6 m/s); cada parada trae su oleada de cajas fuertes (repisas → raíles → compuertas) junto al frontal pintado; al completarla el tren FRENA (v²=2·a·d) hasta el andén siguiente (DRY GULCH, PERDIDO, BRAVOS), espera 4,6 s y vuelve a arrancar. Andenes de madera a ambos lados con postes, tejadillo y cartel pintado por parada. SILBATO + TÚNEL: las ventanas se apagan (roca al 97%) y sólo brillan los candados. Rumor de locomotora proporcional a la marcha. Reloj POR PARADA (2:00; antes 3:00 globales) con HUD «PARADA n/3 · x/y». La cámara sube FAR 60→500 durante la etapa (restaurado al salir). Paredes laterales con alphaTest (cutout en pase opaco): el hueco deja ver el mundo sin romper el orden de transparencias.",
+  "note_v2111": "v2.111 (módulo v30) «EL BOTÍN DEL TREN» — RECONVERSIÓN de la etapa 4 a la spec definitiva: pirámide ARKANOID de CAJONES de madera (5-3-2 sobre un muelle de madera junto al frontal, texturas del artista cubos/: cubo1-3 neutros, cubolingote1-2 con CANDADO dorado y cubolingoteabierto1-2 al abrirse) con reparto ALEATORIO de 2-3 lingotes por pirámide (nunca más de 1 por cajón) y FÍSICA DE GRAVEDAD (cada cajón se apoya en los dos de su fila inferior: al perderlos CAE; pirámide nueva al vaciarla). La bola SAQUE DE UN PORTAL (portals.webp del wizard) sobre la mesa del jugador y el cajón con candado, al golpearlo, cambia de textura, TIEMBLA 1 s, REVIENTA y lanza el lingote (lowpoly_gold_bar.glb) en PARÁBOLA hasta la mesa del rival, donde se APILA (HUD ligotes.png «X / Y» arriba a la izquierda; objetivos 3·5·7 por parada de 2 min, se comprueban AL LLEGAR a la estación y cada parada empieza a 0). FORAJIDO GALOPANTE: sprite sheet en bucle (galope1-3 de perfil) que cabalga PARALELO al tren, lo ADELANA y aparece ~10 veces por trayecto por AMBOS lados (nunca a la vez): GALOPE DE PASO cruza la ventana; GALOPE DE ATAQUE se planta en el centro 4 s con galope_ventana1-3 (limpio) o galope_ventana*_dispara con la DIANA del artista en posición variable — acierto: galope_herido.png 1 s + fundido a negro y conserva el botín; fallo: humo de la boca del revólver, ¡BANG! y ROBO de 1 lingote de la pila. PALA + REVÓLVER (mano libre, gatillo → trigger del vagón) todo el trayecto. MÚSICA PROPIA del vagón (vagon.mp3 en bucle, fuera la BSO del saloon). SUELO DE ARENA procedural del vagón. ANTI-MANCHÓN NEGRO: P1 del parallax pasa a recorte alfa OPACO (alphaTest), capas con depthWrite:false, cielo ampliado a 400x180 y el fondo del mundo se tiñe de CIELO durante la etapa (restaurado al salir).",
+  "note_v2116": "v2.116 (módulo v35) BETA1: (1) bolas EXTRA del vórtice cada 4 s (antes 1 s); (2) túnel del artista NACE A 10 m con fase pre — la boca se ve llegar con luz normal y al cruzar la ventana la luz cae al 20%; duración 8 s para apreciar también la boca de salida espejada; (3) el jinete galopante NO aparece durante el túnel (desaparece y reprograma); (4) superpoderes en escena 5 s (antes 3 s); (5) física de cajones: soportes por posición real (posiciones/alturas, no filas) — las cajas nunca flotan; fila refrescada al aterrizar; (6) etapa 2 del pueblo: perWave 3/5/7 (reparto original recuperado), MARCADOR contador.png arriba-izquierda del HUD con los forajidos que faltan por oleada (asset regenerado: se perdió con el reinicio del sandbox), sangre del visor con salpicadón que cambia de sitio y giro en cada disparo. La línea de casas lineapueblo.webp (v2.106) que llega al suelo sigue en su sitio y se re-verifica.",
+  "note_v2117": "v2.117 (módulo v36) EL PUEBLO CON EL ARTE REAL: (1) MARCADOR del asedio con el contador.png DEL ARTISTA (la carta pergamino con el forajido, antes un letrero regenerado) arriba a la izquierda con la cuenta pintada en su zona libre y JUNTO a él el RELOJ de la oleada (reloj.png, teñido) con el tiempo restante — en el asedio ya no hay reloj central duplicado; (2) CASA DEL SHERIFF corregida con el arte nuevo Fachada2/Interior2 que SÍ LLEGA AL SUELO (el anterior flotaba 33 cm: contenido v_bottom 0.13 → 0.006) y línea verde de zonas2.jpg re-medida píxel a píxel (v 0.238 → 0.114, u sin cambios); (3) LA ESTRELLA DEL SHERIFF se caza TAMBIÉN CON EL REVÓLVER: rayo con asistente ×1.5, láser caliente al apuntarle, el disparo se gasta y destapa al forajido con +12 s (textos ES/EN actualizados); (4) PARADAS del tren: la parada N muestra SU PARADAn.png (mapeo off-by-one corregido: la 1 mostraba PARADA2, la 2 PARADA3 y la 3 PARADA1); (5) TÚNEL SE VE ENTERO: bocas tunelboca de 3,4 m centradas en la ventana (bocaY 1.72), banda tunel.png COSIDA borde a borde entre boca de entrada y boca de salida espejada (cero hueco) y fases del túnel POR DISTANCIA (pre→in al pasar el ojo, dur→out al asomar la boca de salida a 3 m) — la secuencia queda clavada a la velocidad real del mundo.",
+  "note_v2118": "v2.118 (módulo v37) AJUSTES DEL ARTISTA: (1) NINGÚN TÚNEL cuando se aproxima una ESTACIÓN — no nace si la parada llega en <30 s (TREN.tunel.bloquea), se retira en _llegaEstacion y espera 12 s tras _depart (boca y andén ya no se solapan); (2) BOCAS del túnel CORRECTAS en las dos paredes: tunelboca.png NORMAL al entrar (la izquierda iba espejada) y ESPEJADA al salir (la izquierda iba normal); (3) SUPERPODERES de la mesa 8 s en escena (antes 5); (4) ESTACIONES PARADA al SUELO: cada arte se cota a su altura (TREN.estacionY 1:0.75 · 2:1.75 · 3:1.03) para que raíles/andén asienten en la arena — PARADA1 flotaba ~1 m y se veía hueca por debajo; (5) HUD del asedio CLARO: progreso «OLEADA n/3» sin duplicar la cuenta del marcador (chocaba con el reloj de la oleada), mensajes envueltos a 2 líneas con auto-ajuste de fuente (canvas 640×280), HUD subido a y 2.52 y cartel de oleada bajado a y 1.38 (ya no tapa el banderín); (6) LA ESTRELLA DEL SHERIFF DA SU PISTOLA: al aparecer, la pala de la mano libre se cambia por el revólver (_starGunApply, sin munición, láser y gatillo por mano, _gunLoaded excluye esa pala) y al desaparecer la estrella vuelve la pala; si un forajido se destapa, los dos revólveres de diana toman el relevo.",
+  "note_v2119": "v2.119 (módulo v38) CORRECCIONES + RANKING CON SENTIDO: (1) TÚNEL PARED DERECHA arreglado — el cosido boca-banda va SIEMPRE por el borde u=1 de tunelboca.png (el arco abierto): en la derecha los signos se INVIERTEN (entrada espejada, salida normal) y por las DOS ventanas se ve el mismo túnel continuo (antes la derecha mostraba las bocas 'espejadas y mal'); (2) LA PISTOLA DE LA ESTRELLA ya no se come el destape: al cazarla con ella, _breach monta DOS revólveres frescos y ya no se gasta uno con el disparo que la cazó (antes quedaba 1 bala y, gastada, sin pistola para el forajido); (3) ESTACIONES Y PARALLAX MÁS ALTOS ('sólo vemos el techo'): estacionY 1:1.85 · 2:1.95 · 3:1.85 y pies del parallax P2 -2.2 · P3 -0.6 · P4 +0.35; el hueco transparente entre andén y raíles de PARADA1 se RELLENA en carga (canvas: franjas interiores sombreadas) — fin del 'hueca la parte inferior'; (4) PUNTOS DEL CAMPEONATO persistentes (pp_champ_oeste_puntos): forajido +100 · estrella +150 · oleada +200 · asedio +300 · punto duelo +25 · duelo +250 · cajón +20 · lingote +100 · jinete ventana +150 · indio +150 · parada +250 · trayecto +300, con '+N' dorado flotante y chip de estrella en el HUD; EL RANKING MUNDIAL publica p: puntos (antes victorias de duelo); (5) EL INDIO CABALGANTE (indio1-4.png, UN estado de cabalgada): grupos de 1-3 jinetes ligeramente separados que aparecen SÓLO cuando el forajido no está en pantalla (y nunca en el túnel), cabalgan hasta la parte media de la ventana (yBase 1.75) con la MIRILLA siempre encima, sueltan una FLECHA visible que roba un lingote (mismo efecto rojo-levitante que el forajido, sólo si hay oro en la mesa) y se marchan; si les das: indioalcanzado.png 1 s y se desvanecen (+150).",
+  "note_v2120": "v2.120 (módulo v39) AUDITORÍA + 2 SUPERPODERES NUEVOS: (1) TORMENTA DE ARENA — polvo cálido sobre tu campo 8 s (14 velos girando + 3 rodantes botando, powerarena.png en el cartel); (2) ESTAMPIDA — 6 bisontes cruzan detrás de la mesa con polvo, retumbe y vibración 6,5 s (powerestampida.png); bolsa del forajido = 4 (disparo, dinamita, arena, estampida); (3) el cartel ¡SUPERPODER! muestra el icono del poder anunciado; (4) auditoría: pool de la bala trazadora del duelo (0 create/dispose por disparo), rayo del revólver sin allocs por frame, bolas extra del tren con recamb io (el array ya no crece sin tope), HudOeste.dispose() libera textura/material/geometría, listener pp-lang con nombre, _endPower cierra aviso y flancos, diana con re-enganche tardío si el arte cargó tarde.",
+  "note_v2121": "v2.121 (módulo v40) MINIATURAS PARA LOS PODERES CLÁSICOS: el forajido estrena powerdisparo.png (bala trazadora) y powertnt.png (dinamita) — los 4 poderes lucen ahora SU icono propio en el cartel ¡SUPERPODER! (powerdisparo, powertnt, powerarena, powerestampida). Cero cambios de gameplay.",
+  "note_v2122": "v2.122 (módulo v41) AUDITORÍA DE MÚSICA — UNA MELODÍA SIEMPRE: FIX del SOLAPO del TREN — al arrancar la prueba del tren la BSO del saloon seguía sonando (ranura _mus del ForajidoStand) y el TrenAction arrancaba ARRIBA vagon.mp3 (ranura _mus propia): DOS pistas melódicas solapadas durante todo el trayecto (y vagon.mp3 era inaudible bajo la BSO). Ahora: _startTren retira la BSO del saloon ANTES de arrancar el tren (musicOff) y _endPrueba la trae de vuelta en la sala (musicOn, idempotente — en el asedio la BSO sigue viva y no se duplica). El rumble de la locomotora (ruido) y los jingles de oleada (puntuales) no cambian. Núcleo 2.122.0: invariante UNA MELODÍA en startMusic() del núcleo — la música del menú fuerza el duck de la BSO del campeonato aunque algún camino futuro olvide setArcDuck. Sin cambios de jugabilidad ni de arte.",
+  "note_v2124": "v2.124 (módulo v42) AUDITORÍA DE MÚSICA II: la BSO propia (motor v2.78) RESUCITA sola tras cada re-creación del contexto de audio (salir/entrar de VR, rescate del watchdog) — en el TREN no reviva: ahí manda vagon.mp3 (regla v2.122); y ahora ENTRA CON FUNDIDO de 0,8 s (antes arrancaba a volumen pleno junto al fade-out de la música del menú). El núcleo 2.124.0 completa la invariante UNA MELODÍA por los dos sentidos y en la portada la BSO espera (no se pisa con la música 2D). Sin cambios de jugabilidad ni de arte.",
+  "note_v2125": "TORMENTA DE ARENA: la nube y los 3 rodantes aparecian DETRAS del jugador (franja z positiva; el campo propio es z negativo, convencion confeti/mareo) - ahora z -1,50..+0,05 y rodantes sobre TU media mesa (z -1,05). rodante.png: canal alfa reconstruido (el PNG traia fondo blanco con tablero de ajedrez pintado como falsa transparencia y el suelo del estudio opaco - recorte sucio en VR). Tren: decodeAudioData en FORMA PROMESA con copia slice(0) - la forma callback puede no dispararse jamas con la GPU saturada y la musica del vagon moria con _musBusy colgado. _startMusic: si la BSO del nucleo (Locura) esta sonando, la nuestra no entra (UNA MELODIA en ambos sentidos).",
+  "contract": 1,
+  "estado": "publicado",
+  "description": {
+    "es": "Confróntate con el FORAJIDO en el Salvaje Oeste: duelo de ping pong con revólver y dinamita, asedio al escondite, asalto al tren y superpoderes de arena y estampida. El trofeo: la estrella del sheriff.",
+    "en": "Face the OUTLAW in the Wild West: ping pong duel with revolver and dynamite, hideout siege, train heist and sandstorm/stampede super powers. The trophy: the sheriff star."
+  },
+  "powers": [
+    {
+      "kind": "disparo",
+      "name": "Disparo certero",
+      "chance": 0.3,
+      "warn": 2.5
+    },
+    {
+      "kind": "dinamita",
+      "name": "Dinamita",
+      "chance": 0.3,
+      "warn": 3
+    },
+    {
+      "kind": "arena",
+      "name": "Tormenta de arena",
+      "chance": 0.28,
+      "duration": 8
+    },
+    {
+      "kind": "estampida",
+      "name": "Estampida",
+      "chance": 0.25,
+      "duration": 6.5
+    }
+  ],
+  "stages": [
+    {
+      "id": "duelo",
+      "name": "Duelo al mediodía",
+      "kind": "duelo"
+    },
+    {
+      "id": "asedio",
+      "name": "Asedio al escondite",
+      "kind": "objetos"
+    },
+    {
+      "id": "tren",
+      "name": "Asalto al tren",
+      "kind": "tren"
+    }
+  ],
+  "audio": {
+    "music": "assets/bso.mp3",
+    "musicVolume": 0.18,
+    "sounds": {
+      "vagon": "assets/vagon.mp3"
+    }
+  },
+  "notes": [
+    "2026-10-12: migrado al esquema v2.125 (contract 1) — sin cambios de comportamiento",
+    "note_v2140: EL VAGÓN A PUNTO — (1) botes fantasma junto a la red: la frontera del bote arkanoi zonaZ pasa de -2.2 a -1.6 (SÓLO campo del jugador; en campo enemigo la bola sigue su trayectoria). (2) lingotes apilados EN EL SUELO a ambos lados de la mesa (pilas simétricas x ±1.10/±1.38, z -1.00..-0.82), capas de 6 (2x3) alternando lado, apilado EXACTO con la altura real del GLB (nada de offsets fijos), yaw 0 al aterrizar. (3) suelo del vagón con la tarima del dueño room/vagon/suelo.jpg (mapeo 1:1) — fuera la arena procedural. (4) MEGAFONÍA de estación: salidas 'Pasajeros al tren, partimos hacia…' [destino], llegada a los 30 s del final 'En menos de 25 segundos llegaremos a…' [estación], arribo OK 'Cargamento de oro a buen recaudo' + recompensa.png, arribo KO forajido_robo.png + risas_forajido.mp3; voz del banco del núcleo (announce VR-safe) con claves tren_mega_* es/en y átomos mega_* en VOICE_B64/B64_EN + VOICE_FULL.",
+    "2026-10-19 v3.6.2-SDK2 · FASE 4 de la modularización P0 · SDK DE CAMPEONATOS: los 4 motores SFX one-shot (risa del forajido, risa del pueblo, jingle de oleada y risas del robo del vagón) y los 3 congelados (duelo de revólver ×2 y aviso de superpoder) delegan en championships/sdk/champ_sdk.js v1.1.0 con conducta idéntica (volúmenes, anti-spam de 3,2 s y paneo 0,4 intactos; el silencio del arcade ahora se respeta como en el orbital y La Locura); el puente al núcleo pasa a getCore(). La MÚSICA en bucle (BSO del saloon y vagón) conserva su motor propio (fundido, resurrección de contexto y UNA MELODÍA) hasta que el SDK estrene createMusic."
+  ],
+  "note_v2134": "v2.134 (módulo v44) EL TREN A PUNTO — 5 observaciones del dueño en el casco (etapa 4): (1) PARADAS SIN REPETIR — la estación de SALIDA (BRAVOS) lucía PARADA1.png, la misma imagen que la parada 1; ahora la salida estrena SU arte PARADA0.png (placa BRAVOS) y las 4 estaciones del trayecto son distintas. (2) MÁS VEGETACIÓN en la panorámica exterior p1_* — arbustos/cactus del propio artista compuestos sobre el suelo de arena de las DOS panorámicas con perspectiva, racimos y bruma de distancia. (3) TÚNEL CON PROFUNDIDAD — las 3 piezas (boca·banda·boca) estaban coplanares a 0,5 m de la ventana; ahora cada pared del túnel se INCLINA hacia fuera (rotación Y ∓13,7°) y arranca más lejos (x 3,55→3,75): se ve DENTRO del túnel, no un decorado pegado. (4) LA PARED DEL FONDO REBOTA — la bola que sobrevuela la pirámide ya no muere contra el frontal del vagón (z=-5,55): rebota (0,72) con chispazo y golpe seco y puede golpear las cajas DESDE ATRÁS; también las EXTRAS. (5) SUPERPODERES DE VERDAD — X3: las 3 bolas salen con TIRO BALÍSTICO a cajas apiladas reales (izquierda·centro·derecha, impacto asegurado; fuerza el tope del pool); DINAMITA: CADENA — la bola-bomba estalla SIEMPRE que toca caja, rebota y sale cazando la caja viva más cercana hasta agotar TODAS las activas en el momento del poder, con brote final; vigilante anti-atasco (re-apunte a los 3,2 s)."
+}

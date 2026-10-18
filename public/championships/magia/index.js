@@ -163,10 +163,17 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+// v3.6.2-SDK2 · FASE 4 de la modularización P0: kernel compartido de los 5
+// campeonatos (championships/sdk/champ_sdk.js) — la risa del mago y el
+// congelado del aviso delegan en él (el fix «forma promesa» v2.125 llegó a
+// estar copiado 2 veces aquí). La BSO en bucle conserva su motor propio
+// hasta que el SDK estrene createMusic.
+import { createSfx, congela, getCore } from '../sdk/champ_sdk.js';
 
 /* Primitivas del NÚCLEO vía window.__PP_CORE (v2.53). ChampLoader importa
  * este módulo SOLO tras cargar el juego, así que el puente ya está puesto. */
-const __CORE = (typeof window !== 'undefined' && window.__PP_CORE) || {};
+// v3.6.2-SDK2: el puente al núcleo vive en el SDK (getCore) — una sola fuente.
+const __CORE = getCore() || {};
 const DIMS = __CORE.DIMS;
 const stepPhysics = __CORE.stepPhysics;
 const T = __CORE.T;
@@ -3815,38 +3822,35 @@ class WizardController {
     }
   }
 
+  /* v3.6.2-SDK2 · motor SFX del SDK de campeonatos (una instancia por
+   * controlador, cache propia; assets relativos a ESTE módulo). */
+  __sfxSDK() {
+    if (!this.__sdkSfx) this.__sdkSfx = createSfx(import.meta.url, () => this.game);
+    return this.__sdkSfx;
+  }
+
+  /* v3.6.2-SDK2 (FASE 4): la risa del mago la reproduce el SDK de
+   * campeonatos (cache + lección v2.125 + silencio del arcade respetado,
+   * como el orbital y La Locura). El anti-spam de 3,2 s se conserva aquí;
+   * el panNode(0) del núcleo era paneo centrado (sin efecto audible) y el
+   * motor canónico añade la regla de silencio de la familia. */
   loadLaugh() {
-    try {
-      const g = this.game;
-      const url = this.manifest && this.manifest.laughUrl;
-      if (!g.audio || !g.audio.ctx || !url || this._laughBuf || this._laughBusy) return;
-      this._laughBusy = true;
-      fetch(url)
-        .then((r) => r.arrayBuffer())
-        .then((ab) => new Promise((res, rej) => {
-          // v2.125: forma promesa (la callback puede no dispararse jamás)
-            try { res(g.audio.ctx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
-        }))
-        .then((buf) => { this._laughBuf = buf; this._laughBusy = false; })
-        .catch(() => { this._laughBusy = false; });
-    } catch (e) { /* */ }
+    try { this.__sfxSDK().precarga('risas.mp3'); } catch (e) { /* */ }
   }
 
   _playLaugh() {
     try {
       const g = this.game;
-      if (!this._laughBuf || !g.audio || !g.audio.ctx) return false;
+      if (!g.audio || !g.audio.ctx || g.audio.ctx.state !== 'running') return false;
       const now = Date.now();
       if (now - (this._lastLaugh || 0) < 3200) return true;
+      const eng = this.__sfxSDK();
+      if (!eng.tiene('risas.mp3')) {
+        eng.precarga('risas.mp3');        // aún decodificando: sin gasto
+        return false;
+      }
       this._lastLaugh = now;
-      const out = g.audio.panNode ? g.audio.panNode(0) : null;
-      const src2 = g.audio.ctx.createBufferSource();
-      src2.buffer = this._laughBuf;
-      const gain = g.audio.ctx.createGain();
-      gain.gain.value = 1.0;
-      src2.connect(gain);
-      gain.connect(out || g.audio.ctx.destination);
-      src2.start();
+      eng.play('risas.mp3', 1.0);
       return true;
     } catch (e) { return false; }
   }
@@ -3871,6 +3875,9 @@ class WizardController {
       const url = this.manifest && this.manifest.musicUrl;
       if (!url || this._musicBusy) return;
       this._musicBusy = true;
+      // v3.6.2-SDK2: la BSO en bucle conserva su motor propio (fundido 0,8 s,
+      // resurrección de contexto y UNA MELODÍA con el núcleo); el SDK v1.x la
+      // unificará con createMusic. El fix v2.125 ya vive aquí.
       fetch(url)
         .then((r) => r.arrayBuffer())
         .then((ab) => new Promise((res, rej) => {
@@ -4451,8 +4458,8 @@ class WizardController {
     this._setStateSilent('crazy', Math.min(3.4, Math.max(2.2, warn * 1.3)));
     // v2.120: el cartel muestra el ICONO del poder anunciado si lo tiene
     this.powerSign.show(cfg.icon ? this._A(cfg.icon) : null);
-    g.freezeT = Math.max(g.freezeT || 0,
-      Math.max(this.powerSign.T_OUT, warn) + 0.1);
+    // v3.6.2-SDK2: congela() del SDK (patrón locura v2.40, una sola fuente)
+    congela(g, Math.max(this.powerSign.T_OUT, warn) + 0.1);
     this.voice('powerup');
     g.rules.message = tx('pw_warn');
     if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.6, 200);

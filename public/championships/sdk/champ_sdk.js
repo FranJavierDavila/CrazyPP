@@ -1,7 +1,10 @@
 /* ============================================================================
- *  CRAZY PING PONG · SDK DE CAMPEONATOS (champ_sdk.js) — v1.0.0
+ *  CRAZY PING PONG · SDK DE CAMPEONATOS (champ_sdk.js) — v1.1.0
  * ----------------------------------------------------------------------------
  *  FASE 3 del plan de modularización P0 (acordado con el dueño).
+ *  v1.1.0 (FASE 4): precarga() (pedir+decodificar sin sonar, para los
+ *  patrones load* de la casa) y play(name, vol, opts) con opts.pan
+ *  (StereoPanner opcional, el paneo de la risa del Oeste).
  *
  *  POR QUÉ EXISTE — LA FAMILIA DE BUGS:
  *  Los 5 campeonatos son módulos autocontenidos que reimplementaban una y
@@ -27,13 +30,16 @@
  *    · Comportamiento canónico = la implementación más reciente con QA
  *      verde (orbital v3.6.0-SUP1 · locura v2.40).
  *
- *  MIGRACIÓN (FASE 4, pendiente): oeste (7 copias SFX), magia (2), locura
- *  (motor propio ya correcto), valle_neon. Sala6/Rival/HUD compartidos
- *  llegarán en fases posteriores del SDK (v1.x).
+ *  MIGRACIÓN — FASE 4 HECHA (v3.6.2-SDK2): oeste (4 motores SFX one-shot
+ *  + 3 congelados + puente getCore), magia (risa del mago + congelado +
+ *  puente), locura (congelado del patrón origen + puente), valle_neon
+ *  (puente). PENDIENTE en SDK v1.x: la MÚSICA en bucle (BSO/vagón/valle
+ *  conservan su motor propio por fundido, resurrección de contexto y sync
+ *  con el núcleo — createMusic la unificará) y Sala6/Rival/HUD compartidos.
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.0.0';
+const SDK_VERSION = '1.1.0';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -88,7 +94,9 @@ export function descongela(game) {
  *      import { createSfx } from '../sdk/champ_sdk.js';
  *      ...
  *      this._sdkSfx = createSfx(import.meta.url, () => this.game);
+ *      this._sdkSfx.precarga('risa_astro.mp3');   // opcional: calienta cache
  *      this._sdkSfx.play('risa_astro.mp3');
+ *      this._sdkSfx.play('risas.mp3', 0.8, { pan: 0.4 });  // paneo derecho
  *
  *  moduleURL: import.meta.url DEL CAMPEONATO (los assets cuelgan de su
  *  carpeta assets/). getGame: función que devuelve el objeto game del
@@ -99,19 +107,29 @@ export function createSfx(moduleURL, getGame) {
 
   function url(p) { return assetURL(moduleURL, p); }
 
-  function play(name, vol) {
+  /* Petición + decodificación UNA vez (la lección v2.125: forma promesa).
+   * No exige ctx running (decodificar vale con el contexto suspendido):
+   * así la precarga del patrón load* funciona igual que los motores
+   * antiguos. Guard anti-doble-petición por nombre. */
+  function pedir(name) {
+    const g = (typeof getGame === 'function') ? getGame() : getGame;
+    const actx = g && g.audio && g.audio.ctx;
+    if (!actx) return;                   // sin contexto: nada que decodificar
+    if (bufs[name] || busy[name]) return;
+    busy[name] = true;
+    fetch(url(name))
+      .then((r) => r.arrayBuffer())
+      .then((ab) => actx.decodeAudioData(ab.slice(0)))  // forma promesa (v2.125)
+      .then((buf) => { bufs[name] = buf; busy[name] = false; })
+      .catch(() => { busy[name] = false; });
+  }
+
+  function play(name, vol, opts) {
     try {
       const g = (typeof getGame === 'function') ? getGame() : getGame;
       const actx = g && g.audio && g.audio.ctx;
       if (!actx || actx.state !== 'running') return;
-      if (!bufs[name] && !busy[name]) {
-        busy[name] = true;
-        fetch(url(name))
-          .then((r) => r.arrayBuffer())
-          .then((ab) => actx.decodeAudioData(ab.slice(0)))  // forma promesa (v2.125)
-          .then((buf) => { bufs[name] = buf; busy[name] = false; })
-          .catch(() => { busy[name] = false; });
-      }
+      pedir(name);
       const buf = bufs[name];
       if (!buf) return;                    // aún decodificando: en silencio
       const src = actx.createBufferSource();
@@ -120,15 +138,27 @@ export function createSfx(moduleURL, getGame) {
       const A = g.audio;
       gn.gain.value = (A && (A.arcMute || A._arcDucked)) ? 0.0001
                                                          : (vol == null ? 0.65 : vol);
-      src.connect(gn);
-      gn.connect(actx.destination);
+      let nodo = gn;
+      const pan = opts && opts.pan;      // v1.1.0: paneo estéreo opcional
+      if (pan && actx.createStereoPanner) {
+        const pn = actx.createStereoPanner();
+        pn.pan.value = pan;              // −1 izquierda · +1 derecha
+        gn.connect(pn);
+        nodo = pn;
+      }
+      nodo.connect(actx.destination);
       src.start();
     } catch (e) { /* sin SFX: nunca rompe el frame */ }
   }
 
+  /* Pedir + decodificar SIN sonar (patrón load* de la casa). */
+  function precarga(name) {
+    try { pedir(name); } catch (e) { /* nunca rompe */ }
+  }
+
   function tiene(name) { return !!bufs[name]; }   // para diagnósticos/QA
 
-  return { play, url, tiene };
+  return { play, url, tiene, precarga };
 }
 
 /* — Export por defecto (comodidad para imports cortos) ——————————————— */

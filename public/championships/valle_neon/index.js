@@ -14,8 +14,14 @@
  *  ignoreNet (documentado), showInstrucciones (cartel de normas).
  *  ============================================================================ */
 import * as THREE from 'three';
+// v3.6.2-SDK2 · FASE 4 de la modularización P0: el puente al núcleo vive en
+// el SDK de campeonatos (championships/sdk/champ_sdk.js) — una sola fuente
+// para los 5 módulos. Este módulo (data-driven del Taller) no tiene SFX mp3
+// ni congelados propios: su música WAV en bucle conserva el motor propio
+// (createMusic del SDK la unificará en una fase posterior).
+import { getCore } from '../sdk/champ_sdk.js';
 
-const CORE = (typeof window !== 'undefined' && window.__PP_CORE) || null;
+const CORE = getCore();
 const GAME = { g: null };
 let CTRL = null;
 let TL = 'es';

@@ -123,9 +123,16 @@
  *  ===================================================================== */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';   // v2.74: pistol.glb
+// v3.6.2-SDK2 · FASE 4 de la modularización P0: kernel compartido de los 5
+// campeonatos (championships/sdk/champ_sdk.js). La Locura es el ORIGEN del
+// patrón de congelado (v2.40): ese patrón vive ahora en el SDK y el módulo
+// lo usa de allí — una sola fuente para la familia. Sin SFX mp3 propios
+// (los sonidos del rival van por el núcleo vía manifest "sounds").
+import { congela, getCore } from '../sdk/champ_sdk.js';
 
 // Puente de SOLO LECTURA con el núcleo (window.__PP_CORE)
-const __CORE = (typeof window !== 'undefined' && window.__PP_CORE) || {};
+// v3.6.2-SDK2: el puente vive en el SDK (getCore) — una sola fuente.
+const __CORE = getCore() || {};
 const T = __CORE.T;
 const DIMS = __CORE.DIMS;
 const stepPhysics = __CORE.stepPhysics;
@@ -3738,8 +3745,9 @@ class ArcadeController {
     // juego: se anuncia el superpoder sin molestar a la partida.
     // v2.120: el cartel muestra el ICONO del poder anunciado si lo tiene.
     this.powerSign.show(cfg.icon ? this._A(cfg.icon) : null);
-    g.freezeT = Math.max(g.freezeT || 0,
-      Math.max(this.powerSign.T_OUT, warn) + 0.1);
+    // v3.6.2-SDK2: congela() del SDK — el patrón v2.40 que nació aquí vive
+    // ahora en UNA sola fuente para los 5 campeonatos.
+    congela(g, Math.max(this.powerSign.T_OUT, warn) + 0.1);
     g.audio.rivalSfx('powerup');
     g.rules.message = T('arc_power_warn');
     if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.6, 200);

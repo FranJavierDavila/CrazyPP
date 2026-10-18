@@ -108,10 +108,16 @@ FASES COMPLETADAS (plan P0 acordado con el dueño)
     congela()/descongela() del patrón locura v2.40, getCore, assetURL).
     El orbital estrena la adopción (manifest v14) y los ZIPs llevan el
     SDK dentro de championships/sdk/.
+  · Fase 4 (V3.6.2-SDK2): el SDK v1.1.0 (precarga() + opts.pan) lo
+    usan LOS 5 campeonatos — oeste (4 motores SFX one-shot + 3
+    congelados + puente; manifest v49), magia (risa del mago +
+    congelado + puente; v29), locura (el congelado patrón v2.40 que
+    nació ahí + puente; v21) y valle_neon (puente; v2). Conducta
+    idéntica: volúmenes, anti-spam y paneo intactos; la música en
+    bucle conserva su motor propio hasta createMusic (SDK v1.x).
 PRÓXIMA FASE
-  · Fase 4: adoptar el SDK en oeste (7 copias del fix v2.125), magia
-    (2), locura y valle_neon + extraer Sala6/Rival/HUD compartidos.
-    Los «candidatos SDK» de DEPENDENCIAS.md marcan el camino en el
-    núcleo.
+  · SDK v1.x: createMusic (unificar los bucles BSO/vagón/valle) y
+    Sala6/Rival/HUD compartidos. Los «candidatos SDK» de
+    DEPENDENCIAS.md marcan el camino en el núcleo.
   · Cada fase conserva la cadena de release: game.html sigue siendo
     un único fichero autocontenido para los ZIPs.

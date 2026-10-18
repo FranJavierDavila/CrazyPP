@@ -459,6 +459,12 @@
  *  ============================================================================ */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+// v3.6.2-SDK2 · FASE 4 de la modularización P0: kernel compartido de los 5
+// campeonatos (championships/sdk/champ_sdk.js). Los 4 motores SFX one-shot
+// y los 3 congelados delegan en él (el fix «forma promesa» v2.125 llegó a
+// estar copiado 6 veces en este módulo). La MÚSICA en bucle (BSO del saloon
+// y vagón) conserva su motor propio hasta que el SDK estrene createMusic.
+import { createSfx, congela, getCore } from '../sdk/champ_sdk.js';
 
 /* Parámetros de la sala (mismo patrón que MAGIA en el módulo del mago). */
 const OESTE = {
@@ -1275,7 +1281,8 @@ function ppDbg() {
 }
 /* v2.94 · Física del NÚCLEO para las PRUEBAS (patrón magia): stepPhysics +
  * colisionador extra corre a 480 Hz dentro del integrador (anti-túnel). */
-const __CORE = (typeof window !== 'undefined' && window.__PP_CORE) || {};
+// v3.6.2-SDK2: el puente al núcleo vive en el SDK (getCore) — una sola fuente.
+const __CORE = getCore() || {};
 const stepPhysics = __CORE.stepPhysics;
 
 /* v2.92 · TEMPORALES de módulo para el CAMINO CALIENTE por frame (chispas
@@ -2269,7 +2276,8 @@ class DueloAction {
     this._zone = this.ctrl.dianaZone || 3;
     this._hopT = DUELO_P.hopT;
     // BOLA CONGELADA en su posición durante todo el margen del duelo
-    g.freezeT = Math.max(g.freezeT || 0, DUELO_P.drawT + DUELO_P.window + 0.35);
+    // v3.6.2-SDK2: congela() del SDK (el patrón de la casa, una sola fuente).
+    congela(g, DUELO_P.drawT + DUELO_P.window + 0.35);
     this.phase = 'draw';
     this.t = 0;
     this.ctrl.sfx('desenfundar', 0.4);
@@ -2318,7 +2326,7 @@ class DueloAction {
       if (k >= 1) { this.phase = 'duel'; this.t = 0; this._lastTick = 99; }
     } else if (this.phase === 'duel') {
       // EL MARGEN CORRE SIEMPRE (la bola sigue congelada: freezeT reposado)
-      g.freezeT = Math.max(g.freezeT || 0, 0.10);
+      congela(g, 0.10);   // v3.6.2-SDK2: congela() del SDK
       // v2.90: SIN contador 3·2·1 sobre la diana — solo el tic-tac sonoro
       const n = Math.ceil(DUELO_P.window - this.t);
       if (n !== this._lastTick && n >= 0) {
@@ -8661,38 +8669,34 @@ class TrenAction {
     if (this.premio) { this.group.remove(this.premio); this.premio = null; }
   }
 
-  /* ============ v2.140 · RISAS del FORAJIDO (robo de la parada) ========== */
+  /* ============ v2.140 · RISAS del FORAJIDO (robo de la parada) ==========
+   *  v3.6.2-SDK2 (FASE 4): el motor vive en el SDK de campeonatos (cache +
+   *  lección v2.125 + silencio del arcade respetado). Aquí queda la
+   *  orquestación: precarga al montar la etapa y reintentos hasta que
+   *  suena (tiene() marca el «ya sonaron» exactamente como antes). */
   loadRisasForajido() {
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      const url = this.ctrl.manifest && this.ctrl.manifest.risasForajidoUrl;
-      if (!actx || !url || this._risaFBuf || this._risaFBusy) return;
-      this._risaFBusy = true;
-      fetch(url)
-        .then((r) => r.arrayBuffer())
-        .then((ab) => new Promise((res, rej) => {
-          // v2.125: forma promesa (la callback puede no dispararse jamás)
-          try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
-        }))
-        .then((buf) => { this._risaFBuf = buf; this._risaFBusy = false; })
-        .catch(() => { this._risaFBusy = false; });
-    } catch (e) { /* */ }
+    try { this.__sfxSDK().precarga('risas_forajido.mp3'); } catch (e) { /* */ }
   }
   _playRisasForajido(vol) {
     try {
       const g = this.game;
       const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running' || !this._risaFBuf) return;
-      const src5 = actx.createBufferSource();
-      src5.buffer = this._risaFBuf;
-      const gain = actx.createGain();
-      gain.gain.value = vol || 0.9;
-      src5.connect(gain);
-      gain.connect(actx.destination);
-      src5.start();
+      if (!actx || actx.state !== 'running') return;
+      const eng = this.__sfxSDK();
+      if (!eng.tiene('risas_forajido.mp3')) {
+        eng.precarga('risas_forajido.mp3');   // aún decodificando: reintento
+        return;
+      }
+      eng.play('risas_forajido.mp3', vol || 0.9);
       this._risaFt = 9;                // ya sonaron: sin reintentos
     } catch (e) { /* */ }
+  }
+
+  /* v3.6.2-SDK2 · motor SFX del SDK de campeonatos (una instancia por
+   * controlador, cache propia; assets relativos a ESTE módulo). */
+  __sfxSDK() {
+    if (!this.__sdkSfx) this.__sdkSfx = createSfx(import.meta.url, () => this.game);
+    return this.__sdkSfx;
   }
 
   /* ======================================================================
@@ -9263,6 +9267,8 @@ class TrenAction {
         this._musBusy = true;
         const url = this.ctrl.manifest && this.ctrl.manifest.vagonMusicUrl;
         if (!url) { this._musBusy = false; return; }
+        // v3.6.2-SDK2: la MÚSICA en bucle conserva su motor propio (el SDK
+        // v1.x la unificará con createMusic); el fix v2.125 ya vive aquí.
         fetch(url)
           .then((r) => r.arrayBuffer())
           .then((ab) => new Promise((res, rej) => {
@@ -12022,6 +12028,9 @@ class ForajidoStand {
       const url = this.manifest && this.manifest.musicUrl;
       if (!url || this._musicBusy) return;
       this._musicBusy = true;
+      // v3.6.2-SDK2: la BSO en bucle conserva su motor propio (fundido 0,8 s,
+      // resurrección de contexto y UNA MELODÍA con el núcleo); el SDK v1.x la
+      // unificará con createMusic. El fix v2.125 ya vive aquí.
       fetch(url)
         .then((r) => r.arrayBuffer())
         .then((ab) => new Promise((res, rej) => {
@@ -12804,8 +12813,8 @@ class ForajidoStand {
     this._setStateSilent('angry', Math.min(3.4, Math.max(2.2, OESTE_POWER.warn * 1.3)));
     // v2.120: el cartel muestra el ICONO del superpoder anunciado
     this.powerSign.show(cfg.icon ? this._A(cfg.icon) : null);
-    g.freezeT = Math.max(g.freezeT || 0,
-      Math.max(this.powerSign.T_OUT, OESTE_POWER.warn) + 0.1);
+    // v3.6.2-SDK2: congela() del SDK (patrón locura v2.40, una sola fuente)
+    congela(g, Math.max(this.powerSign.T_OUT, OESTE_POWER.warn) + 0.1);
     this._playLaugh(0.9);
     g.rules.message = tx('pw_warn');
     if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.6, 200);
@@ -13223,108 +13232,67 @@ class ForajidoStand {
     } catch (e) { /* sin sonido: nunca rompe */ }
   }
 
-  /* ================= RISA real del forajido (motor v2.54) ================= */
+  /* ================= RISA real del forajido (motor v2.54) =================
+   *  v3.6.2-SDK2 (FASE 4): buffer y reproducción viven en el SDK de
+   *  campeonatos (cache + lección v2.125 + silencio del arcade). El
+   *  anti-spam de 3,2 s y el paneo 0,4 (opts.pan del SDK) se conservan
+   *  aquí — misma conducta exacta. */
   loadLaugh() {
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      const url = this.manifest && this.manifest.laughUrl;
-      if (!actx || !url || this._laughBuf || this._laughBusy) return;
-      this._laughBusy = true;
-      fetch(url)
-        .then((r) => r.arrayBuffer())
-        .then((ab) => new Promise((res, rej) => {
-          // v2.125: forma promesa (la callback puede no dispararse jamás)
-          try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
-        }))
-        .then((buf) => { this._laughBuf = buf; this._laughBusy = false; })
-        .catch(() => { this._laughBusy = false; });
-    } catch (e) { /* */ }
+    try { this.__sfxSDK().precarga('risas.mp3'); } catch (e) { /* */ }
   }
   _playLaugh(vol) {
     try {
       const g = this.game;
       const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running' || !this._laughBuf) return;
+      if (!actx || actx.state !== 'running') return;
       const now = performance.now() / 1000;
       if (now - (this._laughLast || 0) < 3.2) return;
+      const eng = this.__sfxSDK();
+      if (!eng.tiene('risas.mp3')) {
+        eng.precarga('risas.mp3');            // aún decodificando: sin gasto
+        return;
+      }
       this._laughLast = now;
-      const src = actx.createBufferSource();
-      src.buffer = this._laughBuf;
-      const gain = actx.createGain();
-      gain.gain.value = vol || 0.8;
-      const pan = actx.createStereoPanner ? actx.createStereoPanner() : null;
-      if (pan) { pan.pan.value = 0.4; src.connect(gain); gain.connect(pan); pan.connect(actx.destination); }
-      else { src.connect(gain); gain.connect(actx.destination); }
-      src.start();
+      eng.play('risas.mp3', vol || 0.8, { pan: 0.4 });
     } catch (e) { /* */ }
   }
 
-  /* ============ v2.106 · RISA del PUEBLO (derrota del asedio) ============ */
+  /* v3.6.2-SDK2 · motor SFX del SDK de campeonatos (una instancia por
+   * controlador, cache propia; assets relativos a ESTE módulo). */
+  __sfxSDK() {
+    if (!this.__sdkSfx) this.__sdkSfx = createSfx(import.meta.url, () => this.game);
+    return this.__sdkSfx;
+  }
+
+  /* ============ v2.106 · RISA del PUEBLO (derrota del asedio) ============
+   *  v3.6.2-SDK2 (FASE 4): motor en el SDK (precarga perezosa + play). */
   loadRisaPueblo() {
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      const url = this.manifest && this.manifest.risasPuebloUrl;
-      if (!actx || !url || this._risaPBuf || this._risaPBusy) return;
-      this._risaPBusy = true;
-      fetch(url)
-        .then((r) => r.arrayBuffer())
-        .then((ab) => new Promise((res, rej) => {
-          // v2.125: forma promesa (la callback puede no dispararse jamás)
-          try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
-        }))
-        .then((buf) => { this._risaPBuf = buf; this._risaPBusy = false; })
-        .catch(() => { this._risaPBusy = false; });
-    } catch (e) { /* */ }
+    try { this.__sfxSDK().precarga('risas_pueblo.mp3'); } catch (e) { /* */ }
   }
   _playRisaPueblo(vol) {
-    this.loadRisaPueblo();   // perezosa: si aún no está, pedirla ya
     try {
       const g = this.game;
       const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running' || !this._risaPBuf) return;
-      const src3 = actx.createBufferSource();
-      src3.buffer = this._risaPBuf;
-      const gain = actx.createGain();
-      gain.gain.value = vol || 0.85;
-      src3.connect(gain);
-      gain.connect(actx.destination);
-      src3.start();
+      if (!actx || actx.state !== 'running') return;
+      const eng = this.__sfxSDK();
+      eng.precarga('risas_pueblo.mp3');   // perezosa: si aún no está, pedirla ya
+      eng.play('risas_pueblo.mp3', vol || 0.85);
     } catch (e) { /* */ }
   }
 
-  /* ============ v2.99 · MÚSICA del CARTEL de oleada (oleada.mp3) ========== */
+  /* ============ v2.99 · MÚSICA del CARTEL de oleada (oleada.mp3) ==========
+   *  v3.6.2-SDK2 (FASE 4): motor en el SDK (precarga perezosa + play). */
   loadWaveJingle() {
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      const url = this.manifest && this.manifest.waveUrl;
-      if (!actx || !url || this._waveBuf || this._waveBusy) return;
-      this._waveBusy = true;
-      fetch(url)
-        .then((r) => r.arrayBuffer())
-        .then((ab) => new Promise((res, rej) => {
-          // v2.125: forma promesa (la callback puede no dispararse jamás)
-          try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
-        }))
-        .then((buf) => { this._waveBuf = buf; this._waveBusy = false; })
-        .catch(() => { this._waveBusy = false; });
-    } catch (e) { /* */ }
+    try { this.__sfxSDK().precarga('decor/asedio/oleada.mp3'); } catch (e) { /* */ }
   }
   _playWaveJingle(vol) {
-    this.loadWaveJingle();   // perezosa: si aún no está, pedirla ya
     try {
       const g = this.game;
       const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running' || !this._waveBuf) return;
-      const src2 = actx.createBufferSource();
-      src2.buffer = this._waveBuf;
-      const gain = actx.createGain();
-      gain.gain.value = vol || 0.85;
-      src2.connect(gain);
-      gain.connect(actx.destination);
-      src2.start();
+      if (!actx || actx.state !== 'running') return;
+      const eng = this.__sfxSDK();
+      eng.precarga('decor/asedio/oleada.mp3');   // perezosa: pedirla si falta
+      eng.play('decor/asedio/oleada.mp3', vol || 0.85);
     } catch (e) { /* */ }
   }
 

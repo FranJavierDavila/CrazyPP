@@ -1,6 +1,6 @@
 {
   "id": "estacion_orbital",
-  "version": 10,
+  "version": 11,
   "contract": 1,
   "estado": "publicado",
   "title": {
@@ -8,8 +8,8 @@
     "en": "Orbital Station"
   },
   "description": {
-    "es": "El camino completo: 2 duelos, el REACTOR DE ENERGÍA INESTABLE, el REACTOR DE IMPULSO (cubos cuánticos, pistola láser, dianas y perturbaciones) y el DUELO FINAL contra el ASTRO a bordo de su estación espacial.",
-    "en": "The full path: 2 duels, the UNSTABLE POWER REACTOR, the IMPULSE REACTOR (quantum cubes, laser pistol, targets and perturbations) and the FINAL DUEL against the ASTRO aboard his space station."
+    "es": "El camino completo: 2 duelos, el REACTOR DE IMPULSO (cubos cuánticos, pistola láser, dianas y perturbaciones) en la etapa 2, el ESCUDO DE PALA · DEFENSA DEL CASCO (orbes de plasma, drones piratas, Centinela y nave abordadora) en la etapa 4 y el DUELO FINAL contra el ASTRO a bordo de su estación espacial.",
+    "en": "The full path: 2 duels, the IMPULSE REACTOR (quantum cubes, laser pistol, targets and perturbations) at stage 2, the PADDLE SHIELD · HULL DEFENSE (plasma orbs, pirate drones, Sentinel and boarding ship) at stage 4 and the FINAL DUEL against the ASTRO aboard his space station."
   },
   "rival": {
     "id": "estacion_orbital_rival",
@@ -86,10 +86,10 @@
       "kind": "duelo"
     },
     {
-      "id": "reactor",
-      "name": "Reactor de energía inestable",
-      "kind": "reactor",
-      "nota": "v3.3.0: el núcleo de gravedad lanza esferas de plasma; devuélvelas con la pala a las compuertas de energía"
+      "id": "impulso",
+      "name": "Reactor de impulso",
+      "kind": "impulso",
+      "nota": "v3.5.0: ocupa la ETAPA 2 (orden del dueño): destruye los cubos cuánticos con la pelota (3 oleadas de 3/5/7, 120 s cada una) desde la base flotante y desata perturbaciones (Gravedad 0, Atractor, Supergravedad) acertando las dianas con el láser."
     },
     {
       "id": "duelo2",
@@ -97,10 +97,10 @@
       "kind": "duelo"
     },
     {
-      "id": "impulso",
-      "name": "Reactor de impulso",
-      "kind": "impulso",
-      "nota": "v3.4.0: destruye los cubos cuánticos con la pelota (3 oleadas de 3/5/7, 120 s cada una) desde la base flotante y desata perturbaciones (Gravedad 0, Atractor, Supergravedad) acertando las dianas con el láser. Sustituye al ARKANOID II (muro2)."
+      "id": "escudo",
+      "name": "Escudo de pala",
+      "kind": "escudo",
+      "nota": "v3.5.0 · ETAPA 4 NUEVA «Escudo de Pala · Defensa del Casco»: devuelve los orbes de plasma (estándar, pesado, inestable y rotor) con la pala-escudo; golpe limpio y Sobrecarga con orbe perforante; 3 fases (drones, Centinela de rally y nave abordadora de 3 cañones); la INTEGRIDAD DEL CASCO manda y la barrera trasera recibe los impactos. Arte propio v3.5.0 (escudo_pala/)."
     },
     {
       "id": "final",
@@ -175,6 +175,7 @@
     "2026-10-18 v3.4.0-IMP1: la etapa 4 del camino es el REACTOR DE IMPULSO (mecánica del dueño): sala propia de 6 imágenes, núcleo azul/rojo, 3 oleadas de cubos cuánticos (3/5/7, 120 s independientes) destruidos con la pelota desde la base flotante (sin mesa), pistola láser contra dianas cuánticas (1 s visibles / 1 s de espera) que desatan perturbaciones (Gravedad 0, Atractor con destrucción en cadena, Supergravedad) con cambio automático cada 30 s, pantalla suspendida del techo con oleada/tiempo/cubos/estado/perturbación, ventanas con velocidad lumínica, y derrota con astro_laughing frente al jugador. El ARKANOID II queda fuera del camino."
   ],
   "cambios": [
+    "v3.5.0-ESC1: el REACTOR DE IMPULSO pasa a la etapa 2 (orden del dueño) y la etapa 4 estrena el ESCUDO DE PALA · DEFENSA DEL CASCO con arte propio",
     "v3.4.1-RIV1: el ASTRO de la sala se recoloca en la convención de duelos (x 1,26 · z −3,82) — ya no se lee dentro de la pared frontal"
   ]
 }

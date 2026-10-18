@@ -4,11 +4,11 @@ export default function Descargas() {
   const files = [
     {
       emoji: "☁️",
-      nombre: "Juego + CRAZY TV — V3.4.1-RIV1 (paquete Cloudflare)",
+      nombre: "Juego + CRAZY TV — V3.5.0-ESC1 (paquete Cloudflare)",
       detalle:
-        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con el ASTRO bien colocado en la sala (ya no se lee dentro de la pared), el REACTOR DE IMPULSO en la etapa 4 (cubos cuánticos, pistola láser, dianas y perturbaciones), el REACTOR DE ENERGÍA INESTABLE en la etapa 2, PRECISIÓN CCD en el contacto, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
+        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con la etapa 4 NUEVA — ESCUDO DE PALA · DEFENSA DEL CASCO (devuelve orbes de plasma con la pala-escudo contra drones piratas, el Centinela y la nave abordadora) —, el REACTOR DE IMPULSO ahora en la etapa 2 (cubos cuánticos, pistola láser, dianas y perturbaciones), el ASTRO bien colocado en la sala, PRECISIÓN CCD, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
       tamano: "113,7 MB · ZIP · Cloudflare Pages",
-      href: "/descargas/crazypp-v341-riv1-CLOUDFLARE.zip",
+      href: "/descargas/crazypp-v350-esc1-CLOUDFLARE.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",
       borde: "border-sky-500/40",
@@ -16,11 +16,11 @@ export default function Descargas() {
     },
     {
       emoji: "🧊",
-      nombre: "Juego + CRAZY TV — V3.4.1-RIV1 (paquete completo)",
+      nombre: "Juego + CRAZY TV — V3.5.0-ESC1 (paquete completo)",
       detalle:
-        "La V3.4.1-RIV1 íntegra: ASTRO RECOLOCADO — el rival de la ESTACIÓN ORBITAL se coloca como los demás rivales de la casa (convención de duelos: junto a la esquina lejana derecha de la mesa, en espacio abierto y a la misma profundidad que CLOWN y WIZARD) y ya no se lee dentro de la pared frontal · ETAPA 4 NUEVA — REACTOR DE IMPULSO — sala propia de 6 imágenes del dueño SIN mesa: la BASE FLOTANTE repone la pelota, el núcleo alterna ESTABLE (azul) e INESTABLE (rojo con alarma) y expulsa CUBOS CUÁNTICOS en 3 oleadas de 3, 5 y 7 con 2 minutos por oleada; los destruyes con la bola y con la PISTOLA LÁSER de la mano libre aciertas las DIANAS cuánticas (1 s visibles / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0, Atractor (¡un golpe los destruye todos!) y Supergravedad, con cambio automático cada 30 s; pantalla suspendida del techo con oleada, tiempo, cubos y estado; al perder, el ASTRO se ríe frente a ti · el REACTOR DE ENERGÍA INESTABLE sigue en la etapa 2 · ESTACIÓN ORBITAL afinada · PRECISIÓN CCD SDF en el contacto, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+        "La V3.5.0-ESC1 íntegra: ETAPA 4 NUEVA — ESCUDO DE PALA · DEFENSA DEL CASCO — la pala es un escudo manual: devuelve los ORBES DE PLASMA (estándar, pesado, inestable y rotor) que disparan los drones piratas; el GOLPE LIMPIO (centro de la hoja + rápido) carga la SOBRECARGA y al 100 % lanza un ORBE PERFORANTE; 3 fases: drones artilleros, el CENTINELA de rally (5 rebotes exponen su núcleo) y la NAVE ABORDADORA con 3 cañones; la INTEGRIDAD DEL CASCO (100, +30 por interludio) manda y la BARRERA trasera recibe los impactos con onda incluida · ASTRO RECOLOCADO — el rival de la ESTACIÓN ORBITAL se coloca como los demás rivales de la casa (convención de duelos: junto a la esquina lejana derecha de la mesa, en espacio abierto y a la misma profundidad que CLOWN y WIZARD) y ya no se lee dentro de la pared frontal · ETAPA 4 NUEVA — REACTOR DE IMPULSO — sala propia de 6 imágenes del dueño SIN mesa: la BASE FLOTANTE repone la pelota, el núcleo alterna ESTABLE (azul) e INESTABLE (rojo con alarma) y expulsa CUBOS CUÁNTICOS en 3 oleadas de 3, 5 y 7 con 2 minutos por oleada; los destruyes con la bola y con la PISTOLA LÁSER de la mano libre aciertas las DIANAS cuánticas (1 s visibles / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0, Atractor (¡un golpe los destruye todos!) y Supergravedad, con cambio automático cada 30 s; pantalla suspendida del techo con oleada, tiempo, cubos y estado; al perder, el ASTRO se ríe frente a ti · el REACTOR DE ENERGÍA INESTABLE sigue en la etapa 2 · ESTACIÓN ORBITAL afinada · PRECISIÓN CCD SDF en el contacto, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
       tamano: "113,7 MB · ZIP · completo",
-      href: "/descargas/crazypp-v341-riv1-COMPLETO.zip",
+      href: "/descargas/crazypp-v350-esc1-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -28,11 +28,11 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.4.1-RIV1 — versión ligera (sin campeonatos)",
+      nombre: "V3.5.0-ESC1 — versión ligera (sin campeonatos)",
       detalle:
-        "El mismo paquete para subir rápido a Netlify Drop: juego con el ASTRO bien colocado en la sala de la Estación Orbital, el Reactor de impulso y el Reactor de energía inestable, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital con sus dos reactores). Tampoco vale para Cloudflare directo (lleva TypeScript).",
+        "El mismo paquete para subir rápido a Netlify Drop: juego con el Escudo de pala (etapa 4) y el Reactor de impulso (ahora etapa 2), el ASTRO bien colocado en la sala, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital con sus dos reactores). Tampoco vale para Cloudflare directo (lleva TypeScript).",
       tamano: "11,5 MB · ZIP · Netlify",
-      href: "/descargas/crazypp-v341-riv1-ligera.zip",
+      href: "/descargas/crazypp-v350-esc1-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -68,24 +68,24 @@ export default function Descargas() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
             El paquete actual es la{" "}
-            <strong className="text-amber-300">V3.4.1-RIV1</strong>: el{" "}
-            <strong className="text-slate-200">ASTRO de la Estación Orbital</strong>{" "}
-            se coloca ahora como los rivales bien colocados de la casa (junto a
-            la esquina lejana derecha de la mesa, en espacio abierto y a la
-            misma profundidad que CLOWN y WIZARD) y ya no se lee dentro de la
-            pared. Y bajo ese ajuste siguen la etapa 4 —{" "}
-            <strong className="text-slate-200">REACTOR DE IMPULSO</strong> (sin
-            mesa — una <strong className="text-slate-200">base flotante</strong>{" "}
-            repone la pelota, el núcleo expulsa{" "}
-            <strong className="text-slate-200">cubos cuánticos</strong> en 3
-            oleadas y tú los destruyes con la bola mientras la{" "}
-            <strong className="text-slate-200">pistola láser</strong> acierta
-            dianas que desatan perturbaciones), el{" "}
-            <strong className="text-slate-200">Reactor de energía inestable</strong>{" "}
-            de la etapa 2, la{" "}
-            <strong className="text-slate-200">PRECISIÓN CCD</strong> en el
-            contacto de la pala, el saque VR realista, el hall como hub, la
-            física viva y las palas con carácter. Pulsa un botón y listo.
+            <strong className="text-amber-300">V3.5.0-ESC1</strong>: la etapa 4{" "}
+            estrena el{" "}
+            <strong className="text-slate-200">ESCUDO DE PALA · DEFENSA DEL CASCO</strong>{" "}
+            — la pala se convierte en escudo manual: devuelve los{" "}
+            <strong className="text-slate-200">orbes de plasma</strong> de los
+            drones piratas, carga la <strong className="text-slate-200">Sobrecarga</strong>{" "}
+            con golpes limpios hasta lanzar un orbe perforante, resiste el{" "}
+            <strong className="text-slate-200">rally del Centinela</strong> y
+            tumba los tres cañones de la{" "}
+            <strong className="text-slate-200">nave abordadora</strong> mientras
+            la integridad del casco aguanta. Y el{" "}
+            <strong className="text-slate-200">Reactor de impulso</strong> sube
+            a la etapa 2 como pidió el dueño: cubos cuánticos, pistola láser,
+            dianas y perturbaciones. Bajo todo ello: el ASTRO bien colocado, la{" "}
+            <strong className="text-slate-200">PRECISIÓN CCD</strong>, el saque
+            VR realista, el hall como hub (ya sin arrastres al volver), la
+            física viva y las palas con carácter — también para zurdos en el
+            entrenamiento. Pulsa un botón y listo.
           </p>
         </header>
 
@@ -171,7 +171,7 @@ export default function Descargas() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.4.1-RIV1 · WebXR · Astro recolocado · Reactor de
+          Crazy Ping Pong V3.5.0-ESC1 · WebXR · Escudo de pala · Reactor de
           impulso · Estación Orbital · Precisión CCD · CRAZY TV · Meta Quest 3
         </footer>
       </div>

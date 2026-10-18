@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QA del JUEGO · V3.5.0-ESC1 (Escudo de pala · Defensa del casco, etapa 4
+"""QA del JUEGO · V3.5.1-IMP2 (Escudo de pala · Defensa del casco, etapa 4
 nueva con arte propio + impulso en etapa 2 + fixes Hall/entrenamiento).
 Uso: python3 scripts/qa_escudo_v350.py"""
 import asyncio
@@ -38,9 +38,9 @@ async def main():
         print('== PORTADA (dev :3000) ==')
         await page.goto(BASE + '/game.html', wait_until='networkidle')
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.5.0-ESC1', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.5.1-IMP2', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.5.0-ESC1' in badge, f'badge 2D = {badge!r}')
+        chk('V3.5.1-IMP2' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("!!window.__PP_SERVE_LAB"), 'SERVE lab intacto (SRV2)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),
@@ -61,9 +61,9 @@ async def main():
             'camino: escudo en la etapa 4')
         chk("{ kind: 'prueba', id: 'reactor'" not in src, 'camino: el reactor v3.3.0 sale del camino')
         chk('class ReactorInestable' in src, 'clase ReactorInestable conservada (re-insertable)')
-        chk('position.set(1.26, RIV_H / 2' in src, 'ASTRO v3.4.1 intacto (x 1,26 · z −3,82)')
+        chk('(D.tableCenterZ || -1.6) - 1.70' in src, 'ASTRO v3.5.1 intacto (x 1,26 · z −3,30)')
         man = await page.evaluate(f"fetch('{ORBITAL}/manifest.json').then(r=>r.json())")
-        chk(man.get('version') == 11, f'manifest version = {man.get("version")}')
+        chk(man.get('version') == 12, f'manifest version = {man.get("version")}')
         chk([st['id'] for st in man['stages']] == ['duelo1', 'impulso', 'duelo2', 'escudo', 'final'],
             'manifest stages = duelo1·impulso·duelo2·escudo·final')
         codes = await page.evaluate("""async (urls) => {
@@ -141,9 +141,18 @@ async def main():
           out.inter = E.phase === 'inter';
           for (let i = 0; i < 60; i++) E.step(0.1);
           out.fase2 = E.fase === 1 && E.drones.filter(d => d.alive).length === 4 && E.centOn;
+          // v3.5.1 · DETERMINISMO: fuera del reloj de combate no puede haber
+          // orbes ajenos en vuelo (disparos aleatorios de drones/Centinela
+          // durante los 60 steps contaminaban el pool del test)
+          for (const oo of E.orbes) {
+            if (oo.alive) { oo.alive = false; oo.mesh.visible = false;
+              if (oo.glow) oo.glow.visible = false; }
+          }
+          E.centSobreT = 0;
           // rally: rebote del escudo → 5 devoluciones → núcleo expuesto → muere
           const o2 = E.orbes.find(o => !o.alive);
           o2.alive = true; o2.owner = 'jugador'; o2.tipo = 'std'; o2.r = 0.05;
+          o2.fuse = -1; o2.perf = false; o2.clean = false; o2.rebote = false;
           o2.mesh.visible = true; o2.glow.visible = true; o2.pos = o2.mesh.position;
           o2.mesh.position.set(0, E.cent.position.y, E.cent.position.z + 0.55);
           o2.prev.copy(o2.mesh.position); o2.vel.set(0, 0, -6);
@@ -256,7 +265,7 @@ async def main():
         errors2 = []
         pg2.on('pageerror', lambda e: errors2.append(str(e)))
         await pg2.goto(GW + '/game.html', wait_until='networkidle')
-        chk(await pg2.evaluate("window.__PP_VERSION") == '3.5.0-ESC1', 'gateway: __PP_VERSION 3.5.0-ESC1')
+        chk(await pg2.evaluate("window.__PP_VERSION") == '3.5.1-IMP2', 'gateway: __PP_VERSION 3.5.1-IMP2')
         chk(await pg2.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"), 'gateway: puente CCD')
         chk(await pg2.evaluate("!!window.__PP_GAME"), 'gateway: juego arranca')
         chk(not errors2, f'0 pageerrors gateway ({len(errors2)}): {errors2[:2]}')

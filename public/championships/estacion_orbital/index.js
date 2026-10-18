@@ -96,6 +96,9 @@
  *  ========================================================================== */
 import * as THREE from 'three';   // importmap del núcleo: MISMA instancia
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';   // v3.2.0: pistol.glb del MURO 2
+// v3.5.1: fusión de geometrías (cubos cuánticos detallados con 1 sola malla
+// por pieza: marco + nodos) — sin coste extra de draw calls en Quest
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const CORE = (typeof window !== 'undefined' && window.__PP_CORE) || null;
 const GAME = { g: null };
@@ -3283,18 +3286,28 @@ const IMP_CFG = {
   coreY: 1.55, coreZ: -2.75,   // núcleo en la zona central del escenario
   coreR: 0.30,
   baseX: 0, baseY: 0.80, baseZ: -0.55, baseR: 0.46,   // base flotante (sin mesa)
-  ballT: 1.05, ballH: 0.38,    // bote-en-espera sobre la base (periodo/altura)
-  graceT: 0.55,                // animación de rebote antes de estar disponible
+  // v3.5.1 · informe del dueño: «la pelota bota muy lenta y es imposible
+  // golpear por la pala» — bote-en-espera más vivo y salida con propósito
+  ballT: 0.80, ballH: 0.34,    // bote-en-espera sobre la base (periodo/altura)
+  graceT: 0.40,                // animación de rebote antes de estar disponible
   respawnT: 0.8,               // reposición de pelota (configurable)
   fragLife: 0.9,               // vida de los fragmentos (configurable)
   dianaVis: 1.0, dianaWait: 1.0, dianaSize: 0.46,     // ciclo 1 s / 1 s
+  dianaIn: 0.26, dianaOut: 0.30, dianaOutHit: 0.16,   // desintegración (in/out)
   pertAutoT: 30,               // cambio automático de perturbación
-  cubeS: 0.32, cubeHitR: 0.24, // tamaño del cubo y radio de colisión
-  minBallOut: 2.5, maxBallOut: 8.5,   // velocidad de la bola tras el golpeo
+  // v3.5.1 · «los cubos, la mitad de pequeños»: 0,32 → 0,16 m de canto
+  cubeS: 0.16, cubeHitR: 0.14, // tamaño del cubo y radio de colisión (½ diagonal)
+  minBallOut: 3.0, maxBallOut: 9.0,   // velocidad de la bola tras el golpeo
   spawnFlight: 0.75,           // expulsión del núcleo al spot
   superY: 0.36,                // altura baja de la supergravedad
   atractorPos: { x: 0, y: 1.35, z: -1.95 },   // zona central del atractor
+  atrSep: 0.19,                // casi unidos pero SIN penetraciones (canto 0,16)
   bounds: { x: 2.5, yMin: 0.34, yMax: 2.25, zMin: -4.6, zMax: -0.85 },
+  // v3.5.1 · ventanas: partículas de velocidad lumínica FUERA de la sala
+  // (visibles a través del cristal), corriendo de DELANTE hacia ATRÁS para
+  // dar la impresión de que la nave avanza (informe del dueño)
+  warpSpeed: [13, 26],         // m/s de las estrellas (toda velocidad)
+  warpFar: 3.2,                // profundidad de la capa exterior (tras el muro)
 };
 
 class ReactorImpulso {
@@ -3322,7 +3335,15 @@ class ReactorImpulso {
     this._tmpA = new THREE.Vector3();
     this._tmpB = new THREE.Vector3();
     this._tmpC = new THREE.Vector3();
+    this._evts = [];                   // eventos del barrido CCD de la pala
   }
+
+  /* Huecos del racimo del ATRACTOR (centro + 6 caras): hasta 7 cubos casi
+   * unidos en un único punto sin penetrarse entre sí (v3.5.1). */
+  static HUECOS = [
+    [0, 0, 0], [1, 0, 0], [-1, 0, 0],
+    [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
+  ];
 
   _A(p) { return this.ctrl._A('reactor_impulso/' + p); }
   _G() { return Math.abs(DIMS.gravity || 9.6); }   // NUC1: DIMS.gravity es NEGATIVO
@@ -3348,9 +3369,15 @@ class ReactorImpulso {
       this.ctrl._ownTex.add(t);
       return t;
     };
-    const plano = (w, h, tex, px, py, pz, ry, rx) => {
+    const plano = (w, h, tex, px, py, pz, ry, rx, ventanal) => {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
-        new THREE.MeshBasicMaterial({ map: tex }));
+        new THREE.MeshBasicMaterial({ map: tex,
+          // v3.5.1 · informe del dueño: «las ventanas tienen transparencia y
+          // se debe respetar para ver el exterior». Los ventanales laterales
+          // (izquierda/derecha.png con alpha recortado en el cristal) dejan
+          // VER el espacio: alphaTest descarta el cristal sin romper el
+          // orden de profundidad (el marco sigue tapando lo de detrás).
+          alphaTest: ventanal ? 0.35 : 0 }));
       m.position.set(px, py, pz);
       if (ry) m.rotation.y = ry;
       if (rx) m.rotation.x = rx;
@@ -3361,27 +3388,82 @@ class ReactorImpulso {
     plano(hx * 2, this._room.depth, carga('techo.jpg'), 0, hh, this._room.zc, 0, Math.PI / 2);
     plano(hx * 2, hh, carga('frente.jpg'), 0, hh / 2, fz, 0, 0);
     plano(hx * 2, hh, carga('fondo.jpg'), 0, hh / 2, bz, Math.PI, 0);
-    plano(this._room.depth, hh, carga('izquierda.png'), -hx, hh / 2, this._room.zc, Math.PI / 2, 0);
-    plano(this._room.depth, hh, carga('derecha.png'), hx, hh / 2, this._room.zc, -Math.PI / 2, 0);
+    plano(this._room.depth, hh, carga('izquierda.png'), -hx, hh / 2, this._room.zc, Math.PI / 2, 0, true);
+    plano(this._room.depth, hh, carga('derecha.png'), hx, hh / 2, this._room.zc, -Math.PI / 2, 0, true);
 
     /* VENTANAS: viaje a velocidad lumínica (el MISMO efecto en ambas) */
     this._warps = [this._warpBuild(-1), this._warpBuild(1)];
 
-    /* NÚCLEO DEL REACTOR (procedural, azul estable / rojo inestable) */
+    /* NÚCLEO DEL REACTOR (v3.5.1 · informe del dueño: «un modelo más
+     * detallado y mejor modelado, respetando la estética del decorado»):
+     * unidad de emisión flotante con columna de plasma cargada, blindaje
+     * con costillas y marcas ámbar (las luces de la sala), tapa con
+     * antena, peana cónica con aro y campo de contención giratorio.
+     * Azul ESTABLE / rojo INESTABLE por el material del plasma. */
     this.core = new THREE.Group();
     this.core.position.set(0, IMP_CFG.coreY, IMP_CFG.coreZ);
-    this.coreBody = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(IMP_CFG.coreR, 1),
-      new THREE.MeshStandardMaterial({
-        color: 0x14243a, roughness: 0.3, metalness: 0.55,
-        emissive: 0x2e7cff, emissiveIntensity: 0.9, flatShading: true,
-      }));
-    this.ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.035, 10, 48),
+    const matCasco = new THREE.MeshStandardMaterial({
+      color: 0x243247, roughness: 0.35, metalness: 0.7 });
+    const matPanel = new THREE.MeshStandardMaterial({
+      color: 0x8ea3b8, roughness: 0.4, metalness: 0.55 });
+    const matAmbar = new THREE.MeshStandardMaterial({
+      color: 0x231a12, roughness: 0.45, metalness: 0.4,
+      emissive: 0xff9a3c, emissiveIntensity: 0.85 });
+    const matVidrio = new THREE.MeshStandardMaterial({
+      color: 0x0e2440, roughness: 0.15, metalness: 0.1,
+      transparent: true, opacity: 0.30, side: THREE.DoubleSide,
+      emissive: 0x2e7cff, emissiveIntensity: 0.5, depthWrite: false });
+    this.corePlasmaMat = new THREE.MeshStandardMaterial({
+      color: 0x081527, roughness: 0.2, metalness: 0.1,
+      emissive: 0x36a8ff, emissiveIntensity: 1.4 });     // ESTADO azul/rojo
+    this.coreBody = new THREE.Mesh(                       // columna de plasma
+      new THREE.CylinderGeometry(0.115, 0.115, 0.62, 20, 1, true),
+      this.corePlasmaMat);
+    const vidrio = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.20, 0.20, 0.66, 24, 1, true), matVidrio);
+    this.coreVidrio = vidrio;
+    const anilloG = new THREE.TorusGeometry(0.27, 0.05, 12, 28);
+    const sup = new THREE.Mesh(anilloG, matCasco);
+    sup.rotation.x = Math.PI / 2; sup.position.y = 0.30;
+    const inf = new THREE.Mesh(anilloG.clone(), matCasco);
+    inf.rotation.x = Math.PI / 2; inf.position.y = -0.30;
+    const costillas = [];
+    for (let k = 0; k < 8; k++) {
+      const g = new THREE.BoxGeometry(0.045, 0.62, 0.045);
+      const a = (k / 8) * Math.PI * 2;
+      g.translate(Math.cos(a) * 0.245, 0, Math.sin(a) * 0.245);
+      costillas.push(g);
+    }
+    const costillasMesh = new THREE.Mesh(mergeGeometries(costillas), matCasco);
+    const marcas = [];
+    for (let k = 0; k < 4; k++) {
+      const g = new THREE.BoxGeometry(0.052, 0.30, 0.052);
+      const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
+      g.translate(Math.cos(a) * 0.245, 0, Math.sin(a) * 0.245);
+      marcas.push(g);
+    }
+    const marcaMesh = new THREE.Mesh(mergeGeometries(marcas), matAmbar);
+    const domo = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      matPanel);
+    domo.position.y = 0.30;
+    const antena = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.014, 0.014, 0.20, 8), matPanel);
+    antena.position.y = 0.50;
+    const punta = new THREE.Mesh(new THREE.SphereGeometry(0.032, 10, 8), matAmbar);
+    punta.position.y = 0.61;
+    const peana = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.13, 0.24, 0.16, 20), matCasco);
+    peana.position.y = -0.38;
+    const aroPeana = new THREE.Mesh(
+      new THREE.TorusGeometry(0.185, 0.02, 10, 30), matAmbar);
+    aroPeana.rotation.x = Math.PI / 2; aroPeana.position.y = -0.31;
+    this.ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.030, 10, 48),
       new THREE.MeshStandardMaterial({
         color: 0x0a1626, roughness: 0.4, metalness: 0.5,
         emissive: 0x2e7cff, emissiveIntensity: 0.9, transparent: true, opacity: 0.9,
       }));
-    this.ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.60, 0.026, 10, 52),
+    this.ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.60, 0.022, 10, 52),
       new THREE.MeshStandardMaterial({
         color: 0x0a1626, roughness: 0.4, metalness: 0.5,
         emissive: 0x2e7cff, emissiveIntensity: 0.75, transparent: true, opacity: 0.85,
@@ -3394,28 +3476,79 @@ class ReactorImpulso {
     }));
     this.coreGlow.scale.setScalar(1.15);
     this.coreLight = new THREE.PointLight(0x4d8dff, 0.9, 7.5, 2);
-    this.core.add(this.coreBody, this.ring1, this.ring2, this.coreGlow, this.coreLight);
+    this.core.add(this.coreBody, vidrio, sup, inf, costillasMesh, marcaMesh,
+      domo, antena, punta, peana, aroPeana,
+      this.ring1, this.ring2, this.coreGlow, this.coreLight);
     this.core.visible = false;
     this.grp.add(this.core);
 
-    /* CUBOS CUÁNTICOS (pool de 7 = oleada máxima) */
+    /* CUBOS CUÁNTICOS (pool de 7 = oleada máxima)
+     * v3.5.1 · informe del dueño: «la mitad de pequeños, algo mejor
+     * elaborados, con más detalle y estéticamente parecidos al resto de la
+     * escena». Cada cubo es un contenedor de contingencia del reactor:
+     * marco metálico del MISMO gris azulado de los paneles de la sala,
+     * nodos de esquina con el ámbar de sus luces, carcasa oscura y núcleo
+     * interior luminoso (azul estable / rojo inestable). Geometrías
+     * FUSIONADAS: 4 mallas por cubo (28 en el pool) — regla Quest intacta. */
     this.cubes = [];
-    const cGeo = new THREE.BoxGeometry(IMP_CFG.cubeS, IMP_CFG.cubeS, IMP_CFG.cubeS);
+    const S = IMP_CFG.cubeS, T = 0.028;           // canto y grosor del marco
+    const hS = S / 2;
+    const buildMarco = () => {   // los 12 cantos del cubo, fusionados
+      const parts = [];
+      const eX = new THREE.BoxGeometry(S, T, T);
+      const eY = new THREE.BoxGeometry(T, S, T);
+      const eZ = new THREE.BoxGeometry(T, T, S);
+      for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+        const g = eX.clone(); g.translate(0, sy * (hS - T / 2), sz * (hS - T / 2)); parts.push(g);
+      }
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+        const g = eY.clone(); g.translate(sx * (hS - T / 2), 0, sz * (hS - T / 2)); parts.push(g);
+      }
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+        const g = eZ.clone(); g.translate(sx * (hS - T / 2), sy * (hS - T / 2), 0); parts.push(g);
+      }
+      eX.dispose(); eY.dispose(); eZ.dispose();
+      return mergeGeometries(parts);
+    };
+    const buildNodos = () => {   // 8 nodos de esquina (luces ámbar del decorado)
+      const parts = [];
+      const n = new THREE.BoxGeometry(T * 2.1, T * 2.1, T * 2.1);
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+        const g = n.clone(); g.translate(sx * (hS - T / 2), sy * (hS - T / 2), sz * (hS - T / 2));
+        parts.push(g);
+      }
+      n.dispose();
+      return mergeGeometries(parts);
+    };
+    const marcoGeo = buildMarco();
+    const nodosGeo = buildNodos();
+    const carcasaGeo = new THREE.BoxGeometry(S * 0.80, S * 0.80, S * 0.80);
+    const nucleoGeo = new THREE.BoxGeometry(S * 0.42, S * 0.42, S * 0.42);
     for (let i = 0; i < 7; i++) {
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0x8fa9bd, roughness: 0.4, metalness: 0.35,
-        emissive: 0xff3524, emissiveIntensity: 0.0,
-      });
-      const mesh = new THREE.Mesh(cGeo, mat);
-      mesh.visible = false;
-      mesh.castShadow = true;
-      this.grp.add(mesh);
+      const grp = new THREE.Group();
+      const mMarco = new THREE.MeshStandardMaterial({
+        color: 0x9db1c4, roughness: 0.32, metalness: 0.72 });   // panel de la sala
+      const mNodos = new THREE.MeshStandardMaterial({
+        color: 0x1c2736, roughness: 0.4, metalness: 0.6,
+        emissive: 0xff9a3c, emissiveIntensity: 0.55 });          // ámbar de las luces
+      const mCasa = new THREE.MeshStandardMaterial({
+        color: 0x16202e, roughness: 0.5, metalness: 0.5 });
+      const mNucleo = new THREE.MeshStandardMaterial({
+        color: 0x0c1a2e, roughness: 0.25, metalness: 0.2,
+        emissive: 0x36a8ff, emissiveIntensity: 1.15 });          // azul estable
+      grp.add(new THREE.Mesh(marcoGeo, mMarco),
+        new THREE.Mesh(nodosGeo, mNodos),
+        new THREE.Mesh(carcasaGeo, mCasa),
+        new THREE.Mesh(nucleoGeo, mNucleo));
+      grp.visible = false;
+      this.grp.add(grp);
       this.cubes.push({
-        mesh, mat, alive: false,
-        pos: mesh.position,
+        mesh: grp, mat: mNucleo, matNodos: mNodos, alive: false,
+        pos: grp.position,
         vel: new THREE.Vector3(),
         spot: new THREE.Vector3(),
         from: new THREE.Vector3(),
+        off: new THREE.Vector3(),     // hueco propio del ATRACTOR (empaquetado)
         fase: Math.random() * Math.PI * 2,
         w1: 0.4 + Math.random() * 0.5, w2: 0.35 + Math.random() * 0.55,
         tumble: new THREE.Vector3(
@@ -3484,18 +3617,62 @@ class ReactorImpulso {
     this.baseGrp.visible = false;
     this.grp.add(this.baseGrp);
 
-    /* DIANA CUÁNTICA (una a la vez; sprite = billboard al jugador) */
+    /* DIANA CUÁNTICA (una a la vez; billboard al jugador)
+     * v3.5.1 · informe del dueño: «las dianas deben aparecer y desaparecer
+     * con un efecto de desintegración» — shader DISSOLVE con ruido y borde
+     * de energía: uDissolve 0 = intacta · 1 = desintegrada. */
     const texDiana = carga('diana_quantica.png');
+    this.dianaMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uMap: { value: texDiana },
+        uDissolve: { value: 1.0 },
+        uEdge: { value: new THREE.Color(0x9fe8ff) },
+      },
+      transparent: true, depthWrite: false,
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vec4 mv = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+          mv.xy += position.xy;              // billboard: siempre de cara
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        uniform sampler2D uMap;
+        uniform float uDissolve;
+        uniform vec3 uEdge;
+        varying vec2 vUv;
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+        }
+        float ruido(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+                     mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+        }
+        void main() {
+          vec4 tex = texture2D(uMap, vUv);
+          float n = ruido(vUv * 7.0) * 0.68 + ruido(vUv * 19.0) * 0.32;
+          float alpha = tex.a * (1.0 - smoothstep(uDissolve - 0.06, uDissolve + 0.02, n));
+          if (alpha < 0.01) discard;
+          float borde = smoothstep(uDissolve - 0.16, uDissolve - 0.02, n) *
+                        (1.0 - smoothstep(uDissolve - 0.02, uDissolve + 0.04, n));
+          vec3 col = tex.rgb + uEdge * borde * 2.4;
+          gl_FragColor = vec4(col, alpha);
+        }`,
+    });
     this.diana = {
-      sp: new THREE.Sprite(new THREE.SpriteMaterial({
-        map: texDiana, transparent: true, depthWrite: false, opacity: 0.98,
-      })),
+      mesh: new THREE.Mesh(
+        new THREE.PlaneGeometry(IMP_CFG.dianaSize, IMP_CFG.dianaSize),
+        this.dianaMat),
       fase: 'wait', t: 0.6,
+      u: 1,                              // nivel de desintegración (0 intacta)
+      rate: 1 / IMP_CFG.dianaOut,        // velocidad de desintegración activa
     };
-    this.diana.sp.scale.setScalar(IMP_CFG.dianaSize);
-    this.diana.sp.visible = false;
-    this.diana.sp.renderOrder = 20;
-    this.grp.add(this.diana.sp);
+    this.diana.mesh.visible = false;
+    this.diana.mesh.renderOrder = 20;
+    this.grp.add(this.diana.mesh);
 
     /* PANTALLA suspendida del techo (pantallainfo.png + capa de texto) */
     this.panCv = document.createElement('canvas');
@@ -3517,29 +3694,43 @@ class ReactorImpulso {
   }
 
   _warpBuild(side) {
-    const n = 90;
+    /* v3.5.1 · VELOCIDAD LUMÍNICA REORIENTADA (informe del dueño): las
+     * partículas corren en línea recta de DELANTE hacia ATRÁS — la nave
+     * AVANZA — FUERA de la sala (tras el muro), y sólo se ven a través del
+     * cristal de los ventanales. Detrás, el fondo negro del espacio. */
+    const n = 130;
     const pos = new Float32Array(n * 2 * 3);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const lines = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({
-      color: 0xffffff, transparent: true, opacity: 0.75,
+      color: 0xcfe9ff, transparent: true, opacity: 0.95,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     lines.frustumCulled = false;
     lines.visible = false;
+    lines.renderOrder = 4;
     this.grp.add(lines);
+    const R = this._room;
     const stars = [];
     for (let i = 0; i < n; i++) {
       stars.push({
-        a: Math.random() * Math.PI * 2, r: Math.random() * 2.4,
-        sp: 0.55 + Math.random() * 1.1, len: 0.10 + Math.random() * 0.18,
+        x: side * (R.hx + 0.18 + Math.random() * IMP_CFG.warpFar),
+        y: 0.30 + Math.random() * (R.hh + 0.9 - 0.30),
+        z: R.fz - 2.5 + Math.random() * (R.depth + 4.5),
+        sp: IMP_CFG.warpSpeed[0] + Math.random() *
+          (IMP_CFG.warpSpeed[1] - IMP_CFG.warpSpeed[0]),
+        len: 0.70 + Math.random() * 1.0,     // estela a lo largo del vuelo
       });
     }
-    return {
-      lines, pos: geo.attributes.position, stars, n,
-      x: side * ((this._room.hx) - 0.03),
-      cy: 1.5, cz: this._room.zc,
-    };
+    // fondo negro del espacio, una vez por lado, tras el ventanal
+    const fondo = new THREE.Mesh(
+      new THREE.PlaneGeometry(R.depth + 9, 9),
+      new THREE.MeshBasicMaterial({ color: 0x000000 }));
+    fondo.position.set(side * (R.hx + IMP_CFG.warpFar + 0.45), R.hh / 2, R.zc);
+    fondo.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+    this.grp.add(fondo);
+    return { lines, pos: geo.attributes.position, stars, n,
+      zMax: R.bz + 1.6, zMin: R.fz - 2.5 };
   }
 
   _texGlow() {
@@ -3596,6 +3787,7 @@ class ReactorImpulso {
     }
     if (this.ctrl.cartel) this.ctrl.cartel.visible = false;
     if (this.ctrl.powerSign) this.ctrl.powerSign.visible = false;
+    if (this.ctrl.dron) this.ctrl.dron.visible = false;   // v3.5.1: sin vigía heredado
     try { if (this.ctrl.mapa && this.ctrl.mapa.hide) this.ctrl.mapa.hide(); } catch (e) { /* */ }
     try { if (this.ctrl.mapa && this.ctrl.mapa.group) this.ctrl.mapa.group.visible = false; } catch (e) { /* */ }
     // pelota disponible sobre la base flotante
@@ -3609,7 +3801,8 @@ class ReactorImpulso {
     this.coreLight.intensity = 0.9;
     this.coreGlow.material.color.setHex(0x4d8dff);
     for (const c of this.cubes) { c.alive = false; c.mesh.visible = false; }
-    this.diana.sp.visible = false;
+    this.diana.mesh.visible = false;
+    this.diana.u = 1;
     this.diana.fase = 'wait'; this.diana.t = 1;
     g.rules.message = 'REACTOR DE IMPULSO';
     this.hudOn(true);
@@ -3645,11 +3838,15 @@ class ReactorImpulso {
     if (!this.built) return;
     const g = this.game;
     this.hudOn(false);
-    this.diana.sp.visible = false;
+    this.diana.mesh.visible = false;
     for (const c of this.cubes) { c.alive = false; c.mesh.visible = false; }
     for (const f of this.frags) { f.t = 9; f.mesh.visible = false; }
     for (const f of this.flashes) { f.t = 9; f.mesh.visible = false; }
     for (const w of this._warps) w.lines.visible = false;
+    if (g.gunMounts) {
+      for (const gm of g.gunMounts) if (gm) gm.visible = false;   // pistola fuera
+    }
+    if (this.ctrl.dron) this.ctrl.dron.visible = true;    // v3.5.1: vigía de vuelta
     // la sala de la estación vuelve
     if (g.roomGroup) g.roomGroup.visible = true;
     g.tableGroup.visible = true;
@@ -3767,19 +3964,30 @@ class ReactorImpulso {
     this.coreGlow.material.color.setHex(col);
     this.coreGlow.material.opacity = 0.5 + k * 0.22;
     this.coreBody.material.emissive.setHex(col);
-    this.coreBody.material.emissiveIntensity = 0.75 + k * 0.75;
+    this.coreBody.material.emissiveIntensity = 1.05 + k * 0.85;
+    this.coreVidrio.rotation.y -= (0.5 + k * 1.6) * dt;   // vidrio contrarrotando
     this.ring1.material.emissive.setHex(col);
     this.ring2.material.emissive.setHex(col);
     // base flotante: leve balanceo energético
     this.baseGrp.position.y = IMP_CFG.baseY + Math.sin(t * 1.4) * 0.015;
     // estrellas de velocidad lumínica (ambas ventanas, el mismo efecto)
     for (const w of this._warps) this._warpStep(w, dt);
-    // pulso rojo de los cubos durante la inestabilidad
+    // pulso rojo de los cubos durante la inestabilidad (núcleo + nodos)
     if (this.reactorState === 'inestable') {
       for (const c of this.cubes) {
         if (!c.alive) continue;
+        const p = 0.55 + Math.sin(t * 5 + c.fase) * 0.35;
         c.mat.emissive.setHex(0xff3524);
-        c.mat.emissiveIntensity = 0.55 + Math.sin(t * 5 + c.fase) * 0.35;
+        c.mat.emissiveIntensity = p + 0.6;
+        c.matNodos.emissive.setHex(0xff3524);
+        c.matNodos.emissiveIntensity = 0.3 + p * 0.8;
+      }
+    } else {
+      // v3.5.1: al volver a ESTABLE los nodos recuperan su ámbar de la sala
+      for (const c of this.cubes) {
+        if (!c.alive) continue;
+        c.matNodos.emissive.setHex(0xff9a3c);
+        c.matNodos.emissiveIntensity = 0.55;
       }
     }
     this._fxStep(dt);
@@ -3787,19 +3995,19 @@ class ReactorImpulso {
 
   _warpStep(w, dt) {
     const pos = w.pos.array;
+    const hh2 = this._room.hh + 0.6;
     for (let i = 0; i < w.n; i++) {
       const s = w.stars[i];
-      s.r += (0.5 + s.r * 1.35) * s.sp * dt;
-      if (s.r > 2.55) {
-        s.r = 0.04 + Math.random() * 0.25;
-        s.a = Math.random() * Math.PI * 2;
+      s.z += s.sp * dt;                  // de DELANTE hacia ATRÁS: la nave avanza
+      if (s.z > w.zMax) {
+        s.z = w.zMin - Math.random() * 1.2;
+        s.y = 0.30 + Math.random() * hh2;
+        s.x = Math.sign(s.x) * (this._room.hx + 0.18 +
+          Math.random() * IMP_CFG.warpFar);
       }
-      const ca = Math.cos(s.a), sa = Math.sin(s.a);
-      const px = w.x, py = w.cy + sa * s.r, pz = w.cz + ca * s.r;
-      const L = s.len * (0.35 + s.r * 0.5);
       const o = i * 6;
-      pos[o] = px; pos[o + 1] = py; pos[o + 2] = pz;
-      pos[o + 3] = px; pos[o + 4] = py - sa * L; pos[o + 5] = pz - ca * L;
+      pos[o] = s.x; pos[o + 1] = s.y; pos[o + 2] = s.z;
+      pos[o + 3] = s.x; pos[o + 4] = s.y; pos[o + 5] = s.z - s.len;
     }
     w.pos.needsUpdate = true;
     w.lines.visible = true;
@@ -3829,10 +4037,16 @@ class ReactorImpulso {
 
   _oleadaCompleta() {
     // se cancelan dianas y perturbaciones de la oleada (prioridad sobre todo)
+    // v3.5.1: la diana viva se DESINTEGRA (no desaparece en seco)
     this.waveActive = false;
     this.pert = null;
-    this.diana.sp.visible = false;
-    this.diana.fase = 'wait';
+    if (this.diana.fase === 'in' || this.diana.fase === 'vis') {
+      this.diana.fase = 'out';
+      this.diana.t = IMP_CFG.dianaOut;
+    } else {
+      this.diana.mesh.visible = false;
+      this.diana.fase = 'wait';
+    }
     this._reactorEstado('estable');               // desacelera y vuelve a azul
     const g = this.game;
     g.audio.playOsc(523, 523, 0.12, 'square', 0.12, 0);
@@ -3924,17 +4138,21 @@ class ReactorImpulso {
         c.mesh.rotation.x += c.tumble.x * dt * 0.7;
         c.mesh.rotation.y += c.tumble.y * dt * 0.7;
       } else if (this.pert === 'atractor') {
-        // ATRACTOR: convergen a la zona central y orbitan apretados
-        this._tmpA.copy(IMP_CFG.atractorPos).sub(c.pos);
+        // ATRACTOR (v3.5.1 · informe del dueño: «deben permanecer casi
+        // unidos pero sin penetraciones entre ellos»): cada cubo converge a
+        // SU hueco del racimo compacto (huecos asignados en _pertAplica);
+        // la separación por pares de _atractorSepara garantiza el contacto
+        // sin solape aunque lleguen desordenados.
+        this._tmpA.set(
+          IMP_CFG.atractorPos.x + c.off.x,
+          IMP_CFG.atractorPos.y + c.off.y,
+          IMP_CFG.atractorPos.z + c.off.z).sub(c.pos);
         const d = this._tmpA.length() || 0.001;
-        this._tmpA.multiplyScalar(1 / d);
-        this._tmpB.set(-this._tmpA.z, 0.15 * Math.sin(t * 1.3 + c.fase), this._tmpA.x)
-          .normalize();
-        const sp = Math.min(1.7, 0.35 + d * 0.95);
-        c.vel.copy(this._tmpA).multiplyScalar(sp * Math.min(1, d / 0.4))
-          .addScaledVector(this._tmpB, d > 0.5 ? 0.55 : 1.2);
+        const sp = Math.min(2.4, 0.55 + d * 1.25);
+        c.vel.copy(this._tmpA).multiplyScalar((sp * Math.min(1, d / 0.22)) / d);
         c.pos.addScaledVector(c.vel, dt);
-        c.mesh.rotation.y += 5.5 * dt; c.mesh.rotation.x += 3.2 * dt;
+        c.mesh.rotation.x += c.tumble.x * dt * 0.3;   // en el racimo giran lentos
+        c.mesh.rotation.y += c.tumble.y * dt * 0.3;
       } else if (this.pert === 'super') {
         // SUPERGRAVEDAD: caen a ras de suelo y quedan comprimidas
         if (c.pos.y > IMP_CFG.superY + 0.005) {
@@ -3967,6 +4185,31 @@ class ReactorImpulso {
       if (c.pos.z > B.zMax) { c.pos.z = B.zMax; if (c.vel.z > 0) c.vel.z *= -0.8; }
       if (c.pos.z < B.zMin) { c.pos.z = B.zMin; if (c.vel.z < 0) c.vel.z *= -0.8; }
     }
+    if (this.pert === 'atractor') this._atractorSepara();
+  }
+
+  /** ATRACTOR · separación por pares (v3.5.1): los cubos quedan CASI UNIDOS
+   *  (gap de ~3 cm) pero jamás se penetran — el centro de cada uno respeta
+   *  la distancia mínima IMP_CFG.atrSep. Sólo ordena centros: la colisión
+   *  de la bola contra cada cubo no cambia. */
+  _atractorSepara() {
+    const minD = IMP_CFG.atrSep;
+    const vivos = [];
+    for (const c of this.cubes) {
+      if (c.alive && c.spawnT >= c.from0) vivos.push(c);
+    }
+    for (let i = 0; i < vivos.length; i++) {
+      for (let j = i + 1; j < vivos.length; j++) {
+        const a = vivos[i], b = vivos[j];
+        this._tmpA.copy(b.pos).sub(a.pos);
+        const d = this._tmpA.length();
+        if (d > minD || d < 1e-6) continue;
+        this._tmpA.multiplyScalar(1 / d);
+        const push = (minD - d) * 0.5;
+        a.pos.addScaledVector(this._tmpA, -push);
+        b.pos.addScaledVector(this._tmpA, push);
+      }
+    }
   }
 
   /* ---------------- perturbaciones ---------------- */
@@ -3981,6 +4224,9 @@ class ReactorImpulso {
     // seguridad lógica (spec §8): nada nuevo sin oleada activa y cubos vivos
     if (!this.waveActive || this.aliveCubes <= 0) return;
     this.pert = kind;
+    // v3.5.1: en ATRACTOR cada cubo recibe SU hueco del racimo compacto
+    // (centro + 6 caras): llegan ordenados y quedan casi unidos sin solape
+    let slot = 0;
     for (const c of this.cubes) {
       if (!c.alive) continue;
       // la nueva perturbación SUSTITUYE a la anterior: sin fuerzas acumuladas
@@ -3989,6 +4235,11 @@ class ReactorImpulso {
       c.wanderT = 0;
       c.thud = false;
       c.mesh.scale.setScalar(1);
+      if (kind === 'atractor') {
+        const h = ReactorImpulso.HUECOS[slot % ReactorImpulso.HUECOS.length];
+        c.off.set(h[0], h[1], h[2]).multiplyScalar(IMP_CFG.atrSep);
+        slot++;
+      }
     }
     const g = this.game;
     const nombre = kind === 'g0' ? 'GRAVEDAD 0'
@@ -4105,33 +4356,84 @@ class ReactorImpulso {
 
   _dianasStep(dt) {
     const d = this.diana;
-    if (!this.waveActive) { d.sp.visible = false; return; }
+    this.dianaMat.uniforms.uDissolve.value = d.u;
+    if (!this.waveActive) {
+      // fuera de oleada: si quedaba una diana viva se DESINTEGRA y no vuelve
+      if (d.fase === 'in' || d.fase === 'vis' || d.fase === 'out') {
+        d.fase = 'out';
+        d.rate = 1 / IMP_CFG.dianaOut;
+        d.t = IMP_CFG.dianaOut;
+        d.u = Math.min(1, d.u + d.rate * dt);
+        if (d.t <= 0 || d.u >= 1) {
+          d.mesh.visible = false;
+          d.fase = 'wait';
+          d.t = 9;
+        }
+      } else {
+        d.mesh.visible = false;
+      }
+      return;
+    }
     d.t -= dt;
-    if (d.fase === 'vis') {
-      if (d.t <= 0) { d.fase = 'wait'; d.t = IMP_CFG.dianaWait; d.sp.visible = false; }
-    } else if (d.t <= 0) {
-      // nueva aparición en OTRA posición
-      d.sp.position.copy(this._dianaPosicion());
-      d.sp.visible = true;
-      d.sp.material.rotation = 0;
-      d.fase = 'vis';
-      d.t = IMP_CFG.dianaVis;
-      try { this.game.audio.playOsc(1180, 1560, 0.07, 'sine', 0.05, 0); } catch (e) { /* */ }
+    switch (d.fase) {
+      case 'in': {
+        // DESINTEGRACIÓN INVERSA: el ruido se retira y la diana se materializa
+        const k = 1 - Math.max(0, d.t) / IMP_CFG.dianaIn;
+        d.u = Math.max(0, 1 - k);
+        if (d.t <= 0) {
+          d.u = 0;
+          d.fase = 'vis';
+          d.t = IMP_CFG.dianaVis;
+        }
+        break;
+      }
+      case 'vis':
+        d.u = 0;
+        if (d.t <= 0) {
+          d.fase = 'out';
+          d.rate = 1 / IMP_CFG.dianaOut;
+          d.t = IMP_CFG.dianaOut;
+        }
+        break;
+      case 'out':
+        // DESINTEGRACIÓN: el borde de energía come la diana hasta el vacío
+        d.u = Math.min(1, d.u + d.rate * dt);
+        if (d.t <= 0 || d.u >= 1) {
+          d.mesh.visible = false;
+          d.fase = 'wait';
+          d.t = IMP_CFG.dianaWait;
+        }
+        break;
+      default:   // wait
+        d.mesh.visible = false;
+        if (d.t <= 0) {
+          // nueva aparición en OTRA posición, con desintegración inversa
+          d.mesh.position.copy(this._dianaPosicion());
+          d.mesh.visible = true;
+          d.u = 1;
+          d.fase = 'in';
+          d.t = IMP_CFG.dianaIn;
+          try { this.game.audio.playOsc(1180, 1560, 0.07, 'sine', 0.05, 0); } catch (e) { /* */ }
+        }
+        break;
     }
   }
 
   laserTargets() {
-    return (this.diana && this.diana.sp.visible) ? [this.diana.sp] : [];
+    return (this.diana && this.diana.mesh.visible && this.diana.fase === 'vis')
+      ? [this.diana.mesh] : [];
   }
 
-  /** El LÁSER acierta la diana: destello + perturbación (nunca destruye cubos). */
+  /** El LÁSER acierta la diana: DESINTEGRACIÓN rápida + perturbación
+   *  (nunca destruye cubos). */
   _dianaHit(lp) {
     const d = this.diana;
-    if (!d.sp.visible || d.fase !== 'vis') return false;   // diana ya desactivada: NO
-    d.sp.visible = false;
-    d.fase = 'wait';
-    d.t = IMP_CFG.dianaWait;
+    if (!d.mesh.visible || d.fase !== 'vis') return false;   // diana ya desactivada: NO
+    d.fase = 'out';
+    d.rate = 1 / IMP_CFG.dianaOutHit;        // desintegración acelerada por el láser
+    d.t = IMP_CFG.dianaOutHit;
     this._flash(lp, 0xbfe9ff);
+    this._fragmenta(d.mesh.position);        // restos de la desintegración
     const g = this.game;
     try { g.audio.playOsc(1400, 2200, 0.12, 'sine', 0.14, 0); } catch (e) { /* */ }
     try { g.audio.playOsc(600, 1500, 0.15, 'triangle', 0.1, 0); } catch (e) { /* */ }
@@ -4244,7 +4546,35 @@ class ReactorImpulso {
     if (!ps || !ps.active || !ps.pos) return;
     if (sinImpacto || this._cdT > 0) return;
     const ball = g.ball;
-    const rr = (DIMS.ballRadius || 0.02) + 0.085 + (ps.extraReach || 0);
+    if (typeof window !== 'undefined' && window.__PP_PADDLE_SWEEP) {
+      // v3.5.1 · GOLPEO REAL por el barrido esfera-PALA del núcleo (CCD1, el
+      // mismo puente del Escudo de pala y del rally clásico): golpea la HOJA
+      // con su física habitual (rebote + velocidad de la pala + efecto) y no
+      // el agarre — informe del dueño: «es imposible golpear por la pala».
+      // Nota: la pelota ES la bola real del juego (pos/vel/spin), el barrido
+      // responde como en un rally de verdad.
+      this._evts.length = 0;
+      const hit = window.__PP_PADDLE_SWEEP(ball, this._tmpA, ps, this._evts);
+      if (!hit || !this._evts.length) return;
+      this._cdT = 0.25;
+      const cp = this._evts[this._evts.length - 1].pos;
+      const v = ball.vel;
+      const sp = v.length();
+      if (sp < IMP_CFG.minBallOut) v.multiplyScalar(IMP_CFG.minBallOut / Math.max(sp, 0.01));
+      else if (sp > IMP_CFG.maxBallOut) v.multiplyScalar(IMP_CFG.maxBallOut / sp);
+      if (v.y < 0.4) v.y = 0.4 + Math.random() * 0.45;   // arco jugable (patrón REACTOR)
+      if (this.ballState === 'hold') {
+        this.ballState = 'play';
+        this.flight = 0;
+        g.rules.message = tx('¡A por los cubos!', 'Go get the cubes!');
+      }
+      this._flash(cp || ball.pos, 0x9fe8ff);
+      g.audio.playOsc(430, 620, 0.06, 'square', 0.2, 0);
+      if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.55, 70);
+      return;
+    }
+    // Respaldo (sin puente, patrón REACTOR): bumper esfera-grip
+    const rr = (DIMS.ballRadius || 0.02) + 0.11 + (ps.extraReach || 0);
     this._tmpB.copy(ball.pos).sub(ps.pos);
     if (this._tmpB.lengthSq() > rr * rr) return;
     if (this._tmpB.lengthSq() < 1e-6) this._tmpB.set(0, 0.3, 1);
@@ -4327,7 +4657,9 @@ class ReactorImpulso {
     this.phaseT = win ? 4.6 : 4.0;
     this.waveActive = false;
     this.pert = null;
-    this.diana.sp.visible = false;
+    this.diana.mesh.visible = false;
+    this.diana.u = 1;
+    this.diana.fase = 'wait';
     // la pelota queda en reposo sobre la base
     this.ballState = 'hold';
     this.holdT = 0;
@@ -4382,7 +4714,12 @@ class ReactorImpulso {
     a._despuesDePrueba();
   }
 
-  /* ---------------- pantalla informativa (pantallainfo.png) ---------------- */
+  /* ---------------- pantalla informativa (pantallainfo.png) ----------------
+   * v3.5.1 · informe del dueño: «los textos informativos deben estar dentro
+   * del panel correspondiente sin cortar las letras». TODO el texto vive
+   * ahora DENTRO de la pantalla del arte (medida sobre el PNG: interior
+   * oscuro x 64..959 · y 286..456) — nada flota fuera del panel ni se pisa
+   * entre columnas (antes «PERTURBACIÓN» solapaba «REACTOR INESTABLE»). */
   _pantalla() {
     const cv = this.panCv, c = cv.getContext('2d');
     const sec = Math.max(0, Math.ceil(this.waveT));
@@ -4395,17 +4732,18 @@ class ReactorImpulso {
     if (this._panImg) c.drawImage(this._panImg, 0, 0, 1024, 512);
     else {
       c.fillStyle = 'rgba(6,10,18,0.92)';
-      c.fillRect(70, 60, 884, 392);
+      c.fillRect(64, 286, 895, 170);
     }
+    const XL = 96, XC = 512, XR = 928;         // columnas dentro de la pantalla
     const banner = this._banner;
     if (banner && (this.phase === 'intro' || this.phase === 'result')) {
       c.textAlign = 'center'; c.textBaseline = 'middle';
       c.fillStyle = banner.col;
-      c.font = '900 64px system-ui, sans-serif';
-      c.fillText(banner.title, 512, 218);
+      c.font = '900 42px system-ui, sans-serif';
+      c.fillText(banner.title, XC, 344);
       c.fillStyle = '#dfe6ec';
-      c.font = '600 36px system-ui, sans-serif';
-      c.fillText(banner.sub, 512, 296);
+      c.font = '600 22px system-ui, sans-serif';
+      c.fillText(banner.sub, XC, 408);
       this.panTex.needsUpdate = true;
       return;
     }
@@ -4415,47 +4753,41 @@ class ReactorImpulso {
       : this.pert === 'atractor' ? 'ATRACTOR'
         : this.pert === 'super' ? 'SUPERGRAVEDAD' : '—';
     c.textBaseline = 'middle';
-    // cabecera
+    // fila de etiquetas (19 px, gris azulado)
+    c.font = '700 19px system-ui, sans-serif';
+    c.fillStyle = '#8fa3b8';
+    c.textAlign = 'left';
+    c.fillText('OLEADA', XL, 312);
+    c.fillText('CUBOS', XL, 396);
+    c.textAlign = 'right';
+    c.fillText('REACTOR', XR, 312);
+    c.fillText('PERTURBACIÓN', XR, 396);
     c.textAlign = 'center';
     c.fillStyle = '#bfe9ff';
-    c.font = '800 33px system-ui, sans-serif';
-    c.fillText('REACTOR DE IMPULSO · ESTACIÓN ORBITAL', 512, 108);
-    // bloque izquierdo: oleada y cubos
+    c.fillText('TIEMPO', XC, 312);
+    // fila de valores
     c.textAlign = 'left';
     c.fillStyle = '#ffd257';
-    c.font = '900 44px system-ui, sans-serif';
-    c.fillText('PERTURBACIÓN ' + Math.max(1, this.wave), 118, 196);
-    c.fillStyle = '#8fa3b8';
-    c.font = '700 24px system-ui, sans-serif';
-    c.fillText('CUBOS RESTANTES', 120, 268);
+    c.font = '900 36px system-ui, sans-serif';
+    c.fillText(Math.max(1, this.wave) + ' / ' + IMP_CFG.waves.length, XL, 352);
     c.fillStyle = '#ffffff';
-    c.font = '900 58px system-ui, sans-serif';
-    c.fillText(this.aliveCubes + ' / ' + (this.wave ? IMP_CFG.waves[this.wave - 1] : 0), 120, 336);
-    // bloque central: tiempo
-    c.textAlign = 'center';
-    c.fillStyle = '#8fa3b8';
-    c.font = '700 24px system-ui, sans-serif';
-    c.fillText('TIEMPO', 512, 268);
-    c.fillStyle = tcol;
-    c.font = '900 64px ui-monospace, SFMono-Regular, Menlo, monospace';
-    c.fillText(mm + ':' + (ss < 10 ? '0' : '') + ss, 512, 340);
-    // bloque derecho: estado del reactor
+    c.fillText(this.aliveCubes + ' / ' + (this.wave ? IMP_CFG.waves[this.wave - 1] : 0), XL, 434);
     c.textAlign = 'right';
     c.fillStyle = this.reactorState === 'inestable' ? '#ff5a48' : '#5aa8ff';
-    c.font = '900 40px system-ui, sans-serif';
-    c.fillText(this.reactorState === 'inestable' ? 'REACTOR INESTABLE' : 'REACTOR ESTABLE', 906, 196);
-    c.fillStyle = '#8fa3b8';
-    c.font = '700 24px system-ui, sans-serif';
-    c.fillText('PERTURBACIÓN ACTIVA', 906, 268);
+    c.font = '900 30px system-ui, sans-serif';
+    c.fillText(this.reactorState === 'inestable' ? 'INESTABLE' : 'ESTABLE', XR, 352);
     c.fillStyle = this.pert ? '#c9a6ff' : '#5f7186';
-    c.font = '900 36px system-ui, sans-serif';
-    c.fillText(nombrePert, 906, 336);
-    // estado entre oleadas
+    c.font = '900 26px system-ui, sans-serif';
+    c.fillText(nombrePert, XR, 434);
+    c.textAlign = 'center';
+    c.fillStyle = tcol;
+    c.font = '900 50px ui-monospace, SFMono-Regular, Menlo, monospace';
+    c.fillText(mm + ':' + (ss < 10 ? '0' : '') + ss, XC, 356);
+    // mensaje entre oleadas (bajo el reloj, dentro de la pantalla)
     if (!enJuego && this.phase === 'play') {
-      c.textAlign = 'center';
       c.fillStyle = '#7fb069';
-      c.font = '800 30px system-ui, sans-serif';
-      c.fillText('REACTOR ESTABLE · PREPARANDO SIGUIENTE OLEADA…', 512, 412);
+      c.font = '800 19px system-ui, sans-serif';
+      c.fillText('REACTOR ESTABLE · PREPARANDO SIGUIENTE OLEADA…', XC, 430);
     }
     this.panTex.needsUpdate = true;
   }
@@ -6475,18 +6807,18 @@ class StockController {
     const D = this.D;
 
     // RIVAL: standee del ASTRO (assets/rival.webp, arte del dueño)
-    // v3.4.1 · 2.ª CORRECCIÓN DE COLOCACIÓN (informe del dueño: «el rival
-    // sigue apareciendo dentro de la pared»): el spot v3.2.1 (x 1,62 · z −4,5)
-    // dejaba al ASTRO a sólo 1,05 m de la pared frontal — desde el punto de
-    // vista del jugador la perspectiva lo fundía con el arte de la pared
-    // (pies en la línea base del muro, cuerpo sobre los paneles pintados).
-    // AHORA: convención EXACTA de los rivales bien colocados de la casa —
-    // REGLA FIJA de duelos (locura v2.71 / magia v2.71): x = borde derecho
-    // de la mesa + 0,50 ≈ 1,26 · z = −3,82 (la misma profundidad del CLOWN
-    // y del WIZARD: 0,85 m tras el borde lejano de la mesa y 1,73 m LIBRES
-    // de la pared frontal). Cuerpo entero de 2,15 m, pies en el suelo y de
-    // cara, como el forajido (historia: v3.2.1 lo puso en x 1,62 · z −4,5;
-    // antes flotaba a media sala en x 1,26 · z −3,5 con plano de 1,75 m).
+    // v3.5.1 · 3.ª CORRECCIÓN DE COLOCACIÓN (informe del dueño: «el rival
+    // astro está metido en la pared… que se coloque como en el resto de
+    // rivales, totalmente visible a una distancia fija de la mesa»): el
+    // spot v3.4.1 (z −3,82) caía justo sobre la TRANSICIÓN pintada del arte
+    // de la pared frontal — la sala dibuja su propia perspectiva y a esa
+    // profundidad los pies del ASTRO se leían dentro del arranque del muro
+    // (diagnóstico visual: download/diag_imp2/e1_rival.png). AHORA: más
+    // CERCA de la mesa, claramente DENTRO de la sala — z = borde lejano de
+    // la mesa − 0,33 (distancia fija, la misma referencia que los recortes
+    // del suelo que se leen bien) · x = borde derecho + 0,50 (regla fija de
+    // duelos). Cuerpo entero de 2,15 m, pies en el suelo y de cara.
+    // Historia: v3.2.1 (x 1,62 · z −4,5) · v3.4.1 (x 1,26 · z −3,82).
     const texRival = new THREE.TextureLoader().load(this._A('rival.webp'));
     texRival.colorSpace = THREE.SRGBColorSpace;
     this._ownTex.add(texRival);
@@ -6496,7 +6828,7 @@ class StockController {
     });
     const RIV_H = 2.15;                       // convención OESTE.spriteHeight
     this.rivalMesh = new THREE.Mesh(new THREE.PlaneGeometry(RIV_H * 0.5, RIV_H), rivalMat);
-    this.rivalMesh.position.set(1.26, RIV_H / 2, (D.tableCenterZ || -1.6) - 2.22);
+    this.rivalMesh.position.set(1.26, RIV_H / 2, (D.tableCenterZ || -1.6) - 1.70);
     this.rivalMesh.renderOrder = 6;
     this.group.add(this.rivalMesh);
     this._rivalEstado = '';
@@ -7193,8 +7525,10 @@ class StockController {
     const g = this.game;
     const ark = this.arkanoid;
     const imp = this.impulso;
-    // v3.4.0: la pistola también arma en el REACTOR DE IMPULSO (etapa 4)
-    const impOn = !!(imp && imp.active && imp.phase === 'play');
+    // v3.4.0: la pistola también arma en el REACTOR DE IMPULSO (etapa 2)
+    // v3.5.1: arma desde la INTRO (la pistola ya está en la mano libre)
+    const impOn = !!(imp && imp.active &&
+      (imp.phase === 'play' || imp.phase === 'intro'));
     const arkOn = !!(ark && ark.active && ark.variant === 2 && ark.phase === 'play');
     return !!(this.state === 'prueba' && (impOn || arkOn) &&
       g.gunMounts && g.gunMounts[1 - g.paddleHand] &&
@@ -7224,16 +7558,21 @@ class StockController {
     const ark = this.arkanoid;
     const imp = this.impulso;
     if (imp && imp.active && imp.phase === 'play') {
-      // v3.4.0: RAYCAST contra la DIANA cuántica (sólo ella; nunca los cubos)
-      const ray = new THREE.Raycaster(pos, dir, 0, 8.0);
-      ray.camera = g.camera;             // los SPRITES exigen raycaster.camera (three r170)
-      const tgt = imp.laserTargets();
-      if (tgt.length) {
-        const hits = ray.intersectObjects(tgt, false);
-        if (hits.length) {
-          hitDist = hits[0].distance;
-          hitPoint.copy(hits[0].point);
-          hitDiana = true;
+      // v3.5.0: RAYCAST contra la DIANA cuántica (sólo ella; nunca los cubos)
+      // v3.5.1: la diana es un BILLBOARD con desintegración — intersección
+      // rayo-esfera (radio generoso 0,55×size), sin raycaster de sprites
+      const d = imp.diana;
+      if (d && d.mesh.visible && d.fase === 'vis') {
+        const cw = d.mesh.getWorldPosition(new THREE.Vector3());
+        const toC = cw.clone().sub(pos);
+        const t = toC.dot(dir);
+        if (t > 0 && t < 8.0) {
+          const cp = pos.clone().addScaledVector(dir, t);
+          if (cp.distanceTo(cw) <= IMP_CFG.dianaSize * 0.55) {
+            hitDist = t;
+            hitPoint.copy(cp);
+            hitDiana = true;
+          }
         }
       }
     } else if (ark && ark.active && ark.bricks && ark.bricks.length) {
@@ -7393,8 +7732,9 @@ class StockController {
     const ark2On = !!(ark && ark.active && ark.variant === 2 &&
       g.renderer && g.renderer.xr && g.renderer.xr.isPresenting);
     // v3.4.0: la PISTOLA también se monta y arma en el REACTOR DE IMPULSO
+    // v3.5.1: y desde la INTRO (el dueño la echa de menos nada entrar)
     const imp = this.impulso;
-    const impOn = !!(imp && imp.active && imp.phase === 'play' &&
+    const impOn = !!(imp && imp.active && (imp.phase === 'play' || imp.phase === 'intro') &&
       g.renderer && g.renderer.xr && g.renderer.xr.isPresenting);
     const gunOn = ark2On || impOn;
     const holdPhase = ark && (ark.phase === 'serve' || ark.phase === 'intro' ||
@@ -7588,7 +7928,11 @@ class StockController {
     // ejecuta tras las escrituras de visibilidad del núcleo en el frame)
     try { if (g.aiPaddleMesh) g.aiPaddleMesh.visible = (this.state === 'duelo'); } catch (e) { /* */ }
     // v3.2.0: pistola láser del MURO 2 (montaje/visibilidad/fade de rayos)
-    if (this.arkanoid && this.arkanoid.active) this._gunUpdate(dt);
+    // v3.5.1: TAMBIÉN en el REACTOR DE IMPULSO — informe del dueño: «no
+    // aparece la pistola en nuestra mano para poder disparar a las dianas»:
+    // _gunUpdate sólo corría con el muro activo y la pistola nunca se montaba.
+    if ((this.arkanoid && this.arkanoid.active) ||
+        (this.impulso && this.impulso.active)) this._gunUpdate(dt);
     // v3.2.1: coreografía del cartel SuperPower (ancla a la red + vaivén)
     if (this.pwSign) this.pwSign.update(dt);
     // v3.2.1: EXPRESIONES DEL ASTRO según el momento de la partida

@@ -1995,3 +1995,21 @@ Work Log:
 Stage Summary:
 - RESPALDO ANTI-ROLLBACK OPERATIVO: la historia completa (83 commits) vive en github.com/FranJavierDavila/CrazyPP rama «proyecto»; el relay Railway sigue en «main». Restauración tras reciclaje: git clone -b proyecto https://github.com/FranJavierDavila/CrazyPP.git.
 - Pendiente: dueño puede borrar el PAT ya (expira en 7 días); si se quiere futuro push se pide token nuevo; opción de repo privado a valorar por el dueño.
+
+---
+Task ID: 89
+Agent: main (Z.ai)
+Task: MODULARIZACIÓN P0 · FASE 1 — el monolito game.html (6,34 MB · 17.475 líneas) deja de ser la fuente de verdad: src/game/ con 8 wrappers + 14 subsistemas y ensamblador con verificación de identidad. Extra: CAZA DE UN FALLO REAL del QA (física incompleta del harness).
+
+Work Log:
+- Mapa estructural (scripts/mapa_game.py): 125 marcas top-level; el núcleo es UN <script type="module"> de 381..17032 con 7 bloques auxiliares alrededor; los artefactos de extracción de octubre (game_part*.js) estaban obsoletos vs v3.6.0.
+- División byte-exacta (scripts/divide_game.py): cortes validados por TOKEN en la 1.ª línea de cada trozo + recomposición byte-exacta verificada (sha256 de109e090f31c227… = original). 22 piezas en src/game/ (00_head…07_tail + core/c00…c13) + GOLDEN_SHA256.txt. Tres correcciones del propio divisor durante el camino (tokens desplazados, ruta core/, orden canónico de recomposición).
+- Ensamblador permanente (scripts/build_game.py): ORDER fijo (un fichero nuevo en core/ NO entra solo), token de identidad por pieza, ensayo sin --escribir, aviso DIFIERE vs golden. Prueba negativa: editado un trozo → detecta DIFIERE y NO escribe; restaurado → BYTE-EXACTO de nuevo.
+- Verificación triple: local = :3000 = :81 = de109e09… (curl sha256 idéntico por las tres vías).
+- BUG REAL del QA cazado de propina: el check «rebota ENTRE ELLAS» (gravedad cero) fallaba 5× seguidas con bytes de juego IDÉNTICOS. Sonda Playwright (scripts/probe_cero.py): la bola escapaba a y=17,97 — la integración manual del harness NO aplicaba la gravedad del núcleo (DIMS.gravity −9,81), así que el +9,6·dt de _ceroStep (compensación) actuaba como LANZADOR y la bola superaba las motas sin tocar el umbral dl<0,26. El check pasaba o fallaba por suerte geométrica del scatter aleatorio. FIX del harness: aplicar la gravedad del núcleo en la integración manual (GRAV = ctrl.D.gravity) + _poderClear() anti-estado-viejo en tractor y gravedad. Resultado: 16 y 20 cambios de objetivo (sano) y 75 OK · 0 fallos ×2.
+- LEEME.md de src/game/ con el flujo de edición obligatorio y las próximas fases (Fase 2: módulos ES reales; Fase 3: SDK de campeonato).
+
+Stage Summary:
+- FASE 1 COMPLETADA: editar el juego ya no es editar un monolito — cada subsistema es un fichero revisable (el audio 69 KB, la física CCD 15 KB, la red 32 KB…), y el ensamblador impide sincronizar por accidente. La cadena de release NO cambia: game.html sigue siendo un único fichero autocontenido, byte-exacto.
+- El QA sup1 quedó MÁS robusto que antes de modularizar (check de gravedad cero ahora verifica la física real, no la suerte).
+- Pendiente (Fase 2): import/export reales + SDK de campeonato; hoy no se toca para no alterar bytes de la v3.6.0 publicada.

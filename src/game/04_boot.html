@@ -1,0 +1,15 @@
+<script>
+/* URL de la página de Ko-fi (aparece en la portada y en Opciones del menú
+ * VR). Crea la cuenta en ko-fi.com y pon aquí TU dirección. */
+window.PP_KOFI_URL = 'https://ko-fi.com/escala3d';
+/* Endpoint de telemetría anónima (POST JSON por lotes). VACÍO = los
+ * eventos SOLO se encolan en el dispositivo y no se envían a nadie. */
+window.PP_TELEMETRY_ENDPOINT = 'https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele';
+document.addEventListener('DOMContentLoaded', function () {
+  var kb = document.getElementById('kofibtn');
+  if (kb) kb.addEventListener('click', function () {
+    try { window.open(window.PP_KOFI_URL, '_blank', 'noopener'); } catch (e) { /* */ }
+  });
+});
+</script>
+

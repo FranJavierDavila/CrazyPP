@@ -166,6 +166,7 @@ async def main():
           const G = window.__PP_GAME;
           const mod = G.champs.moduleIfLoaded('estacion_orbital');
           const ctrl = mod.controller;
+          ctrl._poderClear();   // anti-flake (Task 89): mismo patrón que en gravedad cero
           const def = { kind: 'custom', name: 'Rayo tractor', duration: 7 };
           const D = ctrl.D;
           const bz = (D.tableCenterZ || -1.6) + 0.55;
@@ -215,9 +216,10 @@ async def main():
           const G = window.__PP_GAME;
           const mod = G.champs.moduleIfLoaded('estacion_orbital');
           const ctrl = mod.controller;
+          ctrl._poderClear();   // anti-flake (Task 89): fuera poderes/avisos envejecidos del bucle vivo
+          const rally0 = G.rules.state;
           const def = { kind: 'custom', name: 'Gravedad cero', duration: 8 };
           ctrl._poderArrancar(def);
-          const rally0 = G.rules.state;
           G.rules.state = 'rally';
           const ball = G.ball;
           ball.pos.set(0, 0.95, -0.7);
@@ -226,8 +228,10 @@ async def main():
           for (let i = 0; i < 10; i++) ctrl._ceroStep(1 / 60, ctrl._act, ball, true);
           const out = { motas: ctrl.motas.filter(m => m.s.material.opacity > 0.1).length };
           let minY = 9, spd = 0, cambios = 0, lastT = ctrl._act.tgt;
+          const GRAV = (ctrl.D && ctrl.D.gravity != null) ? ctrl.D.gravity : -9.81;
           for (let i = 0; i < 300; i++) {          // 5 s a 1/60
             ctrl._ceroStep(1 / 60, ctrl._act, ball, true);
+            ball.vel.y += GRAV * (1 / 60);   // Task 89: gravedad del núcleo — el poder compensa +9,6 y el flotado es real (antes la bola salía lanzada y el check fallaba por suerte geométrica)
             ball.pos.addScaledVector(ball.vel, 1 / 60);   // integra como el núcleo
             minY = Math.min(minY, ball.pos.y);
             spd = ball.vel.length();

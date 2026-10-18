@@ -1,0 +1,2 @@
+# SHA256 del game.html que produjo esta división (v3.6.0-SUP1, Task 89)
+de109e090f31c227b6a09ce0a867c54c66f345eba3fe168fc3561e052d40e0cf

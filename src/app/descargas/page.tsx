@@ -4,11 +4,11 @@ export default function Descargas() {
   const files = [
     {
       emoji: "☁️",
-      nombre: "Juego + CRAZY TV — V3.5.1-IMP2 (paquete Cloudflare)",
+      nombre: "Juego + CRAZY TV — V3.6.0-SUP1 (paquete Cloudflare)",
       detalle:
-        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con el REACTOR DE IMPULSO AFINADO en la etapa 2 (golpeo CCD real de la pala, pistola láser en la mano, dianas con desintegración, cubos a la mitad con la estética del decorado, ventanas con velocidad lumínica tras el cristal), el ESCUDO DE PALA en la etapa 4, el ASTRO bien colocado en la sala, PRECISIÓN CCD, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
-      tamano: "125,1 MB · ZIP · Cloudflare Pages",
-      href: "/descargas/crazypp-v351-imp2-CLOUDFLARE.zip",
+        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con los SUPERPODERES REDEFINIDOS (aviso con la partida congelada, meteoritos en 3D, rayo tractor con dron que atrapa la bola, gravedad cero que hace rebotar la bola entre partículas), la voz del ASTRO (risa y enfado), el REACTOR DE IMPULSO en la etapa 2 (dianas visibles 2 s y la pelota que siempre vuelve a la base), el ESCUDO DE PALA en la etapa 4, PRECISIÓN CCD, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
+      tamano: "125,2 MB · ZIP · Cloudflare Pages",
+      href: "/descargas/crazypp-v360-sup1-CLOUDFLARE.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",
       borde: "border-sky-500/40",
@@ -16,11 +16,11 @@ export default function Descargas() {
     },
     {
       emoji: "🧊",
-      nombre: "Juego + CRAZY TV — V3.5.1-IMP2 (paquete completo)",
+      nombre: "Juego + CRAZY TV — V3.6.0-SUP1 (paquete completo)",
       detalle:
-        "La V3.5.1-IMP2 íntegra: AJUSTE FINO del REACTOR DE IMPULSO (etapa 2) por el informe del dueño en casco — el GOLPEO de la pala es REAL (el mismo barrido CCD esfera-pala del núcleo que el Escudo y el rally: se golpea con la hoja, no con el agarre) y el bote-en-espera es más vivo (0,80 s, salida 3..9 m/s) · la PISTOLA LÁSER pistol.glb ya aparece en la mano libre durante todo el reactor (antes nunca se montaba) · las DIANAS CUÁNTICAS aparecen y desaparecen con un efecto de DESINTEGRACIÓN (shader de disolución con borde de energía y restos; el láser las desintegra rápido) · los CUBOS CUÁNTICOS son la MITAD de pequeños (0,16 m) y están elaborados con la estética del decorado: marco de paneles de la sala, nodos ámbar, carcasa oscura y núcleo azul/rojo · la VELOCIDAD LUMÍNICA se ve a través del cristal de los ventanales (recorte alpha real): espacio negro y partículas pasando de delante hacia atrás a toda velocidad — la nave avanza · el ATRACTOR agrupa los cubos casi unidos pero SIN penetrarse (huecos propios + separación por pares) · los textos de la PANTALLA del techo viven DENTRO del panel, sin cortar letras ni solaparse · el NÚCLEO es un modelo detallado (columna de plasma, blindaje con costillas ámbar, domo, antena, peana y anillos de contención) · y el ASTRO de la etapa 1 se coloca a distancia fija de la mesa, totalmente visible · más el ESCUDO DE PALA en la etapa 4 (orbes de plasma, drones piratas, Centinela y nave abordadora) · PRECISIÓN CCD SDF, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
-      tamano: "125,1 MB · ZIP · completo",
-      href: "/descargas/crazypp-v351-imp2-COMPLETO.zip",
+        "La V3.6.0-SUP1 íntegra: SUPERPODERES REDEFINIDOS por el dueño — el aviso «Super Power!!» CONGELA la partida de verdad (IA, física, saque y árbitro) hasta que desaparece, como siempre se presupuso · los METEORITOS son pequeñas ROCAS EN 3D procedurales (basalto con vetas de óxido, calor de entrada y tumbling) que estallan al bloquear la bola · el RAYO TRACTOR sale de un mini DRON posado encima del haz y la bola que lo cruza queda ATRAPADA flotando dentro del rayo hasta que desaparece y cae VERTICALMENTE · la GRAVEDAD CERO atrae la bola y la hace rebotar ENTRE las partículas blancas de manera aleatoria hasta que desaparecen y la dejan caer · AUDIOS del ASTRO (mp3 del dueño): risa_astro.mp3 con la pose de risas y enfado_astro.mp3 cuando pierde un punto · el REACTOR DE IMPULSO (etapa 2) conserva sus correcciones: la diana cuántica se ve 2 s (antes 1 s) y la pelota SIEMPRE vuelve a botar sobre la base flotante · más el ESCUDO DE PALA en la etapa 4 (orbes de plasma, drones piratas, Centinela y nave abordadora) · PRECISIÓN CCD SDF, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+      tamano: "125,2 MB · ZIP · completo",
+      href: "/descargas/crazypp-v360-sup1-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -28,11 +28,11 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.5.1-IMP2 — versión ligera (sin campeonatos)",
+      nombre: "V3.6.0-SUP1 — versión ligera (sin campeonatos)",
       detalle:
-        "El mismo paquete para subir rápido a Netlify Drop: juego con el Reactor de impulso afinado (etapa 2), el Escudo de pala (etapa 4), el ASTRO bien colocado en la sala, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital con sus dos reactores). Tampoco vale para Cloudflare directo (lleva TypeScript).",
+        "El mismo paquete para subir rápido a Netlify Drop: juego con los superpoderes redefinidos, la voz del ASTRO, el Reactor de impulso (etapa 2), el Escudo de pala (etapa 4), la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital con sus dos reactores). Tampoco vale para Cloudflare directo (lleva TypeScript).",
       tamano: "11,5 MB · ZIP · Netlify",
-      href: "/descargas/crazypp-v351-imp2-ligera.zip",
+      href: "/descargas/crazypp-v360-sup1-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -68,26 +68,25 @@ export default function Descargas() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
             El paquete actual es la{" "}
-            <strong className="text-amber-300">V3.5.1-IMP2</strong>: el{" "}
-            <strong className="text-slate-200">Reactor de impulso</strong>{" "}
-            (etapa 2) queda afinado con el informe del dueño — el{" "}
-            <strong className="text-slate-200">golpeo de la pala</strong> ya es
-            el barrido CCD real del juego, la{" "}
-            <strong className="text-slate-200">pistola láser</strong> aparece en
-            la mano libre, las <strong className="text-slate-200">dianas</strong>{" "}
-            se desintegran al aparecer y desaparecer, los{" "}
-            <strong className="text-slate-200">cubos cuánticos</strong> son la
-            mitad de pequeños y visten la estética del decorado, la{" "}
-            <strong className="text-slate-200">velocidad lumínica</strong> se ve
-            a través del cristal de las ventanas con el espacio pasando a toda
-            velocidad, el <strong className="text-slate-200">atractor</strong>{" "}
-            junta los cubos sin penetrarlos, la{" "}
-            <strong className="text-slate-200">pantalla</strong> del techo lee
-            todo dentro del panel y el{" "}
-            <strong className="text-slate-200">núcleo</strong> es un modelo
-            detallado. Y el <strong className="text-slate-200">ASTRO</strong> de
-            la etapa 1 se coloca a distancia fija de la mesa, totalmente
-            visible. Bajo todo ello: el{" "}
+            <strong className="text-amber-300">V3.6.0-SUP1</strong>: los{" "}
+            <strong className="text-slate-200">superpoderes</strong> se
+            redefinen a petición del dueño — el aviso{" "}
+            <strong className="text-slate-200">congela la partida</strong>{" "}
+            hasta desaparecer, los{" "}
+            <strong className="text-slate-200">meteoritos</strong> son rocas en
+            3D con vetas de óxido, el{" "}
+            <strong className="text-slate-200">rayo tractor</strong> sale de un
+            dron y atrapa la bola flotando dentro del rayo hasta soltarla en
+            caída vertical, la{" "}
+            <strong className="text-slate-200">gravedad cero</strong> hace
+            rebotar la bola entre las partículas blancas y el{" "}
+            <strong className="text-slate-200">ASTRO</strong> estrena voz:{" "}
+            <strong className="text-slate-200">risa</strong> cuando se burla con
+            la pose de risas y <strong className="text-slate-200">enfado</strong>{" "}
+            cuando pierde un punto. En el{" "}
+            <strong className="text-slate-200">Reactor de impulso</strong> la
+            diana se ve 2 segundos y la pelota siempre vuelve a botar sobre la
+            base. Bajo todo ello: el{" "}
             <strong className="text-slate-200">Escudo de pala</strong> en la
             etapa 4, la <strong className="text-slate-200">PRECISIÓN CCD</strong>,
             el saque VR realista, el hall como hub, la física viva y las palas
@@ -177,7 +176,7 @@ export default function Descargas() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.5.1-IMP2 · WebXR · Reactor de impulso afinado ·
+          Crazy Ping Pong V3.6.0-SUP1 · WebXR · Superpoderes redefinidos ·
           Escudo de pala · Estación Orbital · Precisión CCD · CRAZY TV · Meta
           Quest 3
         </footer>

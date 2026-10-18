@@ -399,6 +399,44 @@ function _texFragmento() {
   return t;
 }
 
+/* — v3.6.0 · GEOMETRÍA DE METEORITO (roca 3D del superpoder) ———————————
+ *  Informe del dueño: «sustituye las actuales imágenes recortadas de
+ *  meteoritos por pequeñas rocas en 3d que parezcan verdaderos meteóritos».
+ *  Icosaedro con desplazamiento radial determinista (dos escalas de ruido +
+ *  variante por shape) y COLOR POR VÉRTICE: basalto gris-oscuro con piedra
+ *  clara y vetas de óxido (hierro) — flat shading = aspecto tallado real.
+ *  La geometría es no-indexada: el desplazamiento depende SOLO de la
+ *  dirección de cada vértice, así que no hay grietas entre caras. */
+function _geoMeteorito(shape) {
+  const R = 0.155;                     // radio base (~0,31 m de diámetro real)
+  const geo = new THREE.IcosahedronGeometry(R, 1);
+  const pos = geo.attributes.position;
+  const col = [];
+  const cBase = new THREE.Color(0x5d5147);      // basalto
+  const cDark = new THREE.Color(0x3a322b);      // sombra
+  const cRust = new THREE.Color(0x8a5a33);      // óxido (hierro)
+  const cLite = new THREE.Color(0x7d7469);      // piedra clara
+  const v = new THREE.Vector3();
+  const n = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    n.copy(v).normalize();
+    const d = 0.74 +
+      0.17 * Math.sin(n.x * (5.1 + shape) + n.y * 3.7 + shape * 2.3) +
+      0.12 * Math.sin(n.y * 7.3 - n.z * 5.9 + shape * 1.7) +
+      0.08 * Math.sin(n.z * 11.1 + n.x * 8.3);
+    v.copy(n).multiplyScalar(R * d);
+    pos.setXYZ(i, v.x, v.y, v.z);
+    const m = 0.5 + 0.5 * Math.sin(n.x * 4.2 + n.y * 6.1 + n.z * 5.3 + shape * 1.9);
+    const c = cBase.clone().lerp(m > 0.62 ? cLite : cDark, Math.abs(m - 0.5) * 2);
+    if (m < 0.24) c.lerp(cRust, 0.6);            // vetas de hierro oxidado
+    col.push(c.r, c.g, c.b);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
 /* ============================================================================
  *  DianasOrbitales — LAS PRUEBAS DE HABILIDAD (v3)
  *  ----------------------------------------------------------------------------
@@ -3292,7 +3330,9 @@ const IMP_CFG = {
   graceT: 0.40,                // animación de rebote antes de estar disponible
   respawnT: 0.8,               // reposición de pelota (configurable)
   fragLife: 0.9,               // vida de los fragmentos (configurable)
-  dianaVis: 1.0, dianaWait: 1.0, dianaSize: 0.46,     // ciclo 1 s / 1 s
+  // v3.6.0 · informe del dueño: «la diana debe aparecer durante 2 segundos
+  // sino resulta casi imposible dispararle» — ciclo 2 s visible / 1 s espera
+  dianaVis: 2.0, dianaWait: 1.0, dianaSize: 0.46,     // ciclo 2 s / 1 s
   dianaIn: 0.26, dianaOut: 0.30, dianaOutHit: 0.16,   // desintegración (in/out)
   pertAutoT: 30,               // cambio automático de perturbación
   // v3.5.1 · «los cubos, la mitad de pequeños»: 0,32 → 0,16 m de canto
@@ -3336,6 +3376,7 @@ class ReactorImpulso {
     this._tmpB = new THREE.Vector3();
     this._tmpC = new THREE.Vector3();
     this._evts = [];                   // eventos del barrido CCD de la pala
+    this._restT = 0;                   // v3.6.0: reposo de la pelota (vuelta al bote)
   }
 
   /* Huecos del racimo del ATRACTOR (centro + 6 caras): hasta 7 cubos casi
@@ -4450,6 +4491,7 @@ class ReactorImpulso {
     this.graceT = grace == null ? IMP_CFG.graceT : grace;
     this.flight = 0;
     this._cdT = 0;
+    this._restT = 0;                   // v3.6.0: bote limpio
     g.ball.vel.set(0, 0, 0);
     g.ball.spin.set(0, 0, 0);
     g.ballMesh.visible = true;
@@ -4483,6 +4525,19 @@ class ReactorImpulso {
     }
     // PLAY: gobernada por la física del juego, responde al impacto real de la pala
     this._fisica(dt, false);
+    // v3.6.0 · informe del dueño: «la pelota aparece botando sobre la mesita
+    // circular al principio pero si la golpeamos ya no vuelve a aparecer» —
+    // cuando la pelota lanzada acaba REPOSANDA (sobre la base, en un canto,
+    // casi parada tras los rebotes) no se la esperaba quieta: se la considera
+    // perdida y vuelve a BOTAR sobre la base (el respawn de _bolaPerdida ya
+    // la re-coloca en el bote-en-espera). Umbral generoso: 0,35 m/s durante
+    // 0,6 s — un rally vivo nunca lo dispara.
+    if (ball.vel.lengthSq() < 0.1225) {
+      this._restT += dt;
+      if (this._restT > 0.6) { this._restT = 0; this._bolaPerdida(); }
+    } else {
+      this._restT = 0;
+    }
   }
 
   /** Integración propia por SUBPASOS (sin mesa virtual: aquí no hay mesa).
@@ -4691,6 +4746,7 @@ class ReactorImpulso {
         a.rivalMesh.position.set(0, 1.075, -2.1);
         a.rivalMesh.visible = true;
         a.rivalEstado('laughing');
+        a._sfx('risa_astro.mp3');        // v3.6.0: la risa del dueño, con la pose
       }
       if (a._replay) {
         this._banner = { title: '¡SE ACABÓ EL TIEMPO!', sub: 'Rejugada terminada', col: '#e06c5a' };
@@ -5573,6 +5629,7 @@ class EscudoCasco {
         a.rivalMesh.position.set(0, 1.075, -2.1);
         a.rivalMesh.visible = true;
         a.rivalEstado('laughing');       // astro_laughing, única aparición
+        a._sfx('risa_astro.mp3');        // v3.6.0: la risa del dueño, con la pose
       }
       this.luzAlarma.intensity = 1.6;
     }
@@ -6789,6 +6846,44 @@ class StockController {
     this._exprT = 0;               // transitorio de expresión restante
     this._streakP = 0; this._streakAi = 0;
     this._picandoDone = false;
+    // v3.6.0: SFX mp3 del ASTRO + estado del RAYO TRACTOR
+    this._sfxBufs = null; this._sfxBusy = null;
+    this._tractorTrap = null;      // bola atrapada dentro del haz { x, y, z }
+    this._tractorPrev = new THREE.Vector3();
+    this._tractorPrevOk = false;
+  }
+
+  /* — v3.6.0 · SFX DEL ASTRO (mp3 del dueño) ———————————————————————————
+   *  risa_astro.mp3 → cuando el rival se burla de nosotros con la pose de
+   *  risas · enfado_astro.mp3 → cuando pierde un punto. Motor propio con el
+   *  patrón de la música (fetch + decodeAudioData UNA vez, cache); respeta
+   *  el silencio del arcade (arcMute/_arcDucked). Nunca rompe el frame. */
+  _sfx(name) {
+    try {
+      const g = this.game;
+      const actx = g.audio && g.audio.ctx;
+      if (!actx || actx.state !== 'running') return;
+      if (!this._sfxBufs) this._sfxBufs = {};
+      if (!this._sfxBusy) this._sfxBusy = {};
+      if (!this._sfxBufs[name] && !this._sfxBusy[name]) {
+        this._sfxBusy[name] = true;
+        fetch(this._A(name))
+          .then((r) => r.arrayBuffer())
+          .then((ab) => actx.decodeAudioData(ab.slice(0)))
+          .then((buf) => { this._sfxBufs[name] = buf; this._sfxBusy[name] = false; })
+          .catch(() => { this._sfxBusy[name] = false; });
+      }
+      const buf = this._sfxBufs[name];
+      if (!buf) return;                    // aún decodificando: en silencio
+      const src = actx.createBufferSource();
+      src.buffer = buf;
+      const gn = actx.createGain();
+      const A = g.audio;
+      gn.gain.value = (A && (A.arcMute || A._arcDucked)) ? 0.0001 : 0.65;
+      src.connect(gn);
+      gn.connect(actx.destination);
+      src.start();
+    } catch (e) { /* sin SFX: nunca rompe */ }
   }
 
   _A(p) { return new URL('./assets/' + p, import.meta.url).href; }
@@ -6875,6 +6970,54 @@ class StockController {
       g.scene.add(this.beam);
     }
 
+    // v3.6.0 · DRON DEL RAYO TRACTOR (informe del dueño: «encima del rayo
+    // coloca un pequeño Dron para que el rayo salga de él») — mini dron 3D
+    // con la estética de la sala: casco metálico oscuro, anillo de carga
+    // verde-agua (el mismo tono del haz) y emisor inferior del que NACE
+    // el cono del tractor.
+    if (!this.dronTractor) {
+      const dtx = new THREE.Group();
+      const casco = new THREE.Mesh(
+        new THREE.SphereGeometry(0.085, 20, 14),
+        new THREE.MeshStandardMaterial({ color: 0x2a3542, roughness: 0.5, metalness: 0.75 }),
+      );
+      casco.scale.set(1, 0.62, 1);
+      dtx.add(casco);
+      const ojo = new THREE.Mesh(
+        new THREE.SphereGeometry(0.032, 12, 10),
+        new THREE.MeshBasicMaterial({ color: 0x8fffd8 }),
+      );
+      ojo.position.set(0, -0.028, 0.058);
+      dtx.add(ojo);
+      const anillo = new THREE.Mesh(
+        new THREE.TorusGeometry(0.115, 0.014, 10, 28),
+        new THREE.MeshStandardMaterial({
+          color: 0x6fffc8, emissive: 0x2fbf8f, emissiveIntensity: 0.9,
+          roughness: 0.35, metalness: 0.5,
+        }),
+      );
+      anillo.rotation.x = Math.PI / 2;
+      dtx.add(anillo);
+      const emisor = new THREE.Mesh(
+        new THREE.ConeGeometry(0.034, 0.06, 12, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0xbfffe6, transparent: true, opacity: 0.95, side: THREE.DoubleSide }),
+      );
+      emisor.rotation.x = Math.PI;             // boca hacia abajo: de donde sale el haz
+      emisor.position.y = -0.088;
+      dtx.add(emisor);
+      for (const sx of [-1, 1]) {
+        const pod = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.026, 0.032, 0.075, 10),
+          new THREE.MeshStandardMaterial({ color: 0x39485c, roughness: 0.55, metalness: 0.6 }),
+        );
+        pod.position.set(sx * 0.105, 0.012, 0);
+        dtx.add(pod);
+      }
+      dtx.visible = false;
+      g.scene.add(dtx);
+      this.dronTractor = dtx;
+    }
+
     // motas de GRAVEDAD CERO (pool flotante, una sola vez)
     if (!this.motas) {
       this.motas = [];
@@ -6891,23 +7034,24 @@ class StockController {
       }
     }
 
-    // METEORITOS: pool de rocas (sprites) del poder
+    // METEORITOS (v3.6.0 · informe del dueño: «pequeñas rocas en 3d que
+    // parezcan verdaderos meteóritos») — pool de ROCAS 3D procedurales
+    // (2 shapes × 2), color por vértice y calor de entrada al caer.
     if (!this.rocas) {
       this.rocas = [];
-      const texR1 = new THREE.TextureLoader().load(this._A('asteroide.png'));
-      const texR2 = new THREE.TextureLoader().load(this._A('asteroide2.png'));
-      texR1.colorSpace = THREE.SRGBColorSpace;
-      texR2.colorSpace = THREE.SRGBColorSpace;
-      this._poolTex.add(texR1); this._poolTex.add(texR2);
+      this._rocasGeo = [_geoMeteorito(0), _geoMeteorito(1)];
       for (let i = 0; i < 4; i++) {
-        const mat = new THREE.SpriteMaterial({
-          map: i % 2 ? texR1 : texR2, transparent: true, depthWrite: false, opacity: 0,
+        const mat = new THREE.MeshStandardMaterial({
+          vertexColors: true, flatShading: true,
+          roughness: 0.92, metalness: 0.08,
+          transparent: true, opacity: 0,
+          emissive: 0xff6a22, emissiveIntensity: 0,   // calor al caer
         });
-        const s = new THREE.Sprite(mat);
-        s.renderOrder = 24;
-        s.visible = false;
-        g.scene.add(s);
-        this.rocas.push({ s, mat, on: false, cayendo: false, x: 0, y: 0, z: 0, vy: 0, vida: 0, ph: Math.random() * 6 });
+        const m = new THREE.Mesh(this._rocasGeo[i % 2], mat);
+        m.visible = false;
+        m.renderOrder = 24;
+        g.scene.add(m);
+        this.rocas.push({ m, mat, on: false, cayendo: false, x: 0, y: 0, z: 0, vy: 0, vida: 0, ph: Math.random() * 6, sp: 1.5 + Math.random() * 1.3 });
       }
     }
 
@@ -6995,6 +7139,8 @@ class StockController {
     if (this.state !== 'duelo' || !it || it.survival) return;
     if (it.winner === 'player') {
       this._streakP = (this._streakP || 0) + 1; this._streakAi = 0;
+      // v3.6.0: el ASTRO PIERDE el punto → enfado_astro.mp3 (audio del dueño)
+      this._sfx('enfado_astro.mp3');
       const hits = it.rallyHits | 0;
       if (hits >= 6) {
         // COMBO del jugador: el ASTRO se ENFADA (como el clown)
@@ -7005,7 +7151,11 @@ class StockController {
     } else {
       this._streakAi = (this._streakAi || 0) + 1; this._streakP = 0;
       if (this._streakAi >= 2) this._exprSet('crazy', 3.4);   // enloquece
-      else this._exprSet('laughing', 2.4);                    // se ríe de ti
+      else {
+        // v3.6.0: se ríe de ti CON LA POSE DE RISAS → risa_astro.mp3
+        this._sfx('risa_astro.mp3');
+        this._exprSet('laughing', 2.4);                       // se ríe de ti
+      }
     }
   }
   _exprUpdate(dt) {
@@ -7983,6 +8133,18 @@ class StockController {
         CFG.rival + ' readies: ' + def.name + '!');
       this._psMuestra(def, false);          // v3.2: CARTEL con el identificador
     this.rivalEstado('crazy');            // v3.2.0: ¡el ASTRO se revuelve!
+      // v3.6.0 · «Ojo siempre que se anuncia un superPower el juego permanece
+      // congelado hasta que desaparece el aviso, esto siempre ha sido así» —
+      // La Locura lo hace con g.freezeT (v2.40: gates IA/física/saque/árbitro),
+      // pero el módulo orbital NUNCA lo activaba: el aviso se ahorraba la
+      // congelación y la bola seguía volando. AHORA: la partida se congela el
+      // tiempo del cartel (el aviso sigue contando en champs.update, que no
+      // está gateado — mismo patrón que la casa) y al reanudarse entra el
+      // efecto en el punto exacto.
+      try {
+        this.game.freezeT = Math.max(this.game.freezeT || 0,
+          (def.warn || 2.0) + 0.15);
+      } catch (e) { /* sin congelación: nunca rompe */ }
       try { this.game.audio.playOsc(180, 320, 0.3, 'sawtooth', 0.10, 0); } catch (e) { /* */ }
     } else {
       this._bolsa.unshift(def);       // devuélvelo: no salió esta vez
@@ -8077,6 +8239,13 @@ class StockController {
         this.beam.position.set(0, 1.9, (D.tableCenterZ || -1.6) + 0.55);
         this.beam.scale.set(1, 1.14, 1);           // cono: 1,9 m → punta en 0,76
         this.beam.rotation.z = 0;
+        // v3.6.0: el dron se posa ENCIMA del haz (el rayo sale de su emisor)
+        if (this.dronTractor) {
+          this.dronTractor.visible = true;
+          this.dronTractor.position.set(0, 2.02, (D.tableCenterZ || -1.6) + 0.55);
+          this.dronTractor.rotation.y = 0;
+        }
+        this._tractorTrap = null;                  // sin capturas heredadas
         try { g.audio.playOsc(90, 55, 0.6, 'sawtooth', 0.12, 0); } catch (e) { /* */ }
       } else if (def.name === 'Gravedad cero') {
         const D = this.D;
@@ -8097,6 +8266,7 @@ class StockController {
   _poderFin() {
     const a = this._act;
     if (!a) return;
+    const g = this.game;                           // v3.6.0: tractor/cero sueltan la bola
     // limpieza del efecto que termina (cada poder esconde SOLO lo suyo)
     if (a.def.kind === 'confeti') {
       this._confeti = null;
@@ -8104,12 +8274,26 @@ class StockController {
         for (const p of this._poolConfeti) { p.on = false; p.s.material.opacity = 0; }
       }
     } else if (a.def.name === 'Meteoritos') {
-      for (const r of this.rocas) { r.on = false; r.s.visible = false; r.mat.opacity = 0; }
+      for (const r of this.rocas) { r.on = false; r.m.visible = false; r.mat.opacity = 0; r.mat.emissiveIntensity = 0; }
     } else if (a.def.name === 'Rayo tractor') {
       this.beam.visible = false;
       this.beamMat.opacity = 0;
+      // v3.6.0: el rayo DESAPARECE y deja caer la bola VERTICALMENTE
+      if (this.dronTractor) this.dronTractor.visible = false;
+      if (this._tractorTrap && g.ball && g.ball.vel) {
+        g.ball.vel.set(0, 0, 0);                   // caída vertical pura
+        if (g.ball.spin) g.ball.spin.set(0, 0, 0);
+        if (g.ball.__exPrev) g.ball.__exPrev.copy(g.ball.pos);
+      }
+      this._tractorTrap = null;
     } else if (a.def.name === 'Gravedad cero') {
       for (const m of this.motas) m.s.material.opacity = 0;
+      // v3.6.0: las partículas DESAPARECEN y dejan caer la bola
+      if (g.ball && g.ball.vel) {
+        g.ball.vel.x *= 0.15;
+        g.ball.vel.z *= 0.15;
+        if (g.ball.vel.y > 0) g.ball.vel.y = 0;    // cae, no sale disparada
+      }
     }
     this._act = null;
     this._powerCd = 10 + Math.random() * 5;      // v3.2: antes 12+8 (más ágil)
@@ -8123,7 +8307,9 @@ class StockController {
     this._toward = false;
     this._psOculta();                            // v3.2: fuera el cartel
     if (this.beam) { this.beam.visible = false; this.beamMat.opacity = 0; }
-    if (this.rocas) for (const r of this.rocas) { r.on = false; r.cayendo = false; r.s.visible = false; r.mat.opacity = 0; }
+    if (this.dronTractor) this.dronTractor.visible = false;   // v3.6.0
+    this._tractorTrap = null;                                  // v3.6.0
+    if (this.rocas) for (const r of this.rocas) { r.on = false; r.cayendo = false; r.m.visible = false; r.mat.opacity = 0; r.mat.emissiveIntensity = 0; }
     if (this.motas) for (const m of this.motas) m.s.material.opacity = 0;
     if (this._poolConfeti) for (const p of this._poolConfeti) { p.on = false; p.s.material.opacity = 0; }
     this._confeti = null;
@@ -8194,7 +8380,10 @@ class StockController {
     if (!dentro && c.t > c.dur + 1.5) { this._confeti = null; this._poderFin(); }
   }
 
-  /* — METEORITOS: caen a TU campo y BLOQUEAN la bola (patrón Burla) ------ */
+  /* — METEORITOS (v3.6.0 · ROCAS 3D): caen a TU campo y BLOQUEAN la bola —
+   *  Las rocas procedurales caen con CALOR DE ENTRADA (emisión cálida) y
+   *  tumbling; al tocar la superficie apagan el calor y flotan sobre ella.
+   *  El bloqueo de la bola (patrón Burla) se conserva tal cual. */
   _meteorStep(dt, a, ball, rally) {
     const g = this.game;
     const D = this.D;
@@ -8212,9 +8401,11 @@ class StockController {
         r.y = 2.7 + Math.random() * 0.4;
         r.vy = -2.6;
         r.vida = 0;
-        r.s.visible = true;
+        r.m.visible = true;
         r.mat.opacity = 1;
-        r.s.scale.set(0.34, 0.34, 1);
+        r.m.scale.setScalar(1);
+        r.m.rotation.set(Math.random() * 6.28, Math.random() * 6.28, Math.random() * 6.28);
+        r.mat.emissiveIntensity = 1.0;            // calor de la entrada
         r.tierraY = D.tableTopY + 0.17;
       }
       a.spawnK++;
@@ -8225,22 +8416,25 @@ class StockController {
       if (!r.on) continue;
       if (r.cayendo) {
         r.y += r.vy * dt;
-        r.mat.rotation += dt * 2.4;
+        r.m.rotation.y += dt * r.sp;
+        r.m.rotation.x += dt * r.sp * 0.62;
         if (r.y <= r.tierraY) {
           r.y = r.tierraY;
           r.cayendo = false;
+          r.mat.emissiveIntensity = 0.12;         // aterrizada: calor apagado
           try { g.audio.playNoise(0.25, 180, 0.5, 0.2, 0); } catch (e) { /* */ }
           try { if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.3, 90); } catch (e) { /* */ }
         }
       } else {
         r.vida += dt;
-        r.s.position.y = r.y + Math.sin(this._t * 2.1 + r.ph) * 0.012;
+        r.m.position.y = r.y + Math.sin(this._t * 2.1 + r.ph) * 0.012;
+        r.m.rotation.y += dt * 0.5;               // deriva lenta ya posada
         if (r.vida > 7) r.mat.opacity -= dt * 1.4;
-        if (r.mat.opacity <= 0) { r.on = false; r.s.visible = false; continue; }
+        if (r.mat.opacity <= 0) { r.on = false; r.m.visible = false; continue; }
       }
-      r.s.position.x = r.x;
-      r.s.position.z = r.z;
-      if (r.cayendo) r.s.position.y = r.y;
+      r.m.position.x = r.x;
+      r.m.position.z = r.z;
+      if (r.cayendo) r.m.position.y = r.y;
     }
     // colisión de la bola con rocas VIVAS (solo rally, anti-túnel)
     if (rally && ball && ball.pos && this._bolaPrev) {
@@ -8250,7 +8444,7 @@ class StockController {
       for (const r of this.rocas) {
         if (!r.on || r.mat.opacity < 0.6) continue;
         const rr = 0.17 + rB;
-        const ex = cur.x - r.x, ey = cur.y - r.s.position.y, ez = cur.z - r.z;
+        const ex = cur.x - r.x, ey = cur.y - r.m.position.y, ez = cur.z - r.z;
         const dentro = ex * ex + ey * ey + ez * ez < rr * rr;
         // cruce del segmento con la esfera (muestreo)
         let hit = dentro;
@@ -8261,13 +8455,13 @@ class StockController {
           for (let s2 = 1; s2 <= steps; s2++) {
             const f = s2 / steps;
             const sx = prev.x + dx * f, sy = prev.y + dy * f, sz = prev.z + dz * f;
-            const qx = sx - r.x, qy = sy - r.s.position.y, qz = sz - r.z;
+            const qx = sx - r.x, qy = sy - r.m.position.y, qz = sz - r.z;
             if (qx * qx + qy * qy + qz * qz < rr * rr) { hit = true; break; }
           }
         }
         if (!hit) continue;
         // la roca ESTALLA y la bola sale REBOTADA hacia arriba
-        r.on = false; r.s.visible = false; r.mat.opacity = 0;
+        r.on = false; r.m.visible = false; r.mat.opacity = 0;
         const v = ball.vel;
         v.y = Math.max(2.3, Math.abs(v.y) * 0.5 + 1.4);
         v.x *= 0.5; v.z *= 0.5;
@@ -8284,19 +8478,94 @@ class StockController {
     }
   }
 
-  /* — RAYO TRACTOR: el haz curva la bola hacia el eje central ------------ */
+  /* — RAYO TRACTOR (v3.6.0 · comportamiento definido por el dueño) ———————
+   *  «Encima del rayo coloca un pequeño Dron para que el rayo salga de él»:
+   *  el mini dron flota sobre la boca del haz. «Si la pelota es interceptada
+   *  o pasa a través del rayo se detiene un par de segundos atrapada
+   *  flotando dentro del rayo, y solo cuando el rayo desaparece la deja
+   *  caer verticalmente.» Captura por VOLUMEN del cono + muestreo del
+   *  segmento prev→actual (anti-túnel); atrapada = posición absoluta cada
+   *  frame (flota con vaivén dentro del haz); al morir el haz, velocidad a
+   *  cero → caída vertical pura. */
   _tractorStep(dt, a, ball, rally) {
     const g = this.game;
+    const D = this.D;
     const pulso = 0.34 + Math.sin(this._t * 9) * 0.10;
     this.beamMat.opacity = Math.min(0.5, pulso);
     this.beam.rotation.y += dt * 1.6;
-    if (rally && ball && ball.pos) {
-      // atracción lateral hacia x=0 (tu retorno se cierra solo)
-      ball.vel.x -= ball.pos.x * 0.9 * dt;
+    // el dron vive ENCIMA del haz: vaivén suave + giro del anillo
+    if (this.dronTractor) {
+      this.dronTractor.position.set(0, 2.02 + Math.sin(this._t * 2.3) * 0.022,
+        (D.tableCenterZ || -1.6) + 0.55);
+      this.dronTractor.rotation.y += dt * 1.9;
     }
+    const TOP = 1.9, ALT = 1.14;                     // boca y altura del cono
+    const bz = (D.tableCenterZ || -1.6) + 0.55;      // eje del haz
+    const rB = DIMS.ballRadius || 0.02;
+    const dentro = (px, py, pz) => {
+      const dy = TOP - py;
+      if (dy < -0.02 || dy > ALT) return false;
+      const rY = 0.05 + (0.34 - 0.05) * Math.min(1, Math.max(0, dy / ALT));
+      const dx = px, dz = pz - bz;
+      return (dx * dx + dz * dz) < (rY + rB) * (rY + rB);
+    };
+    // ATRAPADA: flotando dentro del rayo hasta que el rayo desaparezca
+    if (this._tractorTrap) {
+      if (!rally || !ball || !ball.pos || g.rules.state !== 'rally') {
+        this._tractorTrap = null;                    // el punto murió: suelta
+        this._tractorPrevOk = false;
+        return;
+      }
+      const tp = this._tractorTrap;
+      ball.pos.set(tp.x, tp.y + Math.sin(this._t * 2.1) * 0.028, tp.z);
+      ball.vel.set(0, 0, 0);
+      if (ball.spin) ball.spin.set(0, 0, 0);
+      if (ball.__exPrev) ball.__exPrev.copy(ball.pos);
+      this._tractorPrevOk = false;
+      return;
+    }
+    if (!rally || !ball || !ball.pos) { this._tractorPrevOk = false; return; }
+    // captura: la bola está dentro del cono o lo CRUZA (muestreo del segmento)
+    let hit = dentro(ball.pos.x, ball.pos.y, ball.pos.z);
+    if (!hit && this._tractorPrevOk) {
+      const prev = this._tractorPrev;
+      const dx = ball.pos.x - prev.x, dy2 = ball.pos.y - prev.y, dz = ball.pos.z - prev.z;
+      const dist = Math.sqrt(dx * dx + dy2 * dy2 + dz * dz);
+      const steps = Math.max(1, Math.ceil(dist / 0.05));
+      for (let s2 = 1; s2 <= steps; s2++) {
+        const f = s2 / steps;
+        if (dentro(prev.x + dx * f, prev.y + dy2 * f, prev.z + dz * f)) { hit = true; break; }
+      }
+    }
+    if (hit) {
+      // se detiene ATRAPADA flotando dentro del rayo (hasta que muere el haz)
+      const p = ball.pos;
+      const dy = Math.min(ALT - 0.06, Math.max(0.05, TOP - p.y));
+      const rY = 0.05 + (0.34 - 0.05) * (dy / ALT);
+      const rr = Math.min(rY * 0.55, 0.15);
+      const hx = p.x, hz = p.z - bz;
+      const hl = Math.sqrt(hx * hx + hz * hz) || 1;
+      const k = Math.min(1, rr / hl);
+      this._tractorTrap = { x: hx * k, y: TOP - dy, z: bz + hz * k };
+      ball.vel.set(0, 0, 0);
+      if (ball.spin) ball.spin.set(0, 0, 0);
+      if (ball.__exPrev) ball.__exPrev.copy(ball.pos);
+      try { g.audio.playOsc(520, 130, 0.35, 'sine', 0.14, 0); } catch (e) { /* */ }
+      try { g.audio.playNoise(0.3, 700, 0.4, 0.1, 0); } catch (e) { /* */ }
+      if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.4, 90);
+      this._tractorPrevOk = false;
+      return;
+    }
+    this._tractorPrev.copy(ball.pos);
+    this._tractorPrevOk = true;
   }
 
-  /* — GRAVEDAD CERO: la bola flota en ondas verticales ------------------- */
+  /* — GRAVEDAD CERO (v3.6.0 · informe del dueño) —————————————————————————
+   *  «Esas partículas atraen la bola haciéndola rebotar entre ellas de una
+   *  manera aleatoria hasta que desaparecen y dejan caer la bola.» Las motas
+   *  blancas son AHORA atráctores: la bola persigue una tras otra con
+   *  gravedad compensada, rebota en cada una hacia otra con dispersión
+   *  aleatoria y, al extinguirse el poder, cae. (_poderFin la suelta.) */
   _ceroStep(dt, a, ball, rally) {
     const g = this.game;
     const D = this.D;
@@ -8308,9 +8577,38 @@ class StockController {
       const esc = 0.05 + Math.sin(this._t * 3 + m.ph) * 0.015;
       m.s.scale.set(esc, esc, 1);
     }
-    if (rally && ball && ball.vel) {
-      // onda de ingravidez: empuje vertical suave alternante
-      ball.vel.y += Math.sin(this._t * 3.1 + ball.pos.z * 1.7) * 2.3 * dt;
+    if (!rally || !ball || !ball.pos || !ball.vel) return;
+    // objetivo vigente: una mota al azar (cambia al rebotar en ella)
+    if (a.tgt == null || a.tgt < 0 || a.tgt >= this.motas.length) {
+      a.tgt = (Math.random() * this.motas.length) | 0;
+    }
+    const tm = this.motas[a.tgt];
+    const dx = tm.x - ball.pos.x, dy = tm.y - ball.pos.y, dz = tm.z - ball.pos.z;
+    const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+    // atracción hacia la mota + compensación de la gravedad del núcleo
+    const ATT = 7.5;
+    ball.vel.x += (dx / dl) * ATT * dt;
+    ball.vel.y += (dy / dl) * ATT * dt + 9.6 * dt;
+    ball.vel.z += (dz / dl) * ATT * dt;
+    const sp = ball.vel.length();
+    if (sp > 4.4) ball.vel.multiplyScalar(4.4 / sp);   // jugable, nunca un misil
+    // amortiguación suave: sin ella la bola ORBITA la mota sin llegar a
+    // tocarla (atracción pura = órbita estable); el roce la deja caer dentro
+    ball.vel.multiplyScalar(Math.max(0, 1 - 0.6 * dt));
+    // REBOTE ALEATORIO entre partículas: al llegar a una mota, salta hacia
+    // OTRA distinta con dispersión aleatoria (patrón literal del dueño)
+    if (dl < 0.26) {
+      const nuevo = (Math.random() * (this.motas.length - 1)) | 0;
+      a.tgt = nuevo >= a.tgt ? nuevo + 1 : nuevo;      // siempre distinta
+      const v = ball.vel;
+      const s2 = v.length() * 0.85;
+      const m2 = this.motas[a.tgt];
+      const ex = m2.x - ball.pos.x, ey = m2.y - ball.pos.y, ez = m2.z - ball.pos.z;
+      const el = Math.sqrt(ex * ex + ey * ey + ez * ez) || 1;
+      v.set(ex / el * s2 + (Math.random() - 0.5) * 1.6,
+            ey / el * s2 + (Math.random() - 0.5) * 1.6 + 0.4,
+            ez / el * s2 + (Math.random() - 0.5) * 1.6);
+      try { g.audio.playOsc(640, 980, 0.07, 'sine', 0.08, 0); } catch (e) { /* */ }
     }
   }
 }

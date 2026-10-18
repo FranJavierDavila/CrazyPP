@@ -5,6 +5,18 @@ function renderPlayBtn() {
     playEn.style.display = en ? '' : 'none';
   }
 }
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { T, TLang, WORLDRANK, __ppLang, applyLangDOM, ppPlayerName, setLang } from './c00_pre_three.js';
+import { fixInvertedMeshes, loadGunModel, loadPaddleModel, makeGunVisual } from './c01_modelos_3d.js';
+import { AI_PRESETS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
+import { CCD_TUNE, bladeNormalLocal, createPaddleSim, sdfBlade, setPaddleBasis, sweepBallVsBlade, tmpPrev } from './c04_fisica_ccd.js';
+import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddleSweep, computeShotVelocityReal, findServeVelocity, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
+import { NetLink } from './c09_red_netlink.js';
+import { BALL_HAND_LIFT } from './c10_menu_saque.js';
+import { PingPongGame, arBtn, overlay, playEn, playEs, statusEl, vrbtn } from './c12_pingponggame.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+/* DEPS-FASE2-FIN */
 
 // v2.28: la portada ya no muestra agarres ni estadísticas — los callbacks
 // se conservan (el progreso sigue persistiendo y anunciándose en el juego)
@@ -14,7 +26,7 @@ function renderStats() { /* el progreso persiste; sin chips en la portada */ }
 // wrapText: parte un texto en líneas ajustadas al ancho dado. El menú lo
 // usaba desde v2.19 SIN DEFINIR (bug latente en el estado de error de red):
 // corregido en v2.28.
-function wrapText(c, text, x, y, maxW, lh) {
+export function wrapText(c, text, x, y, maxW, lh) {
   const words = String(text || '').split(/\s+/);
   let line = '';
   let yy = y;

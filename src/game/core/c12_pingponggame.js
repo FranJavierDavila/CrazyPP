@@ -1,4 +1,4 @@
-class PingPongGame {
+export class PingPongGame {
   constructor(canvas, paddleModel, callbacks = {}) {
     this.canvas = canvas;
     this.callbacks = callbacks;
@@ -5084,6 +5084,23 @@ class PingPongGame {
     }
   }
 }
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
+import { makePaddleVisual } from './c01_modelos_3d.js';
+import { AI_PRESETS, DIMS, MOUNT_QUAT_RIGHT, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
+import { GameAudio } from './c03_audio_voz.js';
+import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
+import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
+import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
+import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
+import { HALL, HALL_SKIN_COLS, HALL_SKIN_IDS, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, drawHallAchs, drawHallCirc, drawHallDoor, drawHallSign } from './c08_hall_hud.js';
+import { NetLink } from './c09_red_netlink.js';
+import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
+import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, pcA, pcC, pcN, pcT } from './c11_champloader.js';
+import { wrapText } from './c13_ui_arranque.js';
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/* DEPS-FASE2-FIN */
 
 /* =====================================================================
  *  INTERFAZ · PORTADA ANIMADA + botón JUGAR EN VR + HUD (v2.28)
@@ -5091,13 +5108,13 @@ class PingPongGame {
  *  cartoon JUGAR/PLAY EN VR. La dificultad, las salas, el online y los
  *  ajustes viven DENTRO del menú principal de VR (panel flotante acordeón).
  * ===================================================================== */
-const overlay = document.getElementById('overlay');
-const statusEl = document.getElementById('status');
-const vrbtn = document.getElementById('vrbtn');
-const arBtn = document.getElementById('arbtn');
+export const overlay = document.getElementById('overlay');
+export const statusEl = document.getElementById('status');
+export const vrbtn = document.getElementById('vrbtn');
+export const arBtn = document.getElementById('arbtn');
 // v2.30: fuera el botón "Ver demo en pantalla (sin visor)" y su HUD — la
 // portada ya no juega ninguna partida de fondo (solo escena + música).
-const playEs = document.getElementById('playEs');
-const playEn = document.getElementById('playEn');
+export const playEs = document.getElementById('playEs');
+export const playEn = document.getElementById('playEn');
 
 // v2.28: el gran botón cartoon cambia JUGAR <-> PLAY según el idioma

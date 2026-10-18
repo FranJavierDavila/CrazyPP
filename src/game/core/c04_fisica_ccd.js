@@ -1,28 +1,32 @@
-const MAX_SUBSTEP_DT = 1 / 480;
-const tmpPrev = new THREE.Vector3();
-const padPos = new THREE.Vector3();
+export const MAX_SUBSTEP_DT = 1 / 480;
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { DIMS, SERVE_TUNE } from './c02_cfg_escena.js';
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
+export const tmpPrev = new THREE.Vector3();
+export const padPos = new THREE.Vector3();
 const relPrev = new THREE.Vector3();
 const relNow = new THREE.Vector3();
-const crossPoint = new THREE.Vector3();
-const relVel = new THREE.Vector3();
-const tmpN = new THREE.Vector3();
-const tmpM = new THREE.Vector3();
-const tmpS = new THREE.Vector3();
-const tmpT = new THREE.Vector3();
-const tmpD = new THREE.Vector3();
-const tmpV = new THREE.Vector3();
-const tmpSurf = new THREE.Vector3();
-const tmpR = new THREE.Vector3();
+export const crossPoint = new THREE.Vector3();
+export const relVel = new THREE.Vector3();
+export const tmpN = new THREE.Vector3();
+export const tmpM = new THREE.Vector3();
+export const tmpS = new THREE.Vector3();
+export const tmpT = new THREE.Vector3();
+export const tmpD = new THREE.Vector3();
+export const tmpV = new THREE.Vector3();
+export const tmpSurf = new THREE.Vector3();
+export const tmpR = new THREE.Vector3();
 const tmpDeltaQ = new THREE.Quaternion();
-const tmpMountQ = new THREE.Quaternion();
+export const tmpMountQ = new THREE.Quaternion();
 const VEL_WINDOW = 0.045;  // v3.1.0-SRV2: el filtro vivo es SERVE_TUNE.velWindow (mismo valor)
 // v2.29: base del paso anterior para la colisión barrida CON ROTACIÓN
 // (antes solo se interpolaba la posición: en saques con mucha rotación de
 // muñeca la hoja "giraba" entre subpasos y el cruce se detectaba tarde)
-const ipNormal = new THREE.Vector3();
-const ipRight = new THREE.Vector3();
-const ipUp = new THREE.Vector3();
-const tmpTarget = new THREE.Vector3();
+export const ipNormal = new THREE.Vector3();
+export const ipRight = new THREE.Vector3();
+export const ipUp = new THREE.Vector3();
+export const tmpTarget = new THREE.Vector3();
 const tmpShoulder = new THREE.Vector3();
 const tmpDir = new THREE.Vector3();
 
@@ -47,7 +51,7 @@ const tmpDir = new THREE.Vector3();
  *  de updatePaddleSim sigue sólo en el impulso, como siempre).
  *  Todo configurable en CCD_TUNE (vivo en window.__ppDebug.ccdTune).
  * ===================================================================== */
-const CCD_TUNE = {
+export const CCD_TUNE = {
   bladeHalfT: 0.004,      // semigrosor de la hoja (m) — el VISOR dibuja halfT 0.004
   hanY0: -0.21,           // cápsula del mango (frame centro-de-hoja): y inicial
   hanY1: -0.07,           // y final (el agarre vive a -0.14: banda ly ∈ (-0.26,-0.02))
@@ -63,7 +67,7 @@ const CCD_TUNE = {
  * hoja, eje Z = normal de cara). Devuelve distancia con signo al sólido.
  * Fórmula exacta para el cilindro: cara (qy), canto (qx) y esquina
  * (hipotenusa); interior por max. */
-function sdfBlade(x, y, z, R, hT) {
+export function sdfBlade(x, y, z, R, hT) {
   const qx = Math.hypot(x, y) - R;
   const qy = Math.abs(z) - hT;
   const ox = qx > 0 ? qx : 0, oy = qy > 0 ? qy : 0;
@@ -79,7 +83,7 @@ function sdfCapsuleY(x, y, z, y0, y1, r) {
 /* Barrido conservador del segmento [a→b] contra el SDF de la HOJA expandido
  * por el radio de la bola. Devuelve t ∈ [0,1] del PRIMER contacto o -1.
  * (Bucle especializado sin closures: CERO asignaciones.) */
-function sweepBallVsBlade(ax, ay, az, bx, by, bz, R, hT, ballR) {
+export function sweepBallVsBlade(ax, ay, az, bx, by, bz, R, hT, ballR) {
   const eps = CCD_TUNE.eps, maxIter = CCD_TUNE.maxIter;
   const dx = bx - ax, dy = by - ay, dz = bz - az;
   const len = Math.hypot(dx, dy, dz);
@@ -96,7 +100,7 @@ function sweepBallVsBlade(ax, ay, az, bx, by, bz, R, hT, ballR) {
 }
 
 /* Barrido bola↔mango (cápsula vertical), mismas garantías. */
-function sweepBallVsCapsuleY(ax, ay, az, bx, by, bz, y0, y1, r, ballR) {
+export function sweepBallVsCapsuleY(ax, ay, az, bx, by, bz, y0, y1, r, ballR) {
   const eps = CCD_TUNE.eps, maxIter = CCD_TUNE.maxIter;
   const dx = bx - ax, dy = by - ay, dz = bz - az;
   const len = Math.hypot(dx, dy, dz);
@@ -114,7 +118,7 @@ function sweepBallVsCapsuleY(ax, ay, az, bx, by, bz, y0, y1, r, ballR) {
 
 /* Normal LOCAL del SDF del disco (gradiente analítico): cara, canto o
  * esquina redondeada. Se escribe en el Vector3 `n`. */
-function bladeNormalLocal(x, y, z, R, hT, n) {
+export function bladeNormalLocal(x, y, z, R, hT, n) {
   const rho = Math.hypot(x, y);
   const qx = rho - R, qy = Math.abs(z) - hT;
   const sz = z >= 0 ? 1 : -1;
@@ -129,15 +133,15 @@ function bladeNormalLocal(x, y, z, R, hT, n) {
 }
 
 /* Scratches de la CCD (preasignados: CERO asignaciones por frame). */
-const ccdPosA = new THREE.Vector3(), ccdPosB = new THREE.Vector3();
-const ccdNrmA = new THREE.Vector3(), ccdNrmB = new THREE.Vector3();
-const ccdRgtA = new THREE.Vector3(), ccdRgtB = new THREE.Vector3();
-const ccdUpA = new THREE.Vector3(), ccdUpB = new THREE.Vector3();
-const ccdC0 = new THREE.Vector3(), ccdC1 = new THREE.Vector3();
-const ccdP = new THREE.Vector3();
-const ccdNL = new THREE.Vector3();
+export const ccdPosA = new THREE.Vector3(), ccdPosB = new THREE.Vector3();
+export const ccdNrmA = new THREE.Vector3(), ccdNrmB = new THREE.Vector3();
+export const ccdRgtA = new THREE.Vector3(), ccdRgtB = new THREE.Vector3();
+export const ccdUpA = new THREE.Vector3(), ccdUpB = new THREE.Vector3();
+export const ccdC0 = new THREE.Vector3(), ccdC1 = new THREE.Vector3();
+export const ccdP = new THREE.Vector3();
+export const ccdNL = new THREE.Vector3();
 
-function createPaddleSim(who, index) {
+export function createPaddleSim(who, index) {
   return {
     pos: new THREE.Vector3(),
     prev: new THREE.Vector3(),
@@ -162,7 +166,7 @@ function createPaddleSim(who, index) {
   };
 }
 
-function setPaddleBasis(p, q) {
+export function setPaddleBasis(p, q) {
   p.normal.set(0, 0, 1).applyQuaternion(q);
   p.right.set(1, 0, 0).applyQuaternion(q);
   p.up.set(0, 1, 0).applyQuaternion(q);
@@ -170,7 +174,7 @@ function setPaddleBasis(p, q) {
 
 /** Aerodinámica (arrastre + Magnus + decaimiento del giro) compartida
  *  por la física real y TODOS los simuladores: una sola ecuación. */
-function applyAerodynamics(vel, spin, h, dragMul) {
+export function applyAerodynamics(vel, spin, h, dragMul) {
   // v2.102: dragMul — la bola-bomba PESA (0.30 en el asedio): corta el aire
   // y los tiros altos llegan a la diana (el drag 0.142 del ping-pong se
   // comía la mitad de la velocidad en 1 s y la bomba caía 2-4 m antes).
@@ -193,7 +197,7 @@ function applyAerodynamics(vel, spin, h, dragMul) {
  *  - velocidad angular (rad/s) a partir del delta de cuaterniones, para
  *    poder dar efecto con la muñeca como con una pala real.
  */
-function updatePaddleSim(ps, pos, quat, now, dt) {
+export function updatePaddleSim(ps, pos, quat, now, dt) {
   ps.prev.copy(ps.pos);
   // v2.29: conservar la base ORIENTADA del frame anterior (barrido con giro)
   ps.prevNormal.copy(ps.normal);
@@ -242,7 +246,7 @@ function updatePaddleSim(ps, pos, quat, now, dt) {
 }
 
 /** Efecto del giro al botar en la mesa: topspin acelera, backspin frena, lateral desvía. */
-function applyBounceSpin(vel, spin) {
+export function applyBounceSpin(vel, spin) {
   vel.x -= DIMS.bounceSpinKick * spin.z;
   vel.z += DIMS.bounceSpinKick * spin.x;
   spin.multiplyScalar(0.72);
@@ -260,7 +264,7 @@ function applyBounceSpin(vel, spin) {
  *  Resultado: el TOPSPIN patea al botar y conserva/gana giro, el BACKSPIN
  *  frena en seco y la mesa le come el efecto, el LATERAL desvía — y todo
  *  ESCALA con la velocidad de impacto. `impact` = |vel.y| de entrada. */
-function bounceOnTable(vel, spin, impact) {
+export function bounceOnTable(vel, spin, impact) {
   const r = DIMS.ballRadius;
   vel.y = impact * DIMS.tableRestitution;
   const ux = vel.x + r * spin.z;
@@ -323,7 +327,7 @@ try {
 } catch (e) { /* sin localStorage: clásica */ }
 /** Perks del golpe actual. `faceSide` = cara de la hoja que golpea
  *  (+1 = la que mira la normal de la pala, −1 = la trasera). */
-function paddlePerkFor(who, faceSide) {
+export function paddlePerkFor(who, faceSide) {
   if (who !== 'player' || DIMS.paddlePerks < 0.5) return null;
   const p = PADDLE_PERKS[__ppEquippedSkin] || PADDLE_PERKS.clasica;
   if (p.dual) {

@@ -1,6 +1,12 @@
-function collidePaddle(ball, pad, k, events) {
+export function collidePaddle(ball, pad, k, events) {
   return collidePaddleSweep(ball, pad, k, k, events);
 }
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { T } from './c00_pre_three.js';
+import { DIMS, SERVE_TUNE } from './c02_cfg_escena.js';
+import { CCD_TUNE, MAX_SUBSTEP_DT, applyAerodynamics, applyBounceSpin, bladeNormalLocal, bounceOnTable, ccdC0, ccdC1, ccdNL, ccdNrmA, ccdNrmB, ccdP, ccdPosA, ccdPosB, ccdRgtA, ccdRgtB, ccdUpA, ccdUpB, crossPoint, ipNormal, ipRight, ipUp, padPos, paddlePerkFor, relVel, sweepBallVsBlade, sweepBallVsCapsuleY, tmpD, tmpM, tmpN, tmpPrev, tmpR, tmpS, tmpSurf, tmpT } from './c04_fisica_ccd.js';
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
 
 /* v3.1.2-CCD1 · DETECCIÓN CCD POR SDF (reemplaza al cruce de plano + disco).
  * Barrido del segmento de bola [tmpPrev → ball.pos] contra la pala barrida
@@ -10,7 +16,7 @@ function collidePaddle(ball, pad, k, events) {
  * del subpaso y el barrido la absorbe de una vez (spec C: el inicio del
  * segmento se transforma con la pose τa y el fin con la pose τb).
  * Devuelve true si hubo golpe (respuesta clásica ya aplicada). */
-function collidePaddleSweep(ball, pad, kA, kB, events) {
+export function collidePaddleSweep(ball, pad, kA, kB, events) {
   // --- poses A (kA) y B (kB) de la pala dentro del frame (nlerp como v2.29) ---
   ccdPosA.copy(pad.prev).lerp(pad.pos, kA);
   ccdNrmA.copy(pad.prevNormal).lerp(pad.normal, kA).normalize();
@@ -361,7 +367,7 @@ function collideWorld(ball, events) {
   }
 }
 
-function stepPhysics(dt, ball, paddles, events, extra) {
+export function stepPhysics(dt, ball, paddles, events, extra) {
   const n = Math.max(1, Math.min(96, Math.ceil(dt / MAX_SUBSTEP_DT)));
   const h = dt / n;
 
@@ -411,7 +417,7 @@ function stepPhysics(dt, ball, paddles, events, extra) {
 /** v2.19 (online): test de contacto pala-bola SIN integrar la bola — cuando
  *  la bola la simula el rival (llega por red), cada lado solo comprueba si SU
  *  pala toca la bola. tmpPrev hace de posición previa para el CCD. */
-function testPaddleContact(ball, prevPos, paddles, events) {
+export function testPaddleContact(ball, prevPos, paddles, events) {
   for (const p of paddles) if (p.cooldown > 0) p.cooldown -= 0.016;
   if (ball.__serveGrace > 0) ball.__serveGrace -= 0.016;   // v3.1.1-FEEL1
   tmpPrev.copy(prevPos);
@@ -428,7 +434,7 @@ function testPaddleContact(ball, prevPos, paddles, events) {
  *  el contador de botes — antes, tras el bote la simulación no encontraba
  *  candidatos futuros y devolvía null: la IA se quedaba CIEGA justo cuando
  *  debía golpear y la bola se le pasaba (los fallos "no llega"). */
-function predictStrike(ball, sign, bounced) {
+export function predictStrike(ball, sign, bounced) {
   const C = DIMS.tableCenterZ;
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const pos = ball.pos.clone();
@@ -486,7 +492,7 @@ function predictStrike(ball, sign, bounced) {
 }
 
 /** Velocidad parabólica hasta `target`, garantizando que pasa la red. */
-function computeShotVelocity(from, target, tIn, maxSpeed) {
+export function computeShotVelocity(from, target, tIn, maxSpeed) {
   const T = Math.max(0.3, tIn);
   const ty = DIMS.tableTopY + DIMS.ballRadius;
   let vy = (ty - from.y) / T - 0.5 * DIMS.gravity * T;
@@ -580,7 +586,7 @@ function simulateBounceUntilTable(from, vel, spin, maxT, out) {
   return out;
 }
 
-function computeShotVelocityReal(from, target, tIn, maxSpeed, spin) {
+export function computeShotVelocityReal(from, target, tIn, maxSpeed, spin) {
   const T = Math.max(0.3, tIn);
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const v = new THREE.Vector3(
@@ -651,7 +657,7 @@ function computeShotVelocityReal(from, target, tIn, maxSpeed, spin) {
  * Simula un saque completo (bote propio -> red -> bote rival) con las
  * mismas constantes que la física real. Devuelve el resultado y dónde botó.
  */
-function simulateServePath(from, v0, spin, ownSign) {
+export function simulateServePath(from, v0, spin, ownSign) {
   const C = DIMS.tableCenterZ;
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const pos = from.clone();
@@ -719,7 +725,7 @@ function simulateServePath(from, v0, spin, ownSign) {
  *  — el objetivo lateral y el tiempo de vuelo heredan la dirección y la
  *  energía del swing del jugador (asistencia con «toque», no saque enlatado).
  *  Sin hint (IA, máquina de entrenamiento) el comportamiento es el de siempre. */
-function findServeVelocity(from, ownSign, hint) {
+export function findServeVelocity(from, ownSign, hint) {
   const C = DIMS.tableCenterZ;
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const HL = DIMS.tableHalfLength;
@@ -789,7 +795,7 @@ function findServeVelocity(from, ownSign, hint) {
  *  Devuelve telemetría {err, w, sim} para QA/ajuste (window.__ppDebug.
  *  lastServe cuando SERVE_TUNE.debug). `from` = ball.pos, muta ball.
  * ===================================================================== */
-function applyServeProgressiveAssist(ball, pad, tier) {
+export function applyServeProgressiveAssist(ball, pad, tier) {
   const tune = SERVE_TUNE;
   const out = { err: -1, w: 0, sim: null };
   if (tune.assistMax <= 0 || tune.assistAngle <= 0) return out;
@@ -816,7 +822,7 @@ function applyServeProgressiveAssist(ball, pad, tier) {
   ball.spin.lerp(ref.spin, w * 0.5);
   return out;
 }
-function __ppServeTelemetry(res, extra) {
+export function __ppServeTelemetry(res, extra) {
   if (!SERVE_TUNE.debug) return;
   try {
     window.__ppDebug.lastServe = Object.assign({ t: performance.now() / 1000,

@@ -1,4 +1,4 @@
-const DIMS = {
+export const DIMS = {
   tableTopY: 0.76,
   tableHalfLength: 1.37,
   tableHalfWidth: 0.7625,
@@ -65,8 +65,11 @@ const DIMS = {
   roomFrontZ: -5.55,
   roomHeight: 2.85,
 };
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
 
-const AI_PRESETS = {
+export const AI_PRESETS = {
   easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.15, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.03 },
   medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.05,  missBase: 0.08, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.05 },
   hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.024, missBase: 0.03, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
@@ -82,7 +85,7 @@ const AI_PRESETS = {
  * SIEMPRE el gesto real), angleMul/assistMul = margen angular e intensidad
  * de la asistencia progresiva (v3.1.0-SRV2). La legalidad NO cambia:
  * tossMinRise y línea de fondo son reglas, no asistencia. */
-const SERVE_ASSIST_TIERS = {
+export const SERVE_ASSIST_TIERS = {
   easy:   { reach: 0.060, vy: 3.5,  angleMul: 1.4,  assistMul: 1.35 },
   medium: { reach: 0.045, vy: 3.10, angleMul: 1.0,  assistMul: 1.0  },
   hard:   { reach: 0.028, vy: 2.70, angleMul: 0.7,  assistMul: 0.6  },
@@ -106,7 +109,7 @@ const SERVE_ASSIST_TIERS = {
  *  window.__ppDebug.serveTune expone este objeto VIVO: se puede ajustar
  *  desde la consola sin reconstruir (QA y puesta a punto en casco).
  * ===================================================================== */
-const SERVE_TUNE = {
+export const SERVE_TUNE = {
   // --- B · tolerancias de contacto (CCD bola-pala) ---
   skin: 0.02,             // margen normal del plano de la hoja (antes 0.03 fijo)
   skinServe: 0.022,       // margen normal EXTRA durante el vuelo del saque (antes +0.045)
@@ -145,7 +148,7 @@ const SERVE_TUNE = {
  *  k > 1 → más rápida, precisa y agresiva; k < 1 → más lenta y falona.
  *  Se usa para la IA ADAPTATIVA (según el marcador) y el modo SUPERVIVENCIA
  *  (la CPU acelera rallye a rallye). Devuelve un preset NUEVO. */
-function scalePreset(cfg, k) {
+export function scalePreset(cfg, k) {
   const kk = THREE.MathUtils.clamp(k, 0.7, 2.2);
   return {
     maxSpeed: cfg.maxSpeed * THREE.MathUtils.clamp(kk, 0.55, 1.9),
@@ -161,7 +164,7 @@ function scalePreset(cfg, k) {
   };
 }
 
-const COLORS = {
+export const COLORS = {
   tableBlue: 0x17539e, tableEdge: 0x0e3a73, frame: 0x22262b,
   floor: 0x37302b, wall: 0x1a1e23,
   ball: 0xfff8ef, accentAmber: 0xe8b45a, accentGreen: 0x7fb069,
@@ -176,7 +179,7 @@ const COLORS = {
  *  de stick ya es dificultad, B modo, A/X mano de la pala — v2.78: la tecla
  *  Y queda ANULADA, ya no lanza el entrenamiento).
  * ===================================================================== */
-const ROOM_THEMES = [
+export const ROOM_THEMES = [
   {
     key: 'pabellon', name: 'Pabellón', nameKey: 'theme_pabellon', emoji: '🏓',
     floor: 0x37302b, gridC: 0x4a4038, gridG: 0x2c2622,
@@ -231,9 +234,9 @@ function makeMountQuat(roll) {
   const rollQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), roll);
   return new THREE.Quaternion().multiplyQuaternions(rollQ, pitch);
 }
-const MOUNT_QUAT_RIGHT = makeMountQuat(PALA_MOUNT_ROLL);
+export const MOUNT_QUAT_RIGHT = makeMountQuat(PALA_MOUNT_ROLL);
 const MOUNT_QUAT_LEFT = makeMountQuat(-PALA_MOUNT_ROLL);
-const mountQuatFor = (hand) => (hand === 'left' ? MOUNT_QUAT_LEFT : MOUNT_QUAT_RIGHT);
+export const mountQuatFor = (hand) => (hand === 'left' ? MOUNT_QUAT_LEFT : MOUNT_QUAT_RIGHT);
 const UP = new THREE.Vector3(0, 1, 0);
 
 /* =====================================================================

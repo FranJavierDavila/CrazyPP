@@ -1,4 +1,4 @@
-class NetLink {
+export class NetLink {
   constructor(game) {
     this.game = game;
     this.peer = null;
@@ -715,6 +715,12 @@ class NetLink {
     this.owner = 'host';
   }
 }
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { T } from './c00_pre_three.js';
+import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE } from './c01_modelos_3d.js';
+import { DIMS, mountQuatFor } from './c02_cfg_escena.js';
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
 
 
 /* =====================================================================

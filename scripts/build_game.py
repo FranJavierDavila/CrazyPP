@@ -14,8 +14,18 @@ Garantías:
   · Token de identidad en la primera línea de cada pieza.
   · Si el resultado coincide con src/game/GOLDEN_SHA256.txt → «BYTE-EXACTO».
   · Sin --escribir no toca public/ (ensayo seguro).
+
+FASE 2 (build de inserción): los subsistemas de core/ son MÓDULOS ES reales
+(bloques de import generados marcados con DEPS-FASE2 + prefijos export).
+Al ensamblar, este script aplica la transformación inversa sobre las piezas
+core/: quita los bloques marcados y los prefijos `export ` de columna 0, de
+modo que game.html sale BYTE-EXACTO con el mismo ámbito compartido de
+siempre. Generación: node scripts/mod_fase2_generar.mjs · grafo:
+scripts/mod_fase2_analizar.mjs (src/game/DEPS.json / DEPENDENCIAS.md).
+Nota: `export ` en columna 0 dentro de core/ queda RESERVADO al generador.
 """
 import hashlib
+import re
 import sys
 from pathlib import Path
 
@@ -23,6 +33,27 @@ RAIZ = Path('/home/z/my-project')
 SRC = RAIZ / 'src' / 'game'
 GAME = RAIZ / 'public' / 'game.html'
 GOLDEN = SRC / 'GOLDEN_SHA256.txt'
+
+# ── fase 2: marcas del bloque de imports generado y prefijos export ──
+MARK_INI = b'DEPS-FASE2-INICIO'
+MARK_FIN = b'DEPS-FASE2-FIN'
+RE_EXPORT = re.compile(rb'^export (?=(?:async function\b|function\b|class\b|const\b|let\b|var\b))')
+RE_EXPORT_GUARDA = re.compile(rb'(?m)^export (?=(?:async function\b|function\b|class\b|const\b|let\b|var\b))')
+
+def pieza_pura(datos: bytes) -> bytes:
+    """Transformación inversa del generador: bloque DEPS fuera + export fuera."""
+    lineas = datos.split(b'\n')
+    fuera, saltando = [], False
+    for l in lineas:
+        if MARK_INI in l:
+            saltando = True
+            continue
+        if MARK_FIN in l:
+            saltando = False
+            continue
+        if not saltando:
+            fuera.append(RE_EXPORT.sub(b'', l))
+    return b'\n'.join(fuera)
 
 # Orden EXACTO de piezas. (fichero, token requerido en su 1.ª línea)
 ORDER = [
@@ -73,8 +104,15 @@ def main() -> None:
     if fallos_tok:
         sys.exit('FALLO de identidad de piezas:\n  ' + '\n  '.join(fallos_tok))
 
-    # 3. ensamblar
-    datos = b''.join((SRC / n).read_bytes() for n, _ in ORDER)
+    # 3. ensamblar (fase 2: las piezas core/ pasan por la transformación inversa)
+    datos = b''.join(
+        pieza_pura((SRC / n).read_bytes()) if n.startswith('core/') else (SRC / n).read_bytes()
+        for n, _ in ORDER
+    )
+    if MARK_INI in datos or MARK_FIN in datos:
+        sys.exit('FALLO: restos de bloque DEPS-FASE2 en el ensamblado (marcas desequilibradas)')
+    if RE_EXPORT_GUARDA.search(datos):
+        sys.exit('FALLO: restos de prefijo export en columna 0 dentro del ensamblado')
     sha = hashlib.sha256(datos).hexdigest()
     print(f'· ensamblado: {len(datos):,} B · sha256 {sha[:16]}…')
 

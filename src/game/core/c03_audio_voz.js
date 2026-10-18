@@ -52,6 +52,9 @@ const VOICE_FULL = {
     'hard difficulty': ['dificultad_dificil'],
   },
 };
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { TLang, VOICE_B64, VOICE_B64_EN } from './c00_pre_three.js';
+/* DEPS-FASE2-FIN */
 const VOICE_ACH = {
   es: {
     'primera victoria': 'ach_primera',
@@ -88,7 +91,7 @@ function voiceNumPlan(n, lang) {
   return (lang === 'en') ? [VOICE_NUM[d], VOICE_NUM[u]] : [VOICE_NUM[d], 'y', VOICE_NUM[u]];
 }
 
-class GameAudio {
+export class GameAudio {
   constructor() {
     this.ctx = null;
     this.master = null;

@@ -1,4 +1,4 @@
-class ChampLoader {
+export class ChampLoader {
   constructor(game) {
     this.game = game;
     // v2.125: entries lleva { id, folder, title, storage, eager, estado,
@@ -571,22 +571,27 @@ class ChampLoader {
     if (m && m.testStep) { try { m.testStep(dt); } catch (e) { console.warn('[champs.testStep]', e); } }
   }
 }
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { T, __ppLang } from './c00_pre_three.js';
+import { CHAMPS_STATE, _dbQ1, _dbQ2, _dbV1, _rbQ, _rbV1, _rbV2, _rbV3, _rbV4, _rpSize, _rpV1, rpDir, rpOrigin, rpQuat, rpRaycaster } from './c10_menu_saque.js';
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
 
 // temporales del anti-clipping de palas (mesa / red / suelo)
-const pcA = new THREE.Vector3();
-const pcN = new THREE.Vector3();
-const pcC = new THREE.Vector3();
-const pcT = new THREE.Vector3();
+export const pcA = new THREE.Vector3();
+export const pcN = new THREE.Vector3();
+export const pcC = new THREE.Vector3();
+export const pcT = new THREE.Vector3();
 
 // temporales del MENÚ DE MUÑECA (v2.15, espacio mundo; no compartir)
-const muGrip = new THREE.Vector3();
-const muHead = new THREE.Vector3();
-const muDir = new THREE.Vector3();
+export const muGrip = new THREE.Vector3();
+export const muHead = new THREE.Vector3();
+export const muDir = new THREE.Vector3();
 const muPos = new THREE.Vector3();
-const muQ = new THREE.Quaternion();
-const muRaycaster = new THREE.Raycaster();
-const netTmpP = new THREE.Vector3();   // v2.19: poses del rival por red
-const netTmpQ = new THREE.Quaternion();
+export const muQ = new THREE.Quaternion();
+export const muRaycaster = new THREE.Raycaster();
+export const netTmpP = new THREE.Vector3();   // v2.19: poses del rival por red
+export const netTmpQ = new THREE.Quaternion();
 muRaycaster.far = 2.5;
 
 /* v2.135 · PIELES DE CARTEL del artista para las NORMAS de las etapas:
@@ -599,7 +604,7 @@ muRaycaster.far = 2.5;
  *  margen de seguridad (el personaje asoma por el borde superior central y
  *  las manos agarran el marco). Las 3 imágenes precargan al arrancar; si
  *  alguna no llegó, showInstrucciones cae a la piel dibujada de siempre. */
-const NORMAS_SKIN = {
+export const NORMAS_SKIN = {
   defs: {
     locura: {
       url: 'championships/locura/assets/normas_clown.png',

@@ -1,4 +1,4 @@
-const ACHIEVEMENTS = [
+export const ACHIEVEMENTS = [
   { key: 'primera',  emoji: '🥇', nameKey: 'ach_first',    descKey: 'ach_first_d' },
   { key: 'racha3',   emoji: '🔥', nameKey: 'ach_streak',   descKey: 'ach_streak_d' },
   { key: 'gigante',  emoji: '💪', nameKey: 'ach_giant',    descKey: 'ach_giant_d' },
@@ -6,6 +6,12 @@ const ACHIEVEMENTS = [
   { key: 'superviv', emoji: '⏱️', nameKey: 'ach_survivor', descKey: 'ach_survivor_d' },
   { key: 'aces10',   emoji: '🎯', nameKey: 'ach_aces',     descKey: 'ach_aces_d' },
 ];
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { DIMS } from './c02_cfg_escena.js';
+import { tmpD, tmpT, tmpTarget } from './c04_fisica_ccd.js';
+import { computeShotVelocityReal, predictStrike } from './c05_colisiones_ia_golpeo.js';
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
 // accesibilidad de compatibilidad: name/desc dinámicos (por si algún código
 // antiguo los lee) — se actualizan al idioma activo en cada arranque.
 for (const a of ACHIEVEMENTS) {
@@ -13,7 +19,7 @@ for (const a of ACHIEVEMENTS) {
   Object.defineProperty(a, 'desc', { get() { return T(this.descKey); } });
 }
 
-class GameStats {
+export class GameStats {
   constructor() {
     this.KEY = 'ppxr_stats_v1';
     this.data = {
@@ -108,7 +114,7 @@ class GameStats {
  *    del receptor. El lanzamiento fallido no puntúa (se repite).
  *  - IGUALA: volea antes del bote, doble golpe o no pasar la red = falta.
  * ===================================================================== */
-class Rules {
+export class Rules {
   constructor() {
     this.state = 'serve';
     this.server = 'player';
@@ -360,7 +366,7 @@ function gauss() {
   return (Math.random() * 2 - 1) * 0.7 + (Math.random() * 2 - 1) * 0.3;
 }
 
-class OpponentAI {
+export class OpponentAI {
   constructor(cfg, sign, home) {
     this.cfg = cfg;
     this.sign = sign;

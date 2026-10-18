@@ -1,4 +1,4 @@
-function createRoom() {
+export function createRoom() {
   const g = new THREE.Group();
   const zC = (DIMS.roomBackZ + DIMS.roomFrontZ) / 2;
   const depth = DIMS.roomBackZ - DIMS.roomFrontZ;
@@ -84,8 +84,13 @@ function createRoom() {
 
   return g;
 }
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { COLORS, DIMS } from './c02_cfg_escena.js';
+import { tmpV } from './c04_fisica_ccd.js';
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
 
-function createTable() {
+export function createTable() {
   const g = new THREE.Group();
   const topY = DIMS.tableTopY;
   const L = DIMS.tableHalfLength * 2;
@@ -180,7 +185,7 @@ function createTable() {
   return g;
 }
 
-function createBall() {
+export function createBall() {
   const mesh = new THREE.Mesh(
     new THREE.SphereGeometry(DIMS.ballRadius, 48, 32),
     new THREE.MeshStandardMaterial({
@@ -248,7 +253,7 @@ function createBall() {
   return { mesh, trail, trailUpdate };
 }
 
-function createBlobShadow() {
+export function createBlobShadow() {
   const m = new THREE.Mesh(
     new THREE.CircleGeometry(0.05, 20),
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }),
@@ -287,7 +292,7 @@ function createBlobShadow() {
  *    el activo no trae decorado, la sala queda limpia.
  *  · Sin textura (file:// o ruta rota) el troquel simplemente no nace.
  * ===================================================================== */
-function createChampDecor(game) {
+export function createChampDecor(game) {
   const group = new THREE.Group();     // se añade al RIG una sola vez
   group.visible = false;
   let builtFor = null;                 // activeId del set construido (null = aún nada)

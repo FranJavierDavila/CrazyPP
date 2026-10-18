@@ -464,7 +464,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // y los 3 congelados delegan en él (el fix «forma promesa» v2.125 llegó a
 // estar copiado 6 veces en este módulo). Desde el SDK v1.2.0 también la
 // MÚSICA en bucle (BSO del saloon y vagón) vive en el SDK (createMusic).
-import { createSfx, createMusic, congela, getCore } from '../sdk/champ_sdk.js';
+import { createSfx, createMusic, createPowerSign, congela, getCore } from '../sdk/champ_sdk.js';
 
 /* Parámetros de la sala (mismo patrón que MAGIA en el módulo del mago). */
 const OESTE = {
@@ -1517,212 +1517,98 @@ class ForajidoPowerSign {
   constructor(ctrl) {
     this.ctrl = ctrl;
     this.game = ctrl.game;
-    this.t = -1;
-    this.T_IN = 0.40; this.T_HOLD = 1.45; this.T_OUT = 1.90;
-  }
-  build() {
-    if (this.inited) return;
-    this.inited = true;
-    this.group = new THREE.Group();
-    this.pivot = new THREE.Group();
-    this.group.add(this.pivot);
-    this.mat = new THREE.MeshBasicMaterial({
-      transparent: true, depthWrite: false, depthTest: false, opacity: 0,
+    // v3.6.4-SDK4 · FASE 6: la fábrica del SDK (createPowerSign) sustituye
+    // la copia — UNA sola fuente para el tablón de superpoder (ForajidoPowerSign).
+    this._impl = createPowerSign(THREE, () => this.game, {
+      coreo: 'clasica',
+      arte: 'plano',
+      url: () => new URL('./assets/superpoder.webp', import.meta.url).href,
+      pintar: (aplicar) => this._pintarRespaldo(aplicar),
+      dims: () => ODIMS(),
     });
-    this.mat.renderOrder = 49;
-    this.plane = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.502), this.mat);
-    this.pivot.add(this.plane);
-    this.game.rig.add(this.group);
-    this.group.visible = false;
-    const apply = (t) => {
-      if (!this.mat) return;
-      this.mat.map = t; this.mat.needsUpdate = true;
-    };
-    const paint = () => {
-      const cv = oesteCanvas(1024, 560);
-      const c = cv.getContext('2d');
-      // tablones quemados
-      const gr = c.createLinearGradient(0, 0, 0, 560);
-      gr.addColorStop(0, '#3c2a16');
-      gr.addColorStop(0.5, '#4c3418');
-      gr.addColorStop(1, '#2c1c0c');
-      c.fillStyle = gr; c.fillRect(0, 0, 1024, 560);
-      c.strokeStyle = 'rgba(20,12,4,0.5)'; c.lineWidth = 3;
-      for (let i = 0; i < 9; i++) {
-        const y = 30 + i * 62;
-        c.beginPath(); c.moveTo(0, y);
-        c.bezierCurveTo(340, y + 8, 700, y - 8, 1024, y + 3);
-        c.stroke();
-      }
-      // quemaduras de borde
-      for (let i = 0; i < 26; i++) {
-        const x = Math.random() * 1024;
-        const y = Math.random() < 0.5 ? Math.random() * 46 : 560 - Math.random() * 46;
-        const r = 8 + Math.random() * 26;
-        const rg = c.createRadialGradient(x, y, 0, x, y, r);
-        rg.addColorStop(0, 'rgba(8,4,0,0.85)');
-        rg.addColorStop(1, 'rgba(8,4,0,0)');
-        c.fillStyle = rg;
-        c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
-      }
-      // marco con clavos
-      c.strokeStyle = '#c89b4a'; c.lineWidth = 12;
-      c.strokeRect(18, 18, 988, 524);
-      c.fillStyle = '#e8c87a';
-      [[40, 40], [984, 40], [40, 520], [984, 520]].forEach(([x, y]) => {
-        c.beginPath(); c.arc(x, y, 9, 0, Math.PI * 2); c.fill();
-      });
-      // estrella del sheriff arriba
-      c.save();
-      c.translate(512, 108);
-      c.fillStyle = '#e8c87a'; c.strokeStyle = '#7a5a1e'; c.lineWidth = 5;
-      c.beginPath();
-      for (let i = 0; i < 10; i++) {
-        const r = (i % 2 === 0) ? 44 : 19;
-        const a = -Math.PI / 2 + i * Math.PI / 5;
-        const px = Math.cos(a) * r, py = Math.sin(a) * r;
-        if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
-      }
-      c.closePath(); c.fill(); c.stroke();
-      c.restore();
-      // letras
-      c.textAlign = 'center';
-      c.fillStyle = '#ffdf8f';
-      c.font = 'bold 104px Georgia, serif';
-      c.strokeStyle = '#20120a'; c.lineWidth = 8;
-      c.strokeText('¡SUPERPODER!', 512, 300);
-      c.fillText('¡SUPERPODER!', 512, 300);
-      c.fillStyle = '#e8b25f';
-      c.font = 'bold 60px Georgia, serif';
-      c.strokeText('DEL FORAJIDO', 512, 388);
-      c.fillText('DEL FORAJIDO', 512, 388);
-      // agujeros de bala
-      for (const [bx, by] of [[150, 180], [880, 200], [200, 440], [840, 460]]) {
-        c.fillStyle = '#120a04';
-        c.beginPath(); c.arc(bx, by, 13, 0, Math.PI * 2); c.fill();
-        c.strokeStyle = 'rgba(232,200,122,0.4)'; c.lineWidth = 3;
-        c.beginPath(); c.arc(bx, by, 13, 0, Math.PI * 2); c.stroke();
-      }
-      const t = new THREE.CanvasTexture(cv);
-      t.colorSpace = THREE.SRGBColorSpace;
-      apply(t);
-    };
-    try {
-      const img = new Image();
-      img.onload = () => {
-        const t = new THREE.Texture();
-        t.colorSpace = THREE.SRGBColorSpace;
-        t.image = img; t.needsUpdate = true;
-        apply(t);
-      };
-      img.onerror = () => paint();
-      img.src = new URL('./assets/superpoder.webp', import.meta.url).href;
-    } catch (e) { paint(); }
+    this.T_IN = this._impl.T_IN;
+    this.T_HOLD = this._impl.T_HOLD;
+    this.T_OUT = this._impl.T_OUT;
   }
-  /** v2.120 · show(iconUrl): además del tablón, muestra el ICONO circular
-   *  del superpoder anunciado (powerarena/powerestampida). Los poderes
-   *  clásicos (disparo/dinamita) siguen llegando sin icono → sin cambio. */
-  show(iconUrl) {
-    if (!this.inited) this.build();
-    this.t = 0;
-    this.group.visible = true;
-    this._iconShow(iconUrl);
-    this._anclado();
-  }
-  /** Icono circular en la esquina del tablón (textura perezosa en caché). */
-  _iconShow(iconUrl) {
-    if (!iconUrl) {
-      if (this.iconPlane) this.iconPlane.visible = false;
-      return;
+  build() { this._impl.build(); }
+  show(iconUrl) { this._impl.show(iconUrl); }
+  hide() { this._impl.hide(); }
+  update(dt) { this._impl.update(dt); }
+  dispose() { this._impl.dispose(); }
+  get group() { return this._impl.group; }   // acceso QA/interno (solo lectura)
+  /* Respaldo: tablón quemado del Oeste (mismo pintor que había en el
+   * build: vetas, quemaduras de borde, marco con clavos, estrella del
+   * sheriff, ¡SUPERPODER! DEL FORAJIDO y agujeros de bala). */
+  _pintarRespaldo(aplicar) {
+    const cv = oesteCanvas(1024, 560);
+    const c = cv.getContext('2d');
+    // tablones quemados
+    const gr = c.createLinearGradient(0, 0, 0, 560);
+    gr.addColorStop(0, '#3c2a16');
+    gr.addColorStop(0.5, '#4c3418');
+    gr.addColorStop(1, '#2c1c0c');
+    c.fillStyle = gr; c.fillRect(0, 0, 1024, 560);
+    c.strokeStyle = 'rgba(20,12,4,0.5)'; c.lineWidth = 3;
+    for (let i = 0; i < 9; i++) {
+      const y = 30 + i * 62;
+      c.beginPath(); c.moveTo(0, y);
+      c.bezierCurveTo(340, y + 8, 700, y - 8, 1024, y + 3);
+      c.stroke();
     }
-    if (!this.iconPlane) {
-      this.iconPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.30, 0.30),
-        new THREE.MeshBasicMaterial({
-          transparent: true, depthWrite: false, depthTest: false,
-          opacity: 0, renderOrder: 50,
-        }));
-      // v2.120: el renderOrder va en el OBJETO (el del material se ignora
-      // en el orden transparente) — si no, el tablón lo tapaba
-      this.iconPlane.renderOrder = 51;
-      this.iconPlane.position.set(0.30, -0.16, 0.012);   // bajo el texto, esquina
-      this.pivot.add(this.iconPlane);
-      this.iconCache = new Map();
+    // quemaduras de borde
+    for (let i = 0; i < 26; i++) {
+      const x = Math.random() * 1024;
+      const y = Math.random() < 0.5 ? Math.random() * 46 : 560 - Math.random() * 46;
+      const r = 8 + Math.random() * 26;
+      const rg = c.createRadialGradient(x, y, 0, x, y, r);
+      rg.addColorStop(0, 'rgba(8,4,0,0.85)');
+      rg.addColorStop(1, 'rgba(8,4,0,0)');
+      c.fillStyle = rg;
+      c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
     }
-    const mat = this.iconPlane.material;
-    let tex = this.iconCache.get(iconUrl);
-    if (!tex) {
-      tex = new THREE.TextureLoader().load(iconUrl, () => {
-        if (mat) mat.needsUpdate = true;
-      }, undefined, () => { /* sin icono: se queda oculto */ });
-      tex.colorSpace = THREE.SRGBColorSpace;
-      this.iconCache.set(iconUrl, tex);
+    // marco con clavos
+    c.strokeStyle = '#c89b4a'; c.lineWidth = 12;
+    c.strokeRect(18, 18, 988, 524);
+    c.fillStyle = '#e8c87a';
+    [[40, 40], [984, 40], [40, 520], [984, 520]].forEach(([x, y]) => {
+      c.beginPath(); c.arc(x, y, 9, 0, Math.PI * 2); c.fill();
+    });
+    // estrella del sheriff arriba
+    c.save();
+    c.translate(512, 108);
+    c.fillStyle = '#e8c87a'; c.strokeStyle = '#7a5a1e'; c.lineWidth = 5;
+    c.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = (i % 2 === 0) ? 44 : 19;
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      const px = Math.cos(a) * r, py = Math.sin(a) * r;
+      if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
     }
-    mat.map = tex;
-    mat.opacity = 1;
-    mat.needsUpdate = true;
-    this.iconPlane.visible = true;
-  }
-  _anclado() {
-    const g = this.game;
-    // v2.88: ANCLADO A LA RED — centro del cartel a la altura de la red
-    // (netTopY + un poco), justo del lado del jugador; mira al jugador
-    // sólo girando en el plano XZ. Nada de copiar la cámara (iba pegado a
-    // la cara del jugador).
-    const D = ODIMS();
-    if (!D || !this.group) return;
-    this.group.position.set(0, D.netTopY + 0.14, D.tableCenterZ + 0.30);
-    try {
-      const c = g.camera;
-      if (c) {
-        const dx = c.position.x - this.group.position.x;
-        const dz = c.position.z - this.group.position.z;
-        if (Math.abs(dx) > 1e-4 || Math.abs(dz) > 1e-4) {
-          this.group.rotation.y = Math.atan2(dx, dz);
-        }
-      }
-    } catch (e) { /* se queda mirando al lado del jugador (+Z) */ }
-  }
-  update(dt) {
-    if (this.t < 0 || !this.group.visible) return;
-    this.t += dt;
-    this._anclado();
-    const T1 = this.T_IN, T2 = this.T_HOLD, T3 = this.T_OUT;
-    const P = this.pivot;
-    // v2.120: el icono acompaña SIEMPRE al fundido del tablón
-    if (this.iconPlane && this.iconPlane.visible) {
-      this.iconPlane.material.opacity = this.mat.opacity;
+    c.closePath(); c.fill(); c.stroke();
+    c.restore();
+    // letras
+    c.textAlign = 'center';
+    c.fillStyle = '#ffdf8f';
+    c.font = 'bold 104px Georgia, serif';
+    c.strokeStyle = '#20120a'; c.lineWidth = 8;
+    c.strokeText('¡SUPERPODER!', 512, 300);
+    c.fillText('¡SUPERPODER!', 512, 300);
+    c.fillStyle = '#e8b25f';
+    c.font = 'bold 60px Georgia, serif';
+    c.strokeText('DEL FORAJIDO', 512, 388);
+    c.fillText('DEL FORAJIDO', 512, 388);
+    // agujeros de bala
+    for (const [bx, by] of [[150, 180], [880, 200], [200, 440], [840, 460]]) {
+      c.fillStyle = '#120a04';
+      c.beginPath(); c.arc(bx, by, 13, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = 'rgba(232,200,122,0.4)'; c.lineWidth = 3;
+      c.beginPath(); c.arc(bx, by, 13, 0, Math.PI * 2); c.stroke();
     }
-    if (this.t <= T1) {
-      const k = 1 - Math.pow(1 - this.t / T1, 3);
-      P.position.set(-1.4 * (1 - k), 0, 0);
-      P.rotation.z = 0.22 * (1 - k);
-      this.mat.opacity = k;
-    } else if (this.t <= T2) {
-      const k = (this.t - T1) / (T2 - T1);
-      P.position.set(Math.sin(k * 5.2) * 0.055, Math.sin(k * 3.4) * 0.03, 0);
-      P.rotation.z = Math.sin(k * 4.1) * 0.03;
-      this.mat.opacity = 1;
-    } else if (this.t <= T3) {
-      const k = (this.t - T2) / (T3 - T2);
-      const e = k * k;
-      P.position.set(1.5 * e, 0, 0);
-      P.rotation.z = -0.24 * e;
-      this.mat.opacity = 1 - e;
-    } else {
-      this.group.visible = false;
-      this.t = -1;
-      this.mat.opacity = 0;
-    }
-  }
-  hide() {
-    if (this.group) this.group.visible = false;
-    if (this.iconPlane) this.iconPlane.visible = false;   // v2.120
-    this.t = -1;
-    if (this.mat) this.mat.opacity = 0;
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    aplicar(t);
   }
 }
-
 /* ============================================================================
  *  v2.86 · FX del duelo (pools reutilizables — regla Quest: nada por partida).
  *  Chispas (planos aditivos), humo cartoon (sprites), fogonazos, rayos del

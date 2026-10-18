@@ -39,9 +39,9 @@ async def main():
         await page.goto(BASE + '/game.html', wait_until='domcontentloaded')
         await page.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.6.3-SDK3', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.6.4-SDK4', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.6.3-SDK3' in badge, f'badge 2D = {badge!r}')
+        chk('V3.6.4-SDK4' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("!!window.__PP_SERVE_LAB"), 'SERVE lab intacto (SRV2)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),
@@ -64,7 +64,7 @@ async def main():
         chk('class ReactorInestable' in src, 'clase ReactorInestable conservada (re-insertable)')
         chk('(D.tableCenterZ || -1.6) - 1.70' in src, 'ASTRO v3.5.1 intacto (x 1,26 · z −3,30)')
         man = await page.evaluate(f"fetch('{ORBITAL}/manifest.json').then(r=>r.json())")
-        chk(man.get('version') == 14, f'manifest version = {man.get("version")}')
+        chk(man.get('version') == 15, f'manifest version = {man.get("version")}')
         chk([st['id'] for st in man['stages']] == ['duelo1', 'impulso', 'duelo2', 'escudo', 'final'],
             'manifest stages = duelo1·impulso·duelo2·escudo·final')
         codes = await page.evaluate("""async (urls) => {
@@ -267,7 +267,7 @@ async def main():
         pg2.on('pageerror', lambda e: errors2.append(str(e)))
         await pg2.goto(GW + '/game.html', wait_until='domcontentloaded')
         await pg2.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
-        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.3-SDK3', 'gateway: __PP_VERSION 3.6.3-SDK3')
+        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.4-SDK4', 'gateway: __PP_VERSION 3.6.4-SDK4')
         chk(await pg2.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"), 'gateway: puente CCD')
         chk(await pg2.evaluate("!!window.__PP_GAME"), 'gateway: juego arranca')
         chk(not errors2, f'0 pageerrors gateway ({len(errors2)}): {errors2[:2]}')

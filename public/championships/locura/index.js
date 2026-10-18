@@ -128,7 +128,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';   // v2.74: pis
 // patrón de congelado (v2.40): ese patrón vive ahora en el SDK y el módulo
 // lo usa de allí — una sola fuente para la familia. Sin SFX mp3 propios
 // (los sonidos del rival van por el núcleo vía manifest "sounds").
-import { congela, getCore } from '../sdk/champ_sdk.js';
+import { createPowerSign, congela, getCore } from '../sdk/champ_sdk.js';
 
 // Puente de SOLO LECTURA con el núcleo (window.__PP_CORE)
 // v3.6.2-SDK2: el puente vive en el SDK (getCore) — una sola fuente.
@@ -812,258 +812,27 @@ class ArcadeRanking {
 class ArcadePowerSign {
   constructor(ctrl) {
     this.game = ctrl.game;
-    this.url = (ctrl.data && ctrl.data.powerBannerUrl) || '';
-    this.t = -1;                       // -1 = oculto
-    // v2.40: coreografía en segundos — duración TOTAL ≈ 2 s
-    this.T_IN = 0.40;                  // entrada rápida desde un lado
-    this.T_HOLD = 1.45;                // hasta aquí: parada con vaivén
-    this.T_OUT = 1.90;                 // salida rápida por el lado contrario
-  }
-
-  build() {
-    if (this.inited) return;
-    this.inited = true;
-
-    this.group = new THREE.Group();    // ancla a la CABEZA (posición/rotación)
-    this.pivot = new THREE.Group();    // v2.40: coreografía local del cartel
-    this.group.add(this.pivot);
-
-    // arte del cartel (data URL del campeonato) con respaldo a texto
-    this.mat = new THREE.MeshBasicMaterial({
-      transparent: true, depthWrite: false, depthTest: false, opacity: 0,
+    this.ctrl = ctrl;
+    // v3.6.4-SDK4 · FASE 6: la fábrica del SDK (createPowerSign) sustituye
+    // la copia — UNA sola fuente para el tablón de superpoder (ArcadePowerSign).
+    this._impl = createPowerSign(THREE, () => this.game, {
+      coreo: 'v240',
+      halo: true,
+      arte: 'fit1833',
+      url: () => (ctrl.data && ctrl.data.powerBannerUrl) || '',
+      dims: () => (window.__PP_CORE && window.__PP_CORE.DIMS) || null,
     });
-    this.mat.renderOrder = 49;
-    this.plane = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.502), this.mat);
-    this.plane.renderOrder = 49;
-    this.pivot.add(this.plane);
-
-    // v2.40: HALO DE CONTORNO — la silueta REAL del arte (su canal alfa)
-    // estampada con sombra difusa dorada + halo ámbar exterior. El brillo
-    // abraza exactamente la figura del cartel (nada de destellos raros).
-    this.haloMat = new THREE.MeshBasicMaterial({
-      transparent: true, depthWrite: false, depthTest: false,
-      blending: THREE.AdditiveBlending, opacity: 0,
-    });
-    this.haloMat.renderOrder = 48;
-    this.halo = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.502), this.haloMat);
-    this.halo.renderOrder = 48;
-    this.halo.scale.setScalar(1.2);
-    this.pivot.add(this.halo);
-
-    this.group.visible = false;
-    // v2.88: bajo el RIG (con la mesa) — anclado a la RED en vez de a la
-    // cabeza (a la altura de la red, lejos de la cara del jugador; igual
-    // en los tres campeonatos).
-    this.game.rig.add(this.group);
-    this._loadArt();
+    this.T_IN = this._impl.T_IN;
+    this.T_HOLD = this._impl.T_HOLD;
+    this.T_OUT = this._impl.T_OUT;
   }
-
-  /** v2.40: textura del halo a partir de la silueta (alfa) del arte — dos
-   *  pasadas de sombra difusa: núcleo dorado pegado al contorno y halo
-   *  ámbar ancho, fundidas en modo aditivo. */
-  _buildHaloFrom(src, w, h) {
-    try {
-      const mk = (blur, color) => {
-        const cv = arcadeCanvas(w, h);
-        const c = cv.getContext('2d');
-        c.shadowColor = color;
-        c.shadowBlur = blur;
-        c.shadowOffsetX = 0;
-        c.shadowOffsetY = 0;
-        for (let i = 0; i < 3; i++) c.drawImage(src, 0, 0, w, h);
-        return cv;
-      };
-      const wide = mk(Math.max(14, Math.round(h * 0.16)), 'rgba(255,150,40,0.85)');
-      const core = mk(Math.max(8, Math.round(h * 0.07)), 'rgba(255,214,110,0.95)');
-      const c2 = core.getContext('2d');
-      c2.globalCompositeOperation = 'lighter';
-      c2.drawImage(wide, 0, 0);
-      const tex = new THREE.CanvasTexture(core);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      this.haloMat.map = tex;
-      this.haloMat.needsUpdate = true;
-    } catch (e) { console.warn('[powerSign.halo]', e); }
-  }
-
-  _loadArt() {
-    if (this.url) {
-      const tex = new THREE.Texture();
-      tex.colorSpace = THREE.SRGBColorSpace;
-      const img = new Image();
-      img.onload = () => {
-        tex.image = img;
-        tex.needsUpdate = true;
-        this.mat.map = tex;
-        this.mat.needsUpdate = true;
-        // aspecto real del arte (1408x768 -> 1.833): alto acorde
-        const ar = img.width / Math.max(1, img.height);
-        const fit = Math.min(1, 1.833 / Math.max(0.5, ar));
-        this.plane.scale.set(1, fit, 1);
-        this.halo.scale.set(1.2, 1.2 * fit, 1);
-        // v2.40: halo de contorno con la SILUETA del arte
-        this._buildHaloFrom(img, 512, Math.max(64, Math.round(512 / Math.max(0.5, ar))));
-      };
-      img.onerror = () => this._fallbackArt();
-      img.src = this.url;
-    } else {
-      this._fallbackArt();
-    }
-  }
-
-  _fallbackArt() {
-    // sin arte: letrero dibujado "SUPER POWER!!" con brillo
-    const cv = arcadeCanvas(1024, 512);
-    const g = cv.getContext('2d');
-    g.fillStyle = 'rgba(10,16,38,0.85)';
-    g.beginPath();
-    g.roundRect(24, 24, 976, 464, 56);
-    g.fill();
-    g.lineWidth = 14;
-    g.strokeStyle = '#e8b45a';
-    g.stroke();
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.shadowColor = '#ffd257';
-    g.shadowBlur = 34;
-    g.fillStyle = '#ffd257';
-    g.font = '900 190px system-ui, sans-serif';
-    g.fillText('SUPER', 512, 190);
-    g.fillStyle = '#bfe3ff';
-    g.font = '900 170px system-ui, sans-serif';
-    g.fillText('POWER!!', 512, 380);
-    const tex = new THREE.CanvasTexture(cv);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    this.mat.map = tex;
-    this.mat.needsUpdate = true;
-    this._buildHaloFrom(cv, 512, 256);   // v2.40: halo también en el respaldo
-  }
-
-  /** v2.120 · show(iconUrl): el cartel muestra el ICONO del superpoder
-   *  anunciado (powerglobos/powergiro). Los clásicos siguen sin icono. */
-  show(iconUrl) {
-    if (!this.inited) this.build();
-    this.t = 0;
-    this.group.visible = true;
-    this._iconShow(iconUrl);
-    // v2.40: parte del lado IZQUIERDO, sin arte visible aún
-    if (this.pivot) {
-      this.pivot.position.set(-1.15, 0, 0);
-      this.pivot.rotation.z = 0;
-      this.pivot.scale.setScalar(0.92);
-    }
-    this.mat.opacity = 0;
-    this.haloMat.opacity = 0;
-  }
-  /** Icono circular bajo el cartel (textura perezosa en caché, v2.120). */
-  _iconShow(iconUrl) {
-    if (!iconUrl) {
-      if (this.iconPlane) this.iconPlane.visible = false;
-      return;
-    }
-    if (!this.iconPlane) {
-      this.iconPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.30, 0.30),
-        new THREE.MeshBasicMaterial({
-          transparent: true, depthWrite: false, depthTest: false,
-          opacity: 0, renderOrder: 50,
-        }));
-      // v2.120: el renderOrder va en el OBJETO (el del material se ignora
-      // en el orden transparente) — si no, el tablón lo tapaba
-      this.iconPlane.renderOrder = 51;
-      this.iconPlane.position.set(0.30, -0.16, 0.012);
-      this.pivot.add(this.iconPlane);
-      this.iconCache = new Map();
-    }
-    const mat = this.iconPlane.material;
-    let tex = this.iconCache.get(iconUrl);
-    if (!tex) {
-      tex = new THREE.TextureLoader().load(iconUrl, () => {
-        if (mat) mat.needsUpdate = true;
-      }, undefined, () => { /* sin icono: oculto */ });
-      tex.colorSpace = THREE.SRGBColorSpace;
-      this.iconCache.set(iconUrl, tex);
-    }
-    mat.map = tex;
-    mat.opacity = 1;
-    mat.needsUpdate = true;
-    this.iconPlane.visible = true;
-  }
-
-  hide() {
-    this.t = -1;
-    if (this.group) this.group.visible = false;
-    if (this.iconPlane) this.iconPlane.visible = false;   // v2.120
-  }
-
-  update(dt) {
-    if (this.t < 0 || !this.group || !this.group.visible) return;
-    this.t += dt;
-    // v2.120: el icono acompaña SIEMPRE al fundido del cartel
-    if (this.iconPlane && this.iconPlane.visible) {
-      this.iconPlane.material.opacity = this.mat.opacity;
-    }
-    // v2.88: anclado a la RED — centro del cartel a la altura de la red
-    // (netTopY + 0,14), 30 cm del lado del jugador; gira en XZ para mirar
-    // al jugador. Sustituye al anclaje a la CABEZA (1,05 m delante del
-    // rostro = demasiado cerca; petición del artista).
-    {
-      const D = (window.__PP_CORE && window.__PP_CORE.DIMS) || null;
-      const g = this.game;
-      if (D) {
-        this.group.position.set(0, D.netTopY + 0.14, D.tableCenterZ + 0.30);
-        try {
-          const c = g.camera;
-          if (c) {
-            const dx = c.position.x - this.group.position.x;
-            const dz = c.position.z - this.group.position.z;
-            if (Math.abs(dx) > 1e-4 || Math.abs(dz) > 1e-4) {
-              this.group.rotation.y = Math.atan2(dx, dz);
-            }
-          }
-        } catch (e) { /* se queda mirando al lado del jugador (+Z) */ }
-      }
-    }
-    // v2.40 · COREOGRAFÍA: entrada rápida desde la IZQUIERDA -> parada con
-    // leve vaivén y halo de contorno que respira -> salida rápida por la
-    // DERECHA (el lado contrario). Duración total ≈ 2 s.
-    const t = this.t;
-    const X = 1.15;              // media anchura del recorrido lateral (m)
-    if (t < this.T_IN) {
-      // ENTRADA: deslizamiento rápido con frenada suave (easeOutCubic)
-      const k = t / this.T_IN;
-      const e = 1 - Math.pow(1 - k, 3);
-      this.pivot.position.x = -X * (1 - e);
-      this.pivot.rotation.z = (1 - e) * 0.1;
-      this.pivot.scale.setScalar(0.92 + 0.08 * e);
-      this.mat.opacity = Math.min(1, t / 0.12);
-    } else if (t < this.T_HOLD) {
-      // PARADA: vaivén leve (x, inclinación y tamaño)
-      this.pivot.position.x = Math.sin(t * 6.4) * 0.012;
-      this.pivot.rotation.z = Math.sin(t * 5.1) * 0.035;
-      this.pivot.scale.setScalar(1 + Math.sin(t * 8.2) * 0.022);
-      this.mat.opacity = 1;
-    } else if (t < this.T_OUT) {
-      // SALIDA: acelera hacia la DERECHA (easeInCubic) y se desvanece
-      const k = (t - this.T_HOLD) / (this.T_OUT - this.T_HOLD);
-      const e = k * k * k;
-      this.pivot.position.x = X * e;
-      this.pivot.rotation.z = -0.06 * e;
-      this.pivot.scale.setScalar(1);
-      this.mat.opacity = k > 0.72 ? Math.max(0, 1 - (k - 0.72) / 0.28) : 1;
-    } else {
-      this.hide();
-      return;
-    }
-    // halo de contorno: entra con el cartel y respira mientras está parado
-    const breathe = 0.78 + Math.sin(t * 9.0) * 0.22;
-    this.haloMat.opacity = this.mat.opacity *
-      (t < this.T_IN ? 0.4 : breathe) * 0.9;
-    if (t >= this.T_OUT - 0.12) {
-      this.haloMat.opacity *= Math.max(0, (this.T_OUT - t) / 0.12);
-    }
-  }
+  build() { this._impl.build(); }
+  show(iconUrl) { this._impl.show(iconUrl); }
+  hide() { this._impl.hide(); }
+  update(dt) { this._impl.update(dt); }
+  dispose() { this._impl.dispose(); }
+  get group() { return this._impl.group; }   // acceso QA/interno (solo lectura)
 }
-
 const ppSignPos = new THREE.Vector3();
 const ppSignQuat = new THREE.Quaternion();
 const ppSignDir = new THREE.Vector3();

@@ -2117,3 +2117,23 @@ Stage Summary:
 - Pendiente del dueño: prueba en casco opcional (la música debe sonar EXACTAMENTE igual) · SDK v1.x: Sala6/Rival/HUD compartidos · P1/P2 del roadmap.
 - CIERRE (deploy_pages.py --push --release --backup): smoke del sitio verde · rama pages en GitHub = 7de5a85c9 (commit encadenado) · main→proyecto al día · Release v3.6.3-SDK3 con los 4 ZIPs (COMPLETO+CLOUDFLARE+ligera+SOLO) · PAGES EN VIVO VERIFICADA con verify_pages_live.py 3.6.3-SDK3: el juego V3.6.3-SDK3 arranca desde https://franjavierdavila.github.io/CrazyPP/ (17 peticiones OK · 0 fallos · 0 pageerrors) — la FASE 5 ya es jugable en el casco sin descargar nada.
 
+
+
+---
+Task ID: 95
+Agent: main (Z.ai)
+Task: MODULARIZACIÓN P0 · FASE 6 — CREATEPOWERSIGN: el SDK champ_sdk.js v1.3.0 unifica el CARTEL DE SUPERPODER de los 4 campeonatos con duelos (ForajidoPowerSign oeste · WizardPowerSign magia · ArcadePowerSign locura · PwSignEO orbital) con DOS coreografías exactas. Release V3.6.4-SDK4: 4 ZIPs byte-exactos + QA quíntuple verde (181+131+65+54 = 431 checks) + smoke SDK4.
+
+Work Log:
+- INVENTARIO de las 4 copias: timings/plano/anclado IDÉNTICOS (0,40/1,45/1,90 s · 0,92×0,502 · netTopY+0,14 · tableCenterZ+0,30 · mira en XZ); DOS coreografías puras: «clasica» v2.120 (oeste+magia, verbatim: entrada 1,4 m rot 0,22, vaivén sin 5.2/3.4/4.1, salida 1,5·e² rot −0,24, sin halo) y «v240» (locura+orbital, verbatim: escala 0,92→1, opacidad t/0,12, vaivén sin 6.4/5.1/8.2, salida easeInCubic con recorte k>0,72 + HALO DE CONTORNO que respira 0,78±0,22 @9 Hz). Divergencias como knobs: halo (locura/orbital), arte (plano oeste / canvas1024 magia / fit1833 locura+orbital), respaldo (tablón pintado del Oeste / paintPowerBanner de magia / builtin SUPER POWER!! del SDK para locura+orbital), ownTex (orbital), dims (4 fuentes), dispose (regla Quest, solo orbital → ahora los 4).
+- champ_sdk.js v1.2.0 → v1.3.0 (752 líneas): createPowerSign(THREE, getGame, opts) — THREE sigue como parámetro (el SDK no gana dependencias); icono circular v2.120 con cache perezosa COMÚN; expose de T_IN/T_HOLD/T_OUT (el congela del aviso lee T_OUT) + getter group (el QA y el orbital leen pwSign.group.visible).
+- fase6_powersign.py (cirugía re-operable): las 4 clases → DELEGADORES finos (build/show/hide/update/dispose + getter group + T_* expuestos); oeste conserva su pintor del tablón quemado como _pintarRespaldo. Tres pasadas para dejar la plantilla correcta (cierre de constructor, llave de clase con cuerpo extra). Manifiestos: oeste v51 · magia v31 · locura v22 · ORBITAL v15 (primer cambio del orbital desde SDK1). Neto: ~970 líneas de copia retiradas.
+- Sello c00 + badge → 3.6.4-SDK4 · golden NUEVO 8f8b1ea1… (6.343.658 B, el núcleo NO cambia) · triple sha local=:3000=:81 ✓ · hub → v364-sdk4 (FASE 6 en portada y descripciones).
+- gen_release_v364 (derivador asertado, 47/47): build_zip con el bloque NUEVO PowerSign SDK4 (tokens por módulo + manifests v51/31/22/15) + FASE 5 actualizada (v51/31/3) + FASE 4 re-anclada (imports con createPowerSign, locura v22) + orbital v15 + SDK 1.3.0 (createPowerSign + coreo v240 + breathe). Lección: el mensaje del orbital traía el v14 en el TEXTO (no solo en el código). 4 ZIPs byte-exactos: COMPLETO 125.213.762 · ligera 11.453.534 · CLOUDFLARE 125.201.138 · SOLO 6.089 B.
+- gen_qa_v364: qa_sup1_v364 (secciones FASE 5 actualizada + FASE 6 nueva con coreografías; nota SDK4; el orbital conserva 1 decodeAudioData propio — SFX de arsenal, pendiente SDK v1.x) → 131 OK · qa_imp2/qa_escudo parcheados + sus checks históricos del manifest orbital v14→v15 → 65 + 54 OK · qa_descargas_v364 nuevo → 181 OK · smoke_sdk4 (import en cadena + createMusic + createPowerSign con forma de API y T_OUT=1.9) → OK, 0 pageerrors. Tres lecciones del derivador: el replace global de versión puede TOCAR notas históricas insertadas (la nota v3.6.3 de valle se restaura a mano), los checks históricos del manifest orbital v14 viven en TODOS los QA (sup1/imp2/escudo), y el transporte vuelve a mangleando corchetes en los tracebacks.
+- src/game/LEEME.md: Fase 6 completada + próxima SDK v1.x (Rival/HUD compartidos + SFX de arsenal del orbital).
+
+Stage Summary:
+- FASE 6 COMPLETADA: el MOMENTO FIRMA del juego (el aviso «¡Super Power!!» con su coreografía y halo) tiene UNA sola fuente — un bug del tablón se arregla UNA vez y sirven los 4 campeonatos; las DOS coreografías (clásica y v2.40) viajan intactas y el QA verifica la coreografía de cada módulo por nombre.
+- V3.6.4-SDK4 EN PRODUCCIÓN: 4 ZIPs byte-exactos, QA quíntuple verde (431 checks) + smoke, golden 8f8b1ea1…. Cero cambios de gameplay.
+- Pendiente del dueño: prueba en casco opcional (el cartel debe verse EXACTAMENTE igual en los 4) · SDK v1.x: Rival/HUD + SFX de arsenal del orbital · P1/P2 del roadmap.

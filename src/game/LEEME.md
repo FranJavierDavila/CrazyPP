@@ -123,8 +123,18 @@ FASES COMPLETADAS (plan P0 acordado con el dueño)
     de contexto (v2.124) y parada instantánea o con fundido. El fix
     v2.125 del decodeAudioData ya vive UNA sola vez también para la
     música (ningún módulo conserva decodeAudioData propio).
+  · Fase 6 (V3.6.4-SDK4): el SDK v1.3.0 estrena createPowerSign() — el
+    CARTEL DE SUPERPODER de los 4 campeonatos con duelos (Forajido/
+    Wizard/Arcade/PwSignEO) vive en UNA fábrica con DOS coreografías
+    exactas («clasica» v2.120 y «v240» con el halo que respira) y knobs
+    por módulo (arte, respaldo pintado, ownTex, dims). El anclado a la
+    red (v2.88) y el icono del poder (v2.120) son comunes; el dispose
+    de la regla Quest pasa a los cuatro (oeste v51 · magia v31 ·
+    locura v22 · orbital v15).
 PRÓXIMA FASE
-  · SDK v1.x: Sala6/Rival/HUD compartidos. Los «candidatos SDK» de
-    DEPENDENCIAS.md marcan el camino en el núcleo.
+  · SDK v1.x: Rival/HUD compartidos (el standee del rival y el
+    marcador de etapa siguen duplicados entre módulos) y el SFX de
+    arsenal del orbital (su decodeAudioData propio). Los «candidatos
+    SDK» de DEPENDENCIAS.md marcan el camino en el núcleo.
   · Cada fase conserva la cadena de release: game.html sigue siendo
     un único fichero autocontenido para los ZIPs.

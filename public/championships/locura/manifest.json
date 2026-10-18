@@ -1,6 +1,6 @@
 {
   "id": "locura",
-  "version": 21,
+  "version": 22,
   "title": {
     "es": "Campeonato de la Locura",
     "en": "Championship of Madness"
@@ -174,7 +174,8 @@
   "notes": [
     "2026-10-12: migrado al esquema v2.125 (contract 1) — sin cambios de comportamiento",
     "2026-10-13: módulo v18 — MAREO retirado y sustituido por BURLA (rayo arcoíris + 5 cartones burlescos con comodín) a petición del artista/dueño.",
-    "2026-10-19 v3.6.2-SDK2 · FASE 4 de la modularización P0 · SDK DE CAMPEONATOS: el congelado del aviso de superpoder — el patrón v2.40 que NACIÓ en este módulo — y el puente al núcleo pasan a vivir en championships/sdk/champ_sdk.js v1.1.0 (congela()/getCore): una sola fuente para los 5 campeonatos. Sin cambios de conducta: la partida se congela exactamente igual (warn + T_OUT + 0,1 s)."
+    "2026-10-19 v3.6.2-SDK2 · FASE 4 de la modularización P0 · SDK DE CAMPEONATOS: el congelado del aviso de superpoder — el patrón v2.40 que NACIÓ en este módulo — y el puente al núcleo pasan a vivir en championships/sdk/champ_sdk.js v1.1.0 (congela()/getCore): una sola fuente para los 5 campeonatos. Sin cambios de conducta: la partida se congela exactamente igual (warn + T_OUT + 0,1 s).",
+    "2026-10-19 v3.6.4-SDK4 · FASE 6 de la modularización P0 · createPowerSign (SDK v1.3.0): el cartel «SUPER POWER!!» (el patrón v2.40 que NACIÓ aquí, con su HALO DE CONTORNO que respira) se migra a la fábrica única del SDK; ahora el orbital comparte exactamente SU coreografía."
   ],
   "note_v2126": "v2.126 (módulo v17) · LOS 2 PODERES NUEVOS, A PRUEBA DE TODO: (1) LANZAMIENTO GARANTIZADO — el efecto entra aunque el punto muera durante el aviso (antes cualquier estado ≠ rally se comía el poder en silencio: el dueño lo vivía como «globos/mareo no funcionan»); (2) BOLSA ROTATORIA — todos los poderes salen antes de repetir, así GLOBOS y MAREO aparecen seguro en los primeros anuncios de la sesión; (3) POP de globos más generoso (radio 0,155→0,185 m: la bola rápida tunelaba el margen y no reventaba ninguno).",
   "note_v2127": "v2.127 (módulo v18) · BURLA sustituye a MAREO (el dueño: «el superpoder del clown de mareo no funciona»): rayo de luz arcoíris que impacta en puntos distintos de la mesa con un pequeño destello arcoíris y en cada impacto se planta un CARTÓN VERTICAL de ~50 cm (25×50) con el clown burlesco (arte nuevo burla1-4.png + burlacomodin.png); el cartón está presente 2 s y desaparece; son BARRERAS: la bola que los cruza se frena (cae muerta) y el cartón estalla en partículas arcoíris; el COMODÍN (~1 de cada 5, clown de espaldas) deja pasar la bola, que se pone NEGRA y MÁS GRANDE, y si la golpeas con la pala estalla en cintas negras: PUNTO GANADOR; icono nuevo powerburla.png (medallón arcoíris, sustituye a powergiro.png); bolsa: Nv.1/2 confeti+bola loca+globos+burla · Nv.3 bola loca+split+globos+burla; pool precalentado en build() (regla Quest: nada se crea por partida).",

@@ -1,0 +1,147 @@
+== PORTADA (dev :3000) ==
+  ✓ __PP_VERSION = '3.6.4-SDK4'
+  ✓ badge 2D = 'V3.6.4-SDK4'
+  ✓ CCD lab intacto (CCD1)
+  ✓ puente CCD del núcleo expuesto (__PP_PADDLE_SWEEP)
+== Ficheros ==
+  ✓ módulo: function _geoMeteorito
+  ✓ módulo: _rocasGeo = [_geoMeteorito(0), _geoMeteorito(1)]
+  ✓ módulo: vertexColors: true, flatShading: true
+  ✓ módulo: emissive: 0xff6a22
+  ✓ módulo: calor de la entrada
+  ✓ módulo: r.m.rotation.y += dt * r.sp
+  ✓ módulo: r.m.position.y, ez = cur.z - r.z
+  ✓ módulo: this.dronTractor
+  ✓ módulo: _tractorTrap
+  ✓ módulo: el rayo sale de su emisor
+  ✓ módulo: caída vertical pura
+  ✓ módulo: dentro(prev.x + dx * f
+  ✓ módulo: this._tractorPrev.copy(ball.pos)
+  ✓ módulo: const ATT = 7.5
+  ✓ módulo: + 0.5 * Math.sin
+  ✓ módulo: OTRA distinta con dispersión
+  ✓ módulo: if (g.ball.vel.y > 0) g.ball.vel.y = 0
+  ✓ módulo: congela(this.game, (def.warn || 2.0) + 0.15)
+  ✓ módulo: from '../sdk/champ_sdk.js'
+  ✓ módulo: createSfx(import.meta.url
+  ✓ módulo: __sdkSfx
+  ✓ módulo: _sfx(name)
+  ✓ módulo: this._sfx('enfado_astro.mp3')
+  ✓ módulo: this._sfx('risa_astro.mp3')
+  ✓ módulo: a._sfx('risa_astro.mp3')
+  ✓ módulo: dianaVis: 2.0, dianaWait: 1.0
+  ✓ módulo: this._restT > 0.6
+  ✓ módulo: this._restT = 0;                   // v3.6.0: bote limpio
+  ✓ sin referencias huérfanas a los sprites antiguos de rocas
+  ✓ manifest version = 15
+  ✓ manifest stages = duelo1·impulso·duelo2·escudo·final
+  ✓ cambios: entrada v3.6.1-SDK1
+  ✓ los 4 superpoderes siguen en el manifest
+  ✓ risa_astro.mp3 servido (81408 B)
+  ✓ enfado_astro.mp3 servido (37616 B)
+== SDK DE CAMPEONATOS (champ_sdk.js) ==
+  ✓ SDK: const SDK_VERSION = '1.3.0'
+  ✓ SDK: export function createSfx
+  ✓ SDK: export function congela
+  ✓ SDK: export function descongela
+  ✓ SDK: export function getCore
+  ✓ SDK: export function assetURL
+  ✓ SDK: forma promesa (v2.125)
+  ✓ SDK: decodeAudioData(ab.slice(0))
+  ✓ SDK: function precarga
+  ✓ SDK: opts && opts.pan
+  ✓ SDK: export function createMusic
+  ✓ SDK: o.gateStart !== false && arcPlaying()
+  ✓ SDK: export function createPowerSign
+  ✓ SDK: V240 = o.coreo
+  ✓ SDK: pintorSuperPower
+== FASE 5: la música en el SDK (createMusic) ==
+  ✓ oeste: importa el SDK
+  ✓ oeste: la música delega en createMusic
+  ✓ oeste: sin decodeAudioData propio
+  ✓ oeste: sin freeze duplicado
+  ✓ oeste: manifest v51
+  ✓ oeste: nota v3.6.4-SDK4 en el historial
+  ✓ magia: importa el SDK
+  ✓ magia: la música delega en createMusic
+  ✓ magia: sin decodeAudioData propio
+  ✓ magia: sin freeze duplicado
+  ✓ magia: manifest v31
+  ✓ magia: nota v3.6.4-SDK4 en el historial
+  ✓ valle_neon: importa el SDK
+  ✓ valle_neon: la música delega en createMusic
+  ✓ valle_neon: sin decodeAudioData propio
+  ✓ valle_neon: sin freeze duplicado
+  ✓ valle_neon: manifest v3
+  ✓ valle_neon: nota v3.6.3-SDK3 en el historial
+== FASE 6: el tablón de SUPERPODER en el SDK (createPowerSign) ==
+  ✓ oeste: el tablón delega en el SDK
+  ✓ oeste: coreografía clasica conservada
+  ✓ oeste: decodeAudioData propio = 0 (orbital: SFX de arsenal, resto 0)
+  ✓ oeste: manifest v51
+  ✓ oeste: nota SDK4 en el historial
+  ✓ magia: el tablón delega en el SDK
+  ✓ magia: coreografía clasica conservada
+  ✓ magia: decodeAudioData propio = 0 (orbital: SFX de arsenal, resto 0)
+  ✓ magia: manifest v31
+  ✓ magia: nota SDK4 en el historial
+  ✓ locura: el tablón delega en el SDK
+  ✓ locura: coreografía v240 conservada
+  ✓ locura: decodeAudioData propio = 0 (orbital: SFX de arsenal, resto 0)
+  ✓ locura: manifest v22
+  ✓ locura: nota SDK4 en el historial
+  ✓ estacion_orbital: el tablón delega en el SDK
+  ✓ estacion_orbital: coreografía v240 conservada
+  ✓ estacion_orbital: decodeAudioData propio = 1 (orbital: SFX de arsenal, resto 0)
+  ✓ estacion_orbital: manifest v15
+  ✓ estacion_orbital: nota SDK4 en el historial
+== ESCENA EN VIVO: campeonato cargado ==
+  ✓ controlador vivo (state sala)
+  ✓ window.__PP_SDK = 1.3.0 (SDK importado en cadena por el orbital)
+== FREEZE REAL durante el aviso de superpoder ==
+  ✓ aviso de dos fases disparado (Gravedad cero)
+  ✓ PARTIDA CONGELADA: freezeT = 2.15 s (warn + 0,15)
+  ✓ cartel Super Power!! en escena durante el aviso
+== METEORITOS 3D (rocas procedurales) ==
+  ✓ las rocas son MESHES 3D (adiós sprites)
+  ✓ material con color por vértice + flat shading
+  ✓ la roca aterriza sobre tu campo (y = tableTop + 0,17)
+  ✓ tumbling de la roca viva
+  ✓ la roca ESTALLA al bloquear la bola (rebote y True)
+  ✓ fin del poder deja el pool limpio
+== RAYO TRACTOR: dron encima del haz + bola atrapada ==
+  ✓ haz visible + dron visible encima
+  ✓ dron a y 2.02 (encima de la boca del haz)
+  ✓ bola que entra en el haz queda ATRAPADA (vel = 0)
+  ✓ atrapada FLOTANDO dentro del rayo
+  ✓ captura también por CRUCE del segmento (anti-túnel)
+  ✓ al morir el haz: dron fuera y bola SUELTA vertical (vel 0)
+== GRAVEDAD CERO: partículas que atraen y rebotan la bola ==
+  ✓ 14 partículas blancas visibles
+  ✓ la bola flota: y mínima 0.91 (gravedad compensada)
+  ✓ la bola es atraída (velocidad viva)
+  ✓ rebota ENTRE ELLAS: 37 cambios de objetivo
+  ✓ al desaparecer las partículas: bola DEJADA CAER
+== AUDIOS DEL ASTRO (mp3 del dueño) ==
+  ✓ enfado_astro.mp3 decodificado al perder el ASTRO un punto
+  ✓ risa_astro.mp3 decodificado con la pose de risas
+  ✓ pose de risas aplicada (laughing)
+== ESCENA EN VIVO: reactor de impulso · diana 2 s + pelota ==
+  ✓ oleada 1 activa (3 cubos)
+  ✓ diana materializada (fase vis)
+  ✓ DIANA VISIBLE 2.00 s (antes 1 s)
+  ✓ el láser la tiene como objetivo mientras es visible
+  ✓ pelota en reposo → considerada perdida (se recupera)
+  ✓ la pelota VUELVE a la base flotante
+  ✓ …y BOTANDO sobre la mesita circular (no quieta)
+== Derrota del reactor: ASTRO se ríe (risa cableada) ==
+  ✓ ASTRO en pose de risas ante la derrota (laughing)
+== Gateway :81 ==
+  ✓ gateway: __PP_VERSION 3.6.4-SDK4
+  ✓ gateway: puente CCD
+  ✓ gateway: juego arranca
+  ✓ gateway: risa_astro.mp3 servido byte-exacto
+  ✓ 0 pageerrors gateway (0): []
+  ✓ 0 pageerrors dev (0): []
+
+RESULTADO: 131 OK · 0 fallos

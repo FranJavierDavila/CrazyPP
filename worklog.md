@@ -1965,3 +1965,18 @@ Stage Summary:
 - V3.6.0-SUP1 EN PRODUCCIÓN: los 4 superpoderes del orbital con el comportamiento que pidió el dueño (aviso congelando la partida de verdad, meteoritos 3D con óxido y calor, rayo tractor con dron que atrapa la bola hasta soltarla en vertical, gravedad cero que la hace rebotar entre partículas), la VOZ del ASTRO (risa/enfado), la diana visible 2 s y la pelota que siempre regresa a botar sobre la base flotante.
 - QA cuádruple verde (juego 75 + impulso 65 + escudo 54 + hub 69, 0 fallos); 4 ZIPs byte-exactos en el hub y en el panel download/.
 - Pendiente del dueño: prueba en casco de los superpoderes (fuerza de la atracción, radio de captura del haz, tamaño de las rocas) y URL del git remote para el push anti-rollback.
+
+---
+Task ID: 87
+Agent: main (Z.ai)
+Task: El dueño pide V3.6.0 en el centro de descargas — TERCER reciclaje del sandbox borra los ZIPs sin trackear → regeneración byte-exacta con el ensamblador en git.
+
+Work Log:
+- Verificación del destrozo: download/ y public/descargas/ VACÍOS (los 4 ZIPs v360-sup1 eran gitignored); git intacto (game.html VERSION 3.6.0-SUP1, manifest v13, hub → SUP1, módulo orbital completo); 92 ficheros «modificados» resultaron ser SOLO cambios de modo 100644→100755 del reciclaje (0 inserciones de contenido) → restaurados con git checkout.
+- Regeneración: python3 scripts/release-v360/build_zip.py → identidad verificada dura (game/hub/manifest/módulo/20 tokens/assets byte-exactos) + 4 ZIPs BYTE-EXACTOS contra el registro de Task 86: COMPLETO 125.206.366 B · ligera 11.451.838 B · CLOUDFLARE 125.194.235 B · SOLO 6.089 B, en download/ y public/descargas/.
+- download/LEEME-DESCARGA.txt regenerado para SUP1 con scripts/gen_leeme_v360.py (nuevo, en git).
+- QA en verde: scripts/qa_descargas_v360.py → 69 OK · 0 FALLOS (4 botones v360-sup1, ZIPs byte-exactos por :3000 Y :81, game.html 3.6.0-SUP1 por gateway, manifest v13, mp3 del ASTRO byte-exactos, 0 pageerrors) y scripts/qa_sup1_v360.py → 75 OK · 0 fallos (1.ª pasada 74/75 por el flake intermitente del harness ya documentado; 2.ª pasada limpia).
+
+Stage Summary:
+- El centro de descargas vuelve a servir la V3.6.0-SUP1 COMPLETA: hub /descargas en vivo + 4 ZIPs byte-exactos por dev y gateway + respaldo en download/ con LEEME.
+- Tercera pérdida por reciclaje — el patrón se confirma: TODO el release vive en git y se regenera en minutos. Sigue PENDIENTE del dueño la URL del git remote para el push anti-rollback.

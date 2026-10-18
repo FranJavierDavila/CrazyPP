@@ -17,9 +17,9 @@ import * as THREE from 'three';
 // v3.6.2-SDK2 · FASE 4 de la modularización P0: el puente al núcleo vive en
 // el SDK de campeonatos (championships/sdk/champ_sdk.js) — una sola fuente
 // para los 5 módulos. Este módulo (data-driven del Taller) no tiene SFX mp3
-// ni congelados propios: su música WAV en bucle conserva el motor propio
-// (createMusic del SDK la unificará en una fase posterior).
-import { getCore } from '../sdk/champ_sdk.js';
+// ni congelados propios: su música WAV en bucle también vive desde el
+// SDK v1.2.0 (createMusic).
+import { createMusic, getCore } from '../sdk/champ_sdk.js';
 
 const CORE = getCore();
 const GAME = { g: null };
@@ -612,55 +612,36 @@ class PlantillaCtrl {
     if (t && this.standeeMat) { this.standeeMat.map = t; this.standeeMat.needsUpdate = true; }
   }
 
-  /* ------------------------------ música -------------------------------- */
+  /* ------------------------------ música --------------------------------
+   * v3.6.3-SDK3: el motor vive en el SDK (createMusic v1.2.0) con las
+   * variantes propias de este módulo — volumen FIJO del manifest (sin
+   * seguir arcVol), fundido de entrada 1,2 s sin ancla, gate UNA MELODÍA
+   * también dentro de musicOn, SIN sync de volumen y parada CON fundido
+   * de 0,4 s (stop a los 500 ms) — exactamente como el motor v1 que
+   * sustituye. El fix v2.125 del decode ahora vive en el SDK. */
+  get _musSDK() {
+    if (!this.__musSDK) {
+      this.__musSDK = createMusic(() => this.game, {
+        url: () => {
+          const u = this.man && this.man.audio && this.man.audio.music;
+          return u ? this._A(u) : undefined;
+        },
+        vol: () => (this.man && this.man.audio && this.man.audio.musicVolume) || 0.18,
+        fadeIn: 1.2,
+        ancla: false,
+        syncMode: 'none',
+        gateOn: true,
+        renace: false,
+        stopFade: 0.4,
+      });
+    }
+    return this.__musSDK;
+  }
   musicOn() {
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running') return;
-      this._musWanted = true;
-      if (g.audio.arcPlaying) return;               // invariante UNA MELODÍA
-      if (!this._musBuf && !this._musBusy) this._loadMusic(actx);
-      else if (this._musBuf && !this._mus) this._startMusic(actx);
-    } catch (e) { /* */ }
-  }
-  _loadMusic(actx) {
-    const url = this.man && this.man.audio && this.man.audio.music;
-    if (!url) return;
-    this._musBusy = true;
-    fetch(this._A(url)).then((r) => r.arrayBuffer())
-      .then((ab) => new Promise((res, rej) => { try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); } }))
-      .then((buf) => { this._musBuf = buf; this._musBusy = false; if (this._musWanted) this._startMusic(actx); })
-      .catch(() => { this._musBusy = false; });
-  }
-  _startMusic(actx) {
-    try {
-      if (this._mus || !this._musBuf) return;
-      const g = this.game;
-      if (g.audio.arcPlaying) return;
-      const src = actx.createBufferSource();
-      src.buffer = this._musBuf; src.loop = true;
-      const gn = actx.createGain();
-      const vol = (this.man && this.man.audio && this.man.audio.musicVolume) || 0.18;
-      gn.gain.value = 0.0001;
-      src.connect(gn); gn.connect(actx.destination);
-      src.start();
-      gn.gain.linearRampToValueAtTime(vol, actx.currentTime + 1.2);
-      this._mus = { src, gn, vol };
-    } catch (e) { /* */ }
+    this._musSDK.on();
   }
   musicOff() {
-    try {
-      this._musWanted = false;
-      if (!this._mus) return;
-      const { src, gn } = this._mus;
-      const actx = src.context;
-      gn.gain.cancelScheduledValues(actx.currentTime);
-      gn.gain.setValueAtTime(gn.gain.value, actx.currentTime);
-      gn.gain.linearRampToValueAtTime(0.0001, actx.currentTime + 0.4);
-      window.setTimeout(() => { try { src.stop(); } catch (e) { /* */ } }, 500);
-    } catch (e) { /* */ }
-    this._mus = null;
+    this._musSDK.off();
   }
   champIntroPause(on) { try { on ? this.musicOff() : this.musicOn(); } catch (e) { /* */ } }
 

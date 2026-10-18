@@ -166,9 +166,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // v3.6.2-SDK2 · FASE 4 de la modularización P0: kernel compartido de los 5
 // campeonatos (championships/sdk/champ_sdk.js) — la risa del mago y el
 // congelado del aviso delegan en él (el fix «forma promesa» v2.125 llegó a
-// estar copiado 2 veces aquí). La BSO en bucle conserva su motor propio
-// hasta que el SDK estrene createMusic.
-import { createSfx, congela, getCore } from '../sdk/champ_sdk.js';
+// estar copiado 2 veces aquí). Desde el SDK v1.2.0 también la BSO en bucle
+// vive en el SDK (createMusic).
+import { createSfx, createMusic, congela, getCore } from '../sdk/champ_sdk.js';
 
 /* Primitivas del NÚCLEO vía window.__PP_CORE (v2.53). ChampLoader importa
  * este módulo SOLO tras cargar el juego, así que el puente ya está puesto. */
@@ -3855,69 +3855,24 @@ class WizardController {
     } catch (e) { return false; }
   }
 
-  /* ------------------------------- BSO ------------------------------------- */
+  /* ------------------------------- BSO -------------------------------------
+   * v3.6.3-SDK3: el motor vive en el SDK (createMusic v1.2.0) — fundido de
+   * entrada 0,8 s, resurrección v2.124, UNA MELODÍA con arcPlaying, sync
+   * en vivo con rampa 0,15 s y decode v2.125, UNA sola fuente. */
   musicOn() {
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running') return;
-      // v2.124: la BSO muere con cada re-creación del contexto (salir/entrar
-      // de VR, rescate del watchdog): si la referencia apunta a un contexto
-      // ya cerrado, se suelta para que _startMusic pueda revivirla.
-      if (this._mus && this._mus.src.context !== actx) this._mus = null;
-      this._musWanted = true;
-      if (!this._musicBuf && !this._musicBusy) this._loadMusic(actx);
-      else if (this._musicBuf && !this._mus) this._startMusic(actx);
-    } catch (e) { /* sin BSO: nunca rompe */ }
+    this._musSDK.on();
   }
-  _loadMusic(actx) {
-    try {
-      const url = this.manifest && this.manifest.musicUrl;
-      if (!url || this._musicBusy) return;
-      this._musicBusy = true;
-      // v3.6.2-SDK2: la BSO en bucle conserva su motor propio (fundido 0,8 s,
-      // resurrección de contexto y UNA MELODÍA con el núcleo); el SDK v1.x la
-      // unificará con createMusic. El fix v2.125 ya vive aquí.
-      fetch(url)
-        .then((r) => r.arrayBuffer())
-        .then((ab) => new Promise((res, rej) => {
-          // v2.125: forma promesa (la callback puede no dispararse jamás)
-            try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
-        }))
-        .then((buf) => {
-          this._musicBuf = buf; this._musicBusy = false;
-          if (this._musWanted) this._startMusic(actx);
-        })
-        .catch(() => { this._musicBusy = false; });
-    } catch (e) { /* */ }
-  }
-  _startMusic(actx) {
-    try {
-      if (this._mus || !this._musicBuf) return;
-      // v2.125: si la BSO del NÚCLEO está sonando (La Locura), la nuestra no
-      // entra — UNA MELODÍA también en este sentido (simétrico al musicOff()
-      // que el núcleo invoca sobre este módulo cuando arranca la suya).
-      const A0 = this.game && this.game.audio;
-      if (A0 && A0.arcPlaying) return;
-      const gain = actx.createGain();
-      // v2.78: la BSO del campeonato sigue el AJUSTE GLOBAL del menú principal
-      // («Música de los campeonatos», canal pp_arcade_vol del núcleo) — igual
-      // que La Locura, respetando silencio y duck del menú. Antes: fijo 0.15.
-      // v2.124: ENTRADA CON FUNDIDO (0,8 s) — antes arrancaba a volumen pleno
-      // en el mismo tick que el fade-out de la música del menú (al abrir un
-      // duelo): medio segundo de dos melodías pisándose.
-      const t0 = actx.currentTime;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.linearRampToValueAtTime(this._musicEffVol(), t0 + 0.8);
-      this._musRamp = t0 + 0.8;
-      gain.connect(actx.destination);
-      const src2 = actx.createBufferSource();
-      src2.buffer = this._musicBuf;
-      src2.loop = true;
-      src2.connect(gain);
-      src2.start();
-      this._mus = { gain, src: src2 };
-    } catch (e) { /* */ }
+  /* Motor de la BSO: instancia perezosa del SDK (createMusic). Los knobs
+   * son los del motor v2.78+v2.124 que sustituye y van POR DEFECTO en el
+   * SDK (sin el gate del tren del Oeste: aquí no hay vagón). */
+  get _musSDK() {
+    if (!this.__musSDK) {
+      this.__musSDK = createMusic(() => this.game, {
+        url: () => this.manifest && this.manifest.musicUrl,
+        vol: () => this._musicEffVol(),
+      });
+    }
+    return this.__musSDK;
   }
   /** v2.78: volumen EFECTIVO de la BSO según el ajuste global del núcleo
    *  (silencio del usuario + duck del menú + volumen pp_arcade_vol). Si el
@@ -3929,43 +3884,13 @@ class WizardController {
       return (A.arcMute || A._arcDucked) ? 0.0001 : Math.max(0.0001, A.arcVol);
     } catch (e) { return MAGIA.musicVol; }
   }
-  /** v2.78: sincroniza EN VIVO la ganancia de la BSO con el ajuste global
-   *  (el usuario mueve «−/+ volumen» en el menú y la música del Wizard
-   *  responde al momento, igual que lo hace la de La Locura). */
   _syncMusicGain() {
-    try {
-      const A = this.game && this.game.audio;
-      // v2.124: RESURRECCIÓN — si el contexto cambió (re-bind de VR), la BSO
-      // renace sola aquí, en el volumen que toca. Antes la referencia quedaba
-      // apuntando al contexto cerrado y el campeonato seguía sin música hasta
-      // el próximo arranque de duelo.
-      if (this._mus && A && A.ctx && this._mus.src.context !== A.ctx) {
-        this._mus = null;
-        if (this._musWanted && this._musicBuf && A.ctx.state === 'running') {
-          this._startMusic(A.ctx);
-          return;
-        }
-      }
-      if (!this._mus || !this._mus.gain) return;
-      const g = this._mus.gain.gain;
-      const eff = this._musicEffVol();
-      // v2.124: durante el fundido de entrada no se retoca la ganancia
-      if (this._musRamp && A && A.ctx && A.ctx.currentTime < this._musRamp) return;
-      if (A && A.ctx && Math.abs((g.value || 0) - eff) > 0.001) {
-        const t = A.ctx.currentTime;
-        g.cancelScheduledValues(t);
-        g.setValueAtTime(Math.max(0.0001, g.value || 0.0001), t);
-        g.linearRampToValueAtTime(eff, t + 0.15);
-      }
-    } catch (e) { /* nunca rompe el juego */ }
+    // sincronía en vivo + resurrección v2.124: delegadas en el SDK
+    this._musSDK.sync();
   }
   musicOff() {
-    this._musWanted = false;
-    if (this._mus) {
-      try { this._mus.src.stop(); } catch (e) { /* */ }
-      try { this._mus.gain.disconnect(); } catch (e) { /* */ }
-      this._mus = null;
-    }
+    // parada instantánea, como siempre: delega en el SDK
+    this._musSDK.off();
   }
 
   build() {

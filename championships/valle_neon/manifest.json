@@ -1,6 +1,6 @@
 {
   "id": "valle_neon",
-  "version": 2,
+  "version": 3,
   "contract": 1,
   "estado": "publicado",
   "title": {
@@ -151,6 +151,7 @@
   },
   "notes": [
     "v1 · Campeonato creado con El Taller V3.0.3: manifest, módulo y assets generados automáticamente.",
-    "2026-10-19 v3.6.2-SDK2 · FASE 4 de la modularización P0 · SDK DE CAMPEONATOS: el puente al núcleo pasa a getCore() de championships/sdk/champ_sdk.js v1.1.0 (una sola fuente para los 5 módulos). Sin SFX mp3 ni congelados propios: la música WAV en bucle conserva su motor propio hasta que el SDK estrene createMusic."
+    "2026-10-19 v3.6.2-SDK2 · FASE 4 de la modularización P0 · SDK DE CAMPEONATOS: el puente al núcleo pasa a getCore() de championships/sdk/champ_sdk.js v1.1.0 (una sola fuente para los 5 módulos). Sin SFX mp3 ni congelados propios: la música WAV en bucle conserva su motor propio hasta que el SDK estrene createMusic.",
+    "2026-10-19 v3.6.3-SDK3 · FASE 5 de la modularización P0 · createMusic (SDK v1.2.0): la música WAV en bucle se migra al motor único del SDK con conducta idéntica — volumen fijo del manifest, fundido de entrada 1,2 s, gate UNA MELODÍA también en musicOn, sin sync de volumen y parada con fundido de 0,4 s (stop a 500 ms), como su motor v1 original."
   ]
 }

@@ -4785,15 +4785,18 @@ class StockController {
     const D = this.D;
 
     // RIVAL: standee del ASTRO (assets/rival.webp, arte del dueño)
-    // v3.2.1 · POSICIÓN DEL RIVAL = convención FORAJIDO (oeste v2.87, informe
-    // del dueño: «está mal colocado metiéndose dentro de la pared derecha y
-    // debería estar sobre la misma altura que otros rivales como forajido»):
-    // CUERPO ENTERO con el plano de 2,15 m del Oeste (personaje visible
-    // ≈ 1,8 m — el arte 512×1024 del ASTRO es exactamente la proporción 0,5
-    // del forajido), PIES EN EL SUELO (baseY = alto/2) y su mismo spot:
-    // junto al fondo, lado derecho (x 1,62 · z −4,5). Sin giros: de cara,
-    // como el forajido. Antes: plano de 1,75 m flotando a media sala
-    // (x 1,26 · z −3,5), que se leía metido en la pared derecha y bajo.
+    // v3.4.1 · 2.ª CORRECCIÓN DE COLOCACIÓN (informe del dueño: «el rival
+    // sigue apareciendo dentro de la pared»): el spot v3.2.1 (x 1,62 · z −4,5)
+    // dejaba al ASTRO a sólo 1,05 m de la pared frontal — desde el punto de
+    // vista del jugador la perspectiva lo fundía con el arte de la pared
+    // (pies en la línea base del muro, cuerpo sobre los paneles pintados).
+    // AHORA: convención EXACTA de los rivales bien colocados de la casa —
+    // REGLA FIJA de duelos (locura v2.71 / magia v2.71): x = borde derecho
+    // de la mesa + 0,50 ≈ 1,26 · z = −3,82 (la misma profundidad del CLOWN
+    // y del WIZARD: 0,85 m tras el borde lejano de la mesa y 1,73 m LIBRES
+    // de la pared frontal). Cuerpo entero de 2,15 m, pies en el suelo y de
+    // cara, como el forajido (historia: v3.2.1 lo puso en x 1,62 · z −4,5;
+    // antes flotaba a media sala en x 1,26 · z −3,5 con plano de 1,75 m).
     const texRival = new THREE.TextureLoader().load(this._A('rival.webp'));
     texRival.colorSpace = THREE.SRGBColorSpace;
     this._ownTex.add(texRival);
@@ -4803,7 +4806,7 @@ class StockController {
     });
     const RIV_H = 2.15;                       // convención OESTE.spriteHeight
     this.rivalMesh = new THREE.Mesh(new THREE.PlaneGeometry(RIV_H * 0.5, RIV_H), rivalMat);
-    this.rivalMesh.position.set(1.62, RIV_H / 2, (D.tableCenterZ || -1.6) - 2.9);
+    this.rivalMesh.position.set(1.26, RIV_H / 2, (D.tableCenterZ || -1.6) - 2.22);
     this.rivalMesh.renderOrder = 6;
     this.group.add(this.rivalMesh);
     this._rivalEstado = '';

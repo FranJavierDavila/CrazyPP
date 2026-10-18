@@ -4,11 +4,11 @@ export default function Descargas() {
   const files = [
     {
       emoji: "☁️",
-      nombre: "Juego + CRAZY TV — V3.4.0-IMP1 (paquete Cloudflare)",
+      nombre: "Juego + CRAZY TV — V3.4.1-RIV1 (paquete Cloudflare)",
       detalle:
-        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con el REACTOR DE IMPULSO estrenando la etapa 4 (cubos cuánticos, pistola láser, dianas y perturbaciones), el REACTOR DE ENERGÍA INESTABLE en la etapa 2, la ESTACIÓN ORBITAL afinada, PRECISIÓN CCD en el contacto, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
+        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con el ASTRO bien colocado en la sala (ya no se lee dentro de la pared), el REACTOR DE IMPULSO en la etapa 4 (cubos cuánticos, pistola láser, dianas y perturbaciones), el REACTOR DE ENERGÍA INESTABLE en la etapa 2, PRECISIÓN CCD en el contacto, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
       tamano: "113,7 MB · ZIP · Cloudflare Pages",
-      href: "/descargas/crazypp-v340-imp1-CLOUDFLARE.zip",
+      href: "/descargas/crazypp-v341-riv1-CLOUDFLARE.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",
       borde: "border-sky-500/40",
@@ -16,11 +16,11 @@ export default function Descargas() {
     },
     {
       emoji: "🧊",
-      nombre: "Juego + CRAZY TV — V3.4.0-IMP1 (paquete completo)",
+      nombre: "Juego + CRAZY TV — V3.4.1-RIV1 (paquete completo)",
       detalle:
-        "La V3.4.0-IMP1 íntegra: ETAPA 4 NUEVA — REACTOR DE IMPULSO — sala propia de 6 imágenes del dueño SIN mesa: la BASE FLOTANTE repone la pelota, el núcleo alterna ESTABLE (azul) e INESTABLE (rojo con alarma) y expulsa CUBOS CUÁNTICOS en 3 oleadas de 3, 5 y 7 con 2 minutos por oleada; los destruyes con la bola y con la PISTOLA LÁSER de la mano libre aciertas las DIANAS cuánticas (1 s visibles / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0, Atractor (¡un golpe los destruye todos!) y Supergravedad, con cambio automático cada 30 s; pantalla suspendida del techo con oleada, tiempo, cubos y estado; al perder, el ASTRO se ríe frente a ti · el REACTOR DE ENERGÍA INESTABLE sigue en la etapa 2 · ESTACIÓN ORBITAL afinada · PRECISIÓN CCD SDF en el contacto, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+        "La V3.4.1-RIV1 íntegra: ASTRO RECOLOCADO — el rival de la ESTACIÓN ORBITAL se coloca como los demás rivales de la casa (convención de duelos: junto a la esquina lejana derecha de la mesa, en espacio abierto y a la misma profundidad que CLOWN y WIZARD) y ya no se lee dentro de la pared frontal · ETAPA 4 NUEVA — REACTOR DE IMPULSO — sala propia de 6 imágenes del dueño SIN mesa: la BASE FLOTANTE repone la pelota, el núcleo alterna ESTABLE (azul) e INESTABLE (rojo con alarma) y expulsa CUBOS CUÁNTICOS en 3 oleadas de 3, 5 y 7 con 2 minutos por oleada; los destruyes con la bola y con la PISTOLA LÁSER de la mano libre aciertas las DIANAS cuánticas (1 s visibles / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0, Atractor (¡un golpe los destruye todos!) y Supergravedad, con cambio automático cada 30 s; pantalla suspendida del techo con oleada, tiempo, cubos y estado; al perder, el ASTRO se ríe frente a ti · el REACTOR DE ENERGÍA INESTABLE sigue en la etapa 2 · ESTACIÓN ORBITAL afinada · PRECISIÓN CCD SDF en el contacto, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
       tamano: "113,7 MB · ZIP · completo",
-      href: "/descargas/crazypp-v340-imp1-COMPLETO.zip",
+      href: "/descargas/crazypp-v341-riv1-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -28,11 +28,11 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.4.0-IMP1 — versión ligera (sin campeonatos)",
+      nombre: "V3.4.1-RIV1 — versión ligera (sin campeonatos)",
       detalle:
-        "El mismo paquete para subir rápido a Netlify Drop: juego con el Reactor de impulso y el Reactor de energía inestable, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital con sus dos reactores). Tampoco vale para Cloudflare directo (lleva TypeScript).",
+        "El mismo paquete para subir rápido a Netlify Drop: juego con el ASTRO bien colocado en la sala de la Estación Orbital, el Reactor de impulso y el Reactor de energía inestable, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital con sus dos reactores). Tampoco vale para Cloudflare directo (lleva TypeScript).",
       tamano: "11,5 MB · ZIP · Netlify",
-      href: "/descargas/crazypp-v340-imp1-ligera.zip",
+      href: "/descargas/crazypp-v341-riv1-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -68,17 +68,19 @@ export default function Descargas() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
             El paquete actual es la{" "}
-            <strong className="text-amber-300">V3.4.0-IMP1</strong>: la etapa 4
-            de la <strong className="text-slate-200">ESTACIÓN ORBITAL</strong>{" "}
-            estrena el{" "}
-            <strong className="text-slate-200">REACTOR DE IMPULSO</strong>: sin
+            <strong className="text-amber-300">V3.4.1-RIV1</strong>: el{" "}
+            <strong className="text-slate-200">ASTRO de la Estación Orbital</strong>{" "}
+            se coloca ahora como los rivales bien colocados de la casa (junto a
+            la esquina lejana derecha de la mesa, en espacio abierto y a la
+            misma profundidad que CLOWN y WIZARD) y ya no se lee dentro de la
+            pared. Y bajo ese ajuste siguen la etapa 4 —{" "}
+            <strong className="text-slate-200">REACTOR DE IMPULSO</strong> (sin
             mesa — una <strong className="text-slate-200">base flotante</strong>{" "}
             repone la pelota, el núcleo expulsa{" "}
             <strong className="text-slate-200">cubos cuánticos</strong> en 3
             oleadas y tú los destruyes con la bola mientras la{" "}
             <strong className="text-slate-200">pistola láser</strong> acierta
-            dianas que desatan perturbaciones (Gravedad 0, Atractor,
-            Supergravedad). Y bajo todo ello siguen el{" "}
+            dianas que desatan perturbaciones), el{" "}
             <strong className="text-slate-200">Reactor de energía inestable</strong>{" "}
             de la etapa 2, la{" "}
             <strong className="text-slate-200">PRECISIÓN CCD</strong> en el
@@ -169,8 +171,8 @@ export default function Descargas() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.4.0-IMP1 · WebXR · Reactor de impulso · Estación
-          Orbital · Precisión CCD · CRAZY TV · Meta Quest 3
+          Crazy Ping Pong V3.4.1-RIV1 · WebXR · Astro recolocado · Reactor de
+          impulso · Estación Orbital · Precisión CCD · CRAZY TV · Meta Quest 3
         </footer>
       </div>
     </main>

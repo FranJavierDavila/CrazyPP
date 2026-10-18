@@ -1,6 +1,6 @@
 {
   "id": "estacion_orbital",
-  "version": 9,
+  "version": 10,
   "contract": 1,
   "estado": "publicado",
   "title": {
@@ -173,5 +173,8 @@
     "2026-10-18 v3.2.1 (ORB2) · AJUSTE FINO del decorado por informe del dueño en casco: (1) ASTRO a la convención FORAJIDO (oeste v2.87): plano de cuerpo entero 2,15 m (proporción 0,5, arte 512×1024), pies en el suelo, mismo spot del forajido (x 1,62 · z −4,5) y de cara — antes flotaba 1,75 m a media sala (x 1,26 · z −3,5) «metiéndose en la pared derecha» y más bajo que el resto de rivales. (2) MAPA: nodos re-medidos sobre el arte (nodo 5 y 266→335: estaba ~70 px alto) y TAPAS de 240 px base con ts por nodo (los medallones reales miden ~215-235 px; las tapas de 165 px no los cubrían) — las etapas aún por disputar quedan cubiertas con la tapa.png de la casa. (3) CARTEL DE SUPERPODER = el de la CASA: port 1:1 del ArcadePowerSign de La Locura (clase PwSignEO): arte superpower.png ENFRENTE DEL JUGADOR A LA ALTURA DE LA RED (netTopY+0,14, 30 cm hacia el jugador, mirando a la cámara), coreografía ≈2 s (entra por la izquierda, vaivén, halo de contorno que respira, sale por la derecha) + medallón CIRCULAR del poder junto al arte; fuera el panel provisional que flotaba junto al rival. (4) PODERES ENCIMA DE LA MESA: meteoritos x ±0,60 / z −1,45..−0,45, haz del tractor sobre tu campo (z −1,05, punta en la superficie 0,76), motas de gravedad cero y lluvia de estrellas repartidas por TU campo — antes beam/motas/rocas caían fuera de la mesa «sin efectos». (5) EXPRESIONES DEL ASTRO por momento de partida (motor del clown de La Locura, mismos umbrales: combo 6 → angry, punto rival → laughing/crazy con racha 2, rallye 7 → picando, ventaja 6 → loosing, match-point en contra → panic, base duelo, final derrotado/triunfante) con guard anti-recarga en rivalEstado (la vigilancia corre cada frame). (6) CARTEL DE BIENVENIDA fuera de la pared del fondo (z −5,44 → −5,28; antes a 11 cm del muro se leía metido en él). Núcleo: solo badge/VERSION 3.2.1-ORB2 (física CCD/SRV2/FEEL1 INTACTA). Módulo v3.2.1 (manifest v7).",
     "2026-10-18 v3.3.0-NUC1: la etapa 2 del camino es el REACTOR DE ENERGÍA INESTABLE (núcleo de gravedad + esferas de plasma + compuertas); el muro arkanoid queda sólo en la etapa 4.",
     "2026-10-18 v3.4.0-IMP1: la etapa 4 del camino es el REACTOR DE IMPULSO (mecánica del dueño): sala propia de 6 imágenes, núcleo azul/rojo, 3 oleadas de cubos cuánticos (3/5/7, 120 s independientes) destruidos con la pelota desde la base flotante (sin mesa), pistola láser contra dianas cuánticas (1 s visibles / 1 s de espera) que desatan perturbaciones (Gravedad 0, Atractor con destrucción en cadena, Supergravedad) con cambio automático cada 30 s, pantalla suspendida del techo con oleada/tiempo/cubos/estado/perturbación, ventanas con velocidad lumínica, y derrota con astro_laughing frente al jugador. El ARKANOID II queda fuera del camino."
+  ],
+  "cambios": [
+    "v3.4.1-RIV1: el ASTRO de la sala se recoloca en la convención de duelos (x 1,26 · z −3,82) — ya no se lee dentro de la pared frontal"
   ]
 }

@@ -2073,3 +2073,20 @@ Stage Summary:
 - FASE 4 COMPLETADA: el kernel de los 5 campeonatos tiene UNA sola fuente (champ_sdk.js v1.1.0) — oeste ya no tiene 6 copias del motor de audio, magia 2, y el congelado del aviso nace, vive y se repara en un único sitio. Un bug del kernel se arregla UNA vez y sirven los 5.
 - V3.6.2-SDK2 EN PRODUCCIÓN: 4 ZIPs byte-exactos en hub y download/, QA cuádruple verde (359 checks) + smoke, golden d3ffbb94…. Cero cambios de gameplay: la adopción es conducta-idéntica (volúmenes, anti-spam, paneo y reintentos intactos) y el QA EN VIVO lo verifica.
 - Pendiente del dueño: prueba en casco opcional (no hay cambios jugables que re-probar) · P1/P2 del roadmap (version.json único, tests de física deterministas, presupuesto de rendimiento, config-as-data, telemetría).
+
+---
+Task ID: 93
+Agent: main (Z.ai)
+Task: SERVIR EL JUEGO DESDE GITHUB (petición del dueño) — máquina de despliegue a GitHub Pages (rama «pages») + Releases para los ZIPs, preparada para los sucesivos deploys.
+
+Work Log:
+- Contexto al reanudar: FASES 1-4 ya committeadas (Tasks 89-92, HEAD 41b56d1, V3.6.2-SDK2), status limpio, :3000/:81 vivos, remoto «proyecto» 4 commits atrás (Tasks 89-92 sin respaldar), GIT_TOKEN ausente del entorno (el PAT efímero del Task 88 ya no está).
+- Auditoría de compatibilidad con Pages: game.html usa rutas relativas a baseURI para TODO (new URL('championships/…', document.baseURI)); solo 2 referencias absolutas al mismo origen (src=/vendor/socket.io.min.js · href=/tv.html) → 2 reescrituras triviales; three.js sigue viniendo de jsdelivr y PeerJS/telemetría son externos → prefijo /CrazyPP/ inocuo; 0 SharedArrayBuffer/Workers/importScripts → sin necesidad de COOP/COEP; fichero mayor 6,34 MB (límite 100 MB), sitio 130,9 MB / 376 ficheros (límite 1.000 MB).
+- scripts/deploy_pages.py: ensamblado desde `git archive HEAD` (solo trackeados, inmune al árbol de trabajo y a los reciclajes) · reescrituras contadas y asertadas (cualquier desvío ABORTA el deploy) · portada index.html en español + .nojekyll + PAGES-VERSION.txt · verificación de límites de Pages · SMOKE Playwright con prefijo real /CrazyPP/ (servidor propio :3006, sin tocar 8901): juego arrancado, __PP_VERSION verificado en vivo, 0 fallos de red, 0 pageerrors · commit del sitio con plumbing (GIT_INDEX_FILE + hash-object + commit-tree ENCadenado: historial de deploys) SIN tocar jamás el working tree · flags --push / --release (tag v<versión> + los 4 ZIPs a GitHub Releases con dedupe por nombre+tamaño) / --backup (main→proyecto).
+- Primer deploy local: refs/heads/pages → bd136e834 (376 ficheros, sitio V3.6.2-SDK2, game desplegado 533e6266 = golden d3ffbb94 + 2 reescrituras) · smoke verde; única corrección en caliente: el regex de versión buscaba __PP_VERSION literal y el token real es `const VERSION = '3.6.2-SDK2'`.
+- Pendiente del dueño: (1) PAT nuevo de acceso fino (Contents R/W) para push — el anterior ya no está en el entorno; (2) activar Pages UNA vez: Settings → Pages → Deploy from a branch → rama pages, /(root) → Save → https://franjavierdavila.github.io/CrazyPP/ ; (3) decidir si el repo pasa a privado (Pages gratis exige repo público; el código ya es público hoy en «proyecto»).
+
+Stage Summary:
+- GITHUB = SERVIDOR + CD: la rama «pages» contiene el juego COMPLETO jugable (~131 MB) listo para servirse gratis por HTTPS (WebXR funciona en el navegador del Quest); los ZIPs ≥100 MB irán a Releases (hasta 2 GB/asset); la main del relay Railway queda INTACTA (rama nueva, push no destructivo).
+- Flujo de deploys futuros: tras cada versión con QA verde → GIT_TOKEN=… python3 scripts/deploy_pages.py --push --release --backup → sitio vivo en ~1 min + Release con los 4 ZIPs + respaldo anti-rollback al día.
+- Sin token no hay push: la rama pages (bd136e834) espera en el repo local; el script es re-entrante y re-verifica todo en cada ejecución.

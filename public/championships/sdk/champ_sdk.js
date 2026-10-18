@@ -1,5 +1,5 @@
 /* ============================================================================
- *  CRAZY PING PONG · SDK DE CAMPEONATOS (champ_sdk.js) — v1.3.0
+ *  CRAZY PING PONG · SDK DE CAMPEONATOS (champ_sdk.js) — v1.4.0
  * ----------------------------------------------------------------------------
  *  FASE 3 del plan de modularización P0 (acordado con el dueño).
  *  v1.1.0 (FASE 4): precarga() (pedir+decodificar sin sonar, para los
@@ -17,6 +17,18 @@
  *  Arcade/PwSignEO) converge en UNA fábrica con DOS coreografías exactas
  *  («clasica» v2.120 de oeste/magia y «v240» de locura/orbital, con su
  *  halo que respira) y knobs por módulo (arte, respaldo, ownTex, dims).
+ *  v1.4.0 (FASE 7 · CIERRE DEL SDK v1.x): createRival() — el STANDEE del
+ *  rival (la silueta-cartón con sus estados de cara) que orbital y Valle
+ *  Neón duplicaban — con DOS motores exactos («perezoso» del orbital:
+ *  cambia la IMAGEN de la misma textura con guard anti-recarga; «precarga»
+ *  de Valle: swap de mapas precargados con caída a la cara base) — y
+ *  createCartel() — el tablero de etapa (canvas → textura → plano →
+ *  redibujable) cuya fontanería repetían ambos. Además el orbital entrega
+ *  SU ÚLTIMO motor de audio propio (el decodeAudioData de arsenal de su
+ *  bso.wav) a createMusic, y la migración destapa un bug familiar: el
+ *  standee de Valle Neón cargaba «rival.webp / <estado>.webp» que NUNCA
+ *  existieron (los assets reales son .png) — llevaba pintada la silueta
+ *  gris de reserva desde su v1. Ahora carga el arte ZETA-7 real.
  *
  *  POR QUÉ EXISTE — LA FAMILIA DE BUGS:
  *  Los 5 campeonatos son módulos autocontenidos que reimplementaban una y
@@ -42,16 +54,18 @@
  *    · Comportamiento canónico = la implementación más reciente con QA
  *      verde (orbital v3.6.0-SUP1 · locura v2.40).
  *
- *  MIGRACIÓN — FASE 5 HECHA (v3.6.3-SDK3): además de lo anterior, la
- *  MÚSICA en bucle se unifica con createMusic — oeste (BSO del saloon
- *  + música del vagón, manifest v50), magia (BSO, v30) y valle_neon
- *  (música WAV, v3) — y el fix v2.125 del decodeAudioData vive UNA vez
- *  aquí también para la música. PENDIENTE en SDK v1.x: Sala6/Rival/HUD
- *  compartidos.
+ *  MIGRACIÓN — FASES 3-7 COMPLETAS (SDK v1.x CERRADO en v3.6.5-SDK5):
+ *  SFX (createSfx) · congelados (congela) · puente al núcleo (getCore) ·
+ *  MÚSICA en bucle (createMusic: oeste v50, magia v30, locura vía
+ *  manifest, valle v3, orbital v16 — el «arsenal» era su bso.wav) ·
+ *  CARTEL de superpoder (createPowerSign: oeste v51, magia v31, locura
+ *  v22, orbital v15) · STANDEE del rival (createRival: orbital v16,
+ *  valle v4) · TABLERO de etapa (createCartel: orbital v16, valle v4).
+ *  Ningún campeonato conserva ya un decodeAudioData propio.
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.3.0';
+const SDK_VERSION = '1.4.0';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -753,4 +767,256 @@ export function createPowerSign(THREE, getGame, opts) {
   };
 }
 
-export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createPowerSign };
+/* — STANDEE DEL RIVAL (createRival · v1.4.0 · FASE 7) ———————————————————
+ *  La silueta-cartón del rival con sus CARAS (estados) que el orbital y
+ *  Valle Neón escribieron por separado, unificada con DOS motores exactos
+ *  (conducta idéntica por variante):
+ *    · «perezoso» (orbital v3.2.1): UNA sola textura viva; rivalEstado()
+ *      cambia su .image con un Image() nuevo por estado y GUARD
+ *      anti-recarga (si el estado no cambia NO recarga — reasignar el
+ *      mismo webp 60 veces/s no es gratis en Quest). Estado inexistente:
+ *      la cara actual se queda (el onload jamás llega).
+ *    · «precarga» (valle v1): TODAS las caras se precargan al construir
+ *      (base primero, luego los estados); cada llegada ajusta el mapa y
+ *      la ESCALA por aspecto real (asp/0,5). rivalEstado() hace swap de
+ *      mapa con caída a la cara base. Estado inexistente: cara base.
+ *
+ *  Uso desde un campeonato:
+ *      this._rivalSDK = createRival(THREE, () => this.game, { ... });
+ *      this.group.add(this._rivalSDK.node);   // node = grupo o malla
+ *      this._rivalSDK.rivalEstado('duelo');
+ *
+ *  opts (ninguno obligatorio salvo resuelve para tener arte):
+ *    modo        'perezoso'|'precarga' (defecto 'perezoso')
+ *    base        'rival.webp'          — cara base (cartón de la sala)
+ *    estados     ['idle',…]            — caras precargables (precarga)
+ *    resuelve    (f) => url            — resuelve el fichero de cara
+ *    alto        2.15                  — altura del plano (m)
+ *    anchoFijo   alto*0.5              — ancho si aspecto:false
+ *    aspecto     bool (false)          — precarga: escala.x = asp/0,5
+ *    material    'basic'|'standard'    — Basic (orbital) / Standard (valle)
+ *    matParams   {}                    — color/roughness extra del material
+ *    alphaTest   0.25                  — recorte de alfa
+ *    depthWrite  false
+ *    renderOrder 0                     — sólo orbital lo fijaba (6)
+ *    castShadow  false                 — sólo valle lo fijaba (true)
+ *    grupo       bool (false)          — true = envoltorio Group con
+ *                                      pos/rotY propio (valle); false =
+ *                                      la malla se posiciona directa
+ *                                      (orbital — el poder de meteoritos
+ *                                      teletransporta rivalMesh a pelo)
+ *    pos         [x,y,z]               — posición del node (grupo) o malla
+ *    meshY       alto/2                — Y local de la malla dentro del grupo
+ *    rotY        0                     — giro del grupo (valle: mira a mesa)
+ *    onTex       (tex) => void         — registro en _ownTex del módulo
+ *    onEstado    (st) => void          — eco del estado (QA lee el eco del
+ *                                      orbital this._rivalEstado) */
+export function createRival(THREE, getGame, opts) {
+  const o = opts || {};
+  const PRE = o.modo === 'precarga';
+  const ALTO = o.alto || 2.15;
+  const ANCHO = o.anchoFijo || ALTO * 0.5;
+  const EXT = o.ext || 'webp';   // extensión de las caras por estado
+  let tex = null;                // LA textura viva (sólo perezoso)
+  const stTex = {};              // caras precargadas (sólo precarga; la base
+                                 // NUNCA se guarda aquí — igual que valle)
+  let mesh = null, group = null, mat = null;
+  let estado_ = '';
+
+  function resuelve(f) { try { return o.resuelve ? o.resuelve(f) : f; } catch (e) { return f; } }
+  function eco(st) { if (o.onEstado) { try { o.onEstado(st); } catch (e) { /* */ } } }
+  function registrar(t) { if (o.onTex) { try { o.onTex(t); } catch (e) { /* */ } } }
+
+  function construir() {
+    mat = (o.material === 'standard')
+      ? new THREE.MeshStandardMaterial(Object.assign({
+          color: 0xbfc9d6, transparent: true,
+          alphaTest: (o.alphaTest == null) ? 0.05 : o.alphaTest, roughness: 0.9,
+        }, o.matParams || {}))
+      : new THREE.MeshBasicMaterial(Object.assign({
+          transparent: true,
+          alphaTest: (o.alphaTest == null) ? 0.25 : o.alphaTest,
+          depthWrite: (o.depthWrite == null) ? false : !!o.depthWrite,
+        }, o.matParams || {}));
+    mesh = new THREE.Mesh(new THREE.PlaneGeometry(ANCHO, ALTO), mat);
+    mesh.castShadow = !!o.castShadow;
+    if (o.renderOrder) mesh.renderOrder = o.renderOrder;
+    if (o.grupo) {
+      group = new THREE.Group();
+      mesh.position.y = (o.meshY == null) ? ALTO / 2 : o.meshY;
+      group.add(mesh);
+      const p = o.pos || [0, 0, 0];
+      group.position.set(p[0], p[1], p[2]);
+      group.rotation.y = o.rotY || 0;
+    } else {
+      const p = o.pos || [0, 0, 0];
+      mesh.position.set(p[0], p[1], p[2]);
+    }
+  }
+
+  /* Corazón común de las caras: pintar una textura en el material. */
+  function ponMapa(t) {
+    if (t && mat) { mat.map = t; mat.needsUpdate = true; }
+  }
+
+  /* Escala por aspecto real de la cara llegada (sólo valle la pedía). */
+  function escalaAspecto(t) {
+    if (!o.aspecto) return;
+    try {
+      const asp = (t.image && t.image.width) ? t.image.width / t.image.height : 0.5;
+      mesh.scale.set(asp / 0.5, 1, 1);
+    } catch (e) { /* escala por defecto */ }
+  }
+
+  /* «perezoso»: la cara llega por Image() sobre LA MISMA textura. */
+  function estadoPerezoso(st) {
+    try {
+      const img = new Image();
+      img.onload = () => { if (tex) { tex.image = img; tex.needsUpdate = true; } };
+      img.src = resuelve(st + '.' + EXT);
+    } catch (e) { estado_ = ''; eco(''); }
+  }
+
+  /* «precarga»: swap entre caras ya en memoria (caída a la base — que en
+   * la casa era SIEMPRE null: estado desconocido = no-op, igual queda). */
+  function estadoPrecarga(st) {
+    ponMapa(stTex[st] || stTex.base || null);
+  }
+
+  function build() {
+    if (mesh) return;
+    construir();
+    if (PRE) {
+      // base primero (orden del original: rival.webp → estados); su llegada
+      // pinta el mapa PERO no entra en stTex (key null en el original)
+      new THREE.TextureLoader().load(resuelve(o.base || ('rival.' + EXT)), (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+        registrar(t);
+        ponMapa(t);
+        escalaAspecto(t);
+      }, undefined, () => { /* sin arte: silueta */ });
+      (o.estados || []).forEach((st) => {
+        new THREE.TextureLoader().load(resuelve(st + '.' + EXT), (t) => {
+          t.colorSpace = THREE.SRGBColorSpace;
+          registrar(t);
+          stTex[st] = t;
+          ponMapa(t);
+          escalaAspecto(t);
+        }, undefined, () => { /* cara ausente: silueta */ });
+      });
+    } else {
+      // perezoso (orbital): textura viva SIN callback — colorSpace y registro
+      // síncronos, exactamente como el original v3.2.1
+      tex = new THREE.TextureLoader().load(resuelve(o.base || ('rival.' + EXT)));
+      tex.colorSpace = THREE.SRGBColorSpace;
+      registrar(tex);
+    }
+  }
+
+  function rivalEstado(st) {
+    if (!mesh) build();
+    // v3.2.1 (perezoso): si el estado no cambia NO recarga (decode + subida
+    // a GPU). En precarga valle no tenía guard — se conserva así.
+    if (!PRE && estado_ === st) return;
+    estado_ = st;
+    eco(st);
+    if (PRE) estadoPrecarga(st);
+    else estadoPerezoso(st);
+  }
+
+  function dispose() {
+    try {
+      const n = group || mesh;
+      if (n && n.parent) n.parent.remove(n);
+    } catch (e) { /* */ }
+    if (tex) { try { tex.dispose(); } catch (e) { /* */ } }
+    for (const k of Object.keys(stTex)) { try { if (stTex[k]) stTex[k].dispose(); } catch (e) { /* */ } }
+    if (mesh) { try { mesh.geometry.dispose(); } catch (e) { /* */ } }
+    if (mat) { try { mat.dispose(); } catch (e) { /* */ } }
+    tex = null; mesh = null; group = null; mat = null;
+    for (const k of Object.keys(stTex)) delete stTex[k];
+  }
+
+  build();
+  return {
+    rivalEstado, dispose,
+    node: group || mesh,        // lo que el módulo añade a SU grupo
+    mesh, mat,
+    estado: () => estado_,      // QA/diagnóstico
+    get group() { return group; },
+    get tex() { return tex; },
+  };
+}
+
+/* — TABLERO DE ETAPA (createCartel · v1.4.0 · FASE 7) ———————————————————
+ *  La fontanería del cartel de sala/bienvenida que el orbital («cartel de
+ *  bienvenida, redibujable por etapa») y Valle Neón («cartel de sala»)
+ *  repetían a pelo: canvas → CanvasTexture (SRGB) → plano en la pared →
+ *  pintar → needsUpdate. EL ARTE de cada cartel sigue siendo del módulo
+ *  (se pasa como pintor); lo COMPARTIDO — el ciclo de vida del lienzo, el
+ *  redibujado y el dispose — vive aquí.
+ *
+ *  Uso desde un campeonato:
+ *      this._cartelSDK = createCartel(THREE, () => this.game, { ... });
+ *      this.group.add(this._cartelSDK.mesh);
+ *      this._cartelSDK.pinta((c, W, H) => { …arte del módulo… });
+ *
+ *  opts:
+ *    cvW, cvH    512, 256          — resolución del lienzo
+ *    w, h        1.15, 0.575       — tamaño del plano (m)
+ *    pos         [x,y,z]           — posición del plano
+ *    rot         [x,y,z]           — rotación (rad)
+ *    transparent false             — orbital no lo era; valle sí
+ *    depthWrite  false
+ *    onTex       (tex) => void     — registro en _ownTex del módulo
+ *  pinta(pintor) ejecuta pintor(ctx, W, H) y marca needsUpdate — NUNCA
+ *  lanza (el cartel nunca tumba el frame). */
+export function createCartel(THREE, getGame, opts) {
+  const o = opts || {};
+  const CW = o.cvW || 512, CH = o.cvH || 256;
+  let cv = null, tex = null, mesh = null;
+
+  function build() {
+    if (cv) return;
+    cv = document.createElement('canvas');
+    cv.width = CW; cv.height = CH;
+    tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    if (o.onTex) { try { o.onTex(tex); } catch (e) { /* */ } }
+    mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(o.w || 1.15, o.h || 0.575),
+      new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: !!o.transparent,
+        depthWrite: o.depthWrite == null ? false : !!o.depthWrite,
+      }));
+    const p = o.pos || [0, 0, 0];
+    mesh.position.set(p[0], p[1], p[2]);
+    const r = o.rot || [0, 0, 0];
+    mesh.rotation.set(r[0], r[1], r[2]);
+  }
+
+  function pinta(pintor) {
+    try {
+      build();
+      const c = cv.getContext('2d');
+      if (typeof pintor === 'function') pintor(c, CW, CH);
+      tex.needsUpdate = true;
+    } catch (e) { /* el cartel nunca rompe el frame */ }
+  }
+
+  function dispose() {
+    try { if (mesh && mesh.parent) mesh.parent.remove(mesh); } catch (e) { /* */ }
+    if (tex) { try { tex.dispose(); } catch (e) { /* */ } }
+    cv = null; tex = null; mesh = null;
+  }
+
+  build();
+  return {
+    pinta, dispose,
+    mesh, tex,
+    get cv() { return cv; },
+  };
+}
+
+export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createPowerSign, createRival, createCartel };

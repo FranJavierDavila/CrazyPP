@@ -19,7 +19,7 @@ import * as THREE from 'three';
 // para los 5 módulos. Este módulo (data-driven del Taller) no tiene SFX mp3
 // ni congelados propios: su música WAV en bucle también vive desde el
 // SDK v1.2.0 (createMusic).
-import { createMusic, getCore } from '../sdk/champ_sdk.js';
+import { createCartel, createMusic, createRival, getCore } from '../sdk/champ_sdk.js';
 
 const CORE = getCore();
 const GAME = { g: null };
@@ -469,39 +469,50 @@ class PlantillaCtrl {
     this.group = new THREE.Group();
     g.scene.add(this.group);
 
-    /* standee del rival (arte del campeonato o silueta de reserva) */
-    this.standee = new THREE.Group();
-    this.stTex = { base: null, idle: null, duelo: null, derrotado: null, triunfante: null };
-    const cargaTex = (file, key) => {
-      const t = new THREE.TextureLoader().load(this._A('assets/' + file), (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace; this._ownTex.add(tex);
-        if (this.standeeMat) {
-          this.standeeMat.map = tex; this.standeeMat.needsUpdate = true;
-          const asp = (tex.image && tex.image.width) ? tex.image.width / tex.image.height : 0.5;
-          this.standeeMesh.scale.set(asp / 0.5, 1, 1);
-        }
-        if (key) this.stTex[key] = tex;
-      }, undefined, () => { /* sin arte: silueta */ });
-    };
-    this.standeeMat = new THREE.MeshStandardMaterial({ color: 0xbfc9d6, transparent: true, alphaTest: 0.05, roughness: 0.9 });
-    this.standeeMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.85), this.standeeMat);
-    this.standeeMesh.position.y = 0.925;
-    this.standeeMesh.castShadow = true;
-    this.standee.add(this.standeeMesh);
-    this.standee.position.set(DUEL_X, 0, STAND_Z);
-    this.standee.rotation.y = Math.atan2(-DUEL_X, 0.55 - STAND_Z);
-    this.group.add(this.standee);
+    /* standee del rival (arte del campeonato o silueta de reserva)
+     * v3.6.5-SDK5 · FASE 7: el standee vive en el SDK (createRival, motor
+     * «precarga» de la casa valle: swap de mapas precargados + escala por
+     * aspecto real). FIX de la migración: se pedían «rival.webp /
+     * <estado>.webp», ficheros que NUNCA existieron en assets/ (los reales
+     * son .png) — el cartón llevaba pintada la silueta gris de reserva
+     * desde la v1. Ahora carga el arte ZETA-7 real: rival_kraken.png +
+     * <estado>.png (idle/duelo/derrotado/triunfante). */
     const rival = this.man.rival || {};
-    cargaTex('rival.webp', null);
-    (rival.states || []).forEach((st) => { if (this.stTex.hasOwnProperty(st)) cargaTex(st + '.webp', st); });
+    this._rivalSDK = createRival(THREE, () => this.game, {
+      modo: 'precarga',
+      base: 'rival_kraken.png',
+      ext: 'png',
+      estados: (rival.states || []).filter(
+        (st) => ['idle', 'duelo', 'derrotado', 'triunfante'].indexOf(st) >= 0),
+      alto: 1.85,
+      anchoFijo: 0.9,                      // el plano nacía 0,9 × 1,85
+      material: 'standard',
+      alphaTest: 0.05,
+      castShadow: true,
+      aspecto: true,
+      grupo: true,
+      pos: [DUEL_X, 0, STAND_Z],
+      rotY: Math.atan2(-DUEL_X, 0.55 - STAND_Z),
+      resuelve: (f) => this._A('assets/' + f),
+      onTex: (t) => this._ownTex.add(t),
+    });
+    this.standee = this._rivalSDK.node;
+    this.standeeMesh = this._rivalSDK.mesh;
+    this.standeeMat = this._rivalSDK.mat;
+    this.group.add(this.standee);
 
-    /* cartel de sala (canvas) */
-    this.cartelCv = document.createElement('canvas'); this.cartelCv.width = 1024; this.cartelCv.height = 512;
-    this.cartelTex = texDeCanvas(this.cartelCv); this._ownTex.add(this.cartelTex);
-    this.cartel = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.15),
-      new THREE.MeshBasicMaterial({ map: this.cartelTex, transparent: true, depthWrite: false }));
-    this.cartel.position.set(-1.05, 1.62, -3.6);
-    this.cartel.rotation.y = 0.42;
+    /* cartel de sala (canvas)
+     * v3.6.5-SDK5 · FASE 7: la fontanería del lienzo vive en el SDK
+     * (createCartel); el ARTE sigue siendo nuestro (_pintaCartel). */
+    this._cartelSDK = createCartel(THREE, () => this.game, {
+      cvW: 1024, cvH: 512,
+      w: 2.3, h: 1.15,
+      pos: [-1.05, 1.62, -3.6],
+      rot: [0, 0.42, 0],
+      transparent: true,
+      onTex: (t) => this._ownTex.add(t),
+    });
+    this.cartel = this._cartelSDK.mesh;
     this.group.add(this.cartel);
 
     /* mapa del camino (canvas — sin arte externo) */
@@ -583,36 +594,38 @@ class PlantillaCtrl {
 
   /* ---------------------------- cartel de sala -------------------------- */
   _pintaCartel() {
-    const c = this.cartelCv.getContext('2d');
-    const W = 1024, H = 512;
-    c.clearRect(0, 0, W, H);
-    c.fillStyle = 'rgba(8,13,28,.88)';
-    c.beginPath(); c.roundRect(10, 10, W - 20, H - 20, 34); c.fill();
-    c.lineWidth = 6; c.strokeStyle = '#f59e0b'; c.stroke();
-    c.textAlign = 'center';
-    c.fillStyle = '#fbbf24'; c.font = '800 74px "Baloo 2", sans-serif';
-    c.fillText(this.nombre.toUpperCase().slice(0, 22), W / 2, 104);
-    c.fillStyle = '#e2e8f0'; c.font = '600 40px "Nunito Sans", sans-serif';
-    const et = this._etapa();
-    const lbl = et.kind === 'duelo' ? tx('Etapa', 'Stage') : tx('Prueba', 'Test');
-    c.fillText(lbl + ' ' + (this.stage + 1) + '/' + this.etapas.length + ' · ' + et.name, W / 2, 176);
-    c.fillStyle = '#94a3b8'; c.font = '600 34px "Nunito Sans", sans-serif';
-    c.fillText(tx('Rival: ' + this.rivalNombre, 'Rival: ' + this.rivalNombre), W / 2, 240);
-    if (this._champion) {
-      c.fillStyle = '#fde047'; c.font = '800 46px "Baloo 2", sans-serif';
-      c.fillText('🏆 ' + tx('¡CAMPEÓN!', 'CHAMPION!'), W / 2, 316);
-    }
-    c.fillStyle = '#7dd3fc'; c.font = '700 36px "Nunito Sans", sans-serif';
-    c.fillText(tx('Apunta al mapa con la pala', 'Aim at the map with the paddle'), W / 2, 392);
-    c.fillText(tx('y aprieta el gatillo para jugar', 'and pull the trigger to play'), W / 2, 442);
-    this.cartelTex.needsUpdate = true;
+    // v3.6.5-SDK5 · FASE 7: el lienzo vive en el SDK (createCartel); el
+    // ARTE de este cartel de sala sigue siendo del módulo, byte a byte.
+    this._cartelSDK.pinta((c, W, H) => {
+      c.clearRect(0, 0, W, H);
+      c.fillStyle = 'rgba(8,13,28,.88)';
+      c.beginPath(); c.roundRect(10, 10, W - 20, H - 20, 34); c.fill();
+      c.lineWidth = 6; c.strokeStyle = '#f59e0b'; c.stroke();
+      c.textAlign = 'center';
+      c.fillStyle = '#fbbf24'; c.font = '800 74px "Baloo 2", sans-serif';
+      c.fillText(this.nombre.toUpperCase().slice(0, 22), W / 2, 104);
+      c.fillStyle = '#e2e8f0'; c.font = '600 40px "Nunito Sans", sans-serif';
+      const et = this._etapa();
+      const lbl = et.kind === 'duelo' ? tx('Etapa', 'Stage') : tx('Prueba', 'Test');
+      c.fillText(lbl + ' ' + (this.stage + 1) + '/' + this.etapas.length + ' · ' + et.name, W / 2, 176);
+      c.fillStyle = '#94a3b8'; c.font = '600 34px "Nunito Sans", sans-serif';
+      c.fillText(tx('Rival: ' + this.rivalNombre, 'Rival: ' + this.rivalNombre), W / 2, 240);
+      if (this._champion) {
+        c.fillStyle = '#fde047'; c.font = '800 46px "Baloo 2", sans-serif';
+        c.fillText('🏆 ' + tx('¡CAMPEÓN!', 'CHAMPION!'), W / 2, 316);
+      }
+      c.fillStyle = '#7dd3fc'; c.font = '700 36px "Nunito Sans", sans-serif';
+      c.fillText(tx('Apunta al mapa con la pala', 'Aim at the map with the paddle'), W / 2, 392);
+      c.fillText(tx('y aprieta el gatillo para jugar', 'and pull the trigger to play'), W / 2, 442);
+    });
   }
   rivalEstado(st) {
-    const t = this.stTex[st] || this.stTex.base || null;
-    if (t && this.standeeMat) { this.standeeMat.map = t; this.standeeMat.needsUpdate = true; }
+    // v3.6.5-SDK5 · FASE 7: el swap de caras (con caída a la base) vive en
+    // el SDK (createRival «precarga»); aquí queda el punto de entrada.
+    this._rivalSDK.rivalEstado(st);
   }
 
-  /* ------------------------------ música --------------------------------
+  /* ------------------------------ música --------------------------------  /* ------------------------------ música --------------------------------
    * v3.6.3-SDK3: el motor vive en el SDK (createMusic v1.2.0) con las
    * variantes propias de este módulo — volumen FIJO del manifest (sin
    * seguir arcVol), fundido de entrada 1,2 s sin ancla, gate UNA MELODÍA

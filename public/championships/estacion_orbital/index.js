@@ -102,7 +102,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // v3.6.1-SDK1 · FASE 3 de la modularización P0: kernel compartido de los 5
 // campeonatos (SFX canónico, congelado del aviso, puente al núcleo) — la
 // fuente única que mata la familia de bugs duplicados entre módulos.
-import { createPowerSign, createSfx, congela } from '../sdk/champ_sdk.js';
+import { createCartel, createMusic, createPowerSign, createRival, createSfx, congela } from '../sdk/champ_sdk.js';
 
 const CORE = (typeof window !== 'undefined' && window.__PP_CORE) || null;
 const GAME = { g: null };
@@ -6601,8 +6601,9 @@ class StockController {
     this.impulso = new ReactorImpulso(this);
     // v3.5.0: ESCUDO DE PALA (etapa 4 nueva) — pala-escudo contra orbes piratas
     this.escudo = new EscudoCasco(this);
-    this._mus = null; this._musBuf = null; this._musBusy = false;
-    this._musWanted = false; this._musRamp = 0;
+    // v3.6.5-SDK5 · FASE 7: la ranura de música vive DENTRO del SDK
+    // (createMusic); los slots _mus/_musBuf/_musBusy/_musWanted/
+    // _musRamp desaparecen con el motor que los llevaba.
     // poderes
     this._powerCd = 6;
     this._bolsa = [];              // bolsa rotatoria (v2.126 del núcleo)
@@ -6666,33 +6667,43 @@ class StockController {
     // del suelo que se leen bien) · x = borde derecho + 0,50 (regla fija de
     // duelos). Cuerpo entero de 2,15 m, pies en el suelo y de cara.
     // Historia: v3.2.1 (x 1,62 · z −4,5) · v3.4.1 (x 1,26 · z −3,82).
-    const texRival = new THREE.TextureLoader().load(this._A('rival.webp'));
-    texRival.colorSpace = THREE.SRGBColorSpace;
-    this._ownTex.add(texRival);
-    this._rival = texRival;
-    const rivalMat = new THREE.MeshBasicMaterial({
-      map: texRival, transparent: true, alphaTest: 0.25, depthWrite: false,
+    // v3.6.5-SDK5 · FASE 7: el STANDEE vive en el SDK (createRival, motor
+    // «perezoso» del orbital: UNA textura viva + guard anti-recarga v3.2.1).
+    this._rivalSDK = createRival(THREE, () => this.game, {
+      modo: 'perezoso',
+      base: 'rival.webp',
+      alto: 2.15,                          // convención OESTE.spriteHeight
+      alphaTest: 0.25,
+      depthWrite: false,
+      renderOrder: 6,
+      pos: [1.26, 2.15 / 2, (D.tableCenterZ || -1.6) - 1.70],
+      resuelve: (f) => this._A(f),
+      onTex: (t) => this._ownTex.add(t),
+      onEstado: (st) => { this._rivalEstado = st; },   // el QA lee este eco
     });
-    const RIV_H = 2.15;                       // convención OESTE.spriteHeight
-    this.rivalMesh = new THREE.Mesh(new THREE.PlaneGeometry(RIV_H * 0.5, RIV_H), rivalMat);
-    this.rivalMesh.position.set(1.26, RIV_H / 2, (D.tableCenterZ || -1.6) - 1.70);
-    this.rivalMesh.renderOrder = 6;
+    this.rivalMesh = this._rivalSDK.mesh;  // identidad intacta: el poder de
+                                           // meteoritos teletransporta
+                                           // rivalMesh a pelo (x 0, z −2,1)
     this.group.add(this.rivalMesh);
     this._rivalEstado = '';
-    this.rivalEstado('idle');
+    this._rivalSDK.rivalEstado('idle');
 
     // CARTEL de bienvenida (redibujable por etapa)
     // v2.130 · ANTES flotaba sobre la mesa (0 / 1,38 / −1,05) tapando la
     // vista del rival — petición del artista: la MESA SIEMPRE LIBRE. Va a
     // la pared FRONTAL, a la izquierda del marcador del núcleo (x −1,78),
     // como tablón de misión: visible, aimable y sin estorbar a nadie.
-    this.cartelCv = document.createElement('canvas');
-    this.cartelCv.width = 512; this.cartelCv.height = 256;
-    this.cartelTex = this._ct(this.cartelCv);
-    this.cartel = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.575),
-      new THREE.MeshBasicMaterial({ map: this.cartelTex, depthWrite: false }));
-    this.cartel.position.set(-2.2, 1.5, -5.28);
-    this.cartel.rotation.set(0, 0.1, 0);
+    // v3.6.5-SDK5 · FASE 7: la fontanería (canvas → textura → plano →
+    // needsUpdate) vive en el SDK (createCartel); el ARTE sigue siendo
+    // nuestro (_pintaCartel pinta en el lienzo del SDK).
+    this._cartelSDK = createCartel(THREE, () => this.game, {
+      cvW: 512, cvH: 256,
+      w: 1.15, h: 0.575,
+      pos: [-2.2, 1.5, -5.28],
+      rot: [0, 0.1, 0],
+      onTex: (t) => this._ownTex.add(t),
+    });
+    this.cartel = this._cartelSDK.mesh;
     this.group.add(this.cartel);
     this._pintaCartel();
 
@@ -6831,32 +6842,33 @@ class StockController {
 
   /** Cartel de la sala: ETAPA X/5 · nombre (+ ★ SUPERADO si ya campeón). */
   _pintaCartel() {
-    const cv = this.cartelCv;
-    const c = cv.getContext('2d');
-    const et = this._etapa();
-    c.clearRect(0, 0, 512, 256);
-    c.fillStyle = '#101a2c';
-    c.fillRect(0, 0, 512, 256);
-    c.strokeStyle = '#4fd8ff'; c.lineWidth = 10;
-    c.strokeRect(8, 8, 496, 240);
-    c.textAlign = 'center';
-    c.fillStyle = '#f4ecdd';
-    c.font = 'bold 40px Trebuchet MS, sans-serif';
-    c.fillText(tx('ESTACIÓN ORBITAL', 'ORBITAL STATION'), 256, 64);
-    c.fillStyle = '#7fe8ff';
-    c.font = 'bold 34px Trebuchet MS, sans-serif';
-    c.fillText(tx('ETAPA ' + (this.stage + 1) + '/5 · ' + et.name.toUpperCase(),
-      'STAGE ' + (this.stage + 1) + '/5 · ' + et.name.toUpperCase()), 256, 124);
-    c.fillStyle = '#eef4ff';
-    c.font = '24px Trebuchet MS, sans-serif';
-    c.fillText(tx('APUNTA Y PULSA EL GATILLO', 'AIM AND PULL THE TRIGGER'), 256, 178);
-    c.fillText(tx('para empezar', 'to start'), 256, 214);
-    if (this._champion) {
-      c.fillStyle = '#ffd740';
-      c.font = 'bold 26px Trebuchet MS, sans-serif';
-      c.fillText(tx('★ SUPERADO · revancha libre', '★ CLEARED · free rematch'), 256, 248);
-    }
-    this.cartelTex.needsUpdate = true;
+    // v3.6.5-SDK5 · FASE 7: el lienzo vive en el SDK (createCartel); el
+    // ARTE de este tablón de misión sigue siendo del orbital, byte a byte.
+    this._cartelSDK.pinta((c, W, H) => {
+      const et = this._etapa();
+      c.clearRect(0, 0, W, H);
+      c.fillStyle = '#101a2c';
+      c.fillRect(0, 0, W, H);
+      c.strokeStyle = '#4fd8ff'; c.lineWidth = 10;
+      c.strokeRect(8, 8, W - 16, H - 16);
+      c.textAlign = 'center';
+      c.fillStyle = '#f4ecdd';
+      c.font = 'bold 40px Trebuchet MS, sans-serif';
+      c.fillText(tx('ESTACIÓN ORBITAL', 'ORBITAL STATION'), W / 2, 64);
+      c.fillStyle = '#7fe8ff';
+      c.font = 'bold 34px Trebuchet MS, sans-serif';
+      c.fillText(tx('ETAPA ' + (this.stage + 1) + '/5 · ' + et.name.toUpperCase(),
+        'STAGE ' + (this.stage + 1) + '/5 · ' + et.name.toUpperCase()), W / 2, 124);
+      c.fillStyle = '#eef4ff';
+      c.font = '24px Trebuchet MS, sans-serif';
+      c.fillText(tx('APUNTA Y PULSA EL GATILLO', 'AIM AND PULL THE TRIGGER'), W / 2, 178);
+      c.fillText(tx('para empezar', 'to start'), W / 2, 214);
+      if (this._champion) {
+        c.fillStyle = '#ffd740';
+        c.font = 'bold 26px Trebuchet MS, sans-serif';
+        c.fillText(tx('★ SUPERADO · revancha libre', '★ CLEARED · free rematch'), W / 2, 248);
+      }
+    });
   }
 
   rivalEstado(estado) {
@@ -6864,16 +6876,12 @@ class StockController {
     // v3.2.1: si el estado no cambia NO recarga — el motor de expresiones
     // vigila cada frame y reasignar el mismo webp 60 veces/s no es gratis
     // (decode + subida a GPU en Quest).
-    if (this._rivalEstado === estado) return;
-    this._rivalEstado = estado;
-    try {
-      const img = new Image();
-      img.onload = () => { this._rival.image = img; this._rival.needsUpdate = true; };
-      img.src = this._A(estado + '.webp');
-    } catch (e) { this._rivalEstado = ''; }
+    // v3.6.5-SDK5 · FASE 7: el guard y el cambio de cara viven en el SDK
+    // (createRival «perezoso»); this._rivalEstado sigue llenándose vía el
+    // eco onEstado (el QA lo lee).
+    this._rivalSDK.rivalEstado(estado);
   }
-
-  /* — v3.2.1 · EXPRESIONES DEL ASTRO (motor del clown de La Locura) ———
+  /* — v3.2.1 · EXPRESIONES DEL ASTRO  /* — v3.2.1 · EXPRESIONES DEL ASTRO (motor del clown de La Locura) ———
    *  Mismos umbrales que el ArcadeController (picando 7 golpes de rallye,
    *  combo 6, sorpresa 3, ventaja 6, pánico a 10): el ARTE manda, sin voz.
    *  Transitorios con retorno a la cara base del duelo; el aviso de
@@ -6935,8 +6943,28 @@ class StockController {
   }
 
   /* ------------------------------ MÚSICA --------------------------------
-   *  Motor privado siguiendo el patrón magia/oeste v2.124+2.125 (UNA
-   *  MELODÍA, decodeAudioData en promesa con copia). */
+   *  v3.6.5-SDK5 · FASE 7: el motor vive en el SDK (createMusic) con los
+   *  knobs CANÓNICOS de la BSO (fundido de entrada 0,8 s con ancla, sync
+   *  rampa 0,15 s con guard de fundido, gate UNA MELODÍA al arrancar y
+   *  dentro de on(), resurrección de contexto v2.124, parada instantánea).
+   *  El «arsenal» que quedaba — el decodeAudioData propio de esta bso.wav —
+   *  ya no existe: el fix v2.125 (forma promesa) vive UNA sola vez en el
+   *  SDK. El volumen efectivo se consulta EN VIVO vía _musicEffVol(). */
+  get _musSDK() {
+    if (!this.__musSDK) {
+      this.__musSDK = createMusic(() => this.game, {
+        url: () => {
+          try {
+            const m = this.manifest && this.manifest.audio && this.manifest.audio.music;
+            return m ? new URL('./' + m, import.meta.url).href : this._A('bso.wav');
+          } catch (e) { return this._A('bso.wav'); }
+        },
+        vol: () => this._musicEffVol(),
+        gateOn: true,                        // UNA MELODÍA también en on()
+      });
+    }
+    return this.__musSDK;
+  }
   _musicEffVol() {
     try {
       const A = this.game && this.game.audio;
@@ -6944,86 +6972,9 @@ class StockController {
       return (A.arcMute || A._arcDucked) ? 0.0001 : Math.max(0.0001, A.arcVol);
     } catch (e) { return 0.18; }
   }
-  musicOn() {
-    try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running') return;
-      if (this._mus && this._mus.src.context !== actx) this._mus = null;
-      this._musWanted = true;
-      const A0 = g.audio;
-      if (A0 && A0.arcPlaying) return;               // UNA MELODÍA
-      if (!this._musBuf && !this._musBusy) this._loadMusic(actx);
-      else if (this._musBuf && !this._mus) this._startMusic(actx);
-    } catch (e) { /* sin música: nunca rompe */ }
-  }
-  _loadMusic(actx) {
-    try {
-      let url = null;
-      try { url = (this.manifest && this.manifest.audio && this.manifest.audio.music)
-        ? new URL('./' + this.manifest.audio.music, import.meta.url).href : this._A('bso.wav');
-      } catch (e) { url = this._A('bso.wav'); }
-      if (!url || this._musBusy) return;
-      this._musBusy = true;
-      fetch(url)
-        .then((r) => r.arrayBuffer())
-        .then((ab) => actx.decodeAudioData(ab.slice(0)))
-        .then((buf) => {
-          this._musBuf = buf; this._musBusy = false;
-          if (this._musWanted) this._startMusic(actx);
-        })
-        .catch(() => { this._musBusy = false; });
-    } catch (e) { /* */ }
-  }
-  _startMusic(actx) {
-    try {
-      if (this._mus || !this._musBuf) return;
-      const A0 = this.game && this.game.audio;
-      if (A0 && A0.arcPlaying) return;               // UNA MELODÍA
-      const gain = actx.createGain();
-      const t0 = actx.currentTime;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.linearRampToValueAtTime(this._musicEffVol(), t0 + 0.8);
-      this._musRamp = t0 + 0.8;
-      gain.connect(actx.destination);
-      const src = actx.createBufferSource();
-      src.buffer = this._musBuf;
-      src.loop = true;
-      src.connect(gain);
-      src.start();
-      this._mus = { gain, src };
-    } catch (e) { this._mus = null; }
-  }
-  _syncMusicGain() {
-    try {
-      const A = this.game && this.game.audio;
-      if (this._mus && A && A.ctx && this._mus.src.context !== A.ctx) {
-        this._mus = null;                            // re-bind: resucita
-        if (this._musWanted && this._musBuf && A.ctx.state === 'running') {
-          this._startMusic(A.ctx);
-          return;
-        }
-      }
-      if (!this._mus || !this._mus.gain) return;
-      const gn = this._mus.gain.gain;
-      const eff = this._musicEffVol();
-      if (this._musRamp && A && A.ctx && A.ctx.currentTime < this._musRamp) return;
-      if (A && A.ctx && Math.abs((gn.value || 0) - eff) > 0.001) {
-        const t = A.ctx.currentTime;
-        gn.cancelScheduledValues(t);
-        gn.setValueAtTime(Math.max(0.0001, gn.value || 0.0001), t);
-        gn.linearRampToValueAtTime(eff, t + 0.15);
-      }
-    } catch (e) { /* */ }
-  }
-  musicOff() {
-    this._musWanted = false;
-    if (this._mus) {
-      try { this._mus.src.stop(); } catch (e) { /* */ }
-      try { this._mus.gain.disconnect(); } catch (e) { /* */ }
-      this._mus = null;
-    }
-  }
+  musicOn() { this._musSDK.on(); }
+  musicOff() { this._musSDK.off(); }
+  _syncMusicGain() { this._musSDK.sync(); }
 
   /* --------------------------- CICLO / CONTRATO ------------------------- */
   startChamp() {

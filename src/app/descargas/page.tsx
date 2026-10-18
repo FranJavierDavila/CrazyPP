@@ -4,11 +4,11 @@ export default function Descargas() {
   const files = [
     {
       emoji: "☁️",
-      nombre: "Juego + CRAZY TV — V3.2.1-ORB2 (paquete Cloudflare)",
+      nombre: "Juego + CRAZY TV — V3.3.0-NUC1 (paquete Cloudflare)",
       detalle:
-        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con la ESTACIÓN ORBITAL ajustada al detalle (ASTRO en el sitio del forajido, mapa con tapas que cubren las etapas por disputar, cartel SuperPower!! a la altura de la red, expresiones del rival y poderes encima de la mesa), PRECISIÓN CCD en el contacto, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
+        "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con el REACTOR DE ENERGÍA INESTABLE estrenando la etapa 2 (núcleo de gravedad con rotación caótica, esferas de plasma y compuertas de energía), la ESTACIÓN ORBITAL afinada, PRECISIÓN CCD en el contacto, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
       tamano: "113,7 MB · ZIP · Cloudflare Pages",
-      href: "/descargas/crazypp-v321-orb2-CLOUDFLARE.zip",
+      href: "/descargas/crazypp-v330-nuc1-CLOUDFLARE.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",
       borde: "border-sky-500/40",
@@ -16,11 +16,11 @@ export default function Descargas() {
     },
     {
       emoji: "🎯",
-      nombre: "Juego + CRAZY TV — V3.2.1-ORB2 (paquete completo)",
+      nombre: "Juego + CRAZY TV — V3.3.0-NUC1 (paquete completo)",
       detalle:
-        "La V3.2.1-ORB2 íntegra: AJUSTE FINO DE LA ESTACIÓN ORBITAL tras la revisión en casco — el ASTRO colocado en el sitio del forajido (cuerpo entero, pies en el suelo, fuera de la pared derecha), el MAPA con las etapas aún por disputar cubiertas con la tapa de la casa y nodos re-medidos, el cartel SUPERPOWER!! de la casa apareciendo de frente a la altura de la red con el medallón circular del poder, las EXPRESIONES del ASTRO según el momento de la partida (ríe, se enfada, entra en pánico…) y los SUPERPODERES cayendo encima de la mesa con efecto real · MUROS ORBITALES en las etapas 2 y 4 (el arkanoid de La Locura con pistola láser pistol.glb en la variante 2) · cartel de normas con la plantilla del artista (normas_astro.png) · recortables reales por el suelo · y TODO lo anterior: PRECISIÓN CCD SDF en el contacto de la pala (v3.1.2-CCD1), saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+        "La V3.3.0-NUC1 íntegra: ETAPA 2 NUEVA — REACTOR DE ENERGÍA INESTABLE — el NÚCLEO DE GRAVEDAD (arte GLB del dueño) gira de forma caótica tras la mesa y lanza ESFERAS DE PLASMA que debes golpear con la pala para meterlas en las COMPUERTAS de energía: primero una compuerta GRANDE, luego pequeñas y móviles; cada acierto estabiliza el reactor, cada fallo dispara alarmas, vibraciones y CAMBIOS DE GRAVEDAD, y el ASTRO se burla al fallar y se sorprende con tus rachas · el ARKANOID II con pistola láser sigue en la etapa 4 · ESTACIÓN ORBITAL afinada (ASTRO en su sitio, mapa con tapas, SuperPower!! a la altura de la red, expresiones y poderes sobre la mesa) · PRECISIÓN CCD SDF en el contacto, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
       tamano: "113,7 MB · ZIP · completo",
-      href: "/descargas/crazypp-v321-orb2-COMPLETO.zip",
+      href: "/descargas/crazypp-v330-nuc1-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -28,11 +28,11 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.2.1-ORB2 — versión ligera (sin campeonatos)",
+      nombre: "V3.3.0-NUC1 — versión ligera (sin campeonatos)",
       detalle:
-        "El mismo paquete para subir rápido a Netlify Drop: juego con el ajuste fino de la Estación Orbital, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital). Tampoco vale para Cloudflare directo (lleva TypeScript).",
+        "El mismo paquete para subir rápido a Netlify Drop: juego con el Reactor de energía inestable, la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ queda preparada para copiar del paquete completo (ahí vive el campeonato de la Estación Orbital). Tampoco vale para Cloudflare directo (lleva TypeScript).",
       tamano: "11,5 MB · ZIP · Netlify",
-      href: "/descargas/crazypp-v321-orb2-ligera.zip",
+      href: "/descargas/crazypp-v330-nuc1-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -68,15 +68,16 @@ export default function Descargas() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
             El paquete actual es la{" "}
-            <strong className="text-amber-300">V3.2.1-ORB2</strong>: la{" "}
-            <strong className="text-slate-200">ESTACIÓN ORBITAL</strong> queda
-            afinada tras la revisión en casco: el rival ASTRO en su sitio (alto
-            como el forajido y fuera de la pared), el mapa con las etapas por
-            disputar cubiertas con la tapa de la casa, el cartel
-            <strong className="text-slate-200"> SUPERPOWER!!</strong> de frente
-            a la altura de la red con el medallón del poder, el ASTRO
-            expresándose según el partido y los superpoderes cayendo sobre la
-            mesa. Y bajo todo ello sigue la{" "}
+            <strong className="text-amber-300">V3.3.0-NUC1</strong>: la etapa 2
+            de la <strong className="text-slate-200">ESTACIÓN ORBITAL</strong>{" "}
+            estrena el{" "}
+            <strong className="text-slate-200">REACTOR DE ENERGÍA INESTABLE</strong>
+            : el núcleo de gravedad gira de forma caótica y lanza esferas de
+            plasma que devuelves con la pala a las{" "}
+            <strong className="text-slate-200">compuertas</strong> de energía;
+            cada acierto estabiliza el reactor y cada fallo sacude la nave con
+            alarmas y cambios de gravedad, mientras el ASTRO se burla o se
+            sorprende. Y bajo todo ello siguen la{" "}
             <strong className="text-slate-200">PRECISIÓN CCD</strong> en el
             contacto de la pala, el saque VR realista, el hall como hub, la
             física viva y las palas con carácter. Pulsa un botón y listo.
@@ -165,8 +166,8 @@ export default function Descargas() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.2.1-ORB2 · WebXR · Estación Orbital afinada ·
-          Muros arkanoid · Precisión CCD · CRAZY TV · Meta Quest 3
+          Crazy Ping Pong V3.3.0-NUC1 · WebXR · Reactor de energía inestable ·
+          Estación Orbital · Precisión CCD · CRAZY TV · Meta Quest 3
         </footer>
       </div>
     </main>

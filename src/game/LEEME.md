@@ -97,9 +97,21 @@ DIVISIÓN ORIGINAL
   scripts/divide_game.py troceó game.html v3.6.0-SUP1 (sha256 de109e09…)
   con cortes validados por token y recomposición byte-exacta.
 
-PRÓXIMA FASE (plan P0 acordado con el dueño)
-  · Fase 3: SDK de campeonato (Sala6/Rival/HUD/Sfx/FreezeClock compartidos)
-    para que los 5 campeonatos dejen de reimplementar lo mismo. Los
-    «candidatos SDK» de DEPENDENCIAS.md marcan el camino en el núcleo.
-  · Cada fase conserva la cadena de release intacta: game.html sigue
-    siendo un único fichero autocontenido para los ZIPs.
+FASES COMPLETADAS (plan P0 acordado con el dueño)
+  · Fase 1: división BYTE-EXACTA del monolito en esta carpeta
+    (scripts/divide_game.py) + ensamblador con identidad.
+  · Fase 2: los 14 subsistemas de core/ son MÓDULOS ES REALES (grafo
+    verificado por AST; build de inserción inversa).
+  · Fase 3 (V3.6.1-SDK1): SDK DE CAMPEONATOS —
+    public/championships/sdk/champ_sdk.js v1.0.0 con el kernel que los
+    5 campeonatos reimplementaban (SFX canónico con la lección v2.125,
+    congela()/descongela() del patrón locura v2.40, getCore, assetURL).
+    El orbital estrena la adopción (manifest v14) y los ZIPs llevan el
+    SDK dentro de championships/sdk/.
+PRÓXIMA FASE
+  · Fase 4: adoptar el SDK en oeste (7 copias del fix v2.125), magia
+    (2), locura y valle_neon + extraer Sala6/Rival/HUD compartidos.
+    Los «candidatos SDK» de DEPENDENCIAS.md marcan el camino en el
+    núcleo.
+  · Cada fase conserva la cadena de release: game.html sigue siendo
+    un único fichero autocontenido para los ZIPs.

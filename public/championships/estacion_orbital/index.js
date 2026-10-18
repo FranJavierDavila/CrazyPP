@@ -99,6 +99,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';   // v3.2.0: pi
 // v3.5.1: fusión de geometrías (cubos cuánticos detallados con 1 sola malla
 // por pieza: marco + nodos) — sin coste extra de draw calls en Quest
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+// v3.6.1-SDK1 · FASE 3 de la modularización P0: kernel compartido de los 5
+// campeonatos (SFX canónico, congelado del aviso, puente al núcleo) — la
+// fuente única que mata la familia de bugs duplicados entre módulos.
+import { createSfx, congela } from '../sdk/champ_sdk.js';
 
 const CORE = (typeof window !== 'undefined' && window.__PP_CORE) || null;
 const GAME = { g: null };
@@ -6855,34 +6859,17 @@ class StockController {
 
   /* — v3.6.0 · SFX DEL ASTRO (mp3 del dueño) ———————————————————————————
    *  risa_astro.mp3 → cuando el rival se burla de nosotros con la pose de
-   *  risas · enfado_astro.mp3 → cuando pierde un punto. Motor propio con el
-   *  patrón de la música (fetch + decodeAudioData UNA vez, cache); respeta
-   *  el silencio del arcade (arcMute/_arcDucked). Nunca rompe el frame. */
+   *  risas · enfado_astro.mp3 → cuando pierde un punto.
+   *  v3.6.1-SDK1 (FASE 3 modularización): el motor ya NO vive aquí — el
+   *  SDK de campeonatos (championships/sdk/champ_sdk.js) es la fuente única
+   *  de la familia (el fix «forma promesa» v2.125 llegó a estar copy-pasted
+   *  7 veces en oeste y 2 en magia). Misma conducta exacta: fetch +
+   *  decodeAudioData UNA vez con cache, respeta arcMute/_arcDucked, nunca
+   *  rompe el frame. */
   _sfx(name) {
     try {
-      const g = this.game;
-      const actx = g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running') return;
-      if (!this._sfxBufs) this._sfxBufs = {};
-      if (!this._sfxBusy) this._sfxBusy = {};
-      if (!this._sfxBufs[name] && !this._sfxBusy[name]) {
-        this._sfxBusy[name] = true;
-        fetch(this._A(name))
-          .then((r) => r.arrayBuffer())
-          .then((ab) => actx.decodeAudioData(ab.slice(0)))
-          .then((buf) => { this._sfxBufs[name] = buf; this._sfxBusy[name] = false; })
-          .catch(() => { this._sfxBusy[name] = false; });
-      }
-      const buf = this._sfxBufs[name];
-      if (!buf) return;                    // aún decodificando: en silencio
-      const src = actx.createBufferSource();
-      src.buffer = buf;
-      const gn = actx.createGain();
-      const A = g.audio;
-      gn.gain.value = (A && (A.arcMute || A._arcDucked)) ? 0.0001 : 0.65;
-      src.connect(gn);
-      gn.connect(actx.destination);
-      src.start();
+      if (!this.__sdkSfx) this.__sdkSfx = createSfx(import.meta.url, () => this.game);
+      this.__sdkSfx.play(name);
     } catch (e) { /* sin SFX: nunca rompe */ }
   }
 
@@ -8141,10 +8128,10 @@ class StockController {
       // tiempo del cartel (el aviso sigue contando en champs.update, que no
       // está gateado — mismo patrón que la casa) y al reanudarse entra el
       // efecto en el punto exacto.
-      try {
-        this.game.freezeT = Math.max(this.game.freezeT || 0,
-          (def.warn || 2.0) + 0.15);
-      } catch (e) { /* sin congelación: nunca rompe */ }
+      // v3.6.1-SDK1: congela() del SDK — el patrón de la casa (locura v2.40:
+      // gatea IA/física/saque/árbitro; warn + 0,15 s; Math.max no acorta una
+      // congelación ya en curso) vive en UNA sola fuente desde la FASE 3.
+      congela(this.game, (def.warn || 2.0) + 0.15);
       try { this.game.audio.playOsc(180, 320, 0.3, 'sawtooth', 0.10, 0); } catch (e) { /* */ }
     } else {
       this._bolsa.unshift(def);       // devuélvelo: no salió esta vez

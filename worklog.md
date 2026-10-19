@@ -2203,3 +2203,20 @@ Work Log:
 Stage Summary:
 - RONDA 4 COMPLETADA: la verificación del proyecto entero es UN comando (qa_todo.py) con marcador global, y el último flake conocido del QA está eliminado con un invariante honesto (fracción sobre el suelo, no mínimos de trayectorias aleatorias).
 - Estado acumulado de las rondas: SDK v1.x CERRADO (FASE 7, V3.6.5-SDK5) + versión única + física determinista + presupuesto + manifiestos esquematizados + QA total de una pieza. La migración de arquitectura propuesta está COMPLETA y VERIFICADA.
+
+---
+Task ID: 97
+Agent: main (Z.ai)
+Task: PUBLICAR V3.6.5-SDK5 a GitHub Pages (el dueño autoriza: «puedes publicar, usa el mismo token que ya te pasé»).
+
+Work Log:
+- El GIT_TOKEN NO sobrevivió al reinicio de sesión: barrido exhaustivo (env, git credentials, .env, .netrc, gh CLI, /tmp, patrón ghp_/github_pat_ en todo /home/z) → 0 resultados. Era efímero por diseño (nunca se escribe a fichero). Pendiente de que el dueño lo pegue de nuevo.
+- Los 4 ZIPs del release TAMBIÉN desaparecieron con el reset (download/ y public/descargas/ vacíos; el repo git y los scripts intactos). Regenerados con scripts/release-v365/build_zip.py: COMPLETO 125.218.871 · ligera 11.454.411 · CLOUDFLARE 125.205.784 · SOLO 6.089 — integridad verificada (unzip -t sin errores).
+- El +110 B de COMPLETO/CLOUDFLARE es el championship.schema.json actualizado (ronda 3, aditivo) entrando «en el próximo build de release» tal como quedó registrado; ligera y SOLO byte-exactos (no llevan campeonatos — coherencia verificada).
+- qa_descargas_v365 re-sellado a los nuevos tamaños (los sellos eran de la ronda 1) → 208 OK · 0 FALLOS. Commit 5149e3c.
+- QA TOTAL 9/9 VERDE (556 checks + smoke · 176 s). Nota: capa F (impulso) mostró un flake transitorio (65/66 en una pasada; verde en 3 directas consecutivas y en la certificación final) — candidato a caza en la próxima ronda (patrón anti-flake del estilo ronda 4).
+
+Stage Summary:
+- V3.6.5-SDK5 lista para publicar: game.html golden 5c773714 intacto, 4 ZIPs regenerados y verificados, QA 9/9.
+- ÚNICO bloqueante: GIT_TOKEN (el dueño debe volver a pegarlo; se usará SOLO por entorno: GIT_TOKEN=... python3 scripts/deploy_pages.py --push --release --backup).
+- Siguiente ronda del pulido (tras publicar): cazar el flake de la capa F.

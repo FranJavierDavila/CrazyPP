@@ -1,8 +1,8 @@
 {
   "catalogo": "telemetria-crazypp",
-  "version": 1,
+  "version": 2,
   "actualizado": "2026-10-19",
-  "ronda": "6 · roadmap P1 (telemetría)",
+  "ronda": "7 · fix del flujo de producción (array directo + routing por host)",
   "politica_pii": {
     "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
     "sin_ip": true,
@@ -15,8 +15,9 @@
   "transporte": {
     "emisor": "__PP_TELE (src/game/core/c00_pre_three.js)",
     "endpoint_shell": "window.PP_TELEMETRY_ENDPOINT (04_boot.html) — se lee EN CADA envío (perezoso)",
+    "routing": "POR HOST (desde 3.6.5-SDK6, ronda 7): localhost/127.0.0.1/[::1] → /api/telemetria (receptor local con panel); resto (github.io, Cloudflare, …) → worker de producción",
     "formato": "lote JSON por sendBeacon (text/plain, CORS-safelisted) o fetch keepalive no-cors",
-    "forma_del_lote": "{\"app\":\"crazy-pingpong\",\"events\":[…]} (ATENCIÓN: el receptor de producción SOLO acepta arrays directos — ver hallazgos)",
+    "forma_del_lote": "ARRAY DIRECTO [{e,t,v,sid,…},…] (desde 3.6.5-SDK6, ronda 7 — el receptor de producción rechazaba con 400 el wrapper {\"app\",\"events\"}; es el mismo contrato que champ_rank de Magia). El receptor local tolera AMBOS formatos",
     "cola": "localStorage pp_tele_q, máx 60 eventos (MAXQ), persistente",
     "flush": "auto al llegar a 10 encolados · 5 s tras arrancar · cada 30 s · visibilitychange hidden · pagehide (sync)",
     "diagnostico": "window.__PP_TELE.st → {on, q, sid, sent, lastOk, lastErr, fpsSamples}"
@@ -108,8 +109,14 @@
   "hallazgos_ronda6": [
     "El receptor de PRODUCCIÓN (crazypp-tele.escala3dcorreoia.workers.dev/api/tele) rechaza con 400 el wrapper {\"app\",\"events\"} que envía __PP_TELE.flush(): SOLO acepta arrays directos (204). sendBeacon devuelve true (éxito de transporte) → el juego vacía la cola → LOS EVENTOS DEL LOTE SE PIERDEN en producción.",
     "El mismo Worker no expone NINGÚN modo de lectura (GET devuelve un texto fijo): aunque los POST entraran, no hay forma de consultar los datos.",
-    "FIX propuesto (requiere release): en c00_pre_three.js enviar JSON.stringify(st.q) (array directo, el mismo contrato que champ_rank de Magia) — 1 línea. Además, receptor LOCAL propio de esta ronda (/api/telemetria) con lectura y panel.",
+    "FIX propuesto (requiere release): en c00_pre_three.js enviar JSON.stringify(st.q) (array directo, el mismo contrato que champ_rank de Magia) — 1 línea. Además, receptor LOCAL propio de esta ronda (/api/telemetria) con lectura y panel. → APLICADO en la ronda 7 (3.6.5-SDK6), junto con el routing por host del endpoint en 04_boot.",
     "Cloudflare bloquea UAs no-navegador con error 1010/403: cualquier sondeo debe emular UA de Chromium (scripts/sondea_tele_worker.py lo hace)."
+  ],
+  "fix_ronda7": [
+    "c00_pre_three.js (flush): el lote pasa a JSON.stringify(st.q) — ARRAY DIRECTO; el receptor local sigue aceptando el wrapper antiguo por tolerancia.",
+    "04_boot.html: ROUTING POR HOST — localhost/127.0.0.1/[::1] → /api/telemetria (panel /telemetria); resto de hosts → worker de producción.",
+    "Efecto en producción: los lotes dejan de morir en un 400 — el Worker los acepta (204) aunque SIGA sin API de lectura (el panel local es la vía para VER datos hoy).",
+    "Pendiente para rondas futuras: id de campeonato en stage/champion y v real en champ_rank (drift '2.81.0')."
   ],
   "receptor_local": {
     "ruta": "/api/telemetria (Next.js, :3000 y :81 vía gateway)",

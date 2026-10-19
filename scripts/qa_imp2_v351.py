@@ -32,12 +32,29 @@ async def main():
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
 
+        # ANTI-FLAKE (ronda 7): el WORLDRANK del juego (v2.67) hace un GET a un
+        # almacén EXTERNO (api.restful-api.dev) al arrancar la portada. Cuando
+        # ese servicio público se degrada, la petición queda ABIERTA a nivel de
+        # red (el fetch del juego aborta a tiempo y cae a caché — eso es sano —
+        # pero la conexión persiste) y networkidle nunca llega → timeout del
+        # goto. El QA no puede depender de un tercero: se INTERCEPTA el host y
+        # se sirve un ranking-fixture determinista (con ACAO para el mode cors).
+        # El juego NO cambia; fuera del QA el almacén real sigue igual.
+        RANK_FIXTURE = (
+            '{"name":"crazypp-world-ranking","data":{"champs":{"locura":'
+            '[{"n":"QA","p":1,"a":"fixt","t":0}]}}}')
+        await page.route('**api.restful-api.dev/**', lambda r: r.fulfill(
+            status=200,
+            headers={'access-control-allow-origin': '*',
+                     'content-type': 'application/json'},
+            body=RANK_FIXTURE))
+
         print('== PORTADA (dev :3000) ==')
         await page.goto(BASE + '/game.html', wait_until='networkidle')
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.6.5-SDK5', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.6.5-SDK6', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.6.5-SDK5' in badge, f'badge 2D = {badge!r}')
+        chk('V3.6.5-SDK6' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("!!window.__PP_SERVE_LAB"), 'SERVE lab intacto (SRV2)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),

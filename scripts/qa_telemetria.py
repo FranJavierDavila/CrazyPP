@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""CRAZY PING PONG · QA CAPA J · TELEMETRÍA (ronda 6, roadmap P1).
-Verifica la cadena completa del anónimo __PP_TELE sin tocar el juego:
+"""CRAZY PING PONG · QA CAPA J · TELEMETRÍA (rondas 6-7, roadmap P1).
+Verifica la cadena completa del anónimo __PP_TELE. Desde la ronda 7 el JUEGO
+SÍ cambia: el lote es un ARRAY DIRECTO (el receptor de producción rechazaba
+el wrapper con 400) y el endpoint se ENRUTA POR HOST en 04_boot (local →
+/api/telemetria, producción → worker):
   A. Catálogo ↔ fuente        — los 8 eventos del catálogo son TODOS los que
-                                emite el código (y viceversa); PII y hallazgos.
+                                emite el código (y viceversa); PII, hallazgos
+                                y el ROUTING del shell en el artefacto.
   B. Contrato del receptor    — POST wrapper/array/texto/json, saneo, OPTIONS,
                                 GET resumen/eventos, DELETE, límites de tamaño.
-  C. Juego → receptor (E2E)   — Playwright en :3000: boot llega, auto-flush al
-                                llegar a 10, flush manual, error capturado,
-                                FPS, pagehide → page_close y OPT-OUT hermético.
+  C. Juego → receptor (E2E)   — Playwright en :3000: FLUJO NATURAL sin pin
+                                (el routing de 04_boot apunta solo al receptor
+                                local), boot llega, auto-flush al llegar a 10,
+                                flush manual, error capturado, FPS, pagehide →
+                                page_close y OPT-OUT hermético.
   D. Panel + PII + artefacto  — /telemetria en :3000 y :81, API por el gateway,
                                 auditoría de claves (nada fuera del catálogo) y
                                 el artefacto game.html lleva la telemetría.
@@ -114,11 +120,14 @@ def bloque_catalogo():
     chk(len(cat['hallazgos_ronda6']) >= 3,
         f"hallazgos de la ronda 6 documentados ({len(cat['hallazgos_ronda6'])})")
 
-    # el ARTEFACTO lleva la telemetría (sin cambiar su golden)
+    # el ARTEFACTO lleva la telemetría y el ROUTING de la ronda 7
     juego = (RAIZ / 'public/game.html').read_text(encoding='utf-8', errors='replace')
     chk('window.__PP_TELE = __PP_TELE' in juego, 'game.html expone window.__PP_TELE')
-    chk("window.PP_TELEMETRY_ENDPOINT = 'https://" in juego,
-        'game.html lleva el endpoint del shell (04_boot)')
+    chk('location.hostname' in juego and "'/api/telemetria'" in juego
+        and 'workers.dev/api/tele' in juego,
+        'game.html lleva el ROUTING por host del shell (04_boot: local → receptor, producción → worker)')
+    chk('JSON.stringify(st.q)' in juego and "JSON.stringify({ app: 'crazy-pingpong'" not in juego,
+        'game.html envía el lote como ARRAY DIRECTO (fix ronda 7; sin el wrapper rechazado)')
     return cat
 
 
@@ -185,10 +194,45 @@ async def bloque_e2e():
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=['--enable-unsafe-swiftshader'])
 
+        # ---- sesión 0: FLUJO NATURAL sin pin — la prueba del ROUTING de la
+        # ronda 7: en localhost 04_boot apunta SOLO a /api/telemetria y el
+        # boot del juego llega al receptor SIN ninguna ayuda del QA.
+        ctx0 = await browser.new_context(viewport={'width': 1280, 'height': 800})
+        page0 = await ctx0.new_page()
+        await page0.goto(BASE + '/game.html', wait_until='domcontentloaded')
+        await page0.wait_for_function("() => window.__PP_TELE", timeout=45000)
+        sid_nat = await page0.evaluate("() => window.__PP_TELE.st.sid")
+        ep_nat = await page0.evaluate("() => window.PP_TELEMETRY_ENDPOINT")
+        chk(ep_nat == '/api/telemetria',
+            f'ROUTING natural: en localhost 04_boot apunta a /api/telemetria ({ep_nat!r})')
+        t0 = time.time()
+        llego_nat = False
+        while time.time() - t0 < 20:
+            st, j = get_json(API + '?resumen=1&sid=' + str(sid_nat))
+            if j.get('porEvento', {}).get('boot', 0) >= 1:
+                llego_nat = True
+                break
+            await asyncio.sleep(0.5)
+        chk(llego_nat,
+            f'flujo NATURAL sin pin: el boot del juego llega al receptor ({time.time()-t0:.1f} s)')
+        # y un lote manual también entra (array directo, sin wrapper)
+        await page0.evaluate("() => { __PP_TELE.ev('qa_nat', { n: 1 }); __PP_TELE.flush(true); }")
+        t0 = time.time()
+        n_nat = 0
+        while time.time() - t0 < 10:
+            st, j = get_json(API + '?resumen=1&sid=' + str(sid_nat))
+            n_nat = j.get('porEvento', {}).get('qa_nat', 0)
+            if n_nat >= 1:
+                break
+            await asyncio.sleep(0.5)
+        chk(n_nat >= 1, f'flush manual natural entra como array directo ({n_nat} qa_nat)')
+        await ctx0.close()
+
         # ---- sesión 1: telemetría ACTIVADA, endpoint fijado al receptor local
         ctx = await browser.new_context(viewport={'width': 1280, 'height': 800})
-        # lock del endpoint: 04_boot.html asigna el worker DESPUÉS del init →
-        # definimos la propiedad SIN setter para que el valor sobreviva.
+        # lock del endpoint: fija el receptor local AUNQUE 04_boot asignara otro
+        # valor (definimos la propiedad SIN setter: la asignación del shell se
+        # ignora y el pin sobrevive) — en localhost coincide con el routing.
         await ctx.add_init_script(
             "Object.defineProperty(window, 'PP_TELEMETRY_ENDPOINT',"
             "{ get() { return '/api/telemetria'; }, set() {}, configurable: true });")
@@ -201,7 +245,6 @@ async def bloque_e2e():
         chk(bool(sid), f'el juego expone __PP_TELE con sid aleatorio ({sid})')
         ep = await page.evaluate("() => window.PP_TELEMETRY_ENDPOINT")
         chk(ep == '/api/telemetria', f'endpoint fijado al receptor local pese a 04_boot ({ep})')
-
         async def cuenta(tipo=None):
             st, j = get_json(API + '?resumen=1&sid=' + str(sid))
             if tipo:
@@ -315,12 +358,12 @@ async def bloque_e2e():
         await ctx2.close()
         await browser.close()
 
-        # (la purga del sid del E2E ocurre tras la auditoría PII, en el bloque D)
-        return sid
+        # (la purga de los sids del E2E ocurre tras la auditoría PII, en el bloque D)
+        return sid, sid_nat
 
 
 # ---------------------------------------------------------------- BLOQUE D
-def bloque_panel(sid_e2e):
+def bloque_panel(*sids_e2e):
     print('== D · PANEL, PII Y GATEWAY ==')
     st, cuerpo = peticion('GET', url=BASE + '/telemetria')
     chk(st == 200 and 'Telemetría anónima' in cuerpo,
@@ -330,36 +373,39 @@ def bloque_panel(sid_e2e):
     st, cuerpo = peticion('GET', url=GW + '/telemetria')
     chk(st == 200 and 'Telemetría anónima' in cuerpo, 'panel /telemetria por el gateway :81')
 
-    # PII: todo lo recibido del E2E respeta el catálogo (claves permitidas)
+    # PII: todo lo recibido de los E2E respeta el catálogo (claves permitidas)
     cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
     campos = {e['nombre']: {c['nombre'] for c in e['campos']} for e in cat['eventos']}
     base = {'e', 't', 'v', 'sid', '_rec'}
-    st, j = get_json(API + '?eventos=500&sid=' + str(sid_e2e))
-    malos = []
-    for e in j.get('eventos', []):
-        n = e.get('e', '?')
-        permitidos = base | (campos.get(n, set()) if n in campos else set())
-        if n.startswith('qa_'):
-            permitidos |= {'n', 'fps'}
-        extra = {k for k in e.keys() if k not in permitidos}
-        if extra:
-            malos.append((n, sorted(extra)))
-    chk(not malos, f'auditoría PII: todas las claves del E2E están en el catálogo ({malos[:3]})')
-    prohibidas = {'ip', 'ua', 'useragent', 'user_agent', 'referer'}
-    con_prohibida = [e.get('e') for e in j.get('eventos', [])
-                     if prohibidas & {k.lower() for k in e.keys()}]
-    chk(not con_prohibida, 'ningún evento lleva IP/UA/referer')
+    for sid_aud in sids_e2e:
+        st, j = get_json(API + '?eventos=500&sid=' + str(sid_aud))
+        malos = []
+        for e in j.get('eventos', []):
+            n = e.get('e', '?')
+            permitidos = base | (campos.get(n, set()) if n in campos else set())
+            if n.startswith('qa_'):
+                permitidos |= {'n', 'fps'}
+            extra = {k for k in e.keys() if k not in permitidos}
+            if extra:
+                malos.append((n, sorted(extra)))
+        chk(not malos,
+            f'auditoría PII ({sid_aud}): todas las claves del E2E están en el catálogo ({malos[:3]})')
+        prohibidas = {'ip', 'ua', 'useragent', 'user_agent', 'referer'}
+        con_prohibida = [e.get('e') for e in j.get('eventos', [])
+                         if prohibidas & {k.lower() for k in e.keys()}]
+        chk(not con_prohibida, f'ningún evento de {sid_aud} lleva IP/UA/referer')
 
     # limpieza AL FINAL (la auditoría PII necesita los eventos del E2E vivos)
-    peticion('DELETE', url=API + '?sid=' + str(sid_e2e))
+    for sid_p in sids_e2e:
+        peticion('DELETE', url=API + '?sid=' + str(sid_p))
 
 
 async def main():
-    print('QA TELEMETRÍA · ronda 6 (roadmap P1) · juego intacto')
+    print('QA TELEMETRÍA · rondas 6-7 (roadmap P1) · lote array directo + routing por host')
     cat = bloque_catalogo()
     bloque_contrato()
-    sid = await bloque_e2e()
-    bloque_panel(sid)
+    sid, sid_nat = await bloque_e2e()
+    bloque_panel(sid, sid_nat)
     print(f'\nRESULTADO: {ok} OK · {fails} FALLOS')
     sys.exit(1 if fails else 0)
 

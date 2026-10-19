@@ -1,6 +1,6 @@
 {
   "nota": "HASHES de física determinista (test_fisica.mjs). Refrescar SOLO con un cambio físico intencional: node --no-warnings scripts/test_fisica.mjs --update",
-  "version": "3.6.5-SDK5",
+  "version": "3.6.5-SDK6",
   "hashes": {
     "sdfBlade.grid": "f3a3fddfe2122235",
     "sweepBallVsBlade.rayos": "1aa6b631293ac35a",

@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.5-SDK5, fase 7 · CIERRE DEL SDK v1.x (createRival + createCartel + música del orbital); sello actualizado
-# por bump_version.py desde 3.6.5-SDK5B)
-5c77371469e93c8a6b939b55c43976a3ae907abb841432d1c3d90f70028b5035
+# SHA256 del game.html que produjo esta división (3.6.5-SDK6, fase 8 · TELEMETRÍA: flujo de producción reparado (array directo + routing por host); sello actualizado
+# por bump_version.py desde 3.6.5-SDK5)
+783479415a8d5f9a8155e0efb89db0c61616582a4e520247efa1c0efd86801ea

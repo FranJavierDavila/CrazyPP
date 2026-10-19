@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-CRAZY PING PONG · Ensamblador del paquete de despliegue V3.6.5-SDK5.
+CRAZY PING PONG · Ensamblador del paquete de despliegue V3.6.5-SDK6.
 Construye cuatro ZIP listos para subir:
-  · crazypp-v365-sdk5-COMPLETO.zip   (juego + intro oficial + TV + relay +
+  · crazypp-v365-sdk6-COMPLETO.zip   (juego + intro oficial + TV + relay +
                                      campeonatos, ~110 MB)
-  · crazypp-v365-sdk5-ligera.zip     (lo mismo SIN campeonatos, ~11 MB)
-  · crazypp-v365-sdk5-CLOUDFLARE.zip (estático puro: SIN TS/package.json;
+  · crazypp-v365-sdk6-ligera.zip     (lo mismo SIN campeonatos, ~11 MB)
+  · crazypp-v365-sdk6-CLOUDFLARE.zip (estático puro: SIN TS/package.json;
                                      aceptado por la subida directa de
                                      Cloudflare Pages sin wrangler)
   · crazypp-live-service-SOLO.zip    (solo el relay, 6 KB, para GitHub → Railway)
@@ -26,7 +26,7 @@ STAGE = RAIZ / 'scripts' / 'staging-v365'
 DL = RAIZ / 'download'
 DESC = PUB / 'descargas'
 
-VER = 'V3.6.5-SDK5'
+VER = 'V3.6.5-SDK6'
 FECHA = date.today().isoformat()
 
 def sha256(p: Path) -> str:
@@ -45,13 +45,13 @@ def run(cmd, **kw):
 
 # ── 0. Verificación dura de identidad de la versión ──────────────
 game_src = (PUB / 'game.html').read_text(encoding='utf-8')
-if "const VERSION = '3.6.5-SDK5'" not in game_src:
-    sys.exit('FALLO: public/game.html no es la V3.6.5-SDK5 (VERSION distinta)')
-if 'V3.6.5-SDK5' not in game_src:
-    sys.exit('FALLO: el badge estático no es V3.6.5-SDK5')
+if "const VERSION = '3.6.5-SDK6'" not in game_src:
+    sys.exit('FALLO: public/game.html no es la V3.6.5-SDK6 (VERSION distinta)')
+if 'V3.6.5-SDK6' not in game_src:
+    sys.exit('FALLO: el badge estático no es V3.6.5-SDK6')
 hub = (RAIZ / 'src/app/descargas/page.tsx').read_text(encoding='utf-8')
-if 'v365-sdk5' not in hub or 'v364-sdk4' in hub or 'v363-sdk3' in hub or 'v362-sdk2' in hub or 'v361-sdk1' in hub or 'v360-sup1' in hub or 'v351-imp2' in hub or 'v350-esc1' in hub or 'v341-riv1' in hub or 'v340-imp1' in hub or 'v330-nuc1' in hub or 'v321-orb2' in hub:
-    sys.exit('FALLO: el hub /descargas no apunta a los paquetes v365-sdk5')
+if 'v365-sdk6' not in hub or 'v365-sdk5' in hub or 'v364-sdk4' in hub or 'v363-sdk3' in hub or 'v362-sdk2' in hub or 'v361-sdk1' in hub or 'v360-sup1' in hub or 'v351-imp2' in hub or 'v350-esc1' in hub or 'v341-riv1' in hub or 'v340-imp1' in hub or 'v330-nuc1' in hub or 'v321-orb2' in hub:
+    sys.exit('FALLO: el hub /descargas no apunta a los paquetes v365-sdk6')
 man = json.loads((PUB / 'championships/estacion_orbital/manifest.json').read_text(encoding='utf-8'))
 if man.get('version') != 16 or man['rival']['name'] != 'ASTRO':
     sys.exit('FALLO: el manifest de estacion_orbital no es el v3.6.5 (ASTRO, manifest v16)')
@@ -231,7 +231,7 @@ if (PUB / 'championships/estacion_orbital/assets/risa_astro.mp3').stat().st_size
     sys.exit('FALLO: risa_astro.mp3 no es byte-exacto (81.408 B)')
 if (PUB / 'championships/estacion_orbital/assets/enfado_astro.mp3').stat().st_size != 37616:
     sys.exit('FALLO: enfado_astro.mp3 no es byte-exacto (37.616 B)')
-print('· Identidad verificada: game.html V3.6.5-SDK5 + hub v365-sdk5 + SDK de campeonatos (rival, tablón, tablero y música en el SDK)')
+print('· Identidad verificada: game.html V3.6.5-SDK6 + hub v365-sdk6 + SDK de campeonatos (rival, tablón, tablero y música en el SDK)')
 
 # ── 1. Staging limpio ─────────────────────────────────────────────
 if STAGE.exists():
@@ -316,8 +316,33 @@ ficheros = {
     f'Versión : {VER}\n'
     f'Fecha   : {FECHA}\n'
     'Base    : V3.6.4-SDK4 + V3.6.3-SDK3 + V3.6.2-SDK2 + V3.6.1-SDK1 + V3.6.0-SUP1 + V3.5.1-IMP2 + V3.5.0-ESC1 + V3.4.x + V3.3.0-NUC1 + V3.2.x-ORB + V3.1.2-CCD1\n'
-    'Rama    : main · SDK5 (FASE 7 — CIERRE DEL SDK v1.x: rival, tablero y música orbital)\n\n'
-    'Novedades de esta versión (frente a V3.6.4-SDK4):\n'
+    'Rama    : main · SDK6 (FASE 8 — TELEMETRÍA: flujo de producción reparado)\n\n'
+    'Novedades de esta versión (frente a V3.6.5-SDK5):\n'
+    '  · FASE 8 — TELEMETRÍA (roadmap P1): el lote de __PP_TELE ahora es un\n'
+    '    ARRAY DIRECTO (el receptor de producción rechazaba con 400 el\n'
+    '    wrapper {app,events} desde v2.50: los lotes se perdían en silencio;\n'
+    '    sendBeacon daba true por éxito de transporte). Mismo contrato que\n'
+    '    el champ_rank de Magia.\n'
+    '  · ROUTING POR HOST del endpoint: en desarrollo (localhost) los lotes\n'
+    '    van al receptor local /api/telemetria (panel /telemetria con\n'
+    '    lectura); en producción van al Worker.\n'
+    '  · FASE 7 (frente a SDK4): CIERRE DEL SDK v1.x — createRival\n'
+    '    (standee), createCartel (tablero) y createMusic (orbital) en el\n'
+    '    SDK v1.4.0; CERO decodeAudioData en los 5 campeonatos.\n'
+    '  · CERO cambios de gameplay: física CCD/SRV2/FEEL1 intacta,\n'
+    '    superpoderes, reactor, escudo y duelos exactamente igual.\n'
+    '  · Conserva TODO: el ESCUDO DE PALA en la etapa 4, el REACTOR\n'
+    '    DE IMPULSO en la etapa 2, la CCD SDF de contacto, el saque\n'
+    '    VR realista, el hall del anfitrión, PRO CIRCUITO, intro\n'
+    '    oficial, física viva, palas con carácter, CRAZY TV en\n'
+    '    directo y los 5 campeonatos.\n\n'
+    'Historial previo (V3.6.5-SDK5, FASE 7):\n'
+    '  · CIERRE DEL SDK v1.x (champ_sdk.js v1.4.0): createRival con DOS\n'
+    '    motores (perezoso ASTRO / precarga ZETA-7), createCartel y la\n'
+    '    música del orbital en el SDK. FIX ZETA-7: arte real rival_kraken.png.\n'
+    '  · Conserva las FASES 4-6: SFX/congelados/puente (SDK2), música\n'
+    '    (SDK3) y tablón (SDK4) en sus fuentes únicas.\n\n'
+    'Novedades acumuladas hasta V3.6.4-SDK4:\n'
     '  · FASE 7 de la modularización P0 — CIERRE DEL SDK v1.x\n'
     '    (champ_sdk.js v1.4.0). Tres convergencias más:\n'
     '    · createRival: el STANDEE del rival vive en el SDK con DOS\n'
@@ -351,7 +376,7 @@ ficheros = {
 
 # ── 3. ZIP completo ──────────────────────────────────────────────
 DL.mkdir(exist_ok=True)
-zip_c = DL / 'crazypp-v365-sdk5-COMPLETO.zip'
+zip_c = DL / 'crazypp-v365-sdk6-COMPLETO.zip'
 if zip_c.exists():
     zip_c.unlink()
 print('· Comprimiendo paquete COMPLETO (campeonatos incluidos, ~110 MB)...')
@@ -369,7 +394,7 @@ champ_bak.mkdir()
     'El juego funciona igual (Partido, Entrenamiento, Supervivencia y P2P);\n'
     'solo faltarán los campeonatos extra. Copia aquí la carpeta championships/\n'
     'del paquete COMPLETO para tenerlos.\n', encoding='utf-8')
-zip_l = DL / 'crazypp-v365-sdk5-ligera.zip'
+zip_l = DL / 'crazypp-v365-sdk6-ligera.zip'
 if zip_l.exists():
     zip_l.unlink()
 print('· Comprimiendo paquete LIGERA (sin campeonatos, ~11 MB)...')
@@ -385,7 +410,7 @@ shutil.copytree(STAGE, CF_STAGE)
 shutil.rmtree(CF_STAGE / 'extras-nextjs', ignore_errors=True)
 shutil.rmtree(CF_STAGE / 'live-service', ignore_errors=True)
 (CF_STAGE / 'NOTA-CLOUDFLARE.txt').write_text(
-    'CRAZY PING PONG · V3.6.5-SDK5 · PAQUETE CLOUDFLARE\n'
+    'CRAZY PING PONG · V3.6.5-SDK6 · PAQUETE CLOUDFLARE\n'
     '==================================================\n\n'
     'Este paquete es la web ESTÁTICA pura, preparada para la subida\n'
     'directa de Cloudflare Pages (arrastrar y soltar), sin wrangler.\n\n'
@@ -412,7 +437,7 @@ shutil.rmtree(CF_STAGE / 'live-service', ignore_errors=True)
     'Entrenamiento, Supervivencia y P2P); solo la TV en vivo requiere\n'
     'ese relay encendido y el parámetro ?relay=http://IP:3004.\n',
     encoding='utf-8')
-zip_cf = DL / 'crazypp-v365-sdk5-CLOUDFLARE.zip'
+zip_cf = DL / 'crazypp-v365-sdk6-CLOUDFLARE.zip'
 if zip_cf.exists():
     zip_cf.unlink()
 print('· Comprimiendo paquete CLOUDFLARE (estático puro, ~110 MB)...')
@@ -462,4 +487,4 @@ print('· Copiados a public/descargas/ (descargables desde la preview).')
 print('\nRESUMEN')
 for z in (zip_c, zip_l, zip_cf, zip_sr):
     print(f'  {z.name:42s} {z.stat().st_size:>13,} B')
-print('\nV3.6.5-SDK5 lista: CIERRE DEL SDK v1.x — createRival + createCartel + música orbital (FASE 7) + tablón + música.')
+print('\nV3.6.5-SDK6 lista: TELEMETRÍA reparada (array directo + routing por host, FASE 8) sobre el SDK v1.x cerrado (FASE 7).')

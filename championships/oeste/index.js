@@ -1332,6 +1332,21 @@ const TXT = {
     replay_up: 'REJUGANDO LA ETAPA {n} · ¡suerte, forastero!',
     replay_done: '¡REJUGADA SUPERADA! El camino sigue igual…',
     replay_hint: 'Apunta con la pala a una etapa superada y dispara para rejugarla',
+    // v3.6.18 (ronda 24 · POST-CAMPEÓN): RUTA LEYENDA — siendo campeón,
+    // cada rejugada es una etapa LEYENDA (más dura) y sella el camino 5/5.
+    leyenda_on: '¡RUTA LEYENDA! Rejuega las 5 etapas: cada una sella tu leyenda (5/5)',
+    leyenda_ribbon: 'RUTA LEYENDA · ETAPA {n} · ¡GATILLO!',
+    leyenda_up: '¡ETAPA {n} DE LEYENDA! El Oeste va en serio…',
+    leyenda_sello: '¡SELLO DE LEYENDA {n}/5! El Oeste te va temiendo…',
+    leyenda_cstat: 'Sellos de leyenda: {n}/5',
+    leyenda_completa: '★ LEYENDA DEL OESTE ★ · camino sellado 5/5 en modo leyenda',
+    leyenda_medalla_titulo: '¡LEYENDA DEL OESTE!',
+    leyenda_medalla_msg: '5/5 sellos · tu nombre ya es canción de cantina',
+    coronacion_titulo: '¡CAMPEÓN DEL SALVAJE OESTE!',
+    coronacion_msg: 'El forajido entrega su estrella: el Oeste es TUYO, sheriff',
+    coronacion_pts: 'Puntos',
+    coronacion_duelos: 'Duelos ganados',
+    coronacion_fecha: 'Coronado',
     champ_gana: '¡¡CAMPEÓN DEL SALVAJE OESTE!! ¡La estrella es tuya!',
     champ_sub: 'El forajido se rinde: insignia ganada con honor',
     // ETAPA 2 · ASEDIO (v2.95 · el escondite del pueblo)
@@ -1433,6 +1448,20 @@ const TXT = {
     replay_up: 'REPLAYING STAGE {n} · good luck, stranger!',
     replay_done: 'REPLAY CLEARED! The route stays as it was…',
     replay_hint: 'Aim the paddle at a cleared stage and pull the trigger to replay it',
+    // v3.6.18 (ronda 24 · POST-CHAMPION): LEGEND ROUTE
+    leyenda_on: 'LEGEND ROUTE! Replay all 5 stages: each one seals your legend (5/5)',
+    leyenda_ribbon: 'LEGEND ROUTE · STAGE {n} · TRIGGER!',
+    leyenda_up: 'LEGEND STAGE {n}! The West means business…',
+    leyenda_sello: 'LEGEND SEAL {n}/5! The West is starting to fear you…',
+    leyenda_cstat: 'Legend seals: {n}/5',
+    leyenda_completa: '★ WEST LEGEND ★ · route sealed 5/5 in legend mode',
+    leyenda_medalla_titulo: 'WEST LEGEND!',
+    leyenda_medalla_msg: '5/5 seals · your name is already a saloon song',
+    coronacion_titulo: 'WILD WEST CHAMPION!',
+    coronacion_msg: 'The outlaw hands over his star: the West is YOURS, sheriff',
+    coronacion_pts: 'Points',
+    coronacion_duelos: 'Duels won',
+    coronacion_fecha: 'Crowned',
     champ_gana: 'WILD WEST CHAMPION!! The star is yours!',
     champ_sub: 'The outlaw surrenders: badge earned with honor',
     // ETAPA 2 · SIEGE
@@ -5474,7 +5503,7 @@ class AsedioAction {
   }
 
   /** v2.99 · Forajidos que toca matar en la OLEADA vigente (3/5/7 v2.116). */
-  _waveNeed() { return ASEDIO.perWave[this.wave - 1] || 5; }
+  _waveNeed() { return (this.ctrl && this.ctrl._leyendaOn ? 1 : 0) + (ASEDIO.perWave[this.wave - 1] || 5); }   // v3.6.18 (ronda 24): LEYENDA +1 forajido
   /** v2.116 · MARCADOR: forajidos que FALTAN por matar en la oleada
    *  (se pinta con contador.png en la esquina superior izquierda). */
   _marc() {
@@ -8470,7 +8499,7 @@ class TrenAction {
   _enLingote() {
     this.ingots++;
     this.ctrl._puntosAdd(100, this.pile.position);   // v2.119: oro asegurado
-    const meta = TREN.meta[this.wave - 1] || 3;
+    const meta = (TREN.meta[this.wave - 1] || 3) + (this.ctrl && this.ctrl._leyendaOn ? 1 : 0);   // v3.6.18 (ronda 24): LEYENDA +1 lingote
     if (this.ingots === meta) {
       this._msg = tx('tren_objetivo', { n: this.ingots, m: meta });
       this._msgT = 3.0;
@@ -9280,7 +9309,7 @@ class TrenAction {
     /* v2.118 · el primer túnel del tramo NO pisa la salida del andén: al
      * menos 12 s de viaje antes de que la boca aparezca a lo lejos. */
     this._tunnelT = Math.max(this._tunnelT, 12);
-    const meta = TREN.meta[this.wave - 1] || 3;
+    const meta = (TREN.meta[this.wave - 1] || 3) + (this.ctrl && this.ctrl._leyendaOn ? 1 : 0);   // v3.6.18 (ronda 24): LEYENDA +1 lingote
     // (la pirámide de la parada ya está en escena: la monta start() o _arrived())
     this._serveBall();
     this._msg = tx('tren_sale', { n: this.wave, m: meta });
@@ -9340,7 +9369,7 @@ class TrenAction {
     this._stoppedT = 0;
     this.ctrl.sfx('brake', 0);
     this._setRumble(0);
-    const meta = TREN.meta[this.wave - 1] || 3;
+    const meta = (TREN.meta[this.wave - 1] || 3) + (this.ctrl && this.ctrl._leyendaOn ? 1 : 0);   // v3.6.18 (ronda 24): LEYENDA +1 lingote
     if (this.ingots < meta) return this._fail();   // sin el oro mínimo: DERROTA
     this.ctrl._puntosAdd(250, this.pile.position); // v2.119: parada completa
     /* v2.140 · ¡CARGAMENTO DE ORO A BUEN RECAUDO!: voz de estación + panel
@@ -9397,7 +9426,7 @@ class TrenAction {
     return 'PARADA ' + this.wave + '/3';
   }
   _ling() {
-    return { n: this.ingots, m: TREN.meta[this.wave - 1] || 3 };
+    return { n: this.ingots, m: (TREN.meta[this.wave - 1] || 3) + (this.ctrl && this.ctrl._leyendaOn ? 1 : 0) };   // v3.6.18 (ronda 24)
   }
 
   /** FÍSICA + FASES (testStep). */
@@ -11017,6 +11046,7 @@ class ForajidoStand {
     this._asedio = null; this._tren = null;
     this._insignia = null; this._champion = false;
     this._replayReal = null; this._hoverNodo = -1;   // v2.96: rejugada + nodo apuntado
+    this._leyendaOn = false;   // v3.6.18 (ronda 24): rejugada LEYENDA activa (sólo campeón)
     try {
       this.stage = clamp(parseInt(localStorage.getItem('pp_champ_oeste_stage') || '1', 10) || 1, 1, 5);
       this._champion = localStorage.getItem('pp_champ_oeste_champ') === '1';
@@ -11805,7 +11835,7 @@ class ForajidoStand {
     const stNow = clamp(this.stage || 1, 1, 5);
     const hv = this._hoverNodo | 0;   // v2.96: nodo apuntado con la pala
     if (hv >= 0 && (hv + 1) !== stNow) {
-      c.fillText(tx('replay_ribbon').replace('{n}', String(hv + 1)), W / 2, 330);
+      c.fillText(tx(this._champion ? 'leyenda_ribbon' : 'replay_ribbon').replace('{n}', String(hv + 1)), W / 2, 330);   // v3.6.18 (ronda 24)
     } else {
       const ribbonKey = stNow === 2 ? 'e2' : (stNow === 4 ? 'e4'
         : (stNow === 5 ? 'duelo_ribbon3' : (stNow === 3 ? 'duelo_ribbon2' : 'duelo_ribbon')));
@@ -11834,12 +11864,15 @@ class ForajidoStand {
     if (this.stage > 1) {
       c.fillStyle = '#ffd257';
       c.font = 'italic 22px Georgia, serif';
-      c.fillText(tx('replay_hint'), W / 2, 662);
+      c.fillText(tx(this._champion ? 'leyenda_on' : 'replay_hint'), W / 2, 662);   // v3.6.18 (ronda 24)
     }
     // pie (v2.94: si ya es CAMPEÓN, la estrella brilla en el cartel)
     c.fillStyle = '#c9a86a';
     c.font = 'italic 22px Georgia, serif';
-    c.fillText(this._champion ? tx('champ_sub') : tx('falta'), W / 2, 700);
+    // v3.6.18 (ronda 24): el pie del campeón cuenta sus SELLOS de leyenda
+    c.fillText(this._champion
+      ? (this._sellosLeyenda() >= 5 ? tx('leyenda_completa') : tx('leyenda_cstat', { n: this._sellosLeyenda() }))
+      : tx('falta'), W / 2, 700);
     this.tex.needsUpdate = true;
   }
 
@@ -12279,7 +12312,19 @@ class ForajidoStand {
   }
 
   /** v2.94: config de dificultad del duelo VIGENTE (DUELO_NV). */
-  _nvCfg() { return DUELO_NV[(this._duelNv || 1) - 1] || DUELO_NV[0]; }
+  _nvCfg() {
+    const base = DUELO_NV[(this._duelNv || 1) - 1] || DUELO_NV[0];
+    // v3.6.18 (ronda 24): en rejugada LEYENDA el forajido afila la puntería
+    // (sólo campeón; el camino normal queda EXACTAMENTE igual).
+    if (!this._leyendaOn) return base;
+    return {
+      aiMul: base.aiMul * 1.15,
+      chance: Math.min(0.60, base.chance + 0.06),
+      cooldown: Math.max(6.0, base.cooldown - 1.5),
+      primer: Math.max(3.0, base.primer - 1.0),
+      warn: base.warn,
+    };
+  }
 
   /* ======================================================================
    *  v2.94 · ETAPA 2 — ASEDIO AL ESCONDITE (y ETAPA 4 — ASALTO AL TREN):
@@ -12386,6 +12431,7 @@ class ForajidoStand {
     if (!won && this._replayReal != null) {
       this.stage = this._replayReal;
       this._replayReal = null;
+      this._leyendaOn = false;   // v3.6.18 (ronda 24): la LEYENDA se corta al caer
       this._refreshMap();
     }
     if (won) this._stageClear(stage);
@@ -12400,22 +12446,38 @@ class ForajidoStand {
    *  mueve el ANILLO al nodo siguiente y anuncia. La etapa 5 → CAMPEÓN. */
   _stageClear(stage) {
     const g = this.game;
-    if (stage >= 5) {
-      this._championFlow();
-      return;
-    }
-    // v2.96: REJUGADA superada — el progreso REAL se conserva (ni avanza
-    // ni retrocede); el mapa y el cartel vuelven a la etapa vigente.
+    // v3.6.18 (ronda 24): las REJUGADAS se resuelven ANTES del gate del
+    // campeón — repetir la coronación no existe (el camino ya está sellado)
+    // y la LEYENDA del duelo final necesita su sello, no otra corona.
     if (this._replayReal != null) {
+      const nReplay = stage;
       this.stage = this._replayReal;
       this._replayReal = null;
       try { localStorage.setItem(this.storageKey('stage'), String(this.stage)); } catch (e9) { /* */ }
       this._refreshMap();
+      // v3.6.18 (ronda 24): SELLO DE LEYENDA — la etapa rejugada en modo
+      // leyenda queda sellada; 5/5 dispara la medalla LEYENDA DEL OESTE.
+      if (this._leyendaOn) {
+        this._leyendaOn = false;
+        try { localStorage.setItem(this.storageKey('leyenda_' + nReplay), '1'); } catch (eL) { /* */ }
+        const sellos = this._sellosLeyenda();
+        g.rules.message = sellos >= 5 ? tx('leyenda_medalla_msg') : tx('leyenda_sello').replace('{n}', String(nReplay));
+        g.audio.announce(g.rules.message, true);
+        this._setStateSilent('surprised', 2.2);
+        this.sfx('diana', 0);
+        if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.8, 200);
+        if (sellos >= 5) this._leyendaFlow();
+        return;
+      }
       g.rules.message = tx('replay_done');
       g.audio.announce(tx('replay_done'), true);
       this._setStateSilent('surprised', 2.2);
       this.sfx('diana', 0);
       if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.8, 200);
+      return;
+    }
+    if (stage >= 5) {
+      this._championFlow();
       return;
     }
     this.stage = Math.max(this.stage, Math.min(5, stage + 1));
@@ -12443,8 +12505,29 @@ class ForajidoStand {
     this._insigniaShow();
     g.rules.message = tx('champ_gana');
     g.audio.announce(tx('champ_gana'), true);
-    // v2.128: INSIGNIA «¡CONSEGUIDO!» en grande (panel del núcleo)
-    try { const C = window.__PP_CORE; if (C && C.showChampConseguido) C.showChampConseguido('oeste'); } catch (e) { /* */ }
+    // v3.6.18 (ronda 24 · CORONACIÓN): fecha del título + panel épico del
+    // núcleo con título propio, mensaje del forajido y fila de ESTADÍSTICAS.
+    try { localStorage.setItem(this.storageKey('fecha'), new Date().toISOString()); } catch (eF) { /* */ }
+    try {
+      const C = window.__PP_CORE;
+      if (C && C.showChampConseguido) {
+        const fecha = new Date();
+        const fTxt = (C.lang && C.lang() === 'en')
+          ? fecha.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+          : fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+        C.showChampConseguido('oeste', {
+          campeon: true,
+          title: tx('coronacion_titulo'),
+          msg: tx('coronacion_msg'),
+          dur: 14,
+          stats: [
+            [tx('coronacion_pts'), String(this.puntos | 0)],
+            [tx('coronacion_duelos'), String(this.duelWins | 0)],
+            [tx('coronacion_fecha'), fTxt],
+          ],
+        });
+      }
+    } catch (e) { /* */ }
     // v3.6.15 (ronda 18 · EMBUDO COMPLETO): ¡un campeón más en el Oeste!
     try { __PP_TELE.ev('champion', { id: 'oeste' }); } catch (eC) { /* */ }
     this._setStateSilent('defeated', 5);
@@ -12461,6 +12544,43 @@ class ForajidoStand {
           .catch(() => { /* nunca rompe */ });
       }
     } catch (e4) { /* */ }
+  }
+
+  /** v3.6.18 (ronda 24): cuántos sellos de leyenda lleva el campeón. */
+  _sellosLeyenda() {
+    let n = 0;
+    for (let i = 1; i <= 5; i++) {
+      try { if (localStorage.getItem(this.storageKey('leyenda_' + i)) === '1') n++; } catch (e) { /* */ }
+    }
+    return n;
+  }
+
+  /** v3.6.18 (ronda 24 · ¡LEYENDA DEL OESTE!): las 5 etapas selladas en
+   *  modo leyenda — medalla, registro, telemetría y una última risa. */
+  _leyendaFlow() {
+    const g = this.game;
+    try { localStorage.setItem(this.storageKey('leyenda'), '1'); } catch (e) { /* */ }
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'oeste', prueba: 'leyenda', win: true,
+        score: this.puntos | 0, stars: 3,
+      });
+    } catch (eT) { /* el reporte nunca rompe */ }
+    try {
+      const C = window.__PP_CORE;
+      if (C && C.showChampConseguido) {
+        C.showChampConseguido('oeste', {
+          campeon: true,
+          title: tx('leyenda_medalla_titulo'),
+          msg: tx('leyenda_medalla_msg'),
+          dur: 12,
+        });
+      }
+    } catch (e) { /* */ }
+    this._setStateSilent('defeated', 4);
+    this.sfx('diana', 0);
+    this._playLaugh(0.9);
+    if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 1.0, 260);
   }
 
   /** v2.94 · INSIGNIA del sheriff (assets/insignia.png): panel dorado con
@@ -13408,13 +13528,16 @@ class ForajidoStand {
     const n = (idx | 0) + 1;
     const st = clamp(this.stage, 1, 5);
     if (this._stageMode || this._duelOn) return;
-    if (n === st) return this.serveTrigger();     // nodo VIGENTE: camino normal
+    // v3.6.18 (ronda 24): siendo CAMPEÓN, hasta el nodo VIGENTE es una
+    // rejugada LEYENDA (el camino normal ya no existe: estás coronado).
+    if (n === st && !this._champion) return this.serveTrigger();  // nodo VIGENTE: camino normal
     if (this._armT > 0) return;                   // anti-gesto accidental
     this._replayReal = st;                        // el progreso real se conserva
+    this._leyendaOn = !!this._champion;           // v3.6.18 (ronda 24): sólo campeón rejuga en LEYENDA
     this.stage = n;
     this._refreshMap();
     this.paintCartel();
-    g.rules.message = tx('replay_up').replace('{n}', String(n));
+    g.rules.message = tx(this._leyendaOn ? 'leyenda_up' : 'replay_up').replace('{n}', String(n));
     g.audio.announce(g.rules.message, true);
     if (n === 2) return this._startAsedio();
     if (n === 4) return this._startTren();

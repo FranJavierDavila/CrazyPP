@@ -2502,3 +2502,17 @@ Stage Summary:
 - RONDA 14 COMPLETAMENTE EN PRODUCCIÓN (salvo el worker): Pages 3.6.11-SDK6 en vivo (pages 837ebbd86), release con los 4 ZIPs (COMPLETO 125.221.095 · ligera 11.456.468 · CLOUDFLARE 125.207.708 · SOLO 6.089), respaldo proyecto=d0e8926 + este cierre.
 - La próxima sesión VR del dueño vuelve a 1.4× (fluidez); su vr_end + curva vr_ping alimentarán la tabla «Sesiones VR (lentes)» del panel.
 - Pendientes: (1) CF_API_TOKEN del dueño → deploy_worker.py (sesionesVR nativa con historial de 2000 eventos, sustituye al fold del panel); (2) con 2-3 sesiones ≥ 10 min, decidir nitidez definitiva con la curva (1.4 vs 1.45 vs adaptativo); (3) primera partida COMPLETA de Magia/Locura en 3.6.8+ para llenar títulos/victorias/estrellas del embudo.
+
+---
+Task ID: 109 (nota · decisión de nitidez)
+Agent: principal
+Task: Registrar la decisión del dueño tras ver la reversión de la ronda 14: «la nitidez de momento queda así» — 1.4× se mantiene; 1.45/adaptativo SOLO si la curva vr_ping lo justifica. Validar el token re-pasteado.
+
+Work Log:
+- Sondeo D1 post-ronda-14: total=20, sin sesiones nuevas en 3.6.11 (la última VR sigue siendo luhd2xwt en 3.6.10, la que disparó la reversión). Embudo porCampeonato: locura=4 stages, sin partida completa aún.
+- El token pegado por el dueño es el PAT de GitHub (ghp_…8GH8): validado contra /user → login=FranJavierDavila. Es el que ya usan deploy_pages/release/respaldo. NO es el CF_API_TOKEN que falta para deploy_worker.py (el fold de respaldo del panel sigue cubriendo Sesiones VR contra el worker viejo).
+- Decisión anotada: el umbral de 72 fps queda EN SUSPENDO por preferencia del dueño — una futura subida de nitidez (1.45) solo entrará si la curva vr_ping (2-3 sesiones ≥ 10 min en 1.4×) muestra holgura sostenida (media ≥ 78).
+
+Stage Summary:
+- Nitidez cerrada en 1.4× de momento (decisión del dueño; la ronda 14 ya lo dejó así en producción) — sin cambio de código.
+- Bloqueos vigentes: (1) CF_API_TOKEN para el worker (sesionesVR nativa, harness 50/0 listo); (2) primera partida COMPLETA de Magia/Locura para el embudo títulos/victorias/estrellas; (3) curva vr_ping de 2-3 sesiones largas para la decisión definitiva de nitidez.

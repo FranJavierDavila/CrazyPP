@@ -2568,3 +2568,20 @@ Stage Summary:
 - V3.6.13-SDK6 EN VIVO (https://franjavierdavila.github.io/CrazyPP/): la política «SEGUNDA OPORTUNIDAD» queda ALINEADA EN LOS 5 CAMPEONATOS (Locura r15, Magia r16, Oeste/Estación/Valle ya la tenían) — perder una prueba NUNCA retrocede el camino.
 - Acceso D1 restaurado para futuras rondas (clave persistida en el sandbox).
 - Pendiente del dueño: el primer campeonato COMPLETO (cualquiera) estrena el embudo porCampeonato (champion/champ_rank siguen vacíos); CF_API_TOKEN sigue pendiente para el deploy nativo del worker (harness 50/0 listo en deploy_worker.py).
+
+---
+Task ID: 113 (ronda 17 · EMBUDO VIVO)
+Agent: principal
+Task: «SEGUIMOS» tras la ronda 16 — telemetría fresca → decidir y ejecutar la ronda 17 con el cierre completo (bump → release → ZIPs → sellos → QA TOTAL → deploy → verify → backup).
+
+Work Log:
+- TELEMETRÍA (46 eventos / 15 sesiones): un solo evento nuevo — vr_ping a los 2.697 s (45 MINUTOS) de la MISMA sesión sgpxvqzn-378b (3.6.12, xr) con 78 fps y sin vr_end: récord de permanencia en el casco y la mejor señal de fluidez hasta hoy (73→77→78→78 en 45 min). Sin sesión 3.6.13 todavía (el casco siguió con la pestaña viva de 3.6.12). Nitidez: la curva no cumple el criterio del Task 109 (78 sostenido en 2-3 sesiones) — 1.4× se mantiene sin cambios.
+- HALLAZGO (dato mandó): champRank = {} en D1 pese a intentos demostrables de pruebas (transiciones de etapa 0→1→2 del dueño). AUDITORÍA: champ_rank sólo lo emite MAGIA (desde la ronda 11); La Locura — el campeonato con el 100% del tráfico — sólo reporta stage/champion. Los otros 3 (oeste/estacion/valle) tampoco, pero sin tráfico: se dejan para cuando lo tengan.
+- PARCHE (locura/index.js, 1 edit quirúrgico): _finish() del arcade emite champ_rank {champ:'locura', win, score:0, stars:0, bricks, lives, left} justo tras _lastWin — cubre ARKANOID 1 (30 ladrillos) y ARKANOID 2 (54) vía this.C.cols×rows, y captura el estado antes de las ramas win/lose. El agregador del worker (worker.js líneas 278-298) sólo lee champ/win/score/stars: campos extra viajan crudos sin romper nada. score/stars a 0 = honesto (la prueba no puntúa, igual que el orbe). node --check OK.
+- PIPELINE COMPLETO: bump 3.6.14-SDK6 --fase 16 (golden 94922194…, 6.348.360 B) → gen_release_v3614.py (notas FASE 16, «frente a» corregido, aviso ×1 esperado) → build_zip 4 ZIPs: COMPLETO 125.222.483 · ligera 11.456.737 · CLOUDFLARE 125.209.096 · SOLO 6.089 → sella_r17.py (31 sellos, TAMANOS byte-exactos) → qa_todo 10/10 (217 s).
+- DESPLIEGUE: commit a270980 (sin __pycache__) → deploy_pages --push --release --backup: pages 14f47b81b, Release v3.6.14-SDK6 4/4 assets → verify_pages_live 3.6.14-SDK6: VERDE (intento 2 — el 1.º pilló el CDN con la 3.6.13 aún caliente; 17 peticiones · 0 fallos · 0 pageerrors) → worklog + push main:proyecto.
+
+Stage Summary:
+- V3.6.14-SDK6 EN VIVO: el embudo champRank empieza a llenarse con la PRÓXIMA prueba que el dueño juegue (intentos, victorias, ladrillos rotos, vidas usadas, tiempo sobrante, ARKANOID 1 vs 2).
+- Decisión de dificultad data-ready: si el ARKANOID 2 acumula intentos sin victoria, la ronda siguiente puede ajustarlo con la tasa real (hoy sería a ciegas).
+- Pendiente del dueño: primer campeonato COMPLETO (embudo porCampeonato + champion), CF_API_TOKEN (deploy nativo del worker, harness 50/0 listo), 2-3 sesiones ≥10 min para el criterio de nitidez 1.45 (informativo — él ya decidió 1.4×).

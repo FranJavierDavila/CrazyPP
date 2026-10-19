@@ -307,17 +307,19 @@ async def main():
           // unas frames para que las motas se enciendan (la opacidad vive en el step)
           for (let i = 0; i < 10; i++) ctrl._ceroStep(1 / 60, ctrl._act, ball, true);
           const out = { motas: ctrl.motas.filter(m => m.s.material.opacity > 0.1).length };
-          let minY = 9, spd = 0, cambios = 0, lastT = ctrl._act.tgt;
+          let minY = 9, spd = 0, cambios = 0, sobreCero = 0, lastT = ctrl._act.tgt;
           const GRAV = (ctrl.D && ctrl.D.gravity != null) ? ctrl.D.gravity : -9.81;
           for (let i = 0; i < 300; i++) {          // 5 s a 1/60
             ctrl._ceroStep(1 / 60, ctrl._act, ball, true);
             ball.vel.y += GRAV * (1 / 60);   // Task 89: gravedad del núcleo — el poder compensa +9,6 y el flotado es real (antes la bola salía lanzada y el check fallaba por suerte geométrica)
             ball.pos.addScaledVector(ball.vel, 1 / 60);   // integra como el núcleo
             minY = Math.min(minY, ball.pos.y);
+            if (ball.pos.y > 0) sobreCero++;
             spd = ball.vel.length();
             if (ctrl._act.tgt !== lastT) { cambios++; lastT = ctrl._act.tgt; }
           }
           out.minY = minY; out.spd = spd; out.cambios = cambios;
+          out.sobreCero = sobreCero / 300;
           // fin del poder: las partículas DESAPARECEN y DEJAN CAER la bola
           ball.vel.set(0.8, 1.4, 0.8);
           ctrl._poderFin();
@@ -327,7 +329,7 @@ async def main():
           return out;
         }""")
         chk(cer['motas'] >= 12, f"{cer['motas']} partículas blancas visibles")
-        chk(cer['minY'] > 0.4, f"la bola flota: y mínima {cer['minY']:.2f} (gravedad compensada)")
+        chk(cer['sobreCero'] > 0.5, f"la bola FLOTA: {round(cer['sobreCero'] * 100)}% de frames sobre el suelo (y mín {cer['minY']:.2f}; gravedad compensada)")
         chk(cer['spd'] > 0.2, 'la bola es atraída (velocidad viva)')
         chk(cer['cambios'] >= 2, f"rebota ENTRE ELLAS: {cer['cambios']} cambios de objetivo")
         chk(cer['fin'] and cer['cae'], 'al desaparecer las partículas: bola DEJADA CAER')

@@ -2188,3 +2188,18 @@ Work Log:
 Stage Summary:
 - RONDA 3 COMPLETADA: hay presupuesto de rendimiento con líneas base (física, tamaños, arranque, imports) y la configuración de los campeonatos está ESQUEMATIZADA y verificada (schema al día + assets reales en disco).
 - El juego NO cambia (game.html 5c773714 intacto). Commit: Task 96 (ronda 3).
+
+---
+Task ID: 96-d
+Agent: main (Z.ai)
+Task: RONDA 4 del pulido — QA TOTAL en un comando (qa_todo.py) + caza del flake histórico de gravedad cero.
+
+Work Log:
+- QA TOTAL: scripts/qa_todo.py encadena las 9 capas (A versión única → B física determinista → C manifiestos → D presupuesto → E sup1 en vivo → F impulso → G escudo → H hub+ZIPs → I smoke SDK) con DISCOVERY por nombre (qa_sup1_vNNN → el más alto: no se toca en cada release) y marcador global. --rapido = solo A-D (13 s). Certificación completa: 9/9 capas OK en 167 s (23+11+29+14+151+66+54+208 = 556 checks + smoke).
+- FLAKE CAZADO (heredaba desde qa_sup1_v360): el check «la bola flota: y mínima > 0,4» de la gravedad cero era INHERENTEMENTE inestable — el objetivo entre motas es ALEATORIO por diseño («rebota ENTRE las partículas de manera aleatoria») y la trayectoria varía por pasada (minY observado: 0,99 / 0,10 / −0,47). El invariante determinista es la FRACCIÓN de frames sobre el suelo (>50% con gravedad compensada; en caída libre ~9%): sustituido el chk por sobreCero (contador dentro del bucle de 300 frames). Estabilizado: 3/3 pasadas verdes con 151 checks.
+- Lección de oficio: el parche anti-flake vive en el DERIVADOR (gen_qa_v365.py, 4 cirugías sobreCero) y se re-deriva idéntico — verificado diff contra el parche manual (solo offset de líneas). Dos tropiezos del propio parche corregidos al vuelo: comentarios JS en zona Python y Math.round en un f-string de Python.
+- El juego NO cambia (game.html 5c773714 intacto; todo son herramientas de verificación).
+
+Stage Summary:
+- RONDA 4 COMPLETADA: la verificación del proyecto entero es UN comando (qa_todo.py) con marcador global, y el último flake conocido del QA está eliminado con un invariante honesto (fracción sobre el suelo, no mínimos de trayectorias aleatorias).
+- Estado acumulado de las rondas: SDK v1.x CERRADO (FASE 7, V3.6.5-SDK5) + versión única + física determinista + presupuesto + manifiestos esquematizados + QA total de una pieza. La migración de arquitectura propuesta está COMPLETA y VERIFICADA.

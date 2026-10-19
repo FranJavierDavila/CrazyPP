@@ -81,6 +81,22 @@ s = reemplazar(s, "\n        print('== ESCENA EN VIVO: campeonato cargado ==')",
 # runtime __PP_SDK
 s = reemplazar(s, "== '1.3.0',", "== '1.4.0',", 1, 'check runtime __PP_SDK (valor)')
 s = reemplazar(s, "'window.__PP_SDK = 1.3.0", "'window.__PP_SDK = 1.4.0", 1, 'check runtime __PP_SDK (etiqueta)')
+# el objetivo de la gravedad cero es ALEATORIO por diseño («rebota ENTRE las
+# partículas de manera aleatoria») — el umbral sobre minY era flaky: el
+# invariante determinista es la FRACCIÓN de frames sobre el suelo (>50%;
+# en caída libre sería ~9%)
+s = reemplazar(s, "let minY = 9, spd = 0, cambios = 0, lastT = ctrl._act.tgt;",
+               "let minY = 9, spd = 0, cambios = 0, sobreCero = 0, lastT = ctrl._act.tgt;",
+               1, 'sobreCero: contador')
+s = reemplazar(s, "            minY = Math.min(minY, ball.pos.y);\n            spd = ball.vel.length();",
+               "            minY = Math.min(minY, ball.pos.y);\n            if (ball.pos.y > 0) sobreCero++;\n            spd = ball.vel.length();",
+               1, 'sobreCero: cuenta frames')
+s = reemplazar(s, "          out.minY = minY; out.spd = spd; out.cambios = cambios;",
+               "          out.minY = minY; out.spd = spd; out.cambios = cambios;\n          out.sobreCero = sobreCero / 300;",
+               1, 'sobreCero: salida')
+s = reemplazar(s, "chk(cer['minY'] > 0.4, f\"la bola flota: y mínima {cer['minY']:.2f} (gravedad compensada)\")",
+               "chk(cer['sobreCero'] > 0.5, f\"la bola FLOTA: {round(cer['sobreCero'] * 100)}% de frames sobre el suelo (y mín {cer['minY']:.2f}; gravedad compensada)\")",
+               1, 'sobreCero: check robusto')
 # históricos intactos: notas SDK4 de la FASE 5/6 (oeste+magia+bucle, 3) +
 # orbital SDK1 (2) + valle SDK3 (1)
 assert s.count('3.6.4-SDK4') == 3, s.count('3.6.4-SDK4')

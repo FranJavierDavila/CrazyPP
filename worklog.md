@@ -2237,3 +2237,21 @@ Stage Summary:
 - V3.6.5-SDK5 PUBLICADA en https://franjavierdavila.github.io/CrazyPP/ + Release con 4 ZIPs + respaldo anti-rollback al día.
 - Lecciones de oficio: (1) uploads de Releases muertos a mitad quedan como «starter» fantasma que el dedupe por tamaño no destapa — verificar SIEMPRE asset.state=='uploaded' por release ID; (2) un starter no se puede borrar por API: borrar el release y recrear; (3) nohup no sobrevive al reset del shell: usar setsid.
 - Siguiente ronda del pulido: cazar el flake de la capa F (impulso 65/66).
+
+---
+Task ID: 98
+Agent: main (Z.ai)
+Task: RONDA 5 del pulido — caza del flake de la capa F (reactor de impulso, 65/66 observado en la certificación del deploy).
+
+Work Log:
+- REPRODUCCIÓN empírica: scripts/sondea_golpeo_imp2.py (sondeador dedicado) reproduce el bloque del golpeo real 30 veces en UNA sesión → 1/30 fallos (velY=0,3897 vs umbral 0,39), tasa coherente con el flake raro. Hallazgo clave: la banda real de vel.y es [0,373..0,777] y el umbral 0,39 vivía DENTRO. El modo --pin (bola en el punto canónico del hold) NO colapsa la banda (3/30 fallos) → el aleatorio no entra por la entrada.
+- RAÍZ (index.js 4624): el juego GARANTIZA vel.y ≥ 0,4 en el impacto PERO con aleatorio ADITIVO por diseño (v.y = 0,4 + Math.random()·0,45 — patrón REACTOR «arco jugable» aprobado por el dueño). El QA medía al FINAL de _fisica (4 subpasos internos): la gravedad residual (−G·h por subpaso restante) y el subpaso donde caiga el TOI dan una banda medida [0,4−G·dt .. 0,85] = [0,28..0,85]. Umbral 0,39 dentro de la banda = lotería.
+- FIX (solo QA, cero juego): subio → INVARIANTE 0,4 − I._G()·0,0125 (≈0,28, con la MISMA G que usa la física, línea 4559). Inmune al aleatorio aditivo y al TOI; falla sólo si el juego rompe su suelo de 0,4. Etiqueta actualizada. El check vel ≥ 2,9 se queda (suelo empírico 2,985, margen real).
+- Descartado: la dinámica del racimo es estable (converge a huecos fijos, atrSep 0,19 vs umbral 0,185 con separación garantizada por _atractorSepara); el patrón 0,39/subio no existe en otras capas.
+- CERTIFICACIÓN: 5/5 pasadas verdes de la capa F (66 OK) + QA TOTAL 9/9 × 2 consecutivas (556 checks + smoke · ~175 s). Commit ad64839 (qa_imp2_v351 + sondeador + caza_flake_capaF.sh como herramientas/evidencia).
+- Nota de entorno: los procesos nohup en background MURIERON con los reciclajes de sesión (la caza en background no sobrevive) → las validaciones largas van mejor en foreground por trozos.
+
+Stage Summary:
+- RONDA 5 COMPLETADA: el último flake conocido del QA está eliminado con un invariante que mide la GARANTÍA del juego (suelo 0,4 en el impacto) descontando la pérdida física acotada (G·dt), no la cola afortunada de una distribución aleatoria por diseño.
+- El juego NO cambia (game.html golden 5c773714 intacto; en vivo desde la ronda del deploy).
+- Estado del pulido acumulado: SDK v1.x CERRADO + versión única + física determinista + presupuesto + manifiestos + QA total de una pieza + CERO flakes conocidos. La migración de arquitectura sigue completa; siguiente candidato de ronda: lo que destape el dueño en casco o el siguiente punto del roadmap P1 (telemetría).

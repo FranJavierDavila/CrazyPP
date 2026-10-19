@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.8-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.9-SDK6</span>
     </div>
   </main>
 
@@ -1917,7 +1917,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.8-SDK6';
+  const VERSION = '3.6.9-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -2042,8 +2042,53 @@ const __PP_TELE = (() => {
   function fpsLo() { return st.fpsLo; }
   function fpsHi() { return st.fpsHi; }
 
+  /** ronda 12: LATIDO EN VR — las sesiones cerradas abruptamente (casco
+   *  apagado, pestaña muerta) nunca llegan a vr_end ni a page_close y
+   *  desaparecen del análisis (ronda 11 cazó una: vr_start+stage sin cierre).
+   *  Un ping cada 5 min mientras dura la VR deja huella periódica: el ÚLTIMO
+   *  ping fecha el fin real aunque no haya vr_end, y el fps de cada ping
+   *  dibuja la curva a lo largo de la sesión (diagnóstico de caídas).
+   *  Sin PII: sólo dur en segundos y fps del momento. */
+  function vrPing(on) {
+    try {
+      if (st.vrPingT) { clearInterval(st.vrPingT); st.vrPingT = null; }
+      if (on) {
+        var tvr = Date.now();
+        st.vrPingT = window.setInterval(function () {
+          ev('vr_ping', { dur: Math.round((Date.now() - tvr) / 1000), fps: fpsAvg() });
+        }, 300000);
+      }
+    } catch (e) { /* entornos sin timers */ }
+  }
+
   // arranque + cola de ciclo de vida
+  // ronda 12: plataforma REAL del dispositivo (antes '2d' clavado — el casco
+  // era indistinguible del escritorio en el análisis). La detección XR es
+  // asíncrona (navigator.xr.isSessionSupported): el boot sale YA con la
+  // estimación '2d' y, si la promesa confirma XR inmersivo antes de 1.5 s,
+  // se corrige IN SITU en la cola (mismo evento: no duplica el recuento de
+  // boots ni reordena la cola). Privacidad intacta: es una capability del
+  // dispositivo, nunca el user-agent.
   ev('boot', { platform: '2d' });
+  try {
+    if (typeof navigator !== 'undefined' && navigator.xr &&
+        typeof navigator.xr.isSessionSupported === 'function') {
+      Promise.race([
+        navigator.xr.isSessionSupported('immersive-vr'),
+        new Promise(function (r) { setTimeout(function () { r(false); }, 1500); }),
+      ]).then(function (si) {
+        if (!si) return;
+        for (var i = st.q.length - 1; i >= 0; i--) {
+          if (st.q[i] && st.q[i].e === 'boot' && st.q[i].sid === st.sid &&
+              st.q[i].platform === '2d') {
+            st.q[i].platform = 'xr';
+            persist();
+            break;
+          }
+        }
+      }).catch(function () { /* sin WebXR: escritorio */ });
+    }
+  } catch (e) { /* entornos sin navigator.xr */ }
   try {
     window.addEventListener('pagehide', () => {
       ev('page_close', { dur: Math.round((Date.now() - st.t0) / 1000) });
@@ -2062,7 +2107,7 @@ const __PP_TELE = (() => {
   // cola está vacía (flush no hace nada) o si el receptor aún no está.
   try { window.setTimeout(() => flush(), 5000); } catch { /* */ }
 
-  return { ev, flush, noteFrame, fpsAvg, resetFps, fpsLo, fpsHi, get on() { return st.on; }, set on(v) { st.on = !!v; persist(); }, st };
+  return { ev, flush, noteFrame, fpsAvg, resetFps, fpsLo, fpsHi, vrPing, get on() { return st.on; }, set on(v) { st.on = !!v; persist(); }, st };
 })();
 // v2.50: exposición para diagnóstico y pruebas (el módulo la usa por cierre)
 try { window.__PP_TELE = __PP_TELE; } catch { /* */ }
@@ -11590,6 +11635,9 @@ class PingPongGame {
     try { __PP_TELE.ev('vr_start', { mode: this.mode, multi: !!(this.net && this.net.online) }); } catch { /* */ }
     this._vrT0 = Date.now();
     try { __PP_TELE.resetFps(); } catch { /* */ }
+    // ronda 12: LATIDO EN VR — un vr_ping cada 5 min mientras dura la sesión;
+    // si el casco muere sin vr_end, el último ping fecha el fin real.
+    try { __PP_TELE.vrPing(true); } catch { /* */ }
     if (this.showTips) {
       let seen = false;
       try { seen = localStorage.getItem('pp_seen_v1') === '1'; } catch { /* */ }
@@ -11621,6 +11669,8 @@ class PingPongGame {
       // puede no llegar a dispararse).
       __PP_TELE.flush(true);
     } catch { /* */ }
+    // ronda 12: parar el latido de VR (el vr_end ya lleva dur + fps + min/max)
+    try { __PP_TELE.vrPing(false); } catch { /* */ }
     this._vrT0 = 0;
     this.audio.xrActive = false;
     this.audio.vrBound = false;   // v2.31: sin contexto confirmado hasta la próxima sesión

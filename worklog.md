@@ -2734,3 +2734,25 @@ Stage Summary:
 - La campaña en curso NO cambia: mismas pruebas, misma dificultad, mismos sellos — la leyenda es un mundo nuevo que se abre DESPUÉS de coronar.
 - El informe.py ya celebra el champion (ronda 23) y el embudo recogerá 'leyenda' genéricamente.
 - Pendiente del dueño: Duelo Nv.2 → Tren → Duelo Final = primer champion de la historia + coronación nueva.
+
+---
+Task ID: 122 (respaldo completo local · punto post-Ronda 24)
+Agent: principal
+Task: el dueño pidió "una copia completa para guardar en local en este punto" — kit de respaldo descargable del estado V3.6.18-SDK6 en vivo, sin cambios de juego.
+
+Work Log:
+- Estado verificado antes del respaldo: git limpio en main 55394ac, pages local 11446a2 = desplegada, credenciales (.cf-token / .clave-produccion) fuera de git (correcto).
+- Creado scripts/backup_completo.py (persistido y reejecutable; fecha en huso Europe/Madrid) que genera el kit en download/:
+  1) crazypp_git_completo_2026-10-20.bundle (198,2 MB) — git bundle --all: ramas main/pages/proyecto/exp/live-tv + tags v3.6.2→v3.6.18; verificado con git bundle verify; determinista (sha idéntico entre corridas).
+  2) crazypp_respaldofuente_v3.6.18-SDK6_2026-10-20.zip (229,9 MB · 1217 ficheros · 243,1 MB descomprimido) — árbol completo sin regenerables; integridad CRC (zipfile.testzip) y chequeo quirúrgico de presencia (worklog, c12, game.html, oeste/index.js, pipeline, RESPALDO-LEEME) y de ausencia de secretos/staging: limpio.
+  3) credenciales_respaldadas_2026-10-20.txt (chmod 600) — PAT GitHub + token Cloudflare + clave producción D1, aparte del ZIP/bundle por diseño.
+  4) SHA256SUMS_2026-10-20.txt — sumas de integridad del kit.
+- Exclusiones deliberadas (documentadas en RESPALDO-LEEME.txt dentro del ZIP): node_modules/.next/.git (reconstruibles), download/ (el propio kit), public/descargas/ y scripts/staging-*/ (staging regenerable), pages-site/ (checkout local de la rama pages, recuperable del bundle con git checkout pages), upload/crazypp-v308-trn1-CLOUDFLARE.zip (build obsoleto v308 de 106 MB); se CONSERVAN los ZIPs originales de assets de upload/ (paredes/astro/burla) por ser material local-only.
+- 1.er intento detectó 2 fugas de contenido (upload/ con build antiguo de 106 MB + pages-site/ 126 MB que no está en git) → exclusiones añadidas y regeneración completa; tanda 2026-10-19 eliminada para dejar un solo kit.
+- Verificación de autenticación de push: misma convención GIT_TOKEN + credential helper de deploy_pages.py.
+- INCIDENTE GITHUB PUSH PROTECTION (1.er push rechazado): el script llevaba el PAT embebido (para componer el txt de credenciales) → GitHub escanea y bloquea secretos en commits. PAT reubicado en scripts/worker-tele/.github-pat (chmod 600, gitignored, junto a .cf-token y .clave-produccion), el script ahora lo lee de ahí, ZIP regenerado con el script limpio y commit rehecho con --amend. Lección permanente: NUNCA embeber secretos en ficheros versionados (el bundle de respaldo los arrastraría a toda la historia).
+
+Stage Summary:
+- Kit de respaldo completo del punto "Ronda 24 · V3.6.18-SDK6 en vivo" en download/: bundle maestro 198 MB + fuente 230 MB + credenciales + SHA256SUMS, junto a los 4 ZIPs de release v3618 ya existentes (build exacto desplegado).
+- Restauración documentada paso a paso en RESPALDO-LEEME.txt: git clone del bundle + npm install + recredenciales en scripts/worker-tele/ + pipeline en worklog.md.
+- Producción intacta (sin deploy): es una ronda de mantenimiento/seguridad, no de juego.

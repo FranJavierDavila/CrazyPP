@@ -2516,3 +2516,20 @@ Work Log:
 Stage Summary:
 - Nitidez cerrada en 1.4× de momento (decisión del dueño; la ronda 14 ya lo dejó así en producción) — sin cambio de código.
 - Bloqueos vigentes: (1) CF_API_TOKEN para el worker (sesionesVR nativa, harness 50/0 listo); (2) primera partida COMPLETA de Magia/Locura para el embudo títulos/victorias/estrellas; (3) curva vr_ping de 2-3 sesiones largas para la decisión definitiva de nitidez.
+
+---
+Task ID: 110 (ronda 15 · segunda oportunidad)
+Agent: principal
+Task: «vamos con ronda 15» — el dueño aprueba la ronda. Contenido decidido POR DATOS: el embudo de campeonato lleva 5 rondas vacío porque perder la prueba ARKANOID de La Locura retrocedía el camino entero; se sustituye por la política «segunda oportunidad» (repite la prueba), alineada con la v2.44 de los duelos.
+
+Work Log:
+- DATOS DE ENTRADA (26 eventos · 11 sesiones): 3.ª sesión VR del dueño en 3.6.11 (3t215i3n) — 79 fps media (48-97) en 7,7 min, vr_ping 75 al minuto 5: la reversión a 1.4× de la ronda 14 VALIDADA en producción. Embudo porCampeonato: locura=5 stages, 0 champion. Las 3 sesiones VR (20 min) sin completar campeonato.
+- DIAGNÓSTICO EN CÓDIGO: locura/index.js _finish(false) hacía _setStage(0)/_setStage(2) («v2.44: vuelves al paso ANTERIOR») — la sesión 3.6.10 lo captó en vivo: n=0→n=1 (ganó CLOWN Nv.1)→n=0 (perdió ARKANOID, retroceso) y abandono 16 s después. El propio comentario de los duelos («perder REPITE el paso actual») contradecía al del ARKANOID.
+- PARCHE (public/championships/locura/index.js): _finish guarda this._lastWin; la derrota YA NO llama _setStage — la etapa no cambia (localStorage intacto), banner sub con clave nueva ark_retry; la rejugada v2.96 conserva su restore de origen. _afterResult: si _lastWin===false → a.startArkanoid() (relanza la MISMA prueba con su cartel EMPEZAR; start() reinicia vidas/ladrillos/tiempo y la variante se deduce de la etapa). Coherencia gratis: re-entrar con etapa impar (1/3) ya devolvía directo a la prueba (línea 3052).
+- TEXTOS (src/game/core/c00_pre_three.js): ark_retry ES/EN añadida junto a ark_back_clown (que queda huérfana, sin borrar por si hay guards). Magia tiene un retroceso similar (v2.70, orbe, línea 4712) — SIN tocar: sin dato detrás, candidato a ronda futura.
+- DEPLOY: bump fase 14 (golden a03753cf… 6.348.360 B) → gen_release_v3612.py (notas FASE 14, guard grep a 3.6.12, «frente a» a 3.6.11; aviso ×1 de 3.6.11 restante = la cita «frente a», correcta) → 4 ZIPs (COMPLETO 125.221.692 · ligera 11.456.751 · CLOUDFLARE 125.208.305 · SOLO 6.089) → sella_r15.py (31 sellos, tamaños byte-exactos reales) → QA TOTAL 10/10 (671 checks + smoke · 204 s · física 11/11) → commit bf55782 ANTES de deploy → smoke 18/0/0 · pages 529f37e8a fast-forward · release v3.6.12-SDK6 4/4 assets → verify VERDE AL 1.er INTENTO (17/0/0).
+
+Stage Summary:
+- RONDA 15 COMPLETAMENTE EN PRODUCCIÓN: Pages 3.6.12-SDK6 en vivo (pages 529f37e8a), release con los 4 ZIPs, respaldo proyecto sincronizado.
+- La próxima derrota en el ARKANOID de La Locura repite la prueba directamente — el camino ya no castiga. Con un campeonato COMPLETO el embudo porCampeonato estrena títulos/victorias/estrellas.
+- Pendientes: (1) partida COMPLETA de Magia/Locura en 3.6.12 (la primera llena el embudo); (2) CF_API_TOKEN del dueño para el worker nativo de sesionesVR (el fold del panel cubre mientras); (3) Magia: retroceso del orbe (v2.70) como candidato a «segunda oportunidad» si el dato lo pide; (4) nitidez cerrada en 1.4× por decisión del dueño (Task 109).

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.13-SDK6",
-  "fase": 15,
-  "faseNombre": "SEGUNDA OPORTUNIDAD en MAGIA: perder el ORBE repite la prueba (ronda 16)",
+  "version": "3.6.14-SDK6",
+  "fase": 16,
+  "faseNombre": "EMBUDO VIVO: champ_rank de las pruebas ARKANOID de La Locura (ronda 17)",
   "sdk": "1.4.0",
   "fecha": "2026-10-19",
-  "hub": "v3613-sdk6",
+  "hub": "v3614-sdk6",
   "manifests": {
     "oeste": 51,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "758ee587235087ad9eec2ac2341f3dca0375fbf0bae97ae8205f03be8550b3b0"
+  "golden": "9492219416f4d8c9035a1aa8f6791a1546790dd1aa7f1537e548c56b9e546ad6"
 }

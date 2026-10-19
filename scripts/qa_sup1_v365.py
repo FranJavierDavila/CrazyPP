@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QA del JUEGO · V3.6.13-SDK6 (superpoderes redefinidos + voz del ASTRO +
+"""QA del JUEGO · V3.6.14-SDK6 (superpoderes redefinidos + voz del ASTRO +
 ajustes del reactor). Verifica en vivo: congelado REAL durante el aviso
 (g.freezeT), meteoritos 3D procedurales con calor de entrada, rayo tractor
 con dron + bola atrapada que cae vertical al morir el haz, gravedad cero
@@ -43,9 +43,9 @@ async def main():
         # afecta una petición colgada del arranque.
         await page.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.6.13-SDK6', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.6.14-SDK6', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.6.13-SDK6' in badge, f'badge 2D = {badge!r}')
+        chk('V3.6.14-SDK6' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),
             'puente CCD del núcleo expuesto (__PP_PADDLE_SWEEP)')
@@ -438,7 +438,7 @@ async def main():
         pg2.on('pageerror', lambda e: errors2.append(str(e)))
         await pg2.goto(GW + '/game.html', wait_until='domcontentloaded')
         await pg2.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
-        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.13-SDK6', 'gateway: __PP_VERSION 3.6.13-SDK6')
+        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.14-SDK6', 'gateway: __PP_VERSION 3.6.14-SDK6')
         chk(await pg2.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"), 'gateway: puente CCD')
         chk(await pg2.evaluate("!!window.__PP_GAME"), 'gateway: juego arranca')
         mp3gw = await pg2.evaluate("""async () => {

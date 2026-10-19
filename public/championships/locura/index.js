@@ -2476,6 +2476,23 @@ class ArcadeArkanoid {
     const g = this.game;
     const a = this.ctrl;
     this._lastWin = !!win;   // v3.6.12 (ronda 15): _afterResult distingue
+    // v3.6.14 (ronda 17 · EMBUDO VIVO): champ_rank de la PRUEBA. Magia lo
+    // emite desde la ronda 11 pero La Locura no — champRank llevaba CERO
+    // datos pese a los intentos reales (3 sesiones VR y 45 min sin un solo
+    // reporte). El agregador del worker sólo lee champ/win/score/stars (la
+    // prueba no puntúa ni da estrellas → 0, igual que el orbe de Magia);
+    // bricks/lives/left viajan crudos en el JSON para análisis futuro.
+    try {
+      const tot = this.C.cols * this.C.rows;
+      __PP_TELE.ev('champ_rank', {
+        champ: 'locura',
+        win: !!win,
+        score: 0, stars: 0,
+        bricks: Math.max(0, Math.min(tot, tot - this.bricksLeft)),
+        lives: Math.max(0, Math.min(this.C.lives, this.lives)),
+        left: Math.max(0, Math.round(this.time * 10) / 10),
+      });
+    } catch { /* el reporte nunca rompe */ }
     this.phase = 'result';
     this.phaseT = win ? 4.4 : 3.6;
     if (win) {

@@ -1014,6 +1014,16 @@ class DianasOrbitales {
 
   _fin(win) {
     const g = this.game;
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank de DIANAS ORBITALES.
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'estacion_orbital', prueba: 'dianas', win: !!win,
+        score: 0, stars: 0,
+        bajas: Math.max(0, Math.min(this.total | 0, (this.total | 0) - (this.alive | 0))),
+        total: this.total | 0,
+        left: Math.max(0, Math.round(this.tiempo * 10) / 10),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this.running = false;
     this.result = true;
     this.bannerT = 4.4;
@@ -2292,6 +2302,18 @@ class EOArkanoid {
   _finish(win, reason) {
     const g = this.game;
     const a = this.ctrl;
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank de ARKANOID (1/2),
+    // espejo exacto del de La Locura (ronda 17).
+    try {
+      const tot = this.C.cols * this.C.rows;
+      __PP_TELE.ev('champ_rank', {
+        champ: 'estacion_orbital', prueba: this.variant === 2 ? 'arkanoid2' : 'arkanoid1',
+        win: !!win, score: 0, stars: 0,
+        bricks: Math.max(0, Math.min(tot, tot - this.bricksLeft)),
+        lives: Math.max(0, Math.min(this.C.lives, this.lives)),
+        left: Math.max(0, Math.round(this.time * 10) / 10),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this.phase = 'result';
     this.phaseT = win ? 4.4 : 3.6;
     if (win) {
@@ -3171,6 +3193,16 @@ class ReactorInestable {
   _finish(win, reason) {
     const g = this.game;
     const a = this.ctrl;
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank del REACTOR INESTABLE.
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'estacion_orbital', prueba: 'reactor', win: !!win,
+        score: 0, stars: 0,
+        estab: Math.max(0, (this.estabA | 0) + (this.estabB | 0)),
+        lives: Math.max(0, Math.min(REACTOR_CFG.lives, this.lives | 0)),
+        left: Math.max(0, Math.round(this.time * 10) / 10),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this.phase = 'result';
     this.phaseT = win ? 4.4 : 3.6;
     this._sphereOff();
@@ -4712,6 +4744,16 @@ class ReactorImpulso {
   _finish(win, reason) {
     const g = this.game;
     const a = this.ctrl;
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank del REACTOR DE IMPULSO.
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'estacion_orbital', prueba: 'impulso', win: !!win,
+        score: 0, stars: 0,
+        wave: Math.max(1, Math.min(3, this.wave | 0)),
+        cubes: Math.max(0, this.aliveCubes | 0),
+        left: Math.max(0, Math.round(this.waveT * 10) / 10),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this.phase = 'result';
     this.phaseT = win ? 4.6 : 4.0;
     this.waveActive = false;
@@ -5594,6 +5636,16 @@ class EscudoCasco {
   _finish(win) {
     const g = this.game;
     const a = this.ctrl;
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank del JEFE (Casco).
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'estacion_orbital', prueba: 'jefe', win: !!win,
+        score: 0, stars: 0,
+        fase: Math.max(0, Math.min(2, this.fase | 0)),
+        hull: Math.max(0, this.hull | 0),
+        rally: Math.max(0, this.rally | 0),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this.phase = 'result';
     this.phaseT = win ? ESC_CFG.jefe.explodeT + 1.4 : 4.2;
     this._win = win;
@@ -7348,6 +7400,9 @@ class StockController {
     if (win) {
       this.stage = Math.min(4, this.stage + 1);
       try { localStorage.setItem('pp_champ_estacion_orbital_stage', String(this.stage)); } catch (e) { /* */ }
+      // v3.6.15 (ronda 18 · EMBUDO COMPLETO): avance de etapa (embudo por
+      // champ, igual que La Locura desde la ronda 11).
+      try { __PP_TELE.ev('stage', { n: this.stage, id: 'estacion_orbital' }); } catch (eT) { /* */ }
     }
     // derrota: la etapa se repite (sin retroceder al duelo previo: flujo amable)
   }
@@ -7670,6 +7725,14 @@ class StockController {
     // etapa con mensajes de victoria (el QA anterior llamaba con booleanos y
     // no lo vio). Convención Oeste: w = (winner === 'player').
     const won = (w === true) || (w === 'player');
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank del DUELO (todas las
+    // etapas de duelo, incluidas rejugadas y la revancha del título).
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'estacion_orbital', prueba: 'duelo', win: !!won,
+        score: g.rules.scorePlayer | 0, stars: won ? 1 : 0,
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     // v2.130 · REJUGADA por el mapa (campeonato abierto): el progreso REAL
     // no cambia — sin victorias contadas, sin avance, sin insignia.
     if (this._replay) {
@@ -7712,6 +7775,8 @@ class StockController {
           const C = window.__PP_CORE;
           if (C && C.showChampConseguido) C.showChampConseguido('estacion_orbital');
         } catch (e2) { /* */ }
+        // v3.6.15 (ronda 18 · EMBUDO COMPLETO): ¡la estación tiene campeón!
+        try { __PP_TELE.ev('champion', { id: 'estacion_orbital' }); } catch (eC) { /* */ }
         try {
           const W = (typeof window !== 'undefined' && window.__PP_WORLD);
           if (W && typeof W.submit === 'function') {
@@ -7728,6 +7793,8 @@ class StockController {
         const sig = CFG.etapas[Math.min(this.stage + 1, 4)];
         this.stage = Math.min(4, this.stage + 1);
         try { localStorage.setItem('pp_champ_estacion_orbital_stage', String(this.stage)); } catch (e) { /* */ }
+        // v3.6.15 (ronda 18 · EMBUDO COMPLETO): avance de etapa.
+        try { __PP_TELE.ev('stage', { n: this.stage, id: 'estacion_orbital' }); } catch (eS) { /* */ }
         g.rules.message = tx('¡Has ganado el duelo! Siguiente: ' + sig.name,
           'Duel won! Next: ' + sig.name);
       }

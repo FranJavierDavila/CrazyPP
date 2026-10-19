@@ -85,7 +85,7 @@ class DianasDelTaller {
     this.result = false;
     this.cfg = null;                 // {modo, objetivo, premio, tiempo}
     this.targets = [];
-    this.nacidas = 0; this.golpes = 0;
+    this.nacidas = 0; this.golpes = 0; this.perdidas = 0;   // v3.6.15 (r18): embudo
     this.tiempo = 0; this.t = 0;
     this.hold = true; this.holdT = 0; this.flight = 0; this.deadT = 0;
     this.bannerT = 0; this._endDone = false;
@@ -312,6 +312,7 @@ class DianasDelTaller {
   }
   _bolaPerdida() {
     const g = this.game;
+    this.perdidas++;   // v3.6.15 (ronda 18 · EMBUDO COMPLETO): métrica del intento
     this.hold = false;
     g.ball.vel.set(0, 0, 0); g.ball.spin.set(0, 0, 0);
     g.ballMesh.visible = false;
@@ -375,6 +376,17 @@ class DianasDelTaller {
 
   _fin(win) {
     const g = this.game;
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank de DIANAS DEL TALLER.
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'valle_neon', prueba: 'dianas', win: !!win,
+        score: 0, stars: 0,
+        golpes: Math.max(0, this.golpes | 0),
+        objetivo: Math.max(1, ((this.cfg && this.cfg.objetivo) | 0)),
+        perdidas: Math.max(0, this.perdidas | 0),
+        t: Math.max(0, Math.round(this.t * 10) / 10),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this.running = false; this.result = true;
     this.bannerT = 4.4; this._endDone = false;
     this._pintaBanner(win);
@@ -783,6 +795,9 @@ class PlantillaCtrl {
     if (win) {
       this.stage = Math.min(this.etapas.length - 1, this.stage + 1);
       try { localStorage.setItem(this.base + 'stage', String(this.stage)); } catch (e) { /* */ }
+      // v3.6.15 (ronda 18 · EMBUDO COMPLETO): avance de etapa (embudo por
+      // champ, igual que La Locura desde la ronda 11).
+      try { __PP_TELE.ev('stage', { n: this.stage, id: 'valle_neon' }); } catch (eT) { /* */ }
     }
     // derrota: la etapa se repite (flujo amable de la plantilla)
   }
@@ -821,6 +836,14 @@ class PlantillaCtrl {
   onMatchOver(w) {
     const g = this.game;
     const won = (w === true) || (w === 'player');
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank del DUELO (todas las
+    // etapas de duelo, incluidas rejugadas y la revancha del título).
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'valle_neon', prueba: 'duelo', win: !!won,
+        score: g.rules.scorePlayer | 0, stars: won ? 1 : 0,
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     if (this._replay) {
       g.rules.message = won
         ? tx('¡Revancha ganada! El camino sigue igual.', 'Replay won! The path stays the same.')
@@ -847,6 +870,8 @@ class PlantillaCtrl {
       if (et.id === 'final' && !this._champion) {
         this._champion = true;
         try { localStorage.setItem(this.base + 'champ', '1'); } catch (e) { /* */ }
+        // v3.6.15 (ronda 18 · EMBUDO COMPLETO): ¡el valle tiene campeón!
+        try { __PP_TELE.ev('champion', { id: 'valle_neon' }); } catch (eC) { /* */ }
         g.rules.message = tx('¡¡' + this.nombre.toUpperCase() + ' CONSEGUIDO!!', this.nombre.toUpperCase() + ' COMPLETED!!');
         try { const C = window.__PP_CORE; if (C && C.showChampConseguido) C.showChampConseguido(this.id); } catch (e2) { /* */ }
         try {
@@ -863,6 +888,8 @@ class PlantillaCtrl {
         const sig = this.etapas[Math.min(this.stage + 1, this.etapas.length - 1)];
         this.stage = Math.min(this.etapas.length - 1, this.stage + 1);
         try { localStorage.setItem(this.base + 'stage', String(this.stage)); } catch (e) { /* */ }
+        // v3.6.15 (ronda 18 · EMBUDO COMPLETO): avance de etapa.
+        try { __PP_TELE.ev('stage', { n: this.stage, id: 'valle_neon' }); } catch (eS) { /* */ }
         g.rules.message = tx('¡Has ganado el duelo! Siguiente: ' + sig.name, 'Duel won! Next: ' + sig.name);
       }
     } else {

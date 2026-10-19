@@ -12319,6 +12319,15 @@ class ForajidoStand {
   /** Fin del ASEDIO: etapa superada → destapa el mapa; luego SALA. */
   _endAsedio(won) {
     const a = this._asedio;
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank del ASEDIO (etapa 2).
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'oeste', prueba: 'asedio', win: !!won,
+        score: 0, stars: 0,
+        kills: Math.max(0, Math.min(12, (a && a.kills) | 0)),
+        wave: Math.max(1, Math.min(3, (a && a.wave) | 0)),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this._stageMode = null;
     this._asedio = null;
     if (a) a.dispose();
@@ -12327,6 +12336,15 @@ class ForajidoStand {
   /** Fin del TREN: etapa superada → destapa el mapa; luego SALA. */
   _endTren(won) {
     const t = this._tren;
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank del TREN (etapa 4).
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'oeste', prueba: 'tren', win: !!won,
+        score: 0, stars: 0,
+        ingots: Math.max(0, Math.min(99, (t && t.ingots) | 0)),
+        wave: Math.max(1, Math.min(3, (t && t.wave) | 0)),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this._stageMode = null;
     this._tren = null;
     if (t) t.dispose();
@@ -12402,6 +12420,9 @@ class ForajidoStand {
     }
     this.stage = Math.max(this.stage, Math.min(5, stage + 1));
     try { localStorage.setItem(this.storageKey('stage'), String(this.stage)); } catch (e) { /* */ }
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): avance de etapa (embudo por champ,
+    // igual que La Locura desde la ronda 11).
+    try { __PP_TELE.ev('stage', { n: this.stage, id: 'oeste' }); } catch (eT) { /* */ }
     this._refreshMap();
     g.rules.message = tx('etapa_hecho');
     g.audio.announce(tx('etapa_hecho'), true);
@@ -12424,6 +12445,8 @@ class ForajidoStand {
     g.audio.announce(tx('champ_gana'), true);
     // v2.128: INSIGNIA «¡CONSEGUIDO!» en grande (panel del núcleo)
     try { const C = window.__PP_CORE; if (C && C.showChampConseguido) C.showChampConseguido('oeste'); } catch (e) { /* */ }
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): ¡un campeón más en el Oeste!
+    try { __PP_TELE.ev('champion', { id: 'oeste' }); } catch (eC) { /* */ }
     this._setStateSilent('defeated', 5);
     this.sfx('diana', 0);
     this._playLaugh(0.8);
@@ -13100,6 +13123,17 @@ class ForajidoStand {
     const g = this.game;
     const w = winner === 'player';
     if (w) this._puntosAdd(250, null);   // v2.119: duelo ganado (+250)
+    // v3.6.15 (ronda 18 · EMBUDO COMPLETO): champ_rank del DUELO (etapas
+    // 1/3/5 · Nv 1-3). Espejo de La Locura (ronda 17): el agregador del
+    // worker sólo lee champ/win/score/stars; nv y duelScore viajan crudos.
+    try {
+      __PP_TELE.ev('champ_rank', {
+        champ: 'oeste', prueba: 'duelo', win: !!w,
+        score: this.puntos | 0, stars: w ? 1 : 0,
+        nv: this._duelNv || 1,
+        duelScore: g.rules.scorePlayer | 0,
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
     this.rank.push({ w, score: g.rules.scorePlayer | 0, stars: w ? 1 : 0, duel: true, pts: this.puntos | 0 });
     if (this.rank.length > 10) this.rank = this.rank.slice(-10);
     if (w) {

@@ -2673,3 +2673,21 @@ Stage Summary:
 - V3.6.17-SDK6 EN VIVO con «TU CAMINO TE ESPERA» FUNCIONANDO DE VERDAD — verificado en navegador real contra producción con el estado exacto del dueño (Oeste 3/5 tras ganar Duelo Nv.1 + Asedio).
 - La limpieza ark_back_clown (ronda 18) también entró por fin.
 - Pendiente del dueño: recargar el casco → ver el hint en la tarjeta del Oeste → Duelo Nv.2 → Tren → DUELO FINAL = primer champion de la historia.
+
+---
+Task ID: 119 (ronda 22 · token CF + re-despliegue nativo del worker con fuentes correctas)
+Agent: principal
+Task: El dueño pegó el API token de Cloudflare (cfut_…) → verificar, persistir y desplegar el worker nativo. Descubierta y corregida en el camino una DERIVA DEL SANDBOX: el repo local estaba en un snapshot de ronda 10 mientras origin/main traía rondas 11-21.
+
+Work Log:
+- Token cfut_ verificado contra /user/tokens/verify → {"status":"active"}. Persistido en scripts/worker-tele/.cf-token (600) y .gitignore actualizado (commit c78b586; check-ignore verde para .cf-token y .clave-produccion).
+- 1.er deploy_worker.py: E2E verde (latido total=69 · 403 sin clave · POST→204 · resumen con clave · purga · total restaurado) PERO generó CLAVE NUEVA (.clave-produccion no existía en este sandbox) y subió un worker.js VIEJO (snapshot ronda 9-10, sin porCampeonato/sesionesVR).
+- git pull --rebase: local estaba 1/29 divergido; origin/main traía Task 117 (worker ya desplegado en la sesión anterior) y Ronda 21 (V3.6.17-SDK6 con _stageHint en FUENTES). Rebase limpio.
+- 2.º deploy_worker.py con el worker.js actual (+80 líneas: porCampeonato ronda 11 + sesionesVR ronda 14): E2E TODO VERDE, clave reutilizada de .clave-produccion, D1 intacta (total=69).
+- Verificación de agregaciones con datos reales: porCampeonato {locura: stage 6, oeste: stage 2} · sesionesVR n=7 (la de 93 fps entre ellas, v3.6.15) · champRank {oeste: partidas 2, victorias 2, mejor 525, estrellas 1} · erroresTop [] · versiones completas.
+- Push main + main:proyecto → c78b586. Fuentes ronda 21 confirmadas en el sandbox (game.html 9 marcadores, c00 2, c11 6).
+
+Stage Summary:
+- PRODUCCIÓN: worker nativo con la versión MÁS RECIENTE del worker.js, D1 intacta (69 eventos), token CF persistido y blindado.
+- ROTACIÓN DE CLAVE: la clave del panel anterior quedó INVALIDADA (el sandbox había perdido .clave-produccion); nueva clave entregada al dueño por chat para pegarla en /telemetria → «Producción (D1)». La clave vive en scripts/worker-tele/.clave-produccion (600, gitignored).
+- LECCIÓN PERMANENTE: tras cualquier reciclaje de sandbox, git fetch + comparar con origin/main ANTES de desplegar nada (el repositorio remoto es la fuente de verdad, no el disco local).

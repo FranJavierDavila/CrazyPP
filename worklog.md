@@ -2432,3 +2432,20 @@ Stage Summary:
 - RONDA 11 COMPLETADA EN CÓDIGO Y WORKER: la próxima partida de campeonato del dueño alimentará la tabla «Embudo por campeonato» del panel (etapas y títulos POR champ, con champ_rank ya siendo champ). El champ_rank de aquí adelante lleva versión real, t y sid — y ya no se salta el opt-out.
 - Pendiente del cierre: commit + deploy Pages (3.6.8) + verify_pages_live + push de respaldo (necesita PAT nuevo: el del sandbox anterior murió con el reset).
 - La lectura FPS de la ronda 10 sigue esperando la primera sesión VR real en 3.6.7+ (el vr_start de las 12:12 quedó abierto en la 3.6.5 del casco).
+
+---
+Task ID: 105 (cierre · deploy Pages + release + respaldo)
+Agent: principal
+Task: Cerrar la ronda 11 con el PAT nuevo del dueño (el del sandbox anterior murió con el reset): push de Pages 3.6.8-SDK6, GitHub Release con los 4 ZIPs y push de respaldo main→proyecto.
+
+Work Log:
+- PAT del dueño verificado por API (login FranJavierDavila) antes de tocar nada.
+- deploy_pages.py --push --release --backup: smoke verde (18 peticiones · 0 fallos · 0 pageerrors) y commit pages dbfd487e2 creado, pero push RECHAZADO (fetch first): el remoto pages conservaba la cadena del sandbox anterior (3984af0→1e64abb→44284cb, rondas 3.6.5/3.6.7) que el reset perdió en local (la local reconstruía desde 2dc42bf 3.6.4).
+- FIX SIN HISTORIA PERDIDA: commit-tree con el MISMO árbol 07ecf3d0 y mensaje del commit local, re-encadenado sobre el tip remoto 44284cb → 5e202a4c22 y push fast-forward (44284cb..5e202a4). El sitio servido es idéntico (mismo árbol) y el historial remoto de despliegues queda intacto.
+- deploy_pages.py --release --backup: smoke verde de nuevo (18/0/0) · respaldo main→proyecto ✓ (8248497 = HEAD local) · Release v3.6.8-SDK6 publicado con 4/4 assets uploaded (COMPLETO 125.2 MB · ligera 11.5 MB · CLOUDFLARE 125.2 MB · SOLO 6 KB).
+- verify_pages_live.py 3.6.8-SDK6: VERDE AL PRIMER INTENTO (17 peticiones OK · 0 fallos de red · 0 pageerrors) — https://franjavierdavila.github.io/CrazyPP/ ya sirve V3.6.8-SDK6.
+
+Stage Summary:
+- RONDA 11 COMPLETAMENTE EN PRODUCCIÓN: Pages 3.6.8-SDK6 en vivo (pages 5e202a4), release v3.6.8-SDK6 con los 4 ZIPs, respaldo proyecto=8248497 (rondas 9-10-11 en el remoto).
+- LECCIÓN consolidada: tras un reset del sandbox, la rama pages local debe RE-ENCADENARSE sobre origin/pages (commit-tree con árbol y mensaje preservados), nunca forzar push — el historial de despliegues es append-only y ya vive en el remoto.
+- Pendiente de datos: la primera sesión VR del dueño en 3.6.7+/3.6.8 dirá si la optimización FPS subió de 38 (vr_end ahora trae fpsMin/fpsMax); el embudo por campeonato se llenará con su próxima partida de Magia/Locura.

@@ -173,12 +173,21 @@ async def main():
           return {
             liberada: I.ballState === 'play',
             vel: G.ball.vel.length().toFixed(2),
-            subio: G.ball.vel.y >= 0.39,
+            // INVARIANTE DETERMINISTA (ronda 5): el juego GARANTIZA vel.y ≥ 0,4
+          // en el impacto (patrón REACTOR «arco jugable», con aleatorio ADITIVO
+          // por diseño: v.y = 0,4 + Math.random()·0,45) pero el QA mide al
+          // FINAL de _fisica (4 subpasos internos), donde la gravedad residual
+          // puede haberse comido hasta G·dt según el subpaso donde caiga el
+          // TOI. El aleatorio del juego sólo SUMA y no puede bajar del suelo
+          // de 0,4 → el suelo honesto de la medición es 0,4 − G·dt. El umbral
+          // antiguo (0,39) vivía DENTRO de la banda real [0,28..0,85]: lotería
+          // 1/30 (sondeo: vel.y ∈ [0,373..0,777] con entrada canónica).
+          subio: G.ball.vel.y >= 0.4 - I._G() * 0.0125,
           };
         }""")
         chk(hit['liberada'], 'la PALA libera la bola por el barrido CCD (no el agarre)')
         chk(float(hit['vel']) >= 2.9, f"salida con propósito: {hit['vel']} m/s (≥ min 3,0)")
-        chk(hit['subio'], 'arco jugable tras el golpeo')
+        chk(hit['subio'], 'arco jugable tras el golpeo (invariante 0,4−G·dt)')
 
         atr = await page.evaluate("""() => {
           const G = window.__PP_GAME;

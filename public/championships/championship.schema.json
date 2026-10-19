@@ -3,7 +3,16 @@
   "$id": "championship.schema.json",
   "title": "Contrato de campeonato de CRAZY PING PONG (v2.125, contract 1)",
   "type": "object",
-  "required": ["id", "version", "contract", "title", "description", "rival", "storage", "assets"],
+  "required": [
+    "id",
+    "version",
+    "contract",
+    "title",
+    "description",
+    "rival",
+    "storage",
+    "assets"
+  ],
   "properties": {
     "id": {
       "type": "string",
@@ -21,40 +30,78 @@
       "description": "Versión del contrato núcleo↔módulo que el manifest declara."
     },
     "estado": {
-      "enum": ["borrador", "validacion", "listo", "publicado", "desactivado"],
+      "enum": [
+        "borrador",
+        "validacion",
+        "listo",
+        "publicado",
+        "desactivado"
+      ],
       "default": "borrador",
       "description": "Ciclo de vida. Solo 'publicado' aparece en el menú del juego."
     },
     "title": {
       "type": "object",
-      "required": ["es"],
+      "required": [
+        "es"
+      ],
       "properties": {
-        "es": { "type": "string", "minLength": 2, "maxLength": 40 },
-        "en": { "type": "string", "maxLength": 40 }
+        "es": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "en": {
+          "type": "string",
+          "maxLength": 40
+        }
       }
     },
     "description": {
       "type": "object",
-      "required": ["es"],
+      "required": [
+        "es"
+      ],
       "properties": {
-        "es": { "type": "string", "maxLength": 400 },
-        "en": { "type": "string", "maxLength": 400 }
+        "es": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "en": {
+          "type": "string",
+          "maxLength": 400
+        }
       },
       "description": "Descripción corta: se muestra en el catálogo y la usa la herramienta de creación."
     },
     "rival": {
       "type": "object",
-      "required": ["id", "name", "kind"],
+      "required": [
+        "id",
+        "name",
+        "kind"
+      ],
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "kind": { "type": "string", "description": "clase de motor usada: clown|wizard|forajido|stock" },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "clase de motor usada: clown|wizard|forajido|stock"
+        },
         "states": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Estados/emociones del rival (webp en assets/ con el nombre del estado)."
         },
-        "oppLabel": { "type": "string" }
+        "oppLabel": {
+          "type": "string"
+        }
       }
     },
     "storage": {
@@ -69,9 +116,19 @@
     "audio": {
       "type": "object",
       "properties": {
-        "music": { "type": "string", "description": "Ruta relativa de la BSO (assets/...). mp3/ogg." },
-        "musicVolume": { "type": "number", "minimum": 0, "maximum": 1 },
-        "sounds": { "type": "object", "description": "Mapa nombre→ruta de efectos (assets/...)." }
+        "music": {
+          "type": "string",
+          "description": "Ruta relativa de la BSO (assets/...). mp3/ogg."
+        },
+        "musicVolume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sounds": {
+          "type": "object",
+          "description": "Mapa nombre→ruta de efectos (assets/...)."
+        }
       }
     },
     "powers": {
@@ -79,19 +136,57 @@
       "description": "Superpoderes del rival (máx 4 por campeonato).",
       "items": {
         "type": "object",
-        "required": ["kind", "name"],
+        "required": [
+          "kind",
+          "name"
+        ],
         "properties": {
           "kind": {
-            "enum": ["confeti", "bola", "split", "mareo", "globos", "orbe", "disparo", "dinamita", "arena", "estampida", "custom"],
+            "enum": [
+              "arena",
+              "bola",
+              "burla",
+              "confeti",
+              "custom",
+              "dinamita",
+              "disparo",
+              "estampida",
+              "globos",
+              "mareo",
+              "orbe",
+              "split"
+            ],
             "description": "Componente común reutilizado. 'custom' exige module en el index.js."
           },
-          "name": { "type": "string" },
-          "icon": { "type": "string", "description": "assets/ del icono (power<nombre>.png)." },
-          "chance": { "type": "number", "minimum": 0, "maximum": 1 },
-          "cooldown": { "type": "number", "minimum": 0 },
-          "warn": { "type": "number", "minimum": 0, "description": "Segundos de aviso congelado." },
-          "duration": { "type": "number", "minimum": 0 },
-          "module": { "type": "string", "description": "Para kind=custom: nombre de la Action en index.js." }
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string",
+            "description": "assets/ del icono (power<nombre>.png)."
+          },
+          "chance": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "cooldown": {
+            "type": "number",
+            "minimum": 0
+          },
+          "warn": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Segundos de aviso congelado."
+          },
+          "duration": {
+            "type": "number",
+            "minimum": 0
+          },
+          "module": {
+            "type": "string",
+            "description": "Para kind=custom: nombre de la Action en index.js."
+          }
         }
       }
     },
@@ -100,16 +195,37 @@
       "description": "Pruebas de habilidad / etapas del campeonato.",
       "items": {
         "type": "object",
-        "required": ["id", "name", "kind"],
+        "required": [
+          "id",
+          "name",
+          "kind"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
           "kind": {
-            "enum": ["duelo", "arkanoid", "objetos", "tren", "custom"],
+            "enum": [
+              "arkanoid",
+              "custom",
+              "duelo",
+              "escudo",
+              "impulso",
+              "objetos",
+              "tren"
+            ],
             "description": "Prueba estándar del sistema común. 'custom' exige module."
           },
-          "module": { "type": "string" },
-          "rules": { "type": "object", "description": "Parámetros libres de la prueba (tiempos, objetivos, puntuación)." }
+          "module": {
+            "type": "string"
+          },
+          "rules": {
+            "type": "object",
+            "description": "Parámetros libres de la prueba (tiempos, objetivos, puntuación)."
+          }
         }
       }
     },
@@ -121,13 +237,31 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["file", "h", "x", "z"],
+            "required": [
+              "file",
+              "h",
+              "x",
+              "z"
+            ],
             "properties": {
-              "file": { "type": "string", "pattern": "^assets/" },
-              "h": { "type": "number", "minimum": 0.1, "maximum": 3 },
-              "x": { "type": "number" },
-              "z": { "type": "number" },
-              "sway": { "type": "number" }
+              "file": {
+                "type": "string",
+                "pattern": "^assets/"
+              },
+              "h": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 3
+              },
+              "x": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              },
+              "sway": {
+                "type": "number"
+              }
             }
           }
         }
@@ -137,24 +271,64 @@
       "type": "object",
       "description": "Decorado de sala (createChampRoom viste los 6 planos).",
       "properties": {
-        "floor": { "type": "string", "pattern": "^assets/" },
-        "ceil": { "type": "string", "pattern": "^assets/" },
-        "back": { "type": "string", "pattern": "^assets/" },
-        "front": { "type": "string", "pattern": "^assets/" },
-        "left": { "type": "string", "pattern": "^assets/" },
-        "right": { "type": "string", "pattern": "^assets/" }
+        "floor": {
+          "type": "string",
+          "pattern": "^assets/"
+        },
+        "ceil": {
+          "type": "string",
+          "pattern": "^assets/"
+        },
+        "back": {
+          "type": "string",
+          "pattern": "^assets/"
+        },
+        "front": {
+          "type": "string",
+          "pattern": "^assets/"
+        },
+        "left": {
+          "type": "string",
+          "pattern": "^assets/"
+        },
+        "right": {
+          "type": "string",
+          "pattern": "^assets/"
+        }
       }
     },
-    "rewards": { "type": "object", "description": "Claves de progresión/recompensa del campeonato (libres)." },
+    "rewards": {
+      "type": "object",
+      "description": "Claves de progresión/recompensa del campeonato (libres)."
+    },
     "trophy": {
       "type": "object",
-      "properties": { "name": { "type": "object", "properties": { "es": { "type": "string" }, "en": { "type": "string" } } } }
+      "properties": {
+        "name": {
+          "type": "object",
+          "properties": {
+            "es": {
+              "type": "string"
+            },
+            "en": {
+              "type": "string"
+            }
+          }
+        }
+      }
     },
-    "procedural": { "type": "object", "description": "Recursos generados por código (documental)." },
-    "estructura": { "type": "string" },
+    "procedural": {
+      "type": "object",
+      "description": "Recursos generados por código (documental)."
+    },
+    "estructura": {
+      "type": "string"
+    },
     "notes": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Changelog estructurado (v2.125 sustituye a los note_v* sueltos; los existentes se conservan)."
     }
   },

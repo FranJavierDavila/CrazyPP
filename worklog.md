@@ -2158,3 +2158,33 @@ Stage Summary:
 - SDK v1.x CERRADO (v1.4.0): el kernel de los 5 campeonatos ya cubre SFX (createSfx), congelados (congela), puente (getCore), assetURL, MÚSICA en bucle (createMusic), CARTEL de superpoder (createPowerSign), STANDEE del rival (createRival) y TABLERO de etapa (createCartel). NINGÚN campeonato conserva decodeAudioData propio: el fix v2.125 (forma promesa) vive UNA sola vez. El bug del standee gris de Valle Neón (webp inexistentes) queda reparado de paso: ahora carga el arte ZETA-7 real.
 - V3.6.5-SDK5 EN PRODUCCIÓN LOCAL: 4 ZIPs byte-exactos en download/ y hub, QA quíntuple verde (479 checks) + smoke, golden 5c773714…. Cero cambios de gameplay (la colocación del ASTRO y el arte de los tableros son byte a byte los mismos; el único cambio visible es el FIX del standee de Valle que ahora muestra el arte real).
 - Pendiente del dueño: prueba en casco opcional (el standee de Valle ahora sí muestra el rival; el resto debe verse idéntico) · GIT_TOKEN para el deploy a Pages (deploy_pages.py --push --release --backup) · RONDA 2 del pulido: roadmap P1 (version.json único, tests de física deterministas, presupuesto de rendimiento, config-as-data, telemetría).
+
+---
+Task ID: 96-b
+Agent: main (Z.ai)
+Task: RONDA 2 del pulido — ROADMAP P1: version.json único + tests de física deterministas.
+
+Work Log:
+- VERSION.JSON ÚNICO: src/game/VERSION.json (version/fase/faseNombre/sdk/fecha/hub/manifests/golden) es la ÚNICA fuente de verdad · scripts/bump_version.py el ÚNICO camino legítimo (parchea c00+badge+hub asertado y re-entrante, regenera build, refresca golden, contra-verifica BYTE-EXACTO; probado E2E ida y vuelta 3.6.5-SDK5→3.6.5-SDK5B→3.6.5-SDK5) · guard de versión única en build_game.py (paso 1b: cada build verifica que const VERSION y #verBadge casan con VERSION.json; probado en negativo) · dos lecciones del test E2E: el badge lleva V delante (>V3.6.5-SDK5</span>) y el re-entrante debe mirar los sellos EXACTOS (3.6.5-SDK5B contiene como subcadena a 3.6.5-SDK5) · scripts/qa_version.py: 23 checks (sellos, 5 manifests, SDK 1.4.0, golden×3, build BYTE-EXACTO, triple sha :3000/:81) → verde.
+- TESTS DE FÍSICA DETERMINISTAS: scripts/test_fisica.mjs importa la FUENTE REAL (c04_fisica_ccd.js + c02_cfg_escena.js) en Node — el mismo código del Quest — y ejecuta 11 escenarios sin aleatoriedad: grid del SDF de hoja, 8 rayos CCD bola↔hoja (cara/canto/esquina/rasante/contacto/degenerado/detrás/lejos), 4 rayos de cápsula, normales cara-canto-esquina, swing sintético de 120 frames del paddleSim (vel/velInst/omega/base), aerodinámica 480 substeps (topspin + bola-bomba dragMul 0.30), 4 botes slip-coupled (topspin/backspin/lateral/suave), applyBounceSpin, perks de pala y CONSTANTES de tuning (cualquier cambio de CCD_TUNE/DIMS/SERVE_TUNE suena aquí) · hash SHA256 por escenario (canon JSON r9) vs scripts/fisica_golden.json · determinismo verificado en 2 pasadas (0 desviaciones) · prueba negativa: alterar el golden → exit 1 con «FÍSICA CAMBIÓ».
+- c05 NO es importable en Node sin shim (window en top-level y trabajo pesado al cargar): los tests se limitan a c04, que importa limpio (42 exports). Decisión registrada: la capa de saque/IA se sigue verificando en vivo (qa_sup1).
+- LEEME.md: reglas 0 (versión vía bump_version.py) y 0b (física vía test_fisica.mjs) añadidas al camino legítimo.
+
+Stage Summary:
+- RONDA 2 COMPLETADA: la versión tiene UNA fuente y un único camino de cambio con verificación en cada build; la física tiene un pin de determinismo que suena antes de que un cambio no intencional llegue al casco.
+- Commit: Task 96 (ronda 2). El juego NO cambia (game.html 5c773714 intacto, triple sha verificado por qa_version).
+
+---
+Task ID: 96-c
+Agent: main (Z.ai)
+Task: RONDA 3 del pulido — ROADMAP P1: presupuesto de rendimiento + manifiestos validados (config-as-data).
+
+Work Log:
+- BENCH FÍSICO: scripts/test_fisica_perf.mjs mide el camino caliente de la FUENTE REAL en Node (barrido CCD 200k rayos, bote slip-coupled 100k, aerodinámica 200k) → 41,8/4,7/5,7 ms (la física es rapidísima; el guard es por si un cambio mete asignaciones u O(n)).
+- PRESUPUESTO: scripts/qa_rendimiento.py + presupuesto.json (líneas base con --update): tamaños game.html/módulos (+1% tolerancia), física (×3), boot a __PP_GAME en vivo (1386 ms, ×1,6) e import en cadena de los 5 (5282 ms, ×1,6) → 14 OK · 0 FALLOS en la verificación.
+- MANIFIESTOS (config-as-data): scripts/qa_manifiestos.py valida los 5 manifest.json con jsonschema contra championship.schema.json + versiones vs VERSION.json + etapas (ids únicos, kinds conocidos) + audio.music/musicUrl existen en disco + ESTADOS DEL RIVAL con ficheros reales (convención FASE 7: orbital <estado>.webp ×14 · valle rival_kraken.png + <estado>.png ×4 — la convención rota que pintoaba el standee gris de Valle queda PINADA por QA). El QA destapó DRIFT REAL del schema (era de la v3.0.x): los kinds escudo/impulso y el poder burla no estaban en los enums → schema ACTUALIZADO a la realidad del juego (aditivo). → 29 OK · 0 FALLOS.
+- Nota de release: el schema vive en public/championships (viaja en los ZIPs) — el cambio entra en el PRÓXIMO build de release (los ZIPs v3.6.5-SDK5 ya publicados no cambian: misma inmutabilidad de siempre).
+
+Stage Summary:
+- RONDA 3 COMPLETADA: hay presupuesto de rendimiento con líneas base (física, tamaños, arranque, imports) y la configuración de los campeonatos está ESQUEMATIZADA y verificada (schema al día + assets reales en disco).
+- El juego NO cambia (game.html 5c773714 intacto). Commit: Task 96 (ronda 3).

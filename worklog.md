@@ -2292,3 +2292,20 @@ Stage Summary:
 - RONDA 7 COMPLETADA: la telemetría anónima de producción DEJA DE MORIR EN SILENCIO — los lotes entran al Worker (204) desde esta release; en local el flujo es observable de extremo a extremo (routing → receptor → panel). El owner puede VER datos hoy en /telemetria.
 - V3.6.5-SDK6 lista para desplegar (4 ZIPs sellados + golden 78347941…). Pendiente: deploy_pages.py cuando el dueño pegue el PAT (los tokens mueren con el reciclado de sesión por diseño).
 - Lección de oficio: la capa E ya era «más dura que networkidle»; la F quedó siendo la última que exigía red tranquila — y la red que falló no era la nuestra: era la de un TERCERO. Un QA que navega con networkidle no debe compartir camino crítico con ningún servicio externo.
+
+---
+Task ID: 100 (cierre)
+Agent: main (Z.ai)
+Task: DEPLOY V3.6.5-SDK6 a GitHub Pages completado (push + release + backup) con el PAT re-pasteado por el dueño.
+
+Work Log:
+- PAT nuevo verificado por API (FranJavierDavila · scope repo). El resumen de la sesión quedó desfasado: la telemetría P1 ya estaba COMPLETA (rondas 6-7) y la ronda 5 del flake capa F también — lo único pendiente real era este deploy.
+- Pre-chequeos: los 4 ZIPs SDK6 sobrevivieron al reset de sesión (tamaños sellados exactos) y golden 78347941 intacto.
+- DEPLOY TROCEADO POR MUERTES (2 caídas del proceso): (1) intento completo con setsid → murió EN SILENCIO durante el smoke (fase Chromium/swiftshader); (2) ejecución A foreground --no-smoke --push --backup → ✓ pages → 3984af063 (376 ficheros) + main→proyecto; (3) ejecución B setsid --release → murió a mitad de uploads (CLOUDFLARE+COMPLETO+ligera llegaron; SOLO no empezó); (4) verificación por API ANTES de re-entrar: 3 assets uploaded reales, SIN fantasma starter; (5) re-entrada foreground --release → SOLO subido, dedupe omite los 3, ✓ Release v3.6.5-SDK6.
+- LECCIÓN CONSOLIDADA: este entorno mata CUALQUIER proceso background de tool-call (setsid incluido) — el camino fiable es foreground por trozos apoyado en la re-entrancia del script; el dedupe por nombre+tamaño solo es seguro TRAS verificar asset.state=='uploaded' por API.
+- Higiene: los re-ensamblados crean commits encadenados locales en refs/heads/pages no pusheados → realineado local a la remota 3984af063 (mismo sitio). verify_pages_live toma la versión esperada como ARGUMENTO (el default antiguo 3.6.2-SDK2 provocó el único falso fallo del 1.er intento).
+- Verificación final: 4/4 assets uploaded (COMPLETO 125.219.867 · ligera 11.455.407 · CLOUDFLARE 125.206.779 · SOLO 6.089) · PAGES-VERSION.txt en vivo = 3.6.5-SDK6 · verify_pages_live 3.6.5-SDK6: ✓ al 1.er intento (17 peticiones OK · 0 fallos de red · 0 pageerrors).
+
+Stage Summary:
+- V3.6.5-SDK6 PUBLICADA en https://franjavierdavila.github.io/CrazyPP/ + Release con 4 ZIPs + respaldo anti-rollback al día. La telemetría de producción reparada (array directo + routing por host) ya sirve al público; en local, panel /telemetria.
+- Roadmap P1 COMPLETO y publicado. Pendiente del dueño: prueba en casco (standee ZETA-7 de Valle + telemetría en producción). Siguiente ronda: a propuesta del dueño (candidatos registrados en el catálogo: id de campeonato en stage/champion y v real en champ_rank).

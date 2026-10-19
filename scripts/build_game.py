@@ -25,6 +25,7 @@ scripts/mod_fase2_analizar.mjs (src/game/DEPS.json / DEPENDENCIAS.md).
 Nota: `export ` en columna 0 dentro de core/ queda RESERVADO al generador.
 """
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
@@ -94,6 +95,27 @@ def main() -> None:
     if sobran:
         sys.exit('FALLO: ficheros en core/ fuera del ORDER (añádelos a ORDER o bórralos):\n  '
                  + '\n  '.join(sobran))
+
+    # 1b. guard de VERSIÓN ÚNICA: los sellos físicos casan con VERSION.json.
+    #     La única fuente de verdad de la versión es src/game/VERSION.json y
+    #     el único camino para cambiarla es scripts/bump_version.py.
+    vjson = SRC / 'VERSION.json'
+    if vjson.exists():
+        try:
+            vdat = json.loads(vjson.read_text(encoding='utf-8'))
+            vver = vdat.get('version')
+            if vver:
+                c00txt = (SRC / 'core/c00_pre_three.js').read_text(encoding='utf-8')
+                if c00txt.count(f"const VERSION = '{vver}'") != 1:
+                    sys.exit(f'FALLO de versión única: c00_pre_three.js no lleva '
+                             f"const VERSION = '{vver}' (VERSION.json). Camino legítimo: "
+                             f'python3 scripts/bump_version.py <nueva-versión>')
+                bodytxt = (SRC / '03_body.html').read_text(encoding='utf-8')
+                if bodytxt.count(f'>V{vver}</span>') != 1:
+                    sys.exit(f'FALLO de versión única: el badge #verBadge de 03_body.html '
+                             f'no es V{vver}. Camino legítimo: python3 scripts/bump_version.py')
+        except json.JSONDecodeError as e:
+            sys.exit(f'FALLO: VERSION.json no es JSON válido: {e}')
 
     # 2. tokens de identidad
     fallos_tok = []

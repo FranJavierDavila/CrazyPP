@@ -1,5 +1,3 @@
-# SHA256 del game.html que produjo esta división (v3.6.5-SDK5, Task 96 ·
-# FASE 7: createRival + createCartel + música del orbital al SDK — CIERRE
-# DEL SDK v1.x; cambio legítimo de la v3.6.4-SDK4 8f8b1ea1…, solo el sello
-# de versión — el núcleo no cambia en esta fase)
+# SHA256 del game.html que produjo esta división (3.6.5-SDK5, fase 7 · CIERRE DEL SDK v1.x (createRival + createCartel + música del orbital); sello actualizado
+# por bump_version.py desde 3.6.5-SDK5B)
 5c77371469e93c8a6b939b55c43976a3ae907abb841432d1c3d90f70028b5035

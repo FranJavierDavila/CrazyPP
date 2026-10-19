@@ -1,0 +1,17 @@
+{
+  "version": "3.6.5-SDK5",
+  "fase": 7,
+  "faseNombre": "CIERRE DEL SDK v1.x (createRival + createCartel + música del orbital)",
+  "sdk": "1.4.0",
+  "fecha": "2026-10-19",
+  "hub": "v365-sdk5",
+  "manifests": {
+    "oeste": 51,
+    "magia": 31,
+    "locura": 22,
+    "estacion_orbital": 16,
+    "valle_neon": 4
+  },
+  "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
+  "golden": "5c77371469e93c8a6b939b55c43976a3ae907abb841432d1c3d90f70028b5035"
+}

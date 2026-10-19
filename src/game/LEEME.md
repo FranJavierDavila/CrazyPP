@@ -57,6 +57,17 @@ ESTRUCTURA
   `export ` en columna 0 también están RESERVADOS al generador.
 
 CÓMO SE EDITA (EL ÚNICO CAMINO LEGÍTIMO)
+  0. ¿Toqueteas la VERSIÓN? Nada de edits a mano: VERSION.json es la única
+     fuente y el bumper el único camino:
+        python3 scripts/bump_version.py 3.6.6-SDK6 [--fase N --fase-nombre X --sdk Y]
+     (parchea c00 + badge + hub, regenera el build y refresca el golden).
+     El ensamblador VERIFICA en cada build que los sellos casan con
+     VERSION.json (guard de versión única) y scripts/qa_version.py audita
+     la cadena completa (23 checks).
+  0b. ¿Tocaste la FÍSICA? Los tests deterministas mandan:
+        node --no-warnings scripts/test_fisica.mjs
+     (11 escenarios CCD/aero/botes/perks contra fisica_golden.json; refresca
+     SOLO con un cambio físico intencional: --update).
   1. Edita el subsistema que toque en src/game/core/ (o el wrapper HTML/CSS).
   2. Si usaste símbolos de OTRO subsistema (o creaste símbolos que otros
      deban usar), regenera el grafo y los bloques:

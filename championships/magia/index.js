@@ -236,6 +236,7 @@ const TXT = {
     lose_title: 'EL ORBE RESISTIÓ',
     lose_time: '¡Se acabó el tiempo!',
     lose_sub: 'La magia se renueva… ¡otro intento!',
+    orb_retry: 'La prueba se repite: ¡otra oportunidad, vuelve a intentarlo!',   // v3.6.13 (ronda 16)
     win_sub: 'El trofeo te espera en la sala',
     retry_sub: 'El orbe se reconstruye…',
     bricks_left: 'Ladrillos: {n}',
@@ -296,6 +297,7 @@ const TXT = {
     lose_title: 'THE ORB HELD ON',
     lose_time: "Time's up!",
     lose_sub: 'The magic renews itself… try again!',
+    orb_retry: 'The trial repeats: one more chance, try again!',   // v3.6.13 (ronda 16)
     win_sub: 'The trophy awaits in the room',
     retry_sub: 'The orb rebuilds itself…',
     bricks_left: 'Bricks: {n}',
@@ -3195,6 +3197,7 @@ class OrbeMagico {
   _finish(win) {
     const g = this.game;
     const L = this.L;
+    this._lastWin = !!win;   // v3.6.13 (ronda 16): lo lee _afterResult()
     this.phase = 'result';
     this.phaseT = win ? 7.0 : 5.5;
     this._despawnBlock();
@@ -3212,7 +3215,9 @@ class OrbeMagico {
     const firstTrophy = win && !this.ctrl.trophy;
     this._banner = {
       title: win ? tx('win_title') : tx('lose_title'),
-      sub: win ? tx('win_score', { n: this.score }) : tx('lose_time'),
+      // v3.6.13 (ronda 16): el sub de derrota anuncia la SEGUNDA OPORTUNIDAD
+      // (la prueba se repite) — el audio sigue diciendo lose_time.
+      sub: win ? tx('win_score', { n: this.score }) : tx('orb_retry'),
       foot: win ? (firstTrophy ? tx('win_sub') : tx('retry_sub')) : tx('lose_sub'),
       stars,
       col: win ? '#7fb069' : '#e06c5a',
@@ -3283,9 +3288,13 @@ class OrbeMagico {
 
   _afterResult() {
     // v2.70 · PATRÓN ARKANOID (La Locura): tras el cartel de resultado el
-    // nivel se apaga y el camino CONTINÚA — prueba superada: duelo siguiente;
-    // prueba fallida: duelo anterior (el controlador ya ajustó la etapa).
+    // nivel se apaga y el camino CONTINÚA — prueba superada: duelo siguiente.
     this.stop();
+    // v3.6.13 (ronda 16 · SEGUNDA OPORTUNIDAD): DERROTA → la MISMA prueba del
+    // orbe se relanza (cartel explicativo con EMPEZAR y reset v2.63 idéntico
+    // a un arranque fresco); el duelo del camino sólo vuelve tras VICTORIA o
+    // fuera de la prueba. Mismo criterio que La Locura desde la ronda 15.
+    if (this._lastWin === false) { this.ctrl.startOrb(this.ctrl.stage === 3); return; }
     this.ctrl._startDuel();
   }
 
@@ -4709,9 +4718,12 @@ class WizardController {
     }
   }
 
-  /** El tiempo venció con orbe entero: v2.70 «vuelves al paso anterior» —
-   *  perder la prueba devuelve al DUELO previo (igual que el ARKANOID de
-   *  La Locura); tras el cartel de resultado el nivel te lleva a él. */
+  /** El tiempo venció con orbe entero: v3.6.13 (ronda 16 · SEGUNDA
+   *  OPORTUNIDAD) — perder la prueba YA NO retrocede el camino (la v2.70
+   *  devolvía al DUELO previo): la etapa no cambia y _afterResult() relanza
+   *  esta misma prueba del orbe. Misma política v2.44 de los DUELOS («perder
+   *  REPITE el paso actual») y misma que La Locura desde la ronda 15; la
+   *  rejugada (v2.96) restaura su paso de origen. */
   onLevelLost() {
     this._setStateSilent('victory', 4);
     if (this.active && (this.stage === 1 || this.stage === 3)) {
@@ -4719,9 +4731,7 @@ class WizardController {
         this.stage = this._replay.stage; this.round = this._replay.round;
         try { localStorage.setItem(this.storageKey('stage'), String(this.stage)); } catch (e8) { /* */ }
         this._replay = null;
-      } else {
-        this._setStage(this.stage - 1);
-      }
+      }   // ronda 16: sin retroceso — la etapa se queda y la prueba se repite
       if (this.map) this.map.refresh();
     }
   }

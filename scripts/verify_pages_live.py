@@ -53,7 +53,13 @@ async def run_once():
         return ver, bad, perr, nreq
 
 
-for intento in (1, 2):
+# ronda 20: reintentos con espera — el CDN de Pages sirve la versión
+# ANTERIOR hasta ~1 min tras el deploy (3 rondas seguidas con el intento 1
+# falso). 4 intentos · 45 s de espera entre fallos por versión vieja;
+# los fallos por pageerror/4xx NO esperan (esos son reales).
+import time
+
+for intento in (1, 2, 3, 4):
     ver, bad, perr, nreq = asyncio.run(run_once())
     print(f'intento {intento}: __PP_VERSION={ver} · peticiones al sitio={nreq}')
     if ver == EXPECTED and not bad and not perr:
@@ -61,5 +67,11 @@ for intento in (1, 2):
               f'({nreq} peticiones OK · 0 fallos de red · 0 pageerrors)')
         sys.exit(0)
     print('  detalle:', bad[:5], perr[:2])
+    if intento < 4:
+        if ver != EXPECTED:
+            print('  (CDN con la versión anterior aún caliente — espero 45 s y reintento)')
+            time.sleep(45)
+        else:
+            break   # versión correcta pero con fallos reales: no insistir
 print('✗ verificación en vivo fallida')
 sys.exit(1)

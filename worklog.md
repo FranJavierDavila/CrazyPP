@@ -2621,3 +2621,20 @@ Stage Summary:
 - V3.6.16-SDK6 EN VIVO: el hub ya enseña «Etapa X/5 · sigue donde la dejaste» en cada campeonato con camino empezado — el dueño ve dónde quedó su récord de La Locura (etapa 2) y cuánto le queda al primer campeonato COMPLETO.
 - El embudo champ_rank (rondas 17-18) espera sus primeros datos de la sesión del dueño (qym1q37o, 3.6.15, en VR durante esta ronda).
 - Pendiente del dueño: primer campeonato COMPLETO (champion + porCampeonato), CF_API_TOKEN (deploy nativo del worker, harness 50/0 listo), 1-2 sesiones ≥10 min más para el criterio de nitidez 1.45 (hoy 2 de 3).
+
+---
+Task ID: 116 (ronda 20 · OBSERVABILIDAD — sin deploy)
+Agent: principal
+Task: «adelante» con el dueño recién salido del casco — telemetría fresca → decidir ronda. DECISIÓN: ronda de herramientas SIN tocar el juego (0 derrotas registradas = sin señal de dificultad; no cambiar versión bajo los pies del dueño).
+
+Work Log:
+- TELEMETRÍA HISTÓRICA (67 eventos): la sesión qym1q37o (3.6.15, xr) completó EN DIRECTO: duelo Oeste Nv.1 GANADO (525 pts, duelScore 11) → stage 2 → ASEDIO GANADO (12 bajas, 3 oleadas) → stage 3 (DUELO Nv.2). 15m42s de VR, pings 74/89/83 y vr_end a 93 fps (mín 52, máx 113) — MEJOR fluidez jamás medida (antes máx 78). Embudo champ_rank: 2 intentos, 2 victorias, 0 derrotas. Falsa alarma del build («6 menciones 3.6.8»): el grep cuenta 3.6.16 (variable n368 heredada) — página de descargas FRESCA.
+- scripts/informe.py NUEVO: convierte los volcados D1 en briefing accionable (sesiones con duración VR REAL vr_start→último ping — el dur de vr_end es la animación de cierre, no la sesión; curva fps con ratio ≥78; embudo champ_rank por campeonato/prueba con win-rate y métricas crudas; etapa máx humanizada — oeste 1-indexed normalizado; errores; adopción de versiones). Guarda scripts/informe_ultimo.txt. Fix en el mismo archivo: strftime %d-%b (typo %ob).
+- verify_pages_live.py MEJORADO: 4 intentos con espera de 45 s SOLO cuando el CDN sirve la versión anterior (3 rondas seguidas con el intento 1 falso por CDN caliente); si la versión es correcta pero hay fallos reales, no insiste. Probado en vivo: VERDE al intento 1 con 3.6.16 ya asentada.
+- SIN bump, SIN deploy, SIN sellos: cero cambios en public/. Commiteo herramientas + worklog y push.
+
+Stage Summary:
+- Ronda 20 = taller: informe de decisión (scripts/informe.py) + verificador anti-CDN-caliente. La próxima ronda data-driven ya tiene su herramienta.
+- Estado del dueño: Oeste 3/5 (Duelo Nv.1 ✓, Asedio ✓, queda Duelo Nv.2 → Tren → Duelo Final), Locura 3/5. Primer campeonato COMPLETO y primer champion a 2 nodos.
+- Nitidez (informativo): la sesión de hoy (89/83 sostenidos, vr_end 93) ya cumple el espíritu del criterio 1.45 en 1 sesión — decisión del dueño (1.4×) intacta.
+- Pendiente del dueño: CF_API_TOKEN (deploy nativo del worker, harness 50/0 listo).

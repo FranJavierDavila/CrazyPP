@@ -1,0 +1,42 @@
+==========================================================================
+CRAZY PING PONG · INFORME DE DECISIÓN (telemetría D1)
+==========================================================================
+fuente eventos : _eventos_r20.json · 67 eventos
+fuente resumen : _resumen_r20.json · total=67 · sesionesUnicas=19 · arranques24h=17
+
+· FPS (vr_ping): 14 muestras · media 77.1 · mín 68 · máx 89 · ≥78: 6/14
+· FPS (vr_end): media 77.3 · máx absoluto 93
+
+— SESIONES (últimas 8 por último evento) —
+  · qym1q37o v3.6.15-SDK6 [xr] 19-Oct 19:09 UTC · ventana 15m47s · VR cerrada
+      dur VR 15m42s · pings fps: 74/89/83 · vr_end 93 fps (mín 52, máx 113)
+  · lus7ymqu v3.6.14-SDK6 [xr] 19-Oct 18:38 UTC · ventana 31m32s · VR cerrada
+      dur VR 12m43s · pings fps: 76/75 · vr_end 75 fps (mín 49, máx 84)
+  · pul3m5gm v3.6.15-SDK6 [2d] 19-Oct 19:01 UTC · ventana — · sin VR
+  · g4zoka6l v3.6.15-SDK6 [2d] 19-Oct 18:55 UTC · ventana 5m45s · sin VR
+  · sgpxvqzn v3.6.12-SDK6 [xr] 19-Oct 17:28 UTC · ventana 1h09m · VR cerrada
+      dur VR 1h09m · pings fps: 73/77/78/78 · vr_end 75 fps (mín 50, máx 120)
+  · 5z1d2to1 v3.6.12-SDK6 [2d] 19-Oct 17:52 UTC · ventana 5s · sin VR
+  · a5ldnweb v3.6.10-SDK6 [2d] 19-Oct 16:07 UTC · ventana 1h45m · sin VR
+  · lgg49d33 v3.6.11-SDK6 [xr] 19-Oct 17:09 UTC · ventana 19m13s · VR cerrada
+      dur VR 17m41s · pings fps: 78/78/77 · vr_end 78 fps (mín 51, máx 91)
+
+— EMBUDO POR CAMPEONATO (champ_rank / stage / champion) —
+  · locura           pruebas: — | etapa máx: 3/5
+  · oeste            pruebas: asedio 1/1 · duelo 1/1 | etapa máx: 3/5
+      {"prueba": "duelo", "win": true, "score": 525, "stars": 1, "nv": 1, "duelScore": 11}
+      {"prueba": "asedio", "win": true, "score": 0, "stars": 0, "kills": 12, "wave": 3}
+
+— ERRORES —
+  · cero errores reportados
+
+— ADOPCIÓN DE VERSIONES (boots) —
+  · v3.6.9-SDK6       ×5
+  · v3.6.10-SDK6      ×3
+  · v3.6.11-SDK6      ×3
+  · v3.6.15-SDK6      ×3
+  · v3.6.12-SDK6      ×2
+  · v3.6.14-SDK6      ×1
+
+(informe guardado en scripts/informe_ultimo.txt)
+

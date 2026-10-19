@@ -2775,3 +2775,26 @@ Stage Summary:
 - Crear un campeonato nuevo ahora es: arte con nombres convencionales → gen_campeonato.py → qa_plantilla.py VERDE → --registrar. La plantilla trae duelo+dianas+poderes+coronación+leyenda listos; los kinds pesados (arkanoid/orbe/impulso/escudo/tren/asedio) quedan documentados como puntos de extensión con fuente y esfuerzo.
 - Herramientas reutilizables: qa_plantilla.py también audita los campeonatos existentes (modo compat) — primera herramienta de auditoría estática del modelo.
 - Producción intacta (V3.6.18-SDK6) y la coronación del dueño sigue siendo el siguiente hito del juego.
+---
+Task ID: 123
+Agent: principal (Z.ai)
+Task: Tanda de test + auditoría nocturna a petición del dueño («realiza un test y auditorías para ver si quedó algún bug, o ves aspectos mejorables») mientras descansa; prohibido alterar el build dorado.
+
+Work Log:
+- Alineado con origin (main e6c5ab8 = plantilla Ronda 25 ya pushada, sin deploy).
+- qa_todo.py COMPLETO: 10/10 capas VERDE (206 s) — física, manifiestos, presupuesto, juego en vivo, reactor, escudo, hub+ZIPs, SDK, telemetría.
+- qa_plantilla: _plantilla 19 OK/0 fallos VERDE; 5 orgánicos --compat: 4 VERDE + locura ROJO por falta de musicOff — INVESTIGADO: locura delega su BSO en el núcleo (__PP_ARCADE_DATA.musicUrl), el guard c03 (typeof mod.musicOff === 'function') lo protege; gap cosmético del contrato, no bug.
+- node --check masivo: 21 ficheros del juego OK.
+- Auditoría focalizada Ronda 24 (código que disparará el dueño al coronar): _championFlow/_leyendaFlow/_stageClear/showChampConseguido limpios (try-catch, dispose completo, fecha, confeti 14, stats). Falsa alarma descartada: leyendaFlag SÍ encuentra storage (viene del manifest al importar, no de championships.json).
+- BUG REAL hallado y RESUELTO: leave() y _resetLive() de oeste restauraban _replayReal pero NO reseteaban _leyendaOn. Escenario: campeón arma rejugada LEYENDA → «Borrar registros» del HUB → _leyendaOn=true huérfano con _champion=false → el camino normal fresco jugaba TODOS los duelos con dificultad leyenda (aiMul ×1.15, chance +0.06) porque un no-campeón no puede pulsar nodos futuros (el flag no se autocorrige). Rompía la promesa «camino normal byte-idéntico». Fix: 2 líneas (this._leyendaOn=false en ambos sitios). Sin tocar el gate de rejugada ni la coronación.
+- NUEVO scripts/qa_audit_r25.py: auditor estático transversal de 6 capas (storage write==read, promesas sin catch, listeners add/remove, intervals sin clearInterval, métodos this./ctrl. fantasma, i18n tx()). Resultado: 15 OK · 7 avisos · 0 fallos. Los 7 avisos son cadenas fetch/asset sin .catch (c13:46,70,2193,2255 · c09:268 · c11:37,38) — sólo unhandledrejection en consola, jamás rompen partida. Refinado en vivo contra falsos positivos (tx literales de valle/estacion, this.base de valle, canvas ctx helpers, then(onOk,onErr), singleton de flush 30 s).
+- Producción verificada por vía ligera (curl): V3.6.18-SDK6 en vivo, championships.json v29, oeste/index.js 626.266 B con código LEYENDA dentro. verify_pages_live.py colgado 2 veces (headless lento/EPIPE) — sustituido por curl directo, sin más reintentos.
+- Telemetría producción (88 eventos): 0 de error. Usuario YA entró en v3.6.18 (10-20 00:44, 2D, 13 min, sin progreso — exploró). Duelo Nv.2 confirmado como muro: 3 derrotas seguidas en v3.6.17 (duelScore 6/11/6).
+- QA post-fix: sintaxis OK (626.460 B), qa_plantilla --compat VERDE, qa_champion_listo VERDE, presupuesto 14 OK, qa_todo 10/10 (219 s).
+- Commit ad44be3 pushado a main y main:proyecto (PAT en memoria, nunca en disco). SIN DEPLOY: la rama pages no se tocó; producción sigue V3.6.18-SDK6.
+
+Stage Summary:
+- El proyecto pasa la noche más sana posible: 10/10 QA, 0 errores de producción, 1 bug latente resuelto (no alcanzable antes de coronar: requiere ser campeón y borrar registros a mitad de rejugada), 7 mejoras cosméticas documentadas para rondas futuras.
+- Pila de mejorables (Ronda 26+, sin urgencia): .catch en 6-7 cadenas core (c11 índice, c13 modelos pala/pistola/alternativos, c09 voz), musicOff en locura (contrato), y en la plantilla ya están cubiertos.
+- Deploy del fix pendiente de decisión del dueño (recomendación: tras la coronación, junto con lo que traiga la Ronda 26 — el bug no es alcanzable por el dueño hasta ser campeón).
+- El dueño debe seguir con: Duelo Nv.2 (muro real: 3 derrotas; estudiar el patrón del forajido entre oleadas de poder) → Tren → Duelo Final → ¡primera coronación!

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.9-SDK6",
-  "fase": 11,
-  "faseNombre": "TELEMETRIA: plataforma real + latido VR (ronda 12)",
+  "version": "3.6.10-SDK6",
+  "fase": 12,
+  "faseNombre": "NITIDEZ: framebufferScaleFactor 1.5 por datos (ronda 13)",
   "sdk": "1.4.0",
   "fecha": "2026-10-19",
-  "hub": "v369-sdk6",
+  "hub": "v3610-sdk6",
   "manifests": {
     "oeste": 51,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "f2e53b2f3143ff0f4450787b91784a628c59d079c5804a8a006688b89446efdb"
+  "golden": "c3c1722769bee198822a4e2e87b54621419acbdbbfbb0fbda538e6b096955430"
 }

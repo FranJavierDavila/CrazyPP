@@ -2655,3 +2655,21 @@ Stage Summary:
 - WORKER NATIVO EN PRODUCCIÓN desplegado y verificado E2E: el ciclo de vida del worker ya no depende de pegar código en el dashboard — deploy_worker.py lo hace todo con el token (re-entrante, D1 preservada, clave estable).
 - El pendiente CF_API_TOKEN de las rondas 8-19 queda CERRADO. Pendientes restantes del dueño: primer campeonato COMPLETO (a 2 nodos del Oeste) y 1 sesión ≥10 min más si quiere reforzar el criterio de nitidez (informativo: ya decidió 1.4×).
 - Panel opcional para el dueño: /telemetria → «Producción (D1)» → pegar la CLAVE (se recuerda en el navegador) — primera lectura real del visor en casco.
+
+---
+Task ID: 118 (ronda 21 · TU CAMINO TE ESPERA EN PRODUCCIÓN DE VERDAD)
+Agent: principal
+Task: «que sigue?» — sin eventos nuevos del casco → verificación del parche ronda 19 en navegador real → HALLAZGO CRÍTICO y corrección completa con cierre.
+
+Work Log:
+- HALLAZGO CRÍTICO (qa_hub_hints.py, nuevo): el parche de la ronda 19 NO estaba en producción pese a __PP_VERSION=3.6.16 — el prototipo desplegado de ChampLoader NO tenía _stageHint. CAUSA RAÍZ: la ronda 19 (y la limpieza ark_back_clown de la ronda 18) se escribieron en el ARTEFACTO public/game.html, y bump_version paso 4 REGENERA ese fichero desde src/game/ con build_game.py — los edits se perdieron en el bump y se desplegó 3.6.16 sin la función. Confirmado: tamaño del golden idéntico (6.348.360 B) en 3.6.15 y 3.6.16 = +0 B de parche.
+- DIAGNÓSTICO técnico del ensamblador: build_game.py exige token de identidad en la 1.ª línea de cada pieza (c11: b'class ChampLoader') — mi const con cabecera de comentario rompió el ensayo (FALLO de identidad) → CHAMP_STAGE_TOTAL movida al FINAL de c11 (TDZ no aplica: se lee en runtime).
+- PARCHE EN FUENTES (8 edits, 3 piezas): c00_pre_three.js (champ_stage_hint ES/EN tras champ_done_hint + ark_back_clown ES/EN retirado por fin) · c11_champloader.js (_stageHint + menuHint precedencia + CHAMP_STAGE_TOTAL al final) · c12_pingponggame.js (tarjeta con precedencia SUPERADO > etapa > victorias).
+- FLUJO LEGÍTIMO COMPLETO: build_game --escribir (6.350.545 B = +2.185 B exactos del parche) → marcadores verificados en el artefacto (_stageHint ×4, champ_stage_hint ×3, ark_back_clown ×0) → bump 3.6.17-SDK6 --fase 19 (golden d20d4c9a…, 6.350.545 B) → POST-CHECK OBLIGATORIO tras bump (marcadores supervivientes) → gen_release_v3617 (notas FASE 19 con transparencia del fallo) → build_zip: COMPLETO 125.225.922 · ligera 11.457.813 · CLOUDFLARE 125.212.536 · SOLO 6.089 → sella_r21 (31 sellos, idempotente ×2) → QA TOTAL 10/10 (209 s).
+- DESPLIEGUE: commit 287c58c (pyc cazado) → deploy_pages: Release v3.6.17-SDK6 4/4 assets → verify_pages_live 3.6.17-SDK6 VERDE AL PRIMER INTENTO (reintentos automáticos ronda 20) → qa_hub_hints.py 3.6.17-SDK6: 11/11 VERDE contra producción con el estado REAL del dueño (oeste 3/5 → «Etapa 3/5 · sigue donde la dejaste», locura 3/5, salida/campeón/corrupto callados, storage intacto, 0 pageerrors).
+- LECCIÓN PERMANENTE (para todas las rondas futuras): public/game.html es un ARTEFACTO — los cambios del juego se hacen en src/game/core/*.js + build_game.py --escribir; y tras CUALQUIER bump, grep de los marcadores de la ronda en public/game.html antes de seguir el pipeline. qa_hub_hints.py queda como capa QA de facto (K) disponible.
+
+Stage Summary:
+- V3.6.17-SDK6 EN VIVO con «TU CAMINO TE ESPERA» FUNCIONANDO DE VERDAD — verificado en navegador real contra producción con el estado exacto del dueño (Oeste 3/5 tras ganar Duelo Nv.1 + Asedio).
+- La limpieza ark_back_clown (ronda 18) también entró por fin.
+- Pendiente del dueño: recargar el casco → ver el hint en la tarjeta del Oeste → Duelo Nv.2 → Tren → DUELO FINAL = primer champion de la historia.

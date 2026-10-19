@@ -20,9 +20,9 @@ def chk(cond, label):
         fails += 1
 
 ZIPS = {
-    'crazypp-v365-sdk5-COMPLETO.zip': 125218761,
+    'crazypp-v365-sdk5-COMPLETO.zip': 125218871,  # +110 B: championship.schema.json actualizado (ronda 3, aditivo)
     'crazypp-v365-sdk5-ligera.zip': 11454411,
-    'crazypp-v365-sdk5-CLOUDFLARE.zip': 125205674,
+    'crazypp-v365-sdk5-CLOUDFLARE.zip': 125205784,  # +110 B: schema al día
     'crazypp-live-service-SOLO.zip': 6089,
 }
 

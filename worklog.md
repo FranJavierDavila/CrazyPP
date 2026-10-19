@@ -2485,3 +2485,20 @@ Stage Summary:
 - RONDA 13 COMPLETAMENTE EN PRODUCCIÓN: Pages 3.6.10-SDK6 en vivo (pages 9bf874163), release v3.6.10-SDK6 con los 4 ZIPs (COMPLETO 125.221.064 · ligera 11.456.437 · CLOUDFLARE 125.207.678 · SOLO 6.089), respaldo proyecto=800c3b4 + este cierre.
 - La próxima sesión VR del dueño se verá MÁS NITIDA (1.5×) y su vr_end decidirá: media ≥ 72 → se queda; < 72 → volver a 1.4 (una línea).
 - Pendiente con datos: (1) primer vr_ping (sesión ≥ 5 min) — fecha el fin real de sesiones abruptas y dibuja la curva de fps; (2) si el dueño juega ≥ 10 min, la curva fps/nitidez da el 2.º punto de decisión; (3) embudo por campeonato ya recibe ids (locura: 1 etapa) — falta la primera partida COMPLETA en 3.6.8+ para ver títulos/victorias/estrellas.
+
+---
+Task ID: 108 (cierre · deploy Pages + release + respaldo)
+Agent: principal
+Task: Cerrar la ronda 14 (reversión de nitidez por la regla pactada + sesiones VR en el panel): push de Pages 3.6.11-SDK6, GitHub Release con los 4 ZIPs y push de respaldo main→proyecto. Worker pendiente de CF_API_TOKEN.
+
+Work Log:
+- DATOS DE ENTRADA (los que dispararon la ronda): sesión luhd2xwt en 3.6.10 (casco, xr) — vr_start → stage → PRIMER vr_ping REAL de la historia (dur 300 s, fps 68 al minuto 5) → vr_end dur 535 s, fps 63 media (41-82). La regla pre-comprometida del Task 107 («media < 72 → volver a 1.4») se CUMPLIÓ: reversión aplicada y desplegada.
+- DETALLE DE LA DECISIÓN (documentado en c12): la comparación 78 (1.4×, 4,1 min) vs 63 (1.5×, 8,9 min) lleva sesgo de duración — el vr_ping marca 68 a mitad de sesión (≈ 78/1.148, el coste exacto predicho) y la sesión larga 1.4× de la 3.6.7 promedió 55. Aun así se aplica la regla pactada (la confianza en las reglas vale más que la excepción) y queda la salida POR DATOS: 1.45 o adaptativo si el dueño prefiere nitidez, con la curva vr_ping delante.
+- WORKER NO DESPLEGADO: deploy_worker.py exige CF_API_TOKEN (permisos Workers+D1) que se perdió con el reset del sandbox y NO está persistido en el repo (solo .clave-produccion lo está, por diseño). CUBIERTO: el panel hace fold de respaldo desde ?eventos=500 cuando el resumen no trae sesionesVR — el dueño ve sus sesiones VR reales YA, contra el worker viejo. Pendiente: pegar el token en una próxima sesión y correr deploy_worker.py (el worker.js nuevo ya pasa el harness 50/0).
+- HIGIENE DE DATOS VERIFICADA EN VIVO: verify_pages_live ahora inyecta pp_tele=0 ANTES de cargar el juego — tras el verify de esta ronda, D1 sigue en total=20 (0 boots de bots; los 6 boots 2d de 15:48-16:09 eran los verify/smoke de la ronda 13). El smoke del deploy NO se toca (necesita el beacon vivo para probarlo).
+- DESPLIEGUE: commit d0e8926 ANTES de deploy (lección r12) → smoke 18/0/0 · pages 837ebbd86 fast-forward · release v3.6.11-SDK6 4/4 assets · respaldo main→proyecto. El build de Pages tardó ~4,5 min (polling /pages/builds/latest, lección r13 aplicada: no re-deployar) → verify VERDE AL 1.er INTENTO (17/0/0).
+
+Stage Summary:
+- RONDA 14 COMPLETAMENTE EN PRODUCCIÓN (salvo el worker): Pages 3.6.11-SDK6 en vivo (pages 837ebbd86), release con los 4 ZIPs (COMPLETO 125.221.095 · ligera 11.456.468 · CLOUDFLARE 125.207.708 · SOLO 6.089), respaldo proyecto=d0e8926 + este cierre.
+- La próxima sesión VR del dueño vuelve a 1.4× (fluidez); su vr_end + curva vr_ping alimentarán la tabla «Sesiones VR (lentes)» del panel.
+- Pendientes: (1) CF_API_TOKEN del dueño → deploy_worker.py (sesionesVR nativa con historial de 2000 eventos, sustituye al fold del panel); (2) con 2-3 sesiones ≥ 10 min, decidir nitidez definitiva con la curva (1.4 vs 1.45 vs adaptativo); (3) primera partida COMPLETA de Magia/Locura en 3.6.8+ para llenar títulos/victorias/estrellas del embudo.

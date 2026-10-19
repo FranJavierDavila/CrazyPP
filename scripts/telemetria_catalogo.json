@@ -1,8 +1,8 @@
 {
   "catalogo": "telemetria-crazypp",
-  "version": 2,
+  "version": 3,
   "actualizado": "2026-10-19",
-  "ronda": "7 · fix del flujo de producción (array directo + routing por host)",
+  "ronda": "8 · lectura del worker de producción (D1 + clave) + panel doble fuente",
   "politica_pii": {
     "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
     "sin_ip": true,
@@ -123,5 +123,14 @@
     "panel": "/telemetria",
     "almacen": "telemetria/eventos.jsonl (git-ignorado, rotación ~8 MB → .old, SIN IP ni UA)",
     "contrato": "POST acepta array directo O wrapper {app,events} (tolerante) · GET ?resumen=1&sid=… · GET ?eventos=N · DELETE ?sid=… · OPTIONS preflight 204"
+  },
+  "lectura_ronda8": {
+    "worker": "scripts/worker-tele/worker.js — reemplazo del worker de producción: los lotes caen en D1 (SQLite serverless de Cloudflare, binding DB) y la lectura se expone con la clave",
+    "clave": "variable CLAVE del worker (?clave=… o cabecera X-Clave); protege resumen/eventos/DELETE; el POST no lleva clave (el juego es código público)",
+    "contrato": "POST → 204 sin cuerpo (mismo contrato) · GET latido público {ok,total,ts} · GET ?resumen=1 y ?eventos=N con clave (misma forma JSON que el receptor local) · DELETE ?sid con clave",
+    "privacidad": "se guarda exactamente el JSON del evento — sin IP, sin UA, sin cf-*; verificado por la capa J (bloque E: contrato estático + E2E con SQLite real vía node:sqlite, 30 checks)",
+    "panel": "/telemetria añade el selector Local ⇄ Producción (D1): la clave se guarda solo en el navegador del dueño (pp_tele_prod_clave)",
+    "instrucciones": "scripts/worker-tele/LEEME.md — despliegue por dashboard (~10 min) o CLI (wrangler)",
+    "pendiente_despliegue": "el dueño pega el código + crea la base D1 crazypp-tele + pone la CLAVE; verificación: latido público y resumen con clave"
   }
 }

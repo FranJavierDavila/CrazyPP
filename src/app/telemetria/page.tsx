@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * CRAZY PING PONG · PANEL DE TELEMETRÍA (ronda 6 · roadmap P1)
- * Vista en vivo del receptor local (/api/telemetria). Misma estética que el
- * hub de descargas. Anónima por diseño: sólo contadores, sids aleatorios y
- * FPS — sin IP, sin user-agent, sin contenido de partida.
+ * CRAZY PING PONG · PANEL DE TELEMETRÍA (ronda 6 · roadmap P1 · ronda 8 doble fuente)
+ * Vista en vivo del receptor LOCAL (/api/telemetria) y del WORKER DE PRODUCCIÓN
+ * (D1 en Cloudflare, ronda 8) con la clave del dueño. Misma estética que el hub
+ * de descargas. Anónima por diseño: sólo contadores, sids aleatorios y FPS —
+ * sin IP, sin user-agent, sin contenido de partida.
  */
 
 type Ev = Record<string, unknown> & { e?: string; sid?: string; t?: number; _rec?: number };
@@ -26,6 +27,8 @@ type Resumen = {
   almacen: string;
 };
 
+const WORKER_DEF = "https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele";
+
 const hhmm = (t: number) =>
   t ? new Date(t).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
 
@@ -36,19 +39,58 @@ export default function Telemetria() {
   const [err, setErr] = useState<string>("");
   const [pausa, setPausa] = useState(false);
   const [filtro, setFiltro] = useState("");
+  const [fuente, setFuente] = useState<"local" | "prod">("local");
+  const [prodUrl, setProdUrl] = useState(WORKER_DEF);
+  const [prodClave, setProdClave] = useState("");
+
+  // preferencias persistidas (solo en el cliente: el SSR arranca en local)
+  useEffect(() => {
+    try {
+      const f = localStorage.getItem("pp_tele_fuente");
+      if (f === "prod" || f === "local") setFuente(f);
+      const u = localStorage.getItem("pp_tele_prod_url");
+      if (u) setProdUrl(u);
+      const c = localStorage.getItem("pp_tele_prod_clave");
+      if (c) setProdClave(c);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("pp_tele_fuente", fuente);
+      localStorage.setItem("pp_tele_prod_url", prodUrl);
+      localStorage.setItem("pp_tele_prod_clave", prodClave);
+    } catch {}
+  }, [fuente, prodUrl, prodClave]);
 
   const carga = useCallback(async () => {
     try {
-      const q = filtro.trim() ? `?resumen=1&sid=${encodeURIComponent(filtro.trim())}` : "?resumen=1";
-      const res = await fetch("/api/telemetria" + q, { cache: "no-store" });
-      const j = (await res.json()) as Resumen;
+      const esProd = fuente === "prod";
+      const base = esProd ? prodUrl.trim() : "/api/telemetria";
+      if (esProd && !prodClave.trim()) {
+        setR(null);
+        setErr("Producción: escribe la CLAVE del worker para leer (se guarda solo en este navegador)");
+        return;
+      }
+      const p = new URLSearchParams({ resumen: "1" });
+      if (filtro.trim()) p.set("sid", filtro.trim());
+      if (esProd) p.set("clave", prodClave.trim());
+      const res = await fetch(`${base}?${p}`, { cache: "no-store" });
+      const texto = await res.text();
+      if (!res.ok) {
+        throw new Error(
+          res.status === 403
+            ? "clave incorrecta o sin CLAVE en el worker (HTTP 403)"
+            : `HTTP ${res.status}: ${texto.slice(0, 120)}`
+        );
+      }
+      const j = JSON.parse(texto) as Resumen;
       if (!j.ok) throw new Error("ok=false");
       setR(j);
       setErr("");
     } catch (e) {
       setErr(String((e as Error).message || e));
     }
-  }, [filtro]);
+  }, [filtro, fuente, prodUrl, prodClave]);
 
   useEffect(() => {
     carga();
@@ -58,10 +100,12 @@ export default function Telemetria() {
   }, [carga, pausa]);
 
   const purga = async () => {
-    if (!confirm("¿Borrar TODOS los eventos del almacén local?")) return;
-    await fetch("/api/telemetria" + (filtro.trim() ? `?sid=${encodeURIComponent(filtro.trim())}` : ""), {
-      method: "DELETE",
-    });
+    const esProd = fuente === "prod";
+    if (!confirm(`¿Borrar TODOS los eventos de ${esProd ? "PRODUCCIÓN (D1 del worker)" : "el almacén local"}?`)) return;
+    const p = new URLSearchParams();
+    if (filtro.trim()) p.set("sid", filtro.trim());
+    if (esProd) p.set("clave", prodClave.trim());
+    await fetch(`${esProd ? prodUrl.trim() : "/api/telemetria"}?${p}`, { method: "DELETE" });
     carga();
   };
 
@@ -77,14 +121,53 @@ export default function Telemetria() {
           </p>
           <h1 className="mt-2 text-4xl font-black tracking-tight">📡 Telemetría anónima</h1>
           <p className="mt-2 text-sm text-slate-400">
-            Receptor local <code className="rounded bg-slate-800 px-1">/api/telemetria</code> · almacén{" "}
-            <code className="rounded bg-slate-800 px-1">{r?.almacen ?? "telemetria/eventos.jsonl"}</code> · sin IP · sin
+            {fuente === "local" ? (
+              <>
+                Receptor local <code className="rounded bg-slate-800 px-1">/api/telemetria</code>
+              </>
+            ) : (
+              <>
+                Producción <code className="rounded bg-slate-800 px-1">worker /api/tele (D1)</code>
+              </>
+            )}{" "}
+            · almacén <code className="rounded bg-slate-800 px-1">{r?.almacen ?? (fuente === "local" ? "telemetria/eventos.jsonl" : "d1:crazypp-tele")}</code> · sin IP · sin
             user-agent · opt-out desde Opciones del juego
           </p>
         </header>
 
         {/* Controles */}
         <div className="mb-6 flex flex-wrap items-center justify-center gap-3 text-sm">
+          <div className="flex overflow-hidden rounded-md border border-slate-700">
+            <button
+              onClick={() => setFuente("local")}
+              className={`px-4 py-1.5 ${fuente === "local" ? "bg-orange-500 font-bold text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}
+            >
+              Local
+            </button>
+            <button
+              onClick={() => setFuente("prod")}
+              className={`px-4 py-1.5 ${fuente === "prod" ? "bg-orange-500 font-bold text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}
+            >
+              Producción (D1)
+            </button>
+          </div>
+          {fuente === "prod" && (
+            <>
+              <input
+                value={prodUrl}
+                onChange={(e) => setProdUrl(e.target.value)}
+                placeholder="URL del worker…"
+                className="w-72 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 font-mono text-xs outline-none focus:border-orange-400"
+              />
+              <input
+                value={prodClave}
+                onChange={(e) => setProdClave(e.target.value)}
+                type="password"
+                placeholder="CLAVE del worker…"
+                className="w-40 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 outline-none focus:border-orange-400"
+              />
+            </>
+          )}
           <input
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
@@ -270,7 +353,7 @@ export default function Telemetria() {
             </section>
 
             <footer className="mt-10 text-center text-xs text-slate-600">
-              Ronda 6 · roadmap P1 (telemetría) — el juego no cambia: receptor y panel son herramientas del ecosistema.
+              Ronda 8 · Local ⇄ Producción (D1) — el juego no cambia: receptor, worker y panel son herramientas del ecosistema.
             </footer>
           </>
         )}

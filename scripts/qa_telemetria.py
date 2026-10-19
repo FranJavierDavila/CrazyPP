@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""CRAZY PING PONG · QA CAPA J · TELEMETRÍA (rondas 6-7, roadmap P1).
+"""CRAZY PING PONG · QA CAPA J · TELEMETRÍA (rondas 6-8, roadmap P1).
 Verifica la cadena completa del anónimo __PP_TELE. Desde la ronda 7 el JUEGO
 SÍ cambia: el lote es un ARRAY DIRECTO (el receptor de producción rechazaba
 el wrapper con 400) y el endpoint se ENRUTA POR HOST en 04_boot (local →
-/api/telemetria, producción → worker):
+/api/telemetria, producción → worker). Desde la ronda 8 el WORKER DE
+PRODUCCIÓN se verifica SIN nube: el mismo worker.js se ejecuta contra SQLite
+real (node:sqlite) con el harness scripts/worker-tele/test_local.mjs:
   A. Catálogo ↔ fuente        — los 8 eventos del catálogo son TODOS los que
                                 emite el código (y viceversa); PII, hallazgos
                                 y el ROUTING del shell en el artefacto.
@@ -18,6 +20,10 @@ el wrapper con 400) y el endpoint se ENRUTA POR HOST en 04_boot (local →
   D. Panel + PII + artefacto  — /telemetria en :3000 y :81, API por el gateway,
                                 auditoría de claves (nada fuera del catálogo) y
                                 el artefacto game.html lleva la telemetría.
+  E. Worker de producción     — contrato estático de worker.js + sintaxis ESM
+                                + E2E completo con D1 simulado (30 checks del
+                                harness: saneo, clave, agregados SQL, purga,
+                                CORS y privacidad — sin IP/UA jamás).
 Uso: python3 scripts/qa_telemetria.py   (requiere dev :3000 y gateway :81)
 """
 import asyncio
@@ -362,6 +368,66 @@ async def bloque_e2e():
         return sid, sid_nat
 
 
+# ---------------------------------------------------------------- BLOQUE E
+def bloque_worker():
+    """El worker de producción (ronda 8), verificado SIN nube.
+    El propio worker.js se ejecuta contra SQLite real (node:sqlite) con el
+    harness test_local.mjs: contrato completo + agregados SQL + privacidad."""
+    print('== E · WORKER DE PRODUCCIÓN (contrato + E2E con D1 simulado) ==')
+    wjs = RAIZ / 'scripts' / 'worker-tele' / 'worker.js'
+    harness = RAIZ / 'scripts' / 'worker-tele' / 'test_local.mjs'
+    chk(wjs.exists() and harness.exists(),
+        'existen scripts/worker-tele/{worker.js,test_local.mjs}')
+    src = wjs.read_text(encoding='utf-8', errors='replace')
+
+    # --- contrato estático (config-as-data de los anclajes del worker) ---
+    anclas = [
+        ('export default', 'módulo ESM export default'),
+        ('async fetch(request, env)', 'firma fetch(request, env)'),
+        ('CREATE TABLE IF NOT EXISTS eventos', 'esquema auto-inicializado'),
+        ("json_extract(json,'$.fps')", 'agregación fps vía json_extract SQL'),
+        ("json_extract(json,'$.champ')", 'agregación champ_rank vía json_extract SQL'),
+        ('instr(sid, ?)', 'filtro ?sid case-sensitive (paridad con el local)'),
+        ('"Access-Control-Allow-Origin": "*"', 'CORS abierto (el juego y el panel son cross-origin)'),
+        ('MAX_BODY = 256 * 1024', 'límite de cuerpo 256 KB'),
+        ('MAX_EVENTO = 2000', 'límite de 2000 B por evento'),
+        ('MAX_LOTE = 500', 'tope de 500 eventos por lote'),
+        ('env.CLAVE', 'lectura protegida por la variable CLAVE'),
+        ('status: 204, headers: CORS', 'POST responde 204 SIN cuerpo (contrato de producción)'),
+    ]
+    for aguja, etiqueta in anclas:
+        chk(aguja in src, f'worker: {etiqueta}')
+    chk(not re.search(r"headers\.get\(\s*['\"]user-agent", src, re.I),
+        'worker: NO lee la cabecera user-agent (privacidad)')
+    chk(not re.search(r"headers\.get\(\s*['\"]cf-", src),
+        'worker: NO lee cabeceras cf-* (sin IP/geo)')
+
+    # --- sintaxis ESM (node --check sobre copia .mjs temporal) ---
+    import shutil
+    import subprocess as sp
+    tmp = RAIZ / 'scripts' / 'worker-tele' / '.qa_sintaxis.mjs'
+    shutil.copyfile(wjs, tmp)
+    try:
+        r = sp.run(['node', '--check', str(tmp)], capture_output=True, text=True, timeout=60)
+        chk(r.returncode == 0,
+            f'worker: sintaxis ESM válida (node --check) {r.stderr.strip()[:80]}')
+    finally:
+        tmp.unlink(missing_ok=True)
+
+    # --- E2E real: el mismo worker.js contra SQLite (node:sqlite) ---
+    r = sp.run(['node', str(harness)], capture_output=True, text=True, timeout=120)
+    linea = next((l for l in (r.stdout + r.stderr).splitlines()
+                  if l.startswith('RESULTADO')), '')
+    limpio = linea.replace('RESULTADO:', '').strip()
+    m = re.search(r'(\d+)\s*OK\s*·\s*(\d+)\s*FALLOS', limpio)
+    n_fallos = int(m.group(2)) if m else 9999
+    detalle = (r.stdout + r.stderr).strip().splitlines()
+    chk(r.returncode == 0 and n_fallos == 0,
+        f'worker: harness E2E completo contra SQLite ({limpio or "sin salida"})'
+        + ('' if r.returncode == 0 and n_fallos == 0
+           else ' · ' + ' | '.join(detalle[:8])))
+
+
 # ---------------------------------------------------------------- BLOQUE D
 def bloque_panel(*sids_e2e):
     print('== D · PANEL, PII Y GATEWAY ==')
@@ -401,9 +467,10 @@ def bloque_panel(*sids_e2e):
 
 
 async def main():
-    print('QA TELEMETRÍA · rondas 6-7 (roadmap P1) · lote array directo + routing por host')
+    print('QA TELEMETRÍA · rondas 6-8 (roadmap P1) · lote array directo + routing por host + worker D1')
     cat = bloque_catalogo()
     bloque_contrato()
+    bloque_worker()
     sid, sid_nat = await bloque_e2e()
     bloque_panel(sid, sid_nat)
     print(f'\nRESULTADO: {ok} OK · {fails} FALLOS')

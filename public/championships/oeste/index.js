@@ -13347,6 +13347,7 @@ class ForajidoStand {
     if (this._replayReal != null) {
       this.stage = this._replayReal;
       this._replayReal = null;
+      this._leyendaOn = false;             // ronda 25 (auditoría): sin flag huérfano
       try { localStorage.setItem(this.storageKey('stage'), String(this.stage)); } catch (e0) { /* */ }
     }
     this.musicOff();
@@ -13552,6 +13553,7 @@ class ForajidoStand {
     const estaba = !!this.active;
     try { this.leave(); } catch (e) { /* sigue */ }
     this.stage = 1; this._champion = false; this._heridas = 0;
+    this._leyendaOn = false;               // ronda 25 (auditoría): el borrado corta también la LEYENDA
     this.duelWins = 0; this.rank = []; this.round = 1;
     this.streakP = 0; this.streakAi = 0;
     this._replayReal = null; this._hoverNodo = -1;

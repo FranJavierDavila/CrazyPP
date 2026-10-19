@@ -543,5 +543,164 @@
   "v": "3.6.7-SDK6",
   "sid": "ojf71mx7-csds",
   "platform": "2d"
+ },
+ {
+  "e": "vr_start",
+  "t": 1792444241313,
+  "v": "3.6.15-SDK6",
+  "sid": "qym1q37o-p9x3",
+  "mode": "match",
+  "multi": false
+ },
+ {
+  "e": "vr_end",
+  "t": 1792444246910,
+  "v": "3.6.15-SDK6",
+  "sid": "qym1q37o-p9x3",
+  "dur": 6,
+  "fps": 90,
+  "fpsMin": 75,
+  "fpsMax": 75
+ },
+ {
+  "e": "page_close",
+  "t": 1792444249775,
+  "v": "3.6.15-SDK6",
+  "sid": "qym1q37o-p9x3",
+  "dur": 7264
+ },
+ {
+  "e": "boot",
+  "t": 1792444250351,
+  "v": "3.6.17-SDK6",
+  "sid": "j05cy7tq-0z5a",
+  "platform": "xr"
+ },
+ {
+  "e": "page_close",
+  "t": 1792444256088,
+  "v": "3.6.17-SDK6",
+  "sid": "j05cy7tq-0z5a",
+  "dur": 6
+ },
+ {
+  "e": "boot",
+  "t": 1792444256361,
+  "v": "3.6.17-SDK6",
+  "sid": "kcvl5zfe-13s9",
+  "platform": "xr"
+ },
+ {
+  "e": "vr_start",
+  "t": 1792444260544,
+  "v": "3.6.17-SDK6",
+  "sid": "kcvl5zfe-13s9",
+  "mode": "match",
+  "multi": false
+ },
+ {
+  "e": "champ_rank",
+  "t": 1792444528991,
+  "v": "3.6.17-SDK6",
+  "sid": "kcvl5zfe-13s9",
+  "champ": "oeste",
+  "prueba": "duelo",
+  "win": false,
+  "score": 7325,
+  "stars": 0,
+  "nv": 2,
+  "duelScore": 6
+ },
+ {
+  "e": "vr_ping",
+  "t": 1792444560546,
+  "v": "3.6.17-SDK6",
+  "sid": "kcvl5zfe-13s9",
+  "dur": 300,
+  "fps": 71
+ },
+ {
+  "e": "vr_ping",
+  "t": 1792444860549,
+  "v": "3.6.17-SDK6",
+  "sid": "kcvl5zfe-13s9",
+  "dur": 600,
+  "fps": 73
+ },
+ {
+  "e": "champ_rank",
+  "t": 1792444897290,
+  "v": "3.6.17-SDK6",
+  "sid": "kcvl5zfe-13s9",
+  "champ": "oeste",
+  "prueba": "duelo",
+  "win": false,
+  "score": 7600,
+  "stars": 0,
+  "nv": 2,
+  "duelScore": 11
+ },
+ {
+  "e": "vr_ping",
+  "t": 1792445160545,
+  "v": "3.6.17-SDK6",
+  "sid": "kcvl5zfe-13s9",
+  "dur": 900,
+  "fps": 72
+ },
+ {
+  "e": "champ_rank",
+  "t": 1792445179727,
+  "v": "3.6.17-SDK6",
+  "sid": "kcvl5zfe-13s9",
+  "champ": "oeste",
+  "prueba": "duelo",
+  "win": false,
+  "score": 7750,
+  "stars": 0,
+  "nv": 2,
+  "duelScore": 6
+ },
+ {
+  "e": "page_close",
+  "t": 1792448144511,
+  "v": "3.6.7-SDK6",
+  "sid": "ojf71mx7-csds",
+  "dur": 6702
+ },
+ {
+  "e": "boot",
+  "t": 1792448147380,
+  "v": "3.6.18-SDK6",
+  "sid": "62tevl81-ci44",
+  "platform": "2d"
+ },
+ {
+  "e": "page_close",
+  "t": 1792448148270,
+  "v": "3.6.18-SDK6",
+  "sid": "62tevl81-ci44",
+  "dur": 1
+ },
+ {
+  "e": "boot",
+  "t": 1792449883378,
+  "v": "3.6.18-SDK6",
+  "sid": "nwuyva7w-dpma",
+  "platform": "2d"
+ },
+ {
+  "e": "page_close",
+  "t": 1792450693812,
+  "v": "3.6.18-SDK6",
+  "sid": "nwuyva7w-dpma",
+  "dur": 810
+ },
+ {
+  "e": "boot",
+  "t": 1792450695259,
+  "v": "3.6.18-SDK6",
+  "sid": "toi7isk1-v42j",
+  "platform": "2d"
  }
 ]

@@ -2638,3 +2638,20 @@ Stage Summary:
 - Estado del dueño: Oeste 3/5 (Duelo Nv.1 ✓, Asedio ✓, queda Duelo Nv.2 → Tren → Duelo Final), Locura 3/5. Primer campeonato COMPLETO y primer champion a 2 nodos.
 - Nitidez (informativo): la sesión de hoy (89/83 sostenidos, vr_end 93) ya cumple el espíritu del criterio 1.45 en 1 sesión — decisión del dueño (1.4×) intacta.
 - Pendiente del dueño: CF_API_TOKEN (deploy nativo del worker, harness 50/0 listo).
+
+---
+Task ID: 117 (worker nativo · CF_API_TOKEN al fin)
+Agent: principal
+Task: el dueño entrega el CF_API_TOKEN (cfut_…, verificado active) — deploy nativo del worker de telemetría con deploy_worker.py (harness 50/0), pendiente desde la ronda 8.
+
+Work Log:
+- Token verificado: GET /user/tokens/verify → success, estado ACTIVE. CONFUSIÓN PREVIA ACLARADA: el dueño pegó antes el PAT de GitHub (ghp_…, ya en uso, revalidado) — el CF es otro formato sin prefijo ghp_.
+- DEPLOY NATIVO COMPLETO (deploy_worker.py): cuenta Escala3dcorreoia@gmail.com's Account localizada sola · D1 «crazypp-tele» REUTILIZADA (uuid 24ee07a2…, datos intactos) · CLAVE REUTILIZADA de .clave-produccion (no se regeneró: el deployer la lee del fichero si existe — cero rotación de clave en producción) · worker módulo subido con bindings DB+CLAVE · subdomain workers.dev habilitado.
+- E2E EN PRODUCCIÓN (paso 8): latido total=67 · 403 sin clave · POST prueba → 204 · resumen con clave → evento visible · DELETE por sid → borrados 2 · total restaurado 67 — producción limpia.
+- VERIFICACIÓN POST con el flujo estándar del taller (curl + UA navegador + clave): resumen OK, total 67, sesiones 19, almacen d1:crazypp-tele. HITO: champRank por fin con datos en el agregador — {oeste: {partidas: 2, victorias: 2, mejor: 525, estrellas: 1}} (las 2 victorias del dueño en la sesión qym1q37o).
+- Sin cambios en public/ (no toca pages, no bump, no ZIPs). worklog + push main:proyecto. El token CF NUNCA se commitea (no vive en el repo; el dueño lo tiene en su dash).
+
+Stage Summary:
+- WORKER NATIVO EN PRODUCCIÓN desplegado y verificado E2E: el ciclo de vida del worker ya no depende de pegar código en el dashboard — deploy_worker.py lo hace todo con el token (re-entrante, D1 preservada, clave estable).
+- El pendiente CF_API_TOKEN de las rondas 8-19 queda CERRADO. Pendientes restantes del dueño: primer campeonato COMPLETO (a 2 nodos del Oeste) y 1 sesión ≥10 min más si quiere reforzar el criterio de nitidez (informativo: ya decidió 1.4×).
+- Panel opcional para el dueño: /telemetria → «Producción (D1)» → pegar la CLAVE (se recuerda en el navegador) — primera lectura real del visor en casco.

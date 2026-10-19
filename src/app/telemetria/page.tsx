@@ -29,6 +29,8 @@ type Resumen = {
   vrDuracion?: { media: number | null; max: number | null; n: number };
   porDia?: { dia: string; eventos: number; boots: number; sesiones: number }[];
   versiones?: { v: string; eventos: number; sesiones: number }[];
+  // ronda 11 — embudo por campeonato (stage/champion con id desde 3.6.8-SDK6)
+  porCampeonato?: Record<string, { stage?: number; champion?: number }>;
   almacen: string;
 };
 
@@ -136,6 +138,35 @@ export default function Telemetria() {
     ["champ_rank (resultado registrado)", pe.champ_rank ?? 0],
   ];
   const maxBoots = r?.porDia?.length ? Math.max(...r.porDia.map((d) => d.boots), 1) : 1;
+
+  // ronda 11: filas del embudo POR CAMPEONATO (stage/champion del resumen +
+  // champ_rank ya agregado por champ). Tolerante: si la fuente no trae
+  // porCampeonato (receptor viejo), la sección no se pinta.
+  const filasChamp: {
+    id: string; stage: number; champion: number; partidas: number;
+    victorias: number; mejor: number; estrellas: number;
+  }[] = [];
+  if (r) {
+    const ids = new Set([
+      ...Object.keys(r.porCampeonato ?? {}),
+      ...Object.keys(r.champRank ?? {}),
+    ]);
+    for (const id of ids) {
+      const pc = r.porCampeonato?.[id] ?? {};
+      const cr = r.champRank?.[id];
+      if (!pc.stage && !pc.champion && !cr) continue;
+      filasChamp.push({
+        id,
+        stage: pc.stage ?? 0,
+        champion: pc.champion ?? 0,
+        partidas: cr?.partidas ?? 0,
+        victorias: cr?.victorias ?? 0,
+        mejor: cr?.mejor ?? 0,
+        estrellas: cr?.estrellas ?? 0,
+      });
+    }
+    filasChamp.sort((a, b) => b.partidas - a.partidas || b.stage - a.stage);
+  }
 
   return (
     <main className="min-h-screen bg-[#0B1526] text-slate-100">
@@ -343,6 +374,42 @@ export default function Telemetria() {
                       ))}
                     </div>
                   </div>
+
+                  {/* ronda 11: embudo POR CAMPEONATO (requiere juego 3.6.8-SDK6) */}
+                  {filasChamp.length > 0 && (
+                    <div className="mt-5">
+                      <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-slate-400">Embudo por campeonato</h3>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-xs uppercase text-slate-500">
+                            <th className="pb-2">Campeonato</th>
+                            <th className="pb-2 text-right">Etapas</th>
+                            <th className="pb-2 text-right">Títulos</th>
+                            <th className="pb-2 text-right">Partidas</th>
+                            <th className="pb-2 text-right">Victorias</th>
+                            <th className="pb-2 text-right">Mejor</th>
+                            <th className="pb-2 text-right">Estrellas</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filasChamp.map((f) => (
+                            <tr key={f.id} className="border-t border-slate-800">
+                              <td className="py-1.5 font-mono text-orange-300">{f.id}</td>
+                              <td className="py-1.5 text-right text-slate-300">{fmt(f.stage)}</td>
+                              <td className="py-1.5 text-right text-slate-300">{fmt(f.champion)}</td>
+                              <td className="py-1.5 text-right text-slate-300">{fmt(f.partidas)}</td>
+                              <td className="py-1.5 text-right text-emerald-300">{fmt(f.victorias)}</td>
+                              <td className="py-1.5 text-right text-orange-300">{f.mejor ? fmt(f.mejor) : "—"}</td>
+                              <td className="py-1.5 text-right text-amber-300">{f.estrellas ? "★".repeat(Math.min(3, f.estrellas)) : "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Etapas (stage) y títulos (champion) llegan con id desde la V3.6.8-SDK6; partidas/victorias/mejor/estrellas vienen de champ_rank.
+                      </p>
+                    </div>
+                  )}
                 </>
               )}
             </section>
@@ -476,7 +543,7 @@ export default function Telemetria() {
             </section>
 
             <footer className="mt-10 text-center text-xs text-slate-600">
-              Ronda 9 · análisis explícito (duraciones, embudo, por día, versiones) · Local ⇄ Producción (D1) — el juego no cambia: receptor, worker y panel son herramientas del ecosistema.
+              Ronda 11 · embudo por campeonato (id en stage/champion + champ_rank con versión real y opt-out) · Ronda 9 · análisis explícito · Local ⇄ Producción (D1) — el juego no cambia: receptor, worker y panel son herramientas del ecosistema.
             </footer>
           </>
         )}

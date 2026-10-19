@@ -57,7 +57,8 @@ REWRITES = [
     ('href="/tv.html"', 'href="tv.html"', 1),
 ]
 SMOKE_ALLOW_404 = ('/favicon.ico',)      # petición automática del navegador
-SMOKE_ALLOW_PREFIX = ('/socket.io',)     # sondeo del cliente incluido en vendor/
+SMOKE_ALLOW_PREFIX = ('/socket.io',      # sondeo del cliente incluido en vendor/
+                      '/api/')           # ronda 11: bajo 127.0.0.1 el juego enruta la telemetría al receptor LOCAL (que en el sitio estático no existe — en producción real va al Worker); el beacon de 5 s cae al vacío y se tolera
 
 
 def sh(args, **kw):

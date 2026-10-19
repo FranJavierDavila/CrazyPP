@@ -2,7 +2,7 @@
   "catalogo": "telemetria-crazypp",
   "version": 3,
   "actualizado": "2026-10-19",
-  "ronda": "8 · lectura del worker de producción (D1 + clave) + panel doble fuente",
+  "ronda": 11,
   "politica_pii": {
     "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
     "sin_ip": true,
@@ -28,7 +28,11 @@
       "origen": "src/game/core/c00_pre_three.js (__PP_TELE, auto al cargar el módulo)",
       "momento": "carga de game.html (el módulo se evalúa)",
       "campos": [
-        { "nombre": "platform", "tipo": "string", "desc": "'2d' en la carga 2D; la entrada VR se registra con vr_start" }
+        {
+          "nombre": "platform",
+          "tipo": "string",
+          "desc": "'2d' en la carga 2D; la entrada VR se registra con vr_start"
+        }
       ],
       "desde": "v2.50"
     },
@@ -37,7 +41,11 @@
       "origen": "src/game/core/c00_pre_three.js (listener pagehide)",
       "momento": "cierre/ocultación definitiva de la pestaña",
       "campos": [
-        { "nombre": "dur", "tipo": "number", "desc": "segundos de sesión desde el boot" }
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "segundos de sesión desde el boot"
+        }
       ],
       "desde": "v2.50"
     },
@@ -46,7 +54,11 @@
       "origen": "src/game/core/c00_pre_three.js (listener window error)",
       "momento": "excepción no capturada en la página",
       "campos": [
-        { "nombre": "m", "tipo": "string", "desc": "mensaje del error recortado a 140 caracteres" }
+        {
+          "nombre": "m",
+          "tipo": "string",
+          "desc": "mensaje del error recortado a 140 caracteres"
+        }
       ],
       "desde": "v2.76"
     },
@@ -55,8 +67,16 @@
       "origen": "src/game/core/c12_pingponggame.js",
       "momento": "entrada en sesión VR inmersiva",
       "campos": [
-        { "nombre": "mode", "tipo": "string", "desc": "modo de juego activo" },
-        { "nombre": "multi", "tipo": "boolean", "desc": "true si la sesión es multijugador online (NetLink)" }
+        {
+          "nombre": "mode",
+          "tipo": "string",
+          "desc": "modo de juego activo"
+        },
+        {
+          "nombre": "multi",
+          "tipo": "boolean",
+          "desc": "true si la sesión es multijugador online (NetLink)"
+        }
       ],
       "desde": "v2.50"
     },
@@ -65,10 +85,26 @@
       "origen": "src/game/core/c12_pingponggame.js",
       "momento": "salida de la sesión VR (inmediatamente hace flush(true))",
       "campos": [
-        { "nombre": "dur", "tipo": "number", "desc": "segundos de sesión VR" },
-        { "nombre": "fps", "tipo": "number|null", "desc": "FPS medio de la sesión (muestreo cada 5 s; null si no hubo muestras)" },
-        { "nombre": "fpsMin", "tipo": "number|null", "desc": "FPS mínimo de la sesión VR (ronda 10; peor intervalo de 5 s)" },
-        { "nombre": "fpsMax", "tipo": "number|null", "desc": "FPS máximo de la sesión VR (ronda 10; mejor intervalo de 5 s)" }
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "segundos de sesión VR"
+        },
+        {
+          "nombre": "fps",
+          "tipo": "number|null",
+          "desc": "FPS medio de la sesión (muestreo cada 5 s; null si no hubo muestras)"
+        },
+        {
+          "nombre": "fpsMin",
+          "tipo": "number|null",
+          "desc": "FPS mínimo de la sesión VR (ronda 10; peor intervalo de 5 s)"
+        },
+        {
+          "nombre": "fpsMax",
+          "tipo": "number|null",
+          "desc": "FPS máximo de la sesión VR (ronda 10; mejor intervalo de 5 s)"
+        }
       ],
       "desde": "v2.50 (fps desde v2.76)"
     },
@@ -77,7 +113,16 @@
       "origen": "public/championships/locura/index.js · public/championships/magia/index.js",
       "momento": "avance de etapa en el camino del campeonato",
       "campos": [
-        { "nombre": "n", "tipo": "number", "desc": "etapa alcanzada" }
+        {
+          "nombre": "n",
+          "tipo": "number",
+          "desc": "etapa alcanzada"
+        },
+        {
+          "nombre": "id",
+          "tipo": "string",
+          "desc": "ronda 11: id del campeonato ('magia', 'locura'); los eventos anteriores a 3.6.8-SDK6 no lo llevan"
+        }
       ],
       "notas": "NO lleva id de campeonato (limitación conocida: no se puede atribuir al módulo desde el receptor)",
       "desde": "v2.50"
@@ -86,25 +131,63 @@
       "nombre": "champion",
       "origen": "public/championships/locura/index.js · public/championships/magia/index.js",
       "momento": "primer trofeo del campeonato (win && firstTrophy)",
-      "campos": [],
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "string",
+          "desc": "ronda 11: id del campeonato ganado (los anteriores a 3.6.8-SDK6 no lo llevan)"
+        }
+      ],
       "notas": "sin campos extra; NO lleva id de campeonato (misma limitación)",
       "desde": "v2.50"
     },
     {
       "nombre": "champ_rank",
-      "origen": "public/championships/magia/index.js (_reportRank, POST PROPIO con array directo application/json + CORS)",
+      "origen": "public/championships/magia/index.js (_reportRank) — ronda 11: viaja POR la cola __PP_TELE.ev (antes: POST propio application/json)",
       "momento": "fin de la prueba del orbe con ranking",
       "campos": [
-        { "nombre": "champ", "tipo": "string", "desc": "id del campeonato (p.ej. 'magia')" },
-        { "nombre": "win", "tipo": "boolean", "desc": "prueba superada" },
-        { "nombre": "score", "tipo": "number", "desc": "puntuación recortada a rangos imposibles de falsear" },
-        { "nombre": "stars", "tipo": "number", "desc": "0..3 estrellas" },
-        { "nombre": "bricks", "tipo": "number", "desc": "ladrillos destruidos" },
-        { "nombre": "ext", "tipo": "number", "desc": "extensiones de tiempo usadas" },
-        { "nombre": "left", "tipo": "number", "desc": "segundos restantes (×10 redondeados)" },
-        { "nombre": "v", "tipo": "string", "desc": "sello del módulo (OJO: hardcodeado '2.81.0' — drift conocido)" }
+        {
+          "nombre": "champ",
+          "tipo": "string",
+          "desc": "id del campeonato (p.ej. 'magia')"
+        },
+        {
+          "nombre": "win",
+          "tipo": "boolean",
+          "desc": "prueba superada"
+        },
+        {
+          "nombre": "score",
+          "tipo": "number",
+          "desc": "puntuación recortada a rangos imposibles de falsear"
+        },
+        {
+          "nombre": "stars",
+          "tipo": "number",
+          "desc": "0..3 estrellas"
+        },
+        {
+          "nombre": "bricks",
+          "tipo": "number",
+          "desc": "ladrillos destruidos"
+        },
+        {
+          "nombre": "ext",
+          "tipo": "number",
+          "desc": "extensiones de tiempo usadas"
+        },
+        {
+          "nombre": "left",
+          "tipo": "number",
+          "desc": "segundos restantes (×10 redondeados)"
+        },
+        {
+          "nombre": "v",
+          "tipo": "string",
+          "desc": "versión del juego (ronda 11: la REAL de __PP_TELE; antes '2.81.0' hardcodeado — drift conocido cerrado)"
+        }
       ],
-      "notas": "viaja FUERA de la cola __PP_TELE (array directo), por eso el receptor de producción SÍ lo acepta",
+      "notas": "ronda 11: va en la cola estándar de __PP_TELE (t, sid, v reales; respeta opt-out pp_tele=0 y modo depuración; la cola persistida reintenta si no hay red)",
       "desde": "v2.77"
     }
   ],
@@ -134,5 +217,13 @@
     "panel": "/telemetria añade el selector Local ⇄ Producción (D1): la clave se guarda solo en el navegador del dueño (pp_tele_prod_clave)",
     "instrucciones": "scripts/worker-tele/LEEME.md — despliegue por dashboard (~10 min) o CLI (wrangler)",
     "pendiente_despliegue": "el dueño pega el código + crea la base D1 crazypp-tele + pone la CLAVE; verificación: latido público y resumen con clave"
+  },
+  "ronda11": {
+    "cambios": [
+      "stage y champion llevan id del campeonato (magia + locura) desde 3.6.8-SDK6",
+      "champ_rank viaja por __PP_TELE: v real del juego (antes 2.81.0 clavado), t y sid propios, respeta opt-out y modo depuración",
+      "resumen nuevo: porCampeonato {id: {stage, champion}} en worker y receptor local (tolerante con datos sin id)",
+      "panel: tabla «Embudo por campeonato» (etapas, títulos, partidas, victorias, mejor, estrellas)"
+    ]
   }
 }

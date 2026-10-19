@@ -15,7 +15,8 @@ import path from "path";
  *    llega a una release, el receptor local admite los dos.
  *  · GET  ?resumen=1          → agregados (por evento, sesiones, fps, errores,
  *                               champ_rank, últimos 20, y desde ronda 9:
- *                               duraciones, vrDuracion, porDia, versiones)
+ *                               duraciones, vrDuracion, porDia, versiones,
+ *                               porCampeonato (ronda 11))
  *                               con filtro opcional ?sid=
  *  · GET  ?eventos=N          → últimos N eventos crudos (filtro ?sid=)
  *  · GET  (sin params)        → latido {ok, total, ts}
@@ -201,6 +202,9 @@ export async function GET(req: NextRequest) {
       { eventos: number; boots: number; sids: Set<string> }
     >();
     const verMap = new Map<string, { eventos: number; sids: Set<string> }>();
+    // ronda 11 (paridad con el worker): embudo por campeonato — stage/champion
+    // llevan $.id desde 3.6.8-SDK6; los viejos sin id quedan fuera (tolerante)
+    const porCampeonato: Record<string, Record<string, number>> = {};
 
     for (const e of todos) {
       const k = String(e.e ?? "?");
@@ -256,6 +260,12 @@ export async function GET(req: NextRequest) {
       }
       vv.eventos++;
       vv.sids.add(s);
+      // ronda 11
+      if ((k === "stage" || k === "champion") && typeof e.id === "string") {
+        const pc = porCampeonato[e.id as string] ||
+          (porCampeonato[e.id as string] = {});
+        pc[k] = (pc[k] || 0) + 1;
+      }
     }
 
     const sesiones = [...sesMap.values()]
@@ -307,6 +317,7 @@ export async function GET(req: NextRequest) {
         vrDuracion: statDur(vrDurs),
         porDia,
         versiones,
+        porCampeonato,
         almacen: "telemetria/eventos.jsonl",
       },
       { headers: CORS }

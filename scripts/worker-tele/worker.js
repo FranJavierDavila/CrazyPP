@@ -352,6 +352,28 @@ export default {
           .all()
       ).results;
 
+      // ── EMBUDO POR CAMPEONATO (ronda 11): stage/champion llevan $.id desde
+      //    3.6.8-SDK6 — el panel separa Magia de La Locura. Tolerante con
+      //    datos viejos (eventos sin id quedan fuera; el embudo global ya
+      //    los cubre desde porEvento). OJO: el alias es «champ», NO «id» —
+      //    la tabla TIENE columna id (AUTOINCREMENT) y GROUP BY id agruparía
+      //    por el id numérico de fila (cazado por el harness ronda 11).
+      const porCampeonato = {};
+      for (const r of (
+        await env.DB
+          .prepare(
+            "SELECT json_extract(json,'$.id') champ, e, COUNT(*) n FROM eventos " +
+              "WHERE e IN ('stage','champion') AND json_extract(json,'$.id') IS NOT NULL" +
+              (sid ? " AND instr(sid, ?) > 0" : "") +
+              " GROUP BY champ, e"
+          )
+          .bind(...arg)
+          .all()
+      ).results) {
+        if (!porCampeonato[r.champ]) porCampeonato[r.champ] = {};
+        porCampeonato[r.champ][r.e] = (porCampeonato[r.champ][r.e] || 0) + r.n;
+      }
+
       return json({
         ok: true,
         ts: Date.now(),
@@ -379,6 +401,7 @@ export default {
         },
         porDia,
         versiones,
+        porCampeonato,
         almacen: "d1:crazypp-tele",
       });
     }

@@ -1,17 +1,17 @@
 {
-  "version": "3.6.7-SDK6",
-  "fase": 9,
-  "faseNombre": "RENDIMIENTO: FPS en XR optimizados (ronda 10)",
+  "version": "3.6.8-SDK6",
+  "fase": 10,
+  "faseNombre": "ANALISIS DE VENTA: embudo por campeonato (ronda 11)",
   "sdk": "1.4.0",
   "fecha": "2026-10-19",
-  "hub": "v367-sdk6",
+  "hub": "v368-sdk6",
   "manifests": {
     "oeste": 51,
-    "magia": 31,
-    "locura": 22,
+    "magia": 32,
+    "locura": 23,
     "estacion_orbital": 16,
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "c1badcd78369ca90e6889d5eaeab261583c21a9837fd2157e4f37dd465d9effb"
+  "golden": "8ee3a932343fa7227f7956d4385536bf4afa46504da0e69f34dc1f3ac0ce014a"
 }

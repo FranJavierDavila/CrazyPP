@@ -401,6 +401,9 @@ def bloque_worker():
         ('vrDuracion: {', 'ronda 9: el resumen expone vrDuracion'),
         ('porDia,', 'ronda 9: el resumen expone porDia'),
         ('versiones,', 'ronda 9: el resumen expone versiones'),
+        ("e IN ('stage','champion') AND json_extract(json,'$.id')",
+         'ronda 11: porCampeonato agrega stage/champion CON id (tolerante sin id)'),
+        ('porCampeonato,', 'ronda 11: el resumen expone porCampeonato'),
     ]
     for aguja, etiqueta in anclas:
         chk(aguja in src, f'worker: {etiqueta}')
@@ -473,11 +476,55 @@ def bloque_panel(*sids_e2e):
         peticion('DELETE', url=API + '?sid=' + str(sid_p))
 
 
+def bloque_ronda11():
+    """RONDA 11 · embudo por campeonato: id en stage/champion (magia + locura),
+    champ_rank por la cola __PP_TELE (v real, t, sid, opt-out) y panel."""
+    print('== F · RONDA 11 — EMBUDO POR CAMPEONATO ==')
+    vjson = json.loads((RAIZ / 'src' / 'game' / 'VERSION.json').read_text(encoding='utf-8'))
+
+    # ── eventos con id en los campeonatos ──
+    mag = (RAIZ / 'public' / 'championships' / 'magia' / 'index.js').read_text(encoding='utf-8', errors='replace')
+    loc = (RAIZ / 'public' / 'championships' / 'locura' / 'index.js').read_text(encoding='utf-8', errors='replace')
+    chk("ev('stage', { n: this.stage, id: 'magia' })" in mag, 'magia: stage lleva id magia')
+    chk("ev('champion', { id: 'magia' })" in mag, 'magia: champion lleva id magia')
+    chk("ev('stage', { n: this.stage, id: 'locura' })" in loc, 'locura: stage lleva id locura')
+    chk("ev('champion', { id: 'locura' })" in loc, 'locura: champion lleva id locura')
+
+    # ── champ_rank: cola estándar, sin versión clavada ni POST propio ──
+    chk("__PP_TELE.ev('champ_rank'" in mag, 'magia: champ_rank viaja por __PP_TELE.ev')
+    chk("'2.81.0'" not in mag, 'magia: ya NO lleva la versión hardcodeada 2.81.0')
+    chk("e: 'champ_rank'" not in mag, 'magia: sin POST propio (payload manual eliminado)')
+
+    # ── manifests + VERSION.json casan (los cambia esta ronda) ──
+    for mod in ('magia', 'locura'):
+        man = json.loads((RAIZ / 'public' / 'championships' / mod / 'manifest.json').read_text(encoding='utf-8'))
+        esperada = vjson['manifests'][mod]
+        chk(man.get('version') == esperada,
+            f'manifest {mod}: version v{man.get("version")} == VERSION.json v{esperada}')
+
+    # ── paridad del receptor local y el panel ──
+    route = (RAIZ / 'src' / 'app' / 'api' / 'telemetria' / 'route.ts').read_text(encoding='utf-8', errors='replace')
+    chk('porCampeonato' in route, 'route.ts: agrega porCampeonato (paridad con el worker)')
+    panel = (RAIZ / 'src' / 'app' / 'telemetria' / 'page.tsx').read_text(encoding='utf-8', errors='replace')
+    chk('Embudo por campeonato' in panel, 'panel: sección «Embudo por campeonato»')
+    chk('porCampeonato?' in panel, 'panel: Resumen tolera fuente sin porCampeonato')
+
+    # ── catálogo actualizado ──
+    cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
+    por_n = {e['nombre']: e for e in cat['eventos']}
+    chk(cat.get('ronda') == 11, f'catálogo: ronda == 11 (={cat.get("ronda")})')
+    chk(any(c['nombre'] == 'id' for c in por_n['stage']['campos']), 'catálogo: stage documenta id')
+    chk(any(c['nombre'] == 'id' for c in por_n['champion']['campos']), 'catálogo: champion documenta id')
+    chk('__PP_TELE' in por_n['champ_rank'].get('notas', ''),
+        'catálogo: champ_rank documenta el nuevo transporte (cola __PP_TELE)')
+
+
 async def main():
-    print('QA TELEMETRÍA · rondas 6-8 (roadmap P1) · lote array directo + routing por host + worker D1')
+    print('QA TELEMETRÍA · rondas 6-11 (roadmap P1) · lote array directo + routing por host + worker D1 + embudo por campeonato')
     cat = bloque_catalogo()
     bloque_contrato()
     bloque_worker()
+    bloque_ronda11()
     sid, sid_nat = await bloque_e2e()
     bloque_panel(sid, sid_nat)
     print(f'\nRESULTADO: {ok} OK · {fails} FALLOS')

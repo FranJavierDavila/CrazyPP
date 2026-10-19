@@ -201,6 +201,38 @@ try {
   chk(j.total === 0 && j.duraciones.n === 0 && j.porDia.length === 0,
     "tras la purga total el almacén queda a 0 (con análisis vacíos)");
 
+  // M · EMBUDO POR CAMPEONATO (ronda 11): stage/champion llevan id desde 3.6.8
+  await worker.fetch(
+    req("/", {
+      method: "POST",
+      body: JSON.stringify([
+        ev("stage", { n: 1, id: "magia", sid: "r11-a" }),
+        ev("stage", { n: 2, id: "magia", sid: "r11-a" }),
+        ev("champion", { id: "magia", sid: "r11-a" }),
+        ev("stage", { n: 1, id: "locura", sid: "r11-a" }),
+        ev("champion", { id: "locura", sid: "r11-b" }),
+        ev("stage", { n: 3 }), // viejo SIN id → fuera del porCampeonato
+      ]),
+      headers: { "content-type": "text/plain" },
+    }),
+    env,
+    {}
+  );
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(j.porCampeonato?.magia?.stage === 2 && j.porCampeonato?.magia?.champion === 1,
+    `porCampeonato agrega magia stage/champion (${JSON.stringify(j.porCampeonato?.magia)})`);
+  chk(j.porCampeonato?.locura?.stage === 1 && j.porCampeonato?.locura?.champion === 1,
+    `porCampeonato separa locura (${JSON.stringify(j.porCampeonato?.locura)})`);
+  chk(j.porCampeonato?.qa === undefined,
+    "stage/champion SIN id quedan fuera del porCampeonato (tolerante con datos viejos)");
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8&sid=r11-a"), env, {}));
+  chk(j.porCampeonato?.magia?.stage === 2 && j.porCampeonato?.magia?.champion === 1 &&
+      j.porCampeonato?.locura?.champion === undefined,
+    "porCampeonato respeta el filtro ?sid (locura sin su champion de otro sid)");
+  r = await worker.fetch(req("/", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {});
+  j = await cuerpo(r);
+  chk(j.borrados === 6, `purga final del bloque r11 (${j.borrados})`);
+
   // J · CORS en todas las respuestas
   r = await worker.fetch(req("/", { method: "OPTIONS" }), env, {});
   chk(r.status === 204 && r.headers.get("access-control-allow-origin") === "*",

@@ -66,3 +66,7 @@ upload/*.zip
 scripts/worker-tele/.clave-produccion
 # token API de Cloudflare para despliegue nativo del worker (NUNCA commitear)
 scripts/worker-tele/.cf-token
+
+# pycache global (lección rondas 16/19/24: NUNCA commitear)
+__pycache__/
+*.pyc

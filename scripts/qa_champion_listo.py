@@ -125,6 +125,20 @@ async def main():
           P('flag_oeste_sin_clave', () => CH.championFlag('oeste'));
           localStorage.setItem('pp_champ_oeste_champ', '1');
           P('flag_oeste_restaurado', () => CH.championFlag('oeste'));
+          // 5 · LEYENDA (ronda 24): sellos 5/5 → tier por encima de SUPERADO
+          localStorage.setItem('pp_champ_oeste_leyenda', '1');
+          P('flag_leyenda_oeste', () => CH.leyendaFlag ? CH.leyendaFlag('oeste') : 'SIN leyendaFlag');
+          P('resolucion_tarjeta_leyenda', () => {
+            // mismo orden que c12 (ronda 24): etapa → SUPERADO → LEYENDA
+            let hint = CH._stageHint('oeste', 'pp_champ_oeste_') || '';
+            if (CH.championFlag('oeste')) hint = '★ SUPERADO';
+            if (CH.leyendaFlag && CH.leyendaFlag('oeste')) {
+              hint = (window.__PP_CORE && window.__PP_CORE.T) ? window.__PP_CORE.T('champ_leyenda_hint') : '★ LEYENDA';
+            }
+            return hint;
+          });
+          localStorage.removeItem('pp_champ_oeste_leyenda');
+          P('flag_leyenda_off', () => CH.leyendaFlag('oeste'));
           // 4 · storage intacto
           P('storage_final', () => ({
             oeste: localStorage.getItem('pp_champ_oeste_champ'),
@@ -182,6 +196,20 @@ async def main():
         bien('clave restaurada → champion de nuevo true')
     else:
         fallo(f'flag_oeste_restaurado = {P.get("flag_oeste_restaurado")!r}')
+    # ronda 24 · LEYENDA
+    if P.get('flag_leyenda_oeste') is True:
+        bien('leyendaFlag(oeste) con sello → true')
+    else:
+        fallo(f'flag_leyenda_oeste = {P.get("flag_leyenda_oeste")!r}')
+    rl = P.get('resolucion_tarjeta_leyenda', '')
+    if isinstance(rl, str) and rl.startswith('★ LEYENDA'):
+        bien(f'resolución de la TARJETA con LEYENDA → «{rl}» (pisa a SUPERADO)')
+    else:
+        fallo(f'resolucion_tarjeta_leyenda = {rl!r}')
+    if P.get('flag_leyenda_off') is False:
+        bien('sin sello → leyendaFlag vuelve a false')
+    else:
+        fallo(f'flag_leyenda_off = {P.get("flag_leyenda_off")!r}')
     sf = P.get('storage_final') or {}
     esperado = {k: '1' for k in ('oeste', 'locura', 'magia', 'eo', 'valle')}
     if sf == esperado:

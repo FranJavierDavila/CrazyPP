@@ -207,6 +207,7 @@ export class ChampLoader {
       for (const e of this.entries) {
         const base = String(e.storage || '').replace(/\*$/, '');
         if (!base) continue;
+        if (this.leyendaFlag(e.id)) return T('champ_leyenda_hint');   // v3.6.18 (ronda 24): LEYENDA > SUPERADO
         if (this.championFlag(e.id)) return T('champ_done_hint');   // v2.128
         // v3.6.17 (ronda 21): etapa en curso antes que victorias
         const st = this._stageHint(e.id, base);
@@ -238,6 +239,18 @@ export class ChampLoader {
         if (localStorage.getItem(base + 'trophy') === '1') return true;
       }
     } catch (e2) { /* */ }
+    return false;
+  }
+
+  /** v3.6.18 · ronda 24 · ¿LEYENDA? — el campeón que selló las 5 etapas
+   *  en modo leyenda (registro <base>leyenda = '1'; hoy sólo oeste,
+   *  convención extensible a cualquier campeonato por su storage). */
+  leyendaFlag(id) {
+    try {
+      const ent = (this.entries || []).find((x) => x.id === id);
+      const base = String((ent && ent.storage) || '').replace(/\*$/, '');
+      if (base && localStorage.getItem(base + 'leyenda') === '1') return true;
+    } catch (e) { /* */ }
     return false;
   }
 

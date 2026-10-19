@@ -1657,6 +1657,7 @@ export class PingPongGame {
       // récord propio del campeonato (victorias de SU storage)
       let hint = '';
       let done = false;   // v2.128: ¿campeonato superado?
+      let leyenda = false;   // v3.6.18 (ronda 24): ¿sellado 5/5 en leyenda?
       try {
         const ent = (this.champs.entries || []).find((e) => e.id === ch.id);
         const base = String((ent && ent.storage) || '').replace(/\*$/, '');
@@ -1669,6 +1670,8 @@ export class PingPongGame {
         }
         // v2.128: campeonato SUPERADO → hint propio + cinta ★ SUPERADO
         try { if (this.champs.championFlag(ch.id)) { done = true; hint = T('champ_done_hint'); } } catch (e) { /* */ }
+        // v3.6.18 (ronda 24): LEYENDA pisa a SUPERADO en la tarjeta
+        try { if (this.champs.leyendaFlag && this.champs.leyendaFlag(ch.id)) { done = true; hint = T('champ_leyenda_hint'); leyenda = true; } } catch (eL2) { /* */ }
       } catch (e) { /* sin registro */ }
       // tarjeta del campeonato
       c.beginPath();
@@ -1705,7 +1708,7 @@ export class PingPongGame {
         // v2.128: cinta dorada «★ SUPERADO» en la tarjeta del vencido
         c.save();
         c.font = '900 22px system-ui, sans-serif';
-        const chipTxt = T('champ_done_chip');
+        const chipTxt = leyenda ? T('champ_leyenda_chip') : T('champ_done_chip');   // v3.6.18 (ronda 24)
         const chipW = c.measureText(chipTxt).width + 36;
         const chipH = 40;
         const chipX = 944 - chipW / 2 - 18, chipY = y + 20;
@@ -2910,6 +2913,8 @@ export class PingPongGame {
       this.champDone = {
         id, group, cv, c, tex, t: 0, dur: opts.dur || 9.5,
         title: ttl, img: null, mat: mesh.material,
+        stats: Array.isArray(opts.stats) ? opts.stats.slice(0, 3) : null,   // v3.6.18 (ronda 24): coronación con estadísticas
+        campeon: !!opts.campeon,   // v3.6.18 (ronda 24): coronación = más confeti
       };
       try {
         const img = new Image();
@@ -2922,7 +2927,7 @@ export class PingPongGame {
       this._paintChampConseguido();
       group.visible = true;
       group.scale.setScalar(0.2);
-      try { this.confettiBurst = Math.max(this.confettiBurst || 0, 8); } catch (e2) { /* */ }
+      try { this.confettiBurst = Math.max(this.confettiBurst || 0, this.champDone && this.champDone.campeon ? 14 : 8); } catch (e2) { /* */ }   // v3.6.18 (ronda 24)
       try { this.audio.announce(opts.msg || T('champdone_msg'), true); } catch (e3) { /* */ }
       if (this.renderer && this.renderer.xr && this.renderer.xr.isPresenting) {
         try { this.haptic(this.paddleHand, 1.0, 300); } catch (e4) { /* */ }
@@ -3000,9 +3005,26 @@ export class PingPongGame {
       c.fillStyle = '#f2f4f6';
       c.font = '800 46px system-ui, sans-serif';
       c.fillText(S.title || T('champdone_sub'), W / 2, H * 0.845);
-      c.fillStyle = '#9fb2c4';
-      c.font = '600 30px system-ui, sans-serif';
-      c.fillText(T('champdone_replay'), W / 2, H * 0.912);
+      // v3.6.18 (ronda 24): CORONACIÓN — fila de estadísticas en lugar del
+      // recordatorio de rejuego (puntos · duelos ganados · fecha).
+      if (S.stats && S.stats.length) {
+        const nS = S.stats.length, colW = (W - 220) / Math.max(1, nS);
+        for (let i = 0; i < nS; i++) {
+          const lab = String((S.stats[i] && S.stats[i][0]) || '');
+          const val = String((S.stats[i] && S.stats[i][1]) || '');
+          const cx = 110 + colW * (i + 0.5);
+          c.fillStyle = '#9fb2c4';
+          c.font = '600 28px system-ui, sans-serif';
+          c.fillText(lab.toUpperCase(), cx, H * 0.872);
+          c.fillStyle = '#ffd257';
+          c.font = '900 44px system-ui, sans-serif';
+          c.fillText(val, cx, H * 0.922);
+        }
+      } else {
+        c.fillStyle = '#9fb2c4';
+        c.font = '600 30px system-ui, sans-serif';
+        c.fillText(T('champdone_replay'), W / 2, H * 0.912);
+      }
       S.tex.needsUpdate = true;
     } catch (e) { console.warn('[champDone] paint', e); }
   }

@@ -205,6 +205,16 @@ export async function GET(req: NextRequest) {
     // ronda 11 (paridad con el worker): embudo por campeonato — stage/champion
     // llevan $.id desde 3.6.8-SDK6; los viejos sin id quedan fuera (tolerante)
     const porCampeonato: Record<string, Record<string, number>> = {};
+    // ronda 14 (paridad con el worker): SESIONES VR — cada vr_start abre un
+    // ciclo; el vr_end lo cierra (dur real); el último vr_ping lo fecha si
+    // el casco muere sin vr_end (interrumpida). Huérfanos: fuera.
+    const ciclosVR: Array<{
+      sid: string; v: string; inicio: number; dur: number | null;
+      durReal: boolean; estado: string; fps: number | null;
+      fpsMin: number | null; fpsMax: number | null; pings: number;
+      curva: Array<{ m: number; fps: number }>;
+    }> = [];
+    let vrAct: (typeof ciclosVR)[number] | null = null;
 
     for (const e of todos) {
       const k = String(e.e ?? "?");
@@ -266,6 +276,32 @@ export async function GET(req: NextRequest) {
           (porCampeonato[e.id as string] = {});
         pc[k] = (pc[k] || 0) + 1;
       }
+      // ronda 14 (sesiones VR: ciclos vr_start → vr_ping* → vr_end)
+      if (k === "vr_start") {
+        vrAct = {
+          sid: s, v, inicio: t, dur: null, durReal: false, estado: "abierta",
+          fps: null, fpsMin: null, fpsMax: null, pings: 0, curva: [],
+        };
+        ciclosVR.push(vrAct);
+      } else if (vrAct && k === "vr_end") {
+        vrAct.estado = "cerrada";
+        vrAct.durReal = true;
+        if (typeof e.dur === "number") vrAct.dur = e.dur as number;
+        if (typeof e.fps === "number") vrAct.fps = e.fps as number;
+        if (typeof e.fpsMin === "number") vrAct.fpsMin = e.fpsMin as number;
+        if (typeof e.fpsMax === "number") vrAct.fpsMax = e.fpsMax as number;
+      } else if (vrAct && k === "vr_ping") {
+        vrAct.pings++;
+        if (vrAct.estado !== "cerrada") vrAct.estado = "interrumpida";
+        if (typeof e.dur === "number") vrAct.dur = e.dur as number;
+        if (typeof e.fps === "number" && vrAct.curva.length < 24)
+          vrAct.curva.push({
+            m: (e.t as number) > vrAct.inicio
+              ? Math.round(((e.t as number) - vrAct.inicio) / 60000)
+              : 0,
+            fps: e.fps as number,
+          });
+      }
     }
 
     const sesiones = [...sesMap.values()]
@@ -318,6 +354,7 @@ export async function GET(req: NextRequest) {
         porDia,
         versiones,
         porCampeonato,
+        sesionesVR: ciclosVR.slice(-12).reverse(),
         almacen: "telemetria/eventos.jsonl",
       },
       { headers: CORS }

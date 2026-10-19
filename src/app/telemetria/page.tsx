@@ -31,6 +31,13 @@ type Resumen = {
   versiones?: { v: string; eventos: number; sesiones: number }[];
   // ronda 11 — embudo por campeonato (stage/champion con id desde 3.6.8-SDK6)
   porCampeonato?: Record<string, { stage?: number; champion?: number }>;
+  // ronda 14 — sesiones VR: ciclos vr_start → vr_ping* → vr_end por sid
+  sesionesVR?: Array<{
+    sid: string; v: string; inicio: number; dur: number | null;
+    durReal: boolean; estado: string; fps: number | null;
+    fpsMin: number | null; fpsMax: number | null; pings: number;
+    curva: Array<{ m: number; fps: number }>;
+  }>;
   almacen: string;
 };
 
@@ -50,6 +57,62 @@ const durTxt = (s: number | null | undefined) =>
       : s < 3600
         ? `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`
         : `${Math.floor(s / 3600)}h ${Math.round((s % 3600) / 60)}m`;
+
+/** ronda 14 · sparkline SVG de la curva de fps del vr_ping (eje 30-90 fps;
+ *  la línea punteada marca los 72 de confort). Vacío → guion. */
+const Spark = ({ c }: { c: Array<{ m: number; fps: number }> }) => {
+  if (!c || c.length === 0) return <span className="text-xs text-slate-600">—</span>;
+  const maxM = Math.max(...c.map((p) => p.m), 1);
+  const y = (f: number) => 22 - Math.max(0, Math.min(1, (f - 30) / 60)) * 20;
+  const pts = c.map((p) => `${((p.m / maxM) * 96 + 2).toFixed(1)},${y(p.fps).toFixed(1)}`).join(" ");
+  const last = c[c.length - 1];
+  return (
+    <svg viewBox="0 0 100 24" className="h-6 w-24" aria-hidden>
+      <line x1="2" y1={y(72).toFixed(1)} x2="98" y2={y(72).toFixed(1)} stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" />
+      <polyline points={pts} fill="none" stroke="#38bdf8" strokeWidth="1.5" />
+      <circle cx={((last.m / maxM) * 96 + 2).toFixed(1)} cy={y(last.fps).toFixed(1)} r="1.8" fill="#38bdf8" />
+    </svg>
+  );
+};
+
+/** ronda 14 · fold de SESIONES VR desde eventos crudos (misma lógica que el
+ *  worker/route): cada vr_start abre ciclo; vr_end lo cierra; el último
+ *  vr_ping lo fecha (interrumpida). Devuelve las últimas 12, reciente 1.ª. */
+const foldVR = (evs: Ev[]): NonNullable<Resumen["sesionesVR"]> => {
+  const out: NonNullable<Resumen["sesionesVR"]> = [];
+  let act: NonNullable<Resumen["sesionesVR"]>[number] | null = null;
+  for (const e of evs) {
+    const k = String(e.e ?? "");
+    const t = typeof e.t === "number" ? (e.t as number) : 0;
+    if (k === "vr_start") {
+      act = {
+        sid: String(e.sid ?? "-"), v: String(e.v ?? "-"), inicio: t,
+        dur: null, durReal: false, estado: "abierta",
+        fps: null, fpsMin: null, fpsMax: null, pings: 0, curva: [],
+      };
+      out.push(act);
+    } else if (!act) {
+      continue; // vr_end/vr_ping huérfanos: fuera
+    } else if (k === "vr_end") {
+      act.estado = "cerrada";
+      act.durReal = true;
+      if (typeof e.dur === "number") act.dur = e.dur as number;
+      if (typeof e.fps === "number") act.fps = e.fps as number;
+      if (typeof e.fpsMin === "number") act.fpsMin = e.fpsMin as number;
+      if (typeof e.fpsMax === "number") act.fpsMax = e.fpsMax as number;
+    } else if (k === "vr_ping") {
+      act.pings++;
+      if (act.estado !== "cerrada") act.estado = "interrumpida";
+      if (typeof e.dur === "number") act.dur = e.dur as number;
+      if (typeof e.fps === "number" && act.curva.length < 24)
+        act.curva.push({
+          m: (e.t as number) > act.inicio ? Math.round(((e.t as number) - act.inicio) / 60000) : 0,
+          fps: e.fps as number,
+        });
+    }
+  }
+  return out.slice(-12).reverse();
+};
 
 export default function Telemetria() {
   const [r, setR] = useState<Resumen | null>(null);
@@ -102,6 +165,20 @@ export default function Telemetria() {
       }
       const j = JSON.parse(texto) as Resumen;
       if (!j.ok) throw new Error("ok=false");
+      if (!j.sesionesVR) {
+        // worker/receptor sin la ronda 14: fold local desde los crudos
+        // (tolerante — cuando el worker se actualice, su sesionesVR manda)
+        try {
+          const p2 = new URLSearchParams({ eventos: "500" });
+          if (filtro.trim()) p2.set("sid", filtro.trim());
+          if (esProd) p2.set("clave", prodClave.trim());
+          const r2 = await fetch(`${esProd ? prodUrl.trim() : "/api/telemetria"}?${p2}`);
+          if (r2.ok) {
+            const j2 = await r2.json();
+            if (Array.isArray(j2.eventos)) j.sesionesVR = foldVR(j2.eventos as Ev[]);
+          }
+        } catch { /* tolerante: el panel sigue sin sesionesVR */ }
+      }
       setR(j);
       setErr("");
     } catch (e) {
@@ -473,6 +550,66 @@ export default function Telemetria() {
                 )}
               </section>
 
+              {/* Sesiones VR (ronda 14): permanencia real en el casco */}
+              <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+                <h2 className="mb-1 text-lg font-bold">🥽 Sesiones VR (lentes)</h2>
+                <p className="mb-3 text-xs text-slate-500">
+                  Permanencia real: el vr_end cierra la sesión (duración y fps reales); el latido vr_ping (cada 5 min) fecha las que mueren sin él. Línea punteada = 72 fps de confort.
+                </p>
+                {(r.sesionesVR?.length ?? 0) === 0 ? (
+                  <p className="text-sm text-slate-500">Sin sesiones VR registradas (o receptor sin la ronda 14).</p>
+                ) : (
+                  <div className="max-h-72 overflow-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs uppercase text-slate-500">
+                          <th className="pb-2">Inicio</th>
+                          <th className="pb-2">Versión</th>
+                          <th className="pb-2">Duración</th>
+                          <th className="pb-2">Estado</th>
+                          <th className="pb-2 text-right">FPS media (min–max)</th>
+                          <th className="pb-2">Curva</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {r.sesionesVR!.map((s, i) => (
+                          <tr key={`${s.sid}-${s.inicio}-${i}`} className="border-t border-slate-800">
+                            <td className="py-1.5 text-slate-400">{hhmm(s.inicio)}</td>
+                            <td className="py-1.5 font-mono text-xs text-slate-300">{s.v}</td>
+                            <td className="py-1.5 text-slate-300">
+                              {s.dur != null ? (
+                                <span>
+                                  {!s.durReal && <span className="text-amber-400" title="estimada por el último vr_ping">≈ </span>}
+                                  {durTxt(s.dur)}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className="py-1.5">
+                              <span className={
+                                "rounded px-1.5 py-0.5 text-xs font-bold " +
+                                (s.estado === "cerrada"
+                                  ? "bg-emerald-900/60 text-emerald-300"
+                                  : s.estado === "interrumpida"
+                                    ? "bg-amber-900/60 text-amber-300"
+                                    : "bg-sky-900/60 text-sky-300")
+                              }>
+                                {s.estado}
+                              </span>
+                            </td>
+                            <td className="py-1.5 text-right text-slate-300">
+                              {s.fps != null ? `${s.fps} (${s.fpsMin ?? "–"}–${s.fpsMax ?? "–"})` : "—"}
+                            </td>
+                            <td className="py-1.5"><Spark c={s.curva} /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+
               {/* Sesiones */}
               <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
                 <h2 className="mb-3 text-lg font-bold">Últimas sesiones</h2>
@@ -543,7 +680,7 @@ export default function Telemetria() {
             </section>
 
             <footer className="mt-10 text-center text-xs text-slate-600">
-              Ronda 11 · embudo por campeonato (id en stage/champion + champ_rank con versión real y opt-out) · Ronda 9 · análisis explícito · Local ⇄ Producción (D1) — el juego no cambia: receptor, worker y panel son herramientas del ecosistema.
+              Ronda 14 · sesiones VR (vr_ping fecha lo que muere sin vr_end) · Ronda 11 · embudo por campeonato · Ronda 9 · análisis explícito · Local ⇄ Producción (D1) — el juego no cambia: receptor, worker y panel son herramientas del ecosistema.
             </footer>
           </>
         )}

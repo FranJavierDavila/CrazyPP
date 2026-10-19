@@ -233,6 +233,51 @@ try {
   j = await cuerpo(r);
   chk(j.borrados === 6, `purga final del bloque r11 (${j.borrados})`);
 
+  // N · SESIONES VR (ronda 14): ciclos vr_start → vr_ping* → vr_end por sid
+  await worker.fetch(
+    req("/", {
+      method: "POST",
+      body: JSON.stringify([
+        ev("vr_end", { dur: 99, fps: 77, sid: "r14-h" }), // huérfano: sin vr_start → fuera
+        ev("vr_start", { mode: "match", sid: "r14-a" }),
+        ev("vr_ping", { dur: 300, fps: 70, sid: "r14-a" }),
+        ev("vr_end", { dur: 540, fps: 65, fpsMin: 40, fpsMax: 80, sid: "r14-a" }),
+        ev("vr_start", { mode: "match", sid: "r14-b" }),
+        ev("vr_ping", { dur: 300, fps: 60, sid: "r14-b" }),
+        ev("vr_ping", { dur: 600, fps: 55, sid: "r14-b" }), // muere sin vr_end
+        ev("vr_start", { mode: "match", sid: "r14-c" }),    // abierta sin pings
+      ]),
+      headers: { "content-type": "text/plain" },
+    }),
+    env,
+    {}
+  );
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(Array.isArray(j.sesionesVR) && j.sesionesVR.length === 3,
+    `sesionesVR lista 3 ciclos (${j.sesionesVR?.length})`);
+  chk(!j.sesionesVR.some((x) => x.sid === "r14-h"),
+    "vr_end huérfano (sin vr_start) queda fuera de sesionesVR");
+  const sa = j.sesionesVR.find((x) => x.sid === "r14-a");
+  chk(sa && sa.estado === "cerrada" && sa.durReal === true && sa.dur === 540 &&
+      sa.fps === 65 && sa.fpsMin === 40 && sa.fpsMax === 80 && sa.pings === 1,
+    `cerrada: dur/fps/fpsMin/fpsMax del vr_end (${JSON.stringify(sa)})`);
+  chk(sa && Array.isArray(sa.curva) && sa.curva.length === 1 &&
+      sa.curva[0].fps === 70 && sa.curva[0].m === 0,
+    `curva del ping (${JSON.stringify(sa?.curva)})`);
+  const sb = j.sesionesVR.find((x) => x.sid === "r14-b");
+  chk(sb && sb.estado === "interrumpida" && sb.durReal === false &&
+      sb.dur === 600 && sb.pings === 2 && sb.curva.length === 2,
+    `interrumpida fechada por el ÚLTIMO ping (${JSON.stringify(sb)})`);
+  const sc = j.sesionesVR.find((x) => x.sid === "r14-c");
+  chk(sc && sc.estado === "abierta" && sc.dur === null && sc.pings === 0,
+    `abierta sin pings (${JSON.stringify(sc)})`);
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8&sid=r14-a"), env, {}));
+  chk(j.sesionesVR?.length === 1 && j.sesionesVR[0]?.sid === "r14-a",
+    "sesionesVR respeta el filtro ?sid");
+  r = await worker.fetch(req("/", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {});
+  j = await cuerpo(r);
+  chk(j.borrados === 8, `purga final del bloque r14 (${j.borrados})`);
+
   // J · CORS en todas las respuestas
   r = await worker.fetch(req("/", { method: "OPTIONS" }), env, {});
   chk(r.status === 204 && r.headers.get("access-control-allow-origin") === "*",

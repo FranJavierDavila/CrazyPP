@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.10-SDK6, fase 12 · NITIDEZ: framebufferScaleFactor 1.5 por datos (ronda 13); sello actualizado
-# por bump_version.py desde 3.6.9-SDK6)
-c3c1722769bee198822a4e2e87b54621419acbdbbfbb0fbda538e6b096955430
+# SHA256 del game.html que produjo esta división (3.6.11-SDK6, fase 13 · FLUIDEZ: reversión nitidez 1.5→1.4 por datos (ronda 14); sello actualizado
+# por bump_version.py desde 3.6.10-SDK6)
+ac36ee4e5c80f1a1816056b54d4700bad794c328d63a7ad355a045c590fd22f2

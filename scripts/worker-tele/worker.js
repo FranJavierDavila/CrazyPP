@@ -374,6 +374,62 @@ export default {
         porCampeonato[r.champ][r.e] = (porCampeonato[r.champ][r.e] || 0) + r.n;
       }
 
+      // ── SESIONES VR (ronda 14): permanencia REAL en el casco. El vr_end
+      //    cierra el ciclo (dur real); desde la ronda 12 el vr_ping cada
+      //    5 min lo FECHA cuando el casco se apaga sin vr_end (caso
+      //    k5ui6abo). Fold en JS sobre UNA consulta en orden de inserción:
+      //    cada vr_start abre ciclo, el último ping manda en la dur
+      //    estimada. Alias SQL tipo «id» prohibidos (lección ronda 11).
+      const vrEv = (
+        await env.DB
+          .prepare(
+            "SELECT json FROM eventos WHERE e IN ('vr_start','vr_end','vr_ping')" +
+              (sid ? " AND instr(sid, ?) > 0" : "") +
+              " ORDER BY id ASC LIMIT 2000"
+          )
+          .bind(...(sid ? [sid] : []))
+          .all()
+      ).results.map((r) => JSON.parse(r.json));
+      const ciclosVR = [];
+      let vrAct = null;
+      for (const e of vrEv) {
+        if (e.e === "vr_start") {
+          vrAct = {
+            sid: e.sid || "-",
+            v: e.v || "-",
+            inicio: e.t || 0,
+            dur: null,
+            durReal: false,
+            estado: "abierta",
+            fps: null,
+            fpsMin: null,
+            fpsMax: null,
+            pings: 0,
+            curva: [],
+          };
+          ciclosVR.push(vrAct);
+        } else if (!vrAct) {
+          continue; // vr_end/vr_ping huérfanos (sin vr_start): fuera
+        } else if (e.e === "vr_end") {
+          vrAct.estado = "cerrada";
+          vrAct.durReal = true;
+          if (typeof e.dur === "number") vrAct.dur = e.dur;
+          if (typeof e.fps === "number") vrAct.fps = e.fps;
+          if (typeof e.fpsMin === "number") vrAct.fpsMin = e.fpsMin;
+          if (typeof e.fpsMax === "number") vrAct.fpsMax = e.fpsMax;
+        } else if (e.e === "vr_ping") {
+          vrAct.pings++;
+          if (vrAct.estado !== "cerrada") vrAct.estado = "interrumpida";
+          if (typeof e.dur === "number") vrAct.dur = e.dur;
+          if (typeof e.fps === "number" && vrAct.curva.length < 24)
+            vrAct.curva.push({
+              m: e.t > vrAct.inicio ? Math.round((e.t - vrAct.inicio) / 60000) : 0,
+              fps: e.fps,
+            });
+        }
+      }
+      const sesionesVR = ciclosVR.slice(-12).reverse();
+
       return json({
         ok: true,
         ts: Date.now(),
@@ -402,6 +458,7 @@ export default {
         porDia,
         versiones,
         porCampeonato,
+        sesionesVR,
         almacen: "d1:crazypp-tele",
       });
     }

@@ -29,14 +29,16 @@ export class PingPongGame {
     // v3.6.6 (ronda 10 · AUDITORÍA DE FPS): la telemetría vr_end midió 38
     // fps de media en sesión larga — GPU saturada por nitidez máxima
     // (1.7× = ~2.9× píxeles/ojo + foveation 0 + sombras PCFSoft 2048²).
-    // v3.6.10 (ronda 13 · NITIDEZ POR DATOS): el vr_end de la primera
-    // sesión en 3.6.9 midió 78 fps de media (63-88) — margen claro sobre
-    // los 72 de confort → se sube a 1.5× (+15% píxeles/ojo sobre el
-    // 1.4 «Extra Sharpness» de Meta) + foveation 0.5 (periferia
-    // comprimida por el compositor, imperceptible en juego). Si el
-    // vr_end de la 3.6.10 diera media < 72, volver a 1.4 es una línea.
+    // v3.6.11 (ronda 14 · REVERSIÓN POR DATOS): la regla pre-comprometida
+    // («media < 72 → volver a 1.4») se cumplió en la 1.ª sesión real en
+    // 3.6.10: vr_end 63 fps de media (41-82) en 8,9 min con el 1.5×,
+    // frente a 78 (63-88) en 4,1 min con el 1.4× (y 55 en 49 min con
+    // 1.4× en la 3.6.7). Fluidez primero: se vuelve a 1.4× «Extra
+    // Sharpness» + foveation 0.5. Si el dueño prefiere nitidez sobre
+    // fluidez, el compromiso intermedio (1.45) o el escalado adaptativo
+    // son el siguiente paso POR DATOS (con la curva vr_ping delante).
     this.renderer.xr.setFoveation(0.5);
-    this.renderer.xr.setFramebufferScaleFactor(1.5);
+    this.renderer.xr.setFramebufferScaleFactor(1.4);
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0b0e11);

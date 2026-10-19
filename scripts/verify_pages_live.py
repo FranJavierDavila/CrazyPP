@@ -22,6 +22,12 @@ async def run_once():
             '--autoplay-policy=no-user-gesture-required',
         ])
         page = await browser.new_page(viewport={'width': 1280, 'height': 800})
+        # ronda 14: opt-out de telemetría (pp_tele=0) ANTES de que corra el
+        # juego — los bots de verificación NO contaminan la producción D1
+        # con boots '2d' (el 15:48-16:09 del 10-19 eran verify/smoke bots)
+        await page.add_init_script(
+            "try { localStorage.setItem('pp_tele','0'); } catch (e) {}"
+        )
         bad, perr, nreq = [], [], 0
 
         def on_resp(r):

@@ -559,20 +559,65 @@ def bloque_ronda12():
     plat = next((c for c in boot.get('campos', []) if c['nombre'] == 'platform'), None) if boot else None
     chk(plat is not None and "'xr'" in plat.get('desc', ''), 'catálogo: boot documenta platform xr|2d')
     chk('CLAVADO' in plat.get('desc', ''), 'catálogo: boot documenta el fix (antes clavado a 2d)')
-    chk(cat.get('ronda') == 12, f'catálogo: ronda == 12 (={cat.get("ronda")})')
+    chk(cat.get('ronda', 0) >= 12, f'catálogo: ronda >= 12 (={cat.get("ronda")})')
 
     # ── el receptor local no filtra tipos de evento (vr_ping pasa) ──
     route = (RAIZ / 'src' / 'app' / 'api' / 'telemetria' / 'route.ts').read_text(encoding='utf-8', errors='replace')
     chk("e.e" in route or 'evento.e' in route or "body" in route, 'route.ts: receptor genérico (sin whitelist de tipos)')
 
 
+def bloque_ronda14():
+    """RONDA 14 · REVERSIÓN DE NITIDEZ POR DATOS (1.5→1.4, regla <72) +
+    SESIONES VR en el resumen (worker + panel): permanencia real con
+    vr_ping, duración estimada y curva de fps."""
+    print('== H · RONDA 14 — REVERSIÓN NITIDEZ + SESIONES VR ==')
+    c12 = (RAIZ / 'src' / 'game' / 'core' / 'c12_pingponggame.js').read_text(encoding='utf-8', errors='replace')
+    worker = (RAIZ / 'scripts' / 'worker-tele' / 'worker.js').read_text(encoding='utf-8', errors='replace')
+    route = (RAIZ / 'src' / 'app' / 'api' / 'telemetria' / 'route.ts').read_text(encoding='utf-8', errors='replace')
+    panel = (RAIZ / 'src' / 'app' / 'telemetria' / 'page.tsx').read_text(encoding='utf-8', errors='replace')
+    verify = (RAIZ / 'scripts' / 'verify_pages_live.py').read_text(encoding='utf-8', errors='replace')
+    harness = (RAIZ / 'scripts' / 'worker-tele' / 'test_local.mjs').read_text(encoding='utf-8', errors='replace')
+
+    # ── reversión de nitidez: la regla pre-comprometida se aplicó ──
+    chk('setFramebufferScaleFactor(1.4)' in c12, 'c12: framebufferScaleFactor de vuelta a 1.4 (fluidez primero)')
+    chk('setFramebufferScaleFactor(1.5)' not in c12, 'c12: sin rastro del 1.5 (reversión limpia)')
+    chk('REVERSIÓN POR DATOS' in c12, 'c12: comentario documenta la reversión con los datos')
+    chk('setFoveation(0.5)' in c12, 'c12: foveation 0.5 intacta (no se toca)')
+
+    # ── sesionesVR en el worker: fold de ciclos vr_start→pings→vr_end ──
+    chk("e IN ('vr_start','vr_end','vr_ping')" in worker, 'worker: consulta de los 3 eventos VR')
+    chk('ciclosVR' in worker and 'const sesionesVR' in worker, 'worker: fold de ciclos + sesionesVR exportado')
+    chk('durReal' in worker and 'interrumpida' in worker, 'worker: dur real vs estimada + estado interrumpida')
+    chk('curva' in worker and 'slice(-12).reverse()' in worker, 'worker: curva de pings, últimas 12 sesiones')
+    chk('ORDER BY id ASC LIMIT 2000' in worker, 'worker: consulta acotada (2000 eventos VR)')
+
+    # ── paridad receptor local + panel ──
+    chk('ciclosVR' in route and 'sesionesVR:' in route, 'route.ts: paridad del fold sesionesVR')
+    chk('Sesiones VR (lentes)' in panel, 'panel: sección «Sesiones VR (lentes)»')
+    chk('durReal' in panel and 'Spark' in panel, 'panel: duración estimada marcada + sparkline de fps')
+    chk('sesionesVR?' in panel, 'panel: Resumen tolera fuente sin sesionesVR')
+    chk('foldVR' in panel and 'eventos: "500"' in panel, 'panel: fold de respaldo desde los crudos (worker sin ronda 14)')
+
+    # ── higiene: los bots de verificación no contaminan producción ──
+    chk("localStorage.setItem('pp_tele','0')" in verify, 'verify_pages_live: opt-out pp_tele=0 (bots sin boot 2d)')
+
+    # ── catálogo + harness ──
+    cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
+    chk(cat.get('ronda') == 14, f'catálogo: ronda == 14 (={cat.get("ronda")})')
+    chk('sesionesVR' in (cat.get('ronda14') or {}), 'catálogo: ronda14 documenta sesionesVR')
+    por_n = {e['nombre']: e for e in cat['eventos']}
+    chk('PRIMER PING REAL' in por_n.get('vr_ping', {}).get('notas', ''), 'catálogo: vr_ping estrena datos reales')
+    chk('SESIONES VR (ronda 14)' in harness, 'harness: bloque N de sesionesVR')
+
+
 async def main():
-    print('QA TELEMETRÍA · rondas 6-12 (roadmap P1) · lote array directo + routing por host + worker D1 + embudo por campeonato + plataforma real + latido VR')
+    print('QA TELEMETRÍA · rondas 6-14 (roadmap P1) · lote array directo + routing por host + worker D1 + embudo por campeonato + plataforma real + latido VR + sesiones VR')
     cat = bloque_catalogo()
     bloque_contrato()
     bloque_worker()
     bloque_ronda11()
     bloque_ronda12()
+    bloque_ronda14()
     sid, sid_nat = await bloque_e2e()
     bloque_panel(sid, sid_nat)
     print(f'\nRESULTADO: {ok} OK · {fails} FALLOS')

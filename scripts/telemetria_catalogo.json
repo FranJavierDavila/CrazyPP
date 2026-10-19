@@ -2,7 +2,7 @@
   "catalogo": "telemetria-crazypp",
   "version": 3,
   "actualizado": "2026-10-19",
-  "ronda": 12,
+  "ronda": 14,
   "politica_pii": {
     "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
     "sin_ip": true,
@@ -208,7 +208,7 @@
         }
       ],
       "desde": "v3.6.9-SDK6",
-      "notas": "ronda 12: LATIDO EN VR — las sesiones cerradas abruptamente (casco apagado, pestaña muerta) nunca llegan a vr_end ni a page_close y desaparecían del análisis (la ronda 11 cazó una: vr_start+stage sin cierre). El ÚLTIMO ping fecha el fin real aunque no haya vr_end"
+      "notas": "ronda 12: LATIDO EN VR — las sesiones cerradas abruptamente (casco apagado, pestaña muerta) nunca llegan a vr_end ni a page_close y desaparecían del análisis (la ronda 11 cazó una: vr_start+stage sin cierre). El ÚLTIMO ping fecha el fin real aunque no haya vr_end. ronda 14: PRIMER PING REAL en producción (10-19, 68 fps al minuto 5 de la 1.ª sesión 3.6.10) y el resumen ya lo consume: sesionesVR fecha la duración con él"
     }
   ],
   "hallazgos_ronda6": [
@@ -253,5 +253,21 @@
       "worker y receptor local sin cambios (vr_ping es un evento estándar de la cola: lo cuentan porEvento y el embudo lo ignora)",
       "nitidez 1.4→1.5 pospuesta a datos: la sesión 3.6.8 seguía abierta al cerrar la ronda"
     ]
+  },
+  "ronda14": {
+    "cambios": [
+      "resumen.sesionesVR (worker + receptor local en paridad): hasta 12 ciclos VR recientes — sid, versión, inicio, dur (real del vr_end o ≈ estimada del último vr_ping), durReal, estado (cerrada/interrumpida/abierta), fps media (min-max) del vr_end, pings y curva (hasta 24 pings: minuto de sesión + fps)",
+      "panel /telemetria: tabla «Sesiones VR (lentes)» con sparkline de fps (línea punteada = 72 de confort) y badge de estado; ≈ marca la duración estimada",
+      "reversión de nitidez 1.5→1.4 (regla pre-comprometida: media 63 < 72 en la 1.ª sesión real 3.6.10) — el juego recupera fluidez; nota en el catálogo por ser la decisión que gobierna qué fps veremos en la curva",
+      "verify_pages_live con opt-out pp_tele=0: los bots de verificación dejan de emitir boot 2d a producción (contaminación cazada el 10-19: 6 boots de bots)"
+    ],
+    "sesionesVR": {
+      "estado": {
+        "cerrada": "el ciclo terminó con vr_end: dur real y fps/fpsMin/fpsMax del vr_end",
+        "interrumpida": "sin vr_end pero CON vr_ping: dur ≈ estimada por el último ping (caso k5ui6abo)",
+        "abierta": "vr_start sin vr_end ni pings (sesión de < 5 min, en curso o muerta muy pronto)"
+      },
+      "curva": "muestras {m: minutos desde vr_start, fps} — hasta 24 por ciclo; dibuja la caída o estabilidad del rendimiento DENTRO de la sesión"
+    }
   }
 }

@@ -2329,3 +2329,19 @@ Work Log:
 Stage Summary:
 - RONDA 8 COMPLETADA (falta el despliegue del dueño): el visor de datos a la venta YA EXISTE — mismo panel, dos fuentes. Cuando el dueño pegue el código del worker y ponga su CLAVE (~10 min, LEEME.md), el test en casco será la primera lectura real: KPIs, FPS medio VR, errores top y champ_rank por campeonato en vivo desde producción.
 - Candidatos para rondas futuras (análisis de venta): series por día (DAU/retención), embudo de campeonatos (dónde abandonan), filtro por versión; y en el juego (necesita release): id de campeonato en stage/champion y v real en champ_rank.
+
+---
+Task ID: 102 (ronda 8 · despliegue automático, fase 1)
+Agent: principal
+Task: El dueño pide que YO despliegue el worker de telemetría de forma automática → preparar el pipeline que lo haga con solo un API token de Cloudflare.
+
+Work Log:
+- Hallazgo clave: la ronda 8 (código) YA estaba completada y commiteada en 48f776b (worker.js con D1, panel doble fuente, test_local.mjs 30 checks, capa J 64/0, LEEME, catálogo v3) — el resumen de sesión anterior estaba desfasado; no se re-implementó nada.
+- Confirmado: NO hay credenciales de Cloudflare en el entorno (.env solo DATABASE_URL, sin vars CF_*); el worker VIEJO sigue vivo y devolviendo texto fijo («CRAZY PING PONG telemetry: ok») → subdomain de cuenta confirmado: escala3dcorreoia.workers.dev.
+- logs/ NO está gitignored → la clave de producción se guarda en scripts/worker-tele/.clave-produccion y el script añade esa entrada a .gitignore la primera vez.
+- NUEVO scripts/deploy_worker.py (solo stdlib, ~300 líneas): pipeline re-entrante con CF_API_TOKEN por env var → (1) verify token, (2) localiza cuenta (CF_ACCOUNT_ID si hay varias), (3) D1 crazypp-tele crear/reutilizar, (4) PUT módulo con multipart metadata: main_module worker.js + bindings DB(d1)+CLAVE(secret_text), (5) subdomain enabled, (6) E2E real en producción: latido {ok,total} · resumen sin clave=403 · POST lote de prueba con sid sonda→204 · resumen con clave ve porEvento.deploy_prueba≥2 · DELETE ?sid purga · latido restaura el total exacto. Token jamás se imprime; CLAVE se muestra una vez y queda en .clave-produccion (chmod 600). TELE_CLAVE opcional para que el dueño traiga su propia clave.
+- Pruebas del pipeline: sin token → exit 2 con instrucciones de creación del token; token falso → detectado en el paso 1 (6003 Invalid request headers), exit 1, sin fichero de clave creado. Nada tocado en producción.
+
+Stage Summary:
+- Listo para desplegar en ~1 minuto en cuanto el dueño pegue un API token con permisos: Workers Scripts Edit + D1 Edit + Account Read (plantilla «Edit Cloudflare Workers» + D1 Edit).
+- Pendiente del dueño tras el deploy: probar el juego en casco (primera lectura real del visor) y pegar la CLAVE en el panel /telemetria → «Producción (D1)».

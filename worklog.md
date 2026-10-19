@@ -2361,3 +2361,18 @@ Work Log:
 Stage Summary:
 - PRODUCCIÓN DESPLEGADA Y VERIFICADA: el worker crazypp-tele (misma URL de siempre) ahora GUARDA en D1 y EXPONE lectura con clave. total=0 porque el worker viejo no almacenaba nada (los lotes anteriores no se guardaron en ningún sitio).
 - Pendiente del dueño: pegar la CLAVE en el panel /telemetria → «Producción (D1)» y hacer el test en casco (primera lectura real).
+
+---
+Task ID: 102 (ronda 8 · fase 3 — CIERRE con primera lectura real)
+Agent: principal
+Task: El dueño abrió el panel por el dominio público del preview, conectó en modo Producción (D1) con su clave y obtuvo la primera lectura real.
+
+Work Log:
+- El dominio público del preview tardó en activar el enrutamiento (pantalla «Deploying» 202 de la plataforma); a los minutos pasó a 200 sin tocar nada.
+- Descubierto por sondeo: el receptor LOCAL acumulaba 68 boots (v=3.6.5-SDK6, platform 2d, sid único por carga, sin interacción) — trazado a cargas de localhost por el navegador interno de la plataforma (miniaturas/visor del chat), NO jugadores; el routing del juego confirmado en game.html: solo localhost/127.0.0.1/[::1] van al local, cualquier otro host (github.io, preview público, Quest) va al worker.
+- PRIMERA LECTURA REAL DEL DUEÑO en el panel Producción (D1): 9 eventos · 4 sesiones · 3 arranques 24h · boot 3 / page_close 3 / stage 1 / vr_start 1 / vr_end 1 · FPS medio VR 38 · 0 errores · 0 champ_rank. Sesión VR destacada: partido (mode match, multi false) de dur ~4996 s (~83 min).
+- La ronda 8 queda cerrada en su totalidad: worker con D1 en producción + panel doble fuente funcionando con la clave del dueño.
+
+Stage Summary:
+- El pipeline completo (casco/navegador → worker → D1 → panel con clave) funciona SOLO, sin mantenimiento.
+- Datos de esta primera lectura apuntados para rondas futuras: FPS medio 38 (Quest 3 debería ir mucho más alto → candidato ronda de optimización de rendimiento); falta champ_rank (ningún campeonato completado aún); pendiente del catálogo: id de campeonato en stage/champion y series por día para análisis de venta.

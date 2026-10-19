@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.5-SDK6, fase 8 · TELEMETRÍA: flujo de producción reparado (array directo + routing por host); sello actualizado
-# por bump_version.py desde 3.6.5-SDK5)
-783479415a8d5f9a8155e0efb89db0c61616582a4e520247efa1c0efd86801ea
+# SHA256 del game.html que produjo esta división (3.6.7-SDK6, fase 9 · RENDIMIENTO: FPS en XR optimizados (ronda 10); sello actualizado
+# por bump_version.py desde 3.6.6-SDK6)
+c1badcd78369ca90e6889d5eaeab261583c21a9837fd2157e4f37dd465d9effb

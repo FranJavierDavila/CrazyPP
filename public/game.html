@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.5-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.7-SDK6</span>
     </div>
   </main>
 
@@ -1917,7 +1917,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.5-SDK6';
+  const VERSION = '3.6.7-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -1942,7 +1942,7 @@ const __PP_TELE = (() => {
     q: [],             // cola de eventos pendientes
     sid: null,         // id de sesión aleatorio (sin valor identificativo)
     t0: Date.now(),
-    frames: 0, fpsAcc: 0, fpsSamples: [],
+    frames: 0, fpsAcc: 0, fpsSamples: [], fpsLo: null, fpsHi: null,
     // v2.76: diagnóstico de envío (sin PII: sólo contadores y hora)
     sent: 0,           // lotes aceptados por sendBeacon/fetch
     lastOk: 0,         // Date.now() del último envío aceptado
@@ -2022,8 +2022,12 @@ const __PP_TELE = (() => {
     st.frames++; st.fpsAcc += dt;
     if (st.fpsAcc >= 5) {
       const fps = st.frames / st.fpsAcc;
-      st.fpsSamples.push(Math.round(fps));
+      const red = Math.round(fps);
+      st.fpsSamples.push(red);
       if (st.fpsSamples.length > 12) st.fpsSamples.shift();
+      // ronda 10: récord de la sesión (no solo las últimas 12 muestras)
+      if (st.fpsLo === null || red < st.fpsLo) st.fpsLo = red;
+      if (st.fpsHi === null || red > st.fpsHi) st.fpsHi = red;
       st.frames = 0; st.fpsAcc = 0;
     }
   }
@@ -2032,6 +2036,11 @@ const __PP_TELE = (() => {
     const s = st.fpsSamples.slice();
     return s.length ? Math.round(s.reduce((a, b) => a + b, 0) / s.length) : null;
   }
+
+  /** ronda 10: mínimo/máximo DE LA SESIÓN VR (reset al entrar en VR). */
+  function resetFps() { st.fpsLo = null; st.fpsHi = null; }
+  function fpsLo() { return st.fpsLo; }
+  function fpsHi() { return st.fpsHi; }
 
   // arranque + cola de ciclo de vida
   ev('boot', { platform: '2d' });
@@ -2053,7 +2062,7 @@ const __PP_TELE = (() => {
   // cola está vacía (flush no hace nada) o si el receptor aún no está.
   try { window.setTimeout(() => flush(), 5000); } catch { /* */ }
 
-  return { ev, flush, noteFrame, fpsAvg, get on() { return st.on; }, set on(v) { st.on = !!v; persist(); }, st };
+  return { ev, flush, noteFrame, fpsAvg, resetFps, fpsLo, fpsHi, get on() { return st.on; }, set on(v) { st.on = !!v; persist(); }, st };
 })();
 // v2.50: exposición para diagnóstico y pruebas (el módulo la usa por cierre)
 try { window.__PP_TELE = __PP_TELE; } catch { /* */ }
@@ -9062,17 +9071,20 @@ class PingPongGame {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.xr.enabled = true;
     this.renderer.xr.setReferenceSpaceType('local-floor');
-    // Nitidez máxima en el visor: sin foveación (borde nítido en toda la
-    // lente) y framebuffer sobredimensionado (Quest 3 tiene GPU de sobra
-    // para esta escena).
-    this.renderer.xr.setFoveation(0);
-    this.renderer.xr.setFramebufferScaleFactor(1.7);
+    // v3.6.6 (ronda 10 · AUDITORÍA DE FPS): la telemetría vr_end midió 38
+    // fps de media en sesión larga — GPU saturada por nitidez máxima
+    // (1.7× = ~2.9× píxeles/ojo + foveation 0 + sombras PCFSoft 2048²).
+    // Compromiso nitidez/rendimiento: 1.4× («Extra Sharpness» del Meta
+    // Browser, nitidez alta) + foveation 0.5 (periferia comprimida por el
+    // compositor, imperceptible en juego).
+    this.renderer.xr.setFoveation(0.5);
+    this.renderer.xr.setFramebufferScaleFactor(1.4);
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0b0e11);
@@ -9241,7 +9253,7 @@ class PingPongGame {
     this.dirLight = dir;
     dir.position.set(2.2, 3.6, 0.6);
     dir.castShadow = true;
-    dir.shadow.mapSize.set(2048, 2048);
+    dir.shadow.mapSize.set(1024, 1024);
     dir.shadow.camera.left = -3;
     dir.shadow.camera.right = 3;
     dir.shadow.camera.top = 3;
@@ -11577,6 +11589,7 @@ class PingPongGame {
     // v2.77: flag anónimo de multijugador (rival P2P conectado en este momento)
     try { __PP_TELE.ev('vr_start', { mode: this.mode, multi: !!(this.net && this.net.online) }); } catch { /* */ }
     this._vrT0 = Date.now();
+    try { __PP_TELE.resetFps(); } catch { /* */ }
     if (this.showTips) {
       let seen = false;
       try { seen = localStorage.getItem('pp_seen_v1') === '1'; } catch { /* */ }
@@ -11600,6 +11613,8 @@ class PingPongGame {
       __PP_TELE.ev('vr_end', {
         dur: this._vrT0 ? Math.round((Date.now() - this._vrT0) / 1000) : 0,
         fps: __PP_TELE.fpsAvg(),
+        fpsMin: __PP_TELE.fpsLo(),
+        fpsMax: __PP_TELE.fpsHi(),
       });
       // v2.76: la sesión VR terminó → mandar el lote YA (no esperar 30 s;
       // si el casco cierra el visor justo después, el beacon de pagehide

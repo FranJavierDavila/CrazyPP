@@ -20,17 +20,20 @@ export class PingPongGame {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.xr.enabled = true;
     this.renderer.xr.setReferenceSpaceType('local-floor');
-    // Nitidez máxima en el visor: sin foveación (borde nítido en toda la
-    // lente) y framebuffer sobredimensionado (Quest 3 tiene GPU de sobra
-    // para esta escena).
-    this.renderer.xr.setFoveation(0);
-    this.renderer.xr.setFramebufferScaleFactor(1.7);
+    // v3.6.6 (ronda 10 · AUDITORÍA DE FPS): la telemetría vr_end midió 38
+    // fps de media en sesión larga — GPU saturada por nitidez máxima
+    // (1.7× = ~2.9× píxeles/ojo + foveation 0 + sombras PCFSoft 2048²).
+    // Compromiso nitidez/rendimiento: 1.4× («Extra Sharpness» del Meta
+    // Browser, nitidez alta) + foveation 0.5 (periferia comprimida por el
+    // compositor, imperceptible en juego).
+    this.renderer.xr.setFoveation(0.5);
+    this.renderer.xr.setFramebufferScaleFactor(1.4);
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0b0e11);
@@ -199,7 +202,7 @@ export class PingPongGame {
     this.dirLight = dir;
     dir.position.set(2.2, 3.6, 0.6);
     dir.castShadow = true;
-    dir.shadow.mapSize.set(2048, 2048);
+    dir.shadow.mapSize.set(1024, 1024);
     dir.shadow.camera.left = -3;
     dir.shadow.camera.right = 3;
     dir.shadow.camera.top = 3;
@@ -2535,6 +2538,7 @@ export class PingPongGame {
     // v2.77: flag anónimo de multijugador (rival P2P conectado en este momento)
     try { __PP_TELE.ev('vr_start', { mode: this.mode, multi: !!(this.net && this.net.online) }); } catch { /* */ }
     this._vrT0 = Date.now();
+    try { __PP_TELE.resetFps(); } catch { /* */ }
     if (this.showTips) {
       let seen = false;
       try { seen = localStorage.getItem('pp_seen_v1') === '1'; } catch { /* */ }
@@ -2558,6 +2562,8 @@ export class PingPongGame {
       __PP_TELE.ev('vr_end', {
         dur: this._vrT0 ? Math.round((Date.now() - this._vrT0) / 1000) : 0,
         fps: __PP_TELE.fpsAvg(),
+        fpsMin: __PP_TELE.fpsLo(),
+        fpsMax: __PP_TELE.fpsHi(),
       });
       // v2.76: la sesión VR terminó → mandar el lote YA (no esperar 30 s;
       // si el casco cierra el visor justo después, el beacon de pagehide

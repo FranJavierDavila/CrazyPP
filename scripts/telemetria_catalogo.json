@@ -66,7 +66,9 @@
       "momento": "salida de la sesión VR (inmediatamente hace flush(true))",
       "campos": [
         { "nombre": "dur", "tipo": "number", "desc": "segundos de sesión VR" },
-        { "nombre": "fps", "tipo": "number|null", "desc": "FPS medio de la sesión (muestreo cada 5 s; null si no hubo muestras)" }
+        { "nombre": "fps", "tipo": "number|null", "desc": "FPS medio de la sesión (muestreo cada 5 s; null si no hubo muestras)" },
+        { "nombre": "fpsMin", "tipo": "number|null", "desc": "FPS mínimo de la sesión VR (ronda 10; peor intervalo de 5 s)" },
+        { "nombre": "fpsMax", "tipo": "number|null", "desc": "FPS máximo de la sesión VR (ronda 10; mejor intervalo de 5 s)" }
       ],
       "desde": "v2.50 (fps desde v2.76)"
     },

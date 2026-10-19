@@ -1,14 +1,13 @@
 ==========================================================================
 CRAZY PING PONG · INFORME DE DECISIÓN (telemetría D1)
 ==========================================================================
-fuente eventos : _eventos_test_champ.json · 70 eventos
+fuente eventos : _eventos_r23.json · 69 eventos
 fuente resumen : _resumen_r23.json · total=69 · sesionesUnicas=20 · arranques24h=18
 
 · FPS (vr_ping): 14 muestras · media 77.1 · mín 68 · máx 89 · ≥78: 6/14
 · FPS (vr_end): media 77.3 · máx absoluto 93
 
 — SESIONES (últimas 8 por último evento) —
-  · prueba-s v? [?] 20-Oct 12:40 UTC · ventana — · sin VR
   · ojf71mx7 v3.6.7-SDK6 [2d] 19-Oct 20:24 UTC · ventana — · sin VR
   · pul3m5gm v3.6.15-SDK6 [2d] 19-Oct 19:01 UTC · ventana 1h21m · sin VR
   · qym1q37o v3.6.15-SDK6 [xr] 19-Oct 19:09 UTC · ventana 15m47s · VR cerrada
@@ -19,14 +18,11 @@ fuente resumen : _resumen_r23.json · total=69 · sesionesUnicas=20 · arranques
   · sgpxvqzn v3.6.12-SDK6 [xr] 19-Oct 17:28 UTC · ventana 1h09m · VR cerrada
       dur VR 1h09m · pings fps: 73/77/78/78 · vr_end 75 fps (mín 50, máx 120)
   · 5z1d2to1 v3.6.12-SDK6 [2d] 19-Oct 17:52 UTC · ventana 5s · sin VR
-
-████████████████████████████████████████████████████████████████████████
-  🏆 ¡CAMPEÓN EN «oeste»! · 20-Oct 12:40 UTC · sid prueba-sintetica
-████████████████████████████████████████████████████████████████████████
+  · a5ldnweb v3.6.10-SDK6 [2d] 19-Oct 16:07 UTC · ventana 1h45m · sin VR
 
 — EMBUDO POR CAMPEONATO (champ_rank / stage / champion) —
   · locura           pruebas: — | etapa máx: 3/5
-  · oeste            pruebas: asedio 1/1 · duelo 1/1 | etapa máx: 3/5 | ★ CHAMPION ×1
+  · oeste            pruebas: asedio 1/1 · duelo 1/1 | etapa máx: 3/5
       {"prueba": "duelo", "win": true, "score": 525, "stars": 1, "nv": 1, "duelScore": 11}
       {"prueba": "asedio", "win": true, "score": 0, "stars": 0, "kills": 12, "wave": 3}
 

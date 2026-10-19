@@ -2,5 +2,5 @@ version=3.6.5-SDK5
 fuente_commit=677ffcb0c8d131af4be404cd9178e6e55458fd92
 game_sha256=8ffe882552db9856a3f651ca7d9ac6e60356cf72da3f70745d6a466e829cfde5
 reescrituras=2
-fecha=2026-10-19T07:47:21
+fecha=2026-10-19T07:52:58
 url=https://franjavierdavila.github.io/CrazyPP/

@@ -2691,3 +2691,24 @@ Stage Summary:
 - PRODUCCIÓN: worker nativo con la versión MÁS RECIENTE del worker.js, D1 intacta (69 eventos), token CF persistido y blindado.
 - ROTACIÓN DE CLAVE: la clave del panel anterior quedó INVALIDADA (el sandbox había perdido .clave-produccion); nueva clave entregada al dueño por chat para pegarla en /telemetria → «Producción (D1)». La clave vive en scripts/worker-tele/.clave-produccion (600, gitignored).
 - LECCIÓN PERMANENTE: tras cualquier reciclaje de sandbox, git fetch + comparar con origin/main ANTES de desplegar nada (el repositorio remoto es la fuente de verdad, no el disco local).
+
+---
+Task ID: 120 (ronda 23 · PRE-CORONACIÓN — el flujo champion a prueba de balas)
+Agent: principal
+Task: «adelante» — con el dueño a 3 nodos del PRIMER CHAMPION DE LA HISTORIA (oeste 3/5 → Duelo Nv.2 → Tren → Duelo Final), blindar el momento: auditoría completa de las 5 cadenas champion + QA de navegador del estado POST-VICTORIA + herramientas del taller. Sin tocar el juego (0 derrotas, sin señal de dificultad; no bump bajo los pies del dueño).
+
+Work Log:
+- TELEMETRÍA FRESCA (69 eventos, snapshots _eventos_r23/_resumen_r23 con vuelca_tele.py NUEVO): los 2 eventos nuevos son loads 2D de 3.6.7 por el miniaturizador de la plataforma (lección ronda 8, no es jugador). El dueño AÚN no ha jugado la 3.6.17. champRank estable {oeste 2/2, mejor 525} · 0 errores.
+- vuelca_tele.py NUEVO: volcado D1→snapshots persistente (curl+UA navegador, clave en eventos Y resumen; lecciones worker: ?eventos=N máx 500 y clave requerida — 1.ª versión cazó ambas al vuelo).
+- AUDITORÍA DE LAS 5 CADENAS CHAMPION (escritura == lectura): oeste pp_champ_oeste_champ (index.js 12439↔11022+storageKey) · locura pp_arcade_trophy (3216↔2780) · magia pp_champ_magia_trophy (4623↔3643, isChampion→CTRL.trophy) · estacion_orbital pp_champ_estacion_orbital_champ (7772↔6645) · valle_neon pp_champ_valle_neon_champ (872↔manifest.storage). Los 5 manifiestos declaran la base EXACTA que championFlag lee vía entries.storage. COHERENTES LAS 5.
+- AUDITORÍA _championFlow de oeste (12436): persistencia champ+stage=5, insignia dorada en sala, mensaje+audio, showChampConseguido (existe en c13/c12), __PP_TELE.ev('champion') UNA vez, risa+haptics, world rank submit. El duelo final (nv 3) emite champ_rank ANTES (onMatchOver) → el embudo queda completo: champ_rank→champion.
+- qa_champion_listo.py NUEVO (capa L): carga game.html de PRODUCCIÓN con el estado POST-VICTORIA de los 5 (pp_tele=0) y afirma championFlag×5, menuHint→«★ SUPERADO…», resolución de la TARJETA (orden EXACTO c12 1665-1672: stageHint primero, championFlag pisa), control negativo (sin clave→false), storage intacto, 0 pageerrors. PRIMERA EJECUCIÓN CAZÓ UNA FALSEDAD EN MI PROPIA ASERCIÓN: _stageHint('oeste') con champ devuelve «Etapa 5/5» POR DISEÑO (anuncia el Duelo Final al no-campeón; el campeón lo pisan tarjeta y menuHint) — diagnosticado leyendo los consumidores (solo 2: c11 212 y c12 1665, AMBOS con precedencia campeón) y corregida la aserción. 13/13 VERDE contra 3.6.17-SDK6.
+- qa_hub_hints.py: default de versión ahora se lee de src/game/VERSION.json (el 3.6.16 clavado a mano estaba destinado a podrirse). Re-ejecutado: VERDE contra 3.6.17 con el estado real del dueño (oeste 3/5).
+- qa_todo.py: flag --produccion que añade las capas POST-DEPLOY K (qa_hub_hints) y L (qa_champion_listo) — el ciclo completo pasa a 12 capas tras cada release. --rapido re-verificado (A-D 12 s, 0 fallos).
+- informe.py: bandazo de celebración 🏆 cuando aparece el primer evento champion (probado con evento sintético — imprime champ, fecha y sid).
+
+Stage Summary:
+- EL PRIMER CHAMPION ESTÁ BLINDADO: auditoría de claves coherente en los 5, flujo _championFlow completo verificado en fuente, QA de navegador 13/13 contra producción simulando el estado exacto que quedará tras ganar el Duelo Final, y el informe preparado para celebrarlo.
+- Ronda SIN deploy (0 bytes en public/): la 3.6.17 sigue en producción, el dueño no nota nada.
+- Cuando el dueño gane el Duelo Final: champion event → bandazo en informe.py → champRank añade la victoria → porCampeonato cierra → tarjeta «★ SUPERADO» verificada.
+- Pendiente del dueño: pegar la CLAVE nueva en /telemetria (ronda 22), jugar Duelo Nv.2 → Tren → Duelo Final.

@@ -17,10 +17,18 @@ Capas:
   H. qa_descargas_vNNN.py — hub + 4 ZIPs byte-exactos (~208)
   I. smoke_sdkN.py        — SDK + 5 módulos en cadena
   J. qa_telemetria.py     — telemetría anónima: catálogo, receptor, E2E (41)
+  K. qa_hub_hints.py      — (POST-DEPLOY, --produccion) hints del hub en
+                            producción contra el estado real del dueño (11)
+  L. qa_champion_listo.py — (POST-DEPLOY, --produccion) estado champion de
+                            los 5 campeonatos en producción (13)
 
 Uso:
-  python3 scripts/qa_todo.py            # TODO
-  python3 scripts/qa_todo.py --rapido   # solo A-D (sin Playwright pesado)
+  python3 scripts/qa_todo.py                # TODO (A-J, pre-deploy)
+  python3 scripts/qa_todo.py --rapido       # solo A-D (sin Playwright pesado)
+  python3 scripts/qa_todo.py --produccion   # A-J + K/L contra PRODUCCIÓN
+                                            # (tras el deploy: K/L exigen
+                                            # que pages sirva la versión
+                                            # de la FUENTE DE VERDAD)
 Salida: marcador global. Exit 1 si CUALQUIER capa falla."""
 import subprocess
 import sys
@@ -51,12 +59,21 @@ CAPAS = [
     ('J · telemetría', 'qa_telemetria.py'),
 ]
 
+# Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen
+# que pages sirva la versión de la FUENTE DE VERDAD (src/game/VERSION.json).
+CAPAS_PRODUCCION = [
+    ('K · hints del hub (prod)', 'qa_hub_hints.py'),
+    ('L · champion listo (prod)', 'qa_champion_listo.py'),
+]
+
 def main():
     rapido = '--rapido' in sys.argv
+    produccion = '--produccion' in sys.argv
+    capas = CAPAS + (CAPAS_PRODUCCION if produccion else [])
     filas = []
     fallos_total = 0
     t_global = time.monotonic()
-    for nombre, script in CAPAS:
+    for nombre, script in capas:
         if not script or not (SCR / script).exists():
             filas.append((nombre, 'AUSENTE', '-', script or '(no encontrado)'))
             fallos_total += 1

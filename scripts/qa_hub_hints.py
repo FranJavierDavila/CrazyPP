@@ -16,13 +16,31 @@ menuHint() — la lógica «TU CAMINO TE ESPERA»:
   · menuHint() con locura/oeste con progreso → devuelve etapa, no victorias
   · 0 pageerrors durante el arranque
 
-Uso: python3 scripts/qa_hub_hints.py [versión-esperada]  (default 3.6.16-SDK6)
+Uso: python3 scripts/qa_hub_hints.py [versión-esperada]
+     (default: la de src/game/VERSION.json — la fuente de verdad)
 """
 import asyncio
+import json
+import os
 import sys
 
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 URL = 'https://franjavierdavila.github.io/CrazyPP/game.html'
-ESPERADA = sys.argv[1] if len(sys.argv) > 1 else '3.6.16-SDK6'
+
+
+def version_fuente():
+    """La versión esperada en producción = la de la FUENTE DE VERDAD
+    (src/game/VERSION.json). Así el default no se queda viejo como el
+    3.6.16 clavado a mano (cazado en ronda 23)."""
+    try:
+        with open(os.path.join(RAIZ, 'src', 'game', 'VERSION.json'),
+                  encoding='utf-8') as f:
+            return json.load(f).get('version')
+    except Exception:
+        return None
+
+
+ESPERADA = sys.argv[1] if len(sys.argv) > 1 else (version_fuente() or '3.6.17-SDK6')
 
 ESTADO = {
     'pp_tele': '0',                       # el bot NO deja huella en D1

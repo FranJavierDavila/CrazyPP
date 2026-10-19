@@ -125,6 +125,15 @@ def main():
     cr = [e for e in evs if e.get('e') == 'champ_rank']
     stages = [e for e in evs if e.get('e') == 'stage']
     champs_ev = [e for e in evs if e.get('e') == 'champion']
+    if champs_ev:
+        # ronda 23 · ¡EL MOMENTO HISTÓRICO merece titular!
+        import datetime as _dt
+        print('\n' + '█' * 72)
+        for e in champs_ev:
+            c = e.get('champ', e.get('id', '?'))
+            fe = _dt.datetime.fromtimestamp(e.get('t', 0) / 1000, _dt.timezone.utc)
+            print(f'  🏆 ¡CAMPEÓN EN «{c}»! · {fe:%d-%b %H:%M} UTC · sid {e.get("sid", "?")}')
+        print('█' * 72)
     if cr or stages or champs_ev:
         print('\n— EMBUDO POR CAMPEONATO (champ_rank / stage / champion) —')
         por_camp = defaultdict(lambda: defaultdict(list))

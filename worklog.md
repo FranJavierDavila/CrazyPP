@@ -2603,3 +2603,21 @@ Stage Summary:
 - V3.6.15-SDK6 EN VIVO: LOS 5 CAMPEONATOS REPORTAN EL EMBUDO COMPLETO (champ_rank de cada prueba y duelo con métricas reales, stage por avance, champion por título). La próxima sesión que toque cualquier campeonato deja datos comparables — porCampeonato deja de ser exclusivo de La Locura.
 - Sesión del casco capturada en vivo: 3.6.14 12,7 min VR estable (76/75 fps) y primer boot 3.6.15 a las 18:55:55 — el dueño ya está sobre la nueva versión.
 - Pendiente del dueño: primer campeonato COMPLETO (embudo porCampeonato + champion), CF_API_TOKEN (deploy nativo del worker, harness 50/0 listo), 2-3 sesiones ≥10 min con pings para el criterio de nitidez 1.45 (hoy: 12,7 min con 2 pings 76/75 — cuentan).
+
+---
+Task ID: 115 (ronda 19 · TU CAMINO TE ESPERA)
+Agent: principal
+Task: «VALE voy a jugar a los nuevos campeonatos, y tú mientras avanzas» — telemetría fresca → auditoría del porqué de «ningún campeonato completo» → ronda 19 con cierre completo mientras el dueño juega en el casco.
+
+Work Log:
+- TELEMETRÍA (56 eventos / 18 sesiones, snapshots _eventos_r17/_resumen_r17.json): champRank AÚN {} — el embudo (rondas 17-18) se estrena HOY con las partidas del dueño. Sin errores (erroresTop []). Sesión 3.6.14 del casco: 12,7 min, 76/75 fps, vr_end limpio (2ª sesión ≥10 min hacia el criterio de nitidez 1.45). Boots de 3.6.15 en producción (g4zoka6l 2d, pul3m5gm) y arrancó qym1q37o en VR DURANTE la ronda — capturado en vivo.
+- AUDITORÍA «primer campeonato completo»: PERSISTENCIA OK en los 5 (locura pp_arcade_stage 0..4, magia pp_champ_magia_stage 0..4 vía storageKey(), oeste pp_champ_oeste_stage 1..5 ¡1-indexed!, estacion pp_champ_estacion_orbital_stage 0..4, valle base+'stage' 0..etapas-1). El progreso sobrevive al cierre del casco — no es el cuello de botella.
+- HALLAZGO REAL: las tarjetas del hub sólo mostraban «★ SUPERADO» o «Rondas ganadas: N» — NUNCA la etapa en curso («Toca para entrar» aunque llevaras la etapa 2 ganada). Auditoría de estructuras: los 5 caminos son de 5 etapas (NODOS/nodesPx/etapas; manifest stages: oeste declara 3 TIPOS de prueba, no la ruta — no usar como total).
+- PARCHE (game.html, 6 edits): ① ES champ_stage_hint «Etapa {n}/{total} · sigue donde la dejaste»; ② EN «Stage {n}/{total} · pick up where you left off»; ③ CHAMP_STAGE_TOTAL {los 5: 5} antes de ChampLoader; ④ ChampLoader._stageHint(id, base) — normaliza oeste (1..5 tal cual, anunciando desde sv≥2) vs resto (0-indexed, +1, anunciando desde sv≥1; sv>total-1 se calla — locura marca 5 al ser campeón y lo cubre el chip ★); ⑤ menuHint(): precedencia SUPERADO > etapa > victorias; ⑥ tarjeta del menú: misma precedencia. check_gamehtml_js.py nuevo (extrae los 8 bloques script inline y node --check — el bloque principal de 4,2 MB pasa; bloque 0 es el importmap JSON, fallo esperado).
+- PIPELINE: bump 3.6.16-SDK6 --fase 18 (golden NUEVO a43a2ab1…, 6.348.360 B, byte-exacto) → gen_release_v3616.py (notas FASE 18, «frente a» corregido a 3.6.15, aviso ×1 esperado) → build_zip 4 ZIPs: COMPLETO 125.225.070 · ligera 11.456.961 · CLOUDFLARE 125.211.683 · SOLO 6.089 → sella_r19.py (31 sellos en cascada: 5+2+4+2+18, idempotente ×2) → QA TOTAL 10/10 (208 s).
+- DESPLIEGUE: commit 60f440b (pyc de release-v3616 cazado y reseteado antes del commit) → deploy_pages --push --release --backup: pages 3ca1d86e3, Release v3.6.16-SDK6 4/4 assets → verify_pages_live 3.6.16-SDK6 VERDE (intento 2 — el 1.º pilló el CDN con la 3.6.15 caliente; 17 peticiones · 0 fallos · 0 pageerrors) → origin/main estaba atrás (dbdfec4a6, Task 111; linaje ancestro verificado) → push main. RAMAS: main=proyecto=60f440b · pages=3ca1d86e3.
+
+Stage Summary:
+- V3.6.16-SDK6 EN VIVO: el hub ya enseña «Etapa X/5 · sigue donde la dejaste» en cada campeonato con camino empezado — el dueño ve dónde quedó su récord de La Locura (etapa 2) y cuánto le queda al primer campeonato COMPLETO.
+- El embudo champ_rank (rondas 17-18) espera sus primeros datos de la sesión del dueño (qym1q37o, 3.6.15, en VR durante esta ronda).
+- Pendiente del dueño: primer campeonato COMPLETO (champion + porCampeonato), CF_API_TOKEN (deploy nativo del worker, harness 50/0 listo), 1-2 sesiones ≥10 min más para el criterio de nitidez 1.45 (hoy 2 de 3).

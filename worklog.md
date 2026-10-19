@@ -2449,3 +2449,21 @@ Stage Summary:
 - RONDA 11 COMPLETAMENTE EN PRODUCCIÓN: Pages 3.6.8-SDK6 en vivo (pages 5e202a4), release v3.6.8-SDK6 con los 4 ZIPs, respaldo proyecto=8248497 (rondas 9-10-11 en el remoto).
 - LECCIÓN consolidada: tras un reset del sandbox, la rama pages local debe RE-ENCADENARSE sobre origin/pages (commit-tree con árbol y mensaje preservados), nunca forzar push — el historial de despliegues es append-only y ya vive en el remoto.
 - Pendiente de datos: la primera sesión VR del dueño en 3.6.7+/3.6.8 dirá si la optimización FPS subió de 38 (vr_end ahora trae fpsMin/fpsMax); el embudo por campeonato se llenará con su próxima partida de Magia/Locura.
+
+---
+Task ID: 106 (ronda 12 · plataforma real + latido en VR)
+Agent: principal
+Task: El dueño aprueba «adelante con ronda 12»: boot.platform REAL (xr vs 2d — el análisis no distinguía el casco del escritorio) + vr_ping cada 5 min en VR (sesiones cerradas abruptamente como k5ui6abo + curva de fps). La nitidez 1.4→1.5 queda pospuesta a datos: la sesión 3.6.8 seguía abierta al cerrar la ronda.
+
+Work Log:
+- DATOS DE ENTRADA: 23 eventos · 11 sesiones · FPS 38 → 55 (+45%, min 44/max 91) confirmado en 49 min reales de campeonato en 3.6.7 · el dueño GANÓ Magia en VR · 0 errores · embudo por campeonato vacío (correcto: ids solo desde 3.6.8).
+- JUEGO (c00_pre_three.js): boot sale síncrono con '2d' y navigator.xr.isSessionSupported('immersive-vr') (Promise.race con tope 1.5 s) corrige IN SITU el evento en la cola (st.q[i].platform='xr' con guard sid === st.sid; sin duplicar el recuento ni reordenar; sin XR no toca nada). vrPing(on/off) en c00: intervalo 300000 ms emite vr_ping {dur, fps: fpsAvg()} — exportado en __PP_TELE; c12 lo arranca en vr_start (tras resetFps) y lo para en onSessionEnd (tras flush(true)).
+- CATÁLOGO (act_catalogo_r12.py): 9 eventos (+vr_ping), boot documenta platform xr|2d y el fix, sección ronda12. Capa J: bloque_ronda12 con 21 anclas (89→110 OK); ajustes de bloques previos: recuento de eventos 8→9 y ronda == 11 → >= 11 (el catálogo crece por diseño).
+- RELEASE V3.6.9-SDK6: bump_version (golden f2e53b2f… 6.347.774 B, +2.472 B del parche) · gen_release_v369.py con DOS mejoras heredadas: guard del COMPLETO grep a 3.6.9 (lección r10/r11, ahora DENTRO del generador) y «frente a» corregido a la versión ANTERIOR (desliz cosmético de la r11: los GLOBALES lo autorreferían) · build_zip: 4 ZIPs (COMPLETO 125.220.903 · ligera 11.456.276 · CLOUDFLARE 125.207.516 · SOLO 6.089) · sella_r12.py: cascada E/F/G/H/I a 3.6.9 + tamaños nuevos · ZIPs v368 purgados.
+- QA: 2 fallos de la capa D (cadena_ms 4357 > 3210) diagnosticados como base desfasada del sandbox pre-reset (756 ms; hoy ~3100 típico; el parche no toca la cadena — es import de los 5 campeonatos) → presupuesto.json refrescado con --update (procedimiento documentado del propio script, precedente ronda 11) → QA TOTAL 10/10 (661 checks + smoke · 206 s · física 11/11 intacta).
+- DEPLOY: 1.er intento FALLIDO y lección re-aprendida: deploy_pages ensambla git archive HEAD → hay que COMMITAR ANTES («el flujo de casa»); detectó 3.6.8 (árbol sin commitear) y el release buscó ZIPs v368 ya purgados. El push de Pages de ese intento sirvió el MISMO contenido 3.6.8 (sin regresión en vivo). Commit 3a5d48d → re-deploy limpio: smoke 18/0/0 · pages ba871de91 fast-forward (pages local pre-alineada con el remoto: lección del Task 105 aplicada) · respaldo main→proyecto · release v3.6.9-SDK6 4/4 assets · verify_pages_live 3.6.9-SDK6 VERDE AL 1.er INTENTO (17/0/0).
+- Auto-commit de plataforma (cc1c2d6) capturó solo los JSON de las sondas de telemetría — inocuo, absorbido como ancestro.
+
+Stage Summary:
+- RONDA 12 EN PRODUCCIÓN: la próxima carga del juego en el casco reportará platform='xr' (los escritorios '2d') y cada sesión VR emitirá vr_ping cada 5 min — el panel ya los cuenta en porEvento; el último vr_ping fecha el fin real de las sesiones que mueren sin vr_end.
+- Pendiente con datos: (1) vr_end de la sesión 3.6.8 que sigue abierta → 2.º punto FPS optimizado; (2) si confirma ~55, subir nitidez 1.4→1.5 (cambio de una línea en c12); (3) embudo por campeonato se llena con la próxima partida de Magia/Locura en 3.6.8+; (4) el champ_rank histórico (v 2.81.0, sin sid) permanece como registro pre-ronda-11.

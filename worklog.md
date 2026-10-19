@@ -2712,3 +2712,25 @@ Stage Summary:
 - Ronda SIN deploy (0 bytes en public/): la 3.6.17 sigue en producción, el dueño no nota nada.
 - Cuando el dueño gane el Duelo Final: champion event → bandazo en informe.py → champRank añade la victoria → porCampeonato cierra → tarjeta «★ SUPERADO» verificada.
 - Pendiente del dueño: pegar la CLAVE nueva en /telemetria (ronda 22), jugar Duelo Nv.2 → Tren → Duelo Final.
+
+---
+Task ID: 121 (ronda 24 · POST-CAMPEÓN — coronación épica + RUTA LEYENDA NG+)
+Agent: principal
+Task: ronda de mejoras decidida por el dueño (Post-campeón · deploy ahora · sólo positivo): amplificar el momento del primer champion con coronación épica y darle un NG+ (rejugar con dificultad estrella) tras coronar.
+
+Work Log:
+- DISEÑO SÓLO POSITIVO: el camino normal queda byte-idéntico (todas las agujas devuelven el MISMO valor con flags apagados); la leyenda sólo existe siendo campeón. Palancas auditadas antes de tocar: DUELO_NV (1 consumo vía _nvCfg), ASEDIO.perWave (1 consumo vía _waveNeed), TREN.meta (4 consumos en TrenAction, this.ctrl disponible en todos).
+- PARCHE (scripts/patch_r24.py, 24 ediciones con unicidad verificada): oeste/index.js (FUENTE legítima — el build no regenera championships/, verificado en build_game.py) — diccionarios ES/EN (14 strings nuevas), _leyendaOn en constructor, replayLaunch (n===st también rejugada cuando campeón; mensaje leyenda_up), cinta y pista del cartel en modo leyenda, pie con contador de sellos, _nvCfg (aiMul ×1.15 · chance +0.06 máx 0.60 · cooldown −1.5 mín 6.0 · primer −1.0), _waveNeed +1, TREN.meta +1 (×4), derrota corta leyenda, _stageClear REORDENADO (rejugada antes del gate del campeón — coronar dos veces no existe) + sello leyenda_N + _leyendaFlow a 5/5, _championFlow con CORONACIÓN (fecha en storageKey('fecha') + panel con title/msg/dur 14/stats [puntos·duelos·fecha] + campeon:true).
+- CORE (src/game/core/, el camino legítimo de la ronda 21): c00 +4 strings (champ_leyenda_chip/hint ES/EN) · c11 leyendaFlag(id) (entries.storage + 'leyenda') + menuHint precedencia LEYENDA > SUPERADO · c12 tarjeta con tier LEYENDA (local leyenda, override tras championFlag, chip dinámico) + showChampConseguido con opts.stats/campeon + confeti 8→14 + pintado de la fila de estadísticas (3 columnas doradas).
+- BUILD: node --check oeste OK · build_game --escribir (6.352.901 B, +2.356 B) · marcadores core en game.html post-bump (lección ronda 21: leyendaFlag ×3, champ_leyenda_hint ×4, sello de versión 3.6.18 ×2) · oeste 619.909→626.266 B.
+- PIPELINE: bump 3.6.18-SDK6 --fase 20 (golden 25ea3e39…, byte-exacto) → gen_release_v3618.py (notas FASE 20, «frente a» corregido a 3.6.17, guard grep 3.6.18) → build_zip 4 ZIPs: COMPLETO 125.228.199 · ligera 11.458.288 · CLOUDFLARE 125.214.813 · SOLO 6.089 → sella_r24.py (31 sellos en cascada, idempotente) → QA TOTAL: capa D en fallo (oeste +1,03% > presupuesto 1%) → presupuesto refrescado con --update (flujo de cambio intencional, precedentes rondas 12/18) → QA TOTAL 10/10 (206 s).
+- INCIDENTE PYCACHE (tercera vez, rondas 16/19/24): el git add -A re-añadió el pyc tras el reset — sacado con git rm --cached + commit --amend + IGNORE GLOBAL __pycache__/ y *.pyc en .gitignore (blindaje definitivo).
+- INCIDENTE PAGES NON-FAST-FORWARD (deriva del sandbox, 2.ª vez): el deploy encadena el commit al tip LOCAL de pages (viejo) mientras origin/pages traía los deploys reales de las rondas 11-21 → push rechazado. CIRUGÍA: mismo árbol (48e0927^{tree}) re-encadenado a origin/pages (commit-tree -p origin/pages) → push OK. LECCIÓN: tras reciclar sandbox, fetch + alinear refs secundarias (pages/proyecto) antes de deployar, no sólo main.
+- DESPLIEGUE: commit f0baf76 (amend sin pyc) → pages dca592a (re-encadenado) + 367148a36/11446a2da (re-commits de --release/--backup, árboles idénticos) → Release v3.6.18-SDK6 con 4/4 assets → backup main→proyecto → verify_pages_live 3.6.18-SDK6 VERDE AL PRIMER INTENTO (17 peticiones · 0 fallos · 0 pageerrors).
+- QA POST-DEPLOY: qa_todo --produccion 12/12 (K: hints del hub con el estado real del dueño · L: qa_champion_listo 16/16 con los checks LEYENDA nuevos — flag true, resolución de tarjeta «★ LEYENDA» pisando a SUPERADO, sin sello → false, storage intacto, 0 pageerrors).
+
+Stage Summary:
+- V3.6.18-SDK6 EN VIVO: cuando el dueño gane el Duelo Final del Oeste llegará la CORONACIÓN (título, estadísticas del camino, confeti, fecha registrada) y se desbloqueará la RUTA LEYENDA (5 etapas en modo bestia → medalla LEYENDA DEL OESTE + champ_rank prueba 'leyenda' + tier ★ LEYENDA en el hub).
+- La campaña en curso NO cambia: mismas pruebas, misma dificultad, mismos sellos — la leyenda es un mundo nuevo que se abre DESPUÉS de coronar.
+- El informe.py ya celebra el champion (ronda 23) y el embudo recogerá 'leyenda' genéricamente.
+- Pendiente del dueño: Duelo Nv.2 → Tren → Duelo Final = primer champion de la historia + coronación nueva.

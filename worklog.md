@@ -2395,3 +2395,20 @@ Stage Summary:
 - La ronda 9 cierra la petición del dueño: lo que antes estaba implícito en JSON crudo ahora se lee directo en el panel (permanencia, embudo, DAU, versiones) en Local y en Producción.
 - El juego NO cambia (golden 78347941 intacto, sin release) — solo ecosistema de telemetría.
 - Pendiente de análisis futuro: FPS 38 en la sesión VR (candidato ronda de optimización); embudo vacío hasta que alguien complete campeonatos.
+
+---
+Task ID: 104 (ronda 10 · optimización de FPS en XR — COMPLETADO)
+Agent: principal
+Task: El dueño aprueba la ronda de optimización de FPS (telemetría: 38 fps de media en la sesión VR de 83 min).
+
+Work Log:
+- DIAGNÓSTICO (inventario del renderer en el fuente): setFramebufferScaleFactor(1.7) ≈ 2.9× píxeles/ojo + setFoveation(0) (periferia a resolución completa) + PCFSoftShadowMap 2048² → GPU saturada en Quest 3 = 38 fps. Nota del código v2.84 «Quest 3 tiene GPU de sobra» desmentida por la propia telemetría.
+- PARCHE (scripts/apply_perf_r10.py, agujas con unicidad verificada): SOLO presentación — framebufferScaleFactor 1.7→1.4 (nivel «Extra Sharpness» del Meta Browser, −32% píxeles/ojo), foveation 0→0.5 (el compositor comprime la periferia, imperceptible), sombras PCFSoft 2048²→PCF 1024² (la zona sombreada es la mesa 6×6 m). Telemetría: vr_end suma fpsMin/fpsMax DE LA SESIÓN VR (reset en onSessionStart; antes fps era solo la media de las últimas 12 muestras = 60 s) + catálogo con fpsMin/fpsMax.
+- LECCIÓN DE FLUJO (cazada por el propio bump): el primer parche se aplicó al ARTEFACTO public/game.html y el bump_version.py lo REGENERÓ desde src/game/ borrándolo (el guard anti-re-bump de 3.6.6 impidió re-bump → versión final 3.6.7-SDK6 por el único camino legítimo). Los parches van SIEMPRE a src/game/core/ (c12_pingponggame.js renderer + c00_pre_three.js telemetría).
+- RELEASE: bump 3.6.7-SDK6 (fase 9 «RENDIMIENTO: FPS en XR optimizados») · golden c1badcd78369ca90… 6.345.302 B · release-v367/ generado por gen_release_v367.py (notas FASE 9; guard del COMPLETO actualizado a 3.6.7) · 4 ZIPs (COMPLETO 125.220.618 · ligera 11.456.158 · CLOUDFLARE 125.207.232 · SOLO 6.089) · sellado en cascada E/F/G/H/I a 3.6.7-SDK6 + tamaños nuevos de la capa H · ZIPs v365 purgados.
+- QA TOTAL 10/10 (203 s): física 11/11 SIN desviaciones (cero gameplay), capa H 213/213 byte-exacta, capa J 71/0 (fpsMin/fpsMax auditados por PII).
+- DEPLOY: pages 44284cbbc→e5e74b71a (376 ficheros) · release v3.6.7-SDK6 con 4/4 assets · backup main→proyecto · verify_pages_live 3.6.7-SDK6 verde al 1.er intento (17 OK · 0 fallos · 0 pageerrors).
+
+Stage Summary:
+- RONDA 10 EN PRODUCCIÓN: la próxima sesión VR del dueño medirá fps/fpsMin/fpsMax con el renderer aligerado (~−46% de sombreado GPU estimado con sombras incluidas) — la lectura real llegará al panel «Producción (D1)» como los anteriores. Objetivo: 38 → 60+ fps.
+- La nitidez percibida seguirá siendo alta (1.4× es el nivel alto de Meta); si el dueño la nota peor o el fps no sube lo suficiente, los pernos 1.2×/0.6 son un ajuste de una línea para la siguiente ronda.

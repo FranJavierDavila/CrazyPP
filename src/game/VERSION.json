@@ -1,10 +1,10 @@
 {
-  "version": "3.6.11-SDK6",
-  "fase": 13,
-  "faseNombre": "FLUIDEZ: reversión nitidez 1.5→1.4 por datos (ronda 14)",
+  "version": "3.6.12-SDK6",
+  "fase": 14,
+  "faseNombre": "SEGUNDA OPORTUNIDAD: perder el ARKANOID repite la prueba (ronda 15)",
   "sdk": "1.4.0",
   "fecha": "2026-10-19",
-  "hub": "v3611-sdk6",
+  "hub": "v3612-sdk6",
   "manifests": {
     "oeste": 51,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "ac36ee4e5c80f1a1816056b54d4700bad794c328d63a7ad355a045c590fd22f2"
+  "golden": "a03753cfa2bb4955338824f1a136bf1d7dd325693d041f7c65094a3ede85516b"
 }

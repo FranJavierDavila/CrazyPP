@@ -2475,6 +2475,7 @@ class ArcadeArkanoid {
   _finish(win, reason) {
     const g = this.game;
     const a = this.ctrl;
+    this._lastWin = !!win;   // v3.6.12 (ronda 15): _afterResult distingue
     this.phase = 'result';
     this.phaseT = win ? 4.4 : 3.6;
     if (win) {
@@ -2516,30 +2517,22 @@ class ArcadeArkanoid {
         window.setTimeout(() => g.haptic(g.paddleHand, 0.5, 130), 220);
       }
     } else {
-      // v2.44: vuelves al paso ANTERIOR del camino (Clown del nivel previo)
-      if (this.variant === 2) {
-        if (a._replay) {
-          a.stage = a._replay.stage; a.round = a._replay.round;
-          try { localStorage.setItem('pp_arcade_stage', String(a.stage)); } catch { /* */ }
-          a._replay = null;
-        }   // v2.96
-        else a._setStage(2);
-        this._banner = {
-          title: reason === 'lives' ? T('ark_nolives') : T('ark_timeup'),
-          sub: T('ark2_back'), col: '#e06c5a',
-        };
-      } else {
-        if (a._replay) {
-          a.stage = a._replay.stage; a.round = a._replay.round;
-          try { localStorage.setItem('pp_arcade_stage', String(a.stage)); } catch { /* */ }
-          a._replay = null;
-        }   // v2.96
-        else a._setStage(0);   // vuelves al CLOWN Nv. 1
-        this._banner = {
-          title: reason === 'lives' ? T('ark_nolives') : T('ark_timeup'),
-          sub: T('ark_back_clown'), col: '#e06c5a',
-        };
-      }
+      // v3.6.12 (ronda 15 · SEGUNDA OPORTUNIDAD): perder la prueba YA NO
+      // retrocede el camino — el dato mandó: en la 3.6.10 el dueño ganó el
+      // CLOWN Nv. 1 (stage 0→1), perdió el ARKANOID y el retroceso a 0 lo
+      // hizo abandonar 16 s después; 3 sesiones VR (20 min) y 0 campeonatos
+      // completos. Se aplica la MISMA política v2.44 de los DUELOS («perder
+      // REPITE el paso actual»): la etapa no cambia y _afterResult() relanza
+      // esta misma prueba. La rejugada (v2.96) restaura su paso de origen.
+      if (a._replay) {
+        a.stage = a._replay.stage; a.round = a._replay.round;
+        try { localStorage.setItem('pp_arcade_stage', String(a.stage)); } catch { /* */ }
+        a._replay = null;
+      }   // v2.96
+      this._banner = {
+        title: reason === 'lives' ? T('ark_nolives') : T('ark_timeup'),
+        sub: T('ark_retry'), col: '#e06c5a',
+      };
       g.audio.fanfare(false);
       g.audio.announce(T('ark_timeup'), true);
     }
@@ -2551,6 +2544,13 @@ class ArcadeArkanoid {
     const g = this.game;
     const a = this.ctrl;
     this.stop();
+    // v3.6.12 (ronda 15): DERROTA → la MISMA prueba se relanza (segunda
+    // oportunidad, con su cartel explicativo y botón EMPEZAR); el duelo
+    // del camino sólo vuelve tras VICTORIA o fuera de la prueba.
+    if (this._lastWin === false) {
+      a.startArkanoid();
+      return;
+    }
     // nueva partida con el CLOWN (el camino sigue en su paso actual):
     // v2.44 — etapa 2 = CLOWN Nv. 2 · etapa 4 = CLOWN Nv. 3
     g.rules.startMatch('match');

@@ -24,6 +24,11 @@ type Resumen = {
   erroresTop: [string, number][];
   champRank: Record<string, { partidas: number; victorias: number; mejor: number; estrellas: number }>;
   ultimos: Ev[];
+  // ronda 9 (análisis de venta) — opcionales: tolera receptores anteriores
+  duraciones?: { media: number | null; max: number | null; n: number };
+  vrDuracion?: { media: number | null; max: number | null; n: number };
+  porDia?: { dia: string; eventos: number; boots: number; sesiones: number }[];
+  versiones?: { v: string; eventos: number; sesiones: number }[];
   almacen: string;
 };
 
@@ -33,6 +38,16 @@ const hhmm = (t: number) =>
   t ? new Date(t).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
 
 const fmt = (n: number) => n.toLocaleString("es-ES");
+
+/** segundos → texto humano: 4996 → «1h 23m» · 450 → «7m 30s» · 45 → «45s» */
+const durTxt = (s: number | null | undefined) =>
+  s == null
+    ? "—"
+    : s < 60
+      ? `${s}s`
+      : s < 3600
+        ? `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`
+        : `${Math.floor(s / 3600)}h ${Math.round((s % 3600) / 60)}m`;
 
 export default function Telemetria() {
   const [r, setR] = useState<Resumen | null>(null);
@@ -110,6 +125,17 @@ export default function Telemetria() {
   };
 
   const eventos = r ? Object.entries(r.porEvento).sort((a, b) => b[1] - a[1]) : [];
+
+  // ronda 9: embudo de campeonatos (del porEvento) y escala de barras por día
+  const pe = r?.porEvento ?? {};
+  const embudo: [string, number][] = [
+    ["boot (arranques)", pe.boot ?? 0],
+    ["vr_start (entran en VR)", pe.vr_start ?? 0],
+    ["stage (avanzan etapa)", pe.stage ?? 0],
+    ["champion (fin de campeonato)", pe.champion ?? 0],
+    ["champ_rank (resultado registrado)", pe.champ_rank ?? 0],
+  ];
+  const maxBoots = r?.porDia?.length ? Math.max(...r.porDia.map((d) => d.boots), 1) : 1;
 
   return (
     <main className="min-h-screen bg-[#0B1526] text-slate-100">
@@ -222,6 +248,103 @@ export default function Telemetria() {
                   <p className="mt-1 text-xs text-slate-500">{k.s}</p>
                 </div>
               ))}
+            </section>
+
+            {/* ANÁLISIS DE VENTA (ronda 9) */}
+            <section className="mb-8 rounded-xl border border-orange-900/60 bg-slate-900/60 p-5">
+              <h2 className="text-lg font-bold">📈 Análisis de venta</h2>
+              <p className="mt-1 mb-4 text-xs text-slate-500">
+                Datos explícitos de interés: permanencia, embudo de campeonatos, actividad por día y versiones — sin leer JSON crudo.
+              </p>
+              {!r.duraciones && !r.porDia ? (
+                <p className="text-sm text-slate-500">
+                  Esta fuente aún no sirve las agregaciones de análisis (receptor o worker anterior a la ronda 9).
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    {[
+                      { t: "Duración media sesión", v: durTxt(r.duraciones?.media), s: `${fmt(r.duraciones?.n ?? 0)} sesiones cerradas (page_close)` },
+                      { t: "Sesión más larga", v: durTxt(r.duraciones?.max), s: "récord de permanencia" },
+                      { t: "Duración media en VR", v: durTxt(r.vrDuracion?.media), s: `${fmt(r.vrDuracion?.n ?? 0)} sesiones (vr_end)` },
+                      { t: "Sesiones que entran en VR", v: fmt(embudo[1][1]), s: `de ${fmt(embudo[0][1])} arranques · ${embudo[0][1] ? Math.round((embudo[1][1] / embudo[0][1]) * 100) : 0}%` },
+                    ].map((k) => (
+                      <div key={k.t} className="rounded-lg border border-slate-800 bg-slate-950/40 p-3 text-center">
+                        <p className="text-xs uppercase tracking-wider text-slate-400">{k.t}</p>
+                        <p className="mt-1 text-2xl font-black text-emerald-300">{k.v}</p>
+                        <p className="mt-1 text-[11px] text-slate-500">{k.s}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                    <div>
+                      <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-slate-400">Embudo de campeonatos</h3>
+                      <ul className="space-y-1.5 text-sm">
+                        {embudo.map(([label, n]) => (
+                          <li key={label} className="flex items-center gap-3">
+                            <span className="w-56 shrink-0 text-slate-300">{label}</span>
+                            <div className="h-2.5 flex-1 overflow-hidden rounded bg-slate-800">
+                              <div
+                                className="h-full rounded bg-gradient-to-r from-emerald-600 to-emerald-400"
+                                style={{ width: `${embudo[0][1] ? Math.max(3, Math.round((n / embudo[0][1]) * 100)) : 0}%` }}
+                              />
+                            </div>
+                            <span className="w-12 text-right font-bold text-emerald-300">{fmt(n)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-2 text-[11px] text-slate-500">Los % van relativos a los arranques: donde se cae la gente es donde mejorar.</p>
+                    </div>
+
+                    <div>
+                      <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-slate-400">Actividad por día (últimos 14)</h3>
+                      {!r.porDia?.length ? (
+                        <p className="text-sm text-slate-500">Sin actividad diaria aún.</p>
+                      ) : (
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-xs uppercase text-slate-500">
+                              <th className="pb-2">Día</th>
+                              <th className="pb-2">Arranques</th>
+                              <th className="pb-2 text-right">Sesiones</th>
+                              <th className="pb-2 text-right">Eventos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {r.porDia.slice(0, 14).map((d) => (
+                              <tr key={d.dia} className="border-t border-slate-800">
+                                <td className="py-1.5 font-mono text-slate-300">{d.dia.slice(5)}</td>
+                                <td className="py-1.5">
+                                  <div className="h-2.5 w-40 overflow-hidden rounded bg-slate-800">
+                                    <div
+                                      className="h-full rounded bg-gradient-to-r from-orange-600 to-orange-400"
+                                      style={{ width: `${maxBoots ? Math.max(4, Math.round((d.boots / maxBoots) * 100)) : 0}%` }}
+                                    />
+                                  </div>
+                                </td>
+                                <td className="py-1.5 text-right text-emerald-300">{fmt(d.sesiones)}</td>
+                                <td className="py-1.5 text-right text-slate-400">{fmt(d.eventos)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-5">
+                    <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-slate-400">Versiones del juego</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {(r.versiones ?? []).map((v) => (
+                        <span key={v.v} className="rounded-md border border-slate-700 bg-slate-950/40 px-3 py-1.5 text-xs">
+                          <code className="font-mono text-orange-300">{v.v}</code> · {fmt(v.eventos)} eventos · {fmt(v.sesiones)} sesiones
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </section>
 
             <div className="grid gap-6 lg:grid-cols-2">
@@ -353,7 +476,7 @@ export default function Telemetria() {
             </section>
 
             <footer className="mt-10 text-center text-xs text-slate-600">
-              Ronda 8 · Local ⇄ Producción (D1) — el juego no cambia: receptor, worker y panel son herramientas del ecosistema.
+              Ronda 9 · análisis explícito (duraciones, embudo, por día, versiones) · Local ⇄ Producción (D1) — el juego no cambia: receptor, worker y panel son herramientas del ecosistema.
             </footer>
           </>
         )}

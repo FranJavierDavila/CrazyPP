@@ -157,14 +157,49 @@ try {
   r = await worker.fetch(req("/?resumen=1", { headers: { "x-clave": "qa-clave-r8" } }), env, {});
   chk(r.status === 200, "lectura con clave por cabecera X-Clave");
 
+  // L · ANÁLISIS (ronda 9): duraciones, vrDuracion, porDia, versiones
+  const hoy = new Date().toISOString().slice(0, 10);
+  await worker.fetch(
+    req("/", {
+      method: "POST",
+      body: JSON.stringify([
+        ev("page_close", { dur: 300 }),
+        ev("page_close", { dur: 600, sid: "s-r9" }),
+        ev("boot", { sid: "s-r9" }),
+      ]),
+      headers: { "content-type": "text/plain" },
+    }),
+    env,
+    {}
+  );
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(j.duraciones && j.duraciones.n === 2 && j.duraciones.media === 450 && j.duraciones.max === 600,
+    `duraciones SQL media/max/n de page_close.dur (${JSON.stringify(j.duraciones)})`);
+  chk(j.vrDuracion && j.vrDuracion.n === 1 && j.vrDuracion.media === 61 && j.vrDuracion.max === 61,
+    `vrDuracion SQL de vr_end.dur (${JSON.stringify(j.vrDuracion)})`);
+  chk(Array.isArray(j.porDia) && j.porDia[0]?.dia === hoy && j.porDia[0]?.eventos === 11 &&
+      j.porDia[0]?.boots === 2 && j.porDia[0]?.sesiones === 2,
+    `porDia SQL dia/eventos/boots/sesiones (${JSON.stringify(j.porDia[0])})`);
+  chk(Array.isArray(j.versiones) && j.versiones[0]?.v === "qa" && j.versiones[0]?.eventos === 10 && j.versiones[0]?.sesiones === 2,
+    `versiones SQL eventos/sesiones (${JSON.stringify(j.versiones[0])})`);
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8&sid=s-r9"), env, {}));
+  chk(j.duraciones.n === 1 && j.duraciones.media === 600 && j.porDia[0]?.eventos === 2 && j.versiones[0]?.eventos === 2,
+    `análisis con filtro ?sid (${j.duraciones.n}/${j.duraciones.media}/${j.porDia[0]?.eventos}/${j.versiones[0]?.eventos})`);
+
   // I · DELETE con clave (purga por sid, paridad con el receptor local)
   r = await worker.fetch(
     req("/?sid=s-r8", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {}
   );
   j = await cuerpo(r);
-  chk(j.borrados === 8, `DELETE ?sid purga su ámbito (${j.borrados})`);
+  chk(j.borrados === 9, `DELETE ?sid purga su ámbito (${j.borrados})`);
   j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
-  chk(j.total === 0, "tras la purga el almacén queda a 0");
+  chk(j.total === 2, `tras la purga parcial quedan solo los de s-r9 (${j.total})`);
+  r = await worker.fetch(req("/", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {});
+  j = await cuerpo(r);
+  chk(j.borrados === 2, `purga total borra el resto (${j.borrados})`);
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(j.total === 0 && j.duraciones.n === 0 && j.porDia.length === 0,
+    "tras la purga total el almacén queda a 0 (con análisis vacíos)");
 
   // J · CORS en todas las respuestas
   r = await worker.fetch(req("/", { method: "OPTIONS" }), env, {});

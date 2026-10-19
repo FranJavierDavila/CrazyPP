@@ -26,6 +26,12 @@
  * Límites: cuerpo ≤ 256 KB (413) · evento ≤ 2000 B (descartado del lote sin
  * romperlo) · lote ≤ 500 eventos · evento sin `e` válida (1..40 chars) →
  * descartado. Esquema auto-inicializado (CREATE TABLE IF NOT EXISTS).
+ *
+ * Ronda 9 (visor analítico): el resumen añade sin romper nada —
+ *   duraciones  {media,max,n} de page_close.dur (permanencia por sesión)
+ *   vrDuracion  {media,max,n} de vr_end.dur (permanencia en VR real)
+ *   porDia      [{dia,eventos,boots,sesiones}] últimos 30 días (DAU)
+ *   versiones   [{v,eventos,sesiones}] (adopción por versión)
  */
 
 const CORS = {
@@ -262,10 +268,11 @@ export default {
         await env.DB
           .prepare(
             "SELECT json_extract(json,'$.m') m, COUNT(*) n FROM eventos " +
-              "WHERE e='error' AND json_extract(json,'$.m') IS NOT NULL" + fil +
+              "WHERE e='error' AND json_extract(json,'$.m') IS NOT NULL" +
+              (sid ? " AND instr(sid, ?) > 0" : "") +
               " GROUP BY m ORDER BY n DESC LIMIT 8"
           )
-          .bind(...arg)
+          .bind(...(sid ? [sid] : []))
           .all()
       ).results.map((r) => [r.m, r.n]);
       const champRank = {};
@@ -277,7 +284,7 @@ export default {
               "COALESCE(MAX(json_extract(json,'$.score')), 0) mejor, " +
               "COALESCE(SUM(json_extract(json,'$.stars')), 0) estrellas " +
               "FROM eventos WHERE e='champ_rank' AND json_extract(json,'$.champ') IS NOT NULL" +
-              fil + " GROUP BY champ"
+              (sid ? " AND instr(sid, ?) > 0" : "") + " GROUP BY champ"
           )
           .bind(...arg)
           .all()
@@ -296,6 +303,55 @@ export default {
           .all()
       ).results.map((r) => JSON.parse(r.json)).reverse();
 
+      // ── ANÁLISIS DE VENTA (ronda 9): duraciones, VR, por día, versiones
+      //    (campos NUEVOS en el resumen: compatibilidad intacta con lo previo)
+      const durRow = (
+        await env.DB
+          .prepare(
+            "SELECT AVG(CAST(json_extract(json,'$.dur') AS REAL)) m, " +
+              "MAX(CAST(json_extract(json,'$.dur') AS REAL)) mx, COUNT(*) n " +
+              "FROM eventos WHERE e='page_close' AND json_extract(json,'$.dur') IS NOT NULL" +
+              (sid ? " AND instr(sid, ?) > 0" : "")
+          )
+          .bind(...(sid ? [sid] : []))
+          .first()
+      );
+      const vrDurRow = (
+        await env.DB
+          .prepare(
+            "SELECT AVG(CAST(json_extract(json,'$.dur') AS REAL)) m, " +
+              "MAX(CAST(json_extract(json,'$.dur') AS REAL)) mx, COUNT(*) n " +
+              "FROM eventos WHERE e='vr_end' AND json_extract(json,'$.dur') IS NOT NULL" +
+              (sid ? " AND instr(sid, ?) > 0" : "")
+          )
+          .bind(...(sid ? [sid] : []))
+          .first()
+      );
+      const whereDia = fil ? fil + " AND t IS NOT NULL" : " WHERE t IS NOT NULL";
+      const porDia = (
+        await env.DB
+          .prepare(
+            "SELECT date(t/1000,'unixepoch') dia, COUNT(*) eventos, " +
+              "SUM(CASE WHEN e='boot' THEN 1 ELSE 0 END) boots, " +
+              "COUNT(DISTINCT CASE WHEN e='boot' THEN sid END) sesiones " +
+              "FROM eventos" + whereDia +
+              " GROUP BY dia ORDER BY dia DESC LIMIT 30"
+          )
+          .bind(...arg)
+          .all()
+      ).results;
+      const versiones = (
+        await env.DB
+          .prepare(
+            "SELECT COALESCE(v,'-') v, COUNT(*) eventos, " +
+              "COUNT(DISTINCT COALESCE(sid,'-')) sesiones " +
+              "FROM eventos" + fil +
+              " GROUP BY v ORDER BY eventos DESC LIMIT 12"
+          )
+          .bind(...arg)
+          .all()
+      ).results;
+
       return json({
         ok: true,
         ts: Date.now(),
@@ -311,6 +367,18 @@ export default {
         erroresTop,
         champRank,
         ultimos,
+        duraciones: {
+          media: durRow && durRow.m != null ? Math.round(durRow.m) : null,
+          max: durRow && durRow.mx != null ? Math.round(durRow.mx) : null,
+          n: durRow ? durRow.n : 0,
+        },
+        vrDuracion: {
+          media: vrDurRow && vrDurRow.m != null ? Math.round(vrDurRow.m) : null,
+          max: vrDurRow && vrDurRow.mx != null ? Math.round(vrDurRow.mx) : null,
+          n: vrDurRow ? vrDurRow.n : 0,
+        },
+        porDia,
+        versiones,
         almacen: "d1:crazypp-tele",
       });
     }

@@ -14,7 +14,9 @@ import path from "path";
  *    scripts/telemetria_catalogo.json) — aquí no: mientras el fix del juego
  *    llega a una release, el receptor local admite los dos.
  *  · GET  ?resumen=1          → agregados (por evento, sesiones, fps, errores,
- *                               champ_rank, últimos 20) con filtro opcional ?sid=
+ *                               champ_rank, últimos 20, y desde ronda 9:
+ *                               duraciones, vrDuracion, porDia, versiones)
+ *                               con filtro opcional ?sid=
  *  · GET  ?eventos=N          → últimos N eventos crudos (filtro ?sid=)
  *  · GET  (sin params)        → latido {ok, total, ts}
  *  · DELETE ?sid=…            → purga (con o sin filtro)
@@ -191,6 +193,15 @@ export async function GET(req: NextRequest) {
     let arranques24h = 0;
     const h24 = Date.now() - 24 * 3600 * 1000;
 
+    // ronda 9 (análisis de venta) — paridad con el worker de producción
+    const durs: number[] = [];
+    const vrDurs: number[] = [];
+    const porDiaMap = new Map<
+      string,
+      { eventos: number; boots: number; sids: Set<string> }
+    >();
+    const verMap = new Map<string, { eventos: number; sids: Set<string> }>();
+
     for (const e of todos) {
       const k = String(e.e ?? "?");
       porEvento[k] = (porEvento[k] || 0) + 1;
@@ -221,6 +232,30 @@ export async function GET(req: NextRequest) {
           c.mejor = Math.max(c.mejor, e.score as number);
         if (typeof e.stars === "number") c.estrellas += e.stars as number;
       }
+      // ronda 9
+      if (k === "page_close" && typeof e.dur === "number") durs.push(e.dur as number);
+      if (k === "vr_end" && typeof e.dur === "number") vrDurs.push(e.dur as number);
+      if (typeof e.t === "number" && (e.t as number) > 0) {
+        const dia = new Date(e.t as number).toISOString().slice(0, 10);
+        let d = porDiaMap.get(dia);
+        if (!d) {
+          d = { eventos: 0, boots: 0, sids: new Set<string>() };
+          porDiaMap.set(dia, d);
+        }
+        d.eventos++;
+        if (k === "boot") {
+          d.boots++;
+          if (s !== "-") d.sids.add(s);
+        }
+      }
+      const v = typeof e.v === "string" ? e.v : "-";
+      let vv = verMap.get(v);
+      if (!vv) {
+        vv = { eventos: 0, sids: new Set<string>() };
+        verMap.set(v, vv);
+      }
+      vv.eventos++;
+      vv.sids.add(s);
     }
 
     const sesiones = [...sesMap.values()]
@@ -232,6 +267,28 @@ export async function GET(req: NextRequest) {
     const fpsMedio = fps.length
       ? Math.round((fps.reduce((a, b) => a + b, 0) / fps.length) * 10) / 10
       : null;
+
+    const statDur = (a: number[]) =>
+      a.length
+        ? {
+            media: Math.round(a.reduce((x, y) => x + y, 0) / a.length),
+            max: Math.round(Math.max(...a)),
+            n: a.length,
+          }
+        : { media: null, max: null, n: 0 };
+    const porDia = [...porDiaMap.entries()]
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .slice(0, 30)
+      .map(([dia, d]) => ({
+        dia,
+        eventos: d.eventos,
+        boots: d.boots,
+        sesiones: d.sids.size,
+      }));
+    const versiones = [...verMap.entries()]
+      .map(([v, x]) => ({ v, eventos: x.eventos, sesiones: x.sids.size }))
+      .sort((a, b) => b.eventos - a.eventos)
+      .slice(0, 12);
 
     return NextResponse.json(
       {
@@ -246,6 +303,10 @@ export async function GET(req: NextRequest) {
         erroresTop,
         champRank: champ,
         ultimos: todos.slice(-20),
+        duraciones: statDur(durs),
+        vrDuracion: statDur(vrDurs),
+        porDia,
+        versiones,
         almacen: "telemetria/eventos.jsonl",
       },
       { headers: CORS }

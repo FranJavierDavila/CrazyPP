@@ -2376,3 +2376,22 @@ Work Log:
 Stage Summary:
 - El pipeline completo (casco/navegador → worker → D1 → panel con clave) funciona SOLO, sin mantenimiento.
 - Datos de esta primera lectura apuntados para rondas futuras: FPS medio 38 (Quest 3 debería ir mucho más alto → candidato ronda de optimización de rendimiento); falta champ_rank (ningún campeonato completado aún); pendiente del catálogo: id de campeonato en stage/champion y series por día para análisis de venta.
+
+---
+Task ID: 103 (ronda 9 · visor analítico explícito)
+Agent: principal
+Task: El dueño pide datos EXPLÍCITOS de interés (la sesión de 83 min no se veía en el panel) → ronda 9: duraciones, embudo de campeonatos, actividad por día y versiones, sin tocar el juego.
+
+Work Log:
+- WORKER (scripts/worker-tele/worker.js): el resumen añade 4 campos NUEVOS sin romper el contrato — duraciones {media,max,n} de page_close.dur · vrDuracion {media,max,n} de vr_end.dur · porDia [{dia,eventos,boots,sesiones}] últimos 30 días (date(t/1000,'unixepoch')) · versiones [{v,eventos,sesiones}]. Todo con filtro ?sid respetado.
+- BUG LATENTE CAZADO (ronda 8): erroresTop y champRank concatenaban fil tras un WHERE abierto → con ?resumen=1&sid=… la SQL quedaba con DOBLE WHERE y el worker devolvía 500. Nadie lo había visto porque el harness de ronda 8 solo probaba ?eventos con sid. FIX con el patrón correcto (AND instr) + checks de análisis con filtro.
+- route.ts (receptor local): mismas agregaciones en JS (paridad de contrato). Fix del propio desarrollo: (map.get(x) ||= …) NO es asignable en JS (call ≠ target) — SWC lo rechazó; patrón clásico let/if.
+- PANEL (/telemetria): sección nueva «📈 Análisis de venta» con 4 tarjetas (duración media sesión · sesión más larga · duración media VR · % que entra en VR), embudo de campeonatos boot→vr_start→stage→champion→champ_rank con % sobre arranques, actividad por día (14 días, barras), versiones con eventos/sesiones. Tolerante a fuentes antiguas (campos opcionales).
+- QA: harness test_local.mjs 30→37 checks (bloque L: duraciones/vrDuracion/porDia/versiones + filtro sid + purgas parcial y total) 37/0. Capa J 64→71 (7 anclas ronda 9) 71/0. QA TOTAL 10/10 (632 checks + smoke · 218 s).
+- DESPLIEGUE a producción con deploy_worker.py (re-entrante, D1 y CLAVE reutilizadas): E2E en producción verde (latido 9 · 403 sin clave · POST sonda→204 · resumen con clave · purga · total restaurado).
+- Verificación con datos reales: duraciones {media:1687,max:4996,n:3} (28 min de media, récord 83 min) · vrDuracion {media:4973,max:4973,n:1} (83 min VR) · porDia hoy {9 eventos,3 boots,3 sesiones} · versiones {3.6.5-SDK6: 9 eventos/4 sesiones}.
+
+Stage Summary:
+- La ronda 9 cierra la petición del dueño: lo que antes estaba implícito en JSON crudo ahora se lee directo en el panel (permanencia, embudo, DAU, versiones) en Local y en Producción.
+- El juego NO cambia (golden 78347941 intacto, sin release) — solo ecosistema de telemetría.
+- Pendiente de análisis futuro: FPS 38 en la sesión VR (candidato ronda de optimización); embudo vacío hasta que alguien complete campeonatos.

@@ -394,6 +394,13 @@ def bloque_worker():
         ('MAX_LOTE = 500', 'tope de 500 eventos por lote'),
         ('env.CLAVE', 'lectura protegida por la variable CLAVE'),
         ('status: 204, headers: CORS', 'POST responde 204 SIN cuerpo (contrato de producción)'),
+        ("json_extract(json,'$.dur')", 'ronda 9: duraciones/vrDuracion vía json_extract SQL'),
+        ("date(t/1000,'unixepoch')", 'ronda 9: porDia agrupa por día SQL (DAU)'),
+        ("COALESCE(v,'-') v", 'ronda 9: versiones agrupa por versión'),
+        ('duraciones: {', 'ronda 9: el resumen expone duraciones'),
+        ('vrDuracion: {', 'ronda 9: el resumen expone vrDuracion'),
+        ('porDia,', 'ronda 9: el resumen expone porDia'),
+        ('versiones,', 'ronda 9: el resumen expone versiones'),
     ]
     for aguja, etiqueta in anclas:
         chk(aguja in src, f'worker: {etiqueta}')

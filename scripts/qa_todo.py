@@ -16,6 +16,7 @@ Capas:
   G. qa_escudo_vNNN.py    — escudo de pala (~54)
   H. qa_descargas_vNNN.py — hub + 4 ZIPs byte-exactos (~208)
   I. smoke_sdkN.py        — SDK + 5 módulos en cadena
+  J. qa_telemetria.py     — telemetría anónima: catálogo, receptor, E2E (41)
 
 Uso:
   python3 scripts/qa_todo.py            # TODO
@@ -47,6 +48,7 @@ CAPAS = [
     ('G · escudo de pala', 'qa_escudo_v350.py'),
     ('H · hub + ZIPs', ultimo('qa_descargas_v*.py')),
     ('I · smoke del SDK', ultimo('smoke_sdk*.py')),
+    ('J · telemetría', 'qa_telemetria.py'),
 ]
 
 def main():

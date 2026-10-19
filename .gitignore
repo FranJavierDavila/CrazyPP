@@ -61,3 +61,4 @@ public/descargas/
 scripts/staging-*/
 scripts/voice/
 upload/*.zip
+/telemetria/

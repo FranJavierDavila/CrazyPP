@@ -1,0 +1,120 @@
+{
+  "catalogo": "telemetria-crazypp",
+  "version": 1,
+  "actualizado": "2026-10-19",
+  "ronda": "6 · roadmap P1 (telemetría)",
+  "politica_pii": {
+    "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
+    "sin_ip": true,
+    "sin_user_agent": true,
+    "sin_contenido_de_partida": true,
+    "sid": "id de sesión aleatorio (Math.random+Date.now, base36) SIN valor identificativo; caduca con la sesión",
+    "opt_out": "Opciones → «Telemetría anónima: Sí/No» (localStorage pp_tele='0' detiene TODO envío)",
+    "debug": "con window.__PP_DEBUG el modo revisión NO genera telemetría (v2.108)"
+  },
+  "transporte": {
+    "emisor": "__PP_TELE (src/game/core/c00_pre_three.js)",
+    "endpoint_shell": "window.PP_TELEMETRY_ENDPOINT (04_boot.html) — se lee EN CADA envío (perezoso)",
+    "formato": "lote JSON por sendBeacon (text/plain, CORS-safelisted) o fetch keepalive no-cors",
+    "forma_del_lote": "{\"app\":\"crazy-pingpong\",\"events\":[…]} (ATENCIÓN: el receptor de producción SOLO acepta arrays directos — ver hallazgos)",
+    "cola": "localStorage pp_tele_q, máx 60 eventos (MAXQ), persistente",
+    "flush": "auto al llegar a 10 encolados · 5 s tras arrancar · cada 30 s · visibilitychange hidden · pagehide (sync)",
+    "diagnostico": "window.__PP_TELE.st → {on, q, sid, sent, lastOk, lastErr, fpsSamples}"
+  },
+  "eventos": [
+    {
+      "nombre": "boot",
+      "origen": "src/game/core/c00_pre_three.js (__PP_TELE, auto al cargar el módulo)",
+      "momento": "carga de game.html (el módulo se evalúa)",
+      "campos": [
+        { "nombre": "platform", "tipo": "string", "desc": "'2d' en la carga 2D; la entrada VR se registra con vr_start" }
+      ],
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "page_close",
+      "origen": "src/game/core/c00_pre_three.js (listener pagehide)",
+      "momento": "cierre/ocultación definitiva de la pestaña",
+      "campos": [
+        { "nombre": "dur", "tipo": "number", "desc": "segundos de sesión desde el boot" }
+      ],
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "error",
+      "origen": "src/game/core/c00_pre_three.js (listener window error)",
+      "momento": "excepción no capturada en la página",
+      "campos": [
+        { "nombre": "m", "tipo": "string", "desc": "mensaje del error recortado a 140 caracteres" }
+      ],
+      "desde": "v2.76"
+    },
+    {
+      "nombre": "vr_start",
+      "origen": "src/game/core/c12_pingponggame.js",
+      "momento": "entrada en sesión VR inmersiva",
+      "campos": [
+        { "nombre": "mode", "tipo": "string", "desc": "modo de juego activo" },
+        { "nombre": "multi", "tipo": "boolean", "desc": "true si la sesión es multijugador online (NetLink)" }
+      ],
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "vr_end",
+      "origen": "src/game/core/c12_pingponggame.js",
+      "momento": "salida de la sesión VR (inmediatamente hace flush(true))",
+      "campos": [
+        { "nombre": "dur", "tipo": "number", "desc": "segundos de sesión VR" },
+        { "nombre": "fps", "tipo": "number|null", "desc": "FPS medio de la sesión (muestreo cada 5 s; null si no hubo muestras)" }
+      ],
+      "desde": "v2.50 (fps desde v2.76)"
+    },
+    {
+      "nombre": "stage",
+      "origen": "public/championships/locura/index.js · public/championships/magia/index.js",
+      "momento": "avance de etapa en el camino del campeonato",
+      "campos": [
+        { "nombre": "n", "tipo": "number", "desc": "etapa alcanzada" }
+      ],
+      "notas": "NO lleva id de campeonato (limitación conocida: no se puede atribuir al módulo desde el receptor)",
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "champion",
+      "origen": "public/championships/locura/index.js · public/championships/magia/index.js",
+      "momento": "primer trofeo del campeonato (win && firstTrophy)",
+      "campos": [],
+      "notas": "sin campos extra; NO lleva id de campeonato (misma limitación)",
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "champ_rank",
+      "origen": "public/championships/magia/index.js (_reportRank, POST PROPIO con array directo application/json + CORS)",
+      "momento": "fin de la prueba del orbe con ranking",
+      "campos": [
+        { "nombre": "champ", "tipo": "string", "desc": "id del campeonato (p.ej. 'magia')" },
+        { "nombre": "win", "tipo": "boolean", "desc": "prueba superada" },
+        { "nombre": "score", "tipo": "number", "desc": "puntuación recortada a rangos imposibles de falsear" },
+        { "nombre": "stars", "tipo": "number", "desc": "0..3 estrellas" },
+        { "nombre": "bricks", "tipo": "number", "desc": "ladrillos destruidos" },
+        { "nombre": "ext", "tipo": "number", "desc": "extensiones de tiempo usadas" },
+        { "nombre": "left", "tipo": "number", "desc": "segundos restantes (×10 redondeados)" },
+        { "nombre": "v", "tipo": "string", "desc": "sello del módulo (OJO: hardcodeado '2.81.0' — drift conocido)" }
+      ],
+      "notas": "viaja FUERA de la cola __PP_TELE (array directo), por eso el receptor de producción SÍ lo acepta",
+      "desde": "v2.77"
+    }
+  ],
+  "hallazgos_ronda6": [
+    "El receptor de PRODUCCIÓN (crazypp-tele.escala3dcorreoia.workers.dev/api/tele) rechaza con 400 el wrapper {\"app\",\"events\"} que envía __PP_TELE.flush(): SOLO acepta arrays directos (204). sendBeacon devuelve true (éxito de transporte) → el juego vacía la cola → LOS EVENTOS DEL LOTE SE PIERDEN en producción.",
+    "El mismo Worker no expone NINGÚN modo de lectura (GET devuelve un texto fijo): aunque los POST entraran, no hay forma de consultar los datos.",
+    "FIX propuesto (requiere release): en c00_pre_three.js enviar JSON.stringify(st.q) (array directo, el mismo contrato que champ_rank de Magia) — 1 línea. Además, receptor LOCAL propio de esta ronda (/api/telemetria) con lectura y panel.",
+    "Cloudflare bloquea UAs no-navegador con error 1010/403: cualquier sondeo debe emular UA de Chromium (scripts/sondea_tele_worker.py lo hace)."
+  ],
+  "receptor_local": {
+    "ruta": "/api/telemetria (Next.js, :3000 y :81 vía gateway)",
+    "panel": "/telemetria",
+    "almacen": "telemetria/eventos.jsonl (git-ignorado, rotación ~8 MB → .old, SIN IP ni UA)",
+    "contrato": "POST acepta array directo O wrapper {app,events} (tolerante) · GET ?resumen=1&sid=… · GET ?eventos=N · DELETE ?sid=… · OPTIONS preflight 204"
+  }
+}

@@ -1660,7 +1660,10 @@ export class PingPongGame {
       try {
         const ent = (this.champs.entries || []).find((e) => e.id === ch.id);
         const base = String((ent && ent.storage) || '').replace(/\*$/, '');
-        if (base) {
+        // v3.6.17 (ronda 21 · TU CAMINO TE ESPERA): precedencia
+        // SUPERADO > etapa en curso > victorias
+        if (base) hint = this.champs._stageHint(ch.id, base) || hint;
+        if (base && !hint) {
           const w = parseInt(localStorage.getItem(base + 'wins') || '0', 10) || 0;
           if (w > 0) hint = T('best_arcade', { n: w });
         }

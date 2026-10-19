@@ -208,6 +208,9 @@ export class ChampLoader {
         const base = String(e.storage || '').replace(/\*$/, '');
         if (!base) continue;
         if (this.championFlag(e.id)) return T('champ_done_hint');   // v2.128
+        // v3.6.17 (ronda 21): etapa en curso antes que victorias
+        const st = this._stageHint(e.id, base);
+        if (st) return st;
         const w = parseInt(localStorage.getItem(base + 'wins') || '0', 10) || 0;
         if (w > 0) return T('best_arcade', { n: w });
       }
@@ -236,6 +239,26 @@ export class ChampLoader {
       }
     } catch (e2) { /* */ }
     return false;
+  }
+
+  /** v3.6.17 · ronda 21 · «Etapa X/5 · sigue donde la dejaste» — hint de
+   *  progreso para las tarjetas del menú y el subtítulo de la sección.
+   *  Convención de registros: <base>stage. Oeste guarda 1..5 (su constructor
+   *  carga clamp(1,5)); los otros 4 guardan 0..total-1 (por eso el +1). La
+   *  etapa de SALIDA (oeste 1 / resto 0) no se anuncia: no es progreso. Si
+   *  el registro supera el camino (p. ej. locura marca 5 al ser campeón) se
+   *  calla: el chip ★ SUPERADO ya lo cubre. Devuelve '' si nada que anunciar. */
+  _stageHint(id, base) {
+    try {
+      const sv = parseInt(localStorage.getItem(base + 'stage') || '', 10);
+      if (isNaN(sv)) return '';
+      const total = CHAMP_STAGE_TOTAL[id] || 5;
+      let n;                                                            // 1..total
+      if (id === 'oeste') n = (sv >= 2 && sv <= total) ? sv : 0;        // 1-indexed
+      else n = (sv >= 1 && sv <= total - 1) ? sv + 1 : 0;               // 0-indexed
+      if (!n) return '';
+      return T('champ_stage_hint', { n: n, total: total });
+    } catch (e) { return ''; }
   }
 
   /** Al guardar TU NOMBRE: cada módulo cargado repinta sus paneles. */
@@ -647,3 +670,15 @@ for (const nk of Object.keys(NORMAS_SKIN.defs)) {
 }
 window.__PP_NORMAS = NORMAS_SKIN;   // v2.135 · gancho QA (el módulo no expone consts)
 
+
+/* v3.6.17 · ronda 21 · TU CAMINO TE ESPERA — total de etapas del camino de
+ * cada campeonato (NODOS/nodesPx/etapas de cada módulo; los 5 declaran ruta
+ * de 5 hoy). Un campeonato futuro con otra longitud: añadir aquí. Va AL
+ * FINAL de la pieza porque build_game.py exige el token de identidad en la
+ * 1.ª línea (class ChampLoader) y _stageHint sólo lo lee en runtime.
+ * HISTORIA: el parche de la ronda 19 se escribió en el ARTEFACTO
+ * (public/game.html) y bump_version lo regeneró desde aquí — la ronda 21
+ * lo rehace en la fuente. */
+const CHAMP_STAGE_TOTAL = {
+  locura: 5, magia: 5, oeste: 5, estacion_orbital: 5, valle_neon: 5,
+};

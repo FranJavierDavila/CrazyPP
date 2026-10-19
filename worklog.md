@@ -2220,3 +2220,20 @@ Stage Summary:
 - V3.6.5-SDK5 lista para publicar: game.html golden 5c773714 intacto, 4 ZIPs regenerados y verificados, QA 9/9.
 - ÚNICO bloqueante: GIT_TOKEN (el dueño debe volver a pegarlo; se usará SOLO por entorno: GIT_TOKEN=... python3 scripts/deploy_pages.py --push --release --backup).
 - Siguiente ronda del pulido (tras publicar): cazar el flake de la capa F.
+
+---
+Task ID: 97 (cierre)
+Agent: main (Z.ai)
+Task: DEPLOY V3.6.5-SDK5 a GitHub Pages completado (push + release + backup) con el PAT re-pasteado por el dueño.
+
+Work Log:
+- Deploy 1 (--push --release --backup): sitio 376 ficheros · smoke /CrazyPP/ verde · pages → 659a5e798 · respaldo main→proyecto ✓ · CLOUDFLARE.zip subido, COMPLETO muerto a mitad (el proceso nohup murió con el reset del shell → LECCIÓN: setsid para aislar del grupo).
+- Reanudación (--release re-entrante): ligera + SOLO subidos; COMPLETO «ya está (mismo tamaño) — omitido»... pero era un FANTASMA: el upload muerto quedó listado con tamaño declarado y estado «starter» (no descargable). El dedupe del script compara nombre+tamaño, no estado.
+- DELETE del asset starter → 404 (GitHub no permite borrar uploads incompletos por API). Solución: DELETE del release entero (204; el tag se conserva) y recreación con subida fresca de los 4 ZIPs.
+- Deploy final: release v3.6.5-SDK5 recreada — 4/4 assets estado «uploaded» verificado por API por release ID (COMPLETO 125.218.871 · ligera 11.454.411 · CLOUDFLARE 125.205.784 · SOLO 6.089).
+- pages sincronizada hasta f0c623d (3 commits encadenados del día). verify_pages_live: __PP_VERSION=3.6.5-SDK5 EN VIVO · 17 peticiones OK · 0 fallos de red · 0 pageerrors.
+
+Stage Summary:
+- V3.6.5-SDK5 PUBLICADA en https://franjavierdavila.github.io/CrazyPP/ + Release con 4 ZIPs + respaldo anti-rollback al día.
+- Lecciones de oficio: (1) uploads de Releases muertos a mitad quedan como «starter» fantasma que el dedupe por tamaño no destapa — verificar SIEMPRE asset.state=='uploaded' por release ID; (2) un starter no se puede borrar por API: borrar el release y recrear; (3) nohup no sobrevive al reset del shell: usar setsid.
+- Siguiente ronda del pulido: cazar el flake de la capa F (impulso 65/66).

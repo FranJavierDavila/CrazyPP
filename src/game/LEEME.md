@@ -131,10 +131,24 @@ FASES COMPLETADAS (plan P0 acordado con el dueño)
     red (v2.88) y el icono del poder (v2.120) son comunes; el dispose
     de la regla Quest pasa a los cuatro (oeste v51 · magia v31 ·
     locura v22 · orbital v15).
+  · Fase 7 (V3.6.5-SDK5 · CIERRE DEL SDK v1.x): el SDK v1.4.0 estrena
+    createRival() — el STANDEE del rival con DOS motores exactos
+    («perezoso» del orbital: UNA textura viva + guard anti-recarga
+    v3.2.1; «precarga» de Valle: swap de mapas + escala por aspecto) —
+    y createCartel() — el tablero de etapa (canvas → textura → plano →
+    redibujable) cuya fontanería repetían ambos; el ARTE sigue siendo
+    de cada módulo (_pintaCartel pinta en el lienzo del SDK). Además
+    la MÚSICA del orbital (su ÚLTIMO decodeAudioData propio, la
+    bso.wav del «arsenal») pasa a createMusic con los knobs canónicos
+    de la BSO. La migración destapa un bug familiar: el standee de
+    Valle pedía «rival.webp / <estado>.webp» que NUNCA existieron (los
+    reales son .png) y llevaba la silueta gris de reserva desde su v1 —
+    ahora carga el arte ZETA-7 real. Ningún campeonato conserva ya
+    decodeAudioData propio (orbital v16 · valle v4).
 PRÓXIMA FASE
-  · SDK v1.x: Rival/HUD compartidos (el standee del rival y el
-    marcador de etapa siguen duplicados entre módulos) y el SFX de
-    arsenal del orbital (su decodeAudioData propio). Los «candidatos
-    SDK» de DEPENDENCIAS.md marcan el camino en el núcleo.
+  · SDK v1.x CERRADO. La migración de arquitectura continúa con el
+    roadmap P1: version.json único, tests de física deterministas,
+    presupuesto de rendimiento, config-as-data y telemetría. Los
+    «candidatos SDK» de DEPENDENCIAS.md marcan el camino en el núcleo.
   · Cada fase conserva la cadena de release: game.html sigue siendo
     un único fichero autocontenido para los ZIPs.

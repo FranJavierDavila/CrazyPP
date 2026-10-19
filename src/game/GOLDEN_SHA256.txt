@@ -1,4 +1,5 @@
-# SHA256 del game.html que produjo esta división (v3.6.4-SDK4, Task 95 ·
-# FASE 6: createPowerSign; cambio legítimo de la v3.6.3-SDK3 da2105ae…, solo
-# el sello de versión — el núcleo no cambia en esta fase)
-8f8b1ea1a98d0ffd64fb2e4afadc5e011edd7beacbaa054c8e2f81cf63ebe044
+# SHA256 del game.html que produjo esta división (v3.6.5-SDK5, Task 96 ·
+# FASE 7: createRival + createCartel + música del orbital al SDK — CIERRE
+# DEL SDK v1.x; cambio legítimo de la v3.6.4-SDK4 8f8b1ea1…, solo el sello
+# de versión — el núcleo no cambia en esta fase)
+5c77371469e93c8a6b939b55c43976a3ae907abb841432d1c3d90f70028b5035

@@ -2533,3 +2533,20 @@ Stage Summary:
 - RONDA 15 COMPLETAMENTE EN PRODUCCIÓN: Pages 3.6.12-SDK6 en vivo (pages 529f37e8a), release con los 4 ZIPs, respaldo proyecto sincronizado.
 - La próxima derrota en el ARKANOID de La Locura repite la prueba directamente — el camino ya no castiga. Con un campeonato COMPLETO el embudo porCampeonato estrena títulos/victorias/estrellas.
 - Pendientes: (1) partida COMPLETA de Magia/Locura en 3.6.12 (la primera llena el embudo); (2) CF_API_TOKEN del dueño para el worker nativo de sesionesVR (el fold del panel cubre mientras); (3) Magia: retroceso del orbe (v2.70) como candidato a «segunda oportunidad» si el dato lo pide; (4) nitidez cerrada en 1.4× por decisión del dueño (Task 109).
+
+---
+Task ID: 111 (reparación · integridad del repo)
+Agent: principal
+Task: «avancemos» tras aprobar la ronda 15 — al arrancar la ronda 16 el sandbox estaba reseteado Y se descubrió que la rama main REMOTA llevaba machacada desde el 15-oct. Reparar la integridad antes de cualquier ronda nueva.
+
+Work Log:
+- SANDBOX RESETEADO (2.ª vez en el proyecto): repo local en el Task 104 (ronda 10), .clave-produccion perdida (gitignored — pedirla al dueño). Todo el trabajo vivo en el remoto: pages 529f37e8a (3.6.12 en vivo), proyecto beb8b5ab (historia completa 9-15), releases 4/4 assets — cero pérdida real.
+- HALLAZGO: origin/main = ca53ffea «Add files via upload» — historia ajena de 4 commits del 15-oct 15:15-15:33 UTC (Initial commit → Subida inicial → Delete live-service directory → Add files via upload) con SOLO el kit del SOLO-RELAY (LEEME.md, package.json, server.mjs, tools/mock_host.mjs). El fetch traía esa ref → «refusing to merge unrelated histories» al intentar ff. Las rondas 11-15 no lo detectaron porque el flujo empuja main LOCAL → proyecto/pages y nunca empuja a main remota (la única lectura fue ls-remote, que ya mostraba ca53ffea y se malinterpretó como el commit propio del worklog).
+- AUTOPSIA DEL CONTENIDO WEB: package.json / mock_host.mjs IDÉNTICOS a scripts/release-v36XX/, LEEME.md = LEEME-live-service.md renombrado (idéntico), server.mjs DIFIERE — con UNA mejora real del dueño: PORT = LIVE_PORT || process.env.PORT || 3004 (auto-detección de puerto PaaS Railway/Render/Fly) + comentario. Era su edición para desplegar el relay; al subirla por la web machacó main sin querer.
+- REPARACIÓN: main local = origin/proyecto (beb8b5ab, reset --hard) → mejora del dueño INTEGRADA en scripts/release-v3612/server.mjs con comentario de procedencia → commit → historia web ARCHIVADA en refs/heads/archive/main-web-1510 (reversibilidad, nada borrado) → force-with-lease de main sobre ca53ffea → push main→proyecto.
+- LECCIÓN NUEVA (para el flujo de casa): el verificador de integridad debe mirar main REMOTA (ls-remote + comprobación de linaje: el tip de main debe tener la ronda en el mensaje o ser ancestro de proyecto). Un ls-remote a secas no distingue un commit propio de una subida web con hash distinto.
+
+Stage Summary:
+- REPO RESTAURADO: main remota = historia completa del juego (beb8b5ab + Task 111), proyecto/pages/releases intactas, mejora PORT del dueño preservada en la fuente del relay, historia web archivada en archive/main-web-1510.
+- Pendiente del dueño: la clave del worker (.clave-produccion) se perdió con el reset del sandbox — pedirla de nuevo para analizar D1 (no bloquea deploys).
+- Ronda 16 (alinear «segunda oportunidad» a Magia/oeste/estacion/valle si el patrón coincide) queda lista para arrancar con el repo sano.

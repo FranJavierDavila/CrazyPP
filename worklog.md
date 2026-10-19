@@ -2756,3 +2756,22 @@ Stage Summary:
 - Kit de respaldo completo del punto "Ronda 24 · V3.6.18-SDK6 en vivo" en download/: bundle maestro 198 MB + fuente 230 MB + credenciales + SHA256SUMS, junto a los 4 ZIPs de release v3618 ya existentes (build exacto desplegado).
 - Restauración documentada paso a paso en RESPALDO-LEEME.txt: git clone del bundle + npm install + recredenciales en scripts/worker-tele/ + pipeline en worklog.md.
 - Producción intacta (sin deploy): es una ronda de mantenimiento/seguridad, no de juego.
+
+---
+Task ID: 123 (ronda 25 · PLANTILLA UNIFICADA DE CAMPEONATOS)
+Agent: principal
+Task: petición del dueño — "unificar los parámetros de todos los campeonatos de forma que tengamos una plantilla para crear nuevos simplemente subiendo el arte y definiendo comportamientos existentes o añadiendo otros nuevos". Ronda 100% ADITIVA: sin tocar los 5 campeonatos, el core ni el juego (la coronación del dueño debe llegar sobre V3.6.18 intacto).
+
+Work Log:
+- AUDITORÍA (3 agentes en paralelo): matriz completa de los 5 index.js (oeste 626 KB, orbital 373 KB, magia 221 KB, locura 217 KB, valle_neon 59 KB) + manifests + champ_sdk.js v1.4.0. Descubrimientos clave: ya existía contract 1 + ciclo de vida + SDK de 8 fábricas; valle_neon ya era data-driven (prueba de concepto); 3 fuentes de verdad en conflicto (manifest.stages vs CFG.etapas vs taller.retos); parámetros de pruebas como constantes JS (ASEDIO/TREN/ARK_CFG/IMP_CFG/LEVEL); 4 curvas de IA distintas; bloques legacy (cfg de locura, level muerto en oeste); divergencias de storage/trofeo/métrica mundial/estrellas.
+- PLANTILLA (public/championships/_plantilla/): manifest.json = catálogo unificado con _comment de origen por bloque (nuevos: camino/dificultad formula|tabla, camino.leyenda, camino.worldMetric, rivalVisual, pruebas, powerTrigger, playerPower, playerGun, mapa canvas|arte, cartel, hud, coronacion, i18n) + index.js genérico de 1.163 líneas (contrato champ_sdk completo: RivalVivo con expresiones unificadas, motor de poderes de dos fases con bolsa rotatoria|antirepetición y kinds confeti/globos/bola, prueba dianas con 3 modos, coronación épica con fecha+stats, RUTA LEYENDA con 5 sellos, rejugada por mapa, pistola láser opcional, telemetría y ranking mundial) + assets/LEEME-ARTE.txt (convención de arte).
+- HERRAMIENTAS: scripts/gen_campeonato.py (scaffold: valida id/colisiones, adapta manifest, sustituye MOD_ID, copia arte por convención, AUTO-DESACTIVA la pistola si falta pistol.glb, valida al terminar, --registrar opcional) + scripts/qa_plantilla.py (validador estático: contrato 1, rangos del modelo, inventario de assets, 16 métodos del contrato, patrón del camino, anti-secretos; modo --compat para los 5 orgánicos).
+- GUÍA: public/championships/PLANTILLA-GUIA.md (4 pasos de fabricación, catálogo unificado con origen por bloque, kinds portables con fuente y esfuerzo, cómo añadir prueba/poder nuevos, reglas de oro, auditoría de aportaciones).
+- CORRECCIONES DURANTE LA CONSTRUCCIÓN: JSON no admite hex (tint/haz a decimal con _doc); edit que se comió la cabecera de disparo() restaurado; prefijos assets/ duplicados en A(); wrapper de SFX con mapeo de sonidos del manifest; GLTFLoader desde three/addons como los módulos reales; lógica invertida del check MOD_ID en el generador; reinserción de disparo() y re-check de sintaxis.
+- PRUEBAS: node --check ESM OK (plantilla y demo generado); qa_plantilla _plantilla 19 OK/0 fallos VERDE; scaffold demo_bosque con arte ficticio → 20 OK/0 fallos VERDE (pistola autodesactivada por falta de GLB) y sintaxis OK; valle_neon --compat 15 OK VERDE; oeste --compat 12 OK VERDE; test dir eliminado.
+- INTANGIBILIDAD: git diff vacío en los 5 campeonatos + sdk + src/game. Sin deploy (no cambia nada del juego; _plantilla no está registrada en championships.json = inerte).
+
+Stage Summary:
+- Crear un campeonato nuevo ahora es: arte con nombres convencionales → gen_campeonato.py → qa_plantilla.py VERDE → --registrar. La plantilla trae duelo+dianas+poderes+coronación+leyenda listos; los kinds pesados (arkanoid/orbe/impulso/escudo/tren/asedio) quedan documentados como puntos de extensión con fuente y esfuerzo.
+- Herramientas reutilizables: qa_plantilla.py también audita los campeonatos existentes (modo compat) — primera herramienta de auditoría estática del modelo.
+- Producción intacta (V3.6.18-SDK6) y la coronación del dueño sigue siendo el siguiente hito del juego.

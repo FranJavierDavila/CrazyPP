@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.12-SDK6, fase 14 · SEGUNDA OPORTUNIDAD: perder el ARKANOID repite la prueba (ronda 15); sello actualizado
-# por bump_version.py desde 3.6.11-SDK6)
-a03753cfa2bb4955338824f1a136bf1d7dd325693d041f7c65094a3ede85516b
+# SHA256 del game.html que produjo esta división (3.6.13-SDK6, fase 15 · SEGUNDA OPORTUNIDAD en MAGIA: perder el ORBE repite la prueba (ronda 16); sello actualizado
+# por bump_version.py desde 3.6.12-SDK6)
+758ee587235087ad9eec2ac2341f3dca0375fbf0bae97ae8205f03be8550b3b0

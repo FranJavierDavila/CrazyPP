@@ -2954,7 +2954,8 @@ class ArcadeController {
     this.trophyGroup.visible = true;
     this.trophyGroup.userData.reveal = 0;    // dispara la animación de escala
     // v2.50 · FASE 1: ¡un campeón más! (evento anónimo de hito)
-    try { __PP_TELE.ev('champion', {}); } catch { /* */ }
+    // v3.6.8-SDK6 (ronda 11): lleva el ID del campeonato — embudo por champ.
+    try { __PP_TELE.ev('champion', { id: 'locura' }); } catch { /* */ }
   }
 
   /** ENTRAR en el campeonato (botón del menú ARCADE). */
@@ -4421,7 +4422,8 @@ class ArcadeController {
     this.stage = s | 0;
     try { localStorage.setItem('pp_arcade_stage', String(this.stage)); } catch { /* */ }
     // v2.50 · FASE 1: avance del campeonato (telemetría anónima, sin PII)
-    try { __PP_TELE.ev('stage', { n: this.stage }); } catch { /* */ }
+    // v3.6.8-SDK6 (ronda 11): lleva el ID del campeonato — embudo por champ.
+    try { __PP_TELE.ev('stage', { n: this.stage, id: 'locura' }); } catch { /* */ }
     // v2.85 · MOOD POR ETAPA del decorado de sala (room): en la etapa 4
     // (DUELO FINAL contra el CLOWN Nv. 3 JEFE) la carpa se tiñe de penumbra
     // roja; en el resto de etapas vuelve el circo de día. Guard: nunca rompe.

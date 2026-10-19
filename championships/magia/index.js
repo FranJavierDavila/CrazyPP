@@ -3245,7 +3245,9 @@ class OrbeMagico {
     else a.streak = 0;
     if (win && this.score > (a.best | 0)) a.best = this.score | 0;
     // v2.77: ¡un campeón más! (consigue la Varita Dorada por primera vez)
-    if (win && firstTrophy) { try { __PP_TELE.ev('champion', {}); } catch (e) { /* */ } }
+    // v3.6.8-SDK6 (ronda 11): el evento lleva el ID del campeonato — el panel
+    // separa el embudo de Magia del de La Locura (tolerante con datos viejos).
+    if (win && firstTrophy) { try { __PP_TELE.ev('champion', { id: 'magia' }); } catch (e) { /* */ } }
     try {
       localStorage.setItem(a.storageKey('rank'), JSON.stringify(a.rank));
       localStorage.setItem(a.storageKey('wins'), String(a.wins));
@@ -3261,29 +3263,22 @@ class OrbeMagico {
    *  se recortan a rangos imposibles de falsear antes de salir del juego). */
   _reportRank(win, stars) {
     const clamp = (v, a2, b2) => Math.max(a2, Math.min(b2, v | 0));
-    const payload = [{
-      e: 'champ_rank',
-      champ: 'magia',
-      win: !!win,
-      score: clamp(this.score, 0, this.maxScore),
-      stars: clamp(stars, 0, 3),
-      bricks: clamp(this.totalBricks - this.aliveBricks, 0, this.totalBricks),
-      ext: clamp(this.extUsed, 0, this.L.maxExtensions),
-      left: Math.max(0, Math.min(this.L.timeStart * 3, Math.round(this.time * 10) / 10)),
-      v: '2.81.0',
-    }];
+    // v3.6.8-SDK6 (ronda 11): el champ_rank VIAJA POR __PP_TELE — así lleva la
+    // versión REAL del juego (antes v2.81.0 clavada a mano), t y sid propios,
+    // y RESPETA el opt-out (pp_tele=0) y el modo depuración (3 fallos cazados
+    // de un plumazo). La cola persistida reintenta en el arranque siguiente si
+    // el envío no sale; el reporte nunca rompe el juego (ev ya lo blinda).
     try {
-      const ep = (typeof window !== 'undefined' && window.PP_TELEMETRY_ENDPOINT) || '';
-      if (ep && typeof fetch === 'function') {
-        fetch(ep, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: true,
-          mode: 'cors',
-        }).catch(() => { /* el reporte nunca rompe */ });
-      }
-    } catch (e) { /* */ }
+      __PP_TELE.ev('champ_rank', {
+        champ: 'magia',
+        win: !!win,
+        score: clamp(this.score, 0, this.maxScore),
+        stars: clamp(stars, 0, 3),
+        bricks: clamp(this.totalBricks - this.aliveBricks, 0, this.totalBricks),
+        ext: clamp(this.extUsed, 0, this.L.maxExtensions),
+        left: Math.max(0, Math.min(this.L.timeStart * 3, Math.round(this.time * 10) / 10)),
+      });
+    } catch (e) { /* el reporte nunca rompe */ }
   }
 
   _afterResult() {
@@ -4735,7 +4730,7 @@ class WizardController {
     this.stage = s | 0;
     try { localStorage.setItem(this.storageKey('stage'), String(this.stage)); } catch (e) { /* */ }
     // v2.77: avance del campeonato (telemetría anónima, igual que la Locura)
-    try { __PP_TELE.ev('stage', { n: this.stage }); } catch (e) { /* */ }
+    try { __PP_TELE.ev('stage', { n: this.stage, id: 'magia' }); } catch (e) { /* */ }
     // v2.85 · MOOD POR ETAPA del decorado de sala (room): en la etapa 4
     // (DUELO FINAL contra WIZARD Nv. 3 JEFE) el laboratorio se baña en
     // luz arcana violeta; en el resto vuelve el ámbar de las velas. Guard.

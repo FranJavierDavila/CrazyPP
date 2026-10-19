@@ -62,3 +62,5 @@ scripts/staging-*/
 scripts/voice/
 upload/*.zip
 /telemetria/
+# clave de lectura del worker de telemetría (NUNCA commitear)
+scripts/worker-tele/.clave-produccion

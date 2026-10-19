@@ -2345,3 +2345,19 @@ Work Log:
 Stage Summary:
 - Listo para desplegar en ~1 minuto en cuanto el dueño pegue un API token con permisos: Workers Scripts Edit + D1 Edit + Account Read (plantilla «Edit Cloudflare Workers» + D1 Edit).
 - Pendiente del dueño tras el deploy: probar el juego en casco (primera lectura real del visor) y pegar la CLAVE en el panel /telemetria → «Producción (D1)».
+
+---
+Task ID: 102 (ronda 8 · despliegue automático, fase 2 — COMPLETADO)
+Agent: principal
+Task: Ejecutar el despliegue automático del worker de telemetría con el API token pegado por el dueño.
+
+Work Log:
+- El dueño pegó el API token (cfut_…, permisos plantilla «Edit Cloudflare Workers» + D1 Edit, zona en All zones según instrucciones dadas para los campos rojos del formulario).
+- Ejecución 1 de deploy_worker.py: pasos 1-7 verdes (token active · cuenta Escala3dcorreoia@gmail.com's Account · subdomain escala3dcorreoia.workers.dev · D1 crazypp-tele CREADA uuid 24ee07a2-c04… · CLAVE generada y guardada · worker módulo subido con bindings DB+CLAVE · subdomain habilitado) pero paso 8 FALLÓ: latido con HTTP 403 «error code: 1010» — firewall de workers.dev bloquea la firma Python-urllib (curl desnudo ya había pasado antes al worker viejo; los jugadores reales con navegador no se ven afectados).
+- FIX: las sondas E2E del script ahora van por subprocess curl con UA de navegador (--data-binary @- para el POST). Re-ejecución re-entrante: D1 reutilizada, clave reutilizada de .clave-produccion, worker re-subido (idempotente).
+- E2E EN PRODUCCIÓN TODO VERDE: latido {ok:true,total:0} · resumen sin clave→403 · POST lote prueba→204 · resumen con clave→ total=2, sesiones=1, porEvento.deploy_prueba=2, almacen=d1:crazypp-tele · DELETE por sid→borrados=2 · latido restaurado total=0 (producción limpia, sin basura de pruebas).
+- Blindaje repo: .gitignore + scripts/worker-tele/.clave-produccion verificado con check-ignore; git status sin la clave. CLAVE entregada al dueño por chat (no está en este worklog).
+
+Stage Summary:
+- PRODUCCIÓN DESPLEGADA Y VERIFICADA: el worker crazypp-tele (misma URL de siempre) ahora GUARDA en D1 y EXPONE lectura con clave. total=0 porque el worker viejo no almacenaba nada (los lotes anteriores no se guardaron en ningún sitio).
+- Pendiente del dueño: pegar la CLAVE en el panel /telemetria → «Producción (D1)» y hacer el test en casco (primera lectura real).

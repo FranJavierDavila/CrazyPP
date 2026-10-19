@@ -30,6 +30,7 @@ import json
 import os
 import secrets
 import ssl
+import subprocess
 import sys
 import time
 import urllib.error
@@ -254,15 +255,26 @@ def main():
     paso(8, "verificación E2E en producción")
     url = base_url + "/api/tele"
 
+    # Sondas con curl + UA de navegador: workers.dev bloquea la firma de
+    # urllib (error 1010 de firewall). Los jugadores reales no pasan por aquí.
+    UA_NAVEGADOR = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/129.0 Safari/537.36")
+
     def probe(metodo, extra="", cuerpo_b=None, ctype_p="text/plain"):
-        r = urllib.request.Request(url + extra, data=cuerpo_b, method=metodo)
+        cmd = ["curl", "-sS", "-m", "30", "-X", metodo, "-A", UA_NAVEGADOR,
+               "-w", "\n%{http_code}"]
         if cuerpo_b is not None:
-            r.add_header("Content-Type", ctype_p)
+            cmd += ["--data-binary", "@-", "-H", f"Content-Type: {ctype_p}"]
+        cmd.append(url + extra)
+        p = subprocess.run(cmd, input=cuerpo_b if cuerpo_b is not None else b"",
+                           capture_output=True, timeout=60)
+        txt = p.stdout.decode("utf-8", "replace")
+        cuerpo, _, codigo = txt.rpartition("\n")
         try:
-            with urllib.request.urlopen(r, timeout=30) as w:
-                return w.status, w.read().decode("utf-8", "replace")
-        except urllib.error.HTTPError as e:
-            return e.code, e.read().decode("utf-8", "replace")
+            st = int(codigo.strip())
+        except ValueError:
+            st = 0
+        return st, cuerpo
 
     st, txt = probe("GET")
     lat = json.loads(txt) if st == 200 and txt.startswith("{") else {}

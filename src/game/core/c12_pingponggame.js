@@ -2539,6 +2539,9 @@ export class PingPongGame {
     try { __PP_TELE.ev('vr_start', { mode: this.mode, multi: !!(this.net && this.net.online) }); } catch { /* */ }
     this._vrT0 = Date.now();
     try { __PP_TELE.resetFps(); } catch { /* */ }
+    // ronda 12: LATIDO EN VR — un vr_ping cada 5 min mientras dura la sesión;
+    // si el casco muere sin vr_end, el último ping fecha el fin real.
+    try { __PP_TELE.vrPing(true); } catch { /* */ }
     if (this.showTips) {
       let seen = false;
       try { seen = localStorage.getItem('pp_seen_v1') === '1'; } catch { /* */ }
@@ -2570,6 +2573,8 @@ export class PingPongGame {
       // puede no llegar a dispararse).
       __PP_TELE.flush(true);
     } catch { /* */ }
+    // ronda 12: parar el latido de VR (el vr_end ya lleva dur + fps + min/max)
+    try { __PP_TELE.vrPing(false); } catch { /* */ }
     this._vrT0 = 0;
     this.audio.xrActive = false;
     this.audio.vrBound = false;   // v2.31: sin contexto confirmado hasta la próxima sesión

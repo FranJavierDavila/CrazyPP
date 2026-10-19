@@ -2,7 +2,7 @@
   "catalogo": "telemetria-crazypp",
   "version": 3,
   "actualizado": "2026-10-19",
-  "ronda": 11,
+  "ronda": 12,
   "politica_pii": {
     "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
     "sin_ip": true,
@@ -31,10 +31,11 @@
         {
           "nombre": "platform",
           "tipo": "string",
-          "desc": "'2d' en la carga 2D; la entrada VR se registra con vr_start"
+          "desc": "ronda 12: 'xr' si el dispositivo declara soporte WebXR inmersivo al cargar (navigator.xr.isSessionSupported, p. ej. Quest) · '2d' escritorio/navegador sin XR. Antes estaba CLAVADO a '2d' y el casco era indistinguible del escritorio"
         }
       ],
-      "desde": "v2.50"
+      "desde": "v2.50",
+      "notas": "ronda 12: la detección XR es asíncrona (tope 1.5 s) — el boot sale ya con '2d' y se corrige IN SITU en la cola si la promesa confirma XR; el evento no se duplica ni se reordena"
     },
     {
       "nombre": "page_close",
@@ -189,6 +190,25 @@
       ],
       "notas": "ronda 11: va en la cola estándar de __PP_TELE (t, sid, v reales; respeta opt-out pp_tele=0 y modo depuración; la cola persistida reintenta si no hay red)",
       "desde": "v2.77"
+    },
+    {
+      "nombre": "vr_ping",
+      "origen": "src/game/core/c00_pre_three.js (vrPing, intervalo 300000 ms) — activado desde c12_pingponggame.js al vr_start, parado al vr_end",
+      "momento": "cada 5 min mientras dura la sesión VR",
+      "campos": [
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "segundos de VR transcurridos en el momento del ping"
+        },
+        {
+          "nombre": "fps",
+          "tipo": "number",
+          "desc": "fps medio del momento (misma métrica que vr_end) — dibuja la curva a lo largo de la sesión"
+        }
+      ],
+      "desde": "v3.6.9-SDK6",
+      "notas": "ronda 12: LATIDO EN VR — las sesiones cerradas abruptamente (casco apagado, pestaña muerta) nunca llegan a vr_end ni a page_close y desaparecían del análisis (la ronda 11 cazó una: vr_start+stage sin cierre). El ÚLTIMO ping fecha el fin real aunque no haya vr_end"
     }
   ],
   "hallazgos_ronda6": [
@@ -224,6 +244,14 @@
       "champ_rank viaja por __PP_TELE: v real del juego (antes 2.81.0 clavado), t y sid propios, respeta opt-out y modo depuración",
       "resumen nuevo: porCampeonato {id: {stage, champion}} en worker y receptor local (tolerante con datos sin id)",
       "panel: tabla «Embudo por campeonato» (etapas, títulos, partidas, victorias, mejor, estrellas)"
+    ]
+  },
+  "ronda12": {
+    "cambios": [
+      "boot.platform REAL: xr (dispositivo con WebXR inmersivo) vs 2d (escritorio) — antes clavado a 2d",
+      "evento nuevo vr_ping cada 5 min en VR: fecha sesiones cerradas abruptamente y dibuja la curva de fps",
+      "worker y receptor local sin cambios (vr_ping es un evento estándar de la cola: lo cuentan porEvento y el embudo lo ignora)",
+      "nitidez 1.4→1.5 pospuesta a datos: la sesión 3.6.8 seguía abierta al cerrar la ronda"
     ]
   }
 }

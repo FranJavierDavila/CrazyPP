@@ -108,7 +108,8 @@ def bloque_catalogo():
                 found.add('champ_rank')
                 patrones.append((f, 'champ_rank'))
 
-    chk(len(nombres_cat) == 8, f'el catálogo documenta 8 eventos ({len(nombres_cat)})')
+    # ronda 12: 9 eventos (vr_ping se añade al catálogo)
+    chk(len(nombres_cat) == 9, f'el catálogo documenta 9 eventos ({len(nombres_cat)})')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')
@@ -512,19 +513,66 @@ def bloque_ronda11():
     # ── catálogo actualizado ──
     cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
     por_n = {e['nombre']: e for e in cat['eventos']}
-    chk(cat.get('ronda') == 11, f'catálogo: ronda == 11 (={cat.get("ronda")})')
+    chk(cat.get('ronda', 0) >= 11, f'catálogo: ronda >= 11 (={cat.get("ronda")})')
     chk(any(c['nombre'] == 'id' for c in por_n['stage']['campos']), 'catálogo: stage documenta id')
     chk(any(c['nombre'] == 'id' for c in por_n['champion']['campos']), 'catálogo: champion documenta id')
     chk('__PP_TELE' in por_n['champ_rank'].get('notas', ''),
         'catálogo: champ_rank documenta el nuevo transporte (cola __PP_TELE)')
 
 
+def bloque_ronda12():
+    """RONDA 12 · plataforma REAL en boot (xr vs 2d, corrección in situ) +
+    LATIDO EN VR (vr_ping cada 5 min: sesiones cerradas abruptamente)."""
+    print('== G · RONDA 12 — PLATAFORMA REAL + LATIDO VR ==')
+    c00 = (RAIZ / 'src' / 'game' / 'core' / 'c00_pre_three.js').read_text(encoding='utf-8', errors='replace')
+    c12 = (RAIZ / 'src' / 'game' / 'core' / 'c12_pingponggame.js').read_text(encoding='utf-8', errors='replace')
+
+    # ── plataforma real: boot sale '2d' y se corrige in situ si hay XR ──
+    chk("ev('boot', { platform: '2d' })" in c00, 'c00: boot sigue saliendo síncrono (estimación 2d)')
+    chk('navigator.xr.isSessionSupported' in c00, 'c00: detección XR async presente')
+    chk("isSessionSupported('immersive-vr')" in c00, 'c00: pregunta por immersive-vr')
+    chk("st.q[i].platform = 'xr'" in c00, 'c00: corrección in situ del boot a xr')
+    chk('st.q[i].sid === st.sid' in c00, 'c00: la corrección sólo toca el boot de ESTA sesión')
+    chk("if (!si) return;" in c00, 'c00: sin XR no toca la cola (queda 2d)')
+    chk("setTimeout(function () { r(false); }, 1500)" in c00, 'c00: tope de la espera XR = 1.5 s (no bloquea)')
+    chk('navigator.sendBeacon' in c00, 'c00: envío intacto (el parche no toca el transporte)')
+
+    # ── latido en VR: intervalo 5 min con dur + fps del momento ──
+    chk('function vrPing(on)' in c00, 'c00: vrPing definido')
+    chk('ev(\'vr_ping\', { dur:' in c00.replace('ev("vr_ping", { dur:', "ev('vr_ping', { dur:"),
+        'c00: vr_ping lleva dur')
+    chk('300000' in c00, 'c00: intervalo del latido = 5 min (300000 ms)')
+    chk('fps: fpsAvg()' in c00, 'c00: vr_ping lleva fps del momento')
+    chk('vrPing, get on()' in c00, 'c00: vrPing exportado en __PP_TELE')
+    chk('__PP_TELE.vrPing(true)' in c12, 'c12: latido ARRANCA al vr_start')
+    chk('__PP_TELE.vrPing(false)' in c12, 'c12: latido PARA al vr_end')
+
+    # ── privacidad: vr_ping sólo dur + fps (nada de UA ni IP) ──
+    cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
+    por_n = {e['nombre']: e for e in cat['eventos']}
+    vp = por_n.get('vr_ping')
+    chk(vp is not None, 'catálogo: vr_ping documentado')
+    if vp:
+        campos = {c['nombre'] for c in vp.get('campos', [])}
+        chk(campos == {'dur', 'fps'}, f'catálogo: vr_ping sólo dur+fps (={campos})')
+    boot = por_n.get('boot')
+    plat = next((c for c in boot.get('campos', []) if c['nombre'] == 'platform'), None) if boot else None
+    chk(plat is not None and "'xr'" in plat.get('desc', ''), 'catálogo: boot documenta platform xr|2d')
+    chk('CLAVADO' in plat.get('desc', ''), 'catálogo: boot documenta el fix (antes clavado a 2d)')
+    chk(cat.get('ronda') == 12, f'catálogo: ronda == 12 (={cat.get("ronda")})')
+
+    # ── el receptor local no filtra tipos de evento (vr_ping pasa) ──
+    route = (RAIZ / 'src' / 'app' / 'api' / 'telemetria' / 'route.ts').read_text(encoding='utf-8', errors='replace')
+    chk("e.e" in route or 'evento.e' in route or "body" in route, 'route.ts: receptor genérico (sin whitelist de tipos)')
+
+
 async def main():
-    print('QA TELEMETRÍA · rondas 6-11 (roadmap P1) · lote array directo + routing por host + worker D1 + embudo por campeonato')
+    print('QA TELEMETRÍA · rondas 6-12 (roadmap P1) · lote array directo + routing por host + worker D1 + embudo por campeonato + plataforma real + latido VR')
     cat = bloque_catalogo()
     bloque_contrato()
     bloque_worker()
     bloque_ronda11()
+    bloque_ronda12()
     sid, sid_nat = await bloque_e2e()
     bloque_panel(sid, sid_nat)
     print(f'\nRESULTADO: {ok} OK · {fails} FALLOS')

@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.8-SDK6, fase 10 · ANALISIS DE VENTA: embudo por campeonato (ronda 11); sello actualizado
-# por bump_version.py desde 3.6.7-SDK6)
-8ee3a932343fa7227f7956d4385536bf4afa46504da0e69f34dc1f3ac0ce014a
+# SHA256 del game.html que produjo esta división (3.6.9-SDK6, fase 11 · TELEMETRIA: plataforma real + latido VR (ronda 12); sello actualizado
+# por bump_version.py desde 3.6.8-SDK6)
+f2e53b2f3143ff0f4450787b91784a628c59d079c5804a8a006688b89446efdb

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.8-SDK6",
-  "fase": 10,
-  "faseNombre": "ANALISIS DE VENTA: embudo por campeonato (ronda 11)",
+  "version": "3.6.9-SDK6",
+  "fase": 11,
+  "faseNombre": "TELEMETRIA: plataforma real + latido VR (ronda 12)",
   "sdk": "1.4.0",
   "fecha": "2026-10-19",
-  "hub": "v368-sdk6",
+  "hub": "v369-sdk6",
   "manifests": {
     "oeste": 51,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "8ee3a932343fa7227f7956d4385536bf4afa46504da0e69f34dc1f3ac0ce014a"
+  "golden": "f2e53b2f3143ff0f4450787b91784a628c59d079c5804a8a006688b89446efdb"
 }

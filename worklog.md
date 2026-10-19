@@ -2550,3 +2550,21 @@ Stage Summary:
 - REPO RESTAURADO: main remota = historia completa del juego (beb8b5ab + Task 111), proyecto/pages/releases intactas, mejora PORT del dueño preservada en la fuente del relay, historia web archivada en archive/main-web-1510.
 - Pendiente del dueño: la clave del worker (.clave-produccion) se perdió con el reset del sandbox — pedirla de nuevo para analizar D1 (no bloquea deploys).
 - Ronda 16 (alinear «segunda oportunidad» a Magia/oeste/estacion/valle si el patrón coincide) queda lista para arrancar con el repo sano.
+
+---
+Task ID: 112 (ronda 16 · SEGUNDA OPORTUNIDAD en MAGIA)
+Agent: principal
+Task: «avancemos» tras aprobar la ronda 15 — el dueño entregó la clave del worker (cpp-…, formato cpp-+token_urlsafe(18) de deploy_worker.py) → restaurar acceso D1, leer telemetría nueva y ejecutar la ronda 16 pre-aprobada en el Task 111: alinear la política «segunda oportunidad» al resto de campeonatos.
+
+Work Log:
+- CLAVE RESTAURADA: scripts/worker-tele/.clave-produccion (600, gitignored) verificada contra el worker en producción (eventos=200 + resumen=1 OK). Snapshots en scripts/_eventos_r16.json / _resumen_r16.json.
+- TELEMETRÍA (45 eventos / 15 sesiones, todas del 19-oct): PRIMERA SESIÓN REAL EN 3.6.12-SDK6 (sid sgpxvqzn-378b, xr): boot → vr_start → stage n=2 de locura (¡récord de profundidad! antes el máximo era n=1) → 3 pings (73/77/78 fps) → sin vr_end, ≥21,7 min en el casco. La guardia de onLevelWon (stage 1|3) protege el camino tras rejugada consumida: sin bugs. Decisión nitidez (Task 109) se mantiene: pings 73-78 < umbral 78 sostenido → 1.4× sigue. Sin champion aún: el primer campeonato completo sigue pendiente del dueño.
+- AUDITORÍA DEL PATRÓN en los 5 campeonatos: valle_neon (línea 787 «la etapa se repite») y estacion_orbital (7352 «sin retroceder al duelo previo») ya alineados; OESTE alineado (derrota conserva etapa, líneas 12365-12379); MAGIA era el único con retroceso v2.70 (onLevelLost → _setStage(stage-1), línea ~4715).
+- PARCHE MAGIA (5 edits en magia/index.js, espejo exacto de la ronda 15): ① _finish guarda this._lastWin=!!win; ② banner de derrota sub: lose_time → orb_retry (clave nueva ES/EN junto a lose_sub, mismo texto que ark_retry); ③ onLevelLost SIN _setStage(stage-1) — conserva rejugada v2.96 y map.refresh; ④ _afterResult: derrota → ctrl.startOrb(ctrl.stage===3) (cartel explicativo con EMPEZAR + applyComplexity + level.start() que reactiva active tras stop()); ⑤ victoria → _startDuel() intacto. node --check OK.
+- PIPELINE COMPLETO: bump_version 3.6.13-SDK6 --fase 15 (golden 758ee587…, 6.348.360 B, byte-exacto) → gen_release_v3613.py (nuevo, notas FASE 15 con mención histórica en forma corta «3.6.12» para esquivar los GLOBALES) → build_zip 4 ZIPs: COMPLETO 125.222.215 · ligera 11.456.837 · CLOUDFLARE 125.208.829 · SOLO 6.089 → sella_r16.py (31 sellos en cascada, TAMANOS byte-exactos) → qa_todo 10/10 (222 s, cero fallos).
+- DESPLIEGUE: commit 8ae4c90 (sin __pycache__ en release-v3613, lección de higiene) → deploy_pages --push --release --backup: pages d015dd441 (376 ficheros, 131.0 MB), smoke prefijo /CrazyPP 18 peticiones 0 fallos, Release v3.6.13-SDK6 4/4 assets → verify_pages_live 3.6.13-SDK6: VERDE AL PRIMER INTENTO (17 peticiones · 0 fallos de red · 0 pageerrors). Nota: el verificador exige la versión como argumento (default antiguo 3.6.2-SDK2) — dos falsos negativos antes de pasarlo.
+
+Stage Summary:
+- V3.6.13-SDK6 EN VIVO (https://franjavierdavila.github.io/CrazyPP/): la política «SEGUNDA OPORTUNIDAD» queda ALINEADA EN LOS 5 CAMPEONATOS (Locura r15, Magia r16, Oeste/Estación/Valle ya la tenían) — perder una prueba NUNCA retrocede el camino.
+- Acceso D1 restaurado para futuras rondas (clave persistida en el sandbox).
+- Pendiente del dueño: el primer campeonato COMPLETO (cualquiera) estrena el embudo porCampeonato (champion/champ_rank siguen vacíos); CF_API_TOKEN sigue pendiente para el deploy nativo del worker (harness 50/0 listo en deploy_worker.py).

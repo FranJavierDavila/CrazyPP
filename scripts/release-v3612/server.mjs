@@ -18,7 +18,10 @@
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-const PORT = parseInt(process.env.LIVE_PORT || '3004', 10);
+const PORT = parseInt(process.env.LIVE_PORT || process.env.PORT || '3004', 10);
+//   En Railway/Render/Fly detecta SOLO el puerto de la plataforma (PORT),
+//   no hace falta configurar nada. (mejora del dueño, subida web 15-oct,
+//   preservada en la reparación del Task 111)
 const STALE_MS = 12000;   // sin estado 12 s → canal fantasma fuera
 const SWEEP_MS = 5000;
 

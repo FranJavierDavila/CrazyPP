@@ -2467,3 +2467,21 @@ Work Log:
 Stage Summary:
 - RONDA 12 EN PRODUCCIÓN: la próxima carga del juego en el casco reportará platform='xr' (los escritorios '2d') y cada sesión VR emitirá vr_ping cada 5 min — el panel ya los cuenta en porEvento; el último vr_ping fecha el fin real de las sesiones que mueren sin vr_end.
 - Pendiente con datos: (1) vr_end de la sesión 3.6.8 que sigue abierta → 2.º punto FPS optimizado; (2) si confirma ~55, subir nitidez 1.4→1.5 (cambio de una línea en c12); (3) embudo por campeonato se llena con la próxima partida de Magia/Locura en 3.6.8+; (4) el champ_rank histórico (v 2.81.0, sin sid) permanece como registro pre-ronda-11.
+
+---
+Task ID: 107 (cierre · deploy Pages + release + respaldo)
+Agent: principal
+Task: Verificar en producción la entrada generada por el dueño (1.ª sesión en 3.6.9) y cerrar la ronda 13 (nitidez 1.5): push de Pages 3.6.10-SDK6, GitHub Release con los 4 ZIPs y push de respaldo main→proyecto.
+
+Work Log:
+- VERIFICACIÓN DE LA ENTRADA DEL DUEÑO (sesión ufqks7za, 3.6.9-SDK6): boot platform='xr' — PRIMERA VEZ que el casco se identifica como tal en producción (la ronda 12 confirmada en vivo al primer intento) · vr_start match · stage n=1 id='locura' (primera entrada con id del embudo porCampeonato) · vr_end dur=246 s, fps 78 media (63-88) — margen claro sobre los 72 de confort → DISPARADOR documentado de la ronda 13 cumplido (el worklog decía «si confirma ~55, subir nitidez»).
+- vr_ping NO aparece: correcto por diseño — la sesión duró 4,1 min (< 5 min del intervalo). Se estrenará en la primera sesión ≥ 5 min.
+- page_close dur=3830 s (~64 min) de la sesión 3.6.8 r5mpf378 SIN vr_end: la lectura fps de la 3.6.8 se perdió como se temía (caso k5ui6abo) — vr_ping lo fecha a partir de la 3.6.9.
+- La base D1 quedó con solo 5 eventos: purga TOTAL desde el panel (DELETE sin sid con confirm(); el 23 anterior desapareció). Sin retención automática en el worker (solo DELETE manual). Los análisis futuros parten de este estado limpio.
+- DEPLOY: commit 800c3b4 ANTES de deploy_pages (lección r12 aplicada) → smoke 18/0/0 · pages 9bf874163 fast-forward · release v3.6.10-SDK6 4/4 assets · respaldo main→proyecto.
+- INCIDENTE DE BUILD PAGES (lección nueva): verify_pages_live dio 3.6.9 dos veces y el build siguió «building» 22 MIN (referencia previa: 31-81 s — congestión puntual de GitHub, no error nuestro). Procedimiento validado: la rama pages remota se audita ANTES de culpar al deploy (contents API ref=pages → 3.6.10 + framebufferScaleFactor(1.5) presentes; la delta de −2 B del game.html son las reescrituras normales de routing del deploy, como el «+2 reescrituras» de la r12) y el build se espera sondeando /pages/builds/latest (no re-deployar: el push duplicado crearía cola). Al terminar: verify VERDE AL 1.er INTENTO (17/0/0).
+
+Stage Summary:
+- RONDA 13 COMPLETAMENTE EN PRODUCCIÓN: Pages 3.6.10-SDK6 en vivo (pages 9bf874163), release v3.6.10-SDK6 con los 4 ZIPs (COMPLETO 125.221.064 · ligera 11.456.437 · CLOUDFLARE 125.207.678 · SOLO 6.089), respaldo proyecto=800c3b4 + este cierre.
+- La próxima sesión VR del dueño se verá MÁS NITIDA (1.5×) y su vr_end decidirá: media ≥ 72 → se queda; < 72 → volver a 1.4 (una línea).
+- Pendiente con datos: (1) primer vr_ping (sesión ≥ 5 min) — fecha el fin real de sesiones abruptas y dibuja la curva de fps; (2) si el dueño juega ≥ 10 min, la curva fps/nitidez da el 2.º punto de decisión; (3) embudo por campeonato ya recibe ids (locura: 1 etapa) — falta la primera partida COMPLETA en 3.6.8+ para ver títulos/victorias/estrellas.

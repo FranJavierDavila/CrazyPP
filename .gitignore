@@ -64,3 +64,5 @@ upload/*.zip
 /telemetria/
 # clave de lectura del worker de telemetría (NUNCA commitear)
 scripts/worker-tele/.clave-produccion
+# token API de Cloudflare para despliegue nativo del worker (NUNCA commitear)
+scripts/worker-tele/.cf-token

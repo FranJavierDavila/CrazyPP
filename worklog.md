@@ -2879,3 +2879,23 @@ Stage Summary:
 - PAT operativo para la próxima ronda. Assets del Tren (4 mp3) versionados y listos.
 - Próxima tarea real: etapa 4 del vagón del Oeste (dinamita en cadena, cajas hacia ventanas, lingotes sin interpenetración, 4 sonidos).
 - Deudas heredadas: reintentar qa_todo --produccion (K/L); el dueño debe reponer .cf-token y .clave-produccion desde su respaldo del Task 122.
+
+---
+Task ID: 128
+Agent: principal (Z.ai)
+Task: Etapa 4 del vagón del Oeste (informe del dueño): (1) dinamita-cadena ya existente conservada, (2) cajones del oro a las ventanas, (3) fix de la interpenetración del apilado de lingotes, (4) 4 pistas de sonido del artista (Tren_Llegada · vias · Tunel · caballos).
+
+Work Log:
+- RECONOCIMIENTO: el superpoder DINAMITA en cadena ya lo trae v2.134 («caza la caja viva más cercana hasta agotar TODAS las activas») — se conserva sin tocar. El informe del dueño describe el estado v2.141 en producción; los pedidos reales eran ②③④.
+- ③ CAUSA RAÍZ PROBADA CON HERRAMIENTA NUEVA (scripts/mide_lingote_mundo.py, bbox GLB con TRS de nodos replicando Box3.setFromObject): la barra lowpoly_gold_bar nace con su eje LARGO EN Z (mundo 0,078×0,038×0,170) — la rejilla v2.141 (sepZ 0,095) la solapaba 7,5 cm FILA CONTRA FILA SIEMPRE (el v2.141 creía 0,17×0,08 con el largo en X). FIX quirúrgico: root.rotation.y = π/2 en el prototipo → la rejilla v2.141 cuadra ENTERA (verificación numérica: holguras +3,7 mm columnas / +6,1 mm filas con jitter y yaw incluidos; huella 0,55×0,27 sobre el cajón de 0,72×0,36). _lingoteH no cambia (la y es invariante a la rotación).
+- ② CAJONES DEL ORO: x 1,35 → 2,55 (borde exterior a 2,91, 14 cm de la pared ±3,05) — los lingotes caen debajo mismo de las ventanas laterales, visibles desde la cámara; sin colisión con muelle (z -4,62) ni pirámide.
+- ④ SONIDO: NUEVO champ_sdk v1.5.0 con createBucle() — bucle con control POR INSTANCIA (on(desfase, pan) arranca en un punto del audio, setVol(v) vivo frame a frame, off(seco) brusco o con fundido; reloj de parada del propio AudioContext con onended→disconnect: cero setTimeout; decode forma promesa v2.125; mute del arcade respetado; nunca lanza). Cableado en TrenAction: vias.mp3 ON en _depart / OFF con fundido en _llegaEstacion · Tren_Llegada.mp3 one-shot en la llegada · Tunel.mp3 one-shot en la transición 'pre'→'in' del túnel · caballos.mp3 pool de 4 motores (0=forajido, 1..3=grupo de indios), cada jinete desfasado (k×0,31 s + rnd) y con paneo de SU lado (±0,55), volumen = 0,45×(1−d/5,5) por distancia a la ventana, off SECO al abatir (_fjHerido/_indHerido), cierre por jinete al salir de escena y _galCorta() en dispose. Los 4 mp3 del artista en assets/tren/ (los del dueño, byte-exactos desde upload/).
+- QA: NUEVA CAPA V (qa_tren_audio_v3622.py, 25 checks estáticos: assets, import, cableado completo de las 4 pistas, regla «decode solo en el SDK», rejilla sin solape con los valores reales del código) registrada en qa_todo (13 capas). sella_r29 con pins NUEVOS del SDK 1.5.0 en E/I/H (qa_sup1 literal+runtime, smoke_sdk5 sdkVer, qa_descargas gateway+ZIP) y manifest oeste v52 — lección: el sellado también cubre los pins de VERSIÓN DEL SDK, no sólo la del juego. bump --sdk 1.5.0 (re-entrante abortó: sdk parcheado a mano en VERSION.json; qa_version compara V['sdk'] con el literal del SDK). gen_release_v3622 (marcadores + 4 guards heredados actualizados: grep hub, print menciones, SDK 1.5.0+createBucle, manifest oeste v52 + import nuevo — aguja acotada con prefijo 'oeste': ( para no romper el token de magia). Presupuesto refrescado (sdk 51.026 B, oeste 634.136 B).
+- QA TOTAL 13/13 VERDE (275 s) · commit 70ef6a4 · deploy --push --release --backup OK (pages 086a90757, 384 ficheros, smoke 18 peticiones 0 fallos) · Release GitHub v3.6.22-SDK6 con 4 ZIPs (COMPLETO 126.296.837 B = +1 MB por los mp3).
+- VERIFICACIÓN PRODUCCIÓN (curl): V3.6.22-SDK6 servido · oeste/index.js 634.136 B con las 8 agujas nuevas dentro (rotación, x 2.55, 4 pistas, createBucle, _galCorta) · 4 mp3 HTTP 200 byte-exactos · manifest v52 + note_v2142 · champ_sdk.js 1.5.0.
+
+Stage Summary:
+- El vagón SUENA como pidió el dueño y el oro se VEN: llegadas con Tren_Llegada, rodadura continua en marcha, túnel con su pista, y cada caballo con SU galope desfasado que se aleja con el jinete y calla seco al abatirlo. Los lingotes ya NO se interpenetran (causa física probada, no teoría) y descansan a la vista bajo las ventanas.
+- El dinamita-cadena v2.134 se conserva intacto (el dueño lo describe tal cual funciona).
+- Producción en V3.6.22-SDK6: el dueño puede coronar con el tren a punto.
+- Pendientes heredados: reintentar qa_todo --produccion (K/L, se colgaba por red); el dueño debe reponer .cf-token y .clave-produccion desde su respaldo del Task 122.

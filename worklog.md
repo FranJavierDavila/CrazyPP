@@ -2992,3 +2992,18 @@ Stage Summary:
 - Los dos one-shots mudos viajan ahora en el ÚNICO motor que la Quest ha obedecido siempre (createBucle: galopes + rodadura), en los momentos EXACTOS que pidió el dueño: túnel al bajar la luz, llegada justo al terminar la voz. Y las dos pistas están en el perfil de audio que el casco ya decodifica sin rechistar.
 - Producción en V3.6.26-SDK6 (pages 5d7cc84a7, release 4/4). El dueño puede volver a montar en el tren: si el galope sonaba, el túnel y la llegada NO pueden callar (mismo motor, misma vía).
 - Pendientes heredados: reintentar qa_todo --produccion (K/L, se colgaba por red); reponer .cf-token y .clave-produccion desde el respaldo del Task 122; entrenamiento tres arreglos cuando el dueño dé el pase.
+
+---
+Task ID: 134
+Agent: principal (Z.ai)
+Task: Validación del dueño de V3.6.26-SDK6 («listo, solucionado») — cierre oficial del saga del audio del tren + reintento del qa_todo --produccion (pendiente heredado).
+
+Work Log:
+- El dueño confirma desde el Quest 3: «listo, solucionado» — Túnel y Tren_Llegada SUENAN en producción con el motor createBucle (FASE 28) y los momentos exactos pedidos (túnel al bajar la luz · llegada concatenada con la voz). El saga del tren (Tasks 129→133, cinco versiones) queda CERRADO con sello del dueño.
+- REINTENTO qa_todo --produccion (colgado en rondas anteriores por red): python3 scripts/qa_todo.py --produccion → 15/15 VERDE en 333 s, 0 fallos. Las capas K (qa_hub_hints contra producción, 30 s) y L (qa_champion_listo contra producción, 31 s) pasan SIN colgarse. Pendiente heredado cerrado.
+- Nota: `qa_todo.py --help` NO existe como flag — arranca la suite entera (se queda colgado un shell sin timeout). Usar sin argumentos o con --produccion / --rapido.
+
+Stage Summary:
+- Producción V3.6.26-SDK6 VALIDADA POR EL DUEÑO: tren 100 % sonoro (galopes + rodadura + túnel + llegada), QA TOTAL 15/15 con capas de producción K/L en verde.
+- Quedan dos pendientes vivos: (1) entrenamiento tres arreglos — el dueño debe dar el pase con el detalle de los tres fallos; (2) el dueño debe reponer .cf-token y .clave-produccion desde su respaldo del Task 122 (Cloudflare).
+- Siguiente hito natural del roadmap: el dueño juega Duelo Nv.2 → Tren → Duelo Final y corona la Oeste = PRIMER CAMPEÓN de la historia (flujo champion preparado y a prueba de balas en Tasks 120-121).

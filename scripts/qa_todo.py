@@ -59,7 +59,7 @@ CAPAS = [
     ('J · telemetría', 'qa_telemetria.py'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
     ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),
-    ('V · sonido del tren', 'qa_tren_audio_v3624.py'),
+    ('V · sonido del tren', 'qa_tren_audio_v3625.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

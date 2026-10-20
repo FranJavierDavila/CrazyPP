@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.24-SDK6, fase 26 · El tren en el dispositivo real; sello actualizado
-# por bump_version.py desde 3.6.23-SDK6)
-1d38fe846a21f26f09f882c212a438a1284f5d6fdc4a897e59ba4db3c4210cda
+# SHA256 del game.html que produjo esta división (3.6.25-SDK6, fase 27 · El galope fantasma; sello actualizado
+# por bump_version.py desde 3.6.24-SDK6)
+181d390930f043dd24b3defa5ebab31722c6a18b166a32a0df79da80fcf18650

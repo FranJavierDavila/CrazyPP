@@ -8656,14 +8656,18 @@ class TrenAction {
    *  La llegada y el túnel suenan UNA vez por trayecto: cualquier fallo
    *  transitorio (buffer aún decodificando, contexto dormido en el
    *  instante exacto) significaba silencio PARA SIEMPRE. Ahora el disparo
-   *  queda agendado y _pistaTrenStep (cada frame en fxStep) lo reintenta
-   *  hasta que el motor tiene el buffer (play() con buffer listo suena
-   *  síncrono; con buffer tarde, el pend del SDK v1.5.1 lo auto-dispara;
-   *  con contexto dormido, el statechange del SDK v1.5.2 lo despierta).
+   *  queda agendado y _pistaTrenStep (cada frame en fxStep) lo reintenta.
+   *  v3.6.25 · REINTENTO HONESTO: el play del SDK v1.5.3 devuelve TRUE
+   *  sólo cuando src.start() disparó de verdad — la agenda se retira SOLO
+   *  entonces (antes se retiraba por llamar a play(), y un disparo
+   *  tragado por un contexto dormido/buffer tarde era silencio eterno).
+   *  Con sinPend el play del módulo nunca delega en el pend del SDK: cero
+   *  dobles disparos. Precarga en _depart: el fetch+decode madura DURANTE
+   *  la marcha y el disparo encuentra el buffer listo. Margen 9 s.
    *  ====================================================================== */
   _pistaTren(name, vol) {
     if (!this._trenPend) this._trenPend = [];
-    this._trenPend.push({ name, vol, t: 6 });   // 6 s de margen por disparo
+    this._trenPend.push({ name, vol, t: 9 });   // 9 s de margen por disparo
   }
   _pistaTrenStep(dt) {
     if (!this._trenPend || !this._trenPend.length) return;
@@ -8672,10 +8676,17 @@ class TrenAction {
       const p = this._trenPend[i];
       p.t -= dt;
       if (eng.tiene(p.name)) {
-        try { eng.play(p.name, p.vol); } catch (e) { /* */ }
-        this._trenPend.splice(i, 1);      // disparado (el SDK hace el resto)
+        let disparo = false;
+        try { disparo = eng.play(p.name, p.vol, { sinPend: true }); }
+        catch (e) { /* */ }
+        if (disparo) {
+          this._trenPend.splice(i, 1);    // SONÓ de verdad (SDK v1.5.3)
+        } else if (p.t <= 0) {
+          this._trenPend.splice(i, 1);    // 9 s sin poder disparar: paz
+        }
+        /* false sin deadline: reintenta el frame que viene */
       } else if (p.t <= 0) {
-        this._trenPend.splice(i, 1);      // 6 s sin buffer: desistir en paz
+        this._trenPend.splice(i, 1);      // 9 s sin buffer: desistir en paz
       } else {
         try { eng.precarga(p.name); } catch (e) { /* */ }
       }
@@ -8884,8 +8895,14 @@ class TrenAction {
     /* v3.6.22: el galope se DESVANECE con la distancia a la ventana
      * (progresivo al alejarse — paso, fuga e ida incluidas).
      * v3.6.23: AUTOREPARACIÓN — jinete vivo sin galope (contexto renacido
-     * en un re-bind de VR, drop transitorio) → vuelve al instante. */
-    if (this.__galPool && this.__galPool[0]) {
+     * en un re-bind de VR, drop transitorio) → vuelve al instante.
+     * v3.6.25: SOLO jinete VIVO (paso/ida/ventana/fuga) — sin el filtro,
+     * la reparación REVIVÍA el galope cada frame tras el off(true) de la
+     * muerte: seguía galopando en herido, en el fade y tras _fjGone (el
+     * «caballo fantasma» que el dueño ya no podía callar). */
+    if (this.__galPool && this.__galPool[0] &&
+        (this._fjState === 'paso' || this._fjState === 'ida' ||
+         this._fjState === 'ventana' || this._fjState === 'fuga')) {
       this.__galPool[0].setVol(this._galVol(this._fjZ, F.zAtk));
       if (!this.__galPool[0].suena()) {
         try { this.__galPool[0].on(0.12 + Math.random() * 0.9,
@@ -9131,16 +9148,18 @@ class TrenAction {
       }
       /* v3.6.22: galope vivo → desvanecer con la distancia a SU ventana.
        * v3.6.23: AUTOREPARACIÓN — jinete vivo (no abatido) sin galope
-       * (contexto renacido, drop) → SU caballo vuelve al instante. */
+       * (contexto renacido, drop) → SU caballo vuelve al instante.
+       * v3.6.25: TODO el bloque (setVol incluido) SÓLO con el jinete VIVO
+       * (ida/ventana/fuga) — en alcanzado/fade SU galope ya calló y nada
+       * lo despierta (simetría con el fix del forajido). */
       if (rec.galK && rec.state !== 'gone' && this.__galPool &&
-          this.__galPool[rec.galK]) {
+          this.__galPool[rec.galK] &&
+          (rec.state === 'ida' || rec.state === 'ventana' ||
+           rec.state === 'fuga')) {
         try { this.__galPool[rec.galK].setVol(this._galVol(rec.z, rec.zAtk)); } catch (e) { /* */ }
-        if (rec.state === 'ida' || rec.state === 'ventana' ||
-            rec.state === 'fuga') {
-          if (!this.__galPool[rec.galK].suena()) {
-            try { this.__galPool[rec.galK].on(Math.random() * 0.5,
-              rec.side * 0.55); } catch (e) { /* */ }
-          }
+        if (!this.__galPool[rec.galK].suena()) {
+          try { this.__galPool[rec.galK].on(Math.random() * 0.5,
+            rec.side * 0.55); } catch (e) { /* */ }
         }
       }
     }
@@ -9301,20 +9320,25 @@ class TrenAction {
    *     los grupos de indios), cada jinete DESFASADO en el audio y con
    *     paneo de SU lado; se desvanece con la DISTANCIA a la ventana
    *     (setVol vivo por frame) y calla BRUSCO al abatirlo (off seco).
-   *  Los bucles viven en el SDK (createBucle v1.5.2: ignoraMute — las
+   *  Los bucles viven en el SDK (createBucle v1.5.3: ignoraMute — las
    *  pistas del tren son SFX/ambiente, no música, suenan SIEMPRE;
    *  suena() cuenta como MUERTA la instancia de un contexto renacido
-   *  para que la auto-reparación pueda rematarla; on()/play() con el
-   *  contexto dormido quedan PENDIENTES y el statechange los despierta).
+   *  para que la auto-reparación pueda rematarla Y LA MATA (stop +
+   *  disconnect) al soltarla; on()/play() con el contexto dormido quedan
+   *  PENDIENTES y el statechange los despierta; play() devuelve BOOLEANO
+   *  para los reintentos honestos de los one-shots; vigilante de decodes
+   *  colgados a 20 s).
    *  Decode en forma promesa y nunca rompe el frame.
    *  ====================================================================== */
   /* RODADURA — bucle ambience del tren en marcha (ignoraMute: el silencio
-   * del arcade es de MÚSICA; la rodadura suena siempre — SDK v1.5.1). */
+   * del arcade es de MÚSICA; la rodadura suena siempre — SDK v1.5.1).
+   * v3.6.25: volumen 0,13 → 0,30 — a 0,13 la rodadura quedaba ENTERRADA
+   * bajo la música del vagón («casi imperceptible», informe del dueño). */
   get _viasBuc() {
     if (!this.__viasBuc) {
       this.__viasBuc = createBucle(() => this.game, {
         url: () => assetURL(import.meta.url, 'tren/vias.mp3'),
-        vol: () => 0.13,
+        vol: () => 0.30,
         fadeIn: 0.6, stopFade: 0.9,
         ignoraMute: true,
       });
@@ -10021,7 +10045,7 @@ class TrenAction {
      * una sola vez no) + AUTOREPARACIÓN (contexto renacido, drop) al
      * instante (on() es no-op si ya suena). */
     if (this.phase === 'run') {
-      try { this._viasBuc.setVol(0.13); } catch (e) { /* */ }
+      try { this._viasBuc.setVol(0.30); } catch (e) { /* */ }
       try { if (!this._viasBuc.suena()) this._viasBuc.on(); } catch (e) { /* */ }
     }
     if (this.ctrl.fx) this.ctrl.fx.update(dt);

@@ -1,17 +1,17 @@
 {
-  "version": "3.6.25-SDK6",
-  "fase": 27,
-  "faseNombre": "El galope fantasma",
-  "sdk": "1.5.3",
-  "fecha": "2026-10-20",
-  "hub": "v3625-sdk6",
+  "version": "3.6.26-SDK6",
+  "fase": 28,
+  "faseNombre": "Los one-shots viajan en el motor del galope",
+  "sdk": "1.5.4",
+  "fecha": "2026-10-21",
+  "hub": "v3626-sdk6",
   "manifests": {
-    "oeste": 55,
+    "oeste": 56,
     "magia": 32,
     "locura": 23,
     "estacion_orbital": 16,
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "181d390930f043dd24b3defa5ebab31722c6a18b166a32a0df79da80fcf18650"
+  "golden": "a489ec0e49d44e73ebb8b352322bd16463077c60cebcce0e7460353610ebad0a"
 }

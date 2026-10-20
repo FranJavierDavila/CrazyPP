@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.22-SDK6, fase 24 · EL TREN SUENA Y EL ORO SE VE (ronda 28); sello actualizado
-# por bump_version.py desde 3.6.21-SDK6)
-288228a05b9f9611802b7d32bbff7eeb17cd72c59666a9e0c48aa0db4c2e2b33
+# SHA256 del game.html que produjo esta división (3.6.23-SDK6, fase 25 · EL TREN SE OYE SIEMPRE (ronda 29); sello actualizado
+# por bump_version.py desde 3.6.22-SDK6)
+b161737318177767898b9fc39508a5f932dd2476016eca8dcddc79ab3f337460

@@ -39,6 +39,17 @@
  *  el del PROPIO AudioContext (src.stop(cuando) + onended → disconnect):
  *  cero setTimeout. Decode en forma promesa (lección v2.125) y nunca
  *  lanza — las mismas reglas de la casa.
+ *  v1.5.1 (FASE 9 · EL TREN QUE NO SE OÍA): (a) «ignoraMute» — opción para
+ *  createBucle y createSfx: el gate arcMute/_arcDucked es el silencio de la
+ *  MÚSICA del arcade (BSO/vagón), no de los SFX — el dueño con la música
+ *  del arcade apagada no oía rodadura, galopes, llegadas ni túneles
+ *  (ganancia 0,0001) mientras los sonidos sintéticos de la casa (que
+ *  nunca consultaron ese interruptor) sí sonaban. Los motores con
+ *  ignoraMute:true obedecen SIEMPRE; por defecto (false) el contrato
+ *  anterior queda intacto para el resto de campeonatos. (b) createSfx
+ *  «primer play mudo» — play() antes de tener el buffer guardaba silencio
+ *  para siempre si la pista sólo sonaba una vez; ahora el play queda
+ *  PENDIENTE y se auto-dispara al terminar el decode.
  *
  *  POR QUÉ EXISTE — LA FAMILIA DE BUGS:
  *  Los 5 campeonatos son módulos autocontenidos que reimplementaban una y
@@ -75,7 +86,7 @@
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.5.0';
+const SDK_VERSION = '1.5.1';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -137,9 +148,11 @@ export function descongela(game) {
  *  moduleURL: import.meta.url DEL CAMPEONATO (los assets cuelgan de su
  *  carpeta assets/). getGame: función que devuelve el objeto game del
  *  núcleo (se consulta en cada play — el game puede llegar tarde). */
-export function createSfx(moduleURL, getGame) {
+export function createSfx(moduleURL, getGame, opts) {
+  const O = opts || {};               // v1.5.1: { ignoraMute }
   const bufs = Object.create(null);   // nombre → AudioBuffer decodificado
   const busy = Object.create(null);   // nombre → petición en vuelo
+  const pend = Object.create(null);   // v1.5.1: nombre → play pendiente
 
   function url(p) { return assetURL(moduleURL, p); }
 
@@ -156,8 +169,13 @@ export function createSfx(moduleURL, getGame) {
     fetch(url(name))
       .then((r) => r.arrayBuffer())
       .then((ab) => actx.decodeAudioData(ab.slice(0)))  // forma promesa (v2.125)
-      .then((buf) => { bufs[name] = buf; busy[name] = false; })
-      .catch(() => { busy[name] = false; });
+      .then((buf) => {
+        bufs[name] = buf; busy[name] = false;
+        /* v1.5.1: un play() que llegó antes del buffer suena AHORA. */
+        const p = pend[name];
+        if (p) { delete pend[name]; play(name, p.vol, p.opts); }
+      })
+      .catch(() => { busy[name] = false; delete pend[name]; });
   }
 
   function play(name, vol, opts) {
@@ -167,13 +185,17 @@ export function createSfx(moduleURL, getGame) {
       if (!actx || actx.state !== 'running') return;
       pedir(name);
       const buf = bufs[name];
-      if (!buf) return;                    // aún decodificando: en silencio
+      if (!buf) {                       // v1.5.1: pendiente, no silencio eterno
+        pend[name] = { vol, opts };
+        return;
+      }
       const src = actx.createBufferSource();
       src.buffer = buf;
       const gn = actx.createGain();
       const A = g.audio;
-      gn.gain.value = (A && (A.arcMute || A._arcDucked)) ? 0.0001
-                                                         : (vol == null ? 0.65 : vol);
+      /* v1.5.1: el mute del arcade es de MÚSICA — ignoraMute lo pasa. */
+      const silencio = !O.ignoraMute && A && (A.arcMute || A._arcDucked);
+      gn.gain.value = silencio ? 0.0001 : (vol == null ? 0.65 : vol);
       let nodo = gn;
       const pan = opts && opts.pan;      // v1.1.0: paneo estéreo opcional
       if (pan && actx.createStereoPanner) {
@@ -423,7 +445,8 @@ export function createBucle(getGame, opts) {
     try {
       const A = gg() && gg().audio;
       const v = o.vol ? o.vol() : 0.5;
-      if (A && (A.arcMute || A._arcDucked)) return 0.0001;
+      /* v1.5.1: ignoraMute — el gate es de MÚSICA, no de SFX/ambiente. */
+      if (!o.ignoraMute && A && (A.arcMute || A._arcDucked)) return 0.0001;
       return Math.max(0.0001, Math.min(1, v));
     } catch (e) { return 0.0001; }
   }

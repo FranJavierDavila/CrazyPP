@@ -8638,9 +8638,12 @@ class TrenAction {
   }
 
   /* v3.6.2-SDK2 · motor SFX del SDK de campeonatos (una instancia por
-   * controlador, cache propia; assets relativos a ESTE módulo). */
+   * controlador, cache propia; assets relativos a ESTE módulo).
+   * v3.6.23: ignoraMute — las pistas del vagón son SFX/ambiente (llegadas,
+   * túnel, risas): suenan SIEMPRE, como los sintéticos de la casa. */
   __sfxSDK() {
-    if (!this.__sdkSfx) this.__sdkSfx = createSfx(import.meta.url, () => this.game);
+    if (!this.__sdkSfx) this.__sdkSfx = createSfx(import.meta.url, () => this.game,
+      { ignoraMute: true });
     return this.__sdkSfx;
   }
 
@@ -8694,7 +8697,8 @@ class TrenAction {
     this.fj.visible = true;
     this.fjDiana.visible = false;
     this._fjSetFrame('paso');
-    this._sndYihha();   // v2.113: ¡ALERTA! grito del jinete al acercarse
+    /* v3.6.23: el «¡YIHAAA!» sintético de entrada se SUPRIME (petición del
+     * dueño) — el galope real caballos.mp3 (pool 0) anuncia al jinete. */
     /* v3.6.22: GALOPE del caballo — bucle PROPIO con desfase aleatorio y
      * paneo del lado que toca; el volumen vive en _fjUpdate (distancia). */
     try { this._galBuc(0).on(0.12 + Math.random() * 0.9, this._fjSide * 0.55); } catch (e) { /* */ }
@@ -8843,9 +8847,15 @@ class TrenAction {
       this._fjPose(bob);
     }
     /* v3.6.22: el galope se DESVANECE con la distancia a la ventana
-     * (progresivo al alejarse — paso, fuga e ida incluidas). */
+     * (progresivo al alejarse — paso, fuga e ida incluidas).
+     * v3.6.23: AUTOREPARACIÓN — jinete vivo sin galope (contexto renacido
+     * en un re-bind de VR, drop transitorio) → vuelve al instante. */
     if (this.__galPool && this.__galPool[0]) {
       this.__galPool[0].setVol(this._galVol(this._fjZ, F.zAtk));
+      if (!this.__galPool[0].suena()) {
+        try { this.__galPool[0].on(0.12 + Math.random() * 0.9,
+          this._fjSide * 0.55); } catch (e) { /* */ }
+      }
     }
   }
 
@@ -8911,14 +8921,15 @@ class TrenAction {
       rec.diana.visible = true;           // MIRILLA SIEMPRE encima
       rec.grp.visible = true;
       this._indPose(rec, 0);
-      /* v3.6.22: caballo PROPIO por jinete — DESFASADO (k × ~0,3 s: los
-       * caballos no galopan al compás) y paneo del lado del grupo. */
+      /* v3.6.23: sin «¡YIHAAA!» sintético de entrada (petición del dueño):
+       * el grupo entra galopando con SU caballos.mp3 desfasado y paneado. */
       rec.galK = k + 1;
       try { this._galBuc(rec.galK).on(k * 0.31 + Math.random() * 0.14, side * 0.55); } catch (e) { /* */ }
       this._inds.push(rec);
     }
     this._indAny = true;
-    this._sndYihha();                     // ¡ALERTA! igual que el forajido
+    /* v3.6.23: sin «¡YIHAAA!» sintético de entrada (petición del dueño):
+     * el galope real del grupo ya anuncia su llegada. */
     this._msg = tx('tren_indio');
     this._msgT = 2.6;
   }
@@ -9083,10 +9094,19 @@ class TrenAction {
           this.__galPool[rec.galK]) {
         try { this.__galPool[rec.galK].off(true); } catch (e) { /* */ }
       }
-      /* v3.6.22: galope vivo → desvanecer con la distancia a SU ventana. */
+      /* v3.6.22: galope vivo → desvanecer con la distancia a SU ventana.
+       * v3.6.23: AUTOREPARACIÓN — jinete vivo (no abatido) sin galope
+       * (contexto renacido, drop) → SU caballo vuelve al instante. */
       if (rec.galK && rec.state !== 'gone' && this.__galPool &&
           this.__galPool[rec.galK]) {
         try { this.__galPool[rec.galK].setVol(this._galVol(rec.z, rec.zAtk)); } catch (e) { /* */ }
+        if (rec.state === 'ida' || rec.state === 'ventana' ||
+            rec.state === 'fuga') {
+          if (!this.__galPool[rec.galK].suena()) {
+            try { this.__galPool[rec.galK].on(Math.random() * 0.5,
+              rec.side * 0.55); } catch (e) { /* */ }
+          }
+        }
       }
     }
     if (!vivos) this._indGoneAll();
@@ -9241,21 +9261,25 @@ class TrenAction {
    *     los grupos de indios), cada jinete DESFASADO en el audio y con
    *     paneo de SU lado; se desvanece con la DISTANCIA a la ventana
    *     (setVol vivo por frame) y calla BRUSCO al abatirlo (off seco).
-   *  Los bucles viven en el SDK (createBucle v1.5.0): decode en forma
-   *  promesa, mute del arcade respetado y nunca rompe el frame.
+   *  Los bucles viven en el SDK (createBucle v1.5.1 con ignoraMute: las
+   *  pistas del tren son SFX/ambiente, no música — suenan SIEMPRE);
+   *  decode en forma promesa y nunca rompe el frame.
    *  ====================================================================== */
-  /* RODADURA — bucle ambience del tren en marcha. */
+  /* RODADURA — bucle ambience del tren en marcha (ignoraMute: el silencio
+   * del arcade es de MÚSICA; la rodadura suena siempre — SDK v1.5.1). */
   get _viasBuc() {
     if (!this.__viasBuc) {
       this.__viasBuc = createBucle(() => this.game, {
         url: () => assetURL(import.meta.url, 'tren/vias.mp3'),
         vol: () => 0.13,
         fadeIn: 0.6, stopFade: 0.9,
+        ignoraMute: true,
       });
     }
     return this.__viasBuc;
   }
-  /* GALOPE — pool de 4 motores (0 = forajido · 1..3 = jinetes del grupo). */
+  /* GALOPE — pool de 4 motores (0 = forajido · 1..3 = jinetes del grupo).
+   * ignoraMute: el galope es SFX, no música (SDK v1.5.1). */
   _galBuc(k) {
     if (!this.__galPool) this.__galPool = [];
     if (!this.__galPool[k]) {
@@ -9263,6 +9287,7 @@ class TrenAction {
         url: () => assetURL(import.meta.url, 'tren/caballos.mp3'),
         vol: () => 0.45,
         fadeIn: 0.25, stopFade: 0.4,
+        ignoraMute: true,
       });
     }
     return this.__galPool[k];
@@ -9925,6 +9950,12 @@ class TrenAction {
     /* ==== v2.119 · EL INDIO CABALGANTE (grupos 1-3, flecha ladrona) ==== */
     this._indUpdate(dt);
     this._musicSync();   // v3.6.3-SDK3: el SDK guarda si suena (no-op si no)
+    /* v3.6.23: AUTOREPARACIÓN de la rodadura — si el contexto renació en un
+     * re-bind de VR o un drop transitorio la dejó fuera, vuelve AL INSTANTE
+     * mientras el vagón marcha (on() es no-op si ya suena). */
+    if (this.phase === 'run') {
+      try { if (!this._viasBuc.suena()) this._viasBuc.on(); } catch (e) { /* */ }
+    }
     if (this.ctrl.fx) this.ctrl.fx.update(dt);
   }
 
@@ -10687,7 +10718,10 @@ class TrenAction {
   /** v2.113 · «¡YIHAAAA!» del forajido al ENTRAR en escena: alerta sonora
    *  de aproximación. Grito de vaquero sintetizado: un "yi" corto que
    *  SUBE y una "haaa" larga que CAE, con vibrato y dos formantes de voz
-   *  (pasa-banda 760/1350 Hz) sobre una sierra. FUERTE (gana al rumor). */
+   *  (pasa-banda 760/1350 Hz) sobre una sierra. FUERTE (gana al rumor).
+   *  v3.6.23 · RETIRADO de las ENTRADAS (forajido e indios) a petición del
+   *  dueño: los jinetes entran con el galope real caballos.mp3. El método
+   *  se conserva (no tiene llamadas) por si el dueño lo quiere de vuelta. */
   _sndYihha() {
     const ctx = this._sndCtx();
     if (!ctx) return;

@@ -42,6 +42,11 @@ const I18N_STRINGS = {
     serve_opp: 'Saque de {opp}…',
     over_win: '¡HAS GANADO! · {p}-{q} · gatillo: revancha',
     over_lose: '¡HAS PERDIDO! · {p}-{q} · gatillo: revancha',
+    // v3.6.29 · MEJOR DE 3 (ronda 37): mensajes de juego y enfrentamiento
+    game_won_you: 'JUEGO PARA TI · {p}-{q} · serie {a}-{b} · ¡sigue así!',
+    game_won_opp: 'JUEGO PARA {opp} · {p}-{q} · serie {a}-{b} · ¡al siguiente!',
+    over_win_bo: '¡ENFRENTAMIENTO PARA TI! · Juegos {a}-{b} · último {p}-{q}',
+    over_lose_bo: 'ENFRENTAMIENTO PARA {opp} · Juegos {a}-{b} · último {p}-{q}',
     // ---- causas (viajan por red como CLAVES; se traducen al pintar)
     cause_dblhit: 'doble golpe',
     cause_volley: 'golpe antes del bote',
@@ -66,6 +71,11 @@ const I18N_STRINGS = {
     ann_score: '{p} a {q}, saque para {who}',
     ann_victory: '¡Victoria! {p} a {q}',
     ann_match_end: 'Partido para {opp}. {p} a {q}',
+    // v3.6.29 · MEJOR DE 3: megafonía de juego y de enfrentamiento
+    ann_game_you: 'Juego para ti. {a} a {b} en juegos',
+    ann_game_opp: 'Juego para {opp}. {a} a {b} en juegos',
+    ann_victory_bo: '¡Enfrentamiento para ti! {a} juegos a {b}',
+    ann_match_end_bo: 'Enfrentamiento para {opp}. {a} juegos a {b}',
     ann_rally_record: '¡Rallye de {n} golpes! Nuevo récord',
     ann_ach: '¡Logro desbloqueado: {name}!',
     ann_room: 'Sala {room}',
@@ -379,6 +389,7 @@ const I18N_STRINGS = {
     sb_you: 'TÚ',
     sb_cpu: 'CPU',
     sb_rival: 'RIVAL',
+    sb_bo: 'MEJOR DE {n}',
     calib_msg: 'ENTRENAMIENTO · Y: volver al entrenamiento',
     sb_surv: 'S U P E R V I V E N C I A',
     sb_rally_hits: 'golpes del rallye',
@@ -470,6 +481,11 @@ const I18N_STRINGS = {
     serve_opp: '{opp}’s serve…',
     over_win: 'YOU WON! · {p}-{q} · trigger: rematch',
     over_lose: 'YOU LOST! · {p}-{q} · trigger: rematch',
+    // v3.6.29 · BEST OF 3 (round 37): game and matchup messages
+    game_won_you: 'GAME FOR YOU · {p}-{q} · series {a}-{b} · keep it up!',
+    game_won_opp: 'GAME FOR {opp} · {p}-{q} · series {a}-{b} · next one!',
+    over_win_bo: 'MATCHUP FOR YOU! · Games {a}-{b} · last {p}-{q}',
+    over_lose_bo: 'MATCHUP FOR {opp} · Games {a}-{b} · last {p}-{q}',
     cause_dblhit: 'double hit',
     cause_volley: 'hit before the bounce',
     cause_burla: 'mock wildcard',
@@ -492,6 +508,11 @@ const I18N_STRINGS = {
     ann_score: '{p} to {q}, serve for {who}',
     ann_victory: 'Victory! {p} to {q}',
     ann_match_end: 'Match for {opp}. {p} to {q}',
+    // v3.6.29 · BEST OF 3: game and matchup announcer lines
+    ann_game_you: 'Game for you. {a} to {b} in games',
+    ann_game_opp: 'Game for {opp}. {a} to {b} in games',
+    ann_victory_bo: 'Matchup for you! {a} games to {b}',
+    ann_match_end_bo: 'Matchup for {opp}. {a} games to {b}',
     ann_rally_record: 'Rally of {n} hits. New record!',
     ann_ach: 'Achievement unlocked: {name}!',
     ann_room: '{room} arena',
@@ -799,6 +820,7 @@ const I18N_STRINGS = {
     sb_you: 'YOU',
     sb_cpu: 'CPU',
     sb_rival: 'RIVAL',
+    sb_bo: 'BEST OF {n}',
     calib_msg: 'TRAINING · Y: back to the training hub',
     sb_surv: 'S U R V I V A L',
     sb_rally_hits: 'rally hits',
@@ -1555,7 +1577,7 @@ export const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.28-SDK6';
+  const VERSION = '3.6.29-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar

@@ -133,6 +133,15 @@ export class Rules {
     this.mode = 'match';            // 'match' (a 11) | 'survival' (rallyes infinitos)
     this.rallyesSurvived = 0;       // solo supervivencia: rallyes terminados
     this.oppLabel = 'cpu';          // v2.27: CLAVE ('cpu'|'rival') -> T('opp_…')
+    // v3.6.29 · MEJOR DE 3 (ronda 37, petición del dueño): el PARTIDO libre
+    // (vs CPU y online P2P) se disputa al mejor de 3 JUEGOS seguidos — quien
+    // gana 2 juegos es campeón del enfrentamiento. bestOf=1 conserva el
+    // partido a juego único de los campeonatos (sus duelos NO se tocan).
+    this.bestOf = 1;                // 1 = juego único · 3 = mejor de 3
+    this.gamesPlayer = 0;           // juegos ganados por el jugador
+    this.gamesAi = 0;               // juegos ganados por el rival
+    this.gameNo = 1;                // juego en curso dentro del enfrentamiento
+    this.firstServer = 'player';    // primer sacador del ENFRENTAMIENTO
   }
 
   /** Nombre del oponente para los mensajes (CPU o humano remoto). */
@@ -140,13 +149,15 @@ export class Rules {
 
   other(s) { return s === 'player' ? 'ai' : 'player'; }
 
-  startMatch(mode) {
-    this.mode = mode === 'survival' ? 'survival' : 'match';
-    this.rallyesSurvived = 0;
+  /** v3.6.29: reset de UN juego (marcador y botes a cero SIN tocar la serie).
+   *  startMatch = resetGame + serie a cero + bestOf intacto. */
+  resetGame() {
     this.scorePlayer = 0;
     this.scoreAi = 0;
     this.totalPoints = 0;
-    this.server = 'player';
+    this.server = this.gameNo % 2 === 1
+      ? this.firstServer
+      : this.other(this.firstServer);   // cada juego saca el otro (ITTF)
     this.state = 'serve';
     this.stateTimer = 0;
     this.lastHitter = null;
@@ -156,6 +167,18 @@ export class Rules {
     this.validBounce = false;
     this.netTouched = false;
     this.rallyHits = 0;
+  }
+
+  startMatch(mode) {
+    this.mode = mode === 'survival' ? 'survival' : 'match';
+    this.rallyesSurvived = 0;
+    // v3.6.29: NUEVO ENFRENTAMIENTO — la serie arranca a cero (bestOf se
+    // conserva: lo fija el juego en los caminos del partido libre).
+    this.gamesPlayer = 0;
+    this.gamesAi = 0;
+    this.gameNo = 1;
+    this.firstServer = 'player';
+    this.resetGame();
     this.message = this.mode === 'survival'
       ? T('surv_start')
       : T('serve_wait');
@@ -328,13 +351,43 @@ export class Rules {
           (this.scorePlayer >= 11 || this.scoreAi >= 11) &&
           Math.abs(this.scorePlayer - this.scoreAi) >= 2;
         if (finished) {
+          const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
+          const p = this.scorePlayer, q = this.scoreAi;
+          // v3.6.29 · MEJOR DE 3: el juego contado alimenta la serie; el
+          // enfrentamiento se decide al ganar 2 juegos (2·victorias > bestOf).
+          if (this.mode === 'match' && this.bestOf > 1) {
+            if (winner === 'player') this.gamesPlayer++; else this.gamesAi++;
+            const a = this.gamesPlayer, b = this.gamesAi;
+            const serieAcabada = a * 2 > this.bestOf || b * 2 > this.bestOf;
+            if (!serieAcabada) {
+              // Juego terminado, el enfrentamiento SIGUE: juego nuevo con la
+              // serie ya escrita y el saque cambiado (el otro abre).
+              this.gameNo++;
+              this.resetGame();
+              this.message = winner === 'player'
+                ? T('game_won_you', { p, q, a, b })
+                : T('game_won_opp', { opp: this.opp(), p, q, a, b });
+              intents.push({
+                type: 'serve', server: this.server,
+                gameEnd: { winner, p, q, gp: a, ga: b, bo: this.bestOf },
+              });
+              return intents;
+            }
+            // SERIE ACABADA: mensaje con el enfrentamiento completo.
+            this.state = 'over';
+            this.stateTimer = 8;
+            this.message = winner === 'player'
+              ? T('over_win_bo', { p, q, a, b })
+              : T('over_lose_bo', { opp: this.opp(), p, q, a, b });
+            intents.push({ type: 'game-over', winner });
+            return intents;
+          }
+          // v2.26: mensajes alineados con los carteles oficiales (v2.27: i18n)
           this.state = 'over';
           this.stateTimer = 8;
-          const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
-          // v2.26: mensajes alineados con los carteles oficiales (v2.27: i18n)
           this.message = winner === 'player'
-            ? T('over_win', { p: this.scorePlayer, q: this.scoreAi })
-            : T('over_lose', { p: this.scorePlayer, q: this.scoreAi });
+            ? T('over_win', { p, q })
+            : T('over_lose', { p, q });
           intents.push({ type: 'game-over', winner });
         } else {
           this.state = 'serve';

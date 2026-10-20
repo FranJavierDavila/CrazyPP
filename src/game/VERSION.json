@@ -1,10 +1,10 @@
 {
-  "version": "3.6.28-SDK6",
-  "fase": 30,
-  "faseNombre": "Salon del Artista",
+  "version": "3.6.29-SDK6",
+  "fase": 31,
+  "faseNombre": "Sala del Partido y Mejor de 3",
   "sdk": "1.5.4",
   "fecha": "2026-10-20",
-  "hub": "v3628-sdk6",
+  "hub": "v3629-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "55daddb988d6cb177abc20a10c6c54760afb54b878a3b1cfc65e3f6c32d886ec"
+  "golden": "d693f0cb2cf1e20287c72369e3022415ba000ca7dd2b52486078f8f9c56062ca"
 }

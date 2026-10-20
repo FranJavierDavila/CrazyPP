@@ -537,7 +537,7 @@ export class PingPongGame {
     const back = this.preCalibMode === 'survival' ? 'survival' : 'match';
     this.preCalibMode = 'match';
     this.mode = back;
-    this.rules.startMatch(back);
+    this.rules.startMatch(back);   // v3.6.29: PRESERVA bestOf (3 libre · 1 campeonato)
     this.applyAISkill();
     this.resetToss();
     this.aiToss = null;
@@ -558,6 +558,9 @@ export class PingPongGame {
     this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
     this.mode = mode;
     this.survivalRallies = 0;
+    // v3.6.29 · MEJOR DE 3: el PARTIDO libre se disputa al mejor de 3 juegos
+    // (2 victorias = campeón del enfrentamiento, petición del dueño).
+    this.rules.bestOf = 3;
     this.rules.startMatch(mode);
     this.applyAISkill();
     this.resetToss();
@@ -599,6 +602,7 @@ export class PingPongGame {
   /** Partido online nuevo (anfitrión, o revancha pedida por el invitado). */
   startOnlineMatch() {
     if (this.net.role !== 'host') { this.net.sendRematch(); return; }
+    this.rules.bestOf = 3;   // v3.6.29: el enfrentamiento online también al mejor de 3
     this.rules.startMatch(this.mode);
     this.net.owner = 'host';
     this.resetToss();
@@ -610,6 +614,7 @@ export class PingPongGame {
     this.rules.oppLabel = 'cpu';
     this.resetToss();
     this.aiToss = null;
+    this.rules.bestOf = 3;   // v3.6.29: de vuelta con la CPU, seguimos al mejor de 3
     this.rules.startMatch(this.mode);
     this.rules.message = T('net_ended', { msg: msg || T('opp_disconnected') });
     this.audio.announce(T('opp_disconnected'), true);
@@ -2085,7 +2090,7 @@ export class PingPongGame {
           this.startOnlineMatch();   // anfitrión reinicia; invitado pide revancha
         } else {
           if (this.mode !== 'match') this.switchMode('match');
-          else { this.rules.startMatch('match'); this.resetToss(); }
+          else { this.rules.bestOf = 3; this.rules.startMatch('match'); this.resetToss(); }
         }
         this.closeMenu();
         break;
@@ -2343,6 +2348,7 @@ export class PingPongGame {
         this.closeMenu();
         if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
         else {
+          this.rules.bestOf = 3;   // v3.6.29: revancha de menú = enfrentamiento nuevo al mejor de 3
           this.rules.startMatch(this.mode);
           this.resetToss();
         }
@@ -2721,6 +2727,8 @@ export class PingPongGame {
       return;
     }
     if (this.rules.state === 'over') {
+      // v3.6.29: PRESERVA bestOf — la revancha por gatillo repite el contexto
+      // (libre = nueva serie al mejor de 3; campeonato = duelo a juego único)
       this.rules.startMatch(this.mode);   // revancha en el MISMO modo de juego
       this.resetToss();
       return;
@@ -4431,6 +4439,10 @@ export class PingPongGame {
       rally: this.rules.rallyHits,
       rallyes: this.survivalRallies,
       best: this.survivalBest,
+      // v3.6.29 · MEJOR DE 3: la serie vive en el marcador
+      gamesPlayer: this.rules.gamesPlayer,
+      gamesAi: this.rules.gamesAi,
+      bestOf: this.rules.bestOf,
     });
     this.syncDom();
 
@@ -4962,10 +4974,22 @@ export class PingPongGame {
           // MEGAFONÍA: el marcador anuncia el resultado y quién saca
           if (this.rules.mode !== 'survival') {
             const s = this.rules;
-            this.audio.announce(T('ann_score', {
-              p: s.scorePlayer, q: s.scoreAi,
-              who: it.server === 'player' ? T('who_you') : T(this.net.online ? 'opp_rival' : 'opp_machine'),
-            }));
+            if (it.gameEnd) {
+              // v3.6.29 · MEJOR DE 3: juego ganado SIN fin del enfrentamiento
+              const ge = it.gameEnd;
+              this.audio.announce(ge.winner === 'player'
+                ? T('ann_game_you', { p: ge.p, q: ge.q, a: ge.gp, b: ge.ga })
+                : T('ann_game_opp', { opp: s.opp(), p: ge.p, q: ge.q, a: ge.gp, b: ge.ga }), true);
+              // v3.6.29: el resultado del juego viaja al invitado (como pt/rt)
+              if (this.net.online && this.net.role === 'host') {
+                this.net.lastGame = { w: ge.winner, p: ge.p, q: ge.q };
+              }
+            } else {
+              this.audio.announce(T('ann_score', {
+                p: s.scorePlayer, q: s.scoreAi,
+                who: it.server === 'player' ? T('who_you') : T(this.net.online ? 'opp_rival' : 'opp_machine'),
+              }));
+            }
           }
           break;
         case 'game-over':
@@ -4975,10 +4999,15 @@ export class PingPongGame {
           // estado final del rival). Con guard: ningún hook del campeonato
           // puede tumbar el bucle (lección del ReferenceError de v2.39).
           if (this.champs) this.champs.onMatchOver(it.winner);
+          // v3.6.29 · MEJOR DE 3: el cierre anuncia el ENFRENTAMIENTO (juegos)
           this.audio.announce(
             it.winner === 'player'
-              ? T('ann_victory', { p: this.rules.scorePlayer, q: this.rules.scoreAi })
-              : T('ann_match_end', { opp: this.rules.opp(), p: this.rules.scoreAi, q: this.rules.scorePlayer }),
+              ? (this.rules.bestOf > 1 && this.rules.mode === 'match'
+                ? T('ann_victory_bo', { a: this.rules.gamesPlayer, b: this.rules.gamesAi })
+                : T('ann_victory', { p: this.rules.scorePlayer, q: this.rules.scoreAi }))
+              : (this.rules.bestOf > 1 && this.rules.mode === 'match'
+                ? T('ann_match_end_bo', { opp: this.rules.opp(), a: this.rules.gamesPlayer, b: this.rules.gamesAi })
+                : T('ann_match_end', { opp: this.rules.opp(), p: this.rules.scoreAi, q: this.rules.scorePlayer })),
             true,
           );
           this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));

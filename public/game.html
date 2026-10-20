@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.28-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.29-SDK6</span>
     </div>
   </main>
 
@@ -430,6 +430,11 @@ const I18N_STRINGS = {
     serve_opp: 'Saque de {opp}…',
     over_win: '¡HAS GANADO! · {p}-{q} · gatillo: revancha',
     over_lose: '¡HAS PERDIDO! · {p}-{q} · gatillo: revancha',
+    // v3.6.29 · MEJOR DE 3 (ronda 37): mensajes de juego y enfrentamiento
+    game_won_you: 'JUEGO PARA TI · {p}-{q} · serie {a}-{b} · ¡sigue así!',
+    game_won_opp: 'JUEGO PARA {opp} · {p}-{q} · serie {a}-{b} · ¡al siguiente!',
+    over_win_bo: '¡ENFRENTAMIENTO PARA TI! · Juegos {a}-{b} · último {p}-{q}',
+    over_lose_bo: 'ENFRENTAMIENTO PARA {opp} · Juegos {a}-{b} · último {p}-{q}',
     // ---- causas (viajan por red como CLAVES; se traducen al pintar)
     cause_dblhit: 'doble golpe',
     cause_volley: 'golpe antes del bote',
@@ -454,6 +459,11 @@ const I18N_STRINGS = {
     ann_score: '{p} a {q}, saque para {who}',
     ann_victory: '¡Victoria! {p} a {q}',
     ann_match_end: 'Partido para {opp}. {p} a {q}',
+    // v3.6.29 · MEJOR DE 3: megafonía de juego y de enfrentamiento
+    ann_game_you: 'Juego para ti. {a} a {b} en juegos',
+    ann_game_opp: 'Juego para {opp}. {a} a {b} en juegos',
+    ann_victory_bo: '¡Enfrentamiento para ti! {a} juegos a {b}',
+    ann_match_end_bo: 'Enfrentamiento para {opp}. {a} juegos a {b}',
     ann_rally_record: '¡Rallye de {n} golpes! Nuevo récord',
     ann_ach: '¡Logro desbloqueado: {name}!',
     ann_room: 'Sala {room}',
@@ -767,6 +777,7 @@ const I18N_STRINGS = {
     sb_you: 'TÚ',
     sb_cpu: 'CPU',
     sb_rival: 'RIVAL',
+    sb_bo: 'MEJOR DE {n}',
     calib_msg: 'ENTRENAMIENTO · Y: volver al entrenamiento',
     sb_surv: 'S U P E R V I V E N C I A',
     sb_rally_hits: 'golpes del rallye',
@@ -858,6 +869,11 @@ const I18N_STRINGS = {
     serve_opp: '{opp}’s serve…',
     over_win: 'YOU WON! · {p}-{q} · trigger: rematch',
     over_lose: 'YOU LOST! · {p}-{q} · trigger: rematch',
+    // v3.6.29 · BEST OF 3 (round 37): game and matchup messages
+    game_won_you: 'GAME FOR YOU · {p}-{q} · series {a}-{b} · keep it up!',
+    game_won_opp: 'GAME FOR {opp} · {p}-{q} · series {a}-{b} · next one!',
+    over_win_bo: 'MATCHUP FOR YOU! · Games {a}-{b} · last {p}-{q}',
+    over_lose_bo: 'MATCHUP FOR {opp} · Games {a}-{b} · last {p}-{q}',
     cause_dblhit: 'double hit',
     cause_volley: 'hit before the bounce',
     cause_burla: 'mock wildcard',
@@ -880,6 +896,11 @@ const I18N_STRINGS = {
     ann_score: '{p} to {q}, serve for {who}',
     ann_victory: 'Victory! {p} to {q}',
     ann_match_end: 'Match for {opp}. {p} to {q}',
+    // v3.6.29 · BEST OF 3: game and matchup announcer lines
+    ann_game_you: 'Game for you. {a} to {b} in games',
+    ann_game_opp: 'Game for {opp}. {a} to {b} in games',
+    ann_victory_bo: 'Matchup for you! {a} games to {b}',
+    ann_match_end_bo: 'Matchup for {opp}. {a} games to {b}',
     ann_rally_record: 'Rally of {n} hits. New record!',
     ann_ach: 'Achievement unlocked: {name}!',
     ann_room: '{room} arena',
@@ -1187,6 +1208,7 @@ const I18N_STRINGS = {
     sb_you: 'YOU',
     sb_cpu: 'CPU',
     sb_rival: 'RIVAL',
+    sb_bo: 'BEST OF {n}',
     calib_msg: 'TRAINING · Y: back to the training hub',
     sb_surv: 'S U R V I V A L',
     sb_rally_hits: 'rally hits',
@@ -1943,7 +1965,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.28-SDK6';
+  const VERSION = '3.6.29-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -5817,6 +5839,15 @@ class Rules {
     this.mode = 'match';            // 'match' (a 11) | 'survival' (rallyes infinitos)
     this.rallyesSurvived = 0;       // solo supervivencia: rallyes terminados
     this.oppLabel = 'cpu';          // v2.27: CLAVE ('cpu'|'rival') -> T('opp_…')
+    // v3.6.29 · MEJOR DE 3 (ronda 37, petición del dueño): el PARTIDO libre
+    // (vs CPU y online P2P) se disputa al mejor de 3 JUEGOS seguidos — quien
+    // gana 2 juegos es campeón del enfrentamiento. bestOf=1 conserva el
+    // partido a juego único de los campeonatos (sus duelos NO se tocan).
+    this.bestOf = 1;                // 1 = juego único · 3 = mejor de 3
+    this.gamesPlayer = 0;           // juegos ganados por el jugador
+    this.gamesAi = 0;               // juegos ganados por el rival
+    this.gameNo = 1;                // juego en curso dentro del enfrentamiento
+    this.firstServer = 'player';    // primer sacador del ENFRENTAMIENTO
   }
 
   /** Nombre del oponente para los mensajes (CPU o humano remoto). */
@@ -5824,13 +5855,15 @@ class Rules {
 
   other(s) { return s === 'player' ? 'ai' : 'player'; }
 
-  startMatch(mode) {
-    this.mode = mode === 'survival' ? 'survival' : 'match';
-    this.rallyesSurvived = 0;
+  /** v3.6.29: reset de UN juego (marcador y botes a cero SIN tocar la serie).
+   *  startMatch = resetGame + serie a cero + bestOf intacto. */
+  resetGame() {
     this.scorePlayer = 0;
     this.scoreAi = 0;
     this.totalPoints = 0;
-    this.server = 'player';
+    this.server = this.gameNo % 2 === 1
+      ? this.firstServer
+      : this.other(this.firstServer);   // cada juego saca el otro (ITTF)
     this.state = 'serve';
     this.stateTimer = 0;
     this.lastHitter = null;
@@ -5840,6 +5873,18 @@ class Rules {
     this.validBounce = false;
     this.netTouched = false;
     this.rallyHits = 0;
+  }
+
+  startMatch(mode) {
+    this.mode = mode === 'survival' ? 'survival' : 'match';
+    this.rallyesSurvived = 0;
+    // v3.6.29: NUEVO ENFRENTAMIENTO — la serie arranca a cero (bestOf se
+    // conserva: lo fija el juego en los caminos del partido libre).
+    this.gamesPlayer = 0;
+    this.gamesAi = 0;
+    this.gameNo = 1;
+    this.firstServer = 'player';
+    this.resetGame();
     this.message = this.mode === 'survival'
       ? T('surv_start')
       : T('serve_wait');
@@ -6012,13 +6057,43 @@ class Rules {
           (this.scorePlayer >= 11 || this.scoreAi >= 11) &&
           Math.abs(this.scorePlayer - this.scoreAi) >= 2;
         if (finished) {
+          const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
+          const p = this.scorePlayer, q = this.scoreAi;
+          // v3.6.29 · MEJOR DE 3: el juego contado alimenta la serie; el
+          // enfrentamiento se decide al ganar 2 juegos (2·victorias > bestOf).
+          if (this.mode === 'match' && this.bestOf > 1) {
+            if (winner === 'player') this.gamesPlayer++; else this.gamesAi++;
+            const a = this.gamesPlayer, b = this.gamesAi;
+            const serieAcabada = a * 2 > this.bestOf || b * 2 > this.bestOf;
+            if (!serieAcabada) {
+              // Juego terminado, el enfrentamiento SIGUE: juego nuevo con la
+              // serie ya escrita y el saque cambiado (el otro abre).
+              this.gameNo++;
+              this.resetGame();
+              this.message = winner === 'player'
+                ? T('game_won_you', { p, q, a, b })
+                : T('game_won_opp', { opp: this.opp(), p, q, a, b });
+              intents.push({
+                type: 'serve', server: this.server,
+                gameEnd: { winner, p, q, gp: a, ga: b, bo: this.bestOf },
+              });
+              return intents;
+            }
+            // SERIE ACABADA: mensaje con el enfrentamiento completo.
+            this.state = 'over';
+            this.stateTimer = 8;
+            this.message = winner === 'player'
+              ? T('over_win_bo', { p, q, a, b })
+              : T('over_lose_bo', { opp: this.opp(), p, q, a, b });
+            intents.push({ type: 'game-over', winner });
+            return intents;
+          }
+          // v2.26: mensajes alineados con los carteles oficiales (v2.27: i18n)
           this.state = 'over';
           this.stateTimer = 8;
-          const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
-          // v2.26: mensajes alineados con los carteles oficiales (v2.27: i18n)
           this.message = winner === 'player'
-            ? T('over_win', { p: this.scorePlayer, q: this.scoreAi })
-            : T('over_lose', { p: this.scorePlayer, q: this.scoreAi });
+            ? T('over_win', { p, q })
+            : T('over_lose', { p, q });
           intents.push({ type: 'game-over', winner });
         } else {
           this.state = 'serve';
@@ -6841,8 +6916,9 @@ function createChampDecor(game) {
  *    }
  *
  *  Rutas RELATIVAS a la carpeta del campeonato (como «decor»). Cada clave
- *  es independiente: si falta, ese plano conserva el color del tema. El
- *  sistema es del núcleo (patrón createChampDecor v2.80): se monta al
+ *  es independiente: si falta, ese plano VISTE EL ARTE POR DEFECTO DEL
+ *  PARTIDO (v3.6.29, assets/partido/ — antes quedaba con el color del
+ *  tema). El sistema es del núcleo (patrón createChampDecor v2.80): se monta al
  *  activar el campeonato, se destruye (dispose GPU) al salir y un fallo
  *  de carga NUNCA rompe el juego (file:// incluido). Los complementos de
  *  la sala clásica que ensuciarían el arte (rejilla del suelo, paneles
@@ -7476,6 +7552,37 @@ function createChampRoom(game) {
   const WALL_MAP = ['left', 'right', 'back', 'front'];   // = orden de wallMats
   const KEYS = ['floor', 'ceil', 'left', 'right', 'back', 'front'];
 
+  /* v3.6.29 · ARTE POR DEFECTO DEL PARTIDO (ronda 37, FASE 31) — el
+   * escenario del PARTIDO (Match) viste SIEMPRE las seis caras con el
+   * arte del artista (assets/partido/, dimensiones canónicas de
+   * createRoom: frente/fondo 6,10×2,85 · laterales 7,90×2,85 · suelo y
+   * techo 6,10×7,90 — mapeo 1:1 sin distorsión). PETICIÓN EXPRÉS del
+   * dueño: las paredes IZQUIERDA y DERECHA comparten imagen
+   * (izquierda.jpg — UNA sola carga, DOS materiales). El campeonato
+   * activo con «room» propio GANA clave a clave; las claves que falte
+   * visten el arte del partido. Carga a prueba de fallos: sin imagen
+   * (file://), ese plano conserva su color del tema y el juego SIGUE. */
+  const defaultTexs = {};
+  const applyDefaultTex = (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = maxAniso;
+    return tex;
+  };
+  for (const k2 of ['floor', 'ceil', 'back', 'front']) {
+    const f = { floor: 'suelo', ceil: 'techo', back: 'fondo', front: 'frente' }[k2];
+    loader.load('assets/partido/' + f + '.jpg', (tex) => {
+      try { defaultTexs[k2] = applyDefaultTex(tex); } catch { /* */ }
+    }, undefined, () => { /* file:// o arte ausente: color del tema */ });
+  }
+  // izquierda.jpg UNA SOLA carga para las DOS paredes laterales
+  loader.load('assets/partido/izquierda.jpg', (tex) => {
+    try {
+      applyDefaultTex(tex);
+      defaultTexs.left = tex;
+      defaultTexs.right = tex;   // MISMA imagen en ambas laterales
+    } catch { /* */ }
+  }, undefined, () => { /* */ });
+
   const ud = () => (game.roomGroup ? game.roomGroup.userData : null);
 
   /** Quita mapas y colores forzados y re-aplica el tema del jugador. */
@@ -7536,41 +7643,47 @@ function createChampRoom(game) {
   }
 
   /** Refuerzo por frame (barato e idempotente): mapas + blanco/tinte + */
-  /** complementos de la sala clásica ocultos mientras haya arte.        */
+  /** complementos de la sala clásica ocultos mientras haya arte. v3.6.29:
+   *  el arte EFECTIVO por cara es el del campeonato activo (si trae) o el
+   *  arte por defecto del partido — la cancha nunca vuelve a estar desnuda. */
   function update() {
     const activeId = (game.champs && game.champs.activeId) || '';
     if (activeId !== builtFor) buildFor(activeId);
     const U = ud();
     if (!U) return;
-    const has = (k) => !!(set && set.texs[k]);
-    if (set && Object.keys(set.texs).length) {
+    const champTex = (k) => (set && set.texs[k]) || null;
+    const eff = (k) => champTex(k) || defaultTexs[k] || null;
+    const anyArt = KEYS.some(eff);
+    if (anyArt) {
       const tint = variantTint;
       if (U.floorMat) {
-        if (has('floor') && U.floorMat.map !== set.texs.floor) {
-          U.floorMat.map = set.texs.floor; U.floorMat.needsUpdate = true;
+        const t2 = eff('floor');
+        if (t2 && U.floorMat.map !== t2) {
+          U.floorMat.map = t2; U.floorMat.needsUpdate = true;
         }
-        if (has('floor')) U.floorMat.color.set(tint);
+        if (t2) U.floorMat.color.set(champTex('floor') ? tint : 0xffffff);
       }
       if (U.ceilMat) {
-        if (has('ceil') && U.ceilMat.map !== set.texs.ceil) {
-          U.ceilMat.map = set.texs.ceil; U.ceilMat.needsUpdate = true;
+        const t2 = eff('ceil');
+        if (t2 && U.ceilMat.map !== t2) {
+          U.ceilMat.map = t2; U.ceilMat.needsUpdate = true;
         }
-        if (has('ceil')) U.ceilMat.color.set(tint);
+        if (t2) U.ceilMat.color.set(champTex('ceil') ? tint : 0xffffff);
       }
       const wm = U.wallMats || [];
       for (let i = 0; i < wm.length && i < 4; i++) {
         const m = wm[i];
         if (!m) continue;
-        const t2 = set.texs[WALL_MAP[i]];
+        const t2 = eff(WALL_MAP[i]);
         if (t2 && m.map !== t2) { m.map = t2; m.needsUpdate = true; }
-        if (t2) m.color.set(tint);
+        if (t2) m.color.set(champTex(WALL_MAP[i]) ? tint : 0xffffff);
       }
       // complementos del núcleo que chocarían con el arte:
-      if (U.grid) U.grid.visible = !has('floor');
-      if (U.panels) for (const p of U.panels) p.visible = !has('ceil');
-      if (U.strips) for (const s of U.strips) s.visible = !(has('left') || has('right'));
+      if (U.grid) U.grid.visible = !eff('floor');
+      if (U.panels) for (const p of U.panels) p.visible = !eff('ceil');
+      if (U.strips) for (const s of U.strips) s.visible = !(eff('left') || eff('right'));
     } else {
-      // sin decorado: la sala clásica queda EXACTAMENTE como siempre
+      // sin NINGÚN arte (file:// sin assets): la sala clásica de siempre
       if (U.grid) U.grid.visible = true;
       if (U.panels) for (const p of U.panels) p.visible = true;
       if (U.strips) for (const s of U.strips) s.visible = true;
@@ -7582,6 +7695,8 @@ function createChampRoom(game) {
     get builtFor() { return builtFor || ''; },
     /** Claves de arte ya cargadas del set activo (lectura en tests). */
     get loadedKeys() { return set ? Object.keys(set.texs) : []; },
+    /** v3.6.29: claves del arte POR DEFECTO del partido ya cargadas. */
+    get defaultKeys() { return Object.keys(defaultTexs); },
     useVariant,
     update,
   };
@@ -7631,7 +7746,7 @@ function createScoreboard() {
   const update = (d) => {
     const key = d.mode === 'survival'
       ? `S|${d.rally}|${d.rallyes}|${d.best}|${d.server}|${d.message}`
-      : `${d.player}|${d.ai}|${d.server}|${d.message}`;
+      : `${d.player}|${d.ai}|${d.server}|${d.message}|${d.gamesPlayer}|${d.gamesAi}|${d.bestOf}`;
     if (key === last) return;
     last = key;
 
@@ -7697,6 +7812,22 @@ function createScoreboard() {
     ctx.fillStyle = '#f2f4f6';
     ctx.font = '800 190px system-ui, sans-serif';
     ctx.fillText(`${d.player} : ${d.ai}`, 512, 340);
+
+    // v3.6.29 · MEJOR DE 3: la serie de JUEGOS vive en el marcador — pucks
+    // dorados (ganados) y huecos (por jugar) a los lados de «MEJOR DE 3»
+    if (d.bestOf > 1) {
+      const mk = (cx0, on) => {
+        ctx.beginPath();
+        ctx.arc(cx0, 388, 11, 0, Math.PI * 2);
+        if (on) { ctx.fillStyle = '#e8b45a'; ctx.fill(); }
+        else { ctx.strokeStyle = '#5a646e'; ctx.lineWidth = 3; ctx.stroke(); }
+      };
+      ctx.fillStyle = '#8b949c';
+      ctx.font = '600 30px system-ui, sans-serif';
+      ctx.fillText(T('sb_bo', { n: d.bestOf }), 512, 399);
+      for (let i = 0; i < d.bestOf; i++) mk(360 - i * 36, i < (d.gamesPlayer || 0));
+      for (let i = 0; i < d.bestOf; i++) mk(664 + i * 36, i < (d.gamesAi || 0));
+    }
 
     ctx.fillStyle = '#c8ced4';
     // v2.18: el mensaje se auto-ajusta (fuente menor) en vez de recortarse a
@@ -8412,10 +8543,15 @@ class NetLink {
       pkt.y = {
         st: r.state, sv: r.server, sp: r.scorePlayer, sa: r.scoreAi,
         ms: r.message, md: r.mode, ow: this.owner, rh: r.rallyHits,
+        // v3.6.29 · MEJOR DE 3: la serie viaja con el estado (bo=objetivo,
+        // gp/ga juegos ganados; el invitado los espeja con perspectiva)
+        bo: r.bestOf, gp: r.gamesPlayer, ga: r.gamesAi,
       };
       // v2.25: causa estructural del último punto / LET (send-once)
       if (this.lastPoint) { pkt.y.pt = this.lastPoint; this.lastPoint = null; }
       if (this.lastRetry) { pkt.y.rt = this.lastRetry; this.lastRetry = null; }
+      // v3.6.29: resultado del ÚLTIMO JUEGO terminado (send-once, como pt/rt)
+      if (this.lastGame) { pkt.y.gw = this.lastGame; this.lastGame = null; }
       if (r.state === 'over') pkt.y.wn = r.scorePlayer > r.scoreAi ? 'player' : 'ai';
     }
     this.send(pkt);
@@ -8547,9 +8683,14 @@ class NetLink {
     r.state = y.st; r.server = srv;
     r.scorePlayer = my; r.scoreAi = op;
     r.mode = y.md; r.rallyHits = y.rh || 0;
+    // v3.6.29: la serie del anfitrión se espeja CON PERSPECTIVA (gp es suyo)
+    r.bestOf = y.bo || 1;
+    r.gamesPlayer = guest ? (y.ga || 0) : (y.gp || 0);
+    r.gamesAi = guest ? (y.gp || 0) : (y.ga || 0);
     g.mode = y.md; g.pendingMode = y.md;
     if (y.pt) this.lastPoint = y.pt;
     if (y.rt) this.lastRetry = y.rt;
+    if (y.gw) this.lastGame = y.gw;
 
     // ---- MENSAJES LOCALES (perspectiva propia; nunca el texto del rival) --
     if (r.state === 'point' && this.lastPoint) {
@@ -8568,9 +8709,14 @@ class NetLink {
     } else if (r.state === 'over') {
       const won = my > op;
       // v2.26/2.27: mensajes alineados con los carteles oficiales, en el idioma local
-      r.message = won
-        ? T('over_win', { p: my, q: op })
-        : T('over_lose', { p: my, q: op });
+      // v3.6.29 · MEJOR DE 3: el cierre anuncia el ENFRENTAMIENTO completo
+      r.message = (r.bestOf > 1 && r.mode === 'match')
+        ? (won
+          ? T('over_win_bo', { p: my, q: op, a: r.gamesPlayer, b: r.gamesAi })
+          : T('over_lose_bo', { opp: r.opp(), p: my, q: op, a: r.gamesPlayer, b: r.gamesAi }))
+        : (won
+          ? T('over_win', { p: my, q: op })
+          : T('over_lose', { p: my, q: op }));
     }
     if (r.state !== 'point') this.lastPoint = null;
     if (r.state !== 'serve') this.lastRetry = null;
@@ -8586,10 +8732,24 @@ class NetLink {
         g.haptic(g.paddleHand, iWon ? 0.85 : 0.4, iWon ? 110 : 60);
       }
     }
-    if (r.state === 'serve' && prevState !== 'serve' && r.mode !== 'survival') {
+    if (r.state === 'serve' && prevState !== 'serve' && r.mode !== 'survival' && !this.lastGame) {
       g.audio.announce(T('ann_score', { p: r.scorePlayer, q: r.scoreAi,
         who: srv === 'player' ? T('who_you') : T('opp_rival') }));
     }
+    // v3.6.29 · MEJOR DE 3: fin de juego SIN fin del enfrentamiento — el
+    // anfitrión lo señala con gw (una sola vez, como pt/rt); el invitado lo
+    // anuncia en SU idioma y SU perspectiva y consume la señal.
+    if (r.state === 'serve' && this.lastGame && r.mode === 'match' && r.bestOf > 1) {
+      const gw = this.lastGame;
+      const wLocal = guest ? (gw.w === 'player' ? 'ai' : 'player') : gw.w;
+      const pL = guest ? gw.q : gw.p;
+      const qL = guest ? gw.p : gw.q;
+      g.audio.announce(wLocal === 'player'
+        ? T('ann_game_you', { p: pL, q: qL, a: r.gamesPlayer, b: r.gamesAi })
+        : T('ann_game_opp', { opp: r.opp(), p: pL, q: qL, a: r.gamesPlayer, b: r.gamesAi }), true);
+      this.lastGame = null;
+    }
+    if (r.state !== 'serve') this.lastGame = null;
     if (prevMode !== r.mode && (r.mode === 'match' || r.mode === 'survival')) {
       g.audio.announce(r.mode === 'survival' ? T('mode_survival') : T('mode_match'), true);
     }
@@ -9000,6 +9160,10 @@ class ChampLoader {
     if (!m) { g.rules.message = T('arc_no_data'); return; }
     this.leaveAll();
     this.activeId = id;
+    // v3.6.29 · MEJOR DE 3: los duelos de campeonato siguen siendo a UN juego
+    // (el mejor de 3 es del partido libre; se reactiva al arrancar cualquier
+    // modo libre — menú/B/online). Así el camino calibrado no se altera.
+    g.rules.bestOf = 1;
     try { m.start(); }
     catch (e) {
       console.warn('[champs] start ' + id, e);
@@ -10060,7 +10224,7 @@ class PingPongGame {
     const back = this.preCalibMode === 'survival' ? 'survival' : 'match';
     this.preCalibMode = 'match';
     this.mode = back;
-    this.rules.startMatch(back);
+    this.rules.startMatch(back);   // v3.6.29: PRESERVA bestOf (3 libre · 1 campeonato)
     this.applyAISkill();
     this.resetToss();
     this.aiToss = null;
@@ -10081,6 +10245,9 @@ class PingPongGame {
     this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
     this.mode = mode;
     this.survivalRallies = 0;
+    // v3.6.29 · MEJOR DE 3: el PARTIDO libre se disputa al mejor de 3 juegos
+    // (2 victorias = campeón del enfrentamiento, petición del dueño).
+    this.rules.bestOf = 3;
     this.rules.startMatch(mode);
     this.applyAISkill();
     this.resetToss();
@@ -10122,6 +10289,7 @@ class PingPongGame {
   /** Partido online nuevo (anfitrión, o revancha pedida por el invitado). */
   startOnlineMatch() {
     if (this.net.role !== 'host') { this.net.sendRematch(); return; }
+    this.rules.bestOf = 3;   // v3.6.29: el enfrentamiento online también al mejor de 3
     this.rules.startMatch(this.mode);
     this.net.owner = 'host';
     this.resetToss();
@@ -10133,6 +10301,7 @@ class PingPongGame {
     this.rules.oppLabel = 'cpu';
     this.resetToss();
     this.aiToss = null;
+    this.rules.bestOf = 3;   // v3.6.29: de vuelta con la CPU, seguimos al mejor de 3
     this.rules.startMatch(this.mode);
     this.rules.message = T('net_ended', { msg: msg || T('opp_disconnected') });
     this.audio.announce(T('opp_disconnected'), true);
@@ -11608,7 +11777,7 @@ class PingPongGame {
           this.startOnlineMatch();   // anfitrión reinicia; invitado pide revancha
         } else {
           if (this.mode !== 'match') this.switchMode('match');
-          else { this.rules.startMatch('match'); this.resetToss(); }
+          else { this.rules.bestOf = 3; this.rules.startMatch('match'); this.resetToss(); }
         }
         this.closeMenu();
         break;
@@ -11866,6 +12035,7 @@ class PingPongGame {
         this.closeMenu();
         if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
         else {
+          this.rules.bestOf = 3;   // v3.6.29: revancha de menú = enfrentamiento nuevo al mejor de 3
           this.rules.startMatch(this.mode);
           this.resetToss();
         }
@@ -12244,6 +12414,8 @@ class PingPongGame {
       return;
     }
     if (this.rules.state === 'over') {
+      // v3.6.29: PRESERVA bestOf — la revancha por gatillo repite el contexto
+      // (libre = nueva serie al mejor de 3; campeonato = duelo a juego único)
       this.rules.startMatch(this.mode);   // revancha en el MISMO modo de juego
       this.resetToss();
       return;
@@ -13954,6 +14126,10 @@ class PingPongGame {
       rally: this.rules.rallyHits,
       rallyes: this.survivalRallies,
       best: this.survivalBest,
+      // v3.6.29 · MEJOR DE 3: la serie vive en el marcador
+      gamesPlayer: this.rules.gamesPlayer,
+      gamesAi: this.rules.gamesAi,
+      bestOf: this.rules.bestOf,
     });
     this.syncDom();
 
@@ -14485,10 +14661,22 @@ class PingPongGame {
           // MEGAFONÍA: el marcador anuncia el resultado y quién saca
           if (this.rules.mode !== 'survival') {
             const s = this.rules;
-            this.audio.announce(T('ann_score', {
-              p: s.scorePlayer, q: s.scoreAi,
-              who: it.server === 'player' ? T('who_you') : T(this.net.online ? 'opp_rival' : 'opp_machine'),
-            }));
+            if (it.gameEnd) {
+              // v3.6.29 · MEJOR DE 3: juego ganado SIN fin del enfrentamiento
+              const ge = it.gameEnd;
+              this.audio.announce(ge.winner === 'player'
+                ? T('ann_game_you', { p: ge.p, q: ge.q, a: ge.gp, b: ge.ga })
+                : T('ann_game_opp', { opp: s.opp(), p: ge.p, q: ge.q, a: ge.gp, b: ge.ga }), true);
+              // v3.6.29: el resultado del juego viaja al invitado (como pt/rt)
+              if (this.net.online && this.net.role === 'host') {
+                this.net.lastGame = { w: ge.winner, p: ge.p, q: ge.q };
+              }
+            } else {
+              this.audio.announce(T('ann_score', {
+                p: s.scorePlayer, q: s.scoreAi,
+                who: it.server === 'player' ? T('who_you') : T(this.net.online ? 'opp_rival' : 'opp_machine'),
+              }));
+            }
           }
           break;
         case 'game-over':
@@ -14498,10 +14686,15 @@ class PingPongGame {
           // estado final del rival). Con guard: ningún hook del campeonato
           // puede tumbar el bucle (lección del ReferenceError de v2.39).
           if (this.champs) this.champs.onMatchOver(it.winner);
+          // v3.6.29 · MEJOR DE 3: el cierre anuncia el ENFRENTAMIENTO (juegos)
           this.audio.announce(
             it.winner === 'player'
-              ? T('ann_victory', { p: this.rules.scorePlayer, q: this.rules.scoreAi })
-              : T('ann_match_end', { opp: this.rules.opp(), p: this.rules.scoreAi, q: this.rules.scorePlayer }),
+              ? (this.rules.bestOf > 1 && this.rules.mode === 'match'
+                ? T('ann_victory_bo', { a: this.rules.gamesPlayer, b: this.rules.gamesAi })
+                : T('ann_victory', { p: this.rules.scorePlayer, q: this.rules.scoreAi }))
+              : (this.rules.bestOf > 1 && this.rules.mode === 'match'
+                ? T('ann_match_end_bo', { opp: this.rules.opp(), a: this.rules.gamesPlayer, b: this.rules.gamesAi })
+                : T('ann_match_end', { opp: this.rules.opp(), p: this.rules.scoreAi, q: this.rules.scorePlayer })),
             true,
           );
           this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));

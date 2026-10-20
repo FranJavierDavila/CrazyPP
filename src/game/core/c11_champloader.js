@@ -169,6 +169,10 @@ export class ChampLoader {
     if (!m) { g.rules.message = T('arc_no_data'); return; }
     this.leaveAll();
     this.activeId = id;
+    // v3.6.29 · MEJOR DE 3: los duelos de campeonato siguen siendo a UN juego
+    // (el mejor de 3 es del partido libre; se reactiva al arrancar cualquier
+    // modo libre — menú/B/online). Así el camino calibrado no se altera.
+    g.rules.bestOf = 1;
     try { m.start(); }
     catch (e) {
       console.warn('[champs] start ' + id, e);

@@ -410,10 +410,15 @@ export class NetLink {
       pkt.y = {
         st: r.state, sv: r.server, sp: r.scorePlayer, sa: r.scoreAi,
         ms: r.message, md: r.mode, ow: this.owner, rh: r.rallyHits,
+        // v3.6.29 · MEJOR DE 3: la serie viaja con el estado (bo=objetivo,
+        // gp/ga juegos ganados; el invitado los espeja con perspectiva)
+        bo: r.bestOf, gp: r.gamesPlayer, ga: r.gamesAi,
       };
       // v2.25: causa estructural del último punto / LET (send-once)
       if (this.lastPoint) { pkt.y.pt = this.lastPoint; this.lastPoint = null; }
       if (this.lastRetry) { pkt.y.rt = this.lastRetry; this.lastRetry = null; }
+      // v3.6.29: resultado del ÚLTIMO JUEGO terminado (send-once, como pt/rt)
+      if (this.lastGame) { pkt.y.gw = this.lastGame; this.lastGame = null; }
       if (r.state === 'over') pkt.y.wn = r.scorePlayer > r.scoreAi ? 'player' : 'ai';
     }
     this.send(pkt);
@@ -545,9 +550,14 @@ export class NetLink {
     r.state = y.st; r.server = srv;
     r.scorePlayer = my; r.scoreAi = op;
     r.mode = y.md; r.rallyHits = y.rh || 0;
+    // v3.6.29: la serie del anfitrión se espeja CON PERSPECTIVA (gp es suyo)
+    r.bestOf = y.bo || 1;
+    r.gamesPlayer = guest ? (y.ga || 0) : (y.gp || 0);
+    r.gamesAi = guest ? (y.gp || 0) : (y.ga || 0);
     g.mode = y.md; g.pendingMode = y.md;
     if (y.pt) this.lastPoint = y.pt;
     if (y.rt) this.lastRetry = y.rt;
+    if (y.gw) this.lastGame = y.gw;
 
     // ---- MENSAJES LOCALES (perspectiva propia; nunca el texto del rival) --
     if (r.state === 'point' && this.lastPoint) {
@@ -566,9 +576,14 @@ export class NetLink {
     } else if (r.state === 'over') {
       const won = my > op;
       // v2.26/2.27: mensajes alineados con los carteles oficiales, en el idioma local
-      r.message = won
-        ? T('over_win', { p: my, q: op })
-        : T('over_lose', { p: my, q: op });
+      // v3.6.29 · MEJOR DE 3: el cierre anuncia el ENFRENTAMIENTO completo
+      r.message = (r.bestOf > 1 && r.mode === 'match')
+        ? (won
+          ? T('over_win_bo', { p: my, q: op, a: r.gamesPlayer, b: r.gamesAi })
+          : T('over_lose_bo', { opp: r.opp(), p: my, q: op, a: r.gamesPlayer, b: r.gamesAi }))
+        : (won
+          ? T('over_win', { p: my, q: op })
+          : T('over_lose', { p: my, q: op }));
     }
     if (r.state !== 'point') this.lastPoint = null;
     if (r.state !== 'serve') this.lastRetry = null;
@@ -584,10 +599,24 @@ export class NetLink {
         g.haptic(g.paddleHand, iWon ? 0.85 : 0.4, iWon ? 110 : 60);
       }
     }
-    if (r.state === 'serve' && prevState !== 'serve' && r.mode !== 'survival') {
+    if (r.state === 'serve' && prevState !== 'serve' && r.mode !== 'survival' && !this.lastGame) {
       g.audio.announce(T('ann_score', { p: r.scorePlayer, q: r.scoreAi,
         who: srv === 'player' ? T('who_you') : T('opp_rival') }));
     }
+    // v3.6.29 · MEJOR DE 3: fin de juego SIN fin del enfrentamiento — el
+    // anfitrión lo señala con gw (una sola vez, como pt/rt); el invitado lo
+    // anuncia en SU idioma y SU perspectiva y consume la señal.
+    if (r.state === 'serve' && this.lastGame && r.mode === 'match' && r.bestOf > 1) {
+      const gw = this.lastGame;
+      const wLocal = guest ? (gw.w === 'player' ? 'ai' : 'player') : gw.w;
+      const pL = guest ? gw.q : gw.p;
+      const qL = guest ? gw.p : gw.q;
+      g.audio.announce(wLocal === 'player'
+        ? T('ann_game_you', { p: pL, q: qL, a: r.gamesPlayer, b: r.gamesAi })
+        : T('ann_game_opp', { opp: r.opp(), p: pL, q: qL, a: r.gamesPlayer, b: r.gamesAi }), true);
+      this.lastGame = null;
+    }
+    if (r.state !== 'serve') this.lastGame = null;
     if (prevMode !== r.mode && (r.mode === 'match' || r.mode === 'survival')) {
       g.audio.announce(r.mode === 'survival' ? T('mode_survival') : T('mode_match'), true);
     }

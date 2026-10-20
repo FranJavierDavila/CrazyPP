@@ -619,6 +619,37 @@ export function createChampRoom(game) {
   const WALL_MAP = ['left', 'right', 'back', 'front'];   // = orden de wallMats
   const KEYS = ['floor', 'ceil', 'left', 'right', 'back', 'front'];
 
+  /* v3.6.29 · ARTE POR DEFECTO DEL PARTIDO (ronda 37, FASE 31) — el
+   * escenario del PARTIDO (Match) viste SIEMPRE las seis caras con el
+   * arte del artista (assets/partido/, dimensiones canónicas de
+   * createRoom: frente/fondo 6,10×2,85 · laterales 7,90×2,85 · suelo y
+   * techo 6,10×7,90 — mapeo 1:1 sin distorsión). PETICIÓN EXPRÉS del
+   * dueño: las paredes IZQUIERDA y DERECHA comparten imagen
+   * (izquierda.jpg — UNA sola carga, DOS materiales). El campeonato
+   * activo con «room» propio GANA clave a clave; las claves que falte
+   * visten el arte del partido. Carga a prueba de fallos: sin imagen
+   * (file://), ese plano conserva su color del tema y el juego SIGUE. */
+  const defaultTexs = {};
+  const applyDefaultTex = (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = maxAniso;
+    return tex;
+  };
+  for (const k2 of ['floor', 'ceil', 'back', 'front']) {
+    const f = { floor: 'suelo', ceil: 'techo', back: 'fondo', front: 'frente' }[k2];
+    loader.load('assets/partido/' + f + '.jpg', (tex) => {
+      try { defaultTexs[k2] = applyDefaultTex(tex); } catch { /* */ }
+    }, undefined, () => { /* file:// o arte ausente: color del tema */ });
+  }
+  // izquierda.jpg UNA SOLA carga para las DOS paredes laterales
+  loader.load('assets/partido/izquierda.jpg', (tex) => {
+    try {
+      applyDefaultTex(tex);
+      defaultTexs.left = tex;
+      defaultTexs.right = tex;   // MISMA imagen en ambas laterales
+    } catch { /* */ }
+  }, undefined, () => { /* */ });
+
   const ud = () => (game.roomGroup ? game.roomGroup.userData : null);
 
   /** Quita mapas y colores forzados y re-aplica el tema del jugador. */
@@ -679,41 +710,47 @@ export function createChampRoom(game) {
   }
 
   /** Refuerzo por frame (barato e idempotente): mapas + blanco/tinte + */
-  /** complementos de la sala clásica ocultos mientras haya arte.        */
+  /** complementos de la sala clásica ocultos mientras haya arte. v3.6.29:
+   *  el arte EFECTIVO por cara es el del campeonato activo (si trae) o el
+   *  arte por defecto del partido — la cancha nunca vuelve a estar desnuda. */
   function update() {
     const activeId = (game.champs && game.champs.activeId) || '';
     if (activeId !== builtFor) buildFor(activeId);
     const U = ud();
     if (!U) return;
-    const has = (k) => !!(set && set.texs[k]);
-    if (set && Object.keys(set.texs).length) {
+    const champTex = (k) => (set && set.texs[k]) || null;
+    const eff = (k) => champTex(k) || defaultTexs[k] || null;
+    const anyArt = KEYS.some(eff);
+    if (anyArt) {
       const tint = variantTint;
       if (U.floorMat) {
-        if (has('floor') && U.floorMat.map !== set.texs.floor) {
-          U.floorMat.map = set.texs.floor; U.floorMat.needsUpdate = true;
+        const t2 = eff('floor');
+        if (t2 && U.floorMat.map !== t2) {
+          U.floorMat.map = t2; U.floorMat.needsUpdate = true;
         }
-        if (has('floor')) U.floorMat.color.set(tint);
+        if (t2) U.floorMat.color.set(champTex('floor') ? tint : 0xffffff);
       }
       if (U.ceilMat) {
-        if (has('ceil') && U.ceilMat.map !== set.texs.ceil) {
-          U.ceilMat.map = set.texs.ceil; U.ceilMat.needsUpdate = true;
+        const t2 = eff('ceil');
+        if (t2 && U.ceilMat.map !== t2) {
+          U.ceilMat.map = t2; U.ceilMat.needsUpdate = true;
         }
-        if (has('ceil')) U.ceilMat.color.set(tint);
+        if (t2) U.ceilMat.color.set(champTex('ceil') ? tint : 0xffffff);
       }
       const wm = U.wallMats || [];
       for (let i = 0; i < wm.length && i < 4; i++) {
         const m = wm[i];
         if (!m) continue;
-        const t2 = set.texs[WALL_MAP[i]];
+        const t2 = eff(WALL_MAP[i]);
         if (t2 && m.map !== t2) { m.map = t2; m.needsUpdate = true; }
-        if (t2) m.color.set(tint);
+        if (t2) m.color.set(champTex(WALL_MAP[i]) ? tint : 0xffffff);
       }
       // complementos del núcleo que chocarían con el arte:
-      if (U.grid) U.grid.visible = !has('floor');
-      if (U.panels) for (const p of U.panels) p.visible = !has('ceil');
-      if (U.strips) for (const s of U.strips) s.visible = !(has('left') || has('right'));
+      if (U.grid) U.grid.visible = !eff('floor');
+      if (U.panels) for (const p of U.panels) p.visible = !eff('ceil');
+      if (U.strips) for (const s of U.strips) s.visible = !(eff('left') || eff('right'));
     } else {
-      // sin decorado: la sala clásica queda EXACTAMENTE como siempre
+      // sin NINGÚN arte (file:// sin assets): la sala clásica de siempre
       if (U.grid) U.grid.visible = true;
       if (U.panels) for (const p of U.panels) p.visible = true;
       if (U.strips) for (const s of U.strips) s.visible = true;
@@ -725,6 +762,8 @@ export function createChampRoom(game) {
     get builtFor() { return builtFor || ''; },
     /** Claves de arte ya cargadas del set activo (lectura en tests). */
     get loadedKeys() { return set ? Object.keys(set.texs) : []; },
+    /** v3.6.29: claves del arte POR DEFECTO del partido ya cargadas. */
+    get defaultKeys() { return Object.keys(defaultTexs); },
     useVariant,
     update,
   };
@@ -774,7 +813,7 @@ export function createScoreboard() {
   const update = (d) => {
     const key = d.mode === 'survival'
       ? `S|${d.rally}|${d.rallyes}|${d.best}|${d.server}|${d.message}`
-      : `${d.player}|${d.ai}|${d.server}|${d.message}`;
+      : `${d.player}|${d.ai}|${d.server}|${d.message}|${d.gamesPlayer}|${d.gamesAi}|${d.bestOf}`;
     if (key === last) return;
     last = key;
 
@@ -840,6 +879,22 @@ export function createScoreboard() {
     ctx.fillStyle = '#f2f4f6';
     ctx.font = '800 190px system-ui, sans-serif';
     ctx.fillText(`${d.player} : ${d.ai}`, 512, 340);
+
+    // v3.6.29 · MEJOR DE 3: la serie de JUEGOS vive en el marcador — pucks
+    // dorados (ganados) y huecos (por jugar) a los lados de «MEJOR DE 3»
+    if (d.bestOf > 1) {
+      const mk = (cx0, on) => {
+        ctx.beginPath();
+        ctx.arc(cx0, 388, 11, 0, Math.PI * 2);
+        if (on) { ctx.fillStyle = '#e8b45a'; ctx.fill(); }
+        else { ctx.strokeStyle = '#5a646e'; ctx.lineWidth = 3; ctx.stroke(); }
+      };
+      ctx.fillStyle = '#8b949c';
+      ctx.font = '600 30px system-ui, sans-serif';
+      ctx.fillText(T('sb_bo', { n: d.bestOf }), 512, 399);
+      for (let i = 0; i < d.bestOf; i++) mk(360 - i * 36, i < (d.gamesPlayer || 0));
+      for (let i = 0; i < d.bestOf; i++) mk(664 + i * 36, i < (d.gamesAi || 0));
+    }
 
     ctx.fillStyle = '#c8ced4';
     // v2.18: el mensaje se auto-ajusta (fuente menor) en vez de recortarse a

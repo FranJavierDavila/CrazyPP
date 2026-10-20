@@ -465,8 +465,9 @@ export function createChampDecor(game) {
  *    }
  *
  *  Rutas RELATIVAS a la carpeta del campeonato (como «decor»). Cada clave
- *  es independiente: si falta, ese plano conserva el color del tema. El
- *  sistema es del núcleo (patrón createChampDecor v2.80): se monta al
+ *  es independiente: si falta, ese plano VISTE EL ARTE POR DEFECTO DEL
+ *  PARTIDO (v3.6.29, assets/partido/ — antes quedaba con el color del
+ *  tema). El sistema es del núcleo (patrón createChampDecor v2.80): se monta al
  *  activar el campeonato, se destruye (dispose GPU) al salir y un fallo
  *  de carga NUNCA rompe el juego (file:// incluido). Los complementos de
  *  la sala clásica que ensuciarían el arte (rejilla del suelo, paneles

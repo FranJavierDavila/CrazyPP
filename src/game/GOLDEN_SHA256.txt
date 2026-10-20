@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.28-SDK6, fase 30 · Salon del Artista; sello actualizado
-# por bump_version.py desde 3.6.27-SDK6)
-55daddb988d6cb177abc20a10c6c54760afb54b878a3b1cfc65e3f6c32d886ec
+# SHA256 del game.html que produjo esta división (3.6.29-SDK6, fase 31 · Sala del Partido y Mejor de 3; sello actualizado
+# por bump_version.py desde 3.6.28-SDK6)
+d693f0cb2cf1e20287c72369e3022415ba000ca7dd2b52486078f8f9c56062ca

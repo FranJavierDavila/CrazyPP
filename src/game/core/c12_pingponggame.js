@@ -393,7 +393,10 @@ export class PingPongGame {
     if (i === this.paddleHand) return;
     this.paddleHand = i;
     for (let k = 0; k < 2; k++) {
-      if (this.paddleMounts[k]) this.paddleMounts[k].visible = k === this.paddleHand;
+      // v3.6.30 · en el HALL la pala no se ve (ahí nunca se juega): el cambio
+      // de mano por A/X o la reconexión del mando no la resucita.
+      if (this.paddleMounts[k]) this.paddleMounts[k].visible =
+        !this.inHall && k === this.paddleHand;
       const ps = this.controllerPaddles[k];
       ps.prev.copy(ps.pos);
       ps.vel.set(0, 0, 0);
@@ -2270,7 +2273,8 @@ export class PingPongGame {
         // v2.18: mostrar/ocultar la estela de la bola (persistente)
         this.showTrail = !this.showTrail;
         try { localStorage.setItem('ppxr_trail_v1', this.showTrail ? '1' : '0'); } catch { /* */ }
-        if (this.trailObj) this.trailObj.visible = this.showTrail;
+        // v3.6.30 · el hall no muestra estela (su bola está oculta)
+        if (this.trailObj) this.trailObj.visible = this.showTrail && !this.inHall;
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
         this.rules.message = T('msg_trail', { v: this.showTrail ? T('yes') : T('no') });
         this.drawMenu();
@@ -2686,6 +2690,10 @@ export class PingPongGame {
       if (hov >= 0) this.menuClick(hov);
       return;
     }
+    // v3.6.30 · HALL SIN JUEGO: en la estancia el gatillo sólo vive en el
+    // menú (arriba) — ni saque, ni revancha, ni pistola, ni rejugada. Si el
+    // menú está cerrado, el gatillo no hace nada (B lo vuelve a abrir).
+    if (this.inHall) return;
     // v2.38/2.69: PISTOLA DE RAYOS (superpoder de la PRUEBA 2) — el
     // gatillo de la mano LIBRE dispara el rayo con la bola en juego. El
     // módulo activo decide si está armada (variante 2, fase de juego).
@@ -2757,7 +2765,7 @@ export class PingPongGame {
       if (i === this.ballHand) { try { window.__PP_TRAIN.serveRelease(i); } catch (e) { /* nunca rompe */ } }
       return;
     }
-    if (this.calib || this.menuOpen) return;
+    if (this.calib || this.menuOpen || this.inHall) return;   // v3.6.30: el hall no saca
     // v2.45/2.69 · PRUEBA (1 y 2 o la del campeonato de carpeta): soltar
     // el grip con la bola en la mano libre SIRVE IGUAL QUE EN UNA PARTIDA
     // NORMAL (el módulo valida su fase de saque).
@@ -4030,7 +4038,9 @@ export class PingPongGame {
       ? (playerPad.active ? playerPad.pos.z : DIMS.tableCenterZ + DIMS.tableHalfLength + 0.4)
       : this.demoAI.pos.z;
     const aiServing = !this.calib && this.rules.state === 'serve' && this.rules.server === 'ai';
-    const aiHit = (!active || this.calib || this.net.online || frozen)
+    //    v3.6.30 · en el HALL la IA duerme (su pala ya está oculta por
+    //    _hallHidden): nada de pasear al rival invisible por el museo.
+    const aiHit = (!active || this.inHall || this.calib || this.net.online || frozen)
       ? null
       : this.ai.update(dt, this.ball, {
       canHit,
@@ -4063,7 +4073,11 @@ export class PingPongGame {
 
     // 3) Preparación del saque
     let holdLock = false;
-    if (active && !frozen && this.rules.state === 'serve' && !this.calib) {
+    // v3.6.30 · en el HALL no hay saque que preparar: ni la bola en la
+    // mano del jugador ni el paseo/saque de la CPU (todo este bloque).
+    // La bola quieta, oculta y SIN física — el museo no juega.
+    if (active && !frozen && !this.inHall &&
+        this.rules.state === 'serve' && !this.calib) {
       if (this.rules.server === 'player') {
         if (presenting) {
           if (!this.tossed) {
@@ -4167,7 +4181,7 @@ export class PingPongGame {
     // v2.91: durante el SAQUE la bola la simula quien saca — el invitado
     // YA PUEDE SACAR (antes su toss era pisado por la emisión del anfitrión)
     if (this.net.online) this.net.syncServeOwner();
-    if (active && !holdLock && !frozen &&
+    if (active && !holdLock && !frozen && !this.inHall &&
         !(this.champs && this.champs.testActive)) {   // prueba con la bola tomada
       const pads = [];
       if (presenting) {
@@ -4482,24 +4496,31 @@ export class PingPongGame {
     this.rig.position.set(0, 0, HALL.cz + 2.3);
     // v3.5.0-ESC1 · HALL SIN ARRASTRES (informe del dueño: «al volver al Hall
     // desde un campeonato puede quedar la pelota sobre la mesa sin aparecer
-    // la mesa»): el hall oculta mesa/marcador/IA pero NO la bola, y si se
+    // la mesa»): el hall oculta mesa/marcador/IA (v3.6.30: TAMBIÉN la bola, y si se
     // sale de un DUELO en pleno rally el módulo NO re-arranca el partido
     // (solo lo hacía desde 'champtest') → la bola seguía con física real
     // rodando sobre la mesa invisible. RESET DURA: el hall SIEMPRE nace en
-    // estado de SAQUE limpio (la bola en la mano libre — el gesto de siempre,
-    // cinemática local al rig), bola en escala/color/base por defecto y sin
+    // estado de SAQUE limpio (árbitro a cero, ready para la cancha), bola en
+    // escala/color/base por defecto y sin
     // estela. Los módulos ya restauran lo suyo en leave(); esto es la red de
     // seguridad del NÚCLEO, sirve igual al arrancar sesión.
     this.rules.startMatch(this.mode === 'survival' ? 'survival' : 'match');
     this.resetToss();
     this.aiToss = null;
     this.demoToss = null;
-    this._hallResetBall(false);
+    // v3.6.30 · HALL SIN PALA NI BOLA (informe del dueño: «en el hall no
+    // tiene sentido que tengamos la pala y la pelota, ahí nunca se va a
+    // jugar»): la estancia es un museo, no una cancha. La bola nace OCULTA
+    // (mesh + estela + sombra — _hallResetBall es el ÚNICO sitio que toca
+    // ballMesh.visible, así que no hay repintado que la resucite) y la pala
+    // de AMBOS mandos se apaga (exitHall la reenciende según paddleHand).
+    // El gesto de saque sigue intacto al volver a la cancha.
+    this._hallResetBall(true);
+    for (const m of this.paddleMounts || []) if (m) m.visible = false;
     // v3.0.9-HALL1 · EL MUNDO VIVE DENTRO DEL RIG (mesa, IA y marcador son
     // hijos del rig — así funciona el recentrado de sala completa): al
     // viajar al hall se GUARDAN para que la estancia sea el único decorado
-    // activo. La bola se queda: en el hall el jugador la lleva en la mano
-    // libre (mismo gesto de saque, cinemática local al rig).
+    // activo. v3.6.30: la bola YA NO se queda — oculta arriba con el resto.
     this._hallHidden = [];
     for (const o of [this.tableGroup, this.aiPaddleMesh, this.demoPaddleMesh,
                      this.scoreboardGroup]) {
@@ -4551,6 +4572,11 @@ export class PingPongGame {
     if (this.roomGroup && !this.inAR) this.roomGroup.visible = true;
     // v3.5.0-ESC1 · bola limpia al volver a la cancha (nada del hall arrastrado)
     this._hallResetBall(false);
+    // v3.6.30 · la pala vuelve a la mano que le toca (el hall la apagó entera;
+    // misma regla de visibilidad que setPaddleHand — UNA pala, la activa)
+    for (let k = 0; k < 2; k++) {
+      if (this.paddleMounts[k]) this.paddleMounts[k].visible = k === this.paddleHand;
+    }
   }
 
   /* Carga 1 vez la insignia de un campeonato (championships/<id>/assets/

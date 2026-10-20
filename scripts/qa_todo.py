@@ -62,6 +62,7 @@ CAPAS = [
     ('V · sonido del tren', 'qa_tren_audio_v3626.py'),
     ('W · salon del artista', 'qa_hall_salon_v3628.py'),
     ('X · sala del partido + mejor de 3', 'qa_partido_sala_v3629.py'),
+    ('Y · hall sin pala ni bola', 'qa_hall_sin_pala_v3630.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

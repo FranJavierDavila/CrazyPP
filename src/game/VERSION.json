@@ -1,10 +1,10 @@
 {
-  "version": "3.6.29-SDK6",
-  "fase": 31,
-  "faseNombre": "Sala del Partido y Mejor de 3",
+  "version": "3.6.30-SDK6",
+  "fase": 32,
+  "faseNombre": "El Hall es un museo: sin pala ni bola",
   "sdk": "1.5.4",
   "fecha": "2026-10-20",
-  "hub": "v3629-sdk6",
+  "hub": "v3630-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "d693f0cb2cf1e20287c72369e3022415ba000ca7dd2b52486078f8f9c56062ca"
+  "golden": "c411ad086750439e45f9c8350ef93fe19bf3827118f7a1a07c85480b2b77ac96"
 }

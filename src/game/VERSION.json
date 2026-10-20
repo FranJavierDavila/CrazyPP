@@ -1,17 +1,17 @@
 {
-  "version": "3.6.21-SDK6",
-  "fase": 23,
-  "faseNombre": "AYUDAS TÉCNICAS OBEDIENTES (ronda 27)",
-  "sdk": "1.4.0",
+  "version": "3.6.22-SDK6",
+  "fase": 24,
+  "faseNombre": "EL TREN SUENA Y EL ORO SE VE (ronda 28)",
+  "sdk": "1.5.0",
   "fecha": "2026-10-20",
-  "hub": "v3621-sdk6",
+  "hub": "v3622-sdk6",
   "manifests": {
-    "oeste": 51,
+    "oeste": 52,
     "magia": 32,
     "locura": 23,
     "estacion_orbital": 16,
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "0c4a882b1cdb40080df0026866a29ee1526e0e7c3e501bdd4cb29347c63f279d"
+  "golden": "288228a05b9f9611802b7d32bbff7eeb17cd72c59666a9e0c48aa0db4c2e2b33"
 }

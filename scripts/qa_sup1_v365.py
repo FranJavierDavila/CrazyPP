@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QA del JUEGO · V3.6.21-SDK6 (superpoderes redefinidos + voz del ASTRO +
+"""QA del JUEGO · V3.6.22-SDK6 (superpoderes redefinidos + voz del ASTRO +
 ajustes del reactor). Verifica en vivo: congelado REAL durante el aviso
 (g.freezeT), meteoritos 3D procedurales con calor de entrada, rayo tractor
 con dron + bola atrapada que cae vertical al morir el haz, gravedad cero
@@ -43,9 +43,9 @@ async def main():
         # afecta una petición colgada del arranque.
         await page.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.6.21-SDK6', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.6.22-SDK6', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.6.21-SDK6' in badge, f'badge 2D = {badge!r}')
+        chk('V3.6.22-SDK6' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),
             'puente CCD del núcleo expuesto (__PP_PADDLE_SWEEP)')
@@ -99,7 +99,7 @@ async def main():
 
         print('== SDK DE CAMPEONATOS (champ_sdk.js) ==')
         sdksrc = await page.evaluate("fetch('championships/sdk/champ_sdk.js').then(r=>r.text())")
-        for tk in ("const SDK_VERSION = '1.4.0'", 'export function createSfx',
+        for tk in ("const SDK_VERSION = '1.5.0'", 'export function createSfx',
                    'export function congela', 'export function descongela',
                    'export function getCore', 'export function assetURL',
                    'forma promesa (v2.125)', 'decodeAudioData(ab.slice(0))',
@@ -113,7 +113,7 @@ async def main():
             chk(tk in sdksrc, f'SDK: {tk}')
 
         print('== FASE 5: la música en el SDK (createMusic) ==')
-        for mod, vman, nota in (('oeste', 51, 'v3.6.4-SDK4'),
+        for mod, vman, nota in (('oeste', 52, 'v3.6.4-SDK4'),
                                 ('magia', 32, 'v3.6.4-SDK4'),
                                 ('valle_neon', 4, 'v3.6.3-SDK3')):
             srcm = await page.evaluate(
@@ -128,7 +128,7 @@ async def main():
             chk(any(nota in n for n in manm.get('notes', [])),
                 f'{mod}: nota {nota} en el historial')
         print('== FASE 6: el tablón de SUPERPODER en el SDK (createPowerSign) ==')
-        for mod, vman, coreo in (('oeste', 51, 'clasica'), ('magia', 32, 'clasica'),
+        for mod, vman, coreo in (('oeste', 52, 'clasica'), ('magia', 32, 'clasica'),
                                  ('locura', 23, 'v240'),
                                  ('estacion_orbital', 16, 'v240')):
             srcm = await page.evaluate(
@@ -181,8 +181,8 @@ async def main():
           return { state: ctrl.state, ctxState: (G.audio && G.audio.ctx) ? G.audio.ctx.state : 'none' };
         }""")
         chk(ctx['state'] in ('sala', 'duelo'), f"controlador vivo (state {ctx['state']})")
-        chk(await page.evaluate("window.__PP_SDK || ''") == '1.4.0',
-            'window.__PP_SDK = 1.4.0 (SDK importado en cadena por el orbital)')
+        chk(await page.evaluate("window.__PP_SDK || ''") == '1.5.0',
+            'window.__PP_SDK = 1.5.0 (SDK importado en cadena por el orbital)')
 
         print('== FREEZE REAL durante el aviso de superpoder ==')
         frz = await page.evaluate("""() => {
@@ -438,7 +438,7 @@ async def main():
         pg2.on('pageerror', lambda e: errors2.append(str(e)))
         await pg2.goto(GW + '/game.html', wait_until='domcontentloaded')
         await pg2.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
-        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.21-SDK6', 'gateway: __PP_VERSION 3.6.21-SDK6')
+        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.22-SDK6', 'gateway: __PP_VERSION 3.6.22-SDK6')
         chk(await pg2.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"), 'gateway: puente CCD')
         chk(await pg2.evaluate("!!window.__PP_GAME"), 'gateway: juego arranca')
         mp3gw = await pg2.evaluate("""async () => {

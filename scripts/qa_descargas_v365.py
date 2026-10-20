@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QA del HUB /descargas · V3.6.21-SDK6 (FASE 8: telemetría reparada).
+"""QA del HUB /descargas · V3.6.22-SDK6 (FASE 8: telemetría reparada).
 Uso: python3 scripts/qa_descargas_v365.py"""
 import asyncio
 import sys
@@ -20,13 +20,13 @@ def chk(cond, label):
         fails += 1
 
 ZIPS = {
-    'crazypp-v3621-sdk6-COMPLETO.zip': 125257844,  # FASE 10: id en stage/champion + champ_rank por __PP_TELE
-    'crazypp-v3621-sdk6-ligera.zip': 11459492,
-    'crazypp-v3621-sdk6-CLOUDFLARE.zip': 125244457,  # FASE 10: game.html al día
+    'crazypp-v3622-sdk6-COMPLETO.zip': 126296837,  # FASE 10: id en stage/champion + champ_rank por __PP_TELE
+    'crazypp-v3622-sdk6-ligera.zip': 11459504,
+    'crazypp-v3622-sdk6-CLOUDFLARE.zip': 126283450,  # FASE 10: game.html al día
     'crazypp-live-service-SOLO.zip': 6089,
 }
 
-ADOPTANTES = (('oeste', 51, 'v3.6.4-SDK4'), ('magia', 32, 'v3.6.4-SDK4'),
+ADOPTANTES = (('oeste', 52, 'v3.6.4-SDK4'), ('magia', 32, 'v3.6.4-SDK4'),
               ('locura', 23, 'v3.6.4-SDK4'), ('valle_neon', 4, 'v3.6.5-SDK5'))
 
 async def tam(base, nombre):
@@ -46,8 +46,8 @@ async def main():
         await page.goto(BASE + '/descargas', wait_until='domcontentloaded')
         await page.wait_for_load_state('load')
         html = await page.content()
-        chk(html.count('v3621-sdk6') >= 3, f'enlaces v3621-sdk6 ({html.count("v3621-sdk6")})')
-        chk(html.count('3.6.21-SDK6') >= 5, f'menciones 3.6.21-SDK6 ({html.count("3.6.21-SDK6")})')
+        chk(html.count('v3622-sdk6') >= 3, f'enlaces v3622-sdk6 ({html.count("v3622-sdk6")})')
+        chk(html.count('3.6.22-SDK6') >= 5, f'menciones 3.6.22-SDK6 ({html.count("3.6.22-SDK6")})')
         for kw in ('createRival', 'createCartel', 'FASE 8', 'telemetría', 'array directo',
                    'FASE 7', 'SDK v1.x',
                    'decodeAudioData propio', 'rival_kraken.png',
@@ -83,13 +83,13 @@ async def main():
             chk(t == esperado, f'{n} = {t:,} B vía gateway')
 
         print('== El SDK y los campeonatos viajan dentro del COMPLETO ==')
-        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3621-sdk6-COMPLETO.zip') as z:
+        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3622-sdk6-COMPLETO.zip') as z:
             nombres = z.namelist()
             chk('championships/sdk/champ_sdk.js' in nombres,
                 'COMPLETO incluye championships/sdk/champ_sdk.js')
             if 'championships/sdk/champ_sdk.js' in nombres:
                 sdkzip = z.read('championships/sdk/champ_sdk.js').decode('utf-8')
-                chk("const SDK_VERSION = '1.4.0'" in sdkzip
+                chk("const SDK_VERSION = '1.5.0'" in sdkzip
                     and 'function precarga' in sdkzip
                     and 'export function createMusic' in sdkzip
                     and 'export function createPowerSign' in sdkzip
@@ -114,10 +114,10 @@ async def main():
             srcEOz = z.read('championships/estacion_orbital/index.js').decode('utf-8')
             chk('decodeAudioData(' not in srcEOz,
                 'orbital (ZIP): sin decodeAudioData propio (el «arsenal» es createMusic)')
-        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3621-sdk6-CLOUDFLARE.zip') as z:
+        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3622-sdk6-CLOUDFLARE.zip') as z:
             chk('championships/sdk/champ_sdk.js' in z.namelist(),
                 'CLOUDFLARE incluye el SDK')
-        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3621-sdk6-ligera.zip') as z:
+        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3622-sdk6-ligera.zip') as z:
             con_champ = [n for n in z.namelist()
                          if n.startswith('championships/') and n != 'championships/'
                          and 'PON-AQUI' not in n]
@@ -127,10 +127,10 @@ async def main():
         print('== Juego + SDK servidos por gateway ==')
         r = await RC.get(GW + '/game.html')
         cuerpo = await r.text()
-        chk("const VERSION = '3.6.21-SDK6'" in cuerpo, 'gateway: game.html = 3.6.21-SDK6')
+        chk("const VERSION = '3.6.22-SDK6'" in cuerpo, 'gateway: game.html = 3.6.22-SDK6')
         chk('__PP_PADDLE_SWEEP' in cuerpo, 'gateway: puente CCD del núcleo')
         sdk = await (await RC.get(GW + '/championships/sdk/champ_sdk.js')).text()
-        chk("const SDK_VERSION = '1.4.0'" in sdk and 'export function createSfx' in sdk
+        chk("const SDK_VERSION = '1.5.0'" in sdk and 'export function createSfx' in sdk
             and 'function precarga' in sdk and 'export function createMusic' in sdk
             and 'export function createPowerSign' in sdk
             and 'export function createRival' in sdk
@@ -177,7 +177,7 @@ async def main():
 
         print('== FASE 5/6/7: música + tablón + rival por gateway ==')
         TOKENS = {
-            'oeste': ("import { createSfx, createMusic, createPowerSign, congela, getCore } from '../sdk/champ_sdk.js'",
+            'oeste': ("import { createSfx, createMusic, createBucle, createPowerSign, congela, getCore, assetURL } from '../sdk/champ_sdk.js'",
                       '__sfxSDK', "precarga('risas_forajido.mp3')",
                       "eng.play('risas.mp3', vol || 0.8, { pan: 0.4 })",
                       'congela(g, DUELO_P.drawT + DUELO_P.window + 0.35)',

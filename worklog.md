@@ -2860,3 +2860,22 @@ Stage Summary:
 - Las AYUDAS TÉCNICAS del entrenamiento obedecen al 100 %: desmarcado = silencio visual INMEDIATO en las tres, incluidos los iconos de efecto de la pala que nunca habían consultado su interruptor. La capa U congela la regresión para siempre.
 - Producción en V3.6.21-SDK6 (pages 214f69516, release 4/4). El dueño puede seguir entrenando (y coronar) con feedback técnico totalmente controlable desde el HUB.
 - Deuda registrada: reintentar qa_todo --produccion (K/L) en la próxima ronda; reponer .cf-token y .clave-produccion (pendiente del dueño desde el reciclado).
+
+---
+Task ID: 127
+Agent: principal (Z.ai)
+Task: PAT nuevo del dueño + despliegue pendiente; el deploy se ABORTA al descubrir que otra sesión ya desplegó 3.6.19→3.6.21 (Tasks 124-126) — se convierte en sincronización de clon + preservación de assets del Tren.
+
+Work Log:
+- PAT nuevo recibido por chat, guardado en scripts/worker-tele/.github-pat (600, gitignored; verificado HTTP 200 sobre la API del repo). Nunca escrito en fichero versionado.
+- Flujo de release V3.6.19-SDK6 ejecutado COMPLETO en local (bump FASE 21 → gen_release_v3619 → 4 ZIPs → sella_r25 18 agujas → qa_todo 10/10 en 220 s → commit 1703e72) — todo correcto pero OBSOLETO antes de pushear.
+- El push de pages fue RECHAZADO (fetch first): la remota tenía 4 commits de deploy más nuevos. Investigación: la producción YA está en V3.6.21-SDK6 (PAGES-VERSION.txt: fuente 9a1200fad, 2026-10-20 10:26) — otra sesión ejecutó Tasks 124-126: FIX zonas entrenamiento (flipY+repintado, V3.6.19), textos OBJETIVO legibles + i18n (V3.6.20), ayudas técnicas obedientes (V3.6.21). Las 3 tareas pendientes del entrenamiento están RESUELTAS y en producción.
+- ABORTADO el deploy obsoleto (habría sido un rollback de producción 3.6.21 → 3.6.19). Lección registrada: antes de pushear pages, SIEMPRE fetch + comparar PAGES-VERSION.txt; el --backup (main:proyecto) es el seguro anti-rollback.
+- Sincronización: git reset --hard origin/main (e39fea7) · los 4 mp3 del Tren (Tren_Llegada, vias, Tunel, caballos — solo existían en el clon local, upload/ no estaba en la remota) preservados y re-commitados (4a32f22) · refs/heads/pages realineada a origin/pages (214f695) · ZIPs v3619 obsoletos eliminados de download/ y public/descargas/ · push main + main:proyecto (e39fea7..4a32f22).
+- Estado post-sync: VERSION.json 3.6.21-SDK6 FASE 23 · tooling remoto presente (gen_release_v3621, sella_r28, qa_train_zonas_v3619, qa_train_ayudas_v3621) · mis gen_release_v3619/sella_r25 locales descartados (los de la remota son canónicos).
+
+Stage Summary:
+- Producción = V3.6.21-SDK6 con TODAS las fixes del entrenamiento + _leyendaOn + plantilla. El dueño puede coronar en esta versión.
+- PAT operativo para la próxima ronda. Assets del Tren (4 mp3) versionados y listos.
+- Próxima tarea real: etapa 4 del vagón del Oeste (dinamita en cadena, cajas hacia ventanas, lingotes sin interpenetración, 4 sonidos).
+- Deudas heredadas: reintentar qa_todo --produccion (K/L); el dueño debe reponer .cf-token y .clave-produccion desde su respaldo del Task 122.

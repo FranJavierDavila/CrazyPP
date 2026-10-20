@@ -2818,3 +2818,23 @@ Stage Summary:
 - El entrenamiento por zonas queda PERFECTO y verificado a nivel GPU: lo pintado ES lo juzgado, en los 4 objetivos, y la rotación se ve al momento. La capa T congela la regresión para siempre.
 - Producción en V3.6.19-SDK6 (pages 491b5ce85, release 4/4). El dueño puede coronar en esta versión: coronación épica + RUTA LEYENDA + fix de zonas + fix _leyendaOn (ad44be3, incluido ahora sí en producción).
 - Deuda registrada: reponer .cf-token y .clave-produccion tras el reciclado; el método de bloques de notas de gen_release pasa a marcadores (aplicar el mismo cambio en futuros generadores).
+---
+Task ID: 125
+Agent: principal (Z.ai)
+Task: Ajuste de las zonas marcadas (informe del dueño): el texto «OBJETIVO» del quad de entrenamiento «está invertido y no se lee desde la perspectiva del jugador» y «debe respetar el idioma del juego».
+
+Work Log:
+- LECCIÓN PREVIA CORREGIDA: el worklog de la Task 124 afirmaba «los textos con rotate(π) siguen leyéndose correctos» — era una suposición NO verificada (la GPU de esa ronda sólo validó ZONAS). El dueño tenía razón.
+- DIAGNÓSTICO AIRTIGHT POR IoU: con flipY=false (FASE 21) el jugador ve el lienzo del quad con la fila 0 en la RED (verificado por las zonas en la ronda anterior) ⇒ view = espejo vertical del canvas ⇒ para leerse de pie, un texto debe dibujarse con scale(1,-1) (parte alta hacia la fila H=fondo, lectura +x real); rotate(π) deja letras de pie pero con el ORDEN de lectura invertido (espejo horizontal).
+- NUEVO CHEQUEO en qa_train_zonas_v3619.py (sección 5, capa T permanente): réplica EXACTA del bloque de pintado nuevo (vflip) vs antiguo (rot180) sobre el canvas real del juego → IoU con búsqueda ±3 px y fondo dominante bucketizado (la mediana del anillo fallaba en la ventana t1b que pisa madera+franja). PRE-FIX: los 5 textos casaban con el ESPEJO (IoU 0.77-0.999) y no con el legible (0.20-0.81) — el test detectó el bug del dueño antes del fix. POST-FIX: legible 0.773-0.998 vs espejo 0.198-0.812 (inversión perfecta).
+- FIX en c13 drawQuad: los 5 textos (EVITA, OBJETIVO, FONDO t1b, DOBLE BOTE t4a, FONDO 15 cm t4b) pasan de rotate(π) a scale(1,-1) + textBaseline middle (antes alphabetic: el ink se salía de la franja; con middle queda centrado).
+- i18n: claves z_obj/z_evita/z_fondo/z_doble/z_f15 añadidas a TR.es (OBJETIVO/EVITA/FONDO/DOBLE BOTE/FONDO 15 cm) y TR.en (TARGET/AVOID/DEEP/DOUBLE BOUNCE/DEEP 15 cm); los 5 fillText usan t() (mismo patrón que drawPanel). El «OBJETIVO» de oeste/index.js es un toast del HUD — no aplica.
+- build_game.py --escribir (6.354.805 B, golden ae92d0a2) · verificación estática: 2 dicts i18n, 5 t('z_*'), 5 scale(1,-1) en el build.
+- Circuito completo: bump_version 3.6.20-SDK6 (--fase 22 «TEXTOS DEL QUAD LEGIBLES + i18n (ronda 26)») → gen_release_v3620.py NUEVO (copia v3619→v3620, bloque de notas FASE 22 por MARCADORES; guarda: el nombre qa_train_zonas_v3619 NO debe reescribirse) → build_zip 4 ZIPs (COMPLETO 125.257.463 · ligera 11.459.111 · CLOUDFLARE 125.244.077 · SOLO 6.089) → sella_r27.py NUEVO (31 sellos E/F/G/H/I con tamaños nuevos) → qa_todo 11/11 (261 s, capa T 17/17) → commit 348e5dc → deploy_pages --push --release --backup (pages a12e435f7, 380 ficheros, smoke bajo prefijo /CrazyPP 18 peticiones OK) → push main + main:proyecto (PAT en memoria).
+- Verificación producción por curl: V3.6.20-SDK6 servido, 5× scale(1,-1) en el game.html en vivo, clave i18n TARGET servida, release 4/4 assets (API con PAT — la API anónima estaba rate-limited).
+- Cosmético heredado detectado sin tocar: build_zip.py imprime «menciones 3.6.8» con variable n368 pero el grep real ya apunta a 3.6.20 (6 menciones ✓) — etiqueta de print de la FASE 8, corregir en una ronda futura.
+
+Stage Summary:
+- Los textos del quad del entrenamiento por zonas se leen de pie desde el jugador y respetan el idioma (es/en). El chequeo de textos es permanente en la capa T: si alguien reintroduce rotate(π), el QA TOTAL se pone rojo en el momento.
+- Producción en V3.6.20-SDK6 (pages a12e435f7, release 4/4). El dueño puede coronar en esta versión: coronación épica + RUTA LEYENDA + fix de zonas (FASE 21) + textos legibles/i18n (FASE 22) + fix _leyendaOn.
+- Deuda pendiente del dueño: reponer .cf-token y .clave-produccion (reciclado del sandbox, están en su respaldo local del Task 122).

@@ -8652,44 +8652,65 @@ class TrenAction {
   }
 
   /* ======================================================================
-   *  v3.6.24 · ONE-SHOTS DEL ARTISTA CON REINTENTOS (_pistaTren)
-   *  La llegada y el túnel suenan UNA vez por trayecto: cualquier fallo
-   *  transitorio (buffer aún decodificando, contexto dormido en el
-   *  instante exacto) significaba silencio PARA SIEMPRE. Ahora el disparo
-   *  queda agendado y _pistaTrenStep (cada frame en fxStep) lo reintenta.
-   *  v3.6.25 · REINTENTO HONESTO: el play del SDK v1.5.3 devuelve TRUE
-   *  sólo cuando src.start() disparó de verdad — la agenda se retira SOLO
-   *  entonces (antes se retiraba por llamar a play(), y un disparo
-   *  tragado por un contexto dormido/buffer tarde era silencio eterno).
-   *  Con sinPend el play del módulo nunca delega en el pend del SDK: cero
-   *  dobles disparos. Precarga en _depart: el fetch+decode madura DURANTE
-   *  la marcha y el disparo encuentra el buffer listo. Margen 9 s.
+   *  v3.6.26 · ONE-SHOTS DEL ARTISTA POR EL MOTOR DEL GALOPE (_pistaTren)
+   *  Informe del dueño tras v3.6.25 en el dispositivo real: «la entrada
+   *  en el túnel no suena… las llegadas tampoco». Cuatro versiones del
+   *  camino createSfx (v3.6.22→25: play directo, pend+statechange,
+   *  booleano+sinPend) NO llegaron al hardware de la Quest — mientras el
+   *  MISMO SDK con createBucle lleva galopes y rodadura al casco desde
+   *  el primer día. Así que los one-shots VIAJAN ahora en el motor
+   *  PROBADO: cada pista es un createBucle (ignoraMute, fade corto) y el
+   *  disparo es on() — con revival por statechange y espera de buffer
+   *  DENTRO del motor, todo lo que ya demostró llegar al hardware. El
+   *  bucle interno (src.loop) se corta con off() ANTES del wrap: el
+   *  contador de play vive en _pistaTrenStep y el margen (0,45 s) cubre
+   *  el stopFade. precarga() al montar la etapa (SDK v1.5.4): el buffer
+   *  madura durante la marcha y el disparo encuentra el buf listo.
    *  ====================================================================== */
-  _pistaTren(name, vol) {
+  __pistaUna(name, vol) {
+    if (!this.__pistaUnas) this.__pistaUnas = Object.create(null);
+    let u = this.__pistaUnas[name];
+    if (!u) {
+      u = createBucle(() => this.game, {
+        url: () => assetURL(import.meta.url, name),
+        vol: () => vol,
+        ignoraMute: true,
+        fadeIn: 0.06,
+        stopFade: 0.35,
+      });
+      this.__pistaUnas[name] = u;
+    }
+    return u;
+  }
+  _pistaTren(name, vol, dur) {
     if (!this._trenPend) this._trenPend = [];
-    this._trenPend.push({ name, vol, t: 9 });   // 9 s de margen por disparo
+    /* dur: segundos de PLAY (el corte con off() entra 0,45 s antes del
+     * fin real del mp3 — src.loop jamás da la vuelta). */
+    this._trenPend.push({ name, vol, dur, t: 12 });   // 12 s de margen
   }
   _pistaTrenStep(dt) {
     if (!this._trenPend || !this._trenPend.length) return;
-    const eng = this.__sfxSDK();
     for (let i = this._trenPend.length - 1; i >= 0; i--) {
       const p = this._trenPend[i];
       p.t -= dt;
-      if (eng.tiene(p.name)) {
-        let disparo = false;
-        try { disparo = eng.play(p.name, p.vol, { sinPend: true }); }
-        catch (e) { /* */ }
-        if (disparo) {
-          this._trenPend.splice(i, 1);    // SONÓ de verdad (SDK v1.5.3)
-        } else if (p.t <= 0) {
-          this._trenPend.splice(i, 1);    // 9 s sin poder disparar: paz
+      let b = null;
+      try { b = this.__pistaUna(p.name, p.vol); } catch (e) { /* */ }
+      if (!b) { if (p.t <= 0) this._trenPend.splice(i, 1); continue; }
+      try { b.on(0, 0); } catch (e) { /* */ }   // idempotente · revival built-in
+      if (b.suena()) {
+        /* suena() honesto del SDK: instancia viva del contexto ACTIVO —
+         * el reloj de play sólo corre con sonido real en el casco. */
+        p.vivo = (p.vivo == null ? p.dur : p.vivo) - dt;
+        if (p.vivo <= 0) {
+          try { b.off(); } catch (e) { /* */ }  // fundido 0,35 s del motor
+          this._trenPend.splice(i, 1);
         }
-        /* false sin deadline: reintenta el frame que viene */
       } else if (p.t <= 0) {
-        this._trenPend.splice(i, 1);      // 9 s sin buffer: desistir en paz
-      } else {
-        try { eng.precarga(p.name); } catch (e) { /* */ }
+        try { b.off(); } catch (e) { /* */ }    // wanted=false: paz
+        this._trenPend.splice(i, 1);            // 12 s sin hardware: paz
       }
+      /* sin sonido aún: on() ya dejó wanted+precarga — el statechange
+       * del contexto o el decode del buffer despertará el disparo. */
     }
   }
 
@@ -9440,9 +9461,14 @@ class TrenAction {
     this._tunnelT2 = 0;
     /* v3.6.22 · precarga de las pistas nuevas (llegada y túnel; los bucles
      * vias/caballos cargan perezosos en su primer on() — el primer jinete
-     * galopa segundos después del arranque, hay tiempo de sobra). */
+     * galopa segundos después del arranque, hay tiempo de sobra).
+     * v3.6.26 · Y TAMBIÉN EN EL MOTOR DEL GALOPE (createBucle precarga,
+     * SDK v1.5.4): el buffer que madura es el del motor que SUENA —
+     * el createSfx queda para las risas. */
     try { this.__sfxSDK().precarga('tren/Tren_Llegada.mp3'); } catch (e) { /* */ }
     try { this.__sfxSDK().precarga('tren/Tunel.mp3'); } catch (e) { /* */ }
+    try { this.__pistaUna('tren/Tren_Llegada.mp3', 0.5).precarga(); } catch (e) { /* */ }
+    try { this.__pistaUna('tren/Tunel.mp3', 0.42).precarga(); } catch (e) { /* */ }
     /* v2.115 · tanda NUEVA: pool de bolas, poderes, bomba y túnel en cero */
     /* v2.120: además del mesh, se libera el material clonado de cada extra
      * (el recambio ya reutiliza entradas muertas; aquí es el cierre duro). */
@@ -9679,17 +9705,22 @@ class TrenAction {
           this.game.audio.announce(
             tx('tren_mega_llega', { e: TREN.stationNames[this.wave] }), true);
         } catch (e) { /* */ }
-        /* v3.6.24 · LA LLEGADA SUENA «POCO DESPUÉS» DEL ANUNCIO (petición
-         * literal del dueño: «el tren_Llegada.mp3 poco después de que se
-         * anuncien los segundos para llegar a la estación») — el silbato
-         * del artista entra a 1,2 s del anuncio de megafonía, NO al frenar
-         * en el andén (antes sonaba 25 s tarde y el dueño no lo oía). */
-        this._llPistaT = 1.2;
+        /* v3.6.26 · CONCATENADO CON LA VOZ (petición del dueño: «igual
+         * concatenando el sonido con la voz que sí suena») — el silbato
+         * entra JUSTO al terminar la locución real: audio._voiceDur lo
+         * mide el motor de la voz al renderizar el plan (el anuncio que
+         * SÍ se oye en el casco). Fallback 2,8 s si el banco no dio
+         * duración (megáfono apagado, respaldo TTS). */
+        let durV = 0;
+        try { durV = Number(this.game.audio && this.game.audio._voiceDur) || 0; }
+        catch (e) { durV = 0; }
+        if (durV < 1.0 || durV > 8.0) durV = 2.8;
+        this._llPistaT = durV + 0.35;
       }
       /* v3.6.24 · disparo diferido del silbato de llegada (con reintentos). */
       if (this._llPistaT > 0) {
         this._llPistaT -= dt;
-        if (this._llPistaT <= 0) this._pistaTren('tren/Tren_Llegada.mp3', 0.5);
+        if (this._llPistaT <= 0) this._pistaTren('tren/Tren_Llegada.mp3', 0.5, 4.5);
       }
       // crucero hacia delante
       this.v = Math.min(TREN.vMax, this.v + TREN.accel * dt);
@@ -10082,23 +10113,26 @@ class TrenAction {
           this.tunelGrp.position.z = this._tunelZ;
           this.tunelGrp.visible = true;
         }
-        /* v3.6.24 · EL TÚNEL SUENA CUANDO LA BOCA APARECE (petición literal
-         * del dueño: «cuando en el parallax del plano exterior se cargan
-         * las imágenes tunelboca.png, que es el comienzo de la entrada al
-         * túnel») — la pista entra con el PRIMER destello de la boca a lo
-         * lejos, no cuando la boca cruza el ojo. Los 14,4 s cubren de
-         * sobra el cruce entero desde el primer destello. */
-        this._pistaTren('tren/Tunel.mp3', 0.42);
+        /* v3.6.26 · el disparo del mp3 ya NO va aquí — la boca a lo lejos
+         * no era el momento que el oído espera (informe del dueño: la
+         * entrada del túnel no sonaba); ahora entra CUANDO SE BAJA LA
+         * LUZ, en el paso 'pre'→'in' de _tunnelStep. */
       }
     } else if (this._tunnelPhase === 'pre') {
       this._tunnelT2 += dt;
       // la boca ENTRA completa (su borde trasero pasa el ojo) y a
       // continuación asoma la banda ya cosida a ella
-      // (v3.6.24: el one-shot del artista ya sonó al aparecer la boca —
-      // aquí sólo cambia la fase, sin sonido)
+      // (v3.6.26: el one-shot del artista entra AQUÍ — se baja la luz,
+      // suena el túnel)
       if (this._tunelZ >= TU.ojo + TU.bh / 2) {
         this._tunnelPhase = 'in';
         this._tunnelT2 = 0;
+        /* v3.6.26 · EL TÚNEL SUENA CUANDO SE BAJA LA LUZ (petición literal
+         * del dueño: «ver de lanzarlo cuando se baja la luz») — la banda
+         * tapa la ventana y la caja de oscuridad arranca SU fundido: ahí
+         * entra el mp3 del artista (los 14,4 s cubren in+dur+out de
+         * sobra; el off() del motor corta con fundido antes del wrap). */
+        this._pistaTren('tren/Tunel.mp3', 0.42, 13.9);
       }
     } else if (this._tunnelPhase === 'in') {
       this._tunnelT2 += dt;

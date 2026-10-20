@@ -117,11 +117,19 @@
  *  CARTEL de superpoder (createPowerSign: oeste v51, magia v31, locura
  *  v22, orbital v15) · STANDEE del rival (createRival: orbital v16,
  *  valle v4) · TABLERO de etapa (createCartel: orbital v16, valle v4).
+ *  v1.5.4 (FASE 12 · LOS ONE-SHOTS VIAJAN EN EL MOTOR DEL GALOPE — infor-
+ *  me del dueño tras v3.6.25 en el dispositivo real: «la entrada en el
+ *  túnel no suena… las llegadas tampoco… concatenando el sonido con la
+ *  voz que sí suena»): createBucle gana precarga() — pedir + decodificar
+ *  SIN sonar (el patrón load* de la casa, idéntico al de createSfx), para
+ *  que los módulos calienten el buffer de un one-shot MINUTOS antes del
+ *  disparo y el on() encuentre el buf listo. CERO cambios de conducta en
+ *  on()/off()/setVol/suena() — los galopes y la rodadura no se enteran.
  *  Ningún campeonato conserva ya un decodeAudioData propio.
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.5.3';
+const SDK_VERSION = '1.5.4';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -680,7 +688,15 @@ export function createBucle(getGame, opts) {
     return { sonando: suena(), querido: wanted, cargado: !!buf, cargando: busy };
   }
 
-  return { on, off, setVol, suena, estado };
+  /* v1.5.4: pedir + decodificar SIN sonar (patrón load* de la casa, igual
+   * que createSfx.precarga) — el módulo calienta el buffer de un one-shot
+   * minutos antes del disparo y el on() encuentra el buf listo. El decode
+   * vale con el contexto suspendido (lección v2.125). */
+  function precarga() {
+    try { const a = ctx(); if (a && !buf && !busy) cargar(a); } catch (e) { /* */ }
+  }
+
+  return { on, off, setVol, suena, estado, precarga };
 }
 
 /* — CARTEL DE SUPERPODER (createPowerSign · v1.3.0 · FASE 6) ——————————

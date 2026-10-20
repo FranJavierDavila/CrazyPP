@@ -50,6 +50,24 @@
  *  «primer play mudo» — play() antes de tener el buffer guardaba silencio
  *  para siempre si la pista sólo sonaba una vez; ahora el play queda
  *  PENDIENTE y se auto-dispara al terminar el decode.
+ *  v1.5.2 (FASE 10 · EL TREN EN EL DISPOSITIVO REAL — informe del dueño:
+ *  «solo caballos» — la única pista que llegaba al hardware era la que
+ *  escribe su ganancia DIRECTO por frame): tres agujeros de producción
+ *  que sólo muerden en el dispositivo (Quest) y cierran AQUÍ, una vez
+ *  para los 5 campeonatos:
+ *    (a) createSfx.play() con el AudioContext aún no «running» DESCARTABA
+ *        el disparo — y un one-shot (llegada, túnel) no tiene segunda
+ *        oportunidad: ahora queda PENDIENTE y el «statechange» del propio
+ *        contexto lo dispara al despertar (instalación idempotente).
+ *    (b) createBucle.on() con el contexto dormido olvidaba el arranque:
+ *        wanted + (desfase, pan) quedan guardados y el mismo statechange
+ *        arranca el bucle al despertar.
+ *    (c) suena() devolvía TRUE con una instancia de un contexto MUERTO
+ *        (re-bind de VR) — y bloqueaba la auto-reparación de los módulos
+ *        (¡«ya suena»!). Ahora una instancia huérfana cuenta como NO
+ *        sonando. (d) setVol() aplicaba el gate arcMute/_arcDucked sin
+ *        consultar ignoraMute — la escritura viva de los SFX re-intro-
+ *        ducía el mute de MÚSICA que v1.5.1 quitaró del arranque.
  *
  *  POR QUÉ EXISTE — LA FAMILIA DE BUGS:
  *  Los 5 campeonatos son módulos autocontenidos que reimplementaban una y
@@ -86,7 +104,7 @@
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.5.1';
+const SDK_VERSION = '1.5.2';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -153,8 +171,28 @@ export function createSfx(moduleURL, getGame, opts) {
   const bufs = Object.create(null);   // nombre → AudioBuffer decodificado
   const busy = Object.create(null);   // nombre → petición en vuelo
   const pend = Object.create(null);   // v1.5.1: nombre → play pendiente
+  let vigia = null;                   // v1.5.2: ctx con listener puesto
 
   function url(p) { return assetURL(moduleURL, p); }
+
+  /* v1.5.2: un one-shot pedido con el contexto dormido NO se pierde —
+   * el propio AudioContext avisa por statechange y aquí se disparan los
+   * pendientes (idempotente: se borra el pendiente ANTES de disparar). */
+  function vigiaCtx(actx) {
+    if (vigia === actx) return;
+    vigia = actx;
+    try {
+      actx.addEventListener('statechange', () => {
+        try {
+          if (actx.state !== 'running') return;
+          for (const n of Object.keys(pend)) {
+            const p = pend[n];
+            if (bufs[n]) { delete pend[n]; play(n, p.vol, p.opts); }
+          }
+        } catch (e) { /* */ }
+      });
+    } catch (e) { /* sin statechange: sin drama */ }
+  }
 
   /* Petición + decodificación UNA vez (la lección v2.125: forma promesa).
    * No exige ctx running (decodificar vale con el contexto suspendido):
@@ -182,7 +220,13 @@ export function createSfx(moduleURL, getGame, opts) {
     try {
       const g = (typeof getGame === 'function') ? getGame() : getGame;
       const actx = g && g.audio && g.audio.ctx;
-      if (!actx || actx.state !== 'running') return;
+      if (!actx) return;
+      if (actx.state !== 'running') {   // v1.5.2: pendiente, NO descartado
+        pend[name] = { vol, opts };
+        pedir(name);                    // decodificar vale con ctx dormido
+        vigiaCtx(actx);
+        return;
+      }
       pedir(name);
       const buf = bufs[name];
       if (!buf) {                       // v1.5.1: pendiente, no silencio eterno
@@ -426,8 +470,10 @@ export function createMusic(getGame, opts) {
  *        vol () => number — volumen objetivo (consultado al arrancar)
  *        fadeIn s (0,35)  — fundido de entrada
  *        stopFade s (0,45) — fundido de off() sin «seco»
- *  Devuelve { on, off, setVol, suena, estado }. El mute del arcade
- *  (arcMute/_arcDucked) se respeta en el arranque Y en cada setVol.
+ *        ignoraMute (v1.5.1) — true: SFX/ambiente, suenan SIEMPRE (el
+ *        gate arcMute/_arcDucked es de MÚSICA; se omite en arranque y
+ *        en cada setVol). Por defecto false (contrato histórico).
+ *  Devuelve { on, off, setVol, suena, estado }.
  *  ====================================================================== */
 
 export function createBucle(getGame, opts) {
@@ -436,6 +482,25 @@ export function createBucle(getGame, opts) {
   let busy = false;      // petición en vuelo
   let wanted = false;    // on() pidió antes de tener el buffer
   let inst = null;       // { gain, src, pan } — LA instancia viva
+  let pendArranque = null;  // v1.5.2: { desfase, panv } con ctx dormido
+  let vigia = null;         // v1.5.2: ctx con listener puesto
+
+  /* v1.5.2: on() con el contexto dormido NO olvida el arranque — el
+   * propio AudioContext avisa por statechange y aquí nace el bucle. */
+  function vigiaCtx(actx) {
+    if (vigia === actx) return;
+    vigia = actx;
+    try {
+      actx.addEventListener('statechange', () => {
+        try {
+          if (actx.state !== 'running' || !wanted || inst) return;
+          if (!buf) return;                    // cargar() disparará si wanted
+          const p = pendArranque || { desfase: 0, panv: 0 };
+          arrancar(actx, p.desfase, p.panv);
+        } catch (e) { /* */ }
+      });
+    } catch (e) { /* sin statechange: sin drama */ }
+  }
 
   function gg() { return (typeof getGame === 'function') ? getGame() : getGame; }
   function ctx() {
@@ -498,7 +563,14 @@ export function createBucle(getGame, opts) {
   function on(desfase, panv) {
     try {
       const actx = ctx();
-      if (!actx || actx.state !== 'running') return;
+      if (!actx) return;
+      if (actx.state !== 'running') {  // v1.5.2: recordar y despertar
+        wanted = true;
+        pendArranque = { desfase: desfase || 0, panv: panv || 0 };
+        if (!buf && !busy) cargar(actx);  // decodificar vale con ctx dormido
+        vigiaCtx(actx);
+        return;
+      }
       // contexto muerto (re-bind de VR): soltar la instancia vieja
       if (inst && inst.src.context !== actx) inst = null;
       wanted = true;
@@ -507,12 +579,15 @@ export function createBucle(getGame, opts) {
     } catch (e) { /* nunca rompe */ }
   }
 
-  /* Volumen EN VIVO (desvanecer por distancia · mute del arcade). */
+  /* Volumen EN VIVO (desvanecer por distancia · mute del arcade).
+   * v1.5.2: respeta ignoraMute — antes la escritura viva de un SFX con
+   * ignoraMute re-aplicaba el mute de MÚSICA que el arranque ya no ve
+   * (rodadura y galopes mudos con la música del arcade apagada). */
   function setVol(v) {
     try {
       if (!inst) return;
       const A = gg() && gg().audio;
-      const eff = (A && (A.arcMute || A._arcDucked))
+      const eff = (!o.ignoraMute && A && (A.arcMute || A._arcDucked))
         ? 0.0001 : Math.max(0.0001, Math.min(1, v));
       inst.gain.gain.value = eff;
     } catch (e) { /* */ }
@@ -546,9 +621,18 @@ export function createBucle(getGame, opts) {
     inst = null;
   }
 
-  function suena() { return !!inst; }                   // para QA/diagnóstico
+  /* v1.5.2: una instancia de un contexto MUERTO (re-bind de VR) NO suena —
+   * decir que sí bloqueaba la auto-reparación de los módulos (suena()
+   * true → «no hace falta on()»). Sin contexto aún, vale la instancia. */
+  function suena() {
+    try {
+      if (!inst) return false;
+      const a = ctx();
+      return !a || inst.src.context === a;
+    } catch (e) { return !!inst; }
+  }
   function estado() {
-    return { sonando: !!inst, querido: wanted, cargado: !!buf, cargando: busy };
+    return { sonando: suena(), querido: wanted, cargado: !!buf, cargando: busy };
   }
 
   return { on, off, setVol, suena, estado };

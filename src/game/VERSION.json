@@ -1,10 +1,10 @@
 {
-  "version": "3.6.26-SDK6",
-  "fase": 28,
-  "faseNombre": "Los one-shots viajan en el motor del galope",
+  "version": "3.6.27-SDK6",
+  "fase": 29,
+  "faseNombre": "Hall Of Fame",
   "sdk": "1.5.4",
-  "fecha": "2026-10-21",
-  "hub": "v3626-sdk6",
+  "fecha": "2026-10-20",
+  "hub": "v3627-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "a489ec0e49d44e73ebb8b352322bd16463077c60cebcce0e7460353610ebad0a"
+  "golden": "369e1625744cf580398f57f124c9e21f764e59ef4ac108aa35c8b4f80f3b00a4"
 }

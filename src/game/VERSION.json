@@ -1,10 +1,10 @@
 {
-  "version": "3.6.27-SDK6",
-  "fase": 29,
-  "faseNombre": "Hall Of Fame",
+  "version": "3.6.28-SDK6",
+  "fase": 30,
+  "faseNombre": "Salon del Artista",
   "sdk": "1.5.4",
   "fecha": "2026-10-20",
-  "hub": "v3627-sdk6",
+  "hub": "v3628-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "369e1625744cf580398f57f124c9e21f764e59ef4ac108aa35c8b4f80f3b00a4"
+  "golden": "55daddb988d6cb177abc20a10c6c54760afb54b878a3b1cfc65e3f6c32d886ec"
 }

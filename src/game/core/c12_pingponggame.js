@@ -4564,136 +4564,16 @@ export class PingPongGame {
     return null;
   }
 
-  /* REDIBUJA la decoración del HALL OF FAME con lo conseguido (v3.6.27):
-   * cartel + neón, insignias de campeonatos con placa de nombre, placa de
-   * RÉCORD Y RANKING con las cifras de carrera, los 6 medallones de LOGROS
-   * CRAZY, las 6 vitrinas de pieles y el estado del TROFEO (plateado
-   * esperando al primer campeón → dorado con el salón de campeones).
-   * Se llama en enterHall. Barato: repaints de canvas + estados. */
+  /* REDIBUJA lo VIVO del HALL (v3.6.28): desde FASE 30 las seis caras
+   * visten el ARTE DEL ARTISTA (assets/hall/, mapeadas cara a cara en
+   * createHall con el patrón de las salas de campeonato) y drawHall ya
+   * no repinta paredes — sólo mantiene el TROFEO al día: plateado
+   * esperando al primer campeón → dorado (SALÓN DE CAMPEONES) cuando
+   * existe algún campeonato coronado. Se llama en enterHall. */
   drawHall() {
     const ud = this.hallGroup && this.hallGroup.userData.hall;
     if (!ud) return;
-    // 1) carteles con el idioma vivo (marca del neón sin traducción)
-    drawHallSign(ud.signCv, T('hall_sign'), T('hall_sign_sub'));
-    ud.signTex.needsUpdate = true;
-    drawHallDoor(ud.doorCv, T('hall_door'));
-    ud.doorTex.needsUpdate = true;
-    drawHallNeon(ud.neonCv, 'CRAZY PING PONG');
-    ud.neonTex.needsUpdate = true;
-    // 2) fila de campeonatos: se reconstruye si cambió el catálogo —
-    //    marco dorado + placa de terciopelo + PLACA DE NOMBRE por ranura
     const entries = (this.champs && this.champs.entries) || [];
-    const row = ud.champRow;
-    const need = Math.min(6, entries.length);
-    if (row.userData.n !== need) {
-      while (row.children.length) row.remove(row.children[0]);
-      row.userData.slots = [];
-      for (let i = 0; i < need; i++) {
-        const px = (i - (need - 1) / 2) * 0.52;
-        const frame = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5),
-          new THREE.MeshStandardMaterial({ color: 0xc9932f, roughness: 0.45,
-            metalness: 0.5, emissive: 0x000000 }));
-        frame.position.set(px, 1.86, 0);
-        const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.38),
-          new THREE.MeshBasicMaterial({ color: 0x2a1418 }));
-        plate.position.set(px, 1.86, 0.004);
-        const nameCv = hallCanvas(256, 64);
-        const nameTex = new THREE.CanvasTexture(nameCv);
-        const namePlane = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.115),
-          new THREE.MeshBasicMaterial({ map: nameTex, transparent: true }));
-        namePlane.position.set(px, 1.53, 0.006);
-        row.add(frame, plate, namePlane);
-        row.userData.slots.push({ id: entries[i] ? entries[i].id : null,
-          frame, plate, nameCv, nameTex });
-      }
-      row.userData.n = need;
-    }
-    for (const sl of row.userData.slots) {
-      let won = false;
-      let titleTxt = '';
-      if (sl.id) {
-        try { won = this.champs.championFlag(sl.id); } catch (e) { won = false; }
-        const ent = entries.find((e2) => e2.id === sl.id);
-        const t2 = ent && ent.title;
-        titleTxt = t2 ? (t2[TLang()] || t2.es || t2.en || sl.id) : sl.id;
-      }
-      sl.frame.material.emissive.setHex(won ? 0x6b4a12 : 0x1a1a1a);
-      if (won) {
-        let tex = ud.insigniaCache[sl.id];
-        if (tex === undefined) tex = this._loadInsignia(sl.id, ud);
-        if (tex && tex.isTexture) {
-          sl.plate.material.map = tex;
-          sl.plate.material.color.setHex(0xffffff);
-        } else if (tex === false) {
-          sl.plate.material.map = null;              // sin PNG: placa dorada
-          sl.plate.material.color.setHex(0xc9932f);
-        }
-      } else {
-        sl.plate.material.map = null;
-        sl.plate.material.color.setHex(0x2a1418);
-      }
-      sl.plate.material.needsUpdate = true;
-      // placa de nombre bajo el marco (conseguido: latón; pendiente: sombra)
-      if (sl.nameCv) {
-        drawHallNameplate(sl.nameCv, titleTxt, won);
-        sl.nameTex.needsUpdate = true;
-      }
-    }
-    // 3) PLACA DE RÉCORD Y RANKING (cifras de carrera del anfitrión)
-    const s = (this.stats && this.stats.data) ||
-      { won: 0, bestStreak: 0, bestRally: 0, aces: 0, winsByDiff: {} };
-    let prof = null;
-    try { prof = JSON.parse(localStorage.getItem('ppxr_train_v1') || 'null'); } catch (e) { prof = null; }
-    let stars = 0;
-    if (prof && prof.stars) for (const k in prof.stars) stars += Math.max(0, Number(prof.stars[k]) || 0);
-    const wd = s.winsByDiff || {};
-    drawHallRanking(ud.rankCv, {
-      title: T('hall_rank_title'),
-      cols: [
-        { l: T('hall_rank_v'), v: s.won || 0 },
-        { l: T('hall_rank_s'), v: s.bestStreak || 0 },
-        { l: T('hall_rank_r'), v: s.bestRally || 0 },
-        { l: T('hall_rank_a'), v: s.aces || 0 },
-      ],
-      foot: T('hall_circ') + ' · ' + stars + ' ★',
-      foot2: 'F ' + (wd.easy || 0) + '  ·  M ' + (wd.medium || 0) + '  ·  D ' + (wd.hard || 0),
-    });
-    ud.rankTex.needsUpdate = true;
-    // 4) LOGROS CRAZY: cabecera + 6 medallones individuales + cita
-    drawHallHeader(ud.headerAchsCv, T('hall_achs'));
-    ud.headerAchsTex.needsUpdate = true;
-    const items = ACHIEVEMENTS.map((a) => ({
-      on: !!(this.stats && this.stats.data && this.stats.data.ach[a.key]),
-      emoji: a.emoji,
-      name: T(a.nameKey),
-    }));
-    for (let i = 0; i < ud.medalCvs.length && i < items.length; i++) {
-      drawHallMedal(ud.medalCvs[i], items[i].emoji, items[i].name, items[i].on);
-      ud.medalTexs[i].needsUpdate = true;
-      if (ud.medalRims[i]) {
-        ud.medalRims[i].material.color.setHex(items[i].on ? 0xe9b83c : 0x3a4048);
-        ud.medalRims[i].material.emissive.setHex(items[i].on ? 0x4a3410 : 0x000000);
-      }
-    }
-    drawHallQuote(ud.quoteCv, T('hall_quote'));
-    ud.quoteTex.needsUpdate = true;
-    // 5) VITRINA DE PALAS: cabecera + estado de las 6 pieles
-    drawHallHeader(ud.headerPalasCv, T('hall_palas'));
-    ud.headerPalasTex.needsUpdate = true;
-    const unl = (prof && Array.isArray(prof.unlocked)) ? prof.unlocked : ['clasica'];
-    for (let i = 0; i < ud.vitrinas.length; i++) {
-      const v2 = ud.vitrinas[i];
-      const on = unl.indexOf(v2.id) >= 0;
-      const col = new THREE.Color(HALL_SKIN_COLS[i]);
-      v2.blade.material.color.copy(on ? col : new THREE.Color(0x23262d));
-      v2.blade.material.emissive.copy(on ? col : new THREE.Color(0x000000));
-      v2.blade.material.emissiveIntensity = on ? 0.3 : 0.0;
-      const nm = (HALL_SKIN_NAMES[i] &&
-        (HALL_SKIN_NAMES[i][TLang()] || HALL_SKIN_NAMES[i].es)) || v2.id;
-      drawHallNameplate(v2.plateCv, on ? nm : T('hall_locked'), on);
-      v2.plateTex.needsUpdate = true;
-    }
-    // 6) TROFEO: plateado esperando al primer campeón → dorado con campeón
     let anyWon = false;
     try { anyWon = entries.some((e2) => this.champs.championFlag(e2.id)); } catch (e) { anyWon = false; }
     const mat = anyWon ? ud.trophyGold : ud.trophySilver;

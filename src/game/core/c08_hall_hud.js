@@ -1,8 +1,8 @@
 export const HALL = {
   cz: -18.5,        // centro de la estancia (pared frontal de la cancha: z -5,55)
-  hx: 3.4,          // semiancho
-  depth: 7,         // fondo (z -22 … -15)
-  h: 2.85,          // mismo techo que la sala
+  hx: 3.05,         // semiancho · v3.6.28: MISMO ancho que las salas (6,10 m)
+  depth: 7.9,       // fondo · v3.6.28: MISMO fondo que las salas (7,90 m)
+  h: 2.85,          // misma altura que las salas (2,85 m)
 };
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { T, TLang } from './c00_pre_three.js';
@@ -385,109 +385,90 @@ export function drawHallParquet() {
 export function createHall() {
   const g = new THREE.Group();
   const W = HALL.hx * 2;
-  const z0 = HALL.cz - HALL.depth / 2;   // pared de la gloria (insignias + ranking)
-  const z1 = HALL.cz + HALL.depth / 2;   // pared de la puerta (neón)
+  const z0 = HALL.cz - HALL.depth / 2;   // pared FRENTE: la primera que mira el anfitrión
+  const z1 = HALL.cz + HALL.depth / 2;   // pared FONDO: la puerta pintada, tras el spawn
 
-  /* ---- paleta del museo (v3.6.27 · HALL OF FAME) ---- */
-  const wallMat  = new THREE.MeshStandardMaterial({ color: 0x272b33, roughness: 0.96 });
-  const woodMat  = new THREE.MeshStandardMaterial({ color: 0x6e4a2a, roughness: 0.85 });
+  /* v3.6.28 · FASE 30 — EL SALÓN DEL ARTISTA: la estancia adopta las
+   * DIMENSIONES EXACTAS de las salas de campeonato (6,10 × 7,90 × 2,85 m,
+   * las de createRoom) y se viste con el ARTE DEL ARTISTA mapeado CARA A
+   * CARA, como las salas de los campeonatos (patrón createChampRoom v2.85):
+   * seis JPG con TextureLoader (SRGBColorSpace + anisotropía 4), carga
+   * perezosa y a prueba de fallos — si una imagen no llega, ese plano
+   * conserva su color de respaldo y el juego SIGUE. El trofeo de campeón,
+   * sus 7 bolas doradas y las 3 luces siguen VIVOS como mobiliario 3D. */
+  const loader = new THREE.TextureLoader();
+  const texs = {};
+  const texPaths = {
+    front: 'assets/hall/frente.jpg',     // 1849×864 → plano 6,10×2,85
+    back: 'assets/hall/fondo.jpg',       // 1849×864 → plano 6,10×2,85 (la puerta)
+    left: 'assets/hall/izquierda.jpg',   // 2395×864 → plano 7,90×2,85 (ventanal)
+    right: 'assets/hall/derecha.jpg',    // 2395×864 → plano 7,90×2,85 (insignias)
+    floor: 'assets/hall/suelo.jpg',      // 1296×1678 → plano 6,10×7,90 (emblema)
+    ceil: 'assets/hall/techo.jpg',       // 1296×1678 → plano 6,10×7,90 (círculo)
+  };
+  const applyTex = (key, mat) => {
+    loader.load(texPaths[key], (tex) => {
+      try {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = 4;
+        texs[key] = tex;
+        mat.map = tex;
+        mat.color.set(0xffffff);
+        mat.needsUpdate = true;
+      } catch { /* el arte NUNCA rompe el juego */ }
+    }, undefined, () => { /* sin arte (file://): plano con su color */ });
+  };
+
+  /* ---- paleta del mobiliario 3D (trofeo, luces, bolas) ---- */
   const woodDark = new THREE.MeshStandardMaterial({ color: 0x3a2716, roughness: 0.9 });
   const brassMat = new THREE.MeshStandardMaterial({
     color: 0xc9932f, roughness: 0.45, metalness: 0.55 });
-  const velvetMat = new THREE.MeshStandardMaterial({ color: 0x5c1f28, roughness: 1 });
   const goldMat = new THREE.MeshStandardMaterial({
     color: 0xd9a441, roughness: 0.28, metalness: 0.85, emissive: 0x2a1c05, emissiveIntensity: 0.5 });
   const silverMat = new THREE.MeshStandardMaterial({
     color: 0xb9c2c9, roughness: 0.34, metalness: 0.8, emissive: 0x0a0d10, emissiveIntensity: 0.4 });
   const marbleMat = new THREE.MeshStandardMaterial({ color: 0xd8d2c8, roughness: 0.4 });
-  const leafMat = new THREE.MeshStandardMaterial({ color: 0x2f6b3a, roughness: 1 });
 
-  /* ---- SUELO: parqué de roble con el emblema de la casa ---- */
-  const floorTex = new THREE.CanvasTexture(drawHallParquet());
-  floorTex.anisotropy = 4;
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, HALL.depth),
-    new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.9 }));
+  /* ---- SUELO: el arte trae el emblema elíptico de la casa al centro ---- */
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x2e3238, roughness: 0.9 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, HALL.depth), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0, 0.001, HALL.cz);
   g.add(floor);
-  // alfombra roja de bienvenida (CORTA: deja el medallón del parqué a la
-  // vista entre la alfombra y la vitrina del trofeo)
-  const carpet = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.9), velvetMat);
-  carpet.rotation.x = -Math.PI / 2;
-  carpet.position.set(0, 0.008, HALL.cz + 1.7);
-  g.add(carpet);
-  for (const ex of [-1.07, 1.07]) {
-    const trim = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 2.9), brassMat);
-    trim.position.set(ex, 0.011, HALL.cz + 1.7);
-    g.add(trim);
-  }
+  applyTex('floor', floorMat);
 
-  /* ---- PAREDES + zócalo con filete de latón + cornisa ---- */
-  const wall = (w, h, x, y, z, ry) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
-    m.position.set(x, y, z);
+  /* ---- TECHO: el arte trae el círculo luminoso sobre el trofeo ---- */
+  const ceilMat = new THREE.MeshStandardMaterial({ color: 0x1d2026, roughness: 1 });
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, HALL.depth), ceilMat);
+  ceil.rotation.x = Math.PI / 2;
+  ceil.position.set(0, HALL.h, HALL.cz);
+  g.add(ceil);
+  applyTex('ceil', ceilMat);
+
+  /* ---- PAREDES: rotaciones EXACTAS de createRoom (las cuatro leen sin
+   * espejo, igual que en los 5 campeonatos). Cada cara, SU material. ---- */
+  const wallFrontMat = new THREE.MeshStandardMaterial({ color: 0x272b33, roughness: 0.96 });
+  const wallBackMat  = new THREE.MeshStandardMaterial({ color: 0x272b33, roughness: 0.96 });
+  const wallLeftMat  = new THREE.MeshStandardMaterial({ color: 0x272b33, roughness: 0.96 });
+  const wallRightMat = new THREE.MeshStandardMaterial({ color: 0x272b33, roughness: 0.96 });
+  const mkWall = (mat, w, h, x, z, ry) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    m.position.set(x, HALL.h / 2, z);
     m.rotation.y = ry;
     g.add(m);
     return m;
   };
-  wall(HALL.depth, HALL.h, -HALL.hx, HALL.h / 2, HALL.cz, Math.PI / 2);
-  wall(HALL.depth, HALL.h, HALL.hx, HALL.h / 2, HALL.cz, -Math.PI / 2);
-  wall(W, HALL.h, 0, HALL.h / 2, z0, 0);
-  wall(W, HALL.h, 0, HALL.h / 2, z1, Math.PI);
-  // zócalos (base oscura + filete dorado) en las 4 paredes
-  const trimH = (len, x, z, ry) => {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(len, 0.14, 0.02), woodDark);
-    b.position.set(x, 0.07, z); b.rotation.y = ry;
-    g.add(b);
-    const f = new THREE.Mesh(new THREE.BoxGeometry(len, 0.018, 0.024), brassMat);
-    f.position.set(x, 0.152, z); f.rotation.y = ry;
-    g.add(f);
-  };
-  trimH(HALL.depth, -HALL.hx + 0.012, HALL.cz, Math.PI / 2);
-  trimH(HALL.depth, HALL.hx - 0.012, HALL.cz, Math.PI / 2);
-  trimH(W, 0, z0 + 0.012, 0);
-  trimH(W, 0, z1 - 0.012, 0);
-  // cornisa dorada a media altura del remate superior (las 4 paredes)
-  const crown = (len, x, z, ry) => {
-    const c = new THREE.Mesh(new THREE.BoxGeometry(len, 0.026, 0.02), brassMat);
-    c.position.set(x, HALL.h - 0.22, z); c.rotation.y = ry;
-    g.add(c);
-  };
-  crown(HALL.depth, -HALL.hx + 0.012, HALL.cz, Math.PI / 2);
-  crown(HALL.depth, HALL.hx - 0.012, HALL.cz, Math.PI / 2);
-  crown(W, 0, z0 + 0.012, 0);
-  crown(W, 0, z1 - 0.012, 0);
+  const wallLeft  = mkWall(wallLeftMat, HALL.depth, HALL.h, -HALL.hx, HALL.cz, Math.PI / 2);
+  const wallRight = mkWall(wallRightMat, HALL.depth, HALL.h, HALL.hx, HALL.cz, -Math.PI / 2);
+  const wallFront = mkWall(wallFrontMat, W, HALL.h, 0, z0, 0);
+  const wallBack  = mkWall(wallBackMat, W, HALL.h, 0, z1, Math.PI);
+  applyTex('left', wallLeftMat);
+  applyTex('right', wallRightMat);
+  applyTex('front', wallFrontMat);
+  applyTex('back', wallBackMat);
 
-  /* ---- TECHO: artesonado + paneles de luz + anillo dorado del trofeo ---- */
-  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, HALL.depth),
-    new THREE.MeshStandardMaterial({ color: 0x1d2026, roughness: 1 }));
-  ceil.rotation.x = Math.PI / 2;
-  ceil.position.set(0, HALL.h, HALL.cz);
-  g.add(ceil);
-  for (const bz of [-2.55, -1.2, 0.15, 1.5, 2.85]) {
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(W, 0.05, 0.13), woodDark);
-    beam.position.set(0, HALL.h - 0.03, HALL.cz + bz);
-    g.add(beam);
-  }
-  for (const bx of [-1.7, 1.7]) {
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, HALL.depth), woodDark);
-    beam.position.set(bx, HALL.h - 0.03, HALL.cz);
-    g.add(beam);
-  }
-  const panelMat = new THREE.MeshStandardMaterial({
-    color: 0xfff2cf, emissive: 0xffd9a0, emissiveIntensity: 1.5, roughness: 0.4 });
-  for (const px of [-1.7, 1.7]) {
-    const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.55, 2.2), panelMat);
-    panel.rotation.x = Math.PI / 2;
-    panel.position.set(px, HALL.h - 0.06, HALL.cz + 0.4);
-    g.add(panel);
-  }
-  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.035, 10, 40),
-    new THREE.MeshStandardMaterial({
-      color: 0xc9932f, emissive: 0xc9932f, emissiveIntensity: 0.75, roughness: 0.4, metalness: 0.4 }));
-  halo.rotation.x = Math.PI / 2;
-  halo.position.set(0, HALL.h - 0.1, HALL.cz - 0.9);
-  g.add(halo);
+  /* (v3.6.28: zócalos, cornisa, artesonado y paneles RETIRADOS — el arte
+   * del artista los pinta ya en las texturas de techo y paredes) */
 
   /* ---- LUCES: dos lavados cálidos + foco del trofeo (3 en total) ---- */
   const lampMat = new THREE.MeshStandardMaterial({
@@ -503,12 +484,13 @@ export function createHall() {
     lights.push(pl);
   }
   const plTrophy = new THREE.PointLight(0xffd9a0, 0.75, 7, 1.5);
-  plTrophy.position.set(0, 2.0, HALL.cz - 0.9);
+  plTrophy.position.set(0, 2.0, HALL.cz);
   g.add(plTrophy);
   lights.push(plTrophy);
 
-  /* ---- VITRINA DEL TROFEO: peana de mármol + COPA LATHE que rota ---- */
-  const zT = HALL.cz - 0.9;
+  /* ---- TROFEO: peana de mármol + COPA LATHE que rota, en el CENTRO de
+   * la estancia — nace DE PIE SOBRE EL EMBLEMA elíptico del suelo ---- */
+  const zT = HALL.cz;
   const base1 = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.16, 24), marbleMat);
   base1.position.set(0, 0.08, zT);
   g.add(base1);
@@ -546,6 +528,14 @@ export function createHall() {
       depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
   beam.position.set(0, 0.3 + 0.25 + 1.55 / 2 - 0.02, zT);
   g.add(beam);
+  // anillo dorado del techo sobre la copa (el arte pinta el círculo; esto
+  // es el anillo VIVO que respira con updateHallFx)
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.035, 10, 40),
+    new THREE.MeshStandardMaterial({
+      color: 0xc9932f, emissive: 0xc9932f, emissiveIntensity: 0.75, roughness: 0.4, metalness: 0.4 }));
+  halo.rotation.x = Math.PI / 2;
+  halo.position.set(0, HALL.h - 0.1, zT);
+  g.add(halo);
   // placa del trofeo, ABRAZADA al frente de la peana de madera
   const trophyCv = hallCanvas(512, 128);
   const trophyPlaque = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.15),
@@ -553,161 +543,13 @@ export function createHall() {
   trophyPlaque.position.set(0, 0.24, zT + 0.3);
   g.add(trophyPlaque);
 
-  /* ---- EQUIBRADO: peana con bola de exhibición + planta del salón ---- */
-  const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.9, 20), woodDark);
-  ped.position.set(-2.45, 0.45, HALL.cz + 1.4);
-  g.add(ped);
-  const pedBall = new THREE.Mesh(new THREE.SphereGeometry(0.02, 16, 12),
-    new THREE.MeshStandardMaterial({ color: 0xfff6e8, roughness: 0.35 }));
-  pedBall.position.set(-2.45, 0.93, HALL.cz + 1.4);
-  g.add(pedBall);
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.11, 0.28, 12), woodDark);
-  pot.position.set(2.45, 0.14, HALL.cz + 1.4);
-  g.add(pot);
-  for (const [fx2, fy2, fz2, fr] of [[0, 0.48, 0, 0.2], [-0.12, 0.6, 0.05, 0.14], [0.12, 0.58, -0.05, 0.13]]) {
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(fr, 10, 8), leafMat);
-    leaf.position.set(2.45 + fx2, fy2, HALL.cz + 1.4 + fz2);
-    g.add(leaf);
-  }
+  /* (v3.6.28: peana y planta RETIRADAS — el arte pinta sofás, plantas y
+   * mesas en las cuatro paredes; nada 3D que las duplique) */
 
-  /* ---- PARED DE LA GLORIA (z0): cartel + insignias + ranking ---- */
-  const signCv = hallCanvas(1024, 320);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.94),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(signCv), transparent: true }));
-  sign.position.set(0, 2.32, z0 + 0.04);
-  g.add(sign);
-
-  // fila CAMPEONATOS: los marcos los monta drawHall() según las entradas
-  // cargadas (el catálogo llega async: la fila se reconstruye sola)
-  const champRow = new THREE.Group();
-  champRow.position.set(0, 0, z0 + 0.05);
-  champRow.userData.n = -1;
-  champRow.userData.slots = [];
-  g.add(champRow);
-
-  const rankCv = hallCanvas(2048, 460);
-  const rankRow = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.79),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(rankCv), transparent: true }));
-  rankRow.position.set(0, 1.16, z0 + 0.04);
-  g.add(rankRow);
-
-  /* ---- PARED IZQUIERDA: LOGROS CRAZY (cabecera + 6 medallones + cita) ---- */
-  const headerAchsCv = hallCanvas(1024, 256);
-  const headerAchs = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.55),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(headerAchsCv), transparent: true }));
-  headerAchs.rotation.y = Math.PI / 2;
-  headerAchs.position.set(-HALL.hx + 0.04, 2.3, HALL.cz);
-  g.add(headerAchs);
-  const medalCvs = [];
-  const medalTexs = [];
-  const medalRims = [];
-  const medalBack = new THREE.CircleGeometry(0.37, 28);
-  const medalFace = new THREE.CircleGeometry(0.34, 28);
-  const medalRing = new THREE.RingGeometry(0.335, 0.375, 28);
-  const medalCols = [HALL.cz - 1.35, HALL.cz, HALL.cz + 1.35];
-  const medalRows = [1.72, 1.04];
-  for (let i = 0; i < 6; i++) {
-    const mx = -HALL.hx + 0.045;
-    const my = medalRows[Math.floor(i / 3)];
-    const mz = medalCols[i % 3];
-    const back = new THREE.Mesh(medalBack, velvetMat);
-    back.rotation.y = Math.PI / 2;
-    back.position.set(mx - 0.012, my, mz);
-    g.add(back);
-    const rim = new THREE.Mesh(medalRing,
-      new THREE.MeshStandardMaterial({ color: 0xc9932f, roughness: 0.4, metalness: 0.5 }));
-    rim.rotation.y = Math.PI / 2;
-    rim.position.set(mx, my, mz);
-    g.add(rim);
-    const cv = hallCanvas(256, 256);
-    const face = new THREE.Mesh(medalFace,
-      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv) }));
-    face.rotation.y = Math.PI / 2;
-    face.position.set(mx + 0.008, my, mz);
-    g.add(face);
-    medalCvs.push(cv);
-    medalTexs.push(face.material.map);
-    medalRims.push(rim);
-  }
-  const quoteCv = hallCanvas(1024, 160);
-  const quoteRow = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.38),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(quoteCv), transparent: true }));
-  quoteRow.rotation.y = Math.PI / 2;
-  quoteRow.position.set(-HALL.hx + 0.04, 0.52, HALL.cz);
-  g.add(quoteRow);
-
-  /* ---- PARED DERECHA: VITRINA DE PALAS (cabecera + 6 vitrinas) ---- */
-  const headerPalasCv = hallCanvas(1024, 256);
-  const headerPalas = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.55),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(headerPalasCv), transparent: true }));
-  headerPalas.rotation.y = -Math.PI / 2;
-  headerPalas.position.set(HALL.hx - 0.04, 2.3, HALL.cz);
-  g.add(headerPalas);
-  const bladeGeo = new THREE.CircleGeometry(0.105, 24);
-  const handleGeo = new THREE.BoxGeometry(0.032, 0.15, 0.018);
-  const postGeo = new THREE.CylinderGeometry(0.011, 0.011, 0.4, 8);
-  const vitrinas = [];
-  const vitZ = [HALL.cz - 2.25, HALL.cz - 1.35, HALL.cz - 0.45,
-                HALL.cz + 0.45, HALL.cz + 1.35, HALL.cz + 2.25];
-  for (let i = 0; i < 6; i++) {
-    const vz = vitZ[i];
-    const vx = HALL.hx - 0.34;
-    const base = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.72, 0.46), woodDark);
-    base.position.set(vx, 0.36, vz);
-    g.add(base);
-    const top = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.52), woodMat);
-    top.position.set(vx, 1.14, vz);
-    g.add(top);
-    for (const [dx, dz] of [[-0.13, -0.17], [0.13, -0.17], [-0.13, 0.17], [0.13, 0.17]]) {
-      const post = new THREE.Mesh(postGeo, brassMat);
-      post.position.set(vx + dx, 0.92, vz + dz);
-      g.add(post);
-    }
-    const col = HALL_SKIN_COLS[i];
-    const blade = new THREE.Mesh(bladeGeo,
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color(col), roughness: 0.5, metalness: 0.05,
-        emissive: new THREE.Color(col), emissiveIntensity: 0.12, side: THREE.DoubleSide }));
-    blade.rotation.y = -Math.PI / 2;
-    blade.rotation.z = 0.12;
-    blade.position.set(vx - 0.02, 0.92, vz);
-    g.add(blade);
-    const handle = new THREE.Mesh(handleGeo, woodMat);
-    handle.rotation.y = -Math.PI / 2;
-    handle.rotation.z = 0.12;
-    handle.position.set(vx - 0.02 + 0.0, 0.825, vz + 0.125);
-    g.add(handle);
-    const plateCv = hallCanvas(256, 72);
-    const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.1),
-      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(plateCv), transparent: true }));
-    plate.rotation.y = -Math.PI / 2;
-    plate.position.set(vx - 0.185, 0.3, vz);
-    g.add(plate);
-    vitrinas.push({ blade, handle, plateCv, plateTex: plate.material.map, id: HALL_SKIN_IDS[i] });
-  }
-
-  /* ---- PARED DE LA PUERTA (z1): NEÓN + cartel de salida + apliques ---- */
-  const neonCv = hallCanvas(1024, 256);
-  const neon = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 0.78),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(neonCv), transparent: true }));
-  neon.position.set(0, 2.32, z1 - 0.04);
-  neon.rotation.y = Math.PI;
-  g.add(neon);
-  const doorCv = hallCanvas(1024, 256);
-  const door = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.42),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(doorCv), transparent: true }));
-  door.position.set(0, 1.66, z1 - 0.04);
-  door.rotation.y = Math.PI;
-  g.add(door);
-  for (const sx of [-1.55, 1.55]) {
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.42, 8), brassMat);
-    stem.position.set(sx, 1.72, z1 - 0.03);
-    stem.rotation.y = Math.PI;
-    g.add(stem);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), lampMat);
-    bulb.position.set(sx, 1.96, z1 - 0.03);
-    g.add(bulb);
-  }
+  /* (v3.6.28: los PINTORES DE PARED del museo — cartel, fila de
+   * campeonatos, placa de ranking, medallones, cita, cabeceras, vitrinas
+   * de pieles, neón y cartel de puerta — RETIRADOS: el artista pinta
+   * gloria, logros, insignias y vitrinas en las texturas de las caras) */
 
   /* ---- SORPRESA: 7 bolas doradas flotando en vaivén de museo ---- */
   const ballMat2 = new THREE.MeshStandardMaterial({
@@ -716,8 +558,8 @@ export function createHall() {
   for (let i = 0; i < 7; i++) {
     const b = new THREE.Mesh(new THREE.SphereGeometry(0.026 + (i % 3) * 0.007, 12, 10), ballMat2);
     const ang = i * 2.39996;               // ángulo dorado: reparto sin patrón
-    const bx = Math.sin(ang) * 2.3;
-    const bz = HALL.cz - 1.6 + Math.cos(ang) * 2.0;
+    const bx = Math.sin(ang) * 1.9;
+    const bz = HALL.cz + Math.cos(ang) * 2.3;
     const bfx = {
       x0: bx, y0: 1.25 + (i % 4) * 0.24, ph: ang * 2.1,
       s: 0.55 + (i % 3) * 0.16, a: 0.07 + (i % 2) * 0.035,
@@ -729,21 +571,16 @@ export function createHall() {
   }
 
   g.userData.hall = {
-    signCv, doorCv, neonCv, rankCv, headerAchsCv, headerPalasCv, quoteCv, trophyCv,
-    signTex: sign.material.map,
-    doorTex: door.material.map,
-    neonTex: neon.material.map,
-    rankTex: rankRow.material.map,
-    headerAchsTex: headerAchs.material.map,
-    headerPalasTex: headerPalas.material.map,
-    quoteTex: quoteRow.material.map,
+    /* v3.6.28: las SEIS CARAS visten el arte del artista (texs llega async;
+     * texWant = contrato de las 6 claves). Del museo sobrevive lo VIVO:
+     * el trofeo con su haz y anillo, las 7 bolas y las 3 luces. */
+    texs, texWant: Object.keys(texPaths),
+    floor, walls: [wallLeft, wallRight, wallFront, wallBack], ceil,
+    trophyCv,
     trophyTex: trophyPlaque.material.map,
-    medalCvs, medalTexs, medalRims,
-    champRow,
-    vitrinas,
     trophyGroup: trophy, trophyCup: cup, trophyHandles: trophy.children.filter((c2) => c2.geometry && c2.geometry.type === 'TorusGeometry'),
     trophyGold: goldMat, trophySilver: silverMat,
-    insigniaCache: {},   // id → Texture | false (sin PNG) | null (cargando)
+    insigniaCache: {},   // (retirado v3.6.28: las paredes visten arte fijo)
     lights,
     fx: { trophy, beam, halo, balls },
   };

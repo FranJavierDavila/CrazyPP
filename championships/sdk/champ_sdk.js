@@ -1,5 +1,5 @@
 /* ============================================================================
- *  CRAZY PING PONG · SDK DE CAMPEONATOS (champ_sdk.js) — v1.4.0
+ *  CRAZY PING PONG · SDK DE CAMPEONATOS (champ_sdk.js) — v1.5.0
  * ----------------------------------------------------------------------------
  *  FASE 3 del plan de modularización P0 (acordado con el dueño).
  *  v1.1.0 (FASE 4): precarga() (pedir+decodificar sin sonar, para los
@@ -29,6 +29,16 @@
  *  standee de Valle Neón cargaba «rival.webp / <estado>.webp» que NUNCA
  *  existieron (los assets reales son .png) — llevaba pintada la silueta
  *  gris de reserva desde su v1. Ahora carga el arte ZETA-7 real.
+ *  v1.5.0 (FASE 8 · SONIDO DEL TREN DEL OESTE): createBucle() — motor de
+ *  BUCLE con control POR INSTANCIA, lo que createMusic no puede dar (una
+ *  sola ranura, sin desfase, sin volumen vivo): on(desfase, pan) arranca
+ *  el bucle en un punto arbitrario del audio (varios caballos «ligeramente
+ *  desfasados»), setVol(v) cambia el volumen EN VIVO frame a frame
+ *  (desvanecer por distancia, mute del arcade respetado) y off(seco)
+ *  para con fundido o BRUSCO (el jinete abatido). El reloj de parada es
+ *  el del PROPIO AudioContext (src.stop(cuando) + onended → disconnect):
+ *  cero setTimeout. Decode en forma promesa (lección v2.125) y nunca
+ *  lanza — las mismas reglas de la casa.
  *
  *  POR QUÉ EXISTE — LA FAMILIA DE BUGS:
  *  Los 5 campeonatos son módulos autocontenidos que reimplementaban una y
@@ -65,7 +75,7 @@
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.4.0';
+const SDK_VERSION = '1.5.0';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -371,6 +381,154 @@ export function createMusic(getGame, opts) {
   }
 
   return { on, off, sync, sonando, estado };
+}
+
+/* — MOTOR DE BUCLE CON CONTROL POR INSTANCIA (createBucle · v1.5.0) ————
+ *  Lo que createMusic NO puede dar: bucles que conviven (uno por jinete),
+ *  que arrancan DESFASADOS (varios caballos no galopan al compás), cuyo
+ *  volumen cambia EN VIVO (el jinete se aleja y el galope se desvanece)
+ *  y que callan BRUSCAMENTE (el jinete abatido). Un motor por instancia.
+ *
+ *  Uso desde un campeonato:
+ *      import { createBucle } from '../sdk/champ_sdk.js';
+ *      const b = createBucle(() => this.game, {
+ *        url: () => assetURL(import.meta.url, 'tren/caballos.mp3'),
+ *        vol: () => 0.5,                 // volumen base (mute lo aplica el motor)
+ *        fadeIn: 0.3, stopFade: 0.45,
+ *      });
+ *      b.on(1.7, -0.55);   // arranque a 1,7 s del audio · paneo izquierda
+ *      b.setVol(0.12);     // volumen vivo (frame a frame: distancia)
+ *      b.off(true);        // SECO (muerte) · b.off() con fundido (alejarse)
+ *
+ *  opts: url () => string — fuente del bucle (assets del módulo)
+ *        vol () => number — volumen objetivo (consultado al arrancar)
+ *        fadeIn s (0,35)  — fundido de entrada
+ *        stopFade s (0,45) — fundido de off() sin «seco»
+ *  Devuelve { on, off, setVol, suena, estado }. El mute del arcade
+ *  (arcMute/_arcDucked) se respeta en el arranque Y en cada setVol.
+ *  ====================================================================== */
+
+export function createBucle(getGame, opts) {
+  const o = opts || {};
+  let buf = null;        // AudioBuffer decodificado (una sola vez)
+  let busy = false;      // petición en vuelo
+  let wanted = false;    // on() pidió antes de tener el buffer
+  let inst = null;       // { gain, src, pan } — LA instancia viva
+
+  function gg() { return (typeof getGame === 'function') ? getGame() : getGame; }
+  function ctx() {
+    try { const a = gg() && gg().audio; return a && a.ctx; } catch (e) { return null; }
+  }
+  function objetivo() {
+    try {
+      const A = gg() && gg().audio;
+      const v = o.vol ? o.vol() : 0.5;
+      if (A && (A.arcMute || A._arcDucked)) return 0.0001;
+      return Math.max(0.0001, Math.min(1, v));
+    } catch (e) { return 0.0001; }
+  }
+  function srcURL() { try { return o.url ? o.url() : undefined; } catch (e) { return undefined; } }
+
+  /* Carga UNA vez (lección v2.125: forma promesa). */
+  function cargar(actx) {
+    const u = srcURL();
+    if (!u || busy || buf) return;
+    busy = true;
+    fetch(u)
+      .then((r) => r.arrayBuffer())
+      .then((ab) => new Promise((res, rej) => {
+        try { res(actx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
+      }))
+      .then((b) => { buf = b; busy = false; if (wanted) arrancar(actx, 0, 0); })
+      .catch(() => { busy = false; });
+  }
+
+  function arrancar(actx, desfase, panv) {
+    try {
+      if (inst || !buf) return;
+      const gain = actx.createGain();
+      const fi = (o.fadeIn == null) ? 0.35 : o.fadeIn;
+      const t0 = actx.currentTime;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.linearRampToValueAtTime(objetivo(), t0 + fi);
+      let nodo = gain;
+      let pan = null;
+      if (panv && actx.createStereoPanner) {
+        try {
+          pan = actx.createStereoPanner();
+          pan.pan.value = Math.max(-1, Math.min(1, panv));
+          gain.connect(pan);
+          nodo = pan;
+        } catch (e) { pan = null; nodo = gain; }
+      }
+      nodo.connect(actx.destination);
+      const src = actx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      src.connect(gain);
+      src.start(t0, desfase > 0 ? (desfase % buf.duration) : 0); // DESFASE
+      inst = { gain, src, pan };
+    } catch (e) { inst = null; }
+  }
+
+  /* Arrancar el bucle: on(desfaseSegundos, panN1a1) — ambos opcionales. */
+  function on(desfase, panv) {
+    try {
+      const actx = ctx();
+      if (!actx || actx.state !== 'running') return;
+      // contexto muerto (re-bind de VR): soltar la instancia vieja
+      if (inst && inst.src.context !== actx) inst = null;
+      wanted = true;
+      if (!buf && !busy) cargar(actx);
+      else if (buf && !inst) arrancar(actx, desfase || 0, panv || 0);
+    } catch (e) { /* nunca rompe */ }
+  }
+
+  /* Volumen EN VIVO (desvanecer por distancia · mute del arcade). */
+  function setVol(v) {
+    try {
+      if (!inst) return;
+      const A = gg() && gg().audio;
+      const eff = (A && (A.arcMute || A._arcDucked))
+        ? 0.0001 : Math.max(0.0001, Math.min(1, v));
+      inst.gain.gain.value = eff;
+    } catch (e) { /* */ }
+  }
+
+  /* Parar: off(true) SECO (jinete abatido) · off() con fundido (se aleja).
+   * El reloj es el del AudioContext: sin setTimeout, desconecta onended. */
+  function off(seco) {
+    let moribundo = null;
+    try {
+      wanted = false;
+      if (!inst) return;
+      const s = inst.src, gn = inst.gain, c = s.context;
+      const sf = seco ? 0 : (o.stopFade == null ? 0.45 : o.stopFade);
+      if (sf > 0) {
+        gn.gain.cancelScheduledValues(c.currentTime);
+        gn.gain.setValueAtTime(Math.max(0.0001, gn.gain.value || 0.0001), c.currentTime);
+        gn.gain.linearRampToValueAtTime(0.0001, c.currentTime + sf);
+        s.stop(c.currentTime + sf + 0.05);
+        moribundo = { gn, pan: inst.pan };
+        s.onended = () => {
+          try { gn.disconnect(); } catch (e) { /* */ }
+          try { if (moribundo.pan) moribundo.pan.disconnect(); } catch (e) { /* */ }
+        };
+      } else {
+        try { s.stop(); } catch (e) { /* */ }
+        try { gn.disconnect(); } catch (e) { /* */ }
+        try { if (inst.pan) inst.pan.disconnect(); } catch (e) { /* */ }
+      }
+    } catch (e) { /* */ }
+    inst = null;
+  }
+
+  function suena() { return !!inst; }                   // para QA/diagnóstico
+  function estado() {
+    return { sonando: !!inst, querido: wanted, cargado: !!buf, cargando: busy };
+  }
+
+  return { on, off, setVol, suena, estado };
 }
 
 /* — CARTEL DE SUPERPODER (createPowerSign · v1.3.0 · FASE 6) ——————————
@@ -1019,4 +1177,4 @@ export function createCartel(THREE, getGame, opts) {
   };
 }
 
-export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createPowerSign, createRival, createCartel };
+export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createBucle, createPowerSign, createRival, createCartel };

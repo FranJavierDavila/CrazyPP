@@ -1,6 +1,22 @@
 /* ============================================================================
  *  CAMPEONATO DEL SALVAJE OESTE — módulo v2 (ANDAMIO «sala de espera»).
  *  ---------------------------------------------------------------------
+ *  v2.142 (módulo v52 · v3.6.22, ronda 28) · EL TREN SUENA Y EL ORO SE VE —
+ *      informe del dueño en el casco (etapa 4): (1) CUATRO PISTAS DEL
+ *      ARTISTA: Tren_Llegada.mp3 one-shot al llegar a la estación ·
+ *      vias.mp3 RODADURA en bucle mientras el vagón marcha (off con
+ *      fundido al frenar) · Tunel.mp3 one-shot al entrar en el túnel ·
+ *      caballos.mp3 GALOPE POR INSTANCIA (pool 1+3 del SDK v1.5.0,
+ *      createBucle): cada jinete DESFASADO en el audio y con paneo de su
+ *      lado, se desvanece con la DISTANCIA a la ventana y calla BRUSCO
+ *      al abatirlo. (2) CAJONES DEL ORO A LAS VENTANAS: x 1,35 → 2,55 —
+ *      los lingotes caen debajo mismo de las ventanas (antes quedaban
+ *      «muy cerca de la mesa y casi no se veían»). (3) FIX DE LA
+ *      INTERPENETRACIÓN DE LINGOTES: medido con mide_lingote_mundo.py —
+ *      la barra del GLB nace con el eje largo EN Z (0,078×0,038×0,170) y
+ *      la rejilla (sepZ 0,095) la solapaba 7,5 cm fila contra fila; el
+ *      prototipo gira 90° en Y y la rejilla v2.141 cuadra entera
+ *      (holguras +3,7/+6,1 mm). QA: capa V (qa_tren_audio_v3622.py).
  *  v2.141 (módulo v48) · LOS CAJONES DEL ORO + PARADAS CON NOMBRE — ajustes
  *      del dueño sobre la v2.140: (1) LINGOTES SOBRE DOS GRANDES CAJONES:
  *      «los lingotes van a caer a ambos lados de la mesa pero cerca del
@@ -464,7 +480,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // y los 3 congelados delegan en él (el fix «forma promesa» v2.125 llegó a
 // estar copiado 6 veces en este módulo). Desde el SDK v1.2.0 también la
 // MÚSICA en bucle (BSO del saloon y vagón) vive en el SDK (createMusic).
-import { createSfx, createMusic, createPowerSign, congela, getCore } from '../sdk/champ_sdk.js';
+import { createSfx, createMusic, createBucle, createPowerSign, congela, getCore, assetURL } from '../sdk/champ_sdk.js';
 
 /* Parámetros de la sala (mismo patrón que MAGIA en el módulo del mago). */
 const OESTE = {
@@ -1089,10 +1105,14 @@ const TREN = {
    * → z -1,38 · derecha u=0,501 → z -1,59). En su cara superior (y = h)
    * se apilan los lingotes en rejilla 3×3 con capas EXACTAS y una
    * PEQUEÑA VARIACIÓN (jX/jZ/yaw) «para que no parezca tan perfecta» —
-   * con holguras que NUNCA llegan a solapar (lingote 0,17×0,08). */
+   * con holguras que NUNCA llegan a solapar (lingote 0,17×0,08).
+   * v3.6.22 · MÁS CERCA DE LAS VENTANAS (informe del dueño: «ahora están
+   * muy cerca de la mesa y casi no se ven»): x 1,35 → 2,55 — el borde
+   * exterior del cajón queda a 2,91 (14 cm de la pared a ±3,05) y los
+   * lingotes caen DEBAJO MISMO de las ventanas, bien visibles. */
   cajonOro: {
     w: 0.72, h: 0.18, d: 0.36,   // doble de ancho · mitad de alto (cajón 0,36)
-    x: 1.35,                     // entre la mesa (x ±0,76) y la pared (±3,05)
+    x: 2.55,                     // pegado a las ventanas (pared a ±3,05)
     zIzq: -1.38, zDer: -1.59,    // centro de la ventana izquierda / derecha
     sepX: 0.19, sepZ: 0.095,     // rejilla 3×3 (lingote 0,17×0,08 + holgura)
     jX: 0.007, jZ: 0.003, yaw: 0.03,   // pequeñas variaciones de colocación
@@ -8176,6 +8196,16 @@ class TrenAction {
           const sz = box.getSize(new THREE.Vector3());
           const s = 0.17 / (Math.max(sz.x, sz.y, sz.z) || 0.17);
           root.scale.setScalar(s);
+          /* v3.6.22 · FIX DE LA INTERPENETRACIÓN — medido con
+           * scripts/mide_lingote_mundo.py (bbox con TRS de nodos, como
+           * Box3.setFromObject): la barra del GLB nace con su eje LARGO
+           * EN Z (0,078 × 0,038 × 0,170 en mundo) — la rejilla v2.141
+           * (sepZ 0,095) la solapaba 7,5 cm FILA CONTRA FILA. Girada 90°
+           * en Y, el eje largo queda en X y TODA la rejilla cuadra
+           * (0,55 × 0,27 sobre el cajón de 0,72 × 0,36, holguras
+           * positivas con el jitter incluido). La altura (y) no cambia:
+           * _lingoteH sigue siendo la medida real del GLB. */
+          root.rotation.y = Math.PI / 2;
           const wrap = new THREE.Group();
           wrap.add(root);
           wrap.updateMatrixWorld(true);
@@ -8665,11 +8695,17 @@ class TrenAction {
     this.fjDiana.visible = false;
     this._fjSetFrame('paso');
     this._sndYihha();   // v2.113: ¡ALERTA! grito del jinete al acercarse
+    /* v3.6.22: GALOPE del caballo — bucle PROPIO con desfase aleatorio y
+     * paneo del lado que toca; el volumen vive en _fjUpdate (distancia). */
+    try { this._galBuc(0).on(0.12 + Math.random() * 0.9, this._fjSide * 0.55); } catch (e) { /* */ }
   }
   _fjGone() {
     this.fj.visible = false;
     this.fjDiana.visible = false;
     this._fjState = 'off';
+    /* v3.6.22: el galope calla (fin de fuga, túnel o cierre — ya casi
+     * inaudible por la distancia, aquí el cierre duro). */
+    try { if (this.__galPool && this.__galPool[0]) this.__galPool[0].off(true); } catch (e) { /* */ }
     const F = TREN.forajido;
     this._fjNext = (this._fjCount >= F.total) ? 9999
       : F.nextMin + Math.random() * (F.nextMax - F.nextMin);
@@ -8688,6 +8724,8 @@ class TrenAction {
     this._fjT = 0; this._fjFrame = 0;
     this._fjSetFrame('herido');
     this.ctrl.sfx('grito', 0);
+    /* v3.6.22: abatido → el galope calla BRUSCO (petición literal). */
+    try { this._galBuc(0).off(true); } catch (e) { /* */ }
     this._msg = tx('tren_herido');
     this._msgT = 2.2;
     this.ctrl.fx.flash(this.fj.position, 1.4, 0xff6a4a);
@@ -8804,6 +8842,11 @@ class TrenAction {
       if (this._fjZ < F.zOut) return this._fjGone();
       this._fjPose(bob);
     }
+    /* v3.6.22: el galope se DESVANECE con la distancia a la ventana
+     * (progresivo al alejarse — paso, fuga e ida incluidas). */
+    if (this.__galPool && this.__galPool[0]) {
+      this.__galPool[0].setVol(this._galVol(this._fjZ, F.zAtk));
+    }
   }
 
   /* ======================================================================
@@ -8868,6 +8911,10 @@ class TrenAction {
       rec.diana.visible = true;           // MIRILLA SIEMPRE encima
       rec.grp.visible = true;
       this._indPose(rec, 0);
+      /* v3.6.22: caballo PROPIO por jinete — DESFASADO (k × ~0,3 s: los
+       * caballos no galopan al compás) y paneo del lado del grupo. */
+      rec.galK = k + 1;
+      try { this._galBuc(rec.galK).on(k * 0.31 + Math.random() * 0.14, side * 0.55); } catch (e) { /* */ }
       this._inds.push(rec);
     }
     this._indAny = true;
@@ -8879,6 +8926,12 @@ class TrenAction {
     for (const rec of this._inds) {
       rec.grp.visible = false;
       rec.diana.visible = false;
+    }
+    /* v3.6.22: fuera los galopes del grupo (túnel incluido: aquí pasa). */
+    if (this.__galPool) {
+      for (let i = 1; i < 4; i++) {
+        try { if (this.__galPool[i]) this.__galPool[i].off(true); } catch (e) { /* */ }
+      }
     }
     this._inds = [];
     this._indAny = false;
@@ -8903,6 +8956,8 @@ class TrenAction {
     this._indSetFrame(rec, indMat('indioalcanzado.png',
       this._indLd, this._indA, this._aniso));
     this.ctrl.sfx('grito', 0);
+    /* v3.6.22: abatido → SU caballo calla BRUSCO (los demás siguen). */
+    try { if (rec.galK) this._galBuc(rec.galK).off(true); } catch (e) { /* */ }
     this._msg = tx('tren_indio_ok');
     this._msgT = 2.2;
     this.ctrl.fx.flash(rec.grp.position, 1.4, 0xff6a4a);
@@ -9022,6 +9077,17 @@ class TrenAction {
       }
       if (rec.state !== 'gone') vivos++;
       else rec.diana.visible = false;
+      /* v3.6.22: jinete fuera de escena → SU galope calla (los hermanos
+       * del grupo siguen hasta SU salida). */
+      if (rec.state === 'gone' && rec.galK && this.__galPool &&
+          this.__galPool[rec.galK]) {
+        try { this.__galPool[rec.galK].off(true); } catch (e) { /* */ }
+      }
+      /* v3.6.22: galope vivo → desvanecer con la distancia a SU ventana. */
+      if (rec.galK && rec.state !== 'gone' && this.__galPool &&
+          this.__galPool[rec.galK]) {
+        try { this.__galPool[rec.galK].setVol(this._galVol(rec.z, rec.zAtk)); } catch (e) { /* */ }
+      }
     }
     if (!vivos) this._indGoneAll();
     this._flechaStep(dt);
@@ -9165,6 +9231,56 @@ class TrenAction {
    *  dura la prueba (sustituye a la BSO del saloon: musicOn() se retira
    *  durante la etapa). Mismo canal y volúmenes que la BSO del módulo.
    *  ====================================================================== */
+  /* ======================================================================
+   *  v3.6.22 · SONIDO REAL DEL TREN (4 pistas del artista):
+   *   · tren/Tren_Llegada.mp3 — ONE-SHOT al llegar a la estación (_llegaEstacion)
+   *   · tren/vias.mp3 — RODADURA continua en bucle mientras el vagón marcha
+   *     (arranca en _depart, se apaga con fundido al frenar en _llegaEstacion)
+   *   · tren/Tunel.mp3 — ONE-SHOT al ENTRAR en el túnel (fase 'pre'→'in')
+   *   · tren/caballos.mp3 — GALOPE POR INSTANCIA (pool 1+3: el forajido y
+   *     los grupos de indios), cada jinete DESFASADO en el audio y con
+   *     paneo de SU lado; se desvanece con la DISTANCIA a la ventana
+   *     (setVol vivo por frame) y calla BRUSCO al abatirlo (off seco).
+   *  Los bucles viven en el SDK (createBucle v1.5.0): decode en forma
+   *  promesa, mute del arcade respetado y nunca rompe el frame.
+   *  ====================================================================== */
+  /* RODADURA — bucle ambience del tren en marcha. */
+  get _viasBuc() {
+    if (!this.__viasBuc) {
+      this.__viasBuc = createBucle(() => this.game, {
+        url: () => assetURL(import.meta.url, 'tren/vias.mp3'),
+        vol: () => 0.13,
+        fadeIn: 0.6, stopFade: 0.9,
+      });
+    }
+    return this.__viasBuc;
+  }
+  /* GALOPE — pool de 4 motores (0 = forajido · 1..3 = jinetes del grupo). */
+  _galBuc(k) {
+    if (!this.__galPool) this.__galPool = [];
+    if (!this.__galPool[k]) {
+      this.__galPool[k] = createBucle(() => this.game, {
+        url: () => assetURL(import.meta.url, 'tren/caballos.mp3'),
+        vol: () => 0.45,
+        fadeIn: 0.25, stopFade: 0.4,
+      });
+    }
+    return this.__galPool[k];
+  }
+  /* Volumen vivo del galope: distancia del jinete a SU centro de ventana
+   * (desvanecer progresivo al alejarse — la muerte es off(true) seco). */
+  _galVol(z, zAtk) {
+    const d = Math.abs(z - zAtk);
+    return 0.45 * Math.max(0, Math.min(1, 1 - d / 5.5));
+  }
+  /* Cierre duro de TODOS los bucles del vagón (dispose). */
+  _galCorta() {
+    if (this.__galPool) {
+      for (const b of this.__galPool) { try { b.off(true); } catch (e) { /* */ } }
+    }
+    try { if (this.__viasBuc) this.__viasBuc.off(true); } catch (e) { /* */ }
+  }
+
   _musicVol() {
     try {
       const A = this.game.audio;
@@ -9228,6 +9344,11 @@ class TrenAction {
     this._tunnelT = TREN.tunnelFirst;
     this._tunnelPhase = 'none';
     this._tunnelT2 = 0;
+    /* v3.6.22 · precarga de las pistas nuevas (llegada y túnel; los bucles
+     * vias/caballos cargan perezosos en su primer on() — el primer jinete
+     * galopa segundos después del arranque, hay tiempo de sobra). */
+    try { this.__sfxSDK().precarga('tren/Tren_Llegada.mp3'); } catch (e) { /* */ }
+    try { this.__sfxSDK().precarga('tren/Tunel.mp3'); } catch (e) { /* */ }
     /* v2.115 · tanda NUEVA: pool de bolas, poderes, bomba y túnel en cero */
     /* v2.120: además del mesh, se libera el material clonado de cada extra
      * (el recambio ya reutiliza entradas muertas; aquí es el cierre duro). */
@@ -9304,6 +9425,9 @@ class TrenAction {
     this.phase = 'run';
     this.time = TREN.time;
     this._stoppedT = 0;
+    /* v3.6.22: RODADURA — vias.mp3 en bucle mientras el vagón marcha
+     * (se apaga con fundido al frenar en _llegaEstacion). */
+    try { this._viasBuc.on(); } catch (e) { /* */ }
     this._megaLlegada = false;      // v2.140: el anuncio de llegada, por trayecto
     this._hidePremio();             // v2.140: fuera el panel de la parada
     /* v2.118 · el primer túnel del tramo NO pisa la salida del andén: al
@@ -9358,6 +9482,10 @@ class TrenAction {
     this._msg = tx('tren_llega');
     this._msgT = 3.2;
     this.ctrl.sfx('whistle', 0);
+    /* v3.6.22: LLEGADA A LA ESTACIÓN — la rodadura se apaga con fundido
+     * (el tren frena) y suena la pista del artista Tren_Llegada.mp3. */
+    try { this._viasBuc.off(); } catch (e) { /* */ }
+    this.__sfxSDK().play('tren/Tren_Llegada.mp3', 0.5);
   }
 
   /** El tren llega AL ANDÉN: frena del todo y comprueba el BOTÍN. */
@@ -9839,6 +9967,9 @@ class TrenAction {
       if (this._tunelZ >= TU.ojo + TU.bh / 2) {
         this._tunnelPhase = 'in';
         this._tunnelT2 = 0;
+        /* v3.6.22: ENTRADA EN EL TÚNEL — pista del artista Tunel.mp3
+         * (14,4 s: cubre de sobra el cruce entero por la montaña). */
+        this.__sfxSDK().play('tren/Tunel.mp3', 0.42);
       }
     } else if (this._tunnelPhase === 'in') {
       this._tunnelT2 += dt;
@@ -10634,6 +10765,8 @@ class TrenAction {
     const g = this.game;
     this._stopRumble();
     this._musicStop();                 // v2.111: fuera la música del vagón
+    /* v3.6.22: cierre duro de los bucles del tren (rodadura y galopes). */
+    this._galCorta();
     // v2.111: restaurar el FONDO del salón
     if (this._bgWas !== undefined) {
       g.scene.background = this._bgWas;

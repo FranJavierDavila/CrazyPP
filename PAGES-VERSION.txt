@@ -1,6 +1,6 @@
-version=3.6.21-SDK6
-fuente_commit=9a1200fad4e9b81b9ad9da4ee33a0ee883cbb1e4
-game_sha256=d097b1f5801be997cbfc3eeb082317ef4ee1b28659bf96a9260dda139be18f54
+version=3.6.22-SDK6
+fuente_commit=70ef6a46dd8500007281d8739be6283d6f6790e5
+game_sha256=c66d4d2c83bd9090281c2542680cdaca563eb917f33b791aa9ce813cceb16c0a
 reescrituras=2
-fecha=2026-10-20T10:26:26
+fecha=2026-10-20T14:39:45
 url=https://franjavierdavila.github.io/CrazyPP/

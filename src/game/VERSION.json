@@ -1,17 +1,17 @@
 {
-  "version": "3.6.23-SDK6",
-  "fase": 25,
-  "faseNombre": "EL TREN SE OYE SIEMPRE (ronda 29)",
-  "sdk": "1.5.1",
+  "version": "3.6.24-SDK6",
+  "fase": 26,
+  "faseNombre": "El tren en el dispositivo real",
+  "sdk": "1.5.2",
   "fecha": "2026-10-20",
-  "hub": "v3623-sdk6",
+  "hub": "v3624-sdk6",
   "manifests": {
-    "oeste": 53,
+    "oeste": 54,
     "magia": 32,
     "locura": 23,
     "estacion_orbital": 16,
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "b161737318177767898b9fc39508a5f932dd2476016eca8dcddc79ab3f337460"
+  "golden": "1d38fe846a21f26f09f882c212a438a1284f5d6fdc4a897e59ba4db3c4210cda"
 }

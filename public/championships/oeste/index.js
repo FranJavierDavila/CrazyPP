@@ -3,9 +3,13 @@
  *  ---------------------------------------------------------------------
  *  v2.142 (módulo v52 · v3.6.22, ronda 28) · EL TREN SUENA Y EL ORO SE VE —
  *      informe del dueño en el casco (etapa 4): (1) CUATRO PISTAS DEL
- *      ARTISTA: Tren_Llegada.mp3 one-shot al llegar a la estación ·
- *      vias.mp3 RODADURA en bucle mientras el vagón marcha (off con
- *      fundido al frenar) · Tunel.mp3 one-shot al entrar en el túnel ·
+ *      ARTISTA: Tren_Llegada.mp3 one-shot POCO DESPUÉS del anuncio de
+ *      segundos para llegar a la estación (v3.6.24: a 1,2 s de la mega-
+ *      fonía, no al frenar) ·
+ *      vias.mp3 RODADURA en bucle mientras el vagón marcha (setVol vivo
+ *      por frame + off con fundido al frenar) · Tunel.mp3 one-shot AL
+ *      APARECER tunelboca.png en el parallax (v3.6.24: el comienzo de la
+ *      entrada) ·
  *      caballos.mp3 GALOPE POR INSTANCIA (pool 1+3 del SDK v1.5.0,
  *      createBucle): cada jinete DESFASADO en el audio y con paneo de su
  *      lado, se desvanece con la DISTANCIA a la ventana y calla BRUSCO
@@ -8648,6 +8652,37 @@ class TrenAction {
   }
 
   /* ======================================================================
+   *  v3.6.24 · ONE-SHOTS DEL ARTISTA CON REINTENTOS (_pistaTren)
+   *  La llegada y el túnel suenan UNA vez por trayecto: cualquier fallo
+   *  transitorio (buffer aún decodificando, contexto dormido en el
+   *  instante exacto) significaba silencio PARA SIEMPRE. Ahora el disparo
+   *  queda agendado y _pistaTrenStep (cada frame en fxStep) lo reintenta
+   *  hasta que el motor tiene el buffer (play() con buffer listo suena
+   *  síncrono; con buffer tarde, el pend del SDK v1.5.1 lo auto-dispara;
+   *  con contexto dormido, el statechange del SDK v1.5.2 lo despierta).
+   *  ====================================================================== */
+  _pistaTren(name, vol) {
+    if (!this._trenPend) this._trenPend = [];
+    this._trenPend.push({ name, vol, t: 6 });   // 6 s de margen por disparo
+  }
+  _pistaTrenStep(dt) {
+    if (!this._trenPend || !this._trenPend.length) return;
+    const eng = this.__sfxSDK();
+    for (let i = this._trenPend.length - 1; i >= 0; i--) {
+      const p = this._trenPend[i];
+      p.t -= dt;
+      if (eng.tiene(p.name)) {
+        try { eng.play(p.name, p.vol); } catch (e) { /* */ }
+        this._trenPend.splice(i, 1);      // disparado (el SDK hace el resto)
+      } else if (p.t <= 0) {
+        this._trenPend.splice(i, 1);      // 6 s sin buffer: desistir en paz
+      } else {
+        try { eng.precarga(p.name); } catch (e) { /* */ }
+      }
+    }
+  }
+
+  /* ======================================================================
    *  v2.111 · EL FORAJIDO GALOPANTE — sprite sheet en BUCLE (galope1-3)
    *  que cabalga PARALELO al tren y lo ADELA; aparece cada cierto tiempo
    *  al azar, por ambos lados (nunca los dos a la vez), unas 10 veces por
@@ -9252,18 +9287,26 @@ class TrenAction {
    *  durante la etapa). Mismo canal y volúmenes que la BSO del módulo.
    *  ====================================================================== */
   /* ======================================================================
-   *  v3.6.22 · SONIDO REAL DEL TREN (4 pistas del artista):
-   *   · tren/Tren_Llegada.mp3 — ONE-SHOT al llegar a la estación (_llegaEstacion)
-   *   · tren/vias.mp3 — RODADURA continua en bucle mientras el vagón marcha
-   *     (arranca en _depart, se apaga con fundido al frenar en _llegaEstacion)
-   *   · tren/Tunel.mp3 — ONE-SHOT al ENTRAR en el túnel (fase 'pre'→'in')
+   *  v3.6.22/24 · SONIDO REAL DEL TREN (4 pistas del artista):
+   *   · tren/Tren_Llegada.mp3 — ONE-SHOT «poco después» del anuncio de
+   *     segundos de la megafonía (a 1,2 s del tren_mega_llega, v3.6.24:
+   *     petición literal del dueño) — con reintentos (_pistaTren).
+   *   · tren/vias.mp3 — RODADURA continua en bucle mientras el vagón
+   *     marcha (arranca en _depart, setVol DIRECTO por frame en fxStep —
+   *     el mecanismo que llegó al hardware de la Quest en los galopes —,
+   *     se apaga con fundido al frenar en _llegaEstacion)
+   *   · tren/Tunel.mp3 — ONE-SHOT AL APARECER la boca tunelboca.png en
+   *     el parallax (inicio de la fase 'pre', v3.6.24) — con reintentos.
    *   · tren/caballos.mp3 — GALOPE POR INSTANCIA (pool 1+3: el forajido y
    *     los grupos de indios), cada jinete DESFASADO en el audio y con
    *     paneo de SU lado; se desvanece con la DISTANCIA a la ventana
    *     (setVol vivo por frame) y calla BRUSCO al abatirlo (off seco).
-   *  Los bucles viven en el SDK (createBucle v1.5.1 con ignoraMute: las
-   *  pistas del tren son SFX/ambiente, no música — suenan SIEMPRE);
-   *  decode en forma promesa y nunca rompe el frame.
+   *  Los bucles viven en el SDK (createBucle v1.5.2: ignoraMute — las
+   *  pistas del tren son SFX/ambiente, no música, suenan SIEMPRE;
+   *  suena() cuenta como MUERTA la instancia de un contexto renacido
+   *  para que la auto-reparación pueda rematarla; on()/play() con el
+   *  contexto dormido quedan PENDIENTES y el statechange los despierta).
+   *  Decode en forma promesa y nunca rompe el frame.
    *  ====================================================================== */
   /* RODADURA — bucle ambience del tren en marcha (ignoraMute: el silencio
    * del arcade es de MÚSICA; la rodadura suena siempre — SDK v1.5.1). */
@@ -9304,6 +9347,8 @@ class TrenAction {
       for (const b of this.__galPool) { try { b.off(true); } catch (e) { /* */ } }
     }
     try { if (this.__viasBuc) this.__viasBuc.off(true); } catch (e) { /* */ }
+    this._trenPend = [];              // v3.6.24: fuera one-shots agendados
+    this._llPistaT = 0;
   }
 
   _musicVol() {
@@ -9406,6 +9451,9 @@ class TrenAction {
      * llegada y con las RISAS del forajido YA precargadas. */
     this._hidePremio();
     this._megaLlegada = false;
+    /* v3.6.24: estado de los one-shots del artista (llegada/túnel) a cero. */
+    this._llPistaT = 0;
+    this._trenPend = [];
     this.loadRisasForajido();
     // EL VAGÓN MANDA: fuera saloon, troqueles, mapa, cartel y forajido
     if (g.roomGroup) g.roomGroup.visible = false;
@@ -9454,6 +9502,7 @@ class TrenAction {
      * (se apaga con fundido al frenar en _llegaEstacion). */
     try { this._viasBuc.on(); } catch (e) { /* */ }
     this._megaLlegada = false;      // v2.140: el anuncio de llegada, por trayecto
+    this._llPistaT = 0;             // v3.6.24: silbato del artista, por trayecto
     this._hidePremio();             // v2.140: fuera el panel de la parada
     /* v2.118 · el primer túnel del tramo NO pisa la salida del andén: al
      * menos 12 s de viaje antes de que la boca aparezca a lo lejos. */
@@ -9508,9 +9557,10 @@ class TrenAction {
     this._msgT = 3.2;
     this.ctrl.sfx('whistle', 0);
     /* v3.6.22: LLEGADA A LA ESTACIÓN — la rodadura se apaga con fundido
-     * (el tren frena) y suena la pista del artista Tren_Llegada.mp3. */
+     * (el tren frena). v3.6.24: el one-shot del artista ya sonó «poco
+     * después» del anuncio de segundos (a 1,2 s de la megafonía) — aquí
+     * sólo frena la rodadura, junto al silbato sintético de la casa. */
     try { this._viasBuc.off(); } catch (e) { /* */ }
-    this.__sfxSDK().play('tren/Tren_Llegada.mp3', 0.5);
   }
 
   /** El tren llega AL ANDÉN: frena del todo y comprueba el BOTÍN. */
@@ -9605,6 +9655,17 @@ class TrenAction {
           this.game.audio.announce(
             tx('tren_mega_llega', { e: TREN.stationNames[this.wave] }), true);
         } catch (e) { /* */ }
+        /* v3.6.24 · LA LLEGADA SUENA «POCO DESPUÉS» DEL ANUNCIO (petición
+         * literal del dueño: «el tren_Llegada.mp3 poco después de que se
+         * anuncien los segundos para llegar a la estación») — el silbato
+         * del artista entra a 1,2 s del anuncio de megafonía, NO al frenar
+         * en el andén (antes sonaba 25 s tarde y el dueño no lo oía). */
+        this._llPistaT = 1.2;
+      }
+      /* v3.6.24 · disparo diferido del silbato de llegada (con reintentos). */
+      if (this._llPistaT > 0) {
+        this._llPistaT -= dt;
+        if (this._llPistaT <= 0) this._pistaTren('tren/Tren_Llegada.mp3', 0.5);
       }
       // crucero hacia delante
       this.v = Math.min(TREN.vMax, this.v + TREN.accel * dt);
@@ -9950,10 +10011,17 @@ class TrenAction {
     /* ==== v2.119 · EL INDIO CABALGANTE (grupos 1-3, flecha ladrona) ==== */
     this._indUpdate(dt);
     this._musicSync();   // v3.6.3-SDK3: el SDK guarda si suena (no-op si no)
-    /* v3.6.23: AUTOREPARACIÓN de la rodadura — si el contexto renació en un
-     * re-bind de VR o un drop transitorio la dejó fuera, vuelve AL INSTANTE
-     * mientras el vagón marcha (on() es no-op si ya suena). */
+    /* v3.6.24: los one-shots del artista con reintentos (la llegada y el
+     * túnel suenan UNA vez: si el buffer aún decodifica o el contexto
+     * dormía, el disparo se recupera en los frames siguientes). */
+    this._pistaTrenStep(dt);
+    /* v3.6.22/24: RODADURA VIVA — el mismo mecanismo que ya demostró
+     * llegar al hardware en los galopes: setVol DIRECTO por frame mientras
+     * el vagón marcha (la Quest obedeció siempre a esta vía; la rampa de
+     * una sola vez no) + AUTOREPARACIÓN (contexto renacido, drop) al
+     * instante (on() es no-op si ya suena). */
     if (this.phase === 'run') {
+      try { this._viasBuc.setVol(0.13); } catch (e) { /* */ }
       try { if (!this._viasBuc.suena()) this._viasBuc.on(); } catch (e) { /* */ }
     }
     if (this.ctrl.fx) this.ctrl.fx.update(dt);
@@ -9990,17 +10058,23 @@ class TrenAction {
           this.tunelGrp.position.z = this._tunelZ;
           this.tunelGrp.visible = true;
         }
+        /* v3.6.24 · EL TÚNEL SUENA CUANDO LA BOCA APARECE (petición literal
+         * del dueño: «cuando en el parallax del plano exterior se cargan
+         * las imágenes tunelboca.png, que es el comienzo de la entrada al
+         * túnel») — la pista entra con el PRIMER destello de la boca a lo
+         * lejos, no cuando la boca cruza el ojo. Los 14,4 s cubren de
+         * sobra el cruce entero desde el primer destello. */
+        this._pistaTren('tren/Tunel.mp3', 0.42);
       }
     } else if (this._tunnelPhase === 'pre') {
       this._tunnelT2 += dt;
       // la boca ENTRA completa (su borde trasero pasa el ojo) y a
       // continuación asoma la banda ya cosida a ella
+      // (v3.6.24: el one-shot del artista ya sonó al aparecer la boca —
+      // aquí sólo cambia la fase, sin sonido)
       if (this._tunelZ >= TU.ojo + TU.bh / 2) {
         this._tunnelPhase = 'in';
         this._tunnelT2 = 0;
-        /* v3.6.22: ENTRADA EN EL TÚNEL — pista del artista Tunel.mp3
-         * (14,4 s: cubre de sobra el cruce entero por la montaña). */
-        this.__sfxSDK().play('tren/Tunel.mp3', 0.42);
       }
     } else if (this._tunnelPhase === 'in') {
       this._tunnelT2 += dt;

@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.18-SDK6, fase 20 · EMBUDO VIVO: champ_rank de las pruebas ARKANOID de La Locura (ronda 17); sello actualizado
-# por bump_version.py desde 3.6.17-SDK6)
-25ea3e3946f2dabe58a91a0767fa39d84094748abcc0ee03bb9e738f586f02b7
+# SHA256 del game.html que produjo esta división (3.6.19-SDK6, fase 20 · EMBUDO VIVO: champ_rank de las pruebas ARKANOID de La Locura (ronda 17); sello actualizado
+# por bump_version.py desde 3.6.18-SDK6)
+93fea81e9a9fbc50420fad8bdef5ae70f80c06ea1425d220986bca8581f15c88

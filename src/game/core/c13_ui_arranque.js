@@ -946,6 +946,14 @@ loadPaddleModel().then((paddleModel) => {
       const cv = mkCanvas(512, 512);
       quadCtx = cv.getContext('2d');
       quadTex = texOf(cv);
+      // v3.6.19 (ronda 26) · FIX ZONAS: la fila 0 del canvas es la RED (convención
+      // mz() de drawQuad). Con el flipY por defecto (true) y rotation.x = -π/2 la
+      // fila 0 aterriza en el FONDO y todo el overlay se muestra ESPEJADO en
+      // profundidad: la zona OBJETIVO pintaba en la profundidad CONTRARIA a la
+      // que el juez acepta (prueba GPU: objetivo mid → el jugador veía el amarillo
+      // en dz [0.66, 1.05] m y el juez aceptaba [0.34, 0.69]). flipY=false coloca
+      // la fila 0 en la red: t1a, t1b, t4a y t4b quedan EXACTOS a lo pintado.
+      quadTex.flipY = false;
       const m = new THREE.Mesh(
         new THREE.PlaneGeometry(HW() * 2, HL()),
         new THREE.MeshBasicMaterial({ map: quadTex, transparent: true, depthWrite: false, opacity: 0.94 }),
@@ -1443,7 +1451,11 @@ loadPaddleModel().then((paddleModel) => {
         G.audio.playOsc(660, 990, 0.1, 'triangle', 0.14, 0.0);
         G.audio.playOsc(880, 1320, 0.1, 'triangle', 0.14, 0.11);
         G.audio.playOsc(990, 1760, 0.14, 'triangle', 0.14, 0.22);
-        if (active === 't1a') st.target = pickTarget();
+        // v3.6.19 (ronda 26) · FIX ZONAS: al rotar el objetivo hay que REPINTAR
+        // el quad — antes la zona nueva sólo existía para el juez y el jugador
+        // seguía viendo congelada la zona inicial (informe del dueño: «se dan
+        // por buenas nuevas áreas sin ver ninguna zona nueva marcada»).
+        if (active === 't1a') { st.target = pickTarget(); if (quadMesh) drawQuad(active); }
         if (active === 't5a') { /* el rally continúa: los hitos suman */ }
       }
       if (active !== 't5a') recordBest(active, Math.max(st.streak, S.best[active] || 0));

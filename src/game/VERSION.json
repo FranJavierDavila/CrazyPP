@@ -1,10 +1,10 @@
 {
-  "version": "3.6.18-SDK6",
+  "version": "3.6.19-SDK6",
   "fase": 20,
   "faseNombre": "EMBUDO VIVO: champ_rank de las pruebas ARKANOID de La Locura (ronda 17)",
   "sdk": "1.4.0",
-  "fecha": "2026-10-19",
-  "hub": "v3618-sdk6",
+  "fecha": "2026-10-20",
+  "hub": "v3619-sdk6",
   "manifests": {
     "oeste": 51,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "25ea3e3946f2dabe58a91a0767fa39d84094748abcc0ee03bb9e738f586f02b7"
+  "golden": "93fea81e9a9fbc50420fad8bdef5ae70f80c06ea1425d220986bca8581f15c88"
 }

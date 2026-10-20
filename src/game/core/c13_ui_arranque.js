@@ -681,6 +681,7 @@ loadPaddleModel().then((paddleModel) => {
         m_t5a: 'METRÓNOMO', m_t5a_d: 'Bolas a ritmo constante: devuelve el máximo número seguidas. Hitos a 30 · 50 · 100 con bonus.',
         hud_racha: 'RACHA', hud_meta: 'META', hud_bote: 'BOTES', hud_rally: 'RALLY', hud_sesion: 'Sesión', hud_total: 'Total',
         ok_zona: '¡ZONA!', ok_banda: '¡A LA LÍNEA!', ok_bajo: '¡PASE BAJO!', ok_globo: '¡GLOBO!', ok_leido: '¡BIEN LEÍDO!', ok_bloqueo: '¡BLOQUEO!', ok_doble: '¡DOBLE BOTE!', ok_fondo: '¡AL FONDO!', ok_beat: '¡RITMO!',
+        z_obj: 'OBJETIVO', z_evita: 'EVITA', z_fondo: 'FONDO', z_doble: 'DOBLE BOTE', z_f15: 'FONDO 15 cm',
         mal_alto: 'MUY ALTO · te rematan', mal_corta: 'CORTA · al centro', mal_red: 'A LA RED', mal_fuera: 'FUERA', mal_larga: 'LARGO', mal_pierde: 'SE PIERDE',
         hecho: '¡COMPLETADO! +{n} pts', nuevo_skin: 'PIEL NUEVA: {s} · elígela en el hub', hito: '¡HITO {n} RALLY! +{n2} pts',
         sirve: 'Bola en tu mano libre · suéltala (o gatillo) y golpéala en el aire',
@@ -725,6 +726,7 @@ loadPaddleModel().then((paddleModel) => {
         m_t5a: 'METRONOME', m_t5a_d: 'Balls at a steady beat: return as many as you can in a row. Milestones at 30 · 50 · 100 with bonuses.',
         hud_racha: 'STREAK', hud_meta: 'GOAL', hud_bote: 'BOUNCES', hud_rally: 'RALLY', hud_sesion: 'Session', hud_total: 'Total',
         ok_zona: 'ZONE!', ok_banda: 'ON THE LINE!', ok_bajo: 'LOW PASS!', ok_globo: 'LOB!', ok_leido: 'WELL READ!', ok_bloqueo: 'BLOCK!', ok_doble: 'DOUBLE BOUNCE!', ok_fondo: 'DEEP!', ok_beat: 'RHYTHM!',
+        z_obj: 'TARGET', z_evita: 'AVOID', z_fondo: 'DEEP', z_doble: 'DOUBLE BOUNCE', z_f15: 'DEEP 15 cm',
         mal_alto: 'TOO HIGH · they smash', mal_corta: 'SHORT · center', mal_red: 'INTO THE NET', mal_fuera: 'OUT', mal_larga: 'LONG', mal_pierde: 'LOST',
         hecho: 'COMPLETED! +{n} pts', nuevo_skin: 'NEW SKIN: {s} · pick it in the hub', hito: 'MILESTONE {n} RALLY! +{n2} pts',
         sirve: 'Ball resting on your free hand · release it (or trigger) and hit it in the air',
@@ -1505,8 +1507,15 @@ loadPaddleModel().then((paddleModel) => {
         g.fillStyle = 'rgba(255,150,150,1)';
         g.font = '700 26px system-ui, sans-serif'; g.textAlign = 'center';
         g.save();
-        g.translate(mx(0), H - 26); g.rotate(Math.PI);
-        g.fillText('EVITA', 0, 0);
+        // v3.6.20 · TEXTO LEGIBLE + i18n: con flipY=false el jugador ve el
+        // lienzo con la fila 0 en la RED (cerca) y la fila H al fondo (lejos);
+        // para leerse de pie el texto debe dibujarse con la parte alta hacia
+        // la fila H y avanzando hacia +x: eso es scale(1,-1). rotate(π) lo
+        // dejaba en ESPEJO (orden de lectura invertido — informe del dueño
+        // v3.6.19, confirmado por IoU GPU 0.999 vs 0.811).
+        g.translate(mx(0), H - 26); g.scale(1, -1);
+        g.textBaseline = 'middle';
+        g.fillText(t('z_evita'), 0, 0);
         g.restore();
         // zona objetivo dorada
         // v3.0.8-TRN1 · ZONA FIEL AL JUEZ: lo pintado ES lo juzgado. Antes la
@@ -1526,12 +1535,14 @@ loadPaddleModel().then((paddleModel) => {
           g.strokeStyle = 'rgba(60,36,0,0.9)'; g.lineWidth = 3;
           g.strokeRect(zx0 + 12, zy0 + 12, zx1 - zx0 - 24, zy1 - zy0 - 24);
           g.save();
+          // v3.6.20 · TEXTO LEGIBLE + i18n: scale(1,-1) en vez de rotate(π)
+          // (ver EVITA arriba): el dueño veía «OBJETIVO» en espejo y no legible.
           g.translate((zx0 + zx1) / 2, (zy0 + zy1) / 2);
-          g.rotate(Math.PI);
+          g.scale(1, -1);
           const ztW = Math.abs(zx1 - zx0) - 26, ztH = Math.abs(zy1 - zy0) - 18;
           let ztSize = Math.min(58, Math.floor(ztH * 0.62));
           g.font = '900 ' + ztSize + 'px system-ui, sans-serif';
-          const ztText = 'OBJETIVO';
+          const ztText = t('z_obj');
           const ztWid = g.measureText(ztText).width;
           if (ztWid > ztW) ztSize = Math.max(20, Math.floor(ztSize * ztW / ztWid));
           g.font = '900 ' + ztSize + 'px system-ui, sans-serif';
@@ -1557,7 +1568,7 @@ loadPaddleModel().then((paddleModel) => {
         g.strokeStyle = '#9fd4ff'; g.lineWidth = 9;
         g.strokeRect(4.5, 4.5, W - 9, H - 9);
         g.fillStyle = '#0c1826'; g.font = '900 40px system-ui, sans-serif'; g.textAlign = 'center';
-        g.save(); g.translate(W / 2, (mz(zb[0]) + mz(zb[1])) / 2); g.rotate(Math.PI); g.fillText('FONDO', 0, 0); g.restore();
+        g.save(); g.translate(W / 2, (mz(zb[0]) + mz(zb[1])) / 2); g.scale(1, -1); g.textBaseline = 'middle'; g.fillText(t('z_fondo'), 0, 0); g.restore();
       } else if (mode === 't4a') {
         // zona de doble bote junto a la red (lado rival)
         const zr = [C() - 0.56, C() - 0.05];
@@ -1566,8 +1577,8 @@ loadPaddleModel().then((paddleModel) => {
         g.strokeStyle = '#ffc178'; g.lineWidth = 10;
         g.strokeRect(5, mz(zr[0]) + 5, W - 10, mz(zr[1]) - mz(zr[0]) - 10);
         g.fillStyle = '#241206'; g.font = '900 40px system-ui, sans-serif'; g.textAlign = 'center';
-        g.save(); g.translate(W / 2, (mz(zr[0]) + mz(zr[1])) / 2); g.rotate(Math.PI);
-        g.fillText('DOBLE BOTE', 0, 0); g.restore();
+        g.save(); g.translate(W / 2, (mz(zr[0]) + mz(zr[1])) / 2); g.scale(1, -1); g.textBaseline = 'middle';
+        g.fillText(t('z_doble'), 0, 0); g.restore();
       } else if (mode === 't4b') {
         // franja de fondo: últimos 15 cm
         const zr = [C() - HL(), C() - HL() + 0.15];
@@ -1576,8 +1587,8 @@ loadPaddleModel().then((paddleModel) => {
         g.strokeStyle = '#ffc178'; g.lineWidth = 10;
         g.strokeRect(5, mz(zr[0]) + 5, W - 10, mz(zr[1]) - mz(zr[0]) - 10);
         g.fillStyle = '#241206'; g.font = '900 30px system-ui, sans-serif'; g.textAlign = 'center';
-        g.save(); g.translate(W / 2, (mz(zr[0]) + mz(zr[1])) / 2); g.rotate(Math.PI);
-        g.fillText('FONDO 15 cm', 0, 0); g.restore();
+        g.save(); g.translate(W / 2, (mz(zr[0]) + mz(zr[1])) / 2); g.scale(1, -1); g.textBaseline = 'middle';
+        g.fillText(t('z_f15'), 0, 0); g.restore();
       }
       quadTex.needsUpdate = true;
     }

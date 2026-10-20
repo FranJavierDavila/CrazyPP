@@ -14,7 +14,14 @@ la regresión. Verificación AIRTIGHT vía GPU (render top-down + readPixels):
       SE REPINTA solo — la zona nueva es visible sin tocar nada.
   4 · MODOS HERMANOS del quad: t1b (bandas+FONDO 12 cm), t4a (doble bote
       junto a la red) y t4b (FONDO 15 cm) se muestran donde el juez juzga.
-  5 · Cero pageerrors durante toda la batería.
+  5 · TEXTOS del quad (EVITA/OBJETIVO/FONDO/DOBLE BOTE/FONDO 15 cm) pintados
+      con el patrón LEGIBLE para el jugador. Con flipY=false el jugador ve el
+      lienzo con la fila 0 en la RED, así que un texto se lee de pie sólo si
+      se dibuja con scale(1,-1) (parte alta hacia la fila H = fondo). El
+      rotate(π) histórico lo dejaba en ESPEJO (informe del dueño v3.6.19).
+      Método: réplica exacta del bloque de pintado nuevo (vflip) vs antiguo
+      (rot180) sobre el canvas real → IoU con búsqueda de desplazamiento ±3.
+  6 · Cero pageerrors durante toda la batería.
 
 Uso: python3 scripts/qa_train_zonas_v3619.py  (necesita dev :3000)
 Salida: RESULTADO: N OK · N fallos  ·  exit 0/1."""
@@ -192,6 +199,144 @@ async () => {
 };
 """
 
+# ── chequeo de TEXTOS del quad ──────────────────────────────────────────
+# Réplica EXACTA de los dos bloques de pintado posibles dentro de drawQuad:
+#   · vflip  = código NUEVO (v3.6.20): translate → scale(1,-1) → baseline
+#     middle  ⇒ el jugador (que ve el lienzo con la fila 0 en la red) lee
+#     el texto de pie.
+#   · rot180 = código ANTIGuo: translate → rotate(π) (baseline alphabetic
+#     salvo OBJETIVO, que ya usaba middle) ⇒ el jugador lo ve en ESPEJO.
+# Sólo cambia el transform/baseline entre refs; todo lo demás (fuente,
+# colores, ancla, stroke) se copia del drawQuad real. Gana el patrón con
+# mayor IoU contra la tinta real del canvas del juego (±3 px de búsqueda).
+TEXTCHECK_JS = r"""
+(cfg) => {
+  const G = window.__PP_GAME;
+  const T = window.__PP_TRAIN;
+  const grp = G.rig.getObjectByName('ppTrainGrp');
+  const quad = grp.children.find(m => m.isMesh && m.geometry && m.geometry.type === 'PlaneGeometry');
+  const cv = quad.material.map.image;
+  const g = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const HW = quad.geometry.parameters.width / 2;
+  const HL = quad.geometry.parameters.height;
+  const C = quad.position.z + HL / 2;
+  const mx = (x) => W / 2 + (x / HW) * (W / 2);
+  const mz = (z) => H * ((C - z) / HL);
+  // ancla + estilo, réplica del drawQuad por clave
+  let ax, ay, font, fill, stroke = null, lw = 0, baseOld = 'alphabetic';
+  const text = cfg.text;
+  if (cfg.k === 'evita') {
+    ax = mx(0); ay = H - 26;
+    font = '700 26px system-ui, sans-serif';
+    fill = 'rgba(255,150,150,1)';
+  } else if (cfg.k === 'objetivo') {
+    const st = T.__debug.st;
+    const zr = st.target.z === 'deep' ? [C - HL, C - HL / 2] : [C - HL / 2, C - HL / 4];
+    const xr = st.target.x < 0 ? [-HW, -0.15] : [0.15, HW];
+    const zx0 = mx(xr[0]), zx1 = mx(xr[1]), zy0 = mz(zr[0]), zy1 = mz(zr[1]);
+    ax = (zx0 + zx1) / 2; ay = (zy0 + zy1) / 2;
+    let ztSize = Math.min(58, Math.floor((Math.abs(zy1 - zy0) - 18) * 0.62));
+    const ztW = Math.abs(zx1 - zx0) - 26;
+    const mc = document.createElement('canvas').getContext('2d');
+    mc.font = '900 ' + ztSize + 'px system-ui, sans-serif';
+    const wid = mc.measureText(text).width;
+    if (wid > ztW) ztSize = Math.max(20, Math.floor(ztSize * ztW / wid));
+    font = '900 ' + ztSize + 'px system-ui, sans-serif';
+    fill = '#1a1408';
+    stroke = 'rgba(40,24,0,0.85)'; lw = 6;
+    baseOld = 'middle';
+  } else if (cfg.k === 'fondo_t1b') {
+    const zb = [C - HL, C - HL + 0.12];
+    ax = W / 2; ay = (mz(zb[0]) + mz(zb[1])) / 2;
+    font = '900 40px system-ui, sans-serif'; fill = '#0c1826';
+  } else if (cfg.k === 'doble') {
+    const zr = [C - 0.56, C - 0.05];
+    ax = W / 2; ay = (mz(zr[0]) + mz(zr[1])) / 2;
+    font = '900 40px system-ui, sans-serif'; fill = '#241206';
+  } else if (cfg.k === 'f15') {
+    const zr = [C - HL, C - HL + 0.15];
+    ax = W / 2; ay = (mz(zr[0]) + mz(zr[1])) / 2;
+    font = '900 30px system-ui, sans-serif'; fill = '#241206';
+  }
+  // ventana de muestreo (relativa al ancla; esquiva rejillas/bordes pintados)
+  const OFF = {
+    evita: [-45, -28, 90, 48],
+    objetivo: [-80, -34, 160, 68],
+    fondo_t1b: [-90, -22, 180, 30],   // dentro de la franja azul, fuera del borde de 9 px
+    doble: [-240, -44, 480, 88],
+    f15: [-110, -17, 220, 34],
+  }[cfg.k];
+  const x0 = Math.round(ax + OFF[0]), y0 = Math.round(ay + OFF[1]);
+  const ww = OFF[2], hh = OFF[3];
+  // fondo de referencia: color DOMINANTE de la ventana (buckets de 8 por
+  // canal) — robusto aunque la ventana pise dos fondos (madera+franja).
+  const img = g.getImageData(x0, y0, ww, hh).data;
+  const buckets = new Map();
+  for (let i = 0; i < img.length; i += 4) {
+    const key = ((img[i] >> 3) << 10) | ((img[i + 1] >> 3) << 5) | (img[i + 2] >> 3);
+    let b = buckets.get(key);
+    if (!b) { b = [0, 0, 0, 0]; buckets.set(key, b); }
+    b[0]++; b[1] += img[i]; b[2] += img[i + 1]; b[3] += img[i + 2];
+  }
+  let bestB = null;
+  for (const b of buckets.values()) if (!bestB || b[0] > bestB[0]) bestB = b;
+  const bg = [Math.round(bestB[1] / bestB[0]), Math.round(bestB[2] / bestB[0]), Math.round(bestB[3] / bestB[0])];
+  const dist = (r, g2, b, c) => Math.hypot(r - c[0], g2 - c[1], b - c[2]);
+  const maskOf = (data, bgc) => {
+    const m = new Uint8Array(ww * hh);
+    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+      m[p] = dist(data[i], data[i + 1], data[i + 2], bgc) > 60 ? 1 : 0;
+    }
+    return m;
+  };
+  const A = maskOf(img, bg);
+  let ink = 0;
+  for (let p = 0; p < A.length; p++) ink += A[p];
+  // refs: mismas propiedades, SÓLO cambia transform/baseline (nuevo vs antiguo)
+  const refMask = (modo) => {
+    const rc = document.createElement('canvas');
+    rc.width = ww; rc.height = hh;
+    const r = rc.getContext('2d');
+    r.fillStyle = 'rgb(' + bg.join(',') + ')';
+    r.fillRect(0, 0, ww, hh);
+    r.save();
+    r.translate(-x0, -y0);
+    r.translate(ax, ay);
+    if (modo === 'vflip') { r.scale(1, -1); r.textBaseline = 'middle'; }
+    else { r.rotate(Math.PI); r.textBaseline = baseOld; }
+    r.font = font; r.textAlign = 'center';
+    if (stroke) { r.lineWidth = lw; r.strokeStyle = stroke; r.strokeText(text, 0, 0); }
+    r.fillStyle = fill;
+    r.fillText(text, 0, 0);
+    r.restore();
+    return maskOf(r.getImageData(0, 0, ww, hh).data, bg);
+  };
+  const RV = refMask('vflip'), RR = refMask('rot180');
+  const iou = (Bm) => {
+    let best = 0;
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+      let inter = 0, uni = 0;
+      for (let y = 0; y < hh; y++) for (let x = 0; x < ww; x++) {
+        const xs = x + dx, ys = y + dy;
+        const a = A[y * ww + x];
+        const b = (xs >= 0 && xs < ww && ys >= 0 && ys < hh) ? Bm[ys * ww + xs] : 0;
+        if (a || b) uni++;
+        if (a && b) inter++;
+      }
+      if (uni) best = Math.max(best, inter / uni);
+    }
+    return best;
+  };
+  const iouV = iou(RV), iouR = iou(RR);
+  let winner = 'indeciso';
+  if (iouV >= iouR + 0.10) winner = 'vflip';
+  else if (iouR >= iouV + 0.10) winner = 'rot180';
+  return { k: cfg.k, ink, iouV: +iouV.toFixed(3), iouR: +iouR.toFixed(3), winner,
+           font, ax: Math.round(ax), ay: Math.round(ay) };
+};
+"""
+
 
 async def main():
     async with async_playwright() as p:
@@ -283,7 +428,31 @@ async def main():
         # volver a t1a para el estado final limpio
         await page.evaluate("() => window.__PP_TRAIN.startMode(window.__PP_GAME, 't1a')")
 
-        print('== 5 · pageerrors ==')
+        print('== 5 · TEXTOS del quad legibles desde el jugador (vflip vs espejo) ==')
+        TEXTOS = [
+            ('t1a', 'evita', 'EVITA'),
+            ('t1a', 'objetivo', 'OBJETIVO'),
+            ('t1b', 'fondo_t1b', 'FONDO'),
+            ('t4a', 'doble', 'DOBLE BOTE'),
+            ('t4b', 'f15', 'FONDO 15 cm'),
+        ]
+        modo_act = None
+        for modo, k, txt in TEXTOS:
+            if modo != modo_act:
+                await page.evaluate(f"() => window.__PP_TRAIN.startMode(window.__PP_GAME, '{modo}')")
+                await page.wait_for_timeout(90)
+                modo_act = modo
+            if k == 'objetivo':
+                await page.evaluate(SET_TARGET_JS, {'z': 'deep', 'x': -1})
+            r = await page.evaluate(TEXTCHECK_JS, {'k': k, 'text': txt})
+            if r.get('err') or r['ink'] < 40:
+                chk(False, f"{modo}/{k}: tinta insuficiente ({r.get('ink')} px) — revisar ventana/fuente")
+            else:
+                chk(r['winner'] == 'vflip' and r['iouV'] > 0.30,
+                    f"{modo}/{k}: patrón LEGIBLE para el jugador (IoU nuevo={r['iouV']} vs espejo={r['iouR']}, tinta={r['ink']})")
+        await page.evaluate("() => window.__PP_TRAIN.startMode(window.__PP_GAME, 't1a')")
+
+        print('== 6 · pageerrors ==')
         chk(len(errs) == 0, f'0 pageerrors durante la batería ({len(errs)} vistos)')
 
         total = f"RESULTADO: {ok_n[0]} OK · {fail_n[0]} fallos"

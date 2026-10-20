@@ -58,6 +58,7 @@ CAPAS = [
     ('I · smoke del SDK', ultimo('smoke_sdk*.py')),
     ('J · telemetría', 'qa_telemetria.py'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
+    ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

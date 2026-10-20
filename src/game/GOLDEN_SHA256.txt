@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.20-SDK6, fase 22 · TEXTOS DEL QUAD LEGIBLES + i18n (ronda 26); sello actualizado
-# por bump_version.py desde 3.6.19-SDK6)
-ae92d0a23d1f92eb3260f4fd1d767d3c4f0c13d2144911d71a7cc134421fb2f5
+# SHA256 del game.html que produjo esta división (3.6.21-SDK6, fase 23 · AYUDAS TÉCNICAS OBEDIENTES (ronda 27); sello actualizado
+# por bump_version.py desde 3.6.20-SDK6)
+0c4a882b1cdb40080df0026866a29ee1526e0e7c3e501bdd4cb29347c63f279d

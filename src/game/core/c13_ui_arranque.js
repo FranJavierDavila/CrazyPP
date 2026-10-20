@@ -2371,8 +2371,12 @@ loadPaddleModel().then((paddleModel) => {
         }
       }
     }
-    /** Icono en AMBAS caras cuando el jugador aplica efecto (en TODO el juego). */
+    /** Icono en AMBAS caras cuando el jugador aplica efecto (en TODO el juego).
+     *  ronda 27 (informe del dueño «sólo hace caso la línea de tiro»): ahora
+     *  OBEDECE al interruptor «Flecha de efecto» (S.fb.spin) igual que el
+     *  sprite de la bola — desmarcado, ningún icono de efecto aparece. */
     function pulseFaceIcons(lift) {
+      if (!S.fb.spin) return;
       const col = lift < 0 ? 0xff9a4a : lift > 0 ? 0x4ab8ff : 0xc07aff;
       for (const s of faceIcons) {
         s.material.color.setHex(col);
@@ -2644,7 +2648,25 @@ loadPaddleModel().then((paddleModel) => {
         game.drawMenu();
       }
       else if (cmd === 'skin') { applySkin(p[1]); game.drawMenu(); }
-      else if (cmd === 'fb') { S.fb[p[1]] = S.fb[p[1]] ? 0 : 1; save(); game.drawMenu(); }
+      else if (cmd === 'fb') {
+        S.fb[p[1]] = S.fb[p[1]] ? 0 : 1; save();
+        // ronda 27 (informe del dueño) · OBEDIENCIA INMEDIATA: al desmarcar
+        // una ayuda, lo YA DIBUJADO se retira al momento. Antes las marcas
+        // vivían hasta 1,6 s y la línea hasta ~1,7 s desvaneciéndose (y los
+        // iconos de la pala ni siquiera consultaban la bandera): el jugador
+        // desmarcaba y seguía viéndolas — «sólo hace caso la línea de tiro».
+        if (!S.fb.marks) for (const m of marks) { m.userData.ttl = 0; m.visible = false; }
+        if (!S.fb.line && shotLine) { shotTtl = 0; shotLine.visible = false; }
+        if (!S.fb.spin) {
+          if (spinSprite) { spinSprite.material.opacity = 0; spinSprite.visible = false; }
+          st.spinIconT = 0;
+          for (const s of faceIcons) { s.material.opacity = 0; s.visible = false; }
+          // las pistas de goma de la DOBLE GOMA no son feedback de efecto:
+          // updateFaceHints las restaura (identificación de la piel, v3.0.5)
+          updateFaceHints();
+        }
+        game.drawMenu();
+      }
     }
   
     /* ---------------- tick público ---------------- */
@@ -2665,7 +2687,8 @@ loadPaddleModel().then((paddleModel) => {
         burstTick(dt);
         if (active && G.trainV3 && G.calib) trainTick(dt);
         // detección de efecto del jugador en CUALQUIER modo (iconos en caras)
-        if (faceIcons.length && G.events && G.events.length) {
+        // ronda 27 · respeta también el interruptor «Flecha de efecto»
+        if (S.fb.spin && faceIcons.length && G.events && G.events.length) {
           for (const ev of G.events) {
             if (ev.type === 'paddle' && ev.who === 'player' && G.ball && G.ball.spin &&
                 G.ball.spin.lengthSq() > 330) {
@@ -2694,7 +2717,13 @@ loadPaddleModel().then((paddleModel) => {
         ach: Object.assign({}, S.ach), comboBest: S.comboBest || 0,
         round: { hits: st.roundHits, faults: st.roundFaults } }; },
       __debug: { S, st, MODES },
-    __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel, serveAssist },
+    __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel, serveAssist,
+      // ronda 27 · internos de las AYUDAS TÉCNICAS (QA qa_train_ayudas):
+      // accesores —nunca sustituciones— para verificar por GPU que cada
+      // interruptor de la sección «AYUDAS TÉCNICAS» obedece de verdad.
+      spawnMark, pulseFaceIcons, shotLineShow,
+      marks: () => marks, spinSprite: () => spinSprite, shotLine: () => shotLine,
+      faceIcons: () => faceIcons },
     };
   })();
   window.__PP_TRAIN = PP_TRAIN;

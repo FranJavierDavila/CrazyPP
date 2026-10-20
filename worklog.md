@@ -2957,3 +2957,19 @@ Stage Summary:
 - El galope fantasma está EXTERMINADO y sellado en los 3 planos: el módulo (reparación sólo con jinete vivo), el SDK (play booleano + sinPend + huérfana muerta + vigilante de decodes) y el QA (63 estáticos + 32 de runtime que miden el ciclo de vida completo con ganancias reales). La rodadura sube a 0,30 y los one-shots ya no se retiran hasta que SUENAN de verdad.
 - Listo para producción en V3.6.25-SDK6: SOLO FALTA EL PUSH. Cuando el dueño pegue de nuevo el PAT (efímero, por entorno): GIT_TOKEN=... python3 scripts/deploy_pages.py --push --release --backup (rama pages ya construida en local: 30bd518).
 - Pendientes heredados: reintentar qa_todo --produccion (K/L, se colgaba por red); reponer .cf-token y .clave-produccion desde el respaldo del Task 122.
+
+---
+Task ID: 132
+Agent: principal (Z.ai)
+Task: Push + despliegue en producción de V3.6.25-SDK6 (el galope fantasma) con el PAT entregado por el dueño en el chat.
+
+Work Log:
+- PAT recibido por chat → guardado en scripts/worker-tele/.github-pat (93 B, chmod 600, ignorado por .gitignore línea 70 — verificado con git check-ignore). Jamás en ficheros versionados.
+- Validación API GitHub: HTTP 200 en repos/FranJavierDavila/CrazyPP · permisos push/maintain/admin/triage.
+- DESPLIEGUE: GIT_TOKEN=$(cat scripts/worker-tele/.github-pat) python3 scripts/deploy_pages.py --push --release --backup → ensamblado 384 ficheros · smoke /CrazyPP/ 18 peticiones 0 fallos 0 pageerrors · rama pages → a22c10dd4 (commit encadenado desde 6bd61ee) · respaldo anti-rollback main → proyecto al día · Release v3.6.25-SDK6 publicada con 4 ZIPs (COMPLETO 126.303.860 · ligera 11.459.651 · CLOUDFLARE 126.290.473 · SOLO 6.089).
+- VERIFICACIÓN PRODUCCIÓN (curl): PAGES-VERSION.txt → version=3.6.25-SDK6 fuente_commit=6bd61eec6 · oeste/index.js 641.700 B con agujas v2.145 (rodadura 0,30 ×4 · sinPend ×2 · _galCorta ×2 · autoreparación sólo jinete vivo) · champ_sdk.js 59.193 B con SDK_VERSION='1.5.3' · manifest oeste version 55 + note_v2145 · los 4 mp3 HTTP 200 byte-vivos (caballos 468.114 · vias 153.165 · Tunel 287.565 · Tren_Llegada 161.280).
+- PUSH: main (ef02ced + worklog 132) subido a origin/main; proyecto ya en 6bd61ee por el --backup del despliegue.
+
+Stage Summary:
+- PRODUCCIÓN EN V3.6.25-SDK6: el galope fantasma exterminado (auto-reparación sólo con jinete vivo + SDK play() booleano/sinPend/huérfana muerta), rodadura vias a 0,30, one-shots (Tunel + Tren_Llegada) con retiro honesto que sólo se consume cuando SUENAN. El dueño ya puede probar el tren en el Quest 3 y, si todo va bien, coronar la Oeste (Duelo Nv.2 → Tren → Duelo Final = primer champion).
+- Pendientes heredados: reintentar qa_todo --produccion (K/L, se colgaba por red); el dueño debe reponer .cf-token y .clave-produccion desde su respaldo del Task 122 (Cloudflare); entrenamiento tres arreglos cuando el dueño dé el pase.

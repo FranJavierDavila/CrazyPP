@@ -2838,3 +2838,25 @@ Stage Summary:
 - Los textos del quad del entrenamiento por zonas se leen de pie desde el jugador y respetan el idioma (es/en). El chequeo de textos es permanente en la capa T: si alguien reintroduce rotate(π), el QA TOTAL se pone rojo en el momento.
 - Producción en V3.6.20-SDK6 (pages a12e435f7, release 4/4). El dueño puede coronar en esta versión: coronación épica + RUTA LEYENDA + fix de zonas (FASE 21) + textos legibles/i18n (FASE 22) + fix _leyendaOn.
 - Deuda pendiente del dueño: reponer .cf-token y .clave-produccion (reciclado del sandbox, están en su respaldo local del Task 122).
+---
+Task ID: 126
+Agent: principal (Z.ai)
+Task: Informe del dueño — en el entrenamiento, al desmarcar las AYUDAS TÉCNICAS («Marcas de bote», «Líneas de tiro», «Flechas de efecto») sólo está haciendo caso la de líneas de tiro.
+
+Work Log:
+- DIAGNÓSTICO POR QA GPU sobre el JUEGO REAL (dev :3000), no estático: nuevo scripts/qa_train_ayudas_v3621.py conduce el circuito completo clic → estado → física → dibujado.
+- El circuito de los 3 toggles está SANO: menuAction('fb:<k>') es exactamente lo que invoca menuClick del núcleo (id 'trv3:fb:<k>' → arg 'fb:<k>'), S.fb[k] y localStorage (ppxr_train_v1) cambian y persisten, y el ☑/☐ del menú se repinta.
+- Marcas y línea SÍ obedecen a su bandera (spawnMark y shotLineShow llevan los checks desde la modularización): bote REAL conducido por window.__solverHook.stepPhysics + T.tick síncronos → evento 'table' side 'ai' → OFF 0 aros nuevos, ON +2. LECCIÓN DE ARNÉS: en headless el núcleo PINEA la bola (active=false → vel/pos/spin reseteadas cada frame, línea 4153) — la física natural no corre; hay que integrar a mano. Los primeros 4 fallos del arnés eran el feed de la máquina y el pineado, no el juego.
+- CAUSA 1 (real): los ICONOS DE EFECTO EN LAS CARAS DE LA PALA (faceIcons, v3.0.1) no consultaban S.fb.spin — pulsaban SIEMPRE, también en campeonatos (repro: 4/4 visibles con «Flecha de efecto» desmarcada). Como son lo más visible, el dueño atribuía a los tres toggles la desobediencia.
+- CAUSA 2 (percepción): al desmarcar, lo YA DIBUJADO seguía hasta ~1,7 s desvaneciéndose (marcas ttl 1,6 s; línea shotTtl) — «no hace caso» inmediato para el jugador.
+- FIX 1 · c13 pulseFaceIcons: early-return si !S.fb.spin, y la detección de tick también se porta el gate (los iconos de pala obedecen a «Flecha de efecto» igual que el sprite de la bola).
+- FIX 2 · c13 menuAction('fb') · OBEDIENCIA INMEDIATA: al desmarcar se retira al instante lo dibujado (aros ttl=0+visible=false, línea oculta, sprite op 0, iconos ocultos + st.spinIconT=0); updateFaceHints() restaura después las pistas de goma de la DOBLE GOMA (identificación de piel v3.0.5, no es feedback de efecto).
+- __test del módulo ampliado con internos de feedback (spawnMark/pulseFaceIcons/shotLineShow + accesores marks/spinSprite/shotLine/faceIcons) — accesores, nunca sustituciones.
+- Circuito completo: bump 3.6.21-SDK6 (golden 0c4a882b, FASE 23) → gen_release_v3621 NUEVO (notas FASE 23 por MARCADORES; deuda cosmética del print «menciones 3.6.8»→«3.6.21» pagada; guard ajustado: la referencia qa_train_zonas_v3619 vivía DENTRO de las notas antiguas) → build_zip 4 ZIPs (COMPLETO 125.257.844 · ligera 11.459.492 · CLOUDFLARE 125.244.457 · SOLO 6.089) → sella_r28 NUEVO (31 sellos E/F/G/H/I) → qa_todo 12/12 (279 s, NUEVA CAPA U: ayudas entrenamiento 17/17; T zonas 17/17 sin regresión) → commit → deploy_pages --push --release --backup (pages 214f69516, 380 ficheros, smoke 18 peticiones OK, release 4/4 assets) → push main + main:proyecto (PAT en memoria).
+- Verificación producción por curl: V3.6.21-SDK6 en vivo, fix 1 presente (1× «if (!S.fb.spin) return;»), fix 2 presente (1× «OBEDIENCIA INMEDIATA»), release v3.6.21-SDK6 HTTP 200 y ligera ZIP 11.459.492 B byte-exacto.
+- PENDIENTE: qa_todo --produccion (capas K/L) se queda colgado cargando el game.html de producción por red (2 intentos, >320 s) — no es bloqueante: la verificación curl cubre versión/fixes/release; reintentar K/L en la próxima ronda con red estable.
+
+Stage Summary:
+- Las AYUDAS TÉCNICAS del entrenamiento obedecen al 100 %: desmarcado = silencio visual INMEDIATO en las tres, incluidos los iconos de efecto de la pala que nunca habían consultado su interruptor. La capa U congela la regresión para siempre.
+- Producción en V3.6.21-SDK6 (pages 214f69516, release 4/4). El dueño puede seguir entrenando (y coronar) con feedback técnico totalmente controlable desde el HUB.
+- Deuda registrada: reintentar qa_todo --produccion (K/L) en la próxima ronda; reponer .cf-token y .clave-produccion (pendiente del dueño desde el reciclado).

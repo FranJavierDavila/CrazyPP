@@ -3241,3 +3241,19 @@ Stage Summary:
 - Fichero .clave-produccion existe y está gitignored, pero su contenido NO valida contra producción (403).
 - Dos caminos para cerrar: (A) el dueno localiza la clave vigente (la de su panel /telemetria) y se sustituye — cero rotación; (B) rotar producción a la clave del fichero vía API de secrets (el token CF ya permite hacerlo) y el dueno actualiza su panel una vez.
 - Deuda sigue ABIERTA hasta que una de las dos se ejecute.
+
+---
+Task ID: 140-c
+Agent: Z.ai (sesion principal)
+Task: Opción B elegida por el dueño — rotar la CLAVE de producción a la del fichero
+
+Work Log:
+- PUT /accounts/{acc}/workers/scripts/crazypp-tele/secrets {name:CLAVE, type:secret_text} con el token .cf-token → success:true, errores:[].
+- E2E post-rotación contra producción: latido OK {ok:true,total:69} · resumen SIN clave → 403 (protegido OK) · resumen CON la clave del fichero → ✅ OK total=69 · sesionesUnicas=28 · porCampeonato vacío (esperado hasta que el juego lo llene).
+- .clave-produccion (600, gitignored) ahora SÍ coincide con la CLAVE del Worker → deploy_worker.py vuelve a ser seguro de correr (reutilizará la clave, cero rotaciones accidentales).
+
+Stage Summary:
+- CERRADA la pareja completa de deudas heredadas del Task 122: .cf-token (140) + .clave-produccion (140-c).
+- El Worker de producción queda: sano, protegido (403 sin clave) y legible con la clave del fichero.
+- ACCIÓN PARA EL DUEÑO: pegar la clave cpp-…3mR en su panel /telemetria («Producción (D1)») la próxima vez que lo abra — su clave anterior quedó invalidada por la rotación.
+- Peligro registrado en 140-b LEVANTADO: deploy_worker.py ya puede correr con normalidad.

@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "9102c3aa00b90abd1d3cb45049a80168e6711717dc569f538d919e283a5e60a1"
+  "golden": "0b456f3f46c49f71342daeadb451c8398eac0b29ef071dd130f2419361369650"
 }

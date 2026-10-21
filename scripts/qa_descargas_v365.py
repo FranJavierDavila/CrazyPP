@@ -20,9 +20,9 @@ def chk(cond, label):
         fails += 1
 
 ZIPS = {
-    'crazypp-v3636-sdk6-COMPLETO.zip': 130921194,  # FASE 10: id en stage/champion + champ_rank por __PP_TELE
-    'crazypp-v3636-sdk6-ligera.zip': 15886827,
-    'crazypp-v3636-sdk6-CLOUDFLARE.zip': 130907808,  # FASE 10: game.html al día
+    'crazypp-v3636-sdk6-COMPLETO.zip': 130953311,  # FASE 10: id en stage/champion + champ_rank por __PP_TELE
+    'crazypp-v3636-sdk6-ligera.zip': 15918944,
+    'crazypp-v3636-sdk6-CLOUDFLARE.zip': 130939925,  # FASE 10: game.html al día
     'crazypp-live-service-SOLO.zip': 6089,
 }
 

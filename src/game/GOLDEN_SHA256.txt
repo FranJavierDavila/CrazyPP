@@ -1,4 +1,3 @@
-# golden refrescado a mano tras el gancho 4.9 del súper efecto (post-bump 3.6.36-SDK6, ronda 44)
-# SHA256 del game.html que produjo esta división (3.6.36-SDK6, fase 38 · Superpoder Matriz; sello actualizado
-# por bump_version.py desde 3.6.35-SDK6)
-9102c3aa00b90abd1d3cb45049a80168e6711717dc569f538d919e283a5e60a1
+# golden refrescado a mano tras el swap del icono REAL SuperPala_Efecto.png del dueño (ronda 44-b, V3.6.36-SDK6 sin desplegar aún — mismo sello de versión)
+# SHA256 del game.html que produjo esta división (3.6.36-SDK6, fase 38 · Superpoder Matriz; icono efecto = el del dueño, 64 colores)
+0b456f3f46c49f71342daeadb451c8398eac0b29ef071dd130f2419361369650

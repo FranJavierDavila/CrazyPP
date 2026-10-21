@@ -28,10 +28,11 @@ RAIZ = Path('/home/z/my-project')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.35-SDK6', '3.6.36-SDK6'), ('v3635-sdk6', 'v3636-sdk6')]
-TAMANOS = [  # H: tamaños byte-exactos de los ZIPs v3636 (construidos esta ronda)
-    ('130853386', '130921194'),   # COMPLETO
-    ('15819293', '15886827'),     # ligera
-    ('130840000', '130907808'),   # CLOUDFLARE
+TAMANOS = [  # H: tamaños byte-exactos de los ZIPs v3636 (ronda 44-b: icono REAL
+             #    del dueño → COMPLETO/ligera/CLOUDFLARE crecen ~32 KB; SOLO intacto)
+    ('130921194', '130953311'),   # COMPLETO
+    ('15886827', '15918944'),     # ligera
+    ('130907808', '130939925'),   # CLOUDFLARE
 ]
 
 PLAN = [

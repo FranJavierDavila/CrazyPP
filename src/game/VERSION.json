@@ -1,17 +1,17 @@
 {
-  "version": "3.6.33-SDK6",
-  "fase": 35,
-  "faseNombre": "MEGA PALA 2.0 Nucleo de Energia: canto de energia ajustado a la silueta + nucleo en la garganta + uso voluntario por gatillo + recarga/combo",
+  "version": "3.6.34-SDK6",
+  "fase": 36,
+  "faseNombre": "MEGA Pala Normativa: carga por rally de 11+ golpes + icono sobre el mango con jingle + gatillo voluntaria + conmutador Pala Mejorada en Ajustes (nucleo: todos los campeonatos; locura v26 sin mega interna)",
   "sdk": "1.5.4",
   "fecha": "2026-10-21",
-  "hub": "v3633-sdk6",
+  "hub": "v3634-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
-    "locura": 25,
+    "locura": 26,
     "estacion_orbital": 16,
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "0d1acabeb53fae43228d07c06d1f91a7df841cd79858e4ba061fa28c68781689"
+  "golden": "c271f4d1ef973fc6375dbc49f3998642042f5a5082dd64c23365419548143031"
 }

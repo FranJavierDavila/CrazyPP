@@ -64,10 +64,12 @@ CAPAS = [
     ('X · sala del partido + mejor de 3', 'qa_partido_sala_v3629.py'),
     ('Y · hall sin pala ni bola', 'qa_hall_sin_pala_v3630.py'),
     ('Z · menú campeonatos + intro', 'qa_menu_intro_v3631.py'),
-    # AA (qa_mega_pala_v3632) RETIRADA: verificaba el FX que el dueño rechazó
-    # (aura-billboard + anillos sueltos). La sustituye AB (v3633), que cubre
-    # TODO lo vivo del rediseño + las regresiones (escala, radio, dispose).
-    ('AB · mega pala 2.0 gatillo (v3633)', 'qa_mega_pala_v3633.py'),
+    # AB (qa_mega_pala_v3633) RETIRADA: verificaba la MEGA PALA del MÓDULO
+    # locura (núcleo dorado + recarga a tiempo), retirada en v3.6.34.
+    # La sustituye AC (v3634): la MEGA PALA NORMATIVA DEL NÚCLEO — carga por
+    # rally de 11+ golpes, icono sobre el mango + jingle, gatillo voluntaria,
+    # conmutador «Pala Mejorada» y locura v26 sin mega interna.
+    ('AC · mega pala norma (v3634)', 'qa_mega_norma_v3634.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

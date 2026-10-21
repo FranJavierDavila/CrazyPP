@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.33-SDK6, fase 35 · MEGA PALA 2.0 Nucleo de Energia: canto de energia ajustado a la silueta + nucleo en la garganta + uso voluntario por gatillo + recarga/combo; sello actualizado
-# por bump_version.py desde 3.6.32-SDK6)
-0d1acabeb53fae43228d07c06d1f91a7df841cd79858e4ba061fa28c68781689
+# SHA256 del game.html que produjo esta división (3.6.34-SDK6, fase 36 · MEGA Pala Normativa: carga por rally de 11+ golpes + icono sobre el mango con jingle + gatillo voluntaria + conmutador Pala Mejorada en Ajustes (nucleo: todos los campeonatos; locura v26 sin mega interna); sello actualizado
+# por bump_version.py desde 3.6.33-SDK6)
+c271f4d1ef973fc6375dbc49f3998642042f5a5082dd64c23365419548143031

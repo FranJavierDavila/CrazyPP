@@ -2795,6 +2795,13 @@ class ArcadeController {
     // mega pala
     this._BASE_HIT = DIMS.hitAssistRadius;
     this._megaT = 0;
+    // v3.6.32: FEEDBACK VISUAL de la MEGA PALA (el poder era invisible:
+    // el jugador no sabía por qué la bola llegaba más lejos)
+    this._megaS = 0;         // escala visual actual de la montura de pala
+    this._megaWarn = false;  // aviso «el poder se agota» ya disparado
+    this._megaFx = null;     // [fx0, fx1] aura+anillos por montura
+    this._megaFxOn = false;  // la energía está VIVA (evita loops por frame)
+    this._megaAuraTex = null;
     // v2.35: superpoderes del rival EN PLENO JUEGO
     this._powerT = 0;          // segundos restantes del poder activo
     this._powerKind = '';      // 'confetti' | 'redball'
@@ -3128,8 +3135,9 @@ class ArcadeController {
     }
     // v2.74: la pistola del artista vuelve a su sitio (monturas como estaban)
     this._restoreGun();
-    DIMS.hitAssistRadius = this._BASE_HIT;
-    this._megaT = 0;
+    // v3.6.32: MEGA PALA fuera — pala a tamaño 1, radio de siempre y
+    // energía retirada con dispose (una sola llamada cubre los 3 estados)
+    this._megaFxDispose();
     this._purgeBeams();        // v2.120: sin rayos atrapados (0,16 s de vida)
     this._endPower();          // v2.35: bola/confeti de vuelta a la normalidad
     if (g.rules.oppLabel === 'clown') g.rules.oppLabel = 'cpu';
@@ -3166,6 +3174,8 @@ class ArcadeController {
         if (this.powers.includes('mega_pala')) {
           this._megaT = (this.data && this.data.playerPower &&
             this.data.playerPower.duration) || 8;
+          this._megaWarn = false;
+          this._megaFxStart();   // v3.6.32: pala crece + energía + power-up
           this.game.rules.message = T('arc_combo');
         } else {
           this.game.rules.message = T('arc_combo_locked');
@@ -3281,6 +3291,128 @@ class ArcadeController {
     }
   }
 
+  /* ------------ v3.6.32 · MEGA PALA — FEEDBACK VISUAL ------------
+   * La MEGA PALA (poder de La Locura: Crazy Combo con rally de 6 tras
+   * vencer al Clown, radio de detección ×1,38 durante 8 s) sólo tocaba
+   * la FÍSICA: cero feedback, el jugador no veía nada. Ahora:
+   *   · la pala CRECE a ×1,30 (sólo visual: se escala la MONTURA de la
+   *     pala — la física sigue mandada por hitAssistRadius)
+   *   · aura dorada (sprite aditivo) + doble anillo de energía girando
+   *     en el plano de la hoja
+   *   · power-up sonoro (arpegio arcade) + háptica al activarse y
+   *     parpadeo rápido en los últimos 2 s (el poder se agota)
+   * Todo cuelga de las DOS monturas de pala (hijas del grip): si el
+   * jugador cambia de mano a mitad del efecto, la energía viaja sola.
+   * leave() recoge y dispose todo (regla Quest: nada queda colgado). */
+
+  /** Arranque del efecto: energía VIVA + power-up sonoro + háptica. */
+  _megaFxStart() {
+    const g = this.game;
+    try { this._buildMegaFx(); } catch (e) { this._megaFx = null; }
+    this._megaFxVis(true);
+    // arpegio ascendente estilo arcade (dos saltos, centro)
+    try { g.audio.playOsc(420, 860, 0.16, 'square', 0.15, 0); } catch (e) { /* */ }
+    try {
+      window.setTimeout(() => {
+        try { g.audio.playOsc(860, 1400, 0.2, 'square', 0.12, 0); } catch (e2) { /* */ }
+      }, 110);
+    } catch (e) { /* */ }
+    if (g.renderer.xr.isPresenting) {
+      try { g.haptic(g.paddleHand, 0.75, 180); } catch (e) { /* */ }
+    }
+  }
+
+  _megaFxVis(vis) {
+    this._megaFxOn = vis;
+    if (!this._megaFx) return;
+    for (const fx of this._megaFx) {
+      if (fx) fx.visible = vis;
+    }
+  }
+
+  _buildMegaFx() {
+    const g = this.game;
+    if (this._megaFx || !g.paddleMounts) return;
+    // textura del aura (gradiente radial dorado) — UNA para las dos monturas
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 128;
+    const c2 = cv.getContext('2d');
+    const gr = c2.createRadialGradient(64, 64, 8, 64, 64, 62);
+    gr.addColorStop(0, 'rgba(255,228,150,0.95)');
+    gr.addColorStop(0.45, 'rgba(255,190,70,0.32)');
+    gr.addColorStop(1, 'rgba(255,160,40,0)');
+    c2.fillStyle = gr; c2.fillRect(0, 0, 128, 128);
+    const atex = new THREE.CanvasTexture(cv);
+    atex.colorSpace = THREE.SRGBColorSpace;
+    const lista = [];
+    for (let i = 0; i < 2; i++) {
+      const m = g.paddleMounts[i];
+      if (!m) { lista.push(null); continue; }
+      const fx = new THREE.Group();
+      fx.position.y = 0.13;   // centro de la HOJA en espacio montura (grip)
+      fx.visible = false;
+      // aura billboard: Sprite mira SIEMPRE a la cámara (inmune al giro
+      // de la pala — no importa cómo esté orientada la montura)
+      const aura = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: atex, transparent: true, opacity: 0.42,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      aura.scale.setScalar(0.34);
+      fx.add(aura);
+      // anillos EN EL PLANO DE LA HOJA (XY del montura, cara hacia ±Z,
+      // como la pala procedural): abrazan el borde de la hoja
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.104, 0.0085, 10, 40),
+        new THREE.MeshBasicMaterial({ color: 0xffc84a, transparent: true,
+          opacity: 0.7, blending: THREE.AdditiveBlending,
+          depthWrite: false }));
+      const ring2 = new THREE.Mesh(
+        new THREE.TorusGeometry(0.128, 0.0042, 8, 40),
+        new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true,
+          opacity: 0.4, blending: THREE.AdditiveBlending,
+          depthWrite: false }));
+      fx.add(ring); fx.add(ring2);
+      fx.userData = { aura, ring, ring2 };
+      m.add(fx);
+      lista.push(fx);
+    }
+    this._megaFx = lista;
+    this._megaAuraTex = atex;
+  }
+
+  /** Recogida COMPLETA (leave()/salir a mitad del efecto): pala a tamaño
+   *  1, radio de detección de siempre y energía retirada con dispose. */
+  _megaFxDispose() {
+    const g = this.game;
+    DIMS.hitAssistRadius = this._BASE_HIT;
+    this._megaT = 0;
+    this._megaS = 0;
+    this._megaWarn = false;
+    this._megaFxVis(false);
+    if (g && g.paddleMounts) {
+      for (const m of g.paddleMounts) {
+        if (m) m.scale.setScalar(1);
+      }
+    }
+    if (this._megaFx) {
+      for (const fx of this._megaFx) {
+        if (!fx) continue;
+        try { if (fx.parent) fx.parent.remove(fx); } catch (e1) { /* */ }
+        try {
+          fx.userData.ring.geometry.dispose();
+          fx.userData.ring.material.dispose();
+          fx.userData.ring2.geometry.dispose();
+          fx.userData.ring2.material.dispose();
+          fx.userData.aura.material.dispose();
+        } catch (e2) { /* */ }
+      }
+      this._megaFx = null;
+    }
+    try {
+      if (this._megaAuraTex) { this._megaAuraTex.dispose(); this._megaAuraTex = null; }
+    } catch (e3) { /* */ }
+  }
+
   update(dt) {
     if (!this.active || !this.inited) return;
     const g = this.game;
@@ -3293,11 +3425,53 @@ class ArcadeController {
     this.map.update(dt);         // v2.36: anillo de progreso del mapa
 
     // MEGA PALA (Crazy Combo del jugador con poder desbloqueado)
+    // v3.6.32: además del radio de detección (física de siempre), la pala
+    // CRECE a ×1,30 y se envuelve en energía; aviso único en los <2 s
+    // finales. El else cubre los ceros DIRECTOS (_megaT=0 en startMatch):
+    // sin él, el radio quedaba inflado hasta el fin de sesión.
     if (this._megaT > 0) {
       this._megaT -= dt;
       const mul = (this.data && this.data.playerPower && this.data.playerPower.reachMul) || 1.38;
       DIMS.hitAssistRadius = this._BASE_HIT * mul;
-      if (this._megaT <= 0) DIMS.hitAssistRadius = this._BASE_HIT;
+      if (this._megaT <= 0) {
+        DIMS.hitAssistRadius = this._BASE_HIT;   // fin natural: radio de siempre
+      } else if (this._megaT < 2 && !this._megaWarn) {
+        this._megaWarn = true;   // aviso ÚNICO: el poder se agota
+        try { g.audio.playOsc(880, 440, 0.18, 'sine', 0.16, 0); } catch (e) { /* */ }
+      }
+    } else if (DIMS.hitAssistRadius !== this._BASE_HIT) {
+      DIMS.hitAssistRadius = this._BASE_HIT;     // cero directo: restaura YA
+    }
+    // v3.6.32: escala VISUAL de la pala (crece rápido, vuelve suave)
+    const megaObj = this._megaT > 0 ? 1.3 : 1.0;
+    if (Math.abs(this._megaS - megaObj) > 0.002) {
+      const kk = 1 - Math.exp(-dt * (megaObj > this._megaS ? 7 : 4));
+      this._megaS += (megaObj - this._megaS) * kk;
+      if (Math.abs(this._megaS - megaObj) <= 0.002) this._megaS = megaObj;
+      const sv = this._megaS > 1.001 ? this._megaS : 1;
+      if (g.paddleMounts) {
+        for (let i = 0; i < 2; i++) {
+          if (g.paddleMounts[i]) g.paddleMounts[i].scale.setScalar(sv);
+        }
+      }
+    }
+    // v3.6.32: energía VIVA sólo mientras dura el poder (pulso + giro;
+    // parpadeo rápido en los <2 s finales)
+    const megaOn = this._megaT > 0;
+    if (megaOn !== this._megaFxOn) this._megaFxVis(megaOn);
+    if (megaOn && this._megaFx) {
+      const tt = this.t;
+      const blink = this._megaT < 2
+        ? (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(tt * 16))) : 1;
+      for (const fx of this._megaFx) {
+        if (!fx) continue;
+        const U = fx.userData;
+        U.aura.material.opacity = (0.30 + 0.14 * Math.sin(tt * 5.2)) * blink;
+        U.ring.material.opacity = (0.60 + 0.28 * Math.sin(tt * 6.8)) * blink;
+        U.ring2.material.opacity = (0.32 + 0.2 * Math.sin(tt * 4.1 + 1.3)) * blink;
+        U.ring.rotation.z = tt * 2.1;
+        U.ring2.rotation.z = -tt * 1.4;
+      }
     }
 
     // v2.36 · AVISO ANTES DEL PODER: el cartel SuperPower aparece 2 s ANTES
@@ -4766,6 +4940,10 @@ export default {
   id: 'locura',
   /** v2.128: ¿campeonato superado? (cinta ★ SUPERADO del menú) */
   isChampion() { return !!(CTRL && CTRL.trophy); },
+  /** v3.6.32 (ronda 40): acceso de LECTURA al controller para QA —
+   *  qa_mega_pala_v3632 sondea el estado del efecto MEGA PALA
+   *  (_megaT/_megaFx/escala) sin tocar nada (la capa no escribe). */
+  get impl() { return CTRL; },
   /** Único módulo «legacy»: hasta v2.68 el núcleo leía SU estado directo.
    *  Hoy todo el acoplamiento pasa por los ganchos de abajo. */
   legacy: true,

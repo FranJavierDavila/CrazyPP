@@ -3392,3 +3392,20 @@ Stage Summary:
 - V3.6.38-SDK6 (FASE 40) LISTA EN LOCAL: el gatillo ya no construye ni dibuja nada (precaciente + redibujo diferido + textura persistente — la pulsación queda instantánea), el halo rojo viaja CLAVADO a la bola (hijo del ballMesh), las flechas viven EN el plano del icono tangenciales y mirando a cámara, y en juego todo el arsenal se encoge al 50 % recuperando el 100 % al mirar el mango.
 - QA TOTAL 19/19 con capa AG nueva (66) y AF re-anclada (138). Golden de física intacto (0 desviaciones).
 - BLOQUEO ÚNICO: falta el PAT de GitHub (reciclado del sandbox) para commit→remote, deploy pages y push main. El .cf-token ya está repuesto y verificado (activo).
+
+---
+Task ID: 146-b (ronda 46)
+Agent: Z.ai (sesión principal)
+Task: DESPLIEGUE de V3.6.38-SDK6 a producción — PAT de GitHub repuesto por el dueño (tras el reciclado del sandbox), deploy pages + release + push main + verificación.
+
+Work Log:
+- PAT repuesto (github_pat_…, verificado contra /user → login FranJavierDavila; guardado en scripts/worker-tele/.github-pat 600, gitignored OK).
+- DESPLIEGUE (lección 44-b aplicada: el commit 75c61ab YA estaba hecho ANTES del deploy): GIT_TOKEN=$(cat scripts/worker-tele/.github-pat) deploy_pages --push --release --backup → sitio 395 ficheros · 137,2 MB · smoke Playwright bajo prefijo /CrazyPP/ verde (29 peticiones, 0 fallos de red, 0 pageerrors) → rama pages 393e96996 en GitHub · Release v3.6.38-SDK6 con los 4 ZIPs (COMPLETO 131,0 MB · ligera 16,0 MB · CLOUDFLARE 131,0 MB · SOLO 6 KB) · respaldo anti-rollback main→proyecto al día.
+- push main: d33e082..75c61ab (PAT enmascarado en la salida).
+- VERIFICACIÓN PRODUCCIÓN (vía de la casa: fetch git de la rama pages; el sandbox no alcanza pages.dev por curl — 000): origin/pages = 393e969 «deploy pages: 3.6.38-SDK6 · fuente 75c61abcf · game 3a679e7cc358 (+2 reescrituras)» · PAGES-VERSION.txt servido: version=3.6.38-SDK6, fuente_commit=75c61abcf… · game.html servido 6.795.429 B (= golden 0ebb7e19 + 2 reescrituras) con las agujas de la FASE 40: V3.6.38-SDK6 ×1 · _megaPrewarm ×8 · _megaTexDirty ×9 · MEGA_LOD_JUEGO=0.5 ×1 · MEGA_LOD_MIRA=0.978 ×1 · ballMesh.add(sp) ×1 (halo hijo de la bola) · flechas en escena/plano ×2 · 7 data:image/png (3 iconos de poder incluidos).
+- Nota: el token cfut_ del dueño no lista proyectos Pages del API (success true, lista vacía — scope); no bloquea: el build de Pages se dispara solo con la rama pages, como siempre.
+
+Stage Summary:
+- V3.6.38-SDK6 (FASE 40) EN PRODUCCIÓN: gatillo INMEDIATO (precaciente + redibujo diferido + textura persistente), halo rojo CLAVADO a la bola (hijo del ballMesh), flechas EN el plano del icono (tangenciales, mirando a cámara) y LOD 50 % en juego con recuperación al mirar el mango.
+- El dueño debe recargar en el Quest (cerrar pestaña / game.html?v=3638) y probar: (1) lanzar un superpoder — la pulsación debe sentirse INSTANTÁNEA; (2) el halo rojo y el bote rojo deben ir EXACTOS con la bola; (3) las flechas ‹ › a los lados del icono, casi rozándolo, siempre mirando a cámara aunque gire la muñeca; (4) en rally el icono se encoge al 50 % — mirando el mango recupera su tamaño.
+- Pendiente heredado: .clave-produccion (el dueño la repone desde su respaldo del Task 122 cuando pueda; el Worker sigue sano) + calibración fina del LOD (porcentaje/umbral = MEGA_LOD_JUEGO/MEGA_LOD_MIRA) con su feedback.

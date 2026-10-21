@@ -473,8 +473,13 @@ export class OpponentAI {
             // bola NUEVA viniendo: el error de puntería se sortea UNA sola vez
             // y se mantiene durante todo el rallye (antes se re-sorteba cada
             // re-predicción y la pala temblaba persiguiendo objetivos distintos)
-            this.errX = gauss() * this.cfg.errStd;
-            this.errY = gauss() * this.cfg.errStd * 0.6;
+            // v3.6.37 · SÚPER EFECTO NOTORIO (petición del dueño): la bola
+            // MARCADA «dificulta en un %» el éxito del rival — el error se
+            // sortea con la marca YA puesta (el golpe con el poder activo
+            // precede al vuelo) y se amplifica ×efectoRivalErrMul.
+            const eMulIA = ball.ppEfecto ? (DIMS.efectoRivalErrMul || 1) : 1;
+            this.errX = gauss() * this.cfg.errStd * eMulIA;
+            this.errY = gauss() * this.cfg.errStd * 0.6 * eMulIA;
             this.predict.copy(strike.point);
             // v2.23: ¿golpe de DERECHA o de REVÉS? Según el lado en que queda
             // la bola respecto al cuerpo al empezar a reaccionar (con sign:
@@ -540,7 +545,11 @@ export class OpponentAI {
 
     tmpD.copy(tmpT).sub(this.pos);
     const dist = tmpD.length();
-    const desiredSpeed = Math.min(this.cfg.maxSpeed, dist * 4.5);
+    // v3.6.37 · SÚPER EFECTO NOTORIO: con la bola marcada viniendo, el rival
+    // va un % más lento (le CUESTA llegar — visible y honesto: la física de
+    // salida no cambia, solo las piernas de la IA mientras sufre el efecto).
+    const vMulIA = (ball.ppEfecto && toward) ? (DIMS.efectoRivalVel || 1) : 1;
+    const desiredSpeed = Math.min(this.cfg.maxSpeed * vMulIA, dist * 4.5);
     if (dist > 1e-5) tmpD.setLength(desiredSpeed); else tmpD.set(0, 0, 0);
     this.vel.lerp(tmpD, Math.min(1, dt * this.cfg.accel));
     this.pos.addScaledVector(this.vel, dt);
@@ -675,6 +684,8 @@ export class OpponentAI {
     const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
     ball.spin.copy(shotSpin);
     ball.ppEfecto = false;   // v3.6.36: la devolución de la IA LIMPIA la marca
+    ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
+    if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
 
     // swing visual: follow-through del golpe en la dirección del tiro.
     // v2.23: lleva TAMBIÉN el tipo de golpe, el lado (derecha/revés) y la
@@ -724,6 +735,8 @@ export class OpponentAI {
     _miV.addScaledVector(ball.vel, 0.05);   // hereda un 5% del impulso entrante
     ball.spin.set((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 10, 0);
     ball.ppEfecto = false;   // v3.6.36: el golpe torpe de la IA LIMPIA la marca
+    ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
+    if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
     this.swing = {
       t: 0, dur: 0.26,
       contact: ball.pos.clone(),

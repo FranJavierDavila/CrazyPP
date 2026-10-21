@@ -54,6 +54,19 @@ export const DIMS = {
   efectoSpinTope: 2,        // tope de rotación = 2 × spinMax (regla del dueño: 1,5–2×)
   efectoMagnusMul: 1.5,     // Magnus ×1,5 en vuelo para la bola marcada
   efectoBoteMul: 1.8,       // acople del bote ×1,8 (limitado por Coulomb)
+  // v3.6.37 · SÚPER EFECTO NOTORIO (petición del dueño): el rival SUFRE la
+  // bola marcada — «dificultar en un %» su éxito de impacto. Dos palancas
+  // (solo con la bola marcada viniendo; sin poder: 1 = IA idéntica):
+  efectoRivalErrMul: 2.0,   // error de puntería de la IA ×2 al sortear la bola
+  efectoRivalVel: 0.85,     // piernas de la IA ×0,85 (−15 % de velocidad)
+  // v3.6.37 · SÚPER IMÁN (3.er poder; parámetros PROTOTIPO del dueño, a
+  // calibrar con las velocidades reales — NO son física de imán real):
+  // campo que atrae SUAVE la bola al punto dulce de la pala del jugador.
+  imanRadio: 0.45,          // radio de influencia del campo (m)
+  imanPlena: 0.12,          // distancia de máxima asistencia (plena dentro)
+  imanAcelMax: 3,           // aceleración lateral máxima (m/s²)
+  imanDvMax: 0.35,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
+  imanTPred: 0.15,          // horizonte máximo de predicción del impacto (s)
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto

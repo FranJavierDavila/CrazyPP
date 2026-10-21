@@ -69,7 +69,14 @@ CAPAS = [
     # (v3635): SUPERPODER DE PALA con CARGAS ×3 — cada 11 golpes del rally
     # = +1 (tope ×3, distinto sustituye), icono DEL DUEÑO anclado al mango
     # con etiqueta ×N, voz TTS embebida y gatillo del mando LIBRE.
-    ('AE · superpoder matriz (v3636)', 'qa_poderes_matriz_v3636.py'),
+    # AD (qa_mega_cargas_v3635) y AE (qa_poderes_matriz_v3636) RETIRADAS:
+    # la sustituye AF (v3637): SÚPER IMÁN (3.er poder, spec completa del
+    # dueño: campo 8 s al punto dulce, topes 0,45/0,12/3/0,35/0,15, consumo
+    # por impacto asistido, máx. 3) + flechas de la matriz como sprites
+    # PROPIOS (disco+oro+pulso) + SÚPER EFECTO notorio (halo rojo en la
+    # bola, anillo de bote, rival con error ×2 y piernas ×0,85) + toda la
+    # norma de la matriz con 3 poderes y las 6 voces nativas.
+    ('AF · superpoder imán (v3637)', 'qa_poderes_iman_v3637.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

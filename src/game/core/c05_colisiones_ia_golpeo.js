@@ -387,6 +387,69 @@ function collideWorld(ball, events) {
   }
 }
 
+/* ---------- v3.6.37 · SÚPER IMÁN (3.er poder; spec completa del dueño) ----------
+ * Atracción SUAVE de la bola hacia el punto dulce de la pala del jugador:
+ * ayuda a CENTRAR el impacto sin dirigir el golpe — la pala sigue mandada
+ * por el movimiento real de la mano/mando, la salida la calcula el modelo
+ * de contacto de siempre (restitución, fricción, spin) y no se teleporta
+ * ni la bola ni la pala. Principios del dueño implementados:
+ *   · solo bolas que vuelan HACIA la pala (closing > 0,4 m/s);
+ *   · nunca bolas que ya superaron el plano de la cara;
+ *   · predicción lineal del impacto con horizonte imanTPred (0,15 s);
+ *   · campo: plena asistencia dentro de imanPlena (0,12 m), lineal hasta
+ *     imanRadio (0,45 m), nada fuera;
+ *   · aceleración lateral ≤ imanAcelMax (3 m/s²) y Δv lateral acumulado
+ *     POR APROXIMACIÓN ≤ imanDvMax (0,35 m/s) — topes del dueño;
+ *   · integrado por SUBPASO (h fijo): estable ante fluctuaciones de FPS.
+ * La marca de «aproximación asistida» (ball.ppImanTocada) la consume el
+ * núcleo cuando esa bola golpea la pala (1 carga, máx. 3 por activación). */
+const _imC = new THREE.Vector3();
+const _imP = new THREE.Vector3();
+const _imU = new THREE.Vector3();
+const _imD = new THREE.Vector3();
+const _imA = new THREE.Vector3();
+function applyIman(ball, paddles, h) {
+  const IM = ball.ppIman;
+  if (IM.dv >= DIMS.imanDvMax) return;          // tope de empuje ya alcanzado
+  for (const pad of paddles) {
+    if (!pad.active || pad.serveFlight) continue;
+    // punto dulce = centro de la hoja en mundo (C = pos + up·bladeCenterUp)
+    _imC.copy(pad.pos).addScaledVector(pad.up, DIMS.bladeCenterUp);
+    _imU.copy(_imC).sub(ball.pos);
+    const d = _imU.length();
+    if (d > DIMS.imanRadio || d < 1e-4) continue;     // fuera del campo
+    // nunca bolas que ya superaron el plano de la cara
+    _imD.copy(ball.pos).sub(_imC);
+    if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;
+    // solo bolas que se ACERCAN a la pala
+    const closing = ball.vel.dot(_imU) / d;
+    if (closing <= 0.4) continue;
+    // predicción LINEAL del impacto (horizonte del dueño: 0,15 s)
+    const tp = Math.min(d / Math.max(closing, 0.01), DIMS.imanTPred);
+    _imP.copy(ball.pos).addScaledVector(ball.vel, tp);
+    // corrección LATERAL: componente del error perpendicular al vuelo
+    _imA.copy(_imC).sub(_imP);
+    const v2 = Math.max(1e-6, ball.vel.lengthSq());
+    _imA.addScaledVector(ball.vel, -_imA.dot(ball.vel) / v2);
+    const err = _imA.length();
+    if (err < 0.008) continue;                  // ya centrado: nada que empujar
+    // caída del campo: plena DENTRO de imanPlena, lineal hasta imanRadio
+    const f = (d <= DIMS.imanPlena)
+      ? 1
+      : Math.max(0, 1 - (d - DIMS.imanPlena) / (DIMS.imanRadio - DIMS.imanPlena));
+    if (f <= 0) continue;
+    let aMag = DIMS.imanAcelMax * f;
+    const dvRest = DIMS.imanDvMax - IM.dv;      // Δv que falta por aproximación
+    const dvPaso = aMag * h;
+    if (dvPaso > dvRest) aMag *= dvRest / Math.max(dvPaso, 1e-9);
+    if (aMag <= 1e-6) continue;
+    _imA.setLength(aMag);
+    ball.vel.addScaledVector(_imA, h);
+    IM.dv += aMag * h;                          // contador real de Δv lateral
+    ball.ppImanTocada = true;                   // esta aproximación fue asistida
+  }
+}
+
 export function stepPhysics(dt, ball, paddles, events, extra) {
   const n = Math.max(1, Math.min(96, Math.ceil(dt / MAX_SUBSTEP_DT)));
   const h = dt / n;
@@ -401,6 +464,11 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
     ball.vel.y += DIMS.gravity * h;
     applyAerodynamics(ball.vel, ball.spin, h, ball.dragMul,
       ball.ppEfecto ? (DIMS.efectoMagnusMul || 1.5) : 1);   // v3.6.36: bola marcada
+    // v3.6.37 · SÚPER IMÁN: empuje lateral hacia el punto dulce, integrado
+    // DENTRO del subpaso (h fijo → independiente del framerate, requisito
+    // del dueño). ball.ppIman lo arma el núcleo SOLO con la ventana activa:
+    // los simuladores y el golden de física nunca lo ven → física idéntica.
+    if (ball.ppIman) applyIman(ball, paddles, h);
     ball.pos.addScaledVector(ball.vel, h);
 
     // v2.29: si la pala golpea en este subpaso, la bola se RECOLOCA sobre la

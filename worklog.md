@@ -3223,3 +3223,21 @@ Work Log:
 Stage Summary:
 - CERRADA la deuda .cf-token (heredada desde el reciclado del Task 122).
 - SIGUE VIVA la deuda .clave-produccion (clave de lectura del panel /telemetria): sin ella los scripts locales no pueden leer el resumen y un deploy_worker.py sin TELE_CLAVE regeneraría clave nueva rotando la del dueno. El dueno puede pegarla por chat o dejarla para más adelante (no bloquea deploys de web/juego).
+
+---
+Task ID: 140-b
+Agent: Z.ai (sesion principal)
+Task: Reponer .clave-produccion (2.ª mitad de la deuda heredada del Task 122)
+
+Work Log:
+- El dueno pegó una clave (cpp-…, 28 chars); guardada en scripts/worker-tele/.clave-produccion (chmod 600).
+- git check-ignore VERDE (.gitignore:66).
+- Subdomain workers.dev localizado vía API (token nuevo funciona): crazypp-tele.escala3dcorreoia.workers.dev.
+- E2E contra producción: latido OK {ok:true,total:69} · resumen SIN clave → 403 (protegido OK) · resumen CON la clave pegada → 403 «clave requerida» (probado ?clave= y cabecera X-Clave).
+- CONCLUSIÓN: la clave pegada NO coincide con la CLAVE configurada en el Worker de producción (probablemente es una clave antigua del respaldo del Task 122; hubo rotaciones posteriores entregadas por chat — worklog ronda ~20).
+- PELIGRO REGISTRADO: deploy_worker.py usa .clave-produccion como CLAVE en cada deploy → si se corre con este fichero desalineado, ROTARÍA la clave de producción y dejaría de funcionar el panel del dueno. NO correr deploy_worker.py hasta alinear la clave.
+
+Stage Summary:
+- Fichero .clave-produccion existe y está gitignored, pero su contenido NO valida contra producción (403).
+- Dos caminos para cerrar: (A) el dueno localiza la clave vigente (la de su panel /telemetria) y se sustituye — cero rotación; (B) rotar producción a la clave del fichero vía API de secrets (el token CF ya permite hacerlo) y el dueno actualiza su panel una vez.
+- Deuda sigue ABIERTA hasta que una de las dos se ejecute.

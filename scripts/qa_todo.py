@@ -64,6 +64,7 @@ CAPAS = [
     ('X · sala del partido + mejor de 3', 'qa_partido_sala_v3629.py'),
     ('Y · hall sin pala ni bola', 'qa_hall_sin_pala_v3630.py'),
     ('Z · menú campeonatos + intro', 'qa_menu_intro_v3631.py'),
+    ('AA · mega pala visual', 'qa_mega_pala_v3632.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

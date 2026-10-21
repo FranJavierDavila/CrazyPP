@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.31-SDK6, fase 33 · Menú de campeonatos: texto fantasma fuera + intro opcional + menú prioritario + haz-puntero; sello actualizado
-# por bump_version.py desde 3.6.30-SDK6)
-7c27e36a026002bc4f2b1ee64a54728cce6dcf106fa3b181afb90893bc691d18
+# SHA256 del game.html que produjo esta división (3.6.32-SDK6, fase 34 · MEGA PALA con feedback visual: pala ×1.30 + aura y anillos de energía + power-up sonoro/háptica + aviso de agotamiento; sello actualizado
+# por bump_version.py desde 3.6.31-SDK6)
+630b588faaf3646c2e4f9acacc6138a069f3a89f24000f5a5c70e775016454b7

@@ -130,14 +130,26 @@ export class ChampLoader {
         const ent = this.entries.find((x) => x.id === id);
         const r = m.init({ game: this.game, id, stateName: CHAMPS_STATE,
           manifest: ent ? ent.manifest : null });
-        if (r && typeof r.then === 'function') await r;   // data.json listo
+        // v3.6.32 (ronda 40): la promesa de init queda REGISTRADA en el
+        // módulo — el bloque de abajo espera las init EN VUELO.
+        m._ppInitP = (r && typeof r.then === 'function') ? r : null;
+        if (m._ppInitP) await m._ppInitP;                 // data.json listo
       } catch (e) {
         // v2.120: un init roto NO deja pasar el módulo a start() — se
         // re-permite el reintento en el siguiente intento de launch.
         console.warn('[champs] init ' + id, e);
         m._ppInited = false;
+        m._ppInitP = null;
         return null;
       }
+    } else if (m._ppInitP) {
+      // v3.6.32 (ronda 40): CARRERA eager↔launch — el arranque eager marca
+      // _ppInited ANTES de que su init (fetch del manifest) resuelva; un
+      // launch() dentro de esa ventana recibía el módulo con CTRL aún null
+      // y m.start() era un NO-OP silencioso (el campeonato no arrancaba:
+      // informe del QA capa AA). Esperamos la init en vuelo: start() SIEMPRE
+      // encuentra el módulo cableado.
+      try { await m._ppInitP; } catch (eI) { /* init rota: start decidirá */ }
     }
     return m;
   }

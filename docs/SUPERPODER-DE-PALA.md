@@ -130,6 +130,40 @@ Las 4 peticiones del dueño tras probar V3.6.37, con sus decisiones:
    al crecer, k=5 al encoger). **Prueba de sensación**: si el dueño quiere
    otro porcentaje o umbral, es UNA constante.
 
+### 2.e · FASE 41 (ronda 47) — PARTIDA NUEVA = PALA LIMPIA
+
+Reporte del dueño tras probar V3.6.38: «los poderes de la pala al iniciar
+una partida deben desaparecer — permanecen los de una partida previa que
+no se han gastado».
+
+**Causa raíz.** La recogida completa (`_megaNormReset`: matriz de cargas,
+icono ×N, FX de mega/efecto/imán, flechas, halo, anillo de bote, marcas de
+la bola, escalas LOD y radio de asistencia) SOLO corría en dos sitios:
+al ENTRAR EN EL HALL (v3.6.34, «zona neutra») y al APAGAR «Pala Mejorada»
+(v3.6.34). Todos los caminos de nueva partida que NO pasan por el hall
+arrancaban con el arsenal de la partida anterior colgado de la pala:
+revancha por gatillo al terminar (el más visible), revancha de menú,
+cambio de modo con B, online (anfitrión/revancha/desconexión), vuelta de
+calibración y el REINICIO AUTOMÁTICO del árbitro cuando el estado es
+`over` (c06, línea de siempre) — este último corría DENTRO del árbitro,
+donde el núcleo no puede llegar.
+
+**Solución (un solo punto, imposible olvidar).** HOOK de arranque:
+`rules.onMatchStart`. El árbitro (c06) declara el campo y lo avisa al
+FINAL de CADA `startMatch`, con blindaje `try/catch` (el árbitro nunca
+rompe). El núcleo (c12) lo registra UNA vez, en su constructor, apuntando
+a `_megaNormReset`. Con UN aviso cubren TODOS los caminos presentes y
+futuros — cualquier `startMatch` nuevo que llegue a existir hereda la
+recogida gratis. Idempotente por diseño: el hall recogía ANTES de llamar
+`startMatch`; ahora recoge dos veces y no pasa nada (todo son guardas y
+`null`s; sin dispose doble).
+
+**Regla del juego (queda aprobada así).** Empezar una partida SIEMPRE
+arriba con la pala exacta de siempre: cero cargas, cero icono, cero FX.
+Las cargas se ganan JUGANDO (norma de los 11 golpes del rally, tope ×3)
+y se gastan en ESA partida. Ni el marcador ni el bestOf cambian: el hook
+solo toca la pala.
+
 ## 3 · Feedback al jugador
 
 1. **Icono anclado al mango** (sprite-billboard 4,8 cm, base de la mano, justo

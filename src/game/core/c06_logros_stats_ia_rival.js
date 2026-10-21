@@ -142,6 +142,12 @@ export class Rules {
     this.gamesAi = 0;               // juegos ganados por el rival
     this.gameNo = 1;                // juego en curso dentro del enfrentamiento
     this.firstServer = 'player';    // primer sacador del ENFRENTAMIENTO
+    // v3.6.39 · HOOK de arranque: el núcleo (c12) registra aquí la recogida
+    // de los superpoderes de pala — CADA startMatch avisa y NINGUNA partida
+    // nueva hereda cargas/FX de la anterior (reporte del dueño: «los poderes
+    // de una partida previa que no se han gastado permanecen»). El árbitro
+    // no conoce la pala: solo avisa, el núcleo hace la recogida.
+    this.onMatchStart = null;
   }
 
   /** Nombre del oponente para los mensajes (CPU o humano remoto). */
@@ -182,6 +188,12 @@ export class Rules {
     this.message = this.mode === 'survival'
       ? T('surv_start')
       : T('serve_wait');
+    // v3.6.39 · PARTIDA NUEVA = PALA LIMPIA: UN SOLO punto de aviso cubre
+    // TODOS los caminos (menú, revancha por gatillo, revancha de menú,
+    // cambio de modo, online, vuelta de calibración, hall y el reinicio
+    // automático del estado 'over' — imposible olvidar uno). Idempotente:
+    // el hall ya recogía antes de llamar startMatch y repetir no rompe.
+    try { if (this.onMatchStart) this.onMatchStart(); } catch (e) { /* nunca rompe el árbitro */ }
   }
 
   /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea). */

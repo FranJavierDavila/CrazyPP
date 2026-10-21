@@ -59,6 +59,21 @@ export class PingPongGame {
 
     this.audio = new GameAudio();
     this.rules = new Rules();
+    // v3.6.39 · CADA PARTIDA NUEVA NACE CON LA PALA LIMPIA (reporte del
+    // dueño: «los poderes de la pala al iniciar una partida deben
+    // desaparecer — permanecen los de una partida previa que no se han
+    // gastado»). UN hook en el árbitro cubre TODOS los caminos de
+    // startMatch de una vez: menú (start/survgo), revancha por gatillo y
+    // de menú, cambio de modo, online, vuelta de calibración, reinicio
+    // automático del estado 'over' y el arranque de sesión — imposible
+    // olvidar uno. La recogida es el _megaNormReset de siempre
+    // (matriz de cargas, icono, FX de mega/efecto/imán, halo, flechas,
+    // escalas LOD y marcas de la bola) — idempotente, sin dispose doble.
+    try {
+      this.rules.onMatchStart = () => {
+        try { this._megaNormReset(); } catch (e) { /* nunca rompe el árbitro */ }
+      };
+    } catch (eH) { /* */ }
     this.ball = {
       pos: new THREE.Vector3(0, 1, DIMS.tableCenterZ + 0.4),
       vel: new THREE.Vector3(),

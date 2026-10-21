@@ -1,10 +1,10 @@
 {
-  "version": "3.6.38-SDK6",
-  "fase": 40,
-  "faseNombre": "Inmediatez + Halo exacto + Flechas en plano + LOD",
+  "version": "3.6.39-SDK6",
+  "fase": 41,
+  "faseNombre": "Partida nueva = pala limpia",
   "sdk": "1.5.4",
   "fecha": "2026-10-21",
-  "hub": "v3638-sdk6",
+  "hub": "v3639-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "0ebb7e194f1c449d949d6efd9799e15948f0c158680dd1467aed25e920f36e27"
+  "golden": "9288c4fca201fa983350d7e5b15d9e241234b4e818948b166fb056844b92d8fe"
 }

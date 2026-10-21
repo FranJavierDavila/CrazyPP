@@ -82,6 +82,14 @@ CAPAS = [
     # desfase) + flechas EN EL PLANO del icono (anclaje mundo + lateral de
     # cámara, tangenciales) + LOD 50 % en juego / 100 % mirando el mango.
     ('AG · poderes inmediatez+LOD (v3638)', 'qa_poderes_v3638.py'),
+    # AH (v3639): PARTIDA NUEVA = PALA LIMPIA (reporte del dueño: los
+    # poderes sin gastar de una partida previa PERMANECÍAN) — hook único
+    # rules.onMatchStart avisado por el árbitro en CADA startMatch (menú,
+    # revancha por gatillo y de menú, cambio de modo, online, calibración
+    # y reinicio automático del estado 'over') → _megaNormReset completo:
+    # matriz, icono ×N, FX de los tres poderes, flechas, halo, marcas de
+    # bola y escalas LOD. Idempotente y sin dispose doble.
+    ('AH · partida nueva pala limpia (v3639)', 'qa_poderes_reset_v3639.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

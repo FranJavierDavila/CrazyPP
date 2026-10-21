@@ -3190,3 +3190,20 @@ Stage Summary:
 - LA MEGA PALA ES NORMATIVA DEL NÚCLEO: rally de 11+ golpes la carga (una por rally), icono dorado sobre el mango + jingle propio anuncian la carga (adiós núcleo dorado y todo FX dentro de la pala), el gatillo la suelta 8 s (silueta ×1,30 + radio ×1,38), y el conmutador «Pala Mejorada» de AJUSTES la enciende/apaga con persistencia. Locura, magia, oeste, orbital, valle_neon y los campeonatos nuevos la heredan solos (PLANTILLA-GUIA 2.4 + regla de oro 6).
 - V3.6.34-SDK6 lista y verificada en LOCAL (golden c271f4d1, QA 18/18 con X verde en solitario, 4 ZIPs, smoke del sitio verde, rama pages local 14dda5224). PENDIENTE UNICO: el dueño debe pegar de nuevo el PAT de GitHub (queda en scripts/worker-tele/.github-pat, chmod 600) y relanzar: GIT_TOKEN=$(cat scripts/worker-tele/.github-pat) python3 scripts/deploy_pages.py --push --release --backup → push main con el token (sed de máscara) → curl de verificación.
 - Pendientes heredados: reponer .cf-token y .clave-produccion desde el respaldo del Task 122; entrenamiento tres arreglos cuando el dueño dé el pase.
+
+---
+Task ID: 142-b
+Agent: principal (Z.ai)
+Task: Push de producción de V3.6.34-SDK6 con el PAT re-puesto por el dueño + verificación curl completa.
+
+Work Log:
+- PAT del dueño recibido y guardado en scripts/worker-tele/.github-pat (chmod 600, git check-ignore OK) → validado contra /user: HTTP 200, login=FranJavierDavila.
+- 1.er intento de push de pages: NON-FAST-FORWARD (la rama pages local quedó re-basada en una base vieja por el 4.º rodado — mismo caso del Task 133). Rebase de la base: git branch -f pages origin/pages (b972ff4, V3.6.33) → re-deploy.
+- DESPLIEGUE COMPLETO: deploy_pages --push --release --backup → rama pages en GitHub a0fbbb86f (V3.6.34-SDK6, fuente a87be7d) · respaldo main→proyecto al día · Release v3.6.34-SDK6 con los 4 ZIPs subidos (COMPLETO 130.796.328 · ligera 15.762.598 · CLOUDFLARE 130.782.942 · SOLO 6.089).
+- main → GitHub: f264791..a87be7d (el auto-commit del watcher a87be7d incluyó el worklog del Task 142 y .upload-backup/) → LIMPIEZA: git rm --cached .upload-backup + gitignore → 5c43df3 empujado.
+- VERIFICACIÓN PRODUCCIÓN (curl, bypass DNS del sandbox): Release v3.6.34-SDK6 en cabeza con 4 assets byte-exactos · pages/PAGES-VERSION.txt = 3.6.34-SDK6 (fuente a87be7d, game sha 63742af5…) · game.html servido 6.409.886 B con agujas (MEGA PALA NORMATIVA ×5 · pp_pala_mejorada_v1 ×3 · «Pala Mejorada» ×5 · V3.6.34-SDK6 ×1) y SIN núcleo dorado (SphereGeometry(0.011…) ×0) · locura manifest v26 servido · tag v3.6.34-SDK6 → a87be7d.
+
+Stage Summary:
+- PRODUCCIÓN EN V3.6.34-SDK6: MEGA PALA NORMATIVA en el aire — rally de 11+ golpes carga la pala, icono dorado sobre el mango + jingle anuncian la carga, gatillo la libera 8 s, conmutador «Pala Mejorada» en AJUSTES, todos los campeonatos y la plantilla la heredan.
+- El dueño debe recargar en el Quest (cerrar pestaña / game.html?v=3634) y probar: rally largo (11+), icono + jingle, gatillo, y el conmutador en AJUSTES.
+- Pendientes heredados: reponer .cf-token y .clave-produccion desde el respaldo del Task 122; entrenamiento tres arreglos cuando el dueño dé el pase.

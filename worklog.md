@@ -3277,3 +3277,18 @@ Work Log:
 Stage Summary:
 - V3.6.35-SDK6 (FASE 37) lista y verificada localmente: superpoder de pala con cargas x3, icono del dueno anclado al mango, voz animosa, gatillo del mando libre, registro extensible y plantilla heredando la norma.
 - Pendiente en el momento del registro: deploy a producción (deploy_pages --push --release --backup) + verificación curl + push a main.
+
+---
+Task ID: 143-b
+Agent: Z.ai (sesion principal)
+Task: Despliegue de V3.6.35-SDK6 a producción + verificación
+
+Work Log:
+- deploy_pages.py --push --release --backup (GIT_TOKEN del .github-pat): smoke verde bajo prefijo /CrazyPP/ · rama pages → 6a0f80273 (395 ficheros) · respaldo anti-rollback al día · Release v3.6.35-SDK6 publicada con 4/4 assets uploaded (COMPLETO 130.853.386 · CLOUDFLARE 130.840.000 · ligera 15.819.293 · SOLO 6.089 — tamaños byte-exactos contra build_zip).
+- Verificación por el bypass DNS de siempre (curl a pages.dev cayó con el corte histórico del sandbox): GitHub API Release v3.6.35-SDK6 con 4/4 assets ✓ · tag v3.6.35-SDK6 ✓ · refs/heads/pages = 6a0f80273 ✓.
+- push de main completado: 4833904..21bc549 (PAT enmascarado en el log).
+- ACCIÓN PARA EL DUEÑO: en el Quest, abrir el juego con caché limpiada (o forzar recarga) para recibir V3.6.35.
+
+Stage Summary:
+- V3.6.35-SDK6 (FASE 37 · Superpoder de Pala cargas ×3) EN PRODUCCIÓN y sellada: release 4/4, pages 6a0f80273, main 21bc549.
+- El ciclo del Task 143 queda CERRADO end-to-end: diseño → assets TTS/PNG → núcleo → i18n → build → QA 18/18 → release → deploy → push.

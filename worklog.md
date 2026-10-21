@@ -3317,3 +3317,28 @@ Stage Summary:
 - V3.6.36-SDK6 (FASE 38) lista y verificada LOCALMENTE: matriz de potenciadores con ciclo por joystick (flechas sin envolver, un solo icono visible), SÚPER EFECTO con las 4 reglas del dueño, superpoderes SOLO en campeonatos y 4 voces nativas castellanas/inglesas embebidas. QA TOTAL 18/18 con capa AE nueva de 106 checks y física determinista intacta.
 - PENDIENTE DE DESPLIEGUE: el 5.º rodado borró scripts/worker-tele/.github-pat (y .cf-token/.clave-produccion) — cuando el dueño pegue el PAT: GIT_TOKEN=$(cat scripts/worker-tele/.github-pat) python3 scripts/deploy_pages.py --push --release --backup → verificación curl → push main.
 - ACCIONES PARA EL DUEÑO: (1) re-adjuntar SuperPala_Efecto.png (no llegó al disco; hay icono provisional de la casa) → python3 scripts/_poder36_insertar_assets.py adaptado; (2) pegar el PAT de GitHub para desplegar; (3) reponer .cf-token y .clave-produccion (el Worker sigue sano y protegido; la clave vigente es la del panel cpp-…3mR de la rotación 140-c).
+
+---
+Task ID: 144-b (ronda 44-b)
+Agent: Z.ai (sesión principal)
+Task: Icono REAL SuperPala_Efecto.png del dueño + despliegue de V3.6.36-SDK6 (el PAT llegó por chat; el deploy de la Task 144 estaba bloqueado por él)
+
+Work Log:
+- PAT del dueño recibido y guardado en scripts/worker-tele/.github-pat (chmod 600) → verificado contra /user: login=FranJavierDavila.
+- Icono del dueño localizado en upload/SuperPala_Efecto.png (256×256 RGBA, insignia circular con transparencia exterior) → cuantizado a 64 colores con la receta del Crece (67.421 B; probadas 48/32/24 y se descartaron por banding del degradado).
+- scripts/_poder36_swap_icono_real.py NUEVO: sustituye el data-URI del EFECTO en c12 por comparación EXACTA del URI completo (lección ronda 44) + actualiza el comentario de c12 y las notas de release en release-v3636/build_zip.py (adiós «provisional de la casa»). Idempotente.
+- build_game BYTE-EXACTO 6.630.531 B (+40,7 KB) · golden refrescado a mano (0b456f3f…) · VERSION.json.golden alineado → capa A 23/23 (el 1.er qa_todo falló justo por esto: sha(game.html) ≠ VERSION.json.golden).
+- Presupuesto refrescado con medida viva (qa_rendimiento --update): game.html 6.630.531 B · boot 1.181 ms · cadena 4.545 ms · 0 pageerrors.
+- 4 ZIPs reconstruidos (COMPLETO 130.953.311 · ligera 15.918.944 · CLOUDFLARE 130.939.925 · SOLO 6.089) · sella_r44 re-ejecutado con los tamaños nuevos (capa H actualizada) → H 213/213.
+- Capa AE 106/106 con el icono real · qa_todo --rapido A/B/C/D verde.
+- INCIDENCIA 1 (deploy): push de pages NON-FAST-FORWARD — la base local de pages quedó vieja tras el 5.º rodado (caso 133/142). Fix: git branch -f pages origin/pages (6a0f80273) y re-deploy.
+- INCIDENCIA 2 (la importante): el 1.er deploy (17:56) montó la rama pages desde git archive HEAD 3dde1cd — HEAD aún llevaba el game.html PROVISIONAL (6.589.822 B servidos, sha 15baab62) porque el rebuild del icono estaba solo en el working tree. Detectado al verificar el contenido de la rama pages vía raw/FETCH_HEAD. Fix: commit a425628 (ronda 44-b) ANTES de deploy → re-deploy → pages 1e90cc634. LECCIÓN sellada en docs/SUPERPODER-DE-PALA.md §5: commit ANTES de deploy (git archive solo commiteados).
+- DESPLIEGUE FINAL: deploy_pages --push --backup → pages 1e90cc634 (395 ficheros) · smoke verde · respaldo anti-rollback al día. Release v3.6.36-SDK6 ya publicada en el 2.º intento del deploy completo con los 4 ZIPs byte-exactos (130.953.311 / 130.939.925 / 15.918.944 / 6.089).
+- VERIFICACIÓN PRODUCCIÓN (bypass DNS de siempre, fetch git de la rama pages): PAGES-VERSION.txt = 3.6.36-SDK6 fuente a425628 · game.html servido 6.630.529 B (sha 47886f3d, = golden 0b456f3f + las 2 reescrituras del deploy) · aguja del icono REAL del dueño presente ×1 · provisional ×0 · PNG_PODER_EFECTO ×3 · Release 4/4 assets byte-exactos · tag v3.6.36-SDK6.
+- push main: 6a229e8..a425628 (PAT enmascarado). docs/SUPERPODER-DE-PALA.md actualizado (§5: icono real + lección del deploy).
+
+Stage Summary:
+- V3.6.36-SDK6 (FASE 38 · Superpoder Matriz) EN PRODUCCIÓN con el icono REAL del dueño: matriz de potenciadores con ciclo por joystick (flechas ‹ › sin envolver, un solo icono visible), SÚPER EFECTO con las 4 reglas (spin ×2 con tope, Magnus ×1,5, bote ×1,8, 8 s / 5 golpes), superpoderes SOLO en campeonatos (gate champs.active) y 4 voces nativas castellanas/inglesas (Piper davefx/lessac).
+- El ciclo completo queda CERRADO end-to-end: PAT → icono real → build → QA (AE 106 + rapido A-D + H 213) → deploy → verificación → push main.
+- Deudas reabiertas por el 5.º rodado (NO bloquean): .cf-token y .clave-produccion borrados — el Worker sigue sano y protegido; el dueño puede re-pegarlos cuando quiera (o dejarlo para la próxima vez que toque el Worker). Recuerda también pegar la clave cpp-…3mR en tu panel /telemetria si aún no lo hiciste (rotación 140-c).
+- ACCIÓN PARA EL DUEÑO: en el Quest, cerrar la pestaña del juego y reabrir (o game.html?v=3636) para recibir V3.6.36 con el icono definitivo.

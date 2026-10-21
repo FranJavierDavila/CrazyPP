@@ -103,8 +103,15 @@ TODOS los campeonatos lo cogen solos.
   carga ni el gatillo responde · conmutador + hall neutros). La capa AD
   (`qa_mega_cargas_v3635`) quedó **retirada del listado** (historial).
 - `scripts/sella_r44.py` sella las capas E/F/G/H/I a 3.6.36-SDK6.
-- Assets de la ronda: `scripts/_poder36/` (4 voces Piper + icono provisional
-  del efecto) y `scripts/_poder36_insertar_assets.py` (inserción data-URI).
+- Assets de la ronda: `scripts/_poder36/` (4 voces Piper + **icono REAL del
+  dueño** `icono_efecto_real_64.png`, cuantizado a 64 colores con la receta
+  del Crece) y `scripts/_poder36_insertar_assets.py` (inserción data-URI).
+- Ronda 44-b: el icono PROVISIONAL de la casa se sustituyó por el
+  `SuperPala_Efecto.png` del dueño (`scripts/_poder36_swap_icono_real.py`,
+  comparación EXACTA del URI completo). Lección operativa: `deploy_pages.py`
+  ensambla con `git archive HEAD` (solo commiteados) — **commit ANTES de
+  deploy** o producción sirve el build viejo; y tras rodado, re-asentar
+  `refs/heads/pages` a `origin/pages` (non-fast-forward, caso 133/142).
 
 ## 6 · Decisiones de diseño y por qué
 

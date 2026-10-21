@@ -3257,3 +3257,23 @@ Stage Summary:
 - El Worker de producción queda: sano, protegido (403 sin clave) y legible con la clave del fichero.
 - ACCIÓN PARA EL DUEÑO: pegar la clave cpp-…3mR en su panel /telemetria («Producción (D1)») la próxima vez que lo abra — su clave anterior quedó invalidada por la rotación.
 - Peligro registrado en 140-b LEVANTADO: deploy_worker.py ya puede correr con normalidad.
+
+---
+Task ID: 143
+Agent: Z.ai (sesion principal)
+Task: FASE 37 · SUPERPODER DE PALA con CARGAS x3 — diseño aprobado por el dueno implementado end-to-end (nota: los IDs 140-142 ya eran rondas 40-42 del juego; las entradas de credenciales de esta sesión usaron 140/140-b/140-c por colisión, sin efecto en el repo)
+
+Work Log:
+- Diseño aprobado por chat: cada 11 golpes del rally = +1 carga (tope x3, mismo poder acumula / distinto sustituye, cargas solo en la partida), voz animosa TTS, icono del dueno (SuperPala_Crece.png) ANCLADO al mango (base de la mano, sobre el mando), gatillo del mando LIBRE (conmuta al cambiar de mano), conmutador «Pala Mejorada» como llave maestra.
+- Conocimiento guardado en docs/SUPERPODER-DE-PALA.md (reglas, arquitectura, decisiones y mapa de ficheros) + norma x3 reescrita en PLANTILLA-GUIA 2.4.
+- ASSETS: voz TTS «¡Potenciador de pala gigante!» generada (tongtong, recorte de silencios + loudnorm + atempo 1.06 → 2,38 s, mp3 mono 48k 14,5 KB) e icono del dueno cuantizado a 64 colores (36,8 KB); ambos EMBEBIDOS como data-URI en el nucleo (c12) via scripts/_poder35_insertar_assets.py (+68 KB total en game.html).
+- NUCLEO (src/game/core/c12_pingponggame.js): registro PODERES_PALA extensible + constantes MEGA_DUR/MEGA_TOPE/MEGA_GOLPES/MEGA_ICON_*; estado _megaLoads/_megaPoder/_megaRallyGrants sustituye a _megaReady/_megaRallyCharged; _megaCharge con aleatorio del registro + acumulacion + tope honesto; megaTrigger con regla de mano libre (respaldo en la pala si gunArmed; escritorio = raton) y ALARGA +15 s con el efecto activo; icono _megaIconTex(n) = PNG del dueno + etiqueta xN (respaldo canvas dorado) en (0, -0.034, 0.004) 4,8 cm; _megaVoz() (decode+caché, patron _playRivalBuffer); _megaPngCarga/_megaIconRefresh; updateMega con floor(rallyHits/11) y recogida en rally nuevo.
+- i18n ES/EN (c00): arc_mega_cd/arc_mega_hint actualizados + arc_mega_full + poder_mega («¡POTENCIADOR DE PALA GIGANTE!» / «GIANT PADDLE BOOSTER!»).
+- BUILD: corrección del ensamblador (el bloque de constantes al final de c12 para respetar el token de identidad de la 1.a línea) → build_game BYTE-EXACTO 6.486.812 B (+77 KB) · bump_version 3.6.35-SDK6 FASE 37 (sellos c00/badge/hub + VERSION.json + golden 1bf639bbf6c76f66) — 1.er intento del bump abortó a medias (sellos parcheados, build fallido por el token); completado a mano replicando el paso 4.
+- QA: capa AD NUEVA qa_mega_cargas_v3635.py (92 checks: agujas + mecánica headless 10/11/22/33/44 · libera 15 s · alarga +15 · agotamiento · icono anclado · PNG decodificado · rally nuevo · conmutador por menú · hall neutro); AC retirada del listado de qa_todo.py (historial conservado); presupuesto refrescado (--update); sella_r43.py NUEVO (E/F/G/H/I a 3.6.35 + tamaños reales de los ZIPs).
+- RELEASE: gen_release_v3635.py (notas FASE 37 por marcadores; guards SDK 1.5.4/oeste v56/locura v26/estirpe v369-sdk5 intactos; grep del COMPLETO a 3.6.35) → build_zip: COMPLETO 130.853.386 · ligera 15.819.293 · CLOUDFLARE 130.840.000 · SOLO 6.089.
+- QA TOTAL PRE-DEPLOY: 18/18 VERDE (408 s) — incluida AD 92/92.
+
+Stage Summary:
+- V3.6.35-SDK6 (FASE 37) lista y verificada localmente: superpoder de pala con cargas x3, icono del dueno anclado al mango, voz animosa, gatillo del mando libre, registro extensible y plantilla heredando la norma.
+- Pendiente en el momento del registro: deploy a producción (deploy_pages --push --release --backup) + verificación curl + push a main.

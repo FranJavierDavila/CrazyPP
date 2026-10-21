@@ -64,12 +64,12 @@ CAPAS = [
     ('X · sala del partido + mejor de 3', 'qa_partido_sala_v3629.py'),
     ('Y · hall sin pala ni bola', 'qa_hall_sin_pala_v3630.py'),
     ('Z · menú campeonatos + intro', 'qa_menu_intro_v3631.py'),
-    # AB (qa_mega_pala_v3633) RETIRADA: verificaba la MEGA PALA del MÓDULO
-    # locura (núcleo dorado + recarga a tiempo), retirada en v3.6.34.
-    # La sustituye AC (v3634): la MEGA PALA NORMATIVA DEL NÚCLEO — carga por
-    # rally de 11+ golpes, icono sobre el mango + jingle, gatillo voluntaria,
-    # conmutador «Pala Mejorada» y locura v26 sin mega interna.
-    ('AC · mega pala norma (v3634)', 'qa_mega_norma_v3634.py'),
+    # AC (qa_mega_norma_v3634) RETIRADA: verificaba la norma v3.6.34 (una
+    # carga por rally, icono canvas, gatillo cualquiera). La sustituye AD
+    # (v3635): SUPERPODER DE PALA con CARGAS ×3 — cada 11 golpes del rally
+    # = +1 (tope ×3, distinto sustituye), icono DEL DUEÑO anclado al mango
+    # con etiqueta ×N, voz TTS embebida y gatillo del mando LIBRE.
+    ('AD · superpoder cargas (v3635)', 'qa_mega_cargas_v3635.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

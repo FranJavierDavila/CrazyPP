@@ -3082,3 +3082,18 @@ Stage Summary:
 - TELEMETRÍA: cadena producción→Worker verificada con navegador real (+1 boot). Si en el casco sigue sin llegar, mirar el opt-out del visor y reponer la clave de lectura.
 - Producción en V3.6.29-SDK6 (pages e0edb3106, release 4/4). El dueño debe recargar (si el Quest cachea: cerrar pestaña / game.html?v=3629).
 - Pendientes vivos: entrenamiento tres arreglos (el dueño dará el pase); reponer .cf-token y .clave-produccion desde el respaldo del Task 122; el hito grande — CORONAR LA OESTE (Duelo Nv.2 → Tren → Duelo Final): el trofeo del salón pasará de plateado a ORO.
+
+---
+Task ID: 138
+Agent: principal (Z.ai)
+Task: Pregunta del dueño — «tenemos ya la versión V3.6.30 en producción, si es así qué nos toca ahora?».
+
+Work Log:
+- RECUPERACIÓN DE SESIÓN (lección ronda 25, tercera vez): el contenedor llegó rodado — local en 42dabed (V3.6.27, Task 135) mientras origin/main traía V3.6.28 (SALÓN DEL ARTISTA, FASE 30) · V3.6.29 (SALA DEL PARTIDO + MEJOR DE 3, FASE 31) · V3.6.30 (HALL SIN PALA NI BOLA, FASE 32). PAT borrado por el reinicio. Los 4 upload/*.jpg modificados del working tree resultaron IDÉNTICOS byte a byte a origin/main (solo permisos) → git reset --hard origin/main sin pérdida. Local ahora en ca3dafa (V3.6.30-SDK6), working tree limpio.
+- PAT REPUESTO Y VÁLIDO: github_pat del dueño (el entregado por chat en la ronda previa) → scripts/worker-tele/.github-pat (93 B, chmod 600, git check-ignore OK). Validado contra la API: HTTP 200 en repos/FranJavierDavila/CrazyPP.
+- VERIFICACIÓN DE PRODUCCIÓN CON DNS DEL SANDBOX CAÍDO: crazypingpong.pages.dev irresoluble (curl exit 6, DoH dns.google sin respuesta, dig @1.1.1.1/8.8.8.8/9.9.9.9 vacío) — problema de red del sandbox, NO de producción. Vía alternativa infalible: la RELEASE v3.6.30-SDK6 está publicada en GitHub con sus 4 ZIPs (deploy_pages.py la publica como último paso de un despliegue completo; creada 2026-10-20T23:44Z) + tags v3.6.28/29/30-SDK6 en origin + commits de worklog (Tasks 136-137) registrando los deploys. Conclusión: PRODUCCIÓN = V3.6.30-SDK6 CONFIRMADA.
+- Estado de pendientes heredados: telemetría CERRADA (verificada end-to-end en V3.6.29, sonda scripts/probe_tele_prod.py); 8 ideas de venta CERRADAS (ROADMAP-COMERCIAL.md creado en FASE 30, Top-3: #1 demo+quick play · #2 tarjeta compartible · #7 PWA+stores). Vivos: (1) validación del dueño de FASES 30-32 en el Quest; (2) CORONAR LA OESTE = primer campeón (trofeo plateado→ORO); (3) entrenamiento tres arreglos (esperando el detalle de los 3 fallos); (4) lado dueño: reponer .cf-token y .clave-produccion desde el respaldo del Task 122.
+
+Stage Summary:
+- Producción confirmada en V3.6.30-SDK6 (FASE 32) y local sincronizado a ca3dafa con PAT operativo — sandbox listo para la siguiente ronda sin bloqueos.
+- Oferta al dueño para la siguiente ronda: (a) validar el museo sin pala/bola + sala del partido + mejor de 3 en el Quest; (b) coronar la Oeste (Duelo Nv.2 → Tren → Duelo Final) y ver el trofeo en ORO; (c) dar el detalle de los 3 fallos de entrenamiento; (d) arrancar el Top-3 comercial (#1/#2/#7).

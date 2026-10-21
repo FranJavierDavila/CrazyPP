@@ -74,6 +74,24 @@ está en `_plantilla/manifest.json` con comentarios bloque a bloque.
 ### 2.3 Claves de progreso (derivadas del storage, las mismas para todos)
 `stage · champ · fecha · puntos · duelwins · wins · rank · leyenda_1..5 · leyenda`
 
+### 2.4 MEGA PALA NORMATIVA (en el NÚCLEO desde v3.6.34 — se hereda sola)
+La mecánica del superpoder de la pala del JUGADOR **no se implementa en los
+módulos**: vive en `game.html` y TODO campeonato (existente o nuevo) la
+hereda sin escribir una línea.
+
+| Regla | Valor |
+|---|---|
+| Carga | un rally que **supera los 10 golpes** (11+) carga la pala — una carga por rally, sin gastar se conserva |
+| Aviso | **icono dorado sobre el mango** (pala + flechas de crecida) + jingle propio + háptica — nada dentro de la hoja |
+| Uso | **gatillo con la bola en juego** libera 8 s (canto de energía silueta + pala ×1,30 + radio ×1,38 + onda de choque); en `serve` el gatillo SACA |
+| Interruptor | conmutador **«Pala Mejorada»** en AJUSTES (`pp_pala_mejorada_v1`): apagado = pala 100 % normal |
+
+**Prohibido para los módulos**: tocar `DIMS.hitAssistRadius`, escalar
+`g.paddleMounts`, pintar FX sobre la hoja del jugador ni definir
+`megaTrigger` — el núcleo los restauraría y el FX duplicado se ve dos veces.
+Los poderes del RIVAL (bolsa rotatoria, forajido, mago…) siguen siendo cosa
+de cada módulo: la norma solo cubre la pala del jugador.
+
 ---
 
 ## 3 · Comportamientos (kinds de prueba)
@@ -151,6 +169,10 @@ medidas de sala canónicas 6.10×7.90 / 6.10×2.85 / 7.90×2.85 m.
 3. **Contract 1**: el módulo habla con el núcleo SOLO vía champ_sdk.js y el export del contrato.
 4. **Quest first**: pools pre-creados, sin asignaciones por frame, dispose en leave.
 5. **Sin secretos** en ningún fichero versionado (GitHub Push Protection lo vigila).
+6. **Mega Pala = núcleo** (v3.6.34): la pala del JUGADOR y su superpoder son
+   NORMATIVA del núcleo (rally 11+ → carga; gatillo → 8 s; conmutador «Pala
+   Mejorada») — un módulo NUNCA escala `paddleMounts`, toca
+   `DIMS.hitAssistRadius` ni define `megaTrigger` (ver 2.4).
 
 ## 7 · Auditoría de origen (qué aportó cada campeonato a esta plantilla)
 

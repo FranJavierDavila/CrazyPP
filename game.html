@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.33-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.34-SDK6</span>
     </div>
   </main>
 
@@ -647,14 +647,18 @@ const I18N_STRINGS = {
     arc_no_data: 'Campeonato no disponible en esta build',
     cartel_new: '¡PARTIDA NUEVA!',
     cartel_vs: 'VS CLOWN · Ronda {n}',
-    // v3.6.33 · MEGA PALA 2.0 «NÚCLEO DE ENERGÍA»: el uso es VOLUNTARIO
-    // (gatillo con la bola en juego) y el CRAZY COMBO RECARGA al instante.
-    arc_combo: '¡CRAZY COMBO! ¡MEGA PALA RECARGADA!',
+    // v3.6.34 · MEGA PALA NORMATIVA (núcleo): la carga llega con un rally
+    // que SUPERA los 10 golpes (norma en TODOS los campeonatos), el aviso
+    // es el ICONO sobre el mango + jingle propio (adiós núcleo dorado) y
+    // el uso sigue siendo VOLUNTARIO (gatillo con la bola en juego).
+    arc_combo: '¡CRAZY COMBO! ¡MEGA PALA CARGADA!',
     arc_combo_locked: '¡CRAZY COMBO! Gana una ronda para desbloquear la MEGA PALA',
-    arc_mega_go: '¡MEGA PALA! ¡Suéltala!',
+    arc_mega_go: '¡MEGA PALA ACTIVA!',
     arc_mega_ready: 'MEGA PALA lista · gatillo la libera',
-    arc_mega_cd: 'MEGA PALA recargando…',
-    arc_mega_hint: 'La MEGA PALA vive en tu pala (núcleo dorado) · gatillo con la bola en juego',
+    arc_mega_cd: 'SIN CARGA · un rally de 11+ golpes la carga',
+    arc_mega_hint: 'NORMA NUEVA: un rally de 11+ golpes carga tu MEGA PALA (mira el icono sobre el mango) · gatillo con la bola en juego para soltarla',
+    btn_pmej: 'Pala Mejorada: {v}',
+    msg_pmej: 'Pala Mejorada: {v} · superpoderes de la pala',
     arc_power_clown: '¡El Clown enloquece! ¡Confeti a la vista!',
     arc_power_warn: '¡SUPERPODER ENTRANTE! ¡PREPÁRATE…',
     // v2.106 · cartel explicativo de la prueba ARKANOID (La Locura)
@@ -1088,14 +1092,17 @@ const I18N_STRINGS = {
     arc_no_data: 'Championship not available in this build',
     cartel_new: 'NEW MATCH!',
     cartel_vs: 'VS CLOWN · Round {n}',
-    // v3.6.33 · MEGA PADDLE 2.0 "ENERGY CORE": voluntary use (trigger while
-    // the ball is in play); a CRAZY COMBO instantly recharges it.
-    arc_combo: 'CRAZY COMBO! MEGA PADDLE RECHARGED!',
+    // v3.6.34 · MEGA PADDLE CORE NORM: charged by an 11+ hit rally
+    // (all championships), announced by the handle icon + its own jingle;
+    // voluntary use (trigger while the ball is in play).
+    arc_combo: 'CRAZY COMBO! MEGA PADDLE CHARGED!',
     arc_combo_locked: 'CRAZY COMBO! Win a round to unlock the MEGA PADDLE',
-    arc_mega_go: 'MEGA PADDLE! Let it rip!',
+    arc_mega_go: 'MEGA PADDLE ACTIVE!',
     arc_mega_ready: 'MEGA PADDLE ready · trigger to release it',
-    arc_mega_cd: 'MEGA PADDLE recharging…',
-    arc_mega_hint: 'The MEGA PADDLE lives in your paddle (golden core) · trigger while the ball is in play',
+    arc_mega_cd: 'NO CHARGE · an 11+ hit rally charges it',
+    arc_mega_hint: 'NEW RULE: an 11+ hit rally charges your MEGA PADDLE (check the icon above the handle) · trigger while the ball is in play to unleash it',
+    btn_pmej: 'Enhanced Paddle: {v}',
+    msg_pmej: 'Enhanced Paddle: {v} · paddle superpowers',
     arc_power_clown: 'The Clown goes crazy! Confetti incoming!',
     arc_power_warn: 'SUPER POWER INCOMING! GET READY…',
     // v2.106 · ARKANOID instruction poster (La Locura)
@@ -1979,7 +1986,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.33-SDK6';
+  const VERSION = '3.6.34-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -9865,6 +9872,24 @@ class PingPongGame {
     try { this.showTips = localStorage.getItem('pp_tips_v1') !== '0'; } catch { this.showTips = true; }
     this._tipsIdx = -1;          // -1 = sin ciclo activo; 0..2 = consejos; 3 = despedida
     this._tipsTimer = 0;
+    // v3.6.34 · MEGA PALA NORMATIVA (núcleo): mecánica que TODOS los
+    // campeonatos heredan (implementación junto a haptic()). El aviso es
+    // un ICONO sobre el mango + jingle; la carga llega con un rally que
+    // supera los 10 golpes; el gatillo la libera con la bola en juego.
+    // Conmutador «Pala Mejorada» en la página AJUSTES del menú.
+    this._BASE_HIT = DIMS.hitAssistRadius;
+    try { this.palaMejorada = localStorage.getItem('pp_pala_mejorada_v1') !== '0'; } catch { this.palaMejorada = true; }
+    this._megaT = 0;                  // s restantes de ACTIVA
+    this._megaS = 1;                  // escala visual actual de las monturas
+    this._megaReady = false;          // CARGADA (icono vivo · gatillo la libera)
+    this._megaWarn = false;           // aviso «se agota» ya disparado
+    this._megaRallyCharged = false;   // este rally ya dio su carga
+    this._megaFx = null;              // [fx0, fx1] canto+onda por montura
+    this._megaFxOn = false;
+    this._megaIcon = null;            // [icon0, icon1] icono de carga
+    this._megaIconOn = false;
+    this._megaIconPop = 0;            // animación de aparición (1 → 0)
+    this._megaTex = null;             // textura del icono (compartida)
     // MULTIJUGADOR ONLINE (v2.19): P2P por WebRTC (PeerJS) + voz
     this.net = new NetLink(this);
     this.menuPage = 'main';       // 'main' | 'multi' | 'join' | 'name' | 'rank'
@@ -11595,6 +11620,11 @@ class PingPongGame {
     btn('pname', 56, y, 448, 58, T('opts_name', { v: _pn || T('no_name') }), !!_pn, undefined, undefined, 22);
     btn('reset', 520, y, 448, 58, this._resetArm ? T('reset_arm') : T('reset_btn'), false, this._resetArm ? 'surv' : undefined, undefined, 21);
     y += 70;
+    // v3.6.34 · PALA MEJORADA: conmutador de los superpoderes de la pala
+    // (MEGA PALA normativa — rally 11+ la carga, gatillo la suelta).
+    // Activada los permite; desactivada la pala se comporta NORMAL.
+    btn('pmej', 56, y, 912, 56, T('btn_pmej', { v: yn(this.palaMejorada) }), !!this.palaMejorada, undefined, !!this.palaMejorada, 23);
+    y += 68;
     // apoyo Ko-fi (v2.50)
     btn('kofi', 56, y, 912, 56, T('btn_kofi'), false, 'green', undefined, 23);
     y += 68;
@@ -12094,6 +12124,18 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'pmej': {
+        // v3.6.34 · PALA MEJORADA: superpoderes de pala sí/no (persistente).
+        // Al apagar, la recogida es INMEDIATA (radio, escala, icono y FX a
+        // cero con dispose — la pala queda exacta como siempre).
+        this.palaMejorada = !this.palaMejorada;
+        try { localStorage.setItem('pp_pala_mejorada_v1', this.palaMejorada ? '1' : '0'); } catch { /* */ }
+        if (!this.palaMejorada) this._megaNormReset();
+        this.rules.message = T('msg_pmej', { v: this.palaMejorada ? T('yes') : T('no') });
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
       case 'tele': {
         // v2.50 · FASE 1: telemetría anónima (opt-out inmediato y persistente)
         __PP_TELE.on = !__PP_TELE.on;
@@ -12478,12 +12520,12 @@ class PingPongGame {
       this.champs.fireGun(i);
       return;
     }
-    // v3.6.33 · MEGA PALA VOLUNTARIA (petición del dueño tras V3.6.32): con
-    // la bola en juego el gatillo no hacía NADA — ahora LIBERA la MEGA PALA
-    // si el módulo activo la tiene cargada. En 'serve' el gatillo sigue
-    // siendo del SAQUE (cero conflicto) y si el módulo no expone megaTrigger
-    // (otros campeonatos) todo queda como siempre. El módulo devuelve true
-    // si la pulsación era suya (consumida) y el núcleo no la reenvía.
+    // v3.6.34 · MEGA PALA NORMATIVA (núcleo): con la bola en juego el
+    // gatillo LIBERA la carga en TODOS los campeonatos (conmutador «Pala
+    // Mejorada» en AJUSTES). En 'serve' el gatillo sigue SIENDO DEL SAQUE
+    // (cero conflicto). La pala del núcleo consume la pulsación; si algún
+    // campeonato definiera su propio poder de pala, el puente queda detrás.
+    if (this.rules.state === 'rally' && this.megaTrigger(i)) return;
     if (this.rules.state === 'rally' && this.champs &&
         typeof this.champs.megaTrigger === 'function') {
       let consumed = false;
@@ -12593,6 +12635,384 @@ class PingPongGame {
     this.rules.message = T('hint_hit');
     this.audio.serve();
     this.haptic(i, 0.45);
+  }
+
+  /* ============ v3.6.34 · MEGA PALA NORMATIVA (núcleo) ============
+   * Correcciones del dueño tras V3.6.33:
+   *  · «eliminar el núcleo dorado» — FUERA el núcleo/halo/aro/chispas de
+   *    V3.6.33 (y cualquier FX que viva dentro o sobre la hoja). El aviso
+   *    de carga es ahora un ICONO pequeño sobre el mango (dibujo de la
+   *    pala con flechas de crecida) + jingle característico: el jugador
+   *    SABE que la tiene y de qué poder se trata sin que estorbe.
+   *  · «se puede activar cuando un rally supera los 10 golpes» — la carga
+   *    ya NO se arma al empezar el partido ni se recarga a tiempo: UNA
+   *    regla (norma en TODOS los campeonatos): rally de 11+ golpes = carga
+   *    (una por rally; sin gastar se conserva hasta usarse).
+   *  · «extensivo a todos los campeonatos y las plantillas» — vive en el
+   *    NÚCLEO: locura, magia, oeste, orbital, valle_neon y cualquier
+   *    campeonato nuevo heredan la mecánica sin escribir una línea (los
+   *    módulos corren sobre rules/paddleMounts del núcleo).
+   *  · Conmutador «Pala Mejorada» (AJUSTES, pp_pala_mejorada_v1): apagado
+   *    = pala 100 % normal (sin carga, sin icono, gatillo intacto).
+   * Modelo: CARGADA (icono + jingle) → gatillo en rally → ACTIVA 8 s
+   *  (canto de energía BackSide ×1,055 que abraza la SILUETA desde fuera +
+   *  pala ×1,30 + radio de detección ×1,38 + onda de choque + power-up
+   *  sonoro + háptica) → DORMIDA hasta el siguiente rally de 11+.
+   * Todo cuelga de las DOS monturas: viaja sola al cambiar de mano.
+   * Construcción PEREZOSA: nada se crea hasta la primera carga (coste
+   * cero mientras dormida) y _megaNormReset recoge todo con dispose. */
+
+  /** ¿Permite el dueño los superpoderes de pala? (conmutador AJUSTES). */
+  megaEnabled() {
+    return this.palaMejorada !== false;
+  }
+
+  /** GATILLO VOLUNTARIO con la bola en juego (todos los campeonatos).
+   *  Devuelve true si la pulsación es del poder (consumida). En 'serve'
+   *  el gatillo sigue SIENDO DEL SAQUE y con «Pala Mejorada» apagado la
+   *  pala es 100 % normal (false = el núcleo no la consume). */
+  megaTrigger(i) {
+    if (!this.megaEnabled() || this.inHall || this.calib) return false;
+    if (!this.rules || this.rules.state !== 'rally') return false;
+    if (this._megaT > 0) return true;             // ya activa: se come igual
+    if (!this._megaReady) {
+      // sin carga: aviso honesto + blip grave + háptica corta
+      this.rules.message = T('arc_mega_cd');
+      try { this.audio.playOsc(220, 150, 0.12, 'sine', 0.08, 0); } catch (e) { /* */ }
+      if (this.renderer.xr.isPresenting) {
+        try { this.haptic(i, 0.2, 60); } catch (e2) { /* */ }
+      }
+      return true;
+    }
+    // LIBERAR: 8 s de MEGA PALA (el icono cede el sitio al espectáculo)
+    this._megaReady = false;
+    this._megaT = 8;
+    this._megaWarn = false;
+    this._megaIconVis(false);
+    this._megaFxStart();
+    this.rules.message = T('arc_mega_go');
+    return true;
+  }
+
+  /** CARGA NORMATIVA: el rally superó los 10 golpes. Icono (pop) + jingle
+   *  propio (tríada mayor ascendente + brillo — firma DISTINTA del arpegio
+   *  square 420→860→1400 de la activación) + háptica + megáfono. La pista
+   *  «norma nueva» suena UNA sola vez por navegador. */
+  _megaCharge() {
+    this._megaRallyCharged = true;
+    this._megaReady = true;
+    this._megaIconVis(true);
+    let msg = T('arc_combo');
+    try {
+      if (!localStorage.getItem('pp_mega_norm_hint')) {
+        localStorage.setItem('pp_mega_norm_hint', '1');
+        msg = T('arc_mega_hint');
+      }
+    } catch (e) { /* localStorage bloqueado */ }
+    this.rules.message = msg;
+    try { this.audio.playOsc(523, 659, 0.09, 'triangle', 0.14, 0); } catch (e) { /* */ }
+    try { this.audio.playOsc(659, 784, 0.09, 'triangle', 0.14, 0.09); } catch (e) { /* */ }
+    try { this.audio.playOsc(784, 1568, 0.24, 'triangle', 0.16, 0.18); } catch (e) { /* */ }
+    try { this.audio.playOsc(2093, 1976, 0.14, 'sine', 0.05, 0.2); } catch (e) { /* */ }
+    if (this.renderer.xr.isPresenting) {
+      try { this.haptic(this.paddleHand, 0.5, 120); } catch (e) { /* */ }
+    }
+  }
+
+  /** LIBERACIÓN del poder: canto de energía + onda de choque + power-up
+   *  sonoro + háptica (motor probado de V3.6.33, sin el núcleo). */
+  _megaFxStart() {
+    try { this._buildMegaFx(); } catch (e) { this._megaFx = null; }
+    this._megaFxVis(true);
+    this._megaShock();
+    try { this.audio.playOsc(420, 860, 0.16, 'square', 0.15, 0); } catch (e) { /* */ }
+    try {
+      window.setTimeout(() => {
+        try { if (!this.disposed) this.audio.playOsc(860, 1400, 0.2, 'square', 0.12, 0); } catch (e2) { /* */ }
+      }, 110);
+    } catch (e) { /* */ }
+    if (this.renderer.xr.isPresenting) {
+      try { this.haptic(this.paddleHand, 0.75, 180); } catch (e) { /* */ }
+    }
+  }
+
+  _megaFxVis(vis) {
+    this._megaFxOn = vis;
+    if (!this._megaFx) return;
+    for (const fx of this._megaFx) {
+      if (fx) fx.visible = vis;
+    }
+  }
+
+  /** ONDA DE CHOQUE (one-shot por montura, 0,55 s — la anima updateMega). */
+  _megaShock() {
+    if (!this._megaFx) return;
+    for (const fx of this._megaFx) {
+      if (fx) fx.userData.shockT = 0.55;
+    }
+  }
+
+  /** CANTO DE ENERGÍA: clon EXACTO de la pala montada (children[0]) con
+   *  materiales BackSide aditivos ×1,055 — el borde dorado abraza la
+   *  SILUETA desde fuera y el depth test impide entrar en la hoja (la
+   *  lección de V3.6.33 que se conserva). ONDA: anillo one-shot. */
+  _buildMegaFx() {
+    if (this._megaFx || !this.paddleMounts) return;
+    const lista = [];
+    for (let i = 0; i < 2; i++) {
+      const m = this.paddleMounts[i];
+      if (!m) { lista.push(null); continue; }
+      const fx = new THREE.Group();     // espacio MONTURA (identidad)
+      fx.visible = false;
+      const rim = m.children[0] ? m.children[0].clone(true) : null;
+      const rimMats = [];
+      if (rim) {
+        rim.scale.multiplyScalar(1.055);
+        rim.traverse((o) => {
+          if (!o.isMesh) return;
+          const src = Array.isArray(o.material) ? o.material : [o.material];
+          const dorados = src.map(() => new THREE.MeshBasicMaterial({
+            color: 0xffc84a, transparent: true, opacity: 0.55,
+            blending: THREE.AdditiveBlending, side: THREE.BackSide,
+            depthWrite: false,
+          }));
+          o.material = Array.isArray(o.material) ? dorados : dorados[0];
+          o.castShadow = false;
+          o.receiveShadow = false;
+          for (const dm of dorados) rimMats.push(dm);
+        });
+        fx.add(rim);
+      }
+      const shock = new THREE.Mesh(
+        new THREE.TorusGeometry(0.1, 0.006, 8, 48),
+        new THREE.MeshBasicMaterial({ color: 0xffdf8e, transparent: true,
+          opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      shock.position.y = 0.14;          // centro de la HOJA
+      shock.visible = false;
+      fx.add(shock);
+      fx.userData = { rim, rimMats, shock, shockT: 0 };
+      m.add(fx);
+      lista.push(fx);
+    }
+    this._megaFx = lista;
+  }
+
+  /** ICONO DE CARGA: sprite-billboard pequeño (5,6 cm) que flota sobre el
+   *  mango (entre la mano y la pala): dibujo de la pala dorada con 4
+   *  flechas hacia FUERA — «este poder hace la pala grande» de un vistazo.
+   *  Billboard = legible en cualquier ángulo; SIEMPRE fuera de la hoja
+   *  (no hay nada que atraviese la pala: adiós núcleo dorado). */
+  _megaIconTex() {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 256;
+    const c2 = cv.getContext('2d');
+    c2.lineJoin = 'round'; c2.lineCap = 'round';
+    const dor = c2.createLinearGradient(0, 30, 0, 226);
+    dor.addColorStop(0, '#ffe9a3'); dor.addColorStop(0.5, '#ffc84a');
+    dor.addColorStop(1, '#e8961e');
+    // hoja
+    c2.beginPath(); c2.arc(128, 92, 56, 0, Math.PI * 2);
+    c2.fillStyle = dor; c2.fill();
+    c2.lineWidth = 9; c2.strokeStyle = '#5b3a08'; c2.stroke();
+    // mango
+    c2.beginPath();
+    c2.moveTo(114, 138); c2.lineTo(142, 138); c2.lineTo(136, 224);
+    c2.lineTo(120, 224); c2.closePath();
+    c2.fillStyle = dor; c2.fill(); c2.stroke();
+    // 4 flechas diagonales hacia FUERA (crece)
+    const arr = [[52, 52, 20, 20], [204, 52, 236, 20],
+                 [52, 204, 20, 236], [204, 204, 236, 236]];
+    for (const [x1, y1, x2, y2] of arr) {
+      c2.lineWidth = 13; c2.strokeStyle = '#ffe9a3';
+      c2.beginPath(); c2.moveTo(x1, y1); c2.lineTo(x2, y2); c2.stroke();
+      const ang = Math.atan2(y2 - y1, x2 - x1);
+      c2.beginPath();
+      c2.moveTo(x2, y2);
+      c2.lineTo(x2 - Math.cos(ang - 0.5) * 24, y2 - Math.sin(ang - 0.5) * 24);
+      c2.lineTo(x2 - Math.cos(ang + 0.5) * 24, y2 - Math.sin(ang + 0.5) * 24);
+      c2.closePath();
+      c2.fillStyle = '#ffe9a3'; c2.fill();
+    }
+    // destellos de poder
+    c2.fillStyle = '#fff6d8';
+    for (const [x, y, r] of [[128, 14, 8], [244, 128, 6], [12, 128, 6]]) {
+      c2.beginPath(); c2.arc(x, y, r, 0, Math.PI * 2); c2.fill();
+    }
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
+  _buildMegaIcon() {
+    if (this._megaIcon || !this.paddleMounts) return;
+    if (!this._megaTex) this._megaTex = this._megaIconTex();
+    const lista = [];
+    for (let i = 0; i < 2; i++) {
+      const m = this.paddleMounts[i];
+      if (!m) { lista.push(null); continue; }
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: this._megaTex, transparent: true, opacity: 0.96,
+        depthWrite: false }));
+      sp.scale.setScalar(0.056);
+      sp.position.set(0, -0.105, 0.012);
+      sp.renderOrder = 5;
+      sp.visible = false;
+      sp.userData.ppMegaIcon = true;
+      m.add(sp);
+      lista.push(sp);
+    }
+    this._megaIcon = lista;
+  }
+
+  _megaIconVis(vis) {
+    this._megaIconOn = vis;
+    if (!this._megaIcon) {
+      if (!vis) return;
+      try { this._buildMegaIcon(); } catch (e) { this._megaIcon = null; }
+      if (!this._megaIcon) return;
+    }
+    for (const sp of this._megaIcon) {
+      if (sp) sp.visible = vis;
+    }
+    if (vis) this._megaIconPop = 1;   // el icono ENTRA con un pop
+  }
+
+  /** Recogida COMPLETA (regla Quest: nada queda colgado): radio de
+   *  siempre, pala a tamaño 1, canto/onda e icono fuera con dispose.
+   *  El canto NO dispone geometrías — son las del GLB de la pala. */
+  _megaNormReset() {
+    DIMS.hitAssistRadius = this._BASE_HIT;
+    this._megaT = 0;
+    this._megaS = 1;
+    this._megaWarn = false;
+    this._megaReady = false;
+    this._megaRallyCharged = false;
+    this._megaFxVis(false);
+    this._megaIconVis(false);
+    this._megaIconOn = false;
+    this._megaIconPop = 0;
+    if (this.paddleMounts) {
+      for (const m of this.paddleMounts) {
+        if (m) m.scale.setScalar(1);
+      }
+    }
+    if (this._megaFx) {
+      for (const fx of this._megaFx) {
+        if (!fx) continue;
+        try { if (fx.parent) fx.parent.remove(fx); } catch (e1) { /* */ }
+        try {
+          const U = fx.userData;
+          if (U.rimMats) for (const rm of U.rimMats) rm.dispose();
+          if (U.shock) { U.shock.geometry.dispose(); U.shock.material.dispose(); }
+        } catch (e2) { /* */ }
+      }
+      this._megaFx = null;
+    }
+    this._megaFxOn = false;
+    if (this._megaIcon) {
+      for (const sp of this._megaIcon) {
+        if (!sp) continue;
+        try { if (sp.parent) sp.parent.remove(sp); } catch (e3) { /* */ }
+        try { sp.material.dispose(); } catch (e4) { /* */ }
+      }
+      this._megaIcon = null;
+    }
+    this._megaIconOn = false;
+    try {
+      if (this._megaTex) { this._megaTex.dispose(); this._megaTex = null; }
+    } catch (e5) { /* */ }
+  }
+
+  /** v3.6.34 · CORAZÓN de la norma (animate lo llama cada frame). Dos
+   *  bloques: CARGA (rally de 11+ golpes, una por rally) y ACTIVA (8 s:
+   *  radio ×1,38, pala ×1,30, canto, onda, aviso final). Con «Pala
+   *  Mejorada» apagado todo duerme y la pala queda EXACTA como siempre.
+   *  Construcción perezosa: sin carga no existe ni una malla. */
+  updateMega(dt) {
+    if (this.disposed || !this.rules) return;
+    const r = this.rules;
+    const on = this.megaEnabled() && !this.inHall && !this.calib;
+    // CARGA NORMATIVA: el PRIMER rally que supera los 10 golpes la da
+    // (una por rally — cuenta nueva en el siguiente; la carga no usada
+    // se conserva hasta gastarse con el gatillo).
+    if (on && r.state === 'rally') {
+      if (!this._megaReady && this._megaT <= 0 &&
+          !this._megaRallyCharged && (r.rallyHits || 0) > 10) {
+        this._megaCharge();
+      }
+    } else {
+      this._megaRallyCharged = false;   // rally nuevo = cuenta nueva
+    }
+    // RADIO de detección (física): ×1,38 SOLO mientras ACTIVA
+    if (on && this._megaT > 0) {
+      this._megaT -= dt;
+      DIMS.hitAssistRadius = this._BASE_HIT * 1.38;
+      if (this._megaT <= 0) {
+        DIMS.hitAssistRadius = this._BASE_HIT;   // fin natural
+      } else if (this._megaT < 2 && !this._megaWarn) {
+        this._megaWarn = true;   // aviso ÚNICO: el poder se agota
+        try { this.audio.playOsc(880, 440, 0.18, 'sine', 0.16, 0); } catch (e) { /* */ }
+      }
+    } else if (DIMS.hitAssistRadius !== this._BASE_HIT) {
+      DIMS.hitAssistRadius = this._BASE_HIT;     // apagado/cero: restaura YA
+    }
+    // ESCALA visual de la pala (crece rápido, vuelve suave)
+    const objS = (on && this._megaT > 0) ? 1.3 : 1.0;
+    if (Math.abs(this._megaS - objS) > 0.002) {
+      const kk = 1 - Math.exp(-dt * (objS > this._megaS ? 7 : 4));
+      this._megaS += (objS - this._megaS) * kk;
+      if (Math.abs(this._megaS - objS) <= 0.002) this._megaS = objS;
+      const sv = this._megaS > 1.001 ? this._megaS : 1;
+      if (this.paddleMounts) {
+        for (let i = 0; i < 2; i++) {
+          if (this.paddleMounts[i]) this.paddleMounts[i].scale.setScalar(sv);
+        }
+      }
+    }
+    // CANTO + ONDA: vivos SOLO mientras dura el efecto
+    const fxOn = on && this._megaT > 0 && !!this._megaFx;
+    if (fxOn !== this._megaFxOn) this._megaFxVis(fxOn);
+    if (fxOn && this._megaFx) {
+      const tt = performance.now() * 0.001;
+      const blink = this._megaT < 2
+        ? (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(tt * 16))) : 1;
+      for (const fx of this._megaFx) {
+        if (!fx) continue;
+        const U = fx.userData;
+        if (U.rim && U.rimMats.length) {
+          U.rim.visible = true;
+          const ro = (0.5 + 0.14 * Math.sin(tt * 5.1)) * blink;
+          for (const rm of U.rimMats) rm.opacity = ro;
+        }
+        if (U.shockT > 0) {
+          U.shockT -= dt;
+          const ks = 1 - Math.max(0, U.shockT) / 0.55;
+          U.shock.visible = U.shockT > 0;
+          U.shock.scale.setScalar(0.35 + 5.2 * ks);
+          U.shock.material.opacity = 0.85 * (1 - ks);
+        } else if (U.shock.visible) {
+          U.shock.visible = false;
+        }
+      }
+    }
+    // ICONO DE CARGA: visible SOLO en CARGADA (billboard con pop y vaivén)
+    const icoOn = on && this._megaReady && this._megaT <= 0;
+    if (icoOn !== this._megaIconOn) this._megaIconVis(icoOn);
+    if (icoOn && this._megaIcon) {
+      if (this._megaIconPop > 0) {
+        this._megaIconPop = Math.max(0, this._megaIconPop - dt / 0.35);
+      }
+      const tt = performance.now() * 0.001;
+      const pk = 1 - this._megaIconPop;                       // 0 → 1
+      const pop = 0.35 + 0.65 * (1 - Math.pow(1 - pk, 3));    // easeOut
+      const sc = 0.056 * pop * (1 + 0.05 * Math.sin(tt * 3.1));
+      const yy = -0.105 + Math.sin(tt * 2.2) * 0.004;
+      for (const sp of this._megaIcon) {
+        if (!sp) continue;
+        sp.scale.setScalar(sc);
+        sp.position.y = yy;
+      }
+    }
   }
 
   // Vibración háptica robusta (Quest Browser): el XRInputSource guardado en
@@ -14130,6 +14550,9 @@ class PingPongGame {
     this.processEvents(this.events);
     if (this.net.online) this.net.collectEvents(this.events);
     if (this.calib) this.updateCalibration(dt);
+    // v3.6.34 · MEGA PALA NORMATIVA: carga por rally 11+, efecto activo,
+    // icono y restauraciones — barato y perezoso (nada vivo si no toca).
+    this.updateMega(dt);
     if (window.__PP_TRAIN) window.__PP_TRAIN.tick(dt);   // v3.0: cosmética global + entrenamiento
 
     // 7) Sincronizar visuales
@@ -14298,6 +14721,7 @@ class PingPongGame {
     if (this.inHall || this.inAR) return;
     if (this.net && this.net.online) return;
     this.inHall = true;
+    this._megaNormReset();   // v3.6.34: el hall es zona neutra — pala como siempre
     this.rig.position.set(0, 0, HALL.cz + 2.3);
     // v3.5.0-ESC1 · HALL SIN ARRASTRES (informe del dueño: «al volver al Hall
     // desde un campeonato puede quedar la pelota sobre la mesa sin aparecer

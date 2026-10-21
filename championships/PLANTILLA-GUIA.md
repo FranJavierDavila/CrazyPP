@@ -74,20 +74,22 @@ está en `_plantilla/manifest.json` con comentarios bloque a bloque.
 ### 2.3 Claves de progreso (derivadas del storage, las mismas para todos)
 `stage · champ · fecha · puntos · duelwins · wins · rank · leyenda_1..5 · leyenda`
 
-### 2.4 SUPERPODER DE PALA · CARGAS ×3 (en el NÚCLEO desde v3.6.34, ×3 desde v3.6.35 — se hereda sola)
+### 2.4 SUPERPODER DE PALA · MATRIZ + SÚPER EFECTO (en el NÚCLEO desde v3.6.34; ×3 v3.6.35; matriz + solo-campeonatos + súper efecto desde v3.6.36 — se hereda sola)
 La mecánica del superpoder de la pala del JUGADOR **no se implementa en los
 módulos**: vive en `game.html` y TODO campeonato (existente o nuevo) la
-hereda sin escribir una línea.
+hereda sin escribir una línea. Los superpoderes SOLO existen en los
+campeonatos (nunca en un partido contra la máquina fuera de ellos).
 
 | Regla | Valor |
 |---|---|
+| Dónde | **SOLO en campeonatos** (Modalidad Campeonato); el HALL y la calibración son zona neutra |
 | Carga | **cada 11 golpes del rally** (11, 22, 33…) = **+1 carga** de un poder ALEATORIO del registro `PODERES_PALA` — el rally largo premia con más cargas; rally nuevo = cuenta nueva |
-| Acumulación | MISMO poder → **×2, ×3 (tope 3**; con la mano llena, «toc» y nada). PODER DISTINTO → lo **sustituye** (cargas a 1) |
+| Matriz | PODER DISTINTO → **ENTRA en la matriz** (orden de llegada; NO sustituye); MISMO poder → **acumula ×2, ×3 (tope 3**; lleno = «toc» y nada). Joystick ⟷ de cualquier mando CICLA el seleccionado (flechas ‹ › en el icono, sin envolver en los bordes); SOLO UN icono visible en la pala |
 | Vida | las cargas viven SOLO en la partida en curso; nueva partida = 0 |
-| Aviso | **icono del dueño (PNG) anclado al mango** (etiqueta ×N con las cargas) + **voz animosa** («¡Potenciador de pala gigante!», MP3 embebido) + jingle propio + háptica — nada dentro de la hoja |
-| Uso | **gatillo del mando LIBRE** (el que no tiene la pala — conmuta solo al cambiar de mano) libera **15 s por carga** (canto de energía silueta + pala ×1,30 + radio ×1,38 + onda de choque); gatillo con el poder ACTIVO y cargas = **alarga** +15 s (el tamaño nunca se apila); en `serve` el gatillo SACA |
+| Aviso | icono (PNG) anclado al mango (etiqueta ×N + flechas de matriz) + **voz NATIVA por poder e idioma** (es_ES davefx / en_US lessac, MP3 embebido) + jingle propio + háptica — nada dentro de la hoja |
+| Uso | **gatillo del mando LIBRE** libera 1 carga del poder SELECCIONADO: MEGA PALA = 15 s (pala ×1,30 + radio ×1,38 + canto oro; activo+gatillo = alarga +15 s); SÚPER EFECTO = ventana de **8 s o 5 golpes con efecto** (spin generado ×2 con tope 2×spinMax; Magnus ×1,5 y bote ×1,8 SOLO en la bola marcada; activo+gatillo = recarga); en `serve` el gatillo SACA |
 | Interruptor | conmutador **«Pala Mejorada»** en AJUSTES (`pp_pala_mejorada_v1`): apagado = pala 100 % normal |
-| Extender | poder nuevo = una entrada en `PODERES_PALA` (id + nombre i18n + voz) + su icono — el reparto aleatorio lo incluye solo |
+| Extender | poder nuevo = una entrada en `PODERES_PALA` (id + nombre i18n + voz ES/EN + PNG) + su semántica en `megaTrigger` — la matriz, el ciclo y el reparto aleatorio lo incluyen solo |
 
 **Prohibido para los módulos**: tocar `DIMS.hitAssistRadius`, escalar
 `g.paddleMounts`, pintar FX sobre la hoja del jugador ni definir

@@ -72,3 +72,4 @@ scripts/worker-tele/.github-pat
 # pycache global (lección rondas 16/19/24: NUNCA commitear)
 __pycache__/
 *.pyc
+.upload-backup/

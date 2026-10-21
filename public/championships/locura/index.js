@@ -195,6 +195,18 @@ const LOCURA_CFG = {
   champId: 'clown',
 };
 
+// v3.6.33 · MEGA PALA 2.0 «NÚCLEO DE ENERGÍA» — constantes del nuevo modelo.
+//  · USO VOLUNTARIO: el gatillo LIBERA la carga (bola en juego); el saque
+//    sigue siendo del saque. Recarga automática a los MEGA_RECARGA segundos
+//    de terminar el efecto.
+//  · CRAZY COMBO (rally 6 ganado) = RECARGA INSTANTÁNEA (premio de siempre).
+//  · El NÚCLEO dorado vive en la garganta de la pala TODO el partido
+//    (dormida = tenue · cargada = brillante) — el jugador SIEMPRE sabe que
+//    tiene el poder y cuándo puede soltarlo.
+const MEGA_RECARGA = 14;      // s de recarga tras agotar el efecto
+const MEGA_ESCALA = 1.3;      // ×1,30 visual de la montura (física intacta)
+const MEGA_SHOCK_T = 0.55;    // s de vida de la onda de choque al liberar
+
 /* =====================================================================
  *  v2.41 · ARCADE — "CAMPEONATO DE LA LOCURA" (rival: CLOWN)
  *  ---------------------------------------------------------------------
@@ -2795,13 +2807,21 @@ class ArcadeController {
     // mega pala
     this._BASE_HIT = DIMS.hitAssistRadius;
     this._megaT = 0;
-    // v3.6.32: FEEDBACK VISUAL de la MEGA PALA (el poder era invisible:
-    // el jugador no sabía por qué la bola llegaba más lejos)
+    // v3.6.33 · MEGA PALA 2.0 «NÚCLEO DE ENERGÍA»: modelo de 3 estados.
+    //  DORMIDA (poder en propiedad, sin carga) · CARGADA (gatillo la libera)
+    //  · ACTIVA (_megaT > 0, 8 s). La recarga corre sola (MEGA_RECARGA s) y
+    //  el CRAZY COMBO la llena al instante. _megaMatch arma la carga al
+    //  empezar CADA partido (el dueño la usa cuando quiere, no cuando toca).
     this._megaS = 0;         // escala visual actual de la montura de pala
     this._megaWarn = false;  // aviso «el poder se agota» ya disparado
-    this._megaFx = null;     // [fx0, fx1] aura+anillos por montura
+    this._megaFx = null;     // [fx0, fx1] canto+núcleo+chispas por montura
     this._megaFxOn = false;  // la energía está VIVA (evita loops por frame)
-    this._megaAuraTex = null;
+    this._megaReady = false; // CARGADA: el gatillo puede liberarla YA
+    this._megaCd = 0;        // segundos restantes de recarga
+    this._megaMatch = false; // hay un partido vivo (arma la carga al empezar)
+    this._megaFlash = 0;     // destello «lista de nuevo» (decae en el update)
+    this._megaHaloTex = null;
+    this._megaDotTex = null;
     // v2.35: superpoderes del rival EN PLENO JUEGO
     this._powerT = 0;          // segundos restantes del poder activo
     this._powerKind = '';      // 'confetti' | 'redball'
@@ -3169,14 +3189,24 @@ class ArcadeController {
       this.streakAi = 0;
       const hits = it.rallyHits || 0;
       if (hits >= th.comboRally) {
-        // CRAZY COMBO: el Clown se ENFADA; si tienes el poder, MEGA PALA
+        // v3.6.33 · CRAZY COMBO = RECARGA INSTANTÁNEA: el uso de la MEGA PALA
+        // es VOLUNTARIO (gatillo con la bola en juego), pero el combo mantiene
+        // su premio de siempre — llena la carga al momento y, si el efecto ya
+        // está activo, le repone los 8 s completos. El Clown se enfada igual.
         this.setState('hungry', 2.6);
         if (this.powers.includes('mega_pala')) {
-          this._megaT = (this.data && this.data.playerPower &&
-            this.data.playerPower.duration) || 8;
-          this._megaWarn = false;
-          this._megaFxStart();   // v3.6.32: pala crece + energía + power-up
+          if (this._megaT > 0) {
+            this._megaT = (this.data && this.data.playerPower &&
+              this.data.playerPower.duration) || 8;
+            this._megaWarn = false;
+          } else {
+            this._megaReady = true;
+            this._megaCd = 0;
+            this._megaFlash = 1;
+          }
+          this._megaShock();     // la onda celebra la carga (una por montura)
           this.game.rules.message = T('arc_combo');
+          try { this.game.audio.playOsc(660, 1320, 0.14, 'square', 0.12, 0); } catch (e) { /* */ }
         } else {
           this.game.rules.message = T('arc_combo_locked');
         }
@@ -3291,25 +3321,41 @@ class ArcadeController {
     }
   }
 
-  /* ------------ v3.6.32 · MEGA PALA — FEEDBACK VISUAL ------------
-   * La MEGA PALA (poder de La Locura: Crazy Combo con rally de 6 tras
-   * vencer al Clown, radio de detección ×1,38 durante 8 s) sólo tocaba
-   * la FÍSICA: cero feedback, el jugador no veía nada. Ahora:
-   *   · la pala CRECE a ×1,30 (sólo visual: se escala la MONTURA de la
-   *     pala — la física sigue mandada por hitAssistRadius)
-   *   · aura dorada (sprite aditivo) + doble anillo de energía girando
-   *     en el plano de la hoja
-   *   · power-up sonoro (arpegio arcade) + háptica al activarse y
-   *     parpadeo rápido en los últimos 2 s (el poder se agota)
+  /* ------------ v3.6.33 · MEGA PALA 2.0 — «NÚCLEO DE ENERGÍA» ------------
+   * Informe del dueño tras V3.6.32: «el efecto de energía… está muy
+   * desajustado al tamaño de la pala y el aura dorada… se mete dentro de
+   * la propia pala quedando muy cutre. El jugador mientras juega no se
+   * entera de que tiene la Mega Pala y su uso debería ser voluntario,
+   * por ejemplo apretando el gatillo del mando».
+   *
+   * Rediseño COMPLETO (lo antiguo se retira):
+   *   · FUERA el sprite-billboard de 34 cm que atravesaba la hoja.
+   *   · CANTO DE ENERGÍA: clon EXACTO de la pala montada (children[0] del
+   *     mount, misma transformada) con materiales invertidos (BackSide)
+   *     aditivos y escala 1,055 — un borde dorado que abraza la SILUETA
+   *     desde FUERA: donde la pala lo tapa no se pinta (depth test), así
+   *     que es IMPOSIBLE que se meta dentro de la hoja.
+   *   · NÚCLEO de energía en la GARGANTA, visible TODO el partido: tenue
+   *     (dormida) sin carga, VIVO (halo + chispas) cuando está CARGADA —
+   *     el jugador SIEMPRE sabe que tiene el poder.
+   *   · ARO DE CARGA alrededor del núcleo (se llena con la recarga).
+   *   · CHISPAS orbitando la hoja SIEMPRE por fuera del canto.
+   *   · ONDA DE CHOQUE al liberar (anillo que nace en la hoja y se
+   *     expande 0,55 s) + power-up sonoro + háptica.
+   *   · USO VOLUNTARIO: el gatillo con la bola en juego LIBERA la carga
+   *     (megaTrigger); el saque sigue siendo del saque. La recarga corre
+   *     sola (14 s) y el CRAZY COMBO la llena al instante.
    * Todo cuelga de las DOS monturas de pala (hijas del grip): si el
    * jugador cambia de mano a mitad del efecto, la energía viaja sola.
    * leave() recoge y dispose todo (regla Quest: nada queda colgado). */
 
-  /** Arranque del efecto: energía VIVA + power-up sonoro + háptica. */
+  /** LIBERACIÓN del poder (gatillo voluntario): energía VIVA + onda de
+   *  choque + power-up sonoro + háptica. El mensaje lo pone megaTrigger. */
   _megaFxStart() {
     const g = this.game;
     try { this._buildMegaFx(); } catch (e) { this._megaFx = null; }
     this._megaFxVis(true);
+    this._megaShock();
     // arpegio ascendente estilo arcade (dos saltos, centro)
     try { g.audio.playOsc(420, 860, 0.16, 'square', 0.15, 0); } catch (e) { /* */ }
     try {
@@ -3330,64 +3376,186 @@ class ArcadeController {
     }
   }
 
+  /** v3.6.33 · ONDA DE CHOQUE (one-shot por montura): anillo que nace en
+   *  el plano de la hoja y se expande. La anima el update (shockT). */
+  _megaShock() {
+    if (!this._megaFx) return;
+    for (const fx of this._megaFx) {
+      if (!fx) continue;
+      fx.userData.shockT = MEGA_SHOCK_T;
+    }
+  }
+
+  /** v3.6.33 · GATILLO VOLUNTARIO (bola en juego): libera la MEGA PALA si
+   *  está CARGADA. Devuelve true si la pulsación era SUYA (consumida) —
+   *  así el núcleo no la reenvía al saque ni a la revancha. */
+  megaTrigger(i) {
+    const g = this.game;
+    if (!this.active || !this.inited || !g || !g.rules) return false;
+    if (!this.powers || !this.powers.includes('mega_pala')) return false;
+    if (this.arkanoid && this.arkanoid.active) return false; // en la PRUEBA manda el ARKANOID
+    if (g.rules.state !== 'rally') return false;  // en saque, el gatillo SACA
+    if (this._megaT > 0) return true;             // ya activa: pulsación comida
+    if (!this._megaReady) {
+      // sin carga: aviso honesto + blip grave + háptica corta
+      g.rules.message = T('arc_mega_cd');
+      try { g.audio.playOsc(220, 150, 0.12, 'sine', 0.08, 0); } catch (e) { /* */ }
+      if (g.renderer.xr.isPresenting) {
+        try { g.haptic(i, 0.2, 60); } catch (e2) { /* */ }
+      }
+      return true;
+    }
+    // LIBERAR: la carga se gasta, el efecto corre 8 s y la recarga arranca
+    this._megaReady = false;
+    this._megaCd = MEGA_RECARGA;
+    this._megaT = (this.data && this.data.playerPower &&
+      this.data.playerPower.duration) || 8;
+    this._megaWarn = false;
+    this._megaFxStart();
+    g.rules.message = T('arc_mega_go');
+    return true;
+  }
+
   _buildMegaFx() {
     const g = this.game;
     if (this._megaFx || !g.paddleMounts) return;
-    // textura del aura (gradiente radial dorado) — UNA para las dos monturas
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = 128;
-    const c2 = cv.getContext('2d');
-    const gr = c2.createRadialGradient(64, 64, 8, 64, 64, 62);
-    gr.addColorStop(0, 'rgba(255,228,150,0.95)');
-    gr.addColorStop(0.45, 'rgba(255,190,70,0.32)');
-    gr.addColorStop(1, 'rgba(255,160,40,0)');
-    c2.fillStyle = gr; c2.fillRect(0, 0, 128, 128);
-    const atex = new THREE.CanvasTexture(cv);
-    atex.colorSpace = THREE.SRGBColorSpace;
+    // texturas compartidas (UNA de cada para las dos monturas):
+    //  halo — glow dorado suave del núcleo · dot — chispa con corazón firme
+    const haloTex = (() => {
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 128;
+      const c2 = cv.getContext('2d');
+      const gr = c2.createRadialGradient(64, 64, 4, 64, 64, 62);
+      gr.addColorStop(0, 'rgba(255,236,170,1)');
+      gr.addColorStop(0.35, 'rgba(255,196,80,0.5)');
+      gr.addColorStop(1, 'rgba(255,160,40,0)');
+      c2.fillStyle = gr; c2.fillRect(0, 0, 128, 128);
+      const t = new THREE.CanvasTexture(cv);
+      t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    })();
+    const dotTex = (() => {
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 64;
+      const c2 = cv.getContext('2d');
+      const gr = c2.createRadialGradient(32, 32, 2, 32, 32, 30);
+      gr.addColorStop(0, 'rgba(255,246,200,1)');
+      gr.addColorStop(0.5, 'rgba(255,200,90,0.55)');
+      gr.addColorStop(1, 'rgba(255,170,50,0)');
+      c2.fillStyle = gr; c2.fillRect(0, 0, 64, 64);
+      const t = new THREE.CanvasTexture(cv);
+      t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    })();
+    this._megaHaloTex = haloTex;
+    this._megaDotTex = dotTex;
     const lista = [];
     for (let i = 0; i < 2; i++) {
       const m = g.paddleMounts[i];
       if (!m) { lista.push(null); continue; }
-      const fx = new THREE.Group();
-      fx.position.y = 0.13;   // centro de la HOJA en espacio montura (grip)
-      fx.visible = false;
-      // aura billboard: Sprite mira SIEMPRE a la cámara (inmune al giro
-      // de la pala — no importa cómo esté orientada la montura)
-      const aura = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: atex, transparent: true, opacity: 0.42,
-        blending: THREE.AdditiveBlending, depthWrite: false,
-      }));
-      aura.scale.setScalar(0.34);
-      fx.add(aura);
-      // anillos EN EL PLANO DE LA HOJA (XY del montura, cara hacia ±Z,
-      // como la pala procedural): abrazan el borde de la hoja
+      const fx = new THREE.Group();     // espacio MONTURA (identidad):
+      fx.visible = false;               // el canto replica la pala 1:1
+      // · CANTO DE ENERGÍA — clon de la MISMA pala montada (children[0],
+      //   misma transformada) con materiales invertidos (BackSide)
+      //   aditivos y escala 1,055: sólo asoma el borde que la pala NO
+      //   tapa. Ajuste perfecto por construcción: nunca entra en la hoja.
+      const rim = m.children[0] ? m.children[0].clone(true) : null;
+      const rimMats = [];
+      if (rim) {
+        rim.scale.multiplyScalar(1.055);
+        rim.traverse((o) => {
+          if (!o.isMesh) return;
+          const src = Array.isArray(o.material) ? o.material : [o.material];
+          const dorados = src.map(() => new THREE.MeshBasicMaterial({
+            color: 0xffc84a, transparent: true, opacity: 0.55,
+            blending: THREE.AdditiveBlending, side: THREE.BackSide,
+            depthWrite: false,
+          }));
+          o.material = Array.isArray(o.material) ? dorados : dorados[0];
+          o.castShadow = false;
+          o.receiveShadow = false;
+          for (const dm of dorados) rimMats.push(dm);
+        });
+        fx.add(rim);
+      }
+      // · ENERGÍA del núcleo (centro de la HOJA en y=0,13 del montura)
+      const en = new THREE.Group();
+      en.position.y = 0.13;
+      fx.add(en);
+      // NÚCLEO: esferita aditiva en la GARGANTA (borde inferior de la hoja)
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(0.011, 16, 12),
+        new THREE.MeshBasicMaterial({ color: 0xffd257, transparent: true,
+          opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }));
+      core.position.set(0, -0.08, 0);
+      en.add(core);
+      // HALO del núcleo: billboard PEQUEÑO (5,5 cm) despegado de la cara
+      // (z +16 mm > medio grosor de la hoja): lo que la hoja tapa no se
+      // pinta — nada de auras atravesando la pala.
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: haloTex, transparent: true, opacity: 0,
+        blending: THREE.AdditiveBlending, depthWrite: false }));
+      halo.scale.setScalar(0.055);
+      halo.position.set(0, -0.08, 0.016);
+      en.add(halo);
+      // ARO DE CARGA alrededor del núcleo (plano de la hoja)
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.104, 0.0085, 10, 40),
+        new THREE.TorusGeometry(0.028, 0.0028, 8, 32),
         new THREE.MeshBasicMaterial({ color: 0xffc84a, transparent: true,
-          opacity: 0.7, blending: THREE.AdditiveBlending,
-          depthWrite: false }));
-      const ring2 = new THREE.Mesh(
-        new THREE.TorusGeometry(0.128, 0.0042, 8, 40),
-        new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true,
-          opacity: 0.4, blending: THREE.AdditiveBlending,
-          depthWrite: false }));
-      fx.add(ring); fx.add(ring2);
-      fx.userData = { aura, ring, ring2 };
+          opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false }));
+      ring.position.set(0, -0.08, 0);
+      en.add(ring);
+      // CHISPAS orbitando la hoja por FUERA (radio 0,102–0,132 m > canto)
+      const NCH = 26;
+      const arr = new Float32Array(NCH * 3);
+      for (let j = 0; j < NCH; j++) {
+        const a = (j / NCH) * Math.PI * 2;
+        arr[j * 3] = Math.cos(a) * 0.112;
+        arr[j * 3 + 1] = Math.sin(a) * 0.112;
+        arr[j * 3 + 2] = 0;
+      }
+      const sgeo = new THREE.BufferGeometry();
+      sgeo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+      const sparks = new THREE.Points(sgeo, new THREE.PointsMaterial({
+        map: dotTex, color: 0xffe08a, size: 0.014, transparent: true,
+        opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false,
+        sizeAttenuation: true }));
+      const spkV = [], spkP = [], spkF = [];
+      for (let j = 0; j < NCH; j++) {
+        spkV.push(0.55 + 0.5 * Math.random());      // velocidad angular
+        spkP.push(Math.random() * Math.PI * 2);     // fase inicial
+        spkF.push(Math.random() * Math.PI * 2);     // fase de radio/z
+      }
+      en.add(sparks);
+      // ONDA DE CHOQUE (oculta: sólo vive 0,55 s al liberar)
+      const shock = new THREE.Mesh(
+        new THREE.TorusGeometry(0.1, 0.006, 8, 48),
+        new THREE.MeshBasicMaterial({ color: 0xffdf8e, transparent: true,
+          opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      shock.visible = false;
+      en.add(shock);
+      fx.userData = { core, halo, ring, rim, rimMats, sparks, shock,
+        spkN: NCH, spkV, spkP, spkF, shockT: 0 };
       m.add(fx);
       lista.push(fx);
     }
     this._megaFx = lista;
-    this._megaAuraTex = atex;
   }
 
   /** Recogida COMPLETA (leave()/salir a mitad del efecto): pala a tamaño
-   *  1, radio de detección de siempre y energía retirada con dispose. */
+   *  1, radio de detección de siempre y energía retirada con dispose.
+   *  v3.6.33: el canto NO dispone geometrías — son las del modelo GLB de
+   *  la pala (compartidas con la pala real); sólo materiales propios. */
   _megaFxDispose() {
     const g = this.game;
     DIMS.hitAssistRadius = this._BASE_HIT;
     this._megaT = 0;
     this._megaS = 0;
     this._megaWarn = false;
+    this._megaReady = false;
+    this._megaCd = 0;
+    this._megaMatch = false;
+    this._megaFlash = 0;
     this._megaFxVis(false);
     if (g && g.paddleMounts) {
       for (const m of g.paddleMounts) {
@@ -3399,17 +3567,20 @@ class ArcadeController {
         if (!fx) continue;
         try { if (fx.parent) fx.parent.remove(fx); } catch (e1) { /* */ }
         try {
-          fx.userData.ring.geometry.dispose();
-          fx.userData.ring.material.dispose();
-          fx.userData.ring2.geometry.dispose();
-          fx.userData.ring2.material.dispose();
-          fx.userData.aura.material.dispose();
+          const U = fx.userData;
+          if (U.rimMats) for (const rm of U.rimMats) rm.dispose();
+          U.core.geometry.dispose(); U.core.material.dispose();
+          U.halo.material.dispose();
+          U.ring.geometry.dispose(); U.ring.material.dispose();
+          U.sparks.geometry.dispose(); U.sparks.material.dispose();
+          U.shock.geometry.dispose(); U.shock.material.dispose();
         } catch (e2) { /* */ }
       }
       this._megaFx = null;
     }
     try {
-      if (this._megaAuraTex) { this._megaAuraTex.dispose(); this._megaAuraTex = null; }
+      if (this._megaHaloTex) { this._megaHaloTex.dispose(); this._megaHaloTex = null; }
+      if (this._megaDotTex) { this._megaDotTex.dispose(); this._megaDotTex = null; }
     } catch (e3) { /* */ }
   }
 
@@ -3443,7 +3614,7 @@ class ArcadeController {
       DIMS.hitAssistRadius = this._BASE_HIT;     // cero directo: restaura YA
     }
     // v3.6.32: escala VISUAL de la pala (crece rápido, vuelve suave)
-    const megaObj = this._megaT > 0 ? 1.3 : 1.0;
+    const megaObj = this._megaT > 0 ? MEGA_ESCALA : 1.0;
     if (Math.abs(this._megaS - megaObj) > 0.002) {
       const kk = 1 - Math.exp(-dt * (megaObj > this._megaS ? 7 : 4));
       this._megaS += (megaObj - this._megaS) * kk;
@@ -3455,22 +3626,99 @@ class ArcadeController {
         }
       }
     }
-    // v3.6.32: energía VIVA sólo mientras dura el poder (pulso + giro;
-    // parpadeo rápido en los <2 s finales)
-    const megaOn = this._megaT > 0;
-    if (megaOn !== this._megaFxOn) this._megaFxVis(megaOn);
-    if (megaOn && this._megaFx) {
+    // v3.6.33 · MEGA PALA 2.0 — máquina de estados del NÚCLEO DE ENERGÍA
+    const megaOwned = this.powers && this.powers.indexOf('mega_pala') >= 0;
+    // ARMADO por partido: al detectar partido vivo (serve/rally) la pala
+    // arranca CARGADA — el poder se usa CUANDO EL JUGADOR QUIERE.
+    if (megaOwned && !this._megaMatch &&
+        (r.state === 'serve' || r.state === 'rally')) {
+      this._megaMatch = true;
+      if (this._megaT <= 0) { this._megaReady = true; this._megaCd = 0; }
+      try { this._buildMegaFx(); } catch (eMg) { this._megaFx = null; }
+      // pista UNA vez por navegador: dónde vive el poder y cómo se suelta
+      try {
+        if (!localStorage.getItem('pp_arcade_mega_hint')) {
+          localStorage.setItem('pp_arcade_mega_hint', '1');
+          r.message = T('arc_mega_hint');
+        }
+      } catch (eHint) { /* localStorage bloqueado */ }
+    }
+    if (this._megaMatch && (r.state === 'over' || !megaOwned)) {
+      this._megaMatch = false;
+    }
+    // RECARGA automática (el CRAZY COMBO la llena al instante; esto es el goteo)
+    if (megaOwned && this._megaMatch && this._megaT <= 0 && !this._megaReady &&
+        this._megaCd > 0) {
+      this._megaCd -= dt;
+      if (this._megaCd <= 0) {
+        this._megaCd = 0;
+        this._megaReady = true;
+        this._megaFlash = 1;    // destello «lista de nuevo»
+        try { g.audio.playOsc(520, 1040, 0.12, 'sine', 0.10, 0); } catch (eRc) { /* */ }
+      }
+    }
+    if (this._megaFlash > 0) {
+      this._megaFlash = Math.max(0, this._megaFlash - dt / 0.6);
+    }
+    // ENERGÍA VIVA por estados: núcleo en la garganta TODO el partido,
+    // canto + chispas rápidas + onda sólo mientras dura el efecto
+    const megaFxOn = !!(megaOwned && this._megaMatch && this._megaFx);
+    if (megaFxOn !== this._megaFxOn) this._megaFxVis(megaFxOn);
+    if (megaFxOn && this._megaFx) {
       const tt = this.t;
-      const blink = this._megaT < 2
+      const megaAct = this._megaT > 0;
+      const blink = megaAct && this._megaT < 2
         ? (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(tt * 16))) : 1;
+      const carga = (this._megaReady || megaAct)
+        ? 1
+        : Math.max(0, Math.min(1, 1 - this._megaCd / MEGA_RECARGA));
+      const fl = this._megaFlash;
       for (const fx of this._megaFx) {
         if (!fx) continue;
         const U = fx.userData;
-        U.aura.material.opacity = (0.30 + 0.14 * Math.sin(tt * 5.2)) * blink;
-        U.ring.material.opacity = (0.60 + 0.28 * Math.sin(tt * 6.8)) * blink;
-        U.ring2.material.opacity = (0.32 + 0.2 * Math.sin(tt * 4.1 + 1.3)) * blink;
-        U.ring.rotation.z = tt * 2.1;
-        U.ring2.rotation.z = -tt * 1.4;
+        // NÚCLEO: brilla según la carga (dormida tenue · cargada viva)
+        const pulso = 0.5 + 0.5 * Math.sin(tt * (megaAct ? 7.5 : 2.6));
+        U.core.material.opacity = Math.min(1, (0.22 + 0.62 * carga *
+          (0.78 + 0.22 * pulso) + 0.35 * fl)) * blink;
+        U.core.scale.setScalar(0.8 + 0.32 * carga + 0.12 * pulso + 0.25 * fl);
+        // HALO del núcleo (sólo cargada/activa/destello «lista»)
+        U.halo.material.opacity = Math.min(1, (carga >= 1
+          ? 0.42 + 0.2 * Math.sin(tt * 4.2) : 0.12 * carga) + 0.5 * fl) * blink;
+        // ARO DE CARGA alrededor del núcleo (se llena con la recarga)
+        U.ring.material.opacity = carga >= 1
+          ? 0.7 * blink : 0.06 + 0.42 * carga;
+        // CANTO DE ENERGÍA: abraza la SILUETA exacta (sólo con el poder activo)
+        U.rim.visible = !!U.rimMats.length && megaAct;
+        if (U.rim.visible) {
+          const ro = (0.5 + 0.14 * Math.sin(tt * 5.1)) * blink;
+          for (const rm of U.rimMats) rm.opacity = ro;
+        }
+        // CHISPAS orbitando la hoja (FUERA del canto — jamás dentro)
+        U.sparks.visible = carga >= 1 || megaAct;
+        if (U.sparks.visible) {
+          const vel = megaAct ? 2.1 : 0.75;
+          const spa = U.sparks.geometry.attributes.position.array;
+          for (let j = 0; j < U.spkN; j++) {
+            const a = tt * U.spkV[j] * vel + U.spkP[j];
+            const rr = 0.102 + 0.03 *
+              (0.5 + 0.5 * Math.sin(tt * 1.6 + U.spkF[j]));
+            spa[j * 3] = Math.cos(a) * rr;
+            spa[j * 3 + 1] = Math.sin(a) * rr;
+            spa[j * 3 + 2] = Math.sin(tt * 2.3 + U.spkF[j] * 1.7) * 0.013;
+          }
+          U.sparks.geometry.attributes.position.needsUpdate = true;
+          U.sparks.material.opacity = (megaAct ? 0.85 : 0.5) * blink;
+        }
+        // ONDA DE CHOQUE (one-shot al liberar / al recargar por combo)
+        if (U.shockT > 0) {
+          U.shockT -= dt;
+          const ks = 1 - Math.max(0, U.shockT) / MEGA_SHOCK_T;
+          U.shock.visible = U.shockT > 0;
+          U.shock.scale.setScalar(0.35 + 5.2 * ks);
+          U.shock.material.opacity = 0.85 * (1 - ks);
+        } else if (U.shock.visible) {
+          U.shock.visible = false;
+        }
       }
     }
 
@@ -5037,9 +5285,10 @@ export default {
   leave() { if (CTRL) CTRL.leave(); },
 
   /** v2.66/2.69: borrado TOTAL (Opciones → Reiniciar registros): claves
-   *  legacy pp_arcade_* + estado vivo a cero (rank/ronda/trofeo/mapa). */
+   *  legacy pp_arcade_* + estado vivo a cero (rank/ronda/trofeo/mapa).
+   *  v3.6.33: también la pista única de la MEGA PALA (mega_hint). */
   resetRecords() {
-    for (const k of ['rank', 'wins', 'streak', 'powers', 'stage', 'trophy']) {
+    for (const k of ['rank', 'wins', 'streak', 'powers', 'stage', 'trophy', 'mega_hint']) {
       try { localStorage.removeItem('pp_arcade_' + k); } catch (e) { /* */ }
     }
     if (CTRL) {
@@ -5079,9 +5328,14 @@ export default {
   replayHover(idx) { if (CTRL) CTRL.replayHover(idx); },
   replayLaunch(idx) { if (CTRL) CTRL.replayLaunch(idx); },
 
-  /* ---- PISTOLA (v2.38) y BOLA DOBLE (v2.44) — enrutados por el núcleo ---- */
+  /* ---- PISTOLA (v2.38), BOLA DOBLE (v2.44) y MEGA PALA (v3.6.33) —
+   *     enrutados por el núcleo ---- */
   get gunArmed() { return !!(CTRL && CTRL.gunArmed); },
   fireGun(i) { if (CTRL) CTRL.fireGun(i); },
+  /** v3.6.33 · GATILLO VOLUNTARIO de la MEGA PALA (bola en juego): el
+   *  núcleo lo llama por el puente ChampLoader.megaTrigger; devuelve true
+   *  si la pulsación era del poder (liberada / recargando / ya activa). */
+  megaTrigger(i) { return !!(CTRL && CTRL.megaTrigger && CTRL.megaTrigger(i)); },
   get _split() { return (CTRL && CTRL.active && CTRL._split) ? CTRL._split : null; },
   splitFilterEvents(evs) { if (CTRL) CTRL.splitFilterEvents(evs); },
   updateSplit(dt) { if (CTRL) CTRL.updateSplit(dt); },

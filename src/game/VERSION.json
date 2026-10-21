@@ -1,17 +1,17 @@
 {
-  "version": "3.6.32-SDK6",
-  "fase": 34,
-  "faseNombre": "MEGA PALA con feedback visual: pala ×1.30 + aura y anillos de energía + power-up sonoro/háptica + aviso de agotamiento",
+  "version": "3.6.33-SDK6",
+  "fase": 35,
+  "faseNombre": "MEGA PALA 2.0 Nucleo de Energia: canto de energia ajustado a la silueta + nucleo en la garganta + uso voluntario por gatillo + recarga/combo",
   "sdk": "1.5.4",
   "fecha": "2026-10-21",
-  "hub": "v3632-sdk6",
+  "hub": "v3633-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
-    "locura": 24,
+    "locura": 25,
     "estacion_orbital": 16,
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "630b588faaf3646c2e4f9acacc6138a069f3a89f24000f5a5c70e775016454b7"
+  "golden": "0d1acabeb53fae43228d07c06d1f91a7df841cd79858e4ba061fa28c68781689"
 }

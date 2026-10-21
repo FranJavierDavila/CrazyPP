@@ -339,6 +339,18 @@ export class ChampLoader {
     if (m && m.fireGun) { try { m.fireGun(i); } catch (e) { console.warn('[champs.fireGun]', e); } }
   }
 
+  /** v3.6.33 · MEGA PALA VOLUNTARIA: con la bola en juego el gatillo llega
+   *  al módulo activo (hoy sólo La Locura lo define). Devuelve true si la
+   *  pulsación fue CONSUMIDA (el módulo liberó el poder, avisó de recarga o
+   *  la ignoró por suya) — así el núcleo no la reenvía a saque/revancha. */
+  megaTrigger(i) {
+    const m = this.mod;
+    if (m && m.megaTrigger) {
+      try { return m.megaTrigger(i) === true; } catch (e) { console.warn('[champs.megaTrigger]', e); }
+    }
+    return false;
+  }
+
   /** BOLA DOBLE (v2.44): clon vivo de la bola del campeonato activo. */
   get _split() {
     const m = this.mod;

@@ -2720,6 +2720,18 @@ export class PingPongGame {
       this.champs.fireGun(i);
       return;
     }
+    // v3.6.33 · MEGA PALA VOLUNTARIA (petición del dueño tras V3.6.32): con
+    // la bola en juego el gatillo no hacía NADA — ahora LIBERA la MEGA PALA
+    // si el módulo activo la tiene cargada. En 'serve' el gatillo sigue
+    // siendo del SAQUE (cero conflicto) y si el módulo no expone megaTrigger
+    // (otros campeonatos) todo queda como siempre. El módulo devuelve true
+    // si la pulsación era suya (consumida) y el núcleo no la reenvía.
+    if (this.rules.state === 'rally' && this.champs &&
+        typeof this.champs.megaTrigger === 'function') {
+      let consumed = false;
+      try { consumed = this.champs.megaTrigger(i) === true; } catch (e) { /* */ }
+      if (consumed) return;
+    }
     // v2.96: REJUGAR etapas superadas — el gatillo cae con la pala
     // apuntando a un nodo ya desbloqueado del mapa del camino: relanza
     // ESA etapa. Sólo en saque/fin/prueba (nunca con la bola en juego).

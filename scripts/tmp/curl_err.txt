@@ -1,0 +1,2 @@
+* Could not resolve host: crazypingpong.pages.dev
+* shutting down connection #0

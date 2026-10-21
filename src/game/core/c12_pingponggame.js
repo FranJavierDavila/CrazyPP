@@ -1740,6 +1740,12 @@ export class PingPongGame {
       c.closePath(); c.fill();
       rects.push({ x: 56, y: y - 3, w: 912, h: 116, id: 'ppchamp:' + ch.id });
       y += 122;
+      // v3.6.31 · VER PRESENTACIÓN (opcional): la intro del rival sólo se
+      // muestra SOLA la primera vez que se entra; este botón la re-ve a
+      // demanda (launch con opts.intro) — el vídeo deja de ser obligatorio.
+      btn('champintro:' + ch.id, 56, y, 912, 52, T('champ_intro_btn'),
+        false, undefined, undefined, 22);
+      y += 64;
       // controles propios del módulo (música, atajos, récord…)
       const chMod = this.champs.moduleIfLoaded(ch.id);
       const chItems = (chMod && chMod.menuItems) ? chMod.menuItems() : [];
@@ -1777,12 +1783,11 @@ export class PingPongGame {
         }
       }
     }
-    c.fillStyle = '#9aa7b4';
-    c.font = '500 22px system-ui, sans-serif';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    wrapText(c, T('arcade_hint'), 512, y + 22, 860, 30);
-    y += 56;
+    // v3.6.31 · el texto heredado «11-point match vs the Clown… MEGA
+    // PADDLE» (hint del ARCADE v2.34) ya NO se pinta al pie del listado:
+    // describía una tarjeta vieja, se leía como si aplicara a todos los
+    // campeonatos y la MEGA PALA es poder exclusivo de La Locura (Crazy
+    // Combo). Cada tarjeta ya cuenta lo suyo.
     const closeY = Math.min(Math.max(y + 4, 1392), 1428);
     btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
   }
@@ -2042,6 +2047,13 @@ export class PingPongGame {
         // v2.53: CAMPEONATO DE CARPETA — la carpeta entera se carga por
         // import() dinámico. v2.69: La Locura también llega por aquí.
         if (this.champs) this.champs.launch(arg);
+        else this.rules.message = T('arc_no_data');
+        break;
+      case 'champintro':
+        // v3.6.31 · VER PRESENTACIÓN: relanza el campeonato mostrando la
+        // intro (el vídeo de la historia pasa a ser OPCIONAL — sólo se ve
+        // solo la primera vez; aquí se re-ve a demanda).
+        if (this.champs) this.champs.launch(arg, { intro: true });
         else this.rules.message = T('arc_no_data');
         break;
       case 'champact': {
@@ -2664,9 +2676,20 @@ export class PingPongGame {
       return;
     }
 
+    // v3.6.31 · MENÚ PRIORITARIO: si el menú (o el prompt del Hall) está
+    // abierto manda ÉL — los clics van a SUS botones aunque la intro del
+    // campeonato siga detrás (antes la intro se comía los clics: el menú
+    // se abría con B pero era un decorado muerto que no respondía).
+    if (this.menuOpen) {
+      const hov = this.menuHover[i];
+      if (hov >= 0) this.menuClick(hov);
+      return;
+    }
+
     // v2.130 · INTRO DE CAMPEONATO: el gatillo lanza la partida SOLO desde
     // el botón JUGAR (el vídeo de la historia es OPCIONAL). Un gatillo que
     // no impacta el botón reintenta el audio del vídeo (gesto del usuario).
+    // v3.6.31 · corre DESPUÉS del menú: el menú abierto tiene prioridad.
     if (this.champIntro) {
       if (this._champIntroHit(i)) { this.hideChampIntro(true); return; }
       if (this.champIntro.video) this._champIntroPlay();
@@ -2680,14 +2703,6 @@ export class PingPongGame {
         this.lastFeedTap = now;
         this.feedPracticeBall();
       }
-      return;
-    }
-    // MENÚ ABIERTO: el gatillo de CUALQUIER mando hace clic en el panel
-    // (ni saque ni revancha). Antes solo valía el mando que aloja el panel:
-    // apuntar con la pala no hacía nada.
-    if (this.menuOpen) {
-      const hov = this.menuHover[i];
-      if (hov >= 0) this.menuClick(hov);
       return;
     }
     // v3.6.30 · HALL SIN JUEGO: en la estancia el gatillo sólo vive en el
@@ -3269,6 +3284,8 @@ export class PingPongGame {
     const S = this.champIntro;
     if (!S) return;
     this.champIntro = null;
+    // v3.6.31: el haz-puntero de la intro no puede quedar vivo sin intro
+    try { if (this.champs && this.champs.introBeamHide) this.champs.introBeamHide(); } catch (eB) { /* */ }
     try { if (S.video) { S.video.pause(); S.video.removeAttribute('src'); S.video.load(); } } catch (e) { /* */ }
     try { if (S.vtex) S.vtex.dispose(); } catch (e) { /* */ }
     try { S.bmat.map.dispose(); S.bmat.dispose(); } catch (e) { /* */ }
@@ -3291,6 +3308,7 @@ export class PingPongGame {
       S.group.scale.setScalar(0.12 + 0.88 * k);
     } else S.group.scale.setScalar(1);
     let hot = false;
+    let hp = null;   // v3.6.31: impacto del rayo en la intro (botón o panel)
     try {
       const hand = this.paddleHand | 0;
       const ray = this.rays && this.rays[hand];
@@ -3306,9 +3324,26 @@ export class PingPongGame {
         ray.getWorldQuaternion(this._instrQ);
         this._instrD.set(0, 0, -1).applyQuaternion(this._instrQ);
         this._instrRC.set(this._instrO, this._instrD);
-        hot = this._instrRC.intersectObject(S.btn, false).length > 0;
+        const hb = this._instrRC.intersectObject(S.btn, false)[0] || null;
+        hp = hb || this._instrRC.intersectObject(S.mesh, false)[0] || null;
+        hot = !!hb;
+        // v3.6.31 · HAZ-PUNTERO (igual que el mapa del camino, v2.98): el
+        // rayo de la pala se VE sólo mientras toca la intro — así siempre
+        // se sabe a qué se apunta; DORADO sobre el botón JUGAR. Con el
+        // menú abierto manda el menú (sin haz; el suyo es otro).
+        if (hp && !this.menuOpen && this.champs && this.champs.introBeamShow) {
+          try {
+            this.champs.introBeamShow(this._instrO, this._instrD,
+              Math.max(0.25, this._instrO.distanceTo(hp.point)), hot);
+          } catch (eB) { /* nunca tumba el frame */ }
+        }
       }
     } catch (e) { /* */ }
+    // v3.6.31: sin panel apuntado (o menú abierto) el haz se apaga — no
+    // molesta apuntando a otra parte, igual que el mapa.
+    if ((!hp || this.menuOpen) && this.champs && this.champs.introBeamHide) {
+      try { this.champs.introBeamHide(); } catch (eB2) { /* */ }
+    }
     if (hot !== S.btnHot) { S.btnHot = hot; this._pintaBtnJugar(hot); }
   }
 

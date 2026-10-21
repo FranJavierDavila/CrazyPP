@@ -1,10 +1,10 @@
 {
-  "version": "3.6.30-SDK6",
-  "fase": 32,
-  "faseNombre": "El Hall es un museo: sin pala ni bola",
+  "version": "3.6.31-SDK6",
+  "fase": 33,
+  "faseNombre": "Menú de campeonatos: texto fantasma fuera + intro opcional + menú prioritario + haz-puntero",
   "sdk": "1.5.4",
-  "fecha": "2026-10-20",
-  "hub": "v3630-sdk6",
+  "fecha": "2026-10-21",
+  "hub": "v3631-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "c411ad086750439e45f9c8350ef93fe19bf3827118f7a1a07c85480b2b77ac96"
+  "golden": "7c27e36a026002bc4f2b1ee64a54728cce6dcf106fa3b181afb90893bc691d18"
 }

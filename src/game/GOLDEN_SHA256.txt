@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.30-SDK6, fase 32 · El Hall es un museo: sin pala ni bola; sello actualizado
-# por bump_version.py desde 3.6.29-SDK6)
-c411ad086750439e45f9c8350ef93fe19bf3827118f7a1a07c85480b2b77ac96
+# SHA256 del game.html que produjo esta división (3.6.31-SDK6, fase 33 · Menú de campeonatos: texto fantasma fuera + intro opcional + menú prioritario + haz-puntero; sello actualizado
+# por bump_version.py desde 3.6.30-SDK6)
+7c27e36a026002bc4f2b1ee64a54728cce6dcf106fa3b181afb90893bc691d18

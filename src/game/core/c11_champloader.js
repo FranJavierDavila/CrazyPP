@@ -155,9 +155,19 @@ export class ChampLoader {
       }));
   }
 
+  /** v3.6.31 · ¿TOCA INTRO? — la primera vez que se entra al campeonato
+   *  (registro pp_intro_<id> aún vacío). Las siguientes entradas van
+   *  DIRECTAS a jugar; re-ver el vídeo queda OPCIONAL (botón VER
+   *  PRESENTACIÓN de su tarjeta → launch(id, { intro: true })). */
+  introPendiente(id) {
+    try { return !localStorage.getItem('pp_intro_' + id); } catch (e) { return true; }
+  }
+
   /** Lanza un campeonato externo (botón del menú CRAZY). Importa el
-   *  módulo de su carpeta LA PRIMERA VEZ y le entrega el juego. */
-  async launch(id) {
+   *  módulo de su carpeta LA PRIMERA VEZ y le entrega el juego.
+   *  v3.6.31 · opts.intro = fuerza el vídeo de la historia (VER
+   *  PRESENTACIÓN); sin él, la intro SOLO se muestra la primera vez. */
+  async launch(id, opts) {
     const g = this.game;
     if (g.closeTrainingV3) g.closeTrainingV3();   // v3.0.3 · estanqueidad
     if (!/^[a-z0-9_-]+$/i.test(id)) return;
@@ -182,7 +192,21 @@ export class ChampLoader {
     // v2.130 · INTRO común: vídeo de la historia del rival + gran botón
     // JUGAR (estructura común de todos los campeonatos; el vídeo es
     // opcional y si falta assets/intro.mp4 queda un póster con el título).
-    try { this.game.showChampIntro(id); } catch (e2) { /* */ }
+    // v3.6.31 · SÓLO LA PRIMERA VEZ: la primera entrada muestra el vídeo
+    // (conocer al rival y dar contexto); las siguientes entran directo a
+    // jugar. Re-verlo: botón VER PRESENTACIÓN de la tarjeta, o ?intro=1
+    // en la URL (pruebas del dueño). Si no hay localStorage, se muestra
+    // (camino seguro: nadie se pierde la historia).
+    let verIntro = this.introPendiente(id);
+    try {
+      if (verIntro) localStorage.setItem('pp_intro_' + id, '1');
+    } catch (eI0) { /* sin localStorage: se muestra siempre */ }
+    if (!verIntro && opts && opts.intro) verIntro = true;
+    if (!verIntro) {
+      try { verIntro = new URLSearchParams(location.search).has('intro'); }
+      catch (eI1) { /* */ }
+    }
+    if (verIntro) { try { this.game.showChampIntro(id); } catch (e2) { /* */ } }
   }
 
   /* ---------------- v2.69 · enchufe universal del núcleo ----------------
@@ -381,8 +405,10 @@ export class ChampLoader {
     const m = this.mod;
     let idx = -1;
     this._rbWant = false;   // v2.98: ¿la pala está apuntando al mapa?
+    // v3.6.31 · durante la INTRO del campeonato el haz lo gobierna la
+    // propia intro (botón JUGAR); el mapa no raycastea ni lo apaga.
     if (m && typeof m.replayMap === 'function' &&
-        g.renderer.xr.isPresenting && !g.menuOpen) {
+        g.renderer.xr.isPresenting && !g.menuOpen && !g.champIntro) {
       let rm = null;
       try { rm = m.replayMap(); } catch (e) { rm = null; }
       if (rm && rm.plane && Array.isArray(rm.nodesPx) && rm.nodesPx.length) {
@@ -503,6 +529,13 @@ export class ChampLoader {
     this._rb.core.visible = this._rb.glow.visible =
       this._rb.tip.visible = false;
   }
+
+  /** v3.6.31 · haz-puntero de la INTRO (el MISMO haz del mapa del camino,
+   *  v2.98): al apuntar con la pala al panel de la intro sale el rayo y
+   *  se ve DÓNDE se apunta; DORADO sobre el botón JUGAR. El resto del
+   *  tiempo permanece apagado (no molesta). */
+  introBeamShow(oW, dW, len, hot) { this._replayBeamShow(oW, dW, len, hot); }
+  introBeamHide() { this._replayBeamHide(); }
 
   /** v2.96: el gatillo cae con un nodo del camino apuntado → REJUGA esa
    *  etapa (el módulo la relanza). true = gatillo consumido. */

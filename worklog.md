@@ -3118,3 +3118,28 @@ Stage Summary:
 - El menú de campeonatos queda limpio y con la intro domada: texto fantasma fuera (la MEGA PALA sigue siendo el poder de La Locura, documentado en las notas), vídeo de la historia SÓLO la primera vez (re-ver con VER PRESENTACIÓN en cada tarjeta o ?intro=1), el menú MANDA aunque el vídeo esté en pantalla, y el rayo de la pala aparece sobre la intro igual que en los mapas — discreto, sólo al apuntar.
 - Producción en V3.6.31-SDK6 (pages da65c6e05, release 4/4). El dueño debe recargar (si el Quest cachea: cerrar pestaña / game.html?v=3631).
 - Pendientes vivos: validación del dueño de esta FASE 33 en el Quest; coronar la Oeste (Duelo Nv.2 → Tren → Duelo Final = primer campeón, trofeo plateado→ORO); entrenamiento tres arreglos (esperando el detalle de los 3 fallos); lado dueño: reponer .cf-token y .clave-produccion desde el respaldo del Task 122.
+
+---
+Task ID: 140
+Agent: Super Z (main agent)
+Task: V3.6.32-SDK6 (FASE 34) — MEGA PALA con feedback visual (petición del dueño: «si la MEGA PALA sí existe debería dar feedback visual… aumentando el tamaño de la raqueta y poniendo una alerta visual como de energía»)
+
+Work Log:
+- RECUPERACIÓN RODADO #4: HEAD local en 42dabed (V3.6.27) vs origin 4c3d8cc (V3.6.31) — los 6 upload/*.jpg dirty verificados IDENTICOS byte a byte (md5) → git reset --hard origin/main, cero pérdida. PAT repuesta en scripts/worker-tele/.github-pat (chmod 600, API HTTP 200).
+- DESCUBRIMIENTO: Task 139 YA estaba en producción (commit 53b1654, V3.6.31-SDK6: texto fantasma fuera + intro opcional + menú prioritario + haz-puntero) — el resumen de sesión era anterior. El mensaje del dueño (MEGA PALA visual) pasó a ser la ronda 40.
+- MEGA PALA FX (locura/index.js): la pala CRECE a ×1,30 (montura visual — la física sigue en hitAssistRadius ×1,38); AURA dorada Sprite aditivo billboard + DOBLE anillo Torus (0.104/0.128) girando en el plano de la hoja (y=0.13, centro de la hoja GLB verificado con PALA_BLADE_Y-PALA_GRIP_Y); cuelga de las DOS monturas (viaja sola al cambiar de mano); power-up sfx arpegio 420→860→1400 + haptic 0.75/180; aviso ÚNICO <2 s (parpadeo 45-100% + sfx 880→440); _megaFxDispose en leave() (regla Quest: dispose completo, monturas a escala 1); REGRESIÓN corregida: startMatch con _megaT=0 directo dejaba el radio inflado — el update restaura SIEMPRE.
+- BUG REAL ENCONTRADO POR LA CAPA QA (carrera eager↔launch, c11_champloader): el arranque eager marca _ppInited ANTES de resolver su init; un launch() dentro de esa ventana recibía el módulo SIN cablear y start() era un NO-OP silencioso (el campeonato no arrancaba, sin error). FIX: preload() registra m._ppInitP y espera las init en vuelo. Requiere rebuild de game.html (src/game/core/c11) — build_game.py --escribir.
+- QA capa AA NUEVA qa_mega_pala_v3632 (41 checks, en vivo): 17 agujas del módulo servido + 24 checks headless deterministas (avance manual de 45/70 frames a 1/60 — swiftshader va a ~4 fps y las esperas reales no sirven): launch real de locura, impl activo (vía getter impl nuevo + puerta trasera window.__PP_LOCURA), estado fresco, poder manifest v24 (kind/reachMul/duración), escala 1.293 con poder vivo, energía 3 piezas (aura+2 anillos), agotamiento → escala 1.008 y fx apagado, bucle vivo decrementa _megaT, leaveAll → escala exacta 1 + fx null.
+- DIAGNÓSTICO SONDEO (scripts/probe_mega_debug.py, 4 versiones): distinguió mecánica OK vs bucle lento headless — clave para no «arreglar» código correcto.
+- LOCURA v24 (sube_manifest_locura_v24.py): manifest 23→24 + nota FASE 34 en notes[] + VERSION.json manifests.locura=24 (qa_version exige igualdad).
+- RELEASE: bump_version 3.6.32-SDK6 (fase 34, golden 630b588f, game.html 6.389.076 B) · gen_release_v3632 (notas por marcadores; guard locura v23→v24 añadido tras fallo del build) · build_zip: 4 ZIPs (COMPLETO 130.789.233 · ligera 15.755.311 · CLOUDFLARE 130.775.847 · SOLO 6.089) · sella_r40 (E/F/G/H/I: 5+2+4+2+18 agujas de versión + tamaños + pins locura v24 en sup1/descargas) · presupuesto refrescado (locura 225.477 B +3,6%).
+- QA TOTAL 18/18 VERDE (443 s primera pasada con 2 fallos de sellos → sella_r40 ampliado → 418 s limpio). Capas: A 23 · B 11 · C 29 · D 14 · E 150+1 · F 66 · G 54 · H 211+2 · I · J 129 · T 17 · U 17 · V · W 41 · X · Y 32 · Z 36 · AA 41.
+- DESPLIEGUE: 1er intento FALLO (pages non-fast-forward — el rodado dejó la ref local pages en la era 3.6.27); fix: fetch +refs/heads/pages:refs/heads/pages (tip remoto da65c6e) y re-deploy encadenado OK → 655a9e537 (395 ficheros, smoke prefijo /CrazyPP 29 peticiones verde) + Release v3.6.32-SDK6 (4/4 ZIPs) + respaldo main→proyecto.
+- VERIFICACIÓN PRODUCCIÓN (curl directo, DNS vivo): PAGES-VERSION 3.6.32-SDK6 fuente 6441ec8 · game.html 6.389.074 B servido · championships/locura/index.js con 7 agujas del FX · manifest locura v24 · Release 4/4 assets.
+
+Stage Summary:
+- LA MEGA PALA SE VE: pala ×1,30 + aura dorada + doble anillo girando + arpegio/háptica al activarse + parpadeo final — la petición del dueño al completo, sin tocar la física (radio ×1,38 intacto).
+- BONUS: carrera eager↔launch corregida (campeonatos que no arrancaban si entrabas rápido) y regresión del radio inflado corregidas.
+- Producción en V3.6.32-SDK6 (pages 655a9e537, Release 4/4). El dueño debe recargar (si el Quest cachea: cerrar pestaña / game.html?v=3632).
+- Para VER EL EFECTO: vencer al Clown 1 vez (desbloquea mega_pala) y lograr un rally de 6 (CRAZY COMBO) — la pala crece y se enciende 8 s.
+- Pendientes vivos: entrenamiento tres arreglos (el dueño dará el pase); coronación La Oeste (trofeo plateado→ORO); Top-3 comercial (ROADMAP-COMERCIAL.md #1/#2/#7).

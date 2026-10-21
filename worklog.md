@@ -3207,3 +3207,19 @@ Stage Summary:
 - PRODUCCIÓN EN V3.6.34-SDK6: MEGA PALA NORMATIVA en el aire — rally de 11+ golpes carga la pala, icono dorado sobre el mango + jingle anuncian la carga, gatillo la libera 8 s, conmutador «Pala Mejorada» en AJUSTES, todos los campeonatos y la plantilla la heredan.
 - El dueño debe recargar en el Quest (cerrar pestaña / game.html?v=3634) y probar: rally largo (11+), icono + jingle, gatillo, y el conmutador en AJUSTES.
 - Pendientes heredados: reponer .cf-token y .clave-produccion desde el respaldo del Task 122; entrenamiento tres arreglos cuando el dueño dé el pase.
+
+---
+Task ID: 140
+Agent: Z.ai (sesion principal)
+Task: Reponer .cf-token tras el reciclado del sandbox (deuda heredada del Task 122)
+
+Work Log:
+- El dueno pegó el token CF por chat; guardado en scripts/worker-tele/.cf-token (chmod 600, 53 bytes).
+- git check-ignore VERDE (.gitignore:68) — el token nunca entra en el repo.
+- Verificación API: /user/tokens/verify → {"status":"active"} — token válido y activo.
+- Verificación de cuenta: /accounts → «Escala3dcorreoia@gmail.com's Account» (f5c21f0c…) localizada con este token.
+- Estado resultante: deploy_worker.py vuelve a estar operativo (puede actualizar el Worker de telemetría en producción cuando haga falta).
+
+Stage Summary:
+- CERRADA la deuda .cf-token (heredada desde el reciclado del Task 122).
+- SIGUE VIVA la deuda .clave-produccion (clave de lectura del panel /telemetria): sin ella los scripts locales no pueden leer el resumen y un deploy_worker.py sin TELE_CLAVE regeneraría clave nueva rotando la del dueno. El dueno puede pegarla por chat o dejarla para más adelante (no bloquea deploys de web/juego).

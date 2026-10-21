@@ -181,7 +181,14 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   tmpSurf.copy(pad.omega).cross(tmpR.copy(pad.up).multiplyScalar(DIMS.bladeCenterUp))
     .multiplyScalar(DIMS.paddleWristSpin).add(pad.vel);
   tmpS.copy(tmpSurf).cross(tmpN).multiplyScalar(DIMS.spinImpulse);
-  if (tmpS.length() > DIMS.spinMax) tmpS.setLength(DIMS.spinMax);
+  // v3.6.36 · SÚPER EFECTO: ×2 al brush GENERADO por el golpe del jugador
+  // (pad.ppEfectoMul lo pone el núcleo SOLO con el poder activo) — NUNCA
+  // al giro acumulado que ya traía la bola — con tope de seguridad 2×
+  // spinMax. Sin poder el multiplicador es 1: física IDÉNTICA (golden).
+  const eMul = pad.ppEfectoMul || 1;
+  const eTope = DIMS.spinMax * (eMul > 1 ? (DIMS.efectoSpinTope || 2) : 1);
+  if (eMul > 1) tmpS.multiplyScalar(eMul);
+  if (tmpS.length() > eTope) tmpS.setLength(eTope);
 
   if (FIS) {
     // v3.0.5 P1a · REVERSIÓN PARCIAL del spin entrante: la goma NO limpia el
@@ -191,6 +198,14 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     const spinMul = (PK ? PK.spin : 1) *
                     (1 - DIMS.edgeSpinLoss * offC * offC / ctl);
     ball.spin.multiplyScalar(-0.35).addScaledVector(tmpS, spinMul);
+    // v3.6.36 · tope de seguridad sobre el RESULTADO con el súper efecto
+    // activo (reversión −35 % del giro entrante + brush duplicado) y
+    // MARCA de la bola: Magnus y bote amplificados hasta que la IA la
+    // golpee (c06 limpia la marca) o el efecto acabe.
+    if (eMul > 1) {
+      if (ball.spin.length() > eTope) ball.spin.setLength(eTope);
+      ball.ppEfecto = true;
+    }
 
     // v3.0.5 P1b · FRICCIÓN TANGENCIAL de la goma (impulso de contacto con
     // I de cascarón, m_eff = 2/5·m): rozar ARRASTRA la bola, no sólo le da
@@ -213,6 +228,7 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     }
   } else {
     ball.spin.copy(tmpS);
+    if (eMul > 1) ball.ppEfecto = true;   // v3.6.36: bola marcada
   }
 
   // Colocar la bola sobre la cara de contacto
@@ -249,14 +265,18 @@ function collideTable(ball, prevY, events) {
   if (vel.y < 0 && prevY >= topR && pos.y < topR && inX && inZ) {
     pos.y = topR;
     const impact = -vel.y;
+    // v3.6.36 · SÚPER EFECTO: la bola MARCADA amplifica el efecto del
+    // bote (topspin → más agresivo hacia delante · lateral → más desvío
+    // · backspin → más frenada), con el tope de Coulomb como seguro.
+    const eM = ball.ppEfecto ? (DIMS.efectoBoteMul || 1.8) : 1;
     if (DIMS.physicsRealism >= 0.5) {
       // v3.0.5-FIS1 · P2: bote físico con deslizamiento (slip-coupled)
-      bounceOnTable(vel, spin, impact);
+      bounceOnTable(vel, spin, impact, eM);
     } else {
       vel.y = impact * DIMS.tableRestitution;
       vel.x *= DIMS.tableFriction;
       vel.z *= DIMS.tableFriction;
-      applyBounceSpin(vel, spin);
+      applyBounceSpin(vel, spin, eM);
     }
     events.push({ type: 'table', side: pos.z > C ? 'player' : 'ai', speed: impact, pos: pos.clone() });
     return;
@@ -379,7 +399,8 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
     const prevZ = ball.pos.z;
 
     ball.vel.y += DIMS.gravity * h;
-    applyAerodynamics(ball.vel, ball.spin, h, ball.dragMul);
+    applyAerodynamics(ball.vel, ball.spin, h, ball.dragMul,
+      ball.ppEfecto ? (DIMS.efectoMagnusMul || 1.5) : 1);   // v3.6.36: bola marcada
     ball.pos.addScaledVector(ball.vel, h);
 
     // v2.29: si la pala golpea en este subpaso, la bola se RECOLOCA sobre la

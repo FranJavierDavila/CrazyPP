@@ -47,6 +47,13 @@ export const DIMS = {
   trainGamify: 1,
   // P1 · goma (contacto pala-bola) — impulso tangencial con I de cascarón:
   rubberGrip: 0.45,         // agarre de la goma (1 = frenaría el deslizamiento entero)
+  // v3.6.36 · SÚPER EFECTO (poder de pala): amplificación del Magnus en
+  // vuelo, del acople giro-mesa al botar y del tope de rotación — SOLO
+  // para la bola MARCADA (ball.ppEfecto: sale del golpe del jugador con
+  // el poder activo). Sin marca, multiplicador 1: física idéntica.
+  efectoSpinTope: 2,        // tope de rotación = 2 × spinMax (regla del dueño: 1,5–2×)
+  efectoMagnusMul: 1.5,     // Magnus ×1,5 en vuelo para la bola marcada
+  efectoBoteMul: 1.8,       // acople del bote ×1,8 (limitado por Coulomb)
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto

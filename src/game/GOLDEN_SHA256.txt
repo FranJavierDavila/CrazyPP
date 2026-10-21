@@ -1,3 +1,4 @@
-# SHA256 del game.html que produjo esta división (3.6.35-SDK6, fase 37 · Superpoder de Pala cargas x3: cada 11 golpes de rally = +1 carga (tope x3, poder distinto sustituye) + icono del dueno anclado al mango con etiqueta xN + voz animosa TTS embebida + gatillo del mando libre; sello actualizado
-# por bump_version.py desde 3.6.34-SDK6)
-1bf639bbf6c76f6647303623e02d3bfcf1f2d2ca581b4aa5d3869472763fb847
+# golden refrescado a mano tras el gancho 4.9 del súper efecto (post-bump 3.6.36-SDK6, ronda 44)
+# SHA256 del game.html que produjo esta división (3.6.36-SDK6, fase 38 · Superpoder Matriz; sello actualizado
+# por bump_version.py desde 3.6.35-SDK6)
+9102c3aa00b90abd1d3cb45049a80168e6711717dc569f538d919e283a5e60a1

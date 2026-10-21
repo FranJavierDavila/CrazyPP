@@ -674,6 +674,7 @@ export class OpponentAI {
     // bota donde apunta en vez de 15-27 cm corto
     const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
     ball.spin.copy(shotSpin);
+    ball.ppEfecto = false;   // v3.6.36: la devolución de la IA LIMPIA la marca
 
     // swing visual: follow-through del golpe en la dirección del tiro.
     // v2.23: lleva TAMBIÉN el tipo de golpe, el lado (derecha/revés) y la
@@ -722,6 +723,7 @@ export class OpponentAI {
     }
     _miV.addScaledVector(ball.vel, 0.05);   // hereda un 5% del impulso entrante
     ball.spin.set((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 10, 0);
+    ball.ppEfecto = false;   // v3.6.36: el golpe torpe de la IA LIMPIA la marca
     this.swing = {
       t: 0, dur: 0.26,
       contact: ball.pos.clone(),

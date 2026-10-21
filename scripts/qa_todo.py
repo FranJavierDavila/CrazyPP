@@ -69,7 +69,7 @@ CAPAS = [
     # (v3635): SUPERPODER DE PALA con CARGAS ×3 — cada 11 golpes del rally
     # = +1 (tope ×3, distinto sustituye), icono DEL DUEÑO anclado al mango
     # con etiqueta ×N, voz TTS embebida y gatillo del mando LIBRE.
-    ('AD · superpoder cargas (v3635)', 'qa_mega_cargas_v3635.py'),
+    ('AE · superpoder matriz (v3636)', 'qa_poderes_matriz_v3636.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

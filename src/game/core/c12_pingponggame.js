@@ -137,6 +137,14 @@ export class PingPongGame {
     this._megaPngs = {};              // Images por poder (async)
     this._megaPngHecho = false;
     this._megaPngCarga();             // los PNG llegan en paralelo al juego
+    // v3.6.38 · INMEDIATEZ + LOD (ronda 46): textura del icono PERSISTENTE
+    // (redibujada in-place, sin crear/disponer CanvasTextures), redibujos
+    // DIFERIDOS a updateMega (_megaTexDirty — el gatillo no dibuja nada),
+    // PRECALIENTE repartido del arsenal y LOD de tamaño (50 % en juego,
+    // 100 % mirando el mango — peticiones del dueño tras V3.6.37).
+    this._megaLOD = 1;                // escala actual de icono/flechas
+    this._megaTexDirty = false;       // redibujo pendiente del icono
+    this._megaPrewarmQ = null;        // cola del precaliente (1 pieza/frame)
     // v3.6.36 · SÚPER EFECTO (segundo poder del registro): ventana PROPIA
     // de 8 s o 5 golpes con efecto (lo que ocurra antes; reglas del dueño).
     this._efectoT = 0;                // s restantes de súper efecto
@@ -2982,9 +2990,11 @@ export class PingPongGame {
     if (ent.id === 'iman') return this._imanTrigger(ent);
     if (this._megaT > 0) {
       // MEGA ya ACTIVA: una carga nueva ALARGA (+15 s; el tamaño no apila)
+      // v3.6.38 · _megaGasta ya marca el redibujo pendiente (dirty): el
+      // segundo refresh AQUÍ era un segundo canvas+GPU en el MISMO frame
+      // del gatillo (el lag que sentía el dueño).
       this._megaGasta(ent);
       this._megaT += MEGA_DUR;
-      this._megaIconRefresh();
       return true;
     }
     // LIBERAR: MEGA_DUR s de MEGA PALA (el icono cede a lo que quede)
@@ -3025,7 +3035,30 @@ export class PingPongGame {
         this._megaIdx = Math.max(0, this._megaMatriz.length - 1);
       }
     }
-    this._megaIconRefresh();
+    // v3.6.38 · el redibujo del icono ya NO corre en el frame del GATILLO:
+    // se marca pendiente y lo ejecuta updateMega (si el icono sigue
+    // visible). Al lanzar un poder el icono se oculta — el trabajo se
+    // ahorra entero y la pulsación queda INSTANTÁNEA.
+    this._megaTexDirty = true;
+  }
+
+  /** v3.6.38 · PRECALIENTE del arsenal (petición del dueño: lanzar un
+   *  superpoder debe sentirse INMEDIATO — «a todas costa»): TODAS las
+   *  piezas que el gatillo podía construir en su primer uso (canto MEGA,
+   *  canto efecto, canto imán, halo, anillo de bote, flechas) se
+   *  construyen POR ADELANTADO desde la primera carga, REPARTIDAS — una
+   *  sola pieza por frame (updateMega las consume). El gatillo ya no crea
+   *  nada: solo enciende. */
+  _megaPrewarm() {
+    if (this._megaPrewarmQ && this._megaPrewarmQ.length) return;
+    this._megaPrewarmQ = [
+      () => { try { this._buildMegaFx(); } catch (e) { /* */ } },
+      () => { try { this._buildEfectoFx(); } catch (e) { /* */ } },
+      () => { try { this._buildImanFx(); } catch (e) { /* */ } },
+      () => { try { this._buildEfectoHalo(); } catch (e) { /* */ } },
+      () => { try { this._efectoBotePrewarm(); } catch (e) { /* */ } },
+      () => { try { this._buildMegaArrows(); } catch (e) { /* */ } },
+    ];
   }
 
   /** CARGA NORMATIVA v3.6.35: cada 11 golpes del rally (11, 22, 33…)
@@ -3055,8 +3088,9 @@ export class PingPongGame {
       ent = { id: id, n: 1 };
       this._megaMatriz.push(ent);
       this._megaIdx = this._megaMatriz.length - 1;
+      this._megaPrewarm();              // v3.6.38: arsenal caliente ANTES del gatillo
     }
-    this._megaIconRefresh();
+    this._megaTexDirty = true;          // v3.6.38: redibujo diferido (updateMega)
     if (!this._megaSelActiva()) this._megaIconVis(true);
     let msg = this._poderNombre(id);
     if (ent.n > 1) msg += ' ×' + ent.n;
@@ -3170,7 +3204,7 @@ export class PingPongGame {
       return;
     }
     this._megaIdx = ni;
-    this._megaIconRefresh();
+    this._megaTexDirty = true;          // v3.6.38: redibujo diferido (updateMega)
     this._megaIconVis(!this._megaSelActiva());
     try {
       this.audio.playOsc(dir > 0 ? 620 : 520, dir > 0 ? 880 : 380,
@@ -3308,7 +3342,7 @@ export class PingPongGame {
    *  petición del dueño: «colocando sobre la bola un halo visible rojo»).
    *  Sprite aditivo anclado a la bola mientras vuela marcada. */
   _buildEfectoHalo() {
-    if (this._efectoHalo) return;
+    if (this._efectoHalo || !this.ballMesh) return;
     const cv = document.createElement('canvas');
     cv.width = cv.height = 128;
     const c2 = cv.getContext('2d');
@@ -3325,24 +3359,35 @@ export class PingPongGame {
       blending: THREE.AdditiveBlending, depthWrite: false }));
     sp.renderOrder = 7;
     sp.visible = false;
-    this.scene.add(sp);
+    // v3.6.38 · HIJA DE LA BOLA (ballMesh): el halo viaja CON la bola por
+    // transformación — cero desfase posible ni siquiera entre subpasos de
+    // física, extrapolación de red o interpolaciones (petición del dueño:
+    // el halo rojo va EXACTO con la bola).
+    sp.position.set(0, 0, 0);
+    this.ballMesh.add(sp);
     this._efectoHalo = sp;
+  }
+
+  /** v3.6.38 · construcción AISLADA del anillo de bote (la llama el
+   *  PRECALIENTE por adelantado: el primer bote marcado ya no crea nada). */
+  _efectoBotePrewarm() {
+    if (this._efectoBoteFx) return;
+    const geo = new THREE.RingGeometry(0.055, 0.075, 36);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xff4636, transparent: true, opacity: 0.85,
+      side: THREE.DoubleSide, depthWrite: false });
+    this._efectoBoteFx = new THREE.Mesh(geo, mat);
+    this._efectoBoteFx.rotation.x = -Math.PI / 2;
+    this._efectoBoteFx.renderOrder = 6;
+    this._efectoBoteFx.visible = false;
+    this.scene.add(this._efectoBoteFx);
   }
 
   /** v3.6.37 · ANILLO DE BOTE amplificado (SÚPER EFECTO notorio): one-shot
    *  de 0,38 s en el punto de bote de la bola marcada con giro real. */
   _efectoBoteFxShow(pos) {
-    if (!this._efectoBoteFx) {
-      const geo = new THREE.RingGeometry(0.055, 0.075, 36);
-      const mat = new THREE.MeshBasicMaterial({
-        color: 0xff4636, transparent: true, opacity: 0.85,
-        side: THREE.DoubleSide, depthWrite: false });
-      this._efectoBoteFx = new THREE.Mesh(geo, mat);
-      this._efectoBoteFx.rotation.x = -Math.PI / 2;
-      this._efectoBoteFx.renderOrder = 6;
-      this._efectoBoteFx.visible = false;
-      this.scene.add(this._efectoBoteFx);
-    }
+    this._efectoBotePrewarm();
+    if (!this._efectoBoteFx) return;
     const m = this._efectoBoteFx;
     m.position.copy(pos);
     m.position.y = DIMS.tableTopY + 0.004;
@@ -3470,9 +3515,16 @@ export class PingPongGame {
    *  efecto). Billboard = legible en cualquier ángulo; SOLO UN icono se
    *  ve en la pala en todo momento (el seleccionado). */
   _megaIconTex() {
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = 256;
+    // v3.6.38 · canvas + textura PERSISTENTES (se crean UNA vez): cada
+    // refresco solo REDIBUJA y marca needsUpdate — cero asignaciones, cero
+    // disposals, cero uploads de texturas nuevas por pulsación.
+    if (!this._megaIconCv) {
+      this._megaIconCv = document.createElement('canvas');
+      this._megaIconCv.width = this._megaIconCv.height = 256;
+    }
+    const cv = this._megaIconCv;
     const c2 = cv.getContext('2d');
+    c2.clearRect(0, 0, 256, 256);
     c2.lineJoin = 'round'; c2.lineCap = 'round';
     const ent = this._megaSel();
     const id = ent ? ent.id : 'mega';
@@ -3548,9 +3600,14 @@ export class PingPongGame {
     // dueño: «al estar encima de la imagen no se nota») — son sprites
     // PROPIOS a cada lado del icono, con disco de fondo y pulso (ver
     // _buildMegaArrows + updateMega).
-    const t = new THREE.CanvasTexture(cv);
-    t.colorSpace = THREE.SRGBColorSpace;
-    return t;
+    if (!this._megaTex) {
+      const t = new THREE.CanvasTexture(cv);
+      t.colorSpace = THREE.SRGBColorSpace;
+      this._megaTex = t;
+    } else {
+      this._megaTex.needsUpdate = true;   // recalentada in-place
+    }
+    return this._megaTex;
   }
 
   /** v3.6.36 · carga ASÍNCRONA de TODOS los PNG del registro (data-URI →
@@ -3571,24 +3628,18 @@ export class PingPongGame {
   }
 
   /** v3.6.35 · REDIBUJA el icono al cambiar las cargas (×2/×3) o al llegar
-   *  el PNG del dueño. Barato: una textura 256px compartida por las dos
-   *  monturas; la vieja se dispone (regla Quest: nada queda colgado). */
+   *  el PNG del dueño. v3.6.38 · SIN crear/disponer texturas: el canvas es
+   *  PERSISTENTE y la textura se recalienta in-place (needsUpdate) — ni
+   *  una asignación nueva por redibujo. */
   _megaIconRefresh() {
-    if (!this._megaIcon) { this._megaTex = null; return; }
-    try {
-      const t = this._megaIconTex();
-      if (this._megaTex) this._megaTex.dispose();
-      this._megaTex = t;
-      for (const sp of this._megaIcon) {
-        if (sp) { sp.material.map = t; sp.material.needsUpdate = true; }
-      }
-    } catch (e) { /* */ }
+    if (!this._megaTex) { this._megaTexDirty = true; return; }
+    try { this._megaIconTex(); } catch (e) { /* */ }
   }
 
   _buildMegaIcon() {
     if (this._megaIcon || !this.paddleMounts) return;
     this._megaPngCarga();             // por si el PNG aún no había arrancado
-    if (!this._megaTex) this._megaTex = this._megaIconTex();
+    if (!this._megaTex) this._megaIconTex();   // v3.6.38: textura UNA vez
     const lista = [];
     for (let i = 0; i < 2; i++) {
       const m = this.paddleMounts[i];
@@ -3650,12 +3701,15 @@ export class PingPongGame {
         const sp = new THREE.Sprite(new THREE.SpriteMaterial({
           map: tex, transparent: true, opacity: 0.95, depthWrite: false }));
         sp.scale.setScalar(MEGA_ARROW_S);
-        sp.position.set(sx * (MEGA_ICON_S / 2 + MEGA_ARROW_S / 2 + 0.006),
-          MEGA_ICON_Y, MEGA_ICON_Z + 0.004);
+        // v3.6.38 · hijas de la ESCENA (mundo): updateMega las ancla cada
+        // frame AL PLANO DEL ICONO con el lateral de la cámara — el offset
+        // ya no rota con la muñeca (era el eje X local de la montura) y
+        // quedan tangenciales, sin solaparse y mirando a cámara.
+        sp.position.set(0, -100, 0);   // fuera de vista hasta su anclaje
         sp.renderOrder = 6;
         sp.visible = false;
         sp.userData.ppMegaArrow = true;
-        m.add(sp);
+        this.scene.add(sp);
         par.push(sp);
       }
       lista.push(par);
@@ -3713,6 +3767,12 @@ export class PingPongGame {
     this._megaIconVis(false);
     this._megaIconOn = false;
     this._megaIconPop = 0;
+    // v3.6.38 · estado del LOD/redibujos/precaliente a limpio (el arsenal
+    // construido se recoge abajo con dispose; la próxima carga lo
+    // precalienta de nuevo)
+    this._megaLOD = 1;
+    this._megaTexDirty = false;
+    this._megaPrewarmQ = null;
     if (this.paddleMounts) {
       for (const m of this.paddleMounts) {
         if (m) m.scale.setScalar(1);
@@ -3803,6 +3863,12 @@ export class PingPongGame {
     if (this.disposed || !this.rules) return;
     const r = this.rules;
     const on = this.megaEnabled() && !this.inHall && !this.calib;
+    // v3.6.38 · PRECALIENTE: UNA pieza del arsenal por frame (solo con
+    // cargas vivas — mientras duerme, coste cero). El gatillo nunca crea.
+    if (on && this._megaPrewarmQ && this._megaPrewarmQ.length) {
+      const pasoW = this._megaPrewarmQ.shift();
+      try { pasoW(); } catch (eW) { /* */ }
+    }
     // CARGA NORMATIVA v3.6.35: cada MEGA_GOLPES golpes del rally actual
     // = +1 carga (11, 22, 33…). Rally nuevo = cuenta nueva; las cargas
     // sin gastar se conservan hasta gastarse con el gatillo libre.
@@ -3929,6 +3995,12 @@ export class PingPongGame {
     // pala en todo momento), oculto mientras SU efecto está activo
     const icoOn = on && this._megaMatriz.length > 0 && !this._megaSelActiva();
     if (icoOn !== this._megaIconOn) this._megaIconVis(icoOn);
+    // v3.6.38 · redibujo DIFERIDO del icono (gasta/cicla/carga marcan la
+    // necesidad; aquí corre — NUNCA dentro del frame del gatillo).
+    if (this._megaTexDirty && icoOn && this._megaIcon) {
+      this._megaTexDirty = false;
+      try { this._megaIconTex(); } catch (eT0) { /* */ }
+    }
     if (icoOn && this._megaIcon) {
       if (this._megaIconPop > 0) {
         this._megaIconPop = Math.max(0, this._megaIconPop - dt / 0.35);
@@ -3936,7 +4008,12 @@ export class PingPongGame {
       const tt = performance.now() * 0.001;
       const pk = 1 - this._megaIconPop;                       // 0 → 1
       const pop = 0.35 + 0.65 * (1 - Math.pow(1 - pk, 3));    // easeOut
-      const sc = MEGA_ICON_S * pop * (1 + 0.05 * Math.sin(tt * 3.1));
+      // v3.6.38 · LOD del dueño: en JUEGO (rally) el icono al 50 %;
+      // mirando EL MANGO de la pala recupera el 100 % (protagonismo al
+      // enfocar); fuera del rally siempre tamaño completo.
+      this._megaLodUpdate(dt);
+      const sc = MEGA_ICON_S * pop * this._megaLOD *
+        (1 + 0.05 * Math.sin(tt * 3.1));
       const yy = MEGA_ICON_Y + Math.sin(tt * 2.2) * 0.003;
       for (const sp of this._megaIcon) {
         if (!sp) continue;
@@ -3959,21 +4036,50 @@ export class PingPongGame {
       for (let i = 0; i < 2; i++) {
         const par = this._megaArrows[i];
         if (!par) continue;
-        const yyA = (this._megaIcon && this._megaIcon[i])
-          ? this._megaIcon[i].position.y : MEGA_ICON_Y;
-        if (par[0]) {                       // ‹ izquierda
-          par[0].visible = flechasOn && this._megaIdx > 0;
-          if (par[0].visible) {
-            par[0].material.opacity = opA;
-            par[0].position.y = yyA;
+        // Solo la montura VIVA (la pala de la mano activa): el icono es
+        // hijo de la montura y la otra viaja oculta con ella; las flechas
+        // ahora viven en la ESCENA y necesitan esta puerta explícita.
+        const icoI = this._megaIcon ? this._megaIcon[i] : null;
+        const activa = !!(icoI && icoI.visible && this.paddleMounts[i] &&
+          this.paddleMounts[i].visible);
+        const visL = flechasOn && activa && this._megaIdx > 0;
+        const visR = flechasOn && activa && this._megaIdx < L - 1;
+        if (par[0]) par[0].visible = visL;    // ‹ izquierda
+        if (par[1]) par[1].visible = visR;    // › derecha
+        if (!visL && !visR) continue;
+        // v3.6.38 · MISMO PLANO DEL ICONO (petición del dueño): ancla en
+        // MUNDO = centro del icono + lateral EXACTO del plano billboard.
+        // El lateral es la componente del right de cámara PERPENDICULAR a
+        // la línea ojo→icono: la flecha queda EN el plano del icono (ni un
+        // pelo hacia el ojo), a cada lado, casi rozándolo, y los sprites
+        // billboard la miran a la cámara. LOD con la escala del icono (ws)
+        // y flotado con su worldPos.
+        const camB = this._camBasis();
+        if (!camB) continue;
+        icoI.getWorldPosition(_megaTmpA);
+        _megaTmpC.subVectors(camB.pos, _megaTmpA);
+        const Lc = _megaTmpC.length();
+        let lat = camB.right;
+        if (Lc > 1e-4) {
+          _megaTmpC.multiplyScalar(1 / Lc);
+          _megaTmpRight.copy(camB.right)
+            .addScaledVector(_megaTmpC, -camB.right.dot(_megaTmpC));
+          if (_megaTmpRight.lengthSq() > 1e-6) {
+            _megaTmpRight.normalize();
+            lat = _megaTmpRight;
           }
         }
-        if (par[1]) {                       // › derecha
-          par[1].visible = flechasOn && this._megaIdx < L - 1;
-          if (par[1].visible) {
-            par[1].material.opacity = opA;
-            par[1].position.y = yyA;
-          }
+        const ws = Math.max(1e-4,
+          icoI.scale.x * (this.paddleMounts[i].scale.x || 1));
+        const as = ws * (MEGA_ARROW_S / MEGA_ICON_S);
+        const off = ws * 0.5 + as * 0.5 + ws * 0.06;
+        for (const parSA of [[par[0], -1], [par[1], 1]]) {
+          const spA = parSA[0];
+          if (!spA || !spA.visible) continue;
+          spA.scale.setScalar(as);
+          spA.material.opacity = opA;
+          spA.position.copy(_megaTmpA)
+            .addScaledVector(lat, parSA[1] * off);
         }
       }
     }
@@ -3984,8 +4090,10 @@ export class PingPongGame {
         try { this._buildEfectoHalo(); } catch (eH0) { this._efectoHalo = null; }
       }
       if (this._efectoHalo) {
+        // v3.6.38 · el halo ES HIJO de la bola: posición gratis y EXACTA
+        // (nadie lo copia — viaja con el transform de la bola). Aquí solo
+        // la visibilidad y el pulso.
         this._efectoHalo.visible = true;
-        this._efectoHalo.position.copy(this.ball.pos);
         this._efectoHalo.scale.setScalar(
           0.105 + 0.014 * Math.sin(performance.now() * 0.006));
       }
@@ -4002,6 +4110,61 @@ export class PingPongGame {
       this._efectoBoteFx.material.opacity = 0.85 * (1 - kk);
       if (U.boteT <= 0) this._efectoBoteFx.visible = false;
     }
+  }
+
+  /** v3.6.38 · LOD DE TAMAÑO del dueño (prueba de sensación): mientras
+   *  JUGAMOS (rally) el icono y las flechas miden el 50 % — estorban
+   *  menos; MIRANDO EL MANGO de la pala (el icono vive sobre el mango)
+   *  recuperan el 100 %: cobran protagonismo al enfocarlos. Fuera del
+   *  rally, siempre tamaño completo. Transición exponencial suave
+   *  (rápida al crecer, reposada al encoger). */
+  _megaLodUpdate(dt) {
+    let obj = 1;
+    if (this.rules && this.rules.state === 'rally' &&
+        !this._megaMirandoMango()) {
+      obj = MEGA_LOD_JUEGO;
+    }
+    const k = obj > this._megaLOD ? 12 : 5;
+    this._megaLOD += (obj - this._megaLOD) * (1 - Math.exp(-dt * k));
+    if (Math.abs(this._megaLOD - obj) < 0.003) this._megaLOD = obj;
+  }
+
+  /** ¿Mira el jugador DIRECTAMENTE al mango (donde vive el icono)? */
+  _megaMirandoMango() {
+    const ico = this._megaIcon ? this._megaIcon[this.paddleHand] : null;
+    if (!ico || !ico.visible) return false;
+    const cam = this._camBasis();
+    if (!cam) return false;
+    ico.getWorldPosition(_megaTmpB);
+    _megaTmpC.subVectors(_megaTmpB, cam.pos);
+    const L = _megaTmpC.length();
+    if (L < 1e-4) return true;
+    return (_megaTmpC.multiplyScalar(1 / L)).dot(cam.fwd) >= MEGA_LOD_MIRA;
+  }
+
+  /** v3.6.38 · Base de la CÁMARA en mundo {pos, right, up, fwd} — visor
+   *  XR o escritorio. Sin asignaciones por frame (vectores de módulo). */
+  _camBasis() {
+    let m = null;
+    try {
+      if (this.renderer.xr && this.renderer.xr.isPresenting) {
+        m = this.renderer.xr.getCamera().matrixWorld;
+      }
+    } catch (e) { m = null; }
+    if (!m || !m.elements || m.elements.every((v) => v === 0)) {
+      if (!this.camera) return null;
+      try { this.camera.updateMatrixWorld(); } catch (e2) { /* */ }
+      m = this.camera.matrixWorld;
+    }
+    const el = m.elements;
+    _megaTmpRight.set(el[0], el[1], el[2]);
+    if (_megaTmpRight.lengthSq() < 1e-6) return null;
+    _megaTmpRight.normalize();
+    _megaTmpUp.set(el[4], el[5], el[6]).normalize();
+    _megaTmpPos.set(el[12], el[13], el[14]);
+    _megaTmpFwd.set(-el[8], -el[9], -el[10]).normalize(); // mira −Z
+    return { pos: _megaTmpPos, right: _megaTmpRight, up: _megaTmpUp,
+      fwd: _megaTmpFwd };
   }
 
   // Vibración háptica robusta (Quest Browser): el XRInputSource guardado en
@@ -6477,3 +6640,15 @@ const MEGA_ARROW_S = 0.020;
 const MEGA_ICON_Y = -0.034;   // base de la mano, justo sobre el mando
 const MEGA_ICON_Z = 0.004;    // pegado al eje del mango (no «a un lado»)
 const MEGA_ICON_S = 0.048;    // 4,8 cm — pequeño, parte de la pala
+// v3.6.38 · LOD del dueño (prueba de sensación): jugando, icono+flechas
+// al 50 %; mirando EL MANGO (cos ≈ 12°) recuperan el 100 %.
+const MEGA_LOD_JUEGO = 0.5;
+const MEGA_LOD_MIRA = 0.978;
+// Vectores módulo para LOD/anclaje de flechas (cero asignaciones por frame)
+const _megaTmpA = new THREE.Vector3();
+const _megaTmpB = new THREE.Vector3();
+const _megaTmpC = new THREE.Vector3();
+const _megaTmpRight = new THREE.Vector3();
+const _megaTmpUp = new THREE.Vector3();
+const _megaTmpFwd = new THREE.Vector3();
+const _megaTmpPos = new THREE.Vector3();

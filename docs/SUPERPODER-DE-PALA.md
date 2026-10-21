@@ -1,7 +1,7 @@
 # SUPERPODER DE PALA · Conocimiento del sistema
 
-> Documento maestro del diseño aprobado por el dueño (FASE 39 · V3.6.37-SDK6,
-> ronda 45). Toda la mecánica vive en el **núcleo** (`game.html`, generado desde
+> Documento maestro del diseño aprobado por el dueño (FASE 40 · V3.6.38-SDK6,
+> ronda 46). Toda la mecánica vive en el **núcleo** (`game.html`, generado desde
 > `src/game/core/c12_pingponggame.js` + i18n en `c00_pre_three.js` + física en
 > `c02/c04/c05/c06`): TODOS los campeonatos (locura, magia, oeste,
 > estacion_orbital, valle_neon) y cualquier campeonato nuevo la heredan **sin
@@ -14,7 +14,8 @@
 | DÓNDE | **SOLO en los campeonatos** (Modalidad Campeonato, contra rivales). En un partido contra la máquina FUERA de los campeonatos no aparece nada (petición explícita del dueño; gate = `champs.active`). El HALL y la calibración siguen siendo zona neutra. |
 | Concesión | **Cada 11 golpes del rally** (11, 22, 33…) = **+1 carga** de un poder **aleatorio** del registro `PODERES_PALA`. El rally largo premia con más cargas. Rally nuevo = cuenta nueva. |
 | Matriz | Un poder distinto **NO sustituye**: **ENTRA en la matriz** (orden de llegada; el primero cogido ocupa la posición 0, el siguiente la 1…). Mismo poder → **acumula ×2, ×3** (tope 3; lleno = «toc» honesto). |
-| Selección | **Joystick ⟷ de cualquier mando** cicla el seleccionado (en escritorio, ←/→). En todo momento **SOLO UN icono** se ve en la pala. **Flechas ‹ ›** como sprites PROPIOS a los lados del icono (disco oscuro + chevron oro + pulso — ronda 45: dentro del icono «no se nota»), **sin flecha izquierda en el índice 0, sin flecha derecha en el último** — y el joystick tampoco envuelve en los bordes. |
+| Selección | **Joystick ⟷ de cualquier mando** cicla el seleccionado (en escritorio, ←/→). En todo momento **SOLO UN icono** se ve en la pala. **Flechas ‹ ›** como sprites PROPIOS anclados EN EL PLANO DEL ICONO (ronda 46: centro del icono + lateral de cámara perpendicular a la línea ojo→icono × separación tangencial — sin solaparse, casi rozándolo, mirando a cámara; ronda 45: dentro del icono «no se nota»), **sin flecha izquierda en el índice 0, sin flecha derecha en el último** — y el joystick tampoco envuelve en los bordes. |
+| Tamaño (LOD) | **Ronda 46 (prueba de sensación):** jugando (rally), icono + flechas miden el **50 %**; **mirando el mango de la pala** (≈12°) o fuera del rally recuperan el **100 %** — el protagonismo llega al enfocarlos. Transición exponencial suave. |
 | Vida | Las cargas viven **solo en la partida en curso**; nueva partida = 0. |
 | Uso | **Gatillo del mando LIBRE** (conmuta al cambiar de mano; respaldo en la pala si la pistola del Oeste ocupa la libre; escritorio = ratón) gasta 1 carga del poder **SELECCIONADO**. |
 | MEGA PALA | 15 s por carga (pala ×1,30 visual + radio ×1,38 + canto oro + onda). Activa + gatillo = **alarga +15 s** (el tamaño nunca apila). |
@@ -88,6 +89,47 @@ consume 1 carga (máx. 3 por activación) · integración por SUBPASO con h fijo
 > NO son propiedades físicas de un imán real: son parámetros de prototipo del
 > dueño para calibrar con las velocidades reales del juego (DIMS.iman*).
 
+### 2.d · FASE 40 (ronda 46) — gatillo INMEDIATO, halo/bote EXACTOS, flechas
+      en plano y LOD por mirada
+
+Las 4 peticiones del dueño tras probar V3.6.37, con sus decisiones:
+
+1. **LAG DEL GATILLO, FUERA** («debe sentirse que la aplicación es
+   inmediata… a todas costa»). Tres ataques, todos medibles:
+   - *Redibujo diferido*: gasta/cicla/carga marcan `_megaTexDirty` y el
+     redibujo corre en `updateMega` — NUNCA en el frame del gatillo. Al
+     lanzar un poder el icono se oculta: el trabajo se ahorra entero.
+     Además el `megaTrigger` tenía un segundo `_megaIconRefresh()`
+     redundante (doble canvas+GPU en el mismo frame): fuera.
+   - *Textura persistente*: canvas + `CanvasTexture` del icono se crean UNA
+     vez (`_megaIconCv`); cada refresco REDIBUJA y recalienta con
+     `needsUpdate` — ni una asignación ni un disposal por pulsación.
+   - *PRECALIENTE* (`_megaPrewarm`): desde la PRIMERA carga, todo el
+     arsenal que el gatillo podía construir en su primer uso (canto MEGA,
+     canto efecto, canto imán, halo, anillo de bote, flechas) se construye
+     POR ADELANTADO y REPARTIDO — una pieza por frame (cola en
+     `updateMega`). El gatillo ya no crea nada: solo enciende.
+2. **HALO/BOTE EXACTOS** («el halo rojo y el bote rojo desfasados en
+   relación a la bola»): el halo es **HIJO del `ballMesh`** — viaja con su
+   transform, cero desfase posible incluso entre subpasos de física o con
+   extrapolación de red (nadie lo copia: posición gratis). El anillo de
+   bote está precalentado (`_efectoBotePrewarm`): el primer bote marcado ya
+   no construye nada.
+3. **FLECHAS EN EL PLANO DEL ICONO** («mismo plano… prácticamente
+   tocándose tangencialmente… mirando hacia la cámara»): anclaje en MUNDO
+   cada frame — centro del icono + componente del right de cámara
+   **PERPENDICULAR a la línea ojo→icono** × separación tangencial (6 % del
+   tamaño del icono). Nada rota con la muñeca (antes era el eje X local de
+   la montura): siempre a los lados, coplanares, sin solaparse y mirando
+   al ojo (sprites billboard).
+4. **LOD POR MIRADA** («más pequeños mientras jugamos… recuperan su tamaño
+   si miramos el palo de nuestra pala»): `_megaLodUpdate` — en rally el
+   icono y las flechas miden el 50 % (`MEGA_LOD_JUEGO`); mirando el mango
+   (el icono vive sobre el mango; umbral cos ≥ 0,978 ≈ 12°,
+   `MEGA_LOD_MIRA`) o fuera del rally, el 100 %. Exponencial suave (k=12
+   al crecer, k=5 al encoger). **Prueba de sensación**: si el dueño quiere
+   otro porcentaje o umbral, es UNA constante.
+
 ## 3 · Feedback al jugador
 
 1. **Icono anclado al mango** (sprite-billboard 4,8 cm, base de la mano, justo
@@ -148,14 +190,20 @@ TODOS los campeonatos lo cogen solos.
 
 ## 5 · QA y sellado
 
-- Capa **AE** `scripts/qa_poderes_matriz_v3636.py` (en vivo): agujas de la
-  matriz + súper efecto + gate de campeonatos + voces nativas + mecánica
-  headless (carga 11/22/33/44 · matriz con 2 poderes · ciclo ⟷ sin envolver ·
-  flechas en el icono · súper efecto 8 s / 5 golpes · spin ×2 con tope ·
-  marca de bola y limpieza por la IA · SOLO campeonatos: fuera de ellos no
-  carga ni el gatillo responde · conmutador + hall neutros). La capa AD
-  (`qa_mega_cargas_v3635`) quedó **retirada del listado** (historial).
-- `scripts/sella_r44.py` sella las capas E/F/G/H/I a 3.6.36-SDK6.
+- Capa **AG** `scripts/qa_poderes_v3638.py` (en vivo, 66 checks): agujas de
+  los 4 cambios de la FASE 40 + mecánica real headless (precaliente que
+  drena solo · textura persistente con identidad estable · gatillo que NO
+  dibuja · halo hijo de la bola que viaja con ella · flechas coplanares y
+  tangenciales medidas contra la cámara · LOD 50 % en rally → 100 % en
+  saque y con la mirada forzada) + regresiones de las reglas de la ronda 45.
+- Capa **AF** `scripts/qa_poderes_iman_v3637.py` (en vivo, 138 checks):
+  actualizada a la geometría de la ronda 46 (flechas por índice con la
+  puerta de montura viva · halo medido en MUNDO como hijo del ballMesh) —
+  mantiene la micro-simulación de física del imán y la norma completa.
+- Capa **AE** `scripts/qa_poderes_matriz_v3636.py` retirada del listado
+  (historial); la capa AD (`qa_mega_cargas_v3635`) también (historial).
+- `scripts/sella_r46.py` sella las capas E/F/G/H/I a 3.6.38-SDK6 con los
+  tamaños reales de los 4 ZIPs (las rondas previas usaron `sella_r44/r45`).
 - Assets de la ronda: `scripts/_poder36/` (4 voces Piper + **icono REAL del
   dueño** `icono_efecto_real_64.png`, cuantizado a 64 colores con la receta
   del Crece) y `scripts/_poder36_insertar_assets.py` (inserción data-URI).

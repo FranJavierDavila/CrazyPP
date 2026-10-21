@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.37-SDK6, fase 39 · Súper Imán; sello actualizado
-# por bump_version.py desde 3.6.36-SDK6)
-4833252828c647ad49fe7ba4773d470b20edd8f0da2193a8346998dbc5857f58
+# SHA256 del game.html que produjo esta división (3.6.38-SDK6, fase 40 · Inmediatez + Halo exacto + Flechas en plano + LOD; sello actualizado
+# por bump_version.py desde 3.6.37-SDK6)
+0ebb7e194f1c449d949d6efd9799e15948f0c158680dd1467aed25e920f36e27

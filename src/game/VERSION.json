@@ -1,10 +1,10 @@
 {
-  "version": "3.6.37-SDK6",
-  "fase": 39,
-  "faseNombre": "Súper Imán",
+  "version": "3.6.38-SDK6",
+  "fase": 40,
+  "faseNombre": "Inmediatez + Halo exacto + Flechas en plano + LOD",
   "sdk": "1.5.4",
   "fecha": "2026-10-21",
-  "hub": "v3637-sdk6",
+  "hub": "v3638-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "4833252828c647ad49fe7ba4773d470b20edd8f0da2193a8346998dbc5857f58"
+  "golden": "0ebb7e194f1c449d949d6efd9799e15948f0c158680dd1467aed25e920f36e27"
 }

@@ -111,14 +111,14 @@ async def main():
         ('_megaArrowTex(dir) {', 'flechas: textura chevron con disco'),
         ("chev(17, '#141822');", 'flechas: contorno oscuro (se VE sobre el icono)'),
         ("'rgba(12,16,26,0.78)'", 'flechas: disco de fondo oscuro'),
-        ('par[0].visible = flechasOn && this._megaIdx > 0;',
+        ('const visL = flechasOn && activa && this._megaIdx > 0;',
          'flecha ‹ SOLO con vecino a la izquierda'),
-        ('par[1].visible = flechasOn && this._megaIdx < L - 1;',
+        ('const visR = flechasOn && activa && this._megaIdx < L - 1;',
          'flecha › SOLO con vecino a la derecha (sin envolver)'),
         ('_buildEfectoHalo() {', 'halo ROJO de la bola marcada construido'),
         ('blending: THREE.AdditiveBlending', 'halo: mezcla aditiva (visible)'),
-        ('this._efectoHalo.position.copy(this.ball.pos);',
-         'halo: anclado a la bola cada frame'),
+        ('this.ballMesh.add(sp);',
+         'halo: HIJO del ballMesh (v3.6.38 — viaja con la bola, cero desfase)'),
         ('_efectoBoteFxShow(e.pos);', 'bote amplificado: anillo rojo en la mesa'),
         ('RingGeometry(0.055, 0.075, 36)', 'bote amplificado: anillo one-shot'),
         ('golpea con GIRO (arrastra la pala al golpear)',
@@ -139,7 +139,7 @@ async def main():
         ('pp_pala_mejorada_v1', 'conmutador persistente «Pala Mejorada»'),
         ('_megaNormReset()', 'recogida completa con dispose'),
         ('this.updateMega(dt);', 'la norma corre en el bucle animate'),
-        ('V3.6.37-SDK6', 'sello de versión servido'),
+        ('V3.6.38-SDK6', 'sello de versión servido'),
     ]:
         chk(needle in game, label)
     # REGRESIONES
@@ -315,12 +315,17 @@ async def main():
           out.msgEfectoEnsenia = (G.rules.message || '').indexOf('¡SÚPER EFECTO!') === 0 &&
             (G.rules.message || '').indexOf('GIRO') > 0;
 
-          // · HALO ROJO sobre la bola marcada (SÚPER EFECTO notorio)
+          // · HALO ROJO sobre la bola marcada (SÚPER EFECTO notorio;
+          //   v3.6.38: el halo es HIJO del ballMesh — se mide en MUNDO)
           try {
             G.ball.ppEfecto = true;
             paso();
+            const V3H = Object.getPrototypeOf(G.ball.pos).constructor;
+            const mWH = G._efectoHalo
+              ? G._efectoHalo.getWorldPosition(new V3H()) : null;
             out.haloVivo = !!G._efectoHalo && G._efectoHalo.visible === true &&
-              G._efectoHalo.position.distanceTo(G.ball.pos) < 0.01;
+              G._efectoHalo.parent === G.ballMesh &&
+              mWH && mWH.distanceTo(G.ball.pos) < 0.02;
             G.ball.ppEfecto = false;
             paso();
             out.haloFuera = G._efectoHalo.visible === false;

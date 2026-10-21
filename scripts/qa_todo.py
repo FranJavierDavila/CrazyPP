@@ -77,6 +77,11 @@ CAPAS = [
     # bola, anillo de bote, rival con error ×2 y piernas ×0,85) + toda la
     # norma de la matriz con 3 poderes y las 6 voces nativas.
     ('AF · superpoder imán (v3637)', 'qa_poderes_iman_v3637.py'),
+    # AG (v3638): INMEDIATEZ del gatillo (redibujo diferido + textura
+    # persistente + PRECALIENTE repartido) + halo HIJO de la bola (cero
+    # desfase) + flechas EN EL PLANO del icono (anclaje mundo + lateral de
+    # cámara, tangenciales) + LOD 50 % en juego / 100 % mirando el mango.
+    ('AG · poderes inmediatez+LOD (v3638)', 'qa_poderes_v3638.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

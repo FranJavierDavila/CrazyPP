@@ -1284,6 +1284,17 @@ class ArcadeArkanoid {
     this._timeUsed = false;    // el +1 min ya se cogió en esta prueba
     this._time30 = false;      // el aviso sonoro de apremio ya sonó
     this._extraFx = null;      // { pos, t } — plano "+1 MIN" flotando
+    // v3.6.44 (ronda 52) · LADRILLO BOMBA (sólo ARKANOID 2): sustituye a un
+    // AZUL vivo al azar (AL MENOS 1 vez por partida), dura 4 s en cada
+    // ladrillo y SALTA a otro azul; sin azules vivos se esconde y vuelve
+    // en cuanto aparezca uno. Al romperlo (bola o láser) DETONA y arrasa
+    // todos los ladrillos en radio de 2 filas × 2 columnas; consumida, no
+    // vuelve en toda la partida (se reinicia con cada intento).
+    this._bombBrick = null;    // { slot, t } — activo o null
+    this._bombUsed = false;    // la bomba ya DETONÓ en esta partida
+    this._bombWait = false;    // sin azules vivos: esperando que aparezca uno
+    this._bombAge = 0;         // s desde el inicio de la etapa (garantía ≥1)
+    this._bombT = 0;           // s en el ladrillo actual (salto a los 4 s)
     // v2.44 · ABANICO (corriente de aire para desatascar la bola)
     this._fanSamp = [];        // muestras {t, vx} de la velocidad lateral
     this._fanT = 0;            // segundos restantes de viento activo
@@ -1543,6 +1554,39 @@ class ArcadeArkanoid {
         eimg.src = eurl;
       }
     }
+    // v3.6.44 (ronda 52) · LADRILLO BOMBA: malla NEGRA (misma blackMat del
+    // tiempo extra) + icono bomba.webp superpuesto DELANTE — diseño del
+    // estilo del reloj (cartela blanca, silueta negra), a petición del
+    // dueño: «similar al ladrillo del reloj pero con el dibujo de una
+    // bomba». La bola lo REVIENTA (detonación) y el láser también.
+    this.bombMesh = new THREE.Mesh(this.brickGeo, this.blackMat);
+    this.bombMesh.castShadow = true;
+    this.bombMesh.visible = false;
+    this.wallGroup.add(this.bombMesh);
+    this.bombIconMat = this.bombIconMat || new THREE.MeshBasicMaterial({
+      transparent: true, depthWrite: false, side: THREE.FrontSide,
+    });
+    this.bombIcon = new THREE.Mesh(
+      new THREE.PlaneGeometry(C.bw * 0.62, C.bw * 0.62), this.bombIconMat);
+    this.bombIcon.visible = false;
+    this.bombIcon.renderOrder = 6;
+    this.wallGroup.add(this.bombIcon);
+    if (!this._bombaLoading) {
+      this._bombaLoading = true;
+      const burl = (typeof window !== 'undefined' && window.__PP_BOMBA_URL);
+      if (burl) {
+        const bimg = new Image();
+        bimg.onload = () => {
+          const bt = new THREE.Texture();
+          bt.colorSpace = THREE.SRGBColorSpace;
+          bt.image = bimg;
+          bt.needsUpdate = true;
+          this.bombIconMat.map = bt;
+          this.bombIconMat.needsUpdate = true;
+        };
+        bimg.src = burl;
+      }
+    }
     // 2 PAREDES LATERALES de cristal (marco ámbar + rodapié + remate),
     // EN EL BORDE de la mesa (4 mm fuera para no z-fight con el canto).
     // v2.44: longitud C.sideZ0 - C.sideZ1 — con la extensión hacia el
@@ -1661,6 +1705,16 @@ class ArcadeArkanoid {
     if (this.timeMesh) this.timeMesh.visible = false;
     if (this.timeClock) this.timeClock.visible = false;
     if (this.extraPlane) this.extraPlane.visible = false;
+    // v3.6.44 · la BOMBA también SE REINICIA CON CADA PARTIDA (petición
+    // del dueño: «se reinicia con cada partida» — si no detonó, vuelve a
+    // estar disponible; la garantía de aparición vuelve a contar).
+    this._bombBrick = null;
+    this._bombUsed = false;
+    this._bombWait = false;
+    this._bombAge = 0;
+    this._bombT = 0;
+    if (this.bombMesh) this.bombMesh.visible = false;
+    if (this.bombIcon) this.bombIcon.visible = false;
     this.bricksLeft = this.bricks.length;
     for (const b of this.bricks) {
       b.alive = true;
@@ -1848,6 +1902,8 @@ class ArcadeArkanoid {
       }
       // v2.46 · LADRILLO NEGRO del tiempo extra (aparición y saltos)
       this._timeUpdate(dt);
+      // v3.6.44 · LADRILLO BOMBA (aparición, saltos y espera por azules)
+      this._bombUpdate(dt);
       // v2.44 · ABANICO: corriente de aire para empujar la bola al muro
       this._fanUpdate(dt);
       this._physics(dt);
@@ -2031,6 +2087,9 @@ class ArcadeArkanoid {
     const r2 = (r + 0.002) * (r + 0.002);
     for (const b of this.bricks) {
       if (!b.alive) continue;
+      // v3.6.44 · el slot ocupado por la BOMBA no colisiona (su ladrillo
+      // azul está OCULTO debajo — la bomba captura esa zona con SU bloque)
+      if (this._bombBrick && b === this._bombBrick.slot) continue;
       if (p.z - r > b.max.z || p.z + r < b.min.z) continue;
       if (p.x - r > b.max.x || p.x + r < b.min.x) continue;
       if (p.y - r > b.max.y || p.y + r < b.min.y) continue;
@@ -2118,6 +2177,44 @@ class ArcadeArkanoid {
             v.z -= nz * vno * (1 - C.brickRest);
           }
           this._breakTimeBrick();
+        }
+      }
+    }
+    // v3.6.44 · LADRILLO BOMBA: la bola lo revienta y DETONA (mismo esquema
+    // de reflexión que el ladrillo del tiempo — la destrucción la hace
+    // _detonarBomba, que arrasa el radio 2×2 de filas y columnas).
+    if (this._bombBrick) {
+      const bb = this._bombBrick.slot;
+      if (p.z - r <= bb.max.z && p.z + r >= bb.min.z &&
+          p.x - r <= bb.max.x && p.x + r >= bb.min.x &&
+          p.y - r <= bb.max.y && p.y + r >= bb.min.y) {
+        const cx = THREE.MathUtils.clamp(p.x, bb.min.x, bb.max.x);
+        const cy = THREE.MathUtils.clamp(p.y, bb.min.y, bb.max.y);
+        const cz = THREE.MathUtils.clamp(p.z, bb.min.z, bb.max.z);
+        let nx = p.x - cx, ny = p.y - cy, nz = p.z - cz;
+        const d2 = nx * nx + ny * ny + nz * nz;
+        if (d2 <= r2) {
+          if (d2 > 1e-9) {
+            const d = Math.sqrt(d2);
+            nx /= d; ny /= d; nz /= d;
+            p.x = cx + nx * (r + 0.003);
+            p.y = cy + ny * (r + 0.003);
+            p.z = cz + nz * (r + 0.003);
+          } else {
+            nz = 1;
+            p.z = bb.max.z + r + 0.003;
+          }
+          const vn = v.x * nx + v.y * ny + v.z * nz;
+          if (vn < 0) {
+            v.x -= 2 * vn * nx;
+            v.y -= 2 * vn * ny;
+            v.z -= 2 * vn * nz;
+            const vno = v.x * nx + v.y * ny + v.z * nz;
+            v.x -= nx * vno * (1 - C.brickRest);
+            v.y -= ny * vno * (1 - C.brickRest);
+            v.z -= nz * vno * (1 - C.brickRest);
+          }
+          this._detonarBomba();
         }
       }
     }
@@ -2301,6 +2398,150 @@ class ArcadeArkanoid {
     this._msg = T('ark_extra_min');
     this._msgT = 2.0;
     if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.5, 70);
+  }
+
+  /* ---------------------------------------------------------------------
+   * v3.6.44 (ronda 52) · LADRILLO BOMBA del ARKANOID 2 (etapa 4 del
+   * campeonato de La Locura — petición literal del dueño):
+   * «aleatoriamente y al menos 1 vez por partida aparezca un bloque de
+   * ladrillo negro sustituyendo a uno azul con un dibujo de una bomba,
+   * permanece 4 segundos y salta a otro bloque azul si está presente y
+   * sino desaparece hasta que aparezca otro azul, una vez consumido ya no
+   * aparecen más durante la partida, se reinicia con cada partida» y «si
+   * se destruye, con el disparo o con la pelota detone estrepitosamente
+   * todos los bloques que están al menos hasta un rango de 2 filas y
+   * columnas de donde se encuentra». RESULTADO: la etapa Arkanoid tiene
+   * DOS ayudas aseguradas — el reloj (+1 min) y la bomba (el destrozo).
+   * ------------------------------------------------------------------- */
+  _bombUpdate(dt) {
+    if (this.variant !== 2) return;
+    if (this._bombUsed) return;             // consumida: nunca más en la partida
+    if (this._bombBrick) {
+      this._bombT += dt;
+      if (this._bombT >= 4) this._bombJump();   // 4 s en el ladrillo → salta
+      return;
+    }
+    const azules = this.bricks.filter((b) => b.alive && b.state === 'blue');
+    if (this._bombWait) {
+      // desaparecida por falta de azules: vuelve EN CUANTO haya uno
+      if (azules.length) this._bombSpawn(azules);
+      return;
+    }
+    // primera aparición: ALEATORIA pero GARANTIZADA (≥1 vez por partida):
+    // a partir de 1,5 s entra con probabilidad por segundo; a los 6 s sale
+    // forzosa — el dueño SIEMPRE la ve en cada partida.
+    this._bombAge += dt;
+    if (azules.length &&
+        ((this._bombAge > 1.5 && Math.random() < dt * 0.55) ||
+         this._bombAge >= 6)) {
+      this._bombSpawn(azules);
+    }
+  }
+
+  _bombSpawn(azules) {
+    if (!azules || !azules.length) azules =
+      this.bricks.filter((b) => b.alive && b.state === 'blue');
+    if (!azules.length) { this._bombWait = true; return; }
+    this._bombWait = false;
+    const b = azules[(Math.random() * azules.length) | 0];
+    this._bombPlace(b);
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(this.bombMesh.position.x / 2.5, -1, 1);
+    // aparición: «plombeo» grave + tic metálico (amenaza que llega)
+    g.audio.playOsc(180, 96, 0.2, 'triangle', 0.2, pan);
+    g.audio.playNoise(0.08, 2400, 1.4, 0.1, pan);
+  }
+
+  _bombPlace(b) {
+    this._bombBrick = { slot: b, t: 0 };
+    this._bombT = 0;
+    b.mesh.visible = false;              // el azul se OCULTA (sigue vivo)
+    this.bombMesh.visible = true;
+    this.bombMesh.scale.setScalar(1);
+    this.bombMesh.rotation.set(0, 0, 0);
+    this.bombMesh.position.copy(b.home);
+    this.bombIcon.visible = true;        // icono bomba DELANTE del ladrillo
+    this.bombIcon.position.copy(b.home);
+    this.bombIcon.position.z += this.C.depth / 2 + 0.003;
+  }
+
+  _bombJump() {
+    const cur = this._bombBrick.slot;
+    const otros = this.bricks.filter((b) => b.alive && b.state === 'blue' &&
+      b !== cur);
+    if (!otros.length) {
+      // sin azules vivos: DESAPARECE (el azul actual vuelve) y espera a
+      // que aparezca otro azul (_convertRandomRed crea azules nuevos)
+      cur.mesh.visible = true;
+      this.bombMesh.visible = false;
+      this.bombIcon.visible = false;
+      this._bombBrick = null;
+      this._bombWait = true;
+      return;
+    }
+    this._flash(cur.home);               // destello en el ladrillo que abandona
+    cur.mesh.visible = true;             // el azul original REAPARECE
+    this._bombPlace(otros[(Math.random() * otros.length) | 0]);
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(this.bombMesh.position.x / 2.5, -1, 1);
+    g.audio.playOsc(340, 620, 0.09, 'sine', 0.1, pan);
+  }
+
+  /** La bola o el láser revientan la BOMBA: DETONACIÓN ESTREPITOSA —
+   *  arrasa TODOS los ladrillos vivos en radio de 2 filas × 2 columnas
+   *  (rojos Y azules — la bomba no distingue), escombros negros, flash
+   *  doble, BOOM grave con sub-tono y sacudida háptica fuerte. */
+  _detonarBomba() {
+    if (!this._bombBrick) return;
+    const g = this.game;
+    const slot = this._bombBrick.slot;
+    const pos = slot.home.clone();
+    const C = this.C;
+    const idx = this.bricks.indexOf(slot);
+    const rC = (idx >= 0 && C.cols) ? Math.floor(idx / C.cols) : -1;
+    const cC = (idx >= 0 && C.cols) ? idx % C.cols : -1;
+    this._bombBrick = null;              // consumida: NUNCA más en la partida
+    this._bombUsed = true;
+    this.bombMesh.visible = false;
+    this.bombIcon.visible = false;
+    slot.mesh.visible = true;            // el azul vuelve para romperse
+    // DETONACIÓN: radio 2 filas × 2 columnas alrededor del ladrillo bomba
+    if (rC >= 0) {
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          const rr = rC + dr, cc = cC + dc;
+          if (rr < 0 || rr >= C.rows || cc < 0 || cc >= C.cols) continue;
+          const b2 = this.bricks[rr * C.cols + cc];
+          if (b2 && b2.alive) this._breakBrick(b2);
+        }
+      }
+    }
+    // escombros NEGROS de la propia bomba (8 trozos)
+    let spawned = 0;
+    for (const d of this._debris) {
+      if (d.life > 0) continue;
+      d.life = 0.6 + Math.random() * 0.3;
+      d.mesh.visible = true;
+      d.mesh.material = this.blackMat;
+      d.mesh.position.copy(pos);
+      d.mesh.position.x += (Math.random() - 0.5) * 0.2;
+      d.mesh.position.y += (Math.random() - 0.5) * 0.12;
+      d.vel.set((Math.random() - 0.5) * 3.2, Math.random() * 2.2,
+        1.0 + Math.random() * 2.0);
+      if (++spawned >= 8) break;
+    }
+    this._flash(pos);                    // doble flash de la detonación
+    this._flash(pos.clone().add(new THREE.Vector3(
+      (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.2, 0.02)));
+    // BOOM: trueno grave + caída al sub-grave (el destrozo SUENA enorme)
+    const pan = THREE.MathUtils.clamp(pos.x / 2.5, -1, 1);
+    g.audio.playNoise(0.32, 180, 0.7, 0.4, pan);
+    g.audio.playOsc(320, 55, 0.4, 'sawtooth', 0.32, pan);
+    g.audio.playOsc(110, 42, 0.5, 'sine', 0.3, pan);
+    if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.95, 220);
+    this._msg = T('ark_bomba_boom');
+    this._msgT = 2.0;
+    this._hudDirty = true;
   }
 
   /* ---------------------------------------------------------------------
@@ -4504,19 +4745,27 @@ class ArcadeController {
     let hitDist = 6.0;
     let hitBrick = null;
     let hitTime = false;   // v2.46: impacto en el ladrillo negro del tiempo
+    let hitBomb = false;   // v3.6.44: impacto en el ladrillo BOMBA
     const hitPoint = new THREE.Vector3();
     const ark = this.arkanoid;
     if (ark && ark.active && ark.bricks && ark.bricks.length) {
       const ray = new THREE.Raycaster(pos, dir, 0, 6.0);
-      const meshes = ark.bricks.filter((b) => b.alive).map((b) => b.mesh);
+      // v3.6.44 · el slot ocupado por la BOMBA se EXCLUYE (su azul está
+      // oculto debajo — un rayo al ladrillo bomba debe dar a la bomba)
+      const meshes = ark.bricks
+        .filter((b) => b.alive && !(ark._bombBrick && b === ark._bombBrick.slot))
+        .map((b) => b.mesh);
       // v2.46: el ladrillo NEGRO del tiempo extra también recibe el láser
       if (ark._timeBrick && ark.timeMesh) meshes.push(ark.timeMesh);
+      // v3.6.44: el ladrillo BOMBA recibe el láser → detonación
+      if (ark._bombBrick && ark.bombMesh) meshes.push(ark.bombMesh);
       const hits = ray.intersectObjects(meshes, false);
       if (hits.length) {
         hitDist = hits[0].distance;
         hitPoint.copy(hits[0].point);
         hitBrick = ark.bricks.find((b) => b.mesh === hits[0].object) || null;
         hitTime = !hitBrick && hits[0].object === ark.timeMesh;
+        hitBomb = !hitBrick && !hitTime && hits[0].object === ark.bombMesh;
       }
     }
 
@@ -4559,6 +4808,12 @@ class ArcadeController {
       const lp = g.rig.worldToLocal(hitPoint.clone());
       ark._flash(lp);
       ark._breakTimeBrick();
+    } else if (hitBomb) {
+      // v3.6.44: el láser revienta la BOMBA => DETONACIÓN del radio 2×2
+      g.rig.updateWorldMatrix(true, false);
+      const lp = g.rig.worldToLocal(hitPoint.clone());
+      ark._flash(lp);
+      ark._detonarBomba();
     }
 
     // «pew» BAJITO de láser + vibración corta
@@ -4835,6 +5090,7 @@ export default {
       window.__PP_WIND_URL = A('viento.webp');
       window.__PP_RELOJ_URL = A('reloj.webp');
       window.__PP_EXTRA_URL = A('extra.webp');
+      window.__PP_BOMBA_URL = A('bomba.webp');   // v3.6.44: ladrillo BOMBA
       window.__PP_MAPA_URL = A('mapa.webp');
       window.__PP_TAPA_URL = A('tapa.webp');
       GUN_ART_URL = A('pistol.glb');   // v2.74: pistola REAL del artista

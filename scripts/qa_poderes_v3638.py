@@ -129,7 +129,7 @@ async def main():
         ('const MEGA_ARROW_S = 0.020;', 'flechas: tamaño base intacto'),
         ('return !!(this.champs && this.champs.active);',
          'gate: superpoderes SOLO en campeonatos'),
-        ('V3.6.39-SDK6', 'sello de versión servida'),
+        ('V3.6.40-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     # REGRESIONES de los defects que se atacan
@@ -192,13 +192,16 @@ async def main():
           out.texturaMisma = G._megaTex === texAntes && texAntes !== null;
           out.dirtyProcesado = G._megaTexDirty === false;
 
-          // · GATILLO MEGA: NO dibuja (dirty diferido; icono cede al activar)
+          // · GATILLO MEGA: NO dibuja en el gatillo (dirty diferido;
+          // v3.6.40 el icono NO desaparece al activar — pasa a modo ACTIVO
+          // con el anillo de tiempo, petición del dueño en ronda 48)
           G.rules.state = 'rally';
           let tM = null;
           try { tM = G.megaTrigger(libre); } catch (e) { out.errM = String(e); }
           try { G.updateMega(1 / 60); } catch (e) { out.errM1 = String(e); }
           out.megaAbre = tM === true && G._megaT > 14.9;
-          out.sinIconoActivo = G._megaIconOn === false;   // icono cede
+          out.iconoModoActivo = G._megaIconOn === true &&
+            G._megaIconModo === 'act' && G._megaActivaId === 'mega';
           // MEGA ya activa + gatillo = ALARGA (regresión v3.6.36/37)
           Math.random = () => 0.1;
           G.rules.state = 'point'; G.updateMega(1 / 60);
@@ -229,7 +232,8 @@ async def main():
           // · FLECHAS: coplanares con el icono y tangenciales
           // (matriz con DOS entradas: efecto + imán — tras las pruebas
           // anteriores la matriz está vacía: se reconstruye aquí)
-          G._efectoT = 0; G.updateMega(1 / 60);          // icono vuelve
+          G._efectoT = 0; G._megaT = 0; G._megaActivaId = null;
+          G.updateMega(1 / 60);          // v3.6.40: todo apagado → inventario
           Math.random = () => 0.5;
           G.rules.state = 'point'; G.updateMega(1 / 60);
           G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);

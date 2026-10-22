@@ -90,6 +90,14 @@ CAPAS = [
     # matriz, icono ×N, FX de los tres poderes, flechas, halo, marcas de
     # bola y escalas LOD. Idempotente y sin dispose doble.
     ('AH · partida nueva pala limpia (v3639)', 'qa_poderes_reset_v3639.py'),
+    # AI (v3640): EL PODER ACTIVO SE VE EN LA PALA (petición del dueño:
+    # «que el usuario sepa el tipo de poder que tiene activo, sin que
+    # moleste») — el icono del mango NO desaparece al activar: pasa a modo
+    # ACTIVO con ANILLO DE TIEMPO que se vacía (oro/cian/azul = firma del
+    # canto), PARPADEA los últimos 2 s y al terminar vuelve al inventario.
+    # Un solo icono (FASE 38), redibujo diferido+ahorrado (r46), el
+    # indicador duerme en CADA _megaNormReset (FASE 41).
+    ('AI · poder activo se ve en pala (v3640)', 'qa_poderes_activo_v3640.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

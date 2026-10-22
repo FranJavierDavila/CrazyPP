@@ -164,11 +164,55 @@ Las cargas se ganan JUGANDO (norma de los 11 golpes del rally, tope ×3)
 y se gastan en ESA partida. Ni el marcador ni el bestOf cambian: el hook
 solo toca la pala.
 
+### 2.f · FASE 42 (ronda 48) — EL PODER ACTIVO SE VE EN LA PALA
+
+Pregunta del dueño: «¿Se te ocurre alguna manera de que el usuario sepa
+el tipo de poder de pala que tiene activo, sin que moleste durante el
+juego?». Hasta V3.6.39 el icono del mango DESAPARECÍA mientras su propio
+efecto corría (regla de V3.6.36): durante los 8-15 s de ventana el
+jugador solo tenía el canto de silueta (oro/cian/azul), los FX en la
+bola y la voz de activación — fácil confundir el cian del efecto con el
+azul del imán en medio de un rally.
+
+**Recomendación ejecutada (la que se aprobó).** El icono del mango NO
+desaparece al activar: pasa a MODO ACTIVO. Es el mismo sprite, en el
+mismo sitio, con dos caras:
+
+- **Modo ACTIVO** (un poder corriendo): muestra el PNG del poder EN
+  MARCHA rodeado de un **ANILLO DE TIEMPO** que se vacía — pista tenue
+  completa + arco en el color del canto de ese poder (oro `#ffc84a`
+  mega / cian `#54d8f0` efecto / azul `#5aa2ff` imán) con cabeza blanca
+  que marca el sentido del vaciado. En los **últimos 2 s** el icono
+  PARPADEA (mismo lenguaje que el canto que se apaga). Sin HUD, sin
+  texto, sin voces nuevas: vive en la pala, en visión periférica.
+- **Modo INVENTARIO** (nada corriendo): el seleccionado de la matriz con
+  su etiqueta ×N de siempre. Al expirar el poder el icono vuelve aquí
+  solo (o se esconde si no quedan cargas).
+
+Reglas que NO cambian: UN solo icono en la pala en todo momento (FASE
+38), el gatillo gasta el seleccionado, el imán refresca sin gastar, el
+ALARGA de la mega llena el anillo con TODO el tiempo restante, las
+flechas ‹ › descansan mientras un poder corre (elijen el SIGUIENTE) y
+el indicador duerme en CADA `_megaNormReset` (FASE 41: partida nueva =
+pala limpia). Último gatillo manda: si hay dos poderes a la vez, el
+icono muestra el que se lanzó más reciente.
+
+**Ingeniería (lecciones de la casa aplicadas).** El anillo se dibuja en
+el canvas PERSISTENTE del icono (cero texturas nuevas, `needsUpdate`
+in-place); el redibujo es DIFERIDO (nunca en el frame del gatillo, r46)
+y AHORRADO: solo cuando el arco cambia 1/24 de vuelta (≈ cada 0,3 s en
+una ventana de 8 s). El modo activo hereda el LOD del icono (50 % en
+rally, 100 % mirando el mango). `_megaActivaRest()` es el único reloj
+nuevo y `updateMega` reconcilia visibilidad/modo/expiración cada frame
+(fuente única de verdad).
+
 ## 3 · Feedback al jugador
 
 1. **Icono anclado al mango** (sprite-billboard 4,8 cm, base de la mano, justo
    sobre el mando): PNG del poder seleccionado + **etiqueta ×N** (2-3 cargas)
-   + **flechas ‹ ›** de la matriz.
+   + **flechas ‹ ›** de la matriz. Con un poder ACTIVO (FASE 42, §2.f) el
+   MISMO icono pasa a modo activo: poder en marcha + **anillo de tiempo**
+   que se vacía + parpadeo en los últimos 2 s.
 2. **Voz NATIVA** por poder e idioma — Piper **es_ES-davefx** (la MISMA voz
    castellana de la megafonía del juego: «¡Potenciador de pala gigante!» /
    «¡Potenciador de súper efecto!») y **en_US-lessac** si se juega en inglés

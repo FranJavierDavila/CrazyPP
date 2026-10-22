@@ -1,10 +1,10 @@
 {
-  "version": "3.6.39-SDK6",
-  "fase": 41,
-  "faseNombre": "Partida nueva = pala limpia",
+  "version": "3.6.40-SDK6",
+  "fase": 42,
+  "faseNombre": "El poder activo se ve en la pala",
   "sdk": "1.5.4",
-  "fecha": "2026-10-21",
-  "hub": "v3639-sdk6",
+  "fecha": "2026-10-22",
+  "hub": "v3640-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "9288c4fca201fa983350d7e5b15d9e241234b4e818948b166fb056844b92d8fe"
+  "golden": "ae61968f75cd75d5404f59c680c5e2d6db0c9921f357bff7808e908fd12472bc"
 }

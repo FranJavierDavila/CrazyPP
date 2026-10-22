@@ -189,6 +189,16 @@ export class PingPongGame {
     this._megaIconOn = false;
     this._megaIconPop = 0;            // animación de aparición (1 → 0)
     this._megaTex = null;             // textura del icono (compartida)
+    // v3.6.40 · EL PODER ACTIVO SE VE EN LA PALA (ronda 48, petición del
+    // dueño: «que el usuario sepa el tipo de poder de pala que tiene
+    // activo, sin que moleste durante el juego»): el icono del mango NO
+    // desaparece al activar — pasa a modo ACTIVO (el poder en marcha con
+    // un ANILLO DE TIEMPO que se vacía) y vuelve al inventario al
+    // terminar. _megaActivaId = ÚLTIMO poder lanzado (último gatillo manda).
+    this._megaActivaId = null;        // 'mega' | 'efecto' | 'iman' | null
+    this._megaActivaDur = 1;          // ventana contra la que se dibuja el anillo
+    this._megaActivaFrac = -1;        // último trazo del anillo (ahorro de redibujos)
+    this._megaIconModo = '';          // '' | 'inv' inventario | 'act' activo
     // MULTIJUGADOR ONLINE (v2.19): P2P por WebRTC (PeerJS) + voz
     this.net = new NetLink(this);
     this.menuPage = 'main';       // 'main' | 'multi' | 'join' | 'name' | 'rank'
@@ -3010,11 +3020,19 @@ export class PingPongGame {
       // del gatillo (el lag que sentía el dueño).
       this._megaGasta(ent);
       this._megaT += MEGA_DUR;
+      // v3.6.40 · el icono muestra la MEGA en marcha: anillo lleno = TODO
+      // el tiempo restante (el dueño ve QUÉ corre y CUÁNTO queda).
+      this._megaActivaId = 'mega';
+      this._megaActivaDur = this._megaT;
+      this._megaTexDirty = true;
       return true;
     }
-    // LIBERAR: MEGA_DUR s de MEGA PALA (el icono cede a lo que quede)
+    // LIBERAR: MEGA_DUR s de MEGA PALA (v3.6.40: el icono NO cede — pasa
+    // a modo ACTIVO y muestra la MEGA con su anillo de tiempo)
     this._megaGasta(ent);
     this._megaT = MEGA_DUR;
+    this._megaActivaId = 'mega';
+    this._megaActivaDur = MEGA_DUR;
     this._megaWarn = false;
     this._megaFxStart();
     this.rules.message = T('arc_mega_go');
@@ -3037,6 +3055,15 @@ export class PingPongGame {
     if (ent.id === 'efecto') return this._efectoT > 0;
     if (ent.id === 'iman') return this._imanT > 0;
     return false;
+  }
+
+  /** v3.6.40 · segundos restantes del poder ACTIVO mostrado (0 = ninguno).
+   *  Es el reloj del ANILLO DE TIEMPO del icono en modo ACTIVO. */
+  _megaActivaRest() {
+    if (this._megaActivaId === 'mega') return this._megaT;
+    if (this._megaActivaId === 'efecto') return this._efectoT;
+    if (this._megaActivaId === 'iman') return this._imanT;
+    return 0;
   }
 
   /** v3.6.36 · GASTA 1 carga del poder dado (y lo retira de la matriz
@@ -3106,7 +3133,7 @@ export class PingPongGame {
       this._megaPrewarm();              // v3.6.38: arsenal caliente ANTES del gatillo
     }
     this._megaTexDirty = true;          // v3.6.38: redibujo diferido (updateMega)
-    if (!this._megaSelActiva()) this._megaIconVis(true);
+    if (!this._megaIconOn) this._megaIconVis(true);   // v3.6.40: si ya se ve (modo ACTIVO), ni toca
     let msg = this._poderNombre(id);
     if (ent.n > 1) msg += ' ×' + ent.n;
     try {
@@ -3220,7 +3247,9 @@ export class PingPongGame {
     }
     this._megaIdx = ni;
     this._megaTexDirty = true;          // v3.6.38: redibujo diferido (updateMega)
-    this._megaIconVis(!this._megaSelActiva());
+    // v3.6.40 · el ciclo NO apaga el icono: si un poder está ACTIVO el
+    // icono sigue mostrándolo; updateMega reconcilia visibilidad y modo
+    // cada frame (fuente única de verdad, como siempre en la casa).
     try {
       this.audio.playOsc(dir > 0 ? 620 : 520, dir > 0 ? 880 : 380,
         0.09, 'triangle', 0.10, 0);
@@ -3240,6 +3269,9 @@ export class PingPongGame {
       this._efectoT = EFECTO_DUR;
       this._efectoGolpes = EFECTO_GOLPES;
       this._efectoWarn = false;
+      this._megaActivaId = 'efecto';    // v3.6.40: icono en modo ACTIVO
+      this._megaActivaDur = EFECTO_DUR;
+      this._megaTexDirty = true;
       this._efectoOnda();
       this.rules.message = T('arc_efecto_go');
       return true;
@@ -3248,6 +3280,9 @@ export class PingPongGame {
     this._efectoT = EFECTO_DUR;
     this._efectoGolpes = EFECTO_GOLPES;
     this._efectoWarn = false;
+    this._megaActivaId = 'efecto';      // v3.6.40: icono en modo ACTIVO
+    this._megaActivaDur = EFECTO_DUR;
+    this._megaTexDirty = true;
     try { this._buildEfectoFx(); } catch (e) { this._efectoFx = null; }
     this._efectoFxVis(true);
     this._efectoOnda();
@@ -3288,6 +3323,9 @@ export class PingPongGame {
       this._imanT = IMAN_DUR;             // refresco honesto, sin gasto
       this._imanAsistidas = 0;
       this._imanWarn = false;
+      this._megaActivaId = 'iman';        // v3.6.40: icono en modo ACTIVO
+      this._megaActivaDur = IMAN_DUR;
+      this._megaTexDirty = true;
       this._imanOnda();
       this.rules.message = T('arc_iman_go');
       return true;
@@ -3296,6 +3334,9 @@ export class PingPongGame {
     this._imanT = IMAN_DUR;
     this._imanAsistidas = 0;
     this._imanWarn = false;
+    this._megaActivaId = 'iman';          // v3.6.40: icono en modo ACTIVO
+    this._megaActivaDur = IMAN_DUR;
+    this._megaTexDirty = true;
     try { this._buildImanFx(); } catch (e) { this._imanFx = null; }
     this._imanFxVis(true);
     this._imanOnda();
@@ -3542,8 +3583,13 @@ export class PingPongGame {
     c2.clearRect(0, 0, 256, 256);
     c2.lineJoin = 'round'; c2.lineCap = 'round';
     const ent = this._megaSel();
-    const id = ent ? ent.id : 'mega';
-    const n = ent ? ent.n : 0;
+    // v3.6.40 · DOS MODOS del icono: mientras un poder está ACTIVO, el
+    // icono muestra ESE poder (el anillo de tiempo manda sobre el
+    // inventario — es lo que el dueño debe saber sin pensar); al terminar
+    // vuelve al SELECCIONADO de la matriz con su ×N de siempre.
+    const activo = this._megaActivaId || null;
+    const id = activo || (ent ? ent.id : 'mega');
+    const n = activo ? 0 : (ent ? ent.n : 0);
     let dibujo = false;
     try {
       const png = this._megaPngs[id];
@@ -3610,6 +3656,30 @@ export class PingPongGame {
       c2.font = 'bold 46px sans-serif';
       c2.textAlign = 'center'; c2.textBaseline = 'middle';
       c2.fillText('×' + n, 203, 205);
+    }
+    // v3.6.40 · ANILLO DE TIEMPO del modo ACTIVO: pista tenue completa +
+    // arco que se VACÍA en el color del canto del poder (oro mega / cian
+    // efecto / azul imán — la misma firma que abraza la silueta de la
+    // pala) + cabeza blanca que marca el sentido del vaciado. El dueño
+    // lee QUÉ corre y CUÁNTO queda de un vistazo periférico, sin HUD.
+    if (activo) {
+      const rest = Math.max(0, this._megaActivaRest());
+      const frac = Math.max(0, Math.min(1, rest / (this._megaActivaDur || 1)));
+      c2.beginPath(); c2.arc(128, 128, 117, 0, Math.PI * 2);
+      c2.lineWidth = 12; c2.strokeStyle = 'rgba(8,12,20,0.62)'; c2.stroke();
+      if (frac > 0.004) {
+        const a0 = -Math.PI / 2;
+        c2.beginPath();
+        c2.arc(128, 128, 117, a0, a0 + Math.PI * 2 * frac);
+        c2.lineWidth = 12;
+        c2.strokeStyle = activo === 'mega' ? '#ffc84a'
+          : (activo === 'efecto' ? '#54d8f0' : '#5aa2ff');
+        c2.stroke();
+        c2.beginPath();
+        c2.arc(128, 128, 117, a0 + Math.PI * 2 * frac - 0.09,
+          a0 + Math.PI * 2 * frac);
+        c2.lineWidth = 12; c2.strokeStyle = '#ffffff'; c2.stroke();
+      }
     }
     // v3.6.37 · las FLECHAS de la matriz ya NO van dentro del icono (el
     // dueño: «al estar encima de la imagen no se nota») — son sprites
@@ -3788,6 +3858,13 @@ export class PingPongGame {
     this._megaLOD = 1;
     this._megaTexDirty = false;
     this._megaPrewarmQ = null;
+    // v3.6.40 · el indicador ACTIVO también duerme (partida nueva = pala
+    // limpia, FASE 41): sin poder en marcha, el icono (si hubiera) vuelve
+    // a modo inventario y el anillo se olvida.
+    this._megaActivaId = null;
+    this._megaActivaDur = 1;
+    this._megaActivaFrac = -1;
+    this._megaIconModo = '';
     if (this.paddleMounts) {
       for (const m of this.paddleMounts) {
         if (m) m.scale.setScalar(1);
@@ -3938,6 +4015,12 @@ export class PingPongGame {
       this._imanFxVis(false);
       try { if (this.ball) delete this.ball.ppIman; } catch (eI0) { /* */ }
     }
+    // v3.6.40 · el indicador ACTIVO expira con SU poder: si el último
+    // lanzado ya se apagó, la reconciliación de abajo devuelve el icono al
+    // inventario (o lo esconde si no quedan cargas).
+    if (this._megaActivaId && this._megaActivaRest() <= 0) {
+      this._megaActivaId = null;
+    }
     // v3.6.36 · el multiplicador de spin del SÚPER EFECTO viaja EN LA PALA
     // del jugador (lo lee collidePaddleSweep): ×2 al brush GENERADO, con
     // tope de seguridad en c05. Apagado → multiplicador 1 (pala honesta).
@@ -4006,15 +4089,42 @@ export class PingPongGame {
         }
       }
     }
-    // ICONO DE CARGA: el SELECCIONADO de la matriz (SOLO UNO visible en la
-    // pala en todo momento), oculto mientras SU efecto está activo
-    const icoOn = on && this._megaMatriz.length > 0 && !this._megaSelActiva();
+    // v3.6.40 · ICONO con DOS MODOS (petición del dueño: «que el usuario
+    // sepa el tipo de poder de pala que tiene activo, sin que moleste»).
+    // UN SOLO icono en la pala (regla FASE 38 intacta): mientras un poder
+    // está ACTIVO muestra ESE poder con su ANILLO DE TIEMPO; al terminar
+    // vuelve al seleccionado de la matriz (o se esconde si no queda nada).
+    const activaId = this._megaActivaId;
+    const icoOn = on && (this._megaMatriz.length > 0 || !!activaId);
     if (icoOn !== this._megaIconOn) this._megaIconVis(icoOn);
-    // v3.6.38 · redibujo DIFERIDO del icono (gasta/cicla/carga marcan la
-    // necesidad; aquí corre — NUNCA dentro del frame del gatillo).
+    const modo = activaId ? 'act' : 'inv';
+    if (modo !== this._megaIconModo) {
+      this._megaIconModo = modo;
+      this._megaTexDirty = true;      // cambia el DIBUJO (diferido: fuera
+      this._megaActivaFrac = -1;      // del frame del gatillo, lección r46)
+      if (this._megaIconPop <= 0) this._megaIconPop = 0.4;   // pulso suave
+    }
+    // v3.6.38 · redibujo DIFERIDO del icono (gasta/cicla/carga/modo marcan
+    // la necesidad; aquí corre — NUNCA dentro del frame del gatillo).
     if (this._megaTexDirty && icoOn && this._megaIcon) {
       this._megaTexDirty = false;
       try { this._megaIconTex(); } catch (eT0) { /* */ }
+      // v3.6.40 · el trazo que acaba de salir YA lleva el anillo al día
+      this._megaActivaFrac = (modo === 'act')
+        ? Math.max(0, Math.min(1,
+            this._megaActivaRest() / (this._megaActivaDur || 1)))
+        : -1;
+    }
+    // v3.6.40 · ANILLO VIVO con redibujo AHORRADO: solo cuando el arco
+    // cambia una muesca (1/24 de vuelta ≈ cada 0,3 s en una ventana de
+    // 8 s) — canvas persistente + needsUpdate in-place, cero asignaciones.
+    if (modo === 'act' && this._megaIcon) {
+      const frac = Math.max(0, Math.min(1,
+        this._megaActivaRest() / (this._megaActivaDur || 1)));
+      if (Math.abs(frac - this._megaActivaFrac) >= 1 / 24) {
+        this._megaActivaFrac = frac;
+        try { this._megaIconTex(); } catch (eT1) { /* */ }
+      }
     }
     if (icoOn && this._megaIcon) {
       if (this._megaIconPop > 0) {
@@ -4030,17 +4140,25 @@ export class PingPongGame {
       const sc = MEGA_ICON_S * pop * this._megaLOD *
         (1 + 0.05 * Math.sin(tt * 3.1));
       const yy = MEGA_ICON_Y + Math.sin(tt * 2.2) * 0.003;
+      // v3.6.40 · PARPADEO de los últimos 2 s (mismo lenguaje que el
+      // canto que se apaga): «se está acabando» sin texto ni voz ni HUD.
+      const late = (modo === 'act' && this._megaActivaRest() < 2);
       for (const sp of this._megaIcon) {
         if (!sp) continue;
         sp.scale.setScalar(sc);
         sp.position.y = yy;
+        sp.material.opacity = late
+          ? 0.5 + 0.45 * (0.5 + 0.5 * Math.sin(tt * 16)) : 0.96;
       }
     }
     // v3.6.37 · FLECHAS de la matriz: sprites PROPIOS al lado del icono
     // (petición del dueño: dentro del icono «no se nota»). ‹ SOLO con
     // vecino a la izquierda, › SOLO a la derecha — sin envolver; con
     // disco de fondo oscuro + pulso de opacidad para que se VEAN.
-    const flechasOn = on && icoOn && this._megaMatriz.length > 1;
+    // v3.6.40 · las flechas descansan en modo ACTIVO (elijen el SIGUIENTE,
+    // no van a molestar mientras el actual corre): solo inventario.
+    const flechasOn = on && icoOn && modo === 'inv' &&
+      this._megaMatriz.length > 1;
     if (flechasOn && !this._megaArrows) {
       try { this._buildMegaArrows(); } catch (eA0) { this._megaArrows = null; }
     }

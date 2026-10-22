@@ -1,10 +1,10 @@
 {
-  "version": "3.6.46-SDK6",
-  "fase": 48,
-  "faseNombre": "El efecto es spin real y el imán, un gancho metálico",
+  "version": "3.6.47-SDK6",
+  "fase": 49,
+  "faseNombre": "El efecto sólo vive en el intercambio",
   "sdk": "1.5.4",
   "fecha": "2026-10-22",
-  "hub": "v3646-sdk6",
+  "hub": "v3647-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "20c4a385cfc2517b8331b46e14553daae8e8c5ee5099336573bdf9f7285f43dd"
+  "golden": "a1fc68f0d113acd35b20441ffb2d6889b6140d1e3848b8077a1ac9244f4c9ed4"
 }

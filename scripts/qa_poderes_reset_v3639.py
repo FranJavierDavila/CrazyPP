@@ -89,7 +89,7 @@ async def main():
         ('const EFECTO_DUR = 8;', 'efecto: ventana 8 s intacta'),
         ('const MEGA_GOLPES = 11;', 'mega: carga por rally 11+ intacta'),
         ('const MEGA_LOD_JUEGO = 0.5;', 'LOD 50 % en juego intacto'),
-        ('V3.6.46-SDK6', 'sello de versión servida'),
+        ('V3.6.47-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     chk(game.count('_megaNormReset') >= 4,

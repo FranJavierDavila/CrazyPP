@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_spin_pala_v3646 — CAPA AO · ronda 54 (V3.6.46-SDK6, FASE 48).
+"""qa_spin_pala_v3646 — CAPA AO · ronda 54 (V3.6.47-SDK6, FASE 48).
 
 La petición del dueño (literal): «El super poder de pala de efecto la
 estela está desfasada y como no consigo ver el efecto vamos a
@@ -73,14 +73,14 @@ async def main():
         ('efectoTipoUmbral: 0.55,',
          'spin: umbral de barrido 0,55 m/s para clasificar (c02)'),
         # · BOTE TIPIFICADO (c05 + c02 — la firma exacta del dueño)
-        ('if (ball.ppEfectoTipo === \'top\') {',
-         'bote: regla TOPSPIN presente (c05)'),
-        ('} else if (ball.ppEfectoTipo === \'back\') {',
-         'bote: regla BACKSPIN presente (c05)'),
-        ('} else if (ball.ppEfectoTipo === \'side\') {',
-         'bote: regla SIDESPIN presente (c05)'),
-        ('const eM = (ball.ppEfecto && !ball.ppEfectoTipo)',
-         'bote: con tipo claro el bote es FÍSICO PURO (sin acople ×2,4)'),
+        ('if (boteRival && ball.ppEfectoTipo === \'top\') {',
+         'bote: regla TOPSPIN presente y SÓLO en la mesa del RIVAL (c05, r55)'),
+        ('} else if (boteRival && ball.ppEfectoTipo === \'back\') {',
+         'bote: regla BACKSPIN presente y SÓLO en la mesa del RIVAL (c05, r55)'),
+        ('} else if (boteRival && ball.ppEfectoTipo === \'side\') {',
+         'bote: regla SIDESPIN presente y SÓLO en la mesa del RIVAL (c05, r55)'),
+        ('const eM = (boteRival && ball.ppEfecto && !ball.ppEfectoTipo)',
+         'bote: acople ×2,4 sólo marcada y sólo en la mesa del RIVAL (c05, r55)'),
         ('efectoBoteTopAvance: 1.55,', 'bote TOPSPIN: acelera ×1,55 (+piso 0,4)'),
         ('efectoBoteTopVy: 0.62,', 'bote TOPSPIN: sale BAJO (vy ×0,62)'),
         ('efectoBoteBackH: 0.16,', 'bote BACKSPIN: horizontal ×0,16 (casi para)'),
@@ -196,7 +196,7 @@ async def main():
 
           // ============ B · BOTE TIPIFICADO (c05 REAL) ============
           const bote = (tipo, lado, vx) => {
-            const b = { pos: new V3(0.1, DIMS.tableTopY + 0.04, -0.9),
+            const b = { pos: new V3(0.1, DIMS.tableTopY + 0.04, -2.2),
               vel: new V3(vx, -2.5, -3.0), spin: new V3(), dragMul: 1,
               ppEfecto: true, ppEfectoTipo: tipo,
               ppEfectoLado: lado || 0 };

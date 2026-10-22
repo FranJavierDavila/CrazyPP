@@ -185,7 +185,14 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   // (pad.ppEfectoMul lo pone el núcleo SOLO con el poder activo) — NUNCA
   // al giro acumulado que ya traía la bola — con tope de seguridad 2×
   // spinMax. Sin poder el multiplicador es 1: física IDÉNTICA (golden).
-  const eMul = pad.ppEfectoMul || 1;
+  // v3.6.47 · EL EFECTO SOLO VIVE EN EL INTERCAMBIO (spec del dueño, r55):
+  // «SOLO debe aplicar el efecto durante el intercambio de pelotas NUNCA
+  // sobre el saca ni mío ni del rival» — con la pala EN VUELO DE SAQUE
+  // (pad.serveFlight, mi saca) o FUERA DEL RALLY (pad.intercambio en false:
+  // ventana del rival, arkanoid, punto muerto) la pala es HONESTA: sin
+  // brush ×2, sin marca, sin clasificación — todo juego normal.
+  const eMul = (pad.ppEfectoMul || 1) > 1 && !pad.serveFlight &&
+    pad.intercambio !== false ? pad.ppEfectoMul : 1;
   const eTope = DIMS.spinMax * (eMul > 1 ? (DIMS.efectoSpinTope || 2) : 1);
   if (eMul > 1) tmpS.multiplyScalar(eMul);
   if (tmpS.length() > eTope) tmpS.setLength(eTope);
@@ -298,7 +305,12 @@ function collideTable(ball, prevY, events) {
     // (sin el acople extra ×2,4): la firma exacta la pone la regla
     // tipificada de abajo — determinista y calibrada en c02. Las bolas
     // marcadas SIN tipo conservan el acople de siempre (r51/r52).
-    const eM = (ball.ppEfecto && !ball.ppEfectoTipo)
+    // v3.6.47 · «siempre en el bote sobre la MESA DEL RIVAL» (spec r55):
+    // TODO el Súper Efecto (acople ×2,4 y firma tipificada) vive SOLO en
+    // la mitad del rival (z < tableCenterZ); un bote en NUESTRA mitad
+    // (mishit, bola loca) es juego normal — sin amplificar ni firmar.
+    const boteRival = pos.z < C;
+    const eM = (boteRival && ball.ppEfecto && !ball.ppEfectoTipo)
       ? (DIMS.efectoBoteMul || 1.8) : 1;
     if (DIMS.physicsRealism >= 0.5) {
       // v3.0.5-FIS1 · P2: bote físico con deslizamiento (slip-coupled)
@@ -317,7 +329,8 @@ function collideTable(ball, prevY, events) {
     //              velocidad» (bola muerta en la mesa del rival);
     //   SIDESPIN → «dependiendo del lado exagera el bote en la dirección
     //              del efecto» (patada lateral proporcional al vuelo).
-    if (ball.ppEfectoTipo === 'top') {
+    // v3.6.47 · las tres firmas SOLO en la mitad del RIVAL (boteRival).
+    if (boteRival && ball.ppEfectoTipo === 'top') {
       const vz0 = vel.z;
       if (Math.abs(vz0) > 1e-3) {
         const fwd = vz0 > 0 ? 1 : -1;
@@ -326,11 +339,11 @@ function collideTable(ball, prevY, events) {
           DIMS.maxBallSpeed);
         vel.y *= (DIMS.efectoBoteTopVy || 0.62);
       }
-    } else if (ball.ppEfectoTipo === 'back') {
+    } else if (boteRival && ball.ppEfectoTipo === 'back') {
       vel.z *= (DIMS.efectoBoteBackH || 0.16);
       vel.x *= (DIMS.efectoBoteBackFx || 0.35);
       vel.y *= (DIMS.efectoBoteBackVy || 0.32);
-    } else if (ball.ppEfectoTipo === 'side') {
+    } else if (boteRival && ball.ppEfectoTipo === 'side') {
       const lado = ball.ppEfectoLado || 1;
       const kick = THREE.MathUtils.clamp(
         Math.abs(vel.z) * (DIMS.efectoBoteSideKick || 0.42),

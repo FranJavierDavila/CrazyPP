@@ -151,7 +151,7 @@ async def main():
         ('pp_pala_mejorada_v1', 'conmutador persistente «Pala Mejorada»'),
         ('_megaNormReset()', 'recogida completa con dispose'),
         ('this.updateMega(dt);', 'la norma corre en el bucle animate'),
-        ('V3.6.46-SDK6', 'sello de versión servido'),
+        ('V3.6.47-SDK6', 'sello de versión servido'),
     ]:
         chk(needle in game, label)
     # REGRESIONES

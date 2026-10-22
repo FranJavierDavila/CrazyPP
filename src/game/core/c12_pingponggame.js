@@ -6389,6 +6389,11 @@ export class PingPongGame {
         // grande creaba golpes a distancia, prohibidos por el requisito
         ps.extraReach = servingToss ? this.serveTier().reach : 0;
         ps.serveFlight = servingToss;   // v3.1.0-SRV2: tolerancias y suelo de saque
+        // v3.6.47 · EL EFECTO SOLO EN EL INTERCAMBIO (spec del dueño, r55):
+        // la pala conoce el estado del punto — SOLO 'rally' permite que el
+        // Súper Efecto marque (mi saque, la ventana del rival, el arkanoid
+        // y los puntos muertos son JUEGO NORMAL: sin brush ×2 ni marca).
+        ps.intercambio = this.rules.state === 'rally';
       }
     }
 

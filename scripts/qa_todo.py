@@ -171,6 +171,15 @@ CAPAS = [
     # completo: hoja + palo hasta la punta, puerta con el agarre).
     ('AO · spin real + gancho + pala metálica + clamp mango (v3646)',
      'qa_spin_pala_v3646.py'),
+    # AP (ronda 55 · v3.6.47): el SÚPER EFECTO SÓLO vive en el INTERCAMBIO
+    # (petición del dueño): NUNCA sobre el saque (ni propio — serveFlight —
+    # ni el del rival — su ventana no es rally) y SÓLO en las jugadas del
+    # JUGADOR (el multiplicador viaja en sus palas); la firma del bote
+    # (topspin/backspin/sidespin) y el acople ×2,4 SÓLO en la MITAD DEL
+    # RIVAL (boteRival = pos.z < C) — mishits y botes propios son juego
+    # normal. Fuera del rally la pala es HONESTA (sin brush ×2 ni marca).
+    ('AP · efecto sólo en el intercambio y en la mesa del rival (v3647)',
+     'qa_efecto_rally_v3647.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

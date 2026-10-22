@@ -162,15 +162,15 @@ export class PingPongGame {
     this._megaTexDirty = false;       // redibujo pendiente del icono
     this._megaPrewarmQ = null;        // cola del precaliente (1 pieza/frame)
     // v3.6.36 · SÚPER EFECTO (segundo poder del registro): ventana PROPIA
-    // de 8 s o 5 golpes con efecto (lo que ocurra antes; reglas del dueño).
+    // de 10 s (r56: regla del dueño — «sólo está activo 10 segundos desde
+    // la activación»; el reloj es la única ley, sin tope de golpes).
     this._efectoT = 0;                // s restantes de súper efecto
-    this._efectoGolpes = 0;           // golpes potenciados restantes
     this._efectoWarn = false;
     this._efectoFx = null;            // [fx0, fx1] canto cian + onda
     this._efectoFxOn = false;
-    // v3.6.37 · SÚPER IMÁN (tercer poder del registro): campo de 8 s que
-    // centra el impacto en el punto dulce; CADA impacto asistido válido
-    // gasta 1 carga (máx. 3 por activación — spec completa del dueño).
+    // v3.6.37 · SÚPER IMÁN (tercer poder del registro): campo de 10 s
+    // (r56: regla del dueño) que FRENA la bola y la centra en el punto
+    // dulce; CADA impacto asistido válido gasta 1 carga.
     this._imanT = 0;                  // s restantes de campo magnético
     this._imanAsistidas = 0;          // asistencias de ESTA activación
     this._imanWarn = false;
@@ -3094,10 +3094,10 @@ export class PingPongGame {
    *    módulos corren sobre rules/paddleMounts del núcleo).
    *  · Conmutador «Pala Mejorada» (AJUSTES, pp_pala_mejorada_v1): apagado
    *    = pala 100 % normal (sin carga, sin icono, gatillo intacto).
-   * Modelo: CARGADA (icono + jingle) → gatillo en rally → ACTIVA 8 s
+   * Modelo: CARGADA (icono + jingle) → gatillo en rally → ACTIVA 15 s
    *  (canto de energía BackSide ×1,055 que abraza la SILUETA desde fuera +
    *  pala ×1,30 + radio de detección ×1,38 + onda de choque + power-up
-   *  sonoro + háptica) → DORMIDA hasta el siguiente rally de 11+.
+   *  sonoro + háptica) → DORMIDA hasta el siguiente rally de 20+ toques.
    * Todo cuelga de las DOS monturas: viaja sola al cambiar de mano.
    * Construcción PEREZOSA: nada se crea hasta la primera carga (coste
    * cero mientras dormida) y _megaNormReset recoge todo con dispose. */
@@ -3123,7 +3123,7 @@ export class PingPongGame {
    *  v3.6.36 · suelta el poder SELECCIONADO de la MATRIZ (joystick ⟷
    *  cambia la selección; flechas ‹ › en el icono): MEGA PALA activa +
    *  gatillo = ALARGA (+15 s por carga, el tamaño NUNCA apila); SÚPER
-   *  EFECTO activo + gatillo = RECARGA su ventana (8 s / 5 golpes). */
+   *  EFECTO activo + gatillo = RECARGA su ventana (10 s). */
   megaTrigger(i) {
     if (!this.megaEnabled() || this.inHall || this.calib) return false;
     if (!this.rules || this.rules.state !== 'rally') return false;
@@ -3251,8 +3251,9 @@ export class PingPongGame {
     ];
   }
 
-  /** CARGA NORMATIVA v3.6.35: cada 11 golpes del rally (11, 22, 33…)
-   *  concede +1 carga de un poder ALEATORIO del registro PODERES_PALA.
+  /** CARGA NORMATIVA v3.6.35 · r56 (regla del dueño: «superados los 20
+   *  toques, no antes»): cada 20 toques del rally (20, 40, 60…) concede
+   *  +1 carga de un poder ALEATORIO del registro PODERES_PALA.
    *  MISMO poder → ACUMULA (×2, ×3); con la mano llena (tope ×3), «toc»
    *  de tope y nada. PODER DISTINTO → SUSTITUYE (las cargas viejas se
    *  pierden: úsalas o arriésgate). Icono DEL DUEÑO (PNG) con etiqueta
@@ -3441,13 +3442,13 @@ export class PingPongGame {
   }
 
   /** v3.6.36 · SÚPER EFECTO: gatillo con ese poder seleccionado. Ventana
-   *  propia del dueño: 8 segundos O 5 golpes con efecto (lo que ocurra
-   *  antes). Activo + gatillo con cargas = RECARGA la ventana completa. */
+   *  propia del dueño: 10 SEGUNDOS desde la activación (r56: el reloj es
+   *  la única ley). Activo + gatillo con cargas = RECARGA la ventana
+   *  completa. */
   _efectoTrigger(ent) {
     if (this._efectoT > 0) {
       this._megaGasta(ent);
       this._efectoT = EFECTO_DUR;
-      this._efectoGolpes = EFECTO_GOLPES;
       this._efectoWarn = false;
       this._efectoTickN = 0;            // v3.6.43: cuenta sonora desde cero
       this._megaActivaId = 'efecto';    // v3.6.40: icono en modo ACTIVO
@@ -3459,7 +3460,6 @@ export class PingPongGame {
     }
     this._megaGasta(ent);
     this._efectoT = EFECTO_DUR;
-    this._efectoGolpes = EFECTO_GOLPES;
     this._efectoWarn = false;
     this._efectoTickN = 0;              // v3.6.43: cuenta sonora desde cero
     this._megaActivaId = 'efecto';      // v3.6.40: icono en modo ACTIVO
@@ -3483,10 +3483,9 @@ export class PingPongGame {
     return true;
   }
 
-  /** Fin de la ventana de SÚPER EFECTO (8 s agotados o 5.º golpe). */
+  /** Fin de la ventana de SÚPER EFECTO (los 10 s agotados — r56). */
   _efectoFin() {
     this._efectoT = 0;
-    this._efectoGolpes = 0;
     this._efectoFxVis(false);
     this.rules.message = T('arc_efecto_fin');
     try { this.audio.playOsc(660, 330, 0.16, 'sine', 0.12, 0); } catch (e) { /* */ }
@@ -3494,12 +3493,12 @@ export class PingPongGame {
 
   /* =====================================================================
    *  v3.6.37 · SÚPER IMÁN (3.er poder del registro; spec del dueño):
-   *  campo magnético de 8 s alrededor de la pala que atrae SUAVE la bola
-   *  al punto dulce (la física vive en c05, applyIman, por SUBPASO).
-   *  La pala sigue mandada por la mano real; el gatillo solo ABRE el
-   *  campo — CADA impacto asistido válido consume 1 carga (máx. 3
-   *  asistencias por activación): las cargas solo se gastan cuando el
-   *  imán ayuda de verdad. Activo + gatillo = refresca la ventana. */
+   *  campo magnético de 10 s (r56) alrededor de la pala que FRENA la
+   *  bola y la atrae al punto dulce (la física vive en c05, applyIman,
+   *  por SUBPASO). La pala sigue mandada por la mano real; el gatillo
+   *  solo ABRE el campo — CADA impacto asistido válido consume 1 carga:
+   *  las cargas solo se gastan cuando el imán ayuda de verdad. Activo +
+   *  gatillo = refresca la ventana. */
   _imanTrigger(ent) {
     if (this._imanT > 0) {
       this._imanT = IMAN_DUR;             // refresco honesto, sin gasto
@@ -3540,7 +3539,7 @@ export class PingPongGame {
     return true;
   }
 
-  /** Fin del campo del imán (8 s, 3 asistencias o cargas agotadas). */
+  /** Fin del campo del imán (los 10 s agotados o cargas a cero — r56). */
   _imanFin() {
     this._imanT = 0;
     this._imanAsistidas = 0;
@@ -3553,8 +3552,9 @@ export class PingPongGame {
   /** v3.6.37 · IMPACTO ASISTIDO válido del imán (lo llama el gancho del
    *  animate cuando una bola empujada por el campo golpea la pala): gasta
    *  1 carga del IMÁN (encuentra su entrada en la matriz aunque el jugador
-   *  haya ciclado a otro poder) y cierra el campo al llegar a 3
-   *  asistencias o quedarse sin cargas. */
+   *  haya ciclado a otro poder). r56 (regla del dueño): SIN tope de
+   *  asistencias — el campo vive sus 10 s o se apaga al quedarse sin
+   *  cargas. */
   _imanImpacto() {
     const ent = this._megaMatriz.find((x) => x.id === 'iman');
     this._imanAsistidas++;
@@ -3566,7 +3566,7 @@ export class PingPongGame {
     if (this.renderer.xr && this.renderer.xr.isPresenting) {
       try { this.haptic(this.paddleHand, 0.5, 90); } catch (e2) { /* */ }
     }
-    if (!ent || this._imanAsistidas >= IMAN_ASIST) this._imanFin();
+    if (!ent) this._imanFin();      // sin cargas: campo fuera (r56: sin tope de asistencias)
   }
 
   _buildImanFx() { /* v3.6.46: canto del imán RETIRADO (pala limpia + metálica) */ }
@@ -4487,7 +4487,6 @@ export class PingPongGame {
     this._megaStick.x = 0; this._megaStick.cd = 0;
     this._megaRallyGrants = 0;
     this._efectoT = 0;                // v3.6.36: el súper efecto duerme
-    this._efectoGolpes = 0;
     this._efectoWarn = false;
     this._efectoTickN = 0;            // v3.6.43: la cuenta sonora también
     this._efectoFxVis(false);
@@ -4662,8 +4661,9 @@ export class PingPongGame {
   }
 
   /** v3.6.35 · CORAZÓN de la norma (animate lo llama cada frame). Dos
-   *  bloques: CARGA (CADA 11 golpes del rally = +1 carga, tope ×3 — el
-   *  rally largo premia con más cargas) y ACTIVA (15 s por carga:
+   *  bloques: CARGA (CADA 20 TOQUES del rally = +1 carga, tope ×3 — r56:
+   *  «superados los 20 toques, no antes», regla del dueño) y ACTIVA
+   *  (15 s por carga:
    *  radio ×1,38, pala ×1,30, canto, onda, aviso final). Con «Pala
    *  Mejorada» apagado todo duerme y la pala queda EXACTA como siempre.
    *  Construcción perezosa: sin carga no existe ni una malla. */
@@ -4677,8 +4677,9 @@ export class PingPongGame {
       const pasoW = this._megaPrewarmQ.shift();
       try { pasoW(); } catch (eW) { /* */ }
     }
-    // CARGA NORMATIVA v3.6.35: cada MEGA_GOLPES golpes del rally actual
-    // = +1 carga (11, 22, 33…). Rally nuevo = cuenta nueva; las cargas
+    // CARGA NORMATIVA v3.6.35 · r56 (regla del dueño: «superados los 20
+    // toques, no antes»): cada MEGA_GOLPES toques del rally actual
+    // = +1 carga (20, 40, 60…). Rally nuevo = cuenta nueva; las cargas
     // sin gastar se conservan hasta gastarse con el gatillo libre.
     if (on && r.state === 'rally') {
       const concede = Math.floor((r.rallyHits || 0) / MEGA_GOLPES);
@@ -4709,8 +4710,8 @@ export class PingPongGame {
     } else if (DIMS.hitAssistRadius !== this._BASE_HIT) {
       DIMS.hitAssistRadius = this._BASE_HIT;     // apagado/cero: restaura YA
     }
-    // v3.6.36 · SÚPER EFECTO ACTIVO: ventana PROPIA (8 s o 5 golpes con
-    // efecto, lo que ocurra antes — reglas del dueño para este poder).
+    // v3.6.36 · SÚPER EFECTO ACTIVO: ventana PROPIA de 10 s (r56: regla
+    // del dueño — «sólo está activo 10 segundos desde la activación»).
     if (on && this._efectoT > 0) {
       this._efectoT -= dt;
       if (this._efectoT <= 0) {
@@ -4726,13 +4727,13 @@ export class PingPongGame {
         this._poderTickBlip(3);
       }
     }
-    // v3.6.37 · SÚPER IMÁN ACTIVO: ventana PROPIA de 8 s (la física vive
-    // en c05/applyIman; aquí solo el reloj del dueño y la seguridad de que
-    // sin cargas el campo se apaga YA).
+    // v3.6.37 · SÚPER IMÁN ACTIVO: ventana PROPIA de 10 s (r56: regla del
+    // dueño; la física vive en c05/applyIman; aquí solo el reloj y la
+    // seguridad de que sin cargas el campo se apaga YA).
     if (on && this._imanT > 0) {
       this._imanT -= dt;
       if (this._imanT <= 0) {
-        this._imanFin();                 // fin natural (8 s agotados)
+        this._imanFin();                 // fin natural (10 s agotados)
       } else if (this._imanT < 2 && !this._imanWarn) {
         this._imanWarn = true;
         this._poderTickBlip(2);          // v3.6.43: cuenta sonora uniforme
@@ -4822,7 +4823,12 @@ export class PingPongGame {
     // v3.6.37 · el estado del IMÁN viaja EN LA BOLA (lo lee stepPhysics →
     // applyIman): solo en rally y con el campo activo; sin campo la bola
     // no lo conoce (física idéntica — golden intacto).
-    if (on && this._imanT > 0 && r.state === 'rally' && this.ball) {
+    // v3.6.48 (regla del dueño, r56: «menos en los saques»): la bola del
+    // SAQUE del rival (isServeBall: desde su golpe hasta el primer toque
+    // de rally) viene NORMAL — el campo no la toca. undefined = permitir
+    // (compat headless, patrón de la r55).
+    if (on && this._imanT > 0 && r.state === 'rally' && !r.isServeBall &&
+        this.ball) {
       if (!this.ball.ppIman) this.ball.ppIman = { dv: 0 };
     } else if (this.ball && this.ball.ppIman) {
       delete this.ball.ppIman;
@@ -6611,28 +6617,19 @@ export class PingPongGame {
       } catch (e) { console.warn('[split]', e); }
     }
 
-    // 4.9) v3.6.36 · SÚPER EFECTO — golpes CON EFECTO del jugador (máx 5
-    //      por ventana): el golpeo del núcleo ya aplicó el brush ×2 y
-    //      MARCÓ la bola (ball.ppEfecto); aquí se cuentan los golpes
-    //      significativos (|spin| ≥ EFECTO_SPIN_MIN) y el 5.º CIERRA la
-    //      ventana (regla del dueño: 8 s o 5 golpes, lo que ocurra antes).
-    //      Un golpe sin efecto significativo NO cuenta ni recibe bono.
-    if (this._efectoT > 0) {
-      for (const e of this.events) {
-        if (e.type !== 'paddle' || e.who !== 'player') continue;
-        if (this.ball && this.ball.spin &&
-            this.ball.spin.length() >= EFECTO_SPIN_MIN) {
-          if (--this._efectoGolpes <= 0) { this._efectoFin(); break; }
-        }
-      }
-    }
+    // 4.9) v3.6.36 · SÚPER EFECTO — la ventana era de «8 s o 5 golpes con
+    //      efecto, lo que ocurra antes». r56 (regla del dueño: «sólo está
+    //      activo 10 segundos desde la activación»): el RELOJ es la única
+    //      ley — el contador de golpes se RETIRA y la ventana vive entera
+    //      (updateMega la cierra al agotarse).
 
     // 4.95) v3.6.37 · SÚPER IMÁN — impacto ASISTIDO válido: la bola fue
     //      empujada por el campo durante ESTA aproximación (ball.ppIman-
     //      Tocada lo marca c05/applyIman) y golpeó la pala del jugador →
-    //      consume 1 carga (máx. 3 asistencias por activación, spec del
-    //      dueño: «cada impacto asistido válido consume una carga»). Un
-    //      golpe SIN ayuda del campo no consume nada.
+    //      consume 1 carga (spec del dueño: «cada impacto asistido válido
+    //      consume una carga»; r56: sin tope de asistencias — el campo
+    //      vive sus 10 s o se apaga sin cargas). Un golpe SIN ayuda del
+    //      campo no consume nada.
     if (this._imanT > 0) {
       for (const e of this.events) {
         if (e.type !== 'paddle' || e.who !== 'player') continue;
@@ -7676,24 +7673,28 @@ const PODERES_PALA = [
 ];
 const MEGA_DUR = 15;    // s de MEGA PALA por carga (apilable: +15 s cada una)
 const MEGA_TOPE = 3;    // cargas máximas de un poder (×3)
-const MEGA_GOLPES = 11; // cada 11 golpes del rally = +1 carga
+const MEGA_GOLPES = 20; // cada 20 toques del rally = +1 carga (r56: regla
+                        // del dueño — «superados los 20 toques, no antes»)
 // v3.6.36 · SÚPER EFECTO (reglas del dueño): multiplicador al spin GENERADO
-// por el golpe (NUNCA al acumulado que ya traía la bola), ventana de 8 s O
-// 5 golpes con efecto (lo que ocurra antes); Magnus y bote amplificados
-// SOLO en la bola marcada (ppEfecto).
+// por el golpe (NUNCA al acumulado que ya traía la bola), ventana de 10 s
+// desde la activación (r56: «sólo está activo 10 segundos» — sin tope de
+// golpes); Magnus y bote amplificados SOLO en la bola marcada (ppEfecto).
 // v3.6.43 (ronda 51 · el dueño: «no noto los efectos… es preciso exagerarlo
 // para que visualmente veamos el resultado»): el brush generado sube ×3
 // (y con él Magnus ×2,2 y bote ×2,4, en c02) — la curva de la bola se VE.
-const EFECTO_DUR = 8;       // s de ventana
-const EFECTO_GOLPES = 5;    // golpes potenciados por ventana
+const EFECTO_DUR = 10;      // s de ventana (r56: regla del dueño — 10 s
+                            // desde la activación, sin tope de golpes)
 const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)
-const EFECTO_SPIN_MIN = 25; // |spin| mínimo para contar como «con efecto»
+const EFECTO_SPIN_MIN = 25; // |spin| mínimo para el anillo de bote notorio
+                            // (r56: la ventana YA NO cierra por golpes —
+                            // este umbral es sólo FX, en processEvents)
 // v3.6.37 · SÚPER IMÁN (3.er poder; spec completa del dueño): ventana de
-// 8 s que atrae SUAVE la bola al punto dulce (física en c05/applyIman con
-// los topes DIMS.iman*). CADA impacto asistido válido consume 1 carga y
-// hay máx. 3 asistencias por activación — el gatillo solo abre el campo.
-const IMAN_DUR = 8;         // s de campo magnético por activación
-const IMAN_ASIST = 3;       // impactos asistidos máximos por activación
+// 10 s (r56) que FRENA la bola y la atrae al punto dulce (física en
+// c05/applyIman con los topes DIMS.iman*). CADA impacto asistido válido
+// consume 1 carga — el gatillo solo abre el campo.
+const IMAN_DUR = 10;        // s de campo magnético por activación (r56:
+                            // regla del dueño — «el efecto sólo dura
+                            // 10 segundos»)
 // v3.6.41 · SÚPER PORTAL (4.º poder; spec completa del dueño): ventana de
 // 8 s / 3 golpes portalizados; la salida conserva 90–100 % de la rapidez
 // del golpe real; desviación lateral 0,25–0,70 m y vertical 0–0,15 m;

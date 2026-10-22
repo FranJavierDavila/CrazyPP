@@ -72,7 +72,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 50)
-        ('3.6.47-SDK6', 'versión servida: 3.6.47-SDK6 (ronda 50)'),
+        ('3.6.48-SDK6', 'versión servida: 3.6.48-SDK6 (ronda 50)'),
         # · TRÁNSITO EXPLÍCITO (presentación del dueño)
         ('this._portalSinkT = 0;            // hundimiento en el portal de entrada',
          'tránsito: fase de hundimiento declarada'),
@@ -251,15 +251,15 @@ async def main():
           out.spritesPortalCalientes = !!G._portalSpriteA && !!G._portalSpriteB;
           out.iconoPreconstruido = !!G._megaIcon;
 
-          // · SEMBRA portal ×2 (dos rallyes de 11 con frame 'point' entre
+          // · SEMBRA portal ×2 (dos rallyes de 20 con frame 'point' entre
           //    ventanas) y ABRE la ventana con el gatillo
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errU0 = String(e); }
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errU1 = String(e); }
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errGP = String(e); }
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG2 = String(e); }
           out.sembrado = G._megaMatriz.length === 1 &&
             G._megaMatriz[0].id === 'portal' && G._megaMatriz[0].n === 2;

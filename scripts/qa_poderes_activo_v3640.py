@@ -20,7 +20,7 @@ cada _megaNormReset (FASE 41: partida nueva = pala limpia).
 Pruebas (dos niveles):
   1) FUENTE SERVIDA — agujas del modo activo (estado, reconciliación,
      anillo en el canvas, parpadeo, flechas que descansan, pulso) +
-     reglas intactas (15/8/8 s, tope ×3, 11 golpes, LOD) + hook FASE 41.
+     reglas r56 (15/10/10 s, tope ×3, 20 toques, LOD) + hook FASE 41.
   2) MECÁNICA REAL en headless — ciclo completo: MEGA abre → icono en
      modo ACTIVO con textura persistente y anillo al día; el anillo
      PROGRESA y decrece con el tiempo; ALARGA mantiene el modo y llena
@@ -104,16 +104,16 @@ async def main():
          'dibujo: el ×N de cargas solo en modo inventario'),
         # REGLAS INTACTAS (regresión rondas 45-47)
         ('const MEGA_DUR = 15;', 'mega: ventana 15 s por carga intacta'),
-        ('const EFECTO_DUR = 8;', 'efecto: ventana 8 s intacta'),
-        ('const IMAN_DUR = 8;', 'imán: ventana 8 s intacta'),
+        ('const EFECTO_DUR = 10;', 'efecto: ventana 10 s (r56: regla del dueño)'),
+        ('const IMAN_DUR = 10;', 'imán: ventana 10 s (r56: regla del dueño)'),
         ('const MEGA_TOPE = 3;', 'tope ×3 de cargas intacto'),
-        ('const MEGA_GOLPES = 11;', 'carga por rally 11+ intacta'),
+        ('const MEGA_GOLPES = 20;', 'carga cada 20 toques (r56: «no antes de 20»)'),
         ('const MEGA_LOD_JUEGO = 0.5;', 'LOD 50 % en juego intacto'),
         ('const MEGA_LOD_MIRA = 0.978;', 'LOD 100 % con la mirada intacto'),
         # FASE 41 intacta: partida nueva = pala limpia
         ('try { if (this.onMatchStart) this.onMatchStart(); } catch (e) { /* nunca rompe el árbitro */ }',
          'FASE 41: el hook de partida nueva sigue avisando'),
-        ('V3.6.47-SDK6', 'sello de versión servida'),
+        ('V3.6.48-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     chk(game.count("this._megaActivaId = null;") >= 2,
@@ -149,7 +149,7 @@ async def main():
           Math.random = () => 0.1;                 // siempre 'mega'
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errU0 = String(e); }
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errU1 = String(e); }
           for (let i = 0; i < 10; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }
@@ -157,7 +157,7 @@ async def main():
           // 2.ª carga MEGA (×2): frame en 'point' entre ventanas
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errGP = String(e); }
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG2 = String(e); }
           out.sembrado = G._megaMatriz.length === 1 &&
             G._megaMatriz[0].id === 'mega' && G._megaMatriz[0].n === 2;
@@ -185,7 +185,7 @@ async def main():
 
           // · ALARGA: anillo lleno con TODO el restante, mismo modo
           G.rules.state = 'point'; G.updateMega(1 / 60);
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           let tM2 = null;
           const tAntesE = G._megaT;
           try { tM2 = G.megaTrigger(libre); } catch (e) { out.errM2 = String(e); }
@@ -211,18 +211,18 @@ async def main():
           out.megaQuedaUna = G._megaMatriz.length === 1 &&
             G._megaMatriz[0].n === 1;
 
-          // · EFECTO ACTIVO: modo, dur y anillo de SU ventana (8 s)
+          // · EFECTO ACTIVO: modo, dur y anillo de SU ventana (10 s)
           Math.random = () => 0.3;
           G.rules.state = 'point'; G.updateMega(1 / 60);
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           Math.random = () => 0.3;                 // efecto ×2 (tras gastar queda ×1)
           G.rules.state = 'point'; G.updateMega(1 / 60);
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           let tE = null;
           try { tE = G.megaTrigger(libre); } catch (e) { out.errE1 = String(e); }
           try { G.updateMega(1 / 60); } catch (e) { out.errE2 = String(e); }
           out.efectoActivo = tE === true && G._megaActivaId === 'efecto' &&
-            G._megaIconModo === 'act' && G._megaActivaDur === 8 &&
+            G._megaIconModo === 'act' && G._megaActivaDur === 10 &&
             G._efectoT > 7.9;
           out.anilloEfecto = G._megaActivaFrac > 0 && G._megaActivaFrac <= 1;
           out.efectoQuedaUna = G._megaMatriz.length === 2 &&
@@ -238,12 +238,12 @@ async def main():
           // · IMÁN: abre, REFRESCA sin gasto y expira a inventario
           Math.random = () => 0.6;
           G.rules.state = 'point'; G.updateMega(1 / 60);
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           let tI = null;
           try { tI = G.megaTrigger(libre); } catch (e) { out.errI1 = String(e); }
           try { G.updateMega(1 / 60); } catch (e) { out.errI2 = String(e); }
           out.imanActivo = tI === true && G._megaActivaId === 'iman' &&
-            G._megaIconModo === 'act' && G._megaActivaDur === 8;
+            G._megaIconModo === 'act' && G._megaActivaDur === 10;
           let tI2 = null;
           try { tI2 = G.megaTrigger(libre); } catch (e) { out.errI3 = String(e); }
           out.imanRefrescaSinGasto = tI2 === true && G._imanT > 7.9 &&
@@ -297,7 +297,7 @@ async def main():
             chk(rt.get('megaQuedaUna') is True,
                 'cargas honestas: queda mega ×1 tras abrir con ×2')
             chk(rt.get('efectoActivo') is True,
-                'EFECTO activo: modo, dur 8 s y ventana propia')
+                'EFECTO activo: modo, dur 10 s y ventana propia')
             chk(rt.get('anilloEfecto') is True, 'anillo del efecto en rango')
             chk(rt.get('efectoQuedaUna') is True, 'efecto: queda ×1 en matriz')
             chk(rt.get('flechasDescansan') is True,
@@ -305,7 +305,7 @@ async def main():
             chk(rt.get('flechasVuelven') is True,
                 'FLECHAS vuelven al terminar (inventario)')
             chk(rt.get('imanActivo') is True,
-                'IMÁN activo: modo, dur 8 s')
+                'IMÁN activo: modo, dur 10 s')
             chk(rt.get('imanRefrescaSinGasto') is True,
                 'imán REFRESCA sin gastar carga (spec del dueño)')
             chk(rt.get('imanExpiraVuelve') is True,

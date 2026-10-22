@@ -121,15 +121,14 @@ async def main():
          'LOD: escala del icono multiplica el LOD'),
         ('_camBasis() {', 'base de cámara XR/escritorio (sin asignaciones)'),
         # Reglas intactas (regresión de la ronda 45)
-        ('const IMAN_DUR = 8;', 'imán: ventana 8 s intacta'),
-        ('const IMAN_ASIST = 3;', 'imán: 3 asistencias intactas'),
-        ('const EFECTO_DUR = 8;', 'efecto: ventana 8 s intacta'),
-        ('const MEGA_GOLPES = 11;', 'mega: carga por rally 11+ intacta'),
+        ('const IMAN_DUR = 10;', 'imán: ventana 10 s (r56: regla del dueño)'),
+        ('const EFECTO_DUR = 10;', 'efecto: ventana 10 s (r56: regla del dueño)'),
+        ('const MEGA_GOLPES = 20;', 'mega: carga cada 20 toques (r56: «no antes de 20»)'),
         ('const MEGA_ICON_S = 0.048;', 'icono: tamaño base intacto'),
         ('const MEGA_ARROW_S = 0.020;', 'flechas: tamaño base intacto'),
         ('return !!(this.champs && this.champs.active);',
          'gate: superpoderes SOLO en campeonatos'),
-        ('V3.6.47-SDK6', 'sello de versión servida'),
+        ('V3.6.48-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     # REGRESIONES de los defects que se atacan
@@ -175,7 +174,7 @@ async def main():
           Math.random = () => 0.1;                 // siempre 'mega'
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errU0 = String(e); }
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errU1 = String(e); }
           // drenar: una pieza por frame — SIN tocar el gatillo
           for (let i = 0; i < 20; i++) {
@@ -209,7 +208,7 @@ async def main():
           // MEGA ya activa + gatillo = ALARGA (regresión v3.6.36/37)
           Math.random = () => 0.1;
           G.rules.state = 'point'; G.updateMega(1 / 60);
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           const tAntes = G._megaT;
           let tM2 = null;
           try { tM2 = G.megaTrigger(libre); } catch (e) { out.errM2 = String(e); }
@@ -240,10 +239,10 @@ async def main():
           G.updateMega(1 / 60);          // v3.6.40: todo apagado → inventario
           Math.random = () => 0.5;
           G.rules.state = 'point'; G.updateMega(1 / 60);
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           Math.random = () => 0.9;
           G.rules.state = 'point'; G.updateMega(1 / 60);
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           out.dosEnMatriz = G._megaMatriz.length === 2;
           out.flechasEnEscena = Array.isArray(G._megaArrows) &&
             !!G._megaArrows[G.paddleHand] &&

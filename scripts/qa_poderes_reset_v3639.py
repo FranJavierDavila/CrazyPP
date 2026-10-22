@@ -84,12 +84,11 @@ async def main():
         ('if (!this.palaMejorada) this._megaNormReset();',
          'apagar «Pala Mejorada» sigue recogiendo al instante'),
         # Reglas intactas (regresión de las rondas 45-46)
-        ('const IMAN_DUR = 8;', 'imán: ventana 8 s intacta'),
-        ('const IMAN_ASIST = 3;', 'imán: 3 asistencias intactas'),
-        ('const EFECTO_DUR = 8;', 'efecto: ventana 8 s intacta'),
-        ('const MEGA_GOLPES = 11;', 'mega: carga por rally 11+ intacta'),
+        ('const IMAN_DUR = 10;', 'imán: ventana 10 s (r56: regla del dueño)'),
+        ('const EFECTO_DUR = 10;', 'efecto: ventana 10 s (r56: regla del dueño)'),
+        ('const MEGA_GOLPES = 20;', 'mega: carga cada 20 toques (r56: «no antes de 20»)'),
         ('const MEGA_LOD_JUEGO = 0.5;', 'LOD 50 % en juego intacto'),
-        ('V3.6.47-SDK6', 'sello de versión servida'),
+        ('V3.6.48-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     chk(game.count('_megaNormReset') >= 4,
@@ -123,19 +122,19 @@ async def main():
           G.champs.activeId = 'locura';
           G.rules.startMatch('match');        // el propio arranque ya recoge
           Math.random = () => 0.1;            // siempre 'mega'
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG1 = String(e); }
           for (let i = 0; i < 10; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errGD = String(e); }
           }
           // 2.ª carga: frame en 'point' (el rally nuevo REINICIA la cuenta,
-          // igual que en la capa AG) y otra ventana de 11 golpes
+          // igual que en la capa AG) y otra ventana de 20 toques
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errGP = String(e); }
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG2 = String(e); }
           // estado VIVO: efecto + imán activos y marcas en la bola/pala
-          G._efectoT = 5; G._efectoGolpes = 2; G._efectoWarn = true;
+          G._efectoT = 5; G._efectoWarn = true;
           try { G._buildEfectoFx(); G._efectoFxVis(true); } catch (e) { /* */ }
           try { G._buildEfectoHalo(); } catch (e) { /* */ }
           G._imanT = 6; G._imanAsistidas = 1; G._imanWarn = true;
@@ -154,7 +153,7 @@ async def main():
           out.indiceCero = G._megaIdx === 0;
           out.iconoFuera = G._megaIconOn === false;
           out.megaTcero = G._megaT === 0 && G._megaS === 1 && G._megaWarn === false;
-          out.efectoDuerme = G._efectoT === 0 && G._efectoGolpes === 0 && G._efectoWarn === false;
+          out.efectoDuerme = G._efectoT === 0 && G._efectoWarn === false;
           out.imanDuerme = G._imanT === 0 && G._imanAsistidas === 0 && G._imanWarn === false;
           out.fxMegaNull = G._megaFx === null || G._megaFx === undefined;
           out.fxEfectoNull = G._efectoFx === null || G._efectoFx === undefined;
@@ -182,7 +181,7 @@ async def main():
 
           // · REINICIO AUTOMÁTICO del árbitro (estado 'over') TAMBIÉN recoge
           Math.random = () => 0.5;            // otro poder distinto esta vez
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG3 = String(e); }
           out.resembrado = G._megaMatriz.length > 0;
           G.rules.state = 'over';

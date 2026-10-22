@@ -180,6 +180,24 @@ CAPAS = [
     # normal. Fuera del rally la pala es HONESTA (sin brush ×2 ni marca).
     ('AP · efecto sólo en el intercambio y en la mesa del rival (v3647)',
      'qa_efecto_rally_v3647.py'),
+    # AQ (ronda 56 · v3.6.48): LA NORMA DEL DUEÑO — «Todos los superpoderes
+    # de la pala que se concedan superados los 20 toques no antes. El super
+    # iman que ralentice la bola y la dirija hacia el centro de nuestra
+    # pala… el efecto solo entra cuando tenemos que devolver un golpe del
+    # rival… menos en los saques… evidentemente el efecto solo dura 10
+    # segundos. Pasado ese tiempo… todo vuelve a la normalidad. El super
+    # Efecto tambien solo está activo 10 segundos desde la activación y la
+    # ventaja del efecto en los botes solo es para nosotros, el perjudicado
+    # siempre es el rival.» → MEGA_GOLPES 11→20 (19 toques NADA · 20 → +1 ·
+    # 40/60 acumula · 80 tope), EFECTO_DUR/IMAN_DUR 8→10 con ventana
+    # PURAMENTE TEMPORAL (RETIRADOS los topes de golpes: EFECTO_GOLPES,
+    # IMAN_ASIST y el cierre por golpes — el reloj es la única ley), el
+    # campo del imán NUNCA arma sobre la bola del SAQUE del rival
+    # (isServeBall) y el GANCHO gana FRENO exponencial (imanFreno 1,1/s con
+    # suelo 0,15 m/s — «que ralentice la bola»; el tope Δv presupuesta solo
+    # el tirón). Golden de física intacto (el freno vive bajo ball.ppIman).
+    ('AQ · poderes: 20 toques y 10 segundos (v3648)',
+     'qa_poderes_10s20_v3648.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

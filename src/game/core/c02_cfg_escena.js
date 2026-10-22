@@ -118,6 +118,10 @@ export const DIMS = {
   imanGanchoRadio: 1.8,     // radio de captura del gancho (m)
   imanGanchoAcel: 26,       // aceleración hacia el centro de la pala (m/s²)
   imanGanchoDv: 3.2,        // tope de Δv del gancho POR APROXIMACIÓN (m/s)
+  imanFreno: 1.1,           // freno exponencial del campo (1/s) — r56: «que
+                            // ralentice la bola» (regla del dueño)
+  imanFrenoSuelo: 0.15,     // suelo de velocidad del freno (m/s): el vuelo
+                            // nunca muere, la pala sigue teniendo que golpear
   imanGanchoVz: 0.2,        // velocidad mínima hacia nosotros (m/s) — «que venga
                             //  en nuestra dirección de golpeo»
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|

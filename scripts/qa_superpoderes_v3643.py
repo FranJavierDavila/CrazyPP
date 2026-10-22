@@ -82,7 +82,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 51)
-        ('3.6.47-SDK6', 'versión servida: 3.6.47-SDK6 (ronda 52)'),
+        ('3.6.48-SDK6', 'versión servida: 3.6.48-SDK6 (ronda 52)'),
         # · 1) SÚPER EFECTO EXAGERADO
         ('const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)',
          'efecto: el brush generado sube a ×3 (antes ×2)'),
@@ -205,7 +205,7 @@ async def main():
           // · VENTANA del imán viva (el gancho la arma en rally)
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errU0 = String(e); }
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG1 = String(e); }
           out.sembradoIman = G._megaMatriz.length === 1 &&
             G._megaMatriz[0].id === 'iman';
@@ -248,7 +248,7 @@ async def main():
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errP0 = String(e); }
           Math.random = () => 0.98;               // siembra PORTAL (último)
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG2 = String(e); }
           out.sembradoPortal1 = !!(G._megaMatriz.find((x) => x.id === 'portal')) &&
             G._megaMatriz.find((x) => x.id === 'portal').n === 1;
@@ -288,7 +288,7 @@ async def main():
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errT0 = String(e); }
           Math.random = () => 0.30;               // siembra EFECTO (1.º tercio)
-          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG3 = String(e); }
           let blips = 0;
           const playOsc0 = G.audio.playOsc.bind(G.audio);

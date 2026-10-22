@@ -474,10 +474,16 @@ function collideWorld(ball, events) {
  *     movemos — «en su movimiento»);
  *   · tope de Δv POR APROXIMACIÓN imanGanchoDv (3,2 m/s): fuerza fina,
  *     nunca teleporta — la salida la calcula el contacto de siempre;
+ *   · v3.6.48 (regla del dueño, r56): el gancho TAMBIÉN RALENTIZA la
+ *     bola — freno exponencial imanFreno (1,1/s) con suelo de velocidad
+ *     imanFrenoSuelo (0,15 m/s): «que ralentice la bola y la dirija
+ *     hacia el centro de nuestra pala». El freno vive dentro de las
+ *     MISMAS guardas (radio + viniendo + plano) y NO gasta el tope Δv
+ *     (ese presupuesta sólo el tirón);
  *   · nunca bolas que ya superaron el plano de la cara;
  *   · integrado por SUBPASO (h fijo): estable ante fluctuaciones de FPS.
  * La marca de «aproximación asistida» (ball.ppImanTocada) la consume el
- * núcleo cuando esa bola golpea la pala (1 carga, máx. 3 por activación);
+ * núcleo cuando esa bola golpea la pala (1 carga por asistencia);
  * ball.ppImanEmpuje queda como marca de «empuje vivo este frame».
  * La física de salida NO cambia: mismo modelo de contacto, mismo golden. */
 const _imC = new THREE.Vector3();
@@ -488,7 +494,6 @@ const _imA = new THREE.Vector3();
 function applyIman(ball, paddles, h) {
   const IM = ball.ppIman;
   ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja
-  if ((IM.dv || 0) >= DIMS.imanGanchoDv) return;   // tope por aproximación agotado
   for (const pad of paddles) {
     // v3.6.46: SOLO la pala del jugador — el rival nunca gana asistencia
     if (!pad.active || pad.serveFlight || pad.who !== 'player') continue;
@@ -504,8 +509,23 @@ function applyIman(ball, paddles, h) {
     // nunca bolas que ya superaron el plano de la cara
     _imD.copy(ball.pos).sub(_imC);
     if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;
+    // FRENO (v3.6.48 · regla del dueño: «que ralentice la bola»):
+    // amortiguación exponencial por subpaso con suelo de velocidad — la
+    // bola llega MÁS DESPACIO al dulce y cuesta menos golpearla. Dentro
+    // de las guardas del gancho (radio + viniendo hacia nosotros + no
+    // pasado el plano) → simuladores y golden jamás lo ven.
+    const sp0 = ball.vel.length();
+    if (sp0 > DIMS.imanFrenoSuelo) {
+      ball.vel.multiplyScalar(Math.max(DIMS.imanFrenoSuelo / sp0,
+        1 - DIMS.imanFreno * h));
+      ball.ppImanEmpuje = true;                 // el campo está vivo aquí
+      ball.ppImanTocada = true;                 // esta aproximación fue asistida
+    }
     // GANCHO: aceleración DIRECTA hacia el centro de la pala (3D: corrige
-    // lateral Y altura — la bola llega al dulce «para dar un buen golpe»)
+    // lateral Y altura — la bola llega al dulce «para dar un buen golpe»).
+    // El tope de Δv POR APROXIMACIÓN presupuesta SOLO el tirón (el freno
+    // es parte del campo, no del presupuesto).
+    if ((IM.dv || 0) >= DIMS.imanGanchoDv) continue;   // tope del tirón agotado
     _imA.copy(_imU).normalize();
     let aMag = DIMS.imanGanchoAcel;
     const dvRest = DIMS.imanGanchoDv - (IM.dv || 0);

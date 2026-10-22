@@ -16,12 +16,14 @@ Peticiones del dueño implementadas esta ronda:
     ×0,85 mientras la bola marcada vuela (DIMS.efectoRival*) + mensaje que
     enseña A APLICARLO («golpea con GIRO»).
   · «Vamos a añadir otro superpoder de pala "SuperPala_Iman.png"» — el
-    SÚPER IMÁN con la spec completa: campo de 8 s que atrae SUAVE la bola
-    al punto dulce (radio 0,75 m · plena a 0,20 m · a ≤5 m/s² · Δv ≤0,60
-    m/s por aproximación · predicción ≤0,15 s), pala mandada por la mano
-    real, nada teleportado, sin recuperar bolas que ya pasaron el plano,
-    física por SUBPASO (independiente del framerate) y CADA impacto
-    asistido válido consume 1 carga (máx. 3 por activación).
+    SÚPER IMÁN con la spec completa: campo de 10 s (r56: regla del dueño)
+    que FRENA la bola y la arrastra al CENTRO de la pala — GANCHO
+    (radio 1,8 m · aceleración 26 m/s² · tope Δv 3,2 m/s · freno 1,1/s
+    con suelo 0,15 m/s), pala mandada por la mano real, nada teleportado,
+    sin recuperar bolas que ya pasaron el plano, física por SUBPASO
+    (independiente del framerate), NUNCA sobre la bola del saque del
+    rival y CADA impacto asistido válido consume 1 carga (sin tope de
+    asistencias — r56).
 
 Pruebas (dos niveles):
   1) FUENTE SERVIDA — agujas del núcleo (registro de 3 poderes, constantes
@@ -29,12 +31,12 @@ Pruebas (dos niveles):
      flechas sprites, halo, anillo de bote, voces 6) + i18n ES/EN +
      plantilla 2.4 + locura v26 intacta + regresiones (chev dentro del
      icono ABSENT).
-  2) MECÁNICA REAL en headless — norma completa con 3 poderes (11 carga ·
-     22/33 acumula · 44 tope · distinto ENTRA · ciclo sin envolver ·
-     efecto 8 s/5 · recarga · mega alarga) + IMÁN: ventana 8 s, campo en
+  2) MECÁNICA REAL en headless — norma completa con 4 poderes (20 carga ·
+     40/60 acumula · 80 tope · distinto ENTRA · ciclo sin envolver ·
+     efecto 10 s · recarga · mega alarga) + IMÁN: ventana 10 s, campo en
      la bola, micro-simulación de física (empuje lateral al punto dulce,
      topes Δv, nada sin el poder, bola que ya pasó, bola que se aleja),
-     consumo por impacto asistido (n−1, sale a 0, cierre a 3 asistencias),
+     consumo por impacto asistido (n−1, sale a 0, cierre sin cargas),
      flechas ‹ › visibilidad por índice, halo rojo, conmutador y hall.
 
 Salida: RESULTADO: N OK · M fallos (contrato qa_todo)"""
@@ -79,8 +81,9 @@ async def main():
         ('const VOZ_PODER_IMAN_EN', 'voz EN del IMÁN embebida (lessac)'),
         ('voz: VOZ_PODER_IMAN, vozEn: VOZ_PODER_IMAN_EN, png: PNG_PODER_IMAN',
          'imán: voz ES + voz EN + PNG en el registro'),
-        ('const IMAN_DUR = 8;', 'SÚPER IMÁN: ventana de 8 s'),
-        ('const IMAN_ASIST = 3;', 'SÚPER IMÁN: máx. 3 asistencias por activación'),
+        ('const IMAN_DUR = 10;', 'SÚPER IMÁN: ventana de 10 s (r56: regla del dueño)'),
+        ('r.state === \'rally\' && !r.isServeBall',
+         'r56: el campo NUNCA toca la bola del SAQUE del rival («menos en los saques»)'),
         ('const MEGA_ARROW_S = 0.020;', 'flechas de la matriz: sprites de 2 cm'),
         ('imanRadio: 0.95,', 'física: radio de influencia 0,95 m (v3.6.44: «no se nota nada» → campo grande)'),
         ('imanPlena: 0.26,', 'física: distancia de máxima asistencia 0,26 m (v3.6.44)'),
@@ -92,6 +95,9 @@ async def main():
         ('imanGanchoAcel: 26,', 'física: GANCHO con aceleración 26 m/s² (r54)'),
         ('imanGanchoDv: 3.2,', 'física: GANCHO con tope Δv 3,2 m/s por aproximación (r54)'),
         ('imanGanchoVz: 0.2,', 'física: GANCHO solo con bolas viniendo (v.z > 0,2) (r54)'),
+        ('imanFreno: 1.1,', 'física r56: FRENO exponencial del campo (1/s) — «que ralentice la bola»'),
+        ('imanFrenoSuelo: 0.15,', 'física r56: suelo de velocidad del freno (0,15 m/s): el vuelo nunca muere'),
+        ('Math.max(DIMS.imanFrenoSuelo / sp0,', 'física r56: el gancho FRENE dentro de las guardas y sin gastar el tope Δv'),
         ('efectoTipoUmbral: 0.55,', 'efecto: umbral de barrido para clasificar el spin (r54)'),
         ('efectoBoteTopAvance: 1.55,', 'efecto TOPSPIN: el bote acelera hacia delante ×1,55 (r54)'),
         ('efectoBoteBackH: 0.16,', 'efecto BACKSPIN: el bote casi PARA la bola ×0,16 (r54)'),
@@ -116,8 +122,8 @@ async def main():
         ('if (ent.id === \'iman\') return this._imanTrigger(ent);',
          'el gatillo libera el IMÁN seleccionado'),
         ('this._imanT = IMAN_DUR;', 'activación del campo del imán'),
-        ('this._imanAsistidas >= IMAN_ASIST) this._imanFin();',
-         '3.ª asistencia CIERRA el campo (tope del dueño)'),
+        ('if (!ent) this._imanFin();',
+         'r56: SIN tope de asistencias — el campo vive sus 10 s o muere sin cargas'),
         ('this._imanImpacto();', 'gancho: impacto asistido consume 1 carga'),
         ('_buildMegaArrows() {', 'flechas: sprites PROPIOS construidos'),
         ('_megaArrowTex(dir) {', 'flechas: textura chevron con disco'),
@@ -138,8 +144,8 @@ async def main():
         ('brush the ball WITH SPIN', 'i18n EN: el mensaje enseña a aplicar'),
         ('poder_iman:', 'i18n: nombre del poder imán'),
         ('¡POTENCIADOR DE SÚPER IMÁN!', 'ES: megáfono del imán'),
-        ('¡SÚPER IMÁN! · la bola vuela al punto dulce · 8 s / 3 asistencias',
-         'ES: mensaje de activación del imán'),
+        ('¡SÚPER IMÁN! · la bola se frena y vuela al centro de la pala · 10 s',
+         'ES: mensaje de activación del imán (r56: frena + 10 s)'),
         ('SUPER MAGNET BOOSTER!', 'EN: nombre del poder imán'),
         ('iman_asistido:', 'i18n: aviso de impacto asistido'),
         ('const key = id + ((__ppLang === \'en\') ? \'_en\' : \'_es\');',
@@ -151,7 +157,7 @@ async def main():
         ('pp_pala_mejorada_v1', 'conmutador persistente «Pala Mejorada»'),
         ('_megaNormReset()', 'recogida completa con dispose'),
         ('this.updateMega(dt);', 'la norma corre en el bucle animate'),
-        ('V3.6.47-SDK6', 'sello de versión servido'),
+        ('V3.6.48-SDK6', 'sello de versión servido'),
     ]:
         chk(needle in game, label)
     # REGRESIONES
@@ -255,10 +261,10 @@ async def main():
           G.champs.activeId = 'locura';
           Math.random = () => 0.1;                     // SIEMPRE 'mega'
           G.rules.state = 'point'; paso();
-          G.rules.state = 'rally'; G.rules.rallyHits = 10;
+          G.rules.state = 'rally'; G.rules.rallyHits = 19;
           paso(); paso();
-          out.diezSinCarga = G._megaMatriz.length === 0;
-          G.rules.rallyHits = 11; paso();
+          out.diezSinCarga = G._megaMatriz.length === 0;   // 19 toques: NADA
+          G.rules.rallyHits = 20; paso();                  // r56: al toque 20
           out.cargada = G._megaMatriz.length === 1 &&
             G._megaMatriz[0].id === 'mega' && G._megaMatriz[0].n === 1 &&
             G._megaIdx === 0;
@@ -269,18 +275,18 @@ async def main():
             Math.abs(G._megaIcon[0].position.z - 0.004) < 0.002;
 
           // · MISMO PODER ACUMULA ×2/×3, tope ×3 honesto
-          G.rules.rallyHits = 22; paso();
+          G.rules.rallyHits = 40; paso();
           out.dosCargas = G._megaMatriz.length === 1 && G._megaMatriz[0].n === 2;
-          G.rules.rallyHits = 33; paso();
+          G.rules.rallyHits = 60; paso();
           out.tresCargas = G._megaMatriz.length === 1 && G._megaMatriz[0].n === 3;
-          G.rules.rallyHits = 44; paso(); paso();
+          G.rules.rallyHits = 80; paso(); paso();
           out.topeTres = G._megaMatriz.length === 1 && G._megaMatriz[0].n === 3;
           out.msgTope = (G.rules.message || '').indexOf('TOPE ×3') === 0;
 
           // · PODER DISTINTO (efecto): ENTRA en la matriz (posición 1)
           Math.random = () => 0.3;                     // SIEMPRE 'efecto' (4 poderes)
           G.rules.state = 'point'; paso();
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; paso();
           out.matrizDos = G._megaMatriz.length === 2 &&
             G._megaMatriz[0].id === 'mega' && G._megaMatriz[0].n === 3 &&
             G._megaMatriz[1].id === 'efecto' && G._megaMatriz[1].n === 1;
@@ -314,8 +320,7 @@ async def main():
           let ef = null;
           try { ef = G.megaTrigger(libre); } catch (e) { out.errEf = String(e); }
           paso();
-          out.efectoAbre = ef === true && G._efectoT > 7.9 &&
-            G._efectoGolpes === 5;
+          out.efectoAbre = ef === true && G._efectoT > 9.9;
           out.fxHubicacion = Array.isArray(G._efectoFx) &&
             G._efectoFx.filter((f) => f).length === 2;
           const fxE = G._efectoFx && G._efectoFx.find((f) => f);
@@ -357,12 +362,12 @@ async def main():
           } catch (e) { out.errBote = String(e); }
 
           // · fin del efecto + RECARGA (camino AE completo)
-          G._efectoT = 7.0; G._efectoGolpes = 1;
+          G._efectoT = 7.0;
           try { G._efectoFin(); } catch (e) { out.errFin = String(e); }
-          out.finPorGolpes = G._efectoT === 0 && G._efectoGolpes === 0;
+          out.finNatural = G._efectoT === 0;
           Math.random = () => 0.3;                     // SIEMPRE 'efecto'
           G.rules.state = 'point'; paso();
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; paso();
           let rec = null;
           try { rec = G.megaTrigger(libre); } catch (e) { out.errRec = String(e); }
           out.recarga = rec === true && G._efectoT > 7.9;
@@ -371,7 +376,7 @@ async def main():
           // · SÚPER IMÁN: entra en la matriz y el gatillo ABRE el campo
           Math.random = () => 0.6;                     // SIEMPRE 'iman' (4 poderes)
           G.rules.state = 'point'; paso();
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; paso();
           out.imanEntra = !!G._megaMatriz.find((x) => x.id === 'iman') &&
             G._megaIdx === G._megaMatriz.length - 1;
           let im = null;
@@ -474,7 +479,7 @@ async def main():
           // re-poner imán ×3 y abrir campo: 3 asistencias cierran
           Math.random = () => 0.6;                     // SIEMPRE 'iman'
           G.rules.state = 'point'; paso();
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; paso();
           let im = null;
           try { im = G.megaTrigger(libre); } catch (e) { out.errIm2 = String(e); }
           G._imanImpacto(); G._imanImpacto(); G._imanImpacto();
@@ -483,7 +488,7 @@ async def main():
           // · MEGA sigue operando con 3 poderes en el registro
           Math.random = () => 0.1;
           G.rules.state = 'point'; paso();
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; paso();
           out.megaSigue = !!G._megaMatriz.find((x) => x.id === 'mega');
           const sel = G._megaSel();
           if (sel && sel.id === 'mega') {
@@ -504,7 +509,7 @@ async def main():
             (G.rules.message || '').indexOf('SIN CARGAS') === 0;
 
           // · CONMUTADOR APAGADO (camino REAL del menú) y ENCENDIDO
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; Math.random = () => 0.1;
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; Math.random = () => 0.1;
           paso();
           G.menuRects.push({ id: 'pmej' });
           try { G.menuClick(G.menuRects.length - 1); } catch (e) { out.errOff = String(e); }
@@ -519,7 +524,7 @@ async def main():
           out.encendidoPersiste = (() => { try {
             return localStorage.getItem('pp_pala_mejorada_v1') === '1' &&
               G.palaMejorada === true; } catch (e) { return false; } })();
-          G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
+          G.rules.state = 'rally'; G.rules.rallyHits = 20; paso();
           out.vuelveANacer = G._megaMatriz.length === 1;
 
           // · HALL = ZONA NEUTRA
@@ -562,15 +567,15 @@ async def main():
         esperados = [
             ('porDefecto', 'estado fresco: matriz vacía y construcción perezosa'),
             ('hayAPI', 'API del superpoder (incluida _imanTrigger/_imanImpacto)'),
-            ('fueraSinCarga', 'FUERA de campeonato: un rally de 44 NO carga nada'),
+            ('fueraSinCarga', 'FUERA de campeonato: un rally de 44 (aun >20) NO carga nada'),
             ('fueraGatilloLibre', 'FUERA de campeonato: el gatillo no es del poder (false)'),
-            ('diezSinCarga', 'a los 10 golpes NO hay carga'),
-            ('cargada', 'al golpe 11: +1 carga de MEGA en la MATRIZ (posición 0)'),
+            ('diezSinCarga', 'a los 19 toques NO hay carga (r56: nunca antes de 20)'),
+            ('cargada', 'al toque 20: +1 carga de MEGA en la MATRIZ (posición 0)'),
             ('iconoVivo', 'icono vivo en las DOS monturas'),
             ('iconoAnclado', 'icono ANCLADO al mango (y=−0,034 · z=0,004)'),
-            ('dosCargas', 'al golpe 22 del MISMO rally: ×2 (acumula)'),
-            ('tresCargas', 'al golpe 33: ×3'),
-            ('topeTres', 'al golpe 44 NO hay cuarta carga (tope ×3)'),
+            ('dosCargas', 'al toque 40 del MISMO rally: ×2 (acumula)'),
+            ('tresCargas', 'al toque 60: ×3'),
+            ('topeTres', 'al toque 80 NO hay cuarta carga (tope ×3)'),
             ('msgTope', 'megáfono del tope: «TOPE ×3 · ¡gasta una…»'),
             ('matrizDos', 'poder distinto ENTRA en la matriz: [mega ×3, efecto ×1]'),
             ('selNuevo', 'el poder nuevo se SELECCIONA solo (índice 1)'),
@@ -581,7 +586,7 @@ async def main():
             ('opPulso', 'las flechas PULSAN (opacidad animada)'),
             ('alUltimoYNoPasa', 'al último y NO pasa (sin flecha derecha en el final)'),
             ('saqueRespetado', 'en saque el gatillo SACA (no gasta)'),
-            ('efectoAbre', 'gatillo con EFECTO seleccionado: ventana 8 s / 5 golpes'),
+            ('efectoAbre', 'gatillo con EFECTO seleccionado: ventana 10 s (r56)'),
             ('fxHubicacion', 'FX cian construido para las DOS monturas'),
             ('cantoCian', 'el canto del efecto es CIAN (0x54d8f0)'),
             ('multEnPala', 'multiplicador ×3 en las DOS palas del jugador (r51)'),
@@ -590,13 +595,13 @@ async def main():
             ('haloFuera', 'sin marca: el halo se apaga'),
             ('boteFx', 'anillo de bote amplificado se dispara (one-shot)'),
             ('boteFxApaga', 'el anillo de bote se apaga solo (0,38 s)'),
-            ('finPorGolpes', 'fin de la ventana del efecto por golpes'),
+            ('finNatural', 'fin natural del efecto: _efectoFin deja el reloj a 0'),
             ('recarga', 'efecto ACTIVO + gatillo: RECARGA la ventana'),
             ('imanEntra', 'el IMÁN ENTRA en la matriz y se selecciona'),
-            ('imanAbre', 'gatillo con IMÁN: campo de 8 s (sin consumo)'),
+            ('imanAbre', 'gatillo con IMÁN: campo de 10 s (sin consumo; r56)'),
             ('imanFxRetirado', 'imán (r54): canto y flechas RETIRADOS — diseño limpio de pala'),
             ('palaMetalicaViva', 'imán (r54): _imanPalaOsc viva — pala metálica −80 %'),
-            ('msgIman', 'megáfono: ¡SÚPER IMÁN! · la bola vuela al punto dulce…'),
+            ('msgIman', 'megáfono: ¡SÚPER IMÁN! · la bola se frena y vuela al centro…'),
             ('imanSelActiva', 'campo activo: el icono cede (selActiva)'),
             ('bolaArma', 'el campo viaja EN LA BOLA (ball.ppIman) en rally'),
             ('bolaFueraEnSaque', 'en saque la bola NO lleva campo'),

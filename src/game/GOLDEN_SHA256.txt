@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.47-SDK6, fase 49 · El efecto sólo vive en el intercambio; sello actualizado
-# por bump_version.py desde 3.6.46-SDK6)
-a1fc68f0d113acd35b20441ffb2d6889b6140d1e3848b8077a1ac9244f4c9ed4
+# SHA256 del game.html que produjo esta división (3.6.48-SDK6, fase 50 · Poderes honestos: 20 toques y 10 segundos; sello actualizado
+# por bump_version.py desde 3.6.47-SDK6)
+08d60e634911678dd435599c4db0cd9d27ec3cbc35e606a5d8fd94817a388b21

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_bomba_v3644 — CAPA AM · ronda 52 (V3.6.45-SDK6, FASE 46).
+"""qa_bomba_v3644 — CAPA AM · ronda 52 (V3.6.46-SDK6, FASE 46).
 
 La petición del dueño (literal): «Revisa el funcionamiento de los
 superpoderes de pala… El Super iman no hace nada no se ve efecto ni se
@@ -63,27 +63,27 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.45-SDK6', 'versión servida: 3.6.45-SDK6 (ronda 52)'),
-        # · IMÁN SE VIVE: campo continuo + flechas ANCLADAS
-        ('_buildImanCampo() {', 'imán: _buildImanCampo (disco + 12 partículas)'),
-        ('_imanCampoUpdate() {', 'imán: _imanCampoUpdate (anclaje del campo)'),
-        ('try { this._imanCampoUpdate(); } catch (eIC1) { /* */ }',
-         'imán: el updateMega ancla el CAMPO SIEMPRE'),
-        ('try { this._imanFlechasUpdate(); } catch (eIF1) { /* */ }',
-         'imán: el updateMega ancla las FLECHAS SIEMPRE (fix r52)'),
-        ('new THREE.ConeGeometry(0.024, 0.08, 10)',
-         'imán: flechas ×1,8 (0,024 × 0,08 m — se LEEN en juego)'),
+        ('3.6.46-SDK6', 'versión servida: 3.6.46-SDK6 (ronda 52)'),
+        # · v3.6.46 (r54) · NEGATIVAS: campo, flechas y estela RETIRADOS —
+        #   el imán es GANCHO + PALA METÁLICA y el efecto es SPIN REAL
+        ('RETIRADO (ronda 54, petición del dueño): _buildImanCampo',
+         'imán (r54): campo y flechas RETIRADOS — diseño limpio de pala'),
+        ('_imanPalaOsc(on) {', 'imán (r54): pala metálica −80 % (metódico)'),
+        ('_imanOscuroC = hex20(', 'imán (r54): oscurecido real −80 % (hex sRGB exacto)'),
+        ('imanGanchoRadio: 1.8,', 'imán (r54): GANCHO radio 1,8 m (c02)'),
+        ('imanGanchoAcel: 26,', 'imán (r54): GANCHO aceleración 26 m/s² (c02)'),
+        ('RETIRADO (ronda 54): _buildEfectoTrail',
+         'efecto (r54): estela RETIRADA — el efecto es el SPIN REAL'),
+        ('efectoTipoUmbral: 0.55,', 'efecto (r54): clasificación del spin por barrido (c02)'),
+        ('efectoBoteTopAvance: 1.55,', 'efecto (r54): topspin acelera el bote ×1,55 (c02)'),
+        ('efectoBoteBackH: 0.16,', 'efecto (r54): backspin casi para el bote ×0,16 (c02)'),
+        ('efectoBoteSideKick: 0.42,', 'efecto (r54): sidespin patada lateral 0,42 × |vz| (c02)'),
+        # · imán r52 heredado (claves conservadas para rollback)
         ('imanRadio: 0.95,', 'imán: radio 0,95 m (c02)'),
         ('imanAcelMax: 6.5,', 'imán: aceleración 6,5 m/s² (c02)'),
         ('imanDvMax: 0.80,', 'imán: Δv 0,80 m/s (c02)'),
         ('imanRescateAcel: 7.5,', 'imán: rescate 7,5 m/s² (c02)'),
         ('imanRescateDv: 1.05,', 'imán: rescate Δv 1,05 m/s (c02)'),
-        # · EFECTO SE VE: halo grande + estela + anillo de bote mayor
-        ('0.21 + 0.05 * Math.sin(performance.now() * 0.009)',
-         'efecto: halo de la bola marcada 0,21 m con pulso'),
-        ('_buildEfectoTrail() {', 'efecto: _buildEfectoTrail (estela roja)'),
-        ('UT.puntos.push(this.ball.pos.clone());',
-         'efecto: la estela se alimenta de la bola REAL cada frame'),
         ('new THREE.RingGeometry(0.09, 0.115, 40)',
          'efecto: anillo de bote 0,09–0,115 m (antes 0,055–0,075)'),
         ('m.userData.boteT = 0.55;', 'efecto: el anillo de bote dura 0,55 s'),
@@ -355,12 +355,15 @@ async def main():
             G.champs.activeId = 'locura';
             G.rules.startMatch('match');
             G.rules.state = 'point';
-            // precaliente drena (16 piezas)
+            // precaliente drena (13 piezas desde r54)
             for (let i = 0; i < 24; i++) {
               try { G.updateMega(1 / 60); } catch (eU) { out.errU = String(eU); }
             }
-            out.campoConstruido = !!G._imanCampo;
-            out.estelaConstruida = !!G._imanFlechas && !!G._efectoTrail;
+            // v3.6.46 · campo, flechas y estela RETIRADOS: el precaliente NO
+            // debe construirlos y las propiedades NO deben existir
+            out.campoRetirado = !G._imanCampo && !G._imanFlechas;
+            out.estelaRetirada = !G._efectoTrail;
+            out.palaMetalica = typeof G._imanPalaOsc === 'function';
             // blips: espía del audio
             const realOsc = G.audio.playOsc.bind(G.audio);
             const blips = [];
@@ -407,10 +410,14 @@ async def main():
                     'cumplir el intervalo VUELVE (cadencia 15 s — r53)')
                 chk(not rt.get('errNucleo'),
                     f'núcleo headless sin excepciones ({rt.get("errNucleo", "limpio")})')
-                chk(rt.get('campoConstruido') is True,
-                    'núcleo: el PRECALIENTE construye el campo del imán')
-                chk(rt.get('estelaConstruida') is True,
-                    'núcleo: el PRECALIENTE construye flechas y estela del efecto')
+                chk(rt.get('campoRetirado') is True,
+                    'núcleo (r54): campo y flechas del imán RETIRADOS — el '
+                    'precaliente ya no los construye')
+                chk(rt.get('estelaRetirada') is True,
+                    'núcleo (r54): estela del efecto RETIRADA — el precaliente '
+                    'ya no la construye')
+                chk(rt.get('palaMetalica') is True,
+                    'núcleo (r54): _imanPalaOsc existe (pala metálica −80 %)')
                 chk(rt.get('blip12') is True,
                     'núcleo: blips «tres/dos» a 988 Hz · gain ≥ 0,4 · ≥ 0,14 s')
                 chk(rt.get('blip3') is True,

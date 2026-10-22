@@ -160,6 +160,17 @@ CAPAS = [
     # el muro de fábrica con cada partida.
     ('AN · bomba por intervalos + ladrillo eléctrico (v3645)',
      'qa_electrico_v3645.py'),
+    # AO (ronda 54 · v3.6.46): el SÚPER EFECTO es SPIN REAL — el movimiento
+    # de la pala al golpear clasifica TOPSPIN/BACKSPIN/SIDESPIN y el BOTE
+    # traduce cada uno (acelera hacia delante / casi PARA / patada lateral),
+    # con penalización al rival ya viva (error ×2 · piernas ×0,85) y halo +
+    # anillo de bote TINTADOS por tipo. El SÚPER IMÁN es un GANCHO: la bola
+    # que viene en nuestra dirección de golpeo es arrastrada al CENTRO VIVO
+    # de la pala; fuera flechas/campo/canto — PALA METÁLICA −80 % mientras
+    # dure. Y la pala del rival JAMÁS atraviesa la mesa (clamp del mango
+    # completo: hoja + palo hasta la punta, puerta con el agarre).
+    ('AO · spin real + gancho + pala metálica + clamp mango (v3646)',
+     'qa_spin_pala_v3646.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

@@ -231,6 +231,32 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     if (eMul > 1) ball.ppEfecto = true;   // v3.6.36: bola marcada
   }
 
+  // v3.6.46 · CLASIFICACIÓN del SPIN (ronda 54, spec del dueño): con el
+  // Súper Efecto activo, el movimiento REAL de la pala al golpear decide
+  // el tipo — barrido de abajo hacia arriba = TOPSPIN (liftado), de arriba
+  // hacia abajo = BACKSPIN (cortado), lateral = SIDESPIN (lado del barrido,
+  // +x = derecha del jugador). Golpe SIN barrido claro (recto o por debajo
+  // del umbral) no lleva tipo: conserva el comportamiento amplificado de
+  // siempre (bote acoplado ×2,4). El tipo viaja en la bola y lo traduce
+  // el BOTE en c05/collideTable; la marca la limpia la IA al devolver.
+  if (eMul > 1) {
+    const pvx = pad.vel.x, pvy = pad.vel.y;
+    const avx = Math.abs(pvx), avy = Math.abs(pvy);
+    if (Math.max(avx, avy) <= (DIMS.efectoTipoUmbral || 0.55)) {
+      ball.ppEfectoTipo = '';
+      ball.ppEfectoLado = 0;
+    } else if (avy >= avx) {
+      ball.ppEfectoTipo = pvy > 0 ? 'top' : 'back';
+      ball.ppEfectoLado = 0;
+    } else {
+      ball.ppEfectoTipo = 'side';
+      ball.ppEfectoLado = pvx > 0 ? 1 : -1;
+    }
+  } else {
+    ball.ppEfectoTipo = '';
+    ball.ppEfectoLado = 0;
+  }
+
   // Colocar la bola sobre la cara de contacto
   const front = DIMS.ballRadius + 0.002;
   ball.pos
@@ -268,7 +294,12 @@ function collideTable(ball, prevY, events) {
     // v3.6.36 · SÚPER EFECTO: la bola MARCADA amplifica el efecto del
     // bote (topspin → más agresivo hacia delante · lateral → más desvío
     // · backspin → más frenada), con el tope de Coulomb como seguro.
-    const eM = ball.ppEfecto ? (DIMS.efectoBoteMul || 1.8) : 1;
+    // v3.6.46 · con TIPO claro (top/back/side) el bote es FÍSICO PURO
+    // (sin el acople extra ×2,4): la firma exacta la pone la regla
+    // tipificada de abajo — determinista y calibrada en c02. Las bolas
+    // marcadas SIN tipo conservan el acople de siempre (r51/r52).
+    const eM = (ball.ppEfecto && !ball.ppEfectoTipo)
+      ? (DIMS.efectoBoteMul || 1.8) : 1;
     if (DIMS.physicsRealism >= 0.5) {
       // v3.0.5-FIS1 · P2: bote físico con deslizamiento (slip-coupled)
       bounceOnTable(vel, spin, impact, eM);
@@ -277,6 +308,34 @@ function collideTable(ball, prevY, events) {
       vel.x *= DIMS.tableFriction;
       vel.z *= DIMS.tableFriction;
       applyBounceSpin(vel, spin, eM);
+    }
+    // v3.6.46 · SPIN TIPIFICADO — el bote traduce el giro (spec literal
+    // del dueño, ronda 54):
+    //   TOPSPIN  → «al botar la pelota sale muy acelerada hacia delante
+    //              del bote» (y baja: bote tenso de ataque);
+    //   BACKSPIN → «la pelota prácticamente se queda parada con muy poca
+    //              velocidad» (bola muerta en la mesa del rival);
+    //   SIDESPIN → «dependiendo del lado exagera el bote en la dirección
+    //              del efecto» (patada lateral proporcional al vuelo).
+    if (ball.ppEfectoTipo === 'top') {
+      const vz0 = vel.z;
+      if (Math.abs(vz0) > 1e-3) {
+        const fwd = vz0 > 0 ? 1 : -1;
+        vel.z = fwd * Math.min(
+          Math.abs(vz0) * (DIMS.efectoBoteTopAvance || 1.55) + 0.4,
+          DIMS.maxBallSpeed);
+        vel.y *= (DIMS.efectoBoteTopVy || 0.62);
+      }
+    } else if (ball.ppEfectoTipo === 'back') {
+      vel.z *= (DIMS.efectoBoteBackH || 0.16);
+      vel.x *= (DIMS.efectoBoteBackFx || 0.35);
+      vel.y *= (DIMS.efectoBoteBackVy || 0.32);
+    } else if (ball.ppEfectoTipo === 'side') {
+      const lado = ball.ppEfectoLado || 1;
+      const kick = THREE.MathUtils.clamp(
+        Math.abs(vel.z) * (DIMS.efectoBoteSideKick || 0.42),
+        0.45, DIMS.efectoBoteSideMax || 1.5);
+      vel.x += lado * kick;
     }
     events.push({ type: 'table', side: pos.z > C ? 'player' : 'ai', speed: impact, pos: pos.clone() });
     return;
@@ -387,31 +446,27 @@ function collideWorld(ball, events) {
   }
 }
 
-/* ---------- v3.6.37 · SÚPER IMÁN (3.er poder; spec completa del dueño) ----------
- * Atracción SUAVE de la bola hacia el punto dulce de la pala del jugador:
- * ayuda a CENTRAR el impacto sin dirigir el golpe — la pala sigue mandada
- * por el movimiento real de la mano/mando, la salida la calcula el modelo
- * de contacto de siempre (restitución, fricción, spin) y no se teleporta
- * ni la bola ni la pala. Principios del dueño implementados:
- *   · solo bolas que vuelan HACIA la pala (closing > 0,4 m/s);
+/* ---------- v3.6.46 · SÚPER IMÁN — GANCHO al CENTRO de la pala ----------
+ * Redefinición del dueño (ronda 54, spec literal): «cuando lo activamos la
+ * bola se redirige automáticamente al CENTRO de nuestra pala en su
+ * movimiento como atraída por la pala para que podamos dar un buen golpe,
+ * ojo siempre que venga en nuestra dirección de golpeo». Muere el campo
+ * suave de r51-52 (asistencia lateral + rescate): el GANCHO arrastra la
+ * bola DIRECTO al punto dulce:
+ *   · SOLO bolas que vienen hacia nosotros (v.z > imanGanchoVz, 0,2 m/s)
+ *     — «que venga en nuestra dirección de golpeo»;
+ *   · captura dentro de imanGanchoRadio (1,8 m) del punto dulce;
+ *   · aceleración plena hacia el CENTRO VIVO de la pala (el punto dulce
+ *     se recalcula por SUBPASO: el gancho persigue la pala mientras la
+ *     movemos — «en su movimiento»);
+ *   · tope de Δv POR APROXIMACIÓN imanGanchoDv (3,2 m/s): fuerza fina,
+ *     nunca teleporta — la salida la calcula el contacto de siempre;
  *   · nunca bolas que ya superaron el plano de la cara;
- *   · predicción lineal del impacto con horizonte imanTPred (0,15 s);
- *   · campo: plena asistencia dentro de imanPlena (0,20 m), lineal hasta
- *     imanRadio (0,75 m), nada fuera;
- *   · aceleración lateral ≤ imanAcelMax (5 m/s²) y Δv lateral acumulado
- *     POR APROXIMACIÓN ≤ imanDvMax (0,60 m/s) — topes del dueño;
- *   · v3.6.43 RESCATE (petición del dueño: «una bola que se nos escapa la
- *     atraigamos hacia la pala»): si la bola está DENTRO del radio, viene
- *     hacia nuestra mitad (v.z > 0,3) pero NO se acerca al punto dulce
- *     (closing ≤ 0,4), el campo la tira DIRECTO hacia él con aceleración
- *     imanRescateAcel (6 m/s²) y tope propio imanRescateDv (0,85 m/s por
- *     aproximación) — el contador de rescate es INDEPENDIENTE del de la
- *     asistencia clásica (IM.dvRes) para no robar empuje al otro modo.
  *   · integrado por SUBPASO (h fijo): estable ante fluctuaciones de FPS.
  * La marca de «aproximación asistida» (ball.ppImanTocada) la consume el
- * núcleo cuando esa bola golpea la pala (1 carga, máx. 3 por activación).
- * La marca de «empuje vivo ESTE frame» (ball.ppImanEmpuje) la pintan las
- * flechas bola→pala del núcleo (el dueño DEBE ver la atracción). */
+ * núcleo cuando esa bola golpea la pala (1 carga, máx. 3 por activación);
+ * ball.ppImanEmpuje queda como marca de «empuje vivo este frame».
+ * La física de salida NO cambia: mismo modelo de contacto, mismo golden. */
 const _imC = new THREE.Vector3();
 const _imP = new THREE.Vector3();
 const _imU = new THREE.Vector3();
@@ -420,62 +475,33 @@ const _imA = new THREE.Vector3();
 function applyIman(ball, paddles, h) {
   const IM = ball.ppIman;
   ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja
-  if (IM.dv >= DIMS.imanDvMax &&
-      (IM.dvRes || 0) >= DIMS.imanRescateDv) return;   // ambos topes agotados
+  if ((IM.dv || 0) >= DIMS.imanGanchoDv) return;   // tope por aproximación agotado
   for (const pad of paddles) {
-    if (!pad.active || pad.serveFlight) continue;
-    // punto dulce = centro de la hoja en mundo (C = pos + up·bladeCenterUp)
+    // v3.6.46: SOLO la pala del jugador — el rival nunca gana asistencia
+    if (!pad.active || pad.serveFlight || pad.who !== 'player') continue;
+    // punto dulce = CENTRO VIVO de la hoja en mundo (se recalcula por
+    // subpaso: el gancho persigue la pala mientras la movemos)
     _imC.copy(pad.pos).addScaledVector(pad.up, DIMS.bladeCenterUp);
     _imU.copy(_imC).sub(ball.pos);
     const d = _imU.length();
-    if (d > DIMS.imanRadio || d < 1e-4) continue;     // fuera del campo
+    if (d > DIMS.imanGanchoRadio || d < 1e-4) continue;   // fuera del gancho
+    // «siempre que venga en nuestra dirección de golpeo»: solo bolas que
+    // viajan hacia nosotros (z positivo = hacia el lado del jugador)
+    if (ball.vel.z <= (DIMS.imanGanchoVz || 0.2)) continue;
     // nunca bolas que ya superaron el plano de la cara
     _imD.copy(ball.pos).sub(_imC);
     if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;
-    // solo bolas que se ACERCAN a la pala
-    const closing = ball.vel.dot(_imU) / d;
-    if (closing <= 0.4) {
-      // v3.6.43 · RESCATE: bola DENTRO del campo que viene hacia nuestra
-      // mitad pero se aleja del punto dulce (se va larga/cruzada). El campo
-      // la atrae DIRECTO hacia él: aceleración plena, tope Δv propio.
-      if (ball.vel.z <= 0.3) continue;            // no viene hacia nosotros
-      if ((IM.dvRes || 0) >= DIMS.imanRescateDv) continue;   // rescate agotado
-      if (_imU.lengthSq() < 1e-6) continue;
-      _imA.copy(_imU).normalize();
-      let aRes = DIMS.imanRescateAcel;
-      const dvRest = DIMS.imanRescateDv - (IM.dvRes || 0);
-      const dvPaso = aRes * h;
-      if (dvPaso > dvRest) aRes *= dvRest / Math.max(dvPaso, 1e-9);
-      if (aRes <= 1e-6) continue;
-      ball.vel.addScaledVector(_imA, aRes * h);
-      IM.dvRes = (IM.dvRes || 0) + aRes * h;      // contador real de rescate
-      ball.ppImanEmpuje = true;                   // flechas bola→pala
-      ball.ppImanTocada = true;                   // la atracción ES asistencia
-      continue;
-    }
-    // predicción LINEAL del impacto (horizonte del dueño: 0,15 s)
-    const tp = Math.min(d / Math.max(closing, 0.01), DIMS.imanTPred);
-    _imP.copy(ball.pos).addScaledVector(ball.vel, tp);
-    // corrección LATERAL: componente del error perpendicular al vuelo
-    _imA.copy(_imC).sub(_imP);
-    const v2 = Math.max(1e-6, ball.vel.lengthSq());
-    _imA.addScaledVector(ball.vel, -_imA.dot(ball.vel) / v2);
-    const err = _imA.length();
-    if (err < 0.008) continue;                  // ya centrado: nada que empujar
-    // caída del campo: plena DENTRO de imanPlena, lineal hasta imanRadio
-    const f = (d <= DIMS.imanPlena)
-      ? 1
-      : Math.max(0, 1 - (d - DIMS.imanPlena) / (DIMS.imanRadio - DIMS.imanPlena));
-    if (f <= 0) continue;
-    let aMag = DIMS.imanAcelMax * f;
-    const dvRest = DIMS.imanDvMax - IM.dv;      // Δv que falta por aproximación
+    // GANCHO: aceleración DIRECTA hacia el centro de la pala (3D: corrige
+    // lateral Y altura — la bola llega al dulce «para dar un buen golpe»)
+    _imA.copy(_imU).normalize();
+    let aMag = DIMS.imanGanchoAcel;
+    const dvRest = DIMS.imanGanchoDv - (IM.dv || 0);
     const dvPaso = aMag * h;
     if (dvPaso > dvRest) aMag *= dvRest / Math.max(dvPaso, 1e-9);
     if (aMag <= 1e-6) continue;
-    _imA.setLength(aMag);
-    ball.vel.addScaledVector(_imA, h);
-    IM.dv += aMag * h;                          // contador real de Δv lateral
-    ball.ppImanEmpuje = true;                   // flechas bola→pala
+    ball.vel.addScaledVector(_imA, aMag * h);
+    IM.dv = (IM.dv || 0) + aMag * h;            // contador real del gancho
+    ball.ppImanEmpuje = true;                   // marca de empuje vivo
     ball.ppImanTocada = true;                   // esta aproximación fue asistida
   }
 }

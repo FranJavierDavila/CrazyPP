@@ -57,7 +57,23 @@ export const DIMS = {
   // bote ×2,4 (SIEMPRE solo en la bola marcada; sin poder: física igual).
   efectoSpinTope: 3,        // tope de rotación = 3 × spinMax (antes ×2)
   efectoMagnusMul: 2.2,     // Magnus ×2,2 en vuelo (antes ×1,5: curva VISIBLE)
-  efectoBoteMul: 2.4,       // acople del bote ×2,4 (antes ×1,8)
+  efectoBoteMul: 2.4,       // acople del bote ×2,4 (antes ×1,8) — SOLO bolas
+                            // marcadas SIN tipo (golpe neutro); con tipo claro
+                            // el bote es físico puro + regla tipificada (abajo)
+  // v3.6.46 (ronda 54 · el dueño redefine el SÚPER EFECTO: la estela se
+  // retira y el efecto pasa a ser REAL según el movimiento de la pala al
+  // golpear): el brush se CLASIFICA en tres spins y el BOTE traduce cada
+  // uno con su firma exacta — topspin sale muy acelerado hacia delante y
+  // bajo, backspin casi se PARA, sidespin exagera el desvío hacia el lado
+  // del barrido. Constantes calibrables (una fuente de verdad por regla).
+  efectoTipoUmbral: 0.55,    // barrido mínimo (m/s) para clasificar el tipo
+  efectoBoteTopAvance: 1.55, // TOPSPIN: horizontal tras el bote ×1,55 (+0,4 m/s de piso)
+  efectoBoteTopVy: 0.62,     // TOPSPIN: bote BAJO (vy tras el bote ×0,62)
+  efectoBoteBackH: 0.16,     // BACKSPIN: horizontal ×0,16 (prácticamente se para)
+  efectoBoteBackVy: 0.32,    // BACKSPIN: vy ×0,32 (saltito mínimo)
+  efectoBoteBackFx: 0.35,    // BACKSPIN: también frena el componente lateral (x ×0,35)
+  efectoBoteSideKick: 0.42,  // SIDESPIN: patada lateral = 0,42 × |vz| (piso 0,45 m/s)
+  efectoBoteSideMax: 1.5,    // SIDESPIN: tope de la patada lateral (m/s)
   // v3.6.37 · SÚPER EFECTO NOTORIO (petición del dueño): el rival SUFRE la
   // bola marcada — «dificultar en un %» su éxito de impacto. Dos palancas
   // (solo con la bola marcada viniendo; sin poder: 1 = IA idéntica):
@@ -89,8 +105,21 @@ export const DIMS = {
   imanAcelMax: 6.5,         // aceleración lateral máxima (m/s²; antes 5)
   imanDvMax: 0.80,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
   imanTPred: 0.15,          // horizonte máximo de predicción del impacto (s)
-  imanRescateAcel: 7.5,     // RESCATE: aceleración hacia la pala (m/s²)
-  imanRescateDv: 1.05,      // RESCATE: tope de Δv hacia la pala por aproximación (m/s)
+  imanRescateAcel: 7.5,     // (heredado r52 — applyIman ya no lo usa; se
+  imanRescateDv: 1.05,      //  conserva para rollback instantáneo)
+  // v3.6.46 (ronda 54 · el dueño redefine el SÚPER IMÁN: «la bola se
+  // redirige automáticamente al CENTRO de nuestra pala en su movimiento
+  // como atraída por la pala para que podamos dar un buen golpe, ojo
+  // siempre que venga en nuestra dirección de golpeo»): fuera el campo
+  // suave y el rescate — GANCHO DIRECTO: cualquier bola que venga hacia
+  // nosotros dentro del radio del gancho es arrastrada al punto dulce
+  // (persigue el CENTRO VIVO de la pala) con aceleración plena y tope de
+  // Δv por aproximación holgado. Visual: pala oscurecida 80 % (metálica).
+  imanGanchoRadio: 1.8,     // radio de captura del gancho (m)
+  imanGanchoAcel: 26,       // aceleración hacia el centro de la pala (m/s²)
+  imanGanchoDv: 3.2,        // tope de Δv del gancho POR APROXIMACIÓN (m/s)
+  imanGanchoVz: 0.2,        // velocidad mínima hacia nosotros (m/s) — «que venga
+                            //  en nuestra dirección de golpeo»
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto

@@ -82,7 +82,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 51)
-        ('3.6.45-SDK6', 'versión servida: 3.6.45-SDK6 (ronda 52)'),
+        ('3.6.46-SDK6', 'versión servida: 3.6.46-SDK6 (ronda 52)'),
         # · 1) SÚPER EFECTO EXAGERADO
         ('const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)',
          'efecto: el brush generado sube a ×3 (antes ×2)'),
@@ -98,32 +98,25 @@ async def main():
         ('imanDvMax: 0.80,', 'imán: tope de Δv 0,80 m/s por aproximación (v3.6.44)'),
         ('imanRescateAcel: 7.5,', 'imán: RESCATE con aceleración 7,5 m/s² (v3.6.44)'),
         ('imanRescateDv: 1.05,', 'imán: RESCATE con tope Δv 1,05 m/s (v3.6.44)'),
-        ('v3.6.43 · RESCATE: bola DENTRO del campo que viene hacia nuestra',
-         'imán: el RESCATE vive en c05/applyIman (física real)'),
-        ('const closing = ball.vel.dot(_imU) / d;',
-         'imán: el filtro de cierre (closing) decide asistencia ⇄ rescate'),
-        ('if (closing <= 0.4) {',
-         'imán: RAMO del RESCATE (bolas que NO se acercan a la pala)'),
-        ('if (ball.vel.z <= 0.3) continue;            // no viene hacia nosotros',
-         'imán: el rescate SOLO actúa sobre bolas que vienen a nuestra mitad'),
-        ('let aRes = DIMS.imanRescateAcel;',
-         'imán: la atracción usa la aceleración del rescate'),
-        ('IM.dvRes = (IM.dvRes || 0) + aRes * h;      // contador real de rescate',
-         'imán: contador de rescate INDEPENDIENTE (no roba empuje)'),
+        ('v3.6.46 · SÚPER IMÁN — GANCHO al CENTRO de la pala',
+         'imán (r54): el GANCHO vive en c05/applyIman (física real)'),
+        ('if (ball.vel.z <= (DIMS.imanGanchoVz || 0.2)) continue;',
+         'imán (r54): SOLO bolas que vienen en nuestra dirección de golpeo'),
+        ('if (d > DIMS.imanGanchoRadio || d < 1e-4) continue;',
+         'imán (r54): captura dentro del radio del GANCHO (1,8 m)'),
+        ('if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;',
+         'imán (r54): NUNCA bolas que ya superaron el plano de la cara'),
+        ('_imA.copy(_imU).normalize();',
+         'imán (r54): aceleración DIRECTA hacia el CENTRO VIVO de la pala'),
+        ('IM.dv = (IM.dv || 0) + aMag * h;',
+         'imán (r54): contador real de Δv del gancho (tope 3,2 m/s)'),
+        ('imanGanchoAcel: 26,', 'imán (r54): aceleración del gancho 26 m/s² (c02)'),
         ('ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja',
          'imán: la marca del empuje renace fresca cada subpaso'),
         ('ball.ppImanEmpuje = true;',
          'imán: el campo MARCA el empuje para las flechas (ambos modos)'),
-        ('_buildImanFlechas() {', 'imán: _buildImanFlechas (3 conos cian)'),
-        ('_imanFlechasUpdate() {', 'imán: anclaje por frame de las flechas'),
-        ('try { this._imanFlechasUpdate(); } catch (eFl) { /* */ }',
-         'imán: el updateMega ancla las flechas SIEMPRE'),
-        ('() => { try { this._buildImanFlechas(); } catch (e) { /* */ } },   // v3.6.43 flechas',
-         'imán: las flechas entran en el PRECALIENTE (anti-lag)'),
-        ('if (this._imanFlechas) for (const m of this._imanFlechas) m.visible = false;',
-         'imán: partida nueva recoge las flechas'),
-        ('m.position.copy(b.pos).addScaledVector(_imanTmpD, d * t);',
-         'imán: flechas EN LÍNEA desde la bola hacia el punto dulce'),
+        # · r54 · NEGATIVAS: flechas y campo RETIRADOS (pala limpia + metálica)
+        ('_imanPalaOsc(on) {', 'imán (r54): PALA METÁLICA −80 % (sin flechas ni campo)'),
         # · 3) PORTAL: 3 GOLPES GARANTIZADOS
         ('const entAbrir = this._megaMatriz.find((x) => x.id === \'portal\');\n    if (entAbrir) this._megaGasta(entAbrir);   // −1 carga AL ABRIR (no por golpe)',
          'portal: la ACTIVACIÓN gasta 1 carga AL ABRIR'),
@@ -197,19 +190,19 @@ async def main():
           const libre = (G.paddleHand === 0) ? 1 : 0;
           const rndReal = Math.random;
 
-          // · PRECALIENTE de 14 piezas (la 14.ª: flechas del imán)
+          // · PRECALIENTE de 13 piezas (r54: fuera flechas/campo/estela)
           G.champs.activeId = 'locura';
           G.rules.startMatch('match');
-          out.precaliente14 = !!(G._megaPrewarmQ && G._megaPrewarmQ.length >= 14);
+          out.precaliente13 = !!(G._megaPrewarmQ && G._megaPrewarmQ.length === 13);
           Math.random = () => 0.6;                 // siembra IMÁN (tercer tercio)
           for (let i = 0; i < 20; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }
           }
-          out.flechasCalientes = !!G._imanFlechas &&
-            G._imanFlechas.length === 3 && G._imanFlechas[0].isMesh;
+          // v3.6.46 · PALA METÁLICA: el oscurecido sigue el estado de la
+          // ventana (sin flechas que vigilar — la señal es la pala)
+          out.palaMetalicaMontada = typeof G._imanPalaOsc === 'function';
 
-          // · FLECHAS VIVAS según el estado del campo: bola en el radio y
-          //   viniendo → visibles; fuera del radio → ocultas
+          // · VENTANA del imán viva (el gancho la arma en rally)
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errU0 = String(e); }
           G.rules.state = 'rally'; G.rules.rallyHits = 11;
@@ -224,36 +217,30 @@ async def main():
           ps.pos.set(0, 1.0, 0.9);
           ps.up.set(0, 1, 0); ps.normal.set(0, 0, -1);
           const bI = G.ball;
-          // A) bola DENTRO del radio, cruzada (se aleja del punto dulce)
+          // A) con la ventana viva, el oscurecido SE APLICA a la montura
           bI.pos.set(0.45, 1.0, 0.55);
           bI.vel.set(1.5, 0, 2.0);
-          try { G._imanFlechasUpdate(); } catch (e) { out.errF1 = String(e); }
-          out.flechasEnCampo = G._imanFlechas[0].visible &&
-            G._imanFlechas[2].visible;
-          const entreBolaPala = G._imanFlechas[0].position.distanceTo(bI.pos) <
-            G._imanFlechas[0].position.distanceTo(ps.pos);
-          out.flechasBolaPala = entreBolaPala;
-          // B) bola FUERA del radio (z lejano) → ocultas
-          bI.pos.set(0.0, 1.0, -1.5);
-          try { G._imanFlechasUpdate(); } catch (e) { out.errF2 = String(e); }
-          out.flechasFuera = !G._imanFlechas[0].visible &&
-            !G._imanFlechas[2].visible;
+          try { G.updateMega(1 / 60); } catch (e) { out.errF1 = String(e); }
+          out.oscurecidoConVentana = G._imanOscApplied === true;
+          // B) fin de la ventana → el oscurecido SE RETIRA
+          G._imanT = 0;
+          try { G.updateMega(1 / 60); } catch (e) { out.errF2 = String(e); }
+          out.oscurecidoSinVentana = G._imanOscApplied === false;
 
-          // · FÍSICA DEL RESCATE (c05/applyIman): la física real con pala
-          //   del jugador solo corre EN VR (pads solo se llena presenting),
-          //   así que aquí la blindan las agujas de fuente de arriba; en la
-          //   mecánica verificamos que el campo ARMA la bola en rally.
+          // · GANCHO (c05/applyIman): el campo ARMA la bola en rally
+          G._imanT = 8;                            // re-abrir la ventana (IMAN_DUR)
           bI.pos.set(0.45, 1.0, 0.55);
           bI.vel.set(1.5, 0, 2.0);
           bI.ppEfecto = false; bI.ppPortal = false; bI.ppTransito = false;
           try { G.updateMega(1 / 60); } catch (e) { out.errR1 = String(e); }
           out.rescateMarcaArmada = !!bI.ppIman && typeof bI.ppIman.dv === 'number';
-          // y las flechas laten cuando el campo EMPUJA (la marca de c05)
+          // y el empuje vivo queda MARCADO (lo fue c05/applyIman)
           bI.ppImanEmpuje = true;
-          try { G._imanFlechasUpdate(); } catch (e) { out.errF3 = String(e); }
-          out.flechasLaten = G._imanFlechas[0].visible &&
-            G._imanFlechas[0].material.opacity > 0.95;
+          try { G.updateMega(1 / 60); } catch (e) { out.errF3 = String(e); }
+          out.empujeMarcado = bI.ppImanEmpuje === true;
           bI.ppImanEmpuje = false;
+          G._imanT = 0;
+          try { G.updateMega(1 / 60); } catch (e) { out.errF4 = String(e); }
 
           // · PORTAL ×1: el caso EXACTO del dueño («con uno solo me
           //   desaparece») — ahora abre SIEMPRE 3 golpes aunque la matriz
@@ -345,15 +332,14 @@ async def main():
             if k.startswith('err'):
                 chk(not rt[k], f'sin error en runtime ({k}): {rt[k]}')
         esperados = [
-            ('precaliente14', 'precaliente: cola de 14 piezas (flechas incl.)'),
-            ('flechasCalientes', 'precaliente: las 3 flechas del imán construidas'),
+            ('precaliente13', 'precaliente: cola de 13 piezas (r54: sin flechas/campo/estela)'),
+            ('palaMetalicaMontada', 'imán (r54): _imanPalaOsc montada (pala metálica)'),
             ('sembradoIman', 'mecánica: imán sembrado'),
-            ('campoAbre', 'mecánica: el gatillo abre el campo (8 s)'),
-            ('flechasEnCampo', 'imán: bola en el radio → las 3 flechas VISIBLES'),
-            ('flechasBolaPala', 'imán: las flechas están EN LA DIRECCIÓN bola→pala'),
-            ('flechasFuera', 'imán: bola fuera del radio → flechas OCULTAS'),
-            ('rescateMarcaArmada', 'imán: el campo ARMA la bola en rally (ppIman con dv)'),
-            ('flechasLaten', 'imán: con el empuje vivo las flechas LATEN (opacidad al máximo)'),
+            ('campoAbre', 'mecánica: el gatillo abre la ventana del imán (8 s)'),
+            ('oscurecidoConVentana', 'imán (r54): con la ventana viva la pala SE OSCURECE'),
+            ('oscurecidoSinVentana', 'imán (r54): al morir la ventana el oscurecido SE RETIRA'),
+            ('rescateMarcaArmada', 'imán: la ventana ARMA la bola en rally (ppIman con dv)'),
+            ('empujeMarcado', 'imán (r54): el empuje vivo del gancho queda MARCADO'),
             ('sembradoPortal1', 'mecánica: portal sembrado con UNA carga (sorteo ×1)'),
             ('ventanaCon3Golpes', 'portal: abrir da SIEMPRE los 3 golpes de ventana'),
             ('matrizVaciaTrasAbrir', 'portal: la matriz puede quedar SIN el poder'),

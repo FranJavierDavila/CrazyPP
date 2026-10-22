@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.45-SDK6, fase 47 · La bomba marca el paso y la pared se electrifica; sello actualizado
-# por bump_version.py desde 3.6.44-SDK6)
-7a2007ddb2f649434eac21526a10f4475a69dad94e302fc289ab3001b9d6195b
+# SHA256 del game.html que produjo esta división (3.6.46-SDK6, fase 48 · El efecto es spin real y el imán, un gancho metálico; sello actualizado
+# por bump_version.py desde 3.6.45-SDK6)
+20c4a385cfc2517b8331b46e14553daae8e8c5ee5099336573bdf9f7285f43dd

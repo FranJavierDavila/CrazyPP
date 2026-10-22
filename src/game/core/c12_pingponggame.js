@@ -209,9 +209,8 @@ export class PingPongGame {
     // anillo de bote amplificado (one-shot) — el dueño debe VER el efecto.
     this._efectoHalo = null;
     this._efectoBoteFx = null;
-    // v3.6.44 · estela roja de la bola marcada + campo continuo del imán
-    this._efectoTrail = null;
-    this._imanCampo = null;
+    // v3.6.46 · estela y campo del imán RETIRADOS (ronda 54: el efecto es
+    // el SPIN REAL + pala metálica; nada de rastros ni discos)
     // v3.6.37 · FLECHAS de la matriz como sprites PROPIOS al lado del
     // icono (petición del dueño: las chevrons del icono «no se notan»). 
     this._megaArrows = null;          // [[izq, der] por montura]
@@ -3239,9 +3238,6 @@ export class PingPongGame {
       () => { try { this._buildMegaFx(); } catch (e) { /* */ } },
       () => { try { this._buildEfectoFx(); } catch (e) { /* */ } },
       () => { try { this._buildImanFx(); } catch (e) { /* */ } },
-      () => { try { this._buildImanFlechas(); } catch (e) { /* */ } },   // v3.6.43 flechas
-      () => { try { this._buildImanCampo(); } catch (e) { /* */ } },     // v3.6.44 campo
-      () => { try { this._buildEfectoTrail(); } catch (e) { /* */ } },   // v3.6.44 estela
       () => { try { this._buildPortalFx(); } catch (e) { /* */ } },
       () => { try { this._buildEfectoHalo(); } catch (e) { /* */ } },
       () => { try { this._efectoBotePrewarm(); } catch (e) { /* */ } },
@@ -3525,8 +3521,10 @@ export class PingPongGame {
     this._megaActivaId = 'iman';          // v3.6.40: icono en modo ACTIVO
     this._megaActivaDur = IMAN_DUR;
     this._megaTexDirty = true;
-    try { this._buildImanFx(); } catch (e) { this._imanFx = null; }
-    this._imanFxVis(true);
+    // v3.6.46 · SIN canto, SIN flechas, SIN campo: pala LIMPIA — la señal
+    // del imán es la PALA OSCURECIDA al 80 % (metálica) mientras dure la
+    // ventana (la aplica updateMega vía _imanPalaOsc) y la bola curvándose
+    // al centro por el gancho (c05/applyIman).
     this._imanOnda();
     // power-up sonoro PROPIO (firma «imán»: onda grave que sube, sine)
     try { this.audio.playOsc(180, 420, 0.22, 'sine', 0.14, 0); } catch (e) { /* */ }
@@ -3571,152 +3569,103 @@ export class PingPongGame {
     if (!ent || this._imanAsistidas >= IMAN_ASIST) this._imanFin();
   }
 
-  _buildImanFx() { if (!this._imanFx) this._imanFx = this._fxBuild(0x5aa2ff); }
+  _buildImanFx() { /* v3.6.46: canto del imán RETIRADO (pala limpia + metálica) */ }
 
-  /** v3.6.44 · CAMPO CONTINUO del imán (el dueño: «no se ve efecto ni se
-   *  nota nada sobre la pala para saber que se está aplicando»): DISCO de
-   *  campo cian semitransparente flotando DELANTE del punto dulce + 12
-   *  partículas ORBITANDO — señal SIEMPRE visible mientras el campo corre
-   *  (no solo cuando la bola entra). Construcción en el PRECALIENTE
-   *  (15.ª pieza anti-lag); el anclaje vive en updateMega. */
-  _buildImanCampo() {
-    if (this._imanCampo) return;
-    const g = new THREE.Group();
-    g.visible = false;
-    // disco de campo (dos anillos + relleno tenue) — billboard NO: el disco
-    // mira a la hoja (plano XY de la pala), es EL CAMPO alrededor del dulce
-    const anillo = new THREE.Mesh(
-      new THREE.RingGeometry(0.085, 0.105, 40),
-      new THREE.MeshBasicMaterial({ color: 0x6fbaff, transparent: true,
-        opacity: 0.85, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-        depthWrite: false }));
-    g.add(anillo);
-    const relleno = new THREE.Mesh(
-      new THREE.CircleGeometry(0.085, 32),
-      new THREE.MeshBasicMaterial({ color: 0x2f7fd8, transparent: true,
-        opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-        depthWrite: false }));
-    g.add(relleno);
-    // 12 partículas orbitando (puntitos aditivos) — el «campo vivo»
-    const pgeo = new THREE.BufferGeometry();
-    const ppos = new Float32Array(12 * 3);
-    pgeo.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
-    const orbita = new THREE.Points(pgeo, new THREE.PointsMaterial({
-      color: 0xaee2ff, size: 0.017, transparent: true, opacity: 0.95,
-      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }));
-    g.add(orbita);
-    g.userData = { anillo, relleno, orbita, ppos };
-    g.renderOrder = 6;
-    this.scene.add(g);
-    this._imanCampo = g;
-  }
-
-  /** v3.6.44 · ANCLAJE por frame del CAMPO (updateMega): el disco orbita el
-   *  punto dulce de la pala ACTIVA con latido; las partículas giran — y
-   *  con el empuje real (ppImanEmpuje) giran más rápido y el disco late
-   *  más fuerte. Visible SIEMPRE que el campo corre. */
-  _imanCampoUpdate() {
-    const g = this._imanCampo;
-    if (!g) return;
-    let show = false;
-    const ps = this.controllerPaddles && this.controllerPaddles[this.paddleHand];
-    if (this._imanT > 0 && ps && ps.active) {
-      show = true;
-      _imanTmpC.copy(ps.pos).addScaledVector(ps.up, DIMS.bladeCenterUp);
-      g.position.copy(_imanTmpC);
-      if (ps.normal && ps.normal.lengthSq() > 1e-6) {
-        _imanTmpD.copy(ps.pos).add(ps.normal);       // un punto delante
-        g.lookAt(_imanTmpD);
-      }
-      const tNow = performance.now() * 0.001;
-      const empuje = !!(this.ball && this.ball.ppImanEmpuje);
-      const lat = empuje ? 0.78 + 0.30 * Math.sin(tNow * 11)
-                         : 0.62 + 0.20 * Math.sin(tNow * 4.6);
-      const U = g.userData;
-      U.anillo.material.opacity = 0.85 * lat;
-      U.relleno.material.opacity = 0.22 * lat;
-      U.anillo.scale.setScalar(1 + 0.06 * Math.sin(tNow * 4.6));
-      // partículas: dos anillos de 6 girando en sentidos contrarios
-      const ang = tNow * (empuje ? 3.4 : 1.7);
-      for (let i = 0; i < 12; i++) {
-        const rad = (i < 6 ? 0.055 : 0.082) + 0.006 * Math.sin(tNow * 3 + i);
-        const a = ang * (i < 6 ? 1 : -1) + i * (Math.PI / 6);
-        U.ppos[i * 3] = Math.cos(a) * rad;
-        U.ppos[i * 3 + 1] = Math.sin(a) * rad;
-        U.ppos[i * 3 + 2] = 0.004;
-      }
-      U.orbita.geometry.attributes.position.needsUpdate = true;
-    }
-    if (g.visible !== show) g.visible = show;
-  }
-
-  /** v3.6.43 · FLECHAS DE ATRACCIÓN del imán (petición del dueño: «si la
-   *  bola entra dentro del mismo que aparezcan unas pequeñas flechas desde
-   *  la bola en dirección al centro de nuestra pala indicando que está
-   *  siendo atraída»): 3 conos cian EN LÍNEA entre la bola y el punto
-   *  dulce, orientados hacia la pala, con pulso suave. La construcción
-   *  vive en el PRECALIENTE (regla anti-lag: el gatillo nunca construye).
-   *  v3.6.44 (ronda 52 · «no se nota nada»): conos ×1,8 (0,024 × 0,08 m)
-   *  y opacidad plena — a distancia de juego deben LEERSE al primer golpe
-   *  de vista. */
-  _buildImanFlechas() {
-    if (this._imanFlechas) return;
-    const geo = new THREE.ConeGeometry(0.024, 0.08, 10);
-    const lista = [];
-    for (let i = 0; i < 3; i++) {
-      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-        color: 0x6fbaff, transparent: true, opacity: 0.98,
-        blending: THREE.AdditiveBlending, depthWrite: false }));
-      m.renderOrder = 6;
-      m.visible = false;
-      m.position.set(0, -100, 0);   // fuera de vista hasta su anclaje
-      this.scene.add(m);
-      lista.push(m);
-    }
-    this._imanFlechas = lista;
-  }
-
-  /** v3.6.43 · ANCLAJE por frame de las flechas (lo llama updateMega, SIEMPRE
-   *  que existan: la visibilidad la decide el estado del campo). Mostradas
-   *  cuando la bola está DENTRO del radio y del lado correcto de la cara —
-   *  exactamente lo que el dueño pidió: flechas desde la bola hacia el
-   *  CENTRO de la pala. Si el campo está empujando (ball.ppImanEmpuje, lo
-   *  marca c05/applyIman) laten más fuertes.
-   *  v3.6.44 (ronda 52 · FIX CRÍTICO): esta función EXISTÍA desde la ronda
-   *  51 pero NADIE LA LLAMABA — los conos nacían ocultos a y=−100 para
-   *  siempre (por eso el dueño no veía el imán). Anclada en updateMega.
-   *  Además la condición se relaja: flechas en cuanto la bola entra en el
-   *  radio (la petición literal del dueño), sin exigir velocidad de cruce. */
-  _imanFlechasUpdate() {
-    const fs = this._imanFlechas;
-    if (!fs) return;
-    let show = false;
-    const ps = this.controllerPaddles && this.controllerPaddles[this.paddleHand];
-    const b = this.ball;
-    if (this._imanT > 0 && ps && ps.active && b && b.pos && !b.ppTransito) {
-      const C = _imanTmpC.copy(ps.pos).addScaledVector(ps.up, DIMS.bladeCenterUp);
-      const d = C.distanceTo(b.pos);
-      if (d <= DIMS.imanRadio && d > 1e-4) {
-        _imanTmpD.copy(b.pos).sub(C);
-        if (_imanTmpD.dot(ps.normal) > -2 * DIMS.ballRadius) {
-          show = true;
-          _imanTmpD.copy(C).sub(b.pos).normalize();   // bola → punto dulce
-          const empuje = !!b.ppImanEmpuje;
-          const tNow = performance.now() * 0.008;
-          for (let i = 0; i < fs.length; i++) {
-            const m = fs[i];
-            const t = 0.28 + 0.24 * i;
-            m.position.copy(b.pos).addScaledVector(_imanTmpD, d * t);
-            m.quaternion.setFromUnitVectors(_imanUp, _imanTmpD);
-            m.visible = true;
-            m.scale.setScalar(empuje ? 1.35 + 0.14 * Math.sin(tNow) : 1.15);
-            m.material.opacity = empuje ? 1.0 : 0.8 + 0.18 * Math.sin(tNow + i);
+  /** v3.6.46 · PALA METÁLICA del imán (petición del dueño, ronda 54:
+   *  «quitamos las flechas anteriores y dejamos un diseño limpio de pala
+   *  solo que la pala se oscurece como un 80 % de su valor mientras dura
+   *  el efecto — simula que es metálica, como un imán»): traverse de la
+   *  montura ACTIVA del jugador. Los MATERIALES se aislan de verdad (clon
+   *  PROPIO por material — el GLB comparte materiales con la pala del
+   *  rival y la del demo: sin clon, el oscurecido teñiría a todos), el
+   *  color baja ×0,2 con metalness alto mientras el imán corre y la
+   *  restauración devuelve el color EXACTO. Solo trabaja al CAMBIAR de
+   *  estado; con cambio de mano a mitad de ventana, la lista de monturas
+   *  tocadas garantiza que TODAS vuelven a su color. */
+  _imanPalaOsc(on) {
+    if (on === !!this._imanOscApplied) return;
+    this._imanOscApplied = !!on;
+    const aplicar = (mount, encender) => {
+      // oscurecido −80 % en ESPACIO sRGB por HEX ENTERO: determinista y a
+      // prueba de la gestión de color de three (multiplyScalar opera en
+      // lineal y la lectura visual no sería exactamente ×0,2)
+      const hex20 = (h) => (((Math.round(((h >> 16) & 255) * 0.2) & 255) << 16) |
+        ((Math.round(((h >> 8) & 255) * 0.2) & 255) << 8) |
+        (Math.round((h & 255) * 0.2) & 255)) >>> 0;
+      mount.traverse((o) => {
+        if (!o.isMesh || !o.material) return;
+        const esArray = Array.isArray(o.material);
+        const mats = esArray ? o.material : [o.material];
+        let clamados = false;
+        const propios = mats.map((m) => {
+          if (!m || !m.color) return m;
+          if (!m.userData._imanPropio) {
+            let c = null;
+            try { c = m.clone(); } catch (eCl) { c = null; }
+            if (c) {
+              try { c.userData = {}; } catch (eU) { /* */ }
+              c.userData._imanPropio = true;
+              c.userData._imanBaseC = m.color.getHex();
+              c.userData._imanOscuroC = hex20(c.userData._imanBaseC);
+              c.userData._imanBaseE = m.emissive ? m.emissive.getHex() : 0;
+              c.userData._imanBaseMet = m.metalness;
+              c.userData._imanBaseRgh = m.roughness;
+              clamados = true;
+              return c;
+            }
+            // sin clon posible: compartido (nunca debería pasar)
+            m.userData._imanPropio = true;
+            m.userData._imanBaseC = m.color.getHex();
+            m.userData._imanOscuroC = hex20(m.userData._imanBaseC);
+            m.userData._imanBaseE = m.emissive ? m.emissive.getHex() : 0;
+            m.userData._imanBaseMet = m.metalness;
+            m.userData._imanBaseRgh = m.roughness;
+            m.color = m.color.clone();
+            if (m.emissive) m.emissive = m.emissive.clone();
+            return m;
+          }
+          return m;
+        });
+        if (clamados) {
+          if (esArray) o.material = propios; else o.material = propios[0];
+        }
+        const finales = esArray ? o.material : [o.material];
+        for (const m of finales) {
+          if (!m || !m.color || !m.userData._imanPropio) continue;
+          if (encender) {
+            m.color.setHex(m.userData._imanOscuroC);   // −80 % (hex sRGB exacto)
+            if (m.emissive) m.emissive.setHex(0x000000);
+            m.metalness = 0.9;
+            m.roughness = 0.35;
+          } else {
+            m.color.setHex(m.userData._imanBaseC);
+            if (m.emissive) m.emissive.setHex(m.userData._imanBaseE);
+            m.metalness = m.userData._imanBaseMet;
+            m.roughness = m.userData._imanBaseRgh;
           }
         }
+      });
+    };
+    if (on) {
+      const mount = this.paddleMounts && this.paddleMounts[this.paddleHand];
+      if (!mount) return;
+      if (!this._imanOscMounts) this._imanOscMounts = [];
+      if (this._imanOscMounts.indexOf(mount) < 0) this._imanOscMounts.push(mount);
+      aplicar(mount, true);
+    } else {
+      for (const mnt of (this._imanOscMounts || [])) {
+        try { aplicar(mnt, false); } catch (eR) { /* */ }
       }
+      this._imanOscMounts = [];
     }
-    if (!show) for (const m of fs) if (m.visible) m.visible = false;
   }
+
+  /* v3.6.46 · RETIRADO (ronda 54, petición del dueño): _buildImanCampo,
+   * _imanCampoUpdate, _buildImanFlechas y _imanFlechasUpdate (el disco de
+   * campo, sus partículas y las flechas bola→pala) — «quitamos las flechas
+   * anteriores y dejamos un diseño limpio de pala». La atracción SE VE en
+   * la trayectoria: el gancho (c05/applyIman) curva la bola al centro de
+   * la pala y la pala se oscurece mientras dura el efecto (_imanPalaOsc). */
 
   _imanFxVis(vis) {
     this._imanFxOn = vis;
@@ -4085,28 +4034,11 @@ export class PingPongGame {
     this._efectoHalo = sp;
   }
 
-  /** v3.6.44 · ESTELA ROJA de la bola marcada (el dueño: «en el Super
-   *  efecto tampoco noto nada»): línea de 14 puntos que dibuja la
-   *  TRAYECTORIA de la bola con Magnus exagerado — el rastro rojo curvado
-   *  es la señal inconfundible del poder. Construcción en el PRECALIENTE
-   *  (16.ª pieza anti-lag); el anclaje vive en updateMega. */
-  _buildEfectoTrail() {
-    if (this._efectoTrail) return;
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position',
-      new THREE.BufferAttribute(new Float32Array(14 * 3), 3));
-    geo.setDrawRange(0, 0);
-    const mat = new THREE.LineBasicMaterial({
-      color: 0xff5240, transparent: true, opacity: 0.85,
-      blending: THREE.AdditiveBlending, depthWrite: false });
-    const ln = new THREE.Line(geo, mat);
-    ln.renderOrder = 7;
-    ln.frustumCulled = false;
-    ln.visible = false;
-    ln.userData = { geo, puntos: [] };
-    this.scene.add(ln);
-    this._efectoTrail = ln;
-  }
+  /* v3.6.46 · RETIRADO (ronda 54): _buildEfectoTrail — la estela roja de
+   *  la ronda 52 (el dueño: «la estela está desfasada y no consigo ver el
+   *  efecto»). El efecto AHORA ES REAL: el brush se clasifica por el
+   *  movimiento de la pala (c05) y el bote traduce el spin (top/back/side);
+   *  la señal visual es el halo TINTADO por tipo + el anillo de bote. */
 
   /** v3.6.38 · construcción AISLADA del anillo de bote (la llama el
    *  PRECALIENTE por adelantado: el primer bote marcado ya no crea nada).
@@ -4127,8 +4059,10 @@ export class PingPongGame {
   }
 
   /** v3.6.37 · ANILLO DE BOTE amplificado (SÚPER EFECTO notorio): one-shot
-   *  de 0,55 s en el punto de bote de la bola marcada con giro real. */
-  _efectoBoteFxShow(pos) {
+   *  de 0,55 s en el punto de bote de la bola marcada con giro real.
+   *  v3.6.46 · TINTE POR TIPO: top → naranja · back → cian · side → verde
+   *  (mismo lenguaje del halo); sin tipo → rojo de siempre. */
+  _efectoBoteFxShow(pos, tipo) {
     this._efectoBotePrewarm();
     if (!this._efectoBoteFx) return;
     const m = this._efectoBoteFx;
@@ -4136,6 +4070,10 @@ export class PingPongGame {
     m.position.y = DIMS.tableTopY + 0.004;
     m.userData.boteT = 0.55;
     m.scale.setScalar(0.3);
+    m.material.color.setHex(
+      tipo === 'top' ? 0xff8c2a :
+      tipo === 'back' ? 0x3fd0ff :
+      tipo === 'side' ? 0x8dff5a : 0xff4636);
     m.visible = true;
   }
 
@@ -4559,13 +4497,9 @@ export class PingPongGame {
     this._imanWarn = false;
     this._imanTickN = 0;              // v3.6.43
     this._imanFxVis(false);
-    if (this._imanFlechas) for (const m of this._imanFlechas) m.visible = false;
-    // v3.6.44 · campo continuo y estela también duermen con el reset
-    if (this._imanCampo && this._imanCampo.visible) this._imanCampo.visible = false;
-    if (this._efectoTrail && this._efectoTrail.visible) {
-      this._efectoTrail.visible = false;
-      this._efectoTrail.userData.puntos.length = 0;
-    }
+    // v3.6.46 · pala metálica a limpio (restore de materiales) + palas
+    // visuales sin referencias muertas (flechas/campo/estela RETIRADAS).
+    try { this._imanPalaOsc(false); } catch (eOsc0) { /* */ }
     // v3.6.42 · el portal también duerme (recogida completa): ventana,
     // golpes, antirrebote, TRÁNSITO (si una partida muere con la bola
     // viajando, la bola se libera YA — nunca congelada para siempre),
@@ -4595,6 +4529,8 @@ export class PingPongGame {
     try {
       if (this.ball) {
         if (this.ball.ppEfecto) this.ball.ppEfecto = false;
+        this.ball.ppEfectoTipo = '';          // v3.6.46: sin tipo heredado
+        this.ball.ppEfectoLado = 0;
         if (this.ball.ppPortal) this.ball.ppPortal = false;
         if (this.ball.ppIman) delete this.ball.ppIman;
         this.ball.ppImanTocada = false;
@@ -4814,9 +4750,8 @@ export class PingPongGame {
       this._imanFxVis(false);
       try { if (this.ball) delete this.ball.ppIman; } catch (eI0) { /* */ }
     }
-    // v3.6.43 · las flechas bola→pala del imán (anclaje SIEMPRE: la
-    // visibilidad la decide _imanFlechasUpdate con el estado del campo).
-    try { this._imanFlechasUpdate(); } catch (eFl) { /* */ }
+    // v3.6.43 · las flechas bola→pala del imán RETIRADAS (ronda 54: pala
+    // limpia; la atracción la dibuja la propia trayectoria del gancho).
     // v3.6.42 · SÚPER PORTAL ACTIVO: ventana PROPIA de 8 s (los golpes se
     // consumen en el bloque 5.55 del animate; aquí solo el reloj y el aviso).
     // v3.6.43: el vigilante «sin cargas → portal fuera» se RETIRA — la
@@ -5075,8 +5010,11 @@ export class PingPongGame {
         }
       }
     }
-    // v3.6.37 · HALO ROJO sobre la bola MARCADA (SÚPER EFECTO notorio):
+    // v3.6.37 · HALO sobre la bola MARCADA (SÚPER EFECTO notorio):
     // visible mientras la bola lleva la marca (la IA la limpia al devolver).
+    // v3.6.46 · TINTE POR TIPO de spin (lenguaje de c07: naranja = lift,
+    // azul = cortada): top → naranja · back → cian · side → verde ·
+    // sin tipo → rojo de siempre. La bola marcada ANUNCIA su spin.
     if (on && this.ball && this.ball.ppEfecto) {
       if (!this._efectoHalo) {
         try { this._buildEfectoHalo(); } catch (eH0) { this._efectoHalo = null; }
@@ -5084,64 +5022,25 @@ export class PingPongGame {
       if (this._efectoHalo) {
         // v3.6.38 · el halo ES HIJO de la bola: posición gratis y EXACTA
         // (nadie lo copia — viaja con el transform de la bola). Aquí solo
-        // la visibilidad y el pulso.
+        // la visibilidad, el pulso y el COLOR del spin.
         // v3.6.44 (ronda 52 · el dueño SIGUE sin notarlo): halo 0,142→0,21 m
         // (+48 %) con pulso amplio — la bola marcada se ve INCONFUNDIBLE.
         this._efectoHalo.visible = true;
         this._efectoHalo.scale.setScalar(
           0.21 + 0.05 * Math.sin(performance.now() * 0.009));
+        const tpH = this.ball.ppEfectoTipo || '';
+        this._efectoHalo.material.color.setHex(
+          tpH === 'top' ? 0xff8c2a :
+          tpH === 'back' ? 0x3fd0ff :
+          tpH === 'side' ? 0x8dff5a : 0xff5240);
       }
     } else if (this._efectoHalo && this._efectoHalo.visible) {
       this._efectoHalo.visible = false;
     }
-    // v3.6.44 (ronda 52 · el dueño: «en el Super efecto tampoco noto nada»):
-    // ESTELA ROJA de la bola marcada — línea de 14 posiciones históricas que
-    // dibuja la TRAYECTORIA curvada del Magnus: la bola deja un rastro rojo
-    // visible mientras dura el poder (construcción en el precaliente).
-    if (on && this.ball && this.ball.ppEfecto &&
-        this.rules && this.rules.state === 'rally') {
-      if (!this._efectoTrail) {
-        try { this._buildEfectoTrail(); } catch (eTr0) { this._efectoTrail = null; }
-      }
-      if (this._efectoTrail) {
-        const UT = this._efectoTrail.userData;
-        UT.puntos.push(this.ball.pos.clone());
-        while (UT.puntos.length > 14) UT.puntos.shift();
-        const arr = UT.geo.attributes.position.array;
-        for (let i = 0; i < 14; i++) {
-          const p = UT.puntos[Math.min(i, UT.puntos.length - 1)] || this.ball.pos;
-          arr[i * 3] = p.x; arr[i * 3 + 1] = p.y; arr[i * 3 + 2] = p.z;
-        }
-        UT.geo.attributes.position.needsUpdate = true;
-        UT.geo.setDrawRange(0, UT.puntos.length);
-        this._efectoTrail.visible = true;
-        this._efectoTrail.material.opacity = 0.85;
-      }
-    } else if (this._efectoTrail && this._efectoTrail.visible) {
-      // rastro que se desvanece: vaciado suave (queda sin puntos y oculto)
-      this._efectoTrail.userData.puntos.length = 0;
-      this._efectoTrail.visible = false;
-    }
-    // v3.6.44 · CAMPO + FLECHAS del IMÁN anclados AQUÍ (el corazón de la
-    // ronda 52: la ronda 51 construyó las flechas pero NADIE las llamaba —
-    // por eso el imán era invisible). Ambos viven SIEMPRE que el campo
-    // corre: disco orbitando el punto dulce + flechas cuando la bola entra.
-    if (on && this._imanT > 0) {
-      if (!this._imanCampo) {
-        try { this._buildImanCampo(); } catch (eIC0) { this._imanCampo = null; }
-      }
-      try { this._imanCampoUpdate(); } catch (eIC1) { /* */ }
-    } else if (this._imanCampo && this._imanCampo.visible) {
-      this._imanCampo.visible = false;
-    }
-    if (on && this._imanT > 0) {
-      if (!this._imanFlechas) {
-        try { this._buildImanFlechas(); } catch (eIF0) { this._imanFlechas = null; }
-      }
-      try { this._imanFlechasUpdate(); } catch (eIF1) { /* */ }
-    } else if (this._imanFlechas) {
-      for (const mF of this._imanFlechas) if (mF.visible) mF.visible = false;
-    }
+    // v3.6.46 · PALA METÁLICA del imán: oscurecido −80 % SOLO mientras la
+    // ventana corre (estado — el método no-op si no cambia); al expirar la
+    // pala vuelve a su color exacto (materiales aislados de rival/demo).
+    try { this._imanPalaOsc(!!(on && this._imanT > 0)); } catch (eOsc) { /* */ }
     // v3.6.42 · TRÁNSITO del portal (EXPLÍCITO, petición del dueño): la
     // bola se HUNDE en el portal de entrada (0,16 s), viaja OCULTA (el
     // reloj corre en updateMega) y SALE por el centro del portal de
@@ -7381,6 +7280,10 @@ export class PingPongGame {
   clampPaddlePose(pos, q, fromGrip) {
     const R = DIMS.bladeRadius, halfT = 0.004, hR = 0.014;
     const D = 0.1303;                                  // mango -> centro de hoja
+    // v3.6.46 · media LONGITUD del mango por debajo del ancla/agarre (la
+    // estimación antigua solo sumaba el RADIO del mango: el palo se metía
+    // visualmente en la mesa — informe del dueño, ronda 54)
+    const hHalf = 0.05;
     pcA.set(0, fromGrip ? 0 : 1, fromGrip ? -1 : 0).applyQuaternion(q);  // eje hoja
     pcN.set(0, fromGrip ? 1 : 0, fromGrip ? 0 : 1).applyQuaternion(q);   // normal cara
     pcC.copy(pos);
@@ -7390,25 +7293,35 @@ export class PingPongGame {
       pcC.add(pcT).addScaledVector(pcA, D);
     }
     // (fromGrip=false: pos ya ES el centro de la hoja)
+    // punto de AGARRE en el mundo (para la puerta de la mesa y el mango):
+    // fromGrip=true → pos ya es el agarre; fromGrip=false → centro − eje·D
+    const gripX = fromGrip ? pos.x : pcC.x - D * pcA.x;
+    const gripY = fromGrip ? pos.y : pcC.y - D * pcA.y;
+    const gripZ = fromGrip ? pos.z : pcC.z - D * pcA.z;
 
     // semianchura del disco proyectada en cada eje (espesor incluido)
     const spanX = R * Math.sqrt(Math.max(0, 1 - pcN.x * pcN.x)) + halfT * Math.abs(pcN.x);
     const spanY = R * Math.sqrt(Math.max(0, 1 - pcN.y * pcN.y)) + halfT * Math.abs(pcN.y);
     const spanZ = R * Math.sqrt(Math.max(0, 1 - pcN.z * pcN.z)) + halfT * Math.abs(pcN.z);
 
-    // punto más bajo de la pala (hoja + mango)
+    // punto más bajo de la pala (hoja + mango COMPLETO hasta su punta)
     const handleDown = hR * Math.sqrt(Math.max(0, 1 - pcA.y * pcA.y));
     let low = pcC.y - spanY;
     low = fromGrip
-      ? Math.min(low, Math.min(pos.y, pcC.y) - handleDown)
-      : Math.min(low, pcC.y - D * Math.max(0, pcA.y) - handleDown);
+      ? Math.min(low, Math.min(pos.y, pcC.y) - handleDown
+          - hHalf * Math.max(0, pcA.y))
+      : Math.min(low, gripY - hHalf * Math.max(0, pcA.y) - handleDown);
 
     // 1) losa de la mesa: solo si la pala la SOLAPA (con la mano bajo la
-    //    mesa se mueve libre, sin saltos); resuelve por mínima penetración
+    //    mesa se mueve libre, sin saltos); resuelve por mínima penetración.
+    //    v3.6.46: la puerta incluye TAMBIÉN al agarre — una hoja fuera del
+    //    borde con el mango colgando sobre la losa ya cuenta.
     const skin = 0.004;
     const slabBottom = DIMS.tableTopY - DIMS.tableThickness;
-    const overTable = Math.abs(pcC.x) < DIMS.tableHalfWidth + R * 0.85 &&
-      Math.abs(pcC.z - DIMS.tableCenterZ) < DIMS.tableHalfLength + R * 0.85;
+    const inSlabXZ = (x, z) =>
+      Math.abs(x) < DIMS.tableHalfWidth + R * 0.85 &&
+      Math.abs(z - DIMS.tableCenterZ) < DIMS.tableHalfLength + R * 0.85;
+    const overTable = inSlabXZ(pcC.x, pcC.z) || inSlabXZ(gripX, gripZ);
     if (overTable && low < DIMS.tableTopY && pcC.y + spanY > slabBottom) {
       const up = (DIMS.tableTopY + skin) - low;
       const down = (pcC.y + spanY + skin) - slabBottom;
@@ -7619,8 +7532,15 @@ export class PingPongGame {
           // significativo) pega en la mesa: el dueño DEBE ver el efecto.
           if (this.ball && this.ball.ppEfecto &&
               this.ball.spin && this.ball.spin.length() >= EFECTO_SPIN_MIN) {
-            this._efectoBoteFxShow(pMar);
-            try { this.audio.playOsc(900, 260, 0.16, 'sawtooth', 0.2, 0); } catch (eB2) { /* */ }
+            // v3.6.46 · el anillo del bote SE TIÑE por tipo (naranja/cian/
+            // verde/rojo — mismo lenguaje del halo) y el barrido sonoro
+            // firma cada spin: top caída 900→260 · back flotada 560→180 ·
+            // side wobble 740→420 · neutro 900→260.
+            const tpB = this.ball.ppEfectoTipo || '';
+            this._efectoBoteFxShow(pMar, tpB);
+            const fr = tpB === 'back' ? [560, 180]
+              : tpB === 'side' ? [740, 420] : [900, 260];
+            try { this.audio.playOsc(fr[0], fr[1], 0.16, 'sawtooth', 0.2, 0); } catch (eB2) { /* */ }
           }
           if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.18);
           break;

@@ -729,6 +729,8 @@ export class OpponentAI {
     const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
     ball.spin.copy(shotSpin);
     ball.ppEfecto = false;   // v3.6.36: la devolución de la IA LIMPIA la marca
+    ball.ppEfectoTipo = '';  // v3.6.46: fuera también el tipo de spin
+    ball.ppEfectoLado = 0;
     ball.ppPortal = false;   // v3.6.41: la devolución de la IA LIMPIA el portal
     ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
     if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
@@ -781,6 +783,8 @@ export class OpponentAI {
     _miV.addScaledVector(ball.vel, 0.05);   // hereda un 5% del impulso entrante
     ball.spin.set((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 10, 0);
     ball.ppEfecto = false;   // v3.6.36: el golpe torpe de la IA LIMPIA la marca
+    ball.ppEfectoTipo = '';  // v3.6.46: fuera también el tipo de spin
+    ball.ppEfectoLado = 0;
     ball.ppPortal = false;   // v3.6.41: el golpe torpe LIMPIA el portal
     ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
     if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero

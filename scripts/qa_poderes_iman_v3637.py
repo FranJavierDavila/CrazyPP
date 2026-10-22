@@ -88,16 +88,26 @@ async def main():
         ('imanDvMax: 0.80,', 'física: Δv lateral máximo por aproximación 0,80 m/s (v3.6.44)'),
         ('imanRescateAcel: 7.5,', 'física: RESCATE con aceleración 7,5 m/s² (v3.6.44)'),
         ('imanRescateDv: 1.05,', 'física: RESCATE con tope Δv 1,05 m/s (v3.6.44)'),
+        ('imanGanchoRadio: 1.8,', 'física: radio de captura del GANCHO 1,8 m (r54)'),
+        ('imanGanchoAcel: 26,', 'física: GANCHO con aceleración 26 m/s² (r54)'),
+        ('imanGanchoDv: 3.2,', 'física: GANCHO con tope Δv 3,2 m/s por aproximación (r54)'),
+        ('imanGanchoVz: 0.2,', 'física: GANCHO solo con bolas viniendo (v.z > 0,2) (r54)'),
+        ('efectoTipoUmbral: 0.55,', 'efecto: umbral de barrido para clasificar el spin (r54)'),
+        ('efectoBoteTopAvance: 1.55,', 'efecto TOPSPIN: el bote acelera hacia delante ×1,55 (r54)'),
+        ('efectoBoteBackH: 0.16,', 'efecto BACKSPIN: el bote casi PARA la bola ×0,16 (r54)'),
+        ('efectoBoteSideKick: 0.42,', 'efecto SIDESPIN: patada lateral 0,42 × |vz| (r54)'),
+        ('_imanPalaOsc(on) {', 'imán: pala METÁLICA −80 % mientras dura el efecto (r54)'),
         ('imanTPred: 0.15,', 'física: horizonte de predicción 0,15 s (dueño)'),
         ('efectoRivalErrMul: 2.0,', 'efecto notorio: error del rival ×2'),
         ('efectoRivalVel: 0.85,', 'efecto notorio: piernas del rival ×0,85'),
         ('if (ball.ppIman) applyIman(ball, paddles, h);',
          'física: el imán se integra POR SUBPASO (independiente del framerate)'),
         ('function applyIman(ball, paddles, h) {', 'física: empuje al punto dulce (applyIman)'),
-        ('if (closing <= 0.4) {', 'física: el filtro de closing deriva al RESCATE (r51)'),
+        ('if (ball.vel.z <= (DIMS.imanGanchoVz || 0.2)) continue;',
+         'física: SOLO bolas que VIENEN hacia nosotros — dirección de golpeo (r54)'),
         ('if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;',
          'física: NUNCA recupera bolas que ya superaron el plano de la cara'),
-        ('IM.dv += aMag * h;', 'física: contador real de Δv lateral'),
+        ('IM.dv = (IM.dv || 0) + aMag * h;', 'física: contador real de Δv del GANCHO'),
         ('ball.ppImanTocada = true;', 'física: la aproximación asistida queda MARCADA'),
         ('const eMulIA = (ball.ppEfecto ? (DIMS.efectoRivalErrMul || 1) : 1) *',
          'IA: error de puntería amplificado con bola marcada'),
@@ -121,7 +131,7 @@ async def main():
         ('blending: THREE.AdditiveBlending', 'halo: mezcla aditiva (visible)'),
         ('this.ballMesh.add(sp);',
          'halo: HIJO del ballMesh (v3.6.38 — viaja con la bola, cero desfase)'),
-        ('_efectoBoteFxShow(pMar);', 'bote amplificado: anillo rojo en la mesa (v3.6.44: clavado a la bola visual)'),
+        ('_efectoBoteFxShow(pMar, tpB);', 'bote amplificado: anillo en la mesa TINTADO por tipo (r54) · clavado a la bola visual'),
         ('RingGeometry(0.09, 0.115, 40)', 'bote amplificado: anillo one-shot (v3.6.44: 0,09-0,115 m)'),
         ('golpea con GIRO (arrastra la pala al golpear)',
          'i18n ES: el mensaje del efecto enseña A APLICARLO'),
@@ -141,7 +151,7 @@ async def main():
         ('pp_pala_mejorada_v1', 'conmutador persistente «Pala Mejorada»'),
         ('_megaNormReset()', 'recogida completa con dispose'),
         ('this.updateMega(dt);', 'la norma corre en el bucle animate'),
-        ('V3.6.45-SDK6', 'sello de versión servido'),
+        ('V3.6.46-SDK6', 'sello de versión servido'),
     ]:
         chk(needle in game, label)
     # REGRESIONES
@@ -367,12 +377,9 @@ async def main():
           let im = null;
           try { im = G.megaTrigger(libre); } catch (e) { out.errIm = String(e); }
           out.imanAbre = im === true && G._imanT > 7.9 && G._imanAsistidas === 0;
-          out.imanFx = Array.isArray(G._imanFx) &&
-            G._imanFx.filter((f) => f).length === 2;
-          const fxI = G._imanFx && G._imanFx.find((f) => f);
-          out.cantoAzul = !!(fxI && fxI.userData.rim && fxI.userData.rimMats &&
-            fxI.userData.rimMats[0] &&
-            fxI.userData.rimMats[0].color.getHex() === 0x5aa2ff);
+          // v3.6.46 · canto y flechas RETIRADOS (pala limpia) + PALA METÁLICA
+          out.imanFxRetirado = !G._imanFx;
+          out.palaMetalicaViva = typeof G._imanPalaOsc === 'function';
           out.msgIman = (G.rules.message || '').indexOf('¡SÚPER IMÁN!') === 0;
           out.imanSelActiva = G._megaSelActiva() === true;   // icono cede
           paso();                                      // el bucle arma la bola
@@ -396,14 +403,19 @@ async def main():
               vel: new (Object.getPrototypeOf(C).constructor)(vx, 0, -4),
               spin: new (Object.getPrototypeOf(C).constructor)(),
               dragMul: 1 });
-            // A) con imán: empuje lateral HACIA el punto dulce
+            // A) con imán: el GANCHO (r54) arrastra la bola HACIA el centro
+            //    de la pala — «redirige automáticamente al centro de nuestra
+            //    pala… siempre que venga en nuestra dirección de golpeo»:
+            //    bola en el lado de la red ACERCÁNDOSE (vel.z > 0,2)
             const b1 = mkBall(0);
+            b1.pos.copy(C).add(new (Object.getPrototypeOf(C).constructor)(0.2, 0, -0.5));
+            b1.vel.set(0, 0, 2.5);                     // viniendo hacia nosotros
             b1.ppIman = { dv: 0 };
-            for (let i = 0; i < 40; i++) H.stepPhysics(1 / 60, b1, [pad], []);
+            for (let i = 0; i < 30; i++) H.stepPhysics(1 / 60, b1, [pad], []);
             out.imanEmpuja = b1.vel.x < -0.01 && b1.ppImanTocada === true;
-            // B) tope de Δv por aproximación (0,35 m/s del dueño)
-            out.imanTopeDv = b1.ppIman.dv <= H.DIMS.imanDvMax + 0.001 &&
-              Math.abs(b1.vel.x) <= H.DIMS.imanDvMax + 0.001;
+            // B) tope de Δv por aproximación (GANCHO 3,2 m/s, r54)
+            out.imanTopeDv = b1.ppIman.dv <= H.DIMS.imanGanchoDv + 0.001 &&
+              Math.abs(b1.vel.x) <= H.DIMS.imanGanchoDv + 0.001;
             // C) SIN el poder: física idéntica (golden) — vel.x === 0
             const b2 = mkBall(0);
             for (let i = 0; i < 10; i++) H.stepPhysics(1 / 60, b2, [pad], []);
@@ -582,14 +594,14 @@ async def main():
             ('recarga', 'efecto ACTIVO + gatillo: RECARGA la ventana'),
             ('imanEntra', 'el IMÁN ENTRA en la matriz y se selecciona'),
             ('imanAbre', 'gatillo con IMÁN: campo de 8 s (sin consumo)'),
-            ('imanFx', 'FX azul construido para las DOS monturas'),
-            ('cantoAzul', 'el canto del imán es AZUL (0x5aa2ff), familia del icono'),
+            ('imanFxRetirado', 'imán (r54): canto y flechas RETIRADOS — diseño limpio de pala'),
+            ('palaMetalicaViva', 'imán (r54): _imanPalaOsc viva — pala metálica −80 %'),
             ('msgIman', 'megáfono: ¡SÚPER IMÁN! · la bola vuela al punto dulce…'),
             ('imanSelActiva', 'campo activo: el icono cede (selActiva)'),
             ('bolaArma', 'el campo viaja EN LA BOLA (ball.ppIman) en rally'),
             ('bolaFueraEnSaque', 'en saque la bola NO lleva campo'),
-            ('imanEmpuja', 'física: el imán empuja la bola HACIA el punto dulce'),
-            ('imanTopeDv', 'física: Δv lateral respeta el tope 0,60 m/s (v3.6.43)'),
+            ('imanEmpuja', 'física (r54): el GANCHO arrastra la bola hacia el CENTRO de la pala'),
+            ('imanTopeDv', 'física (r54): Δv del gancho respeta el tope 3,2 m/s'),
             ('sinPoderIntacto', 'física: SIN el poder, vel.x === 0 (golden intacto)'),
             ('pasadaNoRecupera', 'física: la bola que YA pasó el plano no se recupera'),
             ('alejandoseNada', 'física: bola que se va LATERAL sin venir a nuestra mitad: sin empuje'),

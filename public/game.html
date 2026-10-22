@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.45-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.46-SDK6</span>
     </div>
   </main>
 
@@ -2036,7 +2036,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.45-SDK6';
+  const VERSION = '3.6.46-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -2783,7 +2783,23 @@ const DIMS = {
   // bote ×2,4 (SIEMPRE solo en la bola marcada; sin poder: física igual).
   efectoSpinTope: 3,        // tope de rotación = 3 × spinMax (antes ×2)
   efectoMagnusMul: 2.2,     // Magnus ×2,2 en vuelo (antes ×1,5: curva VISIBLE)
-  efectoBoteMul: 2.4,       // acople del bote ×2,4 (antes ×1,8)
+  efectoBoteMul: 2.4,       // acople del bote ×2,4 (antes ×1,8) — SOLO bolas
+                            // marcadas SIN tipo (golpe neutro); con tipo claro
+                            // el bote es físico puro + regla tipificada (abajo)
+  // v3.6.46 (ronda 54 · el dueño redefine el SÚPER EFECTO: la estela se
+  // retira y el efecto pasa a ser REAL según el movimiento de la pala al
+  // golpear): el brush se CLASIFICA en tres spins y el BOTE traduce cada
+  // uno con su firma exacta — topspin sale muy acelerado hacia delante y
+  // bajo, backspin casi se PARA, sidespin exagera el desvío hacia el lado
+  // del barrido. Constantes calibrables (una fuente de verdad por regla).
+  efectoTipoUmbral: 0.55,    // barrido mínimo (m/s) para clasificar el tipo
+  efectoBoteTopAvance: 1.55, // TOPSPIN: horizontal tras el bote ×1,55 (+0,4 m/s de piso)
+  efectoBoteTopVy: 0.62,     // TOPSPIN: bote BAJO (vy tras el bote ×0,62)
+  efectoBoteBackH: 0.16,     // BACKSPIN: horizontal ×0,16 (prácticamente se para)
+  efectoBoteBackVy: 0.32,    // BACKSPIN: vy ×0,32 (saltito mínimo)
+  efectoBoteBackFx: 0.35,    // BACKSPIN: también frena el componente lateral (x ×0,35)
+  efectoBoteSideKick: 0.42,  // SIDESPIN: patada lateral = 0,42 × |vz| (piso 0,45 m/s)
+  efectoBoteSideMax: 1.5,    // SIDESPIN: tope de la patada lateral (m/s)
   // v3.6.37 · SÚPER EFECTO NOTORIO (petición del dueño): el rival SUFRE la
   // bola marcada — «dificultar en un %» su éxito de impacto. Dos palancas
   // (solo con la bola marcada viniendo; sin poder: 1 = IA idéntica):
@@ -2815,8 +2831,21 @@ const DIMS = {
   imanAcelMax: 6.5,         // aceleración lateral máxima (m/s²; antes 5)
   imanDvMax: 0.80,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
   imanTPred: 0.15,          // horizonte máximo de predicción del impacto (s)
-  imanRescateAcel: 7.5,     // RESCATE: aceleración hacia la pala (m/s²)
-  imanRescateDv: 1.05,      // RESCATE: tope de Δv hacia la pala por aproximación (m/s)
+  imanRescateAcel: 7.5,     // (heredado r52 — applyIman ya no lo usa; se
+  imanRescateDv: 1.05,      //  conserva para rollback instantáneo)
+  // v3.6.46 (ronda 54 · el dueño redefine el SÚPER IMÁN: «la bola se
+  // redirige automáticamente al CENTRO de nuestra pala en su movimiento
+  // como atraída por la pala para que podamos dar un buen golpe, ojo
+  // siempre que venga en nuestra dirección de golpeo»): fuera el campo
+  // suave y el rescate — GANCHO DIRECTO: cualquier bola que venga hacia
+  // nosotros dentro del radio del gancho es arrastrada al punto dulce
+  // (persigue el CENTRO VIVO de la pala) con aceleración plena y tope de
+  // Δv por aproximación holgado. Visual: pala oscurecida 80 % (metálica).
+  imanGanchoRadio: 1.8,     // radio de captura del gancho (m)
+  imanGanchoAcel: 26,       // aceleración hacia el centro de la pala (m/s²)
+  imanGanchoDv: 3.2,        // tope de Δv del gancho POR APROXIMACIÓN (m/s)
+  imanGanchoVz: 0.2,        // velocidad mínima hacia nosotros (m/s) — «que venga
+                            //  en nuestra dirección de golpeo»
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto
@@ -5226,6 +5255,32 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
     if (eMul > 1) ball.ppEfecto = true;   // v3.6.36: bola marcada
   }
 
+  // v3.6.46 · CLASIFICACIÓN del SPIN (ronda 54, spec del dueño): con el
+  // Súper Efecto activo, el movimiento REAL de la pala al golpear decide
+  // el tipo — barrido de abajo hacia arriba = TOPSPIN (liftado), de arriba
+  // hacia abajo = BACKSPIN (cortado), lateral = SIDESPIN (lado del barrido,
+  // +x = derecha del jugador). Golpe SIN barrido claro (recto o por debajo
+  // del umbral) no lleva tipo: conserva el comportamiento amplificado de
+  // siempre (bote acoplado ×2,4). El tipo viaja en la bola y lo traduce
+  // el BOTE en c05/collideTable; la marca la limpia la IA al devolver.
+  if (eMul > 1) {
+    const pvx = pad.vel.x, pvy = pad.vel.y;
+    const avx = Math.abs(pvx), avy = Math.abs(pvy);
+    if (Math.max(avx, avy) <= (DIMS.efectoTipoUmbral || 0.55)) {
+      ball.ppEfectoTipo = '';
+      ball.ppEfectoLado = 0;
+    } else if (avy >= avx) {
+      ball.ppEfectoTipo = pvy > 0 ? 'top' : 'back';
+      ball.ppEfectoLado = 0;
+    } else {
+      ball.ppEfectoTipo = 'side';
+      ball.ppEfectoLado = pvx > 0 ? 1 : -1;
+    }
+  } else {
+    ball.ppEfectoTipo = '';
+    ball.ppEfectoLado = 0;
+  }
+
   // Colocar la bola sobre la cara de contacto
   const front = DIMS.ballRadius + 0.002;
   ball.pos
@@ -5263,7 +5318,12 @@ function collideTable(ball, prevY, events) {
     // v3.6.36 · SÚPER EFECTO: la bola MARCADA amplifica el efecto del
     // bote (topspin → más agresivo hacia delante · lateral → más desvío
     // · backspin → más frenada), con el tope de Coulomb como seguro.
-    const eM = ball.ppEfecto ? (DIMS.efectoBoteMul || 1.8) : 1;
+    // v3.6.46 · con TIPO claro (top/back/side) el bote es FÍSICO PURO
+    // (sin el acople extra ×2,4): la firma exacta la pone la regla
+    // tipificada de abajo — determinista y calibrada en c02. Las bolas
+    // marcadas SIN tipo conservan el acople de siempre (r51/r52).
+    const eM = (ball.ppEfecto && !ball.ppEfectoTipo)
+      ? (DIMS.efectoBoteMul || 1.8) : 1;
     if (DIMS.physicsRealism >= 0.5) {
       // v3.0.5-FIS1 · P2: bote físico con deslizamiento (slip-coupled)
       bounceOnTable(vel, spin, impact, eM);
@@ -5272,6 +5332,34 @@ function collideTable(ball, prevY, events) {
       vel.x *= DIMS.tableFriction;
       vel.z *= DIMS.tableFriction;
       applyBounceSpin(vel, spin, eM);
+    }
+    // v3.6.46 · SPIN TIPIFICADO — el bote traduce el giro (spec literal
+    // del dueño, ronda 54):
+    //   TOPSPIN  → «al botar la pelota sale muy acelerada hacia delante
+    //              del bote» (y baja: bote tenso de ataque);
+    //   BACKSPIN → «la pelota prácticamente se queda parada con muy poca
+    //              velocidad» (bola muerta en la mesa del rival);
+    //   SIDESPIN → «dependiendo del lado exagera el bote en la dirección
+    //              del efecto» (patada lateral proporcional al vuelo).
+    if (ball.ppEfectoTipo === 'top') {
+      const vz0 = vel.z;
+      if (Math.abs(vz0) > 1e-3) {
+        const fwd = vz0 > 0 ? 1 : -1;
+        vel.z = fwd * Math.min(
+          Math.abs(vz0) * (DIMS.efectoBoteTopAvance || 1.55) + 0.4,
+          DIMS.maxBallSpeed);
+        vel.y *= (DIMS.efectoBoteTopVy || 0.62);
+      }
+    } else if (ball.ppEfectoTipo === 'back') {
+      vel.z *= (DIMS.efectoBoteBackH || 0.16);
+      vel.x *= (DIMS.efectoBoteBackFx || 0.35);
+      vel.y *= (DIMS.efectoBoteBackVy || 0.32);
+    } else if (ball.ppEfectoTipo === 'side') {
+      const lado = ball.ppEfectoLado || 1;
+      const kick = THREE.MathUtils.clamp(
+        Math.abs(vel.z) * (DIMS.efectoBoteSideKick || 0.42),
+        0.45, DIMS.efectoBoteSideMax || 1.5);
+      vel.x += lado * kick;
     }
     events.push({ type: 'table', side: pos.z > C ? 'player' : 'ai', speed: impact, pos: pos.clone() });
     return;
@@ -5382,31 +5470,27 @@ function collideWorld(ball, events) {
   }
 }
 
-/* ---------- v3.6.37 · SÚPER IMÁN (3.er poder; spec completa del dueño) ----------
- * Atracción SUAVE de la bola hacia el punto dulce de la pala del jugador:
- * ayuda a CENTRAR el impacto sin dirigir el golpe — la pala sigue mandada
- * por el movimiento real de la mano/mando, la salida la calcula el modelo
- * de contacto de siempre (restitución, fricción, spin) y no se teleporta
- * ni la bola ni la pala. Principios del dueño implementados:
- *   · solo bolas que vuelan HACIA la pala (closing > 0,4 m/s);
+/* ---------- v3.6.46 · SÚPER IMÁN — GANCHO al CENTRO de la pala ----------
+ * Redefinición del dueño (ronda 54, spec literal): «cuando lo activamos la
+ * bola se redirige automáticamente al CENTRO de nuestra pala en su
+ * movimiento como atraída por la pala para que podamos dar un buen golpe,
+ * ojo siempre que venga en nuestra dirección de golpeo». Muere el campo
+ * suave de r51-52 (asistencia lateral + rescate): el GANCHO arrastra la
+ * bola DIRECTO al punto dulce:
+ *   · SOLO bolas que vienen hacia nosotros (v.z > imanGanchoVz, 0,2 m/s)
+ *     — «que venga en nuestra dirección de golpeo»;
+ *   · captura dentro de imanGanchoRadio (1,8 m) del punto dulce;
+ *   · aceleración plena hacia el CENTRO VIVO de la pala (el punto dulce
+ *     se recalcula por SUBPASO: el gancho persigue la pala mientras la
+ *     movemos — «en su movimiento»);
+ *   · tope de Δv POR APROXIMACIÓN imanGanchoDv (3,2 m/s): fuerza fina,
+ *     nunca teleporta — la salida la calcula el contacto de siempre;
  *   · nunca bolas que ya superaron el plano de la cara;
- *   · predicción lineal del impacto con horizonte imanTPred (0,15 s);
- *   · campo: plena asistencia dentro de imanPlena (0,20 m), lineal hasta
- *     imanRadio (0,75 m), nada fuera;
- *   · aceleración lateral ≤ imanAcelMax (5 m/s²) y Δv lateral acumulado
- *     POR APROXIMACIÓN ≤ imanDvMax (0,60 m/s) — topes del dueño;
- *   · v3.6.43 RESCATE (petición del dueño: «una bola que se nos escapa la
- *     atraigamos hacia la pala»): si la bola está DENTRO del radio, viene
- *     hacia nuestra mitad (v.z > 0,3) pero NO se acerca al punto dulce
- *     (closing ≤ 0,4), el campo la tira DIRECTO hacia él con aceleración
- *     imanRescateAcel (6 m/s²) y tope propio imanRescateDv (0,85 m/s por
- *     aproximación) — el contador de rescate es INDEPENDIENTE del de la
- *     asistencia clásica (IM.dvRes) para no robar empuje al otro modo.
  *   · integrado por SUBPASO (h fijo): estable ante fluctuaciones de FPS.
  * La marca de «aproximación asistida» (ball.ppImanTocada) la consume el
- * núcleo cuando esa bola golpea la pala (1 carga, máx. 3 por activación).
- * La marca de «empuje vivo ESTE frame» (ball.ppImanEmpuje) la pintan las
- * flechas bola→pala del núcleo (el dueño DEBE ver la atracción). */
+ * núcleo cuando esa bola golpea la pala (1 carga, máx. 3 por activación);
+ * ball.ppImanEmpuje queda como marca de «empuje vivo este frame».
+ * La física de salida NO cambia: mismo modelo de contacto, mismo golden. */
 const _imC = new THREE.Vector3();
 const _imP = new THREE.Vector3();
 const _imU = new THREE.Vector3();
@@ -5415,62 +5499,33 @@ const _imA = new THREE.Vector3();
 function applyIman(ball, paddles, h) {
   const IM = ball.ppIman;
   ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja
-  if (IM.dv >= DIMS.imanDvMax &&
-      (IM.dvRes || 0) >= DIMS.imanRescateDv) return;   // ambos topes agotados
+  if ((IM.dv || 0) >= DIMS.imanGanchoDv) return;   // tope por aproximación agotado
   for (const pad of paddles) {
-    if (!pad.active || pad.serveFlight) continue;
-    // punto dulce = centro de la hoja en mundo (C = pos + up·bladeCenterUp)
+    // v3.6.46: SOLO la pala del jugador — el rival nunca gana asistencia
+    if (!pad.active || pad.serveFlight || pad.who !== 'player') continue;
+    // punto dulce = CENTRO VIVO de la hoja en mundo (se recalcula por
+    // subpaso: el gancho persigue la pala mientras la movemos)
     _imC.copy(pad.pos).addScaledVector(pad.up, DIMS.bladeCenterUp);
     _imU.copy(_imC).sub(ball.pos);
     const d = _imU.length();
-    if (d > DIMS.imanRadio || d < 1e-4) continue;     // fuera del campo
+    if (d > DIMS.imanGanchoRadio || d < 1e-4) continue;   // fuera del gancho
+    // «siempre que venga en nuestra dirección de golpeo»: solo bolas que
+    // viajan hacia nosotros (z positivo = hacia el lado del jugador)
+    if (ball.vel.z <= (DIMS.imanGanchoVz || 0.2)) continue;
     // nunca bolas que ya superaron el plano de la cara
     _imD.copy(ball.pos).sub(_imC);
     if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;
-    // solo bolas que se ACERCAN a la pala
-    const closing = ball.vel.dot(_imU) / d;
-    if (closing <= 0.4) {
-      // v3.6.43 · RESCATE: bola DENTRO del campo que viene hacia nuestra
-      // mitad pero se aleja del punto dulce (se va larga/cruzada). El campo
-      // la atrae DIRECTO hacia él: aceleración plena, tope Δv propio.
-      if (ball.vel.z <= 0.3) continue;            // no viene hacia nosotros
-      if ((IM.dvRes || 0) >= DIMS.imanRescateDv) continue;   // rescate agotado
-      if (_imU.lengthSq() < 1e-6) continue;
-      _imA.copy(_imU).normalize();
-      let aRes = DIMS.imanRescateAcel;
-      const dvRest = DIMS.imanRescateDv - (IM.dvRes || 0);
-      const dvPaso = aRes * h;
-      if (dvPaso > dvRest) aRes *= dvRest / Math.max(dvPaso, 1e-9);
-      if (aRes <= 1e-6) continue;
-      ball.vel.addScaledVector(_imA, aRes * h);
-      IM.dvRes = (IM.dvRes || 0) + aRes * h;      // contador real de rescate
-      ball.ppImanEmpuje = true;                   // flechas bola→pala
-      ball.ppImanTocada = true;                   // la atracción ES asistencia
-      continue;
-    }
-    // predicción LINEAL del impacto (horizonte del dueño: 0,15 s)
-    const tp = Math.min(d / Math.max(closing, 0.01), DIMS.imanTPred);
-    _imP.copy(ball.pos).addScaledVector(ball.vel, tp);
-    // corrección LATERAL: componente del error perpendicular al vuelo
-    _imA.copy(_imC).sub(_imP);
-    const v2 = Math.max(1e-6, ball.vel.lengthSq());
-    _imA.addScaledVector(ball.vel, -_imA.dot(ball.vel) / v2);
-    const err = _imA.length();
-    if (err < 0.008) continue;                  // ya centrado: nada que empujar
-    // caída del campo: plena DENTRO de imanPlena, lineal hasta imanRadio
-    const f = (d <= DIMS.imanPlena)
-      ? 1
-      : Math.max(0, 1 - (d - DIMS.imanPlena) / (DIMS.imanRadio - DIMS.imanPlena));
-    if (f <= 0) continue;
-    let aMag = DIMS.imanAcelMax * f;
-    const dvRest = DIMS.imanDvMax - IM.dv;      // Δv que falta por aproximación
+    // GANCHO: aceleración DIRECTA hacia el centro de la pala (3D: corrige
+    // lateral Y altura — la bola llega al dulce «para dar un buen golpe»)
+    _imA.copy(_imU).normalize();
+    let aMag = DIMS.imanGanchoAcel;
+    const dvRest = DIMS.imanGanchoDv - (IM.dv || 0);
     const dvPaso = aMag * h;
     if (dvPaso > dvRest) aMag *= dvRest / Math.max(dvPaso, 1e-9);
     if (aMag <= 1e-6) continue;
-    _imA.setLength(aMag);
-    ball.vel.addScaledVector(_imA, h);
-    IM.dv += aMag * h;                          // contador real de Δv lateral
-    ball.ppImanEmpuje = true;                   // flechas bola→pala
+    ball.vel.addScaledVector(_imA, aMag * h);
+    IM.dv = (IM.dv || 0) + aMag * h;            // contador real del gancho
+    ball.ppImanEmpuje = true;                   // marca de empuje vivo
     ball.ppImanTocada = true;                   // esta aproximación fue asistida
   }
 }
@@ -6682,6 +6737,8 @@ class OpponentAI {
     const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
     ball.spin.copy(shotSpin);
     ball.ppEfecto = false;   // v3.6.36: la devolución de la IA LIMPIA la marca
+    ball.ppEfectoTipo = '';  // v3.6.46: fuera también el tipo de spin
+    ball.ppEfectoLado = 0;
     ball.ppPortal = false;   // v3.6.41: la devolución de la IA LIMPIA el portal
     ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
     if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
@@ -6734,6 +6791,8 @@ class OpponentAI {
     _miV.addScaledVector(ball.vel, 0.05);   // hereda un 5% del impulso entrante
     ball.spin.set((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 10, 0);
     ball.ppEfecto = false;   // v3.6.36: el golpe torpe de la IA LIMPIA la marca
+    ball.ppEfectoTipo = '';  // v3.6.46: fuera también el tipo de spin
+    ball.ppEfectoLado = 0;
     ball.ppPortal = false;   // v3.6.41: el golpe torpe LIMPIA el portal
     ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
     if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
@@ -10262,9 +10321,8 @@ class PingPongGame {
     // anillo de bote amplificado (one-shot) — el dueño debe VER el efecto.
     this._efectoHalo = null;
     this._efectoBoteFx = null;
-    // v3.6.44 · estela roja de la bola marcada + campo continuo del imán
-    this._efectoTrail = null;
-    this._imanCampo = null;
+    // v3.6.46 · estela y campo del imán RETIRADOS (ronda 54: el efecto es
+    // el SPIN REAL + pala metálica; nada de rastros ni discos)
     // v3.6.37 · FLECHAS de la matriz como sprites PROPIOS al lado del
     // icono (petición del dueño: las chevrons del icono «no se notan»). 
     this._megaArrows = null;          // [[izq, der] por montura]
@@ -13292,9 +13350,6 @@ class PingPongGame {
       () => { try { this._buildMegaFx(); } catch (e) { /* */ } },
       () => { try { this._buildEfectoFx(); } catch (e) { /* */ } },
       () => { try { this._buildImanFx(); } catch (e) { /* */ } },
-      () => { try { this._buildImanFlechas(); } catch (e) { /* */ } },   // v3.6.43 flechas
-      () => { try { this._buildImanCampo(); } catch (e) { /* */ } },     // v3.6.44 campo
-      () => { try { this._buildEfectoTrail(); } catch (e) { /* */ } },   // v3.6.44 estela
       () => { try { this._buildPortalFx(); } catch (e) { /* */ } },
       () => { try { this._buildEfectoHalo(); } catch (e) { /* */ } },
       () => { try { this._efectoBotePrewarm(); } catch (e) { /* */ } },
@@ -13578,8 +13633,10 @@ class PingPongGame {
     this._megaActivaId = 'iman';          // v3.6.40: icono en modo ACTIVO
     this._megaActivaDur = IMAN_DUR;
     this._megaTexDirty = true;
-    try { this._buildImanFx(); } catch (e) { this._imanFx = null; }
-    this._imanFxVis(true);
+    // v3.6.46 · SIN canto, SIN flechas, SIN campo: pala LIMPIA — la señal
+    // del imán es la PALA OSCURECIDA al 80 % (metálica) mientras dure la
+    // ventana (la aplica updateMega vía _imanPalaOsc) y la bola curvándose
+    // al centro por el gancho (c05/applyIman).
     this._imanOnda();
     // power-up sonoro PROPIO (firma «imán»: onda grave que sube, sine)
     try { this.audio.playOsc(180, 420, 0.22, 'sine', 0.14, 0); } catch (e) { /* */ }
@@ -13624,152 +13681,103 @@ class PingPongGame {
     if (!ent || this._imanAsistidas >= IMAN_ASIST) this._imanFin();
   }
 
-  _buildImanFx() { if (!this._imanFx) this._imanFx = this._fxBuild(0x5aa2ff); }
+  _buildImanFx() { /* v3.6.46: canto del imán RETIRADO (pala limpia + metálica) */ }
 
-  /** v3.6.44 · CAMPO CONTINUO del imán (el dueño: «no se ve efecto ni se
-   *  nota nada sobre la pala para saber que se está aplicando»): DISCO de
-   *  campo cian semitransparente flotando DELANTE del punto dulce + 12
-   *  partículas ORBITANDO — señal SIEMPRE visible mientras el campo corre
-   *  (no solo cuando la bola entra). Construcción en el PRECALIENTE
-   *  (15.ª pieza anti-lag); el anclaje vive en updateMega. */
-  _buildImanCampo() {
-    if (this._imanCampo) return;
-    const g = new THREE.Group();
-    g.visible = false;
-    // disco de campo (dos anillos + relleno tenue) — billboard NO: el disco
-    // mira a la hoja (plano XY de la pala), es EL CAMPO alrededor del dulce
-    const anillo = new THREE.Mesh(
-      new THREE.RingGeometry(0.085, 0.105, 40),
-      new THREE.MeshBasicMaterial({ color: 0x6fbaff, transparent: true,
-        opacity: 0.85, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-        depthWrite: false }));
-    g.add(anillo);
-    const relleno = new THREE.Mesh(
-      new THREE.CircleGeometry(0.085, 32),
-      new THREE.MeshBasicMaterial({ color: 0x2f7fd8, transparent: true,
-        opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-        depthWrite: false }));
-    g.add(relleno);
-    // 12 partículas orbitando (puntitos aditivos) — el «campo vivo»
-    const pgeo = new THREE.BufferGeometry();
-    const ppos = new Float32Array(12 * 3);
-    pgeo.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
-    const orbita = new THREE.Points(pgeo, new THREE.PointsMaterial({
-      color: 0xaee2ff, size: 0.017, transparent: true, opacity: 0.95,
-      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }));
-    g.add(orbita);
-    g.userData = { anillo, relleno, orbita, ppos };
-    g.renderOrder = 6;
-    this.scene.add(g);
-    this._imanCampo = g;
-  }
-
-  /** v3.6.44 · ANCLAJE por frame del CAMPO (updateMega): el disco orbita el
-   *  punto dulce de la pala ACTIVA con latido; las partículas giran — y
-   *  con el empuje real (ppImanEmpuje) giran más rápido y el disco late
-   *  más fuerte. Visible SIEMPRE que el campo corre. */
-  _imanCampoUpdate() {
-    const g = this._imanCampo;
-    if (!g) return;
-    let show = false;
-    const ps = this.controllerPaddles && this.controllerPaddles[this.paddleHand];
-    if (this._imanT > 0 && ps && ps.active) {
-      show = true;
-      _imanTmpC.copy(ps.pos).addScaledVector(ps.up, DIMS.bladeCenterUp);
-      g.position.copy(_imanTmpC);
-      if (ps.normal && ps.normal.lengthSq() > 1e-6) {
-        _imanTmpD.copy(ps.pos).add(ps.normal);       // un punto delante
-        g.lookAt(_imanTmpD);
-      }
-      const tNow = performance.now() * 0.001;
-      const empuje = !!(this.ball && this.ball.ppImanEmpuje);
-      const lat = empuje ? 0.78 + 0.30 * Math.sin(tNow * 11)
-                         : 0.62 + 0.20 * Math.sin(tNow * 4.6);
-      const U = g.userData;
-      U.anillo.material.opacity = 0.85 * lat;
-      U.relleno.material.opacity = 0.22 * lat;
-      U.anillo.scale.setScalar(1 + 0.06 * Math.sin(tNow * 4.6));
-      // partículas: dos anillos de 6 girando en sentidos contrarios
-      const ang = tNow * (empuje ? 3.4 : 1.7);
-      for (let i = 0; i < 12; i++) {
-        const rad = (i < 6 ? 0.055 : 0.082) + 0.006 * Math.sin(tNow * 3 + i);
-        const a = ang * (i < 6 ? 1 : -1) + i * (Math.PI / 6);
-        U.ppos[i * 3] = Math.cos(a) * rad;
-        U.ppos[i * 3 + 1] = Math.sin(a) * rad;
-        U.ppos[i * 3 + 2] = 0.004;
-      }
-      U.orbita.geometry.attributes.position.needsUpdate = true;
-    }
-    if (g.visible !== show) g.visible = show;
-  }
-
-  /** v3.6.43 · FLECHAS DE ATRACCIÓN del imán (petición del dueño: «si la
-   *  bola entra dentro del mismo que aparezcan unas pequeñas flechas desde
-   *  la bola en dirección al centro de nuestra pala indicando que está
-   *  siendo atraída»): 3 conos cian EN LÍNEA entre la bola y el punto
-   *  dulce, orientados hacia la pala, con pulso suave. La construcción
-   *  vive en el PRECALIENTE (regla anti-lag: el gatillo nunca construye).
-   *  v3.6.44 (ronda 52 · «no se nota nada»): conos ×1,8 (0,024 × 0,08 m)
-   *  y opacidad plena — a distancia de juego deben LEERSE al primer golpe
-   *  de vista. */
-  _buildImanFlechas() {
-    if (this._imanFlechas) return;
-    const geo = new THREE.ConeGeometry(0.024, 0.08, 10);
-    const lista = [];
-    for (let i = 0; i < 3; i++) {
-      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-        color: 0x6fbaff, transparent: true, opacity: 0.98,
-        blending: THREE.AdditiveBlending, depthWrite: false }));
-      m.renderOrder = 6;
-      m.visible = false;
-      m.position.set(0, -100, 0);   // fuera de vista hasta su anclaje
-      this.scene.add(m);
-      lista.push(m);
-    }
-    this._imanFlechas = lista;
-  }
-
-  /** v3.6.43 · ANCLAJE por frame de las flechas (lo llama updateMega, SIEMPRE
-   *  que existan: la visibilidad la decide el estado del campo). Mostradas
-   *  cuando la bola está DENTRO del radio y del lado correcto de la cara —
-   *  exactamente lo que el dueño pidió: flechas desde la bola hacia el
-   *  CENTRO de la pala. Si el campo está empujando (ball.ppImanEmpuje, lo
-   *  marca c05/applyIman) laten más fuertes.
-   *  v3.6.44 (ronda 52 · FIX CRÍTICO): esta función EXISTÍA desde la ronda
-   *  51 pero NADIE LA LLAMABA — los conos nacían ocultos a y=−100 para
-   *  siempre (por eso el dueño no veía el imán). Anclada en updateMega.
-   *  Además la condición se relaja: flechas en cuanto la bola entra en el
-   *  radio (la petición literal del dueño), sin exigir velocidad de cruce. */
-  _imanFlechasUpdate() {
-    const fs = this._imanFlechas;
-    if (!fs) return;
-    let show = false;
-    const ps = this.controllerPaddles && this.controllerPaddles[this.paddleHand];
-    const b = this.ball;
-    if (this._imanT > 0 && ps && ps.active && b && b.pos && !b.ppTransito) {
-      const C = _imanTmpC.copy(ps.pos).addScaledVector(ps.up, DIMS.bladeCenterUp);
-      const d = C.distanceTo(b.pos);
-      if (d <= DIMS.imanRadio && d > 1e-4) {
-        _imanTmpD.copy(b.pos).sub(C);
-        if (_imanTmpD.dot(ps.normal) > -2 * DIMS.ballRadius) {
-          show = true;
-          _imanTmpD.copy(C).sub(b.pos).normalize();   // bola → punto dulce
-          const empuje = !!b.ppImanEmpuje;
-          const tNow = performance.now() * 0.008;
-          for (let i = 0; i < fs.length; i++) {
-            const m = fs[i];
-            const t = 0.28 + 0.24 * i;
-            m.position.copy(b.pos).addScaledVector(_imanTmpD, d * t);
-            m.quaternion.setFromUnitVectors(_imanUp, _imanTmpD);
-            m.visible = true;
-            m.scale.setScalar(empuje ? 1.35 + 0.14 * Math.sin(tNow) : 1.15);
-            m.material.opacity = empuje ? 1.0 : 0.8 + 0.18 * Math.sin(tNow + i);
+  /** v3.6.46 · PALA METÁLICA del imán (petición del dueño, ronda 54:
+   *  «quitamos las flechas anteriores y dejamos un diseño limpio de pala
+   *  solo que la pala se oscurece como un 80 % de su valor mientras dura
+   *  el efecto — simula que es metálica, como un imán»): traverse de la
+   *  montura ACTIVA del jugador. Los MATERIALES se aislan de verdad (clon
+   *  PROPIO por material — el GLB comparte materiales con la pala del
+   *  rival y la del demo: sin clon, el oscurecido teñiría a todos), el
+   *  color baja ×0,2 con metalness alto mientras el imán corre y la
+   *  restauración devuelve el color EXACTO. Solo trabaja al CAMBIAR de
+   *  estado; con cambio de mano a mitad de ventana, la lista de monturas
+   *  tocadas garantiza que TODAS vuelven a su color. */
+  _imanPalaOsc(on) {
+    if (on === !!this._imanOscApplied) return;
+    this._imanOscApplied = !!on;
+    const aplicar = (mount, encender) => {
+      // oscurecido −80 % en ESPACIO sRGB por HEX ENTERO: determinista y a
+      // prueba de la gestión de color de three (multiplyScalar opera en
+      // lineal y la lectura visual no sería exactamente ×0,2)
+      const hex20 = (h) => (((Math.round(((h >> 16) & 255) * 0.2) & 255) << 16) |
+        ((Math.round(((h >> 8) & 255) * 0.2) & 255) << 8) |
+        (Math.round((h & 255) * 0.2) & 255)) >>> 0;
+      mount.traverse((o) => {
+        if (!o.isMesh || !o.material) return;
+        const esArray = Array.isArray(o.material);
+        const mats = esArray ? o.material : [o.material];
+        let clamados = false;
+        const propios = mats.map((m) => {
+          if (!m || !m.color) return m;
+          if (!m.userData._imanPropio) {
+            let c = null;
+            try { c = m.clone(); } catch (eCl) { c = null; }
+            if (c) {
+              try { c.userData = {}; } catch (eU) { /* */ }
+              c.userData._imanPropio = true;
+              c.userData._imanBaseC = m.color.getHex();
+              c.userData._imanOscuroC = hex20(c.userData._imanBaseC);
+              c.userData._imanBaseE = m.emissive ? m.emissive.getHex() : 0;
+              c.userData._imanBaseMet = m.metalness;
+              c.userData._imanBaseRgh = m.roughness;
+              clamados = true;
+              return c;
+            }
+            // sin clon posible: compartido (nunca debería pasar)
+            m.userData._imanPropio = true;
+            m.userData._imanBaseC = m.color.getHex();
+            m.userData._imanOscuroC = hex20(m.userData._imanBaseC);
+            m.userData._imanBaseE = m.emissive ? m.emissive.getHex() : 0;
+            m.userData._imanBaseMet = m.metalness;
+            m.userData._imanBaseRgh = m.roughness;
+            m.color = m.color.clone();
+            if (m.emissive) m.emissive = m.emissive.clone();
+            return m;
+          }
+          return m;
+        });
+        if (clamados) {
+          if (esArray) o.material = propios; else o.material = propios[0];
+        }
+        const finales = esArray ? o.material : [o.material];
+        for (const m of finales) {
+          if (!m || !m.color || !m.userData._imanPropio) continue;
+          if (encender) {
+            m.color.setHex(m.userData._imanOscuroC);   // −80 % (hex sRGB exacto)
+            if (m.emissive) m.emissive.setHex(0x000000);
+            m.metalness = 0.9;
+            m.roughness = 0.35;
+          } else {
+            m.color.setHex(m.userData._imanBaseC);
+            if (m.emissive) m.emissive.setHex(m.userData._imanBaseE);
+            m.metalness = m.userData._imanBaseMet;
+            m.roughness = m.userData._imanBaseRgh;
           }
         }
+      });
+    };
+    if (on) {
+      const mount = this.paddleMounts && this.paddleMounts[this.paddleHand];
+      if (!mount) return;
+      if (!this._imanOscMounts) this._imanOscMounts = [];
+      if (this._imanOscMounts.indexOf(mount) < 0) this._imanOscMounts.push(mount);
+      aplicar(mount, true);
+    } else {
+      for (const mnt of (this._imanOscMounts || [])) {
+        try { aplicar(mnt, false); } catch (eR) { /* */ }
       }
+      this._imanOscMounts = [];
     }
-    if (!show) for (const m of fs) if (m.visible) m.visible = false;
   }
+
+  /* v3.6.46 · RETIRADO (ronda 54, petición del dueño): _buildImanCampo,
+   * _imanCampoUpdate, _buildImanFlechas y _imanFlechasUpdate (el disco de
+   * campo, sus partículas y las flechas bola→pala) — «quitamos las flechas
+   * anteriores y dejamos un diseño limpio de pala». La atracción SE VE en
+   * la trayectoria: el gancho (c05/applyIman) curva la bola al centro de
+   * la pala y la pala se oscurece mientras dura el efecto (_imanPalaOsc). */
 
   _imanFxVis(vis) {
     this._imanFxOn = vis;
@@ -14138,28 +14146,11 @@ class PingPongGame {
     this._efectoHalo = sp;
   }
 
-  /** v3.6.44 · ESTELA ROJA de la bola marcada (el dueño: «en el Super
-   *  efecto tampoco noto nada»): línea de 14 puntos que dibuja la
-   *  TRAYECTORIA de la bola con Magnus exagerado — el rastro rojo curvado
-   *  es la señal inconfundible del poder. Construcción en el PRECALIENTE
-   *  (16.ª pieza anti-lag); el anclaje vive en updateMega. */
-  _buildEfectoTrail() {
-    if (this._efectoTrail) return;
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position',
-      new THREE.BufferAttribute(new Float32Array(14 * 3), 3));
-    geo.setDrawRange(0, 0);
-    const mat = new THREE.LineBasicMaterial({
-      color: 0xff5240, transparent: true, opacity: 0.85,
-      blending: THREE.AdditiveBlending, depthWrite: false });
-    const ln = new THREE.Line(geo, mat);
-    ln.renderOrder = 7;
-    ln.frustumCulled = false;
-    ln.visible = false;
-    ln.userData = { geo, puntos: [] };
-    this.scene.add(ln);
-    this._efectoTrail = ln;
-  }
+  /* v3.6.46 · RETIRADO (ronda 54): _buildEfectoTrail — la estela roja de
+   *  la ronda 52 (el dueño: «la estela está desfasada y no consigo ver el
+   *  efecto»). El efecto AHORA ES REAL: el brush se clasifica por el
+   *  movimiento de la pala (c05) y el bote traduce el spin (top/back/side);
+   *  la señal visual es el halo TINTADO por tipo + el anillo de bote. */
 
   /** v3.6.38 · construcción AISLADA del anillo de bote (la llama el
    *  PRECALIENTE por adelantado: el primer bote marcado ya no crea nada).
@@ -14180,8 +14171,10 @@ class PingPongGame {
   }
 
   /** v3.6.37 · ANILLO DE BOTE amplificado (SÚPER EFECTO notorio): one-shot
-   *  de 0,55 s en el punto de bote de la bola marcada con giro real. */
-  _efectoBoteFxShow(pos) {
+   *  de 0,55 s en el punto de bote de la bola marcada con giro real.
+   *  v3.6.46 · TINTE POR TIPO: top → naranja · back → cian · side → verde
+   *  (mismo lenguaje del halo); sin tipo → rojo de siempre. */
+  _efectoBoteFxShow(pos, tipo) {
     this._efectoBotePrewarm();
     if (!this._efectoBoteFx) return;
     const m = this._efectoBoteFx;
@@ -14189,6 +14182,10 @@ class PingPongGame {
     m.position.y = DIMS.tableTopY + 0.004;
     m.userData.boteT = 0.55;
     m.scale.setScalar(0.3);
+    m.material.color.setHex(
+      tipo === 'top' ? 0xff8c2a :
+      tipo === 'back' ? 0x3fd0ff :
+      tipo === 'side' ? 0x8dff5a : 0xff4636);
     m.visible = true;
   }
 
@@ -14612,13 +14609,9 @@ class PingPongGame {
     this._imanWarn = false;
     this._imanTickN = 0;              // v3.6.43
     this._imanFxVis(false);
-    if (this._imanFlechas) for (const m of this._imanFlechas) m.visible = false;
-    // v3.6.44 · campo continuo y estela también duermen con el reset
-    if (this._imanCampo && this._imanCampo.visible) this._imanCampo.visible = false;
-    if (this._efectoTrail && this._efectoTrail.visible) {
-      this._efectoTrail.visible = false;
-      this._efectoTrail.userData.puntos.length = 0;
-    }
+    // v3.6.46 · pala metálica a limpio (restore de materiales) + palas
+    // visuales sin referencias muertas (flechas/campo/estela RETIRADAS).
+    try { this._imanPalaOsc(false); } catch (eOsc0) { /* */ }
     // v3.6.42 · el portal también duerme (recogida completa): ventana,
     // golpes, antirrebote, TRÁNSITO (si una partida muere con la bola
     // viajando, la bola se libera YA — nunca congelada para siempre),
@@ -14648,6 +14641,8 @@ class PingPongGame {
     try {
       if (this.ball) {
         if (this.ball.ppEfecto) this.ball.ppEfecto = false;
+        this.ball.ppEfectoTipo = '';          // v3.6.46: sin tipo heredado
+        this.ball.ppEfectoLado = 0;
         if (this.ball.ppPortal) this.ball.ppPortal = false;
         if (this.ball.ppIman) delete this.ball.ppIman;
         this.ball.ppImanTocada = false;
@@ -14867,9 +14862,8 @@ class PingPongGame {
       this._imanFxVis(false);
       try { if (this.ball) delete this.ball.ppIman; } catch (eI0) { /* */ }
     }
-    // v3.6.43 · las flechas bola→pala del imán (anclaje SIEMPRE: la
-    // visibilidad la decide _imanFlechasUpdate con el estado del campo).
-    try { this._imanFlechasUpdate(); } catch (eFl) { /* */ }
+    // v3.6.43 · las flechas bola→pala del imán RETIRADAS (ronda 54: pala
+    // limpia; la atracción la dibuja la propia trayectoria del gancho).
     // v3.6.42 · SÚPER PORTAL ACTIVO: ventana PROPIA de 8 s (los golpes se
     // consumen en el bloque 5.55 del animate; aquí solo el reloj y el aviso).
     // v3.6.43: el vigilante «sin cargas → portal fuera» se RETIRA — la
@@ -15128,8 +15122,11 @@ class PingPongGame {
         }
       }
     }
-    // v3.6.37 · HALO ROJO sobre la bola MARCADA (SÚPER EFECTO notorio):
+    // v3.6.37 · HALO sobre la bola MARCADA (SÚPER EFECTO notorio):
     // visible mientras la bola lleva la marca (la IA la limpia al devolver).
+    // v3.6.46 · TINTE POR TIPO de spin (lenguaje de c07: naranja = lift,
+    // azul = cortada): top → naranja · back → cian · side → verde ·
+    // sin tipo → rojo de siempre. La bola marcada ANUNCIA su spin.
     if (on && this.ball && this.ball.ppEfecto) {
       if (!this._efectoHalo) {
         try { this._buildEfectoHalo(); } catch (eH0) { this._efectoHalo = null; }
@@ -15137,64 +15134,25 @@ class PingPongGame {
       if (this._efectoHalo) {
         // v3.6.38 · el halo ES HIJO de la bola: posición gratis y EXACTA
         // (nadie lo copia — viaja con el transform de la bola). Aquí solo
-        // la visibilidad y el pulso.
+        // la visibilidad, el pulso y el COLOR del spin.
         // v3.6.44 (ronda 52 · el dueño SIGUE sin notarlo): halo 0,142→0,21 m
         // (+48 %) con pulso amplio — la bola marcada se ve INCONFUNDIBLE.
         this._efectoHalo.visible = true;
         this._efectoHalo.scale.setScalar(
           0.21 + 0.05 * Math.sin(performance.now() * 0.009));
+        const tpH = this.ball.ppEfectoTipo || '';
+        this._efectoHalo.material.color.setHex(
+          tpH === 'top' ? 0xff8c2a :
+          tpH === 'back' ? 0x3fd0ff :
+          tpH === 'side' ? 0x8dff5a : 0xff5240);
       }
     } else if (this._efectoHalo && this._efectoHalo.visible) {
       this._efectoHalo.visible = false;
     }
-    // v3.6.44 (ronda 52 · el dueño: «en el Super efecto tampoco noto nada»):
-    // ESTELA ROJA de la bola marcada — línea de 14 posiciones históricas que
-    // dibuja la TRAYECTORIA curvada del Magnus: la bola deja un rastro rojo
-    // visible mientras dura el poder (construcción en el precaliente).
-    if (on && this.ball && this.ball.ppEfecto &&
-        this.rules && this.rules.state === 'rally') {
-      if (!this._efectoTrail) {
-        try { this._buildEfectoTrail(); } catch (eTr0) { this._efectoTrail = null; }
-      }
-      if (this._efectoTrail) {
-        const UT = this._efectoTrail.userData;
-        UT.puntos.push(this.ball.pos.clone());
-        while (UT.puntos.length > 14) UT.puntos.shift();
-        const arr = UT.geo.attributes.position.array;
-        for (let i = 0; i < 14; i++) {
-          const p = UT.puntos[Math.min(i, UT.puntos.length - 1)] || this.ball.pos;
-          arr[i * 3] = p.x; arr[i * 3 + 1] = p.y; arr[i * 3 + 2] = p.z;
-        }
-        UT.geo.attributes.position.needsUpdate = true;
-        UT.geo.setDrawRange(0, UT.puntos.length);
-        this._efectoTrail.visible = true;
-        this._efectoTrail.material.opacity = 0.85;
-      }
-    } else if (this._efectoTrail && this._efectoTrail.visible) {
-      // rastro que se desvanece: vaciado suave (queda sin puntos y oculto)
-      this._efectoTrail.userData.puntos.length = 0;
-      this._efectoTrail.visible = false;
-    }
-    // v3.6.44 · CAMPO + FLECHAS del IMÁN anclados AQUÍ (el corazón de la
-    // ronda 52: la ronda 51 construyó las flechas pero NADIE las llamaba —
-    // por eso el imán era invisible). Ambos viven SIEMPRE que el campo
-    // corre: disco orbitando el punto dulce + flechas cuando la bola entra.
-    if (on && this._imanT > 0) {
-      if (!this._imanCampo) {
-        try { this._buildImanCampo(); } catch (eIC0) { this._imanCampo = null; }
-      }
-      try { this._imanCampoUpdate(); } catch (eIC1) { /* */ }
-    } else if (this._imanCampo && this._imanCampo.visible) {
-      this._imanCampo.visible = false;
-    }
-    if (on && this._imanT > 0) {
-      if (!this._imanFlechas) {
-        try { this._buildImanFlechas(); } catch (eIF0) { this._imanFlechas = null; }
-      }
-      try { this._imanFlechasUpdate(); } catch (eIF1) { /* */ }
-    } else if (this._imanFlechas) {
-      for (const mF of this._imanFlechas) if (mF.visible) mF.visible = false;
-    }
+    // v3.6.46 · PALA METÁLICA del imán: oscurecido −80 % SOLO mientras la
+    // ventana corre (estado — el método no-op si no cambia); al expirar la
+    // pala vuelve a su color exacto (materiales aislados de rival/demo).
+    try { this._imanPalaOsc(!!(on && this._imanT > 0)); } catch (eOsc) { /* */ }
     // v3.6.42 · TRÁNSITO del portal (EXPLÍCITO, petición del dueño): la
     // bola se HUNDE en el portal de entrada (0,16 s), viaja OCULTA (el
     // reloj corre en updateMega) y SALE por el centro del portal de
@@ -17434,6 +17392,10 @@ class PingPongGame {
   clampPaddlePose(pos, q, fromGrip) {
     const R = DIMS.bladeRadius, halfT = 0.004, hR = 0.014;
     const D = 0.1303;                                  // mango -> centro de hoja
+    // v3.6.46 · media LONGITUD del mango por debajo del ancla/agarre (la
+    // estimación antigua solo sumaba el RADIO del mango: el palo se metía
+    // visualmente en la mesa — informe del dueño, ronda 54)
+    const hHalf = 0.05;
     pcA.set(0, fromGrip ? 0 : 1, fromGrip ? -1 : 0).applyQuaternion(q);  // eje hoja
     pcN.set(0, fromGrip ? 1 : 0, fromGrip ? 0 : 1).applyQuaternion(q);   // normal cara
     pcC.copy(pos);
@@ -17443,25 +17405,35 @@ class PingPongGame {
       pcC.add(pcT).addScaledVector(pcA, D);
     }
     // (fromGrip=false: pos ya ES el centro de la hoja)
+    // punto de AGARRE en el mundo (para la puerta de la mesa y el mango):
+    // fromGrip=true → pos ya es el agarre; fromGrip=false → centro − eje·D
+    const gripX = fromGrip ? pos.x : pcC.x - D * pcA.x;
+    const gripY = fromGrip ? pos.y : pcC.y - D * pcA.y;
+    const gripZ = fromGrip ? pos.z : pcC.z - D * pcA.z;
 
     // semianchura del disco proyectada en cada eje (espesor incluido)
     const spanX = R * Math.sqrt(Math.max(0, 1 - pcN.x * pcN.x)) + halfT * Math.abs(pcN.x);
     const spanY = R * Math.sqrt(Math.max(0, 1 - pcN.y * pcN.y)) + halfT * Math.abs(pcN.y);
     const spanZ = R * Math.sqrt(Math.max(0, 1 - pcN.z * pcN.z)) + halfT * Math.abs(pcN.z);
 
-    // punto más bajo de la pala (hoja + mango)
+    // punto más bajo de la pala (hoja + mango COMPLETO hasta su punta)
     const handleDown = hR * Math.sqrt(Math.max(0, 1 - pcA.y * pcA.y));
     let low = pcC.y - spanY;
     low = fromGrip
-      ? Math.min(low, Math.min(pos.y, pcC.y) - handleDown)
-      : Math.min(low, pcC.y - D * Math.max(0, pcA.y) - handleDown);
+      ? Math.min(low, Math.min(pos.y, pcC.y) - handleDown
+          - hHalf * Math.max(0, pcA.y))
+      : Math.min(low, gripY - hHalf * Math.max(0, pcA.y) - handleDown);
 
     // 1) losa de la mesa: solo si la pala la SOLAPA (con la mano bajo la
-    //    mesa se mueve libre, sin saltos); resuelve por mínima penetración
+    //    mesa se mueve libre, sin saltos); resuelve por mínima penetración.
+    //    v3.6.46: la puerta incluye TAMBIÉN al agarre — una hoja fuera del
+    //    borde con el mango colgando sobre la losa ya cuenta.
     const skin = 0.004;
     const slabBottom = DIMS.tableTopY - DIMS.tableThickness;
-    const overTable = Math.abs(pcC.x) < DIMS.tableHalfWidth + R * 0.85 &&
-      Math.abs(pcC.z - DIMS.tableCenterZ) < DIMS.tableHalfLength + R * 0.85;
+    const inSlabXZ = (x, z) =>
+      Math.abs(x) < DIMS.tableHalfWidth + R * 0.85 &&
+      Math.abs(z - DIMS.tableCenterZ) < DIMS.tableHalfLength + R * 0.85;
+    const overTable = inSlabXZ(pcC.x, pcC.z) || inSlabXZ(gripX, gripZ);
     if (overTable && low < DIMS.tableTopY && pcC.y + spanY > slabBottom) {
       const up = (DIMS.tableTopY + skin) - low;
       const down = (pcC.y + spanY + skin) - slabBottom;
@@ -17672,8 +17644,15 @@ class PingPongGame {
           // significativo) pega en la mesa: el dueño DEBE ver el efecto.
           if (this.ball && this.ball.ppEfecto &&
               this.ball.spin && this.ball.spin.length() >= EFECTO_SPIN_MIN) {
-            this._efectoBoteFxShow(pMar);
-            try { this.audio.playOsc(900, 260, 0.16, 'sawtooth', 0.2, 0); } catch (eB2) { /* */ }
+            // v3.6.46 · el anillo del bote SE TIÑE por tipo (naranja/cian/
+            // verde/rojo — mismo lenguaje del halo) y el barrido sonoro
+            // firma cada spin: top caída 900→260 · back flotada 560→180 ·
+            // side wobble 740→420 · neutro 900→260.
+            const tpB = this.ball.ppEfectoTipo || '';
+            this._efectoBoteFxShow(pMar, tpB);
+            const fr = tpB === 'back' ? [560, 180]
+              : tpB === 'side' ? [740, 420] : [900, 260];
+            try { this.audio.playOsc(fr[0], fr[1], 0.16, 'sawtooth', 0.2, 0); } catch (eB2) { /* */ }
           }
           if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.18);
           break;

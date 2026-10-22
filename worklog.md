@@ -3450,3 +3450,21 @@ Stage Summary:
 - V3.6.40-SDK6 (FASE 42): el jugador SIEMPRE sabe qué poder corre y cuánto queda — el icono del mango se convierte en el indicador vivo del poder activo (anillo que se vacía + parpadeo final), sin un solo píxel de HUD nuevo.
 - Pendiente puntual del dueño: probar en el Quest (recarga game.html?v=3640) — en un rally, abrir MEGA/EFECTO/IMÁN y mirar el mango de reojo: el poder en marcha con su anillo, parpadeo en los últimos 2 s, y de vuelta al ×N al terminar.
 - Nota de infra: el PAT y .cf-token deben conservarse tras cada rodado (gitignored, no viajan con el reset).
+
+---
+Task ID: 148-b (ronda 48)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 48 — el dueño repuso el PAT de GitHub tras el 6.º rodado; ejecutar la cadena de despliegue pendiente (deploy Pages + release + pushs + verificación de producción).
+
+Work Log:
+- El dueño repuso .github-pat (guardado en scripts/worker-tele/.github-pat, 600). Pre-check con ls-remote (PAT enmascarado en toda salida): origin/main y origin/proyecto en a5bd644 (V3.6.39) y origin/pages en 3b303a5 (deploy 3.6.39) — local 0aebb2b un paso por delante, tal como dejó el Task 148.
+- Estado local re-verificado antes de deploy: working tree limpio, main=0aebb2b (V3.6.40-SDK6 FASE 42), los 4 ZIPs INTACTOS en public/descargas/ (tamaños exactos del Task 148: COMPLETO 131.065.278 · ligera 16.030.653 · CLOUDFLARE 131.051.892 · SOLO 6.089), scripts r48 presentes, worklog Task 148 completo, QA TOTAL 21/21 VERDE ya registrada. Regla «commit ANTES de deploy» cumplida de antemano.
+- Deploy: GIT_TOKEN del entorno (nunca escrito en fichero) → deploy_pages.py --push --release --backup. Sitio ensamblado desde git archive HEAD 0aebb2b9f (395 ficheros · 137,2 MB), smoke Playwright VERDE (29 peticiones, 0 fallos de red, 0 pageerrors), refs/heads/pages → 600423dfd, respaldo anti-rollback main→proyecto al día, Release v3.6.40-SDK6 creado con los 4 ZIPs.
+- Pushs verificados: main a5bd644→0aebb2b (PAT enmascarado); ls-remote final = main/proyecto 0aebb2b9f + pages 600423dfd (3 ramas alineadas en V3.6.40).
+- Verificación de producción (agujas): PAGES-VERSION.txt = version=3.6.40-SDK6 · fuente_commit=0aebb2b9f · game_sha256=5233465c… · fecha 2026-10-22T09:01:10; game.html servido (6.803.576 B tras las 2 reescrituras) coincide EXACTO con ese hash; sellos de versión 3.6.40-SDK6 presentes (c00 + badge); 25 agujas de FASE 42 (_megaActivaId/_megaIconModo/_megaActivaRest) en el game.html servido.
+- Release verificado por API con PAT: tag v3.6.40-SDK6 con los 4 assets (SOLO 0,0 · CLOUDFLARE 131,1 · COMPLETO 131,1 · ligera 16,0 MB).
+
+Stage Summary:
+- RONDA 48 CERRADA EN PRODUCCIÓN: V3.6.40-SDK6 (FASE 42) servida en https://franjavierdavila.github.io/CrazyPP/ con el indicador diegético del poder activo (anillo de tiempo en el icono del mango + parpadeo final), release GitHub con los 4 ZIPs y las 3 ramas remotas alineadas.
+- Al dueño: probar en el Quest recargando game.html?v=3640 (y limpiar caché del navegador del Quest si la versión no refresca).
+- .cf-token sigue sin repo (solo afecta al worker de Telegram; sin cambios esta ronda).

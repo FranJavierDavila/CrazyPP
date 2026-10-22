@@ -107,7 +107,21 @@ CAPAS = [
     # penalización honesta a la IA rival (c06: predicción muerta al cruzar
     # el portal, error ×1,6, piernas ×0,75, +10 % de fallo; la marca se
     # limpia al devolver). Icono del dueño + voces ES/EN embebidos.
-    ('AJ · súper portal 4.º poder (v3641)', 'qa_portal_v3641.py'),
+    # AJ (v3641) RETIRADA: verificaba el portal de r49 (swap inmediato +
+    # muerte de predicción por frame — el dueño demostró en el Quest que la
+    # IA dejaba de devolver). La sustituye AK (v3642).
+    # AK (v3642): EL PORTAL SE ENTIENDE Y LA IA RESPONDE (informe del dueño
+    # tras V3.6.41): tránsito EXPLÍCITO en 3 fases (portal de ENTRADA con
+    # portals.png al 50 % en la zona de impacto + halo → la bola viaja
+    # OCULTA 1 s con la física congelada → el MISMO portal se abre SOBRE la
+    # mesa rival y la bola sale por su CENTRO con bote jugable del solver),
+    # IA penalizada en % con FLANCO único (nunca anulada; la marca muere
+    # con la ventana y con el punto), icono del dueño RECORTADO con alfa
+    # (verificación PIL) y voz ES nativa Piper (la de r49 estaba corrupta),
+    # ANTI-LAG (precaliente de 13 piezas al empezar la partida: cantos,
+    # icono, imagen del portal y 4 voces) y PASSTHROUGH en AJUSTES (en VR,
+    # por defecto OFF, cambio de modo en vivo con re-entrada automática).
+    ('AK · portal se entiende + IA responde (v3642)', 'qa_portal_v3642.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

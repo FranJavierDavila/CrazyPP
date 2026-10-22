@@ -1,2 +1,1 @@
-# SHA256 del game.html que produjo esta división (3.6.41-SDK6, fase 43 · El portal dimensional; regenerado tras el fix de gravedad del portal)
-ae751402dfb1e559dad0ddb97cbb8aae32fd45935a2fd988b044b801179f8756
+e8edb18b10601509a2914dec1dc0c61d6f2e856b01e08409f9b9e157c203c4fd

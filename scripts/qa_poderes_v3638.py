@@ -129,7 +129,7 @@ async def main():
         ('const MEGA_ARROW_S = 0.020;', 'flechas: tamaño base intacto'),
         ('return !!(this.champs && this.champs.active);',
          'gate: superpoderes SOLO en campeonatos'),
-        ('V3.6.41-SDK6', 'sello de versión servida'),
+        ('V3.6.42-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     # REGRESIONES de los defects que se atacan
@@ -165,20 +165,23 @@ async def main():
           const libre = (G.paddleHand === 0) ? 1 : 0;
           const rndReal = Math.random;
 
-          // · PRECALIENTE: la PRIMERA CARGA arma la cola y el bucle la drena
+          // · PRECALIENTE (re-anclado r50): la cola se arma AL EMPEZAR LA
+          //    PARTIDA (anti-lag del dueño: 13 piezas — cantos, imagen del
+          //    portal, icono y 4 voces) y al ganar la carga ya está DRENADA
           G.champs.activeId = 'locura';
           G.rules.startMatch('match');
+          out.colaAlEmpezar = Array.isArray(G._megaPrewarmQ) &&
+            G._megaPrewarmQ.length >= 13;   // r50: anti-lag total
           Math.random = () => 0.1;                 // siempre 'mega'
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errU0 = String(e); }
           G.rules.state = 'rally'; G.rules.rallyHits = 11;
           try { G.updateMega(1 / 60); } catch (e) { out.errU1 = String(e); }
-          out.colaArmada = Array.isArray(G._megaPrewarmQ) &&
-            G._megaPrewarmQ.length === 7;   // v3.6.41: +canto del portal
           // drenar: una pieza por frame — SIN tocar el gatillo
-          for (let i = 0; i < 10; i++) {
+          for (let i = 0; i < 20; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }
           }
+          out.colaArmada = out.colaAlEmpezar === true;
           out.colaDrenada = Array.isArray(G._megaPrewarmQ) &&
             G._megaPrewarmQ.length === 0;
           out.arsenalCaliente = !!G._megaFx && !!G._efectoFx && !!G._imanFx &&

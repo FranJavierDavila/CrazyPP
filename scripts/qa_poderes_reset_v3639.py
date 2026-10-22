@@ -89,7 +89,7 @@ async def main():
         ('const EFECTO_DUR = 8;', 'efecto: ventana 8 s intacta'),
         ('const MEGA_GOLPES = 11;', 'mega: carga por rally 11+ intacta'),
         ('const MEGA_LOD_JUEGO = 0.5;', 'LOD 50 % en juego intacto'),
-        ('V3.6.41-SDK6', 'sello de versión servida'),
+        ('V3.6.42-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     chk(game.count('_megaNormReset') >= 4,
@@ -168,7 +168,10 @@ async def main():
           out.escalaUno = !G.paddleMounts || !G.paddleMounts[0] ||
             Math.abs(G.paddleMounts[0].scale.x - 1) < 1e-6;
           out.lodUno = G._megaLOD === 1;
-          out.prewarmApagado = G._megaPrewarmQ === null;
+          // re-anclado r50: el precaliente se RE-ARMA al empezar (anti-lag,
+          // 13 piezas calientes para la carga — la congelación es imposible)
+          out.prewarmApagado = Array.isArray(G._megaPrewarmQ) &&
+            G._megaPrewarmQ.length >= 13;
           out.baseHitNum = typeof G._BASE_HIT === 'number' && G._BASE_HIT > 0;
 
           // · IDEMPOTENCIA: recoger DOS veces seguidas no rompe nada
@@ -218,7 +221,7 @@ async def main():
             chk(rt.get('palaMulUno') is True, 'partida nueva: multiplicador del rival a 1')
             chk(rt.get('escalaUno') is True, 'partida nueva: escala de la pala a 1')
             chk(rt.get('lodUno') is True, 'partida nueva: LOD al 100 %')
-            chk(rt.get('prewarmApagado') is True, 'partida nueva: precaliente apagado')
+            chk(rt.get('prewarmApagado') is True, 'partida nueva: precaliente RE-ARMADO (anti-lag r50)')
             chk(rt.get('baseHitNum') is True, 'partida nueva: radio de asistencia base intacto')
             chk(rt.get('dobleResetSinError') is True,
                 'IDEMPOTENCIA: doble recogida + startMatch sin errores')

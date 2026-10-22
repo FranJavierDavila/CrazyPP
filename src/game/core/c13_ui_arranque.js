@@ -2763,7 +2763,11 @@ loadPaddleModel().then((paddleModel) => {
     }
     if (!xrOK) { setStatusKey('status_no_vr'); return; }
     setStatusKey('status_starting_vr');
-    game.enterVR()
+    // v3.6.42 · el conmutador de passthrough (AJUSTES en VR) persiste —
+    // por defecto DESACTIVADO; JUGAR respeta lo que el dueño dejó fijado.
+    let arPref = false;
+    try { arPref = localStorage.getItem('ppxr_pending_ar') === '1'; } catch { /* */ }
+    game.enterVR(false, arPref)
       .catch((err) => {
         statusEl.textContent = '⚠️ ' + (err?.message || T('status_vr_fail'));
       });
@@ -2773,6 +2777,9 @@ loadPaddleModel().then((paddleModel) => {
   if (arBtn) {
     arBtn.addEventListener('click', () => {
       if (arBtn.disabled) return;
+      // v3.6.42 · fija el pref del conmutador (coherente con AJUSTES en VR)
+      try { localStorage.setItem('ppxr_pending_ar', '1'); } catch { /* */ }
+      game.pendingAR = true;
       setStatusKey('status_starting_ar');
       game.enterVR(false, true)
         .catch((err) => {

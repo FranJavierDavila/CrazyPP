@@ -444,6 +444,7 @@ export class OpponentAI {
     this.hitCooldown = 0;
     this.errX = 0;
     this.errY = 0;
+    this._ppPortalVisto = false;   // v3.6.42: flanco de la marca del portal
     this.swing = null;   // animación de follow-through del último golpe (v2.17)
     this.prep = new THREE.Vector3();   // retroceso de preparación (visual)
     // v2.23: lado del golpe en curso — +1 derecha (forehand), -1 revés.
@@ -459,6 +460,7 @@ export class OpponentAI {
     this.vel.set(0, 0, 0);
     this.predictValid = false;
     this.hitCooldown = 0;
+    this._ppPortalVisto = false;   // v3.6.42: el flanco del portal a limpio
   }
 
   update(dt, ball, ctx) {
@@ -471,14 +473,23 @@ export class OpponentAI {
     const sign = this.sign;
     const toward = ball.vel.z * sign > 0;
 
-    // v3.6.41 · SÚPER PORTAL: la bola que la IA perseguía DESAPARECIÓ y
-    // reapareció en otra parte (el portal del jugador la trasladó al
-    // otro lado de la red). La predicción anterior muere: la IA reacciona
-    // de nuevo tras SU predictInterval (reacción natural) y el error se
-    // re-sortea amplificado — petición del dueño: el portal «penaliza»
-    // al rival sin tocar la física ni el árbitro. La marca la pone el
-    // núcleo (ball.ppPortal) y la IA la limpia al devolver.
-    if (ball.ppPortal) this.predictValid = false;
+    // v3.6.42 · CORRECCIÓN CRÍTICA (el dueño: «he sacado y no las
+    // devuelve… una cosa es que se le penalice en un % y otra que se anule
+    // su respuesta»): en r49 la predicción moría CADA FRAME mientras la
+    // marca ppPortal estuviera viva — y la marca solo se limpia al
+    // devolver la propia IA, así que la IA pasaba casi TODOS los frames
+    // sin predicción válida (deriva perezosa) y no volvía a golpear NUNCA.
+    // AHORA la muerte de la predicción es PUNTUAL (flanco de subida de la
+    // marca): la bola que desaparece por el portal borra la predicción UNA
+    // sola vez y la IA reacciona tras SU predictInterval natural. La
+    // penalización queda en los % de siempre (error ×1,6 · piernas ×0,75 ·
+    // +10 % de fallo decidido) y SOLO con la ventana del poder viva.
+    if (ball.ppPortal && !this._ppPortalVisto) {
+      this._ppPortalVisto = true;
+      this.predictValid = false;
+      this.predictTimer = Math.max(this.predictTimer, this.cfg.predictInterval);
+    }
+    if (!ball.ppPortal && this._ppPortalVisto) this._ppPortalVisto = false;
 
     if (ctx.canHit && toward) {
       this.predictTimer -= dt;

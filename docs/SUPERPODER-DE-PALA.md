@@ -266,14 +266,55 @@ piernas van ×0,75 (`portalRivalVel`) y el fallo decidido suma +10 %
 (`portalMissExtra`). La marca `ball.ppPortal` la limpia la IA al
 devolver (golpe limpio y mishit) y el `_megaNormReset` (FASE 41).
 
+### 2.h · FASE 44 (ronda 50) — el portal SE ENTIENDE y la IA RESPONDE
+
+Informe del dueño tras probar V3.6.41 en el Quest 3, corregido pieza a
+pieza:
+
+1. **CRÍTICO — «he sacado y no las devuelve»**: en r49 la muerte de la
+   predicción corría CADA FRAME con la marca viva (y la marca solo se
+   limpiaba al devolver la propia IA: bucle de muerte). FIX: la muerte es
+   un FLANCO único (`_ppPortalVisto` en c06) — la IA pierde la predicción
+   UNA vez al cruzar el portal y reacciona tras su `predictInterval`
+   natural. La penalización queda en PORCENTAJES (error ×1,6 · piernas
+   ×0,75 · +10 % de fallo decidido) — **jamás anulación**. Y las
+   desventajas mueren CON el poder: la marca se limpia al acabar la
+   ventana (`_portalFin`) y al acabar el punto (`updateMega`), además de
+   al devolver la IA y en la recogida de partida nueva.
+2. **«el icono no lo has recortado»**: r49 embebió el PNG en RGB (alfa
+   destruido). FIX: recorte al contenido + transparencia preservada (64
+   colores FASTOCTREE) — verificado con PIL en la capa AK.
+3. **«la voz no sale en castellano»**: la ES de r49 estaba corrupta
+   (2,78 s). FIX: Piper `es_ES-davefx` nativa (0,82 s), verificada por ASR.
+4. **«no se entiende visualmente»** — presentación EXPLÍCITA del dueño:
+   al golpear con el poder activo se abre el **portal de ENTRADA en la
+   zona de impacto** (portals.png del dueño — el arte del rival wizard —
+   al **50 %** de su tamaño real) con el halo creciente; la bola se hunde
+   en su centro (0,16 s) y **viaja OCULTA 1 segundo** (física congelada:
+   `stepPhysics` la salta, el árbitro no ve ni un evento); al segundo el
+   **MISMO portal se abre SOBRE la mesa del rival** y la bola **sale
+   disparada por su centro** con trayectoria del solver (bote jugable
+   garantizado — el rival SIEMPRE puede intentarlo). Una identidad, cero
+   colisiones fantasma, el tránsito se CUMPLE aunque el poder expire en
+   el medio (vigilante anti-bloqueo incluido).
+5. **«congelación al cargar un superpoder»** — ANTI-LAG total: el
+   precaliente arranca AL EMPEZAR LA PARTIDA (13 piezas: 4 cantos + halo
+   + anillo de bote + flechas + imagen del portal + icono + 4 voces del
+   idioma vivo) — la carga y el gatillo ya no construyen ni decodifican
+   nada: solo encienden.
+6. **Conmutador PASSTHROUGH en AJUSTES** (en VR, por defecto
+   DESACTIVADO): cambia la sesión en vivo (fin + re-entrada automática al
+   modo contrario aprovechando el gesto del gatillo; si el navegador no
+   lo permite, queda fijado para la próxima entrada) y persiste en
+   `ppxr_pending_ar` — coherente con el enlace de la portada web.
+
 **Presentación diegética (FASE 42 heredada):** el icono pasa a modo
 ACTIVO con anillo VIOLETA `#a86bff` que se vacía y parpadeo final;
 canto violeta ×1,085 en la silueta de la pala (no pelea con oro ni
 cian); anillos de ENTRADA/SALIDA en el mundo (billboard, one-shot de
-0,42 s); tránsito visual: la bola se hunde a 22 % y reaparece (0,16 s,
-SOLO cosmético — la física nunca se entera); barrido sonoro propio
-(baja-subida, como la bola que entra y sale del vórtice); canto del
-portal en el precaliente (cola de 7 piezas).
+0,42 s) + los DOS portales del mundo (sprites del PNG del dueño, pulso
+y desvanecido); barrido sonoro propio en la entrada y en la salida;
+todo el arsenal del portal en el precaliente (cola de 13 piezas).
 
 ## 3 · Feedback al jugador
 

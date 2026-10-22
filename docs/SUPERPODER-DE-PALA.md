@@ -316,6 +316,63 @@ cian); anillos de ENTRADA/SALIDA en el mundo (billboard, one-shot de
 y desvanecido); barrido sonoro propio en la entrada y en la salida;
 todo el arsenal del portal en el precaliente (cola de 13 piezas).
 
+### 2.i · FASE 45 (ronda 51) — los superpoderes SE VEN y SE OYEN
+
+Informe del dueño tras probar V3.6.42 en el Quest 3, corregido pieza a
+pieza:
+
+1. **«No noto los efectos del Poder Super Efectos… exagerarlo»**: el brush
+   generado sube a **×3** (`EFECTO_SPIN_MUL`), la curva Magnus en vuelo a
+   **×2,2** y el acople del bote a **×2,4** (c02), con tope de giro **×3**
+   — la bola marcada CURVA a la vista. Su halo rojo crece un **35 %**
+   (0,142 m + pulso vivo).
+2. **Súper IMÁN entendible** (petición literal: «ampliar un poco el radio
+   de influencia y si la bola entra dentro del mismo que aparezcan unas
+   pequeñas flechas desde la bola en dirección al centro de nuestra pala
+   indicando que está siendo atraída y que sea así»): radio **0,45 →
+   0,75 m**, plena 0,20 m, aceleración ×5, Δv 0,60. **TRES FLECHAS cian**
+   (`_imanFlechas`, conos 3D) aparecen EN LÍNEA desde la bola hacia el
+   punto dulce cuando la bola entra en el campo (y laten si el campo está
+   empujando — marca `ppImanEmpuje` que pone `applyIman`); construidas por
+   el precaliente (14.ª pieza, anti-lag). Y el **RESCATE**: una bola que
+   se nos escapa (cruzada o larga, viniendo a nuestra mitad con
+   `vel.z > 0,3`) es atraída de VERDAD hacia el punto dulce
+   (`imanRescateAcel` 6 m/s², tope `imanRescateDv` 0,85 m/s por
+   aproximación, contador `dvRes` independiente del de la asistencia
+   clásica).
+3. **«En el Super Poder Portal a veces puedo golpear varios portales y
+   otras parece que con uno solo me desaparece»**: CAUSA — el gasto iba
+   POR GOLPE: con el sorteo ×1 la ventana moría al primer portal (y el
+   vigilante «sin cargas → fuera» la apagaba encima). NUEVA ECONOMÍA: la
+   **ACTIVACIÓN gasta 1 carga** y la ventana trae **SIEMPRE SUS 3 GOLPES
+   PORTALIZADOS** (u 8 s) — re-activar refresca (otra carga). El
+   vigilante de la matriz se RETIRA. Nunca más «con uno me desaparece».
+4. **«Feedback sonoro cuando está a punto de acabarse, sin mirar el
+   icono»**: **CUENTA SONORA 3·2·1 uniforme en los CUATRO poderes**
+   (`_poderTickBlip`): blips de 1319 Hz al quedar 3 y 2 segundos, y de
+   1568 Hz (más agudo, urgencia) al quedar 1; el sonido de fin propio de
+   cada poder cierra la cuenta. El parpadeo del icono sigue alineado
+   (warn a 2 s).
+5. **«El conmutador de passthrough que no nos lleve a la ventana
+   principal web desde VR»**: la sesión se pide **SIEMPRE
+   `immersive-ar`** (el Quest 3 la soporta — con fondo opaco se ve
+   EXACTAMENTE igual que una sesión VR) y el passthrough ya NO cambia el
+   MODO de la sesión: el conmutador de AJUSTES alterna tu habitación ⇄
+   sala virtual **AL VUELO** con `_pstAplicar` (canje de background/fog/
+   sala/shadowCatcher + clearColor alfa 0) — sin `session.end`, sin salir
+   a la web, sin cortar el partido. La preferencia (`ppxr_pending_ar`)
+   decide el estado inicial; los caminos del hall/menú filtran con
+   `(inAR && pstOn)`; el fallback fin+re-entrada de r49 queda solo para
+   dispositivos SIN `immersive-ar`.
+
+**Capa AL nueva** (`qa_superpoderes_v3643`, 68 checks): agujas de las 5
+piezas + agujas NEGATIVAS (el gasto por golpe y el vigilante del portal
+ya NO existen) + mecánica real headless (precaliente de 14 piezas,
+flechas vivas según el campo, portal ×1 con 3 golpes garantizados, cuenta
+sonora 3·2·1 espiada en el audio, passthrough que canjea y restaura la
+escena, halo exagerado). **AF re-anclada** a la spec v3.6.43 del imán
+(0,75/0,20/5/0,60 + RESCATE) y al brush ×3 (141 checks).
+
 ## 3 · Feedback al jugador
 
 1. **Icono anclado al mango** (sprite-billboard 4,8 cm, base de la mano, justo

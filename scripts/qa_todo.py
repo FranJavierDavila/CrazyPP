@@ -122,6 +122,17 @@ CAPAS = [
     # icono, imagen del portal y 4 voces) y PASSTHROUGH en AJUSTES (en VR,
     # por defecto OFF, cambio de modo en vivo con re-entrada automática).
     ('AK · portal se entiende + IA responde (v3642)', 'qa_portal_v3642.py'),
+    # AL (v3643): SUPERPODERES QUE SE VEN Y SE OYEN (informe del dueño tras
+    # V3.6.42): Súper EFECTO exagerado (brush ×3, Magnus ×2,2, bote ×2,4,
+    # tope ×3, halo +35 %) · Súper IMÁN con radio 0,75 m, RESCATE real
+    # (bolas escapadas atraídas al punto dulce) y 3 FLECHAS cian bola→pala
+    # · Súper PORTAL con 3 GOLPES GARANTIZADOS por activación (el gasto
+    # por golpe mataba la ventana con sorteo ×1 — «con uno solo me
+    # desaparece»; vigilante de matriz retirado) · CUENTA SONORA 3·2·1
+    # uniforme en los cuatro poderes (sin mirar el icono) · PASSTHROUGH EN
+    # CALIENTE (sesión siempre immersive-ar; _pstAplicar canjea fondo/sala
+    # al vuelo — el conmutador ya NO sale a la web).
+    ('AL · superpoderes se ven y se oyen (v3643)', 'qa_superpoderes_v3643.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

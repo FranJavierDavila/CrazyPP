@@ -17,7 +17,7 @@ Peticiones del dueño implementadas esta ronda:
     enseña A APLICARLO («golpea con GIRO»).
   · «Vamos a añadir otro superpoder de pala "SuperPala_Iman.png"» — el
     SÚPER IMÁN con la spec completa: campo de 8 s que atrae SUAVE la bola
-    al punto dulce (radio 0,45 m · plena a 0,12 m · a ≤3 m/s² · Δv ≤0,35
+    al punto dulce (radio 0,75 m · plena a 0,20 m · a ≤5 m/s² · Δv ≤0,60
     m/s por aproximación · predicción ≤0,15 s), pala mandada por la mano
     real, nada teleportado, sin recuperar bolas que ya pasaron el plano,
     física por SUBPASO (independiente del framerate) y CADA impacto
@@ -82,17 +82,19 @@ async def main():
         ('const IMAN_DUR = 8;', 'SÚPER IMÁN: ventana de 8 s'),
         ('const IMAN_ASIST = 3;', 'SÚPER IMÁN: máx. 3 asistencias por activación'),
         ('const MEGA_ARROW_S = 0.020;', 'flechas de la matriz: sprites de 2 cm'),
-        ('imanRadio: 0.45,', 'física: radio de influencia 0,45 m (dueño)'),
-        ('imanPlena: 0.12,', 'física: distancia de máxima asistencia 0,12 m (dueño)'),
-        ('imanAcelMax: 3,', 'física: aceleración lateral máxima 3 m/s² (dueño)'),
-        ('imanDvMax: 0.35,', 'física: Δv lateral máximo por aproximación 0,35 m/s (dueño)'),
+        ('imanRadio: 0.75,', 'física: radio de influencia 0,75 m (v3.6.43: «ampliar un poco el radio» del dueño)'),
+        ('imanPlena: 0.20,', 'física: distancia de máxima asistencia 0,20 m (v3.6.43)'),
+        ('imanAcelMax: 5,', 'física: aceleración lateral máxima 5 m/s² (v3.6.43)'),
+        ('imanDvMax: 0.60,', 'física: Δv lateral máximo por aproximación 0,60 m/s (v3.6.43)'),
+        ('imanRescateAcel: 6,', 'física: RESCATE (r51) con aceleración 6 m/s²'),
+        ('imanRescateDv: 0.85,', 'física: RESCATE (r51) con tope Δv 0,85 m/s'),
         ('imanTPred: 0.15,', 'física: horizonte de predicción 0,15 s (dueño)'),
         ('efectoRivalErrMul: 2.0,', 'efecto notorio: error del rival ×2'),
         ('efectoRivalVel: 0.85,', 'efecto notorio: piernas del rival ×0,85'),
         ('if (ball.ppIman) applyIman(ball, paddles, h);',
          'física: el imán se integra POR SUBPASO (independiente del framerate)'),
         ('function applyIman(ball, paddles, h) {', 'física: empuje al punto dulce (applyIman)'),
-        ('if (closing <= 0.4) continue;', 'física: solo bolas que se ACERCAN a la pala'),
+        ('if (closing <= 0.4) {', 'física: el filtro de closing deriva al RESCATE (r51)'),
         ('if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;',
          'física: NUNCA recupera bolas que ya superaron el plano de la cara'),
         ('IM.dv += aMag * h;', 'física: contador real de Δv lateral'),
@@ -139,7 +141,7 @@ async def main():
         ('pp_pala_mejorada_v1', 'conmutador persistente «Pala Mejorada»'),
         ('_megaNormReset()', 'recogida completa con dispose'),
         ('this.updateMega(dt);', 'la norma corre en el bucle animate'),
-        ('V3.6.42-SDK6', 'sello de versión servido'),
+        ('V3.6.43-SDK6', 'sello de versión servido'),
     ]:
         chk(needle in game, label)
     # REGRESIONES
@@ -310,8 +312,8 @@ async def main():
           out.cantoCian = !!(fxE && fxE.userData.rim && fxE.userData.rimMats &&
                              fxE.userData.rimMats[0] &&
                              fxE.userData.rimMats[0].color.getHex() === 0x54d8f0);
-          out.multEnPala = G.controllerPaddles[0].ppEfectoMul === 2 &&
-            G.controllerPaddles[1].ppEfectoMul === 2;
+          out.multEnPala = G.controllerPaddles[0].ppEfectoMul === 3 &&
+            G.controllerPaddles[1].ppEfectoMul === 3;
           out.msgEfectoEnsenia = (G.rules.message || '').indexOf('¡SÚPER EFECTO!') === 0 &&
             (G.rules.message || '').indexOf('GIRO') > 0;
 
@@ -413,13 +415,25 @@ async def main():
             b3.ppIman = { dv: 0 };
             for (let i = 0; i < 10; i++) H.stepPhysics(1 / 60, b3, [pad], []);
             out.pasadaNoRecupera = b3.vel.x === 0 && !b3.ppImanTocada;
-            // E) bola que se ALEJA: sin empuje
+            // E) bola LATERAL que NO viene a nuestra mitad: sin empuje
+            //    (el RESCATE de r51 solo actúa con vel.z > 0,3 — «viene
+            //    hacia nosotros» — petición literal del dueño)
             const b4 = mkBall(0);
-            b4.pos.copy(C).add(new (Object.getPrototypeOf(C).constructor)(0.2, 0, 0.3));
-            b4.vel.set(0, 0, 4);                       // se aleja de la pala
+            b4.pos.copy(C).add(new (Object.getPrototypeOf(C).constructor)(0.5, 0, 0.05));
+            b4.vel.set(3, 0, 0);                       // puramente lateral
             b4.ppIman = { dv: 0 };
             for (let i = 0; i < 10; i++) H.stepPhysics(1 / 60, b4, [pad], []);
-            out.alejandoseNada = b4.vel.x === 0 && !b4.ppImanTocada;
+            out.alejandoseNada = b4.vel.x > 2.5 && !b4.ppImanTocada;
+            // E2) RESCATE de r51: bola CRUZADA que viene a nuestra mitad
+            //     (closing ≤ 0,4 pero vel.z > 0,3) — el campo la atrae de
+            //     VERDAD hacia el punto dulce («una bola que se nos escapa
+            //     la atraigamos hacia la pala»)
+            const b5 = mkBall(0);
+            b5.pos.copy(C).add(new (Object.getPrototypeOf(C).constructor)(0.45, 0, 0.15));
+            b5.vel.set(2.5, 0, 2.0);                   // cruzada y viniendo
+            b5.ppIman = { dv: 0, dvRes: 0 };
+            for (let i = 0; i < 10; i++) H.stepPhysics(1 / 60, b5, [pad], []);
+            out.rescateActua = b5.vel.x < 2.0 && b5.ppImanTocada === true;
           } catch (e) { out.errFis = String(e); }
 
           // · CONSUMO por impacto asistido (1 carga por asistencia)
@@ -558,7 +572,7 @@ async def main():
             ('efectoAbre', 'gatillo con EFECTO seleccionado: ventana 8 s / 5 golpes'),
             ('fxHubicacion', 'FX cian construido para las DOS monturas'),
             ('cantoCian', 'el canto del efecto es CIAN (0x54d8f0)'),
-            ('multEnPala', 'multiplicador ×2 en las DOS palas del jugador'),
+            ('multEnPala', 'multiplicador ×3 en las DOS palas del jugador (r51)'),
             ('msgEfectoEnsenia', 'megáfono del efecto ENSEÑA a aplicarlo («GIRO»)'),
             ('haloVivo', 'HALO ROJO visible y anclado a la bola marcada'),
             ('haloFuera', 'sin marca: el halo se apaga'),
@@ -575,10 +589,11 @@ async def main():
             ('bolaArma', 'el campo viaja EN LA BOLA (ball.ppIman) en rally'),
             ('bolaFueraEnSaque', 'en saque la bola NO lleva campo'),
             ('imanEmpuja', 'física: el imán empuja la bola HACIA el punto dulce'),
-            ('imanTopeDv', 'física: Δv lateral respeta el tope 0,35 m/s del dueño'),
+            ('imanTopeDv', 'física: Δv lateral respeta el tope 0,60 m/s (v3.6.43)'),
             ('sinPoderIntacto', 'física: SIN el poder, vel.x === 0 (golden intacto)'),
             ('pasadaNoRecupera', 'física: la bola que YA pasó el plano no se recupera'),
-            ('alejandoseNada', 'física: la bola que se ALEJA no recibe empuje'),
+            ('alejandoseNada', 'física: bola que se va LATERAL sin venir a nuestra mitad: sin empuje'),
+            ('rescateActua', 'física RESCATE (r51): la bola cruzada que viene a nuestra mitad ES atraída'),
             ('asisteGasta', 'impacto asistido: −1 carga y contador +1'),
             ('asisteGasta2', 'segunda asistencia: −1 carga más'),
             ('imanSaleACero', 'cargas a 0: la entrada SALE de la matriz'),

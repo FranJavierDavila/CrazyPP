@@ -1,0 +1,381 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""QA v3.6.43 · RONDA 51 — SUPERPODERES QUE SE VEN Y SE OYEN (AL).
+
+Informe del dueño tras probar V3.6.42 en el Quest 3:
+  1) «No noto los efectos del Poder Super Efectos, igual es preciso
+     exagerarlo para que visualmente veamos el resultado» — FIX: el brush
+     generado sube ×3 (EFECTO_SPIN_MUL), Magnus ×2,2 y bote ×2,4 (c02) y
+     tope de giro ×3 (efectoSpinTope); el halo rojo de la bola marcada
+     crece un 35 % (0,142 m) con pulso más vivo.
+  2) «El Súper Imán tampoco se entiende visualmente: ampliar el radio de
+     influencia y si la bola entra dentro del mismo que aparezcan unas
+     pequeñas flechas desde la bola en dirección al centro de nuestra pala
+     indicando que está siendo atraída y que sea así, eso permite que una
+     bola que se nos escapa la atraigamos hacia la pala» — FIX: radio
+     0,45→0,75 m y plena 0,12→0,20, acel ×5 y Δv ×0,60; RESCATE NUEVO en
+     c05/applyIman (bolas que NO se acercan pero vienen a nuestra mitad son
+     atraídas DIRECTO al punto dulce: imanRescateAcel 6, imanRescateDv
+     0,85); 3 FLECHAS cian en línea bola→punto dulce (construidas por el
+     precaliente, ancladas por _imanFlechasUpdate, laten si el campo
+     empuja).
+  3) «En el Super Poder Portal a veces puedo golpear varios portales y
+     otras parece que con uno solo me desaparece» — CAUSA: el gasto iba
+     POR GOLPE (el sorteo ×1 mataba la ventana al primer portal y encima
+     el vigilante «sin cargas» la apagaba). FIX: la ACTIVACIÓN gasta 1
+     carga y la ventana trae SIEMPRE SUS 3 GOLPES PORTALIZADOS (u 8 s);
+     el vigilante de la matriz se RETIRA; re-activar refresca.
+  4) «En todos los super efectos de pala debemos dar feedback sonoro
+     cuando está a punto de acabarse para que el jugador lo sepa sin
+     mirar el indicador del icono» — FIX: CUENTA SONORA 3·2·1 uniforme en
+     los CUATRO poderes (_poderTickBlip: blips de 1319 Hz; el último, de
+     1568 Hz) + el sonido de fin propio de cada poder.
+  5) «El conmutador de passthrough que no nos lleve a la ventana principal
+     web desde VR, que sea algo directo desde VR a MR sin pasar por la
+     página web» — FIX: la sesión se pide SIEMPRE immersive-ar (el Quest 3
+     la soporta) y el passthrough ya NO cambia el MODO: cambia el FONDO al
+     vuelo (_pstAplicar canjea background/fog/sala/shadowCatcher y pone
+     clearColor alfa 0) — sin session.end, sin salir a la web. La sala
+     virtual opaca se ve idéntica a una sesión VR; los usos del hall y el
+     menú ahora filtran con (inAR && pstOn); fallback r49 solo para
+     dispositivos SIN immersive-ar.
+
+Pruebas: (1) FUENTE SERVida — agujas de las 5 piezas (incluye agujas
+NEGATIVAS: el gasto por golpe y el vigilante del portal ya no existen).
+(2) MECÁNICA REAL headless — precaliente de 14 piezas, flechas del imán
+vivas según el estado del campo, PORTAL ×1 con 3 golpes garantizados (el
+caso exacto del dueño), cuenta sonora 3·2·1 espiada en el audio,
+passthrough en caliente que canjea y restaura la escena, halo del efecto
+exagerado.
+
+Salida: RESULTADO: N OK · M fallos (contrato qa_todo)"""
+import asyncio
+import re
+import sys
+import urllib.request
+
+from playwright.async_api import async_playwright
+
+URL = "http://localhost:3000/game.html"
+
+ok = fails = 0
+
+def chk(cond, label):
+    global ok, fails
+    print(('  ✓ ' if cond else '  ✗ FALLO: ') + label)
+    if cond:
+        ok += 1
+    else:
+        fails += 1
+
+
+async def main():
+    global ok, fails
+    errors = []
+
+    # ---------- 1 · FUENTE SERVIDA ----------
+    try:
+        game = urllib.request.urlopen(URL, timeout=10).read().decode('utf-8')
+    except Exception as e:
+        print('✗ No se pudo leer game.html servido:', e)
+        print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
+        sys.exit(1)
+    for needle, label in [
+        # · SELLO DE VERSIÓN (ronda 51)
+        ('3.6.43-SDK6', 'versión servida: 3.6.43-SDK6 (ronda 51)'),
+        # · 1) SÚPER EFECTO EXAGERADO
+        ('const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)',
+         'efecto: el brush generado sube a ×3 (antes ×2)'),
+        ('efectoSpinTope: 3,', 'efecto: tope de giro ×3 (c02)'),
+        ('efectoMagnusMul: 2.2,', 'efecto: curva Magnus ×2,2 en vuelo (c02)'),
+        ('efectoBoteMul: 2.4,', 'efecto: bote exagerado ×2,4 (c02)'),
+        ('0.142 + 0.024 * Math.sin(performance.now() * 0.009)',
+         'efecto: halo de la bola marcada un 35 % más grande y vivo'),
+        # · 2) SÚPER IMÁN: radio + flechas + RESCATE
+        ('imanRadio: 0.75,', 'imán: radio de influencia 0,75 m (antes 0,45)'),
+        ('imanPlena: 0.20,', 'imán: zona plena 0,20 m'),
+        ('imanAcelMax: 5,', 'imán: aceleración ×5 m/s²'),
+        ('imanDvMax: 0.60,', 'imán: tope de Δv 0,60 m/s por aproximación'),
+        ('imanRescateAcel: 6,', 'imán: RESCATE con aceleración 6 m/s²'),
+        ('imanRescateDv: 0.85,', 'imán: RESCATE con tope Δv 0,85 m/s'),
+        ('v3.6.43 · RESCATE: bola DENTRO del campo que viene hacia nuestra',
+         'imán: el RESCATE vive en c05/applyIman (física real)'),
+        ('const closing = ball.vel.dot(_imU) / d;',
+         'imán: el filtro de cierre (closing) decide asistencia ⇄ rescate'),
+        ('if (closing <= 0.4) {',
+         'imán: RAMO del RESCATE (bolas que NO se acercan a la pala)'),
+        ('if (ball.vel.z <= 0.3) continue;            // no viene hacia nosotros',
+         'imán: el rescate SOLO actúa sobre bolas que vienen a nuestra mitad'),
+        ('let aRes = DIMS.imanRescateAcel;',
+         'imán: la atracción usa la aceleración del rescate'),
+        ('IM.dvRes = (IM.dvRes || 0) + aRes * h;      // contador real de rescate',
+         'imán: contador de rescate INDEPENDIENTE (no roba empuje)'),
+        ('ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja',
+         'imán: la marca del empuje renace fresca cada subpaso'),
+        ('ball.ppImanEmpuje = true;',
+         'imán: el campo MARCA el empuje para las flechas (ambos modos)'),
+        ('_buildImanFlechas() {', 'imán: _buildImanFlechas (3 conos cian)'),
+        ('_imanFlechasUpdate() {', 'imán: anclaje por frame de las flechas'),
+        ('try { this._imanFlechasUpdate(); } catch (eFl) { /* */ }',
+         'imán: el updateMega ancla las flechas SIEMPRE'),
+        ('() => { try { this._buildImanFlechas(); } catch (e) { /* */ } },   // v3.6.43 flechas',
+         'imán: las flechas entran en el PRECALIENTE (anti-lag)'),
+        ('if (this._imanFlechas) for (const m of this._imanFlechas) m.visible = false;',
+         'imán: partida nueva recoge las flechas'),
+        ('m.position.copy(b.pos).addScaledVector(_imanTmpD, d * t);',
+         'imán: flechas EN LÍNEA desde la bola hacia el punto dulce'),
+        # · 3) PORTAL: 3 GOLPES GARANTIZADOS
+        ('const entAbrir = this._megaMatriz.find((x) => x.id === \'portal\');\n    if (entAbrir) this._megaGasta(entAbrir);   // −1 carga AL ABRIR (no por golpe)',
+         'portal: la ACTIVACIÓN gasta 1 carga AL ABRIR'),
+        ('this._portalGolpes--;\n    this._portalCd = PORTAL_CD;',
+         'portal: el golpe consume golpes de VENTANA (no cargas)'),
+        ('if (this._portalGolpes <= 0) {\n      this._portalFin();                  // los 3 portales agotados',
+         'portal: la ventana muere SOLO al agotar los 3 golpes'),
+        ('// v3.6.43: el vigilante «sin cargas → portal fuera» se RETIRA — la',
+         'portal: el vigilante de la matriz se RETIRA (comentario)'),
+        ('this.pstOn = this.inAR && this.pendingAR;',
+         'passthrough: pstOn nace de la preferencia al entrar en sesión'),
+        # · 4) CUENTA SONORA 3·2·1 (los cuatro poderes)
+        ('_poderTickBlip(n) {', 'ticks: _poderTickBlip definida (cuenta uniforme)'),
+        ('const f = n >= 3 ? 1568 : 1319;',
+         'ticks: el último segundo sube de tono (urgencia)'),
+        ('/** v3.6.43 · CUENTA SONORA de fin de poder',
+         'ticks: documentada (petición del dueño)'),
+        # · 5) PASSTHROUGH EN CALIENTE
+        ("arOK ? 'immersive-ar' : 'immersive-vr',",
+         'passthrough: la sesión se pide SIEMPRE immersive-ar si se soporta'),
+        ("try { arOK = !!(await xr.isSessionSupported('immersive-ar')); } catch (eXR) { /* */ }",
+         'passthrough: detección de soporte immersive-ar'),
+        ('_pstAplicar(on) {', 'passthrough: _pstAplicar (canje de fondo/sala)'),
+        ('try { this.renderer.setClearColor(0x000000, 0); } catch (eC) { /* */ }',
+         'passthrough: clearColor alfa 0 → se ve la habitación real'),
+        ('if (this.renderer.xr.isPresenting && this.inAR) {\n          this.pstOn = pstNuevo;\n          this._pstAplicar(pstNuevo);   // ⬅ AL VUELO: ni un frame de web',
+         'passthrough: el conmutador en AR alterna EN CALIENTE'),
+        ('this._pstAplicar(false);\n    this.pstOn = false;\n    this.inAR = false;',
+         'passthrough: fin de sesión restaura sala virtual'),
+        ('this.pstOn = false;           // passthrough visible AHORA (solo inAR)',
+         'passthrough: estado pstOn en el constructor'),
+        ('Passthrough ACTIVADO · tu habitación (sin salir de la partida)',
+         'passthrough: i18n ES en caliente'),
+        ('Passthrough ON · your room (no leaving the match)',
+         'passthrough: i18n EN en caliente'),
+    ]:
+        chk(needle in game, label)
+
+    # · AGUJAS NEGATIVAS (el defecto NO puede volver)
+    chk('if (ent) this._megaGasta(ent);\n    this._portalGolpes--;' not in game,
+        'portal NEGATIVO: ya no hay gasto POR GOLPE de la matriz')
+    chk('sin cargas: portal fuera YA' not in game,
+        'portal NEGATIVO: el vigilante «sin cargas → fuera» desapareció')
+    chk(game.count('(this.inAR && this.pstOn)') >= 5,
+        f'passthrough: los usos de sala/hall filtran con (inAR && pstOn) '
+        f'({game.count("(this.inAR && this.pstOn)")} usos)')
+    chk(game.count('this._poderTickBlip(2)') == 4 and
+        game.count('this._poderTickBlip(1)') == 4 and
+        game.count('this._poderTickBlip(3)') == 4,
+        'ticks: los CUATRO poderes comparten la cuenta 3·2·1 (12 llamadas)')
+
+    # ---------- 2 · MECÁNICA REAL (headless) ----------
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(args=[
+            "--use-gl=swiftshader", "--enable-unsafe-swiftshader",
+            "--autoplay-policy=no-user-gesture-required",
+        ])
+        page = await browser.new_page(viewport={"width": 1280, "height": 800})
+        page.on("pageerror", lambda e: errors.append(str(e)))
+        await page.goto(URL, wait_until="domcontentloaded")
+        await page.wait_for_timeout(7000)
+
+        rt = await page.evaluate("""async () => {
+          const G = window.__PP_GAME;
+          const out = {};
+          if (!G) { out.sinJuego = true; return out; }
+          try { window.__pp2DPlay = true; } catch (e) { /* */ }
+          try { localStorage.removeItem('pp_mega_norm_hint'); } catch (e) { /* */ }
+          try { localStorage.setItem('pp_pala_mejorada_v1', '1'); } catch (e) { /* */ }
+          G.palaMejorada = true;
+          const libre = (G.paddleHand === 0) ? 1 : 0;
+          const rndReal = Math.random;
+
+          // · PRECALIENTE de 14 piezas (la 14.ª: flechas del imán)
+          G.champs.activeId = 'locura';
+          G.rules.startMatch('match');
+          out.precaliente14 = !!(G._megaPrewarmQ && G._megaPrewarmQ.length >= 14);
+          Math.random = () => 0.6;                 // siembra IMÁN (tercer tercio)
+          for (let i = 0; i < 20; i++) {
+            try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }
+          }
+          out.flechasCalientes = !!G._imanFlechas &&
+            G._imanFlechas.length === 3 && G._imanFlechas[0].isMesh;
+
+          // · FLECHAS VIVAS según el estado del campo: bola en el radio y
+          //   viniendo → visibles; fuera del radio → ocultas
+          G.rules.state = 'point';
+          try { G.updateMega(1 / 60); } catch (e) { out.errU0 = String(e); }
+          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          try { G.updateMega(1 / 60); } catch (e) { out.errG1 = String(e); }
+          out.sembradoIman = G._megaMatriz.length === 1 &&
+            G._megaMatriz[0].id === 'iman';
+          let tI = null;
+          try { tI = G.megaTrigger(libre); } catch (e) { out.errI1 = String(e); }
+          out.campoAbre = tI === true && G._imanT > 7.9;
+          const ps = G.controllerPaddles[G.paddleHand];
+          ps.active = true;
+          ps.pos.set(0, 1.0, 0.9);
+          ps.up.set(0, 1, 0); ps.normal.set(0, 0, -1);
+          const bI = G.ball;
+          // A) bola DENTRO del radio, cruzada (se aleja del punto dulce)
+          bI.pos.set(0.45, 1.0, 0.55);
+          bI.vel.set(1.5, 0, 2.0);
+          try { G._imanFlechasUpdate(); } catch (e) { out.errF1 = String(e); }
+          out.flechasEnCampo = G._imanFlechas[0].visible &&
+            G._imanFlechas[2].visible;
+          const entreBolaPala = G._imanFlechas[0].position.distanceTo(bI.pos) <
+            G._imanFlechas[0].position.distanceTo(ps.pos);
+          out.flechasBolaPala = entreBolaPala;
+          // B) bola FUERA del radio (z lejano) → ocultas
+          bI.pos.set(0.0, 1.0, -1.5);
+          try { G._imanFlechasUpdate(); } catch (e) { out.errF2 = String(e); }
+          out.flechasFuera = !G._imanFlechas[0].visible &&
+            !G._imanFlechas[2].visible;
+
+          // · FÍSICA DEL RESCATE (c05/applyIman): la física real con pala
+          //   del jugador solo corre EN VR (pads solo se llena presenting),
+          //   así que aquí la blindan las agujas de fuente de arriba; en la
+          //   mecánica verificamos que el campo ARMA la bola en rally.
+          bI.pos.set(0.45, 1.0, 0.55);
+          bI.vel.set(1.5, 0, 2.0);
+          bI.ppEfecto = false; bI.ppPortal = false; bI.ppTransito = false;
+          try { G.updateMega(1 / 60); } catch (e) { out.errR1 = String(e); }
+          out.rescateMarcaArmada = !!bI.ppIman && typeof bI.ppIman.dv === 'number';
+          // y las flechas laten cuando el campo EMPUJA (la marca de c05)
+          bI.ppImanEmpuje = true;
+          try { G._imanFlechasUpdate(); } catch (e) { out.errF3 = String(e); }
+          out.flechasLaten = G._imanFlechas[0].visible &&
+            G._imanFlechas[0].material.opacity > 0.95;
+          bI.ppImanEmpuje = false;
+
+          // · PORTAL ×1: el caso EXACTO del dueño («con uno solo me
+          //   desaparece») — ahora abre SIEMPRE 3 golpes aunque la matriz
+          //   se quede sin el poder
+          G.rules.state = 'point';
+          try { G.updateMega(1 / 60); } catch (e) { out.errP0 = String(e); }
+          Math.random = () => 0.98;               // siembra PORTAL (último)
+          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          try { G.updateMega(1 / 60); } catch (e) { out.errG2 = String(e); }
+          out.sembradoPortal1 = !!(G._megaMatriz.find((x) => x.id === 'portal')) &&
+            G._megaMatriz.find((x) => x.id === 'portal').n === 1;
+          let tP = null;
+          try { tP = G.megaTrigger(libre); } catch (e) { out.errP1 = String(e); }
+          try { G.updateMega(1 / 60); } catch (e) { out.errP2 = String(e); }
+          out.ventanaCon3Golpes = tP === true && G._portalT > 7.9 &&
+            G._portalGolpes === 3;
+          out.matrizVaciaTrasAbrir = !G._megaMatriz.find((x) => x.id === 'portal');
+          out.ventanaVivaSinMatriz = G._portalT > 7.9;   // el defecto r50 moría AQUÍ
+          // 3 golpes portalizados (cada uno con su viaje resuelto)
+          const b = G.ball;
+          let golpes = 0;
+          for (let k = 0; k < 3; k++) {
+            G.rules.state = 'rally';
+            b.pos.set(0.10, 1.02, 0.55);
+            b.spin.set(2, -1, 4);
+            b.vel.set(-0.35, 0.55, -6.2);
+            G.events.length = 0;
+            G.events.push({ type: 'paddle', who: 'player', speed: 6,
+              pos: b.pos.clone(), paddleIndex: G.paddleHand });
+            G._portalCd = 0;
+            try { G._portalProcesa(); } catch (e) { out.errX1 = String(e); }
+            if (b.ppTransito) golpes++;
+            for (let i = 0; i < 30 && b.ppTransito; i++) {
+              try { G.updateMega(0.05); } catch (e) { out.errV = String(e); }
+            }
+          }
+          out.tresPortales = golpes === 3;
+          out.finTrasTres = G._portalT <= 0 && G._portalGolpes <= 0;
+
+          // · CUENTA SONORA 3·2·1 (espiamos playOsc) — apagamos los OTROS
+          //   poderes para que la cuenta sea EXACTAMENTE la del efecto
+          Math.random = rndReal;
+          G._imanT = 0; G._megaT = 0; G._portalT = 0; G._portalGolpes = 0;
+          if (G.ball) { try { delete G.ball.ppIman; } catch (e) { /* */ } }
+          G.rules.state = 'point';
+          try { G.updateMega(1 / 60); } catch (e) { out.errT0 = String(e); }
+          Math.random = () => 0.30;               // siembra EFECTO (1.º tercio)
+          G.rules.state = 'rally'; G.rules.rallyHits = 11;
+          try { G.updateMega(1 / 60); } catch (e) { out.errG3 = String(e); }
+          let blips = 0;
+          const playOsc0 = G.audio.playOsc.bind(G.audio);
+          G.audio.playOsc = (f1, f2, dur, tipo, vol, delay) => {
+            if (f1 === 1319 || f1 === 1568) blips++;
+            return playOsc0(f1, f2, dur, tipo, vol, delay);
+          };
+          try { G.megaTrigger(libre); } catch (e) { out.errE1 = String(e); }
+          G._efectoT = 3.4;
+          for (let i = 0; i < 40; i++) {
+            try { G.updateMega(0.1); } catch (e) { out.errE2 = String(e); }
+          }
+          G.audio.playOsc = playOsc0;
+          out.cuenta321 = blips === 3;   // cruzó 3, 2 y 1 s exactamente
+
+          // · HALO del efecto exagerado (bola marcada)
+          G._buildEfectoHalo();
+          G.ball.ppEfecto = true;
+          try { G.updateMega(1 / 60); } catch (e) { out.errH1 = String(e); }
+          out.haloGrande = !!G._efectoHalo && G._efectoHalo.visible &&
+            G._efectoHalo.scale.x > 0.115;   // exagerado: 0,118–0,166 (viejo 0,091–0,119)
+
+          // · PASSTHROUGH EN CALIENTE (canje y restore de la escena)
+          const bg0 = G.scene.background, fog0 = G.scene.fog;
+          const sala0 = G.roomGroup ? G.roomGroup.visible : true;
+          try { G._pstAplicar(true); } catch (e) { out.errPST1 = String(e); }
+          out.pstCanjea = G._pstAplicada === true &&
+            G.scene.background === null && G.scene.fog === null &&
+            (!G.roomGroup || G.roomGroup.visible === false);
+          try { G._pstAplicar(false); } catch (e) { out.errPST2 = String(e); }
+          out.pstRestaura = G._pstAplicada === false &&
+            G.scene.background === bg0 && G.scene.fog === fog0 &&
+            (G.roomGroup ? G.roomGroup.visible === sala0 : true);
+          out.pstInocuoDoble = (G._pstAplicar(false), G._pstAplicada === false);
+
+          Math.random = rndReal;
+          return out;
+        }""")
+
+        for k in sorted(rt):
+            if k.startswith('err'):
+                chk(not rt[k], f'sin error en runtime ({k}): {rt[k]}')
+        esperados = [
+            ('precaliente14', 'precaliente: cola de 14 piezas (flechas incl.)'),
+            ('flechasCalientes', 'precaliente: las 3 flechas del imán construidas'),
+            ('sembradoIman', 'mecánica: imán sembrado'),
+            ('campoAbre', 'mecánica: el gatillo abre el campo (8 s)'),
+            ('flechasEnCampo', 'imán: bola en el radio → las 3 flechas VISIBLES'),
+            ('flechasBolaPala', 'imán: las flechas están EN LA DIRECCIÓN bola→pala'),
+            ('flechasFuera', 'imán: bola fuera del radio → flechas OCULTAS'),
+            ('rescateMarcaArmada', 'imán: el campo ARMA la bola en rally (ppIman con dv)'),
+            ('flechasLaten', 'imán: con el empuje vivo las flechas LATEN (opacidad al máximo)'),
+            ('sembradoPortal1', 'mecánica: portal sembrado con UNA carga (sorteo ×1)'),
+            ('ventanaCon3Golpes', 'portal: abrir da SIEMPRE los 3 golpes de ventana'),
+            ('matrizVaciaTrasAbrir', 'portal: la matriz puede quedar SIN el poder'),
+            ('ventanaVivaSinMatriz', 'portal: la ventana SOBREVIVE sin cargas (el defecto r50 moría aquí)'),
+            ('tresPortales', 'portal: los 3 golpes portalizan (cada uno con su viaje)'),
+            ('finTrasTres', 'portal: la ventana muere SOLO tras el 3.er golpe'),
+            ('cuenta321', 'ticks: cuenta sonora 3·2·1 exacta al agotarse el efecto'),
+            ('haloGrande', 'efecto: el halo exagerado se ve (> 0,12 m)'),
+            ('pstCanjea', 'passthrough: _pstAplicar(true) canjea fondo/niebla/sala'),
+            ('pstRestaura', 'passthrough: _pstAplicar(false) restaura la escena'),
+            ('pstInocuoDoble', 'passthrough: doble restore es inocuo'),
+        ]
+        for k, label in esperados:
+            chk(rt.get(k) is True, label + ('' if rt.get(k) is True else
+                f' [got={rt.get(k)!r}]'))
+
+        await browser.close()
+
+    chk(not errors, f'cero pageerrors ({len(errors)}: {errors[:3]})')
+    print(f'RESULTADO: {ok} OK · {fails} fallos')
+    sys.exit(1 if fails else 0)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

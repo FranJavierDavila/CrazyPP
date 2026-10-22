@@ -113,7 +113,7 @@ async def main():
         # FASE 41 intacta: partida nueva = pala limpia
         ('try { if (this.onMatchStart) this.onMatchStart(); } catch (e) { /* nunca rompe el árbitro */ }',
          'FASE 41: el hook de partida nueva sigue avisando'),
-        ('V3.6.42-SDK6', 'sello de versión servida'),
+        ('V3.6.43-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     chk(game.count("this._megaActivaId = null;") >= 2,

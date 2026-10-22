@@ -51,9 +51,13 @@ export const DIMS = {
   // vuelo, del acople giro-mesa al botar y del tope de rotación — SOLO
   // para la bola MARCADA (ball.ppEfecto: sale del golpe del jugador con
   // el poder activo). Sin marca, multiplicador 1: física idéntica.
-  efectoSpinTope: 2,        // tope de rotación = 2 × spinMax (regla del dueño: 1,5–2×)
-  efectoMagnusMul: 1.5,     // Magnus ×1,5 en vuelo para la bola marcada
-  efectoBoteMul: 1.8,       // acople del bote ×1,8 (limitado por Coulomb)
+  // v3.6.43 (ronda 51 · el dueño: «no noto los efectos… es preciso
+  // exagerarlo para que visualmente veamos el resultado»): TODO el bloque
+  // del Súper Efecto sube un escalón — brush ×3, curva ×2,2 en vuelo y
+  // bote ×2,4 (SIEMPRE solo en la bola marcada; sin poder: física igual).
+  efectoSpinTope: 3,        // tope de rotación = 3 × spinMax (antes ×2)
+  efectoMagnusMul: 2.2,     // Magnus ×2,2 en vuelo (antes ×1,5: curva VISIBLE)
+  efectoBoteMul: 2.4,       // acople del bote ×2,4 (antes ×1,8)
   // v3.6.37 · SÚPER EFECTO NOTORIO (petición del dueño): el rival SUFRE la
   // bola marcada — «dificultar en un %» su éxito de impacto. Dos palancas
   // (solo con la bola marcada viniendo; sin poder: 1 = IA idéntica):
@@ -69,11 +73,19 @@ export const DIMS = {
   // v3.6.37 · SÚPER IMÁN (3.er poder; parámetros PROTOTIPO del dueño, a
   // calibrar con las velocidades reales — NO son física de imán real):
   // campo que atrae SUAVE la bola al punto dulce de la pala del jugador.
-  imanRadio: 0.45,          // radio de influencia del campo (m)
-  imanPlena: 0.12,          // distancia de máxima asistencia (plena dentro)
-  imanAcelMax: 3,           // aceleración lateral máxima (m/s²)
-  imanDvMax: 0.35,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
+  // v3.6.43 (ronda 51 · el dueño: «ampliar un poco el radio de influencia…
+  // si la bola entra dentro del mismo… indicando que está siendo atraída…
+  // permite que una bola que se nos escapa la atraigamos hacia la pala»):
+  // el campo crece (radio 0,45→0,75 m, plena 0,12→0,20), empuja MÁS fuerte
+  // y gana el RESCATE (imanRescate*): bolas que NO se acercan a la pala
+  // (se van largas/cruzadas) son atraídas de verdad hacia el punto dulce.
+  imanRadio: 0.75,          // radio de influencia del campo (m; antes 0,45)
+  imanPlena: 0.20,          // distancia de máxima asistencia (plena dentro)
+  imanAcelMax: 5,           // aceleración lateral máxima (m/s²; antes 3)
+  imanDvMax: 0.60,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
   imanTPred: 0.15,          // horizonte máximo de predicción del impacto (s)
+  imanRescateAcel: 6,       // RESCATE: aceleración hacia la pala (m/s²)
+  imanRescateDv: 0.85,      // RESCATE: tope de Δv hacia la pala por aproximación (m/s)
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto

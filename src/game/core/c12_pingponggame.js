@@ -149,6 +149,7 @@ export class PingPongGame {
     } catch (eK) { /* sin window (entornos de prueba) */ }
     this._megaRallyGrants = 0;        // concesiones ya dadas en ESTE rally
     this._megaWarn = false;           // aviso «se agota» ya disparado
+    this._megaTickN = 0;              // v3.6.43: cuenta sonora 3·2·1
     this._megaPngs = {};              // Images por poder (async)
     this._megaPngHecho = false;
     this._megaPngCarga();             // los PNG llegan en paralelo al juego
@@ -266,8 +267,14 @@ export class PingPongGame {
     try {
       this.pendingAR = localStorage.getItem('ppxr_pending_ar') === '1';
     } catch (e) { /* almacenamiento no disponible */ }
-    this.inAR = false;            // sesión actual ES passthrough
-    this._xrSwitchTo = null;      // v3.6.42: modo pedido por el conmutador in-VR
+    this.inAR = false;            // sesión actual ES immersive-ar
+    // v3.6.43 · PASSTHROUGH EN CALIENTE (ronda 51): la sesión se pide
+    // SIEMPRE immersive-ar (el Quest 3 la soporta) y el passthrough ya NO
+    // es el MODO de la sesión sino el ESTADO del fondo — pstOn=true deja
+    // ver la habitación real (fondo transparente) SIN cerrar la sesión.
+    this.pstOn = false;           // passthrough visible AHORA (solo inAR)
+    this._pstAplicada = false;    // el fondo/niebla/sala están canjeados
+    this._xrSwitchTo = null;      // v3.6.42: modo pedido por el conmutador in-VR (solo VR sin AR)
     this.adaptive = true;         // IA adaptativa según el marcador
     this.survivalRallies = 0;     // rallyes completados en la sesión actual
     try {
@@ -825,8 +832,19 @@ export class PingPongGame {
     this.pendingMode = mode === 'survival' ? 'survival' : 'match';
     const xr = navigator.xr;
     if (!xr) throw new Error('Este navegador no soporta WebXR. Usa Meta Quest Browser.');
+    // v3.6.43 · PASSTHROUGH SIN SALIR DE VR (petición del dueño: «que no
+    // nos lleve a la ventana principal web desde VR»): se pide SIEMPRE
+    // 'immersive-ar' que el dispositivo la soporte — la sala virtual opaca
+    // se ve EXACTAMENTE igual que una sesión VR, pero el conmutador de
+    // AJUSTES alterna passthrough ⇄ sala AL VUELO (_pstAplicar) sin cerrar
+    // la sesión (antes: session.end + re-entrada = salto a la web). Sin
+    // soporte AR (escritorio, visores antiguos): immersive-vr como siempre.
+    // useAR pasa a significar el ESTADO INICIAL del passthrough (pref de
+    // la portada, ppxr_pending_ar).
+    let arOK = false;
+    try { arOK = !!(await xr.isSessionSupported('immersive-ar')); } catch (eXR) { /* */ }
     const session = await xr.requestSession(
-      useAR ? 'immersive-ar' : 'immersive-vr',
+      arOK ? 'immersive-ar' : 'immersive-vr',
       { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'dom-overlay'] },
     );
     await this.renderer.xr.setSession(session);
@@ -883,6 +901,37 @@ export class PingPongGame {
     this.setTheme(next.key);
   }
 
+  /** v3.6.43 · PASSTHROUGH EN CALIENTE (ronda 51): aplica o retira el
+   *  passthrough SIN tocar la sesión WebXR — el conmutador de AJUSTES ya
+   *  no sale a la web. on=true: fondo/niebla fuera (framebuffer alfa 0 →
+   *  se ve la habitación real), sala oculta, catcher de sombra puesto.
+   *  on=false: sala virtual exactamente como estaba (fondo, niebla, sala
+   *  — respetando el hall, que gestiona su propia visibilidad). Solo
+   *  tiene efecto dentro de una sesión immersive-ar; inocuo fuera. */
+  _pstAplicar(on) {
+    if (on) {
+      this._savedBg = this.scene.background;
+      this._savedFog = this.scene.fog;
+      this.scene.background = null;
+      this.scene.fog = null;
+      if (this.roomGroup) this.roomGroup.visible = false;
+      if (this.shadowCatcher) this.shadowCatcher.visible = true;
+      try { this.renderer.setClearColor(0x000000, 0); } catch (eC) { /* */ }
+      this._pstAplicada = true;
+    } else {
+      if (!this._pstAplicada) return;   // nada canjeado: nada que restaurar
+      if (this._savedBg !== undefined) this.scene.background = this._savedBg;
+      if (this._savedFog !== undefined) this.scene.fog = this._savedFog;
+      if (this.roomGroup && !(this.inAR && this.pstOn) && !this.inHall) {
+        this.roomGroup.visible = true;
+      }
+      if (this.shadowCatcher) this.shadowCatcher.visible = false;
+      this._savedBg = undefined;
+      this._savedFog = undefined;
+      this._pstAplicada = false;
+    }
+  }
+
   /** Recolorea sala + luces + fondo/niebla con el tema dado. En passthrough
    *  (inAR) la sala está oculta y el fondo es null: solo toca las luces. */
   applyTheme(key) {
@@ -914,7 +963,7 @@ export class PingPongGame {
       s.intensity = t.spotInt;
     }
     this.scene.environmentIntensity = t.envInt;
-    if (!this.inAR) {
+    if (!(this.inAR && this.pstOn)) {   // v3.6.43: el passthrough canjea fondo/niebla
       if (this.scene.background?.isColor) this.scene.background.set(t.bg);
       if (this.scene.fog) {
         this.scene.fog.color.set(t.bg);
@@ -1972,7 +2021,7 @@ export class PingPongGame {
     // v3.6.42 · PASSTHROUGH (petición del dueño): conmutador de TU
     // HABITACIÓN REAL dentro de la sesión — por defecto desactivado.
     // En VR refleja la sesión VIVA; fuera, la próxima entrada.
-    const pstOn = this.renderer.xr.isPresenting ? this.inAR : this.pendingAR;
+    const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
     btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }), !!pstOn, undefined, !!pstOn, 23);
     y += 68;
     // apoyo Ko-fi (v2.50)
@@ -2035,7 +2084,7 @@ export class PingPongGame {
    * delante. Compartido por «⌂ VOLVER AL HALL» (menuClick 'homehall') y por
    * el SI del prompt B ('hallask_si'). Online/passthrough: no aplica. */
   goHomeHall() {
-    if (this.net.online || this.inAR) return false;
+    if (this.net.online || (this.inAR && this.pstOn)) return false;
     this.closeTrainingV3();
     if (this.calib) this.exitCalib();   // recoge panel/entrenamiento y restaura
     if (this.champs) this.champs.leaveAll();
@@ -2487,16 +2536,24 @@ export class PingPongGame {
         break;
       }
       case 'psthru': {
-        // v3.6.42 · PASSTHROUGH dentro de la sesión (petición del dueño:
-        // «una vez dentro podemos conmutarlo desde ese ajuste»). La sesión
-        // WebXR no cambia de modo en caliente: se cierra y se pide la
-        // contraria aprovechando la activación del gatillo (onSessionEnd
-        // re-entra solo vía _xrSwitchTo). Por defecto DESACTIVADO.
-        const pstEstaba = this.renderer.xr.isPresenting ? this.inAR : this.pendingAR;
+        // v3.6.43 · CONMUTACIÓN EN CALIENTE (petición del dueño: «que no
+        // nos lleve a la ventana principal web desde VR, que sea algo
+        // directo desde VR a MR (passthrough) sin pasar por la página
+        // web»): la sesión se pide SIEMPRE immersive-ar, así que el
+        // passthrough ya NO cambia el MODO: cambia el FONDO de la escena
+        // al vuelo (_pstAplicar) — sin session.end, sin salir a la web,
+        // sin cortar el partido. En dispositivos SIN AR queda el fallback
+        // de r49 (fin + re-entrada al modo contrario).
+        const pstEstaba = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
         const pstNuevo = !pstEstaba;
         this.pendingAR = pstNuevo;
         try { localStorage.setItem('ppxr_pending_ar', pstNuevo ? '1' : '0'); } catch { /* */ }
-        if (this.renderer.xr.isPresenting) {
+        if (this.renderer.xr.isPresenting && this.inAR) {
+          this.pstOn = pstNuevo;
+          this._pstAplicar(pstNuevo);   // ⬅ AL VUELO: ni un frame de web
+          this.rules.message = T(pstNuevo ? 'msg_psthru_on' : 'msg_psthru_off');
+        } else if (this.renderer.xr.isPresenting) {
+          // sesión immersive-vr (dispositivo sin AR): fallback de r49
           const ses = this.renderer.xr.getSession();
           if (ses) {
             this._xrSwitchTo = pstNuevo;   // el sessionend re-entra solo
@@ -2654,14 +2711,12 @@ export class PingPongGame {
     } catch (e) { /* sin soporte: la tasa por defecto del runtime */ }
     this.inAR = !!(session && session.environmentBlendMode &&
       session.environmentBlendMode !== 'opaque');
-    if (this.inAR) {
-      this._savedBg = this.scene.background;
-      this._savedFog = this.scene.fog;
-      this.scene.background = null;
-      this.scene.fog = null;
-      this.roomGroup.visible = false;
-      this.shadowCatcher.visible = true;
-    }
+    // v3.6.43 · la sesión se pide SIEMPRE immersive-ar (donde la soporta):
+    // el passthrough ya no es el MODO sino el ESTADO del fondo (pstOn =
+    // preferencia de la portada/AJUSTES). _pstAplicar canjea fondo/niebla/
+    // sala al vuelo — y el conmutador in-VR lo alterna SIN cerrar sesión.
+    this.pstOn = this.inAR && this.pendingAR;
+    this._pstAplicar(this.pstOn);
     // ---- modo de juego (normal / supervivencia)
     this.mode = this.pendingMode;
     this.survivalRallies = 0;
@@ -2792,14 +2847,10 @@ export class PingPongGame {
     // fin del ambiente de torneo
     this.audio.stopMurmur();
     try { window.speechSynthesis?.cancel(); } catch { /* */ }
-    // restaurar la sala virtual si la sesión fue passthrough
-    if (this.inAR) {
-      this.scene.background = this._savedBg;
-      this.scene.fog = this._savedFog;
-      this.roomGroup.visible = true;
-      this.shadowCatcher.visible = false;
-      this.inAR = false;
-    }
+    // v3.6.43 · restaurar la sala virtual (passthrough en caliente incl.)
+    this._pstAplicar(false);
+    this.pstOn = false;
+    this.inAR = false;
     this.exitHall();   // v3.0.9-HALL1: salir de VR limpia el hall y recoloca el rig
     this.mode = 'match';
     this.pendingMode = 'match';
@@ -3112,6 +3163,7 @@ export class PingPongGame {
     this._megaActivaId = 'mega';
     this._megaActivaDur = MEGA_DUR;
     this._megaWarn = false;
+    this._megaTickN = 0;              // v3.6.43: cuenta sonora desde cero
     this._megaFxStart();
     this.rules.message = T('arc_mega_go');
     return true;
@@ -3184,6 +3236,7 @@ export class PingPongGame {
       () => { try { this._buildMegaFx(); } catch (e) { /* */ } },
       () => { try { this._buildEfectoFx(); } catch (e) { /* */ } },
       () => { try { this._buildImanFx(); } catch (e) { /* */ } },
+      () => { try { this._buildImanFlechas(); } catch (e) { /* */ } },   // v3.6.43 flechas
       () => { try { this._buildPortalFx(); } catch (e) { /* */ } },
       () => { try { this._buildEfectoHalo(); } catch (e) { /* */ } },
       () => { try { this._efectoBotePrewarm(); } catch (e) { /* */ } },
@@ -3354,6 +3407,17 @@ export class PingPongGame {
     try { this.rules.message = this._poderNombre(this._megaMatriz[this._megaIdx].id); } catch (e3) { /* */ }
   }
 
+  /** v3.6.43 · CUENTA SONORA de fin de poder (petición del dueño: «feedback
+   *  sonoro cuando está apunto de acabarse para que el jugador lo sepa sin
+   *  mirar el indicador del icono»): ticks 3·2·1 IDÉNTICOS en los cuatro
+   *  poderes de pala — blip agudo y corto; el último (queda 1 s) sube de
+   *  tono para pedir urgencia. El sonido de fin propio de cada poder cierra
+   *  la cuenta. El parpadeo visual del icono sigue alineado (warn a 2 s). */
+  _poderTickBlip(n) {
+    const f = n >= 3 ? 1568 : 1319;
+    try { this.audio.playOsc(f, f, n >= 3 ? 0.09 : 0.07, 'sine', 0.18, 0); } catch (e) { /* */ }
+  }
+
   /** v3.6.36 · SÚPER EFECTO: gatillo con ese poder seleccionado. Ventana
    *  propia del dueño: 8 segundos O 5 golpes con efecto (lo que ocurra
    *  antes). Activo + gatillo con cargas = RECARGA la ventana completa. */
@@ -3363,6 +3427,7 @@ export class PingPongGame {
       this._efectoT = EFECTO_DUR;
       this._efectoGolpes = EFECTO_GOLPES;
       this._efectoWarn = false;
+      this._efectoTickN = 0;            // v3.6.43: cuenta sonora desde cero
       this._megaActivaId = 'efecto';    // v3.6.40: icono en modo ACTIVO
       this._megaActivaDur = EFECTO_DUR;
       this._megaTexDirty = true;
@@ -3374,6 +3439,7 @@ export class PingPongGame {
     this._efectoT = EFECTO_DUR;
     this._efectoGolpes = EFECTO_GOLPES;
     this._efectoWarn = false;
+    this._efectoTickN = 0;              // v3.6.43: cuenta sonora desde cero
     this._megaActivaId = 'efecto';      // v3.6.40: icono en modo ACTIVO
     this._megaActivaDur = EFECTO_DUR;
     this._megaTexDirty = true;
@@ -3417,6 +3483,7 @@ export class PingPongGame {
       this._imanT = IMAN_DUR;             // refresco honesto, sin gasto
       this._imanAsistidas = 0;
       this._imanWarn = false;
+      this._imanTickN = 0;              // v3.6.43: cuenta sonora desde cero
       this._megaActivaId = 'iman';        // v3.6.40: icono en modo ACTIVO
       this._megaActivaDur = IMAN_DUR;
       this._megaTexDirty = true;
@@ -3428,6 +3495,7 @@ export class PingPongGame {
     this._imanT = IMAN_DUR;
     this._imanAsistidas = 0;
     this._imanWarn = false;
+    this._imanTickN = 0;                  // v3.6.43: cuenta sonora desde cero
     this._megaActivaId = 'iman';          // v3.6.40: icono en modo ACTIVO
     this._megaActivaDur = IMAN_DUR;
     this._megaTexDirty = true;
@@ -3479,6 +3547,66 @@ export class PingPongGame {
 
   _buildImanFx() { if (!this._imanFx) this._imanFx = this._fxBuild(0x5aa2ff); }
 
+  /** v3.6.43 · FLECHAS DE ATRACCIÓN del imán (petición del dueño: «si la
+   *  bola entra dentro del mismo que aparezcan unas pequeñas flechas desde
+   *  la bola en dirección al centro de nuestra pala indicando que está
+   *  siendo atraída»): 3 conos cian EN LÍNEA entre la bola y el punto
+   *  dulce, orientados hacia la pala, con pulso suave. La construcción
+   *  vive en el PRECALIENTE (regla anti-lag: el gatillo nunca construye). */
+  _buildImanFlechas() {
+    if (this._imanFlechas) return;
+    const geo = new THREE.ConeGeometry(0.013, 0.042, 8);
+    const lista = [];
+    for (let i = 0; i < 3; i++) {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+        color: 0x6fbaff, transparent: true, opacity: 0.92,
+        blending: THREE.AdditiveBlending, depthWrite: false }));
+      m.renderOrder = 6;
+      m.visible = false;
+      m.position.set(0, -100, 0);   // fuera de vista hasta su anclaje
+      this.scene.add(m);
+      lista.push(m);
+    }
+    this._imanFlechas = lista;
+  }
+
+  /** v3.6.43 · ANCLAJE por frame de las flechas (lo llama updateMega, SIEMPRE
+   *  que existan: la visibilidad la decide el estado del campo). Mostradas
+   *  cuando la bola está DENTRO del radio, del lado correcto de la cara y
+   *  viene hacia nosotros — exactamente lo que el dueño pidió: flechas
+   *  desde la bola hacia el CENTRO de la pala. Si el campo está empujando
+   *  (ball.ppImanEmpuje, lo marca c05/applyIman) laten más fuertes. */
+  _imanFlechasUpdate() {
+    const fs = this._imanFlechas;
+    if (!fs) return;
+    let show = false;
+    const ps = this.controllerPaddles && this.controllerPaddles[this.paddleHand];
+    const b = this.ball;
+    if (this._imanT > 0 && ps && ps.active && b && b.pos && !b.ppTransito) {
+      const C = _imanTmpC.copy(ps.pos).addScaledVector(ps.up, DIMS.bladeCenterUp);
+      const d = C.distanceTo(b.pos);
+      if (d <= DIMS.imanRadio && d > 1e-4 && b.vel && b.vel.z > 0.15) {
+        _imanTmpD.copy(b.pos).sub(C);
+        if (_imanTmpD.dot(ps.normal) > -DIMS.ballRadius) {
+          show = true;
+          _imanTmpD.copy(C).sub(b.pos).normalize();   // bola → punto dulce
+          const empuje = !!b.ppImanEmpuje;
+          const tNow = performance.now() * 0.008;
+          for (let i = 0; i < fs.length; i++) {
+            const m = fs[i];
+            const t = 0.28 + 0.24 * i;
+            m.position.copy(b.pos).addScaledVector(_imanTmpD, d * t);
+            m.quaternion.setFromUnitVectors(_imanUp, _imanTmpD);
+            m.visible = true;
+            m.scale.setScalar(empuje ? 1.25 + 0.12 * Math.sin(tNow) : 1.0);
+            m.material.opacity = empuje ? 0.98 : 0.62 + 0.15 * Math.sin(tNow + i);
+          }
+        }
+      }
+    }
+    if (!show) for (const m of fs) if (m.visible) m.visible = false;
+  }
+
   _imanFxVis(vis) {
     this._imanFxOn = vis;
     this._fxVis(this._imanFx, vis);
@@ -3509,6 +3637,7 @@ export class PingPongGame {
       this._portalT = PORTAL_DUR;
       this._portalGolpes = PORTAL_GOLPES;
       this._portalWarn = false;
+      this._portalTickN = 0;            // v3.6.43: cuenta sonora desde cero
       this._megaActivaId = 'portal';      // v3.6.40: icono en modo ACTIVO
       this._megaActivaDur = PORTAL_DUR;
       this._megaTexDirty = true;
@@ -3517,9 +3646,19 @@ export class PingPongGame {
       return true;
     }
     if (!this._megaMatriz.find((x) => x.id === 'portal')) return false;
+    // v3.6.43 (ronda 51 · el dueño: «a veces puedo golpear varios portales y
+    // otras parece que con uno solo me desaparece»): LA CAUSA — el gasto iba
+    // POR GOLPE, así que con el sorteo ×1 la ventana moría al primer portal
+    // (y el vigilante de «sin cargas» la apagaba encima). NUEVA ECONOMÍA,
+    // consistente con lo que el jugador percibe: la ACTIVACIÓN gasta 1 carga
+    // y la ventana trae SIEMPRE SUS 3 GOLPES PORTALIZADOS (u 8 s) — nunca
+    // depende de cuántas cargas había. Re-activar refresca (otra carga).
+    const entAbrir = this._megaMatriz.find((x) => x.id === 'portal');
+    if (entAbrir) this._megaGasta(entAbrir);   // −1 carga AL ABRIR (no por golpe)
     this._portalT = PORTAL_DUR;
     this._portalGolpes = PORTAL_GOLPES;
     this._portalWarn = false;
+    this._portalTickN = 0;
     this._megaActivaId = 'portal';        // v3.6.40: icono en modo ACTIVO
     this._megaActivaDur = PORTAL_DUR;
     this._megaTexDirty = true;
@@ -3651,20 +3790,19 @@ export class PingPongGame {
     b.ppTransito = true;
     this._portalSinkT = PORTAL_TRANS;     // hundimiento visible (0,16 s)
     this._portalDelayT = PORTAL_DELAY;    // viaje oculto (1 s del dueño)
-    // 7) CONSUMO honesto: 1 carga por golpe portalizado (máx. 3 por
-    //    activación). El tránsito en curso se CUMPLE aunque el poder
-    //    expire: la bola fue golpeada y el punto está vivo.
-    const ent = this._megaMatriz.find((x) => x.id === 'portal');
-    if (ent) this._megaGasta(ent);
+    // 7) CONSUMO honesto (v3.6.43): la ventana YA SE PAGÓ al activar — los
+    //    3 golpes portalizados son SUYOS, garantizados, sin tocar la matriz
+    //    (el dueño: «con uno solo me desaparece» NUNCA más). El límite es
+    //    _portalGolpes (3) o el reloj (8 s). El tránsito en curso se CUMPLE
+    //    aunque el poder expire: la bola fue golpeada y el punto está vivo.
     this._portalGolpes--;
     this._portalCd = PORTAL_CD;           // antirrebote (spec: 0,25 s)
     try { this.audio.playOsc(900, 240, 0.13, 'sine', 0.09, 0); } catch (e1) { /* */ }
     if (this.renderer.xr && this.renderer.xr.isPresenting) {
       try { this.haptic(this.paddleHand, 0.45, 90); } catch (e3) { /* */ }
     }
-    if (this._portalGolpes <= 0 ||
-        !this._megaMatriz.find((x) => x.id === 'portal')) {
-      this._portalFin();                  // golpes o cargas agotadas
+    if (this._portalGolpes <= 0) {
+      this._portalFin();                  // los 3 portales agotados
     }
   }
 
@@ -4273,12 +4411,15 @@ export class PingPongGame {
     this._efectoT = 0;                // v3.6.36: el súper efecto duerme
     this._efectoGolpes = 0;
     this._efectoWarn = false;
+    this._efectoTickN = 0;            // v3.6.43: la cuenta sonora también
     this._efectoFxVis(false);
     // v3.6.37 · el imán y sus marcas también duermen (recogida completa)
     this._imanT = 0;
     this._imanAsistidas = 0;
     this._imanWarn = false;
+    this._imanTickN = 0;              // v3.6.43
     this._imanFxVis(false);
+    if (this._imanFlechas) for (const m of this._imanFlechas) m.visible = false;
     // v3.6.42 · el portal también duerme (recogida completa): ventana,
     // golpes, antirrebote, TRÁNSITO (si una partida muere con la bola
     // viajando, la bola se libera YA — nunca congelada para siempre),
@@ -4286,6 +4427,7 @@ export class PingPongGame {
     this._portalT = 0;
     this._portalGolpes = 0;
     this._portalWarn = false;
+    this._portalTickN = 0;            // v3.6.43: la cuenta sonora también
     this._portalCd = 0;
     this._portalSinkT = 0;
     this._portalDelayT = 0;
@@ -4472,8 +4614,15 @@ export class PingPongGame {
       if (this._megaT <= 0) {
         DIMS.hitAssistRadius = this._BASE_HIT;   // fin natural
       } else if (this._megaT < 2 && !this._megaWarn) {
-        this._megaWarn = true;   // aviso ÚNICO: el poder se agota
-        try { this.audio.playOsc(880, 440, 0.18, 'sine', 0.16, 0); } catch (e) { /* */ }
+        // v3.6.43: warn + tick 2 (la cuenta sonora 3·2·1 es uniforme)
+        this._megaWarn = true;   // aviso: el poder se agota
+        this._poderTickBlip(2);
+      } else if (this._megaT < 3 && (this._megaTickN || 0) < 1) {
+        this._megaTickN = 1;     // v3.6.43: tick 3 — «quedan 3 s»
+        this._poderTickBlip(1);
+      } else if (this._megaT < 1 && (this._megaTickN || 0) < 3) {
+        this._megaTickN = 3;     // v3.6.43: tick 1 — urgencia
+        this._poderTickBlip(3);
       }
     } else if (DIMS.hitAssistRadius !== this._BASE_HIT) {
       DIMS.hitAssistRadius = this._BASE_HIT;     // apagado/cero: restaura YA
@@ -4486,7 +4635,13 @@ export class PingPongGame {
         this._efectoFin();               // fin natural (tiempo agotado)
       } else if (this._efectoT < 2 && !this._efectoWarn) {
         this._efectoWarn = true;
-        try { this.audio.playOsc(760, 380, 0.18, 'sine', 0.14, 0); } catch (e) { /* */ }
+        this._poderTickBlip(2);          // v3.6.43: cuenta sonora uniforme
+      } else if (this._efectoT < 3 && (this._efectoTickN || 0) < 1) {
+        this._efectoTickN = 1;
+        this._poderTickBlip(1);
+      } else if (this._efectoT < 1 && (this._efectoTickN || 0) < 3) {
+        this._efectoTickN = 3;
+        this._poderTickBlip(3);
       }
     }
     // v3.6.37 · SÚPER IMÁN ACTIVO: ventana PROPIA de 8 s (la física vive
@@ -4498,7 +4653,13 @@ export class PingPongGame {
         this._imanFin();                 // fin natural (8 s agotados)
       } else if (this._imanT < 2 && !this._imanWarn) {
         this._imanWarn = true;
-        try { this.audio.playOsc(480, 240, 0.18, 'sine', 0.14, 0); } catch (e) { /* */ }
+        this._poderTickBlip(2);          // v3.6.43: cuenta sonora uniforme
+      } else if (this._imanT < 3 && (this._imanTickN || 0) < 1) {
+        this._imanTickN = 1;
+        this._poderTickBlip(1);
+      } else if (this._imanT < 1 && (this._imanTickN || 0) < 3) {
+        this._imanTickN = 3;
+        this._poderTickBlip(3);
       }
     }
     if (this._imanT > 0 &&
@@ -4507,9 +4668,13 @@ export class PingPongGame {
       this._imanFxVis(false);
       try { if (this.ball) delete this.ball.ppIman; } catch (eI0) { /* */ }
     }
+    // v3.6.43 · las flechas bola→pala del imán (anclaje SIEMPRE: la
+    // visibilidad la decide _imanFlechasUpdate con el estado del campo).
+    try { this._imanFlechasUpdate(); } catch (eFl) { /* */ }
     // v3.6.42 · SÚPER PORTAL ACTIVO: ventana PROPIA de 8 s (los golpes se
-    // consumen en el bloque 5.55 del animate; aquí solo el reloj, el
-    // aviso «se agota» y la seguridad de que sin cargas se apaga YA).
+    // consumen en el bloque 5.55 del animate; aquí solo el reloj y el aviso).
+    // v3.6.43: el vigilante «sin cargas → portal fuera» se RETIRA — la
+    // ventana tiene SUS 3 golpes garantizados y ya no depende de la matriz.
     if (this._portalCd > 0) this._portalCd -= dt;    // antirrebote SIEMPRE
     if (on && this._portalT > 0) {
       this._portalT -= dt;
@@ -4517,14 +4682,14 @@ export class PingPongGame {
         this._portalFin();               // fin natural (8 s agotados)
       } else if (this._portalT < 2 && !this._portalWarn) {
         this._portalWarn = true;
-        try { this.audio.playOsc(1100, 550, 0.18, 'sine', 0.14, 0); } catch (e) { /* */ }
+        this._poderTickBlip(2);          // v3.6.43: cuenta sonora uniforme
+      } else if (this._portalT < 3 && (this._portalTickN || 0) < 1) {
+        this._portalTickN = 1;
+        this._poderTickBlip(1);
+      } else if (this._portalT < 1 && (this._portalTickN || 0) < 3) {
+        this._portalTickN = 3;
+        this._poderTickBlip(3);
       }
-    }
-    if (this._portalT > 0 &&
-        !this._megaMatriz.find((x) => x.id === 'portal')) {
-      this._portalT = 0;                 // sin cargas: portal fuera YA
-      this._portalGolpes = 0;
-      this._portalFxVis(false);
     }
     // v3.6.42 · VIAJE del portal (corre SIEMPRE, con o sin ventana y con
     // o sin Pala Mejorada: la bola fue golpeada y el punto está vivo — el
@@ -4772,9 +4937,11 @@ export class PingPongGame {
         // v3.6.38 · el halo ES HIJO de la bola: posición gratis y EXACTA
         // (nadie lo copia — viaja con el transform de la bola). Aquí solo
         // la visibilidad y el pulso.
+        // v3.6.43 (ronda 51 · el dueño no lo NOTABA): halo un 35 % más
+        // grande y con pulso más vivo — la bola marcada se ve ya de lejos.
         this._efectoHalo.visible = true;
         this._efectoHalo.scale.setScalar(
-          0.105 + 0.014 * Math.sin(performance.now() * 0.006));
+          0.142 + 0.024 * Math.sin(performance.now() * 0.009));
       }
     } else if (this._efectoHalo && this._efectoHalo.visible) {
       this._efectoHalo.visible = false;
@@ -6091,7 +6258,8 @@ export class PingPongGame {
     //      abierto, B lo cierra (atalajo de siempre).
     if (presenting && !this.calib &&
         this.readButton(this.handIndex('right'), 5)) {
-      if (this.menuOpen || this.inHall || this.net.online || this.inAR) {
+      if (this.menuOpen || this.inHall || this.net.online ||
+          (this.inAR && this.pstOn)) {
         // si cerramos el PROMPT con B, la próxima apertura vuelve al menú normal
         if (this.menuOpen && this.menuPage === 'hallask') this.menuPage = 'main';
         this.toggleMenu();
@@ -6648,7 +6816,7 @@ export class PingPongGame {
    * y online se quedan como estaban: el hall es una sala virtual y ahí no
    * la hay. El jugador aparece junto a la puerta, de cara a los trofeos. */
   enterHall() {
-    if (this.inHall || this.inAR) return;
+    if (this.inHall || (this.inAR && this.pstOn)) return;
     if (this.net && this.net.online) return;
     this.inHall = true;
     this._megaNormReset();   // v3.6.34: el hall es zona neutra — pala como siempre
@@ -6728,7 +6896,7 @@ export class PingPongGame {
     for (const o of this._hallHidden || []) o.visible = true;
     this._hallHidden = null;
     if (this.hallGroup) this.hallGroup.visible = false;
-    if (this.roomGroup && !this.inAR) this.roomGroup.visible = true;
+    if (this.roomGroup && !(this.inAR && this.pstOn)) this.roomGroup.visible = true;
     // v3.5.0-ESC1 · bola limpia al volver a la cancha (nada del hall arrastrado)
     this._hallResetBall(false);
     // v3.6.30 · la pala vuelve a la mano que le toca (el hall la apagó entera;
@@ -7380,12 +7548,16 @@ const PODERES_PALA = [
 const MEGA_DUR = 15;    // s de MEGA PALA por carga (apilable: +15 s cada una)
 const MEGA_TOPE = 3;    // cargas máximas de un poder (×3)
 const MEGA_GOLPES = 11; // cada 11 golpes del rally = +1 carga
-// v3.6.36 · SÚPER EFECTO (reglas del dueño): ×2 al spin GENERADO por el
-// golpe (NUNCA al acumulado que ya traía la bola), tope de seguridad 2×// spinMax, ventana de 8 s O 5 golpes con efecto (lo que ocurra antes);
-// Magnus y bote amplificados SOLO en la bola marcada (ppEfecto).
+// v3.6.36 · SÚPER EFECTO (reglas del dueño): multiplicador al spin GENERADO
+// por el golpe (NUNCA al acumulado que ya traía la bola), ventana de 8 s O
+// 5 golpes con efecto (lo que ocurra antes); Magnus y bote amplificados
+// SOLO en la bola marcada (ppEfecto).
+// v3.6.43 (ronda 51 · el dueño: «no noto los efectos… es preciso exagerarlo
+// para que visualmente veamos el resultado»): el brush generado sube ×3
+// (y con él Magnus ×2,2 y bote ×2,4, en c02) — la curva de la bola se VE.
 const EFECTO_DUR = 8;       // s de ventana
 const EFECTO_GOLPES = 5;    // golpes potenciados por ventana
-const EFECTO_SPIN_MUL = 2;  // multiplicador del brush generado
+const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)
 const EFECTO_SPIN_MIN = 25; // |spin| mínimo para contar como «con efecto»
 // v3.6.37 · SÚPER IMÁN (3.er poder; spec completa del dueño): ventana de
 // 8 s que atrae SUAVE la bola al punto dulce (física en c05/applyIman con
@@ -7439,3 +7611,7 @@ const _portalTmpA = new THREE.Vector3();
 const _portalTmpB = new THREE.Vector3();
 const _portalTmpC = new THREE.Vector3();
 const _portalTmpD = new THREE.Vector3();
+// v3.6.43 · rascadores de las flechas del imán (cero allocs por frame)
+const _imanTmpC = new THREE.Vector3();
+const _imanTmpD = new THREE.Vector3();
+const _imanUp = new THREE.Vector3(0, 1, 0);

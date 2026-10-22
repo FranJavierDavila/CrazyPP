@@ -396,13 +396,22 @@ function collideWorld(ball, events) {
  *   · solo bolas que vuelan HACIA la pala (closing > 0,4 m/s);
  *   · nunca bolas que ya superaron el plano de la cara;
  *   · predicción lineal del impacto con horizonte imanTPred (0,15 s);
- *   · campo: plena asistencia dentro de imanPlena (0,12 m), lineal hasta
- *     imanRadio (0,45 m), nada fuera;
- *   · aceleración lateral ≤ imanAcelMax (3 m/s²) y Δv lateral acumulado
- *     POR APROXIMACIÓN ≤ imanDvMax (0,35 m/s) — topes del dueño;
+ *   · campo: plena asistencia dentro de imanPlena (0,20 m), lineal hasta
+ *     imanRadio (0,75 m), nada fuera;
+ *   · aceleración lateral ≤ imanAcelMax (5 m/s²) y Δv lateral acumulado
+ *     POR APROXIMACIÓN ≤ imanDvMax (0,60 m/s) — topes del dueño;
+ *   · v3.6.43 RESCATE (petición del dueño: «una bola que se nos escapa la
+ *     atraigamos hacia la pala»): si la bola está DENTRO del radio, viene
+ *     hacia nuestra mitad (v.z > 0,3) pero NO se acerca al punto dulce
+ *     (closing ≤ 0,4), el campo la tira DIRECTO hacia él con aceleración
+ *     imanRescateAcel (6 m/s²) y tope propio imanRescateDv (0,85 m/s por
+ *     aproximación) — el contador de rescate es INDEPENDIENTE del de la
+ *     asistencia clásica (IM.dvRes) para no robar empuje al otro modo.
  *   · integrado por SUBPASO (h fijo): estable ante fluctuaciones de FPS.
  * La marca de «aproximación asistida» (ball.ppImanTocada) la consume el
- * núcleo cuando esa bola golpea la pala (1 carga, máx. 3 por activación). */
+ * núcleo cuando esa bola golpea la pala (1 carga, máx. 3 por activación).
+ * La marca de «empuje vivo ESTE frame» (ball.ppImanEmpuje) la pintan las
+ * flechas bola→pala del núcleo (el dueño DEBE ver la atracción). */
 const _imC = new THREE.Vector3();
 const _imP = new THREE.Vector3();
 const _imU = new THREE.Vector3();
@@ -410,7 +419,9 @@ const _imD = new THREE.Vector3();
 const _imA = new THREE.Vector3();
 function applyIman(ball, paddles, h) {
   const IM = ball.ppIman;
-  if (IM.dv >= DIMS.imanDvMax) return;          // tope de empuje ya alcanzado
+  ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja
+  if (IM.dv >= DIMS.imanDvMax &&
+      (IM.dvRes || 0) >= DIMS.imanRescateDv) return;   // ambos topes agotados
   for (const pad of paddles) {
     if (!pad.active || pad.serveFlight) continue;
     // punto dulce = centro de la hoja en mundo (C = pos + up·bladeCenterUp)
@@ -423,7 +434,25 @@ function applyIman(ball, paddles, h) {
     if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;
     // solo bolas que se ACERCAN a la pala
     const closing = ball.vel.dot(_imU) / d;
-    if (closing <= 0.4) continue;
+    if (closing <= 0.4) {
+      // v3.6.43 · RESCATE: bola DENTRO del campo que viene hacia nuestra
+      // mitad pero se aleja del punto dulce (se va larga/cruzada). El campo
+      // la atrae DIRECTO hacia él: aceleración plena, tope Δv propio.
+      if (ball.vel.z <= 0.3) continue;            // no viene hacia nosotros
+      if ((IM.dvRes || 0) >= DIMS.imanRescateDv) continue;   // rescate agotado
+      if (_imU.lengthSq() < 1e-6) continue;
+      _imA.copy(_imU).normalize();
+      let aRes = DIMS.imanRescateAcel;
+      const dvRest = DIMS.imanRescateDv - (IM.dvRes || 0);
+      const dvPaso = aRes * h;
+      if (dvPaso > dvRest) aRes *= dvRest / Math.max(dvPaso, 1e-9);
+      if (aRes <= 1e-6) continue;
+      ball.vel.addScaledVector(_imA, aRes * h);
+      IM.dvRes = (IM.dvRes || 0) + aRes * h;      // contador real de rescate
+      ball.ppImanEmpuje = true;                   // flechas bola→pala
+      ball.ppImanTocada = true;                   // la atracción ES asistencia
+      continue;
+    }
     // predicción LINEAL del impacto (horizonte del dueño: 0,15 s)
     const tp = Math.min(d / Math.max(closing, 0.01), DIMS.imanTPred);
     _imP.copy(ball.pos).addScaledVector(ball.vel, tp);
@@ -446,6 +475,7 @@ function applyIman(ball, paddles, h) {
     _imA.setLength(aMag);
     ball.vel.addScaledVector(_imA, h);
     IM.dv += aMag * h;                          // contador real de Δv lateral
+    ball.ppImanEmpuje = true;                   // flechas bola→pala
     ball.ppImanTocada = true;                   // esta aproximación fue asistida
   }
 }

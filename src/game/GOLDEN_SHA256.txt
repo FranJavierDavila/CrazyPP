@@ -1,1 +1,3 @@
-e8edb18b10601509a2914dec1dc0c61d6f2e856b01e08409f9b9e157c203c4fd
+# SHA256 del game.html que produjo esta división (3.6.43-SDK6, fase 45 · Los superpoderes se ven y se oyen; sello actualizado
+# por bump_version.py desde 3.6.42-SDK6)
+442cc9a848be786e5d79b0d041f232edaa929fb53357db986ae40a8cc6617915

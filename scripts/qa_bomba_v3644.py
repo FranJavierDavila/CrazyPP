@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_bomba_v3644 — CAPA AM · ronda 52 (V3.6.44-SDK6, FASE 46).
+"""qa_bomba_v3644 — CAPA AM · ronda 52 (V3.6.45-SDK6, FASE 46).
 
 La petición del dueño (literal): «Revisa el funcionamiento de los
 superpoderes de pala… El Super iman no hace nada no se ve efecto ni se
@@ -63,7 +63,7 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.44-SDK6', 'versión servida: 3.6.44-SDK6 (ronda 52)'),
+        ('3.6.45-SDK6', 'versión servida: 3.6.45-SDK6 (ronda 52)'),
         # · IMÁN SE VIVE: campo continuo + flechas ANCLADAS
         ('_buildImanCampo() {', 'imán: _buildImanCampo (disco + 12 partículas)'),
         ('_imanCampoUpdate() {', 'imán: _imanCampoUpdate (anclaje del campo)'),
@@ -128,8 +128,8 @@ async def main():
          'bomba: icono DELANTE del ladrillo (como el reloj del tiempo)'),
         ('this._bombBrick = null;    // { slot, t } — activo o null',
          'bomba: estado en el constructor'),
-        ('this._bombBrick = null;\n    this._bombUsed = false;\n    this._bombWait = false;\n    this._bombAge = 0;\n    this._bombT = 0;',
-         'bomba: SE REINICIA CON CADA PARTIDA (start)'),
+        ('this._bombBrick = null;\n    this._bombUsed = false;\n    this._bombWait = false;\n    this._bombNext = 2 + Math.random() * 10;\n    this._bombT = 0;\n    this._stageT = 0;',
+         'bomba: SE REINICIA CON CADA PARTIDA (start — intervalo nuevo)'),
         ('if (this.bombMesh) this.bombMesh.visible = false;',
          'bomba: restos fuera del intento anterior (oculta en start)'),
         ('this._bombUpdate(dt);',
@@ -140,10 +140,18 @@ async def main():
          'bomba: consumida = NUNCA más en la partida'),
         ('if (this._bombT >= 4) this._bombJump();',
          'bomba: 4 segundos en cada ladrillo → salta'),
-        ('this._bombAge >= 6)) {',
-         'bomba: aparición GARANTIZADA (forzosa a los 6 s — ≥1 vez/partida)'),
-        ('if (azules.length) this._bombSpawn(azules);',
-         'bomba: sin azules se ESPERA y vuelve en cuanto aparezca uno'),
+        ('this._bombNext = 2 + Math.random() * 10;',
+         'bomba: 1.ª aparición ALEATORIA dentro del 1.er intervalo (2-12 s — r53)'),
+        ('bombaCada: 15,',
+         'bomba: INTERVALOS DE 15 s (espec r53: «salga de manera aleatoria pero\n         con intervalos de 15 segundos si tiene ladrillos disponibles»)'),
+        ('this._stageT += dt;',
+         'bomba: reloj de la etapa que gobierna los intervalos (r53)'),
+        ('this._bombNext = this._stageT + (this.C.bombaCada || 15);',
+         'bomba: cada aparición programa la siguiente a +15 s (r53)'),
+        ('if (this._eFase > 0) return;',
+         'bomba: el final ELÉCTRICO la apaga (r53 — sin bomba en el gran final)'),
+        ('if (azules.length && this._stageT >= this._bombNext) {',
+         'bomba: sale SÓLO si hay azules disponibles y toca intervalo (r53)'),
         ('b.mesh.visible = false;              // el azul se OCULTA (sigue vivo)',
          'bomba: SUSTITUYE al azul (oculto, vivo; colisión salta el slot)'),
         ('if (this._bombBrick && b === this._bombBrick.slot) continue;',
@@ -167,8 +175,8 @@ async def main():
          'bomba: el LÁSER también la revienta (raycast)'),
         ('hitBomb = !hitBrick && !hitTime && hits[0].object === ark.bombMesh;',
          'bomba: impacto del rayo en la bomba identificado'),
-        ('.filter((b) => b.alive && !(ark._bombBrick && b === ark._bombBrick.slot))',
-         'bomba: el rayo del láser EXCLUYE el azul oculto bajo la bomba'),
+        ('.filter((b) => b.alive && b.state !== \'elec\' &&',
+         'bomba: el rayo del láser EXCLUYE el azul oculto (y el eléctrico, r53)'),
         ('this._detonarBomba();\n        }\n      }\n    }\n  }',
          'bomba: la bola la detona (colisión por subpaso)'),
         ('ark._detonarBomba();', 'bomba: el láser llama a la detonación'),
@@ -274,14 +282,20 @@ async def main():
             ark.bricksLeft = 54;
             ark._msg = ''; ark._msgT = 0; ark._hudDirty = false;
             ark._bombBrick = null; ark._bombUsed = false;
-            ark._bombWait = false; ark._bombAge = 0; ark._bombT = 0;
+            ark._bombWait = false; ark._bombT = 0;
+            ark._bombNext = 3; ark._stageT = 0;   // r53: 1.ª aparición a los 3 s
+            ark._eFase = 0; ark._eSeed = null; ark._eMove = [];
+            ark._eCadena = []; ark._eBoltT = 0; ark._eChispT = 0;
 
-            // (a) GARANTÍA ≥1 vez por partida: forzosa a los 6 s
-            for (let i = 0; i < 16; i++) ark._bombUpdate(0.5);   // 8 s
+            // (a) INTERVALOS: aleatoria dentro del 1.er intervalo — con la
+            //     1.ª aparición fijada a los 3 s sale al cruzarlos (r53);
+            //     el spawn programa la SIGUIENTE a +15 s (3,0 + 15 = 18)
+            for (let i = 0; i < 8; i++) ark._bombUpdate(0.5);   // 4 s ≥ 3 s
             out.aAparece = !!ark._bombBrick &&
               ark._bombBrick.slot.state === 'blue' &&
               ark._bombBrick.slot.mesh.visible === false &&
-              ark.bombMesh.visible === true && ark.bombIcon.visible === true;
+              ark.bombMesh.visible === true && ark.bombIcon.visible === true &&
+              ark._bombNext === 18;   // siguiente aparición a +15 s exactos
             const slotA = ark._bombBrick.slot;
 
             // (b) SALTO a los 4 s: otro azul y el original REAPARECE
@@ -318,14 +332,16 @@ async def main():
             for (let i = 0; i < 20; i++) ark._bombUpdate(1);
             out.dNoVuelve = ark._bombBrick === null && ark._bombUsed === true;
 
-            // (e) ESPERA sin azules y retorno con uno nuevo
+            // (e) ESPERA sin azules y retorno en SU INTERVALO (r53)
             ark._bombUsed = false; ark._bombWait = true; ark._bombBrick = null;
+            ark.bombMesh.visible = false; ark.bombIcon.visible = false;
             for (const b of ark.bricks) { b.alive = true; b.state = 'red';
               b.mesh.visible = true; }
-            ark._bombUpdate(0.2);
-            out.eEspera = ark._bombBrick === null && ark._bombWait === true;
             const bNuevo = ark.bricks[30];
-            bNuevo.state = 'blue';                    // aparece un azul nuevo
+            bNuevo.state = 'blue';                    // ya HAY azul disponible
+            ark._bombUpdate(0.2);                     // pero NO toca intervalo
+            out.eEspera = ark._bombBrick === null && ark._bombWait === true;
+            ark._bombNext = ark._stageT;              // el intervalo CUMPLE
             ark._bombUpdate(0.2);
             out.eVuelve = !!ark._bombBrick &&
               ark._bombBrick.slot === bNuevo && bNuevo.mesh.visible === false;
@@ -377,8 +393,8 @@ async def main():
                 chk(not rt.get('errBomba'),
                     f'mecánica bomba sin excepciones ({rt.get("errBomba", "limpia")})')
                 chk(rt.get('aAparece') is True,
-                    'mecánica (a): aparición GARANTIZADA — sustituye a un azul '
-                    '(oculto) con su icono')
+                    'mecánica (a): aparición ALEATORIA por INTERVALOS (r53) — '
+                    'sustituye a un azul (oculto), icono y siguiente a +15 s')
                 chk(rt.get('bSalta') is True,
                     'mecánica (b): a los 4 s SALTA a otro azul y el original reaparece')
                 chk(rt.get('cDetona') is True,
@@ -387,7 +403,8 @@ async def main():
                 chk(rt.get('dNoVuelve') is True,
                     'mecánica (d): consumida, la bomba NO reaparece en la partida')
                 chk(rt.get('eEspera') is True and rt.get('eVuelve') is True,
-                    'mecánica (e): sin azules ESPERA; con un azul nuevo VUELVE')
+                    'mecánica (e): sin intervalo ESPERA aunque haya azul; al '
+                    'cumplir el intervalo VUELVE (cadencia 15 s — r53)')
                 chk(not rt.get('errNucleo'),
                     f'núcleo headless sin excepciones ({rt.get("errNucleo", "limpio")})')
                 chk(rt.get('campoConstruido') is True,

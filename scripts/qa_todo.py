@@ -146,6 +146,20 @@ CAPAS = [
     # garantizada), salta cada 4 s, espera sin azules, DETONA radio
     # 2 filas × 2 columnas (bola o láser) y no vuelve en la partida.
     ('AM · imán/efecto se notan + bomba (v3644)', 'qa_bomba_v3644.py'),
+    # r53 (v3645): LA BOMBA POR INTERVALOS + EL LADRILLO ELÉCTRICO del
+    # ARKANOID 2 (etapa 4 de La Locura) — «salga de manera aleatoria pero
+    # con intervalos de 15 segundos si tiene ladrillos disponible donde
+    # aparecer» (cadencia r53: 1.ª aparición 2-12 s, siguiente a +15 s) ·
+    # y en los ÚLTIMOS 30 s un azul al azar se ELECTRIFICA (rayitos pool
+    # de 14, chisporroteo, ZAP de sellado; SÓLO la bola lo activa — el
+    # láser ni lo ve) → al darle con la bola ATRAE al resto y los reparte
+    # por ANILLOS en las celdas contiguas (las más próximas primero),
+    # todos eléctricos → CUALQUIER impacto desencadena la REACCIÓN EN
+    # CADENA ramificada (ondas de 0,12 s) que arrasa la pared = misión
+    # SUPERADA, con el reloj CONGELADO durante el destrozo. state0 restaura
+    # el muro de fábrica con cada partida.
+    ('AN · bomba por intervalos + ladrillo eléctrico (v3645)',
+     'qa_electrico_v3645.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

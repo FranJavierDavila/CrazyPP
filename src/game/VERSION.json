@@ -1,10 +1,10 @@
 {
-  "version": "3.6.43-SDK6",
-  "fase": 45,
-  "faseNombre": "Los superpoderes se ven y se oyen",
+  "version": "3.6.44-SDK6",
+  "fase": 46,
+  "faseNombre": "Señal continua y la bomba",
   "sdk": "1.5.4",
   "fecha": "2026-10-22",
-  "hub": "v3643-sdk6",
+  "hub": "v3644-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "442cc9a848be786e5d79b0d041f232edaa929fb53357db986ae40a8cc6617915"
+  "golden": "b27c86709bd26d130301c3ecfc211ca6437dce99cd72e6e5a469a278e9069dcd"
 }

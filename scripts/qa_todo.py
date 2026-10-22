@@ -133,6 +133,19 @@ CAPAS = [
     # CALIENTE (sesión siempre immersive-ar; _pstAplicar canjea fondo/sala
     # al vuelo — el conmutador ya NO sale a la web).
     ('AL · superpoderes se ven y se oyen (v3643)', 'qa_superpoderes_v3643.py'),
+    # r52 (v3644): el informe del dueño tras probar V3.6.43 en el Quest —
+    # «el Super iman no hace nada… en el Super efecto tampoco noto nada,
+    # además de que la marca del bote va desfasada. El sonido de alerta de
+    # que se está agotando no suena o no se percibe» → IMÁN con campo
+    # continuo en la pala + flechas ×1,8 ANCLADAS (la r51 las construyó
+    # pero nadie las llamaba) + física 0,95/6,5/0,80 y rescate 7,5/1,05 ·
+    # EFECTO con halo 0,21 + estela roja + anillo de bote mayor · MARCA DEL
+    # BOTE clavada a la bola visual · BLIPS 988/1319 a gain 0,42 con
+    # háptica 3·2·1 · y el LADRILLO BOMBA del ARKANOID 2 (etapa 4 de La
+    # Locura): negro con bomba.webp, sustituye a un azul (≥1 vez/partida
+    # garantizada), salta cada 4 s, espera sin azules, DETONA radio
+    # 2 filas × 2 columnas (bola o láser) y no vuelve en la partida.
+    ('AM · imán/efecto se notan + bomba (v3644)', 'qa_bomba_v3644.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

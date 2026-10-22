@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""QA v3.6.43 · RONDA 51 — SUPERPODERES QUE SE VEN Y SE OYEN (AL).
+"""QA v3.6.43 (re-anclada v3.6.44: imán 0,95/6,5/0,80 · halo 0,21 · blips 988/1319) · RONDA 51 — SUPERPODERES QUE SE VEN Y SE OYEN (AL).
 
 Informe del dueño tras probar V3.6.42 en el Quest 3:
   1) «No noto los efectos del Poder Super Efectos, igual es preciso
@@ -82,22 +82,22 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 51)
-        ('3.6.43-SDK6', 'versión servida: 3.6.43-SDK6 (ronda 51)'),
+        ('3.6.44-SDK6', 'versión servida: 3.6.44-SDK6 (ronda 52)'),
         # · 1) SÚPER EFECTO EXAGERADO
         ('const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)',
          'efecto: el brush generado sube a ×3 (antes ×2)'),
         ('efectoSpinTope: 3,', 'efecto: tope de giro ×3 (c02)'),
         ('efectoMagnusMul: 2.2,', 'efecto: curva Magnus ×2,2 en vuelo (c02)'),
         ('efectoBoteMul: 2.4,', 'efecto: bote exagerado ×2,4 (c02)'),
-        ('0.142 + 0.024 * Math.sin(performance.now() * 0.009)',
+        ('0.21 + 0.05 * Math.sin(performance.now() * 0.009)',
          'efecto: halo de la bola marcada un 35 % más grande y vivo'),
         # · 2) SÚPER IMÁN: radio + flechas + RESCATE
-        ('imanRadio: 0.75,', 'imán: radio de influencia 0,75 m (antes 0,45)'),
-        ('imanPlena: 0.20,', 'imán: zona plena 0,20 m'),
-        ('imanAcelMax: 5,', 'imán: aceleración ×5 m/s²'),
-        ('imanDvMax: 0.60,', 'imán: tope de Δv 0,60 m/s por aproximación'),
-        ('imanRescateAcel: 6,', 'imán: RESCATE con aceleración 6 m/s²'),
-        ('imanRescateDv: 0.85,', 'imán: RESCATE con tope Δv 0,85 m/s'),
+        ('imanRadio: 0.95,', 'imán: radio de influencia 0,95 m (v3.6.44)'),
+        ('imanPlena: 0.26,', 'imán: zona plena 0,26 m (v3.6.44)'),
+        ('imanAcelMax: 6.5,', 'imán: aceleración ×6,5 m/s² (v3.6.44)'),
+        ('imanDvMax: 0.80,', 'imán: tope de Δv 0,80 m/s por aproximación (v3.6.44)'),
+        ('imanRescateAcel: 7.5,', 'imán: RESCATE con aceleración 7,5 m/s² (v3.6.44)'),
+        ('imanRescateDv: 1.05,', 'imán: RESCATE con tope Δv 1,05 m/s (v3.6.44)'),
         ('v3.6.43 · RESCATE: bola DENTRO del campo que viene hacia nuestra',
          'imán: el RESCATE vive en c05/applyIman (física real)'),
         ('const closing = ball.vel.dot(_imU) / d;',
@@ -137,7 +137,7 @@ async def main():
          'passthrough: pstOn nace de la preferencia al entrar en sesión'),
         # · 4) CUENTA SONORA 3·2·1 (los cuatro poderes)
         ('_poderTickBlip(n) {', 'ticks: _poderTickBlip definida (cuenta uniforme)'),
-        ('const f = n >= 3 ? 1568 : 1319;',
+        ('const f = n >= 3 ? 1319 : 988;',
          'ticks: el último segundo sube de tono (urgencia)'),
         ('/** v3.6.43 · CUENTA SONORA de fin de poder',
          'ticks: documentada (petición del dueño)'),
@@ -306,7 +306,7 @@ async def main():
           let blips = 0;
           const playOsc0 = G.audio.playOsc.bind(G.audio);
           G.audio.playOsc = (f1, f2, dur, tipo, vol, delay) => {
-            if (f1 === 1319 || f1 === 1568) blips++;
+            if (f1 === 988 || f1 === 1319) blips++;
             return playOsc0(f1, f2, dur, tipo, vol, delay);
           };
           try { G.megaTrigger(libre); } catch (e) { out.errE1 = String(e); }

@@ -79,13 +79,18 @@ export const DIMS = {
   // el campo crece (radio 0,45→0,75 m, plena 0,12→0,20), empuja MÁS fuerte
   // y gana el RESCATE (imanRescate*): bolas que NO se acercan a la pala
   // (se van largas/cruzadas) son atraídas de verdad hacia el punto dulce.
-  imanRadio: 0.75,          // radio de influencia del campo (m; antes 0,45)
-  imanPlena: 0.20,          // distancia de máxima asistencia (plena dentro)
-  imanAcelMax: 5,           // aceleración lateral máxima (m/s²; antes 3)
-  imanDvMax: 0.60,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
+  // v3.6.44 (ronda 52 · el dueño: «el Super iman no hace nada, no se ve
+  // efecto ni se nota nada sobre la pala»): el campo CRECE otra vez y empuja
+  // MÁS FUERTE — radio 0,75→0,95 m (la bola entra en el campo mucho antes),
+  // plena 0,26, acel 6,5 m/s² y Δv 0,80; el RESCATE de bolas escapadas sube
+  // a 7,5 m/s² / 1,05 m/s (la bola cruzada CURVA hacia la pala a la vista).
+  imanRadio: 0.95,          // radio de influencia del campo (m; antes 0,75)
+  imanPlena: 0.26,          // distancia de máxima asistencia (plena dentro)
+  imanAcelMax: 6.5,         // aceleración lateral máxima (m/s²; antes 5)
+  imanDvMax: 0.80,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
   imanTPred: 0.15,          // horizonte máximo de predicción del impacto (s)
-  imanRescateAcel: 6,       // RESCATE: aceleración hacia la pala (m/s²)
-  imanRescateDv: 0.85,      // RESCATE: tope de Δv hacia la pala por aproximación (m/s)
+  imanRescateAcel: 7.5,     // RESCATE: aceleración hacia la pala (m/s²)
+  imanRescateDv: 1.05,      // RESCATE: tope de Δv hacia la pala por aproximación (m/s)
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto

@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.43-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.44-SDK6</span>
     </div>
   </main>
 
@@ -762,6 +762,8 @@ const I18N_STRINGS = {
     fan_hint: '¡Abanica la pala (izq-der rápida) para crear viento y empujar la bola!',
     // v2.46 · ladrillo negro del TIEMPO EXTRA (ARKANOID 2)
     ark_extra_min: '¡+1 MINUTO EXTRA!',
+    // v3.6.44 · ladrillo BOMBA del ARKANOID 2 (etapa 4 de La Locura)
+    ark_bomba_boom: '¡BOOM! ¡DETONACIÓN!',
     hud_time: 'TIEMPO',
     hud_bricks: 'LADRILLOS',
     hud_lives: 'VIDAS',
@@ -1226,6 +1228,8 @@ const I18N_STRINGS = {
     fan_hint: 'Fan the paddle (quick left-right) to make wind and push the ball!',
     // v2.46 · black TIME-EXTRA brick (ARKANOID 2)
     ark_extra_min: '+1 EXTRA MINUTE!',
+    // v3.6.44 · bomb brick of ARKANOID 2 (stage 4 of Madness)
+    ark_bomba_boom: 'BOOM! DETONATION!',
     hud_time: 'TIME',
     hud_bricks: 'BRICKS',
     hud_lives: 'LIVES',
@@ -2026,7 +2030,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.43-SDK6';
+  const VERSION = '3.6.44-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -2795,13 +2799,18 @@ const DIMS = {
   // el campo crece (radio 0,45→0,75 m, plena 0,12→0,20), empuja MÁS fuerte
   // y gana el RESCATE (imanRescate*): bolas que NO se acercan a la pala
   // (se van largas/cruzadas) son atraídas de verdad hacia el punto dulce.
-  imanRadio: 0.75,          // radio de influencia del campo (m; antes 0,45)
-  imanPlena: 0.20,          // distancia de máxima asistencia (plena dentro)
-  imanAcelMax: 5,           // aceleración lateral máxima (m/s²; antes 3)
-  imanDvMax: 0.60,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
+  // v3.6.44 (ronda 52 · el dueño: «el Super iman no hace nada, no se ve
+  // efecto ni se nota nada sobre la pala»): el campo CRECE otra vez y empuja
+  // MÁS FUERTE — radio 0,75→0,95 m (la bola entra en el campo mucho antes),
+  // plena 0,26, acel 6,5 m/s² y Δv 0,80; el RESCATE de bolas escapadas sube
+  // a 7,5 m/s² / 1,05 m/s (la bola cruzada CURVA hacia la pala a la vista).
+  imanRadio: 0.95,          // radio de influencia del campo (m; antes 0,75)
+  imanPlena: 0.26,          // distancia de máxima asistencia (plena dentro)
+  imanAcelMax: 6.5,         // aceleración lateral máxima (m/s²; antes 5)
+  imanDvMax: 0.80,          // incremento lateral máximo POR APROXIMACIÓN (m/s)
   imanTPred: 0.15,          // horizonte máximo de predicción del impacto (s)
-  imanRescateAcel: 6,       // RESCATE: aceleración hacia la pala (m/s²)
-  imanRescateDv: 0.85,      // RESCATE: tope de Δv hacia la pala por aproximación (m/s)
+  imanRescateAcel: 7.5,     // RESCATE: aceleración hacia la pala (m/s²)
+  imanRescateDv: 1.05,      // RESCATE: tope de Δv hacia la pala por aproximación (m/s)
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto
@@ -10247,6 +10256,9 @@ class PingPongGame {
     // anillo de bote amplificado (one-shot) — el dueño debe VER el efecto.
     this._efectoHalo = null;
     this._efectoBoteFx = null;
+    // v3.6.44 · estela roja de la bola marcada + campo continuo del imán
+    this._efectoTrail = null;
+    this._imanCampo = null;
     // v3.6.37 · FLECHAS de la matriz como sprites PROPIOS al lado del
     // icono (petición del dueño: las chevrons del icono «no se notan»). 
     this._megaArrows = null;          // [[izq, der] por montura]
@@ -13275,6 +13287,8 @@ class PingPongGame {
       () => { try { this._buildEfectoFx(); } catch (e) { /* */ } },
       () => { try { this._buildImanFx(); } catch (e) { /* */ } },
       () => { try { this._buildImanFlechas(); } catch (e) { /* */ } },   // v3.6.43 flechas
+      () => { try { this._buildImanCampo(); } catch (e) { /* */ } },     // v3.6.44 campo
+      () => { try { this._buildEfectoTrail(); } catch (e) { /* */ } },   // v3.6.44 estela
       () => { try { this._buildPortalFx(); } catch (e) { /* */ } },
       () => { try { this._buildEfectoHalo(); } catch (e) { /* */ } },
       () => { try { this._efectoBotePrewarm(); } catch (e) { /* */ } },
@@ -13448,12 +13462,33 @@ class PingPongGame {
   /** v3.6.43 · CUENTA SONORA de fin de poder (petición del dueño: «feedback
    *  sonoro cuando está apunto de acabarse para que el jugador lo sepa sin
    *  mirar el indicador del icono»): ticks 3·2·1 IDÉNTICOS en los cuatro
-   *  poderes de pala — blip agudo y corto; el último (queda 1 s) sube de
-   *  tono para pedir urgencia. El sonido de fin propio de cada poder cierra
-   *  la cuenta. El parpadeo visual del icono sigue alineado (warn a 2 s). */
+   *  poderes de pala; el último (queda 1 s) sube de tono para pedir
+   *  urgencia.
+   *  v3.6.44 (ronda 52 · el dueño: «el sonido de alerta de que se está
+   *  agotando no suena o no se percibe»): los blips de 0,07–0,09 s a gain
+   *  0,18 se perdían en el casco — ahora gain 0,42, duración 0,15/0,2 s,
+   *  DOBLE BLIP en los dos primeros ticks y HÁPTICA creciente (el aviso
+   *  también se SIENTE en el mango): nadie se pierde ya el final. */
   _poderTickBlip(n) {
-    const f = n >= 3 ? 1568 : 1319;
-    try { this.audio.playOsc(f, f, n >= 3 ? 0.09 : 0.07, 'sine', 0.18, 0); } catch (e) { /* */ }
+    const f = n >= 3 ? 1319 : 988;
+    const dur = n >= 3 ? 0.2 : 0.15;
+    const go = (fg, d, gn) => {
+      try { this.audio.playOsc(fg, fg, d, 'triangle', gn, 0); } catch (e) { /* */ }
+    };
+    if (n >= 3) {
+      go(f, dur, 0.42);                                   // «¡UNO!» — urgencia
+      if (this.renderer.xr && this.renderer.xr.isPresenting) {
+        try { this.haptic(this.paddleHand, 0.55, 95); } catch (eH3) { /* */ }
+      }
+    } else {
+      go(f, dur, 0.42);                                   // «tres» / «dos»
+      try { window.setTimeout(() => {
+        if (!this.disposed) go(f, dur * 0.7, 0.34);
+      }, 95); } catch (eT) { /* */ }
+      if (this.renderer.xr && this.renderer.xr.isPresenting) {
+        try { this.haptic(this.paddleHand, 0.35, 55); } catch (eH2) { /* */ }
+      }
+    }
   }
 
   /** v3.6.36 · SÚPER EFECTO: gatillo con ese poder seleccionado. Ventana
@@ -13585,19 +13620,99 @@ class PingPongGame {
 
   _buildImanFx() { if (!this._imanFx) this._imanFx = this._fxBuild(0x5aa2ff); }
 
+  /** v3.6.44 · CAMPO CONTINUO del imán (el dueño: «no se ve efecto ni se
+   *  nota nada sobre la pala para saber que se está aplicando»): DISCO de
+   *  campo cian semitransparente flotando DELANTE del punto dulce + 12
+   *  partículas ORBITANDO — señal SIEMPRE visible mientras el campo corre
+   *  (no solo cuando la bola entra). Construcción en el PRECALIENTE
+   *  (15.ª pieza anti-lag); el anclaje vive en updateMega. */
+  _buildImanCampo() {
+    if (this._imanCampo) return;
+    const g = new THREE.Group();
+    g.visible = false;
+    // disco de campo (dos anillos + relleno tenue) — billboard NO: el disco
+    // mira a la hoja (plano XY de la pala), es EL CAMPO alrededor del dulce
+    const anillo = new THREE.Mesh(
+      new THREE.RingGeometry(0.085, 0.105, 40),
+      new THREE.MeshBasicMaterial({ color: 0x6fbaff, transparent: true,
+        opacity: 0.85, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+        depthWrite: false }));
+    g.add(anillo);
+    const relleno = new THREE.Mesh(
+      new THREE.CircleGeometry(0.085, 32),
+      new THREE.MeshBasicMaterial({ color: 0x2f7fd8, transparent: true,
+        opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+        depthWrite: false }));
+    g.add(relleno);
+    // 12 partículas orbitando (puntitos aditivos) — el «campo vivo»
+    const pgeo = new THREE.BufferGeometry();
+    const ppos = new Float32Array(12 * 3);
+    pgeo.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
+    const orbita = new THREE.Points(pgeo, new THREE.PointsMaterial({
+      color: 0xaee2ff, size: 0.017, transparent: true, opacity: 0.95,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }));
+    g.add(orbita);
+    g.userData = { anillo, relleno, orbita, ppos };
+    g.renderOrder = 6;
+    this.scene.add(g);
+    this._imanCampo = g;
+  }
+
+  /** v3.6.44 · ANCLAJE por frame del CAMPO (updateMega): el disco orbita el
+   *  punto dulce de la pala ACTIVA con latido; las partículas giran — y
+   *  con el empuje real (ppImanEmpuje) giran más rápido y el disco late
+   *  más fuerte. Visible SIEMPRE que el campo corre. */
+  _imanCampoUpdate() {
+    const g = this._imanCampo;
+    if (!g) return;
+    let show = false;
+    const ps = this.controllerPaddles && this.controllerPaddles[this.paddleHand];
+    if (this._imanT > 0 && ps && ps.active) {
+      show = true;
+      _imanTmpC.copy(ps.pos).addScaledVector(ps.up, DIMS.bladeCenterUp);
+      g.position.copy(_imanTmpC);
+      if (ps.normal && ps.normal.lengthSq() > 1e-6) {
+        _imanTmpD.copy(ps.pos).add(ps.normal);       // un punto delante
+        g.lookAt(_imanTmpD);
+      }
+      const tNow = performance.now() * 0.001;
+      const empuje = !!(this.ball && this.ball.ppImanEmpuje);
+      const lat = empuje ? 0.78 + 0.30 * Math.sin(tNow * 11)
+                         : 0.62 + 0.20 * Math.sin(tNow * 4.6);
+      const U = g.userData;
+      U.anillo.material.opacity = 0.85 * lat;
+      U.relleno.material.opacity = 0.22 * lat;
+      U.anillo.scale.setScalar(1 + 0.06 * Math.sin(tNow * 4.6));
+      // partículas: dos anillos de 6 girando en sentidos contrarios
+      const ang = tNow * (empuje ? 3.4 : 1.7);
+      for (let i = 0; i < 12; i++) {
+        const rad = (i < 6 ? 0.055 : 0.082) + 0.006 * Math.sin(tNow * 3 + i);
+        const a = ang * (i < 6 ? 1 : -1) + i * (Math.PI / 6);
+        U.ppos[i * 3] = Math.cos(a) * rad;
+        U.ppos[i * 3 + 1] = Math.sin(a) * rad;
+        U.ppos[i * 3 + 2] = 0.004;
+      }
+      U.orbita.geometry.attributes.position.needsUpdate = true;
+    }
+    if (g.visible !== show) g.visible = show;
+  }
+
   /** v3.6.43 · FLECHAS DE ATRACCIÓN del imán (petición del dueño: «si la
    *  bola entra dentro del mismo que aparezcan unas pequeñas flechas desde
    *  la bola en dirección al centro de nuestra pala indicando que está
    *  siendo atraída»): 3 conos cian EN LÍNEA entre la bola y el punto
    *  dulce, orientados hacia la pala, con pulso suave. La construcción
-   *  vive en el PRECALIENTE (regla anti-lag: el gatillo nunca construye). */
+   *  vive en el PRECALIENTE (regla anti-lag: el gatillo nunca construye).
+   *  v3.6.44 (ronda 52 · «no se nota nada»): conos ×1,8 (0,024 × 0,08 m)
+   *  y opacidad plena — a distancia de juego deben LEERSE al primer golpe
+   *  de vista. */
   _buildImanFlechas() {
     if (this._imanFlechas) return;
-    const geo = new THREE.ConeGeometry(0.013, 0.042, 8);
+    const geo = new THREE.ConeGeometry(0.024, 0.08, 10);
     const lista = [];
     for (let i = 0; i < 3; i++) {
       const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-        color: 0x6fbaff, transparent: true, opacity: 0.92,
+        color: 0x6fbaff, transparent: true, opacity: 0.98,
         blending: THREE.AdditiveBlending, depthWrite: false }));
       m.renderOrder = 6;
       m.visible = false;
@@ -13610,10 +13725,15 @@ class PingPongGame {
 
   /** v3.6.43 · ANCLAJE por frame de las flechas (lo llama updateMega, SIEMPRE
    *  que existan: la visibilidad la decide el estado del campo). Mostradas
-   *  cuando la bola está DENTRO del radio, del lado correcto de la cara y
-   *  viene hacia nosotros — exactamente lo que el dueño pidió: flechas
-   *  desde la bola hacia el CENTRO de la pala. Si el campo está empujando
-   *  (ball.ppImanEmpuje, lo marca c05/applyIman) laten más fuertes. */
+   *  cuando la bola está DENTRO del radio y del lado correcto de la cara —
+   *  exactamente lo que el dueño pidió: flechas desde la bola hacia el
+   *  CENTRO de la pala. Si el campo está empujando (ball.ppImanEmpuje, lo
+   *  marca c05/applyIman) laten más fuertes.
+   *  v3.6.44 (ronda 52 · FIX CRÍTICO): esta función EXISTÍA desde la ronda
+   *  51 pero NADIE LA LLAMABA — los conos nacían ocultos a y=−100 para
+   *  siempre (por eso el dueño no veía el imán). Anclada en updateMega.
+   *  Además la condición se relaja: flechas en cuanto la bola entra en el
+   *  radio (la petición literal del dueño), sin exigir velocidad de cruce. */
   _imanFlechasUpdate() {
     const fs = this._imanFlechas;
     if (!fs) return;
@@ -13623,9 +13743,9 @@ class PingPongGame {
     if (this._imanT > 0 && ps && ps.active && b && b.pos && !b.ppTransito) {
       const C = _imanTmpC.copy(ps.pos).addScaledVector(ps.up, DIMS.bladeCenterUp);
       const d = C.distanceTo(b.pos);
-      if (d <= DIMS.imanRadio && d > 1e-4 && b.vel && b.vel.z > 0.15) {
+      if (d <= DIMS.imanRadio && d > 1e-4) {
         _imanTmpD.copy(b.pos).sub(C);
-        if (_imanTmpD.dot(ps.normal) > -DIMS.ballRadius) {
+        if (_imanTmpD.dot(ps.normal) > -2 * DIMS.ballRadius) {
           show = true;
           _imanTmpD.copy(C).sub(b.pos).normalize();   // bola → punto dulce
           const empuje = !!b.ppImanEmpuje;
@@ -13636,8 +13756,8 @@ class PingPongGame {
             m.position.copy(b.pos).addScaledVector(_imanTmpD, d * t);
             m.quaternion.setFromUnitVectors(_imanUp, _imanTmpD);
             m.visible = true;
-            m.scale.setScalar(empuje ? 1.25 + 0.12 * Math.sin(tNow) : 1.0);
-            m.material.opacity = empuje ? 0.98 : 0.62 + 0.15 * Math.sin(tNow + i);
+            m.scale.setScalar(empuje ? 1.35 + 0.14 * Math.sin(tNow) : 1.15);
+            m.material.opacity = empuje ? 1.0 : 0.8 + 0.18 * Math.sin(tNow + i);
           }
         }
       }
@@ -14012,13 +14132,39 @@ class PingPongGame {
     this._efectoHalo = sp;
   }
 
+  /** v3.6.44 · ESTELA ROJA de la bola marcada (el dueño: «en el Super
+   *  efecto tampoco noto nada»): línea de 14 puntos que dibuja la
+   *  TRAYECTORIA de la bola con Magnus exagerado — el rastro rojo curvado
+   *  es la señal inconfundible del poder. Construcción en el PRECALIENTE
+   *  (16.ª pieza anti-lag); el anclaje vive en updateMega. */
+  _buildEfectoTrail() {
+    if (this._efectoTrail) return;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position',
+      new THREE.BufferAttribute(new Float32Array(14 * 3), 3));
+    geo.setDrawRange(0, 0);
+    const mat = new THREE.LineBasicMaterial({
+      color: 0xff5240, transparent: true, opacity: 0.85,
+      blending: THREE.AdditiveBlending, depthWrite: false });
+    const ln = new THREE.Line(geo, mat);
+    ln.renderOrder = 7;
+    ln.frustumCulled = false;
+    ln.visible = false;
+    ln.userData = { geo, puntos: [] };
+    this.scene.add(ln);
+    this._efectoTrail = ln;
+  }
+
   /** v3.6.38 · construcción AISLADA del anillo de bote (la llama el
-   *  PRECALIENTE por adelantado: el primer bote marcado ya no crea nada). */
+   *  PRECALIENTE por adelantado: el primer bote marcado ya no crea nada).
+   *  v3.6.44 (ronda 52 · «la marca del bote va desfasada… no se nota»):
+   *  anillo 0,09–0,115 m (antes 0,055–0,075) — más GRANDE y más lento
+   *  (0,55 s) para leerse de un vistazo. */
   _efectoBotePrewarm() {
     if (this._efectoBoteFx) return;
-    const geo = new THREE.RingGeometry(0.055, 0.075, 36);
+    const geo = new THREE.RingGeometry(0.09, 0.115, 40);
     const mat = new THREE.MeshBasicMaterial({
-      color: 0xff4636, transparent: true, opacity: 0.85,
+      color: 0xff4636, transparent: true, opacity: 0.95,
       side: THREE.DoubleSide, depthWrite: false });
     this._efectoBoteFx = new THREE.Mesh(geo, mat);
     this._efectoBoteFx.rotation.x = -Math.PI / 2;
@@ -14028,14 +14174,14 @@ class PingPongGame {
   }
 
   /** v3.6.37 · ANILLO DE BOTE amplificado (SÚPER EFECTO notorio): one-shot
-   *  de 0,38 s en el punto de bote de la bola marcada con giro real. */
+   *  de 0,55 s en el punto de bote de la bola marcada con giro real. */
   _efectoBoteFxShow(pos) {
     this._efectoBotePrewarm();
     if (!this._efectoBoteFx) return;
     const m = this._efectoBoteFx;
     m.position.copy(pos);
     m.position.y = DIMS.tableTopY + 0.004;
-    m.userData.boteT = 0.38;
+    m.userData.boteT = 0.55;
     m.scale.setScalar(0.3);
     m.visible = true;
   }
@@ -14126,8 +14272,11 @@ class PingPongGame {
         rim.traverse((o) => {
           if (!o.isMesh) return;
           const src = Array.isArray(o.material) ? o.material : [o.material];
+          // v3.6.44 (ronda 52 · el dueño: «no se nota nada sobre la pala»):
+          // opacity base 0,55→0,82 — el canto se VE de verdad (el pulso
+          // por frame lo anima; el blink de los últimos 2 s lo apaga).
           const dorados = src.map(() => new THREE.MeshBasicMaterial({
-            color: colHex, transparent: true, opacity: 0.55,
+            color: colHex, transparent: true, opacity: 0.82,
             blending: THREE.AdditiveBlending, side: THREE.BackSide,
             depthWrite: false,
           }));
@@ -14458,6 +14607,12 @@ class PingPongGame {
     this._imanTickN = 0;              // v3.6.43
     this._imanFxVis(false);
     if (this._imanFlechas) for (const m of this._imanFlechas) m.visible = false;
+    // v3.6.44 · campo continuo y estela también duermen con el reset
+    if (this._imanCampo && this._imanCampo.visible) this._imanCampo.visible = false;
+    if (this._efectoTrail && this._efectoTrail.visible) {
+      this._efectoTrail.visible = false;
+      this._efectoTrail.userData.puntos.length = 0;
+    }
     // v3.6.42 · el portal también duerme (recogida completa): ventana,
     // golpes, antirrebote, TRÁNSITO (si una partida muere con la bola
     // viajando, la bola se libera YA — nunca congelada para siempre),
@@ -14824,8 +14979,10 @@ class PingPongGame {
         const U = fx.userData;
         if (U.rim && U.rimMats.length) {
           U.rim.visible = true;
-          const ro = (0.5 + 0.14 * Math.sin(tt * 5.1)) * blink;
-          for (const rm of U.rimMats) rm.opacity = ro;
+          // v3.6.44 · canto VIVO: base 0,72 ± 0,22 (antes 0,5 ± 0,14) —
+          // late claro durante toda la ventana del poder.
+          const ro = (0.72 + 0.22 * Math.sin(tt * 5.1)) * blink;
+          for (const rm of U.rimMats) rm.opacity = Math.min(1, ro);
         }
         if (U.shockT > 0) {
           U.shockT -= dt;
@@ -14975,14 +15132,62 @@ class PingPongGame {
         // v3.6.38 · el halo ES HIJO de la bola: posición gratis y EXACTA
         // (nadie lo copia — viaja con el transform de la bola). Aquí solo
         // la visibilidad y el pulso.
-        // v3.6.43 (ronda 51 · el dueño no lo NOTABA): halo un 35 % más
-        // grande y con pulso más vivo — la bola marcada se ve ya de lejos.
+        // v3.6.44 (ronda 52 · el dueño SIGUE sin notarlo): halo 0,142→0,21 m
+        // (+48 %) con pulso amplio — la bola marcada se ve INCONFUNDIBLE.
         this._efectoHalo.visible = true;
         this._efectoHalo.scale.setScalar(
-          0.142 + 0.024 * Math.sin(performance.now() * 0.009));
+          0.21 + 0.05 * Math.sin(performance.now() * 0.009));
       }
     } else if (this._efectoHalo && this._efectoHalo.visible) {
       this._efectoHalo.visible = false;
+    }
+    // v3.6.44 (ronda 52 · el dueño: «en el Super efecto tampoco noto nada»):
+    // ESTELA ROJA de la bola marcada — línea de 14 posiciones históricas que
+    // dibuja la TRAYECTORIA curvada del Magnus: la bola deja un rastro rojo
+    // visible mientras dura el poder (construcción en el precaliente).
+    if (on && this.ball && this.ball.ppEfecto &&
+        this.rules && this.rules.state === 'rally') {
+      if (!this._efectoTrail) {
+        try { this._buildEfectoTrail(); } catch (eTr0) { this._efectoTrail = null; }
+      }
+      if (this._efectoTrail) {
+        const UT = this._efectoTrail.userData;
+        UT.puntos.push(this.ball.pos.clone());
+        while (UT.puntos.length > 14) UT.puntos.shift();
+        const arr = UT.geo.attributes.position.array;
+        for (let i = 0; i < 14; i++) {
+          const p = UT.puntos[Math.min(i, UT.puntos.length - 1)] || this.ball.pos;
+          arr[i * 3] = p.x; arr[i * 3 + 1] = p.y; arr[i * 3 + 2] = p.z;
+        }
+        UT.geo.attributes.position.needsUpdate = true;
+        UT.geo.setDrawRange(0, UT.puntos.length);
+        this._efectoTrail.visible = true;
+        this._efectoTrail.material.opacity = 0.85;
+      }
+    } else if (this._efectoTrail && this._efectoTrail.visible) {
+      // rastro que se desvanece: vaciado suave (queda sin puntos y oculto)
+      this._efectoTrail.userData.puntos.length = 0;
+      this._efectoTrail.visible = false;
+    }
+    // v3.6.44 · CAMPO + FLECHAS del IMÁN anclados AQUÍ (el corazón de la
+    // ronda 52: la ronda 51 construyó las flechas pero NADIE las llamaba —
+    // por eso el imán era invisible). Ambos viven SIEMPRE que el campo
+    // corre: disco orbitando el punto dulce + flechas cuando la bola entra.
+    if (on && this._imanT > 0) {
+      if (!this._imanCampo) {
+        try { this._buildImanCampo(); } catch (eIC0) { this._imanCampo = null; }
+      }
+      try { this._imanCampoUpdate(); } catch (eIC1) { /* */ }
+    } else if (this._imanCampo && this._imanCampo.visible) {
+      this._imanCampo.visible = false;
+    }
+    if (on && this._imanT > 0) {
+      if (!this._imanFlechas) {
+        try { this._buildImanFlechas(); } catch (eIF0) { this._imanFlechas = null; }
+      }
+      try { this._imanFlechasUpdate(); } catch (eIF1) { /* */ }
+    } else if (this._imanFlechas) {
+      for (const mF of this._imanFlechas) if (mF.visible) mF.visible = false;
     }
     // v3.6.42 · TRÁNSITO del portal (EXPLÍCITO, petición del dueño): la
     // bola se HUNDE en el portal de entrada (0,16 s), viaja OCULTA (el
@@ -15030,13 +15235,14 @@ class PingPongGame {
       if (an.userData.ppT <= 0) an.visible = false;
     }
     // v3.6.37 · ANILLO DE BOTE amplificado (one-shot, lo dispara el bote
-    // de la bola marcada en processEvents; aquí solo la animación).
+    // de la bola marcada en processEvents; aquí solo la animación —
+    // v3.6.44: 0,55 s y crecimiento amplio, se lee de un vistazo).
     if (this._efectoBoteFx && this._efectoBoteFx.userData.boteT > 0) {
       const U = this._efectoBoteFx.userData;
       U.boteT -= dt;
-      const kk = 1 - Math.max(0, U.boteT) / 0.38;
-      this._efectoBoteFx.scale.setScalar(0.3 + 2.2 * kk);
-      this._efectoBoteFx.material.opacity = 0.85 * (1 - kk);
+      const kk = 1 - Math.max(0, U.boteT) / 0.55;
+      this._efectoBoteFx.scale.setScalar(0.3 + 2.6 * kk);
+      this._efectoBoteFx.material.opacity = 0.95 * (1 - kk);
       if (U.boteT <= 0) this._efectoBoteFx.visible = false;
     }
   }
@@ -17447,14 +17653,21 @@ class PingPongGame {
             this._lastBounceSfx = performance.now();
             this.audio.tableBounce(pan, Math.min(1, e.speed / 6));
           }
-          this.flashMarker(e.pos);
+          // v3.6.44 (ronda 52 · el dueño: «la marca del bote va desfasada»):
+          // e.pos es el contacto del SUBPASO físico; la bola RENDERIZADA va
+          // un poco más adelante (los subpasos restantes del frame) — a
+          // velocidades de rally la diferencia se VE (la marca queda detrás
+          // de la bola). La marca se clava a la bola visual: posición EXACTA
+          // bajo la bola del frame (fallback e.pos si no hay bola).
+          const pMar = (this.ball && this.ball.pos) ? this.ball.pos : e.pos;
+          this.flashMarker(pMar);
           // v3.6.37 · SÚPER EFECTO NOTORIO: bote EXAGERADO visible — anillo
           // rojo + barrido sonoro SOLO cuando la bola marcada (con giro
           // significativo) pega en la mesa: el dueño DEBE ver el efecto.
           if (this.ball && this.ball.ppEfecto &&
               this.ball.spin && this.ball.spin.length() >= EFECTO_SPIN_MIN) {
-            this._efectoBoteFxShow(e.pos);
-            try { this.audio.playOsc(900, 260, 0.16, 'sawtooth', 0.10, 0); } catch (eB2) { /* */ }
+            this._efectoBoteFxShow(pMar);
+            try { this.audio.playOsc(900, 260, 0.16, 'sawtooth', 0.2, 0); } catch (eB2) { /* */ }
           }
           if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.18);
           break;

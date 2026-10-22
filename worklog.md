@@ -3488,3 +3488,19 @@ Stage Summary:
 - V3.6.41-SDK6 (FASE 43): el 4.º poder de pala SÚPER PORTAL vive en el registro — gatillo abre la ventana violeta (8 s/3 golpes), cada golpe VÁLIDO traslada la bola al campo rival con salida legítima (90–100 % de la rapidez, bote jugable, spin intacto) y el rival IA sufre la bola marcada (predicción muerta + error ×1,6 + piernas ×0,75 + +10 % fallo) sin un solo cambio en física, árbitro o identidad de la bola.
 - Pendiente puntual del dueño: probar en el Quest (recarga game.html?v=3641) — en un rally, abrir SÚPER PORTAL y golpear: la bola entra en el vórtice y reaparece al otro lado con desviación sorprendente pero jugable; el rival tarda en reaccionar y falla más.
 - Pendiente de infra: .cf-token sigue sin reposición (solo worker de Telegram).
+
+---
+Task ID: 149-b (ronda 49)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 49 — despliegue de V3.6.41-SDK6 (FASE 43 · SÚPER PORTAL) a producción y verificación.
+
+Work Log:
+- Deploy con el PAT repuesto: deploy_pages.py --push --release --backup desde HEAD 2fe0ce4 (commit ANTES de deploy, regla de la casa). Sitio ensamblado desde git archive (395 ficheros), smoke Playwright VERDE (29 peticiones, 0 fallos de red, 0 pageerrors), refs/heads/pages → 14e1fee38, respaldo anti-rollback main→proyecto al día, Release v3.6.41-SDK6 creado con los 4 ZIPs.
+- Push main verificado: 0aebb2b → 2fe0ce4 (PAT enmascarado); ls-remote final = main/proyecto 2fe0ce4 + pages 14e1fee38 (3 ramas alineadas en V3.6.41).
+- Verificación de producción (agujas): PAGES-VERSION.txt = version=3.6.41-SDK6 · fuente_commit=2fe0ce4a; game.html servido (6.955.503 B tras las 2 reescrituras del deploy, hash 24233cbe… consistente); sello 3.6.41-SDK6 presente; 15 agujas de FASE 43 (_portalProcesa/ppPortal/PODER_VOZ_PORTAL/portalRivalErrMul) en el game.html servido.
+- Release verificado por API con PAT: tag v3.6.41-SDK6 con los 4 assets (SOLO 0,0 · CLOUDFLARE 131,2 · COMPLETO 131,2 · ligera 16,1 MB).
+
+Stage Summary:
+- RONDA 49 CERRADA EN PRODUCCIÓN: V3.6.41-SDK6 (FASE 43) servida en https://franjavierdavila.github.io/CrazyPP/ con SÚPER PORTAL como 4.º poder de pala (anillo violeta + vórtice + penalización IA), release GitHub con los 4 ZIPs y las 3 ramas remotas alineadas.
+- Al dueño: probar en el Quest recargando game.html?v=3641 (limpiar caché del navegador del Quest si no refresca) — abrir SÚPER PORTAL y golpear: la bola entra en el vórtice y reaparece al otro lado con desviación jugable; el rival falla más.
+- .cf-token sigue sin repo (solo worker de Telegram; sin cambios).

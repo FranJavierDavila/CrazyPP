@@ -3681,3 +3681,21 @@ Stage Summary:
 - EL SÚPER EFECTO OBedeCE AL PUNTO: solo vive en el INTERCAMBIO — tu saque y el del rival, el arkanoid y los puntos muertos son juego normal aunque el poder esté armado; y su firma (topspin acelerado · backspin parado · sidespin con patada · acople ×2,4) SOLO se manifiesta cuando TU bola con efecto bota en la MESA DEL RIVAL. El brush, la marca, el halo, la penalización al rival y la señal sonora siguen intactos dentro de su ventana.
 - Listo para producción en V3.6.47-SDK6: commit + deploy con el PAT del dueño.
 - Pendientes heredados: entrenamiento tres arreglos (el dueño dará el pase); reponer .cf-token y .clave-produccion desde el respaldo del Task 122; conservar scripts/worker-tele/.github-pat (600) tras futuros rodados.
+
+---
+Task ID: 157
+Agent: principal (Z.ai)
+Task: Despliegue y verificación de producción de la ronda 55 (V3.6.47-SDK6, FASE 49 «El efecto sólo vive en el intercambio»).
+
+Work Log:
+- COMMIT: 11350d4 (V3.6.47-SDK6) · PUSH de main APARTE con el protocolo que funciona con este PAT fine-grained (https://<PAT>@github.com/… — la forma x-access-token:<PAT> dio «Invalid username or token» de nuevo; lección consolidada de la Task 155).
+- DESPLIEGUE: GIT_TOKEN=$(cat scripts/worker-tele/.github-pat) python3 scripts/deploy_pages.py --push --release --backup — smoke Playwright bajo prefijo /CrazyPP/ verde (0 fallos de red, 0 pageerrors) · pages → 04292cb7c (396 ficheros, commit encadenado) · respaldo main→proyecto al día · Release v3.6.47-SDK6 publicada con los 4 ZIPs · «deploy terminado».
+- VERIFICACIÓN DE PRODUCCIÓN (curl con anti-caché, ~100 s tras el deploy): PAGES-VERSION.txt = version 3.6.47-SDK6 · fuente_commit 11350d43e… · game_sha256 bd0e551ebcdf… · reescrituras 2 · fecha 2026-10-22T19:16:14.
+- game.html SERVIDO 6.973.136 B (6.973.138 − 2 reescrituras) con «3.6.47-SDK6» ×2 y los 4 MARCADORES de la r55: eMul gateado «pad.intercambio !== false ? pad.ppEfectoMul : 1;» ×1 · ventana «ps.intercambio = this.rules.state === 'rally';» ×1 · puerta «const boteRival = pos.z < C;» ×1 · firma gateada «if (boteRival && ball.ppEfectoTipo === 'top') {» ×1 — NEGATIVAS en lo servido: eMul sin gate ×0 y eM incondicional ×0 ✓.
+- SHA256 DEL SERVIDO = bd0e551ebcdf2aa1c0ba62651cfb1578cc9845e17f38e6d9bd03f30531a5c1a5 — IDÉNTICO al declarado: byte-exacto.
+- ESTADO FINAL: main 11350d4 · pages 04292cb7 · proyecto 11350d4 · working tree limpio.
+
+Stage Summary:
+- RONDA 55 CERRADA EN PRODUCCIÓN: V3.6.47-SDK6 servida en https://franjavierdavila.github.io/CrazyPP/ — main 11350d4, pages 04292cb7, proyecto 11350d4, Release v3.6.47-SDK6 con los 4 ZIPs byte-exactos.
+- Checklist para el dueño (recargar game.html?v=3647 o limpiar caché del Quest): (a) MI SAQUE con el poder de EFECTO armado = saque de SIEMPRE (sin halo, sin acelera-bote) — el efecto NO toca el saque propio NI el del rival; (b) en el INTERCAMBIO, barrido arriba/abajo/lateral = TOPSPIN/BACKSPIN/SIDESPIN como en la r54; (c) la firma (acelerar/parar/patada) SÓLO ocurre cuando la bola con efecto bota en la MESA DEL RIVAL — un mishit que bote en tu mitad es bote normal; (d) fuera de la ventana del poder, todo juego normal.
+- Pendientes heredados: entrenamiento tres arreglos (el dueño dará el pase); reponer .cf-token y .clave-produccion desde el respaldo del Task 122; conservar scripts/worker-tele/.github-pat (600) tras futuros rodados.

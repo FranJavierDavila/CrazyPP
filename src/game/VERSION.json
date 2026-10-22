@@ -1,10 +1,10 @@
 {
-  "version": "3.6.40-SDK6",
-  "fase": 42,
-  "faseNombre": "El poder activo se ve en la pala",
+  "version": "3.6.41-SDK6",
+  "fase": 43,
+  "faseNombre": "El portal dimensional",
   "sdk": "1.5.4",
   "fecha": "2026-10-22",
-  "hub": "v3640-sdk6",
+  "hub": "v3641-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "ae61968f75cd75d5404f59c680c5e2d6db0c9921f357bff7808e908fd12472bc"
+  "golden": "ae751402dfb1e559dad0ddb97cbb8aae32fd45935a2fd988b044b801179f8756"
 }

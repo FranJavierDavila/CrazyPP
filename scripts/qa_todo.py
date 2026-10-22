@@ -98,6 +98,16 @@ CAPAS = [
     # Un solo icono (FASE 38), redibujo diferido+ahorrado (r46), el
     # indicador duerme en CADA _megaNormReset (FASE 41).
     ('AI · poder activo se ve en pala (v3640)', 'qa_poderes_activo_v3640.py'),
+    # AJ (v3641): SÚPER PORTAL, 4.º PODER DE PALA (spec completa del dueño:
+    # portal que traslada la bola tras cada golpe VÁLIDO — 8 s / 3 golpes,
+    # desviación lateral 0,25–0,70 m, vertical 0–0,15 m, conserva 90–100 %
+    # de la rapidez, antirrebote 0,25 s, salida legal con bote jugable por
+    # el solver existente, swap ATÓMICO: la bola jamás cruza la red
+    # físicamente, cero colisiones fantasma, árbitro y física intactos) +
+    # penalización honesta a la IA rival (c06: predicción muerta al cruzar
+    # el portal, error ×1,6, piernas ×0,75, +10 % de fallo; la marca se
+    # limpia al devolver). Icono del dueño + voces ES/EN embebidos.
+    ('AJ · súper portal 4.º poder (v3641)', 'qa_portal_v3641.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

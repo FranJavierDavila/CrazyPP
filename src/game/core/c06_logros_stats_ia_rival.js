@@ -471,6 +471,15 @@ export class OpponentAI {
     const sign = this.sign;
     const toward = ball.vel.z * sign > 0;
 
+    // v3.6.41 · SÚPER PORTAL: la bola que la IA perseguía DESAPARECIÓ y
+    // reapareció en otra parte (el portal del jugador la trasladó al
+    // otro lado de la red). La predicción anterior muere: la IA reacciona
+    // de nuevo tras SU predictInterval (reacción natural) y el error se
+    // re-sortea amplificado — petición del dueño: el portal «penaliza»
+    // al rival sin tocar la física ni el árbitro. La marca la pone el
+    // núcleo (ball.ppPortal) y la IA la limpia al devolver.
+    if (ball.ppPortal) this.predictValid = false;
+
     if (ctx.canHit && toward) {
       this.predictTimer -= dt;
       if (this.predictTimer <= 0) {
@@ -489,7 +498,11 @@ export class OpponentAI {
             // MARCADA «dificulta en un %» el éxito del rival — el error se
             // sortea con la marca YA puesta (el golpe con el poder activo
             // precede al vuelo) y se amplifica ×efectoRivalErrMul.
-            const eMulIA = ball.ppEfecto ? (DIMS.efectoRivalErrMul || 1) : 1;
+            // v3.6.41 · SÚPER PORTAL: la bola que reaparece tras el portal
+            // amplifica TAMBIÉN el error (×portalRivalErrMul) — el sorteo
+            // de una bola recién aparecida es ciego por naturaleza.
+            const eMulIA = (ball.ppEfecto ? (DIMS.efectoRivalErrMul || 1) : 1) *
+              (ball.ppPortal ? (DIMS.portalRivalErrMul || 1) : 1);
             this.errX = gauss() * this.cfg.errStd * eMulIA;
             this.errY = gauss() * this.cfg.errStd * 0.6 * eMulIA;
             this.predict.copy(strike.point);
@@ -560,7 +573,13 @@ export class OpponentAI {
     // v3.6.37 · SÚPER EFECTO NOTORIO: con la bola marcada viniendo, el rival
     // va un % más lento (le CUESTA llegar — visible y honesto: la física de
     // salida no cambia, solo las piernas de la IA mientras sufre el efecto).
-    const vMulIA = (ball.ppEfecto && toward) ? (DIMS.efectoRivalVel || 1) : 1;
+    // v3.6.41 · SÚPER PORTAL: la bola recién aparecida también frena las
+    // piernas (×portalRivalVel) — dos poderes a la vez se multiplican.
+    let vMulIA = 1;
+    if (toward) {
+      if (ball.ppEfecto) vMulIA *= (DIMS.efectoRivalVel || 1);
+      if (ball.ppPortal) vMulIA *= (DIMS.portalRivalVel || 1);
+    }
     const desiredSpeed = Math.min(this.cfg.maxSpeed * vMulIA, dist * 4.5);
     if (dist > 1e-5) tmpD.setLength(desiredSpeed); else tmpD.set(0, 0, 0);
     this.vel.lerp(tmpD, Math.min(1, dt * this.cfg.accel));
@@ -594,7 +613,10 @@ export class OpponentAI {
     if (cy < DIMS.tableTopY - 0.08 || cy > 1.65) return null;
 
     const ballSpeed = ball.vel.length();
-    const pMiss = this.cfg.missBase + Math.max(0, ballSpeed - 7) * 0.05;
+    // v3.6.41 · SÚPER PORTAL: +portalMissExtra de fallo decidido con la
+    // bola del portal viniendo (la IA «no llega bien» más a menudo).
+    const pMiss = this.cfg.missBase + Math.max(0, ballSpeed - 7) * 0.05 +
+      (ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0);
     this.hitCooldown = 0.55;
     // v2.84 · GOLPE MALO (petición del artista): el fallo decidido de la IA
     // YA NO deja pasar la bola a través de la pala (efecto pésimo). La toca
@@ -696,6 +718,7 @@ export class OpponentAI {
     const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
     ball.spin.copy(shotSpin);
     ball.ppEfecto = false;   // v3.6.36: la devolución de la IA LIMPIA la marca
+    ball.ppPortal = false;   // v3.6.41: la devolución de la IA LIMPIA el portal
     ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
     if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
 
@@ -747,6 +770,7 @@ export class OpponentAI {
     _miV.addScaledVector(ball.vel, 0.05);   // hereda un 5% del impulso entrante
     ball.spin.set((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 10, 0);
     ball.ppEfecto = false;   // v3.6.36: el golpe torpe de la IA LIMPIA la marca
+    ball.ppPortal = false;   // v3.6.41: el golpe torpe LIMPIA el portal
     ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
     if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
     this.swing = {

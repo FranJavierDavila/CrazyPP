@@ -81,7 +81,7 @@ async def main():
         ('c2.arc(128, 128, 117, a0, a0 + Math.PI * 2 * frac);',
          'anillo: arco dibujado según el tiempo restante'),
         ("'rgba(8,12,20,0.62)'", 'anillo: pista tenue completa'),
-        (": (activo === 'efecto' ? '#54d8f0' : '#5aa2ff');",
+        ("activo === 'efecto' ? '#54d8f0'",
          'anillo: color por poder (oro/cian/azul = firma del canto)'),
         ('this._megaTex.needsUpdate = true;   // recalentada in-place',
          'textura PERSISTENTE intacta (lección ronda 46)'),
@@ -113,7 +113,7 @@ async def main():
         # FASE 41 intacta: partida nueva = pala limpia
         ('try { if (this.onMatchStart) this.onMatchStart(); } catch (e) { /* nunca rompe el árbitro */ }',
          'FASE 41: el hook de partida nueva sigue avisando'),
-        ('V3.6.40-SDK6', 'sello de versión servida'),
+        ('V3.6.41-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     chk(game.count("this._megaActivaId = null;") >= 2,
@@ -212,10 +212,10 @@ async def main():
             G._megaMatriz[0].n === 1;
 
           // · EFECTO ACTIVO: modo, dur y anillo de SU ventana (8 s)
-          Math.random = () => 0.5;
+          Math.random = () => 0.3;
           G.rules.state = 'point'; G.updateMega(1 / 60);
           G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
-          Math.random = () => 0.5;                 // efecto ×2 (tras gastar queda ×1)
+          Math.random = () => 0.3;                 // efecto ×2 (tras gastar queda ×1)
           G.rules.state = 'point'; G.updateMega(1 / 60);
           G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
           let tE = null;
@@ -236,7 +236,7 @@ async def main():
           out.flechasVuelven = !!parF && parF.some((s) => s.visible);
 
           // · IMÁN: abre, REFRESCA sin gasto y expira a inventario
-          Math.random = () => 0.9;
+          Math.random = () => 0.6;
           G.rules.state = 'point'; G.updateMega(1 / 60);
           G.rules.state = 'rally'; G.rules.rallyHits = 11; G.updateMega(1 / 60);
           let tI = null;

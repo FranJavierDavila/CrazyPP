@@ -1,3 +1,2 @@
-# SHA256 del game.html que produjo esta división (3.6.40-SDK6, fase 42 · El poder activo se ve en la pala; sello actualizado
-# por bump_version.py desde 3.6.39-SDK6)
-ae61968f75cd75d5404f59c680c5e2d6db0c9921f357bff7808e908fd12472bc
+# SHA256 del game.html que produjo esta división (3.6.41-SDK6, fase 43 · El portal dimensional; regenerado tras el fix de gravedad del portal)
+ae751402dfb1e559dad0ddb97cbb8aae32fd45935a2fd988b044b801179f8756

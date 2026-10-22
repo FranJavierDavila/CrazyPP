@@ -129,7 +129,7 @@ async def main():
         ('const MEGA_ARROW_S = 0.020;', 'flechas: tamaño base intacto'),
         ('return !!(this.champs && this.champs.active);',
          'gate: superpoderes SOLO en campeonatos'),
-        ('V3.6.40-SDK6', 'sello de versión servida'),
+        ('V3.6.41-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     # REGRESIONES de los defects que se atacan
@@ -174,7 +174,7 @@ async def main():
           G.rules.state = 'rally'; G.rules.rallyHits = 11;
           try { G.updateMega(1 / 60); } catch (e) { out.errU1 = String(e); }
           out.colaArmada = Array.isArray(G._megaPrewarmQ) &&
-            G._megaPrewarmQ.length === 6;
+            G._megaPrewarmQ.length === 7;   // v3.6.41: +canto del portal
           // drenar: una pieza por frame — SIN tocar el gatillo
           for (let i = 0; i < 10; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }

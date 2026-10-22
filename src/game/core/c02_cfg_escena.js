@@ -59,6 +59,13 @@ export const DIMS = {
   // (solo con la bola marcada viniendo; sin poder: 1 = IA idéntica):
   efectoRivalErrMul: 2.0,   // error de puntería de la IA ×2 al sortear la bola
   efectoRivalVel: 0.85,     // piernas de la IA ×0,85 (−15 % de velocidad)
+  // v3.6.41 · SÚPER PORTAL (4.º poder; penalización honesta al rival IA,
+  // petición del dueño: «deberá penalizarlo para que le resulte más
+  // complicado acertar el golpe»). Solo con la bola marcada viniendo
+  // (ball.ppPortal, el portal del jugador); sin poder: IA idéntica.
+  portalRivalErrMul: 1.6,   // error de puntería de la IA ×1,6 tras el portal
+  portalRivalVel: 0.75,     // piernas de la IA ×0,75 mientras sufre el portal
+  portalMissExtra: 0.10,    // +10 % de fallo decidido (golpe torpe extra)
   // v3.6.37 · SÚPER IMÁN (3.er poder; parámetros PROTOTIPO del dueño, a
   // calibrar con las velocidades reales — NO son física de imán real):
   // campo que atrae SUAVE la bola al punto dulce de la pala del jugador.

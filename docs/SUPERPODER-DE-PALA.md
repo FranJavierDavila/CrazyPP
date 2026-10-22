@@ -206,6 +206,75 @@ rally, 100 % mirando el mango). `_megaActivaRest()` es el único reloj
 nuevo y `updateMega` reconcilia visibilidad/modo/expiración cada frame
 (fuente única de verdad).
 
+### 2.g · FASE 43 (ronda 49) — SÚPER PORTAL, el 4.º poder de pala
+
+Peticion del dueño: «Vamos a crear un nuevo superpoder de pala "Super
+Portal"… el rival es el ordenador deberá penalizarlo de alguna forma
+para que le resulte más complicado acertar el golpe» + spec completa de
+9 parámetros. El portal traslada la bola tras un golpe VÁLIDO: la bola
+desaparece en un vórtice violeta y reaparece más adelante con una
+salida legítima — sorprendente pero CON control del jugador («no debe
+convertirse en una teletransportación arbitraria que ignore la física
+del ping-pong»). Icono del dueño embebido (SuperPala_Portal.png) +
+voces ES/EN (¡SÚPER PORTAL! / SUPER PORTAL!).
+
+**Parámetros (spec del dueño, calibrables):** ventana 8 s / 3 golpes
+portalizados por activación · transición visual 0,16 s (0,12–0,20) ·
+desviación lateral 0,25–0,70 m (NUNCA siempre la máxima) · variación
+vertical 0–0,15 m · conserva 90–100 % de la rapidez del golpe real ·
+antirrebote 0,25 s entre golpes · recarga por la norma de siempre (11
+golpes de rally, tope ×3).
+
+**Las 7 reglas físicas (spec, implementadas una a una):**
+
+1. **Solo tras impacto válido**: `_portalProcesa` exige un evento
+   paddle del jugador SIN consumir en ESTE frame (doble guard con el
+   bloque 5.55: nunca por rozar la pala, por pasar cerca ni por una
+   colisión duplicada). El evento NO se consume: el árbitro registra el
+   golpe y el bote del portal en campo rival (secuencia arbítral
+   intacta — no toca puntuación, identidad, saque ni detección).
+2. **UNA sola bola, UNA sola identidad**: el swap es ATÓMICO
+   (posición + velocidad en el mismo frame, tras el enderezado 5.5 y
+   ANTES del árbitro). La bola NUNCA cruza la red físicamente:
+   reaparece YA al otro lado (plano C−0,22 con margen mínimo de 0,12 m
+   a la red) — cero colisiones fantasma, cero segundo objeto.
+3. **Intención del golpe**: la salida parte de la PROYECCIÓN NATURAL
+   (misma velocidad + gravedad del juego, fórmula de c05) — la desviación
+   se calcula sobre ella, no al azar.
+4. **Desviación viva**: lateral 0,25–0,70 m sobre la perpendicular
+   horizontal al golpe, con SIGNO que lleva la bola hacia el centro de
+   la mesa (y sorteo libre si va centrada); vertical 0–0,15 m. Si la
+   salida se sale de la zona legal (|x| > 0,62 m) se REDUCE; sin margen
+   real, el golpe se procesa NORMAL (spec: «reduce la desviación o
+   cancela el efecto para ese golpe»).
+5. **Bote jugable garantizado**: la velocidad de salida la calcula el
+   SOLVER EXISTENTE (`computeShotVelocity`, el mismo del enderezado 5.5)
+   hacia un bote legítimo medio-fondo del campo rival; después se
+   reescala al 90–100 % de la rapidez del golpe real (sin invertir
+   dirección, sin saltos bruscos, tope maxBallSpeed).
+6. **Spin conservado** (spec v1: sin variación explícita de efecto).
+7. **Consumo honesto**: CADA golpe portalizado gasta 1 carga (3 golpes
+   o cargas agotadas → fin; 8 s → fin natural). El gatillo con la
+   ventana ya abierta REFRESCA sin gastar (mismo lenguaje que el imán).
+
+**Penalización del rival IA (c06, petición expresa del dueño)** — el
+mismo lenguaje honesto del Súper Efecto Notorio, solo con la bola
+marcada viniendo: la predicción de la IA MUERE al cruzar el portal (la
+bola que perseguía desapareció: reacciona tras SU `predictInterval`),
+el error de puntería se re-sortea ×1,6 (`portalRivalErrMul`), las
+piernas van ×0,75 (`portalRivalVel`) y el fallo decidido suma +10 %
+(`portalMissExtra`). La marca `ball.ppPortal` la limpia la IA al
+devolver (golpe limpio y mishit) y el `_megaNormReset` (FASE 41).
+
+**Presentación diegética (FASE 42 heredada):** el icono pasa a modo
+ACTIVO con anillo VIOLETA `#a86bff` que se vacía y parpadeo final;
+canto violeta ×1,085 en la silueta de la pala (no pelea con oro ni
+cian); anillos de ENTRADA/SALIDA en el mundo (billboard, one-shot de
+0,42 s); tránsito visual: la bola se hunde a 22 % y reaparece (0,16 s,
+SOLO cosmético — la física nunca se entera); barrido sonoro propio
+(baja-subida, como la bola que entra y sale del vórtice); canto del
+portal en el precaliente (cola de 7 piezas).
+
 ## 3 · Feedback al jugador
 
 1. **Icono anclado al mango** (sprite-billboard 4,8 cm, base de la mano, justo
@@ -218,14 +287,17 @@ nuevo y `updateMega` reconcilia visibilidad/modo/expiración cada frame
    «¡Potenciador de súper efecto!») y **en_US-lessac** si se juega en inglés
    («Giant paddle booster!» / «Super spin booster!»). MP3 embebido data-URI,
    decode+caché. Adiós a la voz tongtong («horrible, no nativa» — petición
-   del dueño, FASE 38).
+   del dueño, FASE 38). El PORTAL (FASE 43) añade su voz propia ES/EN
+   («¡Súper portal!» / «Super portal!») embebida igual.
 3. **Jingle de carga** (tríada mayor + brillo) compartido; activación con
-   arpegios PROPIOS por poder (oro square 420→1400 · cian sawtooth 340→1280).
+   arpegios PROPIOS por poder (oro square 420→1400 · cian sawtooth 340→1280 ·
+   portal barrido baja-subida 1250→320→1150).
 4. **Canto de energía por poder**: oro ×1,055 (MEGA) / cian ×1,07 (EFECTO) /
-   azul ×1,07 (IMÁN, 0x5aa2ff — familia del icono) — pueden convivir (son
+   azul ×1,07 (IMÁN, 0x5aa2ff — familia del icono) / violeta ×1,085 (PORTAL,
+   0xa86bff — el cuarto canto, no pelea con los otros) — pueden convivir (son
    ortogonales). Onda de choque al liberar. Aviso sonoro
    descendente <2 s. Megáfono ES/EN con ×N y mensajes propios del efecto
-   (`arc_efecto_go/fin`).
+   (`arc_efecto_go/fin`) y del portal (`arc_portal_go/fin`).
 5. Pista de la norma una vez por navegador (`pp_mega_norm_hint`), ahora con
    matriz + joystick + «solo campeonatos».
 

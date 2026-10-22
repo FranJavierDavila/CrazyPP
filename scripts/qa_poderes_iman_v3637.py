@@ -97,9 +97,9 @@ async def main():
          'física: NUNCA recupera bolas que ya superaron el plano de la cara'),
         ('IM.dv += aMag * h;', 'física: contador real de Δv lateral'),
         ('ball.ppImanTocada = true;', 'física: la aproximación asistida queda MARCADA'),
-        ('const eMulIA = ball.ppEfecto ? (DIMS.efectoRivalErrMul || 1) : 1;',
+        ('const eMulIA = (ball.ppEfecto ? (DIMS.efectoRivalErrMul || 1) : 1) *',
          'IA: error de puntería amplificado con bola marcada'),
-        ('const vMulIA = (ball.ppEfecto && toward) ? (DIMS.efectoRivalVel || 1) : 1;',
+        ('if (ball.ppPortal) vMulIA *= (DIMS.portalRivalVel || 1);',
          'IA: piernas más lentas con bola marcada'),
         ('if (ent.id === \'iman\') return this._imanTrigger(ent);',
          'el gatillo libera el IMÁN seleccionado'),
@@ -139,7 +139,7 @@ async def main():
         ('pp_pala_mejorada_v1', 'conmutador persistente «Pala Mejorada»'),
         ('_megaNormReset()', 'recogida completa con dispose'),
         ('this.updateMega(dt);', 'la norma corre en el bucle animate'),
-        ('V3.6.40-SDK6', 'sello de versión servido'),
+        ('V3.6.41-SDK6', 'sello de versión servido'),
     ]:
         chk(needle in game, label)
     # REGRESIONES
@@ -266,7 +266,7 @@ async def main():
           out.msgTope = (G.rules.message || '').indexOf('TOPE ×3') === 0;
 
           // · PODER DISTINTO (efecto): ENTRA en la matriz (posición 1)
-          Math.random = () => 0.5;                     // SIEMPRE 'efecto'
+          Math.random = () => 0.3;                     // SIEMPRE 'efecto' (4 poderes)
           G.rules.state = 'point'; paso();
           G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
           out.matrizDos = G._megaMatriz.length === 2 &&
@@ -348,7 +348,7 @@ async def main():
           G._efectoT = 7.0; G._efectoGolpes = 1;
           try { G._efectoFin(); } catch (e) { out.errFin = String(e); }
           out.finPorGolpes = G._efectoT === 0 && G._efectoGolpes === 0;
-          Math.random = () => 0.5;
+          Math.random = () => 0.3;                     // SIEMPRE 'efecto'
           G.rules.state = 'point'; paso();
           G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
           let rec = null;
@@ -357,7 +357,7 @@ async def main():
           G._efectoT = 0; paso();
 
           // · SÚPER IMÁN: entra en la matriz y el gatillo ABRE el campo
-          Math.random = () => 0.9;                     // SIEMPRE 'iman'
+          Math.random = () => 0.6;                     // SIEMPRE 'iman' (4 poderes)
           G.rules.state = 'point'; paso();
           G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
           out.imanEntra = !!G._megaMatriz.find((x) => x.id === 'iman') &&
@@ -446,7 +446,7 @@ async def main():
           const rndReal = Math.random;
 
           // re-poner imán ×3 y abrir campo: 3 asistencias cierran
-          Math.random = () => 0.9;
+          Math.random = () => 0.6;                     // SIEMPRE 'iman'
           G.rules.state = 'point'; paso();
           G.rules.state = 'rally'; G.rules.rallyHits = 11; paso();
           let im = null;

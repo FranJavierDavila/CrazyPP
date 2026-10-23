@@ -3864,3 +3864,20 @@ Work Log:
 Stage Summary:
 - LOS TRES ARREGLOS EN EL ÁRBOL (pendiente de deploy en el apéndice 164-b): la academia entra DESPEJADA (menú fuera, panel pulsable), los troqueles son INMUNES a las salidas sucias (y nunca estuvieron borrados — sistema vivo en los 5), y el orbe de la etapa 4 del Wizard pesa LA MITAD con el mismo tamaño (515 ladrillos, dianas más gordas, FPS aliviados). Bonus: el mapa del taller de Valle Neón vuelve a verse.
 - Pendientes vivos sin cambio: informe del dueño (Imán/clon), entrenamiento «tres arreglos», .cf-token/.clave-produccion (vía Cloudflare), hito CORONAR LA OESTE.
+
+---
+Task ID: 164-b (apéndice)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 60 — despliegue y verificación byte-exacto de V3.6.52-SDK6 (los tres arreglos) en producción.
+
+Work Log:
+- DEPLOY (deploy_pages --push --release --backup, GIT_TOKEN del dueño): smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 fallos de red, 0 pageerrors) · pages → commit 6dce3534a (396 ficheros · 137,7 MB) · respaldo anti-rollback main→proyecto al día · Release v3.6.52-SDK6 publicada con los 4 ZIPs (COMPLETO 131.337.381 · ligera 16.283.025 · CLOUDFLARE 131.323.994 · SOLO 6.089).
+- Pages build «built» sobre 6dce3534a9136453c08771316e2d8e4cc89afa2f (verde al primer sondeo).
+- VERIFICACIÓN PRODUCCIÓN (curl anti-caché): PAGES-VERSION.txt = 3.6.52-SDK6 · fuente_commit 1e2ba428b · game_sha256 22c0c614… (reescrituras=2, método de siempre: golden c5ef6887 + ruta-absoluta→relativa) · game.html servido SHA256 22c0c6149abd61f42ff9c779f09a778f3ebcffe43c562cadb0bb96d205a9b3c7 = BYTE-EXACTO contra el declarado por el pipeline y contra la rama pages local.
+- AGUJAS r60 EN PRODUCCIÓN: cierre directo del menú en la academia (G.menuOpen=false + setArcDuck) ·1 · autocuración del cerrojo en leaveAll (antes del return temprano) ·1 · magia servida: ORBE_COMPLEJO 0,125/5/3,5 con el 0,088 AUSENTE y manifest v33 · valle_neon servido: this.mapa.build() antes de colgar y manifest v5.
+- NOTA para el dueño: los troqueles NUNCA estuvieron borrados — el sistema vive en los 5 campeonatos (verificado en vivo pieza a pieza); lo que pasaba es que el cerrojo que esconden las pruebas especiales podía quedar izado tras una salida no prevista y los tapaba en TODO hasta recargar. Desde hoy se autocura en cada salida.
+
+Stage Summary:
+- PRODUCCIÓN SIRVIENDO V3.6.52-SDK6 · FASE 54 «Academia despejada, troqueles inmunes, orbe a dieta» byte-exacto (main 1e2ba42 · pages 6dce3534a · fuente 1e2ba42).
+- El dueño debe RECARGAR con la pestaña cerrada o game.html?v=3652 (el Quest cachea). Al entrar: el TUTORIAL se abre sin el menú encima y el gatillo responde desde el paso 0; los troqueles salen en todos los campeonatos aunque venga de una prueba especial; el orbe de la etapa 4 del Wizard tiene 515 ladrillos (la mitad, mismo tamaño) y debería notarse más fluido.
+- Pendientes vivos sin cambio: informe del dueño (Imán/clon), entrenamiento «tres arreglos», .cf-token/.clave-produccion (vía Cloudflare), hito CORONAR LA OESTE.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_poderes_10s20_v3648 — CAPA AQ · ronda 56 (V3.6.48-SDK6, FASE 50).
+"""qa_poderes_10s20_v3648 — CAPA AQ · ronda 56 (V3.6.49-SDK6, FASE 50).
 
 La petición del dueño (literal): «Todos los superpoderes de la pala que
 se concedan superados los 20 toques no antes. El super iman que ralentice
@@ -14,14 +14,14 @@ en los bores solo es para nosotros, el perjudicado siempre es el rival.»
 
 Pruebas: (1) FUENTE SERVIDA — agujas de la NORMA r56 (MEGA_GOLPES=20,
 EFECTO_DUR=10, IMAN_DUR=10, gate del SAQUE DEL RIVAL en el arme del
-campo, FRENO del gancho en c02/c05) + NEGATIVAS (los topes de golpes de
+campo, GUÍA DE TIRO r57 en c02/c05) + NEGATIVAS (los topes de golpes de
 la r36-37 NO vuelven: EFECTO_GOLPES, IMAN_ASIST, el cierre por golpes) +
 i18n ES/EN honesto + plantilla 2.4 con la norma de 20 toques. (2)
 MECÁNICA REAL headless — cadencia EXACTA (19 toques NADA · 20 → +1 · 40
 → ×2 · 60 → ×3 · 80 → tope), ventanas de 10 s PURAMENTE TEMPORALES (el
 efecto y el imán viven sus 10 s completos y cierran solos), el campo del
-imán NUNCA arma sobre la bola del SAQUE del rival (isServeBall) y el
-FRENO de la física viva: la bola asistida llega MÁS DESPACIO al dulce
+imán ya no arma campo por bola NUNCA (r57: la guía vive EN EL GOLPE)
+y la GUÍA DE TIRO de la física viva: el golpe guiado BOTA EN LA MESA DEL RIVAL
 (sin ppIman, velocidad idéntica — golden intacto).
 
 Salida: RESULTADO: N OK · M fallos (contrato qa_todo)"""
@@ -67,26 +67,30 @@ async def main():
          'r56: SÚPER EFECTO — ventana de 10 s desde la activación'),
         ('const IMAN_DUR = 10;',
          'r56: SÚPER IMÁN — campo de 10 s desde la activación'),
-        # · «MENOS EN LOS SAQUES»: el campo no arma sobre la bola del
-        #   saque del rival (isServeBall vive hasta el primer toque)
-        ("r.state === 'rally' && !r.isServeBall",
-         'r56: el imán NUNCA arma sobre la bola del SAQUE del rival'),
-        # · «QUE RALENTICE LA BOLA»: el FRENO del gancho (c02 + c05)
-        ('imanFreno: 1.1,',
-         'r56: FRENO exponencial del campo (1/s) en los DIMS'),
-        ('imanFrenoSuelo: 0.15,',
-         'r56: suelo de velocidad del freno (0,15 m/s) — el vuelo no muere'),
-        ('Math.max(DIMS.imanFrenoSuelo / sp0,',
-         'r56: el gancho FRENE dentro de sus guardas y sin gastar el tope Δv'),
+        # · r57: LA GUÍA DE TIRO (el imán reescrito, «olvidemos el efecto
+        #   anterior de atracción y ralentización») viaja EN LA PALA
+        ('ps.ppImanAim = imanAim;',
+         'r57: la guía de tiro viaja EN LA PALA (ppImanAim)'),
+        ('imanAimVzMin: -0.4,',
+         'r57: sólo tiros que YA van hacia la mitad rival'),
+        ('imanAimProfundidad: 0.62,',
+         'r57: objetivo al 62 % de la media mesa rival (bote seguro)'),
+        ('imanAimPisoVel: 9.5,',
+         'r57: piso de potencia — «golpes muy fuertes y a gran velocidad»'),
+        ('computeShotVelocityReal(ball.pos, _imObjetivo, T0, vMax0, _imSpinCero)',
+         'r57: el SOLVER DE LA CASA reconstruye el tiro (bote asegurado)'),
+        # · r57: SIN campo por bola y SIN gasto por asistencia
+        ('_imanImpacto RETIRADO',
+         'r57: el gasto de cargas por asistencia RETIRADO'),
         # · i18n ES/EN honesto
         ('cada 20 toques de rally te da una', 'i18n ES: la norma de 20 toques'),
         ('cada 20 toques del rally = +1 carga', 'i18n ES: la pista de la norma'),
         ('every 20 rally shots grants one', 'i18n EN: la norma de 20 shots'),
         ('every 20 rally shots = +1 charge', 'i18n EN: la pista de la norma'),
-        ('¡SÚPER IMÁN! · la bola se frena y vuela al centro de la pala · 10 s',
-         'i18n ES: el imán anuncia FRENO + 10 s'),
-        ('SUPER MAGNET! · the ball slows down and flies to the paddle centre · 10 s',
-         'i18n EN: el imán anuncia FRENO + 10 s'),
+        ('¡SÚPER IMÁN! · tus ataques dan SIEMPRE en la mesa rival (más fuerte y rápido) · 10 s',
+         'i18n ES: el imán anuncia GUÍA + 10 s (r57)'),
+        ('SUPER MAGNET! · your shots ALWAYS land on the rival table (stronger and faster) · 10 s',
+         'i18n EN: el imán anuncia GUÍA + 10 s (r57)'),
         ('spin ×3 · 10 s', 'i18n ES: el efecto anuncia 10 s (sin tope de golpes)'),
         ('×3 spin · 10 s', 'i18n EN: el efecto anuncia 10 s (sin tope de golpes)'),
     ]:
@@ -106,6 +110,13 @@ async def main():
         ('every 11 rally hits', 'regresión r56: la norma de 11 hits NO vuelve'),
         ('8 s / 5 golpes', 'regresión r56: «8 s / 5 golpes» NO vuelve'),
         ('8 s / 3 asistencias', 'regresión r56: «8 s / 3 asistencias» NO vuelve'),
+        # · r57: el gancho/freno NUNCA VUELVE (imán = guía de tiro)
+        ('imanGanchoRadio', 'regresión r57: el GANCHO (radio) no vuelve'),
+        ('imanGanchoAcel', 'regresión r57: el GANCHO (aceleración) no vuelve'),
+        ('imanFreno: 1.1', 'regresión r57: el FRENO del campo no vuelve'),
+        ('function applyIman', 'regresión r57: applyIman (campo por subpaso) no vuelve'),
+        ('efectoBoteMul: 2.4', 'regresión r57: el acople ×2,4 del bote NO vuelve'),
+        ('_imanImpacto() {', 'regresión r57: el gasto por asistencia no vuelve'),
     ]:
         chk(ausente not in game, label)
 
@@ -195,60 +206,78 @@ async def main():
             out.imanCierra = G._imanT === 0;
           } catch (e) { out.errVen = String(e); }
 
-          // ===== C · SAQUE DEL RIVAL: el campo NO arma (r56) =====
+          // ===== C · LA GUÍA viaja EN LA PALA (r57) =====
           try {
-            G._imanT = 5;                             // ventana abierta (sintética)
-            G.rules.state = 'rally';
-            G.rules.isServeBall = true;               // bola del SAQUE rival
-            if (G.ball && G.ball.ppIman) delete G.ball.ppIman;
-            paso();
-            out.saqueRivalLimpio = !G.ball || !G.ball.ppIman;
-            G.rules.isServeBall = false;              // primer toque: rally vivo
-            paso();
-            out.rallyArma = !!(G.ball && G.ball.ppIman);
-            G._imanT = 0;
-            if (G.ball && G.ball.ppIman) delete G.ball.ppIman;
+            const psG = G.controllerPaddles[G.paddleHand];
+            G._imanT = 0; paso();
+            out.palaSinVentana = psG.ppImanAim === false;   // sin ventana: honesta
+            G._imanT = 5; paso();                           // ventana viva
+            out.palaConVentana = psG.ppImanAim === true;
+            out.bolaSinCampo = !G.ball || !G.ball.ppIman;   // NUNCA campo por bola
+            G._imanT = 0; paso();
+            out.palaRestaurada = psG.ppImanAim === false;
           } catch (e) { out.errSaq = String(e); }
 
-          // ===== D · EL FRENO (física viva — «que ralentice la bola») ====
+          // ===== D · LA GUÍA DE TIRO (física viva — r57) =====
+          // Un golpe del jugador con la ventana viva y dirección hacia la
+          // mitad rival BOTARÁ EN LA MESA DEL RIVAL (el solver de la casa
+          // reconstruye la velocidad). Golpe MUY MAL AIMADO (hacia la banda
+          // derecha, fuera de la mesa): la guía lo CORRIGE dentro.
           try {
-            const mkPad = (x) => {
+            const mkPadGuia = () => {
               const pad = H.createPaddleSim('player', 0);
               pad.active = true;
-              pad.pos.set(x, 1.0, 1.5); pad.prev.copy(pad.pos);
+              pad.pos.set(0.5, 1.0, 1.5); pad.prev.copy(pad.pos);
+              pad.vel.set(0, 0, -6.0);           // la mano ATACA hacia el rival
+              // la cara mira AL RIVAL (−z) — prev* coherentes para el barrido
+              pad.normal.set(0, 0, -1); pad.up.set(0, 1, 0);
+              pad.right.set(1, 0, 0);
+              pad.prevNormal.copy(pad.normal);
+              pad.prevUp.copy(pad.up);
+              pad.prevRight.copy(pad.right);
+              pad.intercambio = true; pad.serveFlight = false;
+              pad.ppImanAim = true;              // ventana viva (pala armada)
+              pad.cooldown = 0;
               return pad;
             };
-            // El FRENO en ISOLACIÓN: presupuesto del tirón AGOTADO
-            // (ppIman.dv = tope) — así sólo actúa el freno exponencial.
-            // Bola ALTA (y=2.0) y vuelo CORTO (10 frames): ni mesa ni
-            // suelo ni CONTACTO con la pala estropean la medida. EN radio
-            // (d≈1,5 m), viniendo (vz=2,6), delante del plano (normal
-            // (0,0,-1) mira a la bola que llega).
-            const vuela = (xPad, conIman, dv) => {
-              const pad = mkPad(xPad);
-              pad.normal.set(0, 0, -1);
-              const b = { pos: new V3(0, 2.0, 0.35),
-                vel: new V3(0, -0.4, 2.6), spin: new V3(), dragMul: 1 };
-              if (conIman) b.ppIman = { dv: (dv === undefined) ? DIMS.imanGanchoDv : dv };
-              const v0 = b.vel.length();
-              for (let i = 0; i < 10; i++) H.stepPhysics(1 / 60, b, [pad], []);
-              return { v0, v1: b.vel.length(), vz1: b.vel.z, p1: b.pos.clone(),
-                       empuje: b.ppImanEmpuje === true,
-                       tocada: b.ppImanTocada === true };
+            const guia = () => {
+              const pad = mkPadGuia();
+              // bola LLEGANDO a la cara (v.z>0) y el golpe sale hacia la
+              // DERECHA y hacia el rival: dirección errónea (se iría larga
+              // por la banda) — la guía la tiene que corregir dentro
+              const b = { pos: new V3(0.5, 1.0, 1.44),
+                vel: new V3(1.2, 0.1, 3.0), spin: new V3(), dragMul: 1 };
+              H.collidePaddleSweep(b, pad, 0, 1, []);
+              return { b, vel: b.vel.clone() };
             };
-            const ref = vuela(0, false);          // vuelo libre (sin poder)
-            const fuera = vuela(3, true);         // con poder, FUERA del radio
-            const con = vuela(0, true);           // con poder EN el radio (sólo freno)
-            // el freno ataca la VELOCIDAD DE APROXIMACIÓN (z): la gravedad
-            // contamina el módulo (la bola cae) — se compara la componente
-            out.frena = con.vz1 < ref.vz1 * 0.9 && con.empuje && con.tocada;
-            out.goldenIntacto = fuera.v1 === ref.v1 && !fuera.empuje;
-            // y el TIRÓN vive: con presupuesto (dv=0), la bola acaba MÁS
-            // CERCA del centro de la pala que el vuelo libre
-            const tir = vuela(0, true, 0);
-            const padC = mkPad(0);
-            const C = padC.pos.clone().addScaledVector(padC.up, DIMS.bladeCenterUp);
-            out.centra = tir.p1.distanceTo(C) < ref.p1.distanceTo(C);
+            const g1 = guia();
+            // el evento viaja con imanAim (marca del golpe guiado)
+            const evs = [];
+            const pad2 = mkPadGuia();
+            const b2 = { pos: new V3(0.5, 1.0, 1.44),
+              vel: new V3(1.2, 0.1, 3.0), spin: new V3(), dragMul: 1 };
+            H.collidePaddleSweep(b2, pad2, 0, 1, evs);
+            out.eventoGuiado = evs.length > 0 && evs[0].imanAim === true;
+            // SIMULACIÓN real del vuelo hasta el bote en mesa: tiene que
+            // botar EN la mitad del rival y DENTRO de la mesa
+            const b3 = { pos: g1.b.pos.clone(), vel: g1.vel.clone(),
+              spin: new V3(), dragMul: 1 };
+            let bote = null;
+            const evsV = [];
+            for (let i = 0; i < 120 && !bote; i++) {
+              evsV.length = 0;
+              H.stepPhysics(1 / 60, b3, [], evsV);
+              for (const ev of evsV) {
+                if (ev.type === 'table') { bote = ev.pos.clone(); break; }
+              }
+            }
+            out.boteEnMesa = !!bote;
+            out.boteMitadRival = !!bote &&
+              bote.z < DIMS.tableCenterZ - 0.2 &&   // claramente en SU mitad
+              Math.abs(bote.x) <= DIMS.tableHalfWidth &&
+              Math.abs(bote.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength;
+            // y la potencia: el golpe guiado sale RÁPIDO (piso fuerte)
+            out.veloz = g1.vel.length() >= (DIMS.imanAimPisoVel || 9.5) - 0.6;
           } catch (e) { out.errFren = String(e); }
 
           Math.random = realRnd;
@@ -267,15 +296,18 @@ async def main():
             ('iman10', 'SÚPER IMÁN: el campo abre con 10 s exactos'),
             ('imanVivo', 'a los 9,98 s el campo SIGUE vivo'),
             ('imanCierra', 'pasados los 10 s el campo se apaga solo'),
-            ('saqueRivalLimpio', 'la bola del SAQUE del rival NO recibe campo (r56)'),
-            ('rallyArma', 'en el intercambio el campo vuelve a armar'),
-            ('frena', 'EL FRENO: el campo frena la bola asistida (dv agotado, sólo freno) (r56)'),
-            ('goldenIntacto', 'fuera del radio la física es BIT-EXACTA al vuelo libre (golden intacto)'),
-            ('centra', 'EL TIRÓN: con presupuesto, la bola acaba más CERCA del centro de la pala (r54+r56)'),
+            ('palaSinVentana', 'sin ventana la pala es HONESTA (ppImanAim=false) (r57)'),
+            ('palaConVentana', 'con la ventana la pala queda ARMADA (ppImanAim=true) (r57)'),
+            ('bolaSinCampo', 'la bola JAMÁS lleva campo (r57: guía en el golpe)'),
+            ('palaRestaurada', 'cerrada la ventana la pala vuelve a honesta'),
+            ('eventoGuiado', 'el golpe guiado viaja con imanAim:true en el evento (r57)'),
+            ('boteEnMesa', 'LA GUÍA: el golpe mal aimado BOTA EN LA MESA (solver de la casa) (r57)'),
+            ('boteMitadRival', 'el bote cae en la MITAD DEL RIVAL (62 % de la media mesa) (r57)'),
+            ('veloz', 'el golpe guiado sale VELOZ (piso de potencia del dueño) (r57)'),
         ]:
             chk(rt.get(key) is True, label)
         for key in ('sinJuego', 'sinHook', 'errCad', 'errVen', 'errSaq',
-                    'errFren', 'errU', 'errE', 'errI'):
+                    'errFren', 'errU', 'errE', 'errI', 'errFren2'):
             if rt.get(key):
                 chk(False, f'{key}: {rt.get(key)}')
 

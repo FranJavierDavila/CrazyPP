@@ -1,10 +1,10 @@
 {
-  "version": "3.6.48-SDK6",
-  "fase": 50,
+  "version": "3.6.49-SDK6",
+  "fase": 51,
   "faseNombre": "Poderes honestos: 20 toques y 10 segundos",
   "sdk": "1.5.4",
-  "fecha": "2026-10-22",
-  "hub": "v3648-sdk6",
+  "fecha": "2026-10-23",
+  "hub": "v3649-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,5 +13,5 @@
     "valle_neon": 4
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "08d60e634911678dd435599c4db0cd9d27ec3cbc35e606a5d8fd94817a388b21"
+  "golden": "392f2e1e59c49e2715723230425dfea041eda1433d0b95861234484067a8baa7"
 }

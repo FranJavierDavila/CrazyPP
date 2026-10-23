@@ -75,8 +75,11 @@ async def main():
          'bote: firma BACKSPIN sólo en la mitad del rival (c05, r55)'),
         ("} else if (boteRival && ball.ppEfectoTipo === 'side') {",
          'bote: firma SIDESPIN sólo en la mitad del rival (c05, r55)'),
-        ('const eM = (boteRival && ball.ppEfecto && !ball.ppEfectoTipo)',
-         'bote: acople ×2,4 sólo marcada y sólo en la mesa del rival (c05, r55)'),
+        # · v3.6.49 (r57): el acople ×2,4 RETIRADO — «la ventaja del efecto
+        #   en los botes sólo es para el jugador, el perjudicado siempre es
+        #   el rival»: la marca sin tipo bota FÍSICO PURO.
+        ('bounceOnTable(vel, spin, impact);',
+         'r57: bote físico puro (sin acople eM) — el call sin multiplicador'),
     ]:
         chk(needle in game, label)
 
@@ -87,6 +90,10 @@ async def main():
         'NEGATIVA: el eMul sin gate (marcaba en saques y fuera del rally) no vuelve')
     chk('const eM = (ball.ppEfecto && !ball.ppEfectoTipo)' not in game,
         'NEGATIVA: el acople ×2,4 incondicional (botaba en cualquier mitad) no vuelve')
+    chk('const eM = (boteRival && ball.ppEfecto && !ball.ppEfectoTipo)' not in game,
+        'NEGATIVA r57: el acople ×2,4 (aunque sea sólo en mitad rival) NO vuelve')
+    chk('efectoBoteMul: 2.4' not in game,
+        'NEGATIVA r57: la constante del acople no vuelve en los DIMS')
 
     # ---------- 2 · MECÁNICA REAL headless (física viva) ----------
     async with async_playwright() as p:
@@ -189,11 +196,14 @@ async def main():
           const sRiv = boteEn(ZRIV, 'side', 1);
           out.sideRivPatada = sRiv.vel.x >= 0.45;
 
-          // ===== C · ACOPLE ×2,4 (marcada SIN tipo): sólo en el RIVAL ====
-          const acopleEn = (z) => {
+          // ===== C · SIN ACOPLE (r57): la marcada SIN tipo bota FÍSICO
+          // PURO — idéntica a la bola limpia en AMBAS mitades =====
+          const botePuro = (z, marcada) => {
+            // spin CERO: así el Magnus ×2,2 de la marca (vuelo) es nulo y la
+            // única diferencia posible sería el acople del BOTE (retirado)
             const b = { pos: new V3(0.1, DIMS.tableTopY + 0.04, z),
-              vel: new V3(0, -2.5, -3.0), spin: new V3(20, 0, 0),
-              dragMul: 1, ppEfecto: true, ppEfectoTipo: '', ppEfectoLado: 0 };
+              vel: new V3(0, -2.5, -3.0), spin: new V3(), dragMul: 1 };
+            if (marcada) { b.ppEfecto = true; b.ppEfectoTipo = ''; b.ppEfectoLado = 0; }
             const evs = [];
             for (let i = 0; i < 60; i++) {
               H.stepPhysics(1 / 60, b, [], evs);
@@ -201,10 +211,16 @@ async def main():
             }
             return b;
           };
-          const aMio = acopleEn(ZMIO), aRiv = acopleEn(ZRIV);
-          out.acopleSoloRival =
-            Math.abs(aRiv.vel.z - aMio.vel.z) > 0.02 ||
-            Math.abs(aRiv.vel.x - aMio.vel.x) > 0.02;
+          const pMio = botePuro(ZMIO, false), pMioM = botePuro(ZMIO, true);
+          const pRiv = botePuro(ZRIV, false), pRivM = botePuro(ZRIV, true);
+          // la marca SIN tipo ya NO amplifica NADA (el ×2,4 antiguo metía
+          // >1 m/s de diferencia; hoy el residuo del vuelo es < 2 cm/s)
+          out.acopleMuertoRival =
+            Math.abs(pRiv.vel.z - pRivM.vel.z) < 0.02 &&
+            Math.abs(pRiv.vel.x - pRivM.vel.x) < 0.02;
+          out.acopleMuertoMio =
+            Math.abs(pMio.vel.z - pMioM.vel.z) < 0.02 &&
+            Math.abs(pMio.vel.x - pMioM.vel.x) < 0.02;
 
           return out;
         }""")
@@ -220,7 +236,8 @@ async def main():
             'backRivParada': 'BACKSPIN en la mesa del RIVAL: prácticamente PARADA',
             'sideMioSinPatada': 'SIDESPIN en MI mitad: sin patada lateral',
             'sideRivPatada': 'SIDESPIN en la mesa del RIVAL: exagera AL LADO (patada viva)',
-            'acopleSoloRival': 'ACOPLE ×2,4 (sin tipo): bote distinto SÓLO en la mitad del rival',
+            'acopleMuertoRival': 'r57 SIN ACOPLE: marcada sin tipo = física pura en el RIVAL (Δ<2 cm/s)',
+            'acopleMuertoMio': 'r57 SIN ACOPLE: ídem en MI mitad (Δ<2 cm/s)',
         }
         if rt.get('sinJuego'):
             chk(False, 'ventana __PP_GAME presente (¿arranque completo?)')

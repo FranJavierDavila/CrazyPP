@@ -646,6 +646,15 @@ export class ChampLoader {
     const m = this.mod;
     if (m && m.onPoint) { try { m.onPoint(it); } catch (e) { console.warn('[champs.onPoint]', e); } }
   }
+  /** v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL: el núcleo reparte la
+   *  emoción (idle/crazy/angry/laughing/focused/picando/surprised/panic/
+   *  loosing/victory/defeated) y el módulo ACTIVO la viste con SU arte
+   *  (convención <estado>.webp) y SUS sonidos. Hook opcional: los módulos
+   *  sin rivalEmocion ignoran la norma en silencio. */
+  rivalEmocion(st, info) {
+    const m = this.mod;
+    if (m && m.rivalEmocion) { try { m.rivalEmocion(st, info); } catch (e) { console.warn('[champs.rivalEmocion]', e); } }
+  }
   onMatchOver(w) {
     const m = this.mod;
     if (m && m.onMatchOver) { try { m.onMatchOver(w); } catch (e) { console.warn('[champs.onMatchOver]', e); } }

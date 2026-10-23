@@ -172,10 +172,16 @@ export class PingPongGame {
     // (r56: regla del dueño) que FRENA la bola y la centra en el punto
     // dulce; CADA impacto asistido válido gasta 1 carga.
     this._imanT = 0;                  // s restantes de campo magnético
-    this._imanAsistidas = 0;          // asistencias de ESTA activación
+    this._imanAsistidas = 0;          // (r57: retirado el gasto por asistencia)
     this._imanWarn = false;
     this._imanFx = null;              // [fx0, fx1] canto azul + onda
     this._imanFxOn = false;
+    // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL: emoción viva, hold
+    // restante, emoción «siguiente» de la cadena y último hito del rallye.
+    this._rivalEmo = '';
+    this._rivalEmoT = 0;
+    this._rivalEmoNext = '';
+    this._rivalEmoMil = 0;
     // v3.6.41 · SÚPER PORTAL (4.º poder del registro): ventana de 8 s que
     // traslada la bola tras cada golpe VÁLIDO del jugador (máx. 3 por
     // activación; spec completa del dueño). El swap es ATÓMICO: física,
@@ -684,6 +690,13 @@ export class PingPongGame {
     this.ai.reset();
     this.setupAIServe();
     this.setupDemoServe();
+    // v3.6.49 (r57) · NORMA DE EMOCIONES: partido nuevo = rival en _idle
+    // (la regla del dueño: «al principio el rival se colocará en _idle»).
+    this._rivalEmo = '';
+    this._rivalEmoT = 0;
+    this._rivalEmoNext = '';
+    this._rivalEmoMil = 0;
+    this.rivalEmocion('idle', 0);
     this.haptic(this.paddleHand, 0.4);
   }
 
@@ -708,6 +721,13 @@ export class PingPongGame {
     this.ai.reset();
     this.setupAIServe();
     this.setupDemoServe();
+    // v3.6.49 (r57) · NORMA DE EMOCIONES: partido nuevo = rival en _idle
+    // (la regla del dueño: «al principio el rival se colocará en _idle»).
+    this._rivalEmo = '';
+    this._rivalEmoT = 0;
+    this._rivalEmoNext = '';
+    this._rivalEmoMil = 0;
+    this.rivalEmocion('idle', 0);
     this.audio.announce(mode === 'survival'
       ? T('mode_survival')
       : T('mode_match'), true);
@@ -3483,22 +3503,35 @@ export class PingPongGame {
     return true;
   }
 
-  /** Fin de la ventana de SÚPER EFECTO (los 10 s agotados — r56). */
+  /** Fin de la ventana de SÚPER EFECTO (los 10 s agotados — r56).
+   *  v3.6.49 (r57, bug del dueño: «persiste más allá del tiempo indicado»):
+   *  el reloj es la ÚNICA ley y a los 10 s NO QUEDA NADA — las marcas de
+   *  la bola (ppEfecto/ppEfectoTipo/ppEfectoLado) mueren AQUÍ aunque la
+   *  bola esté en pleno vuelo: sin Magnus amplificado, sin firma de bote,
+   *  sin penalizaciones IA. Todo vuelve a la normalidad al instante. */
   _efectoFin() {
     this._efectoT = 0;
     this._efectoFxVis(false);
+    try {
+      if (this.ball) {
+        this.ball.ppEfecto = false;
+        this.ball.ppEfectoTipo = '';
+        this.ball.ppEfectoLado = 0;
+      }
+    } catch (eM) { /* */ }
     this.rules.message = T('arc_efecto_fin');
     try { this.audio.playOsc(660, 330, 0.16, 'sine', 0.12, 0); } catch (e) { /* */ }
   }
 
   /* =====================================================================
-   *  v3.6.37 · SÚPER IMÁN (3.er poder del registro; spec del dueño):
-   *  campo magnético de 10 s (r56) alrededor de la pala que FRENA la
-   *  bola y la atrae al punto dulce (la física vive en c05, applyIman,
-   *  por SUBPASO). La pala sigue mandada por la mano real; el gatillo
-   *  solo ABRE el campo — CADA impacto asistido válido consume 1 carga:
-   *  las cargas solo se gastan cuando el imán ayuda de verdad. Activo +
-   *  gatillo = refresca la ventana. */
+   *  v3.6.49 (ronda 57) · SÚPER IMÁN (3.er poder del registro; spec del
+   *  dueño): GUÍA DE TIRO de 10 s — «asegura que nuestros ataques den
+   *  SIEMPRE en la mesa del rival corrigiendo su dirección y permitiendo
+   *  golpes muy fuertes y a gran velocidad… el poder asegura un bote
+   *  correcto sobre la mesa del rival (10 segundos de duración)».
+   *  La guía vive EN EL GOLPE (c05/collidePaddleSweep con el solver de
+   *  la casa); el gatillo solo ABRE la ventana de 10 s y las cargas ya
+   *  NO se gastan por asistencia (r57). Activo + gatillo = refresca. */
   _imanTrigger(ent) {
     if (this._imanT > 0) {
       this._imanT = IMAN_DUR;             // refresco honesto, sin gasto
@@ -3520,10 +3553,11 @@ export class PingPongGame {
     this._megaActivaId = 'iman';          // v3.6.40: icono en modo ACTIVO
     this._megaActivaDur = IMAN_DUR;
     this._megaTexDirty = true;
-    // v3.6.46 · SIN canto, SIN flechas, SIN campo: pala LIMPIA — la señal
-    // del imán es la PALA OSCURECIDA al 80 % (metálica) mientras dure la
-    // ventana (la aplica updateMega vía _imanPalaOsc) y la bola curvándose
-    // al centro por el gancho (c05/applyIman).
+    // v3.6.46/49 · SIN canto, SIN flechas, SIN campo: pala LIMPIA — la
+    // señal del imán es la PALA OSCURECIDA al 80 % (metálica) mientras
+    // dure la ventana (_imanPalaOsc) y el zap del golpe GUIADO (r57:
+    // la corrección la ejecuta el solver en c05; la Trayectoria la dibuja
+    // la propia bola, fiel al diseño de pala limpia del dueño).
     this._imanOnda();
     // power-up sonoro PROPIO (firma «imán»: onda grave que sube, sine)
     try { this.audio.playOsc(180, 420, 0.22, 'sine', 0.14, 0); } catch (e) { /* */ }
@@ -3548,26 +3582,9 @@ export class PingPongGame {
     this.rules.message = T('arc_iman_fin');
     try { this.audio.playOsc(520, 220, 0.18, 'sine', 0.12, 0); } catch (e) { /* */ }
   }
-
-  /** v3.6.37 · IMPACTO ASISTIDO válido del imán (lo llama el gancho del
-   *  animate cuando una bola empujada por el campo golpea la pala): gasta
-   *  1 carga del IMÁN (encuentra su entrada en la matriz aunque el jugador
-   *  haya ciclado a otro poder). r56 (regla del dueño): SIN tope de
-   *  asistencias — el campo vive sus 10 s o se apaga al quedarse sin
-   *  cargas. */
-  _imanImpacto() {
-    const ent = this._megaMatriz.find((x) => x.id === 'iman');
-    this._imanAsistidas++;
-    if (ent) {
-      this._megaGasta(ent);             // −1 carga (y sale de la matriz a 0)
-      try { this.rules.message = T('iman_asistido'); } catch (e0) { /* */ }
-    }
-    try { this.audio.playOsc(300, 560, 0.12, 'sine', 0.12, 0); } catch (e1) { /* */ }
-    if (this.renderer.xr && this.renderer.xr.isPresenting) {
-      try { this.haptic(this.paddleHand, 0.5, 90); } catch (e2) { /* */ }
-    }
-    if (!ent) this._imanFin();      // sin cargas: campo fuera (r56: sin tope de asistencias)
-  }
+  // v3.6.49 (r57): _imanImpacto RETIRADO — la guía de tiro no gasta cargas
+  // por asistencia: el poder se activa con SU gatillo y vive SUS 10 s
+  // (regla del dueño: «aseguran un bote correcto... 10 segundos de duración»).
 
   _buildImanFx() { /* v3.6.46: canto del imán RETIRADO (pala limpia + metálica) */ }
 
@@ -3663,9 +3680,9 @@ export class PingPongGame {
   /* v3.6.46 · RETIRADO (ronda 54, petición del dueño): _buildImanCampo,
    * _imanCampoUpdate, _buildImanFlechas y _imanFlechasUpdate (el disco de
    * campo, sus partículas y las flechas bola→pala) — «quitamos las flechas
-   * anteriores y dejamos un diseño limpio de pala». La atracción SE VE en
-   * la trayectoria: el gancho (c05/applyIman) curva la bola al centro de
-   * la pala y la pala se oscurece mientras dura el efecto (_imanPalaOsc). */
+   * anteriores y dejamos un diseño limpio de pala». v3.6.49 (r57): la
+   * guía de tiro corrige la TRAYECTORIA en el golpe (solver de la casa
+   * en c05) y la pala se oscurece mientras dura la ventana (_imanPalaOsc). */
 
   _imanFxVis(vis) {
     this._imanFxOn = vis;
@@ -4667,6 +4684,83 @@ export class PingPongGame {
    *  radio ×1,38, pala ×1,30, canto, onda, aviso final). Con «Pala
    *  Mejorada» apagado todo duerme y la pala queda EXACTA como siempre.
    *  Construcción perezosa: sin carga no existe ni una malla. */
+  /* =====================================================================
+   *  v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL — REGLA DEL DUEÑO
+   *  «Todas las imágenes de todos los rivales siguen la misma convención
+   *  [Nombre]_[emoción] y la regla se aplica a TODOS los rivales y queda
+   *  como norma en todos los campeonatos»:
+   *    · espera / al principio ............ _idle
+   *    · el rival lanza un SuperPoder ..... _crazy
+   *    · el rival pierde un punto ......... _angry + sonido de queja
+   *    · el jugador falla ................. _laughing + risas burlonas
+   *    · 5 toques de intercambio .......... _focused
+   *    · 10 toques ........................ _picando
+   *    · 15 toques ........................ _surprised
+   *    · 20 toques ........................ _panic
+   *    · a partir de 20 ................... aleatorio entre _loosing /
+   *                                          _surprised / _panic (cambia
+   *                                          cada 5 toques)
+   *    · el rival gana un punto ........... _victory (tras la risa burlona)
+   *    · el rival pierde el partido ....... _defeated
+   *  El NÚCLEO es la única fuente de verdad (conoce puntos, rallye y
+   *  espera) y reparte la emoción al campeonato activo vía
+   *  champs.rivalEmocion(st) → módulo.rivalEmocion(st, info). Cada módulo
+   *  traduce la emoción a SU arte (convención <estado>.webp) y a SUS
+   *  sonidos (burla/queja propios). Las reacciones locales de puntos de
+   *  los módulos quedan SUSTITUIDAS por esta norma (r57). */
+  rivalEmocion(st, hold, next) {
+    // sin campeonato activo (o sin módulo) la norma duerme: nada que vestir
+    const prev = this._rivalEmo;
+    this._rivalEmo = st;
+    this._rivalEmoT = hold || 0;
+    this._rivalEmoNext = next || '';
+    if (prev === st && (hold || 0) > 0) return;   // misma emoción viva: no re-dispara
+    try { if (this.champs) this.champs.rivalEmocion(st, { t: this._rivalEmoT }); } catch (e) { /* */ }
+  }
+
+  _rivalEmoUpdate(dt) {
+    const r = this.rules;
+    if (!r || !this.champs || !this.champs.active) return;
+    // HITOS del intercambio (sólo en rally y sólo al CRUZAR el umbral)
+    if (r.state === 'rally') {
+      const h = r.rallyHits | 0;
+      if (h !== this._rivalEmoMil) {
+        const prev = this._rivalEmoMil;
+        this._rivalEmoMil = h;
+        const H = [[5, 'focused'], [10, 'picando'], [15, 'surprised'], [20, 'panic']];
+        for (const [n, st] of H) {
+          if (prev < n && h >= n) { this.rivalEmocion(st, 2.2); break; }
+        }
+        // «a partir de ahí aleatoriamente va cambiando» — cada 5 toques
+        if (h > 20 && h % 5 === 0) {
+          const pool = ['loosing', 'surprised', 'panic'];
+          this.rivalEmocion(pool[(Math.random() * pool.length) | 0], 2.2);
+        }
+      }
+    } else {
+      this._rivalEmoMil = 0;   // rally nuevo = cuenta nueva
+      // «En estado de espera y al principio el rival se colocará en _idle»:
+      // la espera del saque manda IDLE — salvo derrota/victoria finales y
+      // salvo que quede una reacción viva (angry/laughing en su hold).
+      if (r.state === 'serve' && this._rivalEmoT <= 0 &&
+          this._rivalEmo !== 'idle' && this._rivalEmo !== 'defeated' &&
+          this._rivalEmo !== 'victory') {
+        this.rivalEmocion('idle', 0);
+      }
+    }
+    // CADENA de reacciones: el hold agotado aplica la emoción «siguiente»
+    // (punto del rival: laughing → victory; resto: queda en la suya hasta
+    // la espera del saque, que la devuelve a idle).
+    if (this._rivalEmoT > 0) {
+      this._rivalEmoT -= dt;
+      if (this._rivalEmoT <= 0 && this._rivalEmoNext) {
+        const nx = this._rivalEmoNext;
+        this._rivalEmoNext = '';
+        this.rivalEmocion(nx, 0);
+      }
+    }
+  }
+
   updateMega(dt) {
     if (this.disposed || !this.rules) return;
     const r = this.rules;
@@ -4727,9 +4821,9 @@ export class PingPongGame {
         this._poderTickBlip(3);
       }
     }
-    // v3.6.37 · SÚPER IMÁN ACTIVO: ventana PROPIA de 10 s (r56: regla del
-    // dueño; la física vive en c05/applyIman; aquí solo el reloj y la
-    // seguridad de que sin cargas el campo se apaga YA).
+    // v3.6.49 (r57) · SÚPER IMÁN ACTIVO: ventana PROPIA de 10 s (regla
+    // del dueño; la GUÍA vive en el golpe, c05; aquí solo el reloj y la
+    // cuenta sonora — sin vigilantes de cargas desde la r57).
     if (on && this._imanT > 0) {
       this._imanT -= dt;
       if (this._imanT <= 0) {
@@ -4745,12 +4839,9 @@ export class PingPongGame {
         this._poderTickBlip(3);
       }
     }
-    if (this._imanT > 0 &&
-        !this._megaMatriz.find((x) => x.id === 'iman')) {
-      this._imanT = 0;                   // sin cargas: campo fuera YA
-      this._imanFxVis(false);
-      try { if (this.ball) delete this.ball.ppIman; } catch (eI0) { /* */ }
-    }
+    // v3.6.49 (r57): el vigilante «sin cargas → campo fuera» se RETIRA —
+    // la guía de tiro ya no gasta cargas por asistencia: la ventana vive
+    // SUS 10 segundos (reloj arriba) y punto.
     // v3.6.43 · las flechas bola→pala del imán RETIRADAS (ronda 54: pala
     // limpia; la atracción la dibuja la propia trayectoria del gancho).
     // v3.6.42 · SÚPER PORTAL ACTIVO: ventana PROPIA de 8 s (los golpes se
@@ -4815,24 +4906,29 @@ export class PingPongGame {
     // del jugador (lo lee collidePaddleSweep): ×2 al brush GENERADO, con
     // tope de seguridad en c05. Apagado → multiplicador 1 (pala honesta).
     const emul = (on && this._efectoT > 0) ? EFECTO_SPIN_MUL : 1;
+    // v3.6.49 (r57) · el SÚPER IMÁN REESCRITO viaja TAMBIÉN EN LA PALA
+    // (ppImanAim lo lee collidePaddleSweep en el golpe): guía de tiro que
+    // asegura mesa rival. Sin ventana → false (golpes 100 % normales).
+    const imanAim = !!(on && this._imanT > 0);
     if (this.controllerPaddles) {
       for (const ps of this.controllerPaddles) {
-        if (ps) ps.ppEfectoMul = emul;
+        if (ps) { ps.ppEfectoMul = emul; ps.ppImanAim = imanAim; }
       }
     }
-    // v3.6.37 · el estado del IMÁN viaja EN LA BOLA (lo lee stepPhysics →
-    // applyIman): solo en rally y con el campo activo; sin campo la bola
-    // no lo conoce (física idéntica — golden intacto).
-    // v3.6.48 (regla del dueño, r56: «menos en los saques»): la bola del
-    // SAQUE del rival (isServeBall: desde su golpe hasta el primer toque
-    // de rally) viene NORMAL — el campo no la toca. undefined = permitir
-    // (compat headless, patrón de la r55).
-    if (on && this._imanT > 0 && r.state === 'rally' && !r.isServeBall &&
-        this.ball) {
-      if (!this.ball.ppIman) this.ball.ppIman = { dv: 0 };
-    } else if (this.ball && this.ball.ppIman) {
-      delete this.ball.ppIman;
+    // v3.6.49 · LA LEY DE LOS 10 s (bug del dueño, r57): sin ventana viva
+    // NO EXISTE marca en ninguna bola — red de seguridad por frame (por
+    // si el fin natural llegara a saltarse en algún camino raro). Barato
+    // e idempotente; con ventana viva no entra.
+    if (!(on && this._efectoT > 0) && this.ball &&
+        (this.ball.ppEfecto || this.ball.ppEfectoTipo || this.ball.ppEfectoLado)) {
+      this.ball.ppEfecto = false;
+      this.ball.ppEfectoTipo = '';
+      this.ball.ppEfectoLado = 0;
     }
+    // v3.6.49 · el imán ya no arma campo por bola (r54-r56 retirados):
+    // la guía vive en la pala (ppImanAim arriba). Limpieza defensiva de
+    // la marca antigua por si algún módulo la dejara viva.
+    if (this.ball && this.ball.ppIman) delete this.ball.ppIman;
     // v3.6.36 · CICLO de la matriz con el joystick (⟷, cualquier mando;
     // en escritorio también ←/→ por el listener del constructor)
     if (on) this._megaCiclo(dt);
@@ -6623,24 +6719,11 @@ export class PingPongGame {
     //      ley — el contador de golpes se RETIRA y la ventana vive entera
     //      (updateMega la cierra al agotarse).
 
-    // 4.95) v3.6.37 · SÚPER IMÁN — impacto ASISTIDO válido: la bola fue
-    //      empujada por el campo durante ESTA aproximación (ball.ppIman-
-    //      Tocada lo marca c05/applyIman) y golpeó la pala del jugador →
-    //      consume 1 carga (spec del dueño: «cada impacto asistido válido
-    //      consume una carga»; r56: sin tope de asistencias — el campo
-    //      vive sus 10 s o se apaga sin cargas). Un golpe SIN ayuda del
-    //      campo no consume nada.
-    if (this._imanT > 0) {
-      for (const e of this.events) {
-        if (e.type !== 'paddle' || e.who !== 'player') continue;
-        if (this.ball && this.ball.ppImanTocada) {
-          this.ball.ppImanTocada = false;
-          if (this.ball.ppIman) this.ball.ppIman.dv = 0;
-          this._imanImpacto();
-          break;
-        }
-      }
-    }
+    // 4.95) v3.6.49 (r57) · SÚPER IMÁN REESCRITO — el impacto asistido y
+    //      SU gasto de cargas (r51-r56) quedan RETIRADOS: la guía de tiro
+    //      vive en el GOLPE (c05, bloque r57; el evento llega con
+    //      imanAim: true) y el feedback (zap + háptica) lo pone el
+    //      procesado de eventos de abajo. La ventana vive SUS 10 s.
 
     // 5) Golpe de saque del jugador: validar regla ITTF RELAJADA (v2.18).
     //    Se eliminó la exigencia del punto muerto: cualquier contacto tras el
@@ -6746,6 +6829,7 @@ export class PingPongGame {
     // v3.6.34 · MEGA PALA NORMATIVA: carga por rally 11+, efecto activo,
     // icono y restauraciones — barato y perezoso (nada vivo si no toca).
     this.updateMega(dt);
+    this._rivalEmoUpdate(dt);   // v3.6.49 (r57): NORMA DE EMOCIONES DEL RIVAL
     if (window.__PP_TRAIN) window.__PP_TRAIN.tick(dt);   // v3.0: cosmética global + entrenamiento
 
     // 7) Sincronizar visuales
@@ -7419,6 +7503,15 @@ export class PingPongGame {
           // punto (arte + voz por estado). Con guard: una excepción aquí
           // nunca tumba el frame.
           if (this.champs) this.champs.onPoint(it);
+          // v3.6.49 (r57) · NORMA DE EMOCIONES — REACCIÓN AL PUNTO:
+          // rival pierde punto → _angry (+ queja del módulo); jugador
+          // falla → _laughing (+ risas burlonas) y luego _victory (gana
+          // el punto). El módulo traduce a SU arte y SUS sonidos.
+          if (this.champs && this.champs.active && it &&
+              (it.winner === 'ai' || it.winner === 'player')) {
+            if (it.winner === 'ai') this.rivalEmocion('laughing', 2.0, 'victory');
+            else this.rivalEmocion('angry', 2.0);
+          }
           break;
         }
         case 'retry-serve':
@@ -7438,6 +7531,13 @@ export class PingPongGame {
           this.resetToss();
           this.aiToss = null;
           this.demoToss = null;
+          // v3.6.49 (r57) · NORMA DE EMOCIONES — ESPERA = _idle (la propia
+          // _rivalEmoUpdate lo repite cada frame de espera; aquí lo fija
+          // YA al entrar en saque salvo que haya una reacción viva).
+          if (this._rivalEmoT <= 0 && this._rivalEmo !== 'idle' &&
+              this._rivalEmo !== 'defeated' && this._rivalEmo !== 'victory') {
+            this.rivalEmocion('idle', 0);
+          }
           if (this.net.online) {
             // v2.19: la bola del saque la lleva quien saca (humano remoto o yo)
             this.net.owner = it.server === 'player' ? this.net.mySide() : this.net.oppSide();
@@ -7471,6 +7571,10 @@ export class PingPongGame {
           // estado final del rival). Con guard: ningún hook del campeonato
           // puede tumbar el bucle (lección del ReferenceError de v2.39).
           if (this.champs) this.champs.onMatchOver(it.winner);
+          // v3.6.49 (r57) · NORMA DE EMOCIONES — FIN DEL PARTIDO: el rival
+          // que pierde el partido queda _defeated; si lo gana, _victory.
+          // Ambos PERSISTEN (la espera del saque no los toca).
+          this.rivalEmocion(it.winner === 'player' ? 'defeated' : 'victory', 0);
           // v3.6.29 · MEJOR DE 3: el cierre anuncia el ENFRENTAMIENTO (juegos)
           this.audio.announce(
             it.winner === 'player'
@@ -7567,6 +7671,15 @@ export class PingPongGame {
             this.haptic(e.paddleIndex,
               Math.min(1, (arkOn ? 0.68 : 0.5) + e.speed / 9),
               arkOn ? 85 : 70);
+          }
+          // v3.6.49 (r57) · SÚPER IMÁN — el golpe fue GUIADO (c05 marca el
+          // evento con imanAim: true): zap «imán» ascendente + háptica
+          // extra — el jugador SIENTE que el poder corrigió su tiro.
+          if (e.imanAim) {
+            try { this.audio.playOsc(240, 560, 0.14, 'sine', 0.12, 0); } catch (eIM0) { /* */ }
+            if (e.paddleIndex !== undefined && e.paddleIndex >= 0) {
+              try { this.haptic(e.paddleIndex, 0.32, 55); } catch (eIM1) { /* */ }
+            }
           }
           break;
       }
@@ -7688,10 +7801,10 @@ const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)
 const EFECTO_SPIN_MIN = 25; // |spin| mínimo para el anillo de bote notorio
                             // (r56: la ventana YA NO cierra por golpes —
                             // este umbral es sólo FX, en processEvents)
-// v3.6.37 · SÚPER IMÁN (3.er poder; spec completa del dueño): ventana de
-// 10 s (r56) que FRENA la bola y la atrae al punto dulce (física en
-// c05/applyIman con los topes DIMS.iman*). CADA impacto asistido válido
-// consume 1 carga — el gatillo solo abre el campo.
+// v3.6.49 (r57) · SÚPER IMÁN (3.er poder; spec completa del dueño):
+// ventana de 10 s de GUÍA DE TIRO (el solver de la casa corrige cada
+// golpe hacia la mesa del rival, c05). El gatillo solo abre la ventana:
+// sin gasto de cargas por asistencia, sin campo por subpaso.
 const IMAN_DUR = 10;        // s de campo magnético por activación (r56:
                             // regla del dueño — «el efecto sólo dura
                             // 10 segundos»)

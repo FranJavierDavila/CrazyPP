@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_bomba_v3644 — CAPA AM · ronda 52 (V3.6.48-SDK6, FASE 46).
+"""qa_bomba_v3644 — CAPA AM · ronda 52 (V3.6.49-SDK6, FASE 46).
 
 La petición del dueño (literal): «Revisa el funcionamiento de los
 superpoderes de pala… El Super iman no hace nada no se ve efecto ni se
@@ -63,15 +63,16 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.48-SDK6', 'versión servida: 3.6.48-SDK6 (ronda 52)'),
+        ('3.6.49-SDK6', 'versión servida: 3.6.49-SDK6 (ronda 52)'),
         # · v3.6.46 (r54) · NEGATIVAS: campo, flechas y estela RETIRADOS —
         #   el imán es GANCHO + PALA METÁLICA y el efecto es SPIN REAL
         ('RETIRADO (ronda 54, petición del dueño): _buildImanCampo',
          'imán (r54): campo y flechas RETIRADOS — diseño limpio de pala'),
         ('_imanPalaOsc(on) {', 'imán (r54): pala metálica −80 % (metódico)'),
         ('_imanOscuroC = hex20(', 'imán (r54): oscurecido real −80 % (hex sRGB exacto)'),
-        ('imanGanchoRadio: 1.8,', 'imán (r54): GANCHO radio 1,8 m (c02)'),
-        ('imanGanchoAcel: 26,', 'imán (r54): GANCHO aceleración 26 m/s² (c02)'),
+        # v3.6.49 (r57): GANCHO RETIRADO — GUÍA DE TIRO en el golpe
+        ('imanAimProfundidad: 0.62,', 'r57: el imán es GUÍA DE TIRO (objetivo 62 % de la mesa rival)'),
+        ('imanAimPisoVel: 9.5,', 'r57: piso de potencia del golpe guiado (golpes muy fuertes)'),
         ('RETIRADO (ronda 54): _buildEfectoTrail',
          'efecto (r54): estela RETIRADA — el efecto es el SPIN REAL'),
         ('efectoTipoUmbral: 0.55,', 'efecto (r54): clasificación del spin por barrido (c02)'),

@@ -192,12 +192,17 @@ CAPAS = [
     # 40/60 acumula · 80 tope), EFECTO_DUR/IMAN_DUR 8→10 con ventana
     # PURAMENTE TEMPORAL (RETIRADOS los topes de golpes: EFECTO_GOLPES,
     # IMAN_ASIST y el cierre por golpes — el reloj es la única ley), el
-    # campo del imán NUNCA arma sobre la bola del SAQUE del rival
-    # (isServeBall) y el GANCHO gana FRENO exponencial (imanFreno 1,1/s con
-    # suelo 0,15 m/s — «que ralentice la bola»; el tope Δv presupuesta solo
-    # el tirón). Golden de física intacto (el freno vive bajo ball.ppIman).
+    # r57: el GANCHO/FRENO se RETIRA — el imán es GUÍA DE TIRO (el solver
+    # de la casa corrige cada golpe hacia la mesa del rival; 10 s sin gasto
+    # por asistencia). Golden de física intacto (la guía vive en el golpe).
     ('AQ · poderes: 20 toques y 10 segundos (v3648)',
      'qa_poderes_10s20_v3648.py'),
+    # r57: NORMA DE EMOCIONES DEL RIVAL (regla del dueño en TODOS los
+    # campeonatos: idle/crazy/angry/laughing/focused/picando/surprised/
+    # panic/pool>20/victory/defeated) + las 3 imágenes nuevas (pared
+    # izquierda y suelo del Hall, suelo de pista para partido/entrenamiento).
+    ('AR · norma de emociones del rival + imágenes r57 (v3649)',
+     'qa_norma_rival_v3649.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

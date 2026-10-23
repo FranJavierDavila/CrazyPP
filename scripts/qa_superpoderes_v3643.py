@@ -82,13 +82,14 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 51)
-        ('3.6.48-SDK6', 'versión servida: 3.6.48-SDK6 (ronda 52)'),
+        ('3.6.49-SDK6', 'versión servida: 3.6.49-SDK6 (ronda 52)'),
         # · 1) SÚPER EFECTO EXAGERADO
         ('const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)',
          'efecto: el brush generado sube a ×3 (antes ×2)'),
         ('efectoSpinTope: 3,', 'efecto: tope de giro ×3 (c02)'),
         ('efectoMagnusMul: 2.2,', 'efecto: curva Magnus ×2,2 en vuelo (c02)'),
-        ('efectoBoteMul: 2.4,', 'efecto: bote exagerado ×2,4 (c02)'),
+        # v3.6.49 (r57): el acople ×2,4 RETIRADO — «la ventaja del bote
+        # sólo es para el jugador»: bote físico puro sin tipo (c05)
         ('0.21 + 0.05 * Math.sin(performance.now() * 0.009)',
          'efecto: halo de la bola marcada un 35 % más grande y vivo'),
         # · 2) SÚPER IMÁN: radio + flechas + RESCATE
@@ -98,23 +99,14 @@ async def main():
         ('imanDvMax: 0.80,', 'imán: tope de Δv 0,80 m/s por aproximación (v3.6.44)'),
         ('imanRescateAcel: 7.5,', 'imán: RESCATE con aceleración 7,5 m/s² (v3.6.44)'),
         ('imanRescateDv: 1.05,', 'imán: RESCATE con tope Δv 1,05 m/s (v3.6.44)'),
-        ('v3.6.46 · SÚPER IMÁN — GANCHO al CENTRO de la pala',
-         'imán (r54): el GANCHO vive en c05/applyIman (física real)'),
-        ('if (ball.vel.z <= (DIMS.imanGanchoVz || 0.2)) continue;',
-         'imán (r54): SOLO bolas que vienen en nuestra dirección de golpeo'),
-        ('if (d > DIMS.imanGanchoRadio || d < 1e-4) continue;',
-         'imán (r54): captura dentro del radio del GANCHO (1,8 m)'),
-        ('if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;',
-         'imán (r54): NUNCA bolas que ya superaron el plano de la cara'),
-        ('_imA.copy(_imU).normalize();',
-         'imán (r54): aceleración DIRECTA hacia el CENTRO VIVO de la pala'),
-        ('IM.dv = (IM.dv || 0) + aMag * h;',
-         'imán (r54): contador real de Δv del gancho (tope 3,2 m/s)'),
-        ('imanGanchoAcel: 26,', 'imán (r54): aceleración del gancho 26 m/s² (c02)'),
-        ('ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja',
-         'imán: la marca del empuje renace fresca cada subpaso'),
-        ('ball.ppImanEmpuje = true;',
-         'imán: el campo MARCA el empuje para las flechas (ambos modos)'),
+        # · v3.6.49 (r57): GUÍA DE TIRO (gancho y freno RETIRADOS)
+        ('ps.ppImanAim = imanAim;',
+         'r57: la guía viaja EN LA PALA (ppImanAim) — gancho retirado'),
+        ('imanAimVzMin: -0.4,', 'r57: guía sólo con tiros hacia la mitad rival'),
+        ('imanAimProfundidad: 0.62,', 'r57: objetivo 62 % de la media mesa rival'),
+        ('imanAimPisoVel: 9.5,', 'r57: piso de potencia — golpes muy fuertes'),
+        ('computeShotVelocityReal(ball.pos, _imObjetivo, T0, vMax0, _imSpinCero)',
+         'r57: el solver de la casa reconstruye el tiro (bote asegurado)'),
         # · r54 · NEGATIVAS: flechas y campo RETIRADOS (pala limpia + metálica)
         ('_imanPalaOsc(on) {', 'imán (r54): PALA METÁLICA −80 % (sin flechas ni campo)'),
         # · 3) PORTAL: 3 GOLPES GARANTIZADOS
@@ -227,18 +219,16 @@ async def main():
           try { G.updateMega(1 / 60); } catch (e) { out.errF2 = String(e); }
           out.oscurecidoSinVentana = G._imanOscApplied === false;
 
-          // · GANCHO (c05/applyIman): el campo ARMA la bola en rally
-          G._imanT = 8;                            // re-abrir la ventana (IMAN_DUR)
+          // · v3.6.49 (r57): SIN campo por bola — la guía vive EN LA PALA
+          G._imanT = 8;                            // ventana viva (IMAN_DUR)
           bI.pos.set(0.45, 1.0, 0.55);
           bI.vel.set(1.5, 0, 2.0);
           bI.ppEfecto = false; bI.ppPortal = false; bI.ppTransito = false;
           try { G.updateMega(1 / 60); } catch (e) { out.errR1 = String(e); }
-          out.rescateMarcaArmada = !!bI.ppIman && typeof bI.ppIman.dv === 'number';
-          // y el empuje vivo queda MARCADO (lo fue c05/applyIman)
-          bI.ppImanEmpuje = true;
-          try { G.updateMega(1 / 60); } catch (e) { out.errF3 = String(e); }
-          out.empujeMarcado = bI.ppImanEmpuje === true;
-          bI.ppImanEmpuje = false;
+          out.rescateMarcaArmada = !bI.ppIman;     // NUNCA campo por bola (r57)
+          // y la PALA del jugador queda armada con la guía
+          const psR = G.controllerPaddles[G.paddleHand];
+          out.empujeMarcado = psR.ppImanAim === true;   // guía armada (r57)
           G._imanT = 0;
           try { G.updateMega(1 / 60); } catch (e) { out.errF4 = String(e); }
 
@@ -305,11 +295,16 @@ async def main():
           out.cuenta321 = blips === 3;   // cruzó 3, 2 y 1 s exactamente
 
           // · HALO del efecto exagerado (bola marcada)
+          // v3.6.49: la LEY de los 10 s limpia marcas sin ventana — el
+          // test abre la ventana ANTES de marcar (r57: la marca sólo
+          // existe con el poder vivo)
           G._buildEfectoHalo();
+          G._efectoT = 5;                    // ventana viva (sintética)
           G.ball.ppEfecto = true;
           try { G.updateMega(1 / 60); } catch (e) { out.errH1 = String(e); }
           out.haloGrande = !!G._efectoHalo && G._efectoHalo.visible &&
             G._efectoHalo.scale.x > 0.115;   // exagerado: 0,118–0,166 (viejo 0,091–0,119)
+          G._efectoT = 0;
 
           // · PASSTHROUGH EN CALIENTE (canje y restore de la escena)
           const bg0 = G.scene.background, fog0 = G.scene.fog;
@@ -338,8 +333,8 @@ async def main():
             ('campoAbre', 'mecánica: el gatillo abre la ventana del imán (8 s)'),
             ('oscurecidoConVentana', 'imán (r54): con la ventana viva la pala SE OSCURECE'),
             ('oscurecidoSinVentana', 'imán (r54): al morir la ventana el oscurecido SE RETIRA'),
-            ('rescateMarcaArmada', 'imán: la ventana ARMA la bola en rally (ppIman con dv)'),
-            ('empujeMarcado', 'imán (r54): el empuje vivo del gancho queda MARCADO'),
+            ('rescateMarcaArmada', 'r57: la ventana JAMÁS arma campo por bola (la guía vive en la pala)'),
+            ('empujeMarcado', 'r57: la pala del jugador queda armada con la guía (ppImanAim)'),
             ('sembradoPortal1', 'mecánica: portal sembrado con UNA carga (sorteo ×1)'),
             ('ventanaCon3Golpes', 'portal: abrir da SIEMPRE los 3 golpes de ventana'),
             ('matrizVaciaTrasAbrir', 'portal: la matriz puede quedar SIN el poder'),

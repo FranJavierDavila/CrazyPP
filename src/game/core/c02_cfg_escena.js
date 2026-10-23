@@ -53,13 +53,15 @@ export const DIMS = {
   // el poder activo). Sin marca, multiplicador 1: física idéntica.
   // v3.6.43 (ronda 51 · el dueño: «no noto los efectos… es preciso
   // exagerarlo para que visualmente veamos el resultado»): TODO el bloque
-  // del Súper Efecto sube un escalón — brush ×3, curva ×2,2 en vuelo y
-  // bote ×2,4 (SIEMPRE solo en la bola marcada; sin poder: física igual).
+  // del Súper Efecto sube un escalón — brush ×3 y curva ×2,2 en vuelo
+  // (SIEMPRE solo en la bola marcada; sin poder: física igual).
+  // v3.6.49 (ronda 57): efectoBoteMul (acople del bote ×2,4) RETIRADO —
+  // el dueño: «la ventaja del efecto en los botes sólo es para el jugador,
+  // el perjudicado siempre es el rival»: un bote amplificado dependía del
+  // giro real y podía salir amable y favorecer AL RIVAL. La ventaja en
+  // los botes es hoy SÓLO la firma tipificada (abajo), que siempre castiga.
   efectoSpinTope: 3,        // tope de rotación = 3 × spinMax (antes ×2)
   efectoMagnusMul: 2.2,     // Magnus ×2,2 en vuelo (antes ×1,5: curva VISIBLE)
-  efectoBoteMul: 2.4,       // acople del bote ×2,4 (antes ×1,8) — SOLO bolas
-                            // marcadas SIN tipo (golpe neutro); con tipo claro
-                            // el bote es físico puro + regla tipificada (abajo)
   // v3.6.46 (ronda 54 · el dueño redefine el SÚPER EFECTO: la estela se
   // retira y el efecto pasa a ser REAL según el movimiento de la pala al
   // golpear): el brush se CLASIFICA en tres spins y el BOTE traduce cada
@@ -107,23 +109,18 @@ export const DIMS = {
   imanTPred: 0.15,          // horizonte máximo de predicción del impacto (s)
   imanRescateAcel: 7.5,     // (heredado r52 — applyIman ya no lo usa; se
   imanRescateDv: 1.05,      //  conserva para rollback instantáneo)
-  // v3.6.46 (ronda 54 · el dueño redefine el SÚPER IMÁN: «la bola se
-  // redirige automáticamente al CENTRO de nuestra pala en su movimiento
-  // como atraída por la pala para que podamos dar un buen golpe, ojo
-  // siempre que venga en nuestra dirección de golpeo»): fuera el campo
-  // suave y el rescate — GANCHO DIRECTO: cualquier bola que venga hacia
-  // nosotros dentro del radio del gancho es arrastrada al punto dulce
-  // (persigue el CENTRO VIVO de la pala) con aceleración plena y tope de
-  // Δv por aproximación holgado. Visual: pala oscurecida 80 % (metálica).
-  imanGanchoRadio: 1.8,     // radio de captura del gancho (m)
-  imanGanchoAcel: 26,       // aceleración hacia el centro de la pala (m/s²)
-  imanGanchoDv: 3.2,        // tope de Δv del gancho POR APROXIMACIÓN (m/s)
-  imanFreno: 1.1,           // freno exponencial del campo (1/s) — r56: «que
-                            // ralentice la bola» (regla del dueño)
-  imanFrenoSuelo: 0.15,     // suelo de velocidad del freno (m/s): el vuelo
-                            // nunca muere, la pala sigue teniendo que golpear
-  imanGanchoVz: 0.2,        // velocidad mínima hacia nosotros (m/s) — «que venga
-                            //  en nuestra dirección de golpeo»
+  // v3.6.49 (ronda 57 · el dueño redefine OTRA VEZ el SÚPER IMÁN: «olvide-
+  // mos el efecto anterior de atracción y ralentización»): GUÍA DE TIRO —
+  // cada golpe del jugador con la ventana viva y dirección hacia la mitad
+  // rival se CORRIGE para botar SIEMPRE en la mesa del rival (solver de
+  // la casa, despeje de red garantizado) y sale reforzado: golpes muy
+  // fuertes y a gran velocidad. El gancho/freno de r54-r56 (imanGancho*,
+  // imanFreno*) queda RETIRADO — sin campo por subpaso.
+  imanAimVzMin: -0.4,       // sólo tiros que YA van hacia la mitad rival (m/s)
+  imanAimProfundidad: 0.62, // objetivo: 62 % de la media mesa rival (bote seguro)
+  imanAimPisoVel: 9.5,      // piso de potencia del golpe guiado (m/s) — «muy fuertes»
+  imanAimEmpuje: 1.2,       // empuje sobre la velocidad real del golpe (×)
+  imanAimTopeFrac: 0.8,     // tope honesto: 0,8 × maxBallSpeed (m/s)
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto

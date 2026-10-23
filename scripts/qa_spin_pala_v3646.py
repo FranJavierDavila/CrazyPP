@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_spin_pala_v3646 — CAPA AO · ronda 54 (V3.6.48-SDK6, FASE 48).
+"""qa_spin_pala_v3646 — CAPA AO · ronda 54 (V3.6.49-SDK6, FASE 48).
 
 La petición del dueño (literal): «El super poder de pala de efecto la
 estela está desfasada y como no consigo ver el efecto vamos a
@@ -79,24 +79,23 @@ async def main():
          'bote: regla BACKSPIN presente y SÓLO en la mesa del RIVAL (c05, r55)'),
         ('} else if (boteRival && ball.ppEfectoTipo === \'side\') {',
          'bote: regla SIDESPIN presente y SÓLO en la mesa del RIVAL (c05, r55)'),
-        ('const eM = (boteRival && ball.ppEfecto && !ball.ppEfectoTipo)',
-         'bote: acople ×2,4 sólo marcada y sólo en la mesa del RIVAL (c05, r55)'),
+        # · v3.6.49 (r57): el acople ×2,4 RETIRADO (ventaja sólo del jugador)
+        ('bounceOnTable(vel, spin, impact);',
+         'r57: bote físico puro — el acople ×2,4 quedó RETIRADO'),
         ('efectoBoteTopAvance: 1.55,', 'bote TOPSPIN: acelera ×1,55 (+piso 0,4)'),
         ('efectoBoteTopVy: 0.62,', 'bote TOPSPIN: sale BAJO (vy ×0,62)'),
         ('efectoBoteBackH: 0.16,', 'bote BACKSPIN: horizontal ×0,16 (casi para)'),
         ('efectoBoteBackVy: 0.32,', 'bote BACKSPIN: saltito mínimo (vy ×0,32)'),
         ('efectoBoteSideKick: 0.42,', 'bote SIDESPIN: patada lateral 0,42 × |vz|'),
         ('efectoBoteSideMax: 1.5,', 'bote SIDESPIN: tope de patada 1,5 m/s'),
-        # · GANCHO del imán al CENTRO de la pala (c05 + c02)
-        ('function applyIman(ball, paddles, h) {', 'imán: applyIman presente'),
-        ('if (ball.vel.z <= (DIMS.imanGanchoVz || 0.2)) continue;',
-         'imán: SOLO bolas que vienen en nuestra dirección de golpeo'),
-        ('if (d > DIMS.imanGanchoRadio || d < 1e-4) continue;',
-         'imán: captura dentro del radio del GANCHO (1,8 m)'),
-        ('if (!pad.active || pad.serveFlight || pad.who !== \'player\') continue;',
-         'imán: SOLO la pala del jugador (el rival nunca gana asistencia)'),
-        ('imanGanchoAcel: 26,', 'imán: aceleración del gancho 26 m/s²'),
-        ('imanGanchoDv: 3.2,', 'imán: tope de Δv del gancho 3,2 m/s'),
+        # · v3.6.49 (r57): GUÍA DE TIRO en el GOLPE (gancho retirado)
+        ('ps.ppImanAim = imanAim;', 'r57: la guía viaja EN LA PALA (ppImanAim)'),
+        ('imanAimVzMin: -0.4,', 'r57: guía sólo con tiros hacia la mitad rival'),
+        ('imanAimProfundidad: 0.62,', 'r57: objetivo 62 % de la media mesa rival'),
+        ('computeShotVelocityReal(ball.pos, _imObjetivo, T0, vMax0, _imSpinCero)',
+         'r57: el solver de la casa reconstruye el tiro guiado'),
+        ("pad.who === 'player' && !pad.serveFlight &&",
+         'r57: SOLO la pala del jugador y NUNCA en el saque (guardas)'),
         # · PALA METÁLICA −80 % (c12) — sin flechas, sin campo, sin canto
         ('_imanPalaOsc(on) {', 'imán: _imanPalaOsc (pala metálica) presente'),
         ('m.color.setHex(m.userData._imanOscuroC);   // −80 % (hex sRGB exacto)',
@@ -221,38 +220,62 @@ async def main():
           const tSin = bote('', 0, 0.4);
           out.boteSinTipo = tSin.hubo && Math.abs(tSin.vx) < 0.45;  // sin tipo: sin patada
 
-          // ============ C · GANCHO al CENTRO (c05 REAL) ============
-          const pad2 = H.createPaddleSim('player', 0);
-          pad2.active = true;
-          pad2.pos.set(0, 1.0, 1.5); pad2.prev.copy(pad2.pos);
-          // base de pala REAL del jugador: la cara mira a la RED (−z) —
-          // el sim por defecto nace mirando +z y el plano de la cara
-          // mandaría a la bola al lado equivocado
-          pad2.normal.set(0, 0, -1); pad2.prevNormal.set(0, 0, -1);
-          pad2.up.set(0, 1, 0); pad2.prevUp.set(0, 1, 0);
-          pad2.right.set(-1, 0, 0); pad2.prevRight.set(-1, 0, 0);
-          const C2 = new V3(0, 1.0 + DIMS.bladeCenterUp, 1.5);
-          const bG = { pos: new V3(0.7, 1.05, 0.9), vel: new V3(0, 0, 2.0),
-            spin: new V3(), dragMul: 1, ppIman: { dv: 0 } };
-          const d0 = bG.pos.distanceTo(C2);
-          // 8 subllamadas (0,133 s): la bola SIGUE en el lado de la red —
-          // el gancho ya debe estar tirando de ella hacia el centro
-          for (let i = 0; i < 8; i++) H.stepPhysics(1 / 60, bG, [pad2], []);
-          const d1 = bG.pos.distanceTo(C2);
-          out.ganchoCerca = d1 < d0 * 0.8 && bG.vel.x < -0.3 &&
-            bG.ppImanTocada === true;
-          out.ganchoTope = bG.ppIman.dv <= DIMS.imanGanchoDv + 0.001;
-          // negativa 1: bola que se ALEJA (no viene en nuestra dirección)
-          const bF = { pos: C2.clone().add(new V3(0.3, 0, -0.4)),
-            vel: new V3(0, 0, -2.5), spin: new V3(), dragMul: 1,
-            ppIman: { dv: 0 } };
-          for (let i = 0; i < 10; i++) H.stepPhysics(1 / 60, bF, [pad2], []);
-          out.ganchoFueraDir = bF.vel.x === 0 && !bF.ppImanTocada;
-          // negativa 2: bola FUERA del radio del gancho
-          const bL = { pos: new V3(2.6, 1.05, 0.9), vel: new V3(0, 0, 2.0),
-            spin: new V3(), dragMul: 1, ppIman: { dv: 0 } };
-          for (let i = 0; i < 10; i++) H.stepPhysics(1 / 60, bL, [pad2], []);
-          out.ganchoFueraRadio = !bL.ppImanTocada;
+          // ============ C · GUÍA DE TIRO (r57, c05 REAL) ============
+          // v3.6.49: el GANCHO quedó RETIRADO («olvidemos la atracción y la
+          // ralentización»). El Súper Imán es ahora GUÍA DE TIRO: el golpe
+          // del jugador con la ventana viva sale con el SOLVER DE LA CASA
+          // y BOTA en la mesa del rival. Prueba REAL: golpe mal aimado
+          // (banda derecha) → el bote cae DENTRO de la mitad rival.
+          const mkPadGuia = () => {
+            const pad = H.createPaddleSim('player', 0);
+            pad.active = true;
+            pad.pos.set(0.5, 1.0, 1.5); pad.prev.copy(pad.pos);
+            pad.vel.set(0, 0, -6.0);
+            pad.normal.set(0, 0, -1); pad.prevNormal.set(0, 0, -1);
+            pad.up.set(0, 1, 0); pad.prevUp.set(0, 1, 0);
+            pad.right.set(-1, 0, 0); pad.prevRight.set(-1, 0, 0);
+            pad.intercambio = true; pad.serveFlight = false;
+            pad.ppImanAim = true;               // ventana viva
+            pad.cooldown = 0;
+            return pad;
+          };
+          const pad2 = mkPadGuia();
+          const bG = { pos: new V3(0.5, 1.0, 1.44),
+            vel: new V3(6.0, 0.1, 3.0), spin: new V3(), dragMul: 1 };
+          const evsG = [];
+          H.collidePaddleSweep(bG, pad2, 0, 1, evsG);
+          out.guiaDispara = evsG.length > 0 && evsG[0].imanAim === true &&
+            bG.vel.z < -0.4;
+          // y el vuelo guiado BOTA en la mesa del rival (física viva)
+          const bbG = { pos: bG.pos.clone(), vel: bG.vel.clone(),
+            spin: new V3(), dragMul: 1 };
+          let boteG = null;
+          const evsBG = [];
+          for (let i = 0; i < 120 && !boteG; i++) {
+            evsBG.length = 0;
+            H.stepPhysics(1 / 60, bbG, [], evsBG);
+            for (const ev of evsBG) {
+              if (ev.type === 'table') { boteG = ev.pos.clone(); break; }
+            }
+          }
+          out.guiaBoteRival = !!boteG &&
+            boteG.z < DIMS.tableCenterZ - 0.2 &&
+            Math.abs(boteG.x) <= DIMS.tableHalfWidth &&
+            Math.abs(boteG.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength;
+          // negativa 1: SIN ventana la pala es honesta (sin corrección)
+          const padH = mkPadGuia(); padH.ppImanAim = false;
+          const bH = { pos: new V3(0.5, 1.0, 1.44),
+            vel: new V3(6.0, 0.1, 3.0), spin: new V3(), dragMul: 1 };
+          const evsH = [];
+          H.collidePaddleSweep(bH, padH, 0, 1, evsH);
+          out.guiaApagada = evsH.length > 0 && evsH[0].imanAim !== true;
+          // negativa 2: bola que ya pasó el plano de la cara — sin contacto
+          const padN = mkPadGuia();
+          const bN = { pos: new V3(0.5, 1.0, 1.0),
+            vel: new V3(0, 0, -2.5), spin: new V3(), dragMul: 1 };
+          const evsN = [];
+          H.collidePaddleSweep(bN, padN, 0, 1, evsN);
+          out.guiaSinContacto = evsN.length === 0;
 
           // ============ D · PALA METÁLICA −80 % (c12 REAL) ============
           const mount = G.paddleMounts && G.paddleMounts[G.paddleHand];
@@ -329,10 +352,10 @@ async def main():
             'boteBack': 'bote BACKSPIN: prácticamente se QUEDA PARADA (física viva)',
             'boteSide': 'bote SIDESPIN: exagera el bote HACIA EL LADO (física viva)',
             'boteSinTipo': 'bote SIN tipo: sin patada lateral (comportamiento de siempre)',
-            'ganchoCerca': 'gancho: tira de la bola HACIA el centro (se acerca y curva, física viva)',
-            'ganchoTope': 'gancho: el Δv acumulado respeta el tope 3,2 m/s',
-            'ganchoFueraDir': 'gancho NEGATIVO: bola que NO viene hacia nosotros — sin empuje',
-            'ganchoFueraRadio': 'gancho NEGATIVO: bola fuera del radio — sin empuje',
+            'guiaDispara': 'r57 GUÍA: el golpe mal aimado dispara la corrección (evento imanAim)',
+            'guiaBoteRival': 'r57 GUÍA: el vuelo corregido BOTA en la mesa del RIVAL (física viva)',
+            'guiaApagada': 'r57 NEGATIVO: sin ventana la pala es honesta (sin imanAim)',
+            'guiaSinContacto': 'r57 NEGATIVO: bola que ya pasó el plano — sin contacto',
             'oscAplicado': 'pala metálica: el oscurecido se aplica (marca de estado)',
             'oscOchenta': 'pala metálica: color EXACTO base × 0,2 (−80 %) en todos los materiales',
             'oscIdempotente': 'pala metálica: doble llamada NO vuelve a oscurecer',

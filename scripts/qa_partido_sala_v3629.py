@@ -36,7 +36,7 @@ PESOS = {  # bytes exactos de los JPG del dueño (upload/partido.zip)
     "frente.jpg": 342732,
     "fondo.jpg": 447871,
     "izquierda.jpg": 395715,
-    "suelo.jpg": 248567,
+    "suelo.jpg": 239705,   # r57: SUELO PISTA nuevo del dueño
     "techo.jpg": 390609,
 }
 

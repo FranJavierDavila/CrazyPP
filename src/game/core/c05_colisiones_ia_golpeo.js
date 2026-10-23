@@ -17,6 +17,7 @@ import * as THREE from 'three';
  * segmento se transforma con la pose τa y el fin con la pose τb).
  * Devuelve true si hubo golpe (respuesta clásica ya aplicada). */
 export function collidePaddleSweep(ball, pad, kA, kB, events) {
+  let imanAimUsado = false;   // v3.6.49: el golpe de este subpaso fue GUIADO por el Súper Imán
   // --- poses A (kA) y B (kB) de la pala dentro del frame (nlerp como v2.29) ---
   ccdPosA.copy(pad.prev).lerp(pad.pos, kA);
   ccdNrmA.copy(pad.prevNormal).lerp(pad.normal, kA).normalize();
@@ -243,9 +244,11 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   // el tipo — barrido de abajo hacia arriba = TOPSPIN (liftado), de arriba
   // hacia abajo = BACKSPIN (cortado), lateral = SIDESPIN (lado del barrido,
   // +x = derecha del jugador). Golpe SIN barrido claro (recto o por debajo
-  // del umbral) no lleva tipo: conserva el comportamiento amplificado de
-  // siempre (bote acoplado ×2,4). El tipo viaja en la bola y lo traduce
-  // el BOTE en c05/collideTable; la marca la limpia la IA al devolver.
+  // del umbral) no lleva tipo: bote FÍSICO PURO (el acople ×2,4 de la r51
+  // quedó RETIRADO en la r57 — un bote amplificado podía salir «amable»
+  // y favorecer al rival; la ventaja del bote es SÓLO la firma tipificada).
+  // El tipo viaja en la bola y lo traduce el BOTE en c05/collideTable; la
+  // marca la limpia la IA al devolver.
   if (eMul > 1) {
     const pvx = pad.vel.x, pvy = pad.vel.y;
     const avx = Math.abs(pvx), avy = Math.abs(pvy);
@@ -263,6 +266,13 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     ball.ppEfectoTipo = '';
     ball.ppEfectoLado = 0;
   }
+  // v3.6.49 · PALA HONESTA TOTAL (bug del dueño, r57: «persiste más allá
+  // del tiempo indicado»): un golpe SIN poder activo (eMul = 1) MATA la
+  // marca vieja que la bola pudiera arrastrar (ventana expirada, saque,
+  // rebote loco). La marca nace SOLO de un golpe con la ventana viva y
+  // muere con el reloj (c12/_efectoFin), con la devolución de la IA (c06)
+  // y con CUALQUIER golpe honesto — jamás sobrevive a los 10 s.
+  if (eMul <= 1 && ball.ppEfecto) ball.ppEfecto = false;
 
   // Colocar la bola sobre la cara de contacto
   const front = DIMS.ballRadius + 0.002;
@@ -272,6 +282,40 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     .addScaledVector(ipRight, lx)
     .addScaledVector(ipUp, ly);
 
+  // v3.6.49 · SÚPER IMÁN — GUÍA DE TIRO EN EL GOLPE (spec literal r57):
+  // la trayectoria real del golpe se prolonga hacia la mitad rival y se
+  // CLAMPA dentro de la mesa (LA corrección de dirección del dueño);
+  // computeShotVelocityReal — el solver de la casa, con arrastre real y
+  // despeje de red garantizado, el mismo que usa la IA — reconstruye la
+  // velocidad para BOTAR EXACTAMENTE en el objetivo (bote correcto
+  // asegurado). Potencia: piso fuerte + empuje ×1,2 con tope honesto.
+  // GUARDAS: sólo pala del jugador (ppImanAim la arma el núcleo SOLO con
+  // la ventana viva), NUNCA en vuelo de saque (serveFlight), NUNCA fuera
+  // del rally (intercambio) y sólo tiros hacia la mitad rival (vel.z <
+  // −0,4): el saque propio y los tiros hacia atrás son juego normal.
+  // Simuladores y golden jamás lo ven (ventana apagada — patrón r56).
+  if (pad.ppImanAim && pad.who === 'player' && !pad.serveFlight &&
+      pad.intercambio !== false &&
+      ball.vel.z < (DIMS.imanAimVzMin || -0.4)) {
+    const tz0 = DIMS.tableCenterZ -
+      DIMS.tableHalfLength * (DIMS.imanAimProfundidad || 0.62);
+    let tx0 = ball.pos.x + ball.vel.x * ((tz0 - ball.pos.z) / ball.vel.z);
+    const lim0 = DIMS.tableHalfWidth - DIMS.ballRadius - 0.05;
+    tx0 = THREE.MathUtils.clamp(tx0, -lim0, lim0);   // LA corrección de dirección
+    _imObjetivo.set(tx0, DIMS.tableTopY + DIMS.ballRadius, tz0);
+    const sp0 = ball.vel.length();
+    const vMax0 = Math.min(DIMS.maxBallSpeed * (DIMS.imanAimTopeFrac || 0.8),
+      Math.max(sp0 * (DIMS.imanAimEmpuje || 1.2), DIMS.imanAimPisoVel || 9.5));
+    const D0 = Math.hypot(_imObjetivo.x - ball.pos.x, _imObjetivo.z - ball.pos.z);
+    const T0 = THREE.MathUtils.clamp(D0 / (vMax0 * 0.82), 0.32, 0.85);
+    ball.vel.copy(computeShotVelocityReal(ball.pos, _imObjetivo, T0, vMax0, _imSpinCero));
+    ball.spin.set(0, 0, 0);              // misil guiado: cero Magnus (bote seguro)
+    ball.ppEfecto = false;               // el imán manda la trayectoria: bola limpia
+    ball.ppEfectoTipo = '';
+    ball.ppEfectoLado = 0;
+    imanAimUsado = true;
+  }
+
   // v3.1.1-FEEL1 · el evento (audio, háptica, árbitro, contadores) sólo
   // existe si el impacto es de verdad: los micro-contactos de REPOSO (botes
   // decrecientes sobre pala quieta) son mudos y no alimentan a nadie. En el
@@ -279,7 +323,7 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   // lanzamiento necesitan ver TAMBIÉN los roces flojos (semántica SRV2).
   if (pad.serveFlight || Math.abs(vRelN) >= SERVE_TUNE.restEventMin) {
     pad.cooldown = DIMS.paddleHitCooldown;
-    events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index });
+    events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index, imanAim: imanAimUsado });
   }
   return true;
 }
@@ -298,28 +342,27 @@ function collideTable(ball, prevY, events) {
   if (vel.y < 0 && prevY >= topR && pos.y < topR && inX && inZ) {
     pos.y = topR;
     const impact = -vel.y;
-    // v3.6.36 · SÚPER EFECTO: la bola MARCADA amplifica el efecto del
-    // bote (topspin → más agresivo hacia delante · lateral → más desvío
-    // · backspin → más frenada), con el tope de Coulomb como seguro.
-    // v3.6.46 · con TIPO claro (top/back/side) el bote es FÍSICO PURO
-    // (sin el acople extra ×2,4): la firma exacta la pone la regla
-    // tipificada de abajo — determinista y calibrada en c02. Las bolas
-    // marcadas SIN tipo conservan el acople de siempre (r51/r52).
+    // v3.6.46 · con TIPO claro (top/back/side) el bote lleva la FIRMA
+    // tipificada de abajo. Las bolas marcadas SIN tipo bote FÍSICO PURO:
+    // v3.6.49 (r57, regla del dueño «la ventaja del bote sólo es para el
+    // jugador, el perjudicado siempre es el rival») RETIRA el acople
+    // ×2,4 de la r51 — un bote amplificado dependía del giro real y
+    // podía salir amable (bola muerta o bote alto y cómodo) y BENEFICIAR
+    // AL RIVAL. La ventaja del efecto en los botes es hoy SÓLO la firma
+    // tipificada, que siempre castiga: top acelera y achica, back mata
+    // el ritmo en su campo, side patada lateral a perseguir.
     // v3.6.47 · «siempre en el bote sobre la MESA DEL RIVAL» (spec r55):
-    // TODO el Súper Efecto (acople ×2,4 y firma tipificada) vive SOLO en
-    // la mitad del rival (z < tableCenterZ); un bote en NUESTRA mitad
-    // (mishit, bola loca) es juego normal — sin amplificar ni firmar.
+    // TODO el Súper Efecto vive SOLO en la mitad del rival (z < C); un
+    // bote en NUESTRA mitad (mishit, bola loca) es juego normal.
     const boteRival = pos.z < C;
-    const eM = (boteRival && ball.ppEfecto && !ball.ppEfectoTipo)
-      ? (DIMS.efectoBoteMul || 1.8) : 1;
     if (DIMS.physicsRealism >= 0.5) {
       // v3.0.5-FIS1 · P2: bote físico con deslizamiento (slip-coupled)
-      bounceOnTable(vel, spin, impact, eM);
+      bounceOnTable(vel, spin, impact);
     } else {
       vel.y = impact * DIMS.tableRestitution;
       vel.x *= DIMS.tableFriction;
       vel.z *= DIMS.tableFriction;
-      applyBounceSpin(vel, spin, eM);
+      applyBounceSpin(vel, spin);
     }
     // v3.6.46 · SPIN TIPIFICADO — el bote traduce el giro (spec literal
     // del dueño, ronda 54):
@@ -459,85 +502,23 @@ function collideWorld(ball, events) {
   }
 }
 
-/* ---------- v3.6.46 · SÚPER IMÁN — GANCHO al CENTRO de la pala ----------
- * Redefinición del dueño (ronda 54, spec literal): «cuando lo activamos la
- * bola se redirige automáticamente al CENTRO de nuestra pala en su
- * movimiento como atraída por la pala para que podamos dar un buen golpe,
- * ojo siempre que venga en nuestra dirección de golpeo». Muere el campo
- * suave de r51-52 (asistencia lateral + rescate): el GANCHO arrastra la
- * bola DIRECTO al punto dulce:
- *   · SOLO bolas que vienen hacia nosotros (v.z > imanGanchoVz, 0,2 m/s)
- *     — «que venga en nuestra dirección de golpeo»;
- *   · captura dentro de imanGanchoRadio (1,8 m) del punto dulce;
- *   · aceleración plena hacia el CENTRO VIVO de la pala (el punto dulce
- *     se recalcula por SUBPASO: el gancho persigue la pala mientras la
- *     movemos — «en su movimiento»);
- *   · tope de Δv POR APROXIMACIÓN imanGanchoDv (3,2 m/s): fuerza fina,
- *     nunca teleporta — la salida la calcula el contacto de siempre;
- *   · v3.6.48 (regla del dueño, r56): el gancho TAMBIÉN RALENTIZA la
- *     bola — freno exponencial imanFreno (1,1/s) con suelo de velocidad
- *     imanFrenoSuelo (0,15 m/s): «que ralentice la bola y la dirija
- *     hacia el centro de nuestra pala». El freno vive dentro de las
- *     MISMAS guardas (radio + viniendo + plano) y NO gasta el tope Δv
- *     (ese presupuesta sólo el tirón);
- *   · nunca bolas que ya superaron el plano de la cara;
- *   · integrado por SUBPASO (h fijo): estable ante fluctuaciones de FPS.
- * La marca de «aproximación asistida» (ball.ppImanTocada) la consume el
- * núcleo cuando esa bola golpea la pala (1 carga por asistencia);
- * ball.ppImanEmpuje queda como marca de «empuje vivo este frame».
- * La física de salida NO cambia: mismo modelo de contacto, mismo golden. */
-const _imC = new THREE.Vector3();
-const _imP = new THREE.Vector3();
-const _imU = new THREE.Vector3();
-const _imD = new THREE.Vector3();
-const _imA = new THREE.Vector3();
-function applyIman(ball, paddles, h) {
-  const IM = ball.ppIman;
-  ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja
-  for (const pad of paddles) {
-    // v3.6.46: SOLO la pala del jugador — el rival nunca gana asistencia
-    if (!pad.active || pad.serveFlight || pad.who !== 'player') continue;
-    // punto dulce = CENTRO VIVO de la hoja en mundo (se recalcula por
-    // subpaso: el gancho persigue la pala mientras la movemos)
-    _imC.copy(pad.pos).addScaledVector(pad.up, DIMS.bladeCenterUp);
-    _imU.copy(_imC).sub(ball.pos);
-    const d = _imU.length();
-    if (d > DIMS.imanGanchoRadio || d < 1e-4) continue;   // fuera del gancho
-    // «siempre que venga en nuestra dirección de golpeo»: solo bolas que
-    // viajan hacia nosotros (z positivo = hacia el lado del jugador)
-    if (ball.vel.z <= (DIMS.imanGanchoVz || 0.2)) continue;
-    // nunca bolas que ya superaron el plano de la cara
-    _imD.copy(ball.pos).sub(_imC);
-    if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;
-    // FRENO (v3.6.48 · regla del dueño: «que ralentice la bola»):
-    // amortiguación exponencial por subpaso con suelo de velocidad — la
-    // bola llega MÁS DESPACIO al dulce y cuesta menos golpearla. Dentro
-    // de las guardas del gancho (radio + viniendo hacia nosotros + no
-    // pasado el plano) → simuladores y golden jamás lo ven.
-    const sp0 = ball.vel.length();
-    if (sp0 > DIMS.imanFrenoSuelo) {
-      ball.vel.multiplyScalar(Math.max(DIMS.imanFrenoSuelo / sp0,
-        1 - DIMS.imanFreno * h));
-      ball.ppImanEmpuje = true;                 // el campo está vivo aquí
-      ball.ppImanTocada = true;                 // esta aproximación fue asistida
-    }
-    // GANCHO: aceleración DIRECTA hacia el centro de la pala (3D: corrige
-    // lateral Y altura — la bola llega al dulce «para dar un buen golpe»).
-    // El tope de Δv POR APROXIMACIÓN presupuesta SOLO el tirón (el freno
-    // es parte del campo, no del presupuesto).
-    if ((IM.dv || 0) >= DIMS.imanGanchoDv) continue;   // tope del tirón agotado
-    _imA.copy(_imU).normalize();
-    let aMag = DIMS.imanGanchoAcel;
-    const dvRest = DIMS.imanGanchoDv - (IM.dv || 0);
-    const dvPaso = aMag * h;
-    if (dvPaso > dvRest) aMag *= dvRest / Math.max(dvPaso, 1e-9);
-    if (aMag <= 1e-6) continue;
-    ball.vel.addScaledVector(_imA, aMag * h);
-    IM.dv = (IM.dv || 0) + aMag * h;            // contador real del gancho
-    ball.ppImanEmpuje = true;                   // marca de empuje vivo
-    ball.ppImanTocada = true;                   // esta aproximación fue asistida
-  }
-}
+/* ---------- v3.6.49 (ronda 57) · SÚPER IMÁN REESCRITO — GUÍA DE TIRO ----------
+ *  El dueño retira el gancho y el freno («olvidemos el efecto anterior de
+ *  atracción y ralentización»): el nuevo Súper Imán «asegura que nuestros
+ *  ataques den SIEMPRE en la mesa del rival corrigiendo su dirección y
+ *  permitiendo golpes muy fuertes y a gran velocidad; aunque la dirección
+ *  sea errónea (siempre que se dirija hacia la parte de la mesa rival)
+ *  acertarán sobre su mesa mediante una corrección de su trayectoria…
+ *  el poder asegura un bote correcto sobre la mesa del rival (10 segundos
+ *  de duración)».
+ *  La mecánica ya NO es un campo por subpaso: es GUÍA DE TIRO EN EL GOLPE
+ *  y vive DENTRO de collidePaddleSweep (ver el bloque r57 allí): el
+ *  solver de la casa computeShotVelocityReal reconstruye la velocidad para
+ *  botar EN LA MESA DEL RIVAL con despeje de red garantizado. Sin marcas
+ *  por subpaso, sin gasto de cargas por asistencia — la ventana vive SUS
+ *  10 s (regla del dueño) y el golden de física jamás la ve. */
+const _imObjetivo = new THREE.Vector3();   // objetivo de la guía del imán
+const _imSpinCero = new THREE.Vector3();   // spin nulo del misil guiado
 
 export function stepPhysics(dt, ball, paddles, events, extra) {
   const n = Math.max(1, Math.min(96, Math.ceil(dt / MAX_SUBSTEP_DT)));
@@ -553,11 +534,9 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
     ball.vel.y += DIMS.gravity * h;
     applyAerodynamics(ball.vel, ball.spin, h, ball.dragMul,
       ball.ppEfecto ? (DIMS.efectoMagnusMul || 1.5) : 1);   // v3.6.36: bola marcada
-    // v3.6.37 · SÚPER IMÁN: empuje lateral hacia el punto dulce, integrado
-    // DENTRO del subpaso (h fijo → independiente del framerate, requisito
-    // del dueño). ball.ppIman lo arma el núcleo SOLO con la ventana activa:
-    // los simuladores y el golden de física nunca lo ven → física idéntica.
-    if (ball.ppIman) applyIman(ball, paddles, h);
+    // v3.6.49 (r57): FUERA el campo por subpaso del imán — la guía de tiro
+    // del Súper Imán vive ahora EN EL GOLPE (collidePaddleSweep, bloque
+    // r57) y el golden de física no ve nada nuevo aquí.
     ball.pos.addScaledVector(ball.vel, h);
 
     // v2.29: si la pala golpea en este subpaso, la bola se RECOLOCA sobre la

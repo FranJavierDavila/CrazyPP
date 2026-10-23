@@ -13518,7 +13518,11 @@ class ForajidoStand {
     } catch (e) { /* */ }
   }
 
-  /* ================= Gancho de PUNTO del árbitro (v2.70) ================== */
+  /* ================= Gancho de PUNTO del árbitro (v2.70) ==================
+   *  v3.6.49 (r57): las REACCIONES DE ARTE del punto las manda la NORMA
+   *  DE EMOCIONES del núcleo (rivalEmocion — norma en TODOS los
+   *  campeonatos). Aquí quedan los contadores, la limpieza del rallye y
+   *  los puntos de duelo. */
   onPoint(it) {
     if (!this.active || !this._duelOn) return;
     const w = it && it.winner;
@@ -13526,13 +13530,33 @@ class ForajidoStand {
     this._toward = false;
     this._restoreBallTint();   // la bola manchada se limpia con el punto
     if (w === 'ai') {
-      this._setStateSilent(Math.random() < 0.5 ? 'laughing' : 'victory', 2.2);
-      if (Math.random() < 0.5) this._playLaugh(0.55);
       this.streakAi++;
     } else if (w === 'player') {
-      this._setStateSilent(Math.random() < 0.5 ? 'surprised' : 'picando', 2.0);
       this.streakP++;
       this._puntosAdd(25, null);   // v2.119: punto de duelo a favor (+25)
+    }
+  }
+
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño):
+   *  el núcleo reparte la emoción estándar y el FORAJIDO la viste con SU
+   *  arte (convención <estado>.webp, abanico STATES) y SUS sonidos: la
+   *  burla con risas.mp3 (motor SDK propio) y la queja con un gruñido
+   *  grave sintetizado (el Oeste no tiene voz de enfado grabada). */
+  rivalEmocion(st) {
+    const DUR = {
+      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
+      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
+      victory: 2.4, defeated: 0,
+    };
+    this._setStateSilent(st, DUR[st] != null ? DUR[st] : 2.0);
+    if (st === 'laughing') this._playLaugh(0.55);
+    else if (st === 'angry') {
+      // QUEJA: gruñido grave descendente (sawtooth 220→85 Hz) — firme pero
+      // corto, no tapa la BSO del salón.
+      try {
+        const g = this.game;
+        g.audio.playOsc(220, 85, 0.34, 'sawtooth', 0.1, 0.1);
+      } catch (eQ) { /* */ }
     }
   }
 
@@ -13998,6 +14022,8 @@ export default {
   /* v2.86 · DUELO: ganchos del árbitro + pistola + gatillo (contrato v2.70) */
   onPoint(it) { if (CTRL) CTRL.onPoint(it); },
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
+  // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+  rivalEmocion(st, info) { if (CTRL) CTRL.rivalEmocion(st); },
   aiMul() {
     const g = GAME;
     if (!CTRL || !CTRL.active || !CTRL._duelOn || !g ||

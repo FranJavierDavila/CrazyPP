@@ -3781,3 +3781,17 @@ Stage Summary:
 - PAT nuevo operativo (validado + guardado + push verificado). Producción (cuando Pages vuelva): V3.6.50-SDK6 — main 18b76f4, pages 404f9a7, game.html SHA256 72ed2620….
 - ACCIÓN REQUERIDA DEL DUEÑO para restablecer el juego (elegir UNA): (a) renovar GitHub Pro (Settings → Billing) y avisar — re-activo Pages por API al momento; (b) volver el repo PÚBLICO (Settings → General → Danger Zone) — Free soporta Pages público, re-activo Pages por API; (c) migrar a Cloudflare Pages (gratis, sin límite de plan) — necesito un API Token de Cloudflare (el .cf-token se perdió, pendiente desde Task 122; los ZIPs CLOUDFLARE ya se generan cada ronda).
 - Tras restablecer: recargar con game.html?v=3650 / limpiar caché del Quest. Pendientes vivos sin cambio: informes de ajuste fino (fuerza del Imán, tasa del clon) y la variante 4 de ARKANOID.
+
+---
+Task ID: 161-b (apéndice)
+Agent: principal (Z.ai)
+Task: Cierre — CAUSA de la caída confirmada por el dueño y PÁGINAS RESTAURADAS en producción.
+
+Work Log:
+- CAUSA RAÍZ (confirmada por el dueño): el repo fue puesto PRIVADO por el dueño — el plan Free no soporta Pages en repos privados → GitHub despublicó el sitio (has_pages=False, 422 en POST /pages). El último build verde (12:44) precedió al cambio de visibilidad.
+- RESTAURACIÓN: el dueño devolvió el repo a PÚBLICO (private:False verificado por API) → POST /pages {branch:pages, path:/} → ✅ ACTIVADO, status building → build «built» sobre el commit correcto 404f9a7ed (V3.6.50-SDK6, sin re-deploy necesario).
+- VERIFICACIÓN PRODUCCIÓN (curl anti-caché): PAGES-VERSION.txt = 3.6.50-SDK6 · fuente 5834fa1 · game_sha256 72ed2620… · game.html servido SHA256 72ed2620b07add4001771fd1c6f9145fa50dc5df399cc0b3b5c3196e3a4ec917 = BYTE-EXACTO contra el declarado y contra el branch pages local · assets/hall/suelo.jpg servido 390.326 B (imagen r58 del dueño, byte-exacto).
+- El PAT clásico del dueño queda operativo y verificado (push real 18b76f4..8e84224). Lección consolidada: si el repo vuelve a privado, Pages se apaga de nuevo (plan Free) — avisar al dueño.
+
+Stage Summary:
+- JUEGO DE NUEVO EN PRODUCCIÓN: https://franjavierdavila.github.io/CrazyPP/ sirviendo V3.6.50-SDK6 byte-exacto (main 8e84224 · pages 404f9a7 · fuente 5834fa1). El dueño debe recargar con game.html?v=3650 o limpiar caché del Quest.

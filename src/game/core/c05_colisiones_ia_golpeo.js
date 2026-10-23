@@ -422,7 +422,9 @@ function collideTable(ball, prevY, events) {
     }
     spin.multiplyScalar(0.6);
     // Regla ITTF: tocar el canto cuenta como bote válido
-    events.push({ type: 'table', side: pos.z > C ? 'player' : 'ai', speed: 1.5, pos: pos.clone() });
+    // r62: el evento lleva edge:true — el sonido del CANTO es el «ping»
+    // metálico con cola (muestra física propia en c03.tableEdge)
+    events.push({ type: 'table', edge: true, side: pos.z > C ? 'player' : 'ai', speed: 1.5, pos: pos.clone() });
   }
 }
 

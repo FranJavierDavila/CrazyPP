@@ -1002,6 +1002,27 @@ export function createReplayBanner() {
     ctx.fillStyle = '#eaf4ff';
     ctx.font = '700 40px system-ui, sans-serif';
     ctx.fillText(T('rep_chip', { n: hits || 0 }), W / 2, H / 2 + 46);
+    // r62 · PASTILLA «CÁMARA LENTA» (ámbar de cine, auto-dimensionada a la
+    // derecha — el título centrado nunca la alcanza: rep_t es corto)
+    const txtSlow = T('rep_slow');
+    ctx.font = '900 30px system-ui, sans-serif';
+    const wSlow = Math.ceil(ctx.measureText(txtSlow).width) + 44;
+    const hSlow = 54;
+    const xSlow = W - 26 - wSlow;
+    const ySlow = H / 2 - hSlow / 2 + 4;
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(26,18,6,0.92)';
+    roundRectPath(ctx, xSlow - 4, ySlow - 4, wSlow + 8, hSlow + 8, 31);
+    ctx.fill();
+    ctx.fillStyle = '#ffc65c';
+    roundRectPath(ctx, xSlow, ySlow, wSlow, hSlow, 27);
+    ctx.fill();
+    ctx.strokeStyle = '#1a1206';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.fillStyle = '#1a1206';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(txtSlow, xSlow + wSlow / 2, ySlow + hSlow / 2 + 1);
     ctx.textBaseline = 'alphabetic';
     tex.needsUpdate = true;
   }

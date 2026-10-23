@@ -472,6 +472,10 @@ export class PingPongGame {
     this._repT = 0;
     this._repPendiente = false;
     this._repVisPrev = null;
+    // r62 · BOLA DE PARTIDO EN CÁMARA LENTA: reloj de la dilatación (s) y
+    // factor ACTUAL aplicado SOLO a la física de la bola (1 = tiempo normal).
+    this._dilT = 0;
+    this._dilF = 1;
 
     const sb = createScoreboard();
     this.scoreboardUpdate = sb.update;
@@ -6980,6 +6984,17 @@ export class PingPongGame {
     // poses P0→P1 degradadas. Orden por frame: leer poses (three.js ya las
     // actualizó de XRFrame antes de este callback) → simular → renderizar.
     const dt = this.lastTime < 0 ? 0.016 : Math.min(now - this.lastTime, 1 / 30);
+    // r62 · RELOJ DE LA DILATACIÓN: corre en tiempo real (no se dilata a sí
+    // mismo). Al armar (_dilT=1,15) el factor CAE a 0,34 (punch cinemático),
+    // aguanta ~0,6 s y regresa suave a 1 en el resto — el último vuelo de la
+    // bola se contempla. Toca SÓLO a stepPhysics: ni IA, ni árbitro, ni HUD.
+    if (this._dilT > 0) {
+      this._dilT = Math.max(0, this._dilT - dt);
+      const _kDil = this._dilT / 1.15;
+      this._dilF = 1 + (0.34 - 1) * Math.min(1, _kDil * 2.2);
+    } else if (this._dilF !== 1) {
+      this._dilF = 1;
+    }
     this.lastTime = now;
     // LIVE-TV: telemetría del anfitrión (solo lectura, fuera del camino crítico)
     try { if (window.__PP_LIVE) window.__PP_LIVE.frame(this, now); } catch { /* */ }
@@ -7333,7 +7348,9 @@ export class PingPongGame {
         // (ni colisiones ni eventos — el árbitro ni se entera; el viaje lo
         // conduce el reloj _portalDelayT en updateMega).
         if (!(this.ball && this.ball.ppTransito)) {
-          stepPhysics(dt, this.ball, pads, this.events);
+          // r62: dt DILATADO en la bola de partido (_dilF < 1 lo frena);
+          // el árbitro ya decidió el punto — la bola vuela de adorno
+          stepPhysics(dt * this._dilF, this.ball, pads, this.events);
         }
       }
     }
@@ -7405,7 +7422,13 @@ export class PingPongGame {
         __ppServeTelemetry(_res, { src: 'core', tier: this.difficulty });
         this.rules.beginServeRally('player');
         if (this.net.online) { this.net.sendHit(true); this._localHit = false; }
-        this.haptic(e.paddleIndex ?? this.paddleHand, 0.8, 90);
+        // r62 · háptica del SAQUE escalada por la velocidad del golpe
+        // (antes fija 0,8/90: una dejada y un saque seco vibraban igual)
+        {
+          const sS = Math.min(1, (e.speed || 4) / 9);
+          this.haptic(e.paddleIndex ?? this.paddleHand,
+            Math.min(1, 0.45 + sS * 0.5), Math.round(55 + 45 * sS));
+        }
         break;
       }
       // lanzamiento fallido: la bola tocó algo sin ser golpeada
@@ -8234,6 +8257,10 @@ export class PingPongGame {
           }
           break;
         case 'game-over':
+          // r62 · BOLA DE PARTIDO EN CÁMARA LENTA: el último vuelo se dilata
+          // (física 0,34× con regreso suave ~1,1 s) ANTES de la fanfarria.
+          // SOLO local: online la bola la conduce el stream del rival.
+          if (!this.net.online) this._dilArranca();
           this.startFanfare(it.winner === 'player');
           this.audio.applause(it.winner === 'player');
           // v2.34/2.69: cierre del campeonato ACTIVO (ranking + camino +
@@ -8283,6 +8310,13 @@ export class PingPongGame {
         window.setTimeout(() => this.haptic(this.paddleHand, 0.22, 380), 300);
       }
     }
+  }
+
+  /** r62 · Arranca la dilatación de la bola de partido: factor 0,34 al
+   *  punto, regreso suave a 1 en ~1,1 s (el último vuelo se contempla). */
+  _dilArranca() {
+    this._dilT = 1.15;
+    this._dilF = 1;
   }
 
   /* ================= r61 · REPETICIÓN DEL MEJOR INTERCAMBIO ============
@@ -8373,13 +8407,15 @@ export class PingPongGame {
   }
 
   /** Reproducción por tiempo real con interpolación lineal entre frames
-   *  (y slerp del quaternión del rival) — independiente del framerate. */
+   *  (y slerp del quaternión del rival) — independiente del framerate.
+   *  r62 · CÁMARA LENTA: los frames se recorren a la MITAD del tiempo
+   *  real (REP_SLOWMO) — la interpolación no cambia, sólo el reloj. */
   _repTick(dt) {
     if (this._repEstado !== 'play' || !this._repBest.buf) return;
     const s = this._repStride, a = this._repBest.buf, n = this._repBest.n;
     let total = 0;
     for (let i = 0; i < n; i++) total += a[i * s + 10];
-    this._repT += dt;
+    this._repT += dt * REP_SLOWMO;
     if (this._repT >= total) { this._repTermina(); return; }
     // localizar el par de frames que rodea _repT
     let t0 = 0, iF = 0;
@@ -8415,7 +8451,14 @@ export class PingPongGame {
           // sonido se limita a uno cada 60 ms.
           if (!this._lastBounceSfx || performance.now() - this._lastBounceSfx > 60) {
             this._lastBounceSfx = performance.now();
-            this.audio.tableBounce(pan, Math.min(1, e.speed / 6));
+            // r62: el CANTO suena a CANTO («ping» metálico con cola — e.edge
+            // lo marca c05); el bote llano sigue su «pock» real con tono por
+            // velocidad. Mismo anti-spam de 60 ms para ambos.
+            if (e.edge) {
+              this.audio.tableEdge(pan, Math.min(1, 0.45 + e.speed / 8));
+            } else {
+              this.audio.tableBounce(pan, Math.min(1, e.speed / 6));
+            }
           }
           // v3.6.44 (ronda 52 · el dueño: «la marca del bote va desfasada»):
           // e.pos es el contacto del SUBPASO físico; la bola RENDERIZADA va
@@ -8443,7 +8486,8 @@ export class PingPongGame {
           if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.18);
           break;
         case 'net':
-          this.audio.net(pan);
+          // r62: la tela responde a la velocidad del golpe (tono por impacto)
+          this.audio.net(pan, Math.min(1, (e.speed || 0.8) / 5));
           this.audio.ohh();   // el público reacciona a la red
           break;
         case 'floor':
@@ -8459,10 +8503,16 @@ export class PingPongGame {
           // v2.44: en ARKANOID la vibración se REFUERZA (petición expresa:
           // "cuando la pala golpea la bola no tenemos respuesta háptica")
           if (e.paddleIndex !== undefined && e.paddleIndex >= 0) {
+            // r62 · HÁPTICA ESCALADA POR IMPACTO: intensidad Y duración
+            // crecen con la velocidad real (dejada = tick corto y suave,
+            // smash = zumbido largo y seco). ARKANOID conserva su refuerzo
+            // v2.44 (petición expresa del dueño: «no tenemos respuesta
+            // háptica» en el modo ladrillos).
             const arkOn = this.rules.state === 'arkanoid';
+            const sH = Math.min(1, e.speed / 9);
             this.haptic(e.paddleIndex,
-              Math.min(1, (arkOn ? 0.68 : 0.5) + e.speed / 9),
-              arkOn ? 85 : 70);
+              Math.min(1, (arkOn ? 0.68 : 0.35) + sH * 0.65),
+              arkOn ? 85 : Math.round(34 + 62 * sH));
           }
           // v3.6.49 (r57) · SÚPER IMÁN — el golpe fue GUIADO (c05 marca el
           // evento con imanAim: true): zap «imán» ascendente + háptica
@@ -8512,6 +8562,9 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 // (RGB 0-1; el mismo lenguaje de color que ya usa cada poder: ámbar del
 // icono, rojo del halo del efecto, cian de las flechas del imán, violeta
 // del portal y azul fantasma del clon). Sin poder → null y manda el spin.
+// r62 · CÁMARA LENTA de la repetición: los frames grabados se recorren a la
+// MITAD del tiempo real (interpolación intacta — framerate-independiente).
+const REP_SLOWMO = 0.5;
 const TRAIL_PODER = {
   mega: [0.93, 0.72, 0.32],     // Súper Pala — ámbar del icono
   efecto: [0.95, 0.24, 0.16],   // Súper Efecto — rojo del halo (r51)

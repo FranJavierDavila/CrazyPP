@@ -245,6 +245,13 @@ CAPAS = [
     # al terminar el partido (mejor = más toques, ≥3; gatillo salta; sin
     # grabación en calib/academia/online; visibilidades restauradas exactas).
     ('AV · estela+adaptativo+repetición (v3653)', 'qa_r61_v3653.py'),
+    # AW (v3654): SONIDO REAL por síntesis modal (5 muestras físicas
+    # incrustadas con playbackRate por velocidad + jitter, canto metálico
+    # propio con e.edge, fallback sintético intacto) + HÁPTICA ESCALADA por
+    # impacto (rally+saque, ARKANOID conserva refuerzo v2.44) + CÁMARA LENTA
+    # (repetición al 50% con pastilla ámbar + dilatación de la bola de
+    # partido 0,34×→1 en ~1,15 s, sólo local).
+    ('AW · sonido real+háptica+cine (v3654)', 'qa_r62_v3654.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

@@ -1,3 +1,4 @@
-# SHA256 del game.html que produjo esta división (3.6.53-SDK6, fase 55 · Estela de poderes, rival que se adapta y el mejor intercambio en pantalla; sello actualizado
-# por re-golden_r60.py tras corregir el cierre del menú en c13)
-4b6026e9b49e1841c4620cfb87b4f3e0d21fbd6fb431a6282c5f21786fafea3b
+# SHA256 del game.html que produjo esta división (3.6.54-SDK6, fase 56 · Sonido real, háptica que mide y el momento cine; sello actualizado
+# por re-golden_r62.py tras regenerar las muestras SFX reales con el
+# contenedor WAV completo (RIFF incluido — la 1.ª iba sin cabecera))
+aeeadb604041aab56333f93e1b4c495ea4c861cb5befd588fcbf9346a38c5a2d

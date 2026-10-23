@@ -4638,6 +4638,25 @@ class ArcadeController {
     this._globos.grp.visible = false;
     for (const it of this._globos.items) { it.alive = false; it.s.visible = false; }
   }
+  /** v3.6.50 (r58) · BLANCOS del SÚPER CLONACIÓN (hook del núcleo, spec
+   *  del dueño: «estas palas Clon tratarán de eliminar cualquier poder de
+   *  molestia de visión como confeti o el superpoder de Globos del
+   *  Clown… se moverán por pantalla destruyendo los globos»). Rellena
+   *  `out` con los globos VIVOS — {x,y,z,r,vivo,kill} en el espacio de
+   *  juego (los globos viven en g.rig, la misma coordenada que it.x/y/z
+   *  +0,06 del centro del pop, igual que el chequeo de la bola). El
+   *  confeti lo barre el NÚCLEO (createConfetti.kill, c08). Contrato
+   *  documentado en PLANTILLA-GUIA §4.1 para futuros campeonatos. */
+  clonBlancos(out) {
+    if (!this._globos || !this._globos.grp || !this._globos.grp.visible) return;
+    for (const it of this._globos.items) {
+      if (!it.alive || !it.s.visible) continue;
+      out.push({
+        x: it.x, y: it.y + 0.06, z: it.z, r: 0.30, vivo: true,
+        kill: () => this._popGlobo(it),
+      });
+    }
+  }
   /* ======== v2.127 · SÉPTIMO SUPERPODER DEL CLOWN: BURLA ==================
    *  Sustituye al MAREO (retirado por petición del dueño: «no funciona»).
    *  RAYO DE LUZ ARCOÍRIS que golpea la mesa en un punto DISTINTO cada vez

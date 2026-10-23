@@ -3828,3 +3828,19 @@ Work Log:
 Stage Summary:
 - LA ACADEMIA ESTÁ ABIERTA: el que entra por primera vez recibe la oferta «¿PRIMERA VEZ?» y en 3 minutos sabe sacar, golpear, cambiar la pala de mano y escoger entre los 6 modos — con la misma física de verdad del juego.
 - Despliegue y verificación byte-exacto en producción: (ver apéndice 163-b si procede).
+
+---
+Task ID: 163-b (apéndice)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 59 — despliegue y verificación byte-exacto de V3.6.51-SDK6 (LA ACADEMIA) en producción.
+
+Work Log:
+- DEPLOY (deploy_pages --push --release --backup, GIT_TOKEN del dueño): smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 fallos de red, 0 pageerrors) · pages → commit b056e9fd7 (396 ficheros · 137,7 MB) · respaldo anti-rollback main→proyecto al día · Release v3.6.51-SDK6 publicada con los 4 ZIPs (COMPLETO 131.335.599 · ligera 16.282.266 · CLOUDFLARE 131.322.212 · SOLO 6.089).
+- Pages build «built» sobre b056e9fd7.
+- VERIFICACIÓN PRODUCCIÓN (curl anti-caché): PAGES-VERSION.txt = 3.6.51-SDK6 · fuente_commit ee0b71f22 · game_sha256 a5c6d7f5… (reescrituras=2, método de siempre) · game.html servido SHA256 a5c6d7f5c064b3bb7774654832a63b64e08add81a9497cf1314c9af315f0a702 = BYTE-EXACTO contra el declarado por el pipeline y contra la rama pages local (la diferencia con el golden 39f6fab5… son las 2 reescrituras documentadas ruta-absoluta→relativa).
+- AGUJAS r59 EN PRODUCCIÓN: 12/12 en verde (módulo __PP_TUT, 9 pasos, guardia onTrigger, holdLock del saque real, banner del HUB, oferta de primera vez, profesor con el solver, ES+EN, birrete, sello de versión) · 110 claves tut_* servidas (55 × 2 idiomas).
+
+Stage Summary:
+- TUTORIAL EN PRODUCCIÓN: https://franjavierdavila.github.io/CrazyPP/ sirviendo V3.6.51-SDK6 · FASE 53 «La academia» byte-exacto (main ee0b71f2 · pages b056e9fd7 · fuente ee0b71f22).
+- El dueño debe RECARGAR con la pestaña cerrada o game.html?v=3651 (el Quest cachea). Al entrar por primera vez tras la actualización verá el banner TUTORIAL en el menú (la oferta de primera vez sólo se muestra a quien nunca ha hecho el tutorial).
+- Pendientes vivos sin cambio: informe del dueño tras probar (Imán/clon), entrenamiento «tres arreglos», .cf-token/.clave-produccion (vía Cloudflare), hito CORONAR LA OESTE.

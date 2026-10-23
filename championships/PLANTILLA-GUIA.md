@@ -155,6 +155,21 @@ Nombres exactos en `assets/` (lista completa y medidas en `LEEME-ARTE.txt`):
 Reglas: PNG con alfa = recorte exacto sin borde · rival 512×1024 cuerpo entero ·
 medidas de sala canónicas 6.10×7.90 / 6.10×2.85 / 7.90×2.85 m.
 
+### 4.1 · NORMA DE EMOCIONES DEL RIVAL (REGLA del dueño, r57 — no negociable)
+
+Todos los rivales siguen LA MISMA convención `[rival]_[emoción]` (un fichero
+`<estado>.webp` por emoción en `assets/`) y el núcleo la aplica como NORMA
+en TODOS los campeonatos vía el hook opcional `rivalEmocion(st, info)` del
+módulo. El núcleo reparte: `_idle` (espera y principio) · `_crazy` (el rival
+anuncia su superpoder) · `_angry` (+ queja, rival pierde punto) · `_laughing`
+(+ risas burlonas, el jugador falla; luego `_victory` al asegurar el punto) ·
+`_focused` (5 toques) · `_picando` (10) · `_surprised` (15) · `_panic` (20) y
+a partir de ahí pool aleatorio `_loosing`/`_surprised`/`_panic` cada 5 toques ·
+`_defeated` (el rival pierde el partido, persistente). El módulo traduce la
+emoción estándar a SU abanico local (p. ej. el Clown viste `hungry` para
+`angry`) y pone SUS sonidos. Los campeonatos nuevos heredan la norma
+implementando el hook (ver `_plantilla/index.js`, método `rivalEmocion`).
+
 ---
 
 ## 5 · Validación y ciclo de vida

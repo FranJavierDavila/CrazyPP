@@ -637,6 +637,22 @@ class PlantillaCtrl {
     this._rivalSDK.rivalEstado(st);
   }
 
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño):
+   *  el núcleo reparte la emoción estándar; ZETA-7 tiene SU abanico de 4
+   *  caras (idle/duelo/derrotado/triunfante) y la norma se traduce al
+   *  más cercano: victory→triunfante · defeated→derrotado · idle→idle ·
+   *  el resto (reacciones de rallye/punto) → cara de duelo. Cuando el
+   *  artista amplíe el abanico con la convención <estado>.webp, el
+   *  mapeo de abajo es el ÚNICO cambio necesario. */
+  rivalEmocion(st) {
+    const MAPA = {
+      idle: 'idle',
+      victory: 'triunfante',
+      defeated: 'derrotado',
+    };
+    this.rivalEstado(MAPA[st] || 'duelo');
+  }
+
   /* ------------------------------ música --------------------------------  /* ------------------------------ música --------------------------------
    * v3.6.3-SDK3: el motor vive en el SDK (createMusic v1.2.0) con las
    * variantes propias de este módulo — volumen FIJO del manifest (sin
@@ -1285,6 +1301,8 @@ const API = {
   resetRecords() { if (CTRL) CTRL.resetRecords(); },
   update(dt) { if (CTRL && CTRL.state) CTRL.update(dt); },
   onPoint(it) { if (CTRL) CTRL.onPoint(it); },
+  // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+  rivalEmocion(st, info) { if (CTRL) CTRL.rivalEmocion(st); },
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
   aiMul() { return CTRL ? CTRL.aiMul() : 1; },
   serveTrigger(i) { if (CTRL) CTRL.serveTrigger(i); },

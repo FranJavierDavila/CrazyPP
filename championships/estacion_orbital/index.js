@@ -6941,34 +6941,29 @@ class StockController {
    *  triunfante') no se pisa. */
   _exprSet(est, t) { this._exprT = t || 0; this.rivalEstado(est); }
   _exprBase() {
-    const r = this.game.rules;
-    const dif = (r.scorePlayer | 0) - (r.scoreAi | 0);
-    if (dif >= 6) return 'loosing';                 // el ASTRO lo está pasando mal
-    if ((r.scorePlayer | 0) >= 10) return 'panic';  // match-point en contra
-    return 'duelo';                                 // cara de duelo (base)
+    // v3.6.49 (r57): la NORMA DE EMOCIONES del núcleo manda los eventos;
+    // la cara BASE entre eventos es la de duelo (el idle lo pone la norma
+    // en la espera del saque, los hitos en el rallye, los puntos al acabar).
+    return 'duelo';
   }
   _exprOnPoint(it) {
-    if (this.state !== 'duelo' || !it || it.survival) return;
-    if (it.winner === 'player') {
-      this._streakP = (this._streakP || 0) + 1; this._streakAi = 0;
-      // v3.6.0: el ASTRO PIERDE el punto → enfado_astro.mp3 (audio del dueño)
-      this._sfx('enfado_astro.mp3');
-      const hits = it.rallyHits | 0;
-      if (hits >= 6) {
-        // COMBO del jugador: el ASTRO se ENFADA (como el clown)
-        this._exprSet('angry', 2.6);
-      } else {
-        this._exprSet('surprised', hits >= 3 ? 1.7 : 1.2);
-      }
-    } else {
-      this._streakAi = (this._streakAi || 0) + 1; this._streakP = 0;
-      if (this._streakAi >= 2) this._exprSet('crazy', 3.4);   // enloquece
-      else {
-        // v3.6.0: se ríe de ti CON LA POSE DE RISAS → risa_astro.mp3
-        this._sfx('risa_astro.mp3');
-        this._exprSet('laughing', 2.4);                       // se ríe de ti
-      }
-    }
+    // v3.6.49 (r57): las reacciones de punto las manda la NORMA DE
+    // EMOCIONES del núcleo vía rivalEmocion() — aquí ya no decide nada.
+  }
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño):
+   *  el núcleo reparte la emoción estándar y el ASTRO la viste con SU
+   *  arte (convención <estado>.webp) y SUS sonidos (enfado_astro.mp3 /
+   *  risa_astro.mp3 del dueño). El abanico del ASTRO ya usa los nombres
+   *  estándar → mapeo IDENTIDAD. */
+  rivalEmocion(st) {
+    const DUR = {
+      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
+      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
+      victory: 2.4, defeated: 0,
+    };
+    this._exprSet(st, DUR[st] != null ? DUR[st] : 2.0);
+    if (st === 'laughing') this._sfx('risa_astro.mp3');
+    else if (st === 'angry') this._sfx('enfado_astro.mp3');
   }
   _exprUpdate(dt) {
     if (this.state !== 'duelo') { this._exprT = 0; return; }
@@ -6981,15 +6976,11 @@ class StockController {
       return;
     }
     if (this._warn || this._act) return;  // 'crazy' del aviso de poder manda
-    if (r.state === 'rally') {
-      if ((r.rallyHits | 0) >= 7 && !this._picandoDone) {
-        this._picandoDone = true;         // rallye largo: ¡se pone picado!
-        this._exprSet('picando', 2.2);
-      } else {
-        this.rivalEstado(this._exprBase());
-      }
-    } else {
-      this._picandoDone = false;
+    // v3.6.49 (r57): la NORMA DE EMOCIONES del núcleo manda TODO (idle en
+    // la espera, hitos del rallye, reacciones de punto). Aquí solo se
+    // limpia el _idle filtrado en pleno rallye (cara de duelo) — jamás se
+    // pisa una emoción viva de la norma.
+    if (r.state === 'rally' && this._rivalEstado === 'idle') {
       this.rivalEstado(this._exprBase());
     }
   }
@@ -8602,6 +8593,8 @@ export default {
   resetRecords() { if (CTRL) CTRL.resetRecords(); },
   update(dt) { if (CTRL && CTRL.state) CTRL.update(dt); },
   onPoint(it) { if (CTRL) CTRL.onPoint(it); },
+  // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+  rivalEmocion(st, info) { if (CTRL) CTRL.rivalEmocion(st); },
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
   aiMul() { return CTRL ? CTRL.aiMul() : 1; },
   serveTrigger(i) { if (CTRL) CTRL.serveTrigger(i); },

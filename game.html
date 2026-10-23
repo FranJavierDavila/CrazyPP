@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.48-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.49-SDK6</span>
     </div>
   </main>
 
@@ -663,7 +663,7 @@ const I18N_STRINGS = {
     poder_mega: '¡POTENCIADOR DE PALA GIGANTE!',
     poder_efecto: '¡POTENCIADOR DE SÚPER EFECTO!',
     // v3.6.37 · SÚPER IMÁN (tercer poder)
-    arc_iman_go: '¡SÚPER IMÁN! · la bola se frena y vuela al centro de la pala · 10 s',
+    arc_iman_go: '¡SÚPER IMÁN! · tus ataques dan SIEMPRE en la mesa rival (más fuerte y rápido) · 10 s',
     arc_iman_fin: 'SÚPER IMÁN agotado',
     iman_asistido: 'IMPACTO ASISTIDO por el imán',
     poder_iman: '¡POTENCIADOR DE SÚPER IMÁN!',
@@ -1132,7 +1132,7 @@ const I18N_STRINGS = {
     poder_mega: 'GIANT PADDLE BOOSTER!',
     poder_efecto: 'SUPER SPIN BOOSTER!',
     // v3.6.37 · SUPER MAGNET (third power)
-    arc_iman_go: 'SUPER MAGNET! · the ball slows down and flies to the paddle centre · 10 s',
+    arc_iman_go: 'SUPER MAGNET! · your shots ALWAYS land on the rival table (stronger and faster) · 10 s',
     arc_iman_fin: 'SUPER MAGNET worn off',
     iman_asistido: 'MAGNET-ASSISTED impact',
     poder_iman: 'SUPER MAGNET BOOSTER!',
@@ -2036,7 +2036,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.48-SDK6';
+  const VERSION = '3.6.49-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -2779,13 +2779,15 @@ const DIMS = {
   // el poder activo). Sin marca, multiplicador 1: física idéntica.
   // v3.6.43 (ronda 51 · el dueño: «no noto los efectos… es preciso
   // exagerarlo para que visualmente veamos el resultado»): TODO el bloque
-  // del Súper Efecto sube un escalón — brush ×3, curva ×2,2 en vuelo y
-  // bote ×2,4 (SIEMPRE solo en la bola marcada; sin poder: física igual).
+  // del Súper Efecto sube un escalón — brush ×3 y curva ×2,2 en vuelo
+  // (SIEMPRE solo en la bola marcada; sin poder: física igual).
+  // v3.6.49 (ronda 57): efectoBoteMul (acople del bote ×2,4) RETIRADO —
+  // el dueño: «la ventaja del efecto en los botes sólo es para el jugador,
+  // el perjudicado siempre es el rival»: un bote amplificado dependía del
+  // giro real y podía salir amable y favorecer AL RIVAL. La ventaja en
+  // los botes es hoy SÓLO la firma tipificada (abajo), que siempre castiga.
   efectoSpinTope: 3,        // tope de rotación = 3 × spinMax (antes ×2)
   efectoMagnusMul: 2.2,     // Magnus ×2,2 en vuelo (antes ×1,5: curva VISIBLE)
-  efectoBoteMul: 2.4,       // acople del bote ×2,4 (antes ×1,8) — SOLO bolas
-                            // marcadas SIN tipo (golpe neutro); con tipo claro
-                            // el bote es físico puro + regla tipificada (abajo)
   // v3.6.46 (ronda 54 · el dueño redefine el SÚPER EFECTO: la estela se
   // retira y el efecto pasa a ser REAL según el movimiento de la pala al
   // golpear): el brush se CLASIFICA en tres spins y el BOTE traduce cada
@@ -2833,23 +2835,18 @@ const DIMS = {
   imanTPred: 0.15,          // horizonte máximo de predicción del impacto (s)
   imanRescateAcel: 7.5,     // (heredado r52 — applyIman ya no lo usa; se
   imanRescateDv: 1.05,      //  conserva para rollback instantáneo)
-  // v3.6.46 (ronda 54 · el dueño redefine el SÚPER IMÁN: «la bola se
-  // redirige automáticamente al CENTRO de nuestra pala en su movimiento
-  // como atraída por la pala para que podamos dar un buen golpe, ojo
-  // siempre que venga en nuestra dirección de golpeo»): fuera el campo
-  // suave y el rescate — GANCHO DIRECTO: cualquier bola que venga hacia
-  // nosotros dentro del radio del gancho es arrastrada al punto dulce
-  // (persigue el CENTRO VIVO de la pala) con aceleración plena y tope de
-  // Δv por aproximación holgado. Visual: pala oscurecida 80 % (metálica).
-  imanGanchoRadio: 1.8,     // radio de captura del gancho (m)
-  imanGanchoAcel: 26,       // aceleración hacia el centro de la pala (m/s²)
-  imanGanchoDv: 3.2,        // tope de Δv del gancho POR APROXIMACIÓN (m/s)
-  imanFreno: 1.1,           // freno exponencial del campo (1/s) — r56: «que
-                            // ralentice la bola» (regla del dueño)
-  imanFrenoSuelo: 0.15,     // suelo de velocidad del freno (m/s): el vuelo
-                            // nunca muere, la pala sigue teniendo que golpear
-  imanGanchoVz: 0.2,        // velocidad mínima hacia nosotros (m/s) — «que venga
-                            //  en nuestra dirección de golpeo»
+  // v3.6.49 (ronda 57 · el dueño redefine OTRA VEZ el SÚPER IMÁN: «olvide-
+  // mos el efecto anterior de atracción y ralentización»): GUÍA DE TIRO —
+  // cada golpe del jugador con la ventana viva y dirección hacia la mitad
+  // rival se CORRIGE para botar SIEMPRE en la mesa del rival (solver de
+  // la casa, despeje de red garantizado) y sale reforzado: golpes muy
+  // fuertes y a gran velocidad. El gancho/freno de r54-r56 (imanGancho*,
+  // imanFreno*) queda RETIRADO — sin campo por subpaso.
+  imanAimVzMin: -0.4,       // sólo tiros que YA van hacia la mitad rival (m/s)
+  imanAimProfundidad: 0.62, // objetivo: 62 % de la media mesa rival (bote seguro)
+  imanAimPisoVel: 9.5,      // piso de potencia del golpe guiado (m/s) — «muy fuertes»
+  imanAimEmpuje: 1.2,       // empuje sobre la velocidad real del golpe (×)
+  imanAimTopeFrac: 0.8,     // tope honesto: 0,8 × maxBallSpeed (m/s)
   rubberMu: 0.55,           // tope de Coulomb: |Δv tangencial| ≤ mu·(1+e)·|vRelN|
   edgeRestLoss: 0.35,       // PUNTO DULCE: el canto pega sordo, rest × (1 − loss·offC²)
   edgeSpinLoss: 0.45,       // el canto imprime menos efecto
@@ -5045,6 +5042,7 @@ function collidePaddle(ball, pad, k, events) {
  * segmento se transforma con la pose τa y el fin con la pose τb).
  * Devuelve true si hubo golpe (respuesta clásica ya aplicada). */
 function collidePaddleSweep(ball, pad, kA, kB, events) {
+  let imanAimUsado = false;   // v3.6.49: el golpe de este subpaso fue GUIADO por el Súper Imán
   // --- poses A (kA) y B (kB) de la pala dentro del frame (nlerp como v2.29) ---
   ccdPosA.copy(pad.prev).lerp(pad.pos, kA);
   ccdNrmA.copy(pad.prevNormal).lerp(pad.normal, kA).normalize();
@@ -5271,9 +5269,11 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
   // el tipo — barrido de abajo hacia arriba = TOPSPIN (liftado), de arriba
   // hacia abajo = BACKSPIN (cortado), lateral = SIDESPIN (lado del barrido,
   // +x = derecha del jugador). Golpe SIN barrido claro (recto o por debajo
-  // del umbral) no lleva tipo: conserva el comportamiento amplificado de
-  // siempre (bote acoplado ×2,4). El tipo viaja en la bola y lo traduce
-  // el BOTE en c05/collideTable; la marca la limpia la IA al devolver.
+  // del umbral) no lleva tipo: bote FÍSICO PURO (el acople ×2,4 de la r51
+  // quedó RETIRADO en la r57 — un bote amplificado podía salir «amable»
+  // y favorecer al rival; la ventaja del bote es SÓLO la firma tipificada).
+  // El tipo viaja en la bola y lo traduce el BOTE en c05/collideTable; la
+  // marca la limpia la IA al devolver.
   if (eMul > 1) {
     const pvx = pad.vel.x, pvy = pad.vel.y;
     const avx = Math.abs(pvx), avy = Math.abs(pvy);
@@ -5291,6 +5291,13 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
     ball.ppEfectoTipo = '';
     ball.ppEfectoLado = 0;
   }
+  // v3.6.49 · PALA HONESTA TOTAL (bug del dueño, r57: «persiste más allá
+  // del tiempo indicado»): un golpe SIN poder activo (eMul = 1) MATA la
+  // marca vieja que la bola pudiera arrastrar (ventana expirada, saque,
+  // rebote loco). La marca nace SOLO de un golpe con la ventana viva y
+  // muere con el reloj (c12/_efectoFin), con la devolución de la IA (c06)
+  // y con CUALQUIER golpe honesto — jamás sobrevive a los 10 s.
+  if (eMul <= 1 && ball.ppEfecto) ball.ppEfecto = false;
 
   // Colocar la bola sobre la cara de contacto
   const front = DIMS.ballRadius + 0.002;
@@ -5300,6 +5307,40 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
     .addScaledVector(ipRight, lx)
     .addScaledVector(ipUp, ly);
 
+  // v3.6.49 · SÚPER IMÁN — GUÍA DE TIRO EN EL GOLPE (spec literal r57):
+  // la trayectoria real del golpe se prolonga hacia la mitad rival y se
+  // CLAMPA dentro de la mesa (LA corrección de dirección del dueño);
+  // computeShotVelocityReal — el solver de la casa, con arrastre real y
+  // despeje de red garantizado, el mismo que usa la IA — reconstruye la
+  // velocidad para BOTAR EXACTAMENTE en el objetivo (bote correcto
+  // asegurado). Potencia: piso fuerte + empuje ×1,2 con tope honesto.
+  // GUARDAS: sólo pala del jugador (ppImanAim la arma el núcleo SOLO con
+  // la ventana viva), NUNCA en vuelo de saque (serveFlight), NUNCA fuera
+  // del rally (intercambio) y sólo tiros hacia la mitad rival (vel.z <
+  // −0,4): el saque propio y los tiros hacia atrás son juego normal.
+  // Simuladores y golden jamás lo ven (ventana apagada — patrón r56).
+  if (pad.ppImanAim && pad.who === 'player' && !pad.serveFlight &&
+      pad.intercambio !== false &&
+      ball.vel.z < (DIMS.imanAimVzMin || -0.4)) {
+    const tz0 = DIMS.tableCenterZ -
+      DIMS.tableHalfLength * (DIMS.imanAimProfundidad || 0.62);
+    let tx0 = ball.pos.x + ball.vel.x * ((tz0 - ball.pos.z) / ball.vel.z);
+    const lim0 = DIMS.tableHalfWidth - DIMS.ballRadius - 0.05;
+    tx0 = THREE.MathUtils.clamp(tx0, -lim0, lim0);   // LA corrección de dirección
+    _imObjetivo.set(tx0, DIMS.tableTopY + DIMS.ballRadius, tz0);
+    const sp0 = ball.vel.length();
+    const vMax0 = Math.min(DIMS.maxBallSpeed * (DIMS.imanAimTopeFrac || 0.8),
+      Math.max(sp0 * (DIMS.imanAimEmpuje || 1.2), DIMS.imanAimPisoVel || 9.5));
+    const D0 = Math.hypot(_imObjetivo.x - ball.pos.x, _imObjetivo.z - ball.pos.z);
+    const T0 = THREE.MathUtils.clamp(D0 / (vMax0 * 0.82), 0.32, 0.85);
+    ball.vel.copy(computeShotVelocityReal(ball.pos, _imObjetivo, T0, vMax0, _imSpinCero));
+    ball.spin.set(0, 0, 0);              // misil guiado: cero Magnus (bote seguro)
+    ball.ppEfecto = false;               // el imán manda la trayectoria: bola limpia
+    ball.ppEfectoTipo = '';
+    ball.ppEfectoLado = 0;
+    imanAimUsado = true;
+  }
+
   // v3.1.1-FEEL1 · el evento (audio, háptica, árbitro, contadores) sólo
   // existe si el impacto es de verdad: los micro-contactos de REPOSO (botes
   // decrecientes sobre pala quieta) son mudos y no alimentan a nadie. En el
@@ -5307,7 +5348,7 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
   // lanzamiento necesitan ver TAMBIÉN los roces flojos (semántica SRV2).
   if (pad.serveFlight || Math.abs(vRelN) >= SERVE_TUNE.restEventMin) {
     pad.cooldown = DIMS.paddleHitCooldown;
-    events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index });
+    events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index, imanAim: imanAimUsado });
   }
   return true;
 }
@@ -5326,28 +5367,27 @@ function collideTable(ball, prevY, events) {
   if (vel.y < 0 && prevY >= topR && pos.y < topR && inX && inZ) {
     pos.y = topR;
     const impact = -vel.y;
-    // v3.6.36 · SÚPER EFECTO: la bola MARCADA amplifica el efecto del
-    // bote (topspin → más agresivo hacia delante · lateral → más desvío
-    // · backspin → más frenada), con el tope de Coulomb como seguro.
-    // v3.6.46 · con TIPO claro (top/back/side) el bote es FÍSICO PURO
-    // (sin el acople extra ×2,4): la firma exacta la pone la regla
-    // tipificada de abajo — determinista y calibrada en c02. Las bolas
-    // marcadas SIN tipo conservan el acople de siempre (r51/r52).
+    // v3.6.46 · con TIPO claro (top/back/side) el bote lleva la FIRMA
+    // tipificada de abajo. Las bolas marcadas SIN tipo bote FÍSICO PURO:
+    // v3.6.49 (r57, regla del dueño «la ventaja del bote sólo es para el
+    // jugador, el perjudicado siempre es el rival») RETIRA el acople
+    // ×2,4 de la r51 — un bote amplificado dependía del giro real y
+    // podía salir amable (bola muerta o bote alto y cómodo) y BENEFICIAR
+    // AL RIVAL. La ventaja del efecto en los botes es hoy SÓLO la firma
+    // tipificada, que siempre castiga: top acelera y achica, back mata
+    // el ritmo en su campo, side patada lateral a perseguir.
     // v3.6.47 · «siempre en el bote sobre la MESA DEL RIVAL» (spec r55):
-    // TODO el Súper Efecto (acople ×2,4 y firma tipificada) vive SOLO en
-    // la mitad del rival (z < tableCenterZ); un bote en NUESTRA mitad
-    // (mishit, bola loca) es juego normal — sin amplificar ni firmar.
+    // TODO el Súper Efecto vive SOLO en la mitad del rival (z < C); un
+    // bote en NUESTRA mitad (mishit, bola loca) es juego normal.
     const boteRival = pos.z < C;
-    const eM = (boteRival && ball.ppEfecto && !ball.ppEfectoTipo)
-      ? (DIMS.efectoBoteMul || 1.8) : 1;
     if (DIMS.physicsRealism >= 0.5) {
       // v3.0.5-FIS1 · P2: bote físico con deslizamiento (slip-coupled)
-      bounceOnTable(vel, spin, impact, eM);
+      bounceOnTable(vel, spin, impact);
     } else {
       vel.y = impact * DIMS.tableRestitution;
       vel.x *= DIMS.tableFriction;
       vel.z *= DIMS.tableFriction;
-      applyBounceSpin(vel, spin, eM);
+      applyBounceSpin(vel, spin);
     }
     // v3.6.46 · SPIN TIPIFICADO — el bote traduce el giro (spec literal
     // del dueño, ronda 54):
@@ -5487,85 +5527,23 @@ function collideWorld(ball, events) {
   }
 }
 
-/* ---------- v3.6.46 · SÚPER IMÁN — GANCHO al CENTRO de la pala ----------
- * Redefinición del dueño (ronda 54, spec literal): «cuando lo activamos la
- * bola se redirige automáticamente al CENTRO de nuestra pala en su
- * movimiento como atraída por la pala para que podamos dar un buen golpe,
- * ojo siempre que venga en nuestra dirección de golpeo». Muere el campo
- * suave de r51-52 (asistencia lateral + rescate): el GANCHO arrastra la
- * bola DIRECTO al punto dulce:
- *   · SOLO bolas que vienen hacia nosotros (v.z > imanGanchoVz, 0,2 m/s)
- *     — «que venga en nuestra dirección de golpeo»;
- *   · captura dentro de imanGanchoRadio (1,8 m) del punto dulce;
- *   · aceleración plena hacia el CENTRO VIVO de la pala (el punto dulce
- *     se recalcula por SUBPASO: el gancho persigue la pala mientras la
- *     movemos — «en su movimiento»);
- *   · tope de Δv POR APROXIMACIÓN imanGanchoDv (3,2 m/s): fuerza fina,
- *     nunca teleporta — la salida la calcula el contacto de siempre;
- *   · v3.6.48 (regla del dueño, r56): el gancho TAMBIÉN RALENTIZA la
- *     bola — freno exponencial imanFreno (1,1/s) con suelo de velocidad
- *     imanFrenoSuelo (0,15 m/s): «que ralentice la bola y la dirija
- *     hacia el centro de nuestra pala». El freno vive dentro de las
- *     MISMAS guardas (radio + viniendo + plano) y NO gasta el tope Δv
- *     (ese presupuesta sólo el tirón);
- *   · nunca bolas que ya superaron el plano de la cara;
- *   · integrado por SUBPASO (h fijo): estable ante fluctuaciones de FPS.
- * La marca de «aproximación asistida» (ball.ppImanTocada) la consume el
- * núcleo cuando esa bola golpea la pala (1 carga por asistencia);
- * ball.ppImanEmpuje queda como marca de «empuje vivo este frame».
- * La física de salida NO cambia: mismo modelo de contacto, mismo golden. */
-const _imC = new THREE.Vector3();
-const _imP = new THREE.Vector3();
-const _imU = new THREE.Vector3();
-const _imD = new THREE.Vector3();
-const _imA = new THREE.Vector3();
-function applyIman(ball, paddles, h) {
-  const IM = ball.ppIman;
-  ball.ppImanEmpuje = false;                    // marca fresca SOLO si empuja
-  for (const pad of paddles) {
-    // v3.6.46: SOLO la pala del jugador — el rival nunca gana asistencia
-    if (!pad.active || pad.serveFlight || pad.who !== 'player') continue;
-    // punto dulce = CENTRO VIVO de la hoja en mundo (se recalcula por
-    // subpaso: el gancho persigue la pala mientras la movemos)
-    _imC.copy(pad.pos).addScaledVector(pad.up, DIMS.bladeCenterUp);
-    _imU.copy(_imC).sub(ball.pos);
-    const d = _imU.length();
-    if (d > DIMS.imanGanchoRadio || d < 1e-4) continue;   // fuera del gancho
-    // «siempre que venga en nuestra dirección de golpeo»: solo bolas que
-    // viajan hacia nosotros (z positivo = hacia el lado del jugador)
-    if (ball.vel.z <= (DIMS.imanGanchoVz || 0.2)) continue;
-    // nunca bolas que ya superaron el plano de la cara
-    _imD.copy(ball.pos).sub(_imC);
-    if (_imD.dot(pad.normal) < -DIMS.ballRadius) continue;
-    // FRENO (v3.6.48 · regla del dueño: «que ralentice la bola»):
-    // amortiguación exponencial por subpaso con suelo de velocidad — la
-    // bola llega MÁS DESPACIO al dulce y cuesta menos golpearla. Dentro
-    // de las guardas del gancho (radio + viniendo hacia nosotros + no
-    // pasado el plano) → simuladores y golden jamás lo ven.
-    const sp0 = ball.vel.length();
-    if (sp0 > DIMS.imanFrenoSuelo) {
-      ball.vel.multiplyScalar(Math.max(DIMS.imanFrenoSuelo / sp0,
-        1 - DIMS.imanFreno * h));
-      ball.ppImanEmpuje = true;                 // el campo está vivo aquí
-      ball.ppImanTocada = true;                 // esta aproximación fue asistida
-    }
-    // GANCHO: aceleración DIRECTA hacia el centro de la pala (3D: corrige
-    // lateral Y altura — la bola llega al dulce «para dar un buen golpe»).
-    // El tope de Δv POR APROXIMACIÓN presupuesta SOLO el tirón (el freno
-    // es parte del campo, no del presupuesto).
-    if ((IM.dv || 0) >= DIMS.imanGanchoDv) continue;   // tope del tirón agotado
-    _imA.copy(_imU).normalize();
-    let aMag = DIMS.imanGanchoAcel;
-    const dvRest = DIMS.imanGanchoDv - (IM.dv || 0);
-    const dvPaso = aMag * h;
-    if (dvPaso > dvRest) aMag *= dvRest / Math.max(dvPaso, 1e-9);
-    if (aMag <= 1e-6) continue;
-    ball.vel.addScaledVector(_imA, aMag * h);
-    IM.dv = (IM.dv || 0) + aMag * h;            // contador real del gancho
-    ball.ppImanEmpuje = true;                   // marca de empuje vivo
-    ball.ppImanTocada = true;                   // esta aproximación fue asistida
-  }
-}
+/* ---------- v3.6.49 (ronda 57) · SÚPER IMÁN REESCRITO — GUÍA DE TIRO ----------
+ *  El dueño retira el gancho y el freno («olvidemos el efecto anterior de
+ *  atracción y ralentización»): el nuevo Súper Imán «asegura que nuestros
+ *  ataques den SIEMPRE en la mesa del rival corrigiendo su dirección y
+ *  permitiendo golpes muy fuertes y a gran velocidad; aunque la dirección
+ *  sea errónea (siempre que se dirija hacia la parte de la mesa rival)
+ *  acertarán sobre su mesa mediante una corrección de su trayectoria…
+ *  el poder asegura un bote correcto sobre la mesa del rival (10 segundos
+ *  de duración)».
+ *  La mecánica ya NO es un campo por subpaso: es GUÍA DE TIRO EN EL GOLPE
+ *  y vive DENTRO de collidePaddleSweep (ver el bloque r57 allí): el
+ *  solver de la casa computeShotVelocityReal reconstruye la velocidad para
+ *  botar EN LA MESA DEL RIVAL con despeje de red garantizado. Sin marcas
+ *  por subpaso, sin gasto de cargas por asistencia — la ventana vive SUS
+ *  10 s (regla del dueño) y el golden de física jamás la ve. */
+const _imObjetivo = new THREE.Vector3();   // objetivo de la guía del imán
+const _imSpinCero = new THREE.Vector3();   // spin nulo del misil guiado
 
 function stepPhysics(dt, ball, paddles, events, extra) {
   const n = Math.max(1, Math.min(96, Math.ceil(dt / MAX_SUBSTEP_DT)));
@@ -5581,11 +5559,9 @@ function stepPhysics(dt, ball, paddles, events, extra) {
     ball.vel.y += DIMS.gravity * h;
     applyAerodynamics(ball.vel, ball.spin, h, ball.dragMul,
       ball.ppEfecto ? (DIMS.efectoMagnusMul || 1.5) : 1);   // v3.6.36: bola marcada
-    // v3.6.37 · SÚPER IMÁN: empuje lateral hacia el punto dulce, integrado
-    // DENTRO del subpaso (h fijo → independiente del framerate, requisito
-    // del dueño). ball.ppIman lo arma el núcleo SOLO con la ventana activa:
-    // los simuladores y el golden de física nunca lo ven → física idéntica.
-    if (ball.ppIman) applyIman(ball, paddles, h);
+    // v3.6.49 (r57): FUERA el campo por subpaso del imán — la guía de tiro
+    // del Súper Imán vive ahora EN EL GOLPE (collidePaddleSweep, bloque
+    // r57) y el golden de física no ve nada nuevo aquí.
     ball.pos.addScaledVector(ball.vel, h);
 
     // v2.29: si la pala golpea en este subpaso, la bola se RECOLOCA sobre la
@@ -10042,6 +10018,15 @@ class ChampLoader {
     const m = this.mod;
     if (m && m.onPoint) { try { m.onPoint(it); } catch (e) { console.warn('[champs.onPoint]', e); } }
   }
+  /** v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL: el núcleo reparte la
+   *  emoción (idle/crazy/angry/laughing/focused/picando/surprised/panic/
+   *  loosing/victory/defeated) y el módulo ACTIVO la viste con SU arte
+   *  (convención <estado>.webp) y SUS sonidos. Hook opcional: los módulos
+   *  sin rivalEmocion ignoran la norma en silencio. */
+  rivalEmocion(st, info) {
+    const m = this.mod;
+    if (m && m.rivalEmocion) { try { m.rivalEmocion(st, info); } catch (e) { console.warn('[champs.rivalEmocion]', e); } }
+  }
   onMatchOver(w) {
     const m = this.mod;
     if (m && m.onMatchOver) { try { m.onMatchOver(w); } catch (e) { console.warn('[champs.onMatchOver]', e); } }
@@ -10321,10 +10306,16 @@ class PingPongGame {
     // (r56: regla del dueño) que FRENA la bola y la centra en el punto
     // dulce; CADA impacto asistido válido gasta 1 carga.
     this._imanT = 0;                  // s restantes de campo magnético
-    this._imanAsistidas = 0;          // asistencias de ESTA activación
+    this._imanAsistidas = 0;          // (r57: retirado el gasto por asistencia)
     this._imanWarn = false;
     this._imanFx = null;              // [fx0, fx1] canto azul + onda
     this._imanFxOn = false;
+    // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL: emoción viva, hold
+    // restante, emoción «siguiente» de la cadena y último hito del rallye.
+    this._rivalEmo = '';
+    this._rivalEmoT = 0;
+    this._rivalEmoNext = '';
+    this._rivalEmoMil = 0;
     // v3.6.41 · SÚPER PORTAL (4.º poder del registro): ventana de 8 s que
     // traslada la bola tras cada golpe VÁLIDO del jugador (máx. 3 por
     // activación; spec completa del dueño). El swap es ATÓMICO: física,
@@ -10833,6 +10824,13 @@ class PingPongGame {
     this.ai.reset();
     this.setupAIServe();
     this.setupDemoServe();
+    // v3.6.49 (r57) · NORMA DE EMOCIONES: partido nuevo = rival en _idle
+    // (la regla del dueño: «al principio el rival se colocará en _idle»).
+    this._rivalEmo = '';
+    this._rivalEmoT = 0;
+    this._rivalEmoNext = '';
+    this._rivalEmoMil = 0;
+    this.rivalEmocion('idle', 0);
     this.haptic(this.paddleHand, 0.4);
   }
 
@@ -10857,6 +10855,13 @@ class PingPongGame {
     this.ai.reset();
     this.setupAIServe();
     this.setupDemoServe();
+    // v3.6.49 (r57) · NORMA DE EMOCIONES: partido nuevo = rival en _idle
+    // (la regla del dueño: «al principio el rival se colocará en _idle»).
+    this._rivalEmo = '';
+    this._rivalEmoT = 0;
+    this._rivalEmoNext = '';
+    this._rivalEmoMil = 0;
+    this.rivalEmocion('idle', 0);
     this.audio.announce(mode === 'survival'
       ? T('mode_survival')
       : T('mode_match'), true);
@@ -13632,22 +13637,35 @@ class PingPongGame {
     return true;
   }
 
-  /** Fin de la ventana de SÚPER EFECTO (los 10 s agotados — r56). */
+  /** Fin de la ventana de SÚPER EFECTO (los 10 s agotados — r56).
+   *  v3.6.49 (r57, bug del dueño: «persiste más allá del tiempo indicado»):
+   *  el reloj es la ÚNICA ley y a los 10 s NO QUEDA NADA — las marcas de
+   *  la bola (ppEfecto/ppEfectoTipo/ppEfectoLado) mueren AQUÍ aunque la
+   *  bola esté en pleno vuelo: sin Magnus amplificado, sin firma de bote,
+   *  sin penalizaciones IA. Todo vuelve a la normalidad al instante. */
   _efectoFin() {
     this._efectoT = 0;
     this._efectoFxVis(false);
+    try {
+      if (this.ball) {
+        this.ball.ppEfecto = false;
+        this.ball.ppEfectoTipo = '';
+        this.ball.ppEfectoLado = 0;
+      }
+    } catch (eM) { /* */ }
     this.rules.message = T('arc_efecto_fin');
     try { this.audio.playOsc(660, 330, 0.16, 'sine', 0.12, 0); } catch (e) { /* */ }
   }
 
   /* =====================================================================
-   *  v3.6.37 · SÚPER IMÁN (3.er poder del registro; spec del dueño):
-   *  campo magnético de 10 s (r56) alrededor de la pala que FRENA la
-   *  bola y la atrae al punto dulce (la física vive en c05, applyIman,
-   *  por SUBPASO). La pala sigue mandada por la mano real; el gatillo
-   *  solo ABRE el campo — CADA impacto asistido válido consume 1 carga:
-   *  las cargas solo se gastan cuando el imán ayuda de verdad. Activo +
-   *  gatillo = refresca la ventana. */
+   *  v3.6.49 (ronda 57) · SÚPER IMÁN (3.er poder del registro; spec del
+   *  dueño): GUÍA DE TIRO de 10 s — «asegura que nuestros ataques den
+   *  SIEMPRE en la mesa del rival corrigiendo su dirección y permitiendo
+   *  golpes muy fuertes y a gran velocidad… el poder asegura un bote
+   *  correcto sobre la mesa del rival (10 segundos de duración)».
+   *  La guía vive EN EL GOLPE (c05/collidePaddleSweep con el solver de
+   *  la casa); el gatillo solo ABRE la ventana de 10 s y las cargas ya
+   *  NO se gastan por asistencia (r57). Activo + gatillo = refresca. */
   _imanTrigger(ent) {
     if (this._imanT > 0) {
       this._imanT = IMAN_DUR;             // refresco honesto, sin gasto
@@ -13669,10 +13687,11 @@ class PingPongGame {
     this._megaActivaId = 'iman';          // v3.6.40: icono en modo ACTIVO
     this._megaActivaDur = IMAN_DUR;
     this._megaTexDirty = true;
-    // v3.6.46 · SIN canto, SIN flechas, SIN campo: pala LIMPIA — la señal
-    // del imán es la PALA OSCURECIDA al 80 % (metálica) mientras dure la
-    // ventana (la aplica updateMega vía _imanPalaOsc) y la bola curvándose
-    // al centro por el gancho (c05/applyIman).
+    // v3.6.46/49 · SIN canto, SIN flechas, SIN campo: pala LIMPIA — la
+    // señal del imán es la PALA OSCURECIDA al 80 % (metálica) mientras
+    // dure la ventana (_imanPalaOsc) y el zap del golpe GUIADO (r57:
+    // la corrección la ejecuta el solver en c05; la Trayectoria la dibuja
+    // la propia bola, fiel al diseño de pala limpia del dueño).
     this._imanOnda();
     // power-up sonoro PROPIO (firma «imán»: onda grave que sube, sine)
     try { this.audio.playOsc(180, 420, 0.22, 'sine', 0.14, 0); } catch (e) { /* */ }
@@ -13697,26 +13716,9 @@ class PingPongGame {
     this.rules.message = T('arc_iman_fin');
     try { this.audio.playOsc(520, 220, 0.18, 'sine', 0.12, 0); } catch (e) { /* */ }
   }
-
-  /** v3.6.37 · IMPACTO ASISTIDO válido del imán (lo llama el gancho del
-   *  animate cuando una bola empujada por el campo golpea la pala): gasta
-   *  1 carga del IMÁN (encuentra su entrada en la matriz aunque el jugador
-   *  haya ciclado a otro poder). r56 (regla del dueño): SIN tope de
-   *  asistencias — el campo vive sus 10 s o se apaga al quedarse sin
-   *  cargas. */
-  _imanImpacto() {
-    const ent = this._megaMatriz.find((x) => x.id === 'iman');
-    this._imanAsistidas++;
-    if (ent) {
-      this._megaGasta(ent);             // −1 carga (y sale de la matriz a 0)
-      try { this.rules.message = T('iman_asistido'); } catch (e0) { /* */ }
-    }
-    try { this.audio.playOsc(300, 560, 0.12, 'sine', 0.12, 0); } catch (e1) { /* */ }
-    if (this.renderer.xr && this.renderer.xr.isPresenting) {
-      try { this.haptic(this.paddleHand, 0.5, 90); } catch (e2) { /* */ }
-    }
-    if (!ent) this._imanFin();      // sin cargas: campo fuera (r56: sin tope de asistencias)
-  }
+  // v3.6.49 (r57): _imanImpacto RETIRADO — la guía de tiro no gasta cargas
+  // por asistencia: el poder se activa con SU gatillo y vive SUS 10 s
+  // (regla del dueño: «aseguran un bote correcto... 10 segundos de duración»).
 
   _buildImanFx() { /* v3.6.46: canto del imán RETIRADO (pala limpia + metálica) */ }
 
@@ -13812,9 +13814,9 @@ class PingPongGame {
   /* v3.6.46 · RETIRADO (ronda 54, petición del dueño): _buildImanCampo,
    * _imanCampoUpdate, _buildImanFlechas y _imanFlechasUpdate (el disco de
    * campo, sus partículas y las flechas bola→pala) — «quitamos las flechas
-   * anteriores y dejamos un diseño limpio de pala». La atracción SE VE en
-   * la trayectoria: el gancho (c05/applyIman) curva la bola al centro de
-   * la pala y la pala se oscurece mientras dura el efecto (_imanPalaOsc). */
+   * anteriores y dejamos un diseño limpio de pala». v3.6.49 (r57): la
+   * guía de tiro corrige la TRAYECTORIA en el golpe (solver de la casa
+   * en c05) y la pala se oscurece mientras dura la ventana (_imanPalaOsc). */
 
   _imanFxVis(vis) {
     this._imanFxOn = vis;
@@ -14816,6 +14818,83 @@ class PingPongGame {
    *  radio ×1,38, pala ×1,30, canto, onda, aviso final). Con «Pala
    *  Mejorada» apagado todo duerme y la pala queda EXACTA como siempre.
    *  Construcción perezosa: sin carga no existe ni una malla. */
+  /* =====================================================================
+   *  v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL — REGLA DEL DUEÑO
+   *  «Todas las imágenes de todos los rivales siguen la misma convención
+   *  [Nombre]_[emoción] y la regla se aplica a TODOS los rivales y queda
+   *  como norma en todos los campeonatos»:
+   *    · espera / al principio ............ _idle
+   *    · el rival lanza un SuperPoder ..... _crazy
+   *    · el rival pierde un punto ......... _angry + sonido de queja
+   *    · el jugador falla ................. _laughing + risas burlonas
+   *    · 5 toques de intercambio .......... _focused
+   *    · 10 toques ........................ _picando
+   *    · 15 toques ........................ _surprised
+   *    · 20 toques ........................ _panic
+   *    · a partir de 20 ................... aleatorio entre _loosing /
+   *                                          _surprised / _panic (cambia
+   *                                          cada 5 toques)
+   *    · el rival gana un punto ........... _victory (tras la risa burlona)
+   *    · el rival pierde el partido ....... _defeated
+   *  El NÚCLEO es la única fuente de verdad (conoce puntos, rallye y
+   *  espera) y reparte la emoción al campeonato activo vía
+   *  champs.rivalEmocion(st) → módulo.rivalEmocion(st, info). Cada módulo
+   *  traduce la emoción a SU arte (convención <estado>.webp) y a SUS
+   *  sonidos (burla/queja propios). Las reacciones locales de puntos de
+   *  los módulos quedan SUSTITUIDAS por esta norma (r57). */
+  rivalEmocion(st, hold, next) {
+    // sin campeonato activo (o sin módulo) la norma duerme: nada que vestir
+    const prev = this._rivalEmo;
+    this._rivalEmo = st;
+    this._rivalEmoT = hold || 0;
+    this._rivalEmoNext = next || '';
+    if (prev === st && (hold || 0) > 0) return;   // misma emoción viva: no re-dispara
+    try { if (this.champs) this.champs.rivalEmocion(st, { t: this._rivalEmoT }); } catch (e) { /* */ }
+  }
+
+  _rivalEmoUpdate(dt) {
+    const r = this.rules;
+    if (!r || !this.champs || !this.champs.active) return;
+    // HITOS del intercambio (sólo en rally y sólo al CRUZAR el umbral)
+    if (r.state === 'rally') {
+      const h = r.rallyHits | 0;
+      if (h !== this._rivalEmoMil) {
+        const prev = this._rivalEmoMil;
+        this._rivalEmoMil = h;
+        const H = [[5, 'focused'], [10, 'picando'], [15, 'surprised'], [20, 'panic']];
+        for (const [n, st] of H) {
+          if (prev < n && h >= n) { this.rivalEmocion(st, 2.2); break; }
+        }
+        // «a partir de ahí aleatoriamente va cambiando» — cada 5 toques
+        if (h > 20 && h % 5 === 0) {
+          const pool = ['loosing', 'surprised', 'panic'];
+          this.rivalEmocion(pool[(Math.random() * pool.length) | 0], 2.2);
+        }
+      }
+    } else {
+      this._rivalEmoMil = 0;   // rally nuevo = cuenta nueva
+      // «En estado de espera y al principio el rival se colocará en _idle»:
+      // la espera del saque manda IDLE — salvo derrota/victoria finales y
+      // salvo que quede una reacción viva (angry/laughing en su hold).
+      if (r.state === 'serve' && this._rivalEmoT <= 0 &&
+          this._rivalEmo !== 'idle' && this._rivalEmo !== 'defeated' &&
+          this._rivalEmo !== 'victory') {
+        this.rivalEmocion('idle', 0);
+      }
+    }
+    // CADENA de reacciones: el hold agotado aplica la emoción «siguiente»
+    // (punto del rival: laughing → victory; resto: queda en la suya hasta
+    // la espera del saque, que la devuelve a idle).
+    if (this._rivalEmoT > 0) {
+      this._rivalEmoT -= dt;
+      if (this._rivalEmoT <= 0 && this._rivalEmoNext) {
+        const nx = this._rivalEmoNext;
+        this._rivalEmoNext = '';
+        this.rivalEmocion(nx, 0);
+      }
+    }
+  }
+
   updateMega(dt) {
     if (this.disposed || !this.rules) return;
     const r = this.rules;
@@ -14876,9 +14955,9 @@ class PingPongGame {
         this._poderTickBlip(3);
       }
     }
-    // v3.6.37 · SÚPER IMÁN ACTIVO: ventana PROPIA de 10 s (r56: regla del
-    // dueño; la física vive en c05/applyIman; aquí solo el reloj y la
-    // seguridad de que sin cargas el campo se apaga YA).
+    // v3.6.49 (r57) · SÚPER IMÁN ACTIVO: ventana PROPIA de 10 s (regla
+    // del dueño; la GUÍA vive en el golpe, c05; aquí solo el reloj y la
+    // cuenta sonora — sin vigilantes de cargas desde la r57).
     if (on && this._imanT > 0) {
       this._imanT -= dt;
       if (this._imanT <= 0) {
@@ -14894,12 +14973,9 @@ class PingPongGame {
         this._poderTickBlip(3);
       }
     }
-    if (this._imanT > 0 &&
-        !this._megaMatriz.find((x) => x.id === 'iman')) {
-      this._imanT = 0;                   // sin cargas: campo fuera YA
-      this._imanFxVis(false);
-      try { if (this.ball) delete this.ball.ppIman; } catch (eI0) { /* */ }
-    }
+    // v3.6.49 (r57): el vigilante «sin cargas → campo fuera» se RETIRA —
+    // la guía de tiro ya no gasta cargas por asistencia: la ventana vive
+    // SUS 10 segundos (reloj arriba) y punto.
     // v3.6.43 · las flechas bola→pala del imán RETIRADAS (ronda 54: pala
     // limpia; la atracción la dibuja la propia trayectoria del gancho).
     // v3.6.42 · SÚPER PORTAL ACTIVO: ventana PROPIA de 8 s (los golpes se
@@ -14964,24 +15040,29 @@ class PingPongGame {
     // del jugador (lo lee collidePaddleSweep): ×2 al brush GENERADO, con
     // tope de seguridad en c05. Apagado → multiplicador 1 (pala honesta).
     const emul = (on && this._efectoT > 0) ? EFECTO_SPIN_MUL : 1;
+    // v3.6.49 (r57) · el SÚPER IMÁN REESCRITO viaja TAMBIÉN EN LA PALA
+    // (ppImanAim lo lee collidePaddleSweep en el golpe): guía de tiro que
+    // asegura mesa rival. Sin ventana → false (golpes 100 % normales).
+    const imanAim = !!(on && this._imanT > 0);
     if (this.controllerPaddles) {
       for (const ps of this.controllerPaddles) {
-        if (ps) ps.ppEfectoMul = emul;
+        if (ps) { ps.ppEfectoMul = emul; ps.ppImanAim = imanAim; }
       }
     }
-    // v3.6.37 · el estado del IMÁN viaja EN LA BOLA (lo lee stepPhysics →
-    // applyIman): solo en rally y con el campo activo; sin campo la bola
-    // no lo conoce (física idéntica — golden intacto).
-    // v3.6.48 (regla del dueño, r56: «menos en los saques»): la bola del
-    // SAQUE del rival (isServeBall: desde su golpe hasta el primer toque
-    // de rally) viene NORMAL — el campo no la toca. undefined = permitir
-    // (compat headless, patrón de la r55).
-    if (on && this._imanT > 0 && r.state === 'rally' && !r.isServeBall &&
-        this.ball) {
-      if (!this.ball.ppIman) this.ball.ppIman = { dv: 0 };
-    } else if (this.ball && this.ball.ppIman) {
-      delete this.ball.ppIman;
+    // v3.6.49 · LA LEY DE LOS 10 s (bug del dueño, r57): sin ventana viva
+    // NO EXISTE marca en ninguna bola — red de seguridad por frame (por
+    // si el fin natural llegara a saltarse en algún camino raro). Barato
+    // e idempotente; con ventana viva no entra.
+    if (!(on && this._efectoT > 0) && this.ball &&
+        (this.ball.ppEfecto || this.ball.ppEfectoTipo || this.ball.ppEfectoLado)) {
+      this.ball.ppEfecto = false;
+      this.ball.ppEfectoTipo = '';
+      this.ball.ppEfectoLado = 0;
     }
+    // v3.6.49 · el imán ya no arma campo por bola (r54-r56 retirados):
+    // la guía vive en la pala (ppImanAim arriba). Limpieza defensiva de
+    // la marca antigua por si algún módulo la dejara viva.
+    if (this.ball && this.ball.ppIman) delete this.ball.ppIman;
     // v3.6.36 · CICLO de la matriz con el joystick (⟷, cualquier mando;
     // en escritorio también ←/→ por el listener del constructor)
     if (on) this._megaCiclo(dt);
@@ -16772,24 +16853,11 @@ class PingPongGame {
     //      ley — el contador de golpes se RETIRA y la ventana vive entera
     //      (updateMega la cierra al agotarse).
 
-    // 4.95) v3.6.37 · SÚPER IMÁN — impacto ASISTIDO válido: la bola fue
-    //      empujada por el campo durante ESTA aproximación (ball.ppIman-
-    //      Tocada lo marca c05/applyIman) y golpeó la pala del jugador →
-    //      consume 1 carga (spec del dueño: «cada impacto asistido válido
-    //      consume una carga»; r56: sin tope de asistencias — el campo
-    //      vive sus 10 s o se apaga sin cargas). Un golpe SIN ayuda del
-    //      campo no consume nada.
-    if (this._imanT > 0) {
-      for (const e of this.events) {
-        if (e.type !== 'paddle' || e.who !== 'player') continue;
-        if (this.ball && this.ball.ppImanTocada) {
-          this.ball.ppImanTocada = false;
-          if (this.ball.ppIman) this.ball.ppIman.dv = 0;
-          this._imanImpacto();
-          break;
-        }
-      }
-    }
+    // 4.95) v3.6.49 (r57) · SÚPER IMÁN REESCRITO — el impacto asistido y
+    //      SU gasto de cargas (r51-r56) quedan RETIRADOS: la guía de tiro
+    //      vive en el GOLPE (c05, bloque r57; el evento llega con
+    //      imanAim: true) y el feedback (zap + háptica) lo pone el
+    //      procesado de eventos de abajo. La ventana vive SUS 10 s.
 
     // 5) Golpe de saque del jugador: validar regla ITTF RELAJADA (v2.18).
     //    Se eliminó la exigencia del punto muerto: cualquier contacto tras el
@@ -16895,6 +16963,7 @@ class PingPongGame {
     // v3.6.34 · MEGA PALA NORMATIVA: carga por rally 11+, efecto activo,
     // icono y restauraciones — barato y perezoso (nada vivo si no toca).
     this.updateMega(dt);
+    this._rivalEmoUpdate(dt);   // v3.6.49 (r57): NORMA DE EMOCIONES DEL RIVAL
     if (window.__PP_TRAIN) window.__PP_TRAIN.tick(dt);   // v3.0: cosmética global + entrenamiento
 
     // 7) Sincronizar visuales
@@ -17568,6 +17637,15 @@ class PingPongGame {
           // punto (arte + voz por estado). Con guard: una excepción aquí
           // nunca tumba el frame.
           if (this.champs) this.champs.onPoint(it);
+          // v3.6.49 (r57) · NORMA DE EMOCIONES — REACCIÓN AL PUNTO:
+          // rival pierde punto → _angry (+ queja del módulo); jugador
+          // falla → _laughing (+ risas burlonas) y luego _victory (gana
+          // el punto). El módulo traduce a SU arte y SUS sonidos.
+          if (this.champs && this.champs.active && it &&
+              (it.winner === 'ai' || it.winner === 'player')) {
+            if (it.winner === 'ai') this.rivalEmocion('laughing', 2.0, 'victory');
+            else this.rivalEmocion('angry', 2.0);
+          }
           break;
         }
         case 'retry-serve':
@@ -17587,6 +17665,13 @@ class PingPongGame {
           this.resetToss();
           this.aiToss = null;
           this.demoToss = null;
+          // v3.6.49 (r57) · NORMA DE EMOCIONES — ESPERA = _idle (la propia
+          // _rivalEmoUpdate lo repite cada frame de espera; aquí lo fija
+          // YA al entrar en saque salvo que haya una reacción viva).
+          if (this._rivalEmoT <= 0 && this._rivalEmo !== 'idle' &&
+              this._rivalEmo !== 'defeated' && this._rivalEmo !== 'victory') {
+            this.rivalEmocion('idle', 0);
+          }
           if (this.net.online) {
             // v2.19: la bola del saque la lleva quien saca (humano remoto o yo)
             this.net.owner = it.server === 'player' ? this.net.mySide() : this.net.oppSide();
@@ -17620,6 +17705,10 @@ class PingPongGame {
           // estado final del rival). Con guard: ningún hook del campeonato
           // puede tumbar el bucle (lección del ReferenceError de v2.39).
           if (this.champs) this.champs.onMatchOver(it.winner);
+          // v3.6.49 (r57) · NORMA DE EMOCIONES — FIN DEL PARTIDO: el rival
+          // que pierde el partido queda _defeated; si lo gana, _victory.
+          // Ambos PERSISTEN (la espera del saque no los toca).
+          this.rivalEmocion(it.winner === 'player' ? 'defeated' : 'victory', 0);
           // v3.6.29 · MEJOR DE 3: el cierre anuncia el ENFRENTAMIENTO (juegos)
           this.audio.announce(
             it.winner === 'player'
@@ -17716,6 +17805,15 @@ class PingPongGame {
             this.haptic(e.paddleIndex,
               Math.min(1, (arkOn ? 0.68 : 0.5) + e.speed / 9),
               arkOn ? 85 : 70);
+          }
+          // v3.6.49 (r57) · SÚPER IMÁN — el golpe fue GUIADO (c05 marca el
+          // evento con imanAim: true): zap «imán» ascendente + háptica
+          // extra — el jugador SIENTE que el poder corrigió su tiro.
+          if (e.imanAim) {
+            try { this.audio.playOsc(240, 560, 0.14, 'sine', 0.12, 0); } catch (eIM0) { /* */ }
+            if (e.paddleIndex !== undefined && e.paddleIndex >= 0) {
+              try { this.haptic(e.paddleIndex, 0.32, 55); } catch (eIM1) { /* */ }
+            }
           }
           break;
       }
@@ -17820,10 +17918,10 @@ const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)
 const EFECTO_SPIN_MIN = 25; // |spin| mínimo para el anillo de bote notorio
                             // (r56: la ventana YA NO cierra por golpes —
                             // este umbral es sólo FX, en processEvents)
-// v3.6.37 · SÚPER IMÁN (3.er poder; spec completa del dueño): ventana de
-// 10 s (r56) que FRENA la bola y la atrae al punto dulce (física en
-// c05/applyIman con los topes DIMS.iman*). CADA impacto asistido válido
-// consume 1 carga — el gatillo solo abre el campo.
+// v3.6.49 (r57) · SÚPER IMÁN (3.er poder; spec completa del dueño):
+// ventana de 10 s de GUÍA DE TIRO (el solver de la casa corrige cada
+// golpe hacia la mesa del rival, c05). El gatillo solo abre la ventana:
+// sin gasto de cargas por asistencia, sin campo por subpaso.
 const IMAN_DUR = 10;        // s de campo magnético por activación (r56:
                             // regla del dueño — «el efecto sólo dura
                             // 10 segundos»)

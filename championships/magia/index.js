@@ -4192,6 +4192,24 @@ class WizardController {
     if (this.inited && this._rivalOn) this.rival.setState(state);
   }
 
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño):
+   *  el núcleo reparte la emoción estándar y el Wizard la viste con SU
+   *  arte (convención <estado>.webp) y SU voz (WIZARD_SFX_KIND + voice).
+   *  Traducción local: la emoción «angry» vive aquí como «hungry» (arte
+   *  enfadado + gruñido). Hitos del rallye y reacciones de punto los
+   *  manda la NORMA del núcleo (r57 sustituye a las propias de onPoint). */
+  rivalEmocion(st) {
+    const DUR = {
+      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
+      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
+      victory: 2.4, defeated: 0,
+    };
+    const mapa = { angry: 'hungry' };   // el enfado del mago es «hungry»
+    const st2 = mapa[st] || st;
+    if (this.state === st2 && (DUR[st] || 0) === 0) return;
+    this.setState(st2, DUR[st] != null ? DUR[st] : 2.0);
+  }
+
   /* ========== v2.71 · SUPERPODERES DEL WIZARD (motor del CLOWN) =========== */
 
   /** ¿Toca lanzar superpoder? SOLO con la bola en juego y viniendo hacia el
@@ -4576,23 +4594,15 @@ class WizardController {
    *  CLOWN en La Locura (SÓLO en duelos; en la prueba el árbitro duerme). */
   onPoint(it) {
     if (!this.active || !this._rivalOn || !it || it.survival) return;
+    // v3.6.49 (r57): las REACCIONES DE ARTE del punto las manda la NORMA
+    // DE EMOCIONES del núcleo (rivalEmocion) — aquí solo quedan los
+    // contadores de racha.
     if (it.winner === 'player') {
       this.streakP++;
       this.streakAi = 0;
-      const hits = it.rallyHits || 0;
-      if (hits >= 6) {
-        // combo del jugador: el mago pierde los papeles
-        this.setState('hungry', 2.6);
-      } else if (hits >= 3 || this.streakP >= 2) {
-        this.setState('surprised', 1.7);
-      } else {
-        this.setState('surprised', 1.2);
-      }
     } else {
       this.streakAi++;
       this.streakP = 0;
-      if (this.streakAi >= 2) this.setState('crazy', 3.4);
-      else this.setState('laughing', 2.4);
     }
   }
 
@@ -5049,6 +5059,8 @@ export default {
   /** v2.70 · DUELOS contra el mago: ganchos activos (antes el árbitro
    *  dormía todo el campeonato). */
   onPoint(it) { if (CTRL) CTRL.onPoint(it); },
+  // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+  rivalEmocion(st, info) { if (CTRL) CTRL.rivalEmocion(st); },
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
   aiMul() {
     const g = GAME;

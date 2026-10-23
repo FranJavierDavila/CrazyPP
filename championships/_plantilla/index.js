@@ -159,6 +159,20 @@ class RivalVivo {
     if (dur) this.timer = dur;
   }
   estadoBase(nombre) { this.base = nombre; if (this.timer <= 0) this._set(nombre, 0); }
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño,
+   *  norma en TODOS los campeonatos): el núcleo reparte la emoción
+   *  estándar y el rival la viste con SU arte (convención <estado>.webp
+   *  + _set con fallbacks). Los nuevos campeonatos heredan la norma con
+   *  este punto de entrada único. */
+  rivalEmocion(st) {
+    const DUR = {
+      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
+      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
+      victory: 2.4, defeated: 4.0,
+    };
+    const MAPA = { victory: 'triunfante' };   // convención local del abanico
+    this._set(MAPA[st] || st, DUR[st] != null ? DUR[st] : 2.0);
+  }
   enDuelo(en) { this.estadoBase(en ? this.baseDuelo : 'idle'); }
   final(ganaJugador) { this._set(ganaJugador ? 'defeated' : 'triunfante', 4.0); }
   reaccion(winner, rallyHits, streakAi) {
@@ -1111,6 +1125,8 @@ function start() { if (CTRL) CTRL.startChamp(); }
 function leave() { if (CTRL) CTRL.leave(); }
 function update(dt) { if (CTRL) CTRL.update(dt); }
 function onPoint(it) { if (CTRL) CTRL.onPoint(it); }
+// v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+function rivalEmocion(st, info) { if (CTRL && CTRL.rival) CTRL.rival.rivalEmocion(st); }
 function onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); }
 function aiMul() { return CTRL ? CTRL.aiMul() : 1.0; }
 function serveTrigger(i) { if (CTRL) CTRL.serveTrigger(i); }
@@ -1145,6 +1161,7 @@ export default {
   resetRecords,
   update,
   onPoint,
+  rivalEmocion,
   onMatchOver,
   aiMul,
   serveTrigger,

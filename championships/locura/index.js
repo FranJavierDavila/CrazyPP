@@ -3816,7 +3816,30 @@ class ArcadeController {
     if (this.inited) this.rival.setState(state);
   }
 
-  /** Un punto acaba de puntuarse (hook de processIntents). */
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño):
+   *  el núcleo reparte la emoción estándar y el Clown la viste con SU
+   *  arte (convención <estado>.webp) y SU voz de personalidad. Traducción
+   *  local: la emoción «angry» vive aquí como estado «hungry» (arte
+   *  enfadado + gruñido — tabla RIVAL_SFX). Los hitos del rallye y las
+   *  reacciones de punto ya NO deciden aquí: manda la norma del núcleo
+   *  (r57 sustituye a las reacciones propias de onPoint). */
+  rivalEmocion(st) {
+    const DUR = {
+      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
+      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
+      victory: 2.4, defeated: 0,
+    };
+    const mapa = { angry: 'hungry' };   // el enfado del Clown es «hungry»
+    const st2 = mapa[st] || st;
+    // «derrotado»/final no se pisa a sí mismo; el resto con su hold
+    if (this.state === st2 && (DUR[st] || 0) === 0) return;
+    this.setState(st2, DUR[st] != null ? DUR[st] : 2.0);
+  }
+
+  /** Un punto acaba de puntuarse (hook de processIntents).
+   *  v3.6.49 (r57): las REACCIONES DE ARTE del punto las manda la NORMA
+   *  DE EMOCIONES del núcleo (rivalEmocion) — aquí solo quedan los
+   *  contadores de racha que alimentan al resto de la máquina. */
   onPoint(it) {
     if (!this.active || it.survival) return;
     const th = this.th;
@@ -3828,22 +3851,17 @@ class ArcadeController {
         // v3.6.34 · los rallyes largos SIGUEN poniendo al Clown hambriento,
         // pero la MEGA PALA ya no vive aquí: es NORMATIVA del núcleo y su
         // carga (rally de 11+ golpes) la pone el núcleo EN PLENO RALLYE.
-        this.setState('hungry', 2.6);
+        // v3.6.49 (r57): el ARTE de la reacción lo pone la norma del núcleo.
       } else if (hits >= th.surprisedRally || this.streakP >= 2) {
-        this.setState('surprised', 1.7);
+        // v3.6.49 (r57): idem — la norma del núcleo manda el arte.
       } else {
-        this.setState('surprised', 1.2);
+        // v3.6.49 (r57): idem — la norma del núcleo manda el arte.
       }
     } else {
       this.streakAi++;
       this.streakP = 0;
-      if (this.streakAi >= 2) {
-        // el Clown ENLOQUECE (arte + voz): el PODER ya no se lanza aquí —
-        // v2.35 lo dispara en pleno rallye para estorbar de verdad
-        this.setState('crazy', 3.4);
-      } else {
-        this.setState('laughing', 2.4);
-      }
+      // v3.6.49 (r57): la reacción crazy/laughing la manda la norma del
+      // núcleo (punto del rival = laughing → victory con SUS sonidos).
     }
   }
 
@@ -5549,6 +5567,8 @@ export default {
 
   update(dt) { if (CTRL) CTRL.update(dt); },
   onPoint(it) { if (CTRL) CTRL.onPoint(it); },
+  // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+  rivalEmocion(st, info) { if (CTRL) CTRL.rivalEmocion(st); },
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
 
   /** v2.44 (antes en el núcleo): nivel del CLOWN — Nv.2 ×1,22 · Nv.3 ×1,5.

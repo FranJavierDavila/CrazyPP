@@ -72,7 +72,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 50)
-        ('3.6.49-SDK6', 'versión servida: 3.6.49-SDK6 (ronda 50)'),
+        ('3.6.50-SDK6', 'versión servida: 3.6.50-SDK6 (ronda 50)'),
         # · TRÁNSITO EXPLÍCITO (presentación del dueño)
         ('this._portalSinkT = 0;            // hundimiento en el portal de entrada',
          'tránsito: fase de hundimiento declarada'),
@@ -244,7 +244,7 @@ async def main():
             await new Promise((r) => setTimeout(r, 100));
           }
           // drena la cola entera (una pieza por frame, como en el juego)
-          Math.random = () => 0.9;
+          Math.random = () => 0.65;
           for (let i = 0; i < 20; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }
           }

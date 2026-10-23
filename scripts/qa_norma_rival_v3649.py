@@ -50,8 +50,8 @@ MODS = {
 IMGS = [
     ('http://localhost:3000/assets/hall/izquierda.jpg', 511370,
      'HALL pared IZQUIERDA: izquierda.jpg nuevo del dueño (byte-exacto)'),
-    ('http://localhost:3000/assets/hall/suelo.jpg', 419364,
-     'HALL SUELO: suelo.jpg nuevo del dueño (byte-exacto)'),
+    ('http://localhost:3000/assets/hall/suelo.jpg', 390326,
+     'HALL SUELO: suelo.jpg versión r58 del dueño (byte-exacto)'),
     ('http://localhost:3000/assets/partido/suelo.jpg', 239705,
      'PARTIDO/ENTRENAMIENTO suelo: suelo_pista.jpg del dueño (byte-exacto)'),
 ]

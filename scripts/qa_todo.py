@@ -203,6 +203,8 @@ CAPAS = [
     # izquierda y suelo del Hall, suelo de pista para partido/entrenamiento).
     ('AR · norma de emociones del rival + imágenes r57 (v3649)',
      'qa_norma_rival_v3649.py'),
+    ('AS · súper clonación + voz del selector (v3650)',
+     'qa_clon_voz_v3650.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

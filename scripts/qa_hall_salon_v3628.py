@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""QA v3.6.28 · SALÓN DEL ARTISTA (capa W, en vivo con Playwright).
+"""QA v3.6.28→v3.6.50 · SALÓN DEL ARTISTA (capa W, en vivo con Playwright).
 
 El Hall adopta las DIMENSIONES de las salas de campeonato y se viste con
-el ARTE DEL ARTISTA mapeado cara a cara (ronda 36, FASE 30):
+el ARTE DEL ARTISTA mapeado cara a cara (ronda 36, FASE 30). Re-anclada
+en la r58 (v3.6.50): el TROFEO y su HAZ se RETIRARON (petición del dueño:
+«eliminar del escenario Hall la copa central y el haz de luz que cae
+sobre ella para dejar ese espacio libre»):
   1) arranque limpio SIN pageerrors
   2) enterHall() enciende el salón y exitHall() lo apaga (rig, roomGroup)
   3) DIMENSIONES DE SALA: suelo 6,10×7,90 m · paredes 2,85 m de alto
      (frontal/back 6,10 · laterales 7,90 — las canónicas de createRoom)
   4) LAS SEIS CARAS VISTEN ARTE: las 6 texturas assets/hall/*.jpg cargan
      (frente, fondo, izquierda, derecha, suelo, techo) con SRGB
-  5) MOBILIARIO VIVO: TROFEO con copa LatheGeometry + 2 asas + haz +
-     anillo, 7 bolas doradas flotantes y 3 luces propias
-  6) LAS SORPRESAS RESPIRAN: updateHallFx gira el trofeo y anima el
-     vaivén (dos muestras del rotation.y separadas 400 ms → delta > 0)
-  7) ESTADO DEL TROFEO: sin campeón → material plateado + placa de espera
+  5) MOBILIARIO VIVO: 7 bolas doradas flotantes y 2 luces propias
+  6) TROFEO FUERA: ni copa, ni haz, ni anillo, ni placa, ni peana — el
+     CENTRO de la estancia queda LIBRE (cero LatheGeometry en el salón)
+  7) LAS SORPRESAS RESPIRAN: updateHallFx anima el vaivén de las bolas
   8) AGUJAS del fichero servido: assets/hall/*.jpg presentes en el
      fuente, updateHallFx(this.hallGroup, spawn HALL.cz + 2.3, dims 3.05;
      los pintores de pared del museo FUERA del repintado (ud.signTex,
-     ud.neonTex, ud.vitrinas, ud.medalCvs ausentes)
+     ud.neonTex, ud.vitrinas, ud.medalCvs ausentes) y el trofeo FUERA
+     (trophyCup/LatheGeometry/trophySilver ausentes del ud y del fuente)
   9) los 6 JPG servidos por el servidor con 200 y peso real
 Capturas: download/qa_hall_salon_portada.png + qa_hall_salon_hall.png
 Salida: RESULTADO: N OK · M fallos (contrato qa_todo)"""
@@ -98,22 +101,27 @@ async def main():
             medalCvs: ud.medalCvs === undefined,
           };
           out.balls = ud.fx ? ud.fx.balls.length : 0;
-          out.trophy = !!(ud.fx && ud.fx.trophy && ud.fx.beam && ud.fx.halo);
-          out.cupLathe = !!(ud.trophyCup && ud.trophyCup.geometry &&
-                            ud.trophyCup.geometry.type === 'LatheGeometry');
-          out.handles = (ud.trophyHandles || []).length;
+          // v3.6.50 (r58): TROFEO RETIRADO — nada de copa/haz/anillo/placa
+          out.trofeoFuera = (!ud.fx || (!ud.fx.trophy && !ud.fx.beam && !ud.fx.halo))
+            && ud.trophyCup === undefined && ud.trophyHandles === undefined
+            && ud.trophySilver === undefined && ud.trophyGold === undefined
+            && ud.trophyCv === undefined && ud.trophyTex === undefined
+            && ud.trophyGroup === undefined;
+          // y NINGÚN mesh huérfano del trofeo en el grupo del hall (peana,
+          // cono del haz, toro del anillo, plano de la placa): se buscan
+          // geometrías ConeGeometry/Torus/Lathe colgadas del hallGroup
+          let residuos = 0;
+          G.hallGroup.traverse((o) => {
+            const gt = o.geometry && o.geometry.type;
+            if (gt === 'LatheGeometry') residuos++;
+          });
+          out.residuosLathe = residuos;
           out.lights = (ud.lights || []).length;
-          out.cupSilver = ud.trophyCup ? ud.trophyCup.material === ud.trophySilver : null;
           // redraw completo en vivo: no debe lanzar
           let redrawOk = true;
           try { G.drawHall(); } catch (e) { redrawOk = false; out.redrawErr = String(e); }
           out.redrawOk = redrawOk;
-          // las sorpresas respiran: dos muestras del giro del trofeo
-          const r0 = ud.fx.trophy.rotation.y;
-          await new Promise(r => setTimeout(r, 400));
-          const r1 = ud.fx.trophy.rotation.y;
-          out.trophySpin = +(r1 - r0).toFixed(4);
-          // las bolas flotantes navegan
+          // las sorpresas respiran: el vaivén de las 7 bolas
           const y0s = ud.fx.balls.map(b => b.position.y);
           await new Promise(r => setTimeout(r, 500));
           out.ballMoved = ud.fx.balls.some((b, i) =>
@@ -160,18 +168,14 @@ async def main():
         chk(all(r.values()),
             "pintores del museo retirados del ud (sin sign/neon/vitrinas/medallas)")
         chk(checks.get("balls") == 7, "7 bolas doradas flotantes")
-        chk(checks.get("trophy") and checks.get("cupLathe")
-            and checks.get("handles") == 2,
-            "trofeo: copa Lathe + 2 asas + haz + anillo")
-        chk(checks.get("lights") == 3, "3 luces propias del salón")
-        chk(checks.get("cupSilver") is True,
-            "sin campeón: trofeo PLATEADO esperando")
+        chk(checks.get("trofeoFuera") is True,
+            "TROFEO FUERA (r58): sin copa/haz/anillo/placa ni referencias en ud")
+        chk(checks.get("residuosLathe") == 0,
+            "cero LatheGeometry en el hall (espacio central libre)")
+        chk(checks.get("lights") == 2, "2 luces propias del salón (el foco del trofeo se fue con él)")
         chk(checks.get("redrawOk"),
             "drawHall() repinta sin excepciones "
             + str(checks.get("redrawErr") or ""))
-        spin = checks.get("trophySpin")
-        chk(isinstance(spin, (int, float)) and spin > 0,
-            "el trofeo GIRA (updateHallFx vivo, delta " + str(spin) + ")")
         chk(checks.get("ballMoved") is True,
             "las bolas flotantes navegan (vaivén vivo)")
 
@@ -189,7 +193,6 @@ async def main():
         ("assets/hall/derecha.jpg", "arte insignias derecho (aguja en fuente)"),
         ("assets/hall/suelo.jpg", "arte del suelo con emblema (aguja en fuente)"),
         ("assets/hall/techo.jpg", "arte del techo con círculo (aguja en fuente)"),
-        ("LatheGeometry", "copa del trofeo por tornearia (servido)"),
         ("updateHallFx(this.hallGroup", "gancho de las sorpresas en animate (servido)"),
         ("hx: 3.05", "HALL a ancho de sala 6,10 (servido)"),
         ("depth: 7.9", "HALL a fondo de sala 7,90 (servido)"),
@@ -197,8 +200,9 @@ async def main():
     ]:
         chk(needle in served, label)
     for viejo in ("ud.signTex", "ud.neonTex", "ud.vitrinas", "ud.medalCvs",
-                  "drawHallAchs", "drawHallCirc"):
-        chk(viejo not in served, "repintado antiguo " + viejo + " retirado")
+                  "drawHallAchs", "drawHallCirc", "LatheGeometry",
+                  "trophyGold", "trophySilver", "drawHallTrophyPlaque"):
+        chk(viejo not in served, "retirado del servido: " + viejo)
 
     # los 6 JPG vivos en el servidor con peso real
     for f in ("frente", "fondo", "izquierda", "derecha", "suelo", "techo"):

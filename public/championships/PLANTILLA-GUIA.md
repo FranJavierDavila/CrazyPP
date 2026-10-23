@@ -170,6 +170,19 @@ emoción estándar a SU abanico local (p. ej. el Clown viste `hungry` para
 `angry`) y pone SUS sonidos. Los campeonatos nuevos heredan la norma
 implementando el hook (ver `_plantilla/index.js`, método `rivalEmocion`).
 
+### 4.2 · BLANCOS del SÚPER CLONACIÓN (hook opcional `clonBlancos(out)`, r58)
+
+El 5.º poder de pala (núcleo, r58) crea 2 palas fantasma que CAZAN las
+molestias de visión del campeonato activo. Si el módulo define
+`clonBlancos(out)`, el núcleo lo llama cada frame con la ventana viva y el
+módulo rellena `out` con sus objetos molestos: `{ x, y, z, r, vivo, kill }`
+en el ESPACIO DE JUEGO (el mismo de `game.ball.pos` y `pad.pos`) — `vivo`
+false cuando el blanco ya no existe y `kill()` lo destruye con SU propio
+efecto (sonido/háptica del módulo, p. ej. `_popGlobo`). Los globos del
+Clown lo implementan; el confeti lo barre el propio núcleo
+(`createConfetti.kill`, c08). Regla: el hook es SOLO LECTURA del estado del
+módulo + `kill` — nunca escribe nada más.
+
 ---
 
 ## 5 · Validación y ciclo de vida

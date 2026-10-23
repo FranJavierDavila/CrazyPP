@@ -82,7 +82,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 51)
-        ('3.6.49-SDK6', 'versión servida: 3.6.49-SDK6 (ronda 52)'),
+        ('3.6.50-SDK6', 'versión servida: 3.6.50-SDK6 (ronda 52)'),
         # · 1) SÚPER EFECTO EXAGERADO
         ('const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)',
          'efecto: el brush generado sube a ×3 (antes ×2)'),
@@ -155,10 +155,10 @@ async def main():
     chk(game.count('(this.inAR && this.pstOn)') >= 5,
         f'passthrough: los usos de sala/hall filtran con (inAR && pstOn) '
         f'({game.count("(this.inAR && this.pstOn)")} usos)')
-    chk(game.count('this._poderTickBlip(2)') == 4 and
-        game.count('this._poderTickBlip(1)') == 4 and
-        game.count('this._poderTickBlip(3)') == 4,
-        'ticks: los CUATRO poderes comparten la cuenta 3·2·1 (12 llamadas)')
+    chk(game.count('this._poderTickBlip(2)') == 5 and
+        game.count('this._poderTickBlip(1)') == 5 and
+        game.count('this._poderTickBlip(3)') == 5,
+        'ticks: los CINCO poderes comparten la cuenta 3·2·1 (15 llamadas)')
 
     # ---------- 2 · MECÁNICA REAL (headless) ----------
     async with async_playwright() as p:
@@ -185,8 +185,8 @@ async def main():
           // · PRECALIENTE de 13 piezas (r54: fuera flechas/campo/estela)
           G.champs.activeId = 'locura';
           G.rules.startMatch('match');
-          out.precaliente13 = !!(G._megaPrewarmQ && G._megaPrewarmQ.length === 13);
-          Math.random = () => 0.6;                 // siembra IMÁN (tercer tercio)
+          out.precaliente13 = !!(G._megaPrewarmQ && G._megaPrewarmQ.length === 16);
+          Math.random = () => 0.5;                 // siembra IMÁN (tercer tercio)
           for (let i = 0; i < 20; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }
           }
@@ -237,7 +237,7 @@ async def main():
           //   se quede sin el poder
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errP0 = String(e); }
-          Math.random = () => 0.98;               // siembra PORTAL (último)
+          Math.random = () => 0.65;               // siembra PORTAL (4.º de 5)
           G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG2 = String(e); }
           out.sembradoPortal1 = !!(G._megaMatriz.find((x) => x.id === 'portal')) &&
@@ -327,7 +327,7 @@ async def main():
             if k.startswith('err'):
                 chk(not rt[k], f'sin error en runtime ({k}): {rt[k]}')
         esperados = [
-            ('precaliente13', 'precaliente: cola de 13 piezas (r54: sin flechas/campo/estela)'),
+            ('precaliente13', 'precaliente: cola de 16 piezas (r54: sin flechas/campo/estela)'),
             ('palaMetalicaMontada', 'imán (r54): _imanPalaOsc montada (pala metálica)'),
             ('sembradoIman', 'mecánica: imán sembrado'),
             ('campoAbre', 'mecánica: el gatillo abre la ventana del imán (8 s)'),

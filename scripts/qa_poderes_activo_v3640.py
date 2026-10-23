@@ -113,7 +113,7 @@ async def main():
         # FASE 41 intacta: partida nueva = pala limpia
         ('try { if (this.onMatchStart) this.onMatchStart(); } catch (e) { /* nunca rompe el árbitro */ }',
          'FASE 41: el hook de partida nueva sigue avisando'),
-        ('V3.6.49-SDK6', 'sello de versión servida'),
+        ('V3.6.50-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     chk(game.count("this._megaActivaId = null;") >= 2,
@@ -236,7 +236,7 @@ async def main():
           out.flechasVuelven = !!parF && parF.some((s) => s.visible);
 
           // · IMÁN: abre, REFRESCA sin gasto y expira a inventario
-          Math.random = () => 0.6;
+          Math.random = () => 0.5;
           G.rules.state = 'point'; G.updateMega(1 / 60);
           G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           let tI = null;

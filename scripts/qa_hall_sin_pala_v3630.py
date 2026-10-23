@@ -88,24 +88,24 @@ async def main():
             vis: vis(),
           };
           G.setPaddleHand(mano0);   // devolver la mano como estaba
-          // el museo sigue vivo: trofeo y bolas doradas
+          // el museo sigue vivo: bolas doradas (trofeo RETIRADO r58 —
+          // espacio central libre, petición del dueño)
           const ud = G.hallGroup && G.hallGroup.userData.hall;
           out.museo = ud ? {
-            cupLathe: !!(ud.trophyCup && ud.trophyCup.geometry &&
-                         ud.trophyCup.geometry.type === 'LatheGeometry'),
-            handles: (ud.trophyHandles || []).length,
-            cupSilver: ud.trophyCup ? ud.trophyCup.material === ud.trophySilver : null,
+            trofeoFuera: (!ud.fx || (!ud.fx.trophy && !ud.fx.beam && !ud.fx.halo))
+              && ud.trophyCup === undefined && ud.trophyHandles === undefined
+              && ud.trophySilver === undefined,
             balls: ud.fx ? ud.fx.balls.length : 0,
             lights: (ud.lights || []).length,
           } : null;
           let redrawOk = true;
           try { G.drawHall(); } catch (e) { redrawOk = false; out.redrawErr = String(e); }
           out.redrawOk = redrawOk;
-          // el trofeo respira (updateHallFx)
-          const r0 = ud && ud.fx && ud.fx.trophy ? ud.fx.trophy.rotation.y : 0;
+          // las bolas respiran (updateHallFx, r58: sin trofeo)
+          const y0s = ud && ud.fx ? ud.fx.balls.map(b => b.position.y) : [];
           await new Promise(r => setTimeout(r, 400));
-          const r1 = ud && ud.fx && ud.fx.trophy ? ud.fx.trophy.rotation.y : 0;
-          out.trophySpin = +(r1 - r0).toFixed(4);
+          out.ballMoved = ud && ud.fx ? ud.fx.balls.some((b, i) =>
+            Math.abs(b.position.y - y0s[i]) > 0.002) : false;
           await new Promise(r => setTimeout(r, 300));
           // SALIDA: todo vuelve a la cancha
           G.exitHall();
@@ -149,18 +149,15 @@ async def main():
             and t.get("hand") in (0, 1),
             "A/X en el hall NO resucita la pala (setPaddleHand guardado)")
         m = checks.get("museo") or {}
-        chk(m.get("cupLathe") and m.get("handles") == 2,
-            "el museo intacto: trofeo Lathe + 2 asas")
-        chk(m.get("cupSilver") is True,
-            "sin campeón: trofeo PLATEADO (el arte no sufre)")
-        chk(m.get("balls") == 7 and m.get("lights") == 3,
-            "7 bolas doradas + 3 luces (el salón respira)")
+        chk(m.get("trofeoFuera") is True,
+            "museo r58: TROFEO FUERA (copa/haz/anillo fuera, espacio libre)")
+        chk(m.get("balls") == 7 and m.get("lights") == 2,
+            "7 bolas doradas + 2 luces (el salón respira)")
         chk(checks.get("redrawOk"),
             "drawHall() repinta sin excepciones "
             + str(checks.get("redrawErr") or ""))
-        spin = checks.get("trophySpin")
-        chk(isinstance(spin, (int, float)) and spin > 0,
-            "el trofeo GIRA (updateHallFx vivo, delta " + str(spin) + ")")
+        chk(checks.get("ballMoved") is True,
+            "las bolas NAVEGAN (updateHallFx vivo, vaivén r58)")
         s = checks.get("salida") or {}
         sv = s.get("vis") or {}
         chk((not s.get("inHall")) and (not s.get("hallVisible"))

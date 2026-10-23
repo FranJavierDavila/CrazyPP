@@ -194,7 +194,7 @@ async def main():
             paso();
             out.efectoCierra = G._efectoT === 0;           // a los 10 s: normalidad
             // IMÁN: campo de 10 s que también vive entero
-            Math.random = () => 0.6;                  // siempre 'iman'
+            Math.random = () => 0.5;                  // siempre 'iman'
             G.rules.state = 'point'; paso();
             G.rules.state = 'rally'; G.rules.rallyHits = 20; paso();
             let tI = null;

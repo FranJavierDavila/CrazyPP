@@ -56,7 +56,7 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.49-SDK6', 'sello de versión servida (r57)'),
+        ('3.6.50-SDK6', 'sello de versión servida (r57)'),
         ('const PODERES_PALA', 'REGISTRO EXTENSIBLE de poderes'),
         ("{ id: 'mega', nombre: () => T('poder_mega'),", 'entrada MEGA del registro'),
         ("{ id: 'efecto', nombre: () => T('poder_efecto'),", 'entrada EFECTO del registro'),
@@ -141,7 +141,7 @@ async def main():
           try {
             G.champs.activeId = 'locura';
             G.rules.startMatch('match');
-            Math.random = () => 0.6;                  // siempre 'iman'
+            Math.random = () => 0.5;                  // siempre 'iman'
             G.rules.state = 'point'; paso();
             G.rules.state = 'rally'; G.rules.rallyHits = 20; paso();
             const nMatriz = G._megaMatriz.length;

@@ -286,101 +286,9 @@ export function drawHallQuote(cv, text) {
   x.shadowBlur = 0;
 }
 
-/* v3.6.27 · Placa del trofeo (512×128): grabado esperando al primer
- * campeón o celebrando el salón de campeones. */
-export function drawHallTrophyPlaque(cv, text, won) {
-  const x = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
-  x.clearRect(0, 0, W, H);
-  const g = x.createLinearGradient(0, 0, 0, H);
-  if (won) { g.addColorStop(0, '#e9b83c'); g.addColorStop(1, '#8a6420'); }
-  else { g.addColorStop(0, '#3a3f48'); g.addColorStop(1, '#1d2127'); }
-  x.fillStyle = g;
-  x.fillRect(4, 4, W - 8, H - 8);
-  x.strokeStyle = 'rgba(0,0,0,0.45)'; x.lineWidth = 3;
-  x.strokeRect(6, 6, W - 12, H - 12);
-  x.fillStyle = won ? '#2c1d06' : '#c9c2b2';
-  x.textAlign = 'center'; x.textBaseline = 'middle';
-  // hasta 2 líneas con envoltura de palabras (la placa SIEMPRE entera)
-  const words = String(text || '').split(' ');
-  const rows = [];
-  let cur = '';
-  for (const w of words) {
-    const test = cur ? cur + ' ' + w : w;
-    if (test.length > 20 && cur) { rows.push(cur); cur = w; }
-    else cur = test;
-  }
-  if (cur) rows.push(cur);
-  const fs = rows.length > 1 ? 34 : 40;
-  x.font = '800 ' + fs + 'px system-ui, sans-serif';
-  const y0 = rows.length > 1 ? H / 2 - 20 : H / 2 + 1;
-  rows.slice(0, 2).forEach((r, i) => x.fillText(r, W / 2, y0 + i * 40));
-}
-
-/* v3.6.27 · Suelo de parqué con medallón central (1024², un solo lienzo):
- * tablones de roble con veta y juntas, viñeta perimetral y en el centro
- * el EMBLEMA DE LA CASA: dos palas cruzadas y la bola, en oro. */
-export function drawHallParquet() {
-  const cv = hallCanvas(1024, 1024);
-  const x = cv.getContext('2d');
-  const W = cv.width;
-  const rows = 8, rh = W / rows;
-  for (let r = 0; r < rows; r++) {
-    const off = (r % 2) * 0.5;
-    const segs = 3;
-    for (let s = 0; s < segs; s++) {
-      const jitter = ((r * 7 + s * 13) % 5) - 2;
-      const base = 138 + jitter * 6;
-      x.fillStyle = 'rgb(' + base + ',' + Math.round(base * 0.7) + ',' + Math.round(base * 0.44) + ')';
-      const pw = W / segs;
-      x.fillRect(((s + off * 0.5) % segs) * pw - 1, r * rh, pw + 2, rh);
-    }
-    x.fillStyle = 'rgba(30,20,10,0.5)';
-    x.fillRect(0, r * rh, W, 2);
-    x.strokeStyle = 'rgba(60,40,20,0.12)'; x.lineWidth = 1;
-    for (let v = 0; v < 3; v++) {
-      x.beginPath();
-      const yv = r * rh + rh * (0.25 + v * 0.25);
-      x.moveTo(0, yv);
-      x.bezierCurveTo(W * 0.3, yv - 4, W * 0.7, yv + 4, W, yv);
-      x.stroke();
-    }
-  }
-  const vg = x.createRadialGradient(W / 2, W / 2, W * 0.3, W / 2, W / 2, W * 0.72);
-  vg.addColorStop(0, 'rgba(0,0,0,0)');
-  vg.addColorStop(1, 'rgba(20,12,6,0.42)');
-  x.fillStyle = vg;
-  x.fillRect(0, 0, W, W);
-  const cx = W / 2, cy = W / 2;
-  x.strokeStyle = 'rgba(201,147,47,0.85)'; x.lineWidth = 10;
-  x.beginPath(); x.arc(cx, cy, 218, 0, Math.PI * 2); x.stroke();
-  x.strokeStyle = 'rgba(201,147,47,0.4)'; x.lineWidth = 4;
-  x.beginPath(); x.arc(cx, cy, 244, 0, Math.PI * 2); x.stroke();
-  x.beginPath(); x.arc(cx, cy, 196, 0, Math.PI * 2); x.stroke();
-  x.fillStyle = 'rgba(24,16,8,0.32)';
-  x.beginPath(); x.arc(cx, cy, 196, 0, Math.PI * 2); x.fill();
-  const pala = (ang) => {
-    x.save();
-    x.translate(cx, cy); x.rotate(ang);
-    x.fillStyle = 'rgba(201,147,47,0.9)';
-    x.fillRect(-14, 40, 28, 128);
-    x.beginPath();
-    x.ellipse(0, -40, 88, 118, 0, 0, Math.PI * 2);
-    x.fillStyle = 'rgba(201,147,47,0.55)';
-    x.fill();
-    x.strokeStyle = 'rgba(255,210,87,0.95)'; x.lineWidth = 7;
-    x.stroke();
-    x.restore();
-  };
-  pala(-Math.PI / 5);
-  pala(Math.PI / 5);
-  x.beginPath(); x.arc(cx, cy - 16, 26, 0, Math.PI * 2);
-  x.fillStyle = 'rgba(255,236,190,0.96)';
-  x.fill();
-  x.strokeStyle = 'rgba(201,147,47,0.9)'; x.lineWidth = 5;
-  x.stroke();
-  return cv;
-}
+/* (v3.6.50 · r58: el pintor de la PLACA DEL TROFEO se retira con él —
+ *  petición del dueño: la copa y su haz salen del Hall y el espacio
+ *  central queda libre. La placa no tiene ya dónde colgarse.) */
 
 export function createHall() {
   const g = new THREE.Group();
@@ -419,15 +327,10 @@ export function createHall() {
     }, undefined, () => { /* sin arte (file://): plano con su color */ });
   };
 
-  /* ---- paleta del mobiliario 3D (trofeo, luces, bolas) ---- */
+  /* ---- paleta del mobiliario 3D (luces, bolas) ----
+   *  v3.6.50 (r58): goldMat/silverMat/marbleMat/brassMat RETIRADOS con el
+   *  trofeo — nada queda que los use. */
   const woodDark = new THREE.MeshStandardMaterial({ color: 0x3a2716, roughness: 0.9 });
-  const brassMat = new THREE.MeshStandardMaterial({
-    color: 0xc9932f, roughness: 0.45, metalness: 0.55 });
-  const goldMat = new THREE.MeshStandardMaterial({
-    color: 0xd9a441, roughness: 0.28, metalness: 0.85, emissive: 0x2a1c05, emissiveIntensity: 0.5 });
-  const silverMat = new THREE.MeshStandardMaterial({
-    color: 0xb9c2c9, roughness: 0.34, metalness: 0.8, emissive: 0x0a0d10, emissiveIntensity: 0.4 });
-  const marbleMat = new THREE.MeshStandardMaterial({ color: 0xd8d2c8, roughness: 0.4 });
 
   /* ---- SUELO: el arte trae el emblema elíptico de la casa al centro ---- */
   const floorMat = new THREE.MeshStandardMaterial({ color: 0x2e3238, roughness: 0.9 });
@@ -470,7 +373,8 @@ export function createHall() {
   /* (v3.6.28: zócalos, cornisa, artesonado y paneles RETIRADOS — el arte
    * del artista los pinta ya en las texturas de techo y paredes) */
 
-  /* ---- LUCES: dos lavados cálidos + foco del trofeo (3 en total) ---- */
+  /* ---- LUCES: dos lavados cálidos (v3.6.50: el foco del trofeo se
+   *  retira con él — 2 en total) ---- */
   const lampMat = new THREE.MeshStandardMaterial({
     color: 0xfff2cf, emissive: 0xffd9a0, emissiveIntensity: 1.7, roughness: 0.4 });
   const lights = [];
@@ -483,65 +387,13 @@ export function createHall() {
     g.add(pl);
     lights.push(pl);
   }
-  const plTrophy = new THREE.PointLight(0xffd9a0, 0.75, 7, 1.5);
-  plTrophy.position.set(0, 2.0, HALL.cz);
-  g.add(plTrophy);
-  lights.push(plTrophy);
-
-  /* ---- TROFEO: peana de mármol + COPA LATHE que rota, en el CENTRO de
-   * la estancia — nace DE PIE SOBRE EL EMBLEMA elíptico del suelo ---- */
-  const zT = HALL.cz;
-  const base1 = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.16, 24), marbleMat);
-  base1.position.set(0, 0.08, zT);
-  g.add(base1);
-  const base2 = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.14, 24), woodDark);
-  base2.position.set(0, 0.23, zT);
-  g.add(base2);
-  const trophy = new THREE.Group();
-  trophy.position.set(0, 0.3, zT);
-  // perfil de la copa (de abajo arriba: pie, tallo, cuerpo, borde)
-  const pts = [];
-  const prof = [
-    [0.0, 0.0], [0.09, 0.0], [0.1, 0.025], [0.045, 0.06],
-    [0.035, 0.14], [0.05, 0.2], [0.13, 0.28], [0.16, 0.38],
-    [0.15, 0.44], [0.155, 0.46], [0.14, 0.47],
-  ];
-  for (const [px2, py2] of prof) pts.push(new THREE.Vector2(px2, py2));
-  const cup = new THREE.Mesh(new THREE.LatheGeometry(pts, 28), goldMat);
-  trophy.add(cup);
-  for (const hs of [-1, 1]) {
-    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.018, 8, 18, Math.PI),
-      goldMat);
-    handle.position.set(hs * 0.15, 0.34, 0);
-    handle.rotation.z = hs * -Math.PI / 2;
-    trophy.add(handle);
-  }
-  const ballGold = new THREE.Mesh(new THREE.SphereGeometry(0.032, 14, 12), goldMat);
-  ballGold.position.set(0, 0.5, 0);
-  trophy.add(ballGold);
-  g.add(trophy);
-  // haz volumétrico FALSO (cono aditivo) desde el anillo hasta la copa
-  const beam = new THREE.Mesh(
-    new THREE.ConeGeometry(0.52, 1.55, 24, 1, true),
-    new THREE.MeshBasicMaterial({
-      color: 0xffe6b0, transparent: true, opacity: 0.055,
-      depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
-  beam.position.set(0, 0.3 + 0.25 + 1.55 / 2 - 0.02, zT);
-  g.add(beam);
-  // anillo dorado del techo sobre la copa (el arte pinta el círculo; esto
-  // es el anillo VIVO que respira con updateHallFx)
-  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.035, 10, 40),
-    new THREE.MeshStandardMaterial({
-      color: 0xc9932f, emissive: 0xc9932f, emissiveIntensity: 0.75, roughness: 0.4, metalness: 0.4 }));
-  halo.rotation.x = Math.PI / 2;
-  halo.position.set(0, HALL.h - 0.1, zT);
-  g.add(halo);
-  // placa del trofeo, ABRAZADA al frente de la peana de madera
-  const trophyCv = hallCanvas(512, 128);
-  const trophyPlaque = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.15),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(trophyCv), transparent: true }));
-  trophyPlaque.position.set(0, 0.24, zT + 0.3);
-  g.add(trophyPlaque);
+  /* (v3.6.50 · r58 — TROFEO RETIRADO, petición del dueño: «eliminar del
+   *  escenario Hall la copa central y el haz de luz que cae sobre ella
+   *  para dejar ese espacio libre». Fuera la peana de mármol, la COPA
+   *  LATHE, sus asas y bola, el HAZ volumétrico, el anillo dorado del
+   *  techo, la placa plateada/oro y su foco: el CENTRO de la estancia
+   *  queda LIBRE sobre el emblema del suelo. El arte de las seis caras
+   *  conserva la memoria del museo; las 7 bolas doradas siguen vivas.) */
 
   /* (v3.6.28: peana y planta RETIRADAS — el arte pinta sofás, plantas y
    * mesas en las cuatro paredes; nada 3D que las duplique) */
@@ -571,37 +423,27 @@ export function createHall() {
   }
 
   g.userData.hall = {
-    /* v3.6.28: las SEIS CARAS visten el arte del artista (texs llega async;
-     * texWant = contrato de las 6 claves). Del museo sobrevive lo VIVO:
-     * el trofeo con su haz y anillo, las 7 bolas y las 3 luces. */
+    /* v3.6.50 (r58): las SEIS CARAS visten el arte del artista (texs llega
+     * async; texWant = contrato de las 6 claves). Del museo sobrevive lo
+     * VIVO: las 7 bolas doradas y las 2 luces — el trofeo y su haz ya no
+     * existen (espacio central libre, petición del dueño). */
     texs, texWant: Object.keys(texPaths),
     floor, walls: [wallLeft, wallRight, wallFront, wallBack], ceil,
-    trophyCv,
-    trophyTex: trophyPlaque.material.map,
-    trophyGroup: trophy, trophyCup: cup, trophyHandles: trophy.children.filter((c2) => c2.geometry && c2.geometry.type === 'TorusGeometry'),
-    trophyGold: goldMat, trophySilver: silverMat,
     insigniaCache: {},   // (retirado v3.6.28: las paredes visten arte fijo)
     lights,
-    fx: { trophy, beam, halo, balls },
+    fx: { balls },
   };
   return g;
 }
 
-/* v3.6.27 · HALL OF FAME — las sorpresas del museo respiran: el trofeo
- * gira lentísimo bajo su haz, el haz respira, el anillo pulsa y las 7
- * bolas doradas navegan en vaivén. SÓLO se llama con el hall visible
- * (desde animate, si inHall): coste cero en la cancha. */
+/* v3.6.50 (r58) · las sorpresas del museo respiran: las 7 bolas doradas
+ * navegan en vaivén. El trofeo, su haz y su anillo se RETIRARON (espacio
+ * central libre). SÓLO se llama con el hall visible (desde animate, si
+ * inHall): coste cero en la cancha. */
 export function updateHallFx(g, dt, now) {
   const ud = g.userData && g.userData.hall;
   if (!ud || !ud.fx) return;
   const fx = ud.fx;
-  if (fx.trophy) fx.trophy.rotation.y = now * 0.42;
-  if (fx.beam && fx.beam.material) {
-    fx.beam.material.opacity = 0.048 + Math.sin(now * 1.7) * 0.018;
-  }
-  if (fx.halo && fx.halo.material && fx.halo.material.emissiveIntensity !== undefined) {
-    fx.halo.material.emissiveIntensity = 0.75 + Math.sin(now * 1.1) * 0.22;
-  }
   for (const b of fx.balls) {
     const p = b.userData.fx;
     b.position.y = p.y0 + Math.sin(now * p.s + p.ph) * p.a;
@@ -1131,6 +973,12 @@ export function createConfetti() {
   ];
   const topY = 2.45;
   const floorY = 0.85;
+  // v3.6.50 (r58) · CAZABLE por las palas CLON del SÚPER CLONACIÓN: las
+  // partículas muertas por kill(i) dejan de caer y de RENACER hasta que
+  // la ráfaga termina (reviven TODAS al apagarse — celebraciones limpias).
+  // Contador de muertos = revive sin barrer con cierres (cero allocs).
+  const dead = new Uint8Array(N);
+  let nMuertos = 0;
   // banda z: media mesa rival + TODA tu zona (el jugador está en z>0)
   const zMin = DIMS.tableCenterZ - 1.0;
   const zSpan = 3.2;   // hasta z≈+0,6: delante de tu cara, estorba el golpeo
@@ -1157,10 +1005,15 @@ export function createConfetti() {
 
   let t = 0;
   const update = (dt, active) => {
-    if (!active) { points.visible = false; return; }
+    if (!active) {
+      points.visible = false;
+      if (nMuertos) { for (let i = 0; i < N; i++) dead[i] = 0; nMuertos = 0; }
+      return;
+    }
     points.visible = true;
     t += dt;
     for (let i = 0; i < N; i++) {
+      if (dead[i]) continue;   // cazado por un clon: fuera hasta la próxima ráfaga
       pos[i * 3 + 1] -= fall[i] * dt;
       pos[i * 3] += Math.sin(t * 2.4 + phase[i]) * sway[i] * dt;
       pos[i * 3 + 2] += Math.cos(t * 1.8 + phase[i]) * sway[i] * dt * 0.6;
@@ -1169,7 +1022,13 @@ export function createConfetti() {
     geo.attributes.position.needsUpdate = true;
   };
 
-  return { points, update };
+  /* v3.6.50 · kill(i): el clon atrapó este confeto — muere sin renacer.
+   * pos/N expuestos (solo lectura) para el barrido de los clones. */
+  const kill = (i) => {
+    if (i >= 0 && i < N && !dead[i]) { dead[i] = 1; nMuertos++; }
+  };
+
+  return { points, update, kill, pos, N };
 }
 
 /* =====================================================================

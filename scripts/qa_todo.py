@@ -215,6 +215,26 @@ CAPAS = [
     # (banner del HUB, oferta de primera vez, AJUSTES) y B/Y de salida.
     ('AT · LA ACADEMIA tutorial interactivo (v3651)',
      'qa_tut_v3651.py'),
+    # AU (ronda 60 · v3.6.52): LOS TRES ARREGLOS del informe del dueño tras
+    # probar LA ACADEMIA en el Quest — (1) «el tutorial se queda bloqueado,
+    # se superpone con otras ventanas del menú y no es pulsable»: el menú
+    # NACÍA del clic y seguía abierto (delante del jugador, order 990 sobre
+    # el 985 del panel, misma altura de ojos) y toggleMenu duerme con calib —
+    # start() ahora lo cierra DIRECTO (3 puertas cubiertas) con salida B/Y
+    # siempre viva; (2) «ME HAS QUITADO DE TODOS LOS ESCENARIOS LOS
+    # TROQUELES»: no se borraron — el cerrojo champDecorHidden de las
+    # pruebas especiales podía quedar PECHO tras una salida no prevista
+    # (reproducido en vivo) → AUTOCURACIÓN en leaveAll (también en el return
+    # temprano) y los 5 campeonatos verifican SU decorado en vivo; (3) «la
+    # etapa 4 del orbe en Wizard… supera los 1000 y pico… como mucho la
+    # mitad… penalizando los FPS»: ORBE_COMPLEJO 1.419 → 515 (−63,7%, tope
+    # ≤710) con la MISMA envergadura (0,625 m), dianas +42%, cima 2,07 < HUD
+    # 2,28 y base en mesa — recuento REAL en la página sobre las constantes
+    # SERVIDAS. BONUS pinzado en la auditoría: el MAPA DEL TALLER de
+    # valle_neon llevaba detached desde SDK5 (add antes de existir el group
+    # perezoso) → build() antes de colgar; la batería vuelve a ir SIN
+    # errores JS.
+    ('AU · tres arreglos del dueño (v3652)', 'qa_r60_v3652.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen
@@ -227,11 +247,18 @@ CAPAS_PRODUCCION = [
 def main():
     rapido = '--rapido' in sys.argv
     produccion = '--produccion' in sys.argv
-    capas = CAPAS + (CAPAS_PRODUCCION if produccion else [])
+    # r60: --desde N --hasta M (1-indexados sobre CAPAS+PRODUCCION) para
+    # poder trocear la suite en turnos cortos sin recortar cobertura.
+    def _num(flag, defecto):
+        return int(sys.argv[sys.argv.index(flag) + 1]) if flag in sys.argv else defecto
+    desde, hasta = _num('--desde', 1), _num('--hasta', 10 ** 6)
+    capas = [(i, n, s) for i, (n, s) in
+             enumerate(CAPAS + (CAPAS_PRODUCCION if produccion else []), 1)
+             if desde <= i <= hasta]
     filas = []
     fallos_total = 0
     t_global = time.monotonic()
-    for nombre, script in capas:
+    for _idx, nombre, script in capas:
         if not script or not (SCR / script).exists():
             filas.append((nombre, 'AUSENTE', '-', script or '(no encontrado)'))
             fallos_total += 1

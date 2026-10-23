@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.51-SDK6, fase 53 · La academia: el tutorial que enseña a jugar; sello actualizado
-# por bump_version.py desde 3.6.50-SDK6; refresco post-estado() QA)
-39f6fab5254e2236cf9becc2022ae4340e9f3fe10568f53e69a88c321b044a73
+# SHA256 del game.html que produjo esta división (3.6.52-SDK6, fase 54 · Academia despejada, troqueles inmunes, orbe a dieta; sello actualizado
+# por re-golden_r60.py tras corregir el cierre del menú en c13)
+c5ef6887ce3c4868d4eae2cc59e5fb95ad528ec4aaf592f9ea6819c6085bea6e

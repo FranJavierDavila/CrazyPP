@@ -367,6 +367,17 @@ export class ChampLoader {
 
   /** SALIR del campeonato externo activo (se juega otro modo). */
   leaveAll() {
+    // r60 (petición del dueño): «ME HAS QUITADO DE TODOS LOS ESCENARIOS LOS
+    // TROQUELES» — no se borraron: las pruebas especiales (asedio/vagón de
+    // oeste, recortables heredados de orbital) alzan game.champDecorHidden
+    // para esconderlos y lo bajan al terminar; si la salida se cuela por
+    // cualquier camino no previsto (error engullido por un guard, B a mitad
+    // de prueba, red…), el cerrojo quedaba PECHO y los troqueles no volvían
+    // en NINGÚN escenario hasta recargar la página. AUTOCURACIÓN: al salir
+    // SIEMPRE se libera (también en el return temprano, porque el cerrojo
+    // es global); el módulo que quiera esconderlos lo volverá a hacer en su
+    // propio arranque (launch() corre DESPUÉS de leaveAll y antes de start).
+    try { this.game.champDecorHidden = false; } catch (e) { /* */ }
     if (!this.activeId) return;
     const m = this.mod;
     try { this.game.hideChampIntro(false); } catch (e0) { /* */ }

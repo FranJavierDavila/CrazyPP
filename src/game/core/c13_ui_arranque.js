@@ -3537,6 +3537,26 @@ window.__PP_CORE = {
     G.exitHall();
     G.enterCalib();                       // árbitro dormido, IA dormida
     if (G.calibPanel) G.calibPanel.group.visible = false;
+    // r60 (petición del dueño): «se está superponiendo con otras ventanas
+    // del menú y no es pulsable» — el menú NACE del clic que abre la
+    // academia y si sigue abierto (delante del jugador, renderOrder 990
+    // sobre el 985 del panel, misma altura de ojos) se come los rayos del
+    // gatillo y el paso 0 nunca arranca. NO vale closeMenu()/toggleMenu():
+    // toggleMenu duerme con `if (this.calib) return` y la academia ESTÁ en
+    // calib — se cierra DIRECTO replicando la rama de cierre. Cubre las 3
+    // puertas (banner del HUB, oferta de primera vez y AJUSTES). Salida
+    // SIEMPRE disponible dentro: B/Y = saltar (pollSkip) · JUGAR YA (paso 8).
+    try {
+      if (G.menuOpen) {
+        G.menuOpen = false;
+        G.menuGroup.visible = false;
+        for (const l of G.menuLines || []) l.visible = false;
+        for (const d of G.menuDots || []) d.visible = false;
+        G.menuHover = [-1, -1];
+        try { G.audio.setMusicWanted(false); } catch (eM1) { /* */ }
+        try { G.audio.setArcDuck(false); } catch (eM2) { /* */ }
+      }
+    } catch (eM0) { /* */ }
     G.trainV3 = null;
     G.trainV3Hub = false;
     G.tutV1 = true;                       // guardias r59 del núcleo

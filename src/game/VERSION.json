@@ -1,17 +1,17 @@
 {
-  "version": "3.6.51-SDK6",
-  "fase": 53,
-  "faseNombre": "La academia: el tutorial que enseña a jugar",
+  "version": "3.6.52-SDK6",
+  "fase": 54,
+  "faseNombre": "Academia despejada, troqueles inmunes, orbe a dieta",
   "sdk": "1.5.4",
   "fecha": "2026-10-23",
-  "hub": "v3651-sdk6",
+  "hub": "v3652-sdk6",
   "manifests": {
     "oeste": 56,
-    "magia": 32,
+    "magia": 33,
     "locura": 27,
     "estacion_orbital": 16,
-    "valle_neon": 4
+    "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "39f6fab5254e2236cf9becc2022ae4340e9f3fe10568f53e69a88c321b044a73"
+  "golden": "c5ef6887ce3c4868d4eae2cc59e5fb95ad528ec4aaf592f9ea6819c6085bea6e"
 }

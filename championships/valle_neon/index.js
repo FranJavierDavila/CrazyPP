@@ -528,7 +528,15 @@ class PlantillaCtrl {
     this.group.add(this.cartel);
 
     /* mapa del camino (canvas — sin arte externo) */
+    // r60 · BUG PINZADO al auditar los solapes de menú (directiva del dueño:
+    // «verificar que son manejables»): MapaTaller nace PEREZOSO (el group lo
+    // crea build(), que sólo llamaba show()) — aquí se colgaba mapa.group
+    // ANTES de existir: THREE rechazaba el add (console.error «Object3D.add:
+    // object not an instance… undefined») y el MAPA DEL TALLER llevaba sin
+    // verse en escena desde la migración SDK5. build() es idempotente:
+    // construirlo ANTES de colgarlo, show() sigue funcionando igual.
     this.mapa = new MapaTaller(this);
+    this.mapa.build();
     this.group.add(this.mapa.group);
 
     /* cartel del superpoder (dos fases) */

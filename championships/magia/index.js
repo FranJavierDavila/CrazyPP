@@ -364,19 +364,26 @@ const LEVEL = {
 };
 
 /* v2.70 · VARIANTE COMPLEJA del orbe (etapa 4 del camino): MISMO espacio en
- * el corredor pero ladrillos MÁS FINOS (0,088 m) y una capa exterior más
- * (radio 7) — OTRO orbe, no una copia: ~60% más de ladrillos que el orbe
- * NORMAL de la v2.69, SIN prórrogas, cadenas más exigentes y el bloque-reloj
- * más efímero. Encaja perfecto: cima ≈ 2,09 m (< HUD 2,28) y base ≈ 0,76 m
- * (apoyado en la mesa).
- * v2.71: radiusMid/radiusCore se FIJAN a sus valores históricos (4/2) para
- * que el cambio de dificultad del orbe NORMAL no altere la variante difícil
- * (mismo nº de ladrillos de siempre: ~1.419). */
+ * el corredor, ladrillos MÁS FINOS y una capa exterior más — OTRO orbe, no
+ * una copia. SIN prórrogas, cadenas más exigentes y el bloque-reloj más
+ * efímero.
+ * v2.71: radiusMid/radiusCore se FIJAN para que el cambio de dificultad del
+ * orbe NORMAL no altere la variante difícil.
+ * r60 (petición del dueño): «supera los 1000 y pico… debería tener como
+ * mucho la mitad, porque además está penalizando los FPS». El orbe COMPLEJO
+ * pasa de 1.419 ladrillos (0,088/7/4/2) a 515 (−63,7%) con la MISMA envergadura
+ * física (5×0,125 = 0,625 m de radio ≈ los 0,616 anteriores), dianas un 42%
+ * más gordas (0,125 vs 0,088 — mismo ladrillo que el orbe NORMAL), núcleo y
+ * medio conservados (2/3,5), cima ≈ 2,08 m (< HUD 2,28), base apoyada en la
+ * mesa (la fórmula del CENTRO deriva del cfg y no se toca) y −64% de
+ * instancias en escena: el alivio de FPS que pide el dueño. La dificultad se
+ * mantiene por lo que define a esta etapa: sin prórrogas, cadenas a 1,35 m/s
+ * y bloque-reloj de 3 s. */
 const ORBE_COMPLEJO = {
-  brickSize: 0.088,
-  radiusOuter: 7,
-  radiusMid: 4,             // v2.71: FIJADO (antes heredaba del orbe normal)
-  radiusCore: 2,            // v2.71: FIJADO (antes heredaba del orbe normal)
+  brickSize: 0.125,         // r60: 0,088→0,125 (dianas gordas, mitad de piezas)
+  radiusOuter: 5,           // r60: 7→5 (radio físico casi idéntico: 0,625 m)
+  radiusMid: 3.5,           // r60: 4→3,5 (medio proporcionado al radio nuevo)
+  radiusCore: 2,            // FIJADO v2.71 (núcleo intacto)
   maxExtensions: 0,        // la prueba difícil no da prórrogas
   minChainSpeed: 1.35,
   clockBlockLife: 3,

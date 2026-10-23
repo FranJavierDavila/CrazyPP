@@ -1,6 +1,6 @@
 {
   "id": "valle_neon",
-  "version": 4,
+  "version": 5,
   "contract": 1,
   "estado": "publicado",
   "title": {
@@ -154,5 +154,8 @@
     "2026-10-19 v3.6.2-SDK2 · FASE 4 de la modularización P0 · SDK DE CAMPEONATOS: el puente al núcleo pasa a getCore() de championships/sdk/champ_sdk.js v1.1.0 (una sola fuente para los 5 módulos). Sin SFX mp3 ni congelados propios: la música WAV en bucle conserva su motor propio hasta que el SDK estrene createMusic.",
     "2026-10-19 v3.6.3-SDK3 · FASE 5 de la modularización P0 · createMusic (SDK v1.2.0): la música WAV en bucle se migra al motor único del SDK con conducta idéntica — volumen fijo del manifest, fundido de entrada 1,2 s, gate UNA MELODÍA también en musicOn, sin sync de volumen y parada con fundido de 0,4 s (stop a 500 ms), como su motor v1 original.",
     "2026-10-19 v3.6.5-SDK5 · FASE 7 de la modularización P0 · CIERRE DEL SDK v1.x (champ_sdk.js v1.4.0): el standee de ZETA-7 pasa a createRival (motor «precarga»: swap de mapas + escala por aspecto) y el cartel de sala pasa a createCartel. FIX de la migración: el standee pedía «rival.webp / <estado>.webp» que nunca existieron (los assets reales son .png) y llevaba pintada la silueta gris de reserva desde la v1 — ahora carga el arte real (rival_kraken.png + estados .png)."
+  ],
+  "historial": [
+    "2026-10-24 v3.6.52-SDK6 · r60: el MAPA DEL TALLER vuelve a verse en escena — MapaTaller nace perezoso (su group lo crea build()) y PlantillaCtrl.build lo colgaba ANTES de existir (THREE rechazaba el add con «Object3D.add: object not an instance»): detached desde la migración SDK5. build() idempotente llamado antes de colgar; show() intacto."
   ]
 }

@@ -2977,3 +2977,662 @@ window.__PP_CORE = {
   },
 };
 
+/* =====================================================================
+ *  v3.6.51 (ronda 59) · LA ACADEMIA — TUTORIAL INTERACTIVO DEL JUEGO
+ *  =====================================================================
+ *  Petición del dueño: «la gente entra, hay tanto menú y opciones que no
+ *  saben ni cómo hacer para sacar». Respuesta: una academia guiada de
+ *  9 PASOS sobre la MESA REAL (física de verdad, árbitro dormido en calib,
+ *  IA dormida) con práctica en cada paso:
+ *    0 bienvenida · 1 TU MANDO (diagrama + gatillo) · 2 LA PALA (vaivén)
+ *    3 EL SAQUE (bola en mano libre + gatillo + cruzar la red)
+ *    4 EL INTERCAMBIO (el «profesor» devuelve suave: 2 devoluciones)
+ *    5 LOS BOTONES (A/X cambia la pala de mano de verdad)
+ *    6/7 LOS MODOS (los 6 + los 5 poderes) · 8 ¡YA SABES JUGAR! (jugar ya)
+ *  Puertas de entrada: banner dorado del HUB · oferta de PRIMERA VEZ
+ *  (pp_tut_asked, la escribe onSessionStart) · botón en AJUSTES.
+ *  Salida: B o Y en cualquier momento → HALL + menú (sin «done»).
+ *  ESTANQUEIDAD: no toca árbitro, IA ni marcador; el núcleo lo invoca vía
+ *  game.tutV1 (guardias r59) + window.__PP_TUT.tick/onTrigger/drawAsk.
+ *  ===================================================================== */
+(function () {
+  'use strict';
+  if (typeof window === 'undefined' || window.__PP_TUT) return;
+
+  const STEPS = 9;              // pasos del guion (0..8)
+  const SWAY_META = 0.55;       // segundos de vaivén firme (paso 2)
+  const DEVOL_META = 2;         // devoluciones para superar el paso 4
+
+  let G = null;                 // PingPongGame activo mientras dura la academia
+  let active = false;
+  let grp = null, cv = null, cc = null, tex = null, mesh = null;
+
+  let step = 0;
+  let sway = 0;                 // progreso del paso 2 (vaivén de la pala)
+  let hitCount = 0;             // devoluciones del paso 4
+  let aiReturned = false;       // el profesor ya devolvió ESTE vuelo
+  let farBounced = false;       // la bola ya botó en el campo lejano (paso 4)
+  let fase = 'espera_golpe';    // submáquina del paso 4
+  let deadT = 0;                // bola muerta acumulada (paso 4, refeed)
+  let flashAgain = 0;           // aviso «otra vez» del paso 3 (s restantes)
+  let lastHand = -1;            // paso 5: mano al entrar
+  const btn5Prev = [true, true]; // B/Y por mando (true = no saltar al entrar)
+  let repaintT = 0;
+  const _cero = (typeof THREE !== 'undefined')
+    ? new THREE.Vector3(0, 0, 0) : null;
+
+  const g = () => (typeof window !== 'undefined' ? window.__game : null);
+
+  /* ---------------- panel del tutorial (colgado del RIG) ------------- */
+  function buildPanel() {
+    if (grp || !G || !G.rig || typeof THREE === 'undefined') return;
+    cv = document.createElement('canvas');
+    cv.width = 1024; cv.height = 640;
+    cc = cv.getContext('2d');
+    tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.02, 0.6375),
+      new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, depthTest: false, depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    mesh.renderOrder = 985;
+    grp = new THREE.Group();
+    grp.add(mesh);
+    grp.position.set(0, 1.52, -0.86);   // delante del jugador, sobre la mesa
+    grp.rotation.x = 0.05;
+    grp.visible = false;
+    G.rig.add(grp);
+  }
+  function teardownPanel() {
+    try { if (grp && G && G.rig) G.rig.remove(grp); } catch (e) { /* */ }
+    grp = null; cv = null; cc = null; tex = null; mesh = null;
+  }
+
+  function rr(c, x, y, w, h, r) {
+    c.beginPath();
+    if (c.roundRect) { c.roundRect(x, y, w, h, r); return; }
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+  function line(c, txt, y, size, col, align, x) {
+    c.fillStyle = col || '#dfe7ee';
+    c.font = '600 ' + size + 'px system-ui, sans-serif';
+    c.textAlign = align || 'center';
+    c.textBaseline = 'middle';
+    c.fillText(txt, x || 512, y);
+  }
+  function pill(c, txt, y, opts) {
+    opts = opts || {};
+    const w = opts.w || 640, h = opts.h || 72;
+    const x = (1024 - w) / 2;
+    rr(c, x, y, w, h, 20);
+    c.fillStyle = opts.col || '#2f9e44';
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.4)';
+    c.lineWidth = 3;
+    c.stroke();
+    c.fillStyle = '#10131a';
+    c.font = '800 ' + (opts.size || 30) + 'px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(txt, 512, y + h / 2 + 1);
+  }
+
+  /* ---------- diagrama esquemático del mando (paso 1) ---------------- */
+  function drawController(c, cx, cy, s) {
+    c.save();
+    c.translate(cx, cy);
+    c.scale(s, s);
+    // anillo del mando
+    c.beginPath();
+    c.ellipse(0, -128, 104, 46, 0, 0, Math.PI * 2);
+    c.lineWidth = 15;
+    c.strokeStyle = '#5b6675';
+    c.stroke();
+    // cuerpo
+    rr(c, -66, -104, 132, 236, 54);
+    const bg = c.createLinearGradient(-66, 0, 66, 0);
+    bg.addColorStop(0, '#414b59');
+    bg.addColorStop(0.5, '#2c343f');
+    bg.addColorStop(1, '#222932');
+    c.fillStyle = bg;
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.3)';
+    c.lineWidth = 3;
+    c.stroke();
+    // stick
+    c.beginPath(); c.arc(0, -46, 27, 0, Math.PI * 2);
+    c.fillStyle = '#14181f'; c.fill();
+    c.strokeStyle = '#93a0af'; c.lineWidth = 5; c.stroke();
+    c.beginPath(); c.arc(0, -46, 9, 0, Math.PI * 2);
+    c.fillStyle = '#93a0af'; c.fill();
+    // botones A/X (izquierda) y B/Y (derecha)
+    const bts = [['X', -40, 16], ['Y', -40, 66], ['A', 40, 16], ['B', 40, 66]];
+    for (const [lb, bx, by] of bts) {
+      c.beginPath(); c.arc(bx, by, 17, 0, Math.PI * 2);
+      c.fillStyle = '#14181f'; c.fill();
+      c.strokeStyle = '#93a0af'; c.lineWidth = 3.5; c.stroke();
+      c.fillStyle = '#e7edf3';
+      c.font = '800 17px system-ui, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(lb, bx, by + 1);
+    }
+    // gatillo (abajo, hacia el jugador)
+    rr(c, -30, 138, 60, 66, 18);
+    c.fillStyle = '#e8b45a'; c.fill();
+    c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 2; c.stroke();
+    // etiquetas
+    c.font = '800 20px system-ui, sans-serif';
+    c.fillStyle = '#ffd257';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(T('tut_lab_trigger'), 0, 240);
+    c.fillStyle = '#cfd8e0';
+    c.fillText(T('tut_lab_stick'), 0, -92);
+    c.textAlign = 'right';
+    c.fillText(T('tut_lab_grip'), -84, 150);
+    c.textAlign = 'left';
+    c.fillText(T('tut_lab_btns'), 66, 110);
+    c.restore();
+  }
+
+  /* ---------------- pintura del panel por paso ----------------------- */
+  function paintHeader(c) {
+    const W = 1024;
+    rr(c, 16, 16, W - 32, 92, 20);
+    const gr = c.createLinearGradient(0, 16, 0, 108);
+    gr.addColorStop(0, '#1d5ad4');
+    gr.addColorStop(1, '#0c2e83');
+    c.fillStyle = gr;
+    c.fill();
+    c.strokeStyle = 'rgba(232,180,90,0.5)';
+    c.lineWidth = 2;
+    c.stroke();
+    c.fillStyle = '#ffe08a';
+    c.font = '900 36px system-ui, sans-serif';
+    c.textAlign = 'left';
+    c.textBaseline = 'middle';
+    c.fillText(T('tut_title'), 44, 56);
+    c.font = '700 21px system-ui, sans-serif';
+    c.fillStyle = '#cfd8e0';
+    c.textAlign = 'right';
+    c.fillText(T('tut_step', { n: step + 1, m: STEPS }), W - 44, 46);
+    for (let i = 0; i < STEPS; i++) {
+      const dx = W - 48 - (STEPS - 1 - i) * 26;
+      c.beginPath();
+      c.arc(dx, 84, i === step ? 8 : 5.5, 0, Math.PI * 2);
+      c.fillStyle = i < step ? '#7fb069' : (i === step ? '#ffd257' : 'rgba(255,255,255,0.25)');
+      c.fill();
+    }
+  }
+  function modeRow(c, y, col0, col1, ini, title, sub) {
+    rr(c, 64, y, 896, 72, 16);
+    const gr = c.createLinearGradient(64, y, 64, y + 72);
+    gr.addColorStop(0, col0);
+    gr.addColorStop(1, col1);
+    c.fillStyle = gr;
+    c.fill();
+    c.beginPath(); c.arc(122, y + 36, 24, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(0,0,0,0.32)'; c.fill();
+    c.fillStyle = '#ffffff';
+    c.font = '800 26px system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(ini, 122, y + 37);
+    c.textAlign = 'left';
+    c.font = '800 27px system-ui, sans-serif';
+    c.fillText(title, 164, y + 26);
+    c.font = '500 19px system-ui, sans-serif';
+    c.fillStyle = 'rgba(255,255,255,0.88)';
+    c.fillText(sub, 164, y + 53);
+  }
+  const PAINTERS = [
+    // 0 · BIENVENIDA
+    (c) => {
+      line(c, T('tut_s0_t'), 200, 46, '#ffd257');
+      line(c, T('tut_s0_l1'), 290, 27);
+      line(c, T('tut_s0_l2'), 336, 27);
+      pill(c, T('tut_s0_go'), 448, { col: '#e8b45a', size: 32 });
+    },
+    // 1 · TU MANDO (diagrama)
+    (c) => {
+      line(c, T('tut_s1_t'), 176, 40, '#ffd257');
+      drawController(c, 250, 400, 0.92);
+      line(c, T('tut_s1_l1'), 260, 22, '#dfe7ee', 'left', 470);
+      line(c, T('tut_s1_l2'), 330, 22, '#dfe7ee', 'left', 470);
+      line(c, T('tut_s1_l3'), 400, 22, '#dfe7ee', 'left', 470);
+      pill(c, T('tut_s1_task'), 480, { w: 560, h: 62, size: 26 });
+    },
+    // 2 · LA PALA (vaivén)
+    (c) => {
+      line(c, T('tut_s2_t'), 190, 44, '#ffd257');
+      line(c, T('tut_s2_l1'), 270, 27);
+      line(c, T('tut_s2_l2'), 320, 27);
+      const p = Math.min(1, sway / SWAY_META);
+      rr(c, 162, 400, 700, 44, 22);
+      c.fillStyle = 'rgba(255,255,255,0.1)'; c.fill();
+      if (p > 0.01) {
+        rr(c, 162, 400, Math.max(26, 700 * p), 44, 22);
+        c.fillStyle = '#7fb069'; c.fill();
+      }
+      c.fillStyle = '#9aa7b4';
+      c.font = '700 19px system-ui, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(Math.round(p * 100) + '%', 512, 424);
+      pill(c, T('tut_s2_task'), 500, { w: 640, h: 64, size: 26 });
+    },
+    // 3 · EL SAQUE
+    (c) => {
+      line(c, T('tut_s3_t'), 170, 44, '#ffd257');
+      line(c, T('tut_s3_l1'), 246, 25);
+      line(c, T('tut_s3_l2'), 294, 25);
+      line(c, T('tut_s3_l3'), 342, 25);
+      if (flashAgain > 0) pill(c, T('tut_s3_again'), 440, { col: '#f0873f', size: 27 });
+      else pill(c, T('tut_s3_task'), 440, { size: 30 });
+    },
+    // 4 · EL INTERCAMBIO (profesor)
+    (c) => {
+      line(c, T('tut_s4_t'), 170, 44, '#ffd257');
+      line(c, T('tut_s4_l1'), 244, 25);
+      line(c, T('tut_s4_l2'), 292, 25);
+      c.fillStyle = '#ffffff';
+      c.font = '900 84px system-ui, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(T('tut_s4_n', { n: Math.min(hitCount, DEVOL_META) }), 512, 412);
+      pill(c, T('tut_s4_task'), 500, { size: 28 });
+    },
+    // 5 · LOS BOTONES EN JUEGO
+    (c) => {
+      line(c, T('tut_s5_t'), 170, 42, '#ffd257');
+      line(c, T('tut_s5_l1'), 244, 25);
+      line(c, T('tut_s5_l2'), 292, 25);
+      line(c, T('tut_s5_l3'), 340, 25);
+      // teclas A y X dibujadas
+      for (const [lb, kx] of [['A', 452], ['X', 572]]) {
+        rr(c, kx - 40, 400, 80, 80, 18);
+        c.fillStyle = 'rgba(255,255,255,0.12)'; c.fill();
+        c.strokeStyle = '#e8b45a'; c.lineWidth = 4; c.stroke();
+        c.fillStyle = '#ffe08a';
+        c.font = '900 46px system-ui, sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(lb, kx, 442);
+      }
+      pill(c, T('tut_s5_task'), 520, { w: 600, h: 62, size: 26 });
+    },
+    // 6 · LOS MODOS · 1 DE 2
+    (c) => {
+      line(c, T('tut_s6_t'), 176, 40, '#ffd257');
+      modeRow(c, 226, '#2f9e44', '#1e7c33', 'P', T('hub_match'), T('tut_s6_m1'));
+      modeRow(c, 312, '#e8590c', '#b0420a', 'S', T('sec_surv'), T('tut_s6_m2'));
+      modeRow(c, 398, '#7048e8', '#4c2bb0', 'M', T('hub_multi'), T('tut_s6_m3'));
+      pill(c, T('tut_hint_next'), 512, { w: 520, h: 58, col: '#e8b45a', size: 24 });
+    },
+    // 7 · LOS MODOS · 2 DE 2 (+ PODERES)
+    (c) => {
+      line(c, T('tut_s7_t'), 168, 38, '#ffd257');
+      modeRow(c, 214, '#b8860b', '#7c5a08', 'C', T('sec_crazy'), T('tut_s7_m1'));
+      modeRow(c, 296, '#0ca678', '#087354', 'R', T('sec_rank'), T('tut_s7_m2'));
+      modeRow(c, 378, '#1c7ed6', '#145c9e', 'T', T('sec_train'), T('tut_s7_m3'));
+      rr(c, 64, 466, 896, 66, 14);
+      c.fillStyle = 'rgba(232,180,90,0.14)'; c.fill();
+      c.strokeStyle = 'rgba(232,180,90,0.45)'; c.lineWidth = 2; c.stroke();
+      line(c, T('tut_s7_p'), 499, 19, '#ffe08a');
+      pill(c, T('tut_hint_next'), 556, { w: 520, h: 54, col: '#e8b45a', size: 23 });
+    },
+    // 8 · ¡YA SABES JUGAR!
+    (c) => {
+      line(c, T('tut_s8_t'), 200, 56, '#ffd257');
+      line(c, T('tut_s8_l1'), 292, 27);
+      line(c, T('tut_s8_l2'), 340, 27);
+      pill(c, T('tut_s8_go'), 440, { w: 720, h: 92, col: '#7fb069', size: 38 });
+    },
+  ];
+  function paintStep() {
+    if (!cc) return;
+    const c = cc;
+    c.clearRect(0, 0, 1024, 640);
+    rr(c, 8, 8, 1008, 624, 30);
+    const bg = c.createLinearGradient(0, 0, 0, 640);
+    bg.addColorStop(0, 'rgba(13,19,34,0.97)');
+    bg.addColorStop(1, 'rgba(8,11,20,0.97)');
+    c.fillStyle = bg;
+    c.fill();
+    c.strokeStyle = 'rgba(232,180,90,0.75)';
+    c.lineWidth = 4;
+    c.stroke();
+    paintHeader(c);
+    try { PAINTERS[step](c); } catch (e) { /* decorativo */ }
+    line(c, T('tut_hint_skip'), 612, 19, '#78838f');
+    if (tex) tex.needsUpdate = true;
+  }
+
+  /* ---------------- guion: entrada y avance de pasos ----------------- */
+  function chime(subida) {
+    if (!G || !G.audio || !G.audio.playOsc) return;
+    try {
+      if (subida) G.audio.playOsc(660, 990, 0.09, 'triangle', 0.15, 0);
+      else G.audio.playOsc(520, 780, 0.12, 'triangle', 0.16, 0);
+    } catch (e) { /* nunca rompe */ }
+  }
+  function enterStep() {
+    if (!G) return;
+    switch (step) {
+      case 3:
+        // EL SAQUE: estado REAL del núcleo — la bola descansa en la mano
+        // libre (holdLock r59) y el gatillo lanza (tossFromHand asistido).
+        G.rules.state = 'serve';
+        G.rules.server = 'player';
+        G.resetToss();
+        G.rules.message = '';
+        break;
+      case 4:
+        // EL INTERCAMBIO: rally sin árbitro; el profesor devuelve suave.
+        G.rules.state = 'rally';
+        G.rules.message = '';
+        hitCount = 0; aiReturned = false; farBounced = false;
+        fase = (G.ball && G.ball.pos.z < DIMS.tableCenterZ) ? 'vuelo_lejos' : 'espera_golpe';
+        deadT = 0;
+        break;
+      case 5:
+        G.rules.state = 'point';
+        G.resetToss();
+        G.rules.message = '';
+        lastHand = G.paddleHand;
+        break;
+      default:
+        G.rules.state = 'point';
+        G.resetToss();
+        G.rules.message = '';
+        break;
+    }
+  }
+  function advance() {
+    if (!G || step >= STEPS - 1) return;
+    step++;
+    sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
+    deadT = 0; flashAgain = 0;
+    chime(true);
+    enterStep();
+    paintStep();
+    try { G.haptic(G.paddleHand, 0.45, 90); } catch (e) { /* */ }
+  }
+
+  /* ---------------- el PROFESOR del paso 4 (devolución suave) -------- */
+  function targetProfesor() {
+    return new THREE.Vector3(
+      (Math.random() * 2 - 1) * 0.38,
+      DIMS.tableTopY,
+      DIMS.tableCenterZ + DIMS.tableHalfLength * 0.5,
+    );
+  }
+
+  /* ---------------- ciclo del tutorial (tick del núcleo) ------------- */
+  function tick(dt) {
+    if (!active || !G) return;
+    try { _tick(dt); } catch (e) { /* nunca rompe el frame */ }
+  }
+  function _tick(dt) {
+    if (!G.renderer || !G.renderer.xr || !G.renderer.xr.isPresenting) return;
+    if (grp) grp.visible = true;
+    pollSkip();
+    repaintT -= dt;
+    switch (step) {
+      case 2: {
+        // vaivén firme de la pala (velocidad del simulador de la pala)
+        const pad = G.controllerPaddles ? G.controllerPaddles[G.paddleHand] : null;
+        const v = pad && pad.vel ? pad.vel.length() : 0;
+        if (v > 2.2) {
+          sway += dt;
+          if (repaintT <= 0) { paintStep(); repaintT = 0.09; }
+        }
+        if (sway >= SWAY_META) advance();
+        break;
+      }
+      case 3: {
+        // EL SAQUE: éxito = la bola cruza la red hacia el campo lejano
+        if (flashAgain > 0) {
+          flashAgain -= dt;
+          if (repaintT <= 0) { paintStep(); repaintT = 0.25; }
+        }
+        if (G.tossed) {
+          const b = G.ball;
+          const cruzada = b.pos.z < (DIMS.tableCenterZ - 0.06) && b.vel.z < -0.9;
+          const muerta = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
+            (Math.abs(b.vel.x) < 0.5 && Math.abs(b.vel.y) < 0.5 && Math.abs(b.vel.z) < 0.5 &&
+              b.pos.y < DIMS.tableTopY + 0.12) ||
+            b.pos.y < -0.4;
+          if (cruzada) { advance(); break; }
+          if (muerta && flashAgain <= 0) {
+            // la bola vuelve a la mano libre (holdLock del núcleo) y se avisa
+            G.resetToss();
+            flashAgain = 2.6;
+            paintStep();
+            try { G.audio.playOsc(330, 220, 0.12, 'sine', 0.12, 0); } catch (e) { /* */ }
+          }
+        }
+        break;
+      }
+      case 4: {
+        // EL INTERCAMBIO: el jugador devuelve 2 bolas del profesor
+        const b = G.ball;
+        if (G.rules.state !== 'rally') G.rules.state = 'rally';
+        if (G.tossed) G.resetToss();
+        const muerta = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
+          (Math.abs(b.vel.x) < 0.4 && Math.abs(b.vel.y) < 0.4 && Math.abs(b.vel.z) < 0.4 &&
+            b.pos.y < DIMS.tableTopY + 0.12);
+        if (muerta) {
+          deadT += dt;
+          if (deadT > 0.5) {
+            deadT = 0; farBounced = false; aiReturned = false;
+            fase = 'espera_golpe';
+            G.feedPracticeBall();   // el profesor sirve otra bola suave
+            try { G.audio.serve(); } catch (e) { /* */ }
+          }
+        } else deadT = 0;
+        if (fase === 'espera_golpe' && !muerta &&
+            b.pos.z < (DIMS.tableCenterZ - 0.06) && b.vel.z < -0.9) {
+          // golpe válido del jugador: la bola cruza hacia el campo lejano
+          hitCount++;
+          paintStep();
+          try { G.haptic(G.paddleHand, 0.4, 80); } catch (e) { /* */ }
+          if (hitCount >= DEVOL_META) { advance(); break; }
+          fase = 'vuelo_lejos';
+          farBounced = false;
+        }
+        if (fase === 'vuelo_lejos' && !aiReturned && !muerta &&
+            b.pos.z < (DIMS.tableCenterZ - 0.1)) {
+          // bote lejano detectado (vel.y pasa a subir cerca de la mesa)
+          if (!farBounced && b.vel.y > 0.35 && b.pos.y < DIMS.tableTopY + 0.5) {
+            farBounced = true;
+          }
+          // el profesor devuelve en la bajada, siempre que la bola esté viva
+          if (farBounced && b.vel.y < 1.1 && _cero) {
+            aiReturned = true;
+            try {
+              const v = computeShotVelocityReal(b.pos, targetProfesor(), 1.05, 5.4, _cero);
+              b.vel.copy(v);
+              b.spin.set(0, 0, 0);
+              G.audio.playOsc(300, 170, 0.07, 'square', 0.13, 0);
+              G.haptic(G.paddleHand, 0.3, 70);
+            } catch (e) {
+              // respaldo sin solver: devolución balística directa suave
+              b.vel.set((Math.random() * 2 - 1) * 0.4, 2.4, 3.1);
+              b.spin.set(0, 0, 0);
+            }
+            fase = 'espera_golpe';
+          }
+        }
+        break;
+      }
+      case 5: {
+        // A/X: cambiar la pala de mano DE VERDAD (el núcleo lo hace)
+        if (G.paddleHand !== lastHand) advance();
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  /* ---------------- gatillo del tutorial (onSelectStart) ------------- */
+  function onTrigger(i) {
+    if (!active || !G) return false;
+    if (G.menuOpen) return false;   // el menú manda (defensa: no vive en calib)
+    switch (step) {
+      case 0:
+      case 1:
+      case 6:
+      case 7:
+        advance();
+        break;
+      case 3:
+        if (!G.tossed) {
+          G.tossFromHand(G.ballHand, true);   // lanzamiento asistido del núcleo
+          G.rules.message = T('hint_hit');
+        }
+        break;
+      case 8:
+        stop({ aJugar: true, done: true });
+        break;
+      default:
+        break;   // pasos físicos (2/4/5): el gatillo no hace nada aquí
+    }
+    return true;   // SIEMPRE consumido: nada del núcleo se dispara en la academia
+  }
+
+  /* ---------------- B / Y = saltar (polling con borde) --------------- */
+  function pollSkip() {
+    if (!G.sources) return;
+    for (let h = 0; h < 2; h++) {
+      const gp = G.sources[h] && G.sources[h].gamepad;
+      const b5 = !!(gp && gp.buttons && gp.buttons[5] && gp.buttons[5].pressed);
+      if (b5 && !btn5Prev[h]) { stop({ done: false }); return; }
+      btn5Prev[h] = b5;
+    }
+  }
+
+  /* ---------------- arranque de la academia -------------------------- */
+  function start(gme) {
+    const gm = gme || g();
+    if (!gm || active) return;
+    if (gm.net && gm.net.online) {
+      gm.rules.message = T('tut_bad_online');
+      try { gm.closeMenu(); } catch (e) { /* */ }
+      return;
+    }
+    if (gm.champs && gm.champs.testActive) {
+      gm.rules.message = T('tut_bad_busy');
+      return;
+    }
+    G = gm;
+    try { if (G._instr) G.hideInstrucciones(true); } catch (e) { /* */ }
+    if (G.trainV3 || G.trainV3Hub) G.closeTrainingV3();   // estanqueidad
+    if (G.champs) { try { G.champs.leaveAll(); } catch (e) { /* */ } }
+    G.exitHall();
+    G.enterCalib();                       // árbitro dormido, IA dormida
+    if (G.calibPanel) G.calibPanel.group.visible = false;
+    G.trainV3 = null;
+    G.trainV3Hub = false;
+    G.tutV1 = true;                       // guardias r59 del núcleo
+    G.mode = 'match';
+    G.rules.bestOf = 3;
+    G.rules.startMatch('match');          // estado limpio del árbitro
+    G.resetToss();
+    G.aiToss = null;
+    G.demoToss = null;
+    G.rules.message = '';
+    step = 0; sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
+    deadT = 0; flashAgain = 0; fase = 'espera_golpe';
+    btn5Prev[0] = true; btn5Prev[1] = true;   // un B/Y recién soltado no salta
+    active = true;
+    buildPanel();
+    enterStep();
+    paintStep();
+    if (grp) grp.visible = true;
+    chime(false);
+    try { G.haptic(G.paddleHand, 0.5, 110); } catch (e) { /* */ }
+  }
+
+  /* ---------------- cierre (jugar ya · saltar · fin) ----------------- */
+  function stop(opts) {
+    if (!active || !G) return;
+    opts = opts || {};
+    const gm = G;
+    active = false;
+    G = null;
+    teardownPanel();
+    gm.tutV1 = null;
+    if (opts.done) {
+      try { localStorage.setItem('pp_tut_done', '1'); } catch (e) { /* */ }
+      try { gm.audio.announce(T('tut_done_msg'), true); } catch (e) { /* */ }
+      try { gm.confettiBurst = Math.max(gm.confettiBurst || 0, 6); } catch (e) { /* */ }
+    }
+    if (opts.aJugar) {
+      gm.exitCalib();        // restaura MODO PARTIDO limpio (startMatch dentro)
+      try { gm.closeMenu(); } catch (e) { /* */ }
+      try { gm.haptic(gm.paddleHand, 0.6, 140); } catch (e) { /* */ }
+    } else {
+      gm.menuPage = 'main';
+      const aCasa = gm.goHomeHall ? gm.goHomeHall() : false;
+      if (aCasa) {
+        if (!gm.menuOpen) gm.toggleMenu();
+        else { gm.anchorMenu(); gm.drawMenu(); }
+      } else {
+        gm.exitCalib();      // passthrough online: al menos fuera de calib
+        try { gm.closeMenu(); } catch (e) { /* */ }
+      }
+    }
+  }
+
+  /* ---------------- página «¿PRIMERA VEZ?» del menú ------------------ */
+  function drawAsk(gme, c, rects, btn, label) {
+    label(T('tutask_title'), 250, 56, '#e8b45a', 'center');
+    label(T('tutask_sub'), 320, 27, '#9aa7b4', 'center');
+    c.strokeStyle = 'rgba(232,180,90,0.35)';
+    c.lineWidth = 2;
+    c.beginPath(); c.moveTo(132, 372); c.lineTo(892, 372); c.stroke();
+    btn('tut:go', 132, 446, 760, 168, T('tutask_yes'), true, 'green', undefined, 44);
+    btn('tut:no', 132, 672, 760, 168, T('tutask_no'), false, undefined, undefined, 44);
+    label(T('tut_hint_skip'), 936, 22, '#5c6672', 'center');
+    gme.menuRects = rects;
+    gme._menuState = gme.rules.state;
+    if (gme.menuTex) gme.menuTex.needsUpdate = true;
+  }
+
+  /* ---------------- acciones de menú (banner / oferta / ajustes) ----- */
+  function menuAction(gme, arg) {
+    if (arg === 'go') start(gme);
+    else if (arg === 'no') {
+      gme.menuPage = 'main';
+      gme.drawMenu();
+      try { gme.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0); } catch (e) { /* */ }
+    }
+  }
+
+  /* ---------------- registro público del módulo ---------------------- */
+  window.__PP_TUT = {
+    version: 'r59-academia',
+    STEPS,
+    start, stop, tick, onTrigger, drawAsk, menuAction,
+    // v3.6.51 · introspección para QA (solo lectura, sin tocar estado)
+    estado() {
+      return {
+        activo: active,
+        paso: step,
+        total: STEPS,
+        sway, hitCount, fase,
+        tienePanel: !!grp,
+        panelVisible: !!(grp && grp.visible),
+      };
+    },
+  };
+})();
+
+
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_spin_pala_v3646 — CAPA AO · ronda 54 (V3.6.50-SDK6, FASE 48).
+"""qa_spin_pala_v3646 — CAPA AO · ronda 54 (V3.6.51-SDK6, FASE 48).
 
 La petición del dueño (literal): «El super poder de pala de efecto la
 estela está desfasada y como no consigo ver el efecto vamos a

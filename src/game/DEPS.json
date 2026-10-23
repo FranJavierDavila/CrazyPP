@@ -1,10 +1,10 @@
 {
   "fase": 2,
-  "generado": "2026-10-18T19:12:18.743Z",
-  "golden": "# SHA256 del game.html que produjo esta división (v3.6.0-SUP1, Task 89)",
+  "generado": "2026-10-23T17:12:43.798Z",
+  "golden": "# SHA256 del game.html que produjo esta división (3.6.50-SDK6, fase 52 · El clon doble y la voz que guía; sello actualizado",
   "ficheros": {
     "c00_pre_three.js": {
-      "lineas": 1846,
+      "lineas": 2185,
       "declara": 15,
       "exporta": [
         "PP_ICONS",
@@ -24,14 +24,14 @@
       "muta": {},
       "biblioteca": [],
       "globalesTop": [
-        "c×109",
-        "y×46",
-        "x×46",
-        "st×42",
-        "window×34",
-        "Math×31",
-        "e×15",
-        "document×13"
+        "c×137",
+        "st×63",
+        "y×60",
+        "x×60",
+        "window×35",
+        "Math×33",
+        "e×17",
+        "i×16"
       ]
     },
     "c01_modelos_3d.js": {
@@ -62,7 +62,7 @@
       ]
     },
     "c02_cfg_escena.js": {
-      "lineas": 250,
+      "lineas": 324,
       "declara": 13,
       "exporta": [
         "AI_PRESETS",
@@ -118,7 +118,7 @@
       ]
     },
     "c04_fisica_ccd.js": {
-      "lineas": 338,
+      "lineas": 351,
       "declara": 52,
       "exporta": [
         "CCD_TUNE",
@@ -186,8 +186,8 @@
       ]
     },
     "c05_colisiones_ia_golpeo.js": {
-      "lineas": 840,
-      "declara": 19,
+      "lineas": 997,
+      "declara": 21,
       "exporta": [
         "__ppServeTelemetry",
         "applyServeProgressiveAssist",
@@ -252,18 +252,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "pos×105",
-        "ball×60",
-        "vel×58",
-        "Math×49",
-        "pad×44",
+        "pos×106",
+        "ball×93",
+        "vel×66",
+        "Math×59",
+        "pad×54",
         "out×36",
-        "C×26",
+        "C×27",
         "from×26"
       ]
     },
     "c06_logros_stats_ia_rival.js": {
-      "lineas": 692,
+      "lineas": 811,
       "declara": 11,
       "exporta": [
         "ACHIEVEMENTS",
@@ -292,18 +292,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "Math×52",
-        "ball×27",
+        "Math×53",
+        "ball×48",
+        "intents×19",
         "sign×17",
         "THREE×17",
-        "intents×15",
         "ctx×13",
-        "out×11",
-        "cause×11"
+        "winner×12",
+        "out×11"
       ]
     },
     "c07_escena_sala.js": {
-      "lineas": 482,
+      "lineas": 483,
       "declara": 5,
       "exporta": [
         "createBall",
@@ -337,12 +337,10 @@
       ]
     },
     "c08_hall_hud.js": {
-      "lineas": 788,
-      "declara": 17,
+      "lineas": 1055,
+      "declara": 23,
       "exporta": [
         "HALL",
-        "HALL_SKIN_COLS",
-        "HALL_SKIN_IDS",
         "createBounceMarkers",
         "createCalibPanel",
         "createChampRoom",
@@ -350,10 +348,7 @@
         "createFanfareBanner",
         "createHall",
         "createScoreboard",
-        "drawHallAchs",
-        "drawHallCirc",
-        "drawHallDoor",
-        "drawHallSign"
+        "updateHallFx"
       ],
       "importa": {
         "c02_cfg_escena.js": [
@@ -369,18 +364,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "x×83",
-        "ctx×75",
-        "THREE×74",
-        "i×34",
-        "U×32",
-        "Math×28",
-        "g×26",
-        "d×25"
+        "x×188",
+        "ctx×85",
+        "THREE×58",
+        "W×57",
+        "i×53",
+        "H×45",
+        "d×38",
+        "Math×36"
       ]
     },
     "c09_red_netlink.js": {
-      "lineas": 726,
+      "lineas": 755,
       "declara": 1,
       "exporta": [
         "NetLink"
@@ -404,10 +399,10 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "g×56",
-        "r×50",
+        "r×72",
+        "g×57",
         "d×31",
-        "y×23",
+        "y×30",
         "e×21",
         "a×15",
         "t×14",
@@ -462,8 +457,8 @@
       ]
     },
     "c11_champloader.js": {
-      "lineas": 645,
-      "declara": 14,
+      "lineas": 763,
+      "declara": 15,
       "exporta": [
         "ChampLoader",
         "NORMAS_SKIN",
@@ -507,19 +502,19 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "m×84",
-        "e×56",
-        "id×32",
+        "m×96",
+        "e×65",
+        "id×38",
+        "g×30",
         "THREE×29",
-        "g×28",
-        "console×19",
+        "console×21",
         "cx×18",
         "rm×14"
       ]
     },
     "c12_pingponggame.js": {
-      "lineas": 5104,
-      "declara": 7,
+      "lineas": 8419,
+      "declara": 83,
       "exporta": [
         "PingPongGame",
         "arBtn",
@@ -572,8 +567,6 @@
         ],
         "c08_hall_hud.js": [
           "HALL",
-          "HALL_SKIN_COLS",
-          "HALL_SKIN_IDS",
           "createBounceMarkers",
           "createCalibPanel",
           "createChampRoom",
@@ -581,10 +574,7 @@
           "createFanfareBanner",
           "createHall",
           "createScoreboard",
-          "drawHallAchs",
-          "drawHallCirc",
-          "drawHallDoor",
-          "drawHallSign"
+          "updateHallFx"
         ],
         "c01_modelos_3d.js": [
           "makePaddleVisual"
@@ -659,18 +649,18 @@
         "RoomEnvironment ← three/addons/environments/RoomEnvironment.js"
       ],
       "globalesTop": [
-        "c×679",
-        "Math×131",
-        "THREE×115",
-        "e×115",
-        "S×108",
-        "y×102",
-        "i×98",
-        "undefined×96"
+        "c×691",
+        "Math×220",
+        "e×183",
+        "THREE×172",
+        "c2×144",
+        "i×130",
+        "S×116",
+        "undefined×107"
       ]
     },
     "c13_ui_arranque.js": {
-      "lineas": 2909,
+      "lineas": 3616,
       "declara": 4,
       "exporta": [
         "wrapText"
@@ -739,14 +729,14 @@
         "GLTFLoader ← three/addons/loaders/GLTFLoader.js"
       ],
       "globalesTop": [
-        "c×262",
-        "g×246",
-        "st×226",
-        "Math×118",
-        "S×116",
-        "pad×104",
-        "o×103",
-        "THREE×100"
+        "c×476",
+        "g×251",
+        "st×227",
+        "G×186",
+        "Math×134",
+        "S×121",
+        "THREE×111",
+        "pad×107"
       ]
     }
   },

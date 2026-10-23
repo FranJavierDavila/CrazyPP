@@ -476,6 +476,66 @@ const I18N_STRINGS = {
     ov_menu: '<b>MENÚ</b> En VR pulsa <b>B</b> (mando derecho): se abre un panel <b>sobre tu muñeca libre</b>. Apunta con <b>cualquier mando</b> (la pala también tiene láser) y elige con el <b>gatillo</b>: modo (Partido / Supervivencia), dificultad de la CPU, sala (Pabellón · Neón · Atardecer · Ártico), ambiente de torneo, estela de la bola, megáfono del marcador e idioma. Todo se aplica al instante y se recuerda entre sesiones.',
     ov_online: '<b>ONLINE</b> En el menú, pestaña <b>MULTIJUGADOR</b>: crea una sala, comparte el <b>código de 5 caracteres</b> y tu rival lo introduce en su menú. Partida P2P directa entre visores (ambos con la web abierta) e <b>incluso podréis hablaros</b>: acepta el permiso de micrófono.',
     ov_rules: '<b>REGLAS</b> Rozar la red en saque y pasar = <b>LET</b> (se repite) · volear antes del bote o dar doble golpe = falta · partido a 11 con ventaja de 2',
+    // v3.6.51 (r59) · LA ACADEMIA — tutorial interactivo (texto ES)
+    tut_hub: 'TUTORIAL',
+    tut_hub_sub: 'Aprende a jugar en 3 minutos · paso a paso y con práctica real',
+    tutask_title: '¿PRIMERA VEZ?',
+    tutask_sub: 'Te enseñamos a jugar: el mando, el saque y todos los modos',
+    tutask_yes: 'EMPEZAR TUTORIAL',
+    tutask_no: 'AHORA NO',
+    tut_title: 'LA ACADEMIA CRAZY',
+    tut_step: 'PASO {n} DE {m}',
+    tut_hint_next: 'GATILLO · continuar',
+    tut_hint_skip: 'B · saltar el tutorial',
+    tut_s0_t: 'BIENVENIDO A LA ACADEMIA',
+    tut_s0_l1: 'En 3 minutos sabrás sacar, golpear y elegir tu modo favorito.',
+    tut_s0_l2: 'Cada paso tiene una práctica real: hazla para continuar.',
+    tut_s0_go: 'GATILLO · empezar',
+    tut_s1_t: 'TU MANDO',
+    tut_s1_l1: 'GATILLO: lanzar la bola al sacar · elegir en los menús',
+    tut_s1_l2: 'GRIP (lateral): soltar la bola · A/X: cambiar la pala de mano',
+    tut_s1_l3: 'B: menú · Y: volver · STICK: oír el poder elegido en partido',
+    tut_s1_task: 'PRÁCTICA: pulsa el GATILLO',
+    tut_s2_t: 'LA PALA',
+    tut_s2_l1: 'La pala ya está en tu mano: es tu raqueta. Sin botones raros.',
+    tut_s2_l2: 'Golpea el aire con un movimiento firme para continuar.',
+    tut_s2_task: 'PRÁCTICA: mueve la pala con fuerza',
+    tut_s3_t: 'EL SAQUE',
+    tut_s3_l1: 'La bola descansa en tu MANO LIBRE (la que no lleva la pala).',
+    tut_s3_l2: 'Pulsa el GATILLO para lanzarla y golpéala con la pala',
+    tut_s3_l3: 'para que cruce la red (debe botar en los dos campos).',
+    tut_s3_task: 'PRÁCTICA: saca y cruza la red',
+    tut_s3_again: 'Otra vez: la bola vuelve a tu mano libre',
+    tut_s4_t: 'EL INTERCAMBIO',
+    tut_s4_l1: 'Tu profesor te devuelve la bola. Golpéala de nuevo',
+    tut_s4_l2: 'por encima de la red. Dos devoluciones y pasas.',
+    tut_s4_task: 'PRÁCTICA: devuelve 2 bolas',
+    tut_s4_n: 'Devoluciones: {n}/2',
+    tut_s5_t: 'LOS BOTONES EN JUEGO',
+    tut_s5_l1: 'A o X: cambia la pala de mano (¡pruébalo ahora!).',
+    tut_s5_l2: 'B: menú · STICK (en partido): oír el poder seleccionado.',
+    tut_s5_l3: 'Cada 20 golpes del rally te dan una carga de poder.',
+    tut_s5_task: 'PRÁCTICA: pulsa A o X',
+    tut_s6_t: 'LOS MODOS · 1 DE 2',
+    tut_s6_m1: 'PARTIDO · contra la CPU (3 niveles). Al mejor de 3 sets.',
+    tut_s6_m2: 'SUPERVIVENCIA · aguanta el máximo de rallyes seguidos.',
+    tut_s6_m3: 'MULTIJUGADOR · online con un código de 5 letras.',
+    tut_s7_t: 'LOS MODOS · 2 DE 2',
+    tut_s7_m1: 'CAMPEONATOS · 6 rivales con su historia. ¡Corona la OESTE!',
+    tut_s7_m2: 'RANKING MUNDIAL · compite con jugadores de todo el mundo.',
+    tut_s7_m3: 'ENTRENAR · PRO TRAINING: 5 áreas para pulir tu técnica.',
+    tut_s7_p: 'PODERES: Mega Pala · Efecto · Imán · Portal · Clonación — con la bola viva, el GATILLO de la mano libre suelta el que tengas cargado.',
+    tut_s8_t: '¡YA SABES JUGAR!',
+    tut_s8_l1: 'Eso es todo: saca, intercambia, gana cargas y suelta poderes.',
+    tut_s8_l2: 'GATILLO = jugar YA contra la CPU · B = volver al menú.',
+    tut_s8_go: 'GATILLO · JUGAR YA',
+    tut_done_msg: '¡Ya sabes jugar! Bienvenido a Crazy Ping Pong',
+    tut_bad_online: 'El tutorial no está disponible en multijugador',
+    tut_bad_busy: 'Termina primero la prueba activa para entrar a la Academia',
+    tut_lab_trigger: 'GATILLO',
+    tut_lab_stick: 'STICK',
+    tut_lab_grip: 'GRIP',
+    tut_lab_btns: 'A/X · B/Y',
     ov_spin: '<b>EFECTO</b> Barre la pala de abajo a arriba al golpear para dar lift; de arriba abajo para cortar',
     ov_train: '<b>ENTRENAR</b> En VR pulsa <b>Y</b> (en cualquier momento): máquina de bolas + panel para ajustar la pala con los sticks. Guarda tus agarres con nombre y cárgalos siempre.',
     ov_difficulty: 'DIFICULTAD',
@@ -945,6 +1005,66 @@ const I18N_STRINGS = {
     ov_menu: '<b>MENU</b> In VR press <b>B</b> (right controller): a panel opens <b>on your free wrist</b>. Aim with <b>either controller</b> (the paddle has a laser too) and pick with the <b>trigger</b>: mode (Match / Survival), CPU difficulty, room (Gym · Neon · Sunset · Arctic), tournament crowd, ball trail, scoreboard announcer and language. Everything applies instantly and is remembered between sessions.',
     ov_online: '<b>ONLINE</b> In the menu, <b>MULTIPLAYER</b> tab: create a room, share the <b>5-character code</b> and your rival types it in their menu. Direct P2P match between headsets (both with the web open) and <b>you can even talk</b>: accept the microphone permission.',
     ov_rules: '<b>RULES</b> Grazing the net on a serve and landing in = <b>LET</b> (replay) · volleying before the bounce or double-hitting = fault · first to 11, win by 2',
+    // v3.6.51 (r59) · LA ACADEMIA — interactive tutorial (EN text)
+    tut_hub: 'TUTORIAL',
+    tut_hub_sub: 'Learn to play in 3 minutes · step by step, with real practice',
+    tutask_title: 'FIRST TIME?',
+    tutask_sub: 'We teach you how to play: the controller, the serve and every mode',
+    tutask_yes: 'START TUTORIAL',
+    tutask_no: 'NOT NOW',
+    tut_title: 'CRAZY ACADEMY',
+    tut_step: 'STEP {n} OF {m}',
+    tut_hint_next: 'TRIGGER · continue',
+    tut_hint_skip: 'B · skip tutorial',
+    tut_s0_t: 'WELCOME TO THE ACADEMY',
+    tut_s0_l1: 'In 3 minutes you will serve, rally and pick your favorite mode.',
+    tut_s0_l2: 'Every step has a real exercise: do it to continue.',
+    tut_s0_go: 'TRIGGER · start',
+    tut_s1_t: 'YOUR CONTROLLER',
+    tut_s1_l1: 'TRIGGER: toss the ball on serves · pick things in menus',
+    tut_s1_l2: 'GRIP (side): release the ball · A/X: move the paddle to that hand',
+    tut_s1_l3: 'B: menu · Y: back · STICK: hear the selected power in a match',
+    tut_s1_task: 'PRACTICE: press the TRIGGER',
+    tut_s2_t: 'THE PADDLE',
+    tut_s2_l1: 'The paddle is already in your hand: it is your racket. No fiddly buttons.',
+    tut_s2_l2: 'Swing it firmly through the air to continue.',
+    tut_s2_task: 'PRACTICE: swing the paddle hard',
+    tut_s3_t: 'THE SERVE',
+    tut_s3_l1: 'The ball rests in your FREE HAND (the one without the paddle).',
+    tut_s3_l2: 'Press the TRIGGER to toss it and hit it with the paddle',
+    tut_s3_l3: 'so it crosses the net (it must bounce on both sides).',
+    tut_s3_task: 'PRACTICE: serve and cross the net',
+    tut_s3_again: 'Again: the ball returns to your free hand',
+    tut_s4_t: 'THE RALLY',
+    tut_s4_l1: 'Your coach returns the ball. Hit it back',
+    tut_s4_l2: 'over the net. Two returns and you pass.',
+    tut_s4_task: 'PRACTICE: return 2 balls',
+    tut_s4_n: 'Returns: {n}/2',
+    tut_s5_t: 'BUTTONS IN A MATCH',
+    tut_s5_l1: 'A or X: switch the paddle to that hand (try it now!).',
+    tut_s5_l2: 'B: menu · STICK (in a match): hear the selected power.',
+    tut_s5_l3: 'Every 20 rally hits grant you one power charge.',
+    tut_s5_task: 'PRACTICE: press A or X',
+    tut_s6_t: 'THE MODES · 1 OF 2',
+    tut_s6_m1: 'MATCH · against the CPU (3 levels). Best of 3 sets.',
+    tut_s6_m2: 'SURVIVAL · survive as many consecutive rallies as you can.',
+    tut_s6_m3: 'MULTIPLAYER · online with a 5-letter code.',
+    tut_s7_t: 'THE MODES · 2 OF 2',
+    tut_s7_m1: 'CHAMPIONSHIPS · 6 rivals with their own story. Crown the WEST!',
+    tut_s7_m2: 'WORLD RANKING · compete with players from everywhere.',
+    tut_s7_m3: 'TRAINING · PRO TRAINING: 5 areas to polish your technique.',
+    tut_s7_p: 'POWERS: Mega Paddle · Spin · Magnet · Portal · Clone — with the ball alive, the free-hand TRIGGER releases the one you have charged.',
+    tut_s8_t: 'YOU KNOW HOW TO PLAY!',
+    tut_s8_l1: 'That is it: serve, rally, earn charges and release powers.',
+    tut_s8_l2: 'TRIGGER = play NOW against the CPU · B = back to the menu.',
+    tut_s8_go: 'TRIGGER · PLAY NOW',
+    tut_done_msg: 'You know how to play! Welcome to Crazy Ping Pong',
+    tut_bad_online: 'The tutorial is not available in multiplayer',
+    tut_bad_busy: 'Finish the active trial first to enter the Academy',
+    tut_lab_trigger: 'TRIGGER',
+    tut_lab_stick: 'STICK',
+    tut_lab_grip: 'GRIP',
+    tut_lab_btns: 'A/X · B/Y',
     ov_spin: '<b>SPIN</b> Brush the paddle bottom-up at impact for topspin; top-down for backspin',
     ov_train: '<b>TRAIN</b> In VR press <b>Y</b> (any time): ball machine + panel to fine-tune the paddle with the sticks. Save your grips with a name and load them any time.',
     ov_difficulty: 'DIFFICULTY',
@@ -1291,6 +1411,25 @@ export const PP_ICONS = {
       c.lineTo(x + Math.cos(a2) * 4.5, y - 24 + Math.sin(a2) * 4.5);
     }
     c.closePath(); c.fill();
+  },
+  tut(c, x, y) {            // v3.6.51 (r59) · birrete (LA ACADEMIA)
+    c.save();
+    c.fillStyle = '#ffe08a';
+    c.beginPath();           // palco del birrete (rombo)
+    c.moveTo(x, y - 16); c.lineTo(x + 30, y - 4);
+    c.lineTo(x, y + 8); c.lineTo(x - 30, y - 4);
+    c.closePath(); c.fill();
+    c.beginPath();           // base (mitad inferior)
+    c.moveTo(x - 18, y + 1); c.lineTo(x - 18, y + 13);
+    c.quadraticCurveTo(x, y + 22, x + 18, y + 13);
+    c.lineTo(x + 18, y + 1); c.quadraticCurveTo(x, y + 9, x - 18, y + 1);
+    c.closePath(); c.fill();
+    c.strokeStyle = '#ffe08a'; c.lineWidth = 4; c.lineCap = 'round';
+    c.beginPath();           // borla
+    c.moveTo(x + 28, y - 2); c.lineTo(x + 28, y + 16);
+    c.stroke();
+    c.beginPath(); c.arc(x + 28, y + 20, 4.5, 0, Math.PI * 2); c.fill();
+    c.restore();
   },
 };
 
@@ -1660,7 +1799,7 @@ export const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.50-SDK6';
+  const VERSION = '3.6.51-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar

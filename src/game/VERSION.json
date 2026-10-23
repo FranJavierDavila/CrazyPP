@@ -1,17 +1,17 @@
 {
- "version": "3.6.50-SDK6",
- "fase": 52,
- "faseNombre": "El clon doble y la voz que guía",
- "sdk": "1.5.4",
- "fecha": "2026-10-23",
- "hub": "v3650-sdk6",
- "manifests": {
-  "oeste": 56,
-  "magia": 32,
-  "locura": 27,
-  "estacion_orbital": 16,
-  "valle_neon": 4
- },
- "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
- "golden": "7d316b146109a2437e69c87f61b78665d26f6447cdb721c4dec721e2f8afabb4"
+  "version": "3.6.51-SDK6",
+  "fase": 53,
+  "faseNombre": "La academia: el tutorial que enseña a jugar",
+  "sdk": "1.5.4",
+  "fecha": "2026-10-23",
+  "hub": "v3651-sdk6",
+  "manifests": {
+    "oeste": 56,
+    "magia": 32,
+    "locura": 27,
+    "estacion_orbital": 16,
+    "valle_neon": 4
+  },
+  "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
+  "golden": "39f6fab5254e2236cf9becc2022ae4340e9f3fe10568f53e69a88c321b044a73"
 }

@@ -820,6 +820,9 @@ export class PingPongGame {
 
   updateCalibration(dt) {
     if (this.trainV3) return;   // v3.0: PRO TRAINING lleva su propia rutina (máquina/jueces)
+    // v3.6.51 (r59) · LA ACADEMIA: el tutorial lleva su propia bola y su
+    // propio guion — la máquina de práctica del ajuste NO puede alimentarla.
+    if (this.tutV1) return;
     const Li = this.handIndex('left');
     const Ri = this.handIndex('right');
     const L = this.stickAxis(Li);
@@ -1624,6 +1627,15 @@ export class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // v3.6.51 (r59) · LA ACADEMIA: página de la OFERTA de primera vez
+    // (el menú nace aquí si el jugador nunca ha hecho el tutorial).
+    if (this.menuPage === 'tutask' && window.__PP_TUT) {
+      window.__PP_TUT.drawAsk(this, c, rects, this._menuBtn, this._menuLabel);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     // v3.0 · PRO TRAINING: páginas del hub de entrenamiento
     if (this.menuPage === 'train' && window.__PP_TRAIN) {
       window.__PP_TRAIN.drawHub(this, c, rects, this._menuBtn, this._menuLabel);
@@ -1762,7 +1774,13 @@ export class PingPongGame {
 
     const CW = 456, CH = 176, GX = 32, GY = 18;
     const X0 = 40, X1 = X0 + CW + GX;
-    let y = 240;
+    // v3.6.51 (r59) · LA ACADEMIA: BANNER del tutorial ENCIMA de la parrilla
+    // de modos (petición del dueño: «con tanto menú y opciones no saben ni
+    // cómo hacer para sacar»). Dorado, ancho completo y con icono propio —
+    // lo primero que se ve, tanto para novatos como para repetirlo.
+    this._modeCard(rects, 'tut:go', 40, 240, 944, 96, T('tut_hub'),
+      T('tut_hub_sub'), '#c9a227', '#8a6d14', PP_ICONS.tut, true);
+    let y = 240 + 96 + GY;
     // fila 1 · PARTIDO — ENTRENAR
     this._modeCard(rects, 'start', X0, y, CW, CH, T('hub_match'),
       over ? T('btn_rematch') : T('hub_vs', { v: diffName }),
@@ -2063,6 +2081,9 @@ export class PingPongGame {
     const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
     btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }), !!pstOn, undefined, !!pstOn, 23);
     y += 68;
+    // v3.6.51 (r59) · LA ACADEMIA: repetir el tutorial desde AJUSTES
+    btn('tut:go', 56, y, 912, 56, T('tut_hub') + ' · ' + T('tutask_yes'), false, undefined, undefined, 23);
+    y += 64;
     // apoyo Ko-fi (v2.50)
     btn('kofi', 56, y, 912, 56, T('btn_kofi'), false, 'green', undefined, 23);
     y += 68;
@@ -2321,6 +2342,11 @@ export class PingPongGame {
         // escena actual, sin tocar modo, saque ni nada de lo activo.
         this.menuPage = 'main';
         this.closeMenu();
+        break;
+      case 'tut':
+        // v3.6.51 (r59) · LA ACADEMIA: el tutorial interactivo arranca desde
+        // el banner del HUB, de la oferta de primera vez o de AJUSTES.
+        if (window.__PP_TUT) window.__PP_TUT.menuAction(this, arg);
         break;
       case 'start':
         // ARRANQUE RÁPIDO: partido contra la CPU (o revancha online)
@@ -2760,12 +2786,28 @@ export class PingPongGame {
     this.mode = this.pendingMode;
     this.survivalRallies = 0;
     this.closeTrainingV3();   // v3.0.3 · estanqueidad al entrar en VR
+    // v3.6.51 (r59) · LA ACADEMIA: si la sesión anterior murió en pleno
+    // tutorial, nace RECOGIDO — el guion nunca sobrevive a una sesión VR.
+    if (this.tutV1 && window.__PP_TUT) {
+      try { window.__PP_TUT.stop({}); } catch (eTut0) { /* nunca rompe */ }
+      this.tutV1 = null;
+    }
     this.rules.startMatch(this.mode);
     this.applyAISkill();
     // v2.28: el MENÚ PRINCIPAL recibe al jugador — gran panel flotante
     // delante con JUGAR PARTIDO ya desplegado: un gatillo y estás jugando.
     // El saque de la CPU queda congelado mientras el menú esté abierto.
-    this.menuPage = 'main';
+    // v3.6.51 (r59) · PRIMERA VEZ: si el jugador NUNCA ha hecho el tutorial
+    // (pp_tut_done) ni ha respondido a la oferta (pp_tut_asked), el menú
+    // nace en «¿PRIMERA VEZ? — EMPEZAR TUTORIAL». Una sola vez; después el
+    // HUB normal con su banner dorado siempre visible.
+    let _tutFirst = false;
+    try {
+      _tutFirst = !localStorage.getItem('pp_tut_done') &&
+                  !localStorage.getItem('pp_tut_asked');
+      if (_tutFirst) localStorage.setItem('pp_tut_asked', '1');
+    } catch (eTut) { /* almacenamiento ausente: oferta omitida */ }
+    this.menuPage = _tutFirst ? 'tutask' : 'main';
     this.menuSec = 'match';
     this.menuOpen = true;
     if (this.menuGroup) {
@@ -2972,6 +3014,14 @@ export class PingPongGame {
       return;
     }
 
+    // v3.6.51 (r59) · LA ACADEMIA: con el tutorial activo el gatillo es SUYO
+    // (continuar pasos, lanzar el saque, jugar al terminar). Corre ANTES de
+    // la máquina de práctica del ajuste: el tutorial vive en calib y sin él
+    // el gatillo alimentaría una bola suelta por encima del guion.
+    if (this.tutV1 && window.__PP_TUT && window.__PP_TUT.onTrigger) {
+      try { if (window.__PP_TUT.onTrigger(i) === true) return; } catch (eTut1) { /* nunca rompe */ }
+    }
+
     // en modo ajuste, el gatillo lanza una bola de entrenamiento
     if (this.calib) {
       const now = performance.now() / 1000;
@@ -3061,6 +3111,18 @@ export class PingPongGame {
    *  cae y se repite. La ayuda explícita es el GATILLO (tossFromHand
    *  asistido). Luego la golpeas con la pala cuando quieras. */
   releaseBallHand(i) {
+    // v3.6.51 (r59) · LA ACADEMIA: soltar el grip con la bola en la mano
+    // libre SIRVE igual que en partido (el método natural del saque, que el
+    // paso 3 enseña como alternativa al gatillo). Antes la guardia de calib
+    // lo comía: ahora el tutorial pasa primero.
+    if (this.tutV1) {
+      if (!window.__PP_TUT) return;
+      if (this.rules.state === 'serve' && this.rules.server === 'player' &&
+          !this.tossed && i === this.ballHand) {
+        this.tossFromHand(i, false);   // lanzamiento natural (velocidad real)
+      }
+      return;
+    }
     // v3.0.8-TRN1 · ENTRENAMIENTO t4a/t4b: soltar el grip con la bola en la
     // mano libre LANZA el saque del módulo (el mismo gesto natural que un
     // partido). El módulo decide: en fase 'tee' lanza con la velocidad real
@@ -6891,7 +6953,8 @@ export class PingPongGame {
     // (calib sin trainV3) sigue sin permitirlo — allí manda el panel propio.
     // Todo lo demás deriva en caliente de paddleHand/ballHand (getters), el
     // saque en mano libre incluido, así que el cambio es seguro en pleno modo.
-    if (presenting && (!this.calib || this.trainV3)) {
+    // v3.6.51 (r59): TAMBIÉN en LA ACADEMIA — el paso 5 se practica A/X.
+    if (presenting && (!this.calib || this.trainV3 || this.tutV1)) {
       for (let i = 0; i < 2; i++) {
         const gp = this.sources[i]?.gamepad;
         const b4 = !!gp?.buttons?.[4]?.pressed;
@@ -6908,7 +6971,8 @@ export class PingPongGame {
     //      ya se entra desde el MENÚ (botón ENTRENAR). Se conserva Y SOLO
     //      DENTRO del ajuste de pala para VOLVER al modo anterior (es la
     //      salida documentada en el propio panel; ver createCalibPanel).
-    if (presenting && this.calib && this.readButton(this.handIndex('left'), 5)) {
+    if (presenting && this.calib && !this.tutV1 &&
+        this.readButton(this.handIndex('left'), 5)) {
       // v3.0.3 · Dentro del PRO TRAINING, Y sale AL HUB DE ENTRENAMIENTO
       // (menú abierto en «ENTRENAR») cerrando el modo POR COMPLETO — antes
       // caía en un partido con los paneles del entrenamiento sin recoger y
@@ -7027,8 +7091,11 @@ export class PingPongGame {
     // v3.6.30 · en el HALL no hay saque que preparar: ni la bola en la
     // mano del jugador ni el paseo/saque de la CPU (todo este bloque).
     // La bola quieta, oculta y SIN física — el museo no juega.
+    // v3.6.51 (r59) · LA ACADEMIA: el paso del SAQUE usa la cinemática REAL
+    // (bola descansando en la mano libre, lanzamiento, punto muerto) aunque
+    // el árbitro duerma en calib — se enseña con la misma mecánica de verdad.
     if (active && !frozen && !this.inHall &&
-        this.rules.state === 'serve' && !this.calib) {
+        this.rules.state === 'serve' && (!this.calib || this.tutV1)) {
       if (this.rules.server === 'player') {
         if (presenting) {
           if (!this.tossed) {
@@ -7310,6 +7377,7 @@ export class PingPongGame {
     this.updateMega(dt);
     this._rivalEmoUpdate(dt);   // v3.6.49 (r57): NORMA DE EMOCIONES DEL RIVAL
     if (window.__PP_TRAIN) window.__PP_TRAIN.tick(dt);   // v3.0: cosmética global + entrenamiento
+    if (window.__PP_TUT) window.__PP_TUT.tick(dt);       // v3.6.51 (r59): LA ACADEMIA (guion/prácticas)
 
     // 7) Sincronizar visuales
     this.ballMesh.position.copy(this.ball.pos);
@@ -8178,7 +8246,7 @@ import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBa
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
 import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
-import { HALL, HALL_SKIN_COLS, HALL_SKIN_IDS, HALL_SKIN_NAMES, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, drawHallDoor, drawHallHeader, drawHallMedal, drawHallNameplate, drawHallNeon, drawHallQuote, drawHallRanking, drawHallSign, hallCanvas, updateHallFx } from './c08_hall_hud.js';
+import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
 import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, pcA, pcC, pcN, pcT } from './c11_champloader.js';

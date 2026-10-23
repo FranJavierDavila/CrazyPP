@@ -205,6 +205,16 @@ CAPAS = [
      'qa_norma_rival_v3649.py'),
     ('AS · súper clonación + voz del selector (v3650)',
      'qa_clon_voz_v3650.py'),
+    # r59 (v3651): LA ACADEMIA — TUTORIAL INTERACTIVO (petición del dueño:
+    # «la gente entra, hay tanto menú y opciones que no saben ni cómo hacer
+    # para sacar»). 9 pasos guiados con práctica real sobre la mesa de
+    # verdad: TU MANDO (diagrama Quest + gatillo), LA PALA (vaivén), EL
+    # SAQUE (bola en mano libre, cruce de red, rearme), EL INTERCAMBIO
+    # (profesor con el solver de la casa, 2 devoluciones), LOS BOTONES
+    # (A/X real), LOS MODOS + 5 poderes, ¡YA SABES JUGAR! Tres puertas
+    # (banner del HUB, oferta de primera vez, AJUSTES) y B/Y de salida.
+    ('AT · LA ACADEMIA tutorial interactivo (v3651)',
+     'qa_tut_v3651.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

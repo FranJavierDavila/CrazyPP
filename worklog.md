@@ -3810,3 +3810,21 @@ Work Log:
 
 Stage Summary:
 - NADA PENDIENTE DE CÓDIGO: todo lo aprobado está en producción V3.6.50-SDK6 (sitio restablecido hoy, byte-exacto). La «variante 4 del ARKANOID» que arrastraba el resumen está VIVA y VERIFICADA VERDE hoy (78+60 checks). La pelota está en la pista del dueño: probar y dar el siguiente informe.
+
+---
+Task ID: 163
+Agent: principal (Z.ai)
+Task: Ronda 59 — LA ACADEMIA: TUTORIAL INTERACTIVO para nuevos jugadores (petición del dueño: «con tanto menú y opciones no saben ni siquiera cómo hacer para sacar») → V3.6.51-SDK6, FASE 53.
+
+Work Log:
+- DISEÑO aprobado en conversación: tutorial de 9 pasos con práctica REAL sobre la mesa de verdad, 3 puertas de entrada (banner del HUB, oferta de primera vez, AJUSTES), B/Y de salida, ES/EN.
+- FUENTE MODULAR editada (el único camino legítimo): c00_pre_three.js (60 claves tut_* ×2 idiomas + icono birrete PP_ICONS.tut) · c12_pingponggame.js (12 ganchos guardados con game.tutV1: updateCalibration dormido, página 'tutask', banner 'tut:go' ENCIMA de la parrilla del HUB [944×96 dorado con birrete], botón en AJUSTES, caso 'tut' en el dispatcher, onTrigger ANTES de la máquina de calib, A/X operativa en la academia, Y ya no saca del ajuste, holdLock del SAQUE REAL (!calib || tutV1), releaseBallHand con saque natural por grip, tick del módulo, oferta de primera vez en onSessionStart con pp_tut_asked/pp_tut_done, stop al morir la sesión VR) · c13_ui_arranque.js (módulo window.__PP_TUT completo, ~640 líneas: panel 1024×640 colgado del RIG a 1,52 m, 9 PAINTERS, diagrama del mando Quest 3, máquIna de pasos, profesor del paso 4 con computeShotVelocityReal + respaldo balístico, realimentación con feedPracticeBall, estado() de introspección QA).
+- LOS 9 PASOS: 0 bienvenida · 1 TU MANDO (diagrama + pulsa gatillo) · 2 LA PALA (vaivén 2,2 m/s sostenido 0,55 s, barra %) · 3 EL SAQUE (estado serve REAL: bola en mano libre, gatillo=asistido, grip=natural; éxito = cruzar la red con vel.z<-0,9; bola muerta → rearme con aviso «otra vez») · 4 EL INTERCAMBIO (profesor devuelve tras el bote lejano, solver de la casa a 1,05 s/5,4 m/s; 2 devoluciones; bola muerta → feedPracticeBall) · 5 LOS BOTONES (A/X cambia la pala de mano de verdad) · 6/7 LOS MODOS (los 6 con sus colores del HUB + los 5 poderes y la norma de 20 toques) · 8 ¡YA SABES JUGAR! (gatillo = exitCalib y jugar YA con sello done + confeti + voz; B = goHomeHall + menú).
+- MOD_FASE2 regenerado (DEPS.json/DEPENDENCIAS.md · c13 importa ahora computeShotVelocityReal/DIMS) + build_game.py --escribir (7.278.274 B, golden 39f6fab5254e2236…) + bump_version 3.6.51-SDK6 FASE 53 «La academia: el tutorial que enseña a jugar» --sdk 1.5.4.
+- QA NUEVA: scripts/qa_tut_v3651.py (128 checks: 31 agujas de fuente, 60 claves ES/EN balanceadas, 5 negativas + mecánica REAL headless del módulo con juego simulado: arranque estanco, vaivén, saque con rearme, profesor con solver, 2 devoluciones, A/X real, JUGAR YA con sello, salida B sin sello, tutela online, drawAsk, menuAction). RESULTADO 128 OK · 0 fallos.
+- RELEASE: gen_release_v3651.py (release-v3651 desde v3650, notas FASE 53 por marcadores, guards SDK 1.5.4/oeste v56/locura v27 y v369-sdk5 intactos) + build_zip (COMPLETO 131.335.599 · ligera 16.282.266 · CLOUDFLARE 131.322.212 · SOLO 6.089) + sella_r59.py (E/F/G/H/I + AF…AO a 3.6.51-SDK6 y tamaños reales de los ZIPs).
+- QA TOTAL: 31 capas VERDE · 628 s · 0 fallos (A-J + T-U-V-W-X-Y-Z + AF-AP-AQ-AR-AS + AT nueva).
+
+Stage Summary:
+- LA ACADEMIA ESTÁ ABIERTA: el que entra por primera vez recibe la oferta «¿PRIMERA VEZ?» y en 3 minutos sabe sacar, golpear, cambiar la pala de mano y escoger entre los 6 modos — con la misma física de verdad del juego.
+- Despliegue y verificación byte-exacto en producción: (ver apéndice 163-b si procede).

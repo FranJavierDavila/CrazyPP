@@ -212,14 +212,20 @@ export function createBall() {
   const tmpSpinCross = new THREE.Vector3();
   /** Estela "de retransmisión": color según el EFECTO de la bola.
    *  naranja = lift/topspin (la Magnus la hunde), azul = slice/backspin
-   *  (flota), violeta = lateral. Se desvanece con la edad del punto. */
-  const trailUpdate = (ball, dt) => {
+   *  (flota), violeta = lateral. Se desvanece con la edad del punto.
+   *  r61 · ESTELA DE PODER: si el juego pasa un tinte (poder de pala
+   *  ACTIVO), la estela viste SU firma y el color por spin pasa a ser el
+   *  respaldo — un vistazo a la bola y sabes qué poder está corriendo. */
+  const trailUpdate = (ball, dt, tint) => {
     positions[idx * 3] = mesh.position.x;
     positions[idx * 3 + 1] = mesh.position.y;
     positions[idx * 3 + 2] = mesh.position.z;
     ages[idx] = 0;
     let r = 0.75, g = 0.75, b = 0.75;
-    if (ball && ball.spin && ball.vel) {
+    if (tint && tint.length === 3) {
+      // firma del poder ACTIVO (el núcleo la prepara ya lerp-eada)
+      r = tint[0]; g = tint[1]; b = tint[2];
+    } else if (ball && ball.spin && ball.vel) {
       tmpSpinCross.crossVectors(ball.spin, ball.vel);   // dirección de la Magnus
       const lift = tmpSpinCross.y;                      // + flota · - se hunde
       const force = Math.min(1, Math.abs(lift) / 9);

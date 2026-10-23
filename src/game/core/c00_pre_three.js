@@ -136,6 +136,10 @@ const I18N_STRINGS = {
     lang_label: 'IDIOMA',
     btn_amb: 'Ambiente: {v}',
     btn_trail: 'Estela: {v}',
+    // r61 · IA adaptativa visible + repetición del mejor intercambio
+    btn_adapt: 'Rival adaptativo: {v}',
+    rep_t: 'REPETICIÓN',
+    rep_chip: 'Mejor intercambio · {n} toques · GATILLO = seguir',
     btn_mic: 'Megáfono del marcador: {v}',
     btn_music: 'Música: {v}',
     msg_music: 'Música {v}',
@@ -407,6 +411,7 @@ const I18N_STRINGS = {
     msg_diff: 'DIFICULTAD: {d}',
     msg_room: 'SALA: {r}',
     msg_trail: 'Estela de la bola: {v}',
+    msg_adapt: 'Rival adaptativo: {v} — se ajusta con el marcador',
     msg_mic: 'Megáfono del marcador: {v}',
     hint_hit: '¡Golpea la bola hacia la mesa con la pala!',
     hint_toss_high: 'Lanza la bola un poco más arriba',
@@ -673,6 +678,10 @@ const I18N_STRINGS = {
     lang_label: 'LANGUAGE',
     btn_amb: 'Crowd: {v}',
     btn_trail: 'Trail: {v}',
+    // r61 · adaptive rival toggle + best-rally replay
+    btn_adapt: 'Adaptive rival: {v}',
+    rep_t: 'REPLAY',
+    rep_chip: 'Best rally · {n} shots · TRIGGER = continue',
     btn_mic: 'Announcer: {v}',
     btn_music: 'Music: {v}',
     msg_music: 'Music {v}',
@@ -941,6 +950,7 @@ const I18N_STRINGS = {
     msg_diff: 'DIFFICULTY: {d}',
     msg_room: 'ROOM: {r}',
     msg_trail: 'Ball trail: {v}',
+    msg_adapt: 'Adaptive rival: {v} — adjusts to the score',
     msg_mic: 'Scoreboard announcer: {v}',
     hint_hit: 'Hit the ball toward the table with your paddle!',
     hint_toss_high: 'Toss the ball a bit higher',
@@ -1799,7 +1809,7 @@ export const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.52-SDK6';
+  const VERSION = '3.6.53-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar

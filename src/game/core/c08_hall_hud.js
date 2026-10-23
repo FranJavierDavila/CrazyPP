@@ -958,6 +958,62 @@ export function createFanfareBanner() {
   return { group, draw, canvas, langChanged };
 }
 
+/** r61 · CARTEL DE LA REPETICIÓN del mejor intercambio: banda azul
+ *  fantasma que ocupa el sitio del cartel de fanfarria mientras los
+ *  fantasmas recrean el rallye. Mismo lenguaje visual (canvas 2D +
+ *  plano al RIG sobre la mesa). */
+export function createReplayBanner() {
+  const W = 1024, H = 240;
+  const group = new THREE.Group();
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.42, 0.3328),
+    new THREE.MeshBasicMaterial({
+      map: tex, transparent: true, side: THREE.FrontSide, depthWrite: false,
+    }),
+  );
+  mesh.renderOrder = 6;
+  group.add(mesh);
+  group.position.set(0, 1.86, DIMS.tableCenterZ);
+  group.visible = false;
+
+  function draw(hits) {
+    group.userData.hits = hits || 0;    // para el repintado por idioma
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(8,14,26,0.88)';
+    ctx.strokeStyle = '#6fb7ff';
+    ctx.lineWidth = 10;
+    roundRectPath(ctx, 10, 10, W - 20, H - 20, 34);
+    ctx.fill();
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(70,160,255,0.85)';
+    ctx.shadowBlur = 22;
+    ctx.fillStyle = '#9fd0ff';
+    ctx.font = '900 86px system-ui, sans-serif';
+    ctx.fillText(T('rep_t'), W / 2, H / 2 - 34);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#eaf4ff';
+    ctx.font = '700 40px system-ui, sans-serif';
+    ctx.fillText(T('rep_chip', { n: hits || 0 }), W / 2, H / 2 + 46);
+    ctx.textBaseline = 'alphabetic';
+    tex.needsUpdate = true;
+  }
+
+  function langChanged() {
+    // el chip lleva el nº de toques del último draw — se repinta con él
+    if (group.visible) draw(group.userData.hits || 0);
+  }
+
+  return { group, draw, canvas, langChanged };
+}
+
 export function createConfetti() {
   // v2.35: lluvia MUCHO más densa (120 -> 430) y repartida también sobre
   // tu campo, para que el confeti del Clown estorbe la visión y el golpeo.

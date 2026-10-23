@@ -72,6 +72,8 @@ export class PingPongGame {
     try {
       this.rules.onMatchStart = () => {
         try { this._megaNormReset(); } catch (e) { /* nunca rompe el árbitro */ }
+        // r61 · partido nuevo: fuera el campeón de la repetición anterior
+        try { this._repReset(); } catch (eR) { /* nunca rompe el árbitro */ }
       };
     } catch (eH) { /* */ }
     this.ball = {
@@ -117,6 +119,11 @@ export class PingPongGame {
     this._lastSelect = [0, 0];
     // ESTELA de la bola (v2.18): conmutable desde el menú y persistente
     try { this.showTrail = localStorage.getItem('ppxr_trail_v1') !== '0'; } catch { this.showTrail = true; }
+    // r61 · ESTELA DE PODER: el color de la estela viste la firma del
+    // poder de pala ACTIVO (lerp suave para que el cambio se sienta vivo
+    // y no un brusco). null = sin poder → color por EFECTO (spin) de siempre.
+    this._trailTint = null;              // [r,g,b] actual (lerp-eada)
+    this._trailTintObj = [0.75, 0.75, 0.75];
     // v2.50 · FASE 1 · CONFORO: háptica desactivable + consejos de 1ª vez
     try { this.hapticsOn = localStorage.getItem('pp_hapt') !== '0'; } catch { this.hapticsOn = true; }
     try { this.showTips = localStorage.getItem('pp_tips_v1') !== '0'; } catch { this.showTips = true; }
@@ -300,7 +307,14 @@ export class PingPongGame {
     this.pstOn = false;           // passthrough visible AHORA (solo inAR)
     this._pstAplicada = false;    // el fondo/niebla/sala están canjeados
     this._xrSwitchTo = null;      // v3.6.42: modo pedido por el conmutador in-VR (solo VR sin AR)
-    this.adaptive = true;         // IA adaptativa según el marcador
+    // r61 · IA ADAPTATIVA VISIBLE: existía desde v2.x (applyAISkill ajusta
+    // el nivel con el marcador) pero era INVISIBLE e inevitable — ahora es
+    // CONMUTADOR en AJUSTES con persistencia, etiqueta en el HUB y
+    // transición SUAVE (lerp del factor en vez del salto por punto).
+    try { this.adaptive = localStorage.getItem('ppxr_adapt_v1') !== '0'; } catch { this.adaptive = true; }
+    this._aiKTarget = 1;          // factor objetivo (applyAISkill)
+    this._aiKCur = 1;             // factor actual (lerp en el tick)
+    this._aiKTimer = 0;           // refresco perezoso del setConfig
     this.survivalRallies = 0;     // rallyes completados en la sesión actual
     try {
       this.survivalBest = Math.max(0, parseInt(localStorage.getItem('ppxr_surv_best') || '0', 10) || 0);
@@ -427,6 +441,37 @@ export class PingPongGame {
 
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
+
+    // r61 · REPETICIÓN DEL MEJOR INTERCAMBIO — grabadora de rallyes y
+    // fantasmas de reproducción (bola + pala del rival, azul fantasma).
+    // La pala PROPIA no se reproduce: en la mano del jugador ya hay una
+    // pala de verdad y se solaparía. Grabación sólo local (serv/rally),
+    // sin calib ni academia ni invitado online.
+    this._repMat = new THREE.MeshBasicMaterial({
+      color: 0x9fd0ff, transparent: true, opacity: 0.55, depthWrite: false,
+    });
+    this.ghostBall = new THREE.Mesh(
+      new THREE.SphereGeometry(DIMS.ballRadius, 24, 16), this._repMat);
+    this.ghostBall.visible = false;
+    this.ghostRival = makePaddleVisual(paddleModel, 'center');
+    this.ghostRival.traverse((o) => {
+      if (o.isMesh) { o.material = this._repMat; o.castShadow = false; }
+    });
+    this.ghostRival.visible = false;
+    this.rig.add(this.ghostBall);
+    this.rig.add(this.ghostRival);
+    this.replayBanner = createReplayBanner();
+    this.rig.add(this.replayBanner.group);
+    const REP_MAX_F = 5400;                  // ~75 s a 72 fps, tope
+    this._repMaxF = REP_MAX_F;
+    this._repStride = 11;                    // bola(3)+rival(3)+quat(4)+dt(1)
+    this._repBuf = new Float32Array(REP_MAX_F * 11);
+    this._repN = 0;
+    this._repBest = { buf: null, n: 0, hits: 0 };
+    this._repEstado = '';                    // '' | 'play'
+    this._repT = 0;
+    this._repPendiente = false;
+    this._repVisPrev = null;
 
     const sb = createScoreboard();
     this.scoreboardUpdate = sb.update;
@@ -1816,7 +1861,15 @@ export class PingPongGame {
     btn('diff:hard', 676, y + 46, 292, 60, T('diff_hard_btn'),
       this.difficulty === 'hard', undefined, undefined, 25);
 
-    y += 130;
+    // r61 · IA ADAPTATIVA visible y decidible: el nivel de la CPU se ajusta
+    // con el marcador (ganas → aprieta · pierdes → afloja). Existía desde
+    // v2.x (applyAISkill) pero era invisible e inevitable; ahora es un
+    // conmutador persistente aquí, junto a la dificultad que modula.
+    btn('adapt', 56, y + 116, 912, 56,
+      T('btn_adapt', { v: this.adaptive ? T('yes') : T('no') }),
+      this.adaptive, undefined, this.adaptive, 23);
+
+    y += 200;
 
     // v3.1.0-SRV2 · EL HALL ES EL HUB: en plena partida (o campeonato) el
     // menú ofrece la vuelta a la estancia del anfitrión — el hall es donde
@@ -2544,6 +2597,17 @@ export class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'adapt': {
+        // r61 · IA ADAPTATIVA visible y decidible (existía desde v2.x
+        // con este mismo applyAISkill, pero sin conmutador ni aviso)
+        this.adaptive = !this.adaptive;
+        try { localStorage.setItem('ppxr_adapt_v1', this.adaptive ? '1' : '0'); } catch { /* */ }
+        this.applyAISkill();      // recalcula el objetivo ya (el lerp lleva)
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.rules.message = T('msg_adapt', { v: this.adaptive ? T('yes') : T('no') });
+        this.drawMenu();
+        break;
+      }
       case 'voz': {
         // v2.22: megáfono del marcador (narrador) sí/no, persistente e
         // independiente del ambiente de torneo
@@ -2711,8 +2775,19 @@ export class PingPongGame {
     // una PARTIDA contra el Clown.
     // v2.53: nivel del rival del campeonato externo (Nv.2 ×1,22 · Nv.3 ×1,5)
     if (this.champs && this.champs.active) k *= this.champs.aiMul();
-    this.aiSkillK = THREE.MathUtils.clamp(k, 0.7, 2.2);
-    this.ai.setConfig(scalePreset(base, this.aiSkillK));
+    // r61 · el resultado es el OBJETIVO: el factor REAL persigue al objetivo
+    // con un lerp en el tick (la adaptación se siente, no se trompea).
+    this._aiKTarget = THREE.MathUtils.clamp(k, 0.7, 2.2);
+    this._aiKAplica();
+  }
+
+  /** r61 · aplica el factor ACTUAL (lerp-eado hacia el objetivo) al
+   *  cerebro de la IA. El salto seco por punto pasaba factura: el rival
+   *  cambiaba de nivel de golpe entre punto y punto. */
+  _aiKAplica() {
+    const base = AI_PRESETS[this.difficulty] || AI_PRESETS.medium;
+    this.aiSkillK = this._aiKCur;
+    this.ai.setConfig(scalePreset(base, this._aiKCur));
   }
 
   /** v2.66 · REINICIO TOTAL de registros («empezar de cero»): borra el
@@ -3089,6 +3164,12 @@ export class PingPongGame {
       return;
     }
     if (this.rules.state === 'over') {
+      // r61 · la 1.ª pulsación durante la REPETICIÓN la salta; la siguiente
+      // sigue siendo revancha en el MISMO modo (camino v3.6.29 intacto)
+      if (this._repEstado === 'play') {
+        try { this._repTermina(); } catch (eR1) { /* */ }
+        return;
+      }
       // v3.6.29: PRESERVA bestOf — la revancha por gatillo repite el contexto
       // (libre = nueva serie al mejor de 3; campeonato = duelo a juego único)
       this.rules.startMatch(this.mode);   // revancha en el MISMO modo de juego
@@ -3300,6 +3381,21 @@ export class PingPongGame {
     if (this._megaActivaId === 'portal') return this._portalT;
     if (this._megaActivaId === 'clon') return this._clonT;   // v3.6.50 (r58)
     return 0;
+  }
+
+  /** r61 · FIRMA DE COLOR de la estela según el poder de pala ACTIVO
+   *  (sólo mientras su ventana corre — _megaActivaRest > 0):
+   *  mega=Súper Pala ámbar · efecto=rojo (el del halo r51) · imán=cian
+   *  (las flechas r52) · portal=violeta mágico · clon=azul fantasma (r58).
+   *  null = sin poder → la estela vuelve a su color por EFECTO (spin). */
+  _trailFirmaPoder() {
+    if (!(this._megaActivaRest() > 0)) return null;
+    if (this._megaActivaId === 'mega') return TRAIL_PODER.mega;
+    if (this._megaActivaId === 'efecto') return TRAIL_PODER.efecto;
+    if (this._megaActivaId === 'iman') return TRAIL_PODER.iman;
+    if (this._megaActivaId === 'portal') return TRAIL_PODER.portal;
+    if (this._megaActivaId === 'clon') return TRAIL_PODER.clon;
+    return null;
   }
 
   /** v3.6.36 · GASTA 1 carga del poder dado (y lo retira de la matriz
@@ -7388,9 +7484,33 @@ export class PingPongGame {
     this.ballMesh.material.emissiveIntensity = ballHeld
       ? 0.75 + Math.sin(now * 6) * 0.25
       : 0.35 + this.apexPulse * 1.2;
+    // r61 · IA ADAPTATIVA SUAVE: el factor actual persigue al objetivo
+    // (aplica el setConfig perezoso, 4 veces/s como mucho)
+    if (Math.abs(this._aiKCur - this._aiKTarget) > 0.002) {
+      this._aiKCur += (this._aiKTarget - this._aiKCur) * Math.min(1, dt * 1.4);
+      this._aiKTimer -= dt;
+      if (this._aiKTimer <= 0) { this._aiKAplica(); this._aiKTimer = 0.25; }
+    }
     // v3.6.42 · en tránsito dimensional la bola no deja estela ni sombra
     if (this.showTrail && !(this.ball && this.ball.ppTransito)) {
-      this.trailUpdate(this.ball, dt);   // v2.18: se puede ocultar
+      // r61 · estela de poder: lerp suave hacia la firma del poder ACTIVO
+      // (y de vuelta al neutro al caducar, cuando el color por spin retoma)
+      const ob = this._trailTintObj;
+      const firma = this._trailFirmaPoder();
+      const kT = Math.min(1, dt * 6);
+      if (firma) {
+        ob[0] += (firma[0] - ob[0]) * kT;
+        ob[1] += (firma[1] - ob[1]) * kT;
+        ob[2] += (firma[2] - ob[2]) * kT;
+        this._trailTint = ob;
+      } else if (this._trailTint) {
+        ob[0] += (0.75 - ob[0]) * kT;
+        ob[1] += (0.75 - ob[1]) * kT;
+        ob[2] += (0.75 - ob[2]) * kT;
+        if (Math.abs(ob[0] - 0.75) + Math.abs(ob[1] - 0.75) +
+            Math.abs(ob[2] - 0.75) < 0.02) this._trailTint = null;
+      }
+      this.trailUpdate(this.ball, dt, this._trailTint);   // v2.18: ocultable
     }
     this.updateBlobShadow();
 
@@ -7455,8 +7575,16 @@ export class PingPongGame {
         const pulse = 1 + Math.sin(this.fanfareT * 5.2) * 0.045 * Math.max(0, 1 - this.fanfareT / 4);
         this.fanfareBanner.group.scale.setScalar(0.2 + 0.8 * ease * pulse);
         this.fanfareBanner.group.rotation.y = Math.sin(this.fanfareT * 1.3) * 0.06;
+        // r61 · la fanfarria asienta (1,6 s) y el MEJOR INTERCAMBIO se
+        // reproduce solo, con sus fantasmas; gatillo lo salta, revancha luego
+        if (this._repPendiente && this._repEstado === '' && this.fanfareT > 1.6) {
+          this._repArranca();
+        }
       }
     }
+    // r61 · motor de la repetición (grabación + reproducción)
+    this._repFrame(dt);
+    this._repTick(dt);
     if (this.confettiBurst > 0) this.confettiBurst = Math.max(0, this.confettiBurst - dt);
     this.confetti.update(
       dt,
@@ -8036,6 +8164,8 @@ export class PingPongGame {
             }
             this.applyAISkill();   // IA adaptativa según el marcador
             this.celebrate(this.stats.recordPoint(it.winner, it.rallyHits || 0));
+            // r61 · fin del intercambio: ¿bate al mejor? (cambio de refs)
+            try { this._repCierra(it.rallyHits || 0); } catch (eR0) { /* */ }
             this.emitStats();
           }
           // v2.34/2.69: el rival del campeonato ACTIVO reacciona a cada
@@ -8136,6 +8266,9 @@ export class PingPongGame {
   startFanfare(win) {
     this.fanfareWin = win;
     this.fanfareT = 0;
+    // r61 · ¿hay mejor intercambio digno de repetirse? (≥3 toques, local)
+    this._repPendiente = !!(this._repBest && this._repBest.buf &&
+      this._repBest.hits >= 3 && !this.net.online);
     this.audio.fanfare(win);
     this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi);
     this.fanfareBanner.group.visible = true;
@@ -8150,6 +8283,126 @@ export class PingPongGame {
         window.setTimeout(() => this.haptic(this.paddleHand, 0.22, 380), 300);
       }
     }
+  }
+
+  /* ================= r61 · REPETICIÓN DEL MEJOR INTERCAMBIO ============
+   *  Grabadora por frames (bola + pala rival + dt) de cada intercambio y
+   *  reproducción FANTASMA del mejor al acabar el partido (entre la
+   *  fanfarria y la revancha). El mejor = el de MÁS TOQUES. La 1.ª
+   *  pulsación del gatillo la salta; la siguiente es revancha (camino
+   *  v3.6.29 intacto). Sin grabación en calib/academia/invitado online. */
+  _repGrabando() {
+    return !this.net.online && !this.tutV1 &&
+      !this.calib && !!this.rules &&
+      (this.rules.state === 'rally' || this.rules.state === 'serve');
+  }
+
+  /** Un frame más en el buffer ACTIVO (bola, pala rival y dt). */
+  _repFrame(dt) {
+    if (!this._repGrabando() || this._repN >= this._repMaxF) return;
+    const o = this._repN * this._repStride;
+    const b = this.ball ? this.ball.pos : null;
+    const ap = this.aiPaddleMesh ? this.aiPaddleMesh.position : null;
+    if (!b || !ap) return;
+    const q = this.aiPaddleMesh.quaternion;
+    const a = this._repBuf;
+    a[o] = b.x; a[o + 1] = b.y; a[o + 2] = b.z;
+    a[o + 3] = ap.x; a[o + 4] = ap.y; a[o + 5] = ap.z;
+    a[o + 6] = q.x; a[o + 7] = q.y; a[o + 8] = q.z; a[o + 9] = q.w;
+    a[o + 10] = dt;
+    this._repN++;
+  }
+
+  /** Fin del intercambio: si bate al mejor, el buffer ACTIVO pasa a ser
+   *  el campeón (intercambio de referencias, cero copias). */
+  _repCierra(hits) {
+    if (this._repN >= 12 && hits > this._repBest.hits) {
+      const viejo = this._repBest.buf;
+      this._repBest = { buf: this._repBuf, n: this._repN, hits };
+      this._repBuf = viejo || new Float32Array(this._repMaxF * this._repStride);
+    }
+    this._repN = 0;
+  }
+
+  /** Partido nuevo: se borra el campeón y cualquier reproducción viva. */
+  _repReset() {
+    if (this._repEstado === 'play') this._repTermina();
+    this._repN = 0;
+    this._repBest = { buf: null, n: 0, hits: 0 };
+    this._repPendiente = false;
+  }
+
+  /** Arranca la reproducción fantasma del mejor intercambio. */
+  _repArranca() {
+    if (this._repEstado === 'play' || !this._repBest.buf) return;
+    this._repEstado = 'play';
+    this._repT = 0;
+    this._repVisPrev = {
+      ball: this.ballMesh ? this.ballMesh.visible : true,
+      ai: this.aiPaddleMesh ? this.aiPaddleMesh.visible : true,
+    };
+    if (this.fanfareBanner) this.fanfareBanner.group.visible = false;
+    if (this.ballMesh) this.ballMesh.visible = false;
+    if (this.aiPaddleMesh) this.aiPaddleMesh.visible = false;
+    this.ghostBall.visible = true;
+    this.ghostRival.visible = true;
+    this.replayBanner.draw(this._repBest.hits);
+    this.replayBanner.group.visible = true;
+  }
+
+  /** Fin natural o salto: los fantasmas se retiran y la fanfarria vuelve
+   *  con las visibilidades EXACTAS de antes (oeste/orbital esconden pala
+   *  IA y bola en sus pruebas — jamás se resurrectan aquí). */
+  _repTermina() {
+    this._repEstado = '';
+    this._repPendiente = false;
+    this.ghostBall.visible = false;
+    this.ghostRival.visible = false;
+    if (this.replayBanner) this.replayBanner.group.visible = false;
+    const prev = this._repVisPrev;      // visibilidades EXACTAS de antes
+    this._repVisPrev = null;
+    if (prev) {
+      if (this.ballMesh) this.ballMesh.visible = prev.ball;
+      if (this.aiPaddleMesh) this.aiPaddleMesh.visible = prev.ai;
+    }
+    // la fanfarria sólo vuelve si el partido SIGUE terminado (un reset
+    // por startMatch llama aquí con state nuevo: ahí no toca resucitarla)
+    if (this.rules && this.rules.state === 'over' && this.fanfareBanner) {
+      this.fanfareBanner.group.visible = true;
+    }
+  }
+
+  /** Reproducción por tiempo real con interpolación lineal entre frames
+   *  (y slerp del quaternión del rival) — independiente del framerate. */
+  _repTick(dt) {
+    if (this._repEstado !== 'play' || !this._repBest.buf) return;
+    const s = this._repStride, a = this._repBest.buf, n = this._repBest.n;
+    let total = 0;
+    for (let i = 0; i < n; i++) total += a[i * s + 10];
+    this._repT += dt;
+    if (this._repT >= total) { this._repTermina(); return; }
+    // localizar el par de frames que rodea _repT
+    let t0 = 0, iF = 0;
+    while (iF < n - 1 && t0 + a[(iF + 1) * s + 10] < this._repT) {
+      t0 += a[(iF + 1) * s + 10];
+      iF++;
+    }
+    const dtn = a[(iF + 1) * s + 10] || 1e-4;
+    const al = THREE.MathUtils.clamp((this._repT - t0) / dtn, 0, 1);
+    const iA = iF * s, iB = (iF + 1) * s;
+    this.ghostBall.position.set(
+      a[iA] + (a[iB] - a[iA]) * al,
+      a[iA + 1] + (a[iB + 1] - a[iA + 1]) * al,
+      a[iA + 2] + (a[iB + 2] - a[iA + 2]) * al,
+    );
+    this.ghostRival.position.set(
+      a[iA + 3] + (a[iB + 3] - a[iA + 3]) * al,
+      a[iA + 4] + (a[iB + 4] - a[iA + 4]) * al,
+      a[iA + 5] + (a[iB + 5] - a[iA + 5]) * al,
+    );
+    _repTmpQ1.set(a[iA + 6], a[iA + 7], a[iA + 8], a[iA + 9]);
+    _repTmpQ2.set(a[iB + 6], a[iB + 7], a[iB + 8], a[iB + 9]);
+    this.ghostRival.quaternion.slerpQuaternions(_repTmpQ1, _repTmpQ2, al);
   }
 
   processEvents(events) {
@@ -8246,7 +8499,7 @@ import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBa
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
 import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
-import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, updateHallFx } from './c08_hall_hud.js';
+import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createReplayBanner, createHall, createScoreboard, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
 import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, pcA, pcC, pcN, pcT } from './c11_champloader.js';
@@ -8254,6 +8507,22 @@ import { wrapText } from './c13_ui_arranque.js';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 /* DEPS-FASE2-FIN */
+
+// r61 · ESTELA DE PODER — firma de color por poder de pala ACTIVO
+// (RGB 0-1; el mismo lenguaje de color que ya usa cada poder: ámbar del
+// icono, rojo del halo del efecto, cian de las flechas del imán, violeta
+// del portal y azul fantasma del clon). Sin poder → null y manda el spin.
+const TRAIL_PODER = {
+  mega: [0.93, 0.72, 0.32],     // Súper Pala — ámbar del icono
+  efecto: [0.95, 0.24, 0.16],   // Súper Efecto — rojo del halo (r51)
+  iman: [0.22, 0.78, 0.85],     // Imán — cian de las flechas (r52)
+  portal: [0.56, 0.35, 0.97],   // Súper Portal — violeta mágico
+  clon: [0.42, 0.72, 1.0],      // Clonación — azul fantasma (r58)
+};
+
+// r61 · temporales de la interpolación de la repetición (cero GC por frame)
+const _repTmpQ1 = new THREE.Quaternion();
+const _repTmpQ2 = new THREE.Quaternion();
 
 /* =====================================================================
  *  INTERFAZ · PORTADA ANIMADA + botón JUGAR EN VR + HUD (v2.28)

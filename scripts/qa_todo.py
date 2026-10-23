@@ -235,6 +235,16 @@ CAPAS = [
     # perezoso) → build() antes de colgar; la batería vuelve a ir SIN
     # errores JS.
     ('AU · tres arreglos del dueño (v3652)', 'qa_r60_v3652.py'),
+    # AV (ronda 61 · v3.6.53): LAS TRES CANDIDATAS APROBADAS por el dueño —
+    # (1) ESTELA DE PODER: la estela viste la firma del poder ACTIVO (mega
+    # ámbar · efecto rojo · imán cian · portal violeta · clon azul fantasma)
+    # con lerp y respaldo por spin; (2) RIVAL ADAPTATIVO visible y decidible
+    # (existía desde v2.x: conmutador persistente HUB+AJUSTES, mensaje y
+    # lerp del factor — gana→aprieta, pierde→afloja, OFF honesto);
+    # (3) REPETICIÓN DEL MEJOR INTERCAMBIO: grabadora por frames y fantasmas
+    # al terminar el partido (mejor = más toques, ≥3; gatillo salta; sin
+    # grabación en calib/academia/online; visibilidades restauradas exactas).
+    ('AV · estela+adaptativo+repetición (v3653)', 'qa_r61_v3653.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

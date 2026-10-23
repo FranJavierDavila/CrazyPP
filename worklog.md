@@ -3900,3 +3900,19 @@ Work Log:
 Stage Summary:
 - LAS TRES CANDIDATAS VIVEN (pendiente de deploy en el apéndice 165-b): la estela habla de qué poder corre, el rival adaptativo se ve, se decide y se siente suave, y el mejor intercambio se revive en fantasmas al acabar cada partido.
 - Pendientes vivos sin cambio: informe del dueño (Imán/clon + los tres arreglos r60), entrenamiento «tres arreglos» (spec), .cf-token/.clave-produccion, hito CORONAR LA OESTE.
+
+---
+Task ID: 165-b (apéndice)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 61 — despliegue y verificación byte-exacto de V3.6.53-SDK6 (las tres candidatas) en producción.
+
+Work Log:
+- DEPLOY (deploy_pages --push --release --backup, GIT_TOKEN del dueño): smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 fallos de red, 0 pageerrors) · pages → commit f706745bf (396 ficheros · 137,7 MB) · respaldo anti-rollback main→proyecto al día · Release v3.6.53-SDK6 publicada con los 4 ZIPs (COMPLETO 131.342.414 · ligera 16.288.058 · CLOUDFLARE 131.329.028 · SOLO 6.089).
+- Pages build «built» sobre f706745bfa075a718279ebd11fc0ecaebdc9657b (verde al primer sondeo).
+- VERIFICACIÓN PRODUCCIÓN (curl anti-caché): PAGES-VERSION.txt = 3.6.53-SDK6 · fuente_commit d76de1916 · game_sha256 f334ae26… (reescrituras=2, método de siempre: golden 4b6026e9 + ruta-absoluta→relativa) · game.html servido SHA256 f334ae269fdc2a07… = BYTE-EXACTO contra el declarado y contra la rama pages local.
+- AGUJAS r61 EN PRODUCCIÓN (6/6 + i18n 4/4 ×2 idiomas): TRAIL_PODER · _trailFirmaPoder · case 'adapt' · _repCierra · createReplayBanner · clamp del objetivo del adaptativo · claves btn_adapt/msg_adapt/rep_t/rep_chip en ES y EN.
+
+Stage Summary:
+- LAS TRES CANDIDATAS EN PRODUCCIÓN: https://franjavierdavila.github.io/CrazyPP/ sirviendo V3.6.53-SDK6 · FASE 55 byte-exacto (main d76de19 · pages f706745bf · fuente d76de19).
+- El dueño debe RECARGAR con la pestaña cerrada o game.html?v=3653 (el Quest cachea). A probar: la estela vistiendo cada poder (darle a los 5), el conmutador del RIVAL ADAPTATIVO bajo la dificultad del HUB, y la REPETICIÓN del mejor intercambio tras la fanfarria (gatillo la salta, el siguiente es revancha).
+- Pendientes vivos sin cambio: informe del dueño (Imán/clon + tres arreglos r60 + estas tres), entrenamiento «tres arreglos» (spec), .cf-token/.clave-produccion (vía Cloudflare), hito CORONAR LA OESTE.

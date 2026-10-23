@@ -3795,3 +3795,18 @@ Work Log:
 
 Stage Summary:
 - JUEGO DE NUEVO EN PRODUCCIÓN: https://franjavierdavila.github.io/CrazyPP/ sirviendo V3.6.50-SDK6 byte-exacto (main 8e84224 · pages 404f9a7 · fuente 5834fa1). El dueño debe recargar con game.html?v=3650 o limpiar caché del Quest.
+
+---
+Task ID: 162
+Agent: principal (Z.ai)
+Task: «vamos con lo siguiente» — verificación de la variante 4 del ARKANOID (resuelta: YA VIVA desde las rondas 52-53) + INCIDENCIA N.º 3 de reciclado de contenedor (repo rodado a V3.6.27) recuperada + guardia verify_lineage.sh.
+
+Work Log:
+- INCIDENCIA (patrón conocido, 3.ª vez): al abrir el turno el repo local llegó RODADO a un snapshot viejo (HEAD 42dabed, V3.6.27; objetos de las rondas 36-58 ausentes; PAT borrado de scripts/worker-tele/.github-pat). Recuperación íntegra desde GitHub (única fuente de verdad): PAT repuesto + fetch completo de refs/tags + reset --hard origin/main (4bb6720, worklog Task 161-b) + pages → origin/pages (404f9a7). Verificado: VERSION.json 3.6.50-SDK6 FASE 52 (manifests locura 27 — el 23 que se leía era del snapshot viejo) · pages game.html SHA256 72ed2620… byte-exacto con producción.
+- GUARDIA NUEVA: scripts/verify_lineage.sh (fetch + comparar HEAD vs origin/main + reset si difiere + print de VERSION.json) — EJECUTAR AL EMPEZAR CADA TURNO antes de tocar nada.
+- VARIANTE 4 DEL ARKANOID RESUELTA COMO NOTA CADUCADA (arrastrada por error desde ronda 57): la petición del dueño se entregó COMPLETA en V3.6.44 (ronda 52: LADRILLO BOMBA — sustituye un azul, salta cada 4 s, bola o láser detonan, arrasa 2 filas × 2 columnas, no vuelve en la partida) y V3.6.45 (ronda 53: intervalos ALEATORIOS de 15 s (bombaCada) + LADRILLO ELÉCTRICO en los últimos 30 s — un azul se electrifica con chisporroteo, sólo la BOLA lo activa, ATRAE al resto de ladrillos a las celdas próximas y CUALQUIER impacto arma la REACCIÓN EN CADENA ramificada que arrasa la pared; el contador se congela durante la cadena). Ambas viven en producción desde entonces.
+- VERIFICACIÓN DE HOY en el árbol actual (4bb6720): qa_bomba_v3644.py 78 OK · 0 fallos · qa_electrico_v3645.py 60 OK · 0 fallos (incluye mecánica headless real: siembra, atracción, cadena, _finish(true) y muro a fábrica).
+- PENDIENTES REALES restantes (ninguno ejecutable sin el dueño): (1) informe del dueño tras probar V3.6.50 en el Quest (ajuste fino del Imán y la tasa del clon 90%); (2) entrenamiento «tres arreglos» — esperando el pase/spec del dueño; (3) reponer .cf-token y .clave-produccion (respaldo Task 122) si se quiere la vía Cloudflare; (4) hito de juego: CORONAR LA OESTE.
+
+Stage Summary:
+- NADA PENDIENTE DE CÓDIGO: todo lo aprobado está en producción V3.6.50-SDK6 (sitio restablecido hoy, byte-exacto). La «variante 4 del ARKANOID» que arrastraba el resumen está VIVA y VERIFICADA VERDE hoy (78+60 checks). La pelota está en la pista del dueño: probar y dar el siguiente informe.

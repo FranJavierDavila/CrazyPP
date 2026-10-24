@@ -85,8 +85,8 @@ FUENTE = [
     # --- módulo LA ACADEMIA (r59) ---
     ("módulo registrado como window.__PP_TUT",
      "window.__PP_TUT = {"),
-    ("guion de 9 pasos",
-     "const STEPS = 11;             // r65 · pasos del guion (0..10): +2 REGLAS"),
+    ("guion reorganizado de 9 pasos (r67)",
+     "const STEPS = 9;              // r67 · guion REORGANIZADO (0..8): menos pizarra, más mesa"),
     ("paso 3 usa el estado REAL de saque del núcleo",
      "G.rules.state = 'serve';"),
     ("profesor devuelve con el SOLVER de la casa",
@@ -107,10 +107,10 @@ FUENTE = [
      "const DEVOL_META = 6;"),
     ("rally real: cada golpe habilita UNA devolución del profesor (r64)",
      "aiReturned = false;   // r64 · cada golpe habilita UNA devolución"),
-    ("mandos 3D reales del dueño (r66: DOS GLB centrados)",
-     "function buildMandos() {"),
-    ("los mandos nacen centrados delante del jugador (r66)",
-     "mandosGrp.position.set(0, 1.07, -0.56);"),
+    ("mandos GLB ANCLADOS a los grips XR (r67)",
+     "function buildMandosAnclados() {"),
+    ("el mando vive DENTRO del grip de SU mano (r67)",
+     "try { G.grips[h].add(mont); } catch (eG) { continue; }"),
     ("resalte de piezas por paso/subfase (r65)",
      "function hlDePaso() {"),
     ("el panel se aparta en la práctica (pose lado, r64)",
@@ -232,26 +232,23 @@ async () => {
   G.sources[0].gamepad.buttons[4] = { pressed: true };   // 4) A
   T.tick(0.016); T.tick(0.05);
   e = T.estado();
-  out.push(['mando: A → mando dominado (subfase 4)', e.subfase === 4]);
-  T.onTrigger(0); T.tick(0.05);
-  e = T.estado();
-  out.push(['gatillo: paso 1 → 2 (la pala)', e.paso === 2]);
-  // --- 3 · paso 2: vaivén de la pala (2,6 m/s sostenido)
+  out.push(['mando: A → momento RAQUETA (subfase 4, aura + vaivén)', e.subfase === 4]);
+  // --- 3 · el VAIVÉN vive en la subfase 4: avanza SOLO al paso 2 (r67)
   G.controllerPaddles[0].vel.set(1.5, 1.2, 1.5);
   T.tick(0.2); T.tick(0.2); T.tick(0.2);
   e = T.estado();
-  out.push(['vaivén: 0,6 s ≥ meta 0,55 → paso 3 (EL SAQUE, r66)', e.paso === 3]);
-  out.push(['saque: demo real con panel apartado',
+  out.push(['vaivén: 0,6 s ≥ meta 0,55 → paso 2 (EL SAQUE, r67)', e.paso === 2]);
+  out.push(['saque: demo del profesor con panel apartado',
             e.submodo === 'demo' && e.pose === 'lado']);
   // la práctica se niega antes de la demo
   T.onTrigger(0);
   e = T.estado();
-  out.push(['saque: la práctica se niega antes de la demo (r66)', e.paso === 3 && e.submodo === 'demo']);
+  out.push(['saque: la práctica se niega antes de la demo (r66)', e.paso === 2 && e.submodo === 'demo']);
   for (let i = 0; i < 30; i++) T.tick(0.2);             // 6 s de demo sobre la mesa
   T.onTrigger(0);
   e = T.estado();
   out.push(['saque: demo vista → práctica (estado real del núcleo, r66)',
-            e.paso === 3 && e.submodo === 'practica' &&
+            e.paso === 2 && e.submodo === 'practica' &&
             G.rules.state === 'serve' && G.rules.server === 'player']);
   out.push(['saque: resetToss del rearme', G.tossed === false]);
   // --- 4 · paso 3 (práctica): 3 SAQUES VÁLIDOS (r64) con cerrojo -------
@@ -260,7 +257,7 @@ async () => {
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);   // cruza la red
   T.tick(0.016); T.tick(0.016);   // el 2.º tick NO debe re-contar (cerrojo r64)
   e = T.estado();
-  out.push(['saque 1/3 contado UNA vez (cerrojo r64)', e.saq === 1 && e.paso === 3]);
+  out.push(['saque 1/3 contado UNA vez (cerrojo r64)', e.saq === 1 && e.paso === 2]);
   G.ball.pos.set(0.4, 0.05, 0.9); G.ball.vel.set(0, 0, 0);        // bola muerta
   T.tick(0.3); T.tick(0.3);       // rearme silencioso (el saque había sido válido)
   e = T.estado();
@@ -270,7 +267,7 @@ async () => {
   G.ball.pos.set(0.3, 0.05, 0.8); G.ball.vel.set(0, 0, 0);        // muerta sin cruzar
   T.tick(0.3); T.tick(0.3);
   e = T.estado();
-  out.push(['saque fallido NO cuenta y rearma', e.saq === 1 && e.paso === 3 && G.tossed === false]);
+  out.push(['saque fallido NO cuenta y rearma', e.saq === 1 && e.paso === 2 && G.tossed === false]);
   // saques 2/3 y 3/3 → paso 4
   T.onTrigger(0);
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
@@ -281,7 +278,7 @@ async () => {
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
   T.tick(0.016);
   e = T.estado();
-  out.push(['saque 3/3 → paso 4 (EL INTERCAMBIO REAL, r66)', e.paso === 4]);
+  out.push(['saque 3/3 → paso 3 (EL INTERCAMBIO REAL, r67)', e.paso === 3]);
   // intercambio real: sacas, el rival devuelve, tú cruzas, el rival falla
   T.onTrigger(0);
   T.tick(0.016);
@@ -297,22 +294,22 @@ async () => {
   T.tick(0.016); T.tick(0.016);
   for (let i = 0; i < 20; i++) T.tick(0.2);
   e = T.estado();
-  out.push(['intercambio REAL ganado (el rival falla, r66)', e.paso === 4 && e.rfHecho === true]);
+  out.push(['intercambio REAL ganado (el rival falla, r67)', e.paso === 3 && e.rfHecho === true]);
   T.onTrigger(0);
   T.tick(0.05);
   e = T.estado();
-  out.push(['gatillo → paso 5 (EL MARCADOR, r66)', e.paso === 5 && e.holo === true]);
+  out.push(['gatillo → paso 4 (EL MARCADOR, r67)', e.paso === 4 && e.holo === true]);
   for (let i = 0; i < 45; i++) T.tick(0.2);        // demo del marcador
   T.onTrigger(0);
   e = T.estado();
-  out.push(['ENTENDIDO del marcador → paso 6 (r66)', e.paso === 6]);
+  out.push(['ENTENDIDO del marcador → paso 5 (r67)', e.paso === 5]);
   G.ball.pos.set(0.3, 0.05, 0.9); G.ball.vel.set(0, 0, 0);
   T.tick(0.7);                                    // bola muerta → el profesor alimenta
   // --- 5 · paso 6: tu golpe habilita al profesor (r66: el orden correcto)
   G.ball.pos.set(0.1, 1.1, -1.75); G.ball.vel.set(0, -0.5, -3.0);
   T.tick(0.016);                                                   // golpe válido del jugador
   e = T.estado();
-  out.push(['jugador: devolución 1/6 contada', e.hitCount === 1 && e.paso === 6]);
+  out.push(['jugador: devolución 1/6 contada', e.hitCount === 1 && e.paso === 5]);
   // --- 6 · el profesor devuelve tras el bote lejano (r64)
   G.ball.pos.set(0.2, 0.9, -2.3); G.ball.vel.set(0, 0.5, -2.0);   // bote lejano
   const vzAntes = G.ball.vel.z;
@@ -336,16 +333,16 @@ async () => {
     T.tick(0.016);                                   // el profesor devuelve
   }
   e = T.estado();
-  out.push(['jugador: devolución 6/6 → paso 7 (botones)', e.paso === 7]);
+  out.push(['jugador: devolución 6/6 → paso 6 (botones)', e.paso === 6]);
   // --- 9 · A/X cambia la mano de verdad
   G.paddleHand = 1;
   T.tick(0.016);
   e = T.estado();
-  out.push(['botones: A/X cambia la mano → paso 8 (modos 1/2)', e.paso === 8]);
-  // --- 10 · modos por gatillo hasta el 10
-  T.onTrigger(0); T.onTrigger(0);
+  out.push(['botones: A/X cambia la mano → paso 7 (modos, r67)', e.paso === 7]);
+  // --- 10 · los modos son UNA pizarra: un solo gatillo hasta el 8 (r67)
+  T.onTrigger(0);
   e = T.estado();
-  out.push(['modos: pasos 8→9→10 por gatillo', e.paso === 10]);
+  out.push(['modos: paso 7 → 8 por gatillo (una sola pizarra)', e.paso === 8]);
   // --- 11 · JUGAR YA: done + localStorage + exitCalib
   localStorage.removeItem('pp_tut_done');
   T.onTrigger(0);

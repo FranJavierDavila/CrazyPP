@@ -286,6 +286,13 @@ CAPAS = [
     # y paso 5 (marcador BAJO con saques reales: 11 por 2 y 10-10 cada
     # punto). Panel apartado en 3-6: la mesa nunca tapada.
     ('BA · academia sobre la mesa (v3658)', 'qa_r66_v3658.py'),
+    # BB (v3659): LA ACADEMIA EN TUS MANOS — informe del dueño tras
+    # V3.6.58: (1) speakPlan CANCELA la voz viva (adiós al audio doble);
+    # (2) mandos GLB ANCLADOS a los grips XR reales al 75% (nada flotando);
+    # (3) UNA sola raqueta (aura sobre la pala REAL, sin clones fantasma);
+    # (4) guion reorganizado a 9 pasos con demo del PROFESOR sobre la mesa
+    # real + AROS GUÍA y la rejilla de modos 2×3 en UNA pizarra.
+    ('BB · academia en tus manos (v3659)', 'qa_r67_v3659.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

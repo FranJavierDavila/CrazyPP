@@ -2978,6 +2978,32 @@ window.__PP_CORE = {
 };
 
 /* =====================================================================
+ *  v3.6.59 (ronda 67) · LA ACADEMIA EN TUS MANOS — r67 (V3.6.59)
+ *  =====================================================================
+ *  Informe del dueño tras V3.6.58, punto por punto:
+ *  (1) «Siguen apareciendo solapes en los textos» → guion REORGANIZADO a
+ *      9 pasos con layout estricto dentro de la zona negra + rejilla de
+ *      modos 2×3 (antes dos pizarras) y textos cortos propios.
+ *  (2) «El audio se superpone dos veces en varios momentos» → speakPlan
+ *      (c03) CANCELA la voz anterior: una sola voz viva, la última gana
+ *      (cierre de tutok→voz del paso siguiente, STICK y reintentos).
+ *  (3) «Los mandos 3D que he subido que estén anclados a las manos reales
+ *      y a los mandos reales, NO un modelo 3D moviéndose en el aire» →
+ *      cada GLB vive DENTRO del espacio grip XR de SU mando (G.grips[h],
+ *      seguido 1:1, orientación real: cabeza arriba, cara hacia delante,
+ *      75% del tamaño r66). Sin giro, sin flotación, sin poses.
+ *  (4) «que la raqueta fantasma también sea la que está real ya en nuestra
+ *      mano y solo 1 raqueta no 2» → ADIÓS clones fantasma: una AURA
+ *      dorada pulsa sobre la PALA REAL del juego (mismo paddleMount) en
+ *      el momento «el mando es tu raqueta».
+ *  (5) «piensa tú la mejor forma de explicarlo, muy sencilla y divertida»
+ *      → guion de 9 pasos (antes 11): 0 bienvenida · 1 TU MANDO, TU
+ *      RAQUETA (4 acciones + vaivén, fusionados) · 2 EL SAQUE (demo del
+ *      PROFESOR sobre la mesa real con AROS GUÍA que se iluminan con los
+ *      botes + 3 saques tuyos) · 3 el intercambio · 4 el marcador ·
+ *      5 la práctica (6 devoluciones) · 6 botones · 7 los modos (UNA
+ *      pizarra) · 8 ¡a jugar!.
+ *  ---------------------------------------------------------------------
  *  v3.6.51 (ronda 59) · LA ACADEMIA — TUTORIAL INTERACTIVO DEL JUEGO
  *  =====================================================================
  *  Petición del dueño: «la gente entra, hay tanto menú y opciones que no
@@ -3021,28 +3047,30 @@ window.__PP_CORE = {
   'use strict';
   if (typeof window === 'undefined' || window.__PP_TUT) return;
 
-  const STEPS = 11;             // r65 · pasos del guion (0..10): +2 REGLAS
-  const SWAY_META = 0.55;       // segundos de vaivén firme (paso 2)
-  const SAQ_META = 3;           // r64 · saques válidos para superar el paso 5
-  const DEVOL_META = 6;         // r64 · devoluciones para superar el paso 6
+  const STEPS = 9;              // r67 · guion REORGANIZADO (0..8): menos pizarra, más mesa
+  const SWAY_META = 0.55;       // segundos de vaivén firme (paso 1, raqueta)
+  const SAQ_META = 3;           // r64 · saques válidos para superar el paso 2
+  const DEVOL_META = 6;         // r64 · devoluciones para superar el paso 5
   const DEMO_MIN = 6;           // r65 · segundos de demo de reglas antes del OK
+  const MANDO_ESC = 0.154;      // r67 · 75% del tamaño r66 (0.205): petición del dueño
 
   let G = null;                 // PingPongGame activo mientras dura la academia
   let active = false;
   let grp = null, cv = null, cc = null, tex = null, mesh = null;
-  let mando = null;             // r66 · grupo de los DOS mandos (izq + der)
-  let mandosGrp = null;         // r66 · grupo padre (hijo del rig, pose propia)
-  let mandosI = null, mandosD = null;   // r66 · {grupo, spin, modelo, halos}
-  let mandosPose = 'centro';    // r66 · pose actual del grupo de mandos
-  let fantasmaMats = null;      // r66 · materiales de las 2 raquetas fantasma
-  let fantasmaOp = 0;           // r66 · opacidad actual de la raqueta fantasma
-  let fantasmaMeta = 0;         // r66 · opacidad objetivo (fade)
-  let etiqueta = null;          // r66 · sprite-etiqueta de la pieza pedida
-  let etiquetaTxt = '';         // r66 · texto de la etiqueta ya pintado
-  let mandoSpin = null;         // r65 · subgrupo giratorio (mando 1, compat QA)
-  let mandoT = 0;               // reloj del mando (giro + pulso)
-  let mandoMats = [];           // r66 · materiales de AMBOS GLB (pulso emissive)
-  let halos = null;             // r66 · { pieza: [Sprite izq, Sprite der] }
+  let anclados = null;          // r67 · mandos ANCLADOS a los grips reales
+                                //        [{mano, mont, glb, halos}, ×2]
+  let mandosVis = 0;            // r67 · opacidad del conjunto anclado (fade)
+  let mandosVisMeta = 0;        // r67 · objetivo: 1 = en las manos · 0 = oculto
+  let auraMats = null;          // r67 · auras de la pala REAL (UNA sola raqueta)
+  let auraOp = 0;               // r67 · opacidad actual de la aura
+  let auraMeta = 0;             // r67 · objetivo del fade de la aura
+  let etiqueta = null;          // sprite-etiqueta (hija del mando de la pala)
+  let etiquetaTxt = '';         // texto de la etiqueta ya pintado
+  let mando = null;             // mando anclado de la mano ACTIVA (compat QA)
+  let mandoSpin = null;         // grupo interior del mando activo (compat QA)
+  let mandoT = 0;               // reloj (pulso de halos)
+  let mandoMats = [];           // materiales de AMBOS GLB (fade + pulso)
+  let halos = null;             // r67 · { pieza: [Sprite izq, Sprite der] }
   let hlParte = null;           // pieza resaltada ahora mismo
   let pizImg = null;            // r65 · imagen de la pizarra decodificada
 
@@ -3124,7 +3152,7 @@ window.__PP_CORE = {
     grp.visible = false;
     G.rig.add(grp);
     asegurarPizarra();                  // r65 · decodifica la pizarra (webp)
-    buildMandos();                      // r66 · DOS mandos GLB (izq+der) centrados
+    buildMandosAnclados();              // r67 · mandos GLB ANCLADOS a los grips
   }
   /* decodifica Pizarra.png (webp embebido) para pintarla de fondo */
   function asegurarPizarra() {
@@ -3139,12 +3167,19 @@ window.__PP_CORE = {
   function teardownPanel() {
     try { if (grp && G && G.rig) G.rig.remove(grp);
           else if (grp && grp.parent) grp.parent.remove(grp); } catch (e) { /* */ }
-    try { if (mandosGrp && G && G.rig) G.rig.remove(mandosGrp);
-          else if (mandosGrp && mandosGrp.parent) mandosGrp.parent.remove(mandosGrp); } catch (e) { /* */ }
+    // r67 · los mandos ANCLADOS salen de los grips reales (cada mont es
+    // hijo de G.grips[h] — desmontarlos NO toca la pala ni el mando XR)
+    if (anclados && G && G.grips) {
+      for (const a of anclados) {
+        try { if (a && a.mont && a.mont.parent) a.mont.parent.remove(a.mont); }
+        catch (e2) { /* */ }
+      }
+    }
     grp = null; cv = null; cc = null; tex = null; mesh = null;
-    mandosGrp = null; mandosI = null; mandosD = null;
-    mando = null; mandoSpin = null; mandoMats = []; halos = null;
-    fantasmaMats = null; fantasmaOp = 0; fantasmaMeta = 0;
+    anclados = null; mando = null; mandoSpin = null;
+    mandoMats = []; halos = null;
+    auraMats = null; auraOp = 0; auraMeta = 0;
+    mandosVis = 0; mandosVisMeta = 0;
     etiqueta = null; etiquetaTxt = '';
     hlParte = null;
     pizImg = null;
@@ -3243,48 +3278,41 @@ window.__PP_CORE = {
     g2.fillText(txt, 256, 82);
     sp.material.map.needsUpdate = true;
   }
-  /* material FANTASMA para la raqueta (el dueño: «una raqueta con material
-   * tipo fantasma para asociar que el mando va a ser nuestra raqueta») */
-  function _fantasmaMats(grupo, coleccion) {
-    grupo.traverse((o) => {
-      if (!o.isMesh) return;
-      const fant = new THREE.MeshBasicMaterial({
-        color: 0x9fd8ff, transparent: true, opacity: 0,
-        blending: THREE.AdditiveBlending, depthWrite: false,
-        side: THREE.DoubleSide,
-      });
-      o.material = fant;
-      o.castShadow = false;
-      o.renderOrder = 992;
-      coleccion.push(fant);
-    });
-  }
+  /* ---------- MANDOS GLB REALES · r67 · ANCLADOS A LAS MANOS ----------
+   * El dueño tras V3.6.58: «Los mandos 3D que he subido que estén anclados
+   * a las manos reales y a los mandos reales, NO un modelo 3D moviéndose en
+   * el aire. Que parezca que los tenemos en las manos… y más pequeños,
+   * como un 75% del tamaño actual». Cada GLB (izq Y/X · der B/A) vive DENTRO
+   * del espacio grip de SU mando XR (G.grips[h]) — sigue la mano 1:1, con
+   * la orientación EXACTA del mando real: cabeza (+Y del GLB) hacia arriba
+   * del mango y cara (+Z del GLB) hacia delante (-Z del grip, giro 180°).
+   * Los HALOS y la ETIQUETA viajan con el mando REAL: las explicaciones se
+   * dan SOBRE lo que el jugador tiene en la mano.                       */
   function _montaMando(gltf, anclas, texHalo) {
     const modelo = gltf.scene;
     const box = new THREE.Box3().setFromObject(modelo);
     const cen = box.getCenter(new THREE.Vector3());
     const tam = box.getSize(new THREE.Vector3());
-    const esc = 0.205 / Math.max(tam.x, tam.y, tam.z, 0.01);
+    const esc = MANDO_ESC / Math.max(tam.x, tam.y, tam.z, 0.01);
     modelo.position.sub(cen);
     modelo.scale.setScalar(esc);
     modelo.traverse((o) => {
       if (o.isMesh) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         for (const m of mats) {
+          m.transparent = true;               // r67 · fade del conjunto
           m.emissive = new THREE.Color('#ffd257');
           m.emissiveIntensity = 0;
           mandoMats.push(m);
         }
       }
     });
-    const grupo = new THREE.Group();
-    const tilt = new THREE.Group();
-    tilt.rotation.set(-Math.PI / 2, 0, Math.PI);   // cabeza arriba, cara visible
-    const spin = new THREE.Group();
-    tilt.add(spin);
-    spin.add(modelo);
-    grupo.add(tilt);
-    // halos OPACOS sobre las piezas (anclas espejo del derecho)
+    // giro 180°: la cara del GLB (+Z, stick/botones) mira hacia -Z del grip
+    // (hacia delante, como el mando REAL en la mano) y la cabeza queda arriba
+    const glb = new THREE.Group();
+    glb.rotation.y = Math.PI;
+    glb.add(modelo);
+    // halos OPACOS sobre las piezas (anclas en espacio GLB, escaladas)
     const hs = {};
     for (const k in anclas) {
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -3292,72 +3320,96 @@ window.__PP_CORE = {
         opacity: 0, depthTest: false, blending: THREE.AdditiveBlending,
       }));
       sp.position.fromArray(anclas[k]).multiplyScalar(esc * 1.12);
-      sp.scale.setScalar(0.052);              // r66 · más GRANDE (era 0.03)
+      sp.scale.setScalar(0.046);              // r67 · con el mando al 75%
       sp.renderOrder = 990;
-      spin.add(sp);
+      glb.add(sp);
       hs[k] = sp;
     }
-    return { grupo, spin, esc, halos: hs, fantasma: null };
+    return { glb, esc, halos: hs };
   }
-  function buildMandos() {
-    if (mandosGrp || !G || !G.rig || typeof THREE === 'undefined' ||
+  function buildMandosAnclados() {
+    if (anclados || !G || !G.grips || typeof THREE === 'undefined' ||
         !GLTFLoader || !TUT_MANDO_GLB || !TUT_MANDO_DER_GLB) return;
     try {
-      mandosGrp = new THREE.Group();
-      mandosGrp.name = 'ppTutMandos';
-      mandosGrp.position.set(0, 1.07, -0.56);
-      mandosGrp.visible = false;
-      G.rig.add(mandosGrp);
       const texHalo = _haloTex();
       etiqueta = _etiquetaSprite();
-      etiqueta.position.set(0, 0.205, 0.02);
-      mandosGrp.add(etiqueta);
-      const binI = Uint8Array.from(atob(TUT_MANDO_GLB), (ch) => ch.charCodeAt(0));
-      new GLTFLoader().parse(binI.buffer, '', (gltf) => {
-        if (!mandosGrp) return;
-        mandosI = _montaMando(gltf, ANCLAS_MANDO, texHalo);
-        mandosI.grupo.position.x = -0.145;
-        mandosI.grupo.rotation.y = 0.16;
-        mandosGrp.add(mandosI.grupo);
-        mando = mandosI.grupo;              // compat QA r65 (mando visible)
-        mandoSpin = mandosI.spin;
-        mandosI.grupo.name = 'ppTutMandoGLB';
-        if (G.paddleModelRef) _ponFantasma(mandosI);
-      }, () => { /* sin GLB: el panel funciona igual */ });
-      const binD = Uint8Array.from(atob(TUT_MANDO_DER_GLB), (ch) => ch.charCodeAt(0));
-      new GLTFLoader().parse(binD.buffer, '', (gltf) => {
-        if (!mandosGrp) return;
-        mandosD = _montaMando(gltf, ANCLAS_MANDO_DER, texHalo);
-        mandosD.grupo.position.x = 0.145;
-        mandosD.grupo.rotation.y = -0.16;
-        mandosGrp.add(mandosD.grupo);
-        if (G.paddleModelRef) _ponFantasma(mandosD);
-      }, () => { /* sin GLB: el panel funciona igual */ });
+      etiqueta.material.opacity = 0;
+      anclados = [];
+      const defs = [
+        { mano: 'left', bin: TUT_MANDO_GLB, anclas: ANCLAS_MANDO },
+        { mano: 'right', bin: TUT_MANDO_DER_GLB, anclas: ANCLAS_MANDO_DER },
+      ];
+      for (let h = 0; h < 2; h++) {
+        const def = defs.find((d) => d.mano === G.handOf[h]) || defs[h];
+        const mont = new THREE.Group();
+        mont.name = 'ppTutMando' + h;
+        // el origen del grip queda dentro del mango: el centro del modelo
+        // sube un pelín (la cabeza por encima de la palma, mango abajo)
+        mont.position.set(0, 0.024, 0);
+        try { G.grips[h].add(mont); } catch (eG) { continue; }
+        const reg = { mano: h, mont, glb: null, halos: null, esc: MANDO_ESC };
+        anclados.push(reg);
+        const bin = Uint8Array.from(atob(def.bin), (ch) => ch.charCodeAt(0));
+        new GLTFLoader().parse(bin.buffer, '', (gltf) => {
+          if (!anclados || anclados.indexOf(reg) < 0) return;
+          const m = _montaMando(gltf, def.anclas, texHalo);
+          mont.add(m.glb);
+          reg.glb = m.glb; reg.halos = m.halos; reg.esc = m.esc;
+          if (h === (G ? G.paddleHand : 1)) {
+            mando = m.glb;                    // compat QA: mando de la pala
+            mandoSpin = m.glb;
+          }
+          _recolocaEtiqueta();
+        }, () => { /* sin GLB: el panel funciona igual */ });
+      }
+      _ponAuraPala();
     } catch (e) { /* nunca rompe el arranque de la academia */ }
   }
-  /* RAQUETA FANTASMA sobre un mando: clon de la pala REAL del juego con
-   * material aditivo translúcido, empuñadura en el cuerpo del mando */
-  function _ponFantasma(mm) {
+  /* la ETIQUETA vive sobre el mando REAL de la mano de la pala */
+  function _recolocaEtiqueta() {
     try {
-      if (!mm || mm.fantasma || !G.paddleModelRef || !makePaddleVisual) return;
-      const f = makePaddleVisual(G.paddleModelRef, 'grip');
+      if (!etiqueta || !anclados || !G) return;
+      const a = anclados[G.paddleHand] || anclados[0];
+      if (a && etiqueta.parent !== a.mont) {
+        if (etiqueta.parent) etiqueta.parent.remove(etiqueta);
+        a.mont.add(etiqueta);
+        etiqueta.position.set(0, MANDO_ESC * 0.92, 0);   // sobre la cabeza
+      }
+    } catch (e) { /* decorativo */ }
+  }
+  /* LA ÚNICA RAQUETA: la pala REAL que ya está en la mano (el dueño: «la
+   * raqueta fantasma también sea la que está real ya en nuestra mano y solo
+   * 1 raqueta no 2»). Sin clones: una AURA dorada sobre la hoja de la pala
+   * del juego, montada en el MISMO paddleMount que la pala visual.       */
+  function _ponAuraPala() {
+    try {
+      if (auraMats || !G || !G.paddleMounts || typeof THREE === 'undefined') return;
+      const mount = G.paddleMounts[G.paddleHand];
+      if (!mount) return;
+      const texHalo = _haloTex();
       const mats = [];
-      _fantasmaMats(f, mats);
-      f.position.set(0.004, -0.028, -0.008);
-      f.rotation.set(-0.62, 0.10, 0.06);   // hoja arriba, abierta hacia el jugador
-      mm.grupo.add(f);
-      mm.fantasma = f;
-      if (!fantasmaMats) fantasmaMats = [];
-      fantasmaMats.push(...mats);
-    } catch (e) { /* decorativo: sin fantasma todo sigue */ }
+      const grpA = new THREE.Group();
+      grpA.name = 'ppTutAuraPala';
+      for (const yy of [0.10, 0.17]) {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: texHalo, color: 0xffd257, transparent: true,
+          opacity: 0, depthTest: false, blending: THREE.AdditiveBlending,
+        }));
+        sp.position.set(0, yy, 0);
+        sp.scale.setScalar(yy > 0.12 ? 0.24 : 0.18);   // halo grande en la hoja
+        sp.renderOrder = 993;
+        grpA.add(sp);
+        mats.push(sp.material);
+      }
+      mount.add(grpA);
+      auraMats = mats;
+    } catch (e) { /* decorativo: sin aura todo sigue */ }
   }
   /* resalte por paso/subfase: ¿qué pieza menciona el guion ahora mismo? */
   function hlDePaso() {
-    if (step === 1) {
-      if (subfase >= 4) return null;   // momento RAQUETA: sin halo
+    if (step === 1 && subfase < 4) {
       return ['gatillo', 'grip', 'stick', 'botones'][Math.min(subfase, 3)];
     }
-    if ((step === 3 && submodo === 'demo') || step === 5) return 'gatillo';
     return null;
   }
   function txtDeEtiqueta(parte) {
@@ -3367,77 +3419,59 @@ window.__PP_CORE = {
     }
     return T('tut_lab_' + parte) || '';
   }
-  /* pose del grupo de mandos (r66): centro (pasos 0-2) · saque (demos sobre
-   * la mesa, en coords de MESA convertidas al rig) · oculto (práctica) */
-  function _poseMandos() {
-    const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
-    if (mandosPose === 'saque') {
-      return { x: 0.15, y: TY + 0.30, z: C + HL + 0.16, s: 1, giro: 0 };
-    }
-    if (mandosPose === 'oculto') {
-      return { x: 0, y: -2.2, z: -0.5, s: 0.85, giro: 0 };
-    }
-    return { x: 0, y: 1.07, z: -0.56, s: 1, giro: 0 };   // centro
-  }
+  /* r67 · tick de los mandos ANCLADOS: NADA de giro ni flotación (van
+   * pegados a los mandos reales) — sólo fades, pulso de halos y etiqueta */
   function tickMandos(dt) {
-    if (!mandosGrp || !G || !G.rig) return;
+    if (!G) return;
     mandoT += dt;
-    const p = _poseMandos();
-    // coordenada de MESA (mundo) → local del rig (el jugador puede andar)
-    G.rig.updateMatrixWorld(true);
-    const destino = new THREE.Vector3(p.x, p.y, p.z);
-    if (mandosPose === 'saque') destino.copy(G.rig.worldToLocal(destino));
-    const k = 1 - Math.exp(-dt * 4.5);
-    mandosGrp.position.x += (destino.x - mandosGrp.position.x) * k;
-    mandosGrp.position.y += (destino.y - mandosGrp.position.y) * k;
-    mandosGrp.position.z += (destino.z - mandosGrp.position.z) * k;
-    const s = mandosGrp.scale.x + (p.s - mandosGrp.scale.x) * k;
-    mandosGrp.scale.setScalar(s);
-    mandosGrp.visible = mandosGrp.position.y > -1;
-    // giro: sólo en exhibición; se DETIENE cuando la fantasma aparece
-    const giroMeta = (fantasmaMeta > 0.02 || mandosPose !== 'centro') ? 0
-      : (step === 1 ? 0.35 : 0.55);
-    for (const mm of [mandosI, mandosD]) {
-      if (!mm) continue;
-      mm.__g = (mm.__g === undefined ? giroMeta : mm.__g + (giroMeta - mm.__g) * k);
-      mm.spin.rotation.y += mm.__g * dt;
-      mm.grupo.position.y = Math.sin(mandoT * 1.4 + (mm === mandosI ? 0 : 1.1)) * 0.008;
+    const k = Math.min(1, dt * 4.5);
+    mandosVis += (mandosVisMeta - mandosVis) * k;
+    // fade de los GLB anclados (opacidad de TODOS sus materiales)
+    for (const m of mandoMats) {
+      try {
+        m.opacity = mandosVis;
+        m.emissiveIntensity = hlParte ? (0.16 + 0.1 * Math.sin(mandoT * 5)) : 0;
+      } catch (e) { /* */ }
     }
-    // fantasma: fade in/out con la opacidad objetivo
-    fantasmaOp += (fantasmaMeta - fantasmaOp) * Math.min(1, dt * 3.2);
-    if (fantasmaMats) {
-      for (const m of fantasmaMats) {
-        try { m.opacity = fantasmaOp * 0.42; } catch (e) { /* */ }
+    for (const a of (anclados || [])) {
+      try { if (a.mont) a.mont.visible = mandosVis > 0.02; } catch (e) { /* */ }
+    }
+    // LA ÚNICA RAQUETA: aura sobre la pala real (fade)
+    auraOp += (auraMeta - auraOp) * Math.min(1, dt * 3.2);
+    if (auraMats) {
+      const pulso = 0.55 + 0.45 * Math.sin(mandoT * 4.2);
+      for (const m of auraMats) {
+        try { m.opacity = auraOp * pulso; } catch (e) { /* */ }
       }
     }
-    // halos + etiqueta de la pieza pedida
+    // halos de la pieza pedida (en el mando REAL de cada mano)
     hlParte = hlDePaso();
-    const pulso = 0.72 + 0.28 * Math.sin(mandoT * 5);
-    for (const mm of [mandosI, mandosD]) {
-      if (!mm) continue;
-      for (const kk in mm.halos) {
+    const pulso = (0.72 + 0.28 * Math.sin(mandoT * 5)) * mandosVis;
+    for (const a of (anclados || [])) {
+      if (!a.halos) continue;
+      for (const kk in a.halos) {
         try {
-          mm.halos[kk].material.opacity = (kk === hlParte) ? pulso : 0;
+          a.halos[kk].material.opacity = (kk === hlParte) ? pulso : 0;
         } catch (e) { /* */ }
       }
     }
     if (etiqueta) {
-      const t = txtDeEtiqueta(hlParte);
+      const t = hlParte ? txtDeEtiqueta(hlParte)
+        : (auraMeta > 0.3 ? T('tut_lab_pala') : '');
       if (t) {
         pintaEtiqueta(etiqueta, t);
-        etiqueta.material.opacity = Math.min(1, etiqueta.material.opacity + dt * 6);
+        etiqueta.material.opacity = Math.min(1,
+          etiqueta.material.opacity + dt * 6) * mandosVis;
       } else {
         etiqueta.material.opacity = Math.max(0, etiqueta.material.opacity - dt * 6);
       }
     }
   }
   function bolaPalmDemo() {
-    // posición de la bola en la palma del mando IZQUIERDO de la demo
+    // r67 · bola de la demo del PROFESOR: apoyada en su mitad, junto al
+    // borde de la mesa (la pala del rival es la referencia visual)
     const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
-    return new THREE.Vector3(0.06, TY + 0.415, C + HL + 0.24);
-  }
-  function puntoSaqueDemo() {
-    return bolaPalmDemo();
+    return new THREE.Vector3(0.10, TY + DIMS.ballRadius + 0.004, C - HL - 0.17);
   }
 
   /* ---------------- pintura del panel (PIZARRA) · r65 ----------------
@@ -3544,6 +3578,24 @@ window.__PP_CORE = {
     fitFont(c, sub, 17, '500', 740, 12);
     c.fillText(sub, 288, y + 50);
   }
+  /* r67 · tarjeta compacta de la rejilla de modos (2×3) */
+  function modeCard(c, x, y, w, h, col0, ini, title, sub) {
+    rr(c, x, y, w, h, 16);
+    c.fillStyle = 'rgba(255,255,255,0.07)'; c.fill();
+    c.strokeStyle = col0; c.lineWidth = 2.5; c.stroke();
+    c.beginPath(); c.arc(x + 36, y + h / 2, 21, 0, Math.PI * 2);
+    c.fillStyle = col0; c.fill();
+    c.fillStyle = '#ffffff';
+    c.font = '800 22px system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(ini, x + 36, y + h / 2 + 1);
+    c.textAlign = 'left';
+    fitFont(c, title, 21, '800', w - 86, 15);
+    c.fillText(title, x + 68, y + 32);
+    c.fillStyle = 'rgba(255,255,255,0.85)';
+    fitFont(c, sub, 15, '500', w - 86, 11);
+    c.fillText(sub, x + 68, y + 62);
+  }
   const PAINTERS = [
     // 0 · BIENVENIDA (voz tutv0a/b)
     (c) => {
@@ -3552,45 +3604,40 @@ window.__PP_CORE = {
       line(c, T('tut_s0_l2'), 384, 26);
       pill(c, T('tut_s0_go'), 462, { col: 'rgba(232,180,90,0.30)', size: 32 });
     },
-    // 1 · TUS MANDOS (GLB reales; la ACCIÓN requerida según la subfase)
+    // 1 · TU MANDO, TU RAQUETA (r67 · fusiona mandos+pala: 4 acciones reales
+    //     sobre los mandos ANCLADOS a tus manos y después el vaivén con la
+    //     ÚNICA raqueta — la pala real que ya tienes en la mano)
     (c) => {
-      line(c, T('tut_s1_t'), 244, 40, '#ffd257');
-      line(c, T('tut_s1_l1'), 306, 21, '#c9d4de');
-      line(c, T('tut_s1_l2'), 344, 21, '#c9d4de');
-      line(c, T('tut_s1_l3'), 382, 21, '#c9d4de');
+      line(c, T('tut_m_t'), 236, 40, '#ffd257');
+      line(c, T('tut_s1_l2'), 296, 20, '#c9d4de');
+      line(c, T('tut_s1_l1'), 328, 17, '#8b98a5');
       const tareas = [T('tut_m1_gat'), T('tut_m1_grip'), T('tut_m1_stick'), T('tut_m1_a')];
       for (let i = 0; i < 4; i++) {
         c.beginPath();
-        c.arc(512 + i * 42, 428, subfase > i ? 9 : 6.5, 0, Math.PI * 2);
+        c.arc(512 + i * 42, 374, subfase > i ? 9 : 6.5, 0, Math.PI * 2);
         c.fillStyle = subfase > i ? '#7fb069' : 'rgba(255,255,255,0.30)';
         c.fill();
       }
       if (subfase >= 4) {
-        pill(c, T('tut_m1_raf'), 470, { col: 'rgba(90,160,255,0.30)', size: 26 });
+        // momento RAQUETA: barra de vaivén con la pala real en la mano
+        pill(c, T('tut_m1_raf'), 406, { col: 'rgba(90,160,255,0.30)', size: 24 });
+        const p = Math.min(1, sway / SWAY_META);
+        rr(c, 280, 492, 800, 40, 20);
+        c.fillStyle = 'rgba(255,255,255,0.12)'; c.fill();
+        if (p > 0.01) {
+          rr(c, 280, 492, Math.max(26, 800 * p), 40, 20);
+          c.fillStyle = 'rgba(127,176,105,0.75)'; c.fill();
+        }
+        c.fillStyle = '#eef2f5';
+        c.font = '700 18px system-ui, sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(Math.round(p * 100) + '%', PIZ_CX, 513);
       } else {
-        pill(c, tareas[Math.min(subfase, 3)], 470,
-          { col: 'rgba(232,180,90,0.28)', size: 27 });
+        pill(c, tareas[Math.min(subfase, 3)], 406,
+          { col: 'rgba(232,180,90,0.28)', size: 26 });
       }
     },
-    // 2 · LA PALA (vaivén)
-    (c) => {
-      line(c, T('tut_s2_t'), 248, 42, '#ffd257');
-      line(c, T('tut_s2_l1'), 316, 24);
-      line(c, T('tut_s2_l2'), 362, 24);
-      const p = Math.min(1, sway / SWAY_META);
-      rr(c, 280, 408, 800, 42, 21);
-      c.fillStyle = 'rgba(255,255,255,0.12)'; c.fill();
-      if (p > 0.01) {
-        rr(c, 280, 408, Math.max(26, 800 * p), 42, 21);
-        c.fillStyle = 'rgba(127,176,105,0.75)'; c.fill();
-      }
-      c.fillStyle = '#eef2f5';
-      c.font = '700 19px system-ui, sans-serif';
-      c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(Math.round(p * 100) + '%', PIZ_CX, 430);
-      pill(c, T('tut_s2_task'), 486, { w: 640, h: 62, size: 25 });
-    },
-    // 3 · EL SAQUE · demo REAL sobre la mesa y luego 3 saques TUYOS
+    // 2 · EL SAQUE · demo del PROFESOR sobre la mesa real y luego 3 saques TUYOS
     (c) => {
       if (submodo === 'demo') {
         line(c, T('tut_d3_t'), 244, 38, '#ffd257');
@@ -3619,7 +3666,7 @@ window.__PP_CORE = {
         else pill(c, T('tut_s3_task'), 500, { size: 28 });
       }
     },
-    // 4 · EL INTERCAMBIO REAL (saque tuyo + rival que devuelve hasta fallar)
+    // 3 · EL INTERCAMBIO REAL (saque tuyo + rival que devuelve hasta fallar)
     (c) => {
       line(c, T('tut_d4_t'), 236, 40, '#ffd257');
       line(c, T('tut_d4_l1'), 302, 21);
@@ -3632,7 +3679,7 @@ window.__PP_CORE = {
         pill(c, T('tut_d4_task'), 462, { size: 24 });
       }
     },
-    // 5 · EL MARCADOR (holo sobre la mesa + saques reales en bucle)
+    // 4 · EL MARCADOR (holo sobre la mesa + saques reales en bucle)
     (c) => {
       line(c, T('tut_d5_t'), 250, 40, '#ffd257');
       line(c, T('tut_d5_l1'), 318, 22);
@@ -3642,7 +3689,7 @@ window.__PP_CORE = {
         : T('tut_h_saq') + '… ' + Math.ceil(DEMO_MIN - demoT) + ' s',
         470, { col: demoT >= DEMO_MIN ? 'rgba(47,158,68,0.35)' : 'rgba(255,255,255,0.10)', size: 27 });
     },
-    // 6 · EL INTERCAMBIO (profesor)
+    // 5 · LA PRÁCTICA (el profesor devuelve 6 bolas)
     (c) => {
       line(c, T('tut_s4_t'), 224, 42, '#ffd257');
       line(c, T('tut_s4_l1'), 290, 23);
@@ -3655,12 +3702,11 @@ window.__PP_CORE = {
       c.shadowBlur = 0;
       pill(c, T('tut_s4_task'), 494, { size: 27 });
     },
-    // 7 · LOS BOTONES EN JUEGO
+    // 6 · LOS BOTONES EN JUEGO
     (c) => {
       line(c, T('tut_s5_t'), 240, 40, '#ffd257');
       line(c, T('tut_s5_l1'), 306, 23);
       line(c, T('tut_s5_l2'), 346, 23);
-      line(c, T('tut_s5_l3'), 386, 23);
       for (const [lb, kx] of [['A', 600], ['X', 760]]) {
         rr(c, kx - 38, 408, 76, 76, 17);
         c.fillStyle = 'rgba(255,255,255,0.10)'; c.fill();
@@ -3672,27 +3718,30 @@ window.__PP_CORE = {
       }
       pill(c, T('tut_s5_task'), 520, { w: 600, h: 62, size: 25 });
     },
-    // 8 · LOS MODOS · 1 DE 2
+    // 7 · LOS MODOS · rejilla 2×3 (r67 · UNA sola pizarra, antes eran dos)
     (c) => {
-      line(c, T('tut_s6_t'), 224, 38, '#ffd257');
-      modeRow(c, 264, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_s6_m1'));
-      modeRow(c, 346, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_s6_m2'));
-      modeRow(c, 428, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_s6_m3'));
-      pill(c, T('tut_hint_next'), 528, { w: 520, h: 56, col: 'rgba(232,180,90,0.28)', size: 23 });
-    },
-    // 9 · LOS MODOS · 2 DE 2 (+ PODERES) — r66 · espaciado sin solapes
-    (c) => {
-      line(c, T('tut_s7_t'), 206, 34, '#ffd257');
-      modeRow(c, 242, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_s7_m1'));
-      modeRow(c, 314, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_s7_m2'));
-      modeRow(c, 386, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_s7_m3'));
-      rr(c, 190, 462, 980, 50, 14);
+      line(c, T('tut_mods_t'), 208, 36, '#ffd257');
+      const W = 480, H = 104;
+      const cards = [
+        [190, 238, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_mod_p')],
+        [690, 238, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_mod_s')],
+        [190, 356, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_mod_m')],
+        [690, 356, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_mod_c')],
+      ];
+      for (const [x, y, col, ini, ti, su] of cards) {
+        modeCard(c, x, y, W, H, col, ini, ti, su);
+      }
+      // fila inferior: RANKING + ENTRENAR (más estrechas, con la caja de poderes)
+      modeCard(c, 190, 470, 300, 96, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'));
+      modeCard(c, 506, 470, 300, 96, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_mod_t'));
+      rr(c, 822, 470, 348, 96, 14);
       c.fillStyle = 'rgba(232,180,90,0.14)'; c.fill();
       c.strokeStyle = 'rgba(232,180,90,0.45)'; c.lineWidth = 2; c.stroke();
-      wrap2(c, T('tut_s7_p'), 487, 16, '#ffe08a', 900, 12);
-      pill(c, T('tut_hint_next'), 538, { w: 520, h: 46, col: 'rgba(232,180,90,0.28)', size: 21 });
+      wrap2(c, T('tut_pow_t'), 512, 15, '#ffe08a', 310, 12);
+      // r67 · píldora 552..594 — NUNCA invade la línea «B · saltar» (604)
+      pill(c, T('tut_hint_next'), 552, { w: 520, h: 42, col: 'rgba(232,180,90,0.28)', size: 20 });
     },
-    // 10 · ¡YA SABES JUGAR!
+    // 8 · ¡YA SABES JUGAR!
     (c) => {
       line(c, T('tut_s8_t'), 268, 52, '#ffd257');
       line(c, T('tut_s8_l1'), 352, 25);
@@ -3783,6 +3832,47 @@ window.__PP_CORE = {
     holo = null; holoPips = null; holoGhost = null; holoTokens = null;
     holoCartel2 = null;
   }
+  /* ---- AROS GUÍA del saque (r67) ----------------------------------
+   * Dos aros PLANOS sobre la MESA REAL que marcan DÓNDE debe botar un
+   * saque válido: primero en TU campo y después en el del rival. Pulsan
+   * suave y SE ILUMINAN en verde cuando la bola botó en su zona — la
+   * regla se VE, no se lee (el profesor la usa en su demo y tú en la
+   * práctica). Sin mallas raras: torus fino reutilizando el material holo. */
+  let arosGrp = null;
+  let aroIzq = null, aroDer = null;
+  function construirAros() {
+    limpiarAros();
+    if (!G || !G.scene || typeof THREE === 'undefined') return;
+    const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
+    arosGrp = new THREE.Group();
+    const geo = new THREE.TorusGeometry(0.085, 0.008, 8, 28);
+    aroIzq = new THREE.Mesh(geo, _holoMat('#ffd257', 0.5));
+    aroIzq.rotation.x = -Math.PI / 2;
+    aroIzq.position.set(0.10, TY + 0.006, C + HL * 0.62);   // TU campo
+    aroDer = new THREE.Mesh(geo, _holoMat('#ffd257', 0.5));
+    aroDer.rotation.x = -Math.PI / 2;
+    aroDer.position.set(0.10, TY + 0.006, C - HL * 0.62);   // campo del rival
+    arosGrp.add(aroIzq); arosGrp.add(aroDer);
+    arosGrp.__t = 0;
+    G.scene.add(arosGrp);
+  }
+  function limpiarAros() {
+    if (!arosGrp) return;
+    try { if (arosGrp.parent) arosGrp.parent.remove(arosGrp); } catch (e) { /* */ }
+    arosGrp = null; aroIzq = null; aroDer = null;
+  }
+  function tickAros(dt) {
+    if (!arosGrp) return;
+    arosGrp.__t += dt;
+    const t = arosGrp.__t;
+    const base = 0.42 + 0.18 * Math.sin(t * 3.2);
+    try {
+      if (aroIzq) aroIzq.material.opacity = aroIzq.__ok ? 0.95 : base;
+      if (aroDer) aroDer.material.opacity = aroDer.__ok ? 0.95 : base;
+      if (aroIzq) aroIzq.material.color.set(aroIzq.__ok ? '#7fb069' : '#ffd257');
+      if (aroDer) aroDer.material.color.set(aroDer.__ok ? '#7fb069' : '#ffd257');
+    } catch (e) { /* decorativo */ }
+  }
   function _holoBase() {
     limpiarHolo();
     if (!G || !G.scene || typeof THREE === 'undefined') return null;
@@ -3841,67 +3931,62 @@ window.__PP_CORE = {
       else G.audio.playOsc(520, 780, 0.12, 'triangle', 0.16, 0);
     } catch (e) { /* nunca rompe */ }
   }
+  /* VOCES (r67 · remapeadas al guion de 9 pasos; los átomos Piper r66 se
+   * REUSAN — sin regenerar TTS): 0 bienvenida · 1 mando+raqueta (c/d/e por
+   * acción, f+2a/b en el vaivén) · 2 saque (profesor + práctica) · 3
+   * intercambio · 4 marcador · 5 práctica · 6 botones · 7 modos (8a+9a) ·
+   * 8 final.                                                       */
   const VOCES_PASO = [
     ['tutv0a', 'tutv0b'],                    // 0 bienvenida
-    ['tutv1a', 'tutv1b'],                    // 1 mandos (luego c/d/e/f por acción)
-    ['tutv2a', 'tutv2b'],                    // 2 pala
-    ['tutv3a', 'tutv3b'],                    // 3 saque: demo en mesa (c/d por fase)
-    ['tutv4a'],                              // 4 intercambio (b al ganarlo)
-    ['tutv5a', 'tutv5b'],                    // 5 marcador
-    ['tutv6a', 'tutv6b'],                    // 6 devoluciones
-    ['tutv7a'],                              // 7 botones
-    ['tutv8a'],                              // 8 modos 1
-    ['tutv9a'],                              // 9 modos 2
-    ['tutv10a', 'tutv10b'],                  // 10 final
+    ['tutv1a', 'tutv1b'],                    // 1 mando+raqueta (c/d/e por acción)
+    ['tutv3a', 'tutv3b'],                    // 2 saque: demo del profesor (d en práctica)
+    ['tutv4a'],                              // 3 intercambio (b al ganarlo)
+    ['tutv5a', 'tutv5b'],                    // 4 marcador
+    ['tutv6a', 'tutv6b'],                    // 5 práctica (6 devoluciones)
+    ['tutv7a'],                              // 6 botones
+    ['tutv8a', 'tutv9a'],                    // 7 modos (una sola pizarra)
+    ['tutv10a', 'tutv10b'],                  // 8 final
   ];
   function enterStep() {
     if (!G) return;
     limpiarHolo();
+    limpiarAros();                      // r67 · los aros salen con el paso
     narrTries = 0;
     demoTxt = null; demoFase = 0; demoFaseT = 0;
     demoBote1 = false; demoBote2 = false;
+    // r67 · los mandos anclados SÓLO se muestran en los pasos 0-1: del 2 en
+    // adelante ves EXACTAMENTE lo que vas a jugar (mando real + pala real)
+    mandosVisMeta = (step <= 1) ? 1 : 0;
+    auraMeta = 0;
     switch (step) {
       case 0:
-        // BIENVENIDA: los mandos ya VISIBLES centrados (el dueño: «el mando
-        // delante en el centro en un punto de visión cómodo»)
+        // BIENVENIDA: los mandos ANCLADOS a tus manos te saludan (halos
+        // apagados, todo quieto: «parece que los tenemos en las manos»)
         G.rules.state = 'point';
         G.resetToss();
         G.rules.message = '';
-        mandosPose = 'centro';
-        fantasmaMeta = 0;
         break;
       case 1:
         subfase = 0;
         G.rules.state = 'point';
         G.resetToss();
         G.rules.message = '';
-        mandosPose = 'centro';
-        fantasmaMeta = 0;
         break;
       case 2:
-        // LA PALA: los mandos siguen en el centro y la FANTASMA ya visible:
-        // «el mando va a ser nuestra raqueta»
-        G.rules.state = 'point';
-        G.resetToss();
-        G.rules.message = '';
-        mandosPose = 'centro';
-        fantasmaMeta = 1;
-        break;
-      case 3:
-        // EL SAQUE (r66): primero una DEMO REAL sobre la mesa (los mandos
-        // sirven un saque reglamentario con la bola del juego y física de
-        // verdad) y después 3 SAQUES del jugador. El panel se aparta.
+        // EL SAQUE (r67): primero la DEMO del PROFESOR sobre la mesa real
+        // (saque reglamentario con la bola del juego: bote en SU campo →
+        // bote en el TUYO → «sin devolución: PUNTO») con AROS GUÍA en la
+        // mesa, y después 3 SAQUES del jugador. El panel se aparta.
         G.rules.state = 'point';
         G.resetToss();
         G.rules.message = '';
         submodo = 'demo';
         demoT = 0; demoCiclos = 0;
-        mandosPose = 'saque';
-        fantasmaMeta = 0.8;
         G.tutBolaViva = false;
         posaBolaDemo();
+        construirAros();
         break;
-      case 4:
+      case 3:
         // EL INTERCAMBIO (r66): saque del jugador, el rival devuelve y el
         // intercambio corre hasta que él falla: así se ve la ROTACIÓN.
         G.rules.state = 'serve';
@@ -3909,47 +3994,38 @@ window.__PP_CORE = {
         G.resetToss();
         G.rules.message = '';
         rfFase = 'saque'; rfVueltas = 0; rfHecho = false; rfVueltaVista = false;
-        mandosPose = 'oculto';
-        fantasmaMeta = 0;
         G.tutBolaViva = false;
         break;
-      case 5:
+      case 4:
         // EL MARCADOR (r66): holo BAJO sobre la mesa + saques reales en
         // bucle que anotan punto a punto hasta 11 por 2 y la igualada.
         G.rules.state = 'point';
         G.resetToss();
         G.rules.message = '';
         demoT = 0; demoPtos = 0; demoDeuce = false;
-        mandosPose = 'saque';
-        fantasmaMeta = 0.8;
         construirHoloMarcador();
+        construirAros();
         G.tutBolaViva = false;
         posaBolaDemo();
         break;
-      case 6:
-        // EL INTERCAMBIO: rally sin árbitro; el profesor devuelve suave.
+      case 5:
+        // LA PRÁCTICA: rally sin árbitro; el profesor devuelve suave.
         G.rules.state = 'rally';
         G.rules.message = '';
         hitCount = 0; aiReturned = false; farBounced = false;
         fase = (G.ball && G.ball.pos.z < DIMS.tableCenterZ) ? 'vuelo_lejos' : 'espera_golpe';
         deadT = 0;
-        mandosPose = 'oculto';
-        fantasmaMeta = 0;
         break;
-      case 7:
+      case 6:
         G.rules.state = 'point';
         G.resetToss();
         G.rules.message = '';
         lastHand = G.paddleHand;
-        mandosPose = 'oculto';
-        fantasmaMeta = 0;
         break;
       default:
         G.rules.state = 'point';
         G.resetToss();
         G.rules.message = '';
-        mandosPose = 'oculto';
-        fantasmaMeta = 0;
         break;
     }
     if (VOCES_PASO[step]) narra(VOCES_PASO[step]);
@@ -3991,7 +4067,7 @@ window.__PP_CORE = {
    * «no nos deja ver la mesa y así resulta inútil»). Transición suave
    * (lerp exponencial, sin saltos).                                */
   function poseDestino() {
-    if (step === 3 || step === 4 || step === 5 || step === 6) {
+    if (step === 2 || step === 3 || step === 4 || step === 5) {
       // pala en mano 1 (derecha) → panel a la IZQUIERDA del jugador (x<0)
       const sgn = (G && G.paddleHand === 1) ? -1 : 1;
       return {
@@ -4025,9 +4101,10 @@ window.__PP_CORE = {
     pollSkip();
     pollVoz();                          // r65 · STICK = repetir la voz
     tickPose(dt);                       // el panel se aparta en la práctica
-    tickMandos(dt);                     // r66 · giro + halos + fantasma + pose
+    tickMandos(dt);                     // r67 · mandos anclados + aura + halos
     tickNarr(dt);                       // r65 · reintentos de la voz
     try { tickHolo(dt); } catch (e) { /* decorativo */ }   // holo-reglas
+    try { tickAros(dt); } catch (e) { /* decorativo */ }   // r67 · aros guía
     repaintT -= dt;
     if (flashOk > 0) {
       flashOk -= dt;
@@ -4035,8 +4112,10 @@ window.__PP_CORE = {
     }
     switch (step) {
       case 1: {
-        // LAS 4 ACCIONES REALES del mando (r65): gatillo → grip → stick → A
-        // el gatillo llega por onTrigger; grip/stick/A se sondean aquí
+        // TU MANDO, TU RAQUETA (r67): las 4 acciones REALES (gatillo → grip
+        // → stick → botones) y después el VAIVÉN con la ÚNICA raqueta (la
+        // pala real en tu mano). El gatillo llega por onTrigger; grip/stick
+        // /botones se sondean aquí.
         if (subfase === 1 || subfase === 3) {
           for (let h = 0; h < 2; h++) {
             const gp = G.sources && G.sources[h] && G.sources[h].gamepad;
@@ -4059,23 +4138,22 @@ window.__PP_CORE = {
             if (ax && (Math.abs(ax.x) > 0.55 || Math.abs(ax.y) > 0.55)) movido = true;
           }
           if (movido) accionMandoOk();
+        } else if (subfase === 4) {
+          // el vaivén firme (velocidad del simulador de la pala): la raqueta
+          // REAL se mueve con tu mano — el mando GLB ya se desvaneció
+          const pad = G.controllerPaddles ? G.controllerPaddles[G.paddleHand] : null;
+          const v = pad && pad.vel ? pad.vel.length() : 0;
+          if (v > 2.2) {
+            sway += dt;
+            if (repaintT <= 0) { paintStep(); repaintT = 0.09; }
+          }
+          if (sway >= SWAY_META) advance();
         }
         break;
       }
       case 2: {
-        // vaivén firme de la pala (velocidad del simulador de la pala)
-        const pad = G.controllerPaddles ? G.controllerPaddles[G.paddleHand] : null;
-        const v = pad && pad.vel ? pad.vel.length() : 0;
-        if (v > 2.2) {
-          sway += dt;
-          if (repaintT <= 0) { paintStep(); repaintT = 0.09; }
-        }
-        if (sway >= SWAY_META) advance();
-        break;
-      }
-      case 3: {
-        // EL SAQUE (r66): DEMO REAL sobre la mesa y después 3 SAQUES del
-        // jugador (la práctica de r64 vive aquí como submodo 'practica').
+        // EL SAQUE (r67): DEMO del PROFESOR sobre la mesa real y después
+        // 3 SAQUES del jugador con los AROS GUÍA en la mesa.
         demoT += dt;
         if (submodo === 'demo') {
           tickDemoSaque(dt, false);
@@ -4087,6 +4165,12 @@ window.__PP_CORE = {
           }
           if (G.tossed) {
             const b = G.ball;
+            const C = DIMS.tableCenterZ, TY = DIMS.tableTopY;
+            // r67 · los aros se ILUMINAN con los botes reales del jugador
+            if (aroIzq && !aroIzq.__ok && b.vel.y > 0.3 &&
+                b.pos.z > C + 0.06 && b.pos.y < TY + 0.35) aroIzq.__ok = true;
+            if (aroDer && aroIzq && aroIzq.__ok && !aroDer.__ok &&
+                b.vel.y > 0.25 && b.pos.z < C - 0.05) aroDer.__ok = true;
             if (!saqLatch) {
               const cruzada = b.pos.z < (DIMS.tableCenterZ - 0.06) && b.vel.z < -0.9;
               if (cruzada) {
@@ -4095,7 +4179,7 @@ window.__PP_CORE = {
                 flashOk = 2.2; flashAgain = 0;
                 paintStep();
                 chime(true);
-                if (saqCount >= SAQ_META) { narra(['tutok']); advance(); break; }
+                if (saqCount >= SAQ_META) { advance(); break; }
               }
             }
             const muerta = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
@@ -4107,6 +4191,8 @@ window.__PP_CORE = {
               const valida = saqLatch;
               G.resetToss();
               saqLatch = false;
+              if (aroIzq) aroIzq.__ok = false;
+              if (aroDer) aroDer.__ok = false;
               if (!valida && flashOk <= 0) {
                 flashAgain = 2.6;
                 paintStep();
@@ -4118,8 +4204,8 @@ window.__PP_CORE = {
         }
         break;
       }
-      case 4: {
-        // EL INTERCAMBIO REAL (r66): sacas, el RIVAL devuelve y el
+      case 3: {
+        // EL INTERCAMBIO REAL (r66→r67): sacas, el RIVAL devuelve y el
         // intercambio corre hasta que él falla; entonces rota el sacador.
         const b = G.ball;
         if (rfFase !== 'saque' && G.rules.state !== 'rally') G.rules.state = 'rally';
@@ -4215,10 +4301,10 @@ window.__PP_CORE = {
         if (repaintT <= 0) { paintStep(); repaintT = 0.4; }
         break;
       }
-      case 5: {
-        // EL MARCADOR (r66): holo BAJO sobre la mesa; los puntos suben
-        // rápido hasta 10-10 y desde ahí CADA punto la anota un saque
-        // REAL del bucle — la igualada se ve con la bola de verdad.
+      case 4: {
+        // EL MARCADOR (r66→r67): holo BAJO sobre la mesa; los puntos suben
+        // rápido hasta 10-10 y desde ahí CADA punto la anota un saque REAL
+        // del profesor — la igualada se ve con la bola de verdad.
         demoT += dt;
         tickDemoSaque(dt, true);
         if (demoPtos < 20) {
@@ -4231,14 +4317,14 @@ window.__PP_CORE = {
         if (repaintT <= 0) { paintStep(); repaintT = 0.4; }
         break;
       }
-      case 6: {
-        // EL INTERCAMBIO (r64): el jugador devuelve 6 bolas del profesor
+      case 5: {
+        // LA PRÁCTICA (r64): el jugador devuelve 6 bolas del profesor
         const b = G.ball;
         if (G.rules.state !== 'rally') G.rules.state = 'rally';
         if (G.tossed) G.resetToss();
         const muerta = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
-          (Math.abs(b.vel.x) < 0.4 && Math.abs(b.vel.y) < 0.4 && Math.abs(b.vel.z) < 0.4 &&
-            b.pos.y < DIMS.tableTopY + 0.12);
+          (Math.abs(b.vel.x) < 0.4 && Math.abs(b.vel.y) < 0.4 &&
+            Math.abs(b.vel.z) < 0.4 && b.pos.y < DIMS.tableTopY + 0.12);
         if (muerta) {
           deadT += dt;
           if (deadT > 0.5) {
@@ -4254,7 +4340,7 @@ window.__PP_CORE = {
           hitCount++;
           paintStep();
           try { G.haptic(G.paddleHand, 0.4, 80); } catch (e) { /* */ }
-          if (hitCount >= DEVOL_META) { narra(['tutok']); advance(); break; }
+          if (hitCount >= DEVOL_META) { advance(); break; }
           fase = 'vuelo_lejos';
           farBounced = false;
           aiReturned = false;   // r64 · cada golpe habilita UNA devolución
@@ -4281,9 +4367,9 @@ window.__PP_CORE = {
         }
         break;
       }
-      case 7: {
+      case 6: {
         // A/X: cambiar la pala de mano DE VERDAD (el núcleo lo hace)
-        if (G.paddleHand !== lastHand) { narra(['tutok']); advance(); }
+        if (G.paddleHand !== lastHand) { advance(); }
         break;
       }
       default:
@@ -4302,16 +4388,21 @@ window.__PP_CORE = {
     else if (subfase === 2) narra(['tutok', 'tutv1d']);
     else if (subfase === 3) narra(['tutok', 'tutv1e']);
     else if (subfase === 4) {
-      fantasmaMeta = 1;                    // el mando SE CONVIERTE en raqueta
-      narra(['tutv1f']);
+      // EL MOMENTO RAQUETA (r67): la única raqueta es la PALA REAL que ya
+      // tienes en la mano — aura dorada sobre ella y el mando GLB se
+      // desvanece («el mando SE CONVIERTE en tu raqueta»)
+      auraMeta = 1;
+      mandosVisMeta = 0;
+      sway = 0;
+      narra(['tutv1f', 'tutv2a']);
     }
   }
-  /* ---------------- ciclo de la DEMO DE SAQUE (r66) --------------------
-   * Los DOS mandos GLB, en pose de saque sobre la MESA REAL: el izquierdo
-   * sostiene la bola del juego, el derecho (con la raqueta fantasma) la
-   * saca. Física y sonidos de verdad: bote PROPIO → cruce → bote RIVAL →
-   * «sin devolución: PUNTO». El paso 3 lo enseña pausado; el paso 5 lo
-   * corre en bucle para anotar el marcador.                              */
+  /* ---------------- ciclo de la DEMO DE SAQUE (r67) --------------------
+   * El PROFESOR saca desde SU lado sobre la MESA REAL (los mandos ya están
+   * en tus manos, nada flota): bote en SU campo (aro rival se ilumina) →
+   * cruce → bote en el TUYO (aro tuyo) → «sin devolución: PUNTO». Física,
+   * sonidos y aros guía de verdad. El paso 2 lo enseña pausado; el paso 4
+   * lo corre en bucle para anotar el marcador.                            */
   function tickDemoSaque(dt, esMarcador) {
     const b = G.ball;
     const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
@@ -4322,9 +4413,11 @@ window.__PP_CORE = {
     }
     switch (demoFase) {
       case 0: {
-        // POSTURA: la bola espera en la palma del mando izquierdo
+        // POSTURA: la bola espera en el lado del PROFESOR
         G.tutBolaViva = false;
         posaBolaDemo();
+        if (aroIzq) aroIzq.__ok = false;
+        if (aroDer) aroDer.__ok = false;
         const espera = esMarcador ? 0.9 : 2.1;
         if (demoFaseT >= espera) {
           demoFase = 1; demoFaseT = 0;
@@ -4333,13 +4426,13 @@ window.__PP_CORE = {
         break;
       }
       case 1: {
-        // SUELTA: el gatillo de la demo suelta la bola (saque real)
+        // SUELTA: el profesor saca (saque REAL desde su campo)
         try {
-          const { v, spin } = findServeVelocity(b.pos, 1, { x: 0.05, spd: 1.22 });
+          const { v, spin } = findServeVelocity(b.pos, -1, { x: -0.05, spd: 1.22 });
           b.vel.copy(v);
           b.spin.copy(spin);
         } catch (e) {
-          b.vel.set(0.02, 2.6, -2.6);
+          b.vel.set(-0.02, 2.6, 2.6);
           b.spin.set(0, 0, 0);
         }
         G.tutBolaViva = true;
@@ -4348,19 +4441,21 @@ window.__PP_CORE = {
         break;
       }
       case 2: {
-        // VUELO REAL: bote propio → cartel; bote rival → cartel
-        if (!demoBote1 && b.vel.y > 0.3 && b.pos.z > C + 0.06 &&
+        // VUELO REAL: bote en SU campo → aro rival; bote en el TUYO → aro tuyo
+        if (!demoBote1 && b.vel.y > 0.3 && b.pos.z < C - 0.06 &&
             b.pos.y < TY + 0.35) {
           demoBote1 = true;
-          demoTxt = { txt: T('tut_d3_p1'), col: 'rgba(232,180,90,0.32)', t: 1.5 };
+          demoTxt = { txt: T('tut_p1r'), col: 'rgba(232,180,90,0.32)', t: 1.5 };
+          if (aroDer) aroDer.__ok = true;
           chime(true);
-          if (!esMarcador) narra(['tutv3b']);
-        } else if (demoBote1 && !demoBote2 && b.vel.y > 0.25 && b.pos.z < C - 0.05) {
+          if (!esMarcador && demoCiclos === 0) narra(['tutv3b']);
+        } else if (demoBote1 && !demoBote2 && b.vel.y > 0.25 && b.pos.z > C + 0.05) {
           demoBote2 = true;
           demoTxt = { txt: T('tut_d3_p2'), col: 'rgba(232,89,12,0.32)', t: 1.5 };
+          if (aroIzq) aroIzq.__ok = true;
           chime(true);
         }
-        const fuera = b.pos.z < C - HL - 0.3 || b.pos.y < TY - 0.6;
+        const fuera = b.pos.z > C + HL + 0.3 || b.pos.y < TY - 0.6;
         if (fuera || demoFaseT > 4.5) {
           demoFase = 3; demoFaseT = 0;
           demoTxt = { txt: T('tut_d3_pto'), col: 'rgba(47,158,68,0.35)', t: 1.4 };
@@ -4371,7 +4466,7 @@ window.__PP_CORE = {
         break;
       }
       case 3: {
-        // PUNTO: pausa didáctica y la bola vuelve a la palma
+        // PUNTO: pausa didáctica y la bola vuelve al lado del profesor
         const pausa = esMarcador ? 0.7 : 1.5;
         if (demoFaseT >= pausa) {
           demoFase = 4; demoFaseT = 0;
@@ -4419,6 +4514,7 @@ window.__PP_CORE = {
       demoTxt = { txt: '11 - 10', col: 'rgba(47,158,68,0.4)', t: 2.4 };
       chime(true);
       setTimeout(() => {
+        if (!holoPips) return;             // r67 · la academia pudo avanzar ya
         demoPtos = 0; demoDeuce = false;
         holoPips.__pi = 0; holoPips.__pd = 0;
         if (holoTokens) holoTokens.cartel10.visible = false;
@@ -4477,28 +4573,26 @@ window.__PP_CORE = {
     if (G.menuOpen) return false;   // el menú manda (defensa: no vive en calib)
     switch (step) {
       case 0:
-      case 8:
-      case 9:
         advance();
         break;
       case 1:
-        // r65 · el gatillo es la PRIMERA acción pedida (subfase 0) y, con
-        // el mando dominado (subfase 4), la confirmación para avanzar
+        // r65/r67 · el gatillo es la PRIMERA acción pedida (subfase 0);
+        // en el momento raqueta (subfase 4) el avance es automático al
+        // completar el vaivén — el gatillo no adelanta
         if (subfase === 0) accionMandoOk();
-        else if (subfase >= 4) advance();
         break;
-      case 3:
-        // r66 · demo: el gatillo pasa a la PRÁCTICA tras ver la mesa;
-        // práctica: el gatillo LANZA (el saque de verdad)
+      case 2:
+        // r67 · demo del profesor: el gatillo pasa a la PRÁCTICA tras ver
+        // la mesa; práctica: el gatillo LANZA (el saque de verdad)
         if (submodo === 'demo') {
           if (demoT > 2.5) {
             submodo = 'practica';
-            mandosPose = 'oculto';
-            fantasmaMeta = 0;
             G.rules.state = 'serve';
             G.rules.server = 'player';
             G.resetToss();
             saqCount = 0; saqLatch = false;
+            if (aroIzq) aroIzq.__ok = false;
+            if (aroDer) aroDer.__ok = false;
             narra(['tutv3d']);
             paintStep();
           }
@@ -4508,10 +4602,9 @@ window.__PP_CORE = {
           G.tutBolaViva = true;
         }
         break;
-      case 4:
-        // r66 · intercambio real: el gatillo SACA y, ganado el punto,
-        // confirma para seguir
-        if (rfHecho) { narra(['tutok']); advance(); }
+      case 3:
+        // intercambio real: el gatillo SACA y, ganado el punto, confirma
+        if (rfHecho) { advance(); }
         else if (rfFase === 'saque' && !G.tossed) {
           G.tossFromHand(G.ballHand, true);
           G.rules.message = T('hint_hit');
@@ -4520,15 +4613,18 @@ window.__PP_CORE = {
           farBounced = false; rfVueltaVista = false;
         }
         break;
-      case 5:
+      case 4:
         // r66 · ENTENDIDO: el gatillo confirma tras ver la demo completa
-        if (demoT >= DEMO_MIN) { narra(['tutok']); advance(); }
+        if (demoT >= DEMO_MIN) { advance(); }
         break;
-      case 10:
+      case 7:
+        advance();   // r67 · los modos (una pizarra) avanzan por gatillo
+        break;
+      case 8:
         stop({ aJugar: true, done: true });
         break;
       default:
-        break;   // pasos físicos (2/6/7): el gatillo no hace nada aquí
+        break;   // pasos físicos (1 vaivén / 5 práctica / 6 botones): nada aquí
     }
     return true;   // SIEMPRE consumido: nada del núcleo se dispara en la academia
   }
@@ -4604,7 +4700,8 @@ window.__PP_CORE = {
     demoBote1 = false; demoBote2 = false; demoCiclos = 0;
     demoPtos = 0; demoDeuce = false;
     rfFase = 'saque'; rfVueltas = 0; rfHecho = false; rfVueltaVista = false;
-    mandosPose = 'centro'; fantasmaOp = 0; fantasmaMeta = 0;
+    mandosVis = 0; mandosVisMeta = 1;    // r67 · los mandos nacen EN TUS MANOS
+    auraOp = 0; auraMeta = 0;
     sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
     deadT = 0; flashAgain = 0; flashOk = 0; saqCount = 0; saqLatch = false;
     fase = 'espera_golpe';
@@ -4637,6 +4734,7 @@ window.__PP_CORE = {
     // desmonta PRIMERO, con G vivo; el fallback por grp.parent de
     // teardownPanel (también r63) cubre cualquier orden futuro.
     limpiarHolo();                        // r65 · el holo-reglas sale con el guion
+    limpiarAros();                        // r67 · los aros guía también
     teardownPanel();
     G = null;
     gm.tutV1 = null;
@@ -4690,14 +4788,22 @@ window.__PP_CORE = {
 
   /* ---------------- registro público del módulo ---------------------- */
   window.__PP_TUT = {
-    version: 'r66-sobre-la-mesa',
+    version: 'r67-en-tus-manos',
     STEPS,
     start, stop, tick, onTrigger, drawAsk, menuAction,
-    // v3.6.51 · introspección para QA (solo lectura, sin tocar estado)
-    // r64 · saques/pose/mando 3D · r65 · subfase, voz y holo
+    // introspección para QA (solo lectura, sin tocar estado)
+    // r67 · mandos anclados a grips, escala 75%, aura de la pala real
     estado() {
       let pose = 'frente';
       try { pose = poseDestino().nombre; } catch (e) { /* */ }
+      let ancladosEnGrips = false, dosAnclados = false;
+      try {
+        dosAnclados = !!(anclados && anclados.length === 2 &&
+          anclados[0].glb && anclados[1].glb);
+        ancladosEnGrips = !!(dosAnclados && G && G.grips &&
+          anclados[0].mont.parent === G.grips[0] &&
+          anclados[1].mont.parent === G.grips[1]);
+      } catch (e) { /* */ }
       return {
         activo: active,
         paso: step,
@@ -4709,17 +4815,22 @@ window.__PP_CORE = {
         demoT,
         voz: narrKeys ? narrKeys[0] : null,
         holo: !!holo,
+        // r67 · anclaje REAL: hijo de los grips XR, no del rig
+        anclados: dosAnclados,
+        ancladosEnGrips,
+        mandoAnclado: !!(anclados && anclados.length === 2),
+        mandosPose: mandosVisMeta > 0.5 ? 'manos' : 'oculto',
+        mandosVis: Math.round(mandosVis * 100) / 100,
+        mandosVisMeta,
+        escalaMando: MANDO_ESC,
+        aura: Math.round(auraOp * 100) / 100,
+        auraMeta,
         tieneMando: !!mando,
         mandoHl: hlParte,
+        etiqueta: hlParte ? (etiqueta ? Math.round(etiqueta.material.opacity * 100) / 100 : 0) : 0,
         tienePanel: !!grp,
         panelVisible: !!(grp && grp.visible),
-        // r66 · mandos duales, fantasma, demos sobre la mesa
-        mandos: !!mandosGrp,
-        dosMandos: !!(mandosI && mandosD),
-        mandosPose,
-        fantasma: fantasmaOp > 0.12,
-        fantasmaOp: Math.round(fantasmaOp * 100) / 100,
-        etiqueta: hlParte ? (etiqueta ? etiqueta.material.opacity : 0) : 0,
+        aros: !!arosGrp,
         submodo,
         demoFase,
         demoTxt: demoTxt ? demoTxt.txt : null,

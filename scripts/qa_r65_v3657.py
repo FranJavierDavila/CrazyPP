@@ -77,12 +77,12 @@ AGUJAS = [
      "if (G.audio.voice === false) return;   // el dueño apagó el megáfono"),
     ("STICK repite la última narración",
      "function pollVoz() {"),
-    ("guion de voz por paso (11 entradas)",
+    ("guion de voz por paso (9 entradas remapeadas r67)",
      "const VOCES_PASO = ["),
     ("aviso hablado de saque fallido («otra vez»)",
      "narra(['tutotra']);"),
-    ("felicitación hablada al superar pasos",
-     "narra(['tutok']);"),
+    ("felicitación hablada dentro del plan de acción (tutok + voz, sin dobles)",
+     "if (subfase === 1) narra(['tutok', 'tutv1c']);"),
     # --- mando GLB real del dueño (r66: DOS mandos centrados) ---
     ("mando GLB embebido (const del asset)",
      "const TUT_MANDO_GLB = '"),
@@ -98,17 +98,17 @@ AGUJAS = [
      "function _haloTex() {"),
     ("etiqueta legible de la pieza (r66)",
      "function _etiquetaSprite() {"),
-    ("raqueta fantasma sobre el mando (r66)",
-     "function _ponFantasma(mm) {"),
-    ("los mandos giran con pose propia (r66)",
-     "function tickMandos(dt) {"),
+    ("AURA sobre la PALA REAL (la única raqueta, r67)",
+     "function _ponAuraPala() {"),
+    ("los mandos anclados NO giran ni flotan (r67)",
+     "r67 · tick de los mandos ANCLADOS: NADA de giro ni flotación"),
     ("resalte por subfase en el paso 1 (4 acciones)",
      "return ['gatillo', 'grip', 'stick', 'botones'][Math.min(subfase, 3)];"),
     # --- reglas visuales sobre la mesa (r66: demos REALES, sin holo abstracto) ---
-    ("paso 3: demo real del saque (mandos en pose de saque)",
-     "mandosPose = 'saque';\n        fantasmaMeta = 0.8;"),
-    ("paso 3: la demo suelta la bola con el solucionador real",
-     "const { v, spin } = findServeVelocity(b.pos, 1, { x: 0.05, spd: 1.22 });"),
+    ("paso 2: demo REAL del PROFESOR sobre la mesa (r67)",
+     "const { v, spin } = findServeVelocity(b.pos, -1, { x: -0.05, spd: 1.22 });"),
+    ("aros guía del saque sobre la mesa real (r67)",
+     "function construirAros() {"),
     ("paso 5: marcador BAJO sobre la mitad rival",
      "holo.position.set(0, DIMS.tableTopY + 0.22, DIMS.tableCenterZ - DIMS.tableHalfLength * 0.34);"),
     ("paso 5: fichas de saque del marcador (2 por lado)",
@@ -133,18 +133,18 @@ AGUJAS = [
     ("píldoras estilo tiza",
      "function pill(c, txt, y, opts) {"),
     # --- gating del onboarding gamificado ---
-    ("11 pasos en el guion",
-     "const STEPS = 11;             // r65 · pasos del guion (0..10): +2 REGLAS"),
+    ("guion reorganizado de 9 pasos (r67)",
+     "const STEPS = 9;              // r67 · guion REORGANIZADO (0..8): menos pizarra, más mesa"),
     ("la demo de reglas exige verla completa (≥6 s)",
      "const DEMO_MIN = 6;           // r65 · segundos de demo de reglas antes del OK"),
     ("el gatillo del paso 1 es la acción pedida, no un salto",
      "if (subfase === 0) accionMandoOk();"),
-    ("ENTENDIDO sólo tras la demo",
-     "if (demoT >= DEMO_MIN) { narra(['tutok']); advance(); }"),
+    ("ENTENDIDO sólo tras la demo (voz única r67: sin tutok antes de avanzar)",
+     "if (demoT >= DEMO_MIN) { advance(); }"),
     ("OK hablado de cada acción del mando",
      "function accionMandoOk() {"),
-    ("el panel se aparta en reglas y práctica (pasos 3-6)",
-     "if (step === 3 || step === 4 || step === 5 || step === 6) {"),
+    ("el panel se aparta en reglas y práctica (pasos 2-5, r67)",
+     "if (step === 2 || step === 3 || step === 4 || step === 5) {"),
 ]
 
 NEGATIVAS = [
@@ -186,7 +186,7 @@ MECANICA = """async () => {
     set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; },
     length() { return Math.hypot(this.x, this.y, this.z); },
   });
-  const mkJuego = (mano) => ({
+  const mkJuego = (mano) => { const G = ({
     net: { online: false }, champs: null,
     trainV3: null, trainV3Hub: false, tutV1: null, calib: false,
     rules: { state: 'point', server: 'ai', message: '', bestOf: 3,
@@ -217,14 +217,21 @@ MECANICA = """async () => {
     rig: new THREE.Group(),
     paddleModelRef: null,
   });
+  // r67 · grips XR reales (los mandos GLB se ANCLAN a ellos)
+  const grips = [new THREE.Group(), new THREE.Group()];
+  const mounts = [new THREE.Group(), new THREE.Group()];
+  grips[0].add(mounts[0]); grips[1].add(mounts[1]);
+  G.grips = grips; G.paddleMounts = mounts; G.handOf = ['left', 'right'];
+  return G;
+  };
 
   // ---------- 1 · arranque + panel PIZARRA + mandos duales -----------
   let G = mkJuego(1);
   G.scene.add(G.rig);
   T.start(G);
   let e = T.estado();
-  out.push({ ok: e.activo && e.paso === 0 && e.total === 11,
-             lab: 'arranque: paso 0 de 11' });
+  out.push({ ok: e.activo && e.paso === 0 && e.total === 9,
+             lab: 'arranque: paso 0 de 9 (guion r67)' });
   out.push({ ok: G.rules.server === 'player',
              lab: 'el árbitro queda en server=player' });
   out.push({ ok: e.voz === 'tutv0a',
@@ -236,10 +243,10 @@ MECANICA = """async () => {
     await new Promise((r) => setTimeout(r, 50));
     e = T.estado();
   }
-  out.push({ ok: e.mandos && e.dosMandos,
-             lab: 'DOS mandos GLB del dueño cargados (r66)' });
-  out.push({ ok: e.mandosPose === 'centro',
-             lab: 'mandos CENTRADOS desde la bienvenida (r66)' });
+  out.push({ ok: e.anclados === true && e.ancladosEnGrips === true,
+             lab: 'DOS mandos GLB ANCLADOS a los grips XR (r67)' });
+  out.push({ ok: e.mandosPose === 'manos',
+             lab: 'los mandos viven EN TUS MANOS desde la bienvenida (r67)' });
   T.tick(0.05);
   out.push({ ok: T.estado().mandoHl === null,
              lab: 'paso 0 (bienvenida) sin pieza resaltada' });
@@ -280,8 +287,8 @@ MECANICA = """async () => {
              lab: 'A pulsada: mandos dominados (subfase 4)' });
   for (let i = 0; i < 30; i++) T.tick(0.1);
   e = T.estado();
-  out.push({ ok: e.fantasma === true,
-             lab: 'RAQUETA FANTASMA visible (r66)' });
+  out.push({ ok: e.aura > 0.4 && e.mandosVisMeta === 0,
+             lab: 'AURA sobre la PALA REAL, el mando GLB se desvanece (r67)' });
   // STICK repite la última narración
   G.audio.__voz = [];
   G.sources[0].gamepad.buttons[3] = { pressed: true };
@@ -290,24 +297,19 @@ MECANICA = """async () => {
              lab: 'STICK repite la última narración (pollVoz)' });
   G.sources[0].gamepad.buttons[3] = { pressed: false };
   T.tick(0.016);
-  T.onTrigger(0);
-  T.tick(0.05);
-  e = T.estado();
-  out.push({ ok: e.paso === 2, lab: 'paso 1 → 2 (la pala) tras las 4 acciones' });
-
-  // ---------- 3 · paso 2 vaivén → paso 3 DEMO SOBRE LA MESA ----------
+  // el vaivén (subfase 4) avanza SOLO al paso 2 (r67)
   G.controllerPaddles[G.paddleHand].vel.set(1.5, 1.2, 1.5);
   T.tick(0.2); T.tick(0.2); T.tick(0.2);
   e = T.estado();
-  out.push({ ok: e.paso === 3 && e.pose === 'lado',
-             lab: 'vaivén → paso 3 EL SAQUE con panel APARTADO (lado)' });
-  out.push({ ok: e.submodo === 'demo' && e.mandosPose === 'saque',
-             lab: 'demo de saque REAL con los mandos sobre la mesa (r66)' });
+  out.push({ ok: e.paso === 2 && e.pose === 'lado',
+             lab: 'vaivén → paso 2 EL SAQUE con panel APARTADO (lado)' });
+  out.push({ ok: e.submodo === 'demo' && e.mandosPose === 'oculto' && e.aros === true,
+             lab: 'demo del PROFESOR sobre la mesa real con AROS GUÍA (r67)' });
   out.push({ ok: e.voz === 'tutv3a',
              lab: 'narración del saque al entrar (tutv3a)' });
   T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.paso === 3 && e.submodo === 'demo',
+  out.push({ ok: e.paso === 2 && e.submodo === 'demo',
              lab: 'la práctica se niega antes de ver la demo' });
   for (let i = 0; i < 25 && e.demoFase === 0; i++) { T.tick(0.2); e = T.estado(); }
   T.tick(0.2); T.tick(0.2);
@@ -336,7 +338,7 @@ MECANICA = """async () => {
     T.tick(0.3); T.tick(0.3);
   }
   e = T.estado();
-  out.push({ ok: e.paso === 4, lab: '3/3 saques → paso 4 EL INTERCAMBIO' });
+  out.push({ ok: e.paso === 3, lab: '3/3 saques → paso 3 EL INTERCAMBIO' });
 
   // ---------- 4 · paso 4: intercambio REAL (r66) ---------------------
   T.onTrigger(0);                       // saca
@@ -362,20 +364,20 @@ MECANICA = """async () => {
   T.onTrigger(0);
   T.tick(0.05);
   e = T.estado();
-  out.push({ ok: e.paso === 5 && e.holo === true && e.pose === 'lado',
-             lab: 'paso 5 MARCADOR: holo BAJO en la escena (lado)' });
+  out.push({ ok: e.paso === 4 && e.holo === true && e.pose === 'lado',
+             lab: 'paso 4 MARCADOR: holo BAJO en la escena (lado)' });
 
   // ---------- 5 · paso 5: marcador con igualada ----------------------
   T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.paso === 5, lab: 'ENTENDIDO se niega antes de la demo' });
+  out.push({ ok: e.paso === 4, lab: 'ENTENDIDO se niega antes de la demo' });
   for (let i = 0; i < 45; i++) T.tick(0.2);
   e = T.estado();
   out.push({ ok: e.demoDeuce === true, lab: 'la igualada 10-10 llega (r66)' });
   T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.paso === 6 && e.holo === false,
-             lab: 'ENTENDIDO → paso 6 DEVOLUCIONES (holo recogido)' });
+  out.push({ ok: e.paso === 5 && e.holo === false && e.aros === false,
+             lab: 'ENTENDIDO → paso 5 PRÁCTICA (holo y aros recogidos)' });
 
   // ---------- 6 · pasos 6/7/8/9/10 y salida --------------------------
   G.ball.pos.set(0.3, 0.05, 0.9); G.ball.vel.set(0, 0, 0);
@@ -389,19 +391,19 @@ MECANICA = """async () => {
     T.tick(0.016);
   }
   e = T.estado();
-  out.push({ ok: e.paso === 7, lab: '6/6 devoluciones → paso 7 BOTONES' });
+  out.push({ ok: e.paso === 6, lab: '6/6 devoluciones → paso 6 BOTONES' });
   G.paddleHand = 0;
   T.tick(0.016);
   e = T.estado();
-  out.push({ ok: e.paso === 8 && e.pose === 'frente',
-             lab: 'A/X → paso 8 MODOS con panel de nuevo FRENTE' });
-  T.onTrigger(0); T.onTrigger(0);
+  out.push({ ok: e.paso === 7 && e.pose === 'frente',
+             lab: 'A/X → paso 7 MODOS con panel de nuevo FRENTE' });
+  T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.paso === 10, lab: 'modos 8→9→10 por gatillo' });
+  out.push({ ok: e.paso === 8, lab: 'modos: UNA pizarra → paso 8 por gatillo' });
   localStorage.removeItem('pp_tut_done');
   T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.activo === false, lab: 'paso 10 JUGAR YA cierra la academia' });
+  out.push({ ok: e.activo === false, lab: 'paso 8 JUGAR YA cierra la academia' });
   out.push({ ok: localStorage.getItem('pp_tut_done') === '1',
              lab: 'sello pp_tut_done escrito' });
   out.push({ ok: G.scene.children.length >= 1,

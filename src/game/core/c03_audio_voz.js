@@ -1627,6 +1627,16 @@ export class GameAudio {
     try {
       if (!plan || !plan.length || !this.ctx || !this.master) return false;
       if (!this.vb || this.vbCtx !== this.ctx) return false;
+      // r67 · UNA SOLA VOZ VIVA (el dueño: «el audio se superpone dos veces
+      // en varios momentos de la explicación»): cada plan nuevo CANCELA el
+      // anterior — antes las fuentes se apilaban (tutok + voz del paso
+      // siguiente sonaban a la vez, y el STICK duplicaba). La última
+      // locución SIEMPRE gana, en la academia y en el marcador.
+      if (this._vozSrc) {
+        try { this._vozSrc.stop(0); } catch (e) { /* ya parada */ }
+        try { this._vozSrc.disconnect(); } catch (e) { /* */ }
+        this._vozSrc = null;
+      }
       const sr = this.ctx.sampleRate;
       const HEAD = 0.34;                      // deja sonar el chime primero
       const items = [];
@@ -1670,6 +1680,10 @@ export class GameAudio {
       g.gain.value = 1.12;                    // megáfono: por encima de la sala
       src.connect(g);
       g.connect(this.master);
+      this._vozSrc = src;                     // r67 · la voz viva ahora mismo
+      src.onended = () => {
+        if (this._vozSrc === src) this._vozSrc = null;
+      };
       src.start(this.ctx.currentTime + 0.02);
       return true;
     } catch { return false; }

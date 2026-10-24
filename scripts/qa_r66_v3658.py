@@ -74,9 +74,9 @@ AGUJAS = [
      "if (this.tutV1 && !this.tutBolaViva && !holdLock) {"),
     ("c12: sin física (holdLock) y sin velocidad mientras duerme",
      "this.ball.vel.set(0, 0, 0);\n      this.ball.spin.set(0, 0, 0);\n    }\n\n    // 4) Física"),
-    ("c13: la bola viva SOLO con saque/rally/demos (practica lanza)",
-     "G.tutBolaViva = true;\n        }\n        break;\n      case 4:"),
-    ("c13: paso 4 el saque también despierta la bola",
+    ("c13: la bola viva SOLO con saque/rally/demos (practica lanza, r67)",
+     "G.tossFromHand(G.ballHand, true);   // lanzamiento asistido del núcleo"),
+    ("c13: el intercambio también despierta la bola (r67)",
      "G.tutBolaViva = true;\n          rfFase = 'vuelo';"),
     ("c13: al arrancar la academia la bola nace DORMIDA",
      "G.tutBolaViva = false;                // r66 · bola DORMIDA salvo bola en juego"),
@@ -92,35 +92,35 @@ AGUJAS = [
      "const ANCLAS_MANDO_DER = {"),
     ("espejo verificado por clustering (comentario)",
      "ESPEJO geométrico del izquierdo (verificado por"),
-    ("grupo propio de mandos con pose (centro/saque/oculto)",
-     "function _poseMandos() {"),
-    ("mandos centrados bajo la pizarra",
-     "mandosGrp.position.set(0, 1.07, -0.56);"),
+    ("mandos ANCLADOS dentro del grip XR (r67)",
+     "function buildMandosAnclados() {"),
+    ("el mando anclado vive en SU grip (r67)",
+     "try { G.grips[h].add(mont); } catch (eG) { continue; }"),
     ("halos OPACOS (núcleo blanco sólido)",
      "rg.addColorStop(0, 'rgba(255,255,255,1)');"),
-    ("halos más grandes (0.052)",
-     "sp.scale.setScalar(0.052);              // r66 · más GRANDE (era 0.03)"),
+    ("halos adaptados al mando al 75% (0.046, r67)",
+     "sp.scale.setScalar(0.046);              // r67 · con el mando al 75%"),
     ("etiqueta legible de la pieza pedida",
      "function _etiquetaSprite() {"),
     ("etiqueta compuesta para los botones Y·X | B·A",
      "return T('tut_lab_btns_i') + '  ·  ' + T('tut_lab_btns_d');"),
-    ("raqueta FANTASMA sobre el mando",
-     "function _ponFantasma(mm) {"),
-    ("fantasma = pala REAL con material aditivo",
-     "blending: THREE.AdditiveBlending, depthWrite: false,"),
-    ("la fantasma aparece al dominar los mandos",
-     "fantasmaMeta = 1;                    // el mando SE CONVIERTE en raqueta"),
-    ("el giro se DETIENE cuando la fantasma aparece",
-     "const giroMeta = (fantasmaMeta > 0.02 || mandosPose !== 'centro') ? 0"),
-    ("pose de saque anclada a la MESA (mundo → rig)",
-     "if (mandosPose === 'saque') destino.copy(G.rig.worldToLocal(destino));"),
+    ("AURA sobre la PALA REAL (UNA raqueta, r67)",
+     "function _ponAuraPala() {"),
+    ("aura aditiva sobre el paddleMount real (r67)",
+     "const mount = G.paddleMounts[G.paddleHand];"),
+    ("el momento raqueta enciende la AURA y desvanece el GLB (r67)",
+     "auraMeta = 1;\n      mandosVisMeta = 0;"),
+    ("nada de giro ni flotación en los mandos anclados (r67)",
+     "r67 · tick de los mandos ANCLADOS: NADA de giro ni flotación"),
+    ("los mandos anclados sólo se ven en los pasos 0-1 (r67)",
+     "mandosVisMeta = (step <= 1) ? 1 : 0;"),
     ("bola de la demo en la palma del mando izquierdo",
      "function bolaPalmDemo() {"),
     # --- pasos rediseñados SOBRE LA MESA ---
     ("paso 3: demo real + práctica (submáquina)",
      "submodo = 'demo';\n        demoT = 0; demoCiclos = 0;"),
-    ("paso 3: mandos en pose de SAQUE sobre la mesa",
-     "mandosPose = 'saque';\n        fantasmaMeta = 0.8;"),
+    ("paso 2: demo del PROFESOR con aros guía (r67)",
+     "posaBolaDemo();\n        construirAros();"),
     ("paso 4: intercambio real contra el rival",
      "rfFase = 'saque'; rfVueltas = 0; rfHecho = false; rfVueltaVista = false;"),
     ("paso 5: marcador BAJO sobre la mitad rival",
@@ -129,10 +129,10 @@ AGUJAS = [
      "holoCartel2 = _cartelTxt(T('tut_h_p2'), '#ffd257', 54, 0.34, 0.17);"),
     ("ciclo de demo: postura → suelta → vuelo → punto → reset",
      "function tickDemoSaque(dt, esMarcador) {"),
-    ("la demo SUELTA la bola con el solucionador REAL de saques",
-     "const { v, spin } = findServeVelocity(b.pos, 1, { x: 0.05, spd: 1.22 });"),
-    ("la demo cuenta el BOTE PROPIO",
-     "demoBote1 = true;\n          demoTxt = { txt: T('tut_d3_p1')"),
+    ("el PROFESOR suelta el saque con el solucionador REAL (ownSign -1, r67)",
+     "const { v, spin } = findServeVelocity(b.pos, -1, { x: -0.05, spd: 1.22 });"),
+    ("la demo del profesor cuenta el BOTE EN SU CAMPO (r67)",
+     "demoTxt = { txt: T('tut_p1r'), col: 'rgba(232,180,90,0.32)', t: 1.5 };"),
     ("la demo cuenta el BOTE RIVAL",
      "demoBote2 = true;\n          demoTxt = { txt: T('tut_d3_p2')"),
     ("el marcador anota puntos con las REGLAS del árbitro",
@@ -153,19 +153,19 @@ AGUJAS = [
      "if (demoT > 2.5) {\n            submodo = 'practica';"),
     ("gatillo del paso 4: saca para empezar el intercambio",
      "else if (rfFase === 'saque' && !G.tossed) {"),
-    ("paso 5: ENTENDIDO con puerta de tiempo",
-     "if (demoT >= DEMO_MIN) { narra(['tutok']); advance(); }"),
-    ("estado() para QA: mandos duales, fantasma y demos",
-     "mandos: !!mandosGrp,"),
-    ("guion de voz r66 (tutv1f de la raqueta)",
-     "['tutv1a', 'tutv1b'],                    // 1 mandos (luego c/d/e/f por acción)"),
+    ("ENTENDIDO con puerta de tiempo (voz única r67)",
+     "if (demoT >= DEMO_MIN) { advance(); }"),
+    ("estado() para QA: anclados, grips, aura y aros (r67)",
+     "ancladosEnGrips,"),
+    ("guion de voz r67 remapeado (tutv1f de la raqueta)",
+     "['tutv1a', 'tutv1b'],                    // 1 mando+raqueta (c/d/e por acción)"),
     # --- textos sin solapes (pintor 9 re-espaciado) ---
-    ("pintor 9: filas subidas (242/314/386)",
-     "modeRow(c, 314, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_s7_m2'));"),
-    ("pintor 9: píldora final a 538 (antes 570 invadía «B · saltar»)",
-     "pill(c, T('tut_hint_next'), 538, { w: 520, h: 46, col: 'rgba(232,180,90,0.28)', size: 21 });"),
-    ("pintor 1: píldora del momento RAQUETA",
-     "pill(c, T('tut_m1_raf'), 470, { col: 'rgba(90,160,255,0.30)', size: 26 });"),
+    ("rejilla de modos: tarjeta R en la fila inferior (r67)",
+     "modeCard(c, 190, 470, 300, 96, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'));"),
+    ("píldora de modos a 552 (NUNCA invade «B · saltar» 604, r67)",
+     "pill(c, T('tut_hint_next'), 552, { w: 520, h: 42, col: 'rgba(232,180,90,0.28)', size: 20 });"),
+    ("paso 1: píldora del momento RAQUETA + barra de vaivén (r67)",
+     "pill(c, T('tut_m1_raf'), 406, { col: 'rgba(90,160,255,0.30)', size: 24 });"),
 ]
 
 NEGATIVAS = [
@@ -207,7 +207,7 @@ MECANICA = """async () => {
     set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; },
     length() { return Math.hypot(this.x, this.y, this.z); },
   });
-  const mkJuego = (mano) => ({
+  const mkJuego = (mano) => { const G = ({
     net: { online: false }, champs: null,
     trainV3: null, trainV3Hub: false, tutV1: null, calib: false,
     rules: { state: 'point', server: 'ai', message: '', bestOf: 3,
@@ -239,14 +239,21 @@ MECANICA = """async () => {
     paddleModelRef: null,
     sceneAddSpy: 0,
   });
+  // r67 · grips XR reales (los mandos GLB se ANCLAN a ellos)
+  const grips = [new THREE.Group(), new THREE.Group()];
+  const mounts = [new THREE.Group(), new THREE.Group()];
+  grips[0].add(mounts[0]); grips[1].add(mounts[1]);
+  G.grips = grips; G.paddleMounts = mounts; G.handOf = ['left', 'right'];
+  return G;
+  };
 
   // ---------- 1 · arranque + DOS mandos GLB --------------------------
   let G = mkJuego(1);
   G.scene.add(G.rig);
   T.start(G);
   let e = T.estado();
-  out.push({ ok: e.activo && e.paso === 0 && e.total === 11,
-             lab: 'arranque: paso 0 de 11' });
+  out.push({ ok: e.activo && e.paso === 0 && e.total === 9,
+             lab: 'arranque: paso 0 de 9 (guion r67)' });
   out.push({ ok: e.bolaViva === false,
              lab: 'la bola nace DORMIDA (adiós al bote continuo)' });
   out.push({ ok: e.voz === 'tutv0a', lab: 'bienvenida hablada (tutv0a)' });
@@ -255,17 +262,17 @@ MECANICA = """async () => {
     await new Promise((r) => setTimeout(r, 50));
     e = T.estado();
   }
-  out.push({ ok: e.mandos && e.dosMandos,
-             lab: 'DOS mandos GLB cargados (izquierdo + derecho)' });
-  out.push({ ok: e.mandosPose === 'centro',
-             lab: 'mandos CENTRADOS delante (pose centro)' });
-  const mandosGrp = G.rig.children.find((ch) => ch.name === 'ppTutMandos');
-  let nHalos = 0, nEtiqueta = 0, nFantasmas = 0;
-  if (mandosGrp) mandosGrp.traverse((o) => {
-    if (o.isSprite) (o.__cv ? nEtiqueta++ : nHalos++);
-  });
-  out.push({ ok: nHalos === 8, lab: `8 halos opacos (4 por mando) · hay ${nHalos}` });
-  out.push({ ok: nEtiqueta === 1, lab: 'etiqueta de la pieza pedida presente' });
+  out.push({ ok: e.anclados === true && e.ancladosEnGrips === true,
+             lab: 'DOS mandos GLB ANCLADOS a los grips XR (izq + der)' });
+  out.push({ ok: e.mandosPose === 'manos',
+             lab: 'mandos EN TUS MANOS (sin modelo flotante)' });
+  let nHalos = 0, nEtiqueta = 0;
+  for (let i = 0; i < 2; i++) {
+    const mont = G.grips[i].children.find((ch) => ch.name === 'ppTutMando' + i);
+    if (mont) mont.traverse((o) => { if (o.isSprite) (o.__cv ? nEtiqueta++ : nHalos++); });
+  }
+  out.push({ ok: nHalos === 8, lab: `8 halos opacos (4 por mando anclado) · hay ${nHalos}` });
+  out.push({ ok: nEtiqueta === 1, lab: 'etiqueta ÚNICA sobre el mando de la pala' });
   T.tick(0.05);
   e = T.estado();
   out.push({ ok: e.mandoHl === null,
@@ -306,31 +313,26 @@ MECANICA = """async () => {
   T.tick(0.016); T.tick(0.05);
   e = T.estado();
   out.push({ ok: e.subfase === 4 && e.mandoHl === null,
-             lab: 'A pulsada: mandos dominados (sin halo)' });
+             lab: 'A pulsada: momento RAQUETA (sin halo de pieza)' });
   for (let i = 0; i < 30; i++) T.tick(0.1);
   e = T.estado();
-  out.push({ ok: e.fantasma === true,
-             lab: 'RAQUETA FANTASMA visible sobre los mandos (fade in)' });
+  out.push({ ok: e.aura > 0.4,
+             lab: 'AURA visible sobre la PALA REAL (fade in, única raqueta)' });
   out.push({ ok: (G.audio.__voz || []).includes('tutv1f'),
              lab: 'voz del momento raqueta (tutv1f)' });
-  T.onTrigger(0);
-  T.tick(0.05);
-  e = T.estado();
-  out.push({ ok: e.paso === 2, lab: 'paso 1 → 2 (la pala)' });
-
-  // ---------- 3 · paso 2 vaivén → paso 3 DEMO SOBRE LA MESA ---------
+  // el vaivén (subfase 4) avanza SOLO al paso 2 (r67)
   G.controllerPaddles[G.paddleHand].vel.set(1.5, 1.2, 1.5);
   T.tick(0.2); T.tick(0.2); T.tick(0.2);
   e = T.estado();
-  out.push({ ok: e.paso === 3 && e.pose === 'lado',
-             lab: 'vaivén → paso 3 EL SAQUE con panel APARTADO' });
-  out.push({ ok: e.submodo === 'demo' && e.mandosPose === 'saque',
-             lab: 'demo de saque con los mandos en POSE DE SAQUE' });
+  out.push({ ok: e.paso === 2 && e.pose === 'lado',
+             lab: 'vaivén → paso 2 EL SAQUE con panel APARTADO' });
+  out.push({ ok: e.submodo === 'demo' && e.mandosPose === 'oculto' && e.aros === true,
+             lab: 'demo del PROFESOR sobre la mesa real con AROS GUÍA' });
   out.push({ ok: e.voz === 'tutv3a', lab: 'narración del saque (tutv3a)' });
   // el gatillo ANTES de 2.5 s NO pasa a práctica
   T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.paso === 3 && e.submodo === 'demo',
+  out.push({ ok: e.paso === 2 && e.submodo === 'demo',
              lab: 'la práctica se niega antes de ver la demo' });
   // deja correr la demo: el ciclo suelta la bola (fase 1) y la bola vuela
   for (let i = 0; i < 25 && e.demoFase === 0; i++) { T.tick(0.2); e = T.estado(); }
@@ -363,12 +365,12 @@ MECANICA = """async () => {
     T.tick(0.3); T.tick(0.3);
   }
   e = T.estado();
-  out.push({ ok: e.paso === 4, lab: '3/3 saques → paso 4 EL INTERCAMBIO' });
+  out.push({ ok: e.paso === 3, lab: '3/3 saques → paso 3 EL INTERCAMBIO' });
 
   // ---------- 4 · paso 4: intercambio REAL (rival devuelve y falla) --
   e = T.estado();
   out.push({ ok: e.rfFase === 'saque' && e.mandosPose === 'oculto',
-             lab: 'paso 4: espera el saque del jugador' });
+             lab: 'paso 3: espera el saque del jugador' });
   T.onTrigger(0);                       // saca
   T.tick(0.016);
   e = T.estado();
@@ -404,18 +406,18 @@ MECANICA = """async () => {
   T.onTrigger(0);
   T.tick(0.05);
   e = T.estado();
-  out.push({ ok: e.paso === 5, lab: 'gatillo → paso 5 EL MARCADOR' });
+  out.push({ ok: e.paso === 4, lab: 'gatillo → paso 4 EL MARCADOR' });
 
   // ---------- 5 · paso 5: marcador con igualada ----------------------
   e = T.estado();
   out.push({ ok: e.holo === true && e.pose === 'lado',
              lab: 'holo-marcador BAJO sobre la mesa (panel apartado)' });
-  out.push({ ok: e.mandosPose === 'saque',
-             lab: 'mandos en pose de saque para el bucle del marcador' });
+  out.push({ ok: e.mandosPose === 'oculto' && e.aros === true,
+             lab: 'mesa LIBRE para el bucle del marcador (aros activos)' });
   // el gatillo ANTES de la demo NO avanza
   T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.paso === 5, lab: 'ENTENDIDO se niega antes de la demo' });
+  out.push({ ok: e.paso === 4, lab: 'ENTENDIDO se niega antes de la demo' });
   for (let i = 0; i < 70; i++) T.tick(0.2);       // 14 s
   e = T.estado();
   out.push({ ok: e.demoPtos >= 20, lab: `marcador hasta 10-10 (pts ${e.demoPtos})` });
@@ -424,9 +426,12 @@ MECANICA = """async () => {
              lab: 'voz de la igualada (tutv5b)' });
   T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.paso === 6, lab: 'demo vista → gatillo pasa a las DEVOLUCIONES' });
+  out.push({ ok: e.paso === 5, lab: 'demo vista → gatillo pasa a la PRÁCTICA' });
 
   // ---------- 6 · pasos 6/7/8/9/10 (r64 intactos) --------------------
+  // rearme: la bola del demo murió en el campo del profesor — el ciclo de
+  // bola muerta (0,5 s) rearma y la fase queda en 'espera_golpe'
+  for (let i = 0; i < 5; i++) T.tick(0.2);
   for (let i = 0; i < 6; i++) {
     G.ball.pos.set(0.1, 1.1, -1.75); G.ball.vel.set(0, -0.5, -3.0);
     T.tick(0.016);
@@ -436,19 +441,19 @@ MECANICA = """async () => {
     T.tick(0.016);
   }
   e = T.estado();
-  out.push({ ok: e.paso === 7, lab: '6/6 devoluciones → paso 7 BOTONES' });
+  out.push({ ok: e.paso === 6, lab: '6/6 devoluciones → paso 6 BOTONES' });
   G.paddleHand = 0;
   T.tick(0.016);
   e = T.estado();
-  out.push({ ok: e.paso === 8 && e.pose === 'frente',
-             lab: 'A/X → paso 8 MODOS (panel de nuevo FRENTE)' });
-  T.onTrigger(0); T.onTrigger(0);
+  out.push({ ok: e.paso === 7 && e.pose === 'frente',
+             lab: 'A/X → paso 7 MODOS (panel de nuevo FRENTE)' });
+  T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.paso === 10, lab: 'modos 8→9→10 por gatillo' });
+  out.push({ ok: e.paso === 8, lab: 'modos: UNA pizarra → paso 8 por gatillo' });
   localStorage.removeItem('pp_tut_done');
   T.onTrigger(0);
   e = T.estado();
-  out.push({ ok: e.activo === false, lab: 'paso 10 JUGAR YA cierra la academia' });
+  out.push({ ok: e.activo === false, lab: 'paso 8 JUGAR YA cierra la academia' });
   out.push({ ok: localStorage.getItem('pp_tut_done') === '1',
              lab: 'sello pp_tut_done escrito' });
   out.push({ ok: G.scene.children.length >= 1,

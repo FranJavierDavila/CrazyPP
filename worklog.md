@@ -4102,3 +4102,22 @@ Stage Summary:
 - PRODUCCIÓN SIRVE V3.6.58-SDK6 (FASE 60 «La academia sobre la mesa»): silencio hasta que toca (bola dormida, adiós al bote continuo de verdad), voces pausadas que respiran, los DOS mandos exactos del dueño centrados con halos opacos y etiquetas, la raqueta fantasma mando→pala, y las reglas demostradas SOBRE la mesa con la bola y la física del juego (saque reglamentario, intercambio con rotación, marcador a 11 por 2 y la igualada). Ronda 66 CERRADA de punta a punta.
 - Recordatorio al dueño: en el Quest, recargar con game.html?v=3.6.58-SDK6 (o limpiar la caché del navegador del visor) para NO quedar en la V3.6.57 del caché.
 - Siguiente: prueba en casco del onboarding sobre la mesa (especialmente la demo del saque y el intercambio real) + fase 61 del roadmap cuando el dueño la defina.
+
+---
+Task ID: 171
+Agent: Super Z (main agent)
+Task: r67 · V3.6.59-SDK6 (FASE 61) — LA ACADEMIA EN TUS MANOS: informe del dueño tras V3.6.58 (solapes que persisten · audio que se superpone dos veces · mandos 3D anclados a las manos reales NO flotando · mandos al 75% · la raqueta fantasma debe ser la REAL y solo 1 · guion más sencillo y divertido de mi cosecha)
+
+Work Log:
+- Universo verificado: sandbox 72 commits atrás → fast-forward a origin/main 368d785 (V3.6.58-SDK6 en producción, pages a9b5f20, golden 30e72d09); assets del dueño byte-idénticos
+- (1) ADIÓS AL AUDIO DOBLE (c03): speakPlan CANCELA la voz viva anterior (_vozSrc: stop+disconnect+onended con guard) — una sola voz, la última gana; además eliminadas las narraciones dobles en los avances (tutok+voz del paso siguiente sonaban a la vez)
+- (2) MANDOS ANCLADOS A LAS MANOS (c13): buildMandosAnclados monta cada GLB (izq Y/X · der B/A por G.handOf) DENTRO del espacio grip XR de SU mando (G.grips[h]) — seguido 1:1, orientación real (cara del GLB → -Z del grip, giro 180°, cabeza arriba), escalado MANDO_ESC 0.154 (75% del 0.205 de r66); sin giro de exhibición ni flotación senoidal; halos (×8, 0.046) y ETIQUETA única (sobre el mando de la pala) viajan con la mano; teardown saca las monturas de los grips
+- (3) UNA SOLA RAQUETA, LA REAL: eliminados _ponFantasma/_fantasmaMats (clones de pala sobre mandos); nueva _ponAuraPala — aura dorada (2 sprites aditivos, pulso) sobre G.paddleMounts[paddleHand]; el momento raqueta (subfase 4) enciende la AURA y desvanece el GLB del mando; etiqueta TU RAQUETA (tut_lab_pala)
+- (4) GUION REORGANIZADO a 9 pasos (STEPS 11→9): 0 bienvenida · 1 TU MANDO, TU RAQUETA (4 acciones reales + vaivén FUSIONADOS, avance automático al completar el vaivén) · 2 EL SAQUE (demo del PROFESOR: findServeVelocity(-1) desde su campo, bola apoyada en su mitad, bote SU campo→TU campo→PUNTO; 3 saques tuyos) · 3 intercambio · 4 marcador · 5 práctica · 6 botones · 7 los modos en UNA pizarra (rejilla 2×3 con modeCard + caja de poderes con tut_pow_t corto; píldora a 552 NUNCA invade «B · saltar» 604) · 8 ¡a jugar!; los mandos anclados SÓLO en pasos 0-1
+- (5) AROS GUÍA (nuevo): dos torus planos sobre la mesa real que marcan dónde debe botar el saque; se ILUMINAN en verde con los botes reales (demo del profesor y práctica); limpiarAros en enterStep/stop
+- (6) Pintores re-diseñados sin solapes + i18n: claves nuevas tut_m_t/tut_mods_t/tut_mod_p..t/tut_lab_pala/tut_pow_t/tut_p1r ×2 idiomas; átomos Piper 27×2 REUSADOS (sin regenerar TTS); VOCES_PASO remapeado
+- QA: capa BB NUEVA qa_r67_v3659 (148/0: agujas+negativas+i18n+átomos+mecánica real headless con grips XR — anclaje, escala 75%, orientación, aura única, voz que se sustituye, 9 pasos completos con prácticas, demo del profesor, aros, cierre limpio) · AT 149/0 · AY 71/0 · AZ 134/0 · BA 152/0 re-selladas al nuevo flujo · sellos de versión rodados a 3.6.59 (E/F/G/I/AF-AN) · qa_descargas_v366 nueva (213/0) · QA TOTAL 39 capas verde (A 23 · B 11 escenarios · C 29 · D 14 · E 151 · F 66 · G 54 · H 213 · J 129 · …)
+- release-v3659 generado (notas FASE 61 por marcadores) · 4 ZIPs (COMPLETO 133.099.308 · ligera 18.044.952 · CLOUDFLARE 133.085.922 · SOLO 6.089) · presupuesto refrescado (game.html 9.820.354 B) · golden 14320f07
+
+Stage Summary:
+- V3.6.59-SDK6 lista para deploy: la academia juega CON LAS MANOS DEL JUGADOR (mandos GLB anclados a los grips XR reales al 75%, una sola raqueta = la pala real con aura), una sola voz viva (adiós al audio doble) y un guion de 9 pasos más sencillo, pausado y divertido con demo del profesor y aros guía sobre la mesa real

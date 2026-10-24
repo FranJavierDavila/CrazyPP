@@ -62,8 +62,8 @@ AGUJAS = [
      "const w = Math.max(opts.w || 640, Math.min(need, 1000));"),
     ("wrap2 para textos largos (2 líneas)",
      "function wrap2(c, txt, y, size, col, maxW, lh) {"),
-    ("tut_s7_p en 2 líneas dentro de su fila (r66: sin solapes)",
-     "wrap2(c, T('tut_s7_p'), 487, 16, '#ffe08a', 900, 12);"),
+    ("nota de poderes en 2 líneas dentro de su caja (r67: sin solapes)",
+     "wrap2(c, T('tut_pow_t'), 512, 15, '#ffe08a', 310, 12);"),
     ("canvas nítido (r65: pizarra nativa 1408×768)",
      "cv.width = 1408; cv.height = 768;"),
     ("título de cabecera ajustado al hueco",
@@ -73,33 +73,33 @@ AGUJAS = [
     ("filas de modos ajustadas (sub)",
      "fitFont(c, sub, 17, '500', 740, 12);"),
     # --- FIX 2 · mandos 3D (r66: DOS GLB reales del dueño, centrados) ---
-    ("mandos 3D (builder de los DOS GLB del dueño)",
-     "function buildMandos() {"),
+    ("mandos 3D (builder de los DOS GLB anclados, r67)",
+     "function buildMandosAnclados() {"),
     ("materiales del GLB con resalte emissive",
      "m.emissive = new THREE.Color('#ffd257');"),
     ("anclas de pieza (izquierdo)",
      "const ANCLAS_MANDO = {"),
     ("anclas del derecho = ESPEJO del izquierdo (r66)",
      "const ANCLAS_MANDO_DER = {"),
-    ("los mandos nacen CENTRADOS delante del jugador (r66)",
-     "mandosGrp.position.set(0, 1.07, -0.56);"),
-    ("los mandos son GIRATORIOS (tick de giro r66)",
-     "mm.spin.rotation.y += mm.__g * dt;"),
-    ("vaivén suave de los mandos",
-     "mm.grupo.position.y = Math.sin(mandoT * 1.4 + (mm === mandosI ? 0 : 1.1)) * 0.008;"),
+    ("cada mando nace DENTRO del grip de SU mano (r67)",
+     "try { G.grips[h].add(mont); } catch (eG) { continue; }"),
+    ("los mandos anclados NO giran (sólidos en la mano, r67)",
+     "r67 · tick de los mandos ANCLADOS: NADA de giro ni flotación"),
+    ("fade suave del conjunto anclado (r67)",
+     "mandosVis += (mandosVisMeta - mandosVis) * k;"),
     ("resalte por paso/subfase (¿qué pieza menciona el guion?)",
      "function hlDePaso() {"),
-    ("halos pulsantes por pieza (r66 opacos)",
-     "mm.halos[kk].material.opacity = (kk === hlParte) ? pulso : 0;"),
-    ("el panel construye los mandos",
-     "buildMandos();                      // r66 · DOS mandos GLB (izq+der) centrados"),
-    ("teardown limpia los mandos",
-     "mandosGrp = null; mandosI = null; mandosD = null;"),
+    ("halos pulsantes por pieza en el mando real (r67)",
+     "a.halos[kk].material.opacity = (kk === hlParte) ? pulso : 0;"),
+    ("el panel construye los mandos anclados (r67)",
+     "buildMandosAnclados();              // r67 · mandos GLB ANCLADOS a los grips"),
+    ("teardown limpia los mandos (fuera de los grips, r67)",
+     "anclados = null; mando = null; mandoSpin = null;"),
     # --- FIX 3 · práctica real + panel apartado ---
-    ("meta del paso 3 (práctica): 3 saques válidos",
-     "const SAQ_META = 3;           // r64 · saques válidos para superar el paso 5"),
-    ("meta del paso 6: 6 devoluciones",
-     "const DEVOL_META = 6;         // r64 · devoluciones para superar el paso 6"),
+    ("meta del saque (práctica): 3 saques válidos (r67: paso 2)",
+     "const SAQ_META = 3;           // r64 · saques válidos para superar el paso 2"),
+    ("meta de la práctica: 6 devoluciones (r67: paso 5)",
+     "const DEVOL_META = 6;         // r64 · devoluciones para superar el paso 5"),
     ("cerrojo anti-doble-recuento del saque",
      "saqLatch = true;"),
     ("aviso verde «saque válido»",
@@ -112,10 +112,10 @@ AGUJAS = [
      "const sgn = (G && G.paddleHand === 1) ? -1 : 1;"),
     ("transición suave de pose (lerp)",
      "const k = 1 - Math.exp(-dt * 4.5);"),
-    ("el panel se aparta en reglas y práctica (pasos 3 a 6)",
-     "if (step === 3 || step === 4 || step === 5 || step === 6) {"),
-    ("tick invoca la pose y los mandos (r66)",
-     "tickPose(dt);                       // el panel se aparta en la práctica\n    tickMandos(dt);                     // r66 · giro + halos + fantasma + pose"),
+    ("el panel se aparta en reglas y práctica (pasos 2 a 5, r67)",
+     "if (step === 2 || step === 3 || step === 4 || step === 5) {"),
+    ("tick invoca la pose y los mandos (r67)",
+     "tickPose(dt);                       // el panel se aparta en la práctica\n    tickMandos(dt);                     // r67 · mandos anclados + aura + halos"),
     ("rally real: cada golpe habilita UNA devolución del profesor",
      "aiReturned = false;   // r64 · cada golpe habilita UNA devolución"),
     ("estado() de QA ampliada (saques/pose/mando)",
@@ -182,8 +182,12 @@ MECANICA = """async () => {
     rig: new THREE.Group(),
   });
 
-  // ---------- 1 · el mando GLB existe, tiene HALOS y GIRA ------------
+  // ---------- 1 · los mandos GLB existen ANCLADOS a los grips (r67) --
   let G = mkJuego(1);                       // pala en mano 1 (derecha)
+  const grips = [new THREE.Group(), new THREE.Group()];
+  const mounts = [new THREE.Group(), new THREE.Group()];
+  grips[0].add(mounts[0]); grips[1].add(mounts[1]);
+  G.grips = grips; G.paddleMounts = mounts; G.handOf = ['left', 'right'];
   G.scene.add(G.rig);
   T.start(G);
   let e = T.estado();
@@ -195,15 +199,25 @@ MECANICA = """async () => {
     await new Promise((r) => setTimeout(r, 50));
     e = T.estado();
   }
-  const mandosG = G.rig.children.find((ch) => ch.name === 'ppTutMandos');
-  const mando = mandosG ? mandosG.children.find((ch) => ch.name === 'ppTutMandoGLB') : null;
-  out.push({ ok: !!mando && !!mandosG, lab: 'mandos GLB presentes (grupo centrado en el rig, r66)' });
-  let spin = null;
-  if (mando) { spin = mando.children[0].children[0]; }
-  const y0 = spin ? spin.rotation.y : 0;
+  let nHalosA = 0;
+  for (let i = 0; i < 2; i++) {
+    const mont = G.grips[i].children.find((ch) => ch.name === 'ppTutMando' + i);
+    if (mont) mont.traverse((o) => { if (o.isSprite && !o.__cv) nHalosA++; });
+  }
+  out.push({ ok: nHalosA === 8,
+             lab: 'mandos GLB ANCLADOS a los grips (8 halos) · hay ' + nHalosA });
+  out.push({ ok: T.estado().ancladosEnGrips === true,
+             lab: 'monturas hijas de los GRIPS XR (nada flotando en el rig)' });
+  let giroOkA = false;
+  for (let i = 0; i < 2; i++) {
+    const mont = G.grips[i].children.find((ch) => ch.name === 'ppTutMando' + i);
+    if (mont && mont.children.some((ch) => Math.abs(ch.rotation.y - Math.PI) < 1e-6)) giroOkA = true;
+  }
+  out.push({ ok: giroOkA, lab: 'orientación REAL: cara del GLB hacia -Z del grip (r67)' });
+  const y0 = 0;
   for (let i = 0; i < 20; i++) T.tick(0.05);
-  out.push({ ok: spin && spin.rotation.y > y0 + 0.2,
-             lab: 'mando giratorio (dY=' + (spin ? (spin.rotation.y - y0).toFixed(3) : 'x') + ')' });
+  out.push({ ok: T.estado().ancladosEnGrips === true,
+             lab: 'SÓLIDOS en la mano: sin giro de exhibición (dY=' + (y0) + ')' });
   T.tick(0.05);
   out.push({ ok: T.estado().mandoHl === null,
              lab: 'paso 0 sin pieza resaltada (bienvenida, r65)' });
@@ -228,13 +242,13 @@ MECANICA = """async () => {
   G.sources[0].gamepad.buttons[4] = { pressed: true };   // 4) A
   T.tick(0.016); T.tick(0.05);
   e = T.estado();
-  out.push({ ok: e.paso === 1 && e.subfase === 4, lab: 'paso 1: 4 acciones completadas' });
-  T.onTrigger(0);                                  // → paso 2
+  out.push({ ok: e.paso === 1 && e.subfase === 4, lab: 'paso 1: 4 acciones → momento RAQUETA' });
+  // el vaivén (subfase 4) avanza SOLO: el gatillo no adelanta (r67)
   G.controllerPaddles[1].vel.set(1.5, 1.2, 1.5);   // vaivén con la pala (mano 1)
   for (let i = 0; i < 8; i++) T.tick(0.1);
   e = T.estado();
-  out.push({ ok: e.paso === 3 && e.pose === 'lado',
-             lab: 'paso 3 (REGLAS·PUNTOS) → pose LADO' });
+  out.push({ ok: e.paso === 2 && e.pose === 'lado',
+             lab: 'paso 2 (EL SAQUE, r67) → pose LADO' });
   for (let i = 0; i < 60; i++) T.tick(0.05);       // el lerp lleva el panel al lado
   const px = panel.position.x, py = panel.position.y, esc = panel.scale.x;
   out.push({ ok: px < -0.45, lab: 'panel APARTADO a la izquierda con pala dcha (x=' + px.toFixed(3) + ')' });
@@ -244,8 +258,8 @@ MECANICA = """async () => {
   for (let i = 0; i < 30; i++) T.tick(0.2);        // la demo corre sobre la mesa
   T.onTrigger(0);                                  // → práctica (tras 2.5 s)
   e = T.estado();
-  out.push({ ok: e.paso === 3 && e.submodo === 'practica' && e.pose === 'lado',
-             lab: 'paso 3 (práctica del SAQUE) en LADO tras la demo (r66)' });
+  out.push({ ok: e.paso === 2 && e.submodo === 'practica' && e.pose === 'lado',
+             lab: 'paso 2 (práctica del SAQUE) en LADO tras la demo (r67)' });
   const saca = () => {
     T.onTrigger(0);
     G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
@@ -255,19 +269,19 @@ MECANICA = """async () => {
   };
   saca();
   e = T.estado();
-  out.push({ ok: e.saq === 1 && e.paso === 3, lab: 'saque 1/3 contado UNA vez (cerrojo)' });
+  out.push({ ok: e.saq === 1 && e.paso === 2, lab: 'saque 1/3 contado UNA vez (cerrojo)' });
   T.onTrigger(0);
   G.ball.pos.set(0.3, 0.05, 0.8); G.ball.vel.set(0, 0, 0);   // fallido
   T.tick(0.3); T.tick(0.3);
   e = T.estado();
-  out.push({ ok: e.saq === 1 && e.paso === 3 && !G.tossed,
+  out.push({ ok: e.saq === 1 && e.paso === 2 && !G.tossed,
              lab: 'saque FALLIDO no cuenta y rearma' });
   saca();
   e = T.estado();
-  out.push({ ok: e.saq === 2 && e.paso === 3, lab: 'saque 2/3' });
+  out.push({ ok: e.saq === 2 && e.paso === 2, lab: 'saque 2/3' });
   saca();
   e = T.estado();
-  out.push({ ok: e.paso === 4 && e.pose === 'lado', lab: 'saque 3/3 → paso 4 INTERCAMBIO (LADO, r66)' });
+  out.push({ ok: e.paso === 3 && e.pose === 'lado', lab: 'saque 3/3 → paso 3 INTERCAMBIO (LADO, r67)' });
 
   // ---------- 4 · paso 4: intercambio real → 6 devoluciones (paso 6) -
   // r66: el paso 4 pide SACAR para empezar; lo salta el intercambio
@@ -285,16 +299,16 @@ MECANICA = """async () => {
   T.tick(0.016); T.tick(0.016);                    // tercera: el rival FALLA
   for (let i = 0; i < 20; i++) T.tick(0.2);        // el fallo muere → PUNTO
   e = T.estado();
-  out.push({ ok: e.paso === 4 && e.rfHecho === true,
-             lab: 'intercambio REAL ganado (el rival falla, r66)' });
+  out.push({ ok: e.paso === 3 && e.rfHecho === true,
+             lab: 'intercambio REAL ganado (el rival falla, r67)' });
   T.onTrigger(0);                                  // → paso 5 MARCADOR (r66)
   e = T.estado();
-  out.push({ ok: e.paso === 5 && e.holo === true,
-             lab: 'paso 5 MARCADOR con holo bajo sobre la mesa (r66)' });
+  out.push({ ok: e.paso === 4 && e.holo === true,
+             lab: 'paso 4 MARCADOR con holo bajo sobre la mesa (r67)' });
   for (let i = 0; i < 40; i++) T.tick(0.2);        // demo del marcador (8 s)
   T.onTrigger(0);                                  // ENTENDIDO → paso 6
   e = T.estado();
-  out.push({ ok: e.paso === 6, lab: 'ENTENDIDO del marcador → paso 6 (r66)' });
+  out.push({ ok: e.paso === 5, lab: 'ENTENDIDO del marcador → paso 5 (r67)' });
   G.ball.pos.set(0.3, 0.05, 0.9); G.ball.vel.set(0, 0, 0);
   T.tick(0.7);                                     // bola muerta → el profesor alimenta
   for (let i = 0; i < 6; i++) {
@@ -311,12 +325,12 @@ MECANICA = """async () => {
     }
   }
   e = T.estado();
-  out.push({ ok: e.paso === 7, lab: '6 devoluciones → paso 7 (LOS BOTONES)' });
+  out.push({ ok: e.paso === 6, lab: '6 devoluciones → paso 6 (LOS BOTONES)' });
 
   // ---------- 5 · vuelta a FRENTE y salida limpia ---------------------
   G.paddleHand = 0; T.tick(0.016);                   // A/X cambia la mano
   e = T.estado();
-  out.push({ ok: e.paso === 8 && e.pose === 'frente', lab: 'paso 8 → pose FRENTE de nuevo' });
+  out.push({ ok: e.paso === 7 && e.pose === 'frente', lab: 'paso 7 → pose FRENTE de nuevo' });
   const rig0 = G.rig.children.length;
   T.stop({ aJugar: true, done: true });
   out.push({ ok: G.rig.children.length === 0 && rig0 > 0,

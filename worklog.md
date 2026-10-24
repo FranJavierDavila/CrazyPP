@@ -4041,3 +4041,22 @@ Work Log:
 Stage Summary:
 - LA ACADEMIA ES AHORA UN ONBOARDING GAMIFICADO Y HABLADO: se ESCUCHA en castellano o inglés (el narrador Piper de siempre), el mando es el MODELO EXACTO del dueño con halos que piden pulsaciones REALES (gatillo, grip, stick, A), las reglas se VEN sobre la mesa (marcador a 11, rotación de saque, doble bote con la bola fantasma), el texto vive en la PIZARRA del dueño (tiza sobre la zona negra, nunca tapando la mesa) y el bote continuo del inicio ha MUERTO. Cada uno de los 11 pasos exige su acción: nadie sale de la academia sin saber jugar.
 - Despliegue y verificación byte-exacto en producción: (ver apéndice 169-b si procede).
+
+---
+Task ID: 169-b (apéndice de despliegue — CERRADO)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 65 — despliegue de V3.6.57-SDK6 en producción.
+
+Work Log:
+- Commit ea0f1b3 en main LOCAL (todo el trabajo r65: c00 voz+ i18n, c12 guardia del saque demo, c13 academia gamificada, QA AZ/AY/AT, release-v3657, sella_r65, presupuesto, worklog).
+- LINAJE PAGES PRE-ALINEADO (lección r64 aplicada): el rebobinado del sandbox había dejado el ref local pages en 11446a2 (Oct 19) — git update-ref refs/heads/pages origin/pages (eb6562bb2) ANTES del deploy → el commit de pages encadenó y subió FAST-FORWARD a la primera, sin rescate esta vez.
+- DEPLOY COMPLETO EN VERDE (deploy_pages.py --push --release --backup con el GIT_TOKEN del dueño): ensamblado 396 ficheros · 137,9 MB · smoke Playwright 29/0 bajo /CrazyPP/ · commit pages e42dbd1f9 push FF ✓ · respaldo main→proyecto ✓ · tag v3.6.57-SDK6 + GitHub Release con los 4 ZIPs (~282 MB) ✓ → https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.57-SDK6
+- Sincronización main→main: push 358f0dd..ea0f1b3 ✓ — origin/main = main local de nuevo.
+- BUILD DE PAGES: built sobre e42dbd1f9 sin errores.
+- VERIFICACIÓN BYTE-EXACTO EN PRODUCCIÓN (curl con ?v=ant caché): PAGES-VERSION.txt servido = 3.6.57-SDK6 · fuente_commit ea0f1b34 · reescrituras=2 · SHA256 del game.html SERVIDO = f7850df6230dfbd4cc5a8803ad3746fbee1296ebbed87bf87005b9fe55444cf3 — IDÉNTICO al ensamblado local (8.758.811 B, −2 B legítimos de las 2 reescrituras).
+- CAPAS DE PRODUCCIÓN: qa_hub_hints VERDE · qa_champion_listo VERDE (carga del juego servido de 8,8 MB incluida).
+
+Stage Summary:
+- PRODUCCIÓN SIRVE V3.6.57-SDK6 (FASE 59 «El onboarding gamificado»): la academia HABLA (voz nativa es/en del narrador Piper), el mando es el GLB EXACTO del dueño con halos que piden gatillo/grip/stick/A reales, las reglas se VEN sobre la mesa (marcador a 11 por 2, rotación del saque 2·2 y 10-10, doble bote con la bola fantasma), el texto vive en la PIZARRA con tiza sobre la zona negra y el bote continuo del inicio ha muerto. Ronda 65 CERRADA de punta a punta.
+- Recordatorio al dueño: en el Quest, recargar con game.html?v=3.6.57-SDK6 (o limpiar la caché del navegador del visor) para NO quedar en la V3.6.56 del caché.
+- Siguiente: fase 60 del roadmap Data-Driven pendiente del dueño (definición en chat) + prueba en casco del onboarding hablado (volumen del megáfono en AJUSTES si la voz se quiere más fuerte).

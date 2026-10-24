@@ -7239,10 +7239,16 @@ export class PingPongGame {
               this.rules.message = 'Repite el lanzamiento';
             }
           }
-        } else if (!this.net.online) {
+        } else if (!this.net.online && !this.tutV1) {
           // ESPECTADOR: la demo saca desde su posición reglamentaria
           // v2.51: NUNCA en online (antes el escritorio 2D sacaba con la
           // demo sin avisar por red: el rival esperaba un saque eterno)
+          // r65 (petición del dueño): «nada más empezar está sonando la bola
+          // botando continuamente» — en la ACADEMIA la demo del espectador
+          // DUERME: sacaba una y otra vez (rally infinito de fondo) y los
+          // botes reales r62 sonaban sin parar durante todo el guion. El
+          // profesor de la academia sirve con feedPracticeBall (c13), que
+          // no necesita este bucle.
           if (!this.demoToss) {
             holdLock = true;
             this.ball.vel.set(0, 0, 0);

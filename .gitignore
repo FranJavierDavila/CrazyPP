@@ -73,3 +73,4 @@ scripts/worker-tele/.github-pat
 __pycache__/
 *.pyc
 .upload-backup/
+upload/_r65/

@@ -86,7 +86,7 @@ FUENTE = [
     ("módulo registrado como window.__PP_TUT",
      "window.__PP_TUT = {"),
     ("guion de 9 pasos",
-     "const STEPS = 9;"),
+     "const STEPS = 11;             // r65 · pasos del guion (0..10): +2 REGLAS"),
     ("paso 3 usa el estado REAL de saque del núcleo",
      "G.rules.state = 'serve';"),
     ("profesor devuelve con el SOLVER de la casa",
@@ -106,13 +106,13 @@ FUENTE = [
     ("meta del paso 4 (6 devoluciones, r64)",
      "const DEVOL_META = 6;"),
     ("rally real: cada golpe habilita UNA devolución del profesor (r64)",
-     "aiReturned = false;   // r64 · cada golpe habilita UNA devolución del"),
+     "aiReturned = false;   // r64 · cada golpe habilita UNA devolución"),
     ("mando 3D procedural Touch Plus (r64)",
      "function buildMando() {"),
     ("el mando 3D flota junto al panel (r64)",
-     "mando.position.set(0.68, -0.05, 0.03);"),
-    ("resalte de piezas por paso (r64)",
-     "function hlDePaso(t) {"),
+     "mando.position.set(0.74, -0.04, 0.03);"),
+    ("resalte de piezas por paso/subfase (r65)",
+     "function hlDePaso() {"),
     ("el panel se aparta en la práctica (pose lado, r64)",
      "function poseDestino() {"),
     ("transición suave de pose (lerp, r64)",
@@ -120,9 +120,9 @@ FUENTE = [
     ("auto-ajuste de textos (sin cortes, r64)",
      "function fitFont(c, txt, size, weight, maxW, minSize) {"),
     ("píldoras auto-dimensionadas (r64)",
-     "const w = Math.max(opts.w || 640, Math.min(need, 960));"),
+     "const w = Math.max(opts.w || 640, Math.min(need, 1000));"),
     ("canvas nítido 1280×800 (r64)",
-     "cv.width = 1280; cv.height = 800;"),
+     "cv.width = 1408; cv.height = 768;"),
     ("estanqueidad: deja los campeonatos al entrar",
      "if (G.champs) { try { G.champs.leaveAll(); } catch (e) { /* */ } }"),
     ("estanqueidad: cierra el PRO TRAINING al entrar",
@@ -191,6 +191,7 @@ MECANICA = r"""
       menuOpen: false, menuPage: 'main',
       calibPanel: { group: { visible: true } },
       confettiBurst: 0,
+      audio_voice: true,
       __feeds: 0, __exitHall: 0, __exitCalib: 0, __goHome: 0,
     };
     Object.defineProperty(G, 'ballHand', { get() { return 1 - this.paddleHand; } });
@@ -206,27 +207,61 @@ MECANICA = r"""
   out.push(['arranque: panel de agarre oculto', G.calibPanel.group.visible === false]);
   out.push(['arranque: paso 0 (bienvenida)', e.paso === 0]);
   out.push(['arranque: exitHall llamado', G.__exitHall === 1]);
-  // --- 2 · paso 0 y 1 por gatillo
-  T.onTrigger(0);
+  // --- 2 · paso 0 → 1 por gatillo
+  T.onTrigger(0); T.tick(0.05);
   e = T.estado();
   out.push(['gatillo: paso 0 → 1 (tu mando)', e.paso === 1]);
-  T.onTrigger(1);
+  // --- 2b · paso 1: las 4 ACCIONES reales del mando (r65)
+  T.onTrigger(0); T.tick(0.05);         // 1) gatillo
+  e = T.estado();
+  out.push(['mando: gatillo → subfase 1 (grip)', e.subfase === 1]);
+  G.sources[0].gamepad.buttons = [{ pressed: false }, { pressed: true }];
+  T.tick(0.016);
+  G.sources[0].gamepad.buttons[1] = { pressed: false };
+  T.tick(0.016);
+  G.sources[0].gamepad.buttons[1] = { pressed: true };   // 2) grip (borde)
+  T.tick(0.016); T.tick(0.05);
+  e = T.estado();
+  out.push(['mando: grip → subfase 2 (stick)', e.subfase === 2]);
+  G.stickAxis = () => ({ x: 0.7, y: 0 });                // 3) stick
+  T.tick(0.016); T.tick(0.05);
+  e = T.estado();
+  out.push(['mando: stick → subfase 3 (botón A)', e.subfase === 3]);
+  G.sources[0].gamepad.buttons[4] = { pressed: true };   // 4) A
+  T.tick(0.016); T.tick(0.05);
+  e = T.estado();
+  out.push(['mando: A → mando dominado (subfase 4)', e.subfase === 4]);
+  T.onTrigger(0); T.tick(0.05);
   e = T.estado();
   out.push(['gatillo: paso 1 → 2 (la pala)', e.paso === 2]);
   // --- 3 · paso 2: vaivén de la pala (2,6 m/s sostenido)
   G.controllerPaddles[0].vel.set(1.5, 1.2, 1.5);
   T.tick(0.2); T.tick(0.2); T.tick(0.2);
   e = T.estado();
-  out.push(['vaivén: 0,6 s ≥ meta 0,55 → paso 3 (EL SAQUE)', e.paso === 3]);
-  out.push(['saque: estado REAL del núcleo', G.rules.state === 'serve' && G.rules.server === 'player']);
+  out.push(['vaivén: 0,6 s ≥ meta 0,55 → paso 3 (REGLAS·PUNTOS, r65)', e.paso === 3]);
+  out.push(['reglas: estado point y panel apartado',
+            G.rules.state === 'point' && e.pose === 'lado']);
+  // ENTENDIDO se niega antes de la demo
+  T.onTrigger(0);
+  e = T.estado();
+  out.push(['reglas: ENTENDIDO se niega antes de la demo (r65)', e.paso === 3]);
+  for (let i = 0; i < 40; i++) T.tick(0.2);             // 8 s de demo
+  T.onTrigger(0);
+  e = T.estado();
+  out.push(['reglas: demo vista → paso 4 (REGLAS·SAQUES)', e.paso === 4]);
+  for (let i = 0; i < 40; i++) T.tick(0.2);
+  T.onTrigger(0);
+  e = T.estado();
+  out.push(['reglas: paso 4 → 5 (EL SAQUE, estado real del núcleo)',
+            e.paso === 5 && G.rules.state === 'serve' && G.rules.server === 'player']);
   out.push(['saque: resetToss del rearme', G.tossed === false]);
-  // --- 4 · paso 3: 3 SAQUES VÁLIDOS (r64) con cerrojo anti-doble-recuento
+  // --- 4 · paso 5: 3 SAQUES VÁLIDOS (r64) con cerrojo anti-doble-recuento
   T.onTrigger(0);
   out.push(['saque: gatillo lanza (tossFromHand)', G.tossed === true]);
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);   // cruza la red
   T.tick(0.016); T.tick(0.016);   // el 2.º tick NO debe re-contar (cerrojo r64)
   e = T.estado();
-  out.push(['saque 1/3 contado UNA vez (cerrojo r64)', e.saq === 1 && e.paso === 3]);
+  out.push(['saque 1/3 contado UNA vez (cerrojo r64)', e.saq === 1 && e.paso === 5]);
   G.ball.pos.set(0.4, 0.05, 0.9); G.ball.vel.set(0, 0, 0);        // bola muerta
   T.tick(0.3); T.tick(0.3);       // rearme silencioso (el saque había sido válido)
   e = T.estado();
@@ -236,8 +271,8 @@ MECANICA = r"""
   G.ball.pos.set(0.3, 0.05, 0.8); G.ball.vel.set(0, 0, 0);        // muerta sin cruzar
   T.tick(0.3); T.tick(0.3);
   e = T.estado();
-  out.push(['saque fallido NO cuenta y rearma', e.saq === 1 && e.paso === 3 && G.tossed === false]);
-  // saques 2/3 y 3/3 → paso 4
+  out.push(['saque fallido NO cuenta y rearma', e.saq === 1 && e.paso === 5 && G.tossed === false]);
+  // saques 2/3 y 3/3 → paso 6
   T.onTrigger(0);
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
   T.tick(0.016);
@@ -247,9 +282,9 @@ MECANICA = r"""
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
   T.tick(0.016);
   e = T.estado();
-  out.push(['saque 3/3 → paso 4 (EL INTERCAMBIO)', e.paso === 4]);
+  out.push(['saque 3/3 → paso 6 (EL INTERCAMBIO)', e.paso === 6]);
   out.push(['intercambio: rally sin árbitro', G.rules.state === 'rally']);
-  // --- 5 · paso 4: el profesor devuelve tras el bote lejano
+  // --- 5 · paso 6: el profesor devuelve tras el bote lejano
   const vzAntes = G.ball.vel.z;
   G.ball.pos.set(0.2, 0.9, -2.3); G.ball.vel.set(0, 0.5, -2.0);   // bote lejano
   T.tick(0.016);                                                   // siembra farBounced
@@ -261,13 +296,13 @@ MECANICA = r"""
   G.ball.pos.set(0.1, 1.1, -1.75); G.ball.vel.set(0, -0.5, -3.0);
   T.tick(0.016);
   e = T.estado();
-  out.push(['jugador: devolución 1/6 contada', e.hitCount === 1 && e.paso === 4]);
+  out.push(['jugador: devolución 1/6 contada', e.hitCount === 1 && e.paso === 6]);
   // --- 7 · bola muerta → el profesor realimenta (máquina del núcleo)
   const feeds0 = G.__feeds;
   G.ball.pos.set(0.4, 0.05, 0.9); G.ball.vel.set(0, 0, 0);
   T.tick(0.3); T.tick(0.3);
   out.push(['profesor: realimenta con feedPracticeBall', G.__feeds > feeds0]);
-  // --- 8 · el jugador devuelve hasta 6/6 → paso 5 (r64)
+  // --- 8 · el jugador devuelve hasta 6/6 → paso 7 (r64)
   for (let i = e.hitCount; i < 6; i++) {
     G.ball.pos.set(0.1, 1.1, -1.75); G.ball.vel.set(0, -0.5, -3.0);
     T.tick(0.016);                                   // golpe válido del jugador
@@ -277,16 +312,16 @@ MECANICA = r"""
     T.tick(0.016);                                   // el profesor devuelve
   }
   e = T.estado();
-  out.push(['jugador: devolución 6/6 → paso 5 (botones)', e.paso === 5]);
+  out.push(['jugador: devolución 6/6 → paso 7 (botones)', e.paso === 7]);
   // --- 9 · A/X cambia la mano de verdad
   G.paddleHand = 1;
   T.tick(0.016);
   e = T.estado();
-  out.push(['botones: A/X cambia la mano → paso 6 (modos 1/2)', e.paso === 6]);
-  // --- 10 · modos por gatillo hasta el 8
-  T.onTrigger(0); T.onTrigger(1);
+  out.push(['botones: A/X cambia la mano → paso 8 (modos 1/2)', e.paso === 8]);
+  // --- 10 · modos por gatillo hasta el 10
+  T.onTrigger(0); T.onTrigger(0);
   e = T.estado();
-  out.push(['modos: pasos 6→7→8 por gatillo', e.paso === 8]);
+  out.push(['modos: pasos 8→9→10 por gatillo', e.paso === 10]);
   // --- 11 · JUGAR YA: done + localStorage + exitCalib
   localStorage.removeItem('pp_tut_done');
   T.onTrigger(0);

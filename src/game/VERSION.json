@@ -1,10 +1,10 @@
 {
-  "version": "3.6.56-SDK6",
-  "fase": 58,
-  "faseNombre": "La academia, a punto",
+  "version": "3.6.57-SDK6",
+  "fase": 59,
+  "faseNombre": "El onboarding gamificado",
   "sdk": "1.5.4",
   "fecha": "2026-10-24",
-  "hub": "v3656-sdk6",
+  "hub": "v3657-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "36c4c41bc7e1e09a1e08d3848ca13a90744f04bdb0886fcfa7a62a45304c7029"
+  "golden": "624e7ad60c2d702a125d8f2d6f0668a6c7a00016857c258783f217fcd0486157"
 }

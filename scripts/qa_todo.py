@@ -266,6 +266,15 @@ CAPAS = [
     # rally real) y el panel se APARTA a un lado en la práctica (pose
     # frente⇄lado con lerp). QA de fuente + grafo con rig real.
     ('AY · academia a punto (v3656)', 'qa_r64_v3656.py'),
+    # AZ (v3657): EL ONBOARDING GAMIFICADO — voz nativa Piper es/en (25
+    # átomos por idioma, narra al entrar, STICK repite), mando GLB REAL
+    # del dueño con halos por pieza (anclas por raycast) y 4 acciones
+    # reales en el paso 1, 2 pasos NUEVOS de reglas visuales sobre la
+    # mesa (holo marcador a 11 + holo rotación del saque con doble bote),
+    # panel PIZARRA del dueño (textos tiza en la zona negra), el saque
+    # demo del espectador DUERME en la academia (adiós al bote continuo)
+    # y gating real en los 11 pasos.
+    ('AZ · onboarding gamificado (v3657)', 'qa_r65_v3657.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

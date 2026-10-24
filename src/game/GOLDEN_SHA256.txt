@@ -1,3 +1,1 @@
-# SHA256 del game.html que produjo esta división (3.6.56-SDK6, fase 58 · La academia, a punto; sello actualizado
-# por bump_version.py desde 3.6.55-SDK6)
-36c4c41bc7e1e09a1e08d3848ca13a90744f04bdb0886fcfa7a62a45304c7029
+624e7ad60c2d702a125d8f2d6f0668a6c7a00016857c258783f217fcd0486157

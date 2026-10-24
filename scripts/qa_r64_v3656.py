@@ -53,71 +53,69 @@ def chk(cond, label):
 
 
 AGUJAS = [
-    # --- FIX 1 · maquetación ---
+    # --- FIX 1 · maquetación (r64, vivo en el r65 con pizarra) ---
     ("auto-ajuste de textos (fitFont)",
      "function fitFont(c, txt, size, weight, maxW, minSize) {"),
     ("line() ajusta TODAS las líneas al panel",
      "function line(c, txt, y, size, col, align, x, maxW) {\n    fitFont(c, txt, size, '600', maxW || LINE_MAXW);"),
     ("píldoras auto-dimensionadas al texto",
-     "const w = Math.max(opts.w || 640, Math.min(need, 960));"),
+     "const w = Math.max(opts.w || 640, Math.min(need, 1000));"),
     ("wrap2 para textos largos (2 líneas)",
      "function wrap2(c, txt, y, size, col, maxW, lh) {"),
     ("tut_s7_p en 2 líneas dentro de su fila",
-     "wrap2(c, T('tut_s7_p'), 499, 19, '#ffe08a', 860, 14);"),
-    ("canvas nítido 1280×800",
-     "cv.width = 1280; cv.height = 800;"),
-    ("coordenadas lógicas intactas (scale 1.25)",
-     "cc.scale(1.25, 1.25);"),
+     "wrap2(c, T('tut_s7_p'), 520, 17, '#ffe08a', 900, 13);"),
+    ("canvas nítido (r65: pizarra nativa 1408×768)",
+     "cv.width = 1408; cv.height = 768;"),
     ("título de cabecera ajustado al hueco",
-     "fitFont(c, T('tut_title'), 36, '900', 700, 24);"),
+     "fitFont(c, T('tut_title'), 40, '900', 600, 26);"),
     ("filas de modos ajustadas (título)",
-     "fitFont(c, title, 27, '800', 760, 18);"),
+     "fitFont(c, title, 25, '800', 740, 17);"),
     ("filas de modos ajustadas (sub)",
-     "fitFont(c, sub, 19, '500', 760, 13);"),
-    # --- FIX 2 · mando 3D procedural ---
-    ("mando 3D procedural Touch Plus (builder)",
+     "fitFont(c, sub, 17, '500', 740, 12);"),
+    # --- FIX 2 · mando 3D (r65: el GLB REAL del dueño) ---
+    ("mando 3D (builder, ahora del GLB del dueño)",
      "function buildMando() {"),
-    ("materiales del mando con resalte emissive",
-     "emissive: new THREE.Color('#ffd257'), emissiveIntensity: 0,"),
-    ("6 piezas nombradas en el grafo",
-     "g.name = 'tut_' + nombre;"),
+    ("materiales del GLB con resalte emissive",
+     "m.emissive = new THREE.Color('#ffd257');"),
+    ("anclas de pieza por raycast fino",
+     "const ANCLAS_MANDO = {"),
     ("el mando nace junto al panel (hijo del panel)",
-     "mando.position.set(0.68, -0.05, 0.03);"),
+     "mando.position.set(0.74, -0.04, 0.03);"),
     ("el mando es GIRATORIO (tick de giro)",
-     "mandoSpin.rotation.y = mandoT * 0.55;"),
+     "mandoSpin.rotation.y = (step === 1 ? mandoT * 0.35 : mandoT * 0.55);"),
     ("vaivén suave del mando",
-     "mando.position.y = -0.05 + Math.sin(mandoT * 1.4) * 0.006;"),
-    ("resalte por paso (¿qué pieza menciona el guion?)",
-     "function hlDePaso(t) {"),
-    ("ciclo de piezas del paso 1 (gatillo/grip/stick/botones)",
-     "const HL_CICLO_S1 = ['gatillo', 'grip', 'stick', 'botones'];"),
+     "mando.position.y = -0.04 + Math.sin(mandoT * 1.4) * 0.006;"),
+    ("resalte por paso/subfase (¿qué pieza menciona el guion?)",
+     "function hlDePaso() {"),
+    ("halos pulsantes por pieza",
+     "halos[k].material.opacity = (k === hlParte) ? 0.55 + 0.35 * Math.sin(mandoT * 5) : 0;"),
     ("el panel construye el mando",
-     "buildMando();                       // r64 · mando 3D flotando junto al panel"),
+     "buildMando();                       // r65 · mando GLB flotando junto al panel"),
     ("teardown limpia el mando",
-     "mando = null; mandoSpin = null; mandoPartes = null; mandoMats = null;"),
+     "mando = null; mandoSpin = null; mandoMats = []; halos = null;"),
     # --- FIX 3 · práctica real + panel apartado ---
-    ("meta del paso 3: 3 saques válidos",
-     "const SAQ_META = 3;"),
-    ("meta del paso 4: 6 devoluciones",
-     "const DEVOL_META = 6;"),
+    ("meta del paso 5: 3 saques válidos",
+     "const SAQ_META = 3;           // r64 · saques válidos para superar el paso 5"),
+    ("meta del paso 6: 6 devoluciones",
+     "const DEVOL_META = 6;         // r64 · devoluciones para superar el paso 6"),
     ("cerrojo anti-doble-recuento del saque",
      "saqLatch = true;"),
     ("aviso verde «saque válido»",
      "flashOk = 2.2; flashAgain = 0;"),
     ("contador grande de saques en el panel",
-     "c.fillText(Math.min(saqCount, SAQ_META) + ' / ' + SAQ_META, 512, 412);"),
+     "c.fillText(Math.min(saqCount, SAQ_META) + ' / ' + SAQ_META, PIZ_CX, 436);"),
     ("pose del panel (frente ⇄ lado)",
      "function poseDestino() {"),
     ("pose lado: al lado CONTRARIO de la pala",
      "const sgn = (G && G.paddleHand === 1) ? -1 : 1;"),
     ("transición suave de pose (lerp)",
      "const k = 1 - Math.exp(-dt * 4.5);"),
-    ("el panel se aparta en los pasos de práctica (3 y 4)",
-     "if (step === 3 || step === 4) {"),
+    ("el panel se aparta en reglas y práctica (pasos 3 a 6)",
+     "if (step === 3 || step === 4 || step === 5 || step === 6) {"),
     ("tick invoca la pose y el mando",
-     "tickPose(dt);                       // r64 · el panel se aparta en la práctica\n    tickMando(dt);                      // r64 · giro + resalte del mando 3D"),
+     "tickPose(dt);                       // el panel se aparta en la práctica\n    tickMando(dt);                      // giro + halos del mando GLB"),
     ("rally real: cada golpe habilita UNA devolución del profesor",
-     "aiReturned = false;   // r64 · cada golpe habilita UNA devolución del"),
+     "aiReturned = false;   // r64 · cada golpe habilita UNA devolución"),
     ("estado() de QA ampliada (saques/pose/mando)",
      "saq: saqCount, metaSaq: SAQ_META, metaDevol: DEVOL_META,"),
 ]
@@ -129,6 +127,10 @@ NEGATIVAS = [
      "const DEVOL_META = 2;"),
     ("el panel ya NO está clavado delante de la cara en la práctica",
      "if (cruzada) { advance(); break; }"),
+    ("el scale(1.25) del canvas r64 retirado (ahora 1:1 nativo)",
+     "cc.scale(1.25, 1.25);"),
+    ("el centro viejo 512 de los pintores retirado",
+     "c.fillText(txt, 512, y + h / 2 + 1);"),
 ]
 
 CLAVES = [
@@ -142,7 +144,6 @@ MECANICA = """async () => {
   const T = window.__PP_TUT;
   if (!T) return [{ ok: false, lab: '__PP_TUT ausente' }];
 
-  // juego simulado CON RIG REAL (grafo de escena verificable)
   const V = (x, y, z) => ({
     x, y, z,
     copy(v) { this.x = v.x; this.y = v.y; this.z = v.z; return this; },
@@ -159,7 +160,10 @@ MECANICA = """async () => {
     controllerPaddles: [{ vel: V(0, 0, 0) }, { vel: V(0, 0, 0) }],
     paddleHand: mano, tossed: false, mode: 'match',
     sources: [{ gamepad: { buttons: [] } }, { gamepad: { buttons: [] } }],
-    audio: { playOsc: () => {}, announce: () => {}, serve: () => {} },
+    audio: { playOsc: () => {}, announce: () => {}, serve: () => {},
+             voice: true,
+             speakPlan(plan) { return true; } },
+    stickAxis() { return { x: 0, y: 0 }; },
     haptic: () => {},
     resetToss() { this.tossed = false; },
     tossFromHand(i, a) { this.tossed = true; },
@@ -172,57 +176,75 @@ MECANICA = """async () => {
     menuOpen: false, menuPage: 'main',
     calibPanel: { group: { visible: true } },
     confettiBurst: 0,
+    scene: new THREE.Scene(),
     rig: new THREE.Group(),
   });
-  const buscaPanelInicial = (rig) => rig.children.filter(ch =>
-    ch.type === 'Group' && Math.abs(ch.position.y - 1.52) < 0.01 &&
-    Math.abs(ch.position.z + 0.86) < 0.01 && ch.children.length > 0);
-  const partesMando = (panel) => {
-    const nombres = [];
-    panel.traverse(o => { if (o.name && o.name.startsWith('tut_')) nombres.push(o.name); });
-    return nombres;
-  };
 
-  // ---------- 1 · FIX 2: el mando 3D existe, tiene 6 partes y GIRA ----
+  // ---------- 1 · el mando GLB existe, tiene HALOS y GIRA ------------
   let G = mkJuego(1);                       // pala en mano 1 (derecha)
+  G.scene.add(G.rig);
   T.start(G);
   let e = T.estado();
-  let panel = buscaPanelInicial(G.rig)[0];
+  let panel = G.rig.children.find((ch) => ch.type === 'Group' &&
+    Math.abs(ch.position.y - 1.52) < 0.01 && ch.children.length > 0);
   out.push({ ok: e.activo && e.pose === 'frente' && !!panel,
              lab: 'arranque: pose frente y panel en el rig (huella r63 intacta)' });
-  const mando = panel ? panel.children.find(ch => ch.name === 'ppTutMando') : null;
-  out.push({ ok: !!mando, lab: 'mando 3D presente junto al panel' });
-  const partes = mando ? partesMando(mando) : [];
-  const esperadas = ['tut_cuerpo', 'tut_anillo', 'tut_stick', 'tut_gatillo', 'tut_grip', 'tut_botones'];
-  out.push({ ok: esperadas.every(p => partes.includes(p)) && partes.length === 6,
-             lab: 'Touch Plus: 6 partes (' + partes.join(',') + ')' });
-  const spin = mando ? mando.children[0].children[0] : null;
+  for (let i = 0; i < 60 && !e.tieneMando; i++) {
+    await new Promise((r) => setTimeout(r, 50));
+    e = T.estado();
+  }
+  const mando = panel ? panel.children.find((ch) => ch.name === 'ppTutMandoGLB') : null;
+  out.push({ ok: !!mando, lab: 'mando GLB presente junto al panel' });
+  let spin = null;
+  if (mando) { spin = mando.children[0].children[0]; }
   const y0 = spin ? spin.rotation.y : 0;
   for (let i = 0; i < 20; i++) T.tick(0.05);
-  out.push({ ok: spin && spin.rotation.y > y0 + 0.3,
+  out.push({ ok: spin && spin.rotation.y > y0 + 0.2,
              lab: 'mando giratorio (dY=' + (spin ? (spin.rotation.y - y0).toFixed(3) : 'x') + ')' });
-  out.push({ ok: T.estado().mandoHl === 'cuerpo', lab: 'paso 0 resalta el CUERPO' });
-  T.onTrigger(0); T.tick(0.05);
-  e = T.estado();
-  out.push({ ok: ['gatillo', 'grip', 'stick', 'botones'].includes(e.mandoHl),
-             lab: 'paso 1 cicla piezas (' + e.mandoHl + ')' });
-  out.push({ ok: T.estado().mandoHl !== null && T.estado().tieneMando === true,
+  T.tick(0.05);
+  out.push({ ok: T.estado().mandoHl === null,
+             lab: 'paso 0 sin pieza resaltada (bienvenida, r65)' });
+  out.push({ ok: T.estado().tieneMando === true,
              lab: 'estado() expone mando/resalte' });
 
-  // ---------- 2 · FIX 3a: pose LADO en la práctica --------------------
+  // ---------- 2 · 4 acciones del paso 1 y vaivén → reglas ------------
+  T.onTrigger(0);                                  // paso 0 → 1
+  T.tick(0.05);
+  out.push({ ok: T.estado().mandoHl === 'gatillo',
+             lab: 'paso 1 subfase 0 resalta el GATILLO (subfase r65)' });
+  T.onTrigger(0);                                  // 1) gatillo
+  T.tick(0.05);
+  G.sources[0].gamepad.buttons = [{ pressed: false }, { pressed: true }];
+  T.tick(0.016);
+  G.sources[0].gamepad.buttons[1] = { pressed: false };
+  T.tick(0.016);
+  G.sources[0].gamepad.buttons[1] = { pressed: true };   // 2) grip
+  T.tick(0.016); T.tick(0.05);
+  G.stickAxis = () => ({ x: 0.7, y: 0 });                // 3) stick
+  T.tick(0.016); T.tick(0.05);
+  G.sources[0].gamepad.buttons[4] = { pressed: true };   // 4) A
+  T.tick(0.016); T.tick(0.05);
+  e = T.estado();
+  out.push({ ok: e.paso === 1 && e.subfase === 4, lab: 'paso 1: 4 acciones completadas' });
   T.onTrigger(0);                                  // → paso 2
   G.controllerPaddles[1].vel.set(1.5, 1.2, 1.5);   // vaivén con la pala (mano 1)
   for (let i = 0; i < 8; i++) T.tick(0.1);
   e = T.estado();
   out.push({ ok: e.paso === 3 && e.pose === 'lado',
-             lab: 'paso 3 (EL SAQUE) → pose LADO' });
+             lab: 'paso 3 (REGLAS·PUNTOS) → pose LADO' });
   for (let i = 0; i < 60; i++) T.tick(0.05);       // el lerp lleva el panel al lado
   const px = panel.position.x, py = panel.position.y, esc = panel.scale.x;
   out.push({ ok: px < -0.45, lab: 'panel APARTADO a la izquierda con pala dcha (x=' + px.toFixed(3) + ')' });
   out.push({ ok: py < 1.4 && esc < 0.95, lab: 'panel más bajo y compacto (y=' + py.toFixed(2) + ' · s=' + esc.toFixed(2) + ')' });
-  out.push({ ok: Math.abs(panel.position.z + 0.62) < 0.05, lab: 'panel más cercano al jugador (z=' + panel.position.z.toFixed(2) + ')' });
 
-  // ---------- 3 · FIX 3b: 3 SAQUES con cerrojo ------------------------
+  // ---------- 3 · reglas (3/4) y 3 SAQUES con cerrojo (paso 5) -------
+  for (let i = 0; i < 40; i++) T.tick(0.2);        // demo puntos 8 s
+  T.onTrigger(0);                                  // → paso 4
+  for (let i = 0; i < 40; i++) T.tick(0.2);        // demo saques 8 s
+  T.onTrigger(0);                                  // → paso 5
+  e = T.estado();
+  out.push({ ok: e.paso === 5 && e.pose === 'lado',
+             lab: 'paso 5 (EL SAQUE) sigue en LADO' });
   const saca = () => {
     T.onTrigger(0);
     G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
@@ -232,21 +254,21 @@ MECANICA = """async () => {
   };
   saca();
   e = T.estado();
-  out.push({ ok: e.saq === 1 && e.paso === 3, lab: 'saque 1/3 contado UNA vez (cerrojo)' });
+  out.push({ ok: e.saq === 1 && e.paso === 5, lab: 'saque 1/3 contado UNA vez (cerrojo)' });
   T.onTrigger(0);
   G.ball.pos.set(0.3, 0.05, 0.8); G.ball.vel.set(0, 0, 0);   // fallido
   T.tick(0.3); T.tick(0.3);
   e = T.estado();
-  out.push({ ok: e.saq === 1 && e.paso === 3 && !G.tossed,
+  out.push({ ok: e.saq === 1 && e.paso === 5 && !G.tossed,
              lab: 'saque FALLIDO no cuenta y rearma' });
   saca();
   e = T.estado();
-  out.push({ ok: e.saq === 2 && e.paso === 3, lab: 'saque 2/3' });
+  out.push({ ok: e.saq === 2 && e.paso === 5, lab: 'saque 2/3' });
   saca();
   e = T.estado();
-  out.push({ ok: e.paso === 4 && e.pose === 'lado', lab: 'saque 3/3 → paso 4 (sigue en LADO)' });
+  out.push({ ok: e.paso === 6 && e.pose === 'lado', lab: 'saque 3/3 → paso 6 (sigue en LADO)' });
 
-  // ---------- 4 · FIX 3c: 6 devoluciones con rally real ---------------
+  // ---------- 4 · 6 devoluciones con rally real (paso 6) --------------
   for (let i = 0; i < 6; i++) {
     G.ball.pos.set(0.1, 1.1, -1.75); G.ball.vel.set(0, -0.5, -3.0);
     T.tick(0.016);                                   // golpe válido del jugador
@@ -261,12 +283,12 @@ MECANICA = """async () => {
     }
   }
   e = T.estado();
-  out.push({ ok: e.paso === 5, lab: '6 devoluciones → paso 5 (LOS BOTONES)' });
+  out.push({ ok: e.paso === 7, lab: '6 devoluciones → paso 7 (LOS BOTONES)' });
 
   // ---------- 5 · vuelta a FRENTE y salida limpia ---------------------
   G.paddleHand = 0; T.tick(0.016);                   // A/X cambia la mano
   e = T.estado();
-  out.push({ ok: e.paso === 6 && e.pose === 'frente', lab: 'paso 6 → pose FRENTE de nuevo' });
+  out.push({ ok: e.paso === 8 && e.pose === 'frente', lab: 'paso 8 → pose FRENTE de nuevo' });
   const rig0 = G.rig.children.length;
   T.stop({ aJugar: true, done: true });
   out.push({ ok: G.rig.children.length === 0 && rig0 > 0,
@@ -276,9 +298,23 @@ MECANICA = """async () => {
 
   // ---------- 6 · jugador ZURDO: el panel se aparta al OTRO lado ------
   G = mkJuego(0);                         // pala en mano 0 (izquierda)
+  G.scene.add(G.rig);
   T.start(G);
-  panel = buscaPanelInicial(G.rig)[0];
-  T.onTrigger(0); T.onTrigger(0);                  // → paso 2
+  panel = G.rig.children.find((ch) => ch.type === 'Group' &&
+    Math.abs(ch.position.y - 1.52) < 0.01 && ch.children.length > 0);
+  T.onTrigger(0); T.tick(0.05);                    // paso 0 → 1
+  T.onTrigger(0); T.tick(0.05);                    // paso 1: gatillo (subfase 0→1)
+  G.sources[0].gamepad.buttons = [{ pressed: false }, { pressed: true }];
+  T.tick(0.016);
+  G.sources[0].gamepad.buttons[1] = { pressed: false };
+  T.tick(0.016);
+  G.sources[0].gamepad.buttons[1] = { pressed: true };   // grip
+  T.tick(0.016); T.tick(0.05);
+  G.stickAxis = () => ({ x: 0.7, y: 0 });
+  T.tick(0.016); T.tick(0.05);
+  G.sources[0].gamepad.buttons[4] = { pressed: true };   // A
+  T.tick(0.016); T.tick(0.05);
+  T.onTrigger(0); T.tick(0.05);                    // paso 1 → 2
   G.controllerPaddles[0].vel.set(1.5, 1.2, 1.5);   // vaivén con la mano 0
   for (let i = 0; i < 8; i++) T.tick(0.1);
   for (let i = 0; i < 60; i++) T.tick(0.05);

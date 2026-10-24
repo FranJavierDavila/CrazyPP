@@ -7,7 +7,7 @@ function renderPlayBtn() {
 }
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { T, TLang, WORLDRANK, __ppLang, applyLangDOM, ppPlayerName, setLang } from './c00_pre_three.js';
-import { fixInvertedMeshes, loadGunModel, loadPaddleModel, makeGunVisual } from './c01_modelos_3d.js';
+import { fixInvertedMeshes, loadGunModel, loadPaddleModel, makeGunVisual, makePaddleVisual } from './c01_modelos_3d.js';
 import { AI_PRESETS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
 import { CCD_TUNE, bladeNormalLocal, createPaddleSim, sdfBlade, setPaddleBasis, sweepBallVsBlade, tmpPrev } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddleSweep, computeShotVelocityReal, findServeVelocity, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
@@ -3037,6 +3037,11 @@ window.__PP_CORE = {
  *    8/9 LOS MODOS · 10 ¡YA SABES JUGAR!
  *  VOZ: cada paso narra al entrar (ES/EN según idioma, más pausada) y el
  *  STICK la repite. Cada paso exige SU acción — onboarding gamificado.
+ *  r68 · LA RAQUETA DEL RIVAL: el profesor tiene PALA visible (la misma
+ *  del juego) en el lado lejano — arma, barre y golpea la bola en su
+ *  saque (demo y marcador) y en cada devolución (intercambio y
+ *  práctica); los saques salen cuando la hoja pasa por la bola (adiós
+ *  al golpe fantasma) y el paso 5 vuelve a tener rally (bola viva).
  *  Puertas de entrada: banner dorado del HUB · oferta de PRIMERA VEZ
  *  (pp_tut_asked, la escribe onSessionStart) · botón en AJUSTES.
  *  Salida: B o Y en cualquier momento → HALL + menú (sin «done»).
@@ -3114,6 +3119,14 @@ window.__PP_CORE = {
   const btn3Prev = [true, true]; // r65 · stick-click por mando (repetir voz)
   const btn4Prev = [true, true]; // r65 · A/X por mando (borde)
   let repaintT = 0;
+  let raqGrp = null;            // r68 · LA RAQUETA DEL RIVAL (escena mundo)
+  let raqVis = null;            // r68 · visual interior (pala del juego)
+  let raqModo = 'oculta';       // r68 · oculta | reposo | prep | golpe
+  let raqT = 0;                 // r68 · reloj del modo actual
+  let raqDe = null;             // r68 · origen del golpe (al iniciarlo)
+  let raqContacto = null;       // r68 · punto de contacto con la bola
+  let raqMeta = null;           // r68 · punto de acompañamiento
+  let feed5T = 0;               // r68 · cuenta atrás del saque del profesor (paso 5)
   const _cero = (typeof THREE !== 'undefined')
     ? new THREE.Vector3(0, 0, 0) : null;
 
@@ -3153,6 +3166,7 @@ window.__PP_CORE = {
     G.rig.add(grp);
     asegurarPizarra();                  // r65 · decodifica la pizarra (webp)
     buildMandosAnclados();              // r67 · mandos GLB ANCLADOS a los grips
+    buildRaqueta();                     // r68 · LA RAQUETA DEL RIVAL (escena)
   }
   /* decodifica Pizarra.png (webp embebido) para pintarla de fondo */
   function asegurarPizarra() {
@@ -3175,6 +3189,7 @@ window.__PP_CORE = {
         catch (e2) { /* */ }
       }
     }
+    limpiarRaqueta();                   // r68 · la pala del rival sale con el guion
     grp = null; cv = null; cc = null; tex = null; mesh = null;
     anclados = null; mando = null; mandoSpin = null;
     mandoMats = []; halos = null;
@@ -3472,6 +3487,107 @@ window.__PP_CORE = {
     // borde de la mesa (la pala del rival es la referencia visual)
     const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
     return new THREE.Vector3(0.10, TY + DIMS.ballRadius + 0.004, C - HL - 0.17);
+  }
+
+  /* ---------------- LA RAQUETA DEL RIVAL (r68) ------------------------
+   * El dueño tras V3.6.59: «la pelota en el saque y en el juego debe ser
+   * golpeada por la raqueta del rival; en estos momentos permanece quieta
+   * y la pelota la golpea un fantasma». Hasta hoy el PROFESOR no tenía
+   * pala: la bola salía (saque demo, devoluciones y feeds de práctica)
+   * desde el aire vacío. Esta es SU pala — la MISMA del juego
+   * (makePaddleVisual 'center': la hoja en el origen, pensado para la IA)
+   * — viva en la escena mundo al lado lejano de la mesa: ARMA (retroceso
+   * siguiendo la bola), BARRE hasta ella y el golpe REAL sale cuando la
+   * hoja pasa por la bola (los saques quietos esperan al blade: el launch
+   * se dispara a RAQ_T_GOLPE, el mismo tramo de la barra). Sólo actúa en
+   * los pasos 2-5 (los de mesa); en el resto ni está. Además el paso 5
+   * (devoluciones) tenía la bola CONGELADA tras el feed (nadie ponía
+   * tutBolaViva=true en ese paso desde la renumeración r67): el saque del
+   * profesor ahora sale con la hoja y pone la bola viva — el rally
+   * vuelve a existir.                                                   */
+  const RAQ_T_GOLPE = 0.13;     // s de la barra hasta la bola (contacto)
+  const RAQ_T_FT = 0.30;        // s de acompañamiento tras el golpe
+  function buildRaqueta() {
+    if (raqGrp || !G || !G.scene || typeof THREE === 'undefined') return;
+    raqGrp = new THREE.Group();
+    raqGrp.name = 'ppTutRaquetaRival';
+    raqVis = makePaddleVisual(G.paddleModelRef, 'center');
+    raqVis.rotation.set(-0.42, 0.08, 0);   // cara al jugador (+z), en guardia
+    raqGrp.add(raqVis);
+    raqGrp.position.set(0.17, DIMS.tableTopY + 0.38,
+      DIMS.tableCenterZ - DIMS.tableHalfLength - 0.10);
+    raqGrp.visible = false;
+    G.scene.add(raqGrp);
+    raqDe = new THREE.Vector3();
+    raqContacto = new THREE.Vector3();
+    raqMeta = new THREE.Vector3();
+    raqModo = 'oculta'; raqT = 0; feed5T = 0;
+  }
+  function limpiarRaqueta() {
+    if (raqGrp) {
+      try { if (raqGrp.parent) raqGrp.parent.remove(raqGrp); } catch (e) { /* */ }
+    }
+    raqGrp = null; raqVis = null; raqDe = null; raqContacto = null;
+    raqMeta = null; raqModo = 'oculta'; raqT = 0; feed5T = 0;
+  }
+  function raquetaReposo() {
+    if (raqGrp) { raqModo = 'reposo'; raqT = 0; }
+  }
+  function raquetaPreparar() {
+    if (raqGrp) { raqModo = 'prep'; raqT = 0; }
+  }
+  function raquetaGolpe(x, y, z, fx) {
+    if (!raqGrp || !raqDe) return;
+    raqDe.copy(raqGrp.position);
+    raqContacto.set(x, y, z);
+    const f = (fx === undefined) ? 1 : fx;
+    raqMeta.set(x + 0.03, y + 0.16, z + 0.55 * f);
+    raqModo = 'golpe'; raqT = 0;
+  }
+  function tickRaqueta(dt) {
+    if (!raqGrp || !raqVis || !G || !G.ball) return;
+    const conRival = (step >= 2 && step <= 5);
+    raqGrp.visible = conRival;
+    if (!conRival) { raqModo = 'oculta'; return; }
+    raqT += dt;
+    const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
+    const k = 1 - Math.exp(-dt * 7.5);
+    if (raqModo === 'golpe') {
+      const tB = RAQ_T_GOLPE + RAQ_T_FT;
+      if (raqT <= RAQ_T_GOLPE) {
+        // TRAMO A · la hoja BARRE hasta la bola (ease-in: arranca suave y
+        // llega EXACTO al contacto cuando el saque/devolución sale)
+        const u = (raqT / RAQ_T_GOLPE) * (raqT / RAQ_T_GOLPE);
+        raqGrp.position.lerpVectors(raqDe, raqContacto, u);
+        raqVis.rotation.x = -0.55 + 0.45 * u;   // la cara cierra al impactar
+      } else if (raqT <= tB) {
+        // TRAMO B · acompañamiento hacia la red (ease-out, cara abierta)
+        const u = 1 - Math.pow(1 - (raqT - RAQ_T_GOLPE) / RAQ_T_FT, 2);
+        raqGrp.position.lerpVectors(raqContacto, raqMeta, u);
+        raqVis.rotation.x = -0.10 + 0.40 * u;
+      } else { raqModo = 'reposo'; raqT = 0; }
+      return;
+    }
+    if (raqModo === 'prep') {
+      // ARMA el golpe: detrás y por encima de la bola, siguiéndola
+      const b = G.ball;
+      const tx = Math.max(-0.55, Math.min(0.55, b.pos.x - 0.07));
+      const ty = Math.max(TY + 0.05, Math.min(TY + 0.75, b.pos.y + 0.17));
+      const tz = Math.max(C - HL - 0.55, Math.min(C - 0.12, b.pos.z - 0.30));
+      raqGrp.position.x += (tx - raqGrp.position.x) * k;
+      raqGrp.position.y += (ty - raqGrp.position.y) * k;
+      raqGrp.position.z += (tz - raqGrp.position.z) * k;
+      raqVis.rotation.x += (-0.55 - raqVis.rotation.x) * k;
+      return;
+    }
+    // REPOSO: guardia del rival al lado lejano, vaivén vivo
+    const rx = 0.17 + 0.010 * Math.sin(raqT * 1.1);
+    const ry = TY + 0.38 + 0.012 * Math.sin(raqT * 1.8);
+    const rz = C - HL - 0.10;
+    raqGrp.position.x += (rx - raqGrp.position.x) * k;
+    raqGrp.position.y += (ry - raqGrp.position.y) * k;
+    raqGrp.position.z += (rz - raqGrp.position.z) * k;
+    raqVis.rotation.x += (-0.42 - raqVis.rotation.x) * k;
   }
 
   /* ---------------- pintura del panel (PIZARRA) · r65 ----------------
@@ -3951,6 +4067,7 @@ window.__PP_CORE = {
     if (!G) return;
     limpiarHolo();
     limpiarAros();                      // r67 · los aros salen con el paso
+    raquetaReposo();                    // r68 · la pala del rival vuelve a su guardia
     narrTries = 0;
     demoTxt = null; demoFase = 0; demoFaseT = 0;
     demoBote1 = false; demoBote2 = false;
@@ -4015,6 +4132,7 @@ window.__PP_CORE = {
         hitCount = 0; aiReturned = false; farBounced = false;
         fase = (G.ball && G.ball.pos.z < DIMS.tableCenterZ) ? 'vuelo_lejos' : 'espera_golpe';
         deadT = 0;
+        feed5T = 0;                     // r68 · sin saque pendiente al entrar
         break;
       case 6:
         G.rules.state = 'point';
@@ -4102,6 +4220,7 @@ window.__PP_CORE = {
     pollVoz();                          // r65 · STICK = repetir la voz
     tickPose(dt);                       // el panel se aparta en la práctica
     tickMandos(dt);                     // r67 · mandos anclados + aura + halos
+    try { tickRaqueta(dt); } catch (e) { /* decorativo */ } // r68 · raqueta rival
     tickNarr(dt);                       // r65 · reintentos de la voz
     try { tickHolo(dt); } catch (e) { /* decorativo */ }   // holo-reglas
     try { tickAros(dt); } catch (e) { /* decorativo */ }   // r67 · aros guía
@@ -4218,6 +4337,7 @@ window.__PP_CORE = {
             if (!rfVueltaVista && b.pos.z < (DIMS.tableCenterZ - 0.1)) {
               if (!farBounced && b.vel.y > 0.3 && b.pos.y < DIMS.tableTopY + 0.5) {
                 farBounced = true;
+                raquetaPreparar();        // r68 · el rival ARMA la devolución
               }
               if (farBounced && b.vel.y < 1.1 && _cero) {
                 rfVueltaVista = true;
@@ -4232,6 +4352,7 @@ window.__PP_CORE = {
                     b.vel.set(0, 1.4, 2.2);
                   }
                   b.spin.set(0, 0, 0);
+                  raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 0.45); // r68 · golpe corto a la red
                   rfFase = 'fallo';
                 } else {
                   try {
@@ -4244,6 +4365,7 @@ window.__PP_CORE = {
                     b.vel.set((Math.random() * 2 - 1) * 0.4, 2.4, 3.1);
                   }
                   b.spin.set(0, 0, 0);
+                  raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 1);    // r68 · SU hoja golpea
                   try { G.audio.paddle(0, 0.45); } catch (e) { /* */ }
                   try { G.haptic(G.paddleHand, 0.3, 70); } catch (e) { /* */ }
                   rfFase = 'ida';
@@ -4322,18 +4444,43 @@ window.__PP_CORE = {
         const b = G.ball;
         if (G.rules.state !== 'rally') G.rules.state = 'rally';
         if (G.tossed) G.resetToss();
+        if (feed5T > 0) {
+          // r68 · el saque del profesor sale cuando SU hoja llega a la bola:
+          // la bola espera quieta (dormida, en la mano del rival) y despega
+          // al paso del blade — y queda VIVA para el rally (antes nadie
+          // la despertaba en este paso: bola congelada en el aire)
+          feed5T -= dt;
+          if (feed5T <= 0) {
+            try {
+              const sv = findServeVelocity(b.pos, -1);
+              b.vel.copy(sv.v);
+              b.spin.copy(sv.spin);
+            } catch (e) {
+              b.vel.set(0, 2.2, 2.6);
+              b.spin.set(0, 0, 0);
+            }
+            G.tutBolaViva = true;    // bola en juego: el rally existe
+          }
+        }
         const muerta = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
           (Math.abs(b.vel.x) < 0.4 && Math.abs(b.vel.y) < 0.4 &&
             Math.abs(b.vel.z) < 0.4 && b.pos.y < DIMS.tableTopY + 0.12);
-        if (muerta) {
+        if (feed5T <= 0 && muerta) {
           deadT += dt;
           if (deadT > 0.5) {
             deadT = 0; farBounced = false; aiReturned = false;
             fase = 'espera_golpe';
             G.feedPracticeBall();   // el profesor sirve otra bola suave
             try { G.audio.serve(); } catch (e) { /* */ }
+            // r68 · la bola ESPERA el golpe visible: su raqueta barre y el
+            // saque sale al paso de la hoja (feed5T) — nada de fantasmas
+            b.vel.set(0, 0, 0);
+            b.spin.set(0, 0, 0);
+            G.tutBolaViva = false;
+            feed5T = RAQ_T_GOLPE;
+            raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 1);
           }
-        } else deadT = 0;
+        } else if (feed5T <= 0) deadT = 0;
         if (fase === 'espera_golpe' && !muerta &&
             b.pos.z < (DIMS.tableCenterZ - 0.06) && b.vel.z < -0.9) {
           // golpe válido del jugador: la bola cruza hacia el campo lejano
@@ -4349,6 +4496,7 @@ window.__PP_CORE = {
             b.pos.z < (DIMS.tableCenterZ - 0.1)) {
           if (!farBounced && b.vel.y > 0.35 && b.pos.y < DIMS.tableTopY + 0.5) {
             farBounced = true;
+            raquetaPreparar();              // r68 · el rival se arma
           }
           if (farBounced && b.vel.y < 1.1 && _cero) {
             aiReturned = true;
@@ -4356,6 +4504,7 @@ window.__PP_CORE = {
               const v = computeShotVelocityReal(b.pos, targetProfesor(), 1.05, 5.4, _cero);
               b.vel.copy(v);
               b.spin.set(0, 0, 0);
+              raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 1);   // r68 · SU hoja golpea
               G.audio.playOsc(300, 170, 0.07, 'square', 0.13, 0);
               G.haptic(G.paddleHand, 0.3, 70);
             } catch (e) {
@@ -4413,20 +4562,28 @@ window.__PP_CORE = {
     }
     switch (demoFase) {
       case 0: {
-        // POSTURA: la bola espera en el lado del PROFESOR
+        // POSTURA: la bola espera en el lado del PROFESOR (r68 · y su
+        // raqueta se ARMA: retroceso visible antes de cada saque)
         G.tutBolaViva = false;
         posaBolaDemo();
         if (aroIzq) aroIzq.__ok = false;
         if (aroDer) aroDer.__ok = false;
         const espera = esMarcador ? 0.9 : 2.1;
+        if (demoFaseT >= espera - 0.55) raquetaPreparar();
+        else raquetaReposo();
         if (demoFaseT >= espera) {
           demoFase = 1; demoFaseT = 0;
           demoBote1 = false; demoBote2 = false;
+          raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 1);   // r68 · la hoja barre
         }
         break;
       }
       case 1: {
-        // SUELTA: el profesor saca (saque REAL desde su campo)
+        // r68 · SUELTA CON GOLPE VISIBLE: la raqueta del RIVAL barre hacia
+        // la bola (que sigue quieta en su campo) y el SAQUE REAL sale
+        // cuando la hoja la alcanza — adiós al golpe fantasma
+        posaBolaDemo();
+        if (demoFaseT < RAQ_T_GOLPE) break;
         try {
           const { v, spin } = findServeVelocity(b.pos, -1, { x: -0.05, spd: 1.22 });
           b.vel.copy(v);
@@ -4735,6 +4892,7 @@ window.__PP_CORE = {
     // teardownPanel (también r63) cubre cualquier orden futuro.
     limpiarHolo();                        // r65 · el holo-reglas sale con el guion
     limpiarAros();                        // r67 · los aros guía también
+    limpiarRaqueta();                     // r68 · la raqueta del rival también
     teardownPanel();
     G = null;
     gm.tutV1 = null;
@@ -4788,7 +4946,7 @@ window.__PP_CORE = {
 
   /* ---------------- registro público del módulo ---------------------- */
   window.__PP_TUT = {
-    version: 'r67-en-tus-manos',
+    version: 'r68-la-raqueta-del-rival',
     STEPS,
     start, stop, tick, onTrigger, drawAsk, menuAction,
     // introspección para QA (solo lectura, sin tocar estado)
@@ -4839,6 +4997,14 @@ window.__PP_CORE = {
         demoPtos,
         demoDeuce,
         bolaViva: !!(G && G.tutBolaViva),
+        // r68 · la raqueta del rival (introspección de QA)
+        raquetaRival: !!raqGrp,
+        raqModo,
+        raqContacto: raqContacto
+          ? [Math.round(raqContacto.x * 1000) / 1000,
+             Math.round(raqContacto.y * 1000) / 1000,
+             Math.round(raqContacto.z * 1000) / 1000]
+          : null,
       };
     },
   };

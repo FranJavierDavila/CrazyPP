@@ -293,6 +293,15 @@ CAPAS = [
     # (4) guion reorganizado a 9 pasos con demo del PROFESOR sobre la mesa
     # real + AROS GUÍA y la rejilla de modos 2×3 en UNA pizarra.
     ('BB · academia en tus manos (v3659)', 'qa_r67_v3659.py'),
+    # BC (v3660): LA RAQUETA DEL RIVAL — informe del dueño tras V3.6.59:
+    # «la pelota en el saque y en el juego debe ser golpeada por la raqueta
+    # del rival; permanece quieta y la golpea un fantasma». El profesor
+    # tiene PALA visible (la misma del juego, hoja en el origen) que arma,
+    # barre y golpea: saques demo/marcador retenidos hasta que la hoja
+    # llega, devoluciones de pasos 3/5 desde la posición exacta de la bola
+    # y el feed del paso 5 con bola VIVA (la renumeración r67 la dejó
+    # congelada: sin tutBolaViva en ese paso, el rally no existía).
+    ('BC · la raqueta del rival (v3660)', 'qa_r68_v3660.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

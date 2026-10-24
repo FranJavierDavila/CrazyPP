@@ -1,10 +1,10 @@
 {
-  "version": "3.6.59-SDK6",
-  "fase": 61,
-  "faseNombre": "La academia en tus manos",
+  "version": "3.6.60-SDK6",
+  "fase": 62,
+  "faseNombre": "LA RAQUETA DEL RIVAL",
   "sdk": "1.5.4",
   "fecha": "2026-10-24",
-  "hub": "v3659-sdk6",
+  "hub": "v3660-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "14320f07b7f2796d39393c58fbb376a771c853ffd4136692461357bc8e213aa7"
+  "golden": "370dcea8367e8669fd01a36f1c9b107cff89eca6f2d620ecefad42193c343b31"
 }

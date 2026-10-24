@@ -107,10 +107,10 @@ FUENTE = [
      "const DEVOL_META = 6;"),
     ("rally real: cada golpe habilita UNA devolución del profesor (r64)",
      "aiReturned = false;   // r64 · cada golpe habilita UNA devolución"),
-    ("mando 3D procedural Touch Plus (r64)",
-     "function buildMando() {"),
-    ("el mando 3D flota junto al panel (r64)",
-     "mando.position.set(0.74, -0.04, 0.03);"),
+    ("mandos 3D reales del dueño (r66: DOS GLB centrados)",
+     "function buildMandos() {"),
+    ("los mandos nacen centrados delante del jugador (r66)",
+     "mandosGrp.position.set(0, 1.07, -0.56);"),
     ("resalte de piezas por paso/subfase (r65)",
      "function hlDePaso() {"),
     ("el panel se aparta en la práctica (pose lado, r64)",
@@ -153,8 +153,9 @@ CLAVES_ES = [
 ]
 
 MECANICA = r"""
-() => {
+async () => {
   const out = [];
+  const THREE = await import('three');
   const T = window.__PP_TUT;
   if (!T || typeof T.start !== 'function') return ['__PP_TUT ausente'];
   const V = (x, y, z) => ({
@@ -175,6 +176,7 @@ MECANICA = r"""
         { vel: V(0, 0, 0) }, { vel: V(0, 0, 0) },
       ],
       paddleHand: 0, ballHand: 1, tossed: false, mode: 'match',
+      scene: new THREE.Scene(), rig: new THREE.Group(), paddleModelRef: null,
       sources: [{ gamepad: { buttons: [] } }, { gamepad: { buttons: [] } }],
       audio: { playOsc: () => {}, announce: () => {}, serve: () => {} },
       haptic: () => {},
@@ -238,30 +240,27 @@ MECANICA = r"""
   G.controllerPaddles[0].vel.set(1.5, 1.2, 1.5);
   T.tick(0.2); T.tick(0.2); T.tick(0.2);
   e = T.estado();
-  out.push(['vaivén: 0,6 s ≥ meta 0,55 → paso 3 (REGLAS·PUNTOS, r65)', e.paso === 3]);
-  out.push(['reglas: estado point y panel apartado',
-            G.rules.state === 'point' && e.pose === 'lado']);
-  // ENTENDIDO se niega antes de la demo
+  out.push(['vaivén: 0,6 s ≥ meta 0,55 → paso 3 (EL SAQUE, r66)', e.paso === 3]);
+  out.push(['saque: demo real con panel apartado',
+            e.submodo === 'demo' && e.pose === 'lado']);
+  // la práctica se niega antes de la demo
   T.onTrigger(0);
   e = T.estado();
-  out.push(['reglas: ENTENDIDO se niega antes de la demo (r65)', e.paso === 3]);
-  for (let i = 0; i < 40; i++) T.tick(0.2);             // 8 s de demo
+  out.push(['saque: la práctica se niega antes de la demo (r66)', e.paso === 3 && e.submodo === 'demo']);
+  for (let i = 0; i < 30; i++) T.tick(0.2);             // 6 s de demo sobre la mesa
   T.onTrigger(0);
   e = T.estado();
-  out.push(['reglas: demo vista → paso 4 (REGLAS·SAQUES)', e.paso === 4]);
-  for (let i = 0; i < 40; i++) T.tick(0.2);
-  T.onTrigger(0);
-  e = T.estado();
-  out.push(['reglas: paso 4 → 5 (EL SAQUE, estado real del núcleo)',
-            e.paso === 5 && G.rules.state === 'serve' && G.rules.server === 'player']);
+  out.push(['saque: demo vista → práctica (estado real del núcleo, r66)',
+            e.paso === 3 && e.submodo === 'practica' &&
+            G.rules.state === 'serve' && G.rules.server === 'player']);
   out.push(['saque: resetToss del rearme', G.tossed === false]);
-  // --- 4 · paso 5: 3 SAQUES VÁLIDOS (r64) con cerrojo anti-doble-recuento
+  // --- 4 · paso 3 (práctica): 3 SAQUES VÁLIDOS (r64) con cerrojo -------
   T.onTrigger(0);
   out.push(['saque: gatillo lanza (tossFromHand)', G.tossed === true]);
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);   // cruza la red
   T.tick(0.016); T.tick(0.016);   // el 2.º tick NO debe re-contar (cerrojo r64)
   e = T.estado();
-  out.push(['saque 1/3 contado UNA vez (cerrojo r64)', e.saq === 1 && e.paso === 5]);
+  out.push(['saque 1/3 contado UNA vez (cerrojo r64)', e.saq === 1 && e.paso === 3]);
   G.ball.pos.set(0.4, 0.05, 0.9); G.ball.vel.set(0, 0, 0);        // bola muerta
   T.tick(0.3); T.tick(0.3);       // rearme silencioso (el saque había sido válido)
   e = T.estado();
@@ -271,8 +270,8 @@ MECANICA = r"""
   G.ball.pos.set(0.3, 0.05, 0.8); G.ball.vel.set(0, 0, 0);        // muerta sin cruzar
   T.tick(0.3); T.tick(0.3);
   e = T.estado();
-  out.push(['saque fallido NO cuenta y rearma', e.saq === 1 && e.paso === 5 && G.tossed === false]);
-  // saques 2/3 y 3/3 → paso 6
+  out.push(['saque fallido NO cuenta y rearma', e.saq === 1 && e.paso === 3 && G.tossed === false]);
+  // saques 2/3 y 3/3 → paso 4
   T.onTrigger(0);
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
   T.tick(0.016);
@@ -282,21 +281,46 @@ MECANICA = r"""
   G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
   T.tick(0.016);
   e = T.estado();
-  out.push(['saque 3/3 → paso 6 (EL INTERCAMBIO)', e.paso === 6]);
-  out.push(['intercambio: rally sin árbitro', G.rules.state === 'rally']);
-  // --- 5 · paso 6: el profesor devuelve tras el bote lejano
-  const vzAntes = G.ball.vel.z;
+  out.push(['saque 3/3 → paso 4 (EL INTERCAMBIO REAL, r66)', e.paso === 4]);
+  // intercambio real: sacas, el rival devuelve, tú cruzas, el rival falla
+  T.onTrigger(0);
+  T.tick(0.016);
+  G.ball.pos.set(0.1, 0.8, -2.3); G.ball.vel.set(0, 0.6, -0.8);
+  T.tick(0.016); T.tick(0.016);
+  G.ball.pos.set(0.05, 1.1, -1.75); G.ball.vel.set(0, -0.8, -3.0);
+  T.tick(0.016);
+  G.ball.pos.set(0.1, 0.8, -2.3); G.ball.vel.set(0, 0.6, -0.8);
+  T.tick(0.016); T.tick(0.016);
+  G.ball.pos.set(0.05, 1.1, -1.75); G.ball.vel.set(0, -0.8, -3.0);
+  T.tick(0.016);
+  G.ball.pos.set(0.1, 0.8, -2.3); G.ball.vel.set(0, 0.6, -0.8);
+  T.tick(0.016); T.tick(0.016);
+  for (let i = 0; i < 20; i++) T.tick(0.2);
+  e = T.estado();
+  out.push(['intercambio REAL ganado (el rival falla, r66)', e.paso === 4 && e.rfHecho === true]);
+  T.onTrigger(0);
+  T.tick(0.05);
+  e = T.estado();
+  out.push(['gatillo → paso 5 (EL MARCADOR, r66)', e.paso === 5 && e.holo === true]);
+  for (let i = 0; i < 45; i++) T.tick(0.2);        // demo del marcador
+  T.onTrigger(0);
+  e = T.estado();
+  out.push(['ENTENDIDO del marcador → paso 6 (r66)', e.paso === 6]);
+  G.ball.pos.set(0.3, 0.05, 0.9); G.ball.vel.set(0, 0, 0);
+  T.tick(0.7);                                    // bola muerta → el profesor alimenta
+  // --- 5 · paso 6: tu golpe habilita al profesor (r66: el orden correcto)
+  G.ball.pos.set(0.1, 1.1, -1.75); G.ball.vel.set(0, -0.5, -3.0);
+  T.tick(0.016);                                                   // golpe válido del jugador
+  e = T.estado();
+  out.push(['jugador: devolución 1/6 contada', e.hitCount === 1 && e.paso === 6]);
+  // --- 6 · el profesor devuelve tras el bote lejano (r64)
   G.ball.pos.set(0.2, 0.9, -2.3); G.ball.vel.set(0, 0.5, -2.0);   // bote lejano
+  const vzAntes = G.ball.vel.z;
   T.tick(0.016);                                                   // siembra farBounced
   G.ball.vel.y = 0.4;                                              // en la bajada
   T.tick(0.016);
   e = T.estado();
   out.push(['profesor: devuelve tras el bote (vel.z invierte)', e.fase === 'espera_golpe' && G.ball.vel.z > 0 && vzAntes < 0]);
-  // --- 6 · el jugador devuelve: 1/6 (r64)
-  G.ball.pos.set(0.1, 1.1, -1.75); G.ball.vel.set(0, -0.5, -3.0);
-  T.tick(0.016);
-  e = T.estado();
-  out.push(['jugador: devolución 1/6 contada', e.hitCount === 1 && e.paso === 6]);
   // --- 7 · bola muerta → el profesor realimenta (máquina del núcleo)
   const feeds0 = G.__feeds;
   G.ball.pos.set(0.4, 0.05, 0.9); G.ball.vel.set(0, 0, 0);

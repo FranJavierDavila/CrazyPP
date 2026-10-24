@@ -275,6 +275,17 @@ CAPAS = [
     # demo del espectador DUERME en la academia (adiós al bote continuo)
     # y gating real en los 11 pasos.
     ('AZ · onboarding gamificado (v3657)', 'qa_r65_v3657.py'),
+    # BA (v3658): LA ACADEMIA SOBRE LA MESA — informe del dueño tras
+    # V3.6.57: bola DORMIDA en los pasos quietos (adiós al bote continuo
+    # de la bola apoyada), voces Piper MÁS PAUSADAS (length-scale 1.16 +
+    # respiros), DOS mandos GLB reales centrados (izquierdo Y/X + derecho
+    # B/A espejo), halos OPACOS con etiqueta, RAQUETA FANTASMA sobre los
+    # mandos, pintor 9 sin solapes y las reglas REALES sobre la mesa:
+    # paso 3 (demo de saque con los mandos + 3 saques tuyos), paso 4
+    # (intercambio real: el rival devuelve hasta fallar — rota el sacador)
+    # y paso 5 (marcador BAJO con saques reales: 11 por 2 y 10-10 cada
+    # punto). Panel apartado en 3-6: la mesa nunca tapada.
+    ('BA · academia sobre la mesa (v3658)', 'qa_r66_v3658.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

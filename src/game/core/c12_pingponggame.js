@@ -7302,6 +7302,23 @@ export class PingPongGame {
       }
     }
 
+    // r66 · ACADEMIA: bola DORMIDA cuando el guion no la usa. El dueño tras
+    // V3.6.57: «sigo escuchando un ruido molesto de bote continuo». Causa
+    // real: en los pasos quietos (state='point') la bola quedaba APOYADA en
+    // la mesa con física viva — la gravedad la hundía unas centésimas por
+    // subpaso, la mesa la devolvía (restitución 0,88) y cada micro-bote
+    // disparaba el «pock» r62 (tableBounce con suelo de fuerza 0,1) hasta
+    // 16 veces por segundo: un goteo incesante desde el primer segundo.
+    // Fix: con tutV1 y sin bola viva la bola queda EN CINEMÁTICA (holdLock,
+    // sin física, sin eventos, sin sonido) y c13 la coloca donde convenga
+    // (sobre la mesa, en la palma del mando demo…). c13 pone
+    // G.tutBolaViva = true SOLO con bola en juego (saque, rally, demos).
+    if (this.tutV1 && !this.tutBolaViva && !holdLock) {
+      holdLock = true;
+      this.ball.vel.set(0, 0, 0);
+      this.ball.spin.set(0, 0, 0);
+    }
+
     // 4) Física (solo la pala del mando activo colisiona).
     //    v2.30: en portada 2D inactiva la bola queda POSADA en la mesa —
     //    nada de rallies de fondo, sonidos ni narración.

@@ -1,1 +1,3 @@
-624e7ad60c2d702a125d8f2d6f0668a6c7a00016857c258783f217fcd0486157
+# SHA256 del game.html que produjo esta división (3.6.58-SDK6, fase 60 · La academia sobre la mesa; sello actualizado
+# por bump_version.py desde 3.6.57-SDK6)
+30e72d092de5df93f09de1e42c8cece053f4b31779167cb293cf18da73500ba9

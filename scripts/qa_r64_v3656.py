@@ -62,8 +62,8 @@ AGUJAS = [
      "const w = Math.max(opts.w || 640, Math.min(need, 1000));"),
     ("wrap2 para textos largos (2 líneas)",
      "function wrap2(c, txt, y, size, col, maxW, lh) {"),
-    ("tut_s7_p en 2 líneas dentro de su fila",
-     "wrap2(c, T('tut_s7_p'), 520, 17, '#ffe08a', 900, 13);"),
+    ("tut_s7_p en 2 líneas dentro de su fila (r66: sin solapes)",
+     "wrap2(c, T('tut_s7_p'), 487, 16, '#ffe08a', 900, 12);"),
     ("canvas nítido (r65: pizarra nativa 1408×768)",
      "cv.width = 1408; cv.height = 768;"),
     ("título de cabecera ajustado al hueco",
@@ -72,29 +72,31 @@ AGUJAS = [
      "fitFont(c, title, 25, '800', 740, 17);"),
     ("filas de modos ajustadas (sub)",
      "fitFont(c, sub, 17, '500', 740, 12);"),
-    # --- FIX 2 · mando 3D (r65: el GLB REAL del dueño) ---
-    ("mando 3D (builder, ahora del GLB del dueño)",
-     "function buildMando() {"),
+    # --- FIX 2 · mandos 3D (r66: DOS GLB reales del dueño, centrados) ---
+    ("mandos 3D (builder de los DOS GLB del dueño)",
+     "function buildMandos() {"),
     ("materiales del GLB con resalte emissive",
      "m.emissive = new THREE.Color('#ffd257');"),
-    ("anclas de pieza por raycast fino",
+    ("anclas de pieza (izquierdo)",
      "const ANCLAS_MANDO = {"),
-    ("el mando nace junto al panel (hijo del panel)",
-     "mando.position.set(0.74, -0.04, 0.03);"),
-    ("el mando es GIRATORIO (tick de giro)",
-     "mandoSpin.rotation.y = (step === 1 ? mandoT * 0.35 : mandoT * 0.55);"),
-    ("vaivén suave del mando",
-     "mando.position.y = -0.04 + Math.sin(mandoT * 1.4) * 0.006;"),
+    ("anclas del derecho = ESPEJO del izquierdo (r66)",
+     "const ANCLAS_MANDO_DER = {"),
+    ("los mandos nacen CENTRADOS delante del jugador (r66)",
+     "mandosGrp.position.set(0, 1.07, -0.56);"),
+    ("los mandos son GIRATORIOS (tick de giro r66)",
+     "mm.spin.rotation.y += mm.__g * dt;"),
+    ("vaivén suave de los mandos",
+     "mm.grupo.position.y = Math.sin(mandoT * 1.4 + (mm === mandosI ? 0 : 1.1)) * 0.008;"),
     ("resalte por paso/subfase (¿qué pieza menciona el guion?)",
      "function hlDePaso() {"),
-    ("halos pulsantes por pieza",
-     "halos[k].material.opacity = (k === hlParte) ? 0.55 + 0.35 * Math.sin(mandoT * 5) : 0;"),
-    ("el panel construye el mando",
-     "buildMando();                       // r65 · mando GLB flotando junto al panel"),
-    ("teardown limpia el mando",
-     "mando = null; mandoSpin = null; mandoMats = []; halos = null;"),
+    ("halos pulsantes por pieza (r66 opacos)",
+     "mm.halos[kk].material.opacity = (kk === hlParte) ? pulso : 0;"),
+    ("el panel construye los mandos",
+     "buildMandos();                      // r66 · DOS mandos GLB (izq+der) centrados"),
+    ("teardown limpia los mandos",
+     "mandosGrp = null; mandosI = null; mandosD = null;"),
     # --- FIX 3 · práctica real + panel apartado ---
-    ("meta del paso 5: 3 saques válidos",
+    ("meta del paso 3 (práctica): 3 saques válidos",
      "const SAQ_META = 3;           // r64 · saques válidos para superar el paso 5"),
     ("meta del paso 6: 6 devoluciones",
      "const DEVOL_META = 6;         // r64 · devoluciones para superar el paso 6"),
@@ -112,8 +114,8 @@ AGUJAS = [
      "const k = 1 - Math.exp(-dt * 4.5);"),
     ("el panel se aparta en reglas y práctica (pasos 3 a 6)",
      "if (step === 3 || step === 4 || step === 5 || step === 6) {"),
-    ("tick invoca la pose y el mando",
-     "tickPose(dt);                       // el panel se aparta en la práctica\n    tickMando(dt);                      // giro + halos del mando GLB"),
+    ("tick invoca la pose y los mandos (r66)",
+     "tickPose(dt);                       // el panel se aparta en la práctica\n    tickMandos(dt);                     // r66 · giro + halos + fantasma + pose"),
     ("rally real: cada golpe habilita UNA devolución del profesor",
      "aiReturned = false;   // r64 · cada golpe habilita UNA devolución"),
     ("estado() de QA ampliada (saques/pose/mando)",
@@ -193,8 +195,9 @@ MECANICA = """async () => {
     await new Promise((r) => setTimeout(r, 50));
     e = T.estado();
   }
-  const mando = panel ? panel.children.find((ch) => ch.name === 'ppTutMandoGLB') : null;
-  out.push({ ok: !!mando, lab: 'mando GLB presente junto al panel' });
+  const mandosG = G.rig.children.find((ch) => ch.name === 'ppTutMandos');
+  const mando = mandosG ? mandosG.children.find((ch) => ch.name === 'ppTutMandoGLB') : null;
+  out.push({ ok: !!mando && !!mandosG, lab: 'mandos GLB presentes (grupo centrado en el rig, r66)' });
   let spin = null;
   if (mando) { spin = mando.children[0].children[0]; }
   const y0 = spin ? spin.rotation.y : 0;
@@ -237,14 +240,12 @@ MECANICA = """async () => {
   out.push({ ok: px < -0.45, lab: 'panel APARTADO a la izquierda con pala dcha (x=' + px.toFixed(3) + ')' });
   out.push({ ok: py < 1.4 && esc < 0.95, lab: 'panel más bajo y compacto (y=' + py.toFixed(2) + ' · s=' + esc.toFixed(2) + ')' });
 
-  // ---------- 3 · reglas (3/4) y 3 SAQUES con cerrojo (paso 5) -------
-  for (let i = 0; i < 40; i++) T.tick(0.2);        // demo puntos 8 s
-  T.onTrigger(0);                                  // → paso 4
-  for (let i = 0; i < 40; i++) T.tick(0.2);        // demo saques 8 s
-  T.onTrigger(0);                                  // → paso 5
+  // ---------- 3 · paso 3 (demo+3 saques con cerrojo) — r66 ------------
+  for (let i = 0; i < 30; i++) T.tick(0.2);        // la demo corre sobre la mesa
+  T.onTrigger(0);                                  // → práctica (tras 2.5 s)
   e = T.estado();
-  out.push({ ok: e.paso === 5 && e.pose === 'lado',
-             lab: 'paso 5 (EL SAQUE) sigue en LADO' });
+  out.push({ ok: e.paso === 3 && e.submodo === 'practica' && e.pose === 'lado',
+             lab: 'paso 3 (práctica del SAQUE) en LADO tras la demo (r66)' });
   const saca = () => {
     T.onTrigger(0);
     G.ball.pos.set(0.1, 1.3, -1.75); G.ball.vel.set(0, -1, -3.2);
@@ -254,21 +255,48 @@ MECANICA = """async () => {
   };
   saca();
   e = T.estado();
-  out.push({ ok: e.saq === 1 && e.paso === 5, lab: 'saque 1/3 contado UNA vez (cerrojo)' });
+  out.push({ ok: e.saq === 1 && e.paso === 3, lab: 'saque 1/3 contado UNA vez (cerrojo)' });
   T.onTrigger(0);
   G.ball.pos.set(0.3, 0.05, 0.8); G.ball.vel.set(0, 0, 0);   // fallido
   T.tick(0.3); T.tick(0.3);
   e = T.estado();
-  out.push({ ok: e.saq === 1 && e.paso === 5 && !G.tossed,
+  out.push({ ok: e.saq === 1 && e.paso === 3 && !G.tossed,
              lab: 'saque FALLIDO no cuenta y rearma' });
   saca();
   e = T.estado();
-  out.push({ ok: e.saq === 2 && e.paso === 5, lab: 'saque 2/3' });
+  out.push({ ok: e.saq === 2 && e.paso === 3, lab: 'saque 2/3' });
   saca();
   e = T.estado();
-  out.push({ ok: e.paso === 6 && e.pose === 'lado', lab: 'saque 3/3 → paso 6 (sigue en LADO)' });
+  out.push({ ok: e.paso === 4 && e.pose === 'lado', lab: 'saque 3/3 → paso 4 INTERCAMBIO (LADO, r66)' });
 
-  // ---------- 4 · 6 devoluciones con rally real (paso 6) --------------
+  // ---------- 4 · paso 4: intercambio real → 6 devoluciones (paso 6) -
+  // r66: el paso 4 pide SACAR para empezar; lo salta el intercambio
+  T.onTrigger(0);                                  // saque del intercambio real
+  T.tick(0.016);
+  G.ball.pos.set(0.1, 0.8, -2.3); G.ball.vel.set(0, 0.6, -0.8);
+  T.tick(0.016); T.tick(0.016);                    // el rival devuelve
+  G.ball.pos.set(0.05, 1.1, -1.75); G.ball.vel.set(0, -0.8, -3.0);
+  T.tick(0.016);                                   // tu golpe cruza
+  G.ball.pos.set(0.1, 0.8, -2.3); G.ball.vel.set(0, 0.6, -0.8);
+  T.tick(0.016); T.tick(0.016);                    // el rival vuelve a devolver
+  G.ball.pos.set(0.05, 1.1, -1.75); G.ball.vel.set(0, -0.8, -3.0);
+  T.tick(0.016);                                   // cruzas otra vez
+  G.ball.pos.set(0.1, 0.8, -2.3); G.ball.vel.set(0, 0.6, -0.8);
+  T.tick(0.016); T.tick(0.016);                    // tercera: el rival FALLA
+  for (let i = 0; i < 20; i++) T.tick(0.2);        // el fallo muere → PUNTO
+  e = T.estado();
+  out.push({ ok: e.paso === 4 && e.rfHecho === true,
+             lab: 'intercambio REAL ganado (el rival falla, r66)' });
+  T.onTrigger(0);                                  // → paso 5 MARCADOR (r66)
+  e = T.estado();
+  out.push({ ok: e.paso === 5 && e.holo === true,
+             lab: 'paso 5 MARCADOR con holo bajo sobre la mesa (r66)' });
+  for (let i = 0; i < 40; i++) T.tick(0.2);        // demo del marcador (8 s)
+  T.onTrigger(0);                                  // ENTENDIDO → paso 6
+  e = T.estado();
+  out.push({ ok: e.paso === 6, lab: 'ENTENDIDO del marcador → paso 6 (r66)' });
+  G.ball.pos.set(0.3, 0.05, 0.9); G.ball.vel.set(0, 0, 0);
+  T.tick(0.7);                                     // bola muerta → el profesor alimenta
   for (let i = 0; i < 6; i++) {
     G.ball.pos.set(0.1, 1.1, -1.75); G.ball.vel.set(0, -0.5, -3.0);
     T.tick(0.016);                                   // golpe válido del jugador
@@ -292,7 +320,7 @@ MECANICA = """async () => {
   const rig0 = G.rig.children.length;
   T.stop({ aJugar: true, done: true });
   out.push({ ok: G.rig.children.length === 0 && rig0 > 0,
-             lab: 'salida: panel+mando desmontados (0 residuos de ' + rig0 + ')' });
+             lab: 'salida: panel+mandos desmontados (0 residuos de ' + rig0 + ')' });
   out.push({ ok: (T.estado().tieneMando === false && T.estado().tienePanel === false),
              lab: 'estado() limpio tras la salida' });
 

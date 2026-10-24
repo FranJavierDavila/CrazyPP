@@ -3997,16 +3997,21 @@ Stage Summary:
 - Despliegue y verificación byte-exacto en producción: (ver apéndice 168-b si procede).
 
 ---
-Task ID: 168-b (apéndice de despliegue — PENDIENTE DE TOKEN)
+Task ID: 168-b (apéndice de despliegue — CERRADO)
 Agent: principal (Z.ai)
 Task: Cierre de la ronda 64 — despliegue de V3.6.56-SDK6 en producción.
 
 Work Log:
 - Commit 5aa4a6b en main LOCAL (todo el trabajo r64: c00 i18n, c13 academia, QA r59 ampliada, capa AY nueva, release-v3656, sella_r64, presupuesto, worklog).
-- BLOQUEO DE DESPLIEGUE (administrativo, no de código): esta sesión NO tiene GIT_TOKEN en el entorno y el fichero .github-pat fue retirado por la doctrina de seguridad del propio deploy_pages.py («sin escribirlo en fichero alguno»). El smoke LOCAL del sitio es verde (29 peticiones, 0 fallos) y el commit de pages se encadena bien (7c8669fd2 en local), pero el PUSH a GitHub y el release exigen el token del dueño.
-- Estado exacto: main local = 5aa4a6b (V3.6.56-SDK6, golden 36c4c41b) · producción SIGUE sirviendo V3.6.55-SDK6 (sin riesgo: nada tocado en remoto) · release-v3656 con los 4 ZIPs generados en scripts/release-v3656/.
+- BLOQUEO INICIAL (resuelto): esta sesión NO tenía GIT_TOKEN; el dueño entregó PAT fine-grained (github_pat_11…) → guardado SOLO en scripts/worker-tele/.github-pat (gitignore línea 70, chmod 600, jamás en el repo). Verificado por API: login FranJavierDavila · repo FranJavierDavila/CrazyPP público · push: True.
+- ESTADO REAL VERIFICADO ANTES DE TOCAR (lección del universo divergente): origin/main = b5b0e8c (V3.6.55-SDK6) y main local = 2fa2604 (2 commits por delante, sin divergencia) · golden local 36c4c41b CONFIRMADO byte-exacto (7.373.974 B) · 4 ZIPs v3656 presentes en public/descargas/ con los tamaños documentados (COMPLETO 131.396.208 · ligera 16.341.852 · CLOUDFLARE 131.382.821 · SOLO 6.089).
+- 1.er intento de deploy (deploy_pages.py --push --release --backup): ensamblado OK (396 ficheros · 137,8 MB), smoke verde (29 peticiones · 0 fallos), commit de pages encadenado (de614904e)… PERO el push de pages RECHAZADO (non-fast-forward): la cadena local de pages estaba CONGELADA desde 11446a2 (3.6.18, Oct 19 — sandbox obsoleto) mientras otras sesiones desplegaron r60-r63 en origin/pages (6dce353→…→64bf8d4, V3.6.55). Divergencia real (ni ancestro ni descendiente).
+- RESCATE DEL LINAJE PAGES (patrón r62 re-parent): commit-tree con el MISMO árbol del despliegue (79cc19eb) y padre = punta de origin/pages (64bf8d4), mensaje original preservado → nuevo commit 66240b9 · push 64bf8d4..66240b9 FAST-FORWARD ✓ (linaje pages intacto, sin force).
+- 2.º deploy COMPLETO EN VERDE: ensamblado · smoke 29/0 · commit pages eb6562bb2 · push FF ✓ · respaldo main→proyecto ✓ · tag v3.6.56-SDK6 + GitHub Release con los 4 ZIPs subidos (~280 MB) ✓ → https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.56-SDK6
+- Sincronización main→main (el script sólo hace main:proyecto): push b5b0e8c..2fa2604 ✓ — origin/main = main local de nuevo.
+- VERIFICACIÓN BYTE-EXACTO EN PRODUCCIÓN (curl con ?v=ant caché): PAGES-VERSION.txt servido = 3.6.56-SDK6 · fuente_commit 2fa26049a · reescrituras=2 · SHA256 del game.html SERVIDO = 9a94a91b453c927a5fe2dc85fda4054bada663a7de7343db043e89859e2ee20c — IDÉNTICO al del ensamblado local (7.373.972 B tras las 2 reescrituras, −2 B legítimos) · badge 3.6.56-SDK6 presente en el HTML servido · build de Pages built sobre eb6562bb2 sin errores.
 
 Stage Summary:
-- PENDIENTE UN SOLO PASO: el dueño (o una sesión con el entorno del dueño) ejecuta:
-    GIT_TOKEN=<su-token> python3 scripts/deploy_pages.py --push --release --backup
-  y después la verificación byte-exacto de siempre (PAGES-VERSION.txt = 3.6.56-SDK6 · SHA256 del servido = 36c4c41b… con 2 reescrituras documentadas).
+- PRODUCCIÓN SIRVE V3.6.56-SDK6 (FASE 58 «La academia, a punto»): tutorial sin cortes + mando 3D procedural Touch Plus giratorio con resalte por pieza + práctica real de 3 saques y 6 devoluciones con el panel apartado y la mesa a la vista. Ronda 64 CERRADA de punta a punta.
+- Recordatorio al dueño: en el Quest, recargar con game.html?v=3.6.56-SDK6 (o limpiar caché del navegador del visor) para NO quedar en la V3.6.55 vieja del caché.
+- Siguiente: fases 59 y 60 del roadmap Data-Driven propuesto en r63 (aprobación del dueño pendiente de definición en chat).

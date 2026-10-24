@@ -3995,3 +3995,18 @@ Work Log:
 Stage Summary:
 - LA ACADEMIA, A PUNTO: el tutorial se lee SIN CORTES (auto-ajuste + canvas nítido), el mando Touch Plus es un MODELO 3D giratorio que ilumina la pieza de la que habla cada paso, y la práctica final exige 3 saques válidos y 6 devoluciones CON LA MESA COMPLETA A LA VISTA (el panel se aparta solo, a ambos lados según la mano de la pala). De propina, la meta 6 destapó un bug latente del profesor (quedaba mudo tras su primera devolución) ya arreglado.
 - Despliegue y verificación byte-exacto en producción: (ver apéndice 168-b si procede).
+
+---
+Task ID: 168-b (apéndice de despliegue — PENDIENTE DE TOKEN)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 64 — despliegue de V3.6.56-SDK6 en producción.
+
+Work Log:
+- Commit 5aa4a6b en main LOCAL (todo el trabajo r64: c00 i18n, c13 academia, QA r59 ampliada, capa AY nueva, release-v3656, sella_r64, presupuesto, worklog).
+- BLOQUEO DE DESPLIEGUE (administrativo, no de código): esta sesión NO tiene GIT_TOKEN en el entorno y el fichero .github-pat fue retirado por la doctrina de seguridad del propio deploy_pages.py («sin escribirlo en fichero alguno»). El smoke LOCAL del sitio es verde (29 peticiones, 0 fallos) y el commit de pages se encadena bien (7c8669fd2 en local), pero el PUSH a GitHub y el release exigen el token del dueño.
+- Estado exacto: main local = 5aa4a6b (V3.6.56-SDK6, golden 36c4c41b) · producción SIGUE sirviendo V3.6.55-SDK6 (sin riesgo: nada tocado en remoto) · release-v3656 con los 4 ZIPs generados en scripts/release-v3656/.
+
+Stage Summary:
+- PENDIENTE UN SOLO PASO: el dueño (o una sesión con el entorno del dueño) ejecuta:
+    GIT_TOKEN=<su-token> python3 scripts/deploy_pages.py --push --release --backup
+  y después la verificación byte-exacto de siempre (PAGES-VERSION.txt = 3.6.56-SDK6 · SHA256 del servido = 36c4c41b… con 2 reescrituras documentadas).

@@ -4137,3 +4137,19 @@ Work Log:
 
 Stage Summary:
 - r67 COMPLETA en local, pendiente SOLO del push (token del dueño) → deploy → verificación byte-exacto → aviso de caché (game.html?v=v3659)
+
+---
+Task ID: 171-c
+Agent: Super Z (main agent)
+Task: CIERRE r67 — V3.6.59-SDK6 en producción byte-exacto + release con 4 ZIPs + linaje pages rescatado (FF, sin force)
+
+Work Log:
+- Push con el PAT del dueño (guardado en scripts/worker-tele/.github-pat, chmod 600, gitignored; salida enmascarada)
+- INCIDENTE resuelto: deploy_pages encadenó el sitio sobre un tip pages VIEJO del sandbox (11446a2) → non-fast-forward. RESCATE del protocolo: commit-tree (mismo árbol, re-parent sobre origin/pages a9b5f20) → push FF 69a7196 — nunca force
+- main y proyecto emparejados: 368d785..d745a50 en ambas
+- Release v3.6.59-SDK6 creada con los 4 ZIPs (COMPLETO 133.099.308 · ligera 18.044.952 · CLOUDFLARE 133.085.922 · SOLO 6.089) — el primer intento la dejó pendiente porque el script murió en el push de pages (se re-ejecutó --release y subió completa); smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 pageerrors)
+- pages tip final f15e3c8e9 (mismo árbol, alineado local/remoto)
+- VERIFICACIÓN BYTE-EXACTO en producción: PAGES-VERSION.txt (version=3.6.59-SDK6 · fuente_commit=d745a50 · reescrituras=2) + served SHA256 bc5ae181b4173433 == ensamblado local bc5ae181b4173433 ✓ · 2 menciones de 3.6.59-SDK6 en el servido
+
+Stage Summary:
+- V3.6.59-SDK6 (FASE 61 — LA ACADEMIA EN TUS MANOS) VIVA en producción: voz única (adiós al audio doble), mandos GLB anclados a los grips XR reales al 75%, una sola raqueta (la real, con aura), guion de 9 pasos con demo del profesor y aros guía — pendiente SOLO el aviso de caché al dueño (game.html?v=v3659)

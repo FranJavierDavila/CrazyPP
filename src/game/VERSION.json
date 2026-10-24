@@ -1,10 +1,10 @@
 {
-  "version": "3.6.54-SDK6",
-  "fase": 56,
-  "faseNombre": "Sonido real, háptica que mide y el momento cine",
+  "version": "3.6.55-SDK6",
+  "fase": 57,
+  "faseNombre": "La academia cierra bien",
   "sdk": "1.5.4",
-  "fecha": "2026-10-23",
-  "hub": "v3654-sdk6",
+  "fecha": "2026-10-24",
+  "hub": "v3655-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "aeeadb604041aab56333f93e1b4c495ea4c861cb5befd588fcbf9346a38c5a2d"
+  "golden": "b3f4eacad9e237ca0dfde5ff230b5566ce29875038863853e73e1f92b730e689"
 }

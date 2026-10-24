@@ -252,6 +252,12 @@ CAPAS = [
     # (repetición al 50% con pastilla ámbar + dilatación de la bola de
     # partido 0,34×→1 en ~1,15 s, sólo local).
     ('AW · sonido real+háptica+cine (v3654)', 'qa_r62_v3654.py'),
+    # AX (v3655): LA ACADEMIA CIERRA BIEN — arreglo del panel huérfano del
+    # tutorial (stop anulaba el juego antes de desmontar el panel: el panel
+    # quedaba VISIBLE para siempre). QA sobre el GRAFO DE ESCENA (lo que el
+    # jugador ve): nace en el rig, desaparece con gatillo y B, sin
+    # duplicados ni residuos, sello sólo al jugar, partido jugable tras salir.
+    ('AX · academia cierra bien (v3655)', 'qa_r63_v3655.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

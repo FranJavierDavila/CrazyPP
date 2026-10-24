@@ -3048,7 +3048,8 @@ window.__PP_CORE = {
     G.rig.add(grp);
   }
   function teardownPanel() {
-    try { if (grp && G && G.rig) G.rig.remove(grp); } catch (e) { /* */ }
+    try { if (grp && G && G.rig) G.rig.remove(grp);
+          else if (grp && grp.parent) grp.parent.remove(grp); } catch (e) { /* */ }
     grp = null; cv = null; cc = null; tex = null; mesh = null;
   }
 
@@ -3585,8 +3586,15 @@ window.__PP_CORE = {
     opts = opts || {};
     const gm = G;
     active = false;
-    G = null;
+    // r63 · ORDEN CRÍTICO (bug del dueño: «la última pantalla se queda fija
+    // y no hay forma de eliminarla»): teardownPanel necesita G.rig para
+    // QUITAR el panel de la escena — con G ya anulado el if cortocircuitaba
+    // y el panel quedaba HUÉRFANO y VISIBLE delante del jugador para
+    // siempre (el módulo ya no lo controla: activo=false). El panel se
+    // desmonta PRIMERO, con G vivo; el fallback por grp.parent de
+    // teardownPanel (también r63) cubre cualquier orden futuro.
     teardownPanel();
+    G = null;
     gm.tutV1 = null;
     if (opts.done) {
       try { localStorage.setItem('pp_tut_done', '1'); } catch (e) { /* */ }

@@ -3955,3 +3955,22 @@ Stage Summary:
 - EL TOQUE PROFESIONAL EN PRODUCCIÓN: https://franjavierdavila.github.io/CrazyPP/ sirviendo V3.6.54-SDK6 · FASE 56 byte-exacto (main fa91db7 · pages 0e9ad64 · fuente fa91db7).
 - El dueño debe RECARGAR con la pestaña cerrada o game.html?v=3654 (el Quest cachea). A probar: (1) el SONIDO — el pock de la mesa y el tock de la pala suben de tono con la velocidad, el CANTO suena a metal, la red a tela; (2) el MANDO — una dejada vibra cortito y suave, un smash zumba seco a tope; (3) el CINE — gana un partido: la bola de partido flota en cámara lenta antes de la fanfarria, y tras ella el mejor intercambio corre a la mitad con su pastilla ámbar (gatillo = seguir).
 - Pendientes vivos sin cambio: informe del dueño (Imán/clon + r60 + r61 + estas tres), entrenamiento «tres arreglos» (spec), .cf-token/.clave-produccion (vía Cloudflare), hito CORONAR LA OESTE.
+
+---
+Task ID: 167
+Agent: principal (Z.ai)
+Task: Ronda 63 — BUG CRÍTICO del informe del dueño: «la última pantalla del tutorial inicial se queda fija y no hay forma de eliminarla de pantalla, con lo que es imposible seguir o jugar» → V3.6.55-SDK6, FASE 57 «La academia cierra bien». (Además: respuesta al dueño sobre el mando 3D del tutorial — no necesita facilitar nada, se modelará en 3D procedural; y propuesta de roadmap Data-Driven por fases, pendiente de su aprobación.)
+
+Work Log:
+- GUARDIA DE LINAJE verde (6605be6 = origin/main, V3.6.54-SDK6 en producción byte-exacto 81cf339b).
+- CAUSA RAÍZ POR LECTURA + REPRODUCCIÓN HEADLESS: stop() (c13, módulo __PP_TUT) anulaba G = null ANTES de llamar teardownPanel() — y teardownPanel necesita G.rig para QUITAR el panel de la escena («if (grp && G && G.rig) G.rig.remove(grp)»). Con G anulado el if CORTOCIRCUITABA: el remove no corría, grp=null sólo soltaba la referencia del closure y el panel quedaba HUÉRFANO y VISIBLE en el rig a la altura de los ojos para SIEMPRE (el módulo ya no lo controla: activo=false → ni tick ni onTrigger lo tocan). REPRODUCIDO en vivo antes de tocar nada: tras stop({aJugar:true,done:true}) —el exit EXACTO del paso 8— el panel seguía en el rig (1 grupo) y visible (true) con el módulo ya inactivo. La QA r59 no lo vio porque estado() mira el CLOSURE del módulo, no el GRAFO DE ESCENA.
+- FIX r63 (doble cinturón, c13_ui_arranque.js): (1) ORDEN CRÍTICO — el panel se desmonta PRIMERO con G vivo (teardownPanel() → G = null); (2) teardownPanel gana RESPALDO POR PADRE («else if (grp && grp.parent) grp.parent.remove(grp)») que quita el panel de CUALQUIER padre si G no estuviera. Cubre TODAS las salidas: gatillo del paso 8 (aJugar+sello), B/Y en cualquier paso (saltar, sin sello), doble arranque y fin de sesión (c12:2870).
+- VERIFICACIÓN EN VIVO (3 salidas, sobre el GRAFO): gatillo → panel 0, activo false, sello pp_tut_done=1, calib false, state serve (JUGABLE) · B → panel 0, sin sello · doble arranque → 1 panel (sin duplicados) y su salida → 0. Cero pageerrors.
+- BUILD: build_game.py --escribir (7.363.410 B) · bump 3.6.55-SDK6 FASE 57 --sdk 1.5.4 · golden b3f4eaca (contra-verificación BYTE-EXACTO OK).
+- QA NUEVA: scripts/qa_r63_v3655.py (16 checks: 3 agujas + 1 negativa del orden viejo + MECÁNICA REAL headless SOBRE EL GRAFO DE ESCENA — la huella del panel es el Group en y=1,52/z=-0,86 con hijos: nace en el rig y visible, DESAPARECE con el gatillo del paso 8 y con B, no se duplica en doble arranque, cero residuos, sello sólo al jugar, calib limpio, partido jugable) → 16 OK · 0 fallos. Regresión r59: qa_tut_v3651 128 OK · 0 fallos (el cambio de stop no rompe el guion).
+- RELEASE: gen_release_v3655.py (release-v3655 desde v3654, notas FASE 57 por marcadores; guards SDK 1.5.4/oeste v56/locura v27/magia v33/valle v5 + estirpe v369-sdk5) · build_zip 4 ZIPs (COMPLETO 131.391.995 · ligera 16.337.639 · CLOUDFLARE 131.378.608 · SOLO 6.089) · sella_r63.py (E/F/G/H/I + AF…AO a 3.6.55 + tamaños reales) · AX registrada en qa_todo.py (35 capas pre-deploy).
+- QA TOTAL: 35 capas VERDE · 0 fallos (parte 1 A-Y 397 s · parte 2 Z-AX 494 s: AT 128 · AU 34 · AV 46 · AW 48 · AX 16).
+
+Stage Summary:
+- LA ACADEMIA CIERRA BIEN: la pantalla final del tutorial ya NO se queda fija — el panel se despide de la escena en las tres salidas y el partido queda jugable al instante. El bug venía desde r59 (invisible para la QA de entonces: miraba el módulo, no la escena).
+- Despliegue y verificación byte-exacto en producción: (ver apéndice 167-b si procede).

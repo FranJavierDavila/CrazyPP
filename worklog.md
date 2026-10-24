@@ -4121,3 +4121,19 @@ Work Log:
 
 Stage Summary:
 - V3.6.59-SDK6 lista para deploy: la academia juega CON LAS MANOS DEL JUGADOR (mandos GLB anclados a los grips XR reales al 75%, una sola raqueta = la pala real con aura), una sola voz viva (adiós al audio doble) y un guion de 9 pasos más sencillo, pausado y divertido con demo del profesor y aros guía sobre la mesa real
+
+---
+Task ID: 171-b
+Agent: Super Z (main agent)
+Task: estado del despliegue r67 — todo listo (commit 8e7c6d7, golden 14320f07, release-v3659 con 4 ZIPs, QA 39/39); el push exige GIT_TOKEN del dueño (doctrina: el token no vive en ficheros)
+
+Work Log:
+- Verificado el sandbox: sin credential helper, sin gh, sin .git-credentials (el fetch funciona porque el repo es público; el push exige el fine-grained PAT del dueño)
+- El commit 8e7c6d7 (V3.6.59-SDK6, FASE 61) está COMPLETE y autoconsistente: game.html 9.820.354 B byte-exacto contra el golden 14320f07, 4 ZIPs en public/descargas/, presupuesto refrescado, worklog 171 cerrado
+- Comando de deploy listo para cuando el dueño aporte el token (un solo paso):
+  GIT_TOKEN=$(cat ruta-del-token) python3 scripts/deploy_pages.py --push --release --backup
+  y después el emparejamiento manual: git push origin main:main (deploy_pages solo empuja main:proyecto)
+- Receta de verificación post-deploy (protocolo de la casa): curl "https://franjavierdavila.github.io/CrazyPP/game.html?v=<ts>" + SHA256 contra el ensamblado (se espera DIFERENTE por las 2 reescrituras del deploy; la referencia es PAGES-VERSION.txt: fuente_commit 8e7c6d7, reescrituras=2) + release v3.6.59-SDK6 con 4 ZIPs + pages tip nuevo
+
+Stage Summary:
+- r67 COMPLETA en local, pendiente SOLO del push (token del dueño) → deploy → verificación byte-exacto → aviso de caché (game.html?v=v3659)

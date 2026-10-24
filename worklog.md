@@ -4085,3 +4085,20 @@ Work Log:
 
 Stage Summary:
 - LA ACADEMIA EXPLICA SOBRE LA MESA REAL: silencio hasta que toca (bola dormida), voz pausada que respira, los DOS mandos exactos del dueño centrados con halos opacos y etiquetas, la raqueta fantasma que une mando y pala, y las reglas del ping pong demostradas con la bola y la física del juego — saque reglamentario, intercambio con rotación y marcador a 11 por 2 con la igualada. Despliegue y verificación byte-exacto en producción: (ver apéndice 170-b si procede).
+
+---
+Task ID: 170-b (apéndice de despliegue — CERRADO)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 66 — despliegue de V3.6.58-SDK6 en producción.
+
+Work Log:
+- Commit 1817ee9 en main LOCAL (todo el trabajo r66: c00 voz r66+i18n, c12 gate tutBolaViva, c13 academia sobre la mesa, QA BA/AT/AY/AZ, release-v3658, sella_r66, presupuesto, worklog).
+- PAT del dueño restaurado a scripts/worker-tele/.github-pat (chmod 600, gitignored) y ref pages PRE-ALINEADO (git update-ref refs/heads/pages origin/pages = e42dbd1f) — lección r64/r65 aplicada: sin rescate esta vez.
+- DEPLOY COMPLETO EN VERDE (deploy_pages.py --push --release --backup): ensamblado 396 ficheros · 140,2 MB · smoke Playwright 29/0 bajo /CrazyPP/ · commit pages a9b5f2032 push FF ✓ · respaldo main→proyecto ✓ · tag v3.6.58-SDK6 + GitHub Release con los 4 ZIPs (~284 MB) ✓ → https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.58-SDK6
+- Sincronización main→main: push 679ad18..1817ee9 ✓ — origin/main = main local de nuevo.
+- VERIFICACIÓN BYTE-EXACTO EN PRODUCCIÓN (curl con ?v=ant caché): PAGES-VERSION.txt servido = 3.6.58-SDK6 · fuente_commit 1817ee947 · reescrituras=2 · SHA256 del game.html SERVIDO = f9f8f39faaf7bdb4ccc2b4d1780ea33a3e4aaeeb0f4c2b644bcabb81255ddd09 (9,811,381 B) — IDÉNTICO al ensamblado local pages-site/game.html (f9f8f39f…, 9,811,381 B) · golden 30e72d09 (9,811,383 B) − 2 B legítimos de las 2 reescrituras · badge 3.6.58-SDK6 presente en el HTML servido.
+
+Stage Summary:
+- PRODUCCIÓN SIRVE V3.6.58-SDK6 (FASE 60 «La academia sobre la mesa»): silencio hasta que toca (bola dormida, adiós al bote continuo de verdad), voces pausadas que respiran, los DOS mandos exactos del dueño centrados con halos opacos y etiquetas, la raqueta fantasma mando→pala, y las reglas demostradas SOBRE la mesa con la bola y la física del juego (saque reglamentario, intercambio con rotación, marcador a 11 por 2 y la igualada). Ronda 66 CERRADA de punta a punta.
+- Recordatorio al dueño: en el Quest, recargar con game.html?v=3.6.58-SDK6 (o limpiar la caché del navegador del visor) para NO quedar en la V3.6.57 del caché.
+- Siguiente: prueba en casco del onboarding sobre la mesa (especialmente la demo del saque y el intercambio real) + fase 61 del roadmap cuando el dueño la defina.

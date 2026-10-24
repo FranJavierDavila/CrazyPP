@@ -258,6 +258,14 @@ CAPAS = [
     # jugador ve): nace en el rig, desaparece con gatillo y B, sin
     # duplicados ni residuos, sello sólo al jugar, partido jugable tras salir.
     ('AX · academia cierra bien (v3655)', 'qa_r63_v3655.py'),
+    # AY (v3656): LA ACADEMIA, A PUNTO — las tres correcciones del dueño al
+    # tutorial: (1) textos auto-ajustados (fitFont/pill/wrap2, canvas
+    # 1280×800: nada se corta ya); (2) MANDO 3D PROCEDURAL Touch Plus (6
+    # piezas giratorias con resalte por paso, la promesa del punto 2);
+    # (3) práctica real (3 saques válidos con cerrojo + 6 devoluciones con
+    # rally real) y el panel se APARTA a un lado en la práctica (pose
+    # frente⇄lado con lerp). QA de fuente + grafo con rig real.
+    ('AY · academia a punto (v3656)', 'qa_r64_v3656.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

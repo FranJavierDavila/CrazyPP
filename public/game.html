@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.55-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.56-SDK6</span>
     </div>
   </main>
 
@@ -898,13 +898,15 @@ const I18N_STRINGS = {
     tut_s3_l1: 'La bola descansa en tu MANO LIBRE (la que no lleva la pala).',
     tut_s3_l2: 'Pulsa el GATILLO para lanzarla y golpéala con la pala',
     tut_s3_l3: 'para que cruce la red (debe botar en los dos campos).',
-    tut_s3_task: 'PRÁCTICA: saca y cruza la red',
+    tut_s3_task: 'PRÁCTICA: realiza 3 saques válidos',
     tut_s3_again: 'Otra vez: la bola vuelve a tu mano libre',
+    tut_s3_cnt: 'SAQUES VÁLIDOS',
+    tut_s3_ok: '¡Saque válido! Sigue así',
     tut_s4_t: 'EL INTERCAMBIO',
     tut_s4_l1: 'Tu profesor te devuelve la bola. Golpéala de nuevo',
-    tut_s4_l2: 'por encima de la red. Dos devoluciones y pasas.',
-    tut_s4_task: 'PRÁCTICA: devuelve 2 bolas',
-    tut_s4_n: 'Devoluciones: {n}/2',
+    tut_s4_l2: 'por encima de la red. Seis devoluciones y pasas.',
+    tut_s4_task: 'PRÁCTICA: devuelve 6 bolas',
+    tut_s4_n: 'Devoluciones: {n}/6',
     tut_s5_t: 'LOS BOTONES EN JUEGO',
     tut_s5_l1: 'A o X: cambia la pala de mano (¡pruébalo ahora!).',
     tut_s5_l2: 'B: menú · STICK (en partido): oír el poder seleccionado.',
@@ -1433,13 +1435,15 @@ const I18N_STRINGS = {
     tut_s3_l1: 'The ball rests in your FREE HAND (the one without the paddle).',
     tut_s3_l2: 'Press the TRIGGER to toss it and hit it with the paddle',
     tut_s3_l3: 'so it crosses the net (it must bounce on both sides).',
-    tut_s3_task: 'PRACTICE: serve and cross the net',
+    tut_s3_task: 'PRACTICE: land 3 valid serves',
     tut_s3_again: 'Again: the ball returns to your free hand',
+    tut_s3_cnt: 'VALID SERVES',
+    tut_s3_ok: 'Valid serve! Keep going',
     tut_s4_t: 'THE RALLY',
     tut_s4_l1: 'Your coach returns the ball. Hit it back',
-    tut_s4_l2: 'over the net. Two returns and you pass.',
-    tut_s4_task: 'PRACTICE: return 2 balls',
-    tut_s4_n: 'Returns: {n}/2',
+    tut_s4_l2: 'over the net. Six returns and you pass.',
+    tut_s4_task: 'PRACTICE: return 6 balls',
+    tut_s4_n: 'Returns: {n}/6',
     tut_s5_t: 'BUTTONS IN A MATCH',
     tut_s5_l1: 'A or X: switch the paddle to that hand (try it now!).',
     tut_s5_l2: 'B: menu · STICK (in a match): hear the selected power.',
@@ -2199,7 +2203,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.55-SDK6';
+  const VERSION = '3.6.56-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -22071,9 +22075,12 @@ window.__PP_CORE = {
  *  saben ni cómo hacer para sacar». Respuesta: una academia guiada de
  *  9 PASOS sobre la MESA REAL (física de verdad, árbitro dormido en calib,
  *  IA dormida) con práctica en cada paso:
- *    0 bienvenida · 1 TU MANDO (diagrama + gatillo) · 2 LA PALA (vaivén)
- *    3 EL SAQUE (bola en mano libre + gatillo + cruzar la red)
- *    4 EL INTERCAMBIO (el «profesor» devuelve suave: 2 devoluciones)
+ *    0 bienvenida · 1 TU MANDO (MANDO 3D PROCEDURAL Touch Plus flotando
+ *      junto al panel — cuerpo, anillo, stick, gatillo, grip y botones —
+ *      giratorio y con cada pieza iluminándose cuando el paso la menciona)
+ *    2 LA PALA (vaivén)
+ *    3 EL SAQUE (3 SAQUES VÁLIDOS; el panel se APARTA a un lateral para
+ *      dejar la mesa a la vista) · 4 EL INTERCAMBIO (6 devoluciones)
  *    5 LOS BOTONES (A/X cambia la pala de mano de verdad)
  *    6/7 LOS MODOS (los 6 + los 5 poderes) · 8 ¡YA SABES JUGAR! (jugar ya)
  *  Puertas de entrada: banner dorado del HUB · oferta de PRIMERA VEZ
@@ -22088,14 +22095,24 @@ window.__PP_CORE = {
 
   const STEPS = 9;              // pasos del guion (0..8)
   const SWAY_META = 0.55;       // segundos de vaivén firme (paso 2)
-  const DEVOL_META = 2;         // devoluciones para superar el paso 4
+  const SAQ_META = 3;           // r64 · saques válidos para superar el paso 3
+  const DEVOL_META = 6;         // r64 · devoluciones para superar el paso 4
 
   let G = null;                 // PingPongGame activo mientras dura la academia
   let active = false;
   let grp = null, cv = null, cc = null, tex = null, mesh = null;
+  let mando = null;             // r64 · grupo del mando 3D (hijo del panel)
+  let mandoSpin = null;         // r64 · subgrupo giratorio del mando
+  let mandoT = 0;               // r64 · reloj del mando (giro + pulso)
+  let mandoPartes = null;       // r64 · { cuerpo, anillo, stick, gatillo, grip, botones }
+  let mandoMats = null;         // r64 · materiales por parte (resalte emissive)
+  let hlParte = null;           // r64 · parte resaltada ahora mismo
 
   let step = 0;
   let sway = 0;                 // progreso del paso 2 (vaivén de la pala)
+  let saqCount = 0;             // r64 · saques válidos del paso 3
+  let saqLatch = false;         // r64 · el lanzamiento EN VUELO ya contó (1 vez)
+  let flashOk = 0;              // r64 · aviso verde «saque válido» (s restantes)
   let hitCount = 0;             // devoluciones del paso 4
   let aiReturned = false;       // el profesor ya devolvió ESTE vuelo
   let farBounced = false;       // la bola ya botó en el campo lejano (paso 4)
@@ -22114,8 +22131,12 @@ window.__PP_CORE = {
   function buildPanel() {
     if (grp || !G || !G.rig || typeof THREE === 'undefined') return;
     cv = document.createElement('canvas');
-    cv.width = 1024; cv.height = 640;
+    // r64 · 1280×800 (misma proporción que el plano 1.02×0.6375): +56 % de
+    // píxeles para un texto NÍTIDO en el HMD; los pintores siguen en
+    // coordenadas lógicas 1024×640 gracias al scale(1.25) del contexto.
+    cv.width = 1280; cv.height = 800;
     cc = cv.getContext('2d');
+    cc.scale(1.25, 1.25);
     tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 4;
@@ -22133,11 +22154,14 @@ window.__PP_CORE = {
     grp.rotation.x = 0.05;
     grp.visible = false;
     G.rig.add(grp);
+    buildMando();                       // r64 · mando 3D flotando junto al panel
   }
   function teardownPanel() {
     try { if (grp && G && G.rig) G.rig.remove(grp);
           else if (grp && grp.parent) grp.parent.remove(grp); } catch (e) { /* */ }
     grp = null; cv = null; cc = null; tex = null; mesh = null;
+    mando = null; mandoSpin = null; mandoPartes = null; mandoMats = null;
+    hlParte = null;
   }
 
   function rr(c, x, y, w, h, r) {
@@ -22150,16 +22174,51 @@ window.__PP_CORE = {
     c.arcTo(x, y, x + w, y, r);
     c.closePath();
   }
-  function line(c, txt, y, size, col, align, x) {
+  /* r64 · AUTO-AJUSTE DE TEXTOS (petición del dueño: «los textos están
+   * mal maquetados y quedan fuera de sus contenedores cortándose»):
+   * fitFont reduce la fuente hasta que el texto cabe en maxW, line lo
+   * aplica a TODAS las líneas, pill auto-dimensiona la píldora al texto
+   * y wrap2 parte en 2 líneas los textos largos. Nada se corta ya.     */
+  const LINE_MAXW = 944;        // ancho útil del panel (1024 - márgenes)
+  function fitFont(c, txt, size, weight, maxW, minSize) {
+    let s = size;
+    const min = minSize || 15;
+    c.font = weight + ' ' + s + 'px system-ui, sans-serif';
+    while (s > min && c.measureText(txt).width > maxW) {
+      s -= 1;
+      c.font = weight + ' ' + s + 'px system-ui, sans-serif';
+    }
+    return s;
+  }
+  function line(c, txt, y, size, col, align, x, maxW) {
+    fitFont(c, txt, size, '600', maxW || LINE_MAXW);
     c.fillStyle = col || '#dfe7ee';
-    c.font = '600 ' + size + 'px system-ui, sans-serif';
     c.textAlign = align || 'center';
     c.textBaseline = 'middle';
     c.fillText(txt, x || 512, y);
   }
+  /* parte un texto largo en 2 líneas centradas (por el espacio más
+   * cercano al centro) tras intentar reducirlo; para tut_s7_p. */
+  function wrap2(c, txt, y, size, col, maxW, lh) {
+    fitFont(c, txt, size, '600', maxW, 12);
+    if (c.measureText(txt).width <= maxW) { line(c, txt, y, size, col); return; }
+    const sep = txt.lastIndexOf(' ', Math.ceil(txt.length / 2));
+    if (sep <= 0) { line(c, txt, y, size, col); return; }
+    line(c, txt.slice(0, sep), y - (lh || 14), size, col);
+    line(c, txt.slice(sep + 1), y + (lh || 14), size, col);
+  }
   function pill(c, txt, y, opts) {
     opts = opts || {};
-    const w = opts.w || 640, h = opts.h || 72;
+    // r64 · la píldora mide lo que pide su texto (con aire) y la fuente
+    // se reduce si hiciera falta: el texto nunca se sale de la píldora.
+    let size = opts.size || 30;
+    c.font = '800 ' + size + 'px system-ui, sans-serif';
+    const need = c.measureText(txt).width + 72;
+    const w = Math.max(opts.w || 640, Math.min(need, 960));
+    if (c.measureText(txt).width > w - 48) {
+      fitFont(c, txt, size, '800', w - 48, 17);
+    }
+    const h = opts.h || 72;
     const x = (1024 - w) / 2;
     rr(c, x, y, w, h, 20);
     c.fillStyle = opts.col || '#2f9e44';
@@ -22168,67 +22227,130 @@ window.__PP_CORE = {
     c.lineWidth = 3;
     c.stroke();
     c.fillStyle = '#10131a';
-    c.font = '800 ' + (opts.size || 30) + 'px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.fillText(txt, 512, y + h / 2 + 1);
   }
 
-  /* ---------- diagrama esquemático del mando (paso 1) ---------------- */
-  function drawController(c, cx, cy, s) {
-    c.save();
-    c.translate(cx, cy);
-    c.scale(s, s);
-    // anillo del mando
-    c.beginPath();
-    c.ellipse(0, -128, 104, 46, 0, 0, Math.PI * 2);
-    c.lineWidth = 15;
-    c.strokeStyle = '#5b6675';
-    c.stroke();
-    // cuerpo
-    rr(c, -66, -104, 132, 236, 54);
-    const bg = c.createLinearGradient(-66, 0, 66, 0);
-    bg.addColorStop(0, '#414b59');
-    bg.addColorStop(0.5, '#2c343f');
-    bg.addColorStop(1, '#222932');
-    c.fillStyle = bg;
-    c.fill();
-    c.strokeStyle = 'rgba(255,255,255,0.3)';
-    c.lineWidth = 3;
-    c.stroke();
-    // stick
-    c.beginPath(); c.arc(0, -46, 27, 0, Math.PI * 2);
-    c.fillStyle = '#14181f'; c.fill();
-    c.strokeStyle = '#93a0af'; c.lineWidth = 5; c.stroke();
-    c.beginPath(); c.arc(0, -46, 9, 0, Math.PI * 2);
-    c.fillStyle = '#93a0af'; c.fill();
-    // botones A/X (izquierda) y B/Y (derecha)
-    const bts = [['X', -40, 16], ['Y', -40, 66], ['A', 40, 16], ['B', 40, 66]];
-    for (const [lb, bx, by] of bts) {
-      c.beginPath(); c.arc(bx, by, 17, 0, Math.PI * 2);
-      c.fillStyle = '#14181f'; c.fill();
-      c.strokeStyle = '#93a0af'; c.lineWidth = 3.5; c.stroke();
-      c.fillStyle = '#e7edf3';
-      c.font = '800 17px system-ui, sans-serif';
-      c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(lb, bx, by + 1);
+  /* ---------- MANDO 3D PROCEDURAL (Meta Touch Plus) · r64 -----------
+   * La promesa hecha al dueño hecha realidad: nada de dibujo plano — el
+   * mando se MODELA con primitivas (cuerpo, anillo, stick, gatillo, grip
+   * y botones A/X/B/Y), flota JUNTO al panel, gira sobre sí mismo y cada
+   * pieza se ILUMINA cuando el paso la menciona.                     */
+  function _matMando(col, rough, metal) {
+    return new THREE.MeshStandardMaterial({
+      color: col, roughness: rough, metalness: metal,
+      emissive: new THREE.Color('#ffd257'), emissiveIntensity: 0,
+    });
+  }
+  function _parte(nombre) {
+    const g = new THREE.Group();
+    g.name = 'tut_' + nombre;
+    return g;
+  }
+  function buildMando() {
+    if (mando || typeof THREE === 'undefined' || !grp) return;
+    mandoPartes = {};
+    mandoMats = {};
+    mando = new THREE.Group();
+    mando.name = 'ppTutMando';
+    const tilt = new THREE.Group();      // inclinación fija: se ve la cara superior
+    tilt.rotation.x = 0.55;
+    mandoSpin = new THREE.Group();       // giro continuo (tickMando)
+    tilt.add(mandoSpin);
+    mando.add(tilt);
+
+    // CUERPO: losa ergonómica + cabeza superior + placa frontal + grip trasero
+    mandoPartes.cuerpo = _parte('cuerpo');
+    mandoMats.cuerpo = _matMando('#eceae6', 0.5, 0.05);
+    const cu1 = new THREE.Mesh(new THREE.CapsuleGeometry(0.0235, 0.068, 6, 18), mandoMats.cuerpo);
+    cu1.scale.set(1, 1, 0.66);
+    mandoPartes.cuerpo.add(cu1);
+    const cu2 = new THREE.Mesh(new THREE.SphereGeometry(0.030, 22, 16), mandoMats.cuerpo);
+    cu2.scale.set(0.85, 0.40, 0.60); cu2.position.y = 0.050;
+    mandoPartes.cuerpo.add(cu2);
+    const cu3 = new THREE.Mesh(new THREE.SphereGeometry(0.0265, 20, 14),
+      _matMando('#262b33', 0.6, 0.2));   // placa oscura de la cara superior
+    cu3.scale.set(0.82, 0.34, 0.16); cu3.position.set(0, 0.052, 0.0125);
+    mandoPartes.cuerpo.add(cu3);
+    const cu4 = new THREE.Mesh(new THREE.CapsuleGeometry(0.0155, 0.050, 5, 14),
+      _matMando('#191d23', 0.75, 0.1));  // grip trasero (batería)
+    cu4.rotation.x = 0.30; cu4.scale.set(1, 1, 0.9); cu4.position.set(0, -0.043, -0.011);
+    mandoPartes.cuerpo.add(cu4);
+
+    // ANILLO: aro metálico alrededor del pozo del stick (halo Touch Plus)
+    mandoPartes.anillo = _parte('anillo');
+    mandoMats.anillo = _matMando('#3a414c', 0.35, 0.65);
+    const an1 = new THREE.Mesh(new THREE.TorusGeometry(0.0148, 0.0036, 10, 30), mandoMats.anillo);
+    an1.rotation.x = Math.PI / 2; an1.position.y = 0.0615;
+    mandoPartes.anillo.add(an1);
+
+    // STICK: base + fuste + capuchón
+    mandoPartes.stick = _parte('stick');
+    mandoMats.stick = _matMando('#14171c', 0.6, 0.3);
+    const st1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0105, 0.0125, 0.005, 16), mandoMats.stick);
+    st1.position.y = 0.0605;
+    mandoPartes.stick.add(st1);
+    const st2 = new THREE.Mesh(new THREE.CylinderGeometry(0.0042, 0.0042, 0.012, 12), mandoMats.stick);
+    st2.position.y = 0.068;
+    mandoPartes.stick.add(st2);
+    mandoMats.stickCap = _matMando('#2a2f37', 0.5, 0.35);
+    const st3 = new THREE.Mesh(new THREE.SphereGeometry(0.010, 16, 12), mandoMats.stickCap);
+    st3.scale.set(1, 0.72, 1); st3.position.y = 0.0755;
+    mandoPartes.stick.add(st3);
+
+    // GATILLO: palanca frontal (dedo índice)
+    mandoPartes.gatillo = _parte('gatillo');
+    mandoMats.gatillo = _matMando('#d9d5cf', 0.55, 0.1);
+    const ga1 = new THREE.Mesh(new THREE.CapsuleGeometry(0.0075, 0.015, 4, 12), mandoMats.gatillo);
+    ga1.rotation.x = 1.15; ga1.scale.set(1.1, 1, 0.75); ga1.position.set(0, 0.028, 0.0215);
+    mandoPartes.gatillo.add(ga1);
+
+    // GRIP: botón lateral (pulgar)
+    mandoPartes.grip = _parte('grip');
+    mandoMats.grip = _matMando('#d9d5cf', 0.55, 0.1);
+    const gr1 = new THREE.Mesh(new THREE.CapsuleGeometry(0.0052, 0.013, 4, 10), mandoMats.grip);
+    gr1.rotation.z = Math.PI / 2; gr1.scale.set(1, 1, 0.75); gr1.position.set(0.0242, 0.004, 0.006);
+    mandoPartes.grip.add(gr1);
+
+    // BOTONES A/X/B/Y: rombo de 4 pulsadores en la cara superior
+    mandoPartes.botones = _parte('botones');
+    mandoMats.botones = _matMando('#262b33', 0.55, 0.25);
+    for (const [bx, bz] of [[0.019, 0.001], [-0.019, 0.001], [0.0115, -0.015], [-0.0115, -0.015]]) {
+      const bt = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.003, 14), mandoMats.botones);
+      bt.position.set(bx, 0.0615, bz);
+      mandoPartes.botones.add(bt);
     }
-    // gatillo (abajo, hacia el jugador)
-    rr(c, -30, 138, 60, 66, 18);
-    c.fillStyle = '#e8b45a'; c.fill();
-    c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 2; c.stroke();
-    // etiquetas
-    c.font = '800 20px system-ui, sans-serif';
-    c.fillStyle = '#ffd257';
-    c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText(T('tut_lab_trigger'), 0, 240);
-    c.fillStyle = '#cfd8e0';
-    c.fillText(T('tut_lab_stick'), 0, -92);
-    c.textAlign = 'right';
-    c.fillText(T('tut_lab_grip'), -84, 150);
-    c.textAlign = 'left';
-    c.fillText(T('tut_lab_btns'), 66, 110);
-    c.restore();
+
+    for (const k in mandoPartes) mandoSpin.add(mandoPartes[k]);
+
+    // colocado: flotando junto al panel (borde derecho), algo por debajo
+    mando.position.set(0.68, -0.05, 0.03);
+    mando.scale.setScalar(1.5);          // ~0,20 m de alto junto al panel
+    grp.add(mando);
+  }
+  /* resalte por paso: ¿qué pieza menciona el guion ahora mismo? */
+  const HL_CICLO_S1 = ['gatillo', 'grip', 'stick', 'botones'];
+  function hlDePaso(t) {
+    if (step === 0) return 'cuerpo';
+    if (step === 1) return HL_CICLO_S1[Math.floor(t / 2.4) % HL_CICLO_S1.length];
+    if (step === 3) return 'gatillo';    // el saque se lanza con el gatillo
+    if (step === 5) return 'botones';    // A/X cambia la pala de mano
+    return null;
+  }
+  function tickMando(dt) {
+    if (!mando) return;
+    mandoT += dt;
+    mandoSpin.rotation.y = mandoT * 0.55;                 // giratorio
+    mando.position.y = -0.05 + Math.sin(mandoT * 1.4) * 0.006;  // vaivén suave
+    hlParte = hlDePaso(mandoT);
+    for (const k in mandoMats) {
+      if (k === 'stickCap') continue;
+      mandoMats[k].emissiveIntensity =
+        (k === hlParte) ? (0.55 + 0.3 * Math.sin(mandoT * 5)) : 0;
+    }
+    mandoMats.stickCap.emissiveIntensity =
+      (hlParte === 'stick') ? mandoMats.stick.emissiveIntensity : 0;
   }
 
   /* ---------------- pintura del panel por paso ----------------------- */
@@ -22244,9 +22366,9 @@ window.__PP_CORE = {
     c.lineWidth = 2;
     c.stroke();
     c.fillStyle = '#ffe08a';
-    c.font = '900 36px system-ui, sans-serif';
     c.textAlign = 'left';
     c.textBaseline = 'middle';
+    fitFont(c, T('tut_title'), 36, '900', 700, 24);   // r64 · cabe junto al contador
     c.fillText(T('tut_title'), 44, 56);
     c.font = '700 21px system-ui, sans-serif';
     c.fillStyle = '#cfd8e0';
@@ -22274,10 +22396,11 @@ window.__PP_CORE = {
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(ini, 122, y + 37);
     c.textAlign = 'left';
-    c.font = '800 27px system-ui, sans-serif';
+    c.fillStyle = '#ffffff';
+    fitFont(c, title, 27, '800', 760, 18);            // r64 · título ajustado a la fila
     c.fillText(title, 164, y + 26);
-    c.font = '500 19px system-ui, sans-serif';
     c.fillStyle = 'rgba(255,255,255,0.88)';
+    fitFont(c, sub, 19, '500', 760, 13);              // r64 · sub ajustado a la fila
     c.fillText(sub, 164, y + 53);
   }
   const PAINTERS = [
@@ -22288,14 +22411,13 @@ window.__PP_CORE = {
       line(c, T('tut_s0_l2'), 336, 27);
       pill(c, T('tut_s0_go'), 448, { col: '#e8b45a', size: 32 });
     },
-    // 1 · TU MANDO (diagrama)
+    // 1 · TU MANDO (el mando 3D procedural flota JUNTO al panel, giratorio)
     (c) => {
       line(c, T('tut_s1_t'), 176, 40, '#ffd257');
-      drawController(c, 250, 400, 0.92);
-      line(c, T('tut_s1_l1'), 260, 22, '#dfe7ee', 'left', 470);
-      line(c, T('tut_s1_l2'), 330, 22, '#dfe7ee', 'left', 470);
-      line(c, T('tut_s1_l3'), 400, 22, '#dfe7ee', 'left', 470);
-      pill(c, T('tut_s1_task'), 480, { w: 560, h: 62, size: 26 });
+      line(c, T('tut_s1_l1'), 268, 24, '#dfe7ee');
+      line(c, T('tut_s1_l2'), 330, 24, '#dfe7ee');
+      line(c, T('tut_s1_l3'), 392, 24, '#dfe7ee');
+      pill(c, T('tut_s1_task'), 478, { w: 560, h: 62, size: 26 });
     },
     // 2 · LA PALA (vaivén)
     (c) => {
@@ -22315,14 +22437,20 @@ window.__PP_CORE = {
       c.fillText(Math.round(p * 100) + '%', 512, 424);
       pill(c, T('tut_s2_task'), 500, { w: 640, h: 64, size: 26 });
     },
-    // 3 · EL SAQUE
+    // 3 · EL SAQUE (r64: 3 válidos + contador grande)
     (c) => {
-      line(c, T('tut_s3_t'), 170, 44, '#ffd257');
-      line(c, T('tut_s3_l1'), 246, 25);
-      line(c, T('tut_s3_l2'), 294, 25);
-      line(c, T('tut_s3_l3'), 342, 25);
-      if (flashAgain > 0) pill(c, T('tut_s3_again'), 440, { col: '#f0873f', size: 27 });
-      else pill(c, T('tut_s3_task'), 440, { size: 30 });
+      line(c, T('tut_s3_t'), 152, 42, '#ffd257');
+      line(c, T('tut_s3_l1'), 214, 22);
+      line(c, T('tut_s3_l2'), 252, 22);
+      line(c, T('tut_s3_l3'), 290, 22);
+      line(c, T('tut_s3_cnt'), 352, 19, '#9aa7b4');
+      c.fillStyle = '#ffffff';
+      c.font = '900 62px system-ui, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(Math.min(saqCount, SAQ_META) + ' / ' + SAQ_META, 512, 412);
+      if (flashOk > 0) pill(c, T('tut_s3_ok'), 470, { col: '#2f9e44', size: 27 });
+      else if (flashAgain > 0) pill(c, T('tut_s3_again'), 470, { col: '#f0873f', size: 27 });
+      else pill(c, T('tut_s3_task'), 476, { size: 29 });
     },
     // 4 · EL INTERCAMBIO (profesor)
     (c) => {
@@ -22370,7 +22498,7 @@ window.__PP_CORE = {
       rr(c, 64, 466, 896, 66, 14);
       c.fillStyle = 'rgba(232,180,90,0.14)'; c.fill();
       c.strokeStyle = 'rgba(232,180,90,0.45)'; c.lineWidth = 2; c.stroke();
-      line(c, T('tut_s7_p'), 499, 19, '#ffe08a');
+      wrap2(c, T('tut_s7_p'), 499, 19, '#ffe08a', 860, 14);   // r64 · 2 líneas, sin cortes
       pill(c, T('tut_hint_next'), 556, { w: 520, h: 54, col: '#e8b45a', size: 23 });
     },
     // 8 · ¡YA SABES JUGAR!
@@ -22444,7 +22572,7 @@ window.__PP_CORE = {
     if (!G || step >= STEPS - 1) return;
     step++;
     sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
-    deadT = 0; flashAgain = 0;
+    deadT = 0; flashAgain = 0; flashOk = 0; saqCount = 0; saqLatch = false;
     chime(true);
     enterStep();
     paintStep();
@@ -22460,6 +22588,37 @@ window.__PP_CORE = {
     );
   }
 
+  /* ---------------- pose del panel (r64) -----------------------------
+   * FRENTE: delante del jugador, sobre la mesa (pasos de texto). LADO:
+   * durante la práctica REAL (pasos 3 EL SAQUE y 4 EL INTERCAMBIO) el
+   * panel se APARTA al lado contrario de la pala, más abajo y girado
+   * hacia el jugador, para dejar la mesa COMPLETA a la vista (petición
+   * del dueño: «no nos deja ver la mesa y así resulta inútil»). La
+   * transición es suave (lerp exponencial, sin saltos).             */
+  function poseDestino() {
+    if (step === 3 || step === 4) {
+      // pala en mano 1 (derecha) → panel a la IZQUIERDA del jugador (x<0)
+      const sgn = (G && G.paddleHand === 1) ? -1 : 1;
+      return {
+        x: sgn * 0.60, y: 1.26, z: -0.62,
+        rx: 0.02, ry: -sgn * 0.62, s: 0.8, nombre: 'lado',
+      };
+    }
+    return { x: 0, y: 1.52, z: -0.86, rx: 0.05, ry: 0, s: 1, nombre: 'frente' };
+  }
+  function tickPose(dt) {
+    if (!grp) return;
+    const p = poseDestino();
+    const k = 1 - Math.exp(-dt * 4.5);
+    grp.position.x += (p.x - grp.position.x) * k;
+    grp.position.y += (p.y - grp.position.y) * k;
+    grp.position.z += (p.z - grp.position.z) * k;
+    grp.rotation.x += (p.rx - grp.rotation.x) * k;
+    grp.rotation.y += (p.ry - grp.rotation.y) * k;
+    const s = grp.scale.x + (p.s - grp.scale.x) * k;
+    grp.scale.setScalar(s);
+  }
+
   /* ---------------- ciclo del tutorial (tick del núcleo) ------------- */
   function tick(dt) {
     if (!active || !G) return;
@@ -22469,7 +22628,13 @@ window.__PP_CORE = {
     if (!G.renderer || !G.renderer.xr || !G.renderer.xr.isPresenting) return;
     if (grp) grp.visible = true;
     pollSkip();
+    tickPose(dt);                       // r64 · el panel se aparta en la práctica
+    tickMando(dt);                      // r64 · giro + resalte del mando 3D
     repaintT -= dt;
+    if (flashOk > 0) {
+      flashOk -= dt;
+      if (flashOk <= 0) paintStep();    // expira el aviso verde
+    }
     switch (step) {
       case 2: {
         // vaivén firme de la pala (velocidad del simulador de la pala)
@@ -22483,31 +22648,49 @@ window.__PP_CORE = {
         break;
       }
       case 3: {
-        // EL SAQUE: éxito = la bola cruza la red hacia el campo lejano
+        // EL SAQUE (r64): 3 VÁLIDOS para superar el paso. Cada lanzamiento
+        // cuenta UNA sola vez (saqLatch: el cruce no se re-cuenta mientras
+        // la bola vuela). Si la bola muere vuelve a la mano libre: en
+        // silencio si el saque había sido válido, con el aviso naranja
+        // «otra vez» si el lanzamiento se perdió.
         if (flashAgain > 0) {
           flashAgain -= dt;
           if (repaintT <= 0) { paintStep(); repaintT = 0.25; }
         }
         if (G.tossed) {
           const b = G.ball;
-          const cruzada = b.pos.z < (DIMS.tableCenterZ - 0.06) && b.vel.z < -0.9;
+          if (!saqLatch) {
+            const cruzada = b.pos.z < (DIMS.tableCenterZ - 0.06) && b.vel.z < -0.9;
+            if (cruzada) {
+              saqLatch = true;
+              saqCount++;
+              flashOk = 2.2; flashAgain = 0;
+              paintStep();
+              chime(true);
+              try { G.haptic(G.paddleHand, 0.45, 80); } catch (e) { /* */ }
+              if (saqCount >= SAQ_META) { advance(); break; }
+            }
+          }
           const muerta = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
             (Math.abs(b.vel.x) < 0.5 && Math.abs(b.vel.y) < 0.5 && Math.abs(b.vel.z) < 0.5 &&
               b.pos.y < DIMS.tableTopY + 0.12) ||
             b.pos.y < -0.4;
-          if (cruzada) { advance(); break; }
-          if (muerta && flashAgain <= 0) {
-            // la bola vuelve a la mano libre (holdLock del núcleo) y se avisa
+          if (muerta) {
+            // la bola vuelve a la mano libre (holdLock del núcleo)
+            const valida = saqLatch;
             G.resetToss();
-            flashAgain = 2.6;
-            paintStep();
-            try { G.audio.playOsc(330, 220, 0.12, 'sine', 0.12, 0); } catch (e) { /* */ }
+            saqLatch = false;
+            if (!valida && flashOk <= 0) {
+              flashAgain = 2.6;
+              paintStep();
+              try { G.audio.playOsc(330, 220, 0.12, 'sine', 0.12, 0); } catch (e) { /* */ }
+            }
           }
         }
         break;
       }
       case 4: {
-        // EL INTERCAMBIO: el jugador devuelve 2 bolas del profesor
+        // EL INTERCAMBIO (r64): el jugador devuelve 6 bolas del profesor
         const b = G.ball;
         if (G.rules.state !== 'rally') G.rules.state = 'rally';
         if (G.tossed) G.resetToss();
@@ -22532,6 +22715,10 @@ window.__PP_CORE = {
           if (hitCount >= DEVOL_META) { advance(); break; }
           fase = 'vuelo_lejos';
           farBounced = false;
+          aiReturned = false;   // r64 · cada golpe habilita UNA devolución del
+                                // profesor (con meta 6 el rally real destapó
+                                // que el cerrojo sólo se limpiaba al morir la
+                                // bola: el profesor quedaba mudo tras la 1.ª)
         }
         if (fase === 'vuelo_lejos' && !aiReturned && !muerta &&
             b.pos.z < (DIMS.tableCenterZ - 0.1)) {
@@ -22656,7 +22843,9 @@ window.__PP_CORE = {
     G.demoToss = null;
     G.rules.message = '';
     step = 0; sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
-    deadT = 0; flashAgain = 0; fase = 'espera_golpe';
+    deadT = 0; flashAgain = 0; flashOk = 0; saqCount = 0; saqLatch = false;
+    fase = 'espera_golpe';
+    mandoT = 0; hlParte = null;
     btn5Prev[0] = true; btn5Prev[1] = true;   // un B/Y recién soltado no salta
     active = true;
     buildPanel();
@@ -22732,16 +22921,23 @@ window.__PP_CORE = {
 
   /* ---------------- registro público del módulo ---------------------- */
   window.__PP_TUT = {
-    version: 'r59-academia',
+    version: 'r64-academia',
     STEPS,
     start, stop, tick, onTrigger, drawAsk, menuAction,
     // v3.6.51 · introspección para QA (solo lectura, sin tocar estado)
+    // r64 · añade saques/pose/mando 3D
     estado() {
+      let pose = 'frente';
+      try { pose = poseDestino().nombre; } catch (e) { /* */ }
       return {
         activo: active,
         paso: step,
         total: STEPS,
         sway, hitCount, fase,
+        saq: saqCount, metaSaq: SAQ_META, metaDevol: DEVOL_META,
+        pose,
+        tieneMando: !!mando,
+        mandoHl: hlParte,
         tienePanel: !!grp,
         panelVisible: !!(grp && grp.visible),
       };

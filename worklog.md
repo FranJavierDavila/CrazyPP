@@ -3938,3 +3938,20 @@ Work Log:
 Stage Summary:
 - EL JUEGO SUENA A BOLA DE VERDAD: cinco muestras físicas incrustadas (el pock de la mesa, el tock de la goma, el PING del canto, la tela de la red, el knock del suelo), el tono sube con la velocidad del impacto, y el mando mide cada golpe (dejada = tick suave, smash = zumbido seco). Y el momento cine: la mejor repetición en cámara lenta con pastilla ámbar y la bola de partido flotando a 0,34× antes de la fanfarria.
 - Despliegue y verificación byte-exacto en producción: (ver apéndice 166-b si procede).
+
+---
+Task ID: 166-b (apéndice)
+Agent: principal (Z.ai)
+Task: Cierre de la ronda 62 — despliegue y verificación byte-exacto de V3.6.54-SDK6 (el toque profesional) en producción.
+
+Work Log:
+- INCIDENCIA DE DESPLIEGUE (patrón «divergencia cósmica», 4.ª vez, cazada SIN daño): el sandbox tenía la rama pages LOCAL rodada a un snapshot viejo (3.6.18-SDK6 del 19-oct) — el deploy_pages --push hizo el commit de pages ENCIMA del padre viejo (7b5e2a2) y GitHub lo rechazó por non-fast-forward. RESCATE: el árbol del commit era CORRECTO (game r62) — commit-tree re-parentado sobre origin/pages (f706745) → 0e9ad64, push limpio f706745..0e9ad64. Linaje restaurado sin reescribir nada ajeno.
+- DEPLOY (deploy_pages --release --backup, GIT_TOKEN del dueño): smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 fallos de red, 0 pageerrors) · respaldo anti-rollback main→proyecto al día · Release v3.6.54-SDK6 publicada con los 4 ZIPs (COMPLETO 131.392.042 · ligera 16.337.686 · CLOUDFLARE 131.378.655 · SOLO 6.089).
+- Pages build «built» sobre 0e9ad644 (verde al primer sondeo).
+- VERIFICACIÓN PRODUCCIÓN (curl anti-caché): PAGES-VERSION.txt = 3.6.54-SDK6 · fuente_commit fa91db7f5 · game_sha256 81cf339bf6f3… (reescrituras=2, método de siempre) · game.html servido SHA256 81cf339bf6f3a0cac3bd7852a07253a8e4f1ae93c7a18410a0ea325118b2540d = BYTE-EXACTO contra el declarado por el pipeline Y contra la rama pages local (la diferencia con el golden aeeadb60 son las 2 reescrituras documentadas).
+- AGUJAS r62 EN PRODUCCIÓN: 22/22 en verde (const PP_SFX_REALES_B64 · muestras mesa/canto · decodificador · jitter anti-ametralladora · pala real · tableEdge · edge:true de c05 · despacho del canto · red con velocidad · háptica rally y saque escaladas · REP_SLOWMO · reloj de dilatación · punch 0,34 · game-over SOLO local · física dilatada · pastilla ámbar · rep_slow ES+EN · sello 3.6.54-SDK6).
+
+Stage Summary:
+- EL TOQUE PROFESIONAL EN PRODUCCIÓN: https://franjavierdavila.github.io/CrazyPP/ sirviendo V3.6.54-SDK6 · FASE 56 byte-exacto (main fa91db7 · pages 0e9ad64 · fuente fa91db7).
+- El dueño debe RECARGAR con la pestaña cerrada o game.html?v=3654 (el Quest cachea). A probar: (1) el SONIDO — el pock de la mesa y el tock de la pala suben de tono con la velocidad, el CANTO suena a metal, la red a tela; (2) el MANDO — una dejada vibra cortito y suave, un smash zumba seco a tope; (3) el CINE — gana un partido: la bola de partido flota en cámara lenta antes de la fanfarria, y tras ella el mejor intercambio corre a la mitad con su pastilla ámbar (gatillo = seguir).
+- Pendientes vivos sin cambio: informe del dueño (Imán/clon + r60 + r61 + estas tres), entrenamiento «tres arreglos» (spec), .cf-token/.clave-produccion (vía Cloudflare), hito CORONAR LA OESTE.

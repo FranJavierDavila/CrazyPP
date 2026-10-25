@@ -4279,3 +4279,17 @@ Work Log:
 
 Stage Summary:
 - r71 COMPLETA en local (código + sellos + golden + ZIPs + QA 35 capas verde) — pendiente SOLO: commit → deploy → emparejar → byte-exacto → aviso de caché (game.html?v=v3663)
+
+---
+Task ID: 175-b
+Agent: Super Z (main agent)
+Task: CIERRE r71 — V3.6.63-SDK6 (FASE 65 «EL SERVICIO HONESTO») en producción byte-exacto + release con 4 ZIPs + empareje completo de refs.
+
+Work Log:
+- Lección aplicada ANTES del deploy: refs/heads/pages local (11446a2, vieja del snapshot) alineada a origin/pages (2d6d716) → push FF A LA PRIMERA (3ª vez consecutiva, sin rescate)
+- Deploy con el PAT del dueño (salida enmascarada): smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 pageerrors) · pages → 693e279d8 · backup main→proyecto ✓ (1c46746) · Release v3.6.63-SDK6 con los 4 ZIPs (COMPLETO 133.109.480 · ligera 18.055.124 · CLOUDFLARE 133.096.094 · SOLO 6.089)
+- Empareje: main:proyecto por el script ✓ · main:main 0c91490..1c46746 ✓ (push con token en URL, sin persistir en config)
+- VERIFICACIÓN BYTE-EXACTO en producción (3 vías): PAGES-VERSION.txt (version=3.6.63-SDK6 · fuente_commit=1c467469 · reescrituras=2) · served SHA256 9dcffceb… == game_sha256 == blob del tree pages 693e279d8 ✓ · diff local vs desplegado = SOLO las 2 reescrituras conocidas (/vendor/socket.io.min.js→vendor/… y /tv.html→tv.html) ✓
+
+Stage Summary:
+- V3.6.63-SDK6 (FASE 65 — EL SERVICIO HONESTO) VIVA en producción: el profesor saca REGLAMENTARIO (bote en SU campo y después en el nuestro, solver 40/40 verificado con la física real), el saque del jugador SOLO cuenta con los dos botes SOBRE la mesa (LARGO/LATERAL/SIN BOTE/volea = «OTRA VEZ»), el cartel del 10-10 dice GANAR ENTERO (autoajuste), la CPU y el rival adaptativo viven en AJUSTES › JUEGO, y AJUSTES es un HUB de 5 subcategorías con icono propio y estado vivo — main=proyecto=1c46746 · pages=693e279 — pendiente SOLO el aviso de caché al dueño (game.html?v=v3663)

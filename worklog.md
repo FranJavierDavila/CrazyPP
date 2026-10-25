@@ -4206,3 +4206,18 @@ Work Log:
 
 Stage Summary:
 - r69 COMPLETA en local (código + sellos + golden + ZIPs + QA 12 capas verde) — pendiente SOLO: commit → deploy → emparejar → byte-exacto → aviso de caché (game.html?v=v3661)
+
+---
+Task ID: 173-b
+Agent: Super Z (main agent)
+Task: CIERRE r69 — V3.6.61-SDK6 en producción byte-exacto + release con 4 ZIPs + deploy LIMPIO (alineación previa de pages, sin rescate)
+
+Work Log:
+- Lección del reciclado aplicada ANTES del deploy: refs/heads/pages local (11446a2, viejo del snapshot) alineada a origin/pages (1ed74db) → el script encadenó sobre el tip verdadero y el push salió FF A LA PRIMERA (sin commit-tree esta vez)
+- Deploy con el PAT del dueño (salida enmascarada): smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 pageerrors) · pages → 2c22c976d · backup main→proyecto ✓ · Release v3.6.61-SDK6 con los 4 ZIPs (COMPLETO 133.103.776 · ligera 18.049.420 · CLOUDFLARE 133.090.389 · SOLO 6.089)
+- Empareje: main:main bda2a65..49c08c9 ✓ (main=proyecto=pages-fuente)
+- VERIFICACIÓN BYTE-EXACTO en producción: PAGES-VERSION.txt (version=3.6.61-SDK6 · fuente_commit=49c08c989 · reescrituras=2) + served SHA256 de44e2a190cfc0cf… == tree pages 2c22c976d ✓
+- PARA EL DUEÑO: (a) en el Quest cerrar pestaña y abrir game.html?v=v3661; (b) los troqueles están VIVOS y verificados en producción pieza a pieza (los 5 campeonatos) — se esconden SOLO por diseño en las pruebas especiales (asedio/vagón de oeste, reactor/recortables de orbital) y con passthrough (inAR); si tras esta versión los sigue echando en falta, decir EN QUÉ escenario y momento exactos
+
+Stage Summary:
+- V3.6.61-SDK6 (FASE 63 — UNA RAQUETA, CERO FANTASMAS) VIVA en producción: una sola raqueta por lado (la pala IA oculta en la academia y restaurada al salir), golpes honestos (la bola despega al paso de la hoja, contacto vivo, cancelación si muere), halo fantasma eliminado (aura desmontada de verdad con autocura), ajustes sin tutorial, vaivén con instrucción en su momento y troqueles verificados con capa de regresión — pendiente SOLO el aviso de caché al dueño (game.html?v=v3661)

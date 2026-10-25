@@ -351,6 +351,26 @@ CAPAS = [
     # que sigue a la cabeza con el color del campeonato y una bola que va
     # y viene sobre la pista. Mejora sorpresa del dueño incluida.
     ('BH · el menú manda, candado y telón de teatro (v3665)', 'qa_r73_v3665.py'),
+    # r74 (V3.6.66-SDK6 FASE 68 «EL MANDO DE SIEMPRE»): (1) «desde el módulo
+    # Pro training, en cualquier modalidad, sacar el Menú con la tecla de
+    # siempre, la B (no la Y)»: la guardia del bloque B ya no se come el
+    # entrenamiento y Y deja de abrir menús (agujas + rama vieja AUSENTE).
+    # (2) «en las etapas 2 y 4 el menú contextual no recibe el foco»: el
+    # bloque menuOpen de onSelectStart sube POR ENCIMA del bloque _instr
+    # (verificado por POSICIÓN de fuente) y los carteles se retiran sin
+    # arrancar al salir al Hall. (3) «el glow no está si cambias la pala de
+    # mano»: la aura se re-papa cada frame a la montura activa. (4) «si
+    # antes de devolver pulsas o haces un saque no puedes avanzar»: el
+    # profesor sirve YA al entrar en la práctica + VIGÍA de re-feed.
+    # (5) «paso 9 modos: sonido de bola por debajo + mal explicado»: bola
+    # DORMIDA en los pasos 6/7/8 (posaBolaMesa), tarjetas con explicación
+    # larga y 3 voces nuevas (tutv8b/8c/9b ES+EN). (6) «el Salvaje Oeste
+    # sería el tercero»: orden canónico del índice medido CON DATOS
+    # (locura→magia→oeste→…). (7) «al abrir un campeonato no desaparece el
+    # menú + bote infinito»: closeMenu en launch para TODOS + ZONA MUERTA
+    # del suelo medida EN VIVO con stepPhysics real (caída 1 mm = 0 eventos,
+    # caída 1 m = 1 evento) + color arcoíris sin allocs (FPS).
+    ('BI · el mando de siempre (v3666)', 'qa_r74_v3666.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

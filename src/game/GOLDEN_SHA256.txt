@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.65-SDK6, fase 67 · EL MENÚ MANDA; sello actualizado
-# por bump_version.py desde 3.6.64-SDK6)
-fea31c797785f4d7450302c19bd70c61dfa4840ae68a0bdc43e791d16d26e4d5
+# SHA256 del game.html que produjo esta división (3.6.66-SDK6, fase 68 · EL MANDO DE SIEMPRE; sello actualizado
+# por bump_version.py desde 3.6.65-SDK6)
+ced93fa876ee96d2a416c9c0116de3d95ebe5aee27b65b889fcc037431842ae7

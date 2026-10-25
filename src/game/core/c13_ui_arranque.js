@@ -911,6 +911,7 @@ loadPaddleModel().then((paddleModel) => {
     let uiPage = 'hub';              // 'hub' | 'area'
     let uiArea = 'dir';
     let rainbowT = 0;
+    let rainbowCol = null;        // r74 · color reciclado (cero allocs por frame)
   
     const st = {
       streak: 0, goal: 0, sessPts: 0, rally: 0, bounces: 0,
@@ -1917,8 +1918,11 @@ loadPaddleModel().then((paddleModel) => {
       // marcados ppAnim — la textura holográfica se tiñe, el resto fijo)
       if (S.skin === 'arcoiris' && skinMats.length) {
         rainbowT += dt * 0.6;
-        const col = new THREE.Color().setHSL(rainbowT % 1, 0.75, 0.55);
-        for (const m of skinMats) if (m.userData && m.userData.ppAnim) m.color.copy(col);
+        // r74 · SIN asignación por frame: el color de módulo se recicla
+        // (antes un THREE.Color nuevo cada frame con la piel arcoíris puesta).
+        if (!rainbowCol) rainbowCol = new THREE.Color();
+        rainbowCol.setHSL(rainbowT % 1, 0.75, 0.55);
+        for (const m of skinMats) if (m.userData && m.userData.ppAnim) m.color.copy(rainbowCol);
       }
       // iconos de efecto en la pala
       if (st.spinIconT > 0) {
@@ -3138,6 +3142,7 @@ window.__PP_CORE = {
   let raqContacto = null;       // r68 · punto de contacto con la bola
   let raqMeta = null;           // r68 · punto de acompañamiento
   let feed5T = 0;               // r68 · cuenta atrás del saque del profesor (paso 5)
+  let quieta5T = 0;             // r74 · vigía de la práctica: bola quieta sin progreso
   let auraGrp = null;           // r69 · el grupo de la aura (para DESMONTARLO de verdad)
   let devPend = 0;              // r69 · cuenta atrás del lanzamiento (golpe honesto)
   let devFin = null;            // r69 · destino del golpe pendiente ('fallo'|'ida'|'practica')
@@ -3471,8 +3476,23 @@ window.__PP_CORE = {
       try { if (a.mont) a.mont.visible = mandosVis > 0.02; } catch (e) { /* */ }
     }
     // LA ÚNICA RAQUETA: aura sobre la pala real (fade)
+    // r74 · LA AURA SIGUE LA MANO (informe del dueño: «si cambiamos la pala
+    // de mano ese efecto de glow no está presente»): la aura se montaba UNA
+    // vez sobre el paddleMount de LA MANO DE ENTONCES — con A/X la pala
+    // viaja a la otra montura y el glow quedaba huérfano en la mano vacía.
+    // Ahora, cada frame y sin coste, si la aura no cuelga de la montura
+    // ACTIVA se re-papa inmediatamente (remove + add, misma identidad).
     auraOp += (auraMeta - auraOp) * Math.min(1, dt * 3.2);
     if (auraMats) {
+      try {
+        if (auraGrp && G.paddleMounts && auraGrp.parent !==
+            G.paddleMounts[G.paddleHand | 0] &&
+            G.paddleMounts[G.paddleHand | 0]) {
+          const viejo = auraGrp.parent;
+          if (viejo) { try { viejo.remove(auraGrp); } catch (eR) { /* */ } }
+          G.paddleMounts[G.paddleHand | 0].add(auraGrp);
+        }
+      } catch (eAura) { /* decorativo */ }
       const pulso = 0.55 + 0.45 * Math.sin(mandoT * 4.2);
       for (const m of auraMats) {
         try { m.opacity = auraOp * pulso; } catch (e) { /* */ }
@@ -3817,7 +3837,7 @@ window.__PP_CORE = {
     c.fillText(sub, 288, y + 50);
   }
   /* r67 · tarjeta compacta de la rejilla de modos (2×3) */
-  function modeCard(c, x, y, w, h, col0, ini, title, sub) {
+  function modeCard(c, x, y, w, h, col0, ini, title, sub, extra) {
     rr(c, x, y, w, h, 16);
     c.fillStyle = 'rgba(255,255,255,0.07)'; c.fill();
     c.strokeStyle = col0; c.lineWidth = 2.5; c.stroke();
@@ -3829,10 +3849,18 @@ window.__PP_CORE = {
     c.fillText(ini, x + 36, y + h / 2 + 1);
     c.textAlign = 'left';
     fitFont(c, title, 21, '800', w - 86, 15);
-    c.fillText(title, x + 68, y + 32);
+    c.fillText(title, x + 68, y + (extra ? 27 : 32));
     c.fillStyle = 'rgba(255,255,255,0.85)';
     fitFont(c, sub, 15, '500', w - 86, 11);
-    c.fillText(sub, x + 68, y + 62);
+    c.fillText(sub, x + 68, y + (extra ? 50 : 62));
+    // r74 · EXPLICACIÓN LARGA del modo (el dueño: «esta parte de los modos
+    // no está bien explicada, deberías pararte un poco más»): cada tarjeta
+    // gana SU línea de detalle (cómo se juega y cuánto dura), en ámbar.
+    if (extra) {
+      c.fillStyle = 'rgba(255,224,138,0.80)';
+      fitFont(c, extra, 13, '600', w - 86, 10);
+      c.fillText(extra, x + 68, y + h - 14);
+    }
   }
   const PAINTERS = [
     // 0 · BIENVENIDA (voz tutv0a/b)
@@ -3992,17 +4020,17 @@ window.__PP_CORE = {
       pill(c, T('tut_hint_next'), 252, { w: 300, h: 32, x: 986, col: 'rgba(232,180,90,0.28)', size: 18 });
       const W = 480, H = 88;
       const cards = [
-        [190, 296, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_mod_p')],
-        [690, 296, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_mod_s')],
-        [190, 396, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_mod_m')],
-        [690, 396, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_mod_c')],
+        [190, 296, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_mod_p'), T('tut_s6_m1')],
+        [690, 296, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_mod_s'), T('tut_s6_m2')],
+        [190, 396, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_mod_m'), T('tut_s6_m3')],
+        [690, 396, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_mod_c'), T('tut_s7_m1')],
       ];
-      for (const [x, y, col, ini, ti, su] of cards) {
-        modeCard(c, x, y, W, H, col, ini, ti, su);
+      for (const [x, y, col, ini, ti, su, ex] of cards) {
+        modeCard(c, x, y, W, H, col, ini, ti, su, ex);
       }
       // fila inferior: RANKING + ENTRENAR (más estrechas, con la caja de poderes)
-      modeCard(c, 190, 496, 300, 80, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'));
-      modeCard(c, 506, 496, 300, 80, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_mod_t'));
+      modeCard(c, 190, 496, 300, 80, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'), T('tut_s7_m2'));
+      modeCard(c, 506, 496, 300, 80, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_mod_t'), T('tut_s7_m3'));
       rr(c, 822, 496, 348, 80, 14);
       c.fillStyle = 'rgba(232,180,90,0.14)'; c.fill();
       c.strokeStyle = 'rgba(232,180,90,0.45)'; c.lineWidth = 2; c.stroke();
@@ -4229,7 +4257,7 @@ window.__PP_CORE = {
     ['tutv5a', 'tutv5b'],                    // 4 marcador
     ['tutv6a', 'tutv6b'],                    // 5 práctica (6 devoluciones)
     ['tutv7a'],                              // 6 botones
-    ['tutv8a', 'tutv9a'],                    // 7 modos (una sola pizarra)
+    ['tutv8a', 'tutv8b', 'tutv8c', 'tutv9a', 'tutv9b'],   // 7 modos (r74: explicados con calma)
     ['tutv10a', 'tutv10b'],                  // 8 final
   ];
   function enterStep() {
@@ -4302,17 +4330,39 @@ window.__PP_CORE = {
         fase = (G.ball && G.ball.pos.z < DIMS.tableCenterZ) ? 'vuelo_lejos' : 'espera_golpe';
         deadT = 0;
         feed5T = 0;                     // r68 · sin saque pendiente al entrar
+        quieta5T = 0;                   // r74 · vigía a cero
+        // r74 · EL PROFESOR SIRVE YA AL ENTRAR (el dueño: «si antes de empezar
+        // a devolver pulsas o haces un saque, no puedes avanzar — no puedes
+        // sacar»): antes el feed llegaba SOLO cuando la bola quedaba MUERTA a
+        // ras de suelo; entrando con la bola en la palma del demo (alta y
+        // quieta) «muerta» jamás era true y el paso se quedaba SIN bola para
+        // siempre. Ahora: bola congelada en la palma del profesor + feed
+        // honesto al paso de la hoja (el mismo camino del tick, nada nuevo).
+        try {
+          const b0 = G.ball;
+          if (b0) {
+            G.feedPracticeBall();
+            b0.vel.set(0, 0, 0); b0.spin.set(0, 0, 0);
+            G.tutBolaViva = false;
+            feed5T = RAQ_T_GOLPE;
+            raquetaGolpe(b0.pos.x, b0.pos.y, b0.pos.z, 1);
+          }
+        } catch (eF5) { /* el re-feed por bola muerta lo repone */ }
         break;
       case 6:
         G.rules.state = 'point';
         G.resetToss();
         G.rules.message = '';
+        G.tutBolaViva = false;          // r74 · bola DORMIDA (adiós al bote infinito de fondo)
+        posaBolaMesa();                 // r74 · descansa sobre la mesa, sin sonido
         lastHand = G.paddleHand;
         break;
       default:
         G.rules.state = 'point';
         G.resetToss();
         G.rules.message = '';
+        G.tutBolaViva = false;          // r74 · pasos 7/8: bola dormida y sobre la mesa
+        posaBolaMesa();
         break;
     }
     if (VOCES_PASO[step]) narra(VOCES_PASO[step]);
@@ -4335,6 +4385,17 @@ window.__PP_CORE = {
     if (!G || !G.ball) return;
     const p = bolaPalmDemo();
     G.ball.pos.copy(p);
+    G.ball.vel.set(0, 0, 0);
+    G.ball.spin.set(0, 0, 0);
+  }
+  /* r74 · bola DORMIDA y VISIBLE sobre la mesa (pasos 6/7/8 — botones, modos
+   * y final): con tutBolaViva=false el núcleo congela la bola donde esté;
+   * dejándola donde la dejó el paso anterior quedaba flotando o botando en el
+   * suelo con micro-botes sonoros («el sonido de la bola por debajo, muy
+   * molesto»). Ahora descansa sobre la mesa, quieta y sin sonido. */
+  function posaBolaMesa() {
+    if (!G || !G.ball) return;
+    G.ball.pos.set(0, DIMS.tableTopY + DIMS.ballRadius, DIMS.tableCenterZ + 0.30);
     G.ball.vel.set(0, 0, 0);
     G.ball.spin.set(0, 0, 0);
   }
@@ -4672,7 +4733,30 @@ window.__PP_CORE = {
             feed5T = RAQ_T_GOLPE;
             raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 1);
           }
-        } else if (feed5T <= 0) deadT = 0;
+        } else if (feed5T <= 0) {
+          deadT = 0;
+          // r74 · VIGÍA DE LA PRÁCTICA: nada atasca el paso. Si la bola va
+          // casi quieta (|v|<0,6 m/s — palma del demo, agarrada con grip,
+          // perdida en cualquier rincón) y no hay feed en marcha, el profesor
+          // VUELVE A SERVIR tras 1,6 s. En rally real la bola nunca está tan
+          // lenta tan tiempo (los ápex duran <0,2 s y siempre cruzan con
+          // velocidad horizontal), así que el vigía jamás dispara en juego.
+          if (b.vel.lengthSq() < 0.36) {
+            quieta5T += dt;
+            if (quieta5T > 1.6) {
+              quieta5T = 0;
+              deadT = 0; farBounced = false; aiReturned = false;
+              fase = 'espera_golpe';
+              G.feedPracticeBall();
+              b.vel.set(0, 0, 0);
+              b.spin.set(0, 0, 0);
+              G.tutBolaViva = false;
+              feed5T = RAQ_T_GOLPE;
+              raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 1);
+              paintStep();
+            }
+          } else quieta5T = 0;
+        }
         if (fase === 'espera_golpe' && !muerta &&
             b.pos.z < (DIMS.tableCenterZ - 0.06) && b.vel.z < -0.9) {
           // golpe válido del jugador: la bola cruza hacia el campo lejano

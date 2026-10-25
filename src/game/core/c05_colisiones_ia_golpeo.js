@@ -459,11 +459,28 @@ function collideWorld(ball, events) {
   if (pos.y < r && vel.y < 0) {
     const impact = -vel.y;
     pos.y = r;
-    vel.y = impact * 0.45;
-    vel.x *= 0.85;
-    vel.z *= 0.85;
-    spin.multiplyScalar(0.35);
-    events.push({ type: 'floor', speed: impact, pos: pos.clone() });
+    // r74 · ZONA MUERTA DEL SUELO (el «sonido de la bola con el bote
+    // infinito» del dueño): una bola en reposo vuelve a tocar el suelo CADA
+    // SUBPASO — la gravedad la hunde unas centésimas, la colisión la
+    // devuelve y cada toque disparaba un «thud» (y un evento con su
+    // pos.clone(): basura por frame). Con bola APARCADA bajo el suelo
+    // (salas de campeonato) además rebotaba hacia la sala en bucle.
+    // Ahora, con impacto despreciable la bola SE POSA: sin evento, sin
+    // sonido, sin rebote fantasma. Un bote real (>= 0,3 m/s ≈ caída de
+    // 4,6 mm — el golden de física juega con velocidades de metros/segundo)
+    // suena exactamente igual que siempre.
+    if (impact < 0.3) {
+      vel.y = 0;
+      vel.x *= 0.9;
+      vel.z *= 0.9;
+      spin.multiplyScalar(0.5);
+    } else {
+      vel.y = impact * 0.45;
+      vel.x *= 0.85;
+      vel.z *= 0.85;
+      spin.multiplyScalar(0.35);
+      events.push({ type: 'floor', speed: impact, pos: pos.clone() });
+    }
   }
   // v2.101: ball.ignoreWalls — las PRUEBAS al AIRE LIBRE (asedio del oeste)
   // juegan SIN los muros invisibles de la sala (roomHalfX ±3,05 tapaba las
@@ -500,7 +517,9 @@ function collideWorld(ball, events) {
   ) {
     pos.set(0, 0.5, DIMS.tableCenterZ);
     vel.set(0, 0, 0);
-    events.push({ type: 'floor', speed: 1, pos: pos.clone() });
+    // r74 · SIN evento: el rescate es un TELETRANSPORTE, no un bote — sonar
+    // aquí era uno de los «thud» fantasma del bote infinito (la bola
+    // aparcada a -10 m saltaba aquí y caía botando audible e invisible).
   }
 }
 

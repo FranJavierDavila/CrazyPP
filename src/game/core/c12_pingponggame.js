@@ -2542,6 +2542,9 @@ export class PingPongGame {
         // el menú ofrece la vuelta a la estancia del anfitrión — allí se
         // cambian ajustes y modalidad. v3.1.1-FEEL1: la recogida estanca
         // vive en goHomeHall() (compartida con el SI del prompt B).
+        // r74 · el cartel EMPEZAR pendiente NO sobrevive a la vuelta al hall
+        // (el menú manda: si hay cartel de debajo, se retira SIN arrancarlo).
+        try { if (this._instr) this.hideInstrucciones(true); } catch (eHh) { /* */ }
         if (this.goHomeHall()) {
           if (!this.menuOpen) this.toggleMenu();
           else { this.anchorMenu(); this.drawMenu(); }
@@ -2552,7 +2555,9 @@ export class PingPongGame {
         // v3.1.1-FEEL1 · SI del prompt B: al HALL con el menú principal en
         // pantalla (misma recogida estanca que «⌂ VOLVER AL HALL»). El prompt
         // se convierte en el menú normal de la estancia.
+        // r74 · mismo retiro silencioso del cartel EMPEZAR pendiente.
         this.menuPage = 'main';
+        try { if (this._instr) this.hideInstrucciones(true); } catch (eHs) { /* */ }
         if (this.goHomeHall()) {
           if (!this.menuOpen) this.toggleMenu();
           else { this.anchorMenu(); this.drawMenu(); }
@@ -3235,6 +3240,21 @@ export class PingPongGame {
     if (nowSel - (this._lastSelect[i] || 0) < 0.07) return;
     this._lastSelect[i] = nowSel;
 
+    // r74 · MENÚ PRIORITARIO AHORA SÍ SOBRE TODO: la comprobación del menú
+    // sube POR ENCIMA del cartel explicativo (antes el bloque `_instr` iba
+    // primero y se comía el gatillo: sobre el cartel de las etapas del
+    // campeonato el menú se veía (r73 lo pinta arriba) pero SUS botones no
+    // respondían y un gatillo que rozaba el EMPEZAR de detrás ARRANCABA la
+    // etapa — «sigue mandando el botón que tenemos por debajo»). Con el
+    // menú abierto SUS botones reciben los clics y el cartel de debajo no
+    // manda; al cerrarlo, la pantalla sigue intacta y EMPEZAR vuelve a ser
+    // el botón que manda. Cubre menú completo Y prompt del Hall (hallask).
+    if (this.menuOpen) {
+      const hov = this.menuHover[i];
+      if (hov >= 0) this.menuClick(hov);
+      return;
+    }
+
     // v2.107 · CARTEL EXPLICATIVO EN PANTALLA: el gatillo lo CIERRA (su
     // callback arranca la prueba al momento). La MISMA pulsación no hace
     // nada más: ni saque, ni disparo de pistola, ni clic de menú.
@@ -3245,17 +3265,7 @@ export class PingPongGame {
       return;
     }
 
-    // v3.6.31 · MENÚ PRIORITARIO: si el menú (o el prompt del Hall) está
-    // abierto manda ÉL — los clics van a SUS botones aunque la intro del
-    // campeonato siga detrás (antes la intro se comía los clics: el menú
-    // se abría con B pero era un decorado muerto que no respondía).
-    if (this.menuOpen) {
-      const hov = this.menuHover[i];
-      if (hov >= 0) this.menuClick(hov);
-      return;
-    }
-
-    // v2.130 · INTRO DE CAMPEONATO: el gatillo lanza la partida SOLO desde
+    // v3.6.31 · INTRO DE CAMPEONATO: el gatillo lanza la partida SOLO desde
     // el botón JUGAR (el vídeo de la historia es OPCIONAL). Un gatillo que
     // no impacta el botón reintenta el audio del vídeo (gesto del usuario).
     // v3.6.31 · corre DESPUÉS del menú: el menú abierto tiene prioridad.
@@ -7464,24 +7474,15 @@ export class PingPongGame {
     //      ya se entra desde el MENÚ (botón ENTRENAR). Se conserva Y SOLO
     //      DENTRO del ajuste de pala para VOLVER al modo anterior (es la
     //      salida documentada en el propio panel; ver createCalibPanel).
+    //      r74 · Y ya NO abre el menú en el PRO TRAINING: el dueño pide el
+    //      comportamiento común — «sacar el Menú con la tecla de siempre,
+    //      la B (no la Y), en cualquier modalidad». El menú del entrenamiento
+    //      lo abre B (bloque 0.6) exactamente igual que en el resto del
+    //      juego; el ajuste de pala puro conserva su Y = volver.
     if (presenting && this.calib && !this.tutV1 &&
+        !this.trainV3 && !this.trainV3Hub &&
         this.readButton(this.handIndex('left'), 5)) {
-      // v3.0.3 · Dentro del PRO TRAINING, Y sale AL HUB DE ENTRENAMIENTO
-      // (menú abierto en «ENTRENAR») cerrando el modo POR COMPLETO — antes
-      // caía en un partido con los paneles del entrenamiento sin recoger y
-      // el siguiente «volver» llevaba al menú principal.
-      const trnY = (typeof window !== 'undefined') && window.__PP_TRAIN;
-      if (trnY && (this.trainV3 || this.trainV3Hub)) {
-        trnY.stopMode(this);
-        this.menuPage = 'train';
-        this.menuOpen = true;
-        this.menuGroup.visible = true;
-        this.anchorMenu();
-        this.drawMenu();
-        this.audio.setMusicWanted(true);
-      } else {
-        this.exitCalib();
-      }
+      this.exitCalib();
     }
 
     // 0.6) botón B (mando derecho): v3.1.1-FEEL1 · en el HALL (y en online/
@@ -7490,9 +7491,30 @@ export class PingPongGame {
     //      Principal ¿SI/No?»: NO cierra la ventana y sigues en la escena,
     //      SI sale al HALL con el menú principal delante. Con el menú ya
     //      abierto, B lo cierra (atalajo de siempre).
-    if (presenting && !this.calib &&
+    //      r74 · EL PRO TRAINING ENTRA EN EL COMPORTAMIENTO COMÚN: en
+    //      cualquier modalidad del entrenamiento (hub o modo dentro, los
+    //      cinco viven en calib) B abre/SIEMPRE cierra SU menú contextual —
+    //      el HUB DE ENTRENAMIENTO (página ENTRENAR), la misma ventana que
+    //      abría Y — y con el menú ya abierto B lo cierra. Antes B estaba
+    //      MUERTO ahí (la guardia !this.calib lo comía) y sólo Y abría.
+    if (presenting && (!this.calib || this.trainV3 || this.trainV3Hub) &&
         this.readButton(this.handIndex('right'), 5)) {
-      if (this.menuOpen || this.inHall || this.net.online ||
+      if ((this.trainV3 || this.trainV3Hub) && !this.menuOpen) {
+        // r74 · mismo desenlace que la antigua Y del entrenamiento: el modo
+        // se recoge POR COMPLETO y el menú nace en la página ENTRENAR.
+        if (window.__PP_TRAIN) {
+          try { window.__PP_TRAIN.stopMode(this); } catch (eTrnB) { /* */ }
+        }
+        this.trainV3 = null;
+        this.trainV3Hub = false;
+        this.menuPage = 'train';
+        this.menuOpen = true;
+        this.menuGroup.visible = true;
+        this.menuHover = [-1, -1];
+        this.anchorMenu();
+        this.drawMenu();
+        this.audio.setMusicWanted(true);
+      } else if (this.menuOpen || this.inHall || this.net.online ||
           (this.inAR && this.pstOn)) {
         // si cerramos el PROMPT con B, la próxima apertura vuelve al menú normal
         if (this.menuOpen && this.menuPage === 'hallask') this.menuPage = 'main';

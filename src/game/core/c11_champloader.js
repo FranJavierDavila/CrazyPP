@@ -79,6 +79,20 @@ export class ChampLoader {
     if (!idx) { this.cargando = false; this._idxListo = true; return; }
     const list = (idx && Array.isArray(idx.championships)) ? idx.championships : [];
 
+    /** r74 · ORDEN CANÓNICO del índice (el dueño: «me has puesto el
+     *  campeonato del Salvaje Oeste de primero y sería el tercero — el
+     *  primero es el de Clow, el segundo el de Wizard y el tercero el de
+     *  forajido»): con los manifest en PARALELO (r73) el orden del menú era
+     *  el orden de LLEGADA de la red — una carpeta rápida adelantaba a la
+     *  siguiente. Cada entrada guarda SU posición del índice (0 Clow ·
+     *  1 Wizard · 2 Forajido…) y list() ordena SIEMPRE por ella. */
+    const ordenDe = (raw) => {
+      const idq = (typeof raw === 'string') ? raw : String((raw && raw.id) || '');
+      const ix = list.findIndex((r2) =>
+        ((typeof r2 === 'string') ? r2 : String((r2 && r2.id) || '')) === idq);
+      return ix >= 0 ? ix : 99;
+    };
+
     /** integra UN manifest (mismo contrato que siempre) → bool éxito */
     const integra = (raw, man) => {
       // v2.69: cada entrada es "id" o { id, eager } — eager importa e
@@ -117,6 +131,7 @@ export class ChampLoader {
         storage: man.storage || '',
         eager: !!ent.eager,
         estado,
+        orden: ordenDe(raw),          // r74 · posición del índice (orden estable)
         manifest: man,
         error: null,
       });
@@ -243,13 +258,18 @@ export class ChampLoader {
     return m;
   }
 
-  /** Entradas para el menú: [{ id, label }] con el idioma del jugador. */
+  /** Entradas para el menú: [{ id, label }] con el idioma del jugador.
+   *  r74 · ORDEN DEL ÍNDICE SIEMPRE: Clow (1.º) · Wizard (2.º) · Forajido
+   *  (3.º) y los que vengan detrás — jamás el orden de llegada de la red. */
   list() {
     const lang = (typeof __ppLang !== 'undefined' && __ppLang === 'en') ? 'en' : 'es';
     // v2.125: el catálogo público son SOLO los publicados (los borradores se
     // prueban con ?champ=<id>; los incompatibles se avisan en consola).
     return this.entries
       .filter((e) => (e.estado || 'publicado') === 'publicado')
+      .sort((a, b) => ((a.orden == null ? 99 : a.orden) -
+                       (b.orden == null ? 99 : b.orden)) ||
+             String(a.id).localeCompare(String(b.id)))
       .map((e) => ({
         id: e.id,
         // r72 · flag de CANDADO para el menú (tarjeta atenuada + candado)
@@ -284,6 +304,12 @@ export class ChampLoader {
     if (!/^[a-z0-9_-]+$/i.test(id)) return;
     if (g.net.online) { g.rules.message = T('msg_guest_mode'); return; }
     g.exitHall();             // v3.1.0-SRV2: un campeonato se juea en la cancha
+    // r74 · EL MENÚ SE RECOGE AL ENTRAR EN CUALQUIER CAMPEONATO (el dueño:
+    // «al seleccionar este campeonato dentro no desaparece el menú principal
+    // desde el que se llamó»): locura/magia lo cerraban en SU start() y el
+    // oeste NO — comportamiento distinto entre campeonatos. Ahora lo cierra
+    // el NÚCLEO, una sola vez y para todos, ANTES de levantar el telón.
+    try { g.closeMenu(); } catch (eCM0) { /* */ }
     // r72 · TELÓN DE CARGA: pantalla negra «Montando el escenario…» desde
     // ANTES de importar el módulo (la importación + texturas son lo que el
     // dueño veía montarse en vivo). Se levanta solo cuando TODO está.

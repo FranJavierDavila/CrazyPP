@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.63-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.64-SDK6</span>
     </div>
   </main>
 
@@ -773,6 +773,11 @@ const I18N_STRINGS = {
     champdone_replay: 'Puedes rejugar cualquier etapa cuando quieras',
     champ_done_chip: '★ SUPERADO',
     champ_done_hint: '★ SUPERADO · rejuega cualquier etapa desde el mapa',
+    // r72 · candados de campeonatos + telón de carga
+    champ_locked_soon: 'Próximamente',
+    champ_locked_chip: 'PRÓXIMAMENTE',
+    champ_locked_hint: 'Aún en preparación · pronto anunciamos cómo desbloquearlo',
+    champ_telon: 'Montando el escenario...',
     champ_stage_hint: 'Etapa {n}/{total} · sigue donde la dejaste',   // v3.6.17 (ronda 21, la de la ronda 19 al fin en producción)
     champ_leyenda_chip: '★ LEYENDA',   // v3.6.18 (ronda 24)
     champ_leyenda_hint: '★ LEYENDA · camino sellado 5/5 en modo leyenda',
@@ -1374,6 +1379,11 @@ const I18N_STRINGS = {
     champdone_replay: 'You can replay any stage anytime',
     champ_done_chip: '★ COMPLETED',
     champ_done_hint: '★ COMPLETED · replay any stage from the map',
+    // r72 · championship locks + loading curtain
+    champ_locked_soon: 'Coming soon',
+    champ_locked_chip: 'COMING SOON',
+    champ_locked_hint: 'Still in the works · unlock rules announced soon',
+    champ_telon: 'Setting up the arena...',
     champ_stage_hint: 'Stage {n}/{total} · pick up where you left off',   // v3.6.17 (ronda 21)
     champ_leyenda_chip: '★ LEGEND',   // v3.6.18 (ronda 24)
     champ_leyenda_hint: '★ LEGEND · route sealed 5/5 in legend mode',
@@ -2019,6 +2029,88 @@ const PP_ICONS = {
     c.closePath(); c.fill();
     c.restore();
   },
+  // ---- r72 · ICONOS de las 5 ÁREAS del ENTRENAMIENTO (PRO TRAINING) ----
+  dir(c, x, y) {            // DIRECCIÓN: diana + flecha al objetivo
+    c.save();
+    c.strokeStyle = '#8fd3ff'; c.lineWidth = 5;
+    c.beginPath(); c.arc(x - 3, y + 3, 21, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.arc(x - 3, y + 3, 10, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = '#8fd3ff';
+    c.beginPath(); c.arc(x - 3, y + 3, 3.5, 0, Math.PI * 2); c.fill();
+    c.lineCap = 'round'; c.lineWidth = 6;
+    c.beginPath(); c.moveTo(x + 7, y - 7); c.lineTo(x + 24, y - 24); c.stroke();
+    c.beginPath();
+    c.moveTo(x + 28, y - 28); c.lineTo(x + 15, y - 26); c.lineTo(x + 26, y - 15);
+    c.closePath(); c.fill();
+    c.restore();
+  },
+  alt(c, x, y) {            // ALTURA: arco limpio por encima de la red
+    c.save();
+    c.strokeStyle = '#8fe3b0'; c.lineWidth = 5; c.lineCap = 'round';
+    c.beginPath();
+    c.moveTo(x - 26, y + 18);
+    c.quadraticCurveTo(x, y - 34, x + 26, y + 18);
+    c.stroke();
+    c.fillStyle = '#ffffff';
+    c.beginPath(); c.arc(x, y - 22, 7, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#8fe3b0'; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(x - 20, y + 14); c.lineTo(x + 20, y + 14); c.stroke();
+    c.lineWidth = 2.5;
+    for (let i = -2; i <= 2; i++) {
+      c.beginPath(); c.moveTo(x + i * 9, y + 14); c.lineTo(x + i * 9, y + 26); c.stroke();
+    }
+    c.restore();
+  },
+  spin(c, x, y) {           // EFECTO: bola con estela de giro
+    c.save();
+    c.fillStyle = '#e6c6ff';
+    c.beginPath(); c.arc(x, y, 11, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#e6c6ff'; c.lineWidth = 5; c.lineCap = 'round';
+    c.beginPath(); c.arc(x, y, 22, Math.PI * 1.15, Math.PI * 1.85); c.stroke();
+    c.beginPath(); c.arc(x, y, 22, Math.PI * 0.15, Math.PI * 0.85); c.stroke();
+    c.fillStyle = '#e6c6ff';
+    c.beginPath(); c.moveTo(x + 24, y - 14); c.lineTo(x + 13, y - 12); c.lineTo(x + 21, y - 3); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(x - 24, y + 14); c.lineTo(x - 13, y + 12); c.lineTo(x - 21, y + 3); c.closePath(); c.fill();
+    c.restore();
+  },
+  saque(c, x, y) {          // SAQUE: la trayectoria del doble bote
+    c.save();
+    c.strokeStyle = '#ffd8a8'; c.lineWidth = 5; c.lineCap = 'round';
+    c.beginPath(); c.arc(x - 15, y + 8, 12, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+    c.beginPath(); c.arc(x + 15, y - 2, 12, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+    c.fillStyle = '#ffffff';
+    c.beginPath(); c.arc(x - 15, y + 8, 5, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(x + 15, y - 2, 5, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(x + 26, y - 18, 6, 0, Math.PI * 2); c.fill();
+    c.restore();
+  },
+  rit(c, x, y) {            // RITMO: metrónomo
+    c.save();
+    c.fillStyle = '#ffb3d1';
+    c.beginPath();
+    c.moveTo(x - 16, y + 22); c.lineTo(x - 6, y - 24);
+    c.lineTo(x + 6, y - 24); c.lineTo(x + 16, y + 22);
+    c.closePath(); c.fill();
+    c.strokeStyle = '#10131a'; c.lineWidth = 3.5; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(x, y - 2); c.lineTo(x + 12, y - 18); c.stroke();
+    c.fillStyle = '#10131a';
+    c.beginPath(); c.arc(x + 12, y - 18, 3.5, 0, Math.PI * 2); c.fill();
+    c.restore();
+  },
+  candado(c, x, y, s) {     // r72 · candado (campeonatos PRÓXIMAMENTE)
+    const k = s || 1;
+    c.save(); c.scale(k, k);
+    c.strokeStyle = '#c9d4de'; c.lineWidth = 5;
+    c.beginPath(); c.arc(x, y - 8, 9, Math.PI, 0); c.stroke();
+    c.fillStyle = '#c9d4de';
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x - 13, y - 8, 26, 20, 5); else c.rect(x - 13, y - 8, 26, 20);
+    c.fill();
+    c.fillStyle = '#10131a';
+    c.beginPath(); c.arc(x, y + 2, 3.2, 0, Math.PI * 2); c.fill();
+    c.fillRect(x - 1.6, y + 2, 3.2, 6);
+    c.restore();
+  },
 };
 
 function T(key, params) {
@@ -2387,7 +2479,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.63-SDK6';
+  const VERSION = '3.6.64-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -9885,6 +9977,17 @@ class ChampLoader {
   get active() { return !!this.activeId; }
   get mod() { return this.activeId ? (this.modules[this.activeId] || null) : null; }
 
+  /* r72 · CANDADO: campeonatos en PRÓXIMAMENTE — se VEN en el menú con un
+   * candado sobre el nombre, pero la puerta está cerrada: al intentar
+   * entrar una voz dice «Próximamente». Las reglas para desbloquearlos
+   * llegaran después; HOY sólo abre el MODO DEPURACIÓN (nombre de
+   * usuario FORO3D → ppDebugMode, ya existente en el núcleo). */
+  static LOCKED = ['estacion_orbital', 'valle_neon'];
+  isLocked(id) {
+    if (!ChampLoader.LOCKED.includes(id)) return false;
+    try { return !ppDebugMode(); } catch (e) { return true; }
+  }
+
   /** v2.125 · ID del campeonato de PORTADA (BSO del núcleo, rankings 2D/VR):
    *  el primero marcado eager en el índice — sustituye a los literales
    *  'locura' repartidos por el núcleo (descubrimiento dinámico real). */
@@ -10034,6 +10137,8 @@ class ChampLoader {
       .filter((e) => (e.estado || 'publicado') === 'publicado')
       .map((e) => ({
         id: e.id,
+        // r72 · flag de CANDADO para el menú (tarjeta atenuada + candado)
+        locked: this.isLocked(e.id),
         label: '▶  ' + String((e.title && (e.title[lang] || e.title.es)) || e.id).toUpperCase(),
       }));
   }
@@ -10052,14 +10157,31 @@ class ChampLoader {
    *  PRESENTACIÓN); sin él, la intro SOLO se muestra la primera vez. */
   async launch(id, opts) {
     const g = this.game;
+    // r72 · CANDADO ANTES DE NADA: un campeonato PRÓXIMAMENTE no abre —
+    // voz «Próximamente» (chime + locución, force) y FUERA. Cubre el
+    // botón de la tarjeta, VER PRESENTACIÓN y la previsualización ?champ=.
+    if (this.isLocked(id)) {
+      try { g.audio.announce(T('champ_locked_soon'), true); } catch (eV) { /* */ }
+      try { g.rules.message = T('champ_locked_soon'); } catch (eM) { /* */ }
+      return;
+    }
     if (g.closeTrainingV3) g.closeTrainingV3();   // v3.0.3 · estanqueidad
     if (!/^[a-z0-9_-]+$/i.test(id)) return;
     if (g.net.online) { g.rules.message = T('msg_guest_mode'); return; }
     g.exitHall();             // v3.1.0-SRV2: un campeonato se juea en la cancha
+    // r72 · TELÓN DE CARGA: pantalla negra «Montando el escenario…» desde
+    // ANTES de importar el módulo (la importación + texturas son lo que el
+    // dueño veía montarse en vivo). Se levanta solo cuando TODO está.
+    let telon = null;
+    try { if (g.showChampCurtain) telon = g.showChampCurtain(id); } catch (eT0) { /* */ }
     // v2.69: import + init viven en preload() (compartido con el arranque
     // eager); aquí sólo falta arrancar. Excluyente con TODO campeonato.
     const m = await this.preload(id);
-    if (!m) { g.rules.message = T('arc_no_data'); return; }
+    if (!m) {
+      g.rules.message = T('arc_no_data');
+      try { if (telon) telon.cierra(); } catch (eT1) { /* */ }
+      return;
+    }
     this.leaveAll();
     this.activeId = id;
     // v3.6.29 · MEJOR DE 3: los duelos de campeonato siguen siendo a UN juego
@@ -10070,7 +10192,37 @@ class ChampLoader {
     catch (e) {
       console.warn('[champs] start ' + id, e);
       this.leaveAll();   // un módulo roto nunca deja el juego colgado
+      try { if (telon) telon.cierra(); } catch (eT2) { /* */ }
       return;
+    }
+    // r72 · ¿CUÁNDO SE LEVANTA EL TELÓN? La sala del campeonato con sus
+    // claves de arte cargadas (champRoom.loadedKeys tras el update() que
+    // recoloca builtFor) + la calma del propio tick (0,9 s mínimo + 0,3 s
+    // estable · tope 12 s). Si toca INTRO, YA: la presentación es ella
+    // misma la ventana de espera con su póster/vídeo.
+    if (telon) {
+      let verIntroTemprana = false;
+      try { verIntroTemprana = !!(opts && opts.intro); } catch (eT3) { /* */ }
+      try {
+        verIntroTemprana = verIntroTemprana || this.introPendiente(id);
+      } catch (eT4) { /* */ }
+      if (verIntroTemprana) {
+        try { telon.cierra(); } catch (eT5) { /* */ }
+      } else {
+        try {
+          telon.espera(() => {
+            const room = g.champRoom;
+            if (!room || room.builtFor !== id) return false;
+            const mod = this.moduleIfLoaded(id);
+            const cfg = (mod && mod.room) || null;
+            const KEYS = ['floor', 'ceil', 'left', 'right', 'back', 'front'];
+            const want = cfg ? KEYS.filter((k) => cfg[k]) : [];
+            if (!want.length) return true;   // sin arte propio: la sala clásica ya está
+            const have = room.loadedKeys || [];
+            return want.every((k) => have.includes(k));
+          });
+        } catch (eT6) { try { telon.cierra(); } catch (eT7) { /* */ } }
+      }
     }
     // v2.130 · INTRO común: vídeo de la historia del rival + gran botón
     // JUGAR (estructura común de todos los campeonatos; el vídeo es
@@ -12624,6 +12776,14 @@ class PingPongGame {
       c.strokeStyle = hovered ? '#ffffff' : 'rgba(255,210,87,0.65)';
       c.lineWidth = hovered ? 5 : 2;
       c.stroke();
+      // r72 · CANDADO: tarjeta ATENUADA (puerta cerrada — voz «Próximamente»)
+      const lockado = !!ch.locked;
+      if (lockado) {
+        c.fillStyle = 'rgba(8,10,16,0.62)';
+        c.beginPath();
+        if (c.roundRect) c.roundRect(56, y, 912, 110, 18); else c.rect(56, y, 912, 110);
+        c.fill();
+      }
       const img = wrlBadgeImg(ch.id);
       if (img && img.complete && img.naturalWidth) {
         const S = 86;
@@ -12640,11 +12800,41 @@ class PingPongGame {
       c.textBaseline = 'alphabetic';
       c.fillStyle = '#ffe9b3';
       c.font = '800 32px system-ui, sans-serif';
-      c.fillText(String(ch.label || '').replace(/^▶\s*/, ''), 186, y + 48);
+      const ttlCh = String(ch.label || '').replace(/^▶\s*/, '');
+      c.fillText(ttlCh, 186, y + 48);
+      if (lockado) {
+        // r72 · CANDADO VISIBLE SOBRE EL NOMBRE del campeonato (el dueño:
+        // «aparecerán bloqueados con un candado visible sobre el propio
+        // nombre») + título apagado para que se lea CERRADO.
+        c.fillStyle = 'rgba(201,212,222,0.75)';
+        c.fillText(ttlCh, 186, y + 48);
+        const twCh = c.measureText(ttlCh).width;
+        try { PP_ICONS.candado(c, 186 + twCh + 26, y + 34, 1.35); } catch (eLk) { /* decorativo */ }
+      }
       c.fillStyle = '#9aa7b4';
       c.font = '600 21px system-ui, sans-serif';
-      c.fillText(hint || T('hub_champ_hint'), 186, y + 82);
-      if (done) {
+      c.fillText(lockado ? T('champ_locked_hint') : (hint || T('hub_champ_hint')), 186, y + 82);
+      if (lockado) {
+        // r72 · chip PLATEADO «PRÓXIMAMENTE» (misma geometría que SUPERADO)
+        c.save();
+        c.font = '900 22px system-ui, sans-serif';
+        const chipTxtL = T('champ_locked_chip');
+        const chipWL = c.measureText(chipTxtL).width + 36;
+        const chipXL = 944 - chipWL / 2 - 18, chipYL = y + 20;
+        c.fillStyle = 'rgba(10,14,20,0.88)';
+        c.strokeStyle = '#c9d4de'; c.lineWidth = 3;
+        if (c.roundRect) {
+          c.beginPath(); c.roundRect(chipXL - chipWL / 2, chipYL - 20, chipWL, 40, 23);
+          c.fill(); c.stroke();
+        } else {
+          c.fillRect(chipXL - chipWL / 2, chipYL - 20, chipWL, 40);
+          c.strokeRect(chipXL - chipWL / 2, chipYL - 20, chipWL, 40);
+        }
+        c.fillStyle = '#c9d4de';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(chipTxtL, chipXL, chipYL + 1);
+        c.restore();
+      } else if (done) {
         // v2.128: cinta dorada «★ SUPERADO» en la tarjeta del vencido
         c.save();
         c.font = '900 22px system-ui, sans-serif';
@@ -12666,17 +12856,22 @@ class PingPongGame {
         c.fillText(chipTxt, chipX, chipY + 1);
         c.restore();
       }
-      c.fillStyle = 'rgba(255,210,87,0.9)';
-      c.beginPath();
-      c.moveTo(924, y + 40); c.lineTo(944, y + 55); c.lineTo(924, y + 70);
-      c.closePath(); c.fill();
+      if (!lockado) {
+        c.fillStyle = 'rgba(255,210,87,0.9)';
+        c.beginPath();
+        c.moveTo(924, y + 40); c.lineTo(944, y + 55); c.lineTo(924, y + 70);
+        c.closePath(); c.fill();
+      }
       rects.push({ x: 56, y: y - 3, w: 912, h: 116, id: 'ppchamp:' + ch.id });
       y += 122;
       // v3.6.31 · VER PRESENTACIÓN (opcional): la intro del rival sólo se
       // muestra SOLA la primera vez que se entra; este botón la re-ve a
       // demanda (launch con opts.intro) — el vídeo deja de ser obligatorio.
-      btn('champintro:' + ch.id, 56, y, 912, 52, T('champ_intro_btn'),
-        false, undefined, undefined, 22);
+      // r72 · en los CANDADOS no hay presentación que ver: puerta cerrada.
+      if (!lockado) {
+        btn('champintro:' + ch.id, 56, y, 912, 52, T('champ_intro_btn'),
+          false, undefined, undefined, 22);
+      }
       y += 64;
       // controles propios del módulo (música, atajos, récord…)
       const chMod = this.champs.moduleIfLoaded(ch.id);
@@ -16919,6 +17114,124 @@ class PingPongGame {
    *  El gatillo sólo actúa sobre el botón JUGAR (raycast); cualquier otro
    *  gatillo reintenta el audio del vídeo (gesto del usuario).
    *  ==================================================================== */
+  /* ============ r72 · TELÓN DE CARGA («Montando el escenario…") ==========
+   * Informe del dueño: al entrar en un campeonato se ve CÓMO SE MONTA el
+   * escenario (planos, rival y carteles llegando uno a uno). Ahora un
+   * TELÓN negro anclado al rig cubre la vista mientras ChampLoader
+   * importa el módulo y la sala carga sus 6 caras; se levanta en fundido
+   * cuando todo está (mínimo de estancia + 0,3 s de lecturas estables ·
+   * tope de seguridad 12 s). Patrón showChampIntro: plano 3D con
+   * depthTest:false — visible DENTRO del visor XR (el DOM no existe allí). */
+  showChampCurtain(id) {
+    try {
+      if (!this.rig) return null;
+      this.hideChampCurtain(true);
+      // título del campeonato para la línea pequeña
+      let ttl = id;
+      try {
+        const ent = ((this.champs && this.champs.entries) || []).find((x) => x.id === id);
+        const tt = ent && ent.title;
+        if (tt) ttl = String((__ppLang === 'en') ? (tt.en || tt.es) : (tt.es || tt.en)) || id;
+      } catch (e0) { /* */ }
+      const W = 1024, H = 640;
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      const c = cv.getContext('2d');
+      const tex = new THREE.CanvasTexture(cv);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true,
+        depthTest: false, depthWrite: false, fog: false });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 2.88), mat);
+      mesh.renderOrder = 70;
+      const group = new THREE.Group();
+      group.add(mesh);
+      group.position.set(0, 1.66, -0.72);   // cerca de la cabeza: cubre TODO el FOV
+      this.rig.add(group);
+      const S = { id, ttl, group, mesh, mat, tex, cv, c,
+        t: 0, rt0: null, listoDesde: null, espera: null, fade: -1 };
+      this.champCurtain = S;
+      this._pintaCurtain(S, 0);
+      return {
+        cierra: () => { try { this.hideChampCurtain(); } catch (e1) { /* */ } },
+        espera: (fn) => { S.espera = fn; },
+      };
+    } catch (e) { console.warn('[curtain] show', e); return null; }
+  }
+
+  /** Pinta el telón: NEGRO total + título pequeño + «Montando el
+   *  escenario…» con puntos animados (redibujado barato por frame). */
+  _pintaCurtain(S, dots) {
+    try {
+      const c = S.c, W = 1024, H = 640;
+      c.clearRect(0, 0, W, H);
+      c.fillStyle = '#000000';
+      c.fillRect(0, 0, W, H);
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = 'rgba(255,210,87,0.55)';
+      c.font = '700 30px system-ui, sans-serif';
+      c.fillText(String(S.ttl || '').toUpperCase(), W / 2, H / 2 - 74);
+      c.fillStyle = '#eef2f5';
+      c.font = '800 52px system-ui, sans-serif';
+      const pts = '.'.repeat(dots % 4);
+      c.fillText(T('champ_telon').replace(/\.+$/, '') + pts, W / 2, H / 2 + 4);
+      // barra fina que respira (sugerencia de actividad, nada de progreso falso)
+      const bw = 320 * (0.55 + 0.45 * Math.sin(S.t * 2.4));
+      c.fillStyle = 'rgba(255,210,87,0.65)';
+      if (c.roundRect) {
+        c.beginPath(); c.roundRect(W / 2 - bw / 2, H / 2 + 92, bw, 8, 4); c.fill();
+      } else c.fillRect(W / 2 - bw / 2, H / 2 + 92, bw, 8);
+      S.tex.needsUpdate = true;
+    } catch (e) { /* decorativo */ }
+  }
+
+  _updateChampCurtain() {
+    const S = this.champCurtain;
+    if (!S) return;
+    // r72 · el telón es INTERFAZ, no física: corre en TIEMPO REAL — una
+    // carga a 20 fps no alarga la espera del dueño y el QA headless (1 fps
+    // con SwiftShader) no se queda colgado 30 s por el cap de dt (1/30).
+    const rt = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+    if (S.rt0 == null) { S.rt0 = rt; S.listoDesde = null; }
+    S.t = rt - S.rt0;
+    this._pintaCurtain(S, Math.floor(S.t * 2.6));
+    if (S.fade >= 0) {
+      const k = Math.max(0, 1 - (rt - S.fade) / 0.42);
+      S.mat.opacity = k;
+      S.mesh.visible = k > 0.01;
+      if (k <= 0.01) this.hideChampCurtain(true);
+      return;
+    }
+    // ¿se levanta? mínimo 0,9 s de estancia + 0,3 s de check estable · tope 12 s
+    if (S.t < 0.9) return;
+    let listo = false;
+    try { listo = S.espera ? !!S.espera() : true; } catch (e) { listo = true; }
+    if (listo) {
+      if (S.listoDesde == null) S.listoDesde = rt;
+      if (rt - S.listoDesde >= 0.3 || S.t >= 12) S.fade = rt;
+    } else {
+      S.listoDesde = null;
+      if (S.t >= 12) S.fade = rt;
+    }
+  }
+
+  /** Cierra el telón: SIN argumento = fundido suave por el tick (la vía
+   *  normal); con true = desmonte inmediato (limpieza/seguridad). */
+  hideChampCurtain(inmediato) {
+    const S = this.champCurtain;
+    if (!S) return;
+    if (!inmediato && S.fade < 0 && this.rig) {
+      S.fade = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+      return;
+    }
+    this.champCurtain = null;
+    try {
+      if (S.group.parent) S.group.parent.remove(S.group);
+      try { S.tex.dispose(); } catch (e0) { /* */ }
+      try { S.mat.dispose(); } catch (e1) { /* */ }
+      try { S.mesh.geometry.dispose(); } catch (e2) { /* */ }
+    } catch (e) { /* el telón NUNCA rompe */ }
+  }
+
   showChampIntro(id) {
     try {
       if (!this.rig) return;
@@ -18392,6 +18705,8 @@ class PingPongGame {
     // v2.106: cartel explicativo de pruebas (fade + callback al terminar)
     this._updateInstrucciones(dt);
     this._updateChampIntro(dt);
+    // r72 · TELÓN DE CARGA de campeonatos (pinta puntos, funde y desmonta)
+    this._updateChampCurtain();
     // v2.128: panel ¡CONSEGUIDO! del campeonato superado (pop + fundido)
     this._updateChampConseguido(dt);
     // v2.79: el decorado de troqueles respira con la sala (visibilidad
@@ -20101,6 +20416,9 @@ loadPaddleModel().then((paddleModel) => {
   // v2.57: puente de PRUEBAS headless — referencia al juego (los campeonatos
   // externos se lanzan desde él; no cambia ningún comportamiento)
   window.__PP_GAME = game;
+  // r72 · sonda de QA: los ICONOS vectoriales (PP_ICONS) para verificarlos
+  // pintándolos en canvas real desde la capa BG (qa_r72_v3664).
+  try { game._ppIconsProbe = () => PP_ICONS; } catch (e) { /* decorativo */ }
   /* ===========================================================
    *  v3.0 · PRO TRAINING — módulo completo (autocontenido)
    *  =========================================================== */
@@ -20375,13 +20693,16 @@ loadPaddleModel().then((paddleModel) => {
       { id: 'carbon', name: { es: 'Pro Carbon', en: 'Pro Carbon' }, min: 2500, tex: 'carbon', edge: 0xff2d2d, grip: 0x17181c, modelUrl: 'assets/pala/pala_pro.glb' },
     ];
   
-    /* ---------------- registro de modos ---------------- */
+    /* ---------------- registro de modos ----------------
+     * r72 · cada área lleva ICONO propio (PP_ICONS en c00) — petición del
+     * dueño: «faltan los iconos de los botones de los apartados de
+     * Entrenamiento para dejarlo bonito». */
     const AREAS = [
-      { id: 'dir', ik: 'a_dir', sk: 'a_dir_s', g0: '#2b6cb0', g1: '#16324f', col: '#63b3ed' },
-      { id: 'alt', ik: 'a_alt', sk: 'a_alt_s', g0: '#2f855a', g1: '#1a4433', col: '#68d391' },
-      { id: 'spin', ik: 'a_spin', sk: 'a_spin_s', g0: '#805ad5', g1: '#44337a', col: '#d6bcfa' },
-      { id: 'saque', ik: 'a_saq', sk: 'a_saq_s', g0: '#c05621', g1: '#652a12', col: '#f6ad55' },
-      { id: 'rit', ik: 'a_rit', sk: 'a_rit_s', g0: '#b83280', g1: '#5f1e42', col: '#f687b3' },
+      { id: 'dir', ic: 'dir', ik: 'a_dir', sk: 'a_dir_s', g0: '#2b6cb0', g1: '#16324f', col: '#63b3ed' },
+      { id: 'alt', ic: 'alt', ik: 'a_alt', sk: 'a_alt_s', g0: '#2f855a', g1: '#1a4433', col: '#68d391' },
+      { id: 'spin', ic: 'spin', ik: 'a_spin', sk: 'a_spin_s', g0: '#805ad5', g1: '#44337a', col: '#d6bcfa' },
+      { id: 'saque', ic: 'saque', ik: 'a_saq', sk: 'a_saq_s', g0: '#c05621', g1: '#652a12', col: '#f6ad55' },
+      { id: 'rit', ic: 'rit', ik: 'a_rit', sk: 'a_rit_s', g0: '#b83280', g1: '#5f1e42', col: '#f687b3' },
     ];
     const MODES = {
       t1a: { area: 'dir', nk: 'm_t1a', dk: 'm_t1a_d', n: 5, ok: 'ok_zona', pts: 1, bonus: 15 },
@@ -21938,7 +22259,7 @@ loadPaddleModel().then((paddleModel) => {
       // tarjetas de áreas (2 × 3)
       const CW = 456, CH = 150, GX = 32, GY = 16, X0 = 40, X1 = X0 + CW + GX;
       let y = 190;
-      const card = (x, yy, id, ik, sk, g0, g1, col, act) => {
+      const card = (x, yy, id, ik, sk, g0, g1, col, act, ic) => {
         const idx = rects.length;
         btn('trv3:area:' + id, x, yy, CW, CH, '', false);
         // repintar encima con estilo propio (btn pinta un botón plano)
@@ -21954,6 +22275,9 @@ loadPaddleModel().then((paddleModel) => {
         c.fillStyle = col; c.globalAlpha = 0.16;
         c.beginPath(); c.arc(x + CW - 56, yy + CH / 2, 44, 0, Math.PI * 2); c.fill();
         c.globalAlpha = 1;
+        // r72 · ICONO EXPLÍCITO del área dentro del medallón (PP_ICONS)
+        const ico = ic && PP_ICONS[ic];
+        if (ico) { try { ico(c, x + CW - 56, yy + CH / 2); } catch (eIco) { /* decorativo */ } }
         c.fillStyle = '#ffffff'; c.textAlign = 'left'; c.textBaseline = 'middle';
         let fs = 34;
         c.font = '800 ' + fs + 'px system-ui, sans-serif';
@@ -21971,7 +22295,7 @@ loadPaddleModel().then((paddleModel) => {
       };
       for (let i = 0; i < AREAS.length; i++) {
         const a = AREAS[i];
-        card(i % 2 === 0 ? X0 : X1, y + Math.floor(i / 2) * (CH + GY), a.id, a.ik, a.sk, a.g0, a.g1, a.col);
+        card(i % 2 === 0 ? X0 : X1, y + Math.floor(i / 2) * (CH + GY), a.id, a.ik, a.sk, a.g0, a.g1, a.col, false, a.ic);
       }
       // tarjeta POSICIÓN DE LA PALA (subapartado 0) a lo ancho
       const yPal = y + 3 * (CH + GY);
@@ -23229,13 +23553,13 @@ window.__PP_CORE = {
   }
   /* parte un texto largo en 2 líneas centradas (por el espacio más
    * cercano al centro) tras intentar reducirlo. */
-  function wrap2(c, txt, y, size, col, maxW, lh) {
+  function wrap2(c, txt, y, size, col, maxW, lh, x) {
     fitFont(c, txt, size, '600', maxW, 12);
-    if (c.measureText(txt).width <= maxW) { line(c, txt, y, size, col); return; }
+    if (c.measureText(txt).width <= maxW) { line(c, txt, y, size, col, undefined, x); return; }
     const sep = txt.lastIndexOf(' ', Math.ceil(txt.length / 2));
-    if (sep <= 0) { line(c, txt, y, size, col); return; }
-    line(c, txt.slice(0, sep), y - (lh || 14), size, col);
-    line(c, txt.slice(sep + 1), y + (lh || 14), size, col);
+    if (sep <= 0) { line(c, txt, y, size, col, undefined, x); return; }
+    line(c, txt.slice(0, sep), y - (lh || 14), size, col, undefined, x);
+    line(c, txt.slice(sep + 1), y + (lh || 14), size, col, undefined, x);
   }
   /* píldora estilo TIZA: borde blanco translúcido, relleno ámbar/verde
    * suave y texto blanco — auto-dimensionada al texto (nada cortado). */
@@ -23249,7 +23573,10 @@ window.__PP_CORE = {
       fitFont(c, txt, size, '800', w - 48, 17);
     }
     const h = opts.h || 72;
-    const x = PIZ_CX - w / 2;
+    // r72 · centro PROPIO (opts.x): la píldora puede vivir fuera del
+    // centro de la pizarra (p. ej. junto al título de LOS MODOS).
+    const cx = (opts.x != null) ? opts.x : PIZ_CX;
+    const x = cx - w / 2;
     rr(c, x, y, w, h, 22);
     c.fillStyle = opts.col || 'rgba(47,158,68,0.30)';
     c.fill();
@@ -23259,7 +23586,7 @@ window.__PP_CORE = {
     c.fillStyle = '#ffffff';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(txt, PIZ_CX, y + h / 2 + 1);
+    c.fillText(txt, cx, y + h / 2 + 1);
   }
   function paintHeader(c) {
     // título a la izquierda de la zona negra (el birrete NO se tapa)
@@ -23334,13 +23661,16 @@ window.__PP_CORE = {
     //     sobre los mandos ANCLADOS a tus manos y después el vaivén con la
     //     ÚNICA raqueta — la pala real que ya tienes en la mano)
     (c) => {
-      line(c, T('tut_m_t'), 236, 40, '#ffd257');
-      line(c, T('tut_s1_l2'), 296, 20, '#c9d4de');
-      line(c, T('tut_s1_l1'), 328, 17, '#8b98a5');
+      // r72 · TÍTULO EN SU FILA: la cabecera (LA ACADEMIA CRAZY · PASO X DE 9
+      // · puntos) ocupa 168..248 — todo título de paso baja a y=272. Antes
+      // «TU MANDO, TU RAQUETA» en 236 pisaba el título de la cabecera.
+      line(c, T('tut_m_t'), 272, 40, '#ffd257');
+      line(c, T('tut_s1_l2'), 320, 20, '#c9d4de');
+      line(c, T('tut_s1_l1'), 350, 17, '#8b98a5');
       const tareas = [T('tut_m1_gat'), T('tut_m1_grip'), T('tut_m1_stick'), T('tut_m1_a')];
       for (let i = 0; i < 4; i++) {
         c.beginPath();
-        c.arc(512 + i * 42, 374, subfase > i ? 9 : 6.5, 0, Math.PI * 2);
+        c.arc(512 + i * 42, 386, subfase > i ? 9 : 6.5, 0, Math.PI * 2);
         c.fillStyle = subfase > i ? '#7fb069' : 'rgba(255,255,255,0.30)';
         c.fill();
       }
@@ -23352,132 +23682,146 @@ window.__PP_CORE = {
         // r70 · SIN SOLAPE: la píldora (caja 406..478 con h=72) y la línea
         // de la instrucción (glifos 441..463) se comían — DOS textos
         // superpuestos (el dueño: «ese panel superpone los textos»).
-        // Nuevo reparto vertical: píldora compacta 392..448 (texto en 421),
-        // instrucción en 472 (glifos ~461..483) y barra en 500 — aire
-        // limpio entre los tres bloques, dentro de la zona negra.
-        pill(c, T('tut_m1_raf'), 392, { col: 'rgba(90,160,255,0.30)', size: 24, h: 56 });
+        // r72 · el reparto r70 baja 20 px con el título (píldora 412..468,
+        // instrucción 494, barra 524..564) — mismos aires, nueva fila libre.
+        pill(c, T('tut_m1_raf'), 412, { col: 'rgba(90,160,255,0.30)', size: 24, h: 56 });
         const p = Math.min(1, sway / SWAY_META);
         c.globalAlpha = p > 0.02 ? 1 : (0.55 + 0.45 * Math.sin(mandoT * 5.2));
-        line(c, T('tut_m1_lado'), 472, 21, '#7fb069');
+        line(c, T('tut_m1_lado'), 494, 21, '#7fb069');
         c.globalAlpha = 1;
-        rr(c, 280, 500, 800, 40, 20);
+        rr(c, 280, 524, 800, 40, 20);
         c.fillStyle = 'rgba(255,255,255,0.12)'; c.fill();
         if (p > 0.01) {
-          rr(c, 280, 500, Math.max(26, 800 * p), 40, 20);
+          rr(c, 280, 524, Math.max(26, 800 * p), 40, 20);
           c.fillStyle = 'rgba(127,176,105,0.75)'; c.fill();
         }
         c.fillStyle = '#eef2f5';
         c.font = '700 18px system-ui, sans-serif';
         c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(Math.round(p * 100) + '%', PIZ_CX, 521);
+        c.fillText(Math.round(p * 100) + '%', PIZ_CX, 545);
       } else {
-        pill(c, tareas[Math.min(subfase, 3)], 406,
+        pill(c, tareas[Math.min(subfase, 3)], 412,
           { col: 'rgba(232,180,90,0.28)', size: 26 });
       }
     },
     // 2 · EL SAQUE · demo del PROFESOR sobre la mesa real y luego 3 saques TUYOS
+    //     r72 · título a 272 (fuera de la cabecera) y cuerpo reexpandido:
+    //     la práctica reparte sus 6 filas con aire (líneas 316/348/380,
+    //     contador 418+466, píldora 514..578) — antes el título en 214
+    //     chocaba con «LA ACADEMIA CRAZY» y el contador vivía apretado.
     (c) => {
       if (submodo === 'demo') {
-        line(c, T('tut_d3_t'), 244, 38, '#ffd257');
-        line(c, T('tut_d3_l1'), 312, 22);
-        line(c, T('tut_d3_l2'), 352, 22);
-        line(c, T('tut_d3_l3'), 392, 22);
+        line(c, T('tut_d3_t'), 272, 38, '#ffd257');
+        line(c, T('tut_d3_l1'), 336, 22);
+        line(c, T('tut_d3_l2'), 376, 22);
+        line(c, T('tut_d3_l3'), 416, 22);
         const aviso = demoTxt && demoTxt.t > 0
           ? { txt: demoTxt.txt, col: demoTxt.col || 'rgba(47,158,68,0.35)' }
           : (demoT > 4 ? { txt: T('tut_d3_go'), col: 'rgba(232,180,90,0.30)' }
                        : { txt: T('tut_rep'), col: 'rgba(255,255,255,0.10)' });
-        pill(c, aviso.txt, 470, { col: aviso.col, size: 26 });
+        pill(c, aviso.txt, 478, { col: aviso.col, size: 26 });
       } else {
-        line(c, T('tut_s3_t'), 214, 40, '#ffd257');
-        line(c, T('tut_s3_l1'), 270, 20);
-        line(c, T('tut_s3_l2'), 302, 20);
-        line(c, T('tut_s3_l3'), 334, 20);
-        line(c, T('tut_s3_cnt'), 386, 18, '#9fb0bd');
+        line(c, T('tut_s3_t'), 272, 40, '#ffd257');
+        line(c, T('tut_s3_l1'), 316, 20);
+        line(c, T('tut_s3_l2'), 348, 20);
+        line(c, T('tut_s3_l3'), 380, 20);
+        line(c, T('tut_s3_cnt'), 418, 18, '#9fb0bd');
         c.fillStyle = '#ffffff';
         c.shadowColor = 'rgba(255,255,255,0.4)'; c.shadowBlur = 10;
-        c.font = '900 58px system-ui, sans-serif';
+        c.font = '900 50px system-ui, sans-serif';
         c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(Math.min(saqCount, SAQ_META) + ' / ' + SAQ_META, PIZ_CX, 436);
+        c.fillText(Math.min(saqCount, SAQ_META) + ' / ' + SAQ_META, PIZ_CX, 466);
         c.shadowBlur = 0;
-        if (flashOk > 0) pill(c, T('tut_s3_ok'), 496, { col: 'rgba(47,158,68,0.35)', size: 26 });
-        else if (flashAgain > 0) pill(c, T('tut_s3_again'), 496, { col: 'rgba(240,135,63,0.32)', size: 26 });
-        else pill(c, T('tut_s3_task'), 500, { size: 28 });
+        if (flashOk > 0) pill(c, T('tut_s3_ok'), 514, { col: 'rgba(47,158,68,0.35)', size: 26, h: 64 });
+        else if (flashAgain > 0) pill(c, T('tut_s3_again'), 514, { col: 'rgba(240,135,63,0.32)', size: 26, h: 64 });
+        else pill(c, T('tut_s3_task'), 514, { size: 28, h: 64 });
       }
     },
     // 3 · EL INTERCAMBIO REAL (saque tuyo + rival que devuelve hasta fallar)
+    //     r72 · título a 272: «EL INTERCAMBIO» en 236 se pintaba ENCIMA de
+    //     la cabecera (el dueño: «se pisa con el texto que tiene arriba»).
     (c) => {
-      line(c, T('tut_d4_t'), 236, 40, '#ffd257');
-      line(c, T('tut_d4_l1'), 302, 21);
-      line(c, T('tut_d4_l2'), 340, 21);
-      line(c, T('tut_d4_l3'), 378, 21);
+      line(c, T('tut_d4_t'), 272, 40, '#ffd257');
+      line(c, T('tut_d4_l1'), 322, 21);
+      line(c, T('tut_d4_l2'), 360, 21);
+      line(c, T('tut_d4_l3'), 398, 21);
       if (rfHecho) {
-        pill(c, T('tut_d4_ok'), 452, { col: 'rgba(47,158,68,0.35)', size: 27 });
-        pill(c, T('tut_hint_next'), 536, { w: 520, h: 54, col: 'rgba(232,180,90,0.28)', size: 23 });
+        pill(c, T('tut_d4_ok'), 440, { col: 'rgba(47,158,68,0.35)', size: 27, h: 64 });
+        pill(c, T('tut_hint_next'), 520, { w: 520, h: 50, col: 'rgba(232,180,90,0.28)', size: 23 });
       } else {
-        pill(c, T('tut_d4_task'), 462, { size: 24 });
+        pill(c, T('tut_d4_task'), 452, { size: 24 });
       }
     },
-    // 4 · EL MARCADOR (holo sobre la mesa + saques reales en bucle)
+    // 4 · EL MARCADOR (holo sobre la mesa + saques reales en bucle) · r72: título a 272
     (c) => {
-      line(c, T('tut_d5_t'), 250, 40, '#ffd257');
-      line(c, T('tut_d5_l1'), 318, 22);
-      line(c, T('tut_d5_l2'), 358, 22);
-      line(c, T('tut_d5_l3'), 398, 22);
+      line(c, T('tut_d5_t'), 272, 40, '#ffd257');
+      line(c, T('tut_d5_l1'), 330, 22);
+      line(c, T('tut_d5_l2'), 368, 22);
+      line(c, T('tut_d5_l3'), 406, 22);
       pill(c, demoT >= DEMO_MIN ? T('tut_ent')
         : T('tut_h_saq') + '… ' + Math.ceil(DEMO_MIN - demoT) + ' s',
-        470, { col: demoT >= DEMO_MIN ? 'rgba(47,158,68,0.35)' : 'rgba(255,255,255,0.10)', size: 27 });
+        478, { col: demoT >= DEMO_MIN ? 'rgba(47,158,68,0.35)' : 'rgba(255,255,255,0.10)', size: 27 });
     },
-    // 5 · LA PRÁCTICA (el profesor devuelve 6 bolas)
+    // 5 · LA PRÁCTICA (el profesor devuelve 6 bolas) · r72: título a 272
+    //     («EL INTERCAMBIO» en 224 con s42 arrancaba DENTRO de la cabecera).
     (c) => {
-      line(c, T('tut_s4_t'), 224, 42, '#ffd257');
-      line(c, T('tut_s4_l1'), 290, 23);
-      line(c, T('tut_s4_l2'), 326, 23);
+      line(c, T('tut_s4_t'), 272, 42, '#ffd257');
+      line(c, T('tut_s4_l1'), 330, 23);
+      line(c, T('tut_s4_l2'), 366, 23);
       c.fillStyle = '#ffffff';
       c.shadowColor = 'rgba(255,255,255,0.4)'; c.shadowBlur = 10;
       c.font = '900 74px system-ui, sans-serif';
       c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(T('tut_s4_n', { n: Math.min(hitCount, DEVOL_META) }), PIZ_CX, 424);
+      c.fillText(T('tut_s4_n', { n: Math.min(hitCount, DEVOL_META) }), PIZ_CX, 446);
       c.shadowBlur = 0;
-      pill(c, T('tut_s4_task'), 494, { size: 27 });
+      pill(c, T('tut_s4_task'), 510, { size: 27, h: 64 });
     },
-    // 6 · LOS BOTONES EN JUEGO
+    // 6 · LOS BOTONES EN JUEGO · r72: título a 272 (en 240 rozaba la
+    //     cabecera y apretaba todo el bloque — «textos algo pegados»)
     (c) => {
-      line(c, T('tut_s5_t'), 240, 40, '#ffd257');
-      line(c, T('tut_s5_l1'), 306, 23);
-      line(c, T('tut_s5_l2'), 346, 23);
+      line(c, T('tut_s5_t'), 272, 40, '#ffd257');
+      line(c, T('tut_s5_l1'), 330, 23);
+      line(c, T('tut_s5_l2'), 370, 23);
       for (const [lb, kx] of [['A', 600], ['X', 760]]) {
-        rr(c, kx - 38, 408, 76, 76, 17);
+        rr(c, kx - 38, 412, 76, 76, 17);
         c.fillStyle = 'rgba(255,255,255,0.10)'; c.fill();
         c.strokeStyle = '#e8b45a'; c.lineWidth = 3.5; c.stroke();
         c.fillStyle = '#ffe08a';
         c.font = '900 42px system-ui, sans-serif';
         c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(lb, kx, 448);
+        c.fillText(lb, kx, 452);
       }
-      pill(c, T('tut_s5_task'), 520, { w: 600, h: 62, size: 25 });
+      pill(c, T('tut_s5_task'), 522, { w: 600, h: 56, size: 25 });
     },
     // 7 · LOS MODOS · rejilla 2×3 (r67 · UNA sola pizarra, antes eran dos)
+    //     r72 · REENCUADRE COMPLETO (el dueño: «los textos están mal
+    //     colocados»): (1) el título baja a 262 — en 208 se pintaba DENTRO
+    //     de la cabecera; (2) la píldora «GATILLO · continuar» sube a la
+    //     fila del título, a su DERECHA (x=986) — antes caía en 552 ENCIMA
+    //     de la fila inferior (496..566); (3) el texto PODERES se dibuja
+    //     DENTRO de su caja ámbar con centro x=996 — el wrap2 antiguo
+    //     pintaba SIEMPRE en el centro de la pizarra (680), o sea ENCIMA
+    //     de la tarjeta ENTRENAR. Fila de tarjetas con aire limpio.
     (c) => {
-      line(c, T('tut_mods_t'), 208, 36, '#ffd257');
-      const W = 480, H = 104;
+      line(c, T('tut_mods_t'), 262, 34, '#ffd257');
+      pill(c, T('tut_hint_next'), 252, { w: 300, h: 32, x: 986, col: 'rgba(232,180,90,0.28)', size: 18 });
+      const W = 480, H = 88;
       const cards = [
-        [190, 238, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_mod_p')],
-        [690, 238, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_mod_s')],
-        [190, 356, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_mod_m')],
-        [690, 356, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_mod_c')],
+        [190, 296, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_mod_p')],
+        [690, 296, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_mod_s')],
+        [190, 396, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_mod_m')],
+        [690, 396, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_mod_c')],
       ];
       for (const [x, y, col, ini, ti, su] of cards) {
         modeCard(c, x, y, W, H, col, ini, ti, su);
       }
       // fila inferior: RANKING + ENTRENAR (más estrechas, con la caja de poderes)
-      modeCard(c, 190, 470, 300, 96, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'));
-      modeCard(c, 506, 470, 300, 96, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_mod_t'));
-      rr(c, 822, 470, 348, 96, 14);
+      modeCard(c, 190, 496, 300, 80, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'));
+      modeCard(c, 506, 496, 300, 80, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_mod_t'));
+      rr(c, 822, 496, 348, 80, 14);
       c.fillStyle = 'rgba(232,180,90,0.14)'; c.fill();
       c.strokeStyle = 'rgba(232,180,90,0.45)'; c.lineWidth = 2; c.stroke();
-      wrap2(c, T('tut_pow_t'), 512, 15, '#ffe08a', 310, 12);
-      // r67 · píldora 552..594 — NUNCA invade la línea «B · saltar» (604)
-      pill(c, T('tut_hint_next'), 552, { w: 520, h: 42, col: 'rgba(232,180,90,0.28)', size: 20 });
+      wrap2(c, T('tut_pow_t'), 536, 14, '#ffe08a', 312, 11, 996);
     },
     // 8 · ¡YA SABES JUGAR!
     (c) => {

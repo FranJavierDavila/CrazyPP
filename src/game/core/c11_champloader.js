@@ -14,6 +14,17 @@ export class ChampLoader {
   get active() { return !!this.activeId; }
   get mod() { return this.activeId ? (this.modules[this.activeId] || null) : null; }
 
+  /* r72 · CANDADO: campeonatos en PRÓXIMAMENTE — se VEN en el menú con un
+   * candado sobre el nombre, pero la puerta está cerrada: al intentar
+   * entrar una voz dice «Próximamente». Las reglas para desbloquearlos
+   * llegaran después; HOY sólo abre el MODO DEPURACIÓN (nombre de
+   * usuario FORO3D → ppDebugMode, ya existente en el núcleo). */
+  static LOCKED = ['estacion_orbital', 'valle_neon'];
+  isLocked(id) {
+    if (!ChampLoader.LOCKED.includes(id)) return false;
+    try { return !ppDebugMode(); } catch (e) { return true; }
+  }
+
   /** v2.125 · ID del campeonato de PORTADA (BSO del núcleo, rankings 2D/VR):
    *  el primero marcado eager en el índice — sustituye a los literales
    *  'locura' repartidos por el núcleo (descubrimiento dinámico real). */
@@ -163,6 +174,8 @@ export class ChampLoader {
       .filter((e) => (e.estado || 'publicado') === 'publicado')
       .map((e) => ({
         id: e.id,
+        // r72 · flag de CANDADO para el menú (tarjeta atenuada + candado)
+        locked: this.isLocked(e.id),
         label: '▶  ' + String((e.title && (e.title[lang] || e.title.es)) || e.id).toUpperCase(),
       }));
   }
@@ -181,14 +194,31 @@ export class ChampLoader {
    *  PRESENTACIÓN); sin él, la intro SOLO se muestra la primera vez. */
   async launch(id, opts) {
     const g = this.game;
+    // r72 · CANDADO ANTES DE NADA: un campeonato PRÓXIMAMENTE no abre —
+    // voz «Próximamente» (chime + locución, force) y FUERA. Cubre el
+    // botón de la tarjeta, VER PRESENTACIÓN y la previsualización ?champ=.
+    if (this.isLocked(id)) {
+      try { g.audio.announce(T('champ_locked_soon'), true); } catch (eV) { /* */ }
+      try { g.rules.message = T('champ_locked_soon'); } catch (eM) { /* */ }
+      return;
+    }
     if (g.closeTrainingV3) g.closeTrainingV3();   // v3.0.3 · estanqueidad
     if (!/^[a-z0-9_-]+$/i.test(id)) return;
     if (g.net.online) { g.rules.message = T('msg_guest_mode'); return; }
     g.exitHall();             // v3.1.0-SRV2: un campeonato se juea en la cancha
+    // r72 · TELÓN DE CARGA: pantalla negra «Montando el escenario…» desde
+    // ANTES de importar el módulo (la importación + texturas son lo que el
+    // dueño veía montarse en vivo). Se levanta solo cuando TODO está.
+    let telon = null;
+    try { if (g.showChampCurtain) telon = g.showChampCurtain(id); } catch (eT0) { /* */ }
     // v2.69: import + init viven en preload() (compartido con el arranque
     // eager); aquí sólo falta arrancar. Excluyente con TODO campeonato.
     const m = await this.preload(id);
-    if (!m) { g.rules.message = T('arc_no_data'); return; }
+    if (!m) {
+      g.rules.message = T('arc_no_data');
+      try { if (telon) telon.cierra(); } catch (eT1) { /* */ }
+      return;
+    }
     this.leaveAll();
     this.activeId = id;
     // v3.6.29 · MEJOR DE 3: los duelos de campeonato siguen siendo a UN juego
@@ -199,7 +229,37 @@ export class ChampLoader {
     catch (e) {
       console.warn('[champs] start ' + id, e);
       this.leaveAll();   // un módulo roto nunca deja el juego colgado
+      try { if (telon) telon.cierra(); } catch (eT2) { /* */ }
       return;
+    }
+    // r72 · ¿CUÁNDO SE LEVANTA EL TELÓN? La sala del campeonato con sus
+    // claves de arte cargadas (champRoom.loadedKeys tras el update() que
+    // recoloca builtFor) + la calma del propio tick (0,9 s mínimo + 0,3 s
+    // estable · tope 12 s). Si toca INTRO, YA: la presentación es ella
+    // misma la ventana de espera con su póster/vídeo.
+    if (telon) {
+      let verIntroTemprana = false;
+      try { verIntroTemprana = !!(opts && opts.intro); } catch (eT3) { /* */ }
+      try {
+        verIntroTemprana = verIntroTemprana || this.introPendiente(id);
+      } catch (eT4) { /* */ }
+      if (verIntroTemprana) {
+        try { telon.cierra(); } catch (eT5) { /* */ }
+      } else {
+        try {
+          telon.espera(() => {
+            const room = g.champRoom;
+            if (!room || room.builtFor !== id) return false;
+            const mod = this.moduleIfLoaded(id);
+            const cfg = (mod && mod.room) || null;
+            const KEYS = ['floor', 'ceil', 'left', 'right', 'back', 'front'];
+            const want = cfg ? KEYS.filter((k) => cfg[k]) : [];
+            if (!want.length) return true;   // sin arte propio: la sala clásica ya está
+            const have = room.loadedKeys || [];
+            return want.every((k) => have.includes(k));
+          });
+        } catch (eT6) { try { telon.cierra(); } catch (eT7) { /* */ } }
+      }
     }
     // v2.130 · INTRO común: vídeo de la historia del rival + gran botón
     // JUGAR (estructura común de todos los campeonatos; el vídeo es
@@ -689,7 +749,7 @@ export class ChampLoader {
   }
 }
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { T, __ppLang } from './c00_pre_three.js';
+import { T, __ppLang, ppDebugMode } from './c00_pre_three.js';
 import { CHAMPS_STATE, _dbQ1, _dbQ2, _dbV1, _rbQ, _rbV1, _rbV2, _rbV3, _rbV4, _rpSize, _rpV1, rpDir, rpOrigin, rpQuat, rpRaycaster } from './c10_menu_saque.js';
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */

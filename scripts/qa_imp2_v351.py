@@ -52,9 +52,9 @@ async def main():
         print('== PORTADA (dev :3000) ==')
         await page.goto(BASE + '/game.html', wait_until='networkidle')
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.6.63-SDK6', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.6.64-SDK6', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.6.63-SDK6' in badge, f'badge 2D = {badge!r}')
+        chk('V3.6.64-SDK6' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("!!window.__PP_SERVE_LAB"), 'SERVE lab intacto (SRV2)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),
@@ -75,7 +75,7 @@ async def main():
                    'this.ctrl.dron.visible = false', 'OLEADA'):
             chk(tk in src, f'módulo: {tk}')
         man = await page.evaluate(f"fetch('{ORBITAL}/manifest.json').then(r=>r.json())")
-        chk(man.get('version') == 16, f'manifest version = {man.get("version")}')
+        chk(man.get('version') == 17, f'manifest version = {man.get("version")}')
         chk([st['id'] for st in man['stages']] == ['duelo1', 'impulso', 'duelo2', 'escudo', 'final'],
             'manifest stages = duelo1·impulso·duelo2·escudo·final')
         chk(any('v3.5.1-IMP2' in c for c in man.get('cambios', [])), 'cambios: entrada v3.5.1-IMP2')
@@ -106,6 +106,7 @@ async def main():
         print('== ESCENA EN VIVO: etapa 1 · ASTRO a distancia fija ==')
         e1 = await page.evaluate("""async () => {
           const G = window.__PP_GAME;
+          try { localStorage.setItem('pp_player_name', 'FORO3D'); if (window.ppDebugRefresh) window.ppDebugRefresh(); } catch (e) { /**/ }
           G.champs.launch('estacion_orbital');
           await new Promise(r => setTimeout(r, 4500));
           const mod = G.champs.moduleIfLoaded('estacion_orbital');

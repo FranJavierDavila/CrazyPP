@@ -326,6 +326,14 @@ CAPAS = [
     # debían vivir DENTRO de un AJUSTES reorganizado por subcategorías con
     # iconos explícitos.
     ('BF · servicio honesto (v3663)', 'qa_r71_v3663.py'),
+    # BG (v3664): EL TELÓN Y EL CANDADO — el informe del dueño tras V3.6.63:
+    # los títulos del cartel de la Academia pisaban la cabecera (pasos 3/4/7
+    # solapados, paso 8 con el texto PODERES dentro de la tarjeta ENTRENAR
+    # por el wrap2 sin x), las 5 tarjetas de Entrenamiento sin icono, Astro
+    # invisible (el grupo del orbital colgado de scene y no del rig) y la
+    # entrada a campeonatos viéndose montarse: telón negro + candados con
+    # voz «Próximamente» y bypass FORO3D.
+    ('BG · telón y candado (v3664)', 'qa_r72_v3664.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

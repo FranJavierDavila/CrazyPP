@@ -6,7 +6,7 @@ function renderPlayBtn() {
   }
 }
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { T, TLang, WORLDRANK, __ppLang, applyLangDOM, ppPlayerName, setLang } from './c00_pre_three.js';
+import { PP_ICONS, T, TLang, WORLDRANK, __ppLang, applyLangDOM, ppPlayerName, setLang } from './c00_pre_three.js';
 import { fixInvertedMeshes, loadGunModel, loadPaddleModel, makeGunVisual, makePaddleVisual } from './c01_modelos_3d.js';
 import { AI_PRESETS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
 import { CCD_TUNE, bladeNormalLocal, createPaddleSim, sdfBlade, setPaddleBasis, sweepBallVsBlade, tmpPrev } from './c04_fisica_ccd.js';
@@ -601,6 +601,9 @@ loadPaddleModel().then((paddleModel) => {
   // v2.57: puente de PRUEBAS headless — referencia al juego (los campeonatos
   // externos se lanzan desde él; no cambia ningún comportamiento)
   window.__PP_GAME = game;
+  // r72 · sonda de QA: los ICONOS vectoriales (PP_ICONS) para verificarlos
+  // pintándolos en canvas real desde la capa BG (qa_r72_v3664).
+  try { game._ppIconsProbe = () => PP_ICONS; } catch (e) { /* decorativo */ }
   /* ===========================================================
    *  v3.0 · PRO TRAINING — módulo completo (autocontenido)
    *  =========================================================== */
@@ -875,13 +878,16 @@ loadPaddleModel().then((paddleModel) => {
       { id: 'carbon', name: { es: 'Pro Carbon', en: 'Pro Carbon' }, min: 2500, tex: 'carbon', edge: 0xff2d2d, grip: 0x17181c, modelUrl: 'assets/pala/pala_pro.glb' },
     ];
   
-    /* ---------------- registro de modos ---------------- */
+    /* ---------------- registro de modos ----------------
+     * r72 · cada área lleva ICONO propio (PP_ICONS en c00) — petición del
+     * dueño: «faltan los iconos de los botones de los apartados de
+     * Entrenamiento para dejarlo bonito». */
     const AREAS = [
-      { id: 'dir', ik: 'a_dir', sk: 'a_dir_s', g0: '#2b6cb0', g1: '#16324f', col: '#63b3ed' },
-      { id: 'alt', ik: 'a_alt', sk: 'a_alt_s', g0: '#2f855a', g1: '#1a4433', col: '#68d391' },
-      { id: 'spin', ik: 'a_spin', sk: 'a_spin_s', g0: '#805ad5', g1: '#44337a', col: '#d6bcfa' },
-      { id: 'saque', ik: 'a_saq', sk: 'a_saq_s', g0: '#c05621', g1: '#652a12', col: '#f6ad55' },
-      { id: 'rit', ik: 'a_rit', sk: 'a_rit_s', g0: '#b83280', g1: '#5f1e42', col: '#f687b3' },
+      { id: 'dir', ic: 'dir', ik: 'a_dir', sk: 'a_dir_s', g0: '#2b6cb0', g1: '#16324f', col: '#63b3ed' },
+      { id: 'alt', ic: 'alt', ik: 'a_alt', sk: 'a_alt_s', g0: '#2f855a', g1: '#1a4433', col: '#68d391' },
+      { id: 'spin', ic: 'spin', ik: 'a_spin', sk: 'a_spin_s', g0: '#805ad5', g1: '#44337a', col: '#d6bcfa' },
+      { id: 'saque', ic: 'saque', ik: 'a_saq', sk: 'a_saq_s', g0: '#c05621', g1: '#652a12', col: '#f6ad55' },
+      { id: 'rit', ic: 'rit', ik: 'a_rit', sk: 'a_rit_s', g0: '#b83280', g1: '#5f1e42', col: '#f687b3' },
     ];
     const MODES = {
       t1a: { area: 'dir', nk: 'm_t1a', dk: 'm_t1a_d', n: 5, ok: 'ok_zona', pts: 1, bonus: 15 },
@@ -2438,7 +2444,7 @@ loadPaddleModel().then((paddleModel) => {
       // tarjetas de áreas (2 × 3)
       const CW = 456, CH = 150, GX = 32, GY = 16, X0 = 40, X1 = X0 + CW + GX;
       let y = 190;
-      const card = (x, yy, id, ik, sk, g0, g1, col, act) => {
+      const card = (x, yy, id, ik, sk, g0, g1, col, act, ic) => {
         const idx = rects.length;
         btn('trv3:area:' + id, x, yy, CW, CH, '', false);
         // repintar encima con estilo propio (btn pinta un botón plano)
@@ -2454,6 +2460,9 @@ loadPaddleModel().then((paddleModel) => {
         c.fillStyle = col; c.globalAlpha = 0.16;
         c.beginPath(); c.arc(x + CW - 56, yy + CH / 2, 44, 0, Math.PI * 2); c.fill();
         c.globalAlpha = 1;
+        // r72 · ICONO EXPLÍCITO del área dentro del medallón (PP_ICONS)
+        const ico = ic && PP_ICONS[ic];
+        if (ico) { try { ico(c, x + CW - 56, yy + CH / 2); } catch (eIco) { /* decorativo */ } }
         c.fillStyle = '#ffffff'; c.textAlign = 'left'; c.textBaseline = 'middle';
         let fs = 34;
         c.font = '800 ' + fs + 'px system-ui, sans-serif';
@@ -2471,7 +2480,7 @@ loadPaddleModel().then((paddleModel) => {
       };
       for (let i = 0; i < AREAS.length; i++) {
         const a = AREAS[i];
-        card(i % 2 === 0 ? X0 : X1, y + Math.floor(i / 2) * (CH + GY), a.id, a.ik, a.sk, a.g0, a.g1, a.col);
+        card(i % 2 === 0 ? X0 : X1, y + Math.floor(i / 2) * (CH + GY), a.id, a.ik, a.sk, a.g0, a.g1, a.col, false, a.ic);
       }
       // tarjeta POSICIÓN DE LA PALA (subapartado 0) a lo ancho
       const yPal = y + 3 * (CH + GY);
@@ -3729,13 +3738,13 @@ window.__PP_CORE = {
   }
   /* parte un texto largo en 2 líneas centradas (por el espacio más
    * cercano al centro) tras intentar reducirlo. */
-  function wrap2(c, txt, y, size, col, maxW, lh) {
+  function wrap2(c, txt, y, size, col, maxW, lh, x) {
     fitFont(c, txt, size, '600', maxW, 12);
-    if (c.measureText(txt).width <= maxW) { line(c, txt, y, size, col); return; }
+    if (c.measureText(txt).width <= maxW) { line(c, txt, y, size, col, undefined, x); return; }
     const sep = txt.lastIndexOf(' ', Math.ceil(txt.length / 2));
-    if (sep <= 0) { line(c, txt, y, size, col); return; }
-    line(c, txt.slice(0, sep), y - (lh || 14), size, col);
-    line(c, txt.slice(sep + 1), y + (lh || 14), size, col);
+    if (sep <= 0) { line(c, txt, y, size, col, undefined, x); return; }
+    line(c, txt.slice(0, sep), y - (lh || 14), size, col, undefined, x);
+    line(c, txt.slice(sep + 1), y + (lh || 14), size, col, undefined, x);
   }
   /* píldora estilo TIZA: borde blanco translúcido, relleno ámbar/verde
    * suave y texto blanco — auto-dimensionada al texto (nada cortado). */
@@ -3749,7 +3758,10 @@ window.__PP_CORE = {
       fitFont(c, txt, size, '800', w - 48, 17);
     }
     const h = opts.h || 72;
-    const x = PIZ_CX - w / 2;
+    // r72 · centro PROPIO (opts.x): la píldora puede vivir fuera del
+    // centro de la pizarra (p. ej. junto al título de LOS MODOS).
+    const cx = (opts.x != null) ? opts.x : PIZ_CX;
+    const x = cx - w / 2;
     rr(c, x, y, w, h, 22);
     c.fillStyle = opts.col || 'rgba(47,158,68,0.30)';
     c.fill();
@@ -3759,7 +3771,7 @@ window.__PP_CORE = {
     c.fillStyle = '#ffffff';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(txt, PIZ_CX, y + h / 2 + 1);
+    c.fillText(txt, cx, y + h / 2 + 1);
   }
   function paintHeader(c) {
     // título a la izquierda de la zona negra (el birrete NO se tapa)
@@ -3834,13 +3846,16 @@ window.__PP_CORE = {
     //     sobre los mandos ANCLADOS a tus manos y después el vaivén con la
     //     ÚNICA raqueta — la pala real que ya tienes en la mano)
     (c) => {
-      line(c, T('tut_m_t'), 236, 40, '#ffd257');
-      line(c, T('tut_s1_l2'), 296, 20, '#c9d4de');
-      line(c, T('tut_s1_l1'), 328, 17, '#8b98a5');
+      // r72 · TÍTULO EN SU FILA: la cabecera (LA ACADEMIA CRAZY · PASO X DE 9
+      // · puntos) ocupa 168..248 — todo título de paso baja a y=272. Antes
+      // «TU MANDO, TU RAQUETA» en 236 pisaba el título de la cabecera.
+      line(c, T('tut_m_t'), 272, 40, '#ffd257');
+      line(c, T('tut_s1_l2'), 320, 20, '#c9d4de');
+      line(c, T('tut_s1_l1'), 350, 17, '#8b98a5');
       const tareas = [T('tut_m1_gat'), T('tut_m1_grip'), T('tut_m1_stick'), T('tut_m1_a')];
       for (let i = 0; i < 4; i++) {
         c.beginPath();
-        c.arc(512 + i * 42, 374, subfase > i ? 9 : 6.5, 0, Math.PI * 2);
+        c.arc(512 + i * 42, 386, subfase > i ? 9 : 6.5, 0, Math.PI * 2);
         c.fillStyle = subfase > i ? '#7fb069' : 'rgba(255,255,255,0.30)';
         c.fill();
       }
@@ -3852,132 +3867,146 @@ window.__PP_CORE = {
         // r70 · SIN SOLAPE: la píldora (caja 406..478 con h=72) y la línea
         // de la instrucción (glifos 441..463) se comían — DOS textos
         // superpuestos (el dueño: «ese panel superpone los textos»).
-        // Nuevo reparto vertical: píldora compacta 392..448 (texto en 421),
-        // instrucción en 472 (glifos ~461..483) y barra en 500 — aire
-        // limpio entre los tres bloques, dentro de la zona negra.
-        pill(c, T('tut_m1_raf'), 392, { col: 'rgba(90,160,255,0.30)', size: 24, h: 56 });
+        // r72 · el reparto r70 baja 20 px con el título (píldora 412..468,
+        // instrucción 494, barra 524..564) — mismos aires, nueva fila libre.
+        pill(c, T('tut_m1_raf'), 412, { col: 'rgba(90,160,255,0.30)', size: 24, h: 56 });
         const p = Math.min(1, sway / SWAY_META);
         c.globalAlpha = p > 0.02 ? 1 : (0.55 + 0.45 * Math.sin(mandoT * 5.2));
-        line(c, T('tut_m1_lado'), 472, 21, '#7fb069');
+        line(c, T('tut_m1_lado'), 494, 21, '#7fb069');
         c.globalAlpha = 1;
-        rr(c, 280, 500, 800, 40, 20);
+        rr(c, 280, 524, 800, 40, 20);
         c.fillStyle = 'rgba(255,255,255,0.12)'; c.fill();
         if (p > 0.01) {
-          rr(c, 280, 500, Math.max(26, 800 * p), 40, 20);
+          rr(c, 280, 524, Math.max(26, 800 * p), 40, 20);
           c.fillStyle = 'rgba(127,176,105,0.75)'; c.fill();
         }
         c.fillStyle = '#eef2f5';
         c.font = '700 18px system-ui, sans-serif';
         c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(Math.round(p * 100) + '%', PIZ_CX, 521);
+        c.fillText(Math.round(p * 100) + '%', PIZ_CX, 545);
       } else {
-        pill(c, tareas[Math.min(subfase, 3)], 406,
+        pill(c, tareas[Math.min(subfase, 3)], 412,
           { col: 'rgba(232,180,90,0.28)', size: 26 });
       }
     },
     // 2 · EL SAQUE · demo del PROFESOR sobre la mesa real y luego 3 saques TUYOS
+    //     r72 · título a 272 (fuera de la cabecera) y cuerpo reexpandido:
+    //     la práctica reparte sus 6 filas con aire (líneas 316/348/380,
+    //     contador 418+466, píldora 514..578) — antes el título en 214
+    //     chocaba con «LA ACADEMIA CRAZY» y el contador vivía apretado.
     (c) => {
       if (submodo === 'demo') {
-        line(c, T('tut_d3_t'), 244, 38, '#ffd257');
-        line(c, T('tut_d3_l1'), 312, 22);
-        line(c, T('tut_d3_l2'), 352, 22);
-        line(c, T('tut_d3_l3'), 392, 22);
+        line(c, T('tut_d3_t'), 272, 38, '#ffd257');
+        line(c, T('tut_d3_l1'), 336, 22);
+        line(c, T('tut_d3_l2'), 376, 22);
+        line(c, T('tut_d3_l3'), 416, 22);
         const aviso = demoTxt && demoTxt.t > 0
           ? { txt: demoTxt.txt, col: demoTxt.col || 'rgba(47,158,68,0.35)' }
           : (demoT > 4 ? { txt: T('tut_d3_go'), col: 'rgba(232,180,90,0.30)' }
                        : { txt: T('tut_rep'), col: 'rgba(255,255,255,0.10)' });
-        pill(c, aviso.txt, 470, { col: aviso.col, size: 26 });
+        pill(c, aviso.txt, 478, { col: aviso.col, size: 26 });
       } else {
-        line(c, T('tut_s3_t'), 214, 40, '#ffd257');
-        line(c, T('tut_s3_l1'), 270, 20);
-        line(c, T('tut_s3_l2'), 302, 20);
-        line(c, T('tut_s3_l3'), 334, 20);
-        line(c, T('tut_s3_cnt'), 386, 18, '#9fb0bd');
+        line(c, T('tut_s3_t'), 272, 40, '#ffd257');
+        line(c, T('tut_s3_l1'), 316, 20);
+        line(c, T('tut_s3_l2'), 348, 20);
+        line(c, T('tut_s3_l3'), 380, 20);
+        line(c, T('tut_s3_cnt'), 418, 18, '#9fb0bd');
         c.fillStyle = '#ffffff';
         c.shadowColor = 'rgba(255,255,255,0.4)'; c.shadowBlur = 10;
-        c.font = '900 58px system-ui, sans-serif';
+        c.font = '900 50px system-ui, sans-serif';
         c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(Math.min(saqCount, SAQ_META) + ' / ' + SAQ_META, PIZ_CX, 436);
+        c.fillText(Math.min(saqCount, SAQ_META) + ' / ' + SAQ_META, PIZ_CX, 466);
         c.shadowBlur = 0;
-        if (flashOk > 0) pill(c, T('tut_s3_ok'), 496, { col: 'rgba(47,158,68,0.35)', size: 26 });
-        else if (flashAgain > 0) pill(c, T('tut_s3_again'), 496, { col: 'rgba(240,135,63,0.32)', size: 26 });
-        else pill(c, T('tut_s3_task'), 500, { size: 28 });
+        if (flashOk > 0) pill(c, T('tut_s3_ok'), 514, { col: 'rgba(47,158,68,0.35)', size: 26, h: 64 });
+        else if (flashAgain > 0) pill(c, T('tut_s3_again'), 514, { col: 'rgba(240,135,63,0.32)', size: 26, h: 64 });
+        else pill(c, T('tut_s3_task'), 514, { size: 28, h: 64 });
       }
     },
     // 3 · EL INTERCAMBIO REAL (saque tuyo + rival que devuelve hasta fallar)
+    //     r72 · título a 272: «EL INTERCAMBIO» en 236 se pintaba ENCIMA de
+    //     la cabecera (el dueño: «se pisa con el texto que tiene arriba»).
     (c) => {
-      line(c, T('tut_d4_t'), 236, 40, '#ffd257');
-      line(c, T('tut_d4_l1'), 302, 21);
-      line(c, T('tut_d4_l2'), 340, 21);
-      line(c, T('tut_d4_l3'), 378, 21);
+      line(c, T('tut_d4_t'), 272, 40, '#ffd257');
+      line(c, T('tut_d4_l1'), 322, 21);
+      line(c, T('tut_d4_l2'), 360, 21);
+      line(c, T('tut_d4_l3'), 398, 21);
       if (rfHecho) {
-        pill(c, T('tut_d4_ok'), 452, { col: 'rgba(47,158,68,0.35)', size: 27 });
-        pill(c, T('tut_hint_next'), 536, { w: 520, h: 54, col: 'rgba(232,180,90,0.28)', size: 23 });
+        pill(c, T('tut_d4_ok'), 440, { col: 'rgba(47,158,68,0.35)', size: 27, h: 64 });
+        pill(c, T('tut_hint_next'), 520, { w: 520, h: 50, col: 'rgba(232,180,90,0.28)', size: 23 });
       } else {
-        pill(c, T('tut_d4_task'), 462, { size: 24 });
+        pill(c, T('tut_d4_task'), 452, { size: 24 });
       }
     },
-    // 4 · EL MARCADOR (holo sobre la mesa + saques reales en bucle)
+    // 4 · EL MARCADOR (holo sobre la mesa + saques reales en bucle) · r72: título a 272
     (c) => {
-      line(c, T('tut_d5_t'), 250, 40, '#ffd257');
-      line(c, T('tut_d5_l1'), 318, 22);
-      line(c, T('tut_d5_l2'), 358, 22);
-      line(c, T('tut_d5_l3'), 398, 22);
+      line(c, T('tut_d5_t'), 272, 40, '#ffd257');
+      line(c, T('tut_d5_l1'), 330, 22);
+      line(c, T('tut_d5_l2'), 368, 22);
+      line(c, T('tut_d5_l3'), 406, 22);
       pill(c, demoT >= DEMO_MIN ? T('tut_ent')
         : T('tut_h_saq') + '… ' + Math.ceil(DEMO_MIN - demoT) + ' s',
-        470, { col: demoT >= DEMO_MIN ? 'rgba(47,158,68,0.35)' : 'rgba(255,255,255,0.10)', size: 27 });
+        478, { col: demoT >= DEMO_MIN ? 'rgba(47,158,68,0.35)' : 'rgba(255,255,255,0.10)', size: 27 });
     },
-    // 5 · LA PRÁCTICA (el profesor devuelve 6 bolas)
+    // 5 · LA PRÁCTICA (el profesor devuelve 6 bolas) · r72: título a 272
+    //     («EL INTERCAMBIO» en 224 con s42 arrancaba DENTRO de la cabecera).
     (c) => {
-      line(c, T('tut_s4_t'), 224, 42, '#ffd257');
-      line(c, T('tut_s4_l1'), 290, 23);
-      line(c, T('tut_s4_l2'), 326, 23);
+      line(c, T('tut_s4_t'), 272, 42, '#ffd257');
+      line(c, T('tut_s4_l1'), 330, 23);
+      line(c, T('tut_s4_l2'), 366, 23);
       c.fillStyle = '#ffffff';
       c.shadowColor = 'rgba(255,255,255,0.4)'; c.shadowBlur = 10;
       c.font = '900 74px system-ui, sans-serif';
       c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(T('tut_s4_n', { n: Math.min(hitCount, DEVOL_META) }), PIZ_CX, 424);
+      c.fillText(T('tut_s4_n', { n: Math.min(hitCount, DEVOL_META) }), PIZ_CX, 446);
       c.shadowBlur = 0;
-      pill(c, T('tut_s4_task'), 494, { size: 27 });
+      pill(c, T('tut_s4_task'), 510, { size: 27, h: 64 });
     },
-    // 6 · LOS BOTONES EN JUEGO
+    // 6 · LOS BOTONES EN JUEGO · r72: título a 272 (en 240 rozaba la
+    //     cabecera y apretaba todo el bloque — «textos algo pegados»)
     (c) => {
-      line(c, T('tut_s5_t'), 240, 40, '#ffd257');
-      line(c, T('tut_s5_l1'), 306, 23);
-      line(c, T('tut_s5_l2'), 346, 23);
+      line(c, T('tut_s5_t'), 272, 40, '#ffd257');
+      line(c, T('tut_s5_l1'), 330, 23);
+      line(c, T('tut_s5_l2'), 370, 23);
       for (const [lb, kx] of [['A', 600], ['X', 760]]) {
-        rr(c, kx - 38, 408, 76, 76, 17);
+        rr(c, kx - 38, 412, 76, 76, 17);
         c.fillStyle = 'rgba(255,255,255,0.10)'; c.fill();
         c.strokeStyle = '#e8b45a'; c.lineWidth = 3.5; c.stroke();
         c.fillStyle = '#ffe08a';
         c.font = '900 42px system-ui, sans-serif';
         c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(lb, kx, 448);
+        c.fillText(lb, kx, 452);
       }
-      pill(c, T('tut_s5_task'), 520, { w: 600, h: 62, size: 25 });
+      pill(c, T('tut_s5_task'), 522, { w: 600, h: 56, size: 25 });
     },
     // 7 · LOS MODOS · rejilla 2×3 (r67 · UNA sola pizarra, antes eran dos)
+    //     r72 · REENCUADRE COMPLETO (el dueño: «los textos están mal
+    //     colocados»): (1) el título baja a 262 — en 208 se pintaba DENTRO
+    //     de la cabecera; (2) la píldora «GATILLO · continuar» sube a la
+    //     fila del título, a su DERECHA (x=986) — antes caía en 552 ENCIMA
+    //     de la fila inferior (496..566); (3) el texto PODERES se dibuja
+    //     DENTRO de su caja ámbar con centro x=996 — el wrap2 antiguo
+    //     pintaba SIEMPRE en el centro de la pizarra (680), o sea ENCIMA
+    //     de la tarjeta ENTRENAR. Fila de tarjetas con aire limpio.
     (c) => {
-      line(c, T('tut_mods_t'), 208, 36, '#ffd257');
-      const W = 480, H = 104;
+      line(c, T('tut_mods_t'), 262, 34, '#ffd257');
+      pill(c, T('tut_hint_next'), 252, { w: 300, h: 32, x: 986, col: 'rgba(232,180,90,0.28)', size: 18 });
+      const W = 480, H = 88;
       const cards = [
-        [190, 238, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_mod_p')],
-        [690, 238, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_mod_s')],
-        [190, 356, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_mod_m')],
-        [690, 356, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_mod_c')],
+        [190, 296, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_mod_p')],
+        [690, 296, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_mod_s')],
+        [190, 396, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_mod_m')],
+        [690, 396, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_mod_c')],
       ];
       for (const [x, y, col, ini, ti, su] of cards) {
         modeCard(c, x, y, W, H, col, ini, ti, su);
       }
       // fila inferior: RANKING + ENTRENAR (más estrechas, con la caja de poderes)
-      modeCard(c, 190, 470, 300, 96, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'));
-      modeCard(c, 506, 470, 300, 96, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_mod_t'));
-      rr(c, 822, 470, 348, 96, 14);
+      modeCard(c, 190, 496, 300, 80, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'));
+      modeCard(c, 506, 496, 300, 80, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_mod_t'));
+      rr(c, 822, 496, 348, 80, 14);
       c.fillStyle = 'rgba(232,180,90,0.14)'; c.fill();
       c.strokeStyle = 'rgba(232,180,90,0.45)'; c.lineWidth = 2; c.stroke();
-      wrap2(c, T('tut_pow_t'), 512, 15, '#ffe08a', 310, 12);
-      // r67 · píldora 552..594 — NUNCA invade la línea «B · saltar» (604)
-      pill(c, T('tut_hint_next'), 552, { w: 520, h: 42, col: 'rgba(232,180,90,0.28)', size: 20 });
+      wrap2(c, T('tut_pow_t'), 536, 14, '#ffe08a', 312, 11, 996);
     },
     // 8 · ¡YA SABES JUGAR!
     (c) => {

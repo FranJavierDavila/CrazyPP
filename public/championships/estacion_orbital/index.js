@@ -1577,6 +1577,11 @@ class EOArkanoid {
     if (this.extraPlane) this.extraPlane.visible = false;
     // v2.41: la red vuelve a la mesa
     for (const m of this._netParts || []) m.visible = true;
+    // v3.6.64-SDK6 · FASE 66 (r72): el ASTRO VUELVE — start() lo esconde
+    // («el ASTRO no juega el muro») y el stop() NUNCA lo restauraba: si
+    // la prueba se reactivara, el rival quedaría oculto para siempre.
+    const aStop = this.ctrl;
+    if (aStop && aStop.rivalMesh) aStop.rivalMesh.visible = true;
     g.tableGroup.visible = true;
     g.scoreboardGroup.visible = true;
     g.aiPaddleMesh.visible = true;
@@ -6707,6 +6712,9 @@ class StockController {
     const D = this.D;
 
     // RIVAL: standee del ASTRO (assets/rival.webp, arte del dueño)
+    // v3.6.64-SDK6 · FASE 66 (r72): guard IDEMPOTENTE — build() se vuelve a
+    // llamar en cada re-entrada al campeonato y sin el guard DUPLICABA el
+    // standee (el resto de piezas — dron/mapa/pwSign/beam — ya lo tenían).
     // v3.5.1 · 3.ª CORRECCIÓN DE COLOCACIÓN (informe del dueño: «el rival
     // astro está metido en la pared… que se coloque como en el resto de
     // rivales, totalmente visible a una distancia fija de la mesa»): el
@@ -6721,6 +6729,7 @@ class StockController {
     // Historia: v3.2.1 (x 1,62 · z −4,5) · v3.4.1 (x 1,26 · z −3,82).
     // v3.6.5-SDK5 · FASE 7: el STANDEE vive en el SDK (createRival, motor
     // «perezoso» del orbital: UNA textura viva + guard anti-recarga v3.2.1).
+    if (!this._rivalSDK) {
     this._rivalSDK = createRival(THREE, () => this.game, {
       modo: 'perezoso',
       base: 'rival.webp',
@@ -6736,6 +6745,7 @@ class StockController {
     this.rivalMesh = this._rivalSDK.mesh;  // identidad intacta: el poder de
                                            // meteoritos teletransporta
                                            // rivalMesh a pelo (x 0, z −2,1)
+    }
     this.group.add(this.rivalMesh);
     this._rivalEstado = '';
     this._rivalSDK.rivalEstado('idle');
@@ -6889,7 +6899,16 @@ class StockController {
       this.mapa.show();
     }
 
-    g.scene.add(this.group);
+    // v3.6.64-SDK6 · FASE 66 (r72 · ASTRO EN EL ESPACIO CORRECTO): el grupo
+    // vivía en g.scene (mundo crudo) mientras mesa, sala, mapa y troqueles
+    // viven en g.rig — el RECENTRADO del Quest (updateRecenter, 25 frames
+    // tras cada sesión XR) gira el rig y deja TODO lo colgado de scene
+    // girado/desplazado respecto a la mesa: era la causa real de las TRES
+    // correcciones de coordenadas anteriores (v3.2.1 → v3.4.1 → v3.5.1) y
+    // del informe del dueño «no se visualiza a Astro». Convención EXACTA
+    // de CLOWN (locura 445) y WIZARD (magia 678): game.rig.add(...) — el
+    // standee vive en el MISMO espacio que la mesa y la sala, SIEMPRE.
+    g.rig.add(this.group);
   }
 
   /** Cartel de la sala: ETAPA X/5 · nombre (+ ★ SUPERADO si ya campeón). */

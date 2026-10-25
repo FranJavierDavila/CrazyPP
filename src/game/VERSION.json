@@ -1,17 +1,17 @@
 {
-  "version": "3.6.63-SDK6",
-  "fase": 65,
-  "faseNombre": "EL SERVICIO HONESTO",
+  "version": "3.6.64-SDK6",
+  "fase": 66,
+  "faseNombre": "EL TELÓN Y EL CANDADO",
   "sdk": "1.5.4",
   "fecha": "2026-10-25",
-  "hub": "v3663-sdk6",
+  "hub": "v3664-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
     "locura": 27,
-    "estacion_orbital": 16,
+    "estacion_orbital": 17,
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "32fa4afceadefa3d1531f5dd8b458a0bb8e346843dc361b9079c285aa2e55b79"
+  "golden": "25bc890d9698c17a11b3fcabb34ca6b7a20296f51f9d3f71220e90d2c61441d2"
 }

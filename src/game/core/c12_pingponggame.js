@@ -1980,6 +1980,14 @@ export class PingPongGame {
       c.strokeStyle = hovered ? '#ffffff' : 'rgba(255,210,87,0.65)';
       c.lineWidth = hovered ? 5 : 2;
       c.stroke();
+      // r72 · CANDADO: tarjeta ATENUADA (puerta cerrada — voz «Próximamente»)
+      const lockado = !!ch.locked;
+      if (lockado) {
+        c.fillStyle = 'rgba(8,10,16,0.62)';
+        c.beginPath();
+        if (c.roundRect) c.roundRect(56, y, 912, 110, 18); else c.rect(56, y, 912, 110);
+        c.fill();
+      }
       const img = wrlBadgeImg(ch.id);
       if (img && img.complete && img.naturalWidth) {
         const S = 86;
@@ -1996,11 +2004,41 @@ export class PingPongGame {
       c.textBaseline = 'alphabetic';
       c.fillStyle = '#ffe9b3';
       c.font = '800 32px system-ui, sans-serif';
-      c.fillText(String(ch.label || '').replace(/^▶\s*/, ''), 186, y + 48);
+      const ttlCh = String(ch.label || '').replace(/^▶\s*/, '');
+      c.fillText(ttlCh, 186, y + 48);
+      if (lockado) {
+        // r72 · CANDADO VISIBLE SOBRE EL NOMBRE del campeonato (el dueño:
+        // «aparecerán bloqueados con un candado visible sobre el propio
+        // nombre») + título apagado para que se lea CERRADO.
+        c.fillStyle = 'rgba(201,212,222,0.75)';
+        c.fillText(ttlCh, 186, y + 48);
+        const twCh = c.measureText(ttlCh).width;
+        try { PP_ICONS.candado(c, 186 + twCh + 26, y + 34, 1.35); } catch (eLk) { /* decorativo */ }
+      }
       c.fillStyle = '#9aa7b4';
       c.font = '600 21px system-ui, sans-serif';
-      c.fillText(hint || T('hub_champ_hint'), 186, y + 82);
-      if (done) {
+      c.fillText(lockado ? T('champ_locked_hint') : (hint || T('hub_champ_hint')), 186, y + 82);
+      if (lockado) {
+        // r72 · chip PLATEADO «PRÓXIMAMENTE» (misma geometría que SUPERADO)
+        c.save();
+        c.font = '900 22px system-ui, sans-serif';
+        const chipTxtL = T('champ_locked_chip');
+        const chipWL = c.measureText(chipTxtL).width + 36;
+        const chipXL = 944 - chipWL / 2 - 18, chipYL = y + 20;
+        c.fillStyle = 'rgba(10,14,20,0.88)';
+        c.strokeStyle = '#c9d4de'; c.lineWidth = 3;
+        if (c.roundRect) {
+          c.beginPath(); c.roundRect(chipXL - chipWL / 2, chipYL - 20, chipWL, 40, 23);
+          c.fill(); c.stroke();
+        } else {
+          c.fillRect(chipXL - chipWL / 2, chipYL - 20, chipWL, 40);
+          c.strokeRect(chipXL - chipWL / 2, chipYL - 20, chipWL, 40);
+        }
+        c.fillStyle = '#c9d4de';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(chipTxtL, chipXL, chipYL + 1);
+        c.restore();
+      } else if (done) {
         // v2.128: cinta dorada «★ SUPERADO» en la tarjeta del vencido
         c.save();
         c.font = '900 22px system-ui, sans-serif';
@@ -2022,17 +2060,22 @@ export class PingPongGame {
         c.fillText(chipTxt, chipX, chipY + 1);
         c.restore();
       }
-      c.fillStyle = 'rgba(255,210,87,0.9)';
-      c.beginPath();
-      c.moveTo(924, y + 40); c.lineTo(944, y + 55); c.lineTo(924, y + 70);
-      c.closePath(); c.fill();
+      if (!lockado) {
+        c.fillStyle = 'rgba(255,210,87,0.9)';
+        c.beginPath();
+        c.moveTo(924, y + 40); c.lineTo(944, y + 55); c.lineTo(924, y + 70);
+        c.closePath(); c.fill();
+      }
       rects.push({ x: 56, y: y - 3, w: 912, h: 116, id: 'ppchamp:' + ch.id });
       y += 122;
       // v3.6.31 · VER PRESENTACIÓN (opcional): la intro del rival sólo se
       // muestra SOLA la primera vez que se entra; este botón la re-ve a
       // demanda (launch con opts.intro) — el vídeo deja de ser obligatorio.
-      btn('champintro:' + ch.id, 56, y, 912, 52, T('champ_intro_btn'),
-        false, undefined, undefined, 22);
+      // r72 · en los CANDADOS no hay presentación que ver: puerta cerrada.
+      if (!lockado) {
+        btn('champintro:' + ch.id, 56, y, 912, 52, T('champ_intro_btn'),
+          false, undefined, undefined, 22);
+      }
       y += 64;
       // controles propios del módulo (música, atajos, récord…)
       const chMod = this.champs.moduleIfLoaded(ch.id);
@@ -6275,6 +6318,124 @@ export class PingPongGame {
    *  El gatillo sólo actúa sobre el botón JUGAR (raycast); cualquier otro
    *  gatillo reintenta el audio del vídeo (gesto del usuario).
    *  ==================================================================== */
+  /* ============ r72 · TELÓN DE CARGA («Montando el escenario…") ==========
+   * Informe del dueño: al entrar en un campeonato se ve CÓMO SE MONTA el
+   * escenario (planos, rival y carteles llegando uno a uno). Ahora un
+   * TELÓN negro anclado al rig cubre la vista mientras ChampLoader
+   * importa el módulo y la sala carga sus 6 caras; se levanta en fundido
+   * cuando todo está (mínimo de estancia + 0,3 s de lecturas estables ·
+   * tope de seguridad 12 s). Patrón showChampIntro: plano 3D con
+   * depthTest:false — visible DENTRO del visor XR (el DOM no existe allí). */
+  showChampCurtain(id) {
+    try {
+      if (!this.rig) return null;
+      this.hideChampCurtain(true);
+      // título del campeonato para la línea pequeña
+      let ttl = id;
+      try {
+        const ent = ((this.champs && this.champs.entries) || []).find((x) => x.id === id);
+        const tt = ent && ent.title;
+        if (tt) ttl = String((__ppLang === 'en') ? (tt.en || tt.es) : (tt.es || tt.en)) || id;
+      } catch (e0) { /* */ }
+      const W = 1024, H = 640;
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      const c = cv.getContext('2d');
+      const tex = new THREE.CanvasTexture(cv);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true,
+        depthTest: false, depthWrite: false, fog: false });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 2.88), mat);
+      mesh.renderOrder = 70;
+      const group = new THREE.Group();
+      group.add(mesh);
+      group.position.set(0, 1.66, -0.72);   // cerca de la cabeza: cubre TODO el FOV
+      this.rig.add(group);
+      const S = { id, ttl, group, mesh, mat, tex, cv, c,
+        t: 0, rt0: null, listoDesde: null, espera: null, fade: -1 };
+      this.champCurtain = S;
+      this._pintaCurtain(S, 0);
+      return {
+        cierra: () => { try { this.hideChampCurtain(); } catch (e1) { /* */ } },
+        espera: (fn) => { S.espera = fn; },
+      };
+    } catch (e) { console.warn('[curtain] show', e); return null; }
+  }
+
+  /** Pinta el telón: NEGRO total + título pequeño + «Montando el
+   *  escenario…» con puntos animados (redibujado barato por frame). */
+  _pintaCurtain(S, dots) {
+    try {
+      const c = S.c, W = 1024, H = 640;
+      c.clearRect(0, 0, W, H);
+      c.fillStyle = '#000000';
+      c.fillRect(0, 0, W, H);
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = 'rgba(255,210,87,0.55)';
+      c.font = '700 30px system-ui, sans-serif';
+      c.fillText(String(S.ttl || '').toUpperCase(), W / 2, H / 2 - 74);
+      c.fillStyle = '#eef2f5';
+      c.font = '800 52px system-ui, sans-serif';
+      const pts = '.'.repeat(dots % 4);
+      c.fillText(T('champ_telon').replace(/\.+$/, '') + pts, W / 2, H / 2 + 4);
+      // barra fina que respira (sugerencia de actividad, nada de progreso falso)
+      const bw = 320 * (0.55 + 0.45 * Math.sin(S.t * 2.4));
+      c.fillStyle = 'rgba(255,210,87,0.65)';
+      if (c.roundRect) {
+        c.beginPath(); c.roundRect(W / 2 - bw / 2, H / 2 + 92, bw, 8, 4); c.fill();
+      } else c.fillRect(W / 2 - bw / 2, H / 2 + 92, bw, 8);
+      S.tex.needsUpdate = true;
+    } catch (e) { /* decorativo */ }
+  }
+
+  _updateChampCurtain() {
+    const S = this.champCurtain;
+    if (!S) return;
+    // r72 · el telón es INTERFAZ, no física: corre en TIEMPO REAL — una
+    // carga a 20 fps no alarga la espera del dueño y el QA headless (1 fps
+    // con SwiftShader) no se queda colgado 30 s por el cap de dt (1/30).
+    const rt = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+    if (S.rt0 == null) { S.rt0 = rt; S.listoDesde = null; }
+    S.t = rt - S.rt0;
+    this._pintaCurtain(S, Math.floor(S.t * 2.6));
+    if (S.fade >= 0) {
+      const k = Math.max(0, 1 - (rt - S.fade) / 0.42);
+      S.mat.opacity = k;
+      S.mesh.visible = k > 0.01;
+      if (k <= 0.01) this.hideChampCurtain(true);
+      return;
+    }
+    // ¿se levanta? mínimo 0,9 s de estancia + 0,3 s de check estable · tope 12 s
+    if (S.t < 0.9) return;
+    let listo = false;
+    try { listo = S.espera ? !!S.espera() : true; } catch (e) { listo = true; }
+    if (listo) {
+      if (S.listoDesde == null) S.listoDesde = rt;
+      if (rt - S.listoDesde >= 0.3 || S.t >= 12) S.fade = rt;
+    } else {
+      S.listoDesde = null;
+      if (S.t >= 12) S.fade = rt;
+    }
+  }
+
+  /** Cierra el telón: SIN argumento = fundido suave por el tick (la vía
+   *  normal); con true = desmonte inmediato (limpieza/seguridad). */
+  hideChampCurtain(inmediato) {
+    const S = this.champCurtain;
+    if (!S) return;
+    if (!inmediato && S.fade < 0 && this.rig) {
+      S.fade = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+      return;
+    }
+    this.champCurtain = null;
+    try {
+      if (S.group.parent) S.group.parent.remove(S.group);
+      try { S.tex.dispose(); } catch (e0) { /* */ }
+      try { S.mat.dispose(); } catch (e1) { /* */ }
+      try { S.mesh.geometry.dispose(); } catch (e2) { /* */ }
+    } catch (e) { /* el telón NUNCA rompe */ }
+  }
+
   showChampIntro(id) {
     try {
       if (!this.rig) return;
@@ -7748,6 +7909,8 @@ export class PingPongGame {
     // v2.106: cartel explicativo de pruebas (fade + callback al terminar)
     this._updateInstrucciones(dt);
     this._updateChampIntro(dt);
+    // r72 · TELÓN DE CARGA de campeonatos (pinta puntos, funde y desmonta)
+    this._updateChampCurtain();
     // v2.128: panel ¡CONSEGUIDO! del campeonato superado (pop + fundido)
     this._updateChampConseguido(dt);
     // v2.79: el decorado de troqueles respira con la sala (visibilidad
@@ -8677,7 +8840,7 @@ import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBa
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
 import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
-import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createReplayBanner, createHall, createScoreboard, updateHallFx } from './c08_hall_hud.js';
+import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createReplayBanner, createScoreboard, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
 import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, pcA, pcC, pcN, pcT } from './c11_champloader.js';

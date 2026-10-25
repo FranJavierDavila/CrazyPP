@@ -144,6 +144,9 @@ MECANICA = """async () => {
   out.push({ ok: g.champDecorHidden === false,
              lab: 'leaveAll final: cerrojo liberado para el siguiente' });
   // 2.d los 5 campeonatos montan el suyo (sistema vivo, nada borrado)
+  // r72 · los candados exigen Modo Depuración (FORO3D) para montar
+  // los decorados de orbital y valle_neon (uso definido por el dueño)
+  try { localStorage.setItem('pp_player_name', 'FORO3D'); if (window.ppDebugRefresh) window.ppDebugRefresh(); } catch (e) { /**/ }
   const ids = ['oeste', 'locura', 'magia', 'valle_neon', 'estacion_orbital'];
   let todosOk = true;
   for (const id of ids) {

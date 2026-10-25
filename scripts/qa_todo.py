@@ -334,6 +334,23 @@ CAPAS = [
     # entrada a campeonatos viéndose montarse: telón negro + candados con
     # voz «Próximamente» y bypass FORO3D.
     ('BG · telón y candado (v3664)', 'qa_r72_v3664.py'),
+    # r73 (FASE 67 · EL MENÚ MANDA): informe del dueño tras V3.6.64 — (1)
+    # «un Menú estemos donde estemos debe ser la ventana que manda y verse
+    # siempre la primera»: familia del menú al cielo del render (panel 9998,
+    # cursores 9999, rayos 9997 — sobre instrucciones 9994/9995 y mapa del
+    # oeste 9990..9996). (2) «los candados están mal colocados y aparecen
+    # desplazados»: la v72 hacía scale(k) ANTES de dibujar en (x,y) — el
+    # candado se pintaba a 1,35× la posición; ahora translate+scale (medido
+    # en píxeles: junto al ancla, cero desplazados). (3) «me ha desaparecido
+    # el campeonato del Salvaje Oeste»: el índice y los manifest se pedían
+    # UNA vez y una petición perdida lo borraba para siempre — fetch con
+    # cache:'no-cache' + reintentos exponenciales + manifest en paralelo +
+    # 2 olas de recuperación (+8 s/+25 s) + estado CARGANDO + botón
+    # REINTENTAR. (4) telón de teatro: esfera negra de 12 m centrada en la
+    # cabeza (adiós al pegote de 0,72 m) + tarjeta de intermedio a 2,00 m
+    # que sigue a la cabeza con el color del campeonato y una bola que va
+    # y viene sobre la pista. Mejora sorpresa del dueño incluida.
+    ('BH · el menú manda, candado y telón de teatro (v3665)', 'qa_r73_v3665.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

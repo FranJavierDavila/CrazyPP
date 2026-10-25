@@ -5021,7 +5021,7 @@ window.__PP_CORE = {
     if (G.calibPanel) G.calibPanel.group.visible = false;
     // r60 (petición del dueño): «se está superponiendo con otras ventanas
     // del menú y no es pulsable» — el menú NACE del clic que abre la
-    // academia y si sigue abierto (delante del jugador, renderOrder 990
+    // academia y si sigue abierto (delante del jugador, renderOrder 9998
     // sobre el 985 del panel, misma altura de ojos) se come los rayos del
     // gatillo y el paso 0 nunca arranca. NO vale closeMenu()/toggleMenu():
     // toggleMenu duerme con `if (this.calib) return` y la academia ESTÁ en

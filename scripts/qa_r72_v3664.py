@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r72_v3664 — CAPA BG · V3.6.64-SDK6, FASE 66 «EL TELÓN Y EL CANDADO».
+"""qa_r72_v3664 — CAPA BG · V3.6.65-SDK6, FASE 66 «EL TELÓN Y EL CANDADO».
 
 Informe del dueño tras probar V3.6.63 en el Quest, punto por punto:
   1. «En el tutorial en el paso 3 existe solapamiento de texto en el cartel».
@@ -80,7 +80,11 @@ AGUJAS = [
     ("telón: tick en animate", "this._updateChampCurtain();"),
     ("telón: texto i18n con puntos animados", "T('champ_telon').replace(/\\.+$/, '') + pts"),
     ("telón: tope de seguridad 12 s (tiempo real)", "if (rt - S.listoDesde >= 0.3 || S.t >= 12) S.fade = rt;"),
-    ("telón: anclado al rig, cerca de la cabeza", "group.position.set(0, 1.66, -0.72);"),
+    # r73 · TELÓN DE TEATRO: la v72 anclaba un plano a 0.72 m; la v73 trae
+    # esfera negra de 12 m (BackSide, renderOrder 65) + cartel a 2 m que
+    # sigue a la cabeza. Aguja re-anclada a la verdad r73.
+    ("telón: esfera negra que traga el mundo", "new THREE.SphereGeometry(12, 28, 18), matEs"),
+    ("telón: cartel a 2 m delante (tick a la cabeza)", "S.group.position.set(S._v1.x + S._v2.x * 2.0, dy, S._v1.z + S._v2.z * 2.0);"),
     ("telón: renderOrder por encima de la intro", "mesh.renderOrder = 70;"),
     # --- r72 · CANDADOS ---
     ("candado: LOCKED con los dos campeonatos", "static LOCKED = ['estacion_orbital', 'valle_neon'];"),
@@ -97,7 +101,8 @@ AGUJAS = [
     ("icono EFECTO (bola con giro)", "spin(c, x, y) {           // EFECTO: bola con estela de giro"),
     ("icono SAQUE (doble bote)", "saque(c, x, y) {          // SAQUE: la trayectoria del doble bote"),
     ("icono RITMO (metrónomo)", "rit(c, x, y) {            // RITMO: metrónomo"),
-    ("icono CANDADO", "candado(c, x, y, s) {     // r72 · candado (campeonatos PRÓXIMAMENTE)"),
+    # r73 · el candado es translate+scale (la v72 lo desplazaba ×1,35)
+    ("icono CANDADO", "candado(c, x, y, s) {     // r73 · candado (campeonatos PRÓXIMAMENTE)"),
     ("AREAS lleva ic por área", "{ id: 'dir', ic: 'dir', ik: 'a_dir'"),
     ("tarjeta dibuja el icono en el medallón", "const ico = ic && PP_ICONS[ic];"),
     # --- r72 · CARTEL sin solapes (reflow) ---

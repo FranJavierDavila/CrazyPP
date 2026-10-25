@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.64-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.65-SDK6</span>
     </div>
   </main>
 
@@ -778,6 +778,10 @@ const I18N_STRINGS = {
     champ_locked_chip: 'PRÓXIMAMENTE',
     champ_locked_hint: 'Aún en preparación · pronto anunciamos cómo desbloquearlo',
     champ_telon: 'Montando el escenario...',
+    // r73 · índice resiliente + telón de teatro
+    champ_cargando: 'Cargando campeonatos…',
+    champ_reintentar: '⟳  REINTENTAR',
+    champ_telon_presenta: 'CRAZY PING PONG PRESENTA',
     champ_stage_hint: 'Etapa {n}/{total} · sigue donde la dejaste',   // v3.6.17 (ronda 21, la de la ronda 19 al fin en producción)
     champ_leyenda_chip: '★ LEYENDA',   // v3.6.18 (ronda 24)
     champ_leyenda_hint: '★ LEYENDA · camino sellado 5/5 en modo leyenda',
@@ -1384,6 +1388,10 @@ const I18N_STRINGS = {
     champ_locked_chip: 'COMING SOON',
     champ_locked_hint: 'Still in the works · unlock rules announced soon',
     champ_telon: 'Setting up the arena...',
+    // r73 · resilient index + theatre curtain
+    champ_cargando: 'Loading championships…',
+    champ_reintentar: '⟳  RETRY',
+    champ_telon_presenta: 'CRAZY PING PONG PRESENTS',
     champ_stage_hint: 'Stage {n}/{total} · pick up where you left off',   // v3.6.17 (ronda 21)
     champ_leyenda_chip: '★ LEGEND',   // v3.6.18 (ronda 24)
     champ_leyenda_hint: '★ LEGEND · route sealed 5/5 in legend mode',
@@ -2097,18 +2105,23 @@ const PP_ICONS = {
     c.beginPath(); c.arc(x + 12, y - 18, 3.5, 0, Math.PI * 2); c.fill();
     c.restore();
   },
-  candado(c, x, y, s) {     // r72 · candado (campeonatos PRÓXIMAMENTE)
+  candado(c, x, y, s) {     // r73 · candado (campeonatos PRÓXIMAMENTE)
+    /* r73 · FIX DEL DESPLAZAMIENTO: la v72 hacía scale(k,k) ANTES de
+     * dibujar en (x, y) absolutos — el candado se pintaba a 1,35× la
+     * posición pedida (un candado flotando junto al pie del menú).
+     * Ahora se TRASLADA al ancla y se escala DESPUÉS: el cuerpo se dibuja
+     * alrededor del ORIGEN y (x, y) es el centro real del candado. */
     const k = s || 1;
-    c.save(); c.scale(k, k);
+    c.save(); c.translate(x, y); c.scale(k, k);
     c.strokeStyle = '#c9d4de'; c.lineWidth = 5;
-    c.beginPath(); c.arc(x, y - 8, 9, Math.PI, 0); c.stroke();
+    c.beginPath(); c.arc(0, -8, 9, Math.PI, 0); c.stroke();
     c.fillStyle = '#c9d4de';
     c.beginPath();
-    if (c.roundRect) c.roundRect(x - 13, y - 8, 26, 20, 5); else c.rect(x - 13, y - 8, 26, 20);
+    if (c.roundRect) c.roundRect(-13, -8, 26, 20, 5); else c.rect(-13, -8, 26, 20);
     c.fill();
     c.fillStyle = '#10131a';
-    c.beginPath(); c.arc(x, y + 2, 3.2, 0, Math.PI * 2); c.fill();
-    c.fillRect(x - 1.6, y + 2, 3.2, 6);
+    c.beginPath(); c.arc(0, 2, 3.2, 0, Math.PI * 2); c.fill();
+    c.fillRect(-1.6, 2, 3.2, 6);
     c.restore();
   },
 };
@@ -2479,7 +2492,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.64-SDK6';
+  const VERSION = '3.6.65-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -9971,6 +9984,9 @@ class ChampLoader {
     this.modules = {};      // id -> módulo importado (perezoso)
     this.activeId = '';     // '' = ningún campeonato externo activo
     this.replayHover = -1;  // v2.96: nodo del mapa apuntado con la pala (-1 = ninguno)
+    // r73 · estado de la carga del índice (el menú pinta «CARGANDO…»)
+    this.cargando = false;
+    this._idxListo = false;
     this._loadIndex();
   }
 
@@ -10003,79 +10019,154 @@ class ChampLoader {
     return !!(m && typeof m.testActive === 'function' && m.testActive());
   }
 
+  /** r73 · FETCH CON REINTENTOS: el índice y los manifest se pedían UNA
+   *  sola vez — una petición perdida (WiFi de la Quest, caché, un 502
+   *  puntual de Pages) eliminaba el campeonato del menú PARA SIEMPRE
+   *  (el «Salvaje Oeste desaparecido»). Ahora: cache:'no-cache' + hasta
+   *  N intentos con espera exponencial. Devuelve null si agota. */
+  async _fetchJSON(url, intentos) {
+    const n = intentos || 3;
+    for (let i = 0; i < n; i++) {
+      try {
+        const r = await fetch(url, { cache: 'no-cache' });
+        if (r.ok) return await r.json();
+      } catch (e) { /* red dormida: reintento */ }
+      if (i < n - 1) {
+        await new Promise((res) => setTimeout(res, 700 * Math.pow(2, i)));
+      }
+    }
+    return null;
+  }
+
   _loadIndex() {
     // file:// no puede fetchear el índice: sin botones y sin ruido en
     // consola (lección v2.52). El juego local sigue igual que siempre.
     if (typeof location !== 'undefined' && !/^https?:$/.test(location.protocol)) return;
-    fetch('championships/championships.json')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('sin índice'))))
-      .then(async (idx) => {
-        const list = (idx && Array.isArray(idx.championships)) ? idx.championships : [];
-        for (const raw of list) {
-          // v2.69: cada entrada es "id" o { id, eager } — eager importa e
-          // inicializa el módulo AL ARRANCAR (sin lanzarlo): La Locura
-          // existe desde el primer frame, igual que hasta v2.68.
-          // v2.125: la entrada también puede llevar "estado" (el del ciclo
-          // de vida); el del manifest manda si lo declara.
-          const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
-          const id = String(ent.id || '');
-          if (!/^[a-z0-9_-]+$/i.test(id)) continue;   // id seguro (sin ../)
-          try {
-            const r2 = await fetch(`championships/${id}/manifest.json`);
-            const man = r2.ok ? await r2.json() : null;
-            if (!man) continue;
-            // v2.125 · CONTRATO: un manifest de un contrato futuro no se
-            // integra (y queda VISIBLE, no mudo).
-            const contrato = man.contract || 1;
-            if (contrato > 1) {
-              console.warn(`[champs] ${id} declara contract ${contrato} > 1 ` +
-                '(núcleo más viejo que el campeonato): no se integra');
-              this.entries.push({
-                id, folder: `championships/${id}/`,
-                title: man.title || { es: id, en: id }, storage: man.storage || '',
-                eager: false, estado: 'incompatible', manifest: man,
-                error: `contract ${contrato} > 1`,
-              });
-              continue;
-            }
-            // v2.125 · CICLO DE VIDA: sólo "publicado" sale en el menú;
-            // borrador/validación/listo se cargan bajo demanda (previsualización
-            // con ?champ=<id>); desactivado ni eso.
-            const estado = man.estado || ent.estado || 'publicado';
-            if (estado === 'desactivado') continue;
-            this.entries.push({
-              id,
-              folder: `championships/${id}/`,
-              title: man.title || { es: id, en: id },
-              storage: man.storage || '',
-              eager: !!ent.eager,
-              estado,
-              manifest: man,
-              error: null,
-            });
-          } catch (e) { /* carpeta incompleta: se ignora sola */ }
+    this.cargando = true;            // r73: el menú puede mostrar «CARGANDO…»
+    this._idxListo = false;
+    this._cargaIdx().catch(() => { /* sin índice: sólo el núcleo */ });
+  }
+
+  /** r73 · CARGA DEL ÍNDICE (async real): índice con 4 intentos, manifest
+   *  en PARALELO (3 intentos cada uno) y DOS OLAS DE RECUPERACIÓN para las
+   *  carpetas que fallaron (+8 s y +25 s). Cada éxito repinta el menú. */
+  async _cargaIdx() {
+    const idx = await this._fetchJSON('championships/championships.json', 4);
+    if (!idx) { this.cargando = false; this._idxListo = true; return; }
+    const list = (idx && Array.isArray(idx.championships)) ? idx.championships : [];
+
+    /** integra UN manifest (mismo contrato que siempre) → bool éxito */
+    const integra = (raw, man) => {
+      // v2.69: cada entrada es "id" o { id, eager } — eager importa e
+      // inicializa el módulo AL ARRANCAR (sin lanzarlo): La Locura
+      // existe desde el primer frame, igual que hasta v2.68.
+      // v2.125: la entrada también puede llevar "estado" (el del ciclo
+      // de vida); el del manifest manda si lo declara.
+      const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+      const id = String(ent.id || '');
+      if (!/^[a-z0-9_-]+$/i.test(id)) return false;
+      if (this.entries.some((x) => x.id === id)) return true;   // ya está
+      if (!man) return false;
+      // v2.125 · CONTRATO: un manifest de un contrato futuro no se
+      // integra (y queda VISIBLE, no mudo).
+      const contrato = man.contract || 1;
+      if (contrato > 1) {
+        console.warn(`[champs] ${id} declara contract ${contrato} > 1 ` +
+          '(núcleo más viejo que el campeonato): no se integra');
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: man.title || { es: id, en: id }, storage: man.storage || '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: `contract ${contrato} > 1`,
+        });
+        return true;
+      }
+      // v2.125 · CICLO DE VIDA: sólo "publicado" sale en el menú;
+      // borrador/validación/listo se cargan bajo demanda (previsualización
+      // con ?champ=<id>); desactivado ni eso.
+      const estado = man.estado || ent.estado || 'publicado';
+      if (estado === 'desactivado') return true;
+      this.entries.push({
+        id,
+        folder: `championships/${id}/`,
+        title: man.title || { es: id, en: id },
+        storage: man.storage || '',
+        eager: !!ent.eager,
+        estado,
+        manifest: man,
+        error: null,
+      });
+      return true;
+    };
+
+    // r73 · PARALELO: una carpeta lenta ya no retrasa a las demás.
+    const fallados = [];
+    await Promise.all(list.map(async (raw) => {
+      const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+      const id = String(ent.id || '');
+      if (!/^[a-z0-9_-]+$/i.test(id)) return;
+      const man = await this._fetchJSON(`championships/${id}/manifest.json`, 3);
+      if (!integra(raw, man)) fallados.push(raw);
+    }));
+
+    // v2.69: módulos eager — importar SIN lanzar (init puede devolver
+    // promesa: el campeonato fusiona su data.json antes de estar listo)
+    for (const e of this.entries) {
+      if (!e.eager) continue;
+      try { await this.preload(e.id); }
+      catch (err) { console.warn('[champs.eager] ' + e.id, err); }
+    }
+    this.cargando = false;
+    this._idxListo = true;
+    // el menú pudo dibujarse antes de llegar la carpeta: repíntalo
+    try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (e) { /* */ }
+    this._previsualiza();
+
+    // r73 · OLAS DE RECUPERACIÓN: lo que falló vuelve a intentarlo a los
+    // 8 s y a los 25 s — un campeonato ya NO se pierde por un hipo de red.
+    for (let ola = 0; ola < 2 && fallados.length; ola++) {
+      await new Promise((res) => setTimeout(res, ola === 0 ? 8000 : 17000));
+      const deNuevo = fallados.splice(0, fallados.length);
+      await Promise.all(deNuevo.map(async (raw) => {
+        const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+        const id = String(ent.id || '');
+        if (this.entries.some((x) => x.id === id)) return;
+        const man = await this._fetchJSON(`championships/${id}/manifest.json`, 3);
+        if (integra(raw, man)) {
+          try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (eR) { /* */ }
+        } else {
+          fallados.push(raw);
         }
-        // v2.69: módulos eager — importar SIN lanzar (init puede devolver
-        // promesa: el campeonato fusiona su data.json antes de estar listo)
-        for (const e of this.entries) {
-          if (!e.eager) continue;
-          try { await this.preload(e.id); }
-          catch (err) { console.warn('[champs.eager] ' + e.id, err); }
-        }
-        // v2.125 · PREVISUALIZACIÓN AISLADA: ?champ=<id> lanza un campeonato
-        // aunque esté en borrador/validación (jamás altera el menú público).
-        try {
-          const q = new URLSearchParams(location.search).get('champ');
-          const ent = q && this.entries.find((x) => x.id === q && x.estado !== 'incompatible');
-          if (ent) {
-            console.info('[champs] previsualización de ' + q);
-            this.launch(q);
-          }
-        } catch (e) { /* */ }
-        // el menú pudo dibujarse antes de llegar la carpeta: repíntalo
-        try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (e) { /* */ }
-      })
-      .catch(() => { /* sin índice: sólo el núcleo (comportamiento clásico) */ });
+      }));
+    }
+    if (fallados.length) {
+      console.warn('[champs] sin manifest tras las olas:', fallados.map((r) =>
+        (typeof r === 'string' ? r : (r && r.id))).join(', '));
+    }
+  }
+
+  /** r73 · RECARGA MANUAL del índice (botón REINTENTAR del menú cuando no
+   *  llegó ninguno). Idempotente: no duplica entradas ya integradas. */
+  recargar() {
+    if (this.cargando) return;
+    this._loadIndex();
+  }
+
+  /** v2.125 · PREVISUALIZACIÓN AISLADA: ?champ=<id> lanza un campeonato
+   *  aunque esté en borrador/validación (jamás altera el menú público).
+   *  r73: vive en método propio — también dispara si la carpeta llegó
+   *  tarde en una ola de recuperación (una sola vez). */
+  _previsualiza() {
+    if (this._prevLanzada) return;
+    try {
+      const q = new URLSearchParams(location.search).get('champ');
+      const ent = q && this.entries.find((x) => x.id === q && x.estado !== 'incompatible');
+      if (ent) {
+        this._prevLanzada = true;
+        console.info('[champs] previsualización de ' + q);
+        this.launch(q);
+      }
+    } catch (e) { /* */ }
   }
 
   /** v2.69 · IMPORTA E INICIALIZA un módulo SIN lanzarlo (idempotente).
@@ -11900,7 +11991,13 @@ class PingPongGame {
       new THREE.PlaneGeometry(0.72, 1.08),
       new THREE.MeshBasicMaterial({ map: this.menuTex, transparent: true, depthTest: false }),
     );
-    this.menuMesh.renderOrder = 990;
+    // r73 · EL MENÚ MANDA: el panel del menú es la ventana que manda donde
+    // sea que se despliegue — se pinta POR ENCIMA de cualquier otra ventana
+    // (instrucciones 9994/9995, mapa del oeste 9990..9996, telón 65..70,
+    // conseguido 60). Sólo la chapa del MODO DEPURACIÓN (9999) comparte
+    // cielo, y es una marca de agua, no una ventana. Al estar el grupo
+    // oculto el orden no afecta a nada más.
+    this.menuMesh.renderOrder = 9998;   // antes 990 (bajo instrucciones/mapa)
     this.menuGroup.add(this.menuMesh);
 
     this.menuGroup.visible = false;
@@ -11935,7 +12032,7 @@ class PingPongGame {
           transparent: true, opacity: 0.85, depthTest: false,
         }),
       );
-      beam.renderOrder = 940;          // sobre la escena, bajo el panel (990)
+      beam.renderOrder = 9997;         // r73: sobre la escena, bajo el panel (9998)
       beam.visible = false;
       beam.frustumCulled = false;
       this.scene.add(beam);
@@ -11947,7 +12044,7 @@ class PingPongGame {
           color: h === 0 ? 0xe8b45a : 0x7fd4e8, depthTest: false, transparent: true, opacity: 0.95,
         }),
       );
-      dot.renderOrder = 991;
+      dot.renderOrder = 9999;
       dot.visible = false;
       this.menuGroup.add(dot);
       this.menuDots.push(dot);
@@ -12741,8 +12838,18 @@ class PingPongGame {
 
     const chList = this.champs ? this.champs.list() : [];
     if (!chList.length) {
-      label(T('arc_no_data'), y + 12, 22, '#75828f', 'center');
-      y += 44;
+      // r73 · ESTADO HONESTO: mientras el índice llega (o si la red falló)
+      // el menú nunca parece roto: «CARGANDO CAMPEONATOS…» con estado vivo,
+      // y si la carga terminó en vacío, botón REINTENTAR (champs.recargar()).
+      if (this.champs && this.champs.cargando) {
+        label(T('champ_cargando'), y + 12, 24, '#ffd257', 'center');
+        y += 46;
+      } else {
+        label(T('arc_no_data'), y + 12, 22, '#75828f', 'center');
+        y += 44;
+        btn('champretry', 312, y, 400, 58, T('champ_reintentar'), false, undefined, undefined, 25);
+        y += 70;
+      }
     }
     for (const ch of chList) {
       const hovered = this.menuHover.includes(rects.length);
@@ -12798,16 +12905,17 @@ class PingPongGame {
       }
       c.textAlign = 'left';
       c.textBaseline = 'alphabetic';
-      c.fillStyle = '#ffe9b3';
       c.font = '800 32px system-ui, sans-serif';
       const ttlCh = String(ch.label || '').replace(/^▶\s*/, '');
+      // r73 · título UNA sola vez: oro en abiertos, plata apagada en candados
+      // (antes se pintaba dos veces — oro y encima plata — tirando pintura).
+      c.fillStyle = lockado ? 'rgba(201,212,222,0.75)' : '#ffe9b3';
       c.fillText(ttlCh, 186, y + 48);
       if (lockado) {
         // r72 · CANDADO VISIBLE SOBRE EL NOMBRE del campeonato (el dueño:
         // «aparecerán bloqueados con un candado visible sobre el propio
-        // nombre») + título apagado para que se lea CERRADO.
-        c.fillStyle = 'rgba(201,212,222,0.75)';
-        c.fillText(ttlCh, 186, y + 48);
+        // nombre») — r73: el icono nace ya BIEN COLOCADO (translate+scale
+        // dentro de PP_ICONS.candado; el scale primero lo desplazaba ×1,35).
         const twCh = c.measureText(ttlCh).width;
         try { PP_ICONS.candado(c, 186 + twCh + 26, y + 34, 1.35); } catch (eLk) { /* decorativo */ }
       }
@@ -13512,6 +13620,13 @@ class PingPongGame {
       }
       case 'theme':
         this.setTheme(arg);        // anuncia, vibra y pinta el mensaje
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      case 'champretry':
+        // r73 · REINTENTAR la carga del índice de campeonatos (índice o
+        // manifest perdidos por la red ya no son un callejón sin salida).
+        if (this.champs) this.champs.recargar();
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
         this.drawMenu();
         break;
@@ -17122,33 +17237,61 @@ class PingPongGame {
    * cuando todo está (mínimo de estancia + 0,3 s de lecturas estables ·
    * tope de seguridad 12 s). Patrón showChampIntro: plano 3D con
    * depthTest:false — visible DENTRO del visor XR (el DOM no existe allí). */
+  /* ====================================================================
+   *  r73 · TELÓN DE TEATRO (rediseño total a petición del dueño:
+   *  «no es poner un pegote de pantalla sino que todo el entorno que nos
+   *  rodea esté negro con el texto delante hasta que carga el escenario»).
+   *  - ENTORNO NEGRO COMPLETO: esfera invertida (BackSide) de 12 m de
+   *    radio colgada del rig y CENTRADA EN LA CABEZA cada tick — pared,
+   *    mesa, troqueles y passthrough desaparecen: el mundo entero se
+   *    apaga mientras llega el escenario.
+   *  - CARTEL A 2 METROS: tarjeta de intermedio de teatro que sigue a la
+   *    cabeza (giro y altura) a 2,00 m exactos, SIEMPRE de cara al visor.
+   *  - TARJETA: doble marco dorado, «CRAZY PING PONG PRESENTA», título
+   *    del campeonato en SU color (autoajuste), «Montando el escenario…»
+   *    con puntos y una BOLA que va y viene sobre una pista con red — el
+   *    ping pong nunca se apaga. Fundido de salida que desmonta TODO.
+   *  Tick en TIEMPO REAL (r72), tope 12 s, API {cierra, espera} intacta.
+   *  ==================================================================== */
   showChampCurtain(id) {
     try {
       if (!this.rig) return null;
       this.hideChampCurtain(true);
-      // título del campeonato para la línea pequeña
+      // título del campeonato para la tarjeta
       let ttl = id;
       try {
         const ent = ((this.champs && this.champs.entries) || []).find((x) => x.id === id);
         const tt = ent && ent.title;
         if (tt) ttl = String((__ppLang === 'en') ? (tt.en || tt.es) : (tt.es || tt.en)) || id;
       } catch (e0) { /* */ }
+      const cols = this._telonCols(id);
       const W = 1024, H = 640;
       const cv = document.createElement('canvas');
       cv.width = W; cv.height = H;
       const c = cv.getContext('2d');
       const tex = new THREE.CanvasTexture(cv);
       tex.colorSpace = THREE.SRGBColorSpace;
+      // 1) LA NADA: esfera negra que se TRAGA el mundo (pinta ANTES del cartel)
+      const matEs = new THREE.MeshBasicMaterial({
+        color: 0x000000, side: THREE.BackSide,
+        depthTest: false, depthWrite: false, fog: false, transparent: true,
+      });
+      const esfera = new THREE.Mesh(new THREE.SphereGeometry(12, 28, 18), matEs);
+      esfera.renderOrder = 65;          // tapa TODO lo de abajo (paredes, mesa, sala)
+      esfera.frustumCulled = false;
+      this.rig.add(esfera);
+      // 2) EL CARTEL a 2,00 m: tarjeta de intermedio de teatro
       const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true,
         depthTest: false, depthWrite: false, fog: false });
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 2.88), mat);
-      mesh.renderOrder = 70;
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.92, 1.2), mat);
+      mesh.renderOrder = 70;            // el texto SIEMPRE sobre la esfera
       const group = new THREE.Group();
       group.add(mesh);
-      group.position.set(0, 1.66, -0.72);   // cerca de la cabeza: cubre TODO el FOV
+      group.position.set(0, 1.6, -2.0);   // 2 m delante (el tick lo afina a la cabeza)
       this.rig.add(group);
-      const S = { id, ttl, group, mesh, mat, tex, cv, c,
-        t: 0, rt0: null, listoDesde: null, espera: null, fade: -1 };
+      const S = { id, ttl, cols, group, mesh, mat, tex, cv, c, esfera, matEs,
+        t: 0, rt0: null, listoDesde: null, espera: null, fade: -1,
+        _v1: null, _v2: null, _q1: null };
       this.champCurtain = S;
       this._pintaCurtain(S, 0);
       return {
@@ -17158,28 +17301,70 @@ class PingPongGame {
     } catch (e) { console.warn('[curtain] show', e); return null; }
   }
 
-  /** Pinta el telón: NEGRO total + título pequeño + «Montando el
-   *  escenario…» con puntos animados (redibujado barato por frame). */
-  _pintaCurtain(S, dots) {
+  /** r73 · color de la tarjeta por campeonato (fallback: oro de la casa). */
+  _telonCols(id) {
+    const M = {
+      locura: ['#ff6b6b', '#ffd257'],
+      magia: ['#b07cff', '#8a5cf6'],
+      oeste: ['#e8a25e', '#c98a4b'],
+      estacion_orbital: ['#7fd4e8', '#4c9fd6'],
+      valle_neon: ['#ff6ad5', '#b07cff'],
+    };
+    return M[id] || ['#ffd257', '#e8b45a'];
+  }
+
+  /** Pinta la TARJETA DE INTERMEDIO: marco doble, «PRESENTA», título en el
+   *  color del campeonato (autoajuste), «Montando el escenario...» con
+   *  puntos y una bola que va y viene sobre la pista — redibujado barato. */
+  _pintaCurtain(S, dots, rt) {
     try {
       const c = S.c, W = 1024, H = 640;
+      const colA = (S.cols && S.cols[0]) || '#ffd257';
+      const colB = (S.cols && S.cols[1]) || '#e8b45a';
       c.clearRect(0, 0, W, H);
       c.fillStyle = '#000000';
       c.fillRect(0, 0, W, H);
+      // doble marco dorado (tarjeta de teatro)
+      c.strokeStyle = colA; c.globalAlpha = 0.9; c.lineWidth = 5;
+      if (c.roundRect) { c.beginPath(); c.roundRect(26, 26, W - 52, H - 52, 26); c.stroke(); }
+      else c.strokeRect(26, 26, W - 52, H - 52);
+      c.globalAlpha = 0.45; c.lineWidth = 2;
+      if (c.roundRect) { c.beginPath(); c.roundRect(44, 44, W - 88, H - 88, 18); c.stroke(); }
+      else c.strokeRect(44, 44, W - 88, H - 88);
+      c.globalAlpha = 1;
+      // «CRAZY PING PONG PRESENTA» con aire entre letras
       c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillStyle = 'rgba(255,210,87,0.55)';
-      c.font = '700 30px system-ui, sans-serif';
-      c.fillText(String(S.ttl || '').toUpperCase(), W / 2, H / 2 - 74);
+      c.fillStyle = 'rgba(238,242,245,0.62)';
+      c.font = '700 27px system-ui, sans-serif';
+      c.fillText(T('champ_telon_presenta').split('').join(' '), W / 2, 108);
+      // título del campeonato en SU color (autoajuste, nunca cortado)
+      const ttl = String(S.ttl || '').toUpperCase();
+      let fs = 58;
+      c.font = '900 ' + fs + 'px system-ui, sans-serif';
+      while (fs > 26 && c.measureText(ttl).width > W - 200) {
+        fs -= 2;
+        c.font = '900 ' + fs + 'px system-ui, sans-serif';
+      }
+      c.fillStyle = colA;
+      c.fillText(ttl, W / 2, H / 2 - 46);
+      // «Montando el escenario...» con puntos animados
       c.fillStyle = '#eef2f5';
-      c.font = '800 52px system-ui, sans-serif';
+      c.font = '800 44px system-ui, sans-serif';
       const pts = '.'.repeat(dots % 4);
-      c.fillText(T('champ_telon').replace(/\.+$/, '') + pts, W / 2, H / 2 + 4);
-      // barra fina que respira (sugerencia de actividad, nada de progreso falso)
-      const bw = 320 * (0.55 + 0.45 * Math.sin(S.t * 2.4));
-      c.fillStyle = 'rgba(255,210,87,0.65)';
-      if (c.roundRect) {
-        c.beginPath(); c.roundRect(W / 2 - bw / 2, H / 2 + 92, bw, 8, 4); c.fill();
-      } else c.fillRect(W / 2 - bw / 2, H / 2 + 92, bw, 8);
+      c.fillText(T('champ_telon').replace(/\.+$/, '') + pts, W / 2, H / 2 + 30);
+      // la pista: línea fina con red central + BOLA que va y viene
+      const ly = H - 128, half = 250;
+      const k = (Math.sin((rt || S.t) * 2.1) + 1) / 2;   // 0..1 vaivén
+      c.strokeStyle = 'rgba(255,255,255,0.22)'; c.lineWidth = 3;
+      c.beginPath(); c.moveTo(W / 2 - half, ly); c.lineTo(W / 2 + half, ly); c.stroke();
+      c.strokeStyle = 'rgba(255,255,255,0.4)'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(W / 2, ly - 14); c.lineTo(W / 2, ly + 6); c.stroke();
+      const bx = W / 2 - half + k * half * 2;
+      const by = ly - 10 - Math.abs(Math.sin((rt || S.t) * 2.1)) * 34;
+      c.fillStyle = '#ffffff';
+      c.beginPath(); c.arc(bx, by, 9, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = colB; c.lineWidth = 2;
+      c.beginPath(); c.arc(bx, by, 12.5, 0, Math.PI * 2); c.stroke();
       S.tex.needsUpdate = true;
     } catch (e) { /* decorativo */ }
   }
@@ -17193,11 +17378,30 @@ class PingPongGame {
     const rt = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
     if (S.rt0 == null) { S.rt0 = rt; S.listoDesde = null; }
     S.t = rt - S.rt0;
-    this._pintaCurtain(S, Math.floor(S.t * 2.6));
+    this._pintaCurtain(S, Math.floor(S.t * 2.6), rt);
+    // r73 · SEGUIR A LA CABEZA: esfera centrada en el visor (nadie escapa
+    // de la nada andando) y cartel a 2,00 m por donde se mire, de frente.
+    try {
+      if (!S._v1) {
+        S._v1 = new THREE.Vector3(); S._v2 = new THREE.Vector3();
+        S._q1 = new THREE.Quaternion();
+      }
+      S._v1.setFromMatrixPosition(this.camera.matrixWorld);       // cabeza (mundo)
+      this.rig.worldToLocal(S._v1);                                // → espacio rig
+      S.esfera.position.copy(S._v1);
+      S._q1.setFromRotationMatrix(this.camera.matrixWorld);
+      S._v2.set(0, 0, -1).applyQuaternion(S._q1); S._v2.y = 0;
+      if (S._v2.lengthSq() < 1e-6) S._v2.set(0, 0, -1); else S._v2.normalize();
+      const dy = Math.max(0.5, Math.min(2.6, S._v1.y));   // altura del ojo acotada
+      S.group.position.set(S._v1.x + S._v2.x * 2.0, dy, S._v1.z + S._v2.z * 2.0);
+      S.group.lookAt(S._v1.x, dy, S._v1.z);
+    } catch (eF) { /* una cabeza tardía no tumba el telón */ }
     if (S.fade >= 0) {
       const k = Math.max(0, 1 - (rt - S.fade) / 0.42);
       S.mat.opacity = k;
+      S.matEs.opacity = k;
       S.mesh.visible = k > 0.01;
+      S.esfera.visible = k > 0.01;
       if (k <= 0.01) this.hideChampCurtain(true);
       return;
     }
@@ -17226,9 +17430,12 @@ class PingPongGame {
     this.champCurtain = null;
     try {
       if (S.group.parent) S.group.parent.remove(S.group);
+      if (S.esfera && S.esfera.parent) S.esfera.parent.remove(S.esfera);
       try { S.tex.dispose(); } catch (e0) { /* */ }
       try { S.mat.dispose(); } catch (e1) { /* */ }
       try { S.mesh.geometry.dispose(); } catch (e2) { /* */ }
+      try { S.matEs.dispose(); } catch (e3) { /* */ }
+      try { S.esfera.geometry.dispose(); } catch (e4) { /* */ }
     } catch (e) { /* el telón NUNCA rompe */ }
   }
 
@@ -17254,7 +17461,7 @@ class PingPongGame {
       const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true,
         depthTest: false, depthWrite: false, fog: false });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.56, 1.44), mat);
-      mesh.renderOrder = 60;
+      mesh.renderOrder = 75;   // r73: sobre la esfera del telón (65) para el relevo
       group.add(mesh);
       // --- botón JUGAR (textura propia: repintado barato al apuntar) ---
       const bcv = document.createElement('canvas');
@@ -17266,7 +17473,7 @@ class PingPongGame {
       bmat.map.colorSpace = THREE.SRGBColorSpace;
       const btn = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.407), bmat);
       btn.position.set(0, -0.99, 0.02);
-      btn.renderOrder = 61;
+      btn.renderOrder = 76;   // r73: idem
       group.add(btn);
       group.position.set(0, 1.72, -2.75);
       group.visible = false;
@@ -24836,7 +25043,7 @@ window.__PP_CORE = {
     if (G.calibPanel) G.calibPanel.group.visible = false;
     // r60 (petición del dueño): «se está superponiendo con otras ventanas
     // del menú y no es pulsable» — el menú NACE del clic que abre la
-    // academia y si sigue abierto (delante del jugador, renderOrder 990
+    // academia y si sigue abierto (delante del jugador, renderOrder 9998
     // sobre el 985 del panel, misma altura de ojos) se come los rayos del
     // gatillo y el paso 0 nunca arranca. NO vale closeMenu()/toggleMenu():
     // toggleMenu duerme con `if (this.calib) return` y la academia ESTÁ en

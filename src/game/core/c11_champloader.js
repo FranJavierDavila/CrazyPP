@@ -8,6 +8,9 @@ export class ChampLoader {
     this.modules = {};      // id -> módulo importado (perezoso)
     this.activeId = '';     // '' = ningún campeonato externo activo
     this.replayHover = -1;  // v2.96: nodo del mapa apuntado con la pala (-1 = ninguno)
+    // r73 · estado de la carga del índice (el menú pinta «CARGANDO…»)
+    this.cargando = false;
+    this._idxListo = false;
     this._loadIndex();
   }
 
@@ -40,79 +43,154 @@ export class ChampLoader {
     return !!(m && typeof m.testActive === 'function' && m.testActive());
   }
 
+  /** r73 · FETCH CON REINTENTOS: el índice y los manifest se pedían UNA
+   *  sola vez — una petición perdida (WiFi de la Quest, caché, un 502
+   *  puntual de Pages) eliminaba el campeonato del menú PARA SIEMPRE
+   *  (el «Salvaje Oeste desaparecido»). Ahora: cache:'no-cache' + hasta
+   *  N intentos con espera exponencial. Devuelve null si agota. */
+  async _fetchJSON(url, intentos) {
+    const n = intentos || 3;
+    for (let i = 0; i < n; i++) {
+      try {
+        const r = await fetch(url, { cache: 'no-cache' });
+        if (r.ok) return await r.json();
+      } catch (e) { /* red dormida: reintento */ }
+      if (i < n - 1) {
+        await new Promise((res) => setTimeout(res, 700 * Math.pow(2, i)));
+      }
+    }
+    return null;
+  }
+
   _loadIndex() {
     // file:// no puede fetchear el índice: sin botones y sin ruido en
     // consola (lección v2.52). El juego local sigue igual que siempre.
     if (typeof location !== 'undefined' && !/^https?:$/.test(location.protocol)) return;
-    fetch('championships/championships.json')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('sin índice'))))
-      .then(async (idx) => {
-        const list = (idx && Array.isArray(idx.championships)) ? idx.championships : [];
-        for (const raw of list) {
-          // v2.69: cada entrada es "id" o { id, eager } — eager importa e
-          // inicializa el módulo AL ARRANCAR (sin lanzarlo): La Locura
-          // existe desde el primer frame, igual que hasta v2.68.
-          // v2.125: la entrada también puede llevar "estado" (el del ciclo
-          // de vida); el del manifest manda si lo declara.
-          const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
-          const id = String(ent.id || '');
-          if (!/^[a-z0-9_-]+$/i.test(id)) continue;   // id seguro (sin ../)
-          try {
-            const r2 = await fetch(`championships/${id}/manifest.json`);
-            const man = r2.ok ? await r2.json() : null;
-            if (!man) continue;
-            // v2.125 · CONTRATO: un manifest de un contrato futuro no se
-            // integra (y queda VISIBLE, no mudo).
-            const contrato = man.contract || 1;
-            if (contrato > 1) {
-              console.warn(`[champs] ${id} declara contract ${contrato} > 1 ` +
-                '(núcleo más viejo que el campeonato): no se integra');
-              this.entries.push({
-                id, folder: `championships/${id}/`,
-                title: man.title || { es: id, en: id }, storage: man.storage || '',
-                eager: false, estado: 'incompatible', manifest: man,
-                error: `contract ${contrato} > 1`,
-              });
-              continue;
-            }
-            // v2.125 · CICLO DE VIDA: sólo "publicado" sale en el menú;
-            // borrador/validación/listo se cargan bajo demanda (previsualización
-            // con ?champ=<id>); desactivado ni eso.
-            const estado = man.estado || ent.estado || 'publicado';
-            if (estado === 'desactivado') continue;
-            this.entries.push({
-              id,
-              folder: `championships/${id}/`,
-              title: man.title || { es: id, en: id },
-              storage: man.storage || '',
-              eager: !!ent.eager,
-              estado,
-              manifest: man,
-              error: null,
-            });
-          } catch (e) { /* carpeta incompleta: se ignora sola */ }
+    this.cargando = true;            // r73: el menú puede mostrar «CARGANDO…»
+    this._idxListo = false;
+    this._cargaIdx().catch(() => { /* sin índice: sólo el núcleo */ });
+  }
+
+  /** r73 · CARGA DEL ÍNDICE (async real): índice con 4 intentos, manifest
+   *  en PARALELO (3 intentos cada uno) y DOS OLAS DE RECUPERACIÓN para las
+   *  carpetas que fallaron (+8 s y +25 s). Cada éxito repinta el menú. */
+  async _cargaIdx() {
+    const idx = await this._fetchJSON('championships/championships.json', 4);
+    if (!idx) { this.cargando = false; this._idxListo = true; return; }
+    const list = (idx && Array.isArray(idx.championships)) ? idx.championships : [];
+
+    /** integra UN manifest (mismo contrato que siempre) → bool éxito */
+    const integra = (raw, man) => {
+      // v2.69: cada entrada es "id" o { id, eager } — eager importa e
+      // inicializa el módulo AL ARRANCAR (sin lanzarlo): La Locura
+      // existe desde el primer frame, igual que hasta v2.68.
+      // v2.125: la entrada también puede llevar "estado" (el del ciclo
+      // de vida); el del manifest manda si lo declara.
+      const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+      const id = String(ent.id || '');
+      if (!/^[a-z0-9_-]+$/i.test(id)) return false;
+      if (this.entries.some((x) => x.id === id)) return true;   // ya está
+      if (!man) return false;
+      // v2.125 · CONTRATO: un manifest de un contrato futuro no se
+      // integra (y queda VISIBLE, no mudo).
+      const contrato = man.contract || 1;
+      if (contrato > 1) {
+        console.warn(`[champs] ${id} declara contract ${contrato} > 1 ` +
+          '(núcleo más viejo que el campeonato): no se integra');
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: man.title || { es: id, en: id }, storage: man.storage || '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: `contract ${contrato} > 1`,
+        });
+        return true;
+      }
+      // v2.125 · CICLO DE VIDA: sólo "publicado" sale en el menú;
+      // borrador/validación/listo se cargan bajo demanda (previsualización
+      // con ?champ=<id>); desactivado ni eso.
+      const estado = man.estado || ent.estado || 'publicado';
+      if (estado === 'desactivado') return true;
+      this.entries.push({
+        id,
+        folder: `championships/${id}/`,
+        title: man.title || { es: id, en: id },
+        storage: man.storage || '',
+        eager: !!ent.eager,
+        estado,
+        manifest: man,
+        error: null,
+      });
+      return true;
+    };
+
+    // r73 · PARALELO: una carpeta lenta ya no retrasa a las demás.
+    const fallados = [];
+    await Promise.all(list.map(async (raw) => {
+      const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+      const id = String(ent.id || '');
+      if (!/^[a-z0-9_-]+$/i.test(id)) return;
+      const man = await this._fetchJSON(`championships/${id}/manifest.json`, 3);
+      if (!integra(raw, man)) fallados.push(raw);
+    }));
+
+    // v2.69: módulos eager — importar SIN lanzar (init puede devolver
+    // promesa: el campeonato fusiona su data.json antes de estar listo)
+    for (const e of this.entries) {
+      if (!e.eager) continue;
+      try { await this.preload(e.id); }
+      catch (err) { console.warn('[champs.eager] ' + e.id, err); }
+    }
+    this.cargando = false;
+    this._idxListo = true;
+    // el menú pudo dibujarse antes de llegar la carpeta: repíntalo
+    try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (e) { /* */ }
+    this._previsualiza();
+
+    // r73 · OLAS DE RECUPERACIÓN: lo que falló vuelve a intentarlo a los
+    // 8 s y a los 25 s — un campeonato ya NO se pierde por un hipo de red.
+    for (let ola = 0; ola < 2 && fallados.length; ola++) {
+      await new Promise((res) => setTimeout(res, ola === 0 ? 8000 : 17000));
+      const deNuevo = fallados.splice(0, fallados.length);
+      await Promise.all(deNuevo.map(async (raw) => {
+        const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+        const id = String(ent.id || '');
+        if (this.entries.some((x) => x.id === id)) return;
+        const man = await this._fetchJSON(`championships/${id}/manifest.json`, 3);
+        if (integra(raw, man)) {
+          try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (eR) { /* */ }
+        } else {
+          fallados.push(raw);
         }
-        // v2.69: módulos eager — importar SIN lanzar (init puede devolver
-        // promesa: el campeonato fusiona su data.json antes de estar listo)
-        for (const e of this.entries) {
-          if (!e.eager) continue;
-          try { await this.preload(e.id); }
-          catch (err) { console.warn('[champs.eager] ' + e.id, err); }
-        }
-        // v2.125 · PREVISUALIZACIÓN AISLADA: ?champ=<id> lanza un campeonato
-        // aunque esté en borrador/validación (jamás altera el menú público).
-        try {
-          const q = new URLSearchParams(location.search).get('champ');
-          const ent = q && this.entries.find((x) => x.id === q && x.estado !== 'incompatible');
-          if (ent) {
-            console.info('[champs] previsualización de ' + q);
-            this.launch(q);
-          }
-        } catch (e) { /* */ }
-        // el menú pudo dibujarse antes de llegar la carpeta: repíntalo
-        try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (e) { /* */ }
-      })
-      .catch(() => { /* sin índice: sólo el núcleo (comportamiento clásico) */ });
+      }));
+    }
+    if (fallados.length) {
+      console.warn('[champs] sin manifest tras las olas:', fallados.map((r) =>
+        (typeof r === 'string' ? r : (r && r.id))).join(', '));
+    }
+  }
+
+  /** r73 · RECARGA MANUAL del índice (botón REINTENTAR del menú cuando no
+   *  llegó ninguno). Idempotente: no duplica entradas ya integradas. */
+  recargar() {
+    if (this.cargando) return;
+    this._loadIndex();
+  }
+
+  /** v2.125 · PREVISUALIZACIÓN AISLADA: ?champ=<id> lanza un campeonato
+   *  aunque esté en borrador/validación (jamás altera el menú público).
+   *  r73: vive en método propio — también dispara si la carpeta llegó
+   *  tarde en una ola de recuperación (una sola vez). */
+  _previsualiza() {
+    if (this._prevLanzada) return;
+    try {
+      const q = new URLSearchParams(location.search).get('champ');
+      const ent = q && this.entries.find((x) => x.id === q && x.estado !== 'incompatible');
+      if (ent) {
+        this._prevLanzada = true;
+        console.info('[champs] previsualización de ' + q);
+        this.launch(q);
+      }
+    } catch (e) { /* */ }
   }
 
   /** v2.69 · IMPORTA E INICIALIZA un módulo SIN lanzarlo (idempotente).

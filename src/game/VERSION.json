@@ -1,10 +1,10 @@
 {
-  "version": "3.6.64-SDK6",
-  "fase": 66,
-  "faseNombre": "EL TELÓN Y EL CANDADO",
+  "version": "3.6.65-SDK6",
+  "fase": 67,
+  "faseNombre": "EL MENÚ MANDA",
   "sdk": "1.5.4",
   "fecha": "2026-10-25",
-  "hub": "v3664-sdk6",
+  "hub": "v3665-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "25bc890d9698c17a11b3fcabb34ca6b7a20296f51f9d3f71220e90d2c61441d2"
+  "golden": "fea31c797785f4d7450302c19bd70c61dfa4840ae68a0bdc43e791d16d26e4d5"
 }

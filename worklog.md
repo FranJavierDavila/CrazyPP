@@ -4153,3 +4153,21 @@ Work Log:
 
 Stage Summary:
 - V3.6.59-SDK6 (FASE 61 — LA ACADEMIA EN TUS MANOS) VIVA en producción: voz única (adiós al audio doble), mandos GLB anclados a los grips XR reales al 75%, una sola raqueta (la real, con aura), guion de 9 pasos con demo del profesor y aros guía — pendiente SOLO el aviso de caché al dueño (game.html?v=v3659)
+
+---
+Task ID: 172
+Agent: Super Z (main agent)
+Task: r68 — V3.6.60-SDK6 FASE 62 «LA RAQUETA DEL RIVAL» (petición literal del dueño tras V3.6.59: «la pelota en el saque y en el juego debe ser golpeada por la raqueta del rival; en estos momentos permanece quieta y la pelota la golpea un fantasma»). Sólo el tutorial, nada más.
+
+Work Log:
+- Divergencia verificada: PAT re-enviado por el dueño = mismo token ya guardado en scripts/worker-tele/.github-pat (chmod 600, gitignored) — API /user HTTP 200 (login enmascarado), permisos push:True sobre el repo; local adelantado 1 commit (ca8e6e0, mensaje UUID, 22:42 del 24 oct) sobre tips emparejados 84dddb1 (main=proyecto)
+- El código r68 YA estaba implementado en ca8e6e0 (sesión anterior): raqueta del rival = la MISMA pala del juego (makePaddleVisual 'center') viva en la escena mundo (ppTutRaquetaRival) al lado lejano; estados reposo (guardia con vaivén) → prep (retroceso siguiendo la bola) → golpe (TRAMO A barrido ease-in hasta contacto en RAQ_T_GOLPE=0.13 s · TRAMO B acompañamiento 0.30 s) → reposo; visible SÓLO en pasos 2-5
+- SAQUES CON ESPERA HONESTA: la demo (paso 2/4) mantiene la bola quieta mientras la hoja viaja y el saque REAL sale a RAQ_T_GOLPE — exactamente cuando el blade la alcanza (adiós al golpe fantasma); feed del paso 5 igual (feed5T) y al salir pone tutBolaViva=true: el RALLY del paso 5 vuelve a existir (nadie lo ponía desde la renumeración r67 11→9 pasos)
+- DEVOLUCIONES (pasos 3 y 5): farBounced arma la raqueta y el golpe (raquetaGolpe) parte SIEMPRE de la posición exacta de la bola
+- Build + sellos: VERSION.json 3.6.60-SDK6 (fase 62), verBadge, c00 const VERSION, hub descargas (9 menciones), golden 370dcea8… == SHA256 real del game.html (9.828.981 B) ✓ · 4 ZIPs v3660 en public/descargas/ (COMPLETO 133.101.039 · ligera 18.046.683 · CLOUDFLARE 133.087.653 · SOLO 6.089) · presupuesto refrescado
+- QA TOTAL por capas en foreground (el nohup muere con la sesión): A versión 23 ✓ · B física 11 ✓ · C manifiestos 29 ✓ · D presupuesto 14 ✓ (standalone; 1 flake de timing en cadena) · E sup1_v365 151 ✓ · F imp2 66 ✓ · G escudo 54 ✓ · H descargas_v366 213 ✓ · J telemetría 129 ✓ · T zonas 17 ✓ · BC qa_r68_v3660 52 ✓ (mecánica real headless: arma, barrido que pasa por la bola, contacto EXACTO, rally vivo, cierre sin residuos)
+- FIX en el bucle: smoke_sdk5.py traía el pin de versión VIEJO (3.6.59-SDK6) — el commit r68 olvidó rodarlo; actualizado a 3.6.60-SDK6 (línea de veredicto + docstring) → SMOKE SDK: OK
+- Docs release-v3660 (CHULETA/LEEME) arrastran plantilla de cabecera de V3.6.9-SDK5 — cosmético, no bloquea; el contrato de deploy es el del protocolo
+
+Stage Summary:
+- r68 COMPLETA en local: código (ca8e6e0) + sellos + golden + ZIPs + QA 12 capas verde + smoke reparado — pendiente SOLO: commit del worklog → deploy (--push --release --backup) → emparejar main:main → verificación byte-exacto → aviso de caché (game.html?v=v3660)

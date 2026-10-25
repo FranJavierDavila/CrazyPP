@@ -3493,10 +3493,19 @@ window.__PP_CORE = {
     }
   }
   function bolaPalmDemo() {
-    // r67 · bola de la demo del PROFESOR: apoyada en su mitad, junto al
-    // borde de la mesa (la pala del rival es la referencia visual)
+    // r71 · bola de la demo del PROFESOR: ELEVADA y justo detrás del borde
+    // (la pala del rival es la referencia visual). La posición antigua
+    // (apoyada a la ALTURA de la mesa, 17 cm detrás del borde) hacía
+    // IMPOSIBLE el saque reglamentario: ningún arco que parte descendiendo
+    // desde la altura de la mesa puede botar antes en SU campo — el solver
+    // no encontraba candidatos y caía SIEMPRE al fallback (lob directo al
+    // campo del jugador: UN solo bote, el fallo que vio el dueño).
+    // Verificado empíricamente (scripts/_r71_verifica_palma.mjs): desde
+    // aquí el solver devuelve 100/100 saques con bote propio profundo en
+    // SU campo + bote cómodo en el nuestro (margen de red ≥ 49 mm) y la
+    // bola queda a 100 mm de la guardia de la raqueta (barrido natural).
     const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
-    return new THREE.Vector3(0.10, TY + DIMS.ballRadius + 0.004, C - HL - 0.17);
+    return new THREE.Vector3(0.10, TY + 0.34, C - HL - 0.16);
   }
 
   /* ---------------- LA RAQUETA DEL RIVAL (r68) ------------------------
@@ -4042,7 +4051,20 @@ window.__PP_CORE = {
     const cvh = document.createElement('canvas');
     cvh.width = 256; cvh.height = 128;
     const g2 = cvh.getContext('2d');
-    g2.font = '900 ' + (px || 64) + 'px system-ui, sans-serif';
+    // r71 · AUTOAJUSTE: el cartel es un canvas de 256 px y un texto largo
+    // («¡+2 PARA GANAR!» a 54 px) se SALÍA del lienzo — en el Quest se veía
+    // la palabra RECORTADA («GAN» en vez de «GANAR», el fallo del dueño en
+    // la explicación del 10-10). Se mide el texto y la fuente se encoge
+    // hasta caber con margen (12 px por lado): el cartel SIEMPRE entero,
+    // en ES y en EN, para cualquier cadena futura.
+    const MARGEN = 244;                       // ancho útil del lienzo (256−2×6)
+    let px2 = px || 64;
+    g2.font = '900 ' + px2 + 'px system-ui, sans-serif';
+    let ancho = g2.measureText(txt).width;
+    if (ancho > MARGEN) {
+      px2 = Math.max(20, Math.floor(px2 * (MARGEN / ancho)));
+      g2.font = '900 ' + px2 + 'px system-ui, sans-serif';
+    }
     g2.textAlign = 'center'; g2.textBaseline = 'middle';
     g2.shadowColor = 'rgba(255,255,255,0.5)';
     g2.shadowBlur = 8;
@@ -4148,8 +4170,11 @@ window.__PP_CORE = {
     holoTokens.cartel10.position.set(0, 0.42, 0);
     holoTokens.cartel10.visible = false;
     H.add(holoTokens.cartel10);
-    holoCartel2 = _cartelTxt(T('tut_h_p2'), '#ffd257', 54, 0.34, 0.17);
-    holoCartel2.position.set(0, 0.60, 0);
+    // r71 · cartel «+2 PARA GANAR» más ANCHO (0.50 m): con el autoajuste la
+    // fuente cabe entera y el plano grande la hace legible de golpe; sube
+    // 25 mm para seguir sin tocar el cartel «¡10-10!» (su banda acaba en 0.495).
+    holoCartel2 = _cartelTxt(T('tut_h_p2'), '#ffd257', 54, 0.50, 0.25);
+    holoCartel2.position.set(0, 0.625, 0);
     holoCartel2.visible = false;
     H.add(holoCartel2);
   }
@@ -4409,21 +4434,29 @@ window.__PP_CORE = {
           }
           if (G.tossed) {
             const b = G.ball;
-            const C = DIMS.tableCenterZ, TY = DIMS.tableTopY;
-            // r70 · EL SAQUE SE APRUEBA CON LOS DOS BOTES (el dueño: «debe
-            // botar en ambos campos y esto no lo comprueba, dando por bueno
-            // un servicio aunque bote en 1 sola parte»). Los aros guía se
-            // iluminan con los BOTES REALES y la cuenta exige la SECUENCIA
-            // reglamentaria: primero TU campo y después el del rival. Un
-            // saque que cruce sin botar (volea), que bote solo en un campo
-            // o que muera por el camino = «OTRA VEZ» (nunca cuenta).
+            const C = DIMS.tableCenterZ, TY = DIMS.tableTopY, HL = DIMS.tableHalfLength;
+            // r70/r71 · EL SAQUE SE APRUEBA CON LOS DOS BOTES SOBRE LA MESA
+            // (el dueño: «debe botar en ambos campos y esto no lo comprueba,
+            // dando por bueno un servicio aunque bote en 1 sola parte»).
+            // r71 · BOTES SOBRE LA MESA, NO EN EL SUELO: la valla antigua
+            // (z + vel.y + y<TY+0.35) también pasaba el bote en el SUELO de
+            // un saque largo que se iba fuera de la mesa (el suelo está a
+            // −76 cm, muy por debajo de TY+0.35) — por eso un servicio que
+            // solo botaba en el campo propio y se marchaba LARGO contaba
+            // como bueno. Ahora cada bote exige el RECTÁNGULO real del
+            // campo (x y z dentro de la mesa) y pegado a la superficie
+            // (y < TY+12 cm). Volea, medio saque, largo y red = «OTRA VEZ».
             if (!saqBote1 && b.vel.y > 0.3 && b.pos.z > C + 0.06 &&
-                b.pos.y < TY + 0.35) {
+                b.pos.z < C + HL + 0.03 &&
+                Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.02 &&
+                b.pos.y < TY + 0.12) {
               saqBote1 = true;
               if (aroIzq) aroIzq.__ok = true;
             }
             if (saqBote1 && !saqBote2 && b.vel.y > 0.25 && b.pos.z < C - 0.05 &&
-                b.pos.y < TY + 0.35) {
+                b.pos.z > C - HL - 0.03 &&
+                Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.02 &&
+                b.pos.y < TY + 0.12) {
               saqBote2 = true;
               if (aroDer) aroDer.__ok = true;
             }
@@ -4728,14 +4761,23 @@ window.__PP_CORE = {
       }
       case 2: {
         // VUELO REAL: bote en SU campo → aro rival; bote en el TUYO → aro tuyo
+        // r71 · BOTES REALES SOBRE LA MESA: la condición antigua (z y vel.y)
+        // también daba por bueno un bote en el SUELO — un saque largo que se
+        // iba fuera del fondo del campo rival «botaba» más allá de la mesa y
+        // se encendía el aro igualmente. Ahora un bote cuenta SOLO si cae
+        // DENTRO del rectángulo del campo correspondiente (x e z de la mesa)
+        // y pegado a la superficie (y bajo TY+12 cm, el suelo está a −76 cm).
         if (!demoBote1 && b.vel.y > 0.3 && b.pos.z < C - 0.06 &&
-            b.pos.y < TY + 0.35) {
+            b.pos.z > C - HL - 0.03 && Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.02 &&
+            b.pos.y < TY + 0.12) {
           demoBote1 = true;
           demoTxt = { txt: T('tut_p1r'), col: 'rgba(232,180,90,0.32)', t: 1.5 };
           if (aroDer) aroDer.__ok = true;
           chime(true);
           if (!esMarcador && demoCiclos === 0) narra(['tutv3b']);
-        } else if (demoBote1 && !demoBote2 && b.vel.y > 0.25 && b.pos.z > C + 0.05) {
+        } else if (demoBote1 && !demoBote2 && b.vel.y > 0.25 && b.pos.z > C + 0.05 &&
+                   b.pos.z < C + HL + 0.03 && Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.02 &&
+                   b.pos.y < TY + 0.12) {
           demoBote2 = true;
           demoTxt = { txt: T('tut_d3_p2'), col: 'rgba(232,89,12,0.32)', t: 1.5 };
           if (aroIzq) aroIzq.__ok = true;
@@ -5155,6 +5197,13 @@ window.__PP_CORE = {
              Math.round(raqGrp.position.z * 1000) / 1000]
           : null,
         saqBote1, saqBote2,
+        // r71 · botes de la demo del profesor + palma (introspección de QA)
+        demoBote1, demoBote2,
+        palma: bolaPalmDemo()
+          ? [Math.round(bolaPalmDemo().x * 1000) / 1000,
+             Math.round(bolaPalmDemo().y * 1000) / 1000,
+             Math.round(bolaPalmDemo().z * 1000) / 1000]
+          : null,
         arosAnclados: !!(arosGrp && G && arosGrp.parent === G.rig),
         holoAnclado: !!(holo && G && holo.parent === G.rig),
         // r69 · golpe honesto + una sola raqueta (introspección de QA)

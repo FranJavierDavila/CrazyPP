@@ -1,10 +1,10 @@
 {
-  "version": "3.6.62-SDK6",
-  "fase": 64,
-  "faseNombre": "LA ACADEMIA PERFECTA",
+  "version": "3.6.63-SDK6",
+  "fase": 65,
+  "faseNombre": "EL SERVICIO HONESTO",
   "sdk": "1.5.4",
   "fecha": "2026-10-25",
-  "hub": "v3662-sdk6",
+  "hub": "v3663-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "faaa2aa0092d2ffe6cc5af19addbccefc37fe7aece585bdd1a04c58eec69db1b"
+  "golden": "32fa4afceadefa3d1531f5dd8b458a0bb8e346843dc361b9079c285aa2e55b79"
 }

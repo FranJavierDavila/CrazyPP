@@ -213,8 +213,15 @@ CAPAS = [
     # (profesor con el solver de la casa, 2 devoluciones), LOS BOTONES
     # (A/X real), LOS MODOS + 5 poderes, ¡YA SABES JUGAR! Tres puertas
     # (banner del HUB, oferta de primera vez, AJUSTES) y B/Y de salida.
-    ('AT · LA ACADEMIA tutorial interactivo (v3651)',
-     'qa_tut_v3651.py'),
+    # AT (v3651) CAPA HISTÓRICA desde r69: su aguja «botón de repetir el
+    # tutorial en AJUSTES» contradice la orden del dueño (r69 retiró ese
+    # botón; la academia vive en el banner del HUB y la oferta de primera
+    # vez). La cadena BB (r67) → BD (r69) → BE (r70) → BF (r71) conserva y
+    # amplía sus verificaciones vivas.
+    # AU (ronda 60): aguja del tutorial actualizada a la verdad actual
+    # (SIN tut:go en AJUSTES desde r69).
+    # AV (ronda 61): agujas del adaptativo actualizadas a su casa nueva:
+    # AJUSTES › JUEGO (ronda 71).
     # AU (ronda 60 · v3.6.52): LOS TRES ARREGLOS del informe del dueño tras
     # probar LA ACADEMIA en el Quest — (1) «el tutorial se queda bloqueado,
     # se superpone con otras ventanas del menú y no es pulsable»: el menú
@@ -265,7 +272,6 @@ CAPAS = [
     # (3) práctica real (3 saques válidos con cerrojo + 6 devoluciones con
     # rally real) y el panel se APARTA a un lado en la práctica (pose
     # frente⇄lado con lerp). QA de fuente + grafo con rig real.
-    ('AY · academia a punto (v3656)', 'qa_r64_v3656.py'),
     # AZ (v3657): EL ONBOARDING GAMIFICADO — voz nativa Piper es/en (25
     # átomos por idioma, narra al entrar, STICK repite), mando GLB REAL
     # del dueño con halos por pieza (anclas por raycast) y 4 acciones
@@ -274,7 +280,6 @@ CAPAS = [
     # panel PIZARRA del dueño (textos tiza en la zona negra), el saque
     # demo del espectador DUERME en la academia (adiós al bote continuo)
     # y gating real en los 11 pasos.
-    ('AZ · onboarding gamificado (v3657)', 'qa_r65_v3657.py'),
     # BA (v3658): LA ACADEMIA SOBRE LA MESA — informe del dueño tras
     # V3.6.57: bola DORMIDA en los pasos quietos (adiós al bote continuo
     # de la bola apoyada), voces Piper MÁS PAUSADAS (length-scale 1.16 +
@@ -285,14 +290,12 @@ CAPAS = [
     # (intercambio real: el rival devuelve hasta fallar — rota el sacador)
     # y paso 5 (marcador BAJO con saques reales: 11 por 2 y 10-10 cada
     # punto). Panel apartado en 3-6: la mesa nunca tapada.
-    ('BA · academia sobre la mesa (v3658)', 'qa_r66_v3658.py'),
     # BB (v3659): LA ACADEMIA EN TUS MANOS — informe del dueño tras
     # V3.6.58: (1) speakPlan CANCELA la voz viva (adiós al audio doble);
     # (2) mandos GLB ANCLADOS a los grips XR reales al 75% (nada flotando);
     # (3) UNA sola raqueta (aura sobre la pala REAL, sin clones fantasma);
     # (4) guion reorganizado a 9 pasos con demo del PROFESOR sobre la mesa
     # real + AROS GUÍA y la rejilla de modos 2×3 en UNA pizarra.
-    ('BB · academia en tus manos (v3659)', 'qa_r67_v3659.py'),
     # BC (v3660): LA RAQUETA DEL RIVAL — informe del dueño tras V3.6.59:
     # «la pelota en el saque y en el juego debe ser golpeada por la raqueta
     # del rival; permanece quieta y la golpea un fantasma». El profesor
@@ -304,13 +307,25 @@ CAPAS = [
     # BD (v3661): UNA RAQUETA, CERO FANTASMAS — capa histórica, sustituida
     # por BE (qa_r70_v3662) que conserva sus verificaciones y añade las de
     # la r70 (anclaje al rig, saque de dos botes, voz cortada, passthrough).
-    # (v3662): LA ACADEMIA PERFECTA — el informe del dueño tras V3.6.61:
-    # troqueles SIEMPRE (el passthrough los escondía), panel del vaivén
-    # sin textos superpuestos, la voz del vaivén suena (tutv2b), la voz
-    # MUERE al salir con B, blindaje total de salida, saque válido SOLO
-    # con bote en TU campo + bote en el del rival, y la raqueta del
-    # profesor EN EL RIG como la mesa (el recentrado la descolocaba).
-    ('BE · academia perfecta (v3662)', 'qa_r70_v3662.py'),
+    # BE (v3662): LA ACADEMIA PERFECTA — capa histórica, sustituida por
+    # BF (qa_r71_v3663) que conserva sus verificaciones y añade las de la
+    # r71 (palma del profesor elevada con solver verificado, botes SOBRE
+    # la mesa con vallas x/z/y, cartel con autoajuste, menú por categorías).
+    # AY (v3656) · AZ (v3657) · BA (v3658) · BB (v3659) CAPAS HISTÓRICAS desde
+    # r70: sus guiones MECÁNICA teletransportan la bola con la semántica del
+    # árbitro PRE-r70 (un solo contacto contaba por «cruzada») y quedaron
+    # sin ejecutar en las rondas 68-70 (subconjunto de 12 capas). La cadena
+    # BD (r69) → BE (r70) → BF (r71) re-verifica la academia COMPLETA con
+    # las reglas VIGENTES (dos botes sobre la mesa, vallas x/z/y, palma
+    # elevada, raqueta al RIG) — sus agujas vivas viven en BF.
+    # BF (v3663): EL SERVICIO HONESTO — el informe del dueño tras V3.6.62:
+    # el saque del profesor debía botar primero en SU campo (la palma vieja
+    # hacía imposible el doble bote: fallback = un solo bote), el saque del
+    # jugador contaba botes en el SUELO (largos y laterales «buenos»), el
+    # cartel del 10-10 recortaba «GANAR», y la CPU + el rival adaptativo
+    # debían vivir DENTRO de un AJUSTES reorganizado por subcategorías con
+    # iconos explícitos.
+    ('BF · servicio honesto (v3663)', 'qa_r71_v3663.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

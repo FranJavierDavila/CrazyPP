@@ -53,8 +53,8 @@ AGUJAS = [
      "localStorage.getItem('ppxr_adapt_v1') !== '0'"),
     ("adaptativa: caso 'adapt' en el dispatcher con applyAISkill",
      "case 'adapt': {"),
-    ("adaptativa: botón en el HUB junto a la dificultad",
-     "btn('adapt', 56, y + 116, 912, 56,"),
+    ("adaptativa: botón en AJUSTES › JUEGO (r71 lo mudó del HUB)",
+     "btn('adapt', 56, y, 912, 56,"),
     ("adaptativa: objetivo + factor actual (lerp en el tick)",
      "this._aiKTarget = THREE.MathUtils.clamp(k, 0.7, 2.2);"),
     ("adaptativa: aplicación suave del factor",
@@ -144,12 +144,12 @@ MECANICA = """async () => {
   out.push({ ok: g._aiKCur > lerp0 + 0.001 && g._aiKCur < 1.5,
              lab: 'adaptativa: el lerp del tick mueve el factor hacia el objetivo' });
   g._aiKTarget = 1; g._aiKCur = 1;        // estado neutro para el resto
-  // conmutador real del HUB (persistencia incluida)
-  g.menuPage = 'main';
+  // conmutador real, en su casa de r71: AJUSTES › JUEGO (persistencia incluida)
+  g.menuPage = 'optsJuego';
   if (!g.menuOpen) g.toggleMenu();
   g.drawMenu();
   const iAd = (g.menuRects || []).findIndex(r => r && r.id === 'adapt');
-  out.push({ ok: iAd >= 0, lab: 'adaptativa: el botón vive en el HUB principal' });
+  out.push({ ok: iAd >= 0, lab: 'adaptativa: el botón vive en AJUSTES › JUEGO (r71)' });
   const antes = g.adaptive;
   g.menuClick(iAd);
   out.push({ ok: g.adaptive === !antes &&

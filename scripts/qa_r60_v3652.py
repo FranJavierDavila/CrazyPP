@@ -106,12 +106,18 @@ MECANICA = """async () => {
              lab: 'tutask: SÍ abre la academia y CIERRA el menú (r60)' });
   T.stop({});
 
-  // puerta 3 · AJUSTES (el botón vive en la página opts: aguja de rects)
+  // puerta 3 · AJUSTES — r69 RETIRÓ el botón tut:go de AJUSTES (orden del
+  // dueño: la academia vive en el banner del HUB y la oferta de primera
+  // vez); r71 lo confirma. La aguja comprueba la verdad ACTUAL: AJUSTES
+  // SIN botón de tutorial y el banner del HUB vivo.
   g.menuPage = 'opts';
   g.drawMenu();
   const idxOpts = (g.menuRects || []).findIndex(r => r && r.id === 'tut:go');
-  out.push({ ok: idxOpts >= 0, lab: 'AJUSTES: botón del tutorial presente' });
+  out.push({ ok: idxOpts < 0, lab: 'AJUSTES: SIN botón del tutorial (retirado en r69, orden del dueño)' });
   g.menuPage = 'main';
+  g.drawMenu();
+  const idxHub = (g.menuRects || []).findIndex(r => r && r.id === 'tut:go');
+  out.push({ ok: idxHub >= 0, lab: 'HUB: el banner de LA ACADEMIA sigue vivo (puerta principal)' });
 
   // ---------- 2 · TROQUELES INMUNES ----------
   // 2.a autocuración en el return temprano (sin campeonato activo)

@@ -1,0 +1,17 @@
+ M upload/fondo.jpg
+ M upload/frente.jpg
+ M upload/suelo.jpg
+ M upload/techo.jpg
+?? backup_snapshot_v3627_r71/
+?? upload/Mando.glb
+?? upload/Pizarra.png
+?? upload/SuperPala_Clon.png
+?? upload/SuperPala_Crece.png
+?? upload/SuperPala_Efecto.png
+?? upload/SuperPala_Iman.png
+?? upload/SuperPala_Portal.png
+?? upload/derecha.jpg
+?? upload/izquierda.jpg
+?? upload/mando_derecho.glb
+?? upload/portals.png
+?? upload/suelo_pista.jpg

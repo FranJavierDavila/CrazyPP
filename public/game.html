@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.62-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.63-SDK6</span>
     </div>
   </main>
 
@@ -635,6 +635,19 @@ const I18N_STRINGS = {
     page_champs: 'CAMPEONATOS',
     page_opts: 'AJUSTES ›',
     opts_title: 'AJUSTES',
+    // r71 · AJUSTES POR SUBCATEGORÍAS (petición del dueño: «mejor organizado
+    // por subcategorías con iconos explícitos de cada una, un diseño bonito»)
+    opts_elegir: 'Toca una categoría para entrar',
+    cat_juego: 'JUEGO',
+    cat_juego_sub: 'Dificultad de la CPU, rival adaptativo y pala mejorada',
+    cat_sala: 'SALA Y ESCENA',
+    cat_sala_sub: 'La sala, la vista y el passthrough',
+    cat_sonido: 'SONIDO',
+    cat_sonido_sub: 'Música, ambiente, megáfono y prueba',
+    cat_visual: 'VISUALES',
+    cat_visual_sub: 'Estela, vibración y consejos',
+    cat_perfil: 'PERFIL Y DATOS',
+    cat_perfil_sub: 'Tu nombre, telemetría y borrado',
     hub_champ_hint: 'Toca para entrar',
     champ_intro_btn: 'VER PRESENTACIÓN · vídeo del rival',   // v3.6.31: re-ver la intro (opcional)
     // ---- v2.34 · ARCADE "Campeonato de la Locura" (rival CLOWN) ----
@@ -1226,6 +1239,17 @@ const I18N_STRINGS = {
     page_champs: 'CHAMPIONSHIPS',
     page_opts: 'SETTINGS ›',
     opts_title: 'SETTINGS',
+    opts_elegir: 'Tap a category to enter',
+    cat_juego: 'GAME',
+    cat_juego_sub: 'CPU difficulty, adaptive rival & enhanced paddle',
+    cat_sala: 'ROOM & SCENE',
+    cat_sala_sub: 'The room, the view and passthrough',
+    cat_sonido: 'AUDIO',
+    cat_sonido_sub: 'Music, ambience, voice and test',
+    cat_visual: 'VISUALS',
+    cat_visual_sub: 'Trail, haptics and tips',
+    cat_perfil: 'PROFILE & DATA',
+    cat_perfil_sub: 'Your name, telemetry and reset',
     hub_champ_hint: 'Tap to enter',
     champ_intro_btn: 'WATCH THE INTRO · rival video',   // v3.6.31: re-watch the intro (optional)
     // ---- v2.34 · ARCADE "Championship of Madness" (CLOWN rival) ----
@@ -1929,6 +1953,72 @@ const PP_ICONS = {
     c.beginPath(); c.arc(x + 28, y + 20, 4.5, 0, Math.PI * 2); c.fill();
     c.restore();
   },
+  // ---- r71 · ICONOS EXPLÍCITOS de las subcategorías de AJUSTES ----
+  cpu(c, x, y) {            // chip (JUEGO: dificultad, adaptativo, mega pala)
+    c.save();
+    c.fillStyle = '#ffe08a';
+    c.fillRect(x - 20, y - 20, 40, 40);                 // cuerpo
+    c.strokeStyle = '#10131a'; c.lineWidth = 3;
+    c.strokeRect(x - 11, y - 11, 22, 22);               // núcleo
+    c.strokeStyle = '#ffe08a'; c.lineWidth = 4; c.lineCap = 'round';
+    for (let i = -1; i <= 1; i++) {                     // pines a cada lado
+      c.beginPath(); c.moveTo(x + i * 13, y - 20); c.lineTo(x + i * 13, y - 30); c.stroke();
+      c.beginPath(); c.moveTo(x + i * 13, y + 20); c.lineTo(x + i * 13, y + 30); c.stroke();
+      c.beginPath(); c.moveTo(x - 20, y + i * 13); c.lineTo(x - 30, y + i * 13); c.stroke();
+      c.beginPath(); c.moveTo(x + 20, y + i * 13); c.lineTo(x + 30, y + i * 13); c.stroke();
+    }
+    c.restore();
+  },
+  sala(c, x, y) {           // casa (SALA Y ESCENA)
+    c.save();
+    c.fillStyle = '#a5d8ff';
+    c.beginPath();                                     // tejado
+    c.moveTo(x - 28, y + 2); c.lineTo(x, y - 26); c.lineTo(x + 28, y + 2);
+    c.closePath(); c.fill();
+    c.fillRect(x - 20, y + 2, 40, 24);                 // muro
+    c.fillStyle = '#10131a';
+    c.fillRect(x - 7, y + 12, 14, 14);                 // puerta
+    c.fillRect(x + 8, y + 7, 8, 8);                    // ventana
+    c.restore();
+  },
+  sonido(c, x, y) {         // altavoz (SONIDO)
+    c.save();
+    c.fillStyle = '#d8f5a2';
+    c.beginPath();                                     // caja
+    c.moveTo(x - 24, y - 8); c.lineTo(x - 10, y - 8);
+    c.lineTo(x + 4, y - 22); c.lineTo(x + 4, y + 22);
+    c.lineTo(x - 10, y + 8); c.lineTo(x - 24, y + 8);
+    c.closePath(); c.fill();
+    c.strokeStyle = '#d8f5a2'; c.lineWidth = 5; c.lineCap = 'round';
+    c.beginPath(); c.arc(x + 12, y, 9, -0.9, 0.9); c.stroke();   // onda 1
+    c.beginPath(); c.arc(x + 12, y, 18, -0.9, 0.9); c.stroke();  // onda 2
+    c.restore();
+  },
+  visual(c, x, y) {         // ojo (VISUALES)
+    c.save();
+    c.strokeStyle = '#d0bfff'; c.lineWidth = 5; c.lineCap = 'round';
+    c.beginPath();
+    c.moveTo(x - 28, y);
+    c.quadraticCurveTo(x, y - 26, x + 28, y);
+    c.quadraticCurveTo(x, y + 26, x - 28, y);
+    c.stroke();
+    c.fillStyle = '#d0bfff';
+    c.beginPath(); c.arc(x, y, 10, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#10131a';
+    c.beginPath(); c.arc(x, y, 4.5, 0, Math.PI * 2); c.fill();
+    c.restore();
+  },
+  perfil(c, x, y) {         // persona (PERFIL Y DATOS)
+    c.save();
+    c.fillStyle = '#ffc9c9';
+    c.beginPath(); c.arc(x, y - 12, 12, 0, Math.PI * 2); c.fill();   // cabeza
+    c.beginPath();                                     // hombros
+    c.moveTo(x - 22, y + 26);
+    c.quadraticCurveTo(x - 22, y + 2, x, y + 2);
+    c.quadraticCurveTo(x + 22, y + 2, x + 22, y + 26);
+    c.closePath(); c.fill();
+    c.restore();
+  },
 };
 
 function T(key, params) {
@@ -2297,7 +2387,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.62-SDK6';
+  const VERSION = '3.6.63-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -12221,6 +12311,16 @@ class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // r71 · SUBPÁGINAS de AJUSTES (optsJuego · optsSala · optsSonido ·
+    // optsVisual · optsPerfil): cada una dibuja SU categoría.
+    if (this.menuPage && this.menuPage.indexOf('opts') === 0 &&
+        this.menuPage !== 'opts') {
+      this.drawMenuOptsCat(rects, this.menuPage.slice(4).toLowerCase());
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     // v3.1.1-FEEL1 · página PROMPT «Menú Principal ¿SI/No?» (botón B fuera
     // del hall): panel mínimo con las dos respuestas, sin acordeón ni secciones.
     if (this.menuPage === 'hallask') {
@@ -12410,24 +12510,12 @@ class PingPongGame {
       '#0ca678', '#087354', PP_ICONS.rank);
     y += CH + GY;
 
-    // dificultad de la CPU (afecta a PARTIDO) — siempre visible
-    label(T('hub_diff'), y + 24, 22, '#9aa7b4', 'center');
-    btn('diff:easy', 56, y + 46, 292, 60, T('diff_easy_btn'),
-      this.difficulty === 'easy', undefined, undefined, 25);
-    btn('diff:medium', 366, y + 46, 292, 60, T('diff_medium_btn'),
-      this.difficulty === 'medium', undefined, undefined, 25);
-    btn('diff:hard', 676, y + 46, 292, 60, T('diff_hard_btn'),
-      this.difficulty === 'hard', undefined, undefined, 25);
-
-    // r61 · IA ADAPTATIVA visible y decidible: el nivel de la CPU se ajusta
-    // con el marcador (ganas → aprieta · pierdes → afloja). Existía desde
-    // v2.x (applyAISkill) pero era invisible e inevitable; ahora es un
-    // conmutador persistente aquí, junto a la dificultad que modula.
-    btn('adapt', 56, y + 116, 912, 56,
-      T('btn_adapt', { v: this.adaptive ? T('yes') : T('no') }),
-      this.adaptive, undefined, this.adaptive, 23);
-
-    y += 200;
+    // r71 · LA DIFICULTAD DE LA CPU Y EL RIVAL ADAPTATIVO SE MUDAN A AJUSTES
+    // (petición del dueño: «los apartados de Nivel de la CPU y Opción de
+    // rival adaptativo deben ir dentro del apartado de Ajustes»). El HUB
+    // queda limpio: banner de la academia, 6 modos, volver al hall, AJUSTES
+    // y cerrar. La dificultad vigente sigue a la vista en la tarjeta de
+    // PARTIDO (hub_vs) y se cambia en AJUSTES › JUEGO.
 
     // v3.1.0-SRV2 · EL HALL ES EL HUB: en plena partida (o campeonato) el
     // menú ofrece la vuelta a la estancia del anfitrión — el hall es donde
@@ -12639,6 +12727,13 @@ class PingPongGame {
   /** v2.110 · página AJUSTES: TODAS las opciones juntas (nada se pierde:
    *  sala, ambiente, voz, música, vibración, estela, consejos, prueba de
    *  sonido, telemetría, nombre, reinicio y Ko-fi). */
+  /* r71 · página AJUSTES reorganizada: el dueño pidió «mejor organizado por
+   * subcategorías con iconos explícitos de cada una, un diseño bonito».
+   * Cinco TARJETAS (misma estética que el HUB: degradado + insignia con
+   * icono + estado vivo en el subtítulo) que abren su propia subpágina:
+   * JUEGO · SALA Y ESCENA · SONIDO · VISUALES · PERFIL Y DATOS. El apoyo
+   * Ko-fi queda abajo, fuera de las categorías. Nada desaparece: todos los
+   * controles viven ahora en su subpágina. */
   drawMenuOpts(rects) {
     const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
@@ -12651,55 +12746,151 @@ class PingPongGame {
     c.textBaseline = 'middle';
     c.fillText(T('opts_title'), 664, 246);
 
-    let y = 310;
-    label(T('room_label'), y + 10, 22);
-    y += 34;
-    const themes = [
-      ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
-      ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
-    ];
-    themes.forEach(([id, name], i) => {
-      btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 64, 448, 56, name,
-        this.theme === id.split(':')[1], undefined, undefined, 23);
-    });
-    y += 136;
     const yn = (v) => (v ? T('yes') : T('no'));
-    btn('amb', 56, y, 448, 56, T('btn_amb', { v: yn(this.audio.ambience) }), !!this.audio.ambience, undefined, !!this.audio.ambience, 23);
-    btn('voz', 520, y, 448, 56, T('btn_mic', { v: yn(this.audio.voice) }), !!this.audio.voice, undefined, !!this.audio.voice, 23);
-    y += 64;
-    btn('music', 56, y, 448, 56, T('btn_music', { v: yn(this.audio.musicOn) }), !!this.audio.musicOn, undefined, !!this.audio.musicOn, 23);
-    btn('hapt', 520, y, 448, 56, T('btn_hapt', { v: yn(this.hapticsOn) }), !!this.hapticsOn, undefined, !!this.hapticsOn, 23);
-    y += 64;
-    btn('trail', 56, y, 448, 56, T('btn_trail', { v: yn(this.showTrail) }), !!this.showTrail, undefined, !!this.showTrail, 23);
-    btn('tips', 520, y, 448, 56, T('btn_tips', { v: yn(this.showTips) }), !!this.showTips, undefined, !!this.showTips, 23);
-    y += 64;
-    // prueba de sonido con AUTO-REPARACIÓN (v2.29) + telemetría (v2.50)
-    btn('sndtest', 56, y, 448, 56, T('btn_sndtest'), false, undefined, undefined, 23);
-    btn('tele', 520, y, 448, 56, T('btn_tele', { v: yn(__PP_TELE.on) }), !!__PP_TELE.on, undefined, !!__PP_TELE.on, 23);
-    y += 66;
     const _pn = ppPlayerName();
-    btn('pname', 56, y, 448, 58, T('opts_name', { v: _pn || T('no_name') }), !!_pn, undefined, undefined, 22);
-    btn('reset', 520, y, 448, 58, this._resetArm ? T('reset_arm') : T('reset_btn'), false, this._resetArm ? 'surv' : undefined, undefined, 21);
-    y += 70;
-    // v3.6.34 · PALA MEJORADA: conmutador de los superpoderes de la pala
-    // (MEGA PALA normativa — rally 11+ la carga, gatillo la suelta).
-    // Activada los permite; desactivada la pala se comporta NORMAL.
-    btn('pmej', 56, y, 912, 56, T('btn_pmej', { v: yn(this.palaMejorada) }), !!this.palaMejorada, undefined, !!this.palaMejorada, 23);
-    y += 64;
-    // v3.6.42 · PASSTHROUGH (petición del dueño): conmutador de TU
-    // HABITACIÓN REAL dentro de la sesión — por defecto desactivado.
-    // En VR refleja la sesión VIVA; fuera, la próxima entrada.
+    const diffName = { easy: T('diff_easy_btn'), medium: T('diff_medium_btn'),
+      hard: T('diff_hard_btn') }[this.difficulty] || '';
+    const themeDef = ROOM_THEMES.find((t) => t.key === this.theme);
+    const themeName = themeDef ? (themeDef.nameKey ? T(themeDef.nameKey) : themeDef.name) : '';
     const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
-    btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }), !!pstOn, undefined, !!pstOn, 23);
-    y += 68;
-    // r69 · el Tutorial de AJUSTES se RETIRA (petición del dueño): la
-    // academia del HUB es el tutorial completo — la entrada repetida aquí
-    // sobraba. La oferta de PRIMERA VEZ y el banner del HUB siguen vivos.
-    // apoyo Ko-fi (v2.50)
+
+    // subtítulos con ESTADO VIVO (lo mismo que se ajusta dentro, de un vistazo)
+    const subJuego = diffName + ' · ' + T('btn_adapt', { v: yn(this.adaptive) });
+    const subSala = (themeName ? themeName + ' · ' : '')
+      + T('btn_psthru', { v: yn(pstOn) });
+    const subSonido = T('btn_music', { v: yn(this.audio.musicOn) })
+      + ' · ' + T('btn_mic', { v: yn(this.audio.voice) })
+      + ' · ' + T('btn_amb', { v: yn(this.audio.ambience) });
+    const subVisual = T('btn_trail', { v: yn(this.showTrail) })
+      + ' · ' + T('btn_hapt', { v: yn(this.hapticsOn) })
+      + ' · ' + T('btn_tips', { v: yn(this.showTips) });
+    const subPerfil = T('opts_name', { v: _pn || T('no_name') })
+      + ' · ' + T('btn_tele', { v: yn(__PP_TELE.on) });
+
+    const CH2 = 150, GY2 = 18;
+    let y = 310;
+    this._modeCard(rects, 'page:optsJuego', 40, y, 944, CH2,
+      T('cat_juego'), subJuego, '#2f9e44', '#1e7c33', PP_ICONS.cpu);
+    y += CH2 + GY2;
+    this._modeCard(rects, 'page:optsSala', 40, y, 944, CH2,
+      T('cat_sala'), subSala, '#1c7ed6', '#145c9e', PP_ICONS.sala);
+    y += CH2 + GY2;
+    this._modeCard(rects, 'page:optsSonido', 40, y, 944, CH2,
+      T('cat_sonido'), subSonido, '#7048e8', '#4c2bb0', PP_ICONS.sonido);
+    y += CH2 + GY2;
+    this._modeCard(rects, 'page:optsVisual', 40, y, 944, CH2,
+      T('cat_visual'), subVisual, '#0ca678', '#087354', PP_ICONS.visual);
+    y += CH2 + GY2;
+    this._modeCard(rects, 'page:optsPerfil', 40, y, 944, CH2,
+      T('cat_perfil'), subPerfil, '#e8590c', '#b0420a', PP_ICONS.perfil);
+    y += CH2 + GY2;
+
+    label(T('opts_elegir'), y + 16, 20, '#75828f', 'center');
+    y += 46;
+    // apoyo Ko-fi (v2.50) — fuera de las categorías, al pie
     btn('kofi', 56, y, 912, 56, T('btn_kofi'), false, 'green', undefined, 23);
     y += 68;
-    label(T('tele_hint'), y + 10, 18, '#75828f');
-    y += 30;
+    const closeY = Math.min(Math.max(y + 4, 1392), 1428);
+    btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
+  }
+
+  /* r71 · SUBPÁGINAS de AJUSTES: cada categoría con SUS controles y un
+   * volver a la página de categorías. Los ids de los controles NO cambian
+   * (diff:*, adapt, pmej, theme:*, amb, voz, music, hapt, trail, tips,
+   * sndtest, tele, pname, reset, psthru) — los handlers siguen intactos. */
+  drawMenuOptsCat(rects, cat) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const label = this._menuLabel;
+    this.drawMenuHeader(rects);
+    btn('page:opts', 40, 216, 240, 60, T('page_back'), false, undefined, undefined, 25);
+    c.fillStyle = '#ffd257';
+    c.font = '900 42px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(T('cat_' + cat), 664, 246);
+
+    const yn = (v) => (v ? T('yes') : T('no'));
+    let y = 330;
+    switch (cat) {
+      case 'juego': {
+        // r71 · LA CASA NUEVA del Nivel de la CPU y el Rival Adaptativo
+        label(T('hub_diff'), y + 10, 22);
+        y += 34;
+        btn('diff:easy', 56, y, 292, 60, T('diff_easy_btn'),
+          this.difficulty === 'easy', undefined, undefined, 25);
+        btn('diff:medium', 366, y, 292, 60, T('diff_medium_btn'),
+          this.difficulty === 'medium', undefined, undefined, 25);
+        btn('diff:hard', 676, y, 292, 60, T('diff_hard_btn'),
+          this.difficulty === 'hard', undefined, undefined, 25);
+        y += 78;
+        btn('adapt', 56, y, 912, 56,
+          T('btn_adapt', { v: yn(this.adaptive) }),
+          !!this.adaptive, undefined, !!this.adaptive, 23);
+        y += 70;
+        btn('pmej', 56, y, 912, 56, T('btn_pmej', { v: yn(this.palaMejorada) }),
+          !!this.palaMejorada, undefined, !!this.palaMejorada, 23);
+        y += 70;
+        break;
+      }
+      case 'sala': {
+        label(T('room_label'), y + 10, 22);
+        y += 34;
+        const themes = [
+          ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
+          ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
+        ];
+        themes.forEach(([id, name], i) => {
+          btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 64, 448, 56, name,
+            this.theme === id.split(':')[1], undefined, undefined, 23);
+        });
+        y += 136;
+        const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
+        btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }),
+          !!pstOn, undefined, !!pstOn, 23);
+        y += 70;
+        break;
+      }
+      case 'sonido': {
+        btn('music', 56, y, 448, 56, T('btn_music', { v: yn(this.audio.musicOn) }),
+          !!this.audio.musicOn, undefined, !!this.audio.musicOn, 23);
+        btn('amb', 520, y, 448, 56, T('btn_amb', { v: yn(this.audio.ambience) }),
+          !!this.audio.ambience, undefined, !!this.audio.ambience, 23);
+        y += 64;
+        btn('voz', 56, y, 448, 56, T('btn_mic', { v: yn(this.audio.voice) }),
+          !!this.audio.voice, undefined, !!this.audio.voice, 23);
+        btn('sndtest', 520, y, 448, 56, T('btn_sndtest'), false, undefined, undefined, 23);
+        y += 70;
+        break;
+      }
+      case 'visual': {
+        btn('trail', 56, y, 448, 56, T('btn_trail', { v: yn(this.showTrail) }),
+          !!this.showTrail, undefined, !!this.showTrail, 23);
+        btn('tips', 520, y, 448, 56, T('btn_tips', { v: yn(this.showTips) }),
+          !!this.showTips, undefined, !!this.showTips, 23);
+        y += 64;
+        btn('hapt', 56, y, 448, 56, T('btn_hapt', { v: yn(this.hapticsOn) }),
+          !!this.hapticsOn, undefined, !!this.hapticsOn, 23);
+        y += 70;
+        break;
+      }
+      case 'perfil': {
+        const _pn = ppPlayerName();
+        btn('pname', 56, y, 448, 58, T('opts_name', { v: _pn || T('no_name') }),
+          !!_pn, undefined, undefined, 22);
+        btn('tele', 520, y, 448, 58, T('btn_tele', { v: yn(__PP_TELE.on) }),
+          !!__PP_TELE.on, undefined, !!__PP_TELE.on, 23);
+        y += 72;
+        btn('reset', 56, y, 912, 58, this._resetArm ? T('reset_arm') : T('reset_btn'),
+          false, this._resetArm ? 'surv' : undefined, undefined, 21);
+        y += 72;
+        label(T('tele_hint'), y + 10, 18, '#75828f');
+        y += 36;
+        break;
+      }
+      default:
+        break;
+    }
     const closeY = Math.min(Math.max(y + 4, 1392), 1428);
     btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
   }
@@ -12876,7 +13067,11 @@ class PingPongGame {
         break;
       case 'page':
         // v2.110 · HUB: navegación entre páginas del menú
-        if (arg === 'main' || arg === 'champs' || arg === 'opts') {
+        // r71 · + subpáginas de AJUSTES (optsJuego/optsSala/optsSonido/
+        // optsVisual/optsPerfil) — las categorías del nuevo AJUSTES.
+        if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
+            arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
+            arg === 'optsVisual' || arg === 'optsPerfil') {
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {
@@ -22798,10 +22993,19 @@ window.__PP_CORE = {
     }
   }
   function bolaPalmDemo() {
-    // r67 · bola de la demo del PROFESOR: apoyada en su mitad, junto al
-    // borde de la mesa (la pala del rival es la referencia visual)
+    // r71 · bola de la demo del PROFESOR: ELEVADA y justo detrás del borde
+    // (la pala del rival es la referencia visual). La posición antigua
+    // (apoyada a la ALTURA de la mesa, 17 cm detrás del borde) hacía
+    // IMPOSIBLE el saque reglamentario: ningún arco que parte descendiendo
+    // desde la altura de la mesa puede botar antes en SU campo — el solver
+    // no encontraba candidatos y caía SIEMPRE al fallback (lob directo al
+    // campo del jugador: UN solo bote, el fallo que vio el dueño).
+    // Verificado empíricamente (scripts/_r71_verifica_palma.mjs): desde
+    // aquí el solver devuelve 100/100 saques con bote propio profundo en
+    // SU campo + bote cómodo en el nuestro (margen de red ≥ 49 mm) y la
+    // bola queda a 100 mm de la guardia de la raqueta (barrido natural).
     const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
-    return new THREE.Vector3(0.10, TY + DIMS.ballRadius + 0.004, C - HL - 0.17);
+    return new THREE.Vector3(0.10, TY + 0.34, C - HL - 0.16);
   }
 
   /* ---------------- LA RAQUETA DEL RIVAL (r68) ------------------------
@@ -23347,7 +23551,20 @@ window.__PP_CORE = {
     const cvh = document.createElement('canvas');
     cvh.width = 256; cvh.height = 128;
     const g2 = cvh.getContext('2d');
-    g2.font = '900 ' + (px || 64) + 'px system-ui, sans-serif';
+    // r71 · AUTOAJUSTE: el cartel es un canvas de 256 px y un texto largo
+    // («¡+2 PARA GANAR!» a 54 px) se SALÍA del lienzo — en el Quest se veía
+    // la palabra RECORTADA («GAN» en vez de «GANAR», el fallo del dueño en
+    // la explicación del 10-10). Se mide el texto y la fuente se encoge
+    // hasta caber con margen (12 px por lado): el cartel SIEMPRE entero,
+    // en ES y en EN, para cualquier cadena futura.
+    const MARGEN = 244;                       // ancho útil del lienzo (256−2×6)
+    let px2 = px || 64;
+    g2.font = '900 ' + px2 + 'px system-ui, sans-serif';
+    let ancho = g2.measureText(txt).width;
+    if (ancho > MARGEN) {
+      px2 = Math.max(20, Math.floor(px2 * (MARGEN / ancho)));
+      g2.font = '900 ' + px2 + 'px system-ui, sans-serif';
+    }
     g2.textAlign = 'center'; g2.textBaseline = 'middle';
     g2.shadowColor = 'rgba(255,255,255,0.5)';
     g2.shadowBlur = 8;
@@ -23453,8 +23670,11 @@ window.__PP_CORE = {
     holoTokens.cartel10.position.set(0, 0.42, 0);
     holoTokens.cartel10.visible = false;
     H.add(holoTokens.cartel10);
-    holoCartel2 = _cartelTxt(T('tut_h_p2'), '#ffd257', 54, 0.34, 0.17);
-    holoCartel2.position.set(0, 0.60, 0);
+    // r71 · cartel «+2 PARA GANAR» más ANCHO (0.50 m): con el autoajuste la
+    // fuente cabe entera y el plano grande la hace legible de golpe; sube
+    // 25 mm para seguir sin tocar el cartel «¡10-10!» (su banda acaba en 0.495).
+    holoCartel2 = _cartelTxt(T('tut_h_p2'), '#ffd257', 54, 0.50, 0.25);
+    holoCartel2.position.set(0, 0.625, 0);
     holoCartel2.visible = false;
     H.add(holoCartel2);
   }
@@ -23714,21 +23934,29 @@ window.__PP_CORE = {
           }
           if (G.tossed) {
             const b = G.ball;
-            const C = DIMS.tableCenterZ, TY = DIMS.tableTopY;
-            // r70 · EL SAQUE SE APRUEBA CON LOS DOS BOTES (el dueño: «debe
-            // botar en ambos campos y esto no lo comprueba, dando por bueno
-            // un servicio aunque bote en 1 sola parte»). Los aros guía se
-            // iluminan con los BOTES REALES y la cuenta exige la SECUENCIA
-            // reglamentaria: primero TU campo y después el del rival. Un
-            // saque que cruce sin botar (volea), que bote solo en un campo
-            // o que muera por el camino = «OTRA VEZ» (nunca cuenta).
+            const C = DIMS.tableCenterZ, TY = DIMS.tableTopY, HL = DIMS.tableHalfLength;
+            // r70/r71 · EL SAQUE SE APRUEBA CON LOS DOS BOTES SOBRE LA MESA
+            // (el dueño: «debe botar en ambos campos y esto no lo comprueba,
+            // dando por bueno un servicio aunque bote en 1 sola parte»).
+            // r71 · BOTES SOBRE LA MESA, NO EN EL SUELO: la valla antigua
+            // (z + vel.y + y<TY+0.35) también pasaba el bote en el SUELO de
+            // un saque largo que se iba fuera de la mesa (el suelo está a
+            // −76 cm, muy por debajo de TY+0.35) — por eso un servicio que
+            // solo botaba en el campo propio y se marchaba LARGO contaba
+            // como bueno. Ahora cada bote exige el RECTÁNGULO real del
+            // campo (x y z dentro de la mesa) y pegado a la superficie
+            // (y < TY+12 cm). Volea, medio saque, largo y red = «OTRA VEZ».
             if (!saqBote1 && b.vel.y > 0.3 && b.pos.z > C + 0.06 &&
-                b.pos.y < TY + 0.35) {
+                b.pos.z < C + HL + 0.03 &&
+                Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.02 &&
+                b.pos.y < TY + 0.12) {
               saqBote1 = true;
               if (aroIzq) aroIzq.__ok = true;
             }
             if (saqBote1 && !saqBote2 && b.vel.y > 0.25 && b.pos.z < C - 0.05 &&
-                b.pos.y < TY + 0.35) {
+                b.pos.z > C - HL - 0.03 &&
+                Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.02 &&
+                b.pos.y < TY + 0.12) {
               saqBote2 = true;
               if (aroDer) aroDer.__ok = true;
             }
@@ -24033,14 +24261,23 @@ window.__PP_CORE = {
       }
       case 2: {
         // VUELO REAL: bote en SU campo → aro rival; bote en el TUYO → aro tuyo
+        // r71 · BOTES REALES SOBRE LA MESA: la condición antigua (z y vel.y)
+        // también daba por bueno un bote en el SUELO — un saque largo que se
+        // iba fuera del fondo del campo rival «botaba» más allá de la mesa y
+        // se encendía el aro igualmente. Ahora un bote cuenta SOLO si cae
+        // DENTRO del rectángulo del campo correspondiente (x e z de la mesa)
+        // y pegado a la superficie (y bajo TY+12 cm, el suelo está a −76 cm).
         if (!demoBote1 && b.vel.y > 0.3 && b.pos.z < C - 0.06 &&
-            b.pos.y < TY + 0.35) {
+            b.pos.z > C - HL - 0.03 && Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.02 &&
+            b.pos.y < TY + 0.12) {
           demoBote1 = true;
           demoTxt = { txt: T('tut_p1r'), col: 'rgba(232,180,90,0.32)', t: 1.5 };
           if (aroDer) aroDer.__ok = true;
           chime(true);
           if (!esMarcador && demoCiclos === 0) narra(['tutv3b']);
-        } else if (demoBote1 && !demoBote2 && b.vel.y > 0.25 && b.pos.z > C + 0.05) {
+        } else if (demoBote1 && !demoBote2 && b.vel.y > 0.25 && b.pos.z > C + 0.05 &&
+                   b.pos.z < C + HL + 0.03 && Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.02 &&
+                   b.pos.y < TY + 0.12) {
           demoBote2 = true;
           demoTxt = { txt: T('tut_d3_p2'), col: 'rgba(232,89,12,0.32)', t: 1.5 };
           if (aroIzq) aroIzq.__ok = true;
@@ -24460,6 +24697,13 @@ window.__PP_CORE = {
              Math.round(raqGrp.position.z * 1000) / 1000]
           : null,
         saqBote1, saqBote2,
+        // r71 · botes de la demo del profesor + palma (introspección de QA)
+        demoBote1, demoBote2,
+        palma: bolaPalmDemo()
+          ? [Math.round(bolaPalmDemo().x * 1000) / 1000,
+             Math.round(bolaPalmDemo().y * 1000) / 1000,
+             Math.round(bolaPalmDemo().z * 1000) / 1000]
+          : null,
         arosAnclados: !!(arosGrp && G && arosGrp.parent === G.rig),
         holoAnclado: !!(holo && G && holo.parent === G.rig),
         // r69 · golpe honesto + una sola raqueta (introspección de QA)

@@ -72,7 +72,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 50)
-        ('3.6.62-SDK6', 'versión servida: 3.6.62-SDK6 (ronda 50)'),
+        ('3.6.63-SDK6', 'versión servida: 3.6.63-SDK6 (ronda 50)'),
         # · TRÁNSITO EXPLÍCITO (presentación del dueño)
         ('this._portalSinkT = 0;            // hundimiento en el portal de entrada',
          'tránsito: fase de hundimiento declarada'),
@@ -158,8 +158,10 @@ async def main():
          'ANTI-LAG: las voces se predecodifican (la carga jamás decodifica)'),
         ('_megaVozPrecalentar(id) {', 'ANTI-LAG: precalentador de voces definido'),
         # · PASSTHROUGH EN AJUSTES (en VR, por defecto OFF)
-        ("btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }), !!pstOn, undefined, !!pstOn, 23);",
-         'PASSTHROUGH: conmutador en la página AJUSTES del menú VR'),
+        # r71: el conmutador vive en la SUBPÁGINA SALA Y ESCENA del nuevo
+        # AJUSTES por categorías (el dueño lo reorganizó en la ronda 71).
+        ("btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }),\n          !!pstOn, undefined, !!pstOn, 23);",
+         'PASSTHROUGH: conmutador en la subpágina SALA de AJUSTES (r71)'),
         ("case 'psthru': {", 'PASSTHROUGH: caso de clic definido'),
         ('this._xrSwitchTo = pstNuevo;   // el sessionend re-entra solo',
          'PASSTHROUGH: cambio de modo en vivo (fin + re-entrada automática)'),

@@ -1667,6 +1667,16 @@ export class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // r71 · SUBPÁGINAS de AJUSTES (optsJuego · optsSala · optsSonido ·
+    // optsVisual · optsPerfil): cada una dibuja SU categoría.
+    if (this.menuPage && this.menuPage.indexOf('opts') === 0 &&
+        this.menuPage !== 'opts') {
+      this.drawMenuOptsCat(rects, this.menuPage.slice(4).toLowerCase());
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     // v3.1.1-FEEL1 · página PROMPT «Menú Principal ¿SI/No?» (botón B fuera
     // del hall): panel mínimo con las dos respuestas, sin acordeón ni secciones.
     if (this.menuPage === 'hallask') {
@@ -1856,24 +1866,12 @@ export class PingPongGame {
       '#0ca678', '#087354', PP_ICONS.rank);
     y += CH + GY;
 
-    // dificultad de la CPU (afecta a PARTIDO) — siempre visible
-    label(T('hub_diff'), y + 24, 22, '#9aa7b4', 'center');
-    btn('diff:easy', 56, y + 46, 292, 60, T('diff_easy_btn'),
-      this.difficulty === 'easy', undefined, undefined, 25);
-    btn('diff:medium', 366, y + 46, 292, 60, T('diff_medium_btn'),
-      this.difficulty === 'medium', undefined, undefined, 25);
-    btn('diff:hard', 676, y + 46, 292, 60, T('diff_hard_btn'),
-      this.difficulty === 'hard', undefined, undefined, 25);
-
-    // r61 · IA ADAPTATIVA visible y decidible: el nivel de la CPU se ajusta
-    // con el marcador (ganas → aprieta · pierdes → afloja). Existía desde
-    // v2.x (applyAISkill) pero era invisible e inevitable; ahora es un
-    // conmutador persistente aquí, junto a la dificultad que modula.
-    btn('adapt', 56, y + 116, 912, 56,
-      T('btn_adapt', { v: this.adaptive ? T('yes') : T('no') }),
-      this.adaptive, undefined, this.adaptive, 23);
-
-    y += 200;
+    // r71 · LA DIFICULTAD DE LA CPU Y EL RIVAL ADAPTATIVO SE MUDAN A AJUSTES
+    // (petición del dueño: «los apartados de Nivel de la CPU y Opción de
+    // rival adaptativo deben ir dentro del apartado de Ajustes»). El HUB
+    // queda limpio: banner de la academia, 6 modos, volver al hall, AJUSTES
+    // y cerrar. La dificultad vigente sigue a la vista en la tarjeta de
+    // PARTIDO (hub_vs) y se cambia en AJUSTES › JUEGO.
 
     // v3.1.0-SRV2 · EL HALL ES EL HUB: en plena partida (o campeonato) el
     // menú ofrece la vuelta a la estancia del anfitrión — el hall es donde
@@ -2085,6 +2083,13 @@ export class PingPongGame {
   /** v2.110 · página AJUSTES: TODAS las opciones juntas (nada se pierde:
    *  sala, ambiente, voz, música, vibración, estela, consejos, prueba de
    *  sonido, telemetría, nombre, reinicio y Ko-fi). */
+  /* r71 · página AJUSTES reorganizada: el dueño pidió «mejor organizado por
+   * subcategorías con iconos explícitos de cada una, un diseño bonito».
+   * Cinco TARJETAS (misma estética que el HUB: degradado + insignia con
+   * icono + estado vivo en el subtítulo) que abren su propia subpágina:
+   * JUEGO · SALA Y ESCENA · SONIDO · VISUALES · PERFIL Y DATOS. El apoyo
+   * Ko-fi queda abajo, fuera de las categorías. Nada desaparece: todos los
+   * controles viven ahora en su subpágina. */
   drawMenuOpts(rects) {
     const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
@@ -2097,55 +2102,151 @@ export class PingPongGame {
     c.textBaseline = 'middle';
     c.fillText(T('opts_title'), 664, 246);
 
-    let y = 310;
-    label(T('room_label'), y + 10, 22);
-    y += 34;
-    const themes = [
-      ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
-      ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
-    ];
-    themes.forEach(([id, name], i) => {
-      btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 64, 448, 56, name,
-        this.theme === id.split(':')[1], undefined, undefined, 23);
-    });
-    y += 136;
     const yn = (v) => (v ? T('yes') : T('no'));
-    btn('amb', 56, y, 448, 56, T('btn_amb', { v: yn(this.audio.ambience) }), !!this.audio.ambience, undefined, !!this.audio.ambience, 23);
-    btn('voz', 520, y, 448, 56, T('btn_mic', { v: yn(this.audio.voice) }), !!this.audio.voice, undefined, !!this.audio.voice, 23);
-    y += 64;
-    btn('music', 56, y, 448, 56, T('btn_music', { v: yn(this.audio.musicOn) }), !!this.audio.musicOn, undefined, !!this.audio.musicOn, 23);
-    btn('hapt', 520, y, 448, 56, T('btn_hapt', { v: yn(this.hapticsOn) }), !!this.hapticsOn, undefined, !!this.hapticsOn, 23);
-    y += 64;
-    btn('trail', 56, y, 448, 56, T('btn_trail', { v: yn(this.showTrail) }), !!this.showTrail, undefined, !!this.showTrail, 23);
-    btn('tips', 520, y, 448, 56, T('btn_tips', { v: yn(this.showTips) }), !!this.showTips, undefined, !!this.showTips, 23);
-    y += 64;
-    // prueba de sonido con AUTO-REPARACIÓN (v2.29) + telemetría (v2.50)
-    btn('sndtest', 56, y, 448, 56, T('btn_sndtest'), false, undefined, undefined, 23);
-    btn('tele', 520, y, 448, 56, T('btn_tele', { v: yn(__PP_TELE.on) }), !!__PP_TELE.on, undefined, !!__PP_TELE.on, 23);
-    y += 66;
     const _pn = ppPlayerName();
-    btn('pname', 56, y, 448, 58, T('opts_name', { v: _pn || T('no_name') }), !!_pn, undefined, undefined, 22);
-    btn('reset', 520, y, 448, 58, this._resetArm ? T('reset_arm') : T('reset_btn'), false, this._resetArm ? 'surv' : undefined, undefined, 21);
-    y += 70;
-    // v3.6.34 · PALA MEJORADA: conmutador de los superpoderes de la pala
-    // (MEGA PALA normativa — rally 11+ la carga, gatillo la suelta).
-    // Activada los permite; desactivada la pala se comporta NORMAL.
-    btn('pmej', 56, y, 912, 56, T('btn_pmej', { v: yn(this.palaMejorada) }), !!this.palaMejorada, undefined, !!this.palaMejorada, 23);
-    y += 64;
-    // v3.6.42 · PASSTHROUGH (petición del dueño): conmutador de TU
-    // HABITACIÓN REAL dentro de la sesión — por defecto desactivado.
-    // En VR refleja la sesión VIVA; fuera, la próxima entrada.
+    const diffName = { easy: T('diff_easy_btn'), medium: T('diff_medium_btn'),
+      hard: T('diff_hard_btn') }[this.difficulty] || '';
+    const themeDef = ROOM_THEMES.find((t) => t.key === this.theme);
+    const themeName = themeDef ? (themeDef.nameKey ? T(themeDef.nameKey) : themeDef.name) : '';
     const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
-    btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }), !!pstOn, undefined, !!pstOn, 23);
-    y += 68;
-    // r69 · el Tutorial de AJUSTES se RETIRA (petición del dueño): la
-    // academia del HUB es el tutorial completo — la entrada repetida aquí
-    // sobraba. La oferta de PRIMERA VEZ y el banner del HUB siguen vivos.
-    // apoyo Ko-fi (v2.50)
+
+    // subtítulos con ESTADO VIVO (lo mismo que se ajusta dentro, de un vistazo)
+    const subJuego = diffName + ' · ' + T('btn_adapt', { v: yn(this.adaptive) });
+    const subSala = (themeName ? themeName + ' · ' : '')
+      + T('btn_psthru', { v: yn(pstOn) });
+    const subSonido = T('btn_music', { v: yn(this.audio.musicOn) })
+      + ' · ' + T('btn_mic', { v: yn(this.audio.voice) })
+      + ' · ' + T('btn_amb', { v: yn(this.audio.ambience) });
+    const subVisual = T('btn_trail', { v: yn(this.showTrail) })
+      + ' · ' + T('btn_hapt', { v: yn(this.hapticsOn) })
+      + ' · ' + T('btn_tips', { v: yn(this.showTips) });
+    const subPerfil = T('opts_name', { v: _pn || T('no_name') })
+      + ' · ' + T('btn_tele', { v: yn(__PP_TELE.on) });
+
+    const CH2 = 150, GY2 = 18;
+    let y = 310;
+    this._modeCard(rects, 'page:optsJuego', 40, y, 944, CH2,
+      T('cat_juego'), subJuego, '#2f9e44', '#1e7c33', PP_ICONS.cpu);
+    y += CH2 + GY2;
+    this._modeCard(rects, 'page:optsSala', 40, y, 944, CH2,
+      T('cat_sala'), subSala, '#1c7ed6', '#145c9e', PP_ICONS.sala);
+    y += CH2 + GY2;
+    this._modeCard(rects, 'page:optsSonido', 40, y, 944, CH2,
+      T('cat_sonido'), subSonido, '#7048e8', '#4c2bb0', PP_ICONS.sonido);
+    y += CH2 + GY2;
+    this._modeCard(rects, 'page:optsVisual', 40, y, 944, CH2,
+      T('cat_visual'), subVisual, '#0ca678', '#087354', PP_ICONS.visual);
+    y += CH2 + GY2;
+    this._modeCard(rects, 'page:optsPerfil', 40, y, 944, CH2,
+      T('cat_perfil'), subPerfil, '#e8590c', '#b0420a', PP_ICONS.perfil);
+    y += CH2 + GY2;
+
+    label(T('opts_elegir'), y + 16, 20, '#75828f', 'center');
+    y += 46;
+    // apoyo Ko-fi (v2.50) — fuera de las categorías, al pie
     btn('kofi', 56, y, 912, 56, T('btn_kofi'), false, 'green', undefined, 23);
     y += 68;
-    label(T('tele_hint'), y + 10, 18, '#75828f');
-    y += 30;
+    const closeY = Math.min(Math.max(y + 4, 1392), 1428);
+    btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
+  }
+
+  /* r71 · SUBPÁGINAS de AJUSTES: cada categoría con SUS controles y un
+   * volver a la página de categorías. Los ids de los controles NO cambian
+   * (diff:*, adapt, pmej, theme:*, amb, voz, music, hapt, trail, tips,
+   * sndtest, tele, pname, reset, psthru) — los handlers siguen intactos. */
+  drawMenuOptsCat(rects, cat) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const label = this._menuLabel;
+    this.drawMenuHeader(rects);
+    btn('page:opts', 40, 216, 240, 60, T('page_back'), false, undefined, undefined, 25);
+    c.fillStyle = '#ffd257';
+    c.font = '900 42px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(T('cat_' + cat), 664, 246);
+
+    const yn = (v) => (v ? T('yes') : T('no'));
+    let y = 330;
+    switch (cat) {
+      case 'juego': {
+        // r71 · LA CASA NUEVA del Nivel de la CPU y el Rival Adaptativo
+        label(T('hub_diff'), y + 10, 22);
+        y += 34;
+        btn('diff:easy', 56, y, 292, 60, T('diff_easy_btn'),
+          this.difficulty === 'easy', undefined, undefined, 25);
+        btn('diff:medium', 366, y, 292, 60, T('diff_medium_btn'),
+          this.difficulty === 'medium', undefined, undefined, 25);
+        btn('diff:hard', 676, y, 292, 60, T('diff_hard_btn'),
+          this.difficulty === 'hard', undefined, undefined, 25);
+        y += 78;
+        btn('adapt', 56, y, 912, 56,
+          T('btn_adapt', { v: yn(this.adaptive) }),
+          !!this.adaptive, undefined, !!this.adaptive, 23);
+        y += 70;
+        btn('pmej', 56, y, 912, 56, T('btn_pmej', { v: yn(this.palaMejorada) }),
+          !!this.palaMejorada, undefined, !!this.palaMejorada, 23);
+        y += 70;
+        break;
+      }
+      case 'sala': {
+        label(T('room_label'), y + 10, 22);
+        y += 34;
+        const themes = [
+          ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
+          ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
+        ];
+        themes.forEach(([id, name], i) => {
+          btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 64, 448, 56, name,
+            this.theme === id.split(':')[1], undefined, undefined, 23);
+        });
+        y += 136;
+        const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
+        btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }),
+          !!pstOn, undefined, !!pstOn, 23);
+        y += 70;
+        break;
+      }
+      case 'sonido': {
+        btn('music', 56, y, 448, 56, T('btn_music', { v: yn(this.audio.musicOn) }),
+          !!this.audio.musicOn, undefined, !!this.audio.musicOn, 23);
+        btn('amb', 520, y, 448, 56, T('btn_amb', { v: yn(this.audio.ambience) }),
+          !!this.audio.ambience, undefined, !!this.audio.ambience, 23);
+        y += 64;
+        btn('voz', 56, y, 448, 56, T('btn_mic', { v: yn(this.audio.voice) }),
+          !!this.audio.voice, undefined, !!this.audio.voice, 23);
+        btn('sndtest', 520, y, 448, 56, T('btn_sndtest'), false, undefined, undefined, 23);
+        y += 70;
+        break;
+      }
+      case 'visual': {
+        btn('trail', 56, y, 448, 56, T('btn_trail', { v: yn(this.showTrail) }),
+          !!this.showTrail, undefined, !!this.showTrail, 23);
+        btn('tips', 520, y, 448, 56, T('btn_tips', { v: yn(this.showTips) }),
+          !!this.showTips, undefined, !!this.showTips, 23);
+        y += 64;
+        btn('hapt', 56, y, 448, 56, T('btn_hapt', { v: yn(this.hapticsOn) }),
+          !!this.hapticsOn, undefined, !!this.hapticsOn, 23);
+        y += 70;
+        break;
+      }
+      case 'perfil': {
+        const _pn = ppPlayerName();
+        btn('pname', 56, y, 448, 58, T('opts_name', { v: _pn || T('no_name') }),
+          !!_pn, undefined, undefined, 22);
+        btn('tele', 520, y, 448, 58, T('btn_tele', { v: yn(__PP_TELE.on) }),
+          !!__PP_TELE.on, undefined, !!__PP_TELE.on, 23);
+        y += 72;
+        btn('reset', 56, y, 912, 58, this._resetArm ? T('reset_arm') : T('reset_btn'),
+          false, this._resetArm ? 'surv' : undefined, undefined, 21);
+        y += 72;
+        label(T('tele_hint'), y + 10, 18, '#75828f');
+        y += 36;
+        break;
+      }
+      default:
+        break;
+    }
     const closeY = Math.min(Math.max(y + 4, 1392), 1428);
     btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
   }
@@ -2322,7 +2423,11 @@ export class PingPongGame {
         break;
       case 'page':
         // v2.110 · HUB: navegación entre páginas del menú
-        if (arg === 'main' || arg === 'champs' || arg === 'opts') {
+        // r71 · + subpáginas de AJUSTES (optsJuego/optsSala/optsSonido/
+        // optsVisual/optsPerfil) — las categorías del nuevo AJUSTES.
+        if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
+            arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
+            arg === 'optsVisual' || arg === 'optsPerfil') {
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {

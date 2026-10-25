@@ -1,10 +1,10 @@
 {
-  "version": "3.6.61-SDK6",
-  "fase": 63,
-  "faseNombre": "UNA RAQUETA, CERO FANTASMAS",
+  "version": "3.6.62-SDK6",
+  "fase": 64,
+  "faseNombre": "LA ACADEMIA PERFECTA",
   "sdk": "1.5.4",
   "fecha": "2026-10-25",
-  "hub": "v3661-sdk6",
+  "hub": "v3662-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "0d41ecc116612c1aa1d2c69c6ededd210fb8235c57791fed4cb248af287e6a6a"
+  "golden": "faaa2aa0092d2ffe6cc5af19addbccefc37fe7aece585bdd1a04c58eec69db1b"
 }

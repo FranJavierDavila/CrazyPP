@@ -404,13 +404,20 @@ export function createChampDecor(game) {
     /** Campeonato del set construido ('' = sala sin decorado). */
     get builtFor() { return builtFor || ''; },
     /** Reconstrucción perezosa al cambiar de campeonato + animación viva.
-     *  Visible SOLO con el campeonato ACTIVO que declara decor (y fuera de AR). */
+     *  Visible SIEMPRE con el campeonato ACTIVO que declara decor (r70:
+     *  también con passthrough — el dueño quiere sus troqueles siempre). */
     update(dt, now) {
       const activeId = (game.champs && game.champs.activeId) || '';
       if (activeId !== builtFor) buildFor(activeId);
       // v2.80: visible sólo si el campeonato activo TRAE decor (v2.81:
       // locura y magia lo traen — cada uno monta SOLO el suyo al activarse).
-      const want = !!(set && set.pieces.length) && !game.inAR &&
+      // r70 · VISIBLE SIEMPRE, también con passthrough (inAR): el dueño
+      // insiste en que los troqueles «han desaparecido» — jugaba con el
+      // passthrough del Quest y la condición !game.inAR los escondía
+      // SIEMPRE en esas sesiones (la QA headless no lo veía: inAR=false).
+      // Los troqueles son cartón apoyado en el suelo del JUGADOR: con
+      // passthrough quedan en su sala real, que es donde los quiere.
+      const want = !!(set && set.pieces.length) &&
         !game.champDecorHidden;   // v2.95: las pruebas pueden taparlo
       if (group.visible !== want) group.visible = want;
       if (!want || !set) return;

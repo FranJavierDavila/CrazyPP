@@ -3085,6 +3085,8 @@ window.__PP_CORE = {
   let demoT = 0;                // r65 · segundos de demo de reglas ya vistos
   let saqCount = 0;             // saques válidos del paso 5
   let saqLatch = false;         // el lanzamiento EN VUELO ya contó (1 vez)
+  let saqBote1 = false;         // r70 · la bola YA BOTÓ en TU campo (saque válido)
+  let saqBote2 = false;         // r70 · y DESPUÉS en el campo del rival
   let flashOk = 0;              // aviso verde «saque válido» (s restantes)
   let hitCount = 0;             // devoluciones del paso 6
   let aiReturned = false;       // el profesor ya devolvió ESTE vuelo
@@ -3525,7 +3527,15 @@ window.__PP_CORE = {
     raqGrp.position.set(0.17, DIMS.tableTopY + 0.38,
       DIMS.tableCenterZ - DIMS.tableHalfLength - 0.10);
     raqGrp.visible = false;
-    G.scene.add(raqGrp);
+    // r70 · AL RIG, COMO LA MESA Y LA BOLA: la raqueta del profesor vivía
+    // en G.scene (mundo crudo) mientras mesa, bola y pala IA viven en el
+    // RIG (el espacio de referencia XR) — con el recentrado del Quest la
+    // raqueta quedaba DESPLAZADA respecto a la mesa («problemas de
+    // colocación», «desfasada y no golpea la pelota» y, ya en v3.6.61,
+    // «el rival golpea pero no aparece su raqueta»: golpeaba fuera de
+    // campo visual). El rig es SU espacio — las mismas coordenadas que la
+    // física usa para la bola y el barrido.
+    G.rig.add(raqGrp);
     raqDe = new THREE.Vector3();
     raqContacto = new THREE.Vector3();
     raqMeta = new THREE.Vector3();
@@ -3567,10 +3577,13 @@ window.__PP_CORE = {
     if (raqGrp) { raqModo = 'reposo'; raqT = 0; }
   }
   function raquetaPreparar() {
-    if (raqGrp) { raqModo = 'prep'; raqT = 0; }
+    if (!raqGrp) return;
+    raqModo = 'prep'; raqT = 0;
+    raqGrp.visible = true;          // r70 · defensivo: el arma NUNCA queda oculta
   }
   function raquetaGolpe(x, y, z, fx) {
     if (!raqGrp || !raqDe) return;
+    raqGrp.visible = true;          // r70 · defensivo: el golpe SIEMPRE se ve
     raqDe.copy(raqGrp.position);
     raqContacto.set(x, y, z);
     const f = (fx === undefined) ? 1 : fx;
@@ -3827,21 +3840,27 @@ window.__PP_CORE = {
         // r69 · INSTRUCCIÓN EXPLÍCITA en el momento (el dueño: «es preciso
         // que se le diga que la mueva hacia los lados sino no nos
         // enteramos») — latiendo mientras la barra sigue vacía.
-        pill(c, T('tut_m1_raf'), 406, { col: 'rgba(90,160,255,0.30)', size: 24 });
+        // r70 · SIN SOLAPE: la píldora (caja 406..478 con h=72) y la línea
+        // de la instrucción (glifos 441..463) se comían — DOS textos
+        // superpuestos (el dueño: «ese panel superpone los textos»).
+        // Nuevo reparto vertical: píldora compacta 392..448 (texto en 421),
+        // instrucción en 472 (glifos ~461..483) y barra en 500 — aire
+        // limpio entre los tres bloques, dentro de la zona negra.
+        pill(c, T('tut_m1_raf'), 392, { col: 'rgba(90,160,255,0.30)', size: 24, h: 56 });
         const p = Math.min(1, sway / SWAY_META);
         c.globalAlpha = p > 0.02 ? 1 : (0.55 + 0.45 * Math.sin(mandoT * 5.2));
-        line(c, T('tut_m1_lado'), 452, 21, '#7fb069');
+        line(c, T('tut_m1_lado'), 472, 21, '#7fb069');
         c.globalAlpha = 1;
-        rr(c, 280, 492, 800, 40, 20);
+        rr(c, 280, 500, 800, 40, 20);
         c.fillStyle = 'rgba(255,255,255,0.12)'; c.fill();
         if (p > 0.01) {
-          rr(c, 280, 492, Math.max(26, 800 * p), 40, 20);
+          rr(c, 280, 500, Math.max(26, 800 * p), 40, 20);
           c.fillStyle = 'rgba(127,176,105,0.75)'; c.fill();
         }
         c.fillStyle = '#eef2f5';
         c.font = '700 18px system-ui, sans-serif';
         c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(Math.round(p * 100) + '%', PIZ_CX, 513);
+        c.fillText(Math.round(p * 100) + '%', PIZ_CX, 521);
       } else {
         pill(c, tareas[Math.min(subfase, 3)], 406,
           { col: 'rgba(232,180,90,0.28)', size: 26 });
@@ -4064,7 +4083,7 @@ window.__PP_CORE = {
     aroDer.position.set(0.10, TY + 0.006, C - HL * 0.62);   // campo del rival
     arosGrp.add(aroIzq); arosGrp.add(aroDer);
     arosGrp.__t = 0;
-    G.scene.add(arosGrp);
+    G.rig.add(arosGrp);   // r70 · al RIG: las DIMS son coordenadas del rig
   }
   function limpiarAros() {
     if (!arosGrp) return;
@@ -4089,7 +4108,9 @@ window.__PP_CORE = {
     holo = new THREE.Group();
     // r66 · BAJO, sobre la mitad rival de la MESA (nunca flotando lejos)
     holo.position.set(0, DIMS.tableTopY + 0.22, DIMS.tableCenterZ - DIMS.tableHalfLength * 0.34);
-    G.scene.add(holo);
+    // r70 · al RIG (espacio de la mesa/bola): en G.scene el recentrado del
+    // Quest lo descolocaba igual que a la raqueta del profesor
+    G.rig.add(holo);
     holoT = 0;
     return holo;
   }
@@ -4248,6 +4269,7 @@ window.__PP_CORE = {
     subfase = 0; demoT = 0;
     sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
     deadT = 0; flashAgain = 0; flashOk = 0; saqCount = 0; saqLatch = false;
+    saqBote1 = false; saqBote2 = false;   // r70 · saque en blanco al avanzar
     cancelaDevolucion();              // r69 · sin golpes pendientes al cambiar de paso
     chime(true);
     enterStep();
@@ -4388,21 +4410,30 @@ window.__PP_CORE = {
           if (G.tossed) {
             const b = G.ball;
             const C = DIMS.tableCenterZ, TY = DIMS.tableTopY;
-            // r67 · los aros se ILUMINAN con los botes reales del jugador
-            if (aroIzq && !aroIzq.__ok && b.vel.y > 0.3 &&
-                b.pos.z > C + 0.06 && b.pos.y < TY + 0.35) aroIzq.__ok = true;
-            if (aroDer && aroIzq && aroIzq.__ok && !aroDer.__ok &&
-                b.vel.y > 0.25 && b.pos.z < C - 0.05) aroDer.__ok = true;
-            if (!saqLatch) {
-              const cruzada = b.pos.z < (DIMS.tableCenterZ - 0.06) && b.vel.z < -0.9;
-              if (cruzada) {
-                saqLatch = true;
-                saqCount++;
-                flashOk = 2.2; flashAgain = 0;
-                paintStep();
-                chime(true);
-                if (saqCount >= SAQ_META) { advance(); break; }
-              }
+            // r70 · EL SAQUE SE APRUEBA CON LOS DOS BOTES (el dueño: «debe
+            // botar en ambos campos y esto no lo comprueba, dando por bueno
+            // un servicio aunque bote en 1 sola parte»). Los aros guía se
+            // iluminan con los BOTES REALES y la cuenta exige la SECUENCIA
+            // reglamentaria: primero TU campo y después el del rival. Un
+            // saque que cruce sin botar (volea), que bote solo en un campo
+            // o que muera por el camino = «OTRA VEZ» (nunca cuenta).
+            if (!saqBote1 && b.vel.y > 0.3 && b.pos.z > C + 0.06 &&
+                b.pos.y < TY + 0.35) {
+              saqBote1 = true;
+              if (aroIzq) aroIzq.__ok = true;
+            }
+            if (saqBote1 && !saqBote2 && b.vel.y > 0.25 && b.pos.z < C - 0.05 &&
+                b.pos.y < TY + 0.35) {
+              saqBote2 = true;
+              if (aroDer) aroDer.__ok = true;
+            }
+            if (!saqLatch && saqBote1 && saqBote2) {
+              saqLatch = true;
+              saqCount++;
+              flashOk = 2.2; flashAgain = 0;
+              paintStep();
+              chime(true);
+              if (saqCount >= SAQ_META) { advance(); break; }
             }
             const muerta = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
               (Math.abs(b.vel.x) < 0.5 && Math.abs(b.vel.y) < 0.5 && Math.abs(b.vel.z) < 0.5 &&
@@ -4413,6 +4444,7 @@ window.__PP_CORE = {
               const valida = saqLatch;
               G.resetToss();
               saqLatch = false;
+              saqBote1 = false; saqBote2 = false;   // r70 · saque nuevo, botes nuevos
               if (aroIzq) aroIzq.__ok = false;
               if (aroDer) aroDer.__ok = false;
               if (!valida && flashOk <= 0) {
@@ -4636,7 +4668,11 @@ window.__PP_CORE = {
       auraMeta = 1;
       mandosVisMeta = 0;
       sway = 0;
-      narra(['tutv1f', 'tutv2a']);
+      // r70 · LA VOZ DEL VAIVÉN, POR FIN COMPLETA: el banco Piper ya traía
+      // el átomo tutv2b («Muévela de lado a lado, con firmeza») — generado
+      // en r66 y jamás narrado (el vaivén solo decía 1f+2a). El dueño pide
+      // la refuerzo hablado en este momento exacto.
+      narra(['tutv1f', 'tutv2a', 'tutv2b']);
     }
   }
   /* ---------------- ciclo de la DEMO DE SAQUE (r67) --------------------
@@ -4841,6 +4877,7 @@ window.__PP_CORE = {
             G.rules.server = 'player';
             G.resetToss();
             saqCount = 0; saqLatch = false;
+            saqBote1 = false; saqBote2 = false;   // r70 · saque en blanco al empezar
             if (aroIzq) aroIzq.__ok = false;
             if (aroDer) aroDer.__ok = false;
             narra(['tutv3d']);
@@ -4850,6 +4887,7 @@ window.__PP_CORE = {
           G.tossFromHand(G.ballHand, true);   // lanzamiento asistido del núcleo
           G.rules.message = T('hint_hit');
           G.tutBolaViva = true;
+          saqBote1 = false; saqBote2 = false;   // r70 · saque nuevo, botes nuevos
         }
         break;
       case 3:
@@ -4955,6 +4993,7 @@ window.__PP_CORE = {
     sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
     cancelaDevolucion();              // r69 · sin golpes pendientes al entrar
     deadT = 0; flashAgain = 0; flashOk = 0; saqCount = 0; saqLatch = false;
+    saqBote1 = false; saqBote2 = false;   // r70 · saque en blanco al entrar
     fase = 'espera_golpe';
     mandoT = 0; hlParte = null;
     narrKeys = null; narrRetry = 0;
@@ -4987,6 +5026,18 @@ window.__PP_CORE = {
     limpiarHolo();                        // r65 · el holo-reglas sale con el guion
     limpiarAros();                        // r67 · los aros guía también
     limpiarRaqueta();                     // r68 · la raqueta del rival también
+    // r70 · BLINDAJE DE SALIDA — NADA de la academia sobrevive al Hall:
+    // (1) la VOZ muere AHORA (el dueño: «al pulsar B y aparecer en el Hall
+    // la voz sigue sonando y debe terminar») — buffer vivo + respaldo;
+    // (2) sin reintentos de narración pendientes (tickNarr ya no corre,
+    //     pero el estado queda limpio para la próxima sesión);
+    // (3) sin golpes pendientes (devPend a cero);
+    // (4) el árbitro vuelve a estado limpio (la academia tocaba
+    //     state/server — que no se cuele un 'rally' fantasma al Hall).
+    try { if (gm.audio && gm.audio.callaVoz) gm.audio.callaVoz(); } catch (eV) { /* */ }
+    narrKeys = null; narrRetry = 0; narrTries = 0;
+    cancelaDevolucion();
+    try { gm.rules.state = 'point'; gm.rules.message = ''; } catch (eR) { /* */ }
     try { if (gm.aiPaddleMesh) gm.aiPaddleMesh.visible = true; } catch (eI0) { /* */ }
     teardownPanel();
     G = null;
@@ -5041,7 +5092,7 @@ window.__PP_CORE = {
 
   /* ---------------- registro público del módulo ---------------------- */
   window.__PP_TUT = {
-    version: 'r69-una-sola-raqueta-golpes-honestos',
+    version: 'r70-academia-perfecta-todo-al-rig',
     STEPS,
     start, stop, tick, onTrigger, drawAsk, menuAction,
     // introspección para QA (solo lectura, sin tocar estado)
@@ -5095,6 +5146,17 @@ window.__PP_CORE = {
         // r68 · la raqueta del rival (introspección de QA)
         raquetaRival: !!raqGrp,
         raqModo,
+        // r70 · anclaje y visibilidad de la raqueta (colocación perfecta)
+        raqVisible: !!(raqGrp && raqGrp.visible),
+        raqAnclada: !!(raqGrp && G && raqGrp.parent === G.rig),
+        raqPos: raqGrp
+          ? [Math.round(raqGrp.position.x * 1000) / 1000,
+             Math.round(raqGrp.position.y * 1000) / 1000,
+             Math.round(raqGrp.position.z * 1000) / 1000]
+          : null,
+        saqBote1, saqBote2,
+        arosAnclados: !!(arosGrp && G && arosGrp.parent === G.rig),
+        holoAnclado: !!(holo && G && holo.parent === G.rig),
         // r69 · golpe honesto + una sola raqueta (introspección de QA)
         devPend: Math.round(devPend * 1000) / 1000,
         aiPadOculta: !!(G && G.aiPaddleMesh && !G.aiPaddleMesh.visible),

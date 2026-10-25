@@ -1689,6 +1689,26 @@ export class GameAudio {
     } catch { return false; }
   }
 
+  /** r70 · CALLA LA VOZ AHORA MISMO: corta el buffer compuesto vivo
+   *  (_vozSrc) y cualquier respaldo de speechSynthesis. La academia la
+   *  usa al SALIR (B/Y o JUGAR YA): el dueño salía al Hall con la voz
+   *  sonando y esta terminaba allí («la voz sigue sonando y debe
+   *  terminar»). Idempotente y a prueba de todo. */
+  callaVoz() {
+    try {
+      if (this._vozSrc) {
+        try { this._vozSrc.onended = null; } catch (e0) { /* */ }
+        try { this._vozSrc.stop(0); } catch (e1) { /* ya parada */ }
+        try { this._vozSrc.disconnect(); } catch (e2) { /* */ }
+        this._vozSrc = null;
+      }
+    } catch (e) { /* nunca rompe */ }
+    try {
+      const ss = window.speechSynthesis;
+      if (ss && ss.speaking) ss.cancel();
+    } catch (e3) { /* */ }
+  }
+
   /** MEGAFONÍA del marcador: chime de torneo + voz ("5-3, saque para ti").
    *  v2.20: voz por WebAudio (clips del banco), audible en VR; si falta un
    *  fragmento o el banco no está listo, respaldo speechSynthesis (2D).

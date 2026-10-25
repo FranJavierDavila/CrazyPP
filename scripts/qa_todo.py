@@ -301,7 +301,16 @@ CAPAS = [
     # llega, devoluciones de pasos 3/5 desde la posición exacta de la bola
     # y el feed del paso 5 con bola VIVA (la renumeración r67 la dejó
     # congelada: sin tutBolaViva en ese paso, el rally no existía).
-    ('BD · una raqueta, cero fantasmas (v3661)', 'qa_r69_v3661.py'),
+    # BD (v3661): UNA RAQUETA, CERO FANTASMAS — capa histórica, sustituida
+    # por BE (qa_r70_v3662) que conserva sus verificaciones y añade las de
+    # la r70 (anclaje al rig, saque de dos botes, voz cortada, passthrough).
+    # (v3662): LA ACADEMIA PERFECTA — el informe del dueño tras V3.6.61:
+    # troqueles SIEMPRE (el passthrough los escondía), panel del vaivén
+    # sin textos superpuestos, la voz del vaivén suena (tutv2b), la voz
+    # MUERE al salir con B, blindaje total de salida, saque válido SOLO
+    # con bote en TU campo + bote en el del rival, y la raqueta del
+    # profesor EN EL RIG como la mesa (el recentrado la descolocaba).
+    ('BE · academia perfecta (v3662)', 'qa_r70_v3662.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

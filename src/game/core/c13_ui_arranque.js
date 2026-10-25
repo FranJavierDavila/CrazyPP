@@ -3127,6 +3127,10 @@ window.__PP_CORE = {
   let raqContacto = null;       // r68 · punto de contacto con la bola
   let raqMeta = null;           // r68 · punto de acompañamiento
   let feed5T = 0;               // r68 · cuenta atrás del saque del profesor (paso 5)
+  let auraGrp = null;           // r69 · el grupo de la aura (para DESMONTARLO de verdad)
+  let devPend = 0;              // r69 · cuenta atrás del lanzamiento (golpe honesto)
+  let devFin = null;            // r69 · destino del golpe pendiente ('fallo'|'ida'|'practica')
+  let devVelFn = null;          // r69 · fábrica de la velocidad (desde la bola VIVA)
   const _cero = (typeof THREE !== 'undefined')
     ? new THREE.Vector3(0, 0, 0) : null;
 
@@ -3190,6 +3194,7 @@ window.__PP_CORE = {
       }
     }
     limpiarRaqueta();                   // r68 · la pala del rival sale con el guion
+    limpiarAura();                      // r69 · la AURA sale del mount (adiós al halo fantasma)
     grp = null; cv = null; cc = null; tex = null; mesh = null;
     anclados = null; mando = null; mandoSpin = null;
     mandoMats = []; halos = null;
@@ -3416,7 +3421,10 @@ window.__PP_CORE = {
         grpA.add(sp);
         mats.push(sp.material);
       }
+      const viejo = mount.getObjectByName('ppTutAuraPala');
+      if (viejo) { try { mount.remove(viejo); } catch (eV) { /* */ } }   // r69 · autocura
       mount.add(grpA);
+      auraGrp = grpA;                    // r69 · referencia para DESMONTARLO
       auraMats = mats;
     } catch (e) { /* decorativo: sin aura todo sigue */ }
   }
@@ -3530,6 +3538,31 @@ window.__PP_CORE = {
     raqGrp = null; raqVis = null; raqDe = null; raqContacto = null;
     raqMeta = null; raqModo = 'oculta'; raqT = 0; feed5T = 0;
   }
+  /* r69 · LA AURA SE DESMONTA DE VERDAD: hasta hoy teardownPanel anulaba
+   * auraMats pero el grupo ppTutAuraPala SE QUEDABA colgado del
+   * paddleMount con la última opacidad del pulso congelada — el «halo
+   * marcado sobre nuestra propia pala» que el dueño veía en partido y
+   * campeonatos después de la academia. Ahora sale del grafo y libera
+   * sus materiales; si quedara algún huérfano, sale por nombre.        */
+  function limpiarAura() {
+    if (auraGrp) {
+      try { if (auraGrp.parent) auraGrp.parent.remove(auraGrp); } catch (eA) { /* */ }
+      try {
+        auraGrp.traverse((o) => {
+          if (o.material) { try { o.material.dispose(); } catch (eD) { /* */ } }
+        });
+      } catch (eT) { /* */ }
+    } else {
+      try {
+        if (G && G.paddleMounts) {
+          const m2 = G.paddleMounts[G.paddleHand];
+          const viejo = m2 && m2.getObjectByName && m2.getObjectByName('ppTutAuraPala');
+          if (viejo) m2.remove(viejo);
+        }
+      } catch (eN) { /* */ }
+    }
+    auraGrp = null; auraMats = null; auraOp = 0; auraMeta = 0;
+  }
   function raquetaReposo() {
     if (raqGrp) { raqModo = 'reposo'; raqT = 0; }
   }
@@ -3556,8 +3589,12 @@ window.__PP_CORE = {
       const tB = RAQ_T_GOLPE + RAQ_T_FT;
       if (raqT <= RAQ_T_GOLPE) {
         // TRAMO A · la hoja BARRE hasta la bola (ease-in: arranca suave y
-        // llega EXACTO al contacto cuando el saque/devolución sale)
+        // llega EXACTO al contacto cuando el saque/devolución sale).
+        // r69 · CONTACTO VIVO: el punto de contacto persigue a la bola en
+        // vuelo (devoluciones) — al cerrar el tramo el blade está EXACTO
+        // sobre ella aunque la bola avance (saques quietos: idéntico).
         const u = (raqT / RAQ_T_GOLPE) * (raqT / RAQ_T_GOLPE);
+        try { raqContacto.copy(G.ball.pos); } catch (eC) { /* */ }
         raqGrp.position.lerpVectors(raqDe, raqContacto, u);
         raqVis.rotation.x = -0.55 + 0.45 * u;   // la cara cierra al impactar
       } else if (raqT <= tB) {
@@ -3588,6 +3625,57 @@ window.__PP_CORE = {
     raqGrp.position.y += (ry - raqGrp.position.y) * k;
     raqGrp.position.z += (rz - raqGrp.position.z) * k;
     raqVis.rotation.x += (-0.42 - raqVis.rotation.x) * k;
+  }
+
+  /* r69 · GOLPES HONESTOS EN LAS DEVOLUCIONES — el dueño: la raqueta del
+   * profesor «está desfasada y no golpea la pelota». Causa real: la
+   * velocidad de la devolución se aplicaba EN EL MISMO FRAME en que el
+   * barrido ARRANCABA — la hoja llegaba 0.13 s TARDE siempre (el saque
+   * demo sí esperaba al blade, las devoluciones no). Ahora el golpe se
+   * ARMA (devPend = RAQ_T_GOLPE) y la bola despega EXACTAMENTE cuando el
+   * tramo A se cierra sobre ella; el punto de contacto es VIVO (persigue
+   * a la bola), así que el blade la alcanza de verdad, venga la bola en
+   * vuelo. Si la bola muere durante el viaje, el golpe se cancela: jamás
+   * un lanzamiento fantasma.                                             */
+  function armaDevolucion(fin, velFn) {
+    if (!G || !G.ball) return;
+    devPend = RAQ_T_GOLPE;
+    devFin = fin;
+    devVelFn = velFn;
+    raquetaGolpe(G.ball.pos.x, G.ball.pos.y, G.ball.pos.z,
+      fin === 'fallo' ? 0.45 : 1);
+  }
+  function cancelaDevolucion() {
+    devPend = 0; devFin = null; devVelFn = null;
+  }
+  function tickDevolucion(dt) {
+    if (devPend <= 0 || !G || !G.ball) return;
+    const b = G.ball;
+    devPend -= dt;
+    const muertaD = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
+      b.pos.y < -0.4;
+    if (muertaD) { cancelaDevolucion(); return; }
+    if (devPend > 0) return;
+    // el TRAMO A se cierra: la hoja está SOBRE la bola — AHORA despega
+    try {
+      b.vel.copy(devVelFn(b.pos));
+      b.spin.set(0, 0, 0);
+    } catch (eV) {
+      b.vel.set(0, 1.4, 2.2);
+      b.spin.set(0, 0, 0);
+    }
+    if (devFin === 'ida') {
+      try { G.audio.paddle(0, 0.45); } catch (eS) { /* */ }
+      try { G.haptic(G.paddleHand, 0.3, 70); } catch (eH) { /* */ }
+      rfFase = 'ida';
+    } else if (devFin === 'fallo') {
+      rfFase = 'fallo';
+    } else if (devFin === 'practica') {
+      try { G.audio.playOsc(300, 170, 0.07, 'square', 0.13, 0); } catch (eS2) { /* */ }
+      try { G.haptic(G.paddleHand, 0.3, 70); } catch (eH2) { /* */ }
+      fase = 'espera_golpe';
+    }
+    cancelaDevolucion();
   }
 
   /* ---------------- pintura del panel (PIZARRA) · r65 ----------------
@@ -3735,9 +3823,15 @@ window.__PP_CORE = {
         c.fill();
       }
       if (subfase >= 4) {
-        // momento RAQUETA: barra de vaivén con la pala real en la mano
+        // momento RAQUETA: barra de vaivén con la pala real en la mano.
+        // r69 · INSTRUCCIÓN EXPLÍCITA en el momento (el dueño: «es preciso
+        // que se le diga que la mueva hacia los lados sino no nos
+        // enteramos») — latiendo mientras la barra sigue vacía.
         pill(c, T('tut_m1_raf'), 406, { col: 'rgba(90,160,255,0.30)', size: 24 });
         const p = Math.min(1, sway / SWAY_META);
+        c.globalAlpha = p > 0.02 ? 1 : (0.55 + 0.45 * Math.sin(mandoT * 5.2));
+        line(c, T('tut_m1_lado'), 452, 21, '#7fb069');
+        c.globalAlpha = 1;
         rr(c, 280, 492, 800, 40, 20);
         c.fillStyle = 'rgba(255,255,255,0.12)'; c.fill();
         if (p > 0.01) {
@@ -4154,6 +4248,7 @@ window.__PP_CORE = {
     subfase = 0; demoT = 0;
     sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
     deadT = 0; flashAgain = 0; flashOk = 0; saqCount = 0; saqLatch = false;
+    cancelaDevolucion();              // r69 · sin golpes pendientes al cambiar de paso
     chime(true);
     enterStep();
     paintStep();
@@ -4216,11 +4311,19 @@ window.__PP_CORE = {
   function _tick(dt) {
     if (!G.renderer || !G.renderer.xr || !G.renderer.xr.isPresenting) return;
     if (grp) grp.visible = true;
+    // r69 · UNA SOLA RAQUETA POR LADO: la pala flotante de la IA (la de
+    // los partidos, «visible en todo momento») NO pinta aquí — el dueño
+    // veía DOS raquetas en el lado del profesor (la animada de la academia
+    // + la de la IA parada, que jamás golpea: la que parecía «desfasada»).
+    // La academia no tiene IA: oculta cada frame (idempotente) y stop()
+    // la devuelve a su estado.
+    try { if (G.aiPaddleMesh) G.aiPaddleMesh.visible = false; } catch (eI) { /* */ }
     pollSkip();
     pollVoz();                          // r65 · STICK = repetir la voz
     tickPose(dt);                       // el panel se aparta en la práctica
     tickMandos(dt);                     // r67 · mandos anclados + aura + halos
     try { tickRaqueta(dt); } catch (e) { /* decorativo */ } // r68 · raqueta rival
+    try { tickDevolucion(dt); } catch (eD2) { /* decorativo */ } // r69 · lanzamientos honestos
     tickNarr(dt);                       // r65 · reintentos de la voz
     try { tickHolo(dt); } catch (e) { /* decorativo */ }   // holo-reglas
     try { tickAros(dt); } catch (e) { /* decorativo */ }   // r67 · aros guía
@@ -4344,31 +4447,26 @@ window.__PP_CORE = {
                 rfVueltas++;
                 if (rfVueltas >= 3) {
                   // el rival FALLA: la devolución se queda corta y muere en
-                  // la red — punto limpio y visible
-                  try {
-                    const v = computeShotVelocityReal(b.pos, targetProfesor(), 1.15, 4.6, _cero);
-                    b.vel.copy(v).multiplyScalar(0.62);
-                  } catch (e) {
-                    b.vel.set(0, 1.4, 2.2);
-                  }
-                  b.spin.set(0, 0, 0);
-                  raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 0.45); // r68 · golpe corto a la red
-                  rfFase = 'fallo';
+                  // la red — punto limpio y visible (r69 · sale al paso de
+                  // la hoja, como el saque: nada de lanzamientos fantasma)
+                  armaDevolucion('fallo', (p) => {
+                    try {
+                      const v = computeShotVelocityReal(p, targetProfesor(), 1.15, 4.6, _cero);
+                      return v.multiplyScalar(0.62);
+                    } catch (e) { return new THREE.Vector3(0, 1.4, 2.2); }
+                  });
                 } else {
-                  try {
-                    const t = new THREE.Vector3(
-                      (Math.random() * 2 - 1) * 0.34, DIMS.tableTopY,
-                      DIMS.tableCenterZ + DIMS.tableHalfLength * 0.52);
-                    const v = computeShotVelocityReal(b.pos, t, 1.05, 4.8, _cero);
-                    b.vel.copy(v);
-                  } catch (e) {
-                    b.vel.set((Math.random() * 2 - 1) * 0.4, 2.4, 3.1);
-                  }
-                  b.spin.set(0, 0, 0);
-                  raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 1);    // r68 · SU hoja golpea
-                  try { G.audio.paddle(0, 0.45); } catch (e) { /* */ }
-                  try { G.haptic(G.paddleHand, 0.3, 70); } catch (e) { /* */ }
-                  rfFase = 'ida';
+                  const tx = (Math.random() * 2 - 1) * 0.34;
+                  armaDevolucion('ida', (p) => {
+                    try {
+                      const t = new THREE.Vector3(
+                        tx, DIMS.tableTopY,
+                        DIMS.tableCenterZ + DIMS.tableHalfLength * 0.52);
+                      return computeShotVelocityReal(p, t, 1.05, 4.8, _cero);
+                    } catch (e) {
+                      return new THREE.Vector3((Math.random() * 2 - 1) * 0.4, 2.4, 3.1);
+                    }
+                  });
                 }
               }
             }
@@ -4500,18 +4598,13 @@ window.__PP_CORE = {
           }
           if (farBounced && b.vel.y < 1.1 && _cero) {
             aiReturned = true;
-            try {
-              const v = computeShotVelocityReal(b.pos, targetProfesor(), 1.05, 5.4, _cero);
-              b.vel.copy(v);
-              b.spin.set(0, 0, 0);
-              raquetaGolpe(b.pos.x, b.pos.y, b.pos.z, 1);   // r68 · SU hoja golpea
-              G.audio.playOsc(300, 170, 0.07, 'square', 0.13, 0);
-              G.haptic(G.paddleHand, 0.3, 70);
-            } catch (e) {
-              b.vel.set((Math.random() * 2 - 1) * 0.4, 2.4, 3.1);
-              b.spin.set(0, 0, 0);
-            }
-            fase = 'espera_golpe';
+            // r69 · la bola despega al paso de la hoja (golpe honesto)
+            armaDevolucion('practica', (p) => {
+              try { return computeShotVelocityReal(p, targetProfesor(), 1.05, 5.4, _cero); }
+              catch (e) {
+                return new THREE.Vector3((Math.random() * 2 - 1) * 0.4, 2.4, 3.1);
+              }
+            });
           }
         }
         break;
@@ -4860,6 +4953,7 @@ window.__PP_CORE = {
     mandosVis = 0; mandosVisMeta = 1;    // r67 · los mandos nacen EN TUS MANOS
     auraOp = 0; auraMeta = 0;
     sway = 0; hitCount = 0; aiReturned = false; farBounced = false;
+    cancelaDevolucion();              // r69 · sin golpes pendientes al entrar
     deadT = 0; flashAgain = 0; flashOk = 0; saqCount = 0; saqLatch = false;
     fase = 'espera_golpe';
     mandoT = 0; hlParte = null;
@@ -4893,6 +4987,7 @@ window.__PP_CORE = {
     limpiarHolo();                        // r65 · el holo-reglas sale con el guion
     limpiarAros();                        // r67 · los aros guía también
     limpiarRaqueta();                     // r68 · la raqueta del rival también
+    try { if (gm.aiPaddleMesh) gm.aiPaddleMesh.visible = true; } catch (eI0) { /* */ }
     teardownPanel();
     G = null;
     gm.tutV1 = null;
@@ -4946,7 +5041,7 @@ window.__PP_CORE = {
 
   /* ---------------- registro público del módulo ---------------------- */
   window.__PP_TUT = {
-    version: 'r68-la-raqueta-del-rival',
+    version: 'r69-una-sola-raqueta-golpes-honestos',
     STEPS,
     start, stop, tick, onTrigger, drawAsk, menuAction,
     // introspección para QA (solo lectura, sin tocar estado)
@@ -5000,6 +5095,9 @@ window.__PP_CORE = {
         // r68 · la raqueta del rival (introspección de QA)
         raquetaRival: !!raqGrp,
         raqModo,
+        // r69 · golpe honesto + una sola raqueta (introspección de QA)
+        devPend: Math.round(devPend * 1000) / 1000,
+        aiPadOculta: !!(G && G.aiPaddleMesh && !G.aiPaddleMesh.visible),
         raqContacto: raqContacto
           ? [Math.round(raqContacto.x * 1000) / 1000,
              Math.round(raqContacto.y * 1000) / 1000,

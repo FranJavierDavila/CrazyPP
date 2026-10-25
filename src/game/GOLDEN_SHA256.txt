@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.60-SDK6, fase 62 · LA RAQUETA DEL RIVAL; sello actualizado
-# por bump_version.py desde 3.6.59-SDK6)
-370dcea8367e8669fd01a36f1c9b107cff89eca6f2d620ecefad42193c343b31
+# SHA256 del game.html que produjo esta división (3.6.61-SDK6, fase 63 · UNA RAQUETA, CERO FANTASMAS; sello actualizado
+# por bump_version.py desde 3.6.60-SDK6)
+0d41ecc116612c1aa1d2c69c6ededd210fb8235c57791fed4cb248af287e6a6a

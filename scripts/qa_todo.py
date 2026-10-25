@@ -301,7 +301,7 @@ CAPAS = [
     # llega, devoluciones de pasos 3/5 desde la posición exacta de la bola
     # y el feed del paso 5 con bola VIVA (la renumeración r67 la dejó
     # congelada: sin tutBolaViva en ese paso, el rally no existía).
-    ('BC · la raqueta del rival (v3660)', 'qa_r68_v3660.py'),
+    ('BD · una raqueta, cero fantasmas (v3661)', 'qa_r69_v3661.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

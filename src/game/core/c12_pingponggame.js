@@ -2138,9 +2138,9 @@ export class PingPongGame {
     const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
     btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }), !!pstOn, undefined, !!pstOn, 23);
     y += 68;
-    // v3.6.51 (r59) · LA ACADEMIA: repetir el tutorial desde AJUSTES
-    btn('tut:go', 56, y, 912, 56, T('tut_hub') + ' · ' + T('tutask_yes'), false, undefined, undefined, 23);
-    y += 64;
+    // r69 · el Tutorial de AJUSTES se RETIRA (petición del dueño): la
+    // academia del HUB es el tutorial completo — la entrada repetida aquí
+    // sobraba. La oferta de PRIMERA VEZ y el banner del HUB siguen vivos.
     // apoyo Ko-fi (v2.50)
     btn('kofi', 56, y, 912, 56, T('btn_kofi'), false, 'green', undefined, 23);
     y += 68;

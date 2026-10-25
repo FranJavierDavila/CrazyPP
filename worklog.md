@@ -4187,3 +4187,22 @@ Work Log:
 
 Stage Summary:
 - V3.6.60-SDK6 (FASE 62 — LA RAQUETA DEL RIVAL) VIVA en producción: el profesor tiene pala visible (la misma del juego) que arma, barre y golpea la bola en su saque (demo y marcador) y en cada devolución (intercambio y práctica); los saques salen cuando la hoja pasa por la bola (adiós al golpe fantasma) y el paso 5 vuelve a tener rally (tutBolaViva=true) — pendiente SOLO el aviso de caché al dueño (game.html?v=v3660)
+
+---
+Task ID: 173
+Agent: Super Z (main agent)
+Task: r69 — V3.6.61-SDK6 FASE 63 «UNA RAQUETA, CERO FANTASMAS» — los 5 puntos del informe del dueño tras V3.6.60: (1) dos raquetas en el lado del profesor, (2) instrucción del vaivén en su momento, (3) halo fugado tras la academia, (4) retirar el Tutorial de ajustes, (5) troqueles «desaparecidos». + RECUPERACIÓN del sandbox (reciclado a snapshot v3.6.27, alineado a origin/main bda2a65 sin pérdida).
+
+Work Log:
+- SANDBOX RECICLADO detectado al retomar (HEAD local en V3.6.27/Task 135, ca8e6e0 y demás historia reciente desaparecidos en local, .github-pat borrado — por eso el dueño reenvió el PAT): origin INTACTO (main=proyecto=bda2a65 · pages=1ed74db) → PAT re-guardado (chmod 600, gitignored, salida enmascarada) → reset --hard a origin/main (respaldo del ruido del snapshot en backup_snapshot_v3627/, sin pérdida: c13 raqGrp ×26, golden 370dcea8 ✓)
+- FIX 1 · UNA SOLA RAQUETA: la pala flotante de la IA (aiPaddleMesh — la de los partidos, «visible en todo momento») se OCULTA durante la academia (idempotente por frame en _tick) y stop() la restaura; el dueño veía DOS raquetas al otro lado y atribuía a la del profesor el desfase de la parada
+- FIX 2 · GOLPES HONESTOS (el «desfasada que no golpea» REAL): las devoluciones (paso 3 ida/fallo y paso 5) aplicaban la velocidad EN EL MISMO FRAME en que el barrido arrancaba — la hoja llegaba 0.13 s TARDE siempre. Ahora armaDevolucion() arma el golpe (devPend=RAQ_T_GOLPE), tickDevolucion() despega la bola EXACTAMENTE al cierre del tramo A, el contacto es VIVO (raqContacto persigue la bola en vuelo en tickRaqueta) y si la bola muere el golpe se cancela (jamás lanzamiento fantasma); cancelaDevolucion() en advance()/start()
+- FIX 3 · HALO FANTASMA MUERTO: stop() nunca desmontaba la aura (ppTutAuraPala quedaba en paddleMounts[paddleHand] con el pulso congelado — el halo que el dueño veía en partido/campeonatos). limpiarAura() la desmonta + dispose de materiales + autocura por nombre; teardownPanel la llama
+- FIX 4 · AJUSTES SIN TUTORIAL: retirado el botón tut:go del menú de ajustes (c12 drawMenu); quedan el banner del HUB y la oferta de primera vez (el handler vive para ellos)
+- FIX 5 · TROQUELES: diagnóstico empírico en dev y PRODUCCIÓN (scripts/_r69_diag_troqueles.py): los 5 campeonatos montan SUS piezas 4/4·2/2 listas y visibles, relevo sucio asedio→magia autocurado, texturas 200 bajo prefijo /CrazyPP/ — el sistema está VIVO en V3.6.60; se blinda con capa de regresión BD y se explica al dueño (ventanas por diseño: pruebas especiales/passthrough)
+- FIX BONUS · INSTRUCCIÓN DEL VAIVÉN: pizarra del paso 1 subfase 4 muestra «MUÉVELA HACIA LOS LADOS · vaivén firme» (tut_m1_lado ES/EN en c00) latiendo mientras la barra está vacía
+- Build: bump_version 3.6.61-SDK6 FASE 63 «UNA RAQUETA, CERO FANTASMAS» (game.html 9.834.348 B, golden 0d41ecc1…) · gen_release_v3661 + build_zip (4 ZIPs: COMPLETO 133.103.776 · ligera 18.049.420 · CLOUDFLARE 133.090.389 · SOLO 6.089) · sella_r69 (13 capas + smoke_sdk5 — lección r68 aplicada) · presupuesto --update
+- QA TOTAL 12 capas verde: A 23 · B 11 · C 29 · D 14 · E 151 · F 66 · G 54 · H 213 · I smoke OK · J 129 · T 17 · **BD nueva qa_r69_v3661 65 OK · 0 fallos** (una sola raqueta · devolución honesta con despegue al paso de la hoja y blade a 38 mm · aura nace y muere en el mount · pala IA vuelve al cerrar · troqueles 5/5 en el juego real) · qa_r68_v3660 (BC) queda como capa histórica sustituida por BD en qa_todo
+
+Stage Summary:
+- r69 COMPLETA en local (código + sellos + golden + ZIPs + QA 12 capas verde) — pendiente SOLO: commit → deploy → emparejar → byte-exacto → aviso de caché (game.html?v=v3661)

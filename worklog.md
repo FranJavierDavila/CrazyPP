@@ -4242,3 +4242,18 @@ Work Log:
 
 Stage Summary:
 - r70 COMPLETA en local (código + sellos + golden + ZIPs + QA 12 capas verde) — pendiente SOLO: commit → deploy (PAT a pedir al dueño: el snapshot la borró) → emparejar → byte-exacto → aviso de caché (game.html?v=v3662)
+
+---
+Task ID: 174-b
+Agent: Super Z (main agent)
+Task: CIERRE r70 — V3.6.62-SDK6 (FASE 64 «LA ACADEMIA PERFECTA») en producción byte-exacto + release con 4 ZIPs + empareje completo de refs. PAT reenviado por el dueño (mismo token, terminado doQOTp) tras el reciclado del sandbox.
+
+Work Log:
+- PAT re-guardado (93 B, chmod 600, gitignored) y verificado contra FranJavierDavila/CrazyPP: HTTP 200, push:True
+- Lección aplicada ANTES del deploy: refs/heads/pages local (2c22c97) YA alineada a origin/pages → push FF A LA PRIMERA (sin commit-tree ni rescate, 2ª vez consecutiva)
+- Deploy con el PAT del dueño (salida enmascarada): smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 pageerrors) · pages → 2d6d7164e · backup main→proyecto ✓ (d04ea32) · Release v3.6.62-SDK6 con los 4 ZIPs (COMPLETO 133.106.952 · ligera 18.052.596 · CLOUDFLARE 133.093.565 · SOLO 6.089)
+- Empareje: main:proyecto por el script ✓ · main:main a8c4952..d04ea32 ✓ (push con token en URL, sin persistir en config — el sandbox reciclado perdió el credencial helper)
+- VERIFICACIÓN BYTE-EXACTO en producción (3 vías): PAGES-VERSION.txt (version=3.6.62-SDK6 · fuente_commit=d04ea323 · reescrituras=2) · served SHA256 02370e0e… == game_sha256 == blob del tree pages 2d6d7164e ✓ · diff local vs desplegado = SOLO las 2 reescrituras conocidas (/vendor/socket.io.min.js→vendor/… y /tv.html→tv.html, rutas relativas para /CrazyPP/) ✓
+
+Stage Summary:
+- V3.6.62-SDK6 (FASE 64 — LA ACADEMIA PERFECTA) VIVA en producción: troqueles en TODOS los campeonatos también con passthrough, panel «TU MANDO ES TU RAQUETA» sin textos superpuestos, voz del vaivén narrada en su momento, la voz MUERE al salir con B al Hall (callaVoz), blindaje total del stop() (nada del tutorial persiste), saque válido SOLO con bote propio + bote rival (aros guía con botes reales), raqueta del profesor EN EL RIG visible en todo el rally — main=proyecto=d04ea32 · pages=2d6d716 — pendiente SOLO el aviso de caché al dueño (game.html?v=v3662)

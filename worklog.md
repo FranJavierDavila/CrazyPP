@@ -4171,3 +4171,19 @@ Work Log:
 
 Stage Summary:
 - r68 COMPLETA en local: código (ca8e6e0) + sellos + golden + ZIPs + QA 12 capas verde + smoke reparado — pendiente SOLO: commit del worklog → deploy (--push --release --backup) → emparejar main:main → verificación byte-exacto → aviso de caché (game.html?v=v3660)
+
+---
+Task ID: 172-b
+Agent: Super Z (main agent)
+Task: CIERRE r68 — V3.6.60-SDK6 en producción byte-exacto + release con 4 ZIPs + rescate del linaje pages (re-parent, FF sin force)
+
+Work Log:
+- Deploy con el PAT del dueño (scripts/worker-tele/.github-pat, salida enmascarada): smoke bajo prefijo /CrazyPP/ verde (29 peticiones, 0 pageerrors) pero el push de pages volvió a fallar non-FF — el script (deploy_pages.py línea 307) encadena el sitio sobre refs/heads/pages LOCAL, que quedó viejo (11446a2, pre-rescate de r67)
+- RESCATE del protocolo (sin force): commit-tree con el MISMO árbol (2b14e39f) re-parentado sobre origin/pages f15e3c8 → a445f52 → push FF f15e3c8..a445f52 ✓
+- Empareje de refs: main:proyecto + main:main → 84dddb1..a3e29e7 en ambas ✓
+- Release re-ejecutada (--release): v3.6.60-SDK6 con los 4 ZIPs (COMPLETO 133.1 MB · ligera 18.0 MB · CLOUDFLARE 133.1 MB · SOLO 6 KB) — el re-run dejó tip local 1ed74db99 (FF sobre a445f52) → empujado y emparejado
+- VERIFICACIÓN BYTE-EXACTO en producción: PAGES-VERSION.txt (version=3.6.60-SDK6 · fuente_commit=a3e29e7b0 · reescrituras=2) + served SHA256 8d65477143bc… == tree pages 1ed74db99 ✓
+- NOTA para próxima ronda (NO tocado ahora): el bug de deploy_pages.py:307 es RECURRENTE — propuesta: que el script haga fetch + leer origin/pages como parent, o que use refs/remotes/origin/pages; queda documentado, no corregido («no toques nada de lo demás»)
+
+Stage Summary:
+- V3.6.60-SDK6 (FASE 62 — LA RAQUETA DEL RIVAL) VIVA en producción: el profesor tiene pala visible (la misma del juego) que arma, barre y golpea la bola en su saque (demo y marcador) y en cada devolución (intercambio y práctica); los saques salen cuando la hoja pasa por la bola (adiós al golpe fantasma) y el paso 5 vuelve a tener rally (tutBolaViva=true) — pendiente SOLO el aviso de caché al dueño (game.html?v=v3660)

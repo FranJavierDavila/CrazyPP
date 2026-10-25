@@ -4393,3 +4393,19 @@ Work Log:
 Stage Summary:
 - r74 COMPLETA en local (código + 3 voces nuevas + sellos + golden ced93fa8 + ZIPs v3666 + QA TOTAL 38/38) — pendiente SOLO: commit → deploy → emparejar → byte-exacto → aviso de caché (game.html?v=v3666)
 - El Pro Training ya usa la B de siempre, el menú manda también sobre los carteles EMPEZAR, el glow sigue la mano, las devoluciones jamás se atascan, los modos se explican con calma (y sin bola sonora de fondo), el menú de campeonatos es Clow→Wizard→Forajido SIEMPRE, abrir cualquier campeonato recoge el menú y viste el mismo telón, y el bote infinito del suelo existe solo en los botes reales
+
+---
+Task ID: 178-b
+Agent: Super Z (main agent)
+Task: Cierre de la r74 — commit, deploy FF, main:main y verificación byte-exacto de 3 vías de V3.6.66-SDK6.
+
+Work Log:
+- COMMIT: 7ad08db «V3.6.66-SDK6 FASE 68 · r74: EL MANDO DE SIEMPRE» (código + 3 voces nuevas ES/EN + sellos + QA + scripts de ronda)
+- DEPLOY (lección r70-r73 aplicada): refs/heads/pages local pre-alineada a origin/pages (5616c5d) ANTES de ensamblar → FF A LA PRIMERA · pages → 8a27eebd6 (396 ficheros, smoke bajo prefijo /CrazyPP/ 29 peticiones 0 fallos 0 pageerrors) · Release v3.6.66-SDK6 con 4 ZIPs (COMPLETO 133.303.948 · ligera 18.248.736 · CLOUDFLARE 133.290.561 · SOLO 6.089 — tamaños verificados en la API de GitHub) · respaldo anti-rollback main→proyecto al día
+- PUSH main:main con token-en-URL (45d493e..7ad08db, unset inmediato, nada persistido en config)
+- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): (1) SERVED game.html?v=v3666 sha256 30bed909… == (2) PAGES-VERSION.txt game_sha256 30bed909… (versión 3.6.66-SDK6 · fuente 7ad08dbe · reescrituras=2) == (3) git cat-file blob pages:game.html 30bed909… — TRES VÍAS IGUALES · diff local(ced93fa8) vs served: EXACTAMENTE las 2 reescrituras conocidas (/vendor/socket.io.min.js→vendor/… · /tv.html→tv.html, adaptación al prefijo /CrazyPP/), aplicadas y comparadas byte a byte → True · golden local ced93fa8 intacto
+- PRODUCCIÓN EXTRA (agujas r74 en el servido): guardia B común en training ✓ · Y sin menú en training ✓ · menú ANTES del cartel (posición) ✓ · aura sigue la mano ✓ · profesor sirve al entrar ✓ · vigía ✓ · posaBolaMesa ✓ · tutv8b/9b en los DOS bancos ✓ · orden del índice ✓ · closeMenu en launch ✓ · zona muerta del suelo ✓ · rescate sin evento ✓ · sellos V3.6.66-SDK6 ×2 y FASE 68 ×2 ✓
+
+Stage Summary:
+- Producción en V3.6.66-SDK6 (pages 8a27eebd6, release 4/4, byte-exacto 3 vías, refs main=proyecto=7ad08db) — la r74 queda CERRADA
+- El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3666

@@ -4352,3 +4352,19 @@ Work Log:
 Stage Summary:
 - r73 COMPLETA en local (código + sellos + golden fea31c79 + ZIPs v3665 + QA TOTAL 37/37) — pendiente SOLO: commit → deploy → emparejar → byte-exacto → aviso de caché (game.html?v=v3665)
 - El menú ya MANDA donde sea que se despliegue, los candados nacen pegados al nombre, el Salvaje Oeste (y todos) resisten los hipos de red con reintentos+olas+REINTENTAR, y el telón es un intermedio de teatro: mundo negro + tarjeta a 2 m con el color de cada campeonato y su bola en la pista
+
+---
+Task ID: 177-b
+Agent: Super Z (main agent)
+Task: Cierre de la r73 — commit, deploy FF, main:main y verificación byte-exacto de 3 vías de V3.6.65-SDK6.
+
+Work Log:
+- COMMIT: 537752c «V3.6.65-SDK6 FASE 67 · r73: EL MENÚ MANDA» (código + sellos + QA + scripts de ronda)
+- DEPLOY (lección r70-r72 aplicada): refs/heads/pages local pre-alineada a origin/pages ANTES de ensamblar → FF A LA PRIMERA · pages → 5616c5d5d (396 ficheros, smoke bajo prefijo /CrazyPP/ 29 peticiones 0 fallos 0 pageerrors) · Release v3.6.65-SDK6 con 4 ZIPs (COMPLETO 133.121.845 · ligera 18.066.633 · CLOUDFLARE 133.108.458 · SOLO 6.089) · respaldo anti-rollback main→proyecto al día
+- PUSH main:main con token-en-URL (8d09a6f..faeb478, unset inmediato, nada persistido en config)
+- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): (1) SERVED game.html?v=v3665 sha256 eb75c11c… == (2) PAGES-VERSION.txt game_sha256 eb75c11c… (versión 3.6.65-SDK6 · fuente 537752c1 · reescrituras=2) == (3) git cat-file blob pages:game.html eb75c11c… — TRES VÍAS IGUALES · diff local(fea31c79) vs served: EXACTAMENTE las 2 reescrituras conocidas (/vendor/socket.io.min.js→vendor/… · /tv.html→tv.html, adaptación al prefijo /CrazyPP/) · golden local fea31c79 intacto
+- PRODUCCIÓN EXTRA (agujas r73 en el servido): menuMesh.renderOrder 9998 ✓ · candado translate+scale ✓ · _fetchJSON ✓ · OLAS DE RECUPERACIÓN ✓ · SphereGeometry(12) del telón ✓ · cartel a 2 m ✓ · champ_telon_presenta ✓ · case champretry ✓ · championships/oeste/manifest.json servido v56 publicado ✓
+
+Stage Summary:
+- Producción en V3.6.65-SDK6 (pages 5616c5d5d, release 4/4, byte-exacto 3 vías, refs main=proyecto=537752c) — la r73 queda CERRADA
+- El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3665

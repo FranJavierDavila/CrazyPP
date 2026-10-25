@@ -4316,3 +4316,18 @@ Work Log:
 Stage Summary:
 - r72 COMPLETA en local (código + sellos + golden 25bc890d + ZIPs v3664 + QA TOTAL 36 capas verde) — pendiente SOLO: commit → deploy → emparejar → byte-exacto → aviso de caché (game.html?v=v3664)
 - El candado ya está operativo: Estación Orbital y Valle Neón se VEN con candado sobre el nombre, no se puede entrar (voz «Próximamente») y SOLO el Modo Depuración (FORO3D) abre — las reglas de desbloqueo las definirá el dueño después
+
+---
+Task ID: 176-b
+Agent: Super Z (main agent)
+Task: Cierre de la r72 — commit, deploy FF, main:main y verificación byte-exacto de 3 vías de V3.6.64-SDK6.
+
+Work Log:
+- COMMIT: 6f51ccd «V3.6.64-SDK6 FASE 66 · r72: EL TELÓN Y EL CANDADO» (código + sellos + QA + scripts de ronda)
+- DEPLOY (lección r70-r71 aplicada): pages pre-alineado a origin/pages (693e279d) ANTES de ensamblar → FF A LA PRIMERA, sin rescate commit-tree · pages → f56cd5488 (396 ficheros, smoke bajo prefijo /CrazyPP/ 29 peticiones 0 fallos) · Release v3.6.64-SDK6 con 4 ZIPs (COMPLETO 133.116.865 · ligera 18.061.653 · CLOUDFLARE 133.103.478 · SOLO 6.089, verificados por API como assets) · respaldo anti-rollback main→proyecto al día · main:main empujado con token-en-URL (dde425c..6f51ccd, unset inmediato, nada persistido en config) · nota: el primer intento de deploy salió sin GIT_TOKEN en el entorno (export explícito lo resolvió)
+- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): (1) SERVED game.html?v=v3664 sha256 a854d660fb8bb3f5… == (2) PAGES-VERSION.txt game_sha256 a854d660… (versión 3.6.64-SDK6 · fuente 6f51ccdb · reescrituras=2) == (3) git cat-file blob pages:game.html a854d660fb8bb3f5… — TRES VÍAS IGUALES · diff local(25bc890d) vs served: EXACTAMENTE las 2 reescrituras conocidas (/vendor/socket.io.min.js→vendor/… · /tv.html→tv.html, adaptación al prefijo /CrazyPP/) · golden local 25bc890d intacto
+- PRODUCCIÓN EXTRA: championships/estacion_orbital/index.js servido con g.rig.add(this.group) (Astro en el RIG) · manifest.json servido version=17 · PAGES-VERSION fuente = commit del worklog r72
+
+Stage Summary:
+- Producción en V3.6.64-SDK6 (pages f56cd5488, release 4/4, byte-exacto 3 vías, refs main=proyecto=6f51ccd) — la r72 queda CERRADA
+- El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3664

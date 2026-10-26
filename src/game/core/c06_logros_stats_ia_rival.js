@@ -142,6 +142,18 @@ export class Rules {
     this.gamesAi = 0;               // juegos ganados por el rival
     this.gameNo = 1;                // juego en curso dentro del enfrentamiento
     this.firstServer = 'player';    // primer sacador del ENFRENTAMIENTO
+    // v3.6.71 · r79 · IDENTIDAD DE RALLYE para el multijugador binario:
+    // rallySeq se incrementa en CADA beginServeRally (los dos extremos lo
+    // hacen en el mismo instante lógico: el sacador al golpear y el
+    // receptor al recibir su BALL_HIT kind 1) — determinista y correlativo.
+    // _appliedRally guarda el último rally resuelto para no duplicar puntos
+    // (CLAIM recibido + detección local del mismo rally).
+    this.rallySeq = 0;
+    this._appliedRally = -1;
+    // v3.6.71 · r79: la guardia anti-duplicado SOLO vive con red v2 activa
+    // (NetLink.startV2 la enciende). En local y en los bancos QA el
+    // comportamiento es EXACTAMENTE el de siempre (regresión cero).
+    this._netGuard = false;
     // v3.6.39 · HOOK de arranque: el núcleo (c12) registra aquí la recogida
     // de los superpoderes de pala — CADA startMatch avisa y NINGUNA partida
     // nueva hereda cargas/FX de la anterior (reporte del dueño: «los poderes
@@ -161,6 +173,8 @@ export class Rules {
     this.scorePlayer = 0;
     this.scoreAi = 0;
     this.totalPoints = 0;
+    this.rallySeq = 0;          // v3.6.71 · r79
+    this._appliedRally = -1;    // v3.6.71 · r79
     this.server = this.gameNo % 2 === 1
       ? this.firstServer
       : this.other(this.firstServer);   // cada juego saca el otro (ITTF)
@@ -196,9 +210,12 @@ export class Rules {
     try { if (this.onMatchStart) this.onMatchStart(); } catch (e) { /* nunca rompe el árbitro */ }
   }
 
-  /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea). */
+  /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea).
+   *  v3.6.71 · r79: cada rallye recibe identidad única (rallySeq) — viaja
+   *  en los POINT_CLAIM/ACK del multijugador binario. */
   beginServeRally(server) {
     this.state = 'rally';
+    this.rallySeq++;
     this.lastHitter = server;
     this.isServeBall = true;
     this.serveOwnPending = true;
@@ -227,6 +244,19 @@ export class Rules {
   }
 
   applyPoint(winner, cause) {
+    // v3.6.71 · r79: guardia anti-duplicado — un rallye SOLO puede
+    // resolverse una vez (la detección local y el CLAIM remoto del mismo
+    // rallyId no pueden sumar dos). SOLO con red v2 activa: en local el
+    // árbitro es único y la guardia no existe (comportamiento intacto).
+    if (this._netGuard && this._appliedRally === this.rallySeq) return [];
+    this._appliedRally = this.rallySeq;
+    return this._applyPointSinGuard(winner, cause);
+  }
+
+  /** cuerpo real de applyPoint SIN la guardia de rally (la pone el
+   *  llamador: applyPoint con rallySeq vivo, forcePoint con rallyId
+   *  del CLAIM — nunca las dos, lección de la capa BN en página). */
+  _applyPointSinGuard(winner, cause) {
     if (this.mode === 'survival') {
       // SUPERVIVENCIA: no hay puntos; lo que cuenta es el rallye terminado.
       // La CPU acelera con cada rallye (lo gestiona el juego con el intent).
@@ -258,6 +288,18 @@ export class Rules {
     this.state = 'serve';
     this.message = T('retry_serve', { cause: T('cause_' + cause) });
     return [{ type: 'retry-serve', cause }];
+  }
+
+  /** v3.6.71 · r79 · PUNTO IMPUESTO POR LA RED: aplica el resultado de un
+   *  POINT_CLAIM del extremo con autoridad, con guardia por rallyId. Espeja
+   *  EXACTAMENTE applyPoint (mismo intent, mismos mensajes) para que el
+   *  receptor viva el punto idéntico al local. */
+  forcePoint(winner, cause, rallyId) {
+    if (rallyId !== undefined && rallyId !== null) {
+      if (this._appliedRally === rallyId) return [];
+      this._appliedRally = rallyId;
+    }
+    return this._applyPointSinGuard(winner, cause);
   }
 
   computeNextServer() {

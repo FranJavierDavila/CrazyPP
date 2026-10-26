@@ -108,8 +108,8 @@ def bloque_catalogo():
                 found.add('champ_rank')
                 patrones.append((f, 'champ_rank'))
 
-    # ronda 12: 9 eventos (vr_ping se añade al catálogo)
-    chk(len(nombres_cat) == 9, f'el catálogo documenta 9 eventos ({len(nombres_cat)})')
+    # ronda 79: 10 eventos (net_match se añade al catálogo — métricas técnicas de red)
+    chk(len(nombres_cat) == 10, f'el catálogo documenta 10 eventos ({len(nombres_cat)})')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')
@@ -603,7 +603,7 @@ def bloque_ronda14():
 
     # ── catálogo + harness ──
     cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
-    chk(cat.get('ronda') == 14, f'catálogo: ronda == 14 (={cat.get("ronda")})')
+    chk(cat.get('ronda') == 79, f'catálogo: ronda == 79 (={cat.get("ronda")})')
     chk('sesionesVR' in (cat.get('ronda14') or {}), 'catálogo: ronda14 documenta sesionesVR')
     por_n = {e['nombre']: e for e in cat['eventos']}
     chk('PRIMER PING REAL' in por_n.get('vr_ping', {}).get('notas', ''), 'catálogo: vr_ping estrena datos reales')

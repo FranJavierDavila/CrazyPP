@@ -191,9 +191,10 @@ async def main():
         ("HALL SIN JUEGO", "gatillo sin juego en la estancia (servido)"),
         ("el hall no saca", "grip de la mano libre sin saque en el hall (servido)"),
         ("!active || this.inHall || this.calib", "IA dormida en el museo (servido)"),
-        ("active && !frozen && !this.inHall &&", "sin preparación de saque en el hall (servido)"),
-        ("active && !holdLock && !frozen && !this.inHall &&",
-         "sin física de la bola en el hall (servido)"),
+        ("active && !frozen && !netFrozen && !this.inHall && !this._netStart &&",
+         "sin preparación de saque en el hall (servido; r79 añade pausa red y MATCH_START)"),
+        ("active && !holdLock && !frozen && !netFrozen && !this.inHall &&",
+         "sin física de la bola en el hall (servido; r79 añade pausa red)"),
         ("el hall no muestra estela", "toggle de estela respeta el museo (servido)"),
         # el gesto clásico del saque, ILESO en la cancha:
         ("this.tossFromHand(this.ballHand, true)", "saque por gatillo intacto (servido)"),

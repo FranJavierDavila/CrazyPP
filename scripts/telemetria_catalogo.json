@@ -1,8 +1,8 @@
 {
   "catalogo": "telemetria-crazypp",
-  "version": 3,
-  "actualizado": "2026-10-19",
-  "ronda": 14,
+  "version": 4,
+  "actualizado": "2026-10-26",
+  "ronda": 79,
   "politica_pii": {
     "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
     "sin_ip": true,
@@ -209,6 +209,69 @@
       ],
       "desde": "v3.6.9-SDK6",
       "notas": "ronda 12: LATIDO EN VR — las sesiones cerradas abruptamente (casco apagado, pestaña muerta) nunca llegan a vr_end ni a page_close y desaparecían del análisis (la ronda 11 cazó una: vr_start+stage sin cierre). El ÚLTIMO ping fecha el fin real aunque no haya vr_end. ronda 14: PRIMER PING REAL en producción (10-19, 68 fps al minuto 5 de la 1.ª sesión 3.6.10) y el resumen ya lo consume: sesionesVR fecha la duración con él"
+    },
+    {
+      "nombre": "net_match",
+      "origen": "src/game/core/c09_red_netlink.js (sendMatchEnd, r79) — transporte binario v2",
+      "momento": "al terminar una partida online (game-over, abandono o colgarse)",
+      "campos": [
+        {
+          "nombre": "role",
+          "tipo": "string",
+          "desc": "'host' | 'guest' — papel del emisor en la partida"
+        },
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "duración de la partida en segundos"
+        },
+        {
+          "nombre": "rtt",
+          "tipo": "object",
+          "desc": "{med,p95,min} en ms (estadística del reloj compartido)"
+        },
+        {
+          "nombre": "jitter",
+          "tipo": "number",
+          "desc": "jitter medio de llegada en ms (EMA RFC3550)"
+        },
+        {
+          "nombre": "turn",
+          "tipo": "boolean",
+          "desc": "true si la conexión pasó por TURN (sin ruta directa)"
+        },
+        {
+          "nombre": "hits/handoffs/snaps",
+          "tipo": "number",
+          "desc": "contadores de eventos del protocolo binario"
+        },
+        {
+          "nombre": "corr",
+          "tipo": "array",
+          "desc": "[sinCorreccion, suaves(2-30cm), saltos(>30cm)] del traspaso"
+        },
+        {
+          "nombre": "provAuth/claims/acks/disputes",
+          "tipo": "number",
+          "desc": "autoridad provisional y libro de reclamos"
+        },
+        {
+          "nombre": "vmax",
+          "tipo": "number",
+          "desc": "velocidad máxima de bola observada (m/s)"
+        },
+        {
+          "nombre": "result",
+          "tipo": "string",
+          "desc": "'win'|'loss'|'abandono'|'' — SIN contenido de partida (ni marcador ni nombres)"
+        },
+        {
+          "nombre": "suspect",
+          "tipo": "boolean",
+          "desc": "true si la validación anti-trampa rechazó 3+ golpes graves"
+        }
+      ],
+      "nota": "r79: SIN resultados identificables — solo métricas técnicas de red (política PII intacta)"
     }
   ],
   "hallazgos_ronda6": [

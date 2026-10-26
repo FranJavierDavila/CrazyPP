@@ -655,7 +655,7 @@ export function createScoreboard() {
   const update = (d) => {
     const key = d.mode === 'survival'
       ? `S|${d.rally}|${d.rallyes}|${d.best}|${d.server}|${d.message}`
-      : `${d.player}|${d.ai}|${d.server}|${d.message}|${d.gamesPlayer}|${d.gamesAi}|${d.bestOf}`;
+      : `${d.player}|${d.ai}|${d.server}|${d.message}|${d.gamesPlayer}|${d.gamesAi}|${d.bestOf}|${d.netPing ?? ''}|${d.netDeg ? 1 : 0}`;
     if (key === last) return;
     last = key;
 
@@ -750,6 +750,18 @@ export function createScoreboard() {
       ctx.font = `500 ${msgFs}px system-ui, sans-serif`;
     }
     ctx.fillText(msg, 512, 440);
+
+    // r79 · v2 · ICONO DE PING (calidad de conexión visible, spec §11):
+    // punto de color + ms en la esquina superior derecha del marcador
+    if (typeof d.netPing === 'number' && d.netPing >= 0) {
+      const col = d.netPing < 80 ? '#7fb069' : d.netPing < 150 ? '#e8b45a' : '#ff6b57';
+      const txt = d.netPing + ' ms' + (d.netDeg ? ' ·' : '');
+      ctx.textAlign = 'right';
+      ctx.font = '700 30px system-ui, sans-serif';
+      ctx.fillStyle = col;
+      ctx.fillText(txt, 996, 66);
+      ctx.textAlign = 'center';
+    }
 
     tex.needsUpdate = true;
   };

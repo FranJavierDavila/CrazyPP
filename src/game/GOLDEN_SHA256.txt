@@ -1,3 +1,2 @@
-# SHA256 del game.html que produjo esta división (3.6.70-SDK6, fase 72 · EL NARRADOR HONESTO; sello actualizado
-# por bump_version.py desde 3.6.69-SDK6)
-f14a02919826b466e8bf20dc4b8f2e70d9d4604c8fc9187e07d98a5a70c17927
+# SHA256 del game.html que produjo esta division (3.6.71-SDK6, fase 73 · CRAZY LINK v2 — multijugador binario real)
+f3395f04a847a42dac32d347a103317ac9ae3eb455eb3af9a4638207ef8dd5ff

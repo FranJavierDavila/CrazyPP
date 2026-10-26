@@ -873,6 +873,8 @@ export const muQ = new THREE.Quaternion();
 export const muRaycaster = new THREE.Raycaster();
 export const netTmpP = new THREE.Vector3();   // v2.19: poses del rival por red
 export const netTmpQ = new THREE.Quaternion();
+export const netTmpQ2 = new THREE.Quaternion(); // r79: deriva del centro de hoja
+export const netTmpV = new THREE.Vector3();     // r79: centro de hoja derivado
 muRaycaster.far = 2.5;
 
 /* v2.135 · PIELES DE CARTEL del artista para las NORMAS de las etapas:

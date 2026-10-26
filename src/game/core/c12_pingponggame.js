@@ -838,19 +838,41 @@ export class PingPongGame {
     this.demoToss = null;
     this.audio.announce(T('opp_connected'), true);
     if (this.net.role === 'host') {
-      this.startOnlineMatch();
+      if (this.net.v2 === 'ok' || this.net.v2 === 'pending') {
+        // r79 · v2: el MATCH_START sincronizado (reloj del anfitrión) abre
+        // el partido con cuenta atrás — spec §3.8. Nada de empezar antes.
+        this.rules.server = 'player';
+        this.rules.message = T('net_syncing');
+      } else {
+        this.startOnlineMatch();
+      }
     } else {
       // v2.25: el primer saque es del anfitrión — el estado sombra del
       // invitado arranca ya en perspectiva correcta (antes el primer paquete
       // de sync tardaba ~50 ms y el invitado veía un "tu saque" falso)
+      // r79 · v2: la partida abre con el MATCH_START del anfitrión
       this.rules.server = 'ai';
-      this.rules.message = T('online_first');
+      this.rules.message = (this.net.v2 === 'ok' || this.net.v2 === 'pending')
+        ? T('net_syncing') : T('online_first');
     }
   }
 
   /** Partido online nuevo (anfitrión, o revancha pedida por el invitado). */
   startOnlineMatch() {
     if (this.net.role !== 'host') { this.net.sendRematch(); return; }
+    if (this.net.v2 === 'ok') {
+      // r79 · v2: nueva partida = nuevo MATCH_START sincronizado (spec §3.8)
+      const startAt = this.net.hostNowMs() + PPNET.VP.COUNTDOWN_MS;
+      this.net.sendRel({ k: 'mstart', sa: startAt, fs: 'host', bo: 3 });
+      this.onNetMatchStart({ startAt, fs: 'host', bo: 3 });
+      return;
+    }
+    if (this.net.v2 === 'pending') {
+      // la subida del transporte sigue en marcha: arrancar en cuanto esté
+      this._netStartWhenReady = true;
+      this.rules.message = T('net_syncing');
+      return;
+    }
     this.rules.bestOf = 3;   // v3.6.29: el enfrentamiento online también al mejor de 3
     this.rules.startMatch(this.mode);
     this.net.owner = 'host';
@@ -858,8 +880,52 @@ export class PingPongGame {
     this.rules.message = T('online_serve');
   }
 
+  /** r79 · MATCH_START (enviado por el anfitrión o recibido por el
+   *  invitado): partida nueva + cuenta atrás hasta el instante EXACTO del
+   *  reloj del anfitrión (spec §3.8: startAt ≈ ahora + 3000 ms). */
+  onNetMatchStart(m) {
+    const guest = this.net.role === 'guest';
+    this.mode = 'match';
+    this.pendingMode = 'match';
+    this.rules.bestOf = m.bo || 3;
+    this.rules.startMatch('match');
+    // el primer sacador lo fija el MATCH_START (fair: alterna por juego —
+    // resetGame ya alterna con gameNo); aquí se ancla el del primer juego
+    this.rules.firstServer = (m.fs === 'host')
+      ? (guest ? 'ai' : 'player')
+      : (guest ? 'player' : 'ai');
+    this.rules.resetGame();     // recalcula el sacador con el firstServer real
+    this.resetToss();
+    this.aiToss = null;
+    this.demoToss = null;
+    this._netStart = { startAt: m.startAt, fs: m.fs };
+    this._netTossLive = false;
+    this.net.setServeHeld(this.rules.server === 'player');
+    this.rules.message = '3';
+  }
+
+  /** r79 · el transporte v2 quedó LISTO (HELLO/READY de ambos) */
+  onNetV2Ready() {
+    if (this._netStartWhenReady) {
+      this._netStartWhenReady = false;
+      if (this.net.role === 'host') this.startOnlineMatch();
+    }
+  }
+
+  /** r79 · pausa del rival (visor quitado/pestaña oculta): el reloj de
+   *  partida se detiene en AMBOS extremos (spec §10) */
+  onNetPause(on) {
+    if (on && this.rules.state !== 'over') this.rules.message = T('net_paused');
+    if (this.menuOpen) this.drawMenu();
+  }
+
   /** El rival se desconecta: vuelta al juego local contra la CPU. */
   onNetEnded(msg) {
+    // r79: retirar todo lo vivo del transporte v2
+    this._netStart = null;
+    this._netTossLive = false;
+    this._netStartWhenReady = false;
+    if (this._netVisor) this._netVisor.visible = false;
     this.rules.oppLabel = 'cpu';
     this.resetToss();
     this.aiToss = null;
@@ -1278,80 +1344,149 @@ export class PingPongGame {
     const label = this._menuLabel;
     const net = this.net;
     const st = net.online ? 'online' : net.status;
-
+    // r79 · SUBMENÚ DE DOS MODOS (petición del dueño): «este modo
+    // Multijugador entra en subMenú con dos modos de juego con sus
+    // respectivos iconos para seguir una estética común con todo el
+    // juego»: NORMAL (partida 1 vs 1 online) y DUELOS LOCOS (poderes de
+    // los campeonatos — con etiqueta PRÓXIMAMENTE y candado ENCIMA, como
+    // los campeonatos bloqueados). El flujo de sala vive debajo, como
+    // hasta hoy, una vez elegido NORMAL.
     this.drawMenuHeader(rects);
-    label(T('mj_head'), 244, 26);
+    label(T('tab_multi'), 244, 26);
+    this._modeCard(rects, 'mjnorm', 40, 100, 944, 96, T('mj_norm_t'),
+      T('mj_norm_s'), '#2f9e44', '#1e7c33', PP_ICONS.multi);
+    this._modeCardDuelos(rects, 40, 208, 944, 96);
+    const yPanel = 330;
 
     if (st === 'online') {
       c.fillStyle = '#7fb069';
-      c.font = '800 52px system-ui, sans-serif';
+      c.font = '800 46px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(T('mj_connected'), 512, 336);
+      c.fillText(T('mj_connected'), 512, yPanel + 24);
+      const ping = (net.v2 === 'ok' && net.pingMs() >= 0)
+        ? ' · ' + T('mj_ping', { n: net.pingMs() }) + (net.degraded() ? ' ·' : '')
+        : '';
       c.fillStyle = '#cfd8e0';
-      c.font = '600 28px system-ui, sans-serif';
-      c.fillText(T('mj_rival', { code: net.code, st: this.rules.state === 'over' ? T('mj_over') : T('mj_playing') }), 512, 396);
+      c.font = '600 26px system-ui, sans-serif';
+      c.fillText(T('mj_rival', { code: net.code, st: this.rules.state === 'over' ? T('mj_over') : T('mj_playing') }) + ping, 512, yPanel + 76);
       const voz = net.voiceState === 'on'
         ? (net.micOn ? T('voz_on_mic') : T('voz_on_silent'))
         : net.voiceState === 'asking' ? T('voz_asking')
         : net.voiceState === 'denied' ? T('voz_denied')
         : T('voz_off');
       c.fillStyle = '#9aa7b4';
-      c.font = '500 24px system-ui, sans-serif';
-      c.fillText(voz, 512, 440);
-      btn('net:mic', 56, 486, 448, 76, T('btn_voz', { v: net.micOn ? T('yes') : T('no') }), net.micOn && net.voiceState === 'on', undefined, !!net.micOn, 26);
-      btn('net:hangup', 520, 486, 448, 76, T('btn_hangup'), false, undefined, undefined, 26);
-      c.fillStyle = '#9aa7b4';
       c.font = '500 22px system-ui, sans-serif';
+      c.fillText(voz, 512, yPanel + 114);
+      btn('net:mic', 56, yPanel + 146, 448, 72, T('btn_voz', { v: net.micOn ? T('yes') : T('no') }), net.micOn && net.voiceState === 'on', undefined, !!net.micOn, 25);
+      btn('net:hangup', 520, yPanel + 146, 448, 72, T('btn_hangup'), false, undefined, undefined, 25);
+      c.fillStyle = '#9aa7b4';
+      c.font = '500 21px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(T('mj_rematch_hint'), 512, 606);
+      c.fillText(T('mj_rematch_hint'), 512, yPanel + 252);
     } else if (st === 'waiting') {
       c.fillStyle = '#e8b45a';
-      c.font = '700 30px system-ui, sans-serif';
+      c.font = '700 28px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(T('mj_room_code'), 512, 316);
+      c.fillText(T('mj_room_code'), 512, yPanel + 14);
       c.fillStyle = '#f2f4f6';
-      c.font = '900 124px ui-monospace, monospace';
-      c.fillText(net.code, 512, 420);
+      c.font = '900 104px ui-monospace, monospace';
+      c.fillText(net.code, 512, yPanel + 96);
       c.fillStyle = '#9aa7b4';
-      c.font = '500 24px system-ui, sans-serif';
-      c.fillText(T('mj_waiting'), 512, 512);
-      btn('net:cancel', 56, 566, 912, 76, T('btn_cancel_room'), false, undefined, undefined, 26);
+      c.font = '500 23px system-ui, sans-serif';
+      c.fillText(T('mj_waiting'), 512, yPanel + 174);
+      btn('net:cancel', 56, yPanel + 210, 912, 70, T('btn_cancel_room'), false, undefined, undefined, 25);
     } else if (st === 'creating' || st === 'joining') {
       c.fillStyle = '#e8b45a';
-      c.font = '700 34px system-ui, sans-serif';
+      c.font = '700 32px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(st === 'creating' ? T('mj_creating') : T('mj_connecting', { code: net.code }), 512, 340);
-      btn('net:cancel', 56, 420, 912, 76, T('btn_cancel'), false, undefined, undefined, 26);
+      c.fillText(st === 'creating' ? T('mj_creating') : T('mj_connecting', { code: net.code }), 512, yPanel + 40);
+      btn('net:cancel', 56, yPanel + 110, 912, 70, T('btn_cancel'), false, undefined, undefined, 25);
     } else if (st === 'error') {
       c.fillStyle = '#ff6b57';
-      c.font = '700 30px system-ui, sans-serif';
+      c.font = '700 28px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      wrapText(c, net.statusMsg || T('mj_error'), 512, 330, 880, 42);
-      btn('net:host', 56, 450, 448, 76, T('btn_retry'), false, undefined, undefined, 26);
-      btn('net:cancel', 520, 450, 448, 76, T('btn_back'), false, undefined, undefined, 26);
+      wrapText(c, net.statusMsg || T('mj_error'), 512, yPanel + 30, 880, 40);
+      btn('net:host', 56, yPanel + 120, 448, 70, T('btn_retry'), false, undefined, undefined, 25);
+      btn('net:cancel', 520, yPanel + 120, 448, 70, T('btn_back'), false, undefined, undefined, 25);
     } else {
       // off
       c.fillStyle = '#cfd8e0';
-      c.font = '600 28px system-ui, sans-serif';
+      c.font = '600 26px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(T('mj_off_hint'), 512, 316);
-      btn('net:host', 56, 366, 912, 86, T('btn_host'), false, 'green', undefined, 27);
-      btn('net:join', 56, 472, 912, 86, T('btn_join'), false, undefined, undefined, 27);
+      c.fillText(T('mj_off_hint'), 512, yPanel + 12);
+      btn('net:host', 56, yPanel + 44, 912, 78, T('btn_host'), false, 'green', undefined, 26);
+      btn('net:join', 56, yPanel + 136, 912, 78, T('btn_join'), false, undefined, undefined, 26);
     }
 
     c.fillStyle = '#75828f';
-    c.font = '500 21px system-ui, sans-serif';
+    c.font = '500 20px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(T('mj_p2p'), 512, 640);
-    c.fillText(T('mj_mic_hint'), 512, 678);
-    btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
+    c.fillText(T('mj_p2p'), 512, 1368);
+    c.fillText(T('mj_mic_hint'), 512, 1402);
+    btn('tab:main', 56, 1440, 912, 68, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
+  }
+
+  /** r79 · tarjeta DUELOS LOCOS con el patrón EXACTO de los campeonatos
+   *  bloqueados: tarjeta atenuada + candado ENCIMA del nombre + chip
+   *  plateado PRÓXIMAMENTE anclado a la derecha + voz al intentar entrar. */
+  _modeCardDuelos(rects, x, y, w, h) {
+    const c = this.menuCanvas.getContext('2d');
+    const g = c.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, '#3b3550');
+    g.addColorStop(1, '#241f33');
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, 22); else c.rect(x, y, w, h);
+    c.fillStyle = g;
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.14)';
+    c.lineWidth = 2;
+    c.stroke();
+    // insignia circular con el icono del modo (rayo de los poderes)
+    const cx = x + 76, cy = y + h / 2;
+    c.beginPath(); c.arc(cx, cy, 50, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(0,0,0,0.30)'; c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.25)'; c.lineWidth = 2.5; c.stroke();
+    try { PP_ICONS.duelo(c, cx, cy); } catch (e) { /* icono decorativo */ }
+    // velo de bloqueado (patrón campeonatos)
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, 22); else c.rect(x, y, w, h);
+    c.fillStyle = 'rgba(8,10,16,0.62)';
+    c.fill();
+    // título con el CANDADO ENCIMA (junto al texto, como los campeonatos)
+    c.textAlign = 'left';
+    c.textBaseline = 'alphabetic';
+    const ttl = T('mj_duel_t');
+    c.font = '800 34px system-ui, sans-serif';
+    c.fillStyle = 'rgba(201,212,222,0.75)';
+    c.fillText(ttl, x + 134, y + h / 2 - 4);
+    try { PP_ICONS.candado(c, x + 134 + c.measureText(ttl).width + 26, y + h / 2 - 16, 1.35); } catch (e) { /* */ }
+    c.font = '600 19px system-ui, sans-serif';
+    c.fillStyle = 'rgba(201,212,222,0.55)';
+    c.fillText(T('mj_duel_s'), x + 134, y + h / 2 + 30);
+    // chip plateado PRÓXIMAMENTE anclado a la derecha (patrón r72/r73)
+    const chip = T('champ_locked_chip');
+    c.font = '800 20px system-ui, sans-serif';
+    const cw = c.measureText(chip).width + 36;
+    const chx = x + w - cw - 26, chy = y + h / 2 - 19;
+    c.beginPath();
+    if (c.roundRect) c.roundRect(chx, chy, cw, 38, 19); else c.rect(chx, chy, cw, 38);
+    c.fillStyle = 'rgba(201,212,222,0.10)';
+    c.fill();
+    c.strokeStyle = '#c9d4de';
+    c.lineWidth = 2;
+    c.stroke();
+    c.fillStyle = '#c9d4de';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(chip, chx + cw / 2, chy + 20);
+    rects.push({ x, y: y - 3, w, h: h + 6, id: 'mjduel' });
   }
 
   /** Página JOIN: teclado en el panel para escribir el código (v2.19;
@@ -2651,6 +2786,21 @@ export class PingPongGame {
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
         break;
+      case 'mjnorm':
+        // r79 · tarjeta NORMAL: el flujo de sala vive justo debajo
+        // (crear/unirse); el aviso guía sin romper nada
+        this.rules.message = T('mj_off_hint');
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      case 'mjduel':
+        // r79 · DUELOS LOCOS bloqueado: etiqueta PRÓXIMAMENTE + candado —
+        // misma respuesta que los campeonatos bloqueados (voz + mensaje)
+        this.rules.message = T('champ_locked_soon');
+        this.audio.announce(T('champ_locked_soon'), true);
+        this.audio.playOsc(220, 180, 0.12, 'sawtooth', 0.1, 0);
+        this.drawMenu();
+        break;
       case 'net':
         if (arg === 'host') { this.menuPage = 'multi'; this.net.hostRoom(); }
         else if (arg === 'join') { this.menuPage = 'join'; this._joinCode = ''; }
@@ -3432,6 +3582,7 @@ export class PingPongGame {
       return;
     }
     if (this.rules.state !== 'serve' || this.rules.server !== 'player') return;
+    if (this._netStart) return;   // r79: cuenta atrás del MATCH_START en curso
     if (this.tossed || i !== this.ballHand) return;
     if (!this.renderer.xr.isPresenting) return;
     const hand = this.controllerPaddles[i];
@@ -3462,6 +3613,11 @@ export class PingPongGame {
     this.tossMaxY = this.ball.pos.y;
     this.ball.vel.copy(v);
     this.ball.spin.set(0, 0, 0);
+    // r79 · v2: el lanzamiento al aire del saque es VISUAL para el rival
+    // (BALL_HIT kind 2 — no regla, no punto: spec §10)
+    this._netTossLive = true;
+    if (this.ballMesh) this.ballMesh.visible = true;
+    if (this.net.online && this.net.v2 === 'ok') this.net.netLocalToss();
     this.rules.message = T('hint_hit');
     this.audio.serve();
     this.haptic(i, 0.45);
@@ -7551,8 +7707,36 @@ export class PingPongGame {
     // 0.7) menú abierto: anclar a la muñeca libre + rayo de apuntado
     if (presenting && this.menuOpen) this.updateMenu();
 
-    // 0.8) v2.19: red online — emitir pose/bola/sync a 20 Hz
-    if (this.net.online) this.net.tick(dt);
+    // 0.8) v2.19: red online — emitir pose/bola/sync (v1: 30 Hz JSON)
+    //      v3.6.71 · r79: transporte binario v2 (pose 60 Hz + eventos fast)
+    if (this.net.online) this.net.frame(dt);
+
+    // 0.85) r79 · MATCH_START: cuenta atrás sincronizada por el reloj del
+    //       anfitrión (spec §3.8); la bola queda HELD hasta el instante exacto
+    if (this._netStart && this.net.online && this.net.v2 === 'ok') {
+      const leftMs = this._netStart.startAt - this.net.hostNowMs();
+      if (leftMs <= 0) {
+        this._netStart = null;
+        this._netTossLive = false;
+        this.rules.message = this.rules.server === 'player'
+          ? T('serve_go')
+          : T('serve_opp', { opp: this.rules.opp() });
+        this.audio.playOsc(880, 1320, 0.12, 'triangle', 0.14, 0);
+      } else {
+        const sLeft = String(Math.ceil(leftMs / 1000));
+        if (sLeft !== this.rules.message) {
+          this.rules.message = sLeft;
+          this.audio.playOsc(660, 660, 0.07, 'sine', 0.1, 0);
+        }
+      }
+    }
+    // r79 · pausa del multijugador (visor quitado / pestaña oculta, spec §10)
+    const netFrozen = this.net.online && this.net.v2Paused();
+    if (netFrozen && this.rules.state !== 'over' && this.rules.state !== 'point') {
+      this.rules.message = this.net.pausedRemoteLong()
+        ? T('net_paused_long')
+        : T('net_paused');
+    }
 
     // 1) Palas de los mandos (solo en VR)
     if (presenting && this.grips) {
@@ -7633,13 +7817,14 @@ export class PingPongGame {
     // v3.6.51 (r59) · LA ACADEMIA: el paso del SAQUE usa la cinemática REAL
     // (bola descansando en la mano libre, lanzamiento, punto muerto) aunque
     // el árbitro duerma en calib — se enseña con la misma mecánica de verdad.
-    if (active && !frozen && !this.inHall &&
+    if (active && !frozen && !netFrozen && !this.inHall && !this._netStart &&
         this.rules.state === 'serve' && (!this.calib || this.tutV1)) {
       if (this.rules.server === 'player') {
         if (presenting) {
           if (!this.tossed) {
             // bola apoyada en la mano libre (cinemática pura)
             holdLock = true;
+            if (this.ballMesh) this.ballMesh.visible = true;   // r79: por si venía oculta (HELD del rival)
             const bh = this.controllerPaddles[this.ballHand];
             this.ball.vel.set(0, 0, 0);
             this.ball.spin.set(0, 0, 0);
@@ -7702,6 +7887,8 @@ export class PingPongGame {
         }
       } else if (this.net.online) {
         // v2.19: saque del rival humano — la bola llega por su emisión de red
+        // r79 · v2: bola HELD del rival — quieta hasta su lanzamiento
+        if (this.net.v2 === 'ok' && !this._netTossLive) holdLock = true;
       } else if (!this.aiToss) {
         // la CPU camina a su posición de saque, sostiene la bola y la lanza:
         // nada de sacar desde donde la pilló el punto anterior
@@ -7757,11 +7944,11 @@ export class PingPongGame {
       this.ball.vel.set(0, 0, 0);
       this.ball.spin.set(0, 0, 0);
       this.ball.pos.set(0, DIMS.tableTopY + DIMS.ballRadius, DIMS.tableCenterZ + 0.25);
-    } else if (this.net.online) this.net.drainNetwork(this);   // v2.19: rival por red
+    } else if (this.net.online) this.net.drainNetwork(this);   // v2.19/r79: rival por red
     // v2.91: durante el SAQUE la bola la simula quien saca — el invitado
     // YA PUEDE SACAR (antes su toss era pisado por la emisión del anfitrión)
     if (this.net.online) this.net.syncServeOwner();
-    if (active && !holdLock && !frozen && !this.inHall &&
+    if (active && !holdLock && !frozen && !netFrozen && !this.inHall &&
         !(this.champs && this.champs.testActive)) {   // prueba con la bola tomada
       const pads = [];
       if (presenting) {
@@ -7778,7 +7965,15 @@ export class PingPongGame {
         this.rules.server === 'player' && !this.calib &&
         ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise;
       if (tossImmune) pads.length = 0;
-      if (this.net.online && this.net.owner !== this.net.mySide()) {
+      // v3.6.71 · r79 · FSM DE LA BOLA (autoridad por mitad, spec §7):
+      // fantasma = bola del rival simulo con la FÍSICA REAL pero SIN mi
+      // pala (nadie golpea una bola de mitad ajena ni un fantasma).
+      const v2on = this.net.online && this.net.v2 === 'ok';
+      if (v2on && !this.net.ballMine()) {
+        stepPhysics(dt * this._dilF, this.ball, [], this.events);
+        this.net.observeGhost(this.ball);
+      } else if (this.net.online && this.net.v2 !== 'ok' &&
+                 this.net.owner !== this.net.mySide()) {
         // v2.19: la bola la simula el rival — seguir su emisión y solo
         // comprobar el contacto de MI pala contra ella
         const prevB = this._netPrevBall || (this._netPrevBall = new THREE.Vector3());
@@ -7801,7 +7996,12 @@ export class PingPongGame {
         if (!(this.ball && this.ball.ppTransito)) {
           // r62: dt DILATADO en la bola de partido (_dilF < 1 lo frena);
           // el árbitro ya decidió el punto — la bola vuela de adorno
-          stepPhysics(dt * this._dilF, this.ball, pads, this.events);
+          // r79 · v2: observador de SUBPASO del cruce de la red — el
+          // traspaso (BALL_HANDOFF) sale con el estado EXACTO del subpaso
+          const _xNet = (v2on && this.net.ballState() === 'own')
+            ? (bX) => { this.net.watchOwnCross(bX); }
+            : null;
+          stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);
         }
       }
     }
@@ -7872,7 +8072,7 @@ export class PingPongGame {
         const _res = applyServeProgressiveAssist(this.ball, hitPad, this.serveTier());
         __ppServeTelemetry(_res, { src: 'core', tier: this.difficulty });
         this.rules.beginServeRally('player');
-        if (this.net.online) { this.net.sendHit(true); this._localHit = false; }
+        if (this.net.online) { this.net.sendHit(true); this._localHit = false; this._netTossLive = false; }
         // r62 · háptica del SAQUE escalada por la velocidad del golpe
         // (antes fija 0,8/90: una dejada y un saque seco vibraban igual)
         {
@@ -7932,10 +8132,13 @@ export class PingPongGame {
     }
 
     // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido;
-    //    en online el INVITADO no puntúa: el marcador llega del anfitrión).
+    //    en online v1 el INVITADO no puntúa: el marcador llega del anfitrión).
+    //    r79 · v2: AMBOS lados llevan árbitro propio sobre la física de su
+    //    mitad (con fantasma idéntico) y los puntos se confrontan CLAIM/ACK.
     //    v2.30: en portada 2D inactiva el árbitro tampoco corre — ni puntos
     //    ni megafonía de fondo.
-    if (active && !this.calib && !frozen && !(this.net.online && this.net.role === 'guest')) {
+    if (active && !this.calib && !frozen && !netFrozen &&
+        !(this.net.online && this.net.v2 !== 'ok' && this.net.role === 'guest')) {
       this.processIntents(this.rules.handleEvents(this.events));
       this.processIntents(this.rules.update(dt));
     }
@@ -7992,30 +8195,73 @@ export class PingPongGame {
     this.aiStrikeT = Math.max(0, this.aiStrikeT - dt);
     this.demoStrikeT = Math.max(0, this.demoStrikeT - dt);
     if (this.net.online) {
-      // v2.19: la pala del rival humano llega por red (marco espejo 180° en Y)
-      // v2.51: SUAVIZADO — llegaba en crudo a 20 Hz y a saltos; ahora
-      // interpolación exponencial de posición + slerp de rotación.
-      // v2.91: MUERTE ADELANTADA — la posición objetivo se adelanta con la
-      // velocidad estimada de las dos últimas muestras (max 120 ms) para
-      // absorber el jitter: la pala rival se mueve CONTINUA, no a saltos.
-      const rp = this.net.remotePaddle;
-      if (rp) {
-        NetLink.posFromNet(rp.p, netTmpP);
-        const prev = this.net._padPrev;
-        if (prev) {
-          const dtS = Math.max(1e-3, (rp.t - prev.t) / 1000);
-          const age = Math.min(0.12, Math.max(0, (performance.now() - rp.t) / 1000));
-          // velocidad en marco RED -> al espejar: (-vx, vy, -vz)
-          netTmpP.x -= ((rp.p[0] - prev.p[0]) / dtS) * age;
-          netTmpP.y += ((rp.p[1] - prev.p[1]) / dtS) * age;
-          netTmpP.z -= ((rp.p[2] - prev.p[2]) / dtS) * age;
+      if (this.net.v2 === 'ok') {
+        // r79 · v2 · AVATAR DEL RIVAL (spec §6): reproducción con retraso
+        // controlado (jitter buffer, interpDelay adaptativo 40-120 ms),
+        // interpolación lineal + slerp, extrapolación ≤100 ms y atenuación
+        // si no llegan datos (>500 ms). La PALA se deriva de la pose de la
+        // mano con el desplazamiento de agarre FIJO — nunca viaja por red.
+        const smp = this._netAvatarOut || (this._netAvatarOut = {
+          hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+          rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+        });
+        const code = this.net.avatarSample(smp);
+        if (code >= 0) {
+          const useLeft = (smp.fl & 4) !== 0;
+          const hpa = useLeft ? smp.lp : smp.rp;
+          const hqa = useLeft ? smp.lq : smp.rq;
+          NetLink.posFromNet(hpa, netTmpP);
+          NetLink.quatFromNet(hqa, netTmpQ);
+          // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
+          const qVis = netTmpQ2.copy(netTmpQ)
+            .multiply(mountQuatFor(useLeft ? 'left' : 'right'));
+          netTmpV.set(0, (PALA_BLADE_Y - PALA_GRIP_Y) * PALA_SCALE, 0)
+            .applyQuaternion(qVis).add(netTmpP);
+          const f2 = 1 - Math.exp(-20 * dt);
+          this.aiPaddleMesh.position.lerp(netTmpV, f2);
+          this.aiPaddleMesh.quaternion.slerp(qVis, f2);
         }
-        NetLink.quatFromNet(rp.q, netTmpQ);
-        const f = 1 - Math.exp(-18 * dt);
-        this.aiPaddleMesh.position.lerp(netTmpP, f);
-        this.aiPaddleMesh.quaternion.slerp(netTmpQ, f);
+        this.aiPaddleMesh.visible = true;
+        // visor del rival: presencia mínima a partir de la CABEZA del packet
+        if (!this._netVisor) {
+          const vg = new THREE.SphereGeometry(0.06, 12, 10);
+          const vm = new THREE.MeshBasicMaterial({ color: 0x10141c, transparent: true, opacity: 0.85 });
+          this._netVisor = new THREE.Mesh(vg, vm);
+          this.scene.add(this._netVisor);
+        }
+        const stale = this.net.avatarStaleMs();
+        const show = code >= 0 && stale < 500;
+        this._netVisor.visible = show;
+        if (show) {
+          NetLink.posFromNet(smp.hp, netTmpP);
+          this._netVisor.position.lerp(netTmpP, 1 - Math.exp(-20 * dt));
+        }
+      } else {
+        // v1 (compatible): la pala del rival humano llega por red (espejo 180°)
+        // v2.51: SUAVIZADO — llegaba en crudo a 20 Hz y a saltos; ahora
+        // interpolación exponencial de posición + slerp de rotación.
+        // v2.91: MUERTE ADELANTADA — la posición objetivo se adelanta con la
+        // velocidad estimada de las dos últimas muestras (max 120 ms) para
+        // absorber el jitter: la pala rival se mueve CONTINUA, no a saltos.
+        const rp = this.net.remotePaddle;
+        if (rp) {
+          NetLink.posFromNet(rp.p, netTmpP);
+          const prev = this.net._padPrev;
+          if (prev) {
+            const dtS = Math.max(1e-3, (rp.t - prev.t) / 1000);
+            const age = Math.min(0.12, Math.max(0, (performance.now() - rp.t) / 1000));
+            // velocidad en marco RED -> al espejar: (-vx, vy, -vz)
+            netTmpP.x -= ((rp.p[0] - prev.p[0]) / dtS) * age;
+            netTmpP.y += ((rp.p[1] - prev.p[1]) / dtS) * age;
+            netTmpP.z -= ((rp.p[2] - prev.p[2]) / dtS) * age;
+          }
+          NetLink.quatFromNet(rp.q, netTmpQ);
+          const f = 1 - Math.exp(-18 * dt);
+          this.aiPaddleMesh.position.lerp(netTmpP, f);
+          this.aiPaddleMesh.quaternion.slerp(netTmpQ, f);
+        }
+        this.aiPaddleMesh.visible = true;
       }
-      this.aiPaddleMesh.visible = true;
     } else {
       // v2.40: congelado — la pala IA conserva su última pose
       if (!frozen) this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
@@ -8116,6 +8362,9 @@ export class PingPongGame {
       gamesPlayer: this.rules.gamesPlayer,
       gamesAi: this.rules.gamesAi,
       bestOf: this.rules.bestOf,
+      // r79 · v2: calidad de conexión visible (ping + degradación)
+      netPing: (this.net.online && this.net.v2 === 'ok') ? this.net.pingMs() : -1,
+      netDeg: this.net.online ? !!this.net.degraded() : false,
     });
     this.syncDom();
 
@@ -8609,7 +8858,12 @@ export class PingPongGame {
         case 'point': {
           // v2.25: el anfitrión captura el punto ESTRUCTURADO para el
           // invitado (con su causa host-relativa; el invitado la remapea)
-          if (this.net.online && this.net.role === 'host' && !it.survival) {
+          // r79 · v2: el punto lo RECLAMA el extremo con autoridad sobre la
+          // mitad donde murió la bola (POINT_CLAIM); el otro confronta con
+          // POINT_ACK y el anfitrión resincroniza si discrepan (spec §7)
+          if (this.net.online && this.net.v2 === 'ok' && !it.survival) {
+            if (!this.net.onLocalPointIntent(it)) break;
+          } else if (this.net.online && this.net.role === 'host' && !it.survival) {
             this.net.lastPoint = { w: it.winner, c: it.cause || '', rh: it.rallyHits || 0 };
           }
           if (it.survival) {
@@ -8663,7 +8917,11 @@ export class PingPongGame {
         }
         case 'retry-serve':
           // v2.25: el LET viaja al invitado (causa neutra) para su mensaje
-          if (this.net.online && this.net.role === 'host') {
+          // r79 · v2: el LET lo detectan AMBOS extremos de sus botes (real o
+          // fantasma) y aplican retryServe sin red — determinista (spec §8)
+          if (this.net.online && this.net.v2 === 'ok') {
+            this.net.onLocalRetryIntent(it);
+          } else if (this.net.online && this.net.role === 'host') {
             this.net.lastRetry = it.cause || '';
           }
           this.resetToss();
@@ -8687,7 +8945,14 @@ export class PingPongGame {
           }
           if (this.net.online) {
             // v2.19: la bola del saque la lleva quien saca (humano remoto o yo)
-            this.net.owner = it.server === 'player' ? this.net.mySide() : this.net.oppSide();
+            // r79 · v2: HELD determinista desde el marcador (spec §9)
+            if (this.net.v2 === 'ok') {
+              this._netTossLive = false;
+              this.net.setServeHeld(it.server === 'player');
+              if (this.ballMesh) this.ballMesh.visible = it.server === 'player';
+            } else {
+              this.net.owner = it.server === 'player' ? this.net.mySide() : this.net.oppSide();
+            }
           } else if (it.server === 'ai') this.setupAIServe();
           else this.setupDemoServe();
           // MEGAFONÍA: el marcador anuncia el resultado y quién saca
@@ -8712,6 +8977,10 @@ export class PingPongGame {
           }
           break;
         case 'game-over':
+          // r79 · v2: firma del resultado (telemetría + aviso al rival)
+          if (this.net.online && this.net.v2 === 'ok') {
+            this.net.sendMatchEnd(it.winner === 'player' ? 'win' : 'loss');
+          }
           // r62 · BOLA DE PARTIDO EN CÁMARA LENTA: el último vuelo se dilata
           // (física 0,34× con regreso suave ~1,1 s) ANTES de la fanfarria.
           // SOLO local: online la bola la conduce el stream del rival.
@@ -8997,7 +9266,7 @@ export class PingPongGame {
 }
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
-import { makePaddleVisual } from './c01_modelos_3d.js';
+import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
 import { AI_PRESETS, DIMS, MOUNT_QUAT_RIGHT, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
@@ -9006,8 +9275,9 @@ import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_i
 import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
 import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createReplayBanner, createScoreboard, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
+import { PPNET } from './c09b_red_nucleo.js';
 import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
-import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, pcA, pcC, pcN, pcT } from './c11_champloader.js';
+import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, netTmpQ2, netTmpV, pcA, pcC, pcN, pcT } from './c11_champloader.js';
 import { wrapText } from './c13_ui_arranque.js';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';

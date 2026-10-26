@@ -75,6 +75,7 @@ ORDER = [
     ('core/c07_escena_sala.js',         b'function createRoom'),
     ('core/c08_hall_hud.js',            b'const HALL = {'),
     ('core/c09_red_netlink.js',         b'class NetLink'),
+    ('core/c09b_red_nucleo.js',         b'const PPNET = (() => {'),
     ('core/c10_menu_saque.js',          b'const MENU_LOGO_SRC'),
     ('core/c11_champloader.js',         b'class ChampLoader'),
     ('core/c12_pingponggame.js',        b'class PingPongGame'),

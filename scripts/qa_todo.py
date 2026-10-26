@@ -397,6 +397,12 @@ CAPAS = [
     # con poderes para rival y jugador (20 toques seguidos · icono en el
     # mango · gatillo · 10 s · ¡lucha y vence!). Pizarra PODERES sincronizada.
     ('BM · el narrador honesto (v3670)', 'qa_r78_v3670.py'),
+    # BN (v3671): CRAZY LINK v2 — multijugador binario real (petición del
+    # dueño r79 + spec netcode v1.0): submenú NORMAL/DUELOS LOCOS (candado
+    # + PRÓXIMAMENTE como los campeonatos), transporte fast(UDP-like)+
+    # reliable, reloj NTP, FSM de bola por mitades, CLAIM/ACK, avatar con
+    # jitter buffer, MATCH_START sincronizado, pausas, ping y validación.
+    ('BN · crazy link v2 (v3671)', 'qa_r79_v3671.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

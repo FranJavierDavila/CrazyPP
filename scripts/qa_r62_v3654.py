@@ -84,8 +84,9 @@ AGUJAS = [
      "this._dilF = 1 + (0.34 - 1) * Math.min(1, _kDil * 2.2);"),
     ("cine: game-over arma la dilatación SOLO local",
      "if (!this.net.online) this._dilArranca();"),
+    # r79: el call lleva el observador de traspaso _xNet (mismo dt dilatado)
     ("cine: la física de la bola recibe el dt dilatado",
-     "stepPhysics(dt * this._dilF, this.ball, pads, this.events);"),
+     "stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);"),
     ("cine: pastilla ámbar en el cartel de repetición",
      "const txtSlow = T('rep_slow');"),
 ]

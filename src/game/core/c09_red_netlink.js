@@ -131,15 +131,25 @@ export class NetLink {
     // el receptor aplica la conjugación completa en quatFromNet.
     return [q.x, q.y, q.z, q.w];
   }
+  /** r79: inversos de arrays planos (eventos fast → marco local) */
+  static posFromNetArr(a) {
+    const T = DIMS.tableTopY;
+    return new THREE.Vector3(-a[0], a[1] + T, -3.2 - a[2]);
+  }
+  static vecFromNetArr(a) { return new THREE.Vector3(-a[0], a[1], -a[2]); }
+  static spinFromNetArr(a) { return new THREE.Vector3(-a[0], a[1], -a[2]); }
 
   /** v2.91 · La propiedad de la bola SIGUE AL SACADOR durante el saque:
    *  si saco YO, yo simulo (toss real + físicas + contacto propio); si
    *  saca el rival, sigo su emisión. Antes el dueño quedaba fijo en
    *  'host': el INVITADO no podía sacar — su lanzamiento era pisado en
    *  cada frame por la emisión atrasada del anfitrión y la bola se caía
-   *  al suelo sin poder golpearla. */
+   *  al suelo sin poder golpearla.
+   *  v3.6.71 · r79: con transporte v2 el dueño lo conduce la FSM de la
+   *  bola (HELD/OWN/GHOST/AUTH) — aquí sólo se sincroniza desde ella. */
   syncServeOwner() {
     if (!this.online || !this.game || !this.game.rules) return;
+    if (this.v2 === 'ok') { this._syncOwnerFromBall(); return; }
     const r = this.game.rules;
     if (r.state !== 'serve') return;
     // r.server está en perspectiva LOCAL ('player' = yo) en ambos roles:
@@ -256,6 +266,9 @@ export class NetLink {
       this.online = true;
       this.owner = 'host';       // el saque inicial siempre es del anfitrión
       this.setStatus('online', T('opp_connected'));
+      // v3.6.71 · r79: subir el transporte binario v2 (fast + reliable) —
+      // la partida arrancará con el MATCH_START sincronizado (spec §3.8)
+      this.startV2();
       this.game?.startOnlineSession();
       this.game?.audio?.kick();  // v2.25: rescate de audio al abrir la sesión
       this.initVoice().catch(() => { /* sin voz, sin problema */ });
@@ -372,6 +385,8 @@ export class NetLink {
   /* --------------- bucle: emitir pose/bola/eventos/sync (20 Hz) --------------- */
   tick(dt) {
     if (!this.online) return;
+    if (this.v2 === 'pending') return;   // r79: durante la subida no hay v1
+    if (this.v2 === 'ok') return;        // r79: el transporte v2 usa frame()
     this._sendAcc += dt;
     if (this._sendAcc < 0.033) return;   // v2.91: 30 Hz (antes 20 — partida a trompicones)
     this._sendAcc = 0;
@@ -429,9 +444,12 @@ export class NetLink {
    *  inyecta con remote:true) NO se re-emiten — antes cada bote del rival
    *  volvía a la red en bucle infinito a 20 Hz: tormenta de eventos (más de
    *  55.000 en 45 s medida en el banco), puntos fantasma en el árbitro del
-   *  anfitrión, marcas eternas en la mesa y audio en ametralladora. */
+   *  anfitrión, marcas eternas en la mesa y audio en ametralladora.
+   *  v3.6.71 · r79: el transporte v2 NO envía botes — el rival los oye de
+   *  SU simulación local (fantasma o autoridad), como dicta la spec §8. */
   collectEvents(events) {
     if (!this.online) return;
+    if (this.v2 === 'ok') return;
     const T = DIMS.tableTopY;
     for (const e of events) {
       if (e.remote) continue;                    // v2.51: jamás re-emitir
@@ -446,9 +464,11 @@ export class NetLink {
   /** Anuncia un golpeo local (tras aplicar la velocidad ya corregida).
    *  v2.25: emisión EN CRUDO — el receptor aplica el espejo UNA vez.
    *  v2.51: se marca _lastHitSent para que applySync no pise el claim
-   *  local con el ow atrasado del anfitrión (flap de propiedad). */
+   *  local con el ow atrasado del anfitrión (flap de propiedad).
+   *  v3.6.71 · r79: el transporte v2 no pasa por aquí (netLocalHit). */
   sendHit(isServe) {
     if (!this.online) return;
+    if (this.v2 === 'ok') { this.netLocalHit(isServe); return; }
     const g = this.game;
     this.owner = this.mySide();
     this._lastHitSent = performance.now();
@@ -466,6 +486,20 @@ export class NetLink {
   /* --------------- recepción --------------- */
   onData(d) {
     if (!d || typeof d !== 'object') return;
+    // v3.6.71 · r79: señalización y control del transporte v2 (por la
+    // DataConnection PeerJS o por el canal reliable propio, mismo formato)
+    if (d.k === 'sdp') { this._v2RemoteDesc(d.d); return; }
+    if (d.k === 'ice') {
+      try { if (this._pc && d.c) this._pc.addIceCandidate(d.c).catch(() => { /* */ }); } catch { /* */ }
+      return;
+    }
+    switch (d.k) {
+      case 'hello2': case 'tick2': case 'tock2': case 'ready2':
+      case 'mstart': case 'claim': case 'ack': case 'resync':
+      case 'pause': case 'resume': case 'mend': case 'v2off':
+        this._onRel(d);
+        return;
+    }
     if (d.k === 'p') {
       if (d.pad) {
         // v2.91: se guarda TAMBIÉN la muestra anterior para estimar la
@@ -641,12 +675,10 @@ export class NetLink {
   }
 
   /** Aplica la bola recibida por red (solo cuando el dueño es el rival).
-   *  v2.91 · MUERTE ADELANTADA (dead reckoning): la muestra llega a 30 Hz
-   *  por una red con jitter; entre paquetes se integra la gravedad local
-   *  sobre la (pos, vel) recibida según la EDAD del paquete y se persigue
-   *  esa trayectoria predicha. Antes el lerp puro hacia la última muestra
-   *  frenaba la bola y cortaba el arco: rallye «a trompicones». */
+   *  v3.6.71 · r79: con transporte v2 la bola rival NO llega por stream —
+   *  la simula el fantasma con la física real (devuelve false siempre). */
   applyBallStream(ball, dt) {
+    if (this.v2 === 'ok') return false;
     const s = this.remoteBall;
     if (!s) return false;
     const tmp = this._tv || (this._tv = new THREE.Vector3());
@@ -711,6 +743,879 @@ export class NetLink {
     }
   }
 
+  /* =====================================================================
+   *  v3.6.71 · r79 — CRAZY LINK v2 · TRANSPORTE BINARIO DE DOBLE CANAL
+   *  Spec «Netcode multijugador online — Ping Pong VR (WebXR)» v1.0:
+   *    · El GOLPE PROPIO es sagrado: colisión local, sonido y háptica en
+   *      el mismo frame; la red nunca la retrasa.
+   *    · AUTORIDAD POR MITAD DE MESA: quien tiene la bola en su mitad
+   *      decide botes/fallos/puntos; traspaso (BALL_HANDOFF) al cruzar
+   *      la red limpiamente; autoridad provisional a los 300 ms.
+   *    · Puntos por POINT_CLAIM → POINT_ACK (rallyId = totalPoints) y
+   *      RESYNC_STATE del anfitrión como árbitro final.
+   *    · Reloj compartido (ancla gruesa por reliable + refinado NTP por
+   *      la cabecera fast), jitter buffer del avatar y validación.
+   *  PeerJS sigue siendo la SALA (código, presencia, voz) y además el
+   *  canal de SEÑALIZACIÓN (SDP/ICE) de una RTCPeerConnection propia con
+   *  dos DataChannels: fast {ordered:false, maxRetransmits:0} (tipo UDP)
+   *  y reliable {ordered:true} (control JSON, mensajes raros).
+   *  Si la subida falla → degradación HONESTA al modo v1 (30 Hz JSON).
+   *  ===================================================================== */
+
+  static ICE_CFG() {
+    // STUN público + TURN libre (openrelay/metered) — decisión abierta de la
+    // spec §18 (coturn propio y regiones: hito posterior, ver worklog).
+    return {
+      iceServers: [
+        { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+        {
+          urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443',
+            'turn:openrelay.metered.ca:443?transport=tcp'],
+          username: 'openrelayproject', credential: 'openrelayproject',
+        },
+      ],
+      iceCandidatePoolSize: 4,
+    };
+  }
+
+  /** FASE 0 · subida del transporte. El INVITADO ofrece; el anfitrión
+   *  responde; el ICE viaja por la DataConnection PeerJS existente. */
+  startV2() {
+    if (typeof PPNET === 'undefined' || typeof RTCPeerConnection === 'undefined') {
+      this._v2Fail(T('net_legacy'));           // sin piezas: v1 honesto
+      return;
+    }
+    this.v2 = 'pending';                        // pending|ok|fail
+    this._pc = null; this._fast = null; this._rel = null;
+    this._fastOpen = false; this._relOpen = false;
+    this._seq = (Math.random() * 0xffff) | 0;
+    this._ackP = 0; this._ackBits = 0;
+    this._echoTime = 0; this._echoAt = 0;       // eco del último paquete recibido
+    this._pend = [];                            // eventos pendientes de ack
+    this._evId = 1;
+    this._fastIn = [];                          // eventos entrantes a drenar
+    this._seenEv = new Map();                   // dedupe por eventId
+    this._recvRing = [];                        // seqs recibidos (pérdida)
+    this._recvHist = [];                        // seqs recibidos (ack/ackBits)
+    this._lastPoseAt = 0;                       // frescura del avatar
+    this._gaps = 0; this._recvs = 0;
+    this._poseAcc = 0; this._snapAcc = 0;
+    this._poseHz = PPNET.VP.POSE_HZ;
+    this._lossLowT = 0; this._degraded = false;
+    this._lastFastAt = 0; this._iceRestarts = 0;
+    this._helloDone = false; this._helloTO = null;
+    this._anchors = 0; this._readyMe = false; this._readyOpp = false;
+    this._mstart = null;                        // {startAt, fs, bo}
+    this._clock = new PPNET.NetClock(this.role === 'host');
+    this._jb = new PPNET.JitterBuf();
+    this._ball = new PPNET.BallAuth();
+    this._sync = new PPNET.MatchSync(this.role);
+    this._val = new PPNET.Validator();
+    this._stats = new PPNET.NetStats(this.role);
+    // r79: la guardia anti-doble-punto del árbitro SOLO con red v2
+    try { if (this.game && this.game.rules) this.game.rules._netGuard = true; } catch { /* */ }
+    this._visOff = null; this._visOffMs = 0;    // corrección/catch-up visual
+    this._pausedSelf = false; this._pausedRemote = false; this._pausedAt = 0;
+    this._lastRelAt = 0; this._claimFallback = null;
+    PPNET.VP.BUILD = (typeof VERSION !== 'undefined') ? VERSION : '';
+    // pausa por visor quitado / pestaña oculta (spec §10)
+    this._onVis = () => {
+      if (this.v2 !== 'ok' || !this.online) return;
+      this._pausedSelf = document.hidden;
+      if (document.hidden) this.sendRel({ k: 'pause', t: this._clock.nowHost(performance.now()) });
+      else this.sendRel({ k: 'resume', t: this._clock.nowHost(performance.now()) });
+    };
+    document.addEventListener('visibilitychange', this._onVis);
+    if (this.role === 'guest') this._v2Offer();
+    this._helloTO = window.setTimeout(() => {
+      if (this.v2 === 'pending') this._v2Fail(T('net_legacy'));
+    }, 9000);
+  }
+
+  async _v2Offer() {
+    try {
+      const pc = new RTCPeerConnection(NetLink.ICE_CFG());
+      this._pc = pc;
+      this._fast = pc.createDataChannel('fast', { ordered: false, maxRetransmits: 0 });
+      this._rel = pc.createDataChannel('rel', { ordered: true });
+      this._wireDC();
+      pc.onicecandidate = (e) => {
+        if (e.candidate) this.send({ k: 'ice', c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate });
+      };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      this.send({ k: 'sdp', d: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+    } catch (e) {
+      this._v2Fail(T('net_legacy'));
+    }
+  }
+
+  /** descripción remota SDP: el anfitrión recibe la OFERTA (y responde);
+   *  el invitado recibe la RESPUESTA. */
+  async _v2RemoteDesc(desc) {
+    try {
+      if (!desc || !desc.type) return;
+      if (!this._pc) {
+        const pc = new RTCPeerConnection(NetLink.ICE_CFG());
+        this._pc = pc;
+        pc.onicecandidate = (e) => {
+          if (e.candidate) this.send({ k: 'ice', c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate });
+        };
+        pc.ondatachannel = (e) => {
+          if (e.channel.label === 'fast') this._fast = e.channel;
+          else if (e.channel.label === 'rel') this._rel = e.channel;
+          this._wireDC();
+        };
+      }
+      await this._pc.setRemoteDescription(desc);
+      if (desc.type === 'offer') {
+        const ans = await this._pc.createAnswer();
+        await this._pc.setLocalDescription(ans);
+        this.send({ k: 'sdp', d: { type: ans.type, sdp: ans.sdp } });
+      }
+    } catch (e) {
+      this._v2Fail(T('net_legacy'));
+    }
+  }
+
+  _wireDC() {
+    if (this._fast) {
+      this._fast.binaryType = 'arraybuffer';
+      this._fast.onopen = () => {
+        this._fastOpen = true;
+        this._v2ChannelsUp();
+      };
+      this._fast.onmessage = (e) => this._onFast(e.data);
+      this._fast.onerror = () => { /* el watchdog de ICE decide */ };
+      this._fast.onclose = () => { this._fastOpen = false; };
+    }
+    if (this._rel) {
+      this._rel.onopen = () => {
+        this._relOpen = true;
+        this._v2ChannelsUp();
+      };
+      this._rel.onmessage = (e) => {
+        try { this._onRel(JSON.parse(typeof e.data === 'string' ? e.data : String(e.data))); }
+        catch { /* json inválido: ignorar */ }
+      };
+      this._rel.onclose = () => { this._relOpen = false; };
+    }
+  }
+
+  _v2ChannelsUp() {
+    if (!(this._fastOpen && this._relOpen) || this.v2 !== 'pending') return;
+    // HELLO (reliable): versión de protocolo, build y ballPhysics (spec §3.5)
+    this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD });
+    if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
+    this._helloTO = window.setTimeout(() => {
+      if (this.v2 === 'pending') this._v2Fail(T('net_legacy'));
+    }, 6000);
+  }
+
+  _onRel(m) {
+    if (!m || typeof m !== 'object') return;
+    this._lastRelAt = performance.now();
+    switch (m.k) {
+      case 'hello2': {
+        if (m.v !== PPNET.VP.PROTO || m.ph !== PPNET.VP.PHYS || m.b !== PPNET.VP.BUILD) {
+          this._v2Fail(T('net_legacy'));        // versiones distintas → v1
+          return;
+        }
+        this._helloDone = true;
+        // ráfaga de reloj: 8 intercambios a ~50 ms (spec §3.6)
+        for (let i = 0; i < 8; i++) {
+          window.setTimeout(() => {
+            if (this.v2 === 'ok' || this.v2 === 'pending') {
+              this.sendRel({ k: 'tick2', t: performance.now() });
+            }
+          }, i * 50);
+        }
+        break;
+      }
+      case 'tick2': {
+        this.sendRel({ k: 'tock2', t: performance.now(), e: m.t });
+        break;
+      }
+      case 'tock2': {
+        // ancla gruesa: mi t de envío, su t completo, mi t de recepción
+        this._clock.anchor(m.e, m.t, performance.now());
+        this._clock.apply(performance.now(), false);
+        this._anchors++;
+        if (this._anchors >= 6 && !this._readyMe) {
+          this._readyMe = true;
+          this.sendRel({ k: 'ready2' });
+          this._v2MaybeStart();
+        }
+        break;
+      }
+      case 'ready2': {
+        this._readyOpp = true;
+        this._v2MaybeStart();
+        break;
+      }
+      case 'mstart': {
+        // MATCH_START del anfitrión: instante futuro + primer sacador
+        this._mstart = { startAt: m.sa, fs: m.fs, bo: m.bo || 3 };
+        this.game?.onNetMatchStart?.(this._mstart);
+        break;
+      }
+      case 'claim': {
+        this._stats.claims++;
+        const g = this.game;
+        // el ganador del claim viaja en perspectiva DEL EMISOR: espejar a
+        // la mía para confrontarlo con lo que YO apliqué (spec §7/§9)
+        const guest = this.role === 'guest';
+        const wMapped = m.w === 'let' ? 'let'
+          : (guest ? (m.w === 'player' ? 'ai' : 'player')
+                   : (m.w === 'player' ? 'player' : 'ai'));
+        const r = this._sync.onClaim(m, wMapped);
+        this.sendRel(r.ack);
+        if (r.apply && g) this._applyRemoteClaim(m, wMapped);
+        if (!r.agree && this.role === 'host') this._sendResync();
+        break;
+      }
+      case 'ack': {
+        const r = this._sync.onAck(m);
+        if (r.dispute && this.role === 'host') this._sendResync();
+        break;
+      }
+      case 'resync': {
+        if (this.role === 'guest') this._applyResync(m);
+        break;
+      }
+      case 'pause': {
+        this._pausedRemote = true;
+        this._pausedAt = performance.now();
+        this.game?.onNetPause?.(true);
+        break;
+      }
+      case 'resume': {
+        this._pausedRemote = false;
+        this.game?.onNetPause?.(false);
+        break;
+      }
+      case 'mend': {
+        this.game?.onNetMatchEnd?.(m);
+        break;
+      }
+      case 'v2off': {
+        this._v2Fail(T('net_legacy'));
+        break;
+      }
+    }
+  }
+
+  _v2MaybeStart() {
+    if (!(this._readyMe && this._readyOpp) || this.v2 !== 'pending') return;
+    this.v2 = 'ok';
+    this._stats.t0 = performance.now();
+    if (this.role === 'host') {
+      // el anfitrión fija el instante de inicio en SU reloj (spec §3.8)
+      const startAt = this._clock.nowHost(performance.now()) + PPNET.VP.COUNTDOWN_MS;
+      const fs = 'host';
+      this.sendRel({ k: 'mstart', sa: startAt, fs, bo: 3 });
+      this._mstart = { startAt, fs, bo: 3 };
+      this.game?.onNetMatchStart?.(this._mstart);
+    }
+    this.game?.onNetV2Ready?.();     // r79: arranque diferido si pidió revancha durante la subida
+    this.game?.onNetStatus?.();
+  }
+
+  /** FASE 1 · bucle por frame (c12 animate): pose 60 Hz + eventos + snaps */
+  frame(dt) {
+    if (!this.online) return;
+    if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
+    const now = performance.now();
+    this._clock.apply(now, this.game?.rules?.state === 'rally');
+    // watchdog de ICE: sin paquetes fast 5 s → restartIce (spec §11)
+    if (this._lastFastAt && now - this._lastFastAt > 5000 &&
+        now - (this._lastIceTry || 0) > PPNET.VP.ICE_RESTART_MS &&
+        this._iceRestarts < PPNET.VP.ICE_RESTART_MAX) {
+      this._iceRestarts++;
+      this._lastIceTry = now;
+      try { this._pc?.restartIce(); } catch { /* */ }
+    }
+    if (this._lastRelAt && now - this._lastRelAt > 12000 && this._lastFastAt &&
+        now - this._lastFastAt > 12000) {
+      this.onPeerGone(T('conn_lost'));
+      return;
+    }
+    this._sendFast(dt, now);
+    this._drainFast();
+  }
+
+  _sendFast(dt, now) {
+    if (!this._fast || !this._fastOpen) return;
+    // pose a POSE_HZ (o 30 en degradado), desde el RAF de la sesión XR
+    const iv = 1 / this._poseHz;
+    this._poseAcc += dt;
+    const g = this.game;
+    const hasPose = !!(g && g.camera && g.grips);
+    let evs = null;
+    // BALL_SNAP a 20 Hz mientras la bola vuela en MI lado (spec §5)
+    if (this._ball.mine && (this._ball.state === 'own' || this._ball.state === 'auth')) {
+      this._snapAcc += dt;
+      if (this._snapAcc >= 1 / PPNET.VP.SNAP_HZ) {
+        this._snapAcc = 0;
+        evs = evs || [];
+        evs.push({
+          t: PPNET.VP.EV.SNAP, id: this._evId++, shot: this._ball.shot,
+          tSnap: Math.round(this._clock.nowHost(now)),
+          p: this._stateNet(g.ball.pos, null), v: this._velNet(g.ball.vel),
+        });
+        this._stats.snaps++;
+        // SNAP no es fiable ni con ack (spec §5): va directo
+        const pk = { seq: (this._seq + 1) & 0xffff, ack: this._ackP, ackBits: this._myAckBits(),
+          sendTime: now, echoTime: this._echoTime, echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
+          pose: null, evs };
+        this._seq = pk.seq;
+        const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
+        const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+        if (n) this._fastSend(buf.slice(0, n), now);
+        evs = null;
+      }
+    }
+    if (this._poseAcc < iv) {
+      // los eventos de golpe/traspaso NO esperan al tick de pose (spec §5)
+      if (this._pend.length) this._flushEvents(now);
+      return;
+    }
+    this._poseAcc = 0;
+    const pose = hasPose ? this._samplePose(g) : null;
+    // reenvío de eventos no confirmados (spec §5: hasta ack, máx 8/paquete)
+    const pendEvs = this._pend.slice(0, PPNET.VP.MAX_EVENTS).map((e) => e.ev);
+    const pk = {
+      seq: (this._seq + 1) & 0xffff,
+      ack: this._ackP, ackBits: this._myAckBits(),
+      sendTime: now, echoTime: this._echoTime,
+      echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
+      pose,
+      evs: pendEvs.length ? pendEvs : null,
+    };
+    this._seq = pk.seq;
+    this._clock.markSent(now);
+    const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
+    const n2 = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+    if (!n2) return;
+    for (const e of this._pend) e.seqs.push(pk.seq);
+    this._fastSend(buf.slice(0, n2), now);
+  }
+
+  _flushEvents(now) {
+    if (!this._pend.length || !this._fast || !this._fastOpen) return;
+    const pk = {
+      seq: (this._seq + 1) & 0xffff, ack: this._ackP, ackBits: this._myAckBits(),
+      sendTime: now, echoTime: this._echoTime,
+      echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
+      pose: null,
+      evs: this._pend.slice(0, PPNET.VP.MAX_EVENTS).map((e) => e.ev),
+    };
+    this._seq = pk.seq;
+    this._clock.markSent(now);
+    const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
+    const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+    if (!n) return;
+    for (const e of this._pend) e.seqs.push(pk.seq);
+    this._fastSend(buf.slice(0, n), now);
+  }
+
+  _fastSend(buf, now) {
+    try { this._fast.send(buf); } catch { /* DC cerrándose */ }
+  }
+
+  /** muestreo de pose: cabeza (cámara XR) + manos (grips), en marco NET */
+  _samplePose(g) {
+    const out = this._poseSmp || (this._poseSmp = {
+      hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+      rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+    });
+    const cam = g.camera;
+    out.hp[0] = cam.position.x; out.hp[1] = cam.position.y; out.hp[2] = cam.position.z;
+    out.hq[0] = cam.quaternion.x; out.hq[1] = cam.quaternion.y;
+    out.hq[2] = cam.quaternion.z; out.hq[3] = cam.quaternion.w;
+    let fl = 0;
+    for (let i = 0; i < 2; i++) {
+      const grip = g.grips[i];
+      const tgt = i === 0 ? out.lp : out.rp;
+      const tq = i === 0 ? out.lq : out.rq;
+      if (grip) {
+        tgt[0] = grip.position.x; tgt[1] = grip.position.y; tgt[2] = grip.position.z;
+        tq[0] = grip.quaternion.x; tq[1] = grip.quaternion.y;
+        tq[2] = grip.quaternion.z; tq[3] = grip.quaternion.w;
+        fl |= 1 << i;                                  // mano rastreada
+        if (i === g.paddleHand) fl |= 4;               // pala en esta mano
+      }
+    }
+    out.fl = fl;
+    return out;
+  }
+
+  /** estado de bola a arrays de marco NET (espejo de emisión, en crudo) */
+  _stateNet(v3, arr) {
+    const T = DIMS.tableTopY;
+    if (arr) {
+      arr[0] = -v3.x; arr[1] = v3.y - T; arr[2] = -3.2 - v3.z;
+      return arr;
+    }
+    return [-v3.x, v3.y - T, -3.2 - v3.z];
+  }
+  _velNet(v3) { return [-v3.x, v3.y, -v3.z]; }
+  _spinNet(v3) { return [-v3.x, v3.y, -v3.z]; }
+
+  _onFast(buf) {
+    if (this.v2 !== 'ok') return;
+    const now = performance.now();
+    this._lastFastAt = now;
+    const o = this._pktIn || (this._pktIn = {});
+    o.yAnchor = DIMS.tableTopY;                    // ancla Y del tapete
+    o.evs = [];
+    const pkt = PPNET.decodePacket(buf, o);
+    if (!pkt) return;
+    this._onAckFrom(pkt);
+    this._clock.onPacket(pkt, now);
+    this._trackLoss(pkt.seq);
+    if (pkt.pose) {
+      // muestra del rival al jitter buffer (marco NET, reloj HOST)
+      this._lastPoseAt = now;
+      const tHost = this._clock.nowHost(now);
+      this._jb.push(tHost, {
+        hp: pkt.pose.hp, hq: pkt.pose.hq, lp: pkt.pose.lp, lq: pkt.pose.lq,
+        rp: pkt.pose.rp, rq: pkt.pose.rq, fl: pkt.pose.fl,
+      });
+      this._jb.autoDelay(this._poseHz, this._clock.jitter);
+    }
+    for (const ev of pkt.evs) {
+      if (this._seenEv.has(ev.id)) continue;             // dedupe (spec §10)
+      this._seenEv.set(ev.id, now);
+      if (this._seenEv.size > 256) {
+        // poda del mapa de dedupe
+        for (const [k, t] of this._seenEv) if (now - t > 5000) this._seenEv.delete(k);
+      }
+      if (ev.t !== PPNET.VP.EV.SNAP) this._fastIn.push(ev);
+      else this._fastIn.push(ev);
+    }
+  }
+
+  _onAckFrom(pkt) {
+    // (a) confirma MIS eventos contenidos en paquetes ya acked (spec §5)
+    for (let i = this._pend.length - 1; i >= 0; i--) {
+      const e = this._pend[i];
+      for (const s of e.seqs) {
+        if (this._ackCovers(pkt.ack, pkt.ackBits, s)) { e.done = true; break; }
+      }
+      if (e.done) this._pend.splice(i, 1);
+    }
+    // (b) registra el seq recibido para mi própi ack/ackBits de envío
+    this._ackP = pkt.seq;
+    this._recvHist.push(pkt.seq);
+    if (this._recvHist.length > 40) this._recvHist.shift();
+  }
+  _ackCovers(ack, bits, seq) {
+    if (seq === ack) return true;
+    const d = PPNET.wrapDiff(ack, seq);
+    if (d > 0 && d <= 32) return ((bits >>> (d - 1)) & 1) === 1;
+    return false;
+  }
+  /** máscara de los 32 seq anteriores al último recibido (spec §5) */
+  _myAckBits() {
+    let bits = 0;
+    for (const s of this._recvHist) {
+      if (s === this._ackP) continue;
+      const d = PPNET.wrapDiff(this._ackP, s);
+      if (d >= 1 && d <= 32) bits |= (1 << (d - 1));
+    }
+    return bits >>> 0;
+  }
+  _trackLoss(seq) {
+    this._recvs++;
+    const last = this._recvRing.length ? this._recvRing[this._recvRing.length - 1] : seq;
+    if (PPNET.wrapDiff(seq, last) > 1) this._gaps += PPNET.wrapDiff(seq, last) - 1;
+    this._recvRing.push(seq);
+    if (this._recvRing.length > 128) {
+      this._recvRing.shift();
+      this._recvs = this._recvRing.length + this._gaps;
+    }
+    // degradación honesta: pérdida sostenida >10 % → pose 30 Hz (spec §11)
+    const loss = this._gaps / Math.max(1, this._gaps + this._recvs);
+    if (loss > PPNET.VP.LOSS_LOW) {
+      this._lossLowT += 1;
+      if (this._lossLowT > 90 && !this._degraded) { this._degraded = true; this._poseHz = PPNET.VP.POSE_HZ_LOW; }
+    } else {
+      this._lossLowT = Math.max(0, this._lossLowT - 2);
+      if (this._degraded && loss < 0.04) { this._degraded = false; this._poseHz = PPNET.VP.POSE_HZ; }
+    }
+  }
+
+  /* ---- eventos de bola del juego (llamados por c12) ---- */
+
+  /** golpeo LOCAL (sagrado): mismo frame, sin esperar red (spec §1) */
+  netLocalHit(isServe) {
+    if (this.v2 !== 'ok') { this.sendHit(isServe); return; }
+    const g = this.game;
+    const nowH = this._clock.nowHost(performance.now());
+    const ev = this._ball.localHit(isServe, {
+      p: this._stateNet(g.ball.pos), v: this._velNet(g.ball.vel), s: this._spinNet(g.ball.spin),
+    }, nowH);
+    this._queueEv(ev);
+    this._flushEvents(performance.now());   // inmediato, sin esperar tick
+    this._stats.hits++;
+    this._stats.maxBallSpeed = Math.max(this._stats.maxBallSpeed, g.ball.vel.length());
+    this._syncOwnerFromBall();
+    // el catch-up visual nace en el PRÓXIMO golpe del rival
+    this._visOffMs = 0; this._visOff = null;
+  }
+
+  /** lanzamiento al aire del saque (visual para el rival, spec §10) */
+  netLocalToss() {
+    if (this.v2 !== 'ok') return;
+    const g = this.game;
+    const nowH = this._clock.nowHost(performance.now());
+    const ev = this._ball.localToss({
+      p: this._stateNet(g.ball.pos), v: this._velNet(g.ball.vel), s: [0, 0, 0],
+    }, nowH);
+    this._queueEv(ev);
+    this._flushEvents(performance.now());
+  }
+
+  /** cruce limpio del plano de la red con bola propia → BALL_HANDOFF */
+  watchOwnCross(ball) {
+    if (this.v2 !== 'ok') return;
+    const cz = DIMS.tableCenterZ;
+    const pz = ball.__netZ === undefined ? ball.pos.z : ball.__netZ;
+    ball.__netZ = ball.pos.z;
+    if (this._ball.state !== 'own') return;
+    if ((pz - cz) * (ball.pos.z - cz) > 0) return;      // sin cruce aún
+    const nowH = this._clock.nowHost(performance.now());
+    const ev = this._ball.crossedNet({
+      p: this._stateNet(ball.pos), v: this._velNet(ball.vel), s: this._spinNet(ball.spin),
+    }, nowH);
+    if (ev) {
+      this._queueEv(ev);
+      this._flushEvents(performance.now());
+      this._stats.handoffs++;
+      this._syncOwnerFromBall();
+    }
+  }
+
+  /** observación del fantasma (cruce sin traspaso → provisional, spec §7) */
+  observeGhost(ball) {
+    if (this.v2 !== 'ok') return;
+    const cz = DIMS.tableCenterZ;
+    const pz = ball.__netZ === undefined ? ball.pos.z : ball.__netZ;
+    ball.__netZ = ball.pos.z;
+    if (this._ball.state === 'ghost' &&
+        (pz - cz) * (ball.pos.z - cz) <= 0) {
+      this._ball.observeGhostCross(this._clock.nowHost(performance.now()));
+    }
+    if (this._ball.maybeProvisional(this._clock.nowHost(performance.now()))) {
+      this._stats.provAuth++;
+      this._syncOwnerFromBall();
+    }
+  }
+
+  /** la bola murió en MI mitad (doble bote/fuera/red/…): reclamo (spec §7) */
+  ballDiedLocal(winnerLocal, cause) {
+    if (this.v2 !== 'ok') return null;
+    const g = this.game;
+    const r = g.rules;
+    const rallyId = r.rallyId;
+    const isAuth = this._ballMineAtDeath();
+    const dec = this._sync.localPoint(rallyId, winnerLocal, cause,
+      r.scorePlayer, r.scoreAi, isAuth, performance.now());
+    if (dec.send) {
+      this._stats.claims++;
+      this.sendRel(dec.send);
+      this._claimFallback = { r: rallyId, t: performance.now() };
+    }
+    return dec;
+  }
+
+  _ballMineAtDeath() {
+    // la autoridad al morir: la bola estaba en mi poder (auth/own/provisional)
+    return this._ball.mine;
+  }
+
+  /** LET detectado localmente: con física idéntica en ambos extremos, los
+   *  dos lados detectan el LET de sus botes (reales o fantasma) y aplican
+   *  retryServe sin red — el siguiente saque re-alinea rallySeq. */
+  retryLet(cause) {
+    if (this.v2 !== 'ok') return { apply: true, send: null };
+    return { apply: true, send: null };
+  }
+
+  _applyRemoteClaim(m, wMapped) {
+    const g = this.game;
+    if (!g) return;
+    if (m.w === 'let') {
+      // LET del rival (su mitad): repetir saque si mi árbitro no lo vio
+      if (g.rules.state === 'rally') {
+        g.processIntents(g.rules.retryServe(m.c || 'let'));
+      }
+      return;
+    }
+    // reclamo en perspectiva YA espejada (wMapped): imponer el punto
+    g.processIntents(g.rules.forcePoint(wMapped, NetLink.remapCause(m.c,
+      this.role === 'guest'), m.r));
+  }
+
+  _sendResync() {
+    const r = this.game?.rules;
+    if (!r) return;
+    this._stats.disputes++;
+    this.sendRel({
+      k: 'resync', sp: r.scorePlayer, sa: r.scoreAi, sv: r.server,
+      st: r.state, tp: r.totalPoints, gp: r.gamesPlayer, ga: r.gamesAi,
+      gn: r.gameNo, fs: r.firstServer,
+    });
+  }
+
+  _applyResync(m) {
+    const r = this.game?.rules;
+    if (!r) return;
+    this._sync.onResync();
+    r.scorePlayer = m.sp; r.scoreAi = m.sa;
+    r.server = m.sv; r.state = m.st; r.totalPoints = m.tp;
+    r.gamesPlayer = m.gp; r.gamesAi = m.ga; r.gameNo = m.gn;
+    r.firstServer = m.fs;
+  }
+
+  /** intents de PUNTO local (processIntents, c12): enviar/suprimir */
+  onLocalPointIntent(it) {
+    if (this.v2 !== 'ok') return true;    // v1: siempre aplicar (host arbiter)
+    const g = this.game;
+    const isAuth = this._ballMineAtDeath();
+    const dec = this._sync.localPoint(g.rules.rallyId, it.winner, it.cause || '',
+      g.rules.scorePlayer, g.rules.scoreAi, isAuth, performance.now());
+    if (dec.send) {
+      this._stats.claims++;
+      this.sendRel(dec.send);
+      this._claimFallback = { r: g.rules.rallyId, t: performance.now() };
+    }
+    return dec.apply;
+  }
+
+  onLocalRetryIntent(it) {
+    return this.retryLet(it.cause || 'let');
+  }
+
+  /** saque determinista desde el marcador (spec §9): HELD del sacador */
+  setServeHeld(serverLocal) {
+    if (this.v2 !== 'ok') return;
+    this._ball.setHeld(serverLocal === 'player');
+    this._syncOwnerFromBall();
+    const g = this.game;
+    if (g && serverLocal !== 'player') {
+      // bola del rival: quieta hasta su lanzamiento (visual honesta)
+      g.ball.vel.set(0, 0, 0);
+      g.ball.spin.set(0, 0, 0);
+    }
+  }
+
+  _syncOwnerFromBall() {
+    this.owner = this._ball.mine ? this.mySide() : this.oppSide();
+  }
+
+  _queueEv(ev) {
+    this._pend.push({ ev, seqs: [], done: false });
+    if (this._pend.length > 24) this._pend.shift();   // techo duro
+  }
+
+  /** drenado de eventos entrantes (c12 animate, antes de la física) */
+  _drainFast() {
+    if (!this._fastIn.length) return;
+    const g = this.game;
+    if (!g) { this._fastIn.length = 0; return; }
+    const evs = this._fastIn;
+    this._fastIn = [];
+    for (const ev of evs) this._applyFastEv(ev, g);
+  }
+
+  _applyFastEv(ev, g) {
+    const nowH = this._clock.nowHost(performance.now());
+    if (ev.t === PPNET.VP.EV.SNAP) {
+      // corrección suave del fantasma (sin ack, spec §5/§8)
+      if (this._ball.state === 'ghost') {
+        const p = NetLink.posFromNetArr(ev.p);
+        const v = NetLink.vecFromNetArr(ev.v);
+        g.ball.pos.lerp(p, 0.25);
+        g.ball.vel.lerp(v, 0.12);
+      }
+      return;
+    }
+    if (ev.t === PPNET.VP.EV.HIT) {
+      // validación del receptor (spec §12)
+      const pad = this._remotePadNet();
+      const ctx = {
+        nowHost: nowH, lastShot: this._ball.shot, lastHitT: this._lastRemoteHitT,
+        padPos: pad,
+      };
+      const v = this._val.hit(ev, ctx);
+      if (!v.ok) {
+        if (this._val.serious >= 3) { this._stats.suspect = true; }
+        return;
+      }
+      this._lastRemoteHitT = ev.tHit;
+      const p = NetLink.posFromNetArr(ev.p);
+      const vl = NetLink.vecFromNetArr(ev.v);
+      const sl = NetLink.spinFromNetArr(ev.s);
+      g.ball.pos.set(p[0], p[1], p[2]);
+      g.ball.vel.set(vl[0], vl[1], vl[2]);
+      g.ball.spin.set(sl[0], sl[1], sl[2]);
+      if (ev.kind === 2) {
+        // lanzamiento al aire del saque del rival: SOLO visual (spec §10)
+        this._ball.state = 'ghost';
+        this._ball.mine = false;
+        g.ballMesh.visible = true;
+        return;
+      }
+      // avance de nacimiento: dt·k con tope (spec §8)
+      const ff = this._ball.onRemoteHit(ev, nowH, PPNET.VP.FF_K, PPNET.VP.FF_MAX);
+      if (ff.adv > 0.001) {
+        const ghostEvs = this._ghostEvs || (this._ghostEvs = []);
+        stepPhysics(ff.adv, g.ball, [], ghostEvs);
+        ghostEvs.length = 0;   // los botes del fantasma suenan por processEvents
+      }
+      this._stats.hits++;
+      this._stats.maxBallSpeed = Math.max(this._stats.maxBallSpeed, g.ball.vel.length());
+      // catch-up visual: la bola se dibuja retrasada interpDelay→0 en 200 ms
+      this._visOffMs = PPNET.VP.CATCHUP_MS;
+      // regla: saque (kind 1) o golpe de rallye (kind 0)
+      if (ev.kind === 1) {
+        g.rules.beginServeRally('ai');
+      } else {
+        g.processIntents(g.rules.registerPaddleHit('ai'));
+      }
+      // sonido del golpe del rival DESDE la simulación local (spec §8)
+      g.audio.paddle(
+        THREE.MathUtils.clamp(g.ball.pos.x / 2.5, -1, 1),
+        Math.min(1, g.ball.vel.length() / 9),
+      );
+      this._syncOwnerFromBall();
+      return;
+    }
+    if (ev.t === PPNET.VP.EV.HANDOFF) {
+      // mi fantasma ya voló hasta ahora: comparar y corregir (spec §8)
+      const mineNet = this._stateNet(g.ball.pos);
+      const corr = this._ball.onHandoff(ev, mineNet, nowH);
+      if (corr.kind === 'smooth' && corr.vec) {
+        const p = NetLink.posFromNetArr(ev.p);
+        const vl = NetLink.vecFromNetArr(ev.v);
+        const sl = NetLink.spinFromNetArr(ev.s);
+        g.ball.pos.set(p[0], p[1], p[2]);
+        g.ball.vel.set(vl[0], vl[1], vl[2]);
+        g.ball.spin.set(sl[0], sl[1], sl[2]);
+        // absorber el salto en lo visual (decae en 80 ms)
+        this._visOff = { x: -corr.vec[0], y: -corr.vec[1], z: -corr.vec[2],
+          ms: corr.ms, t: corr.ms };
+      } else if (corr.kind === 'snap') {
+        const p = NetLink.posFromNetArr(ev.p);
+        const vl = NetLink.vecFromNetArr(ev.v);
+        const sl = NetLink.spinFromNetArr(ev.s);
+        g.ball.pos.set(p[0], p[1], p[2]);
+        g.ball.vel.set(vl[0], vl[1], vl[2]);
+        g.ball.spin.set(sl[0], sl[1], sl[2]);
+        this._stats.corrSnap++;
+      } else {
+        this._stats.corrNone++;
+      }
+      if (corr.kind === 'smooth') this._stats.corrSmooth++;
+      this._syncOwnerFromBall();
+    }
+  }
+
+  _remotePadNet() {
+    // última pose conocida del rival (marco NET) para la validación de golpe
+    const s = this._jb.s[this._jb.s.length - 1];
+    if (!s) return null;
+    const hand = (s.fl & 4) ? s.lp : s.rp;
+    return hand;
+  }
+
+  /** delta visual de la bola (catch-up + correcciones) o null */
+  visDelta(dt) {
+    if (this.v2 !== 'ok') return null;
+    let out = null;
+    if (this._visOff && this._visOff.t > 0) {
+      const k = this._visOff.t / this._visOff.ms;
+      this._visOff.t -= dt * 1000;
+      out = out || new THREE.Vector3();
+      out.set(this._visOff.x * k, this._visOff.y * k, this._visOff.z * k);
+      if (this._visOff.t <= 0) this._visOff = null;
+    }
+    if (this._visOffMs > 0) {
+      const frac = this._visOffMs / PPNET.VP.CATCHUP_MS;
+      this._visOffMs = Math.max(0, this._visOffMs - dt * 1000);
+      const g = this.game;
+      const v = g.ball.vel;
+      const d = (this._jb.delayMs / 1000) * frac;
+      out = out || new THREE.Vector3();
+      out.set(-v.x * d, -v.y * d, -v.z * d);
+    }
+    return out;
+  }
+
+  /** muestra del avatar rival para el render (spec §6) */
+  avatarSample(out) {
+    if (this.v2 !== 'ok') return -1;
+    const tHost = this._clock.nowHost(performance.now());
+    return this._jb.sample(tHost, out);
+  }
+
+  pingMs() {
+    if (this.v2 !== 'ok') return -1;
+    return this._clock.rttStats().med;
+  }
+  hostNowMs() {
+    return this.v2 === 'ok' ? this._clock.nowHost(performance.now()) : performance.now();
+  }
+  avatarStaleMs() {
+    if (this.v2 !== 'ok' || !this._jb || !this._jb.s.length) return 1e9;
+    return performance.now() - this._lastPoseAt;
+  }
+  degraded() { return this.v2 === 'ok' && this._degraded; }
+  ballMine() { return this.v2 === 'ok' ? this._ball.mine : this.owner === this.mySide(); }
+  ballState() { return this.v2 === 'ok' ? this._ball.state : 'legacy'; }
+  v2Paused() { return this.v2 === 'ok' && (this._pausedSelf || this._pausedRemote); }
+  pausedRemoteLong() {
+    return this._pausedRemote && (performance.now() - this._pausedAt) > PPNET.VP.PAUSE_GRACE * 1000;
+  }
+  netReport() {
+    if (this.v2 !== 'ok') return { mode: 'legacy-v1' };
+    this._stats.tEnd = performance.now();
+    return { mode: 'binario-v2', ...this._stats.summary(this._clock),
+      val: { rejects: this._val.rejects, serious: this._val.serious } };
+  }
+
+  _v2Fail(msg) {
+    if (this.v2 === 'fail') return;
+    this.v2 = 'fail';
+    try { this._pc && this._pc.close(); } catch { /* */ }
+    this._pc = null; this._fast = null; this._rel = null;
+    this._fastOpen = this._relOpen = false;
+    if (this._onVis) { document.removeEventListener('visibilitychange', this._onVis); this._onVis = null; }
+    if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
+    this.setStatus(this.online ? 'online' : 'off', msg);
+    this.send({ k: 'v2off' });   // avisa al otro para que degrade igual
+    this.game?.onNetStatus?.();
+  }
+
+  /** fimre del match (reliable) al terminar */
+  sendMatchEnd(result) {
+    if (this.v2 !== 'ok') return;
+    this._stats.result = result;
+    try { if (window.__PP_TELE && window.__PP_TELE.ev) {
+      window.__PP_TELE.ev('net_match', this.netReport());
+    } } catch { /* */ }
+    this.sendRel({ k: 'mend', r: result });
+  }
+
+  sendRel(m) {
+    if (this._rel && this._relOpen) {
+      try { this._rel.send(JSON.stringify(m)); return; } catch { /* */ }
+    }
+    this.send(m);   // fallback: DataConnection PeerJS (fiable y ordenada)
+  }
+
   onPeerGone(msg) {
     const wasOnline = this.online;
     this.teardown();
@@ -718,14 +1623,32 @@ export class NetLink {
     if (wasOnline) this.game?.onNetEnded?.(msg);
   }
 
+
   cancel() {
     this.teardown();
     this.setStatus('off', '');
   }
 
-  hangup() { this.send({ k: 'bye' }); this.onPeerGone('Has cerrado la conexión'); }
+  hangup() {
+    // r79: firma honesta del abandono antes de cortar (spec §11)
+    try { if (this.v2 === 'ok') this.sendMatchEnd('abandono'); } catch { /* */ }
+    this.send({ k: 'bye' });
+    this.onPeerGone('Has cerrado la conexión');
+  }
 
   teardown() {
+    // v3.6.71 · r79: limpieza del transporte v2
+    try { if (this._onVis) document.removeEventListener('visibilitychange', this._onVis); } catch { /* */ }
+    this._onVis = null;
+    try { this._pc && this._pc.close(); } catch { /* */ }
+    this._pc = null; this._fast = null; this._rel = null;
+    this._fastOpen = this._relOpen = false;
+    this.v2 = null;
+    this._clock = null; this._jb = null; this._ball = null;
+    this._sync = null; this._val = null; this._stats = null;
+    this._pend = []; this._fastIn = []; this._seenEv = null;
+    this._recvHist = null; this._mstart = null;
+    this._pausedSelf = this._pausedRemote = false;
     try { this.conn?.close(); } catch { /* */ }
     try { this.call?.close(); } catch { /* */ }
     try { this.peer?.destroy(); } catch { /* */ }
@@ -748,6 +1671,8 @@ export class NetLink {
 import { T } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE } from './c01_modelos_3d.js';
 import { DIMS, mountQuatFor } from './c02_cfg_escena.js';
+import { stepPhysics } from './c05_colisiones_ia_golpeo.js';
+import { PPNET } from './c09b_red_nucleo.js';
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
 

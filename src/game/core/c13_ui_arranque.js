@@ -12,6 +12,7 @@ import { AI_PRESETS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from '.
 import { CCD_TUNE, bladeNormalLocal, createPaddleSim, sdfBlade, setPaddleBasis, sweepBallVsBlade, tmpPrev } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddleSweep, computeShotVelocityReal, findServeVelocity, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { NetLink } from './c09_red_netlink.js';
+import { PPNET } from './c09b_red_nucleo.js';
 import { BALL_HAND_LIFT } from './c10_menu_saque.js';
 import { PingPongGame, arBtn, overlay, playEn, playEs, statusEl, vrbtn } from './c12_pingponggame.js';
 import * as THREE from 'three';
@@ -66,6 +67,7 @@ loadPaddleModel().then((paddleModel) => {
   });
   window.__game = game;
   window.__NetLink = NetLink;   // accesible para pruebas headless (módulo ES)
+  try { window.__PPNET = PPNET; } catch (e0) { /* r79: núcleo de red para QA */ }
   // v2.38: cargar la pistola de rayos y montarla en ambos mandos
   loadGunModel().then((gunModel) => {
     if (!game.gunMounts) return;

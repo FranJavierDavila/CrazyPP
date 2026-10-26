@@ -4494,3 +4494,22 @@ Work Log:
 
 Stage Summary:
 - V3.6.68-SDK6 FASE 70 «EL PULSO CRAZY» completa en local (código + sellos + golden f2867b0b + 4 ZIPs v3668 + QA TOTAL 40/40) — pendiente SOLO: commit → deploy → release → byte-exacto → aviso de caché (game.html?v=v3668)
+
+---
+Task ID: 180-c
+Agent: Super Z (main agent)
+Task: Cierre de producción de la r76 — commit, deploy FF, main:main, verificación byte-exacto de 3 vías y agujas r76 en el servido de V3.6.68-SDK6.
+
+Work Log:
+- COMMIT: cc7923c «V3.6.68-SDK6 FASE 70 · r76: EL PULSO CRAZY» (código en la fuente de verdad c13 + sellos + QA BK + sella_r76 + gen_release_v3668 + release-v3668/ + worklog Task 180/180-b)
+- PUNTO SEGURO publicado: tag v3.6.67-r75-baseline → origin (restauración: git reset --hard v3.6.67-r75-baseline + redeploy)
+- DEPLOY (lección r70-r76 aplicada): refs/heads/pages pre-alineada a origin/pages (1747bab7d) ANTES de ensamblar → FF A LA PRIMERA · pages → 34da18b42 (396 ficheros, smoke bajo prefijo /CrazyPP/ 29 peticiones 0 fallos 0 pageerrors) · respaldo anti-rollback main→proyecto al día
+- PUSH main:main con token-en-URL (628e97b..cc7923c, unset inmediato) → refs alineadas: main=proyecto=local cc7923c6 · pages 34da18b4
+- RELEASE v3.6.68-SDK6 verificada por API: publicada, no-draft, 4/4 ZIPs con tamaños byte-exactos (COMPLETO 133.309.729 · ligera 18.254.517 · CLOUDFLARE 133.296.210 · SOLO 6.221)
+- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): (1) SERVED game.html?v=v3668 sha256 0f2dec22… == (2) PAGES-VERSION.txt game_sha256 0f2dec22… (versión 3.6.68-SDK6 · fuente cc7923c63 · reescrituras=2) == (3) git cat-file blob pages:game.html 0f2dec22… — TRES VÍAS IGUALES · diff local(f2867b0b) vs served: EXACTAMENTE las 2 reescrituras conocidas (/vendor/socket.io.min.js→vendor/… · /tv.html→tv.html), aplicadas y comparadas byte a byte → True · golden local f2867b0b intacto
+- PRODUCCIÓN EXTRA (agujas r76 en el servido): dayKey ×1 · dailyPlan ×1 · dailyComplete ×1 · hook en okHit ×1 · botón del PULSO ×1 · via:'racha' ×3 · campeones del día ×1 · informe del profesor ×1 · sello V3.6.68-SDK6 ×2 · candado en el hueco ×1 — 10/10
+
+Stage Summary:
+- Producción en V3.6.68-SDK6 (pages 34da18b42, release 4/4, byte-exacto 3 vías, refs main=proyecto=local al día) — la r76 queda CERRADA
+- EL PULSO CRAZY en producción: Reto del Día + racha de asistencia + pieles exclusivas (Neón 7 · Fantasma 14 · Campeón 30) + fantasma propio + informe del profesor — LAS RAZONES PARA VOLVER CADA DÍA
+- El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3668

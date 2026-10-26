@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.68-SDK6, fase 70 · EL PULSO CRAZY; sello actualizado
-# por bump_version.py desde 3.6.67-SDK6)
-f2867b0b2a1b0ab89db3ff1bc6dfbbe061491fe5742b605c4e4302a0affef75d
+# SHA256 del game.html que produjo esta división (3.6.69-SDK6, fase 71 · LA RAQUETA MODO FANTASMA; sello actualizado
+# por bump_version.py desde 3.6.68-SDK6)
+f3d706641b7545184b97b86c6be10b36f2045839c1f97b7f57c5baefe5a6c876

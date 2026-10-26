@@ -388,6 +388,10 @@ CAPAS = [
     # día determinista, racha de asistencia con pieles exclusivas,
     # fantasma propio y el informe del profesor con datos reales).
     ('BK · el pulso crazy (v3668)', 'qa_r76_v3668.py'),
+    # r77 · LA RAQUETA MODO FANTASMA: en la academia la pala REAL nace
+    # invisible y materializa EXACTAMENTE cuando la voz dice «tu mando se
+    # convierte en tu raqueta» (subfase 4); cualquier salida la devuelve.
+    ('BL · la raqueta modo fantasma (v3669)', 'qa_r77_v3669.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

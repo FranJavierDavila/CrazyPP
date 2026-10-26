@@ -5199,6 +5199,10 @@ window.__PP_CORE = {
       // EL MOMENTO RAQUETA (r67): la única raqueta es la PALA REAL que ya
       // tienes en la mano — aura dorada sobre ella y el mando GLB se
       // desvanece («el mando SE CONVIERTE en tu raqueta»)
+      // r77 · MATERIALIZACIÓN EN EL INSTANTE EXACTO: hasta aquí la pala
+      // viajó en modo fantasma (invisible, petición del dueño) — aparece
+      // JUSTO cuando la voz lo dice, con la aura como destello de nacimiento.
+      try { G.setPalaOculta(false); } catch (ePR) { /* sigue igual */ }
       auraMeta = 1;
       mandosVisMeta = 0;
       sway = 0;
@@ -5514,6 +5518,12 @@ window.__PP_CORE = {
     G.trainV3 = null;
     G.trainV3Hub = false;
     G.tutV1 = true;                       // guardias r59 del núcleo
+    // r77 · LA RAQUETA MODO FANTASMA (petición del dueño): en las fases
+    // iniciales la raqueta se veía pegada al mando ANTES de tiempo, y el
+    // momento «tu mando se convierte en tu raqueta» llegaba ya estropeado.
+    // La pala REAL nace INVISIBLE: sólo los mandos GLB acompañan al jugador
+    // hasta que el guion lo anuncia (subfase 4 → accionMandoOk la destapa).
+    try { G.setPalaOculta(true); } catch (ePO) { /* sin fantasma, sigue */ }
     G.mode = 'match';
     G.rules.bestOf = 3;
     G.rules.startMatch('match');          // estado limpio del árbitro
@@ -5581,6 +5591,10 @@ window.__PP_CORE = {
     narrKeys = null; narrRetry = 0; narrTries = 0;
     cancelaDevolucion();
     try { gm.rules.state = 'point'; gm.rules.message = ''; } catch (eR) { /* */ }
+    // r77 · BLINDAJE DE SALIDA (fantasma incluido): cualquier camino fuera
+    // de la academia — jugar ya, saltar con B/Y o fin del guion — devuelve
+    // la pala REAL a la mano. Nadie se queda sin raqueta jamás.
+    try { gm.setPalaOculta(false); } catch (ePS) { /* */ }
     try { if (gm.aiPaddleMesh) gm.aiPaddleMesh.visible = true; } catch (eI0) { /* */ }
     teardownPanel();
     G = null;
@@ -5672,6 +5686,10 @@ window.__PP_CORE = {
         escalaMando: MANDO_ESC,
         aura: Math.round(auraOp * 100) / 100,
         auraMeta,
+        // r77 · modo fantasma de la pala REAL (introspección de QA)
+        palaOculta: !!(G && G.tutPalaOculta),
+        palaVisible: !!(G && G.paddleMounts && G.paddleMounts[G.paddleHand] &&
+          G.paddleMounts[G.paddleHand].visible),
         tieneMando: !!mando,
         mandoHl: hlParte,
         etiqueta: hlParte ? (etiqueta ? Math.round(etiqueta.material.opacity * 100) / 100 : 0) : 0,

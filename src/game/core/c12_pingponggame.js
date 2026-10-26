@@ -87,6 +87,10 @@ export class PingPongGame {
     this.controllerPaddles = [createPaddleSim('player', 0), createPaddleSim('player', 1)];
     this.paddleHand = 0;         // mando con la pala (0 izq / 1 der)
     this.manualHand = false;     // el usuario cambió de mano con A/X
+    this.tutPalaOculta = false;  // r77 · ACADEMIA: pala REAL en modo FANTASMA
+                                 //        (invisible hasta «tu mando se convierte
+                                 //        en tu raqueta» — la escriben start/stop
+                                 //        de la academia vía setPalaOculta)
     this.gripDown = [false, false];
     this.btn4Prev = [false, false];
     this.connected = [false, false];
@@ -597,14 +601,34 @@ export class PingPongGame {
     }
   }
 
+  /* r77 · ACADEMIA MODO FANTASMA — petición del dueño: en las fases
+   * iniciales del tutorial la raqueta se ve pegada al mando ANTES de que la
+   * voz diga «tu mando se convierte en tu raqueta», y el momento se estropea.
+   * La pala REAL nace pues INVISIBLE y materializa EXACTAMENTE cuando el
+   * guion lo anuncia (subfase 4 del paso 1). El núcleo sólo guarda la
+   * llave y re-aplica UNA sola regla de visibilidad (hall + fantasma +
+   * mano activa) — setPaddleHand y exitHall la respetan, así un cambio de
+   * mano o volver del Hall no puede resucitarla a mitad de guion.       */
+  setPalaOculta(v) {
+    const antes = this.tutPalaOculta;
+    this.tutPalaOculta = !!v;
+    if (antes === this.tutPalaOculta) return;   // idempotente
+    for (let k = 0; k < 2; k++) {
+      if (this.paddleMounts[k]) this.paddleMounts[k].visible =
+        !this.inHall && !this.tutPalaOculta && k === this.paddleHand;
+    }
+  }
+
   setPaddleHand(i) {
     if (i === this.paddleHand) return;
     this.paddleHand = i;
     for (let k = 0; k < 2; k++) {
       // v3.6.30 · en el HALL la pala no se ve (ahí nunca se juega): el cambio
       // de mano por A/X o la reconexión del mando no la resucita.
+      // r77 · ni la ACADEMIA en modo fantasma (paso 1, antes del momento
+      // raqueta): cambiar de mano no la destapa antes de tiempo.
       if (this.paddleMounts[k]) this.paddleMounts[k].visible =
-        !this.inHall && k === this.paddleHand;
+        !this.inHall && !this.tutPalaOculta && k === this.paddleHand;
       const ps = this.controllerPaddles[k];
       ps.prev.copy(ps.pos);
       ps.vel.set(0, 0, 0);
@@ -8210,8 +8234,10 @@ export class PingPongGame {
     this._hallResetBall(false);
     // v3.6.30 · la pala vuelve a la mano que le toca (el hall la apagó entera;
     // misma regla de visibilidad que setPaddleHand — UNA pala, la activa)
+    // r77 · y respeta el MODO FANTASMA de la academia si siguiera vivo.
     for (let k = 0; k < 2; k++) {
-      if (this.paddleMounts[k]) this.paddleMounts[k].visible = k === this.paddleHand;
+      if (this.paddleMounts[k]) this.paddleMounts[k].visible =
+        !this.tutPalaOculta && k === this.paddleHand;
     }
   }
 

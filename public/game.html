@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.68-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.69-SDK6</span>
     </div>
   </main>
 
@@ -2492,7 +2492,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.68-SDK6';
+  const VERSION = '3.6.69-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -11025,6 +11025,10 @@ class PingPongGame {
     this.controllerPaddles = [createPaddleSim('player', 0), createPaddleSim('player', 1)];
     this.paddleHand = 0;         // mando con la pala (0 izq / 1 der)
     this.manualHand = false;     // el usuario cambió de mano con A/X
+    this.tutPalaOculta = false;  // r77 · ACADEMIA: pala REAL en modo FANTASMA
+                                 //        (invisible hasta «tu mando se convierte
+                                 //        en tu raqueta» — la escriben start/stop
+                                 //        de la academia vía setPalaOculta)
     this.gripDown = [false, false];
     this.btn4Prev = [false, false];
     this.connected = [false, false];
@@ -11535,14 +11539,34 @@ class PingPongGame {
     }
   }
 
+  /* r77 · ACADEMIA MODO FANTASMA — petición del dueño: en las fases
+   * iniciales del tutorial la raqueta se ve pegada al mando ANTES de que la
+   * voz diga «tu mando se convierte en tu raqueta», y el momento se estropea.
+   * La pala REAL nace pues INVISIBLE y materializa EXACTAMENTE cuando el
+   * guion lo anuncia (subfase 4 del paso 1). El núcleo sólo guarda la
+   * llave y re-aplica UNA sola regla de visibilidad (hall + fantasma +
+   * mano activa) — setPaddleHand y exitHall la respetan, así un cambio de
+   * mano o volver del Hall no puede resucitarla a mitad de guion.       */
+  setPalaOculta(v) {
+    const antes = this.tutPalaOculta;
+    this.tutPalaOculta = !!v;
+    if (antes === this.tutPalaOculta) return;   // idempotente
+    for (let k = 0; k < 2; k++) {
+      if (this.paddleMounts[k]) this.paddleMounts[k].visible =
+        !this.inHall && !this.tutPalaOculta && k === this.paddleHand;
+    }
+  }
+
   setPaddleHand(i) {
     if (i === this.paddleHand) return;
     this.paddleHand = i;
     for (let k = 0; k < 2; k++) {
       // v3.6.30 · en el HALL la pala no se ve (ahí nunca se juega): el cambio
       // de mano por A/X o la reconexión del mando no la resucita.
+      // r77 · ni la ACADEMIA en modo fantasma (paso 1, antes del momento
+      // raqueta): cambiar de mano no la destapa antes de tiempo.
       if (this.paddleMounts[k]) this.paddleMounts[k].visible =
-        !this.inHall && k === this.paddleHand;
+        !this.inHall && !this.tutPalaOculta && k === this.paddleHand;
       const ps = this.controllerPaddles[k];
       ps.prev.copy(ps.pos);
       ps.vel.set(0, 0, 0);
@@ -19148,8 +19172,10 @@ class PingPongGame {
     this._hallResetBall(false);
     // v3.6.30 · la pala vuelve a la mano que le toca (el hall la apagó entera;
     // misma regla de visibilidad que setPaddleHand — UNA pala, la activa)
+    // r77 · y respeta el MODO FANTASMA de la academia si siguiera vivo.
     for (let k = 0; k < 2; k++) {
-      if (this.paddleMounts[k]) this.paddleMounts[k].visible = k === this.paddleHand;
+      if (this.paddleMounts[k]) this.paddleMounts[k].visible =
+        !this.tutPalaOculta && k === this.paddleHand;
     }
   }
 
@@ -25294,6 +25320,10 @@ window.__PP_CORE = {
       // EL MOMENTO RAQUETA (r67): la única raqueta es la PALA REAL que ya
       // tienes en la mano — aura dorada sobre ella y el mando GLB se
       // desvanece («el mando SE CONVIERTE en tu raqueta»)
+      // r77 · MATERIALIZACIÓN EN EL INSTANTE EXACTO: hasta aquí la pala
+      // viajó en modo fantasma (invisible, petición del dueño) — aparece
+      // JUSTO cuando la voz lo dice, con la aura como destello de nacimiento.
+      try { G.setPalaOculta(false); } catch (ePR) { /* sigue igual */ }
       auraMeta = 1;
       mandosVisMeta = 0;
       sway = 0;
@@ -25609,6 +25639,12 @@ window.__PP_CORE = {
     G.trainV3 = null;
     G.trainV3Hub = false;
     G.tutV1 = true;                       // guardias r59 del núcleo
+    // r77 · LA RAQUETA MODO FANTASMA (petición del dueño): en las fases
+    // iniciales la raqueta se veía pegada al mando ANTES de tiempo, y el
+    // momento «tu mando se convierte en tu raqueta» llegaba ya estropeado.
+    // La pala REAL nace INVISIBLE: sólo los mandos GLB acompañan al jugador
+    // hasta que el guion lo anuncia (subfase 4 → accionMandoOk la destapa).
+    try { G.setPalaOculta(true); } catch (ePO) { /* sin fantasma, sigue */ }
     G.mode = 'match';
     G.rules.bestOf = 3;
     G.rules.startMatch('match');          // estado limpio del árbitro
@@ -25676,6 +25712,10 @@ window.__PP_CORE = {
     narrKeys = null; narrRetry = 0; narrTries = 0;
     cancelaDevolucion();
     try { gm.rules.state = 'point'; gm.rules.message = ''; } catch (eR) { /* */ }
+    // r77 · BLINDAJE DE SALIDA (fantasma incluido): cualquier camino fuera
+    // de la academia — jugar ya, saltar con B/Y o fin del guion — devuelve
+    // la pala REAL a la mano. Nadie se queda sin raqueta jamás.
+    try { gm.setPalaOculta(false); } catch (ePS) { /* */ }
     try { if (gm.aiPaddleMesh) gm.aiPaddleMesh.visible = true; } catch (eI0) { /* */ }
     teardownPanel();
     G = null;
@@ -25767,6 +25807,10 @@ window.__PP_CORE = {
         escalaMando: MANDO_ESC,
         aura: Math.round(auraOp * 100) / 100,
         auraMeta,
+        // r77 · modo fantasma de la pala REAL (introspección de QA)
+        palaOculta: !!(G && G.tutPalaOculta),
+        palaVisible: !!(G && G.paddleMounts && G.paddleMounts[G.paddleHand] &&
+          G.paddleMounts[G.paddleHand].visible),
         tieneMando: !!mando,
         mandoHl: hlParte,
         etiqueta: hlParte ? (etiqueta ? Math.round(etiqueta.material.opacity * 100) / 100 : 0) : 0,

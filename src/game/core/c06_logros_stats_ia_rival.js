@@ -225,14 +225,20 @@ export class Rules {
     this.rallyHits = 0;
   }
 
-  registerPaddleHit(who) {
+  registerPaddleHit(who, remote) {
     if (this.state !== 'rally') return [];
     // Nadie puede golpear dos veces seguidas (doble golpe = falta)
     if (who === this.lastHitter) {
       return this.applyPoint(this.other(who), 'dblhit');
     }
-    // Volea: golpear antes de que la bote en su campo el receptor
-    if (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce)) {
+    // Volea: golpear antes de que la bote en su campo el receptor.
+    // r81 · la VOLEA la juzga el ÁRBITRO DE ESA MITAD (spec §7): un golpe
+    // REMOTO llega ya validado por el árbitro del que golpea (si hubiera
+    // volea, SU mitad la cantó y llega por CLAIM) — el fantasma propio va
+    // SIEMPRE un poco por detrás del vuelo real (avance ≤120 ms + lag de
+    // red) y un juicio de volea local daba FALTAS FALSAS que partían el
+    // marcador (el duelo simulado r81 lo cazó en vivo).
+    if (!remote && (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce))) {
       return this.applyPoint(this.lastHitter, 'volley');
     }
     this.lastHitter = who;

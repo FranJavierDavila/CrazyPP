@@ -494,6 +494,24 @@ export const PPNET = (() => {
       for (let i = 0; i < 4; i++) { out.hq[i] = s.hq[i]; out.lq[i] = s.lq[i]; out.rq[i] = s.rq[i]; }
       out.fl = s.fl;
     }
+    /** v3.6.73 · r81: muestra del buffer MÁS PRÓXIMA a tHost (la de mayor
+     *  t ≤ tHost dentro de la ventana) — para VALIDAR un golpe en SU
+     *  instante exacto (spec §12), no en el instante retrasado de
+     *  reproducción del avatar (interpDelay 40-120 ms). Sin muestra dentro
+     *  de la ventana devuelve null (el validador no puede juzgar).
+     *  out opcional: {hp,hq,lp,lq,rp,rq,fl} reutilizable. */
+    nearest(tHost, out, winMs) {
+      const W = winMs || 250;
+      if (!this.s.length) return null;
+      let pick = null;
+      for (let i = this.s.length - 1; i >= 0; i--) {
+        if (this.s[i].t <= tHost) { pick = this.s[i]; break; }
+      }
+      if (!pick) pick = this.s[0];                     // todas futuras: la más antigua
+      if (Math.abs(tHost - pick.t) > W) return null;   // desfasada: no juzga
+      if (out) { this._copy(pick, out); return out; }
+      return pick;
+    }
   }
 
   /* ---------- 5 · FSM de la bola: autoridad por mitad (spec §7) -------

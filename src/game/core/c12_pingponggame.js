@@ -37,8 +37,12 @@ export class PingPongGame {
     // Sharpness» + foveation 0.5. Si el dueño prefiere nitidez sobre
     // fluidez, el compromiso intermedio (1.45) o el escalado adaptativo
     // son el siguiente paso POR DATOS (con la curva vr_ping delante).
-    this.renderer.xr.setFoveation(0.5);
-    this.renderer.xr.setFramebufferScaleFactor(1.4);
+    // r81 · SESENTA SEGUROS: el PERF GOVERNOR decide foveation y escala
+    // POR CASCO (Quest 3 mantiene el 1.4×/0.5 de siempre; Quest 2 nace en
+    // 1.05×/0.65/72 Hz — hoy esas partidas «van muy lentas» — y ambos
+    // se autocalibran con la sonda + gobernador; AJUSTES › RENDIMIENTO).
+    this.perf = new PerfManager(this);
+    this.perf.applyToRenderer();
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0b0e11);
@@ -902,6 +906,10 @@ export class PingPongGame {
     this._netStart = { startAt: m.startAt, fs: m.fs };
     this._netTossLive = false;
     this.net.setServeHeld(this.rules.server === 'player');
+    // r81 · bola HELD del rival OCULTA también en el arranque (el intent
+    // 'serve' la esconde en cada punto, pero el MATCH_START llegaba antes:
+    // el invitado veía una bola congelada flotando hasta el primer punto)
+    if (this.ballMesh) this.ballMesh.visible = this.rules.server === 'player';
     this.rules.message = '3';
   }
 
@@ -2486,6 +2494,11 @@ export class PingPongGame {
       + ' · ' + T('btn_tips', { v: yn(this.showTips) });
     const subPerfil = T('opts_name', { v: _pn || T('no_name') })
       + ' · ' + T('btn_tele', { v: yn(__PP_TELE.on) });
+    // r81 · RENDIMIENTO: casco detectado + FPS en vivo de un vistazo
+    const pf = this.perf ? this.perf.status() : null;
+    const subRendi = pf
+      ? pf.tierLabel + ' · ' + T('perf_fps_short', { v: pf.fps })
+      : '';
 
     const CH2 = 150, GY2 = 18;
     let y = 310;
@@ -2503,6 +2516,10 @@ export class PingPongGame {
     y += CH2 + GY2;
     this._modeCard(rects, 'page:optsPerfil', 40, y, 944, CH2,
       T('cat_perfil'), subPerfil, '#e8590c', '#b0420a', PP_ICONS.perfil);
+    y += CH2 + GY2;
+    // r81 · sexta categoría: RENDIMIENTO (autocalibrador de FPS ≥60)
+    this._modeCard(rects, 'page:optsRendi', 40, y, 944, CH2,
+      T('cat_rendi'), subRendi, '#f08c00', '#b3640a', PP_ICONS.cpu);
     y += CH2 + GY2;
 
     label(T('opts_elegir'), y + 16, 20, '#75828f', 'center');
@@ -2606,6 +2623,45 @@ export class PingPongGame {
         y += 72;
         label(T('tele_hint'), y + 10, 18, '#75828f');
         y += 36;
+        break;
+      }
+      case 'rendi': {
+        // r81 · RENDIMIENTO: el autocalibrador a la vista (petición del
+        // dueño: «una herramienta para poder calibrar los FPS según el
+        // modelo de gafas… que asegure al menos 60 FPS seguros»)
+        const pf = this.perf ? this.perf.status() : null;
+        if (pf) {
+          label(T('perf_device', { v: pf.tierLabel }), y + 12, 24, '#e9edf2');
+          y += 34;
+          label(pf.gpu ? pf.gpu.slice(0, 60) : '', y + 2, 17, '#75828f');
+          y += 30;
+          const estado = pf.calibrating
+            ? T('perf_calibrando', { s: pf.probeRound + 1 })
+            : (pf.fps >= 58 ? T('perf_estado_ok') : T('perf_estado_bajo'));
+          label(T('perf_fps', { v: pf.fps, r: pf.sessionRate || pf.rate })
+            + ' · ' + estado, y + 2, 20, pf.fps >= 58 || pf.calibrating ? '#8ce99a' : '#ffa94d');
+          y += 40;
+          btn('perfAuto', 56, y, 912, 56, T('perf_auto', { v: yn(pf.auto) }),
+            !!pf.auto, undefined, !!pf.auto, 23);
+          y += 70;
+          label(T('perf_calidad'), y + 10, 22);
+          y += 34;
+          btn('perfTier:auto', 56, y, 292, 56, T('perf_tier_auto'),
+            this.perf.tierAuto, undefined, this.perf.tierAuto, 21);
+          btn('perfTier:quest3', 366, y, 292, 56, T('perf_t_quest3'),
+            this.perf.tier === 'quest3' && !this.perf.tierAuto,
+            undefined, this.perf.tier === 'quest3' && !this.perf.tierAuto, 20);
+          btn('perfTier:quest2', 676, y, 292, 56, T('perf_t_quest2'),
+            this.perf.tier === 'quest2' && !this.perf.tierAuto,
+            undefined, this.perf.tier === 'quest2' && !this.perf.tierAuto, 20);
+          y += 70;
+          label(T('perf_escala', { v: pf.scale.toFixed(2) }), y + 8, 18, '#75828f');
+          y += 34;
+          btn('perfRecal', 56, y, 912, 56,
+            pf.presenting ? T('perf_recal') : T('perf_recal_next'),
+            false, pf.presenting ? 'gold' : undefined, undefined, 22);
+          y += 70;
+        }
         break;
       }
       default:
@@ -2789,9 +2845,10 @@ export class PingPongGame {
         // v2.110 · HUB: navegación entre páginas del menú
         // r71 · + subpáginas de AJUSTES (optsJuego/optsSala/optsSonido/
         // optsVisual/optsPerfil) — las categorías del nuevo AJUSTES.
+        // r81 · + optsRendi (RENDIMIENTO: autocalibrador de FPS).
         if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
-            arg === 'optsVisual' || arg === 'optsPerfil') {
+            arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi') {
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {
@@ -3251,6 +3308,49 @@ export class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'perfAuto': {
+        // r81 · conmutador de la calibración automática (sonda + gobernador)
+        if (this.perf) {
+          this.perf.auto = !this.perf.auto;
+          this.perf.save();
+          this.rules.message = T('msg_perf_auto', { v: this.perf.auto ? T('yes') : T('no') });
+        }
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'perfTier': {
+        // r81 · perfil manual del casco (auto = detección por GPU)
+        if (this.perf) {
+          if (arg === 'auto') {
+            this.perf.tierAuto = true;
+            this.perf._detectTier();
+            const d = PERF_TIERS[this.perf.tier];
+            this.perf.scale = d.scale; this.perf.fovea = d.fovea; this.perf.rate = d.rate;
+            this.perf.lastCal = null;
+            this.perf.applyToRenderer(); this.perf.save();
+            this.rules.message = T('perf_tier_auto') + ' · ' + PERF_TIERS[this.perf.tier].label;
+          } else {
+            this.perf.setTier(arg);
+            this.rules.message = PERF_TIERS[arg] ? PERF_TIERS[arg].label : '';
+          }
+        }
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'perfRecal': {
+        // r81 · RECALIBRAR: sonda ahora (en VR) o al entrar en la sesión
+        if (this.perf) {
+          this.perf.requestRecal();
+          this.rules.message = this.perf.probe
+            ? T('perf_calibrando', { s: 1 })
+            : T('msg_perf_recal_next');
+        }
+        this.audio.playOsc(880, 1180, 0.09, 'triangle', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
       case 'revancha':
         this.closeMenu();
         if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
@@ -3371,15 +3471,10 @@ export class PingPongGame {
     const session = this.renderer.xr.getSession?.();
     // v3.1.2-CCD1 · spec A: pedir la MAYOR tasa de refresco disponible hasta
     // 120 Hz — más muestras de la mano = trayectoria más fiel para la CCD.
-    try {
-      if (session && session.supportedFrameRates && session.updateTargetFrameRate) {
-        let best = 0;
-        for (const f of session.supportedFrameRates) {
-          if (f <= 120.5 && f > best) best = f;
-        }
-        if (best > 0 && best > (session.frameRate || 0)) session.updateTargetFrameRate(best);
-      }
-    } catch (e) { /* sin soporte: la tasa por defecto del runtime */ }
+    // r81 · la tasa la decide el PERF GOVERNOR (perfil del casco + sonda):
+    // Quest 3 pide su 90/120 de siempre; Quest 2 nace en 72 y la sonda la
+    // baja a 60 ESTABLES si la GPU no da (mucho mejor que 45-55 a salto).
+    try { this.perf.onSessionStart(session); } catch (eP0) { /* nunca rompe */ }
     this.inAR = !!(session && session.environmentBlendMode &&
       session.environmentBlendMode !== 'opaque');
     // v3.6.43 · la sesión se pide SIEMPRE immersive-ar (donde la soporta):
@@ -3509,6 +3604,8 @@ export class PingPongGame {
   onSessionEnd = () => {
     // Salida de VR: re-vincular el audio a la salida 2D del navegador
     // (adoptar-solo-si-running; el contexto del casco se cierra tras el cambio).
+    // r81 · el PERF GOVERNOR cierra su sonda y guarda el perfil del casco
+    try { this.perf.onSessionEnd(); } catch (eP1) { /* nunca rompe */ }
     // v2.50 · FASE 1: fin de sesión VR (duración + FPS medios, anónimos)
     try {
       __PP_TELE.ev('vr_end', {
@@ -7770,6 +7867,14 @@ export class PingPongGame {
     // v2.50 · FASE 1: FPS para telemetría + ciclo de CONSEJOS de 1ª sesión
     // (los consejos ceden el cartel al árbitro y solo se marcan la 1ª vez)
     try { __PP_TELE.noteFrame(dt); } catch { /* */ }
+    // r81 · PERF GOVERNOR: EMA de FPS, sonda de calibración y gobernador
+    // (≥60 seguros en cualquier casco; ver PerfManager al inicio de c12)
+    try { this.perf.feed(dt, presenting); } catch (ePerf) { /* nunca rompe */ }
+    // r81 · página RENDIMIENTO de AJUSTES: FPS en vivo (redibujo suave)
+    if (presenting && this.menuOpen && this.menuPage === 'optsRendi') {
+      this._perfMenuAcc = (this._perfMenuAcc || 0) - dt;
+      if (this._perfMenuAcc <= 0) { this._perfMenuAcc = 0.5; this.drawMenu(); }
+    }
     if (presenting && this._tipsIdx >= 0 && this._tipsIdx <= 3) {
       this._tipsTimer -= dt;
       if (this._tipsTimer <= 0) {
@@ -8386,7 +8491,10 @@ export class PingPongGame {
           const useLeft = (smp.fl & 4) !== 0;
           const hpa = useLeft ? smp.lp : smp.rp;
           const hqa = useLeft ? smp.lq : smp.rq;
-          NetLink.posFromNet(hpa, netTmpP);
+          // r81 · ESPEJO DE POSE (solo X/Z): la Y llega YA anclada a mi
+          // tapete por el códec (yAnchor). posFromNet sumaba T OTRA vez y
+          // el rival flotaba ~76 cm por encima de su altura real.
+          NetLink.posFromNetPose(hpa, netTmpP);
           NetLink.quatFromNet(hqa, netTmpQ);
           // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
           const qVis = netTmpQ2.copy(netTmpQ)
@@ -8409,7 +8517,7 @@ export class PingPongGame {
         const show = code >= 0 && stale < 500;
         this._netVisor.visible = show;
         if (show) {
-          NetLink.posFromNet(smp.hp, netTmpP);
+          NetLink.posFromNetPose(smp.hp, netTmpP);   // r81: pose, no bola
           this._netVisor.position.lerp(netTmpP, 1 - Math.exp(-20 * dt));
         }
       } else {
@@ -9440,6 +9548,298 @@ export class PingPongGame {
     }
   }
 }
+/* =====================================================================
+ *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
+ *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy
+ *  lentas y la experiencia es muy mala… un autocalibrador que asegure al
+ *  menos 60 FPS seguros en cualquier dispositivo».
+ *
+ *  Tres palancas, de más a menos agresiva:
+ *    · fixedFoveation      — VIVO (se aplica al vuelo, three la clava en
+ *                            la XRProjectionLayer en cada cambio).
+ *    · targetFrameRate     — VIVO (session.updateTargetFrameRate): si la
+ *                            GPU no da para 72, un 60 ESTABLE se ve mucho
+ *                            mejor que un 45-55 a trompicones.
+ *    · framebufferScaleFactor — para la PRÓXIMA sesión (three no deja
+ *                            cambiarlo en caliente): se guarda por casco.
+ *
+ *  Perfil por hardware (detección por GPU real, Adreno):
+ *    quest3 (Adreno 740)   — escala 1.40 · fovea 0.50 · 90/120 Hz (hoy)
+ *    quest2 (Adreno 650)   — escala 1.05 · fovea 0.65 · 72 Hz → 60
+ *    gen    (desconocido)  — escala 1.20 · fovea 0.60 · 72 Hz
+ *  La sonda de calibración (onSessionStart o RECALIBRAR) mide 2,8 s por
+ *  ronda (hasta 3) y baja escalones hasta sostener ≥63 FPS de media con
+ *  peor segundo ≥55; el resultado queda en localStorage POR CASCO y la
+ *  siguiente sesión nace ya calibrada. El gobernador continuo vigila la
+ *  partida y baja (con voz) si el promedio cae, y recupera si sobra
+ *  margen. window.__PP_PERF expone el estado para AJUSTES y QA.
+ *  ===================================================================== */
+const PERF_LS = 'ppxr_perf_v1';
+const PERF_TIERS = {
+  quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.50, rate: 90 },
+  quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 },
+  gen: { label: 'VR', scale: 1.20, fovea: 0.60, rate: 72 },
+};
+class PerfManager {
+  constructor(game) {
+    this.g = game;
+    this.tier = 'gen';            // casco detectado (o manual del dueño)
+    this.tierAuto = true;         // false = el dueño fijó el perfil a mano
+    this.auto = true;             // sonda + gobernador activos (AJUSTES)
+    this.scale = 1.4;             // framebufferScaleFactor (próxima sesión)
+    this.fovea = 0.5;             // fixedFoveation VIVO
+    this.rate = 90;               // targetFrameRate preferido
+    this.fps = 0;                 // media EMA para HUD/AJUSTES
+    this.probe = null;            // sonda en curso {round,t,frames,acc,min}
+    this.lastCal = null;          // {fps, when, round} última calibración
+    this._ema = 0; this._emaN = 0;
+    this._secAcc = 0; this._secN = 0; this._secMin = 999;
+    this._hist = [];              // ventanas de 1 s {avg, min}
+    this._coolDown = 0;           // s hasta poder bajar otra vez
+    this._upStreak = 0;           // ventanas seguidas con margen de sobra
+    this._upCool = 0;
+    this._sessScale = null;       // escala con la que NACIÓ esta sesión
+    this._recal = false;          // petición manual pendiente
+    this._detectTier();
+    this._load();
+    try { window.__PP_PERF = this; } catch (e) { /* */ }
+  }
+
+  /* ---- detección del casco por GPU real (Adreno) ---- */
+  _detectTier() {
+    if (!this.tierAuto) return;
+    let r = '';
+    try {
+      const gl = this.g.renderer.getContext();
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      r = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '') : '';
+    } catch (e) { r = ''; }
+    this.gpu = r;
+    if (/adreno\s*\(tm\)\s*74\d/i.test(r)) this.tier = 'quest3';
+    else if (/adreno\s*\(tm\)\s*65\d/i.test(r)) this.tier = 'quest2';
+    else if (/adreno|oculus|quest/i.test(r)) this.tier = 'gen';
+    else this.tier = navigator.hardwareConcurrency >= 8 ? 'gen' : 'gen';
+  }
+
+  /* ---- perfil guardado por casco (localStorage) ---- */
+  _load() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(PERF_LS) || 'null'); } catch (e) { d = null; }
+    if (d && d.tier === this.tier && typeof d.scale === 'number') {
+      this.scale = d.scale;
+      this.fovea = typeof d.fovea === 'number' ? d.fovea : PERF_TIERS[this.tier].fovea;
+      this.rate = typeof d.rate === 'number' ? d.rate : PERF_TIERS[this.tier].rate;
+      this.auto = d.auto !== false;
+      this.lastCal = d.cal || null;
+    } else {
+      const t = PERF_TIERS[this.tier];
+      this.scale = t.scale; this.fovea = t.fovea; this.rate = t.rate;
+    }
+  }
+  save() {
+    try {
+      localStorage.setItem(PERF_LS, JSON.stringify({
+        tier: this.tier, auto: this.auto, scale: +this.scale.toFixed(3),
+        fovea: +this.fovea.toFixed(3), rate: this.rate, cal: this.lastCal,
+      }));
+    } catch (e) { /* almacenamiento ausente */ }
+  }
+
+  /** aplica fovea VIVO + escala para la próxima sesión (llamada en la
+   *  construcción del juego — tres.js lee la escala al crear la capa XR) */
+  applyToRenderer() {
+    try { this.g.renderer.xr.setFramebufferScaleFactor(this.scale); } catch (e) { /* */ }
+    try { this.g.renderer.xr.setFoveation(this.fovea); } catch (e) { /* */ }
+  }
+
+  /** foveation + tasa objetivo al vuelo (dentro de la sesión XR) */
+  applyLive() {
+    try { this.g.renderer.xr.setFoveation(this.fovea); } catch (e) { /* */ }
+    const s = this.g.renderer.xr.getSession && this.g.renderer.xr.getSession();
+    if (s && s.supportedFrameRates && s.updateTargetFrameRate) {
+      try {
+        const rates = s.supportedFrameRates.filter((f) => f >= 55 && f <= this.rate + 0.5);
+        if (rates.length) {
+          const best = Math.max(...rates);
+          if (best > 0 && Math.abs((s.frameRate || 0) - best) > 0.5) s.updateTargetFrameRate(best);
+        }
+      } catch (e) { /* sin soporte */ }
+    }
+  }
+
+  /** entrada de sesión XR: tasa objetivo del perfil + sonda si toca */
+  onSessionStart(session) {
+    this._sessScale = this.scale;
+    this._ema = 0; this._emaN = 0; this._hist.length = 0;
+    this._coolDown = 0; this._upStreak = 0; this._upCool = 0;
+    // tasa del perfil (el casco nunca pasa de lo que el perfil pide)
+    try {
+      if (session && session.supportedFrameRates && session.updateTargetFrameRate) {
+        const cand = session.supportedFrameRates.filter((f) => f <= this.rate + 0.5);
+        const best = cand.length ? Math.max(...cand) : 0;
+        if (best > 0 && best > (session.frameRate || 0)) session.updateTargetFrameRate(best);
+      }
+    } catch (e) { /* tasa por defecto del runtime */ }
+    // sonda: sin calibración de este casco o RECALIBRAR pedido a mano
+    if (this.auto && (this._recal || !this.lastCal)) {
+      this._recal = false;
+      this.probeStart('boot');
+    }
+  }
+  onSessionEnd() {
+    this.probe = null;
+    this.save();
+  }
+
+  /** sonda de calibración: rondas de 2,8 s bajando escalones hasta
+   *  sostener ≥63 de media con peor segundo ≥55 (60 seguros con margen) */
+  probeStart(why) {
+    if (!this.g.renderer.xr.isPresenting) return;
+    this.probe = { round: 0, t: 0, n: 0, acc: 0, min: 999, why: why || 'boot' };
+    this._hist.length = 0;
+  }
+  _probeRound(fpsAvg, fpsMin) {
+    const p = this.probe;
+    const pasa = fpsAvg >= 63 && fpsMin >= 55;
+    if (pasa) {
+      this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: p.round };
+      this.save();
+      this.probe = null;
+      try { this.g.audio.announce(T('perf_cal_ok', { f: Math.round(fpsAvg) }), true); } catch (e) { /* */ }
+      return;
+    }
+    // escalón de degradación (de más sutil a más fuerte)
+    if (p.round === 0) this.fovea = Math.min(0.8, this.fovea + 0.10);
+    else if (p.round === 1) this.rate = this.rate > 62 ? 60 : this.rate;
+    else {
+      this.scale = Math.max(0.9, this.scale - 0.15);   // próxima sesión
+      this.fovea = Math.min(0.8, this.fovea + 0.05);
+    }
+    this.applyLive();
+    this.save();
+    p.round++;
+    if (p.round >= 3) {
+      // sin margen ni al mínimo: 60 Hz ESTABLES como suelo digno
+      this.rate = Math.min(this.rate, 60);
+      this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: 3 };
+      this.applyLive();
+      this.save();
+      this.probe = null;
+      return;
+    }
+    p.t = 0; p.n = 0; p.acc = 0; p.min = 999;
+  }
+
+  /** latido por frame (animate): EMA de FPS, sonda y gobernador */
+  feed(dt, presenting) {
+    if (!dt || dt <= 0 || dt > 1) { /* frame raro: no contamina */ } else {
+      const inst = 1 / dt;
+      this._ema = this._emaN === 0 ? inst : this._ema + (inst - this._ema) * 0.06;
+      this._emaN++;
+      this.fps = Math.round(this._ema);
+      // ventana de 1 s
+      this._secAcc += dt; this._secN++; this._secMin = Math.min(this._secMin, inst);
+      if (this._secAcc >= 1) {
+        const avg = this._secN / this._secAcc, min = this._secMin;
+        this._hist.push({ avg, min });
+        if (this._hist.length > 6) this._hist.shift();
+        this._secAcc = 0; this._secN = 0; this._secMin = 999;
+      }
+    }
+    if (!presenting) return;
+    // sonda activa: manda sobre el gobernador
+    if (this.probe) {
+      const p = this.probe;
+      p.t += dt; p.n++; p.acc += dt;
+      if (dt > 0 && dt < 1) p.min = Math.min(p.min, 1 / dt);
+      if (p.t >= 2.8) {
+        const avg = p.n / Math.max(0.01, p.acc);
+        this._probeRound(avg, p.min);
+      }
+      return;
+    }
+    // gobernador continuo (con histéresis y enFred durante el rallye para
+    // los cambios notables: la tasa se cambia fuera del intercambio)
+    if (!this.auto) return;
+    if (this._coolDown > 0) this._coolDown -= dt;
+    if (this._upCool > 0) this._upCool -= dt;
+    if (this._hist.length >= 4) {
+      const avg = this._hist.reduce((s, h) => s + h.avg, 0) / this._hist.length;
+      const min = Math.min(...this._hist.map((h) => h.min));
+      const rally = this.g.rules && this.g.rules.state === 'rally';
+      const bajando = avg < 56 || (avg < 60 && min < 48);
+      if (bajando && this._coolDown <= 0) {
+        if (!rally || avg < 50) this._stepDown();
+      }
+      const sobra = avg > Math.min(this.rate, 90) * 0.93 && min > this.rate * 0.8;
+      this._upStreak = sobra ? this._upStreak + 1 : 0;
+      if (this._upStreak >= 20 && this._upCool <= 0) this._stepUp();
+    }
+  }
+
+  /** bajo un escalón: fovea → tasa → escala (próxima sesión) */
+  _stepDown() {
+    if (this.fovea < 0.79) this.fovea = Math.min(0.8, this.fovea + 0.08);
+    else if (this.rate > 62) this.rate = 60;
+    else {
+      this.scale = Math.max(0.9, this.scale - 0.10);   // ya para la próxima
+      this.fovea = 0.7;
+    }
+    this._coolDown = 15; this._upStreak = 0;
+    this.applyLive(); this.save();
+    try {
+      if (this.g.rules.state !== 'rally') {
+        this.g.audio.announce(T('perf_stepdown'), false);
+      }
+    } catch (e) { /* */ }
+  }
+  /** sube un escalón si sobra margen (nunca por encima del perfil base) */
+  _stepUp() {
+    const p = PERF_TIERS[this.tier];
+    let subido = false;
+    if (this.scale < p.scale - 0.005) {
+      this.scale = Math.min(p.scale, this.scale + 0.10); subido = true;  // próxima sesión
+    } else if (this.rate < p.rate) {
+      this.rate = Math.min(p.rate, this.rate + 12); subido = true;
+    } else if (this.fovea > p.fovea + 0.005) {
+      this.fovea = Math.max(p.fovea, this.fovea - 0.06); subido = true;
+    }
+    this._upCool = 45; this._upStreak = 0;
+    if (subido) { this.applyLive(); this.save(); }
+  }
+
+  /** estado para AJUSTES/QA */
+  status() {
+    const s = this.g.renderer.xr.getSession && this.g.renderer.xr.getSession();
+    return {
+      tier: this.tier, tierLabel: PERF_TIERS[this.tier].label, gpu: this.gpu || '',
+      auto: this.auto, scale: +this.scale.toFixed(3), fovea: +this.fovea.toFixed(3),
+      rate: this.rate, fps: this.fps, calibrating: !!this.probe,
+      probeRound: this.probe ? this.probe.round : -1,
+      lastCal: this.lastCal, sessionRate: s && s.frameRate ? Math.round(s.frameRate) : 0,
+      presenting: !!this.g.renderer.xr.isPresenting,
+    };
+  }
+  setTier(t) {
+    if (!PERF_TIERS[t]) return;
+    this.tier = t; this.tierAuto = (t === this._detectTierSilent());
+    const d = PERF_TIERS[t];
+    this.scale = d.scale; this.fovea = d.fovea; this.rate = d.rate;
+    this.lastCal = null;
+    this.applyToRenderer(); this.save();
+  }
+  _detectTierSilent() {
+    let r = this.gpu || '';
+    if (/adreno\s*\(tm\)\s*74\d/i.test(r)) return 'quest3';
+    if (/adreno\s*\(tm\)\s*65\d/i.test(r)) return 'quest2';
+    return 'gen';
+  }
+  requestRecal() {
+    if (this.g.renderer.xr.isPresenting) this.probeStart('manual');
+    else this._recal = true;
+  }
+}
+
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r71_v3663 — CAPA BF · V3.6.72-SDK6, FASE 65 «EL SERVICIO HONESTO».
+"""qa_r71_v3663 — CAPA BF · V3.6.73-SDK6, FASE 65 «EL SERVICIO HONESTO».
 
 El informe del dueño tras probar V3.6.62 en el Quest, punto por punto:
   1. «Cuando el profesor realiza un saque lo hace mal. Tiene que botar
@@ -140,7 +140,7 @@ AGUJAS = [
 CONTADORES = [
     (r"tableHalfWidth \+ 0\.02", 4, "rectángulo de mesa en los 4 botes (2 jugador + 2 demo)"),
     (r"TY \+ 0\.12", 4, "botes pegados a la superficie (4 vallas)"),
-    (r"PP_ICONS\.(cpu|sala|sonido|visual|perfil)\b", 5, "los 5 iconos de categoría usados en las tarjetas"),
+    (r"PP_ICONS\.(cpu|sala|sonido|visual|perfil)\b", 6, "iconos de categoría en las tarjetas (5 + RENDIMIENTO r81, cpu ×2)"),
     (r"page:opts(Juego|Sala|Sonido|Visual|Perfil)", 5, "5 tarjetas que abren su subpágina"),
     (r"cat_(juego|sala|sonido|visual|perfil): '", 10, "claves de categoría definidas (5 ES + 5 EN)"),
     (r"saqBote1 = false; saqBote2 = false", 5, "resets del saque intactos (r70)"),
@@ -479,7 +479,7 @@ CARTEL = """async () => {
 async def main():
     global ok, fails
     print("=" * 74)
-    print("qa_r71_v3663 — CAPA BF · V3.6.72-SDK6 FASE 65 «EL SERVICIO HONESTO»")
+    print("qa_r71_v3663 — CAPA BF · V3.6.73-SDK6 FASE 65 «EL SERVICIO HONESTO»")
     print("=" * 74)
 
     print("\n[1] AGUJAS de fuente r71")

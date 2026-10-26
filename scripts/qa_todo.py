@@ -409,6 +409,17 @@ CAPAS = [
     # resplandor), panel retirado del entrenamiento y zonas del reto el
     # DOBLE de anchas (zonaDims compartidas por pintor y juez).
     ('BO · reto diario en la puerta (v3672)', 'qa_r80_v3672.py'),
+    # BP (r81): SESENTA SEGUROS — el autocalibrador de FPS por casco (PERF
+    # GOVERNOR: detección Adreno, sonda 2,8 s × 3, gobernador vivo, AJUSTES
+    # › RENDIMIENTO) + EL MULTIJUGADOR JUGABLE: un solo espejo por camino
+    # (R∘R = identidad mandaba la bola al lado contrario), validador con la
+    # pala en el MISMO marco y en el instante del golpe, rallySeq en los
+    # claims, ICE tempranos en cola, glue sin indexar el Vector3 (NaN) y
+    # DUELO SIMULADO: dos páginas reales (PeerJS real + NETSIM 35 ms ± 12
+    # con 2 % de pérdida) que SACAN, INTERCAMBIAN y PUNTÚAN con marcador
+    # espejado idéntico — la herramienta que pidió el dueño para revisar el
+    # multiusuario sin dos visores.
+    ('BP · sesenta seguros + duelo simulado (v3673)', 'qa_r81_v3673.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

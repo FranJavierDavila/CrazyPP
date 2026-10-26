@@ -579,10 +579,16 @@ def bloque_ronda14():
     harness = (RAIZ / 'scripts' / 'worker-tele' / 'test_local.mjs').read_text(encoding='utf-8', errors='replace')
 
     # ── reversión de nitidez: la regla pre-comprometida se aplicó ──
-    chk('setFramebufferScaleFactor(1.4)' in c12, 'c12: framebufferScaleFactor de vuelta a 1.4 (fluidez primero)')
-    chk('setFramebufferScaleFactor(1.5)' not in c12, 'c12: sin rastro del 1.5 (reversión limpia)')
+    # r81 · los valores los gobierna el PERF GOVERNOR (PerfManager): el
+    # perfil quest3 MANTIENE el 1.40×/0.50 de la reversión por datos y el
+    # Quest 2 nace fluido (1.05×/0.65). applyToRenderer() es el único punto.
+    chk('this.perf = new PerfManager(this)' in c12, 'c12: el PERF GOVERNOR decide nitidez y foveation (r81)')
+    chk('this.perf.applyToRenderer()' in c12, 'c12: applyToRenderer único punto de aplicación')
+    chk("quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.50, rate: 90 }" in c12,
+        'c12: el perfil Quest 3 conserva el 1.40×/0.50 de la reversión (fluidez primero)')
+    chk("quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 }" in c12,
+        'c12: el perfil Quest 2 nace fluido (1.05×/0.65/72 Hz — ≥60 seguros)')
     chk('REVERSIÓN POR DATOS' in c12, 'c12: comentario documenta la reversión con los datos')
-    chk('setFoveation(0.5)' in c12, 'c12: foveation 0.5 intacta (no se toca)')
 
     # ── sesionesVR en el worker: fold de ciclos vr_start→pings→vr_end ──
     chk("e IN ('vr_start','vr_end','vr_ping')" in worker, 'worker: consulta de los 3 eventos VR')

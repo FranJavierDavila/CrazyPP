@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.72-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.73-SDK6</span>
     </div>
   </main>
 
@@ -665,6 +665,27 @@ const I18N_STRINGS = {
     cat_visual_sub: 'Estela, vibración y consejos',
     cat_perfil: 'PERFIL Y DATOS',
     cat_perfil_sub: 'Tu nombre, telemetría y borrado',
+    // r81 · RENDIMIENTO: autocalibrador de FPS (≥60 seguros en cualquier casco)
+    cat_rendi: 'RENDIMIENTO',
+    cat_rendi_sub: 'FPS, calidad automática y calibración por casco',
+    perf_device: 'Dispositivo: {v}',
+    perf_fps: 'FPS ahora: {v} · casco a {r} Hz',
+    perf_fps_short: '{v} FPS',
+    perf_auto: 'Calibración automática: {v}',
+    perf_calidad: 'PERFIL DEL CASCO',
+    perf_tier_auto: 'AUTO',
+    perf_t_quest3: 'Quest 3 · máxima',
+    perf_t_quest2: 'Quest 2 · fluida',
+    perf_escala: 'Resolución de la próxima sesión: ×{v}',
+    perf_recal: 'RECALIBRAR AHORA',
+    perf_recal_next: 'RECALIBRAR AL ENTRAR EN VR',
+    perf_calibrando: 'Calibrando… ronda {s}',
+    perf_cal_ok: 'Listo: {f} FPS estables en tu visor',
+    perf_estado_ok: 'FLUIDO',
+    perf_estado_bajo: 'BAJO FPS · ajustando',
+    perf_stepdown: 'Optimizando la imagen para ir fluido',
+    msg_perf_auto: 'Autocalibración {v}: la calidad se adapta sola a tu visor',
+    msg_perf_recal_next: 'Perfecto: la calibración arrancará al entrar en VR',
     hub_champ_hint: 'Toca para entrar',
     champ_intro_btn: 'VER PRESENTACIÓN · vídeo del rival',   // v3.6.31: re-ver la intro (opcional)
     // ---- v2.34 · ARCADE "Campeonato de la Locura" (rival CLOWN) ----
@@ -1293,6 +1314,27 @@ const I18N_STRINGS = {
     cat_visual_sub: 'Trail, haptics and tips',
     cat_perfil: 'PROFILE & DATA',
     cat_perfil_sub: 'Your name, telemetry and reset',
+    // r81 · PERFORMANCE: FPS auto-calibrator (steady 60+ on any headset)
+    cat_rendi: 'PERFORMANCE',
+    cat_rendi_sub: 'FPS, auto quality and per-headset calibration',
+    perf_device: 'Device: {v}',
+    perf_fps: 'FPS now: {v} · headset at {r} Hz',
+    perf_fps_short: '{v} FPS',
+    perf_auto: 'Auto calibration: {v}',
+    perf_calidad: 'HEADSET PROFILE',
+    perf_tier_auto: 'AUTO',
+    perf_t_quest3: 'Quest 3 · max quality',
+    perf_t_quest2: 'Quest 2 · smooth',
+    perf_escala: 'Resolution next session: ×{v}',
+    perf_recal: 'RECALIBRATE NOW',
+    perf_recal_next: 'RECALIBRATE ON VR ENTRY',
+    perf_calibrando: 'Calibrating… round {s}',
+    perf_cal_ok: 'Done: {f} steady FPS on your headset',
+    perf_estado_ok: 'SMOOTH',
+    perf_estado_bajo: 'LOW FPS · adjusting',
+    perf_stepdown: 'Optimizing visuals to keep it smooth',
+    msg_perf_auto: 'Auto calibration {v}: quality adapts to your headset',
+    msg_perf_recal_next: 'Great: calibration will start when you enter VR',
     hub_champ_hint: 'Tap to enter',
     champ_intro_btn: 'WATCH THE INTRO · rival video',   // v3.6.31: re-watch the intro (optional)
     // ---- v2.34 · ARCADE "Championship of Madness" (CLOWN rival) ----
@@ -2541,7 +2583,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.72-SDK6';
+  const VERSION = '3.6.73-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -6977,14 +7019,20 @@ class Rules {
     this.rallyHits = 0;
   }
 
-  registerPaddleHit(who) {
+  registerPaddleHit(who, remote) {
     if (this.state !== 'rally') return [];
     // Nadie puede golpear dos veces seguidas (doble golpe = falta)
     if (who === this.lastHitter) {
       return this.applyPoint(this.other(who), 'dblhit');
     }
-    // Volea: golpear antes de que la bote en su campo el receptor
-    if (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce)) {
+    // Volea: golpear antes de que la bote en su campo el receptor.
+    // r81 · la VOLEA la juzga el ÁRBITRO DE ESA MITAD (spec §7): un golpe
+    // REMOTO llega ya validado por el árbitro del que golpea (si hubiera
+    // volea, SU mitad la cantó y llega por CLAIM) — el fantasma propio va
+    // SIEMPRE un poco por detrás del vuelo real (avance ≤120 ms + lag de
+    // red) y un juicio de volea local daba FALTAS FALSAS que partían el
+    // marcador (el duelo simulado r81 lo cazó en vivo).
+    if (!remote && (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce))) {
       return this.applyPoint(this.lastHitter, 'volley');
     }
     this.lastHitter = who;
@@ -9317,9 +9365,22 @@ class NetLink {
     const T = DIMS.tableTopY;
     return [-p.x, p.y - T, -3.2 - p.z];
   }
+  /* v3.6.73 · r81 · CONVENCIÓN ÚNICA DEL CABLE: el paquete viaja YA en el
+   * marco del RECEPTOR (el emisor aplica el espejo 180° UNA vez con
+   * posToNet/_stateNet — la involución R(z) = −3.2−z manda «mi lado» al
+   * «lado del otro»). Antes el receptor VOLVÍA a aplicar R al recibir
+   * (posFromNet/posFromNetArr): R∘R = identidad → la bola y la pala del
+   * rival aterrizaban en el marco CRUDO del emisor (¡lado contrario de la
+   * mesa!) — el defecto de fondo del multijugador «cosmético» desde v2.19.
+   * Al recibir solo queda re-anclar la Y al tapete propio (la Y viaja
+   * relativa a la mesa desde v2.91). Los VECTORES (velocidad/spin) ya
+   * viajan espejados por el emisor en v2 (_velNet/_spinNet) → identidad;
+   * en v1 el emisor los manda en crudo → sus receptores SÍ espejan una
+   * vez (vecFromNet/spinFromNet intactos). Eventos v1 (botes): crudo →
+   * espejo al recibir (drainNetwork, intacto). UN solo espejo por camino. */
   static posFromNet(a, out) {
     const T = DIMS.tableTopY;
-    out.set(-a[0], a[1] + T, -3.2 - a[2]);
+    out.set(a[0], a[1] + T, a[2]);
     return out;
   }
   static vecToNet(v) { return [-v.x, v.y, -v.z]; }
@@ -9379,13 +9440,35 @@ class NetLink {
     // el receptor aplica la conjugación completa en quatFromNet.
     return [q.x, q.y, q.z, q.w];
   }
-  /** r79: inversos de arrays planos (eventos fast → marco local) */
+  /** r79: inversos de arrays planos (eventos fast → marco local).
+   *  r81: el wire ya viene en MI marco (espejo del emisor) — solo Y+T. */
   static posFromNetArr(a) {
     const T = DIMS.tableTopY;
-    return new THREE.Vector3(-a[0], a[1] + T, -3.2 - a[2]);
+    return new THREE.Vector3(a[0], a[1] + T, a[2]);
   }
-  static vecFromNetArr(a) { return new THREE.Vector3(-a[0], a[1], -a[2]); }
-  static spinFromNetArr(a) { return new THREE.Vector3(-a[0], a[1], -a[2]); }
+  static vecFromNetArr(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+  static spinFromNetArr(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+
+  /* v3.6.73 · r81 · ESPEJO DE POSE (solo X/Z):
+   * La POSE del rival viaja con la Y ANCLADA AL TAPETE por el códec
+   * (wPos/rPos con yAnchor: sale y−T_anfitrión y entra y+T_propio —
+   * v2.91), así que al recibir YA está a la altura correcta sobre MI
+   * mesa. Añadir T OTRA VEZ (posFromNet) flotaba al rival ~76 cm por
+   * encima de su altura real («los movimientos no calibran bien»).
+   * El espejo de pose sólo gira X/Z (la involución de 180°); la Y pasa
+   * tal cual. NUEVO para poses; posFromNet sigue para BOLAS/eventos
+   * (esas viajan con Y relativa y SÍ necesitan el +T al recibir). */
+  static posFromNetPose(a, out) {
+    out.set(-a[0], a[1], -3.2 - a[2]);
+    return out;
+  }
+  /** pose cruda (marco del emisor, Y ya anclada a MI tapete) → marco NET
+   *  canónico de eventos ([-x, y−T, −3.2−z]) — el MISMO marco de ev.p
+   *  para que el validador compare peras con peras (spec §12). */
+  static poseToNetFrame(a) {
+    const T = DIMS.tableTopY;
+    return [-a[0], a[1] - T, -3.2 - a[2]];
+  }
 
   /** v2.91 · La propiedad de la bola SIGUE AL SACADOR durante el saque:
    *  si saco YO, yo simulo (toss real + físicas + contacto propio); si
@@ -9737,10 +9820,7 @@ class NetLink {
     // v3.6.71 · r79: señalización y control del transporte v2 (por la
     // DataConnection PeerJS o por el canal reliable propio, mismo formato)
     if (d.k === 'sdp') { this._v2RemoteDesc(d.d); return; }
-    if (d.k === 'ice') {
-      try { if (this._pc && d.c) this._pc.addIceCandidate(d.c).catch(() => { /* */ }); } catch { /* */ }
-      return;
-    }
+    if (d.k === 'ice') { this._onIce(d.c); return; }
     switch (d.k) {
       case 'hello2': case 'tick2': case 'tock2': case 'ready2':
       case 'mstart': case 'claim': case 'ack': case 'resync':
@@ -9986,7 +10066,7 @@ class NetLink {
         );
         g.haptic(g.paddleHand, 0.3, 40);
         if (h.sv) g.rules.beginServeRally('ai');
-        else g.processIntents(g.rules.registerPaddleHit('ai'));
+        else g.processIntents(g.rules.registerPaddleHit('ai', true));   // r81: golpe remoto
       }
     }
   }
@@ -10052,6 +10132,7 @@ class NetLink {
     this._lossLowT = 0; this._degraded = false;
     this._lastFastAt = 0; this._iceRestarts = 0;
     this._helloDone = false; this._helloTO = null;
+    this._iceQ = [];                            // r81: ICE tempranos en cola
     this._anchors = 0; this._readyMe = false; this._readyOpp = false;
     this._mstart = null;                        // {startAt, fs, bo}
     this._clock = new PPNET.NetClock(this.role === 'host');
@@ -10075,9 +10156,13 @@ class NetLink {
     };
     document.addEventListener('visibilitychange', this._onVis);
     if (this.role === 'guest') this._v2Offer();
+    // r81 · watchdog de HELLO con ventanas GENEROSAS: el ICE de redes reales
+    // (hotspots, NAT simétricos con STUN lento) puede tardar 10-15 s en
+    // abrir; con 9 s el transporte moría ANTES de nacer y la partida caía
+    // al modo compatible v1. 22 s de gracia total antes de degradar.
     this._helloTO = window.setTimeout(() => {
       if (this.v2 === 'pending') this._v2Fail(T('net_legacy'));
-    }, 9000);
+    }, 22000);
   }
 
   async _v2Offer() {
@@ -10116,6 +10201,15 @@ class NetLink {
         };
       }
       await this._pc.setRemoteDescription(desc);
+      // r81 · ICE tempranos: los candidatos que llegaron ANTES de la
+      // descripción remota se encolaban y morían en silencio (addIceCandidate
+      // rechaza sin remoteDescription) — en redes reales dejaba el ICE a medio
+      // abrir y la partida sin canal fast. Se drenan ahora, en orden.
+      const q = this._iceQ || [];
+      this._iceQ = [];
+      for (const c of q) {
+        try { this._pc.addIceCandidate(c).catch(() => { /* */ }); } catch { /* */ }
+      }
       if (desc.type === 'offer') {
         const ans = await this._pc.createAnswer();
         await this._pc.setLocalDescription(ans);
@@ -10124,6 +10218,17 @@ class NetLink {
     } catch (e) {
       this._v2Fail(T('net_legacy'));
     }
+  }
+
+  /** r81 · candidato ICE entrante: si la descripción remota aún no está,
+   *  se ENCOLA (se drena en _v2RemoteDesc); si ya está, se aplica. */
+  _onIce(c) {
+    if (!c) return;
+    try {
+      const rd = this._pc && this._pc.remoteDescription;
+      if (this._pc && rd && rd.type) this._pc.addIceCandidate(c).catch(() => { /* */ });
+      else (this._iceQ = this._iceQ || []).push(c);
+    } catch { /* */ }
   }
 
   _wireDC() {
@@ -10155,9 +10260,11 @@ class NetLink {
     // HELLO (reliable): versión de protocolo, build y ballPhysics (spec §3.5)
     this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD });
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
+    // r81 · 15 s para el HELLO de respuesta (el ICE ya está abierto aquí:
+    // esto sólo cubre un peer colgado a medias)
     this._helloTO = window.setTimeout(() => {
       if (this.v2 === 'pending') this._v2Fail(T('net_legacy'));
-    }, 6000);
+    }, 15000);
   }
 
   _onRel(m) {
@@ -10211,11 +10318,13 @@ class NetLink {
         this._stats.claims++;
         const g = this.game;
         // el ganador del claim viaja en perspectiva DEL EMISOR: espejar a
-        // la mía para confrontarlo con lo que YO apliqué (spec §7/§9)
-        const guest = this.role === 'guest';
+        // la mía para confrontarlo con lo que YO apliqué (spec §7/§9).
+        // r81 · el espejo es SIEMPRE el intercambio (el emisor llama
+        // «player» a SÍ mismo; para mí ese mismo jugador es «ai»): antes
+        // el anfitrión NO intercambiaba y un CLAIM del invitado se leía
+        // al revés (punto al revés y desacuerdos enmascarados).
         const wMapped = m.w === 'let' ? 'let'
-          : (guest ? (m.w === 'player' ? 'ai' : 'player')
-                   : (m.w === 'player' ? 'player' : 'ai'));
+          : (m.w === 'player' ? 'ai' : 'player');
         const r = this._sync.onClaim(m, wMapped);
         this.sendRel(r.ack);
         if (r.apply && g) this._applyRemoteClaim(m, wMapped);
@@ -10561,12 +10670,15 @@ class NetLink {
     }
   }
 
-  /** la bola murió en MI mitad (doble bote/fuera/red/…): reclamo (spec §7) */
+  /** la bola murió en MI mitad (doble bote/fuera/red/…): reclamo (spec §7)
+   *  r81: la identidad del rallye es rules.rallySeq (rallyId NO existía:
+   *  undefined en los CLAIM → el libro de reclamos colisionaba a partir del
+   *  primer punto y el marcador se congelaba en ambos extremos). */
   ballDiedLocal(winnerLocal, cause) {
     if (this.v2 !== 'ok') return null;
     const g = this.game;
     const r = g.rules;
-    const rallyId = r.rallyId;
+    const rallyId = r.rallySeq;
     const isAuth = this._ballMineAtDeath();
     const dec = this._sync.localPoint(rallyId, winnerLocal, cause,
       r.scorePlayer, r.scoreAi, isAuth, performance.now());
@@ -10627,12 +10739,13 @@ class NetLink {
     r.firstServer = m.fs;
   }
 
-  /** intents de PUNTO local (processIntents, c12): enviar/suprimir */
+  /** intents de PUNTO local (processIntents, c12): enviar/suprimir
+   *  r81: rallySeq como identidad del rallye (ver ballDiedLocal). */
   onLocalPointIntent(it) {
     if (this.v2 !== 'ok') return true;    // v1: siempre aplicar (host arbiter)
     const g = this.game;
     const isAuth = this._ballMineAtDeath();
-    const dec = this._sync.localPoint(g.rules.rallyId, it.winner, it.cause || '',
+    const dec = this._sync.localPoint(g.rules.rallySeq, it.winner, it.cause || '',
       g.rules.scorePlayer, g.rules.scoreAi, isAuth, performance.now());
     if (dec.send) {
       this._stats.claims++;
@@ -10691,8 +10804,10 @@ class NetLink {
       return;
     }
     if (ev.t === PPNET.VP.EV.HIT) {
-      // validación del receptor (spec §12)
-      const pad = this._remotePadNet();
+      // validación del receptor (spec §12) — r81: pose en el marco NET y
+      // en el instante del golpe (antes: marco crudo del emisor contra
+      // ev.p espejado → TODO golpe remoto rechazado por distancia absurda)
+      const pad = this._remotePadNet(ev.kind, ev.tHit);
       const ctx = {
         nowHost: nowH, lastShot: this._ball.shot, lastHitT: this._lastRemoteHitT,
         padPos: pad,
@@ -10703,17 +10818,22 @@ class NetLink {
         return;
       }
       this._lastRemoteHitT = ev.tHit;
+      // r81 · posFromNetArr devuelve THREE.Vector3: el glue r79 lo INDEXABA
+      // (p[0] = undefined → bola NaN → «no llega nada del rival»). copy().
       const p = NetLink.posFromNetArr(ev.p);
       const vl = NetLink.vecFromNetArr(ev.v);
       const sl = NetLink.spinFromNetArr(ev.s);
-      g.ball.pos.set(p[0], p[1], p[2]);
-      g.ball.vel.set(vl[0], vl[1], vl[2]);
-      g.ball.spin.set(sl[0], sl[1], sl[2]);
+      g.ball.pos.copy(p);
+      g.ball.vel.copy(vl);
+      g.ball.spin.copy(sl);
       if (ev.kind === 2) {
         // lanzamiento al aire del saque del rival: SOLO visual (spec §10)
+        // r81: la bola HELD se libera YA en mi lado (el rival la tiene en
+        // el aire) — antes seguía holdLock y congelada hasta el golpe
         this._ball.state = 'ghost';
         this._ball.mine = false;
         g.ballMesh.visible = true;
+        g._netTossLive = true;
         return;
       }
       // avance de nacimiento: dt·k con tope (spec §8)
@@ -10731,7 +10851,7 @@ class NetLink {
       if (ev.kind === 1) {
         g.rules.beginServeRally('ai');
       } else {
-        g.processIntents(g.rules.registerPaddleHit('ai'));
+        g.processIntents(g.rules.registerPaddleHit('ai', true));   // r81: golpe remoto
       }
       // sonido del golpe del rival DESDE la simulación local (spec §8)
       g.audio.paddle(
@@ -10749,9 +10869,9 @@ class NetLink {
         const p = NetLink.posFromNetArr(ev.p);
         const vl = NetLink.vecFromNetArr(ev.v);
         const sl = NetLink.spinFromNetArr(ev.s);
-        g.ball.pos.set(p[0], p[1], p[2]);
-        g.ball.vel.set(vl[0], vl[1], vl[2]);
-        g.ball.spin.set(sl[0], sl[1], sl[2]);
+        g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado
+        g.ball.vel.copy(vl);
+        g.ball.spin.copy(sl);
         // absorber el salto en lo visual (decae en 80 ms)
         this._visOff = { x: -corr.vec[0], y: -corr.vec[1], z: -corr.vec[2],
           ms: corr.ms, t: corr.ms };
@@ -10759,9 +10879,9 @@ class NetLink {
         const p = NetLink.posFromNetArr(ev.p);
         const vl = NetLink.vecFromNetArr(ev.v);
         const sl = NetLink.spinFromNetArr(ev.s);
-        g.ball.pos.set(p[0], p[1], p[2]);
-        g.ball.vel.set(vl[0], vl[1], vl[2]);
-        g.ball.spin.set(sl[0], sl[1], sl[2]);
+        g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado
+        g.ball.vel.copy(vl);
+        g.ball.spin.copy(sl);
         this._stats.corrSnap++;
       } else {
         this._stats.corrNone++;
@@ -10771,12 +10891,40 @@ class NetLink {
     }
   }
 
-  _remotePadNet() {
-    // última pose conocida del rival (marco NET) para la validación de golpe
-    const s = this._jb.s[this._jb.s.length - 1];
+  /** v3.6.73 · r81: pose de la pala del rival EN EL INSTANTE del evento,
+   *  en el MISMO marco NET canónico de ev.p ([-x, y−T, −3.2−z]) para que
+   *  la validación §12 compare distancias reales.
+   *  · MARCO: la pose cruda del JB vive en el marco del EMISOR (con Y ya
+   *    anclada a MI tapete por el códec). Antes se comparaba CONTRA ev.p
+   *    (marco espejado, Y relativa) → distancia absurda (>2 m) y TODO
+   *    golpe remoto rechazado: «no deja sacar ni jugar». Ahora la
+   *    convertimos con poseToNetFrame (espejo exacto de _stateNet).
+   *  · INSTANTE: se muestrea la muestra más próxima a ev.tHit (reloj
+     *  host) — no la de reproducción retrasada del avatar (JB.sample).
+   *  · MANO: en el golpe (kind 0/1) la PALA (fl&4); en el LANZAMIENTO del
+   *    saque (kind 2) la mano LIBRE de la bola (la que lanza no es la que
+   *    lleva la pala) — si sólo hay una mano rastreada, esa. */
+  _remotePadNet(kind, tHit) {
+    if (!this._jb || !this._jb.s.length) return null;
+    const s = (tHit !== undefined && tHit !== null)
+      ? this._jb.nearest(tHit, this._padSmp || (this._padSmp = {
+          hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+          rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+        }))
+      : this._jb.s[this._jb.s.length - 1];
     if (!s) return null;
-    const hand = (s.fl & 4) ? s.lp : s.rp;
-    return hand;
+    const leftTrk = !!(s.fl & 1), rightTrk = !!(s.fl & 2), padLeft = !!(s.fl & 4);
+    let hand;
+    if (kind === 2) {
+      // lanzamiento: la mano de la bola (la NO pala, si está rastreada)
+      if (padLeft && rightTrk) hand = s.rp;
+      else if (!padLeft && leftTrk) hand = s.lp;
+      else hand = padLeft ? s.lp : s.rp;
+    } else {
+      hand = padLeft ? s.lp : s.rp;
+    }
+    if (!hand) return null;
+    return NetLink.poseToNetFrame(hand);
   }
 
   /** delta visual de la bola (catch-up + correcciones) o null */
@@ -11418,6 +11566,24 @@ const PPNET = (() => {
       for (let i = 0; i < 3; i++) { out.hp[i] = s.hp[i]; out.lp[i] = s.lp[i]; out.rp[i] = s.rp[i]; }
       for (let i = 0; i < 4; i++) { out.hq[i] = s.hq[i]; out.lq[i] = s.lq[i]; out.rq[i] = s.rq[i]; }
       out.fl = s.fl;
+    }
+    /** v3.6.73 · r81: muestra del buffer MÁS PRÓXIMA a tHost (la de mayor
+     *  t ≤ tHost dentro de la ventana) — para VALIDAR un golpe en SU
+     *  instante exacto (spec §12), no en el instante retrasado de
+     *  reproducción del avatar (interpDelay 40-120 ms). Sin muestra dentro
+     *  de la ventana devuelve null (el validador no puede juzgar).
+     *  out opcional: {hp,hq,lp,lq,rp,rq,fl} reutilizable. */
+    nearest(tHost, out, winMs) {
+      const W = winMs || 250;
+      if (!this.s.length) return null;
+      let pick = null;
+      for (let i = this.s.length - 1; i >= 0; i--) {
+        if (this.s[i].t <= tHost) { pick = this.s[i]; break; }
+      }
+      if (!pick) pick = this.s[0];                     // todas futuras: la más antigua
+      if (Math.abs(tHost - pick.t) > W) return null;   // desfasada: no juzga
+      if (out) { this._copy(pick, out); return out; }
+      return pick;
     }
   }
 
@@ -12774,8 +12940,12 @@ class PingPongGame {
     // Sharpness» + foveation 0.5. Si el dueño prefiere nitidez sobre
     // fluidez, el compromiso intermedio (1.45) o el escalado adaptativo
     // son el siguiente paso POR DATOS (con la curva vr_ping delante).
-    this.renderer.xr.setFoveation(0.5);
-    this.renderer.xr.setFramebufferScaleFactor(1.4);
+    // r81 · SESENTA SEGUROS: el PERF GOVERNOR decide foveation y escala
+    // POR CASCO (Quest 3 mantiene el 1.4×/0.5 de siempre; Quest 2 nace en
+    // 1.05×/0.65/72 Hz — hoy esas partidas «van muy lentas» — y ambos
+    // se autocalibran con la sonda + gobernador; AJUSTES › RENDIMIENTO).
+    this.perf = new PerfManager(this);
+    this.perf.applyToRenderer();
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0b0e11);
@@ -13639,6 +13809,10 @@ class PingPongGame {
     this._netStart = { startAt: m.startAt, fs: m.fs };
     this._netTossLive = false;
     this.net.setServeHeld(this.rules.server === 'player');
+    // r81 · bola HELD del rival OCULTA también en el arranque (el intent
+    // 'serve' la esconde en cada punto, pero el MATCH_START llegaba antes:
+    // el invitado veía una bola congelada flotando hasta el primer punto)
+    if (this.ballMesh) this.ballMesh.visible = this.rules.server === 'player';
     this.rules.message = '3';
   }
 
@@ -15223,6 +15397,11 @@ class PingPongGame {
       + ' · ' + T('btn_tips', { v: yn(this.showTips) });
     const subPerfil = T('opts_name', { v: _pn || T('no_name') })
       + ' · ' + T('btn_tele', { v: yn(__PP_TELE.on) });
+    // r81 · RENDIMIENTO: casco detectado + FPS en vivo de un vistazo
+    const pf = this.perf ? this.perf.status() : null;
+    const subRendi = pf
+      ? pf.tierLabel + ' · ' + T('perf_fps_short', { v: pf.fps })
+      : '';
 
     const CH2 = 150, GY2 = 18;
     let y = 310;
@@ -15240,6 +15419,10 @@ class PingPongGame {
     y += CH2 + GY2;
     this._modeCard(rects, 'page:optsPerfil', 40, y, 944, CH2,
       T('cat_perfil'), subPerfil, '#e8590c', '#b0420a', PP_ICONS.perfil);
+    y += CH2 + GY2;
+    // r81 · sexta categoría: RENDIMIENTO (autocalibrador de FPS ≥60)
+    this._modeCard(rects, 'page:optsRendi', 40, y, 944, CH2,
+      T('cat_rendi'), subRendi, '#f08c00', '#b3640a', PP_ICONS.cpu);
     y += CH2 + GY2;
 
     label(T('opts_elegir'), y + 16, 20, '#75828f', 'center');
@@ -15343,6 +15526,45 @@ class PingPongGame {
         y += 72;
         label(T('tele_hint'), y + 10, 18, '#75828f');
         y += 36;
+        break;
+      }
+      case 'rendi': {
+        // r81 · RENDIMIENTO: el autocalibrador a la vista (petición del
+        // dueño: «una herramienta para poder calibrar los FPS según el
+        // modelo de gafas… que asegure al menos 60 FPS seguros»)
+        const pf = this.perf ? this.perf.status() : null;
+        if (pf) {
+          label(T('perf_device', { v: pf.tierLabel }), y + 12, 24, '#e9edf2');
+          y += 34;
+          label(pf.gpu ? pf.gpu.slice(0, 60) : '', y + 2, 17, '#75828f');
+          y += 30;
+          const estado = pf.calibrating
+            ? T('perf_calibrando', { s: pf.probeRound + 1 })
+            : (pf.fps >= 58 ? T('perf_estado_ok') : T('perf_estado_bajo'));
+          label(T('perf_fps', { v: pf.fps, r: pf.sessionRate || pf.rate })
+            + ' · ' + estado, y + 2, 20, pf.fps >= 58 || pf.calibrating ? '#8ce99a' : '#ffa94d');
+          y += 40;
+          btn('perfAuto', 56, y, 912, 56, T('perf_auto', { v: yn(pf.auto) }),
+            !!pf.auto, undefined, !!pf.auto, 23);
+          y += 70;
+          label(T('perf_calidad'), y + 10, 22);
+          y += 34;
+          btn('perfTier:auto', 56, y, 292, 56, T('perf_tier_auto'),
+            this.perf.tierAuto, undefined, this.perf.tierAuto, 21);
+          btn('perfTier:quest3', 366, y, 292, 56, T('perf_t_quest3'),
+            this.perf.tier === 'quest3' && !this.perf.tierAuto,
+            undefined, this.perf.tier === 'quest3' && !this.perf.tierAuto, 20);
+          btn('perfTier:quest2', 676, y, 292, 56, T('perf_t_quest2'),
+            this.perf.tier === 'quest2' && !this.perf.tierAuto,
+            undefined, this.perf.tier === 'quest2' && !this.perf.tierAuto, 20);
+          y += 70;
+          label(T('perf_escala', { v: pf.scale.toFixed(2) }), y + 8, 18, '#75828f');
+          y += 34;
+          btn('perfRecal', 56, y, 912, 56,
+            pf.presenting ? T('perf_recal') : T('perf_recal_next'),
+            false, pf.presenting ? 'gold' : undefined, undefined, 22);
+          y += 70;
+        }
         break;
       }
       default:
@@ -15526,9 +15748,10 @@ class PingPongGame {
         // v2.110 · HUB: navegación entre páginas del menú
         // r71 · + subpáginas de AJUSTES (optsJuego/optsSala/optsSonido/
         // optsVisual/optsPerfil) — las categorías del nuevo AJUSTES.
+        // r81 · + optsRendi (RENDIMIENTO: autocalibrador de FPS).
         if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
-            arg === 'optsVisual' || arg === 'optsPerfil') {
+            arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi') {
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {
@@ -15988,6 +16211,49 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'perfAuto': {
+        // r81 · conmutador de la calibración automática (sonda + gobernador)
+        if (this.perf) {
+          this.perf.auto = !this.perf.auto;
+          this.perf.save();
+          this.rules.message = T('msg_perf_auto', { v: this.perf.auto ? T('yes') : T('no') });
+        }
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'perfTier': {
+        // r81 · perfil manual del casco (auto = detección por GPU)
+        if (this.perf) {
+          if (arg === 'auto') {
+            this.perf.tierAuto = true;
+            this.perf._detectTier();
+            const d = PERF_TIERS[this.perf.tier];
+            this.perf.scale = d.scale; this.perf.fovea = d.fovea; this.perf.rate = d.rate;
+            this.perf.lastCal = null;
+            this.perf.applyToRenderer(); this.perf.save();
+            this.rules.message = T('perf_tier_auto') + ' · ' + PERF_TIERS[this.perf.tier].label;
+          } else {
+            this.perf.setTier(arg);
+            this.rules.message = PERF_TIERS[arg] ? PERF_TIERS[arg].label : '';
+          }
+        }
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'perfRecal': {
+        // r81 · RECALIBRAR: sonda ahora (en VR) o al entrar en la sesión
+        if (this.perf) {
+          this.perf.requestRecal();
+          this.rules.message = this.perf.probe
+            ? T('perf_calibrando', { s: 1 })
+            : T('msg_perf_recal_next');
+        }
+        this.audio.playOsc(880, 1180, 0.09, 'triangle', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
       case 'revancha':
         this.closeMenu();
         if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
@@ -16108,15 +16374,10 @@ class PingPongGame {
     const session = this.renderer.xr.getSession?.();
     // v3.1.2-CCD1 · spec A: pedir la MAYOR tasa de refresco disponible hasta
     // 120 Hz — más muestras de la mano = trayectoria más fiel para la CCD.
-    try {
-      if (session && session.supportedFrameRates && session.updateTargetFrameRate) {
-        let best = 0;
-        for (const f of session.supportedFrameRates) {
-          if (f <= 120.5 && f > best) best = f;
-        }
-        if (best > 0 && best > (session.frameRate || 0)) session.updateTargetFrameRate(best);
-      }
-    } catch (e) { /* sin soporte: la tasa por defecto del runtime */ }
+    // r81 · la tasa la decide el PERF GOVERNOR (perfil del casco + sonda):
+    // Quest 3 pide su 90/120 de siempre; Quest 2 nace en 72 y la sonda la
+    // baja a 60 ESTABLES si la GPU no da (mucho mejor que 45-55 a salto).
+    try { this.perf.onSessionStart(session); } catch (eP0) { /* nunca rompe */ }
     this.inAR = !!(session && session.environmentBlendMode &&
       session.environmentBlendMode !== 'opaque');
     // v3.6.43 · la sesión se pide SIEMPRE immersive-ar (donde la soporta):
@@ -16246,6 +16507,8 @@ class PingPongGame {
   onSessionEnd = () => {
     // Salida de VR: re-vincular el audio a la salida 2D del navegador
     // (adoptar-solo-si-running; el contexto del casco se cierra tras el cambio).
+    // r81 · el PERF GOVERNOR cierra su sonda y guarda el perfil del casco
+    try { this.perf.onSessionEnd(); } catch (eP1) { /* nunca rompe */ }
     // v2.50 · FASE 1: fin de sesión VR (duración + FPS medios, anónimos)
     try {
       __PP_TELE.ev('vr_end', {
@@ -20507,6 +20770,14 @@ class PingPongGame {
     // v2.50 · FASE 1: FPS para telemetría + ciclo de CONSEJOS de 1ª sesión
     // (los consejos ceden el cartel al árbitro y solo se marcan la 1ª vez)
     try { __PP_TELE.noteFrame(dt); } catch { /* */ }
+    // r81 · PERF GOVERNOR: EMA de FPS, sonda de calibración y gobernador
+    // (≥60 seguros en cualquier casco; ver PerfManager al inicio de c12)
+    try { this.perf.feed(dt, presenting); } catch (ePerf) { /* nunca rompe */ }
+    // r81 · página RENDIMIENTO de AJUSTES: FPS en vivo (redibujo suave)
+    if (presenting && this.menuOpen && this.menuPage === 'optsRendi') {
+      this._perfMenuAcc = (this._perfMenuAcc || 0) - dt;
+      if (this._perfMenuAcc <= 0) { this._perfMenuAcc = 0.5; this.drawMenu(); }
+    }
     if (presenting && this._tipsIdx >= 0 && this._tipsIdx <= 3) {
       this._tipsTimer -= dt;
       if (this._tipsTimer <= 0) {
@@ -21123,7 +21394,10 @@ class PingPongGame {
           const useLeft = (smp.fl & 4) !== 0;
           const hpa = useLeft ? smp.lp : smp.rp;
           const hqa = useLeft ? smp.lq : smp.rq;
-          NetLink.posFromNet(hpa, netTmpP);
+          // r81 · ESPEJO DE POSE (solo X/Z): la Y llega YA anclada a mi
+          // tapete por el códec (yAnchor). posFromNet sumaba T OTRA vez y
+          // el rival flotaba ~76 cm por encima de su altura real.
+          NetLink.posFromNetPose(hpa, netTmpP);
           NetLink.quatFromNet(hqa, netTmpQ);
           // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
           const qVis = netTmpQ2.copy(netTmpQ)
@@ -21146,7 +21420,7 @@ class PingPongGame {
         const show = code >= 0 && stale < 500;
         this._netVisor.visible = show;
         if (show) {
-          NetLink.posFromNet(smp.hp, netTmpP);
+          NetLink.posFromNetPose(smp.hp, netTmpP);   // r81: pose, no bola
           this._netVisor.position.lerp(netTmpP, 1 - Math.exp(-20 * dt));
         }
       } else {
@@ -22177,6 +22451,298 @@ class PingPongGame {
     }
   }
 }
+/* =====================================================================
+ *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
+ *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy
+ *  lentas y la experiencia es muy mala… un autocalibrador que asegure al
+ *  menos 60 FPS seguros en cualquier dispositivo».
+ *
+ *  Tres palancas, de más a menos agresiva:
+ *    · fixedFoveation      — VIVO (se aplica al vuelo, three la clava en
+ *                            la XRProjectionLayer en cada cambio).
+ *    · targetFrameRate     — VIVO (session.updateTargetFrameRate): si la
+ *                            GPU no da para 72, un 60 ESTABLE se ve mucho
+ *                            mejor que un 45-55 a trompicones.
+ *    · framebufferScaleFactor — para la PRÓXIMA sesión (three no deja
+ *                            cambiarlo en caliente): se guarda por casco.
+ *
+ *  Perfil por hardware (detección por GPU real, Adreno):
+ *    quest3 (Adreno 740)   — escala 1.40 · fovea 0.50 · 90/120 Hz (hoy)
+ *    quest2 (Adreno 650)   — escala 1.05 · fovea 0.65 · 72 Hz → 60
+ *    gen    (desconocido)  — escala 1.20 · fovea 0.60 · 72 Hz
+ *  La sonda de calibración (onSessionStart o RECALIBRAR) mide 2,8 s por
+ *  ronda (hasta 3) y baja escalones hasta sostener ≥63 FPS de media con
+ *  peor segundo ≥55; el resultado queda en localStorage POR CASCO y la
+ *  siguiente sesión nace ya calibrada. El gobernador continuo vigila la
+ *  partida y baja (con voz) si el promedio cae, y recupera si sobra
+ *  margen. window.__PP_PERF expone el estado para AJUSTES y QA.
+ *  ===================================================================== */
+const PERF_LS = 'ppxr_perf_v1';
+const PERF_TIERS = {
+  quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.50, rate: 90 },
+  quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 },
+  gen: { label: 'VR', scale: 1.20, fovea: 0.60, rate: 72 },
+};
+class PerfManager {
+  constructor(game) {
+    this.g = game;
+    this.tier = 'gen';            // casco detectado (o manual del dueño)
+    this.tierAuto = true;         // false = el dueño fijó el perfil a mano
+    this.auto = true;             // sonda + gobernador activos (AJUSTES)
+    this.scale = 1.4;             // framebufferScaleFactor (próxima sesión)
+    this.fovea = 0.5;             // fixedFoveation VIVO
+    this.rate = 90;               // targetFrameRate preferido
+    this.fps = 0;                 // media EMA para HUD/AJUSTES
+    this.probe = null;            // sonda en curso {round,t,frames,acc,min}
+    this.lastCal = null;          // {fps, when, round} última calibración
+    this._ema = 0; this._emaN = 0;
+    this._secAcc = 0; this._secN = 0; this._secMin = 999;
+    this._hist = [];              // ventanas de 1 s {avg, min}
+    this._coolDown = 0;           // s hasta poder bajar otra vez
+    this._upStreak = 0;           // ventanas seguidas con margen de sobra
+    this._upCool = 0;
+    this._sessScale = null;       // escala con la que NACIÓ esta sesión
+    this._recal = false;          // petición manual pendiente
+    this._detectTier();
+    this._load();
+    try { window.__PP_PERF = this; } catch (e) { /* */ }
+  }
+
+  /* ---- detección del casco por GPU real (Adreno) ---- */
+  _detectTier() {
+    if (!this.tierAuto) return;
+    let r = '';
+    try {
+      const gl = this.g.renderer.getContext();
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      r = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '') : '';
+    } catch (e) { r = ''; }
+    this.gpu = r;
+    if (/adreno\s*\(tm\)\s*74\d/i.test(r)) this.tier = 'quest3';
+    else if (/adreno\s*\(tm\)\s*65\d/i.test(r)) this.tier = 'quest2';
+    else if (/adreno|oculus|quest/i.test(r)) this.tier = 'gen';
+    else this.tier = navigator.hardwareConcurrency >= 8 ? 'gen' : 'gen';
+  }
+
+  /* ---- perfil guardado por casco (localStorage) ---- */
+  _load() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(PERF_LS) || 'null'); } catch (e) { d = null; }
+    if (d && d.tier === this.tier && typeof d.scale === 'number') {
+      this.scale = d.scale;
+      this.fovea = typeof d.fovea === 'number' ? d.fovea : PERF_TIERS[this.tier].fovea;
+      this.rate = typeof d.rate === 'number' ? d.rate : PERF_TIERS[this.tier].rate;
+      this.auto = d.auto !== false;
+      this.lastCal = d.cal || null;
+    } else {
+      const t = PERF_TIERS[this.tier];
+      this.scale = t.scale; this.fovea = t.fovea; this.rate = t.rate;
+    }
+  }
+  save() {
+    try {
+      localStorage.setItem(PERF_LS, JSON.stringify({
+        tier: this.tier, auto: this.auto, scale: +this.scale.toFixed(3),
+        fovea: +this.fovea.toFixed(3), rate: this.rate, cal: this.lastCal,
+      }));
+    } catch (e) { /* almacenamiento ausente */ }
+  }
+
+  /** aplica fovea VIVO + escala para la próxima sesión (llamada en la
+   *  construcción del juego — tres.js lee la escala al crear la capa XR) */
+  applyToRenderer() {
+    try { this.g.renderer.xr.setFramebufferScaleFactor(this.scale); } catch (e) { /* */ }
+    try { this.g.renderer.xr.setFoveation(this.fovea); } catch (e) { /* */ }
+  }
+
+  /** foveation + tasa objetivo al vuelo (dentro de la sesión XR) */
+  applyLive() {
+    try { this.g.renderer.xr.setFoveation(this.fovea); } catch (e) { /* */ }
+    const s = this.g.renderer.xr.getSession && this.g.renderer.xr.getSession();
+    if (s && s.supportedFrameRates && s.updateTargetFrameRate) {
+      try {
+        const rates = s.supportedFrameRates.filter((f) => f >= 55 && f <= this.rate + 0.5);
+        if (rates.length) {
+          const best = Math.max(...rates);
+          if (best > 0 && Math.abs((s.frameRate || 0) - best) > 0.5) s.updateTargetFrameRate(best);
+        }
+      } catch (e) { /* sin soporte */ }
+    }
+  }
+
+  /** entrada de sesión XR: tasa objetivo del perfil + sonda si toca */
+  onSessionStart(session) {
+    this._sessScale = this.scale;
+    this._ema = 0; this._emaN = 0; this._hist.length = 0;
+    this._coolDown = 0; this._upStreak = 0; this._upCool = 0;
+    // tasa del perfil (el casco nunca pasa de lo que el perfil pide)
+    try {
+      if (session && session.supportedFrameRates && session.updateTargetFrameRate) {
+        const cand = session.supportedFrameRates.filter((f) => f <= this.rate + 0.5);
+        const best = cand.length ? Math.max(...cand) : 0;
+        if (best > 0 && best > (session.frameRate || 0)) session.updateTargetFrameRate(best);
+      }
+    } catch (e) { /* tasa por defecto del runtime */ }
+    // sonda: sin calibración de este casco o RECALIBRAR pedido a mano
+    if (this.auto && (this._recal || !this.lastCal)) {
+      this._recal = false;
+      this.probeStart('boot');
+    }
+  }
+  onSessionEnd() {
+    this.probe = null;
+    this.save();
+  }
+
+  /** sonda de calibración: rondas de 2,8 s bajando escalones hasta
+   *  sostener ≥63 de media con peor segundo ≥55 (60 seguros con margen) */
+  probeStart(why) {
+    if (!this.g.renderer.xr.isPresenting) return;
+    this.probe = { round: 0, t: 0, n: 0, acc: 0, min: 999, why: why || 'boot' };
+    this._hist.length = 0;
+  }
+  _probeRound(fpsAvg, fpsMin) {
+    const p = this.probe;
+    const pasa = fpsAvg >= 63 && fpsMin >= 55;
+    if (pasa) {
+      this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: p.round };
+      this.save();
+      this.probe = null;
+      try { this.g.audio.announce(T('perf_cal_ok', { f: Math.round(fpsAvg) }), true); } catch (e) { /* */ }
+      return;
+    }
+    // escalón de degradación (de más sutil a más fuerte)
+    if (p.round === 0) this.fovea = Math.min(0.8, this.fovea + 0.10);
+    else if (p.round === 1) this.rate = this.rate > 62 ? 60 : this.rate;
+    else {
+      this.scale = Math.max(0.9, this.scale - 0.15);   // próxima sesión
+      this.fovea = Math.min(0.8, this.fovea + 0.05);
+    }
+    this.applyLive();
+    this.save();
+    p.round++;
+    if (p.round >= 3) {
+      // sin margen ni al mínimo: 60 Hz ESTABLES como suelo digno
+      this.rate = Math.min(this.rate, 60);
+      this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: 3 };
+      this.applyLive();
+      this.save();
+      this.probe = null;
+      return;
+    }
+    p.t = 0; p.n = 0; p.acc = 0; p.min = 999;
+  }
+
+  /** latido por frame (animate): EMA de FPS, sonda y gobernador */
+  feed(dt, presenting) {
+    if (!dt || dt <= 0 || dt > 1) { /* frame raro: no contamina */ } else {
+      const inst = 1 / dt;
+      this._ema = this._emaN === 0 ? inst : this._ema + (inst - this._ema) * 0.06;
+      this._emaN++;
+      this.fps = Math.round(this._ema);
+      // ventana de 1 s
+      this._secAcc += dt; this._secN++; this._secMin = Math.min(this._secMin, inst);
+      if (this._secAcc >= 1) {
+        const avg = this._secN / this._secAcc, min = this._secMin;
+        this._hist.push({ avg, min });
+        if (this._hist.length > 6) this._hist.shift();
+        this._secAcc = 0; this._secN = 0; this._secMin = 999;
+      }
+    }
+    if (!presenting) return;
+    // sonda activa: manda sobre el gobernador
+    if (this.probe) {
+      const p = this.probe;
+      p.t += dt; p.n++; p.acc += dt;
+      if (dt > 0 && dt < 1) p.min = Math.min(p.min, 1 / dt);
+      if (p.t >= 2.8) {
+        const avg = p.n / Math.max(0.01, p.acc);
+        this._probeRound(avg, p.min);
+      }
+      return;
+    }
+    // gobernador continuo (con histéresis y enFred durante el rallye para
+    // los cambios notables: la tasa se cambia fuera del intercambio)
+    if (!this.auto) return;
+    if (this._coolDown > 0) this._coolDown -= dt;
+    if (this._upCool > 0) this._upCool -= dt;
+    if (this._hist.length >= 4) {
+      const avg = this._hist.reduce((s, h) => s + h.avg, 0) / this._hist.length;
+      const min = Math.min(...this._hist.map((h) => h.min));
+      const rally = this.g.rules && this.g.rules.state === 'rally';
+      const bajando = avg < 56 || (avg < 60 && min < 48);
+      if (bajando && this._coolDown <= 0) {
+        if (!rally || avg < 50) this._stepDown();
+      }
+      const sobra = avg > Math.min(this.rate, 90) * 0.93 && min > this.rate * 0.8;
+      this._upStreak = sobra ? this._upStreak + 1 : 0;
+      if (this._upStreak >= 20 && this._upCool <= 0) this._stepUp();
+    }
+  }
+
+  /** bajo un escalón: fovea → tasa → escala (próxima sesión) */
+  _stepDown() {
+    if (this.fovea < 0.79) this.fovea = Math.min(0.8, this.fovea + 0.08);
+    else if (this.rate > 62) this.rate = 60;
+    else {
+      this.scale = Math.max(0.9, this.scale - 0.10);   // ya para la próxima
+      this.fovea = 0.7;
+    }
+    this._coolDown = 15; this._upStreak = 0;
+    this.applyLive(); this.save();
+    try {
+      if (this.g.rules.state !== 'rally') {
+        this.g.audio.announce(T('perf_stepdown'), false);
+      }
+    } catch (e) { /* */ }
+  }
+  /** sube un escalón si sobra margen (nunca por encima del perfil base) */
+  _stepUp() {
+    const p = PERF_TIERS[this.tier];
+    let subido = false;
+    if (this.scale < p.scale - 0.005) {
+      this.scale = Math.min(p.scale, this.scale + 0.10); subido = true;  // próxima sesión
+    } else if (this.rate < p.rate) {
+      this.rate = Math.min(p.rate, this.rate + 12); subido = true;
+    } else if (this.fovea > p.fovea + 0.005) {
+      this.fovea = Math.max(p.fovea, this.fovea - 0.06); subido = true;
+    }
+    this._upCool = 45; this._upStreak = 0;
+    if (subido) { this.applyLive(); this.save(); }
+  }
+
+  /** estado para AJUSTES/QA */
+  status() {
+    const s = this.g.renderer.xr.getSession && this.g.renderer.xr.getSession();
+    return {
+      tier: this.tier, tierLabel: PERF_TIERS[this.tier].label, gpu: this.gpu || '',
+      auto: this.auto, scale: +this.scale.toFixed(3), fovea: +this.fovea.toFixed(3),
+      rate: this.rate, fps: this.fps, calibrating: !!this.probe,
+      probeRound: this.probe ? this.probe.round : -1,
+      lastCal: this.lastCal, sessionRate: s && s.frameRate ? Math.round(s.frameRate) : 0,
+      presenting: !!this.g.renderer.xr.isPresenting,
+    };
+  }
+  setTier(t) {
+    if (!PERF_TIERS[t]) return;
+    this.tier = t; this.tierAuto = (t === this._detectTierSilent());
+    const d = PERF_TIERS[t];
+    this.scale = d.scale; this.fovea = d.fovea; this.rate = d.rate;
+    this.lastCal = null;
+    this.applyToRenderer(); this.save();
+  }
+  _detectTierSilent() {
+    let r = this.gpu || '';
+    if (/adreno\s*\(tm\)\s*74\d/i.test(r)) return 'quest3';
+    if (/adreno\s*\(tm\)\s*65\d/i.test(r)) return 'quest2';
+    return 'gen';
+  }
+  requestRecal() {
+    if (this.g.renderer.xr.isPresenting) this.probeStart('manual');
+    else this._recal = true;
+  }
+}
+
 
 // r61 · ESTELA DE PODER — firma de color por poder de pala ACTIVO
 // (RGB 0-1; el mismo lenguaje de color que ya usa cada poder: ámbar del

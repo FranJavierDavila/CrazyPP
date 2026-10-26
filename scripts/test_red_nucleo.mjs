@@ -132,6 +132,17 @@ const P = PPNET;
   chk(jb.autoDelay(60, 0) === undefined || true, 'jitter: autoDelay calc');
   jb.autoDelay(60, 0);
   chk(jb.delayMs === P.VP.INTERP_MIN, `jitter: delay adaptativo al mínimo con red perfecta (${P.VP.INTERP_MIN} ms)`);
+  // r81 · nearest(): la muestra más próxima a un instante host (validación
+  // de golpes en SU instante, no en el retraso de reproducción)
+  const near = jb.nearest(1627, null, 250);
+  chk(!!near && near.t === 1627, `nearest: localiza la última muestra ≤ t (t=${near ? near.t : -1})`);
+  const near2 = jb.nearest(1600, null, 250);
+  chk(!!near2 && near2.t === 1594, `nearest: la anterior si t cae entre muestras (t=${near2 ? near2.t : -1})`);
+  chk(jb.nearest(1627 + 400, null, 250) === null, 'nearest: fuera de la ventana de 250 ms → null (no juzga)');
+  const outN = { hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1], rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0 };
+  const near3 = jb.nearest(1594, outN, 250);
+  chk(!!near3 && near3 === outN && Math.abs(outN.hp[2] - (-1 + 18 * 0.06)) < 1e-6,
+    'nearest: copia en el buffer de salida reutilizable (hp.z exacto)');
 }
 
 /* — 5 · FSM de la bola ———————————————————————————————————————————— */

@@ -69,9 +69,22 @@ export class NetLink {
     const T = DIMS.tableTopY;
     return [-p.x, p.y - T, -3.2 - p.z];
   }
+  /* v3.6.73 · r81 · CONVENCIÓN ÚNICA DEL CABLE: el paquete viaja YA en el
+   * marco del RECEPTOR (el emisor aplica el espejo 180° UNA vez con
+   * posToNet/_stateNet — la involución R(z) = −3.2−z manda «mi lado» al
+   * «lado del otro»). Antes el receptor VOLVÍA a aplicar R al recibir
+   * (posFromNet/posFromNetArr): R∘R = identidad → la bola y la pala del
+   * rival aterrizaban en el marco CRUDO del emisor (¡lado contrario de la
+   * mesa!) — el defecto de fondo del multijugador «cosmético» desde v2.19.
+   * Al recibir solo queda re-anclar la Y al tapete propio (la Y viaja
+   * relativa a la mesa desde v2.91). Los VECTORES (velocidad/spin) ya
+   * viajan espejados por el emisor en v2 (_velNet/_spinNet) → identidad;
+   * en v1 el emisor los manda en crudo → sus receptores SÍ espejan una
+   * vez (vecFromNet/spinFromNet intactos). Eventos v1 (botes): crudo →
+   * espejo al recibir (drainNetwork, intacto). UN solo espejo por camino. */
   static posFromNet(a, out) {
     const T = DIMS.tableTopY;
-    out.set(-a[0], a[1] + T, -3.2 - a[2]);
+    out.set(a[0], a[1] + T, a[2]);
     return out;
   }
   static vecToNet(v) { return [-v.x, v.y, -v.z]; }
@@ -131,13 +144,35 @@ export class NetLink {
     // el receptor aplica la conjugación completa en quatFromNet.
     return [q.x, q.y, q.z, q.w];
   }
-  /** r79: inversos de arrays planos (eventos fast → marco local) */
+  /** r79: inversos de arrays planos (eventos fast → marco local).
+   *  r81: el wire ya viene en MI marco (espejo del emisor) — solo Y+T. */
   static posFromNetArr(a) {
     const T = DIMS.tableTopY;
-    return new THREE.Vector3(-a[0], a[1] + T, -3.2 - a[2]);
+    return new THREE.Vector3(a[0], a[1] + T, a[2]);
   }
-  static vecFromNetArr(a) { return new THREE.Vector3(-a[0], a[1], -a[2]); }
-  static spinFromNetArr(a) { return new THREE.Vector3(-a[0], a[1], -a[2]); }
+  static vecFromNetArr(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+  static spinFromNetArr(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+
+  /* v3.6.73 · r81 · ESPEJO DE POSE (solo X/Z):
+   * La POSE del rival viaja con la Y ANCLADA AL TAPETE por el códec
+   * (wPos/rPos con yAnchor: sale y−T_anfitrión y entra y+T_propio —
+   * v2.91), así que al recibir YA está a la altura correcta sobre MI
+   * mesa. Añadir T OTRA VEZ (posFromNet) flotaba al rival ~76 cm por
+   * encima de su altura real («los movimientos no calibran bien»).
+   * El espejo de pose sólo gira X/Z (la involución de 180°); la Y pasa
+   * tal cual. NUEVO para poses; posFromNet sigue para BOLAS/eventos
+   * (esas viajan con Y relativa y SÍ necesitan el +T al recibir). */
+  static posFromNetPose(a, out) {
+    out.set(-a[0], a[1], -3.2 - a[2]);
+    return out;
+  }
+  /** pose cruda (marco del emisor, Y ya anclada a MI tapete) → marco NET
+   *  canónico de eventos ([-x, y−T, −3.2−z]) — el MISMO marco de ev.p
+   *  para que el validador compare peras con peras (spec §12). */
+  static poseToNetFrame(a) {
+    const T = DIMS.tableTopY;
+    return [-a[0], a[1] - T, -3.2 - a[2]];
+  }
 
   /** v2.91 · La propiedad de la bola SIGUE AL SACADOR durante el saque:
    *  si saco YO, yo simulo (toss real + físicas + contacto propio); si
@@ -489,10 +524,7 @@ export class NetLink {
     // v3.6.71 · r79: señalización y control del transporte v2 (por la
     // DataConnection PeerJS o por el canal reliable propio, mismo formato)
     if (d.k === 'sdp') { this._v2RemoteDesc(d.d); return; }
-    if (d.k === 'ice') {
-      try { if (this._pc && d.c) this._pc.addIceCandidate(d.c).catch(() => { /* */ }); } catch { /* */ }
-      return;
-    }
+    if (d.k === 'ice') { this._onIce(d.c); return; }
     switch (d.k) {
       case 'hello2': case 'tick2': case 'tock2': case 'ready2':
       case 'mstart': case 'claim': case 'ack': case 'resync':
@@ -738,7 +770,7 @@ export class NetLink {
         );
         g.haptic(g.paddleHand, 0.3, 40);
         if (h.sv) g.rules.beginServeRally('ai');
-        else g.processIntents(g.rules.registerPaddleHit('ai'));
+        else g.processIntents(g.rules.registerPaddleHit('ai', true));   // r81: golpe remoto
       }
     }
   }
@@ -804,6 +836,7 @@ export class NetLink {
     this._lossLowT = 0; this._degraded = false;
     this._lastFastAt = 0; this._iceRestarts = 0;
     this._helloDone = false; this._helloTO = null;
+    this._iceQ = [];                            // r81: ICE tempranos en cola
     this._anchors = 0; this._readyMe = false; this._readyOpp = false;
     this._mstart = null;                        // {startAt, fs, bo}
     this._clock = new PPNET.NetClock(this.role === 'host');
@@ -827,9 +860,13 @@ export class NetLink {
     };
     document.addEventListener('visibilitychange', this._onVis);
     if (this.role === 'guest') this._v2Offer();
+    // r81 · watchdog de HELLO con ventanas GENEROSAS: el ICE de redes reales
+    // (hotspots, NAT simétricos con STUN lento) puede tardar 10-15 s en
+    // abrir; con 9 s el transporte moría ANTES de nacer y la partida caía
+    // al modo compatible v1. 22 s de gracia total antes de degradar.
     this._helloTO = window.setTimeout(() => {
       if (this.v2 === 'pending') this._v2Fail(T('net_legacy'));
-    }, 9000);
+    }, 22000);
   }
 
   async _v2Offer() {
@@ -868,6 +905,15 @@ export class NetLink {
         };
       }
       await this._pc.setRemoteDescription(desc);
+      // r81 · ICE tempranos: los candidatos que llegaron ANTES de la
+      // descripción remota se encolaban y morían en silencio (addIceCandidate
+      // rechaza sin remoteDescription) — en redes reales dejaba el ICE a medio
+      // abrir y la partida sin canal fast. Se drenan ahora, en orden.
+      const q = this._iceQ || [];
+      this._iceQ = [];
+      for (const c of q) {
+        try { this._pc.addIceCandidate(c).catch(() => { /* */ }); } catch { /* */ }
+      }
       if (desc.type === 'offer') {
         const ans = await this._pc.createAnswer();
         await this._pc.setLocalDescription(ans);
@@ -876,6 +922,17 @@ export class NetLink {
     } catch (e) {
       this._v2Fail(T('net_legacy'));
     }
+  }
+
+  /** r81 · candidato ICE entrante: si la descripción remota aún no está,
+   *  se ENCOLA (se drena en _v2RemoteDesc); si ya está, se aplica. */
+  _onIce(c) {
+    if (!c) return;
+    try {
+      const rd = this._pc && this._pc.remoteDescription;
+      if (this._pc && rd && rd.type) this._pc.addIceCandidate(c).catch(() => { /* */ });
+      else (this._iceQ = this._iceQ || []).push(c);
+    } catch { /* */ }
   }
 
   _wireDC() {
@@ -907,9 +964,11 @@ export class NetLink {
     // HELLO (reliable): versión de protocolo, build y ballPhysics (spec §3.5)
     this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD });
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
+    // r81 · 15 s para el HELLO de respuesta (el ICE ya está abierto aquí:
+    // esto sólo cubre un peer colgado a medias)
     this._helloTO = window.setTimeout(() => {
       if (this.v2 === 'pending') this._v2Fail(T('net_legacy'));
-    }, 6000);
+    }, 15000);
   }
 
   _onRel(m) {
@@ -963,11 +1022,13 @@ export class NetLink {
         this._stats.claims++;
         const g = this.game;
         // el ganador del claim viaja en perspectiva DEL EMISOR: espejar a
-        // la mía para confrontarlo con lo que YO apliqué (spec §7/§9)
-        const guest = this.role === 'guest';
+        // la mía para confrontarlo con lo que YO apliqué (spec §7/§9).
+        // r81 · el espejo es SIEMPRE el intercambio (el emisor llama
+        // «player» a SÍ mismo; para mí ese mismo jugador es «ai»): antes
+        // el anfitrión NO intercambiaba y un CLAIM del invitado se leía
+        // al revés (punto al revés y desacuerdos enmascarados).
         const wMapped = m.w === 'let' ? 'let'
-          : (guest ? (m.w === 'player' ? 'ai' : 'player')
-                   : (m.w === 'player' ? 'player' : 'ai'));
+          : (m.w === 'player' ? 'ai' : 'player');
         const r = this._sync.onClaim(m, wMapped);
         this.sendRel(r.ack);
         if (r.apply && g) this._applyRemoteClaim(m, wMapped);
@@ -1313,12 +1374,15 @@ export class NetLink {
     }
   }
 
-  /** la bola murió en MI mitad (doble bote/fuera/red/…): reclamo (spec §7) */
+  /** la bola murió en MI mitad (doble bote/fuera/red/…): reclamo (spec §7)
+   *  r81: la identidad del rallye es rules.rallySeq (rallyId NO existía:
+   *  undefined en los CLAIM → el libro de reclamos colisionaba a partir del
+   *  primer punto y el marcador se congelaba en ambos extremos). */
   ballDiedLocal(winnerLocal, cause) {
     if (this.v2 !== 'ok') return null;
     const g = this.game;
     const r = g.rules;
-    const rallyId = r.rallyId;
+    const rallyId = r.rallySeq;
     const isAuth = this._ballMineAtDeath();
     const dec = this._sync.localPoint(rallyId, winnerLocal, cause,
       r.scorePlayer, r.scoreAi, isAuth, performance.now());
@@ -1379,12 +1443,13 @@ export class NetLink {
     r.firstServer = m.fs;
   }
 
-  /** intents de PUNTO local (processIntents, c12): enviar/suprimir */
+  /** intents de PUNTO local (processIntents, c12): enviar/suprimir
+   *  r81: rallySeq como identidad del rallye (ver ballDiedLocal). */
   onLocalPointIntent(it) {
     if (this.v2 !== 'ok') return true;    // v1: siempre aplicar (host arbiter)
     const g = this.game;
     const isAuth = this._ballMineAtDeath();
-    const dec = this._sync.localPoint(g.rules.rallyId, it.winner, it.cause || '',
+    const dec = this._sync.localPoint(g.rules.rallySeq, it.winner, it.cause || '',
       g.rules.scorePlayer, g.rules.scoreAi, isAuth, performance.now());
     if (dec.send) {
       this._stats.claims++;
@@ -1443,8 +1508,10 @@ export class NetLink {
       return;
     }
     if (ev.t === PPNET.VP.EV.HIT) {
-      // validación del receptor (spec §12)
-      const pad = this._remotePadNet();
+      // validación del receptor (spec §12) — r81: pose en el marco NET y
+      // en el instante del golpe (antes: marco crudo del emisor contra
+      // ev.p espejado → TODO golpe remoto rechazado por distancia absurda)
+      const pad = this._remotePadNet(ev.kind, ev.tHit);
       const ctx = {
         nowHost: nowH, lastShot: this._ball.shot, lastHitT: this._lastRemoteHitT,
         padPos: pad,
@@ -1455,17 +1522,22 @@ export class NetLink {
         return;
       }
       this._lastRemoteHitT = ev.tHit;
+      // r81 · posFromNetArr devuelve THREE.Vector3: el glue r79 lo INDEXABA
+      // (p[0] = undefined → bola NaN → «no llega nada del rival»). copy().
       const p = NetLink.posFromNetArr(ev.p);
       const vl = NetLink.vecFromNetArr(ev.v);
       const sl = NetLink.spinFromNetArr(ev.s);
-      g.ball.pos.set(p[0], p[1], p[2]);
-      g.ball.vel.set(vl[0], vl[1], vl[2]);
-      g.ball.spin.set(sl[0], sl[1], sl[2]);
+      g.ball.pos.copy(p);
+      g.ball.vel.copy(vl);
+      g.ball.spin.copy(sl);
       if (ev.kind === 2) {
         // lanzamiento al aire del saque del rival: SOLO visual (spec §10)
+        // r81: la bola HELD se libera YA en mi lado (el rival la tiene en
+        // el aire) — antes seguía holdLock y congelada hasta el golpe
         this._ball.state = 'ghost';
         this._ball.mine = false;
         g.ballMesh.visible = true;
+        g._netTossLive = true;
         return;
       }
       // avance de nacimiento: dt·k con tope (spec §8)
@@ -1483,7 +1555,7 @@ export class NetLink {
       if (ev.kind === 1) {
         g.rules.beginServeRally('ai');
       } else {
-        g.processIntents(g.rules.registerPaddleHit('ai'));
+        g.processIntents(g.rules.registerPaddleHit('ai', true));   // r81: golpe remoto
       }
       // sonido del golpe del rival DESDE la simulación local (spec §8)
       g.audio.paddle(
@@ -1501,9 +1573,9 @@ export class NetLink {
         const p = NetLink.posFromNetArr(ev.p);
         const vl = NetLink.vecFromNetArr(ev.v);
         const sl = NetLink.spinFromNetArr(ev.s);
-        g.ball.pos.set(p[0], p[1], p[2]);
-        g.ball.vel.set(vl[0], vl[1], vl[2]);
-        g.ball.spin.set(sl[0], sl[1], sl[2]);
+        g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado
+        g.ball.vel.copy(vl);
+        g.ball.spin.copy(sl);
         // absorber el salto en lo visual (decae en 80 ms)
         this._visOff = { x: -corr.vec[0], y: -corr.vec[1], z: -corr.vec[2],
           ms: corr.ms, t: corr.ms };
@@ -1511,9 +1583,9 @@ export class NetLink {
         const p = NetLink.posFromNetArr(ev.p);
         const vl = NetLink.vecFromNetArr(ev.v);
         const sl = NetLink.spinFromNetArr(ev.s);
-        g.ball.pos.set(p[0], p[1], p[2]);
-        g.ball.vel.set(vl[0], vl[1], vl[2]);
-        g.ball.spin.set(sl[0], sl[1], sl[2]);
+        g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado
+        g.ball.vel.copy(vl);
+        g.ball.spin.copy(sl);
         this._stats.corrSnap++;
       } else {
         this._stats.corrNone++;
@@ -1523,12 +1595,40 @@ export class NetLink {
     }
   }
 
-  _remotePadNet() {
-    // última pose conocida del rival (marco NET) para la validación de golpe
-    const s = this._jb.s[this._jb.s.length - 1];
+  /** v3.6.73 · r81: pose de la pala del rival EN EL INSTANTE del evento,
+   *  en el MISMO marco NET canónico de ev.p ([-x, y−T, −3.2−z]) para que
+   *  la validación §12 compare distancias reales.
+   *  · MARCO: la pose cruda del JB vive en el marco del EMISOR (con Y ya
+   *    anclada a MI tapete por el códec). Antes se comparaba CONTRA ev.p
+   *    (marco espejado, Y relativa) → distancia absurda (>2 m) y TODO
+   *    golpe remoto rechazado: «no deja sacar ni jugar». Ahora la
+   *    convertimos con poseToNetFrame (espejo exacto de _stateNet).
+   *  · INSTANTE: se muestrea la muestra más próxima a ev.tHit (reloj
+     *  host) — no la de reproducción retrasada del avatar (JB.sample).
+   *  · MANO: en el golpe (kind 0/1) la PALA (fl&4); en el LANZAMIENTO del
+   *    saque (kind 2) la mano LIBRE de la bola (la que lanza no es la que
+   *    lleva la pala) — si sólo hay una mano rastreada, esa. */
+  _remotePadNet(kind, tHit) {
+    if (!this._jb || !this._jb.s.length) return null;
+    const s = (tHit !== undefined && tHit !== null)
+      ? this._jb.nearest(tHit, this._padSmp || (this._padSmp = {
+          hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+          rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+        }))
+      : this._jb.s[this._jb.s.length - 1];
     if (!s) return null;
-    const hand = (s.fl & 4) ? s.lp : s.rp;
-    return hand;
+    const leftTrk = !!(s.fl & 1), rightTrk = !!(s.fl & 2), padLeft = !!(s.fl & 4);
+    let hand;
+    if (kind === 2) {
+      // lanzamiento: la mano de la bola (la NO pala, si está rastreada)
+      if (padLeft && rightTrk) hand = s.rp;
+      else if (!padLeft && leftTrk) hand = s.lp;
+      else hand = padLeft ? s.lp : s.rp;
+    } else {
+      hand = padLeft ? s.lp : s.rp;
+    }
+    if (!hand) return null;
+    return NetLink.poseToNetFrame(hand);
   }
 
   /** delta visual de la bola (catch-up + correcciones) o null */

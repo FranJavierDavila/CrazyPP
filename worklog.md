@@ -4550,9 +4550,11 @@ Work Log:
 - QA TOTAL 42/42 VERDE (tandas 1-24 · 25-32 · 33-45 = 0 fallos; AW/BH/U son capas pesadas que flakean 1 check de tiempo bajo carga SwiftShader de tanda: VERIFICADAS 52/0 · 48/0 · 17/0 en aislado y en contexto).
 - COMMIT (este) «V3.6.70-SDK6 FASE 72 · r78: EL NARRADOR HONESTO».
 - DEPLOY: pages ensamblado desde git archive HEAD → commit FF en refs/heads/pages · push con PAT · respaldo main→proyecto · Release v3.6.70-SDK6 con 4 ZIPs.
-- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): SERVED == PAGES-VERSION.txt == blob pages (3 vías) + agujas r78 en el servido.
+- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): (1) SERVED game.html?v=v3670 sha256 c010cb03… (10.258.648 B) == (2) PAGES-VERSION.txt game_sha256 c010cb03… (versión 3.6.70-SDK6 · fuente 0da605de8 · reescrituras=2) == (3) git cat-file blob pages:game.html c010cb03… — TRES VÍAS IGUALES · diff local (golden f14a0291) vs served: EXACTAMENTE las 2 reescrituras conocidas (src="/vendor/socket.io.min.js→vendor/… · href="/tv.html→tv.html), aplicadas y comparadas byte a byte → True.
+- AGUJAS r78 EN PRODUCCIÓN (capa BM contra https://…game.html?v=v3670): 40/0 — 10 átomos byte-exacto · VIEJO tutv8b (extraído del tag v3.6.69-SDK6) PROHIBIDO · tutv8c IDÉNTICA · plan 6 átomos en orden · pizarra SOLO CAMPEONATOS · JUEGO REAL en producción: banco decodificado, speakPlan del paso 7 completo = true, 0 pageerrors. FIX de la capa: el anclaje del átomo viejo era HEAD (ya rodado al commit r78) → ahora tag v3.6.69-SDK6 con guard de VERSION 3.6.69.
+- CAPAS PRODUCCIÓN K+L: verde (qa_hub_hints + qa_champion_listo sobre el sitio servido).
 
 Stage Summary:
-- Producción en V3.6.70-SDK6 — la r78 queda CERRADA
+- Producción en V3.6.70-SDK6 (pages b87847c55, release 4/4, byte-exacto 3 vías, refs main=proyecto=local al día) — la r78 queda CERRADA
 - La voz del paso 7 de LA ACADEMIA cuenta la verdad: «…multijugador y campeonatos»; el partido normal ya no promete superpoderes; los campeonatos se explican con el dictado del dueño (modo arcade · 20 toques seguidos · icono en el mango · gatillo · 10 s · ¡lucha y vence!); la pizarra PODERES dice «SOLO CAMPEONATOS». Regla del juego intacta (c12).
 - El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3670

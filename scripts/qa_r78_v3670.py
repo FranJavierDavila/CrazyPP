@@ -69,19 +69,26 @@ def b64_de(ruta):
 
 
 def b64_viejo_git(clave, banco):
-    """Base64 del átomo ANTIGUO tal y como estaba en el commit r77 (HEAD:
-    el desplegado V3.6.69), anclado al banco pedido (VOICE_B64 o EN)."""
-    r = subprocess.run(
-        ["git", "-C", RAIZ, "show", "HEAD:src/game/core/c00_pre_three.js"],
-        capture_output=True)
-    if r.returncode != 0:
-        return None
-    txt = r.stdout.decode("utf-8", "replace")
-    i = txt.find(f"const {banco} = {{")
-    if i < 0:
-        return None
-    m = re.search(r"\n[ \t]*" + clave + r': "([A-Za-z0-9+/=]+)"', txt[i:i + 3_000_000])
-    return m.group(1) if m else None
+    """Base64 del átomo ANTIGUO (la producción V3.6.69 de la ronda 77),
+    anclado al banco pedido (VOICE_B64 o EN). Se busca el commit BASE de la
+    ronda: el tag v3.6.69-SDK6 (release r77); si no existiera, HEAD~1.
+    (HEAD ya NO vale tras el commit r78: contendría los átomos nuevos.)"""
+    bases = ["v3.6.69-SDK6", "HEAD~1"]
+    for ref in bases:
+        r = subprocess.run(
+            ["git", "-C", RAIZ, "show", f"{ref}:src/game/core/c00_pre_three.js"],
+            capture_output=True)
+        if r.returncode != 0:
+            continue
+        txt = r.stdout.decode("utf-8", "replace")
+        if "const VERSION = '3.6.69-SDK6'" not in txt:
+            continue   # no es la producción r77 (p. ej. HEAD ya rodado)
+        i = txt.find(f"const {banco} = {{")
+        if i < 0:
+            return None
+        m = re.search(r"\n[ \t]*" + clave + r': "([A-Za-z0-9+/=]+)"', txt[i:i + 3_000_000])
+        return m.group(1) if m else None
+    return None
 
 
 PLAN77 = ["['tutv8a', 'tutv8b', 'tutv8c', 'tutv9a', 'tutv9b'],   // 7 modos (r74: explicados con calma)"]

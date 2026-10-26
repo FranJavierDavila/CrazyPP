@@ -371,6 +371,19 @@ CAPAS = [
     # del suelo medida EN VIVO con stepPhysics real (caída 1 mm = 0 eventos,
     # caída 1 m = 1 evento) + color arcoíris sin allocs (FPS).
     ('BI · el mando de siempre (v3666)', 'qa_r74_v3666.py'),
+    # r75 (v3667): «EN LA PANTALLA DEL TUTORIAL DE MODOS ALGUNOS TEXTOS
+    # QUEDAN FUERA DEL CONTENEDOR» — diagnóstico medido EN VIVO: la extra
+    # ámbar de RANKING MUNDIAL (353 px) y ENTRENAR (324 px) agotaba el
+    # mínimo de fitFont (10 px) contra 214 px disponibles de las tarjetas
+    # de 300 → el texto SALÍA de la tarjeta y se comía la vecina (también
+    # en EN: 333/341). Arreglo: cardWrap (fitFont + envoltura glotona en
+    # ≤2 líneas que miden TODAS ≤maxW + elipsis de seguridad), modeCard
+    # COMPACTA cuando la extra se parte (sin colisión de tinta, verificado
+    # con métricas reales del canvas) y wrap2 blindado (cada mitad
+    # re-ajustada a maxW). VERIFICACIÓN VIVA: las funciones SERVIDAS se
+    # extraen del game.html y pintan las 6 tarjetas ES+EN en un canvas
+    # real: cada línea dentro de su marco + capturas en download/.
+    ('BJ · todo encaja en los modos (v3667)', 'qa_r75_v3667.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

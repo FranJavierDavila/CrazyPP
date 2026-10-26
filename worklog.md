@@ -4424,3 +4424,23 @@ Work Log:
 Stage Summary:
 - La r74 sigue CERRADA y VIVA en producción (nada pendiente de la ronda): byte-exacto 3 vías re-confirmado tras la compactación, refs main=proyecto=pages al día, release 4/4
 - Siguiente paso cuando el dueño lo confirme con game.html?v=v3666: su r75 (nuevo informe tras V3.6.66)
+
+---
+Task ID: 179
+Agent: Super Z (main agent)
+Task: r75 (V3.6.67-SDK6 FASE 69 «TODO ENCAJA») — informe del dueño tras V3.6.66: «En la pantalla del tutorial de Modos, algunos textos quedan fuera del contenedor es preciso recolocarlos de otra forma para que se lean bien y quede todo bien encajado» + análisis honesto (lo mejor/lo peor) y mecánicas de mejora radical para el proyecto.
+
+Work Log:
+- DIAGNÓSTICO MEDIDO EN VIVO (Playwright + measureText real): en la pizarra LOS MODOS (paso 8 de la academia) la línea de detalle ámbar (extra) de las tarjetas BAJAS de 300 px — RANKING MUNDIAL (353 px) y ENTRENAR (324 px; también EN: 333/341) — agotaba el mínimo de fitFont (10 px) y aún así medía MÁS que los 214 px disponibles (300 − 86 de icono+margen): el texto SALÍA de la tarjeta y se comía la vecina. El resto de textos de la pantalla medidos y contenidos (títulos, subs, caja PODERES 305/311 ≤ 312).
+- FIX 1 · CARDWRAP (c13): nueva envoltura garantizada — reduce la fuente (fitFont) y, si aún no cabe, ENVUELVE por palabras en ≤maxLines líneas que miden TODAS ≤maxW; preferencia por UNA línea legible (≥11 px) antes que partir; red de seguridad con elipsis al mínimo (jamás fuera del contenedor, con cualquier fuente del visor, ES y EN).
+- FIX 2 · MODECARD COMPACTA (c13): título/sub/extra pasan por cardWrap (≤1/1/2 líneas); modo COMPACTO (título 24 · sub 42) cuando la tarjeta es baja (h<88) o la extra se parte en 2 — COLISIÓN DE TINTA ENTRE FILAS verificada con métricas reales del canvas (actualBoundingBox): cazó y corrigió el caso CAMPEONATOS·EN (extra partida pisaba el subtítulo); las altas con extra en 1 línea conservan el dibujado r74 EXACTO (27/50/extra y+h−14). Anchors de la extra partida: y+h−25 / y+h−12.
+- FIX 3 · WRAP2 BLINDADA (c13): cada mitad de la división se re-ajusta a maxW (antes se pintaban al ancho que dieran); hoy el dibujado de la caja PODERES es idéntico (mitades 252/261 ≤ 312) — armadura para cadenas futuras.
+- NOTA DE TUBERÍA: el primer edit se hizo sobre pages-site/game.html (arteFACTO) — corregido a la fuente de verdad src/game/core/c13_ui_arranque.js + build_game.py --escribir (el ensamblador regenera public/game.html y deploy_pages reconstruye pages-site desde HEAD).
+- QA: capa BJ NUEVA qa_r75_v3667 49/0 (agujas · contadores de ramas viejas AUSENTES · orden de fuente · JUEGO REAL: las funciones SERVIDAS (rr/fitFont/line/pill/wrap2/cardWrap/modeCard) extraídas del game.html y pintadas en un canvas real — las 6 tarjetas en ES y EN, cada línea horizontal y verticalmente dentro de su marco + colisión de tinta entre filas · CAPTURAS de la pizarra reconstruida en download/pizarra_modos_r75_ES.png y _EN.png · 0 pageerrors) · registrada en qa_todo (39 capas)
+- Build: bump_version 3.6.67-SDK6 FASE 69 «TODO ENCAJA» --sdk 1.5.4 (game.html 10.137.468 B, golden 27f5b892) · presupuesto --update (boot 1679 ms, −92 ms vs r74) · gen_release_v3667 NUEVO (notas FASE 69 por marcadores) · build_zip 4 ZIPs (COMPLETO 133.304.497 · ligera 18.249.285 · CLOUDFLARE 133.291.110 · SOLO 6.089) · qa_version 23/0 · test_fisica golden 11 escenarios · 0 desviaciones
+- QA TOTAL 39 capas VERDE en 3 tandas: A 23 · B 11 · C 29 · D 14 · E 151 · F 66 · G 54 · H 213 · I smoke · J 129 · T 17 · U 17 · V · W 43 · X · Y 31 · Z 36 · AF 45 · AG 66 · AH 37 · AI 53 · AK 89 · AL 58 · AM 78 · AN 60 · AO 57 · AQ 53 · AR 35 · AS 69 · AU 35 · AV 46 · AW 48 · AX 16 · BF 77 · BG 74 · BH 52 · BI 45 · **BJ 49 OK · 0 fallos** (AW: 1 flake de timing en tanda, verde 48/0 standalone — patrón r70-D documentado)
+- ANÁLISIS HONESTO entregado al dueño en la respuesta (lo mejor: física/feel + academia + campeonatos + superpoderes; lo peor: rejugabilidad a largo plazo, multijugador sin matchmaking, meta/progresión y presencia visual) + mecánicas de mejora radical priorizadas (progresión/meta, matchmaking+retos asíncronos con fantasmas reales, entrenador IA con la telemetría existente, editor de etapas UGC, pulido visual/FPS).
+
+Stage Summary:
+- r75 COMPLETA en local (código en la fuente de verdad + sellos + golden 27f5b892 + ZIPs v3667 + QA TOTAL 39/39) — pendiente SOLO: commit → deploy → emparejar → byte-exacto → aviso de caché (game.html?v=v3667)
+- La pizarra LOS MODOS queda TODO ENCAJA: nada fuera del contenedor en ninguna tarjeta, en ES ni EN, con capturas de evidencia en download/

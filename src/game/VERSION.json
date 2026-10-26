@@ -1,10 +1,10 @@
 {
-  "version": "3.6.66-SDK6",
-  "fase": 68,
-  "faseNombre": "EL MANDO DE SIEMPRE",
+  "version": "3.6.67-SDK6",
+  "fase": 69,
+  "faseNombre": "TODO ENCAJA",
   "sdk": "1.5.4",
-  "fecha": "2026-10-25",
-  "hub": "v3666-sdk6",
+  "fecha": "2026-10-26",
+  "hub": "v3667-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "ced93fa876ee96d2a416c9c0116de3d95ebe5aee27b65b889fcc037431842ae7"
+  "golden": "27f5b892f41c62886f947cacabd890bf541d67daf0bee928855fd3a24af5705b"
 }

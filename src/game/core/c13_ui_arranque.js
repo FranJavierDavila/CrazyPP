@@ -3757,14 +3757,21 @@ window.__PP_CORE = {
     c.shadowBlur = 0;
   }
   /* parte un texto largo en 2 líneas centradas (por el espacio más
-   * cercano al centro) tras intentar reducirlo. */
+   * cercano al centro) tras intentar reducirlo.
+   * r75 · cada MITAD se re-ajusta a maxW (antes las mitades se pintaban al
+   * ancho que dieran: un medio-línea largo se salía de su caja). Hoy las
+   * dos mitades de LOS MODOS caben (252/261 ≤ 312), así que el dibujado
+   * es idéntico — el ajuste es blindaje para cualquier cadena futura. */
   function wrap2(c, txt, y, size, col, maxW, lh, x) {
     fitFont(c, txt, size, '600', maxW, 12);
     if (c.measureText(txt).width <= maxW) { line(c, txt, y, size, col, undefined, x); return; }
     const sep = txt.lastIndexOf(' ', Math.ceil(txt.length / 2));
     if (sep <= 0) { line(c, txt, y, size, col, undefined, x); return; }
-    line(c, txt.slice(0, sep), y - (lh || 14), size, col, undefined, x);
-    line(c, txt.slice(sep + 1), y + (lh || 14), size, col, undefined, x);
+    const l1 = txt.slice(0, sep), l2 = txt.slice(sep + 1);
+    const s1 = fitFont(c, l1, size, '600', maxW, 9);
+    line(c, l1, y - (lh || 14), s1, col, undefined, x, maxW);
+    const s2 = fitFont(c, l2, size, '600', maxW, 9);
+    line(c, l2, y + (lh || 14), s2, col, undefined, x, maxW);
   }
   /* píldora estilo TIZA: borde blanco translúcido, relleno ámbar/verde
    * suave y texto blanco — auto-dimensionada al texto (nada cortado). */
@@ -3836,7 +3843,68 @@ window.__PP_CORE = {
     fitFont(c, sub, 17, '500', 740, 12);
     c.fillText(sub, 288, y + 50);
   }
-  /* r67 · tarjeta compacta de la rejilla de modos (2×3) */
+  /* r75 · ENVOLTURA GARANTIZADA DENTRO de la tarjeta (informe del dueño:
+   * «en la pantalla del tutorial de Modos algunos textos quedan fuera del
+   * contenedor»): diagnóstico medido en vivo — la línea extra de RANKING
+   * MUNDIAL (353 px) y la de ENTRENAR (324 px) agotaban el mínimo de
+   * fitFont (10 px) y seguían midiendo MÁS que los 214 px disponibles de
+   * las tarjetas de 300: el ámbar salía de la tarjeta y se comía la
+   * vecina. cardWrap reduce la fuente (fitFont) y, si aún no cabe, ENVUELVE
+   * por palabras en ≤maxLines líneas que miden TODAS ≤maxW; si ni así
+   * cabe, recorta con elipsis al mínimo. Nada sale del marco, con
+   * cualquier fuente del visor, en ES y en EN. */
+  function cardWrap(c, txt, size, weight, minS, maxW, maxLines) {
+    const words = String(txt).split(' ');
+    const envuelve = (s, n) => {
+      // envoltura glotona a s px en ≤n líneas; null si no cabe entera
+      c.font = weight + ' ' + s + 'px system-ui, sans-serif';
+      const lines = [];
+      let cur = '';
+      for (let i = 0; i < words.length; i++) {
+        const test = cur ? cur + ' ' + words[i] : words[i];
+        if (c.measureText(test).width <= maxW) { cur = test; continue; }
+        if (cur) { lines.push(cur); cur = ''; }
+        if (c.measureText(words[i]).width > maxW) return null;
+        if (lines.length >= n) return null;
+        cur = words[i];
+      }
+      if (cur) lines.push(cur);
+      if (!lines.length || lines.length > n) return null;
+      let wide = 0;
+      for (let i = 0; i < lines.length; i++) {
+        wide = Math.max(wide, c.measureText(lines[i]).width);
+      }
+      return wide <= maxW ? lines : null;
+    };
+    // 1.ª preferencia: UNA línea si cabe con fuente legible (≥11 px) —
+    // las tarjetas altas conservan el dibujado r74 tal cual.
+    const suelo1 = Math.max(minS, 11);
+    for (let s = size; s >= suelo1; s--) {
+      const unica = envuelve(s, 1);
+      if (unica) return { size: s, lines: unica };
+    }
+    // 2.ª preferencia: partir en ≤maxLines líneas a la MAYOR fuente posible
+    for (let s = size; s >= minS; s--) {
+      const partes = envuelve(s, maxLines);
+      if (partes) return { size: s, lines: partes };
+    }
+    // 3.ª: una línea aunque sea al mínimo
+    const ultima = envuelve(minS, 1);
+    if (ultima) return { size: minS, lines: ultima };
+    // red de seguridad: elipsis al mínimo (jamás fuera del contenedor)
+    c.font = weight + ' ' + minS + 'px system-ui, sans-serif';
+    let t2 = String(txt);
+    while (t2.length > 4 && c.measureText(t2 + '…').width > maxW) t2 = t2.slice(0, -1);
+    return { size: minS, lines: [t2 + '…'] };
+  }
+  /* r67 · tarjeta compacta de la rejilla de modos (2×3)
+   * r75 · título, subtítulo y extra pasan por cardWrap (≤1/1/2 líneas) y
+   * las anclas bajan cuando la tarjeta es baja (h<88) para que la extra
+   * de 2 líneas respire sin pisar al subtítulo. cardWrap prefiere UNA
+   * línea legible (≥11 px): con la fuente del visor las tarjetas ALTAS
+   * (480) se ven EXACTAMENTE igual que r74, y las BAJAS (300) meten su
+   * extra en 2 líneas DENTRO del marco: 353→~206 px y 324→~213 px por
+   * línea, con separación de tinta verificada (sub ↔ extra ≥1 px). */
   function modeCard(c, x, y, w, h, col0, ini, title, sub, extra) {
     rr(c, x, y, w, h, 16);
     c.fillStyle = 'rgba(255,255,255,0.07)'; c.fill();
@@ -3848,18 +3916,34 @@ window.__PP_CORE = {
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(ini, x + 36, y + h / 2 + 1);
     c.textAlign = 'left';
-    fitFont(c, title, 21, '800', w - 86, 15);
-    c.fillText(title, x + 68, y + (extra ? 27 : 32));
+    const tw = w - 86;
+    const tt = cardWrap(c, title, 21, '800', 14, tw, 1);
     c.fillStyle = 'rgba(255,255,255,0.85)';
-    fitFont(c, sub, 15, '500', w - 86, 11);
-    c.fillText(sub, x + 68, y + (extra ? 50 : 62));
+    const ts = cardWrap(c, sub, 15, '500', 10, tw, 1);
+    const te = extra ? cardWrap(c, extra, 13, '600', 9, tw, 2) : null;
+    const filaAlta = h >= 88;
+    // r75 · COMPACTA: las tarjetas bajas (h<88) y las altas cuya extra se
+    // parte en 2 líneas suben sus filas (título 24 · sub 42) para que la
+    // 2.ª línea de la extra respire SIN colisión de tinta (verificado en
+    // vivo con métricas reales del canvas); las altas con extra en 1 línea
+    // conservan el dibujado r74 EXACTO (título 27 · sub 50 · extra y+h−14).
+    const compacta = !filaAlta || (te && te.lines.length === 2);
+    c.fillText(tt.lines[0], x + 68, y + (compacta ? 24 : 27));
+    c.fillText(ts.lines[0], x + 68, y + (compacta ? 42 : 50));
     // r74 · EXPLICACIÓN LARGA del modo (el dueño: «esta parte de los modos
     // no está bien explicada, deberías pararte un poco más»): cada tarjeta
     // gana SU línea de detalle (cómo se juega y cuánto dura), en ámbar.
-    if (extra) {
+    // r75 · y SIEMPRE dentro de la tarjeta: cardWrap la parte en 2 líneas
+    // si el ancho de la tarjeta no da para más.
+    if (te) {
       c.fillStyle = 'rgba(255,224,138,0.80)';
-      fitFont(c, extra, 13, '600', w - 86, 10);
-      c.fillText(extra, x + 68, y + h - 14);
+      c.font = '600 ' + te.size + 'px system-ui, sans-serif';
+      if (te.lines.length === 2) {
+        c.fillText(te.lines[0], x + 68, y + h - 25);
+        c.fillText(te.lines[1], x + 68, y + h - 12);
+      } else {
+        c.fillText(te.lines[0], x + 68, y + h - 14);
+      }
     }
   }
   const PAINTERS = [

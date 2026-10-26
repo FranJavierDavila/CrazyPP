@@ -384,6 +384,10 @@ CAPAS = [
     # extraen del game.html y pintan las 6 tarjetas ES+EN en un canvas
     # real: cada línea dentro de su marco + capturas en download/.
     ('BJ · todo encaja en los modos (v3667)', 'qa_r75_v3667.py'),
+    # r76 · EL PULSO CRAZY: el latido diario de la academia (reto del
+    # día determinista, racha de asistencia con pieles exclusivas,
+    # fantasma propio y el informe del profesor con datos reales).
+    ('BK · el pulso crazy (v3668)', 'qa_r76_v3668.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

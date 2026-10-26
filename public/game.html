@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.67-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.68-SDK6</span>
     </div>
   </main>
 
@@ -2492,7 +2492,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.67-SDK6';
+  const VERSION = '3.6.68-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -20732,6 +20732,10 @@ loadPaddleModel().then((paddleModel) => {
       // v3.0.7-PLAY1 · PRO CIRCUITO: estrellas/precisión por prueba, logros
       // y mejor combo alcanzado (todo derivado del juez, nunca al revés)
       stars: {}, acc: {}, ach: {}, comboBest: 0,
+      // v3.6.68 · EL PULSO CRAZY (r76): latido diario de la academia —
+      // last='YYYY-MM-DD' del último reto cobrado · streak=racha viva de
+      // asistencia · bestStreak=récord · done[dayKey]={m,res,g} cobros
+      daily: { last: '', streak: 0, bestStreak: 0, done: {} },
     };
     let S = (() => {
       try {
@@ -20739,6 +20743,12 @@ loadPaddleModel().then((paddleModel) => {
         if (!raw) return JSON.parse(JSON.stringify(DEF));
         const d = Object.assign(JSON.parse(JSON.stringify(DEF)), JSON.parse(raw));
         d.fb = Object.assign({ marks: 1, line: 1, spin: 1 }, d.fb || {});
+        // r76 · migración defensiva del daily (perfiles antiguos sin la clave
+        // o con basura: el PULSO nunca rompe la carga del perfil)
+        d.daily = Object.assign({ last: '', streak: 0, bestStreak: 0, done: {} }, d.daily || {});
+        d.daily.done = (d.daily.done && typeof d.daily.done === 'object' && !(d.daily.done instanceof Array)) ? d.daily.done : {};
+        d.daily.streak = (+d.daily.streak || 0); d.daily.bestStreak = (+d.daily.bestStreak || 0);
+        if (typeof d.daily.last !== 'string') d.daily.last = '';
         if (!Array.isArray(d.unlocked) || !d.unlocked.length) d.unlocked = ['clasica'];
         return d;
       } catch (e) { return JSON.parse(JSON.stringify(DEF)); }
@@ -20792,6 +20802,27 @@ loadPaddleModel().then((paddleModel) => {
         ach_p5: 'CINCO PERFECTOS', ach_all9: 'CIRCUITO COMPLETO',
         ach_m50: 'METRÓNOMO 50', ach_m100: 'METRÓNOMO 100',
         ach_x3: 'TRIPLE COMBO', ach_leg: 'LEYENDA',
+        /* v3.6.68 · EL PULSO CRAZY (r76) — el latido diario */
+        daily_t: 'RETO DEL DÍA', daily_sub: 'un duelo nuevo cada medianoche · igual para toda la academia',
+        daily_racha: 'RACHA', daily_dias: 'días', daily_record: 'récord',
+        daily_hecho: '¡RETO DEL DÍA COMPLETADO! +{n} pts',
+        daily_ya: 'COMPLETADO HOY', daily_vuelve: 'Vuelve mañana: duelo nuevo y racha que sigue',
+        daily_recompensa: '+{n} pts', daily_fantasma_t: 'TU FANTASMA',
+        daily_fantasma: '¡VENCISTE A TU FANTASMA! +15 pts',
+        daily_fantasma_x: 'A vencer: {n}', daily_fantasma_no: 'sin marca aún',
+        daily_iniciar: '▶ INICIAR RETO', daily_ya_btn: '✓ HECHO · vuelve mañana',
+        daily_obj: '{n} seguidas',
+        daily_hitos: 'Sólo la ASISTENCIA al Reto del Día libera estas pieles',
+        daily_asist: 'PIEL DE ASISTENCIA',
+        daily_prof: 'El profesor: «{tip}»',
+        daily_t0: 'terminar el reto de hoy es la primera técnica: la constancia se entrena',
+        daily_t1: 'aún no has cerrado este modo: {n} seguidas y sin prisa — la pala decide antes de botar',
+        daily_t2: 'tu precisión ({a} %) manda sobre la velocidad: menos prisa, más lectura del bote',
+        daily_t3: 'ya lo terminas: ahora SIN fallos — las 3 estrellas son de quien lee el juego',
+        daily_t4: 'modo dominado: tu duelo es la racha — la constancia separa al campeón del resto',
+        daily_p0: 'La casa reta a tu profundidad', daily_p1: 'El hechizo exige control sobre la red',
+        daily_p2: 'Lee el giro o pícate', daily_p3: 'El duelo se gana en el saque',
+        daily_p4: 'El metrónomo no perdona',
       },
       en: {
         hub_t: 'PRO TRAINING', hub_s: 'High performance center · CRAZY PING PONG',
@@ -20837,6 +20868,27 @@ loadPaddleModel().then((paddleModel) => {
         ach_p5: 'FIVE PERFECTS', ach_all9: 'FULL CIRCUIT',
         ach_m50: 'METRONOME 50', ach_m100: 'METRONOME 100',
         ach_x3: 'TRIPLE COMBO', ach_leg: 'LEGEND',
+        /* v3.6.68 · EL PULSO CRAZY (r76) */
+        daily_t: 'DAILY CHALLENGE', daily_sub: 'a new duel every midnight · the same for the whole academy',
+        daily_racha: 'STREAK', daily_dias: 'days', daily_record: 'record',
+        daily_hecho: 'DAILY CHALLENGE COMPLETE! +{n} pts',
+        daily_ya: 'COMPLETED TODAY', daily_vuelve: 'Come back tomorrow: new duel, streak keeps going',
+        daily_recompensa: '+{n} pts', daily_fantasma_t: 'YOUR GHOST',
+        daily_fantasma: 'YOU BEAT YOUR GHOST! +15 pts',
+        daily_fantasma_x: 'To beat: {n}', daily_fantasma_no: 'no mark yet',
+        daily_iniciar: '▶ START CHALLENGE', daily_ya_btn: '✓ DONE · back tomorrow',
+        daily_obj: '{n} in a row',
+        daily_hitos: 'Only DAILY CHALLENGE attendance unlocks these skins',
+        daily_asist: 'ATTENDANCE SKIN',
+        daily_prof: 'The professor: “{tip}”',
+        daily_t0: 'finishing today\u2019s challenge is the first technique: consistency is trained',
+        daily_t1: 'you have not closed this mode yet: {n} in a row, no rush — the blade decides before the bounce',
+        daily_t2: 'your accuracy ({a} %) rules over speed: less rush, read the bounce',
+        daily_t3: 'you already finish it: now with NO faults — 3 stars belong to those who read the game',
+        daily_t4: 'mode mastered: your duel is the streak — consistency separates the champion',
+        daily_p0: 'The house challenges your depth', daily_p1: 'The spell demands net control',
+        daily_p2: 'Read the spin or bite the dust', daily_p3: 'The duel is won at the serve',
+        daily_p4: 'The metronome shows no mercy',
       },
     };
     const t = (k, vars) => {
@@ -20851,6 +20903,91 @@ loadPaddleModel().then((paddleModel) => {
       { min: 800, k: 'lvl3' }, { min: 1500, k: 'lvl4' },
     ];
     const levelOf = (p) => { let l = LEVELS[0]; for (const it of LEVELS) if (p >= it.min) l = it; return l; };
+
+    /* =================================================================
+     *  v3.6.68 · EL PULSO CRAZY (r76) — el latido diario de la academia
+     *  RETO DEL DÍA: duelo determinista por fecha LOCAL del visor (el
+     *  mismo para todos, cambia a medianoche) sobre los 9 modos que ya
+     *  existen. RACHA DE ASISTENCIA con pieles exclusivas que los puntos
+     *  NO compran, y TU FANTASMA: tu mejor marca del modo del día como
+     *  rival al que vencer. Todo local y honesto, con el economy de
+     *  puntos existente (GAMF=0 ⇒ el PULSO no existe, flujo legacy).
+     *  ================================================================= */
+    const DAILY_BASE = 40, DAILY_PASO = 5, DAILY_TOPE = 7, DAILY_FANTASMA = 15;
+    const DAILY_PODA = 90;                 // días recordados en done{}
+    const CHAMPS_DIA = ['CLOW', 'WIZARD', 'FORAJIDO', 'ORBITAL', 'NEÓN'];
+    // RACHA_SKINS se define JUNTO A SKINS (abajo): TDZ — las constantes del
+    // motor van aquí, lo que TOCA a SKINS va tras su declaración.
+
+    function dayKey(off) {
+      const d = new Date();
+      if (off) d.setDate(d.getDate() + off);
+      const p = (n) => (n < 10 ? '0' : '') + n;
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    }
+    function seedOf(s) {                   // FNV-1a 32 bits — estable y rápido
+      let h = 0x811c9dc5;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+      return h >>> 0;
+    }
+    function dailyPlan(k) {
+      const seed = seedOf('ppx-' + k);
+      const ids = Object.keys(MODES);
+      const mode = ids[seed % ids.length];
+      const M = MODES[mode];
+      const areaIdx = AREAS.findIndex((a) => a.id === M.area);
+      return {
+        mode, n: M.n, area: M.area, areaIdx: areaIdx < 0 ? 0 : areaIdx,
+        champ: CHAMPS_DIA[(seed >>> 7) % CHAMPS_DIA.length],
+        frase: 'daily_p' + (areaIdx < 0 ? 0 : areaIdx),
+      };
+    }
+    function dailyTip(k) {                 // EL INFORME DEL PROFESOR (datos reales)
+      const plan = dailyPlan(k);
+      const best = S.best[plan.mode] || 0;
+      const acc = S.acc[plan.mode] || 0;
+      if (!best) return { k: 'daily_t0', v: { n: plan.n } };
+      if (best < plan.n) return { k: 'daily_t1', v: { n: plan.n } };
+      if (acc && acc < 75) return { k: 'daily_t2', v: { a: acc } };
+      if ((S.stars[plan.mode] || 0) < 3) return { k: 'daily_t3', v: { n: plan.n } };
+      return { k: 'daily_t4', v: { n: plan.n } };
+    }
+    function effStreak() {                 // racha VIVA: se enfría si fallas un día
+      if (!S.daily.last) return 0;
+      const hoy = dayKey(), ay = dayKey(-1);
+      return (S.daily.last === hoy || S.daily.last === ay) ? S.daily.streak : 0;
+    }
+    function dailyComplete(mode, res, oldBest) {
+      if (!GAMF()) return;                 // gamify=0 ⇒ el PULSO no existe
+      const k = dayKey();
+      if (S.daily.done[k]) return;         // ya cobrado hoy (jamás doble)
+      const plan = dailyPlan(k);
+      if (plan.mode !== mode) return;      // hoy toca OTRO modo
+      const ay = dayKey(-1);
+      const nk = (S.daily.last === ay || S.daily.last === k) ? S.daily.streak + 1 : 1;
+      S.daily.streak = nk;
+      if (nk > S.daily.bestStreak) S.daily.bestStreak = nk;
+      S.daily.last = k;
+      const fantasma = (res | 0) > (oldBest | 0);   // has batido tu mejor marca
+      const pts = DAILY_BASE + Math.min(nk - 1, DAILY_TOPE) * DAILY_PASO + (fantasma ? DAILY_FANTASMA : 0);
+      S.daily.done[k] = { m: mode, res: res | 0, g: fantasma ? 1 : 0 };
+      const ks = Object.keys(S.daily.done);
+      if (ks.length > DAILY_PODA) {        // poda: recuerda 90 días
+        ks.sort();
+        for (let i = 0; i < ks.length - DAILY_PODA; i++) delete S.daily.done[ks[i]];
+      }
+      addPts(pts);
+      let aviso = t('daily_hecho', { n: pts }) + (fantasma ? '  ·  ' + t('daily_fantasma') : '');
+      for (const sk of RACHA_SKINS) {
+        if (nk >= sk.days && S.unlocked.indexOf(sk.id) < 0) {
+          S.unlocked.push(sk.id);
+          aviso = t('nuevo_skin', { s: sk.name[LANG] || sk.name.es }) + '  ·  ' + aviso;
+          try { G.audio.playOsc(990, 1560, 0.2, 'triangle', 0.15, 0.1); } catch (e) { /* */ }
+        }
+      }
+      toast(aviso, true);
+      save(); panelDirty = true;
+    }
 
     /* =================================================================
      *  v3.0.7-PLAY1 · PRO CIRCUITO — capa de GAMIFICACIÓN de lectura
@@ -20971,7 +21108,16 @@ loadPaddleModel().then((paddleModel) => {
       { id: 'oro', name: { es: 'Oro', en: 'Gold' }, min: 800, tex: 'oro', edge: 0xf2c14e, grip: 0x3a2c10 },
       { id: 'arcoiris', name: { es: 'Arcoíris', en: 'Rainbow' }, min: 1500, tex: 'holo', edge: 0xb07aff, grip: 0x8e44ad, anim: true },
       { id: 'carbon', name: { es: 'Pro Carbon', en: 'Pro Carbon' }, min: 2500, tex: 'carbon', edge: 0xff2d2d, grip: 0x17181c, modelUrl: 'assets/pala/pala_pro.glb' },
+      /* v3.6.68 · EL PULSO CRAZY (r76) — pieles de ASISTENCIA: min:Infinity
+       * ⇒ JAMÁS salen por puntos; sólo la racha de días del Reto del Día
+       * las libera (via:'racha' · days = hito de asistencia). */
+      { id: 'neon', name: { es: 'Neón', en: 'Neon' }, min: Infinity, days: 7, via: 'racha', tex: 'neon', edge: 0x39ff88, grip: 0x0f3d2e },
+      { id: 'fantasma', name: { es: 'Fantasma', en: 'Ghost' }, min: Infinity, days: 14, via: 'racha', tex: 'fantasma', edge: 0xbfe9ff, grip: 0x43545e },
+      { id: 'campeon', name: { es: 'Campeón', en: 'Champion' }, min: Infinity, days: 30, via: 'racha', tex: 'oro', edge: 0xffd700, grip: 0x4a3808, anim: true },
     ];
+    // r76 · EL PULSO CRAZY: pieles de asistencia (definidas aquí por TDZ —
+    // SKINS ya existe) — sólo la racha de días las libera
+    const RACHA_SKINS = SKINS.filter((s) => s.via === 'racha');
   
     /* ---------------- registro de modos ----------------
      * r72 · cada área lleva ICONO propio (PP_ICONS en c00) — petición del
@@ -21504,6 +21650,10 @@ loadPaddleModel().then((paddleModel) => {
     function okHit(key, pts) {
       st.streak++; st.done++;
       st.roundHits++;
+      // r76 · EL PULSO CRAZY: valor logrado y marca PREVIA capturados ANTES
+      // de cualquier reset del goal (el fantasma se juega con la marca vieja)
+      const __dailyRes = (active === 't5a') ? st.rally : st.streak;
+      const __dailyOld = S.best[active] || 0;
       // v3.0.7-PLAY1 · COMBO: los puntos del golpe se multiplican por la
       // racha (×2 a partir de 4, ×3 a partir de 8). Con gamify=0 mul es 1
       // y el flujo de puntos es IDÉNTICO al de v3.0.6.
@@ -21550,6 +21700,9 @@ loadPaddleModel().then((paddleModel) => {
         toast(active === 't5a'
           ? t('hito', { n: st.rally, n2: bonus })
           : t('hecho', { n: bonus }) + suffix, true);
+        // r76 · EL PULSO CRAZY: ¿era el modo del día y no está cobrado?
+        // (después del toast del modo: el aviso del PULSO es el que manda)
+        try { dailyComplete(active, __dailyRes, __dailyOld); } catch (eD) { /* nunca rompe */ }
         st.streak = 0; st.done = 0;
         if (active !== 't5a') { st.roundHits = 0; st.roundFaults = 0; }
         G.audio.playOsc(660, 990, 0.1, 'triangle', 0.14, 0.0);
@@ -22245,6 +22398,11 @@ loadPaddleModel().then((paddleModel) => {
       oro: () => buildGoldTexture(),
       holo: () => buildHoloTexture(),
       carbon: () => buildCarbonTexture(),
+      /* r76 · pieles de asistencia: neón (goma oscura de pips verdes que
+       * emiten) y fantasma (goma blanca espectral) — mismos builders de la
+       * casa: cero shaders nuevos, cero coste nuevo por frame. */
+      neon: () => buildPipTexture({ base: '#0c1410', hi: '#39ff88', lo: '#02120a', glow: true, glowColor: 'rgba(57,255,136,0.9)' }),
+      fantasma: () => buildPipTexture({ base: '#dfeef8', hi: '#ffffff', lo: '#9dc2d6', glow: false }),
     };
     function getSkinTex(id) {
       if (!SKIN_TEX[id]) {
@@ -22610,6 +22768,7 @@ loadPaddleModel().then((paddleModel) => {
       label(t('skins_t'), ySk, 22, '#7d8ea6');
       let sx = X0;
       for (const sk of SKINS) {
+        if (sk.via === 'racha') continue;   // r76: las de asistencia viven en EL PULSO (fila propia)
         const w = 150, h = 76;
         const un = S.unlocked.indexOf(sk.id) >= 0;
         const idb = 'trv3:skin:' + sk.id;
@@ -22662,6 +22821,141 @@ loadPaddleModel().then((paddleModel) => {
         const PT = (typeof window !== 'undefined' && window.__PP_PADDLE_PERKS)
           ? window.__PP_PADDLE_PERKS[S.skin] : null;
         if (PT) label(t(PT.tag) + ' — ' + t(PT.tag + '_d'), ySk + 106, 14, PT.col);
+      }
+      /* =============================================================
+       *  v3.6.68 · EL PULSO CRAZY — RETO DEL DÍA (r76)
+       *  Panel en el HUECO LIBRE del hub (y 1064–1330; los botones de
+       *  abajo están en 1380): NO mueve nada del layout existente.
+       *  Canvas estático del menú: CERO coste por frame en juego.
+       *  La tarjeta entera es el botón → arranca el modo del día.
+       *  ============================================================= */
+      if (GAMF()) {
+        const kD = dayKey();
+        const planD = dailyPlan(kD);
+        const hechoD = !!S.daily.done[kD];
+        const rachaD = effStreak();
+        const MPD = MODES[planD.mode];
+        const yD = 1064, wD = CW * 2 + GX, hD = 156;
+        btn('trv3:daily', X0, yD, wD, hD, '', false);
+        c.save();
+        c.beginPath();
+        if (c.roundRect) c.roundRect(X0, yD, wD, hD, 20); else c.rect(X0, yD, wD, hD);
+        const gD = c.createLinearGradient(X0, yD, X0 + wD, yD + hD);
+        gD.addColorStop(0, '#41307a'); gD.addColorStop(1, '#1c1238');
+        c.fillStyle = gD; c.fill();
+        c.strokeStyle = hechoD ? '#68d391' : '#f0c85a';
+        c.lineWidth = hechoD ? 4 : 3; c.stroke();
+        c.textBaseline = 'middle';
+        // fila 1 · título + llamada a la acción
+        c.textAlign = 'left';
+        c.fillStyle = '#f0c85a'; c.font = '800 30px system-ui, sans-serif';
+        c.fillText(t('daily_t'), X0 + 26, yD + 30);
+        c.textAlign = 'right';
+        c.font = '800 21px system-ui, sans-serif';
+        c.fillStyle = hechoD ? '#68d391' : '#ffffff';
+        let ctaD = hechoD ? t('daily_ya_btn') : t('daily_iniciar') + '  ·  ' + t('daily_recompensa', { n: DAILY_BASE });
+        const _w0 = ctaD;
+        while (ctaD.length > 2 && c.measureText(ctaD).width > 430) ctaD = ctaD.slice(0, -1);
+        if (ctaD !== _w0) ctaD += '…';
+        c.fillText(ctaD, X0 + wD - 26, yD + 30);
+        // fila 2 · el duelo de hoy + TU FANTASMA
+        c.textAlign = 'left';
+        c.fillStyle = '#ffffff'; c.font = '700 22px system-ui, sans-serif';
+        let duelD = t(MPD.nk) + ' · ' + t('daily_obj', { n: planD.n });
+        const _w1 = duelD;
+        while (duelD.length > 2 && c.measureText(duelD).width > 560) duelD = duelD.slice(0, -1);
+        if (duelD !== _w1) duelD += '…';
+        c.fillText(duelD, X0 + 26, yD + 66);
+        c.textAlign = 'right';
+        const bestD = S.best[planD.mode] || 0;
+        c.fillStyle = '#bfe9ff'; c.font = '700 17px system-ui, sans-serif';
+        let ghD = t('daily_fantasma_t') + ' · ' + (bestD ? t('daily_fantasma_x', { n: bestD }) : t('daily_fantasma_no'));
+        const _w2 = ghD;
+        while (ghD.length > 2 && c.measureText(ghD).width > 380) ghD = ghD.slice(0, -1);
+        if (ghD !== _w2) ghD += '…';
+        c.fillText(ghD, X0 + wD - 26, yD + 66);
+        // fila 3 · el campeón del día + la frase de la casa
+        c.textAlign = 'left';
+        c.fillStyle = 'rgba(255,255,255,0.72)'; c.font = '600 18px system-ui, sans-serif';
+        let frD = planD.champ + ' · ' + t(planD.frase) + '   —   ' + t('daily_prof', { tip: t(dailyTip(kD).k, dailyTip(kD).v) });
+        const _w3 = frD;
+        while (frD.length > 2 && c.measureText(frD).width > wD - 60) frD = frD.slice(0, -1);
+        if (frD !== _w3) { frD = frD.replace(/[\s,;:.«»]+$/, '') + '…'; }
+        c.fillText(frD, X0 + 26, yD + 100);
+        // fila 4 · racha viva + puntos de asistencia
+        c.fillStyle = 'rgba(255,255,255,0.85)'; c.font = '700 17px system-ui, sans-serif';
+        c.fillText(t('daily_racha') + ': ' + rachaD + ' ' + t('daily_dias') + '  ·  ' + t('daily_record') + ': ' + (S.daily.bestStreak || 0), X0 + 26, yD + 130);
+        c.textAlign = 'right';
+        const dxD = X0 + wD - 26 - (7 * 18 - 12);
+        for (let i = 0; i < 7; i++) {
+          c.beginPath(); c.arc(dxD + i * 18, yD + 130, 6, 0, Math.PI * 2);
+          c.fillStyle = i < Math.min(rachaD, 7) ? '#f0c85a' : 'rgba(255,255,255,0.15)';
+          c.fill();
+        }
+        c.restore();
+        // pieles de ASISTENCIA (r76): fila propia bajo el panel — jamás en
+        // la fila de puntos; sólo la racha las libera
+        const yA = yD + hD + 14;
+        label(t('daily_asist'), yA, 15, '#7d8ea6');
+        let axD = X0;
+        for (const sk of RACHA_SKINS) {
+          const w = 150, h = 76;
+          const un = S.unlocked.indexOf(sk.id) >= 0;
+          btn('trv3:skin:' + sk.id, axD, yA + 18, w, h, '', false);
+          c.save();
+          c.beginPath();
+          if (c.roundRect) c.roundRect(axD, yA + 18, w, h, 14); else c.rect(axD, yA + 18, w, h);
+          c.fillStyle = S.skin === sk.id ? 'rgba(240,200,90,0.30)' : 'rgba(255,255,255,0.06)';
+          c.fill();
+          c.strokeStyle = S.skin === sk.id ? '#f0c85a' : (un ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)');
+          c.lineWidth = S.skin === sk.id ? 4 : 2;
+          c.stroke();
+          c.beginPath(); c.arc(axD + 30, yA + 56, 22, 0, Math.PI * 2);
+          c.fillStyle = un ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.12)'; c.fill();
+          c.strokeStyle = 'rgba(255,255,255,0.5)'; c.lineWidth = 2; c.stroke();
+          if (un) {
+            c.save();
+            c.beginPath(); c.arc(axD + 30, yA + 56, 20, 0, Math.PI * 2); c.clip();
+            c.drawImage(skinPreviewCv(sk), axD + 10, yA + 36, 40, 40);
+            c.restore();
+          } else {
+            // r76 · el candado vive en el HUECO de la miniatura (slot de
+            // inventario) — el nombre queda limpio y jamás se trunca
+            c.font = '20px system-ui, sans-serif'; c.textAlign = 'center';
+            c.fillText('\u{1F512}', axD + 30, yA + 57);
+          }
+          c.fillStyle = un ? '#e9edf2' : '#5a6a7d';
+          // r76 · fila SUPERIOR = nombre limpio (fitFont: primero reduce la
+          // fuente, jamás corta si cabe), fila INFERIOR = hito de racha
+          let nmA = (sk.name[LANG] || sk.name.es);
+          let fsA = 17;
+          c.font = '700 ' + fsA + 'px system-ui, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+          while (fsA > 13 && c.measureText(nmA).width > 86) { fsA -= 1; c.font = '700 ' + fsA + 'px system-ui, sans-serif'; }
+          const _w4 = nmA;
+          while (nmA.length > 2 && c.measureText(nmA).width > 86) nmA = nmA.slice(0, -1);
+          if (nmA !== _w4) nmA += '…';
+          c.fillText(nmA, axD + 58, yA + 46);
+          c.font = '600 13px system-ui, sans-serif';
+          if (S.skin === sk.id) {
+            c.fillStyle = '#f0c85a';
+            c.fillText(t('skin_sel'), axD + 58, yA + 64);
+          } else if (un) {
+            c.fillStyle = '#7d8ea6';
+            c.fillText(sk.days + ' ' + t('daily_dias'), axD + 58, yA + 64);
+          } else {
+            c.fillStyle = '#5a6a7d';
+            c.fillText('racha ' + sk.days + ' ' + t('daily_dias'), axD + 58, yA + 64);
+          }
+          c.restore();
+          axD += w + 14;
+        }
+        c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillStyle = '#7d8ea6'; c.font = '600 14px system-ui, sans-serif';
+        let htD = t('daily_hitos');
+        const _w5 = htD;
+        while (htD.length > 2 && c.measureText(htD).width > X0 + wD - (axD - 14) - 16) htD = htD.slice(0, -1);
+        if (htD !== _w5) htD += '…';
+        c.fillText(htD, axD - 14 + 16, yA + 56);
       }
       // botón parar si hay modo activo + vuelta al HALL (v3.1.0-SRV2: el
       // hall es el hub — desde el propio hub de entrenamiento se sale a la
@@ -22756,6 +23050,12 @@ loadPaddleModel().then((paddleModel) => {
         game.drawMenu();
       }
       else if (cmd === 'skin') { applySkin(p[1]); game.drawMenu(); }
+      else if (cmd === 'daily') {
+        // r76 · EL PULSO CRAZY: la tarjeta arranca el modo del día (si ya
+        // está cobrado hoy, entrenar es gratis — la recompensa no se repite)
+        game.closeMenu();
+        startMode(game, dailyPlan(dayKey()).mode);
+      }
       else if (cmd === 'fb') {
         S.fb[p[1]] = S.fb[p[1]] ? 0 : 1; save();
         // ronda 27 (informe del dueño) · OBEDIENCIA INMEDIATA: al desmarcar
@@ -22823,9 +23123,13 @@ loadPaddleModel().then((paddleModel) => {
       get state() { return { active, pts: S.pts, best: S.best, skin: S.skin, unlocked: S.unlocked.slice(),
         stars: Object.assign({}, S.stars), acc: Object.assign({}, S.acc),
         ach: Object.assign({}, S.ach), comboBest: S.comboBest || 0,
-        round: { hits: st.roundHits, faults: st.roundFaults } }; },
+        round: { hits: st.roundHits, faults: st.roundFaults },
+        daily: { last: S.daily.last, streak: S.daily.streak, bestStreak: S.daily.bestStreak,
+          hoy: (S.daily.done && S.daily.done[dayKey()]) ? 1 : 0 } }; },
       __debug: { S, st, MODES },
     __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel, serveAssist,
+      // r76 · EL PULSO CRAZY: internos expuestos para la QA (qa_r76_v3668)
+      dayKey, dailyPlan, dailyTip, dailyComplete, effStreak, seedOf,
       // ronda 27 · internos de las AYUDAS TÉCNICAS (QA qa_train_ayudas):
       // accesores —nunca sustituciones— para verificar por GPU que cada
       // interruptor de la sección «AYUDAS TÉCNICAS» obedece de verdad.

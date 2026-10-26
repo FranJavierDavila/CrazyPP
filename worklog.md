@@ -4444,3 +4444,19 @@ Work Log:
 Stage Summary:
 - r75 COMPLETA en local (código en la fuente de verdad + sellos + golden 27f5b892 + ZIPs v3667 + QA TOTAL 39/39) — pendiente SOLO: commit → deploy → emparejar → byte-exacto → aviso de caché (game.html?v=v3667)
 - La pizarra LOS MODOS queda TODO ENCAJA: nada fuera del contenedor en ninguna tarjeta, en ES ni EN, con capturas de evidencia en download/
+
+---
+Task ID: 179-b
+Agent: Super Z (main agent)
+Task: Cierre de la r75 — commit, deploy FF, main:main y verificación byte-exacto de 3 vías de V3.6.67-SDK6.
+
+Work Log:
+- COMMIT: 2f33b12 «V3.6.67-SDK6 FASE 69 · r75: TODO ENCAJA» (código en la fuente de verdad c13 + sellos + QA BJ + scripts de ronda)
+- DEPLOY (lección r70-r75 aplicada): refs/heads/pages local pre-alineada a origin/pages (8a27eebd6) ANTES de ensamblar → FF A LA PRIMERA · pages → 1747bab7d (396 ficheros, smoke bajo prefijo /CrazyPP/ 29 peticiones 0 fallos 0 pageerrors) · Release v3.6.67-SDK6 con 4 ZIPs verificados por API (COMPLETO 133.304.497 · ligera 18.249.285 · CLOUDFLARE 133.291.110 · SOLO 6.089) · respaldo anti-rollback main→proyecto al día
+- PUSH main:main con token-en-URL (74c945b..2f33b12, unset inmediato, nada persistido en config) → origin/main = 2f33b12
+- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): (1) SERVED game.html?v=v3667 sha256 da947845… == (2) PAGES-VERSION.txt game_sha256 da947845… (versión 3.6.67-SDK6 · fuente 2f33b12be · reescrituras=2) == (3) git cat-file blob pages:game.html da947845… — TRES VÍAS IGUALES · diff local(27f5b892) vs served: EXACTAMENTE las 2 reescrituras conocidas (/vendor/socket.io.min.js→vendor/… · /tv.html→tv.html), aplicadas y comparadas byte a byte → True · golden local 27f5b892 intacto
+- PRODUCCIÓN EXTRA (agujas r75 en el servido): cardWrap definida ×1 · elipsis de seguridad ×1 · preferencia 1 línea ≥11 px ×1 · firma modeCard r74 ×1 · modo compacto ×1 · anclas compactas ×2 · extra 2 líneas y+h−25/y+h−12 ×2 · wrap2 mitades re-ajustadas ×1 · LOS MODOS a 262 ×1 · ENTRENAR con su extra ×1 · rama vieja del extra AUSENTE ×0 · anclas viejas AUSENTES ×0 · sello V3.6.67-SDK6 ×1 — 15/15
+
+Stage Summary:
+- Producción en V3.6.67-SDK6 (pages 1747bab7d, release 4/4, byte-exacto 3 vías, refs main=proyecto=pages al día) — la r75 queda CERRADA
+- El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3667

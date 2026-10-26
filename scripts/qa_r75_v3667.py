@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r75_v3667 — CAPA BJ · V3.6.69-SDK6, FASE 69 «TODO ENCAJA».
+"""qa_r75_v3667 — CAPA BJ · V3.6.70-SDK6, FASE 69 «TODO ENCAJA».
 
 Informe del dueño tras probar V3.6.66 en el Quest:
   «En la pantalla del tutorial de Modos, algunos textos quedan fuera del
@@ -110,8 +110,8 @@ AGUJAS = [
      "wrap2(c, T('tut_pow_t'), 536, 14, '#ffe08a', 312, 11, 996);"),
     ("pintor: rejilla llama a modeCard con las 4 altas",
      "modeCard(c, x, y, W, H, col, ini, ti, su, ex);"),
-    ("voz: VOCES_PASO[7] con los 5 átomos (r74 intacto)",
-     "['tutv8a', 'tutv8b', 'tutv8c', 'tutv9a', 'tutv9b'],   // 7 modos (r74: explicados con calma)"),
+    ("voz: VOCES_PASO[7] con los 6 átomos (r74 intacto)",
+     "['tutv8a', 'tutv8b', 'tutv8c', 'tutv9a', 'tutv9c', 'tutv9b'],   // 7 modos (r74: con calma · r78: campeonatos = superpoderes)"),
 ]
 
 CONTADORES = [
@@ -170,8 +170,8 @@ TARJETAS = [
      "TRAINING · PRO TRAINING: 5 areas to polish your technique."),
 ]
 
-PODERES_ES = "PODERES: Mega Pala · Efecto · Imán · Portal · Clon — gatillo con la bola viva."
-PODERES_EN = "POWERS: Mega Paddle · Spin · Magnet · Portal · Clone — trigger with a live ball."
+PODERES_ES = "PODERES · SOLO CAMPEONATOS: 20 toques seguidos cargan · gatillo lanza · 10 s"
+PODERES_EN = "POWERS · CHAMPIONSHIPS ONLY: 20 straight hits charge · trigger fires · 10 s"
 TITULOS = {"ES": "LOS MODOS", "EN": "THE MODES"}
 
 POS = [(190, 296), (690, 296), (190, 396), (690, 396), (190, 496), (506, 496)]

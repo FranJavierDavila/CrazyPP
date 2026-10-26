@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r74_v3666 — CAPA BI · V3.6.69-SDK6, FASE 68 «EL MANDO DE SIEMPRE».
+"""qa_r74_v3666 — CAPA BI · V3.6.70-SDK6, FASE 68 «EL MANDO DE SIEMPRE».
 
 Informe del dueño tras probar V3.6.65 en el Quest, punto por punto:
   1. «Desde el módulo Pro training, en cualquier modalidad, sacar el Menú
@@ -111,8 +111,8 @@ AGUJAS = [
     ("modos: modeCard acepta línea extra", "function modeCard(c, x, y, w, h, col0, ini, title, sub, extra) {"),
     ("modos: tarjeta PARTIDO con explicación larga", "T('hub_match'), T('tut_mod_p'), T('tut_s6_m1')"),
     ("modos: tarjeta ENTRENAR con explicación larga", "T('sec_train'), T('tut_mod_t'), T('tut_s7_m3')"),
-    ("modos: VOCES_PASO[7] con los 5 átomos",
-     "['tutv8a', 'tutv8b', 'tutv8c', 'tutv9a', 'tutv9b'],   // 7 modos (r74: explicados con calma)"),
+    ("modos: VOCES_PASO[7] con los 6 átomos",
+     "['tutv8a', 'tutv8b', 'tutv8c', 'tutv9a', 'tutv9c', 'tutv9b'],   // 7 modos (r74: con calma · r78: campeonatos = superpoderes)"),
     ("voz: átomo tutv8b ES", "tutv8b: \""),
     ("voz: átomo tutv8c ES", "tutv8c: \""),
     ("voz: átomo tutv9b ES", "tutv9b: \""),

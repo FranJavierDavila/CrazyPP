@@ -4645,7 +4645,7 @@ window.__PP_CORE = {
     ['tutv5a', 'tutv5b'],                    // 4 marcador
     ['tutv6a', 'tutv6b'],                    // 5 práctica (6 devoluciones)
     ['tutv7a'],                              // 6 botones
-    ['tutv8a', 'tutv8b', 'tutv8c', 'tutv9a', 'tutv9b'],   // 7 modos (r74: explicados con calma)
+    ['tutv8a', 'tutv8b', 'tutv8c', 'tutv9a', 'tutv9c', 'tutv9b'],   // 7 modos (r74: con calma · r78: campeonatos = superpoderes)
     ['tutv10a', 'tutv10b'],                  // 8 final
   ];
   function enterStep() {

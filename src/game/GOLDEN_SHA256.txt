@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.69-SDK6, fase 71 · LA RAQUETA MODO FANTASMA; sello actualizado
-# por bump_version.py desde 3.6.68-SDK6)
-f3d706641b7545184b97b86c6be10b36f2045839c1f97b7f57c5baefe5a6c876
+# SHA256 del game.html que produjo esta división (3.6.70-SDK6, fase 72 · EL NARRADOR HONESTO; sello actualizado
+# por bump_version.py desde 3.6.69-SDK6)
+f14a02919826b466e8bf20dc4b8f2e70d9d4604c8fc9187e07d98a5a70c17927

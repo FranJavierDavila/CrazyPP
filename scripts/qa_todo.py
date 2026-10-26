@@ -392,6 +392,11 @@ CAPAS = [
     # invisible y materializa EXACTAMENTE cuando la voz dice «tu mando se
     # convierte en tu raqueta» (subfase 4); cualquier salida la devuelve.
     ('BL · la raqueta modo fantasma (v3669)', 'qa_r77_v3669.py'),
+    # r78 · EL NARRADOR HONESTO: la voz del paso 7 (modos) ya no promete
+    # superpoderes en el partido normal — «…y campeonatos», el modo arcade
+    # con poderes para rival y jugador (20 toques seguidos · icono en el
+    # mango · gatillo · 10 s · ¡lucha y vence!). Pizarra PODERES sincronizada.
+    ('BM · el narrador honesto (v3670)', 'qa_r78_v3670.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

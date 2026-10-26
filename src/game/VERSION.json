@@ -1,10 +1,10 @@
 {
-  "version": "3.6.69-SDK6",
-  "fase": 71,
-  "faseNombre": "LA RAQUETA MODO FANTASMA",
+  "version": "3.6.70-SDK6",
+  "fase": 72,
+  "faseNombre": "EL NARRADOR HONESTO",
   "sdk": "1.5.4",
   "fecha": "2026-10-26",
-  "hub": "v3669-sdk6",
+  "hub": "v3670-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "f3d706641b7545184b97b86c6be10b36f2045839c1f97b7f57c5baefe5a6c876"
+  "golden": "f14a02919826b466e8bf20dc4b8f2e70d9d4604c8fc9187e07d98a5a70c17927"
 }

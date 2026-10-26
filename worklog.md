@@ -4536,3 +4536,23 @@ Stage Summary:
 - Producción en V3.6.69-SDK6 (pages bf5a20d58, release 4/4, byte-exacto 3 vías, refs main=proyecto=local al día) — la r77 queda CERRADA
 - En LA ACADEMIA la raqueta es MODO FANTASMA: nace invisible, materializa EXACTAMENTE cuando la voz dice «tu mando se convierte en tu raqueta» con la aura dorada como destello; a prueba de cambio de mano, vuelta del Hall y cualquier salida — nadie se queda sin raqueta jamás. Fuera de la academia, CERO cambios.
 - El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3669
+
+---
+Task ID: 182
+Agent: Super Z (main agent)
+Task: r78 — EL NARRADOR HONESTO: nota del dueño sobre el audio del tutorial en el apartado de modos («se dice que cada 20 toques ganamos un superpoder, pero esto no es para los partidos normales ya que los superpoderes solo aparecen en los campeonatos. Cuando describe los modos llega un momento que dice "…y más…" cuando lo que debería es decir Campeonatos: el modo tipo arcade con poderes en juego tanto para el rival como para el propio jugador cuando consigue superar los 20 toques seguidos. Estos superpoderes se ven con un icono identificativo sobre el mango de nuestra pala y se lanzan apretando el gatillo; tienen una duración de 10 segundos. ¡Lucha con el rival y véncelo!»). Ciclo completo: implementación → QA → sello → release → deploy → verificación byte-exacto 3 vías.
+
+Work Log:
+- DIAGNÓSTICO (átomos vs verdad del juego): en c00, tutv8a decía «…multijugador, y más» (el «y más» del dueño) y tutv8b prometía «Y cada veinte golpes del intercambio, ganas una carga de poder» — FALSO en partido normal: megaEnabled() (c12, v3.6.36, regla del dueño) da poderes SOLO con champs.active · MEGA_GOLPES=20 · gatillo del mando libre · icono del dueño sobre el mango · 10 s (Mega Pala apila +15). tutv9a añadía «poderes locos en cada mesa» — también falso.
+- VOZ NUEVA (Piper de la casa, davefx/lessac r66 pausado — el narrador de SIEMPRE): gen_voice_r78.py regenera 5 átomos ES+EN: tutv8a «…multijugador y campeonatos» (adiós «y más») · tutv8b SIN la carga falsa (4,2 s, antes ~10 s) · tutv9a «Los campeonatos son el modo arcade: aquí sí hay superpoderes, para el rival y para ti, cuando consigues superar veinte toques seguidos» · tutv9c NUEVO con el dictado del dueño (icono en el mango · gatillo · 10 s · «¡Lucha con el rival y véncelo!» — 10,8 s) · tutv9b rivales/historia + ranking + entrenar. tutv8c INTACTA byte a byte. insertar_voz_r78.py: 4 sustituidas + 1 nueva por banco (VOICE_B64/EN +98 KB).
+- ORDEN (c13): VOCES_PASO[7] = 8a, 8b, 8c, 9a, 9c, 9b (6 átomos, r74 con calma). PIZARRA (c00): tut_pow_t ahora «PODERES · SOLO CAMPEONATOS: 20 toques seguidos cargan · gatillo lanza · 10 s» (ES+EN, más corto que el viejo: el encaje r75 solo puede mejorar).
+- QA: capa BM qa_r78_v3670 NUEVA 40/0 (agujas + átomos BYTE-EXACTO: los 10 OGG leídos de disco y buscados dentro del servido + el VIEJO tutv8b extraído de git y PROHIBIDO + tutv8c comprobada IDÉNTICA + JUEGO REAL: banco de voz decodificado con gesto sintético, 6/6 átomos, duraciones nuevas, speakPlan del plan COMPLETO del paso 7 = true — 0 pageerrors) · qa_todo registra BM (42 capas) · sella_r78 (20 capas rodadas a 3.6.70 + tamaños ZIP v3670 + fixtures PODERES de BJ actualizados al texto que se sirve) · agujas de los 5 átomos en BI/BJ re-ancladas a los 6 átomos r78 · gen_release_v3670 (notas FASE 72; fix print n3669 heredado) · release-v3670 4 ZIPs (COMPLETO 133.382.859 · ligera 18.327.647 · CLOUDFLARE 133.369.341 · SOLO 6.221) · bump FASE 72 (golden f14a0291, game.html 10.258.650 B).
+- QA TOTAL 42/42 VERDE (tandas 1-24 · 25-32 · 33-45 = 0 fallos; AW/BH/U son capas pesadas que flakean 1 check de tiempo bajo carga SwiftShader de tanda: VERIFICADAS 52/0 · 48/0 · 17/0 en aislado y en contexto).
+- COMMIT (este) «V3.6.70-SDK6 FASE 72 · r78: EL NARRADOR HONESTO».
+- DEPLOY: pages ensamblado desde git archive HEAD → commit FF en refs/heads/pages · push con PAT · respaldo main→proyecto · Release v3.6.70-SDK6 con 4 ZIPs.
+- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): SERVED == PAGES-VERSION.txt == blob pages (3 vías) + agujas r78 en el servido.
+
+Stage Summary:
+- Producción en V3.6.70-SDK6 — la r78 queda CERRADA
+- La voz del paso 7 de LA ACADEMIA cuenta la verdad: «…multijugador y campeonatos»; el partido normal ya no promete superpoderes; los campeonatos se explican con el dictado del dueño (modo arcade · 20 toques seguidos · icono en el mango · gatillo · 10 s · ¡lucha y vence!); la pizarra PODERES dice «SOLO CAMPEONATOS». Regla del juego intacta (c12).
+- El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3670

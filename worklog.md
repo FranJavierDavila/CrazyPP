@@ -4513,3 +4513,26 @@ Stage Summary:
 - Producción en V3.6.68-SDK6 (pages 34da18b42, release 4/4, byte-exacto 3 vías, refs main=proyecto=local al día) — la r76 queda CERRADA
 - EL PULSO CRAZY en producción: Reto del Día + racha de asistencia + pieles exclusivas (Neón 7 · Fantasma 14 · Campeón 30) + fantasma propio + informe del profesor — LAS RAZONES PARA VOLVER CADA DÍA
 - El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3668
+
+---
+Task ID: 181
+Agent: Super Z (main agent)
+Task: r77 — LA RAQUETA MODO FANTASMA: nota del dueño sobre la academia («antes de que diga "Pulsa el botón A… Tu mando se convierte en tu raqueta", en lugar de colocar la raqueta visible con el mando puede aparecer en modo fantasma sin verse aún, hasta que aparece cuando lo dice»). Ciclo completo: recuperación del snapshot rodado local → punto seguro → implementación → QA → sello → release → deploy → verificación byte-exacto 3 vías.
+
+Work Log:
+- RECUPERACIÓN (incidente heredado): el snapshot local llegó RODADO a la ronda 35 (HEAD 42dabed / V3.6.27 con worklog sin Tasks 136-180) — TODO a salvo en origin/main (75c94df / Task 180-c). PAT repuesto en scripts/worker-tele/.github-pat (600, gitignored) y git reset --hard origin/main; snapshot rodado preservado en stash.
+- PUNTO SEGURO: tag v3.6.68-r76-baseline sobre la producción V3.6.68-SDK6 (blob 0f2dec22) → origin. Restauración: git reset --hard v3.6.68-r76-baseline + redeploy.
+- IMPLEMENTACIÓN (c12 núcleo): llave setPalaOculta(v) + flag tutPalaOculta (init false) con UNA sola regla de visibilidad (hall + fantasma + mano activa); setPaddleHand la respeta (cambiar de mano no destapa a mitad de guion) y exitHall también (volver del Hall tampoco). Idempotente (antes===después ⇒ return).
+- IMPLEMENTACIÓN (c13 academia): start() nace la pala REAL INVISIBLE (sólo mandos GLB anclados acompañan en bienvenida y las 4 acciones del paso 1) · accionMandoOk subfase 4 la MATERIALIZA en el instante EXACTO de la voz «tu mando se convierte en tu raqueta» (antes de auraMeta=1: la aura dorada r67/r74 es el destello de nacimiento; mandosVisMeta=0 funde los GLB) · stop() la devuelve en CUALQUIER salida (jugar ya, B/Y, fin) ANTES de teardownPanel (orden r63). Introspección QA: estado() expone palaOculta + palaVisible.
+- QA: capa BL qa_r77_v3669 NUEVA 49/0 (14 agujas + 7 contadores + 3 órdenes de fuente + JUEGO REAL 25 checks: nace oculto, sobrevive a gatillo/grip/stick, materializa en subfase 4 con aura encendida y mandos fuera, vaivén intacto hasta paso 2, restauración en las 3 salidas, re-arma en 2.ª sesión, B/Y temprano restaura, idempotencia, fin del guion con pp_tut_done — 0 pageerrors) · qa_todo registra BL (41 capas) · capa Y re-anclada a la regla nueva (aguja de setPaddleHand con el fantasma; 31/0) · sella_r77 (19 capas rodadas a 3.6.69 + tamaños ZIP) · gen_release_v3669 (notas FASE 71; fix de agujas 3.6.68 heredadas en build_zip) · release-v3669 4 ZIPs (COMPLETO 133.310.032 · ligera 18.254.820 · CLOUDFLARE 133.296.513 · SOLO 6.221) · presupuesto refrescado (boot 2046 ms SwiftShader) · bump FASE 71 (golden f3d70664, game.html 10.158.650 B).
+- QA TOTAL 41/41 VERDE en 2 tandas (453 s capas 1-20 tras re-anclar Y; 524 s capas 21-41 — 0 fallos, física golden 11/11 incluida).
+- COMMIT a49d576 «V3.6.69-SDK6 FASE 71 · r77: LA RAQUETA MODO FANTASMA».
+- DEPLOY (lección r76 aplicada): refs/heads/pages pre-alineada a origin/pages (34da18b42) ANTES de ensamblar → FF A LA PRIMERA · pages → bf5a20d58 (396 ficheros, smoke bajo /CrazyPP/ 29 peticiones 0 fallos 0 pageerrors) · respaldo anti-rollback main→proyecto al día · Release v3.6.69-SDK6 publicada con 4 ZIPs.
+- PUSH main:main con token-en-URL (75c94df..a49d576) · refs alineadas: main=proyecto=local a49d5767 · pages bf5a20d58.
+- VERIFICACIÓN PRODUCCIÓN BYTE-EXACTO (curl, tras build de Pages): (1) SERVED game.html?v=v3669 sha256 c8c565ee… == (2) PAGES-VERSION.txt game_sha256 c8c565ee… (version 3.6.69-SDK6 · fuente a49d57678 · reescrituras=2) == (3) git cat-file blob pages:game.html c8c565ee… — TRES VÍAS IGUALES.
+- AGUJAS r77 EN PRODUCCIÓN (sobre el servido): setPalaOculta ×1 · tutPalaOculta init ×1 · nace fantasma ×1 · materializa ×1 · blindaje salida ×1 · palaOculta introspección ×1 · sello 3.6.69-SDK6 ×2 — 7/7.
+
+Stage Summary:
+- Producción en V3.6.69-SDK6 (pages bf5a20d58, release 4/4, byte-exacto 3 vías, refs main=proyecto=local al día) — la r77 queda CERRADA
+- En LA ACADEMIA la raqueta es MODO FANTASMA: nace invisible, materializa EXACTAMENTE cuando la voz dice «tu mando se convierte en tu raqueta» con la aura dorada como destello; a prueba de cambio de mano, vuelta del Hall y cualquier salida — nadie se queda sin raqueta jamás. Fuera de la academia, CERO cambios.
+- El dueño debe RECARGAR con caché limpia: cerrar la pestaña del juego y abrir game.html?v=v3669

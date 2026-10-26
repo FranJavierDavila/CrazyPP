@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r76_v3668 — CAPA BK · V3.6.71-SDK6, FASE 70 «EL PULSO CRAZY».
+"""qa_r76_v3668 — CAPA BK · V3.6.72-SDK6, FASE 70 «EL PULSO CRAZY».
 
 Aprobación del dueño (r76): «vamos a implementar con mucho cuidado los 4
 puntos dejando el estado actual como punto seguro de restauración. Necesito
@@ -93,13 +93,13 @@ AGUJAS = [
      "const __dailyOld = S.best[active] || 0;"),
     ("okHit: hook del PULSO en el goal (try — nunca rompe)",
      "try { dailyComplete(active, __dailyRes, __dailyOld); } catch (eD) { /* nunca rompe */ }"),
-    # --- r76 · panel del hub ---
-    ("panel: la tarjeta entera es el botón",
-     "btn('trv3:daily', X0, yD, wD, hD, '', false);"),
-    ("panel: en el hueco libre (y 1064) — no mueve el layout",
-     "const yD = 1064, wD = CW * 2 + GX, hD = 156;"),
-    ("panel: fila propia de pieles de asistencia",
-     "const yA = yD + hD + 14;"),
+    # --- r76 · panel del hub — r80 · EL RETO SE MUDA A LA PUERTA ---
+    ("r80: la entrada del reto vive ahora en el menú principal",
+     "case 'retoDiario':"),
+    ("r80: arranque directo público del duelo de hoy",
+     "startDaily: (g) => {"),
+    ("r80: fila propia de pieles de asistencia (escaparate en el hueco)",
+     "const yA = 1064;"),
     ("fila de puntos: las de asistencia NO entran",
      "if (sk.via === 'racha') continue;   // r76: las de asistencia viven en EL PULSO (fila propia)"),
     ("candado en el hueco de la miniatura (slot de inventario)",
@@ -109,10 +109,10 @@ AGUJAS = [
     # --- r76 · comando de menú + exposición QA ---
     ("menuAction: comando daily",
      "else if (cmd === 'daily') {"),
-    ("menuAction: arranca el modo del día",
-     "startMode(game, dailyPlan(dayKey()).mode);"),
-    ("state: snapshot daily (QA/hub)",
-     "daily: { last: S.daily.last, streak: S.daily.streak, bestStreak: S.daily.bestStreak,"),
+    ("menuAction: arranca el modo del día (r80 · zonas dobles)",
+     "startMode(game, dailyPlan(dayKey()).mode, { daily: 1 });"),
+    ("state: snapshot daily (QA/hub; r80 · modo del día incluido)",
+     "modoName: t(MODES[_pD.mode].nk)"),
     ("__test: internos del PULSO expuestos",
      "dayKey, dailyPlan, dailyTip, dailyComplete, effStreak, seedOf,"),
     ("i18n ES: título del reto",
@@ -137,8 +137,8 @@ AGUJAS = [
 CONTADORES = [
     ("pieles de asistencia ×3 (via:'racha')",
      ["via: 'racha'"], 3),
-    ("botón del PULSO ×1",
-     ["btn('trv3:daily'"], 1),
+    ("botón del PULSO en el hub RETIRADO (r80: ×0 — vive en la puerta)",
+     ["btn('trv3:daily'"], 0),
     ("comando daily ×1",
      ["else if (cmd === 'daily') {"], 1),
     ("dayKey definida ×1",
@@ -162,10 +162,10 @@ ORDEN_FUENTE = [
      "dayKey se define ANTES de dailyPlan"),
     ("function dailyPlan(k) {", "function dailyComplete(mode, res, oldBest) {",
      "dailyPlan se define ANTES de dailyComplete"),
-    ("EL PULSO CRAZY — RETO DEL DÍA (r76)", "btn('trv3:stop', X0, 1380",
-     "el panel del PULSO queda ANTES del botón parar (hueco libre)"),
-    ("const yD = 1064, wD = CW * 2 + GX, hD = 156;", "btn('trv3:stop', X0, 1380",
-     "el panel (1064+156=1220) no alcanza la fila de abajo (1380)"),
+    ("EL RETO SE MUDA A LA PUERTA", "btn('trv3:stop', X0, 1380",
+     "el escaparate de pieles queda ANTES del botón parar (r80)"),
+    ("const yA = 1064;", "btn('trv3:stop', X0, 1380",
+     "la fila de pieles (1064) no alcanza la fila de abajo (1380)"),
 ]
 
 # --- JUEGO REAL: verificación del motor del PULSO con el juego servido ----
@@ -254,17 +254,14 @@ JS_PULSO = """(args) => {
   S.acc[p1.mode] = 95; S.stars[p1.mode] = 3;
   ok('profesor.dominado', tt.dailyTip(kHoy).k === 'daily_t4', tt.dailyTip(kHoy).k);
 
-  // 5 · panel vivo: rects del PULSO dentro de bounds del lienzo 1024×1536
+  // 5 · panel vivo r80: el botón del PULSO ya NO está en el hub (vive en
+  // la puerta — capa BO) y las pieles de asistencia siguen en su fila
   G.menuPage = 'train';
   G.drawMenu();
   const rects = G.menuRects || [];
   const rDaily = rects.filter((r) => r && r.id === 'trv3:daily');
-  ok('panel.rect', rDaily.length === 1, rDaily.length + '');
-  if (rDaily.length === 1) {
-    const r = rDaily[0];
-    ok('panel.boundsX', r.x >= 30 && r.x + r.w <= 1030, r.x + '..' + (r.x + r.w));
-    ok('panel.boundsY', r.y >= 1000 && r.y + r.h <= 1390, r.y + '..' + (r.y + r.h));
-  }
+  ok('panel.retirado', rDaily.length === 0, rDaily.length + ' (r80: se mudó al menú principal)');
+  const rReto = null;   // la geometría del banner de la puerta la mide la capa BO
   for (const piel of ['neon', 'fantasma', 'campeon']) {
     const rs = rects.filter((r) => r && r.id === 'trv3:skin:' + piel);
     ok('panel.piel.' + piel, rs.length === 1, rs.length + '');

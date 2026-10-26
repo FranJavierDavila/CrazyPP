@@ -1070,6 +1070,7 @@ loadPaddleModel().then((paddleModel) => {
       shotPts: [], spinIconT: 0, spinIconCol: null, done: 0,
       tossReleaseY: 0, tossMaxY: 0,   // v3.0.8-TRN1 · validación del lanzamiento (como el núcleo)
       roundHits: 0, roundFaults: 0,   // v3.0.7-PLAY1 · precisión de la ronda en curso
+      daily: 0,           // r80 · 1 = sesión del RETO DIARIO: zonas el DOBLE de anchas (zonaDims)
     };
   
     /* ---------------- constantes geométricas locales ---------------- */
@@ -1081,6 +1082,31 @@ loadPaddleModel().then((paddleModel) => {
     const APEX_Y = 1.50;                                  // aro del globo defensivo
     const CROSS_LOW = () => DIMS.netTopY + 0.055;         // pase bajo correcto
     const CROSS_HI = () => DIMS.netTopY + 0.16;           // demasiado alto
+
+    /* =================================================================
+     *  r80 · EL RETO PERMISIVO — dimensiones de zona COMPARTIDAS por el
+     *  PINTOR (drawQuad) y el JUEZ (judgeAiBounce): lo pintado ES lo
+     *  juzgado (regla de la casa desde v3.0.8-TRN1). Petición del dueño
+     *  para el RETO DIARIO: «las zonas de bote a las que debemos acertar
+     *  sean más permisivas y grandes… digamos que el doble de anchas…
+     *  para no desanimar al jugador» (la dificultad irá subiendo con el
+     *  tiempo). En entrenamiento normal, TODO queda byte a byte igual.
+     *  ================================================================= */
+    function zonaDims() {
+      const diario = !!st.daily;
+      return {
+        diario: diario ? 1 : 0,
+        t1aCentro: diario ? 0.075 : 0.15,   // semiancho del centro prohibido (0,30 m → 0,15 m)
+        // frontera de fila del objetivo como fracción de HL (dz > HL·f):
+        // 'deep' 0,5 → 0,25 (abarca profunda+media) · 'mid' 0,25 → 0 (media+corta)
+        t1aDeepF: diario ? 0.25 : 0.5,
+        t1aMidF: diario ? 0 : 0.25,
+        t1bBanda: diario ? 0.20 : 0.10,     // bandas laterales 10 cm → 20 cm
+        t1bFondo: diario ? 0.24 : 0.12,     // franja de fondo 12 cm → 24 cm
+        t4aProf: diario ? 1.07 : 0.56,      // borde del doble bote desde la red (vano 0,51 → 1,02 m)
+        t4bFondo: diario ? 0.30 : 0.15,     // franja de fondo del saque largo 15 cm → 30 cm
+      };
+    }
   
     /* =================================================================
      *  CONSTRUCCIÓN DE ESCENA (una sola vez, grupo propio)
@@ -1652,6 +1678,9 @@ loadPaddleModel().then((paddleModel) => {
       const mz = (z) => H * ((C() - z) / HL());                // z mundo -> lienzo (0 = fondo rival)
       if (mode === 't1a') {
         // 6 zonas: profundas/medias/cortas × izq/der + centro prohibido
+        // r80 · las dimensiones salen de zonaDims(): lo pintado ES lo
+        // juzgado, también con el RETO DIARIO (zonas el doble de anchas)
+        const ZD = zonaDims();
         const rows = [[C() - HL(), C() - HL() / 2], [C() - HL() / 2, C() - HL() / 4], [C() - HL() / 4, C()]];
         // v3.0.2 · FIX visibilidad: la parrilla casi no se veía en el casco —
         // trazos más gruesos/opacos y colores saturados.
@@ -1662,23 +1691,27 @@ loadPaddleModel().then((paddleModel) => {
         }
         g.beginPath(); g.moveTo(mx(0), 0); g.lineTo(mx(0), H); g.stroke();
         // centro prohibido (rojo translúcido con borde marcado)
+        const cx0 = mx(-ZD.t1aCentro), cx1 = mx(ZD.t1aCentro);
         g.fillStyle = 'rgba(230,70,70,0.55)';
-        g.fillRect(mx(-0.15), 0, mx(0.15) - mx(-0.15), H);
+        g.fillRect(cx0, 0, cx1 - cx0, H);
         g.strokeStyle = 'rgba(255,110,110,0.95)'; g.lineWidth = 4;
-        g.strokeRect(mx(-0.15), 2, mx(0.15) - mx(-0.15), H - 4);
+        g.strokeRect(cx0, 2, cx1 - cx0, H - 4);
         g.fillStyle = 'rgba(255,150,150,1)';
-        g.font = '700 26px system-ui, sans-serif'; g.textAlign = 'center';
-        g.save();
-        // v3.6.20 · TEXTO LEGIBLE + i18n: con flipY=false el jugador ve el
-        // lienzo con la fila 0 en la RED (cerca) y la fila H al fondo (lejos);
-        // para leerse de pie el texto debe dibujarse con la parte alta hacia
-        // la fila H y avanzando hacia +x: eso es scale(1,-1). rotate(π) lo
-        // dejaba en ESPEJO (orden de lectura invertido — informe del dueño
-        // v3.6.19, confirmado por IoU GPU 0.999 vs 0.811).
-        g.translate(mx(0), H - 26); g.scale(1, -1);
-        g.textBaseline = 'middle';
-        g.fillText(t('z_evita'), 0, 0);
-        g.restore();
+        // r80 · EVITA cabe SIEMPRE en la banda (con el reto, la banda es el
+        // doble de estrecha): shrink-to-fit honesto, nunca se sale
+        {
+          const bandW = cx1 - cx0;
+          let evS = 26;
+          g.font = '700 ' + evS + 'px system-ui, sans-serif'; g.textAlign = 'center';
+          while (evS > 11 && g.measureText(t('z_evita')).width > bandW - 6) {
+            evS -= 1; g.font = '700 ' + evS + 'px system-ui, sans-serif';
+          }
+          g.save();
+          g.translate(mx(0), H - 26); g.scale(1, -1);
+          g.textBaseline = 'middle';
+          g.fillText(t('z_evita'), 0, 0);
+          g.restore();
+        }
         // zona objetivo dorada
         // v3.0.8-TRN1 · ZONA FIEL AL JUEZ: lo pintado ES lo juzgado. Antes la
         // zona dorada cubría toda la mitad (incluida la franja central que
@@ -1687,8 +1720,14 @@ loadPaddleModel().then((paddleModel) => {
         // juez acepta (|x| ≥ 15 cm) y el texto se reescala con measureText
         // para caber SIEMPRE dentro del área concreta.
         if (st.target) {
-          const zr = st.target.z === 'deep' ? [C() - HL(), C() - HL() / 2] : [C() - HL() / 2, C() - HL() / 4];
-          const xr = st.target.x < 0 ? [-HW(), -0.15] : [0.15, HW()];
+          // r80 · las filas del objetivo crecen con el reto: 'deep' abarca
+          // profunda+media (frontera HL·0,5→HL·0,25) y 'mid' abarca
+          // media+corta (HL·0,25→toda la mitad); el centro prohibido se
+          // estrecha a la mitad. Pintado y juzgado salen de zonaDims().
+          const zr = st.target.z === 'deep'
+            ? [C() - HL(), C() - HL() * ZD.t1aDeepF]
+            : [C() - HL() / 2, C() - HL() * ZD.t1aMidF];
+          const xr = st.target.x < 0 ? [-HW(), -ZD.t1aCentro] : [ZD.t1aCentro, HW()];
           const zx0 = mx(xr[0]), zx1 = mx(xr[1]), zy0 = mz(zr[0]), zy1 = mz(zr[1]);
           g.fillStyle = 'rgba(242,193,78,0.88)';
           g.fillRect(zx0, zy0, zx1 - zx0, zy1 - zy0);
@@ -1717,23 +1756,26 @@ loadPaddleModel().then((paddleModel) => {
           g.restore();
         }
       } else if (mode === 't1b') {
-        // bandas: laterales 10 cm + fondo 12 cm
+        // bandas: laterales 10 cm + fondo 12 cm (r80 · reto: 20/24 cm)
         // v3.0.6-SRV1 · FIX zona FONDO: el eje Z del lienzo está INVERTIDO
         // respecto a mz() (fila 0 = red, fila H = fondo rival); pintar desde
         // la fila 0 cubría TODA la mesa MENOS la franja objetivo. Con el mismo
         // patrón rect(mz(z0), mz(z1)−mz(z0)) de t4a/t4b la franja cae EXACTA.
+        const ZB = zonaDims();
         g.fillStyle = 'rgba(99,179,237,0.8)';
-        g.fillRect(0, 0, mx(-HW() + 0.10), H);
-        g.fillRect(mx(HW() - 0.10), 0, W - mx(HW() - 0.10), H);
-        const zb = [C() - HL(), C() - HL() + 0.12];   // franja de fondo real
+        g.fillRect(0, 0, mx(-HW() + ZB.t1bBanda), H);
+        g.fillRect(mx(HW() - ZB.t1bBanda), 0, W - mx(HW() - ZB.t1bBanda), H);
+        const zb = [C() - HL(), C() - HL() + ZB.t1bFondo];   // franja de fondo real
         g.fillRect(0, mz(zb[0]), W, mz(zb[1]) - mz(zb[0]));
         g.strokeStyle = '#9fd4ff'; g.lineWidth = 9;
         g.strokeRect(4.5, 4.5, W - 9, H - 9);
         g.fillStyle = '#0c1826'; g.font = '900 40px system-ui, sans-serif'; g.textAlign = 'center';
         g.save(); g.translate(W / 2, (mz(zb[0]) + mz(zb[1])) / 2); g.scale(1, -1); g.textBaseline = 'middle'; g.fillText(t('z_fondo'), 0, 0); g.restore();
       } else if (mode === 't4a') {
-        // zona de doble bote junto a la red (lado rival)
-        const zr = [C() - 0.56, C() - 0.05];
+        // zona de doble bote junto a la red (lado rival) — r80 · reto: el
+        // DOBLE de profunda (0,51 m → 1,02 m desde la red)
+        const Z4 = zonaDims();
+        const zr = [C() - Z4.t4aProf, C() - 0.05];
         g.fillStyle = 'rgba(246,173,85,0.82)';
         g.fillRect(0, mz(zr[0]), W, mz(zr[1]) - mz(zr[0]));
         g.strokeStyle = '#ffc178'; g.lineWidth = 10;
@@ -1742,8 +1784,9 @@ loadPaddleModel().then((paddleModel) => {
         g.save(); g.translate(W / 2, (mz(zr[0]) + mz(zr[1])) / 2); g.scale(1, -1); g.textBaseline = 'middle';
         g.fillText(t('z_doble'), 0, 0); g.restore();
       } else if (mode === 't4b') {
-        // franja de fondo: últimos 15 cm
-        const zr = [C() - HL(), C() - HL() + 0.15];
+        // franja de fondo: últimos 15 cm (r80 · reto: 30 cm)
+        const Z5 = zonaDims();
+        const zr = [C() - HL(), C() - HL() + Z5.t4bFondo];
         g.fillStyle = 'rgba(246,173,85,0.85)';
         g.fillRect(0, mz(zr[0]), W, mz(zr[1]) - mz(zr[0]));
         g.strokeStyle = '#ffc178'; g.lineWidth = 10;
@@ -1800,6 +1843,8 @@ loadPaddleModel().then((paddleModel) => {
   
     function zoneOf(p) {
       // clasifica un bote del lado rival: 'deep'|'mid'|'short' × 'L'|'R'|'C'
+      // (r80 · el juez t1a usa zonaDims() — esta clasificación queda como
+      // referencia documental de las fronteras de siempre)
       const dz = C() - p.z;
       const row = dz > HL() * 0.5 ? 'deep' : dz > HL() * 0.25 ? 'mid' : 'short';
       const col = p.x < -0.15 ? 'L' : p.x > 0.15 ? 'R' : 'C';
@@ -1809,16 +1854,29 @@ loadPaddleModel().then((paddleModel) => {
     function judgeAiBounce(p) {
       // p = posición del bote en el campo rival (primer bote tras el golpe)
       if (active === 't1a') {
-        const z = zoneOf(p);
-        if (st.target && z.row === st.target.z && ((st.target.x < 0 && z.col === 'L') || (st.target.x > 0 && z.col === 'R'))) {
+        // r80 · el JUEZ comparte zonaDims() con el pintor: con el RETO
+        // DIARIO las filas crecen (deep → profunda+media · mid → media+corta)
+        // y el centro prohibido se estrecha a la mitad. Sin reto, la
+        // decisión es EXACTAMENTE la de zoneOf() de siempre (fronteras
+        // incluidas: en ±centro cuenta como centro).
+        const ZJ = zonaDims();
+        const dz1 = C() - p.z;
+        const colC = p.x >= -ZJ.t1aCentro && p.x <= ZJ.t1aCentro;
+        const colOk = st.target && ((st.target.x < 0 && p.x < -ZJ.t1aCentro)
+          || (st.target.x > 0 && p.x > ZJ.t1aCentro));
+        const rowOk = (st.target && st.target.z === 'deep')
+          ? (dz1 > HL() * ZJ.t1aDeepF)
+          : (dz1 > HL() * ZJ.t1aMidF && dz1 <= HL() * 0.5);
+        if (st.target && rowOk && colOk) {
           okHit(MODES[active].ok, MODES[active].pts);
-        } else if (z.col === 'C') {
+        } else if (colC) {
           st.done = 0; failHit('mal_corta');
         } else {
           st.done = 0; failHit('mal_fuera');
         }
       } else if (active === 't1b') {
-        const band = Math.abs(p.x) > HW() - 0.10 || p.z < C() - HL() + 0.12;
+        const ZJ1 = zonaDims();
+        const band = Math.abs(p.x) > HW() - ZJ1.t1bBanda || p.z < C() - HL() + ZJ1.t1bFondo;
         if (band) okHit(MODES[active].ok, MODES[active].pts);
         else { st.done = 0; failHit('mal_corta'); }
       } else if (active === 't2a') {
@@ -1846,7 +1904,9 @@ loadPaddleModel().then((paddleModel) => {
         // corto); el SEGUNDO basta con que bote en el campo rival: exigir los
         // DOS dentro de 51 cm era casi imposible (el 2.º bote de un saque
         // corto real siempre cae más hondo que el 1.º).
-        const inZone = Math.abs(p.x) < HW() && p.z > C() - 0.56 && p.z < C() - 0.05;
+        // r80 · reto diario: vano 0,51 m → 1,02 m (mismo zonaDims que pinta).
+        const ZJ4 = zonaDims();
+        const inZone = Math.abs(p.x) < HW() && p.z > C() - ZJ4.t4aProf && p.z < C() - 0.05;
         if (st.aiBounce === 0) {
           if (!inZone) { st.done = 0; failHit('mal_larga'); }
           else { st.aiBounce = 1; st.live = true; }          // espera el 2.º bote
@@ -1854,7 +1914,8 @@ loadPaddleModel().then((paddleModel) => {
           okHit(MODES[active].ok, MODES[active].pts);        // doble bote ✓
         }
       } else if (active === 't4b') {
-        const deep = p.z < C() - HL() + 0.15;
+        const ZJ5 = zonaDims();
+        const deep = p.z < C() - HL() + ZJ5.t4bFondo;
         if (deep) {
           if (st.cross && st.cross.spd > 4.5) addPts(1);   // bonus saque tenso
           okHit(MODES[active].ok, MODES[active].pts);
@@ -2098,7 +2159,7 @@ loadPaddleModel().then((paddleModel) => {
     /* =================================================================
      *  CICLO DE VIDA DE LOS MODOS
      *  ================================================================= */
-    function startMode(game, id) {
+    function startMode(game, id, opts) {
       if (!game) return;
       if (!MODES[id]) return;
       G = game;
@@ -2106,6 +2167,11 @@ loadPaddleModel().then((paddleModel) => {
       LANG = (typeof __ppLang !== 'undefined' && __ppLang) || 'es';
       active = id;
       const M = MODES[id];
+      // r80 · EL RETO PERMISIVO: arrancado desde el RETO DIARIO, las zonas
+      // de bote se pintan y se juzgan el DOBLE de anchas (zonaDims) —
+      // «para no desanimar al jugador; la dificultad irá subiendo con el
+      // tiempo» (petición del dueño).
+      st.daily = (opts && opts.daily) ? 1 : 0;
       if (!game.calib) game.enterCalib();      // aísla: sin árbitro, sin IA, sin marcador
       game.exitHall();                          // v3.1.0-SRV2: un modo se juea en la cancha
       game.trainV3 = id;                        // el núcleo desactiva su rutina de calib
@@ -2130,6 +2196,7 @@ loadPaddleModel().then((paddleModel) => {
      *  para la estanqueidad total de los módulos. */
     function teardown(game) {
       active = null;
+      st.daily = 0;         // r80 · fuera de sesión: zonas de entrenamiento normales
       drillReach(false);   // v3.0.6-SRV1 · margen de saque fuera al recoger
       if (grp) grp.visible = false;
       applyModeScene();
@@ -2730,79 +2797,21 @@ loadPaddleModel().then((paddleModel) => {
         if (PT) label(t(PT.tag) + ' — ' + t(PT.tag + '_d'), ySk + 106, 14, PT.col);
       }
       /* =============================================================
-       *  v3.6.68 · EL PULSO CRAZY — RETO DEL DÍA (r76)
-       *  Panel en el HUECO LIBRE del hub (y 1064–1330; los botones de
-       *  abajo están en 1380): NO mueve nada del layout existente.
-       *  Canvas estático del menú: CERO coste por frame en juego.
-       *  La tarjeta entera es el botón → arranca el modo del día.
+       *  v3.6.72 (r80) · EL RETO SE MUDA A LA PUERTA — el dueño retira el
+       *  panel del hub de entrenamiento: «La opción del reto del día debe
+       *  estar especialmente destacada en la parte de abajo del menú
+       *  principal (y la retiramos del apartado de entrenamiento)». Ahora
+       *  es BOTÓN ESTRELLA al pie del menú principal (c12
+       *  _retoDiarioCard: pala troquelada + resplandor, texto «Reto
+       *  Diario!») y arranca el duelo de hoy vía PP_TRAIN.startDaily.
+       *  Aquí queda el ESCAPARATE de las pieles de asistencia: lo que la
+       *  racha de días libera poco a poco.
        *  ============================================================= */
       if (GAMF()) {
-        const kD = dayKey();
-        const planD = dailyPlan(kD);
-        const hechoD = !!S.daily.done[kD];
-        const rachaD = effStreak();
-        const MPD = MODES[planD.mode];
-        const yD = 1064, wD = CW * 2 + GX, hD = 156;
-        btn('trv3:daily', X0, yD, wD, hD, '', false);
-        c.save();
-        c.beginPath();
-        if (c.roundRect) c.roundRect(X0, yD, wD, hD, 20); else c.rect(X0, yD, wD, hD);
-        const gD = c.createLinearGradient(X0, yD, X0 + wD, yD + hD);
-        gD.addColorStop(0, '#41307a'); gD.addColorStop(1, '#1c1238');
-        c.fillStyle = gD; c.fill();
-        c.strokeStyle = hechoD ? '#68d391' : '#f0c85a';
-        c.lineWidth = hechoD ? 4 : 3; c.stroke();
-        c.textBaseline = 'middle';
-        // fila 1 · título + llamada a la acción
-        c.textAlign = 'left';
-        c.fillStyle = '#f0c85a'; c.font = '800 30px system-ui, sans-serif';
-        c.fillText(t('daily_t'), X0 + 26, yD + 30);
-        c.textAlign = 'right';
-        c.font = '800 21px system-ui, sans-serif';
-        c.fillStyle = hechoD ? '#68d391' : '#ffffff';
-        let ctaD = hechoD ? t('daily_ya_btn') : t('daily_iniciar') + '  ·  ' + t('daily_recompensa', { n: DAILY_BASE });
-        const _w0 = ctaD;
-        while (ctaD.length > 2 && c.measureText(ctaD).width > 430) ctaD = ctaD.slice(0, -1);
-        if (ctaD !== _w0) ctaD += '…';
-        c.fillText(ctaD, X0 + wD - 26, yD + 30);
-        // fila 2 · el duelo de hoy + TU FANTASMA
-        c.textAlign = 'left';
-        c.fillStyle = '#ffffff'; c.font = '700 22px system-ui, sans-serif';
-        let duelD = t(MPD.nk) + ' · ' + t('daily_obj', { n: planD.n });
-        const _w1 = duelD;
-        while (duelD.length > 2 && c.measureText(duelD).width > 560) duelD = duelD.slice(0, -1);
-        if (duelD !== _w1) duelD += '…';
-        c.fillText(duelD, X0 + 26, yD + 66);
-        c.textAlign = 'right';
-        const bestD = S.best[planD.mode] || 0;
-        c.fillStyle = '#bfe9ff'; c.font = '700 17px system-ui, sans-serif';
-        let ghD = t('daily_fantasma_t') + ' · ' + (bestD ? t('daily_fantasma_x', { n: bestD }) : t('daily_fantasma_no'));
-        const _w2 = ghD;
-        while (ghD.length > 2 && c.measureText(ghD).width > 380) ghD = ghD.slice(0, -1);
-        if (ghD !== _w2) ghD += '…';
-        c.fillText(ghD, X0 + wD - 26, yD + 66);
-        // fila 3 · el campeón del día + la frase de la casa
-        c.textAlign = 'left';
-        c.fillStyle = 'rgba(255,255,255,0.72)'; c.font = '600 18px system-ui, sans-serif';
-        let frD = planD.champ + ' · ' + t(planD.frase) + '   —   ' + t('daily_prof', { tip: t(dailyTip(kD).k, dailyTip(kD).v) });
-        const _w3 = frD;
-        while (frD.length > 2 && c.measureText(frD).width > wD - 60) frD = frD.slice(0, -1);
-        if (frD !== _w3) { frD = frD.replace(/[\s,;:.«»]+$/, '') + '…'; }
-        c.fillText(frD, X0 + 26, yD + 100);
-        // fila 4 · racha viva + puntos de asistencia
-        c.fillStyle = 'rgba(255,255,255,0.85)'; c.font = '700 17px system-ui, sans-serif';
-        c.fillText(t('daily_racha') + ': ' + rachaD + ' ' + t('daily_dias') + '  ·  ' + t('daily_record') + ': ' + (S.daily.bestStreak || 0), X0 + 26, yD + 130);
-        c.textAlign = 'right';
-        const dxD = X0 + wD - 26 - (7 * 18 - 12);
-        for (let i = 0; i < 7; i++) {
-          c.beginPath(); c.arc(dxD + i * 18, yD + 130, 6, 0, Math.PI * 2);
-          c.fillStyle = i < Math.min(rachaD, 7) ? '#f0c85a' : 'rgba(255,255,255,0.15)';
-          c.fill();
-        }
-        c.restore();
-        // pieles de ASISTENCIA (r76): fila propia bajo el panel — jamás en
-        // la fila de puntos; sólo la racha las libera
-        const yA = yD + hD + 14;
+        const wD = CW * 2 + GX;
+        // pieles de ASISTENCIA (r76): fila propia en el hueco del panel —
+        // jamás en la fila de puntos; sólo la racha del RETO DIARIO libera
+        const yA = 1064;
         label(t('daily_asist'), yA, 15, '#7d8ea6');
         let axD = X0;
         for (const sk of RACHA_SKINS) {
@@ -2960,8 +2969,9 @@ loadPaddleModel().then((paddleModel) => {
       else if (cmd === 'daily') {
         // r76 · EL PULSO CRAZY: la tarjeta arranca el modo del día (si ya
         // está cobrado hoy, entrenar es gratis — la recompensa no se repite)
+        // r80 · mismas zonas permisivas que el botón de la puerta
         game.closeMenu();
-        startMode(game, dailyPlan(dayKey()).mode);
+        startMode(game, dailyPlan(dayKey()).mode, { daily: 1 });
       }
       else if (cmd === 'fb') {
         S.fb[p[1]] = S.fb[p[1]] ? 0 : 1; save();
@@ -3024,6 +3034,14 @@ loadPaddleModel().then((paddleModel) => {
   
     return {
       tick, startMode, stopMode, startCalib, menuAction, applySkin, teardown,
+      // r80 · EL RETO DIARIO EN LA PUERTA: el botón estrella del menú
+      // principal (c12 _retoDiarioCard) arranca el duelo de hoy con las
+      // zonas el doble de anchas sin pasar por el hub de entrenamiento
+      startDaily: (g) => {
+        if (!g) return;
+        g.closeMenu();
+        startMode(g, dailyPlan(dayKey()).mode, { daily: 1 });
+      },
       serveTrigger: () => { try { serveTossFromTee(true); } catch (e) { /* nunca rompe */ } },
       serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(false); } catch (e) { /* nunca rompe */ } },
       drawHub, drawArea,
@@ -3031,12 +3049,18 @@ loadPaddleModel().then((paddleModel) => {
         stars: Object.assign({}, S.stars), acc: Object.assign({}, S.acc),
         ach: Object.assign({}, S.ach), comboBest: S.comboBest || 0,
         round: { hits: st.roundHits, faults: st.roundFaults },
-        daily: { last: S.daily.last, streak: S.daily.streak, bestStreak: S.daily.bestStreak,
-          hoy: (S.daily.done && S.daily.done[dayKey()]) ? 1 : 0 } }; },
+        daily: (function () { const _pD = dailyPlan(dayKey());
+          return { last: S.daily.last, streak: S.daily.streak, bestStreak: S.daily.bestStreak,
+            hoy: (S.daily.done && S.daily.done[dayKey()]) ? 1 : 0,
+            modo: _pD.mode, modoName: t(MODES[_pD.mode].nk) }; })() }; },
       __debug: { S, st, MODES },
     __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel, serveAssist,
       // r76 · EL PULSO CRAZY: internos expuestos para la QA (qa_r76_v3668)
       dayKey, dailyPlan, dailyTip, dailyComplete, effStreak, seedOf,
+      // r80 · EL RETO PERMISIVO: las dimensiones de zona compartidas por
+      // pintor y juez (la QA verifica el doble en el reto y la igualdad
+      // byte a byte en entrenamiento)
+      zonaDims,
       // ronda 27 · internos de las AYUDAS TÉCNICAS (QA qa_train_ayudas):
       // accesores —nunca sustituciones— para verificar por GPU que cada
       // interruptor de la sección «AYUDAS TÉCNICAS» obedece de verdad.

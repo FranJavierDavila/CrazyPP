@@ -403,6 +403,12 @@ CAPAS = [
     # reliable, reloj NTP, FSM de bola por mitades, CLAIM/ACK, avatar con
     # jitter buffer, MATCH_START sincronizado, pausas, ping y validación.
     ('BN · crazy link v2 (v3671)', 'qa_r79_v3671.py'),
+    # BO (r80): EL RETO DIARIO EN LA PUERTA — submenú que respira (tarjetas
+    # fuera del marco y de los idiomas · sala y código SÓLO al elegir modo),
+    # botón estrella «Reto Diario!» al pie del HUB (pala troquelada +
+    # resplandor), panel retirado del entrenamiento y zonas del reto el
+    # DOBLE de anchas (zonaDims compartidas por pintor y juez).
+    ('BO · reto diario en la puerta (v3672)', 'qa_r80_v3672.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.71-SDK6",
-  "fase": 73,
-  "faseNombre": "CRAZY LINK v2 — multijugador binario real",
+  "version": "3.6.72-SDK6",
+  "fase": 74,
+  "faseNombre": "EL RETO DIARIO EN LA PUERTA",
   "sdk": "1.5.4",
   "fecha": "2026-10-26",
-  "hub": "v3671-sdk6",
+  "hub": "v3672-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "f3395f04a847a42dac32d347a103317ac9ae3eb455eb3af9a4638207ef8dd5ff"
+  "golden": "a4e8bf2972017a5978d9a6542160ee8a3194cf0ddfc4ae4108e996a45c0123f0"
 }

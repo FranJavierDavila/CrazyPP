@@ -1,2 +1,3 @@
-# SHA256 del game.html que produjo esta division (3.6.71-SDK6, fase 73 · CRAZY LINK v2 — multijugador binario real)
-f3395f04a847a42dac32d347a103317ac9ae3eb455eb3af9a4638207ef8dd5ff
+# SHA256 del game.html que produjo esta división (3.6.72-SDK6, fase 74 · EL RETO DIARIO EN LA PUERTA; sello actualizado
+# por bump_version.py desde 3.6.71-SDK6)
+a4e8bf2972017a5978d9a6542160ee8a3194cf0ddfc4ae4108e996a45c0123f0

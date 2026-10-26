@@ -271,6 +271,7 @@ export class PingPongGame {
     this.menuSec = 'match';       // v2.28: sección ABIERTA del acordeón
     this._menuAnchorUntil = 0;    // v2.28: flotación inicial del panel
     this._joinCode = '';
+    this._mjMode = null;          // r80 · modo elegido en el submenú multi: null = sólo modos; 'normal' = sala/código visibles
     this._localHit = false;       // golpeo propio pendiente de enviar este frame
     // fanfarria de fin de partido (banner + confeti)
     this.fanfareWin = false;
@@ -1349,14 +1350,20 @@ export class PingPongGame {
     // respectivos iconos para seguir una estética común con todo el
     // juego»: NORMAL (partida 1 vs 1 online) y DUELOS LOCOS (poderes de
     // los campeonatos — con etiqueta PRÓXIMAMENTE y candado ENCIMA, como
-    // los campeonatos bloqueados). El flujo de sala vive debajo, como
-    // hasta hoy, una vez elegido NORMAL.
+    // los campeonatos bloqueados).
+    // r80 · EL SUBMENÚ QUE RESPIRA (informe del dueño: «has colocado mal
+    // los botones, se están pisando con el marco superior del menú y los
+    // idiomas»): las tarjetas BAJAN bajo la cabecera (las palas de idioma
+    // ocupan y 42-172 y el sello de versión llega a 198) y el panel de
+    // sala se reasienta debajo. Y «al pulsar sobre estos modos es cuando
+    // aparecen las opciones de sala y código»: sin modo elegido NO hay
+    // sala — this._mjMode gobierna el panel de abajo.
     this.drawMenuHeader(rects);
     label(T('tab_multi'), 244, 26);
-    this._modeCard(rects, 'mjnorm', 40, 100, 944, 96, T('mj_norm_t'),
+    this._modeCard(rects, 'mjnorm', 40, 216, 944, 96, T('mj_norm_t'),
       T('mj_norm_s'), '#2f9e44', '#1e7c33', PP_ICONS.multi);
-    this._modeCardDuelos(rects, 40, 208, 944, 96);
-    const yPanel = 330;
+    this._modeCardDuelos(rects, 40, 326, 944, 96);
+    const yPanel = 446;
 
     if (st === 'online') {
       c.fillStyle = '#7fb069';
@@ -1413,8 +1420,17 @@ export class PingPongGame {
       wrapText(c, net.statusMsg || T('mj_error'), 512, yPanel + 30, 880, 40);
       btn('net:host', 56, yPanel + 120, 448, 70, T('btn_retry'), false, undefined, undefined, 25);
       btn('net:cancel', 520, yPanel + 120, 448, 70, T('btn_back'), false, undefined, undefined, 25);
+    } else if (!this._mjMode) {
+      // r80 · SIN MODO ELEGIDO NO HAY SALA (petición del dueño: «al pulsar
+      // sobre estos modos de juego multijugador es cuando aparecen las
+      // opciones de sala y código»): el submenú sólo ofrece los dos modos.
+      c.fillStyle = '#cfd8e0';
+      c.font = '600 26px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(T('mj_pick'), 512, yPanel + 44);
     } else {
-      // off
+      // off + modo NORMAL elegido: ahora sí, sala y código
       c.fillStyle = '#cfd8e0';
       c.font = '600 26px system-ui, sans-serif';
       c.textAlign = 'center';
@@ -1422,6 +1438,7 @@ export class PingPongGame {
       c.fillText(T('mj_off_hint'), 512, yPanel + 12);
       btn('net:host', 56, yPanel + 44, 912, 78, T('btn_host'), false, 'green', undefined, 26);
       btn('net:join', 56, yPanel + 136, 912, 78, T('btn_join'), false, undefined, undefined, 26);
+      btn('mjsel', 56, yPanel + 230, 912, 56, T('mj_sel_back'), false, undefined, undefined, 24);
     }
 
     c.fillStyle = '#75828f';
@@ -1487,6 +1504,126 @@ export class PingPongGame {
     c.textBaseline = 'middle';
     c.fillText(chip, chx + cw / 2, chy + 20);
     rects.push({ x, y: y - 3, w, h: h + 6, id: 'mjduel' });
+  }
+
+  /** v3.6.72 (r80) · EL RETO DIARIO EN LA PUERTA — botón estrella al pie
+   *  del menú principal (petición del dueño: «Un botón con la pala
+   *  troquelada con el texto "Reto Diario!" y un pequeño resplandor en su
+   *  perímetro para llamar la atención… es el reclamo para que repitan en
+   *  diferentes días ya que poco a poco va dando logros que desbloquean
+   *  apariencias»). Pala con silueta TROQUELADA (contorno punteado de
+   *  troquel + agujeros de perforación) y resplandor dorado alrededor del
+   *  borde de la tarjeta entera. La tarjeta entera es el botón. */
+  _retoDiarioCard(rects, x, y, w, h) {
+    const c = this.menuCanvas.getContext('2d');
+    const hovered = this.menuHover.includes(rects.length);
+    const TRW = (typeof window !== 'undefined') && window.__PP_TRAIN;
+    const D = (TRW && TRW.state) ? TRW.state.daily : null;
+    const hecho = !!(D && D.hoy);
+    const racha = D ? (D.streak || 0) : 0;
+    const col = hecho ? '#68d391' : '#f0c85a';
+
+    // cuerpo: noche púrpura del PULSO (misma sangre que el panel r76)
+    const rr = (k) => {
+      c.beginPath();
+      if (c.roundRect) c.roundRect(x, y, w, h, k); else c.rect(x, y, w, h);
+    };
+    rr(24);
+    const g = c.createLinearGradient(x, y, x + w, y + h);
+    g.addColorStop(0, '#41307a'); g.addColorStop(1, '#1c1238');
+    c.fillStyle = g; c.fill();
+
+    // RESPLANDOR DEL PERÍMETRO (halo con sombra + dos aureolas): «un
+    // pequeño resplandor en su perímetro para llamar la atención»
+    c.save();
+    rr(24);
+    c.shadowColor = hecho ? 'rgba(104,211,145,0.85)' : 'rgba(255,210,87,0.9)';
+    c.shadowBlur = 26;
+    c.strokeStyle = col;
+    c.lineWidth = 3.5;
+    c.stroke(); c.stroke();          // doble pasada = halo más lleno
+    c.shadowBlur = 0;
+    c.strokeStyle = hecho ? 'rgba(104,211,145,0.30)' : 'rgba(255,210,87,0.30)';
+    c.lineWidth = 12;
+    c.stroke();
+    c.strokeStyle = hecho ? 'rgba(104,211,145,0.15)' : 'rgba(255,210,87,0.16)';
+    c.lineWidth = 22;
+    c.stroke();
+    if (hovered) { rr(24); c.strokeStyle = '#ffffff'; c.lineWidth = 5; c.stroke(); }
+    c.restore();
+
+    // LA PALA TROQUELADA: silueta recortada — hoja circular + mango, borde
+    // PUNTEADO de troquel y agujeros de perforación; inclinada para que baile
+    c.save();
+    c.translate(x + 80, y + h / 2);
+    c.rotate(-0.35);
+    const pala = () => {
+      c.beginPath();
+      c.arc(0, -12, 27, 0, Math.PI * 2);            // hoja
+      c.moveTo(-8.5, 12);
+      c.lineTo(-8.5, 44);
+      c.quadraticCurveTo(-8.5, 52, 0, 52);
+      c.quadraticCurveTo(8.5, 52, 8.5, 44);
+      c.lineTo(8.5, 12);
+      c.closePath();
+    };
+    c.save();
+    pala();
+    c.shadowColor = hecho ? 'rgba(104,211,145,0.85)' : 'rgba(255,210,87,0.9)';
+    c.shadowBlur = 16;
+    const gp = c.createLinearGradient(-27, -39, 27, 52);
+    gp.addColorStop(0, '#ffd257'); gp.addColorStop(1, '#c9932f');
+    c.fillStyle = gp; c.fill();
+    c.restore();
+    pala();                                          // borde TROQUELADO punteado
+    c.setLineDash([5.5, 5]);
+    c.strokeStyle = 'rgba(255,248,225,0.95)';
+    c.lineWidth = 2.5;
+    c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = 'rgba(28,18,56,0.9)';              // agujeros de troquel
+    for (const hp of [[-13, -23], [13, -23], [-13, -1], [13, -1]]) {
+      c.beginPath(); c.arc(hp[0], hp[1], 2.6, 0, Math.PI * 2); c.fill();
+    }
+    c.beginPath(); c.arc(0, 42, 3.2, 0, Math.PI * 2); c.fill();   // oreja del colgante
+    c.restore();
+
+    // TÍTULO con el dictado literal del dueño: «Reto Diario!»
+    c.textAlign = 'left';
+    c.textBaseline = 'middle';
+    c.save();
+    c.shadowColor = hecho ? 'rgba(104,211,145,0.7)' : 'rgba(255,210,87,0.75)';
+    c.shadowBlur = 14;
+    c.fillStyle = hecho ? '#8ff0b5' : '#ffd257';
+    c.font = '900 42px system-ui, sans-serif';
+    c.fillText(T('daily_btn_t'), x + 152, y + 36);
+    c.restore();
+    // ESTADO: duelo nuevo listo (con el modo del día) / completado hoy · racha
+    const subT = hecho ? T('daily_btn_done', { n: racha })
+      : T('daily_btn_new', { m: (D && D.modoName) || '', n: racha });
+    const availW = w - 152 - 120;
+    let sub2 = subT;
+    c.font = '700 20px system-ui, sans-serif';
+    while (sub2.length > 2 && c.measureText(sub2).width > availW) sub2 = sub2.slice(0, -1);
+    if (sub2 !== subT) sub2 += '…';
+    c.fillStyle = '#e9edf2';
+    c.fillText(sub2, x + 152, y + 72);
+    // LA PROMESA DE RETORNO (el reclamo del dueño): zonas dobles + medianoche
+    let zona2 = T('daily_btn_zona');
+    c.font = '600 15px system-ui, sans-serif';
+    while (zona2.length > 2 && c.measureText(zona2).width > availW) zona2 = zona2.slice(0, -1);
+    if (zona2 !== T('daily_btn_zona')) zona2 += '…';
+    c.fillStyle = 'rgba(214,188,250,0.85)';
+    c.fillText(zona2, x + 152, y + 100);
+    // CHEVRON ›
+    c.fillStyle = hecho ? 'rgba(143,240,181,0.9)' : 'rgba(255,210,87,0.9)';
+    c.beginPath();
+    c.moveTo(x + w - 46, y + h / 2 - 16);
+    c.lineTo(x + w - 26, y + h / 2);
+    c.lineTo(x + w - 46, y + h / 2 + 16);
+    c.closePath(); c.fill();
+
+    rects.push({ x, y: y - 3, w, h: h + 6, id: 'retoDiario' });
   }
 
   /** Página JOIN: teclado en el panel para escribir el código (v2.19;
@@ -2065,14 +2202,22 @@ export class PingPongGame {
       + ' · ' + T('dock_mic') + ': ' + yn(this.audio.voice);
     this._modeCard(rects, 'page:opts', 40, y, 944, CH, T('opts_title'), optsSub,
       '#5f7183', '#43525f', PP_ICONS.opts);
+    y += CH + 18;
+
+    // v3.6.72 (r80) · EL RETO DIARIO EN LA PUERTA: botón estrella al pie
+    // del menú principal (el dueño retira el panel del entrenamiento y lo
+    // quiere destacado AQUÍ — es el reclamo para volver cada día, con
+    // logros que desbloquean apariencias poco a poco)
+    this._retoDiarioCard(rects, 40, y, 944, 118);
+    y += 118;
 
     // cierre + ayuda
-    btn('close', 56, y + CH + 28, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
+    btn('close', 56, y + 28, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
     c.fillStyle = '#5c6672';
     c.font = '500 20px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(T('menu_hint'), 512, y + CH + 124);
+    c.fillText(T('menu_hint'), 512, y + 124);
   }
 
   /** v2.110 · página CAMPEONATOS: música global + TARJETA por campeonato
@@ -2783,15 +2928,42 @@ export class PingPongGame {
       case 'tab':
         // v2.28: pestaña 'multi' abre la página completa; 'main' vuelve
         this.menuPage = arg === 'multi' ? 'multi' : 'main';
+        // r80 · entrar en el submenú RESETILLA la elección: si hay un flujo
+        // de sala vivo se muestra su panel; en reposo, sólo los dos modos.
+        if (arg === 'multi') {
+          this._mjMode = (this.net.online || this.net.status !== 'off') ? 'normal' : null;
+        }
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
         break;
       case 'mjnorm':
-        // r79 · tarjeta NORMAL: el flujo de sala vive justo debajo
-        // (crear/unirse); el aviso guía sin romper nada
-        this.rules.message = T('mj_off_hint');
+        // r80 · PULSAR EL MODO REVELA LA SALA (petición del dueño): las
+        // opciones de sala y código aparecen AL ELEGIR NORMAL. Con la sala
+        // ya creada o en partida, la tarjeta no cambia nada.
+        this._mjMode = 'normal';
+        this.rules.message = '';
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
+        break;
+      case 'mjsel':
+        // r80 · volver a la selección de modos (sólo posible en reposo: el
+        // chip no existe cuando hay un flujo de sala activo)
+        if (!this.net.online && this.net.status === 'off') this._mjMode = null;
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      case 'retoDiario':
+        // r80 · EL RETO DIARIO EN LA PUERTA: el botón estrella del menú
+        // principal arranca el duelo de hoy (zonas el doble de anchas) sin
+        // pasar por el hub de entrenamiento. La recompensa jamás se repite
+        // (dailyComplete ya lo garantiza): repetir es gratis.
+        try {
+          const TRD = (typeof window !== 'undefined') && window.__PP_TRAIN;
+          if (TRD && TRD.startDaily) {
+            this.audio.playOsc(880, 1320, 0.09, 'triangle', 0.14, 0);
+            TRD.startDaily(this);
+          }
+        } catch (eRD) { /* nunca rompe el menú */ }
         break;
       case 'mjduel':
         // r79 · DUELOS LOCOS bloqueado: etiqueta PRÓXIMAMENTE + candado —
@@ -2804,8 +2976,12 @@ export class PingPongGame {
       case 'net':
         if (arg === 'host') { this.menuPage = 'multi'; this.net.hostRoom(); }
         else if (arg === 'join') { this.menuPage = 'join'; this._joinCode = ''; }
-        else if (arg === 'cancel') { this.net.cancel(); }
-        else if (arg === 'hangup') { this.net.hangup(); }
+        else if (arg === 'cancel') {
+          this.net.cancel();
+          // r80 · sala cancelada: vuelta a la selección de modos
+          this._mjMode = (this.net.online || this.net.status !== 'off') ? 'normal' : null;
+        }
+        else if (arg === 'hangup') { this.net.hangup(); this._mjMode = null; }
         else if (arg === 'mic') { this.net.toggleMic(); if (!this.net.micStream) this.net.initVoice().catch(() => {}); }
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();

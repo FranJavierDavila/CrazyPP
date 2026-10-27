@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.73-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.74-SDK6</span>
     </div>
   </main>
 
@@ -597,6 +597,11 @@ const I18N_STRINGS = {
     net_paused: 'RIVAL EN PAUSA · el partido queda detenido',
     net_paused_long: 'RIVAL EN PAUSA (mucho tiempo) · esperando…',
     net_legacy: 'Sin canal rápido: modo compatible 30 Hz',
+    // r82 · AL MILÍMETRO: el enlace se canta y se diagnostica
+    net_link_direct: 'Enlace directo establecido',
+    net_link_tunnel: 'Enlace por túnel establecido',
+    net_build_warn: 'Tu rival usa otra versión: recargad game.html?v=v3674 en los dos visores',
+    net_v2_down: 'Sin enlace binario con el rival · revisad Internet y recargad',
     join_title: 'CÓDIGO DE LA SALA DE TU AMIGO',
     btn_connect: 'CONECTAR',
     // ---- v2.28 · MENÚ PRINCIPAL (gran panel flotante con acordeón)
@@ -1249,6 +1254,11 @@ const I18N_STRINGS = {
     net_paused: 'RIVAL PAUSED · match clock stopped',
     net_paused_long: 'RIVAL PAUSED (a while) · waiting…',
     net_legacy: 'No fast channel: 30 Hz compatibility mode',
+    // r82 · DOWN TO THE MILLIMETRE: the link announces and diagnoses itself
+    net_link_direct: 'Direct link established',
+    net_link_tunnel: 'Tunnelled link established',
+    net_build_warn: 'Your rival runs another build: reload game.html?v=v3674 on both headsets',
+    net_v2_down: 'No binary link with your rival · check Internet and reload',
     join_title: 'YOUR FRIEND’S ROOM CODE',
     // ---- v2.28 · MAIN MENU (big floating panel with accordion)
     sec_match: 'PLAY MATCH',
@@ -2583,7 +2593,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.73-SDK6';
+  const VERSION = '3.6.74-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -6972,6 +6982,8 @@ class Rules {
     this.server = this.gameNo % 2 === 1
       ? this.firstServer
       : this.other(this.firstServer);   // cada juego saca el otro (ITTF)
+    this.gameOpener = this.server;  // v3.6.74 · r82: referencia de la rotación
+                                    // dentro del juego (firstServer es del PARTIDO)
     this.state = 'serve';
     this.stateTimer = 0;
     this.lastHitter = null;
@@ -7103,11 +7115,21 @@ class Rules {
   }
 
   computeNextServer() {
+    // v3.6.74 · r82 · LA ROTACIÓN ES RELATIVA AL PRIMER SACADOR DEL JUEGO
+    // (gameOpener), no a 'player': en el INVITADO el abridor es 'ai' en SU
+    // perspectiva (el anfitrión abre) y la fórmula antigua (hardcode
+    // 'player') daba el sacador AL REVÉS desde el primer punto — el
+    // anfitrión creía sacar él y el invitado TAMBIÉN: dos bolas HELD,
+    // ningún saque llega, el partido se atasca tras el punto 1 en
+    // dispositivos reales (cazado EN VIVO por la batería multi). El espejo
+    // de perspectiva sale gratis derivándolo del abridor del juego.
     const n = this.totalPoints;
+    const base = this.gameOpener || this.firstServer;
+    const otro = base === 'player' ? 'ai' : 'player';
     if (this.scorePlayer >= 10 && this.scoreAi >= 10) {
-      return n % 2 === 0 ? 'player' : 'ai';
+      return n % 2 === 0 ? base : otro;   // deuce: alterna CADA punto
     }
-    return Math.floor(n / 2) % 2 === 0 ? 'player' : 'ai';
+    return Math.floor(n / 2) % 2 === 0 ? base : otro;
   }
 
   handleEvents(events) {
@@ -9821,6 +9843,16 @@ class NetLink {
     // DataConnection PeerJS o por el canal reliable propio, mismo formato)
     if (d.k === 'sdp') { this._v2RemoteDesc(d.d); return; }
     if (d.k === 'ice') { this._onIce(d.c); return; }
+    // v3.6.74 · r82 · paquete fast encapsulado por el TÚNEL PeerJS: mismo
+    // camino que un paquete del DataChannel propio (binario intacto)
+    if (d.k === 'f2' && d.b) {
+      let b = d.b;
+      if (!(b instanceof ArrayBuffer) && b.buffer) {
+        b = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+      }
+      if (b instanceof ArrayBuffer) this._onFast(b);
+      return;
+    }
     switch (d.k) {
       case 'hello2': case 'tick2': case 'tock2': case 'ready2':
       case 'mstart': case 'claim': case 'ack': case 'resync':
@@ -10133,6 +10165,9 @@ class NetLink {
     this._lastFastAt = 0; this._iceRestarts = 0;
     this._helloDone = false; this._helloTO = null;
     this._iceQ = [];                            // r81: ICE tempranos en cola
+    this._tunnel = false;                       // r82: túnel PeerJS (emergencia)
+    this._v2T0 = performance.now();             // r82: nacimiento de la subida
+    this._buildWarn = false;                    // r82: HELLO con build distinto
     this._anchors = 0; this._readyMe = false; this._readyOpp = false;
     this._mstart = null;                        // {startAt, fs, bo}
     this._clock = new PPNET.NetClock(this.role === 'host');
@@ -10256,7 +10291,9 @@ class NetLink {
   }
 
   _v2ChannelsUp() {
-    if (!(this._fastOpen && this._relOpen) || this.v2 !== 'pending') return;
+    // v3.6.74 · r82 · los canales «suben» por DOS caminos: DC propios abiertos
+    // (P2P) o túnel PeerJS activo (el ICE no llegó a abrir pero la sala vive)
+    if (!((this._fastOpen && this._relOpen) || this._tunnel) || this.v2 !== 'pending') return;
     // HELLO (reliable): versión de protocolo, build y ballPhysics (spec §3.5)
     this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD });
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
@@ -10272,9 +10309,20 @@ class NetLink {
     this._lastRelAt = performance.now();
     switch (m.k) {
       case 'hello2': {
-        if (m.v !== PPNET.VP.PROTO || m.ph !== PPNET.VP.PHYS || m.b !== PPNET.VP.BUILD) {
-          this._v2Fail(T('net_legacy'));        // versiones distintas → v1
+        if (m.v !== PPNET.VP.PROTO || m.ph !== PPNET.VP.PHYS) {
+          this._v2Fail(T('net_legacy'));        // protocolo/física distintos → v1
           return;
+        }
+        // v3.6.74 · r82 · BUILD TOLERANTE: el número de build ya NO rompe el
+        // enlace — el cable v2 depende de PROTO/PHYS y el códec es idéntico.
+        // Antes, dos cascos con la caché desigual (uno en 3.6.72 y otro en
+        // 3.6.73) rechazaban el HELLO y caían EN SILENCIO al v1 cosmético:
+        // el dueño veía «movimiento de palas pero poco más». Ahora el enlace
+        // sube igual y se AVISA (menú + voz) para recargar ambos visores.
+        this._buildWarn = m.b !== PPNET.VP.BUILD;
+        if (this._buildWarn) {
+          this.statusMsg = T('net_build_warn', { a: (m.b || '?').slice(-6), b: (PPNET.VP.BUILD || '?').slice(-6) });
+          this.game?.onNetStatus?.();
         }
         this._helloDone = true;
         // ráfaga de reloj: 8 intercambios a ~50 ms (spec §3.6)
@@ -10381,11 +10429,25 @@ class NetLink {
   /** FASE 1 · bucle por frame (c12 animate): pose 60 Hz + eventos + snaps */
   frame(dt) {
     if (!this.online) return;
+    // v3.6.74 · r82 · TÚNEL DE EMERGENCIA (antes del gate de v2: en
+    // 'pending' este bucle es el único latido que puede activarlo): si el
+    // ICE del transporte propio no abre en 8 s PERO la sala PeerJS sigue
+    // viva (el dueño VEÍA a su rival moverse — ese camino DEMOSTRADO
+    // funciona hasta tras CGNAT), el canal fast viaja ENCAPSULADO por la
+    // DataConnection PeerJS: la FSM v2 entera (reloj, FS de bola,
+    // validador, claims) corre idéntica sobre un tubo fiable. Adiós a la
+    // degradación silenciosa al v1 cosmético.
+    if (this.v2 === 'pending' && !this._tunnel && !this._fastOpen &&
+        performance.now() - (this._v2T0 || 0) > 11000 &&
+        this.conn && this.conn.open) {
+      this._enterTunnel();
+    }
     if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
     const now = performance.now();
     this._clock.apply(now, this.game?.rules?.state === 'rally');
     // watchdog de ICE: sin paquetes fast 5 s → restartIce (spec §11)
-    if (this._lastFastAt && now - this._lastFastAt > 5000 &&
+    // (r82: sólo en modo P2P — con túnel el ICE es irrelevante)
+    if (!this._tunnel && this._lastFastAt && now - this._lastFastAt > 5000 &&
         now - (this._lastIceTry || 0) > PPNET.VP.ICE_RESTART_MS &&
         this._iceRestarts < PPNET.VP.ICE_RESTART_MAX) {
       this._iceRestarts++;
@@ -10402,7 +10464,7 @@ class NetLink {
   }
 
   _sendFast(dt, now) {
-    if (!this._fast || !this._fastOpen) return;
+    if (!this._tunnel && (!this._fast || !this._fastOpen)) return;
     // pose a POSE_HZ (o 30 en degradado), desde el RAF de la sesión XR
     const iv = 1 / this._poseHz;
     this._poseAcc += dt;
@@ -10477,7 +10539,24 @@ class NetLink {
   }
 
   _fastSend(buf, now) {
+    // v3.6.74 · r82 · vía TÚNEL: el paquete binario viaja encapsulado por
+    // la DataConnection PeerJS (binario intacto; el receptor lo desenreda
+    // en onData y entra por el MISMO _onFast). PeerJS serializa ArrayBuffer
+    // como binario sin tocar — a cambio de fiabilidad/orden (SCTP fiable):
+    // el jitter buffer y la FSM ya toleran ese régimen.
+    if (this._tunnel) {
+      try { this.conn.send({ k: 'f2', b: buf }); } catch { /* conn cerrándose */ }
+      return;
+    }
     try { this._fast.send(buf); } catch { /* DC cerrándose */ }
+  }
+
+  /** v3.6.74 · r82 · activa el túnel PeerJS para el canal fast */
+  _enterTunnel() {
+    if (this._tunnel || this.v2 !== 'pending') return;
+    this._tunnel = true;
+    this._stats.turn = true;   // reutiliza la marca «camino no directo»
+    this._v2ChannelsUp();
   }
 
   /** muestreo de pose: cabeza (cámara XR) + manos (grips), en marco NET */
@@ -10503,6 +10582,13 @@ class NetLink {
         if (i === g.paddleHand) fl |= 4;               // pala en esta mano
       }
     }
+    // v3.6.74 · r82 · LATERALIDAD FÍSICA de la mano de la pala (bit 8):
+    // el hueco del mando (slot 0/1) NO es la mano física — un jugador
+    // diestro puede llevar la pala en el slot izquierdo. El avatar del
+    // rival necesita la MANO REAL para su montura (mountQuatFor), si no
+    // la pala del avatar nace rodada 90° en los jugadores con huecos
+    // cruzados. (La pala del validador usa la POSICIÓN — sin cambio.)
+    if (g.grips[g.paddleHand] && g.handOf && g.handOf[g.paddleHand] === 'left') fl |= 8;
     out.fl = fl;
     return out;
   }
@@ -10528,13 +10614,29 @@ class NetLink {
     o.evs = [];
     const pkt = PPNET.decodePacket(buf, o);
     if (!pkt) return;
+    // v3.6.74 · r82 · ECO NTP VIVO: la cabecera fast lleva echoTime/echoDelay
+    // para que EL OTRO reconstruya t1 y refine el reloj (spec §4) — pero
+    // estos dos campos nunca se escribían (solo a 0 en startV2): el refinado
+    // NTP estaba MUERTO y el offset quedaba congelado en el ancla gruesa.
+    // Con el ancla sesgada (fácil ±30-80 ms en Wi-Fi real) el validador
+    // rechazaba por «tHit en el futuro» TODOS los golpes remotos del
+    // partido, sin UI y sin recuperación. Ahora cada paquete recibido
+    // alimenta el eco del siguiente.
+    this._echoTime = pkt.sendTime;
+    this._echoAt = now;
     this._onAckFrom(pkt);
     this._clock.onPacket(pkt, now);
     this._trackLoss(pkt.seq);
     if (pkt.pose) {
       // muestra del rival al jitter buffer (marco NET, reloj HOST)
       this._lastPoseAt = now;
-      const tHost = this._clock.nowHost(now);
+      // v3.6.74 · r82 · SELLO POR CAPTURA, no por llegada: la muestra se
+      // estampa con el sendTime del EMISOR reconstruido en reloj HOST
+      // (mismo truco wrap-safe de NetClock.onPacket). Estampar con la
+      // llegada retrasaba cada muestra un one-way entero (~17-50 ms) y el
+      // validador juzgaba el golpe con la pose ANTERIOR al instante real.
+      const tRef = this._clock.nowHost(now);
+      const tHost = tRef + PPNET.wrapDiff(pkt.sendTime, PPNET.u32(tRef));
       this._jb.push(tHost, {
         hp: pkt.pose.hp, hq: pkt.pose.hq, lp: pkt.pose.lp, lq: pkt.pose.lq,
         rp: pkt.pose.rp, rq: pkt.pose.rq, fl: pkt.pose.fl,
@@ -10726,6 +10828,10 @@ class NetLink {
       k: 'resync', sp: r.scorePlayer, sa: r.scoreAi, sv: r.server,
       st: r.state, tp: r.totalPoints, gp: r.gamesPlayer, ga: r.gamesAi,
       gn: r.gameNo, fs: r.firstServer,
+      // v3.6.74 · r82 · banderas del ÁRBITRO: sin ellas el resincronizado
+      // seguía juzgando el rally con lastHitter/validBounce suyos (puntos
+      // fantasma tras un RESYNC en pleno intercambio)
+      lh: r.lastHitter || null, vb: !!r.validBounce,
     });
   }
 
@@ -10737,6 +10843,9 @@ class NetLink {
     r.server = m.sv; r.state = m.st; r.totalPoints = m.tp;
     r.gamesPlayer = m.gp; r.gamesAi = m.ga; r.gameNo = m.gn;
     r.firstServer = m.fs;
+    // r82: el árbitro de mitad hereda las banderas del anfitrión
+    if (m.lh !== undefined) r.lastHitter = m.lh;
+    if (m.vb !== undefined) r.validBounce = !!m.vb;
   }
 
   /** intents de PUNTO local (processIntents, c12): enviar/suprimir
@@ -10750,7 +10859,8 @@ class NetLink {
     if (dec.send) {
       this._stats.claims++;
       this.sendRel(dec.send);
-      this._claimFallback = { r: g.rules.rallyId, t: performance.now() };
+      // r82: rallyId NO existía (undefined) — la identidad real es rallySeq
+      this._claimFallback = { r: g.rules.rallySeq, t: performance.now() };
     }
     return dec.apply;
   }
@@ -10777,6 +10887,15 @@ class NetLink {
   }
 
   _queueEv(ev) {
+    // v3.6.74 · r82 · IDENTIDAD ÚNICA EN LA COLA (punto de estrangulamiento):
+    // HIT (netLocalHit), TOSS (localToss) y HANDOFF (crossedNet) nacían SIN
+    // id y el códec los sellaba con `e.id & 0xffff` = **0** — el dedupe del
+    // receptor (`_seenEv.has(ev.id)`) se comía TODO evento tras el primero:
+    // punto 1 «funcionaba» (la autoridad provisional de 300 ms enmascaraba
+    // el traspaso deduplicado) y desde el punto 2 el receptor jamás veía
+    // saques, golpes ni traspasos («veo las palas pero no puedo jugar la
+    // bola»). Los SNAP ya traían id propio; el resto lo recibe AQUÍ.
+    if (ev.id === undefined || ev.id === null) ev.id = this._evId++;
     this._pend.push({ ev, seqs: [], done: false });
     if (this._pend.length > 24) this._pend.shift();   // techo duro
   }
@@ -10979,7 +11098,44 @@ class NetLink {
     if (this.v2 !== 'ok') return { mode: 'legacy-v1' };
     this._stats.tEnd = performance.now();
     return { mode: 'binario-v2', ...this._stats.summary(this._clock),
-      val: { rejects: this._val.rejects, serious: this._val.serious } };
+      val: { rejects: this._val.rejects, serious: this._val.serious,
+             // r82: las CAUSAS de rechazo viajan en telemetría — diagnóstico
+             // a distancia de un partido real fallido sin pedir logs al dueño
+             log: this._val.log.slice(0, 8) } };
+  }
+
+  /** v3.6.74 · r82 · estado del enlace para HUD/QA/telemetría (visible:
+   *  el dueño SABE en qué viaja la partida — P2P, túnel, v1 — y con qué
+   *  salud de reloj/validador). window.__PP_NET = this en c12. */
+  netInfo() {
+    if (this.v2 !== 'ok') {
+      return { v2: this.v2 || 'off', via: this.online ? 'sala' : '-',
+        online: !!this.online, buildWarn: !!this._buildWarn };
+    }
+    const rs = this._clock ? this._clock.rttStats() : { med: 0, p95: 0, min: 0 };
+    return {
+      v2: 'ok', via: this._tunnel ? 'tunel' : 'p2p', online: true,
+      buildWarn: !!this._buildWarn,
+      rtt: rs.med, rttP95: rs.p95, jitter: Math.round(this._clock.jitter || 0),
+      clockOff: Math.round(this._clock.offset || 0), clockReady: !!this._clock.ready,
+      jbDelay: Math.round(this._jb.delayMs || 0), starves: this._jb.starves || 0,
+      loss: Math.round((1 - (this._recvs || 0) / Math.max(1, (this._recvs || 0) + (this._gaps || 0))) * 100),
+      ball: this._ball.state, shot: this._ball.shot, mine: this._ball.mine,
+      val: { rej: this._val.rejects, serious: this._val.serious,
+             log: this._val.log.slice(0, 6) },
+    };
+  }
+
+  /** r82 · telemetría del enlace en CUALQUIER fin (no solo game-over):
+   *  una sesión rota a mitad también deja huella diagnosticable */
+  _teleReport(reason) {
+    try {
+      if (window.__PP_TELE && window.__PP_TELE.ev && this.v2) {
+        const rep = this.netReport();
+        rep.end = reason || 'fin';
+        window.__PP_TELE.ev('net_match', rep);
+      }
+    } catch { /* telemetría jamás rompe la red */ }
   }
 
   _v2Fail(msg) {
@@ -10999,9 +11155,7 @@ class NetLink {
   sendMatchEnd(result) {
     if (this.v2 !== 'ok') return;
     this._stats.result = result;
-    try { if (window.__PP_TELE && window.__PP_TELE.ev) {
-      window.__PP_TELE.ev('net_match', this.netReport());
-    } } catch { /* */ }
+    this._teleReport(result);
     this.sendRel({ k: 'mend', r: result });
   }
 
@@ -11014,6 +11168,7 @@ class NetLink {
 
   onPeerGone(msg) {
     const wasOnline = this.online;
+    if (wasOnline && this.v2) this._teleReport('peer_gone');   // r82: diagnóstico
     this.teardown();
     this.setStatus('off', wasOnline ? msg : '');
     if (wasOnline) this.game?.onNetEnded?.(msg);
@@ -11130,6 +11285,9 @@ const PPNET = (() => {
     MAX_SPIN: 160,        // validación: giro máximo aceptado (rad/s)
     MIN_HIT_GAP: 0.150,   // no más de un golpe cada 150 ms
     HIT_NEAR_PAD: 0.60,   // el golpe ocurrió a <60 cm de la pala del rival
+    TOL_FUTURE: 120,      // validación: tHit como máx. 120 ms en el futuro
+                          // (r82: el ancla gruesa del reloj puede errar ~un
+                          //  one-way; el eco NTP refinado la corrige en vivo)
 
     LOSS_LOW: 0.10,       // pérdida sostenida >10 % → avisar y bajar pose
 
@@ -11511,7 +11669,21 @@ const PPNET = (() => {
     push(tHost, sam) {
       // descartar muestras antiguas (paquetes desordenados)
       if (this.s.length && tHost <= this.s[this.s.length - 1].t) return false;
-      this.s.push({ t: tHost, hp: sam.hp, hq: sam.hq, lp: sam.lp, lq: sam.lq, rp: sam.rp, rq: sam.rq, fl: sam.fl });
+      // v3.6.74 · r82 · CLON OBLIGATORIO: el decodificador REUTILIZA sus
+      // arrays (_pose del objeto out) — guardando referencias, TODAS las
+      // muestras del buffer apuntaban a los mismos números: la historia
+      // era siempre la última pose (aliasing total). Consecuencias en
+      // dispositivo real: interpolación del avatar muerta (velocidad 0) y
+      // el validador §12 juzgaba el golpe con la pose del ÚLTIMO paquete
+      // (el follow-through de un smash recorre 25-60 cm → rechazos masivos
+      // con latencia real; con el simulador a 0 ms pasaba de rositas).
+      this.s.push({
+        t: tHost,
+        hp: [sam.hp[0], sam.hp[1], sam.hp[2]], hq: [sam.hq[0], sam.hq[1], sam.hq[2], sam.hq[3]],
+        lp: [sam.lp[0], sam.lp[1], sam.lp[2]], lq: [sam.lq[0], sam.lq[1], sam.lq[2], sam.lq[3]],
+        rp: [sam.rp[0], sam.rp[1], sam.rp[2]], rq: [sam.rq[0], sam.rq[1], sam.rq[2], sam.rq[3]],
+        fl: sam.fl,
+      });
       if (this.s.length > this.cap) this.s.shift();
       this._frozen = false;
       return true;
@@ -11709,10 +11881,16 @@ const PPNET = (() => {
       if (!(sp <= VP.MAX_BALL_SPEED)) return { ok: false, why: `vel ${sp.toFixed(1)} > ${VP.MAX_BALL_SPEED}`, serious: true };
       const sp2 = Math.hypot(ev.s[0], ev.s[1], ev.s[2]);
       if (!(sp2 <= VP.MAX_SPIN)) return { ok: false, why: `spin ${sp2.toFixed(0)} > ${VP.MAX_SPIN}`, serious: true };
-      if (ctx.nowHost !== undefined && ev.tHit > ctx.nowHost + 60) {
+      if (ctx.nowHost !== undefined && ev.tHit > ctx.nowHost + VP.TOL_FUTURE) {
         return { ok: false, why: 'tHit en el futuro', serious: true };
       }
-      if (ctx.lastShot !== undefined && ev.shot !== ctx.lastShot + 1) {
+      // v3.6.74 · r82 · el LANZAMIENTO (kind 2) NO lleva correlativo: sale
+      // con el shot del HELD (0 en el primer saque) y NO incrementa —
+      // exigirle shot+1 RECHAZABA SIEMPRE el toss del rival (el receptor se
+      // quedaba con la bola HELD congelada e invisible y, si el HIT del
+      // saque también caía, atascado en 'serve' para siempre: «no deja
+      // sacar ni jugar»). El correlativo lo porta el HIT (kind 0/1).
+      if (ev.kind !== 2 && ctx.lastShot !== undefined && ev.shot !== ctx.lastShot + 1) {
         return { ok: false, why: `shot ${ev.shot} ≠ ${ctx.lastShot + 1}`, serious: true };
       }
       if (ctx.lastHitT !== undefined && ev.kind !== 2 &&
@@ -13781,11 +13959,12 @@ class PingPongGame {
       this.rules.message = T('net_syncing');
       return;
     }
-    this.rules.bestOf = 3;   // v3.6.29: el enfrentamiento online también al mejor de 3
-    this.rules.startMatch(this.mode);
-    this.net.owner = 'host';
-    this.resetToss();
-    this.rules.message = T('online_serve');
+    // v3.6.74 · r82 · NADA DE PARTIDOS v1 SILENCIOSOS: si el enlace binario
+    // murió de verdad (sin túnel posible), el partido NO arranca en el modo
+    // cosmético sin avisar — mensaje claro en la cancha (antes se entraba a
+    // jugar en v1 y «no se podía jugar la bola» sin saber por qué)
+    this.rules.message = T('net_v2_down');
+    this.audio.announce(T('net_v2_down'), true);
   }
 
   /** r79 · MATCH_START (enviado por el anfitrión o recibido por el
@@ -13818,6 +13997,14 @@ class PingPongGame {
 
   /** r79 · el transporte v2 quedó LISTO (HELLO/READY de ambos) */
   onNetV2Ready() {
+    // v3.6.74 · r82 · EL ENLACE SE CANTA: el dueño SABE en qué viaja la
+    // partida (directo o túnel) y si el otro visor trae otra build
+    try { window.__PP_NET = this.net; } catch { /* */ }
+    const inf = this.net.netInfo ? this.net.netInfo() : null;
+    if (inf && inf.v2 === 'ok') {
+      this.audio.announce(inf.via === 'tunel' ? T('net_link_tunnel') : T('net_link_direct'), true);
+      if (inf.buildWarn) this.audio.announce(T('net_build_warn'), false);
+    }
     if (this._netStartWhenReady) {
       this._netStartWhenReady = false;
       if (this.net.role === 'host') this.startOnlineMatch();
@@ -20995,6 +21182,14 @@ class PingPongGame {
 
     // 3) Preparación del saque
     let holdLock = false;
+    // v3.6.74 · r82 · durante la CUENTA ATRÁS del MATCH_START la bola del
+    // sacador queda EN CINEMÁTICA (antes la física viva la hacía caer y
+    // botar 3 s sobre la mesa — invisible pero sonora y sucia)
+    if (this._netStart && this.net.online && this.net.v2 === 'ok') {
+      holdLock = true;
+      this.ball.vel.set(0, 0, 0);
+      if (this.ball.spin) this.ball.spin.set(0, 0, 0);
+    }
     // v3.6.30 · en el HALL no hay saque que preparar: ni la bola en la
     // mano del jugador ni el paseo/saque de la CPU (todo este bloque).
     // La bola quieta, oculta y SIN física — el museo no juega.
@@ -21072,7 +21267,27 @@ class PingPongGame {
       } else if (this.net.online) {
         // v2.19: saque del rival humano — la bola llega por su emisión de red
         // r79 · v2: bola HELD del rival — quieta hasta su lanzamiento
-        if (this.net.v2 === 'ok' && !this._netTossLive) holdLock = true;
+        if (this.net.v2 === 'ok' && !this._netTossLive) {
+          holdLock = true;
+          // v3.6.74 · r82 · REFERENCIA EXACTA DEL SAQUE: la bola del rival
+          // se VE en SU mano libre (pose de red espejada + altura de mano),
+          // no una bola congelada flotando donde murió el punto anterior —
+          // «conocimiento exacto al milímetro de lo que ocurre»: el saque se
+          // LEE desde el primer frame (mano que sube, bola que sale).
+          const smpH = this._netAvatarOut || (this._netAvatarOut = {
+            hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+            rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+          });
+          if (this.net.avatarSample(smpH) >= 0 && this.net.avatarStaleMs() < 500) {
+            const padL = (smpH.fl & 4) !== 0;
+            const libre = padL ? smpH.rp : smpH.lp;         // la mano SIN pala
+            if (smpH.fl & (padL ? 2 : 1)) {                  // rastreada
+              NetLink.posFromNetPose(libre, netTmpP);
+              this.ball.pos.set(netTmpP.x, netTmpP.y + BALL_HAND_LIFT, netTmpP.z);
+              if (this.ballMesh) this.ballMesh.visible = true;
+            }
+          }
+        }
       } else if (!this.aiToss) {
         // la CPU camina a su posición de saque, sostiene la bola y la lanza:
         // nada de sacar desde donde la pilló el punto anterior
@@ -21186,6 +21401,23 @@ class PingPongGame {
             ? (bX) => { this.net.watchOwnCross(bX); }
             : null;
           stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);
+          // v3.6.74 · r82 · EL GOLPE PROPIO EN v2 SE ANUNCIA (era EL defecto
+          // que dejaba el multijugador injugable en dispositivo real): la
+          // única marca de _localHit vivía en la rama v1 — con el transporte
+          // binario un rally NUNCA emitía HIT kind 0: sin él, BallAuth no
+          // vuelve a 'own', no hay BALL_HANDOFF de vuelta y el rival recibe
+          // un fantasma injugable (y el contacto propio cantaba «doble
+          // golpe» con lastHitter viejo). El duelo simulado de r81 no lo
+          // cazó porque llamaba sendHit() A MANO en el guion del invitado.
+          // SOLO con el RALLYE VIVO: en 'point' la bola muerta sigue
+          // volando «de adorno» — anunciar su roce con la pala resucitaba
+          // la bola en el rival (fantasma → doble bote → PUNTO FANTASMA
+          // por CLAIM, cazado en vivo por la batería en el punto 2).
+          if (v2on && this.rules.state === 'rally') {
+            for (const e of this.events) {
+              if (e.type === 'paddle' && e.who === 'player') { this._localHit = true; break; }
+            }
+          }
         }
       }
     }
@@ -21399,9 +21631,13 @@ class PingPongGame {
           // el rival flotaba ~76 cm por encima de su altura real.
           NetLink.posFromNetPose(hpa, netTmpP);
           NetLink.quatFromNet(hqa, netTmpQ);
+          // v3.6.74 · r82 · montura por MANO FÍSICA (bit 8): el hueco del
+          // mando no dice la mano real — un diestro con la pala en el slot
+          // izquierdo veía su avatar rival con la pala rodada 90°
+          const fisicaIzq = (smp.fl & 8) !== 0;
           // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
           const qVis = netTmpQ2.copy(netTmpQ)
-            .multiply(mountQuatFor(useLeft ? 'left' : 'right'));
+            .multiply(mountQuatFor(fisicaIzq ? 'left' : 'right'));
           netTmpV.set(0, (PALA_BLADE_Y - PALA_GRIP_Y) * PALA_SCALE, 0)
             .applyQuaternion(qVis).add(netTmpP);
           const f2 = 1 - Math.exp(-20 * dt);

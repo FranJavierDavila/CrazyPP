@@ -40,6 +40,9 @@ SCR = RAIZ / 'scripts'
 TIMEOUT = {  # segundos por capa
     'qa_version.py': 120, 'test_fisica.mjs': 90, 'qa_manifiestos.py': 60,
     'qa_rendimiento.py': 300,
+    # r82: la BATERÍA juega 3 partidos completos en paralelo (con reintento
+    # por crash de SwiftShader en cajas modestas) — necesita más margen
+    'bateria_multi_v3674.py': 900,
 }
 
 def ultimo(pat):
@@ -420,6 +423,25 @@ CAPAS = [
     # espejado idéntico — la herramienta que pidió el dueño para revisar el
     # multiusuario sin dos visores.
     ('BP · sesenta seguros + duelo simulado (v3673)', 'qa_r81_v3673.py'),
+    # BR (r82): AL MILÍMETRO — el enlace que el dueño no podía jugar, cazado
+    # por un AGENTE AUDITOR de netcode: el golpe propio en v2 nunca se
+    # anunciaba (_localHit sólo en la rama v1 → sin HIT kind 0 no había
+    # traspaso de vuelta y el rival recibía un fantasma injugable), el
+    # JitterBuf guardaba REFERENCIAS (toda la historia era la última pose),
+    # el eco NTP del reloj estaba MUERTO (offset congelado → rechazos «tHit
+    # en el futuro») y el lanzamiento (kind 2) exigía correlativo. Además:
+    # TÚNEL PeerJS de emergencia (v2 sobre la sala si el ICE no abre), HELLO
+    # tolerante a BUILD, v1 silencioso bloqueado, bola HELD del rival EN SU
+    # MANO, montura por mano física (bit 8), enlace cantado por voz y
+    # netInfo() para ver la salud del enlace.
+    ('BR · al milímetro (v3674)', 'qa_r82_v3674.py'),
+    # BQ (r82): LA BATERÍA — 3 parejas de usuarios reales jugando partidos
+    # COMPLETOS EN PARALELO (señalización PeerJS real): LAN 18 ms, WiFi
+    # 35±12 con relojes desiguales (+137/−211 ms) y TÚNEL con el ICE ROTO
+    # a propósito; cuerpos en sitios distintos, dos puntos por partido
+    # (saque de ambos), marcador espejado idéntico, 0 rechazos. La
+    # herramienta del dueño para «jugar en paralelo varias partidas».
+    ('BQ · batería multi en paralelo (v3674)', 'bateria_multi_v3674.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

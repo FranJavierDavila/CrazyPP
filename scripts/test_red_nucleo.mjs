@@ -277,5 +277,45 @@ const P = PPNET;
   chk(sent > 150, `netSim: ${sent} paquetes emitidos con pérdida simulada sin colgar el bucle`);
 }
 
-console.log(`\nRESULTADO: ${ok} OK · ${fails} FALLOS (test_red_nucleo · PPNET r79)`);
+/* — 9 · r82 · AL MILÍMETRO: clon del JB, kind 2 y tolerancia de futuro —— */
+{
+  // 9.1 · push CLONA: dos pushes con el MISMO objeto reutilizado no se pisan
+  const jb = new P.JitterBuf(8);
+  const sam = { hp: [1, 1.7, 0.4], hq: [0, 0, 0, 1],
+    lp: [-0.4, 1.0, 0.1], lq: [0, 0, 0, 1],
+    rp: [0.3, 1.0, 0.5], rq: [0, 0, 0, 1], fl: 3 };
+  jb.push(5000, sam);
+  const primera = jb.nearest(5000, null, 250);
+  sam.rp[0] = 0.95; sam.rp[2] = -0.2;            // el «decodificador» reutiliza
+  jb.push(5017, sam);                            // (t refescado, otro sitio)
+  const antigua = jb.nearest(5000, null, 250);
+  chk(!!antigua && Math.abs(antigua.rp[0] - 0.3) < 1e-9 && Math.abs(antigua.rp[2] - 0.5) < 1e-9,
+    `JB push CLONA (la muestra antigua sigue en 0.3/0.5, no en ${antigua && antigua.rp[0].toFixed(2)}/${antigua && antigua.rp[2].toFixed(2)})`);
+  const interp = { hp: [0,0,0], hq: [0,0,0,1], lp: [0,0,0], lq: [0,0,0,1], rp: [0,0,0], rq: [0,0,0,1], fl: 0 };
+  const code = jb.sample(5045, interp);   // retraso del JB 40 ms → t interno 5005
+  chk(code === 0 && interp.rp[0] > 0.3 && interp.rp[0] < 0.95,
+    `JB interpola ENTRE muestras distintas (rp.x=${interp.rp[0].toFixed(3)} — con aliasing sería 0.30 plano)`);
+
+  // 9.2 · el LANZAMIENTO (kind 2) NO exige correlativo: shot del HELD (0) pasa
+  const val = new P.Validator();
+  const toss = { t: 1, kind: 2, shot: 0, tHit: 5000,
+    p: [0, 0.3, 1.0], v: [0, 2.4, 0], s: [0, 0, 0] };
+  const rToss = val.hit(toss, { nowHost: 5010, lastShot: 0, lastHitT: 0,
+    padPos: [0.05, 0.25, 1.05] });
+  chk(rToss.ok, 'validador: el LANZAMIENTO (kind 2, shot 0 tras HELD) ACEPTADO — antes rechazado SIEMPRE');
+  // y el HIT de saque (kind 1, shot 1) sigue exigiendo correlativo
+  const hitMal = { t: 1, kind: 1, shot: 3, tHit: 5100, p: [0, 0.3, 1.0], v: [0, 1, -4], s: [0, 0, 0] };
+  const rMal = val.hit(hitMal, { nowHost: 5110, lastShot: 0, lastHitT: 5000, padPos: null });
+  chk(!rMal.ok, 'validador: el HIT sigue exigiendo shot+1 (anti-trampa intacta)');
+
+  // 9.3 · tolerancia de futuro 120 ms (el ancla gruesa puede errar un one-way)
+  const hitFuturo = { t: 1, kind: 1, shot: 1, tHit: 5080, p: [0, 0.3, 1.0], v: [0, 1, -4], s: [0, 0, 0] };
+  const rF = val.hit(hitFuturo, { nowHost: 5000, lastShot: 0, lastHitT: 0, padPos: null });
+  chk(rF.ok, `validador: tHit +80 ms sobre el reloj local ACEPTADO (TOL_FUTURE ${P.VP.TOL_FUTURE} ms — el eco NTP corrige en vivo)`);
+  const hitFuturo2 = { t: 1, kind: 1, shot: 2, tHit: 5400, p: [0, 0.3, 1.0], v: [0, 1, -4], s: [0, 0, 0] };
+  const rF2 = val.hit(hitFuturo2, { nowHost: 5000, lastShot: 1, lastHitT: 5080, padPos: null });
+  chk(!rF2.ok, 'validador: tHit +400 ms sigue RECHAZADO (anti-trampa viva)');
+}
+
+console.log(`\nRESULTADO: ${ok} OK · ${fails} FALLOS (test_red_nucleo · PPNET r82)`);
 process.exit(fails === 0 ? 0 : 1);

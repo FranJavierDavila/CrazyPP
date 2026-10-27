@@ -57,6 +57,9 @@ export const PPNET = (() => {
     MAX_SPIN: 160,        // validación: giro máximo aceptado (rad/s)
     MIN_HIT_GAP: 0.150,   // no más de un golpe cada 150 ms
     HIT_NEAR_PAD: 0.60,   // el golpe ocurrió a <60 cm de la pala del rival
+    TOL_FUTURE: 120,      // validación: tHit como máx. 120 ms en el futuro
+                          // (r82: el ancla gruesa del reloj puede errar ~un
+                          //  one-way; el eco NTP refinado la corrige en vivo)
 
     LOSS_LOW: 0.10,       // pérdida sostenida >10 % → avisar y bajar pose
 
@@ -438,7 +441,21 @@ export const PPNET = (() => {
     push(tHost, sam) {
       // descartar muestras antiguas (paquetes desordenados)
       if (this.s.length && tHost <= this.s[this.s.length - 1].t) return false;
-      this.s.push({ t: tHost, hp: sam.hp, hq: sam.hq, lp: sam.lp, lq: sam.lq, rp: sam.rp, rq: sam.rq, fl: sam.fl });
+      // v3.6.74 · r82 · CLON OBLIGATORIO: el decodificador REUTILIZA sus
+      // arrays (_pose del objeto out) — guardando referencias, TODAS las
+      // muestras del buffer apuntaban a los mismos números: la historia
+      // era siempre la última pose (aliasing total). Consecuencias en
+      // dispositivo real: interpolación del avatar muerta (velocidad 0) y
+      // el validador §12 juzgaba el golpe con la pose del ÚLTIMO paquete
+      // (el follow-through de un smash recorre 25-60 cm → rechazos masivos
+      // con latencia real; con el simulador a 0 ms pasaba de rositas).
+      this.s.push({
+        t: tHost,
+        hp: [sam.hp[0], sam.hp[1], sam.hp[2]], hq: [sam.hq[0], sam.hq[1], sam.hq[2], sam.hq[3]],
+        lp: [sam.lp[0], sam.lp[1], sam.lp[2]], lq: [sam.lq[0], sam.lq[1], sam.lq[2], sam.lq[3]],
+        rp: [sam.rp[0], sam.rp[1], sam.rp[2]], rq: [sam.rq[0], sam.rq[1], sam.rq[2], sam.rq[3]],
+        fl: sam.fl,
+      });
       if (this.s.length > this.cap) this.s.shift();
       this._frozen = false;
       return true;
@@ -636,10 +653,16 @@ export const PPNET = (() => {
       if (!(sp <= VP.MAX_BALL_SPEED)) return { ok: false, why: `vel ${sp.toFixed(1)} > ${VP.MAX_BALL_SPEED}`, serious: true };
       const sp2 = Math.hypot(ev.s[0], ev.s[1], ev.s[2]);
       if (!(sp2 <= VP.MAX_SPIN)) return { ok: false, why: `spin ${sp2.toFixed(0)} > ${VP.MAX_SPIN}`, serious: true };
-      if (ctx.nowHost !== undefined && ev.tHit > ctx.nowHost + 60) {
+      if (ctx.nowHost !== undefined && ev.tHit > ctx.nowHost + VP.TOL_FUTURE) {
         return { ok: false, why: 'tHit en el futuro', serious: true };
       }
-      if (ctx.lastShot !== undefined && ev.shot !== ctx.lastShot + 1) {
+      // v3.6.74 · r82 · el LANZAMIENTO (kind 2) NO lleva correlativo: sale
+      // con el shot del HELD (0 en el primer saque) y NO incrementa —
+      // exigirle shot+1 RECHAZABA SIEMPRE el toss del rival (el receptor se
+      // quedaba con la bola HELD congelada e invisible y, si el HIT del
+      // saque también caía, atascado en 'serve' para siempre: «no deja
+      // sacar ni jugar»). El correlativo lo porta el HIT (kind 0/1).
+      if (ev.kind !== 2 && ctx.lastShot !== undefined && ev.shot !== ctx.lastShot + 1) {
         return { ok: false, why: `shot ${ev.shot} ≠ ${ctx.lastShot + 1}`, serious: true };
       }
       if (ctx.lastHitT !== undefined && ev.kind !== 2 &&

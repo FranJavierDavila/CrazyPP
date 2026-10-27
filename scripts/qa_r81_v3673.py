@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r81_v3673 — CAPA BP · V3.6.72→3.6.73-SDK6, FASE 75 «SESENTA SEGUROS».
+"""qa_r81_v3673 — CAPA BP · V3.6.72→3.6.74-SDK6, FASE 75 «SESENTA SEGUROS».
 
 Petición del dueño (r81): «debemos tener una herramienta para poder calibrar
 los FPS según el modelo de gafas… para unas Oculus 2 las partidas van muy
@@ -136,7 +136,7 @@ AGUJAS = [
     ("HIT aplica la bola con copy (no NaN)", "g.ball.pos.copy(p);"),
     ("HANDOFF aplica con copy (no NaN)", "g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado"),
     ("watchdog HELLO generoso (22 s)", "}, 22000);"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.73-SDK6'"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.74-SDK6'"),
 ]
 
 CONTADORES = [
@@ -145,7 +145,8 @@ CONTADORES = [
     ("probeStart (def + llamadas)", "probeStart", 3),
     ("_stepDown (def + llamada)", "_stepDown", 2),
     ("_stepUp (def + llamada)", "_stepUp", 2),
-    ("posFromNetPose (def + 2 usos)", "posFromNetPose", 3),
+    # r82: +1 uso (la bola HELD del rival se ve EN SU MANO)
+    ("posFromNetPose (def + 3 usos)", "posFromNetPose", 4),
     ("poseToNetFrame (def + uso)", "poseToNetFrame", 3),
     ("nearest( en el transporte", "this._jb.nearest(", 1),
     ("optsRendi (tarjeta + whitelist + comentario + animate)", "optsRendi", 4),
@@ -154,7 +155,7 @@ CONTADORES = [
     ("_iceQ (cola completa)", "_iceQ", 5),
     ("r.rallySeq en el claim", "const rallyId = r.rallySeq", 1),
     ("rallySeq en los intents de punto", "localPoint(g.rules.rallySeq", 1),
-    ("versión única", "const VERSION = '3.6.73-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.74-SDK6'", 1),
 ]
 
 JS_PERF = """async () => {
@@ -464,8 +465,12 @@ async def duel(browser):
         chk(preH.startswith("serve|player"), f"duelo: saca el anfitrión ({preH})")
         preG = await guest.evaluate("() => window.__PP_GAME.rules.server")
         chk(preG == "ai", "duelo: el invitado SABE que saca el rival")
+        # r82 · REFERENCIA EXACTA: la bola HELD del rival ya no nace oculta —
+        # se VE EN SU MANO LIBRE (pose de red espejada, mitad lejana)
         gVis = await guest.evaluate("() => window.__PP_GAME.ballMesh.visible")
-        chk(gVis is False, "duelo: la bola HELD del rival nace OCULTA en el invitado")
+        gBz = await guest.evaluate("() => window.__PP_GAME.ball.pos.z")
+        chk(gVis is True and gBz < -2.0,
+            f"duelo: la bola HELD del rival se VE EN SU MANO (visible={gVis} · z={gBz:.2f})")
 
         # SAQUE del anfitrión (2 poses antes de golpear para el validador)
         await host.wait_for_timeout(220)

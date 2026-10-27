@@ -193,6 +193,28 @@ const I18N_STRINGS = {
     btn_join: 'INTRODUCIR CÓDIGO DE UN AMIGO',
     mj_p2p: 'P2P directo (WebRTC). Necesita internet en ambos visores.',
     mj_mic_hint: 'La voz usa el micrófono: acepta el permiso del navegador.',
+    // r79 · submenú multijugador: NORMAL + DUELOS LOCOS (petición del dueño)
+    mj_norm_t: 'NORMAL · PARTIDA',
+    mj_norm_s: '1 vs 1 online · mejor de 3 juegos · golpe propio sin latencia',
+    mj_duel_t: 'DUELOS LOCOS',
+    mj_duel_s: 'lanza en la mesa los poderes de tus campeonatos',
+    mj_ping: '{n} ms',
+    net_syncing: 'Sincronizando con el rival…',
+    // r80 · submenú que respira + EL RETO DIARIO EN LA PUERTA (dueño)
+    mj_pick: 'Elige un modo de juego para continuar',
+    mj_sel_back: '◀  MODOS',
+    daily_btn_t: 'Reto Diario!',
+    daily_btn_new: 'Duelo de hoy: {m} · racha: {n}',
+    daily_btn_done: 'Completado hoy · racha: {n} · vuelve mañana',
+    daily_btn_zona: 'zonas el doble de amplias · nuevo duelo cada medianoche',
+    net_paused: 'RIVAL EN PAUSA · el partido queda detenido',
+    net_paused_long: 'RIVAL EN PAUSA (mucho tiempo) · esperando…',
+    net_legacy: 'Sin canal rápido: modo compatible 30 Hz',
+    // r82 · AL MILÍMETRO: el enlace se canta y se diagnostica
+    net_link_direct: 'Enlace directo establecido',
+    net_link_tunnel: 'Enlace por túnel establecido',
+    net_build_warn: 'Tu rival usa otra versión: recargad game.html?v=v3674 en los dos visores',
+    net_v2_down: 'Sin enlace binario con el rival · revisad Internet y recargad',
     join_title: 'CÓDIGO DE LA SALA DE TU AMIGO',
     btn_connect: 'CONECTAR',
     // ---- v2.28 · MENÚ PRINCIPAL (gran panel flotante con acordeón)
@@ -261,6 +283,27 @@ const I18N_STRINGS = {
     cat_visual_sub: 'Estela, vibración y consejos',
     cat_perfil: 'PERFIL Y DATOS',
     cat_perfil_sub: 'Tu nombre, telemetría y borrado',
+    // r81 · RENDIMIENTO: autocalibrador de FPS (≥60 seguros en cualquier casco)
+    cat_rendi: 'RENDIMIENTO',
+    cat_rendi_sub: 'FPS, calidad automática y calibración por casco',
+    perf_device: 'Dispositivo: {v}',
+    perf_fps: 'FPS ahora: {v} · casco a {r} Hz',
+    perf_fps_short: '{v} FPS',
+    perf_auto: 'Calibración automática: {v}',
+    perf_calidad: 'PERFIL DEL CASCO',
+    perf_tier_auto: 'AUTO',
+    perf_t_quest3: 'Quest 3 · máxima',
+    perf_t_quest2: 'Quest 2 · fluida',
+    perf_escala: 'Resolución de la próxima sesión: ×{v}',
+    perf_recal: 'RECALIBRAR AHORA',
+    perf_recal_next: 'RECALIBRAR AL ENTRAR EN VR',
+    perf_calibrando: 'Calibrando… ronda {s}',
+    perf_cal_ok: 'Listo: {f} FPS estables en tu visor',
+    perf_estado_ok: 'FLUIDO',
+    perf_estado_bajo: 'BAJO FPS · ajustando',
+    perf_stepdown: 'Optimizando la imagen para ir fluido',
+    msg_perf_auto: 'Autocalibración {v}: la calidad se adapta sola a tu visor',
+    msg_perf_recal_next: 'Perfecto: la calibración arrancará al entrar en VR',
     hub_champ_hint: 'Toca para entrar',
     champ_intro_btn: 'VER PRESENTACIÓN · vídeo del rival',   // v3.6.31: re-ver la intro (opcional)
     // ---- v2.34 · ARCADE "Campeonato de la Locura" (rival CLOWN) ----
@@ -807,6 +850,28 @@ const I18N_STRINGS = {
     btn_join: 'ENTER A FRIEND’S CODE',
     mj_p2p: 'Direct P2P (WebRTC). Needs internet on both headsets.',
     mj_mic_hint: 'Voice uses the microphone: accept the browser permission.',
+    // r79 · multiplayer submenu: NORMAL + CRAZY DUELS (owner request)
+    mj_norm_t: 'NORMAL · MATCH',
+    mj_norm_s: '1 v 1 online · best of 3 games · your own hit has zero lag',
+    mj_duel_t: 'CRAZY DUELS',
+    mj_duel_s: 'bring your championship powers to the table',
+    mj_ping: '{n} ms',
+    net_syncing: 'Syncing with your rival…',
+    // r80 · breathing submenu + DAILY CHALLENGE AT THE GATE (owner)
+    mj_pick: 'Pick a game mode to continue',
+    mj_sel_back: '◀  MODES',
+    daily_btn_t: 'Daily Challenge!',
+    daily_btn_new: 'Today’s duel: {m} · streak: {n}',
+    daily_btn_done: 'Done today · streak: {n} · back tomorrow',
+    daily_btn_zona: 'zones twice as wide · a new duel every midnight',
+    net_paused: 'RIVAL PAUSED · match clock stopped',
+    net_paused_long: 'RIVAL PAUSED (a while) · waiting…',
+    net_legacy: 'No fast channel: 30 Hz compatibility mode',
+    // r82 · DOWN TO THE MILLIMETRE: the link announces and diagnoses itself
+    net_link_direct: 'Direct link established',
+    net_link_tunnel: 'Tunnelled link established',
+    net_build_warn: 'Your rival runs another build: reload game.html?v=v3674 on both headsets',
+    net_v2_down: 'No binary link with your rival · check Internet and reload',
     join_title: 'YOUR FRIEND’S ROOM CODE',
     // ---- v2.28 · MAIN MENU (big floating panel with accordion)
     sec_match: 'PLAY MATCH',
@@ -872,6 +937,27 @@ const I18N_STRINGS = {
     cat_visual_sub: 'Trail, haptics and tips',
     cat_perfil: 'PROFILE & DATA',
     cat_perfil_sub: 'Your name, telemetry and reset',
+    // r81 · PERFORMANCE: FPS auto-calibrator (steady 60+ on any headset)
+    cat_rendi: 'PERFORMANCE',
+    cat_rendi_sub: 'FPS, auto quality and per-headset calibration',
+    perf_device: 'Device: {v}',
+    perf_fps: 'FPS now: {v} · headset at {r} Hz',
+    perf_fps_short: '{v} FPS',
+    perf_auto: 'Auto calibration: {v}',
+    perf_calidad: 'HEADSET PROFILE',
+    perf_tier_auto: 'AUTO',
+    perf_t_quest3: 'Quest 3 · max quality',
+    perf_t_quest2: 'Quest 2 · smooth',
+    perf_escala: 'Resolution next session: ×{v}',
+    perf_recal: 'RECALIBRATE NOW',
+    perf_recal_next: 'RECALIBRATE ON VR ENTRY',
+    perf_calibrando: 'Calibrating… round {s}',
+    perf_cal_ok: 'Done: {f} steady FPS on your headset',
+    perf_estado_ok: 'SMOOTH',
+    perf_estado_bajo: 'LOW FPS · adjusting',
+    perf_stepdown: 'Optimizing visuals to keep it smooth',
+    msg_perf_auto: 'Auto calibration {v}: quality adapts to your headset',
+    msg_perf_recal_next: 'Great: calibration will start when you enter VR',
     hub_champ_hint: 'Tap to enter',
     champ_intro_btn: 'WATCH THE INTRO · rival video',   // v3.6.31: re-watch the intro (optional)
     // ---- v2.34 · ARCADE "Championship of Madness" (CLOWN rival) ----
@@ -1522,6 +1608,21 @@ const PP_ICONS = {
     c.fillStyle = '#ffffff';
     c.beginPath(); c.arc(x, y, 7, 0, Math.PI * 2); c.fill();
   },
+  duelo(c, x, y) {          // r79: rayo de los DUELOS LOCOS (poderes)
+    c.fillStyle = '#ffe066';
+    c.beginPath();
+    c.moveTo(x + 7, y - 28);
+    c.lineTo(x - 14, y + 3);
+    c.lineTo(x - 2, y + 3);
+    c.lineTo(x - 8, y + 28);
+    c.lineTo(x + 16, y - 6);
+    c.lineTo(x + 3, y - 6);
+    c.closePath();
+    c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.85)';
+    c.beginPath(); c.arc(x - 20, y - 19, 5, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(x + 22, y + 16, 4, 0, Math.PI * 2); c.fill();
+  },
   opts(c, x, y) {           // v2.123 · engranaje (AJUSTES)
     c.save();
     c.strokeStyle = '#d3dee8'; c.lineWidth = 7; c.lineCap = 'round';
@@ -2105,7 +2206,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.70-SDK6';
+  const VERSION = '3.6.73-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -6458,6 +6559,18 @@ class Rules {
     this.gamesAi = 0;               // juegos ganados por el rival
     this.gameNo = 1;                // juego en curso dentro del enfrentamiento
     this.firstServer = 'player';    // primer sacador del ENFRENTAMIENTO
+    // v3.6.71 · r79 · IDENTIDAD DE RALLYE para el multijugador binario:
+    // rallySeq se incrementa en CADA beginServeRally (los dos extremos lo
+    // hacen en el mismo instante lógico: el sacador al golpear y el
+    // receptor al recibir su BALL_HIT kind 1) — determinista y correlativo.
+    // _appliedRally guarda el último rally resuelto para no duplicar puntos
+    // (CLAIM recibido + detección local del mismo rally).
+    this.rallySeq = 0;
+    this._appliedRally = -1;
+    // v3.6.71 · r79: la guardia anti-duplicado SOLO vive con red v2 activa
+    // (NetLink.startV2 la enciende). En local y en los bancos QA el
+    // comportamiento es EXACTAMENTE el de siempre (regresión cero).
+    this._netGuard = false;
     // v3.6.39 · HOOK de arranque: el núcleo (c12) registra aquí la recogida
     // de los superpoderes de pala — CADA startMatch avisa y NINGUNA partida
     // nueva hereda cargas/FX de la anterior (reporte del dueño: «los poderes
@@ -6477,6 +6590,8 @@ class Rules {
     this.scorePlayer = 0;
     this.scoreAi = 0;
     this.totalPoints = 0;
+    this.rallySeq = 0;          // v3.6.71 · r79
+    this._appliedRally = -1;    // v3.6.71 · r79
     this.server = this.gameNo % 2 === 1
       ? this.firstServer
       : this.other(this.firstServer);   // cada juego saca el otro (ITTF)
@@ -6512,9 +6627,12 @@ class Rules {
     try { if (this.onMatchStart) this.onMatchStart(); } catch (e) { /* nunca rompe el árbitro */ }
   }
 
-  /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea). */
+  /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea).
+   *  v3.6.71 · r79: cada rallye recibe identidad única (rallySeq) — viaja
+   *  en los POINT_CLAIM/ACK del multijugador binario. */
   beginServeRally(server) {
     this.state = 'rally';
+    this.rallySeq++;
     this.lastHitter = server;
     this.isServeBall = true;
     this.serveOwnPending = true;
@@ -6524,14 +6642,20 @@ class Rules {
     this.rallyHits = 0;
   }
 
-  registerPaddleHit(who) {
+  registerPaddleHit(who, remote) {
     if (this.state !== 'rally') return [];
     // Nadie puede golpear dos veces seguidas (doble golpe = falta)
     if (who === this.lastHitter) {
       return this.applyPoint(this.other(who), 'dblhit');
     }
-    // Volea: golpear antes de que la bote en su campo el receptor
-    if (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce)) {
+    // Volea: golpear antes de que la bote en su campo el receptor.
+    // r81 · la VOLEA la juzga el ÁRBITRO DE ESA MITAD (spec §7): un golpe
+    // REMOTO llega ya validado por el árbitro del que golpea (si hubiera
+    // volea, SU mitad la cantó y llega por CLAIM) — el fantasma propio va
+    // SIEMPRE un poco por detrás del vuelo real (avance ≤120 ms + lag de
+    // red) y un juicio de volea local daba FALTAS FALSAS que partían el
+    // marcador (el duelo simulado r81 lo cazó en vivo).
+    if (!remote && (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce))) {
       return this.applyPoint(this.lastHitter, 'volley');
     }
     this.lastHitter = who;
@@ -6543,6 +6667,19 @@ class Rules {
   }
 
   applyPoint(winner, cause) {
+    // v3.6.71 · r79: guardia anti-duplicado — un rallye SOLO puede
+    // resolverse una vez (la detección local y el CLAIM remoto del mismo
+    // rallyId no pueden sumar dos). SOLO con red v2 activa: en local el
+    // árbitro es único y la guardia no existe (comportamiento intacto).
+    if (this._netGuard && this._appliedRally === this.rallySeq) return [];
+    this._appliedRally = this.rallySeq;
+    return this._applyPointSinGuard(winner, cause);
+  }
+
+  /** cuerpo real de applyPoint SIN la guardia de rally (la pone el
+   *  llamador: applyPoint con rallySeq vivo, forcePoint con rallyId
+   *  del CLAIM — nunca las dos, lección de la capa BN en página). */
+  _applyPointSinGuard(winner, cause) {
     if (this.mode === 'survival') {
       // SUPERVIVENCIA: no hay puntos; lo que cuenta es el rallye terminado.
       // La CPU acelera con cada rallye (lo gestiona el juego con el intent).
@@ -6574,6 +6711,18 @@ class Rules {
     this.state = 'serve';
     this.message = T('retry_serve', { cause: T('cause_' + cause) });
     return [{ type: 'retry-serve', cause }];
+  }
+
+  /** v3.6.71 · r79 · PUNTO IMPUESTO POR LA RED: aplica el resultado de un
+   *  POINT_CLAIM del extremo con autoridad, con guardia por rallyId. Espeja
+   *  EXACTAMENTE applyPoint (mismo intent, mismos mensajes) para que el
+   *  receptor viva el punto idéntico al local. */
+  forcePoint(winner, cause, rallyId) {
+    if (rallyId !== undefined && rallyId !== null) {
+      if (this._appliedRally === rallyId) return [];
+      this._appliedRally = rallyId;
+    }
+    return this._applyPointSinGuard(winner, cause);
   }
 
   computeNextServer() {
@@ -8277,7 +8426,7 @@ function createScoreboard() {
   const update = (d) => {
     const key = d.mode === 'survival'
       ? `S|${d.rally}|${d.rallyes}|${d.best}|${d.server}|${d.message}`
-      : `${d.player}|${d.ai}|${d.server}|${d.message}|${d.gamesPlayer}|${d.gamesAi}|${d.bestOf}`;
+      : `${d.player}|${d.ai}|${d.server}|${d.message}|${d.gamesPlayer}|${d.gamesAi}|${d.bestOf}|${d.netPing ?? ''}|${d.netDeg ? 1 : 0}`;
     if (key === last) return;
     last = key;
 
@@ -8372,6 +8521,18 @@ function createScoreboard() {
       ctx.font = `500 ${msgFs}px system-ui, sans-serif`;
     }
     ctx.fillText(msg, 512, 440);
+
+    // r79 · v2 · ICONO DE PING (calidad de conexión visible, spec §11):
+    // punto de color + ms en la esquina superior derecha del marcador
+    if (typeof d.netPing === 'number' && d.netPing >= 0) {
+      const col = d.netPing < 80 ? '#7fb069' : d.netPing < 150 ? '#e8b45a' : '#ff6b57';
+      const txt = d.netPing + ' ms' + (d.netDeg ? ' ·' : '');
+      ctx.textAlign = 'right';
+      ctx.font = '700 30px system-ui, sans-serif';
+      ctx.fillStyle = col;
+      ctx.fillText(txt, 996, 66);
+      ctx.textAlign = 'center';
+    }
 
     tex.needsUpdate = true;
   };
@@ -8827,9 +8988,22 @@ class NetLink {
     const T = DIMS.tableTopY;
     return [-p.x, p.y - T, -3.2 - p.z];
   }
+  /* v3.6.73 · r81 · CONVENCIÓN ÚNICA DEL CABLE: el paquete viaja YA en el
+   * marco del RECEPTOR (el emisor aplica el espejo 180° UNA vez con
+   * posToNet/_stateNet — la involución R(z) = −3.2−z manda «mi lado» al
+   * «lado del otro»). Antes el receptor VOLVÍA a aplicar R al recibir
+   * (posFromNet/posFromNetArr): R∘R = identidad → la bola y la pala del
+   * rival aterrizaban en el marco CRUDO del emisor (¡lado contrario de la
+   * mesa!) — el defecto de fondo del multijugador «cosmético» desde v2.19.
+   * Al recibir solo queda re-anclar la Y al tapete propio (la Y viaja
+   * relativa a la mesa desde v2.91). Los VECTORES (velocidad/spin) ya
+   * viajan espejados por el emisor en v2 (_velNet/_spinNet) → identidad;
+   * en v1 el emisor los manda en crudo → sus receptores SÍ espejan una
+   * vez (vecFromNet/spinFromNet intactos). Eventos v1 (botes): crudo →
+   * espejo al recibir (drainNetwork, intacto). UN solo espejo por camino. */
   static posFromNet(a, out) {
     const T = DIMS.tableTopY;
-    out.set(-a[0], a[1] + T, -3.2 - a[2]);
+    out.set(a[0], a[1] + T, a[2]);
     return out;
   }
   static vecToNet(v) { return [-v.x, v.y, -v.z]; }
@@ -8889,15 +9063,47 @@ class NetLink {
     // el receptor aplica la conjugación completa en quatFromNet.
     return [q.x, q.y, q.z, q.w];
   }
+  /** r79: inversos de arrays planos (eventos fast → marco local).
+   *  r81: el wire ya viene en MI marco (espejo del emisor) — solo Y+T. */
+  static posFromNetArr(a) {
+    const T = DIMS.tableTopY;
+    return new THREE.Vector3(a[0], a[1] + T, a[2]);
+  }
+  static vecFromNetArr(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+  static spinFromNetArr(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+
+  /* v3.6.73 · r81 · ESPEJO DE POSE (solo X/Z):
+   * La POSE del rival viaja con la Y ANCLADA AL TAPETE por el códec
+   * (wPos/rPos con yAnchor: sale y−T_anfitrión y entra y+T_propio —
+   * v2.91), así que al recibir YA está a la altura correcta sobre MI
+   * mesa. Añadir T OTRA VEZ (posFromNet) flotaba al rival ~76 cm por
+   * encima de su altura real («los movimientos no calibran bien»).
+   * El espejo de pose sólo gira X/Z (la involución de 180°); la Y pasa
+   * tal cual. NUEVO para poses; posFromNet sigue para BOLAS/eventos
+   * (esas viajan con Y relativa y SÍ necesitan el +T al recibir). */
+  static posFromNetPose(a, out) {
+    out.set(-a[0], a[1], -3.2 - a[2]);
+    return out;
+  }
+  /** pose cruda (marco del emisor, Y ya anclada a MI tapete) → marco NET
+   *  canónico de eventos ([-x, y−T, −3.2−z]) — el MISMO marco de ev.p
+   *  para que el validador compare peras con peras (spec §12). */
+  static poseToNetFrame(a) {
+    const T = DIMS.tableTopY;
+    return [-a[0], a[1] - T, -3.2 - a[2]];
+  }
 
   /** v2.91 · La propiedad de la bola SIGUE AL SACADOR durante el saque:
    *  si saco YO, yo simulo (toss real + físicas + contacto propio); si
    *  saca el rival, sigo su emisión. Antes el dueño quedaba fijo en
    *  'host': el INVITADO no podía sacar — su lanzamiento era pisado en
    *  cada frame por la emisión atrasada del anfitrión y la bola se caía
-   *  al suelo sin poder golpearla. */
+   *  al suelo sin poder golpearla.
+   *  v3.6.71 · r79: con transporte v2 el dueño lo conduce la FSM de la
+   *  bola (HELD/OWN/GHOST/AUTH) — aquí sólo se sincroniza desde ella. */
   syncServeOwner() {
     if (!this.online || !this.game || !this.game.rules) return;
+    if (this.v2 === 'ok') { this._syncOwnerFromBall(); return; }
     const r = this.game.rules;
     if (r.state !== 'serve') return;
     // r.server está en perspectiva LOCAL ('player' = yo) en ambos roles:
@@ -9014,6 +9220,9 @@ class NetLink {
       this.online = true;
       this.owner = 'host';       // el saque inicial siempre es del anfitrión
       this.setStatus('online', T('opp_connected'));
+      // v3.6.71 · r79: subir el transporte binario v2 (fast + reliable) —
+      // la partida arrancará con el MATCH_START sincronizado (spec §3.8)
+      this.startV2();
       this.game?.startOnlineSession();
       this.game?.audio?.kick();  // v2.25: rescate de audio al abrir la sesión
       this.initVoice().catch(() => { /* sin voz, sin problema */ });
@@ -9130,6 +9339,8 @@ class NetLink {
   /* --------------- bucle: emitir pose/bola/eventos/sync (20 Hz) --------------- */
   tick(dt) {
     if (!this.online) return;
+    if (this.v2 === 'pending') return;   // r79: durante la subida no hay v1
+    if (this.v2 === 'ok') return;        // r79: el transporte v2 usa frame()
     this._sendAcc += dt;
     if (this._sendAcc < 0.033) return;   // v2.91: 30 Hz (antes 20 — partida a trompicones)
     this._sendAcc = 0;
@@ -9187,9 +9398,12 @@ class NetLink {
    *  inyecta con remote:true) NO se re-emiten — antes cada bote del rival
    *  volvía a la red en bucle infinito a 20 Hz: tormenta de eventos (más de
    *  55.000 en 45 s medida en el banco), puntos fantasma en el árbitro del
-   *  anfitrión, marcas eternas en la mesa y audio en ametralladora. */
+   *  anfitrión, marcas eternas en la mesa y audio en ametralladora.
+   *  v3.6.71 · r79: el transporte v2 NO envía botes — el rival los oye de
+   *  SU simulación local (fantasma o autoridad), como dicta la spec §8. */
   collectEvents(events) {
     if (!this.online) return;
+    if (this.v2 === 'ok') return;
     const T = DIMS.tableTopY;
     for (const e of events) {
       if (e.remote) continue;                    // v2.51: jamás re-emitir
@@ -9204,9 +9418,11 @@ class NetLink {
   /** Anuncia un golpeo local (tras aplicar la velocidad ya corregida).
    *  v2.25: emisión EN CRUDO — el receptor aplica el espejo UNA vez.
    *  v2.51: se marca _lastHitSent para que applySync no pise el claim
-   *  local con el ow atrasado del anfitrión (flap de propiedad). */
+   *  local con el ow atrasado del anfitrión (flap de propiedad).
+   *  v3.6.71 · r79: el transporte v2 no pasa por aquí (netLocalHit). */
   sendHit(isServe) {
     if (!this.online) return;
+    if (this.v2 === 'ok') { this.netLocalHit(isServe); return; }
     const g = this.game;
     this.owner = this.mySide();
     this._lastHitSent = performance.now();
@@ -9224,6 +9440,27 @@ class NetLink {
   /* --------------- recepción --------------- */
   onData(d) {
     if (!d || typeof d !== 'object') return;
+    // v3.6.71 · r79: señalización y control del transporte v2 (por la
+    // DataConnection PeerJS o por el canal reliable propio, mismo formato)
+    if (d.k === 'sdp') { this._v2RemoteDesc(d.d); return; }
+    if (d.k === 'ice') { this._onIce(d.c); return; }
+    // v3.6.74 · r82 · paquete fast encapsulado por el TÚNEL PeerJS: mismo
+    // camino que un paquete del DataChannel propio (binario intacto)
+    if (d.k === 'f2' && d.b) {
+      let b = d.b;
+      if (!(b instanceof ArrayBuffer) && b.buffer) {
+        b = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+      }
+      if (b instanceof ArrayBuffer) this._onFast(b);
+      return;
+    }
+    switch (d.k) {
+      case 'hello2': case 'tick2': case 'tock2': case 'ready2':
+      case 'mstart': case 'claim': case 'ack': case 'resync':
+      case 'pause': case 'resume': case 'mend': case 'v2off':
+        this._onRel(d);
+        return;
+    }
     if (d.k === 'p') {
       if (d.pad) {
         // v2.91: se guarda TAMBIÉN la muestra anterior para estimar la
@@ -9399,12 +9636,10 @@ class NetLink {
   }
 
   /** Aplica la bola recibida por red (solo cuando el dueño es el rival).
-   *  v2.91 · MUERTE ADELANTADA (dead reckoning): la muestra llega a 30 Hz
-   *  por una red con jitter; entre paquetes se integra la gravedad local
-   *  sobre la (pos, vel) recibida según la EDAD del paquete y se persigue
-   *  esa trayectoria predicha. Antes el lerp puro hacia la última muestra
-   *  frenaba la bola y cortaba el arco: rallye «a trompicones». */
+   *  v3.6.71 · r79: con transporte v2 la bola rival NO llega por stream —
+   *  la simula el fantasma con la física real (devuelve false siempre). */
   applyBallStream(ball, dt) {
+    if (this.v2 === 'ok') return false;
     const s = this.remoteBall;
     if (!s) return false;
     const tmp = this._tv || (this._tv = new THREE.Vector3());
@@ -9464,26 +9699,1099 @@ class NetLink {
         );
         g.haptic(g.paddleHand, 0.3, 40);
         if (h.sv) g.rules.beginServeRally('ai');
-        else g.processIntents(g.rules.registerPaddleHit('ai'));
+        else g.processIntents(g.rules.registerPaddleHit('ai', true));   // r81: golpe remoto
       }
     }
   }
 
+  /* =====================================================================
+   *  v3.6.71 · r79 — CRAZY LINK v2 · TRANSPORTE BINARIO DE DOBLE CANAL
+   *  Spec «Netcode multijugador online — Ping Pong VR (WebXR)» v1.0:
+   *    · El GOLPE PROPIO es sagrado: colisión local, sonido y háptica en
+   *      el mismo frame; la red nunca la retrasa.
+   *    · AUTORIDAD POR MITAD DE MESA: quien tiene la bola en su mitad
+   *      decide botes/fallos/puntos; traspaso (BALL_HANDOFF) al cruzar
+   *      la red limpiamente; autoridad provisional a los 300 ms.
+   *    · Puntos por POINT_CLAIM → POINT_ACK (rallyId = totalPoints) y
+   *      RESYNC_STATE del anfitrión como árbitro final.
+   *    · Reloj compartido (ancla gruesa por reliable + refinado NTP por
+   *      la cabecera fast), jitter buffer del avatar y validación.
+   *  PeerJS sigue siendo la SALA (código, presencia, voz) y además el
+   *  canal de SEÑALIZACIÓN (SDP/ICE) de una RTCPeerConnection propia con
+   *  dos DataChannels: fast {ordered:false, maxRetransmits:0} (tipo UDP)
+   *  y reliable {ordered:true} (control JSON, mensajes raros).
+   *  Si la subida falla → degradación HONESTA al modo v1 (30 Hz JSON).
+   *  ===================================================================== */
+
+  static ICE_CFG() {
+    // STUN público + TURN libre (openrelay/metered) — decisión abierta de la
+    // spec §18 (coturn propio y regiones: hito posterior, ver worklog).
+    return {
+      iceServers: [
+        { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+        {
+          urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443',
+            'turn:openrelay.metered.ca:443?transport=tcp'],
+          username: 'openrelayproject', credential: 'openrelayproject',
+        },
+      ],
+      iceCandidatePoolSize: 4,
+    };
+  }
+
+  /** FASE 0 · subida del transporte. El INVITADO ofrece; el anfitrión
+   *  responde; el ICE viaja por la DataConnection PeerJS existente. */
+  startV2() {
+    if (typeof PPNET === 'undefined' || typeof RTCPeerConnection === 'undefined') {
+      this._v2Fail(T('net_legacy'));           // sin piezas: v1 honesto
+      return;
+    }
+    this.v2 = 'pending';                        // pending|ok|fail
+    this._pc = null; this._fast = null; this._rel = null;
+    this._fastOpen = false; this._relOpen = false;
+    this._seq = (Math.random() * 0xffff) | 0;
+    this._ackP = 0; this._ackBits = 0;
+    this._echoTime = 0; this._echoAt = 0;       // eco del último paquete recibido
+    this._pend = [];                            // eventos pendientes de ack
+    this._evId = 1;
+    this._fastIn = [];                          // eventos entrantes a drenar
+    this._seenEv = new Map();                   // dedupe por eventId
+    this._recvRing = [];                        // seqs recibidos (pérdida)
+    this._recvHist = [];                        // seqs recibidos (ack/ackBits)
+    this._lastPoseAt = 0;                       // frescura del avatar
+    this._gaps = 0; this._recvs = 0;
+    this._poseAcc = 0; this._snapAcc = 0;
+    this._poseHz = PPNET.VP.POSE_HZ;
+    this._lossLowT = 0; this._degraded = false;
+    this._lastFastAt = 0; this._iceRestarts = 0;
+    this._helloDone = false; this._helloTO = null;
+    this._iceQ = [];                            // r81: ICE tempranos en cola
+    this._tunnel = false;                       // r82: túnel PeerJS (emergencia)
+    this._v2T0 = performance.now();             // r82: nacimiento de la subida
+    this._buildWarn = false;                    // r82: HELLO con build distinto
+    this._anchors = 0; this._readyMe = false; this._readyOpp = false;
+    this._mstart = null;                        // {startAt, fs, bo}
+    this._clock = new PPNET.NetClock(this.role === 'host');
+    this._jb = new PPNET.JitterBuf();
+    this._ball = new PPNET.BallAuth();
+    this._sync = new PPNET.MatchSync(this.role);
+    this._val = new PPNET.Validator();
+    this._stats = new PPNET.NetStats(this.role);
+    // r79: la guardia anti-doble-punto del árbitro SOLO con red v2
+    try { if (this.game && this.game.rules) this.game.rules._netGuard = true; } catch { /* */ }
+    this._visOff = null; this._visOffMs = 0;    // corrección/catch-up visual
+    this._pausedSelf = false; this._pausedRemote = false; this._pausedAt = 0;
+    this._lastRelAt = 0; this._claimFallback = null;
+    PPNET.VP.BUILD = (typeof VERSION !== 'undefined') ? VERSION : '';
+    // pausa por visor quitado / pestaña oculta (spec §10)
+    this._onVis = () => {
+      if (this.v2 !== 'ok' || !this.online) return;
+      this._pausedSelf = document.hidden;
+      if (document.hidden) this.sendRel({ k: 'pause', t: this._clock.nowHost(performance.now()) });
+      else this.sendRel({ k: 'resume', t: this._clock.nowHost(performance.now()) });
+    };
+    document.addEventListener('visibilitychange', this._onVis);
+    if (this.role === 'guest') this._v2Offer();
+    // r81 · watchdog de HELLO con ventanas GENEROSAS: el ICE de redes reales
+    // (hotspots, NAT simétricos con STUN lento) puede tardar 10-15 s en
+    // abrir; con 9 s el transporte moría ANTES de nacer y la partida caía
+    // al modo compatible v1. 22 s de gracia total antes de degradar.
+    this._helloTO = window.setTimeout(() => {
+      if (this.v2 === 'pending') this._v2Fail(T('net_legacy'));
+    }, 22000);
+  }
+
+  async _v2Offer() {
+    try {
+      const pc = new RTCPeerConnection(NetLink.ICE_CFG());
+      this._pc = pc;
+      this._fast = pc.createDataChannel('fast', { ordered: false, maxRetransmits: 0 });
+      this._rel = pc.createDataChannel('rel', { ordered: true });
+      this._wireDC();
+      pc.onicecandidate = (e) => {
+        if (e.candidate) this.send({ k: 'ice', c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate });
+      };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      this.send({ k: 'sdp', d: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+    } catch (e) {
+      this._v2Fail(T('net_legacy'));
+    }
+  }
+
+  /** descripción remota SDP: el anfitrión recibe la OFERTA (y responde);
+   *  el invitado recibe la RESPUESTA. */
+  async _v2RemoteDesc(desc) {
+    try {
+      if (!desc || !desc.type) return;
+      if (!this._pc) {
+        const pc = new RTCPeerConnection(NetLink.ICE_CFG());
+        this._pc = pc;
+        pc.onicecandidate = (e) => {
+          if (e.candidate) this.send({ k: 'ice', c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate });
+        };
+        pc.ondatachannel = (e) => {
+          if (e.channel.label === 'fast') this._fast = e.channel;
+          else if (e.channel.label === 'rel') this._rel = e.channel;
+          this._wireDC();
+        };
+      }
+      await this._pc.setRemoteDescription(desc);
+      // r81 · ICE tempranos: los candidatos que llegaron ANTES de la
+      // descripción remota se encolaban y morían en silencio (addIceCandidate
+      // rechaza sin remoteDescription) — en redes reales dejaba el ICE a medio
+      // abrir y la partida sin canal fast. Se drenan ahora, en orden.
+      const q = this._iceQ || [];
+      this._iceQ = [];
+      for (const c of q) {
+        try { this._pc.addIceCandidate(c).catch(() => { /* */ }); } catch { /* */ }
+      }
+      if (desc.type === 'offer') {
+        const ans = await this._pc.createAnswer();
+        await this._pc.setLocalDescription(ans);
+        this.send({ k: 'sdp', d: { type: ans.type, sdp: ans.sdp } });
+      }
+    } catch (e) {
+      this._v2Fail(T('net_legacy'));
+    }
+  }
+
+  /** r81 · candidato ICE entrante: si la descripción remota aún no está,
+   *  se ENCOLA (se drena en _v2RemoteDesc); si ya está, se aplica. */
+  _onIce(c) {
+    if (!c) return;
+    try {
+      const rd = this._pc && this._pc.remoteDescription;
+      if (this._pc && rd && rd.type) this._pc.addIceCandidate(c).catch(() => { /* */ });
+      else (this._iceQ = this._iceQ || []).push(c);
+    } catch { /* */ }
+  }
+
+  _wireDC() {
+    if (this._fast) {
+      this._fast.binaryType = 'arraybuffer';
+      this._fast.onopen = () => {
+        this._fastOpen = true;
+        this._v2ChannelsUp();
+      };
+      this._fast.onmessage = (e) => this._onFast(e.data);
+      this._fast.onerror = () => { /* el watchdog de ICE decide */ };
+      this._fast.onclose = () => { this._fastOpen = false; };
+    }
+    if (this._rel) {
+      this._rel.onopen = () => {
+        this._relOpen = true;
+        this._v2ChannelsUp();
+      };
+      this._rel.onmessage = (e) => {
+        try { this._onRel(JSON.parse(typeof e.data === 'string' ? e.data : String(e.data))); }
+        catch { /* json inválido: ignorar */ }
+      };
+      this._rel.onclose = () => { this._relOpen = false; };
+    }
+  }
+
+  _v2ChannelsUp() {
+    // v3.6.74 · r82 · los canales «suben» por DOS caminos: DC propios abiertos
+    // (P2P) o túnel PeerJS activo (el ICE no llegó a abrir pero la sala vive)
+    if (!((this._fastOpen && this._relOpen) || this._tunnel) || this.v2 !== 'pending') return;
+    // HELLO (reliable): versión de protocolo, build y ballPhysics (spec §3.5)
+    this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD });
+    if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
+    // r81 · 15 s para el HELLO de respuesta (el ICE ya está abierto aquí:
+    // esto sólo cubre un peer colgado a medias)
+    this._helloTO = window.setTimeout(() => {
+      if (this.v2 === 'pending') this._v2Fail(T('net_legacy'));
+    }, 15000);
+  }
+
+  _onRel(m) {
+    if (!m || typeof m !== 'object') return;
+    this._lastRelAt = performance.now();
+    switch (m.k) {
+      case 'hello2': {
+        if (m.v !== PPNET.VP.PROTO || m.ph !== PPNET.VP.PHYS) {
+          this._v2Fail(T('net_legacy'));        // protocolo/física distintos → v1
+          return;
+        }
+        // v3.6.74 · r82 · BUILD TOLERANTE: el número de build ya NO rompe el
+        // enlace — el cable v2 depende de PROTO/PHYS y el códec es idéntico.
+        // Antes, dos cascos con la caché desigual (uno en 3.6.72 y otro en
+        // 3.6.73) rechazaban el HELLO y caían EN SILENCIO al v1 cosmético:
+        // el dueño veía «movimiento de palas pero poco más». Ahora el enlace
+        // sube igual y se AVISA (menú + voz) para recargar ambos visores.
+        this._buildWarn = m.b !== PPNET.VP.BUILD;
+        if (this._buildWarn) {
+          this.statusMsg = T('net_build_warn', { a: (m.b || '?').slice(-6), b: (PPNET.VP.BUILD || '?').slice(-6) });
+          this.game?.onNetStatus?.();
+        }
+        this._helloDone = true;
+        // ráfaga de reloj: 8 intercambios a ~50 ms (spec §3.6)
+        for (let i = 0; i < 8; i++) {
+          window.setTimeout(() => {
+            if (this.v2 === 'ok' || this.v2 === 'pending') {
+              this.sendRel({ k: 'tick2', t: performance.now() });
+            }
+          }, i * 50);
+        }
+        break;
+      }
+      case 'tick2': {
+        this.sendRel({ k: 'tock2', t: performance.now(), e: m.t });
+        break;
+      }
+      case 'tock2': {
+        // ancla gruesa: mi t de envío, su t completo, mi t de recepción
+        this._clock.anchor(m.e, m.t, performance.now());
+        this._clock.apply(performance.now(), false);
+        this._anchors++;
+        if (this._anchors >= 6 && !this._readyMe) {
+          this._readyMe = true;
+          this.sendRel({ k: 'ready2' });
+          this._v2MaybeStart();
+        }
+        break;
+      }
+      case 'ready2': {
+        this._readyOpp = true;
+        this._v2MaybeStart();
+        break;
+      }
+      case 'mstart': {
+        // MATCH_START del anfitrión: instante futuro + primer sacador
+        this._mstart = { startAt: m.sa, fs: m.fs, bo: m.bo || 3 };
+        this.game?.onNetMatchStart?.(this._mstart);
+        break;
+      }
+      case 'claim': {
+        this._stats.claims++;
+        const g = this.game;
+        // el ganador del claim viaja en perspectiva DEL EMISOR: espejar a
+        // la mía para confrontarlo con lo que YO apliqué (spec §7/§9).
+        // r81 · el espejo es SIEMPRE el intercambio (el emisor llama
+        // «player» a SÍ mismo; para mí ese mismo jugador es «ai»): antes
+        // el anfitrión NO intercambiaba y un CLAIM del invitado se leía
+        // al revés (punto al revés y desacuerdos enmascarados).
+        const wMapped = m.w === 'let' ? 'let'
+          : (m.w === 'player' ? 'ai' : 'player');
+        const r = this._sync.onClaim(m, wMapped);
+        this.sendRel(r.ack);
+        if (r.apply && g) this._applyRemoteClaim(m, wMapped);
+        if (!r.agree && this.role === 'host') this._sendResync();
+        break;
+      }
+      case 'ack': {
+        const r = this._sync.onAck(m);
+        if (r.dispute && this.role === 'host') this._sendResync();
+        break;
+      }
+      case 'resync': {
+        if (this.role === 'guest') this._applyResync(m);
+        break;
+      }
+      case 'pause': {
+        this._pausedRemote = true;
+        this._pausedAt = performance.now();
+        this.game?.onNetPause?.(true);
+        break;
+      }
+      case 'resume': {
+        this._pausedRemote = false;
+        this.game?.onNetPause?.(false);
+        break;
+      }
+      case 'mend': {
+        this.game?.onNetMatchEnd?.(m);
+        break;
+      }
+      case 'v2off': {
+        this._v2Fail(T('net_legacy'));
+        break;
+      }
+    }
+  }
+
+  _v2MaybeStart() {
+    if (!(this._readyMe && this._readyOpp) || this.v2 !== 'pending') return;
+    this.v2 = 'ok';
+    this._stats.t0 = performance.now();
+    if (this.role === 'host') {
+      // el anfitrión fija el instante de inicio en SU reloj (spec §3.8)
+      const startAt = this._clock.nowHost(performance.now()) + PPNET.VP.COUNTDOWN_MS;
+      const fs = 'host';
+      this.sendRel({ k: 'mstart', sa: startAt, fs, bo: 3 });
+      this._mstart = { startAt, fs, bo: 3 };
+      this.game?.onNetMatchStart?.(this._mstart);
+    }
+    this.game?.onNetV2Ready?.();     // r79: arranque diferido si pidió revancha durante la subida
+    this.game?.onNetStatus?.();
+  }
+
+  /** FASE 1 · bucle por frame (c12 animate): pose 60 Hz + eventos + snaps */
+  frame(dt) {
+    if (!this.online) return;
+    // v3.6.74 · r82 · TÚNEL DE EMERGENCIA (antes del gate de v2: en
+    // 'pending' este bucle es el único latido que puede activarlo): si el
+    // ICE del transporte propio no abre en 8 s PERO la sala PeerJS sigue
+    // viva (el dueño VEÍA a su rival moverse — ese camino DEMOSTRADO
+    // funciona hasta tras CGNAT), el canal fast viaja ENCAPSULADO por la
+    // DataConnection PeerJS: la FSM v2 entera (reloj, FS de bola,
+    // validador, claims) corre idéntica sobre un tubo fiable. Adiós a la
+    // degradación silenciosa al v1 cosmético.
+    if (this.v2 === 'pending' && !this._tunnel && !this._fastOpen &&
+        performance.now() - (this._v2T0 || 0) > 8000 &&
+        this.conn && this.conn.open) {
+      this._enterTunnel();
+    }
+    if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
+    const now = performance.now();
+    this._clock.apply(now, this.game?.rules?.state === 'rally');
+    // watchdog de ICE: sin paquetes fast 5 s → restartIce (spec §11)
+    // (r82: sólo en modo P2P — con túnel el ICE es irrelevante)
+    if (!this._tunnel && this._lastFastAt && now - this._lastFastAt > 5000 &&
+        now - (this._lastIceTry || 0) > PPNET.VP.ICE_RESTART_MS &&
+        this._iceRestarts < PPNET.VP.ICE_RESTART_MAX) {
+      this._iceRestarts++;
+      this._lastIceTry = now;
+      try { this._pc?.restartIce(); } catch { /* */ }
+    }
+    if (this._lastRelAt && now - this._lastRelAt > 12000 && this._lastFastAt &&
+        now - this._lastFastAt > 12000) {
+      this.onPeerGone(T('conn_lost'));
+      return;
+    }
+    this._sendFast(dt, now);
+    this._drainFast();
+  }
+
+  _sendFast(dt, now) {
+    if (!this._tunnel && (!this._fast || !this._fastOpen)) return;
+    // pose a POSE_HZ (o 30 en degradado), desde el RAF de la sesión XR
+    const iv = 1 / this._poseHz;
+    this._poseAcc += dt;
+    const g = this.game;
+    const hasPose = !!(g && g.camera && g.grips);
+    let evs = null;
+    // BALL_SNAP a 20 Hz mientras la bola vuela en MI lado (spec §5)
+    if (this._ball.mine && (this._ball.state === 'own' || this._ball.state === 'auth')) {
+      this._snapAcc += dt;
+      if (this._snapAcc >= 1 / PPNET.VP.SNAP_HZ) {
+        this._snapAcc = 0;
+        evs = evs || [];
+        evs.push({
+          t: PPNET.VP.EV.SNAP, id: this._evId++, shot: this._ball.shot,
+          tSnap: Math.round(this._clock.nowHost(now)),
+          p: this._stateNet(g.ball.pos, null), v: this._velNet(g.ball.vel),
+        });
+        this._stats.snaps++;
+        // SNAP no es fiable ni con ack (spec §5): va directo
+        const pk = { seq: (this._seq + 1) & 0xffff, ack: this._ackP, ackBits: this._myAckBits(),
+          sendTime: now, echoTime: this._echoTime, echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
+          pose: null, evs };
+        this._seq = pk.seq;
+        const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
+        const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+        if (n) this._fastSend(buf.slice(0, n), now);
+        evs = null;
+      }
+    }
+    if (this._poseAcc < iv) {
+      // los eventos de golpe/traspaso NO esperan al tick de pose (spec §5)
+      if (this._pend.length) this._flushEvents(now);
+      return;
+    }
+    this._poseAcc = 0;
+    const pose = hasPose ? this._samplePose(g) : null;
+    // reenvío de eventos no confirmados (spec §5: hasta ack, máx 8/paquete)
+    const pendEvs = this._pend.slice(0, PPNET.VP.MAX_EVENTS).map((e) => e.ev);
+    const pk = {
+      seq: (this._seq + 1) & 0xffff,
+      ack: this._ackP, ackBits: this._myAckBits(),
+      sendTime: now, echoTime: this._echoTime,
+      echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
+      pose,
+      evs: pendEvs.length ? pendEvs : null,
+    };
+    this._seq = pk.seq;
+    this._clock.markSent(now);
+    const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
+    const n2 = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+    if (!n2) return;
+    for (const e of this._pend) e.seqs.push(pk.seq);
+    this._fastSend(buf.slice(0, n2), now);
+  }
+
+  _flushEvents(now) {
+    if (!this._pend.length || !this._fast || !this._fastOpen) return;
+    const pk = {
+      seq: (this._seq + 1) & 0xffff, ack: this._ackP, ackBits: this._myAckBits(),
+      sendTime: now, echoTime: this._echoTime,
+      echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
+      pose: null,
+      evs: this._pend.slice(0, PPNET.VP.MAX_EVENTS).map((e) => e.ev),
+    };
+    this._seq = pk.seq;
+    this._clock.markSent(now);
+    const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
+    const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+    if (!n) return;
+    for (const e of this._pend) e.seqs.push(pk.seq);
+    this._fastSend(buf.slice(0, n), now);
+  }
+
+  _fastSend(buf, now) {
+    // v3.6.74 · r82 · vía TÚNEL: el paquete binario viaja encapsulado por
+    // la DataConnection PeerJS (binario intacto; el receptor lo desenreda
+    // en onData y entra por el MISMO _onFast). PeerJS serializa ArrayBuffer
+    // como binario sin tocar — a cambio de fiabilidad/orden (SCTP fiable):
+    // el jitter buffer y la FSM ya toleran ese régimen.
+    if (this._tunnel) {
+      try { this.conn.send({ k: 'f2', b: buf }); } catch { /* conn cerrándose */ }
+      return;
+    }
+    try { this._fast.send(buf); } catch { /* DC cerrándose */ }
+  }
+
+  /** v3.6.74 · r82 · activa el túnel PeerJS para el canal fast */
+  _enterTunnel() {
+    if (this._tunnel || this.v2 !== 'pending') return;
+    this._tunnel = true;
+    this._stats.turn = true;   // reutiliza la marca «camino no directo»
+    this._v2ChannelsUp();
+  }
+
+  /** muestreo de pose: cabeza (cámara XR) + manos (grips), en marco NET */
+  _samplePose(g) {
+    const out = this._poseSmp || (this._poseSmp = {
+      hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+      rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+    });
+    const cam = g.camera;
+    out.hp[0] = cam.position.x; out.hp[1] = cam.position.y; out.hp[2] = cam.position.z;
+    out.hq[0] = cam.quaternion.x; out.hq[1] = cam.quaternion.y;
+    out.hq[2] = cam.quaternion.z; out.hq[3] = cam.quaternion.w;
+    let fl = 0;
+    for (let i = 0; i < 2; i++) {
+      const grip = g.grips[i];
+      const tgt = i === 0 ? out.lp : out.rp;
+      const tq = i === 0 ? out.lq : out.rq;
+      if (grip) {
+        tgt[0] = grip.position.x; tgt[1] = grip.position.y; tgt[2] = grip.position.z;
+        tq[0] = grip.quaternion.x; tq[1] = grip.quaternion.y;
+        tq[2] = grip.quaternion.z; tq[3] = grip.quaternion.w;
+        fl |= 1 << i;                                  // mano rastreada
+        if (i === g.paddleHand) fl |= 4;               // pala en esta mano
+      }
+    }
+    // v3.6.74 · r82 · LATERALIDAD FÍSICA de la mano de la pala (bit 8):
+    // el hueco del mando (slot 0/1) NO es la mano física — un jugador
+    // diestro puede llevar la pala en el slot izquierdo. El avatar del
+    // rival necesita la MANO REAL para su montura (mountQuatFor), si no
+    // la pala del avatar nace rodada 90° en los jugadores con huecos
+    // cruzados. (La pala del validador usa la POSICIÓN — sin cambio.)
+    if (g.grips[g.paddleHand] && g.handOf && g.handOf[g.paddleHand] === 'left') fl |= 8;
+    out.fl = fl;
+    return out;
+  }
+
+  /** estado de bola a arrays de marco NET (espejo de emisión, en crudo) */
+  _stateNet(v3, arr) {
+    const T = DIMS.tableTopY;
+    if (arr) {
+      arr[0] = -v3.x; arr[1] = v3.y - T; arr[2] = -3.2 - v3.z;
+      return arr;
+    }
+    return [-v3.x, v3.y - T, -3.2 - v3.z];
+  }
+  _velNet(v3) { return [-v3.x, v3.y, -v3.z]; }
+  _spinNet(v3) { return [-v3.x, v3.y, -v3.z]; }
+
+  _onFast(buf) {
+    if (this.v2 !== 'ok') return;
+    const now = performance.now();
+    this._lastFastAt = now;
+    const o = this._pktIn || (this._pktIn = {});
+    o.yAnchor = DIMS.tableTopY;                    // ancla Y del tapete
+    o.evs = [];
+    const pkt = PPNET.decodePacket(buf, o);
+    if (!pkt) return;
+    // v3.6.74 · r82 · ECO NTP VIVO: la cabecera fast lleva echoTime/echoDelay
+    // para que EL OTRO reconstruya t1 y refine el reloj (spec §4) — pero
+    // estos dos campos nunca se escribían (solo a 0 en startV2): el refinado
+    // NTP estaba MUERTO y el offset quedaba congelado en el ancla gruesa.
+    // Con el ancla sesgada (fácil ±30-80 ms en Wi-Fi real) el validador
+    // rechazaba por «tHit en el futuro» TODOS los golpes remotos del
+    // partido, sin UI y sin recuperación. Ahora cada paquete recibido
+    // alimenta el eco del siguiente.
+    this._echoTime = pkt.sendTime;
+    this._echoAt = now;
+    this._onAckFrom(pkt);
+    this._clock.onPacket(pkt, now);
+    this._trackLoss(pkt.seq);
+    if (pkt.pose) {
+      // muestra del rival al jitter buffer (marco NET, reloj HOST)
+      this._lastPoseAt = now;
+      // v3.6.74 · r82 · SELLO POR CAPTURA, no por llegada: la muestra se
+      // estampa con el sendTime del EMISOR reconstruido en reloj HOST
+      // (mismo truco wrap-safe de NetClock.onPacket). Estampar con la
+      // llegada retrasaba cada muestra un one-way entero (~17-50 ms) y el
+      // validador juzgaba el golpe con la pose ANTERIOR al instante real.
+      const tRef = this._clock.nowHost(now);
+      const tHost = tRef + PPNET.wrapDiff(pkt.sendTime, PPNET.u32(tRef));
+      this._jb.push(tHost, {
+        hp: pkt.pose.hp, hq: pkt.pose.hq, lp: pkt.pose.lp, lq: pkt.pose.lq,
+        rp: pkt.pose.rp, rq: pkt.pose.rq, fl: pkt.pose.fl,
+      });
+      this._jb.autoDelay(this._poseHz, this._clock.jitter);
+    }
+    for (const ev of pkt.evs) {
+      if (this._seenEv.has(ev.id)) continue;             // dedupe (spec §10)
+      this._seenEv.set(ev.id, now);
+      if (this._seenEv.size > 256) {
+        // poda del mapa de dedupe
+        for (const [k, t] of this._seenEv) if (now - t > 5000) this._seenEv.delete(k);
+      }
+      if (ev.t !== PPNET.VP.EV.SNAP) this._fastIn.push(ev);
+      else this._fastIn.push(ev);
+    }
+  }
+
+  _onAckFrom(pkt) {
+    // (a) confirma MIS eventos contenidos en paquetes ya acked (spec §5)
+    for (let i = this._pend.length - 1; i >= 0; i--) {
+      const e = this._pend[i];
+      for (const s of e.seqs) {
+        if (this._ackCovers(pkt.ack, pkt.ackBits, s)) { e.done = true; break; }
+      }
+      if (e.done) this._pend.splice(i, 1);
+    }
+    // (b) registra el seq recibido para mi própi ack/ackBits de envío
+    this._ackP = pkt.seq;
+    this._recvHist.push(pkt.seq);
+    if (this._recvHist.length > 40) this._recvHist.shift();
+  }
+  _ackCovers(ack, bits, seq) {
+    if (seq === ack) return true;
+    const d = PPNET.wrapDiff(ack, seq);
+    if (d > 0 && d <= 32) return ((bits >>> (d - 1)) & 1) === 1;
+    return false;
+  }
+  /** máscara de los 32 seq anteriores al último recibido (spec §5) */
+  _myAckBits() {
+    let bits = 0;
+    for (const s of this._recvHist) {
+      if (s === this._ackP) continue;
+      const d = PPNET.wrapDiff(this._ackP, s);
+      if (d >= 1 && d <= 32) bits |= (1 << (d - 1));
+    }
+    return bits >>> 0;
+  }
+  _trackLoss(seq) {
+    this._recvs++;
+    const last = this._recvRing.length ? this._recvRing[this._recvRing.length - 1] : seq;
+    if (PPNET.wrapDiff(seq, last) > 1) this._gaps += PPNET.wrapDiff(seq, last) - 1;
+    this._recvRing.push(seq);
+    if (this._recvRing.length > 128) {
+      this._recvRing.shift();
+      this._recvs = this._recvRing.length + this._gaps;
+    }
+    // degradación honesta: pérdida sostenida >10 % → pose 30 Hz (spec §11)
+    const loss = this._gaps / Math.max(1, this._gaps + this._recvs);
+    if (loss > PPNET.VP.LOSS_LOW) {
+      this._lossLowT += 1;
+      if (this._lossLowT > 90 && !this._degraded) { this._degraded = true; this._poseHz = PPNET.VP.POSE_HZ_LOW; }
+    } else {
+      this._lossLowT = Math.max(0, this._lossLowT - 2);
+      if (this._degraded && loss < 0.04) { this._degraded = false; this._poseHz = PPNET.VP.POSE_HZ; }
+    }
+  }
+
+  /* ---- eventos de bola del juego (llamados por c12) ---- */
+
+  /** golpeo LOCAL (sagrado): mismo frame, sin esperar red (spec §1) */
+  netLocalHit(isServe) {
+    if (this.v2 !== 'ok') { this.sendHit(isServe); return; }
+    const g = this.game;
+    const nowH = this._clock.nowHost(performance.now());
+    const ev = this._ball.localHit(isServe, {
+      p: this._stateNet(g.ball.pos), v: this._velNet(g.ball.vel), s: this._spinNet(g.ball.spin),
+    }, nowH);
+    this._queueEv(ev);
+    this._flushEvents(performance.now());   // inmediato, sin esperar tick
+    this._stats.hits++;
+    this._stats.maxBallSpeed = Math.max(this._stats.maxBallSpeed, g.ball.vel.length());
+    this._syncOwnerFromBall();
+    // el catch-up visual nace en el PRÓXIMO golpe del rival
+    this._visOffMs = 0; this._visOff = null;
+  }
+
+  /** lanzamiento al aire del saque (visual para el rival, spec §10) */
+  netLocalToss() {
+    if (this.v2 !== 'ok') return;
+    const g = this.game;
+    const nowH = this._clock.nowHost(performance.now());
+    const ev = this._ball.localToss({
+      p: this._stateNet(g.ball.pos), v: this._velNet(g.ball.vel), s: [0, 0, 0],
+    }, nowH);
+    this._queueEv(ev);
+    this._flushEvents(performance.now());
+  }
+
+  /** cruce limpio del plano de la red con bola propia → BALL_HANDOFF */
+  watchOwnCross(ball) {
+    if (this.v2 !== 'ok') return;
+    const cz = DIMS.tableCenterZ;
+    const pz = ball.__netZ === undefined ? ball.pos.z : ball.__netZ;
+    ball.__netZ = ball.pos.z;
+    if (this._ball.state !== 'own') return;
+    if ((pz - cz) * (ball.pos.z - cz) > 0) return;      // sin cruce aún
+    const nowH = this._clock.nowHost(performance.now());
+    const ev = this._ball.crossedNet({
+      p: this._stateNet(ball.pos), v: this._velNet(ball.vel), s: this._spinNet(ball.spin),
+    }, nowH);
+    if (ev) {
+      this._queueEv(ev);
+      this._flushEvents(performance.now());
+      this._stats.handoffs++;
+      this._syncOwnerFromBall();
+    }
+  }
+
+  /** observación del fantasma (cruce sin traspaso → provisional, spec §7) */
+  observeGhost(ball) {
+    if (this.v2 !== 'ok') return;
+    const cz = DIMS.tableCenterZ;
+    const pz = ball.__netZ === undefined ? ball.pos.z : ball.__netZ;
+    ball.__netZ = ball.pos.z;
+    if (this._ball.state === 'ghost' &&
+        (pz - cz) * (ball.pos.z - cz) <= 0) {
+      this._ball.observeGhostCross(this._clock.nowHost(performance.now()));
+    }
+    if (this._ball.maybeProvisional(this._clock.nowHost(performance.now()))) {
+      this._stats.provAuth++;
+      this._syncOwnerFromBall();
+    }
+  }
+
+  /** la bola murió en MI mitad (doble bote/fuera/red/…): reclamo (spec §7)
+   *  r81: la identidad del rallye es rules.rallySeq (rallyId NO existía:
+   *  undefined en los CLAIM → el libro de reclamos colisionaba a partir del
+   *  primer punto y el marcador se congelaba en ambos extremos). */
+  ballDiedLocal(winnerLocal, cause) {
+    if (this.v2 !== 'ok') return null;
+    const g = this.game;
+    const r = g.rules;
+    const rallyId = r.rallySeq;
+    const isAuth = this._ballMineAtDeath();
+    const dec = this._sync.localPoint(rallyId, winnerLocal, cause,
+      r.scorePlayer, r.scoreAi, isAuth, performance.now());
+    if (dec.send) {
+      this._stats.claims++;
+      this.sendRel(dec.send);
+      this._claimFallback = { r: rallyId, t: performance.now() };
+    }
+    return dec;
+  }
+
+  _ballMineAtDeath() {
+    // la autoridad al morir: la bola estaba en mi poder (auth/own/provisional)
+    return this._ball.mine;
+  }
+
+  /** LET detectado localmente: con física idéntica en ambos extremos, los
+   *  dos lados detectan el LET de sus botes (reales o fantasma) y aplican
+   *  retryServe sin red — el siguiente saque re-alinea rallySeq. */
+  retryLet(cause) {
+    if (this.v2 !== 'ok') return { apply: true, send: null };
+    return { apply: true, send: null };
+  }
+
+  _applyRemoteClaim(m, wMapped) {
+    const g = this.game;
+    if (!g) return;
+    if (m.w === 'let') {
+      // LET del rival (su mitad): repetir saque si mi árbitro no lo vio
+      if (g.rules.state === 'rally') {
+        g.processIntents(g.rules.retryServe(m.c || 'let'));
+      }
+      return;
+    }
+    // reclamo en perspectiva YA espejada (wMapped): imponer el punto
+    g.processIntents(g.rules.forcePoint(wMapped, NetLink.remapCause(m.c,
+      this.role === 'guest'), m.r));
+  }
+
+  _sendResync() {
+    const r = this.game?.rules;
+    if (!r) return;
+    this._stats.disputes++;
+    this.sendRel({
+      k: 'resync', sp: r.scorePlayer, sa: r.scoreAi, sv: r.server,
+      st: r.state, tp: r.totalPoints, gp: r.gamesPlayer, ga: r.gamesAi,
+      gn: r.gameNo, fs: r.firstServer,
+      // v3.6.74 · r82 · banderas del ÁRBITRO: sin ellas el resincronizado
+      // seguía juzgando el rally con lastHitter/validBounce suyos (puntos
+      // fantasma tras un RESYNC en pleno intercambio)
+      lh: r.lastHitter || null, vb: !!r.validBounce,
+    });
+  }
+
+  _applyResync(m) {
+    const r = this.game?.rules;
+    if (!r) return;
+    this._sync.onResync();
+    r.scorePlayer = m.sp; r.scoreAi = m.sa;
+    r.server = m.sv; r.state = m.st; r.totalPoints = m.tp;
+    r.gamesPlayer = m.gp; r.gamesAi = m.ga; r.gameNo = m.gn;
+    r.firstServer = m.fs;
+    // r82: el árbitro de mitad hereda las banderas del anfitrión
+    if (m.lh !== undefined) r.lastHitter = m.lh;
+    if (m.vb !== undefined) r.validBounce = !!m.vb;
+  }
+
+  /** intents de PUNTO local (processIntents, c12): enviar/suprimir
+   *  r81: rallySeq como identidad del rallye (ver ballDiedLocal). */
+  onLocalPointIntent(it) {
+    if (this.v2 !== 'ok') return true;    // v1: siempre aplicar (host arbiter)
+    const g = this.game;
+    const isAuth = this._ballMineAtDeath();
+    const dec = this._sync.localPoint(g.rules.rallySeq, it.winner, it.cause || '',
+      g.rules.scorePlayer, g.rules.scoreAi, isAuth, performance.now());
+    if (dec.send) {
+      this._stats.claims++;
+      this.sendRel(dec.send);
+      // r82: rallyId NO existía (undefined) — la identidad real es rallySeq
+      this._claimFallback = { r: g.rules.rallySeq, t: performance.now() };
+    }
+    return dec.apply;
+  }
+
+  onLocalRetryIntent(it) {
+    return this.retryLet(it.cause || 'let');
+  }
+
+  /** saque determinista desde el marcador (spec §9): HELD del sacador */
+  setServeHeld(serverLocal) {
+    if (this.v2 !== 'ok') return;
+    this._ball.setHeld(serverLocal === 'player');
+    this._syncOwnerFromBall();
+    const g = this.game;
+    if (g && serverLocal !== 'player') {
+      // bola del rival: quieta hasta su lanzamiento (visual honesta)
+      g.ball.vel.set(0, 0, 0);
+      g.ball.spin.set(0, 0, 0);
+    }
+  }
+
+  _syncOwnerFromBall() {
+    this.owner = this._ball.mine ? this.mySide() : this.oppSide();
+  }
+
+  _queueEv(ev) {
+    this._pend.push({ ev, seqs: [], done: false });
+    if (this._pend.length > 24) this._pend.shift();   // techo duro
+  }
+
+  /** drenado de eventos entrantes (c12 animate, antes de la física) */
+  _drainFast() {
+    if (!this._fastIn.length) return;
+    const g = this.game;
+    if (!g) { this._fastIn.length = 0; return; }
+    const evs = this._fastIn;
+    this._fastIn = [];
+    for (const ev of evs) this._applyFastEv(ev, g);
+  }
+
+  _applyFastEv(ev, g) {
+    const nowH = this._clock.nowHost(performance.now());
+    if (ev.t === PPNET.VP.EV.SNAP) {
+      // corrección suave del fantasma (sin ack, spec §5/§8)
+      if (this._ball.state === 'ghost') {
+        const p = NetLink.posFromNetArr(ev.p);
+        const v = NetLink.vecFromNetArr(ev.v);
+        g.ball.pos.lerp(p, 0.25);
+        g.ball.vel.lerp(v, 0.12);
+      }
+      return;
+    }
+    if (ev.t === PPNET.VP.EV.HIT) {
+      // validación del receptor (spec §12) — r81: pose en el marco NET y
+      // en el instante del golpe (antes: marco crudo del emisor contra
+      // ev.p espejado → TODO golpe remoto rechazado por distancia absurda)
+      const pad = this._remotePadNet(ev.kind, ev.tHit);
+      const ctx = {
+        nowHost: nowH, lastShot: this._ball.shot, lastHitT: this._lastRemoteHitT,
+        padPos: pad,
+      };
+      const v = this._val.hit(ev, ctx);
+      if (!v.ok) {
+        if (this._val.serious >= 3) { this._stats.suspect = true; }
+        return;
+      }
+      this._lastRemoteHitT = ev.tHit;
+      // r81 · posFromNetArr devuelve THREE.Vector3: el glue r79 lo INDEXABA
+      // (p[0] = undefined → bola NaN → «no llega nada del rival»). copy().
+      const p = NetLink.posFromNetArr(ev.p);
+      const vl = NetLink.vecFromNetArr(ev.v);
+      const sl = NetLink.spinFromNetArr(ev.s);
+      g.ball.pos.copy(p);
+      g.ball.vel.copy(vl);
+      g.ball.spin.copy(sl);
+      if (ev.kind === 2) {
+        // lanzamiento al aire del saque del rival: SOLO visual (spec §10)
+        // r81: la bola HELD se libera YA en mi lado (el rival la tiene en
+        // el aire) — antes seguía holdLock y congelada hasta el golpe
+        this._ball.state = 'ghost';
+        this._ball.mine = false;
+        g.ballMesh.visible = true;
+        g._netTossLive = true;
+        return;
+      }
+      // avance de nacimiento: dt·k con tope (spec §8)
+      const ff = this._ball.onRemoteHit(ev, nowH, PPNET.VP.FF_K, PPNET.VP.FF_MAX);
+      if (ff.adv > 0.001) {
+        const ghostEvs = this._ghostEvs || (this._ghostEvs = []);
+        stepPhysics(ff.adv, g.ball, [], ghostEvs);
+        ghostEvs.length = 0;   // los botes del fantasma suenan por processEvents
+      }
+      this._stats.hits++;
+      this._stats.maxBallSpeed = Math.max(this._stats.maxBallSpeed, g.ball.vel.length());
+      // catch-up visual: la bola se dibuja retrasada interpDelay→0 en 200 ms
+      this._visOffMs = PPNET.VP.CATCHUP_MS;
+      // regla: saque (kind 1) o golpe de rallye (kind 0)
+      if (ev.kind === 1) {
+        g.rules.beginServeRally('ai');
+      } else {
+        g.processIntents(g.rules.registerPaddleHit('ai', true));   // r81: golpe remoto
+      }
+      // sonido del golpe del rival DESDE la simulación local (spec §8)
+      g.audio.paddle(
+        THREE.MathUtils.clamp(g.ball.pos.x / 2.5, -1, 1),
+        Math.min(1, g.ball.vel.length() / 9),
+      );
+      this._syncOwnerFromBall();
+      return;
+    }
+    if (ev.t === PPNET.VP.EV.HANDOFF) {
+      // mi fantasma ya voló hasta ahora: comparar y corregir (spec §8)
+      const mineNet = this._stateNet(g.ball.pos);
+      const corr = this._ball.onHandoff(ev, mineNet, nowH);
+      if (corr.kind === 'smooth' && corr.vec) {
+        const p = NetLink.posFromNetArr(ev.p);
+        const vl = NetLink.vecFromNetArr(ev.v);
+        const sl = NetLink.spinFromNetArr(ev.s);
+        g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado
+        g.ball.vel.copy(vl);
+        g.ball.spin.copy(sl);
+        // absorber el salto en lo visual (decae en 80 ms)
+        this._visOff = { x: -corr.vec[0], y: -corr.vec[1], z: -corr.vec[2],
+          ms: corr.ms, t: corr.ms };
+      } else if (corr.kind === 'snap') {
+        const p = NetLink.posFromNetArr(ev.p);
+        const vl = NetLink.vecFromNetArr(ev.v);
+        const sl = NetLink.spinFromNetArr(ev.s);
+        g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado
+        g.ball.vel.copy(vl);
+        g.ball.spin.copy(sl);
+        this._stats.corrSnap++;
+      } else {
+        this._stats.corrNone++;
+      }
+      if (corr.kind === 'smooth') this._stats.corrSmooth++;
+      this._syncOwnerFromBall();
+    }
+  }
+
+  /** v3.6.73 · r81: pose de la pala del rival EN EL INSTANTE del evento,
+   *  en el MISMO marco NET canónico de ev.p ([-x, y−T, −3.2−z]) para que
+   *  la validación §12 compare distancias reales.
+   *  · MARCO: la pose cruda del JB vive en el marco del EMISOR (con Y ya
+   *    anclada a MI tapete por el códec). Antes se comparaba CONTRA ev.p
+   *    (marco espejado, Y relativa) → distancia absurda (>2 m) y TODO
+   *    golpe remoto rechazado: «no deja sacar ni jugar». Ahora la
+   *    convertimos con poseToNetFrame (espejo exacto de _stateNet).
+   *  · INSTANTE: se muestrea la muestra más próxima a ev.tHit (reloj
+     *  host) — no la de reproducción retrasada del avatar (JB.sample).
+   *  · MANO: en el golpe (kind 0/1) la PALA (fl&4); en el LANZAMIENTO del
+   *    saque (kind 2) la mano LIBRE de la bola (la que lanza no es la que
+   *    lleva la pala) — si sólo hay una mano rastreada, esa. */
+  _remotePadNet(kind, tHit) {
+    if (!this._jb || !this._jb.s.length) return null;
+    const s = (tHit !== undefined && tHit !== null)
+      ? this._jb.nearest(tHit, this._padSmp || (this._padSmp = {
+          hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+          rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+        }))
+      : this._jb.s[this._jb.s.length - 1];
+    if (!s) return null;
+    const leftTrk = !!(s.fl & 1), rightTrk = !!(s.fl & 2), padLeft = !!(s.fl & 4);
+    let hand;
+    if (kind === 2) {
+      // lanzamiento: la mano de la bola (la NO pala, si está rastreada)
+      if (padLeft && rightTrk) hand = s.rp;
+      else if (!padLeft && leftTrk) hand = s.lp;
+      else hand = padLeft ? s.lp : s.rp;
+    } else {
+      hand = padLeft ? s.lp : s.rp;
+    }
+    if (!hand) return null;
+    return NetLink.poseToNetFrame(hand);
+  }
+
+  /** delta visual de la bola (catch-up + correcciones) o null */
+  visDelta(dt) {
+    if (this.v2 !== 'ok') return null;
+    let out = null;
+    if (this._visOff && this._visOff.t > 0) {
+      const k = this._visOff.t / this._visOff.ms;
+      this._visOff.t -= dt * 1000;
+      out = out || new THREE.Vector3();
+      out.set(this._visOff.x * k, this._visOff.y * k, this._visOff.z * k);
+      if (this._visOff.t <= 0) this._visOff = null;
+    }
+    if (this._visOffMs > 0) {
+      const frac = this._visOffMs / PPNET.VP.CATCHUP_MS;
+      this._visOffMs = Math.max(0, this._visOffMs - dt * 1000);
+      const g = this.game;
+      const v = g.ball.vel;
+      const d = (this._jb.delayMs / 1000) * frac;
+      out = out || new THREE.Vector3();
+      out.set(-v.x * d, -v.y * d, -v.z * d);
+    }
+    return out;
+  }
+
+  /** muestra del avatar rival para el render (spec §6) */
+  avatarSample(out) {
+    if (this.v2 !== 'ok') return -1;
+    const tHost = this._clock.nowHost(performance.now());
+    return this._jb.sample(tHost, out);
+  }
+
+  pingMs() {
+    if (this.v2 !== 'ok') return -1;
+    return this._clock.rttStats().med;
+  }
+  hostNowMs() {
+    return this.v2 === 'ok' ? this._clock.nowHost(performance.now()) : performance.now();
+  }
+  avatarStaleMs() {
+    if (this.v2 !== 'ok' || !this._jb || !this._jb.s.length) return 1e9;
+    return performance.now() - this._lastPoseAt;
+  }
+  degraded() { return this.v2 === 'ok' && this._degraded; }
+  ballMine() { return this.v2 === 'ok' ? this._ball.mine : this.owner === this.mySide(); }
+  ballState() { return this.v2 === 'ok' ? this._ball.state : 'legacy'; }
+  v2Paused() { return this.v2 === 'ok' && (this._pausedSelf || this._pausedRemote); }
+  pausedRemoteLong() {
+    return this._pausedRemote && (performance.now() - this._pausedAt) > PPNET.VP.PAUSE_GRACE * 1000;
+  }
+  netReport() {
+    if (this.v2 !== 'ok') return { mode: 'legacy-v1' };
+    this._stats.tEnd = performance.now();
+    return { mode: 'binario-v2', ...this._stats.summary(this._clock),
+      val: { rejects: this._val.rejects, serious: this._val.serious,
+             // r82: las CAUSAS de rechazo viajan en telemetría — diagnóstico
+             // a distancia de un partido real fallido sin pedir logs al dueño
+             log: this._val.log.slice(0, 8) } };
+  }
+
+  /** v3.6.74 · r82 · estado del enlace para HUD/QA/telemetría (visible:
+   *  el dueño SABE en qué viaja la partida — P2P, túnel, v1 — y con qué
+   *  salud de reloj/validador). window.__PP_NET = this en c12. */
+  netInfo() {
+    if (this.v2 !== 'ok') {
+      return { v2: this.v2 || 'off', via: this.online ? 'sala' : '-',
+        online: !!this.online, buildWarn: !!this._buildWarn };
+    }
+    const rs = this._clock ? this._clock.rttStats() : { med: 0, p95: 0, min: 0 };
+    return {
+      v2: 'ok', via: this._tunnel ? 'tunel' : 'p2p', online: true,
+      buildWarn: !!this._buildWarn,
+      rtt: rs.med, rttP95: rs.p95, jitter: Math.round(this._clock.jitter || 0),
+      clockOff: Math.round(this._clock.offset || 0), clockReady: !!this._clock.ready,
+      jbDelay: Math.round(this._jb.delayMs || 0), starves: this._jb.starves || 0,
+      loss: Math.round((1 - (this._recvs || 0) / Math.max(1, (this._recvs || 0) + (this._gaps || 0))) * 100),
+      ball: this._ball.state, shot: this._ball.shot, mine: this._ball.mine,
+      val: { rej: this._val.rejects, serious: this._val.serious,
+             log: this._val.log.slice(0, 6) },
+    };
+  }
+
+  /** r82 · telemetría del enlace en CUALQUIER fin (no solo game-over):
+   *  una sesión rota a mitad también deja huella diagnosticable */
+  _teleReport(reason) {
+    try {
+      if (window.__PP_TELE && window.__PP_TELE.ev && this.v2) {
+        const rep = this.netReport();
+        rep.end = reason || 'fin';
+        window.__PP_TELE.ev('net_match', rep);
+      }
+    } catch { /* telemetría jamás rompe la red */ }
+  }
+
+  _v2Fail(msg) {
+    if (this.v2 === 'fail') return;
+    this.v2 = 'fail';
+    try { this._pc && this._pc.close(); } catch { /* */ }
+    this._pc = null; this._fast = null; this._rel = null;
+    this._fastOpen = this._relOpen = false;
+    if (this._onVis) { document.removeEventListener('visibilitychange', this._onVis); this._onVis = null; }
+    if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
+    this.setStatus(this.online ? 'online' : 'off', msg);
+    this.send({ k: 'v2off' });   // avisa al otro para que degrade igual
+    this.game?.onNetStatus?.();
+  }
+
+  /** fimre del match (reliable) al terminar */
+  sendMatchEnd(result) {
+    if (this.v2 !== 'ok') return;
+    this._stats.result = result;
+    this._teleReport(result);
+    this.sendRel({ k: 'mend', r: result });
+  }
+
+  sendRel(m) {
+    if (this._rel && this._relOpen) {
+      try { this._rel.send(JSON.stringify(m)); return; } catch { /* */ }
+    }
+    this.send(m);   // fallback: DataConnection PeerJS (fiable y ordenada)
+  }
+
   onPeerGone(msg) {
     const wasOnline = this.online;
+    if (wasOnline && this.v2) this._teleReport('peer_gone');   // r82: diagnóstico
     this.teardown();
     this.setStatus('off', wasOnline ? msg : '');
     if (wasOnline) this.game?.onNetEnded?.(msg);
   }
+
 
   cancel() {
     this.teardown();
     this.setStatus('off', '');
   }
 
-  hangup() { this.send({ k: 'bye' }); this.onPeerGone('Has cerrado la conexión'); }
+  hangup() {
+    // r79: firma honesta del abandono antes de cortar (spec §11)
+    try { if (this.v2 === 'ok') this.sendMatchEnd('abandono'); } catch { /* */ }
+    this.send({ k: 'bye' });
+    this.onPeerGone('Has cerrado la conexión');
+  }
 
   teardown() {
+    // v3.6.71 · r79: limpieza del transporte v2
+    try { if (this._onVis) document.removeEventListener('visibilitychange', this._onVis); } catch { /* */ }
+    this._onVis = null;
+    try { this._pc && this._pc.close(); } catch { /* */ }
+    this._pc = null; this._fast = null; this._rel = null;
+    this._fastOpen = this._relOpen = false;
+    this.v2 = null;
+    this._clock = null; this._jb = null; this._ball = null;
+    this._sync = null; this._val = null; this._stats = null;
+    this._pend = []; this._fastIn = []; this._seenEv = null;
+    this._recvHist = null; this._mstart = null;
+    this._pausedSelf = this._pausedRemote = false;
     try { this.conn?.close(); } catch { /* */ }
     try { this.call?.close(); } catch { /* */ }
     try { this.peer?.destroy(); } catch { /* */ }
@@ -9510,6 +10818,816 @@ class NetLink {
  * ===================================================================== */
 // v2.28: arte de la cabecera del MENÚ PRINCIPAL (data URL JPEG incrustado
 // por build_html.py — recorte del logo CRAZY PING PONG del arte del juego)
+const PPNET = (() => {
+  /* =====================================================================
+   *  c09b_red_nucleo.js · PPNET — NÚCLEO DE RED MULTIJUGADOR BINARIO (r79)
+   *  Spec: «Netcode multijugador online — Ping Pong VR (WebXR)» v1.0 ·
+   *  26-oct-2026 (dictada por el dueño). Principios:
+   *    1. El golpe propio es SAGRADO (se resuelve local, sin esperar red).
+   *    2. AUTORIDAD POR MITAD DE MESA: quien tiene la bola en SU mitad
+   *       decide botes, fallos y puntos de esa mitad.
+   *    3. Lo visual del rival nunca afecta a la jugabilidad.
+   *    4. Todo se mide (simulador de red + telemetría desde el hito 1).
+   *  MÓDULO PURO: sin THREE, sin DOM, sin window — corre idéntico en el
+   *  Quest (game.html), en QA Playwright (bucle local) y en Node
+   *  (scripts/test_red_nucleo.mjs). Constantes VERSIONADAS (VP) — el
+   *  HELLO compara PROTO y PHYS y rechaza pareja incompatible.
+   *  =====================================================================
+   *  Canales (net/transport):
+   *    · fast     — RTCDataChannel {ordered:false, maxRetransmits:0}
+   *                 (tipo UDP): paquetes binarios de pose + eventos.
+   *    · reliable — RTCDataChannel {ordered:true}: JSON de control
+   *                 (HELLO, READY, MATCH_START, POINT_CLAIM/ACK,
+   *                 PAUSE/RESUME, RESYNC_STATE, MATCH_END, LEAVE).
+   *  Espacio común de mesa: origen en el CENTRO de la superficie, x
+   *  ancho, y arriba, z a lo largo; el HOST vive en -z y el invitado en
+   *  +z (el espejo 180° de NetLink ya lo implementa — aquí todo viaja
+   *  en crudo y cada extremo aplica su espejo UNA vez al recibir).
+   *  ===================================================================== */
+
+  /* ---------- 0 · PARÁMETROS (spec §17 — valores iniciales) ----------- */
+  const VP = {
+    PROTO: 1,             // versión del protocolo binario (HELLO)
+    PHYS: 1,              // versión de ballPhysics compartida (HELLO)
+    BUILD: '',            // hash de build (lo rellena el juego: VERSION)
+
+    POSE_HZ: 60,          // frecuencia de pose (30 en degradado)
+    POSE_HZ_LOW: 30,      // conexión degradada (pérdida sostenida >10 %)
+    SNAP_HZ: 20,          // BALL_SNAP mientras la bola vuela en mi lado
+
+    INTERP_MIN: 40,       // retraso de reproducción del avatar (ms)
+    INTERP_MAX: 120,
+    EXTRAP_MAX: 0.100,    // extrapolación máxima del avatar (s)
+
+    FF_K: 0.6,            // avance de la bola al nacer (× tiempo en tránsito)
+    FF_MAX: 0.120,        // avance máximo (s)
+
+    CATCHUP_MS: 200,      // retraso visual inicial en el golpe del rival (ms)
+    CORR_MIN: 0.02,       // <2 cm: nada
+    CORR_MAX: 0.30,       // 2-30 cm: corregir + absorber salto (80 ms)
+    CORR_SMOOTH: 0.080,   // >30 cm: salto directo + registro
+    HANDOFF_TIMEOUT: 0.300, // s sin traspaso tras el cruce → autoridad provisional
+
+    ICE_RESTART_MS: 10000,   // reintento de ICE antes de abandonar (ms)
+    ICE_RESTART_MAX: 2,
+
+    MAX_RTT_PAIR: 0.200,  // emparejamiento: RTT máximo aceptado (s) — spec §3.1
+
+    MAX_BALL_SPEED: 30,   // validación: rapidez máxima aceptada (m/s)
+    MAX_SPIN: 160,        // validación: giro máximo aceptado (rad/s)
+    MIN_HIT_GAP: 0.150,   // no más de un golpe cada 150 ms
+    HIT_NEAR_PAD: 0.60,   // el golpe ocurrió a <60 cm de la pala del rival
+    TOL_FUTURE: 120,      // validación: tHit como máx. 120 ms en el futuro
+                          // (r82: el ancla gruesa del reloj puede errar ~un
+                          //  one-way; el eco NTP refinado la corrige en vivo)
+
+    LOSS_LOW: 0.10,       // pérdida sostenida >10 % → avisar y bajar pose
+
+    HDR: 21,              // cabecera fast: 21 bytes exactos (spec §5)
+    POSE: 31,             // bloque de pose: 31 bytes exactos (spec §5)
+    MAX_EVENTS: 8,        // eventos reenviables por paquete (spec §5)
+    MAX_PKT: 1200,        // tamaño absoluto máximo de paquete fast
+
+    EV: { HIT: 1, HANDOFF: 2, SNAP: 3 },
+
+    CLK_N: 16,            // muestras de reloj retenidas
+    CLK_LOW: 4,           // mediana del offset de las 4 de menor RTT
+    CLK_SMOOTH: 1.0,      // deslizar el offset como máximo 1 ms por segundo
+    CLK_JUMP: 30,         // saltar el offset sólo si el error supera 30 ms
+
+    COUNTDOWN_MS: 3000,   // MATCH_START: startAt = hostNow + 3000 (spec §3.8)
+    PAUSE_GRACE: 3.0,     // s de pausa del rival antes de detener el reloj
+    CLAIM_TIMEOUT: 0.7,   // s esperando el CLAIM del rival antes de aplicar el mío
+  };
+
+  /* ---------- 1 · matemáticas puras ---------------------------------- */
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  /** diferencia con envoltura u32 (los relojes viajan como u32 ms) */
+  function wrapDiff(a, b) {
+    let d = (a - b) >>> 0;
+    if (d > 0x80000000) d -= 0x100000000;
+    return d;                     // con signo, ms
+  }
+  const u32 = (x) => x >>> 0;
+
+  function median(arr) {
+    if (!arr.length) return 0;
+    const s = arr.slice().sort((a, b) => a - b);
+    const m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+
+  /** cuaternión [x,y,z,w] normalizado (arrays planos, sin THREE) */
+  function qNorm(q) {
+    const l = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+    return [q[0] / l, q[1] / l, q[2] / l, q[3] / l];
+  }
+  /** slerp de cuaterniones planos (mínimo camino) */
+  function qSlerp(a, b, t) {
+    let dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+    let bb = b;
+    if (dot < 0) { bb = [-b[0], -b[1], -b[2], -b[3]]; dot = -dot; }
+    if (dot > 0.9995) {
+      return qNorm([
+        lerp(a[0], bb[0], t), lerp(a[1], bb[1], t),
+        lerp(a[2], bb[2], t), lerp(a[3], bb[3], t),
+      ]);
+    }
+    const th = Math.acos(clamp(dot, -1, 1));
+    const s = Math.sin(th);
+    const wa = Math.sin((1 - t) * th) / s, wb = Math.sin(t * th) / s;
+    return [
+      a[0] * wa + bb[0] * wb, a[1] * wa + bb[1] * wb,
+      a[2] * wa + bb[2] * wb, a[3] * wa + bb[3] * wb,
+    ];
+  }
+  const pLerp = (a, b, t, out) => {
+    out[0] = lerp(a[0], b[0], t); out[1] = lerp(a[1], b[1], t); out[2] = lerp(a[2], b[2], t);
+    return out;
+  };
+
+  /* ---------- 2 · códec binario (spec §5) ----------------------------
+   * Cabecera 21 B: [ver|flags u8][seq u16][ack u16][ackBits u32]
+   *                [sendTime u32][echoTime u32][echoDelay u16][nEvs u16]
+   * Pose 31 B (flag bit0): 3 nodos (cabeza, mano izq., mano der.) ×
+   *   (pos 3×i16 @0,5 mm anclada al tapete + quat «smallest three» 32 bit)
+   *   + 1 B de flags de pose (bit0: pala en mano IZQ; bit2: cabeza rastreada;
+   *   bit3: manos rastreadas).
+   * Eventos (flag bit1): u16 n + n × [tipo u8][eventId u16][carga]:
+   *   HIT(0x01)     kind u8 · shot u16 · tHit u32 · pos/vel/spin 3×f32
+   *   HANDOFF(0x02) shot u16 · tCross u32 · pos/vel/spin 3×f32
+   *   SNAP(0x03)    shot u16 · tSnap u32 · pos 3×f32 · vel 3×f32
+   * F flags: bit0 lleva pose · bit1 lleva eventos.                            */
+  const F_POSE = 1, F_EV = 2;
+
+  class Writer {
+    constructor(buf) { this.dv = new DataView(buf); this.n = 0; }
+    w8(v) { this.dv.setUint8(this.n, v); this.n += 1; return this; }
+    w16(v) { this.dv.setUint16(this.n, v, true); this.n += 2; return this; }
+    w32(v) { this.dv.setUint32(this.n, v >>> 0, true); this.n += 4; return this; }
+    i16(v) { this.dv.setInt16(this.n, v, true); this.n += 2; return this; }
+    f32(v) { this.dv.setFloat32(this.n, v, true); this.n += 4; return this; }
+  }
+  class Reader {
+    constructor(buf) { this.dv = new DataView(buf); this.n = 0; this.len = buf.byteLength; }
+    r8() { const v = this.dv.getUint8(this.n); this.n += 1; return v; }
+    r16() { const v = this.dv.getUint16(this.n, true); this.n += 2; return v; }
+    r32() { const v = this.dv.getUint32(this.n, true); this.n += 4; return v; }
+    ri16() { const v = this.dv.getInt16(this.n, true); this.n += 2; return v; }
+    rf32() { const v = this.dv.getFloat32(this.n, true); this.n += 4; return v; }
+  }
+
+  /** quat → 32 bit «smallest three»: 2 bit índice + 3×10 bit. Se ENVÍA el
+   *  componente de MAYOR magnitud como índice y los tres MENORES (siempre
+   *  en [-√3/2, √3/2], pues el mayor ≥ 0,5) mapeados a [0, 1023] con
+   *  centro 511,5; el mayor se reconstruye con raíz y convención >= 0
+   *  (negando el cuaternión entero si hace falta — q ≡ −q).              */
+  const QSCALE = 511.5 / 0.8660254037844386;   // ≈ 590,53 unidades por 1
+  function quatPack(q) {
+    const n = qNorm(q);
+    // convención: el componente DESCARTADO (el mayor) es >= 0
+    let mi = 0, ma = Math.abs(n[0]);
+    for (let i = 1; i < 4; i++) if (Math.abs(n[i]) > ma) { mi = i; ma = Math.abs(n[i]); }
+    const s = n[mi] < 0 ? -1 : 1;
+    let out = 0, sh = 20;
+    for (let i = 0; i < 4; i++) {
+      if (i === mi) continue;
+      const v = clamp(Math.round(n[i] * s * QSCALE + 511.5), 0, 1023);
+      out |= v << sh;
+      sh -= 10;
+    }
+    out |= mi << 30;
+    return out >>> 0;
+  }
+  function quatUnpack(u, out) {
+    const mi = (u >>> 30) & 3;
+    const rest = [];
+    for (let i = 0, sh = 20; i < 3; i++, sh -= 10) {
+      rest.push((((u >>> sh) & 1023) - 511.5) / QSCALE);
+    }
+    let sumSq = 0;
+    for (const r of rest) sumSq += r * r;
+    const s0 = Math.sqrt(Math.max(0, 1 - sumSq));
+    const q = [0, 0, 0, 0];
+    let k = 0;
+    for (let i = 0; i < 4; i++) {
+      if (i === mi) q[i] = s0; else q[i] = rest[k++];
+    }
+    out[0] = q[0]; out[1] = q[1]; out[2] = q[2]; out[3] = q[3];
+    return out;
+  }
+
+  const P16 = 2000;   // 0,5 mm por unidad (spec §5: ±16 m con i16)
+  function wPos(w, p, yAnchor) {
+    for (let i = 0; i < 3; i++) {
+      const v = (i === 1 && yAnchor) ? p[1] - yAnchor : p[i];
+      w.i16(clamp(Math.round(v * P16), -32768, 32767));
+    }
+  }
+  function rPos(r, out, yAnchor) {
+    for (let i = 0; i < 3; i++) {
+      const v = r.ri16() / P16;
+      out[i] = (i === 1 && yAnchor) ? v + yAnchor : v;
+    }
+    return out;
+  }
+
+  /** codifica un paquete fast completo; devuelve el nº de bytes escritos */
+  function encodePacket(buf, p) {
+    const w = new Writer(buf);
+    let flags = 0;
+    if (p.pose) flags |= F_POSE;
+    if (p.evs && p.evs.length) flags |= F_EV;
+    w.w8((VP.PROTO << 4) | (flags & 15));
+    w.w16(p.seq & 0xffff).w16(p.ack & 0xffff).w32(p.ackBits >>> 0);
+    w.w32(u32(p.sendTime)).w32(u32(p.echoTime)).w16(p.echoDelay & 0xffff);
+    const nEvs = p.evs ? Math.min(p.evs.length, VP.MAX_EVENTS) : 0;
+    w.w16(nEvs);
+    if (p.pose) {
+      const yA = p.yAnchor || 0;
+      // orden fijo: cabeza · mano izquierda · mano derecha
+      wPos(w, p.pose.hp, yA); w.w32(quatPack(p.pose.hq));
+      wPos(w, p.pose.lp, yA); w.w32(quatPack(p.pose.lq));
+      wPos(w, p.pose.rp, yA); w.w32(quatPack(p.pose.rq));
+      w.w8(p.pose.fl & 255);
+    }
+    for (let i = 0; i < nEvs; i++) {
+      const e = p.evs[i];
+      w.w8(e.t).w16(e.id & 0xffff);
+      if (e.t === VP.EV.HIT) {
+        w.w8(e.kind & 255).w16(e.shot & 0xffff).w32(u32(e.tHit));
+        for (let k = 0; k < 3; k++) w.f32(e.p[k]);
+        for (let k = 0; k < 3; k++) w.f32(e.v[k]);
+        for (let k = 0; k < 3; k++) w.f32(e.s[k]);
+      } else if (e.t === VP.EV.HANDOFF) {
+        w.w16(e.shot & 0xffff).w32(u32(e.tCross));
+        for (let k = 0; k < 3; k++) w.f32(e.p[k]);
+        for (let k = 0; k < 3; k++) w.f32(e.v[k]);
+        for (let k = 0; k < 3; k++) w.f32(e.s[k]);
+      } else if (e.t === VP.EV.SNAP) {
+        w.w16(e.shot & 0xffff).w32(u32(e.tSnap));
+        for (let k = 0; k < 3; k++) w.f32(e.p[k]);
+        for (let k = 0; k < 3; k++) w.f32(e.v[k]);
+      }
+    }
+    if (w.n > VP.MAX_PKT) return 0;   // violación del tamaño: paquete nulo
+    return w.n;
+  }
+
+  /** decodifica; si `out` existe reutiliza sus arrays (cero asignaciones) */
+  function decodePacket(buf, out) {
+    if (buf.byteLength < VP.HDR) return null;
+    const r = new Reader(buf);
+    const b0 = r.r8();
+    const ver = (b0 >>> 4) & 15, flags = b0 & 15;
+    if (ver !== VP.PROTO) return null;
+    const o = out || {};
+    o.seq = r.r16(); o.ack = r.r16(); o.ackBits = r.r32();
+    o.sendTime = r.r32(); o.echoTime = r.r32(); o.echoDelay = r.r16();
+    const nEvs = r.r16();
+    o.pose = null; o.evs = [];
+    if (flags & F_POSE) {
+      const yA = o.yAnchor || 0;
+      const pv = o._pose || (o._pose = {
+        hp: [0, 0, 0], hq: [0, 0, 0, 1],
+        lp: [0, 0, 0], lq: [0, 0, 0, 1],
+        rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+      });
+      rPos(r, pv.hp, yA); quatUnpack(r.r32(), pv.hq);
+      rPos(r, pv.lp, yA); quatUnpack(r.r32(), pv.lq);
+      rPos(r, pv.rp, yA); quatUnpack(r.r32(), pv.rq);
+      pv.fl = r.r8();
+      o.pose = pv;
+    }
+    for (let i = 0; i < nEvs && i < VP.MAX_EVENTS + 8; i++) {
+      const t = r.r8(), id = r.r16();
+      if (t === VP.EV.HIT) {
+        const kind = r.r8(), shot = r.r16(), tHit = r.r32();
+        const p = [r.rf32(), r.rf32(), r.rf32()];
+        const v = [r.rf32(), r.rf32(), r.rf32()];
+        const s = [r.rf32(), r.rf32(), r.rf32()];
+        o.evs.push({ t, id, kind, shot, tHit, p, v, s });
+      } else if (t === VP.EV.HANDOFF) {
+        const shot = r.r16(), tCross = r.r32();
+        const p = [r.rf32(), r.rf32(), r.rf32()];
+        const v = [r.rf32(), r.rf32(), r.rf32()];
+        const s = [r.rf32(), r.rf32(), r.rf32()];
+        o.evs.push({ t, id, shot, tCross, p, v, s });
+      } else if (t === VP.EV.SNAP) {
+        const shot = r.r16(), tSnap = r.r32();
+        const p = [r.rf32(), r.rf32(), r.rf32()];
+        const v = [r.rf32(), r.rf32(), r.rf32()];
+        o.evs.push({ t, id, shot, tSnap, p, v });
+      } else {
+        return null;   // tipo desconocido: paquete inválido
+      }
+    }
+    return o;
+  }
+
+  /* ---------- 3 · reloj compartido, RTT y jitter (spec §4) -----------
+   * Sin pings aparte: la cabecera de CADA paquete fast lleva
+   * sendTime/echoTime/echoDelay. Cada llegada produce una muestra NTP:
+   *   t1 = mi sendTime que el otro acaba de ecoar (mi reloj, completo)
+   *   t2 = sendTime del otro − echoDelay (su reloj al recibir mi paquete)
+   *   t3 = sendTime del otro (su reloj al enviarme)
+   *   t4 = mi reloj al recibir
+   *   rtt    = (t4 − t1) − echoDelay
+   *   offset = ((t2 − t1) + (t3 − t4)) / 2   (otro − mío)
+   * La envoltura u32 de los relojes se resuelve con un ANCLA GRUESA por
+   * el canal fiable (números completos, sin envoltura): guest/host
+   * intercambian una vez su performance.now() y fijan offset±rtt/2; a
+   * partir de ahí cada sendTime u32 del rival se reconstruye completo
+   * prediciendo con el offset vigente y corrigiendo por envoltura. El
+   * HOST es el reloj de la partida (isRef): sus marcas de tiempo ya son
+   * de host; el invitado sella con local + offset.
+   * Filtro: últimas 16 muestras → mediana del offset de las 4 de menor
+   * RTT. Suavizado: deslizar ≤1 ms/s; salto sólo si el error >30 ms y
+   * NUNCA durante un rallye (spec §4).                                     */
+  class NetClock {
+    constructor(isRef) {
+      this.isRef = !!isRef;     // el host no aplica offset para sellar
+      this.offset = 0;          // ms; otro − mío
+      this.coarse = false;      // ancla gruesa recibida
+      this.rtt = 0;
+      this.jitter = 0;          // ms (EMA estilo RFC 3550)
+      this.rttMin = Infinity;
+      this.rtts = [];
+      this.samples = [];        // {rtt, off}
+      this._sent = [];          // ring de mis sendTime completos
+      this._prevArr = 0;
+      this._lastApply = 0;
+      this._target = undefined;
+      this.ready = false;
+    }
+    /** registro de envío para recuperar t1 completo desde el eco u32 */
+    markSent(fullMs) {
+      this._sent.push(fullMs);
+      if (this._sent.length > 8) this._sent.shift();
+    }
+    _fullFromEcho(echoU32) {
+      for (let i = this._sent.length - 1; i >= 0; i--) {
+        if (u32(this._sent[i]) === echoU32) return this._sent[i];
+      }
+      return null;
+    }
+    /** ANCLA GRUESA por canal fiable (spec §3.6: ráfaga inicial de 8
+     *  intercambios; aquí cada intercambio fija un candidato y el
+     *  filtro de abajo elige). mySent/myRecv en MI reloj completo. */
+    anchor(mySentFull, peerFull, myRecvFull) {
+      const rtt = Math.max(0, myRecvFull - mySentFull);
+      const off = peerFull - (mySentFull + rtt / 2);
+      this.coarse = true;
+      this._sample(rtt, off);
+      return rtt;
+    }
+    /** llamada al llegar CADA paquete fast */
+    onPacket(pkt, localNowMs) {
+      // jitter de llegada (EMA de la desviación del intervalo esperado)
+      if (this._prevArr) {
+        const iv = Math.max(1, localNowMs - this._prevArr);
+        this.jitter += (Math.abs(iv - 16.7) - this.jitter) / 16;
+      }
+      this._prevArr = localNowMs;
+      const t1 = this._fullFromEcho(pkt.echoTime);
+      if (t1 === null) return;                    // aún no ecoó nada mío
+      // t3 completo: predecir con el offset vigente + corrección de envoltura
+      const pred = localNowMs + this.offset;
+      const t3full = pred + wrapDiff(pkt.sendTime, u32(pred));
+      const t2 = t3full - pkt.echoDelay;
+      const t4 = localNowMs;
+      const rtt = (t4 - t1) - pkt.echoDelay;
+      if (rtt < 0 || rtt > 3000) return;          // muestra anómala
+      const off = ((t2 - t1) + (t3full - t4)) / 2;
+      this._sample(rtt, off);
+    }
+    _sample(rtt, off) {
+      this.rtt = rtt;
+      if (rtt < this.rttMin) this.rttMin = rtt;
+      this.rtts.push(rtt);
+      if (this.rtts.length > 64) this.rtts.shift();
+      this.samples.push({ rtt, off });
+      if (this.samples.length > VP.CLK_N) this.samples.shift();
+      const byRtt = this.samples.slice().sort((a, b) => a.rtt - b.rtt);
+      const low = byRtt.slice(0, Math.min(VP.CLK_LOW, byRtt.length));
+      this._target = median(low.map((s) => s.off));
+      this.ready = this.samples.length >= 4;
+    }
+    /** aplica el offset objetivo con suavizado (espec §4) */
+    apply(nowMs, inRally) {
+      if (this._target === undefined) return;
+      if (!this._lastApply) this._lastApply = nowMs;
+      const err = this._target - this.offset;
+      if (!this.ready) { this.offset = this._target; this._lastApply = nowMs; return; }
+      if (Math.abs(err) > VP.CLK_JUMP && !inRally) {
+        this.offset = this._target;               // salto sólo fuera de rallye
+        this._lastApply = nowMs;
+        return;
+      }
+      const maxStep = (VP.CLK_SMOOTH / 1000) * Math.max(0, nowMs - this._lastApply);
+      this._lastApply = nowMs;
+      this.offset += clamp(err, -maxStep, maxStep);
+    }
+    /** reloj del HOST en ms (el invitado suma su offset; el host es ref) */
+    nowHost(localNowMs) { return this.isRef ? localNowMs : localNowMs + this.offset; }
+    /** RTT mediana y p95 (ms) para telemetría e icono de ping */
+    rttStats() {
+      if (!this.rtts.length) return { med: 0, p95: 0, min: 0 };
+      const s = this.rtts.slice().sort((a, b) => a - b);
+      return {
+        med: Math.round(median(this.rtts)),
+        p95: Math.round(s[Math.min(s.length - 1, Math.floor(s.length * 0.95))]),
+        min: Math.round(this.rttMin === Infinity ? 0 : this.rttMin),
+      };
+    }
+  }
+
+  /* ---------- 4 · jitter buffer del avatar (spec §6) -----------------
+   * Reproducción con retraso controlado: sample(nowHost - interpDelay);
+   * interpolación lineal de posición + slerp de rotación; sin datos →
+   * extrapolar ≤100 ms con velocidad y después CONGELAR (contador de
+   * vaciados para telemetría).                                        */
+  class JitterBuf {
+    constructor(cap) {
+      this.cap = cap || 64;
+      this.s = [];              // {t, hp,hq,lp,lq,rp,rq, vx,vy,vz}
+      this.delayMs = VP.INTERP_MIN;
+      this.starves = 0;         // veces que el buffer se vació (telemetría)
+      this.extraps = 0;
+      this._frozen = false;
+    }
+    push(tHost, sam) {
+      // descartar muestras antiguas (paquetes desordenados)
+      if (this.s.length && tHost <= this.s[this.s.length - 1].t) return false;
+      // v3.6.74 · r82 · CLON OBLIGATORIO: el decodificador REUTILIZA sus
+      // arrays (_pose del objeto out) — guardando referencias, TODAS las
+      // muestras del buffer apuntaban a los mismos números: la historia
+      // era siempre la última pose (aliasing total). Consecuencias en
+      // dispositivo real: interpolación del avatar muerta (velocidad 0) y
+      // el validador §12 juzgaba el golpe con la pose del ÚLTIMO paquete
+      // (el follow-through de un smash recorre 25-60 cm → rechazos masivos
+      // con latencia real; con el simulador a 0 ms pasaba de rositas).
+      this.s.push({
+        t: tHost,
+        hp: [sam.hp[0], sam.hp[1], sam.hp[2]], hq: [sam.hq[0], sam.hq[1], sam.hq[2], sam.hq[3]],
+        lp: [sam.lp[0], sam.lp[1], sam.lp[2]], lq: [sam.lq[0], sam.lq[1], sam.lq[2], sam.lq[3]],
+        rp: [sam.rp[0], sam.rp[1], sam.rp[2]], rq: [sam.rq[0], sam.rq[1], sam.rq[2], sam.rq[3]],
+        fl: sam.fl,
+      });
+      if (this.s.length > this.cap) this.s.shift();
+      this._frozen = false;
+      return true;
+    }
+    clear() { this.s.length = 0; this._frozen = false; }
+    /** retraso adaptativo: clamp(2·intervalo + 2·jitter, 40, 120) ms */
+    autoDelay(poseHz, jitterMs) {
+      const iv = 1000 / Math.max(1, poseHz);
+      this.delayMs = clamp(2 * iv + 2 * jitterMs, VP.INTERP_MIN, VP.INTERP_MAX);
+    }
+    /** muestreo en tNowHost - delayMs; out = {hp,hq,lp,lq,rp,rq,fl}
+     *  devuelve 0 OK · 1 extrapolada · 2 congelada · -1 vacío */
+    sample(tNowHost, out) {
+      const t = tNowHost - this.delayMs;
+      if (!this.s.length) { this.starves++; return -1; }
+      if (t <= this.s[0].t) { this._copy(this.s[0], out); return 0; }
+      const last = this.s[this.s.length - 1];
+      if (t >= last.t) {
+        const gap = (t - last.t) / 1000;
+        const prev2 = this.s.length > 1 ? this.s[this.s.length - 2] : null;
+        if (gap <= VP.EXTRAP_MAX && prev2) {
+          // EXTRAPOLACIÓN con la velocidad de las dos últimas muestras
+          // (spec §6: hasta 100 ms, después congelar)
+          const dtS = Math.max(1e-3, (last.t - prev2.t) / 1000);
+          this._copy(last, out);
+          out.hp[0] += ((last.hp[0] - prev2.hp[0]) / dtS) * gap;
+          out.hp[1] += ((last.hp[1] - prev2.hp[1]) / dtS) * gap;
+          out.hp[2] += ((last.hp[2] - prev2.hp[2]) / dtS) * gap;
+          this.extraps++;
+          return 1;
+        }
+        if (!this._frozen) this.starves++;
+        this._frozen = true;
+        this._copy(last, out);
+        return 2;
+      }
+      // búsqueda del par que rodea t (buffer pequeño: lineal desde el final)
+      let i = this.s.length - 1;
+      while (i > 0 && this.s[i - 1].t > t) i--;
+      const a = this.s[i - 1], b = this.s[i];
+      const k = clamp((t - a.t) / Math.max(1e-6, b.t - a.t), 0, 1);
+      pLerp(a.hp, b.hp, k, out.hp);
+      const q = qSlerp(a.hq, b.hq, k); out.hq[0] = q[0]; out.hq[1] = q[1]; out.hq[2] = q[2]; out.hq[3] = q[3];
+      pLerp(a.lp, b.lp, k, out.lp);
+      const ql = qSlerp(a.lq, b.lq, k); out.lq[0] = ql[0]; out.lq[1] = ql[1]; out.lq[2] = ql[2]; out.lq[3] = ql[3];
+      pLerp(a.rp, b.rp, k, out.rp);
+      const qr = qSlerp(a.rq, b.rq, k); out.rq[0] = qr[0]; out.rq[1] = qr[1]; out.rq[2] = qr[2]; out.rq[3] = qr[3];
+      out.fl = b.fl;
+      return 0;
+    }
+    _copy(s, out) {
+      for (let i = 0; i < 3; i++) { out.hp[i] = s.hp[i]; out.lp[i] = s.lp[i]; out.rp[i] = s.rp[i]; }
+      for (let i = 0; i < 4; i++) { out.hq[i] = s.hq[i]; out.lq[i] = s.lq[i]; out.rq[i] = s.rq[i]; }
+      out.fl = s.fl;
+    }
+    /** v3.6.73 · r81: muestra del buffer MÁS PRÓXIMA a tHost (la de mayor
+     *  t ≤ tHost dentro de la ventana) — para VALIDAR un golpe en SU
+     *  instante exacto (spec §12), no en el instante retrasado de
+     *  reproducción del avatar (interpDelay 40-120 ms). Sin muestra dentro
+     *  de la ventana devuelve null (el validador no puede juzgar).
+     *  out opcional: {hp,hq,lp,lq,rp,rq,fl} reutilizable. */
+    nearest(tHost, out, winMs) {
+      const W = winMs || 250;
+      if (!this.s.length) return null;
+      let pick = null;
+      for (let i = this.s.length - 1; i >= 0; i--) {
+        if (this.s[i].t <= tHost) { pick = this.s[i]; break; }
+      }
+      if (!pick) pick = this.s[0];                     // todas futuras: la más antigua
+      if (Math.abs(tHost - pick.t) > W) return null;   // desfasada: no juzga
+      if (out) { this._copy(pick, out); return out; }
+      return pick;
+    }
+  }
+
+  /* ---------- 5 · FSM de la bola: autoridad por mitad (spec §7) -------
+   * HELD(remoto) → GHOST_FLIGHT (simulación visual del saque/golpe del
+   * rival) → (traspaso) AUTH_MY_SIDE → (mi golpe) OWN_FLIGHT →
+   * (cruce limpio de la red) GHOST_FLIGHT → … · DEAD = punto terminado.
+   * Regla de oro: SOLO puedo golpear con la bola en AUTH_MY_SIDE (o
+   * OWN_FLIGHT justo tras mi golpe, blindado por cooldown).             */
+  class BallAuth {
+    constructor() {
+      this.state = 'idle';      // idle|held|own|ghost|auth|dead
+      this.holder = null;       // en 'held': 'me' | 'opp'
+      this.mine = false;        // la física de la bola la conduzco YO
+      this.shot = 0;            // nº de golpe del rallye (correlativo)
+      this.rally = 0;           // rallyId (totalPoints en el momento del saque)
+      this._crossT = 0;         // ms host del cruce pendiente de traspaso
+      this._crossed = false;    // mi fantasma cruzó y espero BALL_HANDOFF
+      this._provAuth = false;   // autoridad provisional activa (spec §7)
+      this._catchT = 0;         // catch-up visual restante (ms)
+      this._corr = null;        // corrección visual pendiente {vx,vy,vz,ms}
+      this.lastHitHostT = 0;    // mi último golpe (para cadencia propia)
+    }
+    reset() {
+      this.state = 'idle'; this.holder = null; this.mine = false;
+      this.shot = 0; this._crossed = false; this._provAuth = false;
+      this._catchT = 0; this._corr = null;
+    }
+    setHeld(mine) {
+      this.state = 'held'; this.holder = mine ? 'me' : 'opp';
+      this.mine = !!mine; this.shot = 0;
+      this._crossed = false; this._provAuth = false; this._catchT = 0; this._corr = null;
+    }
+    /** golpeo LOCAL (sagrado): emite el evento y pasa a OWN_FLIGHT */
+    localHit(isServe, state, nowHostMs) {
+      this.shot++;
+      this.state = 'own'; this.mine = true;
+      this.lastHitHostT = nowHostMs;
+      this._crossed = false; this._provAuth = false;
+      return {
+        t: VP.EV.HIT, kind: isServe ? 1 : 0, shot: this.shot,
+        tHit: Math.round(nowHostMs), p: state.p, v: state.v, s: state.s,
+      };
+    }
+    /** lanzamiento al aire del saque (visual para el rival, spec §10) */
+    localToss(state, nowHostMs) {
+      return {
+        t: VP.EV.HIT, kind: 2, shot: this.shot,
+        tHit: Math.round(nowHostMs), p: state.p, v: state.v, s: state.s,
+      };
+    }
+    /** recibo el golpe del rival: nace mi fantasma; el glue lo avanza
+     *  dt·k con tope (spec §8). Devuelve el avance a simular (s). */
+    onRemoteHit(ev, nowHostMs, k, ffMax) {
+      this.shot = ev.shot;
+      this.state = 'ghost';
+      this.mine = false;
+      this._crossed = false; this._provAuth = false;
+      const el = Math.max(0, nowHostMs - ev.tHit) / 1000;
+      return { adv: Math.min(ffMax, el * k), el };
+    }
+    /** mi bola cruza limpiamente el plano de la red → BALL_HANDOFF */
+    crossedNet(state, nowHostMs) {
+      if (this.state !== 'own') return null;
+      this.state = 'ghost'; this.mine = false;
+      this._crossed = false;
+      return {
+        t: VP.EV.HANDOFF, shot: this.shot, tCross: Math.round(nowHostMs),
+        p: state.p, v: state.v, s: state.s,
+      };
+    }
+    /** recibo el traspaso: corrección según umbrales 2 cm / 30 cm (spec §8) */
+    onHandoff(ev, myPos, nowHostMs) {
+      this.shot = ev.shot;
+      const wasGhost = this.state === 'ghost' || this.state === 'auth';
+      this.state = 'auth'; this.mine = true;
+      this._crossed = false;
+      const dtErr = Math.max(0, nowHostMs - ev.tCross) / 1000;
+      // error contra mi fantasma (el glue ya avanzó myPos hasta ahora)
+      const ex = myPos[0] - ev.p[0], ey = myPos[1] - ev.p[1], ez = myPos[2] - ev.p[2];
+      const err = Math.hypot(ex, ey, ez);
+      let kind = 'snap';
+      if (wasGhost && err < VP.CORR_MIN) kind = 'none';
+      else if (wasGhost && err < VP.CORR_MAX) kind = 'smooth';
+      return { kind, err, dtErr, vec: kind === 'smooth' ? [ex, ey, ez] : null, ms: VP.CORR_SMOOTH * 1000 };
+    }
+    /** SNAP del rival: corrección suave del fantasma (sin ack, spec §5) */
+    onSnap() { /* el glue aplica el lerp; aquí sólo estadística */ }
+    /** el fantasma cruzó y no llega traspaso: autoridad provisional */
+    maybeProvisional(nowHostMs) {
+      if (this.state !== 'ghost' || !this._crossed || this._provAuth) return false;
+      if ((nowHostMs - this._crossT) / 1000 < VP.HANDOFF_TIMEOUT) return false;
+      this.state = 'auth'; this.mine = true; this._provAuth = true;
+      return true;
+    }
+    /** registra el cruce del fantasma (observado por el glue cada frame) */
+    observeGhostCross(nowHostMs) {
+      if (this.state === 'ghost' && !this._crossed) {
+        this._crossed = true; this._crossT = nowHostMs;
+      }
+    }
+    die() { this.state = 'dead'; this.mine = false; return true; }
+    canHit() { return this.mine; }
+  }
+
+  /* ---------- 6 · validación de eventos recibidos (spec §12) ----------
+   * Trampas groseras: rapidez/giro máximos, shot correlativo, cadencia
+   * ≥150 ms y golpe a <60 cm de la pala del avatar rival. Tres fallos
+   * graves en una partida → partida marcada como sospechosa.            */
+  class Validator {
+    constructor() { this.rejects = 0; this.serious = 0; this.log = []; }
+    hit(ev, ctx) {
+      const r = this._hit(ev, ctx);
+      if (!r.ok) {
+        this.rejects++;
+        if (r.serious) this.serious++;
+        if (this.log.length < 20) this.log.push(r.why);
+      }
+      return r;
+    }
+    _hit(ev, ctx) {
+      const sp = Math.hypot(ev.v[0], ev.v[1], ev.v[2]);
+      if (!(sp <= VP.MAX_BALL_SPEED)) return { ok: false, why: `vel ${sp.toFixed(1)} > ${VP.MAX_BALL_SPEED}`, serious: true };
+      const sp2 = Math.hypot(ev.s[0], ev.s[1], ev.s[2]);
+      if (!(sp2 <= VP.MAX_SPIN)) return { ok: false, why: `spin ${sp2.toFixed(0)} > ${VP.MAX_SPIN}`, serious: true };
+      if (ctx.nowHost !== undefined && ev.tHit > ctx.nowHost + VP.TOL_FUTURE) {
+        return { ok: false, why: 'tHit en el futuro', serious: true };
+      }
+      // v3.6.74 · r82 · el LANZAMIENTO (kind 2) NO lleva correlativo: sale
+      // con el shot del HELD (0 en el primer saque) y NO incrementa —
+      // exigirle shot+1 RECHAZABA SIEMPRE el toss del rival (el receptor se
+      // quedaba con la bola HELD congelada e invisible y, si el HIT del
+      // saque también caía, atascado en 'serve' para siempre: «no deja
+      // sacar ni jugar»). El correlativo lo porta el HIT (kind 0/1).
+      if (ev.kind !== 2 && ctx.lastShot !== undefined && ev.shot !== ctx.lastShot + 1) {
+        return { ok: false, why: `shot ${ev.shot} ≠ ${ctx.lastShot + 1}`, serious: true };
+      }
+      if (ctx.lastHitT !== undefined && ev.kind !== 2 &&
+          (ev.tHit - ctx.lastHitT) < VP.MIN_HIT_GAP * 1000) {
+        return { ok: false, why: 'cadencia <150 ms', serious: false };
+      }
+      if (ctx.padPos && ctx.padPos.length === 3) {
+        const d = Math.hypot(ev.p[0] - ctx.padPos[0], ev.p[1] - ctx.padPos[1], ev.p[2] - ctx.padPos[2]);
+        if (d > VP.HIT_NEAR_PAD) return { ok: false, why: `golpe a ${d.toFixed(2)} m de la pala`, serious: true };
+      }
+      return { ok: true, why: '' };
+    }
+  }
+
+  /* ---------- 7 · simulador de red (solo desarrollo, spec §14) -------- */
+  class NetSim {
+    constructor(cfg) {
+      this.lat = cfg.lat || 0;      // ms de latencia fija (uno-way)
+      this.jit = cfg.jit || 0;      // ms de jitter
+      this.loss = cfg.loss || 0;    // 0..1
+      this.dup = cfg.dup || 0;      // 0..1
+      this.reorder = cfg.reorder || 0;
+      this.seed = (cfg.seed || 123456789) >>> 0;
+      this.q = [];
+    }
+    _rnd() {   // xorshift determinista (tests reproducibles)
+      let x = this.seed;
+      x ^= x << 13; x >>>= 0; x ^= x >> 17; x ^= x << 5; x >>>= 0;
+      this.seed = x;
+      return x / 4294967296;
+    }
+    /** entrega programada de un paquete saliente */
+    emit(buf, nowMs, deliver) {
+      if (this._rnd() < this.loss) return;                  // perdido
+      const d = this.lat + (this.jit ? (this._rnd() * 2 - 1) * this.jit : 0);
+      const t = nowMs + Math.max(0, d);
+      const n = this._rnd() < this.dup ? 2 : 1;
+      for (let i = 0; i < n; i++) {
+        const tt = t + (i > 0 ? 4 + this._rnd() * 12 : 0);
+        this.q.push({ t: tt, buf, deliver });
+      }
+      if (this._rnd() < this.reorder && this.q.length > 2) {
+        const i = this.q.length - 1;
+        const j = this.q.length - 2;
+        const tmp = this.q[i]; this.q[i] = this.q[j]; this.q[j] = tmp;
+      }
+    }
+    pump(nowMs) {
+      let n = 0;
+      this.q.sort((a, b) => a.t - b.t);
+      while (this.q.length && this.q[0].t <= nowMs) {
+        const it = this.q.shift();
+        it.deliver(it.buf);
+        n++;
+      }
+      return n;
+    }
+  }
+
+  /* ---------- 8 · telemetría por partida (spec §14) ------------------- */
+  class NetStats {
+    constructor(role) {
+      this.role = role;
+      this.t0 = 0; this.tEnd = 0;
+      this.turn = false;          // pasó por TURN
+      this.hits = 0; this.handoffs = 0; this.snaps = 0;
+      this.corrNone = 0; this.corrSmooth = 0; this.corrSnap = 0;
+      this.provAuth = 0;
+      this.claims = 0; this.acks = 0; this.disputes = 0;
+      this.maxBallSpeed = 0;
+      this.result = '';           // 'win' | 'loss' | 'abandono' | ''
+      this.suspect = false;
+    }
+    summary(clock) {
+      const rs = clock ? clock.rttStats() : { med: 0, p95: 0, min: 0 };
+      return {
+        role: this.role, dur: this.tEnd ? Math.round((this.tEnd - this.t0) / 1000) : 0,
+        rtt: rs, jitter: Math.round((clock && clock.jitter) || 0),
+        turn: this.turn, hits: this.hits, handoffs: this.handoffs, snaps: this.snaps,
+        corr: [this.corrNone, this.corrSmooth, this.corrSnap],
+        provAuth: this.provAuth, claims: this.claims, acks: this.acks,
+        disputes: this.disputes, vmax: Math.round(this.maxBallSpeed * 10) / 10,
+        result: this.result, suspect: this.suspect,
+      };
+    }
+  }
+
+  /* ---------- 9 · libro de reclamos de punto (spec §7/§9) -------------
+   * Quien tiene AUTORIDAD cuando la bola muere reclama (POINT_CLAIM con
+   * rallyId, ganador, motivo, marcador y shotNumber). El otro responde
+   * POINT_ACK si el reclamo encaja con SUS hechos. Reclamos simultáneos
+   * del mismo rallyId: gana el primero que recibe el HOST.               */
+  class MatchSync {
+    constructor(role) {
+      this.role = role;                 // 'host' | 'guest'
+      this.pending = null;              // mi CLAIM en vuelo {r, w, c, sp, sa}
+      this.applied = -1;                // último rallyId resuelto localmente
+      this.appliedW = null;             // ganador LOCAL con el que lo resolví
+      this.disputes = 0;
+    }
+    /** mi árbitro detectó un punto: AMBOS lados aplican su detección
+     *  local (el fantasma es la misma física); el CLAIM/ACK confronta
+     *  ambos resultados y el HOST resincroniza si discrepan (spec §7). */
+    localPoint(r, w, c, sp, sa, isAuth, nowMs) {
+      if (this.applied === r) return { apply: false, send: null };
+      this.applied = r;
+      this.appliedW = w;
+      if (isAuth) {
+        this.pending = { r, w, c, sp, sa };
+        return { apply: true, send: { k: 'claim', r, w, c, sp, sa } };
+      }
+      return { apply: true, send: null };   // mi detección vale; el claim
+                                            // del rival confirmará o rescindirá
+    }
+    /** llega CLAIM del rival; devuelve el ACK y si debo aplicar.
+     *  mappedW = el ganador del claim YA espejado a MI perspectiva. */
+    onClaim(cl, mappedW) {
+      if (this.applied === cl.r) {
+        const agree = (mappedW === undefined) || (cl.w === 'let') ||
+          (this.appliedW === mappedW);
+        return { ack: { k: 'ack', r: cl.r, agree }, apply: false, agree };
+      }
+      this.applied = cl.r;
+      this.appliedW = mappedW || null;
+      this.pending = null;
+      return { ack: { k: 'ack', r: cl.r, agree: true }, apply: true, agree: true };
+    }
+    /** llega ACK a mi CLAIM; comparar marcadores (perspectiva propia) */
+    onAck(ack) {
+      if (!this.pending) return { ok: true };
+      this.pending = null;
+      if (ack.agree === false) { this.disputes++; return { ok: false, dispute: true }; }
+      return { ok: true };
+    }
+    /** RESYNC del host (autoridad final): adoptar tal cual */
+    onResync() { this.pending = null; this.applied = -1; this.appliedW = null; }
+  }
+
+  return {
+    VP, clamp, lerp, wrapDiff, u32, median, qNorm, qSlerp, pLerp,
+    Writer, Reader, quatPack, quatUnpack, encodePacket, decodePacket,
+    F_POSE, F_EV,
+    NetClock, JitterBuf, BallAuth, Validator, NetSim, NetStats, MatchSync,
+  };
+})();
 const MENU_LOGO_SRC = 'data:image/jpeg;base64,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';
 
 const BALL_HAND_LIFT = 0.08;   // bola "apoyada" sobre la palma de la mano libre
@@ -10484,6 +12602,8 @@ const muQ = new THREE.Quaternion();
 const muRaycaster = new THREE.Raycaster();
 const netTmpP = new THREE.Vector3();   // v2.19: poses del rival por red
 const netTmpQ = new THREE.Quaternion();
+const netTmpQ2 = new THREE.Quaternion(); // r79: deriva del centro de hoja
+const netTmpV = new THREE.Vector3();     // r79: centro de hoja derivado
 muRaycaster.far = 2.5;
 
 /* v2.135 · PIELES DE CARTEL del artista para las NORMAS de las etapas:
@@ -10590,8 +12710,12 @@ class PingPongGame {
     // Sharpness» + foveation 0.5. Si el dueño prefiere nitidez sobre
     // fluidez, el compromiso intermedio (1.45) o el escalado adaptativo
     // son el siguiente paso POR DATOS (con la curva vr_ping delante).
-    this.renderer.xr.setFoveation(0.5);
-    this.renderer.xr.setFramebufferScaleFactor(1.4);
+    // r81 · SESENTA SEGUROS: el PERF GOVERNOR decide foveation y escala
+    // POR CASCO (Quest 3 mantiene el 1.4×/0.5 de siempre; Quest 2 nace en
+    // 1.05×/0.65/72 Hz — hoy esas partidas «van muy lentas» — y ambos
+    // se autocalibran con la sonda + gobernador; AJUSTES › RENDIMIENTO).
+    this.perf = new PerfManager(this);
+    this.perf.applyToRenderer();
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0b0e11);
@@ -10824,6 +12948,7 @@ class PingPongGame {
     this.menuSec = 'match';       // v2.28: sección ABIERTA del acordeón
     this._menuAnchorUntil = 0;    // v2.28: flotación inicial del panel
     this._joinCode = '';
+    this._mjMode = null;          // r80 · modo elegido en el submenú multi: null = sólo modos; 'normal' = sala/código visibles
     this._localHit = false;       // golpeo propio pendiente de enviar este frame
     // fanfarria de fin de partido (banner + confeti)
     this.fanfareWin = false;
@@ -11391,28 +13516,107 @@ class PingPongGame {
     this.demoToss = null;
     this.audio.announce(T('opp_connected'), true);
     if (this.net.role === 'host') {
-      this.startOnlineMatch();
+      if (this.net.v2 === 'ok' || this.net.v2 === 'pending') {
+        // r79 · v2: el MATCH_START sincronizado (reloj del anfitrión) abre
+        // el partido con cuenta atrás — spec §3.8. Nada de empezar antes.
+        this.rules.server = 'player';
+        this.rules.message = T('net_syncing');
+      } else {
+        this.startOnlineMatch();
+      }
     } else {
       // v2.25: el primer saque es del anfitrión — el estado sombra del
       // invitado arranca ya en perspectiva correcta (antes el primer paquete
       // de sync tardaba ~50 ms y el invitado veía un "tu saque" falso)
+      // r79 · v2: la partida abre con el MATCH_START del anfitrión
       this.rules.server = 'ai';
-      this.rules.message = T('online_first');
+      this.rules.message = (this.net.v2 === 'ok' || this.net.v2 === 'pending')
+        ? T('net_syncing') : T('online_first');
     }
   }
 
   /** Partido online nuevo (anfitrión, o revancha pedida por el invitado). */
   startOnlineMatch() {
     if (this.net.role !== 'host') { this.net.sendRematch(); return; }
-    this.rules.bestOf = 3;   // v3.6.29: el enfrentamiento online también al mejor de 3
-    this.rules.startMatch(this.mode);
-    this.net.owner = 'host';
+    if (this.net.v2 === 'ok') {
+      // r79 · v2: nueva partida = nuevo MATCH_START sincronizado (spec §3.8)
+      const startAt = this.net.hostNowMs() + PPNET.VP.COUNTDOWN_MS;
+      this.net.sendRel({ k: 'mstart', sa: startAt, fs: 'host', bo: 3 });
+      this.onNetMatchStart({ startAt, fs: 'host', bo: 3 });
+      return;
+    }
+    if (this.net.v2 === 'pending') {
+      // la subida del transporte sigue en marcha: arrancar en cuanto esté
+      this._netStartWhenReady = true;
+      this.rules.message = T('net_syncing');
+      return;
+    }
+    // v3.6.74 · r82 · NADA DE PARTIDOS v1 SILENCIOSOS: si el enlace binario
+    // murió de verdad (sin túnel posible), el partido NO arranca en el modo
+    // cosmético sin avisar — mensaje claro en la cancha (antes se entraba a
+    // jugar en v1 y «no se podía jugar la bola» sin saber por qué)
+    this.rules.message = T('net_v2_down');
+    this.audio.announce(T('net_v2_down'), true);
+  }
+
+  /** r79 · MATCH_START (enviado por el anfitrión o recibido por el
+   *  invitado): partida nueva + cuenta atrás hasta el instante EXACTO del
+   *  reloj del anfitrión (spec §3.8: startAt ≈ ahora + 3000 ms). */
+  onNetMatchStart(m) {
+    const guest = this.net.role === 'guest';
+    this.mode = 'match';
+    this.pendingMode = 'match';
+    this.rules.bestOf = m.bo || 3;
+    this.rules.startMatch('match');
+    // el primer sacador lo fija el MATCH_START (fair: alterna por juego —
+    // resetGame ya alterna con gameNo); aquí se ancla el del primer juego
+    this.rules.firstServer = (m.fs === 'host')
+      ? (guest ? 'ai' : 'player')
+      : (guest ? 'player' : 'ai');
+    this.rules.resetGame();     // recalcula el sacador con el firstServer real
     this.resetToss();
-    this.rules.message = T('online_serve');
+    this.aiToss = null;
+    this.demoToss = null;
+    this._netStart = { startAt: m.startAt, fs: m.fs };
+    this._netTossLive = false;
+    this.net.setServeHeld(this.rules.server === 'player');
+    // r81 · bola HELD del rival OCULTA también en el arranque (el intent
+    // 'serve' la esconde en cada punto, pero el MATCH_START llegaba antes:
+    // el invitado veía una bola congelada flotando hasta el primer punto)
+    if (this.ballMesh) this.ballMesh.visible = this.rules.server === 'player';
+    this.rules.message = '3';
+  }
+
+  /** r79 · el transporte v2 quedó LISTO (HELLO/READY de ambos) */
+  onNetV2Ready() {
+    // v3.6.74 · r82 · EL ENLACE SE CANTA: el dueño SABE en qué viaja la
+    // partida (directo o túnel) y si el otro visor trae otra build
+    try { window.__PP_NET = this.net; } catch { /* */ }
+    const inf = this.net.netInfo ? this.net.netInfo() : null;
+    if (inf && inf.v2 === 'ok') {
+      this.audio.announce(inf.via === 'tunel' ? T('net_link_tunnel') : T('net_link_direct'), true);
+      if (inf.buildWarn) this.audio.announce(T('net_build_warn'), false);
+    }
+    if (this._netStartWhenReady) {
+      this._netStartWhenReady = false;
+      if (this.net.role === 'host') this.startOnlineMatch();
+    }
+  }
+
+  /** r79 · pausa del rival (visor quitado/pestaña oculta): el reloj de
+   *  partida se detiene en AMBOS extremos (spec §10) */
+  onNetPause(on) {
+    if (on && this.rules.state !== 'over') this.rules.message = T('net_paused');
+    if (this.menuOpen) this.drawMenu();
   }
 
   /** El rival se desconecta: vuelta al juego local contra la CPU. */
   onNetEnded(msg) {
+    // r79: retirar todo lo vivo del transporte v2
+    this._netStart = null;
+    this._netTossLive = false;
+    this._netStartWhenReady = false;
+    if (this._netVisor) this._netVisor.visible = false;
     this.rules.oppLabel = 'cpu';
     this.resetToss();
     this.aiToss = null;
@@ -11831,80 +14035,285 @@ class PingPongGame {
     const label = this._menuLabel;
     const net = this.net;
     const st = net.online ? 'online' : net.status;
-
+    // r79 · SUBMENÚ DE DOS MODOS (petición del dueño): «este modo
+    // Multijugador entra en subMenú con dos modos de juego con sus
+    // respectivos iconos para seguir una estética común con todo el
+    // juego»: NORMAL (partida 1 vs 1 online) y DUELOS LOCOS (poderes de
+    // los campeonatos — con etiqueta PRÓXIMAMENTE y candado ENCIMA, como
+    // los campeonatos bloqueados).
+    // r80 · EL SUBMENÚ QUE RESPIRA (informe del dueño: «has colocado mal
+    // los botones, se están pisando con el marco superior del menú y los
+    // idiomas»): las tarjetas BAJAN bajo la cabecera (las palas de idioma
+    // ocupan y 42-172 y el sello de versión llega a 198) y el panel de
+    // sala se reasienta debajo. Y «al pulsar sobre estos modos es cuando
+    // aparecen las opciones de sala y código»: sin modo elegido NO hay
+    // sala — this._mjMode gobierna el panel de abajo.
     this.drawMenuHeader(rects);
-    label(T('mj_head'), 244, 26);
+    label(T('tab_multi'), 244, 26);
+    this._modeCard(rects, 'mjnorm', 40, 216, 944, 96, T('mj_norm_t'),
+      T('mj_norm_s'), '#2f9e44', '#1e7c33', PP_ICONS.multi);
+    this._modeCardDuelos(rects, 40, 326, 944, 96);
+    const yPanel = 446;
 
     if (st === 'online') {
       c.fillStyle = '#7fb069';
-      c.font = '800 52px system-ui, sans-serif';
+      c.font = '800 46px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(T('mj_connected'), 512, 336);
+      c.fillText(T('mj_connected'), 512, yPanel + 24);
+      const ping = (net.v2 === 'ok' && net.pingMs() >= 0)
+        ? ' · ' + T('mj_ping', { n: net.pingMs() }) + (net.degraded() ? ' ·' : '')
+        : '';
       c.fillStyle = '#cfd8e0';
-      c.font = '600 28px system-ui, sans-serif';
-      c.fillText(T('mj_rival', { code: net.code, st: this.rules.state === 'over' ? T('mj_over') : T('mj_playing') }), 512, 396);
+      c.font = '600 26px system-ui, sans-serif';
+      c.fillText(T('mj_rival', { code: net.code, st: this.rules.state === 'over' ? T('mj_over') : T('mj_playing') }) + ping, 512, yPanel + 76);
       const voz = net.voiceState === 'on'
         ? (net.micOn ? T('voz_on_mic') : T('voz_on_silent'))
         : net.voiceState === 'asking' ? T('voz_asking')
         : net.voiceState === 'denied' ? T('voz_denied')
         : T('voz_off');
       c.fillStyle = '#9aa7b4';
-      c.font = '500 24px system-ui, sans-serif';
-      c.fillText(voz, 512, 440);
-      btn('net:mic', 56, 486, 448, 76, T('btn_voz', { v: net.micOn ? T('yes') : T('no') }), net.micOn && net.voiceState === 'on', undefined, !!net.micOn, 26);
-      btn('net:hangup', 520, 486, 448, 76, T('btn_hangup'), false, undefined, undefined, 26);
-      c.fillStyle = '#9aa7b4';
       c.font = '500 22px system-ui, sans-serif';
+      c.fillText(voz, 512, yPanel + 114);
+      btn('net:mic', 56, yPanel + 146, 448, 72, T('btn_voz', { v: net.micOn ? T('yes') : T('no') }), net.micOn && net.voiceState === 'on', undefined, !!net.micOn, 25);
+      btn('net:hangup', 520, yPanel + 146, 448, 72, T('btn_hangup'), false, undefined, undefined, 25);
+      c.fillStyle = '#9aa7b4';
+      c.font = '500 21px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(T('mj_rematch_hint'), 512, 606);
+      c.fillText(T('mj_rematch_hint'), 512, yPanel + 252);
     } else if (st === 'waiting') {
       c.fillStyle = '#e8b45a';
-      c.font = '700 30px system-ui, sans-serif';
+      c.font = '700 28px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(T('mj_room_code'), 512, 316);
+      c.fillText(T('mj_room_code'), 512, yPanel + 14);
       c.fillStyle = '#f2f4f6';
-      c.font = '900 124px ui-monospace, monospace';
-      c.fillText(net.code, 512, 420);
+      c.font = '900 104px ui-monospace, monospace';
+      c.fillText(net.code, 512, yPanel + 96);
       c.fillStyle = '#9aa7b4';
-      c.font = '500 24px system-ui, sans-serif';
-      c.fillText(T('mj_waiting'), 512, 512);
-      btn('net:cancel', 56, 566, 912, 76, T('btn_cancel_room'), false, undefined, undefined, 26);
+      c.font = '500 23px system-ui, sans-serif';
+      c.fillText(T('mj_waiting'), 512, yPanel + 174);
+      btn('net:cancel', 56, yPanel + 210, 912, 70, T('btn_cancel_room'), false, undefined, undefined, 25);
     } else if (st === 'creating' || st === 'joining') {
       c.fillStyle = '#e8b45a';
-      c.font = '700 34px system-ui, sans-serif';
+      c.font = '700 32px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(st === 'creating' ? T('mj_creating') : T('mj_connecting', { code: net.code }), 512, 340);
-      btn('net:cancel', 56, 420, 912, 76, T('btn_cancel'), false, undefined, undefined, 26);
+      c.fillText(st === 'creating' ? T('mj_creating') : T('mj_connecting', { code: net.code }), 512, yPanel + 40);
+      btn('net:cancel', 56, yPanel + 110, 912, 70, T('btn_cancel'), false, undefined, undefined, 25);
     } else if (st === 'error') {
       c.fillStyle = '#ff6b57';
-      c.font = '700 30px system-ui, sans-serif';
+      c.font = '700 28px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      wrapText(c, net.statusMsg || T('mj_error'), 512, 330, 880, 42);
-      btn('net:host', 56, 450, 448, 76, T('btn_retry'), false, undefined, undefined, 26);
-      btn('net:cancel', 520, 450, 448, 76, T('btn_back'), false, undefined, undefined, 26);
-    } else {
-      // off
+      wrapText(c, net.statusMsg || T('mj_error'), 512, yPanel + 30, 880, 40);
+      btn('net:host', 56, yPanel + 120, 448, 70, T('btn_retry'), false, undefined, undefined, 25);
+      btn('net:cancel', 520, yPanel + 120, 448, 70, T('btn_back'), false, undefined, undefined, 25);
+    } else if (!this._mjMode) {
+      // r80 · SIN MODO ELEGIDO NO HAY SALA (petición del dueño: «al pulsar
+      // sobre estos modos de juego multijugador es cuando aparecen las
+      // opciones de sala y código»): el submenú sólo ofrece los dos modos.
       c.fillStyle = '#cfd8e0';
-      c.font = '600 28px system-ui, sans-serif';
+      c.font = '600 26px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(T('mj_off_hint'), 512, 316);
-      btn('net:host', 56, 366, 912, 86, T('btn_host'), false, 'green', undefined, 27);
-      btn('net:join', 56, 472, 912, 86, T('btn_join'), false, undefined, undefined, 27);
+      c.fillText(T('mj_pick'), 512, yPanel + 44);
+    } else {
+      // off + modo NORMAL elegido: ahora sí, sala y código
+      c.fillStyle = '#cfd8e0';
+      c.font = '600 26px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(T('mj_off_hint'), 512, yPanel + 12);
+      btn('net:host', 56, yPanel + 44, 912, 78, T('btn_host'), false, 'green', undefined, 26);
+      btn('net:join', 56, yPanel + 136, 912, 78, T('btn_join'), false, undefined, undefined, 26);
+      btn('mjsel', 56, yPanel + 230, 912, 56, T('mj_sel_back'), false, undefined, undefined, 24);
     }
 
     c.fillStyle = '#75828f';
-    c.font = '500 21px system-ui, sans-serif';
+    c.font = '500 20px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(T('mj_p2p'), 512, 640);
-    c.fillText(T('mj_mic_hint'), 512, 678);
-    btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
+    c.fillText(T('mj_p2p'), 512, 1368);
+    c.fillText(T('mj_mic_hint'), 512, 1402);
+    btn('tab:main', 56, 1440, 912, 68, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
+  }
+
+  /** r79 · tarjeta DUELOS LOCOS con el patrón EXACTO de los campeonatos
+   *  bloqueados: tarjeta atenuada + candado ENCIMA del nombre + chip
+   *  plateado PRÓXIMAMENTE anclado a la derecha + voz al intentar entrar. */
+  _modeCardDuelos(rects, x, y, w, h) {
+    const c = this.menuCanvas.getContext('2d');
+    const g = c.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, '#3b3550');
+    g.addColorStop(1, '#241f33');
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, 22); else c.rect(x, y, w, h);
+    c.fillStyle = g;
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.14)';
+    c.lineWidth = 2;
+    c.stroke();
+    // insignia circular con el icono del modo (rayo de los poderes)
+    const cx = x + 76, cy = y + h / 2;
+    c.beginPath(); c.arc(cx, cy, 50, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(0,0,0,0.30)'; c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.25)'; c.lineWidth = 2.5; c.stroke();
+    try { PP_ICONS.duelo(c, cx, cy); } catch (e) { /* icono decorativo */ }
+    // velo de bloqueado (patrón campeonatos)
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, 22); else c.rect(x, y, w, h);
+    c.fillStyle = 'rgba(8,10,16,0.62)';
+    c.fill();
+    // título con el CANDADO ENCIMA (junto al texto, como los campeonatos)
+    c.textAlign = 'left';
+    c.textBaseline = 'alphabetic';
+    const ttl = T('mj_duel_t');
+    c.font = '800 34px system-ui, sans-serif';
+    c.fillStyle = 'rgba(201,212,222,0.75)';
+    c.fillText(ttl, x + 134, y + h / 2 - 4);
+    try { PP_ICONS.candado(c, x + 134 + c.measureText(ttl).width + 26, y + h / 2 - 16, 1.35); } catch (e) { /* */ }
+    c.font = '600 19px system-ui, sans-serif';
+    c.fillStyle = 'rgba(201,212,222,0.55)';
+    c.fillText(T('mj_duel_s'), x + 134, y + h / 2 + 30);
+    // chip plateado PRÓXIMAMENTE anclado a la derecha (patrón r72/r73)
+    const chip = T('champ_locked_chip');
+    c.font = '800 20px system-ui, sans-serif';
+    const cw = c.measureText(chip).width + 36;
+    const chx = x + w - cw - 26, chy = y + h / 2 - 19;
+    c.beginPath();
+    if (c.roundRect) c.roundRect(chx, chy, cw, 38, 19); else c.rect(chx, chy, cw, 38);
+    c.fillStyle = 'rgba(201,212,222,0.10)';
+    c.fill();
+    c.strokeStyle = '#c9d4de';
+    c.lineWidth = 2;
+    c.stroke();
+    c.fillStyle = '#c9d4de';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(chip, chx + cw / 2, chy + 20);
+    rects.push({ x, y: y - 3, w, h: h + 6, id: 'mjduel' });
+  }
+
+  /** v3.6.72 (r80) · EL RETO DIARIO EN LA PUERTA — botón estrella al pie
+   *  del menú principal (petición del dueño: «Un botón con la pala
+   *  troquelada con el texto "Reto Diario!" y un pequeño resplandor en su
+   *  perímetro para llamar la atención… es el reclamo para que repitan en
+   *  diferentes días ya que poco a poco va dando logros que desbloquean
+   *  apariencias»). Pala con silueta TROQUELADA (contorno punteado de
+   *  troquel + agujeros de perforación) y resplandor dorado alrededor del
+   *  borde de la tarjeta entera. La tarjeta entera es el botón. */
+  _retoDiarioCard(rects, x, y, w, h) {
+    const c = this.menuCanvas.getContext('2d');
+    const hovered = this.menuHover.includes(rects.length);
+    const TRW = (typeof window !== 'undefined') && window.__PP_TRAIN;
+    const D = (TRW && TRW.state) ? TRW.state.daily : null;
+    const hecho = !!(D && D.hoy);
+    const racha = D ? (D.streak || 0) : 0;
+    const col = hecho ? '#68d391' : '#f0c85a';
+
+    // cuerpo: noche púrpura del PULSO (misma sangre que el panel r76)
+    const rr = (k) => {
+      c.beginPath();
+      if (c.roundRect) c.roundRect(x, y, w, h, k); else c.rect(x, y, w, h);
+    };
+    rr(24);
+    const g = c.createLinearGradient(x, y, x + w, y + h);
+    g.addColorStop(0, '#41307a'); g.addColorStop(1, '#1c1238');
+    c.fillStyle = g; c.fill();
+
+    // RESPLANDOR DEL PERÍMETRO (halo con sombra + dos aureolas): «un
+    // pequeño resplandor en su perímetro para llamar la atención»
+    c.save();
+    rr(24);
+    c.shadowColor = hecho ? 'rgba(104,211,145,0.85)' : 'rgba(255,210,87,0.9)';
+    c.shadowBlur = 26;
+    c.strokeStyle = col;
+    c.lineWidth = 3.5;
+    c.stroke(); c.stroke();          // doble pasada = halo más lleno
+    c.shadowBlur = 0;
+    c.strokeStyle = hecho ? 'rgba(104,211,145,0.30)' : 'rgba(255,210,87,0.30)';
+    c.lineWidth = 12;
+    c.stroke();
+    c.strokeStyle = hecho ? 'rgba(104,211,145,0.15)' : 'rgba(255,210,87,0.16)';
+    c.lineWidth = 22;
+    c.stroke();
+    if (hovered) { rr(24); c.strokeStyle = '#ffffff'; c.lineWidth = 5; c.stroke(); }
+    c.restore();
+
+    // LA PALA TROQUELADA: silueta recortada — hoja circular + mango, borde
+    // PUNTEADO de troquel y agujeros de perforación; inclinada para que baile
+    c.save();
+    c.translate(x + 80, y + h / 2);
+    c.rotate(-0.35);
+    const pala = () => {
+      c.beginPath();
+      c.arc(0, -12, 27, 0, Math.PI * 2);            // hoja
+      c.moveTo(-8.5, 12);
+      c.lineTo(-8.5, 44);
+      c.quadraticCurveTo(-8.5, 52, 0, 52);
+      c.quadraticCurveTo(8.5, 52, 8.5, 44);
+      c.lineTo(8.5, 12);
+      c.closePath();
+    };
+    c.save();
+    pala();
+    c.shadowColor = hecho ? 'rgba(104,211,145,0.85)' : 'rgba(255,210,87,0.9)';
+    c.shadowBlur = 16;
+    const gp = c.createLinearGradient(-27, -39, 27, 52);
+    gp.addColorStop(0, '#ffd257'); gp.addColorStop(1, '#c9932f');
+    c.fillStyle = gp; c.fill();
+    c.restore();
+    pala();                                          // borde TROQUELADO punteado
+    c.setLineDash([5.5, 5]);
+    c.strokeStyle = 'rgba(255,248,225,0.95)';
+    c.lineWidth = 2.5;
+    c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = 'rgba(28,18,56,0.9)';              // agujeros de troquel
+    for (const hp of [[-13, -23], [13, -23], [-13, -1], [13, -1]]) {
+      c.beginPath(); c.arc(hp[0], hp[1], 2.6, 0, Math.PI * 2); c.fill();
+    }
+    c.beginPath(); c.arc(0, 42, 3.2, 0, Math.PI * 2); c.fill();   // oreja del colgante
+    c.restore();
+
+    // TÍTULO con el dictado literal del dueño: «Reto Diario!»
+    c.textAlign = 'left';
+    c.textBaseline = 'middle';
+    c.save();
+    c.shadowColor = hecho ? 'rgba(104,211,145,0.7)' : 'rgba(255,210,87,0.75)';
+    c.shadowBlur = 14;
+    c.fillStyle = hecho ? '#8ff0b5' : '#ffd257';
+    c.font = '900 42px system-ui, sans-serif';
+    c.fillText(T('daily_btn_t'), x + 152, y + 36);
+    c.restore();
+    // ESTADO: duelo nuevo listo (con el modo del día) / completado hoy · racha
+    const subT = hecho ? T('daily_btn_done', { n: racha })
+      : T('daily_btn_new', { m: (D && D.modoName) || '', n: racha });
+    const availW = w - 152 - 120;
+    let sub2 = subT;
+    c.font = '700 20px system-ui, sans-serif';
+    while (sub2.length > 2 && c.measureText(sub2).width > availW) sub2 = sub2.slice(0, -1);
+    if (sub2 !== subT) sub2 += '…';
+    c.fillStyle = '#e9edf2';
+    c.fillText(sub2, x + 152, y + 72);
+    // LA PROMESA DE RETORNO (el reclamo del dueño): zonas dobles + medianoche
+    let zona2 = T('daily_btn_zona');
+    c.font = '600 15px system-ui, sans-serif';
+    while (zona2.length > 2 && c.measureText(zona2).width > availW) zona2 = zona2.slice(0, -1);
+    if (zona2 !== T('daily_btn_zona')) zona2 += '…';
+    c.fillStyle = 'rgba(214,188,250,0.85)';
+    c.fillText(zona2, x + 152, y + 100);
+    // CHEVRON ›
+    c.fillStyle = hecho ? 'rgba(143,240,181,0.9)' : 'rgba(255,210,87,0.9)';
+    c.beginPath();
+    c.moveTo(x + w - 46, y + h / 2 - 16);
+    c.lineTo(x + w - 26, y + h / 2);
+    c.lineTo(x + w - 46, y + h / 2 + 16);
+    c.closePath(); c.fill();
+
+    rects.push({ x, y: y - 3, w, h: h + 6, id: 'retoDiario' });
   }
 
   /** Página JOIN: teclado en el panel para escribir el código (v2.19;
@@ -12483,14 +14892,22 @@ class PingPongGame {
       + ' · ' + T('dock_mic') + ': ' + yn(this.audio.voice);
     this._modeCard(rects, 'page:opts', 40, y, 944, CH, T('opts_title'), optsSub,
       '#5f7183', '#43525f', PP_ICONS.opts);
+    y += CH + 18;
+
+    // v3.6.72 (r80) · EL RETO DIARIO EN LA PUERTA: botón estrella al pie
+    // del menú principal (el dueño retira el panel del entrenamiento y lo
+    // quiere destacado AQUÍ — es el reclamo para volver cada día, con
+    // logros que desbloquean apariencias poco a poco)
+    this._retoDiarioCard(rects, 40, y, 944, 118);
+    y += 118;
 
     // cierre + ayuda
-    btn('close', 56, y + CH + 28, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
+    btn('close', 56, y + 28, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
     c.fillStyle = '#5c6672';
     c.font = '500 20px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(T('menu_hint'), 512, y + CH + 124);
+    c.fillText(T('menu_hint'), 512, y + 124);
   }
 
   /** v2.110 · página CAMPEONATOS: música global + TARJETA por campeonato
@@ -12759,6 +15176,11 @@ class PingPongGame {
       + ' · ' + T('btn_tips', { v: yn(this.showTips) });
     const subPerfil = T('opts_name', { v: _pn || T('no_name') })
       + ' · ' + T('btn_tele', { v: yn(__PP_TELE.on) });
+    // r81 · RENDIMIENTO: casco detectado + FPS en vivo de un vistazo
+    const pf = this.perf ? this.perf.status() : null;
+    const subRendi = pf
+      ? pf.tierLabel + ' · ' + T('perf_fps_short', { v: pf.fps })
+      : '';
 
     const CH2 = 150, GY2 = 18;
     let y = 310;
@@ -12776,6 +15198,10 @@ class PingPongGame {
     y += CH2 + GY2;
     this._modeCard(rects, 'page:optsPerfil', 40, y, 944, CH2,
       T('cat_perfil'), subPerfil, '#e8590c', '#b0420a', PP_ICONS.perfil);
+    y += CH2 + GY2;
+    // r81 · sexta categoría: RENDIMIENTO (autocalibrador de FPS ≥60)
+    this._modeCard(rects, 'page:optsRendi', 40, y, 944, CH2,
+      T('cat_rendi'), subRendi, '#f08c00', '#b3640a', PP_ICONS.cpu);
     y += CH2 + GY2;
 
     label(T('opts_elegir'), y + 16, 20, '#75828f', 'center');
@@ -12879,6 +15305,45 @@ class PingPongGame {
         y += 72;
         label(T('tele_hint'), y + 10, 18, '#75828f');
         y += 36;
+        break;
+      }
+      case 'rendi': {
+        // r81 · RENDIMIENTO: el autocalibrador a la vista (petición del
+        // dueño: «una herramienta para poder calibrar los FPS según el
+        // modelo de gafas… que asegure al menos 60 FPS seguros»)
+        const pf = this.perf ? this.perf.status() : null;
+        if (pf) {
+          label(T('perf_device', { v: pf.tierLabel }), y + 12, 24, '#e9edf2');
+          y += 34;
+          label(pf.gpu ? pf.gpu.slice(0, 60) : '', y + 2, 17, '#75828f');
+          y += 30;
+          const estado = pf.calibrating
+            ? T('perf_calibrando', { s: pf.probeRound + 1 })
+            : (pf.fps >= 58 ? T('perf_estado_ok') : T('perf_estado_bajo'));
+          label(T('perf_fps', { v: pf.fps, r: pf.sessionRate || pf.rate })
+            + ' · ' + estado, y + 2, 20, pf.fps >= 58 || pf.calibrating ? '#8ce99a' : '#ffa94d');
+          y += 40;
+          btn('perfAuto', 56, y, 912, 56, T('perf_auto', { v: yn(pf.auto) }),
+            !!pf.auto, undefined, !!pf.auto, 23);
+          y += 70;
+          label(T('perf_calidad'), y + 10, 22);
+          y += 34;
+          btn('perfTier:auto', 56, y, 292, 56, T('perf_tier_auto'),
+            this.perf.tierAuto, undefined, this.perf.tierAuto, 21);
+          btn('perfTier:quest3', 366, y, 292, 56, T('perf_t_quest3'),
+            this.perf.tier === 'quest3' && !this.perf.tierAuto,
+            undefined, this.perf.tier === 'quest3' && !this.perf.tierAuto, 20);
+          btn('perfTier:quest2', 676, y, 292, 56, T('perf_t_quest2'),
+            this.perf.tier === 'quest2' && !this.perf.tierAuto,
+            undefined, this.perf.tier === 'quest2' && !this.perf.tierAuto, 20);
+          y += 70;
+          label(T('perf_escala', { v: pf.scale.toFixed(2) }), y + 8, 18, '#75828f');
+          y += 34;
+          btn('perfRecal', 56, y, 912, 56,
+            pf.presenting ? T('perf_recal') : T('perf_recal_next'),
+            false, pf.presenting ? 'gold' : undefined, undefined, 22);
+          y += 70;
+        }
         break;
       }
       default:
@@ -13062,9 +15527,10 @@ class PingPongGame {
         // v2.110 · HUB: navegación entre páginas del menú
         // r71 · + subpáginas de AJUSTES (optsJuego/optsSala/optsSonido/
         // optsVisual/optsPerfil) — las categorías del nuevo AJUSTES.
+        // r81 · + optsRendi (RENDIMIENTO: autocalibrador de FPS).
         if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
-            arg === 'optsVisual' || arg === 'optsPerfil') {
+            arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi') {
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {
@@ -13201,14 +15667,60 @@ class PingPongGame {
       case 'tab':
         // v2.28: pestaña 'multi' abre la página completa; 'main' vuelve
         this.menuPage = arg === 'multi' ? 'multi' : 'main';
+        // r80 · entrar en el submenú RESETILLA la elección: si hay un flujo
+        // de sala vivo se muestra su panel; en reposo, sólo los dos modos.
+        if (arg === 'multi') {
+          this._mjMode = (this.net.online || this.net.status !== 'off') ? 'normal' : null;
+        }
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      case 'mjnorm':
+        // r80 · PULSAR EL MODO REVELA LA SALA (petición del dueño): las
+        // opciones de sala y código aparecen AL ELEGIR NORMAL. Con la sala
+        // ya creada o en partida, la tarjeta no cambia nada.
+        this._mjMode = 'normal';
+        this.rules.message = '';
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      case 'mjsel':
+        // r80 · volver a la selección de modos (sólo posible en reposo: el
+        // chip no existe cuando hay un flujo de sala activo)
+        if (!this.net.online && this.net.status === 'off') this._mjMode = null;
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      case 'retoDiario':
+        // r80 · EL RETO DIARIO EN LA PUERTA: el botón estrella del menú
+        // principal arranca el duelo de hoy (zonas el doble de anchas) sin
+        // pasar por el hub de entrenamiento. La recompensa jamás se repite
+        // (dailyComplete ya lo garantiza): repetir es gratis.
+        try {
+          const TRD = (typeof window !== 'undefined') && window.__PP_TRAIN;
+          if (TRD && TRD.startDaily) {
+            this.audio.playOsc(880, 1320, 0.09, 'triangle', 0.14, 0);
+            TRD.startDaily(this);
+          }
+        } catch (eRD) { /* nunca rompe el menú */ }
+        break;
+      case 'mjduel':
+        // r79 · DUELOS LOCOS bloqueado: etiqueta PRÓXIMAMENTE + candado —
+        // misma respuesta que los campeonatos bloqueados (voz + mensaje)
+        this.rules.message = T('champ_locked_soon');
+        this.audio.announce(T('champ_locked_soon'), true);
+        this.audio.playOsc(220, 180, 0.12, 'sawtooth', 0.1, 0);
         this.drawMenu();
         break;
       case 'net':
         if (arg === 'host') { this.menuPage = 'multi'; this.net.hostRoom(); }
         else if (arg === 'join') { this.menuPage = 'join'; this._joinCode = ''; }
-        else if (arg === 'cancel') { this.net.cancel(); }
-        else if (arg === 'hangup') { this.net.hangup(); }
+        else if (arg === 'cancel') {
+          this.net.cancel();
+          // r80 · sala cancelada: vuelta a la selección de modos
+          this._mjMode = (this.net.online || this.net.status !== 'off') ? 'normal' : null;
+        }
+        else if (arg === 'hangup') { this.net.hangup(); this._mjMode = null; }
         else if (arg === 'mic') { this.net.toggleMic(); if (!this.net.micStream) this.net.initVoice().catch(() => {}); }
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
@@ -13478,6 +15990,49 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'perfAuto': {
+        // r81 · conmutador de la calibración automática (sonda + gobernador)
+        if (this.perf) {
+          this.perf.auto = !this.perf.auto;
+          this.perf.save();
+          this.rules.message = T('msg_perf_auto', { v: this.perf.auto ? T('yes') : T('no') });
+        }
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'perfTier': {
+        // r81 · perfil manual del casco (auto = detección por GPU)
+        if (this.perf) {
+          if (arg === 'auto') {
+            this.perf.tierAuto = true;
+            this.perf._detectTier();
+            const d = PERF_TIERS[this.perf.tier];
+            this.perf.scale = d.scale; this.perf.fovea = d.fovea; this.perf.rate = d.rate;
+            this.perf.lastCal = null;
+            this.perf.applyToRenderer(); this.perf.save();
+            this.rules.message = T('perf_tier_auto') + ' · ' + PERF_TIERS[this.perf.tier].label;
+          } else {
+            this.perf.setTier(arg);
+            this.rules.message = PERF_TIERS[arg] ? PERF_TIERS[arg].label : '';
+          }
+        }
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'perfRecal': {
+        // r81 · RECALIBRAR: sonda ahora (en VR) o al entrar en la sesión
+        if (this.perf) {
+          this.perf.requestRecal();
+          this.rules.message = this.perf.probe
+            ? T('perf_calibrando', { s: 1 })
+            : T('msg_perf_recal_next');
+        }
+        this.audio.playOsc(880, 1180, 0.09, 'triangle', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
       case 'revancha':
         this.closeMenu();
         if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
@@ -13598,15 +16153,10 @@ class PingPongGame {
     const session = this.renderer.xr.getSession?.();
     // v3.1.2-CCD1 · spec A: pedir la MAYOR tasa de refresco disponible hasta
     // 120 Hz — más muestras de la mano = trayectoria más fiel para la CCD.
-    try {
-      if (session && session.supportedFrameRates && session.updateTargetFrameRate) {
-        let best = 0;
-        for (const f of session.supportedFrameRates) {
-          if (f <= 120.5 && f > best) best = f;
-        }
-        if (best > 0 && best > (session.frameRate || 0)) session.updateTargetFrameRate(best);
-      }
-    } catch (e) { /* sin soporte: la tasa por defecto del runtime */ }
+    // r81 · la tasa la decide el PERF GOVERNOR (perfil del casco + sonda):
+    // Quest 3 pide su 90/120 de siempre; Quest 2 nace en 72 y la sonda la
+    // baja a 60 ESTABLES si la GPU no da (mucho mejor que 45-55 a salto).
+    try { this.perf.onSessionStart(session); } catch (eP0) { /* nunca rompe */ }
     this.inAR = !!(session && session.environmentBlendMode &&
       session.environmentBlendMode !== 'opaque');
     // v3.6.43 · la sesión se pide SIEMPRE immersive-ar (donde la soporta):
@@ -13736,6 +16286,8 @@ class PingPongGame {
   onSessionEnd = () => {
     // Salida de VR: re-vincular el audio a la salida 2D del navegador
     // (adoptar-solo-si-running; el contexto del casco se cierra tras el cambio).
+    // r81 · el PERF GOVERNOR cierra su sonda y guarda el perfil del casco
+    try { this.perf.onSessionEnd(); } catch (eP1) { /* nunca rompe */ }
     // v2.50 · FASE 1: fin de sesión VR (duración + FPS medios, anónimos)
     try {
       __PP_TELE.ev('vr_end', {
@@ -13985,6 +16537,7 @@ class PingPongGame {
       return;
     }
     if (this.rules.state !== 'serve' || this.rules.server !== 'player') return;
+    if (this._netStart) return;   // r79: cuenta atrás del MATCH_START en curso
     if (this.tossed || i !== this.ballHand) return;
     if (!this.renderer.xr.isPresenting) return;
     const hand = this.controllerPaddles[i];
@@ -14015,6 +16568,11 @@ class PingPongGame {
     this.tossMaxY = this.ball.pos.y;
     this.ball.vel.copy(v);
     this.ball.spin.set(0, 0, 0);
+    // r79 · v2: el lanzamiento al aire del saque es VISUAL para el rival
+    // (BALL_HIT kind 2 — no regla, no punto: spec §10)
+    this._netTossLive = true;
+    if (this.ballMesh) this.ballMesh.visible = true;
+    if (this.net.online && this.net.v2 === 'ok') this.net.netLocalToss();
     this.rules.message = T('hint_hit');
     this.audio.serve();
     this.haptic(i, 0.45);
@@ -17991,6 +20549,14 @@ class PingPongGame {
     // v2.50 · FASE 1: FPS para telemetría + ciclo de CONSEJOS de 1ª sesión
     // (los consejos ceden el cartel al árbitro y solo se marcan la 1ª vez)
     try { __PP_TELE.noteFrame(dt); } catch { /* */ }
+    // r81 · PERF GOVERNOR: EMA de FPS, sonda de calibración y gobernador
+    // (≥60 seguros en cualquier casco; ver PerfManager al inicio de c12)
+    try { this.perf.feed(dt, presenting); } catch (ePerf) { /* nunca rompe */ }
+    // r81 · página RENDIMIENTO de AJUSTES: FPS en vivo (redibujo suave)
+    if (presenting && this.menuOpen && this.menuPage === 'optsRendi') {
+      this._perfMenuAcc = (this._perfMenuAcc || 0) - dt;
+      if (this._perfMenuAcc <= 0) { this._perfMenuAcc = 0.5; this.drawMenu(); }
+    }
     if (presenting && this._tipsIdx >= 0 && this._tipsIdx <= 3) {
       this._tipsTimer -= dt;
       if (this._tipsTimer <= 0) {
@@ -18104,8 +20670,36 @@ class PingPongGame {
     // 0.7) menú abierto: anclar a la muñeca libre + rayo de apuntado
     if (presenting && this.menuOpen) this.updateMenu();
 
-    // 0.8) v2.19: red online — emitir pose/bola/sync a 20 Hz
-    if (this.net.online) this.net.tick(dt);
+    // 0.8) v2.19: red online — emitir pose/bola/sync (v1: 30 Hz JSON)
+    //      v3.6.71 · r79: transporte binario v2 (pose 60 Hz + eventos fast)
+    if (this.net.online) this.net.frame(dt);
+
+    // 0.85) r79 · MATCH_START: cuenta atrás sincronizada por el reloj del
+    //       anfitrión (spec §3.8); la bola queda HELD hasta el instante exacto
+    if (this._netStart && this.net.online && this.net.v2 === 'ok') {
+      const leftMs = this._netStart.startAt - this.net.hostNowMs();
+      if (leftMs <= 0) {
+        this._netStart = null;
+        this._netTossLive = false;
+        this.rules.message = this.rules.server === 'player'
+          ? T('serve_go')
+          : T('serve_opp', { opp: this.rules.opp() });
+        this.audio.playOsc(880, 1320, 0.12, 'triangle', 0.14, 0);
+      } else {
+        const sLeft = String(Math.ceil(leftMs / 1000));
+        if (sLeft !== this.rules.message) {
+          this.rules.message = sLeft;
+          this.audio.playOsc(660, 660, 0.07, 'sine', 0.1, 0);
+        }
+      }
+    }
+    // r79 · pausa del multijugador (visor quitado / pestaña oculta, spec §10)
+    const netFrozen = this.net.online && this.net.v2Paused();
+    if (netFrozen && this.rules.state !== 'over' && this.rules.state !== 'point') {
+      this.rules.message = this.net.pausedRemoteLong()
+        ? T('net_paused_long')
+        : T('net_paused');
+    }
 
     // 1) Palas de los mandos (solo en VR)
     if (presenting && this.grips) {
@@ -18180,19 +20774,28 @@ class PingPongGame {
 
     // 3) Preparación del saque
     let holdLock = false;
+    // v3.6.74 · r82 · durante la CUENTA ATRÁS del MATCH_START la bola del
+    // sacador queda EN CINEMÁTICA (antes la física viva la hacía caer y
+    // botar 3 s sobre la mesa — invisible pero sonora y sucia)
+    if (this._netStart && this.net.online && this.net.v2 === 'ok') {
+      holdLock = true;
+      this.ball.vel.set(0, 0, 0);
+      if (this.ball.spin) this.ball.spin.set(0, 0, 0);
+    }
     // v3.6.30 · en el HALL no hay saque que preparar: ni la bola en la
     // mano del jugador ni el paseo/saque de la CPU (todo este bloque).
     // La bola quieta, oculta y SIN física — el museo no juega.
     // v3.6.51 (r59) · LA ACADEMIA: el paso del SAQUE usa la cinemática REAL
     // (bola descansando en la mano libre, lanzamiento, punto muerto) aunque
     // el árbitro duerma en calib — se enseña con la misma mecánica de verdad.
-    if (active && !frozen && !this.inHall &&
+    if (active && !frozen && !netFrozen && !this.inHall && !this._netStart &&
         this.rules.state === 'serve' && (!this.calib || this.tutV1)) {
       if (this.rules.server === 'player') {
         if (presenting) {
           if (!this.tossed) {
             // bola apoyada en la mano libre (cinemática pura)
             holdLock = true;
+            if (this.ballMesh) this.ballMesh.visible = true;   // r79: por si venía oculta (HELD del rival)
             const bh = this.controllerPaddles[this.ballHand];
             this.ball.vel.set(0, 0, 0);
             this.ball.spin.set(0, 0, 0);
@@ -18255,6 +20858,28 @@ class PingPongGame {
         }
       } else if (this.net.online) {
         // v2.19: saque del rival humano — la bola llega por su emisión de red
+        // r79 · v2: bola HELD del rival — quieta hasta su lanzamiento
+        if (this.net.v2 === 'ok' && !this._netTossLive) {
+          holdLock = true;
+          // v3.6.74 · r82 · REFERENCIA EXACTA DEL SAQUE: la bola del rival
+          // se VE en SU mano libre (pose de red espejada + altura de mano),
+          // no una bola congelada flotando donde murió el punto anterior —
+          // «conocimiento exacto al milímetro de lo que ocurre»: el saque se
+          // LEE desde el primer frame (mano que sube, bola que sale).
+          const smpH = this._netAvatarOut || (this._netAvatarOut = {
+            hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+            rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+          });
+          if (this.net.avatarSample(smpH) >= 0 && this.net.avatarStaleMs() < 500) {
+            const padL = (smpH.fl & 4) !== 0;
+            const libre = padL ? smpH.rp : smpH.lp;         // la mano SIN pala
+            if (smpH.fl & (padL ? 2 : 1)) {                  // rastreada
+              NetLink.posFromNetPose(libre, netTmpP);
+              this.ball.pos.set(netTmpP.x, netTmpP.y + BALL_HAND_LIFT, netTmpP.z);
+              if (this.ballMesh) this.ballMesh.visible = true;
+            }
+          }
+        }
       } else if (!this.aiToss) {
         // la CPU camina a su posición de saque, sostiene la bola y la lanza:
         // nada de sacar desde donde la pilló el punto anterior
@@ -18310,11 +20935,11 @@ class PingPongGame {
       this.ball.vel.set(0, 0, 0);
       this.ball.spin.set(0, 0, 0);
       this.ball.pos.set(0, DIMS.tableTopY + DIMS.ballRadius, DIMS.tableCenterZ + 0.25);
-    } else if (this.net.online) this.net.drainNetwork(this);   // v2.19: rival por red
+    } else if (this.net.online) this.net.drainNetwork(this);   // v2.19/r79: rival por red
     // v2.91: durante el SAQUE la bola la simula quien saca — el invitado
     // YA PUEDE SACAR (antes su toss era pisado por la emisión del anfitrión)
     if (this.net.online) this.net.syncServeOwner();
-    if (active && !holdLock && !frozen && !this.inHall &&
+    if (active && !holdLock && !frozen && !netFrozen && !this.inHall &&
         !(this.champs && this.champs.testActive)) {   // prueba con la bola tomada
       const pads = [];
       if (presenting) {
@@ -18331,7 +20956,15 @@ class PingPongGame {
         this.rules.server === 'player' && !this.calib &&
         ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise;
       if (tossImmune) pads.length = 0;
-      if (this.net.online && this.net.owner !== this.net.mySide()) {
+      // v3.6.71 · r79 · FSM DE LA BOLA (autoridad por mitad, spec §7):
+      // fantasma = bola del rival simulo con la FÍSICA REAL pero SIN mi
+      // pala (nadie golpea una bola de mitad ajena ni un fantasma).
+      const v2on = this.net.online && this.net.v2 === 'ok';
+      if (v2on && !this.net.ballMine()) {
+        stepPhysics(dt * this._dilF, this.ball, [], this.events);
+        this.net.observeGhost(this.ball);
+      } else if (this.net.online && this.net.v2 !== 'ok' &&
+                 this.net.owner !== this.net.mySide()) {
         // v2.19: la bola la simula el rival — seguir su emisión y solo
         // comprobar el contacto de MI pala contra ella
         const prevB = this._netPrevBall || (this._netPrevBall = new THREE.Vector3());
@@ -18354,7 +20987,25 @@ class PingPongGame {
         if (!(this.ball && this.ball.ppTransito)) {
           // r62: dt DILATADO en la bola de partido (_dilF < 1 lo frena);
           // el árbitro ya decidió el punto — la bola vuela de adorno
-          stepPhysics(dt * this._dilF, this.ball, pads, this.events);
+          // r79 · v2: observador de SUBPASO del cruce de la red — el
+          // traspaso (BALL_HANDOFF) sale con el estado EXACTO del subpaso
+          const _xNet = (v2on && this.net.ballState() === 'own')
+            ? (bX) => { this.net.watchOwnCross(bX); }
+            : null;
+          stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);
+          // v3.6.74 · r82 · EL GOLPE PROPIO EN v2 SE ANUNCIA (era EL defecto
+          // que dejaba el multijugador injugable en dispositivo real): la
+          // única marca de _localHit vivía en la rama v1 — con el transporte
+          // binario un rally NUNCA emitía HIT kind 0: sin él, BallAuth no
+          // vuelve a 'own', no hay BALL_HANDOFF de vuelta y el rival recibe
+          // un fantasma injugable (y el contacto propio cantaba «doble
+          // golpe» con lastHitter viejo). El duelo simulado de r81 no lo
+          // cazó porque llamaba sendHit() A MANO en el guion del invitado.
+          if (v2on) {
+            for (const e of this.events) {
+              if (e.type === 'paddle' && e.who === 'player') { this._localHit = true; break; }
+            }
+          }
         }
       }
     }
@@ -18425,7 +21076,7 @@ class PingPongGame {
         const _res = applyServeProgressiveAssist(this.ball, hitPad, this.serveTier());
         __ppServeTelemetry(_res, { src: 'core', tier: this.difficulty });
         this.rules.beginServeRally('player');
-        if (this.net.online) { this.net.sendHit(true); this._localHit = false; }
+        if (this.net.online) { this.net.sendHit(true); this._localHit = false; this._netTossLive = false; }
         // r62 · háptica del SAQUE escalada por la velocidad del golpe
         // (antes fija 0,8/90: una dejada y un saque seco vibraban igual)
         {
@@ -18485,10 +21136,13 @@ class PingPongGame {
     }
 
     // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido;
-    //    en online el INVITADO no puntúa: el marcador llega del anfitrión).
+    //    en online v1 el INVITADO no puntúa: el marcador llega del anfitrión).
+    //    r79 · v2: AMBOS lados llevan árbitro propio sobre la física de su
+    //    mitad (con fantasma idéntico) y los puntos se confrontan CLAIM/ACK.
     //    v2.30: en portada 2D inactiva el árbitro tampoco corre — ni puntos
     //    ni megafonía de fondo.
-    if (active && !this.calib && !frozen && !(this.net.online && this.net.role === 'guest')) {
+    if (active && !this.calib && !frozen && !netFrozen &&
+        !(this.net.online && this.net.v2 !== 'ok' && this.net.role === 'guest')) {
       this.processIntents(this.rules.handleEvents(this.events));
       this.processIntents(this.rules.update(dt));
     }
@@ -18545,30 +21199,80 @@ class PingPongGame {
     this.aiStrikeT = Math.max(0, this.aiStrikeT - dt);
     this.demoStrikeT = Math.max(0, this.demoStrikeT - dt);
     if (this.net.online) {
-      // v2.19: la pala del rival humano llega por red (marco espejo 180° en Y)
-      // v2.51: SUAVIZADO — llegaba en crudo a 20 Hz y a saltos; ahora
-      // interpolación exponencial de posición + slerp de rotación.
-      // v2.91: MUERTE ADELANTADA — la posición objetivo se adelanta con la
-      // velocidad estimada de las dos últimas muestras (max 120 ms) para
-      // absorber el jitter: la pala rival se mueve CONTINUA, no a saltos.
-      const rp = this.net.remotePaddle;
-      if (rp) {
-        NetLink.posFromNet(rp.p, netTmpP);
-        const prev = this.net._padPrev;
-        if (prev) {
-          const dtS = Math.max(1e-3, (rp.t - prev.t) / 1000);
-          const age = Math.min(0.12, Math.max(0, (performance.now() - rp.t) / 1000));
-          // velocidad en marco RED -> al espejar: (-vx, vy, -vz)
-          netTmpP.x -= ((rp.p[0] - prev.p[0]) / dtS) * age;
-          netTmpP.y += ((rp.p[1] - prev.p[1]) / dtS) * age;
-          netTmpP.z -= ((rp.p[2] - prev.p[2]) / dtS) * age;
+      if (this.net.v2 === 'ok') {
+        // r79 · v2 · AVATAR DEL RIVAL (spec §6): reproducción con retraso
+        // controlado (jitter buffer, interpDelay adaptativo 40-120 ms),
+        // interpolación lineal + slerp, extrapolación ≤100 ms y atenuación
+        // si no llegan datos (>500 ms). La PALA se deriva de la pose de la
+        // mano con el desplazamiento de agarre FIJO — nunca viaja por red.
+        const smp = this._netAvatarOut || (this._netAvatarOut = {
+          hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+          rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+        });
+        const code = this.net.avatarSample(smp);
+        if (code >= 0) {
+          const useLeft = (smp.fl & 4) !== 0;
+          const hpa = useLeft ? smp.lp : smp.rp;
+          const hqa = useLeft ? smp.lq : smp.rq;
+          // r81 · ESPEJO DE POSE (solo X/Z): la Y llega YA anclada a mi
+          // tapete por el códec (yAnchor). posFromNet sumaba T OTRA vez y
+          // el rival flotaba ~76 cm por encima de su altura real.
+          NetLink.posFromNetPose(hpa, netTmpP);
+          NetLink.quatFromNet(hqa, netTmpQ);
+          // v3.6.74 · r82 · montura por MANO FÍSICA (bit 8): el hueco del
+          // mando no dice la mano real — un diestro con la pala en el slot
+          // izquierdo veía su avatar rival con la pala rodada 90°
+          const fisicaIzq = (smp.fl & 8) !== 0;
+          // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
+          const qVis = netTmpQ2.copy(netTmpQ)
+            .multiply(mountQuatFor(fisicaIzq ? 'left' : 'right'));
+          netTmpV.set(0, (PALA_BLADE_Y - PALA_GRIP_Y) * PALA_SCALE, 0)
+            .applyQuaternion(qVis).add(netTmpP);
+          const f2 = 1 - Math.exp(-20 * dt);
+          this.aiPaddleMesh.position.lerp(netTmpV, f2);
+          this.aiPaddleMesh.quaternion.slerp(qVis, f2);
         }
-        NetLink.quatFromNet(rp.q, netTmpQ);
-        const f = 1 - Math.exp(-18 * dt);
-        this.aiPaddleMesh.position.lerp(netTmpP, f);
-        this.aiPaddleMesh.quaternion.slerp(netTmpQ, f);
+        this.aiPaddleMesh.visible = true;
+        // visor del rival: presencia mínima a partir de la CABEZA del packet
+        if (!this._netVisor) {
+          const vg = new THREE.SphereGeometry(0.06, 12, 10);
+          const vm = new THREE.MeshBasicMaterial({ color: 0x10141c, transparent: true, opacity: 0.85 });
+          this._netVisor = new THREE.Mesh(vg, vm);
+          this.scene.add(this._netVisor);
+        }
+        const stale = this.net.avatarStaleMs();
+        const show = code >= 0 && stale < 500;
+        this._netVisor.visible = show;
+        if (show) {
+          NetLink.posFromNetPose(smp.hp, netTmpP);   // r81: pose, no bola
+          this._netVisor.position.lerp(netTmpP, 1 - Math.exp(-20 * dt));
+        }
+      } else {
+        // v1 (compatible): la pala del rival humano llega por red (espejo 180°)
+        // v2.51: SUAVIZADO — llegaba en crudo a 20 Hz y a saltos; ahora
+        // interpolación exponencial de posición + slerp de rotación.
+        // v2.91: MUERTE ADELANTADA — la posición objetivo se adelanta con la
+        // velocidad estimada de las dos últimas muestras (max 120 ms) para
+        // absorber el jitter: la pala rival se mueve CONTINUA, no a saltos.
+        const rp = this.net.remotePaddle;
+        if (rp) {
+          NetLink.posFromNet(rp.p, netTmpP);
+          const prev = this.net._padPrev;
+          if (prev) {
+            const dtS = Math.max(1e-3, (rp.t - prev.t) / 1000);
+            const age = Math.min(0.12, Math.max(0, (performance.now() - rp.t) / 1000));
+            // velocidad en marco RED -> al espejar: (-vx, vy, -vz)
+            netTmpP.x -= ((rp.p[0] - prev.p[0]) / dtS) * age;
+            netTmpP.y += ((rp.p[1] - prev.p[1]) / dtS) * age;
+            netTmpP.z -= ((rp.p[2] - prev.p[2]) / dtS) * age;
+          }
+          NetLink.quatFromNet(rp.q, netTmpQ);
+          const f = 1 - Math.exp(-18 * dt);
+          this.aiPaddleMesh.position.lerp(netTmpP, f);
+          this.aiPaddleMesh.quaternion.slerp(netTmpQ, f);
+        }
+        this.aiPaddleMesh.visible = true;
       }
-      this.aiPaddleMesh.visible = true;
     } else {
       // v2.40: congelado — la pala IA conserva su última pose
       if (!frozen) this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
@@ -18669,6 +21373,9 @@ class PingPongGame {
       gamesPlayer: this.rules.gamesPlayer,
       gamesAi: this.rules.gamesAi,
       bestOf: this.rules.bestOf,
+      // r79 · v2: calidad de conexión visible (ping + degradación)
+      netPing: (this.net.online && this.net.v2 === 'ok') ? this.net.pingMs() : -1,
+      netDeg: this.net.online ? !!this.net.degraded() : false,
     });
     this.syncDom();
 
@@ -19162,7 +21869,12 @@ class PingPongGame {
         case 'point': {
           // v2.25: el anfitrión captura el punto ESTRUCTURADO para el
           // invitado (con su causa host-relativa; el invitado la remapea)
-          if (this.net.online && this.net.role === 'host' && !it.survival) {
+          // r79 · v2: el punto lo RECLAMA el extremo con autoridad sobre la
+          // mitad donde murió la bola (POINT_CLAIM); el otro confronta con
+          // POINT_ACK y el anfitrión resincroniza si discrepan (spec §7)
+          if (this.net.online && this.net.v2 === 'ok' && !it.survival) {
+            if (!this.net.onLocalPointIntent(it)) break;
+          } else if (this.net.online && this.net.role === 'host' && !it.survival) {
             this.net.lastPoint = { w: it.winner, c: it.cause || '', rh: it.rallyHits || 0 };
           }
           if (it.survival) {
@@ -19216,7 +21928,11 @@ class PingPongGame {
         }
         case 'retry-serve':
           // v2.25: el LET viaja al invitado (causa neutra) para su mensaje
-          if (this.net.online && this.net.role === 'host') {
+          // r79 · v2: el LET lo detectan AMBOS extremos de sus botes (real o
+          // fantasma) y aplican retryServe sin red — determinista (spec §8)
+          if (this.net.online && this.net.v2 === 'ok') {
+            this.net.onLocalRetryIntent(it);
+          } else if (this.net.online && this.net.role === 'host') {
             this.net.lastRetry = it.cause || '';
           }
           this.resetToss();
@@ -19240,7 +21956,14 @@ class PingPongGame {
           }
           if (this.net.online) {
             // v2.19: la bola del saque la lleva quien saca (humano remoto o yo)
-            this.net.owner = it.server === 'player' ? this.net.mySide() : this.net.oppSide();
+            // r79 · v2: HELD determinista desde el marcador (spec §9)
+            if (this.net.v2 === 'ok') {
+              this._netTossLive = false;
+              this.net.setServeHeld(it.server === 'player');
+              if (this.ballMesh) this.ballMesh.visible = it.server === 'player';
+            } else {
+              this.net.owner = it.server === 'player' ? this.net.mySide() : this.net.oppSide();
+            }
           } else if (it.server === 'ai') this.setupAIServe();
           else this.setupDemoServe();
           // MEGAFONÍA: el marcador anuncia el resultado y quién saca
@@ -19265,6 +21988,10 @@ class PingPongGame {
           }
           break;
         case 'game-over':
+          // r79 · v2: firma del resultado (telemetría + aviso al rival)
+          if (this.net.online && this.net.v2 === 'ok') {
+            this.net.sendMatchEnd(it.winner === 'player' ? 'win' : 'loss');
+          }
           // r62 · BOLA DE PARTIDO EN CÁMARA LENTA: el último vuelo se dilata
           // (física 0,34× con regreso suave ~1,1 s) ANTES de la fanfarria.
           // SOLO local: online la bola la conduce el stream del rival.
@@ -19548,6 +22275,298 @@ class PingPongGame {
     }
   }
 }
+/* =====================================================================
+ *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
+ *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy
+ *  lentas y la experiencia es muy mala… un autocalibrador que asegure al
+ *  menos 60 FPS seguros en cualquier dispositivo».
+ *
+ *  Tres palancas, de más a menos agresiva:
+ *    · fixedFoveation      — VIVO (se aplica al vuelo, three la clava en
+ *                            la XRProjectionLayer en cada cambio).
+ *    · targetFrameRate     — VIVO (session.updateTargetFrameRate): si la
+ *                            GPU no da para 72, un 60 ESTABLE se ve mucho
+ *                            mejor que un 45-55 a trompicones.
+ *    · framebufferScaleFactor — para la PRÓXIMA sesión (three no deja
+ *                            cambiarlo en caliente): se guarda por casco.
+ *
+ *  Perfil por hardware (detección por GPU real, Adreno):
+ *    quest3 (Adreno 740)   — escala 1.40 · fovea 0.50 · 90/120 Hz (hoy)
+ *    quest2 (Adreno 650)   — escala 1.05 · fovea 0.65 · 72 Hz → 60
+ *    gen    (desconocido)  — escala 1.20 · fovea 0.60 · 72 Hz
+ *  La sonda de calibración (onSessionStart o RECALIBRAR) mide 2,8 s por
+ *  ronda (hasta 3) y baja escalones hasta sostener ≥63 FPS de media con
+ *  peor segundo ≥55; el resultado queda en localStorage POR CASCO y la
+ *  siguiente sesión nace ya calibrada. El gobernador continuo vigila la
+ *  partida y baja (con voz) si el promedio cae, y recupera si sobra
+ *  margen. window.__PP_PERF expone el estado para AJUSTES y QA.
+ *  ===================================================================== */
+const PERF_LS = 'ppxr_perf_v1';
+const PERF_TIERS = {
+  quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.50, rate: 90 },
+  quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 },
+  gen: { label: 'VR', scale: 1.20, fovea: 0.60, rate: 72 },
+};
+class PerfManager {
+  constructor(game) {
+    this.g = game;
+    this.tier = 'gen';            // casco detectado (o manual del dueño)
+    this.tierAuto = true;         // false = el dueño fijó el perfil a mano
+    this.auto = true;             // sonda + gobernador activos (AJUSTES)
+    this.scale = 1.4;             // framebufferScaleFactor (próxima sesión)
+    this.fovea = 0.5;             // fixedFoveation VIVO
+    this.rate = 90;               // targetFrameRate preferido
+    this.fps = 0;                 // media EMA para HUD/AJUSTES
+    this.probe = null;            // sonda en curso {round,t,frames,acc,min}
+    this.lastCal = null;          // {fps, when, round} última calibración
+    this._ema = 0; this._emaN = 0;
+    this._secAcc = 0; this._secN = 0; this._secMin = 999;
+    this._hist = [];              // ventanas de 1 s {avg, min}
+    this._coolDown = 0;           // s hasta poder bajar otra vez
+    this._upStreak = 0;           // ventanas seguidas con margen de sobra
+    this._upCool = 0;
+    this._sessScale = null;       // escala con la que NACIÓ esta sesión
+    this._recal = false;          // petición manual pendiente
+    this._detectTier();
+    this._load();
+    try { window.__PP_PERF = this; } catch (e) { /* */ }
+  }
+
+  /* ---- detección del casco por GPU real (Adreno) ---- */
+  _detectTier() {
+    if (!this.tierAuto) return;
+    let r = '';
+    try {
+      const gl = this.g.renderer.getContext();
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      r = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '') : '';
+    } catch (e) { r = ''; }
+    this.gpu = r;
+    if (/adreno\s*\(tm\)\s*74\d/i.test(r)) this.tier = 'quest3';
+    else if (/adreno\s*\(tm\)\s*65\d/i.test(r)) this.tier = 'quest2';
+    else if (/adreno|oculus|quest/i.test(r)) this.tier = 'gen';
+    else this.tier = navigator.hardwareConcurrency >= 8 ? 'gen' : 'gen';
+  }
+
+  /* ---- perfil guardado por casco (localStorage) ---- */
+  _load() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(PERF_LS) || 'null'); } catch (e) { d = null; }
+    if (d && d.tier === this.tier && typeof d.scale === 'number') {
+      this.scale = d.scale;
+      this.fovea = typeof d.fovea === 'number' ? d.fovea : PERF_TIERS[this.tier].fovea;
+      this.rate = typeof d.rate === 'number' ? d.rate : PERF_TIERS[this.tier].rate;
+      this.auto = d.auto !== false;
+      this.lastCal = d.cal || null;
+    } else {
+      const t = PERF_TIERS[this.tier];
+      this.scale = t.scale; this.fovea = t.fovea; this.rate = t.rate;
+    }
+  }
+  save() {
+    try {
+      localStorage.setItem(PERF_LS, JSON.stringify({
+        tier: this.tier, auto: this.auto, scale: +this.scale.toFixed(3),
+        fovea: +this.fovea.toFixed(3), rate: this.rate, cal: this.lastCal,
+      }));
+    } catch (e) { /* almacenamiento ausente */ }
+  }
+
+  /** aplica fovea VIVO + escala para la próxima sesión (llamada en la
+   *  construcción del juego — tres.js lee la escala al crear la capa XR) */
+  applyToRenderer() {
+    try { this.g.renderer.xr.setFramebufferScaleFactor(this.scale); } catch (e) { /* */ }
+    try { this.g.renderer.xr.setFoveation(this.fovea); } catch (e) { /* */ }
+  }
+
+  /** foveation + tasa objetivo al vuelo (dentro de la sesión XR) */
+  applyLive() {
+    try { this.g.renderer.xr.setFoveation(this.fovea); } catch (e) { /* */ }
+    const s = this.g.renderer.xr.getSession && this.g.renderer.xr.getSession();
+    if (s && s.supportedFrameRates && s.updateTargetFrameRate) {
+      try {
+        const rates = s.supportedFrameRates.filter((f) => f >= 55 && f <= this.rate + 0.5);
+        if (rates.length) {
+          const best = Math.max(...rates);
+          if (best > 0 && Math.abs((s.frameRate || 0) - best) > 0.5) s.updateTargetFrameRate(best);
+        }
+      } catch (e) { /* sin soporte */ }
+    }
+  }
+
+  /** entrada de sesión XR: tasa objetivo del perfil + sonda si toca */
+  onSessionStart(session) {
+    this._sessScale = this.scale;
+    this._ema = 0; this._emaN = 0; this._hist.length = 0;
+    this._coolDown = 0; this._upStreak = 0; this._upCool = 0;
+    // tasa del perfil (el casco nunca pasa de lo que el perfil pide)
+    try {
+      if (session && session.supportedFrameRates && session.updateTargetFrameRate) {
+        const cand = session.supportedFrameRates.filter((f) => f <= this.rate + 0.5);
+        const best = cand.length ? Math.max(...cand) : 0;
+        if (best > 0 && best > (session.frameRate || 0)) session.updateTargetFrameRate(best);
+      }
+    } catch (e) { /* tasa por defecto del runtime */ }
+    // sonda: sin calibración de este casco o RECALIBRAR pedido a mano
+    if (this.auto && (this._recal || !this.lastCal)) {
+      this._recal = false;
+      this.probeStart('boot');
+    }
+  }
+  onSessionEnd() {
+    this.probe = null;
+    this.save();
+  }
+
+  /** sonda de calibración: rondas de 2,8 s bajando escalones hasta
+   *  sostener ≥63 de media con peor segundo ≥55 (60 seguros con margen) */
+  probeStart(why) {
+    if (!this.g.renderer.xr.isPresenting) return;
+    this.probe = { round: 0, t: 0, n: 0, acc: 0, min: 999, why: why || 'boot' };
+    this._hist.length = 0;
+  }
+  _probeRound(fpsAvg, fpsMin) {
+    const p = this.probe;
+    const pasa = fpsAvg >= 63 && fpsMin >= 55;
+    if (pasa) {
+      this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: p.round };
+      this.save();
+      this.probe = null;
+      try { this.g.audio.announce(T('perf_cal_ok', { f: Math.round(fpsAvg) }), true); } catch (e) { /* */ }
+      return;
+    }
+    // escalón de degradación (de más sutil a más fuerte)
+    if (p.round === 0) this.fovea = Math.min(0.8, this.fovea + 0.10);
+    else if (p.round === 1) this.rate = this.rate > 62 ? 60 : this.rate;
+    else {
+      this.scale = Math.max(0.9, this.scale - 0.15);   // próxima sesión
+      this.fovea = Math.min(0.8, this.fovea + 0.05);
+    }
+    this.applyLive();
+    this.save();
+    p.round++;
+    if (p.round >= 3) {
+      // sin margen ni al mínimo: 60 Hz ESTABLES como suelo digno
+      this.rate = Math.min(this.rate, 60);
+      this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: 3 };
+      this.applyLive();
+      this.save();
+      this.probe = null;
+      return;
+    }
+    p.t = 0; p.n = 0; p.acc = 0; p.min = 999;
+  }
+
+  /** latido por frame (animate): EMA de FPS, sonda y gobernador */
+  feed(dt, presenting) {
+    if (!dt || dt <= 0 || dt > 1) { /* frame raro: no contamina */ } else {
+      const inst = 1 / dt;
+      this._ema = this._emaN === 0 ? inst : this._ema + (inst - this._ema) * 0.06;
+      this._emaN++;
+      this.fps = Math.round(this._ema);
+      // ventana de 1 s
+      this._secAcc += dt; this._secN++; this._secMin = Math.min(this._secMin, inst);
+      if (this._secAcc >= 1) {
+        const avg = this._secN / this._secAcc, min = this._secMin;
+        this._hist.push({ avg, min });
+        if (this._hist.length > 6) this._hist.shift();
+        this._secAcc = 0; this._secN = 0; this._secMin = 999;
+      }
+    }
+    if (!presenting) return;
+    // sonda activa: manda sobre el gobernador
+    if (this.probe) {
+      const p = this.probe;
+      p.t += dt; p.n++; p.acc += dt;
+      if (dt > 0 && dt < 1) p.min = Math.min(p.min, 1 / dt);
+      if (p.t >= 2.8) {
+        const avg = p.n / Math.max(0.01, p.acc);
+        this._probeRound(avg, p.min);
+      }
+      return;
+    }
+    // gobernador continuo (con histéresis y enFred durante el rallye para
+    // los cambios notables: la tasa se cambia fuera del intercambio)
+    if (!this.auto) return;
+    if (this._coolDown > 0) this._coolDown -= dt;
+    if (this._upCool > 0) this._upCool -= dt;
+    if (this._hist.length >= 4) {
+      const avg = this._hist.reduce((s, h) => s + h.avg, 0) / this._hist.length;
+      const min = Math.min(...this._hist.map((h) => h.min));
+      const rally = this.g.rules && this.g.rules.state === 'rally';
+      const bajando = avg < 56 || (avg < 60 && min < 48);
+      if (bajando && this._coolDown <= 0) {
+        if (!rally || avg < 50) this._stepDown();
+      }
+      const sobra = avg > Math.min(this.rate, 90) * 0.93 && min > this.rate * 0.8;
+      this._upStreak = sobra ? this._upStreak + 1 : 0;
+      if (this._upStreak >= 20 && this._upCool <= 0) this._stepUp();
+    }
+  }
+
+  /** bajo un escalón: fovea → tasa → escala (próxima sesión) */
+  _stepDown() {
+    if (this.fovea < 0.79) this.fovea = Math.min(0.8, this.fovea + 0.08);
+    else if (this.rate > 62) this.rate = 60;
+    else {
+      this.scale = Math.max(0.9, this.scale - 0.10);   // ya para la próxima
+      this.fovea = 0.7;
+    }
+    this._coolDown = 15; this._upStreak = 0;
+    this.applyLive(); this.save();
+    try {
+      if (this.g.rules.state !== 'rally') {
+        this.g.audio.announce(T('perf_stepdown'), false);
+      }
+    } catch (e) { /* */ }
+  }
+  /** sube un escalón si sobra margen (nunca por encima del perfil base) */
+  _stepUp() {
+    const p = PERF_TIERS[this.tier];
+    let subido = false;
+    if (this.scale < p.scale - 0.005) {
+      this.scale = Math.min(p.scale, this.scale + 0.10); subido = true;  // próxima sesión
+    } else if (this.rate < p.rate) {
+      this.rate = Math.min(p.rate, this.rate + 12); subido = true;
+    } else if (this.fovea > p.fovea + 0.005) {
+      this.fovea = Math.max(p.fovea, this.fovea - 0.06); subido = true;
+    }
+    this._upCool = 45; this._upStreak = 0;
+    if (subido) { this.applyLive(); this.save(); }
+  }
+
+  /** estado para AJUSTES/QA */
+  status() {
+    const s = this.g.renderer.xr.getSession && this.g.renderer.xr.getSession();
+    return {
+      tier: this.tier, tierLabel: PERF_TIERS[this.tier].label, gpu: this.gpu || '',
+      auto: this.auto, scale: +this.scale.toFixed(3), fovea: +this.fovea.toFixed(3),
+      rate: this.rate, fps: this.fps, calibrating: !!this.probe,
+      probeRound: this.probe ? this.probe.round : -1,
+      lastCal: this.lastCal, sessionRate: s && s.frameRate ? Math.round(s.frameRate) : 0,
+      presenting: !!this.g.renderer.xr.isPresenting,
+    };
+  }
+  setTier(t) {
+    if (!PERF_TIERS[t]) return;
+    this.tier = t; this.tierAuto = (t === this._detectTierSilent());
+    const d = PERF_TIERS[t];
+    this.scale = d.scale; this.fovea = d.fovea; this.rate = d.rate;
+    this.lastCal = null;
+    this.applyToRenderer(); this.save();
+  }
+  _detectTierSilent() {
+    let r = this.gpu || '';
+    if (/adreno\s*\(tm\)\s*74\d/i.test(r)) return 'quest3';
+    if (/adreno\s*\(tm\)\s*65\d/i.test(r)) return 'quest2';
+    return 'gen';
+  }
+  requestRecal() {
+    if (this.g.renderer.xr.isPresenting) this.probeStart('manual');
+    else this._recal = true;
+  }
+}
+
 
 // r61 · ESTELA DE PODER — firma de color por poder de pala ACTIVO
 // (RGB 0-1; el mismo lenguaje de color que ya usa cada poder: ámbar del
@@ -19802,6 +22821,7 @@ loadPaddleModel().then((paddleModel) => {
   });
   window.__game = game;
   window.__NetLink = NetLink;   // accesible para pruebas headless (módulo ES)
+  try { window.__PPNET = PPNET; } catch (e0) { /* r79: núcleo de red para QA */ }
   // v2.38: cargar la pistola de rayos y montarla en ambos mandos
   loadGunModel().then((gunModel) => {
     if (!game.gunMounts) return;
@@ -20804,6 +23824,7 @@ loadPaddleModel().then((paddleModel) => {
       shotPts: [], spinIconT: 0, spinIconCol: null, done: 0,
       tossReleaseY: 0, tossMaxY: 0,   // v3.0.8-TRN1 · validación del lanzamiento (como el núcleo)
       roundHits: 0, roundFaults: 0,   // v3.0.7-PLAY1 · precisión de la ronda en curso
+      daily: 0,           // r80 · 1 = sesión del RETO DIARIO: zonas el DOBLE de anchas (zonaDims)
     };
   
     /* ---------------- constantes geométricas locales ---------------- */
@@ -20815,6 +23836,31 @@ loadPaddleModel().then((paddleModel) => {
     const APEX_Y = 1.50;                                  // aro del globo defensivo
     const CROSS_LOW = () => DIMS.netTopY + 0.055;         // pase bajo correcto
     const CROSS_HI = () => DIMS.netTopY + 0.16;           // demasiado alto
+
+    /* =================================================================
+     *  r80 · EL RETO PERMISIVO — dimensiones de zona COMPARTIDAS por el
+     *  PINTOR (drawQuad) y el JUEZ (judgeAiBounce): lo pintado ES lo
+     *  juzgado (regla de la casa desde v3.0.8-TRN1). Petición del dueño
+     *  para el RETO DIARIO: «las zonas de bote a las que debemos acertar
+     *  sean más permisivas y grandes… digamos que el doble de anchas…
+     *  para no desanimar al jugador» (la dificultad irá subiendo con el
+     *  tiempo). En entrenamiento normal, TODO queda byte a byte igual.
+     *  ================================================================= */
+    function zonaDims() {
+      const diario = !!st.daily;
+      return {
+        diario: diario ? 1 : 0,
+        t1aCentro: diario ? 0.075 : 0.15,   // semiancho del centro prohibido (0,30 m → 0,15 m)
+        // frontera de fila del objetivo como fracción de HL (dz > HL·f):
+        // 'deep' 0,5 → 0,25 (abarca profunda+media) · 'mid' 0,25 → 0 (media+corta)
+        t1aDeepF: diario ? 0.25 : 0.5,
+        t1aMidF: diario ? 0 : 0.25,
+        t1bBanda: diario ? 0.20 : 0.10,     // bandas laterales 10 cm → 20 cm
+        t1bFondo: diario ? 0.24 : 0.12,     // franja de fondo 12 cm → 24 cm
+        t4aProf: diario ? 1.07 : 0.56,      // borde del doble bote desde la red (vano 0,51 → 1,02 m)
+        t4bFondo: diario ? 0.30 : 0.15,     // franja de fondo del saque largo 15 cm → 30 cm
+      };
+    }
   
     /* =================================================================
      *  CONSTRUCCIÓN DE ESCENA (una sola vez, grupo propio)
@@ -21386,6 +24432,9 @@ loadPaddleModel().then((paddleModel) => {
       const mz = (z) => H * ((C() - z) / HL());                // z mundo -> lienzo (0 = fondo rival)
       if (mode === 't1a') {
         // 6 zonas: profundas/medias/cortas × izq/der + centro prohibido
+        // r80 · las dimensiones salen de zonaDims(): lo pintado ES lo
+        // juzgado, también con el RETO DIARIO (zonas el doble de anchas)
+        const ZD = zonaDims();
         const rows = [[C() - HL(), C() - HL() / 2], [C() - HL() / 2, C() - HL() / 4], [C() - HL() / 4, C()]];
         // v3.0.2 · FIX visibilidad: la parrilla casi no se veía en el casco —
         // trazos más gruesos/opacos y colores saturados.
@@ -21396,23 +24445,27 @@ loadPaddleModel().then((paddleModel) => {
         }
         g.beginPath(); g.moveTo(mx(0), 0); g.lineTo(mx(0), H); g.stroke();
         // centro prohibido (rojo translúcido con borde marcado)
+        const cx0 = mx(-ZD.t1aCentro), cx1 = mx(ZD.t1aCentro);
         g.fillStyle = 'rgba(230,70,70,0.55)';
-        g.fillRect(mx(-0.15), 0, mx(0.15) - mx(-0.15), H);
+        g.fillRect(cx0, 0, cx1 - cx0, H);
         g.strokeStyle = 'rgba(255,110,110,0.95)'; g.lineWidth = 4;
-        g.strokeRect(mx(-0.15), 2, mx(0.15) - mx(-0.15), H - 4);
+        g.strokeRect(cx0, 2, cx1 - cx0, H - 4);
         g.fillStyle = 'rgba(255,150,150,1)';
-        g.font = '700 26px system-ui, sans-serif'; g.textAlign = 'center';
-        g.save();
-        // v3.6.20 · TEXTO LEGIBLE + i18n: con flipY=false el jugador ve el
-        // lienzo con la fila 0 en la RED (cerca) y la fila H al fondo (lejos);
-        // para leerse de pie el texto debe dibujarse con la parte alta hacia
-        // la fila H y avanzando hacia +x: eso es scale(1,-1). rotate(π) lo
-        // dejaba en ESPEJO (orden de lectura invertido — informe del dueño
-        // v3.6.19, confirmado por IoU GPU 0.999 vs 0.811).
-        g.translate(mx(0), H - 26); g.scale(1, -1);
-        g.textBaseline = 'middle';
-        g.fillText(t('z_evita'), 0, 0);
-        g.restore();
+        // r80 · EVITA cabe SIEMPRE en la banda (con el reto, la banda es el
+        // doble de estrecha): shrink-to-fit honesto, nunca se sale
+        {
+          const bandW = cx1 - cx0;
+          let evS = 26;
+          g.font = '700 ' + evS + 'px system-ui, sans-serif'; g.textAlign = 'center';
+          while (evS > 11 && g.measureText(t('z_evita')).width > bandW - 6) {
+            evS -= 1; g.font = '700 ' + evS + 'px system-ui, sans-serif';
+          }
+          g.save();
+          g.translate(mx(0), H - 26); g.scale(1, -1);
+          g.textBaseline = 'middle';
+          g.fillText(t('z_evita'), 0, 0);
+          g.restore();
+        }
         // zona objetivo dorada
         // v3.0.8-TRN1 · ZONA FIEL AL JUEZ: lo pintado ES lo juzgado. Antes la
         // zona dorada cubría toda la mitad (incluida la franja central que
@@ -21421,8 +24474,14 @@ loadPaddleModel().then((paddleModel) => {
         // juez acepta (|x| ≥ 15 cm) y el texto se reescala con measureText
         // para caber SIEMPRE dentro del área concreta.
         if (st.target) {
-          const zr = st.target.z === 'deep' ? [C() - HL(), C() - HL() / 2] : [C() - HL() / 2, C() - HL() / 4];
-          const xr = st.target.x < 0 ? [-HW(), -0.15] : [0.15, HW()];
+          // r80 · las filas del objetivo crecen con el reto: 'deep' abarca
+          // profunda+media (frontera HL·0,5→HL·0,25) y 'mid' abarca
+          // media+corta (HL·0,25→toda la mitad); el centro prohibido se
+          // estrecha a la mitad. Pintado y juzgado salen de zonaDims().
+          const zr = st.target.z === 'deep'
+            ? [C() - HL(), C() - HL() * ZD.t1aDeepF]
+            : [C() - HL() / 2, C() - HL() * ZD.t1aMidF];
+          const xr = st.target.x < 0 ? [-HW(), -ZD.t1aCentro] : [ZD.t1aCentro, HW()];
           const zx0 = mx(xr[0]), zx1 = mx(xr[1]), zy0 = mz(zr[0]), zy1 = mz(zr[1]);
           g.fillStyle = 'rgba(242,193,78,0.88)';
           g.fillRect(zx0, zy0, zx1 - zx0, zy1 - zy0);
@@ -21451,23 +24510,26 @@ loadPaddleModel().then((paddleModel) => {
           g.restore();
         }
       } else if (mode === 't1b') {
-        // bandas: laterales 10 cm + fondo 12 cm
+        // bandas: laterales 10 cm + fondo 12 cm (r80 · reto: 20/24 cm)
         // v3.0.6-SRV1 · FIX zona FONDO: el eje Z del lienzo está INVERTIDO
         // respecto a mz() (fila 0 = red, fila H = fondo rival); pintar desde
         // la fila 0 cubría TODA la mesa MENOS la franja objetivo. Con el mismo
         // patrón rect(mz(z0), mz(z1)−mz(z0)) de t4a/t4b la franja cae EXACTA.
+        const ZB = zonaDims();
         g.fillStyle = 'rgba(99,179,237,0.8)';
-        g.fillRect(0, 0, mx(-HW() + 0.10), H);
-        g.fillRect(mx(HW() - 0.10), 0, W - mx(HW() - 0.10), H);
-        const zb = [C() - HL(), C() - HL() + 0.12];   // franja de fondo real
+        g.fillRect(0, 0, mx(-HW() + ZB.t1bBanda), H);
+        g.fillRect(mx(HW() - ZB.t1bBanda), 0, W - mx(HW() - ZB.t1bBanda), H);
+        const zb = [C() - HL(), C() - HL() + ZB.t1bFondo];   // franja de fondo real
         g.fillRect(0, mz(zb[0]), W, mz(zb[1]) - mz(zb[0]));
         g.strokeStyle = '#9fd4ff'; g.lineWidth = 9;
         g.strokeRect(4.5, 4.5, W - 9, H - 9);
         g.fillStyle = '#0c1826'; g.font = '900 40px system-ui, sans-serif'; g.textAlign = 'center';
         g.save(); g.translate(W / 2, (mz(zb[0]) + mz(zb[1])) / 2); g.scale(1, -1); g.textBaseline = 'middle'; g.fillText(t('z_fondo'), 0, 0); g.restore();
       } else if (mode === 't4a') {
-        // zona de doble bote junto a la red (lado rival)
-        const zr = [C() - 0.56, C() - 0.05];
+        // zona de doble bote junto a la red (lado rival) — r80 · reto: el
+        // DOBLE de profunda (0,51 m → 1,02 m desde la red)
+        const Z4 = zonaDims();
+        const zr = [C() - Z4.t4aProf, C() - 0.05];
         g.fillStyle = 'rgba(246,173,85,0.82)';
         g.fillRect(0, mz(zr[0]), W, mz(zr[1]) - mz(zr[0]));
         g.strokeStyle = '#ffc178'; g.lineWidth = 10;
@@ -21476,8 +24538,9 @@ loadPaddleModel().then((paddleModel) => {
         g.save(); g.translate(W / 2, (mz(zr[0]) + mz(zr[1])) / 2); g.scale(1, -1); g.textBaseline = 'middle';
         g.fillText(t('z_doble'), 0, 0); g.restore();
       } else if (mode === 't4b') {
-        // franja de fondo: últimos 15 cm
-        const zr = [C() - HL(), C() - HL() + 0.15];
+        // franja de fondo: últimos 15 cm (r80 · reto: 30 cm)
+        const Z5 = zonaDims();
+        const zr = [C() - HL(), C() - HL() + Z5.t4bFondo];
         g.fillStyle = 'rgba(246,173,85,0.85)';
         g.fillRect(0, mz(zr[0]), W, mz(zr[1]) - mz(zr[0]));
         g.strokeStyle = '#ffc178'; g.lineWidth = 10;
@@ -21534,6 +24597,8 @@ loadPaddleModel().then((paddleModel) => {
   
     function zoneOf(p) {
       // clasifica un bote del lado rival: 'deep'|'mid'|'short' × 'L'|'R'|'C'
+      // (r80 · el juez t1a usa zonaDims() — esta clasificación queda como
+      // referencia documental de las fronteras de siempre)
       const dz = C() - p.z;
       const row = dz > HL() * 0.5 ? 'deep' : dz > HL() * 0.25 ? 'mid' : 'short';
       const col = p.x < -0.15 ? 'L' : p.x > 0.15 ? 'R' : 'C';
@@ -21543,16 +24608,29 @@ loadPaddleModel().then((paddleModel) => {
     function judgeAiBounce(p) {
       // p = posición del bote en el campo rival (primer bote tras el golpe)
       if (active === 't1a') {
-        const z = zoneOf(p);
-        if (st.target && z.row === st.target.z && ((st.target.x < 0 && z.col === 'L') || (st.target.x > 0 && z.col === 'R'))) {
+        // r80 · el JUEZ comparte zonaDims() con el pintor: con el RETO
+        // DIARIO las filas crecen (deep → profunda+media · mid → media+corta)
+        // y el centro prohibido se estrecha a la mitad. Sin reto, la
+        // decisión es EXACTAMENTE la de zoneOf() de siempre (fronteras
+        // incluidas: en ±centro cuenta como centro).
+        const ZJ = zonaDims();
+        const dz1 = C() - p.z;
+        const colC = p.x >= -ZJ.t1aCentro && p.x <= ZJ.t1aCentro;
+        const colOk = st.target && ((st.target.x < 0 && p.x < -ZJ.t1aCentro)
+          || (st.target.x > 0 && p.x > ZJ.t1aCentro));
+        const rowOk = (st.target && st.target.z === 'deep')
+          ? (dz1 > HL() * ZJ.t1aDeepF)
+          : (dz1 > HL() * ZJ.t1aMidF && dz1 <= HL() * 0.5);
+        if (st.target && rowOk && colOk) {
           okHit(MODES[active].ok, MODES[active].pts);
-        } else if (z.col === 'C') {
+        } else if (colC) {
           st.done = 0; failHit('mal_corta');
         } else {
           st.done = 0; failHit('mal_fuera');
         }
       } else if (active === 't1b') {
-        const band = Math.abs(p.x) > HW() - 0.10 || p.z < C() - HL() + 0.12;
+        const ZJ1 = zonaDims();
+        const band = Math.abs(p.x) > HW() - ZJ1.t1bBanda || p.z < C() - HL() + ZJ1.t1bFondo;
         if (band) okHit(MODES[active].ok, MODES[active].pts);
         else { st.done = 0; failHit('mal_corta'); }
       } else if (active === 't2a') {
@@ -21580,7 +24658,9 @@ loadPaddleModel().then((paddleModel) => {
         // corto); el SEGUNDO basta con que bote en el campo rival: exigir los
         // DOS dentro de 51 cm era casi imposible (el 2.º bote de un saque
         // corto real siempre cae más hondo que el 1.º).
-        const inZone = Math.abs(p.x) < HW() && p.z > C() - 0.56 && p.z < C() - 0.05;
+        // r80 · reto diario: vano 0,51 m → 1,02 m (mismo zonaDims que pinta).
+        const ZJ4 = zonaDims();
+        const inZone = Math.abs(p.x) < HW() && p.z > C() - ZJ4.t4aProf && p.z < C() - 0.05;
         if (st.aiBounce === 0) {
           if (!inZone) { st.done = 0; failHit('mal_larga'); }
           else { st.aiBounce = 1; st.live = true; }          // espera el 2.º bote
@@ -21588,7 +24668,8 @@ loadPaddleModel().then((paddleModel) => {
           okHit(MODES[active].ok, MODES[active].pts);        // doble bote ✓
         }
       } else if (active === 't4b') {
-        const deep = p.z < C() - HL() + 0.15;
+        const ZJ5 = zonaDims();
+        const deep = p.z < C() - HL() + ZJ5.t4bFondo;
         if (deep) {
           if (st.cross && st.cross.spd > 4.5) addPts(1);   // bonus saque tenso
           okHit(MODES[active].ok, MODES[active].pts);
@@ -21832,7 +24913,7 @@ loadPaddleModel().then((paddleModel) => {
     /* =================================================================
      *  CICLO DE VIDA DE LOS MODOS
      *  ================================================================= */
-    function startMode(game, id) {
+    function startMode(game, id, opts) {
       if (!game) return;
       if (!MODES[id]) return;
       G = game;
@@ -21840,6 +24921,11 @@ loadPaddleModel().then((paddleModel) => {
       LANG = (typeof __ppLang !== 'undefined' && __ppLang) || 'es';
       active = id;
       const M = MODES[id];
+      // r80 · EL RETO PERMISIVO: arrancado desde el RETO DIARIO, las zonas
+      // de bote se pintan y se juzgan el DOBLE de anchas (zonaDims) —
+      // «para no desanimar al jugador; la dificultad irá subiendo con el
+      // tiempo» (petición del dueño).
+      st.daily = (opts && opts.daily) ? 1 : 0;
       if (!game.calib) game.enterCalib();      // aísla: sin árbitro, sin IA, sin marcador
       game.exitHall();                          // v3.1.0-SRV2: un modo se juea en la cancha
       game.trainV3 = id;                        // el núcleo desactiva su rutina de calib
@@ -21864,6 +24950,7 @@ loadPaddleModel().then((paddleModel) => {
      *  para la estanqueidad total de los módulos. */
     function teardown(game) {
       active = null;
+      st.daily = 0;         // r80 · fuera de sesión: zonas de entrenamiento normales
       drillReach(false);   // v3.0.6-SRV1 · margen de saque fuera al recoger
       if (grp) grp.visible = false;
       applyModeScene();
@@ -22464,79 +25551,21 @@ loadPaddleModel().then((paddleModel) => {
         if (PT) label(t(PT.tag) + ' — ' + t(PT.tag + '_d'), ySk + 106, 14, PT.col);
       }
       /* =============================================================
-       *  v3.6.68 · EL PULSO CRAZY — RETO DEL DÍA (r76)
-       *  Panel en el HUECO LIBRE del hub (y 1064–1330; los botones de
-       *  abajo están en 1380): NO mueve nada del layout existente.
-       *  Canvas estático del menú: CERO coste por frame en juego.
-       *  La tarjeta entera es el botón → arranca el modo del día.
+       *  v3.6.72 (r80) · EL RETO SE MUDA A LA PUERTA — el dueño retira el
+       *  panel del hub de entrenamiento: «La opción del reto del día debe
+       *  estar especialmente destacada en la parte de abajo del menú
+       *  principal (y la retiramos del apartado de entrenamiento)». Ahora
+       *  es BOTÓN ESTRELLA al pie del menú principal (c12
+       *  _retoDiarioCard: pala troquelada + resplandor, texto «Reto
+       *  Diario!») y arranca el duelo de hoy vía PP_TRAIN.startDaily.
+       *  Aquí queda el ESCAPARATE de las pieles de asistencia: lo que la
+       *  racha de días libera poco a poco.
        *  ============================================================= */
       if (GAMF()) {
-        const kD = dayKey();
-        const planD = dailyPlan(kD);
-        const hechoD = !!S.daily.done[kD];
-        const rachaD = effStreak();
-        const MPD = MODES[planD.mode];
-        const yD = 1064, wD = CW * 2 + GX, hD = 156;
-        btn('trv3:daily', X0, yD, wD, hD, '', false);
-        c.save();
-        c.beginPath();
-        if (c.roundRect) c.roundRect(X0, yD, wD, hD, 20); else c.rect(X0, yD, wD, hD);
-        const gD = c.createLinearGradient(X0, yD, X0 + wD, yD + hD);
-        gD.addColorStop(0, '#41307a'); gD.addColorStop(1, '#1c1238');
-        c.fillStyle = gD; c.fill();
-        c.strokeStyle = hechoD ? '#68d391' : '#f0c85a';
-        c.lineWidth = hechoD ? 4 : 3; c.stroke();
-        c.textBaseline = 'middle';
-        // fila 1 · título + llamada a la acción
-        c.textAlign = 'left';
-        c.fillStyle = '#f0c85a'; c.font = '800 30px system-ui, sans-serif';
-        c.fillText(t('daily_t'), X0 + 26, yD + 30);
-        c.textAlign = 'right';
-        c.font = '800 21px system-ui, sans-serif';
-        c.fillStyle = hechoD ? '#68d391' : '#ffffff';
-        let ctaD = hechoD ? t('daily_ya_btn') : t('daily_iniciar') + '  ·  ' + t('daily_recompensa', { n: DAILY_BASE });
-        const _w0 = ctaD;
-        while (ctaD.length > 2 && c.measureText(ctaD).width > 430) ctaD = ctaD.slice(0, -1);
-        if (ctaD !== _w0) ctaD += '…';
-        c.fillText(ctaD, X0 + wD - 26, yD + 30);
-        // fila 2 · el duelo de hoy + TU FANTASMA
-        c.textAlign = 'left';
-        c.fillStyle = '#ffffff'; c.font = '700 22px system-ui, sans-serif';
-        let duelD = t(MPD.nk) + ' · ' + t('daily_obj', { n: planD.n });
-        const _w1 = duelD;
-        while (duelD.length > 2 && c.measureText(duelD).width > 560) duelD = duelD.slice(0, -1);
-        if (duelD !== _w1) duelD += '…';
-        c.fillText(duelD, X0 + 26, yD + 66);
-        c.textAlign = 'right';
-        const bestD = S.best[planD.mode] || 0;
-        c.fillStyle = '#bfe9ff'; c.font = '700 17px system-ui, sans-serif';
-        let ghD = t('daily_fantasma_t') + ' · ' + (bestD ? t('daily_fantasma_x', { n: bestD }) : t('daily_fantasma_no'));
-        const _w2 = ghD;
-        while (ghD.length > 2 && c.measureText(ghD).width > 380) ghD = ghD.slice(0, -1);
-        if (ghD !== _w2) ghD += '…';
-        c.fillText(ghD, X0 + wD - 26, yD + 66);
-        // fila 3 · el campeón del día + la frase de la casa
-        c.textAlign = 'left';
-        c.fillStyle = 'rgba(255,255,255,0.72)'; c.font = '600 18px system-ui, sans-serif';
-        let frD = planD.champ + ' · ' + t(planD.frase) + '   —   ' + t('daily_prof', { tip: t(dailyTip(kD).k, dailyTip(kD).v) });
-        const _w3 = frD;
-        while (frD.length > 2 && c.measureText(frD).width > wD - 60) frD = frD.slice(0, -1);
-        if (frD !== _w3) { frD = frD.replace(/[\s,;:.«»]+$/, '') + '…'; }
-        c.fillText(frD, X0 + 26, yD + 100);
-        // fila 4 · racha viva + puntos de asistencia
-        c.fillStyle = 'rgba(255,255,255,0.85)'; c.font = '700 17px system-ui, sans-serif';
-        c.fillText(t('daily_racha') + ': ' + rachaD + ' ' + t('daily_dias') + '  ·  ' + t('daily_record') + ': ' + (S.daily.bestStreak || 0), X0 + 26, yD + 130);
-        c.textAlign = 'right';
-        const dxD = X0 + wD - 26 - (7 * 18 - 12);
-        for (let i = 0; i < 7; i++) {
-          c.beginPath(); c.arc(dxD + i * 18, yD + 130, 6, 0, Math.PI * 2);
-          c.fillStyle = i < Math.min(rachaD, 7) ? '#f0c85a' : 'rgba(255,255,255,0.15)';
-          c.fill();
-        }
-        c.restore();
-        // pieles de ASISTENCIA (r76): fila propia bajo el panel — jamás en
-        // la fila de puntos; sólo la racha las libera
-        const yA = yD + hD + 14;
+        const wD = CW * 2 + GX;
+        // pieles de ASISTENCIA (r76): fila propia en el hueco del panel —
+        // jamás en la fila de puntos; sólo la racha del RETO DIARIO libera
+        const yA = 1064;
         label(t('daily_asist'), yA, 15, '#7d8ea6');
         let axD = X0;
         for (const sk of RACHA_SKINS) {
@@ -22694,8 +25723,9 @@ loadPaddleModel().then((paddleModel) => {
       else if (cmd === 'daily') {
         // r76 · EL PULSO CRAZY: la tarjeta arranca el modo del día (si ya
         // está cobrado hoy, entrenar es gratis — la recompensa no se repite)
+        // r80 · mismas zonas permisivas que el botón de la puerta
         game.closeMenu();
-        startMode(game, dailyPlan(dayKey()).mode);
+        startMode(game, dailyPlan(dayKey()).mode, { daily: 1 });
       }
       else if (cmd === 'fb') {
         S.fb[p[1]] = S.fb[p[1]] ? 0 : 1; save();
@@ -22758,6 +25788,14 @@ loadPaddleModel().then((paddleModel) => {
   
     return {
       tick, startMode, stopMode, startCalib, menuAction, applySkin, teardown,
+      // r80 · EL RETO DIARIO EN LA PUERTA: el botón estrella del menú
+      // principal (c12 _retoDiarioCard) arranca el duelo de hoy con las
+      // zonas el doble de anchas sin pasar por el hub de entrenamiento
+      startDaily: (g) => {
+        if (!g) return;
+        g.closeMenu();
+        startMode(g, dailyPlan(dayKey()).mode, { daily: 1 });
+      },
       serveTrigger: () => { try { serveTossFromTee(true); } catch (e) { /* nunca rompe */ } },
       serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(false); } catch (e) { /* nunca rompe */ } },
       drawHub, drawArea,
@@ -22765,12 +25803,18 @@ loadPaddleModel().then((paddleModel) => {
         stars: Object.assign({}, S.stars), acc: Object.assign({}, S.acc),
         ach: Object.assign({}, S.ach), comboBest: S.comboBest || 0,
         round: { hits: st.roundHits, faults: st.roundFaults },
-        daily: { last: S.daily.last, streak: S.daily.streak, bestStreak: S.daily.bestStreak,
-          hoy: (S.daily.done && S.daily.done[dayKey()]) ? 1 : 0 } }; },
+        daily: (function () { const _pD = dailyPlan(dayKey());
+          return { last: S.daily.last, streak: S.daily.streak, bestStreak: S.daily.bestStreak,
+            hoy: (S.daily.done && S.daily.done[dayKey()]) ? 1 : 0,
+            modo: _pD.mode, modoName: t(MODES[_pD.mode].nk) }; })() }; },
       __debug: { S, st, MODES },
     __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel, serveAssist,
       // r76 · EL PULSO CRAZY: internos expuestos para la QA (qa_r76_v3668)
       dayKey, dailyPlan, dailyTip, dailyComplete, effStreak, seedOf,
+      // r80 · EL RETO PERMISIVO: las dimensiones de zona compartidas por
+      // pintor y juez (la QA verifica el doble en el reto y la igualdad
+      // byte a byte en entrenamiento)
+      zonaDims,
       // ronda 27 · internos de las AYUDAS TÉCNICAS (QA qa_train_ayudas):
       // accesores —nunca sustituciones— para verificar por GPU que cada
       // interruptor de la sección «AYUDAS TÉCNICAS» obedece de verdad.

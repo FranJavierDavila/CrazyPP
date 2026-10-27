@@ -878,11 +878,12 @@ export class PingPongGame {
       this.rules.message = T('net_syncing');
       return;
     }
-    this.rules.bestOf = 3;   // v3.6.29: el enfrentamiento online también al mejor de 3
-    this.rules.startMatch(this.mode);
-    this.net.owner = 'host';
-    this.resetToss();
-    this.rules.message = T('online_serve');
+    // v3.6.74 · r82 · NADA DE PARTIDOS v1 SILENCIOSOS: si el enlace binario
+    // murió de verdad (sin túnel posible), el partido NO arranca en el modo
+    // cosmético sin avisar — mensaje claro en la cancha (antes se entraba a
+    // jugar en v1 y «no se podía jugar la bola» sin saber por qué)
+    this.rules.message = T('net_v2_down');
+    this.audio.announce(T('net_v2_down'), true);
   }
 
   /** r79 · MATCH_START (enviado por el anfitrión o recibido por el
@@ -915,6 +916,14 @@ export class PingPongGame {
 
   /** r79 · el transporte v2 quedó LISTO (HELLO/READY de ambos) */
   onNetV2Ready() {
+    // v3.6.74 · r82 · EL ENLACE SE CANTA: el dueño SABE en qué viaja la
+    // partida (directo o túnel) y si el otro visor trae otra build
+    try { window.__PP_NET = this.net; } catch { /* */ }
+    const inf = this.net.netInfo ? this.net.netInfo() : null;
+    if (inf && inf.v2 === 'ok') {
+      this.audio.announce(inf.via === 'tunel' ? T('net_link_tunnel') : T('net_link_direct'), true);
+      if (inf.buildWarn) this.audio.announce(T('net_build_warn'), false);
+    }
     if (this._netStartWhenReady) {
       this._netStartWhenReady = false;
       if (this.net.role === 'host') this.startOnlineMatch();
@@ -8092,6 +8101,14 @@ export class PingPongGame {
 
     // 3) Preparación del saque
     let holdLock = false;
+    // v3.6.74 · r82 · durante la CUENTA ATRÁS del MATCH_START la bola del
+    // sacador queda EN CINEMÁTICA (antes la física viva la hacía caer y
+    // botar 3 s sobre la mesa — invisible pero sonora y sucia)
+    if (this._netStart && this.net.online && this.net.v2 === 'ok') {
+      holdLock = true;
+      this.ball.vel.set(0, 0, 0);
+      if (this.ball.spin) this.ball.spin.set(0, 0, 0);
+    }
     // v3.6.30 · en el HALL no hay saque que preparar: ni la bola en la
     // mano del jugador ni el paseo/saque de la CPU (todo este bloque).
     // La bola quieta, oculta y SIN física — el museo no juega.
@@ -8169,7 +8186,27 @@ export class PingPongGame {
       } else if (this.net.online) {
         // v2.19: saque del rival humano — la bola llega por su emisión de red
         // r79 · v2: bola HELD del rival — quieta hasta su lanzamiento
-        if (this.net.v2 === 'ok' && !this._netTossLive) holdLock = true;
+        if (this.net.v2 === 'ok' && !this._netTossLive) {
+          holdLock = true;
+          // v3.6.74 · r82 · REFERENCIA EXACTA DEL SAQUE: la bola del rival
+          // se VE en SU mano libre (pose de red espejada + altura de mano),
+          // no una bola congelada flotando donde murió el punto anterior —
+          // «conocimiento exacto al milímetro de lo que ocurre»: el saque se
+          // LEE desde el primer frame (mano que sube, bola que sale).
+          const smpH = this._netAvatarOut || (this._netAvatarOut = {
+            hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
+            rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
+          });
+          if (this.net.avatarSample(smpH) >= 0 && this.net.avatarStaleMs() < 500) {
+            const padL = (smpH.fl & 4) !== 0;
+            const libre = padL ? smpH.rp : smpH.lp;         // la mano SIN pala
+            if (smpH.fl & (padL ? 2 : 1)) {                  // rastreada
+              NetLink.posFromNetPose(libre, netTmpP);
+              this.ball.pos.set(netTmpP.x, netTmpP.y + BALL_HAND_LIFT, netTmpP.z);
+              if (this.ballMesh) this.ballMesh.visible = true;
+            }
+          }
+        }
       } else if (!this.aiToss) {
         // la CPU camina a su posición de saque, sostiene la bola y la lanza:
         // nada de sacar desde donde la pilló el punto anterior
@@ -8283,6 +8320,23 @@ export class PingPongGame {
             ? (bX) => { this.net.watchOwnCross(bX); }
             : null;
           stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);
+          // v3.6.74 · r82 · EL GOLPE PROPIO EN v2 SE ANUNCIA (era EL defecto
+          // que dejaba el multijugador injugable en dispositivo real): la
+          // única marca de _localHit vivía en la rama v1 — con el transporte
+          // binario un rally NUNCA emitía HIT kind 0: sin él, BallAuth no
+          // vuelve a 'own', no hay BALL_HANDOFF de vuelta y el rival recibe
+          // un fantasma injugable (y el contacto propio cantaba «doble
+          // golpe» con lastHitter viejo). El duelo simulado de r81 no lo
+          // cazó porque llamaba sendHit() A MANO en el guion del invitado.
+          // SOLO con el RALLYE VIVO: en 'point' la bola muerta sigue
+          // volando «de adorno» — anunciar su roce con la pala resucitaba
+          // la bola en el rival (fantasma → doble bote → PUNTO FANTASMA
+          // por CLAIM, cazado en vivo por la batería en el punto 2).
+          if (v2on && this.rules.state === 'rally') {
+            for (const e of this.events) {
+              if (e.type === 'paddle' && e.who === 'player') { this._localHit = true; break; }
+            }
+          }
         }
       }
     }
@@ -8496,9 +8550,13 @@ export class PingPongGame {
           // el rival flotaba ~76 cm por encima de su altura real.
           NetLink.posFromNetPose(hpa, netTmpP);
           NetLink.quatFromNet(hqa, netTmpQ);
+          // v3.6.74 · r82 · montura por MANO FÍSICA (bit 8): el hueco del
+          // mando no dice la mano real — un diestro con la pala en el slot
+          // izquierdo veía su avatar rival con la pala rodada 90°
+          const fisicaIzq = (smp.fl & 8) !== 0;
           // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
           const qVis = netTmpQ2.copy(netTmpQ)
-            .multiply(mountQuatFor(useLeft ? 'left' : 'right'));
+            .multiply(mountQuatFor(fisicaIzq ? 'left' : 'right'));
           netTmpV.set(0, (PALA_BLADE_Y - PALA_GRIP_Y) * PALA_SCALE, 0)
             .applyQuaternion(qVis).add(netTmpP);
           const f2 = 1 - Math.exp(-20 * dt);

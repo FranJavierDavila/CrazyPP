@@ -1,10 +1,10 @@
 {
-  "version": "3.6.73-SDK6",
-  "fase": 75,
-  "faseNombre": "SESENTA SEGUROS",
+  "version": "3.6.74-SDK6",
+  "fase": 76,
+  "faseNombre": "AL MILIMETRO",
   "sdk": "1.5.4",
-  "fecha": "2026-10-26",
-  "hub": "v3673-sdk6",
+  "fecha": "2026-10-27",
+  "hub": "v3674-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "5d3dc8735ddb4d0705a3f7af164862d020224a5b71baae89b4ff6149eecd997d"
+  "golden": "d7edefe31c79d33dc438c7917a8b06770dbc9cfc14f055b0df200fff5f943979"
 }

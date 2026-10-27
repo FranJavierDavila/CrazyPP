@@ -72,7 +72,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 50)
-        ('3.6.73-SDK6', 'versión servida: 3.6.73-SDK6 (ronda 50)'),
+        ('3.6.74-SDK6', 'versión servida: 3.6.74-SDK6 (ronda 50)'),
         # · TRÁNSITO EXPLÍCITO (presentación del dueño)
         ('this._portalSinkT = 0;            // hundimiento en el portal de entrada',
          'tránsito: fase de hundimiento declarada'),
@@ -108,7 +108,7 @@ async def main():
         # · FÍSICA CONGELADA EN EL VIAJE (r62: la llamada lleva el dt
         #   DILATADO de la bola de partido — el guard del salto es lo que
         #   la aguja protege; _dilF es 1 en todo rally normal)
-        ('if (!(this.ball && this.ball.ppTransito)) {\n          // r62: dt DILATADO en la bola de partido (_dilF < 1 lo frena);\n          // el árbitro ya decidió el punto — la bola vuela de adorno\n          // r79 · v2: observador de SUBPASO del cruce de la red — el\n          // traspaso (BALL_HANDOFF) sale con el estado EXACTO del subpaso\n          const _xNet = (v2on && this.net.ballState() === \'own\')\n            ? (bX) => { this.net.watchOwnCross(bX); }\n            : null;\n          stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);\n        }',
+        ('if (!(this.ball && this.ball.ppTransito)) {\n          // r62: dt DILATADO en la bola de partido (_dilF < 1 lo frena);\n          // el árbitro ya decidió el punto — la bola vuela de adorno\n          // r79 · v2: observador de SUBPASO del cruce de la red — el\n          // traspaso (BALL_HANDOFF) sale con el estado EXACTO del subpaso\n          const _xNet = (v2on && this.net.ballState() === \'own\')\n            ? (bX) => { this.net.watchOwnCross(bX); }\n            : null;\n          stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);',
          'física: stepPhysics SALTA la bola congelada (cero eventos fantasma; dt dilatado r62; r79 añade el observador de traspaso)'),
         ('if (this.showTrail && !(this.ball && this.ball.ppTransito)) {',
          'física: sin estela durante el viaje dimensional'),

@@ -525,6 +525,16 @@ export class NetLink {
     // DataConnection PeerJS o por el canal reliable propio, mismo formato)
     if (d.k === 'sdp') { this._v2RemoteDesc(d.d); return; }
     if (d.k === 'ice') { this._onIce(d.c); return; }
+    // v3.6.74 · r82 · paquete fast encapsulado por el TÚNEL PeerJS: mismo
+    // camino que un paquete del DataChannel propio (binario intacto)
+    if (d.k === 'f2' && d.b) {
+      let b = d.b;
+      if (!(b instanceof ArrayBuffer) && b.buffer) {
+        b = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+      }
+      if (b instanceof ArrayBuffer) this._onFast(b);
+      return;
+    }
     switch (d.k) {
       case 'hello2': case 'tick2': case 'tock2': case 'ready2':
       case 'mstart': case 'claim': case 'ack': case 'resync':
@@ -837,6 +847,9 @@ export class NetLink {
     this._lastFastAt = 0; this._iceRestarts = 0;
     this._helloDone = false; this._helloTO = null;
     this._iceQ = [];                            // r81: ICE tempranos en cola
+    this._tunnel = false;                       // r82: túnel PeerJS (emergencia)
+    this._v2T0 = performance.now();             // r82: nacimiento de la subida
+    this._buildWarn = false;                    // r82: HELLO con build distinto
     this._anchors = 0; this._readyMe = false; this._readyOpp = false;
     this._mstart = null;                        // {startAt, fs, bo}
     this._clock = new PPNET.NetClock(this.role === 'host');
@@ -960,7 +973,9 @@ export class NetLink {
   }
 
   _v2ChannelsUp() {
-    if (!(this._fastOpen && this._relOpen) || this.v2 !== 'pending') return;
+    // v3.6.74 · r82 · los canales «suben» por DOS caminos: DC propios abiertos
+    // (P2P) o túnel PeerJS activo (el ICE no llegó a abrir pero la sala vive)
+    if (!((this._fastOpen && this._relOpen) || this._tunnel) || this.v2 !== 'pending') return;
     // HELLO (reliable): versión de protocolo, build y ballPhysics (spec §3.5)
     this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD });
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
@@ -976,9 +991,20 @@ export class NetLink {
     this._lastRelAt = performance.now();
     switch (m.k) {
       case 'hello2': {
-        if (m.v !== PPNET.VP.PROTO || m.ph !== PPNET.VP.PHYS || m.b !== PPNET.VP.BUILD) {
-          this._v2Fail(T('net_legacy'));        // versiones distintas → v1
+        if (m.v !== PPNET.VP.PROTO || m.ph !== PPNET.VP.PHYS) {
+          this._v2Fail(T('net_legacy'));        // protocolo/física distintos → v1
           return;
+        }
+        // v3.6.74 · r82 · BUILD TOLERANTE: el número de build ya NO rompe el
+        // enlace — el cable v2 depende de PROTO/PHYS y el códec es idéntico.
+        // Antes, dos cascos con la caché desigual (uno en 3.6.72 y otro en
+        // 3.6.73) rechazaban el HELLO y caían EN SILENCIO al v1 cosmético:
+        // el dueño veía «movimiento de palas pero poco más». Ahora el enlace
+        // sube igual y se AVISA (menú + voz) para recargar ambos visores.
+        this._buildWarn = m.b !== PPNET.VP.BUILD;
+        if (this._buildWarn) {
+          this.statusMsg = T('net_build_warn', { a: (m.b || '?').slice(-6), b: (PPNET.VP.BUILD || '?').slice(-6) });
+          this.game?.onNetStatus?.();
         }
         this._helloDone = true;
         // ráfaga de reloj: 8 intercambios a ~50 ms (spec §3.6)
@@ -1085,11 +1111,25 @@ export class NetLink {
   /** FASE 1 · bucle por frame (c12 animate): pose 60 Hz + eventos + snaps */
   frame(dt) {
     if (!this.online) return;
+    // v3.6.74 · r82 · TÚNEL DE EMERGENCIA (antes del gate de v2: en
+    // 'pending' este bucle es el único latido que puede activarlo): si el
+    // ICE del transporte propio no abre en 8 s PERO la sala PeerJS sigue
+    // viva (el dueño VEÍA a su rival moverse — ese camino DEMOSTRADO
+    // funciona hasta tras CGNAT), el canal fast viaja ENCAPSULADO por la
+    // DataConnection PeerJS: la FSM v2 entera (reloj, FS de bola,
+    // validador, claims) corre idéntica sobre un tubo fiable. Adiós a la
+    // degradación silenciosa al v1 cosmético.
+    if (this.v2 === 'pending' && !this._tunnel && !this._fastOpen &&
+        performance.now() - (this._v2T0 || 0) > 11000 &&
+        this.conn && this.conn.open) {
+      this._enterTunnel();
+    }
     if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
     const now = performance.now();
     this._clock.apply(now, this.game?.rules?.state === 'rally');
     // watchdog de ICE: sin paquetes fast 5 s → restartIce (spec §11)
-    if (this._lastFastAt && now - this._lastFastAt > 5000 &&
+    // (r82: sólo en modo P2P — con túnel el ICE es irrelevante)
+    if (!this._tunnel && this._lastFastAt && now - this._lastFastAt > 5000 &&
         now - (this._lastIceTry || 0) > PPNET.VP.ICE_RESTART_MS &&
         this._iceRestarts < PPNET.VP.ICE_RESTART_MAX) {
       this._iceRestarts++;
@@ -1106,7 +1146,7 @@ export class NetLink {
   }
 
   _sendFast(dt, now) {
-    if (!this._fast || !this._fastOpen) return;
+    if (!this._tunnel && (!this._fast || !this._fastOpen)) return;
     // pose a POSE_HZ (o 30 en degradado), desde el RAF de la sesión XR
     const iv = 1 / this._poseHz;
     this._poseAcc += dt;
@@ -1181,7 +1221,24 @@ export class NetLink {
   }
 
   _fastSend(buf, now) {
+    // v3.6.74 · r82 · vía TÚNEL: el paquete binario viaja encapsulado por
+    // la DataConnection PeerJS (binario intacto; el receptor lo desenreda
+    // en onData y entra por el MISMO _onFast). PeerJS serializa ArrayBuffer
+    // como binario sin tocar — a cambio de fiabilidad/orden (SCTP fiable):
+    // el jitter buffer y la FSM ya toleran ese régimen.
+    if (this._tunnel) {
+      try { this.conn.send({ k: 'f2', b: buf }); } catch { /* conn cerrándose */ }
+      return;
+    }
     try { this._fast.send(buf); } catch { /* DC cerrándose */ }
+  }
+
+  /** v3.6.74 · r82 · activa el túnel PeerJS para el canal fast */
+  _enterTunnel() {
+    if (this._tunnel || this.v2 !== 'pending') return;
+    this._tunnel = true;
+    this._stats.turn = true;   // reutiliza la marca «camino no directo»
+    this._v2ChannelsUp();
   }
 
   /** muestreo de pose: cabeza (cámara XR) + manos (grips), en marco NET */
@@ -1207,6 +1264,13 @@ export class NetLink {
         if (i === g.paddleHand) fl |= 4;               // pala en esta mano
       }
     }
+    // v3.6.74 · r82 · LATERALIDAD FÍSICA de la mano de la pala (bit 8):
+    // el hueco del mando (slot 0/1) NO es la mano física — un jugador
+    // diestro puede llevar la pala en el slot izquierdo. El avatar del
+    // rival necesita la MANO REAL para su montura (mountQuatFor), si no
+    // la pala del avatar nace rodada 90° en los jugadores con huecos
+    // cruzados. (La pala del validador usa la POSICIÓN — sin cambio.)
+    if (g.grips[g.paddleHand] && g.handOf && g.handOf[g.paddleHand] === 'left') fl |= 8;
     out.fl = fl;
     return out;
   }
@@ -1232,13 +1296,29 @@ export class NetLink {
     o.evs = [];
     const pkt = PPNET.decodePacket(buf, o);
     if (!pkt) return;
+    // v3.6.74 · r82 · ECO NTP VIVO: la cabecera fast lleva echoTime/echoDelay
+    // para que EL OTRO reconstruya t1 y refine el reloj (spec §4) — pero
+    // estos dos campos nunca se escribían (solo a 0 en startV2): el refinado
+    // NTP estaba MUERTO y el offset quedaba congelado en el ancla gruesa.
+    // Con el ancla sesgada (fácil ±30-80 ms en Wi-Fi real) el validador
+    // rechazaba por «tHit en el futuro» TODOS los golpes remotos del
+    // partido, sin UI y sin recuperación. Ahora cada paquete recibido
+    // alimenta el eco del siguiente.
+    this._echoTime = pkt.sendTime;
+    this._echoAt = now;
     this._onAckFrom(pkt);
     this._clock.onPacket(pkt, now);
     this._trackLoss(pkt.seq);
     if (pkt.pose) {
       // muestra del rival al jitter buffer (marco NET, reloj HOST)
       this._lastPoseAt = now;
-      const tHost = this._clock.nowHost(now);
+      // v3.6.74 · r82 · SELLO POR CAPTURA, no por llegada: la muestra se
+      // estampa con el sendTime del EMISOR reconstruido en reloj HOST
+      // (mismo truco wrap-safe de NetClock.onPacket). Estampar con la
+      // llegada retrasaba cada muestra un one-way entero (~17-50 ms) y el
+      // validador juzgaba el golpe con la pose ANTERIOR al instante real.
+      const tRef = this._clock.nowHost(now);
+      const tHost = tRef + PPNET.wrapDiff(pkt.sendTime, PPNET.u32(tRef));
       this._jb.push(tHost, {
         hp: pkt.pose.hp, hq: pkt.pose.hq, lp: pkt.pose.lp, lq: pkt.pose.lq,
         rp: pkt.pose.rp, rq: pkt.pose.rq, fl: pkt.pose.fl,
@@ -1430,6 +1510,10 @@ export class NetLink {
       k: 'resync', sp: r.scorePlayer, sa: r.scoreAi, sv: r.server,
       st: r.state, tp: r.totalPoints, gp: r.gamesPlayer, ga: r.gamesAi,
       gn: r.gameNo, fs: r.firstServer,
+      // v3.6.74 · r82 · banderas del ÁRBITRO: sin ellas el resincronizado
+      // seguía juzgando el rally con lastHitter/validBounce suyos (puntos
+      // fantasma tras un RESYNC en pleno intercambio)
+      lh: r.lastHitter || null, vb: !!r.validBounce,
     });
   }
 
@@ -1441,6 +1525,9 @@ export class NetLink {
     r.server = m.sv; r.state = m.st; r.totalPoints = m.tp;
     r.gamesPlayer = m.gp; r.gamesAi = m.ga; r.gameNo = m.gn;
     r.firstServer = m.fs;
+    // r82: el árbitro de mitad hereda las banderas del anfitrión
+    if (m.lh !== undefined) r.lastHitter = m.lh;
+    if (m.vb !== undefined) r.validBounce = !!m.vb;
   }
 
   /** intents de PUNTO local (processIntents, c12): enviar/suprimir
@@ -1454,7 +1541,8 @@ export class NetLink {
     if (dec.send) {
       this._stats.claims++;
       this.sendRel(dec.send);
-      this._claimFallback = { r: g.rules.rallyId, t: performance.now() };
+      // r82: rallyId NO existía (undefined) — la identidad real es rallySeq
+      this._claimFallback = { r: g.rules.rallySeq, t: performance.now() };
     }
     return dec.apply;
   }
@@ -1481,6 +1569,15 @@ export class NetLink {
   }
 
   _queueEv(ev) {
+    // v3.6.74 · r82 · IDENTIDAD ÚNICA EN LA COLA (punto de estrangulamiento):
+    // HIT (netLocalHit), TOSS (localToss) y HANDOFF (crossedNet) nacían SIN
+    // id y el códec los sellaba con `e.id & 0xffff` = **0** — el dedupe del
+    // receptor (`_seenEv.has(ev.id)`) se comía TODO evento tras el primero:
+    // punto 1 «funcionaba» (la autoridad provisional de 300 ms enmascaraba
+    // el traspaso deduplicado) y desde el punto 2 el receptor jamás veía
+    // saques, golpes ni traspasos («veo las palas pero no puedo jugar la
+    // bola»). Los SNAP ya traían id propio; el resto lo recibe AQUÍ.
+    if (ev.id === undefined || ev.id === null) ev.id = this._evId++;
     this._pend.push({ ev, seqs: [], done: false });
     if (this._pend.length > 24) this._pend.shift();   // techo duro
   }
@@ -1683,7 +1780,44 @@ export class NetLink {
     if (this.v2 !== 'ok') return { mode: 'legacy-v1' };
     this._stats.tEnd = performance.now();
     return { mode: 'binario-v2', ...this._stats.summary(this._clock),
-      val: { rejects: this._val.rejects, serious: this._val.serious } };
+      val: { rejects: this._val.rejects, serious: this._val.serious,
+             // r82: las CAUSAS de rechazo viajan en telemetría — diagnóstico
+             // a distancia de un partido real fallido sin pedir logs al dueño
+             log: this._val.log.slice(0, 8) } };
+  }
+
+  /** v3.6.74 · r82 · estado del enlace para HUD/QA/telemetría (visible:
+   *  el dueño SABE en qué viaja la partida — P2P, túnel, v1 — y con qué
+   *  salud de reloj/validador). window.__PP_NET = this en c12. */
+  netInfo() {
+    if (this.v2 !== 'ok') {
+      return { v2: this.v2 || 'off', via: this.online ? 'sala' : '-',
+        online: !!this.online, buildWarn: !!this._buildWarn };
+    }
+    const rs = this._clock ? this._clock.rttStats() : { med: 0, p95: 0, min: 0 };
+    return {
+      v2: 'ok', via: this._tunnel ? 'tunel' : 'p2p', online: true,
+      buildWarn: !!this._buildWarn,
+      rtt: rs.med, rttP95: rs.p95, jitter: Math.round(this._clock.jitter || 0),
+      clockOff: Math.round(this._clock.offset || 0), clockReady: !!this._clock.ready,
+      jbDelay: Math.round(this._jb.delayMs || 0), starves: this._jb.starves || 0,
+      loss: Math.round((1 - (this._recvs || 0) / Math.max(1, (this._recvs || 0) + (this._gaps || 0))) * 100),
+      ball: this._ball.state, shot: this._ball.shot, mine: this._ball.mine,
+      val: { rej: this._val.rejects, serious: this._val.serious,
+             log: this._val.log.slice(0, 6) },
+    };
+  }
+
+  /** r82 · telemetría del enlace en CUALQUIER fin (no solo game-over):
+   *  una sesión rota a mitad también deja huella diagnosticable */
+  _teleReport(reason) {
+    try {
+      if (window.__PP_TELE && window.__PP_TELE.ev && this.v2) {
+        const rep = this.netReport();
+        rep.end = reason || 'fin';
+        window.__PP_TELE.ev('net_match', rep);
+      }
+    } catch { /* telemetría jamás rompe la red */ }
   }
 
   _v2Fail(msg) {
@@ -1703,9 +1837,7 @@ export class NetLink {
   sendMatchEnd(result) {
     if (this.v2 !== 'ok') return;
     this._stats.result = result;
-    try { if (window.__PP_TELE && window.__PP_TELE.ev) {
-      window.__PP_TELE.ev('net_match', this.netReport());
-    } } catch { /* */ }
+    this._teleReport(result);
     this.sendRel({ k: 'mend', r: result });
   }
 
@@ -1718,6 +1850,7 @@ export class NetLink {
 
   onPeerGone(msg) {
     const wasOnline = this.online;
+    if (wasOnline && this.v2) this._teleReport('peer_gone');   // r82: diagnóstico
     this.teardown();
     this.setStatus('off', wasOnline ? msg : '');
     if (wasOnline) this.game?.onNetEnded?.(msg);

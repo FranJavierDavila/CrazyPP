@@ -178,6 +178,8 @@ export class Rules {
     this.server = this.gameNo % 2 === 1
       ? this.firstServer
       : this.other(this.firstServer);   // cada juego saca el otro (ITTF)
+    this.gameOpener = this.server;  // v3.6.74 · r82: referencia de la rotación
+                                    // dentro del juego (firstServer es del PARTIDO)
     this.state = 'serve';
     this.stateTimer = 0;
     this.lastHitter = null;
@@ -309,11 +311,21 @@ export class Rules {
   }
 
   computeNextServer() {
+    // v3.6.74 · r82 · LA ROTACIÓN ES RELATIVA AL PRIMER SACADOR DEL JUEGO
+    // (gameOpener), no a 'player': en el INVITADO el abridor es 'ai' en SU
+    // perspectiva (el anfitrión abre) y la fórmula antigua (hardcode
+    // 'player') daba el sacador AL REVÉS desde el primer punto — el
+    // anfitrión creía sacar él y el invitado TAMBIÉN: dos bolas HELD,
+    // ningún saque llega, el partido se atasca tras el punto 1 en
+    // dispositivos reales (cazado EN VIVO por la batería multi). El espejo
+    // de perspectiva sale gratis derivándolo del abridor del juego.
     const n = this.totalPoints;
+    const base = this.gameOpener || this.firstServer;
+    const otro = base === 'player' ? 'ai' : 'player';
     if (this.scorePlayer >= 10 && this.scoreAi >= 10) {
-      return n % 2 === 0 ? 'player' : 'ai';
+      return n % 2 === 0 ? base : otro;   // deuce: alterna CADA punto
     }
-    return Math.floor(n / 2) % 2 === 0 ? 'player' : 'ai';
+    return Math.floor(n / 2) % 2 === 0 ? base : otro;
   }
 
   handleEvents(events) {

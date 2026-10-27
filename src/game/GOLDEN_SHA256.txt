@@ -1,3 +1,2 @@
-# SHA256 del game.html que produjo esta división (3.6.73-SDK6, fase 75 · SESENTA SEGUROS; sello actualizado
-# por bump_version.py desde 3.6.72-SDK6)
-5d3dc8735ddb4d0705a3f7af164862d020224a5b71baae89b4ff6149eecd997d
+# game.html v3.6.74-SDK6 FASE 76 «AL MILÍMETRO» (r82) · regenerado con build_game.py
+d7edefe31c79d33dc438c7917a8b06770dbc9cfc14f055b0df200fff5f943979

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r79_v3671 — CAPA BN · V3.6.75-SDK6, FASE 73 «CRAZY LINK v2».
+"""qa_r79_v3671 — CAPA BN · V3.6.76-SDK6, FASE 73 «CRAZY LINK v2».
 
 Petición del dueño (r79): «Lo siguiente es trabajar el modo multijugador.
 Algo tenemos realizado pero necesitamos hacerlo realista y no cosmético…
@@ -95,7 +95,7 @@ AGUJAS = [
     ("validación cadencia 150 ms", "MIN_HIT_GAP: 0.15"),
     ("avatar: muestra del jitter buffer", "avatarSample"),
     ("ping en el marcador", "netPing"),
-    ("tarjeta DUELOS LOCOS (patrón candado)", "_modeCardDuelos"),
+    ("tarjeta DUELOS LOCOS desbloqueada (r84)", "this._modeCard(rects, 'mjduel', 40, 326"),
     ("icono nuevo del modo duelo", "PP_ICONS.duelo"),
     ("NORMAL · PARTIDA (i18n ES)", "mj_norm_t: 'NORMAL · PARTIDA'"),
     ("DUELOS LOCOS (i18n ES)", "mj_duel_t: 'DUELOS LOCOS'"),
@@ -104,19 +104,19 @@ AGUJAS = [
     ("sincronizando (estado honesto)", "net_syncing: 'Sincronizando con el rival…'"),
     ("pausa del rival (i18n)", "net_paused: 'RIVAL EN PAUSA · el partido queda detenido'"),
     ("degradación honesta a v1", "net_legacy: 'Sin canal rápido: modo compatible 30 Hz'"),
-    ("versión sellada 3.6.75-SDK6", "const VERSION = '3.6.75-SDK6';"),
+    ("versión sellada 3.6.76-SDK6", "const VERSION = '3.6.76-SDK6';"),
 ]
 
 CONTADORES = [
     ("k: 'mstart' (emisión + recepción)", "k: 'mstart'", 2),
     ("k: 'hello2' (una sola definición)", "k: 'hello2'", 1),
     ("k: 'claim' (libro de reclamos)", "k: 'claim'", 1),
-    ("candado ENCIMA del nombre en Duelos", "candado(c, x + 134", 1),
+    ("candado fuera de la tarjeta Duelos (r84)", "candado(c, x + 134", 0),
     ("PP_ICONS.duelo (definición + uso)", "PP_ICONS.duelo", 1),
     ("netPing (marcador + c12 + c08)", "netPing", 7),
     ("setServeHeld (HELD determinista)", "setServeHeld", 3),
-    ("_modeCardDuelos (def + llamada)", "_modeCardDuelos", 2),
-    ("versión única", "const VERSION = '3.6.75-SDK6'", 1),
+    ("mjduel vía _modeCard con las hermanas (r84)", "rects, 'mjduel', 40, 326", 1),
+    ("versión única", "const VERSION = '3.6.76-SDK6'", 1),
     ("agujas de la ronda 78 intactas (MEGA_GOLPES)", "const MEGA_GOLPES = 20;", 1),
 ]
 
@@ -198,8 +198,8 @@ JS_BANCO = """async () => {
       'NetLink: superficie v2 completa en la instancia viva');
   chk(G.net.ballMine() === (G.net.owner === G.net.mySide()) || G.net.v2 !== 'ok',
       'NetLink: ballMine coherente fuera de sesión');
-  chk(typeof G.drawMenuMulti === 'function' && typeof G._modeCardDuelos === 'function'
-      && typeof G.onNetMatchStart === 'function' && typeof G.onNetV2Ready === 'function',
+  chk(typeof G.drawMenuMulti === 'function' && typeof G.onNetMatchStart === 'function'
+      && typeof G.onNetV2Ready === 'function' && typeof G._dlTrigger === 'function',
       'c12: submenú + MATCH_START cableados');
   return out;
 }"""

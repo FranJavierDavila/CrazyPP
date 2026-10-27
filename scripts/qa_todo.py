@@ -454,6 +454,17 @@ CAPAS = [
     # nombre PERMANENTES (ppxr_grips_v1) y salidas B/Y que restauran el
     # Hall sin arrastrar nada.
     ('BS · pala al milímetro (v3675)', 'qa_r83_v3675.py'),
+    # BT (r84): DUELOS LOCOS — la tarjeta del submenú multi sale del patrón
+    # de bloqueo r79 (velo+candado+PRÓXIMAMENTE) y juega de verdad: el modo
+    # viaja en el mstart (md, autoridad del anfitrión), rules.startMatch
+    # normaliza 'duelos' con la SERIE mejor-de-3 intacta y los TRES PODERES
+    # netcode-safe (GIGANTE por bit 16 de pose, FUEGO ×1,18 con tope 26 <cap
+    # 30 del validador, LOCA por el canal de spin del SÚPER EFECTO) cargan
+    # cada 5 golpes y salen con el gatillo de la mano libre; aviso del rival
+    # por cable fiable 'pow' (solo UX). + EL PULSO EN LA PUERTA DEL HALL:
+    # dos placas de museo (drawHallSign) repintadas con i18n y estado diario
+    # en drawHall() (stub r58 revivido).
+    ('BT · duelos locos + pulso en la puerta (v3676)', 'qa_r84_v3676.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

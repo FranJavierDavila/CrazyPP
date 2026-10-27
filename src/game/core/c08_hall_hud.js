@@ -422,6 +422,30 @@ export function createHall() {
     balls.push(b);
   }
 
+  /* r84 · EL PULSO CRAZY EN LA PUERTA: dos placas de museo (drawHallSign)
+   * a los flancos de la pared de la puerta (z1) — «EL PULSO CRAZY · reto
+   * de hoy» y «TU RACHA». Los lienzos viajan en userData.hall y c12.drawHall
+   * los repinta con i18n viva al entrar (el reto cambia cada medianoche). */
+  const pulsoCvL = hallCanvas(1024, 600);
+  const pulsoCvR = hallCanvas(1024, 600);
+  drawHallSign(pulsoCvL, 'EL PULSO CRAZY', '· · ·');
+  drawHallSign(pulsoCvR, 'TU RACHA', '· · ·');
+  const pulsoTexL = new THREE.CanvasTexture(pulsoCvL);
+  const pulsoTexR = new THREE.CanvasTexture(pulsoCvR);
+  try { pulsoTexL.colorSpace = THREE.SRGBColorSpace; pulsoTexL.anisotropy = 4; } catch (eTP1) { /* */ }
+  try { pulsoTexR.colorSpace = THREE.SRGBColorSpace; pulsoTexR.anisotropy = 4; } catch (eTP2) { /* */ }
+  const pulsoZ = (HALL.cz + HALL.depth / 2) - 0.012;   // un pelín delante del arte
+  const pulsoMeshL = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 0.50),
+    new THREE.MeshBasicMaterial({ map: pulsoTexL, transparent: true }));
+  pulsoMeshL.position.set(-2.55, 1.7, pulsoZ);
+  pulsoMeshL.rotation.y = Math.PI;                     // mira hacia dentro (−Z)
+  g.add(pulsoMeshL);
+  const pulsoMeshR = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 0.50),
+    new THREE.MeshBasicMaterial({ map: pulsoTexR, transparent: true }));
+  pulsoMeshR.position.set(2.55, 1.7, pulsoZ);
+  pulsoMeshR.rotation.y = Math.PI;
+  g.add(pulsoMeshR);
+
   g.userData.hall = {
     /* v3.6.50 (r58): las SEIS CARAS visten el arte del artista (texs llega
      * async; texWant = contrato de las 6 claves). Del museo sobrevive lo
@@ -432,6 +456,8 @@ export function createHall() {
     insigniaCache: {},   // (retirado v3.6.28: las paredes visten arte fijo)
     lights,
     fx: { balls },
+    pulsoL: { cv: pulsoCvL, tex: pulsoTexL },   // r84 · placas EL PULSO
+    pulsoR: { cv: pulsoCvR, tex: pulsoTexR },
   };
   return g;
 }

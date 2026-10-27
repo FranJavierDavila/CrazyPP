@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.75-SDK6, fase 77 · LA PALA AL MILIMETRO; sello actualizado
-# por bump_version.py desde 3.6.74-SDK6)
-2f687b6c79c141be02d8b7fb6d24072297ac5d97257f999c84f28226fb09fa79
+# SHA256 del game.html que produjo esta división (3.6.76-SDK6, fase 78 · DUELOS LOCOS; sello actualizado
+# por bump_version.py desde 3.6.75-SDK6)
+7d8e8b8ba40b10934768b6deb2ddc0bee2edbce58709fb5b10efe9e03dc3492f

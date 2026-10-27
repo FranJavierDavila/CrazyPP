@@ -517,6 +517,9 @@ export class NetLink {
 
   sendRematch() { this.send({ k: 'r' }); }
   sendMode(md) { this.send({ k: 'm', md }); }
+  /** r84 · DUELOS LOCOS: aviso FIABLE de «disparé mi poder» (solo UX en
+   *  el receptor; el efecto real viaja por pose/HIT — §DUELOS en c12). */
+  sendDueloPower(id) { this.sendRel({ k: 'pow', p: id }); }
 
   /* --------------- recepción --------------- */
   onData(d) {
@@ -1040,8 +1043,16 @@ export class NetLink {
       }
       case 'mstart': {
         // MATCH_START del anfitrión: instante futuro + primer sacador
-        this._mstart = { startAt: m.sa, fs: m.fs, bo: m.bo || 3 };
+        // r84 · + md: modo de la partida ('match'|'duelos') — autoridad del
+        // anfitrión; el invitado ignora su propia elección del submenú.
+        this._mstart = { startAt: m.sa, fs: m.fs, bo: m.bo || 3, md: (m.md === 'duelos') ? 'duelos' : 'match' };
         this.game?.onNetMatchStart?.(this._mstart);
+        break;
+      }
+      case 'pow': {
+        // r84 · DUELOS LOCOS: el rival disparó un poder — aviso UX puro
+        // (mensaje + voz en el extremo receptor); tolerante e idempotente.
+        this.game?.onRemoteDueloPower?.(m.p);
         break;
       }
       case 'claim': {
@@ -1100,8 +1111,12 @@ export class NetLink {
       // el anfitrión fija el instante de inicio en SU reloj (spec §3.8)
       const startAt = this._clock.nowHost(performance.now()) + PPNET.VP.COUNTDOWN_MS;
       const fs = 'host';
-      this.sendRel({ k: 'mstart', sa: startAt, fs, bo: 3 });
-      this._mstart = { startAt, fs, bo: 3 };
+      // r84 · DUELOS LOCOS: el modo de la partida viaja en el mstart (md) —
+      // lo decide la tarjeta que el anfitrión eligió en el submenú
+      // (_mjMode: 'normal'|'duelos'); el invitado lo recibe y obedece.
+      const md = (this.game && this.game._mjMode === 'duelos') ? 'duelos' : 'match';
+      this.sendRel({ k: 'mstart', sa: startAt, fs, bo: 3, md });
+      this._mstart = { startAt, fs, bo: 3, md };
       this.game?.onNetMatchStart?.(this._mstart);
     }
     this.game?.onNetV2Ready?.();     // r79: arranque diferido si pidió revancha durante la subida
@@ -1271,6 +1286,10 @@ export class NetLink {
     // la pala del avatar nace rodada 90° en los jugadores con huecos
     // cruzados. (La pala del validador usa la POSICIÓN — sin cambio.)
     if (g.grips[g.paddleHand] && g.handOf && g.handOf[g.paddleHand] === 'left') fl |= 8;
+    // r84 · DUELOS LOCOS · GIGANTE (bit 16): el tamaño de MI pala viaja en
+    // la pose — el avatar rival crece/decrece sin mensaje ni códec nuevo
+    // (POSE=31 B intacto: el bit comparte el byte fl ya existente)
+    if (g._dlOn && g._dlOn('gigante')) fl |= 16;
     out.fl = fl;
     return out;
   }

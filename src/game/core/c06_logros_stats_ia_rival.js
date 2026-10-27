@@ -192,7 +192,11 @@ export class Rules {
   }
 
   startMatch(mode) {
-    this.mode = mode === 'survival' ? 'survival' : 'match';
+    // r84 · DUELOS LOCOS: nuevo id de modo — misma puntuación y fin de
+    // juego que 'match' (el árbitro no cambia NADA), sólo activa los
+    // poderes del núcleo (c12 §DUELOS). Normalizador explícito.
+    this.mode = mode === 'survival' ? 'survival'
+      : (mode === 'duelos' ? 'duelos' : 'match');
     this.rallyesSurvived = 0;
     // v3.6.29: NUEVO ENFRENTAMIENTO — la serie arranca a cero (bestOf se
     // conserva: lo fija el juego en los caminos del partido libre).
@@ -427,7 +431,9 @@ export class Rules {
           const p = this.scorePlayer, q = this.scoreAi;
           // v3.6.29 · MEJOR DE 3: el juego contado alimenta la serie; el
           // enfrentamiento se decide al ganar 2 juegos (2·victorias > bestOf).
-          if (this.mode === 'match' && this.bestOf > 1) {
+          // r84 · DUELOS LOCOS entra en la serie (idéntico al 'match': los
+          // CLAIM/ACK y el espejo de marcador son agnósticos del modo).
+          if ((this.mode === 'match' || this.mode === 'duelos') && this.bestOf > 1) {
             if (winner === 'player') this.gamesPlayer++; else this.gamesAi++;
             const a = this.gamesPlayer, b = this.gamesAi;
             const serieAcabada = a * 2 > this.bestOf || b * 2 > this.bestOf;

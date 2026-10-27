@@ -82,7 +82,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 51)
-        ('3.6.75-SDK6', 'versión servida: 3.6.75-SDK6 (ronda 52)'),
+        ('3.6.76-SDK6', 'versión servida: 3.6.76-SDK6 (ronda 52)'),
         # · 1) SÚPER EFECTO EXAGERADO
         ('const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)',
          'efecto: el brush generado sube a ×3 (antes ×2)'),
@@ -155,10 +155,10 @@ async def main():
     chk(game.count('(this.inAR && this.pstOn)') >= 5,
         f'passthrough: los usos de sala/hall filtran con (inAR && pstOn) '
         f'({game.count("(this.inAR && this.pstOn)")} usos)')
-    chk(game.count('this._poderTickBlip(2)') == 5 and
+    chk(game.count('this._poderTickBlip(2)') == 6 and
         game.count('this._poderTickBlip(1)') == 5 and
         game.count('this._poderTickBlip(3)') == 5,
-        'ticks: los CINCO poderes comparten la cuenta 3·2·1 (15 llamadas)')
+        'ticks: los CINCO poderes + el aviso DUELOS comparten la cuenta 3·2·1 (16 llamadas)')
 
     # ---------- 2 · MECÁNICA REAL (headless) ----------
     async with async_playwright() as p:

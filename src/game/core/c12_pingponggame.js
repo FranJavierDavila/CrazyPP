@@ -172,6 +172,14 @@ export class PingPongGame {
     } catch (eK) { /* sin window (entornos de prueba) */ }
     this._megaRallyGrants = 0;        // concesiones ya dadas en ESTE rally
     this._megaWarn = false;           // aviso «se agota» ya disparado
+    // r84 · DUELOS LOCOS — estado de poderes de la partida online (§DUELOS)
+    this._dlCargue = 0;               // golpes propios desde la última carga
+    this._dlLista = false;            // carga lista esperando el gatillo
+    this._dlProximo = '';             // poder que saldrá al disparar
+    this._dlId = '';                  // poder ACTIVO (''|'gigante'|'fuego'|'loca')
+    this._dlT = 0;                    // s restantes del poder activo
+    this._dlWarn = false;             // aviso «se agota» ya disparado
+    this._dlRemotoT = 0;              // aviso del poder del rival (solo UX)
     this._megaTickN = 0;              // v3.6.43: cuenta sonora 3·2·1
     this._megaPngs = {};              // Images por poder (async)
     this._megaPngHecho = false;
@@ -1062,9 +1070,11 @@ export class PingPongGame {
     if (this.net.role !== 'host') { this.net.sendRematch(); return; }
     if (this.net.v2 === 'ok') {
       // r79 · v2: nueva partida = nuevo MATCH_START sincronizado (spec §3.8)
+      // r84 · + md: el modo elegido por el ANFITRIÓN viaja en el mstart
+      const md = (this._mjMode === 'duelos') ? 'duelos' : 'match';
       const startAt = this.net.hostNowMs() + PPNET.VP.COUNTDOWN_MS;
-      this.net.sendRel({ k: 'mstart', sa: startAt, fs: 'host', bo: 3 });
-      this.onNetMatchStart({ startAt, fs: 'host', bo: 3 });
+      this.net.sendRel({ k: 'mstart', sa: startAt, fs: 'host', bo: 3, md });
+      this.onNetMatchStart({ startAt, fs: 'host', bo: 3, md });
       return;
     }
     if (this.net.v2 === 'pending') {
@@ -1086,10 +1096,20 @@ export class PingPongGame {
    *  reloj del anfitrión (spec §3.8: startAt ≈ ahora + 3000 ms). */
   onNetMatchStart(m) {
     const guest = this.net.role === 'guest';
-    this.mode = 'match';
-    this.pendingMode = 'match';
+    // r84 · DUELOS LOCOS: el modo lo sella el mstart del anfitrión (md) —
+    // antes era 'match' hard-coded; sin eso el invitado jamás jugaba duelos.
+    const md = (m && m.md === 'duelos') ? 'duelos' : 'match';
+    this.mode = md;
+    this.pendingMode = md;
     this.rules.bestOf = m.bo || 3;
-    this.rules.startMatch('match');
+    this.rules.startMatch(md);
+    if (md === 'duelos') {
+      // r84 · el enlace se canta y el modo también: los DOS extremos saben
+      // que esta partida es de poderes (message + voz una sola vez)
+      this.rules.message = T('mode_duelos');
+      this.audio.announce(T('mode_duelos'), true);
+      this._dlReset();
+    }
     // el primer sacador lo fija el MATCH_START (fair: alterna por juego —
     // resetGame ya alterna con gameNo); aquí se ancla el del primer juego
     this.rules.firstServer = (m.fs === 'host')
@@ -1582,9 +1602,12 @@ export class PingPongGame {
     // r79 · SUBMENÚ DE DOS MODOS (petición del dueño): «este modo
     // Multijugador entra en subMenú con dos modos de juego con sus
     // respectivos iconos para seguir una estética común con todo el
-    // juego»: NORMAL (partida 1 vs 1 online) y DUELOS LOCOS (poderes de
-    // los campeonatos — con etiqueta PRÓXIMAMENTE y candado ENCIMA, como
-    // los campeonatos bloqueados).
+    // juego»: NORMAL (partida 1 vs 1 online) y DUELOS LOCOS (1 vs 1 con
+    // poderes locos).
+    // r84 · DUELOS LOCOS DESBLOQUEADO (ronda 84): la tarjeta deja el patrón
+    // de bloqueo r72/r73 (velo + candado + PRÓXIMAMENTE) y pasa a ser una
+    // _modeCard con estética común — gradiente morado propio, rayo, hover y
+    // chevron como NORMAL. Las reglas (poderes) se definen en c12 §DUELOS.
     // r80 · EL SUBMENÚ QUE RESPIRA (informe del dueño: «has colocado mal
     // los botones, se están pisando con el marco superior del menú y los
     // idiomas»): las tarjetas BAJAN bajo la cabecera (las palas de idioma
@@ -1596,7 +1619,9 @@ export class PingPongGame {
     label(T('tab_multi'), 244, 26);
     this._modeCard(rects, 'mjnorm', 40, 216, 944, 96, T('mj_norm_t'),
       T('mj_norm_s'), '#2f9e44', '#1e7c33', PP_ICONS.multi);
-    this._modeCardDuelos(rects, 40, 326, 944, 96);
+    // r84 · DUELOS LOCOS desbloqueado: tarjeta estándar con identidad propia
+    this._modeCard(rects, 'mjduel', 40, 326, 944, 96, T('mj_duel_t'),
+      T('mj_duel_s'), '#3b3550', '#241f33', PP_ICONS.duelo);
     const yPanel = 446;
 
     if (st === 'online') {
@@ -1684,61 +1709,9 @@ export class PingPongGame {
     btn('tab:main', 56, 1440, 912, 68, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
   }
 
-  /** r79 · tarjeta DUELOS LOCOS con el patrón EXACTO de los campeonatos
-   *  bloqueados: tarjeta atenuada + candado ENCIMA del nombre + chip
-   *  plateado PRÓXIMAMENTE anclado a la derecha + voz al intentar entrar. */
-  _modeCardDuelos(rects, x, y, w, h) {
-    const c = this.menuCanvas.getContext('2d');
-    const g = c.createLinearGradient(x, y, x, y + h);
-    g.addColorStop(0, '#3b3550');
-    g.addColorStop(1, '#241f33');
-    c.beginPath();
-    if (c.roundRect) c.roundRect(x, y, w, h, 22); else c.rect(x, y, w, h);
-    c.fillStyle = g;
-    c.fill();
-    c.strokeStyle = 'rgba(255,255,255,0.14)';
-    c.lineWidth = 2;
-    c.stroke();
-    // insignia circular con el icono del modo (rayo de los poderes)
-    const cx = x + 76, cy = y + h / 2;
-    c.beginPath(); c.arc(cx, cy, 50, 0, Math.PI * 2);
-    c.fillStyle = 'rgba(0,0,0,0.30)'; c.fill();
-    c.strokeStyle = 'rgba(255,255,255,0.25)'; c.lineWidth = 2.5; c.stroke();
-    try { PP_ICONS.duelo(c, cx, cy); } catch (e) { /* icono decorativo */ }
-    // velo de bloqueado (patrón campeonatos)
-    c.beginPath();
-    if (c.roundRect) c.roundRect(x, y, w, h, 22); else c.rect(x, y, w, h);
-    c.fillStyle = 'rgba(8,10,16,0.62)';
-    c.fill();
-    // título con el CANDADO ENCIMA (junto al texto, como los campeonatos)
-    c.textAlign = 'left';
-    c.textBaseline = 'alphabetic';
-    const ttl = T('mj_duel_t');
-    c.font = '800 34px system-ui, sans-serif';
-    c.fillStyle = 'rgba(201,212,222,0.75)';
-    c.fillText(ttl, x + 134, y + h / 2 - 4);
-    try { PP_ICONS.candado(c, x + 134 + c.measureText(ttl).width + 26, y + h / 2 - 16, 1.35); } catch (e) { /* */ }
-    c.font = '600 19px system-ui, sans-serif';
-    c.fillStyle = 'rgba(201,212,222,0.55)';
-    c.fillText(T('mj_duel_s'), x + 134, y + h / 2 + 30);
-    // chip plateado PRÓXIMAMENTE anclado a la derecha (patrón r72/r73)
-    const chip = T('champ_locked_chip');
-    c.font = '800 20px system-ui, sans-serif';
-    const cw = c.measureText(chip).width + 36;
-    const chx = x + w - cw - 26, chy = y + h / 2 - 19;
-    c.beginPath();
-    if (c.roundRect) c.roundRect(chx, chy, cw, 38, 19); else c.rect(chx, chy, cw, 38);
-    c.fillStyle = 'rgba(201,212,222,0.10)';
-    c.fill();
-    c.strokeStyle = '#c9d4de';
-    c.lineWidth = 2;
-    c.stroke();
-    c.fillStyle = '#c9d4de';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(chip, chx + cw / 2, chy + 20);
-    rects.push({ x, y: y - 3, w, h: h + 6, id: 'mjduel' });
-  }
+  // r84 · La tarjeta DUELOS LOCOS ya no necesita pintor propio: vive en
+  // _modeCard como el resto de modos (el velo/candado/chip r79 quedó
+  // retirado junto con este método, que fue su único consumidor).
 
   /** v3.6.72 (r80) · EL RETO DIARIO EN LA PUERTA — botón estrella al pie
    *  del menú principal (petición del dueño: «Un botón con la pala
@@ -3364,11 +3337,12 @@ export class PingPongGame {
         } catch (eRD) { /* nunca rompe el menú */ }
         break;
       case 'mjduel':
-        // r79 · DUELOS LOCOS bloqueado: etiqueta PRÓXIMAMENTE + candado —
-        // misma respuesta que los campeonatos bloqueados (voz + mensaje)
-        this.rules.message = T('champ_locked_soon');
-        this.audio.announce(T('champ_locked_soon'), true);
-        this.audio.playOsc(220, 180, 0.12, 'sawtooth', 0.1, 0);
+        // r84 · DUELOS LOCOS desbloqueado: espejo EXACTO de 'mjnorm' — el
+        // modo elegido abre la sala (dos pasos r80 intactos). El modo real
+        // de la partida lo sella el ANFITRIÓN en el mstart (md).
+        this._mjMode = 'duelos';
+        this.rules.message = '';
+        this.audio.playOsc(620, 980, 0.06, 'square', 0.1, 0);
         this.drawMenu();
         break;
       case 'net':
@@ -4168,6 +4142,10 @@ export class PingPongGame {
     // de respaldo). En 'serve' el gatillo sigue SIENDO DEL SAQUE (cero
     // conflicto). «Pala Mejorada» apagado = pala 100 % normal.
     if (this.rules.state === 'rally' && this.megaTrigger(i)) return;
+    // r84 · DUELOS LOCOS: el MISMO gatillo de la mano libre libera el poder
+    // cargado de la partida online (megaEnabled es false aquí: los
+    // campeonatos no están activos en red, cero conflicto de entradas).
+    if (this.rules.state === 'rally' && this._dlTrigger(i)) return;
     if (this.rules.state === 'rally' && this.champs &&
         typeof this.champs.megaTrigger === 'function') {
       let consumed = false;
@@ -6422,10 +6400,120 @@ export class PingPongGame {
     }
   }
 
+  /* =====================================================================
+   *  r84 · DUELOS LOCOS — poderes de la partida online (§DUELOS)
+   *  REGLAS (diseño r84, petición del dueño «más adelante se definirán
+   *  las reglas»): 1 vs 1 online con marcador EXACTO de Normal (el
+   *  árbitro/CLAIM/ACK no cambian NADA); cada 5 golpes propios (saque
+   *  incluido) carga 1 poder ALEATORIO; el gatillo de la mano libre lo
+   *  libera con la bola en juego. Tres poderes NETCODE-SAFE:
+   *   · GIGANTE — tu pala ×1,30 y radio de golpeo ×1,38 mientras dura
+   *     (12 s). Efecto LOCAL: el rival lo VE por el bit 16 de pose.fl
+   *     (transporte gratis en el paquete de pose, sin mensaje extra).
+   *   · FUEGO   — tus golpes de rally salen ×1,18 (10 s). La velocidad
+   *     viaja DENTRO del HIT existente; tope interno 26 m/s, por debajo
+   *     del cap 30 del validador §12 (nunca rechazo anti-trampa).
+   *   · LOCA    — tus golpes de rally llevan efecto vivo (spin ×2 del
+   *     brush + Magnus en tu mitad, 10 s): viaja en el mecanismo
+   *     estándar del SÚPER EFECTO (ppEfectoMul en la pala, spin en el
+   *     HIT/HANDOFF). El rival ve la curva en el stream de su mitad.
+   *  El aviso del disparo del rival va por cable fiable ('pow') y es
+   *  SOLO UX: mensaje + voz + blip. Cero cambios en CLAIM/ACK, RESYNC,
+   *  validador ni códec (POSE=31 B intacto: el bit viaja en fl).
+   *  ===================================================================== */
+  _dlEnabled() {
+    return !!(this.rules && this.rules.mode === 'duelos' &&
+      this.net && this.net.online && this.net.v2 === 'ok' &&
+      !this.inHall && !this.calib);
+  }
+  _dlOn(id) {
+    return this._dlEnabled() && this._dlT > 0 && this._dlId === id;
+  }
+  _dlReset() {
+    this._dlCargue = 0;
+    this._dlLista = false;
+    this._dlProximo = '';
+    this._dlId = '';
+    this._dlT = 0;
+    this._dlWarn = false;
+    this._dlRemotoT = 0;
+  }
+  /** un golpe propio (saque o rally) cuenta para la carga: cada 5, poder */
+  _dlChargeHit() {
+    if (!this._dlEnabled() || this._dlLista) return;
+    this._dlCargue++;
+    if (this._dlCargue < 5) return;
+    this._dlCargue = 0;
+    this._dlLista = true;
+    const ids = ['gigante', 'fuego', 'loca'];
+    this._dlProximo = ids[(Math.random() * ids.length) | 0];
+    try {
+      this.audio.playOsc(523, 659, 0.09, 'triangle', 0.12, 0);
+      this.audio.playOsc(659, 784, 0.09, 'triangle', 0.12, 0.09);
+      this.audio.playOsc(784, 1046, 0.13, 'triangle', 0.12, 0.18);
+      this.audio.announce(T('dl_listo'), true);
+      this.haptic(this.paddleHand === 1 ? 0 : 1, 0.5, 90);
+    } catch (eDLc) { /* nunca rompe el golpe */ }
+    this.rules.message = T('dl_poder_listo');
+  }
+  /** gatillo: libera el poder cargado (true = consumido) */
+  _dlTrigger(i) {
+    if (!this._dlEnabled() || !this._dlLista) return false;
+    const id = this._dlProximo || 'gigante';
+    this._dlLista = false;
+    this._dlProximo = '';
+    this._dlId = id;
+    this._dlT = id === 'gigante' ? 12 : 10;
+    this._dlWarn = false;
+    try {
+      this.net.sendDueloPower(id);       // aviso UX al rival ('pow')
+      const nombre = T('dl_' + id);
+      this.rules.message = nombre;
+      this.audio.announce(nombre, true);
+      this.haptic(i, 0.6, 120);
+      if (id === 'gigante') this.audio.playOsc(220, 440, 0.16, 'square', 0.1, 0);
+      else if (id === 'fuego') this.audio.playOsc(340, 760, 0.14, 'sawtooth', 0.1, 0);
+      else this.audio.playOsc(760, 340, 0.14, 'sine', 0.1, 0);
+    } catch (eDLt) { /* el efecto local ya está armado */ }
+    return true;
+  }
+  /** el rival disparó un poder (cable fiable): SOLO aviso local */
+  onRemoteDueloPower(id) {
+    if (!this._dlEnabled()) return;
+    if (id !== 'gigante' && id !== 'fuego' && id !== 'loca') return;
+    this._dlRemotoT = 12;
+    try {
+      this.rules.message = T('dl_' + id) + ' · ' + T('dl_rival');
+      this.audio.announce(T('dl_' + id) + ' ' + T('dl_rival'), true);
+      this.audio.playOsc(180, 320, 0.14, 'square', 0.09, 0);
+    } catch (eDLr) { /* */ }
+  }
+  /** tick por frame de los poderes duelos (llamado junto a updateMega) */
+  _dlUpdate(dt) {
+    if (this.disposed || !this.rules) return;
+    if (!this._dlEnabled()) {
+      if (this._dlT > 0) { this._dlT = 0; this._dlId = ''; }
+      this._dlLista = false;
+      return;
+    }
+    if (this._dlRemotoT > 0) this._dlRemotoT -= dt;
+    if (this._dlT > 0) {
+      this._dlT -= dt;
+      if (this._dlT < 2 && !this._dlWarn) {
+        this._dlWarn = true;
+        try { this._poderTickBlip(2); } catch (eDLw) { /* */ }
+      }
+      if (this._dlT <= 0) { this._dlT = 0; this._dlId = ''; }
+    }
+  }
+
   updateMega(dt) {
     if (this.disposed || !this.rules) return;
     const r = this.rules;
     const on = this.megaEnabled() && !this.inHall && !this.calib;
+    // r84 · DUELOS LOCOS · GIGANTE: mismo radio de golpeo y misma escala
+    // que la MEGA de campeonatos, gobernado por el estado duelos (§DUELOS)
+    const dlGig = this._dlOn('gigante');
     // v3.6.38 · PRECALIENTE: UNA pieza del arsenal por frame (solo con
     // cargas vivas — mientras duerme, coste cero). El gatillo nunca crea.
     if (on && this._megaPrewarmQ && this._megaPrewarmQ.length) {
@@ -6462,6 +6550,9 @@ export class PingPongGame {
         this._megaTickN = 3;     // v3.6.43: tick 1 — urgencia
         this._poderTickBlip(3);
       }
+    } else if (dlGig) {
+      // r84 · GIGANTE de DUELOS LOCOS: radio de detección ×1,38 mientras dura
+      DIMS.hitAssistRadius = this._BASE_HIT * 1.38;
     } else if (DIMS.hitAssistRadius !== this._BASE_HIT) {
       DIMS.hitAssistRadius = this._BASE_HIT;     // apagado/cero: restaura YA
     }
@@ -6588,7 +6679,10 @@ export class PingPongGame {
     // v3.6.36 · el multiplicador de spin del SÚPER EFECTO viaja EN LA PALA
     // del jugador (lo lee collidePaddleSweep): ×2 al brush GENERADO, con
     // tope de seguridad en c05. Apagado → multiplicador 1 (pala honesta).
-    const emul = (on && this._efectoT > 0) ? EFECTO_SPIN_MUL : 1;
+    // r84 · DUELOS LOCOS · LOCA: el MISMO canal de spin (×2, no ×3) con la
+    // ventana del poder duelos — curva real que viaja en el HIT/HANDOFF.
+    const emul = (on && this._efectoT > 0) ? EFECTO_SPIN_MUL
+      : (this._dlOn('loca') ? 2 : 1);
     // v3.6.49 (r57) · el SÚPER IMÁN REESCRITO viaja TAMBIÉN EN LA PALA
     // (ppImanAim lo lee collidePaddleSweep en el golpe): guía de tiro que
     // asegura mesa rival. Sin ventana → false (golpes 100 % normales).
@@ -6616,7 +6710,8 @@ export class PingPongGame {
     // en escritorio también ←/→ por el listener del constructor)
     if (on) this._megaCiclo(dt);
     // ESCALA visual de la pala (crece rápido, vuelve suave)
-    const objS = (on && this._megaT > 0) ? 1.3 : 1.0;
+    // r84 · la GIGANTE de DUELOS LOCOS comparte la misma rampa de escala
+    const objS = ((on && this._megaT > 0) || dlGig) ? 1.3 : 1.0;
     if (Math.abs(this._megaS - objS) > 0.002) {
       const kk = 1 - Math.exp(-dt * (objS > this._megaS ? 7 : 4));
       this._megaS += (objS - this._megaS) * kk;
@@ -8814,7 +8909,13 @@ export class PingPongGame {
         const _res = applyServeProgressiveAssist(this.ball, hitPad, this.serveTier());
         __ppServeTelemetry(_res, { src: 'core', tier: this.difficulty });
         this.rules.beginServeRally('player');
-        if (this.net.online) { this.net.sendHit(true); this._localHit = false; this._netTossLive = false; }
+        // r84 · DUELOS LOCOS: el saque TAMBIÉN carga (5 golpes → poder);
+        // la velocidad del saque queda PURA (la legalidad del saque es
+        // sagrada — el fuego y la loca se estrenan en el rally)
+        if (this.net.online) {
+          try { this._dlChargeHit(); } catch (eDLs) { /* */ }
+          this.net.sendHit(true); this._localHit = false; this._netTossLive = false;
+        }
         // r62 · háptica del SAQUE escalada por la velocidad del golpe
         // (antes fija 0,8/90: una dejada y un saque seco vibraban igual)
         {
@@ -8870,6 +8971,15 @@ export class PingPongGame {
     //      ya enderezada por el asistente del 5.5)
     if (this.net.online && this._localHit) {
       this._localHit = false;
+      // r84 · DUELOS LOCOS: carga por golpe propio + FUEGO acelera MI golpe
+      // (tras el enderezado 5.5: la velocidad enviada es la FINAL; tope
+      // interno 26 m/s < cap 30 del validador §12 — jamás se rechaza)
+      try { this._dlChargeHit(); } catch (eDLh) { /* */ }
+      if (this._dlOn('fuego') && this.ball.vel && this.ball.vel.z < -0.5) {
+        this.ball.vel.multiplyScalar(1.18);
+        if (this.ball.vel.length() > 26) this.ball.vel.setLength(26);
+        try { this.audio.playOsc(900, 1400, 0.08, 'sawtooth', 0.08, 0); } catch (eDLf) { /* */ }
+      }
       this.net.sendHit(false);
     }
 
@@ -8896,6 +9006,7 @@ export class PingPongGame {
     // v3.6.34 · MEGA PALA NORMATIVA: carga por rally 11+, efecto activo,
     // icono y restauraciones — barato y perezoso (nada vivo si no toca).
     this.updateMega(dt);
+    this._dlUpdate(dt);       // r84 · DUELOS LOCOS: tick de poderes online
     this._rivalEmoUpdate(dt);   // v3.6.49 (r57): NORMA DE EMOCIONES DEL RIVAL
     if (window.__PP_TRAIN) window.__PP_TRAIN.tick(dt);   // v3.0: cosmética global + entrenamiento
     if (window.__PP_TUT) window.__PP_TUT.tick(dt);       // v3.6.51 (r59): LA ACADEMIA (guion/prácticas)
@@ -8967,6 +9078,14 @@ export class PingPongGame {
           // mando no dice la mano real — un diestro con la pala en el slot
           // izquierdo veía su avatar rival con la pala rodada 90°
           const fisicaIzq = (smp.fl & 8) !== 0;
+          // r84 · DUELOS LOCOS · GIGANTE del rival (bit 16 de pose.fl):
+          // escala visual de la pala del avatar — el efecto REAL (radio de
+          // golpeo) vive en SU extremo; aquí sólo se VE
+          const dlG = (smp.fl & 16) !== 0;
+          const svDl = dlG ? 1.3 : 1.0;
+          if (Math.abs(this.aiPaddleMesh.scale.x - svDl) > 0.005) {
+            this.aiPaddleMesh.scale.setScalar(svDl);
+          }
           // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
           const qVis = netTmpQ2.copy(netTmpQ)
             .multiply(mountQuatFor(fisicaIzq ? 'left' : 'right'));
@@ -9277,13 +9396,36 @@ export class PingPongGame {
 
   /* REDIBUJA lo VIVO del HALL (v3.6.28→v3.6.50): desde FASE 30 las seis
    * caras visten el ARTE DEL ARTISTA (assets/hall/) y desde la r58 el
-   * TROFEO YA NO EXISTE (espacio central libre, petición del dueño) —
-   * nada queda que repintar: stub que conserva la firma por si un
-   * campeonato futuro vuelve a colgar algo vivo del hall. Se llama en
+   * TROFEO YA NO EXISTE (espacio central libre, petición del dueño).
+   * r84 · vuelve a tener VIDA: las dos placas EL PULSO CRAZY de la pared
+   * de la puerta se repintan aquí con i18n + estado diario. Se llama en
    * enterHall. */
   drawHall() {
     /* v3.6.50 (r58): la lógica plateado→oro del trofeo se retiró con él
      * (placa, lienzo y textura del trofeo fuera de userData.hall). */
+    // r84 · EL PULSO CRAZY EN LA PUERTA: las dos placas del museo se
+    // repintan con i18n viva y el estado real del día (modo del reto y
+    // racha de asistencia). window.__PP_TRAIN puede faltar (bancos QA):
+    // fallback digno y jamás rompe la entrada al hall.
+    try {
+      const ud = this.hallGroup && this.hallGroup.userData && this.hallGroup.userData.hall;
+      if (ud && ud.pulsoL && ud.pulsoR) {
+        const TRH = (typeof window !== 'undefined') && window.__PP_TRAIN;
+        let modo = '', racha = 0, record = 0;
+        try {
+          const D = TRH && TRH.state && TRH.state.daily;
+          if (D) { modo = D.modoName || ''; racha = D.streak || 0; record = D.bestStreak || 0; }
+        } catch (eHD) { /* estado de entrenamiento ausente */ }
+        const subL = modo ? T('pulso_hall_m', { m: modo }) : '· · ·';
+        const subR = (racha > 0)
+          ? T('pulso_racha_s', { n: racha, r: record })
+          : T('pulso_racha_0');
+        drawHallSign(ud.pulsoL.cv, T('pulso_hall_t'), subL);
+        drawHallSign(ud.pulsoR.cv, T('pulso_racha_t'), subR);
+        ud.pulsoL.tex.needsUpdate = true;
+        ud.pulsoR.tex.needsUpdate = true;
+      }
+    } catch (eHP) { /* el cartel nunca rompe la entrada al hall */ }
   }
 
   updateRecenter() {
@@ -10327,7 +10469,7 @@ import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBa
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
 import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
-import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createReplayBanner, createScoreboard, updateHallFx } from './c08_hall_hud.js';
+import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createReplayBanner, createScoreboard, drawHallSign, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { PPNET } from './c09b_red_nucleo.js';
 import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';

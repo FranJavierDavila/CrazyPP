@@ -4698,3 +4698,24 @@ Stage Summary:
 - Su descripción del mapeo de sticks ERA CORRECTA (verificada y confirmada en el worklog y en la QA).
 - El dueño debe RECARGAR CON CACHÉ LIMPIA: cerrar la pestaña del juego y abrir game.html?v=v3675 (los agarres guardados sobreviven: están en el dispositivo).
 - Pendientes heredados vivos: r75 (4 puntos + RAZONES PARA VOLVER CADA DÍA), r76 fragmento cubierto por r77/r78, .cf-token y .clave-produccion desde el respaldo del Task 122 (Cloudflare).
+
+---
+Task ID: 188
+Agent: Super Z (main agent)
+Task: r84 (casa e infra) — el dueño pregunta «¿Está actualizado en github?» y reenvía PAT + token Cloudflare (cfut_…). Verificación de refs/producción, limpieza del commit suelto inempujable y reposición de las credenciales del worker de telemetría (.cf-token + .github-pat) que el reciclado del sandbox había borrado.
+
+Work Log:
+- VERIFICACIÓN GITHUB/PRODUCCIÓN (curl en vivo): SERVED game.html sha256 ddbb75e0… == PAGES-VERSION.txt (version=3.6.75-SDK6 · fuente_commit=561d22ebd · game_sha256=ddbb75e0… · reescrituras=2 · 2026-10-27T19:36:46) == blob pages:game.html → TRES VÍAS IGUALES. origin/main = 877db82 (worklog Task 187) · origin/pages = 7a665382 (deploy 3.6.75-SDK6). GitHub AL DÍA con la r83 cerrada.
+- COMMIT SUELTO INEMPUJABLE LIMPIADO: f3e2036 (mensaje UUID 94dbbabd…, un git add accidental del proyecto entero — MEMORIA.md, beta1/, respaldos/… con crazypp-20261012-2354-v2125.zip de 162,20 MB > límite de 100 MB de GitHub; remote rejected GH001). git reset --mixed a 877db82 (ficheros intactos en disco, historia limpia) → push main «Everything up-to-date».
+- PAT REPUESTO: scripts/worker-tele/.github-pat (600, gitignored — check-ignore ✓) con el PAT reenviado por el dueño; usado para ls-remote y push (funciona).
+- CF-TOKEN REPUESTO (deuda de los Tasks 122/18x heredada desde el reciclado): scripts/worker-tele/.cf-token (600, gitignored — .gitignore:68 ✓) con el token cfut_… del dueño → verificado contra /user/tokens/verify → {"status":"active"} (id c7228555b242fc80722598a4c86f553a).
+- CUENTA LOCALIZA: f5c21f0ca1c45e9fc114de2149361896 (Escala3dcorreoia@gmail.com's Account) — la misma del deploy nativo del Task ~16x. Workers scripts: crazypp (18-10) · crazypp-tele (19-10 20:30) · silent-fog-1 · wild-field-1.
+- WORKER EN PRODUCCIÓN BYTE-EXACTO CON EL REPO: GET /accounts/…/scripts/crazypp-tele (multipart) → módulo extraído 17.707 B, sha256 bf00a15d… IDÉNTICO a scripts/worker-tele/worker.js → NO hace falta re-deploy. Bindings intactos: DB→D1 24ee07a2-c04b-475f-ba72-257d374c06e9 (crazypp-tele) · CLAVE→secret_text (secreto vivo en producción, no rotable).
+- E2E PRODUCCIÓN EN VIVO: GET https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele → {"ok":true,"total":711,…} (D1 con sus 711 eventos, datos intactos) · GET /resumen SIN clave → 403 (protección operativa). El panel del dueño sigue funcionando sin tocar nada.
+- LIMPIEZA: _deployed_worker.js/_deployed_module.js temporales eliminados. Sin cambios de código de juego en esta ronda (no hay versión nueva: producción sigue en V3.6.75-SDK6, game.html?v=v3675).
+
+Stage Summary:
+- GitHub 100 % actualizado y verificado (3 vías byte-exacto en V3.6.75-SDK6 · main=proyecto=local 877db82 · pages 7a665382) + linaje main limpiado del commit suelto inempujable.
+- CREDENCIALES RESTAURADAS: .cf-token (activo, verificado) y .github-pat (funcionando) en scripts/worker-tele/ (600, gitignored) — deuda de infra cerrada EXCEPTO .clave-produccion: NO está en el sandbox ni en ningún respaldo local (el paquete del Task 122 se perdió con el reciclado); solo existe en la copia local del dueño (credenciales_respaldadas_2026-10-20.txt). No bloquea nada: el worker y el panel funcionan. NUNCA rotar la clave (rompería el panel); cuando el dueño la pegue se guarda en scripts/worker-tele/.clave-produccion (600).
+- El dueño debe seguir en V3.6.75-SDK6: cerrar la pestaña y abrir game.html?v=v3675 con caché limpia (los agarres de pala guardados sobreviven: están en el dispositivo).
+- Pendientes heredados vivos: .clave-produccion desde el respaldo del Task 122 (dueño). Nada más en cola: r75-r83 todas CERRADAS.

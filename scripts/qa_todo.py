@@ -442,6 +442,18 @@ CAPAS = [
     # (saque de ambos), marcador espejado idéntico, 0 rechazos. La
     # herramienta del dueño para «jugar en paralelo varias partidas».
     ('BQ · batería multi en paralelo (v3674)', 'bateria_multi_v3674.py'),
+    # BS (r83): LA PALA AL MILÍMETRO — el ajuste de pala MUDA a AJUSTES ›
+    # PALA (7.ª tarjeta colorida + subpágina con AJUSTAR/GUARDAR/CARGAR/
+    # borrar), entra con PASSTHROUGH INMEDIATO en caliente (_pstAplicar sin
+    # salir de VR), RÉPLICAS GLB de los mandos (modelos del tutorial)
+    # ancladas a los grips, EJES LOCALES RGB sobre la montura con LA FLECHA
+    # DEL AJUSTE por eje (raíl + flecha que viaja con el valor vivo:
+    # dirección = signo, magnitud = distancia), EJES Z DIRECTOS (click de
+    # stick; los atajos GRIP se conservan), panel FRONTAL elevado que sigue
+    # a la cabeza (por encima de la vista, sin pisar la pala), agarres con
+    # nombre PERMANENTES (ppxr_grips_v1) y salidas B/Y que restauran el
+    # Hall sin arrastrar nada.
+    ('BS · pala al milímetro (v3675)', 'qa_r83_v3675.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

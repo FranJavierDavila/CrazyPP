@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* r83 · EXCLUSIÓN de fuentes de Tailwind v4: scripts_game/ contiene
+   directorios illegibles para el watcher (root 700 tras el reciclado
+   del sandbox) y Turbopack aborta /descargas. Nada de ese árbol aporta
+   clases: se excluye explícitamente. */
+@source not "../../scripts_game";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

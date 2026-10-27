@@ -770,11 +770,6 @@ export function createScoreboard() {
   return { group, update };
 }
 
-/* =====================================================================
- *  PANEL DE AJUSTE DE PALA (modo entrenamiento en VR)
- *  Texto dinámico en CanvasTexture: nombre del agarre, valores actuales
- *  y controles. Solo se redibuja cuando cambian los valores.
- * ===================================================================== */
 function roundRectPath(g, x, y, w, h, r) {
   g.beginPath();
   g.moveTo(x + r, y);
@@ -785,76 +780,170 @@ function roundRectPath(g, x, y, w, h, r) {
   g.closePath();
 }
 
+/* =====================================================================
+ *  PANEL DE AJUSTE DE PALA (r83 · AJUSTES › PALA — modo propio en VR)
+ *  Panel FRONTAL head-locked, un poco por encima de la línea de ojos y
+ *  SIN tapar la pala que se ajusta (está en la mano, más abajo). Canvas
+ *  768×512 con: cabecera + chip de estado (passthrough o réplica 3D),
+ *  TABLA VIVA de los 6 grados de libertad (X/Y/Z × posición/giro) con
+ *  barras centradas en cero y la celda del eje en uso iluminada, leyenda
+ *  de controles y pie de salida. Solo se redibuja cuando cambian valores.
+ *  La API es la de siempre: update({ name, off, act?, pst? }).
+ * ===================================================================== */
 export function createCalibPanel() {
+  const W = 768, H = 512;
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = W;
+  canvas.height = H;
   const g2 = canvas.getContext('2d');
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   const mat = new THREE.MeshBasicMaterial({
-    map: tex, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false,
+    map: tex, transparent: true, opacity: 0.96, side: THREE.DoubleSide, depthWrite: false,
   });
   const group = new THREE.Group();
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.46), mat);
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.4133), mat);
+  plane.renderOrder = 30;
   group.add(plane);
 
+  // barras centradas en cero (negativo a la izquierda, positivo a la derecha)
+  const barra = (x, y, w, h, v, vMax, activa, col) => {
+    g2.fillStyle = 'rgba(255,255,255,0.10)';
+    roundRectPath(g2, x, y, w, h, 4);
+    g2.fill();
+    g2.fillStyle = 'rgba(255,255,255,0.30)';
+    g2.fillRect(x + w / 2 - 1, y - 2, 2, h + 4);
+    const f = Math.max(-1, Math.min(1, v / vMax));
+    const bw = Math.max(2, Math.abs(f) * (w / 2 - 2));
+    g2.fillStyle = activa ? col : 'rgba(158,177,196,0.85)';
+    if (f >= 0) roundRectPath(g2, x + w / 2 + 1, y, bw, h, 3);
+    else roundRectPath(g2, x + w / 2 - 1 - bw, y, bw, h, 3);
+    g2.fill();
+  };
+
   function update(d) {
-    g2.clearRect(0, 0, 512, 512);
-    g2.fillStyle = 'rgba(13,17,23,0.93)';
-    g2.strokeStyle = 'rgba(232,180,90,0.85)';
+    const o = d.off;
+    const act = d.act || null;
+    const deg = (r) => ((r * 180) / Math.PI).toFixed(1);
+    const mm = (m) => Math.round(m * 1000);
+    const COL = { x: '#ff8787', y: '#8ce99a', z: '#74c0fc' };
+    const AX = [
+      ['X', 'px', 'rx', COL.x],
+      ['Y', 'py', 'ry', COL.y],
+      ['Z', 'pz', 'rz', COL.z],
+    ];
+
+    g2.clearRect(0, 0, W, H);
+    g2.fillStyle = 'rgba(11,15,22,0.94)';
+    g2.strokeStyle = 'rgba(232,180,90,0.9)';
     g2.lineWidth = 4;
-    roundRectPath(g2, 8, 8, 496, 496, 24);
+    roundRectPath(g2, 8, 8, W - 16, H - 16, 26);
     g2.fill();
     g2.stroke();
 
+    // cabecera: título + chip del agarre con nombre
     g2.textAlign = 'left';
+    g2.textBaseline = 'alphabetic';
     g2.fillStyle = '#e8b45a';
-    g2.font = 'bold 40px system-ui, sans-serif';
-    g2.fillText('AJUSTE DE PALA', 34, 66);
-    g2.fillStyle = '#9aa7b4';
-    g2.font = '24px system-ui, sans-serif';
-    g2.fillText('Agarre: ' + d.name, 34, 104);
+    g2.font = '900 44px system-ui, sans-serif';
+    g2.fillText('AJUSTE DE PALA', 36, 62);
+    g2.font = '700 22px system-ui, sans-serif';
+    const nomTxt = 'Agarre: ' + (d.name || 'Natural');
+    const nomW = Math.min(360, g2.measureText(nomTxt).width + 34);
+    g2.fillStyle = 'rgba(232,180,90,0.14)';
+    roundRectPath(g2, W - 36 - nomW, 30, nomW, 40, 20);
+    g2.fill();
+    g2.strokeStyle = 'rgba(232,180,90,0.55)';
+    g2.lineWidth = 2.5;
+    roundRectPath(g2, W - 36 - nomW, 30, nomW, 40, 20);
+    g2.stroke();
+    g2.fillStyle = '#ffd257';
+    g2.fillText(nomTxt, W - 36 - nomW + 17, 57);
 
-    const o = d.off;
-    const deg = (r) => ((r * 180) / Math.PI).toFixed(0);
-    const mm = (m) => Math.round(m * 1000);
-    g2.fillStyle = '#cfd8e0';
-    g2.font = '21px ui-monospace, monospace';
-    g2.fillText(`pos  ${mm(o.px)} · ${mm(o.py)} · ${mm(o.pz)} mm`, 34, 146);
-    g2.fillText(`gir  ${deg(o.rx)}° · ${deg(o.ry)}° · ${deg(o.rz)}°`, 34, 176);
+    // chip de estado: passthrough real o réplica 3D de los mandos
+    const pst = !!d.pst;
+    const stTxt = pst ? '◉ PASSTHROUGH · mandos reales a la vista'
+                      : '◇ RÉPLICA 3D · mando de referencia';
+    g2.fillStyle = pst ? 'rgba(103,223,140,0.16)' : 'rgba(116,192,252,0.16)';
+    roundRectPath(g2, 36, 84, 470, 40, 20);
+    g2.fill();
+    g2.fillStyle = pst ? '#8ce99a' : '#a5d8ff';
+    g2.font = '800 22px system-ui, sans-serif';
+    g2.fillText(stTxt, 54, 111);
 
-    const lines = [
-      ['STICK D', 'girar / inclinar la cara'],
-      ['GRIP D + stick D', 'rodar la pala'],
-      ['STICK I', 'mover la pala'],
-      ['GRIP I + stick I', 'acercar / alejar'],
-      ['A', 'guardar este agarre'],
-      ['B', 'cargar el siguiente'],
-      ['X', 'volver al agarre natural'],
-      ['GATILLO', 'lanzar bola de entrenamiento'],
-      ['Y', 'volver al entrenamiento'],
-      ['B (en juego)', 'abrir / cerrar el MENÚ'],
-      ['MENÚ', 'modo · dificultad · sala · ambiente'],
-    ];
-    // v2.18: re-espaciado — con paso 29 la última línea caía en y=514 (fuera
-    // del canvas de 512 px) y el texto se salía del panel lateral.
-    let y = 214;
-    for (const [k, v] of lines) {
-      g2.fillStyle = '#e8b45a';
-      g2.font = 'bold 20px system-ui, sans-serif';
-      g2.fillText(k, 34, y);
-      g2.fillStyle = '#aeb9c5';
-      g2.font = '20px system-ui, sans-serif';
-      g2.fillText(v, 196, y);
-      y += 25;
+    // tabla viva de los 6 grados de libertad
+    const ty = 158, rh = 62, bx = 120, bw = 268;
+    g2.font = '700 21px ui-monospace, monospace';
+    g2.fillStyle = '#75828f';
+    g2.fillText('POSICIÓN', bx, ty - 14);
+    g2.fillText('GIRO', bx + bw + 130, ty - 14);
+    for (const [ax, pk, rk, col] of AX) {
+      const y = ty + (ax === 'X' ? 0 : ax === 'Y' ? rh : rh * 2);
+      const aP = !!(act && act[pk]);
+      const aR = !!(act && act[rk]);
+      // fila activa: banda suave del color del eje
+      if (aP || aR) {
+        g2.fillStyle = col.replace(')', ',0.10)').replace('rgb', 'rgba').replace('#', '');
+        g2.fillStyle = 'rgba(255,255,255,0.05)';
+        roundRectPath(g2, 28, y - 6, W - 56, 48, 12);
+        g2.fill();
+      }
+      // insignia del eje
+      g2.fillStyle = col;
+      g2.beginPath();
+      g2.arc(56, y + 16, 17, 0, Math.PI * 2);
+      g2.fill();
+      g2.fillStyle = '#10131a';
+      g2.font = '900 21px system-ui, sans-serif';
+      g2.textAlign = 'center';
+      g2.fillText(ax, 56, y + 23);
+      g2.textAlign = 'left';
+      // posición (mm) + barra · giro (grados) + barra
+      g2.font = '700 21px ui-monospace, monospace';
+      g2.fillStyle = aP ? '#ffffff' : '#cfd8e0';
+      g2.fillText(`${mm(o[pk])} mm`, 350, y + 23);
+      g2.fillStyle = aR ? '#ffffff' : '#cfd8e0';
+      g2.fillText(`${deg(o[rk])}°`, 608, y + 23);
+      barra(bx, y + 8, bw, 16, o[pk], 0.35, aP, col);
+      barra(bx + bw + 130, y + 8, bw, 16, o[rk], 1.2, aR, col);
     }
+
+    // leyenda de controles (dos columnas compactas)
+    const lines = [
+      ['STICK D', 'girar X / Y'],
+      ['STICK D pulsado', 'rodar · eje Z'],
+      ['STICK I', 'mover X / Y'],
+      ['STICK I pulsado', 'acercar · eje Z'],
+      ['A', 'guardar agarre'],
+      ['B', 'menú · cargar · salir'],
+      ['X', 'agarre natural'],
+      ['GATILLO', 'bola de práctica'],
+    ];
+    let ly = 386;
+    for (let i = 0; i < lines.length; i++) {
+      const colX = i < 4 ? 36 : 400;
+      const yy = ly + (i % 4) * 30;
+      g2.fillStyle = '#e8b45a';
+      g2.font = '800 19px system-ui, sans-serif';
+      g2.fillText(lines[i][0], colX, yy);
+      g2.fillStyle = '#aeb9c5';
+      g2.font = '600 19px system-ui, sans-serif';
+      g2.fillText(lines[i][1], colX + 188, yy);
+    }
+
+    // pie: la salida es SIEMPRE limpia (el dueño: nada arrastrado al Hall)
+    g2.textAlign = 'center';
+    g2.fillStyle = 'rgba(255,255,255,0.55)';
+    g2.font = '700 20px system-ui, sans-serif';
+    g2.fillText('Y · salir al HALL      B · MENÚ (Volver al Hall)', W / 2, 496);
+    g2.textAlign = 'left';
     tex.needsUpdate = true;
   }
 
   return { group, update };
 }
+
 
 /* =====================================================================
  *  FANFARRIA DE FIN DE PARTIDO · cartel 3D flotante sobre la red con el

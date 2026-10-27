@@ -106,6 +106,14 @@ export class PingPongGame {
     this.gripOffsetQ = new THREE.Quaternion();
     this.gripName = 'Natural';
     this.calib = false;
+    // r83 · AJUSTE DE PALA PURO (AJUSTES › PALA): la bandera que distingue
+    // el ajuste de AGARRE en solitario del paraguas calib del entrenamiento
+    // (los cinco modos y LA ACADEMIA viven en calib con trainV3/tutV1).
+    this.calibPala = false;
+    this._pstVenia = null;        // passthrough previo al entrar al ajuste
+    this._palaAct = null;         // ejes en uso este frame {rx..pz}
+    this._palaAxes = null;        // visualización de ejes locales (createPalaAxes)
+    this._palaMandos = null;      // réplicas 3D de los mandos (fallback sin AR)
     this.preCalibMode = 'match';  // modo al que se vuelve al salir del entrenamiento
     this.pendingCalib = false;
     this.feedTimer = 1.5;
@@ -745,12 +753,36 @@ export class PingPongGame {
     }
   }
 
-  enterCalib() {
+  /** r83 · el ajuste PURO llega con `pala=true` (AJUSTES › PALA). El
+   *  paraguas del entrenamiento sigue llamándolo sin argumento: allí manda
+   *  trainV3/tutV1 y calibPala nace apagada. */
+  enterCalib(pala = false) {
+    const yaPala = !!this.calibPala;
     this.calib = true;
+    this.calibPala = !!pala && !this.trainV3 && !this.tutV1;
     this.closeMenu();            // el entrenamiento tiene su propio panel
     this.preCalibMode = this.mode;   // recordar el modo actual para volver a él
     this.calibPanel.group.visible = true;
     this.panelDirty = true;
+    // r83 · PASSTHROUGH INMEDIATO (petición del dueño: «pasar a passthrough
+    // debe ser inmediato sin salir de la pantalla de configuración»): al
+    // entrar al ajuste se canjea el fondo AL VUELO (_pstAplicar, la misma
+    // palanca del conmutador de AJUSTES) — la sesión no se toca, no hay
+    // ningún frame de web, y el mando REAL queda a la vista todo el tiempo
+    // para colocar la pala encima con precisión. Si el dispositivo no tiene
+    // AR (o el passthrough no puede), el fallback son las RÉPLICAS 3D de
+    // los mandos del tutorial, ancladas 1:1 al grip de cada mano.
+    if (this.calibPala && !yaPala) {
+      this._pstVenia = { pstOn: this.pstOn, pendingAR: this.pendingAR };
+      if (this.inAR && !this.pstOn) {
+        this.pstOn = true;
+        this._pstAplicar(true);
+      }
+      this.rules.message = T('msg_pala_on');
+      this._palaAxesOn();
+      this._palaMandosTick();
+    }
+    if (this.calibPala) this._palaPanelAnclar();   // frontal desde el 1.er frame
     this.resetToss();
     this.aiToss = null;
     this.demoToss = null;
@@ -769,8 +801,42 @@ export class PingPongGame {
       this.trainV3Hub = false;
       try { trnX.teardown(this); } catch (e) { /* nunca rompe */ }
     }
+    const eraPala = !!this.calibPala;
     this.calib = false;
+    this.calibPala = false;
     this.calibPanel.group.visible = false;
+    this._palaAxesOff();
+    this._palaMandosOff();
+    if (eraPala) {
+      // r83 · SALIDA LIMPIA AL HALL (petición del dueño: «al salir se
+      // recupera la visión anterior del Hall eliminando los elementos o
+      // modos usados durante la colocación de la pala — los mandos 3D y la
+      // pala, el panel informativo etc, para no arrastrar nada de esto al
+      // volver al HALL»). Primero el passthrough vuelve al estado del
+      // jugador; si su preferencia era passthrough, el Hall se vuelve a
+      // canjear DESPUÉS de entrar (la estancia es virtual y se entra con la
+      // sala puesta). El menú queda delante en AJUSTES, de donde salió.
+      const queriaPst = !!(this.inAR && this._pstVenia && this._pstVenia.pstOn);
+      this._pstRestaurar();
+      if (this.inAR && this.pstOn) {
+        this.pstOn = false;
+        this._pstAplicar(false);
+      }
+      this.preCalibMode = 'match';
+      this.enterHall();           // startMatch + bola/pala ocultas van dentro
+      if (queriaPst && this.inAR) {
+        this.pstOn = true;
+        this._pstAplicar(true);
+      }
+      this.menuPage = 'opts';
+      this.menuOpen = true;
+      this.menuGroup.visible = true;
+      this.menuHover = [-1, -1];
+      this.anchorMenu();
+      this.drawMenu();
+      this.haptic(this.paddleHand, 0.4);
+      return;
+    }
     // Volver al modo en el que estábamos antes de entrenar (partido o
     // supervivencia) — antes siempre se caía a un partido nuevo, perdiendo
     // la sesión de supervivencia en curso.
@@ -793,6 +859,135 @@ export class PingPongGame {
     this._rivalEmoMil = 0;
     this.rivalEmocion('idle', 0);
     this.haptic(this.paddleHand, 0.4);
+  }
+
+  /* ---------- r83 · AJUSTE DE PALA: ejes, réplicas, panel y passthrough ---
+   * Todo lo que el modo necesita y todo lo que hay que LIMPIAR al salir:
+   * ejes locales sobre la pala, réplicas 3D de los mandos (fallback sin
+   * passthrough), panel frontal anclado a la cabeza y el canje del fondo.
+   * La regla de la casa: nada de esto sobrevive a la salida del modo.     */
+
+  /** Enciende la visualización de ejes sobre la montura de la pala ACTIVA. */
+  _palaAxesOn() {
+    if (this._palaAxes) { this._palaAxes.group.visible = true; return; }
+    const mount = this.paddleMounts && this.paddleMounts[this.paddleHand];
+    if (!mount) return;
+    try {
+      this._palaAxes = createPalaAxes();
+      mount.add(this._palaAxes.group);
+    } catch (eAx) { this._palaAxes = null; }
+  }
+  _palaAxesOff() {
+    if (!this._palaAxes) return;
+    if (this._palaAxes.group.parent) this._palaAxes.group.parent.remove(this._palaAxes.group);
+    this._palaAxes = null;
+    this._palaAct = null;
+  }
+  /** Réplica del cuerpo de _montaMando del tutorial (r66/r67): los MISMOS
+   *  GLB (window.__PP_MANDO_GLB, expuestos por LA ACADEMIA) al 75 % con la
+   *  cara mirando a -Z del grip — coinciden con el mando REAL de la mano.
+   *  Sólo se construyen cuando NO hay passthrough (en Quest la sesión es
+   *  immersive-ar y el mando real se ve directamente). */
+  _palaMandosOn() {
+    if (this._palaMandos) return;
+    const GLBS = (typeof window !== 'undefined') ? window.__PP_MANDO_GLB : null;
+    if (!GLBS || !GLBS.izq || !GLBS.der || typeof GLTFLoader === 'undefined' ||
+        !this.grips) return;
+    try {
+      const reg = [];
+      for (let h = 0; h < 2; h++) {
+        const mont = new THREE.Group();
+        mont.name = 'ppPalaMando' + h;
+        mont.position.set(0, 0.024, 0);   // idem tutorial: origen dentro del mango
+        mont.visible = false;
+        this.grips[h].add(mont);
+        reg.push(mont);
+        const bin = Uint8Array.from(atob(this.handOf[h] === 'left' ? GLBS.izq : GLBS.der), (ch) => ch.charCodeAt(0));
+        new GLTFLoader().parse(bin.buffer, '', (gltf) => {
+          try {
+            const modelo = gltf.scene;
+            const box = new THREE.Box3().setFromObject(modelo);
+            const cen = box.getCenter(new THREE.Vector3());
+            const tam = box.getSize(new THREE.Vector3());
+            const esc = 0.154 / Math.max(tam.x, tam.y, tam.z, 0.01);   // r67: 75 %
+            modelo.position.sub(cen);
+            modelo.scale.setScalar(esc);
+            const glb = new THREE.Group();
+            glb.rotation.y = Math.PI;   // la cara del GLB mira a -Z (mando real)
+            glb.add(modelo);
+            mont.add(glb);
+            mont.visible = !!this.calibPala;   // si ya salimos, no resucita
+          } catch (eM) { /* decorativo */ }
+        }, () => { /* sin GLB: sin réplica, el ajuste funciona igual */ });
+      }
+      this._palaMandos = reg;
+    } catch (e) { this._palaMandos = null; }
+  }
+  _palaMandosOff() {
+    if (!this._palaMandos) return;
+    for (const mont of this._palaMandos) {
+      if (mont.parent) mont.parent.remove(mont);
+      mont.traverse((o) => {
+        if (o.isMesh) {
+          if (o.geometry) o.geometry.dispose();
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          for (const m of mats) { if (m && m.dispose) m.dispose(); }
+        }
+      });
+    }
+    this._palaMandos = null;
+  }
+  /** Por frame: las réplicas viven SOLO sin passthrough (si el jugador
+   *  canjea el fondo con el conmutador mientras ajusta, aparecen/desaparecen
+   *  solas — lo que se ve SIEMPRE es la verdad). */
+  _palaMandosTick() {
+    if (!this.calibPala) return;
+    const quiero = !(this.inAR && this.pstOn);
+    if (quiero && !this._palaMandos) this._palaMandosOn();
+    if (!quiero && this._palaMandos) this._palaMandosOff();
+    if (this._palaMandos) for (const m of this._palaMandos) m.visible = true;
+  }
+  /** Panel FRONTAL head-locked (petición del dueño: «que pudiera verse
+   *  frontalmente un poco por encima de nuestra vista sin interferir con
+   *  la visión de la pala que estamos ajustando»): sigue SOLO el yaw de la
+   *  cabeza (sin bamboleo de pitch/roll), a 1,02 m y 0,30 m por encima de
+   *  los ojos, con un pelín de inclinación hacia la cara. */
+  _palaPanelAnclar() {
+    try {
+      this.camera.getWorldPosition(muHead);
+      this.camera.getWorldQuaternion(muQ);
+      muDir.set(0, 0, -1).applyQuaternion(muQ);
+      muDir.y = 0;
+      if (muDir.lengthSq() < 1e-6) muDir.set(0, 0, -1);
+      muDir.normalize();
+      const p = this.calibPanel.group;
+      const destino = muHead.clone().addScaledVector(muDir, 1.02);
+      destino.y = Math.max(1.32, muHead.y + 0.30);
+      if (p.position.lengthSq() < 1e-6) p.position.copy(destino);
+      else p.position.lerp(destino, 0.35);   // suave: sin tirones al girar
+      p.lookAt(p.position.x - muDir.x, p.position.y - 0.10, p.position.z - muDir.z);
+    } catch (eAn) { /* sin cámara aún: el panel espera en su sitio */ }
+  }
+  /** Devuelve el passthrough al estado previo al ajuste (r83). */
+  _pstRestaurar() {
+    if (!this._pstVenia) return;
+    const v = this._pstVenia;
+    this._pstVenia = null;
+    this.pendingAR = v.pendingAR;
+    if (this.inAR && this.pstOn !== v.pstOn) {
+      this.pstOn = v.pstOn;
+      this._pstAplicar(this.pstOn);
+    }
+  }
+  /** Recoge el ajuste de pala SIN tocar modo ni Hall (lo llaman las
+   *  entradas a entrenamiento/tutorial que viven encima del paraguas
+   *  calib): ejes, réplicas, bandera y passthrough vuelven a su sitio. */
+  palaRecoger() {
+    if (!this.calibPala) return;
+    this.calibPala = false;
+    this._palaAxesOff();
+    this._palaMandosOff();
+    this._pstRestaurar();
   }
 
   /** CAMBIO DE MODO EN VR (botón B del mando derecho): Partido ⇄ Supervivencia
@@ -986,18 +1181,40 @@ export class PingPongGame {
     const R = this.stickAxis(Ri);
     const gripL = !!this.sources[Li]?.gamepad?.buttons?.[1]?.pressed;
     const gripR = !!this.sources[Ri]?.gamepad?.buttons?.[1]?.pressed;
+    // r83 · EJE Z A LA VISTA: el stick también se PULSA (WebXR buttons[3])
+    // y ese clic lo dedica entero al eje Z (rodar / acercar) — sin perder
+    // los ejes X/Y de siempre. GRIP sigue valiendo como atajo (compat).
+    const stickL = !!this.sources[Li]?.gamepad?.buttons?.[3]?.pressed;
+    const stickR = !!this.sources[Ri]?.gamepad?.buttons?.[3]?.pressed;
     const dz = (v) => (Math.abs(v) < 0.16 ? 0 : v);
     const adj = (cur, delta) => Math.max(-1.2, Math.min(1.2, cur + delta));
     const off = this.gripOffset;
     const rot = 1.1 * dt;
     const pos = 0.13 * dt;
+    const act = { rx: 0, ry: 0, rz: 0, px: 0, py: 0, pz: 0 };
     let moved = false;
-    if (dz(R.x)) { off.ry = adj(off.ry, dz(R.x) * rot); moved = true; }
-    if (dz(R.y)) { off.rx = adj(off.rx, -dz(R.y) * rot); moved = true; }
-    if (gripR && dz(R.x)) { off.rz = adj(off.rz, dz(R.x) * rot); moved = true; }
-    if (dz(L.x)) { off.px = adj(off.px, dz(L.x) * pos); moved = true; }
-    if (dz(L.y)) { off.py = adj(off.py, -dz(L.y) * pos); moved = true; }
-    if (gripL && dz(L.y)) { off.pz = adj(off.pz, -dz(L.y) * pos); moved = true; }
+    const zRot = gripR || stickR;   // modo EJE Z de giro (rodar la pala)
+    const zPos = gripL || stickL;   // modo EJE Z de posición (acercar/alejar)
+    if (dz(R.x)) {
+      if (zRot) { off.rz = adj(off.rz, dz(R.x) * rot); act.rz = 1; }
+      else { off.ry = adj(off.ry, dz(R.x) * rot); act.ry = 1; }
+      moved = true;
+    }
+    if (dz(R.y) && !zRot) { off.rx = adj(off.rx, -dz(R.y) * rot); act.rx = 1; moved = true; }
+    if (dz(L.x)) { off.px = adj(off.px, dz(L.x) * pos); act.px = 1; moved = true; }
+    if (dz(L.y)) {
+      if (zPos) { off.pz = adj(off.pz, -dz(L.y) * pos); act.pz = 1; }
+      else { off.py = adj(off.py, -dz(L.y) * pos); act.py = 1; }
+      moved = true;
+    }
+    // r83 · el estado de ejes ACTIVOS alimenta la tabla del panel y las
+    // flechas sobre la pala (sólo repinta cuando cambia: cero coste parado).
+    const actAntes = this._palaAct;
+    const cambioAct = !actAntes ||
+      ['rx', 'ry', 'rz', 'px', 'py', 'pz'].some((k) => !!act[k] !== !!actAntes[k]);
+    this._palaAct = act;
+    if (cambioAct) this.panelDirty = true;
+    if (this._palaAxes) this._palaAxes.setActive(this.calibPala ? act : null, off);
     if (moved) this.applyGripOffset();
 
     if (this.readButton(Ri, 4)) {                       // A: guardar
@@ -1733,6 +1950,48 @@ export class PingPongGame {
     btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
   }
 
+  /** r83 · Página NOMBRE DEL AGARRE: el mismo teclado del nombre del
+   *  jugador, volcado a _gripBuf → saveCurrentGrip. La configuración queda
+   *  PERMANENTE en el dispositivo (ppxr_grips_v1) y se usa en el juego. */
+  drawMenuGripName(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const label = this._menuLabel;
+    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    this.drawMenuHeader(rects);
+    label(T('pala_gname_title'), 240, 26);
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    const nm = this._gripBuf || '';
+    c.beginPath();
+    if (c.roundRect) c.roundRect(112, 268, 800, 112, 16);
+    else c.rect(112, 268, 800, 112);
+    c.fillStyle = 'rgba(255,255,255,0.06)';
+    c.fill();
+    c.strokeStyle = '#e8b45a';
+    c.lineWidth = 5;
+    c.stroke();
+    c.fillStyle = '#f2f4f6';
+    c.font = '800 64px ui-monospace, monospace';
+    c.fillText(nm + '_', 512, 324);
+    c.fillStyle = '#75828f';
+    c.font = '600 22px system-ui, sans-serif';
+    c.fillText(nm.length + ' / 12', 512, 402);
+    for (let i = 0; i < CHARS.length; i++) {
+      const col = i % 7, row = Math.floor(i / 7);
+      btn('gkey:' + CHARS[i], 56 + col * 128, 430 + row * 96, 118, 86, CHARS[i], false, undefined, undefined, 34);
+    }
+    btn('gkey:sp', 56 + 5 * 128, 430 + 3 * 96, 118, 86, '␣', false, undefined, undefined, 34);
+    btn('gkey:del', 56 + 6 * 128, 430 + 3 * 96, 118, 86, '⌫', false, undefined, undefined, 34);
+    for (let d = 0; d <= 9; d++) {
+      btn('gkey:' + d, 56 + d * 90, 814, 86, 78, String(d), false, undefined, undefined, 30);
+    }
+    btn('gkey:ok', 56, 940, 448, 82, T('name_save'), true, 'green', undefined, 28);
+    btn('gkey:cancel', 520, 940, 448, 82, T('btn_back'), false, undefined, undefined, 28);
+    label(T('pala_help'), 1080, 20, '#75828f', 'center');
+    btn('page:optsPala', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
+  }
+
   /** v2.67 · Página RANKING MUNDIAL: top 10 por campeonato con nombre,
    *  puntos y logros al lado. Desplegable ‹ › para elegir el campeonato
    *  (La Locura = victorias; magia = puntos) y ↻ para revalidar. Sin
@@ -1901,9 +2160,13 @@ export class PingPongGame {
         c.lineWidth = hovered ? 4 : 2;
         if (style === 'green') c.strokeStyle = hovered ? '#bfe3a9' : 'rgba(127,176,105,0.55)';
         if (style === 'surv') c.strokeStyle = hovered ? '#ffc09a' : 'rgba(240,135,63,0.55)';
+        // r83 · estilo 'gold': el gran botón de la PALA en AJUSTES brilla con
+        // su marco dorado (antes caía al estilo neutro y perdía jerarquía)
+        if (style === 'gold') c.strokeStyle = hovered ? '#ffe9a8' : 'rgba(232,180,90,0.75)';
         c.stroke();
         c.fillStyle = style === 'green' ? '#bfe3a9'
-          : style === 'surv' ? '#ffc09a' : '#cfd8e0';
+          : style === 'surv' ? '#ffc09a'
+          : style === 'gold' ? '#f4ca79' : '#cfd8e0';
       }
       c.font = `700 ${fsize || 26}px system-ui, sans-serif`;
       c.textAlign = 'center';
@@ -1958,6 +2221,14 @@ export class PingPongGame {
     // v2.66: página TU NOMBRE (teclado en pantalla, igual que 'join')
     if (this.menuPage === 'name') {
       this.drawMenuName(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this.menuTex.needsUpdate = true;
+      return;
+    }
+    // r83 · teclado del NOMBRE DEL AGARRE (AJUSTES › PALA › guardar con nombre)
+    if (this.menuPage === 'gripname') {
+      this.drawMenuGripName(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
       this.menuTex.needsUpdate = true;
@@ -2509,7 +2780,8 @@ export class PingPongGame {
       ? pf.tierLabel + ' · ' + T('perf_fps_short', { v: pf.fps })
       : '';
 
-    const CH2 = 150, GY2 = 18;
+    const CH2 = 128, GY2 = 14;   // r83 · 7 categorías: tarjetas algo más
+                                 // bajas para que TODO siga en el lienzo
     let y = 310;
     this._modeCard(rects, 'page:optsJuego', 40, y, 944, CH2,
       T('cat_juego'), subJuego, '#2f9e44', '#1e7c33', PP_ICONS.cpu);
@@ -2530,12 +2802,21 @@ export class PingPongGame {
     this._modeCard(rects, 'page:optsRendi', 40, y, 944, CH2,
       T('cat_rendi'), subRendi, '#f08c00', '#b3640a', PP_ICONS.cpu);
     y += CH2 + GY2;
+    // r83 · séptima categoría: PALA (el ajuste de la posición de la pala
+    // abandona el PRO TRAINING — «ahí no tiene sentido» — y gana su
+    // subapartado con botón bonito y colorido con su iconito, petición
+    // literal del dueño, mismo estilo que el resto de la interfaz)
+    const subPala = T('pala_actual', { v: this.gripName });
+    this._modeCard(rects, 'page:optsPala', 40, y, 944, CH2,
+      T('cat_pala'), subPala, '#1098ad', '#0b7285', PP_ICONS.pala);
+    y += CH2 + GY2;
 
     label(T('opts_elegir'), y + 16, 20, '#75828f', 'center');
     y += 46;
     // apoyo Ko-fi (v2.50) — fuera de las categorías, al pie
-    btn('kofi', 56, y, 912, 56, T('btn_kofi'), false, 'green', undefined, 23);
-    y += 68;
+    // r83 · fila algo más baja: 7 tarjetas exigen el hueco
+    btn('kofi', 56, y, 912, 48, T('btn_kofi'), false, 'green', undefined, 23);
+    y += 56;
     const closeY = Math.min(Math.max(y + 4, 1392), 1428);
     btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
   }
@@ -2673,6 +2954,41 @@ export class PingPongGame {
         }
         break;
       }
+      case 'pala': {
+        // r83 · LA PALA EN AJUSTES: el subapartado que pide el dueño. Cargar
+        // y borrar agarres guardados, natural, GUARDAR CON NOMBRE y el gran
+        // botón dorado que arranca el ajuste en VR (passthrough al instante).
+        label(T('pala_actual', { v: this.gripName }), y + 10, 24, '#e9edf2');
+        y += 36;
+        label(T('pala_help'), y + 2, 17, '#75828f');
+        y += 32;
+        btn('palaGo', 56, y, 912, 64, T('pala_go'), false, 'gold', undefined, 26);
+        y += 78;
+        btn('gname', 56, y, 912, 56, T('pala_gname'), false, undefined, undefined, 23);
+        y += 70;
+        btn('gripNat', 56, y, 912, 56, T('pala_nat'), false, undefined, undefined, 23);
+        y += 70;
+        label(T('pala_guardados'), y + 10, 22);
+        y += 34;
+        const _gripNombres = this.gripList().slice(0, 8);
+        if (!_gripNombres.length) {
+          label(T('pala_ninguno'), y + 6, 19, '#5f6b78');
+          y += 36;
+        } else {
+          _gripNombres.forEach((nm, i) => {
+            const col = i % 2, row = (i / 2) | 0;
+            btn('gripLoad:' + nm, 56 + col * 464, y + row * 64, 380, 56, nm,
+              this.gripName === nm, undefined, this.gripName === nm, 22);
+            btn('gripDel:' + nm, 444 + col * 464, y + row * 64, 68, 56, '✕',
+              false, 'surv', undefined, 22);
+          });
+          y += Math.ceil(_gripNombres.length / 2) * 64;
+        }
+        // salida limpia al Hall desde AQUÍ (la misma recogida estanca)
+        btn('homehall', 56, y + 6, 912, 56, '⌂ ' + T('hall_home_btn'), false, undefined, undefined, 23);
+        y += 70;
+        break;
+      }
       default:
         break;
     }
@@ -2731,7 +3047,14 @@ export class PingPongGame {
    * delante. Compartido por «⌂ VOLVER AL HALL» (menuClick 'homehall') y por
    * el SI del prompt B ('hallask_si'). Online/passthrough: no aplica. */
   goHomeHall() {
-    if (this.net.online || (this.inAR && this.pstOn)) return false;
+    if (this.net.online) return false;
+    // r83 · el ajuste de pala se recoge ANTES de mirar el passthrough: al
+    // salir del ajuste el fondo vuelve al estado del jugador y el Hall entra
+    // limpio (exitCalib ya deja la estancia recuperada y el menú delante).
+    const eraPala = this.calibPala;
+    if (eraPala) this.exitCalib();
+    if (this.inAR && this.pstOn) return false;
+    if (eraPala) return true;   // exitCalib ya dejó Hall + menú en su sitio
     this.closeTrainingV3();
     if (this.calib) this.exitCalib();   // recoge panel/entrenamiento y restaura
     if (this.champs) this.champs.leaveAll();
@@ -2857,7 +3180,8 @@ export class PingPongGame {
         // r81 · + optsRendi (RENDIMIENTO: autocalibrador de FPS).
         if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
-            arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi') {
+            arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi' ||
+            arg === 'optsPala') {   // r83 · séptima categoría: PALA
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {
@@ -2885,6 +3209,9 @@ export class PingPongGame {
       case 'ppchamp':
         // v2.53: CAMPEONATO DE CARPETA — la carpeta entera se carga por
         // import() dinámico. v2.69: La Locura también llega por aquí.
+        // r83 · un campeonato es PARTIDA REAL: el ajuste de pala se recoge
+        // entero antes de abrir la carpeta (el árbitro debe despertar).
+        if (this.calibPala) this.exitCalib();
         if (this.champs) this.champs.launch(arg);
         else this.rules.message = T('arc_no_data');
         break;
@@ -2943,11 +3270,15 @@ export class PingPongGame {
       case 'tut':
         // v3.6.51 (r59) · LA ACADEMIA: el tutorial interactivo arranca desde
         // el banner del HUB, de la oferta de primera vez o de AJUSTES.
+        // r83 · si el ajuste de pala estaba vivo, sus elementos se recogen
+        // (ejes/réplicas/passthrough) — el tutorial trae los suyos.
+        if (this.calibPala) this.palaRecoger();
         if (window.__PP_TUT) window.__PP_TUT.menuAction(this, arg);
         break;
       case 'start':
         // ARRANQUE RÁPIDO: partido contra la CPU (o revancha online)
         this.closeTrainingV3();   // v3.0.3 · estanqueidad
+        if (this.calibPala) this.exitCalib();   // r83 · el ajuste se recoge (vuelve al Hall y de ahí arranca)
         if (this.champs) this.champs.leaveAll();   // v2.53: y el campeonato externo
         this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
         if (this.net.online) {
@@ -2961,6 +3292,7 @@ export class PingPongGame {
       case 'survgo':
         // SUPERVIVENCIA desde el menú (el invitado online lo pide por red)
         this.closeTrainingV3();   // v3.0.3 · estanqueidad
+        if (this.calibPala) this.exitCalib();   // r83 · idem PARTIDO
         if (this.champs) this.champs.leaveAll();   // v2.53
         this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
         if (this.net.online) {
@@ -3092,6 +3424,72 @@ export class PingPongGame {
           this.menuPage = 'main';
         } else if ((this._nameBuf || '').length < 12) {
           this._nameBuf = (this._nameBuf || '') + arg;
+        }
+        this.drawMenu();
+        break;
+      case 'palaGo': {
+        // r83 · ARRANCAR EL AJUSTE DE PALA desde AJUSTES › PALA (el gran
+        // botón dorado). Guardia honesta: no hay ajuste en partida online.
+        if (this.net.online) {
+          this.rules.message = T('msg_pala_online');
+          this.audio.playOsc(220, 180, 0.12, 'sawtooth', 0.1, 0);
+          this.drawMenu();
+          break;
+        }
+        this.audio.playOsc(880, 1320, 0.09, 'triangle', 0.14, 0);
+        this.closeMenu();
+        if (window.__PP_TRAIN && window.__PP_TRAIN.startCalib) {
+          window.__PP_TRAIN.startCalib(this);
+        } else {
+          this.enterCalib(true);
+        }
+        break;
+      }
+      case 'gripLoad':
+        // r83 · cargar un agarre guardado (persigue su nombre exacto)
+        if (this.loadGripByName(arg)) {
+          this.rules.message = T('pala_actual', { v: arg });
+          this.audio.playOsc(660, 990, 0.09, 'triangle', 0.14, 0);
+        }
+        this.drawMenu();
+        break;
+      case 'gripDel':
+        this.deleteGripByName(arg);
+        this.rules.message = T('msg_pala_del');
+        this.audio.playOsc(500, 330, 0.1, 'sine', 0.12, 0);
+        this.drawMenu();
+        break;
+      case 'gripNat':
+        this.resetGripNatural();
+        this.rules.message = T('pala_actual', { v: this.gripName });
+        this.audio.playOsc(720, 540, 0.1, 'sine', 0.12, 0);
+        this.drawMenu();
+        break;
+      case 'gname':
+        // r83 · GUARDAR CON NOMBRE: teclado propio (el ajuste actual se
+        // guarda tal cual vive AHORA — desde el menú o desde el ajuste)
+        this._gripBuf = this.gripName === 'Natural' ? '' : this.gripName;
+        this.menuPage = 'gripname';
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      case 'gkey':
+        if (arg === 'del') this._gripBuf = (this._gripBuf || '').slice(0, -1);
+        else if (arg === 'sp') {
+          if ((this._gripBuf || '').length < 12 && this._gripBuf.slice(-1) !== ' ') this._gripBuf += ' ';
+        } else if (arg === 'ok') {
+          const _gn = (this._gripBuf || '').replace(/\s+/g, ' ').trim().slice(0, 12);
+          if (_gn) {
+            this.saveCurrentGrip(_gn);
+            this.audio.playOsc(660, 990, 0.09, 'triangle', 0.14, 0);
+          }
+          this._gripBuf = '';
+          this.menuPage = 'optsPala';
+        } else if (arg === 'cancel') {
+          this._gripBuf = '';
+          this.menuPage = 'optsPala';
+        } else if ((this._gripBuf || '').length < 12) {
+          this._gripBuf = (this._gripBuf || '') + arg;
         }
         this.drawMenu();
         break;
@@ -7955,6 +8353,15 @@ export class PingPongGame {
       this.exitCalib();
     }
 
+    // 0.55) r83 · AJUSTE DE PALA: B abre el MENÚ COMÚN (petición del dueño:
+    //       «podremos salir de este modo llamando al menú con la pulsación
+    //       B»). Desde el menú, VOLVER AL HALL recoge el ajuste entero y
+    //       recupera la estancia; el ajuste sigue vivo si sólo cierras.
+    if (presenting && this.calibPala && !this.menuOpen &&
+        this.readButton(this.handIndex('right'), 5)) {
+      this.toggleMenu();
+    }
+
     // 0.6) botón B (mando derecho): v3.1.1-FEEL1 · en el HALL (y en online/
     //      passthrough, donde el hall no existe) B abre/cierra el menú como
     //      siempre; en CUALQUIER OTRA ESTANCIA muestra el PROMPT «Menú
@@ -8480,6 +8887,12 @@ export class PingPongGame {
     this.processEvents(this.events);
     if (this.net.online) this.net.collectEvents(this.events);
     if (this.calib) this.updateCalibration(dt);
+    // r83 · panel frontal + ejes vivos del ajuste de pala (sólo en su modo)
+    if (this.calibPala) {
+      this._palaPanelAnclar();
+      if (this._palaAxes) this._palaAxes.tick(dt);
+      this._palaMandosTick();
+    }
     // v3.6.34 · MEGA PALA NORMATIVA: carga por rally 11+, efecto activo,
     // icono y restauraciones — barato y perezoso (nada vivo si no toca).
     this.updateMega(dt);
@@ -8675,7 +9088,14 @@ export class PingPongGame {
     if (this.inHall && this.hallGroup) updateHallFx(this.hallGroup, dt, now);
 
     if (this.calib && this.panelDirty) {
-      this.calibPanel.update({ name: this.gripName, off: this.gripOffset });
+      // r83 · el panel recibe los ejes en uso (iluminación de celdas) y el
+      // estado del fondo (chip PASSTHROUGH / RÉPLICA 3D)
+      this.calibPanel.update({
+        name: this.gripName,
+        off: this.gripOffset,
+        act: this.calibPala ? this._palaAct : null,
+        pst: this.calibPala ? !!(this.inAR && this.pstOn) : null,
+      });
       this.panelDirty = false;
     }
     // gancho de diagnóstico (solo lectura en tests headless; no afecta al juego)
@@ -10114,3 +10534,116 @@ const _clonQ = new THREE.Quaternion();
 const _clonObjetivo = new THREE.Vector3();
 const _clonSpinCero = new THREE.Vector3(0, 0, 0);
 const _clonBlancosBuf = [];   // buffer reutilizado del hook clonBlancos(out)
+
+/* =====================================================================
+ *  r83 · EJES LOCALES DE LA PALA (visualización del ajuste)
+ *  Tres flechas (X roja · Y verde · Z azul) montadas EN la montura de la
+ *  pala: nacen en el centro de la hoja y muestran los ejes locales REALES
+ *  que mueven los sticks. El eje que se está ajustando pulsa (escala
+ *  1±0.12) y brilla; los demás quedan en tono bajo. depthTest false: se
+ *  ven SIEMPRE, incluso con la mano delante.
+ * ===================================================================== */
+function createPalaAxes() {
+  const group = new THREE.Group();
+  group.position.set(0, 0.15, 0);      // centro de la hoja (GLB real de la casa)
+  group.renderOrder = 40;
+  const eje = (col, dir) => {
+    const mat = new THREE.MeshBasicMaterial({
+      color: col, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false,
+    });
+    const g = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.0034, 0.0034, 0.17, 8), mat);
+    shaft.position.y = 0.085;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.036, 12), mat);
+    tip.position.y = 0.19;
+    g.add(shaft);
+    g.add(tip);
+    if (dir === 'x') g.rotation.z = -Math.PI / 2;    // +Y del cilindro → +X
+    else if (dir === 'z') g.rotation.x = Math.PI / 2; // +Y del cilindro → +Z
+    g.userData.mat = mat;
+    g.userData.col = col;
+    return g;
+  };
+  const ejes = {
+    x: eje(0xff6b6b, 'x'),
+    y: eje(0x51cf66, 'y'),
+    z: eje(0x74c0fc, 'z'),
+  };
+  for (const k in ejes) group.add(ejes[k]);
+  // r83 · LA FLECHA DEL AJUSTE (petición literal: «dibujas claramente
+  // visibles sobre los mismos una flecha con el desplazamiento o giro que
+  // estamos realizando sobre un eje en concreto»): sobre cada eje hay una
+  // guía tenue (raíl centrado en el pivote) y una FLECHA que viaja por él
+  // según el valor VIVO del agarre — posición (±0,35 m como el panel) o giro
+  // (±1,2 rad como el panel; gana el de mayor módulo). Dirección = signo,
+  // magnitud = distancia: colocación al milímetro legible de un vistazo.
+  const GUIA = 0.085;                       // semilongitud del raíl (±8,5 cm)
+  const UV = {
+    x: new THREE.Vector3(1, 0, 0),
+    y: new THREE.Vector3(0, 1, 0),
+    z: new THREE.Vector3(0, 0, 1),
+  };
+  const cursorDe = (col, dir) => {
+    // raíl tenue (el recorrido de la flecha), centrado en el pivote
+    const gmat = new THREE.MeshBasicMaterial({
+      color: 0xffffff, transparent: true, opacity: 0.16, depthTest: false, depthWrite: false,
+    });
+    const guia = new THREE.Group();
+    guia.add(new THREE.Mesh(new THREE.CylinderGeometry(0.0016, 0.0016, GUIA * 2, 6), gmat));
+    if (dir === 'x') guia.rotation.z = -Math.PI / 2;
+    else if (dir === 'z') guia.rotation.x = Math.PI / 2;
+    // la flecha (asta + punta) orientada como el eje
+    const cmat = new THREE.MeshBasicMaterial({
+      color: col, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false,
+    });
+    const fle = new THREE.Group();
+    const asta = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, 0.03, 6), cmat);
+    asta.position.y = 0.015;
+    const punta = new THREE.Mesh(new THREE.ConeGeometry(0.0085, 0.02, 10), cmat);
+    punta.position.y = 0.04;
+    fle.add(asta);
+    fle.add(punta);
+    if (dir === 'x') fle.rotation.z = -Math.PI / 2;
+    else if (dir === 'z') fle.rotation.x = Math.PI / 2;
+    group.add(guia);
+    group.add(fle);
+    return { fle, cmat, gmat };
+  };
+  const cursores = {
+    x: cursorDe(0xff6b6b, 'x'),
+    y: cursorDe(0x51cf66, 'y'),
+    z: cursorDe(0x74c0fc, 'z'),
+  };
+  let t = 0;
+  let act = null;
+  let vals = { px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 };
+  function setActive(a, off) {
+    act = a || null;
+    if (off) {
+      for (const k in vals) vals[k] = +off[k] || 0;
+    }
+  }
+  function tick(dt) {
+    t += dt || 0;
+    for (const k in ejes) {
+      const g = ejes[k];
+      const on = !!(act && (act['p' + k] || act['r' + k]));
+      g.userData.mat.opacity = on ? 1 : 0.4;
+      g.userData.mat.color.setHex(g.userData.col);
+      const s = on ? 1 + Math.sin(t * 7) * 0.12 : 1;
+      g.scale.setScalar(s);
+      // la flecha del ajuste: valor vivo (posición o giro) → distancia al
+      // pivote; brilla y respira cuando SU eje está en uso
+      const cur = cursores[k];
+      const pv = Math.max(-1, Math.min(1, vals['p' + k] / 0.35));
+      const rv = Math.max(-1, Math.min(1, vals['r' + k] / 1.2));
+      const v = Math.abs(pv) >= Math.abs(rv) ? pv : rv;
+      cur.fle.position.copy(UV[k]).multiplyScalar(v * GUIA);
+      cur.fle.scale.setScalar(on ? 1 + Math.sin(t * 9) * 0.2 : 1);
+      cur.cmat.opacity = on ? 0.95 : 0.5;
+      cur.gmat.opacity = on ? 0.3 : 0.14;
+    }
+  }
+  tick(0);
+  return { group, setActive, tick };
+}

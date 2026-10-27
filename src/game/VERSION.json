@@ -1,10 +1,10 @@
 {
-  "version": "3.6.74-SDK6",
-  "fase": 76,
-  "faseNombre": "AL MILIMETRO",
+  "version": "3.6.75-SDK6",
+  "fase": 77,
+  "faseNombre": "LA PALA AL MILIMETRO",
   "sdk": "1.5.4",
   "fecha": "2026-10-27",
-  "hub": "v3674-sdk6",
+  "hub": "v3675-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,5 @@
     "valle_neon": 5
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "d7edefe31c79d33dc438c7917a8b06770dbc9cfc14f055b0df200fff5f943979"
+  "golden": "2f687b6c79c141be02d8b7fb6d24072297ac5d97257f999c84f28226fb09fa79"
 }

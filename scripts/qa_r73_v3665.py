@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r73_v3665 — CAPA BH · V3.6.74-SDK6, FASE 67 «EL MENÚ MANDA».
+"""qa_r73_v3665 — CAPA BH · V3.6.75-SDK6, FASE 67 «EL MENÚ MANDA».
 
 Informe del dueño tras probar V3.6.64 en el Quest, punto por punto:
   1. «Cuando desplegamos un Menú estemos donde estemos debe ser la ventana

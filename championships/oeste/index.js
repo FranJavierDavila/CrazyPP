@@ -1,6 +1,26 @@
 /* ============================================================================
  *  CAMPEONATO DEL SALVAJE OESTE — módulo v2 (ANDAMIO «sala de espera»).
  *  ---------------------------------------------------------------------
+ *  v2.142 (módulo v52 · v3.6.22, ronda 28) · EL TREN SUENA Y EL ORO SE VE —
+ *      informe del dueño en el casco (etapa 4): (1) CUATRO PISTAS DEL
+ *      ARTISTA: Tren_Llegada.mp3 one-shot POCO DESPUÉS del anuncio de
+ *      segundos para llegar a la estación (v3.6.24: a 1,2 s de la mega-
+ *      fonía, no al frenar) ·
+ *      vias.mp3 RODADURA en bucle mientras el vagón marcha (setVol vivo
+ *      por frame + off con fundido al frenar) · Tunel.mp3 one-shot AL
+ *      APARECER tunelboca.png en el parallax (v3.6.24: el comienzo de la
+ *      entrada) ·
+ *      caballos.mp3 GALOPE POR INSTANCIA (pool 1+3 del SDK v1.5.0,
+ *      createBucle): cada jinete DESFASADO en el audio y con paneo de su
+ *      lado, se desvanece con la DISTANCIA a la ventana y calla BRUSCO
+ *      al abatirlo. (2) CAJONES DEL ORO A LAS VENTANAS: x 1,35 → 2,55 —
+ *      los lingotes caen debajo mismo de las ventanas (antes quedaban
+ *      «muy cerca de la mesa y casi no se veían»). (3) FIX DE LA
+ *      INTERPENETRACIÓN DE LINGOTES: medido con mide_lingote_mundo.py —
+ *      la barra del GLB nace con el eje largo EN Z (0,078×0,038×0,170) y
+ *      la rejilla (sepZ 0,095) la solapaba 7,5 cm fila contra fila; el
+ *      prototipo gira 90° en Y y la rejilla v2.141 cuadra entera
+ *      (holguras +3,7/+6,1 mm). QA: capa V (qa_tren_audio_v3622.py).
  *  v2.141 (módulo v48) · LOS CAJONES DEL ORO + PARADAS CON NOMBRE — ajustes
  *      del dueño sobre la v2.140: (1) LINGOTES SOBRE DOS GRANDES CAJONES:
  *      «los lingotes van a caer a ambos lados de la mesa pero cerca del
@@ -464,7 +484,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // y los 3 congelados delegan en él (el fix «forma promesa» v2.125 llegó a
 // estar copiado 6 veces en este módulo). Desde el SDK v1.2.0 también la
 // MÚSICA en bucle (BSO del saloon y vagón) vive en el SDK (createMusic).
-import { createSfx, createMusic, createPowerSign, congela, getCore } from '../sdk/champ_sdk.js';
+import { createSfx, createMusic, createBucle, createPowerSign, congela, getCore, assetURL } from '../sdk/champ_sdk.js';
 
 /* Parámetros de la sala (mismo patrón que MAGIA en el módulo del mago). */
 const OESTE = {
@@ -1089,10 +1109,14 @@ const TREN = {
    * → z -1,38 · derecha u=0,501 → z -1,59). En su cara superior (y = h)
    * se apilan los lingotes en rejilla 3×3 con capas EXACTAS y una
    * PEQUEÑA VARIACIÓN (jX/jZ/yaw) «para que no parezca tan perfecta» —
-   * con holguras que NUNCA llegan a solapar (lingote 0,17×0,08). */
+   * con holguras que NUNCA llegan a solapar (lingote 0,17×0,08).
+   * v3.6.22 · MÁS CERCA DE LAS VENTANAS (informe del dueño: «ahora están
+   * muy cerca de la mesa y casi no se ven»): x 1,35 → 2,55 — el borde
+   * exterior del cajón queda a 2,91 (14 cm de la pared a ±3,05) y los
+   * lingotes caen DEBAJO MISMO de las ventanas, bien visibles. */
   cajonOro: {
     w: 0.72, h: 0.18, d: 0.36,   // doble de ancho · mitad de alto (cajón 0,36)
-    x: 1.35,                     // entre la mesa (x ±0,76) y la pared (±3,05)
+    x: 2.55,                     // pegado a las ventanas (pared a ±3,05)
     zIzq: -1.38, zDer: -1.59,    // centro de la ventana izquierda / derecha
     sepX: 0.19, sepZ: 0.095,     // rejilla 3×3 (lingote 0,17×0,08 + holgura)
     jX: 0.007, jZ: 0.003, yaw: 0.03,   // pequeñas variaciones de colocación
@@ -8176,6 +8200,16 @@ class TrenAction {
           const sz = box.getSize(new THREE.Vector3());
           const s = 0.17 / (Math.max(sz.x, sz.y, sz.z) || 0.17);
           root.scale.setScalar(s);
+          /* v3.6.22 · FIX DE LA INTERPENETRACIÓN — medido con
+           * scripts/mide_lingote_mundo.py (bbox con TRS de nodos, como
+           * Box3.setFromObject): la barra del GLB nace con su eje LARGO
+           * EN Z (0,078 × 0,038 × 0,170 en mundo) — la rejilla v2.141
+           * (sepZ 0,095) la solapaba 7,5 cm FILA CONTRA FILA. Girada 90°
+           * en Y, el eje largo queda en X y TODA la rejilla cuadra
+           * (0,55 × 0,27 sobre el cajón de 0,72 × 0,36, holguras
+           * positivas con el jitter incluido). La altura (y) no cambia:
+           * _lingoteH sigue siendo la medida real del GLB. */
+          root.rotation.y = Math.PI / 2;
           const wrap = new THREE.Group();
           wrap.add(root);
           wrap.updateMatrixWorld(true);
@@ -8608,10 +8642,76 @@ class TrenAction {
   }
 
   /* v3.6.2-SDK2 · motor SFX del SDK de campeonatos (una instancia por
-   * controlador, cache propia; assets relativos a ESTE módulo). */
+   * controlador, cache propia; assets relativos a ESTE módulo).
+   * v3.6.23: ignoraMute — las pistas del vagón son SFX/ambiente (llegadas,
+   * túnel, risas): suenan SIEMPRE, como los sintéticos de la casa. */
   __sfxSDK() {
-    if (!this.__sdkSfx) this.__sdkSfx = createSfx(import.meta.url, () => this.game);
+    if (!this.__sdkSfx) this.__sdkSfx = createSfx(import.meta.url, () => this.game,
+      { ignoraMute: true });
     return this.__sdkSfx;
+  }
+
+  /* ======================================================================
+   *  v3.6.26 · ONE-SHOTS DEL ARTISTA POR EL MOTOR DEL GALOPE (_pistaTren)
+   *  Informe del dueño tras v3.6.25 en el dispositivo real: «la entrada
+   *  en el túnel no suena… las llegadas tampoco». Cuatro versiones del
+   *  camino createSfx (v3.6.22→25: play directo, pend+statechange,
+   *  booleano+sinPend) NO llegaron al hardware de la Quest — mientras el
+   *  MISMO SDK con createBucle lleva galopes y rodadura al casco desde
+   *  el primer día. Así que los one-shots VIAJAN ahora en el motor
+   *  PROBADO: cada pista es un createBucle (ignoraMute, fade corto) y el
+   *  disparo es on() — con revival por statechange y espera de buffer
+   *  DENTRO del motor, todo lo que ya demostró llegar al hardware. El
+   *  bucle interno (src.loop) se corta con off() ANTES del wrap: el
+   *  contador de play vive en _pistaTrenStep y el margen (0,45 s) cubre
+   *  el stopFade. precarga() al montar la etapa (SDK v1.5.4): el buffer
+   *  madura durante la marcha y el disparo encuentra el buf listo.
+   *  ====================================================================== */
+  __pistaUna(name, vol) {
+    if (!this.__pistaUnas) this.__pistaUnas = Object.create(null);
+    let u = this.__pistaUnas[name];
+    if (!u) {
+      u = createBucle(() => this.game, {
+        url: () => assetURL(import.meta.url, name),
+        vol: () => vol,
+        ignoraMute: true,
+        fadeIn: 0.06,
+        stopFade: 0.35,
+      });
+      this.__pistaUnas[name] = u;
+    }
+    return u;
+  }
+  _pistaTren(name, vol, dur) {
+    if (!this._trenPend) this._trenPend = [];
+    /* dur: segundos de PLAY (el corte con off() entra 0,45 s antes del
+     * fin real del mp3 — src.loop jamás da la vuelta). */
+    this._trenPend.push({ name, vol, dur, t: 12 });   // 12 s de margen
+  }
+  _pistaTrenStep(dt) {
+    if (!this._trenPend || !this._trenPend.length) return;
+    for (let i = this._trenPend.length - 1; i >= 0; i--) {
+      const p = this._trenPend[i];
+      p.t -= dt;
+      let b = null;
+      try { b = this.__pistaUna(p.name, p.vol); } catch (e) { /* */ }
+      if (!b) { if (p.t <= 0) this._trenPend.splice(i, 1); continue; }
+      try { b.on(0, 0); } catch (e) { /* */ }   // idempotente · revival built-in
+      if (b.suena()) {
+        /* suena() honesto del SDK: instancia viva del contexto ACTIVO —
+         * el reloj de play sólo corre con sonido real en el casco. */
+        p.vivo = (p.vivo == null ? p.dur : p.vivo) - dt;
+        if (p.vivo <= 0) {
+          try { b.off(); } catch (e) { /* */ }  // fundido 0,35 s del motor
+          this._trenPend.splice(i, 1);
+        }
+      } else if (p.t <= 0) {
+        try { b.off(); } catch (e) { /* */ }    // wanted=false: paz
+        this._trenPend.splice(i, 1);            // 12 s sin hardware: paz
+      }
+      /* sin sonido aún: on() ya dejó wanted+precarga — el statechange
+       * del contexto o el decode del buffer despertará el disparo. */
+    }
   }
 
   /* ======================================================================
@@ -8664,12 +8764,19 @@ class TrenAction {
     this.fj.visible = true;
     this.fjDiana.visible = false;
     this._fjSetFrame('paso');
-    this._sndYihha();   // v2.113: ¡ALERTA! grito del jinete al acercarse
+    /* v3.6.23: el «¡YIHAAA!» sintético de entrada se SUPRIME (petición del
+     * dueño) — el galope real caballos.mp3 (pool 0) anuncia al jinete. */
+    /* v3.6.22: GALOPE del caballo — bucle PROPIO con desfase aleatorio y
+     * paneo del lado que toca; el volumen vive en _fjUpdate (distancia). */
+    try { this._galBuc(0).on(0.12 + Math.random() * 0.9, this._fjSide * 0.55); } catch (e) { /* */ }
   }
   _fjGone() {
     this.fj.visible = false;
     this.fjDiana.visible = false;
     this._fjState = 'off';
+    /* v3.6.22: el galope calla (fin de fuga, túnel o cierre — ya casi
+     * inaudible por la distancia, aquí el cierre duro). */
+    try { if (this.__galPool && this.__galPool[0]) this.__galPool[0].off(true); } catch (e) { /* */ }
     const F = TREN.forajido;
     this._fjNext = (this._fjCount >= F.total) ? 9999
       : F.nextMin + Math.random() * (F.nextMax - F.nextMin);
@@ -8688,6 +8795,8 @@ class TrenAction {
     this._fjT = 0; this._fjFrame = 0;
     this._fjSetFrame('herido');
     this.ctrl.sfx('grito', 0);
+    /* v3.6.22: abatido → el galope calla BRUSCO (petición literal). */
+    try { this._galBuc(0).off(true); } catch (e) { /* */ }
     this._msg = tx('tren_herido');
     this._msgT = 2.2;
     this.ctrl.fx.flash(this.fj.position, 1.4, 0xff6a4a);
@@ -8804,6 +8913,23 @@ class TrenAction {
       if (this._fjZ < F.zOut) return this._fjGone();
       this._fjPose(bob);
     }
+    /* v3.6.22: el galope se DESVANECE con la distancia a la ventana
+     * (progresivo al alejarse — paso, fuga e ida incluidas).
+     * v3.6.23: AUTOREPARACIÓN — jinete vivo sin galope (contexto renacido
+     * en un re-bind de VR, drop transitorio) → vuelve al instante.
+     * v3.6.25: SOLO jinete VIVO (paso/ida/ventana/fuga) — sin el filtro,
+     * la reparación REVIVÍA el galope cada frame tras el off(true) de la
+     * muerte: seguía galopando en herido, en el fade y tras _fjGone (el
+     * «caballo fantasma» que el dueño ya no podía callar). */
+    if (this.__galPool && this.__galPool[0] &&
+        (this._fjState === 'paso' || this._fjState === 'ida' ||
+         this._fjState === 'ventana' || this._fjState === 'fuga')) {
+      this.__galPool[0].setVol(this._galVol(this._fjZ, F.zAtk));
+      if (!this.__galPool[0].suena()) {
+        try { this.__galPool[0].on(0.12 + Math.random() * 0.9,
+          this._fjSide * 0.55); } catch (e) { /* */ }
+      }
+    }
   }
 
   /* ======================================================================
@@ -8868,10 +8994,15 @@ class TrenAction {
       rec.diana.visible = true;           // MIRILLA SIEMPRE encima
       rec.grp.visible = true;
       this._indPose(rec, 0);
+      /* v3.6.23: sin «¡YIHAAA!» sintético de entrada (petición del dueño):
+       * el grupo entra galopando con SU caballos.mp3 desfasado y paneado. */
+      rec.galK = k + 1;
+      try { this._galBuc(rec.galK).on(k * 0.31 + Math.random() * 0.14, side * 0.55); } catch (e) { /* */ }
       this._inds.push(rec);
     }
     this._indAny = true;
-    this._sndYihha();                     // ¡ALERTA! igual que el forajido
+    /* v3.6.23: sin «¡YIHAAA!» sintético de entrada (petición del dueño):
+     * el galope real del grupo ya anuncia su llegada. */
     this._msg = tx('tren_indio');
     this._msgT = 2.6;
   }
@@ -8879,6 +9010,12 @@ class TrenAction {
     for (const rec of this._inds) {
       rec.grp.visible = false;
       rec.diana.visible = false;
+    }
+    /* v3.6.22: fuera los galopes del grupo (túnel incluido: aquí pasa). */
+    if (this.__galPool) {
+      for (let i = 1; i < 4; i++) {
+        try { if (this.__galPool[i]) this.__galPool[i].off(true); } catch (e) { /* */ }
+      }
     }
     this._inds = [];
     this._indAny = false;
@@ -8903,6 +9040,8 @@ class TrenAction {
     this._indSetFrame(rec, indMat('indioalcanzado.png',
       this._indLd, this._indA, this._aniso));
     this.ctrl.sfx('grito', 0);
+    /* v3.6.22: abatido → SU caballo calla BRUSCO (los demás siguen). */
+    try { if (rec.galK) this._galBuc(rec.galK).off(true); } catch (e) { /* */ }
     this._msg = tx('tren_indio_ok');
     this._msgT = 2.2;
     this.ctrl.fx.flash(rec.grp.position, 1.4, 0xff6a4a);
@@ -9022,6 +9161,28 @@ class TrenAction {
       }
       if (rec.state !== 'gone') vivos++;
       else rec.diana.visible = false;
+      /* v3.6.22: jinete fuera de escena → SU galope calla (los hermanos
+       * del grupo siguen hasta SU salida). */
+      if (rec.state === 'gone' && rec.galK && this.__galPool &&
+          this.__galPool[rec.galK]) {
+        try { this.__galPool[rec.galK].off(true); } catch (e) { /* */ }
+      }
+      /* v3.6.22: galope vivo → desvanecer con la distancia a SU ventana.
+       * v3.6.23: AUTOREPARACIÓN — jinete vivo (no abatido) sin galope
+       * (contexto renacido, drop) → SU caballo vuelve al instante.
+       * v3.6.25: TODO el bloque (setVol incluido) SÓLO con el jinete VIVO
+       * (ida/ventana/fuga) — en alcanzado/fade SU galope ya calló y nada
+       * lo despierta (simetría con el fix del forajido). */
+      if (rec.galK && rec.state !== 'gone' && this.__galPool &&
+          this.__galPool[rec.galK] &&
+          (rec.state === 'ida' || rec.state === 'ventana' ||
+           rec.state === 'fuga')) {
+        try { this.__galPool[rec.galK].setVol(this._galVol(rec.z, rec.zAtk)); } catch (e) { /* */ }
+        if (!this.__galPool[rec.galK].suena()) {
+          try { this.__galPool[rec.galK].on(Math.random() * 0.5,
+            rec.side * 0.55); } catch (e) { /* */ }
+        }
+      }
     }
     if (!vivos) this._indGoneAll();
     this._flechaStep(dt);
@@ -9165,6 +9326,76 @@ class TrenAction {
    *  dura la prueba (sustituye a la BSO del saloon: musicOn() se retira
    *  durante la etapa). Mismo canal y volúmenes que la BSO del módulo.
    *  ====================================================================== */
+  /* ======================================================================
+   *  v3.6.22/24 · SONIDO REAL DEL TREN (4 pistas del artista):
+   *   · tren/Tren_Llegada.mp3 — ONE-SHOT «poco después» del anuncio de
+   *     segundos de la megafonía (a 1,2 s del tren_mega_llega, v3.6.24:
+   *     petición literal del dueño) — con reintentos (_pistaTren).
+   *   · tren/vias.mp3 — RODADURA continua en bucle mientras el vagón
+   *     marcha (arranca en _depart, setVol DIRECTO por frame en fxStep —
+   *     el mecanismo que llegó al hardware de la Quest en los galopes —,
+   *     se apaga con fundido al frenar en _llegaEstacion)
+   *   · tren/Tunel.mp3 — ONE-SHOT AL APARECER la boca tunelboca.png en
+   *     el parallax (inicio de la fase 'pre', v3.6.24) — con reintentos.
+   *   · tren/caballos.mp3 — GALOPE POR INSTANCIA (pool 1+3: el forajido y
+   *     los grupos de indios), cada jinete DESFASADO en el audio y con
+   *     paneo de SU lado; se desvanece con la DISTANCIA a la ventana
+   *     (setVol vivo por frame) y calla BRUSCO al abatirlo (off seco).
+   *  Los bucles viven en el SDK (createBucle v1.5.3: ignoraMute — las
+   *  pistas del tren son SFX/ambiente, no música, suenan SIEMPRE;
+   *  suena() cuenta como MUERTA la instancia de un contexto renacido
+   *  para que la auto-reparación pueda rematarla Y LA MATA (stop +
+   *  disconnect) al soltarla; on()/play() con el contexto dormido quedan
+   *  PENDIENTES y el statechange los despierta; play() devuelve BOOLEANO
+   *  para los reintentos honestos de los one-shots; vigilante de decodes
+   *  colgados a 20 s).
+   *  Decode en forma promesa y nunca rompe el frame.
+   *  ====================================================================== */
+  /* RODADURA — bucle ambience del tren en marcha (ignoraMute: el silencio
+   * del arcade es de MÚSICA; la rodadura suena siempre — SDK v1.5.1).
+   * v3.6.25: volumen 0,13 → 0,30 — a 0,13 la rodadura quedaba ENTERRADA
+   * bajo la música del vagón («casi imperceptible», informe del dueño). */
+  get _viasBuc() {
+    if (!this.__viasBuc) {
+      this.__viasBuc = createBucle(() => this.game, {
+        url: () => assetURL(import.meta.url, 'tren/vias.mp3'),
+        vol: () => 0.30,
+        fadeIn: 0.6, stopFade: 0.9,
+        ignoraMute: true,
+      });
+    }
+    return this.__viasBuc;
+  }
+  /* GALOPE — pool de 4 motores (0 = forajido · 1..3 = jinetes del grupo).
+   * ignoraMute: el galope es SFX, no música (SDK v1.5.1). */
+  _galBuc(k) {
+    if (!this.__galPool) this.__galPool = [];
+    if (!this.__galPool[k]) {
+      this.__galPool[k] = createBucle(() => this.game, {
+        url: () => assetURL(import.meta.url, 'tren/caballos.mp3'),
+        vol: () => 0.45,
+        fadeIn: 0.25, stopFade: 0.4,
+        ignoraMute: true,
+      });
+    }
+    return this.__galPool[k];
+  }
+  /* Volumen vivo del galope: distancia del jinete a SU centro de ventana
+   * (desvanecer progresivo al alejarse — la muerte es off(true) seco). */
+  _galVol(z, zAtk) {
+    const d = Math.abs(z - zAtk);
+    return 0.45 * Math.max(0, Math.min(1, 1 - d / 5.5));
+  }
+  /* Cierre duro de TODOS los bucles del vagón (dispose). */
+  _galCorta() {
+    if (this.__galPool) {
+      for (const b of this.__galPool) { try { b.off(true); } catch (e) { /* */ } }
+    }
+    try { if (this.__viasBuc) this.__viasBuc.off(true); } catch (e) { /* */ }
+    this._trenPend = [];              // v3.6.24: fuera one-shots agendados
+    this._llPistaT = 0;
+  }
+
   _musicVol() {
     try {
       const A = this.game.audio;
@@ -9228,6 +9459,16 @@ class TrenAction {
     this._tunnelT = TREN.tunnelFirst;
     this._tunnelPhase = 'none';
     this._tunnelT2 = 0;
+    /* v3.6.22 · precarga de las pistas nuevas (llegada y túnel; los bucles
+     * vias/caballos cargan perezosos en su primer on() — el primer jinete
+     * galopa segundos después del arranque, hay tiempo de sobra).
+     * v3.6.26 · Y TAMBIÉN EN EL MOTOR DEL GALOPE (createBucle precarga,
+     * SDK v1.5.4): el buffer que madura es el del motor que SUENA —
+     * el createSfx queda para las risas. */
+    try { this.__sfxSDK().precarga('tren/Tren_Llegada.mp3'); } catch (e) { /* */ }
+    try { this.__sfxSDK().precarga('tren/Tunel.mp3'); } catch (e) { /* */ }
+    try { this.__pistaUna('tren/Tren_Llegada.mp3', 0.5).precarga(); } catch (e) { /* */ }
+    try { this.__pistaUna('tren/Tunel.mp3', 0.42).precarga(); } catch (e) { /* */ }
     /* v2.115 · tanda NUEVA: pool de bolas, poderes, bomba y túnel en cero */
     /* v2.120: además del mesh, se libera el material clonado de cada extra
      * (el recambio ya reutiliza entradas muertas; aquí es el cierre duro). */
@@ -9260,6 +9501,9 @@ class TrenAction {
      * llegada y con las RISAS del forajido YA precargadas. */
     this._hidePremio();
     this._megaLlegada = false;
+    /* v3.6.24: estado de los one-shots del artista (llegada/túnel) a cero. */
+    this._llPistaT = 0;
+    this._trenPend = [];
     this.loadRisasForajido();
     // EL VAGÓN MANDA: fuera saloon, troqueles, mapa, cartel y forajido
     if (g.roomGroup) g.roomGroup.visible = false;
@@ -9304,7 +9548,11 @@ class TrenAction {
     this.phase = 'run';
     this.time = TREN.time;
     this._stoppedT = 0;
+    /* v3.6.22: RODADURA — vias.mp3 en bucle mientras el vagón marcha
+     * (se apaga con fundido al frenar en _llegaEstacion). */
+    try { this._viasBuc.on(); } catch (e) { /* */ }
     this._megaLlegada = false;      // v2.140: el anuncio de llegada, por trayecto
+    this._llPistaT = 0;             // v3.6.24: silbato del artista, por trayecto
     this._hidePremio();             // v2.140: fuera el panel de la parada
     /* v2.118 · el primer túnel del tramo NO pisa la salida del andén: al
      * menos 12 s de viaje antes de que la boca aparezca a lo lejos. */
@@ -9358,6 +9606,11 @@ class TrenAction {
     this._msg = tx('tren_llega');
     this._msgT = 3.2;
     this.ctrl.sfx('whistle', 0);
+    /* v3.6.22: LLEGADA A LA ESTACIÓN — la rodadura se apaga con fundido
+     * (el tren frena). v3.6.24: el one-shot del artista ya sonó «poco
+     * después» del anuncio de segundos (a 1,2 s de la megafonía) — aquí
+     * sólo frena la rodadura, junto al silbato sintético de la casa. */
+    try { this._viasBuc.off(); } catch (e) { /* */ }
   }
 
   /** El tren llega AL ANDÉN: frena del todo y comprueba el BOTÍN. */
@@ -9452,6 +9705,22 @@ class TrenAction {
           this.game.audio.announce(
             tx('tren_mega_llega', { e: TREN.stationNames[this.wave] }), true);
         } catch (e) { /* */ }
+        /* v3.6.26 · CONCATENADO CON LA VOZ (petición del dueño: «igual
+         * concatenando el sonido con la voz que sí suena») — el silbato
+         * entra JUSTO al terminar la locución real: audio._voiceDur lo
+         * mide el motor de la voz al renderizar el plan (el anuncio que
+         * SÍ se oye en el casco). Fallback 2,8 s si el banco no dio
+         * duración (megáfono apagado, respaldo TTS). */
+        let durV = 0;
+        try { durV = Number(this.game.audio && this.game.audio._voiceDur) || 0; }
+        catch (e) { durV = 0; }
+        if (durV < 1.0 || durV > 8.0) durV = 2.8;
+        this._llPistaT = durV + 0.35;
+      }
+      /* v3.6.24 · disparo diferido del silbato de llegada (con reintentos). */
+      if (this._llPistaT > 0) {
+        this._llPistaT -= dt;
+        if (this._llPistaT <= 0) this._pistaTren('tren/Tren_Llegada.mp3', 0.5, 4.5);
       }
       // crucero hacia delante
       this.v = Math.min(TREN.vMax, this.v + TREN.accel * dt);
@@ -9797,6 +10066,19 @@ class TrenAction {
     /* ==== v2.119 · EL INDIO CABALGANTE (grupos 1-3, flecha ladrona) ==== */
     this._indUpdate(dt);
     this._musicSync();   // v3.6.3-SDK3: el SDK guarda si suena (no-op si no)
+    /* v3.6.24: los one-shots del artista con reintentos (la llegada y el
+     * túnel suenan UNA vez: si el buffer aún decodifica o el contexto
+     * dormía, el disparo se recupera en los frames siguientes). */
+    this._pistaTrenStep(dt);
+    /* v3.6.22/24: RODADURA VIVA — el mismo mecanismo que ya demostró
+     * llegar al hardware en los galopes: setVol DIRECTO por frame mientras
+     * el vagón marcha (la Quest obedeció siempre a esta vía; la rampa de
+     * una sola vez no) + AUTOREPARACIÓN (contexto renacido, drop) al
+     * instante (on() es no-op si ya suena). */
+    if (this.phase === 'run') {
+      try { this._viasBuc.setVol(0.30); } catch (e) { /* */ }
+      try { if (!this._viasBuc.suena()) this._viasBuc.on(); } catch (e) { /* */ }
+    }
     if (this.ctrl.fx) this.ctrl.fx.update(dt);
   }
 
@@ -9831,14 +10113,26 @@ class TrenAction {
           this.tunelGrp.position.z = this._tunelZ;
           this.tunelGrp.visible = true;
         }
+        /* v3.6.26 · el disparo del mp3 ya NO va aquí — la boca a lo lejos
+         * no era el momento que el oído espera (informe del dueño: la
+         * entrada del túnel no sonaba); ahora entra CUANDO SE BAJA LA
+         * LUZ, en el paso 'pre'→'in' de _tunnelStep. */
       }
     } else if (this._tunnelPhase === 'pre') {
       this._tunnelT2 += dt;
       // la boca ENTRA completa (su borde trasero pasa el ojo) y a
       // continuación asoma la banda ya cosida a ella
+      // (v3.6.26: el one-shot del artista entra AQUÍ — se baja la luz,
+      // suena el túnel)
       if (this._tunelZ >= TU.ojo + TU.bh / 2) {
         this._tunnelPhase = 'in';
         this._tunnelT2 = 0;
+        /* v3.6.26 · EL TÚNEL SUENA CUANDO SE BAJA LA LUZ (petición literal
+         * del dueño: «ver de lanzarlo cuando se baja la luz») — la banda
+         * tapa la ventana y la caja de oscuridad arranca SU fundido: ahí
+         * entra el mp3 del artista (los 14,4 s cubren in+dur+out de
+         * sobra; el off() del motor corta con fundido antes del wrap). */
+        this._pistaTren('tren/Tunel.mp3', 0.42, 13.9);
       }
     } else if (this._tunnelPhase === 'in') {
       this._tunnelT2 += dt;
@@ -10556,7 +10850,10 @@ class TrenAction {
   /** v2.113 · «¡YIHAAAA!» del forajido al ENTRAR en escena: alerta sonora
    *  de aproximación. Grito de vaquero sintetizado: un "yi" corto que
    *  SUBE y una "haaa" larga que CAE, con vibrato y dos formantes de voz
-   *  (pasa-banda 760/1350 Hz) sobre una sierra. FUERTE (gana al rumor). */
+   *  (pasa-banda 760/1350 Hz) sobre una sierra. FUERTE (gana al rumor).
+   *  v3.6.23 · RETIRADO de las ENTRADAS (forajido e indios) a petición del
+   *  dueño: los jinetes entran con el galope real caballos.mp3. El método
+   *  se conserva (no tiene llamadas) por si el dueño lo quiere de vuelta. */
   _sndYihha() {
     const ctx = this._sndCtx();
     if (!ctx) return;
@@ -10634,6 +10931,8 @@ class TrenAction {
     const g = this.game;
     this._stopRumble();
     this._musicStop();                 // v2.111: fuera la música del vagón
+    /* v3.6.22: cierre duro de los bucles del tren (rodadura y galopes). */
+    this._galCorta();
     // v2.111: restaurar el FONDO del salón
     if (this._bgWas !== undefined) {
       g.scene.background = this._bgWas;
@@ -13219,7 +13518,11 @@ class ForajidoStand {
     } catch (e) { /* */ }
   }
 
-  /* ================= Gancho de PUNTO del árbitro (v2.70) ================== */
+  /* ================= Gancho de PUNTO del árbitro (v2.70) ==================
+   *  v3.6.49 (r57): las REACCIONES DE ARTE del punto las manda la NORMA
+   *  DE EMOCIONES del núcleo (rivalEmocion — norma en TODOS los
+   *  campeonatos). Aquí quedan los contadores, la limpieza del rallye y
+   *  los puntos de duelo. */
   onPoint(it) {
     if (!this.active || !this._duelOn) return;
     const w = it && it.winner;
@@ -13227,13 +13530,33 @@ class ForajidoStand {
     this._toward = false;
     this._restoreBallTint();   // la bola manchada se limpia con el punto
     if (w === 'ai') {
-      this._setStateSilent(Math.random() < 0.5 ? 'laughing' : 'victory', 2.2);
-      if (Math.random() < 0.5) this._playLaugh(0.55);
       this.streakAi++;
     } else if (w === 'player') {
-      this._setStateSilent(Math.random() < 0.5 ? 'surprised' : 'picando', 2.0);
       this.streakP++;
       this._puntosAdd(25, null);   // v2.119: punto de duelo a favor (+25)
+    }
+  }
+
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño):
+   *  el núcleo reparte la emoción estándar y el FORAJIDO la viste con SU
+   *  arte (convención <estado>.webp, abanico STATES) y SUS sonidos: la
+   *  burla con risas.mp3 (motor SDK propio) y la queja con un gruñido
+   *  grave sintetizado (el Oeste no tiene voz de enfado grabada). */
+  rivalEmocion(st) {
+    const DUR = {
+      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
+      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
+      victory: 2.4, defeated: 0,
+    };
+    this._setStateSilent(st, DUR[st] != null ? DUR[st] : 2.0);
+    if (st === 'laughing') this._playLaugh(0.55);
+    else if (st === 'angry') {
+      // QUEJA: gruñido grave descendente (sawtooth 220→85 Hz) — firme pero
+      // corto, no tapa la BSO del salón.
+      try {
+        const g = this.game;
+        g.audio.playOsc(220, 85, 0.34, 'sawtooth', 0.1, 0.1);
+      } catch (eQ) { /* */ }
     }
   }
 
@@ -13347,6 +13670,7 @@ class ForajidoStand {
     if (this._replayReal != null) {
       this.stage = this._replayReal;
       this._replayReal = null;
+      this._leyendaOn = false;             // ronda 25 (auditoría): sin flag huérfano
       try { localStorage.setItem(this.storageKey('stage'), String(this.stage)); } catch (e0) { /* */ }
     }
     this.musicOff();
@@ -13552,6 +13876,7 @@ class ForajidoStand {
     const estaba = !!this.active;
     try { this.leave(); } catch (e) { /* sigue */ }
     this.stage = 1; this._champion = false; this._heridas = 0;
+    this._leyendaOn = false;               // ronda 25 (auditoría): el borrado corta también la LEYENDA
     this.duelWins = 0; this.rank = []; this.round = 1;
     this.streakP = 0; this.streakAi = 0;
     this._replayReal = null; this._hoverNodo = -1;
@@ -13697,6 +14022,8 @@ export default {
   /* v2.86 · DUELO: ganchos del árbitro + pistola + gatillo (contrato v2.70) */
   onPoint(it) { if (CTRL) CTRL.onPoint(it); },
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
+  // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+  rivalEmocion(st, info) { if (CTRL) CTRL.rivalEmocion(st); },
   aiMul() {
     const g = GAME;
     if (!CTRL || !CTRL.active || !CTRL._duelOn || !g ||

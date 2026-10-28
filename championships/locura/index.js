@@ -187,13 +187,21 @@ const LOCURA_CFG = {
     { kind: 'redball', duration: 8.0, scale: 2.0, speedMul: 0.62, gravityMul: 0.55 },
   ],
   powerTrigger: { chance: 0.32, cooldown: 13.0, minRallyHits: 1, warn: 2.0 },
-  playerPower: { kind: 'mega_pala', reachMul: 1.38, duration: 8.0, trigger: 'crazy_combo_rally6' },
+  // v3.6.34: el PODER DE PALA es NORMATIVA del núcleo (MEGA PALA en
+  // todos los campeonatos: rally de 11+ golpes la carga, gatillo la
+  // suelta). Línea histórica — el módulo ya no implementa nada.
+  playerPower: { kind: 'mega_pala', reachMul: 1.38, duration: 8.0, trigger: 'norma_rally11' },
   thresholds: { picandoRallyHits: 7, loosingDiff: 6, comboRally: 6, surprisedRally: 3 },
   powerBanner: 'superpoder.webp',
   music: 'bso.ogg',
   musicVolume: 0.18,
   champId: 'clown',
 };
+
+// v3.6.34 · la MEGA PALA vive en el NÚCLEO (MEGA PALA NORMATIVA): carga
+// por rally de 11+ golpes, ICONO sobre el mango + jingle propio, gatillo
+// voluntaria y conmutador «Pala Mejorada» en AJUSTES. Aquí ya no quedan
+// constantes ni FX de pala (adiós núcleo dorado, halo, aro y chispas).
 
 /* =====================================================================
  *  v2.41 · ARCADE — "CAMPEONATO DE LA LOCURA" (rival: CLOWN)
@@ -1136,6 +1144,7 @@ const ARK2_CFG = Object.assign({}, ARK_CFG, {
   blueStart: 0.30,   // ~30% de los ladrillos nacen AZULES
   convertFirst: 12,  // gracia (s) antes de la conversión temporal
   convertEvery: 7,   // cada 7 s un ROJO vivo pasa a AZUL
+  bombaCada: 15,     // v3.6.45: la bomba sale por INTERVALOS de 15 s
 });
 ARK_CFG.z = ARK_CFG.sideZ1 + ARK_CFG.depth / 2 + 0.004;
 ARK2_CFG.z = ARK2_CFG.sideZ1 + ARK2_CFG.depth / 2 + 0.004;
@@ -1276,6 +1285,33 @@ class ArcadeArkanoid {
     this._timeUsed = false;    // el +1 min ya se cogió en esta prueba
     this._time30 = false;      // el aviso sonoro de apremio ya sonó
     this._extraFx = null;      // { pos, t } — plano "+1 MIN" flotando
+    // v3.6.44 (ronda 52) · LADRILLO BOMBA (sólo ARKANOID 2): sustituye a un
+    // AZUL vivo al azar, dura 4 s en cada ladrillo y SALTA a otro azul;
+    // sin azules vivos se esconde. v3.6.45 (ronda 53): la aparición pasa a
+    // ser ALEATORIA por INTERVALOS DE 15 s (si hay ladrillos disponibles
+    // donde aparecer). Al romperlo (bola o láser) DETONA y arrasa todos
+    // los ladrillos en radio de 2 filas × 2 columnas; consumida, no vuelve
+    // en toda la partida (se reinicia con cada intento).
+    this._bombBrick = null;    // { slot, t } — activo o null
+    this._bombUsed = false;    // la bomba ya DETONÓ en esta partida
+    this._bombWait = false;    // sin azules vivos: esperando intervalo + azul
+    this._bombNext = 2 + Math.random() * 10;  // s: 1.ª aparición (2-12 s)
+    this._bombT = 0;           // s en el ladrillo actual (salto a los 4 s)
+    this._stageT = 0;          // s de juego de la etapa (intervalos de 15 s)
+    // v3.6.45 (ronda 53) · LADRILLO ELÉCTRICO (sólo ARKANOID 2): en los
+    // ÚLTIMOS 30 s un azul al azar se ELECTRIFICA (rayitos + chisporroteo;
+    // sólo se activa con la BOLA — el láser no lo ve). Al darle con la
+    // bola ATRAE hacia sí al resto de los ladrillos y los reparte en las
+    // celdas pegadas a su alrededor (anillos, las casillas más próximas
+    // primero); todos quedan eléctricos y desde entonces CUALQUIER impacto
+    // desencadena una REACCIÓN EN CADENA ramificada que arrasa la pared —
+    // misión superada. Se reinicia con cada partida.
+    this._eFase = 0;           // 0 nada · 1 sembrado · 2 cadena armada
+    this._eSeed = null;        // ladrillo eléctrico sembrado
+    this._eMove = [];          // tweens de atracción { b, fx, fy, tx, ty, t }
+    this._eCadena = [];        // cola de la reacción en cadena [{ b, t }]
+    this._eBoltT = 0;          // flicker de los rayos (regeneración 0,07 s)
+    this._eChispT = 0;         // chisporroteo aleatorio
     // v2.44 · ABANICO (corriente de aire para desatascar la bola)
     this._fanSamp = [];        // muestras {t, vx} de la velocidad lateral
     this._fanT = 0;            // segundos restantes de viento activo
@@ -1535,6 +1571,108 @@ class ArcadeArkanoid {
         eimg.src = eurl;
       }
     }
+    // v3.6.44 (ronda 52) · LADRILLO BOMBA: malla NEGRA (misma blackMat del
+    // tiempo extra) + icono bomba.webp superpuesto DELANTE — diseño del
+    // estilo del reloj (cartela blanca, silueta negra), a petición del
+    // dueño: «similar al ladrillo del reloj pero con el dibujo de una
+    // bomba». La bola lo REVIENTA (detonación) y el láser también.
+    this.bombMesh = new THREE.Mesh(this.brickGeo, this.blackMat);
+    this.bombMesh.castShadow = true;
+    this.bombMesh.visible = false;
+    this.wallGroup.add(this.bombMesh);
+    this.bombIconMat = this.bombIconMat || new THREE.MeshBasicMaterial({
+      transparent: true, depthWrite: false, side: THREE.FrontSide,
+    });
+    this.bombIcon = new THREE.Mesh(
+      new THREE.PlaneGeometry(C.bw * 0.62, C.bw * 0.62), this.bombIconMat);
+    this.bombIcon.visible = false;
+    this.bombIcon.renderOrder = 6;
+    this.wallGroup.add(this.bombIcon);
+    if (!this._bombaLoading) {
+      this._bombaLoading = true;
+      const burl = (typeof window !== 'undefined' && window.__PP_BOMBA_URL);
+      if (burl) {
+        const bimg = new Image();
+        bimg.onload = () => {
+          const bt = new THREE.Texture();
+          bt.colorSpace = THREE.SRGBColorSpace;
+          bt.image = bimg;
+          bt.needsUpdate = true;
+          this.bombIconMat.map = bt;
+          this.bombIconMat.needsUpdate = true;
+        };
+        bimg.src = burl;
+      }
+    }
+    // v3.6.45 (ronda 53) · LADRILLO ELÉCTRICO: material AZUL que EMITE
+    // cian (la pared electrificada SE VE brillar), icono del RAYO (cartela
+    // blanca + silueta negra + chispa cian — familia del reloj/bomba,
+    // dibujado EN CÓDIGO: cero assets nuevos) y pool de 14 RAYOS 3D
+    // (líneas dentadas aditivas) que CHISPORROTEAN sobre los ladrillos
+    // eléctricos. Nada se crea por partida: todo nace aquí (regla Quest).
+    this.eBrickMat = this.eBrickMat || new THREE.MeshStandardMaterial({
+      color: 0x2f7fd4, roughness: 0.25, metalness: 0.65,
+      emissive: 0x36c9ff, emissiveIntensity: 0.8,
+    });
+    this.eIconMat = this.eIconMat || new THREE.MeshBasicMaterial({
+      transparent: true, depthWrite: false, side: THREE.FrontSide,
+    });
+    this.eIcon = new THREE.Mesh(
+      new THREE.PlaneGeometry(C.bw * 0.62, C.bw * 0.62), this.eIconMat);
+    this.eIcon.visible = false;
+    this.eIcon.renderOrder = 6;
+    this.wallGroup.add(this.eIcon);
+    if (!this._eIconReady) {
+      this._eIconReady = true;
+      const cvE = document.createElement('canvas');
+      cvE.width = 256; cvE.height = 256;
+      const ge = cvE.getContext('2d');
+      // cartela blanca redondeada (la misma familia del reloj y la bomba)
+      ge.fillStyle = '#f4f4f0';
+      ge.beginPath();
+      if (ge.roundRect) ge.roundRect(18, 18, 220, 220, 26);
+      else ge.rect(18, 18, 220, 220);
+      ge.fill();
+      ge.strokeStyle = 'rgba(30,60,80,0.5)'; ge.lineWidth = 7;
+      ge.stroke();
+      // silueta NEGRA del rayo (como la bomba y el reloj: silueta negra)
+      ge.fillStyle = '#111114';
+      ge.beginPath();
+      ge.moveTo(148, 44); ge.lineTo(92, 138); ge.lineTo(126, 138);
+      ge.lineTo(104, 212); ge.lineTo(172, 112); ge.lineTo(134, 112);
+      ge.lineTo(160, 44);
+      ge.closePath(); ge.fill();
+      // chispa cian (la firma eléctrica que lo distingue de la familia)
+      ge.strokeStyle = '#22b1e0'; ge.lineWidth = 6; ge.lineCap = 'round';
+      ge.beginPath();
+      ge.moveTo(196, 60); ge.lineTo(184, 78); ge.lineTo(198, 82);
+      ge.lineTo(182, 102);
+      ge.moveTo(70, 178); ge.lineTo(84, 166); ge.lineTo(74, 156);
+      ge.lineTo(92, 146);
+      ge.stroke();
+      const etx = new THREE.CanvasTexture(cvE);
+      etx.colorSpace = THREE.SRGBColorSpace;
+      this.eIconMat.map = etx;
+      this.eIconMat.needsUpdate = true;
+    }
+    this.eBoltMat = this.eBoltMat || new THREE.LineBasicMaterial({
+      color: 0xaee9ff, transparent: true, opacity: 0.95,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    if (!this.eBolts) {
+      this.eBolts = [];
+      for (let i = 0; i < 14; i++) {
+        const geoB = new THREE.BufferGeometry();
+        geoB.setAttribute('position',
+          new THREE.BufferAttribute(new Float32Array(4 * 3), 3));
+        const ln = new THREE.Line(geoB, this.eBoltMat);
+        ln.visible = false;
+        ln.renderOrder = 7;
+        ln.frustumCulled = false;
+        this.wallGroup.add(ln);
+        this.eBolts.push(ln);
+      }
+    }
     // 2 PAREDES LATERALES de cristal (marco ámbar + rodapié + remate),
     // EN EL BORDE de la mesa (4 mm fuera para no z-fight con el canto).
     // v2.44: longitud C.sideZ0 - C.sideZ1 — con la extensión hacia el
@@ -1601,6 +1739,7 @@ class ArcadeArkanoid {
         this.bricks.push({
           mesh: m, home: m.position.clone(), alive: true,
           state: blue ? 'blue' : 'red',   // v2.44: color lógico del ladrillo
+          state0: blue ? 'blue' : 'red',  // v3.6.45: original (start restaura)
           matIdx: (r * 3 + c) % 3,        // v2.44: tono dentro de su paleta
           min: new THREE.Vector3(x - C.bw / 2, y - C.bh / 2, C.z - C.depth / 2),
           max: new THREE.Vector3(x + C.bw / 2, y + C.bh / 2, C.z + C.depth / 2),
@@ -1653,6 +1792,28 @@ class ArcadeArkanoid {
     if (this.timeMesh) this.timeMesh.visible = false;
     if (this.timeClock) this.timeClock.visible = false;
     if (this.extraPlane) this.extraPlane.visible = false;
+    // v3.6.44 · la BOMBA también SE REINICIA CON CADA PARTIDA (petición
+    // del dueño: «se reinicia con cada partida»); v3.6.45: la 1.ª aparición
+    // vuelve a caer ALEATORIA dentro del primer intervalo (2-12 s).
+    this._bombBrick = null;
+    this._bombUsed = false;
+    this._bombWait = false;
+    this._bombNext = 2 + Math.random() * 10;
+    this._bombT = 0;
+    this._stageT = 0;
+    if (this.bombMesh) this.bombMesh.visible = false;
+    if (this.bombIcon) this.bombIcon.visible = false;
+    // v3.6.45 · el ELÉCTRICO se reinicia con cada partida (fase 0, sin
+    // semilla, sin cadena ni tweens, rayos e icono fuera; cada ladrillo
+    // recupera su color ORIGINAL — state0 — y su sitio en el muro).
+    this._eFase = 0;
+    this._eSeed = null;
+    this._eMove.length = 0;
+    this._eCadena.length = 0;
+    this._eBoltT = 0;
+    this._eChispT = 0;
+    if (this.eIcon) this.eIcon.visible = false;
+    for (const ln of this.eBolts || []) ln.visible = false;
     this.bricksLeft = this.bricks.length;
     for (const b of this.bricks) {
       b.alive = true;
@@ -1660,6 +1821,7 @@ class ArcadeArkanoid {
       b.mesh.scale.setScalar(1);
       b.mesh.rotation.set(0, 0, 0);
       b.mesh.position.copy(b.home);
+      if (b.state0) b.state = b.state0;   // v3.6.45: color ORIGINAL de fábrica
       // v2.44: el material refleja el color lógico (rojo/azul al reiniciar)
       b.mesh.material = b.state === 'blue' ? this.blueMats[b.matIdx] : this.redMats[b.matIdx];
     }
@@ -1784,7 +1946,9 @@ class ArcadeArkanoid {
       }
     } else if (this.phase === 'play') {
       this._tokCd = Math.max(0, this._tokCd - dt);
-      this.time -= dt;
+      // v3.6.45 · la REACCIÓN EN CADENA congela el contador: el gran final
+      // eléctrico se completa SIEMPRE (nadie pierde a mitad del destrozo)
+      if (!this._eCadena.length) this.time -= dt;
       if (this.time <= 0) {
         this.time = 0;
         this._hudDirty = true;
@@ -1826,6 +1990,10 @@ class ArcadeArkanoid {
           }, k * 230 + 105);
         }
       }
+      // v3.6.45 · LADRILLO ELÉCTRICO: al entrar en los ÚLTIMOS 30 s UN azul
+      // al azar se electrifica (si no hay azules aún, reintenta hasta que
+      // la conversión temporal genere uno)
+      if (this.variant === 2 && sec <= 30 && !this._eFase) this._eSembrar();
       // v2.44 · CONVERSIÓN TEMPORAL ROJO->AZUL (sólo variante 2): cada pocos
       // segundos UN ladrillo ROJO vivo pasa a AZUL. Los AZULES NUNCA se
       // eligen (el bug del ladrillo negro: azul elegido = se rompía la
@@ -1840,6 +2008,8 @@ class ArcadeArkanoid {
       }
       // v2.46 · LADRILLO NEGRO del tiempo extra (aparición y saltos)
       this._timeUpdate(dt);
+      // v3.6.44 · LADRILLO BOMBA (aparición, saltos y espera por azules)
+      this._bombUpdate(dt);
       // v2.44 · ABANICO: corriente de aire para empujar la bola al muro
       this._fanUpdate(dt);
       this._physics(dt);
@@ -1855,6 +2025,7 @@ class ArcadeArkanoid {
         return;
       }
     }
+    this._eUpdate(dt);                    // v3.6.45: rayos · chisporroteo · cadena
     this._anims(dt);
     if (this._msgT > 0) {
       this._msgT -= dt;
@@ -2023,6 +2194,9 @@ class ArcadeArkanoid {
     const r2 = (r + 0.002) * (r + 0.002);
     for (const b of this.bricks) {
       if (!b.alive) continue;
+      // v3.6.44 · el slot ocupado por la BOMBA no colisiona (su ladrillo
+      // azul está OCULTO debajo — la bomba captura esa zona con SU bloque)
+      if (this._bombBrick && b === this._bombBrick.slot) continue;
       if (p.z - r > b.max.z || p.z + r < b.min.z) continue;
       if (p.x - r > b.max.x || p.x + r < b.min.x) continue;
       if (p.y - r > b.max.y || p.y + r < b.min.y) continue;
@@ -2066,10 +2240,17 @@ class ArcadeArkanoid {
         v.y -= ny * vno * (1 - C.brickRest);
         v.z -= nz * vno * (1 - C.brickRest);
       }
-      // v2.44 · LÓGICA POR COLOR: la PALA (bola) sólo rompe los ROJOS; los
-      // AZULES REBOTAN (metálico: «clink») — sólo el LÁSER los destruye
-      // (explosión y quedan ROJOS, no desaparecen).
-      if (b.state === 'blue') {
+      // v3.6.45 · ELÉCTRICO: el golpe de la BOLA es su gatillo — con la
+      // semilla (fase 1) ATRAE al resto y electrifica la pared; armada la
+      // cadena (fase 2), CUALQUIER impacto desencadena la reacción en
+      // cadena ramificada. Inmune al láser (el rayo ni siquiera lo ve).
+      if (b.state === 'elec') {
+        if (this._eFase === 1) this._eAtraer(b);
+        else if (this._eFase === 2) this._eCadenaDesde(b);
+      } else if (b.state === 'blue') {
+        // v2.44 · LÓGICA POR COLOR: la PALA (bola) sólo rompe los ROJOS; los
+        // AZULES REBOTAN (metálico: «clink») — sólo el LÁSER los destruye
+        // (explosión y quedan ROJOS, no desaparecen).
         this._brickClink(b);
       } else {
         this._breakBrick(b);
@@ -2113,6 +2294,44 @@ class ArcadeArkanoid {
         }
       }
     }
+    // v3.6.44 · LADRILLO BOMBA: la bola lo revienta y DETONA (mismo esquema
+    // de reflexión que el ladrillo del tiempo — la destrucción la hace
+    // _detonarBomba, que arrasa el radio 2×2 de filas y columnas).
+    if (this._bombBrick) {
+      const bb = this._bombBrick.slot;
+      if (p.z - r <= bb.max.z && p.z + r >= bb.min.z &&
+          p.x - r <= bb.max.x && p.x + r >= bb.min.x &&
+          p.y - r <= bb.max.y && p.y + r >= bb.min.y) {
+        const cx = THREE.MathUtils.clamp(p.x, bb.min.x, bb.max.x);
+        const cy = THREE.MathUtils.clamp(p.y, bb.min.y, bb.max.y);
+        const cz = THREE.MathUtils.clamp(p.z, bb.min.z, bb.max.z);
+        let nx = p.x - cx, ny = p.y - cy, nz = p.z - cz;
+        const d2 = nx * nx + ny * ny + nz * nz;
+        if (d2 <= r2) {
+          if (d2 > 1e-9) {
+            const d = Math.sqrt(d2);
+            nx /= d; ny /= d; nz /= d;
+            p.x = cx + nx * (r + 0.003);
+            p.y = cy + ny * (r + 0.003);
+            p.z = cz + nz * (r + 0.003);
+          } else {
+            nz = 1;
+            p.z = bb.max.z + r + 0.003;
+          }
+          const vn = v.x * nx + v.y * ny + v.z * nz;
+          if (vn < 0) {
+            v.x -= 2 * vn * nx;
+            v.y -= 2 * vn * ny;
+            v.z -= 2 * vn * nz;
+            const vno = v.x * nx + v.y * ny + v.z * nz;
+            v.x -= nx * vno * (1 - C.brickRest);
+            v.y -= ny * vno * (1 - C.brickRest);
+            v.z -= nz * vno * (1 - C.brickRest);
+          }
+          this._detonarBomba();
+        }
+      }
+    }
   }
 
   /** Golpecito sonoro de las paredes del perímetro (v2.41, con anti-spam). */
@@ -2139,6 +2358,10 @@ class ArcadeArkanoid {
    *  ROJO  -> inmune al láser (sólo la pala lo rompe): chispa y «tick». */
   laserHit(b) {
     if (!b || !b.alive) return false;
+    if (b.state === 'elec') {            // v3.6.45: sólo la BOLA lo activa
+      this._laserSpark(b);
+      return false;
+    }
     if (b.state === 'blue') {
       this._laserConvert(b);
       return true;
@@ -2293,6 +2516,436 @@ class ArcadeArkanoid {
     this._msg = T('ark_extra_min');
     this._msgT = 2.0;
     if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.5, 70);
+  }
+
+  /* ---------------------------------------------------------------------
+   * v3.6.44 (ronda 52) · LADRILLO BOMBA del ARKANOID 2 (etapa 4 del
+   * campeonato de La Locura — petición literal del dueño):
+   * «aleatoriamente y al menos 1 vez por partida aparezca un bloque de
+   * ladrillo negro sustituyendo a uno azul con un dibujo de una bomba,
+   * permanece 4 segundos y salta a otro bloque azul si está presente y
+   * sino desaparece hasta que aparezca otro azul, una vez consumido ya no
+   * aparecen más durante la partida, se reinicia con cada partida» y «si
+   * se destruye, con el disparo o con la pelota detone estrepitosamente
+   * todos los bloques que están al menos hasta un rango de 2 filas y
+   * columnas de donde se encuentra». RESULTADO: la etapa Arkanoid tiene
+   * DOS ayudas aseguradas — el reloj (+1 min) y la bomba (el destrozo).
+   * ------------------------------------------------------------------- */
+  _bombUpdate(dt) {
+    if (this.variant !== 2) return;
+    if (this._eFase > 0) return;    // v3.6.45: el final ELÉCTRICO manda — bomba fuera
+    if (this._bombUsed) return;             // consumida: nunca más en la partida
+    this._stageT += dt;          // reloj de la etapa (intervalos de 15 s)
+    if (this._bombBrick) {
+      this._bombT += dt;
+      if (this._bombT >= 4) this._bombJump();   // 4 s en el ladrillo → salta
+      return;
+    }
+    const azules = this.bricks.filter((b) => b.alive && b.state === 'blue');
+    // v3.6.45 (ronda 53, petición del dueño): la bomba sale de manera
+    // ALEATORIA pero por INTERVALOS DE 15 SEGUNDOS — «si tiene ladrillos
+    // disponibles donde aparecer». La 1.ª aparición cae DENTRO del primer
+    // intervalo (2-12 s, aleatoria); tras cada aparición se programa la
+    // siguiente a +15 s, así que tras una desaparición (sin azules) vuelve
+    // en su intervalo, nunca antes.
+    if (this._bombWait) {
+      // desaparecida por falta de azules: espera a SU intervalo y a un azul
+      if (azules.length && this._stageT >= this._bombNext) {
+        this._bombSpawn(azules);
+      }
+      return;
+    }
+    if (azules.length && this._stageT >= this._bombNext) {
+      this._bombSpawn(azules);
+    }
+  }
+
+  _bombSpawn(azules) {
+    if (!azules || !azules.length) azules =
+      this.bricks.filter((b) => b.alive && b.state === 'blue');
+    if (!azules.length) { this._bombWait = true; return; }
+    this._bombWait = false;
+    const b = azules[(Math.random() * azules.length) | 0];
+    this._bombPlace(b);
+    // v3.6.45: la SIGUIENTE aparición se programa a +15 s (intervalos)
+    this._bombNext = this._stageT + (this.C.bombaCada || 15);
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(this.bombMesh.position.x / 2.5, -1, 1);
+    // aparición: «plombeo» grave + tic metálico (amenaza que llega)
+    g.audio.playOsc(180, 96, 0.2, 'triangle', 0.2, pan);
+    g.audio.playNoise(0.08, 2400, 1.4, 0.1, pan);
+  }
+
+  _bombPlace(b) {
+    this._bombBrick = { slot: b, t: 0 };
+    this._bombT = 0;
+    b.mesh.visible = false;              // el azul se OCULTA (sigue vivo)
+    this.bombMesh.visible = true;
+    this.bombMesh.scale.setScalar(1);
+    this.bombMesh.rotation.set(0, 0, 0);
+    this.bombMesh.position.copy(b.home);
+    this.bombIcon.visible = true;        // icono bomba DELANTE del ladrillo
+    this.bombIcon.position.copy(b.home);
+    this.bombIcon.position.z += this.C.depth / 2 + 0.003;
+  }
+
+  _bombJump() {
+    const cur = this._bombBrick.slot;
+    const otros = this.bricks.filter((b) => b.alive && b.state === 'blue' &&
+      b !== cur);
+    if (!otros.length) {
+      // sin azules vivos: DESAPARECE (el azul actual vuelve) y espera a
+      // que aparezca otro azul (_convertRandomRed crea azules nuevos)
+      cur.mesh.visible = true;
+      this.bombMesh.visible = false;
+      this.bombIcon.visible = false;
+      this._bombBrick = null;
+      this._bombWait = true;
+      return;
+    }
+    this._flash(cur.home);               // destello en el ladrillo que abandona
+    cur.mesh.visible = true;             // el azul original REAPARECE
+    this._bombPlace(otros[(Math.random() * otros.length) | 0]);
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(this.bombMesh.position.x / 2.5, -1, 1);
+    g.audio.playOsc(340, 620, 0.09, 'sine', 0.1, pan);
+  }
+
+  /** La bola o el láser revientan la BOMBA: DETONACIÓN ESTREPITOSA —
+   *  arrasa TODOS los ladrillos vivos en radio de 2 filas × 2 columnas
+   *  (rojos Y azules — la bomba no distingue), escombros negros, flash
+   *  doble, BOOM grave con sub-tono y sacudida háptica fuerte. */
+  _detonarBomba() {
+    if (!this._bombBrick) return;
+    const g = this.game;
+    const slot = this._bombBrick.slot;
+    const pos = slot.home.clone();
+    const C = this.C;
+    const idx = this.bricks.indexOf(slot);
+    const rC = (idx >= 0 && C.cols) ? Math.floor(idx / C.cols) : -1;
+    const cC = (idx >= 0 && C.cols) ? idx % C.cols : -1;
+    this._bombBrick = null;              // consumida: NUNCA más en la partida
+    this._bombUsed = true;
+    this.bombMesh.visible = false;
+    this.bombIcon.visible = false;
+    slot.mesh.visible = true;            // el azul vuelve para romperse
+    // DETONACIÓN: radio 2 filas × 2 columnas alrededor del ladrillo bomba
+    if (rC >= 0) {
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          const rr = rC + dr, cc = cC + dc;
+          if (rr < 0 || rr >= C.rows || cc < 0 || cc >= C.cols) continue;
+          const b2 = this.bricks[rr * C.cols + cc];
+          if (b2 && b2.alive) this._breakBrick(b2);
+        }
+      }
+    }
+    // escombros NEGROS de la propia bomba (8 trozos)
+    let spawned = 0;
+    for (const d of this._debris) {
+      if (d.life > 0) continue;
+      d.life = 0.6 + Math.random() * 0.3;
+      d.mesh.visible = true;
+      d.mesh.material = this.blackMat;
+      d.mesh.position.copy(pos);
+      d.mesh.position.x += (Math.random() - 0.5) * 0.2;
+      d.mesh.position.y += (Math.random() - 0.5) * 0.12;
+      d.vel.set((Math.random() - 0.5) * 3.2, Math.random() * 2.2,
+        1.0 + Math.random() * 2.0);
+      if (++spawned >= 8) break;
+    }
+    this._flash(pos);                    // doble flash de la detonación
+    this._flash(pos.clone().add(new THREE.Vector3(
+      (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.2, 0.02)));
+    // BOOM: trueno grave + caída al sub-grave (el destrozo SUENA enorme)
+    const pan = THREE.MathUtils.clamp(pos.x / 2.5, -1, 1);
+    g.audio.playNoise(0.32, 180, 0.7, 0.4, pan);
+    g.audio.playOsc(320, 55, 0.4, 'sawtooth', 0.32, pan);
+    g.audio.playOsc(110, 42, 0.5, 'sine', 0.3, pan);
+    if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.95, 220);
+    this._msg = T('ark_bomba_boom');
+    this._msgT = 2.0;
+    this._hudDirty = true;
+  }
+
+  /* ---------------------------------------------------------------------
+   * v3.6.45 (ronda 53) · EL LADRILLO ELÉCTRICO del ARKANOID 2 (etapa 4 del
+   * campeonato de La Locura — petición literal del dueño): «En los últimos
+   * 30 segundos uno de los ladrillos azules (aleatorio) se convierte en
+   * eléctrico con pequeños rayos que salen de él (solo es destructible con
+   * la bola). Si se le consigue dar con la pelota, atrae hacia sí al resto
+   * de los ladrillos que queden en la pared distribuyéndolos en las celdas
+   * pegadas a su alrededor cubriendo todas las casillas más próximas
+   * posibles y todos cogen el mismo efecto de rayitos pegándolos a su
+   * alrededor; en ese momento y hasta el final del tiempo cualquier
+   * impacto en cualquiera de los ladrillos en el nuevo estado de eléctrico
+   * desencadena una reacción en cadena destruyéndolos de forma ramificada
+   * desde el que recibe el impacto hasta los siguientes hasta destruir
+   * todos en cadena, finalizando de forma exitosa la misión. Y cuando sella
+   * un ladrillo y pasa a eléctrico que emita un sonido de chisporroteo de
+   * electricidad». FASES: 0 = nada · 1 = sembrado (espera la bola) ·
+   * 2 = pared electrificada y cadena armada (el gran final).
+   * ------------------------------------------------------------------- */
+
+  /** Siembra: UN azul vivo al azar pasa a ELÉCTRICO (rayitos + zap +
+   *  chisporroteo). Si no hay azules aún, reintenta en el frame siguiente
+   *  (la conversión temporal genera azules nuevos cada 7 s). */
+  _eSembrar() {
+    if (this._eFase !== 0 || this.variant !== 2) return;
+    const cands = this.bricks.filter((b) => b.alive && b.state === 'blue' &&
+      !(this._bombBrick && b === this._bombBrick.slot));
+    if (!cands.length) return;            // sin azules: reintenta
+    const g = this.game;
+    const b = cands[(Math.random() * cands.length) | 0];
+    this._eFase = 1;
+    this._eSeed = b;
+    b.state = 'elec';
+    b.mesh.material = this.eBrickMat;
+    if (this.eIcon) {
+      this.eIcon.visible = true;
+      this.eIcon.position.copy(b.home);
+      this.eIcon.position.z += this.C.depth / 2 + 0.003;
+    }
+    this._flash(b.mesh.position);
+    // ZAP de sellado: chirrido eléctrico + chispa aguda — «cuando sella un
+    // ladrillo y pasa a eléctrico que emita un sonido» (petición literal)
+    const pan = THREE.MathUtils.clamp(b.home.x / 2.5, -1, 1);
+    g.audio.playOsc(2400, 700, 0.16, 'sawtooth', 0.2, pan);
+    g.audio.playOsc(3400, 2600, 0.08, 'square', 0.1, pan);
+    g.audio.playNoise(0.12, 3200, 1.6, 0.16, pan);
+    this._msg = T('ark_elec_on');
+    this._msgT = 2.6;
+    if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.45, 90);
+    this._hudDirty = true;
+  }
+
+  /** ATRACCIÓN (fase 1 → 2): la bola golpea la semilla — el resto de los
+   *  ladrillos VIVOS es atraído y se reparte en las celdas contiguas por
+   *  ANILLOS desde la semilla (las casillas más próximas primero, huecos
+   *  de ladrillos destruidos incluidos). TODOS quedan eléctricos: la
+   *  reacción en cadena queda armada hasta el final del tiempo. */
+  _eAtraer(seed) {
+    if (this._eFase !== 1 || !seed || !seed.alive) return;
+    const g = this.game;
+    const C = this.C;
+    const cols = C.cols, rows = C.rows;
+    const iS = this.bricks.indexOf(seed);
+    const rS = Math.floor(iS / cols), cS = iS % cols;
+    const W = cols * C.bw + (cols - 1) * C.gap;
+    // celdas destino por ANILLOS (Chebyshev) y, dentro de cada anillo, por
+    // distancia euclídea a la semilla — «cubriendo todas las casillas más
+    // próximas posibles» (los anillos cubren todo el muro: siempre caben)
+    const dests = [];
+    for (let ring = 1; ring <= Math.max(rows, cols); ring++) {
+      const celdas = [];
+      for (let r = rS - ring; r <= rS + ring; r++) {
+        for (let c = cS - ring; c <= cS + ring; c++) {
+          if (Math.max(Math.abs(r - rS), Math.abs(c - cS)) !== ring) continue;
+          if (r < 0 || r >= rows || c < 0 || c >= cols) continue;
+          const i2 = r * cols + c;
+          if (i2 === iS) continue;
+          celdas.push({ i2, d: (r - rS) * (r - rS) + (c - cS) * (c - cS) });
+        }
+      }
+      celdas.sort((a, b2) => a.d - b2.d);
+      for (const cd of celdas) dests.push(cd.i2);
+    }
+    const vivos = this.bricks.filter((b) => b.alive && b !== seed);
+    const usadas = new Set([iS]);
+    let k = 0;
+    for (const b of vivos) {
+      while (k < dests.length && usadas.has(dests[k])) k++;
+      if (k >= dests.length) break;
+      const dst = dests[k++];
+      usadas.add(dst);
+      const r2 = Math.floor(dst / cols), c2 = dst % cols;
+      const x = -W / 2 + C.bw / 2 + c2 * (C.bw + C.gap);
+      const y = C.baseY + C.bh / 2 + r2 * (C.bh + C.gap);
+      b.state = 'elec';
+      b.mesh.material = this.eBrickMat;
+      // AABB nuevo YA (colisión = disposición final); la malla viaja con
+      // un tween corto de 0,35 s (_eMove, procesado en _anims)
+      b.min.set(x - C.bw / 2, y - C.bh / 2, C.z - C.depth / 2);
+      b.max.set(x + C.bw / 2, y + C.bh / 2, C.z + C.depth / 2);
+      this._eMove.push({ b, fx: b.mesh.position.x, fy: b.mesh.position.y,
+        tx: x, ty: y, t: 0 });
+    }
+    this._eFase = 2;
+    this._eChispT = 0.05;                 // el chisporroteo sube YA
+    this._flash(seed.mesh.position);
+    for (let i = 0; i < 5; i++) {
+      const b2 = vivos.length
+        ? vivos[(Math.random() * vivos.length) | 0] : null;
+      if (b2) this._flash(b2.mesh.position);
+    }
+    // gran ZAP de electrificación de la pared
+    const pan = THREE.MathUtils.clamp(seed.home.x / 2.5, -1, 1);
+    g.audio.playOsc(300, 1900, 0.4, 'sawtooth', 0.24, pan);
+    g.audio.playNoise(0.3, 2800, 1.4, 0.22, pan);
+    g.audio.playOsc(1900, 400, 0.3, 'square', 0.12, pan);
+    this._msg = T('ark_elec_aran');
+    this._msgT = 3.0;
+    if (g.renderer.xr.isPresenting) g.haptic(g.paddleHand, 0.7, 160);
+    this._hudDirty = true;
+  }
+
+  /** Celda ACTUAL de un ladrillo, derivada de su AABB — tras la atracción
+   *  los ladrillos viven en celdas NUEVAS (el índice del array ya no vale). */
+  _eCeldaDe(b) {
+    const C = this.C;
+    const W = C.cols * C.bw + (C.cols - 1) * C.gap;
+    const cx = (b.min.x + b.max.x) / 2;
+    const cy = (b.min.y + b.max.y) / 2;
+    const c = Math.round((cx + W / 2 - C.bw / 2) / (C.bw + C.gap));
+    const r = Math.round((cy - C.baseY - C.bh / 2) / (C.bh + C.gap));
+    return { r: Math.max(0, Math.min(C.rows - 1, r)),
+      c: Math.max(0, Math.min(C.cols - 1, c)) };
+  }
+
+  /** REACCIÓN EN CADENA (fase 2): BFS ramificado desde el ladrillo
+   *  impactado — cada onda (0,12 s) revienta los eléctricos vecinos en
+   *  todas direcciones hasta arrasar TODOS los de la pared: la cola se
+   *  procesa en _eCadenaStep y al vaciarla con el muro muerto la misión
+   *  termina de forma EXITOSA (_finish(true)). La propagación va por la
+   *  celda ACTUAL de cada ladrillo (AABB — tras la atracción el índice
+   *  del array ya no coincide con su sitio en el muro). */
+  _eCadenaDesde(b0) {
+    if (this._eFase !== 2 || !b0 || !b0.alive || b0.state !== 'elec') return;
+    if (this._eCadena.length) return;     // la cadena ya corre: no re-dispara
+    const cols = this.C.cols;
+    // mapa celda ACTUAL → ladrillo (sólo eléctricos vivos)
+    const mapa = new Map();
+    for (const b of this.bricks) {
+      if (!b.alive || b.state !== 'elec') continue;
+      const cd = this._eCeldaDe(b);
+      mapa.set(cd.r * cols + cd.c, b);
+    }
+    if (!mapa.size) return;
+    const c0 = this._eCeldaDe(b0);
+    const i0 = c0.r * cols + c0.c;
+    const enCola = new Set([i0]);
+    let frente = [i0];
+    this._eCadena.push({ b: mapa.get(i0) || b0, t: 0 });
+    let t = 0;
+    while (frente.length) {
+      t += 0.12;
+      const sig = [];
+      for (const i of frente) {
+        const r0 = Math.floor(i / cols), c0i = i % cols;
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (!dr && !dc) continue;
+            const rr = r0 + dr, cc = c0i + dc;
+            if (rr < 0 || rr >= this.C.rows || cc < 0 || cc >= cols) continue;
+            const i2 = rr * cols + cc;
+            if (enCola.has(i2) || !mapa.has(i2)) continue;
+            enCola.add(i2);
+            this._eCadena.push({ b: mapa.get(i2), t });
+            sig.push(i2);
+          }
+        }
+      }
+      frente = sig;
+    }
+    const g = this.game;
+    const pan = THREE.MathUtils.clamp(b0.mesh.position.x / 2.5, -1, 1);
+    g.audio.playOsc(2600, 240, 0.22, 'sawtooth', 0.26, pan);
+    g.audio.playNoise(0.18, 3000, 1.5, 0.2, pan);
+  }
+
+  /** Paso de la cadena: revienta la cola POR ONDAS (zap eléctrico por
+   *  ladrillo + escombros del _breakBrick normal). Al vaciarse la cola con
+   *  la pared muerta → VICTORIA (la misión se finaliza con éxito). */
+  _eCadenaStep(dt) {
+    if (!this._eCadena.length) return;
+    const g = this.game;
+    for (const c of this._eCadena) c.t -= dt;
+    while (this._eCadena.length && this._eCadena[0].t <= 0) {
+      const c = this._eCadena.shift();
+      if (!c.b.alive || c.b.state !== 'elec') continue;
+      // mata su tween si aún viajaba (la malla se queda donde esté)
+      this._eMove = this._eMove.filter((m) => m.b !== c.b);
+      this._breakBrick(c.b);
+      const pan = THREE.MathUtils.clamp(c.b.mesh.position.x / 2.5, -1, 1);
+      g.audio.playOsc(2100, 320, 0.07, 'sawtooth', 0.13, pan);
+      g.audio.playNoise(0.05, 3000, 1.3, 0.1, pan);
+    }
+    if (!this._eCadena.length &&
+        (this.phase === 'play' || this.phase === 'serve') &&
+        this.bricksLeft <= 0) {
+      this._finish(true);                 // misión finalizada con ÉXITO
+    }
+  }
+
+  /** Objetivos vivos de los rayos (la semilla en fase 1 · todos en fase 2). */
+  _eBoltTargets() {
+    return this.bricks.filter((b) => b.alive && b.state === 'elec');
+  }
+
+  /** RAYITOS: cada 0,07 s los 14 rayos del pool se REGENERAN sobre los
+   *  ladrillos eléctricos — líneas dentadas aditivas que salen del
+   *  ladrillo hacia fuera («pequeños rayos que salen de él»). */
+  _eBoltUpdate(dt) {
+    if (!this.eBolts || !this.eBolts.length) return;
+    const elec = this._eBoltTargets();
+    if (!elec.length) {
+      for (const ln of this.eBolts) if (ln.visible) ln.visible = false;
+      return;
+    }
+    this._eBoltT -= dt;
+    if (this._eBoltT > 0) return;
+    this._eBoltT = 0.07;
+    const C = this.C;
+    const zf = C.z + C.depth / 2 + 0.006;
+    for (let i = 0; i < this.eBolts.length; i++) {
+      const ln = this.eBolts[i];
+      const b = elec[(Math.random() * elec.length) | 0];
+      const px = b.mesh.position.x + (Math.random() - 0.5) * C.bw * 0.7;
+      const py = b.mesh.position.y + (Math.random() - 0.5) * C.bh * 0.7;
+      const pos = ln.geometry.attributes.position;
+      let x = px, y = py, z = zf;
+      pos.setXYZ(0, x, y, z);
+      const L = 0.05 + Math.random() * 0.09;
+      const ang = Math.random() * Math.PI * 2;
+      for (let s = 1; s < 4; s++) {
+        x += Math.cos(ang) * (L / 3) + (Math.random() - 0.5) * 0.035;
+        y += Math.sin(ang) * (L / 3) + (Math.random() - 0.5) * 0.035;
+        z += 0.008 + Math.random() * 0.02;
+        pos.setXYZ(s, x, y, z);
+      }
+      pos.needsUpdate = true;
+      ln.visible = true;
+    }
+  }
+
+  /** CHISPORROTEO de electricidad: ráfagas cortas aleatorias mientras hay
+   *  ladrillos eléctricos (petición literal del dueño) — crepita sin parar
+   *  hasta que la cadena arrasa la pared. */
+  _eChispUpdate(dt) {
+    const g = this.game;
+    this._eChispT -= dt;
+    if (this._eChispT > 0) return;
+    this._eChispT = 0.12 + Math.random() * 0.26;
+    const elec = this._eBoltTargets();
+    if (!elec.length) return;
+    const b = elec[(Math.random() * elec.length) | 0];
+    const pan = THREE.MathUtils.clamp(b.mesh.position.x / 2.5, -1, 1);
+    g.audio.playNoise(0.03 + Math.random() * 0.04,
+      2600 + Math.random() * 2600, 1.2 + Math.random() * 0.8,
+      0.05 + Math.random() * 0.08, pan);
+    if (Math.random() < 0.12) {
+      g.audio.playOsc(2200 + Math.random() * 1400,
+        800 + Math.random() * 900, 0.05, 'square', 0.05, pan);
+    }
+  }
+
+  /** Dispatch del ELÉCTRICO (rayos · chisporroteo · cadena) — corre en
+   *  play y serve (el crepitar no se apaga entre saques). */
+  _eUpdate(dt) {
+    if (!this._eFase || this.variant !== 2) return;
+    this._eBoltUpdate(dt);
+    this._eChispUpdate(dt);
+    this._eCadenaStep(dt);
   }
 
   /* ---------------------------------------------------------------------
@@ -2473,6 +3126,7 @@ class ArcadeArkanoid {
   }
 
   _finish(win, reason) {
+    if (this.phase === 'result') return;   // v3.6.45: nunca un doble final
     const g = this.game;
     const a = this.ctrl;
     this._lastWin = !!win;   // v3.6.12 (ronda 15): _afterResult distingue
@@ -2601,6 +3255,19 @@ class ArcadeArkanoid {
   /* ---------------- animaciones y HUD ---------------- */
 
   _anims(dt) {
+    // v3.6.45 · tweens de la ATRACCIÓN eléctrica: cada ladrillo viaja a su
+    // celda nueva en 0,35 s (ease suave); al llegar, destello de llegada
+    for (let i = this._eMove.length - 1; i >= 0; i--) {
+      const mv = this._eMove[i];
+      mv.t += dt / 0.35;
+      const k = mv.t >= 1 ? 1 : mv.t * mv.t * (3 - 2 * mv.t);
+      mv.b.mesh.position.set(
+        mv.fx + (mv.tx - mv.fx) * k, mv.fy + (mv.ty - mv.fy) * k, this.C.z);
+      if (mv.t >= 1) {
+        this._eMove.splice(i, 1);
+        this._flash(mv.b.mesh.position);
+      }
+    }
     // v2.41: flashes de destrucción (estallido aditivo que crece y muere)
     for (const f of this._flashes) {
       if (f.t <= 0) continue;
@@ -2792,9 +3459,9 @@ class ArcadeController {
     this._gunArtModel = null;   // escena GLB cargada (caché)
     this._gunArtLoading = false;
     this._gunMuzzle = null;     // boca del cañón (espacio montura) — el láser sale de aquí
-    // mega pala
-    this._BASE_HIT = DIMS.hitAssistRadius;
-    this._megaT = 0;
+    // v3.6.34: la MEGA PALA es NORMATIVA del NÚCLEO (carga por rally de
+    // 11+ golpes, icono sobre el mango, gatillo voluntaria) — el módulo
+    // ya no guarda estado ni pinta FX de pala (cero duplicados).
     // v2.35: superpoderes del rival EN PLENO JUEGO
     this._powerT = 0;          // segundos restantes del poder activo
     this._powerKind = '';      // 'confetti' | 'redball'
@@ -3049,7 +3716,6 @@ class ArcadeController {
     this.round = this._replay ? this._replay.play : ((this.rank ? this.rank.length : 0) + 1);
     this.streakP = 0;
     this.streakAi = 0;
-    this._megaT = 0;
     this._picandoDone = false;
     this._panicWarned = false;
     this._lastTotal = 0;
@@ -3128,8 +3794,6 @@ class ArcadeController {
     }
     // v2.74: la pistola del artista vuelve a su sitio (monturas como estaban)
     this._restoreGun();
-    DIMS.hitAssistRadius = this._BASE_HIT;
-    this._megaT = 0;
     this._purgeBeams();        // v2.120: sin rayos atrapados (0,16 s de vida)
     this._endPower();          // v2.35: bola/confeti de vuelta a la normalidad
     if (g.rules.oppLabel === 'clown') g.rules.oppLabel = 'cpu';
@@ -3152,7 +3816,30 @@ class ArcadeController {
     if (this.inited) this.rival.setState(state);
   }
 
-  /** Un punto acaba de puntuarse (hook de processIntents). */
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño):
+   *  el núcleo reparte la emoción estándar y el Clown la viste con SU
+   *  arte (convención <estado>.webp) y SU voz de personalidad. Traducción
+   *  local: la emoción «angry» vive aquí como estado «hungry» (arte
+   *  enfadado + gruñido — tabla RIVAL_SFX). Los hitos del rallye y las
+   *  reacciones de punto ya NO deciden aquí: manda la norma del núcleo
+   *  (r57 sustituye a las reacciones propias de onPoint). */
+  rivalEmocion(st) {
+    const DUR = {
+      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
+      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
+      victory: 2.4, defeated: 0,
+    };
+    const mapa = { angry: 'hungry' };   // el enfado del Clown es «hungry»
+    const st2 = mapa[st] || st;
+    // «derrotado»/final no se pisa a sí mismo; el resto con su hold
+    if (this.state === st2 && (DUR[st] || 0) === 0) return;
+    this.setState(st2, DUR[st] != null ? DUR[st] : 2.0);
+  }
+
+  /** Un punto acaba de puntuarse (hook de processIntents).
+   *  v3.6.49 (r57): las REACCIONES DE ARTE del punto las manda la NORMA
+   *  DE EMOCIONES del núcleo (rivalEmocion) — aquí solo quedan los
+   *  contadores de racha que alimentan al resto de la máquina. */
   onPoint(it) {
     if (!this.active || it.survival) return;
     const th = this.th;
@@ -3161,30 +3848,20 @@ class ArcadeController {
       this.streakAi = 0;
       const hits = it.rallyHits || 0;
       if (hits >= th.comboRally) {
-        // CRAZY COMBO: el Clown se ENFADA; si tienes el poder, MEGA PALA
-        this.setState('hungry', 2.6);
-        if (this.powers.includes('mega_pala')) {
-          this._megaT = (this.data && this.data.playerPower &&
-            this.data.playerPower.duration) || 8;
-          this.game.rules.message = T('arc_combo');
-        } else {
-          this.game.rules.message = T('arc_combo_locked');
-        }
+        // v3.6.34 · los rallyes largos SIGUEN poniendo al Clown hambriento,
+        // pero la MEGA PALA ya no vive aquí: es NORMATIVA del núcleo y su
+        // carga (rally de 11+ golpes) la pone el núcleo EN PLENO RALLYE.
+        // v3.6.49 (r57): el ARTE de la reacción lo pone la norma del núcleo.
       } else if (hits >= th.surprisedRally || this.streakP >= 2) {
-        this.setState('surprised', 1.7);
+        // v3.6.49 (r57): idem — la norma del núcleo manda el arte.
       } else {
-        this.setState('surprised', 1.2);
+        // v3.6.49 (r57): idem — la norma del núcleo manda el arte.
       }
     } else {
       this.streakAi++;
       this.streakP = 0;
-      if (this.streakAi >= 2) {
-        // el Clown ENLOQUECE (arte + voz): el PODER ya no se lanza aquí —
-        // v2.35 lo dispara en pleno rallye para estorbar de verdad
-        this.setState('crazy', 3.4);
-      } else {
-        this.setState('laughing', 2.4);
-      }
+      // v3.6.49 (r57): la reacción crazy/laughing la manda la norma del
+      // núcleo (punto del rival = laughing → victory con SUS sonidos).
     }
   }
 
@@ -3291,14 +3968,6 @@ class ArcadeController {
     this.cartel.update(dt);
     this.powerSign.update(dt);   // v2.35: cartel SUPER POWER!!
     this.map.update(dt);         // v2.36: anillo de progreso del mapa
-
-    // MEGA PALA (Crazy Combo del jugador con poder desbloqueado)
-    if (this._megaT > 0) {
-      this._megaT -= dt;
-      const mul = (this.data && this.data.playerPower && this.data.playerPower.reachMul) || 1.38;
-      DIMS.hitAssistRadius = this._BASE_HIT * mul;
-      if (this._megaT <= 0) DIMS.hitAssistRadius = this._BASE_HIT;
-    }
 
     // v2.36 · AVISO ANTES DEL PODER: el cartel SuperPower aparece 2 s ANTES
     // y el efecto se suelta cuando el aviso termina (el jugador se prepara).
@@ -3969,6 +4638,25 @@ class ArcadeController {
     this._globos.grp.visible = false;
     for (const it of this._globos.items) { it.alive = false; it.s.visible = false; }
   }
+  /** v3.6.50 (r58) · BLANCOS del SÚPER CLONACIÓN (hook del núcleo, spec
+   *  del dueño: «estas palas Clon tratarán de eliminar cualquier poder de
+   *  molestia de visión como confeti o el superpoder de Globos del
+   *  Clown… se moverán por pantalla destruyendo los globos»). Rellena
+   *  `out` con los globos VIVOS — {x,y,z,r,vivo,kill} en el espacio de
+   *  juego (los globos viven en g.rig, la misma coordenada que it.x/y/z
+   *  +0,06 del centro del pop, igual que el chequeo de la bola). El
+   *  confeti lo barre el NÚCLEO (createConfetti.kill, c08). Contrato
+   *  documentado en PLANTILLA-GUIA §4.1 para futuros campeonatos. */
+  clonBlancos(out) {
+    if (!this._globos || !this._globos.grp || !this._globos.grp.visible) return;
+    for (const it of this._globos.items) {
+      if (!it.alive || !it.s.visible) continue;
+      out.push({
+        x: it.x, y: it.y + 0.06, z: it.z, r: 0.30, vivo: true,
+        kill: () => this._popGlobo(it),
+      });
+    }
+  }
   /* ======== v2.127 · SÉPTIMO SUPERPODER DEL CLOWN: BURLA ==================
    *  Sustituye al MAREO (retirado por petición del dueño: «no funciona»).
    *  RAYO DE LUZ ARCOÍRIS que golpea la mesa en un punto DISTINTO cada vez
@@ -4512,19 +5200,30 @@ class ArcadeController {
     let hitDist = 6.0;
     let hitBrick = null;
     let hitTime = false;   // v2.46: impacto en el ladrillo negro del tiempo
+    let hitBomb = false;   // v3.6.44: impacto en el ladrillo BOMBA
     const hitPoint = new THREE.Vector3();
     const ark = this.arkanoid;
     if (ark && ark.active && ark.bricks && ark.bricks.length) {
       const ray = new THREE.Raycaster(pos, dir, 0, 6.0);
-      const meshes = ark.bricks.filter((b) => b.alive).map((b) => b.mesh);
+      // v3.6.44 · el slot ocupado por la BOMBA se EXCLUYE (su azul está
+      // oculto debajo — un rayo al ladrillo bomba debe dar a la bomba)
+      const meshes = ark.bricks
+        // v3.6.45 · el ELÉCTRICO es invisible al rayo (sólo la bola lo
+        // activa — el láser ATRAVIESA su hueco)
+        .filter((b) => b.alive && b.state !== 'elec' &&
+          !(ark._bombBrick && b === ark._bombBrick.slot))
+        .map((b) => b.mesh);
       // v2.46: el ladrillo NEGRO del tiempo extra también recibe el láser
       if (ark._timeBrick && ark.timeMesh) meshes.push(ark.timeMesh);
+      // v3.6.44: el ladrillo BOMBA recibe el láser → detonación
+      if (ark._bombBrick && ark.bombMesh) meshes.push(ark.bombMesh);
       const hits = ray.intersectObjects(meshes, false);
       if (hits.length) {
         hitDist = hits[0].distance;
         hitPoint.copy(hits[0].point);
         hitBrick = ark.bricks.find((b) => b.mesh === hits[0].object) || null;
         hitTime = !hitBrick && hits[0].object === ark.timeMesh;
+        hitBomb = !hitBrick && !hitTime && hits[0].object === ark.bombMesh;
       }
     }
 
@@ -4567,6 +5266,12 @@ class ArcadeController {
       const lp = g.rig.worldToLocal(hitPoint.clone());
       ark._flash(lp);
       ark._breakTimeBrick();
+    } else if (hitBomb) {
+      // v3.6.44: el láser revienta la BOMBA => DETONACIÓN del radio 2×2
+      g.rig.updateWorldMatrix(true, false);
+      const lp = g.rig.worldToLocal(hitPoint.clone());
+      ark._flash(lp);
+      ark._detonarBomba();
     }
 
     // «pew» BAJITO de láser + vibración corta
@@ -4766,6 +5471,9 @@ export default {
   id: 'locura',
   /** v2.128: ¿campeonato superado? (cinta ★ SUPERADO del menú) */
   isChampion() { return !!(CTRL && CTRL.trophy); },
+  /** Acceso de LECTURA al controller para las capas QA (la capa no
+   *  escribe). La MEGA PALA es del núcleo desde v3.6.34. */
+  get impl() { return CTRL; },
   /** Único módulo «legacy»: hasta v2.68 el núcleo leía SU estado directo.
    *  Hoy todo el acoplamiento pasa por los ganchos de abajo. */
   legacy: true,
@@ -4840,6 +5548,7 @@ export default {
       window.__PP_WIND_URL = A('viento.webp');
       window.__PP_RELOJ_URL = A('reloj.webp');
       window.__PP_EXTRA_URL = A('extra.webp');
+      window.__PP_BOMBA_URL = A('bomba.webp');   // v3.6.44: ladrillo BOMBA
       window.__PP_MAPA_URL = A('mapa.webp');
       window.__PP_TAPA_URL = A('tapa.webp');
       GUN_ART_URL = A('pistol.glb');   // v2.74: pistola REAL del artista
@@ -4859,9 +5568,10 @@ export default {
   leave() { if (CTRL) CTRL.leave(); },
 
   /** v2.66/2.69: borrado TOTAL (Opciones → Reiniciar registros): claves
-   *  legacy pp_arcade_* + estado vivo a cero (rank/ronda/trofeo/mapa). */
+   *  legacy pp_arcade_* + estado vivo a cero (rank/ronda/trofeo/mapa).
+   *  v3.6.33: también la pista única de la MEGA PALA (mega_hint). */
   resetRecords() {
-    for (const k of ['rank', 'wins', 'streak', 'powers', 'stage', 'trophy']) {
+    for (const k of ['rank', 'wins', 'streak', 'powers', 'stage', 'trophy', 'mega_hint']) {
       try { localStorage.removeItem('pp_arcade_' + k); } catch (e) { /* */ }
     }
     if (CTRL) {
@@ -4876,6 +5586,8 @@ export default {
 
   update(dt) { if (CTRL) CTRL.update(dt); },
   onPoint(it) { if (CTRL) CTRL.onPoint(it); },
+  // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+  rivalEmocion(st, info) { if (CTRL) CTRL.rivalEmocion(st); },
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
 
   /** v2.44 (antes en el núcleo): nivel del CLOWN — Nv.2 ×1,22 · Nv.3 ×1,5.
@@ -4901,7 +5613,9 @@ export default {
   replayHover(idx) { if (CTRL) CTRL.replayHover(idx); },
   replayLaunch(idx) { if (CTRL) CTRL.replayLaunch(idx); },
 
-  /* ---- PISTOLA (v2.38) y BOLA DOBLE (v2.44) — enrutados por el núcleo ---- */
+  /* ---- PISTOLA (v2.38) y BOLA DOBLE (v2.44) — enrutados por el núcleo.
+   *     (La MEGA PALA es NORMATIVA del núcleo desde v3.6.34: el módulo ya
+   *     no expone megaTrigger ni pinta FX de pala.) ---- */
   get gunArmed() { return !!(CTRL && CTRL.gunArmed); },
   fireGun(i) { if (CTRL) CTRL.fireGun(i); },
   get _split() { return (CTRL && CTRL.active && CTRL._split) ? CTRL._split : null; },

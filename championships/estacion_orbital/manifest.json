@@ -1,6 +1,6 @@
 {
   "id": "estacion_orbital",
-  "version": 16,
+  "version": 17,
   "contract": 1,
   "estado": "publicado",
   "title": {
@@ -185,5 +185,8 @@
     "v3.5.1-IMP2: AJUSTE FINO del Reactor de impulso (informe del dueño) — golpeo de pala REAL por el barrido CCD del núcleo (adiós al bumper de agarre imposible), bote más vivo (0,80 s) y salida 3..9 m/s · PISTOLA LÁSER pistol.glb visible en la mano libre durante el reactor (también desde la intro) · DIANAS con efecto de DESINTEGRACIÓN (shader dissolve + borde de energía + restos) al aparecer y al desaparecer · CUBOS CUÁNTICOS a la mitad (0,16 m) y elaborados con la estética del decorado (marco de paneles + nodos ámbar + núcleo azul/rojo) · VELOCIDAD LUMÍNICA reorientada: cristal de los ventanales recortado (alpha real), partículas fuera de la sala corriendo de delante hacia atrás sobre espacio negro (la nave avanza) · ATRACTOR: racimo casi unido sin penetraciones (huecos propios + separación por pares) · HUD del pantallainfo: todo el texto dentro de la pantalla del arte, sin cortes ni solapes · NÚCLEO detallado (columna de plasma, blindaje con costillas y marcas ámbar, domo, antena, peana y anillos de contención) · el ASTRO de la etapa 1 se recoloca a distancia fija de la mesa (z −3,30), totalmente visible y fuera del arranque pintado de la pared",
     "v3.5.0-ESC1: el REACTOR DE IMPULSO pasa a la etapa 2 (orden del dueño) y la etapa 4 estrena el ESCUDO DE PALA · DEFENSA DEL CASCO con arte propio",
     "v3.4.1-RIV1: el ASTRO de la sala se recoloca en la convención de duelos (x 1,26 · z −3,82) — ya no se lee dentro de la pared frontal"
+  ],
+  "historial": [
+    "2026-10-26 v3.6.64-SDK6 · r72: ASTRO EN EL ESPACIO CORRECTO — StockController.build colgaba el grupo del campeonato en g.scene (mundo crudo) mientras mesa/sala/mapa viven en g.rig: el RECENTRADO del Quest (updateRecenter, 25 frames tras cada sesión XR) giraba el rig y dejaba al standee girado/desplazado respecto a la mesa — causa real de «no se visualiza a Astro» y de las tres correcciones de coordenadas anteriores. Ahora game.rig.add (convención CLOWN/WIZARD) + guard idempotente del rival en build() (re-entradas no duplican el standee) + EOArkanoid.stop restaura rivalMesh.visible."
   ]
 }

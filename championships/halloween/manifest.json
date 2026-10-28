@@ -1,0 +1,433 @@
+{
+  "id": "halloween",
+  "version": 2,
+  "contract": 1,
+  "estado": "publicado",
+  "title": {
+    "es": "Campeonato de Halloween",
+    "en": "Halloween Championship"
+  },
+  "description": {
+    "es": "Un cementerio bajo la luna donde el ZOMBI defiende su cripta: cinco etapas entre niebla, dianas que brotan de la tierra y un duelo final aullante.",
+    "en": "A moonlit graveyard where the ZOMBIE defends his crypt: five stages of fog, targets rising from the soil and a howling final duel."
+  },
+  "tema": "neutro",
+  "rival": {
+    "id": "halloween_rival",
+    "name": "ZOMBI",
+    "kind": "stock",
+    "oppLabel": "rival",
+    "states": [
+      "present",
+      "idle",
+      "focused",
+      "surprised",
+      "panic",
+      "laughing",
+      "crazy",
+      "angry",
+      "picando",
+      "loosing",
+      "defeated",
+      "victory"
+    ],
+    "personalidad": {
+      "agresividad": 4,
+      "precision": 3,
+      "constancia": 4,
+      "caracter": "siniestro",
+      "celebracion": "Alienta a los muertos y estremece la noche con su risa.",
+      "cerebro": "equilibrado"
+    }
+  },
+  "rivalVisual": {
+    "modo": "precarga",
+    "base": "present.webp",
+    "ext": "webp",
+    "alto": 2.15,
+    "anchoFijo": 0,
+    "material": "basic",
+    "alphaTest": 0.25,
+    "flotacion": {
+      "activo": true,
+      "amplitud": 0.012,
+      "periodo": 1.4
+    },
+    "aspecto": true
+  },
+  "storage": "pp_champ_halloween_*",
+  "camino": {
+    "patron": "duelo_prueba",
+    "duelo": {
+      "puntos": 11
+    },
+    "dificultad": {
+      "modo": "formula",
+      "difMul": 1.0,
+      "paso": 0.15,
+      "difFinal": 1.35,
+      "tabla": [
+        {
+          "aiMul": 1.0,
+          "chance": 0.3,
+          "cooldown": 13.0,
+          "primer": 8.0,
+          "warn": 2.0
+        },
+        {
+          "aiMul": 1.2,
+          "chance": 0.38,
+          "cooldown": 11.0,
+          "primer": 6.5,
+          "warn": 2.0
+        },
+        {
+          "aiMul": 1.4,
+          "chance": 0.46,
+          "cooldown": 9.0,
+          "primer": 5.0,
+          "warn": 1.7
+        }
+      ]
+    },
+    "worldMetric": "duelwins",
+    "leyenda": {
+      "activa": true,
+      "aiMulMul": 1.15,
+      "chanceSuma": 0.06,
+      "chanceMax": 0.6,
+      "cooldownResta": 1.5,
+      "cooldownMin": 6.0,
+      "primerResta": 1.0,
+      "primerMin": 3.0,
+      "pruebaExtra": 1
+    }
+  },
+  "stages": [
+    {
+      "id": "duelo1",
+      "name": "Duelo en la Niebla",
+      "kind": "duelo"
+    },
+    {
+      "id": "prueba1",
+      "name": "La Cripta Sellada",
+      "kind": "dianas",
+      "rules": {
+        "modo": "objetivos",
+        "objetivo": 6,
+        "puntos": 2,
+        "premio": "Calavera de Oro"
+      }
+    },
+    {
+      "id": "duelo2",
+      "name": "Duelo de la Luna",
+      "kind": "duelo"
+    },
+    {
+      "id": "prueba2",
+      "name": "El Pozo del Cometa",
+      "kind": "dianas",
+      "rules": {
+        "modo": "movimiento",
+        "objetivo": 4,
+        "puntos": 3,
+        "premio": "Sello del Cometa"
+      }
+    },
+    {
+      "id": "final",
+      "name": "DUELO FINAL",
+      "kind": "duelo",
+      "rules": {
+        "jefe": true
+      }
+    }
+  ],
+  "pruebas": {
+    "dianas": {
+      "spawnX": 0.85,
+      "spawnYMin": 0.45,
+      "spawnYMax": 1.3,
+      "spawnZMin": -0.55,
+      "spawnZMax": -1.7,
+      "radio": 0.155,
+      "maxVivas": [
+        2,
+        4
+      ],
+      "hold": {
+        "x": 0.0,
+        "z": -0.5,
+        "T": 1.5,
+        "H": 0.42
+      },
+      "recambioMs": 900,
+      "deadT": 0.7,
+      "tiempoBase": 20,
+      "tiempoPorObjetivo": 10,
+      "tiempoMax": 90
+    }
+  },
+  "powers": [
+    {
+      "kind": "mano",
+      "name": "Mano de zombi",
+      "icon": "assets/power_mano.webp",
+      "cooldown": 15,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.3
+    },
+    {
+      "kind": "moscas",
+      "name": "Plaga de Moscas",
+      "icon": "assets/power_moscas.webp",
+      "cooldown": 18,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.28
+    },
+    {
+      "kind": "calabaza",
+      "name": "Calabaza",
+      "icon": "assets/power_calabaza.webp",
+      "cooldown": 16,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.3
+    },
+    {
+      "kind": "gelatina",
+      "name": "Gelatina Asquerosa",
+      "icon": "assets/power_gelatina.webp",
+      "cooldown": 14,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.3
+    }
+  ],
+  "powerTrigger": {
+    "chance": 0.32,
+    "cooldown": 13.0,
+    "minRallyHits": 1,
+    "warn": 2.0,
+    "bolsa": "rotatoria",
+    "primerCd": 6,
+    "garantiaS": 22,
+    "postCdMin": 10,
+    "postCdMax": 15
+  },
+  "playerPower": {
+    "kind": "mega_pala",
+    "reachMul": 1.38,
+    "duration": 8.0,
+    "trigger": "crazy_combo_rally6"
+  },
+  "audio": {
+    "music": "assets/bso.wav",
+    "musicVolume": 0.18,
+    "musicOpts": {
+      "fadeIn": 0.8,
+      "ancla": true,
+      "syncMode": "ramp",
+      "gateStart": true,
+      "gateOn": false,
+      "renace": true,
+      "stopFade": 0
+    },
+    "sounds": {
+      "laugh": "assets/risas.mp3"
+    }
+  },
+  "room": {
+    "floor": "assets/sala_floor.jpg",
+    "ceil": "assets/sala_ceil.jpg",
+    "back": "assets/sala_back.jpg",
+    "front": "assets/sala_front.jpg",
+    "left": "assets/sala_left.jpg",
+    "right": "assets/sala_right.jpg",
+    "variants": {
+      "final": {
+        "tint": 2770474
+      }
+    }
+  },
+  "decor": {
+    "pieces": [
+      {
+        "file": "assets/decor_arana.png",
+        "h": 1.15,
+        "x": -2.3,
+        "z": -2.75,
+        "sway": 0.5
+      },
+      {
+        "file": "assets/decor_calabaza.png",
+        "h": 1.3,
+        "x": 2.45,
+        "z": -2.35,
+        "sway": 0.5
+      },
+      {
+        "file": "assets/decor_lapida.png",
+        "h": 1.0,
+        "x": -2.35,
+        "z": -1.15,
+        "sway": 0.55
+      },
+      {
+        "file": "assets/decor_ojos.png",
+        "h": 0.85,
+        "x": 2.0,
+        "z": -0.8,
+        "sway": 0.5
+      }
+    ]
+  },
+  "mapa": {
+    "modo": "arte",
+    "arte": "assets/mapa.webp",
+    "planoW": 1.66,
+    "pos": [-3.03, 1.45, -1.9],
+    "rotY": 1.5707963267948966,
+    "nodos": [
+      {
+        "x": 148,
+        "y": 392,
+        "r": 118,
+        "ts": 1
+      },
+      {
+        "x": 355,
+        "y": 592,
+        "r": 110,
+        "ts": 1
+      },
+      {
+        "x": 875,
+        "y": 202,
+        "r": 112,
+        "ts": 1
+      },
+      {
+        "x": 890,
+        "y": 556,
+        "r": 104,
+        "ts": 1
+      },
+      {
+        "x": 1265,
+        "y": 332,
+        "r": 120,
+        "ts": 1
+      }
+    ]
+  },
+  "cartel": {
+    "cvW": 1024,
+    "cvH": 512,
+    "w": 2.3,
+    "h": 1.15,
+    "pos": [
+      -1.9,
+      1.55,
+      -5.42
+    ],
+    "rot": [
+      0,
+      0.12,
+      0
+    ]
+  },
+  "hud": {
+    "activo": true,
+    "pos": [
+      0,
+      2.52,
+      -2.55
+    ]
+  },
+  "rewards": {
+    "wins": "Recompensa por vencer (documental)",
+    "champion": "Recompensa por coronar (documental)"
+  },
+  "trophy": {
+    "name": {
+      "es": "Trofeo de la Calavera",
+      "en": "Skull Trophy"
+    },
+    "arte": "assets/insignia.png",
+    "rotY": 0.62
+  },
+  "coronacion": {
+    "titulo": {
+      "es": "¡ZOMBI DERROTADO!",
+      "en": "ZOMBIE DEFEATED!"
+    },
+    "mensaje": {
+      "es": "La cripta es tuya: el cementerio descansa en paz… por hoy.",
+      "en": "The crypt is yours: the graveyard rests in peace… for today."
+    },
+    "dur": 14,
+    "insignia": "assets/insignia.png",
+    "stats": [
+      "puntos",
+      "duelos",
+      "fecha"
+    ]
+  },
+  "procedural": {
+    "art": false,
+    "audio": false,
+    "binaryAssets": 0
+  },
+  "assets": "assets/ (12 poses del zombi del dueño en webp, mapa.webp del dueño, normas_halloween.png del dueño, sala_*.jpg REALES del dueño (paredes.zip), decor_arana/calabaza/lapida/ojos.png REALES del dueño (troqueles.zip), mano1/2/3.webp del dueño (traen el montículo integrado), losa.jpg del dueño (mesa.jpg), superpower.webp del dueño (SuperPower.png), gelatina.webp del dueño, calabaza.glb del dueño, power_mano/moscas/calabaza/gelatina.webp de la casa (medallones), mosca.webp de la casa, bso.wav PROVISIONAL, risas.mp3 PROVISIONAL, insignia.png)",
+  "i18n": {
+    "es": {
+      "bienvenida": "Bienvenido al Campeonato de Halloween",
+      "instr_titulo": "Las normas del cementerio",
+      "instr_lineas": [
+        "Las dianas brotan de la tierra entre la niebla: reviéntalas antes de que se agote el tiempo",
+        "En El Pozo del Cometa las dianas se mueven: apunta al vuelo",
+        "Si fallas, el ZOMBI se ríe; si aciertas, la cripta tiembla",
+        "Mecánica secreta de esta prueba: por anunciar"
+      ],
+      "duelo_vs": "¡DUELO! VS ZOMBI · Ronda {n}",
+      "prueba_vs": "¡PRUEBA! {nombre} · Intento {n}",
+      "sello_leyenda": "Sello de leyenda {n} conseguido",
+      "leyenda_medalla": "LEYENDA COMPLETA: los 5 sellos son tuyos.",
+      "coronacion_titulo": "¡CAMPEÓN DE HALLOWEEN!",
+      "coronacion_msg": "El trono de la cripta es tuyo. Bienvenido a la leyenda.",
+      "reset_ok": "Registros eliminados."
+    },
+    "en": {
+      "bienvenida": "Welcome to the Halloween Championship",
+      "instr_titulo": "The graveyard rules",
+      "instr_lineas": [
+        "Targets rise from the foggy soil: smash them before time runs out",
+        "In The Comet Pit targets move: aim on the fly",
+        "Miss and the ZOMBIE laughs; score and the crypt trembles",
+        "Secret mechanic of this trial: to be announced"
+      ],
+      "duelo_vs": "DUEL! VS ZOMBIE · Round {n}",
+      "prueba_vs": "TRIAL! {nombre} · Attempt {n}",
+      "sello_leyenda": "Legend seal {n} earned",
+      "leyenda_medalla": "FULL LEGEND: all 5 seals are yours.",
+      "coronacion_titulo": "HALLOWEEN CHAMPION!",
+      "coronacion_msg": "The crypt throne is yours. Welcome to legend.",
+      "reset_ok": "Records wiped."
+    }
+  },
+  "estructura": "5 etapas: duelo → dianas → duelo → dianas → duelo final (patrón común de los 5 campeonatos)",
+  "notes": [
+    "v1 (r85) · Campeonato de Halloween — el campeonato del Valle Neón se RETIRA a petición del dueño y su hueco lo ocupa Halloween: rival ZOMBI con las 12 poses del artista (upload/zombi.zip), mapa del artista con 5 nodos medidos (upload/Mapa.png) y cartel de normas del artista (upload/zombi_normas.png) para las etapas 2 y 4.",
+    "v2 (r86) · ESCENARIO REAL: las 6 paredes de la estancia del artista sustituyen al cementerio procedimental (paredes.zip), los 4 troqueles del artista entran en decor.pieces (troqueles.zip), la mesa viste la LOSA de piedra del artista (mesa.jpg, patrón madera del Oeste) y los 2 poderes provisionales (Niebla de tumba/Orbe espectral) dejan paso a los 4 SUPERPODERES REALES del zombi (10 s, anuncio SuperPower.png + medallón circular abajo-derecha + congelación): Mano de zombi (las 3 manos del artista salen de su montículo, estorban y frenan la bola — al chocar la bola se para, se cae y la mano revienta en trocitos), Plaga de Moscas (enjambre revoloteando en la cara del jugador, se espantan con la pala), Calabaza (la bola se vuelve calabaza.glb ×3, pesada y con salida aleatoria tras cada bote en la mesa) y Gelatina Asquerosa (manchas que contaminan la bola: verde fosforito, ×3 de peso, arrastra y suelta humillo verde).",
+    "PROVISIONAL pendiente del artista: bso (del valle), risa e insignia; mecánicas de las etapas 2 y 4 (hoy dianas)."
+  ]
+}

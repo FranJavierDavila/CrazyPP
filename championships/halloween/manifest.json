@@ -294,7 +294,11 @@
     "modo": "arte",
     "arte": "assets/mapa.webp",
     "planoW": 1.66,
-    "pos": [-3.03, 1.45, -1.9],
+    "pos": [
+      -3.03,
+      1.45,
+      -1.9
+    ],
     "rotY": 1.5707963267948966,
     "nodos": [
       {
@@ -343,7 +347,8 @@
       0,
       0.12,
       0
-    ]
+    ],
+    "oculto": true
   },
   "hud": {
     "activo": true,
@@ -428,6 +433,7 @@
   "notes": [
     "v1 (r85) · Campeonato de Halloween — el campeonato del Valle Neón se RETIRA a petición del dueño y su hueco lo ocupa Halloween: rival ZOMBI con las 12 poses del artista (upload/zombi.zip), mapa del artista con 5 nodos medidos (upload/Mapa.png) y cartel de normas del artista (upload/zombi_normas.png) para las etapas 2 y 4.",
     "v2 (r86) · ESCENARIO REAL: las 6 paredes de la estancia del artista sustituyen al cementerio procedimental (paredes.zip), los 4 troqueles del artista entran en decor.pieces (troqueles.zip), la mesa viste la LOSA de piedra del artista (mesa.jpg, patrón madera del Oeste) y los 2 poderes provisionales (Niebla de tumba/Orbe espectral) dejan paso a los 4 SUPERPODERES REALES del zombi (10 s, anuncio SuperPower.png + medallón circular abajo-derecha + congelación): Mano de zombi (las 3 manos del artista salen de su montículo, estorban y frenan la bola — al chocar la bola se para, se cae y la mano revienta en trocitos), Plaga de Moscas (enjambre revoloteando en la cara del jugador, se espantan con la pala), Calabaza (la bola se vuelve calabaza.glb ×3, pesada y con salida aleatoria tras cada bote en la mesa) y Gelatina Asquerosa (manchas que contaminan la bola: verde fosforito, ×3 de peso, arrastra y suelta humillo verde).",
-    "PROVISIONAL pendiente del artista: bso (del valle), risa e insignia; mecánicas de las etapas 2 y 4 (hoy dianas)."
+    "PROVISIONAL pendiente del artista: bso (del valle), risa e insignia; mecánicas de las etapas 2 y 4 (hoy dianas).",
+    "v3 (r88) · A JUSTO DEL INFORME DEL DUEÑO tras V3.6.79: mapa INVISIBLE en la pared izquierda (el dueño venía de V3.6.78, donde el mapa flotaba en [-1.05, 1.45, -3.58] rotY 0.42 — ese cartel flotante 'metido en la pared izquierda hacia el fondo' ERA el mapa sin anclar; r87 ya lo puso en la pared y ahora el CARTEL DE BIENVENIDA se RETIRA (cartel.oculto) porque el dueño no sabía qué hacía ahí) · ZOMBI anclado a la MESA (x = canto derecho +0,69, z = mesa − 1,70) y ALGO MÁS A LA DERECHA · pose idle SUSTITUIDA por el arte nuevo del dueño (upload/zombi_idle.png, la anterior tenía un error) · MANO DE ZOMBI: nace SIEMPRE dentro del tablero (canto − radio del montículo) y la mano pinta POR DELANTE de su tierra (renderOrder montículo 3 → mano 4 → trocitos 5; se ve la parte inferior de la mano) · CALABAZA REESCRITA: centrada en el CENTRO EXACTO de la bola y girando COMO LA BOLA (mismo quaternion), se oscurece (pudre) linealmente hasta que 0,55 s antes del cierre ESTALLA en 12 trozos con CHOFFF y vuelve la bola normal (nunca calabaza y bola a la vez; sin rebotes aleatorios: era injugable) · GELATINA REESCRITA: manchas SIEMPRE dentro del tablero (radio circunscrito del cuadrado girado), CHOFFF al pisarla, bola verde fosforito CON FÍSICA NORMAL (la r87 la pesaba ×3: retirado) y EXPLOSIÓN DE HUMO VERDE al botar en mesa o pala (ráfaga de 18 sprites densa que sobrevive al cierre) · NÚCLEO: la bola queda APARCADA e INERTA en la sala de campeonato (estado champtest) — adiós a los botes y el ruido infinito al arrancar la escena."
   ]
 }

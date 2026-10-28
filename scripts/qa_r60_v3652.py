@@ -147,7 +147,7 @@ MECANICA = """async () => {
   // r72 · los candados exigen Modo Depuración (FORO3D) para montar
   // los decorados de orbital y valle_neon (uso definido por el dueño)
   try { localStorage.setItem('pp_player_name', 'FORO3D'); if (window.ppDebugRefresh) window.ppDebugRefresh(); } catch (e) { /**/ }
-  const ids = ['oeste', 'locura', 'magia', 'valle_neon', 'estacion_orbital'];
+  const ids = ['oeste', 'locura', 'magia', 'halloween', 'estacion_orbital'];  // r85
   let todosOk = true;
   for (const id of ids) {
     await g.champs.launch(id);
@@ -156,8 +156,14 @@ MECANICA = """async () => {
       await new Promise(r => setTimeout(r, 25));
     }
     const d = g.champDecor;
-    if (!(d.builtFor === id && d.group.visible && d.pieces.length > 0 &&
-          d.pieces.every(p => p.ready))) { todosOk = false; break; }
+    // r85 · HALLOWEEN nace SIN troqueles: su sistema vivo = builtFor con
+    // SALA LIMPIA (0 piezas y group invisible — diseño del núcleo). Los
+    // 4 troqueles del dueño llegarán en la siguiente tanda.
+    const sinTroqueles = (id === 'halloween');
+    const piezasOk = sinTroqueles
+      ? (d.pieces.length === 0 && d.group.visible === false)
+      : (d.pieces.length > 0 && d.pieces.every(p => p.ready));
+    if (!(d.builtFor === id && piezasOk)) { todosOk = false; break; }
   }
   g.champs.leaveAll();
   out.push({ ok: todosOk, lab: 'los 5 campeonatos montan SU decorado (sistema vivo)' });

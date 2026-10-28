@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r76_v3668 — CAPA BK · V3.6.76-SDK6, FASE 70 «EL PULSO CRAZY».
+"""qa_r76_v3668 — CAPA BK · V3.6.77-SDK6, FASE 70 «EL PULSO CRAZY».
 
 Aprobación del dueño (r76): «vamos a implementar con mucho cuidado los 4
 puntos dejando el estado actual como punto seguro de restauración. Necesito
@@ -73,8 +73,8 @@ AGUJAS = [
      "const DAILY_BASE = 40, DAILY_PASO = 5, DAILY_TOPE = 7, DAILY_FANTASMA = 15;"),
     ("poda de done{} a 90 días",
      "const DAILY_PODA = 90;"),
-    ("campeones del día (la casa del juego)",
-     "const CHAMPS_DIA = ['CLOW', 'WIZARD', 'FORAJIDO', 'ORBITAL', 'NEÓN'];"),
+    ("campeones del día (la casa del juego · r85: HALLOWEEN sustituye al retirado)",
+     "const CHAMPS_DIA = ['CLOW', 'WIZARD', 'FORAJIDO', 'ORBITAL', 'HALLOWEEN'];"),
     # --- r76 · pieles de asistencia ---
     ("piel Neón (racha 7)",
      "{ id: 'neon', name: { es: 'Neón', en: 'Neon' }, min: Infinity, days: 7, via: 'racha', tex: 'neon', edge: 0x39ff88, grip: 0x0f3d2e },"),

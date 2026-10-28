@@ -1,17 +1,17 @@
 {
-  "version": "3.6.76-SDK6",
-  "fase": 78,
-  "faseNombre": "DUELOS LOCOS",
+  "version": "3.6.77-SDK6",
+  "fase": 79,
+  "faseNombre": "Halloween + Taller UGC",
   "sdk": "1.5.4",
-  "fecha": "2026-10-27",
-  "hub": "v3676-sdk6",
+  "fecha": "2026-10-28",
+  "hub": "v3677-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
     "locura": 27,
     "estacion_orbital": 17,
-    "valle_neon": 5
+    "halloween": 1
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "7d8e8b8ba40b10934768b6deb2ddc0bee2edbce58709fb5b10efe9e03dc3492f"
+  "golden": "8f9b62fcfa31201898028f7ab03e341d55c8ed8806d428e2b753a2f91d681959"
 }

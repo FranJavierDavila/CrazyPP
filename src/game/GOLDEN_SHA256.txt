@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.76-SDK6, fase 78 · DUELOS LOCOS; sello actualizado
-# por bump_version.py desde 3.6.75-SDK6)
-7d8e8b8ba40b10934768b6deb2ddc0bee2edbce58709fb5b10efe9e03dc3492f
+# SHA256 del game.html que produjo esta división (3.6.77-SDK6, fase 79 · Halloween + Taller UGC; sello actualizado
+# por bump_version.py desde 3.6.76-SDK6)
+8f9b62fcfa31201898028f7ab03e341d55c8ed8806d428e2b753a2f91d681959

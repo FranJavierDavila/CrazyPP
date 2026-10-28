@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r77_v3669 — CAPA BL · V3.6.76-SDK6, FASE 71 «LA RAQUETA MODO FANTASMA».
+"""qa_r77_v3669 — CAPA BL · V3.6.77-SDK6, FASE 71 «LA RAQUETA MODO FANTASMA».
 
 Nota del dueño (r77): «En el apartado de academia el tutorial: en las fases
 iniciales, antes de que diga "Pulsa el botón A… Tu mando se convierte en tu

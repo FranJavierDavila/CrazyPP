@@ -44,7 +44,7 @@ MODS = {
     'magia': 'http://localhost:3000/championships/magia/index.js',
     'oeste': 'http://localhost:3000/championships/oeste/index.js',
     'orbital': 'http://localhost:3000/championships/estacion_orbital/index.js',
-    'valle_neon': 'http://localhost:3000/championships/valle_neon/index.js',
+    'halloween': 'http://localhost:3000/championships/halloween/index.js',
     'plantilla': 'http://localhost:3000/championships/_plantilla/index.js',
 }
 IMGS = [

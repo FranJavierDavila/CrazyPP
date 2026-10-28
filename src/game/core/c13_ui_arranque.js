@@ -821,8 +821,35 @@ loadPaddleModel().then((paddleModel) => {
      *  puntos existente (GAMF=0 ⇒ el PULSO no existe, flujo legacy).
      *  ================================================================= */
     const DAILY_BASE = 40, DAILY_PASO = 5, DAILY_TOPE = 7, DAILY_FANTASMA = 15;
+    /* r85 · DIFICULTAD DEL RETO DIARIO — petición del dueño («subir la
+     * dificultad del Reto Diario poco a poco», ya anticipada en r80:
+     * «la dificultad irá subiendo con el tiempo»). UN solo mando central:
+     * el reto del día sigue siendo IGUAL para toda la academia, pero su
+     * objetivo crece +1 seguida (PASO) cada CADA días desde DESDE, con TOPE.
+     * Nov 2026: +1 · mediados: +2 · finales: +3 (tope). Entrenamiento libre
+     * NO se toca: manda el objetivo base del modo (M.n). */
+    const DAILY_DIF = { DESDE: '2026-11-01', CADA: 14, PASO: 1, TOPE: 3 };
+    function dailySub(k) {             // objetivo EXTRA del día (0..TOPE)
+      try {
+        const d0 = new Date(DAILY_DIF.DESDE + 'T00:00:00');
+        const d1 = new Date(k + 'T00:00:00');
+        const dias = Math.floor((d1 - d0) / 86400000);
+        if (!(dias >= 0)) return 0;  // NaN/anterior a DESDE: sin subida
+        return Math.min(DAILY_DIF.TOPE, DAILY_DIF.PASO * (1 + Math.floor(dias / DAILY_DIF.CADA)));
+      } catch (e) { return 0; }
+    }
+    /* r85 · OBJETIVO EFECTIVO del modo activo: en el RETO DIARIO manda el
+     * plan del día (con la subida); en entrenamiento libre, el base (M.n).
+     * ÚNICO punto de lectura del objetivo JUGABLE (HUD y meta). */
+    function objN() {
+      const M = MODES[active];
+      const base = M ? M.n : 0;
+      if (!st.daily || !active) return base;
+      const p = dailyPlan(dayKey());
+      return (p && p.mode === active && p.n > base) ? p.n : base;
+    }
     const DAILY_PODA = 90;                 // días recordados en done{}
-    const CHAMPS_DIA = ['CLOW', 'WIZARD', 'FORAJIDO', 'ORBITAL', 'NEÓN'];
+    const CHAMPS_DIA = ['CLOW', 'WIZARD', 'FORAJIDO', 'ORBITAL', 'HALLOWEEN'];
     // RACHA_SKINS se define JUNTO A SKINS (abajo): TDZ — las constantes del
     // motor van aquí, lo que TOCA a SKINS va tras su declaración.
 
@@ -844,7 +871,7 @@ loadPaddleModel().then((paddleModel) => {
       const M = MODES[mode];
       const areaIdx = AREAS.findIndex((a) => a.id === M.area);
       return {
-        mode, n: M.n, area: M.area, areaIdx: areaIdx < 0 ? 0 : areaIdx,
+        mode, n: M.n + dailySub(k), area: M.area, areaIdx: areaIdx < 0 ? 0 : areaIdx,
         champ: CHAMPS_DIA[(seed >>> 7) % CHAMPS_DIA.length],
         frase: 'daily_p' + (areaIdx < 0 ? 0 : areaIdx),
       };
@@ -1327,7 +1354,7 @@ loadPaddleModel().then((paddleModel) => {
       g.fillText(M ? t(M.nk) : t('hub_s'), 34, 96);
       if (M) {
         // contador grande
-        const big = active === 't5a' ? String(st.rally) : (String(st.streak) + ' / ' + M.n);
+        const big = active === 't5a' ? String(st.rally) : (String(st.streak) + ' / ' + objN());
         g.textAlign = 'center';
         g.fillStyle = '#ffffff';
         g.font = '900 110px system-ui, sans-serif';
@@ -1343,7 +1370,7 @@ loadPaddleModel().then((paddleModel) => {
         } else {
           g.fillStyle = '#a9b8cc';
           g.font = '600 24px system-ui, sans-serif';
-          g.fillText(active === 't4a' || active === 't4b' ? t('sirve') : t('obj') + ': ' + M.n + ' ' + t('seg'), W / 2, 340);
+          g.fillText(active === 't4a' || active === 't4b' ? t('sirve') : t('obj') + ': ' + objN() + ' ' + t('seg'), W / 2, 340);
         }
         // puntos
         g.textAlign = 'left';
@@ -1605,7 +1632,7 @@ loadPaddleModel().then((paddleModel) => {
       const M = MODES[active];
       const hitGoal = active === 't5a'
         ? (st.rally === 30 || st.rally === 50 || st.rally === 100)
-        : (st.streak >= M.n);
+        : (st.streak >= objN());
       if (hitGoal) {
         const bonus = active === 't5a' ? (st.rally === 30 ? 15 : st.rally === 50 ? 25 : 50) : M.bonus;
         addPts(bonus);

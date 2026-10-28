@@ -21,7 +21,7 @@ Auditoría de claves (ronda 23, escritura == lectura en los 5):
   locura           pp_arcade_trophy               (3216 ↔ 2780)
   magia            pp_champ_magia_trophy          (4623 ↔ 3643, isChampion)
   estacion_orbital pp_champ_estacion_orbital_champ (7772 ↔ 6645)
-  valle_neon       pp_champ_valle_neon_champ      (872 ↔ championFlag entries)
+  halloween        pp_champ_halloween_champ     (r85 · plantilla)
 
 Uso: python3 scripts/qa_champion_listo.py [versión-esperada]
      (default: la de src/game/VERSION.json — la fuente de verdad)
@@ -57,11 +57,11 @@ ESTADO = {
     'pp_champ_magia_stage': '4',
     'pp_champ_estacion_orbital_champ': '1',
     'pp_champ_estacion_orbital_stage': '4',
-    'pp_champ_valle_neon_champ': '1',
-    'pp_champ_valle_neon_stage': '4',
+    'pp_champ_halloween_champ': '1',
+    'pp_champ_halloween_stage': '5',
 }
 
-IDS = ['oeste', 'locura', 'magia', 'estacion_orbital', 'valle_neon']
+IDS = ['oeste', 'locura', 'magia', 'estacion_orbital', 'halloween']
 
 
 async def main():

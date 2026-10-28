@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r72_v3664 — CAPA BG · V3.6.76-SDK6, FASE 66 «EL TELÓN Y EL CANDADO».
+"""qa_r72_v3664 — CAPA BG · V3.6.77-SDK6, FASE 66 «EL TELÓN Y EL CANDADO».
 
 Informe del dueño tras probar V3.6.63 en el Quest, punto por punto:
   1. «En el tutorial en el paso 3 existe solapamiento de texto en el cartel».
@@ -42,7 +42,7 @@ El arreglo (r72) y SU verificación:
     (mín 0,9 s + 0,3 s estables · tope 12 s). Verificado lanzando La
     Locura real: el telón nace, pinta «Montando el escenario...» y se
     desmonta solo.
-  · CANDADOS: LOCKED = ['estacion_orbital','valle_neon'] en ChampLoader,
+  · CANDADOS: LOCKED = ['estacion_orbital'] en ChampLoader (r85: valle fuera),
     guard en launch() con voz announce('Próximamente'), tarjeta atenuada
     con candado sobre el nombre + chip plateado, y BYPASS con el Modo
     Depuración (nombre FORO3D → ppDebugMode). Verificado con el loader
@@ -87,7 +87,7 @@ AGUJAS = [
     ("telón: cartel a 2 m delante (tick a la cabeza)", "S.group.position.set(S._v1.x + S._v2.x * 2.0, dy, S._v1.z + S._v2.z * 2.0);"),
     ("telón: renderOrder por encima de la intro", "mesh.renderOrder = 70;"),
     # --- r72 · CANDADOS ---
-    ("candado: LOCKED con los dos campeonatos", "static LOCKED = ['estacion_orbital', 'valle_neon'];"),
+    ("candado: LOCKED con los dos campeonatos", "static LOCKED = ['estacion_orbital'];"),
     ("candado: bypass Modo Depuración (FORO3D)", "try { return !ppDebugMode(); } catch (e) { return true; }"),
     ("candado: guard en launch() con voz", "try { g.audio.announce(T('champ_locked_soon'), true); } catch (eV) { /* */ }"),
     ("candado: flag locked en list()", "locked: this.isLocked(e.id),"),
@@ -216,7 +216,7 @@ async def main():
                 return d;
             }""")
             chk(datos.get("estacion_orbital") is True, "list(): estacion_orbital locked=true")
-            chk(datos.get("valle_neon") is True, "list(): valle_neon locked=true")
+            chk(datos.get("halloween") is False, "list(): halloween libre (r85)")
             chk(datos.get("locura") is False, "list(): locura libre")
             chk(datos.get("oeste") is False, "list(): oeste libre")
 

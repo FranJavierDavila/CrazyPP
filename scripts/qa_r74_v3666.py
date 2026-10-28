@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r74_v3666 — CAPA BI · V3.6.76-SDK6, FASE 68 «EL MANDO DE SIEMPRE».
+"""qa_r74_v3666 — CAPA BI · V3.6.77-SDK6, FASE 68 «EL MANDO DE SIEMPRE».
 
 Informe del dueño tras probar V3.6.65 en el Quest, punto por punto:
   1. «Desde el módulo Pro training, en cualquier modalidad, sacar el Menú
@@ -200,7 +200,7 @@ async def main():
                     break
                 await page.wait_for_timeout(500)
             orden = await page.evaluate("() => window.__PP_GAME.champs.list().map((x) => x.id)")
-            esperado_orden = ["locura", "magia", "oeste", "estacion_orbital", "valle_neon"]
+            esperado_orden = ["locura", "magia", "oeste", "estacion_orbital", "halloween"]
             chk(orden == esperado_orden,
                 f"ORDEN: Clow→Wizard→Forajido→resto → {json.dumps(orden)}")
             # el orden es del ÍNDICE, no de la llegada: entradas con orden numérico

@@ -465,6 +465,9 @@ CAPAS = [
     # dos placas de museo (drawHallSign) repintadas con i18n y estado diario
     # en drawHall() (stub r58 revivido).
     ('BT · duelos locos + pulso en la puerta (v3676)', 'qa_r84_v3676.py'),
+    # r85 · HALLOWEEN (ZOMBI del dueño + mapa + cartel normas) sustituye al valle
+    # neón · DAILY_DIF (dificultad del Reto Diario escalonada) · EL TALLER UGC.
+    ('BU · halloween + taller UGC + pulso escalonado (v3677)', 'qa_r85_v3677.py'),
 ]
 
 # Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen

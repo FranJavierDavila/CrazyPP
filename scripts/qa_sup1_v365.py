@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QA del JUEGO · V3.6.76-SDK6 (superpoderes redefinidos + voz del ASTRO +
+"""QA del JUEGO · V3.6.77-SDK6 (superpoderes redefinidos + voz del ASTRO +
 ajustes del reactor). Verifica en vivo: congelado REAL durante el aviso
 (g.freezeT), meteoritos 3D procedurales con calor de entrada, rayo tractor
 con dron + bola atrapada que cae vertical al morir el haz, gravedad cero
@@ -43,9 +43,9 @@ async def main():
         # afecta una petición colgada del arranque.
         await page.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.6.76-SDK6', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.6.77-SDK6', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.6.76-SDK6' in badge, f'badge 2D = {badge!r}')
+        chk('V3.6.77-SDK6' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),
             'puente CCD del núcleo expuesto (__PP_PADDLE_SWEEP)')
@@ -115,11 +115,15 @@ async def main():
         print('== FASE 5: la música en el SDK (createMusic) ==')
         for mod, vman, nota in (('oeste', 56, 'v3.6.4-SDK4'),
                                 ('magia', 33, 'v3.6.4-SDK4'),
-                                ('valle_neon', 5, 'v3.6.3-SDK3')):
+                                ('halloween', 1, 'r85')):
             srcm = await page.evaluate(
                 f"fetch('championships/{mod}/index.js').then(r=>r.text())")
             chk("from '../sdk/champ_sdk.js'" in srcm, f'{mod}: importa el SDK')
-            chk('get _musSDK()' in srcm, f'{mod}: la música delega en createMusic')
+            if mod == 'halloween':
+                # r85 · la PLANTILLA (halloween) delega la música con su propia firma
+                chk('createMusic(() => GAME' in srcm, f'{mod}: la música delega en createMusic (plantilla r85)')
+            else:
+                chk('get _musSDK()' in srcm, f'{mod}: la música delega en createMusic')
             chk('decodeAudioData(' not in srcm, f'{mod}: sin decodeAudioData propio')
             chk('freezeT = Math.max' not in srcm, f'{mod}: sin freeze duplicado')
             manm = await page.evaluate(
@@ -146,23 +150,33 @@ async def main():
 
         print('== FASE 7: standee + tablero en el SDK (createRival/createCartel) ==')
         for mod, vman, modo, base in (('estacion_orbital', 17, 'perezoso', 'rival.webp'),
-                                      ('valle_neon', 5, 'precarga', 'rival_kraken.png')):
+                                      ('halloween', 1, 'precarga', 'present.webp')):
             srcm = await page.evaluate(
                 f"fetch('championships/{mod}/index.js').then(r=>r.text())")
             chk('createRival(THREE' in srcm, f'{mod}: el standee delega en el SDK')
-            chk("modo: '" + modo + "'" in srcm, f'{mod}: motor {modo} conservado')
-            chk("base: '" + base + "'" in srcm, f'{mod}: arte {base} cableado')
+            if mod == 'halloween':
+                # r85 · tokens de la PLANTILLA (rv del manifest en vez de literales)
+                chk("modo: this.rv.modo || 'precarga'" in srcm, f'{mod}: motor precarga conservado')
+                chk("base: this.rv.base || 'rival.webp'" in srcm, f'{mod}: arte del rival cableado por manifest')
+                chk('cartel.pinta(' in srcm, f'{mod}: el ARTE pinta en el lienzo del SDK')
+                chk('so.musicOpts || {}' in srcm, f'{mod}: la música delega en createMusic')
+            else:
+                chk("modo: '" + modo + "'" in srcm, f'{mod}: motor {modo} conservado')
+                chk("base: '" + base + "'" in srcm, f'{mod}: arte {base} cableado')
+                chk('this._cartelSDK.pinta(' in srcm, f'{mod}: el ARTE pinta en el lienzo del SDK')
+                chk('get _musSDK()' in srcm, f'{mod}: la música delega en createMusic')
             chk('createCartel(THREE' in srcm, f'{mod}: el tablero delega en el SDK')
-            chk('this._cartelSDK.pinta(' in srcm, f'{mod}: el ARTE pinta en el lienzo del SDK')
-            chk('get _musSDK()' in srcm, f'{mod}: la música delega en createMusic')
             manm = await page.evaluate(
                 f"fetch('championships/{mod}/manifest.json').then(r=>r.json())")
             chk(manm.get('version') == vman, f'{mod}: manifest v{vman}')
-            chk(any('v3.6.5-SDK5' in n for n in manm.get('notes', [])),
-                f'{mod}: nota SDK5 en el historial')
+            if mod == 'halloween':
+                chk(any('r85' in n for n in manm.get('notes', [])), f'{mod}: nota r85 en el historial')
+            else:
+                chk(any('v3.6.5-SDK5' in n for n in manm.get('notes', [])),
+                    f'{mod}: nota SDK5 en el historial')
         ndec = await page.evaluate("""async () => {
           let n = 0;
-          for (const m of ['oeste', 'magia', 'locura', 'estacion_orbital', 'valle_neon']) {
+          for (const m of ['oeste', 'magia', 'locura', 'estacion_orbital', 'halloween']) {
             const s = await fetch('championships/' + m + '/index.js').then(r => r.text());
             n += (s.match(/decodeAudioData[(]/g) || []).length;
           }
@@ -441,7 +455,7 @@ async def main():
         pg2.on('pageerror', lambda e: errors2.append(str(e)))
         await pg2.goto(GW + '/game.html', wait_until='domcontentloaded')
         await pg2.wait_for_function("() => window.__PP_GAME && window.__PP_VERSION", timeout=45000)
-        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.76-SDK6', 'gateway: __PP_VERSION 3.6.76-SDK6')
+        chk(await pg2.evaluate("window.__PP_VERSION") == '3.6.77-SDK6', 'gateway: __PP_VERSION 3.6.77-SDK6')
         chk(await pg2.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"), 'gateway: puente CCD')
         chk(await pg2.evaluate("!!window.__PP_GAME"), 'gateway: juego arranca')
         mp3gw = await pg2.evaluate("""async () => {

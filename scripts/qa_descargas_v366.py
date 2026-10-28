@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QA del HUB /descargas · V3.6.76-SDK6 (FASE 8: telemetría reparada).
+"""QA del HUB /descargas · V3.6.77-SDK6 (FASE 8: telemetría reparada).
 Uso: python3 scripts/qa_descargas_v366.py"""
 import asyncio
 import sys
@@ -20,14 +20,14 @@ def chk(cond, label):
         fails += 1
 
 ZIPS = {
-    'crazypp-v3676-sdk6-COMPLETO.zip': 133443218,  # FASE 10: id en stage/champion + champ_rank por __PP_TELE
-    'crazypp-v3676-sdk6-ligera.zip': 18388006,
-    'crazypp-v3676-sdk6-CLOUDFLARE.zip': 133429699,  # FASE 10: game.html al día
+    'crazypp-v3677-sdk6-COMPLETO.zip': 135631128,  # FASE 10: id en stage/champion + champ_rank por __PP_TELE
+    'crazypp-v3677-sdk6-ligera.zip': 18389092,
+    'crazypp-v3677-sdk6-CLOUDFLARE.zip': 135617337,  # FASE 10: game.html al día
     'crazypp-live-service-SOLO.zip': 6221,
 }
 
 ADOPTANTES = (('oeste', 56, 'v3.6.4-SDK4'), ('magia', 33, 'v3.6.4-SDK4'),
-              ('locura', 27, 'v3.6.4-SDK4'), ('valle_neon', 5, 'v3.6.5-SDK5'))
+              ('locura', 27, 'v3.6.4-SDK4'), ('halloween', 1, 'r85'))
 
 async def tam(base, nombre):
     r = await RC.head(base + '/descargas/' + nombre)
@@ -46,8 +46,8 @@ async def main():
         await page.goto(BASE + '/descargas', wait_until='domcontentloaded')
         await page.wait_for_load_state('load')
         html = await page.content()
-        chk(html.count('v3676-sdk6') >= 3, f'enlaces v3676-sdk6 ({html.count("v3676-sdk6")})')
-        chk(html.count('3.6.76-SDK6') >= 5, f'menciones 3.6.76-SDK6 ({html.count("3.6.76-SDK6")})')
+        chk(html.count('v3677-sdk6') >= 3, f'enlaces v3677-sdk6 ({html.count("v3677-sdk6")})')
+        chk(html.count('3.6.77-SDK6') >= 5, f'menciones 3.6.77-SDK6 ({html.count("3.6.77-SDK6")})')
         for kw in ('createRival', 'createCartel', 'FASE 8', 'telemetría', 'array directo',
                    'FASE 7', 'SDK v1.x',
                    'decodeAudioData propio', 'rival_kraken.png',
@@ -83,7 +83,7 @@ async def main():
             chk(t == esperado, f'{n} = {t:,} B vía gateway')
 
         print('== El SDK y los campeonatos viajan dentro del COMPLETO ==')
-        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3676-sdk6-COMPLETO.zip') as z:
+        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3677-sdk6-COMPLETO.zip') as z:
             nombres = z.namelist()
             chk('championships/sdk/champ_sdk.js' in nombres,
                 'COMPLETO incluye championships/sdk/champ_sdk.js')
@@ -114,10 +114,10 @@ async def main():
             srcEOz = z.read('championships/estacion_orbital/index.js').decode('utf-8')
             chk('decodeAudioData(' not in srcEOz,
                 'orbital (ZIP): sin decodeAudioData propio (el «arsenal» es createMusic)')
-        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3676-sdk6-CLOUDFLARE.zip') as z:
+        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3677-sdk6-CLOUDFLARE.zip') as z:
             chk('championships/sdk/champ_sdk.js' in z.namelist(),
                 'CLOUDFLARE incluye el SDK')
-        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3676-sdk6-ligera.zip') as z:
+        with zipfile.ZipFile('/home/z/my-project/public/descargas/crazypp-v3677-sdk6-ligera.zip') as z:
             con_champ = [n for n in z.namelist()
                          if n.startswith('championships/') and n != 'championships/'
                          and 'PON-AQUI' not in n]
@@ -127,7 +127,7 @@ async def main():
         print('== Juego + SDK servidos por gateway ==')
         r = await RC.get(GW + '/game.html')
         cuerpo = await r.text()
-        chk("const VERSION = '3.6.76-SDK6'" in cuerpo, 'gateway: game.html = 3.6.76-SDK6')
+        chk("const VERSION = '3.6.77-SDK6'" in cuerpo, 'gateway: game.html = 3.6.77-SDK6')
         chk('__PP_PADDLE_SWEEP' in cuerpo, 'gateway: puente CCD del núcleo')
         sdk = await (await RC.get(GW + '/championships/sdk/champ_sdk.js')).text()
         chk("const SDK_VERSION = '1.5.4'" in sdk and 'export function createSfx' in sdk
@@ -205,14 +205,13 @@ async def main():
                        'const __CORE = getCore() || {}',
                        'createPowerSign(THREE', "coreo: 'v240'", 'halo: true',
                        "arte: 'fit1833'"),
-            'valle_neon': ("import { createCartel, createMusic, createRival, getCore } from '../sdk/champ_sdk.js'",
-                           'const CORE = getCore();',
-                           'get _musSDK()', 'fadeIn: 1.2', 'ancla: false',
-                           "syncMode: 'none'", 'gateOn: true', 'stopFade: 0.4',
-                           'createRival(THREE', "modo: 'precarga'",
-                           "base: 'rival_kraken.png'", "ext: 'png'",
-                           'createCartel(THREE', 'this._cartelSDK.pinta((',
-                           'this._rivalSDK.rivalEstado(st);'),
+            'halloween': ("createSfx, createMusic, createPowerSign, createRival, createCartel",
+                           "const MOD_ID = 'halloween'",
+                           'createMusic(() => GAME', 'so.musicOpts || {}',
+                           'createRival(THREE', "modo: this.rv.modo || 'precarga'",
+                           "base: this.rv.base || 'rival.webp'",
+                           'createCartel(THREE', 'cartel.pinta(',
+                           'this.r.rivalEstado('),
         }
         ORB_EXTRA = ("import { createCartel, createMusic, createPowerSign, createRival, createSfx, congela } from '../sdk/champ_sdk.js'",
                      'createRival(THREE', "modo: 'perezoso'", "base: 'rival.webp'",

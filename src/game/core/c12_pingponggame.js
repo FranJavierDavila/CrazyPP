@@ -7785,7 +7785,11 @@ export class PingPongGame {
       const c = cv.getContext('2d');
       // v2.107 · piel según campeonato (misma maquetación en todos)
       // v2.129 · «estacion»: panel espacial para Estación Orbital (plantilla)
-      const th = (tema === 'locura' || tema === 'magia' || tema === 'estacion') ? tema : 'oeste';
+      // r85 · cualquier campeonato con CARTEL DEL ARTISTA (NORMAS_SKIN.defs)
+      // usa su propio tema (halloween, y los UGC futuros); el resto cae a las
+      // pieles dibujadas de siempre.
+      const th = (tema && NORMAS_SKIN.defs[tema]) ? tema
+        : ((tema === 'locura' || tema === 'magia' || tema === 'estacion') ? tema : 'oeste');
       // v2.135 · piel del ARTISTA (clown/wizard/forajido): si el cartel del
       //  campeonato ya está cargado se pinta el panel sobre el arte real con
       //  todo el texto dentro del hueco. Sin imagen → piel dibujada de siempre.

@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRAZY PING PONG · EL TALLER UGC · Editor de etapas y campeonatos</title>
+<style>
+:root {
+  --bg: #0b1222; --bg2: #101a30; --card: #14203a; --line: #24365c;
+  --tx: #e8eef8; --tx2: #93a5c4; --oro: #fbbf24; --oro2: #f59e0b;
+  --verde: #68d391; --rojo: #fc8181; --cian: #7ec8ff; --violeta: #b794f4;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: radial-gradient(1200px 700px at 50% -140px, #16243f 0%, var(--bg) 55%);
+  color: var(--tx); font: 15px/1.45 "Trebuchet MS", Verdana, sans-serif; min-height: 100vh;
+}
+header { text-align: center; padding: 26px 16px 10px; }
+header h1 {
+  margin: 0; font-size: 30px; letter-spacing: 2px;
+  background: linear-gradient(180deg, #ffe08a, var(--oro)); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+header .sub { color: var(--tx2); margin-top: 6px; font-size: 13px; }
+.barra { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 14px; position: sticky; top: 0; background: rgba(11,18,34,.92); backdrop-filter: blur(6px); z-index: 30; border-bottom: 1px solid var(--line); }
+button {
+  background: linear-gradient(180deg, #1d2c4e, #16233f); color: var(--tx);
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 16px;
+  font: 700 13px "Trebuchet MS", Verdana, sans-serif; letter-spacing: .4px; cursor: pointer;
+}
+button:hover { border-color: var(--oro); color: var(--oro); }
+button.prim { background: linear-gradient(180deg, #b45309, #92400e); border-color: #d97706; color: #fff7e6; }
+button.prim:hover { filter: brightness(1.12); color: #fff; }
+button.min { padding: 3px 9px; font-size: 12px; border-radius: 7px; }
+button.sel { border-color: var(--oro); color: var(--oro); }
+main { max-width: 1080px; margin: 0 auto; padding: 10px 16px 80px; }
+.seccion {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  margin: 14px 0; overflow: hidden;
+}
+.seccion > h2 {
+  margin: 0; padding: 13px 18px; font-size: 15px; letter-spacing: 1.2px; cursor: pointer;
+  display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, #17254a, #14203a);
+  user-select: none;
+}
+.seccion > h2 .flecha { color: var(--oro); transition: transform .18s; }
+.seccion.abierta > h2 .flecha { transform: rotate(90deg); }
+.seccion .cuerpo { display: none; padding: 6px 18px 18px; }
+.seccion.abierta .cuerpo { display: block; }
+.fila { display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0; align-items: flex-end; }
+.campo { display: flex; flex-direction: column; gap: 4px; min-width: 150px; flex: 1; }
+.campo label { font-size: 11px; letter-spacing: .8px; color: var(--tx2); text-transform: uppercase; }
+.campo input, .campo select, .campo textarea {
+  background: #0d1729; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--tx); padding: 8px 10px; font: 14px "Trebuchet MS", Verdana, sans-serif; width: 100%;
+}
+.campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: var(--oro); }
+.campo input[readonly] { color: var(--tx2); }
+.campo.corto { min-width: 90px; flex: 0 0 110px; }
+.campo.largo { flex: 2 1 340px; }
+.campo textarea { min-height: 62px; resize: vertical; }
+.ayuda { color: var(--tx2); font-size: 12px; margin: 4px 0 0; }
+.aviso { border-radius: 10px; padding: 10px 14px; margin: 10px 0; font-size: 13px; border: 1px solid; }
+.aviso.ok { color: var(--verde); border-color: #2d6a4f; background: rgba(104, 211, 145, .07); }
+.aviso.err { color: var(--rojo); border-color: #7c3a3a; background: rgba(252, 129, 129, .07); }
+.aviso.info { color: var(--cian); border-color: #2b5b7e; background: rgba(126, 200, 255, .06); }
+.etapa {
+  border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 10px 0; background: #0f1a31;
+}
+.etapa .cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.etapa .num {
+  background: linear-gradient(180deg, var(--oro), var(--oro2)); color: #1a1206;
+  font-weight: 900; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.etapa .titulo { font-weight: 800; letter-spacing: .5px; flex: 1; min-width: 140px; }
+.etapa .kind { font-size: 11px; border: 1px solid var(--line); border-radius: 20px; padding: 3px 10px; color: var(--cian); letter-spacing: 1px; }
+.etapa.duelo .kind { color: var(--violeta); }
+.etapa .reglas { border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 6px; }
+#mapaCaja { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 8px; max-width: 720px; background: #0d1729; }
+#mapaCaja img { display: block; width: 100%; cursor: crosshair; user-select: none; -webkit-user-drag: none; }
+.marcaNodo {
+  position: absolute; transform: translate(-50%, -50%); pointer-events: none;
+  border: 2px solid var(--cian); border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,.45), inset 0 0 12px rgba(126,200,255,.35);
+  color: var(--cian); font: 800 12px "Trebuchet MS", sans-serif; display: flex; align-items: center; justify-content: center;
+}
+#mapaWrap { position: relative; }
+.chk { display: flex; gap: 7px; align-items: center; font-size: 13px; color: var(--tx); margin: 3px 0; }
+.chk input { accent-color: var(--oro); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  border: 1px solid var(--line); border-radius: 16px; padding: 3px 10px; font-size: 12px; cursor: pointer; user-select: none;
+}
+.chip.on { border-color: var(--oro); color: var(--oro); background: rgba(251, 191, 36, .08); }
+.listaTx .liTx { display: flex; gap: 8px; margin: 5px 0; }
+.listaTx .liTx input { flex: 1; }
+footer { text-align: center; color: var(--tx2); font-size: 12px; padding: 30px 10px; }
+footer b { color: var(--oro); }
+dialog {
+  background: var(--card); color: var(--tx); border: 1px solid var(--line);
+  border-radius: 14px; max-width: 620px; width: 92vw; padding: 18px 22px;
+}
+dialog::backdrop { background: rgba(4, 8, 16, .72); }
+dialog h3 { margin: 0 0 10px; color: var(--oro); letter-spacing: 1px; }
+dialog pre {
+  background: #0d1729; border: 1px solid var(--line); border-radius: 10px;
+  padding: 12px; font-size: 12.5px; overflow: auto; max-height: 46vh; white-space: pre-wrap;
+}
+.kbd { background: #0d1729; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; font: 700 12px monospace; }
+
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ CRAZY PING PONG · EL TALLER UGC</h1>
+  <div class="sub">Editor de ETAPAS y CAMPEONATOS · genera tu <span class="kbd">manifest.json</span> sin tocar código · r85</div>
+</header>
+
+<div class="barra">
+  <label style="display:contents"><input type="file" id="cargaMan" accept=".json,application/json" hidden>
+    <button id="btnCargar">📂 Cargar manifest.json</button></label>
+  <button id="btnPlantilla">🌱 Empezar de cero (plantilla)</button>
+  <button id="btnValidar" class="prim">✔ Validar</button>
+  <button id="btnExportar" class="prim">⬇ Exportar manifest.json</button>
+  <button id="btnGuia">📖 Guía</button>
+</div>
+
+<main>
+  <div id="estado" class="aviso info">Carga un <b>manifest.json</b> existente (p. ej. <span class="kbd">public/championships/halloween/manifest.json</span>) o empieza de cero.</div>
+
+  <section class="seccion abierta" id="sec-identidad">
+    <h2><span class="flecha">▶</span> IDENTIDAD DEL CAMPEONATO</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo corto"><label>ID (carpeta)</label><input id="f_id" readonly></div>
+        <div class="campo corto"><label>versión</label><input id="f_version" type="number" min="1" step="1"></div>
+        <div class="campo corto"><label>estado</label>
+          <select id="f_estado">
+            <option>borrador</option><option>validacion</option><option>listo</option>
+            <option>publicado</option><option>desactivado</option>
+          </select></div>
+        <div class="campo"><label>tema (libre)</label><input id="f_tema" placeholder="halloween / circo / espacio…"></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>título (ES) · máx 40</label><input id="f_titulo_es" maxlength="40"></div>
+        <div class="campo"><label>título (EN)</label><input id="f_titulo_en" maxlength="40"></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>descripción (ES) · máx 400</label><textarea id="f_desc_es" maxlength="400"></textarea></div>
+        <div class="campo largo"><label>descripción (EN)</label><textarea id="f_desc_en" maxlength="400"></textarea></div>
+      </div>
+      <div class="fila">
+        <div class="campo corto"><label>storage</label><input id="f_storage" readonly></div>
+        <div class="campo largo"><label>nota de versión (notes +)</label><input id="f_note" placeholder="v2 · qué cambia en esta versión"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-rival">
+    <h2><span class="flecha">▶</span> RIVAL Y SUS POSES</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo"><label>nombre del rival</label><input id="f_rival_nombre" maxlength="14"></div>
+        <div class="campo corto"><label>kind (motor)</label>
+          <select id="f_rival_kind"><option>stock</option><option>clown</option><option>wizard</option><option>forajido</option></select></div>
+        <div class="campo corto"><label>alto (m)</label><input id="f_rival_alto" type="number" step="0.05" min="1.2" max="3"></div>
+        <div class="campo corto"><label>ext arte</label>
+          <select id="f_rival_ext"><option>webp</option><option>png</option></select></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>celebración (texto)</label><input id="f_rival_celebracion" maxlength="90"></div>
+        <div class="campo"><label>carácter</label><input id="f_rival_caracter" maxlength="16" placeholder="siniestro / frio / feliz…"></div>
+      </div>
+      <div class="fila">
+        <div class="campo corto"><label>agresividad 1-5</label><input id="f_rival_agresividad" type="number" min="1" max="5" step="1"></div>
+        <div class="campo corto"><label>precisión 1-5</label><input id="f_rival_precision" type="number" min="1" max="5" step="1"></div>
+        <div class="campo corto"><label>constancia 1-5</label><input id="f_rival_constancia" type="number" min="1" max="5" step="1"></div>
+        <div class="campo"><label>cerebro</label>
+          <select id="f_rival_cerebro"><option>equilibrado</option><option>agresivo</option><option>defensivo</option></select></div>
+      </div>
+      <div class="fila"><div class="campo largo">
+        <label>estados (poses en assets/&lt;estado&gt;.&lt;ext&gt;) · el conjunto rico usa 12</label>
+        <div class="chips" id="chipsEstados"></div>
+        <p class="ayuda">Marca las poses que TIENES en <span class="kbd">assets/</span>. «present» es la base del standee (<span class="kbd">rival.ext</span> o base personalizado).</p>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-camino">
+    <h2><span class="flecha">▶</span> CAMINO DE ETAPAS ⚔ (el corazón del campeonato)</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <button class="min" id="btnAddDuelo">+ DUELO</button>
+        <button class="min" id="btnAddPrueba">+ PRUEBA (dianas)</button>
+        <span class="ayuda" id="infoCamino"></span>
+      </div>
+      <div id="listaEtapas"></div>
+      <div class="fila">
+        <div class="campo corto"><label>dificultad difMul</label>
+          <select id="f_difMul"><option value="0.85">0.85 · fácil</option><option value="1" selected>1.0 · media</option><option value="1.18">1.18 · difícil</option></select></div>
+        <div class="campo corto"><label>paso (curva)</label><input id="f_paso" type="number" step="0.01" min="0" max="0.4"></div>
+        <div class="campo corto"><label>difFinal</label><input id="f_difFinal" type="number" step="0.01" min="1" max="2.2"></div>
+        <div class="campo corto"><label>métrica</label>
+          <select id="f_worldMetric"><option>wins</option><option selected>duelwins</option><option>puntos</option></select></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-mapa">
+    <h2><span class="flecha">▶</span> MAPA DEL CAMINO 🗺 (pica los nodos con un clic)</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo corto"><label>modo</label>
+          <select id="f_mapa_modo"><option value="canvas">canvas (dibujado)</option><option value="arte">arte (póster del dueño)</option></select></div>
+        <div class="campo"><label>ruta del póster (assets/…)</label><input id="f_mapa_arte" placeholder="assets/mapa.webp"></div>
+        <div class="campo corto"><label>ancho plano (m)</label><input id="f_mapa_planoW" type="number" step="0.02" min="0.8" max="3"></div>
+        <div class="campo corto"><label>rotY</label><input id="f_mapa_rotY" type="number" step="0.02"></div>
+      </div>
+      <div class="fila" id="filaMapaArte">
+        <div class="campo largo">
+          <label>cargar imagen del póster para PICAR nodos (no se sube: sólo mide)</label>
+          <input type="file" id="cargaMapa" accept="image/*">
+        </div>
+        <button class="min" id="btnNodoClear">Vaciar nodos</button>
+      </div>
+      <div id="mapaCaja" hidden><div id="mapaWrap"></div></div>
+      <div class="fila"><span class="ayuda" id="infoNodos"></span></div>
+      <div id="listaNodos"></div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-poderes">
+    <h2><span class="flecha">▶</span> SUPERPODERES DEL RIVAL ✨</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo corto"><label>chance disparo</label><input id="f_pt_chance" type="number" step="0.01" min="0" max="1"></div>
+        <div class="campo corto"><label>cooldown (s)</label><input id="f_pt_cooldown" type="number" step="0.5" min="4"></div>
+        <div class="campo corto"><label>bolsa</label>
+          <select id="f_pt_bolsa"><option>rotatoria</option><option>antirepeticion</option></select></div>
+        <button class="min" id="btnAddPoder">+ PODER</button>
+      </div>
+      <div id="listaPoderes"></div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-sala">
+    <h2><span class="flecha">▶</span> SALA Y DECORADO 🏛</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo"><label>floor</label><input id="f_room_floor" placeholder="assets/sala_floor.jpg"></div>
+        <div class="campo"><label>ceil</label><input id="f_room_ceil"></div>
+        <div class="campo"><label>back</label><input id="f_room_back"></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>front</label><input id="f_room_front"></div>
+        <div class="campo"><label>left</label><input id="f_room_left"></div>
+        <div class="campo"><label>right</label><input id="f_room_right"></div>
+      </div>
+      <div class="fila">
+        <div class="campo corto"><label>tint final (decimal)</label><input id="f_tint_final" type="number" step="1" placeholder="0x2a4d2a → 2770474"></div>
+        <div class="campo corto"><label>música</label><input id="f_audio_music" placeholder="assets/bso.wav"></div>
+        <div class="campo corto"><label>vol música</label><input id="f_audio_vol" type="number" step="0.02" min="0" max="1"></div>
+        <div class="campo"><label>risa (sounds.laugh)</label><input id="f_audio_laugh" placeholder="assets/risas.mp3"></div>
+      </div>
+      <div class="fila">
+        <button class="min" id="btnAddDecor">+ TROQUEL (decor)</button>
+        <span class="ayuda">PNG con canal ALFA real — el recorte es el alfa, sin borde añadido. Los troqueles se colocan junto a la pared trasera (x metros, z negros hacia el fondo).</span>
+      </div>
+      <div id="listaDecor"></div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-final">
+    <h2><span class="flecha">▶</span> CORONACIÓN, TROFEO Y TEXTOS 🏆</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo"><label>trofeo (ES)</label><input id="f_trophy_es"></div>
+        <div class="campo"><label>trofeo (EN)</label><input id="f_trophy_en"></div>
+        <div class="campo"><label>arte insignia</label><input id="f_insignia" placeholder="assets/insignia.png"></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>coronación · título (ES)</label><input id="f_coro_titulo_es" maxlength="40"></div>
+        <div class="campo"><label>coronación · título (EN)</label><input id="f_coro_titulo_en" maxlength="40"></div>
+        <div class="campo corto"><label>dur (s)</label><input id="f_coro_dur" type="number" step="1" min="6" max="30"></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>coronación · mensaje (ES)</label><textarea id="f_coro_msg_es" maxlength="160"></textarea></div>
+        <div class="campo largo"><label>coronación · mensaje (EN)</label><textarea id="f_coro_msg_en" maxlength="160"></textarea></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>i18n · bienvenida (ES)</label><input id="f_i18n_bienvenida_es"></div>
+        <div class="campo largo"><label>i18n · bienvenida (EN)</label><input id="f_i18n_bienvenida_en"></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>i18n · título de las normas</label><input id="f_i18n_instr_titulo_es"></div>
+        <div class="campo largo"><label>i18n · rules title (EN)</label><input id="f_i18n_instr_titulo_en"></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo">
+          <label>normas / instrucciones de las PRUEBAS (una línea por norma — ES)</label>
+          <div class="listaTx" id="listaInstrEs"></div>
+          <button class="min" data-addtx="instrEs">+ línea ES</button>
+        </div>
+        <div class="campo largo">
+          <label>normas / instructions (EN)</label>
+          <div class="listaTx" id="listaInstrEn"></div>
+          <button class="min" data-addtx="instrEn">+ línea EN</button>
+        </div>
+      </div>
+      <div class="fila"><span class="ayuda">💡 Si el campeonato tiene CARTEL DEL ARTISTA (<span class="kbd">assets/normas_&lt;id&gt;.png</span> 1024×512 con hueco central), el juego pinta estas líneas SOBRE el arte. Pídele el hueco interior a quien hizo el cartel.</span></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <b>EL TALLER UGC</b> · Crazy Ping Pong · herramienta aparte del juego, sin dependencias, todo local.<br>
+  Exporta el <span class="kbd">manifest.json</span> y cópialo en <span class="kbd">public/championships/&lt;id&gt;/</span> (con su carpeta <span class="kbd">assets/</span>).
+</footer>
+
+<dialog id="dlgGuia">
+  <h3>📖 Los 4 pasos de un campeonato UGC</h3>
+  <pre>1 · ARTE — prepara la carpeta <span class="kbd">championships/&lt;id&gt;/assets/</span> con la convención de nombres:
+      sala_floor/ceil/back/front/left/right.jpg   6 planos de la estancia
+      present.webp + &lt;estado&gt;.webp                poses del rival 512×1024 con ALFA real
+      mapa.webp (o .png)                          póster del camino ~1380×752
+      normas_&lt;id&gt;.png                             cartel de normas 1024×512 (opcional)
+      bso.mp3/wav · risas.mp3 · power_N.png · insignia.png
+2 · MANIFEST — este editor genera el <span class="kbd">manifest.json</span>: cárgalo aquí, edita TODO lo visible
+      y exporta. Las ETAPAS (camino) son lo importante: duelos ↔ pruebas alternos y FINAL.
+3 · VALIDAR — botón «Validar»: ids únicos, kinds conocidos, nodos del mapa == etapas,
+      assets citados con la ruta correcta. Corrige los rojos.
+4 · INSTALAR — copia la carpeta del campeonato a <span class="kbd">public/championships/&lt;id&gt;/</span> y añade
+      el <span class="kbd">id</span> a <span class="kbd">public/championships/championships.json</span>. Con estado <span class="kbd">publicado</span> el menú
+      CAMPEONATOS lo descubre SOLO (botón nuevo, ranking y registros incluidos).
+      Previsualizar sin publicar: abre el juego con <span class="kbd">?champ=&lt;id&gt;</span>.
+REGLAS DE ORO: PNG/WebP con transparencia = recorte exacto al alfa (esquinas alfa&lt;30) ·
+sprites del rival PLANOS 512×1024, pies al borde inferior · no renames: el nombre ES el contrato.</pre>
+  <div style="text-align:right"><button class="prim" onclick="document.getElementById('dlgGuia').close()">Entendido</button></div>
+</dialog>
+
+<dialog id="dlgJson">
+  <h3>⬇ manifest.json generado</h3>
+  <pre id="dlgJsonPre"></pre>
+  <div style="text-align:right; display:flex; gap:8px; justify-content:flex-end">
+    <button id="btnCopiar">📋 Copiar</button>
+    <button class="prim" id="btnDescargar">⬇ Descargar</button>
+    <button onclick="document.getElementById('dlgJson').close()">Cerrar</button>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+/* EL TALLER UGC · r85 · editor standalone de campeonatos/etapas de CRAZY PING PONG.
+ * Sin dependencias. Todo local: carga manifest.json → edita → exporta manifest.json.
+ * Contrato soportado: manifest contract 1 de la plantilla unificada (Ronda 25). */
+
+const $ = (id) => document.getElementById(id);
+const ESTADOS_RIVAL = ['present', 'idle', 'focused', 'surprised', 'hungry', 'panic',
+  'laughing', 'crazy', 'angry', 'picando', 'loosing', 'defeated', 'victory',
+  'duelo', 'derrotado', 'triunfante'];
+const KINDS_PRUEBA = ['dianas', 'arkanoid', 'objetos', 'escudo', 'impulso', 'tren', 'custom'];
+const KINDS_PODER = ['confeti', 'globos', 'mareo', 'orbe', 'arena', 'burla', 'dinamita',
+  'disparo', 'estampida', 'split', 'portals', 'fuego', 'sombras', 'crazyball', 'bola'];
+const RUTAS_ASSET = /^assets\/[A-Za-z0-9_\-]+\.(png|jpg|jpeg|webp|mp3|wav|ogg|glb|mp4)$/;
+
+let MAN = null;          // manifest vivo
+let nodosPx = [];        // [{x,y,r}] píxeles del póster
+let imgMapaW = 0, imgMapaH = 0;
+
+/* ------------------------------------------------------------- utilidades */
+function el(tag, cls, html) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  return e;
+}
+function aviso(msg, tipo) {
+  const d = $('estado');
+  d.className = 'aviso ' + (tipo || 'info');
+  d.innerHTML = msg;
+}
+function download(nombre, texto) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([texto], { type: 'application/json' }));
+  a.download = nombre;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ------------------------------------------------- plantilla de partida */
+function plantilla() {
+  return {
+    id: 'mi_campeonato',
+    version: 1,
+    contract: 1,
+    estado: 'borrador',
+    title: { es: 'Mi Campeonato', en: 'My Championship' },
+    description: { es: 'Descripción corta de la tienda del HUB.', en: 'Short HUB shop description.' },
+    tema: 'neutro',
+    rival: {
+      id: 'mi_campeonato_rival', name: 'RIVAL', kind: 'stock',
+      states: ['present', 'idle', 'focused', 'surprised', 'panic', 'laughing',
+        'crazy', 'angry', 'picando', 'loosing', 'defeated', 'victory'],
+      oppLabel: 'rival',
+      personalidad: { agresividad: 3, precision: 3, constancia: 3, caracter: 'frio',
+        celebracion: 'Texto del artista', cerebro: 'equilibrado' },
+    },
+    rivalVisual: { modo: 'precarga', base: 'present.webp', ext: 'webp', alto: 2.15,
+      anchoFijo: 0, material: 'basic', alphaTest: 0.25, aspecto: true,
+      flotacion: { activo: true, amplitud: 0.012, periodo: 1.4 } },
+    storage: 'pp_champ_mi_campeonato_*',
+    camino: { patron: 'duelo_prueba',
+      dificultad: { modo: 'formula', difMul: 1.0, paso: 0.15, difFinal: 1.35 },
+      worldMetric: 'duelwins',
+      leyenda: { activa: true, aiMulMul: 1.15, chanceSuma: 0.06, chanceMax: 0.6,
+        cooldownResta: 1.5, cooldownMin: 6.0, primerResta: 1.0, primerMin: 3.0, pruebaExtra: 1 } },
+    stages: [
+      { id: 'duelo1', name: 'Duelo 1', kind: 'duelo' },
+      { id: 'prueba1', name: 'Dianas del taller', kind: 'dianas',
+        rules: { modo: 'objetivos', objetivo: 6, puntos: 2, premio: 'Trofeo' } },
+      { id: 'duelo2', name: 'Duelo 2', kind: 'duelo' },
+      { id: 'prueba2', name: 'Moscas veloces', kind: 'dianas',
+        rules: { modo: 'movimiento', objetivo: 4, puntos: 3, premio: 'Insignia' } },
+      { id: 'final', name: 'DUELO FINAL', kind: 'duelo', rules: { jefe: true } },
+    ],
+    pruebas: { dianas: { spawnX: 0.85, spawnYMin: 0.45, spawnYMax: 1.3, spawnZMin: -0.55,
+      spawnZMax: -1.7, radio: 0.155, hold: { x: 0.0, z: -0.5, T: 1.5, H: 0.42 },
+      recambioMs: 900, deadT: 0.7, tiempoBase: 20, tiempoPorObjetivo: 10, tiempoMax: 90 } },
+    powers: [
+      { kind: 'confeti', name: 'Confeti', icon: 'assets/power_0.png', cooldown: 18,
+        duration: 6, warn: 2, activacion: 'rally', chance: 0.35 },
+      { kind: 'globos', name: 'Globos', icon: 'assets/power_1.png', cooldown: 20,
+        duration: 8, warn: 2, activacion: 'puntos', cadaCuantos: 3 },
+    ],
+    powerTrigger: { chance: 0.32, cooldown: 13.0, minRallyHits: 1, warn: 2.0,
+      bolsa: 'rotatoria', primerCd: 6, garantiaS: 22, postCdMin: 10, postCdMax: 15 },
+    audio: { music: 'assets/bso.mp3', musicVolume: 0.18,
+      musicOpts: { fadeIn: 0.8, ancla: true, syncMode: 'ramp', gateStart: true,
+        gateOn: false, renace: true, stopFade: 0 },
+      sounds: { laugh: 'assets/risas.mp3' } },
+    room: { floor: 'assets/sala_floor.jpg', ceil: 'assets/sala_ceil.jpg',
+      back: 'assets/sala_back.jpg', front: 'assets/sala_front.jpg',
+      left: 'assets/sala_left.jpg', right: 'assets/sala_right.jpg' },
+    decor: { pieces: [] },
+    mapa: { modo: 'canvas', planoW: 1.66, rotY: 0.42 },
+    cartel: { cvW: 1024, cvH: 512, w: 2.3, h: 1.15 },
+    hud: { activo: true },
+    trophy: { name: { es: 'Trofeo', en: 'Trophy' }, arte: 'assets/insignia.png', rotY: 0.62 },
+    coronacion: { titulo: { es: '¡CAMPEÓN!', en: 'CHAMPION!' },
+      mensaje: { es: 'Has conquistado el campeonato.', en: 'You conquered the championship.' },
+      dur: 14, insignia: 'assets/insignia.png', stats: ['puntos', 'duelos', 'fecha'] },
+    i18n: {
+      es: { bienvenida: 'Bienvenido', instr_titulo: 'Cómo se juega',
+        instr_lineas: ['Norma provisional de la prueba'],
+        duelo_vs: '¡DUELO! VS RIVAL · Ronda {n}', prueba_vs: '¡PRUEBA! {nombre} · Intento {n}',
+        sello_leyenda: 'Sello de leyenda {n} conseguido',
+        leyenda_medalla: 'LEYENDA COMPLETA: los 5 sellos son tuyos.',
+        coronacion_titulo: '¡CAMPEÓN!', coronacion_msg: 'El trono es tuyo.',
+        reset_ok: 'Registros eliminados.' },
+      en: { bienvenida: 'Welcome', instr_titulo: 'How to play',
+        instr_lineas: ['Provisional trial rule'],
+        duelo_vs: 'DUEL! VS RIVAL · Round {n}', prueba_vs: 'TRIAL! {nombre} · Attempt {n}',
+        sello_leyenda: 'Legend seal {n} earned',
+        leyenda_medalla: 'FULL LEGEND: all 5 seals are yours.',
+        coronacion_titulo: 'CHAMPION!', coronacion_msg: 'The throne is yours.',
+        reset_ok: 'Records wiped.' },
+    },
+    rewards: { wins: 'Recompensa por vencer', champion: 'Recompensa por coronar' },
+    notes: ['v1 · campeonato generado con EL TALLER UGC (r85)'],
+  };
+}
+
+/* ------------------------------------------------------------ bindings */
+const BIND = [
+  ['f_id', 'id', 'txt'], ['f_version', 'version', 'num'], ['f_estado', 'estado', 'txt'],
+  ['f_tema', 'tema', 'txt'], ['f_titulo_es', 'title.es', 'txt'], ['f_titulo_en', 'title.en', 'txt'],
+  ['f_desc_es', 'description.es', 'txt'], ['f_desc_en', 'description.en', 'txt'],
+  ['f_storage', 'storage', 'txt'],
+  ['f_rival_nombre', 'rival.name', 'txt'], ['f_rival_kind', 'rival.kind', 'txt'],
+  ['f_rival_alto', 'rivalVisual.alto', 'num'], ['f_rival_ext', 'rivalVisual.ext', 'txt'],
+  ['f_rival_celebracion', 'rival.personalidad.celebracion', 'txt'],
+  ['f_rival_caracter', 'rival.personalidad.caracter', 'txt'],
+  ['f_rival_agresividad', 'rival.personalidad.agresividad', 'num'],
+  ['f_rival_precision', 'rival.personalidad.precision', 'num'],
+  ['f_rival_constancia', 'rival.personalidad.constancia', 'num'],
+  ['f_rival_cerebro', 'rival.personalidad.cerebro', 'txt'],
+  ['f_difMul', 'camino.dificultad.difMul', 'num'], ['f_paso', 'camino.dificultad.paso', 'num'],
+  ['f_difFinal', 'camino.dificultad.difFinal', 'num'], ['f_worldMetric', 'camino.worldMetric', 'txt'],
+  ['f_mapa_modo', 'mapa.modo', 'txt'], ['f_mapa_arte', 'mapa.arte', 'txt'],
+  ['f_mapa_planoW', 'mapa.planoW', 'num'], ['f_mapa_rotY', 'mapa.rotY', 'num'],
+  ['f_pt_chance', 'powerTrigger.chance', 'num'], ['f_pt_cooldown', 'powerTrigger.cooldown', 'num'],
+  ['f_pt_bolsa', 'powerTrigger.bolsa', 'txt'],
+  ['f_room_floor', 'room.floor', 'txt'], ['f_room_ceil', 'room.ceil', 'txt'],
+  ['f_room_back', 'room.back', 'txt'], ['f_room_front', 'room.front', 'txt'],
+  ['f_room_left', 'room.left', 'txt'], ['f_room_right', 'room.right', 'txt'],
+  ['f_tint_final', 'room.variants.final.tint', 'num'],
+  ['f_audio_music', 'audio.music', 'txt'], ['f_audio_vol', 'audio.musicVolume', 'num'],
+  ['f_audio_laugh', 'audio.sounds.laugh', 'txt'],
+  ['f_trophy_es', 'trophy.name.es', 'txt'], ['f_trophy_en', 'trophy.name.en', 'txt'],
+  ['f_insignia', 'trophy.arte', 'txt'],
+  ['f_coro_titulo_es', 'coronacion.titulo.es', 'txt'], ['f_coro_titulo_en', 'coronacion.titulo.en', 'txt'],
+  ['f_coro_dur', 'coronacion.dur', 'num'],
+  ['f_coro_msg_es', 'coronacion.mensaje.es', 'txt'], ['f_coro_msg_en', 'coronacion.mensaje.en', 'txt'],
+  ['f_i18n_bienvenida_es', 'i18n.es.bienvenida', 'txt'], ['f_i18n_bienvenida_en', 'i18n.en.bienvenida', 'txt'],
+  ['f_i18n_instr_titulo_es', 'i18n.es.instr_titulo', 'txt'], ['f_i18n_instr_titulo_en', 'i18n.en.instr_titulo', 'txt'],
+];
+function getRuta(o, ruta) {
+  return ruta.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+}
+function setRuta(o, ruta, v) {
+  const ks = ruta.split('.');
+  let cur = o;
+  for (let i = 0; i < ks.length - 1; i++) {
+    if (cur[ks[i]] == null || typeof cur[ks[i]] !== 'object') cur[ks[i]] = {};
+    cur = cur[ks[i]];
+  }
+  cur[ks[ks.length - 1]] = v;
+}
+function pintarCampos() {
+  for (const [id, ruta, tipo] of BIND) {
+    const e = $(id);
+    if (!e) continue;
+    let v = getRuta(MAN, ruta);
+    if (tipo === 'num') v = (v == null ? '' : v);
+    e.value = (v == null) ? '' : v;
+  }
+  // chips de estados
+  const chips = $('chipsEstados');
+  chips.innerHTML = '';
+  const actuales = (MAN.rival && MAN.rival.states) || [];
+  for (const st of ESTADOS_RIVAL) {
+    const c = el('span', 'chip' + (actuales.indexOf(st) >= 0 ? ' on' : ''), st);
+    c.onclick = () => {
+      const i = MAN.rival.states.indexOf(st);
+      if (i >= 0) MAN.rival.states.splice(i, 1); else MAN.rival.states.push(st);
+      c.classList.toggle('on');
+      validarSilencioso();
+    };
+    chips.appendChild(c);
+  }
+  // i18n instr_lineas
+  pintarListaTx('listaInstrEs', MAN.i18n.es.instr_lineas || []);
+  pintarListaTx('listaInstrEn', (MAN.i18n.en && MAN.i18n.en.instr_lineas) || []);
+  pintarEtapas();
+  pintarPoderes();
+  pintarDecor();
+  pintarNodos();
+  $('filaMapaArte').style.display = MAN.mapa && MAN.mapa.modo === 'arte' ? 'flex' : 'none';
+}
+function pintarListaTx(idLista, arr) {
+  const caja = $(idLista);
+  caja.innerHTML = '';
+  arr.forEach((tx, i) => {
+    const fila = el('div', 'liTx');
+    const inp = document.createElement('input');
+    inp.value = tx;
+    inp.oninput = () => { arr[i] = inp.value; };
+    const del = el('button', 'min', '✕');
+    del.onclick = () => { arr.splice(i, 1); pintarListaTx(idLista, arr); };
+    fila.appendChild(inp); fila.appendChild(del);
+    caja.appendChild(fila);
+  });
+}
+
+/* --------------------------------------------------------------- etapas */
+function pintarEtapas() {
+  const caja = $('listaEtapas');
+  caja.innerHTML = '';
+  const etapas = MAN.stages || [];
+  etapas.forEach((st, i) => {
+    const d = el('div', 'etapa' + (st.kind === 'duelo' ? ' duelo' : ''));
+    const cab = el('div', 'cab');
+    cab.appendChild(el('span', 'num', String(i + 1)));
+    const inpN = document.createElement('input');
+    inpN.value = st.name || '';
+    inpN.style.cssText = 'flex:1;min-width:120px;background:#0d1729;border:1px solid #24365c;border-radius:8px;color:#e8eef8;padding:6px 9px;font-weight:700';
+    inpN.oninput = () => { st.name = inpN.value; };
+    cab.appendChild(inpN);
+    const selK = document.createElement('select');
+    selK.style.cssText = 'background:#0d1729;border:1px solid #24365c;border-radius:8px;color:#7ec8ff;padding:6px 9px;font-weight:700';
+    selK.innerHTML = '<option value="duelo">⚔ duelo</option>' +
+      KINDS_PRUEBA.map((k) => '<option value="' + k + '">🎯 ' + k + '</option>').join('');
+    selK.value = st.kind;
+    selK.onchange = () => { st.kind = selK.value; d.className = 'etapa' + (st.kind === 'duelo' ? ' duelo' : ''); pintarEtapas(); };
+    cab.appendChild(selK);
+    const btns = [['↑', () => { if (i > 0) { etapas.splice(i - 1, 0, etapas.splice(i, 1)[0]); pintarEtapas(); } }],
+      ['↓', () => { if (i < etapas.length - 1) { etapas.splice(i + 1, 0, etapas.splice(i, 1)[0]); pintarEtapas(); } }],
+      ['🗑', () => { etapas.splice(i, 1); pintarEtapas(); }]];
+    for (const [txt, fn] of btns) {
+      const b = el('button', 'min', txt);
+      b.onclick = fn;
+      cab.appendChild(b);
+    }
+    d.appendChild(cab);
+    if (st.kind !== 'duelo') {
+      const reg = el('div', 'reglas');
+      const rules = st.rules || (st.rules = {});
+      const f = (label, clave, tipo, extra) => {
+        const c = el('div', 'campo corto');
+        c.innerHTML = '<label>' + label + '</label>';
+        const inp = document.createElement('input');
+        if (tipo === 'num') inp.type = 'number';
+        Object.assign(inp, extra || {});
+        inp.value = rules[clave] == null ? '' : rules[clave];
+        inp.oninput = () => { rules[clave] = (tipo === 'num') ? (+inp.value || 0) : inp.value; };
+        c.appendChild(inp);
+        return c;
+      };
+      const fila1 = el('div', 'fila');
+      const selM = el('div', 'campo corto');
+      selM.innerHTML = '<label>modo</label>';
+      const s = document.createElement('select');
+      s.innerHTML = '<option>objetivos</option><option>movimiento</option><option>contrarreloj</option>';
+      s.value = rules.modo || 'objetivos';
+      s.onchange = () => { rules.modo = s.value; };
+      selM.appendChild(s);
+      fila1.appendChild(selM);
+      fila1.appendChild(f('objetivo', 'objetivo', 'num', { min: 1, max: 30, step: 1 }));
+      fila1.appendChild(f('puntos', 'puntos', 'num', { min: 1, max: 10, step: 1 }));
+      const pre = el('div', 'campo');
+      pre.innerHTML = '<label>premio</label>';
+      const inpP = document.createElement('input');
+      inpP.value = rules.premio || '';
+      inpP.oninput = () => { rules.premio = inpP.value; };
+      pre.appendChild(inpP);
+      fila1.appendChild(pre);
+      reg.appendChild(fila1);
+      d.appendChild(reg);
+    }
+    caja.appendChild(d);
+  });
+  $('infoCamino').textContent = etapas.length + ' etapas · patrón recomendado: duelo → prueba → duelo → prueba → DUELO FINAL';
+}
+
+/* --------------------------------------------------------------- poderes */
+function pintarPoderes() {
+  const caja = $('listaPoderes');
+  caja.innerHTML = '';
+  (MAN.powers || []).forEach((p, i) => {
+    const fila = el('div', 'fila');
+    const mk = (label, clave, tipo, min, max, step) => {
+      const c = el('div', 'campo ' + (tipo === 'txt' ? '' : 'corto'));
+      c.innerHTML = '<label>' + label + '</label>';
+      const inp = document.createElement('input');
+      if (tipo === 'num') { inp.type = 'number'; inp.min = min; inp.max = max; inp.step = step; }
+      inp.value = p[clave] == null ? '' : p[clave];
+      inp.oninput = () => { p[clave] = (tipo === 'num') ? (+inp.value || 0) : inp.value; };
+      c.appendChild(inp);
+      return c;
+    };
+    const selK = el('div', 'campo corto');
+    selK.innerHTML = '<label>kind</label>';
+    const s = document.createElement('select');
+    s.innerHTML = KINDS_PODER.map((k) => '<option>' + k + '</option>').join('');
+    s.value = p.kind;
+    s.onchange = () => { p.kind = s.value; };
+    selK.appendChild(s);
+    fila.appendChild(selK);
+    fila.appendChild(mk('nombre', 'name', 'txt'));
+    fila.appendChild(mk('icono', 'icon', 'txt'));
+    fila.appendChild(mk('chance', 'chance', 'num', 0, 1, 0.01));
+    fila.appendChild(mk('cooldown', 'cooldown', 'num', 4, 60, 1));
+    fila.appendChild(mk('duración', 'duration', 'num', 2, 30, 1));
+    const b = el('button', 'min', '🗑');
+    b.onclick = () => { MAN.powers.splice(i, 1); pintarPoderes(); };
+    fila.appendChild(b);
+    caja.appendChild(fila);
+  });
+}
+
+/* ---------------------------------------------------------------- decor */
+function pintarDecor() {
+  const caja = $('listaDecor');
+  caja.innerHTML = '';
+  const piezas = (MAN.decor && MAN.decor.pieces) || [];
+  piezas.forEach((p, i) => {
+    const fila = el('div', 'fila');
+    const mk = (label, clave, min, max, step) => {
+      const c = el('div', 'campo corto');
+      c.innerHTML = '<label>' + label + '</label>';
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.min = min; inp.max = max; inp.step = step;
+      inp.value = p[clave] == null ? '' : p[clave];
+      inp.oninput = () => { p[clave] = +inp.value || 0; };
+      c.appendChild(inp);
+      return c;
+    };
+    const cF = el('div', 'campo');
+    cF.innerHTML = '<label>fichero (assets/…)</label>';
+    const inpF = document.createElement('input');
+    inpF.value = p.file || '';
+    inpF.oninput = () => { p.file = inpF.value; };
+    cF.appendChild(inpF);
+    fila.appendChild(cF);
+    fila.appendChild(mk('alto m', 'h', 0.1, 3, 0.05));
+    fila.appendChild(mk('x', 'x', -3, 3, 0.05));
+    fila.appendChild(mk('z', 'z', -3.4, 0, 0.05));
+    fila.appendChild(mk('sway', 'sway', 0, 1.2, 0.05));
+    const b = el('button', 'min', '🗑');
+    b.onclick = () => { piezas.splice(i, 1); pintarDecor(); };
+    fila.appendChild(b);
+    caja.appendChild(fila);
+  });
+}
+
+/* ----------------------------------------------------------------- mapa */
+function pintarNodos() {
+  const caja = $('listaNodos');
+  caja.innerHTML = '';
+  const nodos = (MAN.mapa && MAN.mapa.nodos) || [];
+  $('infoNodos').textContent = nodos.length + ' nodos · deben ser EXACTAMENTE ' +
+    (MAN.stages || []).length + ' (uno por etapa, en orden)';
+  nodos.forEach((n, i) => {
+    const fila = el('div', 'liTx');
+    fila.style.margin = '4px 0';
+    const inp = document.createElement('input');
+    inp.value = 'nodo ' + (i + 1) + ' · x ' + n.x + ' · y ' + n.y + ' · r ' + (n.r || 110);
+    inp.readOnly = true;
+    const bDel = el('button', 'min', '🗑');
+    bDel.onclick = () => { nodos.splice(i, 1); pintarNodos(); marcaNodos(); };
+    fila.appendChild(inp); fila.appendChild(bDel);
+    caja.appendChild(fila);
+  });
+  marcaNodos();
+}
+function marcaNodos() {
+  const wrap = $('mapaWrap');
+  wrap.querySelectorAll('.marcaNodo').forEach((m) => m.remove());
+  const img = wrap.querySelector('img');
+  if (!img || !img.naturalWidth) return;
+  const esc = img.clientWidth / imgMapaW;
+  (MAN.mapa && MAN.mapa.nodos || []).forEach((n, i) => {
+    const m = el('div', 'marcaNodo', String(i + 1));
+    const r = (n.r || 110) * esc;
+    m.style.cssText += 'left:' + n.x * esc + 'px;top:' + n.y * esc + 'px;width:' + r * 2 + 'px;height:' + r * 2 + 'px;';
+    wrap.appendChild(m);
+  });
+}
+function cargarImagenMapa(file) {
+  const img = new Image();
+  img.onload = () => {
+    imgMapaW = img.naturalWidth; imgMapaH = img.naturalHeight;
+    $('mapaCaja').hidden = false;
+    const wrap = $('mapaWrap');
+    wrap.innerHTML = '';
+    wrap.appendChild(img);
+    img.onclick = (ev) => {
+      if (!MAN.mapa) MAN.mapa = {};
+      if (!Array.isArray(MAN.mapa.nodos)) MAN.mapa.nodos = [];
+      const r = img.getBoundingClientRect();
+      const x = Math.round((ev.clientX - r.left) * imgMapaW / r.width);
+      const y = Math.round((ev.clientY - r.top) * imgMapaH / r.height);
+      MAN.mapa.nodos.push({ x, y, r: 110, ts: 1 });
+      pintarNodos();
+    };
+    marcaNodos();
+    aviso('Póster cargado (' + imgMapaW + '×' + imgMapaH + '). CLIC sobre cada medallón, EN ORDEN de etapas.', 'ok');
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+/* --------------------------------------------------------------- export */
+function manifestFinal() {
+  // reconcilia nodos con etapas + limpia huecos
+  const m = JSON.parse(JSON.stringify(MAN));
+  m.id = String(m.id || 'mi_campeonato').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+  m.storage = 'pp_champ_' + m.id + '_*';
+  m.rival.id = m.id + '_rival';
+  m.contract = 1;
+  if (m.mapa && m.mapa.modo === 'arte') {
+    if (!m.mapa.arte) { delete m.mapa.nodos; }
+    if (m.mapa.nodos && m.mapa.nodos.length !== m.stages.length) {
+      aviso('⚠ Nodos del mapa (' + m.mapa.nodos.length + ') ≠ etapas (' + m.stages.length + ') — el juego caería a rejilla. Igálalos.', 'err');
+    }
+  } else if (m.mapa) {
+    delete m.mapa.nodos;
+  }
+  if (m.note && String(m.note).trim()) {
+    m.notes = (m.notes || []).concat([String(m.note).trim()]);
+  }
+  delete m.note;
+  return m;
+}
+function validar(man) {
+  const errs = [], oks = [];
+  const m = man || MAN;
+  if (!m) return ['sin manifest cargado'];
+  if (!/^[a-z0-9_-]{2,24}$/.test(m.id || '')) errs.push('id inválido (^[a-z0-9_-]{2,24}$)');
+  if (!m.title || !m.title.es) errs.push('title.es obligatorio');
+  if ((m.title && m.title.es || '').length > 40) errs.push('title.es supera 40 caracteres');
+  const etapas = m.stages || [];
+  if (etapas.length < 2) errs.push('al menos 2 etapas');
+  const ids = new Set();
+  for (let i = 0; i < etapas.length; i++) {
+    const s = etapas[i];
+    if (!s.id) errs.push('etapa ' + (i + 1) + ' sin id');
+    else if (ids.has(s.id)) errs.push('id de etapa duplicado: ' + s.id);
+    if (s.id) ids.add(s.id);
+    if (!['duelo'].concat(KINDS_PRUEBA).includes(s.kind)) errs.push('etapa ' + (i + 1) + ' kind desconocido: ' + s.kind);
+    if (s.kind !== 'duelo' && !s.rules) errs.push('prueba ' + (i + 1) + ' sin rules (modo/objetivo)');
+  }
+  if (etapas.length && etapas[etapas.length - 1].kind !== 'duelo') {
+    oks.push('la última etapa NO es duelo: la coronación funcionará igual (el FINAL del arte puede ser prueba)');
+  }
+  const rutas = [];
+  const scan = (o) => {
+    if (typeof o === 'string') { if (RUTAS_ASSET.test(o)) rutas.push(o); return; }
+    if (Array.isArray(o)) { o.forEach(scan); return; }
+    if (o && typeof o === 'object') { Object.values(o).forEach(scan); }
+  };
+  scan({ a: m.room, b: m.audio, c: m.powers, d: m.decor, e: m.trophy, f: m.coronacion, g: m.mapa, h: m.rivalVisual });
+  const dupAssets = rutas.filter((r) => r.startsWith('assets/') && !/\.(jpg|jpeg)$/.test(r));
+  if (m.rival.states && m.rival.states.length < 2) errs.push('el rival necesita al menos 2 estados');
+  if (m.mapa && m.mapa.modo === 'arte' && (!m.mapa.nodos || m.mapa.nodos.length !== etapas.length)) {
+    errs.push('mapa modo arte con ' + ((m.mapa.nodos || []).length) + ' nodos ≠ ' + etapas.length + ' etapas (o usa modo canvas)');
+  }
+  for (const p of (m.powers || [])) {
+    if (!KINDS_PODER.includes(p.kind)) errs.push('poder kind desconocido: ' + p.kind);
+    /* r85 · chance sólo manda en activacion 'rally'; los de 'puntos' usan
+     * cadaCuantos (convención valle/halloween — el orbe espectral no lleva chance) */
+    if (p.activacion === 'puntos') {
+      if (!(p.cadaCuantos >= 1)) errs.push('poder ' + p.kind + ': activacion puntos necesita cadaCuantos >= 1');
+    } else if (!(p.chance >= 0 && p.chance <= 1)) {
+      errs.push('poder ' + p.kind + ': chance fuera de 0..1');
+    }
+  }
+  return errs;
+}
+function validarSilencioso() {
+  const errs = validar();
+  aviso(errs.length ? ('⚠ ' + errs.join(' · ')) : '✔ Sin errores de validación (' + (MAN.stages || []).length + ' etapas).', errs.length ? 'err' : 'ok');
+}
+
+/* ---------------------------------------------------------------- carga */
+function cargarManifest(texto) {
+  try {
+    MAN = JSON.parse(texto);
+  } catch (e) {
+    aviso('✗ JSON inválido: ' + e.message, 'err');
+    return;
+  }
+  if (!MAN.stages || !MAN.rival) {
+    aviso('✗ No parece un manifest de campeonato (faltan stages/rival).', 'err');
+    return;
+  }
+  if (MAN.mapa && MAN.mapa.nodos) nodosPx = MAN.mapa.nodos;
+  pintarCampos();
+  aviso('✔ Manifest cargado: <b>' + (MAN.title ? MAN.title.es : MAN.id) + '</b> · ' + MAN.stages.length + ' etapas.', 'ok');
+}
+
+/* --------------------------------------------------------------- eventos */
+$('btnCargar').onclick = () => $('cargaMan').click();
+$('cargaMan').onchange = (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => cargarManifest(String(r.result));
+  r.readAsText(f);
+};
+$('btnPlantilla').onclick = () => { MAN = plantilla(); pintarCampos(); aviso('🌱 Plantilla nueva: <b>' + MAN.id + '</b>. Cambia el id, el título y las etapas.', 'ok'); };
+$('btnValidar').onclick = () => { if (MAN) validarSilencioso(); };
+$('btnExportar').onclick = () => {
+  if (!MAN) { aviso('Carga o crea un campeonato primero.', 'err'); return; }
+  const m = manifestFinal();
+  const txt = JSON.stringify(m, null, 2);
+  $('dlgJsonPre').textContent = txt;
+  $('dlgJson').showModal();
+  $('btnDescargar').onclick = () => download('manifest.json', txt);
+  $('btnCopiar').onclick = async () => {
+    try { await navigator.clipboard.writeText(txt); $('btnCopiar').textContent = '✔ Copiado'; setTimeout(() => { $('btnCopiar').textContent = '📋 Copiar'; }, 1500); } catch (e) { /* */ }
+  };
+};
+$('btnGuia').onclick = () => $('dlgGuia').showModal();
+$('btnAddDuelo').onclick = () => {
+  if (!MAN) return;
+  const n = (MAN.stages || []).filter((s) => s.id.startsWith('duelo')).length + 1;
+  MAN.stages.push({ id: 'duelo' + n, name: 'Duelo ' + n, kind: 'duelo' });
+  pintarEtapas(); pintarNodos();
+};
+$('btnAddPrueba').onclick = () => {
+  if (!MAN) return;
+  const n = (MAN.stages || []).filter((s) => s.id.startsWith('prueba')).length + 1;
+  MAN.stages.push({ id: 'prueba' + n, name: 'Prueba ' + n, kind: 'dianas',
+    rules: { modo: 'objetivos', objetivo: 6, puntos: 2, premio: 'Premio' } });
+  pintarEtapas(); pintarNodos();
+};
+$('btnAddPoder').onclick = () => {
+  if (!MAN) return;
+  MAN.powers.push({ kind: 'confeti', name: 'Nuevo poder', icon: 'assets/power_' + MAN.powers.length + '.png',
+    cooldown: 18, duration: 6, warn: 2, activacion: 'rally', chance: 0.32 });
+  pintarPoderes();
+};
+$('btnAddDecor').onclick = () => {
+  if (!MAN) return;
+  if (!MAN.decor) MAN.decor = {};
+  if (!Array.isArray(MAN.decor.pieces)) MAN.decor.pieces = [];
+  MAN.decor.pieces.push({ file: 'assets/decor' + (MAN.decor.pieces.length + 1) + '.png', h: 1.1, x: -2.3, z: -2.45, sway: 0.4 });
+  pintarDecor();
+};
+document.querySelectorAll('[data-addtx]').forEach((b) => {
+  b.onclick = () => {
+    const cual = b.dataset.addtx;
+    const arr = (cual === 'instrEs') ? MAN.i18n.es.instr_lineas : MAN.i18n.en.instr_lineas;
+    arr.push('');
+    pintarListaTx(cual === 'instrEs' ? 'listaInstrEs' : 'listaInstrEn', arr);
+  };
+});
+$('cargaMapa').onchange = (ev) => { if (ev.target.files[0]) cargarImagenMapa(ev.target.files[0]); };
+$('btnNodoClear').onclick = () => { if (MAN && MAN.mapa) { MAN.mapa.nodos = []; pintarNodos(); } };
+$('f_mapa_modo').addEventListener('change', () => {
+  $('filaMapaArte').style.display = $('f_mapa_modo').value === 'arte' ? 'flex' : 'none';
+});
+document.querySelectorAll('.seccion > h2').forEach((h) => {
+  h.onclick = () => h.parentElement.classList.toggle('abierta');
+});
+window.addEventListener('resize', () => marcaNodos());
+aviso('Carga un <b>manifest.json</b> o empieza de cero con la plantilla. La guía tiene la convención de arte.', 'info');
+
+</script>
+</body>
+</html>

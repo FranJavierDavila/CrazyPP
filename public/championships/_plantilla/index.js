@@ -234,7 +234,10 @@ function construirCartel(game, man) {
     ctx2.fillStyle = '#e2e8f0';
     ctx2.font = '42px sans-serif';
     const et = CTRL ? CTRL.etapaActual() : null;
-    const linea2 = et ? ('Etapa ' + CTRL.indice() + '/5 · ' + et.name) : tx('bienvenida');
+    /* v3.6.77 (r85) · el total era «/5» fijo: los campeonatos UGC pueden tener
+     * otro número de etapas (el mapa de Halloween trae 5 nodos del artista y
+     * los futuros pueden traer lo que quiera) — total REAL del camino. */
+    const linea2 = et ? ('Etapa ' + CTRL.indice() + '/' + CTRL.totalEtapas() + ' · ' + et.name) : tx('bienvenida');
     ctx2.fillText(linea2, W / 2, 200);
     ctx2.fillStyle = '#94a3b8';
     ctx2.font = '36px sans-serif';

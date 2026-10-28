@@ -22,7 +22,10 @@ export class ChampLoader {
    * entrar una voz dice «Próximamente». Las reglas para desbloquearlos
    * llegaran después; HOY sólo abre el MODO DEPURACIÓN (nombre de
    * usuario FORO3D → ppDebugMode, ya existente en el núcleo). */
-  static LOCKED = ['estacion_orbital', 'valle_neon'];
+  // r85 · el campeonato retirado por el dueño se va con su candado, y
+  // HALLOWEEN nace desbloqueado (juega desde el primer día). Sigue con
+  // candado lo que el dueño tenía cerrado: la Estación Orbital (r72).
+  static LOCKED = ['estacion_orbital'];
   isLocked(id) {
     if (!ChampLoader.LOCKED.includes(id)) return false;
     try { return !ppDebugMode(); } catch (e) { return true; }
@@ -920,6 +923,18 @@ export const NORMAS_SKIN = {
       colTitle: '#7fe8ff', colBody: '#dcecff', colBull: '#ffb347',
       colBand: '#12324a', colBand2: '#0b2033',
     },
+    halloween: {
+      // r85 · CARTEL DEL ARTISTA para el Campeonato de Halloween
+      // (zombi_normas.png 1024×512: marco de tierra con el zombi asomando
+      // por arriba y las manos agarrando el borde). Hueco interior medido
+      // 156..916 × 112..464 con margen de seguridad sobre el arte del dueño.
+      // Colores: título calabaza, cuerpo verde pálido, viñetas ácido.
+      url: 'championships/halloween/assets/normas_halloween.png',
+      rect: [166, 122, 906, 454],
+      fFam: '"Trebuchet MS", Verdana, sans-serif',
+      colTitle: '#ffb347', colBody: '#e8f5d0', colBull: '#9dff57',
+      colBand: '#3f5d2a', colBand2: '#2a3f1c',
+    },
   },
   imgs: {},
 };
@@ -940,5 +955,5 @@ window.__PP_NORMAS = NORMAS_SKIN;   // v2.135 · gancho QA (el módulo no expone
  * (public/game.html) y bump_version lo regeneró desde aquí — la ronda 21
  * lo rehace en la fuente. */
 const CHAMP_STAGE_TOTAL = {
-  locura: 5, magia: 5, oeste: 5, estacion_orbital: 5, valle_neon: 5,
-};
+  locura: 5, magia: 5, oeste: 5, estacion_orbital: 5, halloween: 5,
+};  // r85 · valle_neon retirado a petición del dueño → su hueco: HALLOWEEN

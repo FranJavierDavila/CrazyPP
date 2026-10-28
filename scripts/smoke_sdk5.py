@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Smoke SDK (V3.6.76-SDK6 · FASE 8 · telemetría reparada; heredero del smoke SDK5): versión +
+"""Smoke SDK (V3.6.77-SDK6 · FASE 8 · telemetría reparada; heredero del smoke SDK5): versión +
 import EN CADENA de los 5 campeonatos + SDK v1.4.0 registrado (createRival y
 createCartel incluidos) + fábricas nuevas operativas sin game (standee y
 tablero con forma de API correcta, pinta sin game no rompe) + motor de
@@ -28,7 +28,7 @@ async def main():
         # import en cadena de TODOS los campeonatos (el SDK carga con cada uno)
         r = await pg.evaluate("""async () => {
           const mods = {};
-          for (const m of ['estacion_orbital', 'oeste', 'magia', 'locura', 'valle_neon']) {
+          for (const m of ['estacion_orbital', 'oeste', 'magia', 'locura', 'halloween']) {
             try {
               mods[m] = !!(await import('/championships/' + m + '/index.js')).default;
             } catch (e) { mods[m] = 'FALLO: ' + e.message; }
@@ -103,7 +103,7 @@ async def main():
         print('pageerrors:', len(errs), errs[:2])
         await b.close()
         todos = all(v is True for v in r['mods'].values())
-        ok = (ver == '3.6.76-SDK6' and todos and r['sdkVer'] == '1.5.4'
+        ok = (ver == '3.6.77-SDK6' and todos and r['sdkVer'] == '1.5.4'
               and not r['sdkExports'] and r['congela'] == [2.15, 2.15, 0]
               and r['engine'] and r['music'] and r['musicSilente'] and r['powersign']
               and r['rival'] and r['cartel']

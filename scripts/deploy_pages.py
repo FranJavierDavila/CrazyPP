@@ -49,7 +49,8 @@ MAX_FILE = 100_000_000
 SOLO_ZIP = 'crazypp-live-service-SOLO.zip'
 
 SITE_PATHS = ['public/game.html', 'public/championships', 'public/assets',
-              'public/vendor', 'public/tv.html', 'public/robots.txt', 'public/logo.svg']
+              'public/vendor', 'public/tv.html', 'public/robots.txt', 'public/logo.svg',
+              'public/ugc']   # r85: EL TALLER UGC (editor de etapas/campeonatos)
 
 # (original, sustituto, ocurrencias esperadas) — cualquier desvío ABORTA el despliegue
 REWRITES = [

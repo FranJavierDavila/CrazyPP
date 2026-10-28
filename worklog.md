@@ -4770,3 +4770,21 @@ Stage Summary:
 - Producción (tras deploy) en V3.6.77-SDK6 FASE 79: CAMPEONATO DE HALLOWEEN jugable desde el primer día (el ZOMBI del dueño con sus 12 poses, su mapa del cementerio con 5 medallones medidos y su cartel de normas en las etapas 2 y 4), el Valle Neón retirado con todos sus restos, la dificultad del Reto Diario escalonada (DAILY_DIF centralizado) y EL TALLER UGC servido en /ugc/ para fabricar campeonatos sin tocar código.
 - El dueño debe RECARGAR CON CACHÉ LIMPIA: cerrar la pestaña del juego y abrir game.html?v=v3677.
 - Para la siguiente tanda (lo que el dueño pasará): escenario real de Halloween (6 planos de la estancia), los 4 troqueles (manifest.decor.pieces ya preparado), y las mecánicas de las etapas 2 y 4 (hoy dianas provisionales con el cartel «por anunciar»).
+
+---
+Task ID: 190-bis
+Agent: Super Z (main agent)
+Task: r85 · cierre de producción — deploy, verificación tres vías byte-exacto, capas K/L contra producción, agujas r85 en el servido y push de main.
+
+Work Log:
+- DEPLOY: GIT_TOKEN=$(cat scripts/worker-tele/.github-pat) deploy_pages --push --release --backup → pages ebd98ab6b (407 ficheros, smoke 29 peticiones 0 fallos) · Release v3.6.77-SDK6 con los 4 ZIPs (COMPLETO 135.631.128 · ligera 18.389.092 · CLOUDFLARE 135.617.337 · SOLO 6.221) · respaldo main→proyecto al día.
+- TRES VÍAS BYTE-EXACTO (con la lección del método): SERVIDO (curl) = PAGES-VERSION.txt.game_sha256 = contenido del BLOB pages:game.html = 5abc9dd65a1ba1c2… (fuente_commit 830efd65 · reescrituras=2). La 1.ª pasada dio «DIFERENCIA» por usar el HASH GIT del blob (git ls-tree: SHA-1 con cabecera) en vez del sha256 del CONTENIDO extraído — git show pages:game.html | sha256sum es la vía correcta. Verificación extra: local + las 2 reescrituras del deploy (src=/vendor → src=vendor · href=/tv.html → href=tv.html) == servido BYTE A BYTE = True.
+- FALLO CAZADO Y ARREGLADO EN CALIENTE: /ugc/index.html 404 en producción — SITE_PATHS del deploy_pages.py no incluía public/ugc → añadido (r85: EL TALLER UGC) + re-deploy --push --backup → pages 72b384154 (408 ficheros, smoke 30 peticiones 0 fallos) → /ugc/index.html 200, game.html 200, tres vías RE-verificadas tras el re-deploy (mismo game_sha256 5abc9dd6: el re-deploy solo añadió /ugc al árbol).
+- CAPAS DE PRODUCCIÓN: K (qa_hub_hints) VERDE · L (qa_champion_listo) re-anclada (flag_halloween + storage_final pp_champ_halloween_champ) → VERDE: championFlag(halloween) = True en el juego REAL de producción con el estado post-victoria.
+- AGUJAS r85 EN EL SERVIDO DE PRODUCCIÓN 13/13 (DAILY_DIF + dailySub + objN ×2 + filtro NORMAS_SKIN por def + CHAMP_STAGE_TOTAL halloween:5 + CHAMPS_DIA HALLOWEEN + skin del cartel del dueño con su rect + LOCKED sin el retirado + 3 negativas: 'valle_neon' ×0, título del valle ×0, comentario viejo ×0) · assets del campeonato en producción: manifest.json, present.webp, mapa.webp, normas_halloween.png, rival.webp todos 200 · championships.json servido con halloween y sin valle.
+- PUSH DE MAIN al cierre de esta entrada (commit del deploy + verificación).
+
+Stage Summary:
+- PRODUCCIÓN EN V3.6.77-SDK6 FASE 79 (pages 72b384154, release 4/4, byte-exacto 3 vías, /ugc/ vivo) — la r85 queda CERRADA.
+- El dueño debe RECARGAR CON CACHÉ LIMPIA: cerrar la pestaña del juego y abrir game.html?v=v3677 (los agarres de pala, la racha del Pulso y los registros de campeonatos sobreviven: están en el dispositivo).
+- Para la siguiente tanda: escenario real de Halloween (6 planos), 4 troqueles (manifest.decor.pieces preparado) y mecánicas de las etapas 2 y 4 (hoy dianas provisionales con el cartel «por anunciar») — y si el dueño quiere fabricar campeonatos él solo: EL TALLER UGC en /CrazyPP/ugc/ del navegador del PC.

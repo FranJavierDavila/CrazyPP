@@ -9,7 +9,7 @@ en Chromium headless con el estado EXACTO que quedará tras ganar el Duelo
 Final (pp_tele=0: el bot no contamina D1) y afirma la cadena completa de
 «campeón»:
 
-  · championFlag(id) = true para los 5 (oeste/locura/magia/EO/valle)
+  · championFlag(id) = true para los 5 (oeste/locura/magia/EO/halloween)
   · menuHint()          → «★ SUPERADO · …» (precedencia campeón, v2.128)
   · _stageHint(oeste)   → '' (callado: lo cubre el chip ★, ronda 19)
   · control negativo    → sin la clave champ, championFlag vuelve a false
@@ -101,8 +101,8 @@ async def main():
           const out = { ver: window.__PP_VERSION || null, lang: null, pruebas: {} };
           out.lang = (window.__PP_CORE && window.__PP_CORE.lang) ? window.__PP_CORE.lang() : '?';
           const P = (nombre, fn) => { try { out.pruebas[nombre] = fn(); } catch (e) { out.pruebas[nombre] = 'EXC: ' + e; } };
-          // 1 · los 5 campeones reconocidos
-          for (const id of ['oeste','locura','magia','estacion_orbital','valle_neon'])
+          // 1 · los 5 campeones reconocidos (r85: halloween sustituye al retirado)
+          for (const id of ['oeste','locura','magia','estacion_orbital','halloween'])
             P('flag_' + id, () => CH.championFlag(id));
           // 2 · precedencia del campeón en los consumidores reales
           P('menuHint', () => CH.menuHint());
@@ -145,7 +145,7 @@ async def main():
             locura: localStorage.getItem('pp_arcade_trophy'),
             magia: localStorage.getItem('pp_champ_magia_trophy'),
             eo: localStorage.getItem('pp_champ_estacion_orbital_champ'),
-            valle: localStorage.getItem('pp_champ_valle_neon_champ'),
+            halloween: localStorage.getItem('pp_champ_halloween_champ'),
           }));
           return out;
         }""")
@@ -211,7 +211,7 @@ async def main():
     else:
         fallo(f'flag_leyenda_off = {P.get("flag_leyenda_off")!r}')
     sf = P.get('storage_final') or {}
-    esperado = {k: '1' for k in ('oeste', 'locura', 'magia', 'eo', 'valle')}
+    esperado = {k: '1' for k in ('oeste', 'locura', 'magia', 'eo', 'halloween')}
     if sf == esperado:
         bien('storage de los 5 campeones intacto tras las variantes')
     else:

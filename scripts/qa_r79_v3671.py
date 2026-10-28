@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r79_v3671 — CAPA BN · V3.6.77-SDK6, FASE 73 «CRAZY LINK v2».
+"""qa_r79_v3671 — CAPA BN · V3.6.78-SDK6, FASE 73 «CRAZY LINK v2».
 
 Petición del dueño (r79): «Lo siguiente es trabajar el modo multijugador.
 Algo tenemos realizado pero necesitamos hacerlo realista y no cosmético…
@@ -104,7 +104,7 @@ AGUJAS = [
     ("sincronizando (estado honesto)", "net_syncing: 'Sincronizando con el rival…'"),
     ("pausa del rival (i18n)", "net_paused: 'RIVAL EN PAUSA · el partido queda detenido'"),
     ("degradación honesta a v1", "net_legacy: 'Sin canal rápido: modo compatible 30 Hz'"),
-    ("versión sellada 3.6.77-SDK6", "const VERSION = '3.6.77-SDK6';"),
+    ("versión sellada 3.6.78-SDK6", "const VERSION = '3.6.78-SDK6';"),
 ]
 
 CONTADORES = [
@@ -116,7 +116,7 @@ CONTADORES = [
     ("netPing (marcador + c12 + c08)", "netPing", 7),
     ("setServeHeld (HELD determinista)", "setServeHeld", 3),
     ("mjduel vía _modeCard con las hermanas (r84)", "rects, 'mjduel', 40, 326", 1),
-    ("versión única", "const VERSION = '3.6.77-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.78-SDK6'", 1),
     ("agujas de la ronda 78 intactas (MEGA_GOLPES)", "const MEGA_GOLPES = 20;", 1),
 ]
 

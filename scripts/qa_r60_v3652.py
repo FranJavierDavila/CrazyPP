@@ -151,18 +151,16 @@ MECANICA = """async () => {
   let todosOk = true;
   for (const id of ids) {
     await g.champs.launch(id);
-    for (let i = 0; i < 25; i++) {
+    // r86 · halloween YA TIENE los 4 troqueles del dueño (carga perezosa
+    // de los PNG: se sondea hasta 4 s como los demás campeonatos)
+    let piezasOk = false;
+    for (let i = 0; i < 80; i++) {
       g.champDecor.update(0.05, performance.now() / 1000);
-      await new Promise(r => setTimeout(r, 25));
+      await new Promise(r => setTimeout(r, 50));
+      const d0 = g.champDecor;
+      if (d0.builtFor === id && d0.pieces.length > 0 && d0.pieces.every(p => p.ready)) { piezasOk = true; break; }
     }
     const d = g.champDecor;
-    // r85 · HALLOWEEN nace SIN troqueles: su sistema vivo = builtFor con
-    // SALA LIMPIA (0 piezas y group invisible — diseño del núcleo). Los
-    // 4 troqueles del dueño llegarán en la siguiente tanda.
-    const sinTroqueles = (id === 'halloween');
-    const piezasOk = sinTroqueles
-      ? (d.pieces.length === 0 && d.group.visible === false)
-      : (d.pieces.length > 0 && d.pieces.every(p => p.ready));
     if (!(d.builtFor === id && piezasOk)) { todosOk = false; break; }
   }
   g.champs.leaveAll();

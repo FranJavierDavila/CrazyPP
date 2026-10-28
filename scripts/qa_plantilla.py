@@ -29,6 +29,7 @@ KINDS_PODER_IMPL = {"confeti", "globos", "bola"}          # implementados por la
 KINDS_PODER_KNOWN = KINDS_PODER_IMPL | {
     "arena", "burla", "custom", "dinamita", "disparo", "estampida",
     "mareo", "orbe", "split", "portals", "fuego", "sombras", "crazyball",
+    "mano", "moscas", "calabaza", "gelatina",
 }
 ESTADOS_VIDA = {"borrador", "validacion", "listo", "publicado", "desactivado"}
 METRICAS_CORONACION = {"puntos", "duelos", "fecha"}

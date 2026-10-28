@@ -1,6 +1,6 @@
 {
   "id": "halloween",
-  "version": 1,
+  "version": 2,
   "contract": 1,
   "estado": "publicado",
   "title": {
@@ -172,24 +172,44 @@
   },
   "powers": [
     {
-      "kind": "mareo",
-      "name": "Niebla de tumba",
-      "icon": "assets/power_0.png",
-      "cooldown": 16,
-      "duration": 6,
+      "kind": "mano",
+      "name": "Mano de zombi",
+      "icon": "assets/power_mano.webp",
+      "cooldown": 15,
+      "duration": 10,
       "warn": 2,
       "activacion": "rally",
-      "chance": 0.32
+      "chance": 0.3
     },
     {
-      "kind": "orbe",
-      "name": "Orbe espectral",
-      "icon": "assets/power_1.png",
-      "cooldown": 20,
-      "duration": 8,
+      "kind": "moscas",
+      "name": "Plaga de Moscas",
+      "icon": "assets/power_moscas.webp",
+      "cooldown": 18,
+      "duration": 10,
       "warn": 2,
-      "activacion": "puntos",
-      "cadaCuantos": 3
+      "activacion": "rally",
+      "chance": 0.28
+    },
+    {
+      "kind": "calabaza",
+      "name": "Calabaza",
+      "icon": "assets/power_calabaza.webp",
+      "cooldown": 16,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.3
+    },
+    {
+      "kind": "gelatina",
+      "name": "Gelatina Asquerosa",
+      "icon": "assets/power_gelatina.webp",
+      "cooldown": 14,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.3
     }
   ],
   "powerTrigger": {
@@ -239,7 +259,36 @@
     }
   },
   "decor": {
-    "pieces": []
+    "pieces": [
+      {
+        "file": "assets/decor_arana.png",
+        "h": 1.15,
+        "x": -2.3,
+        "z": -2.75,
+        "sway": 0.5
+      },
+      {
+        "file": "assets/decor_calabaza.png",
+        "h": 1.3,
+        "x": 2.45,
+        "z": -2.35,
+        "sway": 0.5
+      },
+      {
+        "file": "assets/decor_lapida.png",
+        "h": 1.0,
+        "x": -2.35,
+        "z": -1.15,
+        "sway": 0.55
+      },
+      {
+        "file": "assets/decor_ojos.png",
+        "h": 0.85,
+        "x": 2.0,
+        "z": -0.8,
+        "sway": 0.5
+      }
+    ]
   },
   "mapa": {
     "modo": "arte",
@@ -337,7 +386,7 @@
     "audio": false,
     "binaryAssets": 0
   },
-  "assets": "assets/ (12 poses del zombi del dueño en webp, mapa.webp del dueño, normas_halloween.png del dueño, sala_*.jpg procedimentales PROVISIONAL, bso.wav PROVISIONAL, risas.mp3 PROVISIONAL, power_0/1.png, insignia.png)",
+  "assets": "assets/ (12 poses del zombi del dueño en webp, mapa.webp del dueño, normas_halloween.png del dueño, sala_*.jpg REALES del dueño (paredes.zip), decor_arana/calabaza/lapida/ojos.png REALES del dueño (troqueles.zip), mano1/2/3.webp del dueño (traen el montículo integrado), losa.jpg del dueño (mesa.jpg), superpower.webp del dueño (SuperPower.png), gelatina.webp del dueño, calabaza.glb del dueño, power_mano/moscas/calabaza/gelatina.webp de la casa (medallones), mosca.webp de la casa, bso.wav PROVISIONAL, risas.mp3 PROVISIONAL, insignia.png)",
   "i18n": {
     "es": {
       "bienvenida": "Bienvenido al Campeonato de Halloween",
@@ -377,6 +426,7 @@
   "estructura": "5 etapas: duelo → dianas → duelo → dianas → duelo final (patrón común de los 5 campeonatos)",
   "notes": [
     "v1 (r85) · Campeonato de Halloween — el campeonato del Valle Neón se RETIRA a petición del dueño y su hueco lo ocupa Halloween: rival ZOMBI con las 12 poses del artista (upload/zombi.zip), mapa del artista con 5 nodos medidos (upload/Mapa.png) y cartel de normas del artista (upload/zombi_normas.png) para las etapas 2 y 4.",
-    "PROVISIONAL: sala (cementerio procedimental), bso (del valle) y risa — el dueño pasará el escenario real (6 planos) y los 4 troqueles en la siguiente tanda; las mecánicas de las etapas 2 y 4 se definen en futuras tandas (hoy dianas)."
+    "v2 (r86) · ESCENARIO REAL: las 6 paredes de la estancia del artista sustituyen al cementerio procedimental (paredes.zip), los 4 troqueles del artista entran en decor.pieces (troqueles.zip), la mesa viste la LOSA de piedra del artista (mesa.jpg, patrón madera del Oeste) y los 2 poderes provisionales (Niebla de tumba/Orbe espectral) dejan paso a los 4 SUPERPODERES REALES del zombi (10 s, anuncio SuperPower.png + medallón circular abajo-derecha + congelación): Mano de zombi (las 3 manos del artista salen de su montículo, estorban y frenan la bola — al chocar la bola se para, se cae y la mano revienta en trocitos), Plaga de Moscas (enjambre revoloteando en la cara del jugador, se espantan con la pala), Calabaza (la bola se vuelve calabaza.glb ×3, pesada y con salida aleatoria tras cada bote en la mesa) y Gelatina Asquerosa (manchas que contaminan la bola: verde fosforito, ×3 de peso, arrastra y suelta humillo verde).",
+    "PROVISIONAL pendiente del artista: bso (del valle), risa e insignia; mecánicas de las etapas 2 y 4 (hoy dianas)."
   ]
 }

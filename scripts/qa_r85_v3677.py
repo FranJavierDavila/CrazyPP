@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r85_v3677.py — CAPA BU (r85 · V3.6.77-SDK6)
+"""qa_r85_v3677.py — CAPA BU (r85 · V3.6.78-SDK6)
    Halloween (campeonato del dueño: ZOMBI + mapa + cartel normas) ·
    Retiro del Valle Neón · Dificultad del Reto Diario (DAILY_DIF) ·
    EL TALLER UGC (editor standalone) · parches de núcleo (NORMAS_SKIN,
@@ -65,12 +65,19 @@ CHK(rv['states'] == ['present', 'idle', 'focused', 'surprised', 'panic', 'laughi
 CHK(m['rivalVisual']['base'] == 'present.webp' and m['rivalVisual']['ext'] == 'webp',
     'rivalVisual base present.webp ext webp')
 pods = m['powers']
-CHK([p['kind'] for p in pods] == ['mareo', 'orbe'], 'poderes temáticos: Niebla de tumba + Orbe espectral')
-CHK(pods[0].get('chance') == 0.32 and pods[1].get('cadaCuantos') == 3, 'chance rally / cadaCuantos puntos')
+CHK([p['kind'] for p in pods] == ['mano', 'moscas', 'calabaza', 'gelatina'],
+    'poderes r86: los 4 REALES del dueño (Mano · Moscas · Calabaza · Gelatina)')
+CHK(all(p['duration'] == 10 for p in pods), 'los 4 poderes duran 10 s (petición del dueño)')
+CHK([p.get('chance') for p in pods] == [0.30, 0.28, 0.30, 0.30], 'chance rally de los 4')
+CHK(all(p['icon'].startswith('assets/power_') for p in pods), 'medallón circular por poder')
 CHK(m['audio']['music'] == 'assets/bso.wav' and m['audio']['sounds']['laugh'] == 'assets/risas.mp3',
     'audio: bso + risa')
 CHK(len(m['room']) >= 6 and m['room']['floor'] == 'assets/sala_floor.jpg', 'sala 6 planos')
-CHK(m['decor']['pieces'] == [], 'decor VACÍO (4 troqueles llegan en la siguiente tanda)')
+dec = m['decor']['pieces']
+CHK([d['file'] for d in dec] == ['assets/decor_arana.png', 'assets/decor_calabaza.png',
+                                 'assets/decor_lapida.png', 'assets/decor_ojos.png'],
+    'decor r86: los 4 TROQUELES del dueño')
+CHK(all(d['h'] > 0.5 and abs(d['x']) > 1.5 for d in dec), 'troqueles en flancos, fuera de la mesa')
 CHK(m['coronacion']['titulo']['es'] == '¡ZOMBI DERROTADO!', 'coronación temática')
 CHK(len(m['i18n']['es']['instr_lineas']) >= 4 and 'por anunciar' in m['i18n']['es']['instr_lineas'][3],
     'normas provisionales de las etapas 2 y 4 (mecánica por anunciar)')
@@ -80,7 +87,12 @@ CHK('playerGun' not in json.dumps(m), 'manifest sin playerGun')
 print('== 4 · ASSETS EN DISCO ==')
 oblig = ['rival.webp'] + [s + '.webp' for s in rv['states']] + ['mapa.webp', 'normas_halloween.png',
     'sala_floor.jpg', 'sala_ceil.jpg', 'sala_back.jpg', 'sala_front.jpg', 'sala_left.jpg',
-    'sala_right.jpg', 'bso.wav', 'risas.mp3', 'power_0.png', 'power_1.png', 'insignia.png',
+    'sala_right.jpg', 'bso.wav', 'risas.mp3', 'insignia.png',
+    # r86 · escenario real + superpoderes del dueño
+    'mano1.webp', 'mano2.webp', 'mano3.webp', 'losa.jpg', 'superpower.webp',
+    'gelatina.webp', 'calabaza.glb', 'mosca.webp',
+    'power_mano.webp', 'power_moscas.webp', 'power_calabaza.webp', 'power_gelatina.webp',
+    'decor_arana.png', 'decor_calabaza.png', 'decor_lapida.png', 'decor_ojos.png',
     'LEEME-ASSETS.txt']
 for f in oblig:
     p = os.path.join(AS, f)

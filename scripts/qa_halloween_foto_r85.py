@@ -33,9 +33,9 @@ with sync_playwright() as pw:
         except Exception as e:
             print('· clic directo falló:', e)
     pg.wait_for_timeout(12000)      # espectador: carga cancha + campeonato + sala
-    pg.screenshot(path=os.path.join(RAIZ, 'scripts', '_r85_halloween_sala.png'))
+    pg.screenshot(path=os.path.join(RAIZ, 'scripts', '_r86_halloween_sala.png'))
     pg.wait_for_timeout(3000)
-    pg.screenshot(path=os.path.join(RAIZ, 'scripts', '_r85_halloween_sala2.png'))
+    pg.screenshot(path=os.path.join(RAIZ, 'scripts', '_r86_halloween_sala2.png'))
     print('pageerrors:', len(errs), errs[:2])
     b.close()
 srv.shutdown()

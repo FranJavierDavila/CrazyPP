@@ -1,17 +1,17 @@
 {
-  "version": "3.6.77-SDK6",
-  "fase": 79,
-  "faseNombre": "Halloween + Taller UGC",
+  "version": "3.6.78-SDK6",
+  "fase": 80,
+  "faseNombre": "Escenario real de Halloween + 4 superpoderes",
   "sdk": "1.5.4",
   "fecha": "2026-10-28",
-  "hub": "v3677-sdk6",
+  "hub": "v3678-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
     "locura": 27,
     "estacion_orbital": 17,
-    "halloween": 1
+    "halloween": 2
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "8f9b62fcfa31201898028f7ab03e341d55c8ed8806d428e2b753a2f91d681959"
+  "golden": "ba32ff32b13bf7b57b9b5de19a3190e7b0c9e666baa8fb2398c27918afc4a943"
 }

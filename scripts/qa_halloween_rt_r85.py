@@ -71,7 +71,12 @@ with sync_playwright() as pw:
         if r.status != 200: mal200.append(n)
     for extra in ['mapa.webp', 'normas_halloween.png', 'sala_floor.jpg', 'sala_back.jpg',
                   'sala_ceil.jpg', 'sala_front.jpg', 'sala_left.jpg', 'sala_right.jpg',
-                  'bso.wav', 'risas.mp3', 'power_0.png', 'power_1.png', 'insignia.png']:
+                  'bso.wav', 'risas.mp3', 'insignia.png',
+                  # r86 · escenario real + superpoderes
+                  'mano1.webp', 'mano2.webp', 'mano3.webp', 'losa.jpg', 'superpower.webp',
+                  'gelatina.webp', 'calabaza.glb', 'mosca.webp',
+                  'power_mano.webp', 'power_moscas.webp', 'power_calabaza.webp', 'power_gelatina.webp',
+                  'decor_arana.png', 'decor_calabaza.png', 'decor_lapida.png', 'decor_ojos.png']:
         r = pg.request.get('http://127.0.0.1:%d/championships/halloween/assets/%s' % (PORT, extra))
         if r.status != 200: mal200.append(extra)
     CHK(not mal200, 'todos los assets de halloween responden 200 (%d fallos: %s)' % (len(mal200), mal200[:5]))

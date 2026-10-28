@@ -102,6 +102,172 @@ function claveOk(url, request, env) {
   return typeof dada === "string" && dada === env.CLAVE;
 }
 
+/* ======================================================================
+ * r87 · RED SOCIAL DEL PULSO (presencia + invitaciones sobre D1)
+ * ==================================================================== */
+const SOCIAL_SCHEMA = [
+  // r87-QA (lección): el DROP de las tablas antiguas NO puede vivir aquí —
+  // cada isolate nuevo lo re-ejecutaría y BORRARÍA los latidos vivos de los
+  // demás isolates. La migración del esquema legacy se hace UNA VEZ por la
+  // API de D1 (scripts/deploy_worker.py / consola). Aquí sólo CREATE IF NOT
+  // EXISTS, idempotente y seguro.
+  `CREATE TABLE IF NOT EXISTS presencia (
+     pid TEXT PRIMARY KEY,
+     n TEXT, v TEXT, st TEXT, code TEXT,
+     t INTEGER NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS idx_pres_t ON presencia(t)`,
+  `CREATE TABLE IF NOT EXISTS invitas (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     de TEXT NOT NULL, deN TEXT, para TEXT NOT NULL, code TEXT,
+     t INTEGER NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS idx_inv_para ON invitas(para)`,
+  `CREATE INDEX IF NOT EXISTS idx_inv_t ON invitas(t)`,
+];
+let socialListo = false;
+async function socialInit(env) {
+  if (socialListo) return;
+  await env.DB.batch(SOCIAL_SCHEMA.map((s) => env.DB.prepare(s)));
+  socialListo = true;
+}
+
+const PRESENCIA_TTL = 90 * 1000;      // latidos vivos: 90 s
+const INVITA_TTL = 6 * 3600 * 1000;   // las invitaciones viven 6 h
+const INVITA_TOPE = 5;                // buzón máx. por destinatario
+
+/** saneo suave: el juego es público — nada de HTML, nada de longitud. */
+function texto(v, tope) {
+  if (typeof v !== "string") return "";
+  return v.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, tope);   // fuera caracteres de control
+}
+function pidOk(v) {
+  return typeof v === "string" && /^[a-zA-Z0-9-]{4,32}$/.test(v);
+}
+
+async function social(request, env, url, metodo) {
+  let crudo;
+  try {
+    crudo = await request.text();
+  } catch {
+    crudo = "";
+  }
+  if (crudo.length > 4096) return json({ ok: false, error: "cuerpo demasiado grande" }, 413);
+  let cuerpo = {};
+  if (crudo.length) {
+    try { cuerpo = JSON.parse(crudo); } catch { return json({ ok: false, error: "json inválido" }, 400); }
+    if (!cuerpo || typeof cuerpo !== "object" || Array.isArray(cuerpo)) {
+      return json({ ok: false, error: "json inválido" }, 400);
+    }
+  }
+  await socialInit(env);
+  const ahora = Date.now();
+
+  /* ------------------------------- PRESENCIA ------------------------- */
+  if (url.pathname === "/api/presencia") {
+    // purga perezosa: fuera los latidos muertos y las invitaciones viejas
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM presencia WHERE t < ?").bind(ahora - PRESENCIA_TTL),
+      env.DB.prepare("DELETE FROM invitas WHERE t < ?").bind(ahora - INVITA_TTL),
+    ]);
+
+    if (metodo === "POST") {
+      const pid = cuerpo.pid;
+      if (cuerpo.bye) {
+        if (pidOk(pid)) await env.DB.prepare("DELETE FROM presencia WHERE pid = ?").bind(pid).run();
+        return json({ ok: true, bye: true, ts: ahora });
+      }
+      if (!pidOk(pid)) return json({ ok: false, error: "pid inválido" }, 400);
+      const n = texto(cuerpo.n, 20) || "Jugador";
+      const v = texto(cuerpo.v, 24);
+      const st = ["libre", "sala", "juego"].includes(cuerpo.st) ? cuerpo.st : "libre";
+      const code = texto(cuerpo.code, 12).toUpperCase();
+      await env.DB.prepare(
+        `INSERT INTO presencia (pid, n, v, st, code, t) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(pid) DO UPDATE SET n=excluded.n, v=excluded.v,
+           st=excluded.st, code=excluded.code, t=excluded.t`
+      ).bind(pid, n, v, st, st === "sala" ? code : "", ahora).run();
+      const { n: total } = await env.DB.prepare("SELECT COUNT(*) n FROM presencia").first();
+      return json({ ok: true, n: total, ts: ahora });
+    }
+
+    if (metodo === "GET") {
+      const { n: total } = await env.DB.prepare("SELECT COUNT(*) n FROM presencia").first();
+      if (url.searchParams.get("lista") == null) {
+        return json({ ok: true, n: total, ts: ahora });
+      }
+      const { results } = await env.DB.prepare(
+        "SELECT pid, n, st, code, t FROM presencia ORDER BY t DESC LIMIT 30"
+      ).all();
+      const jugadores = (results || []).map((r) => ({
+        pid: r.pid, n: r.n, st: r.st, code: r.code || "",
+        hace: Math.max(0, Math.round((ahora - (r.t || ahora)) / 1000)),
+      }));
+      return json({ ok: true, n: total, jugadores, ts: ahora });
+    }
+    return json({ ok: false, error: "método no soportado en /api/presencia" }, 405);
+  }
+
+  /* ------------------------------- INVITAS --------------------------- */
+  if (url.pathname === "/api/invita") {
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM presencia WHERE t < ?").bind(ahora - PRESENCIA_TTL),
+      env.DB.prepare("DELETE FROM invitas WHERE t < ?").bind(ahora - INVITA_TTL),
+    ]);
+
+    if (metodo === "POST") {
+      const de = cuerpo.de, para = cuerpo.para, code = texto(cuerpo.code, 12).toUpperCase();
+      if (!pidOk(de) || !pidOk(para)) return json({ ok: false, error: "pid inválido" }, 400);
+      if (de === para) return json({ ok: false, error: "invitar a uno mismo" }, 400);
+      if (!code) return json({ ok: false, error: "sin código de sala" }, 400);
+      // el REMITENTE debe tener su sala VIVA con ESE código (anti-spam):
+      // latido st='sala' fresco. Si no, la invitación se rechaza.
+      const remitente = await env.DB.prepare(
+        "SELECT st, code FROM presencia WHERE pid = ? AND t > ?"
+      ).bind(de, ahora - PRESENCIA_TTL).first();
+      if (!remitente || remitente.st !== "sala" || remitente.code !== code) {
+        return json({ ok: false, error: "sala no activa" }, 409);
+      }
+      const { n: ya } = await env.DB.prepare(
+        "SELECT COUNT(*) n FROM invitas WHERE para = ?"
+      ).bind(para).first();
+      if (ya >= INVITA_TOPE) return json({ ok: false, error: "buzón lleno" }, 429);
+      const r = await env.DB.prepare(
+        "INSERT INTO invitas (de, deN, para, code, t) VALUES (?, ?, ?, ?, ?)"
+      ).bind(de, texto(cuerpo.deN, 20) || "Jugador", para, code, ahora).run();
+      return json({ ok: true, id: r.meta && r.meta.last_row_id, ts: ahora });
+    }
+
+    if (metodo === "GET") {
+      const pid = url.searchParams.get("pid");
+      if (!pidOk(pid)) return json({ ok: false, error: "pid inválido" }, 400);
+      const { results } = await env.DB.prepare(
+        "SELECT id, de, deN, code, t FROM invitas WHERE para = ? ORDER BY t DESC LIMIT 8"
+      ).bind(pid).all();
+      const invitas = (results || []).map((r) => ({
+        id: r.id, de: r.de, deN: r.deN, code: r.code || "",
+        hace: Math.max(0, Math.round((ahora - (r.t || ahora)) / 1000)),
+      }));
+      return json({ ok: true, invitas, ts: ahora });
+    }
+
+    if (metodo === "DELETE") {
+      const pid = url.searchParams.get("pid");
+      const id = parseInt(url.searchParams.get("id") || "0", 10) || 0;
+      if (id > 0 && pidOk(pid)) {
+        const r = await env.DB.prepare("DELETE FROM invitas WHERE id = ? AND para = ?").bind(id, pid).run();
+        return json({ ok: true, borrados: r.meta ? r.meta.changes : 0 });
+      }
+      if (pidOk(pid)) {
+        const r = await env.DB.prepare("DELETE FROM invitas WHERE para = ?").bind(pid).run();
+        return json({ ok: true, borrados: r.meta ? r.meta.changes : 0 });
+      }
+      return json({ ok: false, error: "pid inválido" }, 400);
+    }
+    return json({ ok: false, error: "método no soportado en /api/invita" }, 405);
+  }
+
+  return json({ ok: false, error: "ruta social desconocida" }, 404);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -109,6 +275,32 @@ export default {
 
     if (metodo === "OPTIONS") {
       return new Response(null, { status: 204, headers: CORS });
+    }
+
+    /* ================================================================
+     * r87 · RED SOCIAL DEL PULSO — /api/presencia + /api/invita
+     * ----------------------------------------------------------------
+     * El medallón de jugadores en línea y el buzón de invitaciones del
+     * menú Multijugador (c09c_red_social.js) viven AQUÍ, en el mismo
+     * worker que la telemetría — ANTES mentía: el cliente existía pero
+     * el worker no tenía rutas y el juego respondía 404 en silencio.
+     *
+     *   POST /api/presencia        {pid,n,v,st,code} → upsert (TTL 90 s)
+     *                              {pid,bye:1}       → baja inmediata
+     *   GET  /api/presencia        → {ok, n, ts} (número fresco)
+     *   GET  /api/presencia?lista=1→ {ok, n, jugadores[]} (tope 30)
+     *   POST /api/invita           {de,deN,para,code} → {ok, id}
+     *                              (sólo si «de» tiene sala abierta VIVA)
+     *   GET  /api/invita?pid=…     → {ok, invitas[]} (tope 8, TTL 6 h)
+     *   DELETE /api/invita?pid=…   → consume todo el buzón del pid
+     *
+     * PRIVACIDAD (misma política que la telemetría): pid anónimo del
+     * dispositivo, nombre de jugador elegido por el usuario, estado y
+     * código de sala. SIN IP, SIN user-agent, SIN cabeceras.
+     * No requiere clave (el juego es público: nunca guarda secretos).
+     * ================================================================ */
+    if (url.pathname === "/api/presencia" || url.pathname === "/api/invita") {
+      return social(request, env, url, metodo);
     }
 
     // ------------------------------------------------------------- POST

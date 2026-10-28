@@ -531,6 +531,10 @@ export class PingPongGame {
     // v2.53: campeonatos externos en carpetas (clones de la estructura de
     // La Locura). Cargador mínimo: índice + import() + los mismos ganchos.
     this.champs = new ChampLoader(this);
+    // r87 · RED SOCIAL DEL PULSO (presencia online + buzón de invitaciones):
+    // latidos al worker, medallón sobre el botón Multijugador y tarjeta de
+    // invitación con UNIRSE directo. Todo tolerante a fallos (c09c).
+    try { this.social = new RedSocial(this); } catch (eRS) { this.social = null; }
     // v2.80 · TROQUELES DE CARTÓN del campeonato ACTIVO (decorado POR
     // campeonato: el módulo declara su config en «decor» y el núcleo la
     // monta aquí, anclada a la mesa en el RIG — lección v2.62). Al cambiar
@@ -1622,7 +1626,20 @@ export class PingPongGame {
     // r84 · DUELOS LOCOS desbloqueado: tarjeta estándar con identidad propia
     this._modeCard(rects, 'mjduel', 40, 326, 944, 96, T('mj_duel_t'),
       T('mj_duel_s'), '#3b3550', '#241f33', PP_ICONS.duelo);
-    const yPanel = 446;
+    // r87 · EL PULSO EN EL SUBMENÚ: jugadores online + TARJETA de invitación
+    // (el dueño: «no me aparece ninguna indicación de jugadores conectados
+    // ni aviso alguno») — contador verde bajo los modos y, si hay buzón,
+    // la tarjeta con UNIRSE directo; el panel de sala baja para hacer sitio.
+    const rs87 = this.social;
+    if (rs87 && rs87.onlineOk && rs87.nOnline > 0 && st !== 'online') {
+      c.fillStyle = '#7fb069';
+      c.font = '600 24px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText('● ' + T('rs_online', { n: rs87.nOnline }), 512, 452);
+    }
+    const hInv = this._invitaCard(rects, 466);
+    const yPanel = 466 + hInv;
 
     if (st === 'online') {
       c.fillStyle = '#7fb069';
@@ -1664,6 +1681,25 @@ export class PingPongGame {
       c.font = '500 23px system-ui, sans-serif';
       c.fillText(T('mj_waiting'), 512, yPanel + 174);
       btn('net:cancel', 56, yPanel + 210, 912, 70, T('btn_cancel_room'), false, undefined, undefined, 25);
+      // r87 · LA LISTA DEL PULSO (VRChat/Rec Room): jugadores online con su
+      // estado y botón INVITAR por jugador (mjsoc:inv:<pid>) — el anfitrión
+      // convoca SIN que nadie teclee el código.
+      const rsW = this.social;
+      if (rsW && rsW.lista.length) {
+        const filas = rsW.lista.slice(0, 4);
+        c.fillStyle = '#7fb069';
+        c.font = '700 24px system-ui, sans-serif';
+        c.textAlign = 'left';
+        c.fillText(T('rs_online', { n: rsW.nOnline }) + ':', 56, yPanel + 318);
+        filas.forEach((j, i) => {
+          const fy = yPanel + 356 + i * 74;
+          const stTxt = j.st === 'sala' ? '🟡 sala ' + (j.code || '') : (j.st === 'juego' ? '🔴 jugando' : '🟢 libre');
+          c.fillStyle = '#e2e8f0';
+          c.font = '600 26px system-ui, sans-serif';
+          c.fillText('● ' + (j.n || 'Jugador') + '  ·  ' + stTxt, 56, fy + 28);
+          btn('mjsoc:inv:' + j.pid, 640, fy, 328, 60, T('rs_invitar'), false, 'green', undefined, 22);
+        });
+      }
     } else if (st === 'creating' || st === 'joining') {
       c.fillStyle = '#e8b45a';
       c.font = '700 32px system-ui, sans-serif';
@@ -2352,6 +2388,68 @@ export class PingPongGame {
     rects.push({ x, y: y - 3, w, h: h + 6, id });
   }
 
+  /** r87 · EL MEDALLÓN DEL PULSO — badge numerado sobre la tarjeta
+   *  Multijugador (estudio Fortnite/Steam). Verde con aro que respira y el
+   *  número de OTROS jugadores online; con invitación pendiente pasa a
+   *  ÁMBAR con «!» (aviso que no se puede perder). Se apoya en la esquina
+   *  superior derecha de la tarjeta, medio fuera, como las badges reales. */
+  _pintaMedallon(r, rs) {
+    if (!r) return;
+    const c = this.menuCanvas.getContext('2d');
+    const cx = r.x + r.w - 30, cy = r.y + 2;
+    const conInvita = rs.hayInvitas();
+    const t = performance.now() / 1000;
+    const pulso = 1 + Math.sin(t * 4.4) * 0.09;             // respiración
+    const R = 30 * pulso;
+    // halo exterior
+    c.beginPath(); c.arc(cx, cy, R + 7 * pulso, 0, Math.PI * 2);
+    c.fillStyle = conInvita ? 'rgba(255,196,40,0.24)' : 'rgba(66,213,90,0.22)';
+    c.fill();
+    // disco
+    const g = c.createRadialGradient(cx - R * 0.3, cy - R * 0.4, R * 0.2, cx, cy, R);
+    if (conInvita) { g.addColorStop(0, '#ffd45e'); g.addColorStop(1, '#c8870f'); }
+    else { g.addColorStop(0, '#7ce687'); g.addColorStop(1, '#1d8a34'); }
+    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2);
+    c.fillStyle = g; c.fill();
+    c.lineWidth = 4; c.strokeStyle = 'rgba(255,255,255,0.92)'; c.stroke();
+    // cifra o «!»
+    c.fillStyle = '#0b2512';
+    c.font = '900 ' + Math.round(R * 1.15) + 'px system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(conInvita ? '!' : String(rs.nOnline), cx, cy + 1);
+  }
+
+  /** r87 · TARJETA DE INVITACIÓN en el submenú Multijugador — Fortnite/
+   *  Steam: nombre del anfitrión + código de sala + UNIRSE / DESCARTAR.
+   *  Devuelve la altura consumida (la pinta el panel de abajo del submenú). */
+  _invitaCard(rects, yTop) {
+    const rs = this.social;
+    if (!rs || !rs.hayInvitas()) return 0;
+    const inv = rs.invitas[0];
+    const c = this.menuCanvas.getContext('2d');
+    const x = 40, w = 944, h = 118, y = yTop;
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, 22); else c.rect(x, y, w, h);
+    c.fillStyle = 'rgba(44,28,4,0.88)';
+    c.fill();
+    c.lineWidth = 3;
+    c.strokeStyle = '#ffb340';
+    c.stroke();
+    // icono sobre + texto
+    c.textAlign = 'left'; c.textBaseline = 'middle';
+    c.fillStyle = '#ffd45e';
+    c.font = '800 30px system-ui, sans-serif';
+    c.fillText('🎮 ' + T('rs_invita_de', { n: inv.deN || 'Jugador' }), x + 26, y + 34);
+    c.fillStyle = '#e8dfc8';
+    c.font = '600 24px system-ui, sans-serif';
+    c.fillText(T('rs_invita_code', { c: inv.code }), x + 26, y + 76);
+    // botones a la derecha (btn/_menuBtn NO lleva rects: captura el del draw
+    // vivo — lección del arnés: pasar rects de más corría el id a un array)
+    this._menuBtn('mjsoc:aceptar', x + 470, y + 24, 220, 70, T('rs_unirse'), false, 'green', undefined, 24);
+    this._menuBtn('mjsoc:desc', x + 704, y + 24, 220, 70, T('rs_descartar'), false, undefined, undefined, 24);
+    return h + 14;
+  }
+
   /** v3.1.1-FEEL1 · página del PROMPT B: «MENÚ PRINCIPAL — ¿SI / No?».
    *  SI  => goHomeHall() (recoger todo + hall con el menú principal delante).
    *  NO  => cerrar el prompt y seguir en la escena actual, tal cual.
@@ -2419,6 +2517,14 @@ export class PingPongGame {
       this.net.online ? T('hub_multi_on', { c: this.net.code })
         : T('hub_multi_sub'),
       '#7048e8', '#4c2bb0', PP_ICONS.multi);
+    // r87 · EL MEDALLÓN DEL PULSO (petición del dueño): badge numerado sobre
+    // la tarjeta Multijugador con los OTROS jugadores online (verde vivo con
+    // aro que respira; con invitación pendiente, ámbar y «!»). El repintado
+    // para la animación lo gobierna updateMenu (0,5 s, sólo si está vivo).
+    if (this.social && this.social.medallonVivo()) {
+      const r = rects[rects.length - 1];   // el rect de tab:multi recién pushado
+      this._pintaMedallon(r, this.social);
+    }
     y += CH + GY;
     // fila 3 · CAMPEONATOS — RANKING MUNDIAL
     this._modeCard(rects, 'page:champs', X0, y, CW, CH, T('sec_crazy'),
@@ -3062,7 +3168,7 @@ export class PingPongGame {
   /** Coloca el panel (flotación inicial) y hace el hit-test del rayo de
    *  apuntado DE CADA MANDO: la pala también puede seleccionar, cada mano
    *  tiene su láser y su hover (v2.16, se mantiene en v2.28). */
-  updateMenu() {
+  updateMenu(dt) {
     // flotación inicial: el panel acompaña a la cabeza antes de fijarse
     if ((performance.now() / 1000) < (this._menuAnchorUntil || 0)) this.anchorMenu();
 
@@ -3113,11 +3219,29 @@ export class PingPongGame {
       if (idx !== this.menuHover[h]) { this.menuHover[h] = idx; dirty = true; }
     }
     if (dirty) this.drawMenu();   // un solo repintado aunque ambas manos cambien
+    // r87 · MEDALLÓN VIVO: repintado suave (0,5 s) mientras pulsa — sólo en
+    // las páginas donde vive (hub con el badge, multi con la tarjeta) y
+    // sólo si la capa social está encendida. Coste: 2 redraws/s como máx.
+    const rs87 = this.social;
+    if (rs87 && rs87.medallonVivo() &&
+        (this.menuPage === 'main' || this.menuPage === 'multi')) {
+      this._rsMenuAcc = (this._rsMenuAcc == null ? 0.5 : this._rsMenuAcc) - dt;
+      if (this._rsMenuAcc <= 0) { this._rsMenuAcc = 0.5; this.drawMenu(); }
+    }
   }
 
   menuClick(idx) {
     const r = this.menuRects[idx];
     if (!r) return;
+    // r87 · INVITACIÓN DIRECTA (mjsoc:inv:<pid>): el anfitrión con sala
+    // abierta convoca a un jugador online de la lista — fetch al buzón del
+    // worker; el destinatario lo ve en ≤20 s como tarjeta con UNIRSE.
+    if (typeof r.id === 'string' && r.id.indexOf('mjsoc:inv:') === 0) {
+      const pid = r.id.slice('mjsoc:inv:'.length);
+      this.audio.playOsc(880, 1240, 0.08, 'triangle', 0.12, 0);
+      try { if (this.social) this.social.invitar(pid); } catch (eIN) { /* */ }
+      return;
+    }
     // v2.69: se conserva TODO tras el primer ':' (antes se perdía el
     // segundo) — necesario para champact:<id>›<acción[:<modo>]>
     const ci0 = r.id.indexOf(':');
@@ -3322,6 +3446,22 @@ export class PingPongGame {
         if (!this.net.online && this.net.status === 'off') this._mjMode = null;
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
+        break;
+      case 'mjsoc':
+        // r87 · TARJETA de invitación (el switch manda por NAMESPACE: el id
+        // 'mjsoc:aceptar' llega como ns='mjsoc' + arg='aceptar' — lección del
+        // arnés: los cases con ':' completo jamás coinciden).
+        if (arg === 'aceptar') {
+          // UNIRSE desde la TARJETA (buzón del worker): consume y entra
+          this.audio.playOsc(760, 1180, 0.08, 'triangle', 0.12, 0);
+          try { if (this.social) this.social.aceptar(); } catch (eRA) { /* */ }
+          this.drawMenu();
+        } else if (arg === 'desc') {
+          // DESCARTAR: vacía el buzón en el worker
+          this.audio.playOsc(420, 300, 0.06, 'sine', 0.08, 0);
+          try { if (this.social) this.social.descartar(); } catch (eRD) { /* */ }
+          this.drawMenu();
+        }
         break;
       case 'retoDiario':
         // r80 · EL RETO DIARIO EN LA PUERTA: el botón estrella del menú
@@ -8335,6 +8475,9 @@ export class PingPongGame {
     // poses P0→P1 degradadas. Orden por frame: leer poses (three.js ya las
     // actualizó de XRFrame antes de este callback) → simular → renderizar.
     const dt = this.lastTime < 0 ? 0.016 : Math.min(now - this.lastTime, 1 / 30);
+    // r87 · RED SOCIAL: latidos/polls espaciados (fetch cada 10-30 s) —
+    // corren SIEMPRE (también congelados y en 2D: el medallón es del menú)
+    try { if (this.social) this.social.tick(dt); } catch (eRS2) { /* nunca rompe */ }
     // r62 · RELOJ DE LA DILATACIÓN: corre en tiempo real (no se dilata a sí
     // mismo). Al armar (_dilT=1,15) el factor CAE a 0,34 (punch cinemático),
     // aguanta ~0,6 s y regresa suave a 1 en el resto — el último vuelo de la
@@ -8501,7 +8644,7 @@ export class PingPongGame {
     }
 
     // 0.7) menú abierto: anclar a la muñeca libre + rayo de apuntado
-    if (presenting && this.menuOpen) this.updateMenu();
+    if (presenting && this.menuOpen) this.updateMenu(dt);   // r87: dt para el pulso del medallón
 
     // 0.8) v2.19: red online — emitir pose/bola/sync (v1: 30 Hz JSON)
     //      v3.6.71 · r79: transporte binario v2 (pose 60 Hz + eventos fast)
@@ -10172,6 +10315,26 @@ export class PingPongGame {
     }
   }
 }
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
+import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
+import { AI_PRESETS, DIMS, MOUNT_QUAT_RIGHT, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
+import { GameAudio } from './c03_audio_voz.js';
+import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
+import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
+import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
+import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
+import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createReplayBanner, createScoreboard, drawHallSign, updateHallFx } from './c08_hall_hud.js';
+import { NetLink } from './c09_red_netlink.js';
+import { PPNET } from './c09b_red_nucleo.js';
+import { RedSocial } from './c09c_red_social.js';
+import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
+import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, netTmpQ2, netTmpV, pcA, pcC, pcN, pcT } from './c11_champloader.js';
+import { wrapText } from './c13_ui_arranque.js';
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+/* DEPS-FASE2-FIN */
 /* =====================================================================
  *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy
@@ -10464,24 +10627,6 @@ class PerfManager {
   }
 }
 
-/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
-import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, DIMS, MOUNT_QUAT_RIGHT, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
-import { GameAudio } from './c03_audio_voz.js';
-import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
-import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
-import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
-import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
-import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createReplayBanner, createScoreboard, drawHallSign, updateHallFx } from './c08_hall_hud.js';
-import { NetLink } from './c09_red_netlink.js';
-import { PPNET } from './c09b_red_nucleo.js';
-import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
-import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, netTmpQ2, netTmpV, pcA, pcC, pcN, pcT } from './c11_champloader.js';
-import { wrapText } from './c13_ui_arranque.js';
-import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-/* DEPS-FASE2-FIN */
 
 // r61 · ESTELA DE PODER — firma de color por poder de pala ACTIVO
 // (RGB 0-1; el mismo lenguaje de color que ya usa cada poder: ámbar del

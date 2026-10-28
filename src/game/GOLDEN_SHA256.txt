@@ -1,3 +1,1 @@
-# SHA256 del game.html que produjo esta división (3.6.78-SDK6, fase 80 · Escenario real de Halloween + 4 superpoderes; sello actualizado
-# por bump_version.py desde 3.6.77-SDK6)
-ba32ff32b13bf7b57b9b5de19a3190e7b0c9e666baa8fb2398c27918afc4a943
+c1da689a6d51be24c72249becac07d3c5e66df131b36f7d33b0a9f8a49010015

@@ -134,10 +134,15 @@ class RivalVivo {
       aspecto: this.rv.aspecto !== false,
       material: this.rv.material || 'basic',
       alphaTest: this.rv.alphaTest != null ? this.rv.alphaTest : 0.25,
-      pos: this.rv.pos || [1.26, 0, -3.3],
+      // r87 · al mundo + pies en el suelo (misma corrección que halloween)
+      pos: this.rv.pos || [1.26, (this.rv.alto || 2.15) / 2, ((DIMS && DIMS.tableCenterZ) || -1.6) - 1.70],
       rotY: this.rv.rotY || 0,
       castShadow: this.rv.material === 'standard',
     });
+    // r87 · AL MUNDO (sin esto el rival no existe: mesh huérfano)
+    try { (this.game.scene || this.game.rig).add(this.r.node); } catch (e) { /* */ }
+    // r87 · PREWARM DE CARAS (anti-trompicones, espejo halloween)
+    this.prewarmI = -1; this.prewarmT = 0;
     this.fallbacks = {
       hungry: ['hungry', 'surprised', 'idle'], surprised: ['surprised', 'idle'],
       crazy: ['crazy', 'laughing', 'idle'], laughing: ['laughing', 'idle'],
@@ -188,6 +193,20 @@ class RivalVivo {
   }
   update(dt, ctx) {
     if (!this.r) return;
+    // r87 · ciclo de prewarm de caras (espejo halloween)
+    if (this.prewarmI < this.estados.length) {
+      this.prewarmT += dt;
+      if (this.prewarmT >= 0.12) {
+        this.prewarmT = 0;
+        this.prewarmI++;
+        if (this.prewarmI < this.estados.length) {
+          try { this.r.rivalEstado(this.estados[this.prewarmI]); this.estado = this.estados[this.prewarmI]; } catch (e) { /* */ }
+        } else {
+          try { this.r.rivalEstado(this.base === 'duelo' ? 'idle' : this.base); this.estado = this.base; } catch (e) { /* */ }
+        }
+      }
+      return;
+    }
     if (this.timer > 0) { this.timer -= dt; if (this.timer <= 0) this._set(this.base, 0); }
     const t = this.thresholds;
     const hits = (ctx && ctx.rallyHits) || 0;
@@ -196,10 +215,14 @@ class RivalVivo {
     if (hits >= t.picandoRallyHits && this.estado !== 'picando') this._set('picando', 2.2);
     else if (sp - sa >= t.loosingDiff) this.estadoBase('loosing');
     else if (sp >= 10 && this.base === 'duelo') this._set('panic', 2.2);
-    if (this.rv.flotacion && this.rv.flotacion.activo !== false && this.r.group) {
+    if (this.rv.flotacion && this.rv.flotacion.activo !== false && this.r.node) {
+      // r87 · flotación sobre el node REAL (sin grupo: mesh directo)
       const amp = this.rv.flotacion.amplitud || 0.012;
       const per = this.rv.flotacion.periodo || 1.4;
-      this.r.group.position.y = (this.rv.pos ? (this.rv.pos[1] || 0) : 0) + Math.sin(performance.now() / 1000 * (Math.PI * 2 / per)) * amp;
+      const base = this.r.node.position.y;
+      const onda = Math.sin(performance.now() / 1000 * (Math.PI * 2 / per)) * amp;
+      this.r.node.position.y = base + onda - (this._flotAnt || 0);
+      this._flotAnt = onda;
     }
   }
   risa() { if (SFX && SFX.tiene('laugh')) SFX.play('laugh', 0.55, { pan: 0.4 }); }
@@ -247,6 +270,8 @@ function construirCartel(game, man) {
     const lineas = (TXT.es && TXT.es.instr_lineas) || [];
     lineas.slice(0, 3).forEach((l, i) => ctx2.fillText(l, W / 2, 350 + i * 46));
   });
+  // r87 · AL MUNDO (igual que el rival: sin esto el cartel no se ve)
+  try { game.scene.add(cartel.mesh); } catch (e) { /* */ }
   return cartel;
 }
 
@@ -259,12 +284,15 @@ class MapaPlantilla {
     const m = man.mapa || {};
     this.modo = m.modo || 'canvas';
     this.planoW = m.planoW || 1.66;
-    this.pos = m.pos || [-1.05, 1.45, -3.58];
-    this.rotY = m.rotY != null ? m.rotY : 0.42;
+    // r87 · NORMATIVA del dueño: pared IZQUIERDA (x −3.05, rotY +π/2)
+    this.pos = m.pos || [-3.03, 1.45, -1.9];
+    this.rotY = m.rotY != null ? m.rotY : (Math.PI / 2);
     this.nodos = [];        // [{x,y,r}] en píxeles de la imagen
     this.imgW = 1280; this.imgH = 720;
     this.maxIdx = () => Math.max(0, Math.min(ctrl.totalEtapas() - 1, ctrl.indiceReal() - 1));
     this._hover = -1;
+    this._tapas = [];       // r87: tapas sobre las etapas aún no superadas
+    this._tapasIdx = -1;
     this._construir();
   }
   _construir() {
@@ -320,7 +348,69 @@ class MapaPlantilla {
     this.anillo.visible = false;
     this.game.scene.add(this.plane);
     this.game.scene.add(this.anillo);
+    // r87 · TAPAS: las etapas aún NO superadas quedan CUBIERTAS (normativa
+    // del dueño, igual que el '?' del mapa canvas). Discos hijos del plano
+    // (se mueven con él; el rayo de rejugada NO las ve — intersectObject
+    // es no-recursivo y sólo cubren nodos no apuntables).
+    const texTapa = this._texTapa();
+    for (let i = 0; i < this.nodos.length; i++) {
+      const n = this.nodos[i];
+      const rW = (n.r / this.imgW) * this.planoW;
+      const lx = (n.x / this.imgW - 0.5) * this.planoW;
+      const ly = (0.5 - n.y / this.imgH) * this.planoW * (this.imgH / this.imgW);
+      const tapa = new THREE.Mesh(
+        new THREE.CircleGeometry(rW * 1.12, 40),
+        new THREE.MeshBasicMaterial({ map: texTapa, transparent: true, depthWrite: false }),
+      );
+      tapa.position.set(lx, ly, 0.006);
+      tapa.renderOrder = 2;
+      this.plane.add(tapa);
+      this._tapas.push(tapa);
+    }
+    this._pintaTapas();
   }
+  /* r87 · textura de la TAPA: piedra oscura con «?» de hueso y aro sepia —
+   * casa con el póster del cementerio (UNA textura compartida). */
+  _texTapa() {
+    if (MapaPlantilla._texTapa) return MapaPlantilla._texTapa;
+    const S = 256;
+    const cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d');
+    const r = S / 2;
+    const grad = g.createRadialGradient(r, r * 0.86, r * 0.12, r, r, r);
+    grad.addColorStop(0, '#3a3128');
+    grad.addColorStop(0.78, '#241d16');
+    grad.addColorStop(1, '#171209');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(r, r, r, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 10; g.strokeStyle = '#54463a';
+    g.beginPath(); g.arc(r, r, r - 8, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = 4; g.strokeStyle = 'rgba(232,223,200,0.28)';
+    g.beginPath(); g.arc(r, r, r - 20, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#e8dfc8';
+    g.font = '900 150px Georgia, serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = 'rgba(0,0,0,0.65)'; g.shadowBlur = 10;
+    g.fillText('?', r, r + 8);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    MapaPlantilla._texTapa = t;
+    return t;
+  }
+  /* r87 · pinta/oculta tapas según el progreso: visible ⇔ etapa i aún no
+   * desbloqueada (i > maxIdx) — EXACTAMENTE el criterio del '?' canvas. */
+  _pintaTapas() {
+    const mx = this.maxIdx();
+    if (mx === this._tapasIdx) return;
+    this._tapasIdx = mx;
+    for (let i = 0; i < this._tapas.length; i++) {
+      const t = this._tapas[i];
+      if (t) t.visible = i > mx;
+    }
+  }
+  /* r87 · el progreso cambia sin rebuild (stage clear) → refresco barato
+   * desde update() del módulo (comparación de un entero). */
+  refresco() { this._pintaTapas(); }
   _rejilla(n, W, H) {
     const cols = Math.min(4, n);
     const filas = Math.ceil(n / cols);
@@ -361,6 +451,13 @@ class MapaPlantilla {
     if (this.plane.geometry) this.plane.geometry.dispose();
     if (this.plane.material.map) this.plane.material.map.dispose();
     if (this.plane.material) this.plane.material.dispose();
+    // r87 · las tapas van con el plano; geometría/material propios sí se
+    // disponen (textura estática compartida: NO dispose)
+    for (const t of this._tapas) {
+      try { if (t.geometry) t.geometry.dispose(); } catch (e) { /* */ }
+      try { if (t.material) t.material.dispose(); } catch (e) { /* */ }
+    }
+    this._tapas = []; this._tapasIdx = -1;
   }
 }
 
@@ -472,6 +569,7 @@ class PlantillaPoderes {
       coreo: 'v240', halo: true, arte: 'fit1833',
       url: () => A('superpoder.webp'),
       fallbackURL: () => A('power_0.png'),
+      dims: () => (DIMS ? { netTopY: DIMS.netTopY, tableCenterZ: DIMS.tableCenterZ } : null),   // r87: sin dims el cartel nacía a los pies
     });
     this.sign.build();
   }
@@ -855,7 +953,18 @@ class PlantillaController {
   }
 
   /* ---- ciclo sala ---- */
+  /* r87 · DESMONTA (espejo halloween): re-entrar no duplica rival/mapa/cartel */
+  _desmonta() {
+    if (this.poderes) { try { this.poderes.dispose(); } catch (e) { /* */ } this.poderes = null; }
+    if (this.pistola) { try { this.pistola.beams.forEach((o) => { this.game.scene.remove(o.m); }); this.pistola.beams = []; } catch (e) { /* */ } this.pistola = null; }
+    if (this.rival) { try { this.rival.dispose(); } catch (e) { /* */ } this.rival = null; }
+    if (this.mapa) { try { this.mapa.dispose(); } catch (e) { /* */ } this.mapa = null; }
+    if (this.cartel) { try { this.game.scene.remove(this.cartel.mesh); this.cartel.dispose(); } catch (e) { /* */ } this.cartel = null; }
+    if (this._insignia) { try { this.game.scene.remove(this._insignia); this._insignia.geometry.dispose(); this._insignia.material.dispose(); } catch (e) { /* */ } this._insignia = null; }
+    if (this.prueba) { try { this.prueba.dispose(); } catch (e) { /* */ } this.prueba = null; }
+  }
   startChamp() {
+    this._desmonta();
     this.rival = new RivalVivo(this.game, this.man);
     this.rival.estadoBase('idle');
     this.cartel = construirCartel(this.game, this.man);
@@ -1045,6 +1154,7 @@ class PlantillaController {
   leave() {
     if (this.prueba) { try { this.prueba.stop(); } catch (e) {} this.prueba = null; }
     if (this.poderes) this.poderes.parar();
+    this._desmonta();       // r87: nada queda colgado al salir
     this.dueloVivo = false;
     if (MUSIC) try { MUSIC.off(); } catch (e) {}
     try {
@@ -1056,6 +1166,7 @@ class PlantillaController {
     this._variant(null);
   }
   update(dt) {
+    if (this.mapa) this.mapa.refresco();   // r87: tapas según progreso
     if (this.rival) {
       const r = this.game.rules || {};
       this.rival.update(dt, { rallyHits: r.rallyHits, scorePlayer: r.scorePlayer, scoreAi: r.scoreAi });

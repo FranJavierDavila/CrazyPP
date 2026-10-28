@@ -9,7 +9,8 @@ const ESTADOS_RIVAL = ['present', 'idle', 'focused', 'surprised', 'hungry', 'pan
   'duelo', 'derrotado', 'triunfante'];
 const KINDS_PRUEBA = ['dianas', 'arkanoid', 'objetos', 'escudo', 'impulso', 'tren', 'custom'];
 const KINDS_PODER = ['confeti', 'globos', 'mareo', 'orbe', 'arena', 'burla', 'dinamita',
-  'disparo', 'estampida', 'split', 'portals', 'fuego', 'sombras', 'crazyball', 'bola'];
+  'disparo', 'estampida', 'split', 'portals', 'fuego', 'sombras', 'crazyball', 'bola',
+  'mano', 'moscas', 'calabaza', 'gelatina'];   // r87: los 4 del zombi (ya están en el schema desde r86)
 const RUTAS_ASSET = /^assets\/[A-Za-z0-9_\-]+\.(png|jpg|jpeg|webp|mp3|wav|ogg|glb|mp4)$/;
 
 let MAN = null;          // manifest vivo

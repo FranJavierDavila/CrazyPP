@@ -1,10 +1,10 @@
 {
   "fase": 2,
-  "generado": "2026-10-26T15:34:17.208Z",
-  "golden": "# SHA256 del game.html que produjo esta división (3.6.70-SDK6, fase 72 · EL NARRADOR HONESTO; sello actualizado",
+  "generado": "2026-10-28T17:24:54.366Z",
+  "golden": "# SHA256 del game.html que produjo esta división (3.6.78-SDK6, fase 80 · Escenario real de Halloween + 4 superpoderes; sello actualizado",
   "ficheros": {
     "c00_pre_three.js": {
-      "lineas": 2589,
+      "lineas": 2756,
       "declara": 15,
       "exporta": [
         "PP_ICONS",
@@ -25,11 +25,11 @@
       "muta": {},
       "biblioteca": [],
       "globalesTop": [
-        "c×384",
-        "y×143",
-        "x×143",
+        "c×416",
+        "y×150",
+        "x×150",
         "st×63",
-        "Math×57",
+        "Math×59",
         "window×35",
         "i×28",
         "e×17"
@@ -264,7 +264,7 @@
       ]
     },
     "c06_logros_stats_ia_rival.js": {
-      "lineas": 841,
+      "lineas": 877,
       "declara": 11,
       "exporta": [
         "ACHIEVEMENTS",
@@ -298,9 +298,9 @@
         "intents×19",
         "sign×17",
         "THREE×17",
-        "winner×13",
-        "ctx×13",
-        "cause×12"
+        "winner×14",
+        "cause×13",
+        "ctx×13"
       ]
     },
     "c07_escena_sala.js": {
@@ -338,7 +338,7 @@
       ]
     },
     "c08_hall_hud.js": {
-      "lineas": 1144,
+      "lineas": 1259,
       "declara": 24,
       "exporta": [
         "HALL",
@@ -350,6 +350,7 @@
         "createHall",
         "createReplayBanner",
         "createScoreboard",
+        "drawHallSign",
         "updateHallFx"
       ],
       "importa": {
@@ -366,18 +367,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "x×188",
+        "x×192",
         "ctx×124",
-        "THREE×65",
-        "W×63",
-        "i×53",
-        "H×51",
-        "d×46",
-        "Math×37"
+        "THREE×75",
+        "W×71",
+        "g2×71",
+        "i×58",
+        "H×54",
+        "d×48"
       ]
     },
     "c09_red_netlink.js": {
-      "lineas": 1676,
+      "lineas": 1930,
       "declara": 1,
       "exporta": [
         "NetLink"
@@ -407,18 +408,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "g×111",
-        "r×99",
-        "d×47",
+        "g×119",
+        "r×103",
+        "d×49",
         "e×46",
-        "performance×37",
-        "m×35",
-        "out×32",
-        "ev×31"
+        "m×41",
+        "performance×39",
+        "ev×36",
+        "out×34"
       ]
     },
     "c09b_red_nucleo.js": {
-      "lineas": 764,
+      "lineas": 811,
       "declara": 1,
       "exporta": [
         "PPNET"
@@ -428,13 +429,38 @@
       "biblioteca": [],
       "globalesTop": [
         "r×59",
-        "i×47",
-        "out×42",
-        "Math×40",
-        "VP×34",
+        "i×50",
+        "out×45",
+        "Math×42",
+        "VP×35",
         "a×32",
         "w×29",
         "b×28"
+      ]
+    },
+    "c09c_red_social.js": {
+      "lineas": 361,
+      "declara": 1,
+      "exporta": [
+        "RedSocial"
+      ],
+      "importa": {
+        "c00_pre_three.js": [
+          "T",
+          "ppPlayerName"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [],
+      "globalesTop": [
+        "r×20",
+        "net×10",
+        "g×10",
+        "base×8",
+        "e×8",
+        "window×7",
+        "nuevo×6",
+        "p×4"
       ]
     },
     "c10_menu_saque.js": {
@@ -485,7 +511,7 @@
       ]
     },
     "c11_champloader.js": {
-      "lineas": 940,
+      "lineas": 955,
       "declara": 17,
       "exporta": [
         "ChampLoader",
@@ -544,8 +570,8 @@
       ]
     },
     "c12_pingponggame.js": {
-      "lineas": 9465,
-      "declara": 87,
+      "lineas": 10889,
+      "declara": 91,
       "exporta": [
         "PingPongGame",
         "arBtn",
@@ -606,6 +632,7 @@
           "createHall",
           "createReplayBanner",
           "createScoreboard",
+          "drawHallSign",
           "updateHallFx"
         ],
         "c01_modelos_3d.js": [
@@ -630,6 +657,9 @@
           "pcC",
           "pcN",
           "pcT"
+        ],
+        "c09c_red_social.js": [
+          "RedSocial"
         ],
         "c00_pre_three.js": [
           "PP_ICONS",
@@ -686,21 +716,22 @@
       "muta": {},
       "biblioteca": [
         "* as THREE ← three",
+        "GLTFLoader ← three/addons/loaders/GLTFLoader.js",
         "RoomEnvironment ← three/addons/environments/RoomEnvironment.js"
       ],
       "globalesTop": [
-        "c×825",
-        "Math×250",
-        "THREE×194",
-        "e×194",
+        "c×918",
+        "Math×299",
+        "THREE×219",
+        "e×205",
         "S×192",
-        "c2×144",
-        "i×132",
-        "y×131"
+        "y×160",
+        "undefined×145",
+        "c2×144"
       ]
     },
     "c13_ui_arranque.js": {
-      "lineas": 5732,
+      "lineas": 5787,
       "declara": 4,
       "exporta": [
         "wrapText"
@@ -774,14 +805,14 @@
         "GLTFLoader ← three/addons/loaders/GLTFLoader.js"
       ],
       "globalesTop": [
-        "c×589",
+        "c×525",
         "G×350",
-        "g×251",
-        "st×229",
-        "Math×208",
+        "g×256",
+        "st×235",
+        "Math×209",
         "b×166",
         "THREE×160",
-        "S×155"
+        "S×152"
       ]
     }
   },
@@ -800,7 +831,7 @@
     },
     {
       "simbolo": "T",
-      "ficherosQueImportan": 6
+      "ficherosQueImportan": 7
     },
     {
       "simbolo": "TLang",
@@ -828,6 +859,10 @@
     },
     {
       "simbolo": "stepPhysics",
+      "ficherosQueImportan": 3
+    },
+    {
+      "simbolo": "ppPlayerName",
       "ficherosQueImportan": 3
     },
     {
@@ -868,10 +903,6 @@
     },
     {
       "simbolo": "tmpV",
-      "ficherosQueImportan": 2
-    },
-    {
-      "simbolo": "mountQuatFor",
       "ficherosQueImportan": 2
     }
   ]

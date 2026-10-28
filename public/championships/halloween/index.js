@@ -35,7 +35,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   getCore, assetURL, congela, descongela,
-  createSfx, createMusic, createPowerSign, createRival, createCartel,
+  createSfx, createMusic, createPowerSign, createRival, createCartel, createBucle,
 } from '../sdk/champ_sdk.js';
 
 /* ------------------------------------------------------------------ */
@@ -123,21 +123,35 @@ class RivalVivo {
     this.estados = (man.rival && man.rival.states) || ['idle', 'duelo'];
     this.thresholds = Object.assign({}, EXPR_DEF, (man.rival && man.rival.thresholds) || {});
     this.timer = 0; this.base = 'idle'; this.baseDuelo = 'duelo';
+    const ALTO = this.rv.alto || 2.15;
+    // r87 · INFORME DEL DUEÑO («no aparece el rival»): el node del SDK NUNCA
+    // se añadía a la escena (el docstring de createRival lo exige) y la pos
+    // por defecto nacía a y=0 (medio cuerpo bajo el suelo). convención del
+    // orbital: pies en el suelo · x derecha · z = mesa − 1,70.
     this.r = createRival(THREE, () => this.game, {
       modo: this.rv.modo || 'precarga',
       base: this.rv.base || 'rival.webp',
       ext: this.rv.ext || 'webp',
       estados: this.estados,
       resuelve: (f) => A(f),
-      alto: this.rv.alto || 2.15,
+      alto: ALTO,
       anchoFijo: this.rv.anchoFijo || 0,
       aspecto: this.rv.aspecto !== false,
       material: this.rv.material || 'basic',
       alphaTest: this.rv.alphaTest != null ? this.rv.alphaTest : 0.25,
-      pos: this.rv.pos || [1.26, 0, -3.3],
+      pos: this.rv.pos || [1.26, ALTO / 2, ((DIMS && DIMS.tableCenterZ) || -1.6) - 1.70],
       rotY: this.rv.rotY || 0,
       castShadow: this.rv.material === 'standard',
     });
+    // r87 · AL MUNDO (sin esto el zombi no existe: mesh huérfano fuera del
+    // grafo — el fallo exacto que veía el dueño). dispose() del SDK lo
+    // desengancha del padre; removeRival cubre el caso de re-entrada.
+    try { (this.game.scene || this.game.rig).add(this.r.node); } catch (e) { /* */ }
+    // r87 · PREWARM DE CARAS (anti-trompicones): las 12 caras del rival se
+    // precargan pero SUBEN A GPU en su 1.er uso (cambio de emoción en pleno
+    // duelo = tirón). El ciclo de abajo las pasea todas en ~1,5 s justo
+    // tras el arranque (telón/intro), repartiendo las subidas.
+    this.prewarmI = -1; this.prewarmT = 0;
     this.fallbacks = {
       hungry: ['hungry', 'surprised', 'idle'], surprised: ['surprised', 'idle'],
       crazy: ['crazy', 'laughing', 'idle'], laughing: ['laughing', 'idle'],
@@ -188,6 +202,20 @@ class RivalVivo {
   }
   update(dt, ctx) {
     if (!this.r) return;
+    // r87 · ciclo de prewarm de caras (sólo los primeros ~1,5 s de sala)
+    if (this.prewarmI < this.estados.length) {
+      this.prewarmT += dt;
+      if (this.prewarmT >= 0.12) {
+        this.prewarmT = 0;
+        this.prewarmI++;
+        if (this.prewarmI < this.estados.length) {
+          try { this.r.rivalEstado(this.estados[this.prewarmI]); this.estado = this.estados[this.prewarmI]; } catch (e) { /* */ }
+        } else {
+          try { this.r.rivalEstado(this.base === 'duelo' ? 'idle' : this.base); this.estado = this.base; } catch (e) { /* */ }
+        }
+      }
+      return;   // durante el paseo no manda la máquina de emociones
+    }
     if (this.timer > 0) { this.timer -= dt; if (this.timer <= 0) this._set(this.base, 0); }
     const t = this.thresholds;
     const hits = (ctx && ctx.rallyHits) || 0;
@@ -196,14 +224,17 @@ class RivalVivo {
     if (hits >= t.picandoRallyHits && this.estado !== 'picando') this._set('picando', 2.2);
     else if (sp - sa >= t.loosingDiff) this.estadoBase('loosing');
     else if (sp >= 10 && this.base === 'duelo') this._set('panic', 2.2);
-    if (this.rv.flotacion && this.rv.flotacion.activo !== false && this.r.group) {
+    if (this.rv.flotacion && this.rv.flotacion.activo !== false && this.r.node) {
+      // r87 · flotación sobre el node REAL (sin grupo: el mesh va directo)
       const amp = this.rv.flotacion.amplitud || 0.012;
       const per = this.rv.flotacion.periodo || 1.4;
-      this.r.group.position.y = (this.rv.pos ? (this.rv.pos[1] || 0) : 0) + Math.sin(performance.now() / 1000 * (Math.PI * 2 / per)) * amp;
+      const base = this.r.node.position.y;
+      this.r.node.position.y = base + Math.sin(performance.now() / 1000 * (Math.PI * 2 / per)) * amp - (this._flotAnt || 0);
+      this._flotAnt = Math.sin(performance.now() / 1000 * (Math.PI * 2 / per)) * amp;
     }
   }
   risa() { if (SFX && SFX.tiene('laugh')) SFX.play('laugh', 0.55, { pan: 0.4 }); }
-  dispose() { if (this.r) try { this.r.dispose(); } catch (e) {} }
+  dispose() { if (this.r) { try { this.r.dispose(); } catch (e) {} } this._flotAnt = 0; }
 }
 
 /* ------------------------------------------------------------------ */
@@ -247,6 +278,9 @@ function construirCartel(game, man) {
     const lineas = (TXT.es && TXT.es.instr_lineas) || [];
     lineas.slice(0, 3).forEach((l, i) => ctx2.fillText(l, W / 2, 350 + i * 46));
   });
+  // r87 · AL MUNDO (igual que el rival: el mesh del SDK no se cuelga solo —
+  // el cartel de bienvenida tampoco se veía por este motivo).
+  try { game.scene.add(cartel.mesh); } catch (e) { /* */ }
   return cartel;
 }
 
@@ -259,12 +293,19 @@ class MapaPlantilla {
     const m = man.mapa || {};
     this.modo = m.modo || 'canvas';
     this.planoW = m.planoW || 1.66;
-    this.pos = m.pos || [-1.05, 1.45, -3.58];
-    this.rotY = m.rotY != null ? m.rotY : 0.42;
+    /* r87 · NORMATIVA DEL DUEÑO (para TODOS los mapas): «colocar en la
+     * pared IZQUIERDA y tapar las etapas que aún no se han superado».
+     * pared izquierda = x −3.05 (DIMS.roomHalfX) con rotY +π/2 (createRoom
+     * mkWall 0) — el póster cuelga 2 cm por dentro para no pelearse con la
+     * pared. La pos/rotY del manifest mandan (los UGC eligen). */
+    this.pos = m.pos || [-3.03, 1.45, -1.9];
+    this.rotY = m.rotY != null ? m.rotY : (Math.PI / 2);
     this.nodos = [];        // [{x,y,r}] en píxeles de la imagen
     this.imgW = 1280; this.imgH = 720;
     this.maxIdx = () => Math.max(0, Math.min(ctrl.totalEtapas() - 1, ctrl.indiceReal() - 1));
     this._hover = -1;
+    this._tapas = [];       // r87: tapas sobre las etapas aún no superadas
+    this._tapasIdx = -1;    // r87: último maxIdx pintado (refresco barato)
     this._construir();
   }
   _construir() {
@@ -320,7 +361,69 @@ class MapaPlantilla {
     this.anillo.visible = false;
     this.game.scene.add(this.plane);
     this.game.scene.add(this.anillo);
+    // r87 · TAPAS: las etapas aún NO superadas quedan CUBIERTAS (normativa
+    // del dueño, igual que el '?' del mapa canvas). Discos hijos del plano
+    // (se mueven con él; el rayo de rejugada NO las ve — intersectObject
+    // es no-recursivo y sólo cubren nodos no apuntables).
+    const texTapa = this._texTapa();
+    for (let i = 0; i < this.nodos.length; i++) {
+      const n = this.nodos[i];
+      const rW = (n.r / this.imgW) * this.planoW;
+      const lx = (n.x / this.imgW - 0.5) * this.planoW;
+      const ly = (0.5 - n.y / this.imgH) * this.planoW * (this.imgH / this.imgW);
+      const tapa = new THREE.Mesh(
+        new THREE.CircleGeometry(rW * 1.12, 40),
+        new THREE.MeshBasicMaterial({ map: texTapa, transparent: true, depthWrite: false }),
+      );
+      tapa.position.set(lx, ly, 0.006);
+      tapa.renderOrder = 2;
+      this.plane.add(tapa);
+      this._tapas.push(tapa);
+    }
+    this._pintaTapas();
   }
+  /* r87 · textura de la TAPA: piedra oscura con «?» de hueso y aro sepia —
+   * casa con el póster del cementerio (UNA textura compartida). */
+  _texTapa() {
+    if (MapaPlantilla._texTapa) return MapaPlantilla._texTapa;
+    const S = 256;
+    const cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d');
+    const r = S / 2;
+    const grad = g.createRadialGradient(r, r * 0.86, r * 0.12, r, r, r);
+    grad.addColorStop(0, '#3a3128');
+    grad.addColorStop(0.78, '#241d16');
+    grad.addColorStop(1, '#171209');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(r, r, r, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 10; g.strokeStyle = '#54463a';
+    g.beginPath(); g.arc(r, r, r - 8, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = 4; g.strokeStyle = 'rgba(232,223,200,0.28)';
+    g.beginPath(); g.arc(r, r, r - 20, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#e8dfc8';
+    g.font = '900 150px Georgia, serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = 'rgba(0,0,0,0.65)'; g.shadowBlur = 10;
+    g.fillText('?', r, r + 8);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    MapaPlantilla._texTapa = t;
+    return t;
+  }
+  /* r87 · pinta/oculta tapas según el progreso: visible ⇔ etapa i aún no
+   * desbloqueada (i > maxIdx) — EXACTAMENTE el criterio del '?' canvas. */
+  _pintaTapas() {
+    const mx = this.maxIdx();
+    if (mx === this._tapasIdx) return;
+    this._tapasIdx = mx;
+    for (let i = 0; i < this._tapas.length; i++) {
+      const t = this._tapas[i];
+      if (t) t.visible = i > mx;
+    }
+  }
+  /* r87 · el progreso cambia sin rebuild (stage clear) → refresco barato
+   * desde update() del módulo (comparación de un entero). */
+  refresco() { this._pintaTapas(); }
   _rejilla(n, W, H) {
     const cols = Math.min(4, n);
     const filas = Math.ceil(n / cols);
@@ -361,6 +464,14 @@ class MapaPlantilla {
     if (this.plane.geometry) this.plane.geometry.dispose();
     if (this.plane.material.map) this.plane.material.map.dispose();
     if (this.plane.material) this.plane.material.dispose();
+    // r87 · las tapas cuelgan del plano (se van con él); SU geometría y
+    // material sí son propios — la textura es ESTÁTICA compartida (no
+    // dispose: la rejugada del mapa y el próximo arranque la reutilizan).
+    for (const t of this._tapas) {
+      try { if (t.geometry) t.geometry.dispose(); } catch (e) { /* */ }
+      try { if (t.material) t.material.dispose(); } catch (e) { /* */ }
+    }
+    this._tapas = []; this._tapasIdx = -1;
   }
 }
 
@@ -533,46 +644,100 @@ function _pumpkinGet(cb) {
   } catch (e) { delete TEX_R86.gltf.pend; }
 }
 
-/* -- 1 · MANO DE ZOMBI: montículos que escupen manos; estorban y frenan -- */
+/* -- 0 · POOL DE TEXTURAS DE MANO (r87 · anti-trompicones) ---------------
+ * texture.clone() crea un RECURSO GPU nuevo: clonar por cada aparición de
+ * mano subía 512×885 a la GPU en plena partida (el tirón que notaba el
+ * dueño). Pool de 3 clones reciclados (máx. 3 manos vivas): la imagen se
+ * re-asingna si el slot trae otra base — UNA subida por slot y sólo cuando
+ * cambia de mano. __r86usada marca el slot ocupado. */
+function _manoTexLibre(M, baseTex) {
+  let t = M.pool.find((x) => x && !x.__r86usada && x.__r86src === baseTex);
+  if (!t) t = M.pool.find((x) => x && !x.__r86usada);
+  if (!t) {
+    if (M.pool.length < 3) { t = baseTex.clone(); t.__r86src = baseTex; M.pool.push(t); }
+    else { t = baseTex.clone(); t.__r86extra = true; }   // fuera de pool: muere con el poder
+  }
+  t.__r86usada = true;
+  if (t.__r86src !== baseTex) { t.image = baseTex.image; t.__r86src = baseTex; t.needsUpdate = true; }
+  return t;
+}
+function _manoTexSuelta(M, t) {
+  if (!t) return;
+  if (t.__r86extra) { try { t.dispose(); } catch (e) { /* */ } M.pool = M.pool.filter((x) => x !== t); }
+  else t.__r86usada = false;
+}
+
+/* -- 1 · MANO DE ZOMBI (r87 · reescrita según el guion del dueño) --------
+ * «en cualquier sitio de la mesa aparece la imagen monticulo.png OJO lo he
+ * adjuntado (actualmente no se ve, pero debería aparecer sobre la mesa
+ * antes de que aparezca la mano) desde la que sale aleatoriamente una de
+ * las tres imágenes de manos zombis… movimiento rápido que se frena un
+ * poco en el último momento (como para dar un susto), unos 3 segundos:
+ * medio segundo para aparecer/desaparecer y 2 segundos arriba».
+ *
+ * CINE EXACTO: montículo plano sobre la mesa (0,32 s pop) → la mano
+ * DESENROLLA desde el montículo (0,50 s, easeOutCubic + sobresalto 7 %)
+ * → 2,00 s de vaivén siniestro → retracto (0,50 s) → montículo y mano se
+ * funden JUNTOS (0,25 s). La bola que toca la mano queda PARADA y se cae;
+ * la mano sale empujada y revienta en 6 trocitos (el montículo se hunde). */
+const MANO_CULTIVO = 0.70;   // el 30 % inferior del arte del dueño es tierra
+const MANO_OFF_Y = 0.30;     // recorte: la mano sale de NUESTRO montículo
+
 PLANTILLA_PODERES.mano = {
   inicio(game, p, ctrl, ctx) {
-    const M = { grupo: new THREE.Group(), vivos: [], trocitos: [], t: 0, prox: 0.35, tex: [], texTrozo: _texTerron() };
+    const M = { grupo: new THREE.Group(), vivos: [], trocitos: [], t: 0, prox: 0.35,
+      tex: [], pool: [], texMonticulo: null, texTrozo: _texTerron() };
     [1, 2, 3].forEach((i) => TEX_R86.pedir('mano' + i + '.webp', (t) => { M.tex.push(t); }));
+    TEX_R86.pedir('monticulo.webp', (t) => { M.texMonticulo = t; });
     game.scene.add(M.grupo);
-    ctx.mano = M;
+    ctx.mano = M;                       // r87: ctx ANTES de los callbacks
   },
   _spawn(game, M) {
     const cz = DIMS.tableCenterZ;
     const x = rand(-0.56, 0.56);
     const z = clamp(cz + rand(-0.95, 0.85), cz - 1.30, cz + 1.10);
     const b = game.ball ? game.ball.pos : null;
-    if (b && Math.abs(b.x - x) < 0.22 && Math.abs(b.z - z) < 0.22) return; // no nacer sobre la bola
-    if (!M.tex.length) return;
-    const tex0 = pick(M.tex);
-    const tex = tex0.clone(); tex.needsUpdate = true; tex.wrapT = THREE.ClampToEdgeWrapping;
-    tex.repeat.y = _FRAC_MONTICULO; tex.offset.y = 0;
-    const W = 0.40, H = W * (885 / 512);
-    const geo = new THREE.PlaneGeometry(W, H);
-    geo.translate(0, H / 2, 0);
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, depthWrite: false });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, DIMS.tableTopY - 0.012, z);
-    mesh.rotation.y = Math.atan2(-x, 0.55 - z);
-    mesh.scale.y = _FRAC_MONTICULO;
-    M.grupo.add(mesh);
-    M.vivos.push({ mesh, tex, W, H, fase: 'subir', t: 0, golpeada: false, vx: 0, vz: 0, va: 0 });
+    if (b && Math.abs(b.x - x) < 0.24 && Math.abs(b.z - z) < 0.24) return; // no nacer sobre la bola
+    if (!M.tex.length || !M.texMonticulo) return;
+    const baseTex = pick(M.tex);
+    const tex = _manoTexLibre(M, baseTex);
+    const W = 0.34, HF = W * (885 / 512);
+    // MONTÍCULO plano sobre la mesa (aparece PRIMERO — guion del dueño)
+    const mMat = new THREE.MeshBasicMaterial({ map: M.texMonticulo, transparent: true, depthWrite: false });
+    const mont = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.46), mMat);
+    mont.rotation.x = -Math.PI / 2;
+    mont.rotation.z = rand(0, Math.PI * 2);
+    mont.position.set(x, DIMS.tableTopY + 0.004 + Math.random() * 0.002, z);
+    mont.renderOrder = 3;
+    mont.scale.setScalar(0.01);
+    M.grupo.add(mont);
+    // MANO vertical anclada al centro del montículo (desenrollado)
+    const tex2 = tex; tex2.wrapT = THREE.ClampToEdgeWrapping;
+    tex2.offset.y = MANO_OFF_Y; tex2.repeat.y = 0.001;
+    const geo = new THREE.PlaneGeometry(W, HF);
+    geo.translate(0, HF / 2, 0);
+    const mat = new THREE.MeshBasicMaterial({ map: tex2, transparent: true, alphaTest: 0.30, side: THREE.DoubleSide, depthWrite: false });
+    const mano = new THREE.Mesh(geo, mat);
+    mano.position.set(x, DIMS.tableTopY + 0.012, z);
+    try {
+      const cam = game.camera;
+      _v86.setFromMatrixPosition(cam.matrixWorld);
+      mano.rotation.y = Math.atan2(_v86.x - x, _v86.z - z);
+    } catch (e) { mano.rotation.y = Math.atan2(-x, 0.55 - z); }
+    mano.scale.y = 0.001;
+    M.grupo.add(mano);
+    M.vivos.push({ mont, mano, tex: tex2, W, HF, fase: 'monticulo', t: 0, golpeada: false, vx: 0, vz: 0, va: 0 });
   },
   _revienta(game, M, v, bola) {
     v.fase = 'golpeada'; v.t = 0;
-    const dir = Math.atan2(v.mesh.position.x - bola.x, v.mesh.position.z - bola.z) || rand(0, 6.3);
+    const dir = Math.atan2(v.mano.position.x - bola.x, v.mano.position.z - bola.z) || rand(0, 6.3);
     v.vx = Math.sin(dir) * rand(0.9, 1.5); v.vz = Math.cos(dir) * rand(0.9, 1.5);
     v.va = rand(-7, 7);
-    // trocitos de tierra y carne zombi
     for (let i = 0; i < 6; i++) {
       const geo = new THREE.PlaneGeometry(rand(0.04, 0.075), rand(0.04, 0.075));
       const mat = new THREE.MeshBasicMaterial({ map: M.texTrozo, transparent: true, alphaTest: 0.3, side: THREE.DoubleSide, depthWrite: false });
       const m = new THREE.Mesh(geo, mat);
-      m.position.copy(v.mesh.position).add(_v86.set(rand(-0.1, 0.1), v.mesh.scale.y * v.H * rand(0.3, 0.9), rand(-0.05, 0.05)));
+      m.position.copy(v.mano.position).add(_v86.set(rand(-0.1, 0.1), v.mano.scale.y * v.HF * rand(0.3, 0.9), rand(-0.05, 0.05)));
       M.grupo.add(m);
       M.trocitos.push({ mesh: m, vx: rand(-0.8, 0.8), vy: rand(0.9, 1.8), vz: rand(-0.5, 0.5), va: rand(-9, 9), vida: 0.55, t: 0 });
     }
@@ -580,61 +745,79 @@ PLANTILLA_PODERES.mano = {
   paso(dt, game, p, ctrl, ctx) {
     const M = ctx.mano; if (!M) return;
     M.t += dt;
-    if (M.t >= M.prox && M.tex.length && M.vivos.length < 3) {
+    if (M.t >= M.prox && M.tex.length && M.texMonticulo && M.vivos.length < 3) {
       this._spawn(game, M);
-      M.prox = M.t + rand(2.2, 2.8);
+      M.prox = M.t + rand(2.0, 2.5);
     }
     const bola = game.ball ? game.ball.pos : null;
     const r = DIMS.ballRadius;
     for (let i = M.vivos.length - 1; i >= 0; i--) {
       const v = M.vivos[i];
       v.t += dt;
-      const frac0 = _FRAC_MONTICULO;
-      if (v.fase === 'subir') {
-        // movimiento rápido que se frena en el último momento (susto) + leve sobresalto
+      if (v.fase === 'monticulo') {
+        // el montículo nace con un pop rápido (0,32 s) y queda latiendo
+        const k = Math.min(1, v.t / 0.32);
+        const e = 1 - Math.pow(1 - k, 3);
+        v.mont.scale.setScalar(e * (1 + (k < 0.7 ? (1 - k / 0.7) * 0.18 : 0)));
+        v.mont.material.opacity = Math.min(1, k * 1.6);
+        if (k >= 1) { v.fase = 'subir'; v.t = 0; }
+      } else if (v.fase === 'subir') {
+        // rápida que se FRENA al final (susto) — guion del dueño: 0,5 s
         const k = Math.min(1, v.t / 0.5);
         const e = 1 - Math.pow(1 - k, 3);
-        v.mesh.scale.y = frac0 + (1 - frac0) * e;
+        v.mano.scale.y = Math.max(0.001, e);
         const sobre = k < 0.24 ? (1 - k / 0.24) * 0.07 : 0;
-        v.mesh.scale.x = v.mesh.scale.z = 1 + sobre;
-        v.tex.repeat.y = v.mesh.scale.y;
+        v.mano.scale.x = v.mano.scale.z = 1 + sobre;
+        v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * e);
         if (k >= 1) { v.fase = 'arriba'; v.t = 0; }
       } else if (v.fase === 'arriba') {
-        v.mesh.rotation.z = Math.sin(v.t * 3.1) * 0.05;           // vaivén siniestro
-        v.tex.repeat.y = v.mesh.scale.y = frac0 + (1 - frac0) * (1 + Math.sin(v.t * 4.7) * 0.015);
-        if (v.t >= 2.0) { v.fase = 'bajar'; v.t = 0; v.mesh.rotation.z = 0; }
+        v.mano.rotation.z = Math.sin(v.t * 3.1) * 0.05;           // vaivén siniestro
+        v.mano.scale.y = 1 + Math.sin(v.t * 4.7) * 0.015;
+        if (v.t >= 2.0) { v.fase = 'bajar'; v.t = 0; v.mano.rotation.z = 0; }
       } else if (v.fase === 'bajar') {
         const k = Math.min(1, v.t / 0.5);
-        v.mesh.scale.y = frac0 + (1 - frac0) * (1 - k * k);
-        v.tex.repeat.y = v.mesh.scale.y;
+        v.mano.scale.y = Math.max(0.001, 1 - k * k);
+        v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * (1 - k * k));
         if (k >= 1) { v.fase = 'fundir'; v.t = 0; }
       } else if (v.fase === 'fundir') {
-        v.mesh.material.opacity = 1 - v.t / 0.25;
+        const op = Math.max(0, 1 - v.t / 0.25);
+        v.mano.material.opacity = op;
+        v.mont.material.opacity = op;
+        v.mont.scale.setScalar(Math.max(0.01, op));
         if (v.t >= 0.25) {
-          M.grupo.remove(v.mesh); v.tex.dispose(); v.mesh.geometry.dispose(); v.mesh.material.dispose();
+          M.grupo.remove(v.mano); M.grupo.remove(v.mont);
+          v.mano.geometry.dispose(); v.mano.material.dispose();
+          v.mont.geometry.dispose(); v.mont.material.dispose();
+          _manoTexSuelta(M, v.tex);
           M.vivos.splice(i, 1);
           continue;
         }
       } else if (v.fase === 'golpeada') {
-        v.mesh.position.x += v.vx * dt; v.mesh.position.z += v.vz * dt;
-        v.mesh.rotation.z += v.va * dt;
-        v.mesh.material.opacity = 1 - v.t / 0.4;
+        // mano empujada (tumba) + montículo hundido; trocitos por el aire
+        v.mano.position.x += v.vx * dt; v.mano.position.z += v.vz * dt;
+        v.mano.rotation.z += v.va * dt;
+        const op = Math.max(0, 1 - v.t / 0.4);
+        v.mano.material.opacity = op;
+        v.mont.material.opacity = Math.max(0, op * 0.6 - 0.3);
         if (v.t >= 0.4) {
-          M.grupo.remove(v.mesh); v.tex.dispose(); v.mesh.geometry.dispose(); v.mesh.material.dispose();
+          M.grupo.remove(v.mano); M.grupo.remove(v.mont);
+          v.mano.geometry.dispose(); v.mano.material.dispose();
+          v.mont.geometry.dispose(); v.mont.material.dispose();
+          _manoTexSuelta(M, v.tex);
           M.vivos.splice(i, 1);
           continue;
         }
       }
-      // la bola choca contra la mano: se queda parada y se cae; la mano revienta
-      if (bola && !v.golpeada && (v.fase === 'subir' || v.fase === 'arriba') && v.mesh.scale.y > 0.6) {
-        const dx = bola.x - v.mesh.position.x;
-        const dy = bola.y - (v.mesh.position.y + v.mesh.scale.y * v.H * 0.55);
-        const dz = bola.z - v.mesh.position.z;
-        if (Math.abs(dx) < 0.21 + r && Math.abs(dy) < v.mesh.scale.y * v.H * 0.48 + r && Math.abs(dz) < 0.10 + r) {
+      // la bola choca contra la mano: PARADA y se cae (guion del dueño)
+      if (bola && !v.golpeada && (v.fase === 'subir' || v.fase === 'arriba') && v.mano.scale.y > 0.6) {
+        const dx = bola.x - v.mano.position.x;
+        const dy = bola.y - (v.mano.position.y + v.mano.scale.y * v.HF * 0.55);
+        const dz = bola.z - v.mano.position.z;
+        if (Math.abs(dx) < 0.19 + r && Math.abs(dy) < v.mano.scale.y * v.HF * 0.48 + r && Math.abs(dz) < 0.10 + r) {
           v.golpeada = true;
           bola.vel.set(rand(-0.25, 0.25), 0.05, rand(-0.25, 0.25));   // parada y se cae
           try { game.audio.paddle(clamp(bola.x / 2.5, -1, 1), 0.4); } catch (e) { /* */ }
-          ctrl.fxPop(v.mesh.position);
+          ctrl.fxPop(v.mano.position);
           this._revienta(game, M, v, bola);
         }
       }
@@ -654,31 +837,55 @@ PLANTILLA_PODERES.mano = {
   },
   fin(game, p, ctrl, ctx) {
     const M = ctx && ctx.mano; if (!M) return;
-    M.vivos.forEach((v) => { v.tex.dispose(); v.mesh.geometry.dispose(); v.mesh.material.dispose(); });
+    M.vivos.forEach((v) => {
+      try { v.mano.geometry.dispose(); v.mano.material.dispose(); } catch (e) { /* */ }
+      try { v.mont.geometry.dispose(); v.mont.material.dispose(); } catch (e) { /* */ }
+      _manoTexSuelta(M, v.tex);
+    });
     M.trocitos.forEach((tr) => { tr.mesh.geometry.dispose(); tr.mesh.material.dispose(); });
+    M.pool.forEach((t) => { try { t.dispose(); } catch (e) { /* */ } });
     game.scene.remove(M.grupo);
     ctx.mano = null;
   },
 };
 
-/* -- 2 · PLAGA DE MOSCAS: enjambre en la cara del jugador, espantable ---- */
+/* -- 2 · PLAGA DE MOSCAS (r87 · «más trabajadas, aleteo, zumbido, más
+ * cantidad y calidad» — informe del dueño) -------------------------------
+ * 24 moscas de 2 FRAMES de aleteo (mosca_a/mosca_b, alternancia ~22 Hz con
+ * fase propia), órbitas elípticas con deriva y dardos ocasionales, ZUMBIDO
+ * de enjambre en bucle (createBucle + fly_buzz.mp3) y espantado con la
+ * pala (proximidad real del mando) — igual que confetti de Clown, pero
+ * vivo. */
 PLANTILLA_PODERES.moscas = {
   inicio(game, p, ctrl, ctx) {
-    const S = { grupo: new THREE.Group(), moscas: [], t: 0, tex: null };
+    const S = { grupo: new THREE.Group(), moscas: [], t: 0, texA: null, texB: null, bucle: null };
     S.grupo.position.set(0, -0.045, -0.44);
     try { game.camera.add(S.grupo); } catch (e) { game.scene.add(S.grupo); }
-    TEX_R86.pedir('mosca.webp', (t) => {
-      S.tex = t;
-      for (let i = 0; i < 15; i++) {
-        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }));
-        const esc = rand(0.030, 0.046);
-        s.scale.set(esc, esc * 0.72, 1);
-        s.userData.r86 = { radio: rand(0.09, 0.22), fase: rand(0, 6.3), vel: rand(0.7, 1.5) * (Math.random() < 0.5 ? 1 : -1), bob: rand(0.25, 0.7), muerta: 0, fx: 0, fy: 0 };
+    ctx.moscas = S;                     // r87: ctx ANTES de los callbacks
+    const nace = () => {
+      if (!S.texA || !S.texB || S.moscas.length) return;
+      for (let i = 0; i < 24; i++) {
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: S.texA, transparent: true, depthWrite: false }));
+        const esc = rand(0.026, 0.055);
+        s.scale.set(esc, esc * 0.82, 1);
+        s.userData.r87 = {
+          radio: rand(0.07, 0.26), fase: rand(0, 6.3),
+          vel: rand(0.8, 1.9) * (Math.random() < 0.5 ? 1 : -1),
+          bob: rand(0.25, 0.7), aleteo: rand(0, 6.3), aleteoV: rand(17, 26),
+          dart: rand(1.5, 4.0), dartT: 0, cx: 0, cy: 0, cz: 0,
+          muerta: 0, fx: 0, fy: 0,
+        };
         S.grupo.add(s);
         S.moscas.push(s);
       }
-    });
-    ctx.moscas = S;
+    };
+    TEX_R86.pedir('mosca_a.webp', (t) => { S.texA = t; nace(); });
+    TEX_R86.pedir('mosca_b.webp', (t) => { S.texB = t; nace(); });
+    // ZUMBIDO del enjambre (bucle del SDK, perfil de audio probado)
+    try {
+      S.bucle = createBucle(() => game, { url: () => A('fly_buzz.mp3'), vol: () => 0.34, fadeIn: 0.15, stopFade: 0.3 });
+      S.bucle.on();
+    } catch (e) { S.bucle = null; }
   },
   paso(dt, game, p, ctrl, ctx) {
     const S = ctx.moscas; if (!S) return;
@@ -686,7 +893,7 @@ PLANTILLA_PODERES.moscas = {
     const pad = game.controllerPaddles ? game.controllerPaddles[(game.paddleHand | 0) || 0] : null;
     for (let i = S.moscas.length - 1; i >= 0; i--) {
       const s = S.moscas[i];
-      const u = s.userData.r86;
+      const u = s.userData.r87;
       if (u.muerta > 0) {
         u.muerta -= dt;
         s.position.x += u.fx * dt; s.position.y += u.fy * dt;
@@ -694,24 +901,36 @@ PLANTILLA_PODERES.moscas = {
         if (u.muerta <= 0) { S.grupo.remove(s); s.material.dispose(); S.moscas.splice(i, 1); }
         continue;
       }
+      // ALETEO: 2 frames alternando con fase propia (~20 Hz, se ve vivo)
+      u.aleteo += dt * u.aleteoV;
+      const frame = (Math.floor(u.aleteo) & 1) ? S.texB : S.texA;
+      if (s.material.map !== frame) { s.material.map = frame; s.material.needsUpdate = true; }
+      // DARDOS: cada 1,5-4 s la mosca re-centra su órbita (enjambre vivo)
+      u.dartT += dt;
+      if (u.dartT >= u.dart) {
+        u.dartT = 0; u.dart = rand(1.5, 4.0);
+        u.cx = rand(-0.05, 0.05); u.cy = rand(-0.03, 0.04); u.cz = rand(-0.04, 0.04);
+      }
       const a = u.fase + S.t * u.vel;
-      s.position.x = Math.cos(a) * u.radio;
-      s.position.y = Math.sin(a * 1.6) * 0.05 + Math.sin(S.t * u.bob + u.fase) * 0.035;
-      s.position.z = Math.sin(a) * u.radio * 0.55;
+      s.position.x = u.cx + Math.cos(a) * u.radio;
+      s.position.y = u.cy + Math.sin(a * 1.6) * 0.05 + Math.sin(S.t * u.bob + u.fase) * 0.035;
+      s.position.z = u.cz + Math.sin(a) * u.radio * 0.55;
       if (pad && pad.pos) {
         s.getWorldPosition(_v86);
-        if (_v86.distanceTo(pad.pos) < 0.15) {          // ¡espantada con la pala!
+        if (_v86.distanceTo(pad.pos) < 0.16) {          // ¡espantada con la pala!
           u.muerta = 0.35;
           const inv = 1 / (Math.hypot(s.position.x, s.position.z) || 1);
-          u.fx = s.position.x * inv * rand(1.2, 2.2);
+          u.fx = s.position.x * inv * rand(1.2, 2.4);
           u.fy = rand(0.4, 1.0);
           ctrl.fxPop(_v86);
+          try { game.audio.playOsc(520 + Math.random() * 260, 180, 0.06, 'sawtooth', 0.05, 0); } catch (e) { /* */ }
         }
       }
     }
   },
   fin(game, p, ctrl, ctx) {
     const S = ctx && ctx.moscas; if (!S) return;
+    if (S.bucle) { try { S.bucle.off(); } catch (e) { /* */ } S.bucle = null; }
     S.moscas.forEach((s) => s.material.dispose());
     try { game.camera.remove(S.grupo); } catch (e) { /* */ }
     try { game.scene.remove(S.grupo); } catch (e) { /* */ }
@@ -719,19 +938,69 @@ PLANTILLA_PODERES.moscas = {
   },
 };
 
-/* -- 3 · CALABAZA: la bola se vuelve calabaza ×3, pesada y caótica ------- */
+/* -- 3 · CALABAZA (r87 · arreglo del fallo del dueño: «NO SE VE POR
+ * NINGÚN LADO, Y LA BOLA DESAPARECE») -----------------------------------
+ * CAUSA: la precarga del constructor terminaba ANTES del disparo → el
+ * callback de _pumpkinGet era SÍNCRONO y corría ANTES de ctx.calabaza = C
+ * → el guard lo saltaba: bola oculta y calabaza nunca añadida.
+ * ARREGLO: ctx primero, callback después; y la bola JAMÁS se queda sin
+ * cuerpo: si el GLB tarda >2,5 s hay calabaza PROCEDURAL de respaldo. */
+function _calabazaProcedural() {
+  if (TEX_R86.cache.__calProc) return TEX_R86.cache.__calProc;
+  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#e8720c'; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 8; i++) {
+    g.fillStyle = i % 2 ? '#c25e06' : '#f08a1d';
+    g.fillRect(i * 16 + 4, 0, 9, 128);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const grp = new THREE.Group();
+  const cuerpo = new THREE.Mesh(
+    new THREE.SphereGeometry(0.062, 20, 16),
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }),
+  );
+  cuerpo.scale.y = 0.82;
+  const rabo = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.008, 0.012, 0.035, 8),
+    new THREE.MeshStandardMaterial({ color: 0x3f6b23, roughness: 0.9 }),
+  );
+  rabo.position.y = 0.062;
+  grp.add(cuerpo); grp.add(rabo);
+  TEX_R86.cache.__calProc = grp;
+  return grp;
+}
+
 PLANTILLA_PODERES.calabaza = {
   inicio(game, p, ctrl, ctx) {
-    const C = { gltf: null, grav0: DIMS.gravity, prevVelY: 0, prevY: 1, spin: 0 };
-    DIMS.gravity = C.grav0 * 2.1;                       // más pesada
-    if (game.ballMesh) game.ballMesh.visible = false;   // la bola deja de verse
+    const C = { gltf: null, grav0: DIMS.gravity, prevVelY: 0, prevY: 1, spin: 0, listo: false };
+    ctx.calabaza = C;                   // r87: ANTES del callback (era el bug)
+    DIMS.gravity = C.grav0 * 2.1;       // más pesada
     _pumpkinGet((sc) => {
-      if (ctx.calabaza) { C.gltf = sc.clone(true); game.scene.add(C.gltf); }
+      if (!ctx.calabaza || C.listo) return;
+      C.listo = true;
+      C.esProc = false;
+      C.gltf = sc.clone(true);
+      game.scene.add(C.gltf);
+      if (game.ballMesh) game.ballMesh.visible = false;   // la bola la sustituye EL CUERPO
     });
-    ctx.calabaza = C;
+    C.fallbackT = 2.5;                  // si el GLB no llega: calabaza de la casa
   },
   paso(dt, game, p, ctrl, ctx) {
     const C = ctx.calabaza; if (!C) return;
+    // r87 · respaldo: el GLB tarda o falló → calabaza procedural (la bola
+    // NUNCA invisible — el fallo exacto que veía el dueño)
+    if (!C.listo && C.fallbackT > 0) {
+      C.fallbackT -= dt;
+      if (C.fallbackT <= 0) {
+        C.listo = true;
+        C.esProc = true;
+        C.gltf = _calabazaProcedural().clone(true);
+        game.scene.add(C.gltf);
+        if (game.ballMesh) game.ballMesh.visible = false;
+      }
+    }
     const b = game.ball; if (!b) return;
     // bote en la mesa → la salida puede ir en CUALQUIER dirección (caos del dueño)
     const enMesa = Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.03 &&
@@ -757,44 +1026,60 @@ PLANTILLA_PODERES.calabaza = {
     if (game.ballMesh) game.ballMesh.visible = true;
     if (C.gltf) {
       game.scene.remove(C.gltf);
-      C.gltf.traverse((o) => {
-        if (o.isMesh) { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((mm) => mm.dispose()); } }
-      });
+      // sólo se dispone lo del GLB del dueño; el procedural es CLON de una
+      // caché de la casa (geometrías/materiales compartidos: no dispose)
+      if (!C.esProc) {
+        C.gltf.traverse((o) => {
+          if (o.isMesh) { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((mm) => mm.dispose()); } }
+        });
+      }
     }
     ctx.calabaza = null;
   },
 };
 
-/* -- 4 · GELATINA ASQUEROSA: manchas que contaminan la bola -------------- */
+/* -- 4 · GELATINA ASQUEROSA (r87 · arreglo ctx-timing + guion del dueño)
+ * «aparecerán unas manchas sobre la mesa de forma aleatoria… COLOCAR
+ * ALEATORIAMENTE UN POCO POR ENCIMA DE LA MESA»: 5 manchas del dueño que
+ * FLOTAN un pelín sobre la losa (y +0,006…+0,012, sin z-fighting), la bola
+ * que las toca se pone VERDE FOSFORITO y pesa POR LO MENOS 3 VECES más
+ * (gravedad ×3 + frenado), soltando humillo verde que se desvanece. */
 PLANTILLA_PODERES.gelatina = {
   inicio(game, p, ctrl, ctx) {
     const G = { manchas: [], humo: [], t: 0, humoT: 0, contaminada: false, grav0: null, col0: 0, emis0: 0 };
+    ctx.gelatina = G;                   // r87: ANTES del callback (era el bug)
     TEX_R86.pedir('gelatina.webp', (t) => {
+      if (!ctx.gelatina || G.manchas.length) return;
       const cz = DIMS.tableCenterZ;
-      for (let i = 0; i < 4; i++) {
-        const tam = rand(0.20, 0.30);
+      for (let i = 0; i < 5; i++) {
+        const tam = rand(0.26, 0.38);
         const geo = new THREE.PlaneGeometry(tam, tam);
-        const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, opacity: 0.92, depthWrite: false });
+        const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, opacity: 0.94, depthWrite: false });
         const m = new THREE.Mesh(geo, mat);
         m.rotation.x = -Math.PI / 2;
         m.rotation.z = rand(0, Math.PI * 2);
-        m.position.set(rand(-0.55, 0.55), DIMS.tableTopY + 0.0025 + i * 0.0004, cz + rand(-1.0, 0.9));
-        if (ctx.gelatina) { ctx.gelatina.manchas.push(m); game.scene.add(m); }
+        // UN POCO POR ENCIMA DE LA MESA (guion del dueño) — escalonado
+        m.position.set(rand(-0.55, 0.55), DIMS.tableTopY + 0.006 + i * 0.0012, cz + rand(-1.0, 0.9));
+        game.scene.add(m);
+        G.manchas.push(m);
       }
     });
-    ctx.gelatina = G;
   },
   paso(dt, game, p, ctrl, ctx) {
     const G = ctx.gelatina; if (!G) return;
     G.t += dt;
+    // respiración sutil de las manchas (vivas, pegajosas)
+    for (let i = 0; i < G.manchas.length; i++) {
+      G.manchas[i].material.opacity = 0.90 + Math.sin(G.t * 2.4 + i * 1.7) * 0.06;
+    }
     const b = game.ball; const r = DIMS.ballRadius;
-    if (!G.contaminada && b && b.pos.y - r <= DIMS.tableTopY + 0.035) {
+    if (!G.contaminada && b && b.pos.y - r <= DIMS.tableTopY + 0.045) {
       for (const m of G.manchas) {
         const dx = b.pos.x - m.position.x;
         const dz = b.pos.z - m.position.z;
-        if (dx * dx + dz * dz < 0.10 * 0.10) {
+        if (dx * dx + dz * dz < 0.11 * 0.11) {
           G.contaminada = true;
-          G.grav0 = DIMS.gravity; DIMS.gravity = G.grav0 * 2.6;   // ≥3 veces más pesada
+          G.grav0 = DIMS.gravity; DIMS.gravity = G.grav0 * 3.0;   // ≥3 VECES más pesada
           const mesh = game.ballMesh;
           if (mesh && mesh.material) {
             G.col0 = mesh.material.color.getHex();
@@ -809,12 +1094,12 @@ PLANTILLA_PODERES.gelatina = {
     }
     if (G.contaminada && b) {
       // necesita más fuerza para avanzar: la gelatina frena la bola
-      b.vel.x *= (1 - 0.30 * dt);
-      b.vel.z *= (1 - 0.30 * dt);
+      b.vel.x *= (1 - 0.35 * dt);
+      b.vel.z *= (1 - 0.35 * dt);
       // humillo verde fosforito que se desvanece
       G.humoT -= dt;
       if (G.humoT <= 0) {
-        G.humoT = 0.085;
+        G.humoT = 0.075;
         const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: _texHumo(), transparent: true, opacity: 0.62, depthWrite: false }));
         s.position.set(b.pos.x + rand(-0.01, 0.01), b.pos.y + 0.02, b.pos.z + rand(-0.01, 0.01));
         s.scale.set(0.05, 0.05, 1);
@@ -845,7 +1130,6 @@ PLANTILLA_PODERES.gelatina = {
     ctx.gelatina = null;
   },
 };
-
 class PlantillaPoderes {
   constructor(ctrl, game, man) {
     this.ctrl = ctrl; this.game = game; this.man = man;
@@ -861,12 +1145,41 @@ class PlantillaPoderes {
     this.sign = createPowerSign(THREE, () => game, {
       coreo: 'v240', halo: true, arte: 'fit1833',
       url: () => A('superpower.webp'),
+      // r87 · INFORME DEL DUEÑO («no aparece el cartel de superpoder»): sin
+      // dims el anclaje se saltaba y el cartel nacía en el ORIGEN del rig
+      // (a los pies, bajo el frustum). Con dims: sobre la red como los
+      // otros 4 campeonatos (locura/orbital pasan lo mismo).
+      dims: () => (DIMS ? { netTopY: DIMS.netTopY, tableCenterZ: DIMS.tableCenterZ } : null),
     });
     this.sign.build();
-    // r86: precarga de TODOS los assets de superpoderes (manos, mosca,
-    // gelatina y calabaza) para que el primer disparo ya salga vestido
-    ['mano1.webp', 'mano2.webp', 'mano3.webp', 'mosca.webp', 'gelatina.webp'].forEach((n) => TEX_R86.pedir(n, () => {}));
+    // r87: precarga de TODOS los assets de superpoderes (manos, montículo,
+    // moscas 2 frames, gelatina y calabaza) para que el primer disparo ya
+    // salga vestido — y sin subidas a GPU a mitad de partida
+    ['mano1.webp', 'mano2.webp', 'mano3.webp', 'monticulo.webp', 'mosca_a.webp', 'mosca_b.webp', 'gelatina.webp'].forEach((n) => TEX_R86.pedir(n, () => {}));
     _pumpkinGet(() => {});
+    // r87 · PREWARM DE SHADERS (anti-trompicones): los materiales de los
+    // poderes nacen a mitad de partida y su 1.ª compilación GLSL da un tirón
+    // en el casco. Aquí se compilan UNA VEZ, tras el telón, con dummies que
+    // se retiran en el mismo instante (renderer.compile cachea los programas).
+    try {
+      const warm = [];
+      const push = (m) => {
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), m);
+        mesh.position.set(0, -50, 0);
+        game.scene.add(mesh); warm.push(mesh);
+      };
+      push(new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.3, side: THREE.DoubleSide, depthWrite: false }));
+      push(new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      sp.position.set(0, -50, 0);
+      game.scene.add(sp); warm.push(sp);
+      game.renderer.compile(game.scene, game.camera);
+      for (const w of warm) {
+        game.scene.remove(w);
+        if (w.geometry) w.geometry.dispose();
+        if (w.material) w.material.dispose();
+      }
+    } catch (e) { /* el prewarm nunca rompe */ }
   }
   _elegir() {
     if (this.T.bolsa === 'rotatoria') {
@@ -1308,7 +1621,20 @@ class PlantillaController {
   }
 
   /* ---- ciclo sala ---- */
+  /* r87 · DESMONTA (nuevo): el arranque repetido (re-entrar al campeonato)
+ * deja TODO lo anterior vivo en escena — rival duplicado, mapa viejo,
+ * cartel y tabla pendiente. Desmonta en orden inverso y limpia la GPU. */
+  _desmonta() {
+    if (this.poderes) { try { this.poderes.dispose(); } catch (e) { /* */ } this.poderes = null; }
+    if (this.pistola) { try { this.pistola.beams.forEach((o) => { this.game.scene.remove(o.m); }); this.pistola.beams = []; } catch (e) { /* */ } this.pistola = null; }
+    if (this.rival) { try { this.rival.dispose(); } catch (e) { /* */ } this.rival = null; }
+    if (this.mapa) { try { this.mapa.dispose(); } catch (e) { /* */ } this.mapa = null; }
+    if (this.cartel) { try { this.game.scene.remove(this.cartel.mesh); this.cartel.dispose(); } catch (e) { /* */ } this.cartel = null; }
+    if (this._insignia) { try { this.game.scene.remove(this._insignia); this._insignia.geometry.dispose(); this._insignia.material.dispose(); } catch (e) { /* */ } this._insignia = null; }
+    if (this.prueba) { try { this.prueba.dispose(); } catch (e) { /* */ } this.prueba = null; }
+  }
   startChamp() {
+    this._desmonta();
     this.rival = new RivalVivo(this.game, this.man);
     this.rival.estadoBase('idle');
     this.cartel = construirCartel(this.game, this.man);
@@ -1463,7 +1789,7 @@ class PlantillaController {
     if (!url) return;
     const tex = new THREE.TextureLoader().load(A(String(url).replace(/^assets\//, '')));
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-    m.position.set(-1.72, 1.42, -3.4);
+    m.position.set(-1.9, 1.42, -5.40);   // r87: pared FRONTAL (antes flotaba a mitad de sala)
     this.game.scene.add(m);
     this._insignia = m;
   }
@@ -1500,6 +1826,7 @@ class PlantillaController {
     if (this.prueba) { try { this.prueba.stop(); } catch (e) {} this.prueba = null; }
     if (this.poderes) this.poderes.parar();
     this._losaOff();
+    this._desmonta();       // r87: el mapa/cartel/rival/insignia NO quedan
     this.dueloVivo = false;
     if (MUSIC) try { MUSIC.off(); } catch (e) {}
     try {
@@ -1511,6 +1838,7 @@ class PlantillaController {
     this._variant(null);
   }
   update(dt) {
+    if (this.mapa) this.mapa.refresco();   // r87: tapas según progreso
     if (this.rival) {
       const r = this.game.rules || {};
       this.rival.update(dt, { rallyHits: r.rallyHits, scorePlayer: r.scorePlayer, scoreAi: r.scoreAi });

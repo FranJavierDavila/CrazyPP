@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r83_v3675 — CAPA BS · V3.6.74→3.6.78-SDK6, FASE 77 «LA PALA AL MILÍMETRO».
+"""qa_r83_v3675 — CAPA BS · V3.6.74→3.6.79-SDK6, FASE 77 «LA PALA AL MILÍMETRO».
 
 Petición del dueño (r83): «Dentro del Pro Training tenemos el ajuste de la
 posición de la pala, pero no tiene sentido ahí, así que vamos a moverlo al
@@ -125,8 +125,8 @@ AGUJAS = [
     ("guardar con A dentro del ajuste", "A: guardar"),
     # — mudanza confirmada —
     ("la tarjeta se RETIRA del hub del Pro Training", "se RETIRA del hub (se muda a"),
-    ("versión 3.6.75 en el badge", "V3.6.78-SDK6"),
-    ("versión 3.6.75 en VERSION", "VERSION = '3.6.78-SDK6'"),
+    ("versión 3.6.75 en el badge", "V3.6.79-SDK6"),
+    ("versión 3.6.75 en VERSION", "VERSION = '3.6.79-SDK6'"),
 ]
 
 CONTADORES = [
@@ -137,7 +137,7 @@ CONTADORES = [
     ("los 3 cursores se construyen", "cursorDe(", 3),
     ("el ajuste PURO se arranca una vez", "game.enterCalib(true);", 1),
     ("sin restos del panel antiguo", "this.palaPanel", 0),
-    ("versión 3.6.75 (badge + VERSION)", "3.6.78-SDK6", 2),
+    ("versión 3.6.75 (badge + VERSION)", "3.6.79-SDK6", 2),
 ]
 
 

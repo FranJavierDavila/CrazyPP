@@ -476,6 +476,7 @@ CAPAS = [
     # anuncio SuperPower del dueño + medallón circular + congelación v2.40.
     ('BV · escenario real halloween + 4 superpoderes (v3678)', 'qa_r86_v3678.py'),
     ('BW · informe del dueño en mano: rival+mapa+cartel+4 poderes+red social (v3679)', 'qa_r87_v3679.py'),
+    ('r88 · halloween a justo (v3680)', 'qa_r88_v3680.py'),
     ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
 ]
 

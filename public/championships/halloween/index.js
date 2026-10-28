@@ -139,7 +139,16 @@ class RivalVivo {
       aspecto: this.rv.aspecto !== false,
       material: this.rv.material || 'basic',
       alphaTest: this.rv.alphaTest != null ? this.rv.alphaTest : 0.25,
-      pos: this.rv.pos || [1.26, ALTO / 2, ((DIMS && DIMS.tableCenterZ) || -1.6) - 1.70],
+      /* r88 · INFORME DEL DUEÑO («el zombi debe aparecer en relación a la
+       * mesa algo más a la derecha… se referenciaban a la mesa»): anclaje
+       * a la MESA — z = mesa − 1,70 (convención que ya daba menos
+       * problemas) y x REFERIDA AL CANTO derecho de la mesa (+0,69).
+       * Nada de x absolutos: si la mesa se mueve, el zombi la sigue. */
+      pos: this.rv.pos || [
+        ((DIMS && DIMS.tableHalfWidth) || 0.7625) + 0.69,
+        ALTO / 2,
+        ((DIMS && DIMS.tableCenterZ) || -1.6) - 1.70,
+      ],
       rotY: this.rv.rotY || 0,
       castShadow: this.rv.material === 'standard',
     });
@@ -242,6 +251,13 @@ class RivalVivo {
 /* ------------------------------------------------------------------ */
 function construirCartel(game, man) {
   const c = man.cartel || {};
+  /* r88 · INFORME DEL DUEÑO («aparece un cartel metido en la pared
+   * izquierda hacia el fondo, que no sé qué está haciendo ahí»): el
+   * cartel de bienvenida se RETIRA de Halloween por normativa — la etapa
+   * la pinta el HUD, las normas salen al lanzar cada etapa y el cartel
+   * de superpoder es el ÚNICO cartel de la sala. Lo decide el manifest
+   * (cartel.oculto): los otros campeonatos conservan el suyo. */
+  if (c.oculto) return null;
   const cartel = createCartel(THREE, () => game, {
     cvW: c.cvW || 1024, cvH: c.cvH || 512,
     w: c.w || 2.3, h: c.h || 1.15,
@@ -619,6 +635,82 @@ function _texHumo() {
   TEX_R86.cache.__humo = t;
   return t;
 }
+/* -- r88 · «CHOFFF» (petición del dueño para la mancha pisada y el
+ * estallido de la calabaza podrida): golpe sordo + soplo, síntesis con
+ * el motor de audio probado del núcleo (playOsc + playNoise). */
+function _chofff(game, x) {
+  const pan = clamp((x || 0) / 2.5, -1, 1);
+  try { game.audio.playOsc(150, 42, 0.30, 'sine', 0.55, pan); } catch (e) { /* */ }
+  try { game.audio.playNoise(0.38, 850, 0.9, 0.42, pan, 'lowpass'); } catch (e) { /* */ }
+}
+
+/* -- r88 · VIDA FUERA DEL PODER: el estallido de la calabaza ocurre
+ * 0,55 s ANTES del cierre y las ráfagas de humo verde deben seguir en
+ * el aire después — trozos y ráfagas viven en este registro GLOBAL con
+ * tick desde PlantillaPoderes.update (sala y duelo) y limpieza en
+ * parar()/dispose()/_desmonta. Nada sobrevive a la salida. */
+const TROZOS_R88 = { lista: [], humo: [] };
+function _trozoAl(game, pos, base, podre) {
+  const geo = new THREE.TetrahedronGeometry(rand(0.022, 0.05));
+  const mat = new THREE.MeshStandardMaterial({ color: (Math.random() < 0.5 ? base : podre).clone(), roughness: 0.85, metalness: 0.0 });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.copy(pos).add(_v86.set(rand(-0.03, 0.03), rand(-0.02, 0.04), rand(-0.03, 0.03)));
+  game.scene.add(m);
+  TROZOS_R88.lista.push({
+    m, t: 0, vida: rand(0.7, 1.0),
+    vx: rand(-1.6, 1.6), vy: rand(1.2, 2.6), vz: rand(-1.6, 1.6),
+    va: rand(-11, 11), eje: Math.random() < 0.5 ? 'x' : 'z',
+  });
+}
+function _humoVerdeR88(game, pos, n) {
+  for (let i = 0; i < n; i++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: _texHumo(), transparent: true, opacity: 0.9, depthWrite: false }));
+    s.position.set(pos.x + rand(-0.06, 0.06), pos.y + rand(0.0, 0.09), pos.z + rand(-0.06, 0.06));
+    s.scale.setScalar(0.08);
+    game.scene.add(s);
+    TROZOS_R88.humo.push({
+      s, t: 0, vida: rand(1.6, 2.4), vy: rand(0.25, 0.6),
+      vx: rand(-0.3, 0.3), vz: rand(-0.3, 0.3),
+      s0: 0.08, s1: rand(0.42, 0.62), op0: rand(0.78, 0.92),
+    });
+  }
+}
+function _pasoTrozosR88(dt, game) {
+  const L = TROZOS_R88.lista;
+  for (let i = L.length - 1; i >= 0; i--) {
+    const t = L[i];
+    t.t += dt;
+    t.vy -= 7.5 * dt;
+    t.m.position.x += t.vx * dt; t.m.position.y += t.vy * dt; t.m.position.z += t.vz * dt;
+    t.m.rotation[t.eje] += t.va * dt;
+    const k = t.t / t.vida;
+    if (k >= 1 || t.m.position.y < 0.02) {
+      game.scene.remove(t.m);
+      t.m.geometry.dispose(); t.m.material.dispose();
+      L.splice(i, 1);
+      continue;
+    }
+    if (k > 0.6) { t.m.material.transparent = true; t.m.material.opacity = Math.max(0, 1 - (k - 0.6) / 0.4); }
+  }
+  const H = TROZOS_R88.humo;
+  for (let i = H.length - 1; i >= 0; i--) {
+    const h = H[i];
+    h.t += dt;
+    h.s.position.y += h.vy * dt;
+    h.s.position.x += h.vx * dt; h.s.position.z += h.vz * dt;
+    const k = h.t / h.vida;
+    h.s.scale.setScalar(h.s0 + k * (h.s1 - h.s0));
+    h.s.material.opacity = Math.max(0, h.op0 * (1 - k));
+    if (k >= 1) { game.scene.remove(h.s); h.s.material.dispose(); H.splice(i, 1); }
+  }
+}
+function _trozosLimpia(game) {
+  for (const t of TROZOS_R88.lista) { try { game.scene.remove(t.m); t.m.geometry.dispose(); t.m.material.dispose(); } catch (e) { /* */ } }
+  TROZOS_R88.lista.length = 0;
+  for (const h of TROZOS_R88.humo) { try { game.scene.remove(h.s); h.s.material.dispose(); } catch (e) { /* */ } }
+  TROZOS_R88.humo.length = 0;
+}
+
 const _v86 = new THREE.Vector3();
 const _FRAC_MONTICULO = 0.30;   // la tierra ocupa el ~30 % inferior del arte del dueño
 
@@ -631,14 +723,25 @@ function _pumpkinGet(cb) {
   try {
     new GLTFLoader().load(A('calabaza.glb'), (g) => {
       g.scene.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; } });
-      // escala: calabaza ≈ 3 veces la bola (Ø 0.125 m)
+      // escala: calabaza ≈ 3 veces la bola (Ø 0.04 m → 0.125 m)
+      const wrapper = new THREE.Group();
       try {
         const caja = new THREE.Box3().setFromObject(g.scene);
         const tam = Math.max(caja.max.x - caja.min.x, caja.max.y - caja.min.y, caja.max.z - caja.min.z) || 1;
-        g.scene.scale.setScalar(0.125 / tam);
+        const s = 0.125 / tam;
+        g.scene.scale.setScalar(s);
+        /* r88 · CENTRADO REAL (el dueño: «debe estar perfectamente alineada
+         * con el centro de la bola»): el centro geométrico del GLB pasa al
+         * origen del wrapper — el consumidor pega el wrapper AL CENTRO de
+         * la bola y la calabaza queda clavada en él (antes +0,035 de foleo
+         * y el pivote del artista donde le dio la gana). */
+        const c = new THREE.Vector3();
+        caja.getCenter(c);
+        g.scene.position.set(-c.x * s, -c.y * s, -c.z * s);
       } catch (e) { /* */ }
-      TEX_R86.gltf.pumpkin = g.scene;
-      (TEX_R86.gltf.pend || []).forEach((f) => { try { f(g.scene); } catch (e) { /* */ } });
+      wrapper.add(g.scene);
+      TEX_R86.gltf.pumpkin = wrapper;
+      (TEX_R86.gltf.pend || []).forEach((f) => { try { f(wrapper); } catch (e) { /* */ } });
       delete TEX_R86.gltf.pend;
     }, undefined, () => { delete TEX_R86.gltf.pend; });
   } catch (e) { delete TEX_R86.gltf.pend; }
@@ -694,8 +797,14 @@ PLANTILLA_PODERES.mano = {
   },
   _spawn(game, M) {
     const cz = DIMS.tableCenterZ;
-    const x = rand(-0.56, 0.56);
-    const z = clamp(cz + rand(-0.95, 0.85), cz - 1.30, cz + 1.10);
+    /* r88 · INFORME DEL DUEÑO («deben aparecer siempre dentro del tablero,
+     * nunca pueden tener partes fuera de él»): el límite es el CANTO de la
+     * mesa menos el radio del montículo (0,23) — antes el cuadro de 0,46 m
+     * en x±0,56 CORTABA el canto (0,56+0,23 = 0,79 > 0,7625). */
+    const MX = Math.max(0.05, ((DIMS.tableHalfWidth != null) ? DIMS.tableHalfWidth : 0.7625) - 0.23 - 0.015);
+    const MZ = Math.max(0.05, ((DIMS.tableHalfLength != null) ? DIMS.tableHalfLength : 1.37) - 0.23 - 0.015);
+    const x = rand(-MX, MX);
+    const z = cz + clamp(rand(-0.98, 0.92), -MZ, MZ);
     const b = game.ball ? game.ball.pos : null;
     if (b && Math.abs(b.x - x) < 0.24 && Math.abs(b.z - z) < 0.24) return; // no nacer sobre la bola
     if (!M.tex.length || !M.texMonticulo) return;
@@ -718,7 +827,13 @@ PLANTILLA_PODERES.mano = {
     geo.translate(0, HF / 2, 0);
     const mat = new THREE.MeshBasicMaterial({ map: tex2, transparent: true, alphaTest: 0.30, side: THREE.DoubleSide, depthWrite: false });
     const mano = new THREE.Mesh(geo, mat);
-    mano.position.set(x, DIMS.tableTopY + 0.012, z);
+    mano.position.set(x, DIMS.tableTopY + 0.014, z);
+    /* r88 · ORDEN DE PINTADO (informe del dueño: «la textura de la mano
+     * debe estar POR DELANTE de la de la tierra de la que sale; ahora es
+     * al revés y no se ve la parte inferior de la mano»): montículo 3 →
+     * mano 4 → trocitos 5. Ambos sin depthWrite: el renderOrder decide y
+     * la mano pisa SU tierra. */
+    mano.renderOrder = 4;
     try {
       const cam = game.camera;
       _v86.setFromMatrixPosition(cam.matrixWorld);
@@ -737,6 +852,7 @@ PLANTILLA_PODERES.mano = {
       const geo = new THREE.PlaneGeometry(rand(0.04, 0.075), rand(0.04, 0.075));
       const mat = new THREE.MeshBasicMaterial({ map: M.texTrozo, transparent: true, alphaTest: 0.3, side: THREE.DoubleSide, depthWrite: false });
       const m = new THREE.Mesh(geo, mat);
+      m.renderOrder = 5;   // r88: los trocitos sobre mano y tierra
       m.position.copy(v.mano.position).add(_v86.set(rand(-0.1, 0.1), v.mano.scale.y * v.HF * rand(0.3, 0.9), rand(-0.05, 0.05)));
       M.grupo.add(m);
       M.trocitos.push({ mesh: m, vx: rand(-0.8, 0.8), vy: rand(0.9, 1.8), vz: rand(-0.5, 0.5), va: rand(-9, 9), vida: 0.55, t: 0 });
@@ -972,23 +1088,50 @@ function _calabazaProcedural() {
   return grp;
 }
 
+/* -- r88 · cuerpo de calabaza POR INSTANCIA: clona los materiales (la
+ * pudrición tiñe SOLO su copia — el caché queda intacto) y guarda el
+ * color original de cada uno. Devuelve los registros para paso(). */
+const _PODRE_R88 = new THREE.Color(0x3a2b12);
+function _preparaCuerpoR88(raiz) {
+  const mats = [];
+  try {
+    raiz.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      const origs = Array.isArray(o.material) ? o.material : [o.material];
+      o.material = origs.map((mm) => {
+        const c = mm.clone();
+        mats.push({
+          m: c,
+          col: c.color ? c.color.clone() : new THREE.Color(0xe8720c),
+          emis: (c.emissive && mm.emissive) ? mm.emissive.clone() : null,
+          podre: _PODRE_R88,
+        });
+        return c;
+      });
+    });
+  } catch (e) { /* */ }
+  return mats;
+}
+
 PLANTILLA_PODERES.calabaza = {
   inicio(game, p, ctrl, ctx) {
-    const C = { gltf: null, grav0: DIMS.gravity, prevVelY: 0, prevY: 1, spin: 0, listo: false };
+    const C = { gltf: null, grav0: DIMS.gravity, t: 0, listo: false, explotada: false, mats: [], dur: p.duration || 10 };
     ctx.calabaza = C;                   // r87: ANTES del callback (era el bug)
-    DIMS.gravity = C.grav0 * 2.1;       // más pesada
-    _pumpkinGet((sc) => {
+    DIMS.gravity = C.grav0 * 2.1;       // «se sentirá más pesada: hay que golpearla más fuerte»
+    _pumpkinGet((wrapper) => {
       if (!ctx.calabaza || C.listo) return;
       C.listo = true;
       C.esProc = false;
-      C.gltf = sc.clone(true);
+      C.gltf = wrapper.clone(true);
+      C.mats = _preparaCuerpoR88(C.gltf);
       game.scene.add(C.gltf);
-      if (game.ballMesh) game.ballMesh.visible = false;   // la bola la sustituye EL CUERPO
+      if (game.ballMesh) game.ballMesh.visible = false;   // la calabaza ES la bola
     });
     C.fallbackT = 2.5;                  // si el GLB no llega: calabaza de la casa
   },
   paso(dt, game, p, ctrl, ctx) {
     const C = ctx.calabaza; if (!C) return;
+    C.t += dt;
     // r87 · respaldo: el GLB tarda o falló → calabaza procedural (la bola
     // NUNCA invisible — el fallo exacto que veía el dueño)
     if (!C.listo && C.fallbackT > 0) {
@@ -997,27 +1140,40 @@ PLANTILLA_PODERES.calabaza = {
         C.listo = true;
         C.esProc = true;
         C.gltf = _calabazaProcedural().clone(true);
+        C.mats = _preparaCuerpoR88(C.gltf);
         game.scene.add(C.gltf);
         if (game.ballMesh) game.ballMesh.visible = false;
       }
     }
     const b = game.ball; if (!b) return;
-    // bote en la mesa → la salida puede ir en CUALQUIER dirección (caos del dueño)
-    const enMesa = Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.03 &&
-      Math.abs(b.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + 0.03;
-    if (enMesa && C.prevVelY < -0.5 && b.vel.y > 0.5) {
-      const hs = Math.hypot(b.vel.x, b.vel.z) * rand(0.75, 1.05);
-      const th = rand(0, Math.PI * 2);
-      b.vel.x = Math.sin(th) * hs;
-      b.vel.z = Math.cos(th) * hs;
-      b.vel.y = Math.max(b.vel.y, rand(1.2, 2.4));
+    /* r88 · ESTALLIDO FINAL (guion del dueño: «se va oscureciendo
+     * (pudriendo) hasta que, cuando está a punto de desaparecer, la
+     * calabaza ya podrida explota en trozos y desaparece, con un sonido
+     * de CHOFFF»). El estallido va 0,55 s antes del cierre y la bola
+     * normal VUELVE en ese instante — nunca calabaza y bola a la vez. */
+    if (!C.explotada && C.t >= C.dur - 0.55) {
+      C.explotada = true;
+      if (C.gltf) C.gltf.visible = false;
+      if (game.ballMesh) game.ballMesh.visible = true;
+      _chofff(game, b.pos.x);
+      for (let i = 0; i < 12; i++) _trozoAl(game, b.pos, new THREE.Color(0xe8720c), new THREE.Color(0x4a3512));
+      try { ctrl.fxPop(b.pos); } catch (e) { /* */ }
     }
-    C.prevVelY = b.vel.y; C.prevY = b.pos.y;
+    if (C.explotada) return;
     if (C.gltf) {
-      C.gltf.position.set(b.pos.x, b.pos.y + 0.035, b.pos.z);
-      C.spin += dt * (2.2 + Math.hypot(b.vel.x, b.vel.z) * 0.6);
-      C.gltf.rotation.y = C.spin;
-      C.gltf.rotation.x = clamp(-b.vel.z * 0.05, -0.45, 0.45);
+      /* r88 · LA CALABAZA ES LA BOLA: centrada en su centro EXACTO y
+       * girando COMO LA BOLA (mismo quaternion del mesh — el dueño:
+       * «girar como lo haría la bola (realmente ahora es la bola pero con
+       * apariencia de calabaza)»). Sin rebotes aleatorios: física de bola
+       * pesada, sin más (el «imposible jugarlo» del informe). */
+      C.gltf.position.copy(b.pos);
+      if (game.ballMesh) C.gltf.quaternion.copy(game.ballMesh.quaternion);
+    }
+    /* r88 · PUDRICIÓN: el arte se oscurece linealmente hasta el estallido */
+    const k = clamp(C.t / Math.max(0.1, C.dur - 0.55), 0, 1);
+    for (const rec of C.mats) {
+      if (rec.m.color) rec.m.color.copy(rec.col).lerp(rec.podre, k);
+      if (rec.m.emissive && rec.emis) rec.m.emissive.copy(rec.emis).multiplyScalar(1 - k * 0.8);
     }
   },
   fin(game, p, ctrl, ctx) {
@@ -1026,31 +1182,38 @@ PLANTILLA_PODERES.calabaza = {
     if (game.ballMesh) game.ballMesh.visible = true;
     if (C.gltf) {
       game.scene.remove(C.gltf);
-      // sólo se dispone lo del GLB del dueño; el procedural es CLON de una
-      // caché de la casa (geometrías/materiales compartidos: no dispose)
-      if (!C.esProc) {
-        C.gltf.traverse((o) => {
-          if (o.isMesh) { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((mm) => mm.dispose()); } }
-        });
-      }
+      /* r88: los MATERIALES son clon por instancia (pudrición) → dispose
+       * SIEMPRE; las GEOMETRÍAS sólo en el GLB del dueño (clon del caché:
+       * re-subida al próximo uso, igual que r87) — el procedural comparte
+       * geometría con la casa y NO se toca. */
+      C.gltf.traverse((o) => {
+        if (o.isMesh) {
+          if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((mm) => { try { mm.dispose(); } catch (e) { /* */ } }); }
+          if (!C.esProc && o.geometry) { try { o.geometry.dispose(); } catch (e) { /* */ } }
+        }
+      });
     }
     ctx.calabaza = null;
   },
 };
 
-/* -- 4 · GELATINA ASQUEROSA (r87 · arreglo ctx-timing + guion del dueño)
- * «aparecerán unas manchas sobre la mesa de forma aleatoria… COLOCAR
- * ALEATORIAMENTE UN POCO POR ENCIMA DE LA MESA»: 5 manchas del dueño que
- * FLOTAN un pelín sobre la losa (y +0,006…+0,012, sin z-fighting), la bola
- * que las toca se pone VERDE FOSFORITO y pesa POR LO MENOS 3 VECES más
- * (gravedad ×3 + frenado), soltando humillo verde que se desvanece. */
+/* -- 4 · GELATINA ASQUEROSA (r88 · guion del dueño, reescrita) --------
+ * «las manchas se deben repartir siempre por dentro de la mesa y nunca
+ * tener alguna parte fuera de ella» (límite por radio CIRCUNSCRITO del
+ * cuadrado girado). «Si la bola golpea alguna mancha, sonido de CHOFFF,
+ * se convierte en bola verde fosforito y cuando bota en la mesa o en la
+ * pala lanza una explosión de humo verde que dificulta mucho la visión.
+ * Su peso NO varía: física de la bola normal» — la r87 la pesaba ×3:
+ * RETIRADO (la bola se juega igual; sólo cambia el aspecto y el humo). */
 PLANTILLA_PODERES.gelatina = {
   inicio(game, p, ctrl, ctx) {
-    const G = { manchas: [], humo: [], t: 0, humoT: 0, contaminada: false, grav0: null, col0: 0, emis0: 0 };
+    const G = { manchas: [], humo: [], t: 0, humoT: 0, contaminada: false, col0: 0, emis0: 0, expT: 0, prevVy: 0 };
     ctx.gelatina = G;                   // r87: ANTES del callback (era el bug)
     TEX_R86.pedir('gelatina.webp', (t) => {
       if (!ctx.gelatina || G.manchas.length) return;
       const cz = DIMS.tableCenterZ;
+      const HW = (DIMS.tableHalfWidth != null) ? DIMS.tableHalfWidth : 0.7625;
+      const HL = (DIMS.tableHalfLength != null) ? DIMS.tableHalfLength : 1.37;
       for (let i = 0; i < 5; i++) {
         const tam = rand(0.26, 0.38);
         const geo = new THREE.PlaneGeometry(tam, tam);
@@ -1058,8 +1221,15 @@ PLANTILLA_PODERES.gelatina = {
         const m = new THREE.Mesh(geo, mat);
         m.rotation.x = -Math.PI / 2;
         m.rotation.z = rand(0, Math.PI * 2);
+        /* r88 · DENTRO DEL TABLERRO SIEMPRE: el límite usa el RADIO
+         * CIRCUNSCRITO del cuadrado girado (tam/2·√2) + margen — antes un
+         * cuadrado de 0,38 en x±0,55 CORTABA el canto (0,55+0,19·√2 =
+         * 0,82 > 0,7625). */
+        const circ = (tam / 2) * 1.4142 + 0.012;
+        const mx = Math.max(0.04, HW - circ);
+        const mz = Math.max(0.04, HL - circ);
         // UN POCO POR ENCIMA DE LA MESA (guion del dueño) — escalonado
-        m.position.set(rand(-0.55, 0.55), DIMS.tableTopY + 0.006 + i * 0.0012, cz + rand(-1.0, 0.9));
+        m.position.set(rand(-mx, mx), DIMS.tableTopY + 0.006 + i * 0.0012, cz + rand(-mz, mz));
         game.scene.add(m);
         G.manchas.push(m);
       }
@@ -1068,6 +1238,7 @@ PLANTILLA_PODERES.gelatina = {
   paso(dt, game, p, ctrl, ctx) {
     const G = ctx.gelatina; if (!G) return;
     G.t += dt;
+    G.expT = Math.max(0, G.expT - dt);
     // respiración sutil de las manchas (vivas, pegajosas)
     for (let i = 0; i < G.manchas.length; i++) {
       G.manchas[i].material.opacity = 0.90 + Math.sin(G.t * 2.4 + i * 1.7) * 0.06;
@@ -1079,7 +1250,9 @@ PLANTILLA_PODERES.gelatina = {
         const dz = b.pos.z - m.position.z;
         if (dx * dx + dz * dz < 0.11 * 0.11) {
           G.contaminada = true;
-          G.grav0 = DIMS.gravity; DIMS.gravity = G.grav0 * 3.0;   // ≥3 VECES más pesada
+          /* r88 · FÍSICA INTACTA (el dueño: «su peso no varía, tendrá la
+           * física de la bola normal») — la r87 la pesaba ×3 y la frenaba:
+           * RETIRADO. Sólo cambia el ASPECTO + el humo. */
           const mesh = game.ballMesh;
           if (mesh && mesh.material) {
             G.col0 = mesh.material.color.getHex();
@@ -1087,16 +1260,35 @@ PLANTILLA_PODERES.gelatina = {
             mesh.material.color.setHex(0x39ff14);                  // verde fosforito
             if (mesh.material.emissive) mesh.material.emissive.setHex(0x1f8f0a);
           }
+          _chofff(game, b.pos.x);                                  // «CHOFFF»
           ctrl.fxPop(b.pos);
           break;
         }
       }
     }
     if (G.contaminada && b) {
-      // necesita más fuerza para avanzar: la gelatina frena la bola
-      b.vel.x *= (1 - 0.35 * dt);
-      b.vel.z *= (1 - 0.35 * dt);
-      // humillo verde fosforito que se desvanece
+      /* r88 · HUMO VERDE AL BOTAR (el dueño: «cuando bota en la mesa o en
+       * la pala lanza una explosión de humo verde que dificulta mucho la
+       * visión»): bote en MESA = invierte vy sobre la mesa; bote en PALA =
+       * contacto del mando con velocidad. Ráfaga densa y lenta (global:
+       * sobrevive al cierre del poder y se disipa sola). */
+      const sobreMesa = Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.03 &&
+        Math.abs(b.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + 0.03;
+      const boteMesa = sobreMesa && G.prevVy < -0.5 && b.vel.y > 0.5;
+      let botePala = false;
+      const pad = game.controllerPaddles ? game.controllerPaddles[(game.paddleHand | 0) || 0] : null;
+      if (pad && pad.pos) {
+        const dp = pad.pos.distanceTo(b.pos);
+        const vp = pad.velocity ? pad.velocity.length() : 0;
+        if (dp < 0.115 + r && vp > 0.6) botePala = true;
+      }
+      if ((boteMesa || botePala) && G.expT <= 0) {
+        G.expT = 0.5;
+        _humoVerdeR88(game, b.pos, 18);
+        try { ctrl.fxPop(b.pos); } catch (e) { /* */ }
+      }
+      G.prevVy = b.vel.y;
+      // humillo verde fosforito que se desvanece (estela ligera)
       G.humoT -= dt;
       if (G.humoT <= 0) {
         G.humoT = 0.075;
@@ -1104,7 +1296,7 @@ PLANTILLA_PODERES.gelatina = {
         s.position.set(b.pos.x + rand(-0.01, 0.01), b.pos.y + 0.02, b.pos.z + rand(-0.01, 0.01));
         s.scale.set(0.05, 0.05, 1);
         game.scene.add(s);
-        G.humo.push({ s, vida: 0.55, t: 0, vy: rand(0.16, 0.24) });
+        G.humo.push({ s, vida: 0.55, t: 0, vy: rand(0.16, 0.24), s0: 0.05, s1: 0.14, op0: 0.62 });
       }
     }
     for (let i = G.humo.length - 1; i >= 0; i--) {
@@ -1112,14 +1304,14 @@ PLANTILLA_PODERES.gelatina = {
       h.t += dt;
       h.s.position.y += h.vy * dt;
       const k = h.t / h.vida;
-      h.s.scale.setScalar(0.05 + k * 0.09);
-      h.s.material.opacity = Math.max(0, 0.62 * (1 - k));
+      h.s.scale.setScalar(h.s0 + k * (h.s1 - h.s0));
+      h.s.material.opacity = Math.max(0, h.op0 * (1 - k));
       if (h.t >= h.vida) { game.scene.remove(h.s); h.s.material.dispose(); G.humo.splice(i, 1); }
     }
   },
   fin(game, p, ctrl, ctx) {
     const G = ctx && ctx.gelatina; if (!G) return;
-    if (G.contaminada && G.grav0 != null) DIMS.gravity = G.grav0;
+    /* r88: sin gravedad que restaurar — la física JAMÁS se tocó */
     const mesh = game.ballMesh;
     if (mesh && mesh.material && G.col0) {
       mesh.material.color.setHex(G.col0);
@@ -1127,6 +1319,9 @@ PLANTILLA_PODERES.gelatina = {
     }
     G.manchas.forEach((m) => { game.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
     G.humo.forEach((h) => { game.scene.remove(h.s); h.s.material.dispose(); });
+    /* las RÁFAGAS de humo viven en TROZOS_R88 (global): mueren solas o en
+     * parar()/dispose() — «cuando el poder cesa desaparece y aparece la
+     * bola normal» (la bola ya está restaurada aquí arriba). */
     ctx.gelatina = null;
   },
 };
@@ -1222,6 +1417,7 @@ class PlantillaPoderes {
     this.rallyFired = false;
   }
   update(dt, ctxR) {
+    _pasoTrozosR88(dt, this.game);      // r88: trozos de calabaza + ráfagas de humo viven FUERA del poder
     this.sign.update(dt);
     const r = ctxR || this.game.rules || {};
     if (this.activo) {
@@ -1246,8 +1442,8 @@ class PlantillaPoderes {
   }
   _elegirPico() { return this.lista.length ? (this.bag.length ? this.bag[0] : this.lista[0]) : null; }
   finRally() { this.rallyFired = false; }
-  parar() { this.pendT = 0; this.pend = null; if (this.activo) this._cerrar(); this.sign.hide(); }
-  dispose() { try { this.sign.dispose(); } catch (e) {} if (this.activo) this._cerrar(); }
+  parar() { this.pendT = 0; this.pend = null; if (this.activo) this._cerrar(); this.sign.hide(); _trozosLimpia(this.game); }   // r88: nada vivo al volver a sala/salir
+  dispose() { try { this.sign.dispose(); } catch (e) {} if (this.activo) this._cerrar(); _trozosLimpia(this.game); }
 }
 
 /* ------------------------------------------------------------------ */
@@ -1815,7 +2011,11 @@ class PlantillaController {
     if (this.rival) this.rival.estadoBase('idle');
     this._refrescaCartel();
   }
-  _refrescaCartel() { if (this.cartel) { try { this.game.scene.remove(this.cartel.mesh); } catch (e) {} this.cartel = construirCartel(this.game, this.man); } }
+  _refrescaCartel() {
+    /* r88: cartel de bienvenida OCULTO por normativa del dueño (manifest) */
+    if (this.man.cartel && this.man.cartel.oculto) { this.cartel = null; return; }
+    if (this.cartel) { try { this.game.scene.remove(this.cartel.mesh); } catch (e) {} this.cartel = construirCartel(this.game, this.man); }
+  }
   fxPop(pos) {
     try {
       if (this.game.confettiBurst != null) { const c = this.game.confettiBurst; this.game.confettiBurst = c; }

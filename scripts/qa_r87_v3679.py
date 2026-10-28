@@ -115,7 +115,11 @@ CHK('ctx.gelatina = G;                   // r87: ANTES del callback' in gel,
 CHK('i < 5' in gel and 'DIMS.tableTopY + 0.006 + i * 0.0012' in gel,
     '5 manchas UN POCO POR ENCIMA de la mesa (y +0,006…)')
 CHK('rand(0.26, 0.38)' in gel, 'manchas grandes (0,26–0,38 m)')
-CHK('DIMS.gravity = G.grav0 * 3.0' in gel, 'bola POR LO MENOS 3 VECES más pesada (×3)')
+# r88 · NORMA NUEVA DEL DUEÑO («su peso no varía, tendrá la física de
+# la bola normal»): la gelatina JAMÁS toca la gravedad — la aguja ×3 de
+# r87 queda revocada y se re-ancla a la física INTACTA.
+CHK('DIMS.gravity = G.grav0 * 3.0' not in gel and 'G.grav0' not in gel,
+    'gelatina con FÍSICA NORMAL (norma r88: el peso NO varía)')
 CHK('0x39ff14' in gel and '0x1f8f0a' in gel, 'verde fosforito (color + emisivo)')
 CHK('_texHumo' in gel and 'G.humoT = 0.075' in gel, 'humillo verde que se desvanece')
 
@@ -234,6 +238,7 @@ with sync_playwright() as pw:
       // CARTEL en escena
       let cartelEnEscena = false;
       try { let p = ctrl.cartel.mesh; while (p) { if (p === g.scene) { cartelEnEscena = true; break; } p = p.parent; } } catch (e) {}
+      const cartelNull = ctrl.cartel === null;
       // SIGN con anclaje (dims pasadas)
       const signGroup = ctrl.poderes.sign.group;
       // RED SOCIAL viva en el juego
@@ -242,7 +247,7 @@ with sync_playwright() as pw:
         vive: true,
         rivalEnEscena, rivalY, rivalPos,
         mapaEnEscena, mapaX, mapaRotY, tapas, tapasVisibles,
-        cartelEnEscena,
+        cartelEnEscena, cartelNull,
         signGroupExiste: !!signGroup,
         rsExiste: !!rs, rsPidLen: rs ? rs.pid.length : 0,
         rsBaseLocal: rs ? rs.base() : '~',   // local → '' (capa OFF por diseño) · prod → workers.dev/api
@@ -257,7 +262,11 @@ with sync_playwright() as pw:
     CHK(abs((st.get('mapaRotY') or 0) - 1.571) < 0.01, 'mapa girado π/2 (mirando a la sala)')
     CHK(st.get('tapas') == 5, '5 TAPAS creadas (5 etapas)')
     CHK(st.get('tapasVisibles') == 4, 'etapas NO superadas TAPADAS al empezar (4 tapas visibles)')
-    CHK(st.get('cartelEnEscena') is True, 'cartel de bienvenida EN ESCENA')
+    # r88 · el CARTEL DE BIENVENIDA se RETIRA por normativa del dueño (manifest
+    # cartel.oculto — «un cartel metido en la pared que no sé qué hace ahí»):
+    # la comprobación se re-ancla: cartel NULO y AUSENTE de la escena.
+    CHK(st.get('cartelNull') is True and st.get('cartelEnEscena') is False,
+        'cartel de bienvenida OCULTO (normativa r88: el dueño lo retiró)')
     CHK(st.get('signGroupExiste') is True, 'cartel de superpoder construido (con dims)')
     CHK(st.get('rsExiste') is True and st.get('rsPidLen') == 16, 'RedSocial viva (pid anónimo 16 hex)')
     CHK(st.get('rsBaseLocal') == '' or st.get('rsBaseLocal').endswith('/api'),
@@ -283,8 +292,9 @@ with sync_playwright() as pw:
       let manoMonto = null;
       try {
         motor.pend = motor.lista.find(p => p.kind === 'mano'); motor.pendT = 0.01; motor._lanzar();
-        for (let i = 0; i < 30; i++) {
-          await new Promise(r => setTimeout(r, 200));
+        for (let i = 0; i < 60; i++) {
+          motor.update(0.05);   // r88 · determinista: el rAF del headless puede quedar a 0 fps (página oculta)
+          await new Promise(r => setTimeout(r, 100));
           const M = motor.ctx.mano;
           if (M && M.vivos.length > 0) {
             manoMonto = {

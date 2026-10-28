@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r80_v3672 — CAPA BO · V3.6.71→3.6.79-SDK6, FASE 74 «EL RETO DIARIO EN
+"""qa_r80_v3672 — CAPA BO · V3.6.71→3.6.80-SDK6, FASE 74 «EL RETO DIARIO EN
 LA PUERTA».
 
 Informe del dueño (r80): «en el submenu del multijugador has colocado mal
@@ -72,7 +72,10 @@ AGUJAS = [
     # — el submenú que respira —
     ("tarjetas bajo la cabecera (y 216)", "this._modeCard(rects, 'mjnorm', 40, 216, 944, 96"),
     ("DUELOS bajo NORMAL (y 326, tarjeta r84)", "this._modeCard(rects, 'mjduel', 40, 326, 944, 96"),
-    ("panel de sala reasentado (y 446)", "const yPanel = 446;"),
+    # r88 · re-anclaje honesto: r87 reasentó el panel bajo la tarjeta de
+    # invitación (y 446 → 466 + hInv); la aguja quedó obsoleta desde
+    # entonces (BO no estuvo en la lista de re-anclajes de r87).
+    ("panel de sala reasentado bajo las invitaciones (y 466 + hInv)", "const yPanel = 466 + hInv;"),
     ("estado de modo elegido (_mjMode)", "this._mjMode = null"),
     ("sin modo no hay sala", "} else if (!this._mjMode) {"),
     ("aviso «elige un modo»", "mj_pick: 'Elige un modo de juego para continuar'"),
@@ -107,7 +110,7 @@ AGUJAS = [
     ("teardown apaga el reto", "st.daily = 0;"),
     # — la r79 queda intacta —
     ("tarjeta duelo con gradiente morado propio (r84)", "'#3b3550', '#241f33', PP_ICONS.duelo)"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.79-SDK6';"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.80-SDK6';"),
 ]
 
 CONTADORES = [
@@ -118,11 +121,12 @@ CONTADORES = [
     ("startDaily (def + usos)", "startDaily", 4),
     ("zonaDims (todas las apariciones)", "zonaDims", 17),
     ("zonaDims() (def + 8 usos + comentarios)", "zonaDims()", 13),
-    ("_mjMode (todas las apariciones, +md r84)", "_mjMode", 12),
+    # r88 · c09c_red_social.js (r87) añade 1 aparición: 12 → 13
+    ("_mjMode (todas las apariciones, +md r84 y c09c r87)", "_mjMode", 13),
     ("mj_pick definido ES+EN", "mj_pick:", 2),
     ("daily_btn_t definido ES+EN", "daily_btn_t:", 2),
     ("botón diario del hub RETIRADO (×0)", '"trv3:daily", X0', 0),
-    ("versión única", "const VERSION = '3.6.79-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.80-SDK6'", 1),
     ("candado de Duelos retirado (r84)", "candado(c, x + 134", 0),
 ]
 

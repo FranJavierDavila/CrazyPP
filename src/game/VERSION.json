@@ -1,10 +1,10 @@
 {
-  "version": "3.6.79-SDK6",
-  "fase": 81,
-  "faseNombre": "EL INFORME DEL DUEÑO EN MANO",
+  "version": "3.6.80-SDK6",
+  "fase": 82,
+  "faseNombre": "A JUSTO DEL INFORME: mapa/zombi/cartel, mano y gelatina dentro del tablero, calabaza que pudre y estalla, gelatina con física normal, sala en calma",
   "sdk": "1.5.4",
   "fecha": "2026-10-28",
-  "hub": "v3679-sdk6",
+  "hub": "v3680-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 2
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "c1da689a6d51be24c72249becac07d3c5e66df131b36f7d33b0a9f8a49010015",
-  "tamano": 10469871
+  "tamano": 10469871,
+  "golden": "bfa8a844e271803f2cdf386c190d5584ad953aeff41c5149bd1999a34f115a96"
 }

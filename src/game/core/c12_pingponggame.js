@@ -8901,6 +8901,23 @@ export class PingPongGame {
       this.ball.spin.set(0, 0, 0);
     }
 
+    // r88 · SALA DE CAMPEONATO EN CALMA (informe del dueño: «cuando arranca
+    // la escena, lo de siempre: aparece la bola sobre la mesa con botes y
+    // ruido infinito»). En 'champtest' (la sala entre etapas de CUALQUIER
+    // campeonato) la bola queda APARCADA e INERTA sobre la mesa — sin
+    // gravedad, sin micro-botes, sin «pock» — la MISMA enfermedad que el
+    // holdLock del tutorial r62 (gravedad + restitución 0,88 + bote sonoro
+    // = goteo incesante). Un duelo (startMatch) o una prueba la toman
+    // desde aquí; el paso de sala nunca vuelve a sonar solo.
+    if (this.rules && this.rules.state === 'champtest' && !holdLock &&
+        !(this.champs && this.champs.testActive)) {
+      holdLock = true;
+      this.ball.vel.set(0, 0, 0);
+      this.ball.spin.set(0, 0, 0);
+      this.ball.pos.set(0, DIMS.tableTopY + DIMS.ballRadius, DIMS.tableCenterZ + 0.45);
+      if (this.ball.__exPrev) this.ball.__exPrev.copy(this.ball.pos);
+    }
+
     // 4) Física (solo la pala del mando activo colisiona).
     //    v2.30: en portada 2D inactiva la bola queda POSADA en la mesa —
     //    nada de rallies de fondo, sonidos ni narración.

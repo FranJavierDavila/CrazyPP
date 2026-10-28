@@ -1,1 +1,3 @@
-c1da689a6d51be24c72249becac07d3c5e66df131b36f7d33b0a9f8a49010015
+# SHA256 del game.html que produjo esta división (3.6.80-SDK6, fase 82 · A JUSTO DEL INFORME: mapa/zombi/cartel, mano y gelatina dentro del tablero, calabaza que pudre y estalla, gelatina con física normal, sala en calma; sello actualizado
+# por bump_version.py desde 3.6.79-SDK6)
+bfa8a844e271803f2cdf386c190d5584ad953aeff41c5149bd1999a34f115a96

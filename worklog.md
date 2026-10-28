@@ -4857,3 +4857,19 @@ Stage Summary:
 - HALLOWEEN QUEDA A JUSTO: el mapa SE VE en la pared izquierda (el «carte intruso» era él mismo sin anclar en V3.6.78), el cartel de bienvenida ya no existe, el zombi se ancla a la MESA algo más a la derecha con la pose idle nueva del artista, la mano nace SIEMPRE dentro del tablero y POR DELANTE de su tierra, la calabaza es LA BOLA (centrada, gira como ella, pudre y ESTALLA con CHOFFF), la gelatina vive dentro del tablero con física NORMAL y botes que reventan en humo verde — y la sala de CUALQUIER campeonato arranca en calma (ni un bote, ni un ruido).
 - El dueño debe RECARGAR CON CACHÉ LIMPIA: cerrar la pestaña del juego y abrir game.html?v=v3680 (el progreso de campeonatos y las agarres de pala sobreviven: están en el dispositivo).
 - Pendientes vivos heredados: mecánicas de las etapas 2 y 4 (normas «por anunciar»), bso/risa/insignia provisionales, y la batería multi BQ sigue siendo flaky bajo carga del sandbox (núcleo verde siempre).
+
+---
+Task ID: 193-bis
+Agent: Super Z (main agent)
+Task: r88 · DESPLIEGUE Y VERIFICACIÓN EN PRODUCCIÓN (continúa Task 193).
+
+Work Log:
+- PUSH main: ee886a9..83eaab1 (x-access-token con el PAT del .github-pat; el credential.helper de deploy_pages devolvió «Invalid username or token» en este sandbox — la vía x-access-token sí funciona y se usó para pages/proyecto/tag).
+- PAGES: la rama remota venía ADELANTADA (9a25cc3 = el deploy r87 de la sesión anterior, sobre 11446a2) y el re-ensamblado local chocaba: rebase abortado a tiempo (de vuelta a main sin pérdidas), pages realineada al remoto y deploy_pages --no-smoke re-ensambló el sitio ENCADENADO sobre el tip remoto → 037aa72eb (427 ficheros · 147,4 MB) push rápido 9a25cc3..037aa72.
+- RELEASE: tag v3.6.80-SDK6 pushed + GitHub Release HTTP 201 (github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.80-SDK6) · respaldo anti-rollback main→proyecto (ee886a9..83eaab1).
+- VERIFICACIÓN TRES VÍAS BYTE-EXACTO: servido b5694d09a529… == PAGES-VERSION.txt servido (game_sha256 b5694d09a529…) == contenido del blob REMOTO pages:game.html vía cat-file (b5694d09a529…) — las tres, idénticas.
+- AGUJAS r88 EN EL SERVIDO: game.html → champtest holdLock ×1 · VERSION 3.6.80-SDK6 · módulo halloween → CHOFFF ×2 · mano.renderOrder=4 · cartel.oculto (return null) ×1 · calabaza quaternion.copy ×1 · estallido C.t ≥ dur−0,55 ×1 · ráfaga _humoVerdeR88 ×1 · zombi anclado a la mesa (tableHalfWidth+0,69) ×1 · radio circunscrito del tablero (HW − circ) ✓ · manifest servido → cartel.oculto true · mapa [-3.03, 1.45, -1.9] · idle.webp servido == local (sha c26fde186b1d…, arte nuevo del dueño).
+
+Stage Summary:
+- PRODUCCIÓN EN V3.6.80-SDK6 (pages 037aa72eb, release v3.6.80-SDK6, tres vías byte-exacto, agujas r88 vivas en el servido).
+- El dueño debe RECARGAR CON CACHÉ LIMPIA: cerrar la pestaña del juego y abrir game.html?v=v3680.

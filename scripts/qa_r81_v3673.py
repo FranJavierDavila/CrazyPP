@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r81_v3673 — CAPA BP · V3.6.72→3.6.80-SDK6, FASE 75 «SESENTA SEGUROS».
+"""qa_r81_v3673 — CAPA BP · V3.6.72→3.6.81-SDK6, FASE 75 «SESENTA SEGUROS».
 
 Petición del dueño (r81): «debemos tener una herramienta para poder calibrar
 los FPS según el modelo de gafas… para unas Oculus 2 las partidas van muy
@@ -136,7 +136,7 @@ AGUJAS = [
     ("HIT aplica la bola con copy (no NaN)", "g.ball.pos.copy(p);"),
     ("HANDOFF aplica con copy (no NaN)", "g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado"),
     ("watchdog HELLO generoso (22 s)", "}, 22000);"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.80-SDK6'"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.81-SDK6'"),
 ]
 
 CONTADORES = [
@@ -155,7 +155,7 @@ CONTADORES = [
     ("_iceQ (cola completa)", "_iceQ", 5),
     ("r.rallySeq en el claim", "const rallyId = r.rallySeq", 1),
     ("rallySeq en los intents de punto", "localPoint(g.rules.rallySeq", 1),
-    ("versión única", "const VERSION = '3.6.80-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.81-SDK6'", 1),
 ]
 
 JS_PERF = """async () => {

@@ -48,8 +48,8 @@ CHK(man['version'] == 2, 'manifest version 2')
 pods = man['powers']
 CHK([p['kind'] for p in pods] == ['mano', 'moscas', 'calabaza', 'gelatina'],
     'powers = los 4 REALES del dueño')
-CHK(all(p['duration'] == 10 and p['warn'] == 2 for p in pods),
-    'los 4: 10 s de duración + 2 s de aviso')
+CHK(all(p['duration'] == (12 if p['kind'] == 'gelatina' else 10) and p['warn'] == 2 for p in pods),
+    'los 4: 10 s de duración + 2 s de aviso (gelatina 12 s desde r89)')
 CHK(all(p['icon'] == 'assets/power_%s.webp' % p['kind'] for p in pods),
     'medallón circular propio por poder')
 CHK(all(p['activacion'] == 'rally' for p in pods), 'activación rally (motor vivo)')

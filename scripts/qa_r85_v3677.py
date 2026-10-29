@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r85_v3677.py — CAPA BU (r85 · V3.6.80-SDK6)
+"""qa_r85_v3677.py — CAPA BU (r85 · V3.6.81-SDK6)
    Halloween (campeonato del dueño: ZOMBI + mapa + cartel normas) ·
    Retiro del Valle Neón · Dificultad del Reto Diario (DAILY_DIF) ·
    EL TALLER UGC (editor standalone) · parches de núcleo (NORMAS_SKIN,

@@ -51,7 +51,7 @@ PLA = open(os.path.join(PUB, 'championships', '_plantilla', 'index.js'), encodin
 print('== 1 · MAPA EN LA PARED IZQUIERDA + TAPAS ==')
 mp = man['mapa']
 CHK(abs(mp.get('rotY', 0) - 3.141592653589793 / 2) < 0.01, 'mapa rotY = π/2 (pared izquierda)')
-CHK(abs(mp.get('pos', [0, 0, 0])[0] + 3.03) < 0.02, 'mapa x = −3.03 (pegado a la pared izquierda)')
+CHK(abs(mp.get('pos', [0, 0, 0])[0] + 3.043) < 0.002, 'mapa x = −3.043 (pegado a la pared izquierda, r89)')
 CHK(mp.get('pos', [0, 0, 0])[1] > 1.0, 'mapa a la altura de los ojos (y %.2f)' % mp.get('pos', [0, 0, 0])[1])
 CHK('this._tapas = []' in mod and '_pintaTapas' in mod and 'refresco()' in mod,
     'TAPAS: creación + refresco por progreso en el módulo')
@@ -65,7 +65,7 @@ CHK('(this.game.scene || this.game.rig).add(this.r.node)' in mod,
 CHK('ALTO / 2' in mod, 'rival: pies en el suelo (y = alto/2, antes y=0 lo enterraba)')
 CHK('this.r.node.position.y = base + onda' in mod or 'this.r.node.position.y' in mod,
     'flotación sobre el node real')
-CHK('prewarmI' in mod, 'prewarm de caras (12 subidas a GPU repartidas tras el telón)')
+CHK('prewarmI' not in mod and 'prewarm' not in mod.replace('el prewarm nunca rompe',''), 'r89: SIN paseo visible de caras — el SDK sube a GPU con initTexture')
 
 print('== 3 · CARTEL DE SUPERPODER CON ANCLAJE ==')
 CHK('dims: () => (DIMS ? { netTopY: DIMS.netTopY, tableCenterZ: DIMS.tableCenterZ } : null)' in mod,
@@ -91,7 +91,7 @@ CHK('_revienta' in chk_block and 'M.trocitos' in chk_block, 'mano empujada que r
 
 print('== 5 · PLAGA DE MOSCAS (más y mejores) ==')
 mos = re.search(r'PLANTILLA_PODERES\.moscas = \{.*?\n\};', mod, re.S).group(0)
-CHK('i < 24' in mos, '24 moscas (antes 15)')
+CHK('i < 48' in mos, '48 moscas (r89: el doble, informe del dueño)')
 CHK('mosca_a.webp' in mos and 'mosca_b.webp' in mos, '2 frames de ALETEO')
 CHK('u.aleteoV' in mos, 'aleteo con fase propia por mosca')
 CHK('createBucle' in mod and 'fly_buzz.mp3' in mos, 'ZUMBIDO en bucle (createBucle + fly_buzz)')
@@ -102,11 +102,11 @@ print('== 6 · CALABAZA (el GLB vuelve a verse) ==')
 cal = re.search(r'PLANTILLA_PODERES\.calabaza = \{.*?\n\};', mod, re.S).group(0)
 CHK('ctx.calabaza = C;                   // r87: ANTES del callback' in cal,
     'ctx ANTES del callback (el bug del disparo síncrono: bola invisible)')
-CHK('_calabazaProcedural' in mod and 'fallbackT = 2.5' in cal,
-    'calabaza PROCEDURAL de respaldo a 2,5 s (la bola jamás sin cuerpo)')
-CHK('DIMS.gravity = C.grav0 * 2.1' in cal, 'más pesada (gravedad ×2,1)')
+CHK('_calabazaProcedural' in mod and 'fallbackT = 1.2' in cal,
+    'calabaza PROCEDURAL de respaldo a 1,2 s (r89: la bola jamás sin cuerpo)')
+CHK('DIMS.gravity' not in cal, 'r89: PESO ESTÁNDAR (la gravedad ×2,1 se retira — decisión del dueño)')
 CHK('C.esProc' in cal, 'dispose diferenciado GLB/procedural (la caché de la casa no se toca)')
-CHK('DIMS.gravity = C.grav0;' in cal, 'restauración de gravedad en fin()')
+CHK('SIN gravedad que restaurar' in cal, 'r89: sin gravedad que restaurar (peso estándar)')
 
 print('== 7 · GELATINA ASQUEROSA ==')
 gel = re.search(r'PLANTILLA_PODERES\.gelatina = \{.*?\n\};', mod, re.S).group(0)
@@ -133,7 +133,7 @@ CHK('    this._desmonta();' in mod.split('  leave() {')[1][:300],
 
 print('== 9 · PLANTILLA ESPEJO (UGC hereda) ==')
 CHK('(this.game.scene || this.game.rig).add(this.r.node)' in PLA, 'rival a la escena')
-CHK('[-3.03, 1.45, -1.9]' in PLA and 'Math.PI / 2' in PLA, 'mapa: pared izquierda por defecto')
+CHK('[-3.043, 1.66, -1.9]' in PLA and 'Math.PI / 2' in PLA, 'mapa: pared izquierda por defecto (r89 elevado)')
 CHK('_pintaTapas' in PLA and 'refresco()' in PLA, 'tapas presentes')
 CHK('dims: () => (DIMS ? { netTopY: DIMS.netTopY, tableCenterZ: DIMS.tableCenterZ } : null)' in PLA,
     'cartel de poderes con dims')
@@ -256,9 +256,9 @@ with sync_playwright() as pw:
       };
     }""")
     CHK(st.get('rivalEnEscena') is True, 'RIVAL EN EL GRAFO DE ESCENA (antes: mesh huérfano)')
-    CHK(st.get('rivalY') == 1.075, 'rival con los PIES EN EL SUELO (y=%s)' % st.get('rivalY'))
+    CHK(abs(st.get('rivalY', 0) - 1.075) < 0.015, 'rival con los PIES EN EL SUELO (y=%s, flotación ±0.012)' % st.get('rivalY'))
     CHK(st.get('mapaEnEscena') is True, 'mapa montado')
-    CHK(st.get('mapaX') == -3.03, 'mapa EN LA PARED IZQUIERDA (x=%s)' % st.get('mapaX'))
+    CHK(abs(st.get('mapaX', 0) + 3.043) < 0.002, 'mapa EN LA PARED IZQUIERDA (x=%s, r89)' % st.get('mapaX'))
     CHK(abs((st.get('mapaRotY') or 0) - 1.571) < 0.01, 'mapa girado π/2 (mirando a la sala)')
     CHK(st.get('tapas') == 5, '5 TAPAS creadas (5 etapas)')
     CHK(st.get('tapasVisibles') == 4, 'etapas NO superadas TAPADAS al empezar (4 tapas visibles)')
@@ -311,7 +311,7 @@ with sync_playwright() as pw:
       let calabaza = null;
       try {
         motor.pend = motor.lista.find(p => p.kind === 'calabaza'); motor.pendT = 0.01; motor._lanzar();
-        await new Promise(r => setTimeout(r, 2900));   // > fallback 2,5 s
+        await new Promise(r => setTimeout(r, 2900));   // > fallback 1,2 s (r89)
         calabaza = { cuerpo: !!(motor.ctx.calabaza && motor.ctx.calabaza.gltf), bolaVisible: g.ballMesh.visible };
         motor._cerrar();
       } catch (e) { calabaza = { err: '' + e }; }

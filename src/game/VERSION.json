@@ -1,10 +1,10 @@
 {
-  "version": "3.6.80-SDK6",
-  "fase": 82,
-  "faseNombre": "A JUSTO DEL INFORME: mapa/zombi/cartel, mano y gelatina dentro del tablero, calabaza que pudre y estalla, gelatina con física normal, sala en calma",
+  "version": "3.6.81-SDK6",
+  "fase": 83,
+  "faseNombre": "Informe r89: mapa enmarcado y elevado, estados del zombi sin superponer, moscas x2, manos por ranuras separadas y con ascenso, gelatina en zigzag con impacto real y 12 s, calabaza precargada con aviso prolongado y peso estándar, sonidos zombi crazy/victory/defeated",
   "sdk": "1.5.4",
-  "fecha": "2026-10-28",
-  "hub": "v3680-sdk6",
+  "fecha": "2026-10-29",
+  "hub": "v3681-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
   "tamano": 10469871,
-  "golden": "bfa8a844e271803f2cdf386c190d5584ad953aeff41c5149bd1999a34f115a96"
+  "golden": "7f11f7d62e22da06be5ef9150f6bc8a974c648c328d70e49886048ca95e047b7"
 }

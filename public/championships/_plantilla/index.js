@@ -141,8 +141,9 @@ class RivalVivo {
     });
     // r87 · AL MUNDO (sin esto el rival no existe: mesh huérfano)
     try { (this.game.scene || this.game.rig).add(this.r.node); } catch (e) { /* */ }
-    // r87 · PREWARM DE CARAS (anti-trompicones, espejo halloween)
-    this.prewarmI = -1; this.prewarmT = 0;
+    /* r89 · el PREWARM VISIBLE se RETIRA (espejo halloween): el SDK sube
+     * cada cara a GPU al llegar con renderer.initTexture — sin paseo de
+     * poses ni «estados superpuestos» percibidos. */
     this.fallbacks = {
       hungry: ['hungry', 'surprised', 'idle'], surprised: ['surprised', 'idle'],
       crazy: ['crazy', 'laughing', 'idle'], laughing: ['laughing', 'idle'],
@@ -193,20 +194,6 @@ class RivalVivo {
   }
   update(dt, ctx) {
     if (!this.r) return;
-    // r87 · ciclo de prewarm de caras (espejo halloween)
-    if (this.prewarmI < this.estados.length) {
-      this.prewarmT += dt;
-      if (this.prewarmT >= 0.12) {
-        this.prewarmT = 0;
-        this.prewarmI++;
-        if (this.prewarmI < this.estados.length) {
-          try { this.r.rivalEstado(this.estados[this.prewarmI]); this.estado = this.estados[this.prewarmI]; } catch (e) { /* */ }
-        } else {
-          try { this.r.rivalEstado(this.base === 'duelo' ? 'idle' : this.base); this.estado = this.base; } catch (e) { /* */ }
-        }
-      }
-      return;
-    }
     if (this.timer > 0) { this.timer -= dt; if (this.timer <= 0) this._set(this.base, 0); }
     const t = this.thresholds;
     const hits = (ctx && ctx.rallyHits) || 0;
@@ -284,8 +271,9 @@ class MapaPlantilla {
     const m = man.mapa || {};
     this.modo = m.modo || 'canvas';
     this.planoW = m.planoW || 1.66;
-    // r87 · NORMATIVA del dueño: pared IZQUIERDA (x −3.05, rotY +π/2)
-    this.pos = m.pos || [-3.03, 1.45, -1.9];
+    // r87 · NORMATIVA del dueño: pared IZQUIERDA (rotY +π/2)
+    // r89 · espejo halloween: ELEVADO (y=1.66), PEGADO a la pared (7 mm)
+    this.pos = m.pos || [-3.043, 1.66, -1.9];
     this.rotY = m.rotY != null ? m.rotY : (Math.PI / 2);
     this.nodos = [];        // [{x,y,r}] en píxeles de la imagen
     this.imgW = 1280; this.imgH = 720;
@@ -341,6 +329,15 @@ class MapaPlantilla {
     );
     this.plane.position.set(this.pos[0], this.pos[1], this.pos[2]);
     this.plane.rotation.y = this.rotY;
+    /* r89 · MARCO de anclaje (espejo halloween): el póster lee como un
+     * cuadro COLGADO, no como un cartel flotando hacia el jugador. */
+    this.marco = new THREE.Mesh(
+      new THREE.PlaneGeometry(this.planoW + 0.09, this.planoW * asp + 0.09),
+      new THREE.MeshBasicMaterial({ color: 0x2b1d10 }),
+    );
+    this.marco.position.set(this.pos[0] - 0.004, this.pos[1], this.pos[2]);
+    this.marco.rotation.y = this.rotY;
+    this.game.scene.add(this.marco);
     this.anillo = new THREE.Mesh(
       new THREE.RingGeometry(0.118, 0.144, 48),
       new THREE.MeshBasicMaterial({ color: 0xf6d34c, side: THREE.DoubleSide }),

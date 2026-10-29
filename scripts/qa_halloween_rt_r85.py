@@ -89,7 +89,10 @@ with sync_playwright() as pw:
     r = pg.request.get('http://127.0.0.1:%d/ugc/index.html' % PORT)
     CHK(r.status == 200 and 'TALLER UGC' in r.text(), '/ugc/index.html servido con EL TALLER UGC')
 
-    pg.screenshot(path=os.path.join(RAIZ, 'scripts', '_r85_halloween_rt.png'))
+    try:
+        pg.screenshot(path=os.path.join(RAIZ, 'scripts', '_r85_halloween_rt.png'), timeout=15000)
+    except Exception:
+        print('  [AVISO] captura decorativa omitida (compositor SwiftShader saturado; flake documentado r89)')
     b.close()
 srv.shutdown()
 

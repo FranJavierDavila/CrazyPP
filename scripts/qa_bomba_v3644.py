@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_bomba_v3644 — CAPA AM · ronda 52 (V3.6.80-SDK6, FASE 46).
+"""qa_bomba_v3644 — CAPA AM · ronda 52 (V3.6.81-SDK6, FASE 46).
 
 La petición del dueño (literal): «Revisa el funcionamiento de los
 superpoderes de pala… El Super iman no hace nada no se ve efecto ni se
@@ -63,7 +63,7 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.80-SDK6', 'versión servida: 3.6.80-SDK6 (ronda 52)'),
+        ('3.6.81-SDK6', 'versión servida: 3.6.81-SDK6 (ronda 52)'),
         # · v3.6.46 (r54) · NEGATIVAS: campo, flechas y estela RETIRADOS —
         #   el imán es GANCHO + PALA METÁLICA y el efecto es SPIN REAL
         ('RETIRADO (ronda 54, petición del dueño): _buildImanCampo',

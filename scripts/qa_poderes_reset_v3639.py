@@ -88,7 +88,7 @@ async def main():
         ('const EFECTO_DUR = 10;', 'efecto: ventana 10 s (r56: regla del dueño)'),
         ('const MEGA_GOLPES = 20;', 'mega: carga cada 20 toques (r56: «no antes de 20»)'),
         ('const MEGA_LOD_JUEGO = 0.5;', 'LOD 50 % en juego intacto'),
-        ('V3.6.80-SDK6', 'sello de versión servida'),
+        ('V3.6.81-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     chk(game.count('_megaNormReset') >= 4,

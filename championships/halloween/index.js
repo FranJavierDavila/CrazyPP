@@ -1323,6 +1323,11 @@ PLANTILLA_PODERES.calabaza = {
     ctx.calabaza = C;                   // r87: ANTES del callback (era el bug)
     C.gltf = _calabazaProcedural().clone(true);
     C.mats = _preparaCuerpoR88(C.gltf);
+    /* r94 · NACIMIENTO EN EL LUGAR EXACTO DE LA BOLA: antes la calabaza se
+     * añadía al origen (0,0,0) y no viajaba hasta el primer paso() — un
+     * frame entera en el suelo. Copia INMEDIATA de la posición renderizada. */
+    if (game.ballMesh) C.gltf.position.copy(game.ballMesh.position);
+    else if (game.ball) C.gltf.position.copy(game.ball.pos);
     game.scene.add(C.gltf);
     if (game.ball) game.ball.ppCalabaza = true;         // r92: contacto de la IA pegado a la calabaza
     if (game.ballMesh) game.ballMesh.visible = false;   // la calabaza ES la bola
@@ -1346,6 +1351,25 @@ PLANTILLA_PODERES.calabaza = {
       try { ctrl.fxPop(b.pos); } catch (e) { /* */ }
     }
     if (C.explotada) return;
+    /* r94 · INFORME DEL DUEÑO («se ve por un lado la calabaza y por otro la
+     * bola… la calabaza debería ocupar el lugar exacto de la bola y esta no
+     * verse mientras tengamos la calabaza sin destruir») — DOS garantías
+     * duras, cada frame, para TODOS los caminos del núcleo:
+     * (1) LA BOLA JAMÁS SE VE mientras la calabaza vive: el núcleo re-enseña
+     *     ballMesh en varios sitios (toss del saque c12:4417, HELD del saca-
+     *     dor c12:8774, reset de punto c12:1132, tránsitos/restauraciones
+     *     c12:6316/10195) y el módulo sólo la ocultaba UNA VEZ en inicio().
+     *     Ahora paso() la vuelve a ocultar DESPUÉS de esos caminos y ANTES
+     *     del render — ver bola y calabaza a la vez es imposible.
+     * (2) EL LUGAR EXACTO: la calabaza copia la posición RENDERIZADA de la
+     *     bola (ballMesh.position, que el núcleo sincroniza de ball.pos en
+     *     este mismo frame) — bit a bit con donde la bola estaría pintada,
+     *     inmune a interpolaciones, HELD o caminos especiales.
+     * (3) GUARD r92: si el núcleo recrea el objeto bola entre puntos, la
+     *     marca ppCalabaza (contacto de la IA pegado a la calabaza) renace
+     *     aquí — nunca caduca a mitad del poder. */
+    if (game.ballMesh) game.ballMesh.visible = false;
+    if (b) b.ppCalabaza = true;
     if (C.gltf) {
       /* r88 · LA CALABAZA ES LA BOLA: centrada en su centro EXACTO.
        * r92 · GIRO SOBRE SÍ MISMA AL GOLPEARLA (informe del dueño: «La
@@ -1358,8 +1382,9 @@ PLANTILLA_PODERES.calabaza = {
        * sensación de rodadura en su tamaño): cada golpe CAMBIA el spin
        * (el remate liftado, el push cortado, el saque) y la calabaza
        * REARANCA su vuelta sobre sí misma en el acto — se la ve girar al
-       * golpearla, como haría la bola. */
-      C.gltf.position.copy(b.pos);
+       * golpearla, como haría la bola.
+       * r94 · POSICIÓN = bola RENDERIZADA (ver garantía (2) arriba). */
+      C.gltf.position.copy(game.ballMesh ? game.ballMesh.position : b.pos);
       const sp = b.spin || null;
       if (sp) {
         C.gltf.rotation.x += sp.x * dt * 0.15;

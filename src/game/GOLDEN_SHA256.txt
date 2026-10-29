@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.84-SDK6, fase 86 · Informe r92: manos ancladas a la mesa (base toca el tablero en todas las fases), mesa nueva del dueño (mesa.webp, 4 losas de piedra con sangre), golpe del rival a la calabaza tangente a la pala (marca ppCalabaza: alcance 0,12 + contacto arrastrado) y calabaza que gira sobre sí misma arrastrada por el spin (×3 la tasa visual de la bola); sello actualizado
-# por bump_version.py desde 3.6.83-SDK6)
-c381122eb01e0191c3b70506463798d811149db05ec10d78a2bd5c2b1d9b34f2
+# SHA256 del game.html que produjo esta división (3.6.85-SDK6, fase 87 · Informe r93: tres rápidas — BSO nueva del dueño (melodia.mp3 178,4 s re-codificada 44100/256 CBR sustituye a midnight_volley.mp3), desfase del rival con la calabaza cazado de raíz (la bola se queda en el punto del barrido como la bola normal y la HOJA viaja a la piel: swing tangente flat sin ascenso inicial) y las cuatro etiquetas de superpoder rediseñadas (fotorealismo siniestro por poder: mano zombi, plaga de moscas, calabaza, gelatina); sello actualizado
+# por bump_version.py desde 3.6.84-SDK6)
+baa570e131d02c24633b8ec47152a20f58677ed3875433a8afddabd810b8553f

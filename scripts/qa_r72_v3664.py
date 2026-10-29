@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r72_v3664 — CAPA BG · V3.6.84-SDK6, FASE 66 «EL TELÓN Y EL CANDADO».
+"""qa_r72_v3664 — CAPA BG · V3.6.85-SDK6, FASE 66 «EL TELÓN Y EL CANDADO».
 
 Informe del dueño tras probar V3.6.63 en el Quest, punto por punto:
   1. «En el tutorial en el paso 3 existe solapamiento de texto en el cartel».

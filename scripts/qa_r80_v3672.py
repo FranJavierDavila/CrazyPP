@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r80_v3672 — CAPA BO · V3.6.71→3.6.84-SDK6, FASE 74 «EL RETO DIARIO EN
+"""qa_r80_v3672 — CAPA BO · V3.6.71→3.6.85-SDK6, FASE 74 «EL RETO DIARIO EN
 LA PUERTA».
 
 Informe del dueño (r80): «en el submenu del multijugador has colocado mal
@@ -110,7 +110,7 @@ AGUJAS = [
     ("teardown apaga el reto", "st.daily = 0;"),
     # — la r79 queda intacta —
     ("tarjeta duelo con gradiente morado propio (r84)", "'#3b3550', '#241f33', PP_ICONS.duelo)"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.84-SDK6';"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.85-SDK6';"),
 ]
 
 CONTADORES = [
@@ -126,7 +126,7 @@ CONTADORES = [
     ("mj_pick definido ES+EN", "mj_pick:", 2),
     ("daily_btn_t definido ES+EN", "daily_btn_t:", 2),
     ("botón diario del hub RETIRADO (×0)", '"trv3:daily", X0', 0),
-    ("versión única", "const VERSION = '3.6.84-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.85-SDK6'", 1),
     ("candado de Duelos retirado (r84)", "candado(c, x + 134", 0),
 ]
 

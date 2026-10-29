@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r92_v3684.py — capa de QA en vivo de la ronda 92 (V3.6.84-SDK6).
+"""qa_r92_v3684.py — capa de QA en vivo de la ronda 92 (V3.6.85-SDK6).
 Informe del dueño tras V3.6.83:
  «Las manos de los zombis deben salir justa de la mesa de tal forma que su
   parte inferior toque la mesa y no quede suspendida en el aire. Cambiamos
@@ -200,10 +200,15 @@ with sync_playwright() as pw:
                       oppPadX: 0, oppPadZ: C + 1.2, rallyHits: 3 };
         const v = ai.update(0.008, g.ball, ctx);
         return { golpeo: !!v, dist: +(g.ball.pos.distanceTo(posAI)).toFixed(4),
-                 velZ: v ? +v.z.toFixed(2) : null, contacto: ai.swing ? ai.swing.contact.toArray().map(x=>+x.toFixed(3)) : null };
+                 velZ: v ? +v.z.toFixed(2) : null, contacto: ai.swing ? ai.swing.contact.toArray().map(x=>+x.toFixed(3)) : null,
+                 distContact: ai.swing ? +(ai.swing.contact.distanceTo(posAI)).toFixed(4) : null,
+                 flat: ai.swing ? ai.swing.flat === true : null };
       };
-      // A) CON marca: pala a 10 cm del radio — alcance 0,12 la ve y el
-      //    contacto queda TANGENTE (≈0,075)
+      // A) CON marca: pala a 10 cm del radio — alcance 0,12 la ve.
+      //    r93 (re-anclaje honesto): la bola se queda en el PUNTO DEL
+      //    BARRIDO (≈0,10 — el arrastre a tangente de la r92 SE RETIRA:
+      //    era el desfase que veía el dueño) y la HOJA nace en la piel
+      //    (contacto tangente ≈0,075 + flat).
       out.con = prepara(true, 0.20, C - 0.60);
       // B) CON marca y pala a 18 cm del radio: alcance 0,12 NO llega (fallo natural — la marca no imita al alcance viejo)
       out.lejos = prepara(true, 0.28, C - 0.60);
@@ -216,8 +221,11 @@ with sync_playwright() as pw:
     else:
         con = golpe.get('con') or {}
         CHK(con.get('golpeo') is True, 'calabaza: la IA GOLPEA con la marca (alcance 0,12)')
-        CHK(con.get('dist') is not None and 0.070 <= con['dist'] <= 0.080,
-            'calabaza: contacto TANGENTE a la pala (dist=%s ≈ 0,075 — la pala TOCA la calabaza)' % con.get('dist'))
+        CHK(con.get('dist') is not None and con['dist'] > 0.08,
+            'calabaza: la bola SE QUEDA en el punto del barrido (dist=%s — r93: sin arrastre a tangente)' % con.get('dist'))
+        CHK(con.get('distContact') is not None and 0.069 <= con['distContact'] <= 0.081,
+            'calabaza: la HOJA nace en la piel (contacto tangente=%s ≈ 0,075 — r93)' % con.get('distContact'))
+        CHK(con.get('flat') is True, 'calabaza: swing flat (sin ascenso inicial — r93)')
         CHK(con.get('velZ') is not None and con['velZ'] > 0, 'calabaza: la devolución SALE (velZ=%s)' % con.get('velZ'))
         lejos = golpe.get('lejos') or {}
         CHK(lejos.get('golpeo') is False, 'calabaza: a 18 cm el alcance 0,12 NO golpea (fallo natural, sin imitar al viejo)')

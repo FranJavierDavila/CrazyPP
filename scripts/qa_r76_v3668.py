@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r76_v3668 — CAPA BK · V3.6.84-SDK6, FASE 70 «EL PULSO CRAZY».
+"""qa_r76_v3668 — CAPA BK · V3.6.85-SDK6, FASE 70 «EL PULSO CRAZY».
 
 Aprobación del dueño (r76): «vamos a implementar con mucho cuidado los 4
 puntos dejando el estado actual como punto seguro de restauración. Necesito

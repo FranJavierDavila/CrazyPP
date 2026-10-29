@@ -1,10 +1,10 @@
 {
-  "version": "3.6.84-SDK6",
-  "fase": 86,
-  "faseNombre": "Informe r92: manos ancladas a la mesa (base toca el tablero en todas las fases), mesa nueva del dueño (mesa.webp, 4 losas de piedra con sangre), golpe del rival a la calabaza tangente a la pala (marca ppCalabaza: alcance 0,12 + contacto arrastrado) y calabaza que gira sobre sí misma arrastrada por el spin (×3 la tasa visual de la bola)",
+  "version": "3.6.85-SDK6",
+  "fase": 87,
+  "faseNombre": "Informe r93: tres rápidas — BSO nueva del dueño (melodia.mp3 178,4 s re-codificada 44100/256 CBR sustituye a midnight_volley.mp3), desfase del rival con la calabaza cazado de raíz (la bola se queda en el punto del barrido como la bola normal y la HOJA viaja a la piel: swing tangente flat sin ascenso inicial) y las cuatro etiquetas de superpoder rediseñadas (fotorealismo siniestro por poder: mano zombi, plaga de moscas, calabaza, gelatina)",
   "sdk": "1.5.4",
   "fecha": "2026-10-29",
-  "hub": "v3684-sdk6",
+  "hub": "v3685-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
   "tamano": 10469871,
-  "golden": "c381122eb01e0191c3b70506463798d811149db05ec10d78a2bd5c2b1d9b34f2"
+  "golden": "baa570e131d02c24633b8ec47152a20f58677ed3875433a8afddabd810b8553f"
 }

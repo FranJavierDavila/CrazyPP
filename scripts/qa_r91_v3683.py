@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r91_v3683.py — capa de QA en vivo de la ronda 91 (V3.6.84-SDK6).
+"""qa_r91_v3683.py — capa de QA en vivo de la ronda 91 (V3.6.85-SDK6).
 Informe del dueño tras V3.6.82: «no suena la música de fondo en Halloween ·
 las manos de zombi están mal recortadas y no sale la parte inferior (la
 tierra y el brazo) · de la calabaza sólo se ve un trocito del rabito verde ·

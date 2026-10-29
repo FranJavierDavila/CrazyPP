@@ -477,6 +477,16 @@ CAPAS = [
     ('BV · escenario real halloween + 4 superpoderes (v3678)', 'qa_r86_v3678.py'),
     ('BW · informe del dueño en mano: rival+mapa+cartel+4 poderes+red social (v3679)', 'qa_r87_v3679.py'),
     ('r88 · halloween a justo (v3680)', 'qa_r88_v3680.py'),
+    # r90 · HALLOWEEN SUENA Y SE JUEGA — informe del dueño tras V3.6.81: BSO
+    # Midnight_Volley.mp3 (fin del bso.wav provisional), sonidos del zombi al
+    # MOTOR PROBADO createBucle (lección del tren; victory re-codificado de
+    # 24 kHz — el perfil que el casco no decodifica), mapa con SRGBColorSpace
+    # (adiós al lavado) + arte nuevo, manos SIN montículo (cortaba la mano),
+    # colisión bola↔mano = MOTOR DE BURLA con CCD por segmento (bug raíz:
+    # bola.vel sobre ball.pos = TypeError tragado — la bola no hacía NADA),
+    # gelatina sin desfase (cuadrado visual exacto por quaternion) + HUMILLO
+    # CONTINUO, calabaza PROCEDURAL garantizada (GLB de Sketchfab retirado).
+    ('r90 · halloween suena y se juega (v3682)', 'qa_r90_v3682.py'),
     ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
 ]
 

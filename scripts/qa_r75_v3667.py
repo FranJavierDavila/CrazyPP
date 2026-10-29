@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r75_v3667 — CAPA BJ · V3.6.81-SDK6, FASE 69 «TODO ENCAJA».
+"""qa_r75_v3667 — CAPA BJ · V3.6.82-SDK6, FASE 69 «TODO ENCAJA».
 
 Informe del dueño tras probar V3.6.66 en el Quest:
   «En la pantalla del tutorial de Modos, algunos textos quedan fuera del

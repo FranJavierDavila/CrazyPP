@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r78_v3670 — CAPA BM · V3.6.81-SDK6, FASE 72 «EL NARRADOR HONESTO».
+"""qa_r78_v3670 — CAPA BM · V3.6.82-SDK6, FASE 72 «EL NARRADOR HONESTO».
 
 Nota del dueño (r78): «En el audio del tutorial en el apartado de modos se
 dice que cada 20 toques ganamos un superpoder, pero esto NO es para los
@@ -112,8 +112,8 @@ AGUJAS = [
      "const MEGA_DUR = 15;"),
     ("EFECTO_DUR = 10 (ventana de 10 s)",
      "const EFECTO_DUR = 10;"),
-    ("versión sellada 3.6.81-SDK6",
-     "const VERSION = '3.6.81-SDK6';"),
+    ("versión sellada 3.6.82-SDK6",
+     "const VERSION = '3.6.82-SDK6';"),
 ]
 
 JS_BANCO = """async () => {

@@ -6,16 +6,16 @@
     "magia": 223247,
     "locura": 251841,
     "estacion_orbital": 374828,
-    "halloween": 112813
+    "halloween": 118224
   },
   "fisica": {
-    "sweep200k": 45.1,
+    "sweep200k": 42.3,
     "bounce100k": 5,
-    "aero200k": 6.4
+    "aero200k": 6.1
   },
   "vivo": {
-    "boot_ms": 1975.4,
-    "cadena_ms": 4386.2
+    "boot_ms": 1688.0,
+    "cadena_ms": 8045.5
   },
   "nota": "L\u00edneas base del presupuesto de rendimiento. Refrescar SOLO tras un cambio intencional: python3 scripts/qa_rendimiento.py --update",
   "fecha": "2026-10-29"

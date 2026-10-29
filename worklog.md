@@ -4991,3 +4991,15 @@ Stage Summary:
 - Pendiente al cierre: commit+push main, deploy pages desde HEAD (post-commit), verificación tres vías + agujas r93 en el servido, release v3.6.85-SDK6 con los 4 ZIPs, recarga del dueño con game.html?v=v3685.
 
 ---
+Agent: principal (Z.ai)
+Task: r198-bis · r93 — DESPLIEGUE Y VERIFICACIÓN EN PRODUCCIÓN (continúa Task 198).
+
+Work Log:
+- DESPLIEGUE (post-commit, HEAD c9bdece0): GIT_TOKEN del gitignored → deploy_pages --push --release --backup · ensamblado desde HEAD · 432 ficheros · 154,1 MB · smoke bajo prefijo /CrazyPP 30 peticiones/0 fallos/0 pageerrors · pages → 85d480687 encadenada · respaldo main→proyecto al día · push main 64c099a..c9bdece (explícito con PAT — el deploy no lo hace) · Release v3.6.85-SDK6 con los 4 ZIPs subidos (https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.85-SDK6).
+- VERIFICACIÓN EN PRODUCCIÓN TRES VÍAS BYTE-EXACTO (scripts/verifica_r93_produccion.py — 16/0): servido sha256 89085523… == PAGES-VERSION.txt servido game_sha256 89085523… == git blob pages:game.html 9d2d1c1b… (hash-object del SERVIDO == ls-tree origin/pages — las 2 reescrituras del patrón de siempre; local public/game.html == golden baa570e1… aparte) · AGUJAS r93 EN EL SERVIDO: c06 swing tangente (toca) + c12 rise0/flat + sello 3.6.85-SDK6 + badge V3.6.85 · FICHEROS DEL MÓDULO SERVIDOS BYTE-IDÉNTICOS 7/7: index.js · manifest.json · melodia.mp3 · power_mano/moscas/calabaza/gelatina.webp · midnight_volley.mp3 404 (retirado).
+- CORRECCIÓN DE LA SONDA: la primera pasada falló 15/16 por DOS causas documentadas — (a) Pages aún no había publicado (servía la 3.6.84, ahora con espera activa hasta detectar sha != a215d92f) y (b) las tres vías deben igualarse SOBRE LOS BYTES SERVIDOS (con reescrituras), no sobre el local.
+
+Stage Summary:
+- V3.6.85-SDK6 VIVA EN PRODUCCIÓN y verificada por tres vías: la melodía NUEVA del dueño suena (melodia.mp3), el rival golpea la calabaza SIN desfase (bola en el barrido, hoja en la piel) y los cuatro superpoderes lucen las etiquetas nuevas — todo ya juega en https://franjavierdavila.github.io/CrazyPP/ — el dueño debe recargar con game.html?v=v3685 para saltar la caché del Quest.
+
+---

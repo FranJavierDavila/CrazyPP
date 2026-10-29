@@ -32,6 +32,13 @@
  *   PLANTILLA_PODERES  → añadir kinds de superpoder nuevos
  * ==========================================================================*/
 import * as THREE from 'three';
+/* r90 · EL GLB DE LA CALABAZA SE RETIRA DEL RUNTIME: calabaza.glb (Sketch-
+ * fab) «carga» pero no llega a pintarse en el casco en 4 rondas (r86→r89)
+ * — el dueño autorizó «buscar otra forma»: la calabaza ES ahora el cuerpo
+ * PROCEDURAL de la casa (lathe con costillas + rabo + zarcillo), garanti-
+ * zado desde el frame 1 con el mismo pipeline que el trofeo del Hall. Sin
+ * GLB no hay esperas, ni swaps, ni bolas invisibles. El import se CONSER-
+ * VA para la pistola láser de la plantilla (playerGun, no activa aquí). */
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   getCore, assetURL, congela, descongela,
@@ -52,6 +59,8 @@ let DIMS = null;      // dimensiones del núcleo
 let STATE_NAME = 'champtest';
 let SFX = null;
 let MUSIC = null;
+/* r90 · motores one-shot del zombi (createBucle × sonido) + tick de corte */
+let ZONB = null;
 
 const TXT = { es: {}, en: {} };
 let DECOR = { pieces: [] };
@@ -322,6 +331,14 @@ class MapaPlantilla {
         ? this.man.mapa.nodos.map((n) => ({ x: n.x, y: n.y, r: n.r || 110, ts: n.ts || 1 }))
         : this._rejilla(etapas.length, this.imgW, this.imgH);
       textura = new THREE.TextureLoader().load(A(String(this.man.mapa.arte).replace(/^assets\//, '')));
+      /* r90 · EL LAVADO DEL MAPA (informe del dueño: «poco saturada y muy
+       * lavada de color»): la textura del arte nacía SIN colorSpace — el
+       * renderer la trataba como LINEAL y desaturaba el póster (la rama
+       * canvas ya lo hacía: línea 353). Con SRGBColorSpace el arte del
+       * dueño se ve con SU saturación. Anisotropía como TEX_R86 (nitidez
+       * en ángulo). */
+      textura.colorSpace = THREE.SRGBColorSpace;
+      try { textura.anisotropy = this.game.renderer.capabilities.getMaxAnisotropy(); } catch (e) { /* */ }
     } else {
       const cv = document.createElement('canvas');
       cv.width = 1280; cv.height = 720;
@@ -714,47 +731,63 @@ function _trozosLimpia(game) {
 }
 
 const _v86 = new THREE.Vector3();
-const _FRAC_MONTICULO = 0.30;   // la tierra ocupa el ~30 % inferior del arte del dueño
+const _q86 = new THREE.Quaternion();   // r90: marco local de las manchas de gelatina
 
-/* -- calabaza.glb: carga ÚNICA con caché (rejugadas sin re-descarga) -----
- * r89 · REINTENTO ÚNICO ante error (Wi-Fi del Quest: un timeout puntual no
- * mata la calabaza de toda la partida) — a los 3 s se vuelve a pedir. */
-function _pumpkinGet(cb) {
-  TEX_R86.gltf = TEX_R86.gltf || {};
-  if (TEX_R86.gltf.pumpkin) { cb(TEX_R86.gltf.pumpkin); return; }
-  (TEX_R86.gltf.pend = TEX_R86.gltf.pend || []).push(cb);
-  if (TEX_R86.gltf.pend.length > 1) return;
-  try {
-    new GLTFLoader().load(A('calabaza.glb'), (g) => {
-      g.scene.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; } });
-      // escala: calabaza ≈ 3 veces la bola (Ø 0.04 m → 0.125 m)
-      const wrapper = new THREE.Group();
-      try {
-        const caja = new THREE.Box3().setFromObject(g.scene);
-        const tam = Math.max(caja.max.x - caja.min.x, caja.max.y - caja.min.y, caja.max.z - caja.min.z) || 1;
-        const s = 0.125 / tam;
-        g.scene.scale.setScalar(s);
-        /* r88 · CENTRADO REAL (el dueño: «debe estar perfectamente alineada
-         * con el centro de la bola»): el centro geométrico del GLB pasa al
-         * origen del wrapper — el consumidor pega el wrapper AL CENTRO de
-         * la bola y la calabaza queda clavada en él (antes +0,035 de foleo
-         * y el pivote del artista donde le dio la gana). */
-        const c = new THREE.Vector3();
-        caja.getCenter(c);
-        g.scene.position.set(-c.x * s, -c.y * s, -c.z * s);
-      } catch (e) { /* */ }
-      wrapper.add(g.scene);
-      TEX_R86.gltf.pumpkin = wrapper;
-      (TEX_R86.gltf.pend || []).forEach((f) => { try { f(wrapper); } catch (e) { /* */ } });
-      delete TEX_R86.gltf.pend;
-    }, undefined, () => {
-      delete TEX_R86.gltf.pend;
-      if (!TEX_R86.gltf.__reintento) {
-        TEX_R86.gltf.__reintento = true;
-        setTimeout(() => { try { _pumpkinGet(() => {}); } catch (e) { /* */ } }, 3000);
-      }
-    });
-  } catch (e) { delete TEX_R86.gltf.pend; }
+/* -- CALABAZA PROCEDURAL DE LA CASA (r90 · «o lo solucionamos si se puede
+ * o tenemos que buscar otra forma de hacerlo» — informe del dueño tras 4
+ * rondas sin ver calabaza.glb) ------------------------------------------
+ * POR QUÉ SE RETIRA EL GLB: el modelo de Sketchfab «cargaba» (fetch+parse
+ * OK) pero no llegaba a PINTARSE en el casco (nodos Lamp, pivote y centro
+ * desplazados, materiales PBR sin las luces del salón) — y como el estato
+ * «listo» se marcaba al cargar, el respaldo procedural jamás entraba y la
+ * bola quedaba OCULTA: «no carga el modelo y no se puede jugar».
+ * LA OTRA FORMA: el mismo pipeline del TROFEO del Hall (LatheGeometry +
+ * canvas, probado en el dispositivo) — cuerpo con costillas pintadas,
+ * rabo y zarcillo, centrado en el origen. Cero descargas, cero esperas,
+ * visible SIEMPRE. */
+function _calabazaProcedural() {
+  if (TEX_R86.cache.__calProc) return TEX_R86.cache.__calProc;
+  /* textura: costillas verticales (gradiente por costilla + brillo lateral) */
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+  const g = cv.getContext('2d');
+  const gBase = g.createLinearGradient(0, 0, 0, 128);
+  gBase.addColorStop(0, '#c85a08'); gBase.addColorStop(0.42, '#ef8618'); gBase.addColorStop(0.62, '#f59b2a'); gBase.addColorStop(1, '#b34e06');
+  g.fillStyle = gBase; g.fillRect(0, 0, 256, 128);
+  const COST = 8;                                    // 8 costillas alrededor
+  for (let i = 0; i < COST; i++) {
+    const x0 = (i / COST) * 256;
+    const gr = g.createLinearGradient(x0, 0, x0 + 256 / COST, 0);
+    gr.addColorStop(0, 'rgba(90,40,4,0.55)');        // surco oscuro
+    gr.addColorStop(0.45, 'rgba(255,170,60,0.30)');  // lomo iluminado
+    gr.addColorStop(1, 'rgba(90,40,4,0.55)');
+    g.fillStyle = gr;
+    g.fillRect(x0, 0, 256 / COST, 128);
+  }
+  // moteado sutil (piel natural)
+  for (let i = 0; i < 90; i++) {
+    g.fillStyle = 'rgba(70,30,5,' + (0.05 + Math.random() * 0.08).toFixed(2) + ')';
+    g.beginPath(); g.arc(Math.random() * 256, Math.random() * 128, 1 + Math.random() * 2.2, 0, 6.3); g.fill();
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  /* perfil del cuerpo: calabaza achatada con hondillos arriba y abajo */
+  const perfil = [
+    [0.000, -1.000], [0.200, -0.985], [0.520, -0.880], [0.780, -0.640],
+    [0.940, -0.320], [1.000, -0.020], [0.950, 0.300], [0.800, 0.580],
+    [0.560, 0.800], [0.300, 0.940], [0.110, 0.995],
+  ].map((p) => new THREE.Vector2(p[0] * 0.065, p[1] * 0.052));   // Ø ≈ 0,13 m ≈ 3× la bola
+  const matCuerpo = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.62, metalness: 0.0, emissive: 0x1a0d02 });
+  const cuerpo = new THREE.Mesh(new THREE.LatheGeometry(perfil, 28), matCuerpo);
+  const matRabo = new THREE.MeshStandardMaterial({ color: 0x4a6b23, roughness: 0.9, metalness: 0.0 });
+  const rabo = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.014, 0.05, 8), matRabo);
+  rabo.position.y = 0.062; rabo.rotation.z = 0.16; rabo.rotation.x = -0.06;
+  const matZar = new THREE.MeshStandardMaterial({ color: 0x55772b, roughness: 0.85, metalness: 0.0 });
+  const zar = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.0028, 6, 18, Math.PI * 1.55), matZar);
+  zar.position.set(0.024, 0.058, 0.012); zar.rotation.x = Math.PI / 2.25; zar.rotation.y = 0.5;
+  const grp = new THREE.Group();
+  grp.add(cuerpo); grp.add(rabo); grp.add(zar);
+  TEX_R86.cache.__calProc = grp;
+  return grp;
 }
 
 /* -- 0 · POOL DE TEXTURAS DE MANO (r87 · anti-trompicones) ---------------
@@ -788,20 +821,41 @@ function _manoTexSuelta(M, t) {
  * poco en el último momento (como para dar un susto), unos 3 segundos:
  * medio segundo para aparecer/desaparecer y 2 segundos arriba».
  *
- * CINE EXACTO: montículo plano sobre la mesa (0,32 s pop) → la mano
- * DESENROLLA desde el montículo (0,50 s, easeOutCubic + sobresalto 7 %)
- * → 2,00 s de vaivén siniestro → retracto (0,50 s) → montículo y mano se
- * funden JUNTOS (0,25 s). La bola que toca la mano queda PARADA y se cae;
- * la mano sale empujada y revienta en 6 trocitos (el montículo se hunde). */
+ * r90 · SIN MONTÍCULO (informe del dueño: «vamos a retirar la textura
+ * monticulo.png de la mesa, puesto que al estar superpuesta con la de
+ * mano1/mano2/mano3, esta última se corta y no se visualiza la parte que
+ * interseca con monticulo.png»): el montículo plano SE RETIRA — la mano
+ * nace DIRECTA de la mesa (su arte ya trae la tierra integrada, recorte
+ * MANO_CULTIVO) y el canto de la mesa se guarda con el RADIO DE LA MANO.
+ *
+ * r90 · COLISIÓN BOLA↔MANO (informe del dueño: «¿qué pasa que la bola no
+ * hace nada al atravesar o chocar con las manos? … al chocar por delante
+ * o por detrás la bola se para y cae y la mano se destroza — en Clown con
+ * Burla era muy similar y funcionaba perfectamente»): se PORTA EL MOTOR
+ * DE BURLA (locura, probado en el casco) — (1) CCD por SEGMENTO
+ * prev→actual subdividido a ≤3 cm (la bola NO atraviesa la mano por
+ * rápida que venga: el test anterior medía un Bloque fino en el frame
+ * exacto y se lo tragaba entre frames), (2) CAJA en el marco LOCAL de la
+ * mano (su rotación Y hacia la cámara ya no mintiendo al test), (3) BANDA
+ * DESDE LA MESA (antes el centro de la banda flotaba a +0,46 m y las
+ * bolas de rallye pasaban por DEBAJO sin tocar nada), (4) al chocar la
+ * bola SE PARA Y CAE (vel 0,−0.4,0 como Burla) y la mano REVIENTA.
+ *
+ * CINE EXACTO (sin montículo): la mano DESENROLLA desde la mesa (0,50 s,
+ * easeOutCubic + sobresalto 7 %) → 2,00 s de vaivén siniestro → retracto
+ * (0,50 s) → fundido (0,25 s). La bola que toca la mano queda PARADA y se
+ * cae; la mano sale empujada y revienta en 6 trocitos. */
 const MANO_CULTIVO = 0.70;   // el 30 % inferior del arte del dueño es tierra
-const MANO_OFF_Y = 0.30;     // recorte: la mano sale de NUESTRO montículo
+const MANO_OFF_Y = 0.30;     // recorte: la mano sale de su propia tierra
+const MANO_GROSOR = 0.055;   // r90: semiespesor del plano mano (por delante Y por detrás)
 
 PLANTILLA_PODERES.mano = {
   inicio(game, p, ctrl, ctx) {
+    /* r90: sin texMonticulo — el montículo SE RETIRA de la mesa */
     const M = { grupo: new THREE.Group(), vivos: [], trocitos: [], t: 0, prox: 0.35,
-      tex: [], bolsa: [], pool: [], texMonticulo: null, texTrozo: _texTerron() };
+      tex: [], bolsa: [], pool: [], texTrozo: _texTerron(),
+      prev: new THREE.Vector3(), prevOk: false };   // r90: CCD de Burla
     [1, 2, 3].forEach((i) => TEX_R86.pedir('mano' + i + '.webp', (t) => { M.tex.push(t); }));
-    TEX_R86.pedir('monticulo.webp', (t) => { M.texMonticulo = t; });
     game.scene.add(M.grupo);
     ctx.mano = M;                       // r87: ctx ANTES de los callbacks
   },
@@ -820,13 +874,10 @@ PLANTILLA_PODERES.mano = {
     const cz = DIMS.tableCenterZ;
     const HW = (DIMS.tableHalfWidth != null) ? DIMS.tableHalfWidth : 0.7625;
     const HL = (DIMS.tableHalfLength != null) ? DIMS.tableHalfLength : 1.37;
-    /* r89 · INFORME DEL DUEÑO («algunos aparecen fuera del tablero de forma
-     * parcial, esto ya se dijo que no puede ocurrir»): DOS fugas corregidas.
-     * (1) el pop del montículo SOBRESALTA ×1,18 → radio real 0,23·1,18 =
-     * 0,271 (antes se acotaba con 0,23 y el canto se cortaba en el pico);
-     * (2) el CANTO RUGOSO de la losa (~7 cm pintados en el borde de la
-     * textura) NO es tablero jugable. Límite = montículo en pico + canto. */
-    const MON = 0.23 * 1.18;   // radio del montículo en el pico del sobresalto (pop ×1,18)
+    /* r90 · SIN MONTÍCULO: el radio de guardia es el de la MANO
+     * (mitad del ancho 0,34 → 0,17, con margen) + el CANTO RUGOSO de la
+     * losa (~7 cm pintados en el borde que NO son tablero jugable). */
+    const MON = 0.17 + 0.03;   // r90: radio de la mano (antes, el montículo en pico 0,23·1,18)
     const BORDE = 0.07;        // el canto rugoso de la losa NO es tablero
     /* r89 · RANURAS DE MANO (informe del dueño: «tampoco deben solaparse
      * entre ellos deben estar siempre separados»): 3 posiciones repartidas
@@ -846,8 +897,8 @@ PLANTILLA_PODERES.mano = {
       if (Math.abs(cx2) + MON + BORDE > HW || Math.abs(cz2) + MON + BORDE > HL) continue;   // canto: ni rozarlo
       let libre = true;
       for (const v of M.vivos) {
-        const dx = cx2 - v.mont.position.x;
-        const dz = (cz + cz2) - v.mont.position.z;   // r89: z ABSOLUTA en ambos lados (mezclar relativa/absoluta anulaba el chequeo)
+        const dx = cx2 - v.mano.position.x;
+        const dz = (cz + cz2) - v.mano.position.z;   // r89: z ABSOLUTA en ambos lados (mezclar relativa/absoluta anulaba el chequeo)
         if (dx * dx + dz * dz < 0.62 * 0.62) { libre = false; break; }
       }
       if (libre) { x = cx2; z = cz + cz2; break; }
@@ -855,21 +906,14 @@ PLANTILLA_PODERES.mano = {
     if (x == null) return;   // sin hueco separado: no nace
     const b = game.ball ? game.ball.pos : null;
     if (b && Math.abs(b.x - x) < 0.24 && Math.abs(b.z - z) < 0.24) return; // no nacer sobre la bola
-    if (!M.tex.length || !M.texMonticulo) return;
+    if (!M.tex.length) return;          // r90: sin requisito de montículo
     const baseTex = this._bolsa(M);
     if (!baseTex) return;
     const tex = _manoTexLibre(M, baseTex);
     const W = 0.34, HF = W * (885 / 512);
-    // MONTÍCULO plano sobre la mesa (aparece PRIMERO — guion del dueño)
-    const mMat = new THREE.MeshBasicMaterial({ map: M.texMonticulo, transparent: true, depthWrite: false });
-    const mont = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.46), mMat);
-    mont.rotation.x = -Math.PI / 2;
-    mont.rotation.z = rand(0, Math.PI * 2);
-    mont.position.set(x, DIMS.tableTopY + 0.004 + Math.random() * 0.002, z);
-    mont.renderOrder = 3;
-    mont.scale.setScalar(0.01);
-    M.grupo.add(mont);
-    // MANO vertical anclada al centro del montículo (desenrollado)
+    // r90 · MANO vertical anclada a la MESA (el montículo plano se RETIRA:
+    // el arte de la mano ya trae su tierra integrada y el solape de las
+    // dos texturas CORTABA la mano en la línea de visión del dueño)
     const tex2 = tex; tex2.wrapT = THREE.ClampToEdgeWrapping;
     tex2.offset.y = MANO_OFF_Y; tex2.repeat.y = 0.001;
     const geo = new THREE.PlaneGeometry(W, HF);
@@ -877,11 +921,8 @@ PLANTILLA_PODERES.mano = {
     const mat = new THREE.MeshBasicMaterial({ map: tex2, transparent: true, alphaTest: 0.30, side: THREE.DoubleSide, depthWrite: false });
     const mano = new THREE.Mesh(geo, mat);
     mano.position.set(x, DIMS.tableTopY + 0.014, z);
-    /* r88 · ORDEN DE PINTADO (informe del dueño: «la textura de la mano
-     * debe estar POR DELANTE de la de la tierra de la que sale; ahora es
-     * al revés y no se ve la parte inferior de la mano»): montículo 3 →
-     * mano 4 → trocitos 5. Ambos sin depthWrite: el renderOrder decide y
-     * la mano pisa SU tierra. */
+    /* r90 · ORDEN DE PINTADO: mano 4 → trocitos 5 (ya sin capa de tierra
+     * 3: nada que la corte). Sin depthWrite: el renderOrder decide. */
     mano.renderOrder = 4;
     try {
       const cam = game.camera;
@@ -891,9 +932,10 @@ PLANTILLA_PODERES.mano = {
     mano.scale.y = 0.001;
     M.grupo.add(mano);
     /* r89 · el dueño («seguimos sin mover la mano de abajo hacia arriba al
-     * aparecer»): la mano ASIENDE 12 cm desde su nacimiento en la tierra;
-     * v.y0 guarda el nivel de partida para bajar/fundir sobre él. */
-    M.vivos.push({ mont, mano, tex: tex2, W, HF, fase: 'monticulo', t: 0, golpeada: false, vx: 0, vz: 0, va: 0, y0: mano.position.y });
+     * aparecer»): la mano ASIENDE 12 cm desde su nacimiento en la mesa;
+     * v.y0 guarda el nivel de partida para bajar/fundir sobre él.
+     * r90: fase inicial DIRECTAMENTE 'subir' (ya no hay pop de montículo). */
+    M.vivos.push({ mano, tex: tex2, W, HF, fase: 'subir', t: 0, golpeada: false, vx: 0, vz: 0, va: 0, y0: mano.position.y });
   },
   _revienta(game, M, v, bola) {
     v.fase = 'golpeada'; v.t = 0;
@@ -913,7 +955,7 @@ PLANTILLA_PODERES.mano = {
   paso(dt, game, p, ctrl, ctx) {
     const M = ctx.mano; if (!M) return;
     M.t += dt;
-    if (M.t >= M.prox && M.tex.length && M.texMonticulo && M.vivos.length < 3) {
+    if (M.t >= M.prox && M.tex.length && M.vivos.length < 3) {   // r90: sin requisito de montículo
       this._spawn(game, M);
       M.prox = M.t + rand(2.0, 2.5);
     }
@@ -922,20 +964,13 @@ PLANTILLA_PODERES.mano = {
     for (let i = M.vivos.length - 1; i >= 0; i--) {
       const v = M.vivos[i];
       v.t += dt;
-      if (v.fase === 'monticulo') {
-        // el montículo nace con un pop rápido (0,32 s) y queda latiendo
-        const k = Math.min(1, v.t / 0.32);
-        const e = 1 - Math.pow(1 - k, 3);
-        v.mont.scale.setScalar(e * (1 + (k < 0.7 ? (1 - k / 0.7) * 0.18 : 0)));
-        v.mont.material.opacity = Math.min(1, k * 1.6);
-        if (k >= 1) { v.fase = 'subir'; v.t = 0; }
-      } else if (v.fase === 'subir') {
+      if (v.fase === 'subir') {
         // rápida que se FRENA al final (susto) — guion del dueño: 0,5 s
         const k = Math.min(1, v.t / 0.5);
         const e = 1 - Math.pow(1 - k, 3);
         v.mano.scale.y = Math.max(0.001, e);
         /* r89 · ASCENSO REAL abajo→arriba (informe del dueño): la mano se
-         * LEVANTA 0,12 m mientras se desenrolla — nace EN la tierra. */
+         * LEVANTA 0,12 m mientras se desenrolla — nace EN la mesa. */
         v.mano.position.y = v.y0 + e * 0.12;
         const sobre = k < 0.24 ? (1 - k / 0.24) * 0.07 : 0;
         v.mano.scale.x = v.mano.scale.z = 1 + sobre;
@@ -949,24 +984,21 @@ PLANTILLA_PODERES.mano = {
       } else if (v.fase === 'bajar') {
         const k = Math.min(1, v.t / 0.5);
         v.mano.scale.y = Math.max(0.001, 1 - k * k);
-        v.mano.position.y = v.y0 + (1 - k * k) * 0.12;   // r89: vuelve a la tierra al retraerse
+        v.mano.position.y = v.y0 + (1 - k * k) * 0.12;   // r89: vuelve a la mesa al retraerse
         v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * (1 - k * k));
         if (k >= 1) { v.fase = 'fundir'; v.t = 0; }
       } else if (v.fase === 'fundir') {
         const op = Math.max(0, 1 - v.t / 0.25);
         v.mano.material.opacity = op;
-        v.mont.material.opacity = op;
-        v.mont.scale.setScalar(Math.max(0.01, op));
         if (v.t >= 0.25) {
-          M.grupo.remove(v.mano); M.grupo.remove(v.mont);
+          M.grupo.remove(v.mano);
           v.mano.geometry.dispose(); v.mano.material.dispose();
-          v.mont.geometry.dispose(); v.mont.material.dispose();
           _manoTexSuelta(M, v.tex);
           M.vivos.splice(i, 1);
           continue;
         }
       } else if (v.fase === 'golpeada') {
-        // mano empujada (tumba) + montículo hundido; trocitos por el aire
+        // mano empujada (tumba); trocitos por el aire
         /* r89 · el empujón NO saca la mano del tablero (norma: nada fuera
          * de la mesa, ni siquiera al reventar): se CLAMPEA al canto. */
         const HWg = (DIMS.tableHalfWidth != null) ? DIMS.tableHalfWidth : 0.7625;
@@ -977,30 +1009,64 @@ PLANTILLA_PODERES.mano = {
         v.mano.rotation.z += v.va * dt;
         const op = Math.max(0, 1 - v.t / 0.4);
         v.mano.material.opacity = op;
-        v.mont.material.opacity = Math.max(0, op * 0.6 - 0.3);
         if (v.t >= 0.4) {
-          M.grupo.remove(v.mano); M.grupo.remove(v.mont);
+          M.grupo.remove(v.mano);
           v.mano.geometry.dispose(); v.mano.material.dispose();
-          v.mont.geometry.dispose(); v.mont.material.dispose();
           _manoTexSuelta(M, v.tex);
           M.vivos.splice(i, 1);
           continue;
         }
       }
-      // la bola choca contra la mano: PARADA y se cae (guion del dueño)
-      if (bola && !v.golpeada && (v.fase === 'subir' || v.fase === 'arriba') && v.mano.scale.y > 0.6) {
-        const dx = bola.x - v.mano.position.x;
-        const dy = bola.y - (v.mano.position.y + v.mano.scale.y * v.HF * 0.55);
-        const dz = bola.z - v.mano.position.z;
-        if (Math.abs(dx) < 0.19 + r && Math.abs(dy) < v.mano.scale.y * v.HF * 0.48 + r && Math.abs(dz) < 0.10 + r) {
-          v.golpeada = true;
-          bola.vel.set(rand(-0.25, 0.25), 0.05, rand(-0.25, 0.25));   // parada y se cae
-          try { game.audio.paddle(clamp(bola.x / 2.5, -1, 1), 0.4); } catch (e) { /* */ }
-          ctrl.fxPop(v.mano.position);
-          this._revienta(game, M, v, bola);
+      /* r90 · COLISIÓN BOLA↔MANO — MOTOR DE BURLA portado (probado en el
+       * casco con el Clown). CCD por SEGMENTO (la bola NO atraviesa el
+       * plano entre frames) + caja en el marco LOCAL de la mano (vale por
+       * delante Y por detrás, con su rotación Y real) + banda DESDE LA
+       * MESA (la bola de rallye vuela bajo: el test antiguo la perdía). */
+      if (bola && !v.golpeada && (v.fase === 'subir' || v.fase === 'arriba') &&
+          v.mano.scale.y > 0.3 && M.prevOk && game.rules && game.rules.state === 'rally') {
+        const cur = bola;
+        const prev = M.prev;
+        const segx = cur.x - prev.x, segy = cur.y - prev.y, segz = cur.z - prev.z;
+        const len = Math.sqrt(segx * segx + segy * segy + segz * segz);
+        const pasos = Math.max(1, Math.ceil(len / 0.03));   // submuestreo ≤3 cm: sin túnel
+        const ry = v.mano.rotation.y;
+        const cy2 = Math.cos(ry), sy2 = Math.sin(ry);
+        const topY = v.mano.position.y + v.mano.scale.y * v.HF + r;
+        const semiancho = v.W * 0.5 + r * 0.8;
+        const semiesp = MANO_GROSOR + r * 0.8;
+        for (let s2 = 1; s2 <= pasos; s2++) {
+          const f = s2 / pasos;
+          const px = prev.x + segx * f, py = prev.y + segy * f, pz = prev.z + segz * f;
+          if (py < DIMS.tableTopY - 0.02 || py > topY) continue;      // banda desde la MESA hasta la punta
+          const wx = px - v.mano.position.x, wz = pz - v.mano.position.z;
+          const lx = cy2 * wx - sy2 * wz;                             // local = R(−ry)·mundo
+          const lz = sy2 * wx + cy2 * wz;
+          if (Math.abs(lx) < semiancho && Math.abs(lz) < semiesp) {
+            v.golpeada = true;
+            /* Burla (probado): la bola SE PARA y cae muerta en el sitio.
+             * r90 · BUG RAÍZ CAZADO: «bola» aquí es game.ball.POS (un
+             * Vector3) — el código anterior (r87/89) llamaba bola.vel.set
+             * sobre el VECTOR DE POSICIÓN: TypeError tragado por el catch
+             * del motor → la mano quedaba marcada pero NADA pasaba («la
+             * bola no hace nada»). La velocidad vive en game.ball.vel. */
+            if (game.ball.vel) game.ball.vel.set(0, -0.4, 0);
+            if (game.ball.spin) game.ball.spin.multiplyScalar(0.15);
+            try {
+              game.audio.paddle(clamp(bola.x / 2.5, -1, 1), 0.4);
+              game.audio.playNoise(0.20, 900, 0.55, 0.16, 0);          // crujido seco de la mano
+              game.audio.playOsc(220, 60, 0.28, 'square', 0.12, 0);
+            } catch (e) { /* */ }
+            try { if (game.renderer.xr.isPresenting) game.haptic(game.paddleHand, 0.6, 90); } catch (e) { /* */ }
+            try { ctrl.fxPop(v.mano.position); } catch (e) { /* */ }
+            this._revienta(game, M, v, bola);
+            break;
+          }
         }
       }
     }
+    /* r90 · memoria del segmento bola (anti-túnel del próximo frame) —
+     * patrón exacto de Burla (_burlaPrevV) */
+    if (bola) { M.prev.copy(bola); M.prevOk = true; }
     for (let i = M.trocitos.length - 1; i >= 0; i--) {
       const tr = M.trocitos[i];
       tr.t += dt;
@@ -1018,7 +1084,6 @@ PLANTILLA_PODERES.mano = {
     const M = ctx && ctx.mano; if (!M) return;
     M.vivos.forEach((v) => {
       try { v.mano.geometry.dispose(); v.mano.material.dispose(); } catch (e) { /* */ }
-      try { v.mont.geometry.dispose(); v.mont.material.dispose(); } catch (e) { /* */ }
       _manoTexSuelta(M, v.tex);
     });
     M.trocitos.forEach((tr) => { tr.mesh.geometry.dispose(); tr.mesh.material.dispose(); });
@@ -1120,39 +1185,16 @@ PLANTILLA_PODERES.moscas = {
   },
 };
 
-/* -- 3 · CALABAZA (r87 · arreglo del fallo del dueño: «NO SE VE POR
- * NINGÚN LADO, Y LA BOLA DESAPARECE») -----------------------------------
- * CAUSA: la precarga del constructor terminaba ANTES del disparo → el
- * callback de _pumpkinGet era SÍNCRONO y corría ANTES de ctx.calabaza = C
- * → el guard lo saltaba: bola oculta y calabaza nunca añadida.
- * ARREGLO: ctx primero, callback después; y la bola JAMÁS se queda sin
- * cuerpo: si el GLB tarda >2,5 s hay calabaza PROCEDURAL de respaldo. */
-function _calabazaProcedural() {
-  if (TEX_R86.cache.__calProc) return TEX_R86.cache.__calProc;
-  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
-  const g = cv.getContext('2d');
-  g.fillStyle = '#e8720c'; g.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 8; i++) {
-    g.fillStyle = i % 2 ? '#c25e06' : '#f08a1d';
-    g.fillRect(i * 16 + 4, 0, 9, 128);
-  }
-  const tex = new THREE.CanvasTexture(cv);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const grp = new THREE.Group();
-  const cuerpo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.062, 20, 16),
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }),
-  );
-  cuerpo.scale.y = 0.82;
-  const rabo = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.008, 0.012, 0.035, 8),
-    new THREE.MeshStandardMaterial({ color: 0x3f6b23, roughness: 0.9 }),
-  );
-  rabo.position.y = 0.062;
-  grp.add(cuerpo); grp.add(rabo);
-  TEX_R86.cache.__calProc = grp;
-  return grp;
-}
+/* -- 3 · CALABAZA (r90 · cuerpo PROCEDURAL DE LA CASA desde el frame 1) --
+ * «La calabaza sigue sin verse, o lo solucionamos si se puede o tenemos
+ * que buscar otra forma de hacerlo» (informe del dueño tras V3.6.81).
+ * La forma: el cuerpo ES la calabaza procedural de la casa (lathe con
+ * costillas + rabo + zarcillo — el pipeline del trofeo del Hall, probado
+ * en el casco) y nace EN EL INSTANTE del disparo. El GLB de Sketchfab se
+ * retira del runtime: «cargaba» pero nunca se pintaba en el casco, y al
+ * marcarse «listo» al cargar bloqueaba el respaldo — bola oculta y
+ * «no se puede jugar». Sin GLB no hay espera de cuerpo (el aviso vuelve
+ * a su ritmo normal de 2 s) ni swap ni estados intermedios. */
 
 /* -- r88 · cuerpo de calabaza POR INSTANCIA: clona los materiales (la
  * pudrición tiñe SOLO su copia — el caché queda intacto) y guarda el
@@ -1184,53 +1226,20 @@ PLANTILLA_PODERES.calabaza = {
     /* r89 · INFORME DEL DUEÑO («un problema con el peso que para evitar
      * problemas no lo vamos a modificar y queda con el estándar de la
      * bola»): la gravedad ×2.1 de la r86/87 se RETIRA — física de bola
-     * ESTÁNDAR; la calabaza ES la bola con otro aspecto. */
-    const C = { gltf: null, t: 0, listo: false, explotada: false, mats: [], dur: p.duration || 10 };
+     * ESTÁNDAR; la calabaza ES la bola con otro aspecto.
+     * r90 · CUERPO GARANTIZADO DESDE EL FRAME 1: la calabaza procedural
+     * de la casa nace EN EL DISPARO — la bola JAMÁS sin cuerpo, sin
+     * esperas de GLB, sin fallbackT ni swap. */
+    const C = { gltf: null, t: 0, listo: true, esProc: true, explotada: false, mats: [], dur: p.duration || 10 };
     ctx.calabaza = C;                   // r87: ANTES del callback (era el bug)
-    _pumpkinGet((wrapper) => {
-      if (!ctx.calabaza || C.listo) return;
-      C.listo = true;
-      C.esProc = false;
-      C.gltf = wrapper.clone(true);
-      C.mats = _preparaCuerpoR88(C.gltf);
-      game.scene.add(C.gltf);
-      if (game.ballMesh) game.ballMesh.visible = false;   // la calabaza ES la bola
-    });
-    C.fallbackT = 1.2;                  // r89: cuerpo de la casa a 1,2 s (la bola JAMÁS sin cuerpo)
+    C.gltf = _calabazaProcedural().clone(true);
+    C.mats = _preparaCuerpoR88(C.gltf);
+    game.scene.add(C.gltf);
+    if (game.ballMesh) game.ballMesh.visible = false;   // la calabaza ES la bola
   },
   paso(dt, game, p, ctrl, ctx) {
     const C = ctx.calabaza; if (!C) return;
     C.t += dt;
-    /* r89 · SWAP AL MODELO DEL ARTISTA: si el GLB del dueño llega TARDE
-     * (el cuerpo en juego es el procedural), se sustituye IN SITU en el
-     * mismo punto y orientación — «es preciso que aparezca» y APARECE el
-     * arte del artista en cuanto se materializa. */
-    if (C.esProc && !C.explotada && TEX_R86.gltf && TEX_R86.gltf.pumpkin) {
-      try {
-        const nuevo = TEX_R86.gltf.pumpkin.clone(true);
-        nuevo.position.copy(C.gltf.position);
-        nuevo.quaternion.copy(C.gltf.quaternion);
-        game.scene.add(nuevo);
-        game.scene.remove(C.gltf);
-        C.gltf.traverse((o) => { if (o.isMesh && o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((mm) => { try { mm.dispose(); } catch (e) { /* */ } }); } });
-        C.gltf = nuevo;
-        C.esProc = false;
-        C.mats = _preparaCuerpoR88(nuevo);
-      } catch (e) { /* el swap nunca rompe el poder */ }
-    }
-    // r87 · respaldo: el GLB tarda o falló → calabaza procedural (la bola
-    // NUNCA invisible — el fallo exacto que veía el dueño)
-    if (!C.listo && C.fallbackT > 0) {
-      C.fallbackT -= dt;
-      if (C.fallbackT <= 0) {
-        C.listo = true;
-        C.esProc = true;
-        C.gltf = _calabazaProcedural().clone(true);
-        C.mats = _preparaCuerpoR88(C.gltf);
-        game.scene.add(C.gltf);
-        if (game.ballMesh) game.ballMesh.visible = false;
-      }
-    }
     const b = game.ball; if (!b) return;
     /* r88 · ESTALLIDO FINAL (guion del dueño: «se va oscureciendo
      * (pudriendo) hasta que, cuando está a punto de desaparecer, la
@@ -1269,14 +1278,12 @@ PLANTILLA_PODERES.calabaza = {
     if (game.ballMesh) game.ballMesh.visible = true;
     if (C.gltf) {
       game.scene.remove(C.gltf);
-      /* r88: los MATERIALES son clon por instancia (pudrición) → dispose
-       * SIEMPRE; las GEOMETRÍAS sólo en el GLB del dueño (clon del caché:
-       * re-subida al próximo uso, igual que r87) — el procedural comparte
-       * geometría con la casa y NO se toca. */
+      /* r88/r90: los MATERIALES son clon por instancia (pudrición) →
+       * dispose SIEMPRE; las GEOMETRÍAS son del caché de la casa (clon del
+       * template procedural) y NO se tocan — re-subida cero al próximo uso. */
       C.gltf.traverse((o) => {
         if (o.isMesh) {
           if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((mm) => { try { mm.dispose(); } catch (e) { /* */ } }); }
-          if (!C.esProc && o.geometry) { try { o.geometry.dispose(); } catch (e) { /* */ } }
         }
       });
     }
@@ -1294,7 +1301,7 @@ PLANTILLA_PODERES.calabaza = {
  * RETIRADO (la bola se juega igual; sólo cambia el aspecto y el humo). */
 PLANTILLA_PODERES.gelatina = {
   inicio(game, p, ctrl, ctx) {
-    const G = { manchas: [], humo: [], t: 0, humoT: 0, contaminada: false, col0: 0, emis0: 0, expT: 0, prevVy: 0 };
+    const G = { manchas: [], humo: [], t: 0, humoT: 0, humoT2: 0.12, humoIdx: 0, contaminada: false, col0: 0, emis0: 0, expT: 0, prevVy: 0 };
     ctx.gelatina = G;                   // r87: ANTES del callback (era el bug)
     TEX_R86.pedir('gelatina.webp', (t) => {
       if (!ctx.gelatina || G.manchas.length) return;
@@ -1340,19 +1347,40 @@ PLANTILLA_PODERES.gelatina = {
     for (let i = 0; i < G.manchas.length; i++) {
       G.manchas[i].material.opacity = 0.90 + Math.sin(G.t * 2.4 + i * 1.7) * 0.06;
     }
+    /* r90 · HUMILLO CONTINUO DESDE LAS MANCHAS (informe del dueño: «mientras
+     * dure el efecto desde las texturas esté saliendo el humillo verde
+     * fosforito continuamente mientras está el poder activo»): cada mancha
+     * echa SU humillo por turnos (~6 efluvios/s repartidos) durante TODA la
+     * duración del poder — independientemente de que la bola esté contami-
+     * nada. Sprites del mismo pool _texHumo, vida 1,25 s, tope 70 vivos:
+     * coste despreciable (≤9 sprites vivos por mancha en el peor caso). */
+    G.humoT2 -= dt;
+    if (G.humoT2 <= 0 && G.manchas.length && G.humo.length < 70) {
+      G.humoT2 = 0.16;
+      G.humoIdx = (G.humoIdx + 1) % G.manchas.length;
+      const mancha = G.manchas[G.humoIdx];
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: _texHumo(), transparent: true, opacity: 0.46, depthWrite: false }));
+      s.position.set(mancha.position.x + rand(-0.05, 0.05), mancha.position.y + 0.012, mancha.position.z + rand(-0.05, 0.05));
+      s.scale.set(0.07, 0.07, 1);
+      game.scene.add(s);
+      G.humo.push({ s, vida: 1.25, t: 0, vy: rand(0.10, 0.18), s0: 0.07, s1: 0.20, op0: 0.46 });
+    }
     const b = game.ball; const r = DIMS.ballRadius;
-    if (!G.contaminada && b && b.pos.y - r <= DIMS.tableTopY + 0.045) {
+    if (!G.contaminada && b && b.pos.y - r <= DIMS.tableTopY + 0.06) {
       for (const m of G.manchas) {
-        const dx = b.pos.x - m.position.x;
-        const dz = b.pos.z - m.position.z;
-        /* r89 · ZONA DE IMPACTO REAL (el dueño: «no se calcula correctamente
-         * la zona de impacto sobre estas imágenes… al botar la pelota no
-         * aparece el efecto»): el radio era FIJO 0,11 m frente a manchas
-         * visuales de 0,13–0,19 m — los golpes morían sin manchar. Ahora
-         * el radio SALÉ del tamaño de la mancha (42 % de su lado) + medio
-         * radio de bola. */
-        const rad = (m.userData.tam || 0.3) * 0.42 + r * 0.5;
-        if (dx * dx + dz * dz < rad * rad) {
+        /* r90 · ZONA DE IMPACTO = LA MANCHA EXACTA (informe del dueño: «da
+         * la sensación de que existe un desfase entre la posición de la
+         * textura y la zona de colisión»): el test anterior era un CÍRCULO
+         * salado (tam·0,42) que ni cubría las esquinas del cuadrado visual
+         * ni respetaba su giro. Ahora el punto de la bola se lleva al
+         * marco LOCAL de la mancha (quaternion inverso — vale con su
+         * rotación Z aleatoria) y se prueba contra el CUADRADO visual
+         * entero (tam/2 + holgura de 3/4 de bola): si la bola toca la
+         * textura, MANCHA; si no la toca, no. Cero desfase posible. */
+        const lim = (m.userData.tam || 0.3) * 0.5 + r * 0.75;
+        _q86.copy(m.quaternion).invert();
+        _v86.copy(b.pos).sub(m.position).applyQuaternion(_q86);
+        if (Math.abs(_v86.x) <= lim && Math.abs(_v86.y) <= lim) {
           G.contaminada = true;
           /* r88 · FÍSICA INTACTA (el dueño: «su peso no varía, tendrá la
            * física de la bola normal») — la r87 la pesaba ×3 y la frenaba:
@@ -1454,11 +1482,10 @@ class PlantillaPoderes {
       dims: () => (DIMS ? { netTopY: DIMS.netTopY, tableCenterZ: DIMS.tableCenterZ } : null),
     });
     this.sign.build();
-    // r87: precarga de TODOS los assets de superpoderes (manos, montículo,
-    // moscas 2 frames, gelatina y calabaza) para que el primer disparo ya
-    // salga vestido — y sin subidas a GPU a mitad de partida
-    ['mano1.webp', 'mano2.webp', 'mano3.webp', 'monticulo.webp', 'mosca_a.webp', 'mosca_b.webp', 'gelatina.webp'].forEach((n) => TEX_R86.pedir(n, () => {}));
-    _pumpkinGet(() => {});
+    // r87: precarga de TODOS los assets de superpoderes (manos, moscas 2
+    // frames y gelatina) para que el primer disparo ya salga vestido — y
+    // sin subidas a GPU a mitad de partida (r90: el montículo SE RETIRA)
+    ['mano1.webp', 'mano2.webp', 'mano3.webp', 'mosca_a.webp', 'mosca_b.webp', 'gelatina.webp'].forEach((n) => TEX_R86.pedir(n, () => {}));
     // r87 · PREWARM DE SHADERS (anti-trompicones): los materiales de los
     // poderes nacen a mitad de partida y su 1.ª compilación GLSL da un tirón
     // en el casco. Aquí se compilan UNA VEZ, tras el telón, con dummies que
@@ -1496,24 +1523,19 @@ class PlantillaPoderes {
     const p = this._elegir(); if (!p) return;
     this.lastKind = p.kind; this.pend = p;
     const warn = p.warn != null ? p.warn : this.T.warn;
-    /* r89 · CALABAZA (el dueño: «es preciso que aparezca, no sé si tenién-
-     * dola precargada en memoria o prolongando la pausa del aviso de
-     * superpoder hasta que nos aseguramos de que carga»): las DOS cosas —
-     * el GLB se precarga en init() DESDE el arranque del módulo y, si aún
-     * no está al disparar, el AVISO SE PROLONGA (partida congelada, cartel
-     * vivo) hasta que el cuerpo llega o se agota un tope de 6 s; en cuanto
-     * carga se lanza AL INSTANTE (update acorta el pendT). Nunca un dispa-
-     * ro sin cuerpo. */
-    const espera = (p.kind === 'calabaza' && !(TEX_R86.gltf && TEX_R86.gltf.pumpkin)) ? 6.0 : 0;
-    this._esperaCuerpo = espera > 0;
-    try { congela(this.game, Math.max(this.sign.T_OUT || 1.9, warn) + espera + 0.1); } catch (e) {}
+    /* r90 · CALABAZA SIN ESPERA DE CUERPO: el cuerpo ES el procedural de
+     * la casa (LatheGeometry, pipeline del trofeo del Hall) y nace EN EL
+     * DISPARO — el aviso vuelve a su ritmo normal (warn) para los CUATRO
+     * poderes; se retira la congelación extra de 6 s de la r89 (existía
+     * SÓLO para esperar el GLB) y el swap in situ. */
+    try { congela(this.game, Math.max(this.sign.T_OUT || 1.9, warn) + 0.1); } catch (e) {}
     this.sign.show(p.icon ? A(String(p.icon).replace(/^assets\//, '')) : A('superpower.webp'));
-    if (this.ctrl.rival) this.ctrl.rival._set('crazy', warn + espera + 1.2);
-    /* r89 · SONIDO DEL ZOMBI AL LANZAR UN SUPERPODER (zombi_crazy.mp3 del
-     * dueño; sustituye a la risa genérica en este momento) */
+    if (this.ctrl.rival) this.ctrl.rival._set('crazy', warn + 1.2);
+    /* r89/r90 · SONIDO DEL ZOMBI AL LANZAR UN SUPERPODER (zombi_crazy.mp3
+     * del dueño) — r90: por el MOTOR PROBADO en el casco (createBucle) */
     if (SFX) SFX.play('crazy', 0.62);
     this.ctrl.haptic(0.6, 200);
-    this.pendT = warn + espera;
+    this.pendT = warn;
   }
   _lanzar() {
     if (!this.pend) { this.pendT = 0; return; }   // r86: robustez — nada de disparos fantasma
@@ -1547,14 +1569,7 @@ class PlantillaPoderes {
       return;
     }
     if (this.pendT > 0) {
-      /* r89 · el cuerpo llegó antes del tope → se lanza YA (descongela el
-       * remanente: la pausa del aviso era «hasta que cargue», no 6 s fijos) */
-      if (this._esperaCuerpo && this.pend && this.pend.kind === 'calabaza' &&
-          TEX_R86.gltf && TEX_R86.gltf.pumpkin && this.pendT > 0.06) {
-        this.pendT = 0.06;
-        try { descongela(this.game); } catch (e) { /* */ }
-      }
-      this.pendT -= dt; if (this.pendT <= 0) { this._esperaCuerpo = false; this._lanzar(); }
+      this.pendT -= dt; if (this.pendT <= 0) { this._lanzar(); }
       return;
     }
     if (this.cd > 0) { this.cd -= dt; return; }
@@ -2221,17 +2236,42 @@ async function init(ctx) {
     Object.keys((MAN.audio && MAN.audio.sounds) || {}).forEach((k) => {
       sonidos[k] = String(MAN.audio.sounds[k]).replace(/^assets\//, '');
     });
-    const base = createSfx(MOD_URL, () => GAME);
+    /* r90 · LOS ONE-SHOTS DEL ZOMBI CAMBIAN DE MOTOR — LA LECCIÓN DEL TREN
+     * (Tasks 129→134, cinco versiones): createSfx JAMÁS llegó al hardware
+     * de la Quest (play tragado, contexto dormido, buffer tarde) mientras
+     * createBucle (galopes + rodadura + Tunel/Llegada desde v3.6.26) sonó
+     * SIEMPRE. El dueño: «los sonidos que te pasé no se escuchan crazy/
+     * defeated/victory». Cada sonido del zombi (laugh/crazy/victory/
+     * defeated) es ahora un createBucle PROPIO (el motor probado) dispa-
+     * rado con on() — revival por statechange y espera de buffer DENTRO
+     * del motor — y cortado con off() por un reloj que SÓLO corre con
+     * suena() honesto (corte antes del wrap de src.loop; desistir en paz
+     * a 9 s si el buffer no llega). Duraciones reales del arte sonoro
+     * (44100 Hz · 256 kbps CBR — el perfil que el casco decodifica):
+     * laugh 2,90 · crazy 2,25 · victory 1,85 · defeated 8,10 s. */
+    const DUR_Z = { laugh: 2.90, crazy: 2.25, victory: 1.85, defeated: 8.10 };
+    ZONB = {};
+    Object.keys(sonidos).forEach((k) => {
+      const nb = createBucle(() => GAME, {
+        url: () => A(sonidos[k]), vol: () => 0.62,
+        fadeIn: 0.06, stopFade: 0.35, ignoraMute: true,   // SFX del rival: suenan SIEMPRE
+      });
+      ZONB[k] = { b: nb, dur: DUR_Z[k] || 3.0, reloj: -1, espera: 0 };
+    });
     SFX = {
-      /* r89: play SIN puerta de caché — base.play ya encola (v1.5.1) si el
-       * buffer aún no llegó; tiene() queda para diagnósticos/QA. */
-      play(n, v, o) { const f = sonidos[n] || (n + '.mp3'); return base.play(f, v, o); },
-      tiene(n) { const f = sonidos[n] || (n + '.mp3'); return base.tiene(f); },
-      precarga(n) { const f = sonidos[n] || (n + '.mp3'); return base.precarga(f); },
+      play(n, v, o) {
+        const k = (n === 'pw') ? 'laugh' : n;            // 'pw' era el alias legacy de la risa
+        const z = ZONB[k]; if (!z) return false;
+        z.b.on();                                        // idempotente: revival + espera de buffer
+        z.reloj = 0; z.espera = 0;
+        return true;
+      },
+      tiene(n) { const z = ZONB[(n === 'pw') ? 'laugh' : n]; return !!(z && z.b.estado && z.b.estado().cargado); },
+      precarga(n) { const z = ZONB[(n === 'pw') ? 'laugh' : n]; if (z) z.b.precarga(); },
     };
-    /* r89 · PRECARGA de TODO el arte sonoro del zombi (risa + victoria/
-     * derrota/crazy) en el arranque del módulo — el 1.er disparo ya suena. */
-    Object.keys(sonidos).forEach((k) => { try { SFX.precarga(k); } catch (e) { /* */ } });
+    /* r89/r90 · PRECARGA de TODO el arte sonoro del zombi en el arranque —
+     * el 1.er disparo encuentra el buffer decodificado. */
+    Object.keys(ZONB).forEach((k) => { try { ZONB[k].b.precarga(); } catch (e) { /* */ } });
     const so = MAN.audio || {};
     MUSIC = createMusic(() => GAME, Object.assign({
       url: so.music ? A(String(so.music).replace(/^assets\//, '')) : null,
@@ -2239,19 +2279,35 @@ async function init(ctx) {
     }, so.musicOpts || {}));
   } catch (e) { SFX = null; MUSIC = null; }
   CTRL = new PlantillaController(GAME, MAN);
-  /* r89 · PRECARGA TEMPRANA DE LA CALABAZA (el dueño: «teniéndola precar-
-   * gada en memoria»): el GLB se pide EN EL init DEL MÓDULO — antes de la
-   * sala, del telón y de cualquier duelo; al disparar el poder el cuerpo
-   * ya está (o el aviso se prolonga hasta que llegue). */
-  try { _pumpkinGet(() => {}); } catch (e) { /* */ }
   window.addEventListener('pp-lang', () => { if (CTRL) CTRL._refrescaCartel(); });
   try { window['__PP_' + String(MOD_ID).toUpperCase()] = { ctrl: () => CTRL, man: () => MAN, pods: PLANTILLA_PODERES }; } catch (e) {}
   return Promise.resolve();
 }
 
+/* r90 · RELOJ DE CORTE de los one-shots del zombi — el patrón exacto de
+ * Tunel/Tren_Llegada (v3.6.26): el reloj SÓLO corre cuando suena() es
+ * honesto (instancia viva en el ctx actual); al llegar a dur−0,35 se corta
+ * con off() (fundido 0,35 — antes del wrap de src.loop, no hay rebobinado
+ * audible) y si el buffer no llegó en 9 s se desiste en paz. Llamado por
+ * frame desde update() — coste: 4 booleanos. */
+function _zombiSfxTick(dt) {
+  if (!ZONB) return;
+  for (const k of Object.keys(ZONB)) {
+    const z = ZONB[k];
+    if (z.reloj < 0) continue;
+    if (z.b.suena()) {
+      z.reloj += dt;
+      if (z.reloj >= Math.max(0.3, z.dur - 0.35)) { try { z.b.off(); } catch (e) { /* */ } z.reloj = -1; }
+    } else {
+      z.espera += dt;
+      if (z.espera > 9) { z.reloj = -1; z.espera = 0; }   // desistir en paz
+    }
+  }
+}
+
 function start() { if (CTRL) CTRL.startChamp(); }
 function leave() { if (CTRL) CTRL.leave(); }
-function update(dt) { if (CTRL) CTRL.update(dt); }
+function update(dt) { _zombiSfxTick(dt); if (CTRL) CTRL.update(dt); }
 function onPoint(it) { if (CTRL) CTRL.onPoint(it); }
 // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
 function rivalEmocion(st, info) { if (CTRL && CTRL.rival) CTRL.rival.rivalEmocion(st); }
@@ -2262,7 +2318,12 @@ function reenter() { if (CTRL) CTRL.reenter(); }
 function replayMap() { return CTRL ? CTRL.replayMap() : null; }
 function replayHover(idx) { if (CTRL) CTRL.replayHover(idx); }
 function replayLaunch(idx) { if (CTRL) CTRL.replayLaunch(idx); }
-function musicOff() { if (CTRL) CTRL.musicOff(); }
+function musicOff() {
+  if (CTRL) CTRL.musicOff();
+  /* r90: al callar la música del campeonato, ningún one-shot del zombi
+   * queda sonando huérfano (salida del campeonato / silencio). */
+  if (ZONB) for (const k of Object.keys(ZONB)) { try { ZONB[k].b.off(true); } catch (e) { /* */ } ZONB[k].reloj = -1; }
+}
 function champIntroPause(on) { if (CTRL) CTRL.champIntroPause(on); }
 function resetRecords() { if (CTRL) CTRL.resetRecords(); }
 function testActive() { return CTRL ? CTRL.testActive() : false; }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r91_v3683.py — capa de QA en vivo de la ronda 91 (V3.6.85-SDK6).
+"""qa_r91_v3683.py — capa de QA en vivo de la ronda 91 (V3.6.86-SDK6).
 Informe del dueño tras V3.6.82: «no suena la música de fondo en Halloween ·
 las manos de zombi están mal recortadas y no sale la parte inferior (la
 tierra y el brazo) · de la calabaza sólo se ve un trocito del rabito verde ·
@@ -179,6 +179,11 @@ with sync_playwright() as pw:
       const V3 = (Object.getPrototypeOf(g.camera.position).constructor);
       if (!g.ball || !g.ball.pos) g.ball = { pos: new V3(), vel: new V3(), spin: new V3() };
       g.ball.pos.set(0.15, 0.95, -0.6);
+      /* r94 · RE-ANCLAJE HONESTO: la calabaza sigue ahora la bola RENDERIZADA
+       * (ballMesh.position — el lugar exacto donde la bola se pintaría, garantía
+       * del informe del dueño). El núcleo sincroniza ballMesh ← ball.pos cada
+       * frame (c12 §7) ANTES de champs.update; la sonda sintética hace lo mismo. */
+      if (g.ballMesh) g.ballMesh.position.copy(g.ball.pos);
       const ctxP = {};
       H.pods.calabaza.inicio(g, { duration: 10 }, H.ctrl(), ctxP);
       H.pods.calabaza.paso(0.033, g, { duration: 10 }, H.ctrl(), ctxP);

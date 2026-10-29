@@ -504,6 +504,15 @@ CAPAS = [
     # sentidos) y GIRO SOBRE SÍ MISMA arrastrado por el spin (×3 la tasa de
     # la bola — se la ve girar al golpearla).
     ('r92 · manos ancladas + mesa nueva + golpe tangente + giro de la calabaza (v3684)', 'qa_r92_v3684.py'),
+    # r93 · TRES RÁPIDAS — BSO melodia.mp3 del dueño, desfase del rival con
+    # la calabaza cazado (bola en el barrido, hoja en la piel) y etiquetas
+    # terroríficas (medallones 512×512 por poder).
+    ('r93 · BSO nueva + golpe rival en la piel + etiquetas terroríficas (v3685)', 'qa_r93_v3685.py'),
+    # r94 · LA CALABAZA ES LA BOLA — la bola JAMÁS visible mientras la
+    # calabaza vive (re-ocultada cada frame contra todos los caminos del
+    # núcleo), posición EXACTA (copia la bola renderizada), nacimiento en
+    # sitio y guard ppCalabaza (r92 no caduca).
+    ('r94 · calabaza = lugar exacto de la bola, bola oculta mientras viva (v3686)', 'qa_r94_v3686.py'),
     ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
 ]
 

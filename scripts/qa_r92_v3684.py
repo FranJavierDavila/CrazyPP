@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r92_v3684.py — capa de QA en vivo de la ronda 92 (V3.6.85-SDK6).
+"""qa_r92_v3684.py — capa de QA en vivo de la ronda 92 (V3.6.86-SDK6).
 Informe del dueño tras V3.6.83:
  «Las manos de los zombis deben salir justa de la mesa de tal forma que su
   parte inferior toque la mesa y no quede suspendida en el aire. Cambiamos
@@ -238,6 +238,12 @@ with sync_playwright() as pw:
     cala = pg.evaluate("""async () => {
       const H = window.__PP_HALLOWEEN; const ctrl = H.ctrl(); const g = ctrl.game;
       const ctxP = {};
+      /* r94 · RE-ANCLAJE HONESTO: la calabaza sigue la bola RENDERIZADA
+       * (ballMesh.position — garantía del informe del dueño en r94). El núcleo
+       * sincroniza ballMesh ← ball.pos cada frame (c12 §7); las sondas IA de
+       * arriba movieron ball.pos sin pasar por el núcleo → se replica el
+       * sincronizado aquí antes de nacer el cuerpo. */
+      if (g.ballMesh) g.ballMesh.position.copy(g.ball.pos);
       H.pods.calabaza.inicio(g, { duration: 10 }, ctrl, ctxP);
       const C = ctxP.calabaza; if (!C || !C.gltf) return { err: 'sin cuerpo' };
       const marcaOn = g.ball.ppCalabaza === true;

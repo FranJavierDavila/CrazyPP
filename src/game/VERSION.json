@@ -1,10 +1,10 @@
 {
-  "version": "3.6.85-SDK6",
-  "fase": 87,
-  "faseNombre": "Informe r93: tres rápidas — BSO nueva del dueño (melodia.mp3 178,4 s re-codificada 44100/256 CBR sustituye a midnight_volley.mp3), desfase del rival con la calabaza cazado de raíz (la bola se queda en el punto del barrido como la bola normal y la HOJA viaja a la piel: swing tangente flat sin ascenso inicial) y las cuatro etiquetas de superpoder rediseñadas (fotorealismo siniestro por poder: mano zombi, plaga de moscas, calabaza, gelatina)",
+  "version": "3.6.86-SDK6",
+  "fase": 88,
+  "faseNombre": "Informe r94: la calabaza es la bola — la bola JAMÁS se ve mientras la calabaza viva (re-ocultada cada frame contra todos los caminos del núcleo: toss 4417, HELD 8774, reset 1132, tránsitos 6316/10195), posición EXACTA (copia la bola renderizada ballMesh.position), nacimiento en el punto vivo y guard ppCalabaza cada frame (el contacto de la IA r92 no caduca aunque el núcleo recree la bola). Cero cambios de núcleo: todo en el módulo halloween (nota v8).",
   "sdk": "1.5.4",
   "fecha": "2026-10-29",
-  "hub": "v3685-sdk6",
+  "hub": "v3686-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
   "tamano": 10469871,
-  "golden": "baa570e131d02c24633b8ec47152a20f58677ed3875433a8afddabd810b8553f"
+  "golden": "036050d8b6b1f1363850b80894de8ed54a36c432f3a22883f61328f8cd6fc4cb"
 }

@@ -43,7 +43,11 @@ CHK('_humoVerdeR88(game, b.pos, 22)' in PLA, 'index: EXPLOSIÓN de humo verde al
 CHK('DIMS.gravity = G.grav0 * 3.0' not in PLA, 'index: gelatina SIN peso ×3 (física de la bola normal)')
 CHK('b.vel.x *= (1 - 0.35 * dt)' not in PLA, 'index: gelatina SIN frenado (física normal)')
 CHK('C.gltf.rotation.x += sp.x * dt * 0.15' in PLA, 'index: calabaza GIRA SOBRE SÍ MISMA arrastrada por el spin (×3 la tasa visual de la bola, r92 — el dueño: «girar al golpearla tal como haría la bola»; el quaternion r88 no se apreciaba en un cuerpo de 13 cm)')
-CHK('C.gltf.position.copy(b.pos)' in PLA, 'index: calabaza centrada en el CENTRO de la bola')
+# r94 · re-anclaje honesto: la calabaza sigue ahora la bola RENDERIZADA
+# (ballMesh.position, fallback b.pos — el núcleo sincroniza ballMesh ← ball.pos
+# cada frame en c12 §7 antes de champs.update; garantía «lugar exacto» r94).
+CHK('C.gltf.position.copy(game.ballMesh ? game.ballMesh.position : b.pos);' in PLA,
+    'index: calabaza centrada en el CENTRO de la bola (bola renderizada — r94)')
 CHK('C.t >= C.dur - 0.55' in PLA and '_trozoAl(game, b.pos' in PLA, 'index: calabaza ESTALLA en trozos 0,55 s antes del cierre')
 CHK('_preparaCuerpoR88' in PLA and '_PODRE_R88' in PLA, 'index: pudrición por instancia (materiales clonados)')
 CHK('_pasoTrozosR88(dt, this.game)' in PLA, 'index: trozos/humo con vida FUERA del poder (tick global)')

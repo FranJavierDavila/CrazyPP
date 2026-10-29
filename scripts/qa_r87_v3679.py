@@ -303,8 +303,10 @@ with sync_playwright() as pw:
           const M = motor.ctx.mano;
           if (M && M.vivos.length > 0) {
             /* r91 · re-anclaje: SIN montículo desde la r90 — la mano nace
-             * DIRECTA sobre la mesa (y = tableTopY + 0,014) con su tierra
-             * integrada y el ARTE COMPLETO (repeat.y → 1). */
+             * DIRECTA sobre la mesa con su tierra integrada y el ARTE
+             * COMPLETO (repeat.y → 1).
+             * r92 · RE-ANCLAJE: base ANCLADA a la mesa (tableTopY + 0,005,
+             * MANO_Y) en TODAS las fases — nada suspendido en el aire. */
             const v0 = M.vivos[0];
             manoMonto = {
               monticulo: v0.mont == null,
@@ -335,7 +337,7 @@ with sync_playwright() as pw:
     mm = res.get('manoMonto') or {}
     CHK(mm.get('monticulo') is True, 'MANO: SIN montículo (nace directa con tierra integrada, r90)')
     CHK((mm.get('manoY') or 0) > 0.70 and (mm.get('manoY') or 0) < 0.85,
-        'mano nace SOBRE LA MESA (y=%s — tableTopY + 0,014)' % mm.get('manoY'))
+        'mano nace SOBRE LA MESA (y=%s — tableTopY + 0,005 MANO_Y r92: toca el tablero)' % mm.get('manoY'))
     ca = res.get('calabaza') or {}
     CHK(ca.get('cuerpo') is True, 'CALABAZA: cuerpo presente (GLB o procedural)')
     CHK(ca.get('bolaVisible') is False, 'con cuerpo presente la bola está sustituida')

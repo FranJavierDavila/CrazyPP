@@ -496,6 +496,14 @@ CAPAS = [
     # rival bajo la NORMA ÚNICA r57 con hold del final y sonido por
     # emoción, un solo plano del zombi en todo el ciclo de vida.
     ('r91 · halloween de raíz: BSO+mapa+manos+calabaza+rival (v3683)', 'qa_r91_v3683.py'),
+    # r92 · LAS CUATRO DEL INFORME — manos ANCLADAS a la mesa (base toca
+    # tablero en todas las fases, fuera el ascenso/bob de la r89), MESA NUEVA
+    # del dueño (mesa.webp, 4 losas con sangre — losa.jpg conservada),
+    # GOLPE DEL RIVAL a la calabaza tangente a la pala (marca ppCalabaza:
+    # alcance 0,12 + contacto arrastrado, probado con la IA REAL en los dos
+    # sentidos) y GIRO SOBRE SÍ MISMA arrastrado por el spin (×3 la tasa de
+    # la bola — se la ve girar al golpearla).
+    ('r92 · manos ancladas + mesa nueva + golpe tangente + giro de la calabaza (v3684)', 'qa_r92_v3684.py'),
     ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
 ]
 

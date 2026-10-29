@@ -671,7 +671,16 @@ export class OpponentAI {
     // y el contacto se produce en el punto exacto de ese trayecto. Tope de
     // longitud 0,5 m: un salto mayor es un TELEPORTE (reposición de saque,
     // resets) y no debe contar como contacto.
-    const reach = 0.21;
+    // r92 · CALABAZA AL ALCANCE DE LA PALA (informe del dueño: «el rival no
+    // la golpea correctamente con su pala, parece que tiene un desplaza-
+    // miento y el efecto no queda bien»): la calabaza del Halloween mide
+    // Ø 0,13 m (3× la bola) pero el contacto saltaba con el alcance gené-
+    // rico de 21 cm — la pala se paraba JUNTO a la calabaza, nunca sobre
+    // ella. Con la marca ppCalabaza (que ponia el módulo en la bola): el
+    // alcance baja a 0,12 m para que el golpe nazca CERCA de la piel de
+    // la calabaza y el ajuste del punto (abajo) sea de centímetros, no un
+    // salto visible. Sin marca: el alcance probado de siempre.
+    const reach = ball.ppCalabaza ? 0.12 : 0.21;
     const r2 = reach * reach;
     let cx = ball.pos.x, cy = ball.pos.y, cz = ball.pos.z;   // punto de contacto
     const prevB = ctx.prevBall || null;
@@ -686,6 +695,24 @@ export class OpponentAI {
         if (this.pos.distanceToSquared(_segC) > r2) return null;
       } else if (this.pos.distanceToSquared(ball.pos) > r2) return null;
     } else if (this.pos.distanceToSquared(ball.pos) > r2) return null;
+    // r92 · CONTACTO TANGENTE con la calabaza: el punto del barrido se
+    // ARRASTRA hacia la pala hasta que la SUPERFICIE de la calabaza toca
+    // el disco (centro de calabaza a ~7,5 cm del centro de la hoja — radio
+    // 0,065 + solape mínimo). Máx. ~4,5 cm de corrección (el alcance ya
+    // nace a 0,12): contacto sólido y creíble, sin teleportes. La salida
+    // se calcula DESPUÉS desde este punto con computeShotVelocityReal al
+    // mismo blanco — la trayectoria de la devolución no cambia.
+    if (ball.ppCalabaza) {
+      const dcx = cx - this.pos.x, dcy = cy - this.pos.y, dcz = cz - this.pos.z;
+      const dC = Math.sqrt(dcx * dcx + dcy * dcy + dcz * dcz) || 1e-6;
+      const TOCA = 0.075;
+      if (dC > TOCA) {
+        const sC = TOCA / dC;
+        cx = this.pos.x + dcx * sC;
+        cy = this.pos.y + dcy * sC;
+        cz = this.pos.z + dcz * sC;
+      }
+    }
     if ((cz - C) * sign < 0.04) return null;
     if (cy < DIMS.tableTopY - 0.08 || cy > 1.65) return null;
 

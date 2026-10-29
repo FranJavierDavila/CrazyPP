@@ -1,10 +1,10 @@
 {
-  "version": "3.6.83-SDK6",
-  "fase": 85,
-  "faseNombre": "Informe r91: música viva (forma canónica createMusic + SDK tolerante), mapa con la receta WizardMap exacta y textura por callback, manos con arte integral, calabaza con el bug material-array cazado (LatheGeometry sin groups = cero draw calls), rival bajo la norma única r57 con hold del final y sonidos por emoción",
+  "version": "3.6.84-SDK6",
+  "fase": 86,
+  "faseNombre": "Informe r92: manos ancladas a la mesa (base toca el tablero en todas las fases), mesa nueva del dueño (mesa.webp, 4 losas de piedra con sangre), golpe del rival a la calabaza tangente a la pala (marca ppCalabaza: alcance 0,12 + contacto arrastrado) y calabaza que gira sobre sí misma arrastrada por el spin (×3 la tasa visual de la bola)",
   "sdk": "1.5.4",
   "fecha": "2026-10-29",
-  "hub": "v3683-sdk6",
+  "hub": "v3684-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
   "tamano": 10469871,
-  "golden": "745af1f8f73a9d21824ab3445d531b2cc50ffa52b203e1f3a72fde12a3523a95"
+  "golden": "c381122eb01e0191c3b70506463798d811149db05ec10d78a2bd5c2b1d9b34f2"
 }

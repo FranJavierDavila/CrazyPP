@@ -905,6 +905,16 @@ const MANO_CULTIVO = 1.0;    // r91: ARTE COMPLETO — el informe del dueño («
                              // visibles medidos) y el dueño la QUIERE en pantalla
 const MANO_OFF_Y = 0.0;      // r91: sin recorte — v cubre 0..1 entero
 const MANO_GROSOR = 0.055;   // r90: semiespesor del plano mano (por delante Y por detrás)
+/* r92 · MANO PEGADA A LA MESA (informe del dueño: «Las manos de los zombis
+ * deben salir justa de la mesa de tal forma que su parte inferior toque la
+ * mesa y no quede suspendida en el aire»): la base del plano SE ANCLA al
+ * tablero en TODAS las fases — fuera el ascenso +0,12 y el vaivén vertical
+ * de la r89 (eran los que dejaban la mano COLGANDO sobre la mesa). El
+ * «nacer de abajo» sigue leyéndose: el plano DESENROLLA desde la mesa
+ * (repeat.y 0→1 con la base fija) y la punta asciende al crecer; el
+ * movimiento vivo queda en el vaivén de ROTACIÓN (pivote en la base) y en
+ * la respiración de ESCALA (crece desde la base, la punta respira). */
+const MANO_Y = 0.005;        // r92: base del plano a 5 mm del tablero (toca la mesa)
 
 PLANTILLA_PODERES.mano = {
   inicio(game, p, ctrl, ctx) {
@@ -977,7 +987,9 @@ PLANTILLA_PODERES.mano = {
     geo.translate(0, HF / 2, 0);
     const mat = new THREE.MeshBasicMaterial({ map: tex2, transparent: true, alphaTest: 0.30, side: THREE.DoubleSide, depthWrite: false });
     const mano = new THREE.Mesh(geo, mat);
-    mano.position.set(x, DIMS.tableTopY + 0.014, z);
+    /* r92 · base del plano EN LA MESA (MANO_Y): la parte inferior toca el
+     * tablero desde el frame 1 y en TODAS las fases (nada suspendida). */
+    mano.position.set(x, DIMS.tableTopY + MANO_Y, z);
     /* r90 · ORDEN DE PINTADO: mano 4 → trocitos 5 (ya sin capa de tierra
      * 3: nada que la corte). Sin depthWrite: el renderOrder decide. */
     mano.renderOrder = 4;
@@ -1026,22 +1038,26 @@ PLANTILLA_PODERES.mano = {
         const k = Math.min(1, v.t / 0.5);
         const e = 1 - Math.pow(1 - k, 3);
         v.mano.scale.y = Math.max(0.001, e);
-        /* r89 · ASCENSO REAL abajo→arriba (informe del dueño): la mano se
-         * LEVANTA 0,12 m mientras se desenrolla — nace EN la mesa. */
-        v.mano.position.y = v.y0 + e * 0.12;
+        /* r92 · BASE FIJA EN LA MESA: nada de ascenso — la punta sube SOLO
+         * porque el plano desenrolla (scale/repeat crecen desde la base). */
+        v.mano.position.y = v.y0;
         const sobre = k < 0.24 ? (1 - k / 0.24) * 0.07 : 0;
         v.mano.scale.x = v.mano.scale.z = 1 + sobre;
         v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * e);   // r91: e→1 = arte completo (tierra + brazo + mano)
         if (k >= 1) { v.fase = 'arriba'; v.t = 0; }
       } else if (v.fase === 'arriba') {
-        v.mano.position.y = v.y0 + 0.12 + Math.sin(v.t * 4.7) * 0.012;   // r89: flota sobre su nivel
-        v.mano.rotation.z = Math.sin(v.t * 3.1) * 0.05;           // vaivén siniestro
-        v.mano.scale.y = 1 + Math.sin(v.t * 4.7) * 0.015;
+        /* r92 · SIGUE TOCANDO LA MESA: el vaivén vivo es de ROTACIÓN
+         * (pivote en la base) y de ESCALA (respira desde la base) — la
+         * posición vertical NO se mueve (fuera el bob +0,12±0,012 de la
+         * r89 que dejaba la mano suspendida en el aire). */
+        v.mano.position.y = v.y0;
+        v.mano.rotation.z = Math.sin(v.t * 3.1) * 0.05;           // vaivén siniestro (base fija)
+        v.mano.scale.y = 1 + Math.sin(v.t * 4.7) * 0.015;         // respiración desde la base
         if (v.t >= 2.0) { v.fase = 'bajar'; v.t = 0; v.mano.rotation.z = 0; }
       } else if (v.fase === 'bajar') {
         const k = Math.min(1, v.t / 0.5);
         v.mano.scale.y = Math.max(0.001, 1 - k * k);
-        v.mano.position.y = v.y0 + (1 - k * k) * 0.12;   // r89: vuelve a la mesa al retraerse
+        v.mano.position.y = v.y0;   // r92: se ENROLLA hacia la mesa (base fija)
         v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * (1 - k * k));   // r91: se enrolla hasta la tierra
         if (k >= 1) { v.fase = 'fundir'; v.t = 0; }
       } else if (v.fase === 'fundir') {
@@ -1296,12 +1312,19 @@ PLANTILLA_PODERES.calabaza = {
      * ESTÁNDAR; la calabaza ES la bola con otro aspecto.
      * r90 · CUERPO GARANTIZADO DESDE EL FRAME 1: la calabaza procedural
      * de la casa nace EN EL DISPARO — la bola JAMÁS sin cuerpo, sin
-     * esperas de GLB, sin fallbackT ni swap. */
+     * esperas de GLB, sin fallbackT ni swap.
+     * r92 · MARCA ppCalabaza EN LA BOLA: el núcleo (OpponentAI) la lee
+     * para ACERCAR el contacto de su pala a la calabaza (Ø 13 cm — con el
+     * alcance genérico de 21 cm la pala parecía golpear BESIDE/DESPLEGA-
+     * DA: «el rival no la golpea correctamente con su pala parece que
+     * tiene un desplazamiento»). La marca viaja en la bola y se limpia
+     * en el estallido y en fin() — el resto del rallye queda intacto. */
     const C = { gltf: null, t: 0, listo: true, esProc: true, explotada: false, mats: [], dur: p.duration || 10 };
     ctx.calabaza = C;                   // r87: ANTES del callback (era el bug)
     C.gltf = _calabazaProcedural().clone(true);
     C.mats = _preparaCuerpoR88(C.gltf);
     game.scene.add(C.gltf);
+    if (game.ball) game.ball.ppCalabaza = true;         // r92: contacto de la IA pegado a la calabaza
     if (game.ballMesh) game.ballMesh.visible = false;   // la calabaza ES la bola
   },
   paso(dt, game, p, ctrl, ctx) {
@@ -1315,6 +1338,7 @@ PLANTILLA_PODERES.calabaza = {
      * normal VUELVE en ese instante — nunca calabaza y bola a la vez. */
     if (!C.explotada && C.t >= C.dur - 0.55) {
       C.explotada = true;
+      if (b) b.ppCalabaza = false;            // r92: bola normal → contacto de IA normal
       if (C.gltf) C.gltf.visible = false;
       if (game.ballMesh) game.ballMesh.visible = true;
       _chofff(game, b.pos.x);
@@ -1323,13 +1347,24 @@ PLANTILLA_PODERES.calabaza = {
     }
     if (C.explotada) return;
     if (C.gltf) {
-      /* r88 · LA CALABAZA ES LA BOLA: centrada en su centro EXACTO y
-       * girando COMO LA BOLA (mismo quaternion del mesh — el dueño:
-       * «girar como lo haría la bola (realmente ahora es la bola pero con
-       * apariencia de calabaza)»). Sin rebotes aleatorios: física de bola
-       * pesada, sin más (el «imposible jugarlo» del informe). */
+      /* r88 · LA CALABAZA ES LA BOLA: centrada en su centro EXACTO.
+       * r92 · GIRO SOBRE SÍ MISMA AL GOLPEARLA (informe del dueño: «La
+       * calabaza debería girar sobre si misma al golpearla tal como haría
+       * la bola»): el quaternion de la bola (r88) apenas se APRECIABA en
+       * un cuerpo de 13 cm (la bola suma spin·dt·0,05 — medio giro por
+       * segundo y la superficie de la calabaza apenas se mueve). La cala-
+       * bazas lleva SU rotación propia ARRASTRADA POR EL SPIN de la bola
+       * a ritmo de cuerpo grande (×3 el factor visual de la bola — misma
+       * sensación de rodadura en su tamaño): cada golpe CAMBIA el spin
+       * (el remate liftado, el push cortado, el saque) y la calabaza
+       * REARANCA su vuelta sobre sí misma en el acto — se la ve girar al
+       * golpearla, como haría la bola. */
       C.gltf.position.copy(b.pos);
-      if (game.ballMesh) C.gltf.quaternion.copy(game.ballMesh.quaternion);
+      const sp = b.spin || null;
+      if (sp) {
+        C.gltf.rotation.x += sp.x * dt * 0.15;
+        C.gltf.rotation.y += sp.y * dt * 0.15;
+      }
     }
     /* r88 · PUDRICIÓN: el arte se oscurece linealmente hasta el estallido */
     const k = clamp(C.t / Math.max(0.1, C.dur - 0.55), 0, 1);
@@ -1341,7 +1376,10 @@ PLANTILLA_PODERES.calabaza = {
   fin(game, p, ctrl, ctx) {
     const C = ctx && ctx.calabaza; if (!C) return;
     /* r89: SIN gravedad que restaurar — la física de la bola JAMÁS se toca
-     * (peso estándar, decisión del dueño) */
+     * (peso estándar, decisión del dueño)
+     * r92: la marca ppCalabaza se LIMPIA (contacto de la IA de vuelta a la
+     * norma genérica de la bola) */
+    if (game.ball) game.ball.ppCalabaza = false;
     if (game.ballMesh) game.ballMesh.visible = true;
     if (C.gltf) {
       game.scene.remove(C.gltf);
@@ -1971,7 +2009,12 @@ class PlantillaController {
   }
 
   /* ---- MESA LOSA (r86 · petición del dueño: la mesa viste la losa de ----
-   * piedra del artista, como la mesa de madera del Salvaje Oeste) -------- */
+   * piedra del artista, como la mesa de madera del Salvaje Oeste) --------
+   * r92 · TEXTURA NUEVA DEL DUEÑO: «Cambiamos la textura de la mesa por la
+   * nueva que adjunto» — mesa.webp (2048×1024, cuatro losas de piedra con
+   * grietas, musgo y salpicaduras de sangre). El mismo camino de siempre
+   * (mesa LOSA sobre ppTableTop, SRGB + anisotropía + marco piedra oscura);
+   * losa.jpg se CONSERVA en assets para rollback. */
   _losaOn() {
     const g = this.game;
     if (!g || !g.tableGroup || this._losaSaved) return;
@@ -1985,7 +2028,7 @@ class PlantillaController {
       metal: top.material.metalness,
     };
     try {
-      const tex = new THREE.TextureLoader().load(A('losa.jpg'));
+      const tex = new THREE.TextureLoader().load(A('mesa.webp'));
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
       try { tex.anisotropy = g.renderer.capabilities.getMaxAnisotropy(); } catch (e) { /* */ }

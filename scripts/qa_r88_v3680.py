@@ -42,7 +42,7 @@ CHK('_chofff(game, b.pos.x)' in PLA, 'index: CHOFFF en la mancha pisada')
 CHK('_humoVerdeR88(game, b.pos, 22)' in PLA, 'index: EXPLOSIÓN de humo verde al botar (22 sprites, r89)')
 CHK('DIMS.gravity = G.grav0 * 3.0' not in PLA, 'index: gelatina SIN peso ×3 (física de la bola normal)')
 CHK('b.vel.x *= (1 - 0.35 * dt)' not in PLA, 'index: gelatina SIN frenado (física normal)')
-CHK('C.gltf.quaternion.copy(game.ballMesh.quaternion)' in PLA, 'index: calabaza GIRA COMO LA BOLA (mismo quaternion)')
+CHK('C.gltf.rotation.x += sp.x * dt * 0.15' in PLA, 'index: calabaza GIRA SOBRE SÍ MISMA arrastrada por el spin (×3 la tasa visual de la bola, r92 — el dueño: «girar al golpearla tal como haría la bola»; el quaternion r88 no se apreciaba en un cuerpo de 13 cm)')
 CHK('C.gltf.position.copy(b.pos)' in PLA, 'index: calabaza centrada en el CENTRO de la bola')
 CHK('C.t >= C.dur - 0.55' in PLA and '_trozoAl(game, b.pos' in PLA, 'index: calabaza ESTALLA en trozos 0,55 s antes del cierre')
 CHK('_preparaCuerpoR88' in PLA and '_PODRE_R88' in PLA, 'index: pudrición por instancia (materiales clonados)')
@@ -172,11 +172,14 @@ with sync_playwright() as pw:
           const b = g.ball;
           const off = Math.hypot(C.gltf.position.x - b.pos.x, C.gltf.position.y - b.pos.y, C.gltf.position.z - b.pos.z);
           const bolaOculta = !g.ballMesh.visible;      // ANTES del estallido
-          g.ballMesh.rotation.set(0.4, 0.7, 0.1);      // gira la bola: la calabaza debe seguirle
+          /* r92 · RE-ANCLAJE (giro propio): la calabaza NO copia el quaternion
+           * de la bola desde la r92 — lleva SU rotación arrastrada por el
+           * spin (×3 la tasa de la bola). Prueba: spin fijo → su rotation
+           * AVANZA (antes del paso vs después). */
+          g.ball.spin.set(20, 8, 0);
+          const rx0 = C.gltf.rotation.x, ry0 = C.gltf.rotation.y;
           await pasoN(2);
-          const qd = Math.abs(C.gltf.quaternion.x - g.ballMesh.quaternion.x) +
-                     Math.abs(C.gltf.quaternion.y - g.ballMesh.quaternion.y) +
-                     Math.abs(C.gltf.quaternion.z - g.ballMesh.quaternion.z);
+          const giroPropio = Math.abs(C.gltf.rotation.x - rx0) + Math.abs(C.gltf.rotation.y - ry0);
           const col0 = C.mats.length ? '#' + C.mats[0].m.color.getHexString() : null;
           C.t = C.dur * 0.5;                    // mitad de vida → tinte intermedio
           await pasoN(2);
@@ -185,7 +188,7 @@ with sync_playwright() as pw:
           C.t = C.dur - 0.20;                   // tramo final → estallido
           await pasoN(8);                       // 0,4 s
           out.calabaza = {
-            cuerpo: true, offsetCentro: off, giroSigue: qd,
+            cuerpo: true, offsetCentro: off, giroPropio,
             bolaOcultaConCalabaza: bolaOculta,
             col0, colMid,
             explotada: C.explotada === true,
@@ -242,8 +245,8 @@ with sync_playwright() as pw:
     CHK(cal.get('cuerpo') is True, 'CALABAZA: cuerpo vivo (GLB o respaldo)')
     oc = cal.get('offsetCentro')
     CHK(oc is not None and oc < 0.02, 'CALABAZA: centrada en el CENTRO EXACTO de la bola (off=%s)' % oc)
-    gs = cal.get('giroSigue')
-    CHK(gs is not None and gs < 0.02, 'CALABAZA: gira COMO LA BOLA (dif tras giro nuevo=%s)' % gs)
+    gs = cal.get('giroPropio')
+    CHK(gs is not None and gs > 0.05, 'CALABAZA: gira SOBRE SÍ MISMA con el spin (Δ rot=%s rad en 2 pasos — r92, la bola r88 no se apreciaba)' % gs)
     CHK(cal.get('bolaOcultaConCalabaza') is True, 'CALABAZA: bola normal OCULTA mientras la calabaza vive (nunca las dos)')
     CHK(cal.get('explotada') is True and (cal.get('trozosNuevos') or 0) >= 8 and cal.get('bolaVuelta') is True,
         'CALABAZA: ESTALLA en trozos (%s) y la bola normal VUELVE' % cal.get('trozosNuevos'))

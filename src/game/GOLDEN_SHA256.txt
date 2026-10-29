@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.83-SDK6, fase 85 · Informe r91: música viva (forma canónica createMusic + SDK tolerante), mapa con la receta WizardMap exacta y textura por callback, manos con arte integral, calabaza con el bug material-array cazado (LatheGeometry sin groups = cero draw calls), rival bajo la norma única r57 con hold del final y sonidos por emoción; sello actualizado
-# por bump_version.py desde 3.6.82-SDK6)
-745af1f8f73a9d21824ab3445d531b2cc50ffa52b203e1f3a72fde12a3523a95
+# SHA256 del game.html que produjo esta división (3.6.84-SDK6, fase 86 · Informe r92: manos ancladas a la mesa (base toca el tablero en todas las fases), mesa nueva del dueño (mesa.webp, 4 losas de piedra con sangre), golpe del rival a la calabaza tangente a la pala (marca ppCalabaza: alcance 0,12 + contacto arrastrado) y calabaza que gira sobre sí misma arrastrada por el spin (×3 la tasa visual de la bola); sello actualizado
+# por bump_version.py desde 3.6.83-SDK6)
+c381122eb01e0191c3b70506463798d811149db05ec10d78a2bd5c2b1d9b34f2

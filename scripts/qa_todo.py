@@ -487,6 +487,15 @@ CAPAS = [
     # gelatina sin desfase (cuadrado visual exacto por quaternion) + HUMILLO
     # CONTINUO, calabaza PROCEDURAL garantizada (GLB de Sketchfab retirado).
     ('r90 · halloween suena y se juega (v3682)', 'qa_r90_v3682.py'),
+    # r91 · EL INFORME QUE POR FIN SE ATACA DE RAÍZ — BSO viva (forma
+    # canónica createMusic + SDK tolerante), mapa con la receta WizardMap
+    # EXACTA y textura por CALLBACK del loader (la sonda r91b cazó al
+    # sondeo dormido: opacity 0 con image vivo), manos con ARTE INTEGRAL
+    # (la tierra y el brazo se ven), calabaza con EL BUG RAÍZ cazado
+    # (material-array sobre geometría sin groups = cero draw calls),
+    # rival bajo la NORMA ÚNICA r57 con hold del final y sonido por
+    # emoción, un solo plano del zombi en todo el ciclo de vida.
+    ('r91 · halloween de raíz: BSO+mapa+manos+calabaza+rival (v3683)', 'qa_r91_v3683.py'),
     ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
 ]
 

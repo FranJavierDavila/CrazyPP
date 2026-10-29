@@ -31,7 +31,7 @@ man = json.load(open(os.path.join(PUB, 'championships/halloween/manifest.json'))
 CHK(man.get('cartel', {}).get('oculto') is True, 'manifest: cartel.oculto=true (cartel de bienvenida RETIRADO)')
 mp = man.get('mapa', {})
 CHK(abs(mp.get('rotY', 0) - math.pi / 2) < 0.01, 'manifest: mapa rotY=π/2 (pared izquierda, normativa)')
-CHK(abs(mp.get('pos', [9])[0] + 3.043) < 0.002 and abs(mp.get('pos', [9])[1] - 1.66) < 0.01, 'manifest: mapa x=-3.043 y=1.66 (r89: elevado y pegado a la pared)')
+CHK(abs(mp.get('pos', [9])[0] + 2.98) < 0.002 and abs(mp.get('pos', [9])[1] - 1.5) < 0.01, 'manifest: mapa pos WizardMap [-2.98, 1.5, -0.9] (r91 — la receta que el dueño ve en todos los campeonatos)')
 PLA = open(os.path.join(PUB, 'championships/halloween/index.js'), encoding='utf-8').read()
 CHK('DIMS.tableHalfWidth) || 0.7625) + 0.69' in PLA, 'index: zombi anclado a la MESA (canto derecho +0,69)')
 CHK('if (c.oculto) return null;' in PLA, 'index: construirCartel respeta cartel.oculto')
@@ -87,11 +87,12 @@ with sync_playwright() as pw:
         while (p) { if (p === g.scene) { out.zombiEnEscena = true; break; } p = p.parent; }
       } catch (e) { out.zombiErr = '' + e; }
       try {
-        const mp = ctrl.mapa.plane;
-        out.mapa = { x: +mp.position.x.toFixed(3), rotY: +mp.rotation.y.toFixed(3),
-                     y: +mp.position.y.toFixed(2), w: +mp.geometry.parameters.width.toFixed(2),
-                     texCargada: !!(mp.material.map && mp.material.map.image &&
-                                    mp.material.map.image.width > 0) };
+        /* r91 · el mapa vive en el GRUPO WizardMap (el plano va local). */
+        const gr = ctrl.mapa.grupo, pl = ctrl.mapa.plane;
+        out.mapa = { x: +gr.position.x.toFixed(3), rotY: +gr.rotation.y.toFixed(3),
+                     y: +gr.position.y.toFixed(2), w: 1.68,
+                     texCargada: !!(pl.material.map && pl.material.map.image &&
+                                    pl.material.map.image.width > 0) };
       } catch (e) { out.mapaErr = '' + e; }
       out.bola = { pos: g.ball ? [+g.ball.pos.x.toFixed(3), +g.ball.pos.y.toFixed(3), +g.ball.pos.z.toFixed(3)] : null,
                    vel: g.ball ? +Math.hypot(g.ball.vel.x, g.ball.vel.y, g.ball.vel.z).toFixed(4) : null };
@@ -108,8 +109,8 @@ with sync_playwright() as pw:
     CHK(abs(z[2] + 3.30) < 0.01, 'zombi referido a la mesa (z=%.2f = mesa − 1,70)' % z[2])
     CHK(abs(z[1] - 1.075) < 0.015, 'zombi con los pies en el suelo (y=%.3f, flotación ±0.012)' % z[1])
     m = st.get('mapa') or {}
-    CHK(abs(m.get('x', 0) + 3.043) < 0.002 and abs((m.get('rotY') or 0) - 1.571) < 0.01,
-        'mapa EN la pared izquierda (x=%s rotY=%s — r89 lo eleva)' % (m.get('x'), m.get('rotY')))
+    CHK(abs(m.get('x', 0) + 2.98) < 0.002 and abs((m.get('rotY') or 0) - 1.571) < 0.01,
+        'mapa EN la pared izquierda (x=%s rotY=%s — receta WizardMap r91)' % (m.get('x'), m.get('rotY')))
     CHK(m.get('texCargada') is True, 'mapa con SU TEXTURA cargada (no un cartel en blanco)')
 
     # bola aparcada: 2 s de escucha sin un solo evento de mesa (cero botes/ruido)
@@ -148,12 +149,15 @@ with sync_playwright() as pw:
         while (guard++ < 160) { motor.update(0.05); if (motor.ctx.mano && motor.ctx.mano.vivos.length >= 1) { motor.update(0.05); break; } }
         await new Promise(r => setTimeout(r, 4));
         const M = motor.ctx.mano;
+        /* r91 · RE-ANCLAJE: sin montículo desde la r90 — la mano nace DIRECTA
+         * con su tierra integrada (renderOrder 4, trocitos 5) y TODO el arte
+         * visible (cultivo 1.0). El canto se chequea sobre la MANO. */
         let fuera = 0, conOrden = 0;
         for (const v of M.vivos) {
-          const half = 0.23;
-          if (Math.abs(v.mont.position.x) > HW - half - 0.005 ||
-              Math.abs(v.mont.position.z - cz) > HL - half - 0.005) fuera++;
-          if (v.mano && v.mano.renderOrder === 4 && v.mont.renderOrder === 3) conOrden++;
+          const half = 0.19;
+          if (Math.abs(v.mano.position.x) > HW - half - 0.005 ||
+              Math.abs(v.mano.position.z - cz) > HL - half - 0.005) fuera++;
+          if (v.mano && v.mano.renderOrder === 4) conOrden++;
         }
         out.mano = { vivos: M.vivos.length, fuera, conOrden };
       } catch (e) { out.manoErr = '' + e; }
@@ -232,8 +236,8 @@ with sync_playwright() as pw:
     print(json.dumps(res, indent=1, ensure_ascii=False))
     mn = res.get('mano') or {}
     CHK(mn.get('fuera') == 0 and (mn.get('vivos') or 0) >= 1,
-        'MANO: %s montículos vivos, TODOS dentro del tablero (fuera=%s)' % (mn.get('vivos'), mn.get('fuera')))
-    CHK(mn.get('conOrden', 0) > 0, 'MANO: mano renderOrder 4 POR DELANTE de la tierra (3)')
+        'MANO: %s manos vivas, TODAS dentro del tablero (fuera=%s — sin montículo desde r90)' % (mn.get('vivos'), mn.get('fuera')))
+    CHK(mn.get('conOrden', 0) > 0, 'MANO: mano renderOrder 4 (trocitos 5 — orden r90 intacto)')
     cal = res.get('calabaza') or {}
     CHK(cal.get('cuerpo') is True, 'CALABAZA: cuerpo vivo (GLB o respaldo)')
     oc = cal.get('offsetCentro')

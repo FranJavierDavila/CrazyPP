@@ -44,7 +44,7 @@ mod = open(os.path.join(HAL, 'index.js'), encoding='utf-8').read()
 man = json.load(open(os.path.join(HAL, 'manifest.json'), encoding='utf-8'))
 
 print('== 1 · MANIFEST v2 ==')
-CHK(man['version'] == 2, 'manifest version 2')
+CHK(man['version'] >= 2, 'manifest version (v2 r86 → v3 r91)')
 pods = man['powers']
 CHK([p['kind'] for p in pods] == ['mano', 'moscas', 'calabaza', 'gelatina'],
     'powers = los 4 REALES del dueño')
@@ -65,8 +65,11 @@ for k in ['mano', 'moscas', 'calabaza', 'gelatina']:
         b = bloque.group(0)
         CHK('inicio(' in b and 'paso(' in b and 'fin(' in b, '  %s: inicio+paso+fin' % k)
 CHK(mod.count('TEX_R86.pedir(') >= 4, 'precarga TEX_R86 (manos ×3 + mosca + gelatina en una sola llamada)')
-CHK('_pumpkinGet' in mod and 'calabaza.glb' in mod and 'GLTFLoader' in mod,
-    'calabaza.glb por GLTFLoader con caché única')
+# r91 · re-anclaje: la calabaza es PROCEDURAL desde la r90 (el GLB de
+# Sketchfab cargaba y no se pintaba en el casco) — el GLB queda en
+# disco como arte del dueño pero NUNCA entra al runtime.
+CHK('_calabazaProcedural' in mod and 'LatheGeometry' in mod and '_pumpkinGet' not in mod,
+    'calabaza PROCEDURAL en runtime (GLB retirado — decisión r90/r91)')
 CHK("url: () => A('superpower.webp')" in mod, 'cartel = SuperPower del DUEÑO')
 for muerto in ["superpoder.webp", "power_0.png", "power_1.png"]:
     CHK(muerto not in mod, 'resto provisional retirado: "%s" ×0' % muerto)
@@ -144,7 +147,7 @@ with sync_playwright() as pw:
       };
     }""")
     CHK(st.get('vive') is True, 'window.__PP_HALLOWEEN expone ctrl+man')
-    CHK(st.get('version') == 2, 'manifest v2 en vivo')
+    CHK(st.get('version') >= 2, 'manifest en vivo (v3 r91)')
     CHK(st.get('kinds') == ['mano', 'moscas', 'calabaza', 'gelatina'],
         'los 4 poderes REGISTRADOS en el motor vivo (%s)' % (st.get('kinds'),))
     CHK(st.get('losaMap') is True, 'MESA CON LOSA: ppTableTop con map del dueño')

@@ -1,21 +1,21 @@
 {
   "tamano": {
     "game.html": 10470844,
-    "sdk": 61789,
+    "sdk": 62384,
     "oeste": 644627,
     "magia": 223247,
     "locura": 251841,
     "estacion_orbital": 374828,
-    "halloween": 118224
+    "halloween": 123520
   },
   "fisica": {
-    "sweep200k": 42.3,
-    "bounce100k": 5,
-    "aero200k": 6.1
+    "sweep200k": 44.5,
+    "bounce100k": 5.1,
+    "aero200k": 6.6
   },
   "vivo": {
-    "boot_ms": 1688.0,
-    "cadena_ms": 8045.5
+    "boot_ms": 1752.8,
+    "cadena_ms": 6368.9
   },
   "nota": "L\u00edneas base del presupuesto de rendimiento. Refrescar SOLO tras un cambio intencional: python3 scripts/qa_rendimiento.py --update",
   "fecha": "2026-10-29"

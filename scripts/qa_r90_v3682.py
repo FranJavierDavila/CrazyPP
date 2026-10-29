@@ -85,7 +85,7 @@ CHK('6.0 : 0' not in PLA and '_esperaCuerpo' not in PLA, 'index: aviso de superp
 # r90 · MAPA CON SU COLOR
 CHK('textura.colorSpace = THREE.SRGBColorSpace' in PLA and 'getMaxAnisotropy' in PLA,
     'index: mapa con SRGBColorSpace + anisotropía (adiós al lavado)')
-CHK('this.marco' in PLA and 'marco.geometry.dispose()' in PLA, 'index: MARCO de anclaje intacto (regresión r89)')
+CHK('this.grupo' in PLA and 'this.back' in PLA and 'back.geometry.dispose()' in PLA, 'index: GRUPO WizardMap con respaldo de anclaje (r91 — sustituye al marco r89)')
 CHK('for (let i = 0; i < 48; i++)' in PLA, 'index: moscas AL DOBLE (regresión r89)')
 CHK(os.path.exists(os.path.join(HAL, 'assets/mapa.webp')) and os.path.getsize(os.path.join(HAL, 'assets/mapa.webp')) > 100000,
     'assets: mapa.webp del dueño presente (%d B)' % os.path.getsize(os.path.join(HAL, 'assets/mapa.webp')))
@@ -119,8 +119,13 @@ with sync_playwright() as pw:
       const ctrl = H.ctrl(), g = ctrl.game;
       const out = { vive: true, state: g.rules ? g.rules.state : null };
       try {
-        const mp = ctrl.mapa.plane;
-        out.mapa = { x: +mp.position.x.toFixed(3), y: +mp.position.y.toFixed(2), rotY: +mp.rotation.y.toFixed(4) };
+        /* r91 · RE-ANCLAJE: el mapa vive en un GRUPO (patrón WizardMap) —
+         * pos/rotY en el grupo; el plano va LOCAL (0,0,0) y su opacity
+         * se abre por el CALLBACK del loader (o el respaldo de refresco). */
+        const gr = ctrl.mapa.grupo, mp = ctrl.mapa.plane;
+        out.mapa = { x: +gr.position.x.toFixed(3), y: +gr.position.y.toFixed(2), rotY: +gr.rotation.y.toFixed(4),
+                     enRig: gr.parent === g.rig || (gr.parent && gr.parent === g.scene) };
+        out.mapaOp = mp.material.opacity;
         out.mapaCS = (mp.material && mp.material.map) ? mp.material.map.colorSpace : null;
         out.mapaAniso = (mp.material && mp.material.map) ? mp.material.map.anisotropy : null;
       } catch (e) { out.mapaErr = '' + e; }
@@ -132,9 +137,12 @@ with sync_playwright() as pw:
     # r90 · EL MAPA YA NO ESTÁ LAVADO: colorSpace SRGB EN LA TEXTURA VIVA
     CHK(st.get('mapaCS') == 'srgb', 'mapa: textura VIVA en SRGB (colorSpace=%s — antes lineal=desaturado)' % st.get('mapaCS'))
     m = st.get('mapa') or {}
-    CHK(abs(m.get('x', 0) + 3.043) < 0.002 and abs(m.get('y', 0) - 1.66) < 0.01,
-        'mapa: posición intacta (x=%s y=%s)' % (m.get('x'), m.get('y')))
+    # r91 · RE-ANCLAJE HONESTO: la receta WizardMap — pos [-2.98, 1.5, -0.9]
+    CHK(abs(m.get('x', 0) + 2.98) < 0.002 and abs(m.get('y', 0) - 1.5) < 0.01,
+        'mapa: posición WizardMap (x=%s y=%s — el grupo manda)' % (m.get('x'), m.get('y')))
     CHK(abs((m.get('rotY') or 0) - 1.5708) < 1e-3, 'mapa: PARALELO a la pared (rotY=%s)' % m.get('rotY'))
+    CHK(abs((st.get('mapaOp') if st.get('mapaOp') is not None else 0) - 1.0) < 1e-6,
+        'mapa: opacity ABIERTA (gate del callback — la sonda r91b cazó al sondeo dormido: opacity 0 con image vivo)')
 
     # ARTE SONORO DECODIFICABLE en este navegador (perfil del casco)
     dec = pg.evaluate("""async () => {
@@ -343,7 +351,7 @@ with sync_playwright() as pw:
     pg.evaluate("""() => {
       const H = window.__PP_HALLOWEEN; const g = H.ctrl().game;
       g.camera.position.set(-0.9, 1.62, -0.4);
-      g.camera.lookAt(-3.043, 1.66, -1.9);
+      g.camera.lookAt(-2.98, 1.5, -0.9);   // r91: receta WizardMap
     }""")
     pg.wait_for_timeout(800)
     pg.screenshot(path=os.path.join(RAIZ, 'scripts', '_r90_mapa.png'))

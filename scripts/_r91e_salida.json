@@ -1,0 +1,79 @@
+{
+ "entrada": {
+  "planos": [],
+  "rivalEnEscena": [
+   "idle.webp"
+  ],
+  "cara": "idle",
+  "nEscenaHijos": 11
+ },
+ "tormenta": {
+  "planos": [],
+  "rivalEnEscena": [
+   "defeated.webp"
+  ],
+  "cara": "defeated",
+  "nEscenaHijos": 13
+ },
+ "duelo": {
+  "planos": [],
+  "rivalEnEscena": [
+   "idle.webp"
+  ],
+  "cara": "idle",
+  "nEscenaHijos": 6
+ },
+ "final": {
+  "planos": [],
+  "rivalEnEscena": [
+   "defeated.webp"
+  ],
+  "cara": "defeated",
+  "nEscenaHijos": 7
+ },
+ "reentrada": {
+  "planos": [],
+  "rivalEnEscena": [
+   "idle.webp"
+  ],
+  "cara": "idle",
+  "nEscenaHijos": 13
+ },
+ "musica": {
+  "modulo": "no-accesible",
+  "ctx": "running"
+ },
+ "sonidos": [
+  {
+   "f": "risas.mp3",
+   "dur": 2.86,
+   "ch": 2,
+   "rate": 44100
+  },
+  {
+   "f": "zombi_crazy.mp3",
+   "dur": 2.25,
+   "ch": 2,
+   "rate": 44100
+  },
+  {
+   "f": "zombi_victory.mp3",
+   "dur": 1.82,
+   "ch": 2,
+   "rate": 44100
+  },
+  {
+   "f": "zombi_defeated.mp3",
+   "dur": 8.1,
+   "ch": 2,
+   "rate": 44100
+  },
+  {
+   "f": "midnight_volley.mp3",
+   "dur": 153.63,
+   "ch": 2,
+   "rate": 44100
+  }
+ ],
+ "pageerrors": []
+}

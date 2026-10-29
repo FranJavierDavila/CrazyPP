@@ -349,6 +349,17 @@ export function createSfx(moduleURL, getGame, opts) {
  *    excluso    () => bool             — true = NO arrancar (otra música suena) */
 export function createMusic(getGame, opts) {
   const o = opts || {};
+  /* r91 · TOLERANCIA DE FORMA (la del createBucle): url y vol admiten
+   * FUNCIÓN (forma canónica — magia/oeste/locura/orbital) o VALOR DIRECTO
+   * (string/number). La r90 del módulo halloween pasó vol como número y
+   * url como string: objetivo() hacía o.vol() sobre un número → TypeError
+   * tragado por el catch de arrancar() → mus=null SIN error visible — la
+   * BSO muda. Con esta forma el motor no puede volver a quedar mudo por
+   * la forma del parámetro, sea cual sea el módulo que lo llame. */
+  const val = (x, def) => {
+    try { if (x == null) return def; return (typeof x === 'function') ? x() : x; }
+    catch (e) { return def; }
+  };
   let mus = null;        // { gain, src } — la RANURA (una melodía por motor)
   let buf = null;        // AudioBuffer decodificado (una sola vez)
   let busy = false;      // petición en vuelo
@@ -359,8 +370,8 @@ export function createMusic(getGame, opts) {
   function ctx() {
     try { const a = gg() && gg().audio; return a && a.ctx; } catch (e) { return null; }
   }
-  function objetivo() { try { return o.vol ? o.vol() : 0.15; } catch (e) { return 0.15; } }
-  function srcURL() { try { return o.url ? o.url() : undefined; } catch (e) { return undefined; } }
+  function objetivo() { return val(o.vol, 0.15) || 0.15; }
+  function srcURL() { return val(o.url, undefined); }
   function puede() { try { return o.puede ? !!o.puede() : true; } catch (e) { return false; } }
   function excluso() { try { return o.excluso ? !!o.excluso() : false; } catch (e) { return true; } }
   function arcPlaying() {

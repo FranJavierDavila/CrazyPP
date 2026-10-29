@@ -51,7 +51,8 @@ PLA = open(os.path.join(PUB, 'championships', '_plantilla', 'index.js'), encodin
 print('== 1 · MAPA EN LA PARED IZQUIERDA + TAPAS ==')
 mp = man['mapa']
 CHK(abs(mp.get('rotY', 0) - 3.141592653589793 / 2) < 0.01, 'mapa rotY = π/2 (pared izquierda)')
-CHK(abs(mp.get('pos', [0, 0, 0])[0] + 3.043) < 0.002, 'mapa x = −3.043 (pegado a la pared izquierda, r89)')
+# r91 · re-anclaje: receta WizardMap (grupo en RIG, pos [-2.98,1.5,-0.9])
+CHK(abs(mp.get('pos', [0, 0, 0])[0] + 2.98) < 0.002, 'mapa x = −2.98 (receta WizardMap r91 — la del dueño bien colocada)')
 CHK(mp.get('pos', [0, 0, 0])[1] > 1.0, 'mapa a la altura de los ojos (y %.2f)' % mp.get('pos', [0, 0, 0])[1])
 CHK('this._tapas = []' in mod and '_pintaTapas' in mod and 'refresco()' in mod,
     'TAPAS: creación + refresco por progreso en el módulo')
@@ -76,17 +77,17 @@ CHK(man['cartel']['pos'][2] < -5.0, 'cartel en la pared FRONTAL (z %.2f)' % man[
 
 print('== 4 · MANO DE ZOMBI REESCRITA ==')
 chk_block = re.search(r'PLANTILLA_PODERES\.mano = \{.*?\n\};', mod, re.S).group(0)
-CHK("fase: 'monticulo'" in chk_block, 'fase montículo ANTES de la mano (guion del dueño)')
-CHK('monticulo.webp' in mod and "TEX_R86.pedir('monticulo.webp'" in chk_block or 'monticulo.webp' in chk_block,
-    'montículo = arte del dueño (monticulo.webp)')
-CHK('MANO_CULTIVO = 0.70' in mod and 'MANO_OFF_Y = 0.30' in mod,
-    'mano por desenrollado (recorte del arte: tierra fuera)')
+# r90/r91 · re-anclaje: SIN montículo — la mano nace DIRECTA en fase subir
+CHK("fase: 'subir'" in chk_block and "fase: 'monticulo'" not in chk_block, 'mano nace DIRECTA en fase subir (sin montículo, r90)')
+CHK('monticulo.webp' not in chk_block, 'montículo RETIRADO del poder (la mano trae su tierra, r90)')
+CHK('MANO_CULTIVO = 1.0' in mod and 'MANO_OFF_Y = 0.0' in mod,
+    'mano con ARTE INTEGRAL (la tierra y el brazo del fondo SE VEN, r91 — petición del dueño)')
 CHK("v.t >= 2.0" in chk_block and "v.t / 0.5" in chk_block,
     'tiempos del guion: 0,5 s subir · 2,0 s arriba · 0,5 s bajar')
 CHK('_manoTexLibre' in mod and '__r86usada' in mod and 'M.pool' in chk_block,
     'POOL de clones de textura (cero subidas GPU por aparición)')
-CHK("bola.vel.set(rand(-0.25, 0.25), 0.05, rand(-0.25, 0.25))" in chk_block,
-    'bola PARADA que se cae al tocar la mano')
+CHK('game.ball.vel.set(0, -0.4, 0)' in chk_block,
+    'bola PARADA que se cae al tocar la mano (0,-0.4,0 — motor de Burla, r90)')
 CHK('_revienta' in chk_block and 'M.trocitos' in chk_block, 'mano empujada que revienta en trocitos')
 
 print('== 5 · PLAGA DE MOSCAS (más y mejores) ==')
@@ -102,10 +103,13 @@ print('== 6 · CALABAZA (el GLB vuelve a verse) ==')
 cal = re.search(r'PLANTILLA_PODERES\.calabaza = \{.*?\n\};', mod, re.S).group(0)
 CHK('ctx.calabaza = C;                   // r87: ANTES del callback' in cal,
     'ctx ANTES del callback (el bug del disparo síncrono: bola invisible)')
-CHK('_calabazaProcedural' in mod and 'fallbackT = 1.2' in cal,
-    'calabaza PROCEDURAL de respaldo a 1,2 s (r89: la bola jamás sin cuerpo)')
+CHK('_calabazaProcedural' in mod and 'C.gltf = _calabazaProcedural().clone(true)' in cal,
+    'calabaza PROCEDURAL desde el disparo (r90: sin esperas de GLB, la bola jamás sin cuerpo)')
 CHK('DIMS.gravity' not in cal, 'r89: PESO ESTÁNDAR (la gravedad ×2,1 se retira — decisión del dueño)')
-CHK('C.esProc' in cal, 'dispose diferenciado GLB/procedural (la caché de la casa no se toca)')
+# r91 · re-anclaje: r90 retiró el GLB — dispose de MATERIALES por
+# instancia (clon de pudrición), geometrías del caché intactas.
+CHK('mm.dispose()' in cal and 'NO se tocan' in cal,
+    'dispose por INSTANCIA: materiales sí, geometrías del caché no (r90/r91)')
 CHK('SIN gravedad que restaurar' in cal, 'r89: sin gravedad que restaurar (peso estándar)')
 
 print('== 7 · GELATINA ASQUEROSA ==')
@@ -229,8 +233,9 @@ with sync_playwright() as pw:
       // MAPA: plano en pared izquierda + tapas
       let mapaX = null, mapaRotY = null, tapas = null, tapasVisibles = 0, mapaEnEscena = false;
       try {
-        const mp = ctrl.mapa.plane;
-        let p = mp; while (p) { if (p === g.scene) { mapaEnEscena = true; break; } p = p.parent; }
+        /* r91 · el mapa vive en el GRUPO WizardMap (el plano va local). */
+        const mp = ctrl.mapa.grupo;
+        let p = mp; while (p) { if (p === g.scene || p === g.rig) { mapaEnEscena = true; break; } p = p.parent; }
         mapaX = +mp.position.x.toFixed(3); mapaRotY = +mp.rotation.y.toFixed(3);
         tapas = ctrl.mapa._tapas.length;
         tapasVisibles = ctrl.mapa._tapas.filter(t => t.visible).length;
@@ -258,7 +263,7 @@ with sync_playwright() as pw:
     CHK(st.get('rivalEnEscena') is True, 'RIVAL EN EL GRAFO DE ESCENA (antes: mesh huérfano)')
     CHK(abs(st.get('rivalY', 0) - 1.075) < 0.015, 'rival con los PIES EN EL SUELO (y=%s, flotación ±0.012)' % st.get('rivalY'))
     CHK(st.get('mapaEnEscena') is True, 'mapa montado')
-    CHK(abs(st.get('mapaX', 0) + 3.043) < 0.002, 'mapa EN LA PARED IZQUIERDA (x=%s, r89)' % st.get('mapaX'))
+    CHK(abs(st.get('mapaX', 0) + 2.98) < 0.002, 'mapa EN LA PARED IZQUIERDA (x=%s, receta WizardMap r91)' % st.get('mapaX'))
     CHK(abs((st.get('mapaRotY') or 0) - 1.571) < 0.01, 'mapa girado π/2 (mirando a la sala)')
     CHK(st.get('tapas') == 5, '5 TAPAS creadas (5 etapas)')
     CHK(st.get('tapasVisibles') == 4, 'etapas NO superadas TAPADAS al empezar (4 tapas visibles)')
@@ -297,10 +302,15 @@ with sync_playwright() as pw:
           await new Promise(r => setTimeout(r, 100));
           const M = motor.ctx.mano;
           if (M && M.vivos.length > 0) {
+            /* r91 · re-anclaje: SIN montículo desde la r90 — la mano nace
+             * DIRECTA sobre la mesa (y = tableTopY + 0,014) con su tierra
+             * integrada y el ARTE COMPLETO (repeat.y → 1). */
+            const v0 = M.vivos[0];
             manoMonto = {
-              monticulo: !!M.vivos[0].mont,
-              monticuloFlat: M.vivos[0].mont.rotation.x < -1.5,
-              manoY: +M.vivos[0].mano.position.y.toFixed(3),
+              monticulo: v0.mont == null,
+              monticuloFlat: true,
+              manoY: +v0.mano.position.y.toFixed(3),
+              arteCompleto: v0.fase === 'arriba' ? Math.abs(v0.tex.repeat.y - 1.0) < 0.02 : null,
             };
             break;
           }
@@ -323,9 +333,9 @@ with sync_playwright() as pw:
     for fila in res.get('out', []):
         CHK(fila.get('ok') and 'err' not in fila, 'ciclo completo %s sin excepciones' % fila.get('k'))
     mm = res.get('manoMonto') or {}
-    CHK(mm.get('monticulo') is True and mm.get('monticuloFlat') is True,
-        'MANO: el MONTÍCULO aparece PLANO sobre la mesa antes de la mano')
-    CHK(abs((mm.get('manoY') or 0) - 0.772) < 0.02, 'mano nace pegada al montículo (y=%s)' % mm.get('manoY'))
+    CHK(mm.get('monticulo') is True, 'MANO: SIN montículo (nace directa con tierra integrada, r90)')
+    CHK((mm.get('manoY') or 0) > 0.70 and (mm.get('manoY') or 0) < 0.85,
+        'mano nace SOBRE LA MESA (y=%s — tableTopY + 0,014)' % mm.get('manoY'))
     ca = res.get('calabaza') or {}
     CHK(ca.get('cuerpo') is True, 'CALABAZA: cuerpo presente (GLB o procedural)')
     CHK(ca.get('bolaVisible') is False, 'con cuerpo presente la bola está sustituida')

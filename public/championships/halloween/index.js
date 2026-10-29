@@ -193,8 +193,11 @@ class RivalVivo {
   /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño,
    *  norma en TODOS los campeonatos): el núcleo reparte la emoción
    *  estándar y el rival la viste con SU arte (convención <estado>.webp
-   *  + _set con fallbacks). Los nuevos campeonatos heredan la norma con
-   *  este punto de entrada único. */
+   *  + _set con fallbacks) y la acompaña con SU arte sonoro (r91):
+   *  laughing → risas burlonas (el zombi gana el punto), crazy →
+   *  zombi_crazy, victory/defeated → las del dueño. Los sonidos del
+   *  rival son SIEMPRE (ignoraMute) y el reloj de corte (_zombiSfxTick)
+   *  los cierra antes del wrap. */
   rivalEmocion(st) {
     const DUR = {
       idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
@@ -203,30 +206,24 @@ class RivalVivo {
     };
     const MAPA = { victory: 'triunfante' };   // convención local del abanico
     this._set(MAPA[st] || st, DUR[st] != null ? DUR[st] : 2.0);
+    /* r91 · SONIDO según la norma (los otros campeonatos acompañan la
+     * emoción con SU arte sonoro — el zombi no podía quedarse mudo). */
+    const SONIDO = { laughing: 'laugh', crazy: 'crazy', victory: 'victory', defeated: 'defeated' };
+    if (SONIDO[st] && SFX) SFX.play(SONIDO[st], 0.62);
   }
-  enDuelo(en) { this.estadoBase(en ? this.baseDuelo : 'idle'); }
+  enDuelo(en) { this.timer = 0; this.estadoBase(en ? this.baseDuelo : 'idle'); }   // r91: una etapa nueva SIEMPRE recompone la cara
   final(ganaJugador) { this._set(ganaJugador ? 'defeated' : 'triunfante', 4.0); }
-  reaccion(winner, rallyHits, streakAi) {
-    const t = this.thresholds;
-    if (winner === 'player') {
-      if (rallyHits >= t.comboRally) this._set('hungry', 2.6);
-      else if (rallyHits >= t.surprisedRally) this._set('surprised', 1.7);
-      else this._set('surprised', 1.2);
-    } else {
-      if (streakAi >= 2) this._set('crazy', 3.4);
-      else this._set('laughing', 2.4);
-    }
-  }
+  /* r91 · reaccion() SE RETIRA: la reacción al punto la reparte el NÚCLEO
+   * (norma r57 — «las reacciones locales de puntos de los módulos quedan
+   * SUSTITUIDAS por esta norma») — el doble motor pisaba las emociones
+   * del core y el dueño no veía cambios limpios. */
   update(dt, ctx) {
     if (!this.r) return;
+    /* r91 · SOLO el temporizador y la flotación: la emoción manda DESDE
+     * EL NÚCLEO (rivalEmocion) y el estado base lo fijan enDuelo/sala/
+     * final. Fuera el motor legacy (picando/loosing/panic) que pisaba la
+     * norma del núcleo cada frame. */
     if (this.timer > 0) { this.timer -= dt; if (this.timer <= 0) this._set(this.base, 0); }
-    const t = this.thresholds;
-    const hits = (ctx && ctx.rallyHits) || 0;
-    const sp = (ctx && ctx.scorePlayer) || 0;
-    const sa = (ctx && ctx.scoreAi) || 0;
-    if (hits >= t.picandoRallyHits && this.estado !== 'picando') this._set('picando', 2.2);
-    else if (sp - sa >= t.loosingDiff) this.estadoBase('loosing');
-    else if (sp >= 10 && this.base === 'duelo') this._set('panic', 2.2);
     if (this.rv.flotacion && this.rv.flotacion.activo !== false && this.r.node) {
       // r87 · flotación sobre el node REAL (sin grupo: el mesh va directo)
       const amp = this.rv.flotacion.amplitud || 0.012;
@@ -302,17 +299,16 @@ class MapaPlantilla {
     this.game = game; this.man = man; this.ctrl = ctrl;
     const m = man.mapa || {};
     this.modo = m.modo || 'canvas';
-    this.planoW = m.planoW || 1.66;
-    /* r87 · NORMATIVA DEL DUEÑO (para TODOS los mapas): «colocar en la
-     * pared IZQUIERDA y tapar las etapas que aún no se han superado».
-     * r89 · INFORME («sigue sin estar colocado paralelo a la pared izquie-
-     * rda, ligeramente por encima de esta»): rotY π/2 EXACTO (paralelo,
-     * verificado en escena viva), el póster SE ELEVA (centro y=1,66: el
-     * borde superior sobre la altura de los ojos) y se PEGA a la pared
-     * (7 mm) con un MARCO de madera vieja a 3 mm que lo ancla — el póster
-     * suelto a 2 cm «flotaba» en la percepción estéreo del Quest. La
-     * pos/rotY del manifest mandan (los UGC eligen). */
-    this.pos = m.pos || [-3.043, 1.66, -1.9];
+    this.planoW = m.planoW || 1.68;
+    /* r91 · RECETA WIZARDMAP — LA QUE EL DUEÑO VE «PERFECTAMENTE COLOCADA
+ * SOBRE LA PARED IZQUIERDA EN TODOS LOS CAMPEONATOS» (magia v2.60/oeste
+ * v2.136): GRUPO colgado del RIG (no de la escena), x −2.98 (7 cm de la
+ * pared — los −3.043 a 7 mm morían tras el plano de la pared en el casco),
+ * y 1.5, z −0.9, ancho 1.68 + RESPALDO de madera oscura detrás (caja de
+ * 22 mm que lo ancla como un cuadro) + material TRANSPARENTE con opacity 0
+ * hasta que la textura llega (nunca un rectángulo negro) + SRGB. Tapas,
+ * anillo de rejugada y API de contrato intactos. */
+    this.pos = m.pos || [-2.98, 1.5, -0.9];
     this.rotY = m.rotY != null ? m.rotY : (Math.PI / 2);
     this.nodos = [];        // [{x,y,r}] en píxeles de la imagen
     this.imgW = 1280; this.imgH = 720;
@@ -330,15 +326,19 @@ class MapaPlantilla {
       this.nodos = (this.man.mapa.nodos && this.man.mapa.nodos.length === etapas.length)
         ? this.man.mapa.nodos.map((n) => ({ x: n.x, y: n.y, r: n.r || 110, ts: n.ts || 1 }))
         : this._rejilla(etapas.length, this.imgW, this.imgH);
-      textura = new THREE.TextureLoader().load(A(String(this.man.mapa.arte).replace(/^assets\//, '')));
-      /* r90 · EL LAVADO DEL MAPA (informe del dueño: «poco saturada y muy
-       * lavada de color»): la textura del arte nacía SIN colorSpace — el
-       * renderer la trataba como LINEAL y desaturaba el póster (la rama
-       * canvas ya lo hacía: línea 353). Con SRGBColorSpace el arte del
-       * dueño se ve con SU saturación. Anisotropía como TEX_R86 (nitidez
-       * en ángulo). */
-      textura.colorSpace = THREE.SRGBColorSpace;
-      try { textura.anisotropy = this.game.renderer.capabilities.getMaxAnisotropy(); } catch (e) { /* */ }
+      /* r91b · EL GATE DE OPACITY SE CIERRA PARA SIEMPRE: la sonda r91b
+       * cazó el fallo EN VIVO — la textura LLEGABA (244 KB · 1380×752 ·
+       * image vivo) y el plano seguía opacity 0: el sondeo con setInterval
+       * (120 ms, ventana 15 s) no siempre ve la llegada (el image puede
+       * ponerse DESPUÉS del build y el intervalo morir antes, o el closure
+       * consultar una textura sustituida). MAGIA (v2.60) NO SONDEA: pasa
+       * el material SIN mapa y asigna mapa+opacity 1 DENTRO del callback
+       * del TextureLoader — el callback ES el evento de llegada, no puede
+       * perderse. ÉSE es el patrón que el dueño ve «perfectamente colo-
+       * cado en TODOS los campeonatos»: se porta TAL CUAL. El sondeo viejo
+       * queda como RESPALDO (refresco() re-levanta el gate: ver abajo) y
+       * el callback manda. */
+      this._urlArte = A(String(this.man.mapa.arte).replace(/^assets\//, ''));
     } else {
       const cv = document.createElement('canvas');
       cv.width = 1280; cv.height = 720;
@@ -370,31 +370,59 @@ class MapaPlantilla {
       textura.colorSpace = THREE.SRGBColorSpace;
     }
     const asp = this.imgH / this.imgW;
+    /* r91 · GRUPO del patrón WizardMap: respaldo + póster + anillo viven
+     * juntos y cuelgan del RIG (el padre que usan TODOS los mapas que el
+     * dueño ve bien — el de la escena era el que fallaba en el casco). */
+    this.grupo = new THREE.Group();
+    this.back = new THREE.Mesh(
+      new THREE.BoxGeometry(this.planoW + 0.06, this.planoW * asp + 0.06, 0.022),
+      new THREE.MeshStandardMaterial({ color: 0x2b1d10, roughness: 0.9, metalness: 0.05 }),
+    );
+    this.back.position.z = -0.013;
+    this.grupo.add(this.back);
     this.plane = new THREE.Mesh(
       new THREE.PlaneGeometry(this.planoW, this.planoW * asp),
-      new THREE.MeshBasicMaterial({ map: textura, transparent: this.modo !== 'arte' }),
+      /* r91b · patrón magia EXACTO: material SIN mapa + opacity 0 — el
+       * mapa y el opacity 1 llegan JUNTOS en el callback del loader (o en
+       * el respaldo de refresco()). Nunca un rectángulo negro, nunca un
+       * póster invisible. */
+      new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0 }),
     );
-    this.plane.position.set(this.pos[0], this.pos[1], this.pos[2]);
-    this.plane.rotation.y = this.rotY;
-    /* r89 · MARCO de anclaje: madera vieja oscura, 45 mm de canto, 3 mm
-     * por delante de la pared (detrás del póster). Con el marco, el mapa
-     * lee como un cuadro COLGADO en la pared — no como un cartel flotando
-     * hacia el jugador. No participa en la rejugada (el rayo sólo ve el
-     * plano). */
-    this.marco = new THREE.Mesh(
-      new THREE.PlaneGeometry(this.planoW + 0.09, this.planoW * asp + 0.09),
-      new THREE.MeshBasicMaterial({ color: 0x2b1d10 }),
-    );
-    this.marco.position.set(this.pos[0] - 0.004, this.pos[1], this.pos[2]);
-    this.marco.rotation.y = this.rotY;
-    this.game.scene.add(this.marco);
+    this.grupo.add(this.plane);
+    this.grupo.position.set(this.pos[0], this.pos[1], this.pos[2]);
+    this.grupo.rotation.y = this.rotY;
     this.anillo = new THREE.Mesh(
       new THREE.RingGeometry(0.118, 0.144, 48),
-      new THREE.MeshBasicMaterial({ color: 0xf6d34c, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: 0xf6d34c, transparent: true, depthWrite: false, side: THREE.DoubleSide }),
     );
+    this.anillo.material.opacity = 0.9;
+    this.anillo.position.z = 0.012;
+    this.anillo.renderOrder = 3;
     this.anillo.visible = false;
-    this.game.scene.add(this.plane);
-    this.game.scene.add(this.anillo);
+    this.grupo.add(this.anillo);
+    /* r91 · AL RIG — el padre probado en el casco por los 5 campeonatos */
+    const raiz = this.game.rig || this.game.scene;
+    try { raiz.add(this.grupo); } catch (e) { this.game.scene.add(this.grupo); }
+    if (this.modo === 'arte' && this._urlArte) {
+      /* r91b · EL CALLBACK DEL LOADER — el patrón de WizardMap (magia),
+       * el que el dueño ve bien en todos los campeonatos: la textura se
+       * asigna y el gate SE ABRE dentro del callback de llegada. Sin
+       * sondeos, sin ventanas que caducan, sin closures a texturas
+       * sustituidas. colorSpace+anisotropía AQUÍ (la textura nace sana). */
+      const g91 = this.game;
+      new THREE.TextureLoader().load(this._urlArte, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        try { tex.anisotropy = g91.renderer.capabilities.getMaxAnisotropy(); } catch (e) { /* */ }
+        if (this.plane) {
+          this.plane.material.map = tex;
+          this.plane.material.opacity = 1;
+          this.plane.material.needsUpdate = true;
+        }
+        this._texArte = tex;
+      });
+    } else {
+      this.plane.material.opacity = 1;   // canvas: ya está
+    }
     // r87 · TAPAS: las etapas aún NO superadas quedan CUBIERTAS (normativa
     // del dueño, igual que el '?' del mapa canvas). Discos hijos del plano
     // (se mueven con él; el rayo de rejugada NO las ve — intersectObject
@@ -457,7 +485,24 @@ class MapaPlantilla {
   }
   /* r87 · el progreso cambia sin rebuild (stage clear) → refresco barato
    * desde update() del módulo (comparación de un entero). */
-  refresco() { this._pintaTapas(); }
+  refresco() {
+    this._pintaTapas();
+    /* r91b · RESPALDO DEL GATE (cinturón y tirantes): si el callback del
+     * loader llegara a perderse (textura en caché con image tardío, re-
+     * entrada del campeonato), refresco corre POR FRAME — si la imagen
+     * está viva y el póster sigue apagado, se enciende aquí. Coste: dos
+     * comparaciones booleanas cuando ya está abierto. */
+    if (this.plane && this.plane.material && !this.plane.material.map &&
+        this._texArte && this._texArte.image) {
+      this.plane.material.map = this._texArte;
+      this.plane.material.opacity = 1;
+      this.plane.material.needsUpdate = true;
+    } else if (this.plane && this.plane.material && this.plane.material.opacity < 1 &&
+               this.plane.material.map && this.plane.material.map.image) {
+      this.plane.material.opacity = 1;
+      this.plane.material.needsUpdate = true;
+    }
+  }
   _rejilla(n, W, H) {
     const cols = Math.min(4, n);
     const filas = Math.ceil(n / cols);
@@ -476,12 +521,11 @@ class MapaPlantilla {
     if (idx >= 0 && idx <= this.maxIdx()) {
       this._hover = idx;
       const n = this.nodos[idx];
-      const sx = this.plane.scale.x, sy = this.plane.scale.y;
-      const lx = (n.x / this.imgW - 0.5) * this.planoW * sx;
-      const ly = (0.5 - n.y / this.imgH) * this.planoW * (this.imgH / this.imgW) * sy;
-      this.anillo.position.copy(this.plane.position);
-      this.anillo.rotation.copy(this.plane.rotation);
-      this.anillo.translateX(lx); this.anillo.translateY(ly); this.anillo.translateZ(0.012);
+      /* r91 · anillo HIJO del grupo: coordenadas LOCALES del plano (el
+       * grupo ya lleva pos/rotY del patrón WizardMap). */
+      const lx = (n.x / this.imgW - 0.5) * this.planoW;
+      const ly = (0.5 - n.y / this.imgH) * this.planoW * (this.imgH / this.imgW);
+      this.anillo.position.set(lx, ly, 0.012);
       this.anillo.scale.setScalar((n.ts || 1) * 1.22);
       this.anillo.material.color.setHex(0x7ec8ff);
       this.anillo.visible = true;
@@ -494,18 +538,17 @@ class MapaPlantilla {
   replayHover(idx) { this.hover(idx); }
   replayLaunch(idx) { this.ctrl.rejugar(idx); }
   dispose() {
-    this.game.scene.remove(this.plane); this.game.scene.remove(this.anillo);
-    if (this.marco) { this.game.scene.remove(this.marco); if (this.marco.geometry) this.marco.geometry.dispose(); if (this.marco.material) this.marco.material.dispose(); this.marco = null; }   // r89: el marco se va con el póster
-    if (this.plane.geometry) this.plane.geometry.dispose();
-    if (this.plane.material.map) this.plane.material.map.dispose();
-    if (this.plane.material) this.plane.material.dispose();
-    // r87 · las tapas cuelgan del plano (se van con él); SU geometría y
-    // material sí son propios — la textura es ESTÁTICA compartida (no
-    // dispose: la rejugada del mapa y el próximo arranque la reutilizan).
-    for (const t of this._tapas) {
-      try { if (t.geometry) t.geometry.dispose(); } catch (e) { /* */ }
-      try { if (t.material) t.material.dispose(); } catch (e) { /* */ }
+    /* r91 · el GRUPO entero se va del rig (respaldo + póster + anillo +
+     * tapas cuelgan de él). La textura de tapas es ESTÁTICA compartida. */
+    const raiz = this.game.rig || this.game.scene;
+    try { raiz.remove(this.grupo); } catch (e) { try { this.game.scene.remove(this.grupo); } catch (e2) { /* */ } }
+    if (this.back) { if (this.back.geometry) this.back.geometry.dispose(); if (this.back.material) this.back.material.dispose(); this.back = null; }
+    if (this.plane) {
+      if (this.plane.geometry) this.plane.geometry.dispose();
+      if (this.plane.material.map) this.plane.material.map.dispose();
+      if (this.plane.material) this.plane.material.dispose();
     }
+    this.grupo = null; this.plane = null; this.anillo = null;
     this._tapas = []; this._tapasIdx = -1;
   }
 }
@@ -772,11 +815,17 @@ function _calabazaProcedural() {
   tex.colorSpace = THREE.SRGBColorSpace;
   /* perfil del cuerpo: calabaza achatada con hondillos arriba y abajo */
   const perfil = [
-    [0.000, -1.000], [0.200, -0.985], [0.520, -0.880], [0.780, -0.640],
+    [0.070, -1.000], [0.200, -0.985], [0.520, -0.880], [0.780, -0.640],
     [0.940, -0.320], [1.000, -0.020], [0.950, 0.300], [0.800, 0.580],
     [0.560, 0.800], [0.300, 0.940], [0.110, 0.995],
   ].map((p) => new THREE.Vector2(p[0] * 0.065, p[1] * 0.052));   // Ø ≈ 0,13 m ≈ 3× la bola
-  const matCuerpo = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.62, metalness: 0.0, emissive: 0x1a0d02 });
+  const matCuerpo = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.62, metalness: 0.0, emissive: 0x1a0d02,
+    /* r91 · A PRUEBA DE CASCO: DoubleSide (si Adreno llegara a cullear
+     * una cara del lathe, la cara interna la sustituye — el informe del
+     * dueño «solo se ve un trocito del rabito») + color base SÓLIDO
+     * naranja: si la textura tarda/falla, el cuerpo ES naranja — jamás
+     * invisible (el blanco por defecto cantaba menos que nada). */
+    side: THREE.DoubleSide, color: 0xe8720c });
   const cuerpo = new THREE.Mesh(new THREE.LatheGeometry(perfil, 28), matCuerpo);
   const matRabo = new THREE.MeshStandardMaterial({ color: 0x4a6b23, roughness: 0.9, metalness: 0.0 });
   const rabo = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.014, 0.05, 8), matRabo);
@@ -786,6 +835,10 @@ function _calabazaProcedural() {
   zar.position.set(0.024, 0.058, 0.012); zar.rotation.x = Math.PI / 2.25; zar.rotation.y = 0.5;
   const grp = new THREE.Group();
   grp.add(cuerpo); grp.add(rabo); grp.add(zar);
+  /* r91 · frustumCulled OFF en los tres: objeto de 13 cm que se mueve
+   * cada frame con la bola — ninguna esfera envolvente obsoleta puede
+   * colarlo fuera del frustum en el casco (coste: cero, se dibuja siempre). */
+  grp.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
   TEX_R86.cache.__calProc = grp;
   return grp;
 }
@@ -845,8 +898,12 @@ function _manoTexSuelta(M, t) {
  * easeOutCubic + sobresalto 7 %) → 2,00 s de vaivén siniestro → retracto
  * (0,50 s) → fundido (0,25 s). La bola que toca la mano queda PARADA y se
  * cae; la mano sale empujada y revienta en 6 trocitos. */
-const MANO_CULTIVO = 0.70;   // el 30 % inferior del arte del dueño es tierra
-const MANO_OFF_Y = 0.30;     // recorte: la mano sale de su propia tierra
+const MANO_CULTIVO = 1.0;    // r91: ARTE COMPLETO — el informe del dueño («no sale
+                             // la parte inferior, la tierra y el brazo saliendo»)
+                             // caza el cultivo 0.70 de la r90: la franja inferior
+                             // del arte ES la tierra y el brazo (47-62 % de píxeles
+                             // visibles medidos) y el dueño la QUIERE en pantalla
+const MANO_OFF_Y = 0.0;      // r91: sin recorte — v cubre 0..1 entero
 const MANO_GROSOR = 0.055;   // r90: semiespesor del plano mano (por delante Y por detrás)
 
 PLANTILLA_PODERES.mano = {
@@ -915,7 +972,7 @@ PLANTILLA_PODERES.mano = {
     // el arte de la mano ya trae su tierra integrada y el solape de las
     // dos texturas CORTABA la mano en la línea de visión del dueño)
     const tex2 = tex; tex2.wrapT = THREE.ClampToEdgeWrapping;
-    tex2.offset.y = MANO_OFF_Y; tex2.repeat.y = 0.001;
+    tex2.offset.y = MANO_OFF_Y; tex2.repeat.y = 0.001;   // r91: desenrolla el ARTE ENTERO desde la tierra (v 0 = la tierra)
     const geo = new THREE.PlaneGeometry(W, HF);
     geo.translate(0, HF / 2, 0);
     const mat = new THREE.MeshBasicMaterial({ map: tex2, transparent: true, alphaTest: 0.30, side: THREE.DoubleSide, depthWrite: false });
@@ -974,7 +1031,7 @@ PLANTILLA_PODERES.mano = {
         v.mano.position.y = v.y0 + e * 0.12;
         const sobre = k < 0.24 ? (1 - k / 0.24) * 0.07 : 0;
         v.mano.scale.x = v.mano.scale.z = 1 + sobre;
-        v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * e);
+        v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * e);   // r91: e→1 = arte completo (tierra + brazo + mano)
         if (k >= 1) { v.fase = 'arriba'; v.t = 0; }
       } else if (v.fase === 'arriba') {
         v.mano.position.y = v.y0 + 0.12 + Math.sin(v.t * 4.7) * 0.012;   // r89: flota sobre su nivel
@@ -985,7 +1042,7 @@ PLANTILLA_PODERES.mano = {
         const k = Math.min(1, v.t / 0.5);
         v.mano.scale.y = Math.max(0.001, 1 - k * k);
         v.mano.position.y = v.y0 + (1 - k * k) * 0.12;   // r89: vuelve a la mesa al retraerse
-        v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * (1 - k * k));
+        v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * (1 - k * k));   // r91: se enrolla hasta la tierra
         if (k >= 1) { v.fase = 'fundir'; v.t = 0; }
       } else if (v.fase === 'fundir') {
         const op = Math.max(0, 1 - v.t / 0.25);
@@ -1205,8 +1262,17 @@ function _preparaCuerpoR88(raiz) {
   try {
     raiz.traverse((o) => {
       if (!o.isMesh || !o.material) return;
-      const origs = Array.isArray(o.material) ? o.material : [o.material];
-      o.material = origs.map((mm) => {
+      /* r91b · EL FALLO QUE ESCONDE EL CUERPO (cazado con THREE r186 delante):
+       * esta función convertía material SIEMPRE en ARRAY ([clon]) — y el
+       * renderer (projectObject) con material-array SÓLO dibuja los
+       * geometry.groups: LatheGeometry (el CUERPO) y TorusGeometry (el
+       * zarcillo) NO TIENEN grupos → CERO draw calls → «la calabaza sólo
+       * enseña el rabito» (CylinderGeometry SÍ trae grupos: el rabo era lo
+       * único vivo — síntoma EXACTO del informe del dueño). FIX: material
+       * único vuelve SINGLE; el array sólo si el mesh YA era multi-material. */
+      const eraArray = Array.isArray(o.material);
+      const origs = eraArray ? o.material : [o.material];
+      const clonados = origs.map((mm) => {
         const c = mm.clone();
         mats.push({
           m: c,
@@ -1216,6 +1282,7 @@ function _preparaCuerpoR88(raiz) {
         });
         return c;
       });
+      o.material = eraArray ? clonados : clonados[0];
     });
   } catch (e) { /* */ }
   return mats;
@@ -1860,6 +1927,7 @@ class PlantillaController {
     this._aiMul = 1.0; this._curva = null;
     this._replay = null; this._leyendaOn = false;
     this.streakAi = 0; this._insignia = null;
+    this._finalT = 0;                     // r91: hold de la cara final del duelo
     this._losaSaved = null; this._losaTex = null; this._losaFrameMat = null; this._losaFrameCol = 0;
   }
   /* ---- camino / progreso ---- */
@@ -2039,10 +2107,10 @@ class PlantillaController {
     this.sala();
   }
   onPoint(it) {
+    /* r91 · la REACCIÓN al punto la reparte el NÚCLEO por la norma r57
+     * (rivalEmocion → cara + sonido). Aquí sólo queda el bookkeeping de
+     * la racha — el motor local que pisaba la norma SE RETIRA. */
     if (!this.dueloVivo) return;
-    const r = this.game.rules || {};
-    if (it && it.winner === 'player' && r.rallyHits && r.rallyHits >= (this.man.rival.thresholds ? this.man.rival.thresholds.comboRally : 6)) {}
-    this.rival.reaccion(it && it.winner, (r.rallyHits || 0), this.streakAi);
     if (it && it.winner === 'rival') this.streakAi++; else if (it && it.winner === 'player') this.streakAi = 0;
   }
   onMatchOver(w) {
@@ -2059,10 +2127,12 @@ class PlantillaController {
     telemetria('champ_rank', { champ: this.man.id, prueba: 'duelo', win: won, score, stars: won ? 1 : 0, nv: this.dueloN, duelScore: score });
     if (won) rankingMundial('✔');
     this.rival.final(won);
-    /* r89 · SONIDOS DEL ZOMBI EN EL FINAL DEL PARTIDO (arte sonoro del
-     * dueño): al VENCERLO suena zombi_defeated.mp3; cuando el zombi GANA,
-     * zombi_victory.mp3 (sustituyen a la risa genérica). */
+    /* r89/r91 · SONIDO DEL FINAL (arte del dueño): al VENCERLO suena
+     * zombi_defeated.mp3; cuando el zombi GANA, zombi_victory.mp3. Y la
+     * CARA final VIVE: _finalT congela el reset de sala() — la r90 la
+     * pisaba con idle EL MISMO FRAME (el dueño jamás vio zombi_defeated). */
     if (SFX) SFX.play(won ? 'defeated' : 'victory', 0.7);
+    this._finalT = 4.2;
     this.dueloVivo = false;
     if (won) this._stageClear(this.dueloIdx, true, 'duelo');
     this.sala();
@@ -2155,7 +2225,7 @@ class PlantillaController {
       this.game.rules.oppLabel = (this.man.rival && this.man.rival.oppLabel) || 'rival';
       this.game.rules.state = STATE_NAME;
     }
-    if (this.rival) this.rival.estadoBase('idle');
+    if (this.rival && !(this._finalT > 0)) this.rival.estadoBase('idle');   // r91: la cara final (defeated/victory) NO se pisa al volver a la sala
     this._refrescaCartel();
   }
   _refrescaCartel() {
@@ -2185,6 +2255,7 @@ class PlantillaController {
     this._variant(null);
   }
   update(dt) {
+    if (this._finalT > 0) this._finalT -= dt;   // r91: hold de la cara final del duelo
     if (this.mapa) this.mapa.refresco();   // r87: tapas según progreso
     if (this.rival) {
       const r = this.game.rules || {};
@@ -2273,14 +2344,19 @@ async function init(ctx) {
      * el 1.er disparo encuentra el buffer decodificado. */
     Object.keys(ZONB).forEach((k) => { try { ZONB[k].b.precarga(); } catch (e) { /* */ } });
     const so = MAN.audio || {};
+    /* r91 · FORMA CANÓNICA (la de magia/oeste): url y vol COMO FUNCIONES.
+     * La r90 los pasó como string/número y el motor los INVOCABA
+     * (o.url()/o.vol()) → TypeError silencioso bajo el catch → la BSO
+     * nació muerta («No suena la música de fondo en Halloween»). El SDK
+     * r91 además tolera valores directos — doble seguro. */
     MUSIC = createMusic(() => GAME, Object.assign({
-      url: so.music ? A(String(so.music).replace(/^assets\//, '')) : null,
-      vol: so.musicVolume != null ? so.musicVolume : 0.15,
+      url: so.music ? (() => A(String(so.music).replace(/^assets\//, ''))) : null,
+      vol: () => (so.musicVolume != null ? so.musicVolume : 0.15),
     }, so.musicOpts || {}));
   } catch (e) { SFX = null; MUSIC = null; }
   CTRL = new PlantillaController(GAME, MAN);
   window.addEventListener('pp-lang', () => { if (CTRL) CTRL._refrescaCartel(); });
-  try { window['__PP_' + String(MOD_ID).toUpperCase()] = { ctrl: () => CTRL, man: () => MAN, pods: PLANTILLA_PODERES }; } catch (e) {}
+  try { window['__PP_' + String(MOD_ID).toUpperCase()] = { ctrl: () => CTRL, man: () => MAN, pods: PLANTILLA_PODERES, mus: () => MUSIC, sfxZ: () => ZONB }; } catch (e) {}
   return Promise.resolve();
 }
 

@@ -1,18 +1,18 @@
 {
-  "version": "3.6.82-SDK6",
-  "fase": 84,
-  "faseNombre": "Informe r90: Halloween suena y se juega — BSO Midnight_Volley, sonidos del zombi por el motor createBucle (victory re-codificado a 44100), mapa con SRGB y arte nuevo saturado, manos sin monticulo con colision Burla CCD (bug bola.vel sobre ball.pos cazado), gelatina con zona de impacto exacta y humillo continuo, calabaza procedural garantizada (GLB retirado)",
+  "version": "3.6.83-SDK6",
+  "fase": 85,
+  "faseNombre": "Informe r91: música viva (forma canónica createMusic + SDK tolerante), mapa con la receta WizardMap exacta y textura por callback, manos con arte integral, calabaza con el bug material-array cazado (LatheGeometry sin groups = cero draw calls), rival bajo la norma única r57 con hold del final y sonidos por emoción",
   "sdk": "1.5.4",
   "fecha": "2026-10-29",
-  "hub": "v3682-sdk6",
+  "hub": "v3683-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
     "locura": 27,
     "estacion_orbital": 17,
-    "halloween": 2
+    "halloween": 3
   },
   "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
   "tamano": 10469871,
-  "golden": "8163add497ec179ca20a58b9bb5af30f2da10c0c86162131fc0165c25d47a399"
+  "golden": "745af1f8f73a9d21824ab3445d531b2cc50ffa52b203e1f3a72fde12a3523a95"
 }

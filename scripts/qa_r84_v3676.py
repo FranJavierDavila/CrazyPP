@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r84_v3676 — CAPA BT · V3.6.75→3.6.82-SDK6, FASE 78 «DUELOS LOCOS».
+"""qa_r84_v3676 — CAPA BT · V3.6.75→3.6.83-SDK6, FASE 78 «DUELOS LOCOS».
 
 Petición del dueño (r84): «Vamos con 2 y 3» —
   (2) DUELOS LOCOS: desbloquear el modo multijugador que lleva el candado

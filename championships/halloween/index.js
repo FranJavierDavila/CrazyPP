@@ -156,11 +156,10 @@ class RivalVivo {
     // grafo — el fallo exacto que veía el dueño). dispose() del SDK lo
     // desengancha del padre; removeRival cubre el caso de re-entrada.
     try { (this.game.scene || this.game.rig).add(this.r.node); } catch (e) { /* */ }
-    // r87 · PREWARM DE CARAS (anti-trompicones): las 12 caras del rival se
-    // precargan pero SUBEN A GPU en su 1.er uso (cambio de emoción en pleno
-    // duelo = tirón). El ciclo de abajo las pasea todas en ~1,5 s justo
-    // tras el arranque (telón/intro), repartiendo las subidas.
-    this.prewarmI = -1; this.prewarmT = 0;
+    /* r89 · el PREWARM VISIBLE (pasear las 12 caras a 0,12 s durante ~1,5 s)
+     * se RETIRA: el SDK sube ahora cada cara a GPU al llegar con
+     * renderer.initTexture — sin parpadeo de poses ni «estados super-
+     * puestos» percibidos por el dueño. this.estado manda desde el 1.er frame. */
     this.fallbacks = {
       hungry: ['hungry', 'surprised', 'idle'], surprised: ['surprised', 'idle'],
       crazy: ['crazy', 'laughing', 'idle'], laughing: ['laughing', 'idle'],
@@ -211,20 +210,6 @@ class RivalVivo {
   }
   update(dt, ctx) {
     if (!this.r) return;
-    // r87 · ciclo de prewarm de caras (sólo los primeros ~1,5 s de sala)
-    if (this.prewarmI < this.estados.length) {
-      this.prewarmT += dt;
-      if (this.prewarmT >= 0.12) {
-        this.prewarmT = 0;
-        this.prewarmI++;
-        if (this.prewarmI < this.estados.length) {
-          try { this.r.rivalEstado(this.estados[this.prewarmI]); this.estado = this.estados[this.prewarmI]; } catch (e) { /* */ }
-        } else {
-          try { this.r.rivalEstado(this.base === 'duelo' ? 'idle' : this.base); this.estado = this.base; } catch (e) { /* */ }
-        }
-      }
-      return;   // durante el paseo no manda la máquina de emociones
-    }
     if (this.timer > 0) { this.timer -= dt; if (this.timer <= 0) this._set(this.base, 0); }
     const t = this.thresholds;
     const hits = (ctx && ctx.rallyHits) || 0;
@@ -311,10 +296,14 @@ class MapaPlantilla {
     this.planoW = m.planoW || 1.66;
     /* r87 · NORMATIVA DEL DUEÑO (para TODOS los mapas): «colocar en la
      * pared IZQUIERDA y tapar las etapas que aún no se han superado».
-     * pared izquierda = x −3.05 (DIMS.roomHalfX) con rotY +π/2 (createRoom
-     * mkWall 0) — el póster cuelga 2 cm por dentro para no pelearse con la
-     * pared. La pos/rotY del manifest mandan (los UGC eligen). */
-    this.pos = m.pos || [-3.03, 1.45, -1.9];
+     * r89 · INFORME («sigue sin estar colocado paralelo a la pared izquie-
+     * rda, ligeramente por encima de esta»): rotY π/2 EXACTO (paralelo,
+     * verificado en escena viva), el póster SE ELEVA (centro y=1,66: el
+     * borde superior sobre la altura de los ojos) y se PEGA a la pared
+     * (7 mm) con un MARCO de madera vieja a 3 mm que lo ancla — el póster
+     * suelto a 2 cm «flotaba» en la percepción estéreo del Quest. La
+     * pos/rotY del manifest mandan (los UGC eligen). */
+    this.pos = m.pos || [-3.043, 1.66, -1.9];
     this.rotY = m.rotY != null ? m.rotY : (Math.PI / 2);
     this.nodos = [];        // [{x,y,r}] en píxeles de la imagen
     this.imgW = 1280; this.imgH = 720;
@@ -370,6 +359,18 @@ class MapaPlantilla {
     );
     this.plane.position.set(this.pos[0], this.pos[1], this.pos[2]);
     this.plane.rotation.y = this.rotY;
+    /* r89 · MARCO de anclaje: madera vieja oscura, 45 mm de canto, 3 mm
+     * por delante de la pared (detrás del póster). Con el marco, el mapa
+     * lee como un cuadro COLGADO en la pared — no como un cartel flotando
+     * hacia el jugador. No participa en la rejugada (el rayo sólo ve el
+     * plano). */
+    this.marco = new THREE.Mesh(
+      new THREE.PlaneGeometry(this.planoW + 0.09, this.planoW * asp + 0.09),
+      new THREE.MeshBasicMaterial({ color: 0x2b1d10 }),
+    );
+    this.marco.position.set(this.pos[0] - 0.004, this.pos[1], this.pos[2]);
+    this.marco.rotation.y = this.rotY;
+    this.game.scene.add(this.marco);
     this.anillo = new THREE.Mesh(
       new THREE.RingGeometry(0.118, 0.144, 48),
       new THREE.MeshBasicMaterial({ color: 0xf6d34c, side: THREE.DoubleSide }),
@@ -477,6 +478,7 @@ class MapaPlantilla {
   replayLaunch(idx) { this.ctrl.rejugar(idx); }
   dispose() {
     this.game.scene.remove(this.plane); this.game.scene.remove(this.anillo);
+    if (this.marco) { this.game.scene.remove(this.marco); if (this.marco.geometry) this.marco.geometry.dispose(); if (this.marco.material) this.marco.material.dispose(); this.marco = null; }   // r89: el marco se va con el póster
     if (this.plane.geometry) this.plane.geometry.dispose();
     if (this.plane.material.map) this.plane.material.map.dispose();
     if (this.plane.material) this.plane.material.dispose();
@@ -714,7 +716,9 @@ function _trozosLimpia(game) {
 const _v86 = new THREE.Vector3();
 const _FRAC_MONTICULO = 0.30;   // la tierra ocupa el ~30 % inferior del arte del dueño
 
-/* -- calabaza.glb: carga ÚNICA con caché (rejugadas sin re-descarga) ----- */
+/* -- calabaza.glb: carga ÚNICA con caché (rejugadas sin re-descarga) -----
+ * r89 · REINTENTO ÚNICO ante error (Wi-Fi del Quest: un timeout puntual no
+ * mata la calabaza de toda la partida) — a los 3 s se vuelve a pedir. */
 function _pumpkinGet(cb) {
   TEX_R86.gltf = TEX_R86.gltf || {};
   if (TEX_R86.gltf.pumpkin) { cb(TEX_R86.gltf.pumpkin); return; }
@@ -743,7 +747,13 @@ function _pumpkinGet(cb) {
       TEX_R86.gltf.pumpkin = wrapper;
       (TEX_R86.gltf.pend || []).forEach((f) => { try { f(wrapper); } catch (e) { /* */ } });
       delete TEX_R86.gltf.pend;
-    }, undefined, () => { delete TEX_R86.gltf.pend; });
+    }, undefined, () => {
+      delete TEX_R86.gltf.pend;
+      if (!TEX_R86.gltf.__reintento) {
+        TEX_R86.gltf.__reintento = true;
+        setTimeout(() => { try { _pumpkinGet(() => {}); } catch (e) { /* */ } }, 3000);
+      }
+    });
   } catch (e) { delete TEX_R86.gltf.pend; }
 }
 
@@ -789,26 +799,65 @@ const MANO_OFF_Y = 0.30;     // recorte: la mano sale de NUESTRO montículo
 PLANTILLA_PODERES.mano = {
   inicio(game, p, ctrl, ctx) {
     const M = { grupo: new THREE.Group(), vivos: [], trocitos: [], t: 0, prox: 0.35,
-      tex: [], pool: [], texMonticulo: null, texTrozo: _texTerron() };
+      tex: [], bolsa: [], pool: [], texMonticulo: null, texTrozo: _texTerron() };
     [1, 2, 3].forEach((i) => TEX_R86.pedir('mano' + i + '.webp', (t) => { M.tex.push(t); }));
     TEX_R86.pedir('monticulo.webp', (t) => { M.texMonticulo = t; });
     game.scene.add(M.grupo);
     ctx.mano = M;                       // r87: ctx ANTES de los callbacks
   },
+  /* r89 · BOLSA de manos: las 3 del dueño SALEN SIEMPRE antes de repetir
+   * (barajado Fisher-Yates por ciclo) — el dueño «no están saliendo todas». */
+  _bolsa(M) {
+    if (!M.tex.length) return null;
+    if (!M.bolsa.length) {
+      const b = M.tex.slice();
+      for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; }
+      M.bolsa = b;
+    }
+    return M.bolsa.pop();
+  },
   _spawn(game, M) {
     const cz = DIMS.tableCenterZ;
-    /* r88 · INFORME DEL DUEÑO («deben aparecer siempre dentro del tablero,
-     * nunca pueden tener partes fuera de él»): el límite es el CANTO de la
-     * mesa menos el radio del montículo (0,23) — antes el cuadro de 0,46 m
-     * en x±0,56 CORTABA el canto (0,56+0,23 = 0,79 > 0,7625). */
-    const MX = Math.max(0.05, ((DIMS.tableHalfWidth != null) ? DIMS.tableHalfWidth : 0.7625) - 0.23 - 0.015);
-    const MZ = Math.max(0.05, ((DIMS.tableHalfLength != null) ? DIMS.tableHalfLength : 1.37) - 0.23 - 0.015);
-    const x = rand(-MX, MX);
-    const z = cz + clamp(rand(-0.98, 0.92), -MZ, MZ);
+    const HW = (DIMS.tableHalfWidth != null) ? DIMS.tableHalfWidth : 0.7625;
+    const HL = (DIMS.tableHalfLength != null) ? DIMS.tableHalfLength : 1.37;
+    /* r89 · INFORME DEL DUEÑO («algunos aparecen fuera del tablero de forma
+     * parcial, esto ya se dijo que no puede ocurrir»): DOS fugas corregidas.
+     * (1) el pop del montículo SOBRESALTA ×1,18 → radio real 0,23·1,18 =
+     * 0,271 (antes se acotaba con 0,23 y el canto se cortaba en el pico);
+     * (2) el CANTO RUGOSO de la losa (~7 cm pintados en el borde de la
+     * textura) NO es tablero jugable. Límite = montículo en pico + canto. */
+    const MON = 0.23 * 1.18;   // radio del montículo en el pico del sobresalto (pop ×1,18)
+    const BORDE = 0.07;        // el canto rugoso de la losa NO es tablero
+    /* r89 · RANURAS DE MANO (informe del dueño: «tampoco deben solaparse
+     * entre ellos deben estar siempre separados»): 3 posiciones repartidas
+     * por la mesa (zigzag) cuya distancia mínima (1,08 m) supera la sepa-
+     * ración exigida (0,62 m) AUN con jitter ±10 cm — separación POR
+     * CONSTRUCCIÓN. Cada nacimiento toma la primera ranura LIBRE (sin
+     * viva a menos de 0,62 m, y sin cortar el canto del tablero) en orden
+     * barajado; si no hay ranura libre, la mano no nace (mejor ausente
+     * que pisada). */
+    const SLOTS = [[-0.30, -0.9], [0.30, 0.0], [-0.30, 0.9]];
+    const orden = [0, 1, 2];
+    for (let i = orden.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [orden[i], orden[j]] = [orden[j], orden[i]]; }
+    let x = null, z = 0;
+    for (const si of orden) {
+      const cx2 = SLOTS[si][0] + rand(-0.1, 0.1);
+      const cz2 = SLOTS[si][1] + rand(-0.1, 0.1);
+      if (Math.abs(cx2) + MON + BORDE > HW || Math.abs(cz2) + MON + BORDE > HL) continue;   // canto: ni rozarlo
+      let libre = true;
+      for (const v of M.vivos) {
+        const dx = cx2 - v.mont.position.x;
+        const dz = (cz + cz2) - v.mont.position.z;   // r89: z ABSOLUTA en ambos lados (mezclar relativa/absoluta anulaba el chequeo)
+        if (dx * dx + dz * dz < 0.62 * 0.62) { libre = false; break; }
+      }
+      if (libre) { x = cx2; z = cz + cz2; break; }
+    }
+    if (x == null) return;   // sin hueco separado: no nace
     const b = game.ball ? game.ball.pos : null;
     if (b && Math.abs(b.x - x) < 0.24 && Math.abs(b.z - z) < 0.24) return; // no nacer sobre la bola
     if (!M.tex.length || !M.texMonticulo) return;
-    const baseTex = pick(M.tex);
+    const baseTex = this._bolsa(M);
+    if (!baseTex) return;
     const tex = _manoTexLibre(M, baseTex);
     const W = 0.34, HF = W * (885 / 512);
     // MONTÍCULO plano sobre la mesa (aparece PRIMERO — guion del dueño)
@@ -841,7 +890,10 @@ PLANTILLA_PODERES.mano = {
     } catch (e) { mano.rotation.y = Math.atan2(-x, 0.55 - z); }
     mano.scale.y = 0.001;
     M.grupo.add(mano);
-    M.vivos.push({ mont, mano, tex: tex2, W, HF, fase: 'monticulo', t: 0, golpeada: false, vx: 0, vz: 0, va: 0 });
+    /* r89 · el dueño («seguimos sin mover la mano de abajo hacia arriba al
+     * aparecer»): la mano ASIENDE 12 cm desde su nacimiento en la tierra;
+     * v.y0 guarda el nivel de partida para bajar/fundir sobre él. */
+    M.vivos.push({ mont, mano, tex: tex2, W, HF, fase: 'monticulo', t: 0, golpeada: false, vx: 0, vz: 0, va: 0, y0: mano.position.y });
   },
   _revienta(game, M, v, bola) {
     v.fase = 'golpeada'; v.t = 0;
@@ -882,17 +934,22 @@ PLANTILLA_PODERES.mano = {
         const k = Math.min(1, v.t / 0.5);
         const e = 1 - Math.pow(1 - k, 3);
         v.mano.scale.y = Math.max(0.001, e);
+        /* r89 · ASCENSO REAL abajo→arriba (informe del dueño): la mano se
+         * LEVANTA 0,12 m mientras se desenrolla — nace EN la tierra. */
+        v.mano.position.y = v.y0 + e * 0.12;
         const sobre = k < 0.24 ? (1 - k / 0.24) * 0.07 : 0;
         v.mano.scale.x = v.mano.scale.z = 1 + sobre;
         v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * e);
         if (k >= 1) { v.fase = 'arriba'; v.t = 0; }
       } else if (v.fase === 'arriba') {
+        v.mano.position.y = v.y0 + 0.12 + Math.sin(v.t * 4.7) * 0.012;   // r89: flota sobre su nivel
         v.mano.rotation.z = Math.sin(v.t * 3.1) * 0.05;           // vaivén siniestro
         v.mano.scale.y = 1 + Math.sin(v.t * 4.7) * 0.015;
         if (v.t >= 2.0) { v.fase = 'bajar'; v.t = 0; v.mano.rotation.z = 0; }
       } else if (v.fase === 'bajar') {
         const k = Math.min(1, v.t / 0.5);
         v.mano.scale.y = Math.max(0.001, 1 - k * k);
+        v.mano.position.y = v.y0 + (1 - k * k) * 0.12;   // r89: vuelve a la tierra al retraerse
         v.tex.repeat.y = Math.max(0.001, MANO_CULTIVO * (1 - k * k));
         if (k >= 1) { v.fase = 'fundir'; v.t = 0; }
       } else if (v.fase === 'fundir') {
@@ -910,7 +967,13 @@ PLANTILLA_PODERES.mano = {
         }
       } else if (v.fase === 'golpeada') {
         // mano empujada (tumba) + montículo hundido; trocitos por el aire
-        v.mano.position.x += v.vx * dt; v.mano.position.z += v.vz * dt;
+        /* r89 · el empujón NO saca la mano del tablero (norma: nada fuera
+         * de la mesa, ni siquiera al reventar): se CLAMPEA al canto. */
+        const HWg = (DIMS.tableHalfWidth != null) ? DIMS.tableHalfWidth : 0.7625;
+        const HZg = (DIMS.tableHalfLength != null) ? DIMS.tableHalfLength : 1.37;
+        const czG = DIMS.tableCenterZ;
+        v.mano.position.x = clamp(v.mano.position.x + v.vx * dt, -(HWg - 0.18), HWg - 0.18);
+        v.mano.position.z = clamp(v.mano.position.z + v.vz * dt, czG - HZg + 0.18, czG + HZg - 0.18);
         v.mano.rotation.z += v.va * dt;
         const op = Math.max(0, 1 - v.t / 0.4);
         v.mano.material.opacity = op;
@@ -967,7 +1030,10 @@ PLANTILLA_PODERES.mano = {
 
 /* -- 2 · PLAGA DE MOSCAS (r87 · «más trabajadas, aleteo, zumbido, más
  * cantidad y calidad» — informe del dueño) -------------------------------
- * 24 moscas de 2 FRAMES de aleteo (mosca_a/mosca_b, alternancia ~22 Hz con
+ * r89 · EL DOBLE de moscas (48): el dueño («colocar el doble de las
+ * actuales»). Sigue siendo 1 draw call por sprite y las texturas ya
+ * están subidas (pool del TEX_R86) — coste despreciable en el Quest.
+ * 48 moscas de 2 FRAMES de aleteo (mosca_a/mosca_b, alternancia ~22 Hz con
  * fase propia), órbitas elípticas con deriva y dardos ocasionales, ZUMBIDO
  * de enjambre en bucle (createBucle + fly_buzz.mp3) y espantado con la
  * pala (proximidad real del mando) — igual que confetti de Clown, pero
@@ -980,7 +1046,7 @@ PLANTILLA_PODERES.moscas = {
     ctx.moscas = S;                     // r87: ctx ANTES de los callbacks
     const nace = () => {
       if (!S.texA || !S.texB || S.moscas.length) return;
-      for (let i = 0; i < 24; i++) {
+      for (let i = 0; i < 48; i++) {   // r89: el doble (informe del dueño)
         const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: S.texA, transparent: true, depthWrite: false }));
         const esc = rand(0.026, 0.055);
         s.scale.set(esc, esc * 0.82, 1);
@@ -1115,9 +1181,12 @@ function _preparaCuerpoR88(raiz) {
 
 PLANTILLA_PODERES.calabaza = {
   inicio(game, p, ctrl, ctx) {
-    const C = { gltf: null, grav0: DIMS.gravity, t: 0, listo: false, explotada: false, mats: [], dur: p.duration || 10 };
+    /* r89 · INFORME DEL DUEÑO («un problema con el peso que para evitar
+     * problemas no lo vamos a modificar y queda con el estándar de la
+     * bola»): la gravedad ×2.1 de la r86/87 se RETIRA — física de bola
+     * ESTÁNDAR; la calabaza ES la bola con otro aspecto. */
+    const C = { gltf: null, t: 0, listo: false, explotada: false, mats: [], dur: p.duration || 10 };
     ctx.calabaza = C;                   // r87: ANTES del callback (era el bug)
-    DIMS.gravity = C.grav0 * 2.1;       // «se sentirá más pesada: hay que golpearla más fuerte»
     _pumpkinGet((wrapper) => {
       if (!ctx.calabaza || C.listo) return;
       C.listo = true;
@@ -1127,11 +1196,28 @@ PLANTILLA_PODERES.calabaza = {
       game.scene.add(C.gltf);
       if (game.ballMesh) game.ballMesh.visible = false;   // la calabaza ES la bola
     });
-    C.fallbackT = 2.5;                  // si el GLB no llega: calabaza de la casa
+    C.fallbackT = 1.2;                  // r89: cuerpo de la casa a 1,2 s (la bola JAMÁS sin cuerpo)
   },
   paso(dt, game, p, ctrl, ctx) {
     const C = ctx.calabaza; if (!C) return;
     C.t += dt;
+    /* r89 · SWAP AL MODELO DEL ARTISTA: si el GLB del dueño llega TARDE
+     * (el cuerpo en juego es el procedural), se sustituye IN SITU en el
+     * mismo punto y orientación — «es preciso que aparezca» y APARECE el
+     * arte del artista en cuanto se materializa. */
+    if (C.esProc && !C.explotada && TEX_R86.gltf && TEX_R86.gltf.pumpkin) {
+      try {
+        const nuevo = TEX_R86.gltf.pumpkin.clone(true);
+        nuevo.position.copy(C.gltf.position);
+        nuevo.quaternion.copy(C.gltf.quaternion);
+        game.scene.add(nuevo);
+        game.scene.remove(C.gltf);
+        C.gltf.traverse((o) => { if (o.isMesh && o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((mm) => { try { mm.dispose(); } catch (e) { /* */ } }); } });
+        C.gltf = nuevo;
+        C.esProc = false;
+        C.mats = _preparaCuerpoR88(nuevo);
+      } catch (e) { /* el swap nunca rompe el poder */ }
+    }
     // r87 · respaldo: el GLB tarda o falló → calabaza procedural (la bola
     // NUNCA invisible — el fallo exacto que veía el dueño)
     if (!C.listo && C.fallbackT > 0) {
@@ -1178,7 +1264,8 @@ PLANTILLA_PODERES.calabaza = {
   },
   fin(game, p, ctrl, ctx) {
     const C = ctx && ctx.calabaza; if (!C) return;
-    DIMS.gravity = C.grav0;
+    /* r89: SIN gravedad que restaurar — la física de la bola JAMÁS se toca
+     * (peso estándar, decisión del dueño) */
     if (game.ballMesh) game.ballMesh.visible = true;
     if (C.gltf) {
       game.scene.remove(C.gltf);
@@ -1214,6 +1301,18 @@ PLANTILLA_PODERES.gelatina = {
       const cz = DIMS.tableCenterZ;
       const HW = (DIMS.tableHalfWidth != null) ? DIMS.tableHalfWidth : 0.7625;
       const HL = (DIMS.tableHalfLength != null) ? DIMS.tableHalfLength : 1.37;
+      /* r89 · CANTO RUGOSO de la losa: el borde pintado de la textura (~7 cm)
+       * no es tablero — las manchas no lo pisan ni lo tocan. Verificación
+       * por radio CIRCUNSCRITO del cuadrado girado (tam/2·√2) + canto. */
+      const BORDE = 0.07;
+      /* r89 · COLOCACIÓN EN ZIGZAG (informe del dueño: «algunas salen
+       * parcialmente fuera… ni tampoco deben solaparse, debemos asegurar
+       * que aparecen separadas entre ellas sin tocarse»): 5 RANURAS a lo
+       * largo de la mesa alternando x — la distancia mínima entre ranuras
+       * (0,57 m) supera el peor contacto visible de dos manchas grandes
+       * (2·0,38·0,42 = 0,32 m) AUN con jitter de ±5 cm: separación POR
+       * CONSTRUCCIÓN, no por suerte; y el canto (|x|≤0,25+0,34 < 0,7625;
+       * |z|≤0,82+0,34 < 1,37) jamás se pisa. */
       for (let i = 0; i < 5; i++) {
         const tam = rand(0.26, 0.38);
         const geo = new THREE.PlaneGeometry(tam, tam);
@@ -1221,15 +1320,13 @@ PLANTILLA_PODERES.gelatina = {
         const m = new THREE.Mesh(geo, mat);
         m.rotation.x = -Math.PI / 2;
         m.rotation.z = rand(0, Math.PI * 2);
-        /* r88 · DENTRO DEL TABLERRO SIEMPRE: el límite usa el RADIO
-         * CIRCUNSCRITO del cuadrado girado (tam/2·√2) + margen — antes un
-         * cuadrado de 0,38 en x±0,55 CORTABA el canto (0,55+0,19·√2 =
-         * 0,82 > 0,7625). */
-        const circ = (tam / 2) * 1.4142 + 0.012;
-        const mx = Math.max(0.04, HW - circ);
-        const mz = Math.max(0.04, HL - circ);
+        m.userData.tam = tam;                        // r89: zona de impacto REAL
+        const rx = -0.2 + (i % 2) * 0.4 + rand(-0.05, 0.05);
+        const rz = -0.82 + i * 0.41 + rand(-0.05, 0.05);
+        if (Math.abs(rx) + (tam / 2) * 1.4142 + 0.012 + BORDE > HW ||
+            Math.abs(rz) + (tam / 2) * 1.4142 + 0.012 + BORDE > HL) continue;   // canto: la mancha NO nace
         // UN POCO POR ENCIMA DE LA MESA (guion del dueño) — escalonado
-        m.position.set(rand(-mx, mx), DIMS.tableTopY + 0.006 + i * 0.0012, cz + rand(-mz, mz));
+        m.position.set(rx, DIMS.tableTopY + 0.006 + i * 0.0012, cz + rz);
         game.scene.add(m);
         G.manchas.push(m);
       }
@@ -1248,7 +1345,14 @@ PLANTILLA_PODERES.gelatina = {
       for (const m of G.manchas) {
         const dx = b.pos.x - m.position.x;
         const dz = b.pos.z - m.position.z;
-        if (dx * dx + dz * dz < 0.11 * 0.11) {
+        /* r89 · ZONA DE IMPACTO REAL (el dueño: «no se calcula correctamente
+         * la zona de impacto sobre estas imágenes… al botar la pelota no
+         * aparece el efecto»): el radio era FIJO 0,11 m frente a manchas
+         * visuales de 0,13–0,19 m — los golpes morían sin manchar. Ahora
+         * el radio SALÉ del tamaño de la mancha (42 % de su lado) + medio
+         * radio de bola. */
+        const rad = (m.userData.tam || 0.3) * 0.42 + r * 0.5;
+        if (dx * dx + dz * dz < rad * rad) {
           G.contaminada = true;
           /* r88 · FÍSICA INTACTA (el dueño: «su peso no varía, tendrá la
            * física de la bola normal») — la r87 la pesaba ×3 y la frenaba:
@@ -1274,17 +1378,20 @@ PLANTILLA_PODERES.gelatina = {
        * sobrevive al cierre del poder y se disipa sola). */
       const sobreMesa = Math.abs(b.pos.x) <= DIMS.tableHalfWidth + 0.03 &&
         Math.abs(b.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + 0.03;
-      const boteMesa = sobreMesa && G.prevVy < -0.5 && b.vel.y > 0.5;
+      /* r89 · BOTES MÁS PERCEPTIBLES: el umbral de 0,5 m/s dejaba sin humo
+       * los botes suaves (el dueño no veía el efecto «al botar con pala y
+       * con mesa») — 0,25 m/s cubre el bote normal de juego. */
+      const boteMesa = sobreMesa && G.prevVy < -0.25 && b.vel.y > 0.25;
       let botePala = false;
       const pad = game.controllerPaddles ? game.controllerPaddles[(game.paddleHand | 0) || 0] : null;
       if (pad && pad.pos) {
         const dp = pad.pos.distanceTo(b.pos);
         const vp = pad.velocity ? pad.velocity.length() : 0;
-        if (dp < 0.115 + r && vp > 0.6) botePala = true;
+        if (dp < 0.13 + r && vp > 0.4) botePala = true;
       }
       if ((boteMesa || botePala) && G.expT <= 0) {
-        G.expT = 0.5;
-        _humoVerdeR88(game, b.pos, 18);
+        G.expT = 0.42;
+        _humoVerdeR88(game, b.pos, 22);   // r89: ráfaga más densa (visibilidad)
         try { ctrl.fxPop(b.pos); } catch (e) { /* */ }
       }
       G.prevVy = b.vel.y;
@@ -1389,12 +1496,24 @@ class PlantillaPoderes {
     const p = this._elegir(); if (!p) return;
     this.lastKind = p.kind; this.pend = p;
     const warn = p.warn != null ? p.warn : this.T.warn;
-    try { congela(this.game, Math.max(this.sign.T_OUT || 1.9, warn) + 0.1); } catch (e) {}
+    /* r89 · CALABAZA (el dueño: «es preciso que aparezca, no sé si tenién-
+     * dola precargada en memoria o prolongando la pausa del aviso de
+     * superpoder hasta que nos aseguramos de que carga»): las DOS cosas —
+     * el GLB se precarga en init() DESDE el arranque del módulo y, si aún
+     * no está al disparar, el AVISO SE PROLONGA (partida congelada, cartel
+     * vivo) hasta que el cuerpo llega o se agota un tope de 6 s; en cuanto
+     * carga se lanza AL INSTANTE (update acorta el pendT). Nunca un dispa-
+     * ro sin cuerpo. */
+    const espera = (p.kind === 'calabaza' && !(TEX_R86.gltf && TEX_R86.gltf.pumpkin)) ? 6.0 : 0;
+    this._esperaCuerpo = espera > 0;
+    try { congela(this.game, Math.max(this.sign.T_OUT || 1.9, warn) + espera + 0.1); } catch (e) {}
     this.sign.show(p.icon ? A(String(p.icon).replace(/^assets\//, '')) : A('superpower.webp'));
-    if (this.ctrl.rival) { this.ctrl.rival._set('crazy', warn + 1.2); this.ctrl.rival.risa(); }
-    if (SFX && SFX.tiene('pw')) SFX.play('pw', 0.5);
+    if (this.ctrl.rival) this.ctrl.rival._set('crazy', warn + espera + 1.2);
+    /* r89 · SONIDO DEL ZOMBI AL LANZAR UN SUPERPODER (zombi_crazy.mp3 del
+     * dueño; sustituye a la risa genérica en este momento) */
+    if (SFX) SFX.play('crazy', 0.62);
     this.ctrl.haptic(0.6, 200);
-    this.pendT = warn;
+    this.pendT = warn + espera;
   }
   _lanzar() {
     if (!this.pend) { this.pendT = 0; return; }   // r86: robustez — nada de disparos fantasma
@@ -1427,7 +1546,17 @@ class PlantillaPoderes {
       if (this.powerT <= 0) this._cerrar();
       return;
     }
-    if (this.pendT > 0) { this.pendT -= dt; if (this.pendT <= 0) this._lanzar(); return; }
+    if (this.pendT > 0) {
+      /* r89 · el cuerpo llegó antes del tope → se lanza YA (descongela el
+       * remanente: la pausa del aviso era «hasta que cargue», no 6 s fijos) */
+      if (this._esperaCuerpo && this.pend && this.pend.kind === 'calabaza' &&
+          TEX_R86.gltf && TEX_R86.gltf.pumpkin && this.pendT > 0.06) {
+        this.pendT = 0.06;
+        try { descongela(this.game); } catch (e) { /* */ }
+      }
+      this.pendT -= dt; if (this.pendT <= 0) { this._esperaCuerpo = false; this._lanzar(); }
+      return;
+    }
     if (this.cd > 0) { this.cd -= dt; return; }
     if (r.state !== 'rally' || this.ctrl.pruebaActiva()) return;
     if ((r.rallyHits || 0) < this.T.minRallyHits) return;
@@ -1915,7 +2044,10 @@ class PlantillaController {
     telemetria('champ_rank', { champ: this.man.id, prueba: 'duelo', win: won, score, stars: won ? 1 : 0, nv: this.dueloN, duelScore: score });
     if (won) rankingMundial('✔');
     this.rival.final(won);
-    this.rival.risa();
+    /* r89 · SONIDOS DEL ZOMBI EN EL FINAL DEL PARTIDO (arte sonoro del
+     * dueño): al VENCERLO suena zombi_defeated.mp3; cuando el zombi GANA,
+     * zombi_victory.mp3 (sustituyen a la risa genérica). */
+    if (SFX) SFX.play(won ? 'defeated' : 'victory', 0.7);
     this.dueloVivo = false;
     if (won) this._stageClear(this.dueloIdx, true, 'duelo');
     this.sala();
@@ -2091,10 +2223,15 @@ async function init(ctx) {
     });
     const base = createSfx(MOD_URL, () => GAME);
     SFX = {
-      play(n, v, o) { const f = sonidos[n] || (n + '.mp3'); if (base.tiene(f)) return base.play(f, v, o); },
+      /* r89: play SIN puerta de caché — base.play ya encola (v1.5.1) si el
+       * buffer aún no llegó; tiene() queda para diagnósticos/QA. */
+      play(n, v, o) { const f = sonidos[n] || (n + '.mp3'); return base.play(f, v, o); },
       tiene(n) { const f = sonidos[n] || (n + '.mp3'); return base.tiene(f); },
       precarga(n) { const f = sonidos[n] || (n + '.mp3'); return base.precarga(f); },
     };
+    /* r89 · PRECARGA de TODO el arte sonoro del zombi (risa + victoria/
+     * derrota/crazy) en el arranque del módulo — el 1.er disparo ya suena. */
+    Object.keys(sonidos).forEach((k) => { try { SFX.precarga(k); } catch (e) { /* */ } });
     const so = MAN.audio || {};
     MUSIC = createMusic(() => GAME, Object.assign({
       url: so.music ? A(String(so.music).replace(/^assets\//, '')) : null,
@@ -2102,8 +2239,13 @@ async function init(ctx) {
     }, so.musicOpts || {}));
   } catch (e) { SFX = null; MUSIC = null; }
   CTRL = new PlantillaController(GAME, MAN);
+  /* r89 · PRECARGA TEMPRANA DE LA CALABAZA (el dueño: «teniéndola precar-
+   * gada en memoria»): el GLB se pide EN EL init DEL MÓDULO — antes de la
+   * sala, del telón y de cualquier duelo; al disparar el poder el cuerpo
+   * ya está (o el aviso se prolonga hasta que llegue). */
+  try { _pumpkinGet(() => {}); } catch (e) { /* */ }
   window.addEventListener('pp-lang', () => { if (CTRL) CTRL._refrescaCartel(); });
-  try { window['__PP_' + String(MOD_ID).toUpperCase()] = { ctrl: () => CTRL, man: () => MAN }; } catch (e) {}
+  try { window['__PP_' + String(MOD_ID).toUpperCase()] = { ctrl: () => CTRL, man: () => MAN, pods: PLANTILLA_PODERES }; } catch (e) {}
   return Promise.resolve();
 }
 

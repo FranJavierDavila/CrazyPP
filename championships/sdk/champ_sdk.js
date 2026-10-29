@@ -1204,30 +1204,53 @@ export function createRival(THREE, getGame, opts) {
   }
 
   /* «precarga»: swap entre caras ya en memoria (caída a la base — que en
-   * la casa era SIEMPRE null: estado desconocido = no-op, igual queda). */
+   * la casa era SIEMPRE null: estado desconocido = no-op, igual queda).
+   * r89: el no-op es REAL — sin cara disponible NO se despinta el material
+   * (ponMapa(null) dejaba el standee como un rectángulo blanco). */
   function estadoPrecarga(st) {
-    ponMapa(stTex[st] || stTex.base || null);
+    const t = stTex[st] || stTex.base || null;
+    if (t) ponMapa(t);
   }
 
   function build() {
     if (mesh) return;
     construir();
+    /* r89 · SUBIDA A GPU INVISIBLE (sustituye al «prewarm» visible de los
+     * módulos): renderer.initTexture(t) sube la cara a GPU SIN colgarla
+     * en el material — el standee deja de parpadear por todas sus caras
+     * y el cambio de emoción en pleno duelo no tira del frame. */
+    const subeGpu = (t) => {
+      try {
+        const gg = (typeof getGame === 'function') ? getGame() : getGame;
+        if (gg && gg.renderer && gg.renderer.initTexture) gg.renderer.initTexture(t);
+      } catch (e) { /* sin renderer (headless): la subida normal bastará */ }
+    };
     if (PRE) {
       // base primero (orden del original: rival.webp → estados); su llegada
-      // pinta el mapa PERO no entra en stTex (key null en el original)
+      // pinta el mapa SÓLO si aún no hay estado vigente (r89) y NO entra en
+      // stTex (convención de la casa: estado desconocido = no-op)
       new THREE.TextureLoader().load(resuelve(o.base || ('rival.' + EXT)), (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         registrar(t);
-        ponMapa(t);
-        escalaAspecto(t);
+        /* r89: la base pinta SIEMPRE que no haya cara viva (evita el flash
+         * blanco del standee mientras llega la cara del estado vigente). */
+        if (!estado_ || !mat.map) { ponMapa(t); escalaAspecto(t); }
+        subeGpu(t);
       }, undefined, () => { /* sin arte: silueta */ });
       (o.estados || []).forEach((st) => {
         new THREE.TextureLoader().load(resuelve(st + '.' + EXT), (t) => {
           t.colorSpace = THREE.SRGBColorSpace;
           registrar(t);
           stTex[st] = t;
-          ponMapa(t);
-          escalaAspecto(t);
+          /* r89 · INFORME DEL DUEÑO («en un determinado momento se super-
+           * ponen dos estados coplanares»): la cara que llega YA NO se
+           * pinta de inmediato — la llegada en vivo hacía al standee
+           * recorrer TODAS sus caras en cuanto arrancaba la sala (y de
+           * quieto mostraba la ÚLTIMA llegada, p.ej. victory, sin que el
+           * estado lógico la pidiera). Sólo se pinta si ES el estado
+           * vigente; el resto queda en caché y sube a GPU por su cuenta. */
+          if (estado_ === st) { ponMapa(t); escalaAspecto(t); }
+          subeGpu(t);
         }, undefined, () => { /* cara ausente: silueta */ });
       });
     } else {

@@ -206,7 +206,7 @@
       "name": "Gelatina Asquerosa",
       "icon": "assets/power_gelatina.webp",
       "cooldown": 14,
-      "duration": 10,
+      "duration": 12,
       "warn": 2,
       "activacion": "rally",
       "chance": 0.3
@@ -242,7 +242,10 @@
       "stopFade": 0
     },
     "sounds": {
-      "laugh": "assets/risas.mp3"
+      "laugh": "assets/risas.mp3",
+      "crazy": "assets/zombi_crazy.mp3",
+      "victory": "assets/zombi_victory.mp3",
+      "defeated": "assets/zombi_defeated.mp3"
     }
   },
   "room": {
@@ -295,8 +298,8 @@
     "arte": "assets/mapa.webp",
     "planoW": 1.66,
     "pos": [
-      -3.03,
-      1.45,
+      -3.043,
+      1.66,
       -1.9
     ],
     "rotY": 1.5707963267948966,

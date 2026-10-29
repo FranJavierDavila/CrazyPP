@@ -4960,3 +4960,16 @@ Stage Summary:
 - LAS CUATRO DEL INFORME ATACADAS Y VERIFICADAS EN VIVO: las manos nacen JUSTO de la mesa y su parte inferior la TOCA en todo el ciclo (fuera el vuelo de la r89), la mesa viste la textura NUEVA del dueño (mesa.webp — cuatro losas de piedra con sangre), el rival GOLPEA la calabaza con la pala SOBRE ella (contacto tangente a 7,5 cm, sin desplazamiento ni teleporte) y la calabaza GIRA SOBRE SÍ MISMA arrastrada por el spin — se re-arranca con cada golpe, como haría la bola.
 - QA TOTAL verde en cascada (56 capas, 0 fallos; batería multi 86✓/0✗ cortada por tiempo del sandbox). Golden c381122e BYTE-EXACTO. 4 ZIPs v3684-sdk6 listos.
 - Pendiente al cierre: deploy desde HEAD (post-commit), verificación tres vías + agujas r92 en el servido, push main, release v3.6.84-SDK6 con los 4 ZIPs, recarga del dueño con game.html?v=v3684.
+
+Task: r197-bis · r92 — DESPLIEGUE Y VERIFICACIÓN EN PRODUCCIÓN (continúa Task 197).
+
+Work Log:
+- CREDENCIALES DEL DUEÑO RE-PUESTAS Y VERIFICADAS: PAT contra /user → login FranJavierDavila (push true en CrazyPP) · .github-pat / .cf-token / .clave-produccion guardados en scripts/worker-tele/ (gitignored verificado con check-ignore, 600).
+- INCIDENCIA DE PAGES DOCUMENTADA Y RESUELTA: el clon traía la rama pages local en 3.6.18 (11446a2) mientras origin/pages vive en 3.6.83 (1bed436) — el primer push pages fue rechazado (non-fast-forward). FIX del patrón Task 195: git branch -f pages origin/pages (re-encadenar al tip remoto) y re-despliegue — el commit encadenado nace AHORA del tip real.
+- DESPLIEGUE (post-commit, HEAD 335962480): GIT_TOKEN del gitignored → deploy_pages --push --release --backup · ensamblado desde HEAD · 432 ficheros · 153,1 MB · smoke bajo prefijo /CrazyPP 30 peticiones/0 fallos/0 pageerrors · pages → 0441a4b74 encadenada a 1bed436a1 · push main 54a427e..3359624 · respaldo main→proyecto al día · Release v3.6.84-SDK6 con los 4 ZIPs subidos (https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.84-SDK6).
+- VERIFICACIÓN EN PRODUCCIÓN TRES VÍAS BYTE-EXACTO: servido sha256 a215d92f… == PAGES-VERSION.txt servido game_sha256 a215d92f… == git blob pages:game.html 5d15b99f… (hash-object del servido == ls-tree origin/pages — 2 reescrituras, patrón de siempre) · AGUJAS r92 EN EL SERVIDO: núcleo game.html ppCalabaza ×3 + tangente 0,075 ×4 + 3.6.84 · módulo index.js SERVIDO BYTE-IDÉNTICO (4ce8a904…) con MANO_Y ×3 + y0 ×8 + mesa.webp ×2 + spin·dt·0,15 ×7 + ppCalabaza ×5 · manifest.json servido byte-idéntico (ca25be1a…) con mesa.webp · FICHEROS DEL MÓDULO SERVIDOS BYTE-IDÉNTICOS: mesa.webp · midnight_volley.mp3 · zombi_defeated.mp3 · index.js · manifest.json (5/5).
+
+Stage Summary:
+- V3.6.84-SDK6 VIVA EN PRODUCCIÓN y verificada por tres vías: las CUATRO del informe (manos nacen de la mesa · textura nueva de la mesa · golpe del rival tangente a la calabaza · calabaza que gira sobre sí misma) ya juegan en https://franjavierdavila.github.io/CrazyPP/ — el dueño debe recargar con game.html?v=v3684 para saltar la caché del Quest.
+
+---

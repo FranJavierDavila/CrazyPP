@@ -695,23 +695,31 @@ export class OpponentAI {
         if (this.pos.distanceToSquared(_segC) > r2) return null;
       } else if (this.pos.distanceToSquared(ball.pos) > r2) return null;
     } else if (this.pos.distanceToSquared(ball.pos) > r2) return null;
-    // r92 · CONTACTO TANGENTE con la calabaza: el punto del barrido se
-    // ARRASTRA hacia la pala hasta que la SUPERFICIE de la calabaza toca
-    // el disco (centro de calabaza a ~7,5 cm del centro de la hoja — radio
-    // 0,065 + solape mínimo). Máx. ~4,5 cm de corrección (el alcance ya
-    // nace a 0,12): contacto sólido y creíble, sin teleportes. La salida
-    // se calcula DESPUÉS desde este punto con computeShotVelocityReal al
-    // mismo blanco — la trayectoria de la devolución no cambia.
+    // r93 · CONTACTO TANGENTE INVERTIDO (informe del dueño tras la r92:
+    // «existe un desfase de la bola cuando la golpea el rival… es una
+    // deriva de precisión entre ambas palas»): la r92 arrastraba el PUNTO
+    // DE CONTACTO hacia la pala y RECOLOCABA la bola en él — con la
+    // calabaza (Ø 0,13 m, 3× la bola) ese salto de hasta 4,5 cm SE VE
+    // (la calabaza salta hacia la pala en el frame del golpe) y encima el
+    // follow-through arrancaba con la hoja 5 cm por encima del contacto.
+    // El golpe del DUEÑO «está correcto» porque su física jamás recoloca
+    // la bola — la deriva era SÓLO del lado de la IA. AHORA: la bola se
+    // queda en el punto del barrido (el MISMO trato que la bola normal)
+    // y es la HOJA la que viaja hasta la piel de la calabaza: el swing
+    // nace en el punto TANGENTE (centro de calabaza a 7,5 cm del centro
+    // de hoja — radio 0,065 + canto de hoja) y sin el ascenso inicial
+    // (flat). Contacto sólido, cero teleportes, física intacta: la salida
+    // se calcula desde ball.pos real con computeShotVelocityReal al mismo
+    // blanco — la trayectoria de la devolución no cambia.
+    let toca = null;                      // punto tangente para el swing (r93)
     if (ball.ppCalabaza) {
       const dcx = cx - this.pos.x, dcy = cy - this.pos.y, dcz = cz - this.pos.z;
       const dC = Math.sqrt(dcx * dcx + dcy * dcy + dcz * dcz) || 1e-6;
       const TOCA = 0.075;
-      if (dC > TOCA) {
-        const sC = TOCA / dC;
-        cx = this.pos.x + dcx * sC;
-        cy = this.pos.y + dcy * sC;
-        cz = this.pos.z + dcz * sC;
-      }
+      const sT = Math.min(1, TOCA / dC);  // nunca pasarse del punto barrido
+      toca = { x: this.pos.x + dcx * sT,
+               y: this.pos.y + dcy * sT,
+               z: this.pos.z + dcz * sT };
     }
     if ((cz - C) * sign < 0.04) return null;
     if (cy < DIMS.tableTopY - 0.08 || cy > 1.65) return null;
@@ -731,7 +739,7 @@ export class OpponentAI {
       if (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z) {
         ball.pos.set(cx, cy, cz);   // recolocar en el punto del barrido
       }
-      return this.mishit(ball);
+      return this.mishit(ball, toca);   // r93: el swing también toca la piel
     }
     // v2.84: golpe LIMPIO con contacto barrido — la salida parte del punto
     // real donde la pala alcanzó la bola (no del punto ya pasado)
@@ -835,7 +843,11 @@ export class OpponentAI {
     this.swing = {
       t: 0,
       dur: 0.3,
-      contact: ball.pos.clone(),
+      // r93 · CALABAZA: el swing nace en el punto TANGENTE (la hoja en la
+      // piel de la calabaza) — la bola NO se mueve del punto barrido.
+      contact: toca ? new THREE.Vector3(toca.x, toca.y, toca.z)
+                    : ball.pos.clone(),
+      flat: !!toca,               // sin ascenso inicial: hoja ya EN contacto
       dir: new THREE.Vector3(v.x, 0, v.z).normalize(),
       vdir: v.clone().normalize(),
       speed: THREE.MathUtils.clamp(v.length() / 6, 0.6, 1.5),
@@ -857,7 +869,7 @@ export class OpponentAI {
    *  La física (red, mesa, suelo) y el árbitro EXISTENTES resuelven cada
    *  desenlace sin ningún cambio: mismo reparto de puntos, pero el fallo
    *  se VE (la bola sale despedida torpe de la pala) y se OYE (toc flojo). */
-  mishit(ball) {
+  mishit(ball, toca) {
     const s = this.sign;
     const r = Math.random();
     if (r < 0.5) {
@@ -883,7 +895,10 @@ export class OpponentAI {
     if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
     this.swing = {
       t: 0, dur: 0.26,
-      contact: ball.pos.clone(),
+      // r93 · CALABAZA: contacto tangente también en el golpe torpe
+      contact: toca ? new THREE.Vector3(toca.x, toca.y, toca.z)
+                    : ball.pos.clone(),
+      flat: !!toca,
       dir: _miD.copy(_miV).setY(0).normalize().clone(),
       vdir: _miD.copy(_miV).normalize().clone(),
       speed: 0.5,                 // follow-through corto: toque sin cuerpo

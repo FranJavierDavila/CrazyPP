@@ -67,15 +67,15 @@ CHK(m['rivalVisual']['base'] == 'present.webp' and m['rivalVisual']['ext'] == 'w
 pods = m['powers']
 CHK([p['kind'] for p in pods] == ['mano', 'moscas', 'calabaza', 'gelatina'],
     'poderes r86: los 4 REALES del dueño (Mano · Moscas · Calabaza · Gelatina)')
-# r89/r91 · re-anclaje honesto: gelatina dura 12 s (petición del dueño en r89:
+# r89/r91/r93 · re-anclaje honesto: gelatina dura 12 s (petición del dueño en r89:
 # «este efecto podemos prolongarlo hasta los 12 segundos») y la BSO es
-# midnight_volley.mp3 desde la r90 (el bso.wav era provisional)
+# melodia.mp3 desde la r93 (midnight_volley fue la de r90; el dueño cambió la melodía)
 CHK([p['duration'] for p in pods] == [10, 10, 10, 12],
     'poderes: mano/moscas/calabaza 10 s · gelatina 12 s (petición del dueño r89)')
 CHK([p.get('chance') for p in pods] == [0.30, 0.28, 0.30, 0.30], 'chance rally de los 4')
 CHK(all(p['icon'].startswith('assets/power_') for p in pods), 'medallón circular por poder')
-CHK(m['audio']['music'] == 'assets/midnight_volley.mp3' and m['audio']['sounds']['laugh'] == 'assets/risas.mp3',
-    'audio: BSO Midnight_Volley (r90) + risa')
+CHK(m['audio']['music'] == 'assets/melodia.mp3' and m['audio']['sounds']['laugh'] == 'assets/risas.mp3',
+    'audio: BSO melodia.mp3 del dueño (r93) + risa')
 CHK(len(m['room']) >= 6 and m['room']['floor'] == 'assets/sala_floor.jpg', 'sala 6 planos')
 dec = m['decor']['pieces']
 CHK([d['file'] for d in dec] == ['assets/decor_arana.png', 'assets/decor_calabaza.png',

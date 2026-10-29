@@ -32,10 +32,11 @@ print('== ESTÁTICA ==')
 man = json.load(open(os.path.join(HAL, 'manifest.json')))
 au = man.get('audio', {})
 # r90 · BSO REAL del dueño
-CHK(au.get('music') == 'assets/midnight_volley.mp3', 'manifest: BSO → assets/midnight_volley.mp3 (fin del bso.wav provisional)')
-CHK(os.path.getsize(os.path.join(HAL, 'assets/midnight_volley.mp3')) > 1000000, 'assets: midnight_volley.mp3 presente (%d B)' % os.path.getsize(os.path.join(HAL, 'assets/midnight_volley.mp3')))
+# r93 · re-anclaje honesto: el dueño sustituyó la melodía (Melodia.mp3 que adjuntó)
+CHK(au.get('music') == 'assets/melodia.mp3', 'manifest: BSO → assets/melodia.mp3 (la melodía del dueño desde la r93; midnight_volley retirado)')
+CHK(os.path.getsize(os.path.join(HAL, 'assets/melodia.mp3')) > 1000000, 'assets: melodia.mp3 presente (%d B)' % os.path.getsize(os.path.join(HAL, 'assets/melodia.mp3')))
 # r90 · perfil de audio del casco (lección Tunel: 24 kHz NO decodifica)
-for f, dur in [('zombi_crazy.mp3', 2.25), ('zombi_victory.mp3', 1.85), ('zombi_defeated.mp3', 8.10), ('risas.mp3', 2.90), ('midnight_volley.mp3', 153.65)]:
+for f, dur in [('zombi_crazy.mp3', 2.25), ('zombi_victory.mp3', 1.85), ('zombi_defeated.mp3', 8.10), ('risas.mp3', 2.90), ('melodia.mp3', 178.44)]:
     try:
         out = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a:0',
                               '-show_entries', 'stream=sample_rate', '-of', 'csv=p=0',
@@ -146,7 +147,7 @@ with sync_playwright() as pw:
 
     # ARTE SONORO DECODIFICABLE en este navegador (perfil del casco)
     dec = pg.evaluate("""async () => {
-      const files = ['zombi_crazy.mp3', 'zombi_victory.mp3', 'zombi_defeated.mp3', 'risas.mp3', 'midnight_volley.mp3'];
+      const files = ['zombi_crazy.mp3', 'zombi_victory.mp3', 'zombi_defeated.mp3', 'risas.mp3', 'melodia.mp3'];
       const actx = new (window.AudioContext || window.webkitAudioContext)();
       const out = {};
       for (const f of files) {
@@ -159,7 +160,7 @@ with sync_playwright() as pw:
       }
       return out;
     }""")
-    for f in ['zombi_crazy.mp3', 'zombi_victory.mp3', 'zombi_defeated.mp3', 'risas.mp3', 'midnight_volley.mp3']:
+    for f in ['zombi_crazy.mp3', 'zombi_victory.mp3', 'zombi_defeated.mp3', 'risas.mp3', 'melodia.mp3']:
         d = (dec or {}).get(f) or {}
         CHK(d.get('ok') is True and d.get('rate') == 44100,
             'audio: %s decodifica a 44100 Hz (dur %s s)' % (f, d.get('dur')))

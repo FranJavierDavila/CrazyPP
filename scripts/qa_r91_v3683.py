@@ -44,7 +44,7 @@ man = json.load(open(os.path.join(HAL, 'manifest.json')))
 CHK(man.get('version') == 3, 'manifest: version=3 (r91)')
 CHK(any(n.startswith('v5 (r91)') for n in man.get('notes', [])), 'manifest: nota v5 (r91) presente')
 au = man.get('audio', {})
-CHK(au.get('music') == 'assets/midnight_volley.mp3', 'manifest: BSO midnight_volley.mp3')
+CHK(au.get('music') == 'assets/melodia.mp3', 'manifest: BSO melodia.mp3 (r93 — melodía nueva del dueño)')
 CHK(au.get('musicVolume') == 0.18, 'manifest: volumen BSO 0,18')
 opts = au.get('musicOpts') or {}
 CHK(opts.get('gateStart') is True and opts.get('gateOn') is False and opts.get('renace') is True,
@@ -232,7 +232,7 @@ with sync_playwright() as pw:
       return { mus: m, ctx: g.audio && g.audio.ctx ? g.audio.ctx.state : null };
     }""")
     CHK((mus.get('mus') or {}).get('sonando') is True, 'BSO: SONANDO tras la intro (JUGAR → hideChampIntro(true) → on())')
-    CHK((mus.get('mus') or {}).get('cargado') is True, 'BSO: buffer cargado (midnight_volley 153,6 s)')
+    CHK((mus.get('mus') or {}).get('cargado') is True, 'BSO: buffer cargado (melodia.mp3 178,4 s — r93)')
     pg.evaluate("""() => { window.__PP_HALLOWEEN.ctrl().serveTrigger(0); }""")
     pg.wait_for_timeout(5000)
     mus2 = pg.evaluate("""() => { const m = window.__PP_HALLOWEEN.mus(); return m ? m.estado() : null; }""")

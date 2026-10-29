@@ -9772,9 +9772,13 @@ export class PingPongGame {
       // cruce del cuerpo: el brazo termina al OTRO lado (de derecha a izquierda
       // en el drive, al revés en el revés)
       swingV.addScaledVector(AIM_RIGHT, -fh * 0.13 * K.cross * e);
+      // r93 · CALABAZA (sw.flat): SIN el ascenso inicial de 5 cm — la hoja
+      // nace YA en el punto tangente (la piel de la calabaza) y el golpe se
+      // lee sobre el cuerpo de la calabaza, no por encima de él.
+      const rise0 = sw.flat ? 0 : 0.05;
       mesh.position.set(
         sw.contact.x + swingV.x,
-        Math.max(0.42, sw.contact.y + swingV.y * 0.55 + 0.05 * (1 - e) + K.rise * e),
+        Math.max(0.42, sw.contact.y + swingV.y * 0.55 + rise0 * (1 - e) + K.rise * e),
         sw.contact.z + swingV.z,
       );
       // HOJA: la punta parte cargada hacia el lado del golpe y CRUZA al lado

@@ -4931,3 +4931,12 @@ Stage Summary:
 - V3.6.83-SDK6 (FASE 85): LAS SIETE QUEJAS DEL INFORME ATACADAS DE RAÍZ — la BSO suena (forma canónica + SDK tolerante), el mapa VISTE la pared izquierda con la receta WizardMap y el gate por callback (más respaldo por-frame), la calabaza por fin SE VE ENTERA (bug material-array cazado: LatheGeometry sin groups = cero draw calls), las manos muestran la tierra y el brazo (arte integral), el zombi obedece la NORMA ÚNICA de emociones con hold del final (defeated por fin visible) y sus cuatro sonidos disparan por la norma, un solo plano del zombi en todo el ciclo de vida.
 - QA TOTAL: r91 55/0 · r90 66/0 · r88 43/0 · BW 94/0 · BV 66/0 · BU 111/0 · A-D 77/0 · golden 745af1f8 BYTE-EXACTO · 4 ZIPs v3683-sdk6 listos.
 - PENDIENTE AL CIERRE: deploy desde HEAD (post-commit), verificación tres vías + agujas r91 en el servido, push main, release v3.6.83-SDK6 con los 4 ZIPs.
+
+Task: r196-bis · r91 — DESPLIEGUE Y VERIFICACIÓN EN PRODUCCIÓN (continúa Task 196).
+
+Work Log:
+- DESPLIEGUE (post-commit, lección aplicada): GIT_TOKEN del gitignored (600) → deploy_pages --push --release --backup · ensamblado desde HEAD 72f17d09b · versión detectada 3.6.83-SDK6 · 431 ficheros (2 menos: power_0/1.png muertos fuera) · smoke bajo prefijo /CrazyPP 30 peticiones/0 fallos/0 pageerrors · pages → 1bed436a1 encadenada · respaldo main→proyecto al día · Release v3.6.83-SDK6 con los 4 ZIPs (https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.83-SDK6).
+- VERIFICACIÓN EN PRODUCCIÓN TRES VÍAS BYTE-EXACTO: servido sha256 2abe4ca0… == PAGES-VERSION.txt servido game_sha256 2abe4ca0… == git blob pages:game.html f9760aec… (hash-object del servido == ls-tree origin/pages — el servido lleva 2 reescrituras, por eso el content-sha difiere del golden de fuente: patrón de siempre) · AGUJAS r91 EN EL SERVIDO 20/20 (mapa: callback + respaldo + RIG; calabaza: SINGLE + DoubleSide + frustum OFF; manos: cultivo 1.0; rival: norma única sin reaccion + sonido por emoción + hold 4.2; BSO: url/vol función; sdk: val() en objetivo/srcURL; manifest v3 + nota v5 + midnight + WizardMap) · 6/6 FICHEROS DEL MÓDULO SERVIDOS BYTE-IDÉNTICOS (midnight_volley · risas · crazy · victory · defeated · mapa.webp) · verify_pages_live 3.6.83-SDK6 (intento 1: 29 peticiones OK · 0 fallos de red · 0 pageerrors).
+
+Stage Summary:
+- V3.6.83-SDK6 VIVA EN PRODUCCIÓN y verificada por tres vías: el dueño debe recargar con game.html?v=v3683 para saltar la caché del Quest.

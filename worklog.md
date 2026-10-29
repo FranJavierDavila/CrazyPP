@@ -5022,3 +5022,15 @@ Stage Summary:
 - LA QUEJA DEL DUEÑO ES IMPOSIBLE AHORA POR CONSTRUCCIÓN: mientras la calabaza viva (sin destruir) la bola JAMÁS se pinta (re-ocultada cada frame contra TODOS los caminos del núcleo) y la calabaza ocupa el LUGAR EXACTO de la bola (copia la posición renderizada, deriva 0 verificada en vivo con la bola en movimiento). Nacimiento en sitio, contacto de la IA que no caduca, estallido intacto (calabaza fuera → bola en el mismo punto).
 - QA TOTAL verde: capa r94 28/0 + 10 capas en cascada, 0 fallos. Golden 036050d8 BYTE-EXACTO. 4 ZIPs v3686-sdk6 listos.
 - Pendiente al cierre: commit+push main, deploy pages desde HEAD, verificación tres vías + agujas r94 en el servido, módulo byte-idéntico, recarga del dueño con game.html?v=v3686.
+
+---
+Task ID: 199-bis
+Agent: principal (Z.ai)
+Task: r94 — DESPLIEGUE Y VERIFICACIÓN EN PRODUCCIÓN (continúa Task 199).
+
+Work Log:
+- DESPLIEGUE (post-commit, HEAD 3998799): PAT restaurado en scripts/worker-tele/.github-pat (600, gitignored — el fichero no sobrevive al snapshot; credencial del dueño de la ronda 5) + push main explícito f204cb8..3998799 · GIT_TOKEN → deploy_pages --push --release --backup · 432 ficheros · smoke bajo prefijo /CrazyPP 30 peticiones/0 fallos/0 pageerrors · pages → 47c3dff67 encadenada · respaldo main→proyecto al día · Release v3.6.86-SDK6 con los 4 ZIPs (https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.86-SDK6).
+- VERIFICACIÓN EN PRODUCCIÓN TRES VÍAS BYTE-EXACTO (scripts/verifica_r94_produccion.py — 15/0): servido sha256 7af857fd… == PAGES-VERSION.txt servido game_sha256 7af857fd… == git hash-object del SERVIDO == blob origin/pages:game.html d4287866… (las 2 reescrituras del patrón de siempre; local public/game.html == golden 036050d8… aparte) · AGUJAS EN EL SERVIDO: sellos 3.6.86-SDK6 + badge V3.6.86 + c06 swing tangente y c12 rise0/flat (r93 intactas) · MÓDULO SERVIDO BYTE-IDÉNTICO 7/7: index.js (EL QUE LLEVA EL FIX r94) · manifest.json (nota v8) · melodia.mp3 · power_mano/moscas/calabaza/gelatina.webp.
+
+Stage Summary:
+- V3.6.86-SDK6 VIVA EN PRODUCCIÓN y verificada por tres vías: la calabaza ES la bola — jamás se ven a la vez (la bola re-oculta cada frame contra todos los caminos del núcleo), la calabaza ocupa el LUGAR EXACTO de la bola (posición renderizada, deriva 0), nacimiento en sitio y contacto de la IA que no caduca — todo ya juega en https://franjavierdavila.github.io/CrazyPP/ — el dueño debe recargar con game.html?v=v3686 para saltar la caché del Quest.

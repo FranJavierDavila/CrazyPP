@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.87-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.88-SDK6</span>
     </div>
   </main>
 
@@ -814,6 +814,75 @@ const I18N_STRINGS = {
     btn_rivstyle: 'Rivales con estilo visible: {v}',
     msg_rivstyle: 'Estilo de los rivales: {v}',
     fanf_stats: '⚡ {v} m/s · Rally {r} · Precisión {p}%',
+    // r96 · SALA Y ESCENA: submenús-botón, deslizador de altura, vista en
+    // vivo de la sala de partidos y HINTS al apuntar en el menú
+    cat_salaroom: 'SALA',
+    cat_salamesa: 'MESA',
+    sub_sala_sub: 'Temas de la estancia y passthrough · se ven EN VIVO',
+    sub_mesa_sub: 'Altura y aspecto de la mesa · se ve EN VIVO',
+    sala_preview: 'Sala de partidos · los cambios se aplican en vivo',
+    mesa_alto_lbl: 'Altura de la mesa (deslizador)',
+    mesa_alto_cm: '{v} cm',
+    mesa_zona_baja: 'Baja',
+    mesa_zona_media: 'Media',
+    mesa_zona_alta: 'Alta',
+    msg_mesa_altoy: 'Altura de la mesa: {v} cm',
+    perf_ffr: 'NITIDEZ DEL VISOR (FOVEADO)',
+    perf_ffr_max: 'Máxima',
+    perf_ffr_alta: 'Alta',
+    perf_ffr_normal: 'Normal',
+    perf_ffr_rinde: 'Rinde',
+    perf_ffr_v: 'Nitidez aplicada ahora: fovea {v}',
+    msg_perf_ffr: 'Nitidez del visor: {v} · el gobernador nunca pasará de ahí',
+    // r96 · HINTS DEL MENÚ (tooltips al apuntar): una línea por control
+    hint_close: 'Cierra el menú y vuelve al juego (también el botón B)',
+    hint_back: 'Volver a la página anterior',
+    hint_modo_match: 'Partido libre contra la CPU al mejor de 3 juegos',
+    hint_modo_train: 'Entrenamiento con áreas de tiro, dirección, altura y más',
+    hint_modo_surv: 'Supervivencia: la CPU acelera rallye a rallye, ¿cuánto aguantas?',
+    hint_modo_multi: 'Multijugador online: salas, duelos y el medallón del Pulso',
+    hint_modo_champs: 'Campeonatos: Halloween, Estación Orbital, Oeste, Magia y Locura',
+    hint_modo_rank: 'Ranking mundial por campeonato (top 10)',
+    hint_modo_tut: 'La Academia: tutorial de primeros pasos',
+    hint_modo_opts: 'Todas las opciones del juego en subapartados',
+    hint_cat_juego: 'Dificultad de la CPU, rival adaptativo, pala mejorada y estilo',
+    hint_cat_sala: 'Sala y mesa: se abre la sala de partidos para ver los cambios',
+    hint_cat_sonido: 'Música, efectos, voz del megáfono y volúmenes separados',
+    hint_cat_visual: 'Estela de la bola, haptics al golpear y consejos',
+    hint_cat_perfil: 'Tu nombre, telemetría y reinicio de registros',
+    hint_cat_rendi: 'FPS, calibración por casco y nitidez del visor',
+    hint_cat_pala: 'Colocación de la pala en el mando, agarres guardados',
+    hint_diff: 'Nivel de la CPU en el partido libre (fácil · media · difícil)',
+    hint_adapt: 'La CPU sube o baja su nivel según el marcador',
+    hint_pmej: 'Superpoderes de la pala en los duelos con poderes',
+    hint_rivstyle: 'La personalidad del rival se ve: se acerca si es agresivo y celebra sus puntos',
+    hint_theme: 'Cambia el ambiente de la sala al instante (suelo, paredes y luces)',
+    hint_psthru: 'Usa tu habitación real como fondo (passthrough del Quest)',
+    hint_mesa_altoy: 'Arrastra o apunta al raíl: la mesa sube y baja EN VIVO (70-84 cm)',
+    hint_mesa_altomen: 'Baja la mesa 1 cm',
+    hint_mesa_altomas: 'Sube la mesa 1 cm',
+    hint_mesa_skin: 'Color de la mesa; las con 🔒 se liberan ganando partidos',
+    hint_music: 'Música del menú y de los campeonatos sí/no',
+    hint_amb: 'Ambiente de la sala (público y sala) sí/no',
+    hint_voz: 'Voz del megáfono (marcador y anuncios) sí/no',
+    hint_sndtest: 'Prueba de sonido; dos pulsaciones reparan el audio',
+    hint_mvol: 'Volumen de la MÚSICA: apunta a la barra o usa − y +',
+    hint_fvol: 'Volumen de los EFECTOS (bola, mesa, red): barra o − y +',
+    hint_mvolset: 'Toca un punto de la barra para fijar el volumen de la música',
+    hint_fvolset: 'Toca un punto de la barra para fijar el volumen de los efectos',
+    hint_trail: 'Estela luminosa tras la bola sí/no',
+    hint_tips: 'Consejos de primera sesión sí/no',
+    hint_hapt: 'Vibración del mando al golpear sí/no',
+    hint_pname: 'Escribe tu nombre para el ranking y el multijugador',
+    hint_tele: 'Telemetría anónima de fallos y rendimiento',
+    hint_reset: 'Borra ranking, récords, logros y poderes (dos pulsaciones)',
+    hint_perfAuto: 'El juego se calibra solo para mantener 60 FPS seguros',
+    hint_perfTier: 'Perfil de calidad manual según tu casco',
+    hint_perfRecal: 'Mide de nuevo los FPS de tu casco y ajusta la calidad',
+    hint_perfFfr: 'Nitidez del visor: menos foveado = imagen más limpia en los bordes',
+    hint_kofi: 'Apoya el desarrollo con un café',
+    hint_sala_sala: 'El ambiente de la estancia: Pabellón, Neón, Atardecer y Ártico + passthrough',
+    hint_sala_mesa: 'La mesa: sube y baja con el deslizador y cambia su color — todo en vivo',
     arc_power_clown: '¡El Clown enloquece! ¡Confeti a la vista!',
     arc_power_warn: '¡SUPERPODER ENTRANTE! ¡PREPÁRATE…',
     // v2.106 · cartel explicativo de la prueba ARKANOID (La Locura)
@@ -1535,6 +1604,75 @@ const I18N_STRINGS = {
     btn_rivstyle: 'Visible rival style: {v}',
     msg_rivstyle: 'Rival style: {v}',
     fanf_stats: '⚡ {v} m/s · Rally {r} · Accuracy {p}%',
+    // r96 · SALA Y ESCENA: button submenus, height slider, live game-room
+    // view and HINTS when aiming at menu controls (EN)
+    cat_salaroom: 'ROOM',
+    cat_salamesa: 'TABLE',
+    sub_sala_sub: 'Room themes and passthrough · LIVE preview',
+    sub_mesa_sub: 'Table height and look · LIVE preview',
+    sala_preview: 'Game room · changes apply live',
+    mesa_alto_lbl: 'Table height (slider)',
+    mesa_alto_cm: '{v} cm',
+    mesa_zona_baja: 'Low',
+    mesa_zona_media: 'Mid',
+    mesa_zona_alta: 'High',
+    msg_mesa_altoy: 'Table height: {v} cm',
+    perf_ffr: 'HEADSET SHARPNESS (FOVEATED)',
+    perf_ffr_max: 'Sharpest',
+    perf_ffr_alta: 'High',
+    perf_ffr_normal: 'Normal',
+    perf_ffr_rinde: 'Fast',
+    perf_ffr_v: 'Sharpness applied now: fovea {v}',
+    msg_perf_ffr: 'Headset sharpness: {v} · the governor will never go past it',
+    // r96 · MENU HINTS (aim tooltips): one line per control
+    hint_close: 'Close the menu and go back to the game (B works too)',
+    hint_back: 'Back to the previous page',
+    hint_modo_match: 'Free match vs the CPU, best of 3 games',
+    hint_modo_train: 'Training with aim areas, direction, height and more',
+    hint_modo_surv: 'Survival: the CPU speeds up every rally — how long can you last?',
+    hint_modo_multi: 'Online multiplayer: rooms, duels and the Pulse badge',
+    hint_modo_champs: 'Championships: Halloween, Orbital Station, West, Magic and Madness',
+    hint_modo_rank: 'World ranking per championship (top 10)',
+    hint_modo_tut: 'The Academy: first-steps tutorial',
+    hint_modo_opts: 'Every game option, sorted in sub-sections',
+    hint_cat_juego: 'CPU difficulty, adaptive rival, boosted paddle and style',
+    hint_cat_sala: 'Room and table: opens the game room so you SEE the changes',
+    hint_cat_sonido: 'Music, effects, megaphone voice and separate volumes',
+    hint_cat_visual: 'Ball trail, hit haptics and tips',
+    hint_cat_perfil: 'Your name, telemetry and records reset',
+    hint_cat_rendi: 'FPS, per-headset calibration and headset sharpness',
+    hint_cat_pala: 'Paddle placement on the controller, saved grips',
+    hint_diff: 'CPU level in free match (easy · medium · hard)',
+    hint_adapt: 'The CPU raises or lowers its level with the score',
+    hint_pmej: 'Paddle superpowers in power duels',
+    hint_rivstyle: 'Rival personality made visible: aggressive ones step in and celebrate',
+    hint_theme: 'Instantly change the room vibe (floor, walls and lights)',
+    hint_psthru: 'Use your real room as the backdrop (Quest passthrough)',
+    hint_mesa_altoy: 'Point along the rail: the table moves UP and DOWN live (70-84 cm)',
+    hint_mesa_altomen: 'Lower the table by 1 cm',
+    hint_mesa_altomas: 'Raise the table by 1 cm',
+    hint_mesa_skin: 'Table color; 🔒 ones unlock by winning matches',
+    hint_music: 'Menu and championship music on/off',
+    hint_amb: 'Room ambience (crowd and hall) on/off',
+    hint_voz: 'Megaphone voice (score calls) on/off',
+    hint_sndtest: 'Sound test; press twice to repair audio',
+    hint_mvol: 'MUSIC volume: aim at the bar or use − and +',
+    hint_fvol: 'EFFECTS volume (ball, table, net): bar or − and +',
+    hint_mvolset: 'Touch a point on the bar to set the music volume',
+    hint_fvolset: 'Touch a point on the bar to set the effects volume',
+    hint_trail: 'Glowing trail behind the ball on/off',
+    hint_tips: 'First-session tips on/off',
+    hint_hapt: 'Controller vibration on hits on/off',
+    hint_pname: 'Type your name for ranking and multiplayer',
+    hint_tele: 'Anonymous crash and performance telemetry',
+    hint_reset: 'Erases ranking, records, achievements and powers (press twice)',
+    hint_perfAuto: 'The game calibrates itself to hold steady 60 FPS',
+    hint_perfTier: 'Manual quality profile for your headset',
+    hint_perfRecal: 'Measure your headset FPS again and adjust quality',
+    hint_perfFfr: 'Headset sharpness: less foveation = cleaner image at the edges',
+    hint_kofi: 'Support development with a coffee',
+    hint_sala_sala: 'The room vibe: Pabellón, Neón, Sunset and Arctic + passthrough',
+    hint_sala_mesa: 'The table: slide it up/down and recolor it — all live',
     arc_power_clown: 'The Clown goes crazy! Confetti incoming!',
     arc_power_warn: 'SUPER POWER INCOMING! GET READY…',
     // v2.106 · ARKANOID instruction poster (La Locura)
@@ -2236,6 +2374,24 @@ const PP_ICONS = {
     c.fillRect(x + 8, y + 7, 8, 8);                    // ventana
     c.restore();
   },
+  mesa(c, x, y) {           // r96 · mesa de ping pong vista lateral (AJUSTES › MESA)
+    c.save();
+    c.strokeStyle = '#b3f0cc'; c.lineWidth = 6; c.lineCap = 'round';
+    c.beginPath();                                     // tablero
+    c.moveTo(x - 26, y - 2); c.lineTo(x + 26, y - 2); c.stroke();
+    c.lineWidth = 5;
+    c.beginPath();                                     // patas
+    c.moveTo(x - 18, y + 2); c.lineTo(x - 18, y + 24);
+    c.moveTo(x + 18, y + 2); c.lineTo(x + 18, y + 24);
+    c.stroke();
+    c.lineWidth = 4;                                   // red
+    c.beginPath();
+    c.moveTo(x, y - 2); c.lineTo(x, y - 14);
+    c.stroke();
+    c.restore();
+    c.fillStyle = '#ffffff';                           // bola
+    c.beginPath(); c.arc(x + 24, y - 13, 5, 0, Math.PI * 2); c.fill();
+  },
   sonido(c, x, y) {         // altavoz (SONIDO)
     c.save();
     c.fillStyle = '#d8f5a2';
@@ -2750,7 +2906,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.87-SDK6';
+  const VERSION = '3.6.88-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -3759,6 +3915,14 @@ const MESA_ALTOS = [
   { id: 'normal', y: 0.76, nameKey: 'mesa_alto_normal' },
   { id: 'alta', y: 0.84, nameKey: 'mesa_alto_alta' },
 ];
+/* r96 · RANGO CONTINUO del DESLIZADOR de altura (AJUSTES › SALA Y ESCENA ›
+ * MESA): la mesa ya no elige entre 3 presets — un raíl ajusta el tablero
+ * entre Baja (0,70) y Alta (0,84) con PASO FINO de 1 cm y feedback en vivo
+ * (la mesa de la sala de partidos sube y baja al mover el deslizador).
+ * MESA_ALTOS se conserva como extremos/zonas de referencia y para la
+ * compatibilidad (QA y migración del ajuste antiguo pp_mesaalto). */
+const MESA_ALTO_MIN = 0.70;
+const MESA_ALTO_MAX = 0.84;
 const MESA_ASPECTOS = [
   { id: 'azul', top: 0x17539e, edge: 0x0e3a73, lock: null, nameKey: 'mesa_asp_azul' },
   { id: 'verde', top: 0x1c6b47, edge: 0x125033, lock: null, nameKey: 'mesa_asp_verde' },
@@ -13356,6 +13520,10 @@ class ChampLoader {
     }
     this.leaveAll();
     this.activeId = id;
+    // r96 · REGLA DEL DUEÑO: las pieles de la mesa son de PARTIDAS y
+    // ENTRENAMIENTO — el campeonato ARRANCA con su mesa nativa (azul
+    // oficial), sin heredar el tinte que el dueño eligió en AJUSTES.
+    try { if (g._mesaNativo) g._mesaNativo(); } catch (eMN) { /* */ }
     // v3.6.29 · MEJOR DE 3: los duelos de campeonato siguen siendo a UN juego
     // (el mejor de 3 es del partido libre; se reactiva al arrancar cualquier
     // modo libre — menú/B/online). Así el camino calibrado no se altera.
@@ -13579,6 +13747,9 @@ class ChampLoader {
     try { if (m && m.leave) m.leave(); }
     catch (e) { console.warn('[champs] leave', e); }
     this.activeId = '';
+    // r96 · fuera del campeonato vuelve el aspecto de mesa ELEGIDO por el
+    // dueño (partidas/entrenamiento) — tras m.leave(), que restaura lo suyo.
+    try { if (this.game._mesaSkinReapply) this.game._mesaSkinReapply(); } catch (eMR) { /* */ }
   }
 
   /* v2.130 · INTRO DE CAMPEONATO: puentes con el módulo activo — la BSO
@@ -14418,13 +14589,25 @@ class PingPongGame {
     // del dueño. Se aplican AL ARRANCAR (física/IA/escena leen DIMS en
     // vivo) y en cada cambio desde el menú. rivStyleOn: rivales con
     // personalidad visible (colocación + celebraciones).
+    // r96 · la altura pasa a ser CONTINUA (deslizador 0,70–0,84 m): nace del
+    // ajuste fino pp_mesaaltoy si existe y si no del preset antiguo
+    // pp_mesaalto (migración honesta de la r95).
     this.mesaAlto = 'normal';
     this.mesaSkin = 'azul';
+    this.mesaAltoY = DIMS.tableTopY;
     try {
       this.mesaAlto = localStorage.getItem('pp_mesaalto') || 'normal';
       this.mesaSkin = localStorage.getItem('pp_mesaskin') || 'azul';
+      const yLS = parseFloat(localStorage.getItem('pp_mesaaltoy'));
+      if (Number.isFinite(yLS)) this.mesaAltoY = yLS;
+      else {
+        const preset = MESA_ALTOS.find((a) => a.id === this.mesaAlto);
+        if (preset) this.mesaAltoY = preset.y;
+      }
+      this.mesaAltoY = Math.min(MESA_ALTO_MAX, Math.max(MESA_ALTO_MIN, this.mesaAltoY));
     } catch { /* */ }
-    this._mesaAplicar(this.mesaAlto, this.mesaSkin);
+    this._mesaAplicarY(this.mesaAltoY, { persist: false });
+    this._mesaTinte(this._mesaSkinDef(this.mesaSkin));
     this.rivStyleOn = true;
     try { this.rivStyleOn = localStorage.getItem('pp_rivstyle_v1') !== '0'; } catch { /* */ }
 
@@ -16212,6 +16395,7 @@ class PingPongGame {
       this.drawMenuMulti(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16219,6 +16403,7 @@ class PingPongGame {
       this.drawMenuJoin(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16227,6 +16412,7 @@ class PingPongGame {
       this.drawMenuName(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16235,6 +16421,7 @@ class PingPongGame {
       this.drawMenuGripName(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16243,6 +16430,7 @@ class PingPongGame {
       this.drawMenuRank(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16251,6 +16439,7 @@ class PingPongGame {
       this.drawMenuChamps(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16258,6 +16447,7 @@ class PingPongGame {
       this.drawMenuOpts(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16268,6 +16458,7 @@ class PingPongGame {
       this.drawMenuOptsCat(rects, this.menuPage.slice(4).toLowerCase());
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16277,6 +16468,7 @@ class PingPongGame {
       this.drawMenuHallAsk(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16286,6 +16478,7 @@ class PingPongGame {
       window.__PP_TUT.drawAsk(this, c, rects, this._menuBtn, this._menuLabel);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16294,6 +16487,7 @@ class PingPongGame {
       window.__PP_TRAIN.drawHub(this, c, rects, this._menuBtn, this._menuLabel);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16301,6 +16495,7 @@ class PingPongGame {
       window.__PP_TRAIN.drawArea(this, c, rects, this._menuBtn, this._menuLabel);
       this.menuRects = rects;
       this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
       this.menuTex.needsUpdate = true;
       return;
     }
@@ -16317,6 +16512,7 @@ class PingPongGame {
 
     this.menuRects = rects;
     this._menuState = this.rules.state;
+    this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
     this.menuTex.needsUpdate = true;
   }
 
@@ -16470,6 +16666,7 @@ class PingPongGame {
     label(T('hallask_hint'), 940, 22, '#5c6672', 'center');
     this.menuRects = rects;
     this._menuState = this.rules.state;
+    this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
     this.menuTex.needsUpdate = true;
   }
 
@@ -16941,12 +17138,29 @@ class PingPongGame {
         break;
       }
       case 'sala': {
-        // r95 · SALA Y ESCENA en DOS subapartados (petición del dueño):
-        // «SALA» (los cuatro ajustes actuales, futuro: pieles de sala) y
-        // «MESA» (altura + aspecto, 3 opciones por defecto y más a futuro
-        // liberables con recompensas).
-        label(T('sub_sala'), y + 10, 22, '#e9edf2');
-        y += 34;
+        // r96 · SALA Y ESCENA como SUBMENÚS-BOTÓN (petición del dueño):
+        // al entrar en esta categoría el entorno deja el HALL y salta a la
+        // SALA DE PARTIDOS (la mesa a la vista — _salaPreviewUpdate), y los
+        // dos apartados pasan a ser TARJETAS con color e icono que abren
+        // SU página: «SALA» (temas + passthrough) y «MESA» (altura con
+        // deslizador + aspecto). El cambio se ve EN VIVO en la mesa.
+        const CH_CARD = 128;   // misma altura de tarjeta que la página AJUSTES
+        label(T('sala_preview'), y + 8, 20, '#8ce99a');
+        y += 44;
+        this._modeCard(rects, 'page:optsSalaRoom', 40, y, 944, CH_CARD,
+          T('cat_salaroom'), T('sub_sala_sub'), '#1c7ed6', '#145c9e', PP_ICONS.sala);
+        y += CH_CARD + 16;
+        this._modeCard(rects, 'page:optsSalaMesa', 40, y, 944, CH_CARD,
+          T('cat_salamesa'), T('sub_mesa_sub'), '#2f9e44', '#1e7c33', PP_ICONS.mesa);
+        y += CH_CARD + 16;
+        // recordatorio honesto: la mesa es de partidas/entrenamiento
+        label(T('mesa_no_champ') + ' · ' + T('mesa_lock_hint'), y + 6, 16, '#5f6b78');
+        y += 30;
+        break;
+      }
+      case 'salaroom': {
+        // r96 · subpágina SALA: los cuatro temas + passthrough (lo que antes
+        // convivía apretado con la MESA en una sola página).
         const themes = [
           ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
           ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
@@ -16960,19 +17174,57 @@ class PingPongGame {
         btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }),
           !!pstOn, undefined, !!pstOn, 23);
         y += 78;
-        label(T('sub_mesa'), y + 10, 22, '#e9edf2');
-        y += 32;
+        break;
+      }
+      case 'salamesa': {
+        // r96 · subpágina MESA: DESLIZADOR de altura (0,70–0,84 m, paso 1 cm)
+        // con feedback EN VIVO sobre la mesa real + aspecto con recompensas.
         if (this.mesaOcupada()) {
           label(T('mesa_no_champ'), y + 2, 18, '#ffa94d');
-          y += 30;
+          y += 32;
         }
-        label(T('mesa_altura_lbl'), y + 2, 17, '#75828f');
+        label(T('mesa_alto_lbl'), y + 2, 17, '#75828f');
         y += 26;
-        MESA_ALTOS.forEach((a, i) => {
-          btn('mesa_alto:' + a.id, 56 + i * 312, y, 288, 54, T(a.nameKey),
-            this.mesaAlto === a.id, undefined, this.mesaAlto === a.id, 22);
-        });
-        y += 66;
+        // ---- deslizador ----
+        {
+          const ocup = this.mesaOcupada();
+          const y0 = this.mesaAltoY;
+          const frac = (y0 - MESA_ALTO_MIN) / (MESA_ALTO_MAX - MESA_ALTO_MIN);
+          const rx = 176, rw = 656, ry = y;
+          // raíl
+          c.fillStyle = 'rgba(255,255,255,0.14)';
+          c.fillRect(rx, ry + 20, rw, 14);
+          // relleno hasta el valor
+          c.fillStyle = ocup ? 'rgba(255,255,255,0.25)' : '#51cf66';
+          c.fillRect(rx, ry + 20, Math.round(rw * frac), 14);
+          // botón/pomo
+          c.beginPath();
+          c.arc(rx + rw * frac, ry + 27, 15, 0, Math.PI * 2);
+          c.fillStyle = ocup ? '#868e96' : '#ffd257';
+          c.fill();
+          c.strokeStyle = '#10131a'; c.lineWidth = 3; c.stroke();
+          // extremos
+          c.fillStyle = '#75828f';
+          c.font = '700 17px system-ui, sans-serif';
+          c.textAlign = 'left'; c.textBaseline = 'middle';
+          c.fillText(T('mesa_zona_baja'), 56, ry + 27);
+          c.textAlign = 'right';
+          c.fillText(T('mesa_zona_alta'), 968, ry + 27);
+          // valor central
+          c.fillStyle = '#e9edf2';
+          c.font = '800 21px system-ui, sans-serif';
+          c.textAlign = 'center';
+          const cm = Math.round(y0 * 100);
+          const zona = y0 < 0.735 ? T('mesa_zona_baja')
+            : (y0 < 0.80 ? T('mesa_zona_media') : T('mesa_zona_alta'));
+          c.fillText(cm + ' cm · ' + zona, 512, ry + 27);
+          // zonas interactivas: el raíl fija la altura AL PUNTO apuntado
+          if (!ocup) rects.push({ x: rx - 8, y: ry - 6, w: rw + 16, h: 66, id: 'mesa_altoy', slider: true });
+          y += 66;
+          btn('mesa_altomen', 176, y, 148, 52, '−', false, undefined, undefined, 26);
+          btn('mesa_altomas', 684, y, 148, 52, '+', false, undefined, undefined, 26);
+          y += 64;
+        }
         label(T('mesa_aspecto_lbl'), y + 2, 17, '#75828f');
         y += 26;
         MESA_ASPECTOS.forEach((s, i) => {
@@ -17002,34 +17254,44 @@ class PingPongGame {
         y += 76;
         // r95 · VOLUMENES SEPARADOS (petición del dueño): música y efectos
         // con sendas barras −/+ (paso 10%, aplicado EN VIVO y persistente).
-        const barra = (vy, vol, id) => {
-          // pista
+        // r96 · LAYOUT LIMPIO (el dueño: «están mal colocados y se
+        // superponen»): cada volumen tiene SU fila de etiqueta y SU fila de
+        // controles — nada de texto pisando botones — y la barra pasa a ser
+        // CLICABLE (fija el volumen al punto apuntado, como el deslizador
+        // de la mesa).
+        const barra = (vy, vol, idSet) => {
+          const rx = 168, rw = 664;
           c.fillStyle = 'rgba(255,255,255,0.14)';
-          c.fillRect(196, vy + 20, 620, 14);
+          c.fillRect(rx, vy + 19, rw, 14);
           c.fillStyle = vol > 0.001 ? '#ffd257' : 'rgba(255,255,255,0.25)';
-          c.fillRect(196, vy + 20, Math.round(620 * vol), 14);
+          c.fillRect(rx, vy + 19, Math.round(rw * vol), 14);
+          c.beginPath();
+          c.arc(rx + rw * vol, vy + 26, 13, 0, Math.PI * 2);
+          c.fillStyle = '#ffd257'; c.fill();
+          c.strokeStyle = '#10131a'; c.lineWidth = 3; c.stroke();
           c.fillStyle = '#e9edf2';
-          c.font = '700 22px system-ui, sans-serif';
-          c.textAlign = 'center';
-          c.textBaseline = 'middle';
-          c.fillText(Math.round(vol * 100) + '%', 506, vy + 27);
-          rects.push({ x: 196, y: vy, w: 620, h: 54, id });
+          c.font = '800 20px system-ui, sans-serif';
+          c.textAlign = 'center'; c.textBaseline = 'middle';
+          c.fillText(Math.round(vol * 100) + '%', 512, vy + 27);
+          rects.push({ x: rx - 8, y: vy - 4, w: rw + 16, h: 62, id: idSet, slider: true });
         };
-        btn('mvol-', 56, y, 96, 54, '−', false, undefined, undefined, 26);
-        btn('mvol+', 872, y, 96, 54, '+', false, undefined, undefined, 26);
         c.fillStyle = '#9aa7b4';
         c.font = '700 20px system-ui, sans-serif';
         c.textAlign = 'left'; c.textBaseline = 'middle';
-        c.fillText(T('btn_musvol'), 56, y - 3);
-        barra(y, this.audio.musicVol, 'noop');
+        c.fillText(T('btn_musvol'), 56, y + 12);   // etiqueta en SU fila
+        y += 30;
+        btn('mvol-', 56, y, 96, 52, '−', false, undefined, undefined, 26);
+        btn('mvol+', 872, y, 96, 52, '+', false, undefined, undefined, 26);
+        barra(y, this.audio.musicVol, 'mvolset');
         y += 66;
-        btn('fvol-', 56, y, 96, 54, '−', false, undefined, undefined, 26);
-        btn('fvol+', 872, y, 96, 54, '+', false, undefined, undefined, 26);
         c.fillStyle = '#9aa7b4';
         c.font = '700 20px system-ui, sans-serif';
         c.textAlign = 'left'; c.textBaseline = 'middle';
-        c.fillText(T('btn_fxvol'), 56, y - 3);
-        barra(y, this.audio.fxVol, 'noop');
+        c.fillText(T('btn_fxvol'), 56, y + 12);
+        y += 30;
+        btn('fvol-', 56, y, 96, 52, '−', false, undefined, undefined, 26);
+        btn('fvol+', 872, y, 96, 52, '+', false, undefined, undefined, 26);
+        barra(y, this.audio.fxVol, 'fvolset');
         y += 70;
         break;
       }
@@ -17094,6 +17356,22 @@ class PingPongGame {
             pf.presenting ? T('perf_recal') : T('perf_recal_next'),
             false, pf.presenting ? 'gold' : undefined, undefined, 22);
           y += 70;
+          // r96 · NITIDEZ DEL VISOR (FFR): tope manual del dueño — el
+          // gobernador nunca pasará de aquí. Cuatro niveles aplicados EN VIVO.
+          label(T('perf_ffr'), y + 10, 22);
+          y += 34;
+          const ffrBtn = (modo, name2, sz) => btn('perfFfr:' + modo, 56, y, 220, 56, name2,
+            this.perf.ffr === modo, undefined, this.perf.ffr === modo, sz || 21);
+          ffrBtn('max', T('perf_ffr_max'), 20);
+          ffrBtn('alta', T('perf_ffr_alta'));
+          ffrBtn('normal', T('perf_ffr_normal'));
+          ffrBtn('rinde', T('perf_ffr_rinde'));
+          y += 62;
+          btn('perfFfr:def', 56, y, 912, 48,
+            (this.perf.ffr === 'def' ? '✓ ' : '') + T('perf_tier_auto')
+            + ' · ' + T('perf_ffr_v', { v: pf.fovea.toFixed(2) }),
+            this.perf.ffr === 'def', undefined, this.perf.ffr === 'def', 19);
+          y += 62;
         }
         break;
       }
@@ -17162,6 +17440,8 @@ class PingPongGame {
       this.audio.playOsc(990, 660, 0.06, 'sine', 0.1, 0);
       // v2.29: al cerrar el menú la música se apaga con fundido (partido en marcha)
       this.audio.setMusicWanted(false);
+      // r96 · la vista de la SALA Y ESCENA se recoge: de vuelta al Hall
+      this._salaPreviewUpdate();
     }
     // v2.37: la BSO del campeonato se SILENCIA mientras el menú esté abierto
     // y vuelve EXACTAMENTE al volumen que tenía al cerrarse el menú.
@@ -17233,6 +17513,9 @@ class PingPongGame {
    *  apuntado DE CADA MANDO: la pala también puede seleccionar, cada mano
    *  tiene su láser y su hover (v2.16, se mantiene en v2.28). */
   updateMenu(dt) {
+    // r96 · SALA Y ESCENA EN VIVO: entrar/salir de la categoría cambia el
+    // entorno Hall <-> sala de partidos (barato: una comparación por frame)
+    this._salaPreviewUpdate();
     // flotación inicial: el panel acompaña a la cabeza antes de fijarse
     if ((performance.now() / 1000) < (this._menuAnchorUntil || 0)) this.anchorMenu();
 
@@ -17264,6 +17547,10 @@ class PingPongGame {
           // es uv.y=1 ARRIBA (v2.24: nunca se pinta espejado en vertical).
           dot.visible = true;
           dot.position.set((hit.uv.x - 0.5) * 0.72, (hit.uv.y - 0.5) * 1.08, 0.004);
+          // r96 · punto EXACTO del panel (px canvas) por mano: los
+          // deslizadores (mesa, volúmenes) fijan el valor AL PUNTO apuntado.
+          if (!this._menuHitPx) this._menuHitPx = [null, null];
+          this._menuHitPx[h] = { x: px, y: py };
         } else {
           dot.visible = false;
         }
@@ -17294,9 +17581,155 @@ class PingPongGame {
     }
   }
 
-  menuClick(idx) {
+  /** r96 · fracción 0..1 dentro de un control deslizador (raíl de la mesa,
+   *  barras de volumen): usa el punto EXACTO del panel al que apuntaba el
+   *  mando (updateMenu lo guarda por mano). Devuelve null si no hay dato. */
+  _menuSliderFrac(r, hit) {
+    if (!r || !hit) return null;
+    const fx = (hit.x - r.x) / Math.max(1, r.w);
+    return Math.min(1, Math.max(0, fx));
+  }
+
+  /* ======================================================================
+   *  r96 · TOOLTIPS DEL MENÚ (norma general pedida por el dueño: «al
+   *  apuntar a las diferentes opciones de los menús, una breve indicación
+   *  de texto sobre qué hace un determinado ajuste, con el idioma
+   *  escogido»). Se pinta al FINAL de cada página: caja con 1-2 líneas
+   *  encima del botón apuntado (o debajo si está arriba). Si no hay
+   *  hover, no pinta NADA (repintados y QA de píxeles intactos).
+   *  ====================================================================== */
+  _menuTipKey(id) {
+    if (typeof id !== 'string' || !id) return '';
+    // familias por prefijo (controles generados dinámicamente)
+    if (id.indexOf('theme:') === 0) return 'hint_theme';
+    if (id.indexOf('diff:') === 0) return 'hint_diff';
+    if (id.indexOf('mesa_skin:') === 0) return 'hint_mesa_skin';
+    if (id.indexOf('perfTier:') === 0) return 'hint_perfTier';
+    if (id.indexOf('perfFfr:') === 0) return 'hint_perfFfr';
+    if (id.indexOf('gripLoad:') === 0 || id.indexOf('gripDel:') === 0) return 'hint_cat_pala';
+    const EXACT = {
+      'close': 'hint_close', 'kofi': 'hint_kofi',
+      'page:main': 'hint_back', 'page:opts': 'hint_back', 'homehall': 'hint_back',
+      'page:optsJuego': 'hint_cat_juego', 'page:optsSala': 'hint_cat_sala',
+      'page:optsSonido': 'hint_cat_sonido', 'page:optsVisual': 'hint_cat_visual',
+      'page:optsPerfil': 'hint_cat_perfil', 'page:optsRendi': 'hint_cat_rendi',
+      'page:optsPala': 'hint_cat_pala',
+      'page:optsSalaRoom': 'hint_sala_sala', 'page:optsSalaMesa': 'hint_sala_mesa',
+      'start': 'hint_modo_match', 'traingo': 'hint_modo_train',
+      'survgo': 'hint_modo_surv', 'tab:multi': 'hint_modo_multi',
+      'page:champs': 'hint_modo_champs', 'wrl:open': 'hint_modo_rank',
+      'tut:go': 'hint_modo_tut',
+      'adapt': 'hint_adapt', 'pmej': 'hint_pmej', 'rivstyle': 'hint_rivstyle',
+      'psthru': 'hint_psthru',
+      'mesa_altoy': 'hint_mesa_altoy', 'mesa_altomen': 'hint_mesa_altomen',
+      'mesa_altomas': 'hint_mesa_altomas',
+      'music': 'hint_music', 'amb': 'hint_amb', 'voz': 'hint_voz',
+      'sndtest': 'hint_sndtest',
+      'mvol-': 'hint_mvol', 'mvol+': 'hint_mvol',
+      'fvol-': 'hint_fvol', 'fvol+': 'hint_fvol',
+      'mvolset': 'hint_mvolset', 'fvolset': 'hint_fvolset',
+      'trail': 'hint_trail', 'tips': 'hint_tips', 'hapt': 'hint_hapt',
+      'pname': 'hint_pname', 'tele': 'hint_tele', 'reset': 'hint_reset',
+      'perfAuto': 'hint_perfAuto', 'perfRecal': 'hint_perfRecal',
+    };
+    return EXACT[id] || '';
+  }
+  /** pinta el tooltip del control apuntado (se llama al final de cada página). */
+  _menuTipDraw(c, rects) {
+    const hand = this.menuHover.findIndex((v) => v >= 0);   // mano apuntando
+    if (hand < 0) return;
+    const r = rects[this.menuHover[hand]];                  // rect apuntado
+    if (!r) return;
+    const key = this._menuTipKey(r.id);
+    if (!key) return;
+    let txt = '';
+    try { txt = T(key); } catch { return; }
+    if (!txt) return;
+    // envoltura a 2 líneas máx. (900 px de ancho)
+    c.font = '600 20px system-ui, sans-serif';
+    const words = String(txt).split(' ');
+    const lines = [];
+    let lin = '';
+    for (const w of words) {
+      const cand = lin ? lin + ' ' + w : w;
+      if (c.measureText(cand).width > 880 && lin) { lines.push(lin); lin = w; }
+      else lin = cand;
+      if (lines.length === 2) break;
+    }
+    if (lin && lines.length < 2) lines.push(lin);
+    const wBox = Math.min(924, Math.max(...lines.map((l) => c.measureText(l).width)) + 44);
+    const hBox = lines.length * 26 + 20;
+    const cx = Math.min(Math.max(r.x + r.w / 2, wBox / 2 + 12), 1024 - wBox / 2 - 12);
+    // encima del botón; si no cabe, debajo
+    const above = r.y - hBox - 10 > 60;
+    const yBox = above ? r.y - hBox - 10 : r.y + r.h + 10;
+    const rr2 = (x, y, w, h, rad) => {
+      c.beginPath();
+      c.moveTo(x + rad, y);
+      c.arcTo(x + w, y, x + w, y + h, rad);
+      c.arcTo(x + w, y + h, x, y + h, rad);
+      c.arcTo(x, y + h, x, y, rad);
+      c.arcTo(x, y, x + w, y, rad);
+      c.closePath();
+    };
+    rr2(cx - wBox / 2, yBox, wBox, hBox, 12);
+    c.fillStyle = 'rgba(6,8,13,0.97)';
+    c.fill();
+    c.strokeStyle = 'rgba(232,180,90,0.85)';
+    c.lineWidth = 2.5;
+    c.stroke();
+    c.fillStyle = '#ffe9a8';
+    c.font = '600 20px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    lines.forEach((l, i) => c.fillText(l, cx, yBox + 16 + i * 26));
+  }
+
+  /* ======================================================================
+   *  r96 · SALA Y ESCENA EN VIVO (petición del dueño: «al entrar en
+   *  Ajustes › Sala y Escena, el entorno debe cambiar del Hall a la sala
+   *  de partidos donde se verá la mesa… tendremos feedback inmediato»).
+   *  Siendo el Hall la estancia del menú, la categoría (y sus dos
+   *  subpáginas SALA/MESA) oculta el museo y muestra la CANCHA: sala +
+   *  mesa + marcador, con el rig RETROCEDIENDO 1,15 m para que el panel
+   *  no tape la mesa. Al salir de la categoría (o cerrar el menú) todo
+   *  vuelve EXACTO: es un cambio VISUAL — inHall no se toca.
+   *  ====================================================================== */
+  _salaPreviewActivo() {
+    const p = this.menuPage || '';
+    return this.menuOpen && this.inHall && !this.net.online &&
+      (p === 'optsSala' || p === 'optsSalaRoom' || p === 'optsSalaMesa');
+  }
+  _salaPreviewUpdate() {
+    const want = this._salaPreviewActivo();
+    if (want === !!this._salaPreview) return;
+    if (want) {
+      this._salaPreview = true;
+      if (this.hallGroup) this.hallGroup.visible = false;
+      if (this.roomGroup && !(this.inAR && this.pstOn)) this.roomGroup.visible = true;
+      for (const o of this._hallHidden || []) {
+        if (o === this.tableGroup || o === this.scoreboardGroup) o.visible = true;
+      }
+      this.rig.position.set(0, 0, 1.15);   // la mesa entera tras el panel
+    } else if (this.inHall) {
+      this._salaPreview = false;
+      this.rig.position.set(0, 0, HALL.cz + 2.3);
+      for (const o of this._hallHidden || []) o.visible = false;
+      if (this.hallGroup) this.hallGroup.visible = true;
+      if (this.roomGroup) this.roomGroup.visible = false;
+    } else {
+      this._salaPreview = false;   // fuera del hall: sólo soltar el flag
+    }
+    try { this.anchorMenu(); } catch { /* */ }
+  }
+
+  menuClick(idx, hand) {
     const r = this.menuRects[idx];
     if (!r) return;
+    // r96 · la mano que pulsa alimenta los deslizadores (con fallback al
+    // último punto conocido de cualquier mando)
+    const mh = this._menuHitPx || [null, null];
+    this._menuClickPx = mh[hand] || mh[0] || mh[1] || null;
     // r87 · INVITACIÓN DIRECTA (mjsoc:inv:<pid>): el anfitrión con sala
     // abierta convoca a un jugador online de la lista — fetch al buzón del
     // worker; el destinatario lo ve en ≤20 s como tarjeta con UNIRSE.
@@ -17342,7 +17775,8 @@ class PingPongGame {
         if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
             arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi' ||
-            arg === 'optsPala') {   // r83 · séptima categoría: PALA
+            arg === 'optsPala' ||
+            arg === 'optsSalaRoom' || arg === 'optsSalaMesa') {   // r96 · submenús SALA/MESA
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {
@@ -17807,6 +18241,20 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'mvolset':   // r96 · barra CLICABLE: fija el volumen al punto
+      case 'fvolset': {
+        const esMus = ns === 'mvolset';
+        const v = this._menuSliderFrac(r, this._menuClickPx);
+        if (v == null) break;
+        const nuevo = Math.round(v * 10) / 10;
+        if (esMus) this.audio.setMusicVol(nuevo); else this.audio.setFxVol(nuevo);
+        this.rules.message = esMus
+          ? T('msg_musicvol', { v: Math.round(nuevo * 100) })
+          : T('msg_fxvol', { v: Math.round(nuevo * 100) });
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      }
       case 'rivstyle': {
         // r95 · RIVALES CON ESTILO VISIBLE: personalidad del manifest
         // (agresivo/defensivo) en COLOCACIÓN y CELEBRACIONES.
@@ -17818,9 +18266,43 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'mesa_altoy': {
+        // r96 · DESLIZADOR de altura: la mesa se fija AL PUNTO del raíl que
+        // apunta el mando (feedback EN VIVO en la sala de partidos).
+        if (this.mesaOcupada()) {
+          this.rules.message = T('mesa_no_champ');
+          this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          this.drawMenu();
+          break;
+        }
+        const frac = this._menuSliderFrac(r, this._menuClickPx);
+        if (frac != null) {
+          const yN = MESA_ALTO_MIN + (MESA_ALTO_MAX - MESA_ALTO_MIN) * frac;
+          const yAp = this._mesaAplicarY(yN);
+          this.rules.message = T('msg_mesa_altoy', { v: Math.round(yAp * 100) });
+          this.audio.playOsc(600 + yN * 300, 720 + yN * 300, 0.05, 'sine', 0.09, 0);
+        }
+        this.drawMenu();
+        break;
+      }
+      case 'mesa_altomen':   // r96 · paso fino ±1 cm
+      case 'mesa_altomas': {
+        if (this.mesaOcupada()) {
+          this.rules.message = T('mesa_no_champ');
+          this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          this.drawMenu();
+          break;
+        }
+        const paso2 = ns === 'mesa_altomas' ? 0.01 : -0.01;
+        const yAp2 = this._mesaAplicarY(this.mesaAltoY + paso2);
+        this.rules.message = T('msg_mesa_altoy', { v: Math.round(yAp2 * 100) });
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      }
       case 'mesa_alto': {
-        // r95 · ALTURA DE LA MESA (Baja/Normal/Alta): muta DIMS y reacomoda
-        // la mesa viva. Bloqueada con un campeonato activo.
+        // r95 → r96 · compatibilidad: preset por id (QA y caminos antiguos).
+        // El menú ya usa el DESLIZADOR; el preset fija la altura exacta.
         if (this.mesaOcupada()) {
           this.rules.message = T('mesa_no_champ');
           this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
@@ -17829,9 +18311,10 @@ class PingPongGame {
         }
         const alto = MESA_ALTOS.find((a) => a.id === arg);
         if (alto) {
-          try { localStorage.setItem('pp_mesaalto', alto.id); } catch { /* */ }
-          this._mesaAplicar(alto.id, this.mesaSkin);
-          this.rules.message = T('msg_mesa_alto', { v: T(alto.nameKey) });
+          const yAp3 = this._mesaAplicarY(alto.y);
+          this._mesaTinte(this._mesaSkinDef(this.mesaSkin));
+          this.rules.message = T('msg_mesa_alto', { v: T(alto.nameKey) })
+            + ' · ' + Math.round(yAp3 * 100) + ' cm';
           this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
         }
         this.drawMenu();
@@ -17853,7 +18336,7 @@ class PingPongGame {
             this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
           } else {
             try { localStorage.setItem('pp_mesaskin', skin.id); } catch { /* */ }
-            this._mesaAplicar(this.mesaAlto, skin.id);
+            this._mesaTinte(skin);   // r96: la altura NO se toca, sólo el tinte
             this.rules.message = T('msg_mesa_skin', { v: T(skin.nameKey) });
             this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
           }
@@ -18007,6 +18490,18 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'perfFfr': {
+        // r96 · NITIDEZ DEL VISOR (foveado fijo): el dueño notaba una
+        // «deformación» en plena pantalla — el FFR agresivo del gobernador
+        // es el sospechoso. Tope manual: el gobernador nunca supera aquí.
+        if (this.perf) {
+          this.perf.setFfr(arg);
+          this.rules.message = T('msg_perf_ffr', { v: this.perf.ffrLabel() });
+        }
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
       case 'revancha':
         this.closeMenu();
         if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
@@ -18102,12 +18597,16 @@ class PingPongGame {
   }
 
   /* ======================================================================
-   *  r95 · MESA (AJUSTES › SALA Y ESCENA › MESA) — altura + aspecto.
-   *  La altura MUTA DIMS.tableTopY/netTopY (física, IA, saque y escena la
-   *  leen EN VIVO — una sola fuente de verdad) y la mesa viva se reacomoda
-   *  con relayoutMesa() (c07) SIN reconstruir nada. El aspecto tiñe
-   *  ppTableTop + marco. Bloqueada durante un campeonato ACTIVO (la
-   *  ARKANOID sustituye la mesa y Halloween viste la suya).
+   *  r95/r96 · MESA (AJUSTES › SALA Y ESCENA › MESA) — altura + aspecto.
+   *  r96 · La altura es CONTINUA (deslizador 0,70–0,84 m, paso fino de
+   *  1 cm): _mesaAplicarY(y) muta DIMS.tableTopY/netTopY (física, IA, saque
+   *  y escena la leen EN VIVO — una sola fuente de verdad) y la mesa viva
+   *  se reacomoda con relayoutMesa() (c07) SIN reconstruir nada.
+   *  El aspecto tiñe ppTableTop + marco. REGLA NUEVA DEL DUEÑO: el ASPECTO
+   *  es un ajuste de PARTIDAS y ENTRENAMIENTO — NUNCA de campeonatos (en
+   *  La Locura teñía SU mesa). _mesaTinte() cae al AZUL NATIVO cuando hay
+   *  un campeonato activo; champs.launch() restaura el nativo al entrar y
+   *  leaveAll() reaplica el aspecto del dueño al salir.
    *  ====================================================================== */
   mesaOcupada() {
     try { return !!(this.champs && this.champs.active); } catch { return false; }
@@ -18123,24 +18622,67 @@ class PingPongGame {
     if (lock === 'streak5') return T('mesa_lock_streak');
     return '';
   }
-  _mesaAplicar(altoId, skinId) {
-    const alto = MESA_ALTOS.find((a) => a.id === altoId) || MESA_ALTOS[1];
+  /** r96 · definición de aspecto por id (con guard de recompensas). */
+  _mesaSkinDef(skinId) {
     let skin = MESA_ASPECTOS.find((s) => s.id === skinId) || MESA_ASPECTOS[0];
     if (skin.lock && !this._mesaLibre(skin.lock)) skin = MESA_ASPECTOS[0];
-    // 1) ALTURA: muta DIMS y reacomoda la mesa viva (referencias intactas)
-    DIMS.tableTopY = alto.y;
-    DIMS.netTopY = alto.y + MESA_NET_H;
+    return skin;
+  }
+  /** r96 · ALTURA CONTINUA: muta DIMS + reacomoda la mesa viva. opts.persist
+   *  evita el.localStorage en el arranque (aún no hay gesto). */
+  _mesaAplicarY(yNum, opts) {
+    const y = Math.min(MESA_ALTO_MAX, Math.max(MESA_ALTO_MIN, +yNum || MESA_ALTO_MIN));
+    DIMS.tableTopY = y;
+    DIMS.netTopY = y + MESA_NET_H;
     relayoutMesa(this.tableGroup);
-    // 2) ASPECTO: tiñe superficie y marco (el marco comparte material con
-    // las patas — un solo tinte cubre apron + apron2 + patas)
-    if (this.tableGroup) {
-      const top = this.tableGroup.getObjectByName('ppTableTop');
-      if (top && top.material) top.material.color.setHex(skin.top);
-      const apron = this.tableGroup.getObjectByName('ppTableApron');
-      if (apron && apron.material) apron.material.color.setHex(skin.edge);
+    this.mesaAltoY = y;
+    // preset más cercano (compat r95: mesaAlto sigue siendo un id válido)
+    let mejor = MESA_ALTOS[1], dist = Infinity;
+    for (const a of MESA_ALTOS) {
+      const d2 = Math.abs(a.y - y);
+      if (d2 < dist) { dist = d2; mejor = a; }
     }
-    this.mesaAlto = alto.id;
-    this.mesaSkin = skin.id;
+    this.mesaAlto = mejor.id;
+    if (!(opts && opts.persist === false)) {
+      try {
+        localStorage.setItem('pp_mesaaltoy', String(+y.toFixed(3)));
+        localStorage.setItem('pp_mesaalto', mejor.id);
+      } catch { /* */ }
+    }
+    return y;
+  }
+  /** r96 · ASPECTO con REGLA DEL DUEÑO: en campeonato activo el tinte cae
+   *  SIEMPRE al azul nativo (la piel es de partidas y entrenamiento). */
+  _mesaTinte(skin) {
+    const def = (skin && skin.top != null) ? skin : MESA_ASPECTOS[0];
+    const nativo = this.mesaOcupada();
+    const top = nativo ? { top: 0x17539e, edge: 0x0e3a73 } : def;
+    if (this.tableGroup) {
+      const topMesh = this.tableGroup.getObjectByName('ppTableTop');
+      if (topMesh && topMesh.material) topMesh.material.color.setHex(top.top);
+      const apron = this.tableGroup.getObjectByName('ppTableApron');
+      if (apron && apron.material) apron.material.color.setHex(top.edge);
+    }
+    this.mesaSkin = nativo ? 'azul' : def.id;
+  }
+  /** r96 · puente de compatibilidad (QA r95 y llamadas antiguas): id de
+   *  preset + id de aspecto. */
+  _mesaAplicar(altoId, skinId) {
+    const alto = MESA_ALTOS.find((a) => a.id === altoId) || MESA_ALTOS[1];
+    this._mesaAplicarY(alto.y);
+    this._mesaTinte(this._mesaSkinDef(skinId));
+  }
+  /** r96 · el campeonato ARRANCA con su mesa nativa (azul oficial): el
+   *  aspecto del dueño es cosa de partidas y entrenamiento. */
+  _mesaNativo() {
+    this._mesaTinte(MESA_ASPECTOS[0]);
+  }
+  /** r96 · vuelta de campeonato: reaplica el aspecto guardado del dueño
+   *  (sólo si de verdad hay aspecto propio distinto del nativo). */
+  _mesaSkinReapply() {
+    let id = 'azul';
+    try { id = localStorage.getItem('pp_mesaskin') || 'azul'; } catch { /* */ }
+    this._mesaTinte(this._mesaSkinDef(id));
   }
 
   /** r61 · aplica el factor ACTUAL (lerp-eado hacia el objetivo) al
@@ -18429,7 +18971,7 @@ class PingPongGame {
     // el botón que manda. Cubre menú completo Y prompt del Hall (hallask).
     if (this.menuOpen) {
       const hov = this.menuHover[i];
-      if (hov >= 0) this.menuClick(hov);
+      if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
       return;
     }
 
@@ -23740,6 +24282,7 @@ class PingPongGame {
   exitHall() {
     if (!this.inHall) return;
     this.inHall = false;
+    this._salaPreview = false;   // r96: la vista de sala no sobrevive a la cancha
     this.rig.position.set(0, 0, 0);
     for (const o of this._hallHidden || []) o.visible = true;
     this._hallHidden = null;
@@ -24619,10 +25162,19 @@ class PingPongGame {
  *  margen. window.__PP_PERF expone el estado para AJUSTES y QA.
  *  ===================================================================== */
 const PERF_LS = 'ppxr_perf_v1';
+/* r96 · FFR (fixed foveated rendering): el dueño notó una «deformación en
+ * medio de la pantalla» durante una partida de resistencia — el foveado
+ * agresivo (0,7-0,8) dibuja los anillos de compresión bien dentro del
+ * campo de visión. NUEVO control NITIDEZ del dueño (AJUSTES › RENDIMIENTO):
+ * cuatro niveles que CAPAN la fovea del gobernador (nunca pasa de ahí) y
+ * se aplican EN VIVO. 'def' = sin tope del dueño (perfil del casco). */
+const PERF_FFR_MODOS = {
+  max: 0.0, alta: 0.25, normal: 0.5, rinde: 0.75,
+};
 const PERF_TIERS = {
-  quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.50, rate: 90 },
+  quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.35, rate: 90 },
   quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 },
-  gen: { label: 'VR', scale: 1.20, fovea: 0.60, rate: 72 },
+  gen: { label: 'VR', scale: 1.20, fovea: 0.55, rate: 72 },
 };
 class PerfManager {
   constructor(game) {
@@ -24633,6 +25185,7 @@ class PerfManager {
     this.scale = 1.4;             // framebufferScaleFactor (próxima sesión)
     this.fovea = 0.5;             // fixedFoveation VIVO
     this.rate = 90;               // targetFrameRate preferido
+    this.ffr = 'def';             // r96 · tope de nitidez del dueño ('def' = perfil)
     this.fps = 0;                 // media EMA para HUD/AJUSTES
     this.probe = null;            // sonda en curso {round,t,frames,acc,min}
     this.lastCal = null;          // {fps, when, round} última calibración
@@ -24674,17 +25227,44 @@ class PerfManager {
       this.fovea = typeof d.fovea === 'number' ? d.fovea : PERF_TIERS[this.tier].fovea;
       this.rate = typeof d.rate === 'number' ? d.rate : PERF_TIERS[this.tier].rate;
       this.auto = d.auto !== false;
+      this.ffr = PERF_FFR_MODOS[d.ffr] != null ? d.ffr : 'def';
       this.lastCal = d.cal || null;
     } else {
       const t = PERF_TIERS[this.tier];
       this.scale = t.scale; this.fovea = t.fovea; this.rate = t.rate;
+      if (d && PERF_FFR_MODOS[d.ffr] != null) this.ffr = d.ffr;
     }
+    // r96 · el tope del dueño se respeta SIEMPRE al nacer
+    this.fovea = Math.min(this.fovea, this.foveaMax());
+  }
+  /** r96 · techo de fovea: el tope del dueño (FFR) o el techo honesto 0,65
+   *  (antes el gobernador llegaba a 0,8 — anillos de compresión visibles
+   *  en plena vista, la «deformación» que reportó el dueño). */
+  foveaMax() {
+    if (this.ffr !== 'def' && PERF_FFR_MODOS[this.ffr] != null) {
+      return PERF_FFR_MODOS[this.ffr];
+    }
+    return 0.65;
+  }
+  /** r96 · ajusta el tope de nitidez EN VIVO ('max'|'alta'|'normal'|'rinde'|'def'). */
+  setFfr(mode) {
+    if (mode === 'def' || PERF_FFR_MODOS[mode] == null) this.ffr = 'def';
+    else this.ffr = mode;
+    this.fovea = Math.min(this.fovea, this.foveaMax());
+    this.applyLive();
+    this.save();
+  }
+  /** r96 · etiqueta del modo activo para el mensaje del árbitro. */
+  ffrLabel() {
+    return this.ffr === 'def' ? (PERF_TIERS[this.tier].label + ' · ' + T('perf_tier_auto'))
+      : T('perf_ffr_' + this.ffr);
   }
   save() {
     try {
       localStorage.setItem(PERF_LS, JSON.stringify({
         tier: this.tier, auto: this.auto, scale: +this.scale.toFixed(3),
         fovea: +this.fovea.toFixed(3), rate: this.rate, cal: this.lastCal,
+        ffr: this.ffr,
       }));
     } catch (e) { /* almacenamiento ausente */ }
   }
@@ -24753,11 +25333,13 @@ class PerfManager {
       return;
     }
     // escalón de degradación (de más sutil a más fuerte)
-    if (p.round === 0) this.fovea = Math.min(0.8, this.fovea + 0.10);
+    // r96 · el techo del FFR (tope del dueño o 0,65 honesto) manda aquí:
+    // nunca más anillos de compresión en plena vista.
+    if (p.round === 0) this.fovea = Math.min(this.foveaMax(), this.fovea + 0.10);
     else if (p.round === 1) this.rate = this.rate > 62 ? 60 : this.rate;
     else {
       this.scale = Math.max(0.9, this.scale - 0.15);   // próxima sesión
-      this.fovea = Math.min(0.8, this.fovea + 0.05);
+      this.fovea = Math.min(this.foveaMax(), this.fovea + 0.05);
     }
     this.applyLive();
     this.save();
@@ -24823,11 +25405,12 @@ class PerfManager {
 
   /** bajo un escalón: fovea → tasa → escala (próxima sesión) */
   _stepDown() {
-    if (this.fovea < 0.79) this.fovea = Math.min(0.8, this.fovea + 0.08);
+    // r96 · techo del FFR también en el gobernador continuo
+    if (this.fovea < this.foveaMax() - 0.005) this.fovea = Math.min(this.foveaMax(), this.fovea + 0.08);
     else if (this.rate > 62) this.rate = 60;
     else {
       this.scale = Math.max(0.9, this.scale - 0.10);   // ya para la próxima
-      this.fovea = 0.7;
+      this.fovea = this.foveaMax();
     }
     this._coolDown = 15; this._upStreak = 0;
     this.applyLive(); this.save();
@@ -24858,6 +25441,7 @@ class PerfManager {
     return {
       tier: this.tier, tierLabel: PERF_TIERS[this.tier].label, gpu: this.gpu || '',
       auto: this.auto, scale: +this.scale.toFixed(3), fovea: +this.fovea.toFixed(3),
+      ffr: this.ffr,   // r96 · tope de nitidez del dueño
       rate: this.rate, fps: this.fps, calibrating: !!this.probe,
       probeRound: this.probe ? this.probe.round : -1,
       lastCal: this.lastCal, sessionRate: s && s.frameRate ? Math.round(s.frameRate) : 0,
@@ -24868,7 +25452,8 @@ class PerfManager {
     if (!PERF_TIERS[t]) return;
     this.tier = t; this.tierAuto = (t === this._detectTierSilent());
     const d = PERF_TIERS[t];
-    this.scale = d.scale; this.fovea = d.fovea; this.rate = d.rate;
+    this.scale = d.scale; this.rate = d.rate;
+    this.fovea = Math.min(d.fovea, this.foveaMax());   // r96: el tope FFR manda
     this.lastCal = null;
     this.applyToRenderer(); this.save();
   }

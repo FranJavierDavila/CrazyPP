@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r95_v3687.py — capa de QA de la ronda 95 (V3.6.87-SDK6).
+"""qa_r95_v3687.py — capa de QA de la ronda 95 (V3.6.88-SDK6).
 
 Cuatro frentes del dueño, verificados aquí:
  1) SIN CARTEL EN LOS DUELOS (regla de casa): «en todos los campeonatos, en
@@ -115,7 +115,7 @@ for aguja, nombre in [
     ('(this.style ? (this.style.zIdle || 0) * -sign : 0),', 'c06: estilo — colocación de espera'),
     ('_rivStyleCalc() {', 'c12: personalidad del manifest → palancas visibles'),
     ('_mesaAplicar(altoId, skinId) {', 'c12: aplicar altura+aspecto de MESA'),
-    ('DIMS.tableTopY = alto.y;', 'c12: la altura MUTA DIMS (física/IA la leen en vivo)'),
+    ('DIMS.tableTopY = y;', 'c12: la altura MUTA DIMS (física/IA la leen en vivo) — re-anclado a r96: deslizador continuo'),
     ("case 'rivstyle': {", 'c12: conmutador Rivales con estilo visible'),
     ("case 'mesa_alto': {", 'c12: handler de altura de mesa'),
     ("case 'mesa_skin': {", 'c12: handler de aspecto de mesa'),
@@ -298,6 +298,7 @@ with sync_playwright() as pw:
       };
       const sonido = ids('optsSonido');
       const sala = ids('optsSala');
+      const salaMesa = ids('optsSalaMesa');
       const juego = ids('optsJuego');
       // pulsar mvol- (barra de música −10)
       g.menuPage = 'optsSonido'; g.drawMenu();
@@ -306,7 +307,7 @@ with sync_playwright() as pw:
       if (iM >= 0) g.menuClick(iM);
       const despues = g.audio.musicVol;
       g.menuPage = 'opts'; g.drawMenu();
-      return { sonido, sala, juego, antes, despues };
+      return { sonido, sala, salaMesa, juego, antes, despues };
     }""")
     if 'err' in (menu or {}):
         CHK(False, 'menú: %s' % menu.get('err'))
@@ -314,9 +315,10 @@ with sync_playwright() as pw:
         s, sa, j = menu.get('sonido', []), menu.get('sala', []), menu.get('juego', [])
         CHK(all(x in s for x in ['mvol-', 'mvol+', 'fvol-', 'fvol+', 'music', 'sndtest']),
             'menú SONIDO: barras −/+ de música y efectos junto a los de siempre')
-        CHK(all(('mesa_alto:' + x) in sa for x in ['baja', 'normal', 'alta']),
-            'menú SALA/MESA: las tres alturas')
-        CHK(all(('mesa_skin:' + x) in sa for x in ['azul', 'verde', 'neon', 'oro', 'carbon']),
+        CHK(all(x in sa for x in ['page:optsSalaRoom', 'page:optsSalaMesa']),
+            'menú SALA/MESA: submenús-botón (re-anclado a r96: deslizador)')
+        # re-anclado a r96: los aspectos viven en la SUBPÁGINA MESA del hub
+        CHK(all(('mesa_skin:' + x) in (menu.get('salaMesa') or []) for x in ['azul', 'verde', 'neon', 'oro', 'carbon']),
             'menú SALA/MESA: los cinco aspectos (3 libres + 2 con recompensa)')
         CHK('rivstyle' in j, 'menú JUEGO: conmutador Rivales con estilo visible')
         CHK(menu.get('antes') == 1 and menu.get('despues') == 0.9,

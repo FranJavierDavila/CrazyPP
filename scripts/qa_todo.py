@@ -518,6 +518,10 @@ CAPAS = [
     # que muta DIMS + aspecto con recompensas) + RIVALES CON ESTILO
     # (colocación + celebración) + ESTADÍSTICAS AL FINAL DEL DUELO.
     ('r95 · sin cartel en duelos + volúmenes + SALA/MESA + estilo + stats duelo (v3687)', 'qa_r95_v3687.py'),
+    # r96 · SALA Y ESCENA EN VIVO (Hall→cancha), submenús SALA/MESA,
+    # deslizador de altura, tooltips, sonidos limpios, pieles fuera de
+    # campeonatos y NITIDEZ (FFR) con techo del gobernador.
+    ('r96 · sala en vivo + submenús + deslizador + tooltips + pieles de campeonato fuera + FFR (v3688)', 'qa_r96_v3688.py'),
     ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
 ]
 

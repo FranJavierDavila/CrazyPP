@@ -426,6 +426,75 @@ const I18N_STRINGS = {
     btn_rivstyle: 'Rivales con estilo visible: {v}',
     msg_rivstyle: 'Estilo de los rivales: {v}',
     fanf_stats: '⚡ {v} m/s · Rally {r} · Precisión {p}%',
+    // r96 · SALA Y ESCENA: submenús-botón, deslizador de altura, vista en
+    // vivo de la sala de partidos y HINTS al apuntar en el menú
+    cat_salaroom: 'SALA',
+    cat_salamesa: 'MESA',
+    sub_sala_sub: 'Temas de la estancia y passthrough · se ven EN VIVO',
+    sub_mesa_sub: 'Altura y aspecto de la mesa · se ve EN VIVO',
+    sala_preview: 'Sala de partidos · los cambios se aplican en vivo',
+    mesa_alto_lbl: 'Altura de la mesa (deslizador)',
+    mesa_alto_cm: '{v} cm',
+    mesa_zona_baja: 'Baja',
+    mesa_zona_media: 'Media',
+    mesa_zona_alta: 'Alta',
+    msg_mesa_altoy: 'Altura de la mesa: {v} cm',
+    perf_ffr: 'NITIDEZ DEL VISOR (FOVEADO)',
+    perf_ffr_max: 'Máxima',
+    perf_ffr_alta: 'Alta',
+    perf_ffr_normal: 'Normal',
+    perf_ffr_rinde: 'Rinde',
+    perf_ffr_v: 'Nitidez aplicada ahora: fovea {v}',
+    msg_perf_ffr: 'Nitidez del visor: {v} · el gobernador nunca pasará de ahí',
+    // r96 · HINTS DEL MENÚ (tooltips al apuntar): una línea por control
+    hint_close: 'Cierra el menú y vuelve al juego (también el botón B)',
+    hint_back: 'Volver a la página anterior',
+    hint_modo_match: 'Partido libre contra la CPU al mejor de 3 juegos',
+    hint_modo_train: 'Entrenamiento con áreas de tiro, dirección, altura y más',
+    hint_modo_surv: 'Supervivencia: la CPU acelera rallye a rallye, ¿cuánto aguantas?',
+    hint_modo_multi: 'Multijugador online: salas, duelos y el medallón del Pulso',
+    hint_modo_champs: 'Campeonatos: Halloween, Estación Orbital, Oeste, Magia y Locura',
+    hint_modo_rank: 'Ranking mundial por campeonato (top 10)',
+    hint_modo_tut: 'La Academia: tutorial de primeros pasos',
+    hint_modo_opts: 'Todas las opciones del juego en subapartados',
+    hint_cat_juego: 'Dificultad de la CPU, rival adaptativo, pala mejorada y estilo',
+    hint_cat_sala: 'Sala y mesa: se abre la sala de partidos para ver los cambios',
+    hint_cat_sonido: 'Música, efectos, voz del megáfono y volúmenes separados',
+    hint_cat_visual: 'Estela de la bola, haptics al golpear y consejos',
+    hint_cat_perfil: 'Tu nombre, telemetría y reinicio de registros',
+    hint_cat_rendi: 'FPS, calibración por casco y nitidez del visor',
+    hint_cat_pala: 'Colocación de la pala en el mando, agarres guardados',
+    hint_diff: 'Nivel de la CPU en el partido libre (fácil · media · difícil)',
+    hint_adapt: 'La CPU sube o baja su nivel según el marcador',
+    hint_pmej: 'Superpoderes de la pala en los duelos con poderes',
+    hint_rivstyle: 'La personalidad del rival se ve: se acerca si es agresivo y celebra sus puntos',
+    hint_theme: 'Cambia el ambiente de la sala al instante (suelo, paredes y luces)',
+    hint_psthru: 'Usa tu habitación real como fondo (passthrough del Quest)',
+    hint_mesa_altoy: 'Arrastra o apunta al raíl: la mesa sube y baja EN VIVO (70-84 cm)',
+    hint_mesa_altomen: 'Baja la mesa 1 cm',
+    hint_mesa_altomas: 'Sube la mesa 1 cm',
+    hint_mesa_skin: 'Color de la mesa; las con 🔒 se liberan ganando partidos',
+    hint_music: 'Música del menú y de los campeonatos sí/no',
+    hint_amb: 'Ambiente de la sala (público y sala) sí/no',
+    hint_voz: 'Voz del megáfono (marcador y anuncios) sí/no',
+    hint_sndtest: 'Prueba de sonido; dos pulsaciones reparan el audio',
+    hint_mvol: 'Volumen de la MÚSICA: apunta a la barra o usa − y +',
+    hint_fvol: 'Volumen de los EFECTOS (bola, mesa, red): barra o − y +',
+    hint_mvolset: 'Toca un punto de la barra para fijar el volumen de la música',
+    hint_fvolset: 'Toca un punto de la barra para fijar el volumen de los efectos',
+    hint_trail: 'Estela luminosa tras la bola sí/no',
+    hint_tips: 'Consejos de primera sesión sí/no',
+    hint_hapt: 'Vibración del mando al golpear sí/no',
+    hint_pname: 'Escribe tu nombre para el ranking y el multijugador',
+    hint_tele: 'Telemetría anónima de fallos y rendimiento',
+    hint_reset: 'Borra ranking, récords, logros y poderes (dos pulsaciones)',
+    hint_perfAuto: 'El juego se calibra solo para mantener 60 FPS seguros',
+    hint_perfTier: 'Perfil de calidad manual según tu casco',
+    hint_perfRecal: 'Mide de nuevo los FPS de tu casco y ajusta la calidad',
+    hint_perfFfr: 'Nitidez del visor: menos foveado = imagen más limpia en los bordes',
+    hint_kofi: 'Apoya el desarrollo con un café',
+    hint_sala_sala: 'El ambiente de la estancia: Pabellón, Neón, Atardecer y Ártico + passthrough',
+    hint_sala_mesa: 'La mesa: sube y baja con el deslizador y cambia su color — todo en vivo',
     arc_power_clown: '¡El Clown enloquece! ¡Confeti a la vista!',
     arc_power_warn: '¡SUPERPODER ENTRANTE! ¡PREPÁRATE…',
     // v2.106 · cartel explicativo de la prueba ARKANOID (La Locura)
@@ -1147,6 +1216,75 @@ const I18N_STRINGS = {
     btn_rivstyle: 'Visible rival style: {v}',
     msg_rivstyle: 'Rival style: {v}',
     fanf_stats: '⚡ {v} m/s · Rally {r} · Accuracy {p}%',
+    // r96 · SALA Y ESCENA: button submenus, height slider, live game-room
+    // view and HINTS when aiming at menu controls (EN)
+    cat_salaroom: 'ROOM',
+    cat_salamesa: 'TABLE',
+    sub_sala_sub: 'Room themes and passthrough · LIVE preview',
+    sub_mesa_sub: 'Table height and look · LIVE preview',
+    sala_preview: 'Game room · changes apply live',
+    mesa_alto_lbl: 'Table height (slider)',
+    mesa_alto_cm: '{v} cm',
+    mesa_zona_baja: 'Low',
+    mesa_zona_media: 'Mid',
+    mesa_zona_alta: 'High',
+    msg_mesa_altoy: 'Table height: {v} cm',
+    perf_ffr: 'HEADSET SHARPNESS (FOVEATED)',
+    perf_ffr_max: 'Sharpest',
+    perf_ffr_alta: 'High',
+    perf_ffr_normal: 'Normal',
+    perf_ffr_rinde: 'Fast',
+    perf_ffr_v: 'Sharpness applied now: fovea {v}',
+    msg_perf_ffr: 'Headset sharpness: {v} · the governor will never go past it',
+    // r96 · MENU HINTS (aim tooltips): one line per control
+    hint_close: 'Close the menu and go back to the game (B works too)',
+    hint_back: 'Back to the previous page',
+    hint_modo_match: 'Free match vs the CPU, best of 3 games',
+    hint_modo_train: 'Training with aim areas, direction, height and more',
+    hint_modo_surv: 'Survival: the CPU speeds up every rally — how long can you last?',
+    hint_modo_multi: 'Online multiplayer: rooms, duels and the Pulse badge',
+    hint_modo_champs: 'Championships: Halloween, Orbital Station, West, Magic and Madness',
+    hint_modo_rank: 'World ranking per championship (top 10)',
+    hint_modo_tut: 'The Academy: first-steps tutorial',
+    hint_modo_opts: 'Every game option, sorted in sub-sections',
+    hint_cat_juego: 'CPU difficulty, adaptive rival, boosted paddle and style',
+    hint_cat_sala: 'Room and table: opens the game room so you SEE the changes',
+    hint_cat_sonido: 'Music, effects, megaphone voice and separate volumes',
+    hint_cat_visual: 'Ball trail, hit haptics and tips',
+    hint_cat_perfil: 'Your name, telemetry and records reset',
+    hint_cat_rendi: 'FPS, per-headset calibration and headset sharpness',
+    hint_cat_pala: 'Paddle placement on the controller, saved grips',
+    hint_diff: 'CPU level in free match (easy · medium · hard)',
+    hint_adapt: 'The CPU raises or lowers its level with the score',
+    hint_pmej: 'Paddle superpowers in power duels',
+    hint_rivstyle: 'Rival personality made visible: aggressive ones step in and celebrate',
+    hint_theme: 'Instantly change the room vibe (floor, walls and lights)',
+    hint_psthru: 'Use your real room as the backdrop (Quest passthrough)',
+    hint_mesa_altoy: 'Point along the rail: the table moves UP and DOWN live (70-84 cm)',
+    hint_mesa_altomen: 'Lower the table by 1 cm',
+    hint_mesa_altomas: 'Raise the table by 1 cm',
+    hint_mesa_skin: 'Table color; 🔒 ones unlock by winning matches',
+    hint_music: 'Menu and championship music on/off',
+    hint_amb: 'Room ambience (crowd and hall) on/off',
+    hint_voz: 'Megaphone voice (score calls) on/off',
+    hint_sndtest: 'Sound test; press twice to repair audio',
+    hint_mvol: 'MUSIC volume: aim at the bar or use − and +',
+    hint_fvol: 'EFFECTS volume (ball, table, net): bar or − and +',
+    hint_mvolset: 'Touch a point on the bar to set the music volume',
+    hint_fvolset: 'Touch a point on the bar to set the effects volume',
+    hint_trail: 'Glowing trail behind the ball on/off',
+    hint_tips: 'First-session tips on/off',
+    hint_hapt: 'Controller vibration on hits on/off',
+    hint_pname: 'Type your name for ranking and multiplayer',
+    hint_tele: 'Anonymous crash and performance telemetry',
+    hint_reset: 'Erases ranking, records, achievements and powers (press twice)',
+    hint_perfAuto: 'The game calibrates itself to hold steady 60 FPS',
+    hint_perfTier: 'Manual quality profile for your headset',
+    hint_perfRecal: 'Measure your headset FPS again and adjust quality',
+    hint_perfFfr: 'Headset sharpness: less foveation = cleaner image at the edges',
+    hint_kofi: 'Support development with a coffee',
+    hint_sala_sala: 'The room vibe: Pabellón, Neón, Sunset and Arctic + passthrough',
+    hint_sala_mesa: 'The table: slide it up/down and recolor it — all live',
     arc_power_clown: 'The Clown goes crazy! Confetti incoming!',
     arc_power_warn: 'SUPER POWER INCOMING! GET READY…',
     // v2.106 · ARKANOID instruction poster (La Locura)
@@ -1848,6 +1986,24 @@ export const PP_ICONS = {
     c.fillRect(x + 8, y + 7, 8, 8);                    // ventana
     c.restore();
   },
+  mesa(c, x, y) {           // r96 · mesa de ping pong vista lateral (AJUSTES › MESA)
+    c.save();
+    c.strokeStyle = '#b3f0cc'; c.lineWidth = 6; c.lineCap = 'round';
+    c.beginPath();                                     // tablero
+    c.moveTo(x - 26, y - 2); c.lineTo(x + 26, y - 2); c.stroke();
+    c.lineWidth = 5;
+    c.beginPath();                                     // patas
+    c.moveTo(x - 18, y + 2); c.lineTo(x - 18, y + 24);
+    c.moveTo(x + 18, y + 2); c.lineTo(x + 18, y + 24);
+    c.stroke();
+    c.lineWidth = 4;                                   // red
+    c.beginPath();
+    c.moveTo(x, y - 2); c.lineTo(x, y - 14);
+    c.stroke();
+    c.restore();
+    c.fillStyle = '#ffffff';                           // bola
+    c.beginPath(); c.arc(x + 24, y - 13, 5, 0, Math.PI * 2); c.fill();
+  },
   sonido(c, x, y) {         // altavoz (SONIDO)
     c.save();
     c.fillStyle = '#d8f5a2';
@@ -2362,7 +2518,7 @@ export const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.87-SDK6';
+  const VERSION = '3.6.88-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar

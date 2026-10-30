@@ -4,11 +4,11 @@ export default function Descargas() {
   const files = [
     {
       emoji: "☁️",
-      nombre: "Juego + CRAZY TV — V3.6.87-SDK6 (paquete Cloudflare)",
+      nombre: "Juego + CRAZY TV — V3.6.88-SDK6 (paquete Cloudflare)",
       detalle:
         "La web estática pura, lista para arrastrar a Cloudflare Pages sin wrangler: sin TypeScript ni package.json (por eso lo acepta la subida directa). Juego con el SDK v1.x CERRADO (FASE 7: el STANDEE del rival en createRival y los tableros de etapa en createCartel viven en el champ_sdk v1.4.0 — ningún campeonato conserva ya decodeAudioData propio), el CARTEL DE SUPERPODER unificado en createPowerSign (FASE 6) y la MÚSICA unificada en createMusic (FASE 5), con el SDK DE CAMPEONATOS adoptado por los 5 campeonatos (FASE 4, kernel único: SFX, congelado, puente), con los SUPERPODERES REDEFINIDOS (aviso con la partida congelada, meteoritos en 3D, rayo tractor con dron que atrapa la bola, gravedad cero que hace rebotar la bola entre partículas), la voz del ASTRO (risa y enfado), el REACTOR DE IMPULSO en la etapa 2 (dianas visibles 2 s y la pelota que siempre vuelve a la base), el ESCUDO DE PALA en la etapa 4, PRECISIÓN CCD, saque VR realista, hall como hub + tv.html + los 5 campeonatos. El relay de TV va aparte: sácalo del paquete COMPLETO o del mini-zip para Railway/Render.",
       tamano: "125,2 MB · ZIP · Cloudflare Pages",
-      href: "/descargas/crazypp-v3687-sdk6-CLOUDFLARE.zip",
+      href: "/descargas/crazypp-v3688-sdk6-CLOUDFLARE.zip",
       ver: null,
       color: "from-sky-500/20 to-transparent",
       borde: "border-sky-500/40",
@@ -16,11 +16,11 @@ export default function Descargas() {
     },
     {
       emoji: "🧊",
-      nombre: "Juego + CRAZY TV — V3.6.87-SDK6 (paquete completo)",
+      nombre: "Juego + CRAZY TV — V3.6.88-SDK6 (paquete completo)",
       detalle:
-        "La V3.6.87-SDK6 íntegra: la FASE 79 trae el Campeonato de HALLOWEEN (el ZOMBI del dueño con sus 12 poses, su mapa del cementerio y su cartel de normas del artista; el Valle Neón se retira), la dificultad del Reto Diario escalonada por semanas (DAILY_DIF) y EL TALLER UGC (editor de etapas y campeonatos en /ugc) · la FASE 78 DESBLOQUEA DUELOS LOCOS (1 vs 1 online con el marcador de Normal más tres poderes netcode-safe: GIGANTE, FUEGO y LOCA) y cuelga EL PULSO CRAZY en la puerta del Hall (placas con el reto del día y la racha) · la FASE 8 repara la TELEMETRÍA anónima (el lote __PP_TELE viaja como array directo — el receptor de producción rechazaba el wrapper con 400 y los lotes se perdían en silencio desde v2.50 — y el endpoint se enruta por host: desarrollo → receptor local con panel /telemetria; producción → Worker; sin PII, con opt-out) · la FASE 7 CIERRA el SDK v1.x (champ_sdk v1.4.0) — createRival unifica el STANDEE del rival (el ASTRO orbital con su motor «perezoso» y ZETA-7 de Valle Neón con el suyo de «precarga», que además estrena FIX: carga el arte real rival_kraken.png y abandona la silueta gris que pintaba desde su v1) y createCartel unifica los tableros de etapa (la fontanería canvas→textura→plano; el ARTE sigue siendo de cada módulo) — y la música de la Estación Orbital (el ÚLTIMO decodeAudioData propio que quedaba) pasa a createMusic · antes, createPowerSign (champ_sdk v1.3.0) unificó el CARTEL DE SUPERPODER de los 4 campeonatos con duelos — la FASE 6 bajó al SDK el tablón «¡Super Power!!» con sus DOS coreografías exactas (la clásica del Oeste/Mago y la v2.40 de La Locura con su halo que respira) — · la FASE 5 (createMusic v1.2.0) unificó la MÚSICA en bucle (BSO del saloon, vagón y WAV de Valle Neón) con conducta idéntica · sobre la FASE 4, en la que el SDK DE CAMPEONATOS ya lo usan LOS 5 (SFX, congelados y puente en el kernel); adiós del todo a la familia de bugs copiados entre módulos · SUPERPODERES REDEFINIDOS por el dueño — el aviso «Super Power!!» CONGELA la partida de verdad (IA, física, saque y árbitro) hasta que desaparece, como siempre se presupuso · los METEORITOS son pequeñas ROCAS EN 3D procedurales (basalto con vetas de óxido, calor de entrada y tumbling) que estallan al bloquear la bola · el RAYO TRACTOR sale de un mini DRON posado encima del haz y la bola que lo cruza queda ATRAPADA flotando dentro del rayo hasta que desaparece y cae VERTICALMENTE · la GRAVEDAD CERO atrae la bola y la hace rebotar ENTRE las partículas blancas de manera aleatoria hasta que desaparecen y la dejan caer · AUDIOS del ASTRO (mp3 del dueño): risa_astro.mp3 con la pose de risas y enfado_astro.mp3 cuando pierde un punto · el REACTOR DE IMPULSO (etapa 2) conserva sus correcciones: la diana cuántica se ve 2 s (antes 1 s) y la pelota SIEMPRE vuelve a botar sobre la base flotante · más el ESCUDO DE PALA en la etapa 4 (orbes de plasma, drones piratas, Centinela y nave abordadora) · PRECISIÓN CCD SDF, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
+        "La V3.6.88-SDK6 íntegra: la FASE 79 trae el Campeonato de HALLOWEEN (el ZOMBI del dueño con sus 12 poses, su mapa del cementerio y su cartel de normas del artista; el Valle Neón se retira), la dificultad del Reto Diario escalonada por semanas (DAILY_DIF) y EL TALLER UGC (editor de etapas y campeonatos en /ugc) · la FASE 78 DESBLOQUEA DUELOS LOCOS (1 vs 1 online con el marcador de Normal más tres poderes netcode-safe: GIGANTE, FUEGO y LOCA) y cuelga EL PULSO CRAZY en la puerta del Hall (placas con el reto del día y la racha) · la FASE 8 repara la TELEMETRÍA anónima (el lote __PP_TELE viaja como array directo — el receptor de producción rechazaba el wrapper con 400 y los lotes se perdían en silencio desde v2.50 — y el endpoint se enruta por host: desarrollo → receptor local con panel /telemetria; producción → Worker; sin PII, con opt-out) · la FASE 7 CIERRA el SDK v1.x (champ_sdk v1.4.0) — createRival unifica el STANDEE del rival (el ASTRO orbital con su motor «perezoso» y ZETA-7 de Valle Neón con el suyo de «precarga», que además estrena FIX: carga el arte real rival_kraken.png y abandona la silueta gris que pintaba desde su v1) y createCartel unifica los tableros de etapa (la fontanería canvas→textura→plano; el ARTE sigue siendo de cada módulo) — y la música de la Estación Orbital (el ÚLTIMO decodeAudioData propio que quedaba) pasa a createMusic · antes, createPowerSign (champ_sdk v1.3.0) unificó el CARTEL DE SUPERPODER de los 4 campeonatos con duelos — la FASE 6 bajó al SDK el tablón «¡Super Power!!» con sus DOS coreografías exactas (la clásica del Oeste/Mago y la v2.40 de La Locura con su halo que respira) — · la FASE 5 (createMusic v1.2.0) unificó la MÚSICA en bucle (BSO del saloon, vagón y WAV de Valle Neón) con conducta idéntica · sobre la FASE 4, en la que el SDK DE CAMPEONATOS ya lo usan LOS 5 (SFX, congelados y puente en el kernel); adiós del todo a la familia de bugs copiados entre módulos · SUPERPODERES REDEFINIDOS por el dueño — el aviso «Super Power!!» CONGELA la partida de verdad (IA, física, saque y árbitro) hasta que desaparece, como siempre se presupuso · los METEORITOS son pequeñas ROCAS EN 3D procedurales (basalto con vetas de óxido, calor de entrada y tumbling) que estallan al bloquear la bola · el RAYO TRACTOR sale de un mini DRON posado encima del haz y la bola que lo cruza queda ATRAPADA flotando dentro del rayo hasta que desaparece y cae VERTICALMENTE · la GRAVEDAD CERO atrae la bola y la hace rebotar ENTRE las partículas blancas de manera aleatoria hasta que desaparecen y la dejan caer · AUDIOS del ASTRO (mp3 del dueño): risa_astro.mp3 con la pose de risas y enfado_astro.mp3 cuando pierde un punto · el REACTOR DE IMPULSO (etapa 2) conserva sus correcciones: la diana cuántica se ve 2 s (antes 1 s) y la pelota SIEMPRE vuelve a botar sobre la base flotante · más el ESCUDO DE PALA en la etapa 4 (orbes de plasma, drones piratas, Centinela y nave abordadora) · PRECISIÓN CCD SDF, saque VR realista, gracia del saque, bote honesto, prompt B, hall del anfitrión, física viva y palas con carácter. Incluye tv.html, el relay Node (live-service), la guía de despliegue, los 5 campeonatos y los extras Next.js. OJO: lleva extras con TypeScript — para la subida directa de Cloudflare Pages usa el paquete Cloudflare.",
       tamano: "125,2 MB · ZIP · completo",
-      href: "/descargas/crazypp-v3687-sdk6-COMPLETO.zip",
+      href: "/descargas/crazypp-v3688-sdk6-COMPLETO.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -28,11 +28,11 @@ export default function Descargas() {
     },
     {
       emoji: "🪶",
-      nombre: "V3.6.87-SDK6 — versión ligera (sin campeonatos)",
+      nombre: "V3.6.88-SDK6 — versión ligera (sin campeonatos)",
       detalle:
         "El mismo paquete para subir rápido a Netlify Drop: juego con el SDK v1.x cerrado (FASE 7: createRival + createCartel + cero decodeAudioData fuera del SDK), el tablón de superpoder unificado en createPowerSign (FASE 6), la música unificada en createMusic (FASE 5) y el SDK de campeonatos ya adoptado por los 5 (FASE 4), los superpoderes redefinidos, la voz del ASTRO, el Reactor de impulso (etapa 2), el Escudo de pala (etapa 4), la precisión CCD del contacto, saque VR realista, hall como hub, física viva y palas con carácter + tv.html + relay + guía. El juego funciona igual; la carpeta championships/ (con el SDK de campeonatos dentro) queda preparada para copiar del paquete completo (ahí viven la Estación Orbital con sus dos reactores y los 5 campeonatos). Tampoco vale para Cloudflare directo (lleva TypeScript).",
       tamano: "11,5 MB · ZIP · Netlify",
-      href: "/descargas/crazypp-v3687-sdk6-ligera.zip",
+      href: "/descargas/crazypp-v3688-sdk6-ligera.zip",
       ver: null,
       color: "from-rose-500/20 to-transparent",
       borde: "border-rose-500/40",
@@ -68,7 +68,7 @@ export default function Descargas() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
             El paquete actual es la{" "}
-            <strong className="text-amber-300">V3.6.87-SDK6</strong>: la{" "}
+            <strong className="text-amber-300">V3.6.88-SDK6</strong>: la{" "}
             <strong className="text-slate-200">FASE 8</strong> repara el{" "}
             <strong className="text-slate-200">flujo de la telemetría</strong>{" "}
             anónima — el lote de <strong className="text-slate-200">__PP_TELE</strong>{" "}
@@ -202,7 +202,7 @@ export default function Descargas() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-slate-600">
-          Crazy Ping Pong V3.6.87-SDK6 · WebXR · SDK v1.x cerrado ·
+          Crazy Ping Pong V3.6.88-SDK6 · WebXR · SDK v1.x cerrado ·
           createRival · createPowerSign · createMusic · Superpoderes redefinidos ·
           Escudo de pala · Estación Orbital · Precisión CCD · CRAZY TV · Meta
           Quest 3

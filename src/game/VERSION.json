@@ -1,10 +1,10 @@
 {
-  "version": "3.6.87-SDK6",
-  "fase": 89,
-  "faseNombre": "Ajustes del dueño: sin cartel en duelos + volumenes + SALA/MESA + rivales con estilo + stats de duelo",
+  "version": "3.6.88-SDK6",
+  "fase": 90,
+  "faseNombre": "Sala y Escena en vivo: Hall->cancha, submenus SALA/MESA, deslizador de altura, tooltips del menu, sonidos limpios, pieles de mesa fuera de campeonatos, nitidez FFR",
   "sdk": "1.5.4",
   "fecha": "2026-10-30",
-  "hub": "v3687-sdk6",
+  "hub": "v3688-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "tamano": 10469871,
-  "golden": "bdb8a5e69ed1760f067a1fedb8eff8914f37c6f4be1b8d1a680b38d2c634e8a3"
+  "nota": "r95",
+  "tamano": 10530654,
+  "golden": "04e94d38f10026661eeb7a202784cf71c2eb5c3025b2e2e084b5e71cbe75894d"
 }

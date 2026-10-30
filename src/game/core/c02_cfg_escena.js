@@ -258,6 +258,14 @@ export const MESA_ALTOS = [
   { id: 'normal', y: 0.76, nameKey: 'mesa_alto_normal' },
   { id: 'alta', y: 0.84, nameKey: 'mesa_alto_alta' },
 ];
+/* r96 · RANGO CONTINUO del DESLIZADOR de altura (AJUSTES › SALA Y ESCENA ›
+ * MESA): la mesa ya no elige entre 3 presets — un raíl ajusta el tablero
+ * entre Baja (0,70) y Alta (0,84) con PASO FINO de 1 cm y feedback en vivo
+ * (la mesa de la sala de partidos sube y baja al mover el deslizador).
+ * MESA_ALTOS se conserva como extremos/zonas de referencia y para la
+ * compatibilidad (QA y migración del ajuste antiguo pp_mesaalto). */
+export const MESA_ALTO_MIN = 0.70;
+export const MESA_ALTO_MAX = 0.84;
 export const MESA_ASPECTOS = [
   { id: 'azul', top: 0x17539e, edge: 0x0e3a73, lock: null, nameKey: 'mesa_asp_azul' },
   { id: 'verde', top: 0x1c6b47, edge: 0x125033, lock: null, nameKey: 'mesa_asp_verde' },

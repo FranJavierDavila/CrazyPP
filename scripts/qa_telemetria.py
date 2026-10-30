@@ -578,17 +578,21 @@ def bloque_ronda14():
     verify = (RAIZ / 'scripts' / 'verify_pages_live.py').read_text(encoding='utf-8', errors='replace')
     harness = (RAIZ / 'scripts' / 'worker-tele' / 'test_local.mjs').read_text(encoding='utf-8', errors='replace')
 
-    # ── reversión de nitidez: la regla pre-comprometida se aplicó ──
-    # r81 · los valores los gobierna el PERF GOVERNOR (PerfManager): el
-    # perfil quest3 MANTIENE el 1.40×/0.50 de la reversión por datos y el
-    # Quest 2 nace fluido (1.05×/0.65). applyToRenderer() es el único punto.
+    # ── nitidez del visor: r81 la introdujo, r96 la afina por el dueño ──
+    # r96 · la «deformación en medio de la pantalla» del dueño era el FFR
+    # agresivo: Quest 3 nace a 0.35 (la sonda del gobernador sube escalones
+    # SÓLO si el casco no sostiene 60 — el suelo de fluidez NO se toca), el
+    # techo sin tope manual baja de 0,8 a 0,65 y el dueño tiene 4 niveles
+    # de NITIDEZ que el gobernador respeta. applyToRenderer() sigue siendo
+    # el único punto de aplicación.
     chk('this.perf = new PerfManager(this)' in c12, 'c12: el PERF GOVERNOR decide nitidez y foveation (r81)')
     chk('this.perf.applyToRenderer()' in c12, 'c12: applyToRenderer único punto de aplicación')
-    chk("quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.50, rate: 90 }" in c12,
-        'c12: el perfil Quest 3 conserva el 1.40×/0.50 de la reversión (fluidez primero)')
+    chk("quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.35, rate: 90 }" in c12,
+        'c12: el perfil Quest 3 nace NÍTIDO (1.40×/0.35 — r96, anti-FFR)')
     chk("quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 }" in c12,
         'c12: el perfil Quest 2 nace fluido (1.05×/0.65/72 Hz — ≥60 seguros)')
-    chk('REVERSIÓN POR DATOS' in c12, 'c12: comentario documenta la reversión con los datos')
+    chk('return 0.65;' in c12, 'c12: techo del gobernador 0,65 (r96, adiós a la fovea 0,8)')
+    chk('const PERF_FFR_MODOS = {' in c12, 'c12: NITIDEZ (FFR) del dueño en 4 niveles (r96)')
 
     # ── sesionesVR en el worker: fold de ciclos vr_start→pings→vr_end ──
     chk("e IN ('vr_start','vr_end','vr_ping')" in worker, 'worker: consulta de los 3 eventos VR')

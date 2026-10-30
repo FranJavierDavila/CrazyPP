@@ -1,3 +1,2 @@
-# SHA256 del game.html que produjo esta división (3.6.87-SDK6, fase 89 · Ajustes del dueño: sin cartel en duelos + volumenes + SALA/MESA + rivales con estilo + stats de duelo; sello actualizado
-# por bump_version.py desde 3.6.86-SDK6)
-bdb8a5e69ed1760f067a1fedb8eff8914f37c6f4be1b8d1a680b38d2c634e8a3
+# SHA256 del game.html que produjo esta división (3.6.88-SDK6, fase 90 · Sala y Escena en vivo: Hall->cancha, submenus SALA/MESA, deslizador de altura, tooltips del menu, sonidos limpios, pieles de mesa fuera de campeonatos, nitidez FFR; sello actualizado por bump_version)
+04e94d38f10026661eeb7a202784cf71c2eb5c3025b2e2e084b5e71cbe75894d

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r94_v3687.py — capa de QA de la ronda 94 (V3.6.87-SDK6).
+"""qa_r94_v3687.py — capa de QA de la ronda 94 (V3.6.88-SDK6).
 Informe del dueño tras V3.6.85: «cuando jugamos con calabaza en determinados
 momentos se produce un desfase y se ve por un lado la calabaza y por otro la
 bola. No debería pasar, la calabaza debería ocupar el lugar exacto de la bola
@@ -50,8 +50,8 @@ CHK('if (game.ball) game.ball.ppCalabaza = false;' in PLA,
     'módulo: estallido/fin limpian ppCalabaza (contacto IA a la norma)')
 
 GH = open(os.path.join(PUB, 'game.html'), encoding='utf-8', errors='ignore').read()
-CHK(GH.count("const VERSION = '3.6.87-SDK6'") == 1, 'bundle: sello const VERSION 3.6.87-SDK6')
-CHK('>V3.6.87-SDK6<' in GH, 'bundle: badge V3.6.87-SDK6 en el servido')
+CHK(GH.count("const VERSION = '3.6.88-SDK6'") == 1, 'bundle: sello const VERSION 3.6.88-SDK6')
+CHK('>V3.6.88-SDK6<' in GH, 'bundle: badge V3.6.88-SDK6 en el servido')
 CHK('const rise0 = sw.flat ? 0 : 0.05;' in GH, 'bundle: aguja r93 c12 rise0/flat intacta')
 
 # ------------------------------------------------------------- RUNTIME ----

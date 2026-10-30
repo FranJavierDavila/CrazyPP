@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r81_v3673 — CAPA BP · V3.6.72→3.6.87-SDK6, FASE 75 «SESENTA SEGUROS».
+"""qa_r81_v3673 — CAPA BP · V3.6.72→3.6.88-SDK6, FASE 75 «SESENTA SEGUROS».
 
 Petición del dueño (r81): «debemos tener una herramienta para poder calibrar
 los FPS según el modelo de gafas… para unas Oculus 2 las partidas van muy
@@ -73,7 +73,9 @@ def chk(cond, label):
 AGUJAS = [
     # — el PERF GOVERNOR (autocalibrador) —
     ("perfil por casco (tabla PERF_TIERS)", "const PERF_TIERS = {"),
-    ("Quest 3 mantiene el 1.40 de siempre", "quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.50, rate: 90 }"),
+    # r96 · re-ancla: Quest 3 nace NÍTIDO (0,35) — la sonda del gobernador
+    # sube escalones sólo si el casco no sostiene 60; el suelo NO se toca.
+    ("Quest 3 nace nítido (1.40×/0.35 — r96 anti-FFR)", "quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.35, rate: 90 }"),
     ("Quest 2 nace fluido (1.05×)", "quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 }"),
     ("clase PerfManager", "class PerfManager {"),
     ("detección por GPU real (Adreno)", "WEBGL_debug_renderer_info"),
@@ -82,7 +84,8 @@ AGUJAS = [
     ("persistencia por casco", "localStorage.setItem(PERF_LS"),
     ("sonda: rondas de 2,8 s", "p.t >= 2.8"),
     ("sonda: umbral 63 de media y peor segundo 55", "fpsAvg >= 63 && fpsMin >= 55"),
-    ("escalón 1: foveation", "if (p.round === 0) this.fovea = Math.min(0.8, this.fovea + 0.10)"),
+    # r96 · re-ancla: el techo del FFR (foveaMax) manda en los escalones
+    ("escalón 1: foveation con techo del FFR", "if (p.round === 0) this.fovea = Math.min(this.foveaMax(), this.fovea + 0.10)"),
     ("escalón 2: tasa 60 estable", "this.rate = this.rate > 62 ? 60 : this.rate"),
     ("escalón 3: escala próxima sesión", "this.scale = Math.max(0.9, this.scale - 0.15)"),
     ("gobernador: baja si el promedio cae", "const bajando = avg < 56 || (avg < 60 && min < 48)"),
@@ -136,12 +139,12 @@ AGUJAS = [
     ("HIT aplica la bola con copy (no NaN)", "g.ball.pos.copy(p);"),
     ("HANDOFF aplica con copy (no NaN)", "g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado"),
     ("watchdog HELLO generoso (22 s)", "}, 22000);"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.87-SDK6'"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.88-SDK6'"),
 ]
 
 CONTADORES = [
     ("PerfManager (def + new + hook)", "PerfManager", 3),
-    ("PERF_TIERS (def + usos)", "PERF_TIERS", 12),
+    ("PERF_TIERS (def + usos + ffrLabel r96)", "PERF_TIERS", 13),
     ("probeStart (def + llamadas)", "probeStart", 3),
     ("_stepDown (def + llamada)", "_stepDown", 2),
     ("_stepUp (def + llamada)", "_stepUp", 2),
@@ -149,13 +152,13 @@ CONTADORES = [
     ("posFromNetPose (def + 3 usos)", "posFromNetPose", 4),
     ("poseToNetFrame (def + uso)", "poseToNetFrame", 3),
     ("nearest( en el transporte", "this._jb.nearest(", 1),
-    ("optsRendi (tarjeta + whitelist + comentario + animate)", "optsRendi", 4),
-    ("perfRecal (botón + caso)", "perfRecal", 2),
+    ("optsRendi (tarjeta + whitelist + comentario + animate + capa r96)", "optsRendi", 5),
+    ("perfRecal (botón + caso + mapa de tooltips r96)", "perfRecal", 6),
     ("_onIce (def + llamada)", "_onIce", 2),
     ("_iceQ (cola completa)", "_iceQ", 5),
     ("r.rallySeq en el claim", "const rallyId = r.rallySeq", 1),
     ("rallySeq en los intents de punto", "localPoint(g.rules.rallySeq", 1),
-    ("versión única", "const VERSION = '3.6.87-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.88-SDK6'", 1),
 ]
 
 JS_PERF = """async () => {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r71_v3663 — CAPA BF · V3.6.87-SDK6, FASE 65 «EL SERVICIO HONESTO».
+"""qa_r71_v3663 — CAPA BF · V3.6.88-SDK6, FASE 65 «EL SERVICIO HONESTO».
 
 El informe del dueño tras probar V3.6.62 en el Quest, punto por punto:
   1. «Cuando el profesor realiza un saque lo hace mal. Tiene que botar
@@ -140,9 +140,11 @@ AGUJAS = [
 CONTADORES = [
     (r"tableHalfWidth \+ 0\.02", 4, "rectángulo de mesa en los 4 botes (2 jugador + 2 demo)"),
     (r"TY \+ 0\.12", 4, "botes pegados a la superficie (4 vallas)"),
-    (r"PP_ICONS\.(cpu|sala|sonido|visual|perfil)\b", 6, "iconos de categoría en las tarjetas (5 + RENDIMIENTO r81, cpu ×2)"),
-    (r"page:opts(Juego|Sala|Sonido|Visual|Perfil)", 5, "5 tarjetas que abren su subpágina"),
-    (r"cat_(juego|sala|sonido|visual|perfil): '", 10, "claves de categoría definidas (5 ES + 5 EN)"),
+    # r96 · re-ancla: SALA y MESA son SUBMENÚS-BOTÓN (2 tarjetas nuevas con
+    # iconos sala+mesa) — 7 tarjetas de categoría + PALA (r83) + RENDI (r81)
+    (r"PP_ICONS\.(cpu|sala|sonido|visual|perfil|mesa)\b", 8, "iconos de categoría en las tarjetas (7 categorías + hub SALA/MESA r96: cpu ×2, sala ×2, mesa)"),
+    (r"page:opts(Juego|Sala|Sonido|Visual|Perfil)", 14, "7 tarjetas + 7 entradas del mapa de tooltips (r96)"),
+    (r"cat_(juego|sala|sonido|visual|perfil|salaroom|salamesa): '", 24, "claves de categoría definidas (7 ES + 7 EN + sub-rótulos ES/EN)"),
     (r"saqBote1 = false; saqBote2 = false", 5, "resets del saque intactos (r70)"),
     (r"bolaPalmDemo\(\)", 6, "palma usada por posaBolaDemo/estado"),
 ]
@@ -410,8 +412,13 @@ MENU = """async () => {
              lab: 'cambiar la CPU a MEDIO desde AJUSTES › JUEGO funciona' });
 
   // ---------- 4 · las otras subpáginas dibujan SUS controles ----------
+  // r96 · re-ancla: los temas viven en la SUBPÁGINA SALA del hub
   g.menuPage = 'optsSala'; g.drawMenu();
   let s = ids();
+  out.push({ ok: s.includes('page:optsSalaRoom') && s.includes('page:optsSalaMesa'),
+             lab: 'SALA Y ESCENA: hub con los DOS submenús-botón (r96)' });
+  g.menuPage = 'optsSalaRoom'; g.drawMenu();
+  s = ids();
   out.push({ ok: ['theme:pabellon', 'theme:neon', 'theme:atardecer', 'theme:artico']
       .every((t) => s.includes(t)) && s.includes('psthru'),
              lab: 'SALA: las 4 salas + passthrough en su subpágina' });
@@ -479,7 +486,7 @@ CARTEL = """async () => {
 async def main():
     global ok, fails
     print("=" * 74)
-    print("qa_r71_v3663 — CAPA BF · V3.6.87-SDK6 FASE 65 «EL SERVICIO HONESTO»")
+    print("qa_r71_v3663 — CAPA BF · V3.6.88-SDK6 FASE 65 «EL SERVICIO HONESTO»")
     print("=" * 74)
 
     print("\n[1] AGUJAS de fuente r71")

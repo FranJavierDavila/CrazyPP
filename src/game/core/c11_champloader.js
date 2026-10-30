@@ -328,6 +328,10 @@ export class ChampLoader {
     }
     this.leaveAll();
     this.activeId = id;
+    // r96 · REGLA DEL DUEÑO: las pieles de la mesa son de PARTIDAS y
+    // ENTRENAMIENTO — el campeonato ARRANCA con su mesa nativa (azul
+    // oficial), sin heredar el tinte que el dueño eligió en AJUSTES.
+    try { if (g._mesaNativo) g._mesaNativo(); } catch (eMN) { /* */ }
     // v3.6.29 · MEJOR DE 3: los duelos de campeonato siguen siendo a UN juego
     // (el mejor de 3 es del partido libre; se reactiva al arrancar cualquier
     // modo libre — menú/B/online). Así el camino calibrado no se altera.
@@ -551,6 +555,9 @@ export class ChampLoader {
     try { if (m && m.leave) m.leave(); }
     catch (e) { console.warn('[champs] leave', e); }
     this.activeId = '';
+    // r96 · fuera del campeonato vuelve el aspecto de mesa ELEGIDO por el
+    // dueño (partidas/entrenamiento) — tras m.leave(), que restaura lo suyo.
+    try { if (this.game._mesaSkinReapply) this.game._mesaSkinReapply(); } catch (eMR) { /* */ }
   }
 
   /* v2.130 · INTRO DE CAMPEONATO: puentes con el módulo activo — la BSO

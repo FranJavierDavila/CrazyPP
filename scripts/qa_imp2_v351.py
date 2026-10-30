@@ -52,9 +52,9 @@ async def main():
         print('== PORTADA (dev :3000) ==')
         await page.goto(BASE + '/game.html', wait_until='networkidle')
         ver = await page.evaluate("window.__PP_VERSION || ''")
-        chk(ver == '3.6.86-SDK6', f'__PP_VERSION = {ver!r}')
+        chk(ver == '3.6.87-SDK6', f'__PP_VERSION = {ver!r}')
         badge = await page.inner_text('#verBadge') if await page.locator('#verBadge').count() else ''
-        chk('V3.6.86-SDK6' in badge, f'badge 2D = {badge!r}')
+        chk('V3.6.87-SDK6' in badge, f'badge 2D = {badge!r}')
         chk(await page.evaluate("!!window.__PP_CCD_LAB"), 'CCD lab intacto (CCD1)')
         chk(await page.evaluate("!!window.__PP_SERVE_LAB"), 'SERVE lab intacto (SRV2)')
         chk(await page.evaluate("typeof window.__PP_PADDLE_SWEEP === 'function'"),

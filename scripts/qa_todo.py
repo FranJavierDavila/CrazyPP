@@ -513,6 +513,11 @@ CAPAS = [
     # núcleo), posición EXACTA (copia la bola renderizada), nacimiento en
     # sitio y guard ppCalabaza (r92 no caduca).
     ('r94 · calabaza = lugar exacto de la bola, bola oculta mientras viva (v3686)', 'qa_r94_v3686.py'),
+    # r95 · SIN CARTEL EN LOS DUELOS (regla de casa: sólo etapas de
+    # habilidad) + VOLÚMENES SEPARADOS música/efectos + SALA/MESA (altura
+    # que muta DIMS + aspecto con recompensas) + RIVALES CON ESTILO
+    # (colocación + celebración) + ESTADÍSTICAS AL FINAL DEL DUELO.
+    ('r95 · sin cartel en duelos + volúmenes + SALA/MESA + estilo + stats duelo (v3687)', 'qa_r95_v3687.py'),
     ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
 ]
 

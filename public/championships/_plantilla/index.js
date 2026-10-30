@@ -1006,7 +1006,10 @@ class PlantillaController {
     this.game.rules.oppLabel = (this.man.rival && this.man.rival.oppLabel) || 'rival';
     this.game.rules.startMatch(this.camino.duelo && this.camino.duelo.modo || 'match');
     if (cfg.primer != null && this.poderes) this.poderes.cd = cfg.primer;
-    try { this.game.showInstrucciones(tx('duelo_vs', { n: this.dueloN }), [], 4.0, () => {}, this.man.id, { empezar: true }); } catch (e) {}
+    /* r95 · REGLA DE CASA (petición del dueño): en las fases de DUELO con el
+     * rival NO hay cartel — sólo en las etapas de HABILIDAD. El aviso vive
+     * en la línea del marcador y el duelo arranca al saque. */
+    this.game.rules.message = tx('duelo_vs', { n: this.dueloN });
   }
   _startPrueba(idx, esReplay) {
     const st = this.etapas()[idx];

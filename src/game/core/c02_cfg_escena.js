@@ -245,6 +245,30 @@ export const COLORS = {
 };
 
 /* =====================================================================
+ *  r95 · MESA (AJUSTES › SALA Y ESCENA › MESA) — altura y aspecto.
+ *  La altura MUTA DIMS.tableTopY/netTopY (una sola fuente de verdad:
+ *  física, IA, saque y escena la leen EN VIVO) y la mesa viva se
+ *  reacomoda con relayoutMesa() (c07). El aspecto tiñe ppTableTop y el
+ *  marco (ppTableApron/ppTableLeg comparten material). 3 opciones por
+ *  defecto + 2 bloqueadas que se liberan con RECOMPENSAS (victorias y
+ *  racha del Hall — ver _mesaLibre en el juego).
+ * ===================================================================== */
+export const MESA_ALTOS = [
+  { id: 'baja', y: 0.70, nameKey: 'mesa_alto_baja' },
+  { id: 'normal', y: 0.76, nameKey: 'mesa_alto_normal' },
+  { id: 'alta', y: 0.84, nameKey: 'mesa_alto_alta' },
+];
+export const MESA_ASPECTOS = [
+  { id: 'azul', top: 0x17539e, edge: 0x0e3a73, lock: null, nameKey: 'mesa_asp_azul' },
+  { id: 'verde', top: 0x1c6b47, edge: 0x125033, lock: null, nameKey: 'mesa_asp_verde' },
+  { id: 'neon', top: 0x8a2be2, edge: 0x5b1c9e, lock: null, nameKey: 'mesa_asp_neon' },
+  { id: 'oro', top: 0xc9932f, edge: 0x8f6a1e, lock: 'wins10', nameKey: 'mesa_asp_oro' },
+  { id: 'carbon', top: 0x171a20, edge: 0x0d0f13, lock: 'streak5', nameKey: 'mesa_asp_carbon' },
+];
+/** Altura de red REGLAMENTARIA sobre la mesa (15,25 cm — ITTF). */
+export const MESA_NET_H = 0.1525;
+
+/* =====================================================================
  *  TEMAS DE SALA (v2.14): ambientes visuales intercambiables al vuelo.
  *  Cada tema redefine suelo/paredes/techo/paneles de luz/tira LED/rejilla,
  *  las tres luces de la escena, el fondo y la niebla. La mesa, las vallas

@@ -1025,8 +1025,8 @@ export function createFanfareBanner() {
     img.src = url;
   };
 
-  function draw(win, pScore, aScore) {
-    lastArgs = [win, pScore, aScore];
+  function draw(win, pScore, aScore, stats) {
+    lastArgs = [win, pScore, aScore, stats];
     const lang = (typeof TLang === 'function') ? TLang() : 'es';
     const key = win ? 'win' : 'lose';
     ensurePoster(lang, key);
@@ -1072,6 +1072,33 @@ export function createFanfareBanner() {
     ctx.fillStyle = '#ffffff';
     ctx.fillText(txt, cx, cy + 2);
     ctx.textBaseline = 'alphabetic';
+
+    // r95 · ESTADÍSTICAS DEL DUELO (petición del dueño: «al final de cada
+    // duelo: velocidad máx. de bola, rally más largo, % precisión») — chip
+    // delgado ENCIMA del marcador, mismo lenguaje visual. Con guard: si no
+    // llegan stats (repintados viejos) no se pinta nada.
+    if (stats && (stats.vmax > 0 || stats.rally > 0 || stats.prec > 0)) {
+      const stTxt = T('fanf_stats', {
+        v: (Math.round((stats.vmax || 0) * 10) / 10).toFixed(1),
+        r: stats.rally || 0,
+        p: stats.prec || 0,
+      });
+      ctx.font = '700 34px system-ui, sans-serif';
+      const sw = ctx.measureText(stTxt).width;
+      const scw = sw + 48, sch = 56;
+      const scy = cy - ch / 2 - 44;
+      ctx.fillStyle = 'rgba(8,12,20,0.72)';
+      ctx.strokeStyle = win ? 'rgba(232,180,90,0.75)' : 'rgba(150,165,180,0.55)';
+      ctx.lineWidth = 4;
+      roundRectPath(ctx, cx - scw / 2, scy - sch / 2, scw, sch, 28);
+      ctx.fill();
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#e9edf2';
+      ctx.fillText(stTxt, cx, scy + 1);
+      ctx.textBaseline = 'alphabetic';
+    }
 
     tex.needsUpdate = true;
   }

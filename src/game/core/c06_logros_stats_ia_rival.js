@@ -204,6 +204,12 @@ export class Rules {
     this.gamesAi = 0;
     this.gameNo = 1;
     this.firstServer = 'player';
+    // r95 · ESTADÍSTICAS DEL PARTIDO (petición del dueño: «estadísticas al
+    // final de cada duelo»: velocidad máx. de bola, rally más largo y %
+    // precisión). Se RESETTAN en cada partida nueva y las alimenta el
+    // núcleo en vivo (vmax en animate, rally en el punto); la fanfarria
+    // las muestra al terminar. El % precisión sale del marcador final.
+    this.mStats = { vmax: 0, bestRally: 0 };
     this.resetGame();
     this.message = this.mode === 'survival'
       ? T('surv_start')
@@ -517,6 +523,12 @@ export class OpponentAI {
     // Se sortea al APARECER la bola (con la posición del cuerpo aún lejos del
     // punto de contacto) y se mantiene durante todo el rallye de esa bola.
     this.fhSide = 1;
+    // r95 · RIVALES CON ESTILO VISIBLE (petición del dueño): la personalidad
+    // del manifest (agresivo/defensivo) SE NOTA en la COLOCACIÓN y en las
+    // CELEBRACIONES. El juego inyecta { zIdle, bias, celeb } aquí; cero =
+    // comportamiento clásico byte-idéntico (toggle AJUSTES › JUEGO).
+    this.style = null;
+    this.celebT = 0;   // celebración en curso (segundos que quedan)
   }
 
   setConfig(cfg) { this.cfg = cfg; }
@@ -531,6 +543,7 @@ export class OpponentAI {
 
   update(dt, ball, ctx) {
     this.hitCooldown -= dt;
+    if (this.celebT > 0) this.celebT -= dt;   // r95: celebración con estilo
     if (this.swing) {
       this.swing.t += dt;
       if (this.swing.t > this.swing.dur) this.swing = null;
@@ -625,6 +638,10 @@ export class OpponentAI {
     } else if (this.predictValid) {
       const baseline = C + sign * DIMS.tableHalfLength;
       let inDist = (this.predict.z - baseline) * -sign;
+      // r95 · ESTILO VISIBLE: el agresivo se ADELANTA al golpe (juega más
+      // cerca de la mesa), el defensivo espera más atrás. bias en metros,
+      // simétrico para los dos lados (inDist es normalizada por sign).
+      inDist -= (this.style ? (this.style.bias || 0) : 0);
       inDist = THREE.MathUtils.clamp(inDist, -0.45, DIMS.tableHalfLength + 0.15);
       const zClamp = baseline + inDist * -sign;
       let yClamp = THREE.MathUtils.clamp(this.predict.y + this.errY, 0.55, 1.55);
@@ -638,10 +655,13 @@ export class OpponentAI {
         zClamp,
       );
     } else {
+      // r95 · ESTILO VISIBLE · COLOCACIÓN: el agresivo espera MÁS CERCA de
+      // la mesa (zIdle positivo hacia la red), el defensivo más atrás.
       tmpT.set(
         this.home.x + ball.pos.x * 0.3,
         this.home.y,
-        this.home.z + (toward ? -sign * 0.2 : 0),
+        this.home.z + (toward ? -sign * 0.2 : 0) +
+          (this.style ? (this.style.zIdle || 0) * -sign : 0),
       );
     }
 

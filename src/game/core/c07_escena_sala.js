@@ -109,6 +109,7 @@ export function createTable() {
   const mkLine = (w, d, x, z) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, lineH, d), lineMat);
     m.position.set(x, topY + lineH / 2 - 0.0005, DIMS.tableCenterZ + z);
+    m.name = 'ppTableLine';   // r95: relayoutMesa() las reacomoda al cambiar la altura
     g.add(m);
   };
   mkLine(W, 0.02, 0, -DIMS.tableHalfLength + 0.01);
@@ -134,6 +135,7 @@ export function createTable() {
       leg.position.set(lx, (topY - DIMS.tableThickness) / 2, DIMS.tableCenterZ + lz);
       leg.castShadow = true;
       leg.name = 'ppTableLeg';    // v2.87
+      leg.userData.h = topY - DIMS.tableThickness;   // r95: escala honesta en relayoutMesa
       g.add(leg);
     }
   }
@@ -163,6 +165,7 @@ export function createTable() {
     new THREE.MeshBasicMaterial({ map: netTex, transparent: true, side: THREE.DoubleSide, alphaTest: 0.05 }),
   );
   netMesh.position.set(0, topY + (DIMS.netTopY - topY) / 2, DIMS.tableCenterZ);
+  netMesh.name = 'ppTableNet';   // r95: relayoutMesa()
   g.add(netMesh);
 
   const band = new THREE.Mesh(
@@ -170,6 +173,7 @@ export function createTable() {
     new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 }),
   );
   band.position.set(0, DIMS.netTopY, DIMS.tableCenterZ);
+  band.name = 'ppTableBand';   // r95: relayoutMesa()
   g.add(band);
 
   const postMat = new THREE.MeshStandardMaterial({ color: 0x30343a, roughness: 0.4, metalness: 0.6 });
@@ -179,10 +183,48 @@ export function createTable() {
       postMat,
     );
     post.position.set(px, topY + (DIMS.netTopY - topY) / 2, DIMS.tableCenterZ);
+    post.name = 'ppTablePost';   // r95: relayoutMesa()
     g.add(post);
   }
 
   return g;
+}
+
+/* =====================================================================
+ *  r95 · RELAYOUT DE LA MESA VIVA (AJUSTES › MESA › altura)
+ *  La altura elegida MUTA DIMS.tableTopY/netTopY (física, IA y saque la
+ *  leen en vivo — una sola fuente de verdad) y ESTA función reacomoda la
+ *  mesa ya montada SIN reconstruirla: sólo POSICIONES y la ESCALA de las
+ *  patas. Cero dispose — las referencias del núcleo y de los campeonatos
+ *  (ppTableTop de la mesa.webp de Halloween, _netParts, arkanoide...)
+ *  siguen siendo el MISMO objeto. La red mantiene su altura regla-
+ *  mentaria (15,25 cm) sobre la nueva superficie.
+ * ===================================================================== */
+export function relayoutMesa(group) {
+  if (!group) return;
+  const topY = DIMS.tableTopY;
+  const th = DIMS.tableThickness;
+  const netH = (DIMS.netTopY != null) ? (DIMS.netTopY - topY) : 0.1525;
+  const top = group.getObjectByName('ppTableTop');
+  if (top) top.position.y = topY - th / 2;
+  for (const m of group.children) {
+    if (m.name === 'ppTableLine') {
+      m.position.y = topY + 0.002 / 2 - 0.0005;
+    } else if (m.name === 'ppTableApron') {
+      m.position.y = topY - th - 0.06;
+    } else if (m.name === 'ppTableLeg') {
+      const h0 = m.userData && m.userData.h ? m.userData.h : (topY - th);
+      const h1 = topY - th;
+      m.scale.y = h1 / h0;
+      m.position.y = h1 / 2;
+    } else if (m.name === 'ppTableNet') {
+      m.position.y = topY + netH / 2;
+    } else if (m.name === 'ppTableBand') {
+      m.position.y = topY + netH;
+    } else if (m.name === 'ppTablePost') {
+      m.position.y = topY + netH / 2;
+    }
+  }
 }
 
 export function createBall() {

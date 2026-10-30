@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r93_v3685.py — capa de QA de la ronda 93 (V3.6.86-SDK6).
+"""qa_r93_v3685.py — capa de QA de la ronda 93 (V3.6.87-SDK6).
 Informe del dueño tras V3.6.84: «sustituimos la melodía por "melodia.mp3"
 del campeonato por la que adjunto · en el super poder de la calabaza existe
 un desfase de la bola cuando la golpea el rival que está desfasada, en
@@ -121,8 +121,8 @@ except ImportError:
 
 # sellos del bundle recién construido
 GH = open(os.path.join(PUB, 'game.html'), encoding='utf-8', errors='ignore').read()
-CHK(GH.count("const VERSION = '3.6.86-SDK6'") == 1, 'bundle: sello const VERSION 3.6.86-SDK6')
-CHK('>V3.6.86-SDK6<' in GH, 'bundle: badge V3.6.86-SDK6 en el servido')
+CHK(GH.count("const VERSION = '3.6.87-SDK6'") == 1, 'bundle: sello const VERSION 3.6.87-SDK6')
+CHK('>V3.6.87-SDK6<' in GH, 'bundle: badge V3.6.87-SDK6 en el servido')
 CHK('const rise0 = sw.flat ? 0 : 0.05;' in GH, 'bundle: aguja c12 rise0/flat en el servido')
 CHK('contact: toca ? new THREE.Vector3(toca.x, toca.y, toca.z)' in GH,
     'bundle: aguja c06 tangente-para-el-swing en el servido')

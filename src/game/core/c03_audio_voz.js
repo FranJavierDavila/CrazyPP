@@ -187,6 +187,20 @@ export class GameAudio {
       if (Number.isFinite(v)) this.arcVol = Math.min(1, Math.max(0, v));
       this.arcMute = localStorage.getItem('pp_arcade_mute') === '1';
     } catch { /* */ }
+    // r95 · VOLÚMENES SEPARADOS (petición del dueño: «incorporar Volumen
+    // separado música/efectos en AJUSTES»): dos canales PERSISTENTES e
+    // independientes. musicVol escala la música del menú Y la BSO de los
+    // campeonatos; fxVol escala el BUS de efectos (golpes, botes, canto,
+    // red, suelo, rival, UI, fanfarria). La voz del megáfono y el ambiente
+    // conservan SUS canales propios (no son ni música ni efectos).
+    this.musicVol = 1;
+    this.fxVol = 1;
+    try {
+      const mv = parseFloat(localStorage.getItem('pp_musicvol'));
+      if (Number.isFinite(mv)) this.musicVol = Math.min(1, Math.max(0, mv));
+      const fv = parseFloat(localStorage.getItem('pp_fxvol'));
+      if (Number.isFinite(fv)) this.fxVol = Math.min(1, Math.max(0, fv));
+    } catch { /* */ }
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
@@ -236,6 +250,12 @@ export class GameAudio {
     this.ambBus = ctx.createGain();
     this.ambBus.gain.value = 1;
     this.ambBus.connect(this.master);
+    // r95 · BUS de EFECTOS: todo lo que sale por panNode (playOsc/playNoise,
+    // muestras reales, rival, fanfarria) pasa por aquí — el canal de volumen
+    // «efectos» del menú lo escala EN VIVO sin tocar voz ni ambiente.
+    this.fxBus = ctx.createGain();
+    this.fxBus.gain.value = Math.max(0.0001, this.fxVol);
+    this.fxBus.connect(this.master);
     const len = Math.floor(ctx.sampleRate * 0.25);
     this.noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = this.noiseBuffer.getChannelData(0);
@@ -307,6 +327,59 @@ export class GameAudio {
     else if (this.musicWanted) this.startMusic();
   }
 
+  /* ---------- r95 · VOLÚMENES SEPARADOS MÚSICA / EFECTOS ----------
+   * Dos canales persistentes (pp_musicvol / pp_fxvol, 0..1) que el menú
+   * AJUSTES › SONIDOS gobierna con sendas barras −/+. Aplicación EN VIVO:
+   * la música del menú y la BSO del campeonato re-escalan su ganancia al
+   * instante; el bus de efectos (fxBus) lo mismo. Cero toques a voz y
+   * ambiente (canales propios con conmutador propio desde v2.x). */
+
+  /** Volumen de la MÚSICA (menú + BSO de campeonatos). 0..1, persistente. */
+  setMusicVol(v) {
+    v = Math.min(1, Math.max(0, Number.isFinite(v) ? v : 1));
+    this.musicVol = v;
+    try { localStorage.setItem('pp_musicvol', String(v)); } catch { /* */ }
+    try {
+      if (this.ctx && this._musicGain && this.musicPlaying) {
+        const t = this.ctx.currentTime;
+        this._musicGain.gain.cancelScheduledValues(t);
+        this._musicGain.gain.setValueAtTime(
+          Math.max(0.0001, this._musicGain.gain.value || 0.0001), t);
+        this._musicGain.gain.linearRampToValueAtTime(
+          Math.max(0.0001, 0.26 * v), t + 0.15);
+      }
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
+    try {
+      // BSO del campeonato (canal del NÚCLEO): mismo criterio que
+      // startArcadeMusic — mute/duck mandan, musicVol escala.
+      if (this.ctx && this._arcGain && this.arcPlaying) {
+        const t = this.ctx.currentTime;
+        const vol = Math.max(0.0001,
+          (this.arcMute || this._arcDucked) ? 0.0001 : this.arcVol * v);
+        this._arcGain.gain.cancelScheduledValues(t);
+        this._arcGain.gain.setValueAtTime(
+          Math.max(0.0001, this._arcGain.gain.value || 0.0001), t);
+        this._arcGain.gain.linearRampToValueAtTime(vol, t + 0.15);
+      }
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
+  }
+
+  /** Volumen de los EFECTOS (bus de SFX completo). 0..1, persistente. */
+  setFxVol(v) {
+    v = Math.min(1, Math.max(0, Number.isFinite(v) ? v : 1));
+    this.fxVol = v;
+    try { localStorage.setItem('pp_fxvol', String(v)); } catch { /* */ }
+    try {
+      if (this.ctx && this.fxBus) {
+        const t = this.ctx.currentTime;
+        this.fxBus.gain.cancelScheduledValues(t);
+        this.fxBus.gain.setValueAtTime(
+          Math.max(0.0001, this.fxBus.gain.value || 0.0001), t);
+        this.fxBus.gain.linearRampToValueAtTime(Math.max(0.0001, v), t + 0.1);
+      }
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
+  }
+
   /** El juego marca si la música debe sonar ahora (menú abierto en VR). */
   setMusicWanted(wanted) {
     const w = !!wanted;
@@ -363,7 +436,7 @@ export class GameAudio {
       const g = this.ctx.createGain();
       const t = this.ctx.currentTime;
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(0.26, t + 0.9);
+      g.gain.linearRampToValueAtTime(Math.max(0.0001, 0.26 * this.musicVol), t + 0.9);   // r95: canal música
       src.connect(g); g.connect(this.master);
       src.start(t);
       this._musicSrc = src;
@@ -450,7 +523,7 @@ export class GameAudio {
       const g = this.ctx.createGain();
       const t = this.ctx.currentTime;
       const vol = Math.max(0.0001,
-        (this.arcMute || this._arcDucked) ? 0.0001 : this.arcVol);
+        (this.arcMute || this._arcDucked) ? 0.0001 : this.arcVol * this.musicVol);   // r95: canal música
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(vol, t + 0.8);
       src.connect(g); g.connect(this.master);
@@ -493,7 +566,7 @@ export class GameAudio {
     try {
       const t = this.ctx.currentTime;
       const to = (this.arcMute || this._arcDucked)
-        ? 0.0001 : Math.max(0.0001, this.arcVol);
+        ? 0.0001 : Math.max(0.0001, this.arcVol * this.musicVol);   // r95: canal música
       this._arcGain.gain.cancelScheduledValues(t);
       this._arcGain.gain.setValueAtTime(
         Math.max(0.0001, this._arcGain.gain.value || 0.0001), t);
@@ -784,7 +857,7 @@ export class GameAudio {
     const p = this.ctx.createStereoPanner();
     // NaN/Infinity -> 0 (un valor no finito aquí LANZA y mata el frame)
     p.pan.value = Number.isFinite(pan) ? Math.max(-1, Math.min(1, pan)) : 0;
-    p.connect(this.master);
+    p.connect(this.fxBus || this.master);   // r95: bus de EFECTOS (volumen propio)
     return p;
   }
 
@@ -1242,13 +1315,14 @@ export class GameAudio {
         g.gain.setValueAtTime(vol, t + Math.max(0.03, dur - 0.07));
         g.gain.linearRampToValueAtTime(0.0001, t + dur);
         o.connect(g);
+        const FX = this.fxBus || this.master;   // r95: la fanfarria es EFECTO
         if (win) {
-          g.connect(this.master);
+          g.connect(FX);
         } else {
           const lp = this.ctx.createBiquadFilter();
           lp.type = 'lowpass';
           lp.frequency.value = 900;
-          g.connect(lp); lp.connect(this.master);
+          g.connect(lp); lp.connect(FX);
         }
         o.start(t); o.stop(t + dur + 0.05);
         if (win) {
@@ -1260,7 +1334,7 @@ export class GameAudio {
           g2.gain.setValueAtTime(0.0001, t);
           g2.gain.linearRampToValueAtTime(vol * 0.32, t + 0.02);
           g2.gain.linearRampToValueAtTime(0.0001, t + dur);
-          o2.connect(g2); g2.connect(this.master);
+          o2.connect(g2); g2.connect(this.fxBus || this.master);   // r95: EFECTO
           o2.start(t); o2.stop(t + dur + 0.05);
         }
       }

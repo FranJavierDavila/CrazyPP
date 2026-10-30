@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r92_v3684.py — capa de QA en vivo de la ronda 92 (V3.6.86-SDK6).
+"""qa_r92_v3684.py — capa de QA en vivo de la ronda 92 (V3.6.87-SDK6).
 Informe del dueño tras V3.6.83:
  «Las manos de los zombis deben salir justa de la mesa de tal forma que su
   parte inferior toque la mesa y no quede suspendida en el aire. Cambiamos

@@ -7133,7 +7133,10 @@ class StockController {
     g.rules.message = (et.id === 'final')
       ? tx('¡DUELO FINAL contra ' + CFG.rival + '!', 'FINAL DUEL vs ' + CFG.rival + '!')
       : tx('¡Duelo contra ' + CFG.rival + '!', CFG.rival + ' duel!');
-    this._showInstr(et);
+    /* r95 · REGLA DE CASA (petición del dueño): en las fases de DUELO con el
+     * rival NO hay cartel explicativo — fuera _showInstr(); el aviso vive en
+     * la línea del marcador y el duelo arranca al saque. Las PRUEBAS de
+     * habilidad conservan SU cartel (regla v2.106 intacta). */
     this.musicOn();
     // poderes: bolsa limpia y el primero tarda en llegar
     this._poderClear();
@@ -7146,25 +7149,8 @@ class StockController {
     this._streakP = 0; this._streakAi = 0;
     this._exprT = 0; this._picandoDone = false;
   }
-  _showInstr(et) {
-    try {
-      const final = et.id === 'final';
-      this.game.showInstrucciones(
-        tx('Duelo contra ' + CFG.rival, CFG.rival + ' duel'),
-        final ? [
-          tx('El AX-9 pelea a MÁXIMA POTENCIA. Primero a ' + CFG.puntos + ' puntos.',
-            'AX-9 fights at FULL POWER. First to ' + CFG.puntos + ' points.'),
-          tx('¡Gana y la estación es tuya: insignia ¡CONSEGUIDO!!',
-            'Win and the station is yours: ACHIEVED badge!'),
-        ] : [
-          tx('Primero a ' + CFG.puntos + ' puntos. La dificultad sube con cada duelo ganado.',
-            'First to ' + CFG.puntos + ' points. Difficulty rises with every duel won.'),
-          tx('¡Cuidado con los superpoderes de ' + CFG.rival + '!',
-            'Beware ' + CFG.rival + '\'s super powers!'),
-        ],
-        5.0, null, 'estacion');
-    } catch (e) { /* */ }
-  }
+  /* r95 · _showInstr(et) RETIRADO — regla de casa: los DUELOS no muestran
+   * cartel explicativo; sólo las pruebas de habilidad (regla v2.106). */
 
   _empezarPrueba(et) {
     const g = this.game;

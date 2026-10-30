@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r74_v3666 — CAPA BI · V3.6.86-SDK6, FASE 68 «EL MANDO DE SIEMPRE».
+"""qa_r74_v3666 — CAPA BI · V3.6.87-SDK6, FASE 68 «EL MANDO DE SIEMPRE».
 
 Informe del dueño tras probar V3.6.65 en el Quest, punto por punto:
   1. «Desde el módulo Pro training, en cualquier modalidad, sacar el Menú

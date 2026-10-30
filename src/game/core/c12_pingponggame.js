@@ -432,6 +432,19 @@ export class PingPongGame {
     // v2.38: la mesa se guarda — la prueba ARKANOID la sustituye por el muro
     this.tableGroup = createTable();
     this.rig.add(this.tableGroup);
+    // r95 · MESA (AJUSTES › SALA Y ESCENA): altura y aspecto PERSISTENTES
+    // del dueño. Se aplican AL ARRANCAR (física/IA/escena leen DIMS en
+    // vivo) y en cada cambio desde el menú. rivStyleOn: rivales con
+    // personalidad visible (colocación + celebraciones).
+    this.mesaAlto = 'normal';
+    this.mesaSkin = 'azul';
+    try {
+      this.mesaAlto = localStorage.getItem('pp_mesaalto') || 'normal';
+      this.mesaSkin = localStorage.getItem('pp_mesaskin') || 'azul';
+    } catch { /* */ }
+    this._mesaAplicar(this.mesaAlto, this.mesaSkin);
+    this.rivStyleOn = true;
+    try { this.rivStyleOn = localStorage.getItem('pp_rivstyle_v1') !== '0'; } catch { /* */ }
 
     // receptor de sombras para passthrough (sombra de mesa/bola sobre el suelo real)
     this.shadowCatcher = new THREE.Mesh(
@@ -2937,10 +2950,20 @@ export class PingPongGame {
         btn('pmej', 56, y, 912, 56, T('btn_pmej', { v: yn(this.palaMejorada) }),
           !!this.palaMejorada, undefined, !!this.palaMejorada, 23);
         y += 70;
+        // r95 · RIVALES CON ESTILO VISIBLE: la personalidad del manifest
+        // (agresivo/defensivo) se nota en COLOCACIÓN y CELEBRACIONES.
+        btn('rivstyle', 56, y, 912, 56,
+          T('btn_rivstyle', { v: yn(this.rivStyleOn !== false) }),
+          this.rivStyleOn !== false, undefined, this.rivStyleOn !== false, 23);
+        y += 70;
         break;
       }
       case 'sala': {
-        label(T('room_label'), y + 10, 22);
+        // r95 · SALA Y ESCENA en DOS subapartados (petición del dueño):
+        // «SALA» (los cuatro ajustes actuales, futuro: pieles de sala) y
+        // «MESA» (altura + aspecto, 3 opciones por defecto y más a futuro
+        // liberables con recompensas).
+        label(T('sub_sala'), y + 10, 22, '#e9edf2');
         y += 34;
         const themes = [
           ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
@@ -2954,7 +2977,35 @@ export class PingPongGame {
         const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
         btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }),
           !!pstOn, undefined, !!pstOn, 23);
-        y += 70;
+        y += 78;
+        label(T('sub_mesa'), y + 10, 22, '#e9edf2');
+        y += 32;
+        if (this.mesaOcupada()) {
+          label(T('mesa_no_champ'), y + 2, 18, '#ffa94d');
+          y += 30;
+        }
+        label(T('mesa_altura_lbl'), y + 2, 17, '#75828f');
+        y += 26;
+        MESA_ALTOS.forEach((a, i) => {
+          btn('mesa_alto:' + a.id, 56 + i * 312, y, 288, 54, T(a.nameKey),
+            this.mesaAlto === a.id, undefined, this.mesaAlto === a.id, 22);
+        });
+        y += 66;
+        label(T('mesa_aspecto_lbl'), y + 2, 17, '#75828f');
+        y += 26;
+        MESA_ASPECTOS.forEach((s, i) => {
+          const libre = !s.lock || this._mesaLibre(s.lock);
+          const activo = this.mesaSkin === s.id;
+          btn('mesa_skin:' + s.id, 56 + (i % 3) * 312, y + Math.floor(i / 3) * 62,
+            288, 54, (libre ? '' : '🔒 ') + T(s.nameKey),
+            activo, undefined, activo, 21);
+        });
+        y += Math.ceil(MESA_ASPECTOS.length / 3) * 62 + 6;
+        const hayCerrada = MESA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock));
+        if (hayCerrada) {
+          label(T('mesa_lock_hint'), y + 2, 16, '#5f6b78');
+          y += 28;
+        }
         break;
       }
       case 'sonido': {
@@ -2966,6 +3017,37 @@ export class PingPongGame {
         btn('voz', 56, y, 448, 56, T('btn_mic', { v: yn(this.audio.voice) }),
           !!this.audio.voice, undefined, !!this.audio.voice, 23);
         btn('sndtest', 520, y, 448, 56, T('btn_sndtest'), false, undefined, undefined, 23);
+        y += 76;
+        // r95 · VOLUMENES SEPARADOS (petición del dueño): música y efectos
+        // con sendas barras −/+ (paso 10%, aplicado EN VIVO y persistente).
+        const barra = (vy, vol, id) => {
+          // pista
+          c.fillStyle = 'rgba(255,255,255,0.14)';
+          c.fillRect(196, vy + 20, 620, 14);
+          c.fillStyle = vol > 0.001 ? '#ffd257' : 'rgba(255,255,255,0.25)';
+          c.fillRect(196, vy + 20, Math.round(620 * vol), 14);
+          c.fillStyle = '#e9edf2';
+          c.font = '700 22px system-ui, sans-serif';
+          c.textAlign = 'center';
+          c.textBaseline = 'middle';
+          c.fillText(Math.round(vol * 100) + '%', 506, vy + 27);
+          rects.push({ x: 196, y: vy, w: 620, h: 54, id });
+        };
+        btn('mvol-', 56, y, 96, 54, '−', false, undefined, undefined, 26);
+        btn('mvol+', 872, y, 96, 54, '+', false, undefined, undefined, 26);
+        c.fillStyle = '#9aa7b4';
+        c.font = '700 20px system-ui, sans-serif';
+        c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillText(T('btn_musvol'), 56, y - 3);
+        barra(y, this.audio.musicVol, 'noop');
+        y += 66;
+        btn('fvol-', 56, y, 96, 54, '−', false, undefined, undefined, 26);
+        btn('fvol+', 872, y, 96, 54, '+', false, undefined, undefined, 26);
+        c.fillStyle = '#9aa7b4';
+        c.font = '700 20px system-ui, sans-serif';
+        c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillText(T('btn_fxvol'), 56, y - 3);
+        barra(y, this.audio.fxVol, 'noop');
         y += 70;
         break;
       }
@@ -3726,6 +3808,77 @@ export class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'mvol-':   // r95 · VOLUMEN MÚSICA −/+ (ns sin ':' — id completo)
+      case 'mvol+':
+      case 'fvol-':
+      case 'fvol+': {
+        const esMus = ns.startsWith('mvol');
+        const sube = r.id.endsWith('+');
+        const paso = sube ? 0.1 : -0.1;
+        const actual = esMus ? this.audio.musicVol : this.audio.fxVol;
+        const nuevo = Math.round(Math.min(1, Math.max(0, actual + paso)) * 10) / 10;
+        if (esMus) this.audio.setMusicVol(nuevo); else this.audio.setFxVol(nuevo);
+        this.rules.message = esMus
+          ? T('msg_musicvol', { v: Math.round(nuevo * 100) })
+          : T('msg_fxvol', { v: Math.round(nuevo * 100) });
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'rivstyle': {
+        // r95 · RIVALES CON ESTILO VISIBLE: personalidad del manifest
+        // (agresivo/defensivo) en COLOCACIÓN y CELEBRACIONES.
+        this.rivStyleOn = !(this.rivStyleOn !== false);
+        try { localStorage.setItem('pp_rivstyle_v1', this.rivStyleOn ? '1' : '0'); } catch { /* */ }
+        this._rivStyleAplicar();
+        this.rules.message = T('msg_rivstyle', { v: this.rivStyleOn ? T('yes') : T('no') });
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'mesa_alto': {
+        // r95 · ALTURA DE LA MESA (Baja/Normal/Alta): muta DIMS y reacomoda
+        // la mesa viva. Bloqueada con un campeonato activo.
+        if (this.mesaOcupada()) {
+          this.rules.message = T('mesa_no_champ');
+          this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          this.drawMenu();
+          break;
+        }
+        const alto = MESA_ALTOS.find((a) => a.id === arg);
+        if (alto) {
+          try { localStorage.setItem('pp_mesaalto', alto.id); } catch { /* */ }
+          this._mesaAplicar(alto.id, this.mesaSkin);
+          this.rules.message = T('msg_mesa_alto', { v: T(alto.nameKey) });
+          this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        }
+        this.drawMenu();
+        break;
+      }
+      case 'mesa_skin': {
+        // r95 · ASPECTO DE LA MESA: 3 por defecto + 2 liberables con
+        // recompensas (10 victorias / racha de 5 — datos del Hall).
+        if (this.mesaOcupada()) {
+          this.rules.message = T('mesa_no_champ');
+          this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          this.drawMenu();
+          break;
+        }
+        const skin = MESA_ASPECTOS.find((s) => s.id === arg);
+        if (skin) {
+          if (skin.lock && !this._mesaLibre(skin.lock)) {
+            this.rules.message = this._mesaLockTxt(skin.lock) || T('mesa_lock_hint');
+            this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          } else {
+            try { localStorage.setItem('pp_mesaskin', skin.id); } catch { /* */ }
+            this._mesaAplicar(this.mesaAlto, skin.id);
+            this.rules.message = T('msg_mesa_skin', { v: T(skin.nameKey) });
+            this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+          }
+        }
+        this.drawMenu();
+        break;
+      }
       case 'music': {
         // v2.29: música de fondo (portada + menú en VR), preferencia
         // compartida con el botón 🔊 de la portada
@@ -3931,6 +4084,81 @@ export class PingPongGame {
     // con un lerp en el tick (la adaptación se siente, no se trompea).
     this._aiKTarget = THREE.MathUtils.clamp(k, 0.7, 2.2);
     this._aiKAplica();
+    this._rivStyleAplicar();   // r95: estilo del rival vigente en cada recalculo
+  }
+
+  /* ======================================================================
+   *  r95 · RIVALES CON ESTILO VISIBLE (petición del dueño)
+   *  «que la personalidad del manifest (agresivo/defensivo) se note en
+   *  colocación y celebraciones». Lee la personalidad del campeonato
+   *  ACTIVO (manifest.rival.personalidad) y deriva tres palancas visibles:
+   *    zIdle → cuánto se acerca/aleja de la mesa al esperar (m)
+   *    bias  → se adelanta/retrasa al golpear (m, simétrico por lado)
+   *    celeb → celebración al ganar el punto (1 grande · 0,35 sobria)
+   *  Con el toggle AJUSTES › JUEGO en NO (o sin manifest) todo queda a
+   *  cero: comportamiento clásico EXACTO. Sólo toca la PALA IA del núcleo.
+   *  ====================================================================== */
+  _rivStyleCalc() {
+    const s = { zIdle: 0, bias: 0, celeb: 0 };
+    if (!this.rivStyleOn) return s;
+    let pers = null;
+    try {
+      const act = this.champs && this.champs.active;
+      pers = act && act.man && act.man.rival && act.man.rival.personalidad;
+    } catch { /* sin campeonato: neutro */ }
+    if (!pers) return s;
+    const ag = (pers.agresividad || 3) - 3;          // -2 defensivo .. +2 agresivo
+    s.zIdle = ag * 0.16;                              // agresivo: hasta +0,32 m hacia la red
+    s.bias = ag * 0.09;                               // se adelanta al golpe / espera atrás
+    s.celeb = ag >= 1 ? 1 : (ag <= -1 ? 0.35 : 0.6);  // grande · sobrio · normal
+    return s;
+  }
+  _rivStyleAplicar() {
+    const st = this._rivStyleCalc();
+    if (this.ai) this.ai.style = st;
+    if (this.demoAI) this.demoAI.style = st;   // el demo espeja el estilo
+  }
+
+  /* ======================================================================
+   *  r95 · MESA (AJUSTES › SALA Y ESCENA › MESA) — altura + aspecto.
+   *  La altura MUTA DIMS.tableTopY/netTopY (física, IA, saque y escena la
+   *  leen EN VIVO — una sola fuente de verdad) y la mesa viva se reacomoda
+   *  con relayoutMesa() (c07) SIN reconstruir nada. El aspecto tiñe
+   *  ppTableTop + marco. Bloqueada durante un campeonato ACTIVO (la
+   *  ARKANOID sustituye la mesa y Halloween viste la suya).
+   *  ====================================================================== */
+  mesaOcupada() {
+    try { return !!(this.champs && this.champs.active); } catch { return false; }
+  }
+  _mesaLibre(lock) {
+    const d = (this.stats && this.stats.data) || {};
+    if (lock === 'wins10') return (d.won || 0) >= 10;
+    if (lock === 'streak5') return (d.bestStreak || 0) >= 5;
+    return true;
+  }
+  _mesaLockTxt(lock) {
+    if (lock === 'wins10') return T('mesa_lock_wins');
+    if (lock === 'streak5') return T('mesa_lock_streak');
+    return '';
+  }
+  _mesaAplicar(altoId, skinId) {
+    const alto = MESA_ALTOS.find((a) => a.id === altoId) || MESA_ALTOS[1];
+    let skin = MESA_ASPECTOS.find((s) => s.id === skinId) || MESA_ASPECTOS[0];
+    if (skin.lock && !this._mesaLibre(skin.lock)) skin = MESA_ASPECTOS[0];
+    // 1) ALTURA: muta DIMS y reacomoda la mesa viva (referencias intactas)
+    DIMS.tableTopY = alto.y;
+    DIMS.netTopY = alto.y + MESA_NET_H;
+    relayoutMesa(this.tableGroup);
+    // 2) ASPECTO: tiñe superficie y marco (el marco comparte material con
+    // las patas — un solo tinte cubre apron + apron2 + patas)
+    if (this.tableGroup) {
+      const top = this.tableGroup.getObjectByName('ppTableTop');
+      if (top && top.material) top.material.color.setHex(skin.top);
+      const apron = this.tableGroup.getObjectByName('ppTableApron');
+      if (apron && apron.material) apron.material.color.setHex(skin.edge);
+    }
+    this.mesaAlto = alto.id;
+    this.mesaSkin = skin.id;
   }
 
   /** r61 · aplica el factor ACTUAL (lerp-eado hacia el objetivo) al
@@ -9393,6 +9621,17 @@ export class PingPongGame {
         // v3.1.2-CCD1 · piezas de la CCD por SDF para QA headless
         collidePaddleSweep, CCD_TUNE, sweepBallVsBlade, sweepBallVsCapsuleY };
     }
+    // r95 · ESTADÍSTICA VIVA: velocidad MÁXIMA de la bola durante el
+    // rallye (un length() por frame — la fanfarria final la muestra).
+    try {
+      if (this.rules.mStats && this.rules.state === 'rally' &&
+          this.ball && this.ball.vel && this.ball.active !== false) {
+        const sp = this.ball.vel.length();
+        if (Number.isFinite(sp) && sp > this.rules.mStats.vmax) {
+          this.rules.mStats.vmax = sp;
+        }
+      }
+    } catch { /* */ }
     this.scoreboardUpdate({
       player: this.rules.scorePlayer,
       ai: this.rules.scoreAi,
@@ -9799,10 +10038,19 @@ export class PingPongGame {
         K.clos0 + K.clos1 * e);
       mesh.quaternion.slerp(poseQ, Math.min(1, dt * 18));
     } else {
+      // r95 · CELEBRACIÓN CON ESTILO: al ganar el punto, el rival agresivo
+      // LO CELEBRA (tres saltitos + guiño de hoja) y el defensivo lo hace
+      // sobrio. Sin estilo (o toggle NO): exactamente el bob de siempre.
+      let celebBob = 0, celebRoll = 0;
+      if (ai.celebT > 0) {
+        const ct = Math.sin((1 - ai.celebT / 0.9) * Math.PI * 3);
+        celebBob = Math.abs(ct) * 0.055;
+        celebRoll = ct * 0.32;
+      }
       const bob = Math.sin(performance.now() / 1000 * 3.0 + (who === 'ai' ? 0 : 2.1)) * 0.012;
       mesh.position.set(
         ai.pos.x + ai.prep.x,
-        Math.max(0.42, ai.pos.y + ai.prep.y + bob),
+        Math.max(0.42, ai.pos.y + ai.prep.y + bob + celebBob),
         ai.pos.z + ai.prep.z,
       );
       // espera: postura de jugador real — hoja delante, inclinada hacia el
@@ -9817,7 +10065,7 @@ export class PingPongGame {
       AIM_FACE.x += (this.ball.pos.x - mesh.position.x) * 0.7;
       const sway = Math.sin(performance.now() / 1000 * 1.7 + (who === 'ai' ? 1.3 : 4.2)) * 0.06;
       // bola alta: cara algo cerrada por encima · bola baja: cara abierta
-      bladePose(AIM_BLADE, AIM_FACE, sway, this.ball.pos.y > 1.25 ? 0.1 : -0.12);
+      bladePose(AIM_BLADE, AIM_FACE, sway + celebRoll, this.ball.pos.y > 1.25 ? 0.1 : -0.12);
       mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
     }
     this.clampPaddlePose(mesh.position, mesh.quaternion, false);
@@ -9957,12 +10205,28 @@ export class PingPongGame {
             if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.25, 70);
           } else {
             // PARTIDO: punto + adaptativa + ambiente de torneo
+            // r95 · ESTADÍSTICAS DEL DUELO: el rally más largo del partido
+            // (la fanfarria final muestra vmax · rally · precisión).
+            try {
+              if (this.rules.mStats && (it.rallyHits || 0) > this.rules.mStats.bestRally) {
+                this.rules.mStats.bestRally = it.rallyHits || 0;
+              }
+            } catch { /* */ }
             this.audio.point(it.winner === 'player');
             if (it.winner === 'player') {
               this.audio.applause(false);
             } else if (it.cause && NetLink.OHH_CAUSES.has(it.cause)) {
               this.audio.ohh();
             }
+            // r95 · CELEBRACIÓN CON ESTILO: el rival agresivo que GANA el
+            // punto lo celebra (saltitos + guiño de hoja) si el toggle
+            // AJUSTES › JUEGO «Rivales con estilo visible» está activo.
+            try {
+              if (it.winner !== 'player' && this.ai && this.ai.style &&
+                  this.ai.style.celeb >= 0.6) {
+                this.ai.celebT = 0.9;
+              }
+            } catch { /* */ }
             if (this.renderer.xr.isPresenting) {
               this.haptic(this.paddleHand, it.winner === 'player' ? 0.85 : 0.4, it.winner === 'player' ? 110 : 60);
             }
@@ -10093,7 +10357,17 @@ export class PingPongGame {
     this._repPendiente = !!(this._repBest && this._repBest.buf &&
       this._repBest.hits >= 3 && !this.net.online);
     this.audio.fanfare(win);
-    this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi);
+    // r95 · ESTADÍSTICAS AL FINAL DE CADA DUELO (petición del dueño):
+    // velocidad máx. de bola · rally más largo · % precisión, medidos EN
+    // VIVO durante el partido (rules.mStats) y pintados bajo el marcador.
+    const _mst = this.rules.mStats || { vmax: 0, bestRally: 0 };
+    const _tot = this.rules.scorePlayer + this.rules.scoreAi;
+    const fanfStats = {
+      vmax: Math.round(_mst.vmax * 10) / 10,
+      rally: _mst.bestRally || 0,
+      prec: _tot > 0 ? Math.round((this.rules.scorePlayer / _tot) * 100) : 0,
+    };
+    this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi, fanfStats);
     this.fanfareBanner.group.visible = true;
     this.fanfareBanner.group.scale.setScalar(0.2);
     if (this.renderer.xr.isPresenting) {
@@ -10339,12 +10613,12 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, DIMS, MOUNT_QUAT_RIGHT, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, DIMS, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
-import { createBall, createBlobShadow, createChampDecor, createRoom, createTable } from './c07_escena_sala.js';
+import { createBall, createBlobShadow, createChampDecor, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
 import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createReplayBanner, createScoreboard, drawHallSign, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { PPNET } from './c09b_red_nucleo.js';

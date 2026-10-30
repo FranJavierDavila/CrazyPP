@@ -12211,7 +12211,10 @@ class ForajidoStand {
     try {
       const A = this.game && this.game.audio;
       if (!A) return OESTE.musicVol;
-      return (A.arcMute || A._arcDucked) ? 0.0001 : Math.max(0.0001, A.arcVol);
+      /* r95 · CANAL MÚSICA: el volumen global de música (AJUSTES › SONIDOS)
+       * escala también esta BSO privada (0..1, defecto 1 — sin él, nada cambia). */
+      return (A.arcMute || A._arcDucked) ? 0.0001 :
+        Math.max(0.0001, A.arcVol * (A.musicVol == null ? 1 : A.musicVol));
     } catch (e) { return OESTE.musicVol; }
   }
   _syncMusicGain() {

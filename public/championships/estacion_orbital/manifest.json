@@ -188,5 +188,7 @@
   ],
   "historial": [
     "2026-10-26 v3.6.64-SDK6 · r72: ASTRO EN EL ESPACIO CORRECTO — StockController.build colgaba el grupo del campeonato en g.scene (mundo crudo) mientras mesa/sala/mapa viven en g.rig: el RECENTRADO del Quest (updateRecenter, 25 frames tras cada sesión XR) giraba el rig y dejaba al standee girado/desplazado respecto a la mesa — causa real de «no se visualiza a Astro» y de las tres correcciones de coordenadas anteriores. Ahora game.rig.add (convención CLOWN/WIZARD) + guard idempotente del rival en build() (re-entradas no duplican el standee) + EOArkanoid.stop restaura rivalMesh.visible."
+  ,
+    "2026-10-31 v3.6.87-SDK6 · r95 · SIN CARTEL EN LOS DUELOS — regla de casa del dueño: en las fases de duelo con el rival no hay cartel explicativo; sólo en las etapas de habilidad. Los duelos del AX-9 (Duelo 1, Duelo 2 y DUELO FINAL) arrancan sin cartel: el aviso vive en la línea del marcador y el duelo comienza al saque. Las pruebas de habilidad conservan SU cartel explicativo (regla v2.106 intacta). _showInstr() retirado."
   ]
 }

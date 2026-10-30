@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.86-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.87-SDK6</span>
     </div>
   </main>
 
@@ -787,6 +787,33 @@ const I18N_STRINGS = {
     msg_psthru_next_off: 'Passthrough desactivado · se aplicará al entrar',
     btn_pmej: 'Pala Mejorada: {v}',
     msg_pmej: 'Pala Mejorada: {v} · superpoderes de la pala',
+    // r95 · AJUSTES NUEVOS: volúmenes separados, SALA/MESA, rivales con
+    // estilo y estadísticas del duelo (ES)
+    btn_musvol: 'Volumen música',
+    btn_fxvol: 'Volumen efectos',
+    msg_musicvol: 'Música: {v}%',
+    msg_fxvol: 'Efectos: {v}%',
+    sub_sala: 'SALA',
+    sub_mesa: 'MESA',
+    mesa_altura_lbl: 'Altura de la mesa',
+    mesa_aspecto_lbl: 'Aspecto de la mesa',
+    mesa_alto_baja: 'Baja',
+    mesa_alto_normal: 'Normal',
+    mesa_alto_alta: 'Alta',
+    mesa_asp_azul: 'Azul oficial',
+    mesa_asp_verde: 'Verde clásica',
+    mesa_asp_neon: 'Neón locura',
+    mesa_asp_oro: 'Oro campeón',
+    mesa_asp_carbon: 'Carbono pro',
+    mesa_lock_wins: '🔒 Oro campeón: gana 10 partidos',
+    mesa_lock_streak: '🔒 Carbono pro: encadena una racha de 5',
+    mesa_lock_hint: 'Las mesas con 🔒 se liberan con recompensas',
+    mesa_no_champ: 'La mesa no se toca durante un campeonato',
+    msg_mesa_alto: 'Altura de la mesa: {v}',
+    msg_mesa_skin: 'Aspecto de la mesa: {v}',
+    btn_rivstyle: 'Rivales con estilo visible: {v}',
+    msg_rivstyle: 'Estilo de los rivales: {v}',
+    fanf_stats: '⚡ {v} m/s · Rally {r} · Precisión {p}%',
     arc_power_clown: '¡El Clown enloquece! ¡Confeti a la vista!',
     arc_power_warn: '¡SUPERPODER ENTRANTE! ¡PREPÁRATE…',
     // v2.106 · cartel explicativo de la prueba ARKANOID (La Locura)
@@ -1481,6 +1508,33 @@ const I18N_STRINGS = {
     msg_psthru_next_off: 'Passthrough disabled · applies on entry',
     btn_pmej: 'Enhanced Paddle: {v}',
     msg_pmej: 'Enhanced Paddle: {v} · paddle superpowers',
+    // r95 · NEW SETTINGS: split volumes, ROOM/TABLE, visible rival style and
+    // duel stats (EN)
+    btn_musvol: 'Music volume',
+    btn_fxvol: 'Effects volume',
+    msg_musicvol: 'Music: {v}%',
+    msg_fxvol: 'Effects: {v}%',
+    sub_sala: 'ROOM',
+    sub_mesa: 'TABLE',
+    mesa_altura_lbl: 'Table height',
+    mesa_aspecto_lbl: 'Table look',
+    mesa_alto_baja: 'Low',
+    mesa_alto_normal: 'Standard',
+    mesa_alto_alta: 'Tall',
+    mesa_asp_azul: 'Official blue',
+    mesa_asp_verde: 'Classic green',
+    mesa_asp_neon: 'Crazy neon',
+    mesa_asp_oro: 'Champion gold',
+    mesa_asp_carbon: 'Pro carbon',
+    mesa_lock_wins: '🔒 Champion gold: win 10 matches',
+    mesa_lock_streak: '🔒 Pro carbon: chain a 5-win streak',
+    mesa_lock_hint: '🔒 tables unlock with rewards',
+    mesa_no_champ: 'The table is locked during a championship',
+    msg_mesa_alto: 'Table height: {v}',
+    msg_mesa_skin: 'Table look: {v}',
+    btn_rivstyle: 'Visible rival style: {v}',
+    msg_rivstyle: 'Rival style: {v}',
+    fanf_stats: '⚡ {v} m/s · Rally {r} · Accuracy {p}%',
     arc_power_clown: 'The Clown goes crazy! Confetti incoming!',
     arc_power_warn: 'SUPER POWER INCOMING! GET READY…',
     // v2.106 · ARKANOID instruction poster (La Locura)
@@ -2696,7 +2750,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.86-SDK6';
+  const VERSION = '3.6.87-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -3692,6 +3746,30 @@ const COLORS = {
 };
 
 /* =====================================================================
+ *  r95 · MESA (AJUSTES › SALA Y ESCENA › MESA) — altura y aspecto.
+ *  La altura MUTA DIMS.tableTopY/netTopY (una sola fuente de verdad:
+ *  física, IA, saque y escena la leen EN VIVO) y la mesa viva se
+ *  reacomoda con relayoutMesa() (c07). El aspecto tiñe ppTableTop y el
+ *  marco (ppTableApron/ppTableLeg comparten material). 3 opciones por
+ *  defecto + 2 bloqueadas que se liberan con RECOMPENSAS (victorias y
+ *  racha del Hall — ver _mesaLibre en el juego).
+ * ===================================================================== */
+const MESA_ALTOS = [
+  { id: 'baja', y: 0.70, nameKey: 'mesa_alto_baja' },
+  { id: 'normal', y: 0.76, nameKey: 'mesa_alto_normal' },
+  { id: 'alta', y: 0.84, nameKey: 'mesa_alto_alta' },
+];
+const MESA_ASPECTOS = [
+  { id: 'azul', top: 0x17539e, edge: 0x0e3a73, lock: null, nameKey: 'mesa_asp_azul' },
+  { id: 'verde', top: 0x1c6b47, edge: 0x125033, lock: null, nameKey: 'mesa_asp_verde' },
+  { id: 'neon', top: 0x8a2be2, edge: 0x5b1c9e, lock: null, nameKey: 'mesa_asp_neon' },
+  { id: 'oro', top: 0xc9932f, edge: 0x8f6a1e, lock: 'wins10', nameKey: 'mesa_asp_oro' },
+  { id: 'carbon', top: 0x171a20, edge: 0x0d0f13, lock: 'streak5', nameKey: 'mesa_asp_carbon' },
+];
+/** Altura de red REGLAMENTARIA sobre la mesa (15,25 cm — ITTF). */
+const MESA_NET_H = 0.1525;
+
+/* =====================================================================
  *  TEMAS DE SALA (v2.14): ambientes visuales intercambiables al vuelo.
  *  Cada tema redefine suelo/paredes/techo/paneles de luz/tira LED/rejilla,
  *  las tres luces de la escena, el fondo y la niebla. La mesa, las vallas
@@ -3957,6 +4035,20 @@ class GameAudio {
       if (Number.isFinite(v)) this.arcVol = Math.min(1, Math.max(0, v));
       this.arcMute = localStorage.getItem('pp_arcade_mute') === '1';
     } catch { /* */ }
+    // r95 · VOLÚMENES SEPARADOS (petición del dueño: «incorporar Volumen
+    // separado música/efectos en AJUSTES»): dos canales PERSISTENTES e
+    // independientes. musicVol escala la música del menú Y la BSO de los
+    // campeonatos; fxVol escala el BUS de efectos (golpes, botes, canto,
+    // red, suelo, rival, UI, fanfarria). La voz del megáfono y el ambiente
+    // conservan SUS canales propios (no son ni música ni efectos).
+    this.musicVol = 1;
+    this.fxVol = 1;
+    try {
+      const mv = parseFloat(localStorage.getItem('pp_musicvol'));
+      if (Number.isFinite(mv)) this.musicVol = Math.min(1, Math.max(0, mv));
+      const fv = parseFloat(localStorage.getItem('pp_fxvol'));
+      if (Number.isFinite(fv)) this.fxVol = Math.min(1, Math.max(0, fv));
+    } catch { /* */ }
     // El sensor de proximidad de la Quest suspende la pestaña al ajustar el
     // visor; al volver, el contexto de audio queda a veces suspendido.
     // Al recuperar visibilidad: rescate SUAVE (resume + recrear solo si el
@@ -4006,6 +4098,12 @@ class GameAudio {
     this.ambBus = ctx.createGain();
     this.ambBus.gain.value = 1;
     this.ambBus.connect(this.master);
+    // r95 · BUS de EFECTOS: todo lo que sale por panNode (playOsc/playNoise,
+    // muestras reales, rival, fanfarria) pasa por aquí — el canal de volumen
+    // «efectos» del menú lo escala EN VIVO sin tocar voz ni ambiente.
+    this.fxBus = ctx.createGain();
+    this.fxBus.gain.value = Math.max(0.0001, this.fxVol);
+    this.fxBus.connect(this.master);
     const len = Math.floor(ctx.sampleRate * 0.25);
     this.noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = this.noiseBuffer.getChannelData(0);
@@ -4077,6 +4175,59 @@ class GameAudio {
     else if (this.musicWanted) this.startMusic();
   }
 
+  /* ---------- r95 · VOLÚMENES SEPARADOS MÚSICA / EFECTOS ----------
+   * Dos canales persistentes (pp_musicvol / pp_fxvol, 0..1) que el menú
+   * AJUSTES › SONIDOS gobierna con sendas barras −/+. Aplicación EN VIVO:
+   * la música del menú y la BSO del campeonato re-escalan su ganancia al
+   * instante; el bus de efectos (fxBus) lo mismo. Cero toques a voz y
+   * ambiente (canales propios con conmutador propio desde v2.x). */
+
+  /** Volumen de la MÚSICA (menú + BSO de campeonatos). 0..1, persistente. */
+  setMusicVol(v) {
+    v = Math.min(1, Math.max(0, Number.isFinite(v) ? v : 1));
+    this.musicVol = v;
+    try { localStorage.setItem('pp_musicvol', String(v)); } catch { /* */ }
+    try {
+      if (this.ctx && this._musicGain && this.musicPlaying) {
+        const t = this.ctx.currentTime;
+        this._musicGain.gain.cancelScheduledValues(t);
+        this._musicGain.gain.setValueAtTime(
+          Math.max(0.0001, this._musicGain.gain.value || 0.0001), t);
+        this._musicGain.gain.linearRampToValueAtTime(
+          Math.max(0.0001, 0.26 * v), t + 0.15);
+      }
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
+    try {
+      // BSO del campeonato (canal del NÚCLEO): mismo criterio que
+      // startArcadeMusic — mute/duck mandan, musicVol escala.
+      if (this.ctx && this._arcGain && this.arcPlaying) {
+        const t = this.ctx.currentTime;
+        const vol = Math.max(0.0001,
+          (this.arcMute || this._arcDucked) ? 0.0001 : this.arcVol * v);
+        this._arcGain.gain.cancelScheduledValues(t);
+        this._arcGain.gain.setValueAtTime(
+          Math.max(0.0001, this._arcGain.gain.value || 0.0001), t);
+        this._arcGain.gain.linearRampToValueAtTime(vol, t + 0.15);
+      }
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
+  }
+
+  /** Volumen de los EFECTOS (bus de SFX completo). 0..1, persistente. */
+  setFxVol(v) {
+    v = Math.min(1, Math.max(0, Number.isFinite(v) ? v : 1));
+    this.fxVol = v;
+    try { localStorage.setItem('pp_fxvol', String(v)); } catch { /* */ }
+    try {
+      if (this.ctx && this.fxBus) {
+        const t = this.ctx.currentTime;
+        this.fxBus.gain.cancelScheduledValues(t);
+        this.fxBus.gain.setValueAtTime(
+          Math.max(0.0001, this.fxBus.gain.value || 0.0001), t);
+        this.fxBus.gain.linearRampToValueAtTime(Math.max(0.0001, v), t + 0.1);
+      }
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
+  }
+
   /** El juego marca si la música debe sonar ahora (menú abierto en VR). */
   setMusicWanted(wanted) {
     const w = !!wanted;
@@ -4133,7 +4284,7 @@ class GameAudio {
       const g = this.ctx.createGain();
       const t = this.ctx.currentTime;
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(0.26, t + 0.9);
+      g.gain.linearRampToValueAtTime(Math.max(0.0001, 0.26 * this.musicVol), t + 0.9);   // r95: canal música
       src.connect(g); g.connect(this.master);
       src.start(t);
       this._musicSrc = src;
@@ -4220,7 +4371,7 @@ class GameAudio {
       const g = this.ctx.createGain();
       const t = this.ctx.currentTime;
       const vol = Math.max(0.0001,
-        (this.arcMute || this._arcDucked) ? 0.0001 : this.arcVol);
+        (this.arcMute || this._arcDucked) ? 0.0001 : this.arcVol * this.musicVol);   // r95: canal música
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(vol, t + 0.8);
       src.connect(g); g.connect(this.master);
@@ -4263,7 +4414,7 @@ class GameAudio {
     try {
       const t = this.ctx.currentTime;
       const to = (this.arcMute || this._arcDucked)
-        ? 0.0001 : Math.max(0.0001, this.arcVol);
+        ? 0.0001 : Math.max(0.0001, this.arcVol * this.musicVol);   // r95: canal música
       this._arcGain.gain.cancelScheduledValues(t);
       this._arcGain.gain.setValueAtTime(
         Math.max(0.0001, this._arcGain.gain.value || 0.0001), t);
@@ -4554,7 +4705,7 @@ class GameAudio {
     const p = this.ctx.createStereoPanner();
     // NaN/Infinity -> 0 (un valor no finito aquí LANZA y mata el frame)
     p.pan.value = Number.isFinite(pan) ? Math.max(-1, Math.min(1, pan)) : 0;
-    p.connect(this.master);
+    p.connect(this.fxBus || this.master);   // r95: bus de EFECTOS (volumen propio)
     return p;
   }
 
@@ -5012,13 +5163,14 @@ class GameAudio {
         g.gain.setValueAtTime(vol, t + Math.max(0.03, dur - 0.07));
         g.gain.linearRampToValueAtTime(0.0001, t + dur);
         o.connect(g);
+        const FX = this.fxBus || this.master;   // r95: la fanfarria es EFECTO
         if (win) {
-          g.connect(this.master);
+          g.connect(FX);
         } else {
           const lp = this.ctx.createBiquadFilter();
           lp.type = 'lowpass';
           lp.frequency.value = 900;
-          g.connect(lp); lp.connect(this.master);
+          g.connect(lp); lp.connect(FX);
         }
         o.start(t); o.stop(t + dur + 0.05);
         if (win) {
@@ -5030,7 +5182,7 @@ class GameAudio {
           g2.gain.setValueAtTime(0.0001, t);
           g2.gain.linearRampToValueAtTime(vol * 0.32, t + 0.02);
           g2.gain.linearRampToValueAtTime(0.0001, t + dur);
-          o2.connect(g2); g2.connect(this.master);
+          o2.connect(g2); g2.connect(this.fxBus || this.master);   // r95: EFECTO
           o2.start(t); o2.stop(t + dur + 0.05);
         }
       }
@@ -7111,6 +7263,12 @@ class Rules {
     this.gamesAi = 0;
     this.gameNo = 1;
     this.firstServer = 'player';
+    // r95 · ESTADÍSTICAS DEL PARTIDO (petición del dueño: «estadísticas al
+    // final de cada duelo»: velocidad máx. de bola, rally más largo y %
+    // precisión). Se RESETTAN en cada partida nueva y las alimenta el
+    // núcleo en vivo (vmax en animate, rally en el punto); la fanfarria
+    // las muestra al terminar. El % precisión sale del marcador final.
+    this.mStats = { vmax: 0, bestRally: 0 };
     this.resetGame();
     this.message = this.mode === 'survival'
       ? T('surv_start')
@@ -7424,6 +7582,12 @@ class OpponentAI {
     // Se sortea al APARECER la bola (con la posición del cuerpo aún lejos del
     // punto de contacto) y se mantiene durante todo el rallye de esa bola.
     this.fhSide = 1;
+    // r95 · RIVALES CON ESTILO VISIBLE (petición del dueño): la personalidad
+    // del manifest (agresivo/defensivo) SE NOTA en la COLOCACIÓN y en las
+    // CELEBRACIONES. El juego inyecta { zIdle, bias, celeb } aquí; cero =
+    // comportamiento clásico byte-idéntico (toggle AJUSTES › JUEGO).
+    this.style = null;
+    this.celebT = 0;   // celebración en curso (segundos que quedan)
   }
 
   setConfig(cfg) { this.cfg = cfg; }
@@ -7438,6 +7602,7 @@ class OpponentAI {
 
   update(dt, ball, ctx) {
     this.hitCooldown -= dt;
+    if (this.celebT > 0) this.celebT -= dt;   // r95: celebración con estilo
     if (this.swing) {
       this.swing.t += dt;
       if (this.swing.t > this.swing.dur) this.swing = null;
@@ -7532,6 +7697,10 @@ class OpponentAI {
     } else if (this.predictValid) {
       const baseline = C + sign * DIMS.tableHalfLength;
       let inDist = (this.predict.z - baseline) * -sign;
+      // r95 · ESTILO VISIBLE: el agresivo se ADELANTA al golpe (juega más
+      // cerca de la mesa), el defensivo espera más atrás. bias en metros,
+      // simétrico para los dos lados (inDist es normalizada por sign).
+      inDist -= (this.style ? (this.style.bias || 0) : 0);
       inDist = THREE.MathUtils.clamp(inDist, -0.45, DIMS.tableHalfLength + 0.15);
       const zClamp = baseline + inDist * -sign;
       let yClamp = THREE.MathUtils.clamp(this.predict.y + this.errY, 0.55, 1.55);
@@ -7545,10 +7714,13 @@ class OpponentAI {
         zClamp,
       );
     } else {
+      // r95 · ESTILO VISIBLE · COLOCACIÓN: el agresivo espera MÁS CERCA de
+      // la mesa (zIdle positivo hacia la red), el defensivo más atrás.
       tmpT.set(
         this.home.x + ball.pos.x * 0.3,
         this.home.y,
-        this.home.z + (toward ? -sign * 0.2 : 0),
+        this.home.z + (toward ? -sign * 0.2 : 0) +
+          (this.style ? (this.style.zIdle || 0) * -sign : 0),
       );
     }
 
@@ -7935,6 +8107,7 @@ function createTable() {
   const mkLine = (w, d, x, z) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, lineH, d), lineMat);
     m.position.set(x, topY + lineH / 2 - 0.0005, DIMS.tableCenterZ + z);
+    m.name = 'ppTableLine';   // r95: relayoutMesa() las reacomoda al cambiar la altura
     g.add(m);
   };
   mkLine(W, 0.02, 0, -DIMS.tableHalfLength + 0.01);
@@ -7960,6 +8133,7 @@ function createTable() {
       leg.position.set(lx, (topY - DIMS.tableThickness) / 2, DIMS.tableCenterZ + lz);
       leg.castShadow = true;
       leg.name = 'ppTableLeg';    // v2.87
+      leg.userData.h = topY - DIMS.tableThickness;   // r95: escala honesta en relayoutMesa
       g.add(leg);
     }
   }
@@ -7989,6 +8163,7 @@ function createTable() {
     new THREE.MeshBasicMaterial({ map: netTex, transparent: true, side: THREE.DoubleSide, alphaTest: 0.05 }),
   );
   netMesh.position.set(0, topY + (DIMS.netTopY - topY) / 2, DIMS.tableCenterZ);
+  netMesh.name = 'ppTableNet';   // r95: relayoutMesa()
   g.add(netMesh);
 
   const band = new THREE.Mesh(
@@ -7996,6 +8171,7 @@ function createTable() {
     new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 }),
   );
   band.position.set(0, DIMS.netTopY, DIMS.tableCenterZ);
+  band.name = 'ppTableBand';   // r95: relayoutMesa()
   g.add(band);
 
   const postMat = new THREE.MeshStandardMaterial({ color: 0x30343a, roughness: 0.4, metalness: 0.6 });
@@ -8005,10 +8181,48 @@ function createTable() {
       postMat,
     );
     post.position.set(px, topY + (DIMS.netTopY - topY) / 2, DIMS.tableCenterZ);
+    post.name = 'ppTablePost';   // r95: relayoutMesa()
     g.add(post);
   }
 
   return g;
+}
+
+/* =====================================================================
+ *  r95 · RELAYOUT DE LA MESA VIVA (AJUSTES › MESA › altura)
+ *  La altura elegida MUTA DIMS.tableTopY/netTopY (física, IA y saque la
+ *  leen en vivo — una sola fuente de verdad) y ESTA función reacomoda la
+ *  mesa ya montada SIN reconstruirla: sólo POSICIONES y la ESCALA de las
+ *  patas. Cero dispose — las referencias del núcleo y de los campeonatos
+ *  (ppTableTop de la mesa.webp de Halloween, _netParts, arkanoide...)
+ *  siguen siendo el MISMO objeto. La red mantiene su altura regla-
+ *  mentaria (15,25 cm) sobre la nueva superficie.
+ * ===================================================================== */
+function relayoutMesa(group) {
+  if (!group) return;
+  const topY = DIMS.tableTopY;
+  const th = DIMS.tableThickness;
+  const netH = (DIMS.netTopY != null) ? (DIMS.netTopY - topY) : 0.1525;
+  const top = group.getObjectByName('ppTableTop');
+  if (top) top.position.y = topY - th / 2;
+  for (const m of group.children) {
+    if (m.name === 'ppTableLine') {
+      m.position.y = topY + 0.002 / 2 - 0.0005;
+    } else if (m.name === 'ppTableApron') {
+      m.position.y = topY - th - 0.06;
+    } else if (m.name === 'ppTableLeg') {
+      const h0 = m.userData && m.userData.h ? m.userData.h : (topY - th);
+      const h1 = topY - th;
+      m.scale.y = h1 / h0;
+      m.position.y = h1 / 2;
+    } else if (m.name === 'ppTableNet') {
+      m.position.y = topY + netH / 2;
+    } else if (m.name === 'ppTableBand') {
+      m.position.y = topY + netH;
+    } else if (m.name === 'ppTablePost') {
+      m.position.y = topY + netH / 2;
+    }
+  }
 }
 
 function createBall() {
@@ -9346,8 +9560,8 @@ function createFanfareBanner() {
     img.src = url;
   };
 
-  function draw(win, pScore, aScore) {
-    lastArgs = [win, pScore, aScore];
+  function draw(win, pScore, aScore, stats) {
+    lastArgs = [win, pScore, aScore, stats];
     const lang = (typeof TLang === 'function') ? TLang() : 'es';
     const key = win ? 'win' : 'lose';
     ensurePoster(lang, key);
@@ -9393,6 +9607,33 @@ function createFanfareBanner() {
     ctx.fillStyle = '#ffffff';
     ctx.fillText(txt, cx, cy + 2);
     ctx.textBaseline = 'alphabetic';
+
+    // r95 · ESTADÍSTICAS DEL DUELO (petición del dueño: «al final de cada
+    // duelo: velocidad máx. de bola, rally más largo, % precisión») — chip
+    // delgado ENCIMA del marcador, mismo lenguaje visual. Con guard: si no
+    // llegan stats (repintados viejos) no se pinta nada.
+    if (stats && (stats.vmax > 0 || stats.rally > 0 || stats.prec > 0)) {
+      const stTxt = T('fanf_stats', {
+        v: (Math.round((stats.vmax || 0) * 10) / 10).toFixed(1),
+        r: stats.rally || 0,
+        p: stats.prec || 0,
+      });
+      ctx.font = '700 34px system-ui, sans-serif';
+      const sw = ctx.measureText(stTxt).width;
+      const scw = sw + 48, sch = 56;
+      const scy = cy - ch / 2 - 44;
+      ctx.fillStyle = 'rgba(8,12,20,0.72)';
+      ctx.strokeStyle = win ? 'rgba(232,180,90,0.75)' : 'rgba(150,165,180,0.55)';
+      ctx.lineWidth = 4;
+      roundRectPath(ctx, cx - scw / 2, scy - sch / 2, scw, sch, 28);
+      ctx.fill();
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#e9edf2';
+      ctx.fillText(stTxt, cx, scy + 1);
+      ctx.textBaseline = 'alphabetic';
+    }
 
     tex.needsUpdate = true;
   }
@@ -14173,6 +14414,19 @@ class PingPongGame {
     // v2.38: la mesa se guarda — la prueba ARKANOID la sustituye por el muro
     this.tableGroup = createTable();
     this.rig.add(this.tableGroup);
+    // r95 · MESA (AJUSTES › SALA Y ESCENA): altura y aspecto PERSISTENTES
+    // del dueño. Se aplican AL ARRANCAR (física/IA/escena leen DIMS en
+    // vivo) y en cada cambio desde el menú. rivStyleOn: rivales con
+    // personalidad visible (colocación + celebraciones).
+    this.mesaAlto = 'normal';
+    this.mesaSkin = 'azul';
+    try {
+      this.mesaAlto = localStorage.getItem('pp_mesaalto') || 'normal';
+      this.mesaSkin = localStorage.getItem('pp_mesaskin') || 'azul';
+    } catch { /* */ }
+    this._mesaAplicar(this.mesaAlto, this.mesaSkin);
+    this.rivStyleOn = true;
+    try { this.rivStyleOn = localStorage.getItem('pp_rivstyle_v1') !== '0'; } catch { /* */ }
 
     // receptor de sombras para passthrough (sombra de mesa/bola sobre el suelo real)
     this.shadowCatcher = new THREE.Mesh(
@@ -16678,10 +16932,20 @@ class PingPongGame {
         btn('pmej', 56, y, 912, 56, T('btn_pmej', { v: yn(this.palaMejorada) }),
           !!this.palaMejorada, undefined, !!this.palaMejorada, 23);
         y += 70;
+        // r95 · RIVALES CON ESTILO VISIBLE: la personalidad del manifest
+        // (agresivo/defensivo) se nota en COLOCACIÓN y CELEBRACIONES.
+        btn('rivstyle', 56, y, 912, 56,
+          T('btn_rivstyle', { v: yn(this.rivStyleOn !== false) }),
+          this.rivStyleOn !== false, undefined, this.rivStyleOn !== false, 23);
+        y += 70;
         break;
       }
       case 'sala': {
-        label(T('room_label'), y + 10, 22);
+        // r95 · SALA Y ESCENA en DOS subapartados (petición del dueño):
+        // «SALA» (los cuatro ajustes actuales, futuro: pieles de sala) y
+        // «MESA» (altura + aspecto, 3 opciones por defecto y más a futuro
+        // liberables con recompensas).
+        label(T('sub_sala'), y + 10, 22, '#e9edf2');
         y += 34;
         const themes = [
           ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
@@ -16695,7 +16959,35 @@ class PingPongGame {
         const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
         btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }),
           !!pstOn, undefined, !!pstOn, 23);
-        y += 70;
+        y += 78;
+        label(T('sub_mesa'), y + 10, 22, '#e9edf2');
+        y += 32;
+        if (this.mesaOcupada()) {
+          label(T('mesa_no_champ'), y + 2, 18, '#ffa94d');
+          y += 30;
+        }
+        label(T('mesa_altura_lbl'), y + 2, 17, '#75828f');
+        y += 26;
+        MESA_ALTOS.forEach((a, i) => {
+          btn('mesa_alto:' + a.id, 56 + i * 312, y, 288, 54, T(a.nameKey),
+            this.mesaAlto === a.id, undefined, this.mesaAlto === a.id, 22);
+        });
+        y += 66;
+        label(T('mesa_aspecto_lbl'), y + 2, 17, '#75828f');
+        y += 26;
+        MESA_ASPECTOS.forEach((s, i) => {
+          const libre = !s.lock || this._mesaLibre(s.lock);
+          const activo = this.mesaSkin === s.id;
+          btn('mesa_skin:' + s.id, 56 + (i % 3) * 312, y + Math.floor(i / 3) * 62,
+            288, 54, (libre ? '' : '🔒 ') + T(s.nameKey),
+            activo, undefined, activo, 21);
+        });
+        y += Math.ceil(MESA_ASPECTOS.length / 3) * 62 + 6;
+        const hayCerrada = MESA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock));
+        if (hayCerrada) {
+          label(T('mesa_lock_hint'), y + 2, 16, '#5f6b78');
+          y += 28;
+        }
         break;
       }
       case 'sonido': {
@@ -16707,6 +16999,37 @@ class PingPongGame {
         btn('voz', 56, y, 448, 56, T('btn_mic', { v: yn(this.audio.voice) }),
           !!this.audio.voice, undefined, !!this.audio.voice, 23);
         btn('sndtest', 520, y, 448, 56, T('btn_sndtest'), false, undefined, undefined, 23);
+        y += 76;
+        // r95 · VOLUMENES SEPARADOS (petición del dueño): música y efectos
+        // con sendas barras −/+ (paso 10%, aplicado EN VIVO y persistente).
+        const barra = (vy, vol, id) => {
+          // pista
+          c.fillStyle = 'rgba(255,255,255,0.14)';
+          c.fillRect(196, vy + 20, 620, 14);
+          c.fillStyle = vol > 0.001 ? '#ffd257' : 'rgba(255,255,255,0.25)';
+          c.fillRect(196, vy + 20, Math.round(620 * vol), 14);
+          c.fillStyle = '#e9edf2';
+          c.font = '700 22px system-ui, sans-serif';
+          c.textAlign = 'center';
+          c.textBaseline = 'middle';
+          c.fillText(Math.round(vol * 100) + '%', 506, vy + 27);
+          rects.push({ x: 196, y: vy, w: 620, h: 54, id });
+        };
+        btn('mvol-', 56, y, 96, 54, '−', false, undefined, undefined, 26);
+        btn('mvol+', 872, y, 96, 54, '+', false, undefined, undefined, 26);
+        c.fillStyle = '#9aa7b4';
+        c.font = '700 20px system-ui, sans-serif';
+        c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillText(T('btn_musvol'), 56, y - 3);
+        barra(y, this.audio.musicVol, 'noop');
+        y += 66;
+        btn('fvol-', 56, y, 96, 54, '−', false, undefined, undefined, 26);
+        btn('fvol+', 872, y, 96, 54, '+', false, undefined, undefined, 26);
+        c.fillStyle = '#9aa7b4';
+        c.font = '700 20px system-ui, sans-serif';
+        c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillText(T('btn_fxvol'), 56, y - 3);
+        barra(y, this.audio.fxVol, 'noop');
         y += 70;
         break;
       }
@@ -17467,6 +17790,77 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'mvol-':   // r95 · VOLUMEN MÚSICA −/+ (ns sin ':' — id completo)
+      case 'mvol+':
+      case 'fvol-':
+      case 'fvol+': {
+        const esMus = ns.startsWith('mvol');
+        const sube = r.id.endsWith('+');
+        const paso = sube ? 0.1 : -0.1;
+        const actual = esMus ? this.audio.musicVol : this.audio.fxVol;
+        const nuevo = Math.round(Math.min(1, Math.max(0, actual + paso)) * 10) / 10;
+        if (esMus) this.audio.setMusicVol(nuevo); else this.audio.setFxVol(nuevo);
+        this.rules.message = esMus
+          ? T('msg_musicvol', { v: Math.round(nuevo * 100) })
+          : T('msg_fxvol', { v: Math.round(nuevo * 100) });
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'rivstyle': {
+        // r95 · RIVALES CON ESTILO VISIBLE: personalidad del manifest
+        // (agresivo/defensivo) en COLOCACIÓN y CELEBRACIONES.
+        this.rivStyleOn = !(this.rivStyleOn !== false);
+        try { localStorage.setItem('pp_rivstyle_v1', this.rivStyleOn ? '1' : '0'); } catch { /* */ }
+        this._rivStyleAplicar();
+        this.rules.message = T('msg_rivstyle', { v: this.rivStyleOn ? T('yes') : T('no') });
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'mesa_alto': {
+        // r95 · ALTURA DE LA MESA (Baja/Normal/Alta): muta DIMS y reacomoda
+        // la mesa viva. Bloqueada con un campeonato activo.
+        if (this.mesaOcupada()) {
+          this.rules.message = T('mesa_no_champ');
+          this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          this.drawMenu();
+          break;
+        }
+        const alto = MESA_ALTOS.find((a) => a.id === arg);
+        if (alto) {
+          try { localStorage.setItem('pp_mesaalto', alto.id); } catch { /* */ }
+          this._mesaAplicar(alto.id, this.mesaSkin);
+          this.rules.message = T('msg_mesa_alto', { v: T(alto.nameKey) });
+          this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        }
+        this.drawMenu();
+        break;
+      }
+      case 'mesa_skin': {
+        // r95 · ASPECTO DE LA MESA: 3 por defecto + 2 liberables con
+        // recompensas (10 victorias / racha de 5 — datos del Hall).
+        if (this.mesaOcupada()) {
+          this.rules.message = T('mesa_no_champ');
+          this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          this.drawMenu();
+          break;
+        }
+        const skin = MESA_ASPECTOS.find((s) => s.id === arg);
+        if (skin) {
+          if (skin.lock && !this._mesaLibre(skin.lock)) {
+            this.rules.message = this._mesaLockTxt(skin.lock) || T('mesa_lock_hint');
+            this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          } else {
+            try { localStorage.setItem('pp_mesaskin', skin.id); } catch { /* */ }
+            this._mesaAplicar(this.mesaAlto, skin.id);
+            this.rules.message = T('msg_mesa_skin', { v: T(skin.nameKey) });
+            this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+          }
+        }
+        this.drawMenu();
+        break;
+      }
       case 'music': {
         // v2.29: música de fondo (portada + menú en VR), preferencia
         // compartida con el botón 🔊 de la portada
@@ -17672,6 +18066,81 @@ class PingPongGame {
     // con un lerp en el tick (la adaptación se siente, no se trompea).
     this._aiKTarget = THREE.MathUtils.clamp(k, 0.7, 2.2);
     this._aiKAplica();
+    this._rivStyleAplicar();   // r95: estilo del rival vigente en cada recalculo
+  }
+
+  /* ======================================================================
+   *  r95 · RIVALES CON ESTILO VISIBLE (petición del dueño)
+   *  «que la personalidad del manifest (agresivo/defensivo) se note en
+   *  colocación y celebraciones». Lee la personalidad del campeonato
+   *  ACTIVO (manifest.rival.personalidad) y deriva tres palancas visibles:
+   *    zIdle → cuánto se acerca/aleja de la mesa al esperar (m)
+   *    bias  → se adelanta/retrasa al golpear (m, simétrico por lado)
+   *    celeb → celebración al ganar el punto (1 grande · 0,35 sobria)
+   *  Con el toggle AJUSTES › JUEGO en NO (o sin manifest) todo queda a
+   *  cero: comportamiento clásico EXACTO. Sólo toca la PALA IA del núcleo.
+   *  ====================================================================== */
+  _rivStyleCalc() {
+    const s = { zIdle: 0, bias: 0, celeb: 0 };
+    if (!this.rivStyleOn) return s;
+    let pers = null;
+    try {
+      const act = this.champs && this.champs.active;
+      pers = act && act.man && act.man.rival && act.man.rival.personalidad;
+    } catch { /* sin campeonato: neutro */ }
+    if (!pers) return s;
+    const ag = (pers.agresividad || 3) - 3;          // -2 defensivo .. +2 agresivo
+    s.zIdle = ag * 0.16;                              // agresivo: hasta +0,32 m hacia la red
+    s.bias = ag * 0.09;                               // se adelanta al golpe / espera atrás
+    s.celeb = ag >= 1 ? 1 : (ag <= -1 ? 0.35 : 0.6);  // grande · sobrio · normal
+    return s;
+  }
+  _rivStyleAplicar() {
+    const st = this._rivStyleCalc();
+    if (this.ai) this.ai.style = st;
+    if (this.demoAI) this.demoAI.style = st;   // el demo espeja el estilo
+  }
+
+  /* ======================================================================
+   *  r95 · MESA (AJUSTES › SALA Y ESCENA › MESA) — altura + aspecto.
+   *  La altura MUTA DIMS.tableTopY/netTopY (física, IA, saque y escena la
+   *  leen EN VIVO — una sola fuente de verdad) y la mesa viva se reacomoda
+   *  con relayoutMesa() (c07) SIN reconstruir nada. El aspecto tiñe
+   *  ppTableTop + marco. Bloqueada durante un campeonato ACTIVO (la
+   *  ARKANOID sustituye la mesa y Halloween viste la suya).
+   *  ====================================================================== */
+  mesaOcupada() {
+    try { return !!(this.champs && this.champs.active); } catch { return false; }
+  }
+  _mesaLibre(lock) {
+    const d = (this.stats && this.stats.data) || {};
+    if (lock === 'wins10') return (d.won || 0) >= 10;
+    if (lock === 'streak5') return (d.bestStreak || 0) >= 5;
+    return true;
+  }
+  _mesaLockTxt(lock) {
+    if (lock === 'wins10') return T('mesa_lock_wins');
+    if (lock === 'streak5') return T('mesa_lock_streak');
+    return '';
+  }
+  _mesaAplicar(altoId, skinId) {
+    const alto = MESA_ALTOS.find((a) => a.id === altoId) || MESA_ALTOS[1];
+    let skin = MESA_ASPECTOS.find((s) => s.id === skinId) || MESA_ASPECTOS[0];
+    if (skin.lock && !this._mesaLibre(skin.lock)) skin = MESA_ASPECTOS[0];
+    // 1) ALTURA: muta DIMS y reacomoda la mesa viva (referencias intactas)
+    DIMS.tableTopY = alto.y;
+    DIMS.netTopY = alto.y + MESA_NET_H;
+    relayoutMesa(this.tableGroup);
+    // 2) ASPECTO: tiñe superficie y marco (el marco comparte material con
+    // las patas — un solo tinte cubre apron + apron2 + patas)
+    if (this.tableGroup) {
+      const top = this.tableGroup.getObjectByName('ppTableTop');
+      if (top && top.material) top.material.color.setHex(skin.top);
+      const apron = this.tableGroup.getObjectByName('ppTableApron');
+      if (apron && apron.material) apron.material.color.setHex(skin.edge);
+    }
+    this.mesaAlto = alto.id;
+    this.mesaSkin = skin.id;
   }
 
   /** r61 · aplica el factor ACTUAL (lerp-eado hacia el objetivo) al
@@ -23134,6 +23603,17 @@ class PingPongGame {
         // v3.1.2-CCD1 · piezas de la CCD por SDF para QA headless
         collidePaddleSweep, CCD_TUNE, sweepBallVsBlade, sweepBallVsCapsuleY };
     }
+    // r95 · ESTADÍSTICA VIVA: velocidad MÁXIMA de la bola durante el
+    // rallye (un length() por frame — la fanfarria final la muestra).
+    try {
+      if (this.rules.mStats && this.rules.state === 'rally' &&
+          this.ball && this.ball.vel && this.ball.active !== false) {
+        const sp = this.ball.vel.length();
+        if (Number.isFinite(sp) && sp > this.rules.mStats.vmax) {
+          this.rules.mStats.vmax = sp;
+        }
+      }
+    } catch { /* */ }
     this.scoreboardUpdate({
       player: this.rules.scorePlayer,
       ai: this.rules.scoreAi,
@@ -23540,10 +24020,19 @@ class PingPongGame {
         K.clos0 + K.clos1 * e);
       mesh.quaternion.slerp(poseQ, Math.min(1, dt * 18));
     } else {
+      // r95 · CELEBRACIÓN CON ESTILO: al ganar el punto, el rival agresivo
+      // LO CELEBRA (tres saltitos + guiño de hoja) y el defensivo lo hace
+      // sobrio. Sin estilo (o toggle NO): exactamente el bob de siempre.
+      let celebBob = 0, celebRoll = 0;
+      if (ai.celebT > 0) {
+        const ct = Math.sin((1 - ai.celebT / 0.9) * Math.PI * 3);
+        celebBob = Math.abs(ct) * 0.055;
+        celebRoll = ct * 0.32;
+      }
       const bob = Math.sin(performance.now() / 1000 * 3.0 + (who === 'ai' ? 0 : 2.1)) * 0.012;
       mesh.position.set(
         ai.pos.x + ai.prep.x,
-        Math.max(0.42, ai.pos.y + ai.prep.y + bob),
+        Math.max(0.42, ai.pos.y + ai.prep.y + bob + celebBob),
         ai.pos.z + ai.prep.z,
       );
       // espera: postura de jugador real — hoja delante, inclinada hacia el
@@ -23558,7 +24047,7 @@ class PingPongGame {
       AIM_FACE.x += (this.ball.pos.x - mesh.position.x) * 0.7;
       const sway = Math.sin(performance.now() / 1000 * 1.7 + (who === 'ai' ? 1.3 : 4.2)) * 0.06;
       // bola alta: cara algo cerrada por encima · bola baja: cara abierta
-      bladePose(AIM_BLADE, AIM_FACE, sway, this.ball.pos.y > 1.25 ? 0.1 : -0.12);
+      bladePose(AIM_BLADE, AIM_FACE, sway + celebRoll, this.ball.pos.y > 1.25 ? 0.1 : -0.12);
       mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
     }
     this.clampPaddlePose(mesh.position, mesh.quaternion, false);
@@ -23698,12 +24187,28 @@ class PingPongGame {
             if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.25, 70);
           } else {
             // PARTIDO: punto + adaptativa + ambiente de torneo
+            // r95 · ESTADÍSTICAS DEL DUELO: el rally más largo del partido
+            // (la fanfarria final muestra vmax · rally · precisión).
+            try {
+              if (this.rules.mStats && (it.rallyHits || 0) > this.rules.mStats.bestRally) {
+                this.rules.mStats.bestRally = it.rallyHits || 0;
+              }
+            } catch { /* */ }
             this.audio.point(it.winner === 'player');
             if (it.winner === 'player') {
               this.audio.applause(false);
             } else if (it.cause && NetLink.OHH_CAUSES.has(it.cause)) {
               this.audio.ohh();
             }
+            // r95 · CELEBRACIÓN CON ESTILO: el rival agresivo que GANA el
+            // punto lo celebra (saltitos + guiño de hoja) si el toggle
+            // AJUSTES › JUEGO «Rivales con estilo visible» está activo.
+            try {
+              if (it.winner !== 'player' && this.ai && this.ai.style &&
+                  this.ai.style.celeb >= 0.6) {
+                this.ai.celebT = 0.9;
+              }
+            } catch { /* */ }
             if (this.renderer.xr.isPresenting) {
               this.haptic(this.paddleHand, it.winner === 'player' ? 0.85 : 0.4, it.winner === 'player' ? 110 : 60);
             }
@@ -23834,7 +24339,17 @@ class PingPongGame {
     this._repPendiente = !!(this._repBest && this._repBest.buf &&
       this._repBest.hits >= 3 && !this.net.online);
     this.audio.fanfare(win);
-    this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi);
+    // r95 · ESTADÍSTICAS AL FINAL DE CADA DUELO (petición del dueño):
+    // velocidad máx. de bola · rally más largo · % precisión, medidos EN
+    // VIVO durante el partido (rules.mStats) y pintados bajo el marcador.
+    const _mst = this.rules.mStats || { vmax: 0, bestRally: 0 };
+    const _tot = this.rules.scorePlayer + this.rules.scoreAi;
+    const fanfStats = {
+      vmax: Math.round(_mst.vmax * 10) / 10,
+      rally: _mst.bestRally || 0,
+      prec: _tot > 0 ? Math.round((this.rules.scorePlayer / _tot) * 100) : 0,
+    };
+    this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi, fanfStats);
     this.fanfareBanner.group.visible = true;
     this.fanfareBanner.group.scale.setScalar(0.2);
     if (this.renderer.xr.isPresenting) {

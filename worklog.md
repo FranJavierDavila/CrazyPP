@@ -5129,3 +5129,64 @@ Work Log:
 - DESPLIEGUE (post-commit, HEAD f13f189): push main 101b417..f13f189 (PAT del dueño expandido EN la URL) · git branch -f pages origin/pages (patrón anti non-fast-forward) · GIT_TOKEN → deploy_pages --push --release --backup · pages → 54543a49e encadenada al tip (432 ficheros · smoke bajo prefijo /CrazyPP 0 fallos/0 pageerrors) · respaldo main→proyecto al día · Release v3.6.91-SDK6 con los 4 ZIPs (https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.91-SDK6).
 - VERIFICACIÓN EN PRODUCCIÓN TRES VÍAS BYTE-EXACTO (scripts/verifica_r99_produccion.py — 51/0): servido sha256 == PAGES-VERSION.txt servido game_sha256 == git hash-object del SERVIDO == blob origin/pages:game.html (las 2 reescrituras del patrón de siempre; local public/game.html == golden a80e2a8f… aparte) · AGUJAS EN EL SERVIDO: sellos 3.6.91-SDK6 + badge V3.6.91 + % ENCIMA de la barra (r99) + posiciones antiguas RETIRADAS + decal 1,04×0,26 tumbado a 6 mm en z −0,57 con pegado por frame (r99) + bocadillo/arrastre/agarre de la r98 intactos + MÓDULO SERVIDO BYTE-IDÉNTICO 5/5 (halloween) + r95/r93/r97 heredadas intactas.
 - PENDIENTE VIVO para el dueño: recargar con game.html?v=v3691 (el Quest cachea: cerrar pestaña o forzar recarga). El % de los deslizadores vive ENCIMA de la barra y ya no se pisa; la altura de la mesa se lee SOBRE la mesa — texto más pequeño, paralelo al tablero, pegado al lado del dueño.
+
+---
+Task ID: 205
+Agent: principal (Z.ai)
+Task: ronda 100 — cuatro peticiones del dueño tras V3.6.91: (1) «en la prueba de altura, de pasar la pelota por debajo de una barra me
+gustaría que en esa prueba pudiésemos modificar la altura de dicha barra de manera interactiva durante el entrenamiento… pulsando unos
+iconos que se encuentran a la altura de la barra con forma de una flecha hacia arriba y otra flecha hacia abajo con la medida de la
+altura de la barra sobre la superficie de la mesa… ajustar en rangos de 1 cm… enfocando con la mano que no tiene pala hacia esos iconos
+sale un haz de selección» · (2) «en la prueba de altura de los globos aparece un icono de una línea con un círculo o toro en la parte
+superior… ¿es correcta esa representación y está bien situada? pensé que debería estar situado en el medio de la mesa» · (3) «en las
+partidas y campeonatos a veces el primer saque no me permite lanzar la pelota al aire con la mano libre hasta donde quiera, es como si
+en ese primer intento tuviese una limitación o restricción, revisalo» · (4) «Eleven Table Tennis tiene más precisión: botar la bola
+sobre nuestra propia raqueta, pararla, que se deslice… si la empujo puedo recuperar el bote… nosotros: va a trompicones y al levantar
+la pala la bola la atraviesa y desaparece… si ellos lo han conseguido nosotros no podemos ser menos» — SIN romper la física de golpes.
+
+Work Log:
+- ARRANQUE: sandbox reciclado DOS veces en la sesión (árbol de Task 135, V3.6.27, PAT ausente) — recuperación desde origin/main con el
+  PAT del dueño (stash de uploads + fetch + reset --hard e5ac8d2 V3.6.91 + pages alineada). Diagnóstico previo íntegro: c13 (AREAS/
+  MODES del Pro Training, buildRibbon t2a, buildApexRing t2b, jueces 1910-1925), c12 (tossFromHand, árbitro del saque, holdLock), c04
+  (CCD SDF + updatePaddleSim: media móvil 45 ms + lerp 0.85 + clamp), c05 (collidePaddleSweep/stepPhysics/testPaddleContact).
+- DIAGNÓSTICO (3): el lanzamiento usaba hand.vel = media móvil de 45 ms con lerp 0.85 — al soltar en el pico del flick el filtro iba
+  detrás (60-80 % de la velocidad de la mano): «lanzamiento cortado». FIX FIEL (c12 tossFromHand + c13 serveTossFromTee): si
+  hand.velInst (velocidad INSTANTÁNEA con el mismo techo anti-picos) es mayor, manda ELLA — la bola sale con la mano real; gesto suave
+  = idéntico al de siempre. Duelos de campeonato cubiertos (usan el saque del núcleo).
+- (1) BARRA INTERACTIVA (c13): barraH viva (0,17 de serie, clamps 0,05-0,40, persistente pp_train_barra_v1 con redondeo a mm) —
+  RIBBON_Y() pasa a dinámica y el JUEZ t2a (cross.y < RIBBON_Y) juzga lo que se ve; buildRibbon ampliado: sprite flecha ARRIBA,
+  rótulo de lectura en cm sobre la SUPERFICIE de la mesa (BARRA_CM) y flecha ABAJO (columna a x=1,05 m, fuera del extremo de la
+  cinta, canvas chevrones ámbar + rótulo i18n ES/EN); barraTick: rayo de la MANO LIBRE (G.rays[G.ballHand]) con hover MATEMÁTICO
+  (distanceToPoint <= 7,5 cm), brillo del botón + háptica de borde + HAZ DE SELECCIÓN (línea + punto, perezoso); barraAjustarHover:
+  el gatillo ±1 cm CONSUME el gesto (serveTrigger hook — la bola del tee no sale) con blip ascendente/descendente + háptica + toast
+  de cm; applyModeScene repinta el rótulo al entrar; internos expuestos en __test para la QA (accesores, nunca sustituciones).
+- (2) ARO AL CENTRO (c13 buildApexRing): el toro verde (aro objetivo) + haz de guía pasan de z=C()+0,50 m (media cancha rival) al
+  CENTRO de la mesa (z=C()) — el apex de un globo real ocurre junto a la red; el juez t2b no cambia (mide st.apex del vuelo).
+  Respuesta al dueño: la representación ES correcta (aro por encima del que pasa el globo + línea de guía) — sólo estaba desplazado.
+- (4) BOLA VIVA EN LA PALA (c02+c05+c12, quirúrgico): CONTACTO DE REPOSO en collidePaddleSweep — llegada MUY lenta a la CARA de la
+  pala del jugador (nunca saque/serveFlight, nunca mango ni canto): proyección sin penetración, velocidad normal relativa ANULADA
+  (sin rebote), fricción tangencial con acople de giro (Δω = −(3/2r)·(N×Δv), rodadura), UMBRAL DUAL 0,95 m/s con pala lenta
+  (paddleRestCarry 0,5) / 0,65 con pala viva (el swing real JAMÁS posa: es golpe puro — físicas de golpe y golden intactos); evento
+  restTouch SOLO en contacto nuevo → c12: «toc» suave de goma + háptica (throttle 250 ms, sin carga de poder ni cuenta de golpes) +
+  return true (padHit aplaza mesa/red ese subpaso). TRANSPORTE en stepPhysics (una pasada por frame, temporales propios cero allocs):
+  la bola apoyada VIAJA 1:1 con la pala (posición re-proyectada a la cara con el punto local conservado), gravedad tangencial con
+  fricción estática (pala plana = bola quieta; pala inclinada = la bola RUEDA cuesta abajo), rodadura del cascarón suave, despegues
+  limpios: pala rápida (> carry ⇒ el CCD decide el golpe natural — jamás la atraviesa), bola fuera del disco (rodó fuera), edad sin
+  re-confirmar > 90 ms, pala ausente. El GOLPE limpia el apoyo (__ppRestIdx=-1).
+- VERSION: bump_version canónico 3.6.91 → 3.6.92-SDK6 FASE 94 «LA BOLA VIVA EN TU PALA + BARRA INTERACTIVA (r100)» (SDK 1.6.0 se
+  conserva; golden edc1bd99→7b94c439→5fe56d9c en tres regoldados del desarrollo; VERSION.json fase 94 · hub v3692-sdk6 · 10.588.364 B).
+- QA: capa r100 NUEVA (scripts/qa_r100_v3692.py — 81/0: estática 57 agujas + negativas (cinta fija 17 cm y aro a +0,50 RETIRADOS) +
+  sellos + RUNTIME en vivo: flick 4 m/s real / gesto suave 2 m/s intacto · bola posada a rB de la cara estable < 0,08 m/s sin un solo
+  evento de golpe · restTouch · transporte 1:1 (3 cm con la pala despacio) · swing a 3,2 m/s GOLPEA y la bola vuela (bote recuperado)
+  · apoyo roto limpio · barra ±1 cm con clamps 5/40 y persistencia limpia · mandos a 1,05 m y cinta al nivel del rótulo · sin errores
+  de página). Golden de física 11/0 (los escenarios no tocan la rama de reposo). DIAGNÓSTICO intermedio con trace frame a frame: la
+  bola que cae 2 cm llega a 0,66 m/s (por encima del primer umbral 0,65) — origen del umbral dual pala lenta 0,95.
+- RELEASE: gen_release_v3692 NUEVO (hereda release-v3691 → v3692, 24 tokens re-anclados; lección del primer intento: re-anclar tokens
+  ANTES de insertar el bloque de notas — el FIN heredado se busca ya a 3.6.92) · build_zip → 4 ZIPs (COMPLETO 146.638.363 B · ligera
+  18.432.661 · CLOUDFLARE 146.624.571 · SOLO 6.221) · QA TOTAL EN CASCADA (A-J, log completo en /tmp/qa_todo_r100.log).
+- DESPLIEGUE (post-commit): push main con el PAT del dueño · git branch -f pages origin/pages · deploy_pages.py --push --release
+  --backup · VERIFICACIÓN EN PRODUCCIÓN TRES VÍAS BYTE-EXACTO (scripts/verifica_r100_produccion.py): servido sha256 ==
+  PAGES-VERSION.txt == git ls-tree pages · agujas r100 en el servido (barra interactiva, aro al centro, velInst, reposo+transporte)
+  · r99/r98/r97/r95 heredadas intactas · módulo halloween byte-idéntico 5/5.
+- PENDIENTE VIVO para el dueño: recargar con game.html?v=v3692 (el Quest cachea: cerrar pestaña o forzar recarga). La barra del PASE
+  BAJO ajusta ±1 cm con el rayo de la mano libre; la bola ya se posa y rueda sobre la pala como Eleven.

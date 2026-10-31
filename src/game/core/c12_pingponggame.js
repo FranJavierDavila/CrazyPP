@@ -5382,6 +5382,16 @@ export class PingPongGame {
   tossFromHand(i, assisted) {
     const hand = this.controllerPaddles[i];
     const v = new THREE.Vector3().copy(hand.vel);
+    // r100 · LANZAMIENTO FIEL AL GESTO (informe del dueño: «el primer saque
+    // no me permite lanzar la pelota al aire hasta donde quiera, como si
+    // tuviese una limitación»). El filtro de media móvil (diseñado para
+    // GOLPES reproducibles) llega al instante del soltado detrás del pico del
+    // flick: la bola salía con 60-80 % de la velocidad de la mano. Si la
+    // velocidad INSTANTÁNEA del mando (velInst, mismo techo anti-picos de
+    // paddleVelClamp) es mayor, manda ELLA: la bola sale con la velocidad
+    // REAL de la mano (requisito A v3.1.0-SRV2 al pie de la letra). Gestos
+    // suaves: velInst ≈ vel → comportamiento idéntico al de siempre.
+    if (hand.velInst && hand.velInst.lengthSq() > v.lengthSq()) v.copy(hand.velInst);
     // v3.0.9-HALL1 · subida mínima del saque asistido según dificultad
     const vyMin = this.serveTier().vy;
     if (assisted && v.y < vyMin) {
@@ -11397,6 +11407,19 @@ export class PingPongGame {
           break;
         case 'wall':
           this.audio.thud(pan, Math.min(0.5, e.speed / 6));
+          break;
+        case 'restTouch':
+          // r100 · la bola SE POSA sobre la pala (contacto de reposo c05):
+          // «toc» suave de goma — sin carga de poder, sin cuenta de golpes,
+          // sin FX de golpe (no es un golpe). Throttle 250 ms por si la bola
+          // va reboteciendo en el apoyo.
+          if (!this._restSfxAt || performance.now() - this._restSfxAt > 250) {
+            this._restSfxAt = performance.now();
+            try { this.audio.playOsc(210, 160, 0.05, 'sine', Math.min(0.14, 0.05 + (e.speed || 0) * 0.12), pan); } catch (eRT) { /* */ }
+            if (this.renderer.xr.isPresenting) {
+              try { this.haptic(this.ballHand, 0.12, 24); } catch (eRT2) { /* */ }
+            }
+          }
           break;
         case 'paddle':
           this.audio.paddle(pan, Math.min(1, e.speed / 9));

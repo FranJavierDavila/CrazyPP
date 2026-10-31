@@ -1,10 +1,10 @@
 {
-  "version": "3.6.91-SDK6",
-  "fase": 93,
-  "faseNombre": "AJUSTES FINOS DEL MENÚ (r99)",
+  "version": "3.6.92-SDK6",
+  "fase": 94,
+  "faseNombre": "LA BOLA VIVA EN TU PALA + BARRA INTERACTIVA (r100)",
   "sdk": "1.6.0",
-  "fecha": "2026-10-31",
-  "hub": "v3691-sdk6",
+  "fecha": "2026-11-01",
+  "hub": "v3692-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r95",
-  "tamano": 10552700,
-  "golden": "a80e2a8fa2ad3a7a57705acbb7981182a9739fdcf03a2f1698280037de02fc59"
+  "nota": "r100",
+  "tamano": 10588364,
+  "golden": "5fe56d9c754fdff9f6a32a7f52f0d0517610bec7ca05b3030e02189fb0031597"
 }

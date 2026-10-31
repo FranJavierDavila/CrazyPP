@@ -117,6 +117,55 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   const vRelN = relVel.dot(tmpN);
   if (vRelN >= 0) return false;   // ya se separan: no es un golpe (spec F)
 
+  /* ================================================================
+   * r100 · CONTACTO DE REPOSO pala-bola (el estándar Eleven).
+   * Informe del dueño tras V3.6.91: «si paramos la bola sobre la pala su
+   * movimiento va a trompicones y si levanto la pala la bola la atraviesa y
+   * desaparece… Eleven: se desliza perfectamente, e incluso empujándola
+   * recupero el bote». Diagnóstico: una bola depositada re-golpeaba en CADA
+   * subpaso (gravedad ⇒ contacto ⇒ restitución + reversión de giro + suelo
+   * de salida + evento) — micro-rebotes = «trompicones», y una pala que
+   * sube rápido barría el plano sin resolución ⇒ la bola quedaba debajo.
+   * Solución: llegada MUY lenta a la CARA de la pala del jugador ⇒ APOYO
+   * (no golpe): proyección sin penetración, velocidad normal relativa
+   * anulada (sin rebote), fricción tangencial con rodadura y REGISTRO del
+   * punto de apoyo — stepPhysics la arrastra por frame (bloque r100 allí).
+   * El swing real (|-vRelN| > paddleRestSpeed) sigue siendo GOLPE puro:
+   * físicas de golpe, golden e IA byte a byte intactos. El «empujón» que
+   * recupera el bote es natural: la pala acelera ⇒ vRelN crece ⇒ golpe. */
+  if (pad.who === 'player' && !pad.serveFlight && !onHandle &&
+      Math.abs(lhz) >= hT &&
+      -vRelN <= (pad.vel.lengthSq() <= DIMS.paddleRestCarry * DIMS.paddleRestCarry
+        ? DIMS.paddleRestSpeedPad      // pala lenta: posar la bola (hasta 0,95)
+        : DIMS.paddleRestSpeed)) {     // pala viva: umbral estricto (0,65)
+    // proyección a la cara (mismo patrón que la colocación del golpe)
+    ball.pos.copy(padPos).addScaledVector(tmpN, rB + 0.001)
+      .addScaledVector(ipRight, lx).addScaledVector(ipUp, ly);
+    // anular la aproximación normal (la bola comparte la normal de la pala)
+    ball.vel.addScaledVector(tmpN, -vRelN);
+    // fricción tangencial + acople de giro (rueda en vez de vibrar)
+    relVel.copy(ball.vel).sub(pad.vel);
+    relVel.addScaledVector(tmpN, -relVel.dot(tmpN));      // tangencial relativa
+    const slipR = relVel.length();
+    if (slipR > 1e-4) {
+      let dvR = slipR * DIMS.paddleRestFric;
+      if (dvR > slipR) dvR = slipR;
+      relVel.setLength(-dvR);
+      ball.vel.add(relVel);
+      // Δω = −(3/2r)·(N × Δv): el mismo acople cascarón del bote (FIS1)
+      ball.spin.addScaledVector(tmpD.copy(tmpN).cross(relVel), -1.5 / DIMS.ballRadius);
+    }
+    const nuevo = ball.__ppRestIdx !== pad.index ||
+      (ball.__ppRestT === undefined) || ball.__ppRestT > DIMS.paddleRestDrop;
+    ball.__ppRestIdx = pad.index;
+    ball.__ppRestSide = tmpN.dot(ipNormal) >= 0 ? 1 : -1;
+    ball.__ppRestLx = lx;
+    ball.__ppRestDy = dyy;
+    ball.__ppRestT = 0;
+    if (nuevo) events.push({ type: 'restTouch', speed: -vRelN, pos: crossPoint.clone() });
+    return true;   // padHit: el subpaso aplaza mesa/red (la bola está en la pala)
+  }
+
   // v3.0.5 P1: PUNTO DULCE — offC: 0 = centro de la hoja, 1 = canto.
   // El canto pega «sordo» (menos restitución), dispersa y da menos efecto.
   // El anillo de asistencia del saque (fuera de la hoja) penalización fija
@@ -281,6 +330,10 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     .addScaledVector(tmpN, front)
     .addScaledVector(ipRight, lx)
     .addScaledVector(ipUp, ly);
+  // r100 · un GOLPE rompe cualquier apoyo previo (el transporte r100 en
+  // stepPhysics jamás persigue una bola ya golpeada)
+  ball.__ppRestIdx = -1;
+  ball.__ppRestT = 0;
 
   // v3.6.49 · SÚPER IMÁN — GUÍA DE TIRO EN EL GOLPE (spec literal r57):
   // la trayectoria real del golpe se prolonga hacia la mitad rival y se
@@ -541,7 +594,79 @@ function collideWorld(ball, events) {
 const _imObjetivo = new THREE.Vector3();   // objetivo de la guía del imán
 const _imSpinCero = new THREE.Vector3();   // spin nulo del misil guiado
 
+/* r100 · TEMPORALES del transporte del apoyo (una pasada por frame: CERO
+ * asignaciones en el camino caliente). */
+const _rsBase = new THREE.Vector3();
+const _rsN = new THREE.Vector3();
+const _rsG = new THREE.Vector3();
+const _rsSlip = new THREE.Vector3();
+const _rsOm = new THREE.Vector3();
+
 export function stepPhysics(dt, ball, paddles, events, extra) {
+  /* ================================================================
+   * r100 · TRANSPORTE DEL APOYO (bloque complementario del contacto de
+   * reposo en collidePaddleSweep). La bola apoyada en la pala del jugador
+   * VIAJA con ella mientras el gesto sea suave: posición re-proyectada a la
+   * cara con la pose del frame nuevo (punto local conservado), gravedad
+   * tangencial con fricción estática (pala plana = bola quieta; pala
+   * inclinada = la bola rueda cuesta abajo) y rodadura del cascarón. Al
+   * acelerar la pala (swing, > paddleRestCarry) el apoyo se SUELTA y el
+   * barrido CCD del subpaso decide el golpe natural — nunca atraviesa.
+   * Despegues: pala rápida, bola deslizada fuera del disco, edad sin
+   * re-confirmar > paddleRestDrop o pala ausente (auto-limpieza).        */
+  if (ball.__ppRestIdx >= 0) {
+    let rp = null;
+    for (const p of paddles) if (p && p.index === ball.__ppRestIdx) { rp = p; break; }
+    ball.__ppRestT = (ball.__ppRestT || 0) + dt;
+    if (!rp || !rp.active || rp.who !== 'player' ||
+        ball.__ppRestT > DIMS.paddleRestDrop ||
+        rp.vel.lengthSq() > DIMS.paddleRestCarry * DIMS.paddleRestCarry) {
+      ball.__ppRestIdx = -1;                       // despegue: física normal
+    } else {
+      _rsN.copy(rp.normal).multiplyScalar(ball.__ppRestSide || 1);  // normal hacia la bola
+      // 1) deslizamiento propio: gravedad proyectada en el plano de la hoja
+      _rsG.set(0, DIMS.gravity, 0);
+      const gn = _rsG.dot(_rsN);                   // componente normal (negativa)
+      _rsG.addScaledVector(_rsN, -gn);             // tangencial (cuesta abajo)
+      const ax = _rsG.dot(rp.right), ay = _rsG.dot(rp.up);
+      const amax = DIMS.paddleRestFric * Math.abs(gn);
+      let sx = ball.__ppRestSx || 0, sy = ball.__ppRestSy || 0;
+      const quieta = (sx * sx + sy * sy) < 1e-6 &&
+        Math.hypot(ax, ay) <= DIMS.paddleRestMuS * Math.abs(gn);
+      if (quieta) { sx = 0; sy = 0; }              // fricción estática: no rueda
+      else {
+        sx += ax * dt; sy += ay * dt;
+        const sLen = Math.hypot(sx, sy);
+        if (sLen > 1e-9) {
+          const sNew = Math.max(0, sLen - amax * dt * 2.2);
+          const sK = sNew / sLen; sx *= sK; sy *= sK;
+        }
+      }
+      // 2) punto de apoyo actualizado y clamped al disco de la hoja
+      const lx2 = ball.__ppRestLx + sx * dt, dy2 = ball.__ppRestDy + sy * dt;
+      const rIn = DIMS.bladeRadius - DIMS.ballRadius * 0.35;
+      if (lx2 * lx2 + dy2 * dy2 > rIn * rIn) {
+        ball.__ppRestIdx = -1;                     // rodó fuera del borde
+      } else {
+        ball.__ppRestLx = lx2; ball.__ppRestDy = dy2;
+        ball.__ppRestSx = sx; ball.__ppRestSy = sy;
+        // 3) posición pegada a la cara con la pose del frame nuevo
+        _rsBase.copy(rp.pos).addScaledVector(rp.up, DIMS.bladeCenterUp);
+        ball.pos.copy(_rsBase)
+          .addScaledVector(rp.right, lx2)
+          .addScaledVector(rp.up, dy2)
+          .addScaledVector(_rsN, DIMS.ballRadius + 0.001);
+        // 4) velocidad: la de la pala + el deslizamiento propio (al soltar
+        //    la bola hereda ambos — botes y deslices naturales)
+        _rsSlip.set(0, 0, 0).addScaledVector(rp.right, sx).addScaledVector(rp.up, sy);
+        ball.vel.copy(rp.vel).add(_rsSlip);
+        // 5) rodadura del cascarón (ω ideal = (N × v)/r, aproximada suave)
+        _rsOm.copy(_rsN).cross(_rsSlip).divideScalar(DIMS.ballRadius);
+        ball.spin.lerp(_rsOm, 0.15);
+      }
+    }
+  }
+
   const n = Math.max(1, Math.min(96, Math.ceil(dt / MAX_SUBSTEP_DT)));
   const h = dt / n;
 

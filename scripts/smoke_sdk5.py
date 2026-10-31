@@ -103,7 +103,7 @@ async def main():
         print('pageerrors:', len(errs), errs[:2])
         await b.close()
         todos = all(v is True for v in r['mods'].values())
-        ok = (ver == '3.6.91-SDK6' and todos and r['sdkVer'] == '1.6.0'
+        ok = (ver == '3.6.92-SDK6' and todos and r['sdkVer'] == '1.6.0'
               and not r['sdkExports'] and r['congela'] == [2.15, 2.15, 0]
               and r['engine'] and r['music'] and r['musicSilente'] and r['powersign']
               and r['rival'] and r['cartel']

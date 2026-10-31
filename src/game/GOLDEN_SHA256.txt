@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.91-SDK6, fase 93 · AJUSTES FINOS DEL MENÚ (r99); sello actualizado
-# por bump_version.py desde 3.6.90-SDK6)
-a80e2a8fa2ad3a7a57705acbb7981182a9739fdcf03a2f1698280037de02fc59
+# SHA256 del game.html que produjo esta división (3.6.92-SDK6, fase 93 · AJUSTES FINOS DEL MENÚ (r99); sello actualizado
+# por bump_version.py desde 3.6.91-SDK6)
+5fe56d9c754fdff9f6a32a7f52f0d0517610bec7ca05b3030e02189fb0031597

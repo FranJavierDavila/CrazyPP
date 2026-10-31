@@ -328,6 +328,35 @@ export class ChampLoader {
     }
     this.leaveAll();
     this.activeId = id;
+    // r97 · VOZ DE PERSONALIDAD DEL RIVAL: (a) los ARCHIVOS de voz del
+    // manifest activo (audio.sounds kind→archivo) quedan a la vista del
+    // motor rivalSfx del núcleo — antes SÓLO La Locura los publicaba a
+    // mano (window.__PP_ARCADE_DATA); ahora cualquier campeonato que
+    // declare sounds en SU manifest tiene la voz del rival por ARCHIVO en
+    // los estados estándar (laugh/crazy/angry/victory…), con la síntesis
+    // como respaldo. (b) la personalidad (manifest.rival.personalidad)
+    // queda publicada para que la síntesis se TIÑA (agresivo grave,
+    // defensivo agudo — c03 rivalSfx). El propio módulo sigue mandando:
+    // si él ya publicó __PP_ARCADE_DATA (La Locura, más rico) NO se pisa.
+    try {
+      const entV = this.entries.find((x) => x.id === id);
+      const manV = entV && entV.manifest;
+      if (manV) {
+        window.__PP_CHAMP_PERS = (manV.rival && manV.rival.personalidad) || null;
+        const sndV = (manV.audio && manV.audio.sounds) || {};
+        const claves = Object.keys(sndV);
+        if (claves.length && !(typeof window !== 'undefined' && window.__PP_ARCADE_DATA)) {
+          const urlsV = {};
+          for (const k of claves) {
+            try {
+              urlsV[k] = new URL('championships/' + id + '/' +
+                String(sndV[k]).replace(/^assets\//, 'assets/'), import.meta.url).href;
+            } catch (eU) { /* */ }
+          }
+          window.__PP_ARCADE_DATA = { __ppCoreVoz: true, sounds: urlsV };
+        }
+      }
+    } catch (eV0) { /* la voz jamás rompe el lanzamiento */ }
     // r96 · REGLA DEL DUEÑO: las pieles de la mesa son de PARTIDAS y
     // ENTRENAMIENTO — el campeonato ARRANCA con su mesa nativa (azul
     // oficial), sin heredar el tinte que el dueño eligió en AJUSTES.
@@ -554,7 +583,27 @@ export class ChampLoader {
     try { this.game.hideChampIntro(false); } catch (e0) { /* */ }
     try { if (m && m.leave) m.leave(); }
     catch (e) { console.warn('[champs] leave', e); }
+    // r97 · INFORME DEL DUEÑO («salí al Hall y seguía escuchando en bucle
+    // al zombi»): candado UNIVERSAL de salida — todo módulo con musicOff()
+    // (música propia + one-shots/bucles propios) lo calla TODO aquí. La
+    // fuga real: los one-shots del zombi son BUCLES cortados por un reloj
+    // que sólo corre desde update(); al salir a mitad de sonido el reloj
+    // muere y el bucle suena eterno en el Hall (más aún con la música del
+    // Hall muteada, porque entonces NADIE llama a mod.musicOff()). El
+    // módulo halloween además corta SU tren en leave() — doble seguro.
+    try { if (m && typeof m.musicOff === 'function') m.musicOff(); }
+    catch (eM) { console.warn('[champs] musicOff', eM); }
     this.activeId = '';
+    // r97 · fuera del campeonato se RETIRA la voz publicada por el núcleo
+    // (los archivos del manifest activo y su personalidad — el siguiente
+    // campeonato publica la suya; fuera de campeonato manda la síntesis
+    // neutra de siempre). El bloque rico de La Locura (__ppCoreVoz ausente)
+    // NO se toca: lo gestiona su propio módulo.
+    try { if (typeof window !== 'undefined' && window.__PP_ARCADE_DATA &&
+              window.__PP_ARCADE_DATA.__ppCoreVoz) window.__PP_ARCADE_DATA = null; }
+    catch (eV1) { /* */ }
+    try { if (typeof window !== 'undefined') window.__PP_CHAMP_PERS = null; }
+    catch (eV2) { /* */ }
     // r96 · fuera del campeonato vuelve el aspecto de mesa ELEGIDO por el
     // dueño (partidas/entrenamiento) — tras m.leave(), que restaura lo suyo.
     try { if (this.game._mesaSkinReapply) this.game._mesaSkinReapply(); } catch (eMR) { /* */ }

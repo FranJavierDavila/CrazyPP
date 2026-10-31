@@ -1348,6 +1348,11 @@ export class PingPongGame {
   setTheme(key, silent = false) {
     const t = ROOM_THEMES.find((x) => x.key === key);
     if (!t || key === this.theme) return;
+    // r97 · temas DESBLOQUEABLES (Nocturna con 4★ de retos semanales)
+    if (t.lock && !this._salaTemaLibre(t.lock)) {
+      try { this.rules.message = T('sala_lock_stars', { n: 4 }); } catch (e) { /* */ }
+      return;
+    }
     this.theme = key;
     try { localStorage.setItem('ppxr_theme', key); } catch { /* */ }
     this.applyTheme(key);
@@ -1361,9 +1366,17 @@ export class PingPongGame {
   }
 
   cycleTheme(dir) {
+    // r97 · SALTA los temas bloqueados (flick del stick nunca aterriza en
+    // un tema con candado)
+    const n = ROOM_THEMES.length;
     const i = ROOM_THEMES.findIndex((t) => t.key === this.theme);
-    const next = ROOM_THEMES[(i + dir + ROOM_THEMES.length) % ROOM_THEMES.length];
-    this.setTheme(next.key);
+    for (let paso = 1; paso <= n; paso++) {
+      const cand = ROOM_THEMES[((i + dir * paso) % n + n) % n];
+      if (!cand.lock || this._salaTemaLibre(cand.lock)) {
+        this.setTheme(cand.key);
+        return;
+      }
+    }
   }
 
   /** v3.6.43 · PASSTHROUGH EN CALIENTE (ronda 51): aplica o retira el
@@ -3006,17 +3019,18 @@ export class PingPongGame {
         break;
       }
       case 'salaroom': {
-        // r96 · subpágina SALA: los cuatro temas + passthrough (lo que antes
+        // r96 · subpágina SALA: los temas + passthrough (lo que antes
         // convivía apretado con la MESA en una sola página).
-        const themes = [
-          ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
-          ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
-        ];
+        // r97 · los temas salen DE ROOM_THEMES con su candado — Nocturna se
+        // abre con 4★ de los retos semanales (setTheme rechaza y avisa).
+        const themes = ROOM_THEMES.map((t0) => ['theme:' + t0.key,
+          (t0.lock && !this._salaTemaLibre(t0.lock) ? '🔒 ' : '') +
+          (t0.nameKey ? T(t0.nameKey) : t0.name)]);
         themes.forEach(([id, name], i) => {
           btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 64, 448, 56, name,
             this.theme === id.split(':')[1], undefined, undefined, 23);
         });
-        y += 136;
+        y += Math.ceil(themes.length / 2) * 64 + 8;
         const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
         btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }),
           !!pstOn, undefined, !!pstOn, 23);
@@ -3086,6 +3100,27 @@ export class PingPongGame {
         if (hayCerrada) {
           label(T('mesa_lock_hint'), y + 2, 16, '#5f6b78');
           y += 28;
+        }
+        // r97 · RETOS DE LA SEMANA: lo que ALIMENTA los candados de arriba
+        {
+          const act97 = this._retosActivos();
+          const st97 = this._retosEstado();
+          label(T('retos_t'), y + 2, 17, '#f0c85a');
+          y += 28;
+          for (const r of act97) {
+            const hecho = st97.done.indexOf(r.id) >= 0;
+            const p97 = Math.min(st97.p[r.id] || 0, r.n);
+            const progTxt = r.id === 'vmax65'
+              ? p97.toFixed(1) + ' / ' + r.n
+              : Math.floor(p97) + ' / ' + r.n;
+            btn('reto97', 56, y, 912, 46,
+              (hecho ? '✓ ' : '') + T(r.k, { n: r.n }) + '   ·   ' + progTxt,
+              hecho, undefined, false, 20);
+            y += 52;
+          }
+          label(T('retos_star', { n: st97.stars | 0 }) + ' · ' + T('retos_premio'),
+            y + 2, 15, '#7d8ea6');
+          y += 26;
         }
         break;
       }
@@ -4460,13 +4495,17 @@ export class PingPongGame {
   }
   _mesaLibre(lock) {
     const d = (this.stats && this.stats.data) || {};
-    if (lock === 'wins10') return (d.won || 0) >= 10;
-    if (lock === 'streak5') return (d.bestStreak || 0) >= 5;
+    // r97 · los RETOS SEMANALES ALIMENTAN los desbloqueos: las estrellas
+    // abren Oro (6★) y Carbono (3★) sin exigir las marcas clásicas.
+    const stars = this._retosEstrellas();
+    if (lock === 'wins10') return (d.won || 0) >= 10 || stars >= 6;
+    if (lock === 'streak5') return (d.bestStreak || 0) >= 5 || stars >= 3;
     return true;
   }
   _mesaLockTxt(lock) {
-    if (lock === 'wins10') return T('mesa_lock_wins');
-    if (lock === 'streak5') return T('mesa_lock_streak');
+    // r97 · el texto del candado muestra la ALTERNATIVA por estrellas
+    if (lock === 'wins10') return T('mesa_lock_wins_stars', { n: 6 });
+    if (lock === 'streak5') return T('mesa_lock_streak_stars', { n: 3 });
     return '';
   }
   /** r96 · definición de aspecto por id (con guard de recompensas). */
@@ -4530,6 +4569,58 @@ export class PingPongGame {
     let id = 'azul';
     try { id = localStorage.getItem('pp_mesaskin') || 'azul'; } catch { /* */ }
     this._mesaTinte(this._mesaSkinDef(id));
+  }
+
+  /* ====================================================================
+   *  r97 · MOTOR DE RETOS SEMANALES (3 activos, estrellas de por vida)
+   *  ==================================================================== */
+  /** Estado de la semana actual (migra estrellas entre semanas). */
+  _retosEstado() {
+    const wk = _retosSemanaKey();
+    let st = null;
+    try { st = JSON.parse(localStorage.getItem('pp_retos_v1') || 'null'); } catch (e) { st = null; }
+    if (!st || st.wk !== wk || typeof st.p !== 'object' || !Array.isArray(st.done)) {
+      st = { wk, p: {}, done: [], stars: (st && (st.stars | 0)) || 0 };
+    }
+    return st;
+  }
+  _retosGuarda(st) {
+    try { localStorage.setItem('pp_retos_v1', JSON.stringify(st)); } catch (e) { /* */ }
+  }
+  /** Los 3 retos de ESTA semana (rotación determinista por hash de semana). */
+  _retosActivos() {
+    const wk = _retosSemanaKey();
+    let h = 0;
+    for (let i = 0; i < wk.length; i++) h = (h * 31 + wk.charCodeAt(i)) >>> 0;
+    return [0, 1, 2].map((i) => RETOS_POOL[(h + i * 2) % RETOS_POOL.length]);
+  }
+  /** Alimenta un reto (ev: victoria/duelo/rally/vmax/aces/entrenamiento).
+   *  modo suma: cada evento suma · modo max: queda el mayor valor. */
+  _retosEvento(ev, v) {
+    try {
+      const st = this._retosEstado();
+      for (const r of this._retosActivos()) {
+        if (r.ev !== ev || st.done.indexOf(r.id) >= 0) continue;
+        const antes = st.p[r.id] || 0;
+        st.p[r.id] = r.modo === 'max' ? Math.max(antes, v) : antes + v;
+        if (st.p[r.id] >= r.n) {
+          st.done.push(r.id);
+          st.stars = (st.stars | 0) + 1;
+          try { this.audio.playOsc(880, 1320, 0.16, 'sine', 0.14, 0); } catch (e) { /* */ }
+          try { this.rules.message = T('retos_star', { n: st.stars }); } catch (e) { /* */ }
+        }
+      }
+      this._retosGuarda(st);
+    } catch (e) { /* los retos jamás rompen el partido */ }
+  }
+  _retosEstrellas() {
+    try { return (this._retosEstado().stars) | 0; } catch (e) { return 0; }
+  }
+  /** r97 · SALA desbloqueable: el tema Nocturna se abre con 4★ de retos. */
+  _salaTemaLibre(lock) {
+    if (!lock) return true;
+    if (lock === 'stars4') return this._retosEstrellas() >= 4;
+    return true;
   }
 
   /** r61 · aplica el factor ACTUAL (lerp-eado hacia el objetivo) al
@@ -10001,6 +10092,11 @@ export class PingPongGame {
         if (Number.isFinite(sp) && sp > this.rules.mStats.vmax) {
           this.rules.mStats.vmax = sp;
         }
+        // r97 · RETO vmax (cruce 6,5 m/s una vez por punto — barato)
+        if (Number.isFinite(sp) && sp >= 6.5 && this._retoVmaxOk !== true) {
+          this._retoVmaxOk = true;
+          this._retosEvento('vmax', sp);
+        }
       }
     } catch { /* */ }
     this.scoreboardUpdate({
@@ -10542,6 +10638,33 @@ export class PingPongGame {
     m.material.opacity = 0.55;
   }
 
+  /** r97 · MAPA DE CALOR — clasifica un bote del lado del JUGADOR en la
+   *  rejilla 3×3 (filas: corta/media/fondo desde la red · columnas:
+   *  izq/centro/der VISTAS DEL JUGADOR, derecha = +x). Devuelve 0..8 o −1
+   *  si el bote no es del lado del jugador. */
+  _heatClasifica(p) {
+    try {
+      const HL = DIMS.tableHalfLength || 1.37;
+      const dz = p.z - DIMS.tableCenterZ;
+      if (dz <= 0.02 || dz > HL + 0.08) return -1;   // fuera de nuestro lado
+      const fila = dz < HL * 0.34 ? 0 : dz < HL * 0.67 ? 1 : 2;
+      const col = p.x < -0.15 ? 0 : p.x > 0.15 ? 2 : 1;
+      return fila * 3 + col;
+    } catch (e) { return -1; }
+  }
+
+  /** r97 · HISTÓRICO global del mapa (pp_heat_v1) — lo lee la tarjeta del
+   *  entrenamiento (c13). Sin datos: array a cero (la tarjeta se pinta
+   *  «sin datos todavía» con el total a 0). */
+  heatGlobal() {
+    const g = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    try {
+      const acc = JSON.parse(localStorage.getItem('pp_heat_v1') || '[]');
+      for (let i = 0; i < 9 && i < acc.length; i++) g[i] = acc[i] | 0;
+    } catch (e) { /* */ }
+    return g;
+  }
+
   processIntents(intents) {
     // LIVE-TV: los intents del árbitro (point/serve/game-over) salen por el canal
     try { if (window.__PP_LIVE) window.__PP_LIVE.onIntents(intents); } catch { /* */ }
@@ -10604,6 +10727,36 @@ export class PingPongGame {
             }
             this.applyAISkill();   // IA adaptativa según el marcador
             this.celebrate(this.stats.recordPoint(it.winner, it.rallyHits || 0));
+            // r97 · MAPA DE CALOR (petición del dueño: «zonas donde pierdes
+            // puntos»): punto PERDIDO con intercambio real → la zona del último
+            // bote en NUESTRO lado (3×3: corta/media/fondo × izq/centro/der)
+            // suma en el mapa DEL PARTIDO (mHeat, lo pinta la fanfarria) y en
+            // el HISTÓRICO persistente (pp_heat_v1 — tarjeta del entrenamiento).
+            try {
+              const hb97 = this._heatBounce;
+              if (it.winner === 'ai' && (it.rallyHits || 0) >= 1 &&
+                  !this.net.online && hb97) {
+                const hIdx = this._heatClasifica(hb97);
+                if (hIdx >= 0) {
+                  if (!this.rules.mHeat) this.rules.mHeat = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+                  this.rules.mHeat[hIdx]++;
+                  try {
+                    const acc = JSON.parse(localStorage.getItem('pp_heat_v1') || '[]');
+                    while (acc.length < 9) acc.push(0);
+                    acc[hIdx]++;
+                    localStorage.setItem('pp_heat_v1', JSON.stringify(acc));
+                  } catch (eH2) { /* */ }
+                }
+              }
+            } catch (eH0) { /* */ }
+            this._heatBounce = null;   // cada punto parte de cero
+            // r97 · RETOS: aces (punto directo del sacador) y rally largo —
+            // y el techo de velocidad se resetea por punto (cruce honesto)
+            try {
+              this._retoVmaxOk = false;
+              if (it.winner === 'player' && (it.rallyHits || 0) === 1) this._retosEvento('aces', 1);
+              if ((it.rallyHits || 0) >= 12) this._retosEvento('rally', it.rallyHits);
+            } catch (eR98) { /* */ }
             // r61 · fin del intercambio: ¿bate al mejor? (cambio de refs)
             try { this._repCierra(it.rallyHits || 0); } catch (eR0) { /* */ }
             this.emitStats();
@@ -10716,6 +10869,12 @@ export class PingPongGame {
           );
           this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));
           this.emitStats();
+          // r97 · RETOS SEMANALES: duelos jugados/ganados alimentan la semana
+          try {
+            this._retoVmaxOk = false;
+            this._retosEvento('duelo', 1);
+            if (it.winner === 'player') this._retosEvento('victoria', 1);
+          } catch (eR97) { /* */ }
           break;
       }
     }
@@ -10738,6 +10897,8 @@ export class PingPongGame {
       vmax: Math.round(_mst.vmax * 10) / 10,
       rally: _mst.bestRally || 0,
       prec: _tot > 0 ? Math.round((this.rules.scorePlayer / _tot) * 100) : 0,
+      // r97 · MAPA DE CALOR del partido (≥3 zonas perdidas para pintarlo)
+      heat: { g: (this.rules.mHeat || [0, 0, 0, 0, 0, 0, 0, 0, 0]).slice(0, 9) },
     };
     this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi, fanfStats);
     this.fanfareBanner.group.visible = true;
@@ -10910,6 +11071,10 @@ export class PingPongGame {
           // bajo la bola del frame (fallback e.pos si no hay bola).
           const pMar = (this.ball && this.ball.pos) ? this.ball.pos : e.pos;
           this.flashMarker(pMar);
+          // r97 · MAPA DE CALOR: memoria del ÚLTIMO bote real (posición física
+          // del subpaso, e.pos — más fiel que la bola del frame) — el punto
+          // perdido se clasifica en la zona de este bote (c12 punto fin).
+          try { this._heatBounce = { x: e.pos.x, z: e.pos.z }; } catch (eH) { /* */ }
           // v3.6.37 · SÚPER EFECTO NOTORIO: bote EXAGERADO visible — anillo
           // rojo + barrido sonoro SOLO cuando la bola marcada (con giro
           // significativo) pega en la mesa: el dueño DEBE ver el efecto.
@@ -11646,4 +11811,33 @@ function createPalaAxes() {
   }
   tick(0);
   return { group, setActive, tick };
+}
+
+/* =====================================================================
+ *  r97 · RETOS SEMANALES — 3 retos por semana ISO que ALIMENTAN los
+ *  desbloqueos de MESA (Oro/Carbono) y de SALA (tema Nocturna). Selección
+ *  DETERMINISTA por semana (mismos retos para todos los días de la
+ *  semana, rotan cada lunes), progreso persistente (pp_retos_v1) y
+ *  ESTRELLAS ACUMULATIVAS de por vida: la alternativa honesta para quien
+ *  entrena mucho y quiere abrir recompensas sin esperar las marcas
+ *  clásicas (10 victorias / racha de 5).
+ *  ===================================================================== */
+const RETOS_POOL = [
+  { id: 'victorias', ev: 'victoria', n: 3, k: 'retos_r1', modo: 'suma' },
+  { id: 'rally12', ev: 'rally', n: 12, k: 'retos_r2', modo: 'max' },
+  { id: 'vmax65', ev: 'vmax', n: 6.5, k: 'retos_r3', modo: 'max' },
+  { id: 'entreno2', ev: 'entrenamiento', n: 2, k: 'retos_r4', modo: 'suma' },
+  { id: 'aces5', ev: 'aces', n: 5, k: 'retos_r5', modo: 'suma' },
+  { id: 'duelos5', ev: 'duelo', n: 5, k: 'retos_r6', modo: 'suma' },
+];
+function _retosSemanaKey() {
+  try {
+    const d = new Date();
+    const j = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dia = (j.getUTCDay() + 6) % 7;
+    j.setUTCDate(j.getUTCDate() - dia + 3);   // el jueves de esta semana ISO
+    const prim = new Date(Date.UTC(j.getUTCFullYear(), 0, 4));
+    const sem = 1 + Math.round(((j - prim) / 86400000 - 3 + ((prim.getUTCDay() + 6) % 7)) / 7);
+    return j.getUTCFullYear() + 'W' + String(sem).padStart(2, '0');
+  } catch (e) { return 'W0'; }
 }

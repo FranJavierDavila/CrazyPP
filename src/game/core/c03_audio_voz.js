@@ -1044,6 +1044,23 @@ export class GameAudio {
       if (!out) return;
       const ctx = this.ctx;
       const now = ctx.currentTime;
+      // r97 · VOZ DE PERSONALIDAD DEL RIVAL (petición del dueño): la perso-
+      // nalidad del campeonato activo (manifest.rival.personalidad) TIÑE la
+      // voz sintética — el AGRESIVO gruñe MÁS GRAVE y con más presencia, el
+      // DEFENSIVO suena más agudo/suave, el neutro queda como siempre. Los
+      // ARCHIVOS del manifest (sounds[kind], canal de abajo) NO se tocan:
+      // el arte del módulo manda; esto sólo personaliza el respaldo
+      // sintético que suena cuando no hay archivo. El modulador lo publica
+      // el champloader (window.__PP_CHAMP_PERS) al lanzar el campeonato.
+      let PM = 1, GM = 1;
+      try {
+        const pers = (typeof window !== 'undefined') && window.__PP_CHAMP_PERS;
+        if (pers && pers.agresividad != null) {
+          const ag = Math.max(1, Math.min(5, +pers.agresividad || 3)) - 3;  // -2..+2
+          PM = 1 - ag * 0.11;   // agresivo ×0,78 (grave) · defensivo ×1,22 (agudo)
+          GM = 1 + ag * 0.10;   // agresivo más presente
+        }
+      } catch (eP) { /* */ }
       // v2.35: bus de voz del rival — más presencia que el resto de SFX
       const bus = ctx.createGain();
       bus.gain.value = 1.6;
@@ -1053,10 +1070,10 @@ export class GameAudio {
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
         osc.type = type || 'triangle';
-        osc.frequency.setValueAtTime(Math.max(20, f0), t);
-        osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+        osc.frequency.setValueAtTime(Math.max(20, f0 * PM), t);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1 * PM), t + dur);
         g.gain.setValueAtTime(0.001, t);
-        g.gain.exponentialRampToValueAtTime(Math.max(0.002, gain), t + 0.015);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.002, gain * GM), t + 0.015);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         osc.connect(g);
         if (lp) {
@@ -1077,10 +1094,10 @@ export class GameAudio {
         src.loop = true;
         const f = ctx.createBiquadFilter();
         f.type = type || 'bandpass';
-        f.frequency.value = freq;
+        f.frequency.value = Math.max(40, freq * PM);
         f.Q.value = q;
         const g = ctx.createGain();
-        g.gain.setValueAtTime(Math.max(0.001, gain), t);
+        g.gain.setValueAtTime(Math.max(0.001, gain * GM), t);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         src.connect(f); f.connect(g); g.connect(bus);
         src.start(t); src.stop(t + dur + 0.02);
@@ -1093,12 +1110,12 @@ export class GameAudio {
       const vox = (t, dur, f0, f1, vow, gain) => {
         const gl = ctx.createOscillator();
         gl.type = 'sawtooth';
-        gl.frequency.setValueAtTime(Math.max(60, f0), t);
-        gl.frequency.exponentialRampToValueAtTime(Math.max(60, f1), t + dur);
+        gl.frequency.setValueAtTime(Math.max(60, f0 * PM), t);
+        gl.frequency.exponentialRampToValueAtTime(Math.max(60, f1 * PM), t + dur);
         const env = ctx.createGain();
         env.gain.setValueAtTime(0.001, t);
-        env.gain.exponentialRampToValueAtTime(Math.max(0.002, gain), t + Math.min(0.035, dur * 0.35));
-        env.gain.setValueAtTime(Math.max(0.002, gain), t + dur * 0.6);
+        env.gain.exponentialRampToValueAtTime(Math.max(0.002, gain * GM), t + Math.min(0.035, dur * 0.35));
+        env.gain.setValueAtTime(Math.max(0.002, gain * GM), t + dur * 0.6);
         env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         const F = FORMANTS[vow] || FORMANTS.a;
         for (let fi = 0; fi < 2; fi++) {

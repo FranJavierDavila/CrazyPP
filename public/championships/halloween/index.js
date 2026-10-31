@@ -1328,7 +1328,15 @@ PLANTILLA_PODERES.calabaza = {
      * frame entera en el suelo. Copia INMEDIATA de la posición renderizada. */
     if (game.ballMesh) C.gltf.position.copy(game.ballMesh.position);
     else if (game.ball) C.gltf.position.copy(game.ball.pos);
-    game.scene.add(C.gltf);
+    /* r97 · HIJA DEL MISMO PADRE QUE LA BOLA: la bola vive en game.rig y la
+     * calabaza en game.scene — dos espacios de coordenadas. Si CUALQUIER
+     * transform del rig deja de ser identidad (hoy o en el futuro), copiar
+     * la posición LOCAL a un objeto de la raíz DESFASA la calabaza
+     * exactamente ese delta («desincronizada con el bote»). Con el mismo
+     * padre, ballMesh.position y C.gltf.position son EL MISMO espacio:
+     * bit a bit por construcción, inmune a rig/cámara/relayoutMesa. */
+    if (game.ballMesh && game.ballMesh.parent) game.ballMesh.parent.add(C.gltf);
+    else game.scene.add(C.gltf);
     if (game.ball) game.ball.ppCalabaza = true;         // r92: contacto de la IA pegado a la calabaza
     if (game.ballMesh) game.ballMesh.visible = false;   // la calabaza ES la bola
   },
@@ -1407,7 +1415,10 @@ PLANTILLA_PODERES.calabaza = {
     if (game.ball) game.ball.ppCalabaza = false;
     if (game.ballMesh) game.ballMesh.visible = true;
     if (C.gltf) {
-      game.scene.remove(C.gltf);
+      /* r97: la calabaza es HIJA DEL PADRE DE LA BOLA (rig) — se retira de
+       * SU padre real (scene.remove ya no la encuentra). */
+      if (C.gltf.parent) C.gltf.parent.remove(C.gltf);
+      else game.scene.remove(C.gltf);
       /* r88/r90: los MATERIALES son clon por instancia (pudrición) →
        * dispose SIEMPRE; las GEOMETRÍAS son del caché de la casa (clon del
        * template procedural) y NO se tocan — re-subida cero al próximo uso. */
@@ -2318,6 +2329,17 @@ class PlantillaController {
     this._desmonta();       // r87: el mapa/cartel/rival/insignia NO quedan
     this.dueloVivo = false;
     if (MUSIC) try { MUSIC.off(); } catch (e) {}
+    /* r97 · INFORME DEL DUEÑO («salí al Hall y seguía escuchando en bucle
+     * al zombi estando ya en la escena del Hall»): los one-shots del zombi
+     * SON BUCLES del SDK cortados por un reloj que SÓLO corre desde
+     * update() — al salir a mitad de sonido el reloj se congela y el bucle
+     * suena ETERNO en el Hall (verificado en vivo: ZONB.crazy.suena() ===
+     * true tras leaveAll). leave() CORTA TODO el tren del zombi AQUÍ —
+     * no depende de que la música del Hall arranque y llame a musicOff(). */
+    if (ZONB) for (const k of Object.keys(ZONB)) {
+      try { ZONB[k].b.off(true); } catch (e) { /* */ }
+      ZONB[k].reloj = -1; ZONB[k].espera = 0;
+    }
     try {
       if (this.game.rules) {
         if (this.game.rules.state === STATE_NAME) this.game.rules.startMatch('match');

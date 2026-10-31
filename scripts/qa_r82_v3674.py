@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r82_v3674 — CAPA BR · V3.6.73→3.6.88-SDK6, FASE 76 «AL MILÍMETRO».
+"""qa_r82_v3674 — CAPA BR · V3.6.73→3.6.89-SDK6, FASE 76 «AL MILÍMETRO».
 
 Petición del dueño (r82): «Lo que me parece que no va bien es la partida en
 red multijugador, sigo sin poder jugar la bola. Veo movimiento de palas pero

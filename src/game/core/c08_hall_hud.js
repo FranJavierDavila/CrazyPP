@@ -1098,6 +1098,45 @@ export function createFanfareBanner() {
       ctx.fillStyle = '#e9edf2';
       ctx.fillText(stTxt, cx, scy + 1);
       ctx.textBaseline = 'alphabetic';
+
+      // r97 · MAPA DE CALOR DEL PARTIDO (petición del dueño: «zonas donde
+      // pierdes puntos»): mini-mesa 3×3 a la izquierda del chip de
+      // estadísticas — cada celda se enciende ROJO según los puntos
+      // perdidos en esa zona (corta/media/fondo × izq/centro/der). Con
+      // guard: sólo con ≥3 puntos perdidos (menos no dice nada).
+      if (stats.heat && stats.heat.g) {
+        const hg = stats.heat.g;
+        let tot = 0; for (let i = 0; i < 9; i++) tot += hg[i] | 0;
+        if (tot >= 3) {
+          let maxC = 1; for (let i = 0; i < 9; i++) maxC = Math.max(maxC, hg[i] | 0);
+          const gx = cx - scw / 2 - 88, gy = scy - 26;
+          ctx.fillStyle = 'rgba(8,12,20,0.72)';
+          ctx.strokeStyle = win ? 'rgba(232,180,90,0.55)' : 'rgba(150,165,180,0.45)';
+          ctx.lineWidth = 3;
+          roundRectPath(ctx, gx, gy, 76, 56, 12);
+          ctx.fill();
+          ctx.stroke();
+          for (let r = 0; r < 3; r++) {
+            for (let cI = 0; cI < 3; cI++) {
+              const v = hg[r * 3 + cI] | 0;
+              const alfa = v > 0 ? (0.18 + 0.72 * (v / maxC)) : 0.05;
+              ctx.fillStyle = v > 0
+                ? 'rgba(255,82,70,' + alfa.toFixed(2) + ')'
+                : 'rgba(255,255,255,0.05)';
+              ctx.fillRect(gx + 6 + cI * 22, gy + 6 + r * 16, 20, 14);
+            }
+          }
+          // red (línea superior) + etiqueta corta
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          ctx.fillRect(gx + 4, gy + 3, 68, 2);
+          ctx.font = '600 13px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#93a3b5';
+          ctx.fillText(T('heat_t'), gx + 38, gy + 68);
+          ctx.textBaseline = 'alphabetic';
+        }
+      }
     }
 
     tex.needsUpdate = true;

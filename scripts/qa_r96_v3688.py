@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r96_v3688.py — capa de QA de la ronda 96 (V3.6.88-SDK6).
+"""qa_r96_v3688.py — capa de QA de la ronda 96 (V3.6.89-SDK6).
 
 Los seis frentes del dueño de esta ronda:
  1) SALA Y ESCENA EN VIVO: al entrar en Ajustes › Sala y Escena el entorno
@@ -107,10 +107,10 @@ for aguja, nombre in AGUJAS:
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.88-SDK6', 'c00: VERSION sella 3.6.88-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.89-SDK6', 'c00: VERSION sella 3.6.89-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 90, 'VERSION.json: FASE 90')
-CHK(V.get('hub') == 'v3688-sdk6', 'VERSION.json: hub v3688-sdk6')
+CHK(V.get('fase') == 91, 'VERSION.json: FASE 91')
+CHK(V.get('hub') == 'v3689-sdk6', 'VERSION.json: hub v3689-sdk6')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')

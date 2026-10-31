@@ -1636,6 +1636,8 @@ loadPaddleModel().then((paddleModel) => {
       if (hitGoal) {
         const bonus = active === 't5a' ? (st.rally === 30 ? 15 : st.rally === 50 ? 25 : 50) : M.bonus;
         addPts(bonus);
+        // r97 · RETO SEMANAL «entrenamiento»: una meta completada cuenta
+        try { if (G && G._retosEvento) G._retosEvento('entrenamiento', 1); } catch (eRE) { /* */ }
         if (active === 't5a') recordBest(active, st.rally);
         // v3.0.7-PLAY1 · estrellas + precisión + celebración al completar
         let suffix = '';
@@ -2894,6 +2896,52 @@ loadPaddleModel().then((paddleModel) => {
         while (htD.length > 2 && c.measureText(htD).width > X0 + wD - (axD - 14) - 16) htD = htD.slice(0, -1);
         if (htD !== _w5) htD += '…';
         c.fillText(htD, axD - 14 + 16, yA + 56);
+      }
+      /* =============================================================
+       *  r97 · MAPA DE CALOR (petición del dueño: «mapa de calor de zonas
+       *  donde pierdes puntos — el entrenamiento ya mide zonas»): tarjeta
+       *  con el HISTÓRICO global (pp_heat_v1 que alimenta el núcleo al
+       *  perder un punto en partido). Rejilla 3×3 (corta/media/fondo ×
+       *  izq/centro/der vistas del jugador), rojo = zonas donde te ganan
+       *  más puntos. Sólo lectura: diagnóstico para dirigir el
+       *  entrenamiento (si te ganan en el fondo-derecha: drills de fondo).
+       *  ============================================================= */
+      {
+        const hg = (game && game.heatGlobal) ? game.heatGlobal() : [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let tot = 0; for (let i = 0; i < 9; i++) tot += hg[i] | 0;
+        let maxC = 1; for (let i = 0; i < 9; i++) maxC = Math.max(maxC, hg[i] | 0);
+        const wD2 = CW * 2 + GX, yH = 1170, hH = 178;
+        c.save();
+        c.beginPath();
+        if (c.roundRect) c.roundRect(X0, yH, wD2, hH, 20); else c.rect(X0, yH, wD2, hH);
+        c.fillStyle = 'rgba(10,14,22,0.55)';
+        c.fill();
+        c.strokeStyle = 'rgba(255,255,255,0.16)';
+        c.lineWidth = 2;
+        c.stroke();
+        c.fillStyle = '#f0c85a'; c.font = '800 24px system-ui, sans-serif';
+        c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillText(t('heat_t'), X0 + 26, yH + 30);
+        c.fillStyle = '#8fa0b8'; c.font = '600 16px system-ui, sans-serif';
+        c.fillText(tot > 0 ? t('heat_total').replace('{n}', String(tot)) : t('heat_sin'), X0 + 26, yH + 58);
+        // mini-mesa 3×3 (red arriba, jugador abajo) + etiquetas de fila
+        const cwH = 52, chH = 34, gxH = X0 + 26, gyH = yH + 74;
+        for (let r = 0; r < 3; r++) {
+          for (let cI = 0; cI < 3; cI++) {
+            const v = hg[r * 3 + cI] | 0;
+            const alfa = v > 0 ? (0.18 + 0.72 * (v / maxC)) : 0.05;
+            c.fillStyle = v > 0 ? 'rgba(255,82,70,' + alfa.toFixed(2) + ')'
+              : 'rgba(255,255,255,0.05)';
+            c.fillRect(gxH + cI * (cwH + 3), gyH + r * (chH + 3), cwH, chH);
+          }
+        }
+        c.fillStyle = 'rgba(255,255,255,0.55)';
+        c.fillRect(gxH - 3, gyH - 7, cwH * 3 + 12, 3);   // la red
+        c.fillStyle = '#93a3b8'; c.font = '600 13px system-ui, sans-serif';
+        c.fillText(t('heat_corta'), gxH + cwH * 3 + 16, gyH + chH * 0.5 + 1);
+        c.fillText(t('heat_media'), gxH + cwH * 3 + 16, gyH + chH * 1.5 + 4);
+        c.fillText(t('heat_fondo'), gxH + cwH * 3 + 16, gyH + chH * 2.5 + 7);
+        c.restore();
       }
       // botón parar si hay modo activo + vuelta al HALL (v3.1.0-SRV2: el
       // hall es el hub — desde el propio hub de entrenamiento se sale a la

@@ -1,2 +1,2 @@
-# SHA256 del game.html que produjo esta división (3.6.88-SDK6, fase 90 · Sala y Escena en vivo: Hall->cancha, submenus SALA/MESA, deslizador de altura, tooltips del menu, sonidos limpios, pieles de mesa fuera de campeonatos, nitidez FFR; sello actualizado por bump_version)
-04e94d38f10026661eeb7a202784cf71c2eb5c3025b2e2e084b5e71cbe75894d
+# SHA256 del game.html que produjo esta división (3.6.89-SDK6, fase 91 · Calabaza clavada a la bola viva, cero zombis en el Hall, voz de personalidad por rival, mapa de calor y retos semanales; sello actualizado por bump_version)
+cc5b9f04d4828933149e62980ff368677f376b29380f86aff4c6767e782c7e85

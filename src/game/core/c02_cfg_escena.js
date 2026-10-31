@@ -326,6 +326,20 @@ export const ROOM_THEMES = [
     dirCol: 0xffffff, dirInt: 2.3, spotCol: 0xdff0ff, spotInt: 0.55,
     envInt: 0.85,
   },
+  /* r97 · TEMA NOCTURNA — sala DESBLOQUEABLE con las estrellas de los
+   * RETOS SEMANALES (lock stars4): la recompensa visual que los retos
+   * «alimentan». Azul medianoche, luz de luna fría y niebla corta. */
+  {
+    key: 'nocturna', name: 'Nocturna', nameKey: 'theme_nocturna', emoji: '🌙',
+    floor: 0x141a24, gridC: 0x26334a, gridG: 0x11161f,
+    wall: 0x0d1119, ceil: 0x090c12, panel: 0xd9e8ff,
+    strip: 0x6f9fe8, ring: 0x9fc4ff,
+    bg: 0x04060a, fogNear: 8, fogFar: 16,
+    hemiSky: 0xbcd4ff, hemiGround: 0x0e1622, hemiInt: 0.72,
+    dirCol: 0xd6e5ff, dirInt: 2.0, spotCol: 0xa8c8ff, spotInt: 0.5,
+    envInt: 0.62,
+    lock: 'stars4',
+  },
 ];
 
 // Montura de la pala sobre el mando (espacio "grip" de WebXR):

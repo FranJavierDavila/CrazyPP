@@ -310,7 +310,7 @@ with sync_playwright() as pw:
       const p = motor.lista.find(q => q.kind === 'calabaza');
       motor.cd = 0; motor.powerT = 0; motor.pend = p; motor.pendT = 0.01; motor._lanzar();
       const C = motor.ctx.calabaza; if (!C) return { err: 'sin ctx.calabaza' };
-      const cuerpoAlInstante = !!C.gltf && C.gltf.parent === g.scene;   // r90: DESDE EL DISPARO
+      const cuerpoAlInstante = !!C.gltf && (C.gltf.parent === g.scene || (g.ballMesh && C.gltf.parent === g.ballMesh.parent));   // r90: DESDE EL DISPARO · r97: hija del MISMO PADRE que la bola
       let geos = [];
       if (C.gltf) C.gltf.traverse((o) => { if (o.isMesh && geos.indexOf(o.geometry.type) < 0) geos.push(o.geometry.type); });
       for (let s = 0; s < 10; s++) motor.update(0.1, motor.game.rules);
@@ -320,7 +320,7 @@ with sync_playwright() as pw:
       out.esProc = !!C.esProc;
       out.visible = C.gltf ? C.gltf.visible : null;
       out.bolaOculta = g.ballMesh ? !g.ballMesh.visible : null;
-      out.alinea = C.gltf ? +C.gltf.position.distanceTo(g.ball.pos).toFixed(4) : null;
+      out.alinea = C.gltf ? +C.gltf.position.distanceTo(g.ballMesh ? g.ballMesh.position : g.ball.pos).toFixed(4) : null;   // r97: la bola RENDERIZADA manda
       out.tam = C.gltf ? null : null;
       C.t = C.dur - 0.56;
       for (let s = 0; s < 4; s++) motor.update(0.1, motor.game.rules);
@@ -332,11 +332,11 @@ with sync_playwright() as pw:
         CHK(False, 'calabaza: %s' % cal['err'])
     else:
         CHK(abs(cal['grav'] - cal['g0']) < 1e-6, 'calabaza: gravedad INTACTA (peso estándar %s)' % cal['grav'])
-        CHK(cal.get('cuerpoAlInstante') is True, 'calabaza: CUERPO EN ESCENA DESDE EL DISPARO (sin esperas de GLB)')
+        CHK(cal.get('cuerpoAlInstante') is True, 'calabaza: CUERPO VIVO DESDE EL DISPARO (r97: hija del MISMO PADRE que la bola — rig — coordenada única garantizada)')
         CHK((cal.get('geos') or []).count('LatheGeometry') > 0, 'calabaza: cuerpo de LATHE con costillas (%s)' % '+'.join(cal.get('geos') or []))
         CHK(cal.get('visible') is True, 'calabaza: VISIBLE (nunca más invisible en el casco)')
         CHK(cal.get('bolaOculta') is True, 'calabaza: la bola se OCULTA (nunca dos cuerpos)')
-        CHK(cal.get('alinea') is not None and cal.get('alinea') < 0.01, 'calabaza: centrada en el CENTRO de la bola (Δ=%s)' % cal.get('alinea'))
+        CHK(cal.get('alinea') is not None and cal.get('alinea') < 0.01, 'calabaza: clavada a la bola RENDERIZADA (Δ=%s — r97: ballMesh manda, no el subpaso)' % cal.get('alinea'))
         CHK(cal.get('explotada') is True, 'calabaza: ESTALLA al final de la vida')
         CHK(cal.get('bolaVuelve') is True, 'calabaza: la bola VUELVE en el estallido')
 

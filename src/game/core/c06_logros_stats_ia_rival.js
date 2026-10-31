@@ -210,6 +210,12 @@ export class Rules {
     // núcleo en vivo (vmax en animate, rally en el punto); la fanfarria
     // las muestra al terminar. El % precisión sale del marcador final.
     this.mStats = { vmax: 0, bestRally: 0 };
+    // r97 · MAPA DE CALOR (petición del dueño: «zonas donde pierdes puntos»):
+    // por PARTIDO, los botes del lado del jugador en los que se pierde el
+    // punto — rejilla 3×3 (corta/media/fondo × izq/centro/der). La fanfarria
+    // pinta el mapa del partido; el entrenamiento acumula el histórico
+    // (pp_heat_v1 vía c12). Reset por partido como mStats.
+    this.mHeat = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     this.resetGame();
     this.message = this.mode === 'survival'
       ? T('surv_start')
@@ -723,20 +729,32 @@ export class OpponentAI {
     // (la calabaza salta hacia la pala en el frame del golpe) y encima el
     // follow-through arrancaba con la hoja 5 cm por encima del contacto.
     // El golpe del DUEÑO «está correcto» porque su física jamás recoloca
-    // la bola — la deriva era SÓLO del lado de la IA. AHORA: la bola se
-    // queda en el punto del barrido (el MISMO trato que la bola normal)
-    // y es la HOJA la que viaja hasta la piel de la calabaza: el swing
-    // nace en el punto TANGENTE (centro de calabaza a 7,5 cm del centro
-    // de hoja — radio 0,065 + canto de hoja) y sin el ascenso inicial
-    // (flat). Contacto sólido, cero teleportes, física intacta: la salida
-    // se calcula desde ball.pos real con computeShotVelocityReal al mismo
-    // blanco — la trayectoria de la devolución no cambia.
+    // la bola — la deriva era SÓLO del lado de la IA. r93: la bola se
+    // queda en el punto del barrido y es la HOJA la que viaja a la piel.
+    // r97 · INFORME DEL DUEÑO («otra vez veo la calabaza desincronizada
+    // con el bote de la pelota y el rival golpea en un sitio diferente a
+    // donde está la calabaza»): el punto del barrido (cx,cy,cz) vive en el
+    // SUBPASO de física — hasta UN FRAME POR DETRÁS de la posición
+    // RENDERIZADA (ballMesh se sincroniza al final del update). Con la
+    // bola normal (Ø 4 cm, veloz) ese retroceso es invisible; la calabaza
+    // (Ø 13 cm) SALTABA hacia atrás en el frame del golpe y la hoja
+    // golpeaba donde la calabaza YA NO ESTÁ. DOS garantías duras ahora:
+    // (1) LA BOLA CALABAZA JAMÁS SE RECOLOCA al punto del barrido — igual
+    //     que la física del dueño, que nunca recoloca la bola: la salida
+    //     nace de ball.pos VIVO (frame renderizado) y el solver apunta al
+    //     MISMO blanco — trayectoria honesta, cero saltos.
+    // (2) LA HOJA VIAJA A LA CALABAZA RENDERIZADA: el tangente se calcula
+    //     desde ball.pos (donde la calabaza está PINTADA este frame), no
+    //     desde el punto del subpaso — centro de calabaza a 7,5 cm del
+    //     centro de hoja (radio 0,065 + canto), flat sin ascenso (r93).
     let toca = null;                      // punto tangente para el swing (r93)
     if (ball.ppCalabaza) {
-      const dcx = cx - this.pos.x, dcy = cy - this.pos.y, dcz = cz - this.pos.z;
+      const dcx = ball.pos.x - this.pos.x,
+            dcy = ball.pos.y - this.pos.y,
+            dcz = ball.pos.z - this.pos.z;
       const dC = Math.sqrt(dcx * dcx + dcy * dcy + dcz * dcz) || 1e-6;
       const TOCA = 0.075;
-      const sT = Math.min(1, TOCA / dC);  // nunca pasarse del punto barrido
+      const sT = Math.min(1, TOCA / dC);  // nunca pasarse de la bola viva
       toca = { x: this.pos.x + dcx * sT,
                y: this.pos.y + dcy * sT,
                z: this.pos.z + dcz * sT };
@@ -756,14 +774,18 @@ export class OpponentAI {
     // se marcha larga/fuera o cruza floja y alta — el punto se pierde igual
     // pero con contacto, sonido y pose creíbles en lugar del cruce fantasma.
     if (Math.random() < pMiss) {
-      if (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z) {
+      // r97: la calabaza NUNCA se recoloca (la bola viva manda — ver arriba)
+      if (!ball.ppCalabaza &&
+          (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z)) {
         ball.pos.set(cx, cy, cz);   // recolocar en el punto del barrido
       }
       return this.mishit(ball, toca);   // r93: el swing también toca la piel
     }
     // v2.84: golpe LIMPIO con contacto barrido — la salida parte del punto
-    // real donde la pala alcanzó la bola (no del punto ya pasado)
-    if (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z) {
+    // real donde la pala alcanzó la bola (no del punto ya pasado).
+    // r97: con la calabaza la bola VIVA manda (cero saltos visibles).
+    if (!ball.ppCalabaza &&
+        (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z)) {
       ball.pos.set(cx, cy, cz);
     }
 

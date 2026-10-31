@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.88-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.89-SDK6</span>
     </div>
   </main>
 
@@ -505,6 +505,7 @@ const I18N_STRINGS = {
     theme_neon: 'Neón',
     theme_atardecer: 'Atardecer',
     theme_artico: 'Ártico',
+    theme_nocturna: 'Nocturna 🌙',
     // ---- menú de muñeca
     menu_title: 'MENÚ',
     menu_hint: 'apunta con la pala y elige con el GATILLO',
@@ -814,6 +815,26 @@ const I18N_STRINGS = {
     btn_rivstyle: 'Rivales con estilo visible: {v}',
     msg_rivstyle: 'Estilo de los rivales: {v}',
     fanf_stats: '⚡ {v} m/s · Rally {r} · Precisión {p}%',
+    // r97 · MAPA DE CALOR + RETOS SEMANALES
+    heat_t: 'MAPA DE CALOR',
+    heat_sub: 'zonas donde pierdes puntos',
+    heat_sin: 'sin datos todavía — juega duelos',
+    heat_total: '{n} puntos perdidos',
+    heat_corta: 'corta',
+    heat_media: 'media',
+    heat_fondo: 'fondo',
+    retos_t: 'RETOS DE LA SEMANA',
+    retos_star: 'estrellas: {n}',
+    retos_r1: 'Gana {n} duelos',
+    retos_r2: 'Completa un rally de {n}+ golpes',
+    retos_r3: 'Golpea la bola a {n} m/s o más',
+    retos_r4: 'Completa {n} sesiones de entrenamiento',
+    retos_r5: 'Consigue {n} aces',
+    retos_r6: 'Juega {n} duelos',
+    retos_premio: 'alimenta los desbloqueos de mesa y sala',
+    mesa_lock_wins_stars: '10 victorias — o {n}★ de retos',
+    mesa_lock_streak_stars: 'racha de 5 — o {n}★ de retos',
+    sala_lock_stars: 'consigue {n}★ en los retos semanales',
     // r96 · SALA Y ESCENA: submenús-botón, deslizador de altura, vista en
     // vivo de la sala de partidos y HINTS al apuntar en el menú
     cat_salaroom: 'SALA',
@@ -1300,6 +1321,7 @@ const I18N_STRINGS = {
     theme_neon: 'Neon',
     theme_atardecer: 'Sunset',
     theme_artico: 'Arctic',
+    theme_nocturna: 'Night 🌙',
     menu_title: 'MENU',
     menu_hint: 'aim with the paddle and pick with the TRIGGER',
     menu_b: 'B · close',
@@ -1604,6 +1626,26 @@ const I18N_STRINGS = {
     btn_rivstyle: 'Visible rival style: {v}',
     msg_rivstyle: 'Rival style: {v}',
     fanf_stats: '⚡ {v} m/s · Rally {r} · Accuracy {p}%',
+    // r97 · HEAT MAP + WEEKLY CHALLENGES (EN)
+    heat_t: 'HEAT MAP',
+    heat_sub: 'zones where you lose points',
+    heat_sin: 'no data yet — play matches',
+    heat_total: '{n} points lost',
+    heat_corta: 'short',
+    heat_media: 'mid',
+    heat_fondo: 'deep',
+    retos_t: 'WEEKLY CHALLENGES',
+    retos_star: 'stars: {n}',
+    retos_r1: 'Win {n} duels',
+    retos_r2: 'Finish a {n}+ shot rally',
+    retos_r3: 'Hit the ball at {n} m/s or more',
+    retos_r4: 'Complete {n} training sessions',
+    retos_r5: 'Score {n} aces',
+    retos_r6: 'Play {n} duels',
+    retos_premio: 'feeds the table and room unlocks',
+    mesa_lock_wins_stars: '10 wins — or {n}★ from challenges',
+    mesa_lock_streak_stars: '5 streak — or {n}★ from challenges',
+    sala_lock_stars: 'earn {n}★ in the weekly challenges',
     // r96 · SALA Y ESCENA: button submenus, height slider, live game-room
     // view and HINTS when aiming at menu controls (EN)
     cat_salaroom: 'ROOM',
@@ -2906,7 +2948,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.88-SDK6';
+  const VERSION = '3.6.89-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -3983,6 +4025,20 @@ const ROOM_THEMES = [
     dirCol: 0xffffff, dirInt: 2.3, spotCol: 0xdff0ff, spotInt: 0.55,
     envInt: 0.85,
   },
+  /* r97 · TEMA NOCTURNA — sala DESBLOQUEABLE con las estrellas de los
+   * RETOS SEMANALES (lock stars4): la recompensa visual que los retos
+   * «alimentan». Azul medianoche, luz de luna fría y niebla corta. */
+  {
+    key: 'nocturna', name: 'Nocturna', nameKey: 'theme_nocturna', emoji: '🌙',
+    floor: 0x141a24, gridC: 0x26334a, gridG: 0x11161f,
+    wall: 0x0d1119, ceil: 0x090c12, panel: 0xd9e8ff,
+    strip: 0x6f9fe8, ring: 0x9fc4ff,
+    bg: 0x04060a, fogNear: 8, fogFar: 16,
+    hemiSky: 0xbcd4ff, hemiGround: 0x0e1622, hemiInt: 0.72,
+    dirCol: 0xd6e5ff, dirInt: 2.0, spotCol: 0xa8c8ff, spotInt: 0.5,
+    envInt: 0.62,
+    lock: 'stars4',
+  },
 ];
 
 // Montura de la pala sobre el mando (espacio "grip" de WebXR):
@@ -5056,6 +5112,23 @@ class GameAudio {
       if (!out) return;
       const ctx = this.ctx;
       const now = ctx.currentTime;
+      // r97 · VOZ DE PERSONALIDAD DEL RIVAL (petición del dueño): la perso-
+      // nalidad del campeonato activo (manifest.rival.personalidad) TIÑE la
+      // voz sintética — el AGRESIVO gruñe MÁS GRAVE y con más presencia, el
+      // DEFENSIVO suena más agudo/suave, el neutro queda como siempre. Los
+      // ARCHIVOS del manifest (sounds[kind], canal de abajo) NO se tocan:
+      // el arte del módulo manda; esto sólo personaliza el respaldo
+      // sintético que suena cuando no hay archivo. El modulador lo publica
+      // el champloader (window.__PP_CHAMP_PERS) al lanzar el campeonato.
+      let PM = 1, GM = 1;
+      try {
+        const pers = (typeof window !== 'undefined') && window.__PP_CHAMP_PERS;
+        if (pers && pers.agresividad != null) {
+          const ag = Math.max(1, Math.min(5, +pers.agresividad || 3)) - 3;  // -2..+2
+          PM = 1 - ag * 0.11;   // agresivo ×0,78 (grave) · defensivo ×1,22 (agudo)
+          GM = 1 + ag * 0.10;   // agresivo más presente
+        }
+      } catch (eP) { /* */ }
       // v2.35: bus de voz del rival — más presencia que el resto de SFX
       const bus = ctx.createGain();
       bus.gain.value = 1.6;
@@ -5065,10 +5138,10 @@ class GameAudio {
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
         osc.type = type || 'triangle';
-        osc.frequency.setValueAtTime(Math.max(20, f0), t);
-        osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+        osc.frequency.setValueAtTime(Math.max(20, f0 * PM), t);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1 * PM), t + dur);
         g.gain.setValueAtTime(0.001, t);
-        g.gain.exponentialRampToValueAtTime(Math.max(0.002, gain), t + 0.015);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.002, gain * GM), t + 0.015);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         osc.connect(g);
         if (lp) {
@@ -5089,10 +5162,10 @@ class GameAudio {
         src.loop = true;
         const f = ctx.createBiquadFilter();
         f.type = type || 'bandpass';
-        f.frequency.value = freq;
+        f.frequency.value = Math.max(40, freq * PM);
         f.Q.value = q;
         const g = ctx.createGain();
-        g.gain.setValueAtTime(Math.max(0.001, gain), t);
+        g.gain.setValueAtTime(Math.max(0.001, gain * GM), t);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         src.connect(f); f.connect(g); g.connect(bus);
         src.start(t); src.stop(t + dur + 0.02);
@@ -5105,12 +5178,12 @@ class GameAudio {
       const vox = (t, dur, f0, f1, vow, gain) => {
         const gl = ctx.createOscillator();
         gl.type = 'sawtooth';
-        gl.frequency.setValueAtTime(Math.max(60, f0), t);
-        gl.frequency.exponentialRampToValueAtTime(Math.max(60, f1), t + dur);
+        gl.frequency.setValueAtTime(Math.max(60, f0 * PM), t);
+        gl.frequency.exponentialRampToValueAtTime(Math.max(60, f1 * PM), t + dur);
         const env = ctx.createGain();
         env.gain.setValueAtTime(0.001, t);
-        env.gain.exponentialRampToValueAtTime(Math.max(0.002, gain), t + Math.min(0.035, dur * 0.35));
-        env.gain.setValueAtTime(Math.max(0.002, gain), t + dur * 0.6);
+        env.gain.exponentialRampToValueAtTime(Math.max(0.002, gain * GM), t + Math.min(0.035, dur * 0.35));
+        env.gain.setValueAtTime(Math.max(0.002, gain * GM), t + dur * 0.6);
         env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         const F = FORMANTS[vow] || FORMANTS.a;
         for (let fi = 0; fi < 2; fi++) {
@@ -7433,6 +7506,12 @@ class Rules {
     // núcleo en vivo (vmax en animate, rally en el punto); la fanfarria
     // las muestra al terminar. El % precisión sale del marcador final.
     this.mStats = { vmax: 0, bestRally: 0 };
+    // r97 · MAPA DE CALOR (petición del dueño: «zonas donde pierdes puntos»):
+    // por PARTIDO, los botes del lado del jugador en los que se pierde el
+    // punto — rejilla 3×3 (corta/media/fondo × izq/centro/der). La fanfarria
+    // pinta el mapa del partido; el entrenamiento acumula el histórico
+    // (pp_heat_v1 vía c12). Reset por partido como mStats.
+    this.mHeat = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     this.resetGame();
     this.message = this.mode === 'survival'
       ? T('surv_start')
@@ -7946,20 +8025,32 @@ class OpponentAI {
     // (la calabaza salta hacia la pala en el frame del golpe) y encima el
     // follow-through arrancaba con la hoja 5 cm por encima del contacto.
     // El golpe del DUEÑO «está correcto» porque su física jamás recoloca
-    // la bola — la deriva era SÓLO del lado de la IA. AHORA: la bola se
-    // queda en el punto del barrido (el MISMO trato que la bola normal)
-    // y es la HOJA la que viaja hasta la piel de la calabaza: el swing
-    // nace en el punto TANGENTE (centro de calabaza a 7,5 cm del centro
-    // de hoja — radio 0,065 + canto de hoja) y sin el ascenso inicial
-    // (flat). Contacto sólido, cero teleportes, física intacta: la salida
-    // se calcula desde ball.pos real con computeShotVelocityReal al mismo
-    // blanco — la trayectoria de la devolución no cambia.
+    // la bola — la deriva era SÓLO del lado de la IA. r93: la bola se
+    // queda en el punto del barrido y es la HOJA la que viaja a la piel.
+    // r97 · INFORME DEL DUEÑO («otra vez veo la calabaza desincronizada
+    // con el bote de la pelota y el rival golpea en un sitio diferente a
+    // donde está la calabaza»): el punto del barrido (cx,cy,cz) vive en el
+    // SUBPASO de física — hasta UN FRAME POR DETRÁS de la posición
+    // RENDERIZADA (ballMesh se sincroniza al final del update). Con la
+    // bola normal (Ø 4 cm, veloz) ese retroceso es invisible; la calabaza
+    // (Ø 13 cm) SALTABA hacia atrás en el frame del golpe y la hoja
+    // golpeaba donde la calabaza YA NO ESTÁ. DOS garantías duras ahora:
+    // (1) LA BOLA CALABAZA JAMÁS SE RECOLOCA al punto del barrido — igual
+    //     que la física del dueño, que nunca recoloca la bola: la salida
+    //     nace de ball.pos VIVO (frame renderizado) y el solver apunta al
+    //     MISMO blanco — trayectoria honesta, cero saltos.
+    // (2) LA HOJA VIAJA A LA CALABAZA RENDERIZADA: el tangente se calcula
+    //     desde ball.pos (donde la calabaza está PINTADA este frame), no
+    //     desde el punto del subpaso — centro de calabaza a 7,5 cm del
+    //     centro de hoja (radio 0,065 + canto), flat sin ascenso (r93).
     let toca = null;                      // punto tangente para el swing (r93)
     if (ball.ppCalabaza) {
-      const dcx = cx - this.pos.x, dcy = cy - this.pos.y, dcz = cz - this.pos.z;
+      const dcx = ball.pos.x - this.pos.x,
+            dcy = ball.pos.y - this.pos.y,
+            dcz = ball.pos.z - this.pos.z;
       const dC = Math.sqrt(dcx * dcx + dcy * dcy + dcz * dcz) || 1e-6;
       const TOCA = 0.075;
-      const sT = Math.min(1, TOCA / dC);  // nunca pasarse del punto barrido
+      const sT = Math.min(1, TOCA / dC);  // nunca pasarse de la bola viva
       toca = { x: this.pos.x + dcx * sT,
                y: this.pos.y + dcy * sT,
                z: this.pos.z + dcz * sT };
@@ -7979,14 +8070,18 @@ class OpponentAI {
     // se marcha larga/fuera o cruza floja y alta — el punto se pierde igual
     // pero con contacto, sonido y pose creíbles en lugar del cruce fantasma.
     if (Math.random() < pMiss) {
-      if (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z) {
+      // r97: la calabaza NUNCA se recoloca (la bola viva manda — ver arriba)
+      if (!ball.ppCalabaza &&
+          (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z)) {
         ball.pos.set(cx, cy, cz);   // recolocar en el punto del barrido
       }
       return this.mishit(ball, toca);   // r93: el swing también toca la piel
     }
     // v2.84: golpe LIMPIO con contacto barrido — la salida parte del punto
-    // real donde la pala alcanzó la bola (no del punto ya pasado)
-    if (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z) {
+    // real donde la pala alcanzó la bola (no del punto ya pasado).
+    // r97: con la calabaza la bola VIVA manda (cero saltos visibles).
+    if (!ball.ppCalabaza &&
+        (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z)) {
       ball.pos.set(cx, cy, cz);
     }
 
@@ -9797,6 +9892,45 @@ function createFanfareBanner() {
       ctx.fillStyle = '#e9edf2';
       ctx.fillText(stTxt, cx, scy + 1);
       ctx.textBaseline = 'alphabetic';
+
+      // r97 · MAPA DE CALOR DEL PARTIDO (petición del dueño: «zonas donde
+      // pierdes puntos»): mini-mesa 3×3 a la izquierda del chip de
+      // estadísticas — cada celda se enciende ROJO según los puntos
+      // perdidos en esa zona (corta/media/fondo × izq/centro/der). Con
+      // guard: sólo con ≥3 puntos perdidos (menos no dice nada).
+      if (stats.heat && stats.heat.g) {
+        const hg = stats.heat.g;
+        let tot = 0; for (let i = 0; i < 9; i++) tot += hg[i] | 0;
+        if (tot >= 3) {
+          let maxC = 1; for (let i = 0; i < 9; i++) maxC = Math.max(maxC, hg[i] | 0);
+          const gx = cx - scw / 2 - 88, gy = scy - 26;
+          ctx.fillStyle = 'rgba(8,12,20,0.72)';
+          ctx.strokeStyle = win ? 'rgba(232,180,90,0.55)' : 'rgba(150,165,180,0.45)';
+          ctx.lineWidth = 3;
+          roundRectPath(ctx, gx, gy, 76, 56, 12);
+          ctx.fill();
+          ctx.stroke();
+          for (let r = 0; r < 3; r++) {
+            for (let cI = 0; cI < 3; cI++) {
+              const v = hg[r * 3 + cI] | 0;
+              const alfa = v > 0 ? (0.18 + 0.72 * (v / maxC)) : 0.05;
+              ctx.fillStyle = v > 0
+                ? 'rgba(255,82,70,' + alfa.toFixed(2) + ')'
+                : 'rgba(255,255,255,0.05)';
+              ctx.fillRect(gx + 6 + cI * 22, gy + 6 + r * 16, 20, 14);
+            }
+          }
+          // red (línea superior) + etiqueta corta
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          ctx.fillRect(gx + 4, gy + 3, 68, 2);
+          ctx.font = '600 13px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#93a3b5';
+          ctx.fillText(T('heat_t'), gx + 38, gy + 68);
+          ctx.textBaseline = 'alphabetic';
+        }
+      }
     }
 
     tex.needsUpdate = true;
@@ -13520,6 +13654,35 @@ class ChampLoader {
     }
     this.leaveAll();
     this.activeId = id;
+    // r97 · VOZ DE PERSONALIDAD DEL RIVAL: (a) los ARCHIVOS de voz del
+    // manifest activo (audio.sounds kind→archivo) quedan a la vista del
+    // motor rivalSfx del núcleo — antes SÓLO La Locura los publicaba a
+    // mano (window.__PP_ARCADE_DATA); ahora cualquier campeonato que
+    // declare sounds en SU manifest tiene la voz del rival por ARCHIVO en
+    // los estados estándar (laugh/crazy/angry/victory…), con la síntesis
+    // como respaldo. (b) la personalidad (manifest.rival.personalidad)
+    // queda publicada para que la síntesis se TIÑA (agresivo grave,
+    // defensivo agudo — c03 rivalSfx). El propio módulo sigue mandando:
+    // si él ya publicó __PP_ARCADE_DATA (La Locura, más rico) NO se pisa.
+    try {
+      const entV = this.entries.find((x) => x.id === id);
+      const manV = entV && entV.manifest;
+      if (manV) {
+        window.__PP_CHAMP_PERS = (manV.rival && manV.rival.personalidad) || null;
+        const sndV = (manV.audio && manV.audio.sounds) || {};
+        const claves = Object.keys(sndV);
+        if (claves.length && !(typeof window !== 'undefined' && window.__PP_ARCADE_DATA)) {
+          const urlsV = {};
+          for (const k of claves) {
+            try {
+              urlsV[k] = new URL('championships/' + id + '/' +
+                String(sndV[k]).replace(/^assets\//, 'assets/'), import.meta.url).href;
+            } catch (eU) { /* */ }
+          }
+          window.__PP_ARCADE_DATA = { __ppCoreVoz: true, sounds: urlsV };
+        }
+      }
+    } catch (eV0) { /* la voz jamás rompe el lanzamiento */ }
     // r96 · REGLA DEL DUEÑO: las pieles de la mesa son de PARTIDAS y
     // ENTRENAMIENTO — el campeonato ARRANCA con su mesa nativa (azul
     // oficial), sin heredar el tinte que el dueño eligió en AJUSTES.
@@ -13746,7 +13909,27 @@ class ChampLoader {
     try { this.game.hideChampIntro(false); } catch (e0) { /* */ }
     try { if (m && m.leave) m.leave(); }
     catch (e) { console.warn('[champs] leave', e); }
+    // r97 · INFORME DEL DUEÑO («salí al Hall y seguía escuchando en bucle
+    // al zombi»): candado UNIVERSAL de salida — todo módulo con musicOff()
+    // (música propia + one-shots/bucles propios) lo calla TODO aquí. La
+    // fuga real: los one-shots del zombi son BUCLES cortados por un reloj
+    // que sólo corre desde update(); al salir a mitad de sonido el reloj
+    // muere y el bucle suena eterno en el Hall (más aún con la música del
+    // Hall muteada, porque entonces NADIE llama a mod.musicOff()). El
+    // módulo halloween además corta SU tren en leave() — doble seguro.
+    try { if (m && typeof m.musicOff === 'function') m.musicOff(); }
+    catch (eM) { console.warn('[champs] musicOff', eM); }
     this.activeId = '';
+    // r97 · fuera del campeonato se RETIRA la voz publicada por el núcleo
+    // (los archivos del manifest activo y su personalidad — el siguiente
+    // campeonato publica la suya; fuera de campeonato manda la síntesis
+    // neutra de siempre). El bloque rico de La Locura (__ppCoreVoz ausente)
+    // NO se toca: lo gestiona su propio módulo.
+    try { if (typeof window !== 'undefined' && window.__PP_ARCADE_DATA &&
+              window.__PP_ARCADE_DATA.__ppCoreVoz) window.__PP_ARCADE_DATA = null; }
+    catch (eV1) { /* */ }
+    try { if (typeof window !== 'undefined') window.__PP_CHAMP_PERS = null; }
+    catch (eV2) { /* */ }
     // r96 · fuera del campeonato vuelve el aspecto de mesa ELEGIDO por el
     // dueño (partidas/entrenamiento) — tras m.leave(), que restaura lo suyo.
     try { if (this.game._mesaSkinReapply) this.game._mesaSkinReapply(); } catch (eMR) { /* */ }
@@ -15501,6 +15684,11 @@ class PingPongGame {
   setTheme(key, silent = false) {
     const t = ROOM_THEMES.find((x) => x.key === key);
     if (!t || key === this.theme) return;
+    // r97 · temas DESBLOQUEABLES (Nocturna con 4★ de retos semanales)
+    if (t.lock && !this._salaTemaLibre(t.lock)) {
+      try { this.rules.message = T('sala_lock_stars', { n: 4 }); } catch (e) { /* */ }
+      return;
+    }
     this.theme = key;
     try { localStorage.setItem('ppxr_theme', key); } catch { /* */ }
     this.applyTheme(key);
@@ -15514,9 +15702,17 @@ class PingPongGame {
   }
 
   cycleTheme(dir) {
+    // r97 · SALTA los temas bloqueados (flick del stick nunca aterriza en
+    // un tema con candado)
+    const n = ROOM_THEMES.length;
     const i = ROOM_THEMES.findIndex((t) => t.key === this.theme);
-    const next = ROOM_THEMES[(i + dir + ROOM_THEMES.length) % ROOM_THEMES.length];
-    this.setTheme(next.key);
+    for (let paso = 1; paso <= n; paso++) {
+      const cand = ROOM_THEMES[((i + dir * paso) % n + n) % n];
+      if (!cand.lock || this._salaTemaLibre(cand.lock)) {
+        this.setTheme(cand.key);
+        return;
+      }
+    }
   }
 
   /** v3.6.43 · PASSTHROUGH EN CALIENTE (ronda 51): aplica o retira el
@@ -17159,17 +17355,18 @@ class PingPongGame {
         break;
       }
       case 'salaroom': {
-        // r96 · subpágina SALA: los cuatro temas + passthrough (lo que antes
+        // r96 · subpágina SALA: los temas + passthrough (lo que antes
         // convivía apretado con la MESA en una sola página).
-        const themes = [
-          ['theme:pabellon', T('theme_pabellon')], ['theme:neon', T('theme_neon')],
-          ['theme:atardecer', T('theme_atardecer')], ['theme:artico', T('theme_artico')],
-        ];
+        // r97 · los temas salen DE ROOM_THEMES con su candado — Nocturna se
+        // abre con 4★ de los retos semanales (setTheme rechaza y avisa).
+        const themes = ROOM_THEMES.map((t0) => ['theme:' + t0.key,
+          (t0.lock && !this._salaTemaLibre(t0.lock) ? '🔒 ' : '') +
+          (t0.nameKey ? T(t0.nameKey) : t0.name)]);
         themes.forEach(([id, name], i) => {
           btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 64, 448, 56, name,
             this.theme === id.split(':')[1], undefined, undefined, 23);
         });
-        y += 136;
+        y += Math.ceil(themes.length / 2) * 64 + 8;
         const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
         btn('psthru', 56, y, 912, 56, T('btn_psthru', { v: yn(pstOn) }),
           !!pstOn, undefined, !!pstOn, 23);
@@ -17239,6 +17436,27 @@ class PingPongGame {
         if (hayCerrada) {
           label(T('mesa_lock_hint'), y + 2, 16, '#5f6b78');
           y += 28;
+        }
+        // r97 · RETOS DE LA SEMANA: lo que ALIMENTA los candados de arriba
+        {
+          const act97 = this._retosActivos();
+          const st97 = this._retosEstado();
+          label(T('retos_t'), y + 2, 17, '#f0c85a');
+          y += 28;
+          for (const r of act97) {
+            const hecho = st97.done.indexOf(r.id) >= 0;
+            const p97 = Math.min(st97.p[r.id] || 0, r.n);
+            const progTxt = r.id === 'vmax65'
+              ? p97.toFixed(1) + ' / ' + r.n
+              : Math.floor(p97) + ' / ' + r.n;
+            btn('reto97', 56, y, 912, 46,
+              (hecho ? '✓ ' : '') + T(r.k, { n: r.n }) + '   ·   ' + progTxt,
+              hecho, undefined, false, 20);
+            y += 52;
+          }
+          label(T('retos_star', { n: st97.stars | 0 }) + ' · ' + T('retos_premio'),
+            y + 2, 15, '#7d8ea6');
+          y += 26;
         }
         break;
       }
@@ -18613,13 +18831,17 @@ class PingPongGame {
   }
   _mesaLibre(lock) {
     const d = (this.stats && this.stats.data) || {};
-    if (lock === 'wins10') return (d.won || 0) >= 10;
-    if (lock === 'streak5') return (d.bestStreak || 0) >= 5;
+    // r97 · los RETOS SEMANALES ALIMENTAN los desbloqueos: las estrellas
+    // abren Oro (6★) y Carbono (3★) sin exigir las marcas clásicas.
+    const stars = this._retosEstrellas();
+    if (lock === 'wins10') return (d.won || 0) >= 10 || stars >= 6;
+    if (lock === 'streak5') return (d.bestStreak || 0) >= 5 || stars >= 3;
     return true;
   }
   _mesaLockTxt(lock) {
-    if (lock === 'wins10') return T('mesa_lock_wins');
-    if (lock === 'streak5') return T('mesa_lock_streak');
+    // r97 · el texto del candado muestra la ALTERNATIVA por estrellas
+    if (lock === 'wins10') return T('mesa_lock_wins_stars', { n: 6 });
+    if (lock === 'streak5') return T('mesa_lock_streak_stars', { n: 3 });
     return '';
   }
   /** r96 · definición de aspecto por id (con guard de recompensas). */
@@ -18683,6 +18905,58 @@ class PingPongGame {
     let id = 'azul';
     try { id = localStorage.getItem('pp_mesaskin') || 'azul'; } catch { /* */ }
     this._mesaTinte(this._mesaSkinDef(id));
+  }
+
+  /* ====================================================================
+   *  r97 · MOTOR DE RETOS SEMANALES (3 activos, estrellas de por vida)
+   *  ==================================================================== */
+  /** Estado de la semana actual (migra estrellas entre semanas). */
+  _retosEstado() {
+    const wk = _retosSemanaKey();
+    let st = null;
+    try { st = JSON.parse(localStorage.getItem('pp_retos_v1') || 'null'); } catch (e) { st = null; }
+    if (!st || st.wk !== wk || typeof st.p !== 'object' || !Array.isArray(st.done)) {
+      st = { wk, p: {}, done: [], stars: (st && (st.stars | 0)) || 0 };
+    }
+    return st;
+  }
+  _retosGuarda(st) {
+    try { localStorage.setItem('pp_retos_v1', JSON.stringify(st)); } catch (e) { /* */ }
+  }
+  /** Los 3 retos de ESTA semana (rotación determinista por hash de semana). */
+  _retosActivos() {
+    const wk = _retosSemanaKey();
+    let h = 0;
+    for (let i = 0; i < wk.length; i++) h = (h * 31 + wk.charCodeAt(i)) >>> 0;
+    return [0, 1, 2].map((i) => RETOS_POOL[(h + i * 2) % RETOS_POOL.length]);
+  }
+  /** Alimenta un reto (ev: victoria/duelo/rally/vmax/aces/entrenamiento).
+   *  modo suma: cada evento suma · modo max: queda el mayor valor. */
+  _retosEvento(ev, v) {
+    try {
+      const st = this._retosEstado();
+      for (const r of this._retosActivos()) {
+        if (r.ev !== ev || st.done.indexOf(r.id) >= 0) continue;
+        const antes = st.p[r.id] || 0;
+        st.p[r.id] = r.modo === 'max' ? Math.max(antes, v) : antes + v;
+        if (st.p[r.id] >= r.n) {
+          st.done.push(r.id);
+          st.stars = (st.stars | 0) + 1;
+          try { this.audio.playOsc(880, 1320, 0.16, 'sine', 0.14, 0); } catch (e) { /* */ }
+          try { this.rules.message = T('retos_star', { n: st.stars }); } catch (e) { /* */ }
+        }
+      }
+      this._retosGuarda(st);
+    } catch (e) { /* los retos jamás rompen el partido */ }
+  }
+  _retosEstrellas() {
+    try { return (this._retosEstado().stars) | 0; } catch (e) { return 0; }
+  }
+  /** r97 · SALA desbloqueable: el tema Nocturna se abre con 4★ de retos. */
+  _salaTemaLibre(lock) {
+    if (!lock) return true;
+    if (lock === 'stars4') return this._retosEstrellas() >= 4;
+    return true;
   }
 
   /** r61 · aplica el factor ACTUAL (lerp-eado hacia el objetivo) al
@@ -24154,6 +24428,11 @@ class PingPongGame {
         if (Number.isFinite(sp) && sp > this.rules.mStats.vmax) {
           this.rules.mStats.vmax = sp;
         }
+        // r97 · RETO vmax (cruce 6,5 m/s una vez por punto — barato)
+        if (Number.isFinite(sp) && sp >= 6.5 && this._retoVmaxOk !== true) {
+          this._retoVmaxOk = true;
+          this._retosEvento('vmax', sp);
+        }
       }
     } catch { /* */ }
     this.scoreboardUpdate({
@@ -24695,6 +24974,33 @@ class PingPongGame {
     m.material.opacity = 0.55;
   }
 
+  /** r97 · MAPA DE CALOR — clasifica un bote del lado del JUGADOR en la
+   *  rejilla 3×3 (filas: corta/media/fondo desde la red · columnas:
+   *  izq/centro/der VISTAS DEL JUGADOR, derecha = +x). Devuelve 0..8 o −1
+   *  si el bote no es del lado del jugador. */
+  _heatClasifica(p) {
+    try {
+      const HL = DIMS.tableHalfLength || 1.37;
+      const dz = p.z - DIMS.tableCenterZ;
+      if (dz <= 0.02 || dz > HL + 0.08) return -1;   // fuera de nuestro lado
+      const fila = dz < HL * 0.34 ? 0 : dz < HL * 0.67 ? 1 : 2;
+      const col = p.x < -0.15 ? 0 : p.x > 0.15 ? 2 : 1;
+      return fila * 3 + col;
+    } catch (e) { return -1; }
+  }
+
+  /** r97 · HISTÓRICO global del mapa (pp_heat_v1) — lo lee la tarjeta del
+   *  entrenamiento (c13). Sin datos: array a cero (la tarjeta se pinta
+   *  «sin datos todavía» con el total a 0). */
+  heatGlobal() {
+    const g = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    try {
+      const acc = JSON.parse(localStorage.getItem('pp_heat_v1') || '[]');
+      for (let i = 0; i < 9 && i < acc.length; i++) g[i] = acc[i] | 0;
+    } catch (e) { /* */ }
+    return g;
+  }
+
   processIntents(intents) {
     // LIVE-TV: los intents del árbitro (point/serve/game-over) salen por el canal
     try { if (window.__PP_LIVE) window.__PP_LIVE.onIntents(intents); } catch { /* */ }
@@ -24757,6 +25063,36 @@ class PingPongGame {
             }
             this.applyAISkill();   // IA adaptativa según el marcador
             this.celebrate(this.stats.recordPoint(it.winner, it.rallyHits || 0));
+            // r97 · MAPA DE CALOR (petición del dueño: «zonas donde pierdes
+            // puntos»): punto PERDIDO con intercambio real → la zona del último
+            // bote en NUESTRO lado (3×3: corta/media/fondo × izq/centro/der)
+            // suma en el mapa DEL PARTIDO (mHeat, lo pinta la fanfarria) y en
+            // el HISTÓRICO persistente (pp_heat_v1 — tarjeta del entrenamiento).
+            try {
+              const hb97 = this._heatBounce;
+              if (it.winner === 'ai' && (it.rallyHits || 0) >= 1 &&
+                  !this.net.online && hb97) {
+                const hIdx = this._heatClasifica(hb97);
+                if (hIdx >= 0) {
+                  if (!this.rules.mHeat) this.rules.mHeat = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+                  this.rules.mHeat[hIdx]++;
+                  try {
+                    const acc = JSON.parse(localStorage.getItem('pp_heat_v1') || '[]');
+                    while (acc.length < 9) acc.push(0);
+                    acc[hIdx]++;
+                    localStorage.setItem('pp_heat_v1', JSON.stringify(acc));
+                  } catch (eH2) { /* */ }
+                }
+              }
+            } catch (eH0) { /* */ }
+            this._heatBounce = null;   // cada punto parte de cero
+            // r97 · RETOS: aces (punto directo del sacador) y rally largo —
+            // y el techo de velocidad se resetea por punto (cruce honesto)
+            try {
+              this._retoVmaxOk = false;
+              if (it.winner === 'player' && (it.rallyHits || 0) === 1) this._retosEvento('aces', 1);
+              if ((it.rallyHits || 0) >= 12) this._retosEvento('rally', it.rallyHits);
+            } catch (eR98) { /* */ }
             // r61 · fin del intercambio: ¿bate al mejor? (cambio de refs)
             try { this._repCierra(it.rallyHits || 0); } catch (eR0) { /* */ }
             this.emitStats();
@@ -24869,6 +25205,12 @@ class PingPongGame {
           );
           this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));
           this.emitStats();
+          // r97 · RETOS SEMANALES: duelos jugados/ganados alimentan la semana
+          try {
+            this._retoVmaxOk = false;
+            this._retosEvento('duelo', 1);
+            if (it.winner === 'player') this._retosEvento('victoria', 1);
+          } catch (eR97) { /* */ }
           break;
       }
     }
@@ -24891,6 +25233,8 @@ class PingPongGame {
       vmax: Math.round(_mst.vmax * 10) / 10,
       rally: _mst.bestRally || 0,
       prec: _tot > 0 ? Math.round((this.rules.scorePlayer / _tot) * 100) : 0,
+      // r97 · MAPA DE CALOR del partido (≥3 zonas perdidas para pintarlo)
+      heat: { g: (this.rules.mHeat || [0, 0, 0, 0, 0, 0, 0, 0, 0]).slice(0, 9) },
     };
     this.fanfareBanner.draw(win, this.rules.scorePlayer, this.rules.scoreAi, fanfStats);
     this.fanfareBanner.group.visible = true;
@@ -25063,6 +25407,10 @@ class PingPongGame {
           // bajo la bola del frame (fallback e.pos si no hay bola).
           const pMar = (this.ball && this.ball.pos) ? this.ball.pos : e.pos;
           this.flashMarker(pMar);
+          // r97 · MAPA DE CALOR: memoria del ÚLTIMO bote real (posición física
+          // del subpaso, e.pos — más fiel que la bola del frame) — el punto
+          // perdido se clasifica en la zona de este bote (c12 punto fin).
+          try { this._heatBounce = { x: e.pos.x, z: e.pos.z }; } catch (eH) { /* */ }
           // v3.6.37 · SÚPER EFECTO NOTORIO: bote EXAGERADO visible — anillo
           // rojo + barrido sonoro SOLO cuando la bola marcada (con giro
           // significativo) pega en la mesa: el dueño DEBE ver el efecto.
@@ -25779,6 +26127,35 @@ function createPalaAxes() {
   }
   tick(0);
   return { group, setActive, tick };
+}
+
+/* =====================================================================
+ *  r97 · RETOS SEMANALES — 3 retos por semana ISO que ALIMENTAN los
+ *  desbloqueos de MESA (Oro/Carbono) y de SALA (tema Nocturna). Selección
+ *  DETERMINISTA por semana (mismos retos para todos los días de la
+ *  semana, rotan cada lunes), progreso persistente (pp_retos_v1) y
+ *  ESTRELLAS ACUMULATIVAS de por vida: la alternativa honesta para quien
+ *  entrena mucho y quiere abrir recompensas sin esperar las marcas
+ *  clásicas (10 victorias / racha de 5).
+ *  ===================================================================== */
+const RETOS_POOL = [
+  { id: 'victorias', ev: 'victoria', n: 3, k: 'retos_r1', modo: 'suma' },
+  { id: 'rally12', ev: 'rally', n: 12, k: 'retos_r2', modo: 'max' },
+  { id: 'vmax65', ev: 'vmax', n: 6.5, k: 'retos_r3', modo: 'max' },
+  { id: 'entreno2', ev: 'entrenamiento', n: 2, k: 'retos_r4', modo: 'suma' },
+  { id: 'aces5', ev: 'aces', n: 5, k: 'retos_r5', modo: 'suma' },
+  { id: 'duelos5', ev: 'duelo', n: 5, k: 'retos_r6', modo: 'suma' },
+];
+function _retosSemanaKey() {
+  try {
+    const d = new Date();
+    const j = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dia = (j.getUTCDay() + 6) % 7;
+    j.setUTCDate(j.getUTCDate() - dia + 3);   // el jueves de esta semana ISO
+    const prim = new Date(Date.UTC(j.getUTCFullYear(), 0, 4));
+    const sem = 1 + Math.round(((j - prim) / 86400000 - 3 + ((prim.getUTCDay() + 6) % 7)) / 7);
+    return j.getUTCFullYear() + 'W' + String(sem).padStart(2, '0');
+  } catch (e) { return 'W0'; }
 }
 function renderPlayBtn() {
   const en = TLang() === 'en';
@@ -27405,6 +27782,8 @@ loadPaddleModel().then((paddleModel) => {
       if (hitGoal) {
         const bonus = active === 't5a' ? (st.rally === 30 ? 15 : st.rally === 50 ? 25 : 50) : M.bonus;
         addPts(bonus);
+        // r97 · RETO SEMANAL «entrenamiento»: una meta completada cuenta
+        try { if (G && G._retosEvento) G._retosEvento('entrenamiento', 1); } catch (eRE) { /* */ }
         if (active === 't5a') recordBest(active, st.rally);
         // v3.0.7-PLAY1 · estrellas + precisión + celebración al completar
         let suffix = '';
@@ -28663,6 +29042,52 @@ loadPaddleModel().then((paddleModel) => {
         while (htD.length > 2 && c.measureText(htD).width > X0 + wD - (axD - 14) - 16) htD = htD.slice(0, -1);
         if (htD !== _w5) htD += '…';
         c.fillText(htD, axD - 14 + 16, yA + 56);
+      }
+      /* =============================================================
+       *  r97 · MAPA DE CALOR (petición del dueño: «mapa de calor de zonas
+       *  donde pierdes puntos — el entrenamiento ya mide zonas»): tarjeta
+       *  con el HISTÓRICO global (pp_heat_v1 que alimenta el núcleo al
+       *  perder un punto en partido). Rejilla 3×3 (corta/media/fondo ×
+       *  izq/centro/der vistas del jugador), rojo = zonas donde te ganan
+       *  más puntos. Sólo lectura: diagnóstico para dirigir el
+       *  entrenamiento (si te ganan en el fondo-derecha: drills de fondo).
+       *  ============================================================= */
+      {
+        const hg = (game && game.heatGlobal) ? game.heatGlobal() : [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let tot = 0; for (let i = 0; i < 9; i++) tot += hg[i] | 0;
+        let maxC = 1; for (let i = 0; i < 9; i++) maxC = Math.max(maxC, hg[i] | 0);
+        const wD2 = CW * 2 + GX, yH = 1170, hH = 178;
+        c.save();
+        c.beginPath();
+        if (c.roundRect) c.roundRect(X0, yH, wD2, hH, 20); else c.rect(X0, yH, wD2, hH);
+        c.fillStyle = 'rgba(10,14,22,0.55)';
+        c.fill();
+        c.strokeStyle = 'rgba(255,255,255,0.16)';
+        c.lineWidth = 2;
+        c.stroke();
+        c.fillStyle = '#f0c85a'; c.font = '800 24px system-ui, sans-serif';
+        c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillText(t('heat_t'), X0 + 26, yH + 30);
+        c.fillStyle = '#8fa0b8'; c.font = '600 16px system-ui, sans-serif';
+        c.fillText(tot > 0 ? t('heat_total').replace('{n}', String(tot)) : t('heat_sin'), X0 + 26, yH + 58);
+        // mini-mesa 3×3 (red arriba, jugador abajo) + etiquetas de fila
+        const cwH = 52, chH = 34, gxH = X0 + 26, gyH = yH + 74;
+        for (let r = 0; r < 3; r++) {
+          for (let cI = 0; cI < 3; cI++) {
+            const v = hg[r * 3 + cI] | 0;
+            const alfa = v > 0 ? (0.18 + 0.72 * (v / maxC)) : 0.05;
+            c.fillStyle = v > 0 ? 'rgba(255,82,70,' + alfa.toFixed(2) + ')'
+              : 'rgba(255,255,255,0.05)';
+            c.fillRect(gxH + cI * (cwH + 3), gyH + r * (chH + 3), cwH, chH);
+          }
+        }
+        c.fillStyle = 'rgba(255,255,255,0.55)';
+        c.fillRect(gxH - 3, gyH - 7, cwH * 3 + 12, 3);   // la red
+        c.fillStyle = '#93a3b8'; c.font = '600 13px system-ui, sans-serif';
+        c.fillText(t('heat_corta'), gxH + cwH * 3 + 16, gyH + chH * 0.5 + 1);
+        c.fillText(t('heat_media'), gxH + cwH * 3 + 16, gyH + chH * 1.5 + 4);
+        c.fillText(t('heat_fondo'), gxH + cwH * 3 + 16, gyH + chH * 2.5 + 7);
+        c.restore();
       }
       // botón parar si hay modo activo + vuelta al HALL (v3.1.0-SRV2: el
       // hall es el hub — desde el propio hub de entrenamiento se sale a la

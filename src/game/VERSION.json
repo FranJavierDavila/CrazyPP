@@ -1,10 +1,10 @@
 {
-  "version": "3.6.88-SDK6",
-  "fase": 90,
-  "faseNombre": "Sala y Escena en vivo: Hall->cancha, submenus SALA/MESA, deslizador de altura, tooltips del menu, sonidos limpios, pieles de mesa fuera de campeonatos, nitidez FFR",
-  "sdk": "1.5.4",
-  "fecha": "2026-10-30",
-  "hub": "v3688-sdk6",
+  "version": "3.6.89-SDK6",
+  "fase": 91,
+  "faseNombre": "Calabaza clavada a la bola viva, cero zombis en el Hall, voz de personalidad por rival, mapa de calor y retos semanales",
+  "sdk": "1.6.0",
+  "fecha": "2026-10-31",
+  "hub": "v3689-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r95",
-  "tamano": 10530654,
-  "golden": "04e94d38f10026661eeb7a202784cf71c2eb5c3025b2e2e084b5e71cbe75894d"
+  "tamano": 10552700,
+  "golden": "cc5b9f04d4828933149e62980ff368677f376b29380f86aff4c6767e782c7e85"
 }

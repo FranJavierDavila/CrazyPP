@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.91-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.92-SDK6</span>
     </div>
   </main>
 
@@ -2950,7 +2950,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.91-SDK6';
+  const VERSION = '3.6.92-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -3730,6 +3730,22 @@ const DIMS = {
   // re-ida legítima de tu propio golpeo nunca baja de ~0,5 s).
   paddleHitCooldown: 0.24,
   paddleVelClamp: 12,       // v2.29: techo de velocidad de pala (picos de tracking)
+  // --- r100 · CONTACTO DE REPOSO pala-bola (el estándar Eleven) ---
+  // Petición del dueño tras V3.6.91: «si paramos la bola sobre la pala su
+  // movimiento va a trompicones… y si levanto la pala la bola la atraviesa y
+  // desaparece. Eleven rueda y se desliza sobre la superficie». El reposo
+  // NO toca los golpes (por debajo de este umbral no llega ningún swing):
+  // la física de golpes, el golden y la IA quedan byte a byte intactos.
+  paddleRestSpeed: 0.65,    // vRelN <= esto al llegar = APOYO (no golpe, sin rebote)
+  paddleRestSpeedPad: 0.95, // umbral APLICADO con la pala lenta (posar la bola
+                            // desde 3-4 cm de caída llega a ~0,9 m/s) — un
+                            // bloqueo real con la pala quieta a <0,9 m/s es
+                            // exactamente eso: posar la bola (estándar Eleven)
+  paddleRestFric: 0.38,     // fricción tangencial por re-contacto (deslizar/rodar)
+  paddleRestMuS: 0.35,      // fricción estática: gravedad tangencial menor no desliza
+  paddleRestDrop: 0.09,     // s de edad del apoyo sin re-confirmar antes de soltar
+  paddleRestCarry: 0.5,     // pala más lenta que esto ARRASTRA la bola apoyada
+  paddleRestBounce: 0.35,   // fricción (Coulomb suavizado) del apoyo en un bote suave
   maxBallSpeed: 14,
   // --- efecto (spin) ---
   magnus: 0.0035,           // a = Cm·(ω × v)
@@ -6398,6 +6414,55 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
   const vRelN = relVel.dot(tmpN);
   if (vRelN >= 0) return false;   // ya se separan: no es un golpe (spec F)
 
+  /* ================================================================
+   * r100 · CONTACTO DE REPOSO pala-bola (el estándar Eleven).
+   * Informe del dueño tras V3.6.91: «si paramos la bola sobre la pala su
+   * movimiento va a trompicones y si levanto la pala la bola la atraviesa y
+   * desaparece… Eleven: se desliza perfectamente, e incluso empujándola
+   * recupero el bote». Diagnóstico: una bola depositada re-golpeaba en CADA
+   * subpaso (gravedad ⇒ contacto ⇒ restitución + reversión de giro + suelo
+   * de salida + evento) — micro-rebotes = «trompicones», y una pala que
+   * sube rápido barría el plano sin resolución ⇒ la bola quedaba debajo.
+   * Solución: llegada MUY lenta a la CARA de la pala del jugador ⇒ APOYO
+   * (no golpe): proyección sin penetración, velocidad normal relativa
+   * anulada (sin rebote), fricción tangencial con rodadura y REGISTRO del
+   * punto de apoyo — stepPhysics la arrastra por frame (bloque r100 allí).
+   * El swing real (|-vRelN| > paddleRestSpeed) sigue siendo GOLPE puro:
+   * físicas de golpe, golden e IA byte a byte intactos. El «empujón» que
+   * recupera el bote es natural: la pala acelera ⇒ vRelN crece ⇒ golpe. */
+  if (pad.who === 'player' && !pad.serveFlight && !onHandle &&
+      Math.abs(lhz) >= hT &&
+      -vRelN <= (pad.vel.lengthSq() <= DIMS.paddleRestCarry * DIMS.paddleRestCarry
+        ? DIMS.paddleRestSpeedPad      // pala lenta: posar la bola (hasta 0,95)
+        : DIMS.paddleRestSpeed)) {     // pala viva: umbral estricto (0,65)
+    // proyección a la cara (mismo patrón que la colocación del golpe)
+    ball.pos.copy(padPos).addScaledVector(tmpN, rB + 0.001)
+      .addScaledVector(ipRight, lx).addScaledVector(ipUp, ly);
+    // anular la aproximación normal (la bola comparte la normal de la pala)
+    ball.vel.addScaledVector(tmpN, -vRelN);
+    // fricción tangencial + acople de giro (rueda en vez de vibrar)
+    relVel.copy(ball.vel).sub(pad.vel);
+    relVel.addScaledVector(tmpN, -relVel.dot(tmpN));      // tangencial relativa
+    const slipR = relVel.length();
+    if (slipR > 1e-4) {
+      let dvR = slipR * DIMS.paddleRestFric;
+      if (dvR > slipR) dvR = slipR;
+      relVel.setLength(-dvR);
+      ball.vel.add(relVel);
+      // Δω = −(3/2r)·(N × Δv): el mismo acople cascarón del bote (FIS1)
+      ball.spin.addScaledVector(tmpD.copy(tmpN).cross(relVel), -1.5 / DIMS.ballRadius);
+    }
+    const nuevo = ball.__ppRestIdx !== pad.index ||
+      (ball.__ppRestT === undefined) || ball.__ppRestT > DIMS.paddleRestDrop;
+    ball.__ppRestIdx = pad.index;
+    ball.__ppRestSide = tmpN.dot(ipNormal) >= 0 ? 1 : -1;
+    ball.__ppRestLx = lx;
+    ball.__ppRestDy = dyy;
+    ball.__ppRestT = 0;
+    if (nuevo) events.push({ type: 'restTouch', speed: -vRelN, pos: crossPoint.clone() });
+    return true;   // padHit: el subpaso aplaza mesa/red (la bola está en la pala)
+  }
+
   // v3.0.5 P1: PUNTO DULCE — offC: 0 = centro de la hoja, 1 = canto.
   // El canto pega «sordo» (menos restitución), dispersa y da menos efecto.
   // El anillo de asistencia del saque (fuera de la hoja) penalización fija
@@ -6562,6 +6627,10 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
     .addScaledVector(tmpN, front)
     .addScaledVector(ipRight, lx)
     .addScaledVector(ipUp, ly);
+  // r100 · un GOLPE rompe cualquier apoyo previo (el transporte r100 en
+  // stepPhysics jamás persigue una bola ya golpeada)
+  ball.__ppRestIdx = -1;
+  ball.__ppRestT = 0;
 
   // v3.6.49 · SÚPER IMÁN — GUÍA DE TIRO EN EL GOLPE (spec literal r57):
   // la trayectoria real del golpe se prolonga hacia la mitad rival y se
@@ -6822,7 +6891,79 @@ function collideWorld(ball, events) {
 const _imObjetivo = new THREE.Vector3();   // objetivo de la guía del imán
 const _imSpinCero = new THREE.Vector3();   // spin nulo del misil guiado
 
+/* r100 · TEMPORALES del transporte del apoyo (una pasada por frame: CERO
+ * asignaciones en el camino caliente). */
+const _rsBase = new THREE.Vector3();
+const _rsN = new THREE.Vector3();
+const _rsG = new THREE.Vector3();
+const _rsSlip = new THREE.Vector3();
+const _rsOm = new THREE.Vector3();
+
 function stepPhysics(dt, ball, paddles, events, extra) {
+  /* ================================================================
+   * r100 · TRANSPORTE DEL APOYO (bloque complementario del contacto de
+   * reposo en collidePaddleSweep). La bola apoyada en la pala del jugador
+   * VIAJA con ella mientras el gesto sea suave: posición re-proyectada a la
+   * cara con la pose del frame nuevo (punto local conservado), gravedad
+   * tangencial con fricción estática (pala plana = bola quieta; pala
+   * inclinada = la bola rueda cuesta abajo) y rodadura del cascarón. Al
+   * acelerar la pala (swing, > paddleRestCarry) el apoyo se SUELTA y el
+   * barrido CCD del subpaso decide el golpe natural — nunca atraviesa.
+   * Despegues: pala rápida, bola deslizada fuera del disco, edad sin
+   * re-confirmar > paddleRestDrop o pala ausente (auto-limpieza).        */
+  if (ball.__ppRestIdx >= 0) {
+    let rp = null;
+    for (const p of paddles) if (p && p.index === ball.__ppRestIdx) { rp = p; break; }
+    ball.__ppRestT = (ball.__ppRestT || 0) + dt;
+    if (!rp || !rp.active || rp.who !== 'player' ||
+        ball.__ppRestT > DIMS.paddleRestDrop ||
+        rp.vel.lengthSq() > DIMS.paddleRestCarry * DIMS.paddleRestCarry) {
+      ball.__ppRestIdx = -1;                       // despegue: física normal
+    } else {
+      _rsN.copy(rp.normal).multiplyScalar(ball.__ppRestSide || 1);  // normal hacia la bola
+      // 1) deslizamiento propio: gravedad proyectada en el plano de la hoja
+      _rsG.set(0, DIMS.gravity, 0);
+      const gn = _rsG.dot(_rsN);                   // componente normal (negativa)
+      _rsG.addScaledVector(_rsN, -gn);             // tangencial (cuesta abajo)
+      const ax = _rsG.dot(rp.right), ay = _rsG.dot(rp.up);
+      const amax = DIMS.paddleRestFric * Math.abs(gn);
+      let sx = ball.__ppRestSx || 0, sy = ball.__ppRestSy || 0;
+      const quieta = (sx * sx + sy * sy) < 1e-6 &&
+        Math.hypot(ax, ay) <= DIMS.paddleRestMuS * Math.abs(gn);
+      if (quieta) { sx = 0; sy = 0; }              // fricción estática: no rueda
+      else {
+        sx += ax * dt; sy += ay * dt;
+        const sLen = Math.hypot(sx, sy);
+        if (sLen > 1e-9) {
+          const sNew = Math.max(0, sLen - amax * dt * 2.2);
+          const sK = sNew / sLen; sx *= sK; sy *= sK;
+        }
+      }
+      // 2) punto de apoyo actualizado y clamped al disco de la hoja
+      const lx2 = ball.__ppRestLx + sx * dt, dy2 = ball.__ppRestDy + sy * dt;
+      const rIn = DIMS.bladeRadius - DIMS.ballRadius * 0.35;
+      if (lx2 * lx2 + dy2 * dy2 > rIn * rIn) {
+        ball.__ppRestIdx = -1;                     // rodó fuera del borde
+      } else {
+        ball.__ppRestLx = lx2; ball.__ppRestDy = dy2;
+        ball.__ppRestSx = sx; ball.__ppRestSy = sy;
+        // 3) posición pegada a la cara con la pose del frame nuevo
+        _rsBase.copy(rp.pos).addScaledVector(rp.up, DIMS.bladeCenterUp);
+        ball.pos.copy(_rsBase)
+          .addScaledVector(rp.right, lx2)
+          .addScaledVector(rp.up, dy2)
+          .addScaledVector(_rsN, DIMS.ballRadius + 0.001);
+        // 4) velocidad: la de la pala + el deslizamiento propio (al soltar
+        //    la bola hereda ambos — botes y deslices naturales)
+        _rsSlip.set(0, 0, 0).addScaledVector(rp.right, sx).addScaledVector(rp.up, sy);
+        ball.vel.copy(rp.vel).add(_rsSlip);
+        // 5) rodadura del cascarón (ω ideal = (N × v)/r, aproximada suave)
+        _rsOm.copy(_rsN).cross(_rsSlip).divideScalar(DIMS.ballRadius);
+        ball.spin.lerp(_rsOm, 0.15);
+      }
+    }
+  }
+
   const n = Math.max(1, Math.min(96, Math.ceil(dt / MAX_SUBSTEP_DT)));
   const h = dt / n;
 
@@ -19720,6 +19861,16 @@ class PingPongGame {
   tossFromHand(i, assisted) {
     const hand = this.controllerPaddles[i];
     const v = new THREE.Vector3().copy(hand.vel);
+    // r100 · LANZAMIENTO FIEL AL GESTO (informe del dueño: «el primer saque
+    // no me permite lanzar la pelota al aire hasta donde quiera, como si
+    // tuviese una limitación»). El filtro de media móvil (diseñado para
+    // GOLPES reproducibles) llega al instante del soltado detrás del pico del
+    // flick: la bola salía con 60-80 % de la velocidad de la mano. Si la
+    // velocidad INSTANTÁNEA del mando (velInst, mismo techo anti-picos de
+    // paddleVelClamp) es mayor, manda ELLA: la bola sale con la velocidad
+    // REAL de la mano (requisito A v3.1.0-SRV2 al pie de la letra). Gestos
+    // suaves: velInst ≈ vel → comportamiento idéntico al de siempre.
+    if (hand.velInst && hand.velInst.lengthSq() > v.lengthSq()) v.copy(hand.velInst);
     // v3.0.9-HALL1 · subida mínima del saque asistido según dificultad
     const vyMin = this.serveTier().vy;
     if (assisted && v.y < vyMin) {
@@ -25736,6 +25887,19 @@ class PingPongGame {
         case 'wall':
           this.audio.thud(pan, Math.min(0.5, e.speed / 6));
           break;
+        case 'restTouch':
+          // r100 · la bola SE POSA sobre la pala (contacto de reposo c05):
+          // «toc» suave de goma — sin carga de poder, sin cuenta de golpes,
+          // sin FX de golpe (no es un golpe). Throttle 250 ms por si la bola
+          // va reboteciendo en el apoyo.
+          if (!this._restSfxAt || performance.now() - this._restSfxAt > 250) {
+            this._restSfxAt = performance.now();
+            try { this.audio.playOsc(210, 160, 0.05, 'sine', Math.min(0.14, 0.05 + (e.speed || 0) * 0.12), pan); } catch (eRT) { /* */ }
+            if (this.renderer.xr.isPresenting) {
+              try { this.haptic(this.ballHand, 0.12, 24); } catch (eRT2) { /* */ }
+            }
+          }
+          break;
         case 'paddle':
           this.audio.paddle(pan, Math.min(1, e.speed / 9));
           // vibración clara del mando al golpear la bola (el canto, los
@@ -27130,7 +27294,7 @@ loadPaddleModel().then((paddleModel) => {
         seg: 'seguidas',
         m_t1a: 'MESA MARCADA', m_t1a_d: 'Lleva la bola {n} veces seguidas a la zona dorada. El centro (rojo) es la zona fácil del rival: evítala.',
         m_t1b: 'JUNTO A LA LÍNEA', m_t1b_d: 'Coloca {n} bolas seguidas rozando las bandas laterales o el fondo. Cuanto más cerca de la línea, más difícil es para el rival.',
-        m_t2a: 'PASE BAJO', m_t2a_d: 'Golpea drives profundos pasando ENTRE la red y la cinta naranja (17 cm). Si pasas por encima, el rival te remata.',
+        m_t2a: 'PASE BAJO', m_t2a_d: 'Golpea drives profundos pasando ENTRE la red y la cinta naranja. Ajusta la altura de la barra (±1 cm) enfocando sus flechas con el rayo de la mano libre y pulsando el gatillo. Si pasas por encima, el rival te remata.',
         m_t2b: 'GLOBO DEFENSIVO', m_t2b_d: 'Levanta {n} globos seguidos por encima del aro y que boten en el fondo rival. Gana tiempo cuando estás en apuros.',
         m_t3a: 'LEER EL CORTADO', m_t3a_d: 'La máquina lanza bolas con corte pesado. Devuélvelas {n} veces seguidas con la pala abierta: sin tocar la red y sin levantarla.',
         m_t3b: 'BLOQUEAR EL TOPSPIN', m_t3b_d: 'Bolas con lift fuerte y velocidad variable. Bloquea o contraataca {n} veces seguidas con la pala cerrada.',
@@ -27196,7 +27360,7 @@ loadPaddleModel().then((paddleModel) => {
         seg: 'in a row',
         m_t1a: 'MARKED TABLE', m_t1a_d: 'Hit {n} balls in a row into the gold zone. The center (red) is the opponent\u2019s easy zone: avoid it.',
         m_t1b: 'HUG THE LINE', m_t1b_d: 'Place {n} balls in a row grazing the side bands or the baseline. The closer to the line, the harder to return.',
-        m_t2a: 'LOW PASS', m_t2a_d: 'Hit deep drives passing BETWEEN the net and the orange ribbon (17 cm). Over it and they smash you.',
+        m_t2a: 'LOW PASS', m_t2a_d: 'Hit deep drives passing BETWEEN the net and the orange ribbon. Adjust the bar height (±1 cm) by aiming its arrows with your free-hand ray and pulling the trigger. Over it and they smash you.',
         m_t2b: 'DEFENSIVE LOB', m_t2b_d: 'Lift {n} lobs in a row above the hoop landing deep. Buy time when you are in trouble.',
         m_t3a: 'READ THE CHOP', m_t3a_d: 'The machine fires heavy backspin. Return them {n} times in a row with an open blade: no net, no pop-up.',
         m_t3b: 'BLOCK THE TOPSPIN', m_t3b_d: 'Strong topspin at varying speed. Block or counter {n} times in a row with a closed blade.',
@@ -27548,7 +27712,23 @@ loadPaddleModel().then((paddleModel) => {
     const TOP = () => DIMS.tableTopY;
     const HW = () => DIMS.tableHalfWidth;
     const HL = () => DIMS.tableHalfLength;
-    const RIBBON_Y = () => DIMS.netTopY + 0.17;          // cinta a 17 cm sobre la red
+    /* r100 · BARRA INTERACTIVA DEL PASE BAJO (petición del dueño): «que
+     * pudiésemos modificar la altura de dicha barra de manera interactiva
+     * durante el entrenamiento… pulsando unos iconos a la altura de la barra
+     * con forma de flecha hacia arriba y otra hacia abajo, con la medida de
+     * la altura de la barra sobre la superficie de la mesa… ajustar en
+     * rangos de 1 cm». La altura VIVE sobre la red (barraH) y la lectura
+     * del rótulo es sobre la SUPERFICIE de la mesa. Persistente. */
+    let barraH = 0.17;
+    let barraHover = -1;         // 0 = flecha arriba · 1 = flecha abajo · -1 nada
+    let barraEdgeT = 0;          // háptica de hover (sólo en el cambio)
+    try {
+      const _bh = JSON.parse(localStorage.getItem('pp_train_barra_v1') || '{}');
+      if (typeof _bh.h === 'number' && _bh.h >= 0.05 && _bh.h <= 0.40) barraH = _bh.h;
+    } catch (e) { /* sin almacenamiento: 17 cm de siempre */ }
+    const BARRA_MIN = 0.05, BARRA_MAX = 0.40;
+    const RIBBON_Y = () => DIMS.netTopY + barraH;         // cinta AJUSTABLE (r100)
+    const BARRA_CM = () => Math.round((DIMS.netTopY + barraH - DIMS.tableTopY) * 100);
     const APEX_Y = 1.50;                                  // aro del globo defensivo
     const CROSS_LOW = () => DIMS.netTopY + 0.055;         // pase bajo correcto
     const CROSS_HI = () => DIMS.netTopY + 0.16;           // demasiado alto
@@ -27619,6 +27799,55 @@ loadPaddleModel().then((paddleModel) => {
     }
   
     // --- cinta sobre la red (pase bajo) ---
+    // r100 · la cinta trae SUS MANDOS: flecha arriba / flecha abajo con la
+    // lectura en cm sobre la superficie de la mesa. Se enfocan con el rayo
+    // de la MANO LIBRE (barraTick) y se pulsan con el gatillo (serveTrigger).
+    function barraChevronTex(dir) {
+      const cv = mkCanvas(96, 96), x = cv.getContext('2d');
+      x.fillStyle = '#16202c';
+      x.beginPath();
+      if (x.roundRect) x.roundRect(6, 6, 84, 84, 20); else x.rect(6, 6, 84, 84);
+      x.fill();
+      x.lineWidth = 4; x.strokeStyle = '#8f6a3a';
+      x.stroke();
+      x.lineWidth = 11; x.lineCap = 'round'; x.lineJoin = 'round';
+      x.strokeStyle = '#ffbf5a';
+      x.beginPath();
+      if (dir > 0) { x.moveTo(26, 58); x.lineTo(48, 34); x.lineTo(70, 58); }
+      else { x.moveTo(26, 38); x.lineTo(48, 62); x.lineTo(70, 38); }
+      x.stroke();
+      return texOf(cv);
+    }
+    function barraLabelTex() {
+      const cv = mkCanvas(320, 110), x = cv.getContext('2d');
+      x.clearRect(0, 0, 320, 110);
+      x.fillStyle = 'rgba(20,26,36,0.88)';
+      x.beginPath();
+      if (x.roundRect) x.roundRect(4, 4, 312, 102, 22); else x.rect(4, 4, 312, 102);
+      x.fill();
+      x.lineWidth = 4; x.strokeStyle = '#ffb84d';
+      x.stroke();
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillStyle = '#ffd27a';
+      x.font = 'bold 58px "Noto Sans SC", sans-serif';
+      x.fillText(String(BARRA_CM()) + ' cm', 160, 44);
+      x.fillStyle = '#9fb3c8';
+      x.font = '22px "Noto Sans SC", sans-serif';
+      x.fillText(LANG === 'en' ? 'BAR HEIGHT' : 'ALTURA BARRA', 160, 86);
+      return texOf(cv);
+    }
+    let barraUp = null, barraDn = null, barraLbl = null;
+    let barraRibbon = null;                 // cinta viva (band+glow) para barraLay
+    let barraHaz = null, barraDot = null;   // haz de selección de la mano libre
+    const BARRA_X = 1.05;                   // fuera del extremo de la cinta
+    function barraLay() {
+      // recoloca cinta + mandos a la altura viva (cada ajuste de 1 cm)
+      const by = RIBBON_Y();
+      if (barraUp) barraUp.position.set(BARRA_X, by + 0.10, 0);
+      if (barraDn) barraDn.position.set(BARRA_X, by - 0.10, 0);
+      if (barraLbl) barraLbl.position.set(BARRA_X, by, 0);
+      if (barraRibbon) { barraRibbon.band.position.y = by; barraRibbon.glow.position.y = by + 0.02; }
+    }
     function buildRibbon() {
       const g = new THREE.Group();
       const band = new THREE.Mesh(
@@ -27633,9 +27862,126 @@ loadPaddleModel().then((paddleModel) => {
       );
       glow.position.y = RIBBON_Y() + 0.02;
       g.add(glow);
+      barraRibbon = { band, glow };
+      // r100 · MANDOS DE ALTURA: sprites ↑ / cm / ↓ (siempre de cara al
+      // jugador) — el rayo de la mano libre los enfoca y el gatillo ajusta.
+      const mkBoton = (dir) => {
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: barraChevronTex(dir), transparent: true, depthWrite: false, opacity: 0.94,
+        }));
+        s.scale.set(0.085, 0.085, 1);
+        g.add(s);
+        return s;
+      };
+      barraUp = mkBoton(1);
+      barraDn = mkBoton(-1);
+      barraLbl = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: barraLabelTex(), transparent: true, depthWrite: false, opacity: 0.96,
+      }));
+      barraLbl.scale.set(0.27, 0.093, 1);
+      g.add(barraLbl);
+      barraLay();
       g.position.set(0, 0, C());
       g.visible = false;
       return g;
+    }
+
+    /* r100 · HAZ DE SELECCIÓN de la barra (el rayo de la mano libre): línea
+     * fina + punto en el botón enfocado. Se crean perezosos la 1.ª vez. */
+    function barraHazEnsure() {
+      if (barraHaz) return;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+      barraHaz = new THREE.Line(geo, new THREE.LineBasicMaterial({
+        color: 0xffd27a, transparent: true, opacity: 0.6, depthWrite: false,
+      }));
+      barraHaz.frustumCulled = false;
+      barraHaz.visible = false;
+      grp.add(barraHaz);
+      barraDot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.014, 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.9 }),
+      );
+      barraDot.visible = false;
+      grp.add(barraDot);
+    }
+
+    /* r100 · TICK de la barra: el rayo de la MANO LIBRE (sin pala) enfoca
+     * las flechas (hover: brillo + háptica de borde + haz de selección). */
+    const _bRay = new THREE.Raycaster();
+    const _bOrg = new THREE.Vector3();
+    const _bDir = new THREE.Vector3();
+    const _bQ = new THREE.Quaternion();
+    const _bW = new THREE.Vector3();
+    function barraTick(dt) {
+      if (!ribbonG || !ribbonG.visible) {
+        if (barraHover !== -1) barraHover = -1;
+        if (barraHaz) barraHaz.visible = false;
+        if (barraDot) barraDot.visible = false;
+        return;
+      }
+      const h = (G.ballHand === 0 || G.ballHand === 1) ? G.ballHand : 0;
+      const ray = G.rays && G.rays[h];
+      let hit = -1;
+      if (ray && G.connected && G.connected[h]) {
+        ray.getWorldPosition(_bOrg);
+        ray.getWorldQuaternion(_bQ);
+        _bDir.set(0, 0, -1).applyQuaternion(_bQ);
+        _bRay.set(_bOrg, _bDir);
+        barraHazEnsure();
+        for (let k = 0; k < 2; k++) {
+          const b = (k === 0) ? barraUp : barraDn;
+          if (!b) continue;
+          b.getWorldPosition(_bW);
+          if (_bRay.ray.distanceToPoint(_bW) <= 0.075) { hit = k; break; }
+        }
+      }
+      if (hit !== barraHover) {
+        barraHover = hit;
+        barraEdgeT = 0.0;               // háptica sólo en el cambio (abajo)
+        if (hit >= 0) {
+          try { G.haptic(h, 0.14, 20); } catch (eHH) { /* */ }
+          try { G.audio.playOsc(520, 660, 0.05, 'sine', 0.08, 0); } catch (eHA) { /* */ }
+        }
+      }
+      // brillo del botón enfocado (tinte del material del sprite)
+      if (barraUp) barraUp.material.color.setHex(barraHover === 0 ? 0xffffff : 0xbfcfe0);
+      if (barraDn) barraDn.material.color.setHex(barraHover === 1 ? 0xffffff : 0xbfcfe0);
+      // haz de selección vivo
+      const objetivo = barraHover === 0 ? barraUp : barraHover === 1 ? barraDn : null;
+      if (objetivo) {
+        objetivo.getWorldPosition(_bW);
+        const pa = barraHaz.geometry.attributes.position;
+        pa.setXYZ(0, _bOrg.x, _bOrg.y, _bOrg.z);
+        pa.setXYZ(1, _bW.x, _bW.y, _bW.z);
+        pa.needsUpdate = true;
+        barraHaz.visible = true;
+        barraDot.visible = true;
+        barraDot.position.copy(_bW);
+        barraEdgeT += dt;
+      } else {
+        barraHaz.visible = false;
+        barraDot.visible = false;
+      }
+    }
+
+    /* r100 · AJUSTE con el gatillo sobre una flecha (±1 cm). Devuelve true
+     * si el gatillo fue CONSUMIDO por la barra (no sirve la bola). */
+    function barraAjustarHover() {
+      if (barraHover < 0 || !ribbonG || !ribbonG.visible) return false;
+      barraH = THREE.MathUtils.clamp(
+        barraH + (barraHover === 0 ? 0.01 : -0.01), BARRA_MIN, BARRA_MAX);
+      try { localStorage.setItem('pp_train_barra_v1', JSON.stringify({ h: Math.round(barraH * 1000) / 1000 })); } catch (eBS) { /* */ }
+      barraLay();
+      if (barraLbl) {
+        barraLbl.material.map = barraLabelTex();
+        barraLbl.material.needsUpdate = true;
+      }
+      try { G.audio.playOsc(barraHover === 0 ? 640 : 480, barraHover === 0 ? 820 : 360, 0.09, 'triangle', 0.14, 0); } catch (eBS2) { /* */ }
+      const h = (G.ballHand === 0 || G.ballHand === 1) ? G.ballHand : 0;
+      try { G.haptic(h, 0.3, 45); } catch (eBS3) { /* */ }
+      toast((LANG === 'en' ? 'Bar: ' : 'Barra: ') + BARRA_CM() + ' cm', true);
+      return true;
     }
   
     // --- aro de altura (globo defensivo) ---
@@ -27653,7 +27999,16 @@ loadPaddleModel().then((paddleModel) => {
       );
       beam.position.y = -(APEX_Y - TOP()) / 2;
       g.add(beam);
-      g.position.set(0, APEX_Y, C() + 0.5);
+      // r100 · ARO EN EL CENTRO DE LA MESA (duda del dueño: «aparece una
+      // línea con un círculo o toro arriba… pensé que debería estar situado
+      // en el medio de la mesa»). La representación ES correcta — el toro
+      // horizontal es el ARO objetivo por encima del que pasa el globo y la
+      // línea es el haz de guía hasta la mesa — pero vivía a +0,50 m hacia
+      // el rival: flotaba sobre la media-cancha contraria y confundía. El
+      // apex de un globo real ocurre junto a la red, así que el aro se ancla
+      // al CENTRO de la mesa (sobre la línea): el juez no cambia (mide el
+      // apex máximo del vuelo, no la posición del aro) — sólo la escena.
+      g.position.set(0, APEX_Y, C());
       g.visible = false;
       return g;
     }
@@ -27966,6 +28321,10 @@ loadPaddleModel().then((paddleModel) => {
       const v = new THREE.Vector3(0, vyMin, 0);
       if (bh && bh.active) {
         v.copy(bh.vel);
+        // r100 · lanzamiento FIEL al gesto (mismo fix que el núcleo): si la
+        // velocidad instantánea del mando es mayor que la filtrada, manda
+        // ella — el flick del saque del tee sale con la mano real.
+        if (bh.velInst && bh.velInst.lengthSq() > v.lengthSq()) v.copy(bh.velInst);
         if (assisted) {
           // gatillo: la bola SIEMPRE sube lo suficiente para golpearla
           if (v.y < vyMin) v.y = vyMin;
@@ -28277,6 +28636,11 @@ loadPaddleModel().then((paddleModel) => {
       metroG.visible = (active === 't5a');
       panel.visible = !!active;
       if (quadMesh.visible) drawQuad(active);
+      // r100 · al (re)entrar en el PASE BAJO el rótulo repinta cm + idioma
+      if (ribbonG.visible && barraLbl) {
+        barraLbl.material.map = barraLabelTex();
+        barraLbl.material.needsUpdate = true;
+      }
     }
   
   
@@ -29524,6 +29888,9 @@ loadPaddleModel().then((paddleModel) => {
         cosmeticsTick(dt);
         burstTick(dt);
         if (active && G.trainV3 && G.calib) trainTick(dt);
+        // r100 · mandos de la BARRA del pase bajo (t2a): el rayo de la mano
+        // libre enfoca las flechas (haz de selección) — gatillo ajusta ±1 cm
+        barraTick(dt);
         // detección de efecto del jugador en CUALQUIER modo (iconos en caras)
         // ronda 27 · respeta también el interruptor «Flecha de efecto»
         if (S.fb.spin && faceIcons.length && G.events && G.events.length) {
@@ -29555,7 +29922,14 @@ loadPaddleModel().then((paddleModel) => {
         g.closeMenu();
         startMode(g, dailyPlan(dayKey()).mode, { daily: 1 });
       },
-      serveTrigger: () => { try { serveTossFromTee(true); } catch (e) { /* nunca rompe */ } },
+      serveTrigger: () => {
+        try {
+          // r100 · el gatillo sobre una FLECHA de la barra ajusta ±1 cm y se
+          // CONSUME (la bola del tee no sale): foco → gatillo → ajuste
+          if (barraAjustarHover()) return;
+          serveTossFromTee(true);
+        } catch (e) { /* nunca rompe */ }
+      },
       serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(false); } catch (e) { /* nunca rompe */ } },
       drawHub, drawArea,
       get state() { return { active, pts: S.pts, best: S.best, skin: S.skin, unlocked: S.unlocked.slice(),
@@ -29579,7 +29953,24 @@ loadPaddleModel().then((paddleModel) => {
       // interruptor de la sección «AYUDAS TÉCNICAS» obedece de verdad.
       spawnMark, pulseFaceIcons, shotLineShow,
       marks: () => marks, spinSprite: () => spinSprite, shotLine: () => shotLine,
-      faceIcons: () => faceIcons },
+      faceIcons: () => faceIcons,
+      // r100 · internos de la BARRA del pase bajo (qa_r100_v3692): accesores
+      // —nunca sustituciones— de la altura viva, la lectura en cm y los
+      // mandos (flechas + rótulo + recolocación)
+      barraH: () => barraH,
+      barraCm: () => BARRA_CM(),
+      barraHoverSet: (v) => { barraHover = v; },
+      barraVisSet: (v) => { if (ribbonG) ribbonG.visible = !!v; },   // QA: estado t2a
+      barraAjustar: barraAjustarHover,
+      barraLay,
+      barraSpr: () => ({
+        up: barraUp ? { x: barraUp.position.x, y: barraUp.position.y } : null,
+        lbl: barraLbl ? { x: barraLbl.position.x, y: barraLbl.position.y } : null,
+        dn: barraDn ? { x: barraDn.position.x, y: barraDn.position.y } : null,
+        cinta: barraRibbon ? { band: barraRibbon.band.position.y } : null,
+        grupo: ribbonG ? ribbonG.position.z : null,
+      }),
+      barraHaz: () => barraHaz },
     };
   })();
   window.__PP_TRAIN = PP_TRAIN;

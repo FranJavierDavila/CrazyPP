@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r98_v3690.py — capa de QA de la ronda 98 (V3.6.90-SDK6).
+"""qa_r98_v3690.py — capa de QA de la ronda 98 (V3.6.91-SDK6).
 Tres peticiones del dueño sobre la interfaz de los menús:
  1) TOOLTIPS BONITOS: «quiero algo más vistoso y bonito como un bocadillo
     sobre fondo blanco con el texto en negro y que apunte con precisión a
@@ -74,9 +74,9 @@ AGUJAS = [
     ('const thick = (idx >= 0 || sobreMesa) ? 1.7 : 1;',
      'c12: el haz engorda también sobre la mesa'),
     ('RingGeometry(0.026, 0.044, 28)', 'c12: anillo de selección en el punto de contacto'),
-    ('PlaneGeometry(1.12, 0.28)', 'c12: rótulo GRANDE (1,12 m) sobre la mesa'),
-    ('this._mesaLabel.position.set(0, DIMS.tableTopY + 0.52, 0.92);',
-     'c12: rótulo sobre el LADO DEL DUEÑO (+z), flotando'),
+    ('PlaneGeometry(1.04, 0.26)', 'c12: rótulo decal (1,04 m — r99 «algo más pequeño»)'),
+    ('DIMS.tableCenterZ + DIMS.tableHalfLength - 0.34',
+     'c12: rótulo SOBRE la superficie, lado del dueño (r99)'),
     ('MESA_ALTO_MAX, Math.max(MESA_ALTO_MIN, g2.y0 + (gy - g2.cy0))',
      'c12: agarre con clamp honesto 0,70-0,84'),
     # (4) página MESA sin raíl, con lectura + pista del gesto
@@ -110,10 +110,10 @@ CHK("hint_fvolset: 'Hold the trigger on the bar and slide your controller left o
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.90-SDK6', 'c00: VERSION sella 3.6.90-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.91-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 92, 'VERSION.json: FASE 92')
-CHK(V.get('hub') == 'v3690-sdk6', 'VERSION.json: hub v3690-sdk6')
+CHK(V.get('fase') == 93, 'VERSION.json: FASE 93')
+CHK(V.get('hub') == 'v3691-sdk6', 'VERSION.json: hub v3691-sdk6')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')
@@ -289,8 +289,8 @@ with sync_playwright() as pw:
         CHK(abs(grab['y1'] - 0.81) < 0.0011, 'agarre: mando +5 cm → mesa 0,76→0,81 (1:1, %s)' % grab['y1'])
         CHK(abs(grab['dims1'] - 0.81) < 0.0011, 'agarre: DIMS.tableTopY acompaña EN VIVO (%s)' % grab['dims1'])
         CHK(grab['labelVis'] is True, 'agarre: el rótulo grande se VE durante el agarre')
-        CHK(grab['labelPos'][2] == 0.92 and grab['labelPos'][1] > 1.3,
-            'agarre: rótulo sobre el LADO DEL DUEÑO (z +0,92, por encima del tablero)')
+        CHK(grab['labelPos'][2] == -0.57 and abs(grab['labelPos'][1] - 0.816) < 0.011,
+            'agarre: rótulo decal SOBRE la superficie (z −0,57, 6 mm sobre el tablero — r99)')
         CHK(grab['ls1'] == '0.81', 'agarre: la altura agarrada PERSISTE (pp_mesaaltoy=0.81)')
         CHK(abs(grab['yHi'] - 0.84) < 0.0011, 'agarre: clamp ALTO honesto (0,84, %s)' % grab['yHi'])
         CHK(abs(grab['yLo'] - 0.70) < 0.0011, 'agarre: clamp BAJO honesto (0,70, %s)' % grab['yLo'])

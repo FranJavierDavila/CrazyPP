@@ -1,10 +1,10 @@
 {
-  "version": "3.6.90-SDK6",
-  "fase": 92,
-  "faseNombre": "GESTOS CONTINUOS DEL MENÚ (r98): bocadillos blancos, deslizadores arrastrables y mesa agarrable",
+  "version": "3.6.91-SDK6",
+  "fase": 93,
+  "faseNombre": "AJUSTES FINOS DEL MENÚ (r99)",
   "sdk": "1.6.0",
   "fecha": "2026-10-31",
-  "hub": "v3690-sdk6",
+  "hub": "v3691-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r95",
   "tamano": 10552700,
-  "golden": "d8c679bcdd620eda15d9eaf692344d5fea70857ef6aec62b954670695d11e073"
+  "golden": "a80e2a8fa2ad3a7a57705acbb7981182a9739fdcf03a2f1698280037de02fc59"
 }

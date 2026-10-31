@@ -4,7 +4,7 @@
 
 Barrido genérico e idempotente: en TODA capa qa_*.py que aún lleve el sello
 de la ronda anterior se sustituyen los dos tokens de versión (3.6.89-SDK6 →
-3.6.90-SDK6 y v3689-sdk6 → v3690-sdk6). Si una capa ya lleva el sello nuevo
+3.6.91-SDK6 y v3689-sdk6 → v3691-sdk6). Si una capa ya lleva el sello nuevo
 (o nunca lo llevó), no se toca (lección de la ronda 13: «ya sellado» cuenta
 como OK). El SDK NO cambia esta ronda (1.6.0 se estrenó en la r97); el
 cambio r98 vive en el NÚCLEO (c12 bocadillo blanco + arrastre de

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r95_v3687.py — capa de QA de la ronda 95 (V3.6.90-SDK6).
+"""qa_r95_v3687.py — capa de QA de la ronda 95 (V3.6.91-SDK6).
 
 Cuatro frentes del dueño, verificados aquí:
  1) SIN CARTEL EN LOS DUELOS (regla de casa): «en todos los campeonatos, en

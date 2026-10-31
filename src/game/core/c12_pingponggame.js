@@ -1564,9 +1564,13 @@ export class PingPongGame {
     }
 
     // r98 · MESA AGARRABLE: anillo de selección por mando (donde el rayo
-    // toca la mesa) + RÓTULO GRANDE con la altura viva sobre el lado del
-    // dueño. Viven en ESCENA (no en menuGroup: el panel se ancla y se mueve,
+    // toca la mesa) + RÓTULO con la altura viva sobre el lado del dueño.
+    // Viven en ESCENA (no en menuGroup: el panel se ancla y se mueve,
     // la mesa no). Sólo se ven en la página MESA con la sala a la vista.
+    // r99 · el rótulo pasa a DECAL PLANO SOBRE LA SUPERFICIE (petición
+    // del dueño: «sobre la propia mesa, texto algo más pequeño y paralelo
+    // a la superficie que se pueda leer bien») — plano tumbado mirando
+    // ARRIBA (rotation.x = −90°) a 6 mm del tablero, lado del dueño.
     this._mesaRings = [];
     for (let h = 0; h < 2; h++) {
       const ring = new THREE.Mesh(
@@ -1588,9 +1592,13 @@ export class PingPongGame {
     this._mesaLabelTex = new THREE.CanvasTexture(this._mesaLabelCv);
     this._mesaLabelTex.colorSpace = THREE.SRGBColorSpace;
     this._mesaLabel = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.12, 0.28),
+      // r99 · «algo más pequeño»: 1,04 × 0,26 m (era 1,12 × 0,28) y TUMBADO
+      // paralelo a la superficie — texto mirando al techo, se lee mirando
+      // la mesa como una hoja apoyada sobre el tablero.
+      new THREE.PlaneGeometry(1.04, 0.26),
       new THREE.MeshBasicMaterial({ map: this._mesaLabelTex, transparent: true, depthTest: false }),
     );
+    this._mesaLabel.rotation.x = -Math.PI / 2;   // decal plano sobre la mesa
     this._mesaLabel.renderOrder = 9997;
     this._mesaLabel.visible = false;
     this.scene.add(this._mesaLabel);
@@ -3183,10 +3191,13 @@ export class PingPongGame {
           c.arc(rx + rw * vol, vy + 26, 13, 0, Math.PI * 2);
           c.fillStyle = '#ffd257'; c.fill();
           c.strokeStyle = '#10131a'; c.lineWidth = 3; c.stroke();
-          c.fillStyle = '#e9edf2';
-          c.font = '800 20px system-ui, sans-serif';
+          // r99 · % LIGERAMENTE ENCIMA de la barra (petición del dueño:
+          // «que no se pisen por la barra al moverlo»): la lectura vive
+          // SOBRE el raíl y la bola del deslizador ya no la tapa nunca.
+          c.fillStyle = '#ffd257';
+          c.font = '800 17px system-ui, sans-serif';
           c.textAlign = 'center'; c.textBaseline = 'middle';
-          c.fillText(Math.round(vol * 100) + '%', 512, vy + 27);
+          c.fillText(Math.round(vol * 100) + '%', 512, vy + 2);
           rects.push({ x: rx - 8, y: vy - 4, w: rw + 16, h: 62, id: idSet, slider: true });
         };
         c.fillStyle = '#9aa7b4';
@@ -3580,8 +3591,12 @@ export class PingPongGame {
     return { punto: hit.point, dist: hit.distance };
   }
 
-  /** r98 · rótulo GRANDE con la altura viva sobre el lado del dueño
-   *  («bien grande sobre nuestro lado de la mesa un texto con su altura»). */
+  /** r98 · rótulo con la altura viva sobre el lado del dueño.
+   *  r99 · DECAL PLANO sobre la superficie de la mesa (petición del
+   *  dueño: «sobre la propia mesa, texto algo más pequeño y paralelo a
+   *  la superficie que se pueda leer bien»): tumbado mirando arriba,
+   *  a 6 mm del tablero, pegado al lado del dueño; sigue a la mesa
+   *  por frame mientras se agarra (_mesaGrabUpdate). */
   _mesaLabelShow() {
     if (!this._mesaLabel) return;
     const cv = this._mesaLabelCv;
@@ -3601,15 +3616,20 @@ export class PingPongGame {
     c2.lineWidth = 6;
     c2.stroke();
     c2.fillStyle = '#ffffff';
-    c2.font = '800 118px system-ui, sans-serif';
+    // r99 · texto ALGO MÁS PEQUEÑO (96 px, era 118) para el decal plano
+    c2.font = '800 96px system-ui, sans-serif';
     c2.textAlign = 'center';
     c2.textBaseline = 'middle';
-    c2.fillText(cm + ' cm · ' + zona, cv.width / 2, cv.height / 2 + 8);
+    c2.fillText(cm + ' cm · ' + zona, cv.width / 2, cv.height / 2 + 4);
     this._mesaLabelTex.needsUpdate = true;
     this._mesaLabel.visible = true;
     if (this._mesaLabel.material) this._mesaLabel.material.opacity = 1;
-    // sobre el LADO DEL DUEÑO de la mesa (el jugador vive en +z), flotando
-    this._mesaLabel.position.set(0, DIMS.tableTopY + 0.52, 0.92);
+    // r99 · SOBRE la superficie, lado del dueño (el jugador vive en +z):
+    // 6 mm sobre el tablero (cero z-fighting con las líneas) y 34 cm
+    // hacia la red desde el borde cercano — zona libre de líneas.
+    this._mesaLabel.position.set(
+      0, DIMS.tableTopY + 0.006,
+      DIMS.tableCenterZ + DIMS.tableHalfLength - 0.34);
   }
 
   /** r98 · actualización por frame del AGARRE: la altura de la mesa sigue
@@ -3624,6 +3644,12 @@ export class PingPongGame {
     }
     const gy = this._menuGripPos ? this._menuGripPos[g2.hand] : null;
     if (!Number.isFinite(gy)) return;
+    // r99 · el decal vive PEGADO a la superficie (seguimiento por FRAME,
+    // no sólo en el repintado por cm): la mesa sube/baja y el rótulo no
+    // se queda ni hundido ni flotando entre pasos.
+    if (this._mesaLabel && this._mesaLabel.visible) {
+      this._mesaLabel.position.y = DIMS.tableTopY + 0.006;
+    }
     const yN = Math.min(MESA_ALTO_MAX, Math.max(MESA_ALTO_MIN, g2.y0 + (gy - g2.cy0)));
     if (Math.abs(yN - this.mesaAltoY) > 0.0004) {
       const yAp = this._mesaAplicarY(yN);

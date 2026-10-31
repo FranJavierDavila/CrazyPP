@@ -687,7 +687,7 @@ loadPaddleModel().then((paddleModel) => {
         seg: 'seguidas',
         m_t1a: 'MESA MARCADA', m_t1a_d: 'Lleva la bola {n} veces seguidas a la zona dorada. El centro (rojo) es la zona fácil del rival: evítala.',
         m_t1b: 'JUNTO A LA LÍNEA', m_t1b_d: 'Coloca {n} bolas seguidas rozando las bandas laterales o el fondo. Cuanto más cerca de la línea, más difícil es para el rival.',
-        m_t2a: 'PASE BAJO', m_t2a_d: 'Golpea drives profundos pasando ENTRE la red y la cinta naranja. Ajusta la altura de la barra (±1 cm) enfocando sus flechas con el rayo de la mano libre y pulsando el gatillo. Si pasas por encima, el rival te remata.',
+        m_t2a: 'PASE BAJO', m_t2a_d: 'Golpea drives profundos pasando ENTRE la red y la cinta naranja. Ajusta la altura de la barra acercando la MANO LIBRE a la cinta y moviéndola arriba o abajo (aparta la mano para fijar). Si pasas por encima, el rival te remata.',
         m_t2b: 'GLOBO DEFENSIVO', m_t2b_d: 'Levanta {n} globos seguidos por encima del aro y que boten en el fondo rival. Gana tiempo cuando estás en apuros.',
         m_t3a: 'LEER EL CORTADO', m_t3a_d: 'La máquina lanza bolas con corte pesado. Devuélvelas {n} veces seguidas con la pala abierta: sin tocar la red y sin levantarla.',
         m_t3b: 'BLOQUEAR EL TOPSPIN', m_t3b_d: 'Bolas con lift fuerte y velocidad variable. Bloquea o contraataca {n} veces seguidas con la pala cerrada.',
@@ -753,7 +753,7 @@ loadPaddleModel().then((paddleModel) => {
         seg: 'in a row',
         m_t1a: 'MARKED TABLE', m_t1a_d: 'Hit {n} balls in a row into the gold zone. The center (red) is the opponent\u2019s easy zone: avoid it.',
         m_t1b: 'HUG THE LINE', m_t1b_d: 'Place {n} balls in a row grazing the side bands or the baseline. The closer to the line, the harder to return.',
-        m_t2a: 'LOW PASS', m_t2a_d: 'Hit deep drives passing BETWEEN the net and the orange ribbon. Adjust the bar height (±1 cm) by aiming its arrows with your free-hand ray and pulling the trigger. Over it and they smash you.',
+        m_t2a: 'LOW PASS', m_t2a_d: 'Hit deep drives passing BETWEEN the net and the orange ribbon. Adjust the bar height by bringing your FREE HAND to the ribbon and moving it up or down (pull away to set). Over it and they smash you.',
         m_t2b: 'DEFENSIVE LOB', m_t2b_d: 'Lift {n} lobs in a row above the hoop landing deep. Buy time when you are in trouble.',
         m_t3a: 'READ THE CHOP', m_t3a_d: 'The machine fires heavy backspin. Return them {n} times in a row with an open blade: no net, no pop-up.',
         m_t3b: 'BLOCK THE TOPSPIN', m_t3b_d: 'Strong topspin at varying speed. Block or counter {n} times in a row with a closed blade.',
@@ -1105,22 +1105,30 @@ loadPaddleModel().then((paddleModel) => {
     const TOP = () => DIMS.tableTopY;
     const HW = () => DIMS.tableHalfWidth;
     const HL = () => DIMS.tableHalfLength;
-    /* r100 · BARRA INTERACTIVA DEL PASE BAJO (petición del dueño): «que
-     * pudiésemos modificar la altura de dicha barra de manera interactiva
-     * durante el entrenamiento… pulsando unos iconos a la altura de la barra
-     * con forma de flecha hacia arriba y otra hacia abajo, con la medida de
-     * la altura de la barra sobre la superficie de la mesa… ajustar en
-     * rangos de 1 cm». La altura VIVE sobre la red (barraH) y la lectura
-     * del rótulo es sobre la SUPERFICIE de la mesa. Persistente. */
+    /* r101 · BARRA INTERACTIVA DEL PASE BAJO — AJUSTE POR PROXIMIDAD.
+     * La r100 lo intentó con flechas + rayo de la mano libre y el GATILLO
+     * consumido; el dueño lo retiró: «es inútil, cuesta enfocar, donde
+     * apunto y donde están los botones nada tienen que ver y se pisa el
+     * gatillo que suelta las bolas del tee». En el tee TODOS los botones
+     * están vivos (gatillo = lanzar, grip = lanzamiento natural al soltar),
+     * así que el ajuste NO usa NINGÚN botón: la MANO LIBRE entra en el
+     * pasillo de la cinta (≥0,30 s) y la barra pasa a SEGUIR la altura de
+     * la mano en vivo (pasos de 1 cm, blip y háptica por paso, clamps
+     * 5..40 cm); al APARTAR la mano del pasillo la altura queda fijada y
+     * guardada (persistencia pp_train_barra_v1). Interacción directa,
+     * cómoda y cero interferencias con el juego. */
     let barraH = 0.17;
-    let barraHover = -1;         // 0 = flecha arriba · 1 = flecha abajo · -1 nada
-    let barraEdgeT = 0;          // háptica de hover (sólo en el cambio)
+    let barraZona = false;       // mano libre dentro del pasillo de la cinta
+    let barraZonaT = 0;          // dwell dentro del pasillo (s)
+    let barraAgarrada = false;   // la barra sigue la mano AHORA
     try {
       const _bh = JSON.parse(localStorage.getItem('pp_train_barra_v1') || '{}');
       if (typeof _bh.h === 'number' && _bh.h >= 0.05 && _bh.h <= 0.40) barraH = _bh.h;
     } catch (e) { /* sin almacenamiento: 17 cm de siempre */ }
     const BARRA_MIN = 0.05, BARRA_MAX = 0.40;
-    const RIBBON_Y = () => DIMS.netTopY + barraH;         // cinta AJUSTABLE (r100)
+    const BARRA_DWELL = 0.30;                // s en el pasillo para agarrar
+    const BARRA_PASO = 0.01;                 // resolución: 1 cm
+    const RIBBON_Y = () => DIMS.netTopY + barraH;         // cinta AJUSTABLE
     const BARRA_CM = () => Math.round((DIMS.netTopY + barraH - DIMS.tableTopY) * 100);
     const APEX_Y = 1.50;                                  // aro del globo defensivo
     const CROSS_LOW = () => DIMS.netTopY + 0.055;         // pase bajo correcto
@@ -1192,9 +1200,9 @@ loadPaddleModel().then((paddleModel) => {
     }
   
     // --- cinta sobre la red (pase bajo) ---
-    // r100 · la cinta trae SUS MANDOS: flecha arriba / flecha abajo con la
-    // lectura en cm sobre la superficie de la mesa. Se enfocan con el rayo
-    // de la MANO LIBRE (barraTick) y se pulsan con el gatillo (serveTrigger).
+    // r101 · la cinta trae SUS MANDOS: rótulo con la lectura en cm sobre la
+    // SUPERFICIE de la mesa y las dos flechas flanqueándolo — ya no son
+    // botones de rayo: indican el ajuste por proximidad (mano libre).
     function barraChevronTex(dir) {
       const cv = mkCanvas(96, 96), x = cv.getContext('2d');
       x.fillStyle = '#16202c';
@@ -1211,6 +1219,11 @@ loadPaddleModel().then((paddleModel) => {
       x.stroke();
       return texOf(cv);
     }
+    function pistaBarra() {
+      if (barraAgarrada) return LANG === 'en' ? 'PULL AWAY TO SET' : 'APARTA LA MANO PARA FIJAR';
+      if (barraZona) return LANG === 'en' ? 'MOVE YOUR HAND ↑↓' : 'MUEVE LA MANO ↑↓';
+      return LANG === 'en' ? 'BAR HEIGHT' : 'ALTURA BARRA';
+    }
     function barraLabelTex() {
       const cv = mkCanvas(320, 110), x = cv.getContext('2d');
       x.clearRect(0, 0, 320, 110);
@@ -1218,27 +1231,27 @@ loadPaddleModel().then((paddleModel) => {
       x.beginPath();
       if (x.roundRect) x.roundRect(4, 4, 312, 102, 22); else x.rect(4, 4, 312, 102);
       x.fill();
-      x.lineWidth = 4; x.strokeStyle = '#ffb84d';
+      x.lineWidth = 4; x.strokeStyle = barraAgarrada ? '#ffe08a' : '#ffb84d';
       x.stroke();
       x.textAlign = 'center'; x.textBaseline = 'middle';
       x.fillStyle = '#ffd27a';
-      x.font = 'bold 58px "Noto Sans SC", sans-serif';
-      x.fillText(String(BARRA_CM()) + ' cm', 160, 44);
-      x.fillStyle = '#9fb3c8';
-      x.font = '22px "Noto Sans SC", sans-serif';
-      x.fillText(LANG === 'en' ? 'BAR HEIGHT' : 'ALTURA BARRA', 160, 86);
+      x.font = 'bold 56px "Noto Sans SC", sans-serif';
+      x.fillText(String(BARRA_CM()) + ' cm', 160, 42);
+      x.fillStyle = (barraZona || barraAgarrada) ? '#ffe8b0' : '#9fb3c8';
+      x.font = '20px "Noto Sans SC", sans-serif';
+      x.fillText(pistaBarra(), 160, 84);
       return texOf(cv);
     }
     let barraUp = null, barraDn = null, barraLbl = null;
     let barraRibbon = null;                 // cinta viva (band+glow) para barraLay
-    let barraHaz = null, barraDot = null;   // haz de selección de la mano libre
-    const BARRA_X = 1.05;                   // fuera del extremo de la cinta
+    let barraUltCm = -1;                    // repintado del rótulo sólo al cambiar
+    const BARRA_SEP = 0.24;                 // flechas flanqueando el rótulo
     function barraLay() {
-      // recoloca cinta + mandos a la altura viva (cada ajuste de 1 cm)
+      // recoloca cinta + mandos a la altura viva (cada ajuste)
       const by = RIBBON_Y();
-      if (barraUp) barraUp.position.set(BARRA_X, by + 0.10, 0);
-      if (barraDn) barraDn.position.set(BARRA_X, by - 0.10, 0);
-      if (barraLbl) barraLbl.position.set(BARRA_X, by, 0);
+      if (barraLbl) barraLbl.position.set(0, by + 0.13, 0);
+      if (barraUp) barraUp.position.set(-BARRA_SEP, by + 0.13, 0);
+      if (barraDn) barraDn.position.set(BARRA_SEP, by + 0.13, 0);
       if (barraRibbon) { barraRibbon.band.position.y = by; barraRibbon.glow.position.y = by + 0.02; }
     }
     function buildRibbon() {
@@ -1257,7 +1270,7 @@ loadPaddleModel().then((paddleModel) => {
       g.add(glow);
       barraRibbon = { band, glow };
       // r100 · MANDOS DE ALTURA: sprites ↑ / cm / ↓ (siempre de cara al
-      // jugador) — el rayo de la mano libre los enfoca y el gatillo ajusta.
+      // jugador) — el ajuste es por PROXIMIDAD de la mano libre (sin gatillo).
       const mkBoton = (dir) => {
         const s = new THREE.Sprite(new THREE.SpriteMaterial({
           map: barraChevronTex(dir), transparent: true, depthWrite: false, opacity: 0.94,
@@ -1279,104 +1292,99 @@ loadPaddleModel().then((paddleModel) => {
       return g;
     }
 
-    /* r100 · HAZ DE SELECCIÓN de la barra (el rayo de la mano libre): línea
-     * fina + punto en el botón enfocado. Se crean perezosos la 1.ª vez. */
-    function barraHazEnsure() {
-      if (barraHaz) return;
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
-      barraHaz = new THREE.Line(geo, new THREE.LineBasicMaterial({
-        color: 0xffd27a, transparent: true, opacity: 0.6, depthWrite: false,
-      }));
-      barraHaz.frustumCulled = false;
-      barraHaz.visible = false;
-      grp.add(barraHaz);
-      barraDot = new THREE.Mesh(
-        new THREE.SphereGeometry(0.014, 10, 8),
-        new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.9 }),
-      );
-      barraDot.visible = false;
-      grp.add(barraDot);
-    }
-
-    /* r100 · TICK de la barra: el rayo de la MANO LIBRE (sin pala) enfoca
-     * las flechas (hover: brillo + háptica de borde + haz de selección). */
-    const _bRay = new THREE.Raycaster();
-    const _bOrg = new THREE.Vector3();
-    const _bDir = new THREE.Vector3();
-    const _bQ = new THREE.Quaternion();
-    const _bW = new THREE.Vector3();
-    function barraTick(dt) {
-      if (!ribbonG || !ribbonG.visible) {
-        if (barraHover !== -1) barraHover = -1;
-        if (barraHaz) barraHaz.visible = false;
-        if (barraDot) barraDot.visible = false;
-        return;
+    /* r101 · MÁQUINA DE AJUSTE (pura, verificable en QA): (px, py, pz) =
+     * posición de la mano libre en mundo. Dentro del pasillo de la cinta
+     * (|x| ≤ semiancho+0,30 · |z−cinta| ≤ 0,20 · altura cerca de la red)
+     * durante ≥ BARRA_DWELL la barra se AGARRA y sigue la mano en pasos de
+     * 1 cm; fuera del pasillo se suelta (fijar + guardar). Sin botones. */
+    const hMano = () => G.ballHand;          // mano libre (getter del núcleo)
+    function barraFijar(hRaw, salto) {
+      const sube = hRaw >= barraH;
+      const h = THREE.MathUtils.clamp(
+        Math.round(hRaw / BARRA_PASO) * BARRA_PASO, BARRA_MIN, BARRA_MAX);
+      const cambio = Math.abs(h - barraH) > 1e-9;
+      barraH = h;
+      if (cambio || salto) {
+        barraUltCm = -1;
+        barraLay();
+        barraPinta();
       }
-      const h = (G.ballHand === 0 || G.ballHand === 1) ? G.ballHand : 0;
-      const ray = G.rays && G.rays[h];
-      let hit = -1;
-      if (ray && G.connected && G.connected[h]) {
-        ray.getWorldPosition(_bOrg);
-        ray.getWorldQuaternion(_bQ);
-        _bDir.set(0, 0, -1).applyQuaternion(_bQ);
-        _bRay.set(_bOrg, _bDir);
-        barraHazEnsure();
-        for (let k = 0; k < 2; k++) {
-          const b = (k === 0) ? barraUp : barraDn;
-          if (!b) continue;
-          b.getWorldPosition(_bW);
-          if (_bRay.ray.distanceToPoint(_bW) <= 0.075) { hit = k; break; }
-        }
-      }
-      if (hit !== barraHover) {
-        barraHover = hit;
-        barraEdgeT = 0.0;               // háptica sólo en el cambio (abajo)
-        if (hit >= 0) {
-          try { G.haptic(h, 0.14, 20); } catch (eHH) { /* */ }
-          try { G.audio.playOsc(520, 660, 0.05, 'sine', 0.08, 0); } catch (eHA) { /* */ }
-        }
-      }
-      // brillo del botón enfocado (tinte del material del sprite)
-      if (barraUp) barraUp.material.color.setHex(barraHover === 0 ? 0xffffff : 0xbfcfe0);
-      if (barraDn) barraDn.material.color.setHex(barraHover === 1 ? 0xffffff : 0xbfcfe0);
-      // haz de selección vivo
-      const objetivo = barraHover === 0 ? barraUp : barraHover === 1 ? barraDn : null;
-      if (objetivo) {
-        objetivo.getWorldPosition(_bW);
-        const pa = barraHaz.geometry.attributes.position;
-        pa.setXYZ(0, _bOrg.x, _bOrg.y, _bOrg.z);
-        pa.setXYZ(1, _bW.x, _bW.y, _bW.z);
-        pa.needsUpdate = true;
-        barraHaz.visible = true;
-        barraDot.visible = true;
-        barraDot.position.copy(_bW);
-        barraEdgeT += dt;
-      } else {
-        barraHaz.visible = false;
-        barraDot.visible = false;
+      if (cambio) {
+        try { G.audio.playOsc(sube ? 640 : 480, sube ? 760 : 400, 0.05, 'sine', 0.10, 0); } catch (eBF) { /* */ }
+        try { G.haptic(hMano(), 0.12, 18); } catch (eBF2) { /* */ }
       }
     }
-
-    /* r100 · AJUSTE con el gatillo sobre una flecha (±1 cm). Devuelve true
-     * si el gatillo fue CONSUMIDO por la barra (no sirve la bola). */
-    function barraAjustarHover() {
-      if (barraHover < 0 || !ribbonG || !ribbonG.visible) return false;
-      barraH = THREE.MathUtils.clamp(
-        barraH + (barraHover === 0 ? 0.01 : -0.01), BARRA_MIN, BARRA_MAX);
+    function barraSoltar() {
+      barraAgarrada = false;
+      barraUltCm = -1;
+      barraPinta();
       try { localStorage.setItem('pp_train_barra_v1', JSON.stringify({ h: Math.round(barraH * 1000) / 1000 })); } catch (eBS) { /* */ }
-      barraLay();
-      if (barraLbl) {
+      try { G.audio.playOsc(520, 340, 0.09, 'triangle', 0.12, 0); } catch (eBS2) { /* */ }
+      toast((LANG === 'en' ? 'Bar: ' : 'Barra: ') + BARRA_CM() + ' cm', true);
+    }
+    function barraPinta() {
+      const cm = BARRA_CM();
+      if (barraLbl && barraUltCm !== cm) {
         barraLbl.material.map = barraLabelTex();
         barraLbl.material.needsUpdate = true;
+        barraUltCm = cm;
       }
-      try { G.audio.playOsc(barraHover === 0 ? 640 : 480, barraHover === 0 ? 820 : 360, 0.09, 'triangle', 0.14, 0); } catch (eBS2) { /* */ }
-      const h = (G.ballHand === 0 || G.ballHand === 1) ? G.ballHand : 0;
-      try { G.haptic(h, 0.3, 45); } catch (eBS3) { /* */ }
-      toast((LANG === 'en' ? 'Bar: ' : 'Barra: ') + BARRA_CM() + ' cm', true);
+      const tinte = barraAgarrada ? 0xffffff : (barraZona ? 0xffe0a8 : 0xbfcfe0);
+      if (barraUp) barraUp.material.color.setHex(tinte);
+      if (barraDn) barraDn.material.color.setHex(tinte);
+    }
+    function barraUpdate(px, py, pz, dt) {
+      if (!ribbonG || !ribbonG.visible) {
+        barraZona = false; barraZonaT = 0;
+        if (barraAgarrada) barraSoltar();
+        return { zona: false, agarrada: false };
+      }
+      const dz = pz - ribbonG.position.z;
+      const enZona = Math.abs(px) <= DIMS.tableHalfWidth + 0.30 &&
+        Math.abs(dz) <= 0.20 &&
+        py >= DIMS.netTopY - 0.06 && py <= DIMS.netTopY + 0.60;
+      if (enZona) {
+        barraZonaT += dt;
+        if (!barraZona) { barraZona = true; barraPinta(); }
+        if (!barraAgarrada && barraZonaT >= BARRA_DWELL) {
+          barraAgarrada = true;
+          barraFijar(py - DIMS.netTopY, true);      // agarre: la barra salta a la mano
+          try { G.audio.playOsc(300, 520, 0.10, 'triangle', 0.16, 0); } catch (eGA) { /* */ }
+        } else if (barraAgarrada) {
+          barraFijar(py - DIMS.netTopY, false);     // sigue la mano en vivo
+        }
+      } else {
+        barraZonaT = 0;
+        if (barraZona) { barraZona = false; barraPinta(); }
+        if (barraAgarrada) barraSoltar();
+      }
+      return { zona: barraZona, agarrada: barraAgarrada };
+    }
+    /* r101 · TICK: posición REAL de la mano libre → máquina de ajuste. */
+    const _bW = new THREE.Vector3();
+    function barraTick(dt) {
+      if (!ribbonG || !ribbonG.visible) { barraUpdate(0, -1, 0, dt); return; }
+      const h = G.ballHand;
+      const ray = G.rays && G.rays[h];
+      if (!ray || !G.connected || !G.connected[h]) {
+        if (barraAgarrada || barraZona) barraUpdate(0, -1, 0, dt);
+        return;
+      }
+      ray.getWorldPosition(_bW);
+      barraUpdate(_bW.x, _bW.y, _bW.z, dt);
+    }
+    /* r101 · AJUSTE DIRECTO ±1 cm (QA; el juego usa barraUpdate). */
+    function barraAjustar(dir) {
+      if (!ribbonG || !ribbonG.visible) return false;
+      barraH = THREE.MathUtils.clamp(
+        Math.round((barraH + (dir > 0 ? BARRA_PASO : -BARRA_PASO)) * 1000) / 1000,
+        BARRA_MIN, BARRA_MAX);
+      barraUltCm = -1;
+      barraLay();
+      barraPinta();
       return true;
     }
-  
+
     // --- aro de altura (globo defensivo) ---
     function buildApexRing() {
       const g = new THREE.Group();
@@ -1714,10 +1722,6 @@ loadPaddleModel().then((paddleModel) => {
       const v = new THREE.Vector3(0, vyMin, 0);
       if (bh && bh.active) {
         v.copy(bh.vel);
-        // r100 · lanzamiento FIEL al gesto (mismo fix que el núcleo): si la
-        // velocidad instantánea del mando es mayor que la filtrada, manda
-        // ella — el flick del saque del tee sale con la mano real.
-        if (bh.velInst && bh.velInst.lengthSq() > v.lengthSq()) v.copy(bh.velInst);
         if (assisted) {
           // gatillo: la bola SIEMPRE sube lo suficiente para golpearla
           if (v.y < vyMin) v.y = vyMin;
@@ -3281,8 +3285,8 @@ loadPaddleModel().then((paddleModel) => {
         cosmeticsTick(dt);
         burstTick(dt);
         if (active && G.trainV3 && G.calib) trainTick(dt);
-        // r100 · mandos de la BARRA del pase bajo (t2a): el rayo de la mano
-        // libre enfoca las flechas (haz de selección) — gatillo ajusta ±1 cm
+        // r101 · mandos de la BARRA del pase bajo (t2a): la mano libre cerca
+        // de la cinta la agarra (≥0,3 s) y la barra sigue su altura — sin gatillo
         barraTick(dt);
         // detección de efecto del jugador en CUALQUIER modo (iconos en caras)
         // ronda 27 · respeta también el interruptor «Flecha de efecto»
@@ -3315,14 +3319,7 @@ loadPaddleModel().then((paddleModel) => {
         g.closeMenu();
         startMode(g, dailyPlan(dayKey()).mode, { daily: 1 });
       },
-      serveTrigger: () => {
-        try {
-          // r100 · el gatillo sobre una FLECHA de la barra ajusta ±1 cm y se
-          // CONSUME (la bola del tee no sale): foco → gatillo → ajuste
-          if (barraAjustarHover()) return;
-          serveTossFromTee(true);
-        } catch (e) { /* nunca rompe */ }
-      },
+      serveTrigger: () => { try { serveTossFromTee(true); } catch (e) { /* nunca rompe */ } },
       serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(false); } catch (e) { /* nunca rompe */ } },
       drawHub, drawArea,
       get state() { return { active, pts: S.pts, best: S.best, skin: S.skin, unlocked: S.unlocked.slice(),
@@ -3347,14 +3344,15 @@ loadPaddleModel().then((paddleModel) => {
       spawnMark, pulseFaceIcons, shotLineShow,
       marks: () => marks, spinSprite: () => spinSprite, shotLine: () => shotLine,
       faceIcons: () => faceIcons,
-      // r100 · internos de la BARRA del pase bajo (qa_r100_v3692): accesores
-      // —nunca sustituciones— de la altura viva, la lectura en cm y los
-      // mandos (flechas + rótulo + recolocación)
+      // r101 · internos de la BARRA del pase bajo (qa_r101_v3693): accesores
+      // —nunca sustituciones— de la altura viva, la lectura en cm, el estado
+      // del agarre por proximidad y los mandos (flechas + rótulo + recolocación)
       barraH: () => barraH,
       barraCm: () => BARRA_CM(),
-      barraHoverSet: (v) => { barraHover = v; },
+      barraEstado: () => ({ zona: barraZona, agarrada: barraAgarrada }),
+      barraUpdate,
       barraVisSet: (v) => { if (ribbonG) ribbonG.visible = !!v; },   // QA: estado t2a
-      barraAjustar: barraAjustarHover,
+      barraAjustar,
       barraLay,
       barraSpr: () => ({
         up: barraUp ? { x: barraUp.position.x, y: barraUp.position.y } : null,
@@ -3362,8 +3360,8 @@ loadPaddleModel().then((paddleModel) => {
         dn: barraDn ? { x: barraDn.position.x, y: barraDn.position.y } : null,
         cinta: barraRibbon ? { band: barraRibbon.band.position.y } : null,
         grupo: ribbonG ? ribbonG.position.z : null,
-      }),
-      barraHaz: () => barraHaz },
+      }) },
+
     };
   })();
   window.__PP_TRAIN = PP_TRAIN;

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.92-SDK6",
-  "fase": 94,
-  "faseNombre": "LA BOLA VIVA EN TU PALA + BARRA INTERACTIVA (r100)",
+  "version": "3.6.93-SDK6",
+  "fase": 95,
+  "faseNombre": "SAQUE RESTAURADO + BARRA POR PROXIMIDAD (r101)",
   "sdk": "1.6.0",
-  "fecha": "2026-11-01",
-  "hub": "v3692-sdk6",
+  "fecha": "2026-10-31",
+  "hub": "v3693-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r100",
   "tamano": 10588364,
-  "golden": "5fe56d9c754fdff9f6a32a7f52f0d0517610bec7ca05b3030e02189fb0031597"
+  "golden": "b232a8f3705229ef26baa7df5545a8081b2add5c54aec4468d91525af84e5810"
 }

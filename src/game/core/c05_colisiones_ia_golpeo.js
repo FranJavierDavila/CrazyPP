@@ -118,26 +118,23 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   if (vRelN >= 0) return false;   // ya se separan: no es un golpe (spec F)
 
   /* ================================================================
-   * r100 · CONTACTO DE REPOSO pala-bola (el estándar Eleven).
-   * Informe del dueño tras V3.6.91: «si paramos la bola sobre la pala su
-   * movimiento va a trompicones y si levanto la pala la bola la atraviesa y
-   * desaparece… Eleven: se desliza perfectamente, e incluso empujándola
-   * recupero el bote». Diagnóstico: una bola depositada re-golpeaba en CADA
-   * subpaso (gravedad ⇒ contacto ⇒ restitución + reversión de giro + suelo
-   * de salida + evento) — micro-rebotes = «trompicones», y una pala que
-   * sube rápido barría el plano sin resolución ⇒ la bola quedaba debajo.
-   * Solución: llegada MUY lenta a la CARA de la pala del jugador ⇒ APOYO
-   * (no golpe): proyección sin penetración, velocidad normal relativa
-   * anulada (sin rebote), fricción tangencial con rodadura y REGISTRO del
-   * punto de apoyo — stepPhysics la arrastra por frame (bloque r100 allí).
-   * El swing real (|-vRelN| > paddleRestSpeed) sigue siendo GOLPE puro:
-   * físicas de golpe, golden e IA byte a byte intactos. El «empujón» que
-   * recupera el bote es natural: la pala acelera ⇒ vRelN crece ⇒ golpe. */
+   * r100/r101 · CONTACTO DE REPOSO pala-bola (el estándar Eleven).
+   * r100 lo estrenó con umbral dual 0,95 (pala lenta) / 0,65 (pala
+   * viva) y el dueño lo devolvió: «no has sabido resolver lo del
+   * contacto de la bola parada y has estropeado los saques» — con
+   * 0,95 la pala SECUESTRABA botes legítimos (botar la bola sobre la
+   * pala moría al tercer toque; llegadas suaves quedaban pegadas en
+   * pleno intercambio). r101: umbral ÚNICO 0,25 m/s — se posa SÓLO
+   * una bola realmente quieta (el redil de gravedad por frame ~0,14
+   * m/s a 72 Hz queda dentro: el apoyo re-captura en silencio cada
+   * frame, sin trompicones) y todo lo que llegue con vida BOTA por la
+   * vía de golpe normal (restitución, spin y suelo FEEL1 de siempre,
+   * byte a byte). El transporte en stepPhysics (bloque r100) sigue
+   * arrastrando la bola apoyada 1:1 y el swing la suelta limpio:
+   * levantar la pala la lanza al aire — Eleven. */
   if (pad.who === 'player' && !pad.serveFlight && !onHandle &&
       Math.abs(lhz) >= hT &&
-      -vRelN <= (pad.vel.lengthSq() <= DIMS.paddleRestCarry * DIMS.paddleRestCarry
-        ? DIMS.paddleRestSpeedPad      // pala lenta: posar la bola (hasta 0,95)
-        : DIMS.paddleRestSpeed)) {     // pala viva: umbral estricto (0,65)
+      -vRelN <= DIMS.paddleRestSpeed) {
     // proyección a la cara (mismo patrón que la colocación del golpe)
     ball.pos.copy(padPos).addScaledVector(tmpN, rB + 0.001)
       .addScaledVector(ipRight, lx).addScaledVector(ipUp, ly);

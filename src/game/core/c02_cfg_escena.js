@@ -26,22 +26,21 @@ export const DIMS = {
   // re-ida legítima de tu propio golpeo nunca baja de ~0,5 s).
   paddleHitCooldown: 0.24,
   paddleVelClamp: 12,       // v2.29: techo de velocidad de pala (picos de tracking)
-  // --- r100 · CONTACTO DE REPOSO pala-bola (el estándar Eleven) ---
-  // Petición del dueño tras V3.6.91: «si paramos la bola sobre la pala su
-  // movimiento va a trompicones… y si levanto la pala la bola la atraviesa y
-  // desaparece. Eleven rueda y se desliza sobre la superficie». El reposo
-  // NO toca los golpes (por debajo de este umbral no llega ningún swing):
-  // la física de golpes, el golden y la IA quedan byte a byte intactos.
-  paddleRestSpeed: 0.65,    // vRelN <= esto al llegar = APOYO (no golpe, sin rebote)
-  paddleRestSpeedPad: 0.95, // umbral APLICADO con la pala lenta (posar la bola
-                            // desde 3-4 cm de caída llega a ~0,9 m/s) — un
-                            // bloqueo real con la pala quieta a <0,9 m/s es
-                            // exactamente eso: posar la bola (estándar Eleven)
+  // --- r100/r101 · CONTACTO DE REPOSO pala-bola (el estándar Eleven) ---
+  // Petición del dueño: «si paramos la bola sobre la pala va a trompicones…
+  // y si levanto la pala la bola la atraviesa». r100 lo implementó con
+  // umbral dual 0,95/0,65 y el dueño lo devolvió: con 0,95 la pala
+  // SECUESTRABA los botes legítimos (botar la bola sobre la pala moría
+  // al tercer toque y las llegadas suaves quedaban pegadas). r101:
+  // umbral ÚNICO 0,25 m/s — sólo se posa una bola REALMENTE quieta (el
+  // redil de gravedad por frame a 72 Hz es ~0,14 m/s: la bola apoyada
+  // re-captura en silencio cada frame, sin trompicones) y CUALQUIER
+  // bote con vida (>0,25) BOTA con la física de golpe de siempre.
+  paddleRestSpeed: 0.25,    // vRelN <= esto al llegar = APOYO (no golpe, sin rebote)
   paddleRestFric: 0.38,     // fricción tangencial por re-contacto (deslizar/rodar)
   paddleRestMuS: 0.35,      // fricción estática: gravedad tangencial menor no desliza
   paddleRestDrop: 0.09,     // s de edad del apoyo sin re-confirmar antes de soltar
   paddleRestCarry: 0.5,     // pala más lenta que esto ARRASTRA la bola apoyada
-  paddleRestBounce: 0.35,   // fricción (Coulomb suavizado) del apoyo en un bote suave
   maxBallSpeed: 14,
   // --- efecto (spin) ---
   magnus: 0.0035,           // a = Cm·(ω × v)

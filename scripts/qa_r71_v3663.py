@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r71_v3663 — CAPA BF · V3.6.89-SDK6, FASE 65 «EL SERVICIO HONESTO».
+"""qa_r71_v3663 — CAPA BF · V3.6.90-SDK6, FASE 65 «EL SERVICIO HONESTO».
 
 El informe del dueño tras probar V3.6.62 en el Quest, punto por punto:
   1. «Cuando el profesor realiza un saque lo hace mal. Tiene que botar
@@ -486,7 +486,7 @@ CARTEL = """async () => {
 async def main():
     global ok, fails
     print("=" * 74)
-    print("qa_r71_v3663 — CAPA BF · V3.6.89-SDK6 FASE 65 «EL SERVICIO HONESTO»")
+    print("qa_r71_v3663 — CAPA BF · V3.6.90-SDK6 FASE 65 «EL SERVICIO HONESTO»")
     print("=" * 74)
 
     print("\n[1] AGUJAS de fuente r71")

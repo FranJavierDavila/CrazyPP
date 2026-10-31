@@ -522,6 +522,17 @@ CAPAS = [
     # deslizador de altura, tooltips, sonidos limpios, pieles fuera de
     # campeonatos y NITIDEZ (FFR) con techo del gobernador.
     ('r96 · sala en vivo + submenús + deslizador + tooltips + pieles de campeonato fuera + FFR (v3688)', 'qa_r96_v3688.py'),
+    # r97 · informe del dueño tras V3.6.88: calabaza CLAVADA a la bola viva
+    # (mismo padre, c06 jamás recoloca la bola calabaza), CERO zombis en el
+    # Hall (leave corta el tren ZONB + candado universal musicOff), voz de
+    # personalidad por rival (SDK 1.6.0), mapa de calor 3×3 persistente y
+    # retos semanales que alimentan Oro/Carbono/Nocturna.
+    ('r97 · calabaza bola viva + cero zombis + voz rival + calor + retos (v3689)', 'qa_r97_v3689.py'),
+    # r98 · GESTOS CONTINUOS del menú (tres peticiones del dueño): bocadillo
+    # BLANCO con texto negro y COLA precisa, deslizadores ARRASTRABLES
+    # (gatillo apretado + mando a izq/der) y MESA AGARRABLE (rayo de
+    # selección + subir/bajar 1:1 con rótulo grande con los cm).
+    ('r98 · bocadillo blanco + sliders arrastrables + mesa agarrable (v3690)', 'qa_r98_v3690.py'),
     ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
 ]
 

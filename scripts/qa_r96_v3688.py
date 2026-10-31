@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r96_v3688.py — capa de QA de la ronda 96 (V3.6.89-SDK6).
+"""qa_r96_v3688.py — capa de QA de la ronda 96 (V3.6.90-SDK6).
 
 Los seis frentes del dueño de esta ronda:
  1) SALA Y ESCENA EN VIVO: al entrar en Ajustes › Sala y Escena el entorno
@@ -48,7 +48,7 @@ AGUJAS = [
     ('_salaPreviewUpdate() {', 'c12: vista de sala — conmutador Hall↔cancha'),
     ('this.rig.position.set(0, 0, 1.15);', 'c12: rig retrasado 1,15 m para ver la mesa'),
     ('this.rig.position.set(0, 0, HALL.cz + 2.3);', 'c12: la vista devuelve al Hall EXACTO'),
-    ('this._salaPreviewUpdate();\n    // flotación inicial', 'c12: la vista se vigila cada frame en updateMenu'),
+    ('this._salaPreviewUpdate();\n    // r98 · fuera de la página MESA', 'c12: la vista se vigila cada frame en updateMenu (con la limpieza r98)'),
     ('this._salaPreviewUpdate();\n    }', 'c12: cerrar el menú recoge la vista de sala'),
     ('this._salaPreview = false;   // r96: la vista de sala no sobrevive a la cancha', 'c12: exitHall limpia el flag'),
     ('sala_preview: \'Sala de partidos · los cambios se aplican en vivo\'', 'i18n ES: aviso de vista en vivo'),
@@ -62,23 +62,26 @@ AGUJAS = [
     ("cat_salaroom: 'ROOM'", 'i18n EN: título del submenú SALA'),
     ("cat_salamesa: 'TABLE'", 'i18n EN: título del submenú MESA'),
     ("arg === 'optsSalaRoom' || arg === 'optsSalaMesa'", 'c12: navegación de los dos submenús'),
-    # (3) deslizador
-    ('const MESA_ALTO_MIN = 0.70;', 'c02: rango BAJO del deslizador'),
-    ('const MESA_ALTO_MAX = 0.84;', 'c02: rango ALTO del deslizador'),
+    # (3) altura de mesa — r98 · RE-ANCLA HONESTO: el raíl del deslizador
+    # se RETIRÓ (petición del dueño: la mesa se agarrA apuntándole con el
+    # rayo de selección y moviendo el mando arriba/abajo); quedan vivos el
+    # rango, la altura continua, la persistencia y el paso fino
+    ('const MESA_ALTO_MIN = 0.70;', 'c02: rango BAJO de la altura'),
+    ('const MESA_ALTO_MAX = 0.84;', 'c02: rango ALTO de la altura'),
     ('_mesaAplicarY(yNum, opts) {', 'c12: altura CONTINUA (muta DIMS + relayout)'),
-    ("id: 'mesa_altoy', slider: true", 'c12: raíl del deslizador interactivo'),
+    ('_mesaGrabActivo()', 'c12: la mesa se AGARRA en 3D (r98 retira el raíl — re-ancla honesto)'),
     ("localStorage.setItem('pp_mesaaltoy'", 'c12: altura fina persistente'),
     ("case 'mesa_altomen':   // r96 · paso fino ±1 cm", 'c12: botones − / + de 1 cm'),
-    ('_menuSliderFrac(r, hit) {', 'c12: fracción del raíl por el punto apuntado'),
+    ('_menuSliderFrac(r, hit) {', 'c12: fracción del control por el punto apuntado'),
     ('this._menuHitPx[h] = { x: px, y: py };', 'c12: punto EXACTO del panel por mano'),
     ('this.menuClick(hov, i);   // r96: mano que pulsa', 'c12: el gatillo pasa la mano (deslizadores)'),
-    ("mesa_zona_baja: 'Baja'", 'i18n ES: extremos del raíl'),
-    ("mesa_zona_alta: 'Alta'", 'i18n ES: extremo alto del raíl'),
+    ("mesa_zona_baja: 'Baja'", 'i18n ES: zonas de la altura'),
+    ("mesa_zona_alta: 'Alta'", 'i18n ES: zona alta'),
     # (4) tooltips
     ('_menuTipDraw(c, rects) {', 'c12: pintor del tooltip'),
     ('_menuTipKey(id) {', 'c12: resolución id → hint'),
-    ("hint_mesa_altoy: 'Arrastra o apunta al raíl", 'i18n ES: tooltip del deslizador'),
-    ("hint_mesa_altoy: 'Point along the rail", 'i18n EN: tooltip del deslizador'),
+    ("hint_mesa_altoy: 'Apunta a la mesa, mantén el gatillo", 'i18n ES: tooltip del gesto de altura (r98)'),
+    ("hint_mesa_altoy: 'Point at the table, hold the trigger", 'i18n EN: tooltip del gesto de altura (r98)'),
     ("hint_cat_sala: 'Sala y mesa: se abre la sala de partidos", 'i18n ES: tooltip de la categoría'),
     ("hint_perfFfr: 'Nitidez del visor", 'i18n ES: tooltip de la nitidez'),
     # (5) sonidos limpios
@@ -107,10 +110,10 @@ for aguja, nombre in AGUJAS:
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.89-SDK6', 'c00: VERSION sella 3.6.89-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.90-SDK6', 'c00: VERSION sella 3.6.90-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 91, 'VERSION.json: FASE 91')
-CHK(V.get('hub') == 'v3689-sdk6', 'VERSION.json: hub v3689-sdk6')
+CHK(V.get('fase') == 92, 'VERSION.json: FASE 92')
+CHK(V.get('hub') == 'v3690-sdk6', 'VERSION.json: hub v3690-sdk6')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')
@@ -268,45 +271,45 @@ with sync_playwright() as pw:
         CHK(vista.get('tableOff') is False and vista.get('hallOff') is True,
             'vista sala: mesa oculta y museo visible tras la vuelta')
 
-    # ---- 4 · MENÚ: submenús, raíl y barras obedecen AL PUNTO apuntado
+    # ---- 4 · MENÚ: submenús, paso fino y barras (r98 · RE-ANCLA HONESTO:
+    # el raíl del deslizador se RETIRÓ — la mesa se agarrA en 3D — y las
+    # barras de volumen ARRASTRAN con el gatillo apretado)
     menu = pg.evaluate("""() => {
       const g = window.__PP_GAME; if (!g) return { err: 'sin juego' };
+      g.connected = [true, true];   // r98: los gestos exigen mando vivo (QA)
+      g.menuOpen = true;            // r98: el arrastre vive SOLO con el menú abierto
       const ids = (p) => { g.menuPage = p; g.drawMenu(); return g.menuRects.map(r => r.id); };
       const out = {};
       out.sala = ids('optsSala');
       out.salaRoom = ids('optsSalaRoom');
       out.salaMesa = ids('optsSalaMesa');
       out.sonido = ids('optsSonido');
-      // clic en el CENTRO del raíl → ~77 cm
+      // r98 · el rect del raíl NO existe ya (la mesa se agarrA en 3D)
       g.menuPage = 'optsSalaMesa'; g.drawMenu();
-      const r = g.menuRects.find(x => x.id === 'mesa_altoy');
-      g._menuHitPx = [{ x: r.x + r.w * 0.5, y: r.y + 10 }, null];
-      const i0 = g.menuRects.indexOf(r);
-      g.menuClick(i0, 0);
-      out.centro = Math.round(g.mesaAltoY * 1000) / 1000;
-      // clic al 0% → 70 cm; al 100% → 84 cm
-      g._menuHitPx = [{ x: r.x + r.w * 0.99, y: r.y + 10 }, null];
-      g.menuClick(i0, 0);
-      out.fin = Math.round(g.mesaAltoY * 1000) / 1000;
-      g._menuHitPx = [{ x: r.x + 2, y: r.y + 10 }, null];
-      g.menuClick(i0, 0);
-      out.ini = Math.round(g.mesaAltoY * 1000) / 1000;
-      // ±1 cm (desde el mínimo: + primero para no clampar)
+      out.railFuera = !g.menuRects.some(x => x.id === 'mesa_altoy');
+      // ±1 cm desde la altura actual (los − / + siguen vivos)
+      out.base98 = g.mesaAltoY;
       const im = g.menuRects.findIndex(x => x.id === 'mesa_altomen');
       const imas = g.menuRects.findIndex(x => x.id === 'mesa_altomas');
       g.menuClick(imas, 0);
       out.mas1 = Math.round(g.mesaAltoY * 1000) / 1000;
       g.menuClick(im, 0);
       out.menos = Math.round(g.mesaAltoY * 1000) / 1000;
-      g.menuClick(imas, 0); g.menuClick(imas, 0);
-      out.mas = Math.round(g.mesaAltoY * 1000) / 1000;
-      // barra de volumen clicable al 30%
+      // barra de volumen clicable al 30% (y el clic ARMA el arrastre — r98)
       g.menuPage = 'optsSonido'; g.drawMenu();
       const rv = g.menuRects.find(x => x.id === 'mvolset');
       g._menuHitPx = [{ x: rv.x + rv.w * 0.3, y: rv.y + 10 }, null];
       const iv = g.menuRects.indexOf(rv);
       g.menuClick(iv, 0);
       out.vol = g.audio.musicVol;
+      out.dragOn = !!(g._menuDrag && g._menuDrag.id === 'mvolset' && g._menuDrag.hand === 0);
+      // r98 · ARRASTRE: gatillo apretado, el punto pasa al 80% → sube EN VIVO
+      g._menuHitPx[0] = { x: rv.x + rv.w * 0.8, y: rv.y + 10 };
+      g._menuDragUpdate();
+      out.volDrag = g.audio.musicVol;
+      g.onSelectEnd(0);
+      out.dragOff = g._menuDrag === null;
+      g.connected = [false, false];   // devolvemos el estado headless honesto
       g.audio.setMusicVol(1);
       // páginas sin errores
       for (const p of ['opts', 'optsJuego', 'optsSala', 'optsSalaRoom', 'optsSalaMesa',
@@ -324,22 +327,25 @@ with sync_playwright() as pw:
             'menú SALA Y ESCENA: las DOS tarjetas de submenú (botones con color e icono)')
         CHK('theme:neon' in menu['salaRoom'] and 'psthru' in menu['salaRoom'],
             'submenú SALA: los cuatro temas + passthrough')
-        CHK('mesa_altoy' in menu['salaMesa'] and 'mesa_altomen' in menu['salaMesa'],
-            'submenú MESA: raíl + paso fino')
+        CHK('mesa_altomen' in menu['salaMesa'] and 'mesa_altomas' in menu['salaMesa']
+            and 'mesa_altoy' not in menu['salaMesa'],
+            'submenú MESA: paso fino vivo y raíl RETIRADO (r98: la mesa se agarrA)')
+        CHK(menu['railFuera'] is True,
+            'submenú MESA: cero rect mesa_altoy en el panel (re-ancla honesto)')
         CHK(menu['sonido'].count('mvolset') == 1 and menu['sonido'].count('fvolset') == 1,
             'sonidos: las dos barras CLICABLES')
-        CHK(abs(menu['centro'] - 0.77) < 0.014,
-            'raíl: clic al centro ≈ 77 cm (%s)' % menu['centro'])
-        CHK(abs(menu['fin'] - 0.84) < 0.014 and abs(menu['ini'] - 0.70) < 0.014,
-            'raíl: extremos honestos (70/84 cm al punto apuntado)')
-        CHK(abs(menu['mas1'] - (menu['ini'] + 0.01)) < 1e-9,
-            'raíl: + sube 1 cm')
-        CHK(abs(menu['menos'] - menu['ini']) < 1e-9,
-            'raíl: − baja 1 cm (de vuelta al mínimo)')
-        CHK(abs(menu['mas'] - (menu['ini'] + 0.02)) < 1e-9,
-            'raíl: + sube 1 cm dos veces')
+        CHK(abs(menu['mas1'] - (menu['base98'] + 0.01)) < 1e-9,
+            'altura: + sube 1 cm (r98)')
+        CHK(abs(menu['menos'] - menu['base98']) < 1e-9,
+            'altura: − baja 1 cm (r98)')
         CHK(abs(menu['vol'] - 0.3) < 0.011,
             'volumen: clic al 30%% de la barra fija 30%% (%s)' % menu['vol'])
+        CHK(menu['dragOn'] is True,
+            'volumen: el clic ARMA el arrastre (_menuDrag por mano — r98)')
+        CHK(abs(menu['volDrag'] - 0.8) < 0.011,
+            'volumen: ARRASTRE del mando al 80%% sube el valor EN VIVO (%s)' % menu['volDrag'])
+        CHK(menu['dragOff'] is True,
+            'volumen: soltar el gatillo (onSelectEnd) cierra el arrastre')
 
     # ---- 5 · TOOLTIP: se pinta al apuntar y NO pinta sin hover
     tip = pg.evaluate("""() => {

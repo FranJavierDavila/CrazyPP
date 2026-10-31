@@ -1,10 +1,10 @@
 {
-  "version": "3.6.89-SDK6",
-  "fase": 91,
-  "faseNombre": "Calabaza clavada a la bola viva, cero zombis en el Hall, voz de personalidad por rival, mapa de calor y retos semanales",
+  "version": "3.6.90-SDK6",
+  "fase": 92,
+  "faseNombre": "GESTOS CONTINUOS DEL MENÚ (r98): bocadillos blancos, deslizadores arrastrables y mesa agarrable",
   "sdk": "1.6.0",
   "fecha": "2026-10-31",
-  "hub": "v3689-sdk6",
+  "hub": "v3690-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r95",
   "tamano": 10552700,
-  "golden": "cc5b9f04d4828933149e62980ff368677f376b29380f86aff4c6767e782c7e85"
+  "golden": "d8c679bcdd620eda15d9eaf692344d5fea70857ef6aec62b954670695d11e073"
 }

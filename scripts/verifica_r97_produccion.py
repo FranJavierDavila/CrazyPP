@@ -76,8 +76,8 @@ CHK(blob is not None and ho == blob, 'vía 3: hash-object del servido == blob or
 
 gh = servido.decode('utf-8', 'replace')
 # r97 · agujas de los seis frentes
-CHK("const VERSION = '3.6.89-SDK6'" in gh, 'aguja servido: sello 3.6.89-SDK6')
-CHK('>V3.6.89-SDK6<' in gh, 'aguja servido: badge V3.6.89-SDK6')
+CHK("const VERSION = '3.6.90-SDK6'" in gh, 'aguja servido: sello 3.6.90-SDK6')
+CHK('>V3.6.90-SDK6<' in gh, 'aguja servido: badge V3.6.90-SDK6')
 CHK('_salaPreviewUpdate() {' in gh, 'aguja servido: vista de sala EN VIVO (r97)')
 CHK("'page:optsSalaRoom'" in gh and "'page:optsSalaMesa'" in gh, 'aguja servido: submenús SALA/MESA (r97)')
 CHK('_mesaAplicarY(yNum, opts) {' in gh, 'aguja servido: deslizador de altura (r97)')
@@ -132,4 +132,4 @@ if FAIL:
     for f in FAIL:
         print('  ✗', f)
     sys.exit(1)
-print('VERDE — 3.6.89-SDK6 viva en producción (tres vías byte-exacto)')
+print('VERDE — 3.6.90-SDK6 viva en producción (tres vías byte-exacto)')

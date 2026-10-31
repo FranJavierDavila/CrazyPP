@@ -123,6 +123,16 @@ export class PingPongGame {
     // MENÚ DE MUÑECA (v2.15): un solo acceso a modo/dificultad/sala/ambiente
     this.menuOpen = false;
     this.menuHover = [-1, -1];   // hover INDEPENDIENTE por mando (v2.16)
+    // r98 · GESTOS CONTINUOS del menú: arrastre de deslizadores (gatillo
+    // apretado moviendo el mando a izq/der) y AGARRE de la mesa (rayo de
+    // selección + subir/bajar con la altura del mando 1:1).
+    this._menuDrag = null;          // { hand, id } mientras el gatillo arrastra
+    this._menuHitPx = [null, null]; // punto exacto del panel por mano (r96)
+    this._menuGripPos = [null, null]; // altura del mando por mano (r98, agarre)
+    this._mesaHover = [null, null]; // punto de la mesa bajo el rayo por mano
+    this._mesaGrab = null;          // { hand, y0, cy0 } durante el agarre
+    this._mesaCmLast = null;        // último cm sonado (tick por cm, sin ametrallar)
+    this._mesaLabelT = 0;           // despedida del rótulo de altura (s)
     this.menuRects = [];
     this._menuState = '';
     this.lastFeedTap = 0;
@@ -633,6 +643,9 @@ export class PingPongGame {
       // entraba DOS veces → toggles sin efecto y letras duplicadas.
       const onSelect = () => this.onSelectStart(i);
       targetRay.addEventListener('selectstart', onSelect);
+      // r98 · FIN del gatillo: cierra el arrastre de deslizadores y el
+      // agarre de la mesa (los dos gestos continuos del menú)
+      targetRay.addEventListener('selectend', () => this.onSelectEnd(i));
       const onSqueezeStart = () => {
         this.audio.kick();       // el grip también reactiva el audio en VR
         this.gripDown[i] = true;
@@ -1549,6 +1562,38 @@ export class PingPongGame {
       this.menuGroup.add(dot);
       this.menuDots.push(dot);
     }
+
+    // r98 · MESA AGARRABLE: anillo de selección por mando (donde el rayo
+    // toca la mesa) + RÓTULO GRANDE con la altura viva sobre el lado del
+    // dueño. Viven en ESCENA (no en menuGroup: el panel se ancla y se mueve,
+    // la mesa no). Sólo se ven en la página MESA con la sala a la vista.
+    this._mesaRings = [];
+    for (let h = 0; h < 2; h++) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.026, 0.044, 28),
+        new THREE.MeshBasicMaterial({
+          color: h === 0 ? 0xe8b45a : 0x7fd4e8,
+          transparent: true, opacity: 0.95, depthTest: false, side: THREE.DoubleSide,
+        }),
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.renderOrder = 9997;
+      ring.visible = false;
+      this.scene.add(ring);
+      this._mesaRings.push(ring);
+    }
+    this._mesaLabelCv = document.createElement('canvas');
+    this._mesaLabelCv.width = 1024;
+    this._mesaLabelCv.height = 256;
+    this._mesaLabelTex = new THREE.CanvasTexture(this._mesaLabelCv);
+    this._mesaLabelTex.colorSpace = THREE.SRGBColorSpace;
+    this._mesaLabel = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.12, 0.28),
+      new THREE.MeshBasicMaterial({ map: this._mesaLabelTex, transparent: true, depthTest: false }),
+    );
+    this._mesaLabel.renderOrder = 9997;
+    this._mesaLabel.visible = false;
+    this.scene.add(this._mesaLabel);
 
     this.drawMenu();
   }
@@ -3038,50 +3083,37 @@ export class PingPongGame {
         break;
       }
       case 'salamesa': {
-        // r96 · subpágina MESA: DESLIZADOR de altura (0,70–0,84 m, paso 1 cm)
-        // con feedback EN VIVO sobre la mesa real + aspecto con recompensas.
+        // r96 · subpágina MESA: altura y aspecto con recompensas.
+        // r98 · ADIÓS AL RAÍL (petición del dueño: «poder cogerla simplemente
+        // apuntando con los mandos hacia ella — aparece un rayo de selección
+        // — y moviendo hacia arriba o hacia abajo la subimos o bajamos, con
+        // un texto bien grande sobre nuestro lado de la mesa con su altura»):
+        // la mesa se AGARRA en 3D (_mesaGrab) y el panel muestra la lectura
+        // viva + paso fino −/+; la pista del gesto vive en el tooltip del
+        // control Y en la página (mesa_alto_grab).
         if (this.mesaOcupada()) {
           label(T('mesa_no_champ'), y + 2, 18, '#ffa94d');
           y += 32;
         }
         label(T('mesa_alto_lbl'), y + 2, 17, '#75828f');
         y += 26;
-        // ---- deslizador ----
+        // ---- altura: LECTURA viva (la mesa se agarra en 3D) ----
         {
           const ocup = this.mesaOcupada();
           const y0 = this.mesaAltoY;
-          const frac = (y0 - MESA_ALTO_MIN) / (MESA_ALTO_MAX - MESA_ALTO_MIN);
-          const rx = 176, rw = 656, ry = y;
-          // raíl
-          c.fillStyle = 'rgba(255,255,255,0.14)';
-          c.fillRect(rx, ry + 20, rw, 14);
-          // relleno hasta el valor
-          c.fillStyle = ocup ? 'rgba(255,255,255,0.25)' : '#51cf66';
-          c.fillRect(rx, ry + 20, Math.round(rw * frac), 14);
-          // botón/pomo
-          c.beginPath();
-          c.arc(rx + rw * frac, ry + 27, 15, 0, Math.PI * 2);
-          c.fillStyle = ocup ? '#868e96' : '#ffd257';
-          c.fill();
-          c.strokeStyle = '#10131a'; c.lineWidth = 3; c.stroke();
-          // extremos
-          c.fillStyle = '#75828f';
-          c.font = '700 17px system-ui, sans-serif';
-          c.textAlign = 'left'; c.textBaseline = 'middle';
-          c.fillText(T('mesa_zona_baja'), 56, ry + 27);
-          c.textAlign = 'right';
-          c.fillText(T('mesa_zona_alta'), 968, ry + 27);
-          // valor central
-          c.fillStyle = '#e9edf2';
-          c.font = '800 21px system-ui, sans-serif';
-          c.textAlign = 'center';
           const cm = Math.round(y0 * 100);
           const zona = y0 < 0.735 ? T('mesa_zona_baja')
             : (y0 < 0.80 ? T('mesa_zona_media') : T('mesa_zona_alta'));
-          c.fillText(cm + ' cm · ' + zona, 512, ry + 27);
-          // zonas interactivas: el raíl fija la altura AL PUNTO apuntado
-          if (!ocup) rects.push({ x: rx - 8, y: ry - 6, w: rw + 16, h: 66, id: 'mesa_altoy', slider: true });
-          y += 66;
+          c.fillStyle = '#e9edf2';
+          c.font = '800 30px system-ui, sans-serif';
+          c.textAlign = 'center';
+          c.textBaseline = 'middle';
+          c.fillText(cm + ' cm · ' + zona, 512, y + 30);
+          y += 62;
+          if (!ocup) {
+            label(T('mesa_alto_grab'), y + 2, 17, '#8ce99a');
+            y += 30;
+          }
           btn('mesa_altomen', 176, y, 148, 52, '−', false, undefined, undefined, 26);
           btn('mesa_altomas', 684, y, 148, 52, '+', false, undefined, undefined, 26);
           y += 64;
@@ -3398,6 +3430,13 @@ export class PingPongGame {
     // r96 · SALA Y ESCENA EN VIVO: entrar/salir de la categoría cambia el
     // entorno Hall <-> sala de partidos (barato: una comparación por frame)
     this._salaPreviewUpdate();
+    // r98 · fuera de la página MESA (o del menú): sin anillos, sin rótulo,
+    // sin agarre — nada de la mesa sobrevive a la salida
+    if (!this._mesaGrabActivo() &&
+        (this._mesaGrab || this._mesaLabelT > 0 ||
+         (this._mesaRings && this._mesaRings.some((rg2) => rg2.visible)))) {
+      this._mesaGrabCleanup();
+    }
     // flotación inicial: el panel acompaña a la cabeza antes de fijarse
     if ((performance.now() / 1000) < (this._menuAnchorUntil || 0)) this.anchorMenu();
 
@@ -3416,7 +3455,30 @@ export class PingPongGame {
         ray.getWorldQuaternion(muQ);
         muDir.set(0, 0, -1).applyQuaternion(muQ);
         muRaycaster.set(muGrip, muDir);
+        // r98 · altura viva del mando (el AGARRE de la mesa la sigue 1:1)
+        if (!this._menuGripPos) this._menuGripPos = [null, null];
+        this._menuGripPos[h] = muGrip.y;
         const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
+        // r98 · MESA AGARRABLE: mano agarrando (el rayo sigue a la mesa
+        // aunque cruce el panel) o rayo que NO cae en el panel con la
+        // página MESA delante → el propio rayo busca la mesa
+        const agarrando = !!(this._mesaGrab && this._mesaGrab.hand === h);
+        let sobreMesa = null;
+        if (this._mesaGrabActivo() && (agarrando || !hit)) {
+          sobreMesa = this._mesaRay(muGrip, muDir);
+        }
+        if (!this._mesaHover) this._mesaHover = [null, null];
+        this._mesaHover[h] = sobreMesa ? sobreMesa.punto : null;
+        const ring = this._mesaRings && this._mesaRings[h];
+        if (ring) {
+          if (sobreMesa) {
+            ring.visible = true;
+            ring.position.set(sobreMesa.punto.x,
+              sobreMesa.punto.y + 0.006, sobreMesa.punto.z);
+          } else if (!agarrando) {
+            ring.visible = false;
+          }
+        }
 
         // v2.24: se descartan intersecciones degeneradas (el mando tocando el
         // propio plano del panel, distancia ~0) para no pintar un cursor falso.
@@ -3433,6 +3495,8 @@ export class PingPongGame {
           // deslizadores (mesa, volúmenes) fijan el valor AL PUNTO apuntado.
           if (!this._menuHitPx) this._menuHitPx = [null, null];
           this._menuHitPx[h] = { x: px, y: py };
+          // r98 · mientras la mano AGARRA la mesa, el panel calla
+          if (agarrando) dot.visible = false;
         } else {
           dot.visible = false;
         }
@@ -3440,9 +3504,10 @@ export class PingPongGame {
         line.visible = true;
         line.position.copy(muGrip);
         line.quaternion.copy(muQ);
-        line.scale.z = hit ? hit.distance : 0.5;
-        // el haz engorda al pasar sobre un botón (feedback extra)
-        const thick = idx >= 0 ? 1.7 : 1;
+        // r98 · el haz alcanza la MESA cuando es ella la que se apunta
+        line.scale.z = sobreMesa ? sobreMesa.dist : (hit ? hit.distance : 0.5);
+        // el haz engorda al pasar sobre un botón (o sobre la mesa — r98)
+        const thick = (idx >= 0 || sobreMesa) ? 1.7 : 1;
         line.scale.x = thick;
         line.scale.y = thick;
       } else {
@@ -3452,6 +3517,20 @@ export class PingPongGame {
       if (idx !== this.menuHover[h]) { this.menuHover[h] = idx; dirty = true; }
     }
     if (dirty) this.drawMenu();   // un solo repintado aunque ambas manos cambien
+    // r98 · GESTOS CONTINUOS: arrastre de deslizadores + agarre de la mesa
+    this._menuDragUpdate();
+    this._mesaGrabUpdate();
+    // r98 · despedida del rótulo de altura (1 s tras soltar el gatillo)
+    if (this._mesaLabelT > 0 && !this._mesaGrab) {
+      this._mesaLabelT -= dt;
+      if (this._mesaLabel && this._mesaLabel.material) {
+        this._mesaLabel.material.opacity = Math.max(0, Math.min(1, this._mesaLabelT));
+        if (this._mesaLabelT <= 0) {
+          this._mesaLabel.visible = false;
+          this._mesaLabel.material.opacity = 1;
+        }
+      }
+    }
     // r87 · MEDALLÓN VIVO: repintado suave (0,5 s) mientras pulsa — sólo en
     // las páginas donde vive (hub con el badge, multi con la tarjeta) y
     // sólo si la capa social está encendida. Coste: 2 redraws/s como máx.
@@ -3470,6 +3549,140 @@ export class PingPongGame {
     if (!r || !hit) return null;
     const fx = (hit.x - r.x) / Math.max(1, r.w);
     return Math.min(1, Math.max(0, fx));
+  }
+
+  /* ======================================================================
+   *  r98 · GESTOS CONTINUOS DEL MENÚ (tres peticiones del dueño):
+   *   · BOCADILLO blanco con texto negro y cola precisa (_menuTipDraw).
+   *   · DESLIZADORES arrastrables: gatillo apretado sobre la barra +
+   *     mando a izquierda/derecha mueve el valor en vivo (_menuDrag).
+   *   · MESA AGARRABLE: en la página MESA el rayo toca la mesa (rayo de
+   *     selección + anillo), y con el gatillo apretado la mesa SUBE/BAJA
+   *     siguiendo la altura del mando 1:1, con rótulo GRANDE sobre el
+   *     lado del dueño mostrando los cm en vivo (_mesaGrab).
+   *  ====================================================================== */
+
+  /** r98 · ¿la mesa es agarrable AHORA? Página MESA con la sala a la vista
+   *  y la mesa LIBRE (los campeonatos son intocables — regla r96). */
+  _mesaGrabActivo() {
+    return !!(this.menuOpen && this.inHall && this._salaPreviewActivo() &&
+      this.menuPage === 'optsSalaMesa' && !this.mesaOcupada());
+  }
+
+  /** r98 · rayo de selección contra la MESA REAL (tableGroup). Devuelve
+   *  { punto, dist } o null. Barato: sólo corre en la página MESA. */
+  _mesaRay(origin, dir) {
+    if (!this.tableGroup || !this.tableGroup.visible || this.mesaOcupada()) return null;
+    if (!this._mesaRaycaster) this._mesaRaycaster = new THREE.Raycaster();
+    this._mesaRaycaster.set(origin, dir);
+    const hit = this._mesaRaycaster.intersectObject(this.tableGroup, true)[0];
+    if (!hit || hit.distance < 0.02) return null;
+    return { punto: hit.point, dist: hit.distance };
+  }
+
+  /** r98 · rótulo GRANDE con la altura viva sobre el lado del dueño
+   *  («bien grande sobre nuestro lado de la mesa un texto con su altura»). */
+  _mesaLabelShow() {
+    if (!this._mesaLabel) return;
+    const cv = this._mesaLabelCv;
+    const c2 = cv ? cv.getContext('2d') : null;
+    if (!c2) return;
+    const cm = Math.round(this.mesaAltoY * 100);
+    const zona = this.mesaAltoY < 0.735 ? T('mesa_zona_baja')
+      : (this.mesaAltoY < 0.80 ? T('mesa_zona_media') : T('mesa_zona_alta'));
+    c2.clearRect(0, 0, cv.width, cv.height);
+    // pastilla oscura con borde ámbar — texto blanco BIEN GRANDE
+    c2.fillStyle = 'rgba(8,12,20,0.74)';
+    c2.beginPath();
+    if (c2.roundRect) c2.roundRect(12, 14, cv.width - 24, cv.height - 28, 40);
+    else c2.rect(12, 14, cv.width - 24, cv.height - 28);
+    c2.fill();
+    c2.strokeStyle = 'rgba(255,210,87,0.92)';
+    c2.lineWidth = 6;
+    c2.stroke();
+    c2.fillStyle = '#ffffff';
+    c2.font = '800 118px system-ui, sans-serif';
+    c2.textAlign = 'center';
+    c2.textBaseline = 'middle';
+    c2.fillText(cm + ' cm · ' + zona, cv.width / 2, cv.height / 2 + 8);
+    this._mesaLabelTex.needsUpdate = true;
+    this._mesaLabel.visible = true;
+    if (this._mesaLabel.material) this._mesaLabel.material.opacity = 1;
+    // sobre el LADO DEL DUEÑO de la mesa (el jugador vive en +z), flotando
+    this._mesaLabel.position.set(0, DIMS.tableTopY + 0.52, 0.92);
+  }
+
+  /** r98 · actualización por frame del AGARRE: la altura de la mesa sigue
+   *  la altura del MANDO 1:1 (clamp 0,70–0,84 m), tick por cm y rótulo. */
+  _mesaGrabUpdate() {
+    const g2 = this._mesaGrab;
+    if (!g2) return;
+    if (!this.menuOpen || !this.connected[g2.hand]) {
+      this._mesaGrab = null;
+      this._mesaLabelT = 1.0;
+      return;
+    }
+    const gy = this._menuGripPos ? this._menuGripPos[g2.hand] : null;
+    if (!Number.isFinite(gy)) return;
+    const yN = Math.min(MESA_ALTO_MAX, Math.max(MESA_ALTO_MIN, g2.y0 + (gy - g2.cy0)));
+    if (Math.abs(yN - this.mesaAltoY) > 0.0004) {
+      const yAp = this._mesaAplicarY(yN);
+      const cm2 = Math.round(yAp * 100);
+      if (cm2 !== this._mesaCmLast) {
+        this._mesaCmLast = cm2;
+        const fr2 = (yAp - MESA_ALTO_MIN) / (MESA_ALTO_MAX - MESA_ALTO_MIN);
+        try { this.audio.playOsc(500 + fr2 * 900, 620 + fr2 * 900, 0.04, 'sine', 0.06, 0); } catch (eT2) { /* */ }
+        // r98 · repintado POR CM (la lectura del panel sólo cambia así):
+        // el rótulo 3D es el feedback continuo, el canvas no se ametralla
+        this._mesaLabelShow();
+        this.drawMenu();
+      }
+    }
+  }
+
+  /** r98 · fuera de la página MESA: sin anillos, sin rótulo, sin agarre. */
+  _mesaGrabCleanup() {
+    this._mesaGrab = null;
+    this._mesaLabelT = 0;
+    if (this._mesaLabel) this._mesaLabel.visible = false;
+    for (const rg of this._mesaRings || []) rg.visible = false;
+    if (this._mesaHover) this._mesaHover = [null, null];
+  }
+
+  /** r98 · fin del gatillo: suelta el arrastre del deslizador y el agarre
+   *  de la mesa (el rótulo se despide solo, 1 s de fundido). */
+  onSelectEnd(i) {
+    if (this.disposed) return;
+    if (this._menuDrag && this._menuDrag.hand === i) this._menuDrag = null;
+    if (this._mesaGrab && this._mesaGrab.hand === i) {
+      this._mesaGrab = null;
+      this._mesaLabelT = 1.0;
+      try { this.audio.playOsc(520, 400, 0.07, 'sine', 0.08, 0); } catch (eR2) { /* */ }
+    }
+  }
+
+  /** r98 · ARRASTRE de deslizadores: con el gatillo apretado sobre una
+   *  barra (volumen), mover el mando a IZQUIERDA/DERECHA mueve el valor
+   *  en vivo — «una forma mucho más intuitiva». Sólo actúa con arrastre
+   *  activo y sólo repinta cuando el valor (en deciles) cambia. */
+  _menuDragUpdate() {
+    const d = this._menuDrag;
+    if (!d) return;
+    if (!this.menuOpen || !this.connected[d.hand]) { this._menuDrag = null; return; }
+    const r = this.menuRects.find((x) => x.id === d.id);
+    if (!r) { this._menuDrag = null; return; }
+    const frac = this._menuSliderFrac(r, (this._menuHitPx || [])[d.hand]);
+    if (frac == null) return;
+    const nuevo = Math.round(frac * 10) / 10;
+    const esMus = d.id === 'mvolset';
+    const actual = esMus ? this.audio.musicVol : this.audio.fxVol;
+    if (nuevo === actual) return;
+    if (esMus) this.audio.setMusicVol(nuevo); else this.audio.setFxVol(nuevo);
+    this.rules.message = esMus
+      ? T('msg_musicvol', { v: Math.round(nuevo * 100) })
+      : T('msg_fxvol', { v: Math.round(nuevo * 100) });
+    try { this.audio.playOsc(600 + nuevo * 500, 760 + nuevo * 500, 0.04, 'sine', 0.07, 0); } catch (eD2) { /* */ }
+    this.drawMenu();
   }
 
   /* ======================================================================
@@ -3516,7 +3729,11 @@ export class PingPongGame {
     };
     return EXACT[id] || '';
   }
-  /** pinta el tooltip del control apuntado (se llama al final de cada página). */
+  /** pinta el tooltip del control apuntado (se llama al final de cada página).
+   *  r98 · BOCADILLO DEL DUEÑO: burbuja BLANCA con texto NEGRO, sombra
+   *  suave para despegarla del panel y una COLA que apunta con precisión
+   *  al control (triángulo hasta el borde del rect apuntado — incluso con
+   *  la burbuja recortada en los bordes la cola llega hasta él). */
   _menuTipDraw(c, rects) {
     const hand = this.menuHover.findIndex((v) => v >= 0);   // mano apuntando
     if (hand < 0) return;
@@ -3527,24 +3744,24 @@ export class PingPongGame {
     let txt = '';
     try { txt = T(key); } catch { return; }
     if (!txt) return;
-    // envoltura a 2 líneas máx. (900 px de ancho)
-    c.font = '600 20px system-ui, sans-serif';
+    // envoltura a 2 líneas máx. (860 px de ancho)
+    c.font = '600 21px system-ui, sans-serif';
     const words = String(txt).split(' ');
     const lines = [];
     let lin = '';
     for (const w of words) {
       const cand = lin ? lin + ' ' + w : w;
-      if (c.measureText(cand).width > 880 && lin) { lines.push(lin); lin = w; }
+      if (c.measureText(cand).width > 860 && lin) { lines.push(lin); lin = w; }
       else lin = cand;
       if (lines.length === 2) break;
     }
     if (lin && lines.length < 2) lines.push(lin);
-    const wBox = Math.min(924, Math.max(...lines.map((l) => c.measureText(l).width)) + 44);
-    const hBox = lines.length * 26 + 20;
-    const cx = Math.min(Math.max(r.x + r.w / 2, wBox / 2 + 12), 1024 - wBox / 2 - 12);
-    // encima del botón; si no cabe, debajo
-    const above = r.y - hBox - 10 > 60;
-    const yBox = above ? r.y - hBox - 10 : r.y + r.h + 10;
+    const wBox = Math.min(924, Math.max(...lines.map((l) => c.measureText(l).width)) + 48);
+    const hBox = lines.length * 28 + 22;
+    const cx = Math.min(Math.max(r.x + r.w / 2, wBox / 2 + 14), 1024 - wBox / 2 - 14);
+    // encima del botón; si no cabe, debajo (14 px de hueco para la cola)
+    const above = r.y - hBox - 14 > 60;
+    const yBox = above ? r.y - hBox - 14 : r.y + r.h + 14;
     const rr2 = (x, y, w, h, rad) => {
       c.beginPath();
       c.moveTo(x + rad, y);
@@ -3554,17 +3771,55 @@ export class PingPongGame {
       c.arcTo(x, y, x + w, y, rad);
       c.closePath();
     };
-    rr2(cx - wBox / 2, yBox, wBox, hBox, 12);
-    c.fillStyle = 'rgba(6,8,13,0.97)';
+    // burbuja BLANCA con sombra suave (r98: «un bocadillo sobre fondo
+    // blanco con el texto en negro»)
+    c.save();
+    c.shadowColor = 'rgba(0,0,0,0.42)';
+    c.shadowBlur = 14;
+    c.shadowOffsetY = 3;
+    rr2(cx - wBox / 2, yBox, wBox, hBox, 14);
+    c.fillStyle = '#ffffff';
     c.fill();
-    c.strokeStyle = 'rgba(232,180,90,0.85)';
-    c.lineWidth = 2.5;
+    c.restore();
+    c.strokeStyle = 'rgba(12,16,24,0.38)';
+    c.lineWidth = 2;
     c.stroke();
-    c.fillStyle = '#ffe9a8';
-    c.font = '600 20px system-ui, sans-serif';
+    // COLA del bocadillo (r98: «que apunte con precisión a cada apartado»):
+    // triángulo desde el borde de la burbuja hasta el centro EXACTO del
+    // control; si la burbuja se recorta, la cola sale inclinada y AUN ASÍ
+    // aterriza en el control apuntado.
+    const itemCx = Math.min(Math.max(r.x + r.w / 2, 20), 1004);
+    const tx = Math.min(Math.max(itemCx, cx - wBox / 2 + 30), cx + wBox / 2 - 30);
+    const yEdge = above ? yBox + hBox - 1 : yBox + 1;
+    const yTip = above ? r.y - 3 : r.y + r.h + 3;
+    if (Math.abs(yTip - yEdge) > 5) {
+      c.beginPath();
+      c.moveTo(tx - 11, yEdge);
+      c.lineTo(tx + 11, yEdge);
+      c.lineTo(itemCx, yTip);
+      c.closePath();
+      c.fillStyle = '#ffffff';
+      c.fill();
+      c.strokeStyle = 'rgba(12,16,24,0.38)';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(tx - 11, yEdge);
+      c.lineTo(itemCx, yTip);
+      c.lineTo(tx + 11, yEdge);
+      c.stroke();
+      // el relleno de la cola tapa el trazo del borde de la burbuja donde
+      // se unen: repaso el segmento interior en blanco para la unión limpia
+      c.strokeStyle = '#ffffff';
+      c.beginPath();
+      c.moveTo(tx - 10, yEdge);
+      c.lineTo(tx + 10, yEdge);
+      c.stroke();
+    }
+    c.fillStyle = '#0e1219';
+    c.font = '600 21px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    lines.forEach((l, i) => c.fillText(l, cx, yBox + 16 + i * 26));
+    lines.forEach((l, i) => c.fillText(l, cx, yBox + 18 + i * 28));
   }
 
   /* ======================================================================
@@ -4130,6 +4385,9 @@ export class PingPongGame {
         if (v == null) break;
         const nuevo = Math.round(v * 10) / 10;
         if (esMus) this.audio.setMusicVol(nuevo); else this.audio.setFxVol(nuevo);
+        // r98 · ARRASTRE: el gatillo SIGUE apretado sobre la barra — mover
+        // el mando a izquierda/derecha sigue ajustando el valor en vivo
+        this._menuDrag = { hand, id: ns };
         this.rules.message = esMus
           ? T('msg_musicvol', { v: Math.round(nuevo * 100) })
           : T('msg_fxvol', { v: Math.round(nuevo * 100) });
@@ -4910,6 +5168,17 @@ export class PingPongGame {
     if (this.menuOpen) {
       const hov = this.menuHover[i];
       if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
+      // r98 · AGARRE DE LA MESA: gatillo con el rayo sobre la mesa (página
+      // MESA) — la altura sigue a la altura del mando 1:1 hasta soltar.
+      else if (this._mesaGrabActivo() && this._mesaHover && this._mesaHover[i]) {
+        const p0 = new THREE.Vector3();
+        this.rays[i].getWorldPosition(p0);
+        this._mesaGrab = { hand: i, y0: this.mesaAltoY, cy0: p0.y };
+        this._mesaCmLast = Math.round(this.mesaAltoY * 100);
+        this._mesaLabelT = 0;
+        this._mesaLabelShow();
+        try { this.audio.playOsc(420, 560, 0.08, 'sine', 0.1, 0); } catch (eG2) { /* */ }
+      }
       return;
     }
 

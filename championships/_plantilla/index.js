@@ -36,6 +36,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   getCore, assetURL, congela, descongela,
   createSfx, createMusic, createPowerSign, createRival, createCartel,
+  createRivalVoz,
 } from '../sdk/champ_sdk.js';
 
 /* ------------------------------------------------------------------ */
@@ -48,6 +49,7 @@ let CORE = null;      // window.__PP_CORE vía getCore()
 let GAME = null;      // objeto game del núcleo
 let MAN = null;       // manifest.json (config unificada)
 let CTRL = null;      // PlantillaController
+let VOZ = null;       // r97 · voz de personalidad del rival (SDK v1.6)
 let DIMS = null;      // dimensiones del núcleo
 let STATE_NAME = 'champtest';
 let SFX = null;
@@ -178,6 +180,18 @@ class RivalVivo {
     };
     const MAPA = { victory: 'triunfante' };   // convención local del abanico
     this._set(MAPA[st] || st, DUR[st] != null ? DUR[st] : 2.0);
+    /* r97 · VOZ DE PERSONALIDAD (SDK v1.6 createRivalVoz): la emoción
+     * estándar también SUENA — clip del manifest (rival.voz.celebra/
+     * enfada/poder) si existe, y si no, voz sintética teñida por la
+     * personalidad (agresivo gruñe grave, defensivo suspira). Los nuevos
+     * campeonatos nacen con voz por defecto: declaren archivos en
+     * manifest.rival.voz y el motor los usa solos. */
+    try {
+      if (!VOZ) VOZ = createRivalVoz(MOD_URL, () => GAME, () => MAN);
+      if (st === 'laughing' || st === 'victory') VOZ.play('celebra');
+      else if (st === 'angry' || st === 'loosing') VOZ.play('enfada');
+      else if (st === 'crazy') VOZ.play('poder');
+    } catch (eV) { /* la voz jamás rompe la cara */ }
   }
   enDuelo(en) { this.estadoBase(en ? this.baseDuelo : 'idle'); }
   final(ganaJugador) { this._set(ganaJugador ? 'defeated' : 'triunfante', 4.0); }

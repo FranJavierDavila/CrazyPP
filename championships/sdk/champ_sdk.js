@@ -129,7 +129,7 @@
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.5.4';
+const SDK_VERSION = '1.6.0';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -606,7 +606,13 @@ export function createBucle(getGame, opts) {
       nodo.connect(actx.destination);
       const src = actx.createBufferSource();
       src.buffer = buf;
-      src.loop = true;
+      /* r97 · v1.6 · MODO ONE-SHOT (o.loop === false): src.loop=false — el
+       * clip suena UNA VEZ y muere solo (onended libera). Nace para la VOZ
+       * DE PERSONALIDAD del rival (createRivalVoz): un clip de voz no puede
+       * quedar en bucle huérfano si el módulo muere a mitad de frase — la
+       * lección del zombi en el Hall. createBucle normal: loop=true como
+       * siempre (galopes, enjambres, rodadura). */
+      src.loop = o.loop !== false;
       src.connect(gain);
       src.start(t0, desfase > 0 ? (desfase % buf.duration) : 0); // DESFASE
       inst = { gain, src, pan };
@@ -708,6 +714,102 @@ export function createBucle(getGame, opts) {
   }
 
   return { on, off, setVol, suena, estado, precarga };
+}
+
+/* — VOZ DE PERSONALIDAD DEL RIVAL (createRivalVoz · v1.6 · r97) ————————
+ *  Petición del dueño: «voz de personalidad por rival (el motor rivalSfx
+ *  ya acepta archivos del manifest)». Cada campeonato declara en SU
+ *  manifest:
+ *
+ *    "rival": { ..., "voz": {
+ *      "celebra": "risa_astro.mp3",   // el rival GANA el punto
+ *      "enfada":  "enfado_astro.mp3", // el rival PIERDE el punto
+ *      "poder":   null,               // lanza superpoder (opcional)
+ *      "gana":    null,               // victoria final (opcional)
+ *      "pierde":  null                // derrota final (opcional)
+ *    } }
+ *
+ *  El motor usa createBucle con loop:false (one-shot honesto: sin reloj,
+ *  sin bucles huérfanos) y respeta el PERSONALITY FALLBACK: si el
+ *  manifest no trae clip para un evento, la voz sale del SINTETIZADOR del
+ *  núcleo (playOsc) con un patrón según la personalidad del manifest
+ *  (agresividad): gruñido grave (agresivo ≥4), suspiro suave (defensivo
+ *  ≤2), bip neutro (resto). Cero assets nuevos obligatorios, cero bucles.
+ *
+ *  Uso: const VOZ = createRivalVoz(import.meta.url, () => this.game, () => MAN);
+ *       VOZ.precarga(); VOZ.play('celebra');
+ *  ==================================================================== */
+export function createRivalVoz(moduleURL, getGame, getMan) {
+  const base = (typeof moduleURL === 'string') ? moduleURL : '';
+  const dir = base ? base.slice(0, base.lastIndexOf('/') + 1) : '';
+  function gg() { return (typeof getGame === 'function') ? getGame() : getGame; }
+  function man() {
+    try { const m = (typeof getMan === 'function') ? getMan() : getMan; return m || null; }
+    catch (e) { return null; }
+  }
+  const KITS = new Map();   // evento → createBucle one-shot
+  let mapa = null;
+  function asegurar() {
+    if (mapa) return mapa;
+    mapa = null;
+    try {
+      const m = man();
+      mapa = (m && m.rival && m.rival.voz) || null;
+    } catch (e) { mapa = null; }
+    return mapa;
+  }
+  function kit(ev) {
+    const mapa2 = asegurar();
+    if (!mapa2) return null;
+    const file = mapa2[ev];
+    if (!file) return null;
+    if (!KITS.has(ev)) {
+      try {
+        KITS.set(ev, createBucle(gg, {
+          url: () => dir + 'assets/' + String(file).replace(/^assets\//, ''),
+          vol: () => 0.55, fadeIn: 0.05, stopFade: 0.25,
+          loop: false, ignoraMute: true,   // voz del rival: suena SIEMPRE
+        }));
+      } catch (e) { return null; }
+    }
+    return KITS.get(ev);
+  }
+  /* PERSONALITY FALLBACK: voz sintética según personalidad.caracter y
+   * agresividad del manifest. Barato (playOsc del núcleo) y SIEMPRE suena
+   * aunque el campeonato no tenga arte sonoro del rival. */
+  function procedural(ev) {
+    try {
+      const g = gg(); const A = g && g.audio;
+      if (!A || !A.playOsc) return;
+      let pers = null;
+      try { const m = man(); pers = m && m.rival && m.rival.personalidad; } catch (e) { /* */ }
+      const ag = (pers && pers.agresividad) || 3;
+      if (ev === 'celebra' || ev === 'gana') {
+        if (ag >= 4) { A.playOsc(120, 88, 0.22, 'sawtooth', 0.14, 0); A.playOsc(184, 140, 0.16, 'square', 0.08, 0.09); }
+        else if (ag <= 2) { A.playOsc(330, 392, 0.18, 'sine', 0.10, 0); }
+        else { A.playOsc(262, 330, 0.15, 'triangle', 0.11, 0); }
+      } else if (ev === 'enfada' || ev === 'pierde') {
+        if (ag >= 4) { A.playOsc(98, 62, 0.30, 'sawtooth', 0.15, 0); }
+        else { A.playOsc(294, 220, 0.26, 'sine', 0.10, 0); }
+      } else if (ev === 'poder') {
+        A.playOsc(150, 320, 0.20, 'sawtooth', 0.12, 0);
+      } else {
+        A.playOsc(220, 220, 0.12, 'triangle', 0.08, 0);
+      }
+    } catch (e) { /* la voz jamás rompe */ }
+  }
+  function play(ev) {
+    const k = kit(ev);
+    if (k) { try { k.on(); return true; } catch (e) { /* cae al procedural */ } }
+    procedural(ev);
+    return false;
+  }
+  function precarga() {
+    const mapa2 = asegurar(); if (!mapa2) return;
+    for (const ev of Object.keys(mapa2)) { const k = kit(ev); if (k) { try { k.precarga(); } catch (e) { /* */ } } }
+  }
+  function off() { for (const k of KITS.values()) { try { k.off(true); } catch (e) { /* */ } } }
+  return { play, precarga, off, tiene: (ev) => !!kit(ev) };
 }
 
 /* — CARTEL DE SUPERPODER (createPowerSign · v1.3.0 · FASE 6) ——————————
@@ -1379,4 +1481,4 @@ export function createCartel(THREE, getGame, opts) {
   };
 }
 
-export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createBucle, createPowerSign, createRival, createCartel };
+export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createBucle, createRivalVoz, createPowerSign, createRival, createCartel };

@@ -5190,3 +5190,4 @@ Work Log:
   · r99/r98/r97/r95 heredadas intactas · módulo halloween byte-idéntico 5/5.
 - PENDIENTE VIVO para el dueño: recargar con game.html?v=v3692 (el Quest cachea: cerrar pestaña o forzar recarga). La barra del PASE
   BAJO ajusta ±1 cm con el rayo de la mano libre; la bola ya se posa y rueda sobre la pala como Eleven.
+- CIERRE (datos reales): push main e5ac8d2..3b4f528 (PAT del dueño) · deploy pages desde 3b4f528 · release v3.6.92-SDK6 (tag) · servido sha256 7e7f74f0… == PAGES-VERSION.txt == blob origin/pages 301a3457… (tres vías byte-exacto) · verifica_r100_produccion.py 44/0 · post-deploy K/L VERDE (hub hints 3.6.92 · champion listo 3.6.92) · el dueño debe recargar con game.html?v=v3692

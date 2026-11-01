@@ -1,10 +1,10 @@
 {
-  "version": "3.6.93-SDK6",
-  "fase": 95,
-  "faseNombre": "SAQUE RESTAURADO + BARRA POR PROXIMIDAD (r101)",
+  "version": "3.6.94-SDK6",
+  "fase": 96,
+  "faseNombre": "PALA RIVAL FIEL + BARRA POR JOYSTICK (r102)",
   "sdk": "1.6.0",
-  "fecha": "2026-10-31",
-  "hub": "v3693-sdk6",
+  "fecha": "2026-11-01",
+  "hub": "v3694-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r100",
   "tamano": 10588364,
-  "golden": "b232a8f3705229ef26baa7df5545a8081b2add5c54aec4468d91525af84e5810"
+  "golden": "ea4b7adad5c7cb0a84dc1a27f6bbed7a8e08d7848ab8e1bd34c45335385dc14b"
 }

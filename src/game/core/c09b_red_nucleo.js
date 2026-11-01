@@ -27,7 +27,11 @@ export const PPNET = (() => {
 
   /* ---------- 0 · PARÁMETROS (spec §17 — valores iniciales) ----------- */
   const VP = {
-    PROTO: 1,             // versión del protocolo binario (HELLO)
+    // v3.6.94 · r102 · PROTO 2: la mano-con-pala de la pose viaja ahora como
+    // CUATERNIÓN VISUAL (grip ⊗ montura viva — antes grip crudo). Dos cascos
+    // con versiones distintas RECHAZAN el HELLO y caen a v1 en vez de
+    // interpretar mal el cable (pala del rival rodada/desplazada).
+    PROTO: 2,             // versión del protocolo binario (HELLO)
     PHYS: 1,              // versión de ballPhysics compartida (HELLO)
     BUILD: '',            // hash de build (lo rellena el juego: VERSION)
 

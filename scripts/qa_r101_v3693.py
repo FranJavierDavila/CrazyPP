@@ -327,14 +327,17 @@ with sync_playwright() as pw:
     }""")
     CHK(not trig['toca'], 'gatillo: serveTrigger NO menciona la barra (lanza SIEMPRE)')
 
-    # ---- 7 · escena: mandos pegados a la cinta (rótulo centro, flechas flanco)
+    # ---- 7 · escena: mandos PEGADOS AL JUGADOR (r102: rótulo+flechas sobre
+    # el cuadrante propio de la mesa, a 30 cm del borde cercano — la cinta
+    # sigue en la red; x sin cambios: rótulo al centro, flechas flanco)
     esc = pg.evaluate("""() => {
       const g = window.__PP_GAME; if (!g) return { err: 'sin juego' };
       const T = window.__PP_TRAIN;
       try { T.tick(0.016); } catch (e) { return { err: 'tick: ' + (e && e.message) }; }
       const X = T.__test;
       const D = window.__PP_CORE.DIMS;
-      return { spr: X.barraSpr(), zCentro: Math.round((D.tableCenterZ) * 1000) / 1000 };
+      return { spr: X.barraSpr(), zLbl: X.barraEtiquetaZ(),
+               zEsperado: D.tableCenterZ + D.tableHalfLength - 0.30 };
     }""")
     if 'err' in (esc or {}):
         CHK(False, 'escena: %s' % esc.get('err'))
@@ -343,15 +346,15 @@ with sync_playwright() as pw:
         if not s or not s.get('up'):
             CHK(False, 'escena: los mandos de la barra NO existen tras el buildScene')
         else:
-            CHK(abs(s['lbl']['x']) < 1e-6, 'escena: rótulo al CENTRO de la cinta (x=0)')
+            CHK(abs(s['lbl']['x']) < 1e-6, 'escena: rótulo al CENTRO lateral (x=0)')
             CHK(abs(s['up']['x'] + 0.24) < 1e-6 and abs(s['dn']['x'] - 0.24) < 1e-6,
                 'escena: flechas flanqueando el rótulo (±0,24 m)')
             CHK(abs(s['up']['y'] - s['lbl']['y']) < 1e-6 and abs(s['dn']['y'] - s['lbl']['y']) < 1e-6,
                 'escena: todo el conjunto a la MISMA altura (viaja con la cinta)')
             CHK(s['cinta'] is not None and abs(s['cinta']['band'] - (s['lbl']['y'] - 0.13)) < 1e-6,
                 'escena: la cinta vive 13 cm por debajo del rótulo')
-            CHK(abs(s['grupo'] - esc['zCentro']) < 1e-6,
-                'escena: conjunto sobre el centro de la mesa (z=%s)' % s['grupo'])
+            CHK(abs(esc['zLbl'] - esc['zEsperado']) < 1e-6,
+                'escena: rótulo PEGADO AL JUGADOR (z=%s ≈ borde cercano −0,30)' % round(esc['zLbl'], 3))
 
     # ---- 8 · sin errores de página
     CHK(not errs, 'runtime: sin errores de página (%s)' % (errs[0][:80] if errs else 'limpio'))

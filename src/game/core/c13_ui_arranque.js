@@ -1222,36 +1222,50 @@ loadPaddleModel().then((paddleModel) => {
     function pistaBarra() {
       if (barraAgarrada) return LANG === 'en' ? 'PULL AWAY TO SET' : 'APARTA LA MANO PARA FIJAR';
       if (barraZona) return LANG === 'en' ? 'MOVE YOUR HAND ↑↓' : 'MUEVE LA MANO ↑↓';
-      return LANG === 'en' ? 'BAR HEIGHT' : 'ALTURA BARRA';
+      // r102 · pista por defecto = LOS DOS CAMINOS (petición del dueño:
+      // «debemos informar de este control de altura al jugador»)
+      return LANG === 'en' ? 'STICK ↑↓ OR HAND AT RIBBON' : 'JOYSTICK ↑↓ O MANO EN LA CINTA';
     }
     function barraLabelTex() {
-      const cv = mkCanvas(320, 110), x = cv.getContext('2d');
-      x.clearRect(0, 0, 320, 110);
+      // r102 · lienzo 400 px (la pista nueva con el joystick cabe de sobra;
+      // el sprite escala a 0,34 m para conservar la densidad de píxeles)
+      const cv = mkCanvas(400, 110), x = cv.getContext('2d');
+      x.clearRect(0, 0, 400, 110);
       x.fillStyle = 'rgba(20,26,36,0.88)';
       x.beginPath();
-      if (x.roundRect) x.roundRect(4, 4, 312, 102, 22); else x.rect(4, 4, 312, 102);
+      if (x.roundRect) x.roundRect(4, 4, 392, 102, 22); else x.rect(4, 4, 392, 102);
       x.fill();
       x.lineWidth = 4; x.strokeStyle = barraAgarrada ? '#ffe08a' : '#ffb84d';
       x.stroke();
       x.textAlign = 'center'; x.textBaseline = 'middle';
       x.fillStyle = '#ffd27a';
       x.font = 'bold 56px "Noto Sans SC", sans-serif';
-      x.fillText(String(BARRA_CM()) + ' cm', 160, 42);
+      x.fillText(String(BARRA_CM()) + ' cm', 200, 42);
       x.fillStyle = (barraZona || barraAgarrada) ? '#ffe8b0' : '#9fb3c8';
       x.font = '20px "Noto Sans SC", sans-serif';
-      x.fillText(pistaBarra(), 160, 84);
+      x.fillText(pistaBarra(), 200, 84);
       return texOf(cv);
     }
     let barraUp = null, barraDn = null, barraLbl = null;
     let barraRibbon = null;                 // cinta viva (band+glow) para barraLay
     let barraUltCm = -1;                    // repintado del rótulo sólo al cambiar
+    let barraAvisoHecho = false;            // r102: toast informativo 1 vez/sesión
     const BARRA_SEP = 0.24;                 // flechas flanqueando el rótulo
+    // r102 · RÓTULO PEGADO AL JUGADOR (petición del dueño: «que tenga la
+    // etiqueta informativa sobre la mesa pero pegada al jugador, no como
+    // ahora que está en el centro bajo la red»): la pastilla de cm y las
+    // flechas flotan sobre el CUADRANTE PRÓPIO de la mesa, a 30 cm del borde
+    // cercano; la cinta sigue en la red (es la referencia del pase bajo).
+    // OJO: los sprites son HIJOS del grupo (que vive en z=C()) — la z aquí
+    // es LOCAL: mundo = C() + (HL() − 0,30).
+    const BARRA_LBL_Z = () => HL() - 0.30;
     function barraLay() {
       // recoloca cinta + mandos a la altura viva (cada ajuste)
       const by = RIBBON_Y();
-      if (barraLbl) barraLbl.position.set(0, by + 0.13, 0);
-      if (barraUp) barraUp.position.set(-BARRA_SEP, by + 0.13, 0);
-      if (barraDn) barraDn.position.set(BARRA_SEP, by + 0.13, 0);
+      const zl = BARRA_LBL_Z();
+      if (barraLbl) barraLbl.position.set(0, by + 0.13, zl);
+      if (barraUp) barraUp.position.set(-BARRA_SEP, by + 0.13, zl);
+      if (barraDn) barraDn.position.set(BARRA_SEP, by + 0.13, zl);
       if (barraRibbon) { barraRibbon.band.position.y = by; barraRibbon.glow.position.y = by + 0.02; }
     }
     function buildRibbon() {
@@ -1284,7 +1298,7 @@ loadPaddleModel().then((paddleModel) => {
       barraLbl = new THREE.Sprite(new THREE.SpriteMaterial({
         map: barraLabelTex(), transparent: true, depthWrite: false, opacity: 0.96,
       }));
-      barraLbl.scale.set(0.27, 0.093, 1);
+      barraLbl.scale.set(0.34, 0.093, 1);   // r102: lienzo 400 px (misma densidad)
       g.add(barraLbl);
       barraLay();
       g.position.set(0, 0, C());
@@ -1360,10 +1374,40 @@ loadPaddleModel().then((paddleModel) => {
       }
       return { zona: barraZona, agarrada: barraAgarrada };
     }
+    /* r102 · JOYSTICK (petición del dueño: «su altura se controla mejor con
+     * cualquiera de los joysticks de los mandos… debemos informar de este
+     * control al jugador»): el eje Y de CUALQUIER stick sube/baja la barra
+     * en pasos de 1 cm (BARRA_STICK_V a plena deflexión, muerta 0,30; los
+     * dos sticks SUMAN). El stick MANDA sobre la proximidad: suelta la
+     * barra si estuviera agarrada y anula el dwell para que la mano no la
+     * re-agarre sola. En el PRO TRAINING el stick no tiene OTRO uso
+     * (updateCalibration retorna antes con trainV3 activo — sin conflicto). */
+    const BARRA_STICK_V = 0.14;              // m/s a plena deflexión
+    let barraStickAcc = 0;                   // fracción de paso de 1 cm pendiente
+    function barraStick(dt) {
+      if (!ribbonG || !ribbonG.visible) { barraStickAcc = 0; return false; }
+      let y = 0;
+      for (let h = 0; h < 2; h++) {
+        const ax = G.stickAxis ? G.stickAxis(h) : null;
+        if (ax && Math.abs(ax.y) > 0.30) y += -ax.y;   // stick arriba = subir
+      }
+      if (!y) { barraStickAcc = 0; return false; }
+      if (barraAgarrada) barraSoltar();
+      barraZona = false; barraZonaT = 0;               // el stick anula el dwell
+      barraStickAcc += y * BARRA_STICK_V * dt / BARRA_PASO;
+      const pasos = Math.trunc(barraStickAcc);
+      if (pasos) {
+        barraStickAcc -= pasos;
+        barraFijar(barraH + pasos * BARRA_PASO, false);
+        return true;
+      }
+      return false;
+    }
     /* r101 · TICK: posición REAL de la mano libre → máquina de ajuste. */
     const _bW = new THREE.Vector3();
     function barraTick(dt) {
       if (!ribbonG || !ribbonG.visible) { barraUpdate(0, -1, 0, dt); return; }
+      barraStick(dt);                        // r102: joystick, cualquier mando
       const h = G.ballHand;
       const ray = G.rays && G.rays[h];
       if (!ray || !G.connected || !G.connected[h]) {
@@ -2037,6 +2081,15 @@ loadPaddleModel().then((paddleModel) => {
       if (ribbonG.visible && barraLbl) {
         barraLbl.material.map = barraLabelTex();
         barraLbl.material.needsUpdate = true;
+        // r102 · AVISO AL JUGADOR (petición del dueño: «debemos informar de
+        // este control de altura al jugador»): una vez por sesión, al entrar
+        // por primera vez en el PASE BAJO
+        if (!barraAvisoHecho) {
+          barraAvisoHecho = true;
+          toast((LANG === 'en'
+            ? 'Bar: ' + BARRA_CM() + ' cm · adjust with EITHER STICK ↑↓ (or hand at the ribbon)'
+            : 'Barra: ' + BARRA_CM() + ' cm · ajústala con CUALQUIER JOYSTICK ↑↓ (o la mano en la cinta)'), true);
+        }
       }
     }
   
@@ -3351,6 +3404,10 @@ loadPaddleModel().then((paddleModel) => {
       barraCm: () => BARRA_CM(),
       barraEstado: () => ({ zona: barraZona, agarrada: barraAgarrada }),
       barraUpdate,
+      barraStick,                                          // r102: máquina joystick
+      barraStickEstado: () => ({ acc: barraStickAcc, avisado: barraAvisoHecho }),
+      barraEtiquetaZ: () => (barraLbl
+        ? barraLbl.position.z + (ribbonG ? ribbonG.position.z : 0) : 0),  // z MUNDO
       barraVisSet: (v) => { if (ribbonG) ribbonG.visible = !!v; },   // QA: estado t2a
       barraAjustar,
       barraLay,

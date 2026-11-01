@@ -66,6 +66,8 @@ upload/*.zip
 scripts/worker-tele/.clave-produccion
 # token API de Cloudflare para despliegue nativo del worker (NUNCA commitear)
 scripts/worker-tele/.cf-token
+scripts/worker-tele/.cloudflare-token
+scripts/worker-tele/.telemetry-clave
 # PAT de GitHub para push (NUNCA commitear — lección Task 122: GitHub Push Protection)
 scripts/worker-tele/.github-pat
 

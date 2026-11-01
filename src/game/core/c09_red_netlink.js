@@ -1273,8 +1273,26 @@ export class NetLink {
       const tq = i === 0 ? out.lq : out.rq;
       if (grip) {
         tgt[0] = grip.position.x; tgt[1] = grip.position.y; tgt[2] = grip.position.z;
-        tq[0] = grip.quaternion.x; tq[1] = grip.quaternion.y;
-        tq[2] = grip.quaternion.z; tq[3] = grip.quaternion.w;
+        // v3.6.94 · r102 · LA MANO CON PALA VIAJA COMO CUATERNIÓN VISUAL:
+        // q = grip ⊗ montura viva (paddleMounts[i] ya lleva
+        // mountQuatFor(handOf) ⊗ gripOffsetQ — la MISMA fórmula probada del
+        // camino v1). Antes viajaba el grip CRUDO y el receptor multiplicaba
+        // la montura SIN conjugarla por el espejo de 180°: R⊗(grip⊗M)⊗R⁻¹
+        // es (R⊗grip⊗R⁻¹)⊗(R⊗M⊗R⁻¹), y (R⊗grip⊗R⁻¹)⊗M difiere en el roll
+        // completo de la montura (~166°) — el rival veía la pala RODADA y su
+        // hoja desplazada ~26 cm del verdadero («multijugador imposible»).
+        // El receptor (c12) ya NO multiplica nada: quatFromNet conjuga el
+        // visual entero, igual que hacía el camino v1 desde v2.91.
+        if (i === g.paddleHand) {
+          const mq = (g.paddleMounts && g.paddleMounts[i] && g.paddleMounts[i].quaternion)
+            || mountQuatFor(g.handOf && g.handOf[i] === 'left' ? 'left' : 'right');
+          const qv = NetLink._poseQ || (NetLink._poseQ = new THREE.Quaternion());
+          qv.copy(grip.quaternion).multiply(mq);
+          tq[0] = qv.x; tq[1] = qv.y; tq[2] = qv.z; tq[3] = qv.w;
+        } else {
+          tq[0] = grip.quaternion.x; tq[1] = grip.quaternion.y;
+          tq[2] = grip.quaternion.z; tq[3] = grip.quaternion.w;
+        }
         fl |= 1 << i;                                  // mano rastreada
         if (i === g.paddleHand) fl |= 4;               // pala en esta mano
       }

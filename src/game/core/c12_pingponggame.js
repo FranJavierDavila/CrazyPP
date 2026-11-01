@@ -10222,11 +10222,14 @@ export class PingPongGame {
           // tapete por el códec (yAnchor). posFromNet sumaba T OTRA vez y
           // el rival flotaba ~76 cm por encima de su altura real.
           NetLink.posFromNetPose(hpa, netTmpP);
+          // v3.6.94 · r102 · el cuaternión de la mano-con-pala YA ES la
+          // visual completa del emisor (grip ⊗ montura viva — c09
+          // _samplePose): quatFromNet lo conjuga por el espejo de 180° y
+          // aquí NO se multiplica ninguna montura. Multiplicar
+          // mountQuatFor(sin conjugar) tras conjugar el grip rodaba la pala
+          // del rival ~166° y mandaba su hoja ~26 cm fuera («la partida
+          // multijugador es imposible»).
           NetLink.quatFromNet(hqa, netTmpQ);
-          // v3.6.74 · r82 · montura por MANO FÍSICA (bit 8): el hueco del
-          // mando no dice la mano real — un diestro con la pala en el slot
-          // izquierdo veía su avatar rival con la pala rodada 90°
-          const fisicaIzq = (smp.fl & 8) !== 0;
           // r84 · DUELOS LOCOS · GIGANTE del rival (bit 16 de pose.fl):
           // escala visual de la pala del avatar — el efecto REAL (radio de
           // golpeo) vive en SU extremo; aquí sólo se VE
@@ -10235,14 +10238,13 @@ export class PingPongGame {
           if (Math.abs(this.aiPaddleMesh.scale.x - svDl) > 0.005) {
             this.aiPaddleMesh.scale.setScalar(svDl);
           }
-          // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
-          const qVis = netTmpQ2.copy(netTmpQ)
-            .multiply(mountQuatFor(fisicaIzq ? 'left' : 'right'));
+          // centro de la hoja = pose de la mano + offset de hoja del modelo
+          // girado por la visual YA conjugada (PALA_BLADE_Y/GRIP del c01)
           netTmpV.set(0, (PALA_BLADE_Y - PALA_GRIP_Y) * PALA_SCALE, 0)
-            .applyQuaternion(qVis).add(netTmpP);
+            .applyQuaternion(netTmpQ).add(netTmpP);
           const f2 = 1 - Math.exp(-20 * dt);
           this.aiPaddleMesh.position.lerp(netTmpV, f2);
-          this.aiPaddleMesh.quaternion.slerp(qVis, f2);
+          this.aiPaddleMesh.quaternion.slerp(netTmpQ, f2);
         }
         this.aiPaddleMesh.visible = true;
         // visor del rival: presencia mínima a partir de la CABEZA del packet
@@ -11469,7 +11471,7 @@ import { NetLink } from './c09_red_netlink.js';
 import { PPNET } from './c09b_red_nucleo.js';
 import { RedSocial } from './c09c_red_social.js';
 import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
-import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, netTmpQ2, netTmpV, pcA, pcC, pcN, pcT } from './c11_champloader.js';
+import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, netTmpV, pcA, pcC, pcN, pcT } from './c11_champloader.js';
 import { wrapText } from './c13_ui_arranque.js';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';

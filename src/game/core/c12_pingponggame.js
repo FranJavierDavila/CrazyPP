@@ -11442,6 +11442,11 @@ export class PingPongGame {
           // v2.34: anti-spam de bote — la física puede emitir ráfagas de
           // eventos 'table' en un mismo instante (esquina + canto); el
           // sonido se limita a uno cada 60 ms.
+          // M1 · r106 · HÁPTICA DEL BOTE CALIBRADA: antes 0,18 FIJA y FUERA
+          // del guard (cada evento de mesa vibraba: una ráfaga esquina+canto
+          // era una ametralladora). Ahora DENTRO del guard, proporcional a la
+          // velocidad (bote suave 0,10/50 ms · bote fuerte 0,24/80 ms) y con
+          // el CANTO distinguible (pico más alto, muy corto y seco).
           if (!this._lastBounceSfx || performance.now() - this._lastBounceSfx > 60) {
             this._lastBounceSfx = performance.now();
             // r62: el CANTO suena a CANTO («ping» metálico con cola — e.edge
@@ -11451,6 +11456,14 @@ export class PingPongGame {
               this.audio.tableEdge(pan, Math.min(1, 0.45 + e.speed / 8));
             } else {
               this.audio.tableBounce(pan, Math.min(1, e.speed / 6));
+            }
+            const s6 = Math.min(1, e.speed / 6);
+            if (this.renderer.xr.isPresenting) {
+              if (e.edge) {
+                this.haptic(this.paddleHand, 0.14 + 0.16 * s6, 28);
+              } else {
+                this.haptic(this.paddleHand, 0.08 + 0.16 * s6, Math.round(50 + 30 * s6));
+              }
             }
           }
           // v3.6.44 (ronda 52 · el dueño: «la marca del bote va desfasada»):
@@ -11480,11 +11493,13 @@ export class PingPongGame {
               : tpB === 'side' ? [740, 420] : [900, 260];
             try { this.audio.playOsc(fr[0], fr[1], 0.16, 'sawtooth', 0.2, 0); } catch (eB2) { /* */ }
           }
-          if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.18);
           break;
         case 'net':
           // r62: la tela responde a la velocidad del golpe (tono por impacto)
           this.audio.net(pan, Math.min(1, (e.speed || 0.8) / 5));
+          // M1 · r106: el roce de la malla SE SIENTE — vibración breve y
+          // sutil (los eventos de red son raros: sin riesgo de ametralladora).
+          if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.15, 45);
           this.audio.ohh();   // el público reacciona a la red
           break;
         case 'floor':

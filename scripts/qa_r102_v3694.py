@@ -102,10 +102,10 @@ CHK('const BARRA_DWELL = 0.30;' in GH, 'game.html: dwell 0,30 intacto (r101)')
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
 # r103 · re-anclada a la build viva (la r103 movió el rótulo y selló 3.6.95)
-CHK(bool(mver) and mver.group(1) == '3.6.97-SDK6', 'c00: VERSION sella 3.6.97-SDK6 (re-anclada r103)')
+CHK(bool(mver) and mver.group(1) == '3.6.98-SDK6', 'c00: VERSION sella 3.6.98-SDK6 (re-anclada r103)')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 99, 'VERSION.json: FASE 99 (re-anclada r105)')
-CHK(V.get('hub') == 'v3697-sdk6', 'VERSION.json: hub v3695-sdk6 (re-anclada r103)')
+CHK(V.get('fase') == 100, 'VERSION.json: FASE 99 (re-anclada r105)')
+CHK(V.get('hub') == 'v3698-sdk6', 'VERSION.json: hub v3695-sdk6 (re-anclada r103)')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')

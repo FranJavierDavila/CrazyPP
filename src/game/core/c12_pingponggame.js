@@ -129,6 +129,8 @@ export class PingPongGame {
     this._menuDrag = null;          // { hand, id } mientras el gatillo arrastra
     this._menuHitPx = [null, null]; // punto exacto del panel por mano (r96)
     this._menuGripPos = [null, null]; // altura del mando por mano (r98, agarre)
+    this._menuHoverDrawAt = 0;      // r105 · última hora de repintado por hover
+    this._menuDrawPend = false;     // r105 · hover pendiente de repintar (throttle)
     this._mesaHover = [null, null]; // punto de la mesa bajo el rayo por mano
     this._mesaGrab = null;          // { hand, y0, cy0 } durante el agarre
     this._mesaCmLast = null;        // último cm sonado (tick por cm, sin ametrallar)
@@ -1506,7 +1508,15 @@ export class PingPongGame {
     // lienzo 1024×1536). A 1,08 m de distancia ~1 texel = 1 píxel del visor
     // (nitidez 1:1, sin submuestreo) y TODO el texto del menú gana un 25 %
     // de tamaño físico sin tocar una sola coordenada de página.
-    this.menuTex.anisotropy = 8;   // antes 4: texto oblicuo más nítido
+    // r105 · RENDIMIENTO: el panel vive a ~1 m del jugador — MAGNIFICACIÓN
+    // pura (el visor pide MÁS píxeles de los que tiene la textura 1024×1536),
+    // así que los mips no aportan nitidez y CADA repintado del canvas pagaba
+    // su generación (~12 niveles en GPU) encima del upload de 6 MB. Sin mips
+    // el repintado es más barato y el aspecto a 1 m es IDÉNTICO (mip 0 +
+    // bilineal era lo que ya se usaba en magnificación con mips activos).
+    this.menuTex.generateMipmaps = false;
+    this.menuTex.minFilter = THREE.LinearFilter;
+    this.menuTex.anisotropy = 1;   // sin mips el anisotrópico no aplica (era 8)
     this.menuMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(0.90, 1.35),
       new THREE.MeshBasicMaterial({ map: this.menuTex, transparent: true, depthTest: false }),
@@ -2250,6 +2260,7 @@ export class PingPongGame {
    *  v2.28: página principal en ACORDEÓN — las secciones se contraen y solo
    *  se despliega la que se selecciona (menuSec). */
   drawMenu() {
+    this._menuDrawPend = false;   // r105 · cualquier repintado real atiende el hover pendiente
     const c = this.menuCanvas.getContext('2d');
     if (!c) return;
     const W = 1024, H = 1536;
@@ -3555,10 +3566,16 @@ export class PingPongGame {
           const py = (1 - hit.uv.y) * 1536;
           idx = this.menuRects.findIndex((r) =>
             px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h);
-          // cursor sobre el panel (uv -> plano 0.72×1.08). El eje Y del plano
+          // cursor sobre el panel (uv -> plano del panel). El eje Y del plano
           // es uv.y=1 ARRIBA (v2.24: nunca se pinta espejado en vertical).
+          // r105 · FIX DERIVA: el punto seguía proyectándose en el plano
+          // ANTIGUO 0,72×1,08 mientras el panel es 0,90×1,35 desde r104 — el
+          // cursor quedaba desviado hasta 0,09 m (X) y 0,135 m (Y) hacia el
+          // centro respecto al rayo real (la «deriva» reportada). Las dos
+          // dimensiones DEBEN coincidir con PlaneGeometry(0.90, 1.35) de
+          // buildMenu — mantener sincronizadas.
           dot.visible = true;
-          dot.position.set((hit.uv.x - 0.5) * 0.72, (hit.uv.y - 0.5) * 1.08, 0.004);
+          dot.position.set((hit.uv.x - 0.5) * 0.90, (hit.uv.y - 0.5) * 1.35, 0.004);
           // r96 · punto EXACTO del panel (px canvas) por mano: los
           // deslizadores (mesa, volúmenes) fijan el valor AL PUNTO apuntado.
           if (!this._menuHitPx) this._menuHitPx = [null, null];
@@ -3584,7 +3601,26 @@ export class PingPongGame {
       }
       if (idx !== this.menuHover[h]) { this.menuHover[h] = idx; dirty = true; }
     }
-    if (dirty) this.drawMenu();   // un solo repintado aunque ambas manos cambien
+    // r105 · RENDIMIENTO: el repintado por HOVER va THROTTLED (90 ms ≈ 11 Hz).
+    // Cada drawMenu repinta el lienzo entero 1024×1536 y sube 6 MB a la GPU;
+    // barriendo el panel con el rayo se encadenaban 15-20 repintados/segundo
+    // y eso se notaba en los FPS del casco. El highlight sigue fluido y los
+    // repintados por ACCIÓN (clicks, páginas, sliders, estado) siguen siendo
+    // inmediatos: no pasan por aquí.
+    if (dirty) {
+      const nowH = performance.now();
+      if ((nowH - (this._menuHoverDrawAt || 0)) >= 90) {
+        this._menuHoverDrawAt = nowH;
+        this.drawMenu();          // un solo repintado aunque ambas manos cambien
+      } else {
+        this._menuDrawPend = true;   // se atiende en el siguiente frame
+      }
+    } else if (this._menuDrawPend &&
+               (performance.now() - (this._menuHoverDrawAt || 0)) >= 90) {
+      this._menuDrawPend = false;
+      this._menuHoverDrawAt = performance.now();
+      this.drawMenu();
+    }
     // r98 · GESTOS CONTINUOS: arrastre de deslizadores + agarre de la mesa
     this._menuDragUpdate();
     this._mesaGrabUpdate();

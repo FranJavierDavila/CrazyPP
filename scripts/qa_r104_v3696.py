@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r104_v3696.py — capa de QA de la ronda 104 (V3.6.96-SDK6).
+"""qa_r104_v3696.py — capa de QA de la ronda 104 (V3.6.97-SDK6).
 
 Petición del dueño: «Los textos pequeños de los menús no se leen muy bien, y
 revisar que no desborden y estén bien encajadas. Habría alguna manera de que
@@ -46,8 +46,8 @@ AGUJAS = [
     # 1 · panel a pantalla completa
     ('new THREE.PlaneGeometry(0.90, 1.35),',
      'panel del menú 0,90×1,35 m (+25 % lineal, 2:3 intacto)'),
-    ('this.menuTex.anisotropy = 8;',
-     'anisotropía 8 (texto oblicuo más nítido)'),
+    ('this.menuTex.anisotropy = 1;   // sin mips el anisotrópico no aplica (era 8)',
+     'anisotropía 1 coherente sin mips (re-anclada r105)'),
     ('new THREE.CircleGeometry(0.011, 24),',
      'cursor del menú proporcional al panel (0,011 m)'),
     # 2 · escalado global de fuentes
@@ -124,13 +124,13 @@ CHK('PROTO: 2,' in GH, 'game.html: pala rival FIEL intacta (r102 códec)')
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.96-SDK6', 'c00: VERSION sella 3.6.96-SDK6')
-CHK('>V3.6.96-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
-    'portada: badge V3.6.96-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.97-SDK6', 'c00: VERSION sella 3.6.97-SDK6')
+CHK('>V3.6.97-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
+    'portada: badge V3.6.97-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 98, 'VERSION.json: FASE 98')
-CHK(V.get('hub') == 'v3696-sdk6', 'VERSION.json: hub v3696-sdk6')
-CHK(V.get('golden', '').startswith('37861066'), 'VERSION.json: golden 37861066…')
+CHK(V.get('fase') == 99, 'VERSION.json: FASE 98')
+CHK(V.get('hub') == 'v3697-sdk6', 'VERSION.json: hub v3697-sdk6')
+CHK(V.get('golden', '').startswith('f22445cb'), 'VERSION.json: golden 37861066…')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo + lienzo del menú) ==')
@@ -161,7 +161,7 @@ with sync_playwright() as pw:
     }""")
     CHK(abs(geo['w'] - 0.90) < 1e-9 and abs(geo['h'] - 1.35) < 1e-9,
         'panel: malla 0,90×1,35 m en vivo (%.2f×%.2f)' % (geo['w'], geo['h']))
-    CHK(geo['ani'] == 8, 'panel: anisotropía 8 en vivo')
+    CHK(geo['ani'] == 1, 'panel: anisotropía 1 en vivo (re-anclada r105, mips OFF)')
     CHK(geo['ro'] == 9998, 'panel: renderOrder 9998 intacto (el menú manda)')
 
     # ---- 2 · escalado de fuentes REAL del contexto (medido contra un lienzo limpio)

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.96-SDK6",
-  "fase": 98,
-  "faseNombre": "MENÚS A PANTALLA COMPLETA — legibilidad (r104)",
+  "version": "3.6.97-SDK6",
+  "fase": 99,
+  "faseNombre": "DERIVA DEL PUNTERO + RENDIMIENTO DEL MENÚ (r105)",
   "sdk": "1.6.0",
   "fecha": "2026-11-01",
-  "hub": "v3696-sdk6",
+  "hub": "v3697-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r104",
   "tamano": 10597962,
-  "golden": "37861066a706d72522d64654af412479b43c6091a3d2f791ab83232fb37c5ca7"
+  "golden": "f22445cb46d4b43f7b1f94e9d95dba31628d4633cc03a4540162e43755886151"
 }

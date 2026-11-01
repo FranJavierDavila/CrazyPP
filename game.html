@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.93-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.94-SDK6</span>
     </div>
   </main>
 
@@ -2950,7 +2950,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.93-SDK6';
+  const VERSION = '3.6.94-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -11535,8 +11535,26 @@ class NetLink {
       const tq = i === 0 ? out.lq : out.rq;
       if (grip) {
         tgt[0] = grip.position.x; tgt[1] = grip.position.y; tgt[2] = grip.position.z;
-        tq[0] = grip.quaternion.x; tq[1] = grip.quaternion.y;
-        tq[2] = grip.quaternion.z; tq[3] = grip.quaternion.w;
+        // v3.6.94 · r102 · LA MANO CON PALA VIAJA COMO CUATERNIÓN VISUAL:
+        // q = grip ⊗ montura viva (paddleMounts[i] ya lleva
+        // mountQuatFor(handOf) ⊗ gripOffsetQ — la MISMA fórmula probada del
+        // camino v1). Antes viajaba el grip CRUDO y el receptor multiplicaba
+        // la montura SIN conjugarla por el espejo de 180°: R⊗(grip⊗M)⊗R⁻¹
+        // es (R⊗grip⊗R⁻¹)⊗(R⊗M⊗R⁻¹), y (R⊗grip⊗R⁻¹)⊗M difiere en el roll
+        // completo de la montura (~166°) — el rival veía la pala RODADA y su
+        // hoja desplazada ~26 cm del verdadero («multijugador imposible»).
+        // El receptor (c12) ya NO multiplica nada: quatFromNet conjuga el
+        // visual entero, igual que hacía el camino v1 desde v2.91.
+        if (i === g.paddleHand) {
+          const mq = (g.paddleMounts && g.paddleMounts[i] && g.paddleMounts[i].quaternion)
+            || mountQuatFor(g.handOf && g.handOf[i] === 'left' ? 'left' : 'right');
+          const qv = NetLink._poseQ || (NetLink._poseQ = new THREE.Quaternion());
+          qv.copy(grip.quaternion).multiply(mq);
+          tq[0] = qv.x; tq[1] = qv.y; tq[2] = qv.z; tq[3] = qv.w;
+        } else {
+          tq[0] = grip.quaternion.x; tq[1] = grip.quaternion.y;
+          tq[2] = grip.quaternion.z; tq[3] = grip.quaternion.w;
+        }
         fl |= 1 << i;                                  // mano rastreada
         if (i === g.paddleHand) fl |= 4;               // pala en esta mano
       }
@@ -12218,7 +12236,11 @@ const PPNET = (() => {
 
   /* ---------- 0 · PARÁMETROS (spec §17 — valores iniciales) ----------- */
   const VP = {
-    PROTO: 1,             // versión del protocolo binario (HELLO)
+    // v3.6.94 · r102 · PROTO 2: la mano-con-pala de la pose viaja ahora como
+    // CUATERNIÓN VISUAL (grip ⊗ montura viva — antes grip crudo). Dos cascos
+    // con versiones distintas RECHAZAN el HELLO y caen a v1 en vez de
+    // interpretar mal el cable (pala del rival rodada/desplazada).
+    PROTO: 2,             // versión del protocolo binario (HELLO)
     PHYS: 1,              // versión de ballPhysics compartida (HELLO)
     BUILD: '',            // hash de build (lo rellena el juego: VERSION)
 
@@ -24697,11 +24719,14 @@ class PingPongGame {
           // tapete por el códec (yAnchor). posFromNet sumaba T OTRA vez y
           // el rival flotaba ~76 cm por encima de su altura real.
           NetLink.posFromNetPose(hpa, netTmpP);
+          // v3.6.94 · r102 · el cuaternión de la mano-con-pala YA ES la
+          // visual completa del emisor (grip ⊗ montura viva — c09
+          // _samplePose): quatFromNet lo conjuga por el espejo de 180° y
+          // aquí NO se multiplica ninguna montura. Multiplicar
+          // mountQuatFor(sin conjugar) tras conjugar el grip rodaba la pala
+          // del rival ~166° y mandaba su hoja ~26 cm fuera («la partida
+          // multijugador es imposible»).
           NetLink.quatFromNet(hqa, netTmpQ);
-          // v3.6.74 · r82 · montura por MANO FÍSICA (bit 8): el hueco del
-          // mando no dice la mano real — un diestro con la pala en el slot
-          // izquierdo veía su avatar rival con la pala rodada 90°
-          const fisicaIzq = (smp.fl & 8) !== 0;
           // r84 · DUELOS LOCOS · GIGANTE del rival (bit 16 de pose.fl):
           // escala visual de la pala del avatar — el efecto REAL (radio de
           // golpeo) vive en SU extremo; aquí sólo se VE
@@ -24710,14 +24735,13 @@ class PingPongGame {
           if (Math.abs(this.aiPaddleMesh.scale.x - svDl) > 0.005) {
             this.aiPaddleMesh.scale.setScalar(svDl);
           }
-          // centro de la hoja = mano ⊗ montura + offset de agarre (constante)
-          const qVis = netTmpQ2.copy(netTmpQ)
-            .multiply(mountQuatFor(fisicaIzq ? 'left' : 'right'));
+          // centro de la hoja = pose de la mano + offset de hoja del modelo
+          // girado por la visual YA conjugada (PALA_BLADE_Y/GRIP del c01)
           netTmpV.set(0, (PALA_BLADE_Y - PALA_GRIP_Y) * PALA_SCALE, 0)
-            .applyQuaternion(qVis).add(netTmpP);
+            .applyQuaternion(netTmpQ).add(netTmpP);
           const f2 = 1 - Math.exp(-20 * dt);
           this.aiPaddleMesh.position.lerp(netTmpV, f2);
-          this.aiPaddleMesh.quaternion.slerp(qVis, f2);
+          this.aiPaddleMesh.quaternion.slerp(netTmpQ, f2);
         }
         this.aiPaddleMesh.visible = true;
         // visor del rival: presencia mínima a partir de la CABEZA del packet
@@ -27815,36 +27839,50 @@ loadPaddleModel().then((paddleModel) => {
     function pistaBarra() {
       if (barraAgarrada) return LANG === 'en' ? 'PULL AWAY TO SET' : 'APARTA LA MANO PARA FIJAR';
       if (barraZona) return LANG === 'en' ? 'MOVE YOUR HAND ↑↓' : 'MUEVE LA MANO ↑↓';
-      return LANG === 'en' ? 'BAR HEIGHT' : 'ALTURA BARRA';
+      // r102 · pista por defecto = LOS DOS CAMINOS (petición del dueño:
+      // «debemos informar de este control de altura al jugador»)
+      return LANG === 'en' ? 'STICK ↑↓ OR HAND AT RIBBON' : 'JOYSTICK ↑↓ O MANO EN LA CINTA';
     }
     function barraLabelTex() {
-      const cv = mkCanvas(320, 110), x = cv.getContext('2d');
-      x.clearRect(0, 0, 320, 110);
+      // r102 · lienzo 400 px (la pista nueva con el joystick cabe de sobra;
+      // el sprite escala a 0,34 m para conservar la densidad de píxeles)
+      const cv = mkCanvas(400, 110), x = cv.getContext('2d');
+      x.clearRect(0, 0, 400, 110);
       x.fillStyle = 'rgba(20,26,36,0.88)';
       x.beginPath();
-      if (x.roundRect) x.roundRect(4, 4, 312, 102, 22); else x.rect(4, 4, 312, 102);
+      if (x.roundRect) x.roundRect(4, 4, 392, 102, 22); else x.rect(4, 4, 392, 102);
       x.fill();
       x.lineWidth = 4; x.strokeStyle = barraAgarrada ? '#ffe08a' : '#ffb84d';
       x.stroke();
       x.textAlign = 'center'; x.textBaseline = 'middle';
       x.fillStyle = '#ffd27a';
       x.font = 'bold 56px "Noto Sans SC", sans-serif';
-      x.fillText(String(BARRA_CM()) + ' cm', 160, 42);
+      x.fillText(String(BARRA_CM()) + ' cm', 200, 42);
       x.fillStyle = (barraZona || barraAgarrada) ? '#ffe8b0' : '#9fb3c8';
       x.font = '20px "Noto Sans SC", sans-serif';
-      x.fillText(pistaBarra(), 160, 84);
+      x.fillText(pistaBarra(), 200, 84);
       return texOf(cv);
     }
     let barraUp = null, barraDn = null, barraLbl = null;
     let barraRibbon = null;                 // cinta viva (band+glow) para barraLay
     let barraUltCm = -1;                    // repintado del rótulo sólo al cambiar
+    let barraAvisoHecho = false;            // r102: toast informativo 1 vez/sesión
     const BARRA_SEP = 0.24;                 // flechas flanqueando el rótulo
+    // r102 · RÓTULO PEGADO AL JUGADOR (petición del dueño: «que tenga la
+    // etiqueta informativa sobre la mesa pero pegada al jugador, no como
+    // ahora que está en el centro bajo la red»): la pastilla de cm y las
+    // flechas flotan sobre el CUADRANTE PRÓPIO de la mesa, a 30 cm del borde
+    // cercano; la cinta sigue en la red (es la referencia del pase bajo).
+    // OJO: los sprites son HIJOS del grupo (que vive en z=C()) — la z aquí
+    // es LOCAL: mundo = C() + (HL() − 0,30).
+    const BARRA_LBL_Z = () => HL() - 0.30;
     function barraLay() {
       // recoloca cinta + mandos a la altura viva (cada ajuste)
       const by = RIBBON_Y();
-      if (barraLbl) barraLbl.position.set(0, by + 0.13, 0);
-      if (barraUp) barraUp.position.set(-BARRA_SEP, by + 0.13, 0);
-      if (barraDn) barraDn.position.set(BARRA_SEP, by + 0.13, 0);
+      const zl = BARRA_LBL_Z();
+      if (barraLbl) barraLbl.position.set(0, by + 0.13, zl);
+      if (barraUp) barraUp.position.set(-BARRA_SEP, by + 0.13, zl);
+      if (barraDn) barraDn.position.set(BARRA_SEP, by + 0.13, zl);
       if (barraRibbon) { barraRibbon.band.position.y = by; barraRibbon.glow.position.y = by + 0.02; }
     }
     function buildRibbon() {
@@ -27877,7 +27915,7 @@ loadPaddleModel().then((paddleModel) => {
       barraLbl = new THREE.Sprite(new THREE.SpriteMaterial({
         map: barraLabelTex(), transparent: true, depthWrite: false, opacity: 0.96,
       }));
-      barraLbl.scale.set(0.27, 0.093, 1);
+      barraLbl.scale.set(0.34, 0.093, 1);   // r102: lienzo 400 px (misma densidad)
       g.add(barraLbl);
       barraLay();
       g.position.set(0, 0, C());
@@ -27953,10 +27991,40 @@ loadPaddleModel().then((paddleModel) => {
       }
       return { zona: barraZona, agarrada: barraAgarrada };
     }
+    /* r102 · JOYSTICK (petición del dueño: «su altura se controla mejor con
+     * cualquiera de los joysticks de los mandos… debemos informar de este
+     * control al jugador»): el eje Y de CUALQUIER stick sube/baja la barra
+     * en pasos de 1 cm (BARRA_STICK_V a plena deflexión, muerta 0,30; los
+     * dos sticks SUMAN). El stick MANDA sobre la proximidad: suelta la
+     * barra si estuviera agarrada y anula el dwell para que la mano no la
+     * re-agarre sola. En el PRO TRAINING el stick no tiene OTRO uso
+     * (updateCalibration retorna antes con trainV3 activo — sin conflicto). */
+    const BARRA_STICK_V = 0.14;              // m/s a plena deflexión
+    let barraStickAcc = 0;                   // fracción de paso de 1 cm pendiente
+    function barraStick(dt) {
+      if (!ribbonG || !ribbonG.visible) { barraStickAcc = 0; return false; }
+      let y = 0;
+      for (let h = 0; h < 2; h++) {
+        const ax = G.stickAxis ? G.stickAxis(h) : null;
+        if (ax && Math.abs(ax.y) > 0.30) y += -ax.y;   // stick arriba = subir
+      }
+      if (!y) { barraStickAcc = 0; return false; }
+      if (barraAgarrada) barraSoltar();
+      barraZona = false; barraZonaT = 0;               // el stick anula el dwell
+      barraStickAcc += y * BARRA_STICK_V * dt / BARRA_PASO;
+      const pasos = Math.trunc(barraStickAcc);
+      if (pasos) {
+        barraStickAcc -= pasos;
+        barraFijar(barraH + pasos * BARRA_PASO, false);
+        return true;
+      }
+      return false;
+    }
     /* r101 · TICK: posición REAL de la mano libre → máquina de ajuste. */
     const _bW = new THREE.Vector3();
     function barraTick(dt) {
       if (!ribbonG || !ribbonG.visible) { barraUpdate(0, -1, 0, dt); return; }
+      barraStick(dt);                        // r102: joystick, cualquier mando
       const h = G.ballHand;
       const ray = G.rays && G.rays[h];
       if (!ray || !G.connected || !G.connected[h]) {
@@ -28630,6 +28698,15 @@ loadPaddleModel().then((paddleModel) => {
       if (ribbonG.visible && barraLbl) {
         barraLbl.material.map = barraLabelTex();
         barraLbl.material.needsUpdate = true;
+        // r102 · AVISO AL JUGADOR (petición del dueño: «debemos informar de
+        // este control de altura al jugador»): una vez por sesión, al entrar
+        // por primera vez en el PASE BAJO
+        if (!barraAvisoHecho) {
+          barraAvisoHecho = true;
+          toast((LANG === 'en'
+            ? 'Bar: ' + BARRA_CM() + ' cm · adjust with EITHER STICK ↑↓ (or hand at the ribbon)'
+            : 'Barra: ' + BARRA_CM() + ' cm · ajústala con CUALQUIER JOYSTICK ↑↓ (o la mano en la cinta)'), true);
+        }
       }
     }
   
@@ -29944,6 +30021,10 @@ loadPaddleModel().then((paddleModel) => {
       barraCm: () => BARRA_CM(),
       barraEstado: () => ({ zona: barraZona, agarrada: barraAgarrada }),
       barraUpdate,
+      barraStick,                                          // r102: máquina joystick
+      barraStickEstado: () => ({ acc: barraStickAcc, avisado: barraAvisoHecho }),
+      barraEtiquetaZ: () => (barraLbl
+        ? barraLbl.position.z + (ribbonG ? ribbonG.position.z : 0) : 0),  // z MUNDO
       barraVisSet: (v) => { if (ribbonG) ribbonG.visible = !!v; },   // QA: estado t2a
       barraAjustar,
       barraLay,

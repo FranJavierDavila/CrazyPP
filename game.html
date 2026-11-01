@@ -324,7 +324,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.97-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.98-SDK6</span>
     </div>
   </main>
 
@@ -2950,7 +2950,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.97-SDK6';
+  const VERSION = '3.6.98-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -25939,6 +25939,11 @@ class PingPongGame {
           // v2.34: anti-spam de bote — la física puede emitir ráfagas de
           // eventos 'table' en un mismo instante (esquina + canto); el
           // sonido se limita a uno cada 60 ms.
+          // M1 · r106 · HÁPTICA DEL BOTE CALIBRADA: antes 0,18 FIJA y FUERA
+          // del guard (cada evento de mesa vibraba: una ráfaga esquina+canto
+          // era una ametralladora). Ahora DENTRO del guard, proporcional a la
+          // velocidad (bote suave 0,10/50 ms · bote fuerte 0,24/80 ms) y con
+          // el CANTO distinguible (pico más alto, muy corto y seco).
           if (!this._lastBounceSfx || performance.now() - this._lastBounceSfx > 60) {
             this._lastBounceSfx = performance.now();
             // r62: el CANTO suena a CANTO («ping» metálico con cola — e.edge
@@ -25948,6 +25953,14 @@ class PingPongGame {
               this.audio.tableEdge(pan, Math.min(1, 0.45 + e.speed / 8));
             } else {
               this.audio.tableBounce(pan, Math.min(1, e.speed / 6));
+            }
+            const s6 = Math.min(1, e.speed / 6);
+            if (this.renderer.xr.isPresenting) {
+              if (e.edge) {
+                this.haptic(this.paddleHand, 0.14 + 0.16 * s6, 28);
+              } else {
+                this.haptic(this.paddleHand, 0.08 + 0.16 * s6, Math.round(50 + 30 * s6));
+              }
             }
           }
           // v3.6.44 (ronda 52 · el dueño: «la marca del bote va desfasada»):
@@ -25977,11 +25990,13 @@ class PingPongGame {
               : tpB === 'side' ? [740, 420] : [900, 260];
             try { this.audio.playOsc(fr[0], fr[1], 0.16, 'sawtooth', 0.2, 0); } catch (eB2) { /* */ }
           }
-          if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.18);
           break;
         case 'net':
           // r62: la tela responde a la velocidad del golpe (tono por impacto)
           this.audio.net(pan, Math.min(1, (e.speed || 0.8) / 5));
+          // M1 · r106: el roce de la malla SE SIENTE — vibración breve y
+          // sutil (los eventos de red son raros: sin riesgo de ametralladora).
+          if (this.renderer.xr.isPresenting) this.haptic(this.paddleHand, 0.15, 45);
           this.audio.ohh();   // el público reacciona a la red
           break;
         case 'floor':

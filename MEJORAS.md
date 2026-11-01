@@ -15,13 +15,20 @@
 | # | Hito | Esfuerzo | Estado |
 |---|------|----------|--------|
 | M1 | Game feel · capas de sonido + hápticas calibradas | ★☆☆ | ✅ HECHA r106 · v3.6.98-SDK6 en producción |
-| M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ◐ M2a HECHA r107 · M2b (alarmas) SIGUIENTE (r108) |
-| M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ⬜ pendiente (tras M2b) |
+| M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ✅ HECHA r107 (M2a arnés-gate) + r108 (M2b alarmas, worker vivo) |
+| M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ◐ SIGUIENTE (r109) |
 | M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ⬜ pendiente |
 | M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ⬜ pendiente |
 | M6 | Identidad "locura + entrenador" (power-ups, 2v2, campeonatos) | ★★★ | ⬜ pendiente |
 | M7 | Matchmaking + ELO online + reto diario/torneo semanal | ★★★★ | ⬜ pendiente |
 | M8 | Port nativo a tienda (App Lab / Horizon) | ★★★★★ | ⬜ pendiente (decisión estratégica) |
+
+> **HALLAZGO REAL de M2b (r108, estreno del sistema):** con los datos reales
+> del casco del dueño la alarma fps_bajo disparó ROJA al instante — media
+> **58,1 FPS en VR** sobre 17 sesiones vr_end (umbral 60). La pérdida de
+> rendimiento que el dueño reportó en r105 queda CONFIRMADA con telemetría:
+> a investigar en las próximas rondas (candidatos: NITIDEZ/FFR elegida en
+> r96, perfil Quest 2 a 72 Hz mezclado en la media, o coste del hall+HUD).
 
 ---
 
@@ -56,12 +63,12 @@ agujas r106 en producción.
 
 ---
 
-## M2 · ARNÉS ANTI-REGRESIÓN + ALARMAS DE TELEMETRÍA ◐ (M2a hecha r107 · M2b → r108)
+## M2 · ARNÉS ANTI-REGRESIÓN + ALARMAS DE TELEMETRÍA ✅ HECHA (M2a r107 · M2b r108)
 
 > **DIVISIÓN HONESTA (r107):** M2 se parte en dos rondas. **M2a (r107, HECHA)**:
-> el arnés que JUEGA (gate de ronda). **M2b (r108)**: alarmas de telemetría en
-> el worker (solo worker.js + su E2E local — el despliegue del worker vivo es
-> una acción de dashboard del dueño).
+> el arnés que JUEGA (gate de ronda). **M2b (r108, HECHA)**: alarmas de
+> telemetría en el worker — DESPLEGADAS en producción con deploy_worker.py
+> (sin dashboard: token del dueño, D1 y CLAVE preservadas, E2E de sonda verde).
 
 ### M2a · EL ARNÉS QUE JUEGA ✅ HECHA (r107)
 
@@ -95,13 +102,29 @@ agujas r106 en producción.
 **Criterios de aceptación:** ✓ canario cazado en ambos arneses · ✓ gate verde
 dentro de qa_todo · ✓ determinismo (mismo hash en 2 ejecuciones).
 
-### M2b · ALARMAS DE TELEMETRÍA ⏳ SIGUIENTE (r108)
+### M2b · ALARMAS DE TELEMETRÍA ✅ HECHA (r108)
 
 **Alcance:**
-- [ ] Bloque `alarmas` en el resumen del worker (FPS medio de vr_end < umbral ·
-      errores JS por sesión · sesiones VR cortas = posible crash al entrar).
-- [ ] E2E local del worker con eventos sembrados (test_local.mjs ampliado).
-- [ ] Despliegue del worker vivo (acción de dashboard del dueño — LEEME.md).
+- [x] Bloque `alarmas` en el resumen del worker (worker.js): fps_bajo (media
+      de vr_end.fps <72 amarillo / <60 rojo, ≥3 muestras) · errores_js (media
+      por sesión ≥1 amarillo / ≥3 rojo, mensaje top incluido) · vr_cortas
+      (sesiones VR cerradas de <60 s: ≥25% con ≥3 amarillo / ≥50% rojo).
+      Nivel global = el peor de los items; sin datos suficientes → verde.
+      Tolerante y compatible: campo NUEVO, los lectores viejos no lo leen.
+- [x] E2E local con eventos sembrados (test_local.mjs bloque O, 61 checks
+      en total): perfil malo → rojo global con las 3 alarmas bien caladas ·
+      perfil sano → verde sin items · fronteras (68 = amarillo, 3/sesión =
+      rojo, top inequívoco) · filtro ?sid reescala · almacén vacío → verde.
+- [x] Tarjeta «Alarmas de producción» en el panel de Pages
+      (public/telemetria.html): nivel global coloreado + items (o «Sin
+      alarmas» verde), tolerante con worker viejo. QA capa J 131/0.
+- [x] DESPLIEGUE REAL (r108, sin dashboard): scripts/deploy_worker.py con el
+      token del dueño — D1 reutilizada, CLAVE reutilizada (sin rotación),
+      E2E de sonda en producción verde (latido 270 · 403 sin clave · POST
+      204 · resumen · purga · restauración).
+- [x] **Estreno con hallazgo real:** la alarma fps_bajo disparó ROJA con los
+      datos vivos del dueño — media 58,1 FPS en 17 sesiones vr_end. Ver
+      nota en la cola de ejecución.
 
 ---
 
@@ -200,3 +223,4 @@ nativo.
 |------|----------|---------|-------|-------|
 | M1 · game feel | r106 | 3.6.98-SDK6 (FASE 100) | 2026-11-01 | Audio r62 verificado como regresión · háptica del bote calibrada dentro del guard · canto distinguible · red palpable · QA 35/0 · cascada verde · tres vías 24/0 |
 | M2a · arnés que juega (gate) | r107 | (sin cambio de juego — 3.6.98-SDK6 sigue) | 2026-11-01 | Arnés físico 200 rallies determinista (0,6 s) + arnés vivo 45 s con piloto IA + canarios cazados en ambos · gate en qa_todo · 0 cambios de gameplay |
+| M2b · alarmas de telemetría | r108 | (sin cambio de juego — 3.6.98-SDK6 sigue) · worker vivo actualizado | 2026-11-02 | Bloque `alarmas` en el resumen (fps_bajo/errores_js/vr_cortas) · harness 61/0 · capa J 131/0 · arneses M2a verdes · desplegado con deploy_worker.py (D1+CLAVE preservadas, E2E sonda verde) · panel Pages con tarjeta · hallazgo real: fps_bajo ROJO 58,1 FPS/17 sesiones |

@@ -63,6 +63,30 @@ navegador, nunca sale del dispositivo). A partir de ahí verás EN VIVO los
 eventos que llegan del casco y de cualquier jugador: KPIs, FPS medio VR,
 errores top, champ_rank por campeonato y los últimos 20 crudos.
 
+También en Pages: https://franjavierdavila.github.io/CrazyPP/telemetria.html
+(mismo visor, sin tocar nada local — desde la ronda 18 muestra ARRIBA DEL
+TODO la tarjeta «Alarmas de producción» con el nivel global y cada alarma).
+
+ALARMAS (ronda 18 · roadmap MEJORAS.md M2b)
+-------------------------------------------
+El resumen (?resumen=1) devuelve el bloque `alarmas` — interpreta los
+agregados y avisa de los tres síntomas que matan la retención en el casco:
+
+  fps_bajo    media de vr_end.fps < 72 (confort Quest) con ≥3 muestras →
+              AMARILLO; < 60 (mínimo jugable) → ROJO.
+  errores_js  media de eventos `error` por sesión ≥ 1 → AMARILLO;
+              ≥ 3 → ROJO. El mensaje más frecuente viaja en `datos.top`.
+  vr_cortas   sesiones VR cerradas (vr_end o fechadas por vr_ping) que
+              duran < 60 s = posible crash al entrar: ≥ 25% con ≥ 3
+              sesiones → AMARILLO; ≥ 50% → ROJO.
+
+Estructura: {"nivel": "verde"|"amarillo"|"rojo",
+             "items": [{id, nivel, msg, datos}]}.
+Sin datos suficientes → nivel «verde» y sin items (no se alarma con 1-2
+muestras). El filtro ?sid reescala las alarmas al subconjunto. Nivel global
+= el PEOR de los items. Nada previo cambia: es un campo NUEVO y tolerante
+(paneles viejos simplemente no lo leen).
+
 COSTES (plan gratuito de Cloudflare)
 ------------------------------------
 D1 gratis: 100.000 filas escritas/día y 5 M leídas/día. Cada evento es una
@@ -75,5 +99,6 @@ QA
 La capa J (scripts/qa_telemetria.py) verifica el worker SIN nube: ejecuta el
 mismo worker.js contra SQLite real (node:sqlite) con el harness
 scripts/worker-tele/test_local.mjs — contrato completo, saneo, clave,
-agregados SQL y privacidad (30 checks). Lo que pasa esa prueba es byte a
-byte lo que se despliega.
+agregados SQL, ALARMAS (bloque O: perfil malo rojo, perfil sano verde,
+fronteras amarillo/rojo, filtro sid, almacén vacío) y privacidad (61
+checks). Lo que pasa esa prueba es byte a byte lo que se despliega.

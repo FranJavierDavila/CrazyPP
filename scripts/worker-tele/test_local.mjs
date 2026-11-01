@@ -278,6 +278,101 @@ try {
   j = await cuerpo(r);
   chk(j.borrados === 8, `purga final del bloque r14 (${j.borrados})`);
 
+  // O · ALARMAS DE TELEMETRÍA (ronda 18 · roadmap MEJORAS.md M2b):
+  // fps_bajo · errores_js · vr_cortas — el resumen interpreta los agregados;
+  // sin datos suficientes → verde y sin items. dur en segundos (c00).
+  const al = (jj) => jj.alarmas;
+
+  // O1 · perfil malo: fps rojo (media 54,3) + vr cortas rojo (2/3) + errores amarillo (4/3)
+  await worker.fetch(
+    req("/", {
+      method: "POST",
+      body: JSON.stringify([
+        ev("boot", { sid: "r18-a" }),
+        ev("vr_start", { sid: "r18-a" }), ev("vr_end", { dur: 45, fps: 50, sid: "r18-a" }),
+        ev("error", { m: "boom_a", sid: "r18-a" }), ev("error", { m: "boom_a", sid: "r18-a" }),
+        ev("boot", { sid: "r18-b" }),
+        ev("vr_start", { sid: "r18-b" }), ev("vr_end", { dur: 50, fps: 55, sid: "r18-b" }),
+        ev("error", { m: "boom_b", sid: "r18-b" }), ev("error", { m: "boom_b", sid: "r18-b" }),
+        ev("boot", { sid: "r18-c" }),
+        ev("vr_start", { sid: "r18-c" }), ev("vr_end", { dur: 300, fps: 58, sid: "r18-c" }),
+      ]),
+      headers: { "content-type": "text/plain" },
+    }),
+    env,
+    {}
+  );
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(al(j) && al(j).nivel === "rojo", `O1 · nivel global rojo (${al(j)?.nivel})`);
+  const aFps = al(j).items.find((x) => x.id === "fps_bajo");
+  const aErr = al(j).items.find((x) => x.id === "errores_js");
+  const aCortas = al(j).items.find((x) => x.id === "vr_cortas");
+  chk(aFps && aFps.nivel === "rojo" && aFps.datos.medio === 54.3 && aFps.datos.muestras === 3,
+    `O1 · fps_bajo ROJO con medio 54,3 y 3 muestras (${JSON.stringify(aFps)})`);
+  chk(aErr && aErr.nivel === "amarillo" && aErr.datos.errores === 4 && aErr.datos.sesiones === 3,
+    `O1 · errores_js AMARILLO 4 errores / 3 sesiones (${JSON.stringify(aErr)})`);
+  chk(aCortas && aCortas.nivel === "rojo" && aCortas.datos.cortas === 2 && aCortas.datos.cerradas === 3 && aCortas.datos.pct === 67,
+    `O1 · vr_cortas ROJO 2/3 = 67% (${JSON.stringify(aCortas)})`);
+  await worker.fetch(req("/", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {});
+
+  // O2 · perfil sano: 3 sesiones VR largas y fluidas, 0 errores → verde sin items
+  await worker.fetch(
+    req("/", {
+      method: "POST",
+      body: JSON.stringify([
+        ev("boot", { sid: "r18-d" }), ev("vr_start", { sid: "r18-d" }), ev("vr_end", { dur: 600, fps: 88, sid: "r18-d" }),
+        ev("boot", { sid: "r18-e" }), ev("vr_start", { sid: "r18-e" }), ev("vr_end", { dur: 900, fps: 85, sid: "r18-e" }),
+        ev("boot", { sid: "r18-f" }), ev("vr_start", { sid: "r18-f" }), ev("vr_end", { dur: 120, fps: 90, sid: "r18-f" }),
+      ]),
+      headers: { "content-type": "text/plain" },
+    }),
+    env,
+    {}
+  );
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(al(j) && al(j).nivel === "verde" && al(j).items.length === 0,
+    `O2 · perfil sano → VERDE sin items (${JSON.stringify(al(j))})`);
+  await worker.fetch(req("/", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {});
+
+  // O3 · fronteras: fps amarillo (68 ≥ 60 y < 72) + errores rojo (3 por sesión)
+  await worker.fetch(
+    req("/", {
+      method: "POST",
+      body: JSON.stringify([
+        ev("boot", { sid: "r18-g" }), ev("vr_start", { sid: "r18-g" }), ev("vr_end", { dur: 200, fps: 68, sid: "r18-g" }),
+        ev("error", { m: "x1", sid: "r18-g" }), ev("error", { m: "x1", sid: "r18-g" }), ev("error", { m: "x2", sid: "r18-g" }),
+        ev("boot", { sid: "r18-h" }), ev("vr_start", { sid: "r18-h" }), ev("vr_end", { dur: 300, fps: 70, sid: "r18-h" }),
+        ev("error", { m: "x1", sid: "r18-h" }), ev("error", { m: "x2", sid: "r18-h" }), ev("error", { m: "x3", sid: "r18-h" }),
+        ev("boot", { sid: "r18-i" }), ev("vr_start", { sid: "r18-i" }), ev("vr_end", { dur: 400, fps: 66, sid: "r18-i" }),
+        ev("error", { m: "x1", sid: "r18-i" }), ev("error", { m: "x2", sid: "r18-i" }), ev("error", { m: "x3", sid: "r18-i" }),
+        // top inequívoco: x1=4 > x2=3 > x3=2 · total 9 errores / 3 sesiones = media 3
+      ]),
+      headers: { "content-type": "text/plain" },
+    }),
+    env,
+    {}
+  );
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  const aF2 = al(j).items.find((x) => x.id === "fps_bajo");
+  const aE2 = al(j).items.find((x) => x.id === "errores_js");
+  chk(aF2 && aF2.nivel === "amarillo" && aF2.datos.medio === 68,
+    `O3 · fps_bajo AMARILLO con medio 68 (frontera <72) (${JSON.stringify(aF2)})`);
+  chk(aE2 && aE2.nivel === "rojo" && aE2.datos.media === 3 && aE2.datos.top === "x1",
+    `O3 · errores_js ROJO con 3 por sesión y top incluido (${JSON.stringify(aE2)})`);
+  chk(!al(j).items.some((x) => x.id === "vr_cortas"),
+    "O3 · vr_cortas NO dispara con las 3 sesiones largas");
+  chk(al(j).nivel === "rojo", `O3 · nivel global = el PEOR de los items (${al(j).nivel})`);
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8&sid=r18-g"), env, {}));
+  const aE3 = al(j).items.find((x) => x.id === "errores_js");
+  chk(aE3 && aE3.datos.errores === 3 && aE3.datos.sesiones === 1,
+    `O3 · alarmas respetan el filtro ?sid (${JSON.stringify(aE3?.datos)})`);
+  await worker.fetch(req("/", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {});
+
+  // O4 · almacén vacío → verde (nada que alarmar)
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(al(j) && al(j).nivel === "verde" && al(j).items.length === 0,
+    "O4 · almacén vacío → VERDE (nada que alarmar)");
+
   // J · CORS en todas las respuestas
   r = await worker.fetch(req("/", { method: "OPTIONS" }), env, {});
   chk(r.status === 204 && r.headers.get("access-control-allow-origin") === "*",

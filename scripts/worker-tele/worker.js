@@ -32,6 +32,14 @@
  *   vrDuracion  {media,max,n} de vr_end.dur (permanencia en VR real)
  *   porDia      [{dia,eventos,boots,sesiones}] últimos 30 días (DAU)
  *   versiones   [{v,eventos,sesiones}] (adopción por versión)
+ *
+ * Ronda 18 (roadmap MEJORAS.md M2b): el resumen añade el bloque `alarmas`
+ *   — interpreta los agregados y avisa de los tres síntomas que matan la
+ *   retención en el casco. Tolerante: sin datos suficientes → «verde».
+ *   fps_bajo    media de vr_end.fps < 72 con ≥3 muestras (amarillo; < 60 rojo)
+ *   errores_js  eventos `error` por sesión ≥1 (amarillo; ≥3 rojo, top incluido)
+ *   vr_cortas   sesiones VR cerradas de <60 s ≥25% con ≥3 (amarillo; ≥50% rojo)
+ *   Estructura: {nivel:"verde"|"amarillo"|"rojo", items:[{id,nivel,msg,datos}]}
  */
 
 const CORS = {
@@ -622,6 +630,76 @@ export default {
       }
       const sesionesVR = ciclosVR.slice(-12).reverse();
 
+      // ── ALARMAS DE TELEMETRÍA (ronda 18 · roadmap MEJORAS.md M2b) ──
+      // Interpreta los agregados de arriba y avisa de los tres síntomas
+      // que matan la retención en el casco. Campo NUEVO y tolerante: si
+      // no hay datos suficientes el nivel es «verde» y no se emite item.
+      // Umbral fps: 72 = confort del Quest (regla del panel desde r14);
+      // 60 = mínimo jugable. dur de vr_end/vr_ping en SEGUNDOS (c00).
+      const alarmas = (() => {
+        const items = [];
+        // 1 · fps_bajo — media de vr_end.fps (≥3 muestras para no chirriar)
+        if (fpsRow && fpsRow.m != null && fpsRow.n >= 3) {
+          const medio = Math.round(fpsRow.m * 10) / 10;
+          const nv = medio < 60 ? "rojo" : medio < 72 ? "amarillo" : null;
+          if (nv) {
+            items.push({
+              id: "fps_bajo",
+              nivel: nv,
+              msg: "FPS medio en VR " + medio + " (" +
+                (nv === "rojo" ? "bajo el mínimo jugable 60" : "bajo el confort 72") + ")",
+              datos: { medio, muestras: fpsRow.n },
+            });
+          }
+        }
+        // 2 · errores_js — media de eventos `error` por sesión (top incluido)
+        const errores = porEvento["error"] || 0;
+        if (errores > 0 && sesUnicas > 0) {
+          const media = Math.round((errores / sesUnicas) * 10) / 10;
+          const nv = media >= 3 ? "rojo" : media >= 1 ? "amarillo" : null;
+          if (nv) {
+            items.push({
+              id: "errores_js",
+              nivel: nv,
+              msg: "Errores JS " + media + " por sesión (" + errores + " en " +
+                sesUnicas + " sesiones)" +
+                (erroresTop[0] ? " · top: " + String(erroresTop[0][0]).slice(0, 80) : ""),
+              datos: {
+                errores,
+                sesiones: sesUnicas,
+                media,
+                top: erroresTop[0] ? erroresTop[0][0] : null,
+              },
+            });
+          }
+        }
+        // 3 · vr_cortas — sesiones VR de <60 s = posible crash al entrar
+        //     (cerradas por vr_end o fechadas por ping; las abiertas sin dur
+        //     no cuentan porque aún no se sabe cuánto durarán)
+        const vrFin = ciclosVR.filter(
+          (c) => c.estado !== "abierta" && typeof c.dur === "number"
+        );
+        const vrCortas = vrFin.filter((c) => c.dur < 60);
+        if (vrFin.length >= 3) {
+          const pct = Math.round((vrCortas.length / vrFin.length) * 100);
+          const nv = pct >= 50 ? "rojo" : pct >= 25 ? "amarillo" : null;
+          if (nv) {
+            items.push({
+              id: "vr_cortas",
+              nivel: nv,
+              msg: pct + "% de las sesiones VR duran <60 s (posible crash al entrar)",
+              datos: { cortas: vrCortas.length, cerradas: vrFin.length, pct },
+            });
+          }
+        }
+        const peso = { rojo: 2, amarillo: 1 };
+        const nivel = items.reduce(
+          (a, i) => (peso[i.nivel] > (peso[a] || 0) ? i.nivel : a),
+          "verde"
+        );
+        return { nivel, items };
+      })();
+
       return json({
         ok: true,
         ts: Date.now(),
@@ -651,6 +729,7 @@ export default {
         versiones,
         porCampeonato,
         sesionesVR,
+        alarmas,
         almacen: "d1:crazypp-tele",
       });
     }

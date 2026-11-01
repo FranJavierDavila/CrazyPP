@@ -1251,21 +1251,24 @@ loadPaddleModel().then((paddleModel) => {
     let barraUltCm = -1;                    // repintado del rótulo sólo al cambiar
     let barraAvisoHecho = false;            // r102: toast informativo 1 vez/sesión
     const BARRA_SEP = 0.24;                 // flechas flanqueando el rótulo
-    // r102 · RÓTULO PEGADO AL JUGADOR (petición del dueño: «que tenga la
-    // etiqueta informativa sobre la mesa pero pegada al jugador, no como
-    // ahora que está en el centro bajo la red»): la pastilla de cm y las
-    // flechas flotan sobre el CUADRANTE PRÓPIO de la mesa, a 30 cm del borde
-    // cercano; la cinta sigue en la red (es la referencia del pase bajo).
-    // OJO: los sprites son HIJOS del grupo (que vive en z=C()) — la z aquí
-    // es LOCAL: mundo = C() + (HL() − 0,30).
-    const BARRA_LBL_Z = () => HL() - 0.30;
+    // r103 · ETIQUETAS FUERA DE LA VISTA (petición del dueño: «las etiquetas
+    // de altura de la barra no estén en primer plano: no dejan jugar con
+    // comodidad al estar sobre la línea de visión de mesa. Estarán FIJAS sin
+    // ningún cambio de orientación, ancladas a la altura de la barra que
+    // movemos y en su mismo plano, pero en la parte DERECHA fuera de la
+    // visión de la mesa»): la pastilla de cm y las flechas viven en el
+    // PLANO de la barra (z local 0 — el grupo vive en z=C()) y a la DERECHA
+    // de la mesa, 0,42 m más allá del canto derecho (+0,76) → x ≈ 1,18 m:
+    // fuera de la mesa y del tiro, a la vista con un mínimo giro de cabeza.
+    // La altura SIGUE viva (RIBBON_Y + 0,075): sube y baja con la barra.
+    const BARRA_LBL_X = () => HW() + 0.42;
     function barraLay() {
       // recoloca cinta + mandos a la altura viva (cada ajuste)
       const by = RIBBON_Y();
-      const zl = BARRA_LBL_Z();
-      if (barraLbl) barraLbl.position.set(0, by + 0.13, zl);
-      if (barraUp) barraUp.position.set(-BARRA_SEP, by + 0.13, zl);
-      if (barraDn) barraDn.position.set(BARRA_SEP, by + 0.13, zl);
+      const xl = BARRA_LBL_X();
+      if (barraLbl) barraLbl.position.set(xl, by + 0.075, 0);
+      if (barraUp) barraUp.position.set(xl - BARRA_SEP, by + 0.075, 0);
+      if (barraDn) barraDn.position.set(xl + BARRA_SEP, by + 0.075, 0);
       if (barraRibbon) { barraRibbon.band.position.y = by; barraRibbon.glow.position.y = by + 0.02; }
     }
     function buildRibbon() {
@@ -1283,22 +1286,31 @@ loadPaddleModel().then((paddleModel) => {
       glow.position.y = RIBBON_Y() + 0.02;
       g.add(glow);
       barraRibbon = { band, glow };
-      // r100 · MANDOS DE ALTURA: sprites ↑ / cm / ↓ (siempre de cara al
-      // jugador) — el ajuste es por PROXIMIDAD de la mano libre (sin gatillo).
+      // r103 · MANDOS DE ALTURA: PLANOS DE ORIENTACIÓN FIJA (adiós sprites
+      // que se re-orientan con la cabeza — petición del dueño: «fijas sin
+      // ningún cambio de orientación»): miran a +z (al jugador de siempre),
+      // NUNCA giran, y el ajuste sigue siendo por PROXIMIDAD de la mano
+      // libre + joystick (sin gatillo).
       const mkBoton = (dir) => {
-        const s = new THREE.Sprite(new THREE.SpriteMaterial({
-          map: barraChevronTex(dir), transparent: true, depthWrite: false, opacity: 0.94,
-        }));
-        s.scale.set(0.085, 0.085, 1);
+        const s = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.085, 0.085),
+          new THREE.MeshBasicMaterial({
+            map: barraChevronTex(dir), transparent: true, depthWrite: false,
+            opacity: 0.94, side: THREE.DoubleSide,
+          }),
+        );
         g.add(s);
         return s;
       };
       barraUp = mkBoton(1);
       barraDn = mkBoton(-1);
-      barraLbl = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: barraLabelTex(), transparent: true, depthWrite: false, opacity: 0.96,
-      }));
-      barraLbl.scale.set(0.34, 0.093, 1);   // r102: lienzo 400 px (misma densidad)
+      barraLbl = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.34, 0.0935),
+        new THREE.MeshBasicMaterial({
+          map: barraLabelTex(), transparent: true, depthWrite: false,
+          opacity: 0.96, side: THREE.DoubleSide,
+        }),
+      );   // r102: lienzo 400 px · r103: plano fijo en vez de sprite
       g.add(barraLbl);
       barraLay();
       g.position.set(0, 0, C());
@@ -3417,6 +3429,17 @@ loadPaddleModel().then((paddleModel) => {
         dn: barraDn ? { x: barraDn.position.x, y: barraDn.position.y } : null,
         cinta: barraRibbon ? { band: barraRibbon.band.position.y } : null,
         grupo: ribbonG ? ribbonG.position.z : null,
+      }),
+      // r103 · QA: los mandos son MALLAS DE ORIENTACIÓN FIJA (isMesh, jamás
+      // sprites) y el rótulo viaja con la cinta (delta y constante +0,075)
+      barraFijo: () => ({
+        lblMesh: barraLbl ? !!barraLbl.isMesh : null,
+        upMesh: barraUp ? !!barraUp.isMesh : null,
+        dnMesh: barraDn ? !!barraDn.isMesh : null,
+        lblX: barraLbl ? barraLbl.position.x : null,
+        lblYRel: (barraLbl && barraRibbon)
+          ? Math.round((barraLbl.position.y - barraRibbon.band.position.y) * 1000) / 1000
+          : null,
       }) },
 
     };

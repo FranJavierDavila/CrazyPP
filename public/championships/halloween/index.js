@@ -164,7 +164,7 @@ class RivalVivo {
     // r87 · AL MUNDO (sin esto el zombi no existe: mesh huérfano fuera del
     // grafo — el fallo exacto que veía el dueño). dispose() del SDK lo
     // desengancha del padre; removeRival cubre el caso de re-entrada.
-    try { (this.game.scene || this.game.rig).add(this.r.node); } catch (e) { /* */ }
+    try { (this.game.rig || this.game.scene).add(this.r.node); } catch (e) { /* */ }
     /* r89 · el PREWARM VISIBLE (pasear las 12 caras a 0,12 s durante ~1,5 s)
      * se RETIRA: el SDK sube ahora cada cara a GPU al llegar con
      * renderer.initTexture — sin parpadeo de poses ni «estados super-
@@ -287,7 +287,7 @@ function construirCartel(game, man) {
   });
   // r87 · AL MUNDO (igual que el rival: el mesh del SDK no se cuelga solo —
   // el cartel de bienvenida tampoco se veía por este motivo).
-  try { game.scene.add(cartel.mesh); } catch (e) { /* */ }
+  try { (game.rig || game.scene).add(cartel.mesh); } catch (e) { /* */ }
   return cartel;
 }
 
@@ -583,7 +583,7 @@ PLANTILLA_PODERES.globos = {
       const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
       m.scale.set(0.30, 0.375, 1);
       pool.push({ s: m, vy: rand(0.55, 0.9), t: 0 });
-      game.scene.add(m);
+      (game.rig || game.scene).add(m);
     }
     ctx.globos = { pool, popT: 0 };
   },
@@ -606,7 +606,7 @@ PLANTILLA_PODERES.globos = {
   },
   fin(game, p, ctrl, ctx) {
     const G = ctx && ctx.globos; if (!G) return;
-    G.pool.forEach((o) => { game.scene.remove(o.s); o.s.material.map.dispose(); o.s.material.dispose(); });
+    G.pool.forEach((o) => { (game.rig || game.scene).remove(o.s); o.s.material.map.dispose(); o.s.material.dispose(); });
     ctx.globos = null;
   },
 };
@@ -717,7 +717,7 @@ function _trozoAl(game, pos, base, podre) {
   const mat = new THREE.MeshStandardMaterial({ color: (Math.random() < 0.5 ? base : podre).clone(), roughness: 0.85, metalness: 0.0 });
   const m = new THREE.Mesh(geo, mat);
   m.position.copy(pos).add(_v86.set(rand(-0.03, 0.03), rand(-0.02, 0.04), rand(-0.03, 0.03)));
-  game.scene.add(m);
+  (game.rig || game.scene).add(m);
   TROZOS_R88.lista.push({
     m, t: 0, vida: rand(0.7, 1.0),
     vx: rand(-1.6, 1.6), vy: rand(1.2, 2.6), vz: rand(-1.6, 1.6),
@@ -729,7 +729,7 @@ function _humoVerdeR88(game, pos, n) {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: _texHumo(), transparent: true, opacity: 0.9, depthWrite: false }));
     s.position.set(pos.x + rand(-0.06, 0.06), pos.y + rand(0.0, 0.09), pos.z + rand(-0.06, 0.06));
     s.scale.setScalar(0.08);
-    game.scene.add(s);
+    (game.rig || game.scene).add(s);
     TROZOS_R88.humo.push({
       s, t: 0, vida: rand(1.6, 2.4), vy: rand(0.25, 0.6),
       vx: rand(-0.3, 0.3), vz: rand(-0.3, 0.3),
@@ -747,7 +747,7 @@ function _pasoTrozosR88(dt, game) {
     t.m.rotation[t.eje] += t.va * dt;
     const k = t.t / t.vida;
     if (k >= 1 || t.m.position.y < 0.02) {
-      game.scene.remove(t.m);
+      (game.rig || game.scene).remove(t.m);
       t.m.geometry.dispose(); t.m.material.dispose();
       L.splice(i, 1);
       continue;
@@ -763,13 +763,13 @@ function _pasoTrozosR88(dt, game) {
     const k = h.t / h.vida;
     h.s.scale.setScalar(h.s0 + k * (h.s1 - h.s0));
     h.s.material.opacity = Math.max(0, h.op0 * (1 - k));
-    if (k >= 1) { game.scene.remove(h.s); h.s.material.dispose(); H.splice(i, 1); }
+    if (k >= 1) { (game.rig || game.scene).remove(h.s); h.s.material.dispose(); H.splice(i, 1); }
   }
 }
 function _trozosLimpia(game) {
-  for (const t of TROZOS_R88.lista) { try { game.scene.remove(t.m); t.m.geometry.dispose(); t.m.material.dispose(); } catch (e) { /* */ } }
+  for (const t of TROZOS_R88.lista) { try { (game.rig || game.scene).remove(t.m); t.m.geometry.dispose(); t.m.material.dispose(); } catch (e) { /* */ } }
   TROZOS_R88.lista.length = 0;
-  for (const h of TROZOS_R88.humo) { try { game.scene.remove(h.s); h.s.material.dispose(); } catch (e) { /* */ } }
+  for (const h of TROZOS_R88.humo) { try { (game.rig || game.scene).remove(h.s); h.s.material.dispose(); } catch (e) { /* */ } }
   TROZOS_R88.humo.length = 0;
 }
 
@@ -923,7 +923,7 @@ PLANTILLA_PODERES.mano = {
       tex: [], bolsa: [], pool: [], texTrozo: _texTerron(),
       prev: new THREE.Vector3(), prevOk: false };   // r90: CCD de Burla
     [1, 2, 3].forEach((i) => TEX_R86.pedir('mano' + i + '.webp', (t) => { M.tex.push(t); }));
-    game.scene.add(M.grupo);
+    (game.rig || game.scene).add(M.grupo);
     ctx.mano = M;                       // r87: ctx ANTES de los callbacks
   },
   /* r89 · BOLSA de manos: las 3 del dueño SALEN SIEMPRE antes de repetir
@@ -996,6 +996,10 @@ PLANTILLA_PODERES.mano = {
     try {
       const cam = game.camera;
       _v86.setFromMatrixPosition(cam.matrixWorld);
+      /* r103 · la cámara vive en MUNDO y la mano en el RIG (marco de la
+       * mesa): convertir antes del billboard (patron c12 r73 worldToLocal) */
+      const raiz103 = game.rig || game.scene;
+      if (raiz103 && raiz103.worldToLocal) raiz103.worldToLocal(_v86);
       mano.rotation.y = Math.atan2(_v86.x - x, _v86.z - z);
     } catch (e) { mano.rotation.y = Math.atan2(-x, 0.55 - z); }
     mano.scale.y = 0.001;
@@ -1161,7 +1165,7 @@ PLANTILLA_PODERES.mano = {
     });
     M.trocitos.forEach((tr) => { tr.mesh.geometry.dispose(); tr.mesh.material.dispose(); });
     M.pool.forEach((t) => { try { t.dispose(); } catch (e) { /* */ } });
-    game.scene.remove(M.grupo);
+    (game.rig || game.scene).remove(M.grupo);
     ctx.mano = null;
   },
 };
@@ -1475,7 +1479,7 @@ PLANTILLA_PODERES.gelatina = {
             Math.abs(rz) + (tam / 2) * 1.4142 + 0.012 + BORDE > HL) continue;   // canto: la mancha NO nace
         // UN POCO POR ENCIMA DE LA MESA (guion del dueño) — escalonado
         m.position.set(rx, DIMS.tableTopY + 0.006 + i * 0.0012, cz + rz);
-        game.scene.add(m);
+        (game.rig || game.scene).add(m);
         G.manchas.push(m);
       }
     });
@@ -1503,7 +1507,7 @@ PLANTILLA_PODERES.gelatina = {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: _texHumo(), transparent: true, opacity: 0.46, depthWrite: false }));
       s.position.set(mancha.position.x + rand(-0.05, 0.05), mancha.position.y + 0.012, mancha.position.z + rand(-0.05, 0.05));
       s.scale.set(0.07, 0.07, 1);
-      game.scene.add(s);
+      (game.rig || game.scene).add(s);
       G.humo.push({ s, vida: 1.25, t: 0, vy: rand(0.10, 0.18), s0: 0.07, s1: 0.20, op0: 0.46 });
     }
     const b = game.ball; const r = DIMS.ballRadius;
@@ -1571,7 +1575,7 @@ PLANTILLA_PODERES.gelatina = {
         const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: _texHumo(), transparent: true, opacity: 0.62, depthWrite: false }));
         s.position.set(b.pos.x + rand(-0.01, 0.01), b.pos.y + 0.02, b.pos.z + rand(-0.01, 0.01));
         s.scale.set(0.05, 0.05, 1);
-        game.scene.add(s);
+        (game.rig || game.scene).add(s);
         G.humo.push({ s, vida: 0.55, t: 0, vy: rand(0.16, 0.24), s0: 0.05, s1: 0.14, op0: 0.62 });
       }
     }
@@ -1582,7 +1586,7 @@ PLANTILLA_PODERES.gelatina = {
       const k = h.t / h.vida;
       h.s.scale.setScalar(h.s0 + k * (h.s1 - h.s0));
       h.s.material.opacity = Math.max(0, h.op0 * (1 - k));
-      if (h.t >= h.vida) { game.scene.remove(h.s); h.s.material.dispose(); G.humo.splice(i, 1); }
+      if (h.t >= h.vida) { (game.rig || game.scene).remove(h.s); h.s.material.dispose(); G.humo.splice(i, 1); }
     }
   },
   fin(game, p, ctrl, ctx) {
@@ -1593,8 +1597,8 @@ PLANTILLA_PODERES.gelatina = {
       mesh.material.color.setHex(G.col0);
       if (mesh.material.emissive) mesh.material.emissive.setHex(G.emis0);
     }
-    G.manchas.forEach((m) => { game.scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
-    G.humo.forEach((h) => { game.scene.remove(h.s); h.s.material.dispose(); });
+    G.manchas.forEach((m) => { (game.rig || game.scene).remove(m); m.geometry.dispose(); m.material.dispose(); });
+    G.humo.forEach((h) => { (game.rig || game.scene).remove(h.s); h.s.material.dispose(); });
     /* las RÁFAGAS de humo viven en TROZOS_R88 (global): mueren solas o en
      * parar()/dispose() — «cuando el poder cesa desaparece y aparece la
      * bola normal» (la bola ya está restaurada aquí arriba). */
@@ -1636,16 +1640,16 @@ class PlantillaPoderes {
       const push = (m) => {
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), m);
         mesh.position.set(0, -50, 0);
-        game.scene.add(mesh); warm.push(mesh);
+        (game.rig || game.scene).add(mesh); warm.push(mesh);
       };
       push(new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.3, side: THREE.DoubleSide, depthWrite: false }));
       push(new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }));
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
       sp.position.set(0, -50, 0);
-      game.scene.add(sp); warm.push(sp);
+      (game.rig || game.scene).add(sp); warm.push(sp);
       game.renderer.compile(game.scene, game.camera);
       for (const w of warm) {
-        game.scene.remove(w);
+        (game.rig || game.scene).remove(w);
         if (w.geometry) w.geometry.dispose();
         if (w.material) w.material.dispose();
       }
@@ -1774,7 +1778,7 @@ class DianasPrueba {
       this.hudCv = cv; this.hudTex = new THREE.CanvasTexture(cv); this.hudTex.colorSpace = THREE.SRGBColorSpace;
       this.hud = new THREE.Mesh(new THREE.PlaneGeometry(1.55, 0.36), new THREE.MeshBasicMaterial({ map: this.hudTex, transparent: true }));
       this.hud.position.set(0, DIMS.tableTopY + 1.18, DIMS.tableCenterZ - 1.55);
-      this.game.scene.add(this.hud);
+      (this.game.rig || this.game.scene).add(this.hud);
     }
     const nVivas = clamp(this.objetivo, this.cfg.maxVivas[0], this.cfg.maxVivas[1]);
     for (let i = 0; i < nVivas; i++) this.vivas.push(this._nuevaDiana(i));
@@ -1787,7 +1791,7 @@ class DianasPrueba {
     const r = this.modo === 'contrarreloj' ? this.cfg.radio * 0.84 : this.cfg.radio;
     s.scale.set(r * 2.6, r * 2.6, 1);
     this._colocar(s);
-    this.game.scene.add(s);
+    (this.game.rig || this.game.scene).add(s);
     const mv = this.modo === 'objetivos' ? { w: 0.25, a: 0.02 } : this.modo === 'movimiento' ? { w: 0.85, a: 0.22 } : { w: 1.5, a: 0.34 };
     return { s, r, fase: Math.random() * Math.PI * 2, mv, bob: this.modo !== 'objetivos', y0: s.position.y, vida: 0 };
   }
@@ -1910,8 +1914,8 @@ class DianasPrueba {
   }
   activa() { return this.fase === 'play'; }
   stop() {
-    if (this.hud) { this.game.scene.remove(this.hud); this.hud.geometry.dispose(); this.hud.material.map.dispose(); this.hud.material.dispose(); this.hud = null; }
-    this.vivas.forEach((d) => { this.game.scene.remove(d.s); d.s.material.dispose(); });
+    if (this.hud) { (this.game.rig || this.game.scene).remove(this.hud); this.hud.geometry.dispose(); this.hud.material.map.dispose(); this.hud.material.dispose(); this.hud = null; }
+    this.vivas.forEach((d) => { (this.game.rig || this.game.scene).remove(d.s); d.s.material.dispose(); });
     this.vivas = [];
     const b = this.game.ball;
     b.ignoreNet = false; b.ignoreTable = false;
@@ -1960,12 +1964,25 @@ class PlantillaPistola {
   }
   _disparaDianas(origen, dir) {
     const pr = this.ctrl.pruebaActual();
+    /* r103 · las dianas viven en el RIG (marco de la mesa — anclaje al
+     * recentrado) y el rayo de la cámara XR viene en MUNDO: convertir
+     * origen+dir al espacio de las dianas (patron c12 r73 worldToLocal).
+     * El HAZ visual sigue en mundo (scene): nace de la cámara XR. */
+    const raiz = this.game.rig || this.game.scene;
+    let oR = origen, dR = dir;
+    try {
+      if (raiz && raiz.worldToLocal) {
+        oR = origen.clone(); raiz.worldToLocal(oR);
+        dR = dir.clone().applyQuaternion(
+          raiz.getWorldQuaternion(new THREE.Quaternion()).invert());
+      }
+    } catch (e) { oR = origen; dR = dir; }
     for (const d of pr.vivas) {
       if (d.vida < 0 || !d.s.visible) continue;
-      const t0 = new THREE.Vector3().subVectors(d.s.position, origen);
-      const tProy = t0.dot(dir);
+      const t0 = new THREE.Vector3().subVectors(d.s.position, oR);
+      const tProy = t0.dot(dR);
       if (tProy < 0 || tProy > this.alcance) continue;
-      const punto = origen.clone().addScaledVector(dir, tProy);
+      const punto = oR.clone().addScaledVector(dR, tProy);
       if (punto.distanceTo(d.s.position) <= d.r * 1.2) { pr.laserHit(d.s.position); break; }
     }
   }
@@ -2116,8 +2133,8 @@ class PlantillaController {
     if (this.pistola) { try { this.pistola.beams.forEach((o) => { this.game.scene.remove(o.m); }); this.pistola.beams = []; } catch (e) { /* */ } this.pistola = null; }
     if (this.rival) { try { this.rival.dispose(); } catch (e) { /* */ } this.rival = null; }
     if (this.mapa) { try { this.mapa.dispose(); } catch (e) { /* */ } this.mapa = null; }
-    if (this.cartel) { try { this.game.scene.remove(this.cartel.mesh); this.cartel.dispose(); } catch (e) { /* */ } this.cartel = null; }
-    if (this._insignia) { try { this.game.scene.remove(this._insignia); this._insignia.geometry.dispose(); this._insignia.material.dispose(); } catch (e) { /* */ } this._insignia = null; }
+    if (this.cartel) { try { (this.game.rig || this.game.scene).remove(this.cartel.mesh); this.cartel.dispose(); } catch (e) { /* */ } this.cartel = null; }
+    if (this._insignia) { try { (this.game.rig || this.game.scene).remove(this._insignia); this._insignia.geometry.dispose(); this._insignia.material.dispose(); } catch (e) { /* */ } this._insignia = null; }
     if (this.prueba) { try { this.prueba.dispose(); } catch (e) { /* */ } this.prueba = null; }
   }
   startChamp() {
@@ -2286,7 +2303,7 @@ class PlantillaController {
     const tex = new THREE.TextureLoader().load(A(String(url).replace(/^assets\//, '')));
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
     m.position.set(-1.9, 1.42, -5.40);   // r87: pared FRONTAL (antes flotaba a mitad de sala)
-    this.game.scene.add(m);
+    (this.game.rig || this.game.scene).add(m);
     this._insignia = m;
   }
   rejugar(idx) {
@@ -2314,7 +2331,7 @@ class PlantillaController {
   _refrescaCartel() {
     /* r88: cartel de bienvenida OCULTO por normativa del dueño (manifest) */
     if (this.man.cartel && this.man.cartel.oculto) { this.cartel = null; return; }
-    if (this.cartel) { try { this.game.scene.remove(this.cartel.mesh); } catch (e) {} this.cartel = construirCartel(this.game, this.man); }
+    if (this.cartel) { try { (this.game.rig || this.game.scene).remove(this.cartel.mesh); } catch (e) {} this.cartel = construirCartel(this.game, this.man); }
   }
   fxPop(pos) {
     try {

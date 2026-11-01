@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.94-SDK6, fase 96 · PALA RIVAL FIEL + BARRA POR JOYSTICK (r102); sello actualizado
-# por bump_version.py desde 3.6.93-SDK6)
-ea4b7adad5c7cb0a84dc1a27f6bbed7a8e08d7848ab8e1bd34c45335385dc14b
+# SHA256 del game.html que produjo esta división (3.6.95-SDK6, fase 97 · ETIQUETAS FUERA DE LA VISTA + RIVAL ANCLADO A LA MESA (r103); sello actualizado
+# por bump_version.py desde 3.6.94-SDK6)
+cc57e0101300197ffc1d9b5e3a7f7d51e3e41a23875fe55d9034ffffcc94867c

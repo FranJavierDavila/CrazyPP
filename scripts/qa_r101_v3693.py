@@ -87,10 +87,11 @@ CHK('C() + 0.5' not in GH, 'game.html: aro a +0,50 m sigue retirado')
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.93-SDK6', 'c00: VERSION sella 3.6.93-SDK6')
+# r103 · re-anclada a la build viva (el rótulo vive a la derecha, sella 3.6.95)
+CHK(bool(mver) and mver.group(1) == '3.6.95-SDK6', 'c00: VERSION sella 3.6.95-SDK6 (re-anclada r103)')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 95, 'VERSION.json: FASE 95')
-CHK(V.get('hub') == 'v3693-sdk6', 'VERSION.json: hub v3693-sdk6')
+CHK(V.get('fase') == 97, 'VERSION.json: FASE 97 (re-anclada r103)')
+CHK(V.get('hub') == 'v3695-sdk6', 'VERSION.json: hub v3695-sdk6 (re-anclada r103)')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')
@@ -337,7 +338,7 @@ with sync_playwright() as pw:
       const X = T.__test;
       const D = window.__PP_CORE.DIMS;
       return { spr: X.barraSpr(), zLbl: X.barraEtiquetaZ(),
-               zEsperado: D.tableCenterZ + D.tableHalfLength - 0.30 };
+               xEsperado: D.tableHalfWidth + 0.42, cz: D.tableCenterZ };
     }""")
     if 'err' in (esc or {}):
         CHK(False, 'escena: %s' % esc.get('err'))
@@ -346,15 +347,18 @@ with sync_playwright() as pw:
         if not s or not s.get('up'):
             CHK(False, 'escena: los mandos de la barra NO existen tras el buildScene')
         else:
-            CHK(abs(s['lbl']['x']) < 1e-6, 'escena: rótulo al CENTRO lateral (x=0)')
-            CHK(abs(s['up']['x'] + 0.24) < 1e-6 and abs(s['dn']['x'] - 0.24) < 1e-6,
+            # r103 · re-ancladas: el rótulo vive a la DERECHA de la mesa, en el
+            # plano de la barra y a su altura (cinta +0,075)
+            CHK(abs(s['lbl']['x'] - esc['xEsperado']) < 1e-6,
+                'escena: rótulo a la DERECHA (x=%s = canto+0,42) — r103' % round(s['lbl']['x'], 4))
+            CHK(abs(s['up']['x'] - (esc['xEsperado'] - 0.24)) < 1e-6 and abs(s['dn']['x'] - (esc['xEsperado'] + 0.24)) < 1e-6,
                 'escena: flechas flanqueando el rótulo (±0,24 m)')
             CHK(abs(s['up']['y'] - s['lbl']['y']) < 1e-6 and abs(s['dn']['y'] - s['lbl']['y']) < 1e-6,
                 'escena: todo el conjunto a la MISMA altura (viaja con la cinta)')
-            CHK(s['cinta'] is not None and abs(s['cinta']['band'] - (s['lbl']['y'] - 0.13)) < 1e-6,
-                'escena: la cinta vive 13 cm por debajo del rótulo')
-            CHK(abs(esc['zLbl'] - esc['zEsperado']) < 1e-6,
-                'escena: rótulo PEGADO AL JUGADOR (z=%s ≈ borde cercano −0,30)' % round(esc['zLbl'], 3))
+            CHK(s['cinta'] is not None and abs(s['cinta']['band'] - (s['lbl']['y'] - 0.075)) < 1e-6,
+                'escena: la cinta vive 7,5 cm por debajo del rótulo')
+            CHK(abs(esc['zLbl'] - esc['cz']) < 1e-6,
+                'escena: rótulo EN EL PLANO DE LA BARRA (z=%s = centro de mesa)' % round(esc['zLbl'], 3))
 
     # ---- 8 · sin errores de página
     CHK(not errs, 'runtime: sin errores de página (%s)' % (errs[0][:80] if errs else 'limpio'))

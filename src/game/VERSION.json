@@ -1,10 +1,10 @@
 {
-  "version": "3.6.94-SDK6",
-  "fase": 96,
-  "faseNombre": "PALA RIVAL FIEL + BARRA POR JOYSTICK (r102)",
+  "version": "3.6.95-SDK6",
+  "fase": 97,
+  "faseNombre": "ETIQUETAS FUERA DE LA VISTA + RIVAL ANCLADO A LA MESA (r103)",
   "sdk": "1.6.0",
   "fecha": "2026-11-01",
-  "hub": "v3694-sdk6",
+  "hub": "v3695-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r100",
   "tamano": 10588364,
-  "golden": "ea4b7adad5c7cb0a84dc1a27f6bbed7a8e08d7848ab8e1bd34c45335385dc14b"
+  "golden": "cc57e0101300197ffc1d9b5e3a7f7d51e3e41a23875fe55d9034ffffcc94867c"
 }

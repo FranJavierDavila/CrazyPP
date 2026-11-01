@@ -1,0 +1,19 @@
+{
+  "name": "crazypp-live-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CRAZY PING PONG · Servidor relay de emisiones en vivo (CRAZY TV) — canales + fan-out de estado 30 Hz",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "demo": "node tools/mock_host.mjs",
+    "start:bun": "bun server.mjs"
+  },
+  "dependencies": {
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

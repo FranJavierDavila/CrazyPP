@@ -52,15 +52,16 @@ AGUJAS = [
     ('netTmpV.set(0, (PALA_BLADE_Y - PALA_GRIP_Y) * PALA_SCALE, 0)\n            .applyQuaternion(netTmpQ).add(netTmpP);',
      'c12: hoja girada por la visual YA conjugada'),
     ('PROTO: 2,', 'c09b: PROTO=2 (parejas mixtas caen a v1, no interpretan mal el cable)'),
-    # 2 · etiqueta pegada al jugador
-    ('const BARRA_LBL_Z = () => HL() - 0.30;',
-     'c13: rótulo a 30 cm del borde cercano (z LOCAL del grupo de la red)'),
-    ('if (barraLbl) barraLbl.position.set(0, by + 0.13, zl);',
-     'c13: el rótulo viaja con la cinta a la z nueva'),
+    # 2 · etiqueta (r103 la movió: pegada al jugador → DERECHA fuera de la vista,
+    #     plano de la barra y mallas de orientación fija)
+    ('const BARRA_LBL_X = () => HW() + 0.42;',
+     'c13: rótulo a la DERECHA fuera de la visión de la mesa (r103)'),
+    ('if (barraLbl) barraLbl.position.set(xl, by + 0.075, 0);',
+     'c13: el rótulo viaja con la cinta (altura viva, plano de la barra)'),
     ('const cv = mkCanvas(400, 110), x = cv.getContext(\'2d\');',
      'c13: lienzo del rótulo 400 px (pista con joystick)'),
-    ('barraLbl.scale.set(0.34, 0.093, 1);',
-     'c13: sprite 0,34 m (misma densidad de píxeles)'),
+    ('new THREE.PlaneGeometry(0.34, 0.0935)',
+     'c13: rótulo malla FIJA 0,34 m (misma densidad de píxeles)'),
     # 3 · joystick
     ('function barraStick(dt) {', 'c13: máquina del JOYSTICK presente'),
     ('const BARRA_STICK_V = 0.14;', 'c13: 14 cm/s a plena deflexión'),
@@ -100,10 +101,11 @@ CHK('const BARRA_DWELL = 0.30;' in GH, 'game.html: dwell 0,30 intacto (r101)')
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.94-SDK6', 'c00: VERSION sella 3.6.94-SDK6')
+# r103 · re-anclada a la build viva (la r103 movió el rótulo y selló 3.6.95)
+CHK(bool(mver) and mver.group(1) == '3.6.95-SDK6', 'c00: VERSION sella 3.6.95-SDK6 (re-anclada r103)')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 96, 'VERSION.json: FASE 96')
-CHK(V.get('hub') == 'v3694-sdk6', 'VERSION.json: hub v3694-sdk6')
+CHK(V.get('fase') == 97, 'VERSION.json: FASE 97 (re-anclada r103)')
+CHK(V.get('hub') == 'v3695-sdk6', 'VERSION.json: hub v3695-sdk6 (re-anclada r103)')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')
@@ -238,14 +240,15 @@ with sync_playwright() as pw:
         CHK(c['desvioNuevo'] < 5e-3, 'conjugación (%s): centro de la hoja FIEL (desvío %.1f mm)' % (k, c['desvioNuevo'] * 1000))
         CHK(c['desvioViejo'] > 0.15, 'conjugación (%s): la fórmula VIEJA desviaba la hoja %.1f cm (el defecto del dueño)' % (k, c['desvioViejo'] * 100))
 
-    # ---- 3 · rótulo PEGADO AL JUGADOR (z mundo = C()+HL−0,30), x intactos
+    # ---- 3 · rótulo FUERA DE LA VISTA (r103): derecha + plano de la barra
     esc = pg.evaluate("""() => {
       const T = window.__PP_TRAIN;
       const X = T.__test;
       const D = window.__PP_CORE.DIMS;
       try { T.tick(0.016); } catch (e) { return { err: 'tick: ' + (e && e.message) }; }
-      return { spr: X.barraSpr(), zLbl: X.barraEtiquetaZ(),
-               zEsperado: D.tableCenterZ + D.tableHalfLength - 0.30 };
+      X.barraVisSet(true); X.barraLay();
+      return { spr: X.barraSpr(), fijo: X.barraFijo(), zLbl: X.barraEtiquetaZ(),
+               xEsperado: D.tableHalfWidth + 0.42, cz: D.tableCenterZ };
     }""")
     if 'err' in (esc or {}):
         CHK(False, 'etiqueta: %s' % esc.get('err'))
@@ -253,13 +256,15 @@ with sync_playwright() as pw:
         s = esc['spr']
         CHK(s and s.get('up'), 'etiqueta: mandos construidos')
         if s and s.get('up'):
-            CHK(abs(s['lbl']['x']) < 1e-6, 'etiqueta: rótulo centrado lateralmente (x=0)')
-            CHK(abs(s['up']['x'] + 0.24) < 1e-6 and abs(s['dn']['x'] - 0.24) < 1e-6,
-                'etiqueta: flechas flanqueando (±0,24 m)')
-            CHK(abs(esc['zLbl'] - esc['zEsperado']) < 1e-6,
-                'etiqueta: SOBRE LA MESA PEGADA AL JUGADOR (z=%s, borde cercano −0,30)' % round(esc['zLbl'], 3))
-            CHK(esc['zLbl'] > esc['zEsperado'] - 0.01,
-                'etiqueta: en el cuadrante PROPIO (lado +z del centro de la mesa)')
+            CHK(abs(s['lbl']['x'] - esc['xEsperado']) < 1e-6,
+                'etiqueta: rótulo a la DERECHA de la mesa (x=%s = canto+0,42) — r103' % round(s['lbl']['x'], 4))
+            CHK(abs(s['up']['x'] - (esc['xEsperado'] - 0.24)) < 1e-6 and
+                abs(s['dn']['x'] - (esc['xEsperado'] + 0.24)) < 1e-6,
+                'etiqueta: flechas flanqueando el rótulo (±0,24 m)')
+            CHK(abs(esc['zLbl'] - esc['cz']) < 1e-6,
+                'etiqueta: en el MISMO PLANO que la barra (z mundo=%s = centro de mesa)' % round(esc['zLbl'], 3))
+            CHK(esc['fijo']['lblMesh'] and esc['fijo']['upMesh'] and esc['fijo']['dnMesh'],
+                'etiqueta: MALLAS de orientación FIJA (isMesh, jamás sprites)')
 
     # ---- 4 · JOYSTICK: pasos de 1 cm, arriba=subir, clamps, manda sobre la mano
     stick = pg.evaluate("""() => {

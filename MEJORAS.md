@@ -15,8 +15,8 @@
 | # | Hito | Esfuerzo | Estado |
 |---|------|----------|--------|
 | M1 | Game feel · capas de sonido + hápticas calibradas | ★☆☆ | ✅ HECHA r106 · v3.6.98-SDK6 en producción |
-| M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ⏳ SIGUIENTE (r107) |
-| M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ⬜ pendiente |
+| M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ◐ M2a HECHA r107 · M2b (alarmas) SIGUIENTE (r108) |
+| M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ⬜ pendiente (tras M2b) |
 | M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ⬜ pendiente |
 | M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ⬜ pendiente |
 | M6 | Identidad "locura + entrenador" (power-ups, 2v2, campeonatos) | ★★★ | ⬜ pendiente |
@@ -56,23 +56,52 @@ agujas r106 en producción.
 
 ---
 
-## M2 · ARNÉS ANTI-REGRESIÓN + ALARMAS DE TELEMETRÍA
+## M2 · ARNÉS ANTI-REGRESIÓN + ALARMAS DE TELEMETRÍA ◐ (M2a hecha r107 · M2b → r108)
 
-**Por qué segundo:** protege TODAS las rondas futuras. Hoy 208 verificaciones
-estáticas no juegan; el dueño descubre las regresiones (saque roto, deriva del
-puntero, FPS). Que juegue la máquina primero.
+> **DIVISIÓN HONESTA (r107):** M2 se parte en dos rondas. **M2a (r107, HECHA)**:
+> el arnés que JUEGA (gate de ronda). **M2b (r108)**: alarmas de telemetría en
+> el worker (solo worker.js + su E2E local — el despliegue del worker vivo es
+> una acción de dashboard del dueño).
+
+### M2a · EL ARNÉS QUE JUEGA ✅ HECHA (r107)
 
 **Alcance:**
-- [ ] Arnés headless que JUEGA: 200 rallies simulados (saque→bote→golpeo→punto
-      con la física real), barrido completo de menús (cada página, cada botón,
-      sliders a extremos) y verificación de invariants por frame (bola dentro
-      de mundo, pala rival anclada, sin NaN).
-- [ ] Alarmas de telemetría: FPS p95 por sesión, tasa de fallo de saque,
-      caídas/errores JS — umbrales con alarma en el resumen del worker.
-- [ ] Gate de ronda: si el arnés roja, NO se despliega.
+- [x] **Arnés físico** (`scripts/arnes_rallies_v3698.mjs`, node puro, 0,6 s):
+      200 rallies completos con el código REAL del juego (c05.stepPhysics +
+      c06.Rules + c06.OpponentAI + c05.findServeVelocity), presets reales
+      (9 combinaciones easy/medium/hard), determinista por semilla (mulberry32,
+      hash estable 81dc1942…). Invariantes por subpaso: I1 finitos · I2 bola en
+      sala · I3 IAs ancladas (nunca cruzan la red; tope legal de persecución
+      2·HL+0,15 de c06) · I4 árbitro vivo (15 s sin golpeo con bola viva) ·
+      I5 reparto de puntos (89-103 en la batería).
+- [x] **Arnés vivo** (`scripts/qa_arnes_vivo_v3698.py`, Playwright): el juego
+      REAL juega 45 s de partido en navegador (bucle completo + piloto IA
+      inyectado en la mitad del jugador, casa espejo del rival). Reloj propio
+      (setAnimationLoop(null) + animate paso a paso — en headless el rAF corre
+      a 1,5 fps). Invariantes V1-V3 por frame; señales de vida exigidas
+      (puntos, botes, saques). Lección clave: el reloj sintético debe arrancar
+      POR DELANTE del real (dt negativo corrompe) y la mesa está en C=−1,6.
+- [x] **Canarios (test canario del criterio de aceptación):** el arnés físico
+      detecta la bola teletransportada (I-2) y el vivo la suya (V2, muestreando
+      antes de que el juego se autocure en 1 frame). Si el canario NO se
+      detecta, el arnés ROJA (un arnés que no muerde no sirve).
+- [x] **Gate de ronda:** `qa_todo.py` gana dos capas M2a (físico 1 s · vivo
+      ~112 s). Si el arnés roja, NO se despliega.
+- [x] Hallazgos del propio arnés (sin cambio de juego necesario): los rallyes
+      largos hard-vs-hard (60+ intercambios, missBase 0,03) son comportamiento
+      ESPERADO, no bug; el juego se autocura de bolas envenenadas en 1 frame;
+      entre puntos la bola se APARCA en (3, 50, 2,3) — el arnés lo tolera.
 
-**Criterios de aceptación:** el arnés detecta al menos 1 bug sembrado a
-propósito (test canario) · alarmas visibles en el visor analítico.
+**Criterios de aceptación:** ✓ canario cazado en ambos arneses · ✓ gate verde
+dentro de qa_todo · ✓ determinismo (mismo hash en 2 ejecuciones).
+
+### M2b · ALARMAS DE TELEMETRÍA ⏳ SIGUIENTE (r108)
+
+**Alcance:**
+- [ ] Bloque `alarmas` en el resumen del worker (FPS medio de vr_end < umbral ·
+      errores JS por sesión · sesiones VR cortas = posible crash al entrar).
+- [ ] E2E local del worker con eventos sembrados (test_local.mjs ampliado).
+- [ ] Despliegue del worker vivo (acción de dashboard del dueño — LEEME.md).
 
 ---
 
@@ -170,3 +199,4 @@ nativo.
 | Hito | Ronda(s) | Versión | Fecha | Notas |
 |------|----------|---------|-------|-------|
 | M1 · game feel | r106 | 3.6.98-SDK6 (FASE 100) | 2026-11-01 | Audio r62 verificado como regresión · háptica del bote calibrada dentro del guard · canto distinguible · red palpable · QA 35/0 · cascada verde · tres vías 24/0 |
+| M2a · arnés que juega (gate) | r107 | (sin cambio de juego — 3.6.98-SDK6 sigue) | 2026-11-01 | Arnés físico 200 rallies determinista (0,6 s) + arnés vivo 45 s con piloto IA + canarios cazados en ambos · gate en qa_todo · 0 cambios de gameplay |

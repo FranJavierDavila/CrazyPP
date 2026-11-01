@@ -40,6 +40,7 @@ SCR = RAIZ / 'scripts'
 TIMEOUT = {  # segundos por capa
     'qa_version.py': 120, 'test_fisica.mjs': 90, 'qa_manifiestos.py': 60,
     'qa_rendimiento.py': 300,
+    'qa_arnes_fisico_v3698.py': 300, 'qa_arnes_vivo_v3698.py': 420,
     # r82: la BATERÍA juega 3 partidos completos en paralelo (con reintento
     # por crash de SwiftShader en cajas modestas) — necesita más margen
     'bateria_multi_v3674.py': 900,
@@ -60,6 +61,13 @@ CAPAS = [
     ('H · hub + ZIPs', ultimo('qa_descargas_v*.py')),
     ('I · smoke del SDK', ultimo('smoke_sdk*.py')),
     ('J · telemetría', 'qa_telemetria.py'),
+    # M2a (r107) · ARNÉS ANTI-REGRESIÓN — gate de ronda: si el arnés roja,
+    # NO se despliega (MEJORAS.md). Físico = node puro (200 rallies con
+    # física/árbitro/IA reales + invariantes I1-I5 + determinismo por
+    # semilla). Vivo = partido REAL en navegador (invariantes V1-V3 por
+    # frame + canario sembrado que DEBE ser cazado).
+    ('M2a · arnés físico (200 rallies)', 'qa_arnes_fisico_v3698.py'),
+    ('M2a · arnés vivo + canario', 'qa_arnes_vivo_v3698.py'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
     ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),
     ('V · sonido del tren', 'qa_tren_audio_v3626.py'),

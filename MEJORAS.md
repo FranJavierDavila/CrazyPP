@@ -14,8 +14,8 @@
 
 | # | Hito | Esfuerzo | Estado |
 |---|------|----------|--------|
-| M1 | Game feel · capas de sonido + hápticas calibradas | ★☆☆ | ⏳ SIGUIENTE (r106) |
-| M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ⬜ pendiente |
+| M1 | Game feel · capas de sonido + hápticas calibradas | ★☆☆ | ✅ HECHA r106 · v3.6.98-SDK6 en producción |
+| M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ⏳ SIGUIENTE (r107) |
 | M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ⬜ pendiente |
 | M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ⬜ pendiente |
 | M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ⬜ pendiente |
@@ -25,7 +25,7 @@
 
 ---
 
-## M1 · GAME FEEL — capas de sonido de impacto + hápticas calibradas ⏳ (r106)
+## M1 · GAME FEEL — capas de sonido de impacto + hápticas calibradas ✅ HECHA (r106 · v3.6.98-SDK6)
 
 > **CORRECCIÓN DE AUDITORÍA (r106):** el análisis crítico inicial se hizo sobre
 > un árbol reciclado a r35 por error del sandbox. El juego r105 YA TRAE desde
@@ -169,4 +169,4 @@ nativo.
 
 | Hito | Ronda(s) | Versión | Fecha | Notas |
 |------|----------|---------|-------|-------|
-| — | — | — | — | (aún ninguno) |
+| M1 · game feel | r106 | 3.6.98-SDK6 (FASE 100) | 2026-11-01 | Audio r62 verificado como regresión · háptica del bote calibrada dentro del guard · canto distinguible · red palpable · QA 35/0 · cascada verde · tres vías 24/0 |

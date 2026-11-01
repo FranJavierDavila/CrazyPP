@@ -99,7 +99,6 @@ for a, n in RETIRADAS:
 CHK('3.6.98-SDK6' in TXT, 'servido: sello de versión 3.6.98-SDK6')
 
 # heredadas (r105/r104/r103/r102)
-CHK('this.menuTex.generateMipmaps = false;', 'mips OFF' in TXT or False)
 CHK('this.menuTex.generateMipmaps = false;' in TXT, 'servido: mips OFF intacto (r105)')
 CHK('if ((nowH - (this._menuHoverDrawAt || 0)) >= 90) {' in TXT,
     'servido: throttle de hover 90 ms intacto (r105)')

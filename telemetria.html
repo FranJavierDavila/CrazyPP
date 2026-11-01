@@ -39,6 +39,12 @@
   .aviso { background:#2b1c10; border:1px solid #6b4413; color:#ffd257; padding:10px 14px; border-radius:12px; font-size:13px; margin:12px 0; }
   code { background:#182034; padding:1px 6px; border-radius:6px; font-size:12px; }
   .meta { color:#5d6b82; font-size:11px; }
+  /* ronda 18 · alarmas del worker (MEJORAS.md M2b) */
+  .ala { padding:9px 13px; border-radius:10px; font-size:13px; margin:6px 0; line-height:1.35; }
+  .ala.rojo { background:#2b1010; border:1px solid #6b1313; color:#ff9d93; }
+  .ala.amarillo { background:#2b1c10; border:1px solid #6b4413; color:#ffd257; }
+  .ala.verde { background:#10240f; border:1px solid #2c5b22; color:#9ae66e; }
+  .ala b { font-size:14px; margin-right:6px; }
 </style>
 </head>
 <body>
@@ -89,6 +95,14 @@ function tabla(cabs, filas) {
 
 function pinta(d) {
   const ev = d.porEvento || {};
+  // ronda 18 · alarmas del worker: nivel global + items (tolerante si el
+  // worker vivo todavía no trae el bloque — verde por defecto)
+  const al = d.alarmas || { nivel: 'verde', items: [] };
+  const limpia = (s) => String(s || '').replace(/[<>&]/g, '');
+  const alHTML = (al.items || []).length
+    ? (al.items || []).map((i) => '<div class="ala ' + limpia(i.nivel) + '"><b>' +
+        (i.nivel === 'rojo' ? '✖' : '⚠') + '</b>' + limpia(i.msg) + '</div>').join('')
+    : '<div class="ala verde"><b>✓</b>Sin alarmas — FPS, errores JS y sesiones VR dentro de umbral</div>';
   const evFilas = Object.entries(ev).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, fnum(v)]);
   const dur = d.duraciones || {};
   const vr = d.vrDuracion || {};
@@ -108,6 +122,9 @@ function pinta(d) {
     '<span style="color:#8b98ad">' + String(e.json || '').replace(/[<>&]/g, '').slice(0, 90) + '</span>',
   ]);
   $('contenido').innerHTML =
+    '<section><h2>Alarmas de producción · nivel <b style="color:' +
+    (al.nivel === 'rojo' ? '#ff6b61' : al.nivel === 'amarillo' ? '#fbbf24' : '#7ddb6a') +
+    '">' + limpia(al.nivel).toUpperCase() + '</b></h2>' + alHTML + '</section>' +
     '<div class="kpis">' +
     kpi(fnum(d.total), 'eventos totales') +
     kpi(fnum(d.sesionesUnicas), 'sesiones únicas') +

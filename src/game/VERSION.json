@@ -1,10 +1,10 @@
 {
-  "version": "3.6.95-SDK6",
-  "fase": 97,
-  "faseNombre": "ETIQUETAS FUERA DE LA VISTA + RIVAL ANCLADO A LA MESA (r103)",
+  "version": "3.6.96-SDK6",
+  "fase": 98,
+  "faseNombre": "MENÚS A PANTALLA COMPLETA — legibilidad (r104)",
   "sdk": "1.6.0",
   "fecha": "2026-11-01",
-  "hub": "v3695-sdk6",
+  "hub": "v3696-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r100",
-  "tamano": 10588364,
-  "golden": "cc57e0101300197ffc1d9b5e3a7f7d51e3e41a23875fe55d9034ffffcc94867c"
+  "nota": "r104",
+  "tamano": 10597962,
+  "golden": "37861066a706d72522d64654af412479b43c6091a3d2f791ab83232fb37c5ca7"
 }

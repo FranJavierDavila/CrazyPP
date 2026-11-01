@@ -667,6 +667,14 @@ loadPaddleModel().then((paddleModel) => {
     const TR = {
       es: {
         hub_t: 'PRO TRAINING', hub_s: 'Centro de alto rendimiento · CRAZY PING PONG',
+        // r104 · claves del MAPA DE CALOR (r97) en el diccionario propio:
+        // antes caían en CRUDO («heat_t», «heat_sin»…) al pie del hub
+        heat_t: 'MAPA DE CALOR',
+        heat_sin: 'sin datos todavía — juega duelos',
+        heat_total: '{n} puntos perdidos',
+        heat_corta: 'corta',
+        heat_media: 'media',
+        heat_fondo: 'fondo',
         perfil: 'PERFIL', pts: 'puntos', nivel: 'Nivel', volver: '‹ Volver', menu: '‹ Menú',
         a_dir: 'DIRECCIÓN', a_dir_s: 'Profundidad y colocación',
         a_alt: 'ALTURA', a_alt_s: 'Control sobre la red',
@@ -733,6 +741,12 @@ loadPaddleModel().then((paddleModel) => {
       },
       en: {
         hub_t: 'PRO TRAINING', hub_s: 'High performance center · CRAZY PING PONG',
+        heat_t: 'HEAT MAP',
+        heat_sin: 'no data yet — play matches',
+        heat_total: '{n} points lost',
+        heat_corta: 'short',
+        heat_media: 'mid',
+        heat_fondo: 'deep',
         perfil: 'PROFILE', pts: 'points', nivel: 'Level', volver: '‹ Back', menu: '‹ Menu',
         a_dir: 'DIRECTION', a_dir_s: 'Depth and placement',
         a_alt: 'HEIGHT', a_alt_s: 'Net clearance control',
@@ -2934,9 +2948,14 @@ loadPaddleModel().then((paddleModel) => {
       c.font = '900 54px system-ui, sans-serif';
       c.textAlign = 'left'; c.textBaseline = 'middle';
       c.fillText(t('hub_t'), 40, 78);
-      c.fillStyle = '#7d8ea6';
+      c.fillStyle = '#a9b8cc';
       c.font = '600 24px system-ui, sans-serif';
-      c.fillText(subTxt || t('hub_s'), 40, 122);
+      // r104 · subtítulo RECORTADO: con la fuente escalada llegó a pisar el
+      // bloque de puntos/nivel/logros (x ≥ 560). Nunca pasa de 500 px.
+      let sub104 = subTxt || t('hub_s');
+      while (sub104.length > 2 && c.measureText(sub104).width > 500) sub104 = sub104.slice(0, -1);
+      if (sub104 !== (subTxt || t('hub_s'))) sub104 += '…';
+      c.fillText(sub104, 40, 122);
       c.strokeStyle = 'rgba(240,200,90,0.55)'; c.lineWidth = 3;
       c.beginPath(); c.moveTo(40, 152); c.lineTo(984, 152); c.stroke();
       btn('trv3:back', 820, 34, 164, 56, t('menu'), false, undefined, undefined, 24);
@@ -2962,7 +2981,7 @@ loadPaddleModel().then((paddleModel) => {
         c.fillStyle = nx ? '#f0c85a' : '#68d391';
         c.fillRect(bx, by, Math.max(4, bw * prog), 7);
         c.font = '600 15px system-ui, sans-serif';
-        c.fillStyle = '#7d8ea6';
+        c.fillStyle = '#a9b8cc';
         c.fillText(nx ? (S.pts + ' / ' + nx.min) : t('max'), 800, by + 22);
         const got = ACHS.filter((a) => S.ach[a]).length;
         c.font = '700 15px system-ui, sans-serif';
@@ -3022,7 +3041,7 @@ loadPaddleModel().then((paddleModel) => {
       // pala, pero no tiene sentido ahí». Las ayudas técnicas suben a su
       // hueco y el hub queda 100 % entrenamiento (5 áreas + pieles).
       const yFb = y + 3 * (CH + GY) + 16;
-      label(t('fb_t'), yFb, 22, '#7d8ea6');
+      label(t('fb_t'), yFb, 22, '#a9b8cc');
       const toggles = [['marks', t('fb_marks')], ['line', t('fb_line')], ['spin', t('fb_spin')]];
       let tx = X0;
       for (const [k, lbl] of toggles) {
@@ -3032,7 +3051,7 @@ loadPaddleModel().then((paddleModel) => {
       }
       // skins
       const ySk = yFb + 108;
-      label(t('skins_t'), ySk, 22, '#7d8ea6');
+      label(t('skins_t'), ySk, 22, '#a9b8cc');
       let sx = X0;
       for (const sk of SKINS) {
         if (sk.via === 'racha') continue;   // r76: las de asistencia viven en EL PULSO (fila propia)
@@ -3105,7 +3124,7 @@ loadPaddleModel().then((paddleModel) => {
         // pieles de ASISTENCIA (r76): fila propia en el hueco del panel —
         // jamás en la fila de puntos; sólo la racha del RETO DIARIO libera
         const yA = 1064;
-        label(t('daily_asist'), yA, 15, '#7d8ea6');
+        label(t('daily_asist'), yA, 15, '#a9b8cc');
         let axD = X0;
         for (const sk of RACHA_SKINS) {
           const w = 150, h = 76;
@@ -3149,7 +3168,7 @@ loadPaddleModel().then((paddleModel) => {
             c.fillStyle = '#f0c85a';
             c.fillText(t('skin_sel'), axD + 58, yA + 64);
           } else if (un) {
-            c.fillStyle = '#7d8ea6';
+            c.fillStyle = '#a9b8cc';
             c.fillText(sk.days + ' ' + t('daily_dias'), axD + 58, yA + 64);
           } else {
             c.fillStyle = '#5a6a7d';
@@ -3159,7 +3178,7 @@ loadPaddleModel().then((paddleModel) => {
           axD += w + 14;
         }
         c.textAlign = 'left'; c.textBaseline = 'middle';
-        c.fillStyle = '#7d8ea6'; c.font = '600 14px system-ui, sans-serif';
+        c.fillStyle = '#a9b8cc'; c.font = '600 14px system-ui, sans-serif';
         let htD = t('daily_hitos');
         const _w5 = htD;
         while (htD.length > 2 && c.measureText(htD).width > X0 + wD - (axD - 14) - 16) htD = htD.slice(0, -1);
@@ -6041,7 +6060,7 @@ if (typeof window !== 'undefined') {
     c.beginPath(); c.moveTo(132, 372); c.lineTo(892, 372); c.stroke();
     btn('tut:go', 132, 446, 760, 168, T('tutask_yes'), true, 'green', undefined, 44);
     btn('tut:no', 132, 672, 760, 168, T('tutask_no'), false, undefined, undefined, 44);
-    label(T('tut_hint_skip'), 936, 22, '#5c6672', 'center');
+    label(T('tut_hint_skip'), 936, 22, '#9aa7b4', 'center');
     gme.menuRects = rects;
     gme._menuState = gme.rules.state;
     if (gme.menuTex) gme.menuTex.needsUpdate = true;

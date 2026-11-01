@@ -1499,9 +1499,16 @@ export class PingPongGame {
     this.menuCanvas.height = 1536;
     this.menuTex = new THREE.CanvasTexture(this.menuCanvas);
     this.menuTex.colorSpace = THREE.SRGBColorSpace;
-    this.menuTex.anisotropy = 4;
+    // r104 · MENÚS A PANTALLA COMPLETA (petición del dueño: «los textos
+    // pequeños de los menús no se leen muy bien… que se distribuyan a
+    // pantalla completa para ganar todo el espacio posible»): el panel pasa
+    // de 0,72×1,08 m a 0,90×1,35 m (+25 % lineal, misma proporción 2:3 del
+    // lienzo 1024×1536). A 1,08 m de distancia ~1 texel = 1 píxel del visor
+    // (nitidez 1:1, sin submuestreo) y TODO el texto del menú gana un 25 %
+    // de tamaño físico sin tocar una sola coordenada de página.
+    this.menuTex.anisotropy = 8;   // antes 4: texto oblicuo más nítido
     this.menuMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.72, 1.08),
+      new THREE.PlaneGeometry(0.90, 1.35),
       new THREE.MeshBasicMaterial({ map: this.menuTex, transparent: true, depthTest: false }),
     );
     // r73 · EL MENÚ MANDA: el panel del menú es la ventana que manda donde
@@ -1551,8 +1558,9 @@ export class PingPongGame {
       this.scene.add(beam);
       this.menuLines.push(beam);
 
+      // r104 · cursor proporcional al panel grande (0,009 → 0,011 m)
       const dot = new THREE.Mesh(
-        new THREE.CircleGeometry(0.009, 24),
+        new THREE.CircleGeometry(0.011, 24),
         new THREE.MeshBasicMaterial({
           color: h === 0 ? 0xe8b45a : 0x7fd4e8, depthTest: false, transparent: true, opacity: 0.95,
         }),
@@ -1603,6 +1611,34 @@ export class PingPongGame {
     this._mesaLabel.visible = false;
     this.scene.add(this._mesaLabel);
 
+    // r104 · ESCALADO GLOBAL DE FUENTES DEL MENÚ (×1,16): la otra mitad de
+    // «los textos pequeños no se leen muy bien». Se intercepta la propiedad
+    // `font` del contexto 2D del lienzo del menú: CUALQUIER `c.font =
+    // '700 26px …'` (c12, PRO TRAINING en c13, champloader en c11) se dibuja
+    // un 16 % más grande. Los autofits existentes usan measureText sobre el
+    // MISMO contexto, así que siguen cuadrando; el riesgo de desborde se
+    // mantiene a raya y el texto físico total sube ~45 % (panel + fuentes).
+    // Fallback silencioso: si el navegador no expone el descriptor, el
+    // panel grande (+25 %) sigue mejorando la legibilidad por sí solo.
+    try {
+      const _mctx = this.menuCanvas.getContext('2d');
+      const _fdesc = Object.getOwnPropertyDescriptor(
+        Object.getPrototypeOf(_mctx), 'font');
+      if (_fdesc && _fdesc.set && _fdesc.get) {
+        const MENU_FS = 1.16;
+        Object.defineProperty(_mctx, 'font', {
+          configurable: true,
+          get() { return _fdesc.get.call(this); },
+          set(v) {
+            _fdesc.set.call(this, String(v).replace(
+              /(\d+(?:\.\d+)?)px/g,
+              (m0, n0) => (Math.round(parseFloat(n0) * MENU_FS * 10) / 10) + 'px',
+            ));
+          },
+        });
+      }
+    } catch (eFS) { /* sin escalado: el panel grande ya gana un 25 % */ }
+
     this.drawMenu();
   }
 
@@ -1634,12 +1670,14 @@ export class PingPongGame {
       c.textBaseline = 'middle';
       c.fillText('CRAZY PING PONG', 48, 108);
     }
-    this._langPaddle(rects, 'es', 746, 48);
-    this._langPaddle(rects, 'en', 874, 48);
+    // r104 · palas de idioma MÁS GRANDES (118 → 132 px = dianas más cómodas
+    // con el panel a pantalla completa) y sello de versión más legible
+    this._langPaddle(rects, 'es', 728, 40);
+    this._langPaddle(rects, 'en', 856, 40);
     // v3.0.1 · sello de versión en TODAS las páginas del menú (bajo las palas
     // de idioma, franja libre y 168-198): el dueño verifica la build EN EL CASCO.
-    c.fillStyle = 'rgba(255,210,87,0.88)';
-    c.font = '700 17px system-ui, sans-serif';
+    c.fillStyle = '#ffd257';
+    c.font = '800 19px system-ui, sans-serif';
     c.textAlign = 'right';
     c.textBaseline = 'alphabetic';
     c.fillText('V' + (typeof window !== 'undefined' && window.__PP_VERSION ? window.__PP_VERSION : '3.0.4-EXP.TV1'), 996, 190);
@@ -1651,7 +1689,7 @@ export class PingPongGame {
     const img = lang === 'es' ? this.padES : this.padEN;
     const act = TLang() === lang;
     const hovered = this.menuHover.includes(rects.length);
-    const S = 118;
+    const S = 132;   // r104 · 118 → 132 con el panel a pantalla completa
     c.save();
     c.beginPath();
     c.arc(x + S / 2, y + S / 2, S / 2 - 2, 0, Math.PI * 2);
@@ -1785,9 +1823,13 @@ export class PingPongGame {
         filas.forEach((j, i) => {
           const fy = yPanel + 356 + i * 74;
           const stTxt = j.st === 'sala' ? '🟡 sala ' + (j.code || '') : (j.st === 'juego' ? '🔴 jugando' : '🟢 libre');
+          // r104 · nombre RECORTADO (16 chars): con la fuente escalada no
+          // invade el botón INVITAR (x 640) ni desborda la fila
+          const nm104 = String(j.n || 'Jugador');
+          const nmT104 = nm104.length > 16 ? nm104.slice(0, 15) + '…' : nm104;
           c.fillStyle = '#e2e8f0';
           c.font = '600 26px system-ui, sans-serif';
-          c.fillText('● ' + (j.n || 'Jugador') + '  ·  ' + stTxt, 56, fy + 28);
+          c.fillText('● ' + nmT104 + '  ·  ' + stTxt, 56, fy + 28);
           btn('mjsoc:inv:' + j.pid, 640, fy, 328, 60, T('rs_invitar'), false, 'green', undefined, 22);
         });
       }
@@ -1827,8 +1869,8 @@ export class PingPongGame {
       btn('mjsel', 56, yPanel + 230, 912, 56, T('mj_sel_back'), false, undefined, undefined, 24);
     }
 
-    c.fillStyle = '#75828f';
-    c.font = '500 20px system-ui, sans-serif';
+    c.fillStyle = '#98a6b4';   // r104 · pie más legible (antes #75828f)
+    c.font = '600 20px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.fillText(T('mj_p2p'), 512, 1368);
@@ -2027,7 +2069,7 @@ export class PingPongGame {
     c.fillStyle = '#f2f4f6';
     c.font = '800 64px ui-monospace, monospace';
     c.fillText(nm + '_', 512, 324);
-    c.fillStyle = '#75828f';
+    c.fillStyle = '#98a6b4';
     c.font = '600 22px system-ui, sans-serif';
     c.fillText(nm.length + ' / 12', 512, 402);
     // teclado 7×4: 26 letras + ␣ + ⌫
@@ -2046,7 +2088,7 @@ export class PingPongGame {
     }
     btn('nkey:ok', 56, 940, 448, 82, T('name_save'), true, 'green', undefined, 28);
     btn('nkey:cancel', 520, 940, 448, 82, T('btn_back'), false, undefined, undefined, 28);
-    label(T('name_hint'), 1080, 20, '#75828f', 'center');
+    label(T('name_hint'), 1080, 20, '#98a6b4', 'center');
     btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
   }
 
@@ -2074,7 +2116,7 @@ export class PingPongGame {
     c.fillStyle = '#f2f4f6';
     c.font = '800 64px ui-monospace, monospace';
     c.fillText(nm + '_', 512, 324);
-    c.fillStyle = '#75828f';
+    c.fillStyle = '#98a6b4';
     c.font = '600 22px system-ui, sans-serif';
     c.fillText(nm.length + ' / 12', 512, 402);
     for (let i = 0; i < CHARS.length; i++) {
@@ -2088,7 +2130,7 @@ export class PingPongGame {
     }
     btn('gkey:ok', 56, 940, 448, 82, T('name_save'), true, 'green', undefined, 28);
     btn('gkey:cancel', 520, 940, 448, 82, T('btn_back'), false, undefined, undefined, 28);
-    label(T('pala_help'), 1080, 20, '#75828f', 'center');
+    label(T('pala_help'), 1080, 20, '#98a6b4', 'center');
     btn('page:optsPala', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
   }
 
@@ -2134,7 +2176,7 @@ export class PingPongGame {
     c.fillText(wrLabel(this._wrlChamp), 512, 303);
 
     // cabecera de columnas
-    c.fillStyle = '#75828f';
+    c.fillStyle = '#98a6b4';
     c.font = '700 20px system-ui, sans-serif';
     c.textAlign = 'left';
     c.fillText(T('wrl_col_name'), 150, 372);
@@ -2200,7 +2242,7 @@ export class PingPongGame {
     btn('wrl:refresh', 700, 882, 268, 62, T('wrl_refresh'), false, undefined, undefined, 22);
 
     // sin nombre: recordatorio de que puede firmar sus registros
-    if (!ppPlayerName()) label(T('wrl_need_name'), 966, 19, '#75828f', 'center');
+    if (!ppPlayerName()) label(T('wrl_need_name'), 966, 19, '#98a6b4', 'center');
     btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
   }
 
@@ -2256,7 +2298,9 @@ export class PingPongGame {
       } else {
         c.fillStyle = 'rgba(255,255,255,0.07)';
         c.fill();
-        c.strokeStyle = hovered ? '#ffffff' : 'rgba(255,255,255,0.18)';
+        // r104 · borde más DEFINIDO (0.18 → 0.30): «opciones más claras y
+        // mejor definidas» — cada botón se recorta bien sobre el fondo
+        c.strokeStyle = hovered ? '#ffffff' : 'rgba(255,255,255,0.30)';
         c.lineWidth = hovered ? 4 : 2;
         if (style === 'green') c.strokeStyle = hovered ? '#bfe3a9' : 'rgba(127,176,105,0.55)';
         if (style === 'surv') c.strokeStyle = hovered ? '#ffc09a' : 'rgba(240,135,63,0.55)';
@@ -2268,12 +2312,12 @@ export class PingPongGame {
           : style === 'surv' ? '#ffc09a'
           : style === 'gold' ? '#f4ca79' : '#cfd8e0';
       }
-      c.font = `700 ${fsize || 26}px system-ui, sans-serif`;
+      c.font = `700 ${fsize || 28}px system-ui, sans-serif`;
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       let tx = x + w / 2;
       if (check !== undefined) {
-        const bs = 13, bx = x + 26, by = y + h / 2;
+        const bs = 14, bx = x + 26, by = y + h / 2;
         c.lineWidth = 3;
         if (check) {
           c.fillStyle = active ? 'rgba(16,19,26,0.88)' : 'rgba(207,216,224,0.92)';
@@ -2288,14 +2332,16 @@ export class PingPongGame {
           c.strokeStyle = active ? 'rgba(16,19,26,0.8)' : 'rgba(255,255,255,0.55)';
           c.strokeRect(bx - bs, by - bs, bs * 2, bs * 2);
         }
-        tx += 18;
+        tx += 20;
       }
       c.fillText(label2, tx, y + h / 2 + 1);
       rects.push({ x: x - 5, y: y - 3, w: w + 10, h: h + 6, id });
     };
     this._menuBtn = btn;
     this._menuRects = rects;
-    const label = (txt, y, size = 24, col = '#9aa7b4', align = 'left') => {
+    // r104 · etiquetas por defecto más grandes y MÁS CLARAS (24→28 px,
+    // gris azulado más luminoso): los textos pequeños ganan contraste
+    const label = (txt, y, size = 28, col = '#c9d3dd', align = 'left') => {
       c.fillStyle = col;
       c.font = `700 ${size}px system-ui, sans-serif`;
       c.textAlign = align;
@@ -2542,8 +2588,11 @@ export class PingPongGame {
     // icono sobre + texto
     c.textAlign = 'left'; c.textBaseline = 'middle';
     c.fillStyle = '#ffd45e';
-    c.font = '800 30px system-ui, sans-serif';
-    c.fillText('🎮 ' + T('rs_invita_de', { n: inv.deN || 'Jugador' }), x + 26, y + 34);
+    c.font = '800 28px system-ui, sans-serif';
+    // r104 · anfitrión RECORTADO (14 chars): con fuente escalada el renglón
+    // no pisa los botones UNIRSE/DESCARTAR (x+470)
+    const deN104 = String(inv.deN || 'Jugador');
+    c.fillText('🎮 ' + T('rs_invita_de', { n: deN104.length > 14 ? deN104.slice(0, 13) + '…' : deN104 }), x + 26, y + 34);
     c.fillStyle = '#e8dfc8';
     c.font = '600 24px system-ui, sans-serif';
     c.fillText(T('rs_invita_code', { c: inv.code }), x + 26, y + 76);
@@ -2576,7 +2625,7 @@ export class PingPongGame {
     btn('hallask_no', 132, 700, 760, 170, T('hallask_no_btn'), false, undefined, undefined, 46);
 
     // ayuda
-    label(T('hallask_hint'), 940, 22, '#5c6672', 'center');
+    label(T('hallask_hint'), 940, 22, '#9aa7b4', 'center');
     this.menuRects = rects;
     this._menuState = this.rules.state;
     this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
@@ -2653,7 +2702,7 @@ export class PingPongGame {
     // estás en casa) ni en online (el hall no existe allí).
     if (!this.inHall && !this.net.online) {
       btn('homehall', 40, y, 944, 64, T('hall_home_btn'), false, undefined, undefined, 27);
-      c.fillStyle = '#5c6672';
+      c.fillStyle = '#9aa7b4';
       c.font = '500 17px system-ui, sans-serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
@@ -2685,7 +2734,7 @@ export class PingPongGame {
 
     // cierre + ayuda
     btn('close', 56, y + 28, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
-    c.fillStyle = '#5c6672';
+    c.fillStyle = '#9aa7b4';
     c.font = '500 20px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
@@ -2734,7 +2783,7 @@ export class PingPongGame {
         label(T('champ_cargando'), y + 12, 24, '#ffd257', 'center');
         y += 46;
       } else {
-        label(T('arc_no_data'), y + 12, 22, '#75828f', 'center');
+        label(T('arc_no_data'), y + 12, 22, '#98a6b4', 'center');
         y += 44;
         btn('champretry', 312, y, 400, 58, T('champ_reintentar'), false, undefined, undefined, 25);
         y += 70;
@@ -2810,7 +2859,13 @@ export class PingPongGame {
       }
       c.fillStyle = '#9aa7b4';
       c.font = '600 21px system-ui, sans-serif';
-      c.fillText(lockado ? T('champ_locked_hint') : (hint || T('hub_champ_hint')), 186, y + 82);
+      // r104 · hint RECORTADO con elipsis (la fuente escalada hizo llegar
+      // «Aún en preparación…» hasta el borde de la tarjeta)
+      let hint104 = lockado ? T('champ_locked_hint') : (hint || T('hub_champ_hint'));
+      const _h104 = hint104;
+      while (hint104.length > 2 && c.measureText(hint104).width > 700) hint104 = hint104.slice(0, -1);
+      if (hint104 !== _h104) hint104 += '…';
+      c.fillText(hint104, 186, y + 82);
       if (lockado) {
         // r72 · chip PLATEADO «PRÓXIMAMENTE» (misma geometría que SUPERADO)
         c.save();
@@ -2887,7 +2942,7 @@ export class PingPongGame {
           c.textAlign = 'center';
           c.textBaseline = 'middle';
           c.fillText(it.pct || '', 810, y + 29);
-          c.fillStyle = '#5c6672';
+          c.fillStyle = '#9aa7b4';
           c.font = '600 22px system-ui, sans-serif';
           c.textAlign = 'left';
           c.fillText(it.hint || '', 886, y + 29);
@@ -2896,10 +2951,10 @@ export class PingPongGame {
           btn('champact:' + ch.id + '\u203A' + it.act, 56, y, 912, it.h || 74, it.label, false, it.tone || 'surv', undefined, it.fs || 27);
           y += (it.h || 74) + 12;
         } else if (it.row === 'locked') {
-          label(it.text, y + 12, 22, '#75828f', 'center');
+          label(it.text, y + 12, 22, '#98a6b4', 'center');
           y += 40;
         } else if (it.row === 'locked2') {
-          label(it.text, y + 10, 20, '#75828f', 'center');
+          label(it.text, y + 10, 20, '#98a6b4', 'center');
           y += 36;
         } else if (it.row === 'center') {
           label(it.text || '', y + 20, 24, it.color || '#ffd98a', 'center');
@@ -2995,7 +3050,7 @@ export class PingPongGame {
       T('cat_pala'), subPala, '#1098ad', '#0b7285', PP_ICONS.pala);
     y += CH2 + GY2;
 
-    label(T('opts_elegir'), y + 16, 20, '#75828f', 'center');
+    label(T('opts_elegir'), y + 16, 20, '#98a6b4', 'center');
     y += 46;
     // apoyo Ko-fi (v2.50) — fuera de las categorías, al pie
     // r83 · fila algo más baja: 7 tarjetas exigen el hueco
@@ -3067,7 +3122,7 @@ export class PingPongGame {
           T('cat_salamesa'), T('sub_mesa_sub'), '#2f9e44', '#1e7c33', PP_ICONS.mesa);
         y += CH_CARD + 16;
         // recordatorio honesto: la mesa es de partidas/entrenamiento
-        label(T('mesa_no_champ') + ' · ' + T('mesa_lock_hint'), y + 6, 16, '#5f6b78');
+        label(T('mesa_no_champ') + ' · ' + T('mesa_lock_hint'), y + 6, 16, '#93a1b0');
         y += 30;
         break;
       }
@@ -3103,7 +3158,7 @@ export class PingPongGame {
           label(T('mesa_no_champ'), y + 2, 18, '#ffa94d');
           y += 32;
         }
-        label(T('mesa_alto_lbl'), y + 2, 17, '#75828f');
+        label(T('mesa_alto_lbl'), y + 2, 17, '#98a6b4');
         y += 26;
         // ---- altura: LECTURA viva (la mesa se agarra en 3D) ----
         {
@@ -3126,7 +3181,7 @@ export class PingPongGame {
           btn('mesa_altomas', 684, y, 148, 52, '+', false, undefined, undefined, 26);
           y += 64;
         }
-        label(T('mesa_aspecto_lbl'), y + 2, 17, '#75828f');
+        label(T('mesa_aspecto_lbl'), y + 2, 17, '#98a6b4');
         y += 26;
         MESA_ASPECTOS.forEach((s, i) => {
           const libre = !s.lock || this._mesaLibre(s.lock);
@@ -3138,7 +3193,7 @@ export class PingPongGame {
         y += Math.ceil(MESA_ASPECTOS.length / 3) * 62 + 6;
         const hayCerrada = MESA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock));
         if (hayCerrada) {
-          label(T('mesa_lock_hint'), y + 2, 16, '#5f6b78');
+          label(T('mesa_lock_hint'), y + 2, 16, '#93a1b0');
           y += 28;
         }
         // r97 · RETOS DE LA SEMANA: lo que ALIMENTA los candados de arriba
@@ -3159,7 +3214,7 @@ export class PingPongGame {
             y += 52;
           }
           label(T('retos_star', { n: st97.stars | 0 }) + ' · ' + T('retos_premio'),
-            y + 2, 15, '#7d8ea6');
+            y + 2, 15, '#a9b8cc');
           y += 26;
         }
         break;
@@ -3241,7 +3296,7 @@ export class PingPongGame {
         btn('reset', 56, y, 912, 58, this._resetArm ? T('reset_arm') : T('reset_btn'),
           false, this._resetArm ? 'surv' : undefined, undefined, 21);
         y += 72;
-        label(T('tele_hint'), y + 10, 18, '#75828f');
+        label(T('tele_hint'), y + 10, 18, '#98a6b4');
         y += 36;
         break;
       }
@@ -3253,7 +3308,7 @@ export class PingPongGame {
         if (pf) {
           label(T('perf_device', { v: pf.tierLabel }), y + 12, 24, '#e9edf2');
           y += 34;
-          label(pf.gpu ? pf.gpu.slice(0, 60) : '', y + 2, 17, '#75828f');
+          label(pf.gpu ? pf.gpu.slice(0, 60) : '', y + 2, 17, '#98a6b4');
           y += 30;
           const estado = pf.calibrating
             ? T('perf_calibrando', { s: pf.probeRound + 1 })
@@ -3275,7 +3330,7 @@ export class PingPongGame {
             this.perf.tier === 'quest2' && !this.perf.tierAuto,
             undefined, this.perf.tier === 'quest2' && !this.perf.tierAuto, 20);
           y += 70;
-          label(T('perf_escala', { v: pf.scale.toFixed(2) }), y + 8, 18, '#75828f');
+          label(T('perf_escala', { v: pf.scale.toFixed(2) }), y + 8, 18, '#98a6b4');
           y += 34;
           btn('perfRecal', 56, y, 912, 56,
             pf.presenting ? T('perf_recal') : T('perf_recal_next'),
@@ -3306,7 +3361,7 @@ export class PingPongGame {
         // botón dorado que arranca el ajuste en VR (passthrough al instante).
         label(T('pala_actual', { v: this.gripName }), y + 10, 24, '#e9edf2');
         y += 36;
-        label(T('pala_help'), y + 2, 17, '#75828f');
+        label(T('pala_help'), y + 2, 17, '#98a6b4');
         y += 32;
         btn('palaGo', 56, y, 912, 64, T('pala_go'), false, 'gold', undefined, 26);
         y += 78;
@@ -3318,7 +3373,7 @@ export class PingPongGame {
         y += 34;
         const _gripNombres = this.gripList().slice(0, 8);
         if (!_gripNombres.length) {
-          label(T('pala_ninguno'), y + 6, 19, '#5f6b78');
+          label(T('pala_ninguno'), y + 6, 19, '#93a1b0');
           y += 36;
         } else {
           _gripNombres.forEach((nm, i) => {
@@ -3429,7 +3484,9 @@ export class PingPongGame {
     if (muDir.lengthSq() < 1e-6) muDir.set(0, 0, -1);
     muDir.normalize();
     this.menuGroup.position.copy(muHead).addScaledVector(muDir, 1.08);
-    this.menuGroup.position.y = Math.max(0.85, muHead.y - 0.05);
+    // r104 · panel 1,35 m de alto: el centro baja 7 cm para repartir la
+    // altura nueva (arriba 27°· abajo 36° aprox.) sin perder la cabecera
+    this.menuGroup.position.y = Math.max(0.85, muHead.y - 0.12);
     this.menuGroup.lookAt(muHead);
     this._menuAnchorUntil = performance.now() / 1000 + 1.8;
   }

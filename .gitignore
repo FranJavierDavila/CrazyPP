@@ -76,3 +76,5 @@ __pycache__/
 *.pyc
 .upload-backup/
 upload/_r65/
+
+scripts/worker-tele/.telemetry-pass

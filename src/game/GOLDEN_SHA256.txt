@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.99-SDK6, fase 101 · PWA INSTALABLE (r109); sello actualizado
-# por bump_version.py desde 3.6.98-SDK6)
-22a0d6377afc11d33d1cc419e6a2d503c97d1282e4590bd82a4ddca1162604fd
+# SHA256 del game.html que produjo esta división (3.6.100-SDK6, fase 102 · Duelo Reparado; sello actualizado
+# por bump_version.py desde 3.6.99-SDK6)
+be53ae5c307cc7eb1cd0f2534a02bfe6f56dbabb3c4e6f18b58923a44cb27c6d

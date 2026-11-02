@@ -41,6 +41,7 @@ TIMEOUT = {  # segundos por capa
     'qa_version.py': 120, 'test_fisica.mjs': 90, 'qa_manifiestos.py': 60,
     'qa_rendimiento.py': 300,
     'qa_arnes_fisico_v3698.py': 300, 'qa_arnes_vivo_v3698.py': 420,
+    'qa_duelo_r110.py': 260,   # r110: banco de duelo NetLink (node, ~45 s)
     # r82: la BATERÍA juega 3 partidos completos en paralelo (con reintento
     # por crash de SwiftShader en cajas modestas) — necesita más margen
     'bateria_multi_v3674.py': 900,
@@ -76,6 +77,11 @@ CAPAS = [
     # SW registrado y ACTIVO en scope raíz, manifest/iconos servidos,
     # toasts en la portada.
     ('r109 · PWA instalable (v3699)', 'qa_r109_v3699.py'),
+    # r110 · DUELO REPARADO (informe del dueño: partida con amigos injugable)
+    # — banco Node con el código REAL de red+física: espejo de pose exacto
+    # (bit4 de pose corregido), duelo completo con autoridad/contacto/0
+    # rechazos del validador. Detalle en la cabecera de qa_duelo_r110.py.
+    ('r110 · banco de duelo NetLink', 'qa_duelo_r110.py'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
     ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),
     ('V · sonido del tren', 'qa_tren_audio_v3626.py'),

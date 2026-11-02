@@ -666,10 +666,19 @@ async def jugar(pw, per, url):
               f"validador SIN rechazos NI graves al cierre (anfitrión {rejH} · invitado {rejG})")
 
         # el avatar del rival se mueve en la mitad LEJANA de cada página
-        hAv = await host.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
-        gAv = await guest.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
-        P.chk(hAv < -2.4 and gAv < -2.4,
-              f"cuerpos con offsets: la pala del rival vive en la mitad LEJANA de cada página (z={hAv:.2f} / z={gAv:.2f})")
+        # r110 · el umbral −2,4 lo calibró el BUG del bit4: el avatar pintaba
+        # la mano LIBRE fija (lz≈0,1 → espejo −3,3). Con el fix el avatar
+        # sigue la pala REAL (pz≈−0,7..−0,75 → espejo −2,45..−2,5, correcto).
+        # Se muestrea el MÍNIMO de ~1 s (el vaivén + JB de 40-120 ms) y se
+        # exige < −2,25: mitad lejana profunda, nunca encima del jugador.
+        hAv = gAv = 0.0
+        for _i in range(7):
+            hS = await host.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
+            gS = await guest.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
+            hAv, gAv = min(hAv, hS) if _i else hS, min(gAv, gS) if _i else gS
+            await host.wait_for_timeout(150)
+        P.chk(hAv < -2.25 and gAv < -2.25,
+              f"cuerpos con offsets: la pala del rival vive en la mitad LEJANA de cada página (min z={hAv:.2f} / {gAv:.2f})")
 
     except Exception as e:  # la pareja no debe tumbar a las demás
         # r82: un CRASH del renderer (SwiftShader en cajas modestas) se

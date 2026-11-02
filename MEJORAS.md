@@ -17,7 +17,8 @@
 | M1 | Game feel · capas de sonido + hápticas calibradas | ★☆☆ | ✅ HECHA r106 · v3.6.98-SDK6 en producción |
 | M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ✅ HECHA r107 (M2a arnés-gate) + r108 (M2b alarmas, worker vivo) |
 | M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ✅ HECHA r109 · v3.6.99-SDK6 en producción |
-| M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ◐ SIGUIENTE (r110) |
+| MP | **MULTIJUGADOR REPARADO** (prioridad del dueño: partida con amigos injugable) | ★★★ | ✅ HECHA r110 · v3.6.100-SDK6 en producción |
+| M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ◐ SIGUIENTE (r111) |
 | M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ⬜ pendiente |
 | M6 | Identidad "locura + entrenador" (power-ups, 2v2, campeonatos) | ★★★ | ⬜ pendiente |
 | M7 | Matchmaking + ELO online + reto diario/torneo semanal | ★★★★ | ⬜ pendiente |
@@ -29,6 +30,65 @@
 > rendimiento que el dueño reportó en r105 queda CONFIRMADA con telemetría:
 > a investigar en las próximas rondas (candidatos: NITIDEZ/FFR elegida en
 > r96, perfil Quest 2 a 72 Hz mezclado en la media, o coste del hall+HUD).
+>
+> **MP (r110) — REPORTE DEL DUEÑO que reordenó la cola:** «es imposible
+> golpear la bola… las palas no aparecen donde deberían… veo su pelota
+> cuando mueve su pala». Causa raíz: el BIT 4 de la pose (ver sección MP).
+
+---
+
+## MP · MULTIJUGADOR REPARADO ✅ HECHA (r110 · v3.6.100-SDK6)
+
+> **PRIORIDAD MÁXIMA dictada por el dueño** (por delante de M4): el
+> multijugador era INJUGABLE en duelo real. Diagnóstico con un BANCO DE
+> DUELO nuevo en Node (`scripts/diag_multijugador_r110.mjs`): dos extremos
+> completos con el CÓDIGO REAL de producción (c09 NetLink + c09b PPNET +
+> física c04/c05 + c02) sobre un cable simulado (40 ms ±12 ms, pérdida 1 %
+> en fast, canales RTC falsos con SDP/ICE/Hello reales del juego).
+
+**Causa raíz y reparaciones (las 4):**
+- [x] **BIT 4 DE POSE (la madre del cordero)** — el emisor (`c09
+      _samplePose`) ponía `fl |= 4` con la pala en CUALQUIER mano, pero los
+      TRES lectores (c12 render 10311, c12 saque 9928, c09 `_remotePadNet`
+      1754) lo interpretan como «pala en la mano IZQUIERDA (slot 0)». Un
+      jugador diestro (paddleHand=1, el 95 %) viajaba mal leído: el rival
+      pintaba su pala en la MANO LIBRE — donde está la bola del saque («veo
+      su pelota, no su pala», palabra literal del dueño) — y el validador
+      §12 comparaba cada golpe contra la mano equivocada: distancias de >1 m
+      → TODO golpe remoto rechazado → «la bola cae irremediablemente aunque
+      la trate de golpear». Fix en el emisor (bit4 sólo slot 0) + **PROTO 3**
+      (builds mezclados rechazan el HELLO y caen a v1 honesto, sin
+      malinterpretar el cable).
+- [x] **VALIDADOR JUSTO** (c09b VP): MAX_SPIN 160→220 · TOL_FUTURE
+      120→250 ms · HIT_NEAR_PAD 0,60→0,85 m. Con latencia/efecto real se
+      rechazaban golpes LEGÍTIMOS (rechazar un golpe honesto regala un
+      punto y congela el rallye). El anti-trampa sigue vivo: +400 ms sigue
+      rechazado, shot+1 sigue exigido, 0,85 m sigue siendo imposible desde
+      lejos.
+- [x] **MITAD PROPIA JUGABLE EN FANTASMA** (c12 bloque FSM): el fantasma se
+      simulaba con palas VACÍAS aunque la bola ya estuviera EN MI MITAD —
+      ventana muerta de RTT..300 ms por golpeo (a 5 m/s = 1,5 m injugable).
+      Ahora mi pala participa en mi mitad y mi contacto reclama la
+      autoridad (netLocalHit → HIT con validación §12 en el rival). En
+      mitad ajena sigue prohibido tocar.
+- [x] **REPARACIÓN DE SAQUE ATASCADO** (c09 `_applyFastEv` SNAP): si el
+      TOSS/HIT del saque rival se perdía o era rechazado, mi bola quedaba
+      HELD del rival PARA SIEMPRE («no deja ni sacar ni jugar»). Ahora los
+      SNAPs del rival (su bola viva) liberan el hold y pasan a fantasma
+      desde el estado exacto del SNAP.
+
+**Banco de duelo (capa GATE nueva `qa_duelo_r110.py`):** S1 espejo de pose
+EXACTO diestro y zurdo (0,0 cm · 0,1° — el bit4 zurdo viaja ON y el lector
+elige lp) · S2 saque legal con el solucionador REAL del juego → cruce →
+autoridad del invitado → CONTACTO → validación del anfitrión **0 rechazos**
+→ FSM own/ghost/auth correcta. 9/0 verde. `test_red_nucleo` 59/0 (anti-
+trampa intacta: +400 ms rechazado, shot+1 exigido). Batería BQ (3 duelos
+reales en paralelo con PeerJS real) intacta.
+
+**Criterios de aceptación:** dos cascos en el mismo build juegan un duelo
+completo: palas donde deben (diestro y zurdo), bola del saque legible en la
+mano del rival, golpes del invitado ACEPTADOS, sin bolas congeladas.
+Verificación final: el dueño repite la partida con amigos en producción.
 
 ---
 

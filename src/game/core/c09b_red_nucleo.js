@@ -31,7 +31,10 @@ export const PPNET = (() => {
     // CUATERNIÓN VISUAL (grip ⊗ montura viva — antes grip crudo). Dos cascos
     // con versiones distintas RECHAZAN el HELLO y caen a v1 en vez de
     // interpretar mal el cable (pala del rival rodada/desplazada).
-    PROTO: 2,             // versión del protocolo binario (HELLO)
+    // r110 · PROTO 3: semántica del bit4 de pose corregida (pala=mano IZQ
+    // slot 0 — antes se ponía en cualquier mano). Builds mezclados no pueden
+    // compartir cable: RECHAZO de HELLO → v1 honesto y jugable.
+    PROTO: 3,             // versión del protocolo binario (HELLO)
     PHYS: 1,              // versión de ballPhysics compartida (HELLO)
     BUILD: '',            // hash de build (lo rellena el juego: VERSION)
 
@@ -58,10 +61,23 @@ export const PPNET = (() => {
     MAX_RTT_PAIR: 0.200,  // emparejamiento: RTT máximo aceptado (s) — spec §3.1
 
     MAX_BALL_SPEED: 30,   // validación: rapidez máxima aceptada (m/s)
-    MAX_SPIN: 160,        // validación: giro máximo aceptado (rad/s)
+    // r110 · MAX_SPIN 160→220: un giro legal ya supera 160 con muñeca rápida
+    // (spinImpulse 9·m/s sobre rel 12-18 m/s en el enderezado 5.5) — rechazar
+    // un golpe LEGÍTIMO regala un punto y congela el rallye («imposible
+    // golpear la bola»). El cap local DIMS.spinMax (90) sigue mandando en el
+    // juego normal; 220 sólo corta trampas groseras.
+    MAX_SPIN: 220,        // validación: giro máximo aceptado (rad/s)
     MIN_HIT_GAP: 0.150,   // no más de un golpe cada 150 ms
-    HIT_NEAR_PAD: 0.60,   // el golpe ocurrió a <60 cm de la pala del rival
-    TOL_FUTURE: 120,      // validación: tHit como máx. 120 ms en el futuro
+    // r110 · HIT_NEAR_PAD 0,60→0,85: con JB+latencia real la pose del
+    // instante exacto puede faltar ±1 muestra y el follow-through de un
+    // smash recorre 25-60 cm — 0,60 rechazaba golpes honestos. 0,85 sigue
+    // siendo imposible para quien no esté cerca de la bola.
+    HIT_NEAR_PAD: 0.85,   // el golpe ocurrió a <85 cm de la pala del rival
+    // r110 · TOL_FUTURE 120→250: el ancla gruesa del reloj puede errar ~un
+    // one-way (±40-80 ms en Wi-Fi real) y el eco NTP tarda unos paquetes en
+    // afinar — los PRIMEROS golpes de cada partida se rechazaban por «tHit
+    // en el futuro» sin motivo real.
+    TOL_FUTURE: 250,      // validación: tHit como máx. 250 ms en el futuro
                           // (r82: el ancla gruesa del reloj puede errar ~un
                           //  one-way; el eco NTP refinado la corrige en vivo)
 

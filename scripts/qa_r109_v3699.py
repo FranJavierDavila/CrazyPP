@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r109_v3699.py — capa de QA de la ronda 109 (V3.6.99-SDK6).
+"""qa_r109_v3699.py — capa de QA de la ronda 109 (V3.6.100-SDK6).
 
 HITO M3 del roadmap MEJORAS.md · PWA INSTALABLE.
 
@@ -142,11 +142,11 @@ CHK('Copiando PWA (manifest + sw + iconos)' in bz, 'build_zip: la PWA viaja en l
 # 8 · versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.99-SDK6', 'c00: VERSION sella 3.6.99-SDK6')
-CHK('>V3.6.99-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
-    'portada: badge V3.6.99-SDK6')
-CHK(V.get('fase') == 101, 'VERSION.json: FASE 101')
-CHK(V.get('hub') == 'v3699-sdk6', 'VERSION.json: hub v3699-sdk6')
+CHK(bool(mver) and mver.group(1) == '3.6.100-SDK6', 'c00: VERSION sella 3.6.100-SDK6')
+CHK('>V3.6.100-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
+    'portada: badge V3.6.100-SDK6')
+CHK(V.get('fase') == 102, 'VERSION.json: FASE 102 (r110 Duelo Reparado)')
+CHK(V.get('hub') == 'v36100-sdk6', 'VERSION.json: hub v36100-sdk6')
 
 # 9 · regresión (r106/r105/r104/r102/r62 intactas)
 CHK('const s6 = Math.min(1, e.speed / 6);' in GH, 'r106: háptica del bote calibrada intacta')
@@ -155,7 +155,7 @@ CHK('this.menuTex.generateMipmaps = false;' in GH, 'r105: mips OFF intacto')
 CHK('if ((nowH - (this._menuHoverDrawAt || 0)) >= 90) {' in GH, 'r105: throttle de hover intacto')
 CHK('new THREE.PlaneGeometry(0.90, 1.35),' in GH, 'r104: panel 0,90×1,35 intacto')
 CHK('const MENU_FS = 1.16;' in GH, 'r104: fuentes ×1,16 intactas')
-CHK('PROTO: 2,' in GH, 'r102: pala rival FIEL intacta')
+CHK('PROTO: 3,' in GH, 'r102/r110: pala rival FIEL intacta (PROTO 3, bit4 mano izquierda)')
 CHK("const nombres = ['mesa', 'pala', 'canto', 'red', 'suelo'];" in GH, 'r62: 5 muestras físicas intactas')
 
 # ------------------------------------------------------------- RUNTIME ----

@@ -1294,7 +1294,17 @@ export class NetLink {
           tq[2] = grip.quaternion.z; tq[3] = grip.quaternion.w;
         }
         fl |= 1 << i;                                  // mano rastreada
-        if (i === g.paddleHand) fl |= 4;               // pala en esta mano
+        // r110 · SEMÁNTICA DEL BIT 4 = «pala en la mano IZQUIERDA (slot 0)»:
+        // TODOS los lectores (c12 render 10311, c12 saque 9928, c09
+        // _remotePadNet 1754) lo interpretan así. Antes se ponía en
+        // CUALQUIER mano con pala: un jugador diestro (paddleHand=1, el 95 %)
+        // viajaba con bit4=ON y el rival pintaba su pala en la MANO LIBRE
+        // (donde está la bola del saque — «veo su pelota, no su pala») y el
+        // validador §12 comparaba cada golpe contra la mano equivocada
+        // (distancias de >1 m → TODO golpe remoto rechazado: «la bola cae
+        // irremediablemente»). Con pala a la derecha el bit queda a 0 y el
+        // lector elige rp: la mano que DEBE.
+        if (i === 0 && i === g.paddleHand) fl |= 4;
       }
     }
     // v3.6.74 · r82 · LATERALIDAD FÍSICA de la mano de la pala (bit 8):
@@ -1632,6 +1642,24 @@ export class NetLink {
   _applyFastEv(ev, g) {
     const nowH = this._clock.nowHost(performance.now());
     if (ev.t === PPNET.VP.EV.SNAP) {
+      // r110 · REPARACIÓN DE SERVE ATASCADO: SNAPs sólo emite quien tiene la
+      // bola viva (own/auth). Si MI bola sigue HELD del rival (holder='opp')
+      // y llegan SNAPs, su saque YA está en el aire en su casco — el TOSS o
+      // el HIT del saque se perdió o fue rechazado — y yo me quedaría con la
+      // bola congelada en la mano PARA SIEMPRE («no deja ni sacar ni
+      // jugar»). Libero el hold y paso a fantasma DESDE el estado del SNAP:
+      // el glue toma el mando y el rallye sigue siendo honesto.
+      if (this._ball.state === 'held' && this._ball.holder === 'opp') {
+        this._ball.state = 'ghost';
+        this._ball.mine = false;
+        const pR = NetLink.posFromNetArr(ev.p);
+        const vR = NetLink.vecFromNetArr(ev.v);
+        g.ball.pos.copy(pR);
+        g.ball.vel.copy(vR);
+        if (g.ballMesh) g.ballMesh.visible = true;
+        g._netTossLive = true;
+        return;
+      }
       // corrección suave del fantasma (sin ack, spec §5/§8)
       if (this._ball.state === 'ghost') {
         const p = NetLink.posFromNetArr(ev.p);

@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""RONDA 110 · SELLADO EN CASCADA de las capas QA a 3.6.100-SDK6.
+
+Barrido genérico e idempotente r110: en TODA capa qa_*.py que aún lleve el
+sello de la ronda anterior se sustituyen los dos tokens de versión
+(3.6.99-SDK6 → 3.6.100-SDK6 y v3699-sdk6 → v36100-sdk6). Si una capa ya
+lleva el sello nuevo (o nunca lo llevó), no se toca. El SDK NO cambia; el
+cambio r110 vive en el NÚCLEO DE RED (c09 bit4 de pose + reparación de
+saque atascado · c09b PROTO 3 y umbrales del validador · c12 mitad propia
+jugable en fantasma) — informe del dueño del multijugador con amigos."""
+import sys
+from pathlib import Path
+
+RAIZ = Path('/home/z/my-project')
+SCR = RAIZ / 'scripts'
+
+VERSIONES = [('3.6.99-SDK6', '3.6.100-SDK6'), ('v3699-sdk6', 'v36100-sdk6')]
+
+def sella_fichero(p: Path):
+    try:
+        t = p.read_text(encoding='utf-8')
+    except Exception:
+        return None
+    orig = t
+    cambios = 0
+    for viejo, nuevo in VERSIONES:
+        n = t.count(viejo)
+        if n:
+            t = t.replace(viejo, nuevo)
+            cambios += n
+    if cambios:
+        p.write_text(t, encoding='utf-8')
+        return cambios
+    return 'ya'
+
+def main():
+    capas = sorted(SCR.glob('qa_*.py'))
+    tocados = []
+    for p in capas:
+        if p.name.startswith('sella_'):
+            continue   # los selladores no se sellan a sí mismos
+        r = sella_fichero(p)
+        if isinstance(r, int) and r > 0:
+            tocados.append((p.name, r))
+    print('== SELLADO r110 ==')
+    for nombre, n in tocados:
+        print(f'  ✓ {nombre}: {n} sello(s) → 3.6.100-SDK6 / v36100-sdk6')
+    if not tocados:
+        print('  (nada que sellar: todas las capas ya estaban al día)')
+    print(f'\nTotal capas selladas: {len(tocados)}')
+
+if __name__ == '__main__':
+    main()

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.99-SDK6",
-  "fase": 101,
-  "faseNombre": "PWA INSTALABLE (r109)",
+  "version": "3.6.100-SDK6",
+  "fase": 102,
+  "faseNombre": "Duelo Reparado",
   "sdk": "1.6.0",
   "fecha": "2026-11-02",
-  "hub": "v3699-sdk6",
+  "hub": "v36100-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r104",
   "tamano": 10597962,
-  "golden": "22a0d6377afc11d33d1cc419e6a2d503c97d1282e4590bd82a4ddca1162604fd"
+  "golden": "be53ae5c307cc7eb1cd0f2534a02bfe6f56dbabb3c4e6f18b58923a44cb27c6d"
 }

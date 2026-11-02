@@ -10028,12 +10028,27 @@ export class PingPongGame {
         ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise;
       if (tossImmune) pads.length = 0;
       // v3.6.71 · r79 · FSM DE LA BOLA (autoridad por mitad, spec §7):
-      // fantasma = bola del rival simulo con la FÍSICA REAL pero SIN mi
-      // pala (nadie golpea una bola de mitad ajena ni un fantasma).
+      // fantasma = bola del rival simulo con la FÍSICA REAL.
+      // r110 · LA MITAD PROPIA ES JUGABLE TAMBIÉN EN FANTASMA: antes el
+      // fantasma se simulaba con palas VACÍAS y la autoridad tardaba
+      // (HANDOFF en vuelo ~RTT, o provisional a 300 ms) — a 4-6 m/s la bola
+      // recorría 1,2-1,8 m INJUGABLE y moría con doble bote antes de que el
+      // jugador pudiera tocarla («cae irremediablemente aunque la trate de
+      // golpear»). Ahora, si el fantasma ya está EN MI MITAD (pasó la red
+      // hacia mí), MI pala participa: mi contacto es el golpe SAGRADO local
+      // (netLocalHit → HIT con validación §12 en el rival) y reclama la
+      // autoridad. En mitad ajena sigue prohibido tocar (anti-doble-golpe
+      // en la línea, spec §7) y el anti-trampa no cambia.
       const v2on = this.net.online && this.net.v2 === 'ok';
       if (v2on && !this.net.ballMine()) {
-        stepPhysics(dt * this._dilF, this.ball, [], this.events);
+        const enMiMitad = this.ball.pos.z > DIMS.tableCenterZ;
+        stepPhysics(dt * this._dilF, this.ball, enMiMitad ? pads : [], this.events);
         this.net.observeGhost(this.ball);
+        if (enMiMitad && this.rules.state === 'rally') {
+          for (const e of this.events) {
+            if (e.type === 'paddle' && e.who === 'player') { this._localHit = true; break; }
+          }
+        }
       } else if (this.net.online && this.net.v2 !== 'ok' &&
                  this.net.owner !== this.net.mySide()) {
         // v2.19: la bola la simula el rival — seguir su emisión y solo

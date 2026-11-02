@@ -5365,3 +5365,19 @@ Stage Summary:
 - EL MULTIJUGADOR VUELVE: la causa de «veo su pelota y no su pala» era UN BIT mal emitido que hacía que el rival pintara la pala en la mano libre y que el árbitro rechazara cada golpe. Con el fix, el banco demuestra espejo de pose EXACTO (0,0 cm) y un duelo completo con saque legal, autoridad, contacto del invitado y 0 rechazos.
 - GATE 14/14 VERDE con la capa nueva del banco de duelo como gate permanente: cualquier regresión futura de NetLink muere antes del deploy.
 - Pendiente del dueño: repetir la partida con amigos en producción V3.6.100-SDK6 (ambos cascos deben recargar la versión nueva — con la PWA, abrir y cerrar la app una vez). Pendientes heredados: reponer .cf-token y .clave-produccion (borrados por el reciclado del sandbox; están en el respaldo del Task 122).
+
+---
+Task ID: 215 (cierre)
+Agent: principal (Z.ai)
+Task: Despliegue y verificación de producción de V3.6.100-SDK6 (r110).
+
+Work Log:
+- COMMIT+PUSH: 9dae511 en origin/main (push restaurado con el PAT nuevo del dueño).
+- INCIDENCIA DEPLOY CONOCIDA resuelta: push pages non-fast-forward (el ref local de pages quedó viejo tras el reciclado) → git update-ref refs/heads/pages → origin/pages (63d99e5b) antes del deploy.
+- DESPLIEGUE: deploy_pages --push --release --backup → pages b7408b14c · Release v3.6.100-SDK6 con los 4 ZIPs (COMPLETO 146.754.137 · ligera 18.548.052 · CLOUDFLARE 146.739.971 · SOLO 6.221) · respaldo main→proyecto al día.
+- VERIFICACIÓN DE PRODUCCIÓN (curl): PAGES-VERSION.txt = version=3.6.100-SDK6 · fuente_commit=9dae511 · game_sha256 0994c541 (el servido CASA con el sello del deploy; −2 B vs golden = artefacto conocido del pipeline, igual en rondas anteriores) · agujas r110 vivas en el game.html servido: PROTO: 3 · bit4 sólo mano izquierda (i===0 && i===paddleHand) · reparación de saque atascado (holder === 'opp') · mitad propia jugable en fantasma · MAX_SPIN 220 · HIT_NEAR_PAD 0,85 · TOL_FUTURE 250 · sw.js const CACHE = 'crazypp-v3.6.100-SDK6' (4.º sello vivo) · manifest + 3 iconos + telemetría.html servidos. Nota: PAGES-VERSION (sin .txt) y champ_sdk.js ya no son rutas del playbook actual (PAGES-VERSION.txt es la viva; champ_sdk dejó de publicarse en hitos posteriores).
+
+Stage Summary:
+- Producción en V3.6.100-SDK6 (pages b7408b14c, release 4/4, agujas r110 en verde).
+- EL DUEÑO DEBE: repetir la partida multijugador con amigos — AMBOS cascos con la app nueva (con la PWA instalada: abrir y cerrar la app una vez para que el SW traiga la 3.6.100; el HELLO avisa si los builds desigualan).
+- Siguiente hito del roadmap: M4 · Onboarding < 60 s (r111).

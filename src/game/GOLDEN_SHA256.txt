@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.98-SDK6, fase 100 · M1 GAME FEEL (r106); sello actualizado
-# por bump_version.py desde 3.6.97-SDK6)
-414f27dcb13b865343013b8944ccd808fa0eaef63704e9d27d5a1340aca4cee1
+# SHA256 del game.html que produjo esta división (3.6.99-SDK6, fase 101 · PWA INSTALABLE (r109); sello actualizado
+# por bump_version.py desde 3.6.98-SDK6)
+22a0d6377afc11d33d1cc419e6a2d503c97d1282e4590bd82a4ddca1162604fd

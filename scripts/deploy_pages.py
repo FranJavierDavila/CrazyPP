@@ -51,7 +51,9 @@ SOLO_ZIP = 'crazypp-live-service-SOLO.zip'
 SITE_PATHS = ['public/game.html', 'public/championships', 'public/assets',
               'public/vendor', 'public/tv.html', 'public/robots.txt', 'public/logo.svg',
               'public/ugc',          # r85: EL TALLER UGC (editor de etapas/campeonatos)
-              'public/telemetria.html']   # r87: PANEL de telemetría (URL estable en Pages)
+              'public/telemetria.html',   # r87: PANEL de telemetría (URL estable en Pages)
+              'public/manifest.webmanifest', 'public/sw.js',   # r109 · M3 PWA
+              'public/logo-192.png', 'public/logo-512.png', 'public/logo-maskable-512.png']
 
 # (original, sustituto, ocurrencias esperadas) — cualquier desvío ABORTA el despliegue
 REWRITES = [

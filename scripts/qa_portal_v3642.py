@@ -71,8 +71,8 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        # · SELLO DE VERSIÓN (ronda 50)
-        ('3.6.91-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 50)'),
+        # · SELLO DE VERSIÓN (al día r109)
+        ('3.6.99-SDK6', 'versión servida: 3.6.91-SDK6 (al día r109)'),
         # · TRÁNSITO EXPLÍCITO (presentación del dueño)
         ('this._portalSinkT = 0;            // hundimiento en el portal de entrada',
          'tránsito: fase de hundimiento declarada'),

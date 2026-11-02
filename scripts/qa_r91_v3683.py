@@ -267,7 +267,7 @@ with sync_playwright() as pw:
       const H = window.__PP_HALLOWEEN; const g = H.ctrl().game;
       const EST = ['present','idle','focused','surprised','panic','laughing','crazy','angry','picando','loosing','defeated','victory'];
       let n = 0;
-      g.scene.children.forEach((c) => {
+      g.scene.traverse((c) => {
         let src = null;
         try { const m = c.material; const map = m && m.map; if (map && map.image && map.image.src) src = map.image.src; } catch (e) {}
         if (!src) return;

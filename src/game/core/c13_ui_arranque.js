@@ -3666,6 +3666,94 @@ loadPaddleModel().then((paddleModel) => {
     WORLDRANK.load(false).catch(() => { /* nunca rompe la portada */ });
   }
 
+  /* =====================================================================
+   *  r109 · M3 PWA INSTALABLE (roadmap MEJORAS.md) — la portada se vuelve
+   *  instaladora: registra el service worker, detecta standalone, captura
+   *  beforeinstallprompt y enseña el camino manual si el navegador no
+   *  dispara el diálogo. Cero juego: DOM puro + telemetría anónima.
+   *  ===================================================================== */
+  const pwaSt = { standalone: false, prompt: null, registered: false };
+  try {
+    window.__ppPwa = pwaSt;   // gancho de QA (qa_r109)
+  } catch (e0) { /* */ }
+
+  // (1) registro del service worker — sólo en contexto seguro (o localhost
+  // para pruebas): en file:// no existe y en http:// simple se ignora en paz.
+  try {
+    const swOk = 'serviceWorker' in navigator &&
+      (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname));
+    if (swOk) {
+      navigator.serviceWorker.register('sw.js', { scope: './' })
+        .then(() => { pwaSt.registered = true; })
+        .catch(() => { pwaSt.registered = false; });   // nunca rompe la portada
+    }
+  } catch (e1) { /* */ }
+
+  // (2) detección de standalone: la app YA está instalada (arrancada desde
+  // el icono). Oculta el botón y avisa una vez a telemetría.
+  try {
+    pwaSt.standalone = window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
+      window.navigator.standalone === true;
+    if (pwaSt.standalone) {
+      const pb0 = document.getElementById('pwabtn');
+      if (pb0) pb0.style.display = 'none';
+      try { if (window.__PP_TELE) window.__PP_TELE.ev('pwa_standalone', {}); } catch (e2) { /* */ }
+    }
+  } catch (e3) { /* */ }
+
+  // (3) toast discreto de la portada (mismo idioma vivo que el resto)
+  let ppToastEl = null, ppToastTmr = 0;
+  const ppToast = (html, ms) => {
+    try {
+      if (!ppToastEl) {
+        ppToastEl = document.createElement('div');
+        ppToastEl.id = 'ppToast';
+        const ov = document.getElementById('overlay');
+        (ov || document.body).appendChild(ppToastEl);
+      }
+      ppToastEl.innerHTML = html;
+      ppToastEl.classList.add('show');
+      if (ppToastTmr) clearTimeout(ppToastTmr);
+      ppToastTmr = setTimeout(() => { if (ppToastEl) ppToastEl.classList.remove('show'); }, ms || 9000);
+    } catch (e4) { /* */ }
+  };
+  window.__ppPwaToast = ppToast;   // reutilizable (M4 onboarding)
+
+  // (4) botón INSTALAR EN EL CASCO: diálogo nativo si lo hay, manual si no.
+  const pwaBtn = document.getElementById('pwabtn');
+  try {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();               // el diálogo lo manda NUESTRO botón
+      pwaSt.prompt = e;
+      if (pwaBtn) pwaBtn.classList.add('pwaOn');
+    });
+    window.addEventListener('appinstalled', () => {
+      pwaSt.prompt = null;
+      if (pwaBtn) pwaBtn.style.display = 'none';
+      ppToast(T('pwa_installed'), 8000);
+      try { if (window.__PP_TELE) window.__PP_TELE.ev('pwa_installed', {}); } catch (e5) { /* */ }
+    });
+  } catch (e6) { /* */ }
+  if (pwaBtn && !pwaSt.standalone) {
+    pwaBtn.addEventListener('click', () => {
+      const ev0 = pwaSt.prompt;
+      if (ev0 && typeof ev0.prompt === 'function') {
+        ev0.prompt();
+        ev0.userChoice && ev0.userChoice.then((r) => {
+          try { if (window.__PP_TELE) window.__PP_TELE.ev('pwa_prompt', { o: String(r && r.outcome || '?') }); } catch (e7) { /* */ }
+          if (r && r.outcome === 'accepted') { pwaSt.prompt = null; pwaBtn.style.display = 'none'; }
+        }).catch(() => { /* */ });
+      } else {
+        // Sin evento nativo (Quest Browser puede no dispararlo): caminito
+        // manual — el toast enseña los 2 toques del menú del navegador.
+        ppToast(T('pwa_manual'), 11000);
+        try { if (window.__PP_TELE) window.__PP_TELE.ev('pwa_manual_hint', {}); } catch (e8) { /* */ }
+      }
+    });
+  }
+
   applyLangDOM();   // primera pintura de la portada en el idioma guardado
 });
 

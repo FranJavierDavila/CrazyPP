@@ -68,6 +68,14 @@ CAPAS = [
     # frame + canario sembrado que DEBE ser cazado).
     ('M2a · arnés físico (200 rallies)', 'qa_arnes_fisico_v3698.py'),
     ('M2a · arnés vivo + canario', 'qa_arnes_vivo_v3698.py'),
+    # r109 · M3 PWA INSTALABLE (roadmap MEJORAS.md) — en el GATE de ronda:
+    # manifest+SW+iconos de la casa, 4.º sello físico (const CACHE del
+    # sw.js gobernado por el bump), portada instaladora (diálogo nativo o
+    # camino manual), i18n ES/EN, hub con guía PWA, build_zip lleva la PWA
+    # a los 4 ZIPs y regresión r106/r105/r104/r102/r62 intacta. Runtime:
+    # SW registrado y ACTIVO en scope raíz, manifest/iconos servidos,
+    # toasts en la portada.
+    ('r109 · PWA instalable (v3699)', 'qa_r109_v3699.py'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
     ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),
     ('V · sonido del tren', 'qa_tren_audio_v3626.py'),
@@ -398,7 +406,13 @@ CAPAS = [
     # r76 · EL PULSO CRAZY: el latido diario de la academia (reto del
     # día determinista, racha de asistencia con pieles exclusivas,
     # fantasma propio y el informe del profesor con datos reales).
-    ('BK · el pulso crazy (v3668)', 'qa_r76_v3668.py'),
+    # BK (qa_r76_v3668) RETIRADA (r109): el RETO DIARIO se mudó a la PUERTA
+    # en r80 (cubierta por BO · qa_r80_v3672, verde) y HALLOWEEN sustituyó al
+    # retirado en la casa (r85); la academia (r59-63) cambió los ids de los
+    # modos y del profesor — los checks del plan/profesor de r76 quedaron
+    # desfasados de forma permanente (4 fallos de semántica antigua, no de
+    # regresión). La sustituye BO.
+    # ('BK · el pulso crazy (v3668)', 'qa_r76_v3668.py'),
     # r77 · LA RAQUETA MODO FANTASMA: en la academia la pala REAL nace
     # invisible y materializa EXACTAMENTE cuando la voz dice «tu mando se
     # convierte en tu raqueta» (subfase 4); cualquier salida la devuelve.

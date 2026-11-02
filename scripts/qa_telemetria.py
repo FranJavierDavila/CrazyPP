@@ -109,7 +109,7 @@ def bloque_catalogo():
                 patrones.append((f, 'champ_rank'))
 
     # ronda 79: 10 eventos (net_match se añade al catálogo — métricas técnicas de red)
-    chk(len(nombres_cat) == 10, f'el catálogo documenta 10 eventos ({len(nombres_cat)})')
+    chk(len(nombres_cat) == 14, f'el catálogo documenta 14 eventos ({len(nombres_cat)})')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')
@@ -613,9 +613,12 @@ def bloque_ronda14():
 
     # ── catálogo + harness ──
     cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
-    chk(cat.get('ronda') == 79, f'catálogo: ronda == 79 (={cat.get("ronda")})')
+    chk(cat.get('ronda') == 109, f'catálogo: ronda == 109 (={cat.get("ronda")})')
     chk('sesionesVR' in (cat.get('ronda14') or {}), 'catálogo: ronda14 documenta sesionesVR')
     por_n = {e['nombre']: e for e in cat['eventos']}
+    # r109 · M3 PWA: los 4 eventos nuevos del instalador documentados
+    chk(all(n in por_n for n in ('pwa_standalone', 'pwa_prompt', 'pwa_installed', 'pwa_manual_hint')),
+        'catálogo: eventos pwa_* documentados (r109)')
     chk('PRIMER PING REAL' in por_n.get('vr_ping', {}).get('notas', ''), 'catálogo: vr_ping estrena datos reales')
     chk('SESIONES VR (ronda 14)' in harness, 'harness: bloque N de sesionesVR')
 

@@ -61,8 +61,8 @@ CHK('i > mx' in mod, 'criterio de la tapa: i > maxIdx (igual que el ? del canvas
 CHK('_texTapa' in mod and "'?'" in mod, 'tapa con «?» de hueso (textura compartida estática)')
 
 print('== 2 · RIVAL A LA VISTA ==')
-CHK('(this.game.scene || this.game.rig).add(this.r.node)' in mod,
-    'rival: node AÑADIDO a la escena (el fallo del dueño)')
+CHK('(this.game.rig || this.game.scene).add(this.r.node)' in mod,
+    'rival: node AÑADIDO a la escena (el fallo del dueño; r88: rig primero)')
 CHK('ALTO / 2' in mod, 'rival: pies en el suelo (y = alto/2, antes y=0 lo enterraba)')
 CHK('this.r.node.position.y = base + onda' in mod or 'this.r.node.position.y' in mod,
     'flotación sobre el node real')
@@ -71,8 +71,8 @@ CHK('prewarmI' not in mod and 'prewarm' not in mod.replace('el prewarm nunca rom
 print('== 3 · CARTEL DE SUPERPODER CON ANCLAJE ==')
 CHK('dims: () => (DIMS ? { netTopY: DIMS.netTopY, tableCenterZ: DIMS.tableCenterZ } : null)' in mod,
     'createPowerSign CON dims (antes: origen del rig = a los pies)')
-CHK('try { game.scene.add(cartel.mesh); } catch (e) { /* */ }' in mod,
-    'cartel de bienvenida AÑADIDO a la escena (también era invisible)')
+CHK('(game.rig || game.scene).add(cartel.mesh)' in mod,
+    'cartel de superpoder AÑADIDO a la escena (r88: rig primero · el cartel de BIENVENIDA quedó retirado por normativa)')
 CHK(man['cartel']['pos'][2] < -5.0, 'cartel en la pared FRONTAL (z %.2f)' % man['cartel']['pos'][2])
 
 print('== 4 · MANO DE ZOMBI REESCRITA ==')

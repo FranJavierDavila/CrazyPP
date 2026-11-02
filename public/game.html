@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CRAZY PING PONG · Meta Quest 3</title>
+<!-- r109 · M3 PWA: manifest + color del tema (instalable, adiós ?v=) -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0b2050" />
 <meta name="description" content="Tenis de mesa arcade en WebXR para Meta Quest 3: partido, entrenamiento, supervivencia y multijugador online P2P." />
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -267,6 +270,20 @@
   .wrlnone { text-align: center !important; color: #5c6672 !important; padding: 18px 8px !important; }
   .wrlogro { width: 30px; height: 30px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 0 4px rgba(255,210,87,0.65)); }
   .wrlfoot { margin-top: 12px; font-size: 12px; color: #75828f; line-height: 1.5; }
+
+  /* ==== r109 · M3 PWA: toast de instalación en la portada + botón vivo ==== */
+  #ppToast {
+    position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(8px);
+    max-width: min(560px, 86vw); z-index: 60;
+    background: rgba(9, 14, 26, 0.94); border: 1px solid rgba(255, 210, 87, 0.55);
+    border-radius: 14px; padding: 12px 18px;
+    color: #e9edf2; font-size: 14px; line-height: 1.55; text-align: center;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  #ppToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #ppToast b { color: #ffd257; }
+  .footlink.pwaOn { color: #ffd257; font-weight: 700; text-shadow: 0 0 8px rgba(255,210,87,0.45); }
 </style>
 <script src="/vendor/socket.io.min.js"></script>
 <script type="importmap">
@@ -320,11 +337,14 @@
       <span class="dot">·</span>
       <button id="introbtn" title="INTRO">🎬 INTRO</button>
       <span class="dot">·</span>
+      <!-- r109 · M3 PWA: instalar en el casco (antes de Ko-fi) -->
+      <button id="pwabtn" class="footlink" data-i18n="ov_pwa">📲 INSTALAR EN EL CASCO</button>
+      <span class="dot">·</span>
       <button id="kofibtn" class="footlink" data-i18n="ov_kofi">☕ Apoyar en Ko-fi</button>
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.98-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.99-SDK6</span>
     </div>
   </main>
 
@@ -1220,6 +1240,11 @@ const I18N_STRINGS = {
     ov_vr: 'ENTRAR EN VR',
     ov_ar: '🏠 PASSTHROUGH · tu habitación',
     ov_kofi: '☕ Apoyar en Ko-fi',
+    // r109 · M3 PWA (portada): botón instalar + toasts
+    ov_pwa: '📲 INSTALAR EN EL CASCO',
+    pwa_manual: '<b>Instálala en 2 toques:</b> abre el menú <b>⋮</b> del navegador y elige <b>«Instalar app»</b>. Icono propio en el casco, sin teclear URL y actualizaciones automáticas.',
+    pwa_installed: '<b>¡App instalada!</b> CRAZY PING PONG ya vive en tu casco: búscala entre tus apps.',
+    pwa_ready: 'Listo para instalar: pulsa de nuevo y elige «Instalar» en el diálogo.',
     music_title: 'Música (portada y menú VR)',
     ov_hint: '<b>En el visor:</b> sube esta carpeta a <b>Netlify Drop</b> y abre el enlace con el <b>Meta Quest Browser</b> (requiere HTTPS).',
     ov_lang: '🌐 Idioma / Language',
@@ -2026,6 +2051,11 @@ const I18N_STRINGS = {
     ov_vr: 'ENTER VR',
     ov_ar: '🏠 PASSTHROUGH · your room',
     ov_kofi: '☕ Support on Ko-fi',
+    // r109 · M3 PWA (portada): install button + toasts
+    ov_pwa: '📲 INSTALL ON HEADSET',
+    pwa_manual: '<b>Install it in 2 taps:</b> open the browser <b>⋮</b> menu and choose <b>"Install app"</b>. Its own icon on the headset, no URL typing and automatic updates.',
+    pwa_installed: '<b>App installed!</b> CRAZY PING PONG now lives on your headset: find it among your apps.',
+    pwa_ready: 'Ready to install: press again and choose "Install" in the dialog.',
     music_title: 'Music (landing and VR menu)',
     ov_hint: '<b>On the headset:</b> upload this folder to <b>Netlify Drop</b> and open the link with the <b>Meta Quest Browser</b> (HTTPS required).',
     ov_lang: '🌐 Language / Idioma',
@@ -2950,7 +2980,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.98-SDK6';
+  const VERSION = '3.6.99-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -30389,6 +30419,94 @@ loadPaddleModel().then((paddleModel) => {
     document.addEventListener('pp-lang', wrlRender2D);   // repinta con el idioma vivo
     // calienta la caché al cargar la portada (igual que hace el menú VR)
     WORLDRANK.load(false).catch(() => { /* nunca rompe la portada */ });
+  }
+
+  /* =====================================================================
+   *  r109 · M3 PWA INSTALABLE (roadmap MEJORAS.md) — la portada se vuelve
+   *  instaladora: registra el service worker, detecta standalone, captura
+   *  beforeinstallprompt y enseña el camino manual si el navegador no
+   *  dispara el diálogo. Cero juego: DOM puro + telemetría anónima.
+   *  ===================================================================== */
+  const pwaSt = { standalone: false, prompt: null, registered: false };
+  try {
+    window.__ppPwa = pwaSt;   // gancho de QA (qa_r109)
+  } catch (e0) { /* */ }
+
+  // (1) registro del service worker — sólo en contexto seguro (o localhost
+  // para pruebas): en file:// no existe y en http:// simple se ignora en paz.
+  try {
+    const swOk = 'serviceWorker' in navigator &&
+      (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname));
+    if (swOk) {
+      navigator.serviceWorker.register('sw.js', { scope: './' })
+        .then(() => { pwaSt.registered = true; })
+        .catch(() => { pwaSt.registered = false; });   // nunca rompe la portada
+    }
+  } catch (e1) { /* */ }
+
+  // (2) detección de standalone: la app YA está instalada (arrancada desde
+  // el icono). Oculta el botón y avisa una vez a telemetría.
+  try {
+    pwaSt.standalone = window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
+      window.navigator.standalone === true;
+    if (pwaSt.standalone) {
+      const pb0 = document.getElementById('pwabtn');
+      if (pb0) pb0.style.display = 'none';
+      try { if (window.__PP_TELE) window.__PP_TELE.ev('pwa_standalone', {}); } catch (e2) { /* */ }
+    }
+  } catch (e3) { /* */ }
+
+  // (3) toast discreto de la portada (mismo idioma vivo que el resto)
+  let ppToastEl = null, ppToastTmr = 0;
+  const ppToast = (html, ms) => {
+    try {
+      if (!ppToastEl) {
+        ppToastEl = document.createElement('div');
+        ppToastEl.id = 'ppToast';
+        const ov = document.getElementById('overlay');
+        (ov || document.body).appendChild(ppToastEl);
+      }
+      ppToastEl.innerHTML = html;
+      ppToastEl.classList.add('show');
+      if (ppToastTmr) clearTimeout(ppToastTmr);
+      ppToastTmr = setTimeout(() => { if (ppToastEl) ppToastEl.classList.remove('show'); }, ms || 9000);
+    } catch (e4) { /* */ }
+  };
+  window.__ppPwaToast = ppToast;   // reutilizable (M4 onboarding)
+
+  // (4) botón INSTALAR EN EL CASCO: diálogo nativo si lo hay, manual si no.
+  const pwaBtn = document.getElementById('pwabtn');
+  try {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();               // el diálogo lo manda NUESTRO botón
+      pwaSt.prompt = e;
+      if (pwaBtn) pwaBtn.classList.add('pwaOn');
+    });
+    window.addEventListener('appinstalled', () => {
+      pwaSt.prompt = null;
+      if (pwaBtn) pwaBtn.style.display = 'none';
+      ppToast(T('pwa_installed'), 8000);
+      try { if (window.__PP_TELE) window.__PP_TELE.ev('pwa_installed', {}); } catch (e5) { /* */ }
+    });
+  } catch (e6) { /* */ }
+  if (pwaBtn && !pwaSt.standalone) {
+    pwaBtn.addEventListener('click', () => {
+      const ev0 = pwaSt.prompt;
+      if (ev0 && typeof ev0.prompt === 'function') {
+        ev0.prompt();
+        ev0.userChoice && ev0.userChoice.then((r) => {
+          try { if (window.__PP_TELE) window.__PP_TELE.ev('pwa_prompt', { o: String(r && r.outcome || '?') }); } catch (e7) { /* */ }
+          if (r && r.outcome === 'accepted') { pwaSt.prompt = null; pwaBtn.style.display = 'none'; }
+        }).catch(() => { /* */ });
+      } else {
+        // Sin evento nativo (Quest Browser puede no dispararlo): caminito
+        // manual — el toast enseña los 2 toques del menú del navegador.
+        ppToast(T('pwa_manual'), 11000);
+        try { if (window.__PP_TELE) window.__PP_TELE.ev('pwa_manual_hint', {}); } catch (e8) { /* */ }
+      }
+    });
   }
 
   applyLangDOM();   // primera pintura de la portada en el idioma guardado

@@ -92,7 +92,7 @@ CHK("mesa_alto_grab: 'Grab the table: aim, hold the trigger and move it up or do
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.91-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.99-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
 CHK(V.get('fase') == 93, 'VERSION.json: FASE 93')
 CHK(V.get('hub') == 'v3691-sdk6', 'VERSION.json: hub v3691-sdk6')

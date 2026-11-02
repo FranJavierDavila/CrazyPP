@@ -6,8 +6,11 @@ Es el ÚNICO camino legítimo para cambiar la versión del juego. En una sola
 pasada, asertada y re-entrante:
   1. Verifica que los sellos actuales casan con VERSION.json (si alguien
      editó un sello a mano, ABORTA).
-  2. Parchea los 3 sellos físicos: c00_pre_three.js (const VERSION),
-     03_body.html (#verBadge) y el hub /descargas (todas las menciones).
+  2. Parchea los 4 sellos físicos: c00_pre_three.js (const VERSION),
+     03_body.html (#verBadge), el hub /descargas (todas las menciones) y
+     public/sw.js (const CACHE = 'crazypp-v…', r109/M3: el bump gobierna
+     la caché del service worker — al cambiar el byte, el navegador
+     actualiza el SW y activate purga las cachés viejas).
   3. Reescribe VERSION.json (fecha de hoy + fase/sdk si se pasan).
   4. Regenera public/game.html (build_game.py --escribir) y refresca el
      GOLDEN_SHA256.txt con el comentario estándar.
@@ -31,6 +34,7 @@ SRC = RAIZ / 'src' / 'game'
 C00 = SRC / 'core' / 'c00_pre_three.js'
 BODY = SRC / '03_body.html'
 HUB = RAIZ / 'src' / 'app' / 'descargas' / 'page.tsx'
+SWJS = RAIZ / 'public' / 'sw.js'      # r109 · M3: sello de la caché PWA
 VJSON = SRC / 'VERSION.json'
 GOLDEN = SRC / 'GOLDEN_SHA256.txt'
 GAME = RAIZ / 'public' / 'game.html'
@@ -93,10 +97,15 @@ def main():
     n_tag_hub = hub.count(viejo_tag)
     if n_ver_hub < 3 or n_tag_hub < 3:
         aborta(f'hub con menciones inesperadas: {n_ver_hub}×{actual}, {n_tag_hub}×{viejo_tag}')
+    # r109 · M3: sello de la caché del service worker
+    sw = SWJS.read_text(encoding='utf-8')
+    if sw.count(f"const CACHE = 'crazypp-v{actual}'") != 1:
+        aborta(f'public/sw.js no lleva exactamente una vez const CACHE = crazypp-v{actual}')
     # re-entrante: si los sellos EXACTOS ya son la nueva versión, no escribir
     # nada (los sellos van acotados por comillas/cierre, así que un sufijo
     # tipo 3.6.5-SDK5B no dispara el guard del 3.6.5-SDK5)
-    if f"const VERSION = '{nueva}'" in c00 or f'>V{nueva}</span>' in body:
+    if f"const VERSION = '{nueva}'" in c00 or f'>V{nueva}</span>' in body \
+            or f"const CACHE = 'crazypp-v{nueva}'" in sw:
         aborta('los sellos ya son la versión nueva (¿bump repetido?)')
 
     # 2. parchear los 3 sellos
@@ -109,7 +118,11 @@ def main():
     HUB.write_text(
         hub.replace(actual, nueva).replace(viejo_tag, nuevo_tag),
         encoding='utf-8')
-    print(f'· sellos parcheados: c00 (1) · badge (1) · hub ({n_ver_hub}×{nueva} + {n_tag_hub}×{nuevo_tag})')
+    SWJS.write_text(
+        sw.replace(f"const CACHE = 'crazypp-v{actual}'",
+                   f"const CACHE = 'crazypp-v{nueva}'", 1),
+        encoding='utf-8')
+    print(f'· sellos parcheados: c00 (1) · badge (1) · hub ({n_ver_hub}×{nueva} + {n_tag_hub}×{nuevo_tag}) · sw.js CACHE (1)')
 
     # 3. VERSION.json nuevo
     vdat2 = dict(vdat)

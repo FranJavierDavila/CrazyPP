@@ -45,6 +45,21 @@ hub = (RAIZ / 'src/app/descargas/page.tsx').read_text(encoding='utf-8')
 chk(hub.count(ver) >= 3, f'hub: menciones de {ver} ({hub.count(ver)})')
 chk(hub.count(V['hub']) >= 3, f'hub: menciones del sello {V["hub"]} ({hub.count(V["hub"])})')
 
+# 2b · r109 · M3 PWA: sello del service worker + manifest + iconos
+swjs = (RAIZ / 'public/sw.js').read_text(encoding='utf-8')
+chk(swjs.count(f"const CACHE = 'crazypp-v{ver}'") == 1,
+    'public/sw.js: const CACHE casa con la versión (el bump gobierna la caché)')
+man = json.loads((RAIZ / 'public/manifest.webmanifest').read_text(encoding='utf-8'))
+chk(man.get('start_url') == './game.html' and man.get('scope') == './',
+    'manifest: start_url ./game.html + scope ./ (compatible /CrazyPP/)')
+chk(man.get('display') == 'fullscreen', 'manifest: display fullscreen (Quest)')
+chk(man.get('name', '').startswith('CRAZY PING PONG'), 'manifest: nombre de la casa')
+for _ico in man.get('icons', []):
+    _f = RAIZ / 'public' / str(_ico.get('src', ''))
+    _ok = _f.exists() and _f.stat().st_size > 1000
+    chk(_ok, f"manifest: icono {_ico.get('src')} existe ({_f.stat().st_size if _f.exists() else 0:,} B)")
+chk(len(man.get('icons', [])) >= 3, 'manifest: 3 iconos (192 + 512 + maskable)')
+
 # 3 · manifests de los 5 campeonatos
 for mod, esperado in V['manifests'].items():
     m = json.loads((RAIZ / f'public/championships/{mod}/manifest.json').read_text(encoding='utf-8'))

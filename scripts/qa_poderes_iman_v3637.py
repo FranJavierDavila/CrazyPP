@@ -56,7 +56,7 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.91-SDK6', 'sello de versión servida (r57)'),
+        ('3.6.99-SDK6', 'sello de versión servida (al día r109)'),
         ('const PODERES_PALA', 'REGISTRO EXTENSIBLE de poderes'),
         ("{ id: 'mega', nombre: () => T('poder_mega'),", 'entrada MEGA del registro'),
         ("{ id: 'efecto', nombre: () => T('poder_efecto'),", 'entrada EFECTO del registro'),
@@ -88,9 +88,9 @@ async def main():
          'imán: pala METÁLICA −80 % mientras dura la ventana (r54, intacta)'),
         # · i18n ES/EN
         ('¡SÚPER IMÁN! · tus ataques dan SIEMPRE en la mesa rival (más fuerte y rápido) · 10 s',
-         'i18n ES: el imán anuncia la GUÍA + 10 s (r57)'),
+         'i18n ES: el imán anuncia la GUÍA + 10 s (al día r109)'),
         ('SUPER MAGNET! · your shots ALWAYS land on the rival table (stronger and faster) · 10 s',
-         'i18n EN: el imán anuncia la GUÍA + 10 s (r57)'),
+         'i18n EN: el imán anuncia la GUÍA + 10 s (al día r109)'),
         # · EFECTO NOTORIO (r37) intacto
         ('efectoRivalErrMul: 2.0,', 'efecto notorio: error del rival ×2 (intacto)'),
         ('efectoRivalVel: 0.85,', 'efecto notorio: piernas del rival ×0,85 (intacto)'),
@@ -272,7 +272,7 @@ async def main():
             ('iman10', 'SÚPER IMÁN: la ventana abre con 10 s exactos'),
             ('imanViva', 'a los 9,98 s la ventana SIGUE viva'),
             ('imanCierra', 'pasados los 10 s la ventana se cierra SÓLA (reloj)'),
-            ('sinGastoExtra', 'la guía NO gasta cargas por asistencia (r57)'),
+            ('sinGastoExtra', 'la guía NO gasta cargas por asistencia (al día r109)'),
             ('desarmada', 'sin ventana la pala es HONESTA (ppImanAim=false)'),
             ('armada', 'con la ventana la pala queda ARMADA (ppImanAim=true)'),
             ('corregidaDer', 'LA GUÍA: tiro a la banda DERECHA bota EN LA MESA RIVAL'),

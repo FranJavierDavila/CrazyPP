@@ -110,10 +110,10 @@ for aguja, nombre in AGUJAS:
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.91-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.99-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 93, 'VERSION.json: FASE 93')
-CHK(V.get('hub') == 'v3691-sdk6', 'VERSION.json: hub v3691-sdk6')
+CHK(V.get('fase') == 101, 'VERSION.json: FASE 101')
+CHK(V.get('hub') == 'v3699-sdk6', 'VERSION.json: hub v3699-sdk6')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')

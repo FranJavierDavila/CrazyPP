@@ -1,10 +1,10 @@
 {
-  "version": "3.6.98-SDK6",
-  "fase": 100,
-  "faseNombre": "M1 GAME FEEL (r106)",
+  "version": "3.6.99-SDK6",
+  "fase": 101,
+  "faseNombre": "PWA INSTALABLE (r109)",
   "sdk": "1.6.0",
-  "fecha": "2026-11-01",
-  "hub": "v3698-sdk6",
+  "fecha": "2026-11-02",
+  "hub": "v3699-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r104",
   "tamano": 10597962,
-  "golden": "414f27dcb13b865343013b8944ccd808fa0eaef63704e9d27d5a1340aca4cee1"
+  "golden": "22a0d6377afc11d33d1cc419e6a2d503c97d1282e4590bd82a4ddca1162604fd"
 }

@@ -121,8 +121,8 @@ except ImportError:
 
 # sellos del bundle recién construido
 GH = open(os.path.join(PUB, 'game.html'), encoding='utf-8', errors='ignore').read()
-CHK(GH.count("const VERSION = '3.6.91-SDK6'") == 1, 'bundle: sello const VERSION 3.6.91-SDK6')
-CHK('>V3.6.91-SDK6<' in GH, 'bundle: badge V3.6.91-SDK6 en el servido')
+CHK(GH.count("const VERSION = '3.6.99-SDK6'") == 1, 'bundle: sello const VERSION 3.6.91-SDK6')
+CHK('>V3.6.99-SDK6<' in GH, 'bundle: badge V3.6.91-SDK6 en el servido')
 CHK('const rise0 = sw.flat ? 0 : 0.05;' in GH, 'bundle: aguja c12 rise0/flat en el servido')
 CHK('contact: toca ? new THREE.Vector3(toca.x, toca.y, toca.z)' in GH,
     'bundle: aguja c06 tangente-para-el-swing en el servido')
@@ -176,7 +176,8 @@ with sync_playwright() as pw:
       const H = window.__PP_HALLOWEEN; if (!H) return null;
       const est = () => (H.mus() ? H.mus().estado() : null);
       let m = est();
-      for (let i = 0; i < 50; i++) {
+      // r109: paciencia 20 s (decode de 178 s de audio en máquina caliente)
+      for (let i = 0; i < 100; i++) {
         m = est();
         if (m && m.cargado && m.querido && m.sonando) break;
         await new Promise(r => setTimeout(r, 200));

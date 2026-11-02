@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.99-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.100-SDK6</span>
     </div>
   </main>
 
@@ -2980,7 +2980,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.99-SDK6';
+  const VERSION = '3.6.100-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -11586,7 +11586,17 @@ class NetLink {
           tq[2] = grip.quaternion.z; tq[3] = grip.quaternion.w;
         }
         fl |= 1 << i;                                  // mano rastreada
-        if (i === g.paddleHand) fl |= 4;               // pala en esta mano
+        // r110 · SEMÁNTICA DEL BIT 4 = «pala en la mano IZQUIERDA (slot 0)»:
+        // TODOS los lectores (c12 render 10311, c12 saque 9928, c09
+        // _remotePadNet 1754) lo interpretan así. Antes se ponía en
+        // CUALQUIER mano con pala: un jugador diestro (paddleHand=1, el 95 %)
+        // viajaba con bit4=ON y el rival pintaba su pala en la MANO LIBRE
+        // (donde está la bola del saque — «veo su pelota, no su pala») y el
+        // validador §12 comparaba cada golpe contra la mano equivocada
+        // (distancias de >1 m → TODO golpe remoto rechazado: «la bola cae
+        // irremediablemente»). Con pala a la derecha el bit queda a 0 y el
+        // lector elige rp: la mano que DEBE.
+        if (i === 0 && i === g.paddleHand) fl |= 4;
       }
     }
     // v3.6.74 · r82 · LATERALIDAD FÍSICA de la mano de la pala (bit 8):
@@ -11924,6 +11934,24 @@ class NetLink {
   _applyFastEv(ev, g) {
     const nowH = this._clock.nowHost(performance.now());
     if (ev.t === PPNET.VP.EV.SNAP) {
+      // r110 · REPARACIÓN DE SERVE ATASCADO: SNAPs sólo emite quien tiene la
+      // bola viva (own/auth). Si MI bola sigue HELD del rival (holder='opp')
+      // y llegan SNAPs, su saque YA está en el aire en su casco — el TOSS o
+      // el HIT del saque se perdió o fue rechazado — y yo me quedaría con la
+      // bola congelada en la mano PARA SIEMPRE («no deja ni sacar ni
+      // jugar»). Libero el hold y paso a fantasma DESDE el estado del SNAP:
+      // el glue toma el mando y el rallye sigue siendo honesto.
+      if (this._ball.state === 'held' && this._ball.holder === 'opp') {
+        this._ball.state = 'ghost';
+        this._ball.mine = false;
+        const pR = NetLink.posFromNetArr(ev.p);
+        const vR = NetLink.vecFromNetArr(ev.v);
+        g.ball.pos.copy(pR);
+        g.ball.vel.copy(vR);
+        if (g.ballMesh) g.ballMesh.visible = true;
+        g._netTossLive = true;
+        return;
+      }
       // corrección suave del fantasma (sin ack, spec §5/§8)
       if (this._ball.state === 'ghost') {
         const p = NetLink.posFromNetArr(ev.p);
@@ -12270,7 +12298,10 @@ const PPNET = (() => {
     // CUATERNIÓN VISUAL (grip ⊗ montura viva — antes grip crudo). Dos cascos
     // con versiones distintas RECHAZAN el HELLO y caen a v1 en vez de
     // interpretar mal el cable (pala del rival rodada/desplazada).
-    PROTO: 2,             // versión del protocolo binario (HELLO)
+    // r110 · PROTO 3: semántica del bit4 de pose corregida (pala=mano IZQ
+    // slot 0 — antes se ponía en cualquier mano). Builds mezclados no pueden
+    // compartir cable: RECHAZO de HELLO → v1 honesto y jugable.
+    PROTO: 3,             // versión del protocolo binario (HELLO)
     PHYS: 1,              // versión de ballPhysics compartida (HELLO)
     BUILD: '',            // hash de build (lo rellena el juego: VERSION)
 
@@ -12297,10 +12328,23 @@ const PPNET = (() => {
     MAX_RTT_PAIR: 0.200,  // emparejamiento: RTT máximo aceptado (s) — spec §3.1
 
     MAX_BALL_SPEED: 30,   // validación: rapidez máxima aceptada (m/s)
-    MAX_SPIN: 160,        // validación: giro máximo aceptado (rad/s)
+    // r110 · MAX_SPIN 160→220: un giro legal ya supera 160 con muñeca rápida
+    // (spinImpulse 9·m/s sobre rel 12-18 m/s en el enderezado 5.5) — rechazar
+    // un golpe LEGÍTIMO regala un punto y congela el rallye («imposible
+    // golpear la bola»). El cap local DIMS.spinMax (90) sigue mandando en el
+    // juego normal; 220 sólo corta trampas groseras.
+    MAX_SPIN: 220,        // validación: giro máximo aceptado (rad/s)
     MIN_HIT_GAP: 0.150,   // no más de un golpe cada 150 ms
-    HIT_NEAR_PAD: 0.60,   // el golpe ocurrió a <60 cm de la pala del rival
-    TOL_FUTURE: 120,      // validación: tHit como máx. 120 ms en el futuro
+    // r110 · HIT_NEAR_PAD 0,60→0,85: con JB+latencia real la pose del
+    // instante exacto puede faltar ±1 muestra y el follow-through de un
+    // smash recorre 25-60 cm — 0,60 rechazaba golpes honestos. 0,85 sigue
+    // siendo imposible para quien no esté cerca de la bola.
+    HIT_NEAR_PAD: 0.85,   // el golpe ocurrió a <85 cm de la pala del rival
+    // r110 · TOL_FUTURE 120→250: el ancla gruesa del reloj puede errar ~un
+    // one-way (±40-80 ms en Wi-Fi real) y el eco NTP tarda unos paquetes en
+    // afinar — los PRIMEROS golpes de cada partida se rechazaban por «tHit
+    // en el futuro» sin motivo real.
+    TOL_FUTURE: 250,      // validación: tHit como máx. 250 ms en el futuro
                           // (r82: el ancla gruesa del reloj puede errar ~un
                           //  one-way; el eco NTP refinado la corrige en vivo)
 
@@ -24555,12 +24599,27 @@ class PingPongGame {
         ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise;
       if (tossImmune) pads.length = 0;
       // v3.6.71 · r79 · FSM DE LA BOLA (autoridad por mitad, spec §7):
-      // fantasma = bola del rival simulo con la FÍSICA REAL pero SIN mi
-      // pala (nadie golpea una bola de mitad ajena ni un fantasma).
+      // fantasma = bola del rival simulo con la FÍSICA REAL.
+      // r110 · LA MITAD PROPIA ES JUGABLE TAMBIÉN EN FANTASMA: antes el
+      // fantasma se simulaba con palas VACÍAS y la autoridad tardaba
+      // (HANDOFF en vuelo ~RTT, o provisional a 300 ms) — a 4-6 m/s la bola
+      // recorría 1,2-1,8 m INJUGABLE y moría con doble bote antes de que el
+      // jugador pudiera tocarla («cae irremediablemente aunque la trate de
+      // golpear»). Ahora, si el fantasma ya está EN MI MITAD (pasó la red
+      // hacia mí), MI pala participa: mi contacto es el golpe SAGRADO local
+      // (netLocalHit → HIT con validación §12 en el rival) y reclama la
+      // autoridad. En mitad ajena sigue prohibido tocar (anti-doble-golpe
+      // en la línea, spec §7) y el anti-trampa no cambia.
       const v2on = this.net.online && this.net.v2 === 'ok';
       if (v2on && !this.net.ballMine()) {
-        stepPhysics(dt * this._dilF, this.ball, [], this.events);
+        const enMiMitad = this.ball.pos.z > DIMS.tableCenterZ;
+        stepPhysics(dt * this._dilF, this.ball, enMiMitad ? pads : [], this.events);
         this.net.observeGhost(this.ball);
+        if (enMiMitad && this.rules.state === 'rally') {
+          for (const e of this.events) {
+            if (e.type === 'paddle' && e.who === 'player') { this._localHit = true; break; }
+          }
+        }
       } else if (this.net.online && this.net.v2 !== 'ok' &&
                  this.net.owner !== this.net.mySide()) {
         // v2.19: la bola la simula el rival — seguir su emisión y solo

@@ -1,8 +1,8 @@
 {
  "catalogo": "telemetria-crazypp",
- "version": 6,
+ "version": 7,
  "actualizado": "2026-11-03",
- "ronda": 111,
+ "ronda": 112,
  "politica_pii": {
   "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
   "sin_ip": true,
@@ -348,6 +348,25 @@
    ],
    "desde": "v3.6.101",
    "notas": "M4 (r111): mide si la academia se termina o se salta ahora que ya NO bloquea la primera entrada (el HUB nace en ▶ JUGAR)."
+  },
+  {
+   "nombre": "ai_style",
+   "origen": "src/game/core/c12_pingponggame.js (onMatchStart, M5a r112)",
+   "momento": "arranque de un partido LOCAL con estilo de rival ≠ clásico",
+   "campos": [
+    {
+     "nombre": "est",
+     "tipo": "string",
+     "desc": "id del estilo activo (looper/chopero/bloqueador/atacante/defensivo/dejadas/allround/nervioso/veterano/gigante/relampago)"
+    },
+    {
+     "nombre": "dif",
+     "tipo": "string",
+     "desc": "dificultad de la CPU vigente"
+    }
+   ],
+   "desde": "v3.6.102",
+   "notas": "M5a (r112): mide qué personalidades eligen los jugadores. Sin emisión en online ni con estilo clásico."
   }
  ],
  "hallazgos_ronda6": [

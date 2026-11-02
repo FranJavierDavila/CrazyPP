@@ -253,6 +253,89 @@ export function scalePreset(cfg, k) {
   };
 }
 
+/* =====================================================================
+ *  M5a (r112) · IA CON ESTILOS — 12 PERSONALIDADES sobre la MISMA física.
+ *  Cada estilo = multiplicadores ACOTADOS sobre la cfg ya escalada
+ *  (dificultad × adaptativo × supervivencia) + colocación (zIdle/bias,
+ *  el mismo canal que la personalidad de campeonato desde r95) + celebración.
+ *  SIN TRAMPAS: la velocidad final sigue clamped por el solver legal, el
+ *  error vive en ±55 % como mucho, minT/maxT y smash nunca salen de rango
+ *  y las palas IA siguen ancladas a su mitad (invariante I3 del arnés).
+ *  'clasico' = null en mul → comportamiento EXACTO de siempre (los arneses
+ *  deterministas no tocan pp_estilo_v1: sus hashes quedan intactos).
+ *  ===================================================================== */
+export const OPPONENT_STYLES = [
+  { id: 'clasico', es: 'Clásico', en: 'Classic',
+    esSub: 'El rival de siempre', enSub: 'The usual rival',
+    mul: null, zIdle: 0, bias: 0, celeb: 0.6 },
+  { id: 'looper', es: 'Looper', en: 'Looper',
+    esSub: 'Lifta desde lejos', enSub: 'Topspin from deep',
+    mul: { speed: 0.95, err: 1.18, miss: 1.1, pred: 1.1, accel: 0.9, smash: 0.55, tLo: 1.08, tHi: 1.12 },
+    zIdle: 0.34, bias: 0.02, celeb: 0.8 },
+  { id: 'chopero', es: 'Chopero', en: 'Chopper',
+    esSub: 'Cortada profunda y paciencia', enSub: 'Deep chop and patience',
+    mul: { speed: 0.88, err: 0.92, miss: 0.88, pred: 1.15, accel: 0.85, smash: 0.4, tLo: 1.15, tHi: 1.2 },
+    zIdle: 0.26, bias: 0.04, celeb: 0.45 },
+  { id: 'bloqueador', es: 'Bloqueador', en: 'Blocker',
+    esSub: 'Pegado a la mesa, reflejos', enSub: 'Glued to the table, reflexes',
+    mul: { speed: 0.85, err: 0.85, miss: 0.8, pred: 0.85, accel: 1.3, smash: 0.9, tLo: 0.95, tHi: 0.9 },
+    zIdle: -0.30, bias: 0.03, celeb: 0.5 },
+  { id: 'atacante', es: 'Atacante', en: 'Attacker',
+    esSub: 'Smash a la primera', enSub: 'Smash on sight',
+    mul: { speed: 1.15, err: 1.28, miss: 1.22, pred: 1.0, accel: 1.12, smash: 2.1, tLo: 0.85, tHi: 0.8 },
+    zIdle: -0.22, bias: 0.06, celeb: 1 },
+  { id: 'defensivo', es: 'Defensivo', en: 'Defender',
+    esSub: 'Bolas altas desde el fondo', enSub: 'High balls from the back',
+    mul: { speed: 0.92, err: 1.08, miss: 1.05, pred: 1.05, accel: 0.95, smash: 0.35, tLo: 1.25, tHi: 1.3 },
+    zIdle: 0.36, bias: 0.0, celeb: 0.35 },
+  { id: 'dejadas', es: 'Dejadas', en: 'Drop-shot',
+    esSub: 'Juego corto y maña', enSub: 'Short game and guile',
+    mul: { speed: 0.9, err: 1.12, miss: 1.08, pred: 1.0, accel: 1.05, smash: 0.5, tLo: 0.72, tHi: 0.75 },
+    zIdle: -0.06, bias: -0.10, celeb: 0.7 },
+  { id: 'allround', es: 'All-round', en: 'All-round',
+    esSub: 'Equilibrio total', enSub: 'Total balance',
+    mul: { speed: 1.0, err: 0.95, miss: 0.95, pred: 1.0, accel: 1.0, smash: 1.0, tLo: 1.0, tHi: 1.0 },
+    zIdle: 0.05, bias: 0.0, celeb: 0.6 },
+  { id: 'nervioso', es: 'Joven nervioso', en: 'Nervous youth',
+    esSub: 'Rápido pero desordenado', enSub: 'Fast but scatterbrained',
+    mul: { speed: 1.1, err: 1.55, miss: 1.4, pred: 1.2, accel: 1.45, smash: 1.2, tLo: 1.0, tHi: 1.05 },
+    zIdle: 0.0, bias: 0.02, celeb: 0.9 },
+  { id: 'veterano', es: 'Veterano frío', en: 'Cold veteran',
+    esSub: 'Nunca falla dos veces', enSub: 'Never misses twice',
+    mul: { speed: 0.98, err: 0.68, miss: 0.7, pred: 1.15, accel: 0.85, smash: 0.8, tLo: 1.0, tHi: 1.0 },
+    zIdle: 0.08, bias: 0.03, celeb: 0.25 },
+  { id: 'gigante', es: 'Gigante', en: 'Giant',
+    esSub: 'Alcance descomunal', enSub: 'Huge reach',
+    mul: { speed: 0.9, err: 0.88, miss: 0.9, pred: 1.05, accel: 0.88, smash: 0.9, tLo: 1.0, tHi: 1.0 },
+    zIdle: 0.10, bias: 0.16, celeb: 0.55 },
+  { id: 'relampago', es: 'Relámpago', en: 'Lightning',
+    esSub: 'Pequeño y velocísimo', enSub: 'Small and blazing fast',
+    mul: { speed: 1.05, err: 1.22, miss: 1.18, pred: 0.78, accel: 1.6, smash: 1.1, tLo: 0.9, tHi: 0.85 },
+    zIdle: -0.10, bias: 0.0, celeb: 1 },
+];
+
+/** M5a (r112) · aplica los multiplicadores de un estilo a una cfg YA
+ *  escalada (dificultad × adaptativo × supervivencia). Devuelve una cfg
+ *  NUEVA; con estilo nulo (o 'clasico') devuelve la cfg INTACTA. Todos los
+ *  campos quedan clamped a los rangos legales de scalePreset/AI_PRESETS. */
+export function estiloAplicar(cfg, estilo) {
+  if (!estilo || !estilo.mul) return cfg;
+  const m = estilo.mul;
+  const cl = (v, a, b) => Math.min(b, Math.max(a, v));
+  return {
+    maxSpeed: cfg.maxSpeed * (m.speed || 1),
+    accel: Math.min(30, cfg.accel * (m.accel || 1)),
+    errStd: cl(cfg.errStd * (m.err || 1), 0.008, 0.16),
+    missBase: cl(cfg.missBase * (m.miss || 1), 0.004, 0.45),
+    minT: cl(cfg.minT * (m.tLo || 1), 0.24, 1.0),
+    maxT: cl(cfg.maxT * (m.tHi || 1), 0.4, 1.3),
+    maxShotSpeed: cfg.maxShotSpeed * (m.speed || 1),
+    predictInterval: cl(cfg.predictInterval * (m.pred || 1), 0.03, 0.30),
+    smash: cl(cfg.smash * (m.smash || 1), 0.01, 0.75),
+    short: cfg.short,
+  };
+}
+
 export const COLORS = {
   tableBlue: 0x17539e, tableEdge: 0x0e3a73, frame: 0x22262b,
   floor: 0x37302b, wall: 0x1a1e23,

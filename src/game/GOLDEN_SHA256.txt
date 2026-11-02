@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.101-SDK6, fase 103 · Duelo Reparado; sello actualizado
-# por bump_version.py desde 3.6.100-SDK6)
-0eca301813c3ff087139eea28971fdb880c603509bf9b43a2cd9d9d5980e9165
+# SHA256 del game.html que produjo esta división (3.6.102-SDK6, fase 104 · Duelo Reparado; sello actualizado
+# por bump_version.py desde 3.6.101-SDK6)
+0156b90e08513cb87b819f7fe682b2eb0a02ac2604e63cce8521ee085384404f

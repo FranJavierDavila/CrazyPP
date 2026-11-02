@@ -42,6 +42,8 @@ TIMEOUT = {  # segundos por capa
     'qa_rendimiento.py': 300,
     'qa_arnes_fisico_v3698.py': 300, 'qa_arnes_vivo_v3698.py': 420,
     'qa_duelo_r110.py': 260,   # r110: banco de duelo NetLink (node, ~45 s)
+    # r112: arnés de estilos (12 × 30 rallies reales en caja modesta)
+    'qa_estilos_r112.mjs': 1200,
     # r82: la BATERÍA juega 3 partidos completos en paralelo (con reintento
     # por crash de SwiftShader en cajas modestas) — necesita más margen
     'bateria_multi_v3674.py': 900,
@@ -89,6 +91,14 @@ CAPAS = [
     # detectado y altura de mesa auto; telemetría primer_rally + tut_end
     # (catálogo v6). Un jugador nuevo en rallye real en <60 s.
     ('r111 · onboarding <60 s (v36101)', 'qa_r111_v36101.py'),
+    # r112 · M5a IA CON ESTILOS (roadmap MEJORAS.md) — 12 personalidades
+    # sobre la MISMA física: registro OPPONENT_STYLES con multiplicadores
+    # acotados, selector ‹ › en AJUSTES › JUEGO, colocación por el canal
+    # r95, telemetría ai_style (catálogo v7) y ARNÉS DE ESTILOS Node
+    # (12 × 30 rallies reales: cfg acotada + invariantes + 66 parejas
+    # distinguibles — sin trampas).
+    ('r112 · estilos de IA (v36102)', 'qa_r112_v36102.py'),
+    ('r112 · arnés de estilos (no-trampa)', 'qa_estilos_r112.mjs'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
     ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),
     ('V · sonido del tren', 'qa_tren_audio_v3626.py'),

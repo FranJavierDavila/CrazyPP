@@ -109,8 +109,8 @@ def bloque_catalogo():
                 patrones.append((f, 'champ_rank'))
 
     # ronda 79: 10 eventos (net_match se añade al catálogo — métricas técnicas de red)
-    # r111 (M4): el catálogo v6 documenta 16 eventos (+ primer_rally + tut_end)
-    chk(len(nombres_cat) == 16, f'el catálogo documenta 16 eventos ({len(nombres_cat)})')
+    # r112 (M5a): el catálogo v7 documenta 17 eventos (+ ai_style)
+    chk(len(nombres_cat) == 17, f'el catálogo documenta 17 eventos ({len(nombres_cat)})')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')
@@ -619,7 +619,7 @@ def bloque_ronda14():
 
     # ── catálogo + harness ──
     cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
-    chk(cat.get('ronda', 0) >= 111, f'catálogo: ronda >= 111 (={cat.get("ronda")})')
+    chk(cat.get('ronda', 0) >= 112, f'catálogo: ronda >= 112 (={cat.get("ronda")})')
     chk('sesionesVR' in (cat.get('ronda14') or {}), 'catálogo: ronda14 documenta sesionesVR')
     por_n = {e['nombre']: e for e in cat['eventos']}
     # r109 · M3 PWA: los 4 eventos nuevos del instalador documentados

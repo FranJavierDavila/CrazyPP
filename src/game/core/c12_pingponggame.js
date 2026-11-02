@@ -77,6 +77,12 @@ export class PingPongGame {
       this.rules.onMatchStart = () => {
         try { this._megaNormReset(); } catch (e) { /* nunca rompe el árbitro */ }
         // r61 · partido nuevo: fuera el campeón de la repetición anterior
+        // M5a (r112) · telemetría del ESTILO del rival (partido local con
+        // estilo ≠ clásico; una emisión por partido).
+        if (this.ppEstilo && this.ppEstilo !== 'clasico' &&
+            !(this.net && this.net.online)) {
+          try { __PP_TELE.ev('ai_style', { est: this.ppEstilo, dif: this.difficulty }); } catch (eAS) { /* */ }
+        }
         try { this._repReset(); } catch (eR) { /* nunca rompe el árbitro */ }
         // M4 (r111) · la línea de la GUÍA DEL SAQUE sobrevive al startMatch
         // (el árbitro repone su mensaje; si la guía está en cancha, vuelve)
@@ -333,6 +339,13 @@ export class PingPongGame {
         const d = localStorage.getItem('ppxr_dif');
         return (d === 'easy' || d === 'medium' || d === 'hard') ? d : 'medium';
       } catch (e) { return 'medium'; }
+    })();
+    // M5a (r112) · ESTILO DEL RIVAL: 12 personalidades sobre la MISMA física
+    // (multiplicadores acotados, sin trampas). Persiste en pp_estilo_v1;
+    // 'clasico' = comportamiento EXACTO de siempre (arneses intactos).
+    this.ppEstilo = (() => {
+      try { return localStorage.getItem('pp_estilo_v1') || 'clasico'; }
+      catch (e) { return 'clasico'; }
     })();
     // --- modos de juego (v2.11) ---
     this.mode = 'match';          // 'match' | 'survival' (en curso)
@@ -3125,6 +3138,15 @@ export class PingPongGame {
           T('btn_rivstyle', { v: yn(this.rivStyleOn !== false) }),
           this.rivStyleOn !== false, undefined, this.rivStyleOn !== false, 23);
         y += 70;
+        // M5a (r112) · ESTILO DEL RIVAL: 12 personalidades sobre la MISMA
+        // física (‹ › para ciclar). El nombre queda a la vista y persiste
+        // en pp_estilo_v1; 'clasico' = el rival de siempre, byte-idéntico.
+        btn('estilo:prev', 56, y, 120, 56, '‹', false, undefined, undefined, 30);
+        const estAct = OPPONENT_STYLES.find((s0) => s0.id === (this.ppEstilo || 'clasico')) || OPPONENT_STYLES[0];
+        btn('estilo:next', 192, y, 776, 56,
+          T('estilo_lbl') + ': ' + (__ppLang === 'en' ? estAct.en : estAct.es),
+          this.ppEstilo !== 'clasico', undefined, undefined, 23);
+        y += 70;
         break;
       }
       case 'sala': {
@@ -4536,6 +4558,20 @@ export class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'estilo': {
+        // M5a (r112) · ESTILO DEL RIVAL: ‹ › cicla las 12 personalidades
+        // (clasico → looper → … → relampago). Persiste en pp_estilo_v1,
+        // recalcula la cfg de la IA en vivo y anuncia el elegido.
+        const idx0 = OPPONENT_STYLES.findIndex((s0) => s0.id === (this.ppEstilo || 'clasico'));
+        const ni0 = (idx0 + (arg === 'prev' ? -1 : 1) + OPPONENT_STYLES.length) % OPPONENT_STYLES.length;
+        this.ppEstilo = OPPONENT_STYLES[ni0].id;
+        try { localStorage.setItem('pp_estilo_v1', this.ppEstilo); } catch { /* */ }
+        this.applyAISkill();          // recoloca cfg + colocación EN VIVO
+        this.rules.message = T('msg_estilo', { v: __ppLang === 'en' ? OPPONENT_STYLES[ni0].en : OPPONENT_STYLES[ni0].es });
+        this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        this.drawMenu();
+        break;
+      }
       case 'mesa_altoy': {
         // r96 · DESLIZADOR de altura: la mesa se fija AL PUNTO del raíl que
         // apunta el mando (feedback EN VIVO en la sala de partidos).
@@ -4853,7 +4889,17 @@ export class PingPongGame {
       const act = this.champs && this.champs.active;
       pers = act && act.man && act.man.rival && act.man.rival.personalidad;
     } catch { /* sin campeonato: neutro */ }
-    if (!pers) return s;
+    if (!pers) {
+      // M5a (r112) · sin campeonato: el ESTILO elegido gobierna colocación
+      // y celebración (mismo canal que la personalidad del manifest r95).
+      const est = this._estiloActivo();
+      if (est) {
+        s.zIdle = est.zIdle;
+        s.bias = est.bias;
+        s.celeb = est.celeb;
+      }
+      return s;
+    }
     const ag = (pers.agresividad || 3) - 3;          // -2 defensivo .. +2 agresivo
     s.zIdle = ag * 0.16;                              // agresivo: hasta +0,32 m hacia la red
     s.bias = ag * 0.09;                               // se adelanta al golpe / espera atrás
@@ -5017,7 +5063,25 @@ export class PingPongGame {
   _aiKAplica() {
     const base = AI_PRESETS[this.difficulty] || AI_PRESETS.medium;
     this.aiSkillK = this._aiKCur;
-    this.ai.setConfig(scalePreset(base, this._aiKCur));
+    let cfg = scalePreset(base, this._aiKCur);
+    // M5a (r112) · ESTILO DEL RIVAL: multiplicadores ACOTADOS sobre la cfg
+    // escalada (sólo partido LOCAL sin campeonato — la herencia de estilos a
+    // los rivales de campeonato llega con M5b). Con 'clasico' la cfg queda
+    // INTACTA (comportamiento byte-idéntico de siempre).
+    const est = this._estiloActivo();
+    if (est) cfg = estiloAplicar(cfg, est);
+    this.ai.setConfig(cfg);
+  }
+
+  /** M5a (r112) · el estilo activo del rival (entrada de OPPONENT_STYLES o
+   *  null = clásico). NUNCA en online (la mesa la acuerda el anfitrión), en
+   *  campeonato (herencia de estilos: M5b), calibración ni academia. */
+  _estiloActivo() {
+    if (!this.ppEstilo || this.ppEstilo === 'clasico') return null;
+    if (this.net && this.net.online) return null;
+    if (this.champs && this.champs.active) return null;
+    if (this.calib || this.tutV1 || this.trainV3) return null;
+    return OPPONENT_STYLES.find((s) => s.id === this.ppEstilo) || null;
   }
 
   /** v2.66 · REINICIO TOTAL de registros («empezar de cero»): borra el
@@ -11832,7 +11896,7 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, DIMS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, DIMS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, estiloAplicar, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';

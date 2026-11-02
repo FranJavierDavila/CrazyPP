@@ -19,7 +19,7 @@
 | M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ✅ HECHA r109 · v3.6.99-SDK6 en producción |
 | MP | **MULTIJUGADOR REPARADO** (prioridad del dueño: partida con amigos injugable) | ★★★ | ✅ HECHA r110 · v3.6.100-SDK6 en producción |
 | M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ✅ HECHA r111 · v3.6.101-SDK6 en producción |
-| M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ◐ SIGUIENTE (r112) |
+| M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ◐ M5a ✅ r112 · M5b escalera → r113 |
 | M6 | Identidad "locura + entrenador" (power-ups, 2v2, campeonatos) | ★★★ | ⬜ pendiente |
 | M7 | Matchmaking + ELO online + reto diario/torneo semanal | ★★★★ | ⬜ pendiente |
 | M8 | Port nativo a tienda (App Lab / Horizon) | ★★★★★ | ⬜ pendiente (decisión estratégica) |
@@ -267,6 +267,20 @@ repo) — la implementación en src se reconstruyó sobre esas agujas.
 ---
 
 ## M5 · IA CON ESTILOS + ESCALERA DE CARRERA
+
+> **r112 · M5a ✅ (v3.6.102-SDK6):** DOCE personalidades sobre la MISMA
+> física, sin trampas: Clásico (byte-idéntico, mul=null) · Looper · Chopero ·
+> Bloqueador · Atacante · Defensivo · Dejadas · All-round · Joven nervioso ·
+> Veterano frío · Gigante · Relámpago. Registro `OPPONENT_STYLES` (c02) con
+> multiplicadores ACOTADOS (errStd/missBase/velocidad/predicción/smash/T) +
+> colocación por el canal r95 (zIdle/bias) + celebración propia. Selector ‹ ›
+> en AJUSTES › JUEGO (persistencia pp_estilo_v1, recálculo EN VIVO, anuncio
+> del árbitro). NUNCA en online/campeonato/calibración/academia. PRUEBA DE
+> NO-TRAMPA: arnés Node qa_estilos_r112 (12 estilos × 30 rallies con física,
+> árbitro e IA reales): cfg acotada NT-1, invariantes I1-I4 (la IA jamás
+> cruza la red), firma ≠ clásico D-1 y 66/66 parejas distinguibles D-2.
+> Telemetría ai_style (catálogo v7, 17 eventos). Los rivales de campeonato
+> NO cambian (la herencia de estilos llega con M5b, junto a la escalera).
 
 **Alcance:**
 - [ ] 8-12 personalidades con parámetros y tácticas propias SOBRE la física

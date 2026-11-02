@@ -1,10 +1,10 @@
 {
-  "version": "3.6.100-SDK6",
-  "fase": 102,
+  "version": "3.6.101-SDK6",
+  "fase": 103,
   "faseNombre": "Duelo Reparado",
   "sdk": "1.6.0",
   "fecha": "2026-11-02",
-  "hub": "v36100-sdk6",
+  "hub": "v36101-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r104",
   "tamano": 10597962,
-  "golden": "be53ae5c307cc7eb1cd0f2534a02bfe6f56dbabb3c4e6f18b58923a44cb27c6d"
+  "golden": "0eca301813c3ff087139eea28971fdb880c603509bf9b43a2cd9d9d5980e9165"
 }

@@ -82,6 +82,13 @@ CAPAS = [
     # (bit4 de pose corregido), duelo completo con autoridad/contacto/0
     # rechazos del validador. Detalle en la cabecera de qa_duelo_r110.py.
     ('r110 · banco de duelo NetLink', 'qa_duelo_r110.py'),
+    # r111 · M4 ONBOARDING (roadmap MEJORAS.md) — ▶ JUGAR botón único del
+    # HUB (la academia ya no bloquea la 1.ª vez), LA MESA DE LA CASA
+    # (diorama IA-vs-IA en vivo en el hall, cinemática pura), guía del
+    # primer saque (aros + una línea, pp_srv_v1 a los 3 saques), idioma
+    # detectado y altura de mesa auto; telemetría primer_rally + tut_end
+    # (catálogo v6). Un jugador nuevo en rallye real en <60 s.
+    ('r111 · onboarding <60 s (v36101)', 'qa_r111_v36101.py'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
     ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),
     ('V · sonido del tren', 'qa_tren_audio_v3626.py'),

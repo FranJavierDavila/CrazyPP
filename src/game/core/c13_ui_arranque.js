@@ -6117,6 +6117,15 @@ if (typeof window !== 'undefined') {
     G = null;
     gm.tutV1 = null;
     gm.tutBolaViva = null;                // r66 · la bola vuelve al núcleo
+    // M4 (r111) · TELEMETRÍA DEL EMBUDO: cómo acaba la academia ahora que
+    // ya no bloquea la primera entrada (el HUB nace en ▶ JUGAR). done =
+    // guion completo · aJugar = botón ▶ JUGAR YA · skip = B/Y.
+    try {
+      window.__PP_TELE.ev('tut_end', {
+        res: opts.aJugar ? 'aJugar' : (opts.done ? 'done' : 'skip'),
+        paso: typeof gm.tutPaso === 'number' ? gm.tutPaso : -1,
+      });
+    } catch (eTE) { /* la telemetría nunca rompe */ }
     if (opts.done) {
       try { localStorage.setItem('pp_tut_done', '1'); } catch (e) { /* */ }
       try { gm.audio.announce(T('tut_done_msg'), true); } catch (e) { /* */ }

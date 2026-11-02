@@ -18,8 +18,8 @@
 | M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ✅ HECHA r107 (M2a arnés-gate) + r108 (M2b alarmas, worker vivo) |
 | M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ✅ HECHA r109 · v3.6.99-SDK6 en producción |
 | MP | **MULTIJUGADOR REPARADO** (prioridad del dueño: partida con amigos injugable) | ★★★ | ✅ HECHA r110 · v3.6.100-SDK6 en producción |
-| M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ◐ SIGUIENTE (r111) |
-| M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ⬜ pendiente |
+| M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ✅ HECHA r111 · v3.6.101-SDK6 en producción |
+| M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ◐ SIGUIENTE (r112) |
 | M6 | Identidad "locura + entrenador" (power-ups, 2v2, campeonatos) | ★★★ | ⬜ pendiente |
 | M7 | Matchmaking + ELO online + reto diario/torneo semanal | ★★★★ | ⬜ pendiente |
 | M8 | Port nativo a tienda (App Lab / Horizon) | ★★★★★ | ⬜ pendiente (decisión estratégica) |
@@ -224,17 +224,45 @@ tres vías byte-exacto (31/0) + K/L post-deploy verdes.
 
 ---
 
-## M4 · ONBOARDING < 60 SEGUNDOS
+## M4 · ONBOARDING < 60 SEGUNDOS ✅ HECHA (r111 · v3.6.101-SDK6)
 
 **Alcance:**
-- [ ] Rally demostración IA-vs-IA en vivo de fondo en el menú principal.
-- [ ] Botón único **JUGAR** por delante de todo lo demás.
-- [ ] Saque guiado la primera vez (fantasma del gesto + texto de una línea),
-      marcado como visto en localStorage.
-- [ ] Idioma y altura de mesa detectados/recordados antes del primer toque.
+- [x] Rally demostración IA-vs-IA en vivo de fondo en el menú principal —
+      **LA MESA DE LA CASA**: diorama IA-vs-IA sobre pedestal del hall
+      (mesa miniatura ~55 %, palas disco, bola en parábolas scriptadas —
+      cinemática pura, coste cero en cancha, hijo del hallGroup).
+- [x] Botón único **JUGAR** por delante de todo lo demás — tarjeta ▶ JUGAR
+      (hub_play) a toda fila 944×136 en y=240, verde vivo; la academia deja
+      de bloquear (HUB DIRECTO: menuPage='main' SIEMPRE; bienvenida de
+      1.ª instalación en UNA línea del árbitro, first_hint).
+- [x] Saque guiado la primera vez — tres aros dorados aditivos en la cancha
+      real (bola → golpe → red) + UNA línea que sobrevive al startMatch
+      (srv_guide); se marca pp_srv_v1 a los 3 saques legales; nunca en
+      academia ni online; desmonte con dispose.
+- [x] Idioma y altura de mesa detectados/recordados antes del primer toque —
+      c00 detecta navigator.language en la 1.ª instalación (huellas
+      pp_tut_asked/pp_seen_v1 como guardia; es*→ES · resto→EN, recordado en
+      pp_lang) y c12 muestrea la altura de la cabeza (2,6/4,7 s, mediana,
+      <1,30 m → mesa baja 0,70, guardia pp_hauto_v1, nunca online).
 
 **Criterios de aceptación:** un jugador nuevo está en un rally real en <60 s
-sin tocar nada más que JUGAR (medible con telemetría: evento primer_rally_ts).
+sin tocar nada más que JUGAR (medible con telemetría: evento **primer_rally**,
+lat = segundos desde vr_start, una vez por sesión, sólo partido local; catálogo
+v6 con 16 eventos + tut_end del cierre de la academia).
+
+**Cierre (r111):** GATE de ronda VERDE (A 31/0 · B 11/0 · C 29/0 · D 14/0 ·
+F 66/0 · G 54/0 · H 208/0 · J 132/0 · arnés físico 200/0 · arnés vivo 11/0 ·
+r109 VERDE · r110 VERDE · **r111 49/0** · T 17/0 · U 17/0 · V 74/0 · W 43/0 ·
+X 37/0 · Y 31/0 · Z 36/0) + batería multi BQ (P1 LAN verde · P3 túnel 42/42 ·
+P2 con 1 fallo de sincronía = flameo documentado r109/r110, NetLink intacto).
+Re-anclas honestas: qa_telemetria (catálogo v6/16 + panel por su ruta REAL de
+producción /telemetria.html — el SSR del dev server de ESTE sandbox muere por
+los directorios root-owned heredados del reciclado, artefacto del entorno) y
+locale es-ES en los arneses que leen la portada (qa_r109, qa_train_zonas,
+qa_partido_sala — la detección de idioma M4 respeta navigator.language y el
+Chromium de QA nace en-US). QA r111 nueva ya venía del intento perdido de la
+encarnación anterior (qa_r111_v36101 + gen_release_v36101 + sella_r111 en el
+repo) — la implementación en src se reconstruyó sobre esas agujas.
 
 ---
 

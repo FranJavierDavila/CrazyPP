@@ -78,6 +78,13 @@ export class PingPongGame {
         try { this._megaNormReset(); } catch (e) { /* nunca rompe el árbitro */ }
         // r61 · partido nuevo: fuera el campeón de la repetición anterior
         try { this._repReset(); } catch (eR) { /* nunca rompe el árbitro */ }
+        // M4 (r111) · la línea de la GUÍA DEL SAQUE sobrevive al startMatch
+        // (el árbitro repone su mensaje; si la guía está en cancha, vuelve)
+        if (this.rules.server === 'player') {
+          if (this._srvGrp && this._srvGrp.visible) {
+            this.rules.message = T('srv_guide');
+          }
+        }
       };
     } catch (eH) { /* */ }
     this.ball = {
@@ -2659,26 +2666,29 @@ export class PingPongGame {
 
     const CW = 456, CH = 176, GX = 32, GY = 18;
     const X0 = 40, X1 = X0 + CW + GX;
-    // v3.6.51 (r59) · LA ACADEMIA: BANNER del tutorial ENCIMA de la parrilla
-    // de modos (petición del dueño: «con tanto menú y opciones no saben ni
-    // cómo hacer para sacar»). Dorado, ancho completo y con icono propio —
-    // lo primero que se ve, tanto para novatos como para repetirlo.
-    this._modeCard(rects, 'tut:go', 40, 240, 944, 96, T('tut_hub'),
-      T('tut_hub_sub'), '#c9a227', '#8a6d14', PP_ICONS.tut, true);
-    let y = 240 + 96 + GY;
-    // fila 1 · PARTIDO — ENTRENAR
-    this._modeCard(rects, 'start', X0, y, CW, CH, T('hub_match'),
+    // M4 (r111) · ▶ JUGAR: EL BOTÓN ÚNICO. A toda fila, verde vivo y lo
+    // PRIMERO que se ve (el hito del roadmap: un jugador nuevo está en un
+    // rallye real en <60 s sin tocar nada más que este botón). La revancha
+    // también vive aquí (el subtítulo lo dice cuando el partido terminó).
+    this._modeCard(rects, 'start', 40, 240, 944, 136, T('hub_play'),
       over ? T('btn_rematch') : T('hub_vs', { v: diffName }),
-      '#2f9e44', '#1e7c33', PP_ICONS.match);
-    this._modeCard(rects, 'traingo', X1, y, CW, CH, T('sec_train'),
+      '#37b24d', '#1e7c33', PP_ICONS.match, true);
+    // banner de LA ACADEMIA justo debajo: la oferta de siempre, dorada y a
+    // toda fila, para quien quiera el curso completo — sin bloquear a nadie
+    // (la página «¿PRIMERA VEZ?» dejó de existir como puerta en r111).
+    this._modeCard(rects, 'tut:go', 40, 394, 944, 96, T('tut_hub'),
+      T('tut_hub_sub'), '#c9a227', '#8a6d14', PP_ICONS.tut, true);
+    let y = 394 + 96 + GY;
+    // fila 1 · ENTRENAR — SUPERVIVENCIA
+    this._modeCard(rects, 'traingo', X0, y, CW, CH, T('sec_train'),
       T('hub_train_sub'), '#1c7ed6', '#145c9e', PP_ICONS.train);
-    y += CH + GY;
-    // fila 2 · SUPERVIVENCIA — MULTIJUGADOR
-    this._modeCard(rects, 'survgo', X0, y, CW, CH, T('sec_surv'),
+    this._modeCard(rects, 'survgo', X1, y, CW, CH, T('sec_surv'),
       this.survivalBest > 0 ? T('best_surv', { n: this.survivalBest })
         : T('hub_surv_sub'),
       '#e8590c', '#b0420a', PP_ICONS.surv);
-    this._modeCard(rects, 'tab:multi', X1, y, CW, CH, T('hub_multi'),
+    y += CH + GY;
+    // fila 2 · MULTIJUGADOR — CAMPEONATOS
+    this._modeCard(rects, 'tab:multi', X0, y, CW, CH, T('hub_multi'),
       this.net.online ? T('hub_multi_on', { c: this.net.code })
         : T('hub_multi_sub'),
       '#7048e8', '#4c2bb0', PP_ICONS.multi);
@@ -2690,14 +2700,26 @@ export class PingPongGame {
       const r = rects[rects.length - 1];   // el rect de tab:multi recién pushado
       this._pintaMedallon(r, this.social);
     }
-    y += CH + GY;
-    // fila 3 · CAMPEONATOS — RANKING MUNDIAL
-    this._modeCard(rects, 'page:champs', X0, y, CW, CH, T('sec_crazy'),
+    this._modeCard(rects, 'page:champs', X1, y, CW, CH, T('sec_crazy'),
       (this.champs && this.champs.menuHint()) || T('hub_champ_sub'),
       '#b8860b', '#7c5a08', PP_ICONS.champ, true);
-    this._modeCard(rects, 'wrl:open', X1, y, CW, CH, T('sec_rank'),
+    y += CH + GY;
+    // fila 3 · RANKING MUNDIAL — AJUSTES (media celda cada uno; M4 r111:
+    // AJUSTES baja de tarjeta completa a la parrilla — ▶ JUGAR ocupa su
+    // antiguo hueco a toda fila). El subtítulo resume el estado vivo igual
+    // que lo hacía la tarjeta completa de v2.123.
+    const yn = (v) => (v ? T('yes') : T('no'));
+    const short = (k) => T(k, { v: yn(true) }).split(':')[0];
+    const themeDef = ROOM_THEMES.find((t) => t.key === this.theme);
+    const themeName = themeDef ? (themeDef.nameKey ? T(themeDef.nameKey) : themeDef.name) : '';
+    const optsSub = (themeName ? themeName + ' · ' : '')
+      + short('btn_music') + ': ' + yn(this.audio.musicOn)
+      + ' · ' + T('dock_mic') + ': ' + yn(this.audio.voice);
+    this._modeCard(rects, 'wrl:open', X0, y, CW, CH, T('sec_rank'),
       WORLDRANK.status === 'online' ? T('wrl_online') : T('hub_rank_sub'),
       '#0ca678', '#087354', PP_ICONS.rank);
+    this._modeCard(rects, 'page:opts', X1, y, CW, CH, T('opts_title'), optsSub,
+      '#5f7183', '#43525f', PP_ICONS.opts);
     y += CH + GY;
 
     // r71 · LA DIFICULTAD DE LA CPU Y EL RIVAL ADAPTATIVO SE MUDAN A AJUSTES
@@ -2721,20 +2743,9 @@ export class PingPongGame {
       y += 100;
     }
 
-    // v2.123 · OPCIONES CONTRAÍDAS: una sola TARJETA (misma estética que el
-    // resto del HUB) que abre la página AJUSTES, donde vive TODO: sala,
-    // música, ambiente, megáfono, vibración, estela, consejos, nombre…
-    // El subtítulo resume el estado vivo para no perder info de un vistazo.
-    const yn = (v) => (v ? T('yes') : T('no'));
-    const short = (k) => T(k, { v: yn(true) }).split(':')[0];
-    const themeDef = ROOM_THEMES.find((t) => t.key === this.theme);
-    const themeName = themeDef ? (themeDef.nameKey ? T(themeDef.nameKey) : themeDef.name) : '';
-    const optsSub = (themeName ? themeName + ' · ' : '')
-      + short('btn_music') + ': ' + yn(this.audio.musicOn)
-      + ' · ' + T('dock_mic') + ': ' + yn(this.audio.voice);
-    this._modeCard(rects, 'page:opts', 40, y, 944, CH, T('opts_title'), optsSub,
-      '#5f7183', '#43525f', PP_ICONS.opts);
-    y += CH + 18;
+    // M4 (r111) · la tarjeta AJUSTES COMPLETA (v2.123) vive ahora en la
+    // PARRILLA (fila 3, media celda): ▶ JUGAR hereda su hueco a toda fila.
+    // El subtítulo resume el estado vivo igual que lo hacía la tarjeta.
 
     // v3.6.72 (r80) · EL RETO DIARIO EN LA PUERTA: botón estrella al pie
     // del menú principal (el dueño retira el panel del entrenamiento y lo
@@ -5096,7 +5107,11 @@ export class PingPongGame {
                   !localStorage.getItem('pp_tut_asked');
       if (_tutFirst) localStorage.setItem('pp_tut_asked', '1');
     } catch (eTut) { /* almacenamiento ausente: oferta omitida */ }
-    this.menuPage = _tutFirst ? 'tutask' : 'main';
+    // M4 (r111) · HUB DIRECTO: el menú nace SIEMPRE en el HUB con ▶ JUGAR
+    // por delante de todo. La página «¿PRIMERA VEZ?» ya no bloquea el
+    // arranque: la academia sigue viva como banner dorado y la bienvenida
+    // cabe en UNA línea del árbitro (first_hint) para la 1.ª instalación.
+    this.menuPage = 'main';
     this.menuSec = 'match';
     this.menuOpen = true;
     if (this.menuGroup) {
@@ -5106,6 +5121,22 @@ export class PingPongGame {
     }
     this.audio.setArcDuck(true);   // v2.37: menú abierto -> BSO del arcade en silencio
     this.rules.message = T('menu_open');
+    if (_tutFirst) this.rules.message = T('first_hint');
+    // M4 (r111) · ALTURA DE MESA AUTO: si el jugador juega SENTADO (mediana
+    // de la altura de la cabeza por debajo de 1,30 m en los primeros
+    // segundos de sesión) la mesa baja al preset cómodo 0,70. UNA sola vez
+    // en la vida del casco (pp_hauto_v1); nunca en online (la mesa la
+    // acuerda el anfitrión) ni en calibración.
+    this._primerRally = false;
+    try {
+      if (!localStorage.getItem('pp_hauto_v1') &&
+          !(this.net && this.net.online) && !this.calib) {
+        this._hAuto = { m: [], t: [] };
+        this._hAuto.t.push(window.setTimeout(() => this._hAutoMuestra(), 2600));
+        this._hAuto.t.push(window.setTimeout(() => this._hAutoMuestra(), 4700));
+        this._hAuto.t.push(window.setTimeout(() => this._hAutoCierra(), 5000));
+      }
+    } catch (eHA) { /* sin almacenamiento: no pasa nada */ }
     // v3.0.9-HALL1 · NACER EN EL HALL: la primera vez (y cada sesión) el
     // jugador aparece en la estancia del anfitrión, no en la cancha vacía.
     this.enterHall();
@@ -10464,6 +10495,26 @@ export class PingPongGame {
     // estancia visible (trofeo que rota, haz que respira, anillo que pulsa,
     // bolas doradas en vaivén) — coste cero en la cancha
     if (this.inHall && this.hallGroup) updateHallFx(this.hallGroup, dt, now);
+    // M4 (r111) · LA MESA DE LA CASA: el diorama IA-vs-IA del hall respira
+    // SÓLO con la estancia visible (coste cero en la cancha). Y aquí la
+    // telemetría del embudo: el PRIMER rallye real de la sesión en partido
+    // local (una sola vez) — la métrica del hito: <60 s para el jugador nuevo.
+    if (this._demoHall && this.inHall) this._demoMuseoTick(dt, now);
+    if (!this._primerRally && this.rules.state === 'rally' &&
+        this.mode === 'match' && !this.inHall && !this.calib &&
+        !(this.net && this.net.online)) {
+      this._primerRally = true;
+      try {
+        __PP_TELE.ev('primer_rally', {
+          lat: Math.round((Date.now() - (this._vrT0 || Date.now())) / 100) / 10,
+          dif: this.difficulty,
+        });
+      } catch (ePR) { /* la telemetría nunca rompe */ }
+    }
+    // M4 (r111) · latido de la GUÍA DEL PRIMER SAQUE (barato: corta si no
+    // hay guía construida — _srvGrp nula en cuanto está vista o fuera de
+    // partido local).
+    try { this._srvGuideTick(dt); } catch (eSGT) { /* */ }
 
     if (this.calib && this.panelDirty) {
       // r83 · el panel recibe los ejes en uso (iluminación de celdas) y el
@@ -10596,6 +10647,9 @@ export class PingPongGame {
       this.hallGroup.visible = true;
     }
     if (this.roomGroup) this.roomGroup.visible = false;
+    // M4 (r111) · LA MESA DE LA CASA: el diorama se construye UNA vez y
+    // vive como hijo del hallGroup (se enciende y apaga con la estancia).
+    try { this._demoMuseoConstruir(); } catch (eDM) { /* */ }
     this.rules.message = T('hall_welcome');
   }
 
@@ -10638,6 +10692,9 @@ export class PingPongGame {
     if (this.roomGroup && !(this.inAR && this.pstOn)) this.roomGroup.visible = true;
     // v3.5.0-ESC1 · bola limpia al volver a la cancha (nada del hall arrastrado)
     this._hallResetBall(false);
+    // M4 (r111) · GUÍA DEL PRIMER SAQUE: al pisar la cancha real se oferta
+    // (todos los caminos a la cancha pasan por aquí; nunca rompe).
+    try { this._srvGuideTry(); } catch (eSG) { /* nunca rompe */ }
     // v3.6.30 · la pala vuelve a la mano que le toca (el hall la apagó entera;
     // misma regla de visibilidad que setPaddleHand — UNA pala, la activa)
     // r77 · y respeta el MODO FANTASMA de la academia si siguiera vivo.
@@ -10645,6 +10702,198 @@ export class PingPongGame {
       if (this.paddleMounts[k]) this.paddleMounts[k].visible =
         !this.tutPalaOculta && k === this.paddleHand;
     }
+  }
+
+  /* ================== M4 (r111) · LA MESA DE LA CASA ==================
+   * Diorama IA-vs-IA EN VIVO sobre un pedestal del hall: una mesa
+   * miniatura (~55 %) con dos palas disco y una bola que se pasan en
+   * parábolas SCRIPTADAS — cinemática pura, sin física ni árbitro (el
+   * rallye real sigue siendo cosa de la cancha). Es la «demo del menú»
+   * del roadmap: el jugador nuevo ve CÓMO se juega mientras decide.
+   * Hijo del hallGroup: se enciende y apaga con la estancia; el latido
+   * sólo corre con el hall visible (coste cero en la cancha). */
+  _demoMuseoConstruir() {
+    if (this._demoHall || !this.hallGroup) return;
+    const grp = new THREE.Group();
+    grp.position.set(-1.08, 0, HALL.cz + 0.95);
+    // pedestal torneado (madera oscura, como las vitrinas del museo)
+    const ped = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.26, 0.34, 0.94, 18),
+      new THREE.MeshStandardMaterial({ color: 0x3a2c1c, roughness: 0.8 }));
+    ped.position.y = 0.47;
+    grp.add(ped);
+    // tablero miniatura azul de la casa + red blanca
+    const tablero = new THREE.Mesh(
+      new THREE.BoxGeometry(0.84, 0.028, 1.50),
+      new THREE.MeshStandardMaterial({ color: 0x17539e, roughness: 0.55 }));
+    tablero.position.y = 0.955;
+    grp.add(tablero);
+    const red = new THREE.Mesh(
+      new THREE.BoxGeometry(0.84, 0.055, 0.006),
+      new THREE.MeshStandardMaterial({ color: 0xe7ebf0 }));
+    red.position.set(0, 1.0, 0);
+    grp.add(red);
+    // palas disco (roja la de casa, negra el rival) y bola marfil
+    const geoP = new THREE.CylinderGeometry(0.062, 0.062, 0.012, 14);
+    const p1 = new THREE.Mesh(geoP, new THREE.MeshStandardMaterial({ color: 0xd23f3f, roughness: 0.5 }));
+    p1.rotation.x = Math.PI / 2;
+    p1.position.set(0, 1.0, 0.62);
+    const p2 = new THREE.Mesh(geoP, new THREE.MeshStandardMaterial({ color: 0x14171d, roughness: 0.5 }));
+    // el rival nace con el swing cargado (vuelve a guardia en el 1.er latido)
+    p2.rotation.x = 0.9;
+    p2.userData.swing = 1;
+    p2.position.set(0, 1.0, -0.62);
+    const bola = new THREE.Mesh(
+      new THREE.SphereGeometry(0.021, 12, 10),
+      new THREE.MeshStandardMaterial({ color: 0xfff6e0, emissive: 0x6b5a25 }));
+    bola.position.set(0, 1.0, 0.5);
+    grp.add(p1); grp.add(p2); grp.add(bola);
+    this.hallGroup.add(grp);
+    this._demoHall = {
+      grp, p1, p2, bola, k: 0.15, dur: 0.9, lado: 1,
+      desde: new THREE.Vector3(0, 1.0, 0.5),
+      hasta: new THREE.Vector3(0, 1.0, -0.5),
+    };
+  }
+
+  /** Latido del diorama: parábola scriptada bola→pala, swing del que
+   *  golpea y vaivén de guardia. dt acotado (pestañas lentas). */
+  _demoMuseoTick(dt, now) {
+    const d = this._demoHall;
+    if (!d || !d.grp.visible) return;
+    d.k += Math.min(dt, 0.05) / d.dur;
+    if (d.k >= 1) {
+      d.k = 0;
+      d.dur = 0.75 + Math.random() * 0.5;
+      // golpea quien estaba lejos: nuevo destino al otro lado, con dispersión
+      d.lado = -d.lado;
+      d.desde.set(d.bola.position.x, 1.0, d.bola.position.z);
+      d.hasta.set((Math.random() * 2 - 1) * 0.27, 1.0,
+        d.lado * (0.42 + Math.random() * 0.18));
+      const pal = d.lado > 0 ? d.p1 : d.p2;
+      pal.userData.swing = 1;
+    }
+    const k = d.k;
+    d.bola.position.lerpVectors(d.desde, d.hasta, k);
+    d.bola.position.y = 1.0 + Math.sin(k * Math.PI) * (0.10 + 0.05 * d.dur);
+    const seguir = (p, fase) => {
+      p.position.x += ((d.bola.position.x * 0.65) - p.position.x) * Math.min(1, dt * 5);
+      p.position.y = 1.0 + Math.sin(now * 0.0021 + fase) * 0.014;
+      if (p.userData.swing > 0) {
+        p.userData.swing = Math.max(0, p.userData.swing - dt * 2.4);
+        p.rotation.x = Math.PI / 2 - p.userData.swing * 0.9;
+      }
+    };
+    seguir(d.p1, 0);
+    seguir(d.p2, 1.7);
+  }
+
+  /* ================== M4 (r111) · GUÍA DEL PRIMER SAQUE ================
+   * Tres aros dorados aditivos en la cancha real (bola → golpe → red)
+   * con pulso, y UNA línea del árbitro que sobrevive al startMatch. Se
+   * oferta al pisar la cancha (exitHall), SOLO partido local y nunca en
+   * academia; tres saques legales y se marca vista (pp_srv_v1) para
+   * siempre. Desmonte con dispose — nada queda colgando. */
+  _srvGuideTry() {
+    if (this._srvGrp) return;
+    if (this.mode !== 'match' || this.tutV1) return;
+    if (this.net && this.net.online) return;
+    if (this.inHall || this.calib) return;
+    let visto = false;
+    try { visto = localStorage.getItem('pp_srv_v1') === '1'; } catch (eS0) { /* */ }
+    if (visto) return;
+    const geo = new THREE.TorusGeometry(0.085, 0.009, 8, 28);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xffd257, transparent: true, opacity: 0.8,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const a1 = new THREE.Mesh(geo, mat);   // aro de la BOLA (mano libre)
+    const a2 = new THREE.Mesh(geo, mat);   // aro del GOLPE (al caer)
+    const a3 = new THREE.Mesh(geo, mat);   // aro de la RED (pasa por encima)
+    a3.position.set(0, (DIMS.netTopY || 1.0) + 0.10, DIMS.tableCenterZ);
+    const grp = new THREE.Group();
+    grp.add(a1); grp.add(a2); grp.add(a3);
+    grp.visible = false;
+    this.scene.add(grp);
+    this._srvGrp = grp;
+    this._srvAros = [a1, a2, a3];
+    this._srvGeo = geo;
+    this._srvMat = mat;
+    this._srvCount = 0;
+    this._srvPrev = '';
+  }
+
+  /** Latido: visibilidad (sólo saque propio), pulso aditivo, aros anclados
+   *  a la bola libre y conteo de saques legales (3 → vista para siempre). */
+  _srvGuideTick(dt) {
+    const g = this._srvGrp;
+    if (!g) return;
+    const st = this.rules.state;
+    const enSaque = st === 'serve' && this.rules.server === 'player';
+    if (this._srvPrev === 'serve' && st === 'rally') {
+      // saque legal completado (el salto serve→rally sólo lo firma el saque)
+      this._srvCount++;
+      if (this._srvCount >= 3) this._srvGuideQuitar(true);
+    }
+    this._srvPrev = st;
+    g.visible = enSaque;
+    if (!enSaque) return;
+    const D = DIMS;
+    const bp = this.ball ? this.ball.pos : null;
+    if (bp) {
+      this._srvAros[0].position.copy(bp);
+      this._srvAros[1].position.set(bp.x, Math.max(bp.y, D.tableTopY + 0.32),
+        bp.z - 0.30);
+    }
+    this._srvAros[2].position.set(bp ? bp.x * 0.4 : 0,
+      (D.netTopY || 1.0) + 0.10, D.tableCenterZ);
+    const pul = 0.62 + Math.sin(performance.now() * 0.0055) * 0.28;
+    this._srvMat.opacity = pul;
+  }
+
+  /** Desmonte con dispose (geometría + material); visto=true lo marca en
+   *  localStorage (pp_srv_v1) y no vuelve jamás. */
+  _srvGuideQuitar(visto) {
+    if (this._srvGrp) {
+      try { this.scene.remove(this._srvGrp); } catch (eQ1) { /* */ }
+      if (this._srvGeo) this._srvGeo.dispose();
+      if (this._srvMat) this._srvMat.dispose();
+      this._srvGrp = null;
+      this._srvAros = null;
+      this._srvGeo = null;
+      this._srvMat = null;
+    }
+    if (visto) {
+      try { localStorage.setItem('pp_srv_v1', '1'); } catch { /* */ }
+    }
+  }
+
+  /** M4 (r111) · ALTURA DE MESA AUTO — muestreos de la altura de la
+   *  cabeza (2,6 s y 4,7 s tras entrar en VR); el cierre calcula la
+   *  mediana y, si el jugador está SENTADO (<1,30 m), baja la mesa al
+   *  preset cómodo 0,70 (persistente). Guardia pp_hauto_v1: UNA vez. */
+  _hAutoMuestra() {
+    if (!this._hAuto) return;
+    try {
+      const cam = (this.renderer && this.renderer.xr &&
+        this.renderer.xr.getCamera && this.renderer.xr.getCamera()) ||
+        this.camera;
+      const v = new THREE.Vector3();
+      cam.getWorldPosition(v);
+      this._hAuto.m.push(v.y);
+    } catch (eH3) { /* muestra perdida: no pasa nada */ }
+  }
+
+  _hAutoCierra() {
+    try {
+      const m = ((this._hAuto && this._hAuto.m) || []).slice().sort((a, b) => a - b);
+      const hMed = m.length ? m[m.length >> 1] : 0;
+      if (hMed > 0) {
+        if (hMed < 1.30) this._mesaAplicarY(0.70);
+      }
+      try { localStorage.setItem('pp_hauto_v1', m.length ? '1' : '0'); } catch (eH4) { /* */ }
+    } catch (eH5) { /* */ }
+    this._hAuto = null;
   }
 
   /* Carga 1 vez la insignia de un campeonato (championships/<id>/assets/

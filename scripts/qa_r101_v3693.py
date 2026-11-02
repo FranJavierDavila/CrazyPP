@@ -88,10 +88,10 @@ CHK('C() + 0.5' not in GH, 'game.html: aro a +0,50 m sigue retirado')
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
 # r103 · re-anclada a la build viva (el rótulo vive a la derecha, sella 3.6.95)
-CHK(bool(mver) and mver.group(1) == '3.6.100-SDK6', 'c00: VERSION sella 3.6.100-SDK6 (re-anclada r103)')
+CHK(bool(mver) and mver.group(1) == '3.6.101-SDK6', 'c00: VERSION sella 3.6.101-SDK6 (re-anclada r103)')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
 CHK(V.get('fase') == 100, 'VERSION.json: FASE 99 (re-anclada r105)')
-CHK(V.get('hub') == 'v36100-sdk6', 'VERSION.json: hub v3695-sdk6 (re-anclada r103)')
+CHK(V.get('hub') == 'v36101-sdk6', 'VERSION.json: hub v3695-sdk6 (re-anclada r103)')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')

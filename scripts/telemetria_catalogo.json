@@ -1,8 +1,8 @@
 {
  "catalogo": "telemetria-crazypp",
- "version": 5,
- "actualizado": "2026-11-02",
- "ronda": 109,
+ "version": 6,
+ "actualizado": "2026-11-03",
+ "ronda": 111,
  "politica_pii": {
   "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
   "sin_ip": true,
@@ -310,6 +310,44 @@
    "campos": [],
    "desde": "v3.6.99-SDK6",
    "notas": "r109: si aparece mucho, significa que el navegador objetivo no dispara beforeinstallprompt"
+  },
+  {
+   "nombre": "primer_rally",
+   "origen": "src/game/core/c12_pingponggame.js (animate, M4 r111)",
+   "momento": "el árbitro entra en 'rally' por PRIMERA vez de la sesión en partido local (no hall, no calibración, no online)",
+   "campos": [
+    {
+     "nombre": "lat",
+     "tipo": "number",
+     "desc": "segundos desde vr_start (redondeado a 0,1) — la métrica del hito M4: un jugador nuevo en rallye real en <60 s"
+    },
+    {
+     "nombre": "dif",
+     "tipo": "string",
+     "desc": "dificultad de la CPU vigente (easy/medium/hard)"
+    }
+   ],
+   "desde": "v3.6.101",
+   "notas": "M4 (r111): UNA sola vez por sesión; lat + 60 s de media en jugadores nuevos = onboarding cumplido. En duelo online no sale (la mesa la acuerda el anfitrión)."
+  },
+  {
+   "nombre": "tut_end",
+   "origen": "src/game/core/c13_ui_arranque.js (LA ACADEMIA, stop(), M4 r111)",
+   "momento": "cierre de la academia: fin del guion, botón ▶ JUGAR YA o salida con B/Y",
+   "campos": [
+    {
+     "nombre": "res",
+     "tipo": "string",
+     "desc": "'done' fin del guion · 'aJugar' botón ▶ JUGAR YA (paso final) · 'skip' saltó con B/Y"
+    },
+    {
+     "nombre": "paso",
+     "tipo": "number",
+     "desc": "paso del guion en el que acabó (0..8; -1 si no llegó a contarse)"
+    }
+   ],
+   "desde": "v3.6.101",
+   "notas": "M4 (r111): mide si la academia se termina o se salta ahora que ya NO bloquea la primera entrada (el HUB nace en ▶ JUGAR)."
   }
  ],
  "hallazgos_ronda6": [

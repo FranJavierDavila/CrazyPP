@@ -58,7 +58,8 @@ async def main():
             "--use-gl=swiftshader", "--enable-unsafe-swiftshader",
             "--autoplay-policy=no-user-gesture-required",
         ])
-        page = await browser.new_page(viewport={"width": 1280, "height": 800})
+        # r111 · el arnés declara SU idioma (detección M4 en c00)
+        page = await browser.new_page(viewport={"width": 1280, "height": 800}, locale="es-ES")
         page.on("pageerror", lambda e: errors.append(str(e)))
         await page.goto(URL, wait_until="domcontentloaded")
         await page.wait_for_timeout(7000)

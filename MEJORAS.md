@@ -16,8 +16,8 @@
 |---|------|----------|--------|
 | M1 | Game feel · capas de sonido + hápticas calibradas | ★☆☆ | ✅ HECHA r106 · v3.6.98-SDK6 en producción |
 | M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ✅ HECHA r107 (M2a arnés-gate) + r108 (M2b alarmas, worker vivo) |
-| M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ◐ SIGUIENTE (r109) |
-| M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ⬜ pendiente |
+| M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ✅ HECHA r109 · v3.6.99-SDK6 en producción |
+| M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ◐ SIGUIENTE (r110) |
 | M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ⬜ pendiente |
 | M6 | Identidad "locura + entrenador" (power-ups, 2v2, campeonatos) | ★★★ | ⬜ pendiente |
 | M7 | Matchmaking + ELO online + reto diario/torneo semanal | ★★★★ | ⬜ pendiente |
@@ -128,20 +128,39 @@ dentro de qa_todo · ✓ determinismo (mismo hash en 2 ejecuciones).
 
 ---
 
-## M3 · PWA INSTALABLE
+## M3 · PWA INSTALABLE ✅ HECHA (r109 · v3.6.99-SDK6)
 
 **Por qué:** mata el mayor matador de retención (URL + `?v=` + caché del Quest)
 sin esperar el port nativo. Icono en el casco, arranque en 2 clics, actualización
 por service worker.
 
 **Alcance:**
-- [ ] `manifest.webmanifest` + iconos 192/512 + service worker con estrategia
-      cache-first por versión (el bump ya existente gobierna la caché).
-- [ ] Página/aviso "instalar en el casco" y detección de standalone.
-- [ ] Deploy compatible con GitHub Pages bajo `/CrazyPP/`.
+- [x] `manifest.webmanifest` (fullscreen landscape, start_url `./game.html`,
+      scope `./` — compatible con Pages bajo `/CrazyPP/`) + iconos 192/512
+      + variante maskable (emblema de la casa: palas cruzadas + bola en oro,
+      `scripts/gen_iconos_pwa.py`) + service worker `sw.js` con estrategia
+      por tipo: game.html stale-while-revalidate · datos vivos
+      (campeonatos/UGC/PAGES-VERSION) network-first · assets cache-first con
+      relleno bajo demanda · purga de cachés viejas en activate.
+- [x] **El bump gobierna la caché (4.º sello físico):** `const CACHE =
+      'crazypp-v<versión>'` en sw.js — `bump_version.py` lo parchea y
+      `qa_version.py` lo verifica; cada versión invalida la caché sola.
+- [x] Portada instaladora (c13): botón «📲 INSTALAR EN EL CASCO» con diálogo
+      nativo (beforeinstallprompt → pwaOn dorado) y caminito manual de 2
+      toques si el navegador no lo dispara (toast `#ppToast`); detección de
+      standalone (el botón se oculta dentro de la app ya instalada);
+      telemetría anónima `pwa_standalone/pwa_prompt/pwa_installed/
+      pwa_manual_hint` (catálogo v5).
+- [x] Deploy compatible con GitHub Pages bajo `/CrazyPP/` (deploy_pages
+      publica manifest+sw+iconos; build_zip los lleva a los 4 ZIPs) + hub
+      /descargas con la guía PWA + i18n ES/EN.
 
-**Criterios de aceptación:** instalada desde el navegador del Quest, arranca
-desde el icono sin teclear URL · el bump de versión invalida la caché sola.
+**Criterios de aceptación:** ✓ instalable desde el navegador (headless
+Chromium captura beforeinstallprompt = criterios de instalabilidad
+cumplidos; el dueño instala desde el Quest Browser con el botón o
+⋮ → Instalar app) · ✓ arranque sin teclear URL (icono propio) · ✓ el bump
+de versión invalida la caché sola (4.º sello) · ✓ agujas r109 en producción
+tres vías byte-exacto (31/0) + K/L post-deploy verdes.
 
 ---
 
@@ -224,3 +243,4 @@ nativo.
 | M1 · game feel | r106 | 3.6.98-SDK6 (FASE 100) | 2026-11-01 | Audio r62 verificado como regresión · háptica del bote calibrada dentro del guard · canto distinguible · red palpable · QA 35/0 · cascada verde · tres vías 24/0 |
 | M2a · arnés que juega (gate) | r107 | (sin cambio de juego — 3.6.98-SDK6 sigue) | 2026-11-01 | Arnés físico 200 rallies determinista (0,6 s) + arnés vivo 45 s con piloto IA + canarios cazados en ambos · gate en qa_todo · 0 cambios de gameplay |
 | M2b · alarmas de telemetría | r108 | (sin cambio de juego — 3.6.98-SDK6 sigue) · worker vivo actualizado | 2026-11-02 | Bloque `alarmas` en el resumen (fps_bajo/errores_js/vr_cortas) · harness 61/0 · capa J 131/0 · arneses M2a verdes · desplegado con deploy_worker.py (D1+CLAVE preservadas, E2E sonda verde) · panel Pages con tarjeta · hallazgo real: fps_bajo ROJO 58,1 FPS/17 sesiones |
+| M3 · PWA instalable | r109 | 3.6.99-SDK6 (FASE 101) | 2026-11-02 | manifest+sw.js+iconos de la casa · 4.º sello físico (const CACHE gobernado por el bump) · portada instaladora (diálogo nativo + camino manual + standalone) · telemetría pwa_* (catálogo v5) · build_zip lleva la PWA a los 4 ZIPs · QA gate 13/13 (r109 nueva capa) · cascada histórica re-anclada (20+ capas, BK retirada) · tres vías 31/0 · K/L post-deploy verdes |

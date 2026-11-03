@@ -763,10 +763,25 @@ export class OpponentAI {
     if (cy < DIMS.tableTopY - 0.08 || cy > 1.65) return null;
 
     const ballSpeed = ball.vel.length();
-    // v3.6.41 · SÚPER PORTAL: +portalMissExtra de fallo decidido con la
-    // bola del portal viniendo (la IA «no llega bien» más a menudo).
-    const pMiss = this.cfg.missBase + Math.max(0, ballSpeed - 7) * 0.05 +
-      (ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0);
+    // r113 · CPU INTELIGENTE (petición del dueño: «la CPU no falla bolas
+    // fáciles; sólo escoradas, rápidas o de colocación extrema»). Antes el
+    // fallo era un impuesto FIJO (missBase) que repartía muertes por igual:
+    // la IA fallaba bolas cómodas a la pala. Ahora el fallo es ESFUERZO:
+    //  · base tibia (la torpeza del nivel — easy sigue fallando algo más);
+    //  · RAPIDA: +0,06 por m/s por encima de 7 (sube un pelín: 0,05);
+    //  · ESCORADA/COLOCACIÓN EXTREMA: +0,60 por cada metro de VIAJE por
+    //    encima de 0,85 — una bola al rincón que obliga a desplazarse 1,6 m
+    //    se paga (+0,45); una bola cómoda junto a la pala NO se falla.
+    //  · portal: igual de decisivo que siempre (DIMS.portalMissExtra).
+    // Los estilos M5a (errStd/miss ×) siguen multiplicando la cfg — sus
+    // clamps acotan y la distinción entre personalidades se conserva.
+    // (NOTA: el `reach` de arriba es el RADIO de la pala — este es `viaje`.)
+    const viaje = Math.hypot(cx - this.pos.x, cz - this.pos.z);
+    const pMiss = Math.min(0.85,
+      this.cfg.missBase * 0.25 +
+      Math.max(0, ballSpeed - 7) * 0.06 +
+      Math.max(0, viaje - 0.85) * 0.60 +
+      (ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0));
     this.hitCooldown = 0.55;
     // v2.84 · GOLPE MALO (petición del artista): el fallo decidido de la IA
     // YA NO deja pasar la bola a través de la pala (efecto pésimo). La toca

@@ -8,6 +8,11 @@ import { CCD_TUNE, MAX_SUBSTEP_DT, applyAerodynamics, applyBounceSpin, bladeNorm
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
 
+// r113 · temporales de la DIRECCIÓN AL OBJETIVO (módulo-local, cero colisión
+// con los temporales compartidos de c04)
+const tmpAim = new THREE.Vector3();
+const tmpAim2 = new THREE.Vector3();
+
 /* v3.1.2-CCD1 · DETECCIÓN CCD POR SDF (reemplaza al cruce de plano + disco).
  * Barrido del segmento de bola [tmpPrev → ball.pos] contra la pala barrida
  * entre las poses kA y kB del frame (pad.prev → pad.pos). kA/kB son las
@@ -188,8 +193,13 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
 
   // Golpe con CUERPO: transfiere parte de la velocidad de la pala en la
   // dirección de salida (acelerar la mano = bola más rápida, siempre)
+  // r113 · FÍSICA DEL GOLPE FUERTE (petición del dueño: la bola debe salir
+  // con la VELOCIDAD REAL del swing): 0,22 sólo transfería una quinta parte
+  // del empuje — un smash de 10 m/s aportaba 2,2 m/s y el golpe «no se
+  // sentía». 0,40 transfiere el doble sin romper los toques suaves (el
+  // término sólo opera con padN > 0: pala acercándose a la bola).
   const padN = pad.vel.dot(tmpN);
-  if (padN > 0) ball.vel.addScaledVector(tmpN, padN * 0.22 * (PK ? PK.power : 1));
+  if (padN > 0) ball.vel.addScaledVector(tmpN, padN * 0.40 * (PK ? PK.power : 1));
 
   // v3.0.5 P1: bamboleo del canto — golpes cerca del borde dispersan
   if (FIS && offC > 0.7) {
@@ -217,6 +227,39 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     exitFloor = DIMS.minExitSpeed * floorK;
   }
   if (vn < exitFloor) ball.vel.addScaledVector(tmpN, exitFloor - vn);
+
+  // r113 · DIRECCIÓN AL OBJETIVO (petición del dueño: «cuesta apuntar hacia
+  // donde apunto»): la salida reflejaba sobre la NORMAL de la cara — con la
+  // hoja un poco girada la bola se iba a donde apuntaba LA MADERA, no el
+  // brazo. En un golpe real la dirección la manda el SWING: giramos la
+  // componente horizontal de la salida hacia la dirección del movimiento de
+  // la pala (proporcional a la energía del swing y SOLO en swings vivos —
+  // los toques suaves no se tocan). Jugador only (la IA ya apunta con su
+  // solver), nunca en vuelo de saque (el solver valida esa trayectoria) y
+  // sólo en intercambio (misma puerta honesta del súper efecto, r55).
+  if (pad.who === 'player' && !pad.serveFlight &&
+      pad.intercambio !== false && FIS) {
+    const swing = pad.vel.length();
+    if (swing > 2.5) {
+      // mezcla hasta 45°: k = 0..0.45 según la energía por encima del umbral
+      const kAim = 0.45 * Math.min(1, (swing - 2.5) / 6);
+      tmpAim.copy(pad.vel); tmpAim.y = 0;
+      if (tmpAim.lengthSq() > 1e-6) {
+        tmpAim.normalize();
+        tmpAim2.set(ball.vel.x, 0, ball.vel.z);
+        const spH = tmpAim2.length();
+        if (spH > 1e-4) {
+          tmpAim2.divideScalar(spH).lerp(tmpAim, kAim).normalize();
+          // guardia: el giro JAMÁS invierte el sentido de cruce (la salida
+          // hacia el lado rival se conserva: mismo signo de z)
+          if (tmpAim2.z * ball.vel.z >= 0) {
+            ball.vel.x = tmpAim2.x * spH;
+            ball.vel.z = tmpAim2.z * spH;
+          }
+        }
+      }
+    }
+  }
 
   // Límite de velocidad
   const sp = ball.vel.length();

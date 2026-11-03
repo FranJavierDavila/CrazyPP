@@ -1550,6 +1550,31 @@ export class PingPongGame {
     this.menuMesh.renderOrder = 9998;   // antes 990 (bajo instrucciones/mapa)
     this.menuGroup.add(this.menuMesh);
 
+    /* r113 · LA CHINCHETA DEL MENÚ (petición del dueño): icono de chincheta
+     * SIEMPRE visible en el CENTRO SUPERIOR del panel. POR DEFECTO OFF (el
+     * menú se comporta como siempre: anclaje delante de la cara + flotación
+     * de 1,8 s y fijo). Al pulsarla el menú queda ANCLADO al punto del
+     * espacio donde estaba en ese instante (anchorMenu deja de reposicionar
+     * — ni flotación ni re-anclajes al reabrir). Pulso de nuevo = soltar:
+     * el panel vuelve a anclarse delante de la cabeza. Estado en memoria
+     * (cada sesión arranca con la chincheta OFF, tal cual pidió el dueño). */
+    this.menuPin = false;             // r113: OFF por defecto (petición expresa)
+    this._menuPinCv = document.createElement('canvas');
+    this._menuPinCv.width = 128;
+    this._menuPinCv.height = 128;
+    this._menuPinTex = new THREE.CanvasTexture(this._menuPinCv);
+    this._menuPinTex.colorSpace = THREE.SRGBColorSpace;
+    this._menuPinMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.085, 0.085),
+      new THREE.MeshBasicMaterial({ map: this._menuPinTex, transparent: true, depthTest: false }),
+    );
+    // centro superior del panel 0,90×1,35: borde arriba en y=+0,675 — la
+    // chincheta cabalga el borde (+0,032 hacia arriba) como un pin real
+    this._menuPinMesh.position.set(0, 0.707, 0.006);
+    this._menuPinMesh.renderOrder = 9998;
+    this.menuGroup.add(this._menuPinMesh);
+    this._menuPinDraw();
+
     this.menuGroup.visible = false;
     this.scene.add(this.menuGroup);   // espacio MUNDO: inmune al recentrado
 
@@ -3519,8 +3544,12 @@ export class PingPongGame {
 
   /** v2.28: coloca el gran panel DELANTE de la cabeza (1,08 m), un poco por
    *  debajo de la línea de ojos, mirando a la cara. Durante ~1,8 s sigue
-   *  suavemente a la cabeza (flotación) y después queda FIJO en el mundo. */
+   *  suavemente a la cabeza (flotación) y después queda FIJO en el mundo.
+   *  r113 · CHINCHETA: con el pin puesto el panel NO se re-ancla NUNCA —
+   *  permanece en el punto exacto del espacio donde se puso la chincheta
+   *  (se cancela también la flotación pendiente). */
   anchorMenu() {
+    if (this.menuPin) { this._menuAnchorUntil = 0; return; }
     this.camera.getWorldPosition(muHead);
     this.camera.getWorldQuaternion(muQ);
     muDir.set(0, 0, -1).applyQuaternion(muQ);
@@ -3533,6 +3562,88 @@ export class PingPongGame {
     this.menuGroup.position.y = Math.max(0.85, muHead.y - 0.12);
     this.menuGroup.lookAt(muHead);
     this._menuAnchorUntil = performance.now() / 1000 + 1.8;
+  }
+
+  /* r113 · CHINCHETA DEL MENÚ — dibujo del icono (128², estilo de la casa):
+   * badge circular oscuro + chincheta de silueta. OFF: pin PLATEADO con
+   * puntas fuera (menú libre, sigue a la cabeza). ON: pin DORADO clavado
+   * con aro de anclaje (menú fijo en el espacio). */
+  _menuPinDraw() {
+    const c = this._menuPinCv.getContext('2d');
+    c.clearRect(0, 0, 128, 128);
+    // badge de fondo (target de pulso legible sobre cualquier arte)
+    c.beginPath();
+    c.arc(64, 64, 56, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(13,16,23,0.82)';
+    c.fill();
+    c.lineWidth = 4;
+    c.strokeStyle = this.menuPin ? 'rgba(232,180,90,0.95)' : 'rgba(255,255,255,0.35)';
+    c.stroke();
+    // chincheta (vista lateral): cabeza + cuello + aguja
+    const oro = this.menuPin;
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    // aguja (clavada hacia abajo-derecha si ON; recta si OFF)
+    c.strokeStyle = oro ? '#ffe9a8' : '#aeb9c4';
+    c.lineWidth = 7;
+    c.beginPath();
+    c.moveTo(64, 62);
+    if (oro) { c.lineTo(84, 96); }
+    else { c.lineTo(64, 100); }
+    c.stroke();
+    // punta
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.arc(oro ? 84 : 64, oro ? 96 : 100, 2.5, 0, Math.PI * 2);
+    c.fillStyle = oro ? '#ffe9a8' : '#aeb9c4';
+    c.fill();
+    // cabeza del pin (domo)
+    c.beginPath();
+    c.arc(64, 48, 19, 0, Math.PI * 2);
+    const g = c.createLinearGradient(45, 29, 83, 67);
+    if (oro) { g.addColorStop(0, '#fff3cf'); g.addColorStop(0.55, '#e8b45a'); g.addColorStop(1, '#8f6a24'); }
+    else { g.addColorStop(0, '#e8eef4'); g.addColorStop(0.55, '#93a1ae'); g.addColorStop(1, '#525d68'); }
+    c.fillStyle = g;
+    c.fill();
+    c.lineWidth = 3;
+    c.strokeStyle = oro ? 'rgba(255,233,168,0.9)' : 'rgba(255,255,255,0.45)';
+    c.stroke();
+    // brillo del domo
+    c.beginPath();
+    c.ellipse(57, 42, 6, 4, -0.5, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(255,255,255,0.55)';
+    c.fill();
+    // con el pin puesto: aro de ANCLAJO alrededor (estado inequívoco)
+    if (oro) {
+      c.beginPath();
+      c.arc(64, 64, 47, 0, Math.PI * 2);
+      c.setLineDash([9, 7]);
+      c.lineWidth = 4;
+      c.strokeStyle = 'rgba(232,180,90,0.8)';
+      c.stroke();
+      c.setLineDash([]);
+    }
+    if (this._menuPinTex) this._menuPinTex.needsUpdate = true;
+  }
+
+  /* r113 · pulso de la chincheta: ancla el menú en su punto del espacio /
+   * lo suelta (vuelve a anclarse delante de la cabeza). Feedback: arpegio,
+   * háptica por la mano que pulsa y rótulo breve en el mensaje del HUD. */
+  _menuPinToggle(hand) {
+    this.menuPin = !this.menuPin;
+    this._menuPinDraw();
+    try { this.audio.playOsc(this.menuPin ? 620 : 470, this.menuPin ? 930 : 340, 0.09, 'sine', 0.14, 0); } catch (ePin1) { /* */ }
+    if (this.renderer.xr.isPresenting) this.haptic(hand, 0.5, 90);
+    try {
+      const mPin = T(this.menuPin ? 'menu_pin_on' : 'menu_pin_off');
+      this.rules.message = mPin;
+      clearTimeout(this._menuPinMsgTo);
+      this._menuPinMsgTo = setTimeout(() => {
+        try { if (this.rules.message === mPin) this.rules.message = ''; } catch (ePM2) { /* */ }
+      }, 2600);
+    } catch (ePin2) { /* */ }
+    // soltar = el panel regresa a la cabeza (la flotación se reanuda sola)
+    if (!this.menuPin) this.anchorMenu();
   }
 
   /** Coloca el panel (flotación inicial) y hace el hit-test del rayo de
@@ -3571,6 +3682,12 @@ export class PingPongGame {
         if (!this._menuGripPos) this._menuGripPos = [null, null];
         this._menuGripPos[h] = muGrip.y;
         const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
+        // r113 · CHINCHETA: el rayo también busca el pin (prioridad sobre el
+        // panel: cuelga 6 mm por delante del plano). Sólo con el menú abierto.
+        let pinHit = null;
+        if (this.menuOpen && this._menuPinMesh) {
+          pinHit = muRaycaster.intersectObject(this._menuPinMesh, false)[0] || null;
+        }
         // r98 · MESA AGARRABLE: mano agarrando (el rayo sigue a la mesa
         // aunque cruce el panel) o rayo que NO cae en el panel con la
         // página MESA delante → el propio rayo busca la mesa
@@ -3618,14 +3735,22 @@ export class PingPongGame {
         } else {
           dot.visible = false;
         }
-
+        // r113 · hover del PIN: el cursor salta a la chincheta y el haz se
+        // engorda como sobre un botón (idx especial -2 — nunca colisiona con
+        // los índices reales de menuRects)
+        if (pinHit) {
+          idx = -2;
+          dot.visible = true;
+          dot.position.copy(this.menuGroup.worldToLocal(pinHit.point.clone()));
+        }
         line.visible = true;
         line.position.copy(muGrip);
         line.quaternion.copy(muQ);
         // r98 · el haz alcanza la MESA cuando es ella la que se apunta
-        line.scale.z = sobreMesa ? sobreMesa.dist : (hit ? hit.distance : 0.5);
+        line.scale.z = sobreMesa ? sobreMesa.dist :
+          (pinHit ? pinHit.distance : (hit ? hit.distance : 0.5));
         // el haz engorda al pasar sobre un botón (o sobre la mesa — r98)
-        const thick = (idx >= 0 || sobreMesa) ? 1.7 : 1;
+        const thick = (idx >= 0 || idx === -2 || sobreMesa) ? 1.7 : 1;
         line.scale.x = thick;
         line.scale.y = thick;
       } else {
@@ -5381,7 +5506,9 @@ export class PingPongGame {
     // el botón que manda. Cubre menú completo Y prompt del Hall (hallask).
     if (this.menuOpen) {
       const hov = this.menuHover[i];
-      if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
+      // r113 · CHINCHETA: hover -2 = el gatillo pega/suelta el panel
+      if (hov === -2) this._menuPinToggle(i);
+      else if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
       // r98 · AGARRE DE LA MESA: gatillo con el rayo sobre la mesa (página
       // MESA) — la altura sigue a la altura del mando 1:1 hasta soltar.
       else if (this._mesaGrabActivo() && this._mesaHover && this._mesaHover[i]) {

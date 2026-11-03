@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.102-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.103-SDK6</span>
     </div>
   </main>
 
@@ -528,6 +528,8 @@ const I18N_STRINGS = {
     hall_locked: 'BLOQUEADA',
     hall_trophy_wait: 'EL TROFEO ESPERA A SU PRIMER CAMPEÓN',
     hall_trophy_won: 'SALÓN DE CAMPEONES',
+    menu_pin_off: 'Chincheta: el menú sigue tu cabeza',
+    menu_pin_on: 'Chincheta puesta: menú anclado aquí',
     hall_door: 'A LA CANCHA ›',
     hall_home_btn: '⌂ VOLVER AL HALL',
     hall_home_hint: 'El hall es tu casa: ajustes y cambio de modo viven allí',
@@ -1365,6 +1367,8 @@ const I18N_STRINGS = {
     hall_locked: 'LOCKED',
     hall_trophy_wait: 'THE TROPHY AWAITS ITS FIRST CHAMPION',
     hall_trophy_won: 'HALL OF CHAMPIONS',
+    menu_pin_off: 'Pushpin: menu follows your head',
+    menu_pin_on: 'Pushpin set: menu pinned here',
     hall_door: '› TO THE COURT',
     opp_connected: 'Opponent connected. Let’s play!',
     opp_disconnected: 'Opponent disconnected',
@@ -3008,7 +3012,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.102-SDK6';
+  const VERSION = '3.6.103-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -3787,7 +3791,13 @@ const DIMS = {
   // segundo "tok" y bola disparada hacia atrás. 0,24 s lo elimina (la
   // re-ida legítima de tu propio golpeo nunca baja de ~0,5 s).
   paddleHitCooldown: 0.24,
-  paddleVelClamp: 12,       // v2.29: techo de velocidad de pala (picos de tracking)
+  // r113 · FÍSICA DEL GOLPE FUERTE (petición del dueño: «la velocidad de
+  // los golpes fuertes no es real, tiene que dar velocidad real según la
+  // fuerza»): el techo 12 recortaba los swings ENÉRGICOS de verdad (un
+  // smash de brazo supera 12 m/s con facilidad) y la bola salía débil.
+  // 16 mantiene la guarda anti-picos de tracking (picos de 30+ m/s de un
+  // frame siguen recortándose) pero deja pasar el swing real.
+  paddleVelClamp: 16,       // r113: antes 12 — el smash real ya no se recorta
   // --- r100/r101 · CONTACTO DE REPOSO pala-bola (el estándar Eleven) ---
   // Petición del dueño: «si paramos la bola sobre la pala va a trompicones…
   // y si levanto la pala la bola la atraviesa». r100 lo implementó con
@@ -3803,7 +3813,11 @@ const DIMS = {
   paddleRestMuS: 0.35,      // fricción estática: gravedad tangencial menor no desliza
   paddleRestDrop: 0.09,     // s de edad del apoyo sin re-confirmar antes de soltar
   paddleRestCarry: 0.5,     // pala más lenta que esto ARRASTRA la bola apoyada
-  maxBallSpeed: 14,
+  // r113 · techo de bola sube con el techo de pala: un golpe fuerte AHORA
+  // se siente fuerte (hasta 18 m/s ≈ 65 km/h, rango de un smash amateur
+  // real). El validador del duelo online (c09b) no impone techo de
+  // velocidad (sólo de giro MAX_SPIN) — cambio seguro para online.
+  maxBallSpeed: 18,
   // --- efecto (spin) ---
   magnus: 0.0035,           // a = Cm·(ω × v)
   bounceSpinKick: 0.012,
@@ -3969,8 +3983,13 @@ const SERVE_TUNE = {
   assistMax: 0.35,        // mezcla máxima hacia la referencia legal con error → 0 (medium) × tier.assistMul
   assistMinSpeed: 1.2,    // por debajo de esta salida (m/s) no hay asistencia: un roce es un roce
   // --- A · filtrado de velocidad de la mano (updatePaddleSim) ---
-  velWindow: 0.045,       // ventana de la media móvil (s) — antes VEL_WINDOW fijo
-  velLerp: 0.85,          // respuesta del filtro — antes lerp fijo
+  // r113 · FÍSICA DEL GOLPE FUERTE: ventana y lerp más rápidos — el pico
+  // REAL del swing llega al contacto en lugar de promediarse (la ventana
+  // 0,045 + lerp 0,85 retrasaban y achataban los golpes fuertes: la bola
+  // salía con la velocidad de hace 45 ms, no con la de ahora). El filtro
+  // sigue amortiguando el jitter (3 muestras a 72 Hz ≈ 42 ms → 2-3 muestras).
+  velWindow: 0.032,       // r113: antes 0,045 — menos lag del filtro
+  velLerp: 0.90,          // r113: antes 0,85 — respuesta más ágil
   // --- E · límites post-impacto del saque ---
   serveMaxSpeed: 8.8,     // techo del saque (antes fijo)
   serveMinSpeed: 0,       // suelo del saque: 0 = DESACTIVADO (antes 3.2 forzados: disfrazaba roces)
@@ -6445,6 +6464,11 @@ function collidePaddle(ball, pad, k, events) {
   return collidePaddleSweep(ball, pad, k, k, events);
 }
 
+// r113 · temporales de la DIRECCIÓN AL OBJETIVO (módulo-local, cero colisión
+// con los temporales compartidos de c04)
+const tmpAim = new THREE.Vector3();
+const tmpAim2 = new THREE.Vector3();
+
 /* v3.1.2-CCD1 · DETECCIÓN CCD POR SDF (reemplaza al cruce de plano + disco).
  * Barrido del segmento de bola [tmpPrev → ball.pos] contra la pala barrida
  * entre las poses kA y kB del frame (pad.prev → pad.pos). kA/kB son las
@@ -6625,8 +6649,13 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
 
   // Golpe con CUERPO: transfiere parte de la velocidad de la pala en la
   // dirección de salida (acelerar la mano = bola más rápida, siempre)
+  // r113 · FÍSICA DEL GOLPE FUERTE (petición del dueño: la bola debe salir
+  // con la VELOCIDAD REAL del swing): 0,22 sólo transfería una quinta parte
+  // del empuje — un smash de 10 m/s aportaba 2,2 m/s y el golpe «no se
+  // sentía». 0,40 transfiere el doble sin romper los toques suaves (el
+  // término sólo opera con padN > 0: pala acercándose a la bola).
   const padN = pad.vel.dot(tmpN);
-  if (padN > 0) ball.vel.addScaledVector(tmpN, padN * 0.22 * (PK ? PK.power : 1));
+  if (padN > 0) ball.vel.addScaledVector(tmpN, padN * 0.40 * (PK ? PK.power : 1));
 
   // v3.0.5 P1: bamboleo del canto — golpes cerca del borde dispersan
   if (FIS && offC > 0.7) {
@@ -6654,6 +6683,39 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
     exitFloor = DIMS.minExitSpeed * floorK;
   }
   if (vn < exitFloor) ball.vel.addScaledVector(tmpN, exitFloor - vn);
+
+  // r113 · DIRECCIÓN AL OBJETIVO (petición del dueño: «cuesta apuntar hacia
+  // donde apunto»): la salida reflejaba sobre la NORMAL de la cara — con la
+  // hoja un poco girada la bola se iba a donde apuntaba LA MADERA, no el
+  // brazo. En un golpe real la dirección la manda el SWING: giramos la
+  // componente horizontal de la salida hacia la dirección del movimiento de
+  // la pala (proporcional a la energía del swing y SOLO en swings vivos —
+  // los toques suaves no se tocan). Jugador only (la IA ya apunta con su
+  // solver), nunca en vuelo de saque (el solver valida esa trayectoria) y
+  // sólo en intercambio (misma puerta honesta del súper efecto, r55).
+  if (pad.who === 'player' && !pad.serveFlight &&
+      pad.intercambio !== false && FIS) {
+    const swing = pad.vel.length();
+    if (swing > 2.5) {
+      // mezcla hasta 45°: k = 0..0.45 según la energía por encima del umbral
+      const kAim = 0.45 * Math.min(1, (swing - 2.5) / 6);
+      tmpAim.copy(pad.vel); tmpAim.y = 0;
+      if (tmpAim.lengthSq() > 1e-6) {
+        tmpAim.normalize();
+        tmpAim2.set(ball.vel.x, 0, ball.vel.z);
+        const spH = tmpAim2.length();
+        if (spH > 1e-4) {
+          tmpAim2.divideScalar(spH).lerp(tmpAim, kAim).normalize();
+          // guardia: el giro JAMÁS invierte el sentido de cruce (la salida
+          // hacia el lado rival se conserva: mismo signo de z)
+          if (tmpAim2.z * ball.vel.z >= 0) {
+            ball.vel.x = tmpAim2.x * spH;
+            ball.vel.z = tmpAim2.z * spH;
+          }
+        }
+      }
+    }
+  }
 
   // Límite de velocidad
   const sp = ball.vel.length();
@@ -8339,10 +8401,25 @@ class OpponentAI {
     if (cy < DIMS.tableTopY - 0.08 || cy > 1.65) return null;
 
     const ballSpeed = ball.vel.length();
-    // v3.6.41 · SÚPER PORTAL: +portalMissExtra de fallo decidido con la
-    // bola del portal viniendo (la IA «no llega bien» más a menudo).
-    const pMiss = this.cfg.missBase + Math.max(0, ballSpeed - 7) * 0.05 +
-      (ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0);
+    // r113 · CPU INTELIGENTE (petición del dueño: «la CPU no falla bolas
+    // fáciles; sólo escoradas, rápidas o de colocación extrema»). Antes el
+    // fallo era un impuesto FIJO (missBase) que repartía muertes por igual:
+    // la IA fallaba bolas cómodas a la pala. Ahora el fallo es ESFUERZO:
+    //  · base tibia (la torpeza del nivel — easy sigue fallando algo más);
+    //  · RAPIDA: +0,06 por m/s por encima de 7 (sube un pelín: 0,05);
+    //  · ESCORADA/COLOCACIÓN EXTREMA: +0,60 por cada metro de VIAJE por
+    //    encima de 0,85 — una bola al rincón que obliga a desplazarse 1,6 m
+    //    se paga (+0,45); una bola cómoda junto a la pala NO se falla.
+    //  · portal: igual de decisivo que siempre (DIMS.portalMissExtra).
+    // Los estilos M5a (errStd/miss ×) siguen multiplicando la cfg — sus
+    // clamps acotan y la distinción entre personalidades se conserva.
+    // (NOTA: el `reach` de arriba es el RADIO de la pala — este es `viaje`.)
+    const viaje = Math.hypot(cx - this.pos.x, cz - this.pos.z);
+    const pMiss = Math.min(0.85,
+      this.cfg.missBase * 0.25 +
+      Math.max(0, ballSpeed - 7) * 0.06 +
+      Math.max(0, viaje - 0.85) * 0.60 +
+      (ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0));
     this.hitCooldown = 0.55;
     // v2.84 · GOLPE MALO (petición del artista): el fallo decidido de la IA
     // YA NO deja pasar la bola a través de la pala (efecto pésimo). La toca
@@ -16232,6 +16309,31 @@ class PingPongGame {
     this.menuMesh.renderOrder = 9998;   // antes 990 (bajo instrucciones/mapa)
     this.menuGroup.add(this.menuMesh);
 
+    /* r113 · LA CHINCHETA DEL MENÚ (petición del dueño): icono de chincheta
+     * SIEMPRE visible en el CENTRO SUPERIOR del panel. POR DEFECTO OFF (el
+     * menú se comporta como siempre: anclaje delante de la cara + flotación
+     * de 1,8 s y fijo). Al pulsarla el menú queda ANCLADO al punto del
+     * espacio donde estaba en ese instante (anchorMenu deja de reposicionar
+     * — ni flotación ni re-anclajes al reabrir). Pulso de nuevo = soltar:
+     * el panel vuelve a anclarse delante de la cabeza. Estado en memoria
+     * (cada sesión arranca con la chincheta OFF, tal cual pidió el dueño). */
+    this.menuPin = false;             // r113: OFF por defecto (petición expresa)
+    this._menuPinCv = document.createElement('canvas');
+    this._menuPinCv.width = 128;
+    this._menuPinCv.height = 128;
+    this._menuPinTex = new THREE.CanvasTexture(this._menuPinCv);
+    this._menuPinTex.colorSpace = THREE.SRGBColorSpace;
+    this._menuPinMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.085, 0.085),
+      new THREE.MeshBasicMaterial({ map: this._menuPinTex, transparent: true, depthTest: false }),
+    );
+    // centro superior del panel 0,90×1,35: borde arriba en y=+0,675 — la
+    // chincheta cabalga el borde (+0,032 hacia arriba) como un pin real
+    this._menuPinMesh.position.set(0, 0.707, 0.006);
+    this._menuPinMesh.renderOrder = 9998;
+    this.menuGroup.add(this._menuPinMesh);
+    this._menuPinDraw();
+
     this.menuGroup.visible = false;
     this.scene.add(this.menuGroup);   // espacio MUNDO: inmune al recentrado
 
@@ -18201,8 +18303,12 @@ class PingPongGame {
 
   /** v2.28: coloca el gran panel DELANTE de la cabeza (1,08 m), un poco por
    *  debajo de la línea de ojos, mirando a la cara. Durante ~1,8 s sigue
-   *  suavemente a la cabeza (flotación) y después queda FIJO en el mundo. */
+   *  suavemente a la cabeza (flotación) y después queda FIJO en el mundo.
+   *  r113 · CHINCHETA: con el pin puesto el panel NO se re-ancla NUNCA —
+   *  permanece en el punto exacto del espacio donde se puso la chincheta
+   *  (se cancela también la flotación pendiente). */
   anchorMenu() {
+    if (this.menuPin) { this._menuAnchorUntil = 0; return; }
     this.camera.getWorldPosition(muHead);
     this.camera.getWorldQuaternion(muQ);
     muDir.set(0, 0, -1).applyQuaternion(muQ);
@@ -18215,6 +18321,88 @@ class PingPongGame {
     this.menuGroup.position.y = Math.max(0.85, muHead.y - 0.12);
     this.menuGroup.lookAt(muHead);
     this._menuAnchorUntil = performance.now() / 1000 + 1.8;
+  }
+
+  /* r113 · CHINCHETA DEL MENÚ — dibujo del icono (128², estilo de la casa):
+   * badge circular oscuro + chincheta de silueta. OFF: pin PLATEADO con
+   * puntas fuera (menú libre, sigue a la cabeza). ON: pin DORADO clavado
+   * con aro de anclaje (menú fijo en el espacio). */
+  _menuPinDraw() {
+    const c = this._menuPinCv.getContext('2d');
+    c.clearRect(0, 0, 128, 128);
+    // badge de fondo (target de pulso legible sobre cualquier arte)
+    c.beginPath();
+    c.arc(64, 64, 56, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(13,16,23,0.82)';
+    c.fill();
+    c.lineWidth = 4;
+    c.strokeStyle = this.menuPin ? 'rgba(232,180,90,0.95)' : 'rgba(255,255,255,0.35)';
+    c.stroke();
+    // chincheta (vista lateral): cabeza + cuello + aguja
+    const oro = this.menuPin;
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    // aguja (clavada hacia abajo-derecha si ON; recta si OFF)
+    c.strokeStyle = oro ? '#ffe9a8' : '#aeb9c4';
+    c.lineWidth = 7;
+    c.beginPath();
+    c.moveTo(64, 62);
+    if (oro) { c.lineTo(84, 96); }
+    else { c.lineTo(64, 100); }
+    c.stroke();
+    // punta
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.arc(oro ? 84 : 64, oro ? 96 : 100, 2.5, 0, Math.PI * 2);
+    c.fillStyle = oro ? '#ffe9a8' : '#aeb9c4';
+    c.fill();
+    // cabeza del pin (domo)
+    c.beginPath();
+    c.arc(64, 48, 19, 0, Math.PI * 2);
+    const g = c.createLinearGradient(45, 29, 83, 67);
+    if (oro) { g.addColorStop(0, '#fff3cf'); g.addColorStop(0.55, '#e8b45a'); g.addColorStop(1, '#8f6a24'); }
+    else { g.addColorStop(0, '#e8eef4'); g.addColorStop(0.55, '#93a1ae'); g.addColorStop(1, '#525d68'); }
+    c.fillStyle = g;
+    c.fill();
+    c.lineWidth = 3;
+    c.strokeStyle = oro ? 'rgba(255,233,168,0.9)' : 'rgba(255,255,255,0.45)';
+    c.stroke();
+    // brillo del domo
+    c.beginPath();
+    c.ellipse(57, 42, 6, 4, -0.5, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(255,255,255,0.55)';
+    c.fill();
+    // con el pin puesto: aro de ANCLAJO alrededor (estado inequívoco)
+    if (oro) {
+      c.beginPath();
+      c.arc(64, 64, 47, 0, Math.PI * 2);
+      c.setLineDash([9, 7]);
+      c.lineWidth = 4;
+      c.strokeStyle = 'rgba(232,180,90,0.8)';
+      c.stroke();
+      c.setLineDash([]);
+    }
+    if (this._menuPinTex) this._menuPinTex.needsUpdate = true;
+  }
+
+  /* r113 · pulso de la chincheta: ancla el menú en su punto del espacio /
+   * lo suelta (vuelve a anclarse delante de la cabeza). Feedback: arpegio,
+   * háptica por la mano que pulsa y rótulo breve en el mensaje del HUD. */
+  _menuPinToggle(hand) {
+    this.menuPin = !this.menuPin;
+    this._menuPinDraw();
+    try { this.audio.playOsc(this.menuPin ? 620 : 470, this.menuPin ? 930 : 340, 0.09, 'sine', 0.14, 0); } catch (ePin1) { /* */ }
+    if (this.renderer.xr.isPresenting) this.haptic(hand, 0.5, 90);
+    try {
+      const mPin = T(this.menuPin ? 'menu_pin_on' : 'menu_pin_off');
+      this.rules.message = mPin;
+      clearTimeout(this._menuPinMsgTo);
+      this._menuPinMsgTo = setTimeout(() => {
+        try { if (this.rules.message === mPin) this.rules.message = ''; } catch (ePM2) { /* */ }
+      }, 2600);
+    } catch (ePin2) { /* */ }
+    // soltar = el panel regresa a la cabeza (la flotación se reanuda sola)
+    if (!this.menuPin) this.anchorMenu();
   }
 
   /** Coloca el panel (flotación inicial) y hace el hit-test del rayo de
@@ -18253,6 +18441,12 @@ class PingPongGame {
         if (!this._menuGripPos) this._menuGripPos = [null, null];
         this._menuGripPos[h] = muGrip.y;
         const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
+        // r113 · CHINCHETA: el rayo también busca el pin (prioridad sobre el
+        // panel: cuelga 6 mm por delante del plano). Sólo con el menú abierto.
+        let pinHit = null;
+        if (this.menuOpen && this._menuPinMesh) {
+          pinHit = muRaycaster.intersectObject(this._menuPinMesh, false)[0] || null;
+        }
         // r98 · MESA AGARRABLE: mano agarrando (el rayo sigue a la mesa
         // aunque cruce el panel) o rayo que NO cae en el panel con la
         // página MESA delante → el propio rayo busca la mesa
@@ -18300,14 +18494,22 @@ class PingPongGame {
         } else {
           dot.visible = false;
         }
-
+        // r113 · hover del PIN: el cursor salta a la chincheta y el haz se
+        // engorda como sobre un botón (idx especial -2 — nunca colisiona con
+        // los índices reales de menuRects)
+        if (pinHit) {
+          idx = -2;
+          dot.visible = true;
+          dot.position.copy(this.menuGroup.worldToLocal(pinHit.point.clone()));
+        }
         line.visible = true;
         line.position.copy(muGrip);
         line.quaternion.copy(muQ);
         // r98 · el haz alcanza la MESA cuando es ella la que se apunta
-        line.scale.z = sobreMesa ? sobreMesa.dist : (hit ? hit.distance : 0.5);
+        line.scale.z = sobreMesa ? sobreMesa.dist :
+          (pinHit ? pinHit.distance : (hit ? hit.distance : 0.5));
         // el haz engorda al pasar sobre un botón (o sobre la mesa — r98)
-        const thick = (idx >= 0 || sobreMesa) ? 1.7 : 1;
+        const thick = (idx >= 0 || idx === -2 || sobreMesa) ? 1.7 : 1;
         line.scale.x = thick;
         line.scale.y = thick;
       } else {
@@ -20063,7 +20265,9 @@ class PingPongGame {
     // el botón que manda. Cubre menú completo Y prompt del Hall (hallask).
     if (this.menuOpen) {
       const hov = this.menuHover[i];
-      if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
+      // r113 · CHINCHETA: hover -2 = el gatillo pega/suelta el panel
+      if (hov === -2) this._menuPinToggle(i);
+      else if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
       // r98 · AGARRE DE LA MESA: gatillo con el rayo sobre la mesa (página
       // MESA) — la altura sigue a la altura del mando 1:1 hasta soltar.
       else if (this._mesaGrabActivo() && this._mesaHover && this._mesaHover[i]) {

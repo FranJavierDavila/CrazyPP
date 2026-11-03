@@ -1721,7 +1721,8 @@ class PlantillaPoderes {
     if (r.state !== 'rally' || this.ctrl.pruebaActiva()) return;
     if ((r.rallyHits || 0) < this.T.minRallyHits) return;
     const b = this.game.ball;
-    if (!b || !(b.vel.z > 0.35)) return;
+    // r113 · flanco INVERTIDO (dueño): sólo con la bola yendo al RIVAL
+    if (!b || !(b.vel.z < -0.35)) return;
     if (this.T.bolsa === 'rotatoria' && this.rallyFired) return;
     this.garantiaT -= dt;
     const p0 = this._elegirPico();

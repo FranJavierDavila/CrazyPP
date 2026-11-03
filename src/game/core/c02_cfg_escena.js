@@ -25,7 +25,13 @@ export const DIMS = {
   // segundo "tok" y bola disparada hacia atrás. 0,24 s lo elimina (la
   // re-ida legítima de tu propio golpeo nunca baja de ~0,5 s).
   paddleHitCooldown: 0.24,
-  paddleVelClamp: 12,       // v2.29: techo de velocidad de pala (picos de tracking)
+  // r113 · FÍSICA DEL GOLPE FUERTE (petición del dueño: «la velocidad de
+  // los golpes fuertes no es real, tiene que dar velocidad real según la
+  // fuerza»): el techo 12 recortaba los swings ENÉRGICOS de verdad (un
+  // smash de brazo supera 12 m/s con facilidad) y la bola salía débil.
+  // 16 mantiene la guarda anti-picos de tracking (picos de 30+ m/s de un
+  // frame siguen recortándose) pero deja pasar el swing real.
+  paddleVelClamp: 16,       // r113: antes 12 — el smash real ya no se recorta
   // --- r100/r101 · CONTACTO DE REPOSO pala-bola (el estándar Eleven) ---
   // Petición del dueño: «si paramos la bola sobre la pala va a trompicones…
   // y si levanto la pala la bola la atraviesa». r100 lo implementó con
@@ -41,7 +47,11 @@ export const DIMS = {
   paddleRestMuS: 0.35,      // fricción estática: gravedad tangencial menor no desliza
   paddleRestDrop: 0.09,     // s de edad del apoyo sin re-confirmar antes de soltar
   paddleRestCarry: 0.5,     // pala más lenta que esto ARRASTRA la bola apoyada
-  maxBallSpeed: 14,
+  // r113 · techo de bola sube con el techo de pala: un golpe fuerte AHORA
+  // se siente fuerte (hasta 18 m/s ≈ 65 km/h, rango de un smash amateur
+  // real). El validador del duelo online (c09b) no impone techo de
+  // velocidad (sólo de giro MAX_SPIN) — cambio seguro para online.
+  maxBallSpeed: 18,
   // --- efecto (spin) ---
   magnus: 0.0035,           // a = Cm·(ω × v)
   bounceSpinKick: 0.012,
@@ -210,8 +220,13 @@ export const SERVE_TUNE = {
   assistMax: 0.35,        // mezcla máxima hacia la referencia legal con error → 0 (medium) × tier.assistMul
   assistMinSpeed: 1.2,    // por debajo de esta salida (m/s) no hay asistencia: un roce es un roce
   // --- A · filtrado de velocidad de la mano (updatePaddleSim) ---
-  velWindow: 0.045,       // ventana de la media móvil (s) — antes VEL_WINDOW fijo
-  velLerp: 0.85,          // respuesta del filtro — antes lerp fijo
+  // r113 · FÍSICA DEL GOLPE FUERTE: ventana y lerp más rápidos — el pico
+  // REAL del swing llega al contacto en lugar de promediarse (la ventana
+  // 0,045 + lerp 0,85 retrasaban y achataban los golpes fuertes: la bola
+  // salía con la velocidad de hace 45 ms, no con la de ahora). El filtro
+  // sigue amortiguando el jitter (3 muestras a 72 Hz ≈ 42 ms → 2-3 muestras).
+  velWindow: 0.032,       // r113: antes 0,045 — menos lag del filtro
+  velLerp: 0.90,          // r113: antes 0,85 — respuesta más ágil
   // --- E · límites post-impacto del saque ---
   serveMaxSpeed: 8.8,     // techo del saque (antes fijo)
   serveMinSpeed: 0,       // suelo del saque: 0 = DESACTIVADO (antes 3.2 forzados: disfrazaba roces)

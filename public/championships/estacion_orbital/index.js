@@ -7935,7 +7935,8 @@ class StockController {
         this._powerCd = 0;
         this._quizasPoder(true);
       } else if (g.rules.state === 'rally' && g.ball && g.ball.vel) {
-        const toward = g.ball.vel.z > 0.35;
+        // r113 · flanco INVERTIDO (dueño): sólo con la bola yendo al RIVAL
+        const toward = g.ball.vel.z < -0.35;
         const edge = toward && !this._toward;
         this._toward = toward;
         if (edge && this._powerCd <= 0) this._quizasPoder();

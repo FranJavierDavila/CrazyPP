@@ -12996,7 +12996,9 @@ class ForajidoStand {
     if (!ball || !ball.vel) return;
     if (r.state !== 'rally' || this._rallyFired) { this._toward = false; return; }
     if ((r.rallyHits || 0) < OESTE_POWER.minRallyHits) { this._toward = false; return; }
-    const toward = ball.vel.z > 0.35;
+    // r113 · flanco INVERTIDO (dueño): el poder se anuncia SOLO con la bola
+    // yendo hacia el RIVAL — nunca roba el golpeo del jugador con el congelado
+    const toward = ball.vel.z < -0.35;
     const edge = toward && !this._toward;
     this._toward = toward;
     if (!edge) return;

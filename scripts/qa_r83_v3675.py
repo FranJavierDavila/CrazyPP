@@ -125,8 +125,8 @@ AGUJAS = [
     ("guardar con A dentro del ajuste", "A: guardar"),
     # — mudanza confirmada —
     ("la tarjeta se RETIRA del hub del Pro Training", "se RETIRA del hub (se muda a"),
-    ("versión en el badge (al día r109)", "V3.6.102-SDK6"),
-    ("versión 3.6.75 en VERSION", "VERSION = '3.6.102-SDK6'"),
+    ("versión en el badge (al día r109)", "V3.6.103-SDK6"),
+    ("versión 3.6.75 en VERSION", "VERSION = '3.6.103-SDK6'"),
 ]
 
 CONTADORES = [
@@ -137,7 +137,7 @@ CONTADORES = [
     ("los 3 cursores se construyen", "cursorDe(", 3),
     ("el ajuste PURO se arranca una vez", "game.enterCalib(true);", 1),
     ("sin restos del panel antiguo", "this.palaPanel", 0),
-    ("versión (badge + VERSION) al día r109", "3.6.102-SDK6", 2),
+    ("versión (badge + VERSION) al día r109", "3.6.103-SDK6", 2),
 ]
 
 

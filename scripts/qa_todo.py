@@ -98,6 +98,11 @@ CAPAS = [
     # (12 × 30 rallies reales: cfg acotada + invariantes + 66 parejas
     # distinguibles — sin trampas).
     ('r112 · estilos de IA (v36102)', 'qa_r112_v36102.py'),
+    # r113 · AJUSTES DEL DUEÑO — chincheta del menú (ancla/suelta), física del
+    # golpe fuerte (velocidad real + dirección al objetivo), CPU que no falla
+    # bolas fáciles, superpoderes sólo con la bola hacia el rival (5
+    # campeonatos) y etapa 4 de La Locura relajada. En vivo: el pin ancla.
+    ('r113 · ajustes del dueño (v36103)', 'qa_r113_v36103.py'),
     ('r112 · arnés de estilos (no-trampa)', 'qa_estilos_r112.mjs'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
     ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),

@@ -72,7 +72,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (al día r109)
-        ('3.6.102-SDK6', 'versión servida: 3.6.91-SDK6 (al día r109)'),
+        ('3.6.103-SDK6', 'versión servida: 3.6.91-SDK6 (al día r109)'),
         # · TRÁNSITO EXPLÍCITO (presentación del dueño)
         ('this._portalSinkT = 0;            // hundimiento en el portal de entrada',
          'tránsito: fase de hundimiento declarada'),
@@ -140,7 +140,7 @@ async def main():
          'IA %: error de puntería ×1,6 SOLO con la marca (penalización honesta)'),
         ('if (ball.ppPortal) vMulIA *= (DIMS.portalRivalVel || 1);',
          'IA %: piernas ×0,75 SOLO con la marca'),
-        ('(ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0);',
+        ('(ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0));',
          'IA %: +10 % de fallo decidido SOLO con la marca'),
         # · LAS DESVENTAJAS Mueren CON EL PODER
         ('try { if (this.ball && !this.ball.ppTransito) this.ball.ppPortal = false; }',

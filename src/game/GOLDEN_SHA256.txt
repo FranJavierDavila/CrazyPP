@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.102-SDK6, fase 104 · Duelo Reparado; sello actualizado
-# por bump_version.py desde 3.6.101-SDK6)
-0156b90e08513cb87b819f7fe682b2eb0a02ac2604e63cce8521ee085384404f
+# SHA256 del game.html que produjo esta división (3.6.103-SDK6, fase 105 · Ajustes del dueño: chincheta, física del golpe, CPU, superpoderes y etapa 4; sello actualizado
+# por bump_version.py desde 3.6.102-SDK6)
+72de53aa5e14c7c9bb5a505e7e0bdc508e69310d12d1e433f8c9d12a104f645f

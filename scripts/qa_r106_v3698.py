@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r106_v3698.py — capa de QA de la ronda 106 (V3.6.102-SDK6).
+"""qa_r106_v3698.py — capa de QA de la ronda 106 (V3.6.103-SDK6).
 
 HITO M1 del roadmap MEJORAS.md · GAME FEEL — hápticas calibradas.
 (Auditoría corregida: la mitad de AUDIO de M1 ya existía desde r62 «SFX
@@ -86,12 +86,12 @@ CHK('const BARRA_LBL_X = () => HW() + 0.42;' in GH, 'r103: rótulo derecha intac
 
 # versión sellada
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.102-SDK6', 'c00: VERSION sella 3.6.102-SDK6')
-CHK('>V3.6.102-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
-    'portada: badge V3.6.102-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.103-SDK6', 'c00: VERSION sella 3.6.103-SDK6')
+CHK('>V3.6.103-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
+    'portada: badge V3.6.103-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
 CHK(V.get('fase') == 100, 'VERSION.json: FASE 100')
-CHK(V.get('hub') == 'v36102-sdk6', 'VERSION.json: hub v36102-sdk6')
+CHK(V.get('hub') == 'v36103-sdk6', 'VERSION.json: hub v36103-sdk6')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo: háptica calibrada con eventos inyectados) ==')

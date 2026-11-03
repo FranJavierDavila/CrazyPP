@@ -81,3 +81,4 @@ scripts/worker-tele/.telemetry-pass
 
 # sandbox Node del banco de duelo (se regenera de src en cada QA)
 scripts/ppdiag/
+scripts/worker-tele/.telemetry-creds

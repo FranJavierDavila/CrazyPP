@@ -1132,19 +1132,26 @@ const ARK_CFG = {
  * · Cristales laterales OTRO +30 cm hacia el jugador (red + 0,60). */
 const ARK2_CFG = Object.assign({}, ARK_CFG, {
   variant: 2,
-  cols: 9, rows: 6, gap: 0.012,
+  // r113 · DIFICULTAD RELAJADA (petición del dueño: «la etapa 4 es muy
+  // difícil»): muro 9×5 (45 ladrillos, antes 9×6=54), 3,5 minutos (antes
+  // 2,5), menos azules de nacimiento (24%, antes 30%), la conversión
+  // temporal ROJO→AZUL llega más tarde (20 s de gracia y cada 11 s, antes
+  // 12/7) y la bomba sale cada 20 s (antes 15). La identidad de la prueba
+  // intacta: rojos sólo con la pala, azules sólo con el láser, cristales
+  // a red+80 cm y 5 vidas.
+  cols: 9, rows: 5, gap: 0.012,
   bw: (DIMS.tableHalfWidth * 2 - 8 * 0.012) / 9,   // 0,1586 m
   bh: 0.15,
   // v2.46 · +20 cm MÁS: red + 80 cm (30+30+20). Y ojo: la colisión del
   // perímetro usa SIEMPRE this.C (antes _extraCollide leía ARK_CFG fijo y
   // los 50 cm nuevos NO colisionaban — bug del "cristal sin comportamiento").
   sideZ0: DIMS.tableCenterZ + 0.80,  // v2.46: red + 80 cm hacia ti
-  time: 150,         // 2,5 minutos (muro del doble de ladrillos)
+  time: 210,         // r113: 3,5 minutos (antes 2,5)
   lives: 5,
-  blueStart: 0.30,   // ~30% de los ladrillos nacen AZULES
-  convertFirst: 12,  // gracia (s) antes de la conversión temporal
-  convertEvery: 7,   // cada 7 s un ROJO vivo pasa a AZUL
-  bombaCada: 15,     // v3.6.45: la bomba sale por INTERVALOS de 15 s
+  blueStart: 0.24,   // r113: ~24% nacen AZULES (antes 30%)
+  convertFirst: 20,  // r113: gracia 20 s antes de la conversión (antes 12)
+  convertEvery: 11,  // r113: cada 11 s un ROJO pasa a AZUL (antes 7)
+  bombaCada: 20,     // r113: bomba cada 20 s (antes 15) — v3.6.45 intervalos
 });
 ARK_CFG.z = ARK_CFG.sideZ1 + ARK_CFG.depth / 2 + 0.004;
 ARK2_CFG.z = ARK2_CFG.sideZ1 + ARK2_CFG.depth / 2 + 0.004;
@@ -4074,10 +4081,13 @@ class ArcadeController {
 
   /* ============ v2.35 · SUPERPODERES DEL RIVAL (en pleno rallye) ============ */
 
-  /** ¿Toca lanzar superpoder? SOLO con la bola en juego y viniendo hacia el
-   *  jugador (para ESTORBAR el golpeo, no cuando el punto está muerto).
-   *  Puertas: rally activo, cooldown, máximo 1 por rallye, azar y que no
-   *  haya ya un aviso colgando (v2.36). */
+  /** ¿Toca lanzar superpoder? r113 · PETICIÓN DEL DUEÑO: NUNCA con la bola
+   *  viniendo hacia el jugador — el congelado del anuncio (v2.40) le robaba
+   *  el golpeo. El flanco se invierte: el poder se anuncia SOLO con la bola
+   *  ACABA de salir hacia el RIVAL (vel.z < -0,35, justo tras tu golpeo):
+   *  el anuncio vive mientras la bola viaja al otro lado y el efecto entra
+   *  cuando la bola regresa. Puertas: rally activo, cooldown, máximo 1 por
+   *  rallye, azar y que no haya ya un aviso colgando (v2.36). */
   maybeTriggerPower() {
     if (!this.active || this._pendingPower) return;
     if (this._powerT > 0 || this._powerCd > 0) return;
@@ -4089,8 +4099,8 @@ class ArcadeController {
     const minHits = (this.data && this.data.powerTrigger &&
       this.data.powerTrigger.minRallyHits) || 1;
     if ((r.rallyHits || 0) < minHits) { this._toward = false; return; }
-    // flanco: la bola ACABA de ponerse rumbo al jugador (vel.z > 0)
-    const toward = ball.vel.z > 0.35;
+    // flanco r113: la bola ACABA de ponerse rumbo AL RIVAL (vel.z < -0,35)
+    const toward = ball.vel.z < -0.35;
     const edge = toward && !this._toward;
     this._toward = toward;
     if (!edge) return;

@@ -4237,8 +4237,10 @@ class WizardController {
     if (r.state !== 'rally' || this._rallyFired) { this._toward = false; return; }
     const minHits = WIZ_POWER.minRallyHits;
     if ((r.rallyHits || 0) < minHits) { this._toward = false; return; }
-    // flanco: la bola ACABA de ponerse rumbo al jugador (vel.z > 0)
-    const toward = ball.vel.z > 0.35;
+    // r113 · flanco INVERTIDO (petición del dueño): NUNCA con la bola viniendo
+    // hacia el jugador (el congelado del aviso le robaba el golpeo) — el poder
+    // se anuncia SOLO con la bola ACABA de salir hacia el RIVAL (vel.z < -0,35)
+    const toward = ball.vel.z < -0.35;
     const edge = toward && !this._toward;
     this._toward = toward;
     if (!edge) return;

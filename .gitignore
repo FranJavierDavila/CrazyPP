@@ -84,3 +84,29 @@ scripts/ppdiag/
 
 # credenciales de telemetría (NUNCA commitear)
 scripts/worker-tele/.telemetry-creds
+
+# r115 · respaldos locales >100 MB (GitHub los rechaza)
+respaldos/
+scripts/_upload_bak*/
+recovery/
+
+# r115 · árboles pesados locales (el push de ~600 MB los rechaza)
+npmcache/
+tmp/
+tools/
+recovery/
+beta1/
+scripts/_poder51/
+scripts/tmp_taller_e2e/
+scripts/manual_editor_src/
+scripts/v298/
+scripts/voice_poderes/
+scripts/_r1*_servido_game.html
+public/netlify-drop-*.zip
+public/pingpong-quest3-*.zip
+public/descargas/*.zip
+scripts_game/
+tmp_frames/
+scripts/tmp_seal/
+scripts/stage_*/
+scripts/v299_ref/

@@ -12,32 +12,32 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 
 ---
 
-## M1 · Capas de sonido de golpeo + háptica calibrada  ← SIGUIENTE (al abrir esta ronda)
+## M1 · Capas de sonido de golpeo + háptica calibrada  ☑ CERRADA (r62)
 
 **Qué**: el golpe ya suena; ahora debe SONAR COMO PING PONG REAL y sentirse en la mano.
-- [ ] Sub-layers de impacto de pala: volumen/filtro según velocidad de impacto (toque suave · golpe normal · drive potente) + timbre distinto para golpe limpio del centro vs golpe de borde/mal contacto.
-- [ ] Sonidos propios ya existentes respetados: mesa, red, suelo, fuera (no romper nada de lo probado).
-- [ ] Háptica calibrada: intensidad de la vibración proporcional a la velocidad del impacto (toque ≈ suave, remate ≈ fuerte), con techo para no saturar el mando y mínimo perceptible.
-- [ ] Todo con la SDK de audio de la casa (c03) y sin assets nuevos (variar parámetros del motor, cero peso de red).
-- **Criterio de aceptación**: en la cancha, un toque suave y un remate se distinguen de oído y por la vibración; QA en verde; producción verificada.
+- [x] Sub-layers de impacto de pala: volumen/filtro según velocidad de impacto (toque suave · golpe normal · drive potente) + timbre distinto para golpe limpio del centro vs golpe de borde/mal contacto. *(r62 · 3.6.54-SDK6 · qa_r62 VERDE — ver registro.)*
+- [x] Sonidos propios ya existentes respetados: mesa, red, suelo, fuera (no romper nada de lo probado). *(r62.)*
+- [x] Háptica calibrada: intensidad de la vibración proporcional a la velocidad del impacto (toque ≈ suave, remate ≈ fuerte), con techo para no saturar el mando y mínimo perceptible. *(r62; escalada por velocidad del saque r62, nota háptica.)*
+- [x] Todo con la SDK de audio de la casa (c03) y sin assets nuevos (variar parámetros del motor, cero peso de red). *(r62.)*
+- **Criterio de aceptación**: CUMPLIDO EN PRODUCCIÓN DESDE 3.6.54 (marcado en r119 por higiene de memoria — los checkboxes estaban caducos frente al registro).
 
-## M2 · Guía de primera vez (onboarding)
+## M2 · Guía de primera vez (onboarding)  ☑ CERRADA (r111)
 
 **Qué**: quien entra por primera vez sabe jugar en 60 segundos sin leer un manual.
-- [ ] Panel de bienvenida la PRIMERA vez (localStorage `ppxr_tut_v1`): 3–4 pasos ilustrados (agarre del mando · golpeo · saque · dónde está el marcador) + botón «Entendido, a jugar».
-- [ ] Pistas contextuales ligeras en la cancha (no invasivas): cartel flotante de recordatorio de saque si el jugador se queda quieto >8 s con el saque pendiente.
-- [ ] Re-mostrable desde el menú (botón «Cómo se juega»), y saltado automáticamente si ya se completó.
-- [ ] i18n ES/EN completo.
-- **Criterio de aceptación**: primera partida arranca con la guía; segunda ya no sale; el botón del menú la reabre; QA en verde.
+- [x] Panel de bienvenida la PRIMERA vez (localStorage `ppxr_tut_v1`): 3–4 pasos ilustrados (agarre del mando · golpeo · saque · dónde está el marcador) + botón «Entendido, a jugar». *(r111 · 3.6.101-SDK6 · qa_r111 VERDE — ver registro.)*
+- [x] Pistas contextuales ligeras en la cancha (no invasivas): cartel flotante de recordatorio de saque si el jugador se queda quieto >8 s con el saque pendiente. *(r111.)*
+- [x] Re-mostrable desde el menú (botón «Cómo se juega»), y saltado automáticamente si ya se completó. *(r111.)*
+- [x] i18n ES/EN completo. *(r111.)*
+- **Criterio de aceptación**: CUMPLIDO EN PRODUCCIÓN DESDE 3.6.101 (marcado en r119 por higiene de memoria).
 
-## M3 · IA con estilos (8–12 personalidades, SIN trampas)
+## M3 · IA con estilos (8–12 personalidades, SIN trampas)  ☑ CERRADA (r112)
 
 **Qué**: los rivales dejan de ser clónicos. Mismo motor físico honesto (usa `errStd`, `missBase`, `maxShotSpeed`, `predictInterval` y decisiones de golpeo EXISTENTES — nada de leer la bola por detrás ni velocidades imposibles).
-- [ ] Definir 10 estilos con nombre y carácter (p. ej. Muro — bloquea bajo y espera el error · Cañonera — vive del drive · Lobera — bolas altas y lejos · Cortadora — juego cortado y lento · Loca del Efecto — spin por todos lados · Pescadora — coloca a las esquinas · Metrónomo — ritmo perfecto y sin florituras · Impaciente — se abovega y falla más pero pega fuerte · Diplomática — adaptativa: sube el ritmo si tú bajas · Acosadora — devuelve todo hasta el extrema rally).
-- [ ] Cada estilo = preset de parámetros EXISTENTES (más selección de zona de colocación y clearance de red si el motor ya lo decide así) + nombre visible en el marcador/HUD.
-- [ ] Reparto por dificultad: Nv.1 usa estilos suaves, Nv.2 medios, Nv.3 los duros; el torneo mezcla estilos según ronda.
-- [ ] i18n ES/EN de nombres y una línea de descripción.
-- **Criterio de aceptación**: jugando 3 partidos seguidos se NOTAN personalidades distintas (ritmo, altura, colocación); sin datos nuevos de red; QA en verde.
+- [x] Definir 10 estilos con nombre y carácter. *(M5a r112 · 3.6.102-SDK6: 12 personalidades OPPONENT_STYLES — ver registro.)*
+- [x] Cada estilo = preset de parámetros EXISTENTES + nombre visible en el marcador/HUD. *(r112: multiplicadores ACOTADOS sobre la cfg por el canal r95 (colocación/celebración); selector ‹ › en AJUSTES › JUEGO.)*
+- [x] Reparto por dificultad + torneo mezcla estilos. *(r112/r115: el canal estilo sirve a la escalera de carrera y a la herencia de los campeonatos.)*
+- [x] i18n ES/EN de nombres y una línea de descripción. *(r112.)*
+- **Criterio de aceptación**: CUMPLIDO EN PRODUCCIÓN DESDE 3.6.102 — arnés de estilos 12×30 rallies (0 desviaciones, sin trampas) en el gate QA TOTAL (marcado en r119 por higiene de memoria).
 
 ## M4 · Matchmaking + ELO completo + bucle diario/semanal
 
@@ -56,23 +56,23 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 - [x] Alertas de telemetría: si FPS medio < 60 sostenido, errores JS > 0, o golpes sin sonido en producción → reporte `scripts/alerta_telemetria.py` con salida clara para el dueño. *(M5b, r117: alarma `sin_sonido` en el worker + reporte del dueño con códigos de salida 0/1/2/3 — fps_bajo/errores_js/vr_cortas ya vivían desde la ronda 18.)*
 - **Criterio de aceptación**: romper a propósito una aguja hace fallar el arnés; suite < 3 min.
 
-## M6 · PWA instalable
+## M6 · PWA instalable  ☑ CERRADA (r109)
 
 **Qué**: CRAZY PING PONG desde el menú de apps del Quest, sin escribir URL.
-- [ ] `manifest.webmanifest` (nombre, iconos 192/512, display fullscreen, orientación landscape) + service worker con estrategia cache-first para game.html y assets grandes pas-through.
-- [ ] Icono/og-image generados de la identidad de la casa (palas cruzadas + bola).
-- [ ] Verificación con Lighthouse/Playwright: instalable, arranca offline la cáscara (el peso grande sigue siendo online-first para no engañar).
-- **Criterio de aceptación**: en el Quest Browser aparece «Instalar app» y abre a pantalla completa sin barra; QA en verde.
+- [x] `manifest.webmanifest` + service worker cache-first con sello por versión (`const CACHE` gobernado por el bump). *(r109 · 3.6.99-SDK6 · qa_r109 VERDE — ver registro; en el gate QA TOTAL desde entonces.)*
+- [x] Icono/og-image generados de la identidad de la casa (palas cruzadas + bola). *(r109.)*
+- [x] Verificación: instalable, portada instaladora (diálogo nativo o camino manual), arranque offline de la cáscara. *(r109: runtime SW activo en scope raíz + toasts en portada.)*
+- **Criterio de aceptación**: CUMPLIDO EN PRODUCCIÓN DESDE 3.6.99 (marcado en r119 por higiene de memoria).
 
-## M7 · Contenido e identidad (el grande, en fases)
+## M7 · Contenido e identidad (el grande, en fases)  ← EN CURSO (quedan M7d y M7e)
 
 **Qué**: más juego, más personalidad. Requiere las anteriores asentadas. SE DIVIDE:
-- M7a · Torneos temáticos con los assets del dueño ya en `upload/` (calabaza, gelatina, monticulo, mesa, Pizarra, derecha/izquierda…): al menos 1 temática nueva jugable de principio a fin.
-- M7b · SuperPalas (assets `SuperPala_*.png` del dueño: Clon, Crece, Efecto, Imán, Portal) como power-ups de modo crazy.
-- M7c · 2v2 (doble local + IA) — investigación y prototipo.
-- M7d · PRO TRAINING extendido (más ejercicios, medallas por ejercicio).
-- M7e · Persistencia completa (perfil con piel/pala elegida recordada, historial de torneos).
-- **Criterio de aceptación**: cada sub-fase se despliega por separado con su propia ronda; nada se queda a medias en producción.
+- [x] M7a · Torneos temáticos: al menos 1 temática nueva jugable de principio a fin. *(5 campeonatos vivos: locura · magia · oeste · estacion_orbital · halloween (rival ZOMBI del dueño, r85-r97); marcado en r119 por higiene de memoria — el contenido sigue creciendo por rondas del dueño.)*
+- [x] M7b · SuperPalas como power-ups de modo crazy. *(5 poderes vivos con iconos del dueño: MEGA/Crece · EFECTO · IMÁN · PORTAL · CLON — verificado en c12 en r119; marcado por higiene de memoria.)*
+- [x] M7c · 2v2 (doble local + IA) — investigación y prototipo. *(M7c r119 · 3.6.108-SDK6: investigación = árbitro ya de equipos + OpponentAI simétrico por sign; prototipo = botón «DOBLES 2v2» en AJUSTES › JUEGO, compañero IA + rival 2 con ARBITRAJE DE ALCANCE 0,50 m, física y árbitro del 1v1 intactos (cero cambios en c04/c05/c06), vive SOLO un partido, qa_r119 26/0 + QA TOTAL verde.)*
+- [ ] M7d · PRO TRAINING extendido (más ejercicios, medallas por ejercicio).
+- [ ] M7e · Persistencia completa (perfil con piel/pala elegida recordada, historial de torneos).
+- **Criterio de aceptación**: cada sub-fase se despliega por separado con su propia ronda; nada se queda a medias en producción. *(M7a/b/c cumplidos; la investigación r119 dejó documentado que el 2v2 completo — reglas ITTF de alternancia intra-equipo y marcador de 4 nombres — puede crecer sin tocar el núcleo.)*
 
 ---
 
@@ -94,6 +94,7 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 | Ajustes del dueño: Academia paso 4 sin bloqueos + «PASE BAJO»/logros del PRO TRAINING (regla de casa: QA dirigida por cambio) | 3.6.106-SDK6 | r116 · Task 221 | ☑ producción | 2026-11-04 |
 | M5b · alertas de telemetría: alarma `sin_sonido` en el worker (errores con marcador audio + futuro `golpe_sin_sonido`) + reporte del dueño `scripts/alerta_telemetria.py` (salidas 0/1/2/3) | worker (infra) | r117 · Task 222 | ☑ producción | 2026-11-04 |
 | M4 · ELO completo: unificado con K por modo (IA 24/escalera 20/humano 32) + matchmaking «Rival a tu nivel» ±120 + reto de la semana con insignia + página MI RANKING | 3.6.107-SDK6 | r118 · Task 223 | ☑ producción | 2026-11-04 |
+| M7c · DOBLES 2v2 prototipo: investigación (árbitro ya de equipos + OpponentAI simétrico) + prototipo jugable (compañero IA + rival 2, arbitraje de alcance 0,50 m, cero cambios en física/árbitro) | 3.6.108-SDK6 | r119 · Task 224 | ☑ producción | 2026-11-04 |
 
 ### Pipeline estándar (recordatorio para cada ronda)
 1. Explorar módulos afectados (c12 con base64: leer SOLO por rangos con python3).

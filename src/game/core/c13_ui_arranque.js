@@ -2995,8 +2995,12 @@ loadPaddleModel().then((paddleModel) => {
         }
       }
       // tarjetas de áreas (2 × 3)
+      // r116 · la parrilla BAJA a 236 px (informe del dueño: los textos y
+      // números de los LOGROS «están descolocados» — la fila LOGROS n/9 y
+      // sus puntos quedaban encerrados DENTRO de las tarjetas, que nacían
+      // en 190 y los tapaban). La fila de logros respira libre.
       const CW = 456, CH = 150, GX = 32, GY = 16, X0 = 40, X1 = X0 + CW + GX;
-      let y = 190;
+      let y = 236;
       const card = (x, yy, id, ik, sk, g0, g1, col, act, ic) => {
         const idx = rects.length;
         btn('trv3:area:' + id, x, yy, CW, CH, '', false);
@@ -3263,20 +3267,43 @@ loadPaddleModel().then((paddleModel) => {
         c.textAlign = 'left'; c.textBaseline = 'middle';
         c.fillStyle = '#ffffff'; c.font = '800 34px system-ui, sans-serif';
         c.fillText(t(M.nk), 68, y + 42);
-        c.fillStyle = 'rgba(255,255,255,0.85)'; c.font = '600 20px system-ui, sans-serif';
+        c.fillStyle = 'rgba(255,255,255,0.85)';
         const desc = t(M.dk, { n: M.n });
-        // cuerpo envuelto a 2 líneas
-        let l1 = desc, l2 = '';
-        if (c.measureText(desc).width > 700) {
-          const words = desc.split(' ');
-          l1 = ''; l2 = '';
-          for (const w of words) {
-            if (c.measureText(l1 + ' ' + w).width <= 700 && !l2) l1 = l1 ? l1 + ' ' + w : w;
-            else l2 = l2 ? l2 + ' ' + w : w;
+        // r116 · CUERPO A PRUEBA DE DESBORDE (informe del dueño: en «PASE
+        // BAJO» el texto se salía de su tarjeta): envoltura propia a 620 px
+        // y hasta 3 líneas, rebaje de fuente si hace falta y elipsis dura
+        // como red de seguridad. Nada sale ya del contenedor.
+        let dFs = 20;
+        const wrapAt = (fs) => {
+          c.font = '600 ' + fs + 'px system-ui, sans-serif';
+          const ls = [''];
+          for (const w of desc.split(' ')) {
+            const cur = ls[ls.length - 1];
+            const cand = cur ? cur + ' ' + w : w;
+            if (!cur || c.measureText(cand).width <= 620) ls[ls.length - 1] = cand;
+            else ls.push(w);
+          }
+          return ls;
+        };
+        let dLines = wrapAt(dFs);
+        if (dLines.length > 3) { dFs = 18; dLines = wrapAt(dFs); }
+        const dCorta = dLines.length > 3;
+        dLines = dLines.slice(0, 3);
+        for (let i = 0; i < dLines.length; i++) {
+          while (dLines[i].length > 2 && c.measureText(dLines[i]).width > 620) {
+            dLines[i] = dLines[i].slice(0, -1);
           }
         }
-        c.fillText(l1, 68, y + 82);
-        if (l2) c.fillText(l2, 68, y + 110);
+        if (dCorta && dLines[2]) dLines[2] += '…';
+        c.font = '600 ' + dFs + 'px system-ui, sans-serif';
+        if (dLines.length > 2) {
+          c.fillText(dLines[0], 68, y + 70);
+          c.fillText(dLines[1], 68, y + 92);
+          c.fillText(dLines[2], 68, y + 114);
+        } else {
+          c.fillText(dLines[0] || '', 68, y + 82);
+          if (dLines[1]) c.fillText(dLines[1], 68, y + 110);
+        }
         c.fillStyle = '#f0c85a'; c.font = '700 20px system-ui, sans-serif';
         c.fillText((S.best[id] ? t('mejor') + ': ' + S.best[id] + '  ·  ' : '') + t('obj') + ': ' + M.n, 68, y + 142);
         // v3.0.7-PLAY1 · estrellas logradas + mejor precisión de la prueba
@@ -5497,6 +5524,30 @@ if (typeof window !== 'undefined') {
             break;
           case 'vuelo': {
             // la bola va hacia el rival: espera el bote lejano para devolver
+            // r116 · NEVERA DEL PASO 4 (informe del dueño: «cuando empezamos
+            // la práctica de intercambio, como lancemos la bola y esta se
+            // caiga al suelo ahí se queda sin poder hacer nada»): si la bola
+            // del saque muere —en el suelo, sobre la mesa o más allá— sin que
+            // llegue al profesor, el intercambio SE REPITE al instante (mismo
+            // camino honesto que 'ida': vuelta al saque, sin castigo). Antes
+            // no había control de bola muerta en 'vuelo': rfFase quedaba
+            // clavado aquí para siempre y, como el gatillo exige 'saque',
+            // el paso 4 era imposible de continuar.
+            const muertaV = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
+              (Math.abs(b.vel.x) < 0.4 && Math.abs(b.vel.y) < 0.4 && Math.abs(b.vel.z) < 0.4 &&
+                b.pos.y < DIMS.tableTopY + 0.12) ||
+              b.pos.y < -0.4;
+            if (muertaV) {
+              rfFase = 'saque';
+              rfVueltas = 0; farBounced = false; rfVueltaVista = false;
+              G.rules.state = 'serve';
+              G.resetToss();
+              G.tutBolaViva = false;
+              flashAgain = 2.4;
+              paintStep();
+              narra(['tutotra']);
+              break;
+            }
             if (!rfVueltaVista && b.pos.z < (DIMS.tableCenterZ - 0.1)) {
               if (!farBounced && b.vel.y > 0.3 && b.pos.y < DIMS.tableTopY + 0.5) {
                 farBounced = true;

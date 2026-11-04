@@ -91,6 +91,7 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 | Ajustes del dueño: física fuerte + CPU + superpoderes justos + Locura etapa 4 | 3.6.103-SDK6 | r113 · Task 218 | ☑ producción | 2026-11-03 |
 | Ajustes del dueño: chincheta por estancia + fuera el diorama | 3.6.104-SDK6 | r114 · Task 219 | ☑ producción | 2026-11-04 |
 | Ajustes del dueño: fuera la repetición del mejor punto + superpoder EN EL GOLPEO rival (+ M5B escalera de carrera y herencia de estilos de la sesión perdida) | 3.6.105-SDK6 | r115 · Task 220 | ☑ producción | 2026-11-04 |
+| Ajustes del dueño: Academia paso 4 sin bloqueos + «PASE BAJO»/logros del PRO TRAINING (regla de casa: QA dirigida por cambio) | 3.6.106-SDK6 | r116 · Task 221 | ☑ producción | 2026-11-04 |
 
 ### Pipeline estándar (recordatorio para cada ronda)
 1. Explorar módulos afectados (c12 con base64: leer SOLO por rangos con python3).

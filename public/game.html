@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.105-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.106-SDK6</span>
     </div>
   </main>
 
@@ -3068,7 +3068,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.105-SDK6';
+  const VERSION = '3.6.106-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -30657,8 +30657,12 @@ loadPaddleModel().then((paddleModel) => {
         }
       }
       // tarjetas de áreas (2 × 3)
+      // r116 · la parrilla BAJA a 236 px (informe del dueño: los textos y
+      // números de los LOGROS «están descolocados» — la fila LOGROS n/9 y
+      // sus puntos quedaban encerrados DENTRO de las tarjetas, que nacían
+      // en 190 y los tapaban). La fila de logros respira libre.
       const CW = 456, CH = 150, GX = 32, GY = 16, X0 = 40, X1 = X0 + CW + GX;
-      let y = 190;
+      let y = 236;
       const card = (x, yy, id, ik, sk, g0, g1, col, act, ic) => {
         const idx = rects.length;
         btn('trv3:area:' + id, x, yy, CW, CH, '', false);
@@ -30925,20 +30929,43 @@ loadPaddleModel().then((paddleModel) => {
         c.textAlign = 'left'; c.textBaseline = 'middle';
         c.fillStyle = '#ffffff'; c.font = '800 34px system-ui, sans-serif';
         c.fillText(t(M.nk), 68, y + 42);
-        c.fillStyle = 'rgba(255,255,255,0.85)'; c.font = '600 20px system-ui, sans-serif';
+        c.fillStyle = 'rgba(255,255,255,0.85)';
         const desc = t(M.dk, { n: M.n });
-        // cuerpo envuelto a 2 líneas
-        let l1 = desc, l2 = '';
-        if (c.measureText(desc).width > 700) {
-          const words = desc.split(' ');
-          l1 = ''; l2 = '';
-          for (const w of words) {
-            if (c.measureText(l1 + ' ' + w).width <= 700 && !l2) l1 = l1 ? l1 + ' ' + w : w;
-            else l2 = l2 ? l2 + ' ' + w : w;
+        // r116 · CUERPO A PRUEBA DE DESBORDE (informe del dueño: en «PASE
+        // BAJO» el texto se salía de su tarjeta): envoltura propia a 620 px
+        // y hasta 3 líneas, rebaje de fuente si hace falta y elipsis dura
+        // como red de seguridad. Nada sale ya del contenedor.
+        let dFs = 20;
+        const wrapAt = (fs) => {
+          c.font = '600 ' + fs + 'px system-ui, sans-serif';
+          const ls = [''];
+          for (const w of desc.split(' ')) {
+            const cur = ls[ls.length - 1];
+            const cand = cur ? cur + ' ' + w : w;
+            if (!cur || c.measureText(cand).width <= 620) ls[ls.length - 1] = cand;
+            else ls.push(w);
+          }
+          return ls;
+        };
+        let dLines = wrapAt(dFs);
+        if (dLines.length > 3) { dFs = 18; dLines = wrapAt(dFs); }
+        const dCorta = dLines.length > 3;
+        dLines = dLines.slice(0, 3);
+        for (let i = 0; i < dLines.length; i++) {
+          while (dLines[i].length > 2 && c.measureText(dLines[i]).width > 620) {
+            dLines[i] = dLines[i].slice(0, -1);
           }
         }
-        c.fillText(l1, 68, y + 82);
-        if (l2) c.fillText(l2, 68, y + 110);
+        if (dCorta && dLines[2]) dLines[2] += '…';
+        c.font = '600 ' + dFs + 'px system-ui, sans-serif';
+        if (dLines.length > 2) {
+          c.fillText(dLines[0], 68, y + 70);
+          c.fillText(dLines[1], 68, y + 92);
+          c.fillText(dLines[2], 68, y + 114);
+        } else {
+          c.fillText(dLines[0] || '', 68, y + 82);
+          if (dLines[1]) c.fillText(dLines[1], 68, y + 110);
+        }
         c.fillStyle = '#f0c85a'; c.font = '700 20px system-ui, sans-serif';
         c.fillText((S.best[id] ? t('mejor') + ': ' + S.best[id] + '  ·  ' : '') + t('obj') + ': ' + M.n, 68, y + 142);
         // v3.0.7-PLAY1 · estrellas logradas + mejor precisión de la prueba
@@ -33159,6 +33186,30 @@ if (typeof window !== 'undefined') {
             break;
           case 'vuelo': {
             // la bola va hacia el rival: espera el bote lejano para devolver
+            // r116 · NEVERA DEL PASO 4 (informe del dueño: «cuando empezamos
+            // la práctica de intercambio, como lancemos la bola y esta se
+            // caiga al suelo ahí se queda sin poder hacer nada»): si la bola
+            // del saque muere —en el suelo, sobre la mesa o más allá— sin que
+            // llegue al profesor, el intercambio SE REPITE al instante (mismo
+            // camino honesto que 'ida': vuelta al saque, sin castigo). Antes
+            // no había control de bola muerta en 'vuelo': rfFase quedaba
+            // clavado aquí para siempre y, como el gatillo exige 'saque',
+            // el paso 4 era imposible de continuar.
+            const muertaV = (b.pos.y < DIMS.ballRadius + 0.05 && Math.abs(b.vel.y) < 0.6) ||
+              (Math.abs(b.vel.x) < 0.4 && Math.abs(b.vel.y) < 0.4 && Math.abs(b.vel.z) < 0.4 &&
+                b.pos.y < DIMS.tableTopY + 0.12) ||
+              b.pos.y < -0.4;
+            if (muertaV) {
+              rfFase = 'saque';
+              rfVueltas = 0; farBounced = false; rfVueltaVista = false;
+              G.rules.state = 'serve';
+              G.resetToss();
+              G.tutBolaViva = false;
+              flashAgain = 2.4;
+              paintStep();
+              narra(['tutotra']);
+              break;
+            }
             if (!rfVueltaVista && b.pos.z < (DIMS.tableCenterZ - 0.1)) {
               if (!farBounced && b.vel.y > 0.3 && b.pos.y < DIMS.tableTopY + 0.5) {
                 farBounced = true;

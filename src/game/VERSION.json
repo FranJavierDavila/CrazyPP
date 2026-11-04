@@ -1,10 +1,10 @@
 {
-  "version": "3.6.105-SDK6",
-  "fase": 107,
-  "faseNombre": "RETIRO DE LA REPETICIÓN DEL MEJOR PUNTO + SUPERPODER EN EL GOLPEO RIVAL",
+  "version": "3.6.106-SDK6",
+  "fase": 108,
+  "faseNombre": "Academia sin bloqueos (paso 4) + PASE BAJO/logros del PRO TRAINING",
   "sdk": "1.6.0",
   "fecha": "2026-11-04",
-  "hub": "v36105-sdk6",
+  "hub": "v36106-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r104",
   "tamano": 10597962,
-  "golden": "d48478e67b8fe52f59a8d43c502e85f6ba528ba42d98236856eeeff0d5dbb09a"
+  "golden": "423acb330b62f7c354f072ddba2c456c800a730c72e2505fa1e918072446f5f5"
 }

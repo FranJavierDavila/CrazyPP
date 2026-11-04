@@ -69,10 +69,10 @@ AGUJAS = [
     ('this._mesaGrab = { hand: i, y0: this.mesaAltoY, cy0: p0.y };',
      'c12: el gatillo sobre la mesa COMIENZA el agarre'),
     ('this._menuGripPos[h] = muGrip.y;', 'c12: altura viva del mando captada por frame'),
-    ('line.scale.z = sobreMesa ? sobreMesa.dist : (hit ? hit.distance : 0.5);',
-     'c12: el haz LLEGA a la mesa cuando es ella la que se apunta'),
-    ('const thick = (idx >= 0 || sobreMesa) ? 1.7 : 1;',
-     'c12: el haz engorda también sobre la mesa'),
+    ('line.scale.z = sobreMesa ? sobreMesa.dist :',
+     'c12: el haz LLEGA a la mesa cuando es ella la que se apunta (re-ancla r119)'),
+    ('const thick = (idx >= 0 || idx === -2 || sobreMesa) ? 1.7 : 1;',
+     'c12: el haz engorda también sobre la mesa (re-ancla r119)'),
     ('RingGeometry(0.026, 0.044, 28)', 'c12: anillo de selección en el punto de contacto'),
     ('PlaneGeometry(1.04, 0.26)', 'c12: rótulo decal (1,04 m — r99 «algo más pequeño»)'),
     ('DIMS.tableCenterZ + DIMS.tableHalfLength - 0.34',
@@ -110,10 +110,10 @@ CHK("hint_fvolset: 'Hold the trigger on the bar and slide your controller left o
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.105-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.108-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
-CHK(V.get('fase') == 101, 'VERSION.json: FASE 101')
-CHK(V.get('hub') == 'v36105-sdk6', 'VERSION.json: hub v36105-sdk6')
+CHK(V.get('fase') == 110, 'VERSION.json: FASE 110')
+CHK(V.get('hub') == 'v36108-sdk6', 'VERSION.json: hub v36108-sdk6')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')

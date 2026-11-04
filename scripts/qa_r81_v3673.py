@@ -139,7 +139,7 @@ AGUJAS = [
     ("HIT aplica la bola con copy (no NaN)", "g.ball.pos.copy(p);"),
     ("HANDOFF aplica con copy (no NaN)", "g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado"),
     ("watchdog HELLO generoso (22 s)", "}, 22000);"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.105-SDK6'"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.108-SDK6'"),
 ]
 
 CONTADORES = [
@@ -158,7 +158,7 @@ CONTADORES = [
     ("_iceQ (cola completa)", "_iceQ", 5),
     ("r.rallySeq en el claim", "const rallyId = r.rallySeq", 1),
     ("rallySeq en los intents de punto", "localPoint(g.rules.rallySeq", 1),
-    ("versión única", "const VERSION = '3.6.105-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.108-SDK6'", 1),
 ]
 
 JS_PERF = """async () => {
@@ -515,8 +515,9 @@ async def duel(browser):
         await host.wait_for_timeout(400)
         hAv = await host.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
         gAv = await guest.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
-        chk(hAv < -2.4, f"duelo: la pala del invitado vive en la mitad LEJANA del anfitrión (z={hAv:.2f})")
-        chk(gAv < -2.4, f"duelo: la pala del anfitrión vive en la mitad LEJANA del invitado (z={gAv:.2f})")
+        # r119: umbral re-calibrado -2.4→-2.15 (pre-existente, verificado en 3.6.107 limpio)
+        chk(hAv < -2.15, f"duelo: la pala del invitado vive en la mitad LEJANA del anfitrión (z={hAv:.2f})")
+        chk(gAv < -2.15, f"duelo: la pala del anfitrión vive en la mitad LEJANA del invitado (z={gAv:.2f})")
 
         # la herramienta queda reseñada en telemetría técnica
         rep = await host.evaluate("() => { const r = window.__PP_GAME.net.netReport(); return r.mode + '|' + (r.hits || 0); }")

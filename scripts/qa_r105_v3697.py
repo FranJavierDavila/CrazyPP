@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r105_v3697.py — capa de QA de la ronda 105 (V3.6.105-SDK6).
+"""qa_r105_v3697.py — capa de QA de la ronda 105 (V3.6.108-SDK6).
 
 Informe del dueño tras V3.6.96: «muchísimo mejor ahora los menús, PERO
 debes revisar que existe una DERIVA entre los punteros y el menú y no se
@@ -96,12 +96,12 @@ CHK('(this.game.rig || this.game.scene).add(this.r.node);' in HWJS, 'halloween: 
 
 # versión sellada
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.105-SDK6', 'c00: VERSION sella 3.6.105-SDK6')
-CHK('>V3.6.105-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
-    'portada: badge V3.6.105-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.108-SDK6', 'c00: VERSION sella 3.6.108-SDK6')
+CHK('>V3.6.108-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
+    'portada: badge V3.6.108-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
 CHK(V.get('fase') == 100, 'VERSION.json: FASE 99')
-CHK(V.get('hub') == 'v36105-sdk6', 'VERSION.json: hub v36105-sdk6')
+CHK(V.get('hub') == 'v36108-sdk6', 'VERSION.json: hub v36108-sdk6')
 CHK(V.get('golden', '').startswith('414f27dc'), 'VERSION.json: golden 414f27dc…')
 
 # ------------------------------------------------------------- RUNTIME ----

@@ -401,6 +401,18 @@
       ],
       "desde": "v3.6.105",
       "notas": "M5b (r115): mide el uso de la escalera de carrera (reto/rival y ascensos). Nunca en online (el desafío no existe allí)."
+    },
+    {
+      "nombre": "dobles",
+      "origen": "src/game/core/c12_pingponggame.js (case 'dobles' del menú, M7c r119)",
+      "momento": "cuando el dueño arma y arranca un partido de DOBLES 2v2 desde AJUSTES › JUEGO (único disparo por arranque)",
+      "campos": [
+        {
+          "nombre": "acc",
+          "tipo": "string",
+          "desc": "acción registrada: 'start' (partido de dobles arrancado)"
+        }
+      ]
     }
   ],
   "hallazgos_ronda6": [
@@ -461,5 +473,6 @@
       },
       "curva": "muestras {m: minutos desde vr_start, fps} — hasta 24 por ciclo; dibuja la caída o estabilidad del rendimiento DENTRO de la sesión"
     }
-  }
+  },
+  "nota_r119": "r119 (M7c): +dobles (19 eventos) — arranque del prototipo DOBLES 2v2; sin PII."
 }

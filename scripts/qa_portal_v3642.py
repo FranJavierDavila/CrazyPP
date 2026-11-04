@@ -72,7 +72,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (al día r109)
-        ('3.6.105-SDK6', 'versión servida: 3.6.91-SDK6 (al día r109)'),
+        ('3.6.108-SDK6', 'versión servida: 3.6.91-SDK6 (al día r109)'),
         # · TRÁNSITO EXPLÍCITO (presentación del dueño)
         ('this._portalSinkT = 0;            // hundimiento en el portal de entrada',
          'tránsito: fase de hundimiento declarada'),

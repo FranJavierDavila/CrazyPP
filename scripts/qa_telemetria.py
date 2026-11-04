@@ -112,7 +112,7 @@ def bloque_catalogo():
     # r112 (M5a): el catálogo v7 documenta 17 eventos (+ ai_style)
     # r115 · re-ancla honesta: el catálogo vive en 18 (carrera entró con la
     # escalera de carrera y la aguja se quedó en 17 — deriva pre-existente)
-    chk(len(nombres_cat) == 18, f'el catálogo documenta 18 eventos ({len(nombres_cat)})')
+    chk(len(nombres_cat) == 19, f'el catálogo documenta 19 eventos ({len(nombres_cat)})')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')

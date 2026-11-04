@@ -1,10 +1,10 @@
 {
-  "version": "3.6.107-SDK6",
-  "fase": 109,
-  "faseNombre": "M4 ELO completo: unificado + matchmaking + reto semanal + MI RANKING",
+  "version": "3.6.108-SDK6",
+  "fase": 110,
+  "faseNombre": "M7c · DOBLES 2v2 prototipo (investigación y prototipo jugable)",
   "sdk": "1.6.0",
   "fecha": "2026-11-04",
-  "hub": "v36107-sdk6",
+  "hub": "v36108-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r104",
-  "tamano": 10597962,
-  "golden": "be3e6b2cce0d820cb6ca7ddd2f6ed79aaca274de6b9743f8b52c292674df40ac"
+  "nota": "r119",
+  "tamano": 10691069,
+  "golden": "534638ec729a65e14768e8220ebe53e05fce7cbbc355bd70d354e3baa3794d16"
 }

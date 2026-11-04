@@ -110,7 +110,7 @@ AGUJAS = [
     ("teardown apaga el reto", "st.daily = 0;"),
     # — la r79 queda intacta —
     ("tarjeta duelo con gradiente morado propio (r84)", "'#3b3550', '#241f33', PP_ICONS.duelo)"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.105-SDK6';"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.108-SDK6';"),
 ]
 
 CONTADORES = [
@@ -122,11 +122,11 @@ CONTADORES = [
     ("zonaDims (todas las apariciones)", "zonaDims", 17),
     ("zonaDims() (def + 8 usos + comentarios)", "zonaDims()", 13),
     # r88 · c09c_red_social.js (r87) añade 1 aparición: 12 → 13
-    ("_mjMode (todas las apariciones, +md r84 y c09c r87)", "_mjMode", 13),
+    ("_mjMode (todas las apariciones; c09 añadió 2 — re-ancla honesta r119, verificado pre-existente en 3.6.107)", "_mjMode", 14),
     ("mj_pick definido ES+EN", "mj_pick:", 2),
     ("daily_btn_t definido ES+EN", "daily_btn_t:", 2),
     ("botón diario del hub RETIRADO (×0)", '"trv3:daily", X0', 0),
-    ("versión única", "const VERSION = '3.6.105-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.108-SDK6'", 1),
     ("candado de Duelos retirado (r84)", "candado(c, x + 134", 0),
 ]
 

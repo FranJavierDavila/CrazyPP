@@ -341,6 +341,25 @@ export class PingPongGame {
       new THREE.Vector3(0, 1.05, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.70),
     );
 
+    // M7c (r119) · DOBLES 2v2 (PROTOTIPO): dos IA más, una por lado.
+    //  · COMPAÑERO (sign +1, easy FIJO — nunca adaptativo ni con estilo):
+    //    vive en la mitad IZQUIERDA del lado del jugador y cubre la bola
+    //    que el jugador no alcanza (arbitraje de alcance en el update).
+    //  · RIVAL 2 (sign -1, misma cfg efectiva que el rival 1): mitad
+    //    DERECHA del lado CPU. Ambos JAMÁS sirven (el saque es del equipo).
+    this.aiComp = new OpponentAI(
+      AI_PRESETS.easy, 1,
+      new THREE.Vector3(-0.62, 1.05, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.55),
+    );
+    this.aiRiv2 = new OpponentAI(
+      AI_PRESETS.medium, -1,
+      new THREE.Vector3(0.62, 1.05, DIMS.tableCenterZ - DIMS.tableHalfLength - 0.55),
+    );
+    // el modo vive SOLO un partido: botón DOBLES (AJUSTES › JUEGO) lo arma
+    // y el game-over lo recoge — nunca se filtra a otro modo.
+    this.doblesActivo = false;
+    this._dbStats = { comp: 0, r2: 0 };   // golpes por pala (ganchos de QA)
+
     // v3.0.9-HALL1 · la dificultad SE RECUERDA entre sesiones (y con ella
     // el nivel de asistencia del saque: fácil más ayuda, difícil menos).
     this.difficulty = (() => {
@@ -542,6 +561,17 @@ export class PingPongGame {
 
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
+
+    // M7c (r119) · DOBLES 2v2 (PROTOTIPO): pala del COMPAÑERO (lado jugador,
+    // mitad izquierda) y del SEGUNDO RIVAL (lado CPU, mitad derecha). Nacen
+    // OCULTAS — sólo viven cuando doblesActivo (botón AJUSTES › JUEGO) y el
+    // 1v1 de siempre queda byte-idéntico (cero coste en su ausencia).
+    this.partnerPaddleMesh = makePaddleVisual(paddleModel, 'center');
+    this.partnerPaddleMesh.visible = false;
+    this.rig.add(this.partnerPaddleMesh);
+    this.riv2PaddleMesh = makePaddleVisual(paddleModel, 'center');
+    this.riv2PaddleMesh.visible = false;
+    this.rig.add(this.riv2PaddleMesh);
 
     // r115 · RETIRO DEL DUEÑO: la REPETICIÓN DEL MEJOR INTERCAMBIO (r61)
     // se SUPRIME — fuera grabadora, fantasmas, cartel y cámara lenta del
@@ -1153,6 +1183,7 @@ export class PingPongGame {
    *  reloj del anfitrión (spec §3.8: startAt ≈ ahora + 3000 ms). */
   onNetMatchStart(m) {
     const guest = this.net.role === 'guest';
+    this.doblesActivo = false;   // M7c (r119): online JAMÁS lleva dobles
     // r84 · DUELOS LOCOS: el modo lo sella el mstart del anfitrión (md) —
     // antes era 'match' hard-coded; sin eso el invitado jamás jugaba duelos.
     const md = (m && m.md === 'duelos') ? 'duelos' : 'match';
@@ -3420,6 +3451,12 @@ export class PingPongGame {
           T('estilo_lbl') + ': ' + (__ppLang === 'en' ? estAct.en : estAct.es),
           this.ppEstilo !== 'clasico', undefined, undefined, 23);
         y += 70;
+        // M7c (r119) · DOBLES 2v2 (PROTOTIPO): partido 2 contra 2 local —
+        // tú + compañero IA contra dos rivales IA, con la MISMA física y
+        // árbitro del 1v1. Botón naranja 'surv' = experimental de la casa.
+        btn('dobles', 56, y, 912, 56, T('dobles_btn'), !!this.doblesActivo,
+          'surv', undefined, 23);
+        y += 70;
         break;
       }
       case 'sala': {
@@ -4600,6 +4637,7 @@ export class PingPongGame {
         if (this.calibPala) this.exitCalib();   // r83 · el ajuste se recoge (vuelve al Hall y de ahí arranca)
         if (this.champs) this.champs.leaveAll();   // v2.53: y el campeonato externo
         this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
+        this.doblesActivo = false;   // M7c (r119): ▶ JUGAR es SIEMPRE 1v1
         if (this.net.online) {
           this.startOnlineMatch();   // anfitrión reinicia; invitado pide revancha
         } else {
@@ -4614,6 +4652,7 @@ export class PingPongGame {
         if (this.calibPala) this.exitCalib();   // r83 · idem PARTIDO
         if (this.champs) this.champs.leaveAll();   // v2.53
         this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
+        this.doblesActivo = false;   // M7c (r119): el dobles no entra en supervivencia
         if (this.net.online) {
           if (this.net.role === 'guest') this.net.sendMode('survival');
           this.rules.message = T('msg_guest_mode');
@@ -4914,6 +4953,36 @@ export class PingPongGame {
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
         break;
+      case 'dobles': {
+        // M7c (r119) · DOBLES 2v2 (PROTOTIPO): arma y ARRANCA el partido
+        // de dobles en un solo gesto (mismo arranque que ▶ JUGAR). Todo
+        // lo demás se retira: escalera, matchmaking, campeonato, academia.
+        if (this.net.online) {
+          this.rules.message = T('msg_no_cpu');
+          this.drawMenu();
+          break;
+        }
+        this.closeTrainingV3();
+        if (this.calibPala) this.exitCalib();
+        if (this.champs) this.champs.leaveAll();
+        this.exitHall();
+        this.carreraMatch = null;
+        this.mmMatch = null;
+        this.doblesActivo = true;
+        this._dbStats.comp = 0;
+        this._dbStats.r2 = 0;
+        this.aiComp.reset();          // ambos nacen en su casa (como ai.reset)
+        this.aiRiv2.reset();
+        this.applyAISkill();          // rival 2 + compañero reciben su cfg YA
+        if (this.mode !== 'match') this.switchMode('match');
+        else { this.rules.bestOf = 3; this.rules.startMatch('match'); this.resetToss(); }
+        this.rules.oppName = null;
+        this.rules.message = T('dobles_msg');
+        this.audio.announce(T('dobles_msg'), true);
+        try { __PP_TELE.ev('dobles', { acc: 'start' }); } catch (eDBt) { /* */ }
+        this.closeMenu();
+        break;
+      }
       case 'theme':
         this.setTheme(arg);        // anuncia, vibra y pinta el mensaje
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
@@ -5583,6 +5652,14 @@ export class PingPongGame {
     const est = this._estiloActivo();
     if (est) cfg = estiloAplicar(cfg, est);
     this.ai.setConfig(cfg);
+    // M7c (r119) · DOBLES: el RIVAL 2 corre al MISMO nivel que el rival 1
+    // (misma cfg efectiva — el estilo del rival vive en ambos) y el
+    // COMPAÑERO queda ANCLADO a easy sin estilo ni adaptación: es tu
+    // pareja de dobles, no otro oponente.
+    if (this.doblesActivo) {
+      this.aiRiv2.setConfig(cfg);
+      this.aiComp.setConfig(scalePreset(AI_PRESETS.easy, 1));
+    }
   }
 
   /** M5a (r112) · el estilo activo del rival (entrada de OPPONENT_STYLES o
@@ -5665,6 +5742,7 @@ export class PingPongGame {
     if (this.calibPala) this.exitCalib();
     if (this.champs) this.champs.leaveAll();
     this.exitHall();
+    this.doblesActivo = false;   // M7c (r119): la escalera es 1v1 siempre
     this.carreraMatch = { div: divIdx, rId: rival.id, nombre: rival.es, estilo: rival.estilo, preset: rival.preset, k: rival.k };
     if (this.mode !== 'match') this.switchMode('match');
     else { this.rules.bestOf = 3; this.rules.startMatch('match'); this.resetToss(); }
@@ -10556,6 +10634,65 @@ export class PingPongGame {
         Math.min(1, aiHit.length() / 9),
       );
     }
+    // M7c (r119) · DOBLES 2v2 (PROTOTIPO): las DOS palas extra golpean por
+    // IA con la MISMA física honesta del 1v1 (OpponentAI es simétrico por
+    // sign — cero cambios en c04/c05/c06). ARBITRAJE DE ALCANCE: nadie
+    // roba la bola a su compañero de equipo — el COMPAÑERO sólo toma la
+    // bola que la pala del jugador no alcanza (radio generoso 0,50 m
+    // medido sobre el segmento barrido, el mismo anti-túnel de la IA) y
+    // el RIVAL 2 sólo la que el rival 1 no llega. El árbitro intacto:
+    // registerPaddleHit('player'|'ai') comparte marcador por EQUIPO y la
+    // falta de doble golpe (mismo who dos veces) ya vive en Rules.
+    if (this.doblesActivo && !this.net.online && !this.inHall && !this.calib &&
+        !frozen && active && !(this.champs && this.champs.active)) {
+      const _dbSeg = this._prevBallForAI || this.ball.pos;   // barrido anti-túnel
+      // — COMPAÑERO (sign +1): respeta tu alcance —
+      const _dbCercaJug = playerPad.active
+        ? _dbDistSeg(playerPad.pos, _dbSeg, this.ball.pos) < 0.50
+        : false;
+      if (!_dbCercaJug) {
+        const compHit = this.aiComp.update(dt, this.ball, {
+          canHit,
+          validBounce: this.rules.validBounce,
+          oppPadX: this.ai.pos.x,      // coloca AWAY del rival 1
+          oppPadZ: this.ai.pos.z,
+          rallyHits: this.rules.rallyHits,
+          holdTarget: null,            // el compañero JAMÁS sirve
+          prevBall: this._prevBallForAI || null,
+        });
+        if (compHit) {
+          this.ball.vel.copy(compHit);
+          this.processIntents(this.rules.registerPaddleHit('player'));
+          this.audio.paddle(
+            THREE.MathUtils.clamp(this.ball.pos.x / 2.5, -1, 1),
+            Math.min(1, compHit.length() / 9),
+          );
+          this._dbStats.comp++;
+        }
+      }
+      // — RIVAL 2 (sign -1): respeta el alcance del rival 1 —
+      const _dbCercaRiv = _dbDistSeg(this.ai.pos, _dbSeg, this.ball.pos) < 0.50;
+      if (!_dbCercaRiv) {
+        const r2Hit = this.aiRiv2.update(dt, this.ball, {
+          canHit,
+          validBounce: this.rules.validBounce,
+          oppPadX: presenting && playerPad.active ? playerPad.pos.x : this.aiComp.pos.x,
+          oppPadZ: presenting && playerPad.active ? playerPad.pos.z : this.aiComp.pos.z,
+          rallyHits: this.rules.rallyHits,
+          holdTarget: null,            // el rival 2 JAMÁS sirve
+          prevBall: this._prevBallForAI || null,
+        });
+        if (r2Hit) {
+          this.ball.vel.copy(r2Hit);
+          this.processIntents(this.rules.registerPaddleHit('ai'));
+          this.audio.paddle(
+            THREE.MathUtils.clamp(this.ball.pos.x / 2.5, -1, 1),
+            Math.min(1, r2Hit.length() / 9),
+          );
+          this._dbStats.r2++;
+        }
+      }
+    }
     // v2.30: el "jugador demo" del escritorio se retiró — nadie golpea por
     // el lado del jugador en la portada.
 
@@ -11132,6 +11269,21 @@ export class PingPongGame {
       // v2.40: congelado — la pala IA conserva su última pose
       if (!frozen) this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
     }
+    // M7c (r119) · DOBLES 2v2: poses y visibilidad de las DOS palas extra.
+    // who='partner'/'ai2' jamás coincide con rules.server → nunca entran
+    // en la coreografía de saque (el saque es siempre del equipo titular).
+    // Ocultas en el hall (enterHall las apaga), en prueba de campeonato y
+    // con el modo inactivo — el 1v1 no ve ni un píxel nuevo.
+    const _dbOn = !!this.doblesActivo && !this.inHall &&
+      !(this.champs && (this.champs.active || this.champs.testActive));
+    if (this.partnerPaddleMesh) {
+      this.partnerPaddleMesh.visible = _dbOn;
+      if (_dbOn && !frozen) this.updateAIPaddlePose(this.partnerPaddleMesh, this.aiComp, 'partner', dt);
+    }
+    if (this.riv2PaddleMesh) {
+      this.riv2PaddleMesh.visible = _dbOn;
+      if (_dbOn && !frozen) this.updateAIPaddlePose(this.riv2PaddleMesh, this.aiRiv2, 'ai2', dt);
+    }
     // v2.38/2.69: durante la PRUEBA del campeonato activo (ARKANOID de
     // La Locura o la de cualquier carpeta) la pala flotante NO se ve
     if (this.champs && this.champs.testActive) this.aiPaddleMesh.visible = false;
@@ -11334,6 +11486,7 @@ export class PingPongGame {
     // activo. v3.6.30: la bola YA NO se queda — oculta arriba con el resto.
     this._hallHidden = [];
     for (const o of [this.tableGroup, this.aiPaddleMesh, this.demoPaddleMesh,
+                     this.partnerPaddleMesh, this.riv2PaddleMesh,   // M7c r119
                      this.scoreboardGroup]) {
       if (o) { this._hallHidden.push(o); o.visible = false; }
     }
@@ -12159,6 +12312,9 @@ export class PingPongGame {
           // M5b (r115) · resultado del desafío de la escalera (progreso,
           // ascenso y corona); sin desafío activo no toca nada.
           try { this._carreraResultado(it.winner === 'player'); } catch (eCA) { /* */ }
+          // M7c (r119) · DOBLES: el modo vive SOLO un partido — el siguiente
+          // arranque vuelve al 1v1 de siempre (mismo corte que mmMatch).
+          this.doblesActivo = false;
           // r97 · RETOS SEMANALES: duelos jugados/ganados alimentan la semana
           try {
             this._retoVmaxOk = false;
@@ -12893,6 +13049,20 @@ const _clonQ = new THREE.Quaternion();
 const _clonObjetivo = new THREE.Vector3();
 const _clonSpinCero = new THREE.Vector3(0, 0, 0);
 const _clonBlancosBuf = [];   // buffer reutilizado del hook clonBlancos(out)
+
+// M7c (r119) · DOBLES: distancia de un punto al SEGMENTO ab→cd (arbitraje
+// de alcance del compañero/rival 2 sobre el barrido de la bola). Sin
+// allocations — módulo-local como los rascadores de poderes.
+const _dbAB = new THREE.Vector3();
+const _dbAP = new THREE.Vector3();
+function _dbDistSeg(p, a, b) {
+  _dbAB.copy(b).sub(a);
+  const l2 = _dbAB.lengthSq();
+  if (l2 < 1e-10) return p.distanceTo(a);
+  _dbAP.copy(p).sub(a);
+  const t = THREE.MathUtils.clamp(_dbAP.dot(_dbAB) / l2, 0, 1);
+  return p.distanceTo(_dbAP.copy(a).addScaledVector(_dbAB, t));
+}
 
 /* =====================================================================
  *  r83 · EJES LOCALES DE LA PALA (visualización del ajuste)

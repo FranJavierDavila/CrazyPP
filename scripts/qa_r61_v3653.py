@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """r61 · v3.6.53-SDK6 · FASE 55 «Estela de poderes, rival que se adapta y el
-mejor intercambio en pantalla» — QA de las TRES features aprobadas por el
-dueño (las candidatas sin aprobar quedaron aprobadas en conversación):
+mejor intercambio en pantalla» — QA de las features de la ronda. r115 ·
+RE-ANCA HONESTA: la REPETICIÓN DEL MEJOR INTERCAMBIO (feature 3 de la r61)
+la SUPRIMIÓ el dueño — la capa verifica ahora su AUSENCIA (agujas negativas
++ mecánica headless) y que el fin de partido va directo a revancha:
 
   1) ESTELA DE PODER — la estela de la bola viste la firma del poder de
      pala ACTIVO (mega ámbar · efecto rojo · imán cian · portal violeta ·
@@ -10,9 +12,9 @@ dueño (las candidatas sin aprobar quedaron aprobadas en conversación):
   2) RIVAL ADAPTATIVO — existía desde v2.x pero era invisible: ahora
      conmutador persistente (AJUSTES + HUB junto a la dificultad), mensaje
      de estado y transición SUAVE (lerp del factor en el tick).
-  3) REPETICIÓN DEL MEJOR INTERCAMBIO — grabadora por frames (bola + pala
-     rival + dt) y reproducción fantasma al terminar el partido, con
-     salto por gatillo y fanfarria restaurada.
+  3) RETIRO r115 — fuera grabadora, fantasmas, cartel, i18n rep_* y la
+     cámara lenta del replay; la fanfarria respira sola y el gatillo en
+     'over' es revancha desde el primer pulso.
 
 Uso: python3 scripts/qa_r61_v3653.py        (servidor dev en :3000)
 """
@@ -61,30 +63,29 @@ AGUJAS = [
      "_aiKAplica() {"),
     ("adaptativa: el tick persigue al objetivo",
      "this._aiKCur += (this._aiKTarget - this._aiKCur) * Math.min(1, dt * 1.4);"),
-    # --- 3 · repetición ---
-    ("repetición: grabadora con puertas (local, sin calib/academia/online)",
-     "_repGrabando() {"),
-    ("repetición: frame = bola(3)+rival(3)+quat(4)+dt(1)",
-     "this._repStride = 11;"),
-    ("repetición: el mejor intercambio se guarda por toques",
-     "_repCierra(hits) {"),
-    ("repetición: fantasmas bola + rival en azul fantasma",
-     "this.ghostRival = makePaddleVisual(paddleModel, 'center');"),
-    ("repetición: cartel propio de repetición",
-     "createReplayBanner() {"),
-    ("repetición: se reproduce tras asentar la fanfarria (1,6 s)",
-     "if (this._repPendiente && this._repEstado === '' && this.fanfareT > 1.6) {"),
-    ("repetición: interpolación por tiempo real (framerate-independiente)",
-     "this.ghostRival.quaternion.slerpQuaternions(_repTmpQ1, _repTmpQ2, al);"),
-    ("repetición: gatillo salta la repetición ANTES de la revancha",
-     "if (this._repEstado === 'play') {\n        try { this._repTermina(); } catch (eR1) { /* */ }"),
-    ("repetición: partido nuevo borra el campeón (hook onMatchStart)",
-     "try { this._repReset(); } catch (eR) { /* nunca rompe el árbitro */ }"),
-    ("repetición: visibilidades EXACTAS restauradas (sin resurrecciones)",
-     "const prev = this._repVisPrev;      // visibilidades EXACTAS de antes"),
+    # --- 3 · RETIRO r115 de la repetición (agujas NEGATIVAS) ---
 ]
 
-CLAVES = ['btn_adapt', 'msg_adapt', 'rep_t', 'rep_chip']
+AGUJAS_FUERA = [
+    ("retiro: la grabadora del mejor intercambio ya no existe",
+     "_repGrabando"),
+    ("retiro: el motor de frames del replay ya no existe",
+     "_repStride"),
+    ("retiro: los fantasmas (bola/rival) ya no existen",
+     "ghostRival"),
+    ("retiro: el cartel de la repetición ya no existe",
+     "createReplayBanner"),
+    ("retiro: la cámara lenta del replay ya no existe",
+     "REP_SLOWMO"),
+    ("retiro: i18n rep_t retirado",
+     "rep_t: '"),
+    ("retiro: i18n rep_chip retirado",
+     "rep_chip: '"),
+    ("retiro: i18n rep_slow retirado",
+     "rep_slow: '"),
+]
+
+CLAVES = ['btn_adapt', 'msg_adapt']
 
 MECANICA = """async () => {
   const out = [];
@@ -158,65 +159,17 @@ MECANICA = """async () => {
   g.menuClick(iAd);                       // deja el estado como estaba
   g.toggleMenu();
 
-  // ---------- 3 · REPETICIÓN DEL MEJOR INTERCAMBIO ----------
-  g._repReset();
-  const stride = g._repStride;
-  // sintetiza un intercambio de 30 frames (bola cruzando, rival moviéndose)
-  for (let i = 0; i < 30; i++) {
-    const o = i * stride;
-    g._repBuf[o] = 0; g._repBuf[o + 1] = 1; g._repBuf[o + 2] = -1 - i * 0.1;
-    g._repBuf[o + 3] = 1; g._repBuf[o + 4] = 0.9; g._repBuf[o + 5] = -4;
-    g._repBuf[o + 6] = 0; g._repBuf[o + 7] = 0; g._repBuf[o + 8] = 0; g._repBuf[o + 9] = 1;
-    g._repBuf[o + 10] = 0.016;
-  }
-  g._repN = 30;
-  g._repCierra(7);
-  out.push({ ok: g._repBest.hits === 7 && g._repBest.n === 30 && g._repN === 0,
-             lab: 'repetición: el intercambio de 7 toques queda como MEJOR' });
-  g._repN = 10;                            // uno peor no lo desbancan
-  g._repCierra(4);
-  out.push({ ok: g._repBest.hits === 7,
-             lab: 'repetición: uno de 4 toques NO desbanca al de 7' });
-  const visBall0 = g.ballMesh.visible, visAi0 = g.aiPaddleMesh.visible;
-  g._repArranca();
-  out.push({ ok: g._repEstado === 'play' && g.ghostBall.visible &&
-                  g.ghostRival.visible && g.replayBanner.group.visible &&
-                  !g.ballMesh.visible && !g.aiPaddleMesh.visible,
-             lab: 'repetición: fantasmas + cartel en escena, bola/rival ocultos' });
-  g._repT = 0;
-  g._repTick(0.4);                          // ~mitad del intercambio sintético
-  const gp = g.ghostBall.position;
-  out.push({ ok: gp.z < -1 && gp.z > -3.9,
-             lab: 'repetición: la bola fantasma interpola el trayecto (z=' + gp.z.toFixed(2) + ')' });
-  const qg = g.ghostRival.quaternion;
-  out.push({ ok: Math.abs(qg.w - 1) < 0.01,
-             lab: 'repetición: el rival fantasma interpola su actitud (slerp)' });
-  g._repTermina();
-  out.push({ ok: g._repEstado === '' && !g.ghostBall.visible &&
-                  !g.replayBanner.group.visible &&
-                  g.ballMesh.visible === visBall0 &&
-                  g.aiPaddleMesh.visible === visAi0,
-             lab: 'repetición: fin con visibilidades EXACTAS restauradas' });
-  // puertas de la grabadora
-  const st0 = g.rules.state, cal0 = g.calib;
-  g.rules.state = 'rally'; g.calib = false;
-  const netSave = g.net.online;
-  try { Object.defineProperty(g.net, 'online', { value: false, configurable: true }); } catch (e) { g.net._onlineFake = true; }
-  out.push({ ok: g._repGrabando() === true,
-             lab: 'repetición: graba en rally local' });
-  g.calib = true;
-  out.push({ ok: g._repGrabando() === false,
-             lab: 'repetición: NO graba en calib/academia' });
-  g.calib = false;
-  try { Object.defineProperty(g.net, 'online', { value: true, configurable: true }); } catch (e) { /* */ }
-  out.push({ ok: g._repGrabando() === false,
-             lab: 'repetición: NO graba el invitado online' });
-  try { Object.defineProperty(g.net, 'online', { value: netSave, configurable: true }); } catch (e) { /* */ }
-  g.rules.state = st0; g.calib = cal0;
-  // reset por partido nuevo
-  g._repReset();
-  out.push({ ok: g._repBest.hits === 0 && g._repBest.buf === null,
-             lab: 'repetición: startMatch borra el campeón (hook)' });
+  // ---------- 3 · RETIRO r115 de la repetición ----------
+  out.push({ ok: typeof g._repArranca === 'undefined' &&
+                  typeof g._repTick === 'undefined' &&
+                  typeof g._repReset === 'undefined',
+             lab: 'retiro: ningún método del replay sobrevive en el juego' });
+  out.push({ ok: !('ghostBall' in g) && !('replayBanner' in g) &&
+                  !('_repBuf' in g) && !('_repBest' in g) &&
+                  !('_repEstado' in g),
+             lab: 'retiro: sin fantasmas, cartel, buffer ni estado del replay' });
+  out.push({ ok: g._repPendiente === undefined,
+             lab: 'retiro: la fanfarria no arma ninguna repetición pendiente' });
   return out;
 }"""
 
@@ -237,6 +190,10 @@ async def main():
         src = await page.content()
         for label, aguja in AGUJAS:
             chk(aguja in src, label)
+
+        print("--- 1b · AGUJAS NEGATIVAS (retiro r115) ---")
+        for label, aguja in AGUJAS_FUERA:
+            chk(aguja not in src, label)
 
         print("--- 2 · i18n ES/EN balanceado ---")
         for clave in CLAVES:

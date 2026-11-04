@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.104-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.105-SDK6</span>
     </div>
   </main>
 
@@ -456,6 +456,27 @@ const I18N_STRINGS = {
     // M5a (r112) · IA CON ESTILOS: selector y anuncio
     estilo_lbl: 'Estilo del rival',
     msg_estilo: 'Rival: {v} · misma física, otro carácter',
+    // M5b (r115) · ESCALERA DE CARRERA: divisiones, rivales y progreso
+    carrera_lbl: 'Escalera de carrera',
+    carrera_sub: 'Bronce → Leyenda · tres rivales por división',
+    carrera_hint: 'Gana a los 3 para ascender · las derrotas no bajan: revancha cuando quieras',
+    carrera_hub_sub: '{v} · {n}/3 rivales',
+    carrera_d_bronce: 'BRONCE',
+    carrera_d_plata: 'PLATA',
+    carrera_d_oro: 'ORO',
+    carrera_d_diamante: 'DIAMANTE',
+    carrera_d_leyenda: 'LEYENDA',
+    carrera_actual: 'DIVISIÓN ACTUAL',
+    carrera_superada: 'SUPERADA',
+    carrera_bloqueada: 'BLOQUEADA',
+    carrera_challenge: 'DESAFIAR A {v}',
+    carrera_rematch: 'REVANCHA CONTRA {v}',
+    carrera_vencido: 'VENCIDO',
+    carrera_pendiente: 'PRÓXIMO',
+    carrera_win_msg: '¡Victoria de la escalera contra {v}!',
+    carrera_lose_msg: 'Derrota contra {v} · la revancha te espera',
+    carrera_promo_msg: '¡ASCIENDES A LA DIVISIÓN {v}!',
+    carrera_crown_msg: '¡CORONA DE LEYENDA! La escalera es tuya',
     surv_start: 'SUPERVIVENCIA · aguanta el rallye más largo',
     surv_new: 'Nueva bola · GATILLO para lanzar y golpear',
     surv_opp: 'Saque de {opp}… acelera cada vez más',
@@ -570,9 +591,8 @@ const I18N_STRINGS = {
     btn_trail: 'Estela: {v}',
     // r61 · IA adaptativa visible + repetición del mejor intercambio
     btn_adapt: 'Rival adaptativo: {v}',
-    rep_t: 'REPETICIÓN',
-    rep_slow: 'CÁMARA LENTA',
-    rep_chip: 'Mejor intercambio · {n} toques · GATILLO = seguir',
+    // r115: rep_t/rep_slow/rep_chip retirados con la repetición del mejor
+    // intercambio (petición del dueño)
     btn_mic: 'Megáfono del marcador: {v}',
     btn_music: 'Música: {v}',
     msg_music: 'Música {v}',
@@ -1290,6 +1310,27 @@ const I18N_STRINGS = {
     // M5a (r112) · IA STYLES: selector and announcement
     estilo_lbl: 'Rival style',
     msg_estilo: 'Rival: {v} · same physics, new character',
+    // M5b (r115) · CAREER LADDER: divisions, rivals and progress
+    carrera_lbl: 'Career ladder',
+    carrera_sub: 'Bronze → Legend · three rivals per division',
+    carrera_hint: 'Beat all 3 to climb up · losses never demote: rematch whenever you like',
+    carrera_hub_sub: '{v} · {n}/3 rivals',
+    carrera_d_bronce: 'BRONZE',
+    carrera_d_plata: 'SILVER',
+    carrera_d_oro: 'GOLD',
+    carrera_d_diamante: 'DIAMOND',
+    carrera_d_leyenda: 'LEGEND',
+    carrera_actual: 'CURRENT DIVISION',
+    carrera_superada: 'CLEARED',
+    carrera_bloqueada: 'LOCKED',
+    carrera_challenge: 'CHALLENGE {v}',
+    carrera_rematch: 'REMATCH {v}',
+    carrera_vencido: 'BEATEN',
+    carrera_pendiente: 'NEXT',
+    carrera_win_msg: 'Ladder win against {v}!',
+    carrera_lose_msg: 'Loss against {v} · the rematch awaits',
+    carrera_promo_msg: 'PROMOTED TO THE {v} DIVISION!',
+    carrera_crown_msg: 'LEGEND CROWN! The ladder is yours',
     surv_start: 'SURVIVAL · keep the longest rally going',
     surv_new: 'New ball · TRIGGER to toss and hit',
     surv_opp: '{opp}’s serve… faster and faster',
@@ -1400,9 +1441,8 @@ const I18N_STRINGS = {
     btn_trail: 'Trail: {v}',
     // r61 · adaptive rival toggle + best-rally replay
     btn_adapt: 'Adaptive rival: {v}',
-    rep_t: 'REPLAY',
-    rep_slow: 'SLOW MOTION',
-    rep_chip: 'Best rally · {n} shots · TRIGGER = continue',
+    // r115: rep_t/rep_slow/rep_chip removed with the best-rally replay
+    // (owner request)
     btn_mic: 'Announcer: {v}',
     btn_music: 'Music: {v}',
     msg_music: 'Music {v}',
@@ -2452,6 +2492,22 @@ const PP_ICONS = {
     c.beginPath(); c.arc(x + 28, y + 20, 4.5, 0, Math.PI * 2); c.fill();
     c.restore();
   },
+  carrera(c, x, y) {        // M5b (r115) · escalera (LA CARRERA)
+    c.save();
+    c.strokeStyle = '#ffd9ec'; c.lineWidth = 7; c.lineCap = 'round';
+    c.beginPath();           // dos montantes
+    c.moveTo(x - 14, y - 26); c.lineTo(x - 14, y + 26); c.stroke();
+    c.beginPath();
+    c.moveTo(x + 14, y - 26); c.lineTo(x + 14, y + 26); c.stroke();
+    c.lineWidth = 6;
+    c.beginPath();           // travesaños ascendentes
+    c.moveTo(x - 14, y - 10); c.lineTo(x + 14, y - 10); c.stroke();
+    c.beginPath();
+    c.moveTo(x - 14, y + 8); c.lineTo(x + 14, y + 8); c.stroke();
+    c.fillStyle = '#ffffff';  // la bola en lo alto
+    c.beginPath(); c.arc(x + 21, y - 23, 8, 0, Math.PI * 2); c.fill();
+    c.restore();
+  },
   // ---- r71 · ICONOS EXPLÍCITOS de las subcategorías de AJUSTES ----
   cpu(c, x, y) {            // chip (JUEGO: dificultad, adaptativo, mega pala)
     c.save();
@@ -3012,7 +3068,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.104-SDK6';
+  const VERSION = '3.6.105-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -4113,6 +4169,70 @@ function estiloAplicar(cfg, estilo) {
     short: cfg.short,
   };
 }
+
+/* =====================================================================
+ *  M5b (r115) · HERENCIA DE ESTILOS A CAMPEONATOS — la personalidad del
+ *  manifest (agresividad/precision/constancia/caracter/cerebro) se
+ *  traduce a UNO de los 12 estilos de OPPONENT_STYLES. Determinista,
+ *  sin señales claras → null (el rival queda EXACTO como siempre).
+ *  El toggle «Rivales con estilo visible» (pp_rivstyle_v1) sigue mandando:
+ *  en NO la herencia se apaga y los campeonatos quedan byte-idénticos.
+ *  ===================================================================== */
+function estiloDePersonalidad(pers) {
+  if (!pers) return null;
+  const ag = pers.agresividad || 3;
+  const pr = pers.precision || 3;
+  const co = pers.constancia || 3;
+  const car = String(pers.caracter || '').toLowerCase();
+  if (car === 'frio' || co >= 4) return 'veterano';   // paciente, no falla dos veces
+  if (ag >= 4) return 'atacante';                     // viviendo del smash
+  if (ag <= 2 && pr >= 4) return 'bloqueador';        // pegado y de reflejos
+  if (ag <= 2) return 'defensivo';                    // bolas altas desde el fondo
+  if (pr >= 4) return 'bloqueador';
+  if (co <= 2) return 'nervioso';                     // rápido pero desordenado
+  return null;                                        // sin señal: comportamiento clásico
+}
+
+/* =====================================================================
+ *  M5b (r115) · LA ESCALERA DE CARRERA — divisiones de BRONCE a LEYENDA
+ *  con rivales CONCRETOS (nombre propio + estilo de M5a + preset base y
+ *  factor k). La cfg del desafío = scalePreset(AI_PRESETS[preset], k) +
+ *  estiloAplicar(estilo) — SIEMPRE dentro de los topes legales (sin
+ *  trampas: mismos clamps que el resto del juego). El progreso vive en
+ *  localStorage pp_carrera_v1 (div, done, rec, crowned) — ver c12.
+ *  ===================================================================== */
+const CARRERA_DIVISIONES = [
+  { id: 'bronce', nameKey: 'carrera_d_bronce', col: '#c9935a',
+    rivales: [
+      { id: 'roko', es: 'ROKO EL ATREVIDO', en: 'ROKO THE BOLD', estilo: 'nervioso', preset: 'easy', k: 0.88 },
+      { id: 'marta', es: 'MARTA MESITA', en: 'MARTY TABLETOP', estilo: 'allround', preset: 'easy', k: 1.0 },
+      { id: 'paco', es: 'PACO CORTADA', en: 'CHOP CHOP CHARLIE', estilo: 'chopero', preset: 'easy', k: 1.08 },
+    ] },
+  { id: 'plata', nameKey: 'carrera_d_plata', col: '#c9ccd4',
+    rivales: [
+      { id: 'lulu', es: 'LULU LOOPER', en: 'LULU LOOPER', estilo: 'looper', preset: 'easy', k: 1.2 },
+      { id: 'paola', es: 'PAOLA LA PARED', en: 'WALL-WALL PAULA', estilo: 'bloqueador', preset: 'easy', k: 1.25 },
+      { id: 'fede', es: 'FEDE FONDO', en: 'DEEP-DAVE', estilo: 'defensivo', preset: 'medium', k: 0.9 },
+    ] },
+  { id: 'oro', nameKey: 'carrera_d_oro', col: '#ffd257',
+    rivales: [
+      { id: 'carla', es: 'CARLA CUCHILLA', en: 'CARLA THE BLADE', estilo: 'dejadas', preset: 'medium', k: 1.0 },
+      { id: 'oscar', es: 'ÓSCAR OFENSIVA', en: 'OSCAR ONSLAUGHT', estilo: 'atacante', preset: 'medium', k: 1.05 },
+      { id: 'tomas', es: 'TOMÁS TODO TERRENO', en: 'TOM ALL-TERRAIN', estilo: 'allround', preset: 'medium', k: 1.15 },
+    ] },
+  { id: 'diamante', nameKey: 'carrera_d_diamante', col: '#7de3ff',
+    rivales: [
+      { id: 'vera', es: 'VERA LA VETERANA', en: 'VERA THE VETERAN', estilo: 'veterano', preset: 'medium', k: 1.25 },
+      { id: 'gus', es: 'GUS EL GIGANTE', en: 'GIANT GUS', estilo: 'gigante', preset: 'hard', k: 0.95 },
+      { id: 'nina', es: 'NINA NÉBULA', en: 'NINA NEBULA', estilo: 'relampago', preset: 'hard', k: 1.02 },
+    ] },
+  { id: 'leyenda', nameKey: 'carrera_d_leyenda', col: '#b07cff',
+    rivales: [
+      { id: 'rayo', es: 'RAYO ROMERO', en: 'LIGHTNING RAY', estilo: 'relampago', preset: 'hard', k: 1.15 },
+      { id: 'muro', es: 'EL MURO DE HIERRO', en: 'THE IRON WALL', estilo: 'bloqueador', preset: 'hard', k: 1.2 },
+      { id: 'leyenda', es: 'LA LEYENDA', en: 'THE LEGEND', estilo: 'veterano', preset: 'hard', k: 1.3 },
+    ] },
+];
 
 const COLORS = {
   tableBlue: 0x17539e, tableEdge: 0x0e3a73, frame: 0x22262b,
@@ -7800,8 +7920,14 @@ class Rules {
     this.onMatchStart = null;
   }
 
-  /** Nombre del oponente para los mensajes (CPU o humano remoto). */
-  opp() { return T('opp_' + (this.oppLabel || 'cpu')); }
+  /** Nombre del oponente para los mensajes (CPU o humano remoto).
+   *  M5b (r115) · oppName: nombre PROPIO del rival de la escalera de
+   *  carrera (ROKO, MARTA…); lo pone el núcleo al desafiar y lo retira
+   *  al terminar. Sin él, el rótulo clásico opp_label de siempre. */
+  opp() {
+    if (this.oppName) return this.oppName;
+    return T('opp_' + (this.oppLabel || 'cpu'));
+  }
 
   other(s) { return s === 'player' ? 'ai' : 'player'; }
 
@@ -10302,82 +10428,9 @@ function createFanfareBanner() {
   return { group, draw, canvas, langChanged };
 }
 
-/** r61 · CARTEL DE LA REPETICIÓN del mejor intercambio: banda azul
- *  fantasma que ocupa el sitio del cartel de fanfarria mientras los
- *  fantasmas recrean el rallye. Mismo lenguaje visual (canvas 2D +
- *  plano al RIG sobre la mesa). */
-function createReplayBanner() {
-  const W = 1024, H = 240;
-  const group = new THREE.Group();
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.42, 0.3328),
-    new THREE.MeshBasicMaterial({
-      map: tex, transparent: true, side: THREE.FrontSide, depthWrite: false,
-    }),
-  );
-  mesh.renderOrder = 6;
-  group.add(mesh);
-  group.position.set(0, 1.86, DIMS.tableCenterZ);
-  group.visible = false;
-
-  function draw(hits) {
-    group.userData.hits = hits || 0;    // para el repintado por idioma
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(8,14,26,0.88)';
-    ctx.strokeStyle = '#6fb7ff';
-    ctx.lineWidth = 10;
-    roundRectPath(ctx, 10, 10, W - 20, H - 20, 34);
-    ctx.fill();
-    ctx.stroke();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(70,160,255,0.85)';
-    ctx.shadowBlur = 22;
-    ctx.fillStyle = '#9fd0ff';
-    ctx.font = '900 86px system-ui, sans-serif';
-    ctx.fillText(T('rep_t'), W / 2, H / 2 - 34);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#eaf4ff';
-    ctx.font = '700 40px system-ui, sans-serif';
-    ctx.fillText(T('rep_chip', { n: hits || 0 }), W / 2, H / 2 + 46);
-    // r62 · PASTILLA «CÁMARA LENTA» (ámbar de cine, auto-dimensionada a la
-    // derecha — el título centrado nunca la alcanza: rep_t es corto)
-    const txtSlow = T('rep_slow');
-    ctx.font = '900 30px system-ui, sans-serif';
-    const wSlow = Math.ceil(ctx.measureText(txtSlow).width) + 44;
-    const hSlow = 54;
-    const xSlow = W - 26 - wSlow;
-    const ySlow = H / 2 - hSlow / 2 + 4;
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(26,18,6,0.92)';
-    roundRectPath(ctx, xSlow - 4, ySlow - 4, wSlow + 8, hSlow + 8, 31);
-    ctx.fill();
-    ctx.fillStyle = '#ffc65c';
-    roundRectPath(ctx, xSlow, ySlow, wSlow, hSlow, 27);
-    ctx.fill();
-    ctx.strokeStyle = '#1a1206';
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    ctx.fillStyle = '#1a1206';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(txtSlow, xSlow + wSlow / 2, ySlow + hSlow / 2 + 1);
-    ctx.textBaseline = 'alphabetic';
-    tex.needsUpdate = true;
-  }
-
-  function langChanged() {
-    // el chip lleva el nº de toques del último draw — se repinta con él
-    if (group.visible) draw(group.userData.hits || 0);
-  }
-
-  return { group, draw, canvas, langChanged };
-}
+/** r115 · RETIRO DEL DUEÑO: el cartel de la REPETICIÓN del mejor
+ *  intercambio (r61) se suprimió con todo el sistema de replay — el
+ *  constructor propio del cartel ya no existe. */
 
 function createConfetti() {
   // v2.35: lluvia MUCHO más densa (120 -> 430) y repartida también sobre
@@ -14835,14 +14888,23 @@ class PingPongGame {
     try {
       this.rules.onMatchStart = () => {
         try { this._megaNormReset(); } catch (e) { /* nunca rompe el árbitro */ }
-        // r61 · partido nuevo: fuera el campeón de la repetición anterior
+        // M5b (r115) · el nombre del rival de la escalera (o su retirada)
+        // se re-ancla en CADA startMatch: un solo punto cubre menú, revancha
+        // por gatillo, reinicio automático del 'over' y arranque de sesión.
+        try {
+          this.rules.oppName = this.carreraMatch
+            ? ((__ppLang === 'en')
+              ? (((CARRERA_DIVISIONES[this.carreraMatch.div] || {}).rivales || [])
+                .find((r) => r.id === this.carreraMatch.rId) || {}).en || this.carreraMatch.nombre
+              : this.carreraMatch.nombre)
+            : null;
+        } catch (eON) { this.rules.oppName = null; }
         // M5a (r112) · telemetría del ESTILO del rival (partido local con
         // estilo ≠ clásico; una emisión por partido).
         if (this.ppEstilo && this.ppEstilo !== 'clasico' &&
             !(this.net && this.net.online)) {
           try { __PP_TELE.ev('ai_style', { est: this.ppEstilo, dif: this.difficulty }); } catch (eAS) { /* */ }
         }
-        try { this._repReset(); } catch (eR) { /* nunca rompe el árbitro */ }
         // M4 (r111) · la línea de la GUÍA DEL SAQUE sobrevive al startMatch
         // (el árbitro repone su mensaje; si la guía está en cancha, vuelve)
         if (this.rules.server === 'player') {
@@ -15106,6 +15168,11 @@ class PingPongGame {
       try { return localStorage.getItem('pp_estilo_v1') || 'clasico'; }
       catch (e) { return 'clasico'; }
     })();
+    // M5b (r115) · ESCALERA DE CARRERA: el desafío ACTIVO (sólo vive durante
+    // el partido retado); el progreso persiste en pp_carrera_v1. null = el
+    // rival se configura como siempre (partido normal / campeonato / online).
+    this.carreraMatch = null;
+    this._carreraSel = 0;         // división mostrada en la página del menú
     // --- modos de juego (v2.11) ---
     this.mode = 'match';          // 'match' | 'survival' (en curso)
     this.pendingMode = 'match';   // modo que se aplicará al entrar en VR
@@ -15283,36 +15350,10 @@ class PingPongGame {
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
 
-    // r61 · REPETICIÓN DEL MEJOR INTERCAMBIO — grabadora de rallyes y
-    // fantasmas de reproducción (bola + pala del rival, azul fantasma).
-    // La pala PROPIA no se reproduce: en la mano del jugador ya hay una
-    // pala de verdad y se solaparía. Grabación sólo local (serv/rally),
-    // sin calib ni academia ni invitado online.
-    this._repMat = new THREE.MeshBasicMaterial({
-      color: 0x9fd0ff, transparent: true, opacity: 0.55, depthWrite: false,
-    });
-    this.ghostBall = new THREE.Mesh(
-      new THREE.SphereGeometry(DIMS.ballRadius, 24, 16), this._repMat);
-    this.ghostBall.visible = false;
-    this.ghostRival = makePaddleVisual(paddleModel, 'center');
-    this.ghostRival.traverse((o) => {
-      if (o.isMesh) { o.material = this._repMat; o.castShadow = false; }
-    });
-    this.ghostRival.visible = false;
-    this.rig.add(this.ghostBall);
-    this.rig.add(this.ghostRival);
-    this.replayBanner = createReplayBanner();
-    this.rig.add(this.replayBanner.group);
-    const REP_MAX_F = 5400;                  // ~75 s a 72 fps, tope
-    this._repMaxF = REP_MAX_F;
-    this._repStride = 11;                    // bola(3)+rival(3)+quat(4)+dt(1)
-    this._repBuf = new Float32Array(REP_MAX_F * 11);
-    this._repN = 0;
-    this._repBest = { buf: null, n: 0, hits: 0 };
-    this._repEstado = '';                    // '' | 'play'
-    this._repT = 0;
-    this._repPendiente = false;
-    this._repVisPrev = null;
+    // r115 · RETIRO DEL DUEÑO: la REPETICIÓN DEL MEJOR INTERCAMBIO (r61)
+    // se SUPRIME — fuera grabadora, fantasmas, cartel y cámara lenta del
+    // replay. Al terminar la partida la fanfarria respira sola y el gatillo
+    // es revancha desde el primer pulso.
     // r62 · BOLA DE PARTIDO EN CÁMARA LENTA: reloj de la dilatación (s) y
     // factor ACTUAL aplicado SOLO a la física de la bola (1 = tiempo normal).
     this._dilT = 0;
@@ -17275,6 +17316,15 @@ class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // M5b (r115) · página de la ESCALERA DE CARRERA
+    if (this.menuPage === 'carrera') {
+      this.drawMenuCarrera(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
+      this.menuTex.needsUpdate = true;
+      return;
+    }
 
     this.drawMenuHeader(rects);
 
@@ -17472,12 +17522,20 @@ class PingPongGame {
     this._modeCard(rects, 'start', 40, 240, 944, 136, T('hub_play'),
       over ? T('btn_rematch') : T('hub_vs', { v: diffName }),
       '#37b24d', '#1e7c33', PP_ICONS.match, true);
-    // banner de LA ACADEMIA justo debajo: la oferta de siempre, dorada y a
-    // toda fila, para quien quiera el curso completo — sin bloquear a nadie
-    // (la página «¿PRIMERA VEZ?» dejó de existir como puerta en r111).
-    this._modeCard(rects, 'tut:go', 40, 394, 944, 96, T('tut_hub'),
+    // M5b (r115) · fila CARRERA | ACADEMIA: la escalera entra en el hub con
+    // tarjeta propia (estado vivo: división + rivales vencidos · corona).
+    const _carrSt = this._carreraEstado();
+    const _carrDiv = CARRERA_DIVISIONES[_carrSt.div];
+    const _carrN = _carrDiv.rivales.filter((r) => _carrSt.done[r.id]).length;
+    this._modeCard(rects, 'carrera:abre', X0, 394, CW, CH, T('carrera_lbl'),
+      _carrSt.crowned ? '✦ ' + T('carrera_d_leyenda')
+        : T('carrera_hub_sub', { v: T(_carrDiv.nameKey), n: _carrN }),
+      '#d6336c', '#a61e4d', PP_ICONS.carrera, true);
+    // banner de LA ACADEMIA reencuadrado a media celda (la oferta de siempre,
+    // dorada — el hueco a toda fila lo ocupa ahora la escalera de carrera).
+    this._modeCard(rects, 'tut:go', X1, 394, CW, CH, T('tut_hub'),
       T('tut_hub_sub'), '#c9a227', '#8a6d14', PP_ICONS.tut, true);
-    let y = 394 + 96 + GY;
+    let y = 394 + CH + GY;
     // fila 1 · ENTRENAR — SUPERVIVENCIA
     this._modeCard(rects, 'traingo', X0, y, CW, CH, T('sec_train'),
       T('hub_train_sub'), '#1c7ed6', '#145c9e', PP_ICONS.train);
@@ -17560,6 +17618,143 @@ class PingPongGame {
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.fillText(T('menu_hint'), 512, y + 124);
+  }
+
+  /* ================== M5b (r115) · ESCALERA DE CARRERA ==================
+   *  Página propia: 5 franjas de división (estado de cada una) + el
+   *  detalle de la división vista (3 rivales con su estilo y su récord)
+   *  + el botón DESAFIAR del próximo pendiente. Las derrotas no bajan:
+   *  todo rival de TU división se puede repicar (revancha) cuando quieras.
+   *  ===================================================================== */
+  drawMenuCarrera(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const st = this._carreraEstado();
+    this.drawMenuHeader(rects);
+    btn('page:main', 40, 216, 240, 60, T('page_back'), false, undefined, undefined, 25);
+    // cabecera de la página
+    c.fillStyle = '#ffd257';
+    c.font = '900 44px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(T('carrera_lbl'), 512, 312);
+    c.fillStyle = '#9aa7b4';
+    c.font = '500 20px system-ui, sans-serif';
+    c.fillText(T('carrera_sub'), 512, 350);
+    // --- franjas de división (BRONCE → LEYENDA) ---
+    const stripH = 64, stripGap = 10;
+    let y = 384;
+    for (let i = 0; i < CARRERA_DIVISIONES.length; i++) {
+      const div = CARRERA_DIVISIONES[i];
+      const esActual = i === st.div;
+      const superada = i < st.div;
+      const clickable = i <= st.div;
+      const hovered = this.menuHover.includes(rects.length);
+      // fondo
+      c.beginPath();
+      if (c.roundRect) c.roundRect(56, y, 912, stripH, 14); else c.rect(56, y, 912, stripH);
+      c.fillStyle = esActual ? 'rgba(232,180,90,0.16)'
+        : superada ? 'rgba(127,176,105,0.10)' : 'rgba(255,255,255,0.05)';
+      c.fill();
+      c.strokeStyle = hovered && clickable ? '#ffffff'
+        : esActual ? 'rgba(232,180,90,0.75)'
+        : superada ? 'rgba(127,176,105,0.45)' : 'rgba(255,255,255,0.18)';
+      c.lineWidth = hovered && clickable ? 4 : 2;
+      c.stroke();
+      // barra del color de la división
+      c.fillStyle = div.col;
+      c.beginPath();
+      if (c.roundRect) c.roundRect(64, y + 8, 10, stripH - 16, 5); else c.rect(64, y + 8, 10, stripH - 16);
+      c.fill();
+      // nombre
+      c.textAlign = 'left';
+      c.fillStyle = i > st.div ? 'rgba(207,216,224,0.45)' : '#ffffff';
+      c.font = '800 26px system-ui, sans-serif';
+      c.fillText(T(div.nameKey), 92, y + stripH / 2 + 1);
+      // estado a la derecha
+      c.textAlign = 'right';
+      if (esActual) {
+        const n = div.rivales.filter((r) => st.done[r.id]).length;
+        c.fillStyle = '#ffd257';
+        c.font = '800 24px system-ui, sans-serif';
+        c.fillText(n + '/3 · ' + T('carrera_actual'), 952, y + stripH / 2 + 1);
+      } else if (superada) {
+        c.fillStyle = '#93c97e';
+        c.font = '700 22px system-ui, sans-serif';
+        c.fillText('✓ ' + T('carrera_superada'), 952, y + stripH / 2 + 1);
+      } else {
+        c.fillStyle = 'rgba(207,216,224,0.45)';
+        c.font = '700 22px system-ui, sans-serif';
+        c.fillText(T('carrera_bloqueada'), 952, y + stripH / 2 + 1);
+      }
+      if (clickable) rects.push({ x: 56, y: y - 3, w: 912, h: stripH + 6, id: 'carrera:sel:' + i });
+      y += stripH + stripGap;
+    }
+    // --- detalle de la división vista ---
+    const vi = Math.min(this._carreraSel || 0, st.div);
+    const divV = CARRERA_DIVISIONES[vi];
+    const esTuDiv = vi === st.div;
+    y += 6;
+    c.textAlign = 'left';
+    c.fillStyle = divV.col;
+    c.font = '900 24px system-ui, sans-serif';
+    c.fillText(T(divV.nameKey) + (esTuDiv ? ' · ' + T('carrera_actual') : ''), 56, y + 14);
+    y += 40;
+    const rowH = 64, rowGap = 10;
+    for (const r of divV.rivales) {
+      const vencido = !!st.done[r.id];
+      const retable = esTuDiv;                    // revancha/desafío en TU división
+      const hovered = this.menuHover.includes(rects.length);
+      c.beginPath();
+      if (c.roundRect) c.roundRect(56, y, 912, rowH, 12); else c.rect(56, y, 912, rowH);
+      c.fillStyle = vencido ? 'rgba(127,176,105,0.10)' : 'rgba(255,255,255,0.07)';
+      c.fill();
+      c.strokeStyle = hovered && retable ? '#ffffff'
+        : vencido ? 'rgba(127,176,105,0.4)' : 'rgba(255,255,255,0.26)';
+      c.lineWidth = hovered && retable ? 4 : 2;
+      c.stroke();
+      c.textAlign = 'left';
+      c.fillStyle = '#ffffff';
+      c.font = '800 24px system-ui, sans-serif';
+      c.fillText((__ppLang === 'en' ? r.en : r.es), 80, y + 26);
+      // sub: estilo del rival (el carácter que hereda de M5a)
+      const estDef = OPPONENT_STYLES.find((s) => s.id === r.estilo);
+      c.fillStyle = 'rgba(255,255,255,0.6)';
+      c.font = '600 17px system-ui, sans-serif';
+      c.fillText(estDef ? (__ppLang === 'en' ? estDef.en : estDef.es) : r.estilo, 80, y + 48);
+      c.textAlign = 'right';
+      if (vencido) {
+        const rec = st.rec[r.id] || { w: 1, l: 0 };
+        c.fillStyle = '#93c97e';
+        c.font = '700 20px system-ui, sans-serif';
+        c.fillText('✓ ' + T('carrera_vencido') + '  ' + rec.w + '-' + rec.l, 948, y + rowH / 2 + 1);
+      } else {
+        c.fillStyle = '#ffd257';
+        c.font = '700 20px system-ui, sans-serif';
+        c.fillText('▶ ' + (estDef ? (__ppLang === 'en' ? estDef.en : estDef.es) : ''), 948, y + rowH / 2 + 1);
+      }
+      if (retable) rects.push({ x: 56, y: y - 3, w: 912, h: rowH + 6, id: 'carrera:des:' + vi + ':' + r.id });
+      y += rowH + rowGap;
+    }
+    // --- DESAFIAR / corona ---
+    y += 8;
+    const prox = this._carreraProximo(st);
+    if (prox && st.div === vi) {
+      const nm = (__ppLang === 'en' ? prox.rival.en : prox.rival.es);
+      btn('carrera:des:' + st.div + ':' + prox.rival.id, 56, y, 912, 72,
+        T('carrera_challenge', { v: nm }), true, 'green', undefined, 30);
+      y += 88;
+    } else if (st.crowned) {
+      c.textAlign = 'center';
+      c.fillStyle = '#ffd257';
+      c.font = '900 26px system-ui, sans-serif';
+      c.fillText('✦ ' + T('carrera_crown_msg') + ' ✦', 512, y + 36);
+      y += 88;
+    }
+    c.textAlign = 'center';
+    c.fillStyle = '#9aa7b4';
+    c.font = '500 18px system-ui, sans-serif';
+    c.fillText(T('carrera_hint'), 512, Math.min(y + 10, 1490));
   }
 
   /** v2.110 · página CAMPEONATOS: música global + TARJETA por campeonato
@@ -19520,6 +19715,33 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'carrera': {
+        // M5b (r115) · LA ESCALERA DE CARRERA: abrir la página, seleccionar
+        // división vista (sel:<i>) o desafiar/revancha (des:<i>:<rivalId>).
+        if (arg === 'abre') {
+          this.menuPage = 'carrera';
+          this._carreraSel = this._carreraEstado().div;
+          this.audio.playOsc(620, 930, 0.07, 'triangle', 0.13, 0);
+        } else if (arg.indexOf('sel:') === 0) {
+          const i = parseInt(arg.slice(4), 10);
+          if (i >= 0 && i < CARRERA_DIVISIONES.length) {
+            // sólo se abren divisiones alcanzadas (o la siguiente a la tuya
+            // para ver lo que viene — sin desafiar)
+            const st = this._carreraEstado();
+            if (i <= st.div) this._carreraSel = i;
+            this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+          }
+        } else if (arg.indexOf('des:') === 0) {
+          const parts = arg.split(':');
+          const i = parseInt(parts[1], 10);
+          const rid = parts.slice(2).join(':');
+          this.audio.playOsc(760, 1020, 0.08, 'triangle', 0.14, 0);
+          this._carreraDesafiar(i, rid);
+          break;   // el desafío cierra el menú (no repintar encima)
+        }
+        this.drawMenu();
+        break;
+      }
       case 'mesa_altoy': {
         // r96 · DESLIZADOR de altura: la mesa se fija AL PUNTO del raíl que
         // apunta el mando (feedback EN VIVO en la sala de partidos).
@@ -19797,8 +20019,14 @@ class PingPongGame {
    *      completado hasta doblar su velocidad; (3) v2.44: CLOWN Nv. 2/3 del
    *      campeonato son MÁS listos (×1,22 / ×1,5). */
   applyAISkill() {
-    const base = AI_PRESETS[this.difficulty] || AI_PRESETS.medium;
+    // M5b (r115) · el desafío de la escalera trae SU preset base (easy/
+    // medium/hard de la división) y SU factor k — la dificultad elegida
+    // por el jugador no se toca ni se pisa.
+    const base = this.carreraMatch
+      ? (AI_PRESETS[this.carreraMatch.preset] || AI_PRESETS.medium)
+      : (AI_PRESETS[this.difficulty] || AI_PRESETS.medium);
     let k = 1;
+    if (this.carreraMatch) k *= this.carreraMatch.k;
     if (this.adaptive) {
       const diff = this.rules.scorePlayer - this.rules.scoreAi;
       k += diff > 0 ? Math.min(diff, 6) * 0.055 : Math.max(diff, -6) * 0.05;
@@ -20009,27 +20237,159 @@ class PingPongGame {
    *  cerebro de la IA. El salto seco por punto pasaba factura: el rival
    *  cambiaba de nivel de golpe entre punto y punto. */
   _aiKAplica() {
-    const base = AI_PRESETS[this.difficulty] || AI_PRESETS.medium;
+    // M5b (r115) · en desafío de la escalera el preset BASE es el del rival
+    // (easy/medium/hard de su división) — la dificultad del usuario no pisa.
+    const base = this.carreraMatch
+      ? (AI_PRESETS[this.carreraMatch.preset] || AI_PRESETS.medium)
+      : (AI_PRESETS[this.difficulty] || AI_PRESETS.medium);
     this.aiSkillK = this._aiKCur;
     let cfg = scalePreset(base, this._aiKCur);
     // M5a (r112) · ESTILO DEL RIVAL: multiplicadores ACOTADOS sobre la cfg
-    // escalada (sólo partido LOCAL sin campeonato — la herencia de estilos a
-    // los rivales de campeonato llega con M5b). Con 'clasico' la cfg queda
-    // INTACTA (comportamiento byte-idéntico de siempre).
+    // escalada. Con 'clasico' la cfg queda INTACTA (comportamiento
+    // byte-idéntico de siempre). M5b (r115): el canal ahora sirve TAMBIÉN
+    // al desafío de la escalera (estilo del rival retado) y a la herencia
+    // de los campeonatos (estilo derivado de la personalidad del manifest)
+    // — _estiloActivo decide cuál aplica en cada modo.
     const est = this._estiloActivo();
     if (est) cfg = estiloAplicar(cfg, est);
     this.ai.setConfig(cfg);
   }
 
   /** M5a (r112) · el estilo activo del rival (entrada de OPPONENT_STYLES o
-   *  null = clásico). NUNCA en online (la mesa la acuerda el anfitrión), en
-   *  campeonato (herencia de estilos: M5b), calibración ni academia. */
+   *  null = clásico). NUNCA en online (la mesa la acuerda el anfitrión),
+   *  calibración ni academia.
+   *  M5b (r115) · el canal pasa a servir a TRES señales, por prioridad:
+   *    1. Desafío de la escalera → el estilo del rival retado.
+   *    2. Campeonato activo → herencia: estilo derivado de la personalidad
+   *       del manifest (mismo toggle pp_rivstyle_v1 que el canal r95).
+   *    3. Partido local → el estilo elegido en AJUSTES › JUEGO. */
   _estiloActivo() {
-    if (!this.ppEstilo || this.ppEstilo === 'clasico') return null;
     if (this.net && this.net.online) return null;
-    if (this.champs && this.champs.active) return null;
     if (this.calib || this.tutV1 || this.trainV3) return null;
+    if (this.carreraMatch) {
+      return OPPONENT_STYLES.find((s) => s.id === this.carreraMatch.estilo) || null;
+    }
+    if (this.champs && this.champs.active) {
+      // Herencia de estilos a campeonatos (M5b): el carácter del manifest
+      // se traduce a un estilo de M5a; sin señal clara o con el toggle en
+      // NO, el rival queda EXACTO como siempre (cfg del módulo intacta).
+      if (this.rivStyleOn === false) return null;
+      let pers = null;
+      try { pers = this.champs.active.man && this.champs.active.man.rival
+        && this.champs.active.man.rival.personalidad; } catch { /* */ }
+      const id = estiloDePersonalidad(pers);
+      return id ? (OPPONENT_STYLES.find((s) => s.id === id) || null) : null;
+    }
+    if (!this.ppEstilo || this.ppEstilo === 'clasico') return null;
     return OPPONENT_STYLES.find((s) => s.id === this.ppEstilo) || null;
+  }
+
+  /* =====================================================================
+   *  M5b (r115) · LA ESCALERA DE CARRERA
+   *  5 divisiones (Bronce→Leyenda) × 3 rivales concretos (c02). El
+   *  progreso vive en pp_carrera_v1 {div, done, rec, crowned}: vencer a
+   *  los 3 de la división ASCIende (anuncio + fanfarria ya existente);
+   *  perder NO baja — revancha siempre disponible. En Leyenda, la corona
+   *  se sella y las revanchas quedan libres. NUNCA online ni campeonato
+   *  (el desafío sale del hall y deja el campeonato con leaveAll).
+   *  ===================================================================== */
+  _carreraEstado() {
+    let st = null;
+    try { st = JSON.parse(localStorage.getItem('pp_carrera_v1') || 'null'); } catch { st = null; }
+    if (!st || typeof st !== 'object') st = {};
+    if (typeof st.div !== 'number' || st.div < 0 || st.div >= CARRERA_DIVISIONES.length) st.div = 0;
+    if (!st.done || typeof st.done !== 'object') st.done = {};
+    if (!st.rec || typeof st.rec !== 'object') st.rec = {};
+    st.crowned = !!st.crowned;
+    return st;
+  }
+  _carreraGuarda(st) {
+    try { localStorage.setItem('pp_carrera_v1', JSON.stringify(st)); } catch { /* */ }
+  }
+  /** el siguiente rival pendiente de la división vigente (o null si la
+   *  división está superada — con la auto-promoción sólo pasa en Leyenda
+   *  ya coronada). */
+  _carreraProximo(st) {
+    const div = CARRERA_DIVISIONES[st.div];
+    if (!div) return null;
+    for (const r of div.rivales) if (!st.done[r.id]) return { div, rival: r };
+    return null;
+  }
+  /** DESAFIAR: configura el partido de la escalera y arranca como un
+   *  ▶ JUGAR (mismo camino: fuera academia/calibración/campeonato, fuera
+   *  del hall, partido local, menú cerrado). */
+  _carreraDesafiar(divIdx, rivalId) {
+    if (this.net.online) {
+      this.rules.message = T('msg_no_cpu');
+      this.drawMenu();
+      return;
+    }
+    const div = CARRERA_DIVISIONES[divIdx];
+    const rival = div && div.rivales.find((r) => r.id === rivalId);
+    if (!rival) return;
+    const st = this._carreraEstado();
+    const permitido = divIdx === st.div;
+    if (!permitido) return;   // sólo rivales de TU división (o revanchas)
+    // El desafío sale del hall y limpia el resto de modos (como ▶ JUGAR)
+    this.closeTrainingV3();
+    if (this.calibPala) this.exitCalib();
+    if (this.champs) this.champs.leaveAll();
+    this.exitHall();
+    this.carreraMatch = { div: divIdx, rId: rival.id, nombre: rival.es, estilo: rival.estilo, preset: rival.preset, k: rival.k };
+    if (this.mode !== 'match') this.switchMode('match');
+    else { this.rules.bestOf = 3; this.rules.startMatch('match'); this.resetToss(); }
+    this.rules.oppName = (__ppLang === 'en') ? rival.en : rival.es;
+    this.rules.message = T('carrera_challenge', { v: this.rules.oppName });
+    this.audio.announce(T('carrera_challenge', { v: this.rules.oppName }), true);
+    try { __PP_TELE.ev('carrera', { div: div.id, r: rival.id, est: rival.estilo, acc: 'reto' }); } catch { /* */ }
+    this.closeMenu();
+  }
+  /** FIN del desafío (intent game-over): rec W/L, done, ascenso y corona.
+   *  Los mensajes se emiten con retardo para no pisar la fanfarria. */
+  _carreraResultado(won) {
+    const cm = this.carreraMatch;
+    this.carreraMatch = null;   // el partido terminó: el siguiente ya es normal
+    if (!cm) return;
+    this.rules.oppName = null;
+    const st = this._carreraEstado();
+    const div = CARRERA_DIVISIONES[cm.div];
+    if (!div) return;
+    const rec = st.rec[cm.rId] || { w: 0, l: 0 };
+    if (won) rec.w++; else rec.l++;
+    st.rec[cm.rId] = rec;
+    let promo = null;
+    if (won && !st.done[cm.rId]) {
+      st.done[cm.rId] = true;
+      const quedan = div.rivales.some((r) => !st.done[r.id]);
+      if (!quedan) {
+        if (cm.div < CARRERA_DIVISIONES.length - 1) {
+          st.div = cm.div + 1;
+          promo = CARRERA_DIVISIONES[st.div];
+        } else if (!st.crowned) {
+          st.crowned = true;
+          promo = 'corona';
+        }
+      }
+    }
+    this._carreraGuarda(st);
+    const nombre = (__ppLang === 'en')
+      ? ((CARRERA_DIVISIONES[cm.div].rivales.find((r) => r.id === cm.rId) || {}).en || cm.nombre)
+      : cm.nombre;
+    const msg = won ? T('carrera_win_msg', { v: nombre }) : T('carrera_lose_msg', { v: nombre });
+    const msgPromo = promo === 'corona' ? T('carrera_crown_msg')
+      : (promo ? T('carrera_promo_msg', { v: __ppLang === 'en' ? promo.en : T(promo.nameKey) }) : null);
+    window.setTimeout(() => {
+      if (this.disposed) return;
+      this.audio.announce(msg, true);
+      this.rules.message = msg;
+      if (msgPromo) window.setTimeout(() => {
+        if (this.disposed) return;
+        this.audio.announce(msgPromo, true);
+        this.rules.message = msgPromo;
+        this.haptic(this.paddleHand, 0.9, 160);
+      }, 1600);
+    }, 1500);
+    try { __PP_TELE.ev('carrera', { div: div.id, r: cm.rId, acc: won ? 'win' : 'loss', promo: promo ? 1 : 0 }); } catch { /* */ }
   }
 
   /** v2.66 · REINICIO TOTAL de registros («empezar de cero»): borra el
@@ -20044,6 +20404,7 @@ class PingPongGame {
       'pp_arcade_powers', 'pp_arcade_stage', 'pp_arcade_trophy',
       'pp_worldrank_cache',   // v2.67: caché local del ranking mundial
       'pp_seen_v1',           // v2.68: consejos de 1ª sesión → vuelven a mostrarse
+      'pp_carrera_v1',        // M5b (r115): progreso de la escalera de carrera
     ];
     for (const k of KEYS) { try { localStorage.removeItem(k); } catch { /* */ } }
     // núcleo: estadísticas y logros
@@ -20445,12 +20806,8 @@ class PingPongGame {
       return;
     }
     if (this.rules.state === 'over') {
-      // r61 · la 1.ª pulsación durante la REPETICIÓN la salta; la siguiente
-      // sigue siendo revancha en el MISMO modo (camino v3.6.29 intacto)
-      if (this._repEstado === 'play') {
-        try { this._repTermina(); } catch (eR1) { /* */ }
-        return;
-      }
+      // r115 · la repetición del mejor intercambio se retiró: el 1.er pulso
+      // en 'over' es YA revancha en el MISMO modo (camino v3.6.29 intacto)
       // v3.6.29: PRESERVA bestOf — la revancha por gatillo repite el contexto
       // (libre = nueva serie al mejor de 3; campeonato = duelo a juego único)
       this.rules.startMatch(this.mode);   // revancha en el MISMO modo de juego
@@ -25473,16 +25830,10 @@ class PingPongGame {
         const pulse = 1 + Math.sin(this.fanfareT * 5.2) * 0.045 * Math.max(0, 1 - this.fanfareT / 4);
         this.fanfareBanner.group.scale.setScalar(0.2 + 0.8 * ease * pulse);
         this.fanfareBanner.group.rotation.y = Math.sin(this.fanfareT * 1.3) * 0.06;
-        // r61 · la fanfarria asienta (1,6 s) y el MEJOR INTERCAMBIO se
-        // reproduce solo, con sus fantasmas; gatillo lo salta, revancha luego
-        if (this._repPendiente && this._repEstado === '' && this.fanfareT > 1.6) {
-          this._repArranca();
-        }
+        // r115 · la repetición del mejor intercambio se retiró: la fanfarria
+        // respira sola y el gatillo es revancha desde el primer pulso
       }
     }
-    // r61 · motor de la repetición (grabación + reproducción)
-    this._repFrame(dt);
-    this._repTick(dt);
     if (this.confettiBurst > 0) this.confettiBurst = Math.max(0, this.confettiBurst - dt);
     this.confetti.update(
       dt,
@@ -26353,8 +26704,6 @@ class PingPongGame {
               if (it.winner === 'player' && (it.rallyHits || 0) === 1) this._retosEvento('aces', 1);
               if ((it.rallyHits || 0) >= 12) this._retosEvento('rally', it.rallyHits);
             } catch (eR98) { /* */ }
-            // r61 · fin del intercambio: ¿bate al mejor? (cambio de refs)
-            try { this._repCierra(it.rallyHits || 0); } catch (eR0) { /* */ }
             this.emitStats();
           }
           // v2.34/2.69: el rival del campeonato ACTIVO reacciona a cada
@@ -26465,6 +26814,9 @@ class PingPongGame {
           );
           this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));
           this.emitStats();
+          // M5b (r115) · resultado del desafío de la escalera (progreso,
+          // ascenso y corona); sin desafío activo no toca nada.
+          try { this._carreraResultado(it.winner === 'player'); } catch (eCA) { /* */ }
           // r97 · RETOS SEMANALES: duelos jugados/ganados alimentan la semana
           try {
             this._retoVmaxOk = false;
@@ -26480,9 +26832,8 @@ class PingPongGame {
   startFanfare(win) {
     this.fanfareWin = win;
     this.fanfareT = 0;
-    // r61 · ¿hay mejor intercambio digno de repetirse? (≥3 toques, local)
-    this._repPendiente = !!(this._repBest && this._repBest.buf &&
-      this._repBest.hits >= 3 && !this.net.online);
+    // r115 · fuera la repetición del mejor intercambio: la fanfarria va
+    // directa (sin _repPendiente ni fantasmas que la interrumpan)
     this.audio.fanfare(win);
     // r95 · ESTADÍSTICAS AL FINAL DE CADA DUELO (petición del dueño):
     // velocidad máx. de bola · rally más largo · % precisión, medidos EN
@@ -26518,127 +26869,10 @@ class PingPongGame {
     this._dilF = 1;
   }
 
-  /* ================= r61 · REPETICIÓN DEL MEJOR INTERCAMBIO ============
-   *  Grabadora por frames (bola + pala rival + dt) de cada intercambio y
-   *  reproducción FANTASMA del mejor al acabar el partido (entre la
-   *  fanfarria y la revancha). El mejor = el de MÁS TOQUES. La 1.ª
-   *  pulsación del gatillo la salta; la siguiente es revancha (camino
-   *  v3.6.29 intacto). Sin grabación en calib/academia/invitado online. */
-  _repGrabando() {
-    return !this.net.online && !this.tutV1 &&
-      !this.calib && !!this.rules &&
-      (this.rules.state === 'rally' || this.rules.state === 'serve');
-  }
-
-  /** Un frame más en el buffer ACTIVO (bola, pala rival y dt). */
-  _repFrame(dt) {
-    if (!this._repGrabando() || this._repN >= this._repMaxF) return;
-    const o = this._repN * this._repStride;
-    const b = this.ball ? this.ball.pos : null;
-    const ap = this.aiPaddleMesh ? this.aiPaddleMesh.position : null;
-    if (!b || !ap) return;
-    const q = this.aiPaddleMesh.quaternion;
-    const a = this._repBuf;
-    a[o] = b.x; a[o + 1] = b.y; a[o + 2] = b.z;
-    a[o + 3] = ap.x; a[o + 4] = ap.y; a[o + 5] = ap.z;
-    a[o + 6] = q.x; a[o + 7] = q.y; a[o + 8] = q.z; a[o + 9] = q.w;
-    a[o + 10] = dt;
-    this._repN++;
-  }
-
-  /** Fin del intercambio: si bate al mejor, el buffer ACTIVO pasa a ser
-   *  el campeón (intercambio de referencias, cero copias). */
-  _repCierra(hits) {
-    if (this._repN >= 12 && hits > this._repBest.hits) {
-      const viejo = this._repBest.buf;
-      this._repBest = { buf: this._repBuf, n: this._repN, hits };
-      this._repBuf = viejo || new Float32Array(this._repMaxF * this._repStride);
-    }
-    this._repN = 0;
-  }
-
-  /** Partido nuevo: se borra el campeón y cualquier reproducción viva. */
-  _repReset() {
-    if (this._repEstado === 'play') this._repTermina();
-    this._repN = 0;
-    this._repBest = { buf: null, n: 0, hits: 0 };
-    this._repPendiente = false;
-  }
-
-  /** Arranca la reproducción fantasma del mejor intercambio. */
-  _repArranca() {
-    if (this._repEstado === 'play' || !this._repBest.buf) return;
-    this._repEstado = 'play';
-    this._repT = 0;
-    this._repVisPrev = {
-      ball: this.ballMesh ? this.ballMesh.visible : true,
-      ai: this.aiPaddleMesh ? this.aiPaddleMesh.visible : true,
-    };
-    if (this.fanfareBanner) this.fanfareBanner.group.visible = false;
-    if (this.ballMesh) this.ballMesh.visible = false;
-    if (this.aiPaddleMesh) this.aiPaddleMesh.visible = false;
-    this.ghostBall.visible = true;
-    this.ghostRival.visible = true;
-    this.replayBanner.draw(this._repBest.hits);
-    this.replayBanner.group.visible = true;
-  }
-
-  /** Fin natural o salto: los fantasmas se retiran y la fanfarria vuelve
-   *  con las visibilidades EXACTAS de antes (oeste/orbital esconden pala
-   *  IA y bola en sus pruebas — jamás se resurrectan aquí). */
-  _repTermina() {
-    this._repEstado = '';
-    this._repPendiente = false;
-    this.ghostBall.visible = false;
-    this.ghostRival.visible = false;
-    if (this.replayBanner) this.replayBanner.group.visible = false;
-    const prev = this._repVisPrev;      // visibilidades EXACTAS de antes
-    this._repVisPrev = null;
-    if (prev) {
-      if (this.ballMesh) this.ballMesh.visible = prev.ball;
-      if (this.aiPaddleMesh) this.aiPaddleMesh.visible = prev.ai;
-    }
-    // la fanfarria sólo vuelve si el partido SIGUE terminado (un reset
-    // por startMatch llama aquí con state nuevo: ahí no toca resucitarla)
-    if (this.rules && this.rules.state === 'over' && this.fanfareBanner) {
-      this.fanfareBanner.group.visible = true;
-    }
-  }
-
-  /** Reproducción por tiempo real con interpolación lineal entre frames
-   *  (y slerp del quaternión del rival) — independiente del framerate.
-   *  r62 · CÁMARA LENTA: los frames se recorren a la MITAD del tiempo
-   *  real (REP_SLOWMO) — la interpolación no cambia, sólo el reloj. */
-  _repTick(dt) {
-    if (this._repEstado !== 'play' || !this._repBest.buf) return;
-    const s = this._repStride, a = this._repBest.buf, n = this._repBest.n;
-    let total = 0;
-    for (let i = 0; i < n; i++) total += a[i * s + 10];
-    this._repT += dt * REP_SLOWMO;
-    if (this._repT >= total) { this._repTermina(); return; }
-    // localizar el par de frames que rodea _repT
-    let t0 = 0, iF = 0;
-    while (iF < n - 1 && t0 + a[(iF + 1) * s + 10] < this._repT) {
-      t0 += a[(iF + 1) * s + 10];
-      iF++;
-    }
-    const dtn = a[(iF + 1) * s + 10] || 1e-4;
-    const al = THREE.MathUtils.clamp((this._repT - t0) / dtn, 0, 1);
-    const iA = iF * s, iB = (iF + 1) * s;
-    this.ghostBall.position.set(
-      a[iA] + (a[iB] - a[iA]) * al,
-      a[iA + 1] + (a[iB + 1] - a[iA + 1]) * al,
-      a[iA + 2] + (a[iB + 2] - a[iA + 2]) * al,
-    );
-    this.ghostRival.position.set(
-      a[iA + 3] + (a[iB + 3] - a[iA + 3]) * al,
-      a[iA + 4] + (a[iB + 4] - a[iA + 4]) * al,
-      a[iA + 5] + (a[iB + 5] - a[iA + 5]) * al,
-    );
-    _repTmpQ1.set(a[iA + 6], a[iA + 7], a[iA + 8], a[iA + 9]);
-    _repTmpQ2.set(a[iB + 6], a[iB + 7], a[iB + 8], a[iB + 9]);
-    this.ghostRival.quaternion.slerpQuaternions(_repTmpQ1, _repTmpQ2, al);
-  }
+  /* ========= r115 · RETIRO: REPETICIÓN DEL MEJOR INTERCAMBIO ==========
+   *  El dueño la suprimió: fuera grabadora, reproducción fantasma, cartel
+   *  y cámara lenta del replay. El fin de partido es fanfarria → revancha
+   *  (el gatillo revancha desde el primer pulso). */
 
   processEvents(events) {
     for (const e of events) {
@@ -27110,9 +27344,7 @@ class PerfManager {
 // (RGB 0-1; el mismo lenguaje de color que ya usa cada poder: ámbar del
 // icono, rojo del halo del efecto, cian de las flechas del imán, violeta
 // del portal y azul fantasma del clon). Sin poder → null y manda el spin.
-// r62 · CÁMARA LENTA de la repetición: los frames grabados se recorren a la
-// MITAD del tiempo real (interpolación intacta — framerate-independiente).
-const REP_SLOWMO = 0.5;
+// (r115: la cámara lenta de la repetición se retiró con el replay)
 const TRAIL_PODER = {
   mega: [0.93, 0.72, 0.32],     // Súper Pala — ámbar del icono
   efecto: [0.95, 0.24, 0.16],   // Súper Efecto — rojo del halo (r51)
@@ -27120,10 +27352,6 @@ const TRAIL_PODER = {
   portal: [0.56, 0.35, 0.97],   // Súper Portal — violeta mágico
   clon: [0.42, 0.72, 1.0],      // Clonación — azul fantasma (r58)
 };
-
-// r61 · temporales de la interpolación de la repetición (cero GC por frame)
-const _repTmpQ1 = new THREE.Quaternion();
-const _repTmpQ2 = new THREE.Quaternion();
 
 /* =====================================================================
  *  INTERFAZ · PORTADA ANIMADA + botón JUGAR EN VR + HUD (v2.28)

@@ -351,6 +351,70 @@ export function estiloAplicar(cfg, estilo) {
   };
 }
 
+/* =====================================================================
+ *  M5b (r115) · HERENCIA DE ESTILOS A CAMPEONATOS — la personalidad del
+ *  manifest (agresividad/precision/constancia/caracter/cerebro) se
+ *  traduce a UNO de los 12 estilos de OPPONENT_STYLES. Determinista,
+ *  sin señales claras → null (el rival queda EXACTO como siempre).
+ *  El toggle «Rivales con estilo visible» (pp_rivstyle_v1) sigue mandando:
+ *  en NO la herencia se apaga y los campeonatos quedan byte-idénticos.
+ *  ===================================================================== */
+export function estiloDePersonalidad(pers) {
+  if (!pers) return null;
+  const ag = pers.agresividad || 3;
+  const pr = pers.precision || 3;
+  const co = pers.constancia || 3;
+  const car = String(pers.caracter || '').toLowerCase();
+  if (car === 'frio' || co >= 4) return 'veterano';   // paciente, no falla dos veces
+  if (ag >= 4) return 'atacante';                     // viviendo del smash
+  if (ag <= 2 && pr >= 4) return 'bloqueador';        // pegado y de reflejos
+  if (ag <= 2) return 'defensivo';                    // bolas altas desde el fondo
+  if (pr >= 4) return 'bloqueador';
+  if (co <= 2) return 'nervioso';                     // rápido pero desordenado
+  return null;                                        // sin señal: comportamiento clásico
+}
+
+/* =====================================================================
+ *  M5b (r115) · LA ESCALERA DE CARRERA — divisiones de BRONCE a LEYENDA
+ *  con rivales CONCRETOS (nombre propio + estilo de M5a + preset base y
+ *  factor k). La cfg del desafío = scalePreset(AI_PRESETS[preset], k) +
+ *  estiloAplicar(estilo) — SIEMPRE dentro de los topes legales (sin
+ *  trampas: mismos clamps que el resto del juego). El progreso vive en
+ *  localStorage pp_carrera_v1 (div, done, rec, crowned) — ver c12.
+ *  ===================================================================== */
+export const CARRERA_DIVISIONES = [
+  { id: 'bronce', nameKey: 'carrera_d_bronce', col: '#c9935a',
+    rivales: [
+      { id: 'roko', es: 'ROKO EL ATREVIDO', en: 'ROKO THE BOLD', estilo: 'nervioso', preset: 'easy', k: 0.88 },
+      { id: 'marta', es: 'MARTA MESITA', en: 'MARTY TABLETOP', estilo: 'allround', preset: 'easy', k: 1.0 },
+      { id: 'paco', es: 'PACO CORTADA', en: 'CHOP CHOP CHARLIE', estilo: 'chopero', preset: 'easy', k: 1.08 },
+    ] },
+  { id: 'plata', nameKey: 'carrera_d_plata', col: '#c9ccd4',
+    rivales: [
+      { id: 'lulu', es: 'LULU LOOPER', en: 'LULU LOOPER', estilo: 'looper', preset: 'easy', k: 1.2 },
+      { id: 'paola', es: 'PAOLA LA PARED', en: 'WALL-WALL PAULA', estilo: 'bloqueador', preset: 'easy', k: 1.25 },
+      { id: 'fede', es: 'FEDE FONDO', en: 'DEEP-DAVE', estilo: 'defensivo', preset: 'medium', k: 0.9 },
+    ] },
+  { id: 'oro', nameKey: 'carrera_d_oro', col: '#ffd257',
+    rivales: [
+      { id: 'carla', es: 'CARLA CUCHILLA', en: 'CARLA THE BLADE', estilo: 'dejadas', preset: 'medium', k: 1.0 },
+      { id: 'oscar', es: 'ÓSCAR OFENSIVA', en: 'OSCAR ONSLAUGHT', estilo: 'atacante', preset: 'medium', k: 1.05 },
+      { id: 'tomas', es: 'TOMÁS TODO TERRENO', en: 'TOM ALL-TERRAIN', estilo: 'allround', preset: 'medium', k: 1.15 },
+    ] },
+  { id: 'diamante', nameKey: 'carrera_d_diamante', col: '#7de3ff',
+    rivales: [
+      { id: 'vera', es: 'VERA LA VETERANA', en: 'VERA THE VETERAN', estilo: 'veterano', preset: 'medium', k: 1.25 },
+      { id: 'gus', es: 'GUS EL GIGANTE', en: 'GIANT GUS', estilo: 'gigante', preset: 'hard', k: 0.95 },
+      { id: 'nina', es: 'NINA NÉBULA', en: 'NINA NEBULA', estilo: 'relampago', preset: 'hard', k: 1.02 },
+    ] },
+  { id: 'leyenda', nameKey: 'carrera_d_leyenda', col: '#b07cff',
+    rivales: [
+      { id: 'rayo', es: 'RAYO ROMERO', en: 'LIGHTNING RAY', estilo: 'relampago', preset: 'hard', k: 1.15 },
+      { id: 'muro', es: 'EL MURO DE HIERRO', en: 'THE IRON WALL', estilo: 'bloqueador', preset: 'hard', k: 1.2 },
+      { id: 'leyenda', es: 'LA LEYENDA', en: 'THE LEGEND', estilo: 'veterano', preset: 'hard', k: 1.3 },
+    ] },
+];
+
 export const COLORS = {
   tableBlue: 0x17539e, tableEdge: 0x0e3a73, frame: 0x22262b,
   floor: 0x37302b, wall: 0x1a1e23,

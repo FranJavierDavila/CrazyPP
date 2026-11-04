@@ -1151,82 +1151,9 @@ export function createFanfareBanner() {
   return { group, draw, canvas, langChanged };
 }
 
-/** r61 · CARTEL DE LA REPETICIÓN del mejor intercambio: banda azul
- *  fantasma que ocupa el sitio del cartel de fanfarria mientras los
- *  fantasmas recrean el rallye. Mismo lenguaje visual (canvas 2D +
- *  plano al RIG sobre la mesa). */
-export function createReplayBanner() {
-  const W = 1024, H = 240;
-  const group = new THREE.Group();
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.42, 0.3328),
-    new THREE.MeshBasicMaterial({
-      map: tex, transparent: true, side: THREE.FrontSide, depthWrite: false,
-    }),
-  );
-  mesh.renderOrder = 6;
-  group.add(mesh);
-  group.position.set(0, 1.86, DIMS.tableCenterZ);
-  group.visible = false;
-
-  function draw(hits) {
-    group.userData.hits = hits || 0;    // para el repintado por idioma
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(8,14,26,0.88)';
-    ctx.strokeStyle = '#6fb7ff';
-    ctx.lineWidth = 10;
-    roundRectPath(ctx, 10, 10, W - 20, H - 20, 34);
-    ctx.fill();
-    ctx.stroke();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(70,160,255,0.85)';
-    ctx.shadowBlur = 22;
-    ctx.fillStyle = '#9fd0ff';
-    ctx.font = '900 86px system-ui, sans-serif';
-    ctx.fillText(T('rep_t'), W / 2, H / 2 - 34);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#eaf4ff';
-    ctx.font = '700 40px system-ui, sans-serif';
-    ctx.fillText(T('rep_chip', { n: hits || 0 }), W / 2, H / 2 + 46);
-    // r62 · PASTILLA «CÁMARA LENTA» (ámbar de cine, auto-dimensionada a la
-    // derecha — el título centrado nunca la alcanza: rep_t es corto)
-    const txtSlow = T('rep_slow');
-    ctx.font = '900 30px system-ui, sans-serif';
-    const wSlow = Math.ceil(ctx.measureText(txtSlow).width) + 44;
-    const hSlow = 54;
-    const xSlow = W - 26 - wSlow;
-    const ySlow = H / 2 - hSlow / 2 + 4;
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(26,18,6,0.92)';
-    roundRectPath(ctx, xSlow - 4, ySlow - 4, wSlow + 8, hSlow + 8, 31);
-    ctx.fill();
-    ctx.fillStyle = '#ffc65c';
-    roundRectPath(ctx, xSlow, ySlow, wSlow, hSlow, 27);
-    ctx.fill();
-    ctx.strokeStyle = '#1a1206';
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    ctx.fillStyle = '#1a1206';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(txtSlow, xSlow + wSlow / 2, ySlow + hSlow / 2 + 1);
-    ctx.textBaseline = 'alphabetic';
-    tex.needsUpdate = true;
-  }
-
-  function langChanged() {
-    // el chip lleva el nº de toques del último draw — se repinta con él
-    if (group.visible) draw(group.userData.hits || 0);
-  }
-
-  return { group, draw, canvas, langChanged };
-}
+/** r115 · RETIRO DEL DUEÑO: el cartel de la REPETICIÓN del mejor
+ *  intercambio (r61) se suprimió con todo el sistema de replay — el
+ *  constructor propio del cartel ya no existe. */
 
 export function createConfetti() {
   // v2.35: lluvia MUCHO más densa (120 -> 430) y repartida también sobre

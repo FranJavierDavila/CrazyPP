@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r113_v36103.py — capa de QA de la ronda 113 (V3.6.104-SDK6).
+"""qa_r113_v36103.py — capa de QA de la ronda 113 (V3.6.105-SDK6).
 
 SEIS AJUSTES DEL DUEÑO sobre el juego vivo:
 
@@ -19,10 +19,11 @@ SEIS AJUSTES DEL DUEÑO sobre el juego vivo:
      bolas rápidas (+0,06/m/s sobre 7) y escoradas/colocación extrema
      (+0,60/m de viaje sobre 0,85); tope 0,85; portal intacto. La IA ya no
      regala puntos con bolas cómodas a la pala.
-  4) SUPERPODERES JUSTOS (5 campeonatos): el flanco del anuncio se INVIERTEn
-     — el poder se anuncia SÓLO con la bola yendo hacia el RIVAL
-     (vel.z < -0,35), nunca con la bola viniendo hacia el jugador: el
-     congelado del cartel ya no roba el golpeo. Locura/Magia/Oeste/
+  4) SUPERPODERES JUSTOS (5 campeonatos) · RE-ANCLA r115: el flanco del
+     anuncio pasa del cruce de velocidad (r113, bola hacia el rival) al
+     GOLPEO del rival — rules.lastHitter pasa a 'ai' justo en el contacto
+     de su pala y la bola sigue en SU campo (z < −1,6 del centro de mesa):
+     el congelado del cartel nace en ese justo momento. Locura/Magia/Oeste/
      Halloween/Orbital.
   5) LA LOCURA · ETAPA 4 (ARKANOID 2) RELAJADA: 9×5=45 ladrillos (antes 54),
      210 s (antes 150), blueStart 0,24 (antes 0,30), convertFirst 20 s
@@ -103,13 +104,14 @@ CHK('Math.max(0, ballSpeed - 7) * 0.05' not in GH,
     'cpu: el fallo viejo plano (×0,05 sin esfuerzo) desapareció')
 
 # ── 4 · SUPERPODERES JUSTOS (5 campeonatos, ficheros servidos) ──
-print('== CAMPEONATOS (flanco invertido + ARK2) ==')
+# r115 · re-ancla: el flanco ya no es velocidad, es el GOLPEO del rival
+print('== CAMPEONATOS (flanco en el golpeo rival + ARK2) ==')
 FLANCOS = {
-    'locura': ('const toward = ball.vel.z < -0.35;', None),
-    'magia': ('const toward = ball.vel.z < -0.35;', None),
-    'oeste': ('const toward = ball.vel.z < -0.35;', None),
-    'halloween': ('if (!b || !(b.vel.z < -0.35)) return;', None),
-    'estacion_orbital': ('const toward = g.ball.vel.z < -0.35;', None),
+    'locura': ("const golpeAi = r.lastHitter === 'ai' && ball.pos.z < -1.6;",),
+    'magia': ("const golpeAi = r.lastHitter === 'ai' && ball.pos.z < -1.6;",),
+    'oeste': ("const golpeAi = r.lastHitter === 'ai' && ball.pos.z < -1.6;",),
+    'halloween': ("const golpeAi = r.lastHitter === 'ai' && !!b && !!b.pos && b.pos.z < -1.6;",),
+    'estacion_orbital': ("const golpeAi = g.rules.lastHitter === 'ai' && g.ball.pos.z < -1.6;",),
 }
 VIEJOS = [
     ('locura', 'ball.vel.z > 0.35'),
@@ -117,15 +119,20 @@ VIEJOS = [
     ('oeste', 'ball.vel.z > 0.35'),
     ('halloween', 'b.vel.z > 0.35'),
     ('estacion_orbital', 'g.ball.vel.z > 0.35'),
+    ('locura', 'ball.vel.z < -0.35'),
+    ('magia', 'ball.vel.z < -0.35'),
+    ('oeste', 'ball.vel.z < -0.35'),
+    ('halloween', 'b.vel.z < -0.35'),
+    ('estacion_orbital', 'g.ball.vel.z < -0.35'),
 ]
-for champ, (aguja, _) in FLANCOS.items():
+for champ, (aguja,) in FLANCOS.items():
     t = open(os.path.join(RAIZ, f'public/championships/{champ}/index.js'),
              encoding='utf-8').read()
-    CHK(aguja in t, f'{champ}: el poder se anuncia SÓLO con la bola hacia el rival')
+    CHK(aguja in t, f'{champ}: el poder nace EN EL GOLPEO del rival (lastHitter=ai, bola en su campo)')
 for champ, viejo in VIEJOS:
     t = open(os.path.join(RAIZ, f'public/championships/{champ}/index.js'),
              encoding='utf-8').read()
-    CHK(viejo not in t, f'{champ}: el flanco viejo (bola hacia el jugador) desapareció')
+    CHK(viejo not in t, f'{champ}: el flanco viejo por velocidad ({viejo}) desapareció')
 
 # ── 5 · LA LOCURA · ETAPA 4 RELAJADA ──
 t_loc = open(os.path.join(RAIZ, 'public/championships/locura/index.js'),
@@ -154,6 +161,8 @@ REGRESION = [
     ("navigator.serviceWorker.register('sw.js'", 'r109 PWA intacta'),
     ('LA MESA DE LA CASA — RETIRADA', 'r114 diorama retirado (petición del dueño)'),
     ("localStorage.getItem('pp_estilo_v1') || 'clasico'", 'r112 estilos intactos'),
+    ('RETIRO DEL DUEÑO: la REPETICIÓN DEL MEJOR INTERCAMBIO (r61)',
+     'r115 repetición suprimida (petición del dueño)'),
 ]
 for aguja, nombre in REGRESION:
     CHK(aguja in GH, 'regresión: ' + nombre)

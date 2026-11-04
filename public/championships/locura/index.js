@@ -3473,7 +3473,7 @@ class ArcadeController {
     this._powerT = 0;          // segundos restantes del poder activo
     this._powerKind = '';      // 'confetti' | 'redball'
     this._powerCd = 0;         // cooldown hasta el próximo poder
-    this._toward = false;      // la bola venía hacia el jugador (flanco)
+    this._hitAi = false;       // flanco r115: el rival acababa de golpear
     this._rallyFired = false;  // ya se lanzó un poder en este rallye
     this._lastPower = '';      // para alternar confeti/bola
     this._ballFx = null;       // respaldo de DIMS/malla de la BOLA LOCA
@@ -3730,7 +3730,7 @@ class ArcadeController {
     this._powerT = 0;
     this._powerKind = '';
     this._powerCd = 0;
-    this._toward = false;
+    this._hitAi = false;
     this._rallyFired = false;
     this._lastPower = '';
     this._pendingPower = null;   // v2.36: sin avisos colgados de antes
@@ -4081,12 +4081,12 @@ class ArcadeController {
 
   /* ============ v2.35 · SUPERPODERES DEL RIVAL (en pleno rallye) ============ */
 
-  /** ¿Toca lanzar superpoder? r113 · PETICIÓN DEL DUEÑO: NUNCA con la bola
-   *  viniendo hacia el jugador — el congelado del anuncio (v2.40) le robaba
-   *  el golpeo. El flanco se invierte: el poder se anuncia SOLO con la bola
-   *  ACABA de salir hacia el RIVAL (vel.z < -0,35, justo tras tu golpeo):
-   *  el anuncio vive mientras la bola viaja al otro lado y el efecto entra
-   *  cuando la bola regresa. Puertas: rally activo, cooldown, máximo 1 por
+  /** ¿Toca lanzar superpoder? r115 · PETICIÓN DEL DUEÑO: el poder se
+   *  anuncia EN EL GOLPEO del rival — bola en SU campo y su pala
+   *  golpeándola: en ese justo momento puede aparecer el lanzamiento
+   *  (el congelado del anuncio v2.40 nace del contacto; nunca en pleno
+   *  vuelo hacia el jugador, ni tras tu golpeo como en r113).
+   *  Puertas: rally activo, cooldown, máximo 1 por
    *  rallye, azar y que no haya ya un aviso colgando (v2.36). */
   maybeTriggerPower() {
     if (!this.active || this._pendingPower) return;
@@ -4095,14 +4095,18 @@ class ArcadeController {
     const r = g.rules;
     const ball = g.ball;
     if (!ball || !ball.vel) return;
-    if (r.state !== 'rally' || this._rallyFired) { this._toward = false; return; }
+    if (r.state !== 'rally' || this._rallyFired) { this._hitAi = false; return; }
     const minHits = (this.data && this.data.powerTrigger &&
       this.data.powerTrigger.minRallyHits) || 1;
-    if ((r.rallyHits || 0) < minHits) { this._toward = false; return; }
-    // flanco r113: la bola ACABA de ponerse rumbo AL RIVAL (vel.z < -0,35)
-    const toward = ball.vel.z < -0.35;
-    const edge = toward && !this._toward;
-    this._toward = toward;
+    if ((r.rallyHits || 0) < minHits) { this._hitAi = false; return; }
+    // flanco r115 (dueño): el poder nace EN EL GOLPEO del rival —
+    // rules.lastHitter pasa a 'ai' justo en el contacto de su pala
+    // (registerPaddleHit) y la bola sigue en SU campo (z < −1,6 del centro
+    // de mesa; el rival vive en z negativo). El congelado del anuncio nace
+    // en ese justo momento, nunca en pleno vuelo hacia el jugador.
+    const golpeAi = r.lastHitter === 'ai' && ball.pos.z < -1.6;
+    const edge = golpeAi && !this._hitAi;
+    this._hitAi = golpeAi;
     if (!edge) return;
     const chance = (this.data && this.data.powerTrigger &&
       this.data.powerTrigger.chance) || ARCADE_DEFAULTS.powerChance;

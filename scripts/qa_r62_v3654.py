@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """r62 · v3.6.54-SDK6 · FASE 56 «Sonido real, háptica que mide y el momento
-cine» — QA de las TRES features aprobadas por el dueño:
+cine» — QA de las features de la ronda. r115 · RE-ANCA HONESTA: la cámara
+lenta de la REPETICIÓN (feature 3a de la r62) se retiró con el replay que
+suprimió el dueño — la capa verifica ahora su AUSENCIA; la dilatación de la
+BOLA DE PARTIDO (match point) sigue viva:
 
   1) SONIDO REAL — muestras por síntesis modal física (bola de 40 mm contra
      cada superficie) incrustadas en base64, decodificadas una sola vez y
@@ -10,9 +13,9 @@ cine» — QA de las TRES features aprobadas por el dueño:
      Fallback: la síntesis de siempre (el audio NUNCA rompe el juego).
   2) HÁPTICA ESCALADA — intensidad Y duración crecen con la velocidad real
      en los golpes (rally + saque). ARKANOID conserva su refuerzo v2.44.
-  3) CÁMARA LENTA — la repetición del mejor intercambio corre al 50% (con
-     pastilla ámbar en el cartel) y la BOLA DE PARTIDO se dilata en vivo
-     (física 0,34× con regreso suave ~1,15 s, sólo local).
+  3) CÁMARA LENTA — la BOLA DE PARTIDO se dilata en vivo (física 0,34× con
+     regreso suave ~1,15 s, sólo local). La cámara lenta del replay
+     (REP_SLOWMO + pastilla ámbar) se retiró en r115 con la repetición.
 
 Uso: python3 scripts/qa_r62_v3654.py        (servidor dev en :3000)
 """
@@ -73,11 +76,7 @@ AGUJAS = [
      "arkOn ? 85 : Math.round(34 + 62 * sH));"),
     ("háptica: SAQUE escalado (intensidad y duración)",
      "Math.min(1, 0.45 + sS * 0.5), Math.round(55 + 45 * sS));"),
-    # --- 3 · cámara lenta ---
-    ("cine: factor de la repetición (mitad de tiempo real)",
-     "const REP_SLOWMO = 0.5;"),
-    ("cine: el reloj de la repetición corre a la mitad",
-     "this._repT += dt * REP_SLOWMO;"),
+    # --- 3 · cámara lenta (r115: la del replay se retiró con él) ---
     ("cine: reloj de dilatación en el tick",
      "if (this._dilT > 0) {"),
     ("cine: regreso suave del factor (punch 0,34 → 1)",
@@ -87,8 +86,6 @@ AGUJAS = [
     # r79: el call lleva el observador de traspaso _xNet (mismo dt dilatado)
     ("cine: la física de la bola recibe el dt dilatado",
      "stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);"),
-    ("cine: pastilla ámbar en el cartel de repetición",
-     "const txtSlow = T('rep_slow');"),
 ]
 
 NEGATIVAS = [
@@ -98,9 +95,15 @@ NEGATIVAS = [
      "this.haptic(e.paddleIndex ?? this.paddleHand, 0.8, 90);"),
     ("sfx: la llamada de red sin fuerza retirada",
      "this.audio.net(pan);"),
+    ("r115: la cámara lenta del replay retirada con la repetición",
+     "const REP_SLOWMO = 0.5;"),
+    ("r115: el reloj del replay retirado",
+     "this._repT += dt * REP_SLOWMO;"),
+    ("r115: la pastilla ámbar del cartel retirada",
+     "const txtSlow = T('rep_slow');"),
 ]
 
-CLAVES = ['rep_slow']
+CLAVES = []
 
 MECANICA = """async () => {
   const out = [];
@@ -219,36 +222,10 @@ MECANICA = """async () => {
   }
   out.push({ ok: g._dilT === 0 && g._dilF === 1,
              lab: 'cine: regreso completo a tiempo normal (sin salto brusco)' });
-  // 3b · repetición a la mitad
-  g._repReset();
-  const stride = g._repStride;
-  for (let i = 0; i < 30; i++) {
-    const o = i * stride;
-    g._repBuf[o] = 0; g._repBuf[o + 1] = 1; g._repBuf[o + 2] = -1 - i * 0.1;
-    g._repBuf[o + 3] = 1; g._repBuf[o + 4] = 0.9; g._repBuf[o + 5] = -4;
-    g._repBuf[o + 6] = 0; g._repBuf[o + 7] = 0; g._repBuf[o + 8] = 0; g._repBuf[o + 9] = 1;
-    g._repBuf[o + 10] = 0.016;
-  }
-  g._repN = 30;
-  g._repCierra(7);
-  g._repArranca();
-  g._repT = 0;
-  g._repTick(0.2);
-  out.push({ ok: Math.abs(g._repT - 0.1) < 1e-6,
-             lab: 'cine: la repetición corre a la MITAD (0,2 s reales → 0,1 s de replay)' });
-  // 3c · la pastilla ámbar está pintada en el canvas del cartel (escaneo
-  // de banda: el texto es OSCURO dentro de la pastilla, así que se busca
-  // CUALQUIER píxel ámbar #ffc65c en la zona derecha del cartel)
-  const cxb = g.replayBanner.canvas.getContext('2d');
-  const banda = cxb.getImageData(640, 90, 384, 70).data;
-  let ambar = 0;
-  for (let i = 0; i < banda.length; i += 4) {
-    if (banda[i] > 200 && banda[i + 1] > 140 && banda[i + 2] < 140) ambar++;
-  }
-  out.push({ ok: ambar > 500,
-             lab: 'cine: pastilla CÁMARA LENTA pintada en ámbar (' + ambar + ' píxeles)' });
-  g._repTermina();
-  // 3d · la dilatación NO se arma online (guard)
+  // 3b · r115: la repetición a la mitad se RETIRÓ con el replay
+  out.push({ ok: typeof g._repTick === 'undefined' && typeof g._repArranca === 'undefined',
+             lab: 'cine: el motor del replay ya no existe (retiro r115)' });
+  // 3c · la dilatación NO se arma online (guard)
   const onlineSave = g.net.online;
   try { Object.defineProperty(g.net, 'online', { value: true, configurable: true }); } catch (e) { /* */ }
   g._dilT = 0;

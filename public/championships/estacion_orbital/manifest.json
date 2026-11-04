@@ -15,6 +15,13 @@
     "id": "estacion_orbital_rival",
     "name": "ASTRO",
     "kind": "stock",
+    "personalidad": {
+      "agresividad": 3,
+      "precision": 4,
+      "constancia": 3,
+      "caracter": "sereno",
+      "cerebro": "equilibrado"
+    },
     "states": [
       "idle",
       "duelo",

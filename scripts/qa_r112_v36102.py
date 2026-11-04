@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r112_v36102.py — capa de QA de la ronda 112 (V3.6.104-SDK6).
+"""qa_r112_v36102.py — capa de QA de la ronda 112 (V3.6.105-SDK6).
 
 HITO M5a del roadmap MEJORAS.md · IA CON ESTILOS (12 personalidades).
 
@@ -70,7 +70,11 @@ AGUJAS_C12 = [
     ("const est = this._estiloActivo();", 'c12: consumo del registro (estilo activo en el juego)'),
     ("localStorage.getItem('pp_estilo_v1') || 'clasico'", 'c12: ppEstilo persistido (pp_estilo_v1)'),
     ('_estiloActivo()', 'c12: _estiloActivo (guardia de contexto)'),
-    ('if (this.champs && this.champs.active) return null;', 'c12: NUNCA en campeonato (herencia M5b)'),
+    # r115 · re-ancla: la herencia M5b ATERRIZÓ — el carácter del manifest
+    # del campeonato se traduce a un estilo M5a (con toggle del dueño)
+    ('// Herencia de estilos a campeonatos (M5b): el carácter del manifest',
+     'c12: herencia M5b ATERRIZADA (manifest → estilo M5a)'),
+    ('if (this.rivStyleOn === false) return null;', 'c12: toggle del dueño sobre la herencia'),
     ('if (this.net && this.net.online) return null;', 'c12: NUNCA en online'),
     ('if (est) cfg = estiloAplicar(cfg, est);', 'c12: merge en _aiKAplica'),
     ("btn('estilo:prev', 56, y, 120, 56, '‹'", 'c12: selector ‹ en AJUSTES › JUEGO'),
@@ -96,8 +100,9 @@ CHK("msg_estilo: 'Rival: {v} · same physics, new character'," in GH, 'i18n EN: 
 CHK("__PP_TELE.ev('ai_style', { est: this.ppEstilo, dif: this.difficulty });" in GH,
     'telemetría: ai_style emitido en onMatchStart')
 CAT = json.load(open(os.path.join(RAIZ, 'scripts/telemetria_catalogo.json')))
-CHK(CAT['version'] == 7, f"catálogo v7 (={CAT['version']})")
-CHK(len(CAT['eventos']) == 17, f"catálogo documenta 17 eventos (={len(CAT['eventos'])})")
+# r115 · re-ancla: el catálogo vive en v8 (carrera entró en el v7 tardío)
+CHK(str(CAT['version']).lstrip('v') == '8', f"catálogo v8 (={CAT['version']})")
+CHK(len(CAT['eventos']) == 18, f"catálogo documenta 18 eventos (={len(CAT['eventos'])})")
 nombres = {e['nombre'] for e in CAT['eventos']}
 CHK('ai_style' in nombres, 'catálogo: ai_style documentado')
 

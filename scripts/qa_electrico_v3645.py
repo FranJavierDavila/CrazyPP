@@ -65,7 +65,7 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.104-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 53)'),
+        ('3.6.105-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 53)'),
         # i18n del ELÉCTRICO (c00 → game.html compilado)
         ("ark_elec_on: '¡LADRILLO ELÉCTRICO! Dale con la BOLA',",
          'eléctrico: i18n ES del sellado (c00→game.html)'),

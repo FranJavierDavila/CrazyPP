@@ -3623,7 +3623,7 @@ class WizardController {
     this._pendingPower = null;   // cfg del poder armado (fase de aviso)
     this._pendT = 0;
     this._rallyFired = false;    // máximo 1 poder por rallye
-    this._toward = false;        // flanco: la bola acaba de venir hacia ti
+    this._hitAi = false;         // flanco r115: el rival acababa de golpear
     this._ballFx = null;         // respaldo de DIMS/malla de la BOLA LOCA
     this._locaPh = 0;            // v2.72: fase del vaivén errático
     this._locaJx = 0;            // ráfaga aleatoria vigente…
@@ -4234,15 +4234,16 @@ class WizardController {
     const r = g.rules;
     const ball = g.ball;
     if (!ball || !ball.vel) return;
-    if (r.state !== 'rally' || this._rallyFired) { this._toward = false; return; }
+    if (r.state !== 'rally' || this._rallyFired) { this._hitAi = false; return; }
     const minHits = WIZ_POWER.minRallyHits;
-    if ((r.rallyHits || 0) < minHits) { this._toward = false; return; }
-    // r113 · flanco INVERTIDO (petición del dueño): NUNCA con la bola viniendo
-    // hacia el jugador (el congelado del aviso le robaba el golpeo) — el poder
-    // se anuncia SOLO con la bola ACABA de salir hacia el RIVAL (vel.z < -0,35)
-    const toward = ball.vel.z < -0.35;
-    const edge = toward && !this._toward;
-    this._toward = toward;
+    if ((r.rallyHits || 0) < minHits) { this._hitAi = false; return; }
+    // r115 · flanco del DUEÑO: el poder nace EN EL GOLPEO del rival —
+    // rules.lastHitter pasa a 'ai' justo en el contacto de su pala y la
+    // bola sigue en SU campo (z < −1,6 del centro de mesa). El congelado
+    // del aviso nace en ese justo momento, nunca en pleno vuelo.
+    const golpeAi = r.lastHitter === 'ai' && ball.pos.z < -1.6;
+    const edge = golpeAi && !this._hitAi;
+    this._hitAi = golpeAi;
     if (!edge) return;
     if (Math.random() < WIZ_POWER.chance) this.firePower();
   }

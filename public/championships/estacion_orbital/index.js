@@ -7144,7 +7144,7 @@ class StockController {
     this._powerCd = 6;            // v3.2: antes 8 (el primer poder llega antes)
     this._dueloT = 0;             // v3.2: relojes del disparo redundante
     this._lastPowerT = 0;
-    this._toward = false;
+    this._hitAi = false;
     // v3.2.1: expresiones del ASTRO a cero en cada duelo
     this._streakP = 0; this._streakAi = 0;
     this._exprT = 0; this._picandoDone = false;
@@ -7924,7 +7924,8 @@ class StockController {
     this._dueloT = (this._dueloT || 0) + dt;
     // v3.2 · DISPARO REDUNDANTE (lección del casco: el gancho por PUNTO
     // puede no llegar; La Locura dispara por RALLY y SÍ funciona):
-    // (a) en rally con la bola viniendo al jugador (edge vel.z>0.35) y
+    // (a) en rally con el RIVAL ACABANDO DE GOLPEAR (flanco r115 del
+    // dueño: rules.lastHitter pasa a 'ai' con la bola en SU campo) y
     // cooldown libre → tirada con la probabilidad del poder;
     // (b) RED DE SEGURIDAD: si en 22 s de duelo no ha saltado NADA, se
     // FUERZA el poder (garantía anti-silencio, pase lo que pase con los
@@ -7934,14 +7935,15 @@ class StockController {
       if (urgente) {
         this._powerCd = 0;
         this._quizasPoder(true);
-      } else if (g.rules.state === 'rally' && g.ball && g.ball.vel) {
-        // r113 · flanco INVERTIDO (dueño): sólo con la bola yendo al RIVAL
-        const toward = g.ball.vel.z < -0.35;
-        const edge = toward && !this._toward;
-        this._toward = toward;
+      } else if (g.rules.state === 'rally' && g.ball && g.ball.pos) {
+        // r115 · flanco del DUEÑO: el poder nace EN EL GOLPEO del rival —
+        // la bola sigue en SU campo (z < −1,6 del centro de mesa)
+        const golpeAi = g.rules.lastHitter === 'ai' && g.ball.pos.z < -1.6;
+        const edge = golpeAi && !this._hitAi;
+        this._hitAi = golpeAi;
         if (edge && this._powerCd <= 0) this._quizasPoder();
       } else {
-        this._toward = false;
+        this._hitAi = false;
       }
     }
     // FASE 1: aviso
@@ -8071,7 +8073,7 @@ class StockController {
     const g = this.game;
     this._warn = null;
     this._act = null;
-    this._toward = false;
+    this._hitAi = false;
     this._psOculta();                            // v3.2: fuera el cartel
     if (this.beam) { this.beam.visible = false; this.beamMat.opacity = 0; }
     if (this.dronTractor) this.dronTractor.visible = false;   // v3.6.0

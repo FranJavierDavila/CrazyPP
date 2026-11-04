@@ -162,8 +162,14 @@ export class Rules {
     this.onMatchStart = null;
   }
 
-  /** Nombre del oponente para los mensajes (CPU o humano remoto). */
-  opp() { return T('opp_' + (this.oppLabel || 'cpu')); }
+  /** Nombre del oponente para los mensajes (CPU o humano remoto).
+   *  M5b (r115) · oppName: nombre PROPIO del rival de la escalera de
+   *  carrera (ROKO, MARTA…); lo pone el núcleo al desafiar y lo retira
+   *  al terminar. Sin él, el rótulo clásico opp_label de siempre. */
+  opp() {
+    if (this.oppName) return this.oppName;
+    return T('opp_' + (this.oppLabel || 'cpu'));
+  }
 
   other(s) { return s === 'player' ? 'ai' : 'player'; }
 

@@ -110,7 +110,9 @@ def bloque_catalogo():
 
     # ronda 79: 10 eventos (net_match se añade al catálogo — métricas técnicas de red)
     # r112 (M5a): el catálogo v7 documenta 17 eventos (+ ai_style)
-    chk(len(nombres_cat) == 17, f'el catálogo documenta 17 eventos ({len(nombres_cat)})')
+    # r115 · re-ancla honesta: el catálogo vive en 18 (carrera entró con la
+    # escalera de carrera y la aguja se quedó en 17 — deriva pre-existente)
+    chk(len(nombres_cat) == 18, f'el catálogo documenta 18 eventos ({len(nombres_cat)})')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')

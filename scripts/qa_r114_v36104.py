@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r114_v36104.py — capa de QA de la ronda 114 (V3.6.104-SDK6).
+"""qa_r114_v36104.py — capa de QA de la ronda 114 (V3.6.105-SDK6).
 
 LA CORRECCIÓN BLOQUEANTE del menú en VR (informe del dueño tras V3.6.103):
 
@@ -101,8 +101,8 @@ REGRESION = [
 ]
 for aguja, nombre in REGRESION:
     CHK(aguja in GH, 'regresión: ' + nombre)
-CHK(VER_OK if (VER_OK := ('3.6.104-SDK6' in GH)) else False,
-    'sello de versión 3.6.104-SDK6 en el juego')
+CHK(VER_OK if (VER_OK := ('3.6.105-SDK6' in GH)) else False,
+    'sello de versión 3.6.105-SDK6 en el juego')
 
 # ── 5 · EN VIVO (Playwright): el heal respira sin XR ──
 PORT = 8914

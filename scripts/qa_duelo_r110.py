@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_duelo_r110 — CAPA GATE · V3.6.104-SDK6, r110 «DUELO REPARADO».
+"""qa_duelo_r110 — CAPA GATE · V3.6.105-SDK6, r110 «DUELO REPARADO».
 
 Informe del dueño tras una partida real con amigos: «es imposible golpear
 la bola… las palas no aparecen donde deberían… veo su pelota cuando mueve

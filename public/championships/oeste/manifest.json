@@ -10,6 +10,13 @@
     "name": "FORAJIDO",
     "oppLabel": "forajido",
     "kind": "forajido del salvaje oeste",
+    "personalidad": {
+      "agresividad": 4,
+      "precision": 4,
+      "constancia": 3,
+      "caracter": "orgulloso",
+      "cerebro": "duelista"
+    },
     "states": [
       "present",
       "idle",

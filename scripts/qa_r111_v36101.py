@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r111_v36101.py — capa de QA de la ronda 111 (V3.6.104-SDK6).
+"""qa_r111_v36101.py — capa de QA de la ronda 111 (V3.6.105-SDK6).
 
 HITO M4 del roadmap MEJORAS.md · ONBOARDING < 60 SEGUNDOS.
 
@@ -51,8 +51,10 @@ AGUJAS = [
      "tarjeta ▶ JUGAR a toda fila (944×136) en y=240"),
     ("'#37b24d', '#1e7c33', PP_ICONS.match, true);",
      '▶ JUGAR verde vivo con ancho completo (wide=true)'),
-    ("this._modeCard(rects, 'tut:go', 40, 394, 944, 96, T('tut_hub')",
-     'banner de la academia justo bajo ▶ JUGAR (y=394)'),
+    # r115 · re-ancla: el HUB vive en parrilla (la escalera de carrera
+    # M5b ocupa la media celda izquierda; la academia, la derecha)
+    ("this._modeCard(rects, 'tut:go', X1, 394, CW, CH, T('tut_hub')",
+     'banner de la academia en parrilla (X1, y=394, junto a carrera)'),
     ("this._modeCard(rects, 'page:opts', X1, y, CW, CH, T('opts_title')",
      'AJUSTES en la parrilla (media celda, X1)'),
     ('hub_play', 'i18n clave hub_play usada en c12'),
@@ -135,7 +137,8 @@ CHK("__PP_TELE.ev('primer_rally', {" in GH,
 CHK('window.__PP_TELE.ev(\'tut_end\', {' in GH,
     'telemetría: tut_end emitido (cierre de la academia)')
 CAT = json.load(open(os.path.join(RAIZ, 'scripts/telemetria_catalogo.json')))
-CHK(CAT['version'] >= 7, f"catálogo v7+ (={CAT['version']})")
+# r115 · re-ancla: versión del catálogo comparable (v8 llega como str)
+CHK(int(str(CAT['version']).lstrip('v')) >= 7, f"catálogo v7+ (={CAT['version']})")
 CHK(len(CAT['eventos']) >= 17, f"catálogo documenta 17+ eventos (={len(CAT['eventos'])})")
 nombres = {e['nombre'] for e in CAT['eventos']}
 CHK({'primer_rally', 'tut_end'} <= nombres, 'catálogo: primer_rally + tut_end documentados')

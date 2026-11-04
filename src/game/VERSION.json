@@ -1,10 +1,10 @@
 {
-  "version": "3.6.104-SDK6",
-  "fase": 106,
-  "faseNombre": "ANCLA POR ESTANCIA (MENÚ) + RETIRO DEL DIORAMA",
+  "version": "3.6.105-SDK6",
+  "fase": 107,
+  "faseNombre": "RETIRO DE LA REPETICIÓN DEL MEJOR PUNTO + SUPERPODER EN EL GOLPEO RIVAL",
   "sdk": "1.6.0",
-  "fecha": "2026-11-03",
-  "hub": "v36104-sdk6",
+  "fecha": "2026-11-04",
+  "hub": "v36105-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r104",
   "tamano": 10597962,
-  "golden": "4a9ef5d59a2e4ed2d5b3c976d17e64f090649096c9a1dfdcee6fd660e39b1dcb"
+  "golden": "d48478e67b8fe52f59a8d43c502e85f6ba528ba42d98236856eeeff0d5dbb09a"
 }

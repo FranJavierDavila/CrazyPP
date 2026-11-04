@@ -373,6 +373,61 @@ try {
   chk(al(j) && al(j).nivel === "verde" && al(j).items.length === 0,
     "O4 · almacén vacío → VERDE (nada que alarmar)");
 
+  // O5 · sin_sonido (roadmap MEJORAS.md M5 · alertas de telemetría):
+  //     señales de audio roto = errores con marcador audio/sonido/decode/sfx
+  //     + eventos golpe_sin_sonido. Los errores SIN marcador NO cuentan.
+  await worker.fetch(
+    req("/", {
+      method: "POST",
+      body: JSON.stringify([
+        ev("boot", { sid: "m5b-a" }),
+        ev("error", { m: "decodeAudioData falló", sid: "m5b-a" }),
+        ev("error", { m: "boom_a sin marcador", sid: "m5b-a" }), // fuera
+        ev("boot", { sid: "m5b-b" }),
+        ev("golpe_sin_sonido", { sid: "m5b-b" }),
+        ev("boot", { sid: "m5b-c" }),
+        ev("error", { m: "AudioContext suspendido", sid: "m5b-c" }),
+      ]),
+      headers: { "content-type": "text/plain" },
+    }),
+    env,
+    {}
+  );
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  const aSon = al(j).items.find((x) => x.id === "sin_sonido");
+  chk(aSon && aSon.nivel === "amarillo" && aSon.datos.senales === 3 && aSon.datos.sesiones === 3,
+    `O5 · sin_sonido AMARILLO 3 señales / 3 sesiones (${JSON.stringify(aSon)})`);
+  const aErr5 = al(j).items.find((x) => x.id === "errores_js");
+  chk(aErr5 && aErr5.datos.errores === 3 && aErr5.datos.sesiones === 3,
+    `O5 · errores_js sigue contando TODOS los errores (3: 2 audio + 1 sin marcador, sin filtrar) (${JSON.stringify(aErr5?.datos)})`);
+  chk(al(j).items.find((x) => x.id === "fps_bajo") === undefined &&
+      al(j).items.find((x) => x.id === "vr_cortas") === undefined,
+    "O5 · fps_bajo y vr_cortas NO se ven afectados por el bloque M5b");
+
+  // O5b · rojo: 6 señales más en m5b-a → 9 señales / 3 sesiones = media 3
+  await worker.fetch(
+    req("/", {
+      method: "POST",
+      body: JSON.stringify([1, 2, 3, 4, 5, 6].map((i) =>
+        ev("error", { m: "sfx crear fallo " + i, sid: "m5b-a" })
+      )),
+      headers: { "content-type": "text/plain" },
+    }),
+    env,
+    {}
+  );
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  const aSonR = al(j).items.find((x) => x.id === "sin_sonido");
+  chk(aSonR && aSonR.nivel === "rojo" && aSonR.datos.senales === 9 && aSonR.datos.media === 3,
+    `O5b · sin_sonido ROJO 9 señales / 3 sesiones = media 3 (${JSON.stringify(aSonR)})`);
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8&sid=m5b-c"), env, {}));
+  chk(al(j).items.find((x) => x.id === "sin_sonido")?.datos.senales === 1,
+    "O5b · sin_sonido respeta el filtro ?sid (m5b-c: 1 señal)");
+  await worker.fetch(req("/", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {});
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(al(j).nivel === "verde" && al(j).items.length === 0,
+    "O5c · tras la purga el almacén vuelve a VERDE sin items");
+
   // J · CORS en todas las respuestas
   r = await worker.fetch(req("/", { method: "OPTIONS" }), env, {});
   chk(r.status === 204 && r.headers.get("access-control-allow-origin") === "*",

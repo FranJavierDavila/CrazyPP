@@ -51,9 +51,9 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 ## M5 · Arnés anti-regresión + alertas de telemetría
 
 **Qué**: que ninguna versión futura rompa lo que ya funciona.
-- [ ] Arnés de regresión automatizado: arranque del game.html en Playwright + 30 checks invariantes (versión, audio SDK, menú, cancha, saque, IA responde, HUD, hall).
-- [ ] Compara JSON de checks contra línea base (`tests/baseline_checks.json`) y FALLA si algo se mueve sin justificación.
-- [ ] Alertas de telemetría: si FPS medio < 60 sostenido, errores JS > 0, o golpes sin sonido en producción → reporte `scripts/alerta_telemetria.py` con salida clara para el dueño.
+- [x] Arnés de regresión automatizado: arranque del game.html en Playwright + 30 checks invariantes (versión, audio SDK, menú, cancha, saque, IA responde, HUD, hall).
+- [x] Compara JSON de checks contra línea base (`tests/baseline_checks.json`) y FALLA si algo se mueve sin justificación.
+- [x] Alertas de telemetría: si FPS medio < 60 sostenido, errores JS > 0, o golpes sin sonido en producción → reporte `scripts/alerta_telemetria.py` con salida clara para el dueño. *(M5b, r117: alarma `sin_sonido` en el worker + reporte del dueño con códigos de salida 0/1/2/3 — fps_bajo/errores_js/vr_cortas ya vivían desde la ronda 18.)*
 - **Criterio de aceptación**: romper a propósito una aguja hace fallar el arnés; suite < 3 min.
 
 ## M6 · PWA instalable
@@ -85,13 +85,14 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 | M2 onboarding <60 s | 3.6.101-SDK6 | r111 · qa_r111 VERDE | ☑ producción | 2026-11 |
 | M3 estilos de IA (12) | 3.6.102-SDK6 | r112 · arnés 12/0 | ☑ producción | 2026-11 |
 | M4 reto diario (ELO completo pendiente) | vivo | r76+ · qa_r76 | ☐ parcial | — |
-| M5 arnés físico+vivo (alertas de telemetría pendientes) | vivo | qa_arnes_* VERDE | ☐ parcial | — |
+| M5 arnés físico+vivo + alertas de telemetría (M5b: `sin_sonido` + `alerta_telemetria.py`) | vivo | test_local 67/0 · deploy worker 2026-11-04 | ☑ producción | 2026-11-04 |
 | M6 PWA instalable | 3.6.99-SDK6 | r109 · qa_r109 VERDE | ☑ producción | 2026-11 |
 | M7 contenido (5 campeonatos) | continuo | FASE 20-107 | ☐ en curso | — |
 | Ajustes del dueño: física fuerte + CPU + superpoderes justos + Locura etapa 4 | 3.6.103-SDK6 | r113 · Task 218 | ☑ producción | 2026-11-03 |
 | Ajustes del dueño: chincheta por estancia + fuera el diorama | 3.6.104-SDK6 | r114 · Task 219 | ☑ producción | 2026-11-04 |
 | Ajustes del dueño: fuera la repetición del mejor punto + superpoder EN EL GOLPEO rival (+ M5B escalera de carrera y herencia de estilos de la sesión perdida) | 3.6.105-SDK6 | r115 · Task 220 | ☑ producción | 2026-11-04 |
 | Ajustes del dueño: Academia paso 4 sin bloqueos + «PASE BAJO»/logros del PRO TRAINING (regla de casa: QA dirigida por cambio) | 3.6.106-SDK6 | r116 · Task 221 | ☑ producción | 2026-11-04 |
+| M5b · alertas de telemetría: alarma `sin_sonido` en el worker (errores con marcador audio + futuro `golpe_sin_sonido`) + reporte del dueño `scripts/alerta_telemetria.py` (salidas 0/1/2/3) | worker (infra) | r117 · Task 222 | ☑ producción | 2026-11-04 |
 
 ### Pipeline estándar (recordatorio para cada ronda)
 1. Explorar módulos afectados (c12 con base64: leer SOLO por rangos con python3).

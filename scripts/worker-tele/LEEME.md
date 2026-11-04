@@ -67,10 +67,10 @@ También en Pages: https://franjavierdavila.github.io/CrazyPP/telemetria.html
 (mismo visor, sin tocar nada local — desde la ronda 18 muestra ARRIBA DEL
 TODO la tarjeta «Alarmas de producción» con el nivel global y cada alarma).
 
-ALARMAS (ronda 18 · roadmap MEJORAS.md M2b)
+ALARMAS (ronda 18 · M2b — ampliada en M5b)
 -------------------------------------------
 El resumen (?resumen=1) devuelve el bloque `alarmas` — interpreta los
-agregados y avisa de los tres síntomas que matan la retención en el casco:
+agregados y avisa de los síntomas que matan la retención en el casco:
 
   fps_bajo    media de vr_end.fps < 72 (confort Quest) con ≥3 muestras →
               AMARILLO; < 60 (mínimo jugable) → ROJO.
@@ -79,6 +79,11 @@ agregados y avisa de los tres síntomas que matan la retención en el casco:
   vr_cortas   sesiones VR cerradas (vr_end o fechadas por vr_ping) que
               duran < 60 s = posible crash al entrar: ≥ 25% con ≥ 3
               sesiones → AMARILLO; ≥ 50% → ROJO.
+  sin_sonido  (M5b) golpes sin sonido: errores con marcador de audio en el
+              mensaje (audio/sonido/decode/sfx) + eventos `golpe_sin_sonido`
+              (el juego aún no los envía: la alarma queda preparada — el día
+              que lleguen, disparan sin otro deploy). ≥ 1 por sesión →
+              AMARILLO; ≥ 3 → ROJO.
 
 Estructura: {"nivel": "verde"|"amarillo"|"rojo",
              "items": [{id, nivel, msg, datos}]}.
@@ -94,11 +99,26 @@ fila pequeña (<2 KB). Para tener un problema real de coste necesitarías
 cientos de jugadores diarios con sesiones larguísimas — y aún así el plan
 de pago son 5 USD/mes.
 
+REPORTE DEL DUEÑO (M5b · scripts/alerta_telemetria.py)
+------------------------------------------------------
+Lectura en un vistazo de las alarmas de producción, sin abrir el panel:
+
+    python3 scripts/alerta_telemetria.py            # reporte humano
+    python3 scripts/alerta_telemetria.py --json     # salida máquina (cron)
+    python3 scripts/alerta_telemetria.py --sid XYZ  # reescala a una sesión
+
+Códigos de salida para automatizar: 0 VERDE · 1 AMARILLO · 2 ROJO ·
+3 ERROR de red/clave (no es alarma). Usa curl (workers.dev bloquea urllib)
+y lee la clave de .clave-produccion. No duplica umbrales: reporta lo que el
+worker declara y añade contexto (FPS medio, duraciones, versión más activa).
+
 QA
 --
 La capa J (scripts/qa_telemetria.py) verifica el worker SIN nube: ejecuta el
 mismo worker.js contra SQLite real (node:sqlite) con el harness
 scripts/worker-tele/test_local.mjs — contrato completo, saneo, clave,
 agregados SQL, ALARMAS (bloque O: perfil malo rojo, perfil sano verde,
-fronteras amarillo/rojo, filtro sid, almacén vacío) y privacidad (61
-checks). Lo que pasa esa prueba es byte a byte lo que se despliega.
+fronteras amarillo/rojo, filtro sid, almacén vacío) y privacidad (67
+checks tras M5b: O5/O5b/O5c cubren sin_sonido — amarillo, rojo, filtro sid,
+los errores sin marcador NO cuentan y la purga vuelve a verde). Lo que pasa
+esa prueba es byte a byte lo que se despliega.

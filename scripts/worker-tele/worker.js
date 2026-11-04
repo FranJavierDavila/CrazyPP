@@ -33,6 +33,11 @@
  *   porDia      [{dia,eventos,boots,sesiones}] últimos 30 días (DAU)
  *   versiones   [{v,eventos,sesiones}] (adopción por versión)
  *
+ * Ronda M5b (roadmap MEJORAS.md M5 · alertas de telemetría): el bloque
+ * `alarmas` gana el item `sin_sonido` (golpes sin sonido: errores con
+ * marcador de audio o eventos golpe_sin_sonido) y nace el reporte del
+ * dueño scripts/alerta_telemetria.py (lectura ?resumen=1 + salida clara).
+ *
  * Ronda 18 (roadmap MEJORAS.md M2b): el resumen añade el bloque `alarmas`
  *   — interpreta los agregados y avisa de los tres síntomas que matan la
  *   retención en el casco. Tolerante: sin datos suficientes → «verde».
@@ -475,6 +480,25 @@ export default {
           .bind(...(sid ? [sid] : []))
           .all()
       ).results.map((r) => [r.m, r.n]);
+      // ── sin_sonido (M5b): señales de audio roto. Cuenta errores cuyo
+      //    mensaje lleva marcador de audio (decode/AudioContext/sfx/sonido)
+      //    más eventos golpe_sin_sonido (el juego aún no los envía: la
+      //    alarma queda preparada para el día que lleguen — cero deploy).
+      const sonidoRow = (
+        await env.DB
+          .prepare(
+            "SELECT COUNT(*) n FROM eventos WHERE (" +
+              "(e='golpe_sin_sonido' OR (e='error' AND (" +
+              "instr(lower(COALESCE(json_extract(json,'$.m'),'')),'audio') > 0 OR " +
+              "instr(lower(COALESCE(json_extract(json,'$.m'),'')),'sonido') > 0 OR " +
+              "instr(lower(COALESCE(json_extract(json,'$.m'),'')),'decode') > 0 OR " +
+              "instr(lower(COALESCE(json_extract(json,'$.m'),'')),'sfx') > 0)))" +
+              (sid ? " AND instr(sid, ?) > 0" : "") +
+              ")"
+          )
+          .bind(...(sid ? [sid] : []))
+          .first()
+      );
       const champRank = {};
       for (const r of (
         await env.DB
@@ -689,6 +713,22 @@ export default {
               nivel: nv,
               msg: pct + "% de las sesiones VR duran <60 s (posible crash al entrar)",
               datos: { cortas: vrCortas.length, cerradas: vrFin.length, pct },
+            });
+          }
+        }
+        // 4 · sin_sonido (M5b) — señales de audio roto por sesión:
+        //     ≥1 amarillo · ≥3 rojo (misma regla que errores_js)
+        if (sonidoRow && sonidoRow.n > 0 && sesUnicas > 0) {
+          const mediaS = Math.round((sonidoRow.n / sesUnicas) * 10) / 10;
+          const nvS = mediaS >= 3 ? "rojo" : mediaS >= 1 ? "amarillo" : null;
+          if (nvS) {
+            items.push({
+              id: "sin_sonido",
+              nivel: nvS,
+              msg: "Golpes sin sonido: " + sonidoRow.n +
+                " señal(es) de audio roto en " + sesUnicas + " sesiones (" +
+                mediaS + " por sesión)",
+              datos: { senales: sonidoRow.n, sesiones: sesUnicas, media: mediaS },
             });
           }
         }

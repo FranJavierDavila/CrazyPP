@@ -5512,3 +5512,26 @@ Stage Summary:
 - Producción en V3.6.106-SDK6. El dueño debe recargar (la PWA purga sola al cambiar el sello del SW).
 - NOTA DE INFRA: el sandbox arrancó 80 rondas atrás — ANTES de empujar hay que sincronizar con origin y comprobar la versión de producción por curl; el trabajo hecho sobre árbol viejo se guarda en rama backup (backup-v3628-local) y nunca se despliega.
 - SIGUIENTE en la cola: M5b·alarmas del worker de telemetría + reponer .cf-token/.clave-produccion si el sandbox los recicla.
+
+---
+Task ID: 222
+Agent: principal (Z.ai)
+Task: M5b · alertas de telemetría (r117) — «Vamos con la M5B, seguimos, y recuerda actualizar siempre en Github, y empezar sabiendo la versión en la que estamos que en este caso es la 3.6.106». Pieza pendiente del M5 del ROADMAP: el síntoma «golpes sin sonido» no tenía alarma y el reporte `scripts/alerta_telemetria.py` no existía (fps_bajo/errores_js/vr_cortas ya vivían desde la ronda 18).
+
+Work Log:
+- SINCRONIZACIÓN: sandbox arrancó en r35 (42dabed) — stash de upload/, backup de 27 untracked a backup-upload-local/, ff-only a origin/main d20f118 = V3.6.106-SDK6 confirmada por el dueño y por VERSION.json (FASE 108, golden 423acb33).
+- CREDENCIALES REPUESTAS en scripts/worker-tele/ (chmod 600, gitignored): .github-pat · .cf-token (cfut_… — verificado VIVO contra la API de Cloudflare, cuenta f5c21f0c) · .clave-produccion (cpp-… — la invalidación anotada en backup_completo.py ya no aplica: verificado 200 OK contra producción hoy).
+- W1 · WORKER — ALARMA `sin_sonido` (worker.js): SQL nueva que cuenta errores cuyo mensaje lleva marcador de audio (audio/sonido/decode/sfx, case-insensitive) + eventos `golpe_sin_sonido` (el juego aún no los envía — la alarma queda preparada para el día que lleguen, cero deploy). Umbral espejo de errores_js: ≥1/sesión AMARILLO, ≥3/sesión ROJO. ITEM 4 del bloque `alarmas` (nivel global ya lo pesa). CAZADO POR EL ARNÉS DURANTE LA RONDA: la primera versión del SQL ligaba el filtro `AND instr(sid, ?) > 0` solo a la rama sfx por precedencia OR — los golpes_sin_sonido de OTRAS sesiones se colaban al filtrar por sid (O5b devolvía 2 señales en vez de 1). FIX: paréntesis `(e='golpe_sin_sonido' OR (e='error' AND (...))) AND sid`.
+- W2 · HARNESS (test_local.mjs): bloque O5/O5b/O5c nuevo — sin_sonido AMARILLO 3 señales/3 sesiones, errores_js SIGUE contando TODOS los errores (3 = 2 audio + 1 sin marcador: la alarma nueva no filtra la vieja), fps_bajo/vr_cortas intactos, ROJO 9/3 = media 3, filtro ?sid exacto, purga → VERDE. RESULTADO: 67 OK · 0 FALLOS (61 antes).
+- W3 · REPORTE DEL DUEÑO — scripts/alerta_telemetria.py NUEVO: lee ?resumen=1 por curl (workers.dev bloquea urllib) con .clave-produccion, imprime reporte de un vistazo (eventos, sesiones, arranques 24 h, FPS medio/muestras, duraciones, versión más activa, cada alarma con nivel+datos, nivel global) y sale con código 0 VERDE · 1 AMARILLO · 2 ROJO · 3 ERROR de red/clave. Flags --json (cron) y --sid. No duplica umbrales: reporta lo que el worker declara.
+- DEPLOY DEL WORKER POR API (sin dashboard): bindings actuales leídos antes de tocar (CLAVE secret_text + DB d1 24ee07a2) → PUT /accounts/…/workers/scripts/crazypp-tele con metadata que CONSERVA el secreto (viaja en el metadata, sin él el PUT habría borrado la CLAVE y roto la auth de producción) → success 2026-11-04T15:25:57Z.
+- VERIFICACIÓN E2E EN PRODUCCIÓN: POST de 2 eventos con sid=qa-m5b → resumen filtrado dispara `sin_sonido` AMARILLO («1 señal(es) de audio roto en 1 sesiones») → DELETE ?sid=qa-m5b purga los 2 → latido total 59 (los datos reales intactos: +1 evento real llegado durante la prueba). Panel de Pages no necesita cambios: renderiza items genéricos.
+- HALLAZGO REAL DEL REPORTE (producción, 2026-11-04 15:26 UTC): NIVEL GLOBAL AMARILLO — FPS medio VR 70 (4 muestras, bajo el confort 72, sobre el mínimo jugable 60). Sin errores JS ni sesiones cortas ni señales de audio. La versión más activa sigue siendo 3.6.104 (3.6.105/106 aún sin muestras del casco del dueño).
+- DOCS: LEEME.md (sección ALARMAS ampliada con sin_sonido + sección REPORTE DEL DUEÑO + QA a 67 checks) · ROADMAP-MEJORAS.md (M5 → las 3 casillas [x], fila del registro ☑ producción 2026-11-04).
+
+Stage Summary:
+- M5 COMPLETA: el arnés (físico+vivo) y las alertas de telemetría están en producción — el dueño puede mirar la salud del casco con `python3 scripts/alerta_telemetria.py` (0 verde · 1 amarillo · 2 rojo) o colgarlo de un cron con --json.
+- Alarma nueva `sin_sonido` desplegada y verificada E2E en la nube (post → dispara → purga limpia); preparada para el futuro evento golpe_sin_sonido del juego sin otro deploy.
+- Estado real de producción: AMARILLO por FPS medio VR 70 (<72 confort) con 4 muestras — señal a vigilar, no incidente.
+- Sin bump de juego: game.html no cambia (ronda de infra) — producción sigue en V3.6.106-SDK6.
+- SIGUIENTE en la cola: M4 (ELO completo) o los ajustes que pida el dueño.

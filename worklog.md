@@ -5503,7 +5503,7 @@ Work Log:
 - QA r116 NUEVA (qa_r116_dirigida, 10 checks · 10 OK / 0 fallos por GPU headless): arranque limpio + LA ACADEMIA recorrida ENTERA con el mock de la casa (patrón qa_r66: paso 0→1 con las 4 acciones reales + vaivén, paso 2 con 3 saques válidos por los botes r71 reales de la mesa C=-1.6/TL 1.37/TW 0.7625/TY 0.76, paso 4) — el gatillo saca (rfFase='vuelo'), la bola muerta en el suelo vuelve a 'saque' AL INSTANTE, toss reiniciado y estado 'serve', y el gatillo vuelve a sacar (PASO 4 DESBLOQUEADO) + drawHub con la 1.ª tarjeta en y=236 exacto + drawArea «PASE BAJO» sin excepción. NOTA DE ARNÉS: el sim de saque del qa_r66 quedó obsoleto tras las vallas r70/r71 (boten sobre la mesa, no en el suelo) — el nuevo usa los rectángulos reales r71.
 - PRESUPUESTO: game.html 10.659.863 B (+2.647 B) · golden 423acb33 · bump FASE 108 (3.6.106-SDK6) · gen_release_v36106 (notas FASE 108, guards SDK 1.6.0 conservados, marcadores heredados con el cierre «sellada a» re-anclado por tokens).
 - 4 ZIPs: COMPLETO 146.768.350 · ligera 18.561.082 · CLOUDFLARE 146.754.185 · SOLO 6.221.
-- DESPLIEGUE: main/pages push + Release v3.6.106-SDK6 (4 ZIPs) + respaldo main:proyecto.
+- DESPLIEGUE: main f13b901 push directo ✓ · pages fbcce727b (commit encadenado sobre e0f392243 del remoto, tras re-sincronizar la rama local) · Release v3.6.106-SDK6 (4 ZIPs: COMPLETO 146.768.350 · ligera 18.561.082 · CLOUDFLARE 146.754.185 · SOLO 6.221) · respaldo anti-rollback main→proyecto ✓.
 - VERIFICACIÓN PRODUCCIÓN (curl): PAGES-VERSION.txt version=3.6.106-SDK6 · game.html servido con el guard muertaV del paso 4 y la parrilla y=236 · Release 4/4.
 
 Stage Summary:

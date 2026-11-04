@@ -81,13 +81,16 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 | Mejora | Versión | Ronda/Task | Estado | Fecha |
 |---|---|---|---|---|
 | (partida) | 3.6.27-SDK6 | ronda 35 · Task 135 | producción | 2026-10-20 |
-| M1 | _pendiente_ | — | ☐ | — |
-| M2 | _pendiente_ | — | ☐ | — |
-| M3 | _pendiente_ | — | ☐ | — |
-| M4 | _pendiente_ | — | ☐ | — |
-| M5 | _pendiente_ | — | ☐ | — |
-| M6 | _pendiente_ | — | ☐ | — |
-| M7 | _pendiente_ | — | ☐ | — |
+| M1 sonido real + háptica | 3.6.54-SDK6 | r62 · qa_r62 VERDE | ☑ producción | 2026-10 |
+| M2 onboarding <60 s | 3.6.101-SDK6 | r111 · qa_r111 VERDE | ☑ producción | 2026-11 |
+| M3 estilos de IA (12) | 3.6.102-SDK6 | r112 · arnés 12/0 | ☑ producción | 2026-11 |
+| M4 reto diario (ELO completo pendiente) | vivo | r76+ · qa_r76 | ☐ parcial | — |
+| M5 arnés físico+vivo (alertas de telemetría pendientes) | vivo | qa_arnes_* VERDE | ☐ parcial | — |
+| M6 PWA instalable | 3.6.99-SDK6 | r109 · qa_r109 VERDE | ☑ producción | 2026-11 |
+| M7 contenido (5 campeonatos) | continuo | FASE 20-107 | ☐ en curso | — |
+| Ajustes del dueño: física fuerte + CPU + superpoderes justos + Locura etapa 4 | 3.6.103-SDK6 | r113 · Task 218 | ☑ producción | 2026-11-03 |
+| Ajustes del dueño: chincheta por estancia + fuera el diorama | 3.6.104-SDK6 | r114 · Task 219 | ☑ producción | 2026-11-04 |
+| Ajustes del dueño: fuera la repetición del mejor punto + superpoder EN EL GOLPEO rival (+ M5B escalera de carrera y herencia de estilos de la sesión perdida) | 3.6.105-SDK6 | r115 · Task 220 | ☑ producción | 2026-11-04 |
 
 ### Pipeline estándar (recordatorio para cada ronda)
 1. Explorar módulos afectados (c12 con base64: leer SOLO por rangos con python3).

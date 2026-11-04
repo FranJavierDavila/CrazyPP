@@ -269,6 +269,36 @@ export function scalePreset(cfg, k) {
 }
 
 /* =====================================================================
+ *  M4 (r118) · ELO — el número ÚNICO de habilidad (roadmap MEJORAS.md M4)
+ *  ELO_CPU: el valor de referencia de cada preset de la CPU — ancla la
+ *  matemática GANAR/PERDER (recordMatch) y el MATCHMAKING (propuesta de
+ *  rival cerca de tu nivel). r109 (PWA) ya reservaba la página 'rank';
+ *  esto es la base numérica local, sin servidor nuevo.
+ * ===================================================================== */
+export const ELO_CPU = { easy: 900, medium: 1050, hard: 1200 };
+
+/** M4 · MATCHMAKING LOCAL POR ELO — rival propuesto cerca de tu nivel con
+ *  variedad. Dado tu ELO y un jitter en ±120 (la VARIEDAD: cada propuesta
+ *  es distinta), elige el preset por bandas y afina con scalePreset:
+ *    bandas   <975 easy · <1125 medium · resto hard (los saltos de preset
+ *             ya son grandes; k sólo afina dentro de la banda)
+ *    k        10^((objetivo − base del preset)/400) acotado a [0.7, 1.6]
+ *             (1.6 y no 2.2: el matchmaking nunca propone un muro)
+ *  Devuelve {preset, k, elo} — elo = objetivo REAL tras el clamp de k.
+ *  FUNCIÓN PURA (testable sin instancia de juego: qa_r118_dirigida). */
+export function rivalPorElo(elo, jitter) {
+  const j = THREE.MathUtils.clamp(Number(jitter) || 0, -120, 120);
+  const objetivo = THREE.MathUtils.clamp(Math.round(elo + j), 400, 2000);
+  const preset = objetivo < 975 ? 'easy' : objetivo < 1125 ? 'medium' : 'hard';
+  const base = ELO_CPU[preset];
+  const k = THREE.MathUtils.clamp(Math.pow(10, (objetivo - base) / 400), 0.7, 1.6);
+  return { preset, k, elo: Math.round(base + 400 * Math.log10(k)) };
+}
+
+// M4 · gancho de tests (patrón __PP_WORLD/__PP_WRL_BADGE: visible para QA)
+try { if (typeof window !== 'undefined') window.__PP_ELO = { rivalPorElo, ELO_CPU, AI_PRESETS }; } catch { }
+
+/* =====================================================================
  *  M5a (r112) · IA CON ESTILOS — 12 PERSONALIDADES sobre la MISMA física.
  *  Cada estilo = multiplicadores ACOTADOS sobre la cfg ya escalada
  *  (dificultad × adaptativo × supervivencia) + colocación (zIdle/bias,

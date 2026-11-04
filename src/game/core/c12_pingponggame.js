@@ -85,7 +85,7 @@ export class PingPongGame {
               ? (((CARRERA_DIVISIONES[this.carreraMatch.div] || {}).rivales || [])
                 .find((r) => r.id === this.carreraMatch.rId) || {}).en || this.carreraMatch.nombre
               : this.carreraMatch.nombre)
-            : null;
+            : (this.mmMatch ? T('mm_rival', { n: this.mmMatch.elo }) : null);
         } catch (eON) { this.rules.oppName = null; }
         // M5a (r112) · telemetría del ESTILO del rival (partido local con
         // estilo ≠ clásico; una emisión por partido).
@@ -361,6 +361,11 @@ export class PingPongGame {
     // rival se configura como siempre (partido normal / campeonato / online).
     this.carreraMatch = null;
     this._carreraSel = 0;         // división mostrada en la página del menú
+    // M4 (r118) · MATCHMAKING POR ELO: el rival propuesto cerca de tu nivel
+    // (±120 con variedad). Vive SOLO durante el partido armado desde el
+    // botón «Rival a tu nivel» (AJUSTES › JUEGO) y se limpia al terminar
+    // el partido — el siguiente vuelve a la dificultad elegida siempre.
+    this.mmMatch = null;
     // --- modos de juego (v2.11) ---
     this.mode = 'match';          // 'match' | 'survival' (en curso)
     this.pendingMode = 'match';   // modo que se aplicará al entrar en VR
@@ -2439,6 +2444,15 @@ export class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // M4 (r118) · página MI RANKING (ELO personal local, sin servidor)
+    if (this.menuPage === 'rankme') {
+      this.drawMenuRankMe(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     // v2.110 · páginas del HUB: CAMPEONATOS y AJUSTES
     if (this.menuPage === 'champs') {
       this.drawMenuChamps(rects);
@@ -2806,6 +2820,85 @@ export class PingPongGame {
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.fillText(T('menu_hint'), 512, y + 124);
+  }
+
+  /* ================== M4 (r118) · MI RANKING (ELO) ======================
+   *  Panel personal local: ELO actual con el último delta, marca,
+   *  rachas, mejor día y los últimos cambios del historial (eloHist).
+   *  Todo de stats.data — sin servidor nuevo. Leyenda con el K por modo.
+   *  ===================================================================== */
+  drawMenuRankMe(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const D = (this.stats && this.stats.data) || { elo: 1000, eloHist: [] };
+    this.drawMenuHeader(rects);
+    btn('page:main', 40, 216, 240, 60, T('page_back'), false, undefined, undefined, 25);
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#ffd257';
+    c.font = '900 44px system-ui, sans-serif';
+    c.fillText(T('rankme_t'), 512, 312);
+    c.fillStyle = '#9aa7b4';
+    c.font = '500 20px system-ui, sans-serif';
+    c.fillText(T('rankme_sub'), 512, 350);
+    // ELO grande + delta del último cambio
+    const hist = Array.isArray(D.eloHist) ? D.eloHist : [];
+    const last = hist.length ? hist[hist.length - 1] : null;
+    c.fillStyle = '#ffffff';
+    c.font = '900 92px system-ui, sans-serif';
+    c.fillText(String(D.elo || 1000), 512, 445);
+    if (last) {
+      c.fillStyle = last.d >= 0 ? '#7ddb6a' : '#ff6b61';
+      c.font = '800 26px system-ui, sans-serif';
+      c.fillText((last.d >= 0 ? '+' : '') + last.d, 706, 425);
+    }
+    c.fillStyle = '#8fa0b8'; c.font = '500 16px system-ui, sans-serif';
+    c.fillText(T('rankme_leyenda'), 512, 512);
+    // tres tarjetas: marca · rachas · mejor día
+    const colY = 580;
+    const cols = [
+      [T('rankme_marca', { w: D.won || 0, l: D.lost || 0 })],
+      [T('rankme_racha_a') + ': ' + (D.streak || 0), T('rankme_racha_m') + ': ' + (D.bestStreak || 0)],
+      [T('rankme_mejordia'), (D.mejorDia && D.mejorDia.dia)
+        ? D.mejorDia.dia + ' · ' + T('rankme_dia', { v: D.mejorDia.v })
+        : '—'],
+    ];
+    for (let i = 0; i < 3; i++) {
+      const cx = 200 + i * 312;
+      c.fillStyle = 'rgba(255,255,255,0.06)';
+      c.beginPath();
+      if (c.roundRect) c.roundRect(cx - 140, colY, 280, 92, 14); else c.rect(cx - 140, colY, 280, 92);
+      c.fill();
+      c.fillStyle = '#e9edf2';
+      c.font = '700 20px system-ui, sans-serif';
+      for (let j = 0; j < cols[i].length; j++) c.fillText(cols[i][j], cx, colY + 32 + j * 32);
+    }
+    // historial (últimos 8, más reciente arriba)
+    c.fillStyle = '#a9b8cc'; c.font = '700 20px system-ui, sans-serif';
+    c.textAlign = 'left';
+    c.fillText(T('rankme_hist'), 56, 742);
+    if (!hist.length) {
+      c.fillStyle = '#5a6a7d'; c.font = '500 19px system-ui, sans-serif';
+      c.fillText(T('rankme_vacio'), 56, 782);
+    } else {
+      const filas = hist.slice(-8).reverse();
+      for (let i = 0; i < filas.length; i++) {
+        const e2 = filas[i];
+        const y2 = 786 + i * 44;
+        const d2 = new Date(e2.t);
+        const p2 = (n) => (n < 10 ? '0' : '') + n;
+        c.fillStyle = '#e9edf2'; c.font = '600 20px system-ui, sans-serif';
+        c.fillText(p2(d2.getDate()) + '/' + p2(d2.getMonth() + 1), 76, y2);
+        c.fillStyle = '#8fa0b8'; c.font = '500 18px system-ui, sans-serif';
+        c.fillText(T('rankme_' + (e2.m || 'ia')), 170, y2);
+        c.fillStyle = e2.d >= 0 ? '#7ddb6a' : '#ff6b61';
+        c.font = '800 22px system-ui, sans-serif';
+        c.textAlign = 'right';
+        c.fillText((e2.d >= 0 ? '+' : '') + e2.d, 940, y2);
+        c.textAlign = 'left';
+        c.strokeStyle = 'rgba(255,255,255,0.08)';
+        c.beginPath(); c.moveTo(56, y2 + 21); c.lineTo(968, y2 + 21); c.stroke();
+      }
+    }
   }
 
   /* ================== M5b (r115) · ESCALERA DE CARRERA ==================
@@ -3294,6 +3387,17 @@ export class PingPongGame {
         btn('diff:hard', 676, y, 292, 60, T('diff_hard_btn'),
           this.difficulty === 'hard', undefined, undefined, 25);
         y += 78;
+        // M4 (r118) · MATCHMAKING POR ELO + MI RANKING: el rival propuesto
+        // cerca de tu nivel (la propuesta REAL sortea ±120 al armar; aquí
+        // se muestra tu ELO como centro de la banda) y el panel personal.
+        label(T('mm_label'), y + 10, 22);
+        y += 34;
+        btn('mm:go', 56, y, 912, 56,
+          T('mm_btn', { n: (this.stats && this.stats.data.elo) || 1000 }),
+          !!this.mmMatch, undefined, undefined, 23);
+        y += 70;
+        btn('rankme', 56, y, 912, 56, T('rankme_btn'), false, undefined, undefined, 23);
+        y += 70;
         btn('adapt', 56, y, 912, 56,
           T('btn_adapt', { v: yn(this.adaptive) }),
           !!this.adaptive, undefined, !!this.adaptive, 23);
@@ -4782,6 +4886,34 @@ export class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'mm': {
+        // M4 (r118) · MATCHMAKING POR ELO: armar el rival propuesto (jitter
+        // ±120 = la variedad) y abrir la sala — el MISMO flujo de dos pasos
+        // del modo normal (r80). Se limpia al terminar el partido.
+        if (this.net.online) {
+          this.rules.message = T('msg_no_cpu');
+          this.drawMenu();
+          break;
+        }
+        const prop = rivalPorElo((this.stats && this.stats.data.elo) || 1000,
+          Math.random() * 240 - 120);
+        this.mmMatch = prop;
+        this._mjMode = 'normal';
+        this.rules.message = T('mm_armado', {
+          n: prop.elo,
+          d: prop.preset === 'easy' ? T('diff_easy_btn')
+            : prop.preset === 'medium' ? T('diff_medium_btn') : T('diff_hard_btn'),
+        });
+        this.audio.playOsc(880, 1180, 0.07, 'triangle', 0.12, 0);
+        this.drawMenu();
+        break;
+      }
+      case 'rankme':
+        // M4 (r118) · abrir MI RANKING (panel personal del ELO)
+        this.menuPage = 'rankme';
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.drawMenu();
+        break;
       case 'theme':
         this.setTheme(arg);        // anuncia, vibra y pinta el mensaje
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
@@ -5210,11 +5342,18 @@ export class PingPongGame {
     // M5b (r115) · el desafío de la escalera trae SU preset base (easy/
     // medium/hard de la división) y SU factor k — la dificultad elegida
     // por el jugador no se toca ni se pisa.
+    // M4 (r118) · el matchmaking por ELO trae el SUYO igual (carrera > mm
+    // > dificultad elegida: mismo orden de prioridad en ambos lectores).
     const base = this.carreraMatch
       ? (AI_PRESETS[this.carreraMatch.preset] || AI_PRESETS.medium)
-      : (AI_PRESETS[this.difficulty] || AI_PRESETS.medium);
+      : this.mmMatch
+        ? (AI_PRESETS[this.mmMatch.preset] || AI_PRESETS.medium)
+        : (AI_PRESETS[this.difficulty] || AI_PRESETS.medium);
     let k = 1;
+    // M4 (r118) · PRIORIDAD EXCLUYENTE: el k viaja con el preset que manda
+    // (carrera gana a matchmaking — el QA r118 cazó la multiplicación doble)
     if (this.carreraMatch) k *= this.carreraMatch.k;
+    else if (this.mmMatch) k *= this.mmMatch.k;
     if (this.adaptive) {
       const diff = this.rules.scorePlayer - this.rules.scoreAi;
       k += diff > 0 ? Math.min(diff, 6) * 0.055 : Math.max(diff, -6) * 0.05;
@@ -5427,9 +5566,12 @@ export class PingPongGame {
   _aiKAplica() {
     // M5b (r115) · en desafío de la escalera el preset BASE es el del rival
     // (easy/medium/hard de su división) — la dificultad del usuario no pisa.
+    // M4 (r118) · el matchmaking por ELO igual (carrera > mm > dificultad).
     const base = this.carreraMatch
       ? (AI_PRESETS[this.carreraMatch.preset] || AI_PRESETS.medium)
-      : (AI_PRESETS[this.difficulty] || AI_PRESETS.medium);
+      : this.mmMatch
+        ? (AI_PRESETS[this.mmMatch.preset] || AI_PRESETS.medium)
+        : (AI_PRESETS[this.difficulty] || AI_PRESETS.medium);
     this.aiSkillK = this._aiKCur;
     let cfg = scalePreset(base, this._aiKCur);
     // M5a (r112) · ESTILO DEL RIVAL: multiplicadores ACOTADOS sobre la cfg
@@ -5537,6 +5679,7 @@ export class PingPongGame {
   _carreraResultado(won) {
     const cm = this.carreraMatch;
     this.carreraMatch = null;   // el partido terminó: el siguiente ya es normal
+    this.mmMatch = null;        // M4 (r118): el matchmaking también expira con el partido
     if (!cm) return;
     this.rules.oppName = null;
     const st = this._carreraEstado();
@@ -12000,7 +12143,18 @@ export class PingPongGame {
                 : T('ann_match_end', { opp: this.rules.opp(), p: this.rules.scoreAi, q: this.rules.scorePlayer })),
             true,
           );
-          this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty));
+          this.celebrate(this.stats.recordMatch(it.winner === 'player', this.difficulty, (() => {
+            // M4 (r118) · info ELO del enfrentamiento: modo real (escalera
+            // > matchmaking > IA/P2P) y ELO de referencia del rival con el
+            // MISMO mapeo k→elo que el matchmaking (400·log10(k)).
+            const modo = this.carreraMatch ? 'carrera'
+              : (this.net && this.net.online ? 'p2p' : 'ia');
+            const oppElo = this.carreraMatch
+              ? Math.round((ELO_CPU[this.carreraMatch.preset] || 1050) +
+                400 * Math.log10(this.carreraMatch.k || 1))
+              : (this.mmMatch ? this.mmMatch.elo : (ELO_CPU[this.difficulty] || 1050));
+            return { modo, oppElo };
+          })()));
           this.emitStats();
           // M5b (r115) · resultado del desafío de la escalera (progreso,
           // ascenso y corona); sin desafío activo no toca nada.
@@ -12196,7 +12350,7 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, CARRERA_DIVISIONES, DIMS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, estiloAplicar, estiloDePersonalidad, mountQuatFor, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, CARRERA_DIVISIONES, DIMS, ELO_CPU, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, estiloAplicar, estiloDePersonalidad, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';

@@ -27,6 +27,13 @@ export class GameStats {
       pointsWon: 0, pointsLost: 0, aces: 0, bestRally: 0,
       winsByDiff: { easy: 0, medium: 0, hard: 0 },
       ach: {},
+      // M4 (r118) · ELO unificado (roadmap MEJORAS.md M4): el número de
+      // habilidad ÚNICO para IA local, escalera y P2P. eloHist guarda los
+      // últimos 40 cambios {t, d:±delta, m:modo}; mejorDia = el día con más
+      // victorias; hoyDia = contador vivo del día en curso.
+      elo: 1000, eloHist: [],
+      mejorDia: { dia: '', v: 0 },
+      hoyDia: { dia: '', v: 0 },
     };
     try {
       const raw = localStorage.getItem(this.KEY);
@@ -37,6 +44,11 @@ export class GameStats {
         this.data.ach = saved.ach || {};
       }
     } catch { /* datos corruptos: se recrean limpios */ }
+    // M4 · migración tolerante (datos viejos sin ELO o corruptos)
+    if (typeof this.data.elo !== 'number' || !(this.data.elo > 0)) this.data.elo = 1000;
+    if (!Array.isArray(this.data.eloHist)) this.data.eloHist = [];
+    if (!this.data.mejorDia || typeof this.data.mejorDia !== 'object') this.data.mejorDia = { dia: '', v: 0 };
+    if (!this.data.hoyDia || typeof this.data.hoyDia !== 'object') this.data.hoyDia = { dia: '', v: 0 };
   }
 
   save() {
@@ -85,14 +97,37 @@ export class GameStats {
     return out;
   }
 
-  /** Fin de PARTIDO. Devuelve logros nuevos. */
-  recordMatch(win, difficulty) {
+  /** Fin de PARTIDO. Devuelve logros nuevos.
+   *  M4 (r118) · ELO: info opcional { modo, oppElo } — modo 'ia'|'carrera'|
+   *  'p2p' elige el factor K (24 · 20 · 32: los duelos humanos valen más);
+   *  oppElo es el valor de referencia del rival (ELO_CPU / rivalPorElo /
+   *  simétrico en P2P). Sin info, K=24 y rival 1000 — compatibilidad
+   *  byte-idéntica con las llamadas antiguas de dos argumentos. */
+  recordMatch(win, difficulty, info) {
     const out = [];
+    const inf = info || {};
+    const KMOD = { ia: 24, carrera: 20, p2p: 32 };
+    const modo = KMOD[inf.modo] ? inf.modo : 'ia';
+    const miElo = this.data.elo;
+    const oppElo = (typeof inf.oppElo === 'number' && inf.oppElo > 0) ? inf.oppElo : 1000;
+    const esperado = 1 / (1 + Math.pow(10, (oppElo - miElo) / 400));
+    const delta = Math.round(KMOD[modo] * ((win ? 1 : 0) - esperado));
+    this.data.elo = Math.max(100, miElo + delta);
+    this.data.eloHist.push({ t: Date.now(), d: delta, m: modo });
+    if (this.data.eloHist.length > 40) {
+      this.data.eloHist.splice(0, this.data.eloHist.length - 40);
+    }
     if (win) {
       this.data.won++;
       this.data.streak++;
       if (this.data.streak > this.data.bestStreak) this.data.bestStreak = this.data.streak;
       this.data.winsByDiff[difficulty] = (this.data.winsByDiff[difficulty] || 0) + 1;
+      // M4 · mejor día: victorias de HOY contra el récord histórico del día
+      const d = new Date(); const p2 = (n) => (n < 10 ? '0' : '') + n;
+      const hoy = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+      const hv = (this.data.hoyDia.dia === hoy) ? this.data.hoyDia.v + 1 : 1;
+      this.data.hoyDia = { dia: hoy, v: hv };
+      if (hv >= (this.data.mejorDia.v || 0)) this.data.mejorDia = { dia: hoy, v: hv };
       if (this.unlock('primera')) out.push('primera');
       if (this.data.streak >= 3 && this.unlock('racha3')) out.push('racha3');
       if (difficulty === 'hard' && this.unlock('gigante')) out.push('gigante');
@@ -104,6 +139,11 @@ export class GameStats {
     return out;
   }
 }
+
+
+// M4 (r118) · gancho de tests (patrón __PP_WORLD: visible para la QA
+// qa_r118_dirigida — el dev de Next no sirve los módulos crudos)
+try { if (typeof window !== 'undefined') window.__PP_GameStats = GameStats; } catch { }
 
 
 /* =====================================================================

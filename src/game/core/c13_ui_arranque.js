@@ -643,6 +643,8 @@ loadPaddleModel().then((paddleModel) => {
       // last='YYYY-MM-DD' del último reto cobrado · streak=racha viva de
       // asistencia · bestStreak=récord · done[dayKey]={m,res,g} cobros
       daily: { last: '', streak: 0, bestStreak: 0, done: {} },
+      // M4 (r118) · RETO SEMANAL: bad=insignias acumuladas · done[weekKey]={m,res,g}
+      semana: { bad: 0, done: {} },
     };
     let S = (() => {
       try {
@@ -656,6 +658,10 @@ loadPaddleModel().then((paddleModel) => {
         d.daily.done = (d.daily.done && typeof d.daily.done === 'object' && !(d.daily.done instanceof Array)) ? d.daily.done : {};
         d.daily.streak = (+d.daily.streak || 0); d.daily.bestStreak = (+d.daily.bestStreak || 0);
         if (typeof d.daily.last !== 'string') d.daily.last = '';
+        // M4 (r118) · migración defensiva del semanal (igual que el daily)
+        d.semana = Object.assign({ bad: 0, done: {} }, d.semana || {});
+        d.semana.done = (d.semana.done && typeof d.semana.done === 'object' && !(d.semana.done instanceof Array)) ? d.semana.done : {};
+        d.semana.bad = (+d.semana.bad || 0);
         if (!Array.isArray(d.unlocked) || !d.unlocked.length) d.unlocked = ['clasica'];
         return d;
       } catch (e) { return JSON.parse(JSON.stringify(DEF)); }
@@ -735,6 +741,13 @@ loadPaddleModel().then((paddleModel) => {
         daily_t2: 'tu precisión ({a} %) manda sobre la velocidad: menos prisa, más lectura del bote',
         daily_t3: 'ya lo terminas: ahora SIN fallos — las 3 estrellas son de quien lee el juego',
         daily_t4: 'modo dominado: tu duelo es la racha — la constancia separa al campeón del resto',
+        /* M4 (r118) · RETO DE LA SEMANA */
+        semana_t: 'RETO DE LA SEMANA',
+        semana_sub: '{m} · objetivo {n} seguidas · duelo de la septana',
+        semana_iniciar: '▶ INICIAR RETO SEMANAL',
+        semana_ya: '✓ SEMANA COMPLETADA',
+        semana_insignia: 'Insignias ×{n}',
+        semana_hecho: '¡RETO SEMANAL COMPLETADO! +{n} pts',
         daily_p0: 'La casa reta a tu profundidad', daily_p1: 'El hechizo exige control sobre la red',
         daily_p2: 'Lee el giro o pícate', daily_p3: 'El duelo se gana en el saque',
         daily_p4: 'El metrónomo no perdona',
@@ -796,6 +809,13 @@ loadPaddleModel().then((paddleModel) => {
         daily_ya: 'COMPLETED TODAY', daily_vuelve: 'Come back tomorrow: new duel, streak keeps going',
         daily_recompensa: '+{n} pts', daily_fantasma_t: 'YOUR GHOST',
         daily_fantasma: 'YOU BEAT YOUR GHOST! +15 pts',
+        /* M4 (r118) · WEEKLY CHALLENGE */
+        semana_t: 'WEEKLY CHALLENGE',
+        semana_sub: '{m} · goal {n} in a row · this week\'s duel',
+        semana_iniciar: '▶ START WEEKLY',
+        semana_ya: '✓ WEEK DONE',
+        semana_insignia: 'Badges ×{n}',
+        semana_hecho: 'WEEKLY CHALLENGE COMPLETE! +{n} pts',
         daily_fantasma_x: 'To beat: {n}', daily_fantasma_no: 'no mark yet',
         daily_iniciar: '▶ START CHALLENGE', daily_ya_btn: '✓ DONE · back tomorrow',
         daily_obj: '{n} in a row',
@@ -853,12 +873,17 @@ loadPaddleModel().then((paddleModel) => {
       } catch (e) { return 0; }
     }
     /* r85 · OBJETIVO EFECTIVO del modo activo: en el RETO DIARIO manda el
-     * plan del día (con la subida); en entrenamiento libre, el base (M.n).
+     * plan del día (con la subida); en el RETO SEMANAL (M4 r118) manda el
+     * plan de la septana; en entrenamiento libre, el base (M.n).
      * ÚNICO punto de lectura del objetivo JUGABLE (HUD y meta). */
     function objN() {
       const M = MODES[active];
       const base = M ? M.n : 0;
       if (!st.daily || !active) return base;
+      if (st.weekly) {
+        const pw = weeklyPlan(weekKey());
+        if (pw && pw.mode === active && pw.n > base) return pw.n;
+      }
       const p = dailyPlan(dayKey());
       return (p && p.mode === active && p.n > base) ? p.n : base;
     }
@@ -934,6 +959,69 @@ loadPaddleModel().then((paddleModel) => {
         }
       }
       toast(aviso, true);
+      save(); panelDirty = true;
+    }
+
+    /* =================================================================
+     *  M4 (r118) · RETO DE LA SEMANA — el hermano mayor del PULSO
+     *  (roadmap MEJORAS.md M4). Misma mecánica determinista que el
+     *  diario: semilla por septana (lunes→domingo, hora LOCAL), modo
+     *  y objetivo iguales para todos, TU FANTASMA como rival y premio
+     *  de INSIGNIA acumulable (S.semana.bad) + puntos mayores (120/30).
+     *  Objetivo: base +2 con subida +1 por semana transcurrida (tope 4).
+     *  Las RACHA_SKINS siguen siendo SOLO del diario (fila propia).
+     *  ================================================================= */
+    const WEEKLY_BASE = 120, WEEKLY_FANTASMA = 30;
+    const WEEKLY_SUB = { DESDE: '2026-W1102', PASO: 1, TOPE: 4 };  // lunes 2026-11-02
+    function weekKey(off) {
+      const d = new Date();
+      if (off) d.setDate(d.getDate() + off * 7);
+      const dia = (d.getDay() + 6) % 7;            // lunes = 0
+      d.setDate(d.getDate() - dia);                // el lunes de esta septana
+      const p = (n) => (n < 10 ? '0' : '') + n;
+      return d.getFullYear() + '-W' + p(d.getMonth() + 1) + p(d.getDate());
+    }
+    function weeklySub(k) {
+      try {
+        const lunesDe = (wk) => {
+          const i = wk.indexOf('-W');
+          return new Date(+wk.slice(0, i), +wk.slice(i + 2, i + 4) - 1, +wk.slice(i + 4));
+        };
+        const semanas = Math.floor((lunesDe(k) - lunesDe(WEEKLY_SUB.DESDE)) / 604800000);
+        if (!(semanas >= 0)) return 0;
+        return Math.min(WEEKLY_SUB.TOPE, WEEKLY_SUB.PASO * (1 + semanas));
+      } catch (e) { return 0; }
+    }
+    function weeklyPlan(k) {
+      const seed = seedOf('ppx-semana-' + k);
+      const ids = Object.keys(MODES);
+      const mode = ids[seed % ids.length];
+      const M = MODES[mode];
+      const areaIdx = AREAS.findIndex((a) => a.id === M.area);
+      return {
+        mode, n: M.n + 2 + weeklySub(k), area: M.area, areaIdx: areaIdx < 0 ? 0 : areaIdx,
+        champ: CHAMPS_DIA[(seed >>> 7) % CHAMPS_DIA.length],
+      };
+    }
+    function weeklyComplete(mode, res, oldBest) {
+      if (!GAMF()) return;                 // gamify=0 ⇒ el PULSO no existe
+      const k = weekKey();
+      if (S.semana.done[k]) return;        // ya cobrada la septana (jamás doble)
+      const plan = weeklyPlan(k);
+      if (plan.mode !== mode) return;      // esta semana toca OTRO modo
+      const fantasma = (res | 0) > (oldBest | 0);
+      const pts = WEEKLY_BASE + (fantasma ? WEEKLY_FANTASMA : 0);
+      S.semana.done[k] = { m: mode, res: res | 0, g: fantasma ? 1 : 0 };
+      S.semana.bad++;
+      const ks = Object.keys(S.semana.done);
+      if (ks.length > 26) {                // poda: recuerda 26 semanas
+        ks.sort();
+        for (let i = 0; i < ks.length - 26; i++) delete S.semana.done[ks[i]];
+      }
+      addPts(pts);
+      toast(t('semana_hecho', { n: pts }) + (fantasma ? '  ·  ' + t('daily_fantasma') : '') +
+        '  ·  ' + t('semana_insignia', { n: S.semana.bad }), true);
+      try { G.audio.playOsc(880, 1560, 0.22, 'triangle', 0.15, 0.1); } catch (e) { /* */ }
       save(); panelDirty = true;
     }
 
@@ -1933,7 +2021,10 @@ loadPaddleModel().then((paddleModel) => {
           : t('hecho', { n: bonus }) + suffix, true);
         // r76 · EL PULSO CRAZY: ¿era el modo del día y no está cobrado?
         // (después del toast del modo: el aviso del PULSO es el que manda)
-        try { dailyComplete(active, __dailyRes, __dailyOld); } catch (eD) { /* nunca rompe */ }
+        // M4 (r118) · sesión del RETO SEMANAL: el cobro va al plan de la
+        // septana (insignia incluida); el diario queda intacto.
+        try { if (st.weekly) weeklyComplete(active, __dailyRes, __dailyOld);
+          else dailyComplete(active, __dailyRes, __dailyOld); } catch (eD) { /* nunca rompe */ }
         st.streak = 0; st.done = 0;
         if (active !== 't5a') { st.roundHits = 0; st.roundFaults = 0; }
         G.audio.playOsc(660, 990, 0.1, 'triangle', 0.14, 0.0);
@@ -2484,6 +2575,7 @@ loadPaddleModel().then((paddleModel) => {
       // «para no desanimar al jugador; la dificultad irá subiendo con el
       // tiempo» (petición del dueño).
       st.daily = (opts && opts.daily) ? 1 : 0;
+      st.weekly = (opts && opts.weekly) ? 1 : 0;   // M4 (r118) · sesiones del reto semanal
       if (!game.calib) game.enterCalib();      // aísla: sin árbitro, sin IA, sin marcador
       game.palaRecoger && game.palaRecoger();  // r83 · si el AJUSTE DE PALA estaba vivo, sus elementos se recogen
       game.exitHall();                          // v3.1.0-SRV2: un modo se juea en la cancha
@@ -2510,6 +2602,7 @@ loadPaddleModel().then((paddleModel) => {
     function teardown(game) {
       active = null;
       st.daily = 0;         // r80 · fuera de sesión: zonas de entrenamiento normales
+      st.weekly = 0;        // M4 (r118) · fuera de sesión: sin bandera semanal
       drillReach(false);   // v3.0.6-SRV1 · margen de saque fuera al recoger
       if (grp) grp.visible = false;
       applyModeScene();
@@ -3039,6 +3132,49 @@ loadPaddleModel().then((paddleModel) => {
         const a = AREAS[i];
         card(i % 2 === 0 ? X0 : X1, y + Math.floor(i / 2) * (CH + GY), a.id, a.ik, a.sk, a.g0, a.g1, a.col, false, a.ic);
       }
+      /* M4 (r118) · RETO DE LA SEMANA en el HUECO 6 de la parrilla (el que
+       * dejó la tarjeta de posición de la pala al mudarse a AJUSTES r83).
+       * El hermano mayor del PULSO con SU insignia: mismo duelo
+       * determinista por septana, puntos mayores (120/30). */
+      if (GAMF()) {
+        const wk = weekKey();
+        const wp = weeklyPlan(wk);
+        const hecho6 = !!S.semana.done[wk];
+        const yy6 = y + 2 * (CH + GY);
+        const idx6 = rects.length;
+        btn('trv3:semana', X1, yy6, CW, CH, '', false);
+        c.save();
+        c.beginPath();
+        if (c.roundRect) c.roundRect(X1, yy6, CW, CH, 20); else c.rect(X1, yy6, CW, CH);
+        const gr6 = c.createLinearGradient(X1, yy6, X1 + CW, yy6 + CH);
+        gr6.addColorStop(0, hecho6 ? '#4a5a34' : '#8c6d1f');
+        gr6.addColorStop(1, hecho6 ? '#26301b' : '#4a3a10');
+        c.fillStyle = gr6; c.fill();
+        c.strokeStyle = (game.menuHover && game.menuHover.includes(idx6)) ? '#ffffff'
+          : (hecho6 ? 'rgba(127,176,105,0.65)' : '#f0c85a');
+        c.lineWidth = 3; c.stroke();
+        // medallón con la INSIGNIA semanal (cuenta acumulada)
+        c.fillStyle = hecho6 ? 'rgba(127,176,105,0.20)' : 'rgba(240,200,90,0.16)';
+        c.beginPath(); c.arc(X1 + CW - 56, yy6 + CH / 2, 44, 0, Math.PI * 2); c.fill();
+        c.fillStyle = hecho6 ? '#9ad17f' : '#f0c85a';
+        c.font = '900 26px system-ui, sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('\u{1F3C5}', X1 + CW - 56, yy6 + CH / 2 - 8);
+        c.font = '700 15px system-ui, sans-serif';
+        c.fillText('\u00D7' + S.semana.bad, X1 + CW - 56, yy6 + CH / 2 + 16);
+        c.fillStyle = '#ffffff'; c.textAlign = 'left';
+        c.font = '800 30px system-ui, sans-serif';
+        c.fillText(t('semana_t'), X1 + 26, yy6 + 48);
+        c.fillStyle = 'rgba(255,255,255,0.85)'; c.font = '600 18px system-ui, sans-serif';
+        let sub6 = t('semana_sub', { m: t(MODES[wp.mode].nk), n: wp.n });
+        while (sub6.length > 2 && c.measureText(sub6).width > CW - 130) sub6 = sub6.slice(0, -1);
+        if (sub6 !== t('semana_sub', { m: t(MODES[wp.mode].nk), n: wp.n })) sub6 += '\u2026';
+        c.fillText(sub6, X1 + 26, yy6 + 82);
+        c.fillStyle = hecho6 ? '#9ad17f' : '#f0c85a';
+        c.font = '700 19px system-ui, sans-serif';
+        c.fillText(hecho6 ? t('semana_ya') : t('semana_iniciar'), X1 + 26, yy6 + 118);
+        c.restore();
+      }
       // r83 · la tarjeta POSICIÓN DE LA PALA se RETIRA del hub (se muda a
       // AJUSTES › PALA, subapartado propio con passthrough y ejes completos):
       // «Dentro del Pro Trainning tenemos el ajuste de la posición de la
@@ -3358,6 +3494,12 @@ loadPaddleModel().then((paddleModel) => {
         game.closeMenu();
         startMode(game, dailyPlan(dayKey()).mode, { daily: 1 });
       }
+      else if (cmd === 'semana') {
+        // M4 (r118) · RETO DE LA SEMANA: mismo camino que el diario con
+        // SU plan de septana — el cobro va a weeklyComplete (insignia).
+        game.closeMenu();
+        startMode(game, weeklyPlan(weekKey()).mode, { daily: 1, weekly: 1 });
+      }
       else if (cmd === 'fb') {
         S.fb[p[1]] = S.fb[p[1]] ? 0 : 1; save();
         // ronda 27 (informe del dueño) · OBEDIENCIA INMEDIATA: al desmarcar
@@ -3430,6 +3572,13 @@ loadPaddleModel().then((paddleModel) => {
         g.closeMenu();
         startMode(g, dailyPlan(dayKey()).mode, { daily: 1 });
       },
+      // M4 (r118) · RETO DE LA SEMANA: arranque desde cualquier llamada
+      // externa (futuro botón estrella en la puerta si el dueño lo pide)
+      startWeekly: (g) => {
+        if (!g) return;
+        g.closeMenu();
+        startMode(g, weeklyPlan(weekKey()).mode, { daily: 1, weekly: 1 });
+      },
       serveTrigger: () => { try { serveTossFromTee(true); } catch (e) { /* nunca rompe */ } },
       serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(false); } catch (e) { /* nunca rompe */ } },
       drawHub, drawArea,
@@ -3440,11 +3589,18 @@ loadPaddleModel().then((paddleModel) => {
         daily: (function () { const _pD = dailyPlan(dayKey());
           return { last: S.daily.last, streak: S.daily.streak, bestStreak: S.daily.bestStreak,
             hoy: (S.daily.done && S.daily.done[dayKey()]) ? 1 : 0,
-            modo: _pD.mode, modoName: t(MODES[_pD.mode].nk) }; })() }; },
+            modo: _pD.mode, modoName: t(MODES[_pD.mode].nk) }; })(),
+        // r118 · RETO DE LA SEMANA: insignias, estado de la septana y plan
+        semana: (function () { const _pW = weeklyPlan(weekKey());
+          return { bad: S.semana.bad,
+            hecho: (S.semana.done && S.semana.done[weekKey()]) ? 1 : 0,
+            modo: _pW.mode, n: _pW.n }; })() }; },
       __debug: { S, st, MODES },
     __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel, serveAssist,
       // r76 · EL PULSO CRAZY: internos expuestos para la QA (qa_r76_v3668)
       dayKey, dailyPlan, dailyTip, dailyComplete, effStreak, seedOf,
+      // r118 · RETO DE LA SEMANA: internos para la QA (qa_r118_dirigida)
+      weekKey, weeklyPlan, weeklyComplete, weeklySub,
       // r80 · EL RETO PERMISIVO: las dimensiones de zona compartidas por
       // pintor y juez (la QA verifica el doble en el reto y la igualdad
       // byte a byte en entrenamiento)

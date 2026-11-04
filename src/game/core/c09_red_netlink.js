@@ -711,7 +711,16 @@ export class NetLink {
         g.audio.announce(iWon
           ? T('ann_victory', { p: r.scorePlayer, q: r.scoreAi })
           : T('ann_match_end', { opp: r.opp(), p: r.scoreAi, q: r.scorePlayer }), true);
-        g.celebrate(g.stats.recordMatch(iWon, g.difficulty));
+        // M4 (r118) · ELO P2P: duelo humano — K=32 y rival SIMÉTRICO
+        // (oppElo = tu propio ELO: esperado 0,5; ganar +16, perder −16).
+        // Sin protocolo nuevo: el ELO del remoto viajará cuando el dueño
+        // quiera (hoy la paridad simétrica es honesta y estable).
+        try {
+          g.celebrate(g.stats.recordMatch(iWon, g.difficulty,
+            { modo: 'p2p', oppElo: g.stats.data.elo }));
+        } catch (eEL) {
+          g.celebrate(g.stats.recordMatch(iWon, g.difficulty));
+        }
         g.emitStats();
       }
     } else {

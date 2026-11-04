@@ -5535,3 +5535,26 @@ Stage Summary:
 - Estado real de producción: AMARILLO por FPS medio VR 70 (<72 confort) con 4 muestras — señal a vigilar, no incidente.
 - Sin bump de juego: game.html no cambia (ronda de infra) — producción sigue en V3.6.106-SDK6.
 - SIGUIENTE en la cola: M4 (ELO completo) o los ajustes que pida el dueño.
+
+---
+Task ID: 223
+Agent: principal (Z.ai)
+Task: M4 · ELO completo (r118) — «seguimos» tras la M5B: la cola apuntaba a M4 (roadmap MEJORAS.md): ELO unificado con K por modo guardado en stats.data, matchmaking local ±120 con variedad, reto semanal con insignia (el diario vive desde r76) y panel de ranking personal. Todo local, sin servidor nuevo.
+
+Work Log:
+- RECUPERACIÓN: sandbox reciclado de nuevo (repo en r35) — backup de upload/, ff-only a origin/main af74e4f (V3.6.106 + M5B) y credenciales repuestas (.github-pat/.cf-token/.clave-produccion, las tres vivas).
+- EXPLORACIÓN: recordMatch (c06) tiene DOS llamadas — c12:12003 (local/escalera) y c09:714 (P2P); scalePreset(cfg,k) es la palanca exacta del matchmaking; la página 'rank' existente es el ranking MUNDIAL (v2.67) — el personal necesita página propia; la escalera de carrera (r115) queda separada del ELO.
+- E1 · ELO UNIFICADO (c02+c06): ELO_CPU {easy 900, medium 1050, hard 1200} ancla la matemática. GameStats: elo (nace 1000), eloHist {t,d,m} podado a 40, mejorDia/hoyDia por victorias. recordMatch(win, difficulty, info) con K por modo: IA 24 · carrera 20 · P2P 32 (los duelos humanos valen más); oppElo de la carrera mapeado con el MISMO 400·log10(k) del matchmaking. Llamadas legacy de 2 args byte-idénticas (K24, rival 1000). Migración tolerante de datos viejos.
+- E2 · MATCHMAKING (c02+c12): rivalPorElo(elo, jitter) PURE — bandas <975 easy / <1125 medium / resto hard + k = 10^((objetivo−base)/400) acotado [0.7,1.6] (jamás propone un muro). Botón «Rival a tu nivel» en AJUSTES › JUEGO (jitter ±120 al armar = la variedad), mismo flujo de sala de dos pasos (r80), mmMatch vive SOLO el partido (se limpia con el mismo corte de la carrera) y el nombre del rival viaja al árbitro (mm_rival).
+- E3 · INTEGRACIÓN IA: applyAISkill y _aiKAplica leen base con prioridad carrera > matchmaking > dificultad. CAZADO POR EL ARNÉS: la primera versión multiplicaba k de carrera × k de matchmaking (0.49 en vez de 1.0) — prioridad EXCLUYENTE (else if). recordMatch pasa {modo, oppElo} reales; P2P simétrico (oppElo = propio: ganar +16 / perder −16).
+- E4 · RETO DE LA SEMANA (c13): weekKey por septana (lunes→domingo, hora LOCAL), weeklyPlan determinista (semilla ppx-semana-W), objetivo base+2 con subida +1/semana (tope 4, DESDE 2026-W1102), weeklyComplete con cobro ÚNICO (guard done[weekKey]), INSIGNIA acumulable (S.semana.bad) + 120/30 pts, poda a 26 semanas. Tarjeta en el HUECO 6 de la parrilla del hub (el que dejó la posición de pala, r83 — cero riesgo de layout), handler trv3:semana, startWeekly exportado, objN() consciente del semanal, st.weekly con las mismas zonas permisivas del diario. i18n ES/EN (7 claves) en el TR del módulo.
+- E5 · MI RANKING (c12): página 'rankme' nueva (dispatcher + drawMenuRankMe) — ELO grande con último delta coloreado, marca, rachas, mejor día y últimos 8 cambios (fecha · modo · ±delta). Entrada desde AJUSTES › JUEGO. Ganchos de test de la casa: window.__PP_ELO (c02) y window.__PP_GameStats (c06) — patrón __PP_WORLD.
+- QA DIRIGIDA qa_r118_dirigida (29 OK · 0 fallos por GPU headless): arranque limpio · matemática ELO win/loss/K-por-modo/legacy · poda 40 y mejor día · 200 propuestas con bandas + suelos/techos (contrato honesto: dentro del rango representable la propuesta es EXACTA; fuera, clamp — los suelos 838/988/1138 nacen del k mínimo 0.7) · variedad 28 rivales en 30 propuestas · semanal determinista con cobro único y modo equivocado sin premio · drawMenuRankMe vivo · mmMatch manda sobre la dificultad (easy k0.7 → missBase 0.195, maxSpeed 1.40) y carrera > matchmaking (3.80).
+- PRESUPUESTO: game.html 10.682.216 B · golden be3e6b2c · bump FASE 109 (3.6.107-SDK6) · gen_release_v36107 (notas FASE 109, guard SDK 1.6.0 conservado) · 4 ZIPs (COMPLETO 146.775.500 · ligera 18.568.232 · CLOUDFLARE 146.761.335 · SOLO 6.221).
+- NOTA DE ARNÉS: el QA de módulos crudos por import dinámico no vive en el dev de Next — la ronda usa ganchos window (patrón de la casa) en vez de imports.
+
+Stage Summary:
+- M4 COMPLETA: ELO unificado (IA/escalera/P2P con K por modo), matchmaking «Rival a tu nivel» ±120 con variedad, reto de la SEMANA con insignia y página MI RANKING — todo local, sin servidor, con el diario r76 intacto.
+- El arnés r118 cazó 2 fallos reales antes de producción: la multiplicación doble de k (carrera×matchmaking) y la banda ±120 contra los suelos físicos del k=0.7.
+- Producción pasa a V3.6.107-SDK6 (FASE 109); el dueño debe recargar (la PWA purga sola al cambiar el sello del SW).
+- SIGUIENTE en la cola: M7 (contenido e identidad: torneos temáticos con los assets del dueño, SuperPalas) o los ajustes que pida el dueño.

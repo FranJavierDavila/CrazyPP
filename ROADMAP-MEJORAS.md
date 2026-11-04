@@ -42,11 +42,11 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 ## M4 · Matchmaking + ELO completo + bucle diario/semanal
 
 **Qué**: razón para volver cada día.
-- [ ] ELO unificado (local vs IA y P2P cuando exista) con K distinto por modo, guardado en stats.data.
-- [ ] Matchmaking local por ELO: el rival propuesto queda cerca de tu nivel (±120) con variedad.
-- [ ] Reto diario y reto semanal (semilla del día/semana + rival con estilo de M3 + premio de insignia).
-- [ ] Panel de ranking personal (histórico de ELO, racha, mejor día).
-- **Criterio de aceptación**: dos días seguidos propone retos distintos y el ELO sube/baja coherente; todo local, sin servidor nuevo.
+- [x] ELO unificado (local vs IA y P2P cuando exista) con K distinto por modo, guardado en stats.data. *(M4, r118: K IA 24 · escalera 20 · humano 32; historial 40 cambios + mejor día; llamadas legacy de 2 args intactas.)*
+- [x] Matchmaking local por ELO: el rival propuesto queda cerca de tu nivel (±120) con variedad. *(M4, r118: botón «Rival a tu nivel» en AJUSTES › JUEGO — bandas easy/medium/hard + k acotado 0.7-1.6, jamás propone un muro; la escalera de carrera manda si está activa.)*
+- [x] Reto diario y reto semanal (semilla del día/semana + rival con estilo de M3 + premio de insignia). *(Diario vivo desde r76; semanal nuevo en r118: septana lunes→domingo, objetivo base+2 con subida semanal (tope 4), insignia acumulable + 120/30 pts, en el hueco 6 del hub.)*
+- [x] Panel de ranking personal (histórico de ELO, racha, mejor día). *(M4, r118: página MI RANKING desde AJUSTES › JUEGO — ELO + último delta, marca, rachas, mejor día y últimos 8 cambios.)*
+- **Criterio de aceptación**: dos días seguidos propone retos distintos y el ELO sube/baja coherente; todo local, sin servidor nuevo. *(QA r118: 29 OK · 0 fallos — matchmaking con 28 rivales distintos en 30 propuestas; ELO sube/baja según rival y modo.)*
 
 ## M5 · Arnés anti-regresión + alertas de telemetría
 
@@ -84,7 +84,7 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 | M1 sonido real + háptica | 3.6.54-SDK6 | r62 · qa_r62 VERDE | ☑ producción | 2026-10 |
 | M2 onboarding <60 s | 3.6.101-SDK6 | r111 · qa_r111 VERDE | ☑ producción | 2026-11 |
 | M3 estilos de IA (12) | 3.6.102-SDK6 | r112 · arnés 12/0 | ☑ producción | 2026-11 |
-| M4 reto diario (ELO completo pendiente) | vivo | r76+ · qa_r76 | ☐ parcial | — |
+| M4 ELO completo (unificado + matchmaking + reto semanal + MI RANKING) | 3.6.107-SDK6 | r118 · Task 223 · qa_r118 29/0 | ☑ producción | 2026-11-04 |
 | M5 arnés físico+vivo + alertas de telemetría (M5b: `sin_sonido` + `alerta_telemetria.py`) | vivo | test_local 67/0 · deploy worker 2026-11-04 | ☑ producción | 2026-11-04 |
 | M6 PWA instalable | 3.6.99-SDK6 | r109 · qa_r109 VERDE | ☑ producción | 2026-11 |
 | M7 contenido (5 campeonatos) | continuo | FASE 20-107 | ☐ en curso | — |
@@ -93,6 +93,7 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 | Ajustes del dueño: fuera la repetición del mejor punto + superpoder EN EL GOLPEO rival (+ M5B escalera de carrera y herencia de estilos de la sesión perdida) | 3.6.105-SDK6 | r115 · Task 220 | ☑ producción | 2026-11-04 |
 | Ajustes del dueño: Academia paso 4 sin bloqueos + «PASE BAJO»/logros del PRO TRAINING (regla de casa: QA dirigida por cambio) | 3.6.106-SDK6 | r116 · Task 221 | ☑ producción | 2026-11-04 |
 | M5b · alertas de telemetría: alarma `sin_sonido` en el worker (errores con marcador audio + futuro `golpe_sin_sonido`) + reporte del dueño `scripts/alerta_telemetria.py` (salidas 0/1/2/3) | worker (infra) | r117 · Task 222 | ☑ producción | 2026-11-04 |
+| M4 · ELO completo: unificado con K por modo (IA 24/escalera 20/humano 32) + matchmaking «Rival a tu nivel» ±120 + reto de la semana con insignia + página MI RANKING | 3.6.107-SDK6 | r118 · Task 223 | ☑ producción | 2026-11-04 |
 
 ### Pipeline estándar (recordatorio para cada ronda)
 1. Explorar módulos afectados (c12 con base64: leer SOLO por rangos con python3).

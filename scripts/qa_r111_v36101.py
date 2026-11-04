@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r111_v36101.py — capa de QA de la ronda 111 (V3.6.103-SDK6).
+"""qa_r111_v36101.py — capa de QA de la ronda 111 (V3.6.104-SDK6).
 
 HITO M4 del roadmap MEJORAS.md · ONBOARDING < 60 SEGUNDOS.
 
@@ -68,21 +68,24 @@ CHK("this.menuPage = 'main';\n    this.menuSec = 'match';" in GH,
 CHK('if (_tutFirst) this.rules.message = T(\'first_hint\');' in GH,
     'c12: bienvenida de 1.ª vez en UNA línea del árbitro')
 
-# 3 · diorama LA MESA DE LA CASA
-AGUJAS_DEMO = [
+# 3 · diorama LA MESA DE LA CASA — RETIRADO en r114 (petición expresa y
+# REITERADA del dueño: «sigo viendo la mesa con las dos palas jugando en el
+# Hall y ya dijimos que no la queremos, no aporta nada»). La capa pasa de
+# exigir presencia a exigir AUSENCIA (re-ancla honesta de r114).
+RETIRADA_DEMO = [
     ('_demoMuseoConstruir()', 'diorama: construcción'),
     ('_demoMuseoTick(dt, now)', 'diorama: latido enganchado al animate'),
     ('if (this._demoHall && this.inHall) this._demoMuseoTick(dt, now);',
-     'diorama: SÓLO respira con el hall visible (coste cero en cancha)'),
-    ('this.hallGroup.add(grp);', 'diorama: hijo del hallGroup (apaga con el hall)'),
+     'diorama: guard del latido en el animate'),
     ('new THREE.BoxGeometry(0.84, 0.028, 1.50)', 'mesa miniatura (escala ~0,55)'),
     ('new THREE.CylinderGeometry(0.062, 0.062, 0.012, 14)', 'palas disco del diorama'),
     ('d.bola.position.lerpVectors(d.desde, d.hasta, k);',
      'rallye cinemático: parábolas scriptadas (sin física real)'),
     ('p2.rotation.x = 0.9;', 'swing seco del golpe del rival'),
 ]
-for aguja, nombre in AGUJAS_DEMO:
-    CHK(aguja in GH, 'c12 diorama: ' + nombre)
+for aguja, nombre in RETIRADA_DEMO:
+    CHK(aguja not in GH, 'c12 diorama RETIRADO (r114): ' + nombre)
+CHK('LA MESA DE LA CASA — RETIRADA' in GH, 'c12: marcador del retiro del diorama (r114)')
 
 # 4 · guía del primer saque
 AGUJAS_SRV = [
@@ -157,5 +160,5 @@ if FAIL:
     for f in FAIL:
         print('  ✗ ' + f)
     raise SystemExit(1)
-print('CAPA r111 VERDE: ▶ JUGAR único + HUB directo + diorama del hall +')
+print('CAPA r111 VERDE: ▶ JUGAR único + HUB directo + (diorama retirado en r114) +')
 print('guía del primer saque + idioma/altura detectados + catálogo v6.')

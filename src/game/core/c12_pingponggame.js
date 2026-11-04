@@ -1559,6 +1559,8 @@ export class PingPongGame {
      * el panel vuelve a anclarse delante de la cabeza. Estado en memoria
      * (cada sesión arranca con la chincheta OFF, tal cual pidió el dueño). */
     this.menuPin = false;             // r113: OFF por defecto (petición expresa)
+    this._menuAnchorEst = '';         // r114: estancia donde nació el ancla
+    this._menuAnchorRigZ = 0;         // r114: z del rig al firmar el ancla
     this._menuPinCv = document.createElement('canvas');
     this._menuPinCv.width = 128;
     this._menuPinCv.height = 128;
@@ -3474,6 +3476,16 @@ export class PingPongGame {
     for (const d of this.menuDots) d.visible = false;
     this.menuHover = [-1, -1];
     if (this.menuOpen) {
+      // r114 · reapertura HONESTA: si el ancla clavada quedó lejos de la
+      // cabeza (el jugador caminó con la chincheta puesta), se suelta y el
+      // menú nace SIEMPRE delante — nunca «no lo veo» al pulsar B.
+      if (this.menuPin) {
+        this.camera.getWorldPosition(muHead);
+        if (this.menuGroup.position.distanceTo(muHead) > 2.5) {
+          this.menuPin = false;
+          this._menuPinDraw();
+        }
+      }
       this.anchorMenu();          // v2.28: DELANTE del jugador, no en la muñeca
       this.rules.message = T('menu_open');
       this.drawMenu();
@@ -3508,6 +3520,16 @@ export class PingPongGame {
     this.menuOpen = true;
     this.menuGroup.visible = true;
     this.menuHover = [-1, -1];
+    // r114 · el prompt B nace SIEMPRE delante: si el ancla clavada quedó
+    // lejos de la cabeza (otro escenario o el jugador caminó), se suelta.
+    if (this.menuPin) {
+      this.camera.getWorldPosition(muHead);
+      if (this.menuGroup.position.distanceTo(muHead) > 2.5 ||
+          this._menuEstancia() !== this._menuAnchorEst) {
+        this.menuPin = false;
+        this._menuPinDraw();
+      }
+    }
     this.anchorMenu();
     this.rules.message = '';
     this.drawMenu();
@@ -3562,6 +3584,41 @@ export class PingPongGame {
     this.menuGroup.position.y = Math.max(0.85, muHead.y - 0.12);
     this.menuGroup.lookAt(muHead);
     this._menuAnchorUntil = performance.now() / 1000 + 1.8;
+    // r114 · la ancla se FIRMA: estancia donde nace + z del rig de ese
+    // momento. updateMenu vigila la firma — si el jugador viaja de escena
+    // o el rig se teletransporta, el ancla vieja se invalida sola.
+    this._menuAnchorEst = this._menuEstancia();
+    this._menuAnchorRigZ = this.rig ? this.rig.position.z : 0;
+  }
+
+  /* r114 · ESTANCIA del menú: la etiqueta que firma cada ancla. El panel
+   * vive en espacio MUNDO y el rig VIAJA entre estancias (el hall está a
+   * z −18,5 del rig) — un ancla de una escena en otra es un panel
+   * INVISIBLE (informe del dueño: «si anclamos el menú y nos vamos a otro
+   * escenario al volver a sacar el menú ya no se ve»). Con la firma,
+   * updateMenu detecta el viaje y re-ancla delante del jugador. */
+  _menuEstancia() {
+    if (this.inHall) return 'hall';
+    if (this.inAR) return 'ar';
+    if (this.net && this.net.online) return 'online';
+    return 'court';
+  }
+
+  /** r114 · HEAL del ancla (llamado cada frame con el menú abierto): si la
+   *  firma del ancla vivo NO corresponde a la estancia actual o el rig se
+   *  movió >2 m desde que se firmó (viaje hall↔cancha↔AR↔online, vista
+   *  previa de la sala, re-entrada en VR), el ancla vieja se INVALIDA: la
+   *  chincheta se suelta SOLA y el panel reaparece delante del jugador.
+   *  Nunca puede quedar un menú descolgado en coordenadas de otra escena. */
+  _menuAnclaHeal() {
+    const estMenu = this._menuEstancia();
+    const rigZMenu = this.rig ? this.rig.position.z : 0;
+    const anclaVieja = estMenu !== this._menuAnchorEst ||
+      Math.abs(rigZMenu - (this._menuAnchorRigZ !== undefined ?
+        this._menuAnchorRigZ : rigZMenu)) > 2;
+    if (!anclaVieja) return;
+    if (this.menuPin) { this.menuPin = false; this._menuPinDraw(); }
+    this.anchorMenu();
   }
 
   /* r113 · CHINCHETA DEL MENÚ — dibujo del icono (128², estilo de la casa):
@@ -3660,6 +3717,13 @@ export class PingPongGame {
          (this._mesaRings && this._mesaRings.some((rg2) => rg2.visible)))) {
       this._mesaGrabCleanup();
     }
+    // r114 · ANCLA POR ESTANCIA + VIAJE DEL RIG (informe del dueño: «si
+    // anclamos el menú y nos vamos a otro escenario al volver a sacar el
+    // menú ya no se ve por quedar descolocado… EL menú se ancla en la
+    // escena en la que nos encontremos pero en cualquier otra no aparece
+    // anclado y se comporta normal, sino pasa que no aparece el menú»):
+    // heal testeable en su propio método (sin XR delante).
+    this._menuAnclaHeal();
     // flotación inicial: el panel acompaña a la cabeza antes de fijarse
     if ((performance.now() / 1000) < (this._menuAnchorUntil || 0)) this.anchorMenu();
 
@@ -10686,11 +10750,10 @@ export class PingPongGame {
     // estancia visible (trofeo que rota, haz que respira, anillo que pulsa,
     // bolas doradas en vaivén) — coste cero en la cancha
     if (this.inHall && this.hallGroup) updateHallFx(this.hallGroup, dt, now);
-    // M4 (r111) · LA MESA DE LA CASA: el diorama IA-vs-IA del hall respira
-    // SÓLO con la estancia visible (coste cero en la cancha). Y aquí la
-    // telemetría del embudo: el PRIMER rallye real de la sesión en partido
-    // local (una sola vez) — la métrica del hito: <60 s para el jugador nuevo.
-    if (this._demoHall && this.inHall) this._demoMuseoTick(dt, now);
+    // M4 (r111) · LA MESA DE LA CASA: r114 la RETIRA — sin latido, el
+    // guard muerto se elimina del todo. Y aquí la telemetría del embudo: el
+    // PRIMER rallye real de la sesión en partido local (una sola vez) — la
+    // métrica del hito: <60 s para el jugador nuevo.
     if (!this._primerRally && this.rules.state === 'rally' &&
         this.mode === 'match' && !this.inHall && !this.calib &&
         !(this.net && this.net.online)) {
@@ -10838,9 +10901,11 @@ export class PingPongGame {
       this.hallGroup.visible = true;
     }
     if (this.roomGroup) this.roomGroup.visible = false;
-    // M4 (r111) · LA MESA DE LA CASA: el diorama se construye UNA vez y
-    // vive como hijo del hallGroup (se enciende y apaga con la estancia).
-    try { this._demoMuseoConstruir(); } catch (eDM) { /* */ }
+    // M4 (r111) · LA MESA DE LA CASA — RETIRADA en r114 (petición expresa
+    // del dueño, de nuevo: «sigo viendo la mesa con las dos palas jugando
+    // en el Hall y ya dijimos que no la queremos, no aporta nada»): el
+    // diorama IA-vs-IA sobre pedestal sale del Hall Of Fame. La telemetría
+    // del embudo (primer_rally) sigue viva más abajo, sin el diorama.
     this.rules.message = T('hall_welcome');
   }
 
@@ -10895,89 +10960,16 @@ export class PingPongGame {
     }
   }
 
-  /* ================== M4 (r111) · LA MESA DE LA CASA ==================
-   * Diorama IA-vs-IA EN VIVO sobre un pedestal del hall: una mesa
-   * miniatura (~55 %) con dos palas disco y una bola que se pasan en
-   * parábolas SCRIPTADAS — cinemática pura, sin física ni árbitro (el
-   * rallye real sigue siendo cosa de la cancha). Es la «demo del menú»
-   * del roadmap: el jugador nuevo ve CÓMO se juega mientras decide.
-   * Hijo del hallGroup: se enciende y apaga con la estancia; el latido
-   * sólo corre con el hall visible (coste cero en la cancha). */
-  _demoMuseoConstruir() {
-    if (this._demoHall || !this.hallGroup) return;
-    const grp = new THREE.Group();
-    grp.position.set(-1.08, 0, HALL.cz + 0.95);
-    // pedestal torneado (madera oscura, como las vitrinas del museo)
-    const ped = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.26, 0.34, 0.94, 18),
-      new THREE.MeshStandardMaterial({ color: 0x3a2c1c, roughness: 0.8 }));
-    ped.position.y = 0.47;
-    grp.add(ped);
-    // tablero miniatura azul de la casa + red blanca
-    const tablero = new THREE.Mesh(
-      new THREE.BoxGeometry(0.84, 0.028, 1.50),
-      new THREE.MeshStandardMaterial({ color: 0x17539e, roughness: 0.55 }));
-    tablero.position.y = 0.955;
-    grp.add(tablero);
-    const red = new THREE.Mesh(
-      new THREE.BoxGeometry(0.84, 0.055, 0.006),
-      new THREE.MeshStandardMaterial({ color: 0xe7ebf0 }));
-    red.position.set(0, 1.0, 0);
-    grp.add(red);
-    // palas disco (roja la de casa, negra el rival) y bola marfil
-    const geoP = new THREE.CylinderGeometry(0.062, 0.062, 0.012, 14);
-    const p1 = new THREE.Mesh(geoP, new THREE.MeshStandardMaterial({ color: 0xd23f3f, roughness: 0.5 }));
-    p1.rotation.x = Math.PI / 2;
-    p1.position.set(0, 1.0, 0.62);
-    const p2 = new THREE.Mesh(geoP, new THREE.MeshStandardMaterial({ color: 0x14171d, roughness: 0.5 }));
-    // el rival nace con el swing cargado (vuelve a guardia en el 1.er latido)
-    p2.rotation.x = 0.9;
-    p2.userData.swing = 1;
-    p2.position.set(0, 1.0, -0.62);
-    const bola = new THREE.Mesh(
-      new THREE.SphereGeometry(0.021, 12, 10),
-      new THREE.MeshStandardMaterial({ color: 0xfff6e0, emissive: 0x6b5a25 }));
-    bola.position.set(0, 1.0, 0.5);
-    grp.add(p1); grp.add(p2); grp.add(bola);
-    this.hallGroup.add(grp);
-    this._demoHall = {
-      grp, p1, p2, bola, k: 0.15, dur: 0.9, lado: 1,
-      desde: new THREE.Vector3(0, 1.0, 0.5),
-      hasta: new THREE.Vector3(0, 1.0, -0.5),
-    };
-  }
-
-  /** Latido del diorama: parábola scriptada bola→pala, swing del que
-   *  golpea y vaivén de guardia. dt acotado (pestañas lentas). */
-  _demoMuseoTick(dt, now) {
-    const d = this._demoHall;
-    if (!d || !d.grp.visible) return;
-    d.k += Math.min(dt, 0.05) / d.dur;
-    if (d.k >= 1) {
-      d.k = 0;
-      d.dur = 0.75 + Math.random() * 0.5;
-      // golpea quien estaba lejos: nuevo destino al otro lado, con dispersión
-      d.lado = -d.lado;
-      d.desde.set(d.bola.position.x, 1.0, d.bola.position.z);
-      d.hasta.set((Math.random() * 2 - 1) * 0.27, 1.0,
-        d.lado * (0.42 + Math.random() * 0.18));
-      const pal = d.lado > 0 ? d.p1 : d.p2;
-      pal.userData.swing = 1;
-    }
-    const k = d.k;
-    d.bola.position.lerpVectors(d.desde, d.hasta, k);
-    d.bola.position.y = 1.0 + Math.sin(k * Math.PI) * (0.10 + 0.05 * d.dur);
-    const seguir = (p, fase) => {
-      p.position.x += ((d.bola.position.x * 0.65) - p.position.x) * Math.min(1, dt * 5);
-      p.position.y = 1.0 + Math.sin(now * 0.0021 + fase) * 0.014;
-      if (p.userData.swing > 0) {
-        p.userData.swing = Math.max(0, p.userData.swing - dt * 2.4);
-        p.rotation.x = Math.PI / 2 - p.userData.swing * 0.9;
-      }
-    };
-    seguir(d.p1, 0);
-    seguir(d.p2, 1.7);
-  }
+  /* ================== M4 (r111) · LA MESA DE LA CASA — RETIRADA (r114)
+   * Petición EXPRESA y REITERADA del dueño: «sigo viendo la mesa con
+   * las dos palas jugando en el Hall y ya dijimos que no la queremos,
+   * no aporta nada». El diorama IA-vs-IA sobre pedestal (mesa
+   * miniatura ~55 % + palas disco + bola en parábolas scriptadas)
+   * sale del Hall Of Fame: ni construcción ni latido — el centro de
+   * la estancia queda libre y el museo se queda con su arte y sus
+   * 7 bolas doradas. La GUÍA DEL PRIMER SAQUE (M4) sigue viva aquí
+   * debajo intacta, igual que la telemetría del embudo (primer_rally).
+   * ================================================================== */
 
   /* ================== M4 (r111) · GUÍA DEL PRIMER SAQUE ================
    * Tres aros dorados aditivos en la cancha real (bola → golpe → red)

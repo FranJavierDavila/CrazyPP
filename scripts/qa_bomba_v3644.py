@@ -63,7 +63,7 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.103-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 52)'),
+        ('3.6.104-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 52)'),
         # · v3.6.46 (r54) · NEGATIVAS: campo, flechas y estela RETIRADOS —
         #   el imán es GANCHO + PALA METÁLICA y el efecto es SPIN REAL
         ('RETIRADO (ronda 54, petición del dueño): _buildImanCampo',
@@ -143,12 +143,12 @@ async def main():
          'bomba: 4 segundos en cada ladrillo → salta'),
         ('this._bombNext = 2 + Math.random() * 10;',
          'bomba: 1.ª aparición ALEATORIA dentro del 1.er intervalo (2-12 s — r53)'),
-        ('bombaCada: 15,',
-         'bomba: INTERVALOS DE 15 s (espec r53: «salga de manera aleatoria pero\n         con intervalos de 15 segundos si tiene ladrillos disponibles»)'),
+        ('bombaCada: 20,',
+         'bomba: INTERVALOS DE 20 s (r113 relajó la etapa 4 del dueño: antes 15 — espec r53)'),
         ('this._stageT += dt;',
          'bomba: reloj de la etapa que gobierna los intervalos (r53)'),
         ('this._bombNext = this._stageT + (this.C.bombaCada || 15);',
-         'bomba: cada aparición programa la siguiente a +15 s (r53)'),
+         'bomba: cada aparición programa la siguiente a +bombaCada (20 s desde r113)'),
         ('if (this._eFase > 0) return;',
          'bomba: el final ELÉCTRICO la apaga (r53 — sin bomba en el gran final)'),
         ('if (azules.length && this._stageT >= this._bombNext) {',
@@ -247,7 +247,8 @@ async def main():
 
             // --- andamio mínimo (la escena real no se monta en headless) ---
             ark.variant = 2;
-            ark.C = { cols: 9, rows: 6, depth: 0.12, brickRest: 0.5 };
+            // r114: la cfg del test lleva el bombaCada REAL de ARK2_CFG (20 s — r113)
+            ark.C = { cols: 9, rows: 6, depth: 0.12, brickRest: 0.5, bombaCada: 20 };
             ark._dying = [];
             ark._flash = () => {};
             ark.redMats = [{}, {}, {}];   // escombros: material por tono (mock)
@@ -290,13 +291,13 @@ async def main():
 
             // (a) INTERVALOS: aleatoria dentro del 1.er intervalo — con la
             //     1.ª aparición fijada a los 3 s sale al cruzarlos (r53);
-            //     el spawn programa la SIGUIENTE a +15 s (3,0 + 15 = 18)
+            //     el spawn programa la SIGUIENTE a +20 s (3,0 + 20 = 23 — r113)
             for (let i = 0; i < 8; i++) ark._bombUpdate(0.5);   // 4 s ≥ 3 s
             out.aAparece = !!ark._bombBrick &&
               ark._bombBrick.slot.state === 'blue' &&
               ark._bombBrick.slot.mesh.visible === false &&
               ark.bombMesh.visible === true && ark.bombIcon.visible === true &&
-              ark._bombNext === 18;   // siguiente aparición a +15 s exactos
+              ark._bombNext === 23;   // siguiente aparición a +20 s exactos (r113)
             const slotA = ark._bombBrick.slot;
 
             // (b) SALTO a los 4 s: otro azul y el original REAPARECE
@@ -398,7 +399,7 @@ async def main():
                     f'mecánica bomba sin excepciones ({rt.get("errBomba", "limpia")})')
                 chk(rt.get('aAparece') is True,
                     'mecánica (a): aparición ALEATORIA por INTERVALOS (r53) — '
-                    'sustituye a un azul (oculto), icono y siguiente a +15 s')
+                    'sustituye a un azul (oculto), icono y siguiente a +20 s (r113)')
                 chk(rt.get('bSalta') is True,
                     'mecánica (b): a los 4 s SALTA a otro azul y el original reaparece')
                 chk(rt.get('cDetona') is True,
@@ -408,7 +409,7 @@ async def main():
                     'mecánica (d): consumida, la bomba NO reaparece en la partida')
                 chk(rt.get('eEspera') is True and rt.get('eVuelve') is True,
                     'mecánica (e): sin intervalo ESPERA aunque haya azul; al '
-                    'cumplir el intervalo VUELVE (cadencia 15 s — r53)')
+                    'cumplir el intervalo VUELVE (cadencia 20 s — r113)')
                 chk(not rt.get('errNucleo'),
                     f'núcleo headless sin excepciones ({rt.get("errNucleo", "limpio")})')
                 chk(rt.get('campoRetirado') is True,

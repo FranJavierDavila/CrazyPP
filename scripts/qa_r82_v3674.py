@@ -66,7 +66,8 @@ AGUJAS = [
     ("JitterBuf clona las muestras", "CLON OBLIGATORIO"),
     ("sello de pose por captura del emisor", "SELLO POR CAPTURA"),
     ("eco NTP vivo (echoTime/echoDelay)", "ECO NTP VIVO"),
-    ("tolerancia de futuro 120 ms", "TOL_FUTURE: 120"),
+    # r114: la tolerancia subió a 250 ms en rondas posteriores (120→250)
+    ("tolerancia de futuro 250 ms", "TOL_FUTURE: 250"),
     ("el lanzamiento (kind 2) sin correlativo", "el LANZAMIENTO (kind 2) NO lleva correlativo"),
     # — túnel PeerJS de emergencia —
     ("túnel: gate en el bucle frame", "TÚNEL DE EMERGENCIA"),
@@ -78,7 +79,8 @@ AGUJAS = [
     ("partido v1 silencioso bloqueado", "NADA DE PARTIDOS v1 SILENCIOSOS"),
     # — referencias exactas visibles —
     ("bola HELD del rival EN SU MANO", "REFERENCIA EXACTA DEL SAQUE"),
-    ("montura del avatar por mano física (bit 8)", "montura por MANO FÍSICA"),
+    # r114: el comentario del bit 8 cambió de texto (mismo mecanismo)
+    ("montura del avatar por mano física (bit 8)", "necesita la MANO REAL para su montura"),
     ("emisión del bit 8 de lateralidad", "LATERALIDAD FÍSICA"),
     ("cuenta atrás con bola en cinemática", "CUENTA ATRÁS del MATCH_START la bola"),
     ("enlace cantado por voz", "EL ENLACE SE CANTA"),

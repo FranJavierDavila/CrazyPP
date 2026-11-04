@@ -277,7 +277,8 @@ async def main():
             }""")
             chk(telon_vivo.get("activo") == "locura", "TELÓN: La Locura arranca")
             chk(bool(telon_vivo.get("telon")), "TELÓN: nace negro con el launch")
-            chk("LOCURA" in (telon_vivo.get("texto") or "").upper(), "TELÓN: lleva el título del campeonato")
+            chk("LOCURA" in (telon_vivo.get("texto") or "").upper() or "MADNESS" in (telon_vivo.get("texto") or "").upper(),
+            "TELÓN: lleva el título del campeonato (ES o EN — M4 detecta el idioma)")
             desmonta = await page.evaluate("""() => new Promise((res) => {
                 const t0 = Date.now();
                 const iv = setInterval(() => {

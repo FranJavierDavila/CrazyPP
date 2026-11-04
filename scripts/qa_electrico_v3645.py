@@ -65,7 +65,7 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.103-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 53)'),
+        ('3.6.104-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 53)'),
         # i18n del ELÉCTRICO (c00 → game.html compilado)
         ("ark_elec_on: '¡LADRILLO ELÉCTRICO! Dale con la BOLA',",
          'eléctrico: i18n ES del sellado (c00→game.html)'),
@@ -87,11 +87,11 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · CADENCIA NUEVA DE LA BOMBA (r53)
-        ('bombaCada: 15,', 'bomba: INTERVALOS DE 15 s en ARK2_CFG (r53)'),
+        ('bombaCada: 20,', 'bomba: INTERVALOS DE 20 s en ARK2_CFG (r113 relaja la etapa 4)'),
         ('this._bombNext = 2 + Math.random() * 10;',
          'bomba: 1.ª aparición aleatoria dentro del 1.er intervalo'),
         ('this._bombNext = this._stageT + (this.C.bombaCada || 15);',
-         'bomba: cada aparición programa la siguiente a +15 s'),
+         'bomba: cada aparición programa la siguiente a +bombaCada (20 s desde r113)'),
         ('if (this._eFase > 0) return;',
          'bomba: el final eléctrico la APAGA (sin bomba en el gran final)'),
         # · SIEMBRA (fase 0 → 1): últimos 30 s, UN azul al azar
@@ -203,7 +203,8 @@ async def main():
             // --- andamio mínimo (la escena real no se monta en headless) ---
             ark.variant = 2;
             ark.C = { cols: 9, rows: 6, gap: 0.012, depth: 0.12,
-              bw: 0.1586, bh: 0.15, baseY: 0, z: 0, brickRest: 0.86 };
+              bw: 0.1586, bh: 0.15, baseY: 0, z: 0, brickRest: 0.86,
+              bombaCada: 20 };
             ark._dying = [];
             ark._flash = () => {};
             ark.redMats = [{}, {}, {}];
@@ -250,7 +251,8 @@ async def main():
               seed.state === 'elec' && seed.alive === true &&
               seed.mesh.material === ark.eBrickMat &&
               ark.eIcon.visible === true &&
-              String(ark._msg).indexOf('ELÉCTRICO') >= 0;
+              String(ark._msg).indexOf('ELÉCTRICO') >= 0 ||
+              String(ark._msg).indexOf('ELECTRIC BRICK') >= 0;   // M4: QA nace en-US
 
             // ===== (b) INMUNIDAD al láser =====
             const rLaser = ark.laserHit(seed);

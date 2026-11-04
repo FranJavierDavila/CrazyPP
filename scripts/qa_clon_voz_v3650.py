@@ -302,7 +302,9 @@ async def main():
             G.stickAxis = () => ({ x: 1.0 });  // el dueño empuja el stick
             r.state = 'rally';
             G._megaCiclo(0.016);
-            out.fSinPoder = r.message === 'Sin poder';
+            // r114: M4 detecta el idioma — el Chromium de QA nace en-US, el
+            // mensaje llega en EN; se acepta ES y EN (mismo árbol de voz)
+            out.fSinPoder = r.message === 'Sin poder' || r.message === 'No power';
             out.fCd0 = Math.abs(G._megaStick.cd - 0.5) < 0.01;
             // con UN poder: no cicla, pero la voz nombra (caché sel_…)
             G._megaMatriz.push({ id: 'mega', n: 1 });
@@ -312,10 +314,10 @@ async def main():
             // la voz se decodifica (data-URI) y queda cacheada
             await new Promise((r2) => setTimeout(r2, 700));
             const buf = G.audio && G.audio._megaVozBuf || {};
-            out.fVozNada = !!(buf.sel_nada_es && (buf.sel_nada_es.buf ||
-                             buf.sel_nada_es.busy || buf.sel_nada_es.failed));
-            out.fVozMega = !!(buf.sel_mega_es && (buf.sel_mega_es.buf ||
-                             buf.sel_mega_es.busy || buf.sel_mega_es.failed));
+            const nadaVoz = buf.sel_nada_es || buf.sel_nada_en;   // ES o EN (M4)
+            out.fVozNada = !!(nadaVoz && (nadaVoz.buf || nadaVoz.busy || nadaVoz.failed));
+            const megaVoz = buf.sel_mega_es || buf.sel_mega_en;   // ES o EN (M4)
+            out.fVozMega = !!(megaVoz && (megaVoz.buf || megaVoz.busy || megaVoz.failed));
             G.stickAxis = stickReal;
             G._megaCicla(-1);                  // borde: blip y nada (sin envolver)
           } catch (e) { out.errF = String(e); }

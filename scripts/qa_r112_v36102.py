@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r112_v36102.py — capa de QA de la ronda 112 (V3.6.103-SDK6).
+"""qa_r112_v36102.py — capa de QA de la ronda 112 (V3.6.104-SDK6).
 
 HITO M5a del roadmap MEJORAS.md · IA CON ESTILOS (12 personalidades).
 
@@ -107,11 +107,13 @@ REGRESION = [
     ('_megaNormReset', 'r62+ hápticas/poderes intactos'),
     ('r110 · SEMÁNTICA DEL BIT 4', 'r110 fix de duelo presente'),
     ("navigator.serviceWorker.register('sw.js'", 'r109 PWA intacta'),
-    ('_demoMuseoConstruir()', 'r111 diorama intacto'),
+    ('LA MESA DE LA CASA — RETIRADA', 'r114 diorama retirado (petición del dueño)'),
     ("localStorage.getItem('pp_estilo_v1') || 'clasico'", 'r112 estado presente'),
 ]
 for aguja, nombre in REGRESION:
     CHK(aguja in GH, 'regresión: ' + nombre)
+CHK('_demoMuseoConstruir()' not in GH,
+    'r114: el diorama IA-vs-IA del Hall está FUERA del servido')
 
 # 6 · ARNÉS DE ESTILOS: corre como CAPA PROPIA del GATE (qa_estilos_r112.mjs,
 #         igual que test_fisica.mjs en la capa B) — en esta capa sólo se

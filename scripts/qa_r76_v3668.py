@@ -191,7 +191,11 @@ JS_PULSO = """(args) => {
   ok('plan.determinista', p1.mode === p2.mode && p1.champ === p2.champ && p1.frase === p2.frase);
   const modos = Object.keys(dbg.MODES);
   ok('plan.modoValido', modos.indexOf(p1.mode) >= 0, p1.mode);
-  ok('plan.metaCoherente', p1.n === dbg.MODES[p1.mode].n, p1.n);
+  // r114: DAILY_DIF (DESDE 2026-11-01, +1 cada 14 días, tope 3) añade
+  // un objetivo EXTRA por fecha — el meta del plan es el objetivo base
+  // más el sub del día, nunca POR DEBAJO del objetivo del modo
+  ok('plan.metaCoherente', p1.n >= dbg.MODES[p1.mode].n &&
+     p1.n <= dbg.MODES[p1.mode].n + 3, p1.n);
   ok('plan.campeon', ['CLOW', 'WIZARD', 'FORAJIDO', 'ORBITAL', 'NEÓN'].indexOf(p1.champ) >= 0, p1.champ);
   ok('plan.frase', /^daily_p[0-4]$/.test(p1.frase), p1.frase);
   const pOtro = tt.dailyPlan('2026-01-01'), pOtro2 = tt.dailyPlan('2026-01-02');
@@ -249,7 +253,9 @@ JS_PULSO = """(args) => {
   S.best[p1.mode] = 0;
   const tip0 = tt.dailyTip(kHoy);
   ok('profesor.sinMarca', tip0.k === 'daily_t0', tip0.k);
-  S.best[p1.mode] = dbg.MODES[p1.mode].n; S.acc[p1.mode] = 60;
+  // r114: el objetivo del plan LLEVA el sub del día — el profesor compara
+  // contra p1.n completo
+  S.best[p1.mode] = p1.n; S.acc[p1.mode] = 60;
   ok('profesor.precision', tt.dailyTip(kHoy).k === 'daily_t2', tt.dailyTip(kHoy).k);
   S.acc[p1.mode] = 95; S.stars[p1.mode] = 3;
   ok('profesor.dominado', tt.dailyTip(kHoy).k === 'daily_t4', tt.dailyTip(kHoy).k);

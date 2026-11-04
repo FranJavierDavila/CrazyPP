@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.103-SDK6, fase 105 · Ajustes del dueño: chincheta, física del golpe, CPU, superpoderes y etapa 4; sello actualizado
-# por bump_version.py desde 3.6.102-SDK6)
-72de53aa5e14c7c9bb5a505e7e0bdc508e69310d12d1e433f8c9d12a104f645f
+# SHA256 del game.html que produjo esta división (3.6.104-SDK6, fase 106 · ANCLA POR ESTANCIA (MENÚ) + RETIRO DEL DIORAMA; sello actualizado
+# por r114 tras el refactor _menuAnclaHeal)
+4a9ef5d59a2e4ed2d5b3c976d17e64f090649096c9a1dfdcee6fd660e39b1dcb

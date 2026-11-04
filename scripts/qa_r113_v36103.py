@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r113_v36103.py — capa de QA de la ronda 113 (V3.6.103-SDK6).
+"""qa_r113_v36103.py — capa de QA de la ronda 113 (V3.6.104-SDK6).
 
 SEIS AJUSTES DEL DUEÑO sobre el juego vivo:
 
@@ -152,11 +152,13 @@ REGRESION = [
     ('_megaNormReset', 'r62+ hápticas/poderes intactos'),
     ('r110 · SEMÁNTICA DEL BIT 4', 'r110 fix de duelo presente'),
     ("navigator.serviceWorker.register('sw.js'", 'r109 PWA intacta'),
-    ('_demoMuseoConstruir()', 'r111 diorama intacto'),
+    ('LA MESA DE LA CASA — RETIRADA', 'r114 diorama retirado (petición del dueño)'),
     ("localStorage.getItem('pp_estilo_v1') || 'clasico'", 'r112 estilos intactos'),
 ]
 for aguja, nombre in REGRESION:
     CHK(aguja in GH, 'regresión: ' + nombre)
+CHK('_demoMuseoConstruir()' not in GH,
+    'r114: el diorama IA-vs-IA del Hall está FUERA del servido')
 
 # ── EN VIVO: la chincheta respira (menú + ancla + toggle) ──
 print('== EN VIVO (chincheta del menú) ==')

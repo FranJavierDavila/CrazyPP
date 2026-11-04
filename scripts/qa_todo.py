@@ -103,6 +103,14 @@ CAPAS = [
     # bolas fáciles, superpoderes sólo con la bola hacia el rival (5
     # campeonatos) y etapa 4 de La Locura relajada. En vivo: el pin ancla.
     ('r113 · ajustes del dueño (v36103)', 'qa_r113_v36103.py'),
+    # r114 · CORRECCIÓN BLOQUEANTE del menú (informe del dueño: «si estoy en
+    # un partido y pulso B para sacar el Menú no lo veo… si anclamos el menú
+    # y nos vamos a otro escenario ya no se ve») — ANCLA POR ESTANCIA: el
+    # ancla se firma (estancia + rig) y el heal por frame la invalida al
+    # viajar (la chincheta se suelta sola, el panel reaparece delante);
+    # reapertura honesta en toggleMenu/openHallAsk; y LA MESA DE LA CASA
+    # (diorama IA-vs-IA del hall, FASE 103) RETIRADA por petición expresa.
+    ('r114 · menú ancla por estancia (v36104)', 'qa_r114_v36104.py'),
     ('r112 · arnés de estilos (no-trampa)', 'qa_estilos_r112.mjs'),
     ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
     ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r104_v3696.py — capa de QA de la ronda 104 (V3.6.103-SDK6).
+"""qa_r104_v3696.py — capa de QA de la ronda 104 (V3.6.104-SDK6).
 
 Petición del dueño: «Los textos pequeños de los menús no se leen muy bien, y
 revisar que no desborden y estén bien encajadas. Habría alguna manera de que
@@ -124,12 +124,12 @@ CHK('PROTO: 2,' in GH, 'game.html: pala rival FIEL intacta (r102 códec)')
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.103-SDK6', 'c00: VERSION sella 3.6.103-SDK6')
-CHK('>V3.6.103-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
-    'portada: badge V3.6.103-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.104-SDK6', 'c00: VERSION sella 3.6.104-SDK6')
+CHK('>V3.6.104-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
+    'portada: badge V3.6.104-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
 CHK(V.get('fase') == 100, 'VERSION.json: FASE 98')
-CHK(V.get('hub') == 'v36103-sdk6', 'VERSION.json: hub v36103-sdk6')
+CHK(V.get('hub') == 'v36104-sdk6', 'VERSION.json: hub v36104-sdk6')
 CHK(V.get('golden', '').startswith('414f27dc'), 'VERSION.json: golden 414f27dc…')
 
 # ------------------------------------------------------------- RUNTIME ----

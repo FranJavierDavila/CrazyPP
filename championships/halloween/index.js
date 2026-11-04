@@ -1721,8 +1721,13 @@ class PlantillaPoderes {
     if (r.state !== 'rally' || this.ctrl.pruebaActiva()) return;
     if ((r.rallyHits || 0) < this.T.minRallyHits) return;
     const b = this.game.ball;
-    // r113 · flanco INVERTIDO (dueño): sólo con la bola yendo al RIVAL
-    if (!b || !(b.vel.z < -0.35)) return;
+    // r115 · flanco del DUEÑO: el poder nace EN EL GOLPEO del rival —
+    // rules.lastHitter pasa a 'ai' justo en el contacto de su pala y la
+    // bola sigue en SU campo (z < −1,6 del centro de mesa). Edge por
+    // frame: un único intento por golpeo rival.
+    const golpeAi = r.lastHitter === 'ai' && !!b && !!b.pos && b.pos.z < -1.6;
+    if (!golpeAi || golpeAi === this._hitAi) { this._hitAi = golpeAi; return; }
+    this._hitAi = golpeAi;
     if (this.T.bolsa === 'rotatoria' && this.rallyFired) return;
     this.garantiaT -= dt;
     const p0 = this._elegirPico();

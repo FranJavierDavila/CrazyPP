@@ -11322,7 +11322,7 @@ class ForajidoStand {
     this._duelOn = false; this._duelT = 0; this._armT = 0; this._duelPose = false;
     this._rivalOn = false;
     this._powerCd = 0; this._powerT = 0; this._pendingPower = null; this._pendT = 0;
-    this._powerKind = null; this._lastPower = null; this._rallyFired = false; this._toward = false;
+    this._powerKind = null; this._lastPower = null; this._rallyFired = false; this._hitAi = false;
     this._rev = null; this._dyn = null;   // v2.90: fuera _dynSide (objetivos aleatorios)
     // v2.89 · EL DUELO del Disparo certero: diana, arte de duelo, pala-revólver
     this._duelo = null;
@@ -12994,13 +12994,15 @@ class ForajidoStand {
     const r = g.rules;
     const ball = g.ball;
     if (!ball || !ball.vel) return;
-    if (r.state !== 'rally' || this._rallyFired) { this._toward = false; return; }
-    if ((r.rallyHits || 0) < OESTE_POWER.minRallyHits) { this._toward = false; return; }
-    // r113 · flanco INVERTIDO (dueño): el poder se anuncia SOLO con la bola
-    // yendo hacia el RIVAL — nunca roba el golpeo del jugador con el congelado
-    const toward = ball.vel.z < -0.35;
-    const edge = toward && !this._toward;
-    this._toward = toward;
+    if (r.state !== 'rally' || this._rallyFired) { this._hitAi = false; return; }
+    if ((r.rallyHits || 0) < OESTE_POWER.minRallyHits) { this._hitAi = false; return; }
+    // r115 · flanco del DUEÑO: el poder nace EN EL GOLPEO del rival —
+    // rules.lastHitter pasa a 'ai' justo en el contacto de su pala y la
+    // bola sigue en SU campo (z < −1,6 del centro de mesa). El congelado
+    // del aviso nace en ese justo momento, nunca en pleno vuelo.
+    const golpeAi = r.lastHitter === 'ai' && ball.pos.z < -1.6;
+    const edge = golpeAi && !this._hitAi;
+    this._hitAi = golpeAi;
     if (!edge) return;
     if (Math.random() < this._nvCfg().chance) this.firePower();
   }
@@ -13105,7 +13107,7 @@ class ForajidoStand {
     this._pendingPower = null;
     this._pendT = 0;
     this._rallyFired = false;
-    this._toward = false;
+    this._hitAi = false;
     this._restoreBallTint();
   }
 
@@ -13532,7 +13534,7 @@ class ForajidoStand {
     if (!this.active || !this._duelOn) return;
     const w = it && it.winner;
     this._rallyFired = false;
-    this._toward = false;
+    this._hitAi = false;
     this._restoreBallTint();   // la bola manchada se limpia con el punto
     if (w === 'ai') {
       this.streakAi++;

@@ -9,6 +9,13 @@
   "id": "clown",
   "name": "CLOWN",
   "kind": "payaso loco",
+  "personalidad": {
+   "agresividad": 4,
+   "precision": 2,
+   "constancia": 2,
+   "caracter": "loco",
+   "cerebro": "caos"
+  },
   "states": [
    "present",
    "idle",

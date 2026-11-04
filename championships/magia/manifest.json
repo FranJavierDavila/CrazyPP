@@ -10,6 +10,13 @@
     "name": "WIZARD",
     "oppLabel": "wizard",
     "kind": "mago arcano",
+    "personalidad": {
+      "agresividad": 2,
+      "precision": 4,
+      "constancia": 4,
+      "caracter": "frio",
+      "cerebro": "estratega"
+    },
     "states": [
       "present",
       "idle",

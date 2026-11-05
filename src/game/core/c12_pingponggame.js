@@ -854,6 +854,11 @@ export class PingPongGame {
   enterCalib(pala = false) {
     const yaPala = !!this.calibPala;
     this.calib = true;
+    // r122 · «el modo vive SÓLO un partido»: entrar a la academia o a
+    // AJUSTES›PALA cierra el DOBLES 2v2 (antes doblesActivo sobrevivía:
+    // palas extra congeladas en la escena y exitCalib re-armaba un 2v2
+    // fantasma al volver al partido).
+    this.doblesActivo = false;
     this.calibPala = !!pala && !this.trainV3 && !this.tutV1;
     this.closeMenu();            // el entrenamiento tiene su propio panel
     this.preCalibMode = this.mode;   // recordar el modo actual para volver a él
@@ -6075,6 +6080,17 @@ export class PingPongGame {
     this.apexSignaled = false;
     this.gripDown[0] = false;
     this.gripDown[1] = false;
+    // r122 · v2: un lanzamiento CAÍDO (a mesa/suelo o timeout 8 s) no puede
+    // dejar el enlace en «toss vivo»: el rival simulaba una bola fantasma
+    // rodando por el suelo en vez de esperar EN LA MANO. Re-arma el HELD
+    // como hace el MATCH_START (setServeHeld + visibilidad por sacador).
+    if (this._netTossLive) {
+      this._netTossLive = false;
+      if (this.net && this.net.online && this.net.v2 === 'ok') {
+        this.net.setServeHeld(this.rules.server === 'player');
+        if (this.ballMesh) this.ballMesh.visible = this.rules.server === 'player';
+      }
+    }
   }
 
   onSelectStart(i) {
@@ -10644,7 +10660,7 @@ export class PingPongGame {
     // registerPaddleHit('player'|'ai') comparte marcador por EQUIPO y la
     // falta de doble golpe (mismo who dos veces) ya vive en Rules.
     if (this.doblesActivo && !this.net.online && !this.inHall && !this.calib &&
-        !frozen && active && !(this.champs && this.champs.active)) {
+        !frozen && active && !(this.champs && (this.champs.active || this.champs.testActive))) {
       const _dbSeg = this._prevBallForAI || this.ball.pos;   // barrido anti-túnel
       // — COMPAÑERO (sign +1): respeta tu alcance —
       const _dbCercaJug = playerPad.active

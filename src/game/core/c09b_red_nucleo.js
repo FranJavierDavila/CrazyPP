@@ -804,8 +804,12 @@ export const PPNET = (() => {
         this.pending = { r, w, c, sp, sa };
         return { apply: true, send: { k: 'claim', r, w, c, sp, sa } };
       }
-      return { apply: true, send: null };   // mi detección vale; el claim
-                                            // del rival confirmará o rescindirá
+      // r122 · también SIN autoridad se envía el CLAIM: tras un cruce ambos
+      // extremos son ghost — si cada uno aplicó un punto DISTINTO nadie
+      // reclamaba y la divergencia del marcador era indetectable. onClaim
+      // ya confronta (agree/dispute → resync del host) y, si el rival no
+      // aplicó nada, su _applyRemoteClaim recupera el punto perdido.
+      return { apply: true, send: { k: 'claim', r, w, c, sp, sa } };
     }
     /** llega CLAIM del rival; devuelve el ACK y si debo aplicar.
      *  mappedW = el ganador del claim YA espejado a MI perspectiva. */

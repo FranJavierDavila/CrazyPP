@@ -104,19 +104,19 @@ AGUJAS = [
     ("sincronizando (estado honesto)", "net_syncing: 'Sincronizando con el rival…'"),
     ("pausa del rival (i18n)", "net_paused: 'RIVAL EN PAUSA · el partido queda detenido'"),
     ("degradación honesta a v1", "net_legacy: 'Sin canal rápido: modo compatible 30 Hz'"),
-    ("versión sellada 3.6.91-SDK6", "const VERSION = '3.6.110-SDK6';"),
+    ("versión sellada 3.6.91-SDK6", "const VERSION = '3.6.111-SDK6';"),
 ]
 
 CONTADORES = [
     ("k: 'mstart' (emisión + recepción)", "k: 'mstart'", 2),
     ("k: 'hello2' (una sola definición)", "k: 'hello2'", 1),
-    ("k: 'claim' (libro de reclamos)", "k: 'claim'", 1),
+    ("k: 'claim' (libro de reclamos — r122: también SIN autoridad)", "k: 'claim'", 2),
     ("candado fuera de la tarjeta Duelos (r84)", "candado(c, x + 134", 0),
     ("PP_ICONS.duelo (definición + uso)", "PP_ICONS.duelo", 1),
     ("netPing (marcador + c12 + c08)", "netPing", 7),
-    ("setServeHeld (HELD determinista)", "setServeHeld", 3),
+    ("setServeHeld (HELD determinista — r122: +re-arms del toss caído)", "setServeHeld", 5),
     ("mjduel vía _modeCard con las hermanas (r84)", "rects, 'mjduel', 40, 326", 1),
-    ("versión única", "const VERSION = '3.6.110-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.111-SDK6'", 1),
     ("agujas de la ronda 78 intactas (MEGA_GOLPES)", "const MEGA_GOLPES = 20;", 1),
 ]
 

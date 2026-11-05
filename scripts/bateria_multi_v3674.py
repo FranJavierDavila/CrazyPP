@@ -127,6 +127,14 @@ PERFILES = [
      "skew_h": 0, "skew_g": 0, "sabotea": True, "via": "tunel", "seed": 36740021},
 ]
 
+# r122 · filtro por entorno (lección r121: la batería paralela de 3 parejas
+# excede el techo de 600 s del sandbox → se corren PAREJAS por llamada):
+#   BATERIA_SOLO=P1 python3 scripts/bateria_multi_v3674.py
+import os as _os
+if _os.environ.get('BATERIA_SOLO'):
+    _solo = set(_os.environ['BATERIA_SOLO'].split(','))
+    PERFILES = [p for p in PERFILES if p['id'] in _solo]
+
 # ————— init scripts (ANTES de pg.goto) —————
 JS_SKEW = """(() => {
   // r82 · RELOJES DESIGUALES: el performance.now de esta página vive

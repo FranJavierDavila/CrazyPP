@@ -1,10 +1,10 @@
 {
-  "version": "3.6.110-SDK6",
-  "fase": 112,
-  "faseNombre": "M-RED · multijugador verificado: saque del invitado + validación justa (banco S3 + batería 4 puntos)",
+  "version": "3.6.111-SDK6",
+  "fase": 113,
+  "faseNombre": "M-RED2 · revision completa del netcode: resync con perspectiva, guardia de estado, claim sin autoridad, toss caido, higiene + fuga 2v2 + PULSO vivo",
   "sdk": "1.6.0",
   "fecha": "2026-11-05",
-  "hub": "v36110-sdk6",
+  "hub": "v36111-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r119",
   "tamano": 10691069,
-  "golden": "efab7b8b120774a456442c50f32a66c3d7eebbe290e273689f85ad5779bbe277"
+  "golden": "86e291d113fcb6c3607001c52399ccd0271f8af4a7cbc11da1c55f01bdcf5ebc"
 }

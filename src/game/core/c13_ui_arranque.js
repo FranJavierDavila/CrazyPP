@@ -2487,6 +2487,14 @@ loadPaddleModel().then((paddleModel) => {
               recordStars(active, mi + 1);
               checkGlobalAch();
             }
+            // r122 · EL PULSO (reto diario) y el RETO SEMANAL también en el
+            // CAMINO VIVO: antes sólo vivían en el hitGoal del okHit muerto
+            // (desde v3.0.2) — un día con plan t5a/t5b no podía cobrar el
+            // PULSO ni la insignia semanal. Mismo patrón idempotente del
+            // bloque vivo r120 (grant/record ya guardan por sí mismos).
+            try { if (G && G._retosEvento) G._retosEvento('entrenamiento', 1); } catch (eRE) { /* */ }
+            try { if (st.weekly) weeklyComplete(active, st.rally, S.best[active] || 0);
+              else dailyComplete(active, st.rally, S.best[active] || 0); } catch (eD) { /* nunca rompe */ }
           }
           panelDirty = true;    // el rally sigue: el beat sustituirá la bola cuando la anterior repose
         }

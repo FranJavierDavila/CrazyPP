@@ -144,7 +144,7 @@ AGUJAS = [
     ("HIT aplica la bola con copy (no NaN)", "g.ball.pos.copy(p);"),
     ("HANDOFF aplica con copy (no NaN)", "g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado"),
     ("watchdog HELLO generoso (22 s)", "}, 22000);"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.110-SDK6'"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.111-SDK6'"),
 ]
 
 CONTADORES = [
@@ -165,7 +165,7 @@ CONTADORES = [
     ("_iceQ (cola completa)", "_iceQ", 5),
     ("r.rallySeq en el claim", "const rallyId = r.rallySeq", 1),
     ("rallySeq en los intents de punto", "localPoint(g.rules.rallySeq", 1),
-    ("versión única", "const VERSION = '3.6.110-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.111-SDK6'", 1),
 ]
 
 JS_PERF = """async () => {

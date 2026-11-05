@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r111_v36101.py — capa de QA de la ronda 111 (V3.6.110-SDK6).
+"""qa_r111_v36101.py — capa de QA de la ronda 111 (V3.6.111-SDK6).
 
 HITO M4 del roadmap MEJORAS.md · ONBOARDING < 60 SEGUNDOS.
 

@@ -256,7 +256,12 @@ export class NetLink {
     }
     this.peer.on('open', () => { this._retryIds = 0; onReady && onReady(); });
     this.peer.on('connection', (conn) => {     // lado anfitrión
-      if (this.conn && this.conn.open) { conn.close(); return; }  // una sala = un rival
+      // r122 · una sala = un rival: con conexión VIVA se rechaza el nuevo;
+      // si sólo queda un RESTO cerrado de una sesión anterior se aparta y
+      // se acepta el entrante (antes un conn a medio abrir era reemplazado
+      // en silencio → startV2 dos veces y dos peers alimentando onData).
+      if (this.conn && this.conn.open) { conn.close(); return; }
+      if (this.conn && this.conn !== conn) { try { this.conn.close(); } catch { /* */ } }
       this.wireConn(conn);
     });
     this.peer.on('call', (call) => {           // voz entrante (anfitrión)
@@ -382,6 +387,7 @@ export class NetLink {
       g.gain.value = 0;                     // silencio total
       osc.connect(g); g.connect(dst);
       osc.start();
+      this._silentCtx = ctx;      // r122: cerrarlo en teardown (fuga AudioContext)
       this._silent = dst.stream;
       return this._silent;
     } catch { return null; }
@@ -540,7 +546,7 @@ export class NetLink {
     }
     switch (d.k) {
       case 'hello2': case 'tick2': case 'tock2': case 'ready2':
-      case 'mstart': case 'claim': case 'ack': case 'resync':
+      case 'mstart': case 'claim': case 'ack': case 'resync': case 'resync-req':
       case 'pause': case 'resume': case 'mend': case 'v2off':
         this._onRel(d);
         return;
@@ -1090,6 +1096,12 @@ export class NetLink {
         if (this.role === 'guest') this._applyResync(m);
         break;
       }
+      case 'resync-req': {
+        // r122 · el receptor rechazó un saque/HIT legal: pide resync y el
+        // anfitrión responde con la autoridad (spec §9).
+        if (this.role === 'host') this._sendResync();
+        break;
+      }
       case 'pause': {
         this._pausedRemote = true;
         this._pausedAt = performance.now();
@@ -1566,6 +1578,10 @@ export class NetLink {
       k: 'resync', sp: r.scorePlayer, sa: r.scoreAi, sv: r.server,
       st: r.state, tp: r.totalPoints, gp: r.gamesPlayer, ga: r.gamesAi,
       gn: r.gameNo, fs: r.firstServer,
+      // r122 · el abridor del juego viaja también (computeNextServer lo
+      // deriva de gameOpener): sin él, un resync que cruce el cambio de
+      // juego (mejor de 3) rotaba el saque al revés todo el juego nuevo.
+      go: r.gameOpener,
       // v3.6.74 · r82 · banderas del ÁRBITRO: sin ellas el resincronizado
       // seguía juzgando el rally con lastHitter/validBounce suyos (puntos
       // fantasma tras un RESYNC en pleno intercambio)
@@ -1577,12 +1593,25 @@ export class NetLink {
     const r = this.game?.rules;
     if (!r) return;
     this._sync.onResync();
-    r.scorePlayer = m.sp; r.scoreAi = m.sa;
-    r.server = m.sv; r.state = m.st; r.totalPoints = m.tp;
-    r.gamesPlayer = m.gp; r.gamesAi = m.ga; r.gameNo = m.gn;
-    r.firstServer = m.fs;
+    // r122 · FIX MARCADOR INVERTIDO: sp/sa/sv/fs/gp/ga/lh viajan en
+    // perspectiva del ANFITRIÓN («player» = él) y se aplicaban EN CRUDO —
+    // el único camino que no remapeaba (v1 applySync y mstart sí): el
+    // invitado quedaba con el marcador del revés, sumaba sus puntos en el
+    // hueco del rival y podía coronar victoria/ELO falsos. Espejo EXACTO
+    // del applySync v1 (líneas ~624-640).
+    const gu = this.role === 'guest';
+    const flip = (x) => (x === 'player' ? 'ai' : 'player');
+    r.scorePlayer = gu ? m.sa : m.sp;
+    r.scoreAi = gu ? m.sp : m.sa;
+    r.server = gu ? flip(m.sv) : m.sv;
+    r.state = m.st; r.totalPoints = m.tp;
+    r.gamesPlayer = gu ? m.ga : m.gp;
+    r.gamesAi = gu ? m.gp : m.ga;
+    r.gameNo = m.gn;
+    r.firstServer = gu ? flip(m.fs) : m.fs;
+    r.gameOpener = m.go !== undefined ? (gu ? flip(m.go) : m.go) : r.gameOpener;
     // r82: el árbitro de mitad hereda las banderas del anfitrión
-    if (m.lh !== undefined) r.lastHitter = m.lh;
+    if (m.lh !== undefined) r.lastHitter = gu ? flip(m.lh) : m.lh;
     if (m.vb !== undefined) r.validBounce = !!m.vb;
   }
 
@@ -1679,6 +1708,14 @@ export class NetLink {
       return;
     }
     if (ev.t === PPNET.VP.EV.HIT) {
+      // r122 · guardia de estado (espejo de la v1, ~781-784): un HIT
+      // atrasado/duplicado (retransmisión tras pérdida) NO puede resucitar
+      // un rallye ya puntuado — antes beginServeRally('ai') corría
+      // incondicional y revivía el rallye con el punto ya contado.
+      const stG = g.rules.state;
+      if (stG !== 'rally' && !(stG === 'serve' && (ev.kind === 1 || ev.kind === 2))) {
+        return;
+      }
       // validación del receptor (spec §12) — r81: pose en el marco NET y
       // en el instante del golpe (antes: marco crudo del emisor contra
       // ev.p espejado → TODO golpe remoto rechazado por distancia absurda)
@@ -1690,6 +1727,16 @@ export class NetLink {
       const v = this._val.hit(ev, ctx);
       if (!v.ok) {
         if (this._val.serious >= 3) { this._stats.suspect = true; }
+        // r122 · red de seguridad: un saque/HIT legal rechazado (p.ej.
+        // «tHit en el futuro» con ancla gruesa mala al inicio) dejaba este
+        // lado ATASCADO para siempre — reglas en 'serve' sin intent que
+        // las mueva. El rechazo pide resync: el atasco se repara en un RTT.
+        const nowMs = performance.now();
+        if (nowMs - (this._lastResyncReq || 0) > 1000) {
+          this._lastResyncReq = nowMs;
+          if (this.role === 'host') this._sendResync();
+          else this.sendRel({ k: 'resync-req' });
+        }
         return;
       }
       // r121 · la CADENCIA cuenta GOLPES, no lanzamientos: el toss (kind 2)
@@ -1976,6 +2023,10 @@ export class NetLink {
     if (this.remoteAudio) { try { this.remoteAudio.srcObject = null; } catch { /* */ } }
     this.conn = null; this.call = null; this.peer = null; this.micStream = null;
     this._silent = null;
+    if (this._silentCtx) {   // r122: cerrar el AudioContext del stream silencioso (fuga por reconexión)
+      try { this._silentCtx.close().catch(() => { /* */ }); } catch { /* */ }
+      this._silentCtx = null;
+    }
     this.online = false;
     this.remotePaddle = null; this.remoteBall = null;
     this._padPrev = null;                               // v2.91
@@ -1983,6 +2034,7 @@ export class NetLink {
     this.lastPoint = null; this.lastRetry = null;   // v2.25
     this._lastHitSent = 0;                          // v2.51
     if (this._joinTO) { window.clearTimeout(this._joinTO); this._joinTO = null; }
+    if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }   // r122: no matar la sesión NUEVA en reconexión rápida
     this.voiceState = 'off';
     this.owner = 'host';
   }

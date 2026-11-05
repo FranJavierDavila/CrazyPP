@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r109_v3699.py — capa de QA de la ronda 109 (V3.6.110-SDK6).
+"""qa_r109_v3699.py — capa de QA de la ronda 109 (V3.6.111-SDK6).
 
 HITO M3 del roadmap MEJORAS.md · PWA INSTALABLE.
 
@@ -142,12 +142,12 @@ CHK('Copiando PWA (manifest + sw + iconos)' in bz, 'build_zip: la PWA viaja en l
 # 8 · versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.110-SDK6', 'c00: VERSION sella 3.6.110-SDK6')
-CHK('>V3.6.110-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
-    'portada: badge V3.6.110-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.111-SDK6', 'c00: VERSION sella 3.6.111-SDK6')
+CHK('>V3.6.111-SDK6</span>' in open(os.path.join(RAIZ, 'src/game/03_body.html'), encoding='utf-8').read(),
+    'portada: badge V3.6.111-SDK6')
 # r115 · re-ancla: la FASE vive en el bump (VERSION.json es la fuente de verdad)
 CHK(V.get('fase') >= 106, f"VERSION.json: FASE {V.get('fase')} (>= 106, r114 ancla por estancia)")
-CHK(V.get('hub') == 'v36110-sdk6', 'VERSION.json: hub v36110-sdk6')
+CHK(V.get('hub') == 'v36111-sdk6', 'VERSION.json: hub v36111-sdk6')
 
 # 9 · regresión (r106/r105/r104/r102/r62 intactas)
 CHK('const s6 = Math.min(1, e.speed / 6);' in GH, 'r106: háptica del bote calibrada intacta')

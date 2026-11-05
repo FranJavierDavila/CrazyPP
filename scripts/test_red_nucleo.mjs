@@ -198,7 +198,12 @@ const P = PPNET;
   let d1 = h.localPoint(0, 'player', 'dbl_opp', 1, 0, true, 0);
   chk(d1.apply && d1.send?.k === 'claim', 'sync: el extremo con autoridad EMITE CLAIM');
   let d2 = g.localPoint(0, 'ai', 'dbl_opp', 0, 1, false, 5);   // guest detectó (su perspectiva: ganó la ai)
-  chk(d2.apply && !d2.send, 'sync: el invitado aplica SU detección sin reclamar');
+  // r122 · el invitado TAMBIÉN reclama sin autoridad (tras un cruce ambos
+  // extremos son ghost: si nadie reclamaba, puntos opuestos divergían en
+  // silencio — el claim cruzado hace la divergencia detectable).
+  chk(d2.apply && d2.send?.k === 'claim', 'sync: el invitado SIN autoridad TAMBIÉN reclama (r122: divergencia detectable)');
+  const ackX = h.onClaim(d2.send, 'player');   // claim 'ai' del guest = 'player' en el marco del host
+  chk(ackX.ack.agree === true && !ackX.apply, 'sync: cruce de claims SIN autoridad → acuerdo y sin doble aplicación');
   const ack1 = g.onClaim(d1.send, 'ai');   // claim 'player' del host = 'ai' en el marco del guest
   chk(ack1.ack.agree === true && !ack1.apply, 'sync: detección local del guest ENCAJA con el claim → ACK acuerdo');
   chk(h.onAck(ack1.ack).ok, 'sync: el host confirma el ACK');

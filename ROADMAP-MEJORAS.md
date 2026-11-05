@@ -96,6 +96,7 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 | M4 · ELO completo: unificado con K por modo (IA 24/escalera 20/humano 32) + matchmaking «Rival a tu nivel» ±120 + reto de la semana con insignia + página MI RANKING | 3.6.107-SDK6 | r118 · Task 223 | ☑ producción | 2026-11-04 |
 | M7c · DOBLES 2v2 prototipo: investigación (árbitro ya de equipos + OpponentAI simétrico) + prototipo jugable (compañero IA + rival 2, arbitraje de alcance 0,50 m, cero cambios en física/árbitro) | 3.6.108-SDK6 | r119 · Task 224 | ☑ producción | 2026-11-04 |
 | M7d · PRO TRAINING extendido: 2 ejercicios nuevos (ESQUINA EXACTA + METRÓNOMO LOCO) + medallas BRONCE/PLATA/ORO por ejercicio (retroactivas, medallero en el hub) + logro MEDALLERO DE ORO + m50/m100 re-anclados al juez vivo | 3.6.109-SDK6 | r120 · Task 225 · qa_r120 39/0 | ☑ producción | 2026-11-05 |
+| M-RED · multijugador verificado al 100% (requisito Nº 1 del dueño): 2 bugs reales del validador reparados (pose fantasma con hueco de pose → POSE_FRESH_MS ±150 ms bidireccional; cadencia contaba el lanzamiento) + saque del INVITADO con rotación ITTF en banco S3 y batería de 4 puntos (P1 67 · P2 68 · P3 69, 0 fallos, verde también a 120 ms ±40/5 %) | 3.6.110-SDK6 | r121 · Task 226 · banco 18/0 · qa_r81 136/0 · qa_r82 48/0 | ☑ producción | 2026-11-05 |
 
 ### Pipeline estándar (recordatorio para cada ronda)
 1. Explorar módulos afectados (c12 con base64: leer SOLO por rangos con python3).

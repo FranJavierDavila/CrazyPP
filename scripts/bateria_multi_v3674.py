@@ -408,9 +408,11 @@ async def wait_cond(page, js, timeout_s, step_ms=250):
     return False
 
 
-async def punto_duelo(P, sac_pg, rec_pg, nom_sac, nom_rec, num, reintenta=True):
+async def punto_duelo(P, sac_pg, rec_pg, nom_sac, nom_rec, num, reintenta=True, tot=None):
     """UN punto completo: saque → rallye → auth → devolución → doble bote
-    → CLAIM/ACK → marcador. El guion sirve para cualquier lado."""
+    → CLAIM/ACK → marcador. El guion sirve para cualquier lado.
+    tot: total de puntos ESPERADO al morir la bola (puntos 3+: el wait
+    genérico sp+sa>0 dispararía al instante con el marcador ya abierto)."""
     # SAQUE: pose determinista (A) + golpe con la física real (B)
     pre = await sac_pg.evaluate(JS_SERVE_A)
     if not P.chk(pre.startswith("serve|player"),
@@ -462,10 +464,14 @@ async def punto_duelo(P, sac_pg, rec_pg, nom_sac, nom_rec, num, reintenta=True):
     if not P.chk(rej_rec == 0, f"punto {num}: validador del {nom_rec} SIN rechazos ({rej_rec})"):
         return False
     # muerte de la bola por doble bote en la mitad del sacador → CLAIM/ACK
-    hPoint = await wait_cond(sac_pg, JS_WAIT_PUNTO, 55)
+    # (r121 · tot: en los puntos 3+ el total ya es >0 — se espera al TOTAL)
+    wp = JS_WAIT_PUNTO if tot is None else (
+        "() => { const G = window.__PP_GAME; return G.rules.state === 'point' && "
+        "(G.rules.scorePlayer + G.rules.scoreAi) >= %d; }" % tot)
+    hPoint = await wait_cond(sac_pg, wp, 55)
     if not P.chk(hPoint, f"punto {num}: punto detectado por el árbitro del {nom_sac} (doble bote)"):
         return False
-    gPoint = await wait_cond(rec_pg, JS_WAIT_PUNTO, 55)
+    gPoint = await wait_cond(rec_pg, wp, 55)
     if not P.chk(gPoint, f"punto {num}: el punto llega al {nom_rec} (CLAIM aplicado)"):
         return False
     hj = await sac_pg.evaluate(JS_STATE)
@@ -646,6 +652,47 @@ async def jugar(pw, per, url):
         nom_rec2 = "invitado" if sac2_pg is host else "anfitrión"
         P.chk(True, f"el árbitro toca sacar a: {nom_sac2}")
         if not await punto_duelo(P, sac2_pg, rec2_pg, nom_sac2, nom_rec2, 2):
+            return
+
+        # r121 · PUNTOS 3-4 · ROTACIÓN ITTF: tras 2 puntos saca el OTRO
+        # (c06 computeNextServer: floor(totalPoints/2) impar). Ejercita el
+        # camino del SAQUE DEL INVITADO (v2.91: la bola HELD sigue al
+        # sacador) y la rotación del sacador en partido real — el hueco que
+        # quedaba sin cubrir (los puntos 1-2 siempre los saca el abridor).
+        sv3H = await wait_cond(host, JS_SERVE_SIGUIENTE, 75)
+        sv3G = await wait_cond(guest, JS_SERVE_SIGUIENTE, 75)
+        if not P.chk(sv3H and sv3G, "ambos árbitros en SAQUE para el punto 3"):
+            return
+        await guest.wait_for_timeout(600)
+        svH3 = await host.evaluate(JS_SERVER_LOCAL)
+        svG3 = await guest.evaluate(JS_SERVER_LOCAL)
+        if not P.chk((svH3 == "player") != (svG3 == "player"),
+                     f"tercer sacador COHERENTE (anfitrión '{svH3}' · invitado '{svG3}')"):
+            return
+        if not P.chk((svH3 == "player") != (svH2 == "player"),
+                     f"ROTACIÓN tras 2 puntos: el punto 2 lo sacó {nom_sac2} y el 3 saca el otro"):
+            return
+        sac3_pg, rec3_pg = (host, guest) if svH3 == "player" else (guest, host)
+        nom_sac3 = "anfitrión" if sac3_pg is host else "invitado"
+        nom_rec3 = "invitado" if sac3_pg is host else "anfitrión"
+        if not await punto_duelo(P, sac3_pg, rec3_pg, nom_sac3, nom_rec3, 3, tot=3):
+            return
+
+        # PUNTO 4 — MISMO sacador que el 3 (la rotación es cada 2 puntos)
+        sv4H = await wait_cond(host, JS_SERVE_SIGUIENTE, 75)
+        sv4G = await wait_cond(guest, JS_SERVE_SIGUIENTE, 75)
+        if not P.chk(sv4H and sv4G, "ambos árbitros en SAQUE para el punto 4"):
+            return
+        await guest.wait_for_timeout(600)
+        svH4 = await host.evaluate(JS_SERVER_LOCAL)
+        svG4 = await guest.evaluate(JS_SERVER_LOCAL)
+        if not P.chk((svH4 == "player") != (svG4 == "player") and svH4 == svH3,
+                     f"cuarto sacador COHERENTE y SIN rotar aún (anfitrión '{svH4}')"):
+            return
+        sac4_pg, rec4_pg = (host, guest) if svH4 == "player" else (guest, host)
+        nom_sac4 = "anfitrión" if sac4_pg is host else "invitado"
+        nom_rec4 = "invitado" if sac4_pg is host else "anfitrión"
+        if not await punto_duelo(P, sac4_pg, rec4_pg, nom_sac4, nom_rec4, 4, tot=4):
             return
 
         # salud final del enlace (r82: netInfo) en las dos páginas

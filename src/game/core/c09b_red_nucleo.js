@@ -80,6 +80,16 @@ export const PPNET = (() => {
     TOL_FUTURE: 250,      // validación: tHit como máx. 250 ms en el futuro
                           // (r82: el ancla gruesa del reloj puede errar ~un
                           //  one-way; el eco NTP refinado la corrige en vivo)
+    // r121 · POSE FRESCA PARA JUZGAR (spec §12): la muestra de pose con la
+    // que se valida un golpe/saque remoto debe ser CONTEMPORÁNEA al evento
+    // (±150 ms ≈ 2-3 muestras a 60 Hz + un one-way). Antes se aceptaba la
+    // última muestra ≤ tHit AUNQUE viniera de un hueco sin pose (arranque,
+    // degradación, ráfaga de pérdida): el validador juzgaba un saque
+    // honesto contra una pala FANTASMA de hace segundos → rechazo injusto
+    // → el receptor «no deja sacar ni jugar». Sin pose fiable el chequeo de
+    // distancia se OMITE (los frenos duros — velocidad, giro, cadencia,
+    // correlativo — siguen; y mejor un chequeo menos que un partido roto).
+    POSE_FRESH_MS: 150,
 
     LOSS_LOW: 0.10,       // pérdida sostenida >10 % → avisar y bajar pose
 

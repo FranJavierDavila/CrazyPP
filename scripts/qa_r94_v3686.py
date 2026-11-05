@@ -50,8 +50,8 @@ CHK('if (game.ball) game.ball.ppCalabaza = false;' in PLA,
     'módulo: estallido/fin limpian ppCalabaza (contacto IA a la norma)')
 
 GH = open(os.path.join(PUB, 'game.html'), encoding='utf-8', errors='ignore').read()
-CHK(GH.count("const VERSION = '3.6.109-SDK6'") == 1, 'bundle: sello const VERSION 3.6.91-SDK6')
-CHK('>V3.6.109-SDK6<' in GH, 'bundle: badge V3.6.91-SDK6 en el servido')
+CHK(GH.count("const VERSION = '3.6.110-SDK6'") == 1, 'bundle: sello const VERSION 3.6.91-SDK6')
+CHK('>V3.6.110-SDK6<' in GH, 'bundle: badge V3.6.91-SDK6 en el servido')
 CHK('const rise0 = sw.flat ? 0 : 0.05;' in GH, 'bundle: aguja r93 c12 rise0/flat intacta')
 
 # ------------------------------------------------------------- RUNTIME ----

@@ -37,7 +37,17 @@
 
 ---
 
-## MP · MULTIJUGADOR REPARADO ✅ HECHA (r110 · v3.6.100-SDK6)
+## MP · MULTIJUGADOR REPARADO ✅ HECHA (r110 · v3.6.100-SDK6) · VERIFICADO AL 100% (r121 · v3.6.110-SDK6)
+
+> **r121 · GARANTÍA EXTENDIDA (requisito Nº 1 del dueño)**: dos defectos
+> REALES del validador §12 cazados por el banco y reparados — (1) la pose
+> para juzgar un golpe/saque remoto ahora es la MÁS PRÓXIMA a tHit en ambas
+> direcciones y a ±150 ms (POSE_FRESH_MS): un hueco sin pose ya no juzga
+> contra una pala fantasma que «no deja sacar»; (2) la cadencia cuenta
+> GOLPES, no lanzamientos: el toss ya no dispara el rechazo del saque
+> rápido. Cobertura nueva del hueco sin probar: el SAQUE DEL INVITADO con
+> ROTACIÓN ITTF — banco S3 (18/0, también a 120 ms ±40/5 %) y batería de 4
+> puntos con PeerJS real (P1 67 · P2 68 · P3 69 checks, 0 fallos).
 
 > **PRIORIDAD MÁXIMA dictada por el dueño** (por delante de M4): el
 > multijugador era INJUGABLE en duelo real. Diagnóstico con un BANCO DE

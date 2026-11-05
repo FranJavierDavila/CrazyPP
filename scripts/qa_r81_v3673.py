@@ -119,7 +119,12 @@ AGUJAS = [
     ("visor del rival: espejo de pose", "NetLink.posFromNetPose(smp.hp, netTmpP)"),
     # — validador en el marco y en el instante —
     ("pala del rival en el marco del evento", "const pad = this._remotePadNet(ev.kind, ev.tHit)"),
-    ("muestra más próxima al golpe (JB)", "nearest(tHit, this._padSmp"),
+    # r121 · pose FRESCA para juzgar: la muestra más próxima a tHit en AMBAS
+    # direcciones y a ±150 ms (VP.POSE_FRESH_MS) — sin pose fiable NO se
+    # juzga la distancia (antes una pala fantasma de un hueco sin pose
+    # rechazaba saques honestos: «no deja sacar»)
+    ("pose fresca para juzgar (±150 ms bidireccional)", "Math.abs(this._jb.s[i].t - tHit)"),
+    ("puerta de frescura POSE_FRESH_MS", "best > PPNET.VP.POSE_FRESH_MS"),
     ("el lanzamiento mira la mano libre", "if (kind === 2) {"),
     ("JitterBuf.nearest en el núcleo", "nearest(tHost, out, winMs) {"),
     ("ventana de 250 ms para juzgar", "const W = winMs || 250"),
@@ -139,7 +144,7 @@ AGUJAS = [
     ("HIT aplica la bola con copy (no NaN)", "g.ball.pos.copy(p);"),
     ("HANDOFF aplica con copy (no NaN)", "g.ball.pos.copy(p);     // r81: Vector3 — copy, no indexado"),
     ("watchdog HELLO generoso (22 s)", "}, 22000);"),
-    ("versión sellada de nacimiento", "const VERSION = '3.6.109-SDK6'"),
+    ("versión sellada de nacimiento", "const VERSION = '3.6.110-SDK6'"),
 ]
 
 CONTADORES = [
@@ -151,14 +156,16 @@ CONTADORES = [
     # r82: +1 uso (la bola HELD del rival se ve EN SU MANO)
     ("posFromNetPose (def + 3 usos)", "posFromNetPose", 4),
     ("poseToNetFrame (def + uso)", "poseToNetFrame", 3),
-    ("nearest( en el transporte", "this._jb.nearest(", 1),
+    # r121 · la cadencia cuenta GOLPES, no lanzamientos (el toss kind 2 ya
+    # no sella _lastRemoteHitT: un saque rápido tras el lanzamiento es legal)
+    ("cadencia sólo con golpes (kind !== 2)", "if (ev.kind !== 2) this._lastRemoteHitT = ev.tHit", 1),
     ("optsRendi (tarjeta + whitelist + comentario + animate + capa r96)", "optsRendi", 5),
     ("perfRecal (botón + caso + mapa de tooltips r96)", "perfRecal", 6),
     ("_onIce (def + llamada)", "_onIce", 2),
     ("_iceQ (cola completa)", "_iceQ", 5),
     ("r.rallySeq en el claim", "const rallyId = r.rallySeq", 1),
     ("rallySeq en los intents de punto", "localPoint(g.rules.rallySeq", 1),
-    ("versión única", "const VERSION = '3.6.109-SDK6'", 1),
+    ("versión única", "const VERSION = '3.6.110-SDK6'", 1),
 ]
 
 JS_PERF = """async () => {

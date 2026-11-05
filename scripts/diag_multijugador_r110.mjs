@@ -8,13 +8,32 @@
  *   · cable RTC simulado (latencia ± jitter + pérdida en fast)
  * Replica el GLUE de c12 (decisiones 10009-10226 y 10298-10356) tal cual
  * está en producción, y mide:
- *   S1 · invariante de espejo de pose (pala estática del anfitrión)
- *   S2 · saque → cruce → AUTORIDAD del invitado → golpeo de vuelta
- *        (ventana injugable = tiempo con bola en mi mitad y pala prohibida)
- *   S3 · rally de 4 golpes ida y vuelta con el glue de producción
+ *   S1 · invariante de espejo de pose (pala estática del anfitrión, diestro
+ *        y zurdo) — posición y orientación al milímetro
+ *   S2 · saque del ANFITRIÓN → cruce → AUTORIDAD del invitado → golpeo
+ *        de vuelta (ventana injugable = tiempo con bola en mi mitad)
+ *   S3 · SAQUE DEL INVITADO con la ROTACIÓN ITTF tras 2 puntos
+ *        (computeNextServer): toss kind 2 visible en el anfitrión, saque
+ *        kind 1 con correlativo, autoridad del anfitrión y devolución
  * Uso: node scripts/diag_multijugador_r110.mjs [--pre110]
  *   (por defecto replica el glue r110; --pre110 reproduce el glue r109
- *    para comparación A/B de la ventana injugable)                      */
+ *    para comparación A/B de la ventana injugable)
+ *   Cable por entorno: LAT (one-way ms), JIT (jitter), LOSS (pérdida fast) */
+/* ---- auto-reparación de ppdiag/ (el banco corre desde clone limpio) ----
+ * Los wrappers re-exportan el CÓDIGO REAL de src/game/core — sin copias
+ * derivadas: lo que prueba el banco es SIEMPRE producción. */
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+{
+  const PPD = new URL('./ppdiag/', import.meta.url);
+  if (!existsSync(PPD)) mkdirSync(PPD, { recursive: true });
+  const base = '../../src/game/core/';
+  for (const m of ['c09_red_netlink', 'c09b_red_nucleo', 'c02_cfg_escena',
+    'c04_fisica_ccd', 'c05_colisiones_ia_golpeo']) {
+    const f = new URL(m + '.js', PPD);
+    if (!existsSync(f)) writeFileSync(f, `export * from '${base}${m}.js';\n`);
+  }
+}
+
 import * as THREE from 'three';
 
 /* ---- entorno browser mínimo para c09 (window/document) ---------------- */
@@ -135,6 +154,22 @@ NetLink.prototype._v2Fail = function (msg) {
   }
   return _origFail.call(this, msg);
 };
+
+/* DBG: traza del validador §12 y de la pose usada para juzgar */
+if (process.env.DBG) {
+  const _origRemotePad = NetLink.prototype._remotePadNet;
+  NetLink.prototype._remotePadNet = function (kind, tHit) {
+    const pad = _origRemotePad.call(this, kind, tHit);
+    if (pad) {
+      const jb = this._jb;
+      const last = jb && jb.s.length ? jb.s[jb.s.length - 1] : null;
+      console.log(`    [padNet ${this.role}] kind=${kind} pad=(${pad[0].toFixed(2)},${pad[1].toFixed(2)},${pad[2].toFixed(2)}) · jbN=${jb ? jb.s.length : 0} lastT=${last ? Math.round(last.t) : '-'} nowHost=${Math.round(this.hostNowMs())}`);
+    } else {
+      console.log(`    [padNet ${this.role}] kind=${kind} pad=NULL (sin pose cerca de tHit=${tHit})`);
+    }
+    return pad;
+  };
+}
 
 /* ---- stubs de juego --------------------------------------------------- */
 function makeAudio() {
@@ -434,6 +469,110 @@ async function rally({ nShots = 4, report = true } = {}) {
   return { crossGuestT, authGuestT, windowMs, contactG, contactH, retCross, H, G };
 }
 
+/* ---- S3 · saque del INVITADO (rotación ITTF tras 2 puntos) ------------- */
+async function S3() {
+  const { H, G, v2ok } = await bootDuel();
+  chk(v2ok, 'enlace v2 sube');
+  if (!v2ok) return;
+  // rotación determinista (c06 computeNextServer): totalPoints=2 → saca el
+  // OTRO del abridor. En perspectiva LOCAL: anfitrión saca 'ai', invitado 'player'.
+  for (const S of [H, G]) {
+    const r = S.g.rules;
+    r.totalPoints = 2; r.scorePlayer = 1; r.scoreAi = 1;
+  }
+  H.g.rules.state = 'serve'; H.g.rules.server = 'ai';
+  G.g.rules.state = 'serve'; G.g.rules.server = 'player';
+  // pose viva en ambos: pala (slot 1) + mano libre (slot 0) rastreadas —
+  // el validador §12 del anfitrión juzga el saque contra la PALA del invitado
+  for (const S of [H, G]) {
+    S.g.grips[1].position.set(0, 1.05, 0.15);
+    S.g.grips[1].quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+    S.g.grips[1].__pose = true;
+    S.g.grips[0].position.set(-0.3, 1.0, 0.2);
+    S.g.grips[0].__pose = true;
+    S.g.controllerPaddles[1].active = true;
+  }
+  // HELD del saque (c12 intent 'serve' → setServeHeld, spec §9/§10)
+  // + CALENTAMIENTO: como en el juego real (cuenta atrás de 3 s del
+  // MATCH_START), la pose fluye unos frames ANTES del primer saque — el
+  // JB del anfitrión debe tener pose fresca del invitado al llegar el toss
+  G.net.setServeHeld(true);
+  H.net.setServeHeld(false);
+  for (let i = 0; i < 24; i++) { glueStep(H, 1/60, { pads: false }); glueStep(G, 1/60, { pads: false }); await tick(); }
+  G.g.ball.pos.set(0.08, 0.95, DIMS.tableCenterZ + 1.52);   // mano del invitado
+  G.g.ball.vel.set(0, 0, 0); G.g.ball.spin.set(0, 0, 0);
+  H.g.ball.pos.copy(G.g.ball.pos).setZ(-3.2 - G.g.ball.pos.z);
+  H.g.ball.vel.set(0, 0, 0);
+  chk(H.g.ballMesh.visible === false, 'el anfitrión NO ve la bola HELD del invitado antes del lanzamiento');
+  // LANZAMIENTO (kind 2) del invitado — visual honesto en el anfitrión
+  G.net.netLocalToss();
+  G.g.ball.vel.set(0, 3.4, 0);
+  for (let i = 0; i < 28; i++) { glueStep(H, 1/60, { pads: false }); glueStep(G, 1/60, { pads: false }); await tick(); }
+  chk(H.g.ballMesh.visible === true, 'el anfitrión VE la bola lanzada por el invitado (toss kind 2)');
+  chk(H.net.ballState() === 'ghost', `FSM del anfitrión tras el toss: ${H.net.ballState()} (esperado ghost)`);
+  // SAQUE (kind 1) del invitado con el SOLUCIONADOR real
+  const srv = findServeVelocity(G.g.ball.pos.clone(), 1, { x: 0.15, spd: 1 });
+  G.g.ball.vel.copy(srv.v); G.g.ball.spin.copy(srv.spin);
+  G.net.netLocalHit(true);
+  G.g.rules.beginServeRally('player');
+  // tracker realista (anfitrión e invitado): cada lado SOLO se mueve para
+  // bolas ENTRANTES (ghost) o con autoridad (auth) — y su pala se DESACTIVA
+  // fuera de esa ventana: nadie re-embiste su propio saque (un jugador real
+  // acompaña el golpe con la muñeca y recupera la posición)
+  const track = (S) => {
+    const b = S.g.ball, n2 = S.net;
+    const want = b.pos.z > DIMS.tableCenterZ &&
+      (!n2.ballMine() || n2.ballState() === 'auth');
+    S.g.controllerPaddles[S.g.paddleHand].active = want;
+    if (!want) return;
+    const grip = S.g.grips[S.g.paddleHand];
+    const tgt = b.pos.clone();
+    const vy = b.vel.y;
+    if (vy < -0.5) {
+      const tt = (-vy - Math.sqrt(vy * vy + 2 * 9.81 * (b.pos.y - 0.95))) / 9.81;
+      if (tt > 0 && tt < 0.9) tgt.addScaledVector(b.vel, tt);
+    } else tgt.addScaledVector(b.vel, 0.08);
+    tgt.y = Math.max(0.78, Math.min(1.55, tgt.y));
+    const d = tgt.clone().sub(grip.position);
+    const step = Math.min(d.length(), 14 * (1 / 60));
+    if (d.length() > 1e-4) grip.position.addScaledVector(d.normalize(), step);
+    const q = new THREE.Quaternion();
+    q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), b.vel.clone().negate().normalize());
+    grip.quaternion.slerp(q, 0.5);
+    grip.__pose = true;
+  };
+  const t0 = performance.now();
+  let crossH = 0, authH = 0, hitsH = 0, devuelto = false;
+  // flag exacto: el invitado APLICÓ un HIT kind 0 (la devolución del anfitrión)
+  const _afeG = G.net._applyFastEv.bind(G.net);
+  G.net._applyFastEv = (ev, g) => {
+    if (ev.t === PPNET.VP.EV.HIT && ev.kind === 0) devuelto = true;
+    return _afeG(ev, g);
+  };
+  while (performance.now() - t0 < 12000 && !devuelto) {
+    glueStep(H, 1/60); glueStep(G, 1/60);
+    track(H); track(G);
+    hitsH += H.g.events.filter((e) => e.type === 'paddle').length;
+    if (!crossH && H.g.ball.pos.z > DIMS.tableCenterZ + 0.02) crossH = performance.now() - t0;
+    if (crossH && !authH && H.net.ballMine()) authH = performance.now() - t0;
+    await tick();
+  }
+  const win = crossH && authH;
+  if (process.env.DBG) {
+    for (const [n, S] of [['HOST', H], ['GUEST', G]]) {
+      const n2 = S.net, b = n2._ball, st = n2._stats;
+      console.log(`    [${n}] FSM=${b.state} mine=${b.mine} shot=${b.shot} · rules=${S.g.rules.state}/${S.g.rules.server} · hits=${st.hits} handoffs=${st.handoffs} snaps=${st.snaps} · rej=${n2._val.rejects} log=${JSON.stringify(n2._val.log.slice(0, 4))} · bola=(${S.g.ball.pos.x.toFixed(2)},${S.g.ball.pos.y.toFixed(2)},${S.g.ball.pos.z.toFixed(2)}) v=(${S.g.ball.vel.x.toFixed(1)},${S.g.ball.vel.y.toFixed(1)},${S.g.ball.vel.z.toFixed(1)}) pend=${n2._pend.length} fastIn=${n2._fastIn.length}`);
+    }
+  }
+  const win2 = crossH && authH;
+  chk(H.g.rules.state === 'rally', `el anfitrión entra en RALLYE con el saque del invitado (estado ${H.g.rules.state})`);
+  chk(win, `el anfitrión consigue AUTORIDAD tras el cruce (${win ? authH.toFixed(0) + ' ms desde el cruce' : 'NUNCA'})`);
+  chk(hitsH >= 1, `el anfitrión DEVUELVE con la pala (${hitsH} contactos)`);
+  chk(devuelto, 'el invitado RECIBE la devolución del anfitrión (HIT kind 0 aplicado)');
+  const vH = H.net.netInfo().val, vG = G.net.netInfo().val;
+  chk(vH.rej === 0 && vG.rej === 0, `validadores SIN rechazos (anfitrión ${vH.rej} · invitado ${vG.rej})`);
+}
+
 /* ---- main ------------------------------------------------------------- */
 console.log(`CABLE: ${LAT} ms one-way · jitter ±${JIT} ms · pérdida fast ${(LOSS * 100).toFixed(1)} % · ${FIX ? 'MODO --fix' : 'PRODUCCIÓN (glue r109)'}`);
 await S1();
@@ -446,5 +585,9 @@ console.log('\n— S2 · SAQUE DEL ANFITRIÓN → ¿puede devolver el invitado? 
     if (r.windowMs > 150) console.log('    ⚠ VENTANA INJUGABLE GRANDE: el rival ve la bola caer sin poder tocarla');
   }
 }
+
+console.log('\n— S3 · SAQUE DEL INVITADO (rotación ITTF tras 2 puntos) —');
+await S3();
+
 console.log('\nRESULTADO:', okN, 'OK ·', failN, 'FALLOS');
 process.exit(failN ? 1 : 0);

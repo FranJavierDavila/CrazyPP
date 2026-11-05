@@ -1,10 +1,10 @@
 {
-  "version": "3.6.109-SDK6",
-  "fase": 111,
-  "faseNombre": "M7d · PRO TRAINING extendido (2 ejercicios nuevos + medallas por ejercicio)",
+  "version": "3.6.110-SDK6",
+  "fase": 112,
+  "faseNombre": "M-RED · multijugador verificado: saque del invitado + validación justa (banco S3 + batería 4 puntos)",
   "sdk": "1.6.0",
-  "fecha": "2026-11-04",
-  "hub": "v36109-sdk6",
+  "fecha": "2026-11-05",
+  "hub": "v36110-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r119",
   "tamano": 10691069,
-  "golden": "fed4d6fb24130b48a3ff4d09480560b35fa79e94626be8b387df5ad069408b22"
+  "golden": "efab7b8b120774a456442c50f32a66c3d7eebbe290e273689f85ad5779bbe277"
 }

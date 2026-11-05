@@ -1692,7 +1692,12 @@ export class NetLink {
         if (this._val.serious >= 3) { this._stats.suspect = true; }
         return;
       }
-      this._lastRemoteHitT = ev.tHit;
+      // r121 · la CADENCIA cuenta GOLPES, no lanzamientos: el toss (kind 2)
+      // NO es un golpeo — un saque ejecutado rápido tras el lanzamiento
+      // (~150-200 ms, humano real con toss bajo) es juego legal, no trampa.
+      // Antes el toss sellaba _lastRemoteHitT y el saque llegaba «<150 ms
+      // después del golpe anterior» → RECHAZADO → el rival «no deja sacar».
+      if (ev.kind !== 2) this._lastRemoteHitT = ev.tHit;
       // r81 · posFromNetArr devuelve THREE.Vector3: el glue r79 lo INDEXABA
       // (p[0] = undefined → bola NaN → «no llega nada del rival»). copy().
       const p = NetLink.posFromNetArr(ev.p);
@@ -1781,13 +1786,21 @@ export class NetLink {
    *    lleva la pala) — si sólo hay una mano rastreada, esa. */
   _remotePadNet(kind, tHit) {
     if (!this._jb || !this._jb.s.length) return null;
-    const s = (tHit !== undefined && tHit !== null)
-      ? this._jb.nearest(tHit, this._padSmp || (this._padSmp = {
-          hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1],
-          rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0,
-        }))
-      : this._jb.s[this._jb.s.length - 1];
-    if (!s) return null;
+    // r121 · POSE FRESCA: la muestra para juzgar es la MÁS PRÓXIMA a tHit en
+    // AMBAS direcciones (no sólo la última ≤ tHit) y debe estar a ±150 ms
+    // (VP.POSE_FRESH_MS). Antes, un hueco sin pose (arranque, degradación,
+    // ráfaga de pérdida) dejaba juzgar el saque/golpe contra la última
+    // muestra VIEJA — una pala fantasma en un sitio que el rival abandonó
+    // hace segundos — y el rechazo injusto congelaba el saque del rival
+    // («no deja sacar ni jugar»). Sin pose contemporánea NO se juzga la
+    // distancia (chequeo omitido); los frenos duros del validador siguen.
+    let pick = null, best = Infinity;
+    for (let i = this._jb.s.length - 1; i >= 0; i--) {
+      const d = Math.abs(this._jb.s[i].t - tHit);
+      if (d < best) { best = d; pick = this._jb.s[i]; }
+    }
+    if (!pick || best > PPNET.VP.POSE_FRESH_MS) return null;
+    const s = pick;
     const leftTrk = !!(s.fl & 1), rightTrk = !!(s.fl & 2), padLeft = !!(s.fl & 4);
     let hand;
     if (kind === 2) {

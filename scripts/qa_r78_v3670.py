@@ -113,7 +113,7 @@ AGUJAS = [
     ("EFECTO_DUR = 10 (ventana de 10 s)",
      "const EFECTO_DUR = 10;"),
     ("versión sellada 3.6.91-SDK6",
-     "const VERSION = '3.6.108-SDK6';"),
+     "const VERSION = '3.6.109-SDK6';"),
 ]
 
 JS_BANCO = """async () => {

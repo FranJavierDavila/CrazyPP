@@ -64,13 +64,13 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 - [x] Verificación: instalable, portada instaladora (diálogo nativo o camino manual), arranque offline de la cáscara. *(r109: runtime SW activo en scope raíz + toasts en portada.)*
 - **Criterio de aceptación**: CUMPLIDO EN PRODUCCIÓN DESDE 3.6.99 (marcado en r119 por higiene de memoria).
 
-## M7 · Contenido e identidad (el grande, en fases)  ← EN CURSO (quedan M7d y M7e)
+## M7 · Contenido e identidad (el grande, en fases)  ← EN CURSO (queda M7e)
 
 **Qué**: más juego, más personalidad. Requiere las anteriores asentadas. SE DIVIDE:
 - [x] M7a · Torneos temáticos: al menos 1 temática nueva jugable de principio a fin. *(5 campeonatos vivos: locura · magia · oeste · estacion_orbital · halloween (rival ZOMBI del dueño, r85-r97); marcado en r119 por higiene de memoria — el contenido sigue creciendo por rondas del dueño.)*
 - [x] M7b · SuperPalas como power-ups de modo crazy. *(5 poderes vivos con iconos del dueño: MEGA/Crece · EFECTO · IMÁN · PORTAL · CLON — verificado en c12 en r119; marcado por higiene de memoria.)*
 - [x] M7c · 2v2 (doble local + IA) — investigación y prototipo. *(M7c r119 · 3.6.108-SDK6: investigación = árbitro ya de equipos + OpponentAI simétrico por sign; prototipo = botón «DOBLES 2v2» en AJUSTES › JUEGO, compañero IA + rival 2 con ARBITRAJE DE ALCANCE 0,50 m, física y árbitro del 1v1 intactos (cero cambios en c04/c05/c06), vive SOLO un partido, qa_r119 26/0 + QA TOTAL verde.)*
-- [ ] M7d · PRO TRAINING extendido (más ejercicios, medallas por ejercicio).
+- [x] M7d · PRO TRAINING extendido (más ejercicios, medallas por ejercicio). *(M7d r120 · 3.6.109-SDK6: t1c ESQUINA EXACTA y t5b METRÓNOMO LOCO (11 ejercicios) + medallas BRONCE/PLATA/ORO derivadas y RETROACTIVAS (habilidad: estrellas+precisión · rally: la marca) con medallero por área en el hub + logro MEDALLERO DE ORO (n/10); PLAN_POOL congela los retos r76/r118 byte-idénticos; re-ancladas en el camino vivo las estrellas y m50/m100 del metrónomo (muertos desde v3.0.2).)*
 - [ ] M7e · Persistencia completa (perfil con piel/pala elegida recordada, historial de torneos).
 - **Criterio de aceptación**: cada sub-fase se despliega por separado con su propia ronda; nada se queda a medias en producción. *(M7a/b/c cumplidos; la investigación r119 dejó documentado que el 2v2 completo — reglas ITTF de alternancia intra-equipo y marcador de 4 nombres — puede crecer sin tocar el núcleo.)*
 
@@ -95,6 +95,7 @@ Token de despliegue: `scripts/worker-tele/.github-pat` (GIT_TOKEN). Repo: `FranJ
 | M5b · alertas de telemetría: alarma `sin_sonido` en el worker (errores con marcador audio + futuro `golpe_sin_sonido`) + reporte del dueño `scripts/alerta_telemetria.py` (salidas 0/1/2/3) | worker (infra) | r117 · Task 222 | ☑ producción | 2026-11-04 |
 | M4 · ELO completo: unificado con K por modo (IA 24/escalera 20/humano 32) + matchmaking «Rival a tu nivel» ±120 + reto de la semana con insignia + página MI RANKING | 3.6.107-SDK6 | r118 · Task 223 | ☑ producción | 2026-11-04 |
 | M7c · DOBLES 2v2 prototipo: investigación (árbitro ya de equipos + OpponentAI simétrico) + prototipo jugable (compañero IA + rival 2, arbitraje de alcance 0,50 m, cero cambios en física/árbitro) | 3.6.108-SDK6 | r119 · Task 224 | ☑ producción | 2026-11-04 |
+| M7d · PRO TRAINING extendido: 2 ejercicios nuevos (ESQUINA EXACTA + METRÓNOMO LOCO) + medallas BRONCE/PLATA/ORO por ejercicio (retroactivas, medallero en el hub) + logro MEDALLERO DE ORO + m50/m100 re-anclados al juez vivo | 3.6.109-SDK6 | r120 · Task 225 · qa_r120 39/0 | ☑ producción | 2026-11-05 |
 
 ### Pipeline estándar (recordatorio para cada ronda)
 1. Explorar módulos afectados (c12 con base64: leer SOLO por rangos con python3).

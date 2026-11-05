@@ -63,7 +63,7 @@ async def main():
         print(f'RESULTADO: {ok} OK · {fails + 1} fallos')
         sys.exit(1)
     for needle, label in [
-        ('3.6.108-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 52)'),
+        ('3.6.109-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 52)'),
         # · v3.6.46 (r54) · NEGATIVAS: campo, flechas y estela RETIRADOS —
         #   el imán es GANCHO + PALA METÁLICA y el efecto es SPIN REAL
         ('RETIRADO (ronda 54, petición del dueño): _buildImanCampo',

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r112_v36102.py — capa de QA de la ronda 112 (V3.6.108-SDK6).
+"""qa_r112_v36102.py — capa de QA de la ronda 112 (V3.6.109-SDK6).
 
 HITO M5a del roadmap MEJORAS.md · IA CON ESTILOS (12 personalidades).
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_r113_v36103.py — capa de QA de la ronda 113 (V3.6.108-SDK6).
+"""qa_r113_v36103.py — capa de QA de la ronda 113 (V3.6.109-SDK6).
 
 SEIS AJUSTES DEL DUEÑO sobre el juego vivo:
 

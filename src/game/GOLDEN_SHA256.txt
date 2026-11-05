@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.108-SDK6, fase 110 · M7c · DOBLES 2v2 prototipo (investigación y prototipo jugable); sello actualizado
-# por bump_version.py desde 3.6.107-SDK6)
-534638ec729a65e14768e8220ebe53e05fce7cbbc355bd70d354e3baa3794d16
+# SHA256 del game.html que produjo esta división (3.6.109-SDK6, fase 111 · M7d · PRO TRAINING extendido (2 ejercicios nuevos + medallas por ejercicio); sello actualizado
+# por bump_version.py desde 3.6.108-SDK6)
+fed4d6fb24130b48a3ff4d09480560b35fa79e94626be8b387df5ad069408b22

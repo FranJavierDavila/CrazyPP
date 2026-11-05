@@ -98,8 +98,8 @@ CHK('stats.heat && stats.heat.g' in C8 and "T('heat_t')" in C8,
     'c08: fanfarria pinta el mini-mapa del partido (≥3 puntos perdidos)')
 
 GH = open(os.path.join(PUB, 'game.html'), encoding='utf-8', errors='ignore').read()
-CHK(GH.count("const VERSION = '3.6.108-SDK6'") == 1, 'bundle: sello const VERSION 3.6.91-SDK6')
-CHK('>V3.6.108-SDK6<' in GH, 'bundle: badge V3.6.91-SDK6 en el servido')
+CHK(GH.count("const VERSION = '3.6.109-SDK6'") == 1, 'bundle: sello const VERSION 3.6.91-SDK6')
+CHK('>V3.6.109-SDK6<' in GH, 'bundle: badge V3.6.91-SDK6 en el servido')
 CHK('createRivalVoz' in open(os.path.join(PUB, 'championships/sdk/champ_sdk.js'), encoding='utf-8').read(),
     'bundle: SDK v1.6 con createRivalVoz servido junto a los módulos (SDK externo)')
 CHK('__ppCoreVoz' in GH, 'bundle: aguja c11 candado de voz en el servido')

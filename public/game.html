@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.108-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.109-SDK6</span>
     </div>
   </main>
 
@@ -3108,7 +3108,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.108-SDK6';
+  const VERSION = '3.6.109-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -28813,6 +28813,11 @@ loadPaddleModel().then((paddleModel) => {
         m_t4a: 'SAQUE CORTO · DOBLE BOTE', m_t4a_d: 'Saca y consigue que la bola BOTE DOS VECES en la zona marcada junto a la red. El saque corto evita el ataque rival.',
         m_t4b: 'SAQUE LARGO · AL FONDO', m_t4b_d: 'Coloca {n} primeros botes en la franja de los últimos 15 cm. Saque rápido y tenso pegado al fondo.',
         m_t5a: 'METRÓNOMO', m_t5a_d: 'Bolas a ritmo constante: devuelve el máximo número seguidas. Hitos a 30 · 50 · 100 con bonus.',
+        /* M7d (r120) · PRO TRAINING extendido — dos ejercicios nuevos */
+        m_t1c: 'ESQUINA EXACTA', m_t1c_d: 'Coloca {n} bolas seguidas en la ESQUINA: fondo Y banda a la vez (cuadros dorados). La esquina es el tiro más difícil de devolver.',
+        m_t5b: 'METRÓNOMO LOCO', m_t5b_d: 'Como el metrónomo, pero la máquina TRAICIONA: cada bola llega a una velocidad distinta. Hitos a 20 · 40 · 80 con bonus.',
+        ok_esq: '¡ESQUINA!',
+        med_t: 'MEDALLAS', med_br: 'BRONCE', med_pl: 'PLATA', med_or: 'ORO',
         hud_racha: 'RACHA', hud_meta: 'META', hud_bote: 'BOTES', hud_rally: 'RALLY', hud_sesion: 'Sesión', hud_total: 'Total',
         ok_zona: '¡ZONA!', ok_banda: '¡A LA LÍNEA!', ok_bajo: '¡PASE BAJO!', ok_globo: '¡GLOBO!', ok_leido: '¡BIEN LEÍDO!', ok_bloqueo: '¡BLOQUEO!', ok_doble: '¡DOBLE BOTE!', ok_fondo: '¡AL FONDO!', ok_beat: '¡RITMO!',
         z_obj: 'OBJETIVO', z_evita: 'EVITA', z_fondo: 'FONDO', z_doble: 'DOBLE BOTE', z_f15: 'FONDO 15 cm',
@@ -28828,6 +28833,7 @@ loadPaddleModel().then((paddleModel) => {
         ach_p5: 'CINCO PERFECTOS', ach_all9: 'CIRCUITO COMPLETO',
         ach_m50: 'METRÓNOMO 50', ach_m100: 'METRÓNOMO 100',
         ach_x3: 'TRIPLE COMBO', ach_leg: 'LEYENDA',
+        ach_or5: 'MEDALLERO DE ORO',   /* M7d (r120) · 5 medallas de ORO */
         /* v3.6.68 · EL PULSO CRAZY (r76) — el latido diario */
         daily_t: 'RETO DEL DÍA', daily_sub: 'un duelo nuevo cada medianoche · igual para toda la academia',
         daily_racha: 'RACHA', daily_dias: 'días', daily_record: 'récord',
@@ -28892,6 +28898,11 @@ loadPaddleModel().then((paddleModel) => {
         m_t4a: 'SHORT SERVE · DOUBLE BOUNCE', m_t4a_d: 'Serve so the ball BOUNCES TWICE in the marked zone near the net. Short serves prevent attacks.',
         m_t4b: 'LONG SERVE · DEEP', m_t4b_d: 'Land {n} first bounces in the last 15 cm strip. Fast, tight serves to the baseline.',
         m_t5a: 'METRONOME', m_t5a_d: 'Balls at a steady beat: return as many as you can in a row. Milestones at 30 · 50 · 100 with bonuses.',
+        /* M7d (r120) · extended PRO TRAINING — two new drills */
+        m_t1c: 'EXACT CORNER', m_t1c_d: 'Place {n} balls in a row in the CORNER: deep AND side band at once (gold squares). The corner is the hardest shot to return.',
+        m_t5b: 'CRAZY METRONOME', m_t5b_d: 'Like the metronome, but the machine BETRAYS you: every ball arrives at a different speed. Milestones at 20 · 40 · 80 with bonuses.',
+        ok_esq: 'CORNER!',
+        med_t: 'MEDALS', med_br: 'BRONZE', med_pl: 'SILVER', med_or: 'GOLD',
         hud_racha: 'STREAK', hud_meta: 'GOAL', hud_bote: 'BOUNCES', hud_rally: 'RALLY', hud_sesion: 'Session', hud_total: 'Total',
         ok_zona: 'ZONE!', ok_banda: 'ON THE LINE!', ok_bajo: 'LOW PASS!', ok_globo: 'LOB!', ok_leido: 'WELL READ!', ok_bloqueo: 'BLOCK!', ok_doble: 'DOUBLE BOUNCE!', ok_fondo: 'DEEP!', ok_beat: 'RHYTHM!',
         z_obj: 'TARGET', z_evita: 'AVOID', z_fondo: 'DEEP', z_doble: 'DOUBLE BOUNCE', z_f15: 'DEEP 15 cm',
@@ -28907,6 +28918,7 @@ loadPaddleModel().then((paddleModel) => {
         ach_p5: 'FIVE PERFECTS', ach_all9: 'FULL CIRCUIT',
         ach_m50: 'METRONOME 50', ach_m100: 'METRONOME 100',
         ach_x3: 'TRIPLE COMBO', ach_leg: 'LEGEND',
+        ach_or5: 'GOLD MEDAL HAUL',   /* M7d (r120) · 5 GOLD medals */
         /* v3.6.68 · EL PULSO CRAZY (r76) */
         daily_t: 'DAILY CHALLENGE', daily_sub: 'a new duel every midnight · the same for the whole academy',
         daily_racha: 'STREAK', daily_dias: 'days', daily_record: 'record',
@@ -29010,7 +29022,7 @@ loadPaddleModel().then((paddleModel) => {
     }
     function dailyPlan(k) {
       const seed = seedOf('ppx-' + k);
-      const ids = Object.keys(MODES);
+      const ids = PLAN_POOL;               /* M7d (r120): pool clásico congelado */
       const mode = ids[seed % ids.length];
       const M = MODES[mode];
       const areaIdx = AREAS.findIndex((a) => a.id === M.area);
@@ -29099,7 +29111,7 @@ loadPaddleModel().then((paddleModel) => {
     }
     function weeklyPlan(k) {
       const seed = seedOf('ppx-semana-' + k);
-      const ids = Object.keys(MODES);
+      const ids = PLAN_POOL;               /* M7d (r120): pool clásico congelado */
       const mode = ids[seed % ids.length];
       const M = MODES[mode];
       const areaIdx = AREAS.findIndex((a) => a.id === M.area);
@@ -29144,7 +29156,7 @@ loadPaddleModel().then((paddleModel) => {
      *  NUNCA toca física, juez, feeds ni reglas. Interruptor DIMS.trainGamify.
      *  ================================================================= */
     const GAMF = () => (typeof DIMS !== 'undefined' && DIMS.trainGamify === 0) ? 0 : 1;
-    const ACHS = ['r10', 'r20', 'p1', 'p5', 'all9', 'm50', 'm100', 'x3', 'leg'];
+    const ACHS = ['r10', 'r20', 'p1', 'p5', 'all9', 'm50', 'm100', 'x3', 'leg', 'or5'];
     function grant(id) {
       if (!GAMF() || S.ach[id]) return;
       S.ach[id] = 1; save(); panelDirty = true;
@@ -29155,7 +29167,7 @@ loadPaddleModel().then((paddleModel) => {
     }
     function comboMul() {
       if (!GAMF() || !active) return 1;
-      return comboMulN(active === 't5a' ? st.rally : st.streak);
+      return comboMulN(isRallyM() ? st.rally : st.streak);
     }
     function comboMulN(r) { return r >= 8 ? 3 : (r >= 4 ? 2 : 1); }
     function starsFor(faults) { return faults === 0 ? 3 : (faults <= 2 ? 2 : 1); }
@@ -29168,15 +29180,72 @@ loadPaddleModel().then((paddleModel) => {
       if ((S.acc[mode] || 0) < pct) { S.acc[mode] = pct; save(); panelDirty = true; }
     }
     function checkStreakAch() {
-      const r = active === 't5a' ? st.rally : st.streak;
+      const r = isRallyM() ? st.rally : st.streak;
       if (r >= 10) grant('r10');
       if (r >= 20) grant('r20');
     }
     function checkGlobalAch() {
       const modes = Object.keys(MODES);
-      if (modes.every((m) => (S.stars[m] || 0) >= 1)) grant('all9');
+      /* M7d (r120) · all9 queda anclado al CIRCUITO CLÁSICO (PLAN_POOL):
+       * «CIRCUITO COMPLETO» prometía los 9 ejercicios de siempre — los
+       * nuevos no endurecen retroactivamente un logro veterano. */
+      if (PLAN_POOL.every((m) => (S.stars[m] || 0) >= 1)) grant('all9');
       if (modes.filter((m) => S.stars[m] === 3).length >= 5) grant('p5');
+      /* M7d (r120) · MEDALLERO DE ORO: 5 ejercicios con medalla de ORO */
+      if (modes.filter((m) => medallaDe(m) === 3).length >= 5) grant('or5');
       if (S.pts >= 1500) grant('leg');
+    }
+    /* =================================================================
+     *  M7d (r120) · MEDALLAS POR EJERCICIO — honor derivado de los datos
+     *  que YA existen: sin migración y RETROACTIVO (quien ya dominó un
+     *  ejercicio despierta con su medalla puesta).
+     *  · modos de HABILIDAD (t1/t2/t3/t4): estrellas + precisión
+     *    🥉 1 bronce: meta completada alguna vez (stars ≥ 1)
+     *    🥈 2 plata:  2 estrellas y precisión ≥ 70 %
+     *    🥇 3 oro:    3 estrellas y precisión ≥ 85 %
+     *  · modos RALLY (t5a/t5b): la MARCA manda (no hay precisión que
+     *    grabar en un rally infinito — los hitos SON la meta):
+     *    🥉 marca ≥ meta1 · 🥈 ≥ meta2 · 🥇 ≥ meta3 (30/50/100 · 20/40/80)
+     *  Con gamify=0 (GAMF=0) no hay medallas: flujo legacy intacto.
+     *  ================================================================= */
+    function medallaDe(id) {
+      if (!GAMF()) return 0;
+      const MI = RALLY_MILL[id];
+      if (MI) {
+        const best = S.best[id] || 0;
+        if (best >= MI[2]) return 3;
+        if (best >= MI[1]) return 2;
+        if (best >= MI[0]) return 1;
+        return 0;
+      }
+      const stN = S.stars[id] || 0;
+      if (stN >= 3) return (S.acc[id] || 0) >= 85 ? 3 : 2;
+      if (stN === 2) return (S.acc[id] || 0) >= 70 ? 2 : 1;
+      if (stN === 1) return 1;
+      return 0;
+    }
+    const MED_GLYPH = ['', '\u{1F949}', '\u{1F948}', '\u{1F947}'];
+    /* M7d (r120) · costuras de QA al patrón de la casa (__test/__debug,
+     * vivos desde r76/r80/r118): el juez REAL con botes sintéticos y el
+     * apagado limpio. Cero caminos nuevos de juego. */
+    function qaJudge(mode, p, crossY, apexY, rally) {
+      if (!MODES[mode] || !p) return null;
+      G = G || ((typeof window !== 'undefined' && window.__PP_GAME) || null);
+      if (!G) return null;
+      const antes = { pts: S.pts, streak: st.streak };
+      active = mode;                      // juez directo (QA dirigida r120)
+      st.live = true; st.shotRec = true; st.aiBounce = 0; st.aiTouched = false;
+      st.cross = (crossY == null) ? null : { y: crossY, spd: 5 };
+      st.apex = (apexY == null) ? 1.0 : apexY;
+      if (rally != null) st.rally = rally;
+      if (mode === 't1a' && !st.target) st.target = pickTarget();
+      judgeAiBounce({ x: p.x, y: p.y, z: p.z });
+      return { pts: S.pts, delta: S.pts - antes.pts, streak: st.streak,
+        rally: st.rally, stars: Object.assign({}, S.stars) };
+    }
+    function qaOff() {
+      active = null; st.live = false; st.daily = 0; st.weekly = 0;
+      st.streak = 0; st.rally = 0;
     }
     function checkComboAch(mul) {
       if (mul > (S.comboBest || 0)) { S.comboBest = mul; save(); }
@@ -29274,6 +29343,9 @@ loadPaddleModel().then((paddleModel) => {
     const MODES = {
       t1a: { area: 'dir', nk: 'm_t1a', dk: 'm_t1a_d', n: 5, ok: 'ok_zona', pts: 1, bonus: 15 },
       t1b: { area: 'dir', nk: 'm_t1b', dk: 'm_t1b_d', n: 5, ok: 'ok_banda', pts: 2, bonus: 20 },
+      /* M7d (r120) · ESQUINA EXACTA: el tiro de campeón — fondo Y banda a la
+       * vez. Entrenamiento libre: NUNCA entra en los retos (PLAN_POOL). */
+      t1c: { area: 'dir', nk: 'm_t1c', dk: 'm_t1c_d', n: 3, ok: 'ok_esq', pts: 3, bonus: 25 },
       t2a: { area: 'alt', nk: 'm_t2a', dk: 'm_t2a_d', n: 5, ok: 'ok_bajo', pts: 2, bonus: 20 },
       t2b: { area: 'alt', nk: 'm_t2b', dk: 'm_t2b_d', n: 4, ok: 'ok_globo', pts: 2, bonus: 20 },
       t3a: { area: 'spin', nk: 'm_t3a', dk: 'm_t3a_d', n: 5, ok: 'ok_leido', pts: 2, bonus: 20 },
@@ -29281,7 +29353,24 @@ loadPaddleModel().then((paddleModel) => {
       t4a: { area: 'saque', nk: 'm_t4a', dk: 'm_t4a_d', n: 3, ok: 'ok_doble', pts: 3, bonus: 15 },
       t4b: { area: 'saque', nk: 'm_t4b', dk: 'm_t4b_d', n: 3, ok: 'ok_fondo', pts: 3, bonus: 15 },
       t5a: { area: 'rit', nk: 'm_t5a', dk: 'm_t5a_d', n: 30, ok: 'ok_beat', pts: 1, bonus: 15 },
+      /* M7d (r120) · METRÓNOMO LOCO: el mismo rally con la máquina
+       * TRAICIONERA (velocidad variable por bola). Hitos 20 · 40 · 80. */
+      t5b: { area: 'rit', nk: 'm_t5b', dk: 'm_t5b_d', n: 20, ok: 'ok_beat', pts: 1, bonus: 15 },
     };
+    /* M7d (r120) · POOL DE LOS RETOS — el PULSO diario (r76) y el semanal
+     * (r118) sembraban sobre Object.keys(MODES): con ejercicios nuevos el
+     * pool cambiaría y el determinismo («igual para toda la academia»)
+     * se rompería en mitad de la septana. PLAN_POOL congela los 9
+     * clásicos EN ORDEN: los planes de hoy son byte-idénticos a 3.6.108
+     * y los dos ejercicios nuevos son entrenamiento libre puro. */
+    const PLAN_POOL = ['t1a', 't1b', 't2a', 't2b', 't3a', 't3b', 't4a', 't4b', 't5a'];
+    /* hitos del rally por modo (M7d): [meta1, meta2, meta3] · bonus fijo 15/25/50 */
+    const RALLY_MILL = { t5a: [30, 50, 100], t5b: [20, 40, 80] };
+    const RALLY_BONUS = { t5a: [15, 25, 50], t5b: [15, 25, 50] };
+    /* M7d (r120) · modos RALLY (el contador manda sobre la racha): t5a y
+     * t5b comparten juez, HUD y latido; la máquina del LOCO traiciona. */
+    const isRallyM = () => active === 't5a' || active === 't5b';
+    const BEAT_INT = () => (active === 't5b' ? 1.45 : 1.65);
   
   
     /* =================================================================
@@ -29816,14 +29905,14 @@ loadPaddleModel().then((paddleModel) => {
       g.fillText(M ? t(M.nk) : t('hub_s'), 34, 96);
       if (M) {
         // contador grande
-        const big = active === 't5a' ? String(st.rally) : (String(st.streak) + ' / ' + objN());
+        const big = isRallyM() ? String(st.rally) : (String(st.streak) + ' / ' + objN());
         g.textAlign = 'center';
         g.fillStyle = '#ffffff';
         g.font = '900 110px system-ui, sans-serif';
         g.fillText(big, W / 2, 216);
         g.fillStyle = '#8fa0b8';
         g.font = '700 26px system-ui, sans-serif';
-        g.fillText(active === 't5a' ? t('hud_rally') : t('hud_racha') + ' · ' + t('hud_meta'), W / 2, 292);
+        g.fillText(isRallyM() ? t('hud_rally') : t('hud_racha') + ' · ' + t('hud_meta'), W / 2, 292);
         // toast
         if (st.toastT > 0) {
           g.fillStyle = st.toastOk ? '#68d391' : '#fc8181';
@@ -29858,7 +29947,7 @@ loadPaddleModel().then((paddleModel) => {
           g.font = '800 30px system-ui, sans-serif';
           g.fillText('\u2605'.repeat(stN) + '\u2606'.repeat(3 - stN), W - 34, 52);
           const tries = st.roundHits + st.roundFaults;
-          if (tries > 0 && active !== 't5a') {
+          if (tries > 0 && !isRallyM()) {
             const acc = Math.round(st.roundHits / tries * 100);
             g.fillStyle = '#8fa0b8';
             g.font = '600 20px system-ui, sans-serif';
@@ -30148,7 +30237,7 @@ loadPaddleModel().then((paddleModel) => {
     function failHit(key) {
       st.streak = 0;
       st.roundFaults++;
-      if (active === 't5a' && st.rally > 0) {
+      if (isRallyM() && st.rally > 0) {
         recordBest(active, st.rally);
         toast(t('fin_rally', { n: st.rally }), false);
       } else toast(t(key || 'mal_fuera'), false);
@@ -30265,6 +30354,31 @@ loadPaddleModel().then((paddleModel) => {
         g.strokeRect(4.5, 4.5, W - 9, H - 9);
         g.fillStyle = '#0c1826'; g.font = '900 40px system-ui, sans-serif'; g.textAlign = 'center';
         g.save(); g.translate(W / 2, (mz(zb[0]) + mz(zb[1])) / 2); g.scale(1, -1); g.textBaseline = 'middle'; g.fillText(t('z_fondo'), 0, 0); g.restore();
+      } else if (mode === 't1c') {
+        /* M7d (r120) · ESQUINA EXACTA — los DOS cuadros dorados: la ESQUINA
+         * es la INTERSECCIÓN del fondo (dz > HL·0,5, la fila lejana) con la
+         * banda lateral (mismo ancho que juzga t1b). Geometría calcada del
+         * juez t1c: lo pintado ES lo juzgado. */
+        const ZC = zonaDims();
+        const zr = [C() - HL(), C() - HL() * 0.5];
+        const y0 = mz(zr[0]), y1 = mz(zr[1]);
+        const corners = [
+          [0, mx(-HW() + ZC.t1bBanda)],
+          [mx(HW() - ZC.t1bBanda), W],
+        ];
+        for (const [cx0, cx1] of corners) {
+          g.fillStyle = 'rgba(242,193,78,0.88)';
+          g.fillRect(cx0, y0, cx1 - cx0, y1 - y0);
+          g.strokeStyle = '#ffd257'; g.lineWidth = 10;
+          g.strokeRect(cx0 + 5, y0 + 5, cx1 - cx0 - 10, y1 - y0 - 10);
+          g.strokeStyle = 'rgba(60,36,0,0.9)'; g.lineWidth = 3;
+          g.strokeRect(cx0 + 12, y0 + 12, cx1 - cx0 - 24, y1 - y0 - 24);
+        }
+        // el resto de la mesa se apaga (el objetivo NO es la mesa entera)
+        g.fillStyle = 'rgba(10,14,22,0.42)';
+        g.fillRect(0, 0, W, y0);                     // mitad cercana: fuera
+        g.fillRect(corners[0][1], y0, corners[1][0] - corners[0][1], y1 - y0);  // centro profundo: fuera
+        g.fillRect(0, y1, W, H - y1);                // banda media/corta: fuera
       } else if (mode === 't4a') {
         // zona de doble bote junto a la red (lado rival) — r80 · reto: el
         // DOBLE de profunda (0,51 m → 1,02 m desde la red)
@@ -30293,10 +30407,10 @@ loadPaddleModel().then((paddleModel) => {
     }
   
     function applyModeScene() {
-      quadMesh.visible = (active === 't1a' || active === 't1b' || active === 't4a' || active === 't4b');
+      quadMesh.visible = (active === 't1a' || active === 't1b' || active === 't1c' || active === 't4a' || active === 't4b');
       ribbonG.visible = (active === 't2a');
       apexG.visible = (active === 't2b');
-      metroG.visible = (active === 't5a');
+      metroG.visible = (active === 't5a' || active === 't5b');
       panel.visible = !!active;
       if (quadMesh.visible) drawQuad(active);
       // r100 · al (re)entrar en el PASE BAJO el rótulo repinta cm + idioma
@@ -30322,7 +30436,7 @@ loadPaddleModel().then((paddleModel) => {
      *  ================================================================= */
     function modeFeed() {
       // alimentación específica por modo (máquina o soporte de saque)
-      if (active === 't1a' || active === 't1b' || active === 't2a' || active === 't2b' || active === 't5a') {
+      if (active === 't1a' || active === 't1b' || active === 't1c' || active === 't2a' || active === 't2b' || active === 't5a') {
         // v3.0.8-TRN1 · MÁQUINA DE SPARRING: bolas de rally directas y
         // profundas (tiro resuelto con Magnus, despeje de red garantizado)
         // en vez de saques del solver que a veces caían lentos y cortos. La
@@ -30330,6 +30444,13 @@ loadPaddleModel().then((paddleModel) => {
         feedToPlayer({ rally: true, max: active === 't5a' ? 7.2 : 7.8 });
         st.phase = 'rally';
         if (active === 't5a') st.live = true;   // el beat vigila el fallo aunque el jugador no la toque
+      } else if (active === 't5b') {
+        /* M7d (r120) · METRÓNOMO LOCO: la MISMA máquina, pero cada bola
+         * llega a una velocidad distinta (5,6–9,2): leer el ritmo YA no
+         * basta. El beat vigila el fallo igual que en t5a. */
+        feedToPlayer({ rally: true, max: 5.6 + Math.random() * 3.6 });
+        st.phase = 'rally';
+        st.live = true;
       } else if (active === 't3a') {
         const spin = new THREE.Vector3(-(58 + Math.random() * 22), (Math.random() - 0.5) * 10, 0);
         feedToPlayer({
@@ -30387,6 +30508,16 @@ loadPaddleModel().then((paddleModel) => {
         const band = Math.abs(p.x) > HW() - ZJ1.t1bBanda || p.z < C() - HL() + ZJ1.t1bFondo;
         if (band) okHit(MODES[active].ok, MODES[active].pts);
         else { st.done = 0; failHit('mal_corta'); }
+      } else if (active === 't1c') {
+        /* M7d (r120) · ESQUINA EXACTA: fondo Y banda A LA VEZ (los dos
+         * cuadros dorados del overlay). Mismo lenguaje de zonas que t1b
+         * (ZJ.t1bBanda) y la frontera profunda de t1a (HL·0,5): lo pintado
+         * ES lo juzgado. */
+        const ZJ2 = zonaDims();
+        const deep = (C() - p.z) > HL() * 0.5;
+        const band = Math.abs(p.x) > HW() - ZJ2.t1bBanda;
+        if (deep && band) okHit(MODES[active].ok, MODES[active].pts);
+        else { st.done = 0; failHit('mal_corta'); }
       } else if (active === 't2a') {
         const deep = p.z < C() - 0.60;
         const under = st.cross && st.cross.y < RIBBON_Y();
@@ -30428,23 +30559,39 @@ loadPaddleModel().then((paddleModel) => {
           if (st.cross && st.cross.spd > 4.5) addPts(1);   // bonus saque tenso
           okHit(MODES[active].ok, MODES[active].pts);
         } else { st.done = 0; failHit('mal_corta'); }        // v3.0.2: era 'mal_larga' (semántica invertida)
-      } else if (active === 't5a') {
+      } else if (active === 't5a' || active === 't5b') {
         // v3.0.2 · FIX metrónomo: el rally NUNCA se incrementaba (el juez no
         // tenía rama t5a) — el contador quedaba en 0 y no sumaba puntos.
         // aiTouched cierra el cómputo: los rebotes EXTRA de la misma bola no suman.
+        // M7d (r120) · la rama sirve a t5a y a t5b (METRÓNOMO LOCO) con
+        // hitos propios por modo (RALLY_MILL / RALLY_BONUS).
         if (!st.aiTouched) {
           st.aiTouched = true;
           st.rally++;
           addPts(MODES[active].pts);
           G.audio.playOsc(760, 1180, 0.07, 'sine', 0.13, 0);
-          if (st.rally === 30 || st.rally === 50 || st.rally === 100) {
-            const bonus = st.rally === 30 ? 15 : st.rally === 50 ? 25 : 50;
+          /* M7d (r120) · logros de racha por el CAMINO VIVO (idempotentes):
+           * m50/m100 vivían sólo en okHit y el juez del rally jamás lo
+           * llama (muerto desde la refactorización v3.0.2). */
+          if (st.rally >= 50) grant('m50');
+          if (st.rally >= 100) grant('m100');
+          const MI = RALLY_MILL[active], MO = RALLY_BONUS[active];
+          const mi = MI.indexOf(st.rally);
+          if (mi >= 0) {
+            const bonus = MO[mi];
             addPts(bonus);
             recordBest(active, st.rally);
             toast(t('hito', { n: st.rally, n2: bonus }), true);
             G.audio.playOsc(660, 990, 0.1, 'triangle', 0.14, 0);
             G.audio.playOsc(880, 1320, 0.1, 'triangle', 0.14, 0.11);
             G.audio.playOsc(990, 1760, 0.14, 'triangle', 0.14, 0.22);
+            /* M7d (r120) · RE-ANCLADO EN EL CAMINO VIVO: estrellas y logros
+             * globales del rally (antes en el okHit muerto): las medallas
+             * del metrónomo ya nacen con estrella que las sustenta. */
+            if (GAMF()) {
+              recordStars(active, mi + 1);
+              checkGlobalAch();
+            }
           }
           panelDirty = true;    // el rally sigue: el beat sustituirá la bola cuando la anterior repose
         }
@@ -30529,7 +30676,7 @@ loadPaddleModel().then((paddleModel) => {
           // con bote rival YA puntuado la bola muere sola SIN fallo; sin bote
           // rival el jugador no la devolvió (el beat también lo detecta).
           if (st.deadT > 0.55 && st.shotRec) {
-            if (active === 't5a') {
+            if (isRallyM()) {
               if (st.aiTouched) st.shotRec = false;
               else { failHit('mal_fuera'); st.shotRec = false; }
             } else if (active === 't4a' && st.aiBounce === 1) { st.done = 0; failHit('mal_larga'); st.shotRec = false; }
@@ -30579,23 +30726,24 @@ loadPaddleModel().then((paddleModel) => {
       // 4) alimentación temporizada (t4a/t4b la lleva el soporte del paso 3)
       if (!st.live && !(active === 't4a' || active === 't4b')) {
         st.wait -= dt;
-        if (st.wait <= 0) { modeFeed(); st.wait = active === 't5a' ? 1.65 : 2.2; }
-      } else if (active === 't5a') {
+        if (st.wait <= 0) { modeFeed(); st.wait = isRallyM() ? BEAT_INT() : 2.2; }
+      } else if (isRallyM()) {
         // v3.0.2 · FIX «la bola desaparece»: el beat ya NO roba la bola en
         // vuelo. Sólo sustituye cuando la anterior está ASENTADA (muerta, ya
         // botó en el campo rival o pasó de largo). Si el beat vence y el
         // jugador no la devolvió, el rally termina ANTES de alimentar.
+        // M7d (r120) · BEAT_INT: el LOCO late más rápido (1,45 s).
         st.feedT += dt;
         const settled = !st.live || st.aiTouched || ballDead() || b.pos.z > C() + HL() + 0.4;
-        if (st.feedT >= 1.65 && settled) {
+        if (st.feedT >= BEAT_INT() && settled) {
           if (st.live && !st.aiTouched) failHit('mal_fuera');
           st.feedT = 0; modeFeed();
         }
       }
       // 5) metrónomo visual
-      if (active === 't5a') {
+      if (isRallyM()) {
         st.beat += dt;
-        const ph = (st.beat % 1.65) / 1.65;
+        const ph = (st.beat % BEAT_INT()) / BEAT_INT();
         const s = 1 + 0.5 * Math.max(0, 1 - ph * 4);
         metroG.scale.set(s, s, 1);
         metroG.material.opacity = 0.35 + 0.55 * Math.max(0, 1 - ph * 3);
@@ -31231,6 +31379,15 @@ loadPaddleModel().then((paddleModel) => {
         const bests = Object.keys(MODES).filter((m) => MODES[m].area === id && S.best[m]);
         c.fillStyle = '#f0c85a'; c.font = '700 18px system-ui, sans-serif';
         c.fillText(bests.length ? t('mejor') + ': ' + bests.map((m) => S.best[m]).join(' / ') : '·', x + 26, yy + 120);
+        /* M7d (r120) · MEDALLERO del área a la derecha de la fila (sólo si
+         * hay metal): 🥇n 🥈n 🥉n — el hub resume el honor de la academia */
+        const mds = Object.keys(MODES).filter((m) => MODES[m].area === id);
+        const tal = mds.reduce((acc, m) => { const d = medallaDe(m); if (d) acc[d - 1]++; return acc; }, [0, 0, 0]);
+        if (tal[0] || tal[1] || tal[2]) {
+          c.textAlign = 'right';
+          c.fillText('\u{1F947}' + tal[2] + ' \u{1F948}' + tal[1] + ' \u{1F949}' + tal[0], x + CW - 24, yy + 120);
+          c.textAlign = 'left';
+        }
         c.restore();
       };
       for (let i = 0; i < AREAS.length; i++) {
@@ -31548,10 +31705,13 @@ loadPaddleModel().then((paddleModel) => {
         c.fillStyle = '#f0c85a'; c.font = '700 20px system-ui, sans-serif';
         c.fillText((S.best[id] ? t('mejor') + ': ' + S.best[id] + '  ·  ' : '') + t('obj') + ': ' + M.n, 68, y + 142);
         // v3.0.7-PLAY1 · estrellas logradas + mejor precisión de la prueba
+        // M7d (r120) · MEDALLA del ejercicio delante de las estrellas
+        // (🥉 meta completada · 🥈 2★ y ≥70 % · 🥇 3★ y ≥85 %)
         if (GAMF()) {
           const stN = S.stars[id] || 0;
           c.textAlign = 'right';
-          let meta = '\u2605'.repeat(stN) + '\u2606'.repeat(3 - stN);
+          const md = medallaDe(id);
+          let meta = (md ? MED_GLYPH[md] + ' ' : '') + '\u2605'.repeat(stN) + '\u2606'.repeat(3 - stN);
           if (S.acc[id]) meta += '  ' + S.acc[id] + '%';
           c.fillStyle = stN ? '#f0c85a' : 'rgba(255,255,255,0.35)';
           c.font = '800 22px system-ui, sans-serif';
@@ -31700,8 +31860,13 @@ loadPaddleModel().then((paddleModel) => {
           return { bad: S.semana.bad,
             hecho: (S.semana.done && S.semana.done[weekKey()]) ? 1 : 0,
             modo: _pW.mode, n: _pW.n }; })() }; },
-      __debug: { S, st, MODES },
+      __debug: { S, st, MODES, PLAN_POOL },   /* M7d (r120): PLAN_POOL visible */
     __test: { okHit, failHit, judgeAiBounce, modeFeed, pickTarget, serveTee, drawQuad, drawPanel, serveAssist,
+      // M7d (r120) · medallas por ejercicio + juez REAL sintético + dims
+      // de mesa (HW/HL/C/TOP) + apagado limpio y estado del modo activo
+      medallaDe, qaJudge, qaOff, activo: () => active,
+      trainDims: () => ({ HW: HW(), HL: HL(), C: C(), TOP: TOP() }),
+      checkGlobalAch,
       // r76 · EL PULSO CRAZY: internos expuestos para la QA (qa_r76_v3668)
       dayKey, dailyPlan, dailyTip, dailyComplete, effStreak, seedOf,
       // r118 · RETO DE LA SEMANA: internos para la QA (qa_r118_dirigida)

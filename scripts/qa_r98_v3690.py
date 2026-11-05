@@ -110,10 +110,10 @@ CHK("hint_fvolset: 'Hold the trigger on the bar and slide your controller left o
 # versión sellada
 import re as _re
 mver = _re.search(r"const VERSION = '([^']+)'", GH)
-CHK(bool(mver) and mver.group(1) == '3.6.108-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
+CHK(bool(mver) and mver.group(1) == '3.6.109-SDK6', 'c00: VERSION sella 3.6.91-SDK6')
 V = json.load(open(os.path.join(RAIZ, 'src/game/VERSION.json')))
 CHK(V.get('fase') == 110, 'VERSION.json: FASE 110')
-CHK(V.get('hub') == 'v36108-sdk6', 'VERSION.json: hub v36108-sdk6')
+CHK(V.get('hub') == 'v36109-sdk6', 'VERSION.json: hub v36109-sdk6')
 
 # ------------------------------------------------------------- RUNTIME ----
 print('== RUNTIME (juego vivo) ==')

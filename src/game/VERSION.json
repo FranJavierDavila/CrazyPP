@@ -1,10 +1,10 @@
 {
-  "version": "3.6.108-SDK6",
-  "fase": 110,
-  "faseNombre": "M7c · DOBLES 2v2 prototipo (investigación y prototipo jugable)",
+  "version": "3.6.109-SDK6",
+  "fase": 111,
+  "faseNombre": "M7d · PRO TRAINING extendido (2 ejercicios nuevos + medallas por ejercicio)",
   "sdk": "1.6.0",
   "fecha": "2026-11-04",
-  "hub": "v36108-sdk6",
+  "hub": "v36109-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r119",
   "tamano": 10691069,
-  "golden": "534638ec729a65e14768e8220ebe53e05fce7cbbc355bd70d354e3baa3794d16"
+  "golden": "fed4d6fb24130b48a3ff4d09480560b35fa79e94626be8b387df5ad069408b22"
 }

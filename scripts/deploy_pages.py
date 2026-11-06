@@ -303,8 +303,14 @@ def commit_pages_branch(version, head, game_sha, nfiles):
     sh(['git', 'read-tree', '--empty'], env=env)
     # r126 · bulk update: un solo `git add` con GIT_INDEX_FILE propio (antes:
     # hash-object + update-index POR FICHERO = 2 subprocessos por fichero y
-    # timeouts en el mount lento del sandbox).
-    sh(['git', 'add', '-f', '--all', '--', '.'], env=env, cwd=SITE)
+    # timeouts en el mount lento del sandbox). CUIDADO (lección de ESTA ronda,
+    # deploy da84c162a → sitio 404): el índice guarda rutas RELATIVAS A LA
+    # RAÍZ DEL REPO — un `git add .` con cwd=SITE anida todo bajo
+    # «pages-site/». Con --work-tree=SITE las rutas quedan en la RAÍZ del
+    # tree, y core.fileMode=false sella 100644 como el bucle antiguo.
+    sh(['git', '-c', 'core.fileMode=false',
+        '--git-dir', os.path.join(REPO, '.git'), '--work-tree', SITE,
+        'add', '-f', '--all', '--', '.'], env=env, cwd=SITE)
     tree = out(['git', 'write-tree'], env=env)
     parent = None
     try:

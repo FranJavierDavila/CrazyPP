@@ -153,6 +153,27 @@ function claveOk(url, request, env) {
  * (documentación oficial de Cloudflare Realtime, «Generate Credentials»).
  * Saneo local: sólo urls stun/turn/turns y FUERA el puerto 53 — nota
  * oficial de CF: los navegadores lo bloquean y el ICE esperaría el timeout.
+ *
+ * ronda 20 · P4-F4 — RUTA METERED SIN COSTE (juego entre casas distintas)
+ * ---------------------------------------------------------------------
+ * VERIFICADO EN SANDBOX (2026-11-07): el TURN público Open Relay está
+ * RETIRADO — openrelay.metered.ca resuelve a 192.0.2.1 (IP-documentación,
+ * RFC 5737) y staticauth.openrelay.metered.ca no responde ni por UDP ni
+ * TCP con el esquema coturn. NADA de credenciales muertas al cliente.
+ *
+ * Alternativa sin tarjeta: cuenta gratuita de Metered (Open Relay, 20
+ * GB/mes). El dueño crea la cuenta, y el worker acude a su API REST a
+ * por credenciales dinámicas con SOLO dos variables nuevas (sin redeploy
+ * de este código):
+ *   METERED_APP      texto  · subdominio de la app (x.metered.live)
+ *   METERED_API_KEY  secret · apiKey del panel de Metered
+ * → GET https://{METERED_APP}.metered.live/api/v1/turn/credentials
+ *   ?apiKey=… → 200 [ {urls:[…], username, credential}, … ]
+ * (mismo formato que generate-ice-servers: pasa por el mismo saneo).
+ *
+ * PRIORIDAD: TURN_API_TOKEN (Cloudflare, gratis hasta 1 TB/mes) >
+ * METERED_* (20 GB/mes) > STUN honesto con turn:false. El campo `fuente`
+ * de la respuesta indica quién dio el relé (cloudflare|metered).
  * ==================================================================== */
 const ICE_TTL_DEFECTO = 21600;        // 6 h de vida de la credencial TURN
 const ICE_CACHE_MS = 4 * 60 * 1000;   // caché por isolate (≤15 llamadas/h)
@@ -187,6 +208,14 @@ function saneaIceServers(lista) {
     fuera.push(limpio);
   }
   return fuera;
+}
+
+/** Fusiona la base STUN con los servidores de un upstream, sin duplicar
+ *  urls (las entradas con el mismo bloque urls se quedan en su 1ª vez). */
+function fusionaIce(base, extra) {
+  const vista = new Set(base.map((s) => s.urls.join(" ")));
+  return base.concat((extra || []).filter((s) => s && Array.isArray(s.urls) &&
+    !vista.has(s.urls.join(" "))));
 }
 
 /** Id de la cuenta: variable explícita o derivada del token (una vez). */
@@ -253,14 +282,40 @@ async function iceRespuesta(env, fetchImpl) {
           const j = await r.json();
           const servs = saneaIceServers(j && j.iceServers);
           if (servs.length) {
-            resp = { ok: true, ts: ahora, turn: true, iceServers: servs, ttl: ICE_TTL_DEFECTO };
+            resp = { ok: true, ts: ahora, turn: true, iceServers: servs, ttl: ICE_TTL_DEFECTO, fuente: "cloudflare" };
           }
         }
       }
     } catch { /* cae abajo → STUN honesto */ }
     if (!resp) resp = { ok: true, ts: ahora, turn: false, iceServers: ICE_STUN_BASE, error: "turn_upstream" };
   } else {
-    resp = { ok: true, ts: ahora, turn: false, iceServers: ICE_STUN_BASE };
+    // ronda 20 · P4-F4 — ruta Metered (cuenta gratuita del dueño, sin
+    // tarjeta): si están las dos variables, pedimos credenciales dinámicas
+    // a su API REST y las saneamos igual que las de Cloudflare.
+    const mApp = env && env.METERED_APP;
+    const mKey = env && env.METERED_API_KEY;
+    if (typeof mApp === "string" && mApp && typeof mKey === "string" && mKey) {
+      try {
+        const r = await fetchImpl(
+          `https://${mApp}.metered.live/api/v1/turn/credentials?apiKey=${encodeURIComponent(mKey)}`
+        );
+        if (r.status === 200) {
+          const j = await r.json();
+          const servs = saneaIceServers(j);
+          const hayTurn = servs.some((s) => s.urls.some((u) => /^turn/.test(u)));
+          if (hayTurn) {
+            resp = { ok: true, ts: ahora, turn: true,
+                     iceServers: fusionaIce(ICE_STUN_BASE, servs),
+                     ttl: ICE_TTL_DEFECTO, fuente: "metered" };
+          }
+        }
+      } catch { /* cae abajo → STUN honesto */ }
+      if (!resp) {
+        resp = { ok: true, ts: ahora, turn: false, iceServers: ICE_STUN_BASE, error: "metered_upstream" };
+      }
+    } else {
+      resp = { ok: true, ts: ahora, turn: false, iceServers: ICE_STUN_BASE };
+    }
   }
   iceCache = { t0: ahora, resp };
   return resp;

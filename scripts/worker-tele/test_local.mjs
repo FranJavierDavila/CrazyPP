@@ -531,6 +531,71 @@ try {
     // P7 · CORS
     r = await worker.fetch(reqIce("/api/ice"), envIce5, {});
     chk(r.headers.get("access-control-allow-origin") === "*", "P7 · /api/ice lleva CORS");
+
+    // P8 · ruta Metered (ronda 20 · P4-F4): cuenta gratuita del dueño,
+    // credenciales dinámicas por API REST — mismo saneo que Cloudflare
+    globalThis.fetch = async (url) => {
+      const s = String(url);
+      if (s.includes("metered.live/api/v1/turn/credentials")) {
+        return { status: 200, json: async () => [
+          { urls: ["stun:global.metered.ca:80"] },
+          { urls: ["turn:global.metered.ca:80?transport=udp"], username: "mu", credential: "mc" },
+          { urls: ["turn:global.metered.ca:53?transport=udp"], username: "mu", credential: "mc" },
+          { urls: ["turn:global.metered.ca:443?transport=tcp"], username: "", credential: "" },
+          { urls: ["turns:global.metered.ca:443?transport=tcp"], username: "mu", credential: "mc" },
+        ] };
+      }
+      return { status: 500, json: async () => ({}) };
+    };
+    const envM = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0,
+      METERED_APP: "crazypp", METERED_API_KEY: "qa-key-m" };
+    r = await worker.fetch(reqIce("/api/ice"), envM, {});
+    j = await cuerpo(r);
+    chk(r.status === 200 && j.turn === true && j.fuente === "metered" && j.ttl === 21600,
+      `P8 · Metered configurada → turn:true fuente=metered (${j.turn}/${j.fuente})`);
+    const mTurn = j.iceServers.filter((s) => s.urls.some((u) => u.startsWith("turn")));
+    chk(mTurn.length === 2 && mTurn.every((s) => s.username && s.credential),
+      `P8 · saneo: 2 turn con credencial (:53 y sin credencial fuera) (${mTurn.length})`);
+    chk(j.iceServers.some((s) => s.urls.some((u) => u.startsWith("stun:stun.cloudflare.com"))),
+      "P8 · la fusión mantiene el STUN base");
+
+    // P9 · Metered rota → degradación limpia a STUN honesto
+    globalThis.fetch = async () => ({ status: 500, json: async () => ({}) });
+    const envM2 = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0,
+      METERED_APP: "crazypp", METERED_API_KEY: "qa-key-m" };
+    r = await worker.fetch(reqIce("/api/ice"), envM2, {});
+    j = await cuerpo(r);
+    chk(r.status === 200 && j.turn === false && j.error === "metered_upstream" &&
+        j.iceServers.every((s) => s.urls.some((u) => u.startsWith("stun:"))),
+      `P9 · metered caída → STUN honesto con error (${j.error})`);
+
+    // P10 · prioridad: si hay TURN_API_TOKEN, NO se llama a metered
+    let llamadasMetered = 0;
+    globalThis.fetch = async (url) => {
+      const s = String(url);
+      if (s.includes("metered.live")) { llamadasMetered++; return { status: 200, json: async () => [] }; }
+      if (s.includes("/credentials/generate-ice-servers")) {
+        return { status: 201, json: async () => ({
+          iceServers: [{ urls: ["turn:turn.cloudflare.com:3478?transport=udp"], username: "u", credential: "c" }] }) };
+      }
+      return { status: 400, json: async () => ({ success: false }) };
+    };
+    const envAmbos = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0,
+      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key",
+      METERED_APP: "crazypp", METERED_API_KEY: "qa-key-m" };
+    r = await worker.fetch(reqIce("/api/ice"), envAmbos, {});
+    j = await cuerpo(r);
+    chk(j.turn === true && j.fuente === "cloudflare" && llamadasMetered === 0,
+      `P10 · CF tiene prioridad sobre Metered (${llamadasMetered} llamadas a metered)`);
+
+    // P11 · Metered sin servidores turn válidos → STUN honesto
+    globalThis.fetch = async () => ({ status: 200, json: async () => [{ urls: ["stun:global.metered.ca:80"] }] });
+    const envM3 = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0,
+      METERED_APP: "crazypp", METERED_API_KEY: "qa-key-m" };
+    r = await worker.fetch(reqIce("/api/ice"), envM3, {});
+    j = await cuerpo(r);
+    chk(r.status === 200 && j.turn === false && j.error === "metered_upstream",
+      `P11 · metered sin turn válido → STUN honesto (${j.error})`);
   } finally {
     globalThis.fetch = _fetchReal;
   }

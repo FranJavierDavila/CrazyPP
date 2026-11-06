@@ -92,6 +92,44 @@ muestras). El filtro ?sid reescala las alarmas al subconjunto. Nivel global
 = el PEOR de los items. Nada previo cambia: es un campo NUEVO y tolerante
 (paneles viejos simplemente no lo leen).
 
+TURN SIN COSTE PARA JUGAR ENTRE CASAS (ronda 20 · P4-F4)
+---------------------------------------------------------
+Para partidas entre redes distintas, el relé TURN entra cuando el enlace
+directo no se abre (NAT simétrico, CGNAT…). El TURN público Open Relay
+está RETIRADO (verificado 2026-11-07: openrelay.metered.ca → 192.0.2.1,
+IP-documentación). Dos rutas vivas, ambas sin coste real:
+
+RUTA A · Cloudflare Realtime (recomendada · gratis hasta 1 TB/mes)
+  1. dash.cloudflare.com → My Profile → API Tokens → Create Token →
+     Custom Token → permiso Account · Realtime TURN · Edit.
+  2. Worker crazypp-tele → Settings → Variables and Secrets →
+     Add · Type: Secret · Name: TURN_API_TOKEN · Value: el token. → Deploy.
+  3. Verifica: https://…workers.dev/api/ice → "turn":true,
+     "fuente":"cloudflare". (Puede pedir tarjeta en el perfil de CF
+     para productos medidos, pero NO cobra por debajo de 1 TB/mes.)
+
+RUTA B · Metered / Open Relay (sin tarjeta · gratis 20 GB/mes)
+  1. Crea la cuenta gratuita en metered.ca (sin tarjeta) y una app;
+     copia el subdominio (p. ej. «crazypp» para crazypp.metered.live)
+     y la apiKey del panel.
+  2. Worker crazypp-tele → Settings → Variables and Secrets:
+     - Add · Type: Text   · Name: METERED_APP      · Value: el subdominio
+     - Add · Type: Secret · Name: METERED_API_KEY  · Value: la apiKey
+     → Deploy.
+  3. Verifica: https://…workers.dev/api/ice → "turn":true,
+     "fuente":"metered". Sin tocar código: el worker ya lee esas
+     variables y sanea las credenciales (fuera puerto 53, turn sin
+     credencial descartado).
+
+PRIORIDAD AUTOMÁTICA: TURN_API_TOKEN > METERED_* > STUN sólo (turn:false).
+Mientras no haya ninguna configurada, /api/ice responde STUN honesto —
+el juego funciona igual en la misma Wi-Fi y en muchas fibras entre casas
+(STUN basta); TURN es la red de seguridad.
+
+OJO: los despliegues por scripts/deploy_worker.py PRESERVAN los secrets
+ya existentes del worker (se re-listan sin valor en el PUT); los valores
+nunca pasan por el repo.
+
 COSTES (plan gratuito de Cloudflare)
 ------------------------------------
 D1 gratis: 100.000 filas escritas/día y 5 M leídas/día. Cada evento es una

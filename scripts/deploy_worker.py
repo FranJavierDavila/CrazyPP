@@ -103,8 +103,14 @@ def exigir(status, j, contexto):
         fallo(contexto, errs or f"HTTP {status}")
 
 
-def multipart(worker_js, database_id, clave):
-    """Construye el multipart del PUT del script módulo."""
+def multipart(worker_js, database_id, clave, extra_bindings=None):
+    """Construye el multipart del PUT del script módulo.
+
+    extra_bindings: bindings adicionales que PRESERVAN valores ya en la
+    nube (secret_text sin "text": Cloudflare conserva el valor existente)
+    o los añaden nuevos (plain_text/secret_text con "text"). Así los
+    redeploys nunca borran TURN_API_TOKEN / METERED_* del dashboard.
+    """
     limite = "----cpp" + secrets.token_hex(12)
     meta = json.dumps({
         "main_module": "worker.js",
@@ -112,7 +118,7 @@ def multipart(worker_js, database_id, clave):
         "bindings": [
             {"type": "d1", "name": BINDING_D1, "id": database_id},
             {"type": "secret_text", "name": VAR_CLAVE, "text": clave},
-        ],
+        ] + list(extra_bindings or []),
     }).encode()
     mod = worker_js.encode()
     trozos = []
@@ -234,16 +240,52 @@ def main():
     guarda_clave(clave)
     ok("guardada en scripts/worker-tele/.clave-produccion (600, gitignored)")
 
-    # ── 6 · subir el worker
-    paso(6, f"subiendo el worker «{NOMBRE_SCRIPT}» (módulo + bindings D1 y CLAVE)")
-    cuerpo, ctype = multipart(worker_js, database_id, clave)
+    # ── 6 · bindings extra (preservar secrets del dashboard + variables ICE)
+    paso(6, "bindings ICE existentes (preservar secrets, nunca se leen)")
+    extras = []
+    nombres_conocidos = {BINDING_D1, VAR_CLAVE}
+    st, j = req("GET", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/settings", token)
+    if st == 200 and isinstance((j.get("result") or {}).get("bindings"), list):
+        for b in j["result"]["bindings"]:
+            nombre = b.get("name")
+            if not nombre or nombre in nombres_conocidos:
+                continue
+            if b.get("type") == "secret_text":
+                # sin "text" → Cloudflare conserva el valor que ya había
+                extras.append({"type": "secret_text", "name": nombre})
+                nombres_conocidos.add(nombre)
+            elif b.get("type") == "plain_text":
+                extras.append({"type": "plain_text", "name": nombre, "text": b.get("text", "")})
+                nombres_conocidos.add(nombre)
+        ok(f"{len(extras)} binding(s) existente(s) preservado(s)")
+    else:
+        print("   aviso: settings no disponibles (HTTP {st}); continúo sin preservar")
+    for nombre, tipo in (("TURN_API_TOKEN", "secret_text"),
+                         ("METERED_API_KEY", "secret_text"),
+                         ("METERED_APP", "plain_text")):
+        if nombre in nombres_conocidos:
+            continue
+        valor = os.environ.get(nombre, "").strip()
+        if valor:
+            b = {"type": tipo, "name": nombre}
+            if tipo == "plain_text":
+                b["text"] = valor
+            else:
+                b["text"] = valor
+            extras.append(b)
+            nombres_conocidos.add(nombre)
+            ok(f"binding {nombre} añadido desde el entorno")
+
+    # ── 7 · subir el worker
+    paso(7, f"subiendo el worker «{NOMBRE_SCRIPT}» (módulo + bindings D1 y CLAVE)")
+    cuerpo, ctype = multipart(worker_js, database_id, clave, extras)
     st, j = req("PUT", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}", token,
                 crudo=cuerpo, ctype=ctype)
     exigir(st, j, "subida del worker")
     ok("worker desplegado")
 
-    # ── 7 · subdomain activado
-    paso(7, "asegurando workers.dev activado")
+    # ── 8 · subdomain activado
+    paso(8, "asegurando workers.dev activado")
     st, j = req("POST", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/subdomain",
                 token, cuerpo={"enabled": True, "previews_enabled": True})
     if st >= 400:
@@ -251,8 +293,8 @@ def main():
     else:
         ok("subdomain habilitado")
 
-    # ── 8 · verificación E2E en producción
-    paso(8, "verificación E2E en producción")
+    # ── 9 · verificación E2E en producción
+    paso(9, "verificación E2E en producción")
     url = base_url + "/api/tele"
 
     # Sondas con curl + UA de navegador: workers.dev bloquea la firma de

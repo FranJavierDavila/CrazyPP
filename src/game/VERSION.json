@@ -1,10 +1,10 @@
 {
-  "version": "3.6.112-SDK6",
-  "fase": 114,
-  "faseNombre": "M-RED3 · endurecimiento del decodificador fast: cap de eventos al maximo del protocolo + escudo en el canal fast",
+  "version": "3.6.113-SDK6",
+  "fase": 115,
+  "faseNombre": "M7e · persistencia completa: historial de torneos (c11 historialTorneos + página HISTORIAL en el menú) y perfil recordado (AJUSTES › PERFIL Y DATOS)",
   "sdk": "1.6.0",
-  "fecha": "2026-11-05",
-  "hub": "v36112-sdk6",
+  "fecha": "2026-11-06",
+  "hub": "v36113-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r119",
   "tamano": 10691069,
-  "golden": "abfd35d72d35c9a6fac084076ad8afa134ac61249c7b7498d98fc263bea0aba9"
+  "golden": "bc1d80a9680dbbc75721b3aa422355fc377dcf387c3fe2976a04a89893a71fa7"
 }

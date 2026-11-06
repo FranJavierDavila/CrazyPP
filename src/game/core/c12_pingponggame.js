@@ -2498,6 +2498,15 @@ export class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // M7e (r124) · página HISTORIAL DE TORNEOS
+    if (this.menuPage === 'champhist') {
+      this.drawMenuChampHist(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     if (this.menuPage === 'opts') {
       this.drawMenuOpts(rects);
       this.menuRects = rects;
@@ -3300,6 +3309,67 @@ export class PingPongGame {
     // describía una tarjeta vieja, se leía como si aplicara a todos los
     // campeonatos y la MEGA PALA es poder exclusivo de La Locura (Crazy
     // Combo). Cada tarjeta ya cuenta lo suyo.
+    // M7e (r124) · HISTORIAL DE TORNEOS: la pasada de sellado es barata
+    // (~10 lecturas de localStorage) y corre al pintar la página — un
+    // campeonato recién vencido queda sellado aunque no entres al panel.
+    try { this.champs.historialTorneos(); } catch (eH7) { /* */ }
+    if (y < 1320) {
+      btn('page:champhist', 56, y + 4, 912, 56, T('hist_btn'),
+        false, undefined, undefined, 22);
+      y += 72;
+    }
+    const closeY = Math.min(Math.max(y + 4, 1392), 1428);
+    btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
+  }
+
+  /** M7e (r124) · página HISTORIAL DE TORNEOS — una fila por campeonato
+   *  vencido: nombre vivo por idioma, victorias corrientes de SU registro,
+   *  sello LEYENDA y la fecha en que el torneo quedó sellado. Los datos
+   *  viven en 'pp_torneos_historial_v1' (c11.historialTorneos) y se
+   *  refrescan al pintar la página. */
+  drawMenuChampHist(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const label = this._menuLabel;
+    this.drawMenuHeader(rects);
+    btn('page:champs', 40, 216, 240, 60, T('page_back'), false, undefined, undefined, 25);
+    c.fillStyle = '#ffd257';
+    c.font = '900 42px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(T('hist_title'), 664, 246);
+
+    let hist = [];
+    try { hist = (this.champs && this.champs.historialTorneos()) || []; } catch (eH) { /* */ }
+    let y = 320;
+    if (!hist.length) {
+      label(T('hist_empty'), y + 20, 21, '#98a6b4', 'center');
+      y += 64;
+    }
+    for (const h of hist) {
+      const ent = ((this.champs && this.champs.entries) || []).find((e) => e.id === h.id) || {};
+      const nom = String((ent.title && ((ent.title[__ppLang] || ent.title.es) || h.id)) || h.id);
+      let fila = (h.leyenda ? '★ ' : '🏆 ') + nom
+        + ' · ' + T('hist_wins', { n: h.wins | 0 })
+        + ' · ' + T('hist_sellado', { f: h.fecha || '' });
+      c.beginPath();
+      if (c.roundRect) c.roundRect(56, y, 912, 54, 14); else c.rect(56, y, 912, 54);
+      c.fillStyle = 'rgba(255,210,87,0.08)';
+      c.fill();
+      c.strokeStyle = 'rgba(255,210,87,0.35)';
+      c.lineWidth = 2;
+      c.stroke();
+      c.fillStyle = h.leyenda ? '#ffd257' : '#ffe9b3';
+      c.font = '700 24px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      const _f0 = fila;
+      while (fila.length > 2 && c.measureText(fila).width > 856) fila = fila.slice(0, -1);
+      if (fila !== _f0) fila += '…';
+      c.fillText(fila, 76, y + 28);
+      y += 62;
+      if (y > 1432) break;   // cap visible: el registro ya está sellado igualmente
+    }
     const closeY = Math.min(Math.max(y + 4, 1392), 1428);
     btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
   }
@@ -3657,6 +3727,28 @@ export class PingPongGame {
         y += 72;
         label(T('tele_hint'), y + 10, 18, '#98a6b4');
         y += 36;
+        // M7e (r124) · TU PERFIL RECORDADO — lectura VIVA de los registros
+        // que el juego ya mantiene (pp_mesaskin, pp_mesaalto, pp_mesaaltoy,
+        // pp_pala_mejorada_v1, pp_rivstyle_v1, pp_pid): nada nuevo que
+        // sincronizar — el perfil ES el estado, aquí se ve de un vistazo.
+        label(T('perfil_titulo'), y + 14, 26, '#ffd257');
+        y += 44;
+        const _sk = this._mesaSkinDef(this.mesaSkin);
+        label(T('perfil_skin', { v: T(_sk.nameKey) }), y + 8, 20);
+        y += 32;
+        let _altoId = 'normal';
+        try { _altoId = localStorage.getItem('pp_mesaalto') || 'normal'; } catch { /* */ }
+        const _alto = MESA_ALTOS.find((a) => a.id === _altoId);
+        label(T('perfil_alto', { v: _alto ? T(_alto.nameKey) : _altoId }), y + 8, 20);
+        y += 32;
+        label(T('perfil_pala', { v: yn(this.palaMejorada) }), y + 8, 20);
+        y += 32;
+        label(T('perfil_estilo', { v: yn(this.rivStyleOn) }), y + 8, 20);
+        y += 32;
+        let _pid = '';
+        try { _pid = (localStorage.getItem('pp_pid') || '').slice(0, 8); } catch { /* */ }
+        if (_pid) label(T('perfil_pid', { v: _pid }), y + 8, 20, '#7e8ea8');
+        if (_pid) y += 32;
         break;
       }
       case 'rendi': {
@@ -4538,7 +4630,7 @@ export class PingPongGame {
         // r71 · + subpáginas de AJUSTES (optsJuego/optsSala/optsSonido/
         // optsVisual/optsPerfil) — las categorías del nuevo AJUSTES.
         // r81 · + optsRendi (RENDIMIENTO: autocalibrador de FPS).
-        if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
+        if (arg === 'main' || arg === 'champs' || arg === 'champhist' || arg === 'opts' ||
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
             arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi' ||
             arg === 'optsPala' ||

@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.112-SDK6, fase 114 · M-RED3 · endurecimiento del decodificador fast: cap de eventos al maximo del protocolo + escudo en el canal fast; sello actualizado
-# por bump_version.py desde 3.6.111-SDK6)
-abfd35d72d35c9a6fac084076ad8afa134ac61249c7b7498d98fc263bea0aba9
+# SHA256 del game.html que produjo esta división (3.6.113-SDK6, fase 115 · M7e · persistencia completa: historial de torneos (c11 historialTorneos + página HISTORIAL en el menú) y perfil recordado (AJUSTES › PERFIL Y DATOS); sello actualizado
+# por bump_version.py desde 3.6.112-SDK6)
+bc1d80a9680dbbc75721b3aa422355fc377dcf387c3fe2976a04a89893a71fa7

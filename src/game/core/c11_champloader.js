@@ -494,6 +494,41 @@ export class ChampLoader {
     return false;
   }
 
+  /** M7e (r124) · HISTORIAL DE TORNEOS — escanea los campeonatos y sella
+   *  en 'pp_torneos_historial_v1' la FECHA en que cada uno se ve campeón
+   *  por primera vez (retroactivo y honesto: lo ya ganado entra con la
+   *  fecha de esta primera pasada — nunca se inventa una fecha antigua).
+   *  Una fila por torneo, append-only; victorias y LEYENDA se refrescan
+   *  de sus registros en cada pasada; cap 50 (historialFusionar). Barata:
+   *  ~10 lecturas de localStorage por pasada — el menú la llama al pintar
+   *  las páginas CAMPEONATOS e HISTORIAL. Devuelve el historial vigente. */
+  historialTorneos() {
+    const KEY = 'pp_torneos_historial_v1';
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { hist = []; }
+    if (!Array.isArray(hist)) hist = [];
+    const filas = [];
+    try {
+      for (const e of this.entries || []) {
+        const base = String(e.storage || '').replace(/\*$/, '');
+        if (!base) continue;
+        let w = 0;
+        try { w = parseInt(localStorage.getItem(base + 'wins') || '0', 10) || 0; } catch (eW) { /* */ }
+        filas.push({
+          id: e.id,
+          esCampeon: this.championFlag(e.id) === true,
+          wins: w,
+          leyenda: this.leyendaFlag(e.id) === true,
+        });
+      }
+    } catch (e2) { /* sin registros: el historial queda como esté */ }
+    const [nuevo, dirty] = historialFusionar(hist, filas);
+    if (dirty) {
+      try { localStorage.setItem(KEY, JSON.stringify(nuevo)); } catch { /* */ }
+    }
+    return nuevo;
+  }
+
   /** v3.6.17 · ronda 21 · «Etapa X/5 · sigue donde la dejaste» — hint de
    *  progreso para las tarjetas del menú y el subtítulo de la sección.
    *  Convención de registros: <base>stage. Oeste guarda 1..5 (su constructor
@@ -911,6 +946,40 @@ export class ChampLoader {
     if (m && m.testStep) { try { m.testStep(dt); } catch (e) { console.warn('[champs.testStep]', e); } }
   }
 }
+/* M7e (r124) · FUSIÓN PURA DEL HISTORIAL DE TORNEOS (testeable headless,
+ * sin localStorage ni DOM). filas = estado ACTUAL de cada campeonato
+ * [{ id, esCampeon, wins, leyenda }]. Reglas:
+ *  · Un torneo ENTRA el primer día que se ve campeón (fecha de sellado) y
+ *    JAMÁS sale — el historial es append-only.
+ *  · wins y leyenda se REFRESCAN en cada pasada (viven en sus registros).
+ *  · Devuelve [nuevo, dirty] — dirty=sé si hay que persistir.
+ *  · Cap 50 filas (orden estable: fecha de sellado, luego id).
+ *  · Al FINAL del módulo: el ensamblador exige el token de identidad
+ *    ('class ChampLoader') en la 1.ª línea de la pieza. */
+export function historialFusionar(hist, filas) {
+  const h0 = Array.isArray(hist) ? hist.filter((x) => x && x.id) : [];
+  let hoy = '';
+  try { hoy = new Date().toISOString().slice(0, 10); } catch { hoy = ''; }
+  let dirty = false;
+  const out = h0.slice();
+  for (const f of filas || []) {
+    if (!f || !f.id || f.esCampeon !== true) continue;
+    let r = out.find((x) => x.id === f.id);
+    if (!r) {
+      r = { id: f.id, fecha: hoy, wins: 0, leyenda: false };
+      out.push(r);
+      dirty = true;
+    }
+    const w = f.wins | 0;
+    if (w !== r.wins) { r.wins = w; dirty = true; }
+    const ley = f.leyenda === true;
+    if (ley !== r.leyenda) { r.leyenda = ley; dirty = true; }
+  }
+  out.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1
+    : (a.id < b.id ? -1 : 1)));
+  return [out.slice(-50), dirty];
+}
+
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { T, __ppLang, ppDebugMode } from './c00_pre_three.js';
 import { CHAMPS_STATE, _dbQ1, _dbQ2, _dbV1, _rbQ, _rbV1, _rbV2, _rbV3, _rbV4, _rpSize, _rpV1, rpDir, rpOrigin, rpQuat, rpRaycaster } from './c10_menu_saque.js';

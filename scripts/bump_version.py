@@ -152,6 +152,7 @@ def main():
         f'{vdat2.get("fase")} · {vdat2.get("faseNombre", "")}; sello actualizado\n'
         f'# por bump_version.py desde {actual})\n{sha}\n', encoding='utf-8')
     vdat2['golden'] = sha
+    vdat2['tamano'] = tam   # r127: el tamaño REAL del build (antes quedaba el del golden anterior)
     VJSON.write_text(json.dumps(vdat2, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(f'· golden nuevo: {sha[:16]}… ({tam:,} B) · VERSION.json actualizado')
 

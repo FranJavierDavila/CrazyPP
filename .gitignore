@@ -110,3 +110,6 @@ tmp_frames/
 scripts/tmp_seal/
 scripts/stage_*/
 scripts/v299_ref/
+
+# r126: área de ensamblaje del deploy de Pages (vive dentro del repo ahora)
+pages-site/

@@ -30,7 +30,7 @@ import re
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')   # r127: el mount vivo del repo (higiene, como deploy_pages.py)
 SRC = RAIZ / 'src' / 'game'
 GAME = RAIZ / 'public' / 'game.html'
 GOLDEN = SRC / 'GOLDEN_SHA256.txt'

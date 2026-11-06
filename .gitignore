@@ -113,3 +113,6 @@ scripts/v299_ref/
 
 # r126: área de ensamblaje del deploy de Pages (vive dentro del repo ahora)
 pages-site/
+
+# r127: ZIPs siempre fuera de git (límite GitHub 100 MB — este fósil pesa 101,6 MB)
+crazypp-v308-trn1-CLOUDFLARE.zip

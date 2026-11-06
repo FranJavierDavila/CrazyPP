@@ -857,11 +857,70 @@ export const PPNET = (() => {
     };
   }
 
+  /* ---------- r127 · P4.2 · autodiagnóstico contra la web -----------
+   * verCompara sólo ve al RIVAL. Si los DOS cascos retoman pestañas
+   * viejas de la MISMA versión, el enlace queda limpio y el desajuste
+   * con la web es invisible (lección P4: boots de 3.6.100/107/108/110/
+   * 111 conviviendo). verSelf es la decisión pura y testable del propio
+   * build (arranque) contra PAGES-VERSION.txt, que el service worker
+   * sirve RED PRIMERO. Mismas convenciones que verCompara: igual SOLO
+   * si ambas cadenas existen y son idénticas; '?' si falta un lado. */
+  function verSelf(mine, site) {
+    const m = (typeof mine === 'string') ? mine : '';
+    const s = (typeof site === 'string') ? site : '';
+    const igual = m !== '' && s !== '' && m === s;
+    return {
+      igual,
+      mine: m, site: s,
+      mineC: m ? m.slice(-6) : '?',
+      siteC: s ? s.slice(-6) : '?',
+    };
+  }
+
+  /* ---------- r127 · P4.2 · AUTODIAGNÓSTICO DE VERSIÓN AL ARRANCAR ---
+   * Al arrancar, el juego pregunta a PAGES-VERSION.txt?now=<ts> — el SW
+   * lo sirve RED PRIMERO (VIVAS): fresco siempre que haya Internet — y
+   * compara la versión de la web con el build corriendo. Distinto →
+   * game.onSelfcheckOutdated(vs) (aviso EN LA SALA: pista + megáfono +
+   * fila del panel). Telemetría ver_selfcheck UNA vez por sesión y
+   * SIEMPRE (coincida o no): es el censo de builds vivos que P4
+   * necesita para ver los «boots conviviendo». Sin red, sin fichero o
+   * sin sello → silencio absoluto: fire-and-forget, jamás bloquea el
+   * arranque ni el juego offline. Vive en el núcleo para no estirar el
+   * grafo DEPS-FASE2: c12 ya importa PPNET. */
+  let _selfTele = false;   // censo: una sola emisión ver_selfcheck por sesión
+  async function selfcheckVersion(game) {
+    try {
+      const resp = await fetch('PAGES-VERSION.txt?now=' + Date.now(), {
+        cache: 'no-store',
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
+          ? AbortSignal.timeout(4000) : undefined,
+      });
+      if (!resp || !resp.ok) return;
+      const txt = await resp.text();
+      const m = /^version=(.+)$/m.exec(txt || '');
+      if (!m) return;                     // fichero sin sello → nada
+      const site = m[1].trim();
+      const mine = (typeof VERSION !== 'undefined') ? VERSION : '';
+      const vs = verSelf(mine, site);
+      try {
+        if (!_selfTele) {
+          _selfTele = true;
+          const g = (typeof window !== 'undefined') ? window : globalThis;
+          g.__PP_TELE?.ev?.('ver_selfcheck', { mine: vs.mine, site: vs.site });
+        }
+      } catch (eT) { /* la telemetría nunca revienta */ }
+      if (!vs.igual && game && typeof game.onSelfcheckOutdated === 'function') {
+        game.onSelfcheckOutdated(vs);
+      }
+    } catch (e) { /* sin red / timeout: silencio, el arranque manda */ }
+  }
+
   return {
     VP, clamp, lerp, wrapDiff, u32, median, qNorm, qSlerp, pLerp,
     Writer, Reader, quatPack, quatUnpack, encodePacket, decodePacket,
     F_POSE, F_EV,
     NetClock, JitterBuf, BallAuth, Validator, NetSim, NetStats, MatchSync,
-    verCompara,
+    verCompara, verSelf, selfcheckVersion,
   };
 })();

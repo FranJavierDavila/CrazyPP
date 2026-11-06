@@ -29,7 +29,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')   # r127: el mount vivo del repo (higiene, como deploy_pages.py)
 SRC = RAIZ / 'src' / 'game'
 C00 = SRC / 'core' / 'c00_pre_three.js'
 BODY = SRC / '03_body.html'

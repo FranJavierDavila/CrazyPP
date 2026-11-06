@@ -1,10 +1,10 @@
 {
-  "version": "3.6.115-SDK6",
-  "fase": 117,
-  "faseNombre": "P4.1 aviso de build + cache-busting",
+  "version": "3.6.116-SDK6",
+  "fase": 118,
+  "faseNombre": "P4.2 autodiagnóstico de versión",
   "sdk": "1.6.0",
   "fecha": "2026-11-06",
-  "hub": "v36115-sdk6",
+  "hub": "v36116-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r119",
   "tamano": 10725856,
-  "golden": "6f6c300c3e1907b097657a8eae7e4fe29e4b14a188dc466711639ac16863d632"
+  "golden": "6ec1d54c2b3803f05374bc75092b5f8617eded32902e7d516afcac81627a0cfe"
 }

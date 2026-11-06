@@ -294,6 +294,11 @@ const I18N_STRINGS = {
     // veía el del menú con la visera puesta). Texto genérico, versiones vivas.
     net_build_warn: 'Tu rival usa OTRA versión ({a} vs {b}): recargad el juego en los DOS visores y cread la sala de nuevo',
     net_build_voice: 'rival con otra versión recargad el juego en los dos visores',
+    // r127 · P4.2 · autodiagnóstico de versión al arrancar: si los DOS
+    // cascos quedaron viejos, el HELLO no lo ve — el propio build se
+    // compara contra la web (PAGES-VERSION.txt, red primero).
+    net_selfcheck_warn: 'Estás en una versión ANTIGUA ({b}) · en la web hay la {a}: cierra y reabre la web para actualizarte',
+    net_selfcheck_voice: 'versión antigua cierra y reabre la web para actualizarte',
     net_v2_down: 'Sin enlace binario con el rival · revisad Internet y recargad',
     join_title: 'CÓDIGO DE LA SALA DE TU AMIGO',
     btn_connect: 'CONECTAR',
@@ -1178,6 +1183,11 @@ const I18N_STRINGS = {
     // r126 · P4.1 · build warning inside the room (first real match lesson)
     net_build_warn: 'Your rival runs ANOTHER build ({a} vs {b}): reload the game on BOTH headsets and re-create the room',
     net_build_voice: 'rival on another build reload the game on both headsets',
+    // r127 · P4.2 · boot-time version self-check: if BOTH headsets stayed
+    // old, the HELLO cannot see it — the running build is compared against
+    // the web itself (PAGES-VERSION.txt, network-first).
+    net_selfcheck_warn: 'You are on an OLD build ({b}) · the web has {a}: close and reopen the web to update',
+    net_selfcheck_voice: 'old version close and reopen the web to update',
     net_v2_down: 'No binary link with your rival · check Internet and reload',
     join_title: 'YOUR FRIEND’S ROOM CODE',
     // ---- v2.28 · MAIN MENU (big floating panel with accordion)
@@ -2729,7 +2739,7 @@ export const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.115-SDK6';
+  const VERSION = '3.6.116-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar

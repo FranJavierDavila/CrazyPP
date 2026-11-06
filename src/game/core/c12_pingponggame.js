@@ -321,6 +321,13 @@ export class PingPongGame {
     this._megaIconModo = '';          // '' | 'inv' inventario | 'act' activo
     // MULTIJUGADOR ONLINE (v2.19): P2P por WebRTC (PeerJS) + voz
     this.net = new NetLink(this);
+    // r127 · P4.2 · AUTODIAGNÓSTICO DE VERSIÓN: mi build contra la web
+    // (PAGES-VERSION.txt, red primero). Fire-and-forget: jamás bloquea el
+    // arranque; sin red o sin fichero → silencio. Si los DOS cascos
+    // retoman pestañas viejas de la MISMA versión, el HELLO no puede ver
+    // el desajuste — esto sí (PPNET.selfcheckVersion, en el núcleo c09b).
+    this._selfWarnInfo = null;
+    try { PPNET.selfcheckVersion?.(this); } catch (e127) { /* el arranque manda */ }
     this.menuPage = 'main';       // 'main' | 'multi' | 'join' | 'name' | 'rank'
     this.menuSec = 'match';       // v2.28: sección ABIERTA del acordeón
     this._menuAnchorUntil = 0;    // v2.28: flotación inicial del panel
@@ -1279,6 +1286,20 @@ export class PingPongGame {
     if (this.menuOpen) this.drawMenu();
   }
 
+  /** r127 · P4.2 · la web tiene una versión NUEVA que la mía: el build
+   *  corriendo es un residuo de caché (SWR de un ciclo o pestaña vieja
+   *  del Quest Browser). Mismo camino EN LA SALA que onBuildMismatch:
+   *  mensaje de pista + voz de megáfono; la fila del panel online le da
+   *  prioridad (recargar MI build lo arregla todo, el rival incluido). */
+  onSelfcheckOutdated(vs) {
+    this._selfWarnInfo = vs || null;
+    if (vs) {
+      this.rules.message = T('net_selfcheck_warn', { a: vs.siteC, b: vs.mineC });
+      this.audio.announce(T('net_selfcheck_voice'), true);
+    }
+    if (this.menuOpen) this.drawMenu();
+  }
+
   /** Máquina de bolas: saque reglamentario (bote propio + bote rival) hacia
    *  el campo del jugador, para entrenar golpes con el agarre ajustado. */
   feedPracticeBall() {
@@ -1893,8 +1914,18 @@ export class PingPongGame {
       btn('net:hangup', 520, yPanel + 146, 448, 72, T('btn_hangup'), false, undefined, undefined, 25);
       // r126 · P4.1 · aviso de BUILD distinto, visible EN la sala: sustituye
       // la pista de revancha mientras el rival hable otro build.
+      // r127 · P4.2 · el autodiagnóstico de versión (mi build vs la web)
+      // tiene PRIORIDAD sobre el del rival: si MI build es viejo, recargar
+      // mi visor lo arregla TODO (el del rival también, si era caché).
       const bm126 = net.buildMismatch ? net.buildMismatch() : null;
-      if (bm126) {
+      const sc126 = this._selfWarnInfo || null;
+      if (sc126) {
+        c.fillStyle = '#ff6b57';
+        c.font = '700 24px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        wrapText(c, T('net_selfcheck_warn', { a: sc126.siteC, b: sc126.mineC }), 512, yPanel + 250, 880, 30);
+      } else if (bm126) {
         c.fillStyle = '#ff6b57';
         c.font = '700 24px system-ui, sans-serif';
         c.textAlign = 'center';

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.116-SDK6",
-  "fase": 118,
-  "faseNombre": "P4.2 autodiagnóstico de versión",
+  "version": "3.6.117-SDK6",
+  "fase": 119,
+  "faseNombre": "skins de bola",
   "sdk": "1.6.0",
-  "fecha": "2026-11-06",
-  "hub": "v36116-sdk6",
+  "fecha": "2026-11-07",
+  "hub": "v36117-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r127",
-  "tamano": 10731285,
-  "golden": "6ec1d54c2b3803f05374bc75092b5f8617eded32902e7d516afcac81627a0cfe"
+  "nota": "r21",
+  "tamano": 10756498,
+  "golden": "348de39c5ad727972fbacd9216717f610f968ff6fe6e5761b508c254dae396d9"
 }

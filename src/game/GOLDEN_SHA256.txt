@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.116-SDK6, fase 118 · P4.2 autodiagnóstico de versión; sello actualizado
-# por bump_version.py desde 3.6.115-SDK6)
-6ec1d54c2b3803f05374bc75092b5f8617eded32902e7d516afcac81627a0cfe
+# SHA256 del game.html que produjo esta división (3.6.117-SDK6, fase 119 · skins de bola; sello actualizado
+# por bump_version.py desde 3.6.116-SDK6)
+348de39c5ad727972fbacd9216717f610f968ff6fe6e5761b508c254dae396d9

@@ -484,6 +484,85 @@ export const MESA_ASPECTOS = [
 export const MESA_NET_H = 0.1525;
 
 /* =====================================================================
+ *  r21 (v3.6.117) · ASPECTOS DE LA BOLA — skins 100 % COSMÉTICAS.
+ *  Reglas de casa (idénticas a MESA_ASPECTOS, r96):
+ *   · NUNCA tocan la física: radio, masa, rebote y Magnus son intocables —
+ *     el material cambia color/mapa/roughness/metalness/emisivo, nada más.
+ *   · CANDADOS igual que las mesas: lock 'wins10' (10 victorias o 6★ de
+ *     retos) y 'streak5' (racha de 5 o 3★) — reutiliza _mesaLibre().
+ *   · REGLA DEL DUEÑO en campeonato: la bola cae a la OFICIAL (blanca).
+ *   · ONLINE: la bola viste la skin del HOST — viaja en el HELLO v2 (campo
+ *     sk) y el invitado la adopta; builds viejos ignoran el campo (JSON
+ *     tolerante, PROTO/PHYS intactos).
+ *  Texturas: PROCEDURALES (canvas 2D en runtime, c07) — cero bytes nuevos
+ *  en el bundle, cero descargas nuevas en el casco.
+ *  Campos: id · lock · nameKey · tex (null = material plano) · color ·
+ *  rough · metal · emis · emisInt · trail [r,g,b] del reposo de estela ·
+ *  ring (Saturno: aro hijo decorativo).
+ *  ===================================================================== */
+export const BOLA_ASPECTOS = [
+  /* — clásicas (3) — */
+  { id: 'blanca', lock: null, nameKey: 'bola_asp_blanca', tex: null,
+    color: 0xfff8ef, rough: 0.35, metal: 0.0, emis: 0x555044, emisInt: 0.35,
+    trail: [0.75, 0.75, 0.75], ring: false },
+  { id: 'naranja', lock: null, nameKey: 'bola_asp_naranja', tex: null,
+    color: 0xff8a3d, rough: 0.35, metal: 0.0, emis: 0x553418, emisInt: 0.35,
+    trail: [1.0, 0.54, 0.24], ring: false },
+  { id: 'menta', lock: null, nameKey: 'bola_asp_menta', tex: null,
+    color: 0x8fe3c8, rough: 0.35, metal: 0.0, emis: 0x2e5548, emisInt: 0.35,
+    trail: [0.56, 0.89, 0.78], ring: false },
+  /* — locura (5) — */
+  { id: 'estrellas', lock: 'streak5', nameKey: 'bola_asp_estrellas', tex: 'estrellas',
+    color: 0xffffff, rough: 0.35, metal: 0.0, emis: 0x555034, emisInt: 0.35,
+    trail: [1.0, 0.82, 0.35], ring: false },
+  { id: 'playa', lock: null, nameKey: 'bola_asp_playa', tex: 'playa',
+    color: 0xffffff, rough: 0.4, metal: 0.0, emis: 0x555555, emisInt: 0.3,
+    trail: [0.9, 0.9, 0.9], ring: false },
+  { id: 'futbol', lock: 'wins10', nameKey: 'bola_asp_futbol', tex: 'futbol',
+    color: 0xffffff, rough: 0.5, metal: 0.0, emis: 0x444444, emisInt: 0.3,
+    trail: [0.9, 0.9, 0.95], ring: false },
+  { id: 'ocho', lock: 'wins10', nameKey: 'bola_asp_ocho', tex: 'ocho',
+    color: 0xffffff, rough: 0.22, metal: 0.0, emis: 0x2a2a33, emisInt: 0.4,
+    trail: [0.2, 0.2, 0.25], ring: false },
+  { id: 'ojo', lock: null, nameKey: 'bola_asp_ojo', tex: 'ojo',
+    color: 0xffffff, rough: 0.3, metal: 0.0, emis: 0x555055, emisInt: 0.35,
+    trail: [0.85, 0.75, 0.9], ring: false },
+  /* — neón / arcade (3) — */
+  { id: 'neon', lock: null, nameKey: 'bola_asp_neon', tex: null,
+    color: 0xff3fa4, rough: 0.25, metal: 0.0, emis: 0xff2f96, emisInt: 0.85,
+    trail: [1.0, 0.25, 0.64], ring: false },
+  { id: 'holo', lock: 'wins10', nameKey: 'bola_asp_holo', tex: 'holo',
+    color: 0xffffff, rough: 0.3, metal: 0.1, emis: 0x446688, emisInt: 0.45,
+    trail: [0.4, 0.8, 1.0], ring: false },
+  { id: 'disco', lock: 'streak5', nameKey: 'bola_asp_disco', tex: 'disco',
+    color: 0xcfd6de, rough: 0.12, metal: 0.9, emis: 0x333840, emisInt: 0.5,
+    trail: [0.8, 0.84, 0.9], ring: false },
+  /* — planetas (4) — */
+  { id: 'marte', lock: null, nameKey: 'bola_asp_marte', tex: 'marte',
+    color: 0xffffff, rough: 0.55, metal: 0.0, emis: 0x54301c, emisInt: 0.3,
+    trail: [0.85, 0.4, 0.25], ring: false },
+  { id: 'luna', lock: null, nameKey: 'bola_asp_luna', tex: 'luna',
+    color: 0xffffff, rough: 0.6, metal: 0.0, emis: 0x555a60, emisInt: 0.3,
+    trail: [0.8, 0.82, 0.86], ring: false },
+  { id: 'tierra', lock: null, nameKey: 'bola_asp_tierra', tex: 'tierra',
+    color: 0xffffff, rough: 0.4, metal: 0.0, emis: 0x1c3a55, emisInt: 0.35,
+    trail: [0.3, 0.55, 0.9], ring: false },
+  { id: 'lava', lock: 'streak5', nameKey: 'bola_asp_lava', tex: 'lava',
+    color: 0xffffff, rough: 0.5, metal: 0.0, emis: 0xff5a1e, emisInt: 0.6,
+    trail: [1.0, 0.35, 0.12], ring: false },
+  { id: 'saturno', lock: 'wins10', nameKey: 'bola_asp_saturno', tex: 'saturno',
+    color: 0xffffff, rough: 0.45, metal: 0.0, emis: 0x554a30, emisInt: 0.3,
+    trail: [0.9, 0.78, 0.5], ring: true },
+];
+/** r21 · id de la skin OFICIAL (campeonato y respaldo de red). */
+export const BOLA_ID_OFICIAL = BOLA_ASPECTOS[0].id;
+/** r21 · skin por id SIN chequeo de candado (para la skin del RIVAL: el
+ *  anfitrión ya la tenía desbloqueada — el invitado confía el id si existe). */
+export function bolaAspectoPorId(id) {
+  return BOLA_ASPECTOS.find((s) => s.id === id) || BOLA_ASPECTOS[0];
+}
+
+/* =====================================================================
  *  TEMAS DE SALA (v2.14): ambientes visuales intercambiables al vuelo.
  *  Cada tema redefine suelo/paredes/techo/paneles de luz/tira LED/rejilla,
  *  las tres luces de la escena, el fondo y la niebla. La mesa, las vallas

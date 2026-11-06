@@ -555,6 +555,18 @@ export class PingPongGame {
     this.rig.add(mesh);
     this.rig.add(trail);
 
+    /* r21 (v3.6.117) · SKIN DE BOLA del dueño: persiste en pp_bolaskin y
+     * se aplica a la malla viva (cosmético puro — cero física). El resto
+     * de reposo de la estela viaja con la skin (estela a juego). */
+    this.bolaSkin = 'blanca';
+    try { this.bolaSkin = localStorage.getItem('pp_bolaskin') || 'blanca'; } catch { /* */ }
+    this._bolaTrailRest = [0.75, 0.75, 0.75];
+    this._peerSkinId = null;   // skin del anfitrión (online, via HELLO sk)
+    try { this._bolaTinte(this._bolaSkinDef(this.bolaSkin)); } catch { /* */ }
+    /* r21 · chispas de bote: pool fijo (5×8 puntos), color de la skin. */
+    this.chispas = createChispas();
+    this.rig.add(this.chispas.group);
+
     this.blob = createBlobShadow();
     this.rig.add(this.blob);
     this.markers = createBounceMarkers();
@@ -3605,6 +3617,10 @@ export class PingPongGame {
         this._modeCard(rects, 'page:optsSalaMesa', 40, y, 944, CH_CARD,
           T('cat_salamesa'), T('sub_mesa_sub'), '#2f9e44', '#1e7c33', PP_ICONS.mesa);
         y += CH_CARD + 16;
+        // r21 · tarjeta BOLA (skins de bola): tercera tarjeta de SALA
+        this._modeCard(rects, 'page:optsSalaBola', 40, y, 944, CH_CARD,
+          T('cat_salabola'), T('sub_bola_sub'), '#e8b45a', '#b3841f', PP_ICONS.mesa);
+        y += CH_CARD + 16;
         // recordatorio honesto: la mesa es de partidas/entrenamiento
         label(T('mesa_no_champ') + ' · ' + T('mesa_lock_hint'), y + 6, 16, '#93a1b0');
         y += 30;
@@ -3701,6 +3717,29 @@ export class PingPongGame {
             y + 2, 15, '#a9b8cc');
           y += 26;
         }
+        break;
+      }
+      case 'salabola': {
+        /* r21 (v3.6.117) · subpágina BOLA: 16 skins (clásicas + locura +
+         * planetas), candados iguales que la mesa y regla del dueño: en
+         * campeonato el selector se AVISA (cae a la oficial al jugar). */
+        label(T('bola_aspecto_lbl'), y + 2, 17, '#98a6b4');
+        y += 26;
+        BOLA_ASPECTOS.forEach((s, i) => {
+          const libre = !s.lock || this._mesaLibre(s.lock);
+          const activo = this._bolaSkinLS() === s.id;
+          btn('bola_skin:' + s.id, 56 + (i % 3) * 312, y + Math.floor(i / 3) * 62,
+            288, 54, (libre ? '' : '🔒 ') + T(s.nameKey),
+            activo, undefined, activo, 21);
+        });
+        y += Math.ceil(BOLA_ASPECTOS.length / 3) * 62 + 6;
+        const hayCerradaB = BOLA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock));
+        if (hayCerradaB) {
+          label(T('mesa_lock_hint'), y + 2, 16, '#93a1b0');
+          y += 28;
+        }
+        label(T('bola_cosmetica'), y + 2, 16, '#8ce99a');
+        y += 28;
         break;
       }
       case 'sonido': {
@@ -4689,7 +4728,8 @@ export class PingPongGame {
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
             arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi' ||
             arg === 'optsPala' ||
-            arg === 'optsSalaRoom' || arg === 'optsSalaMesa') {   // r96 · submenús SALA/MESA
+            arg === 'optsSalaRoom' || arg === 'optsSalaMesa' ||
+            arg === 'optsSalaBola') {   // r96 · submenús SALA/MESA · r21 · BOLA
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {
@@ -5361,6 +5401,25 @@ export class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'bola_skin': {
+        // r21 · SKIN DE LA BOLA: 16 aspectos, candados como las mesas
+        // (10 victorias o 6★ / racha de 5 o 3★) y regla del dueño: en
+        // campeonato la bola cae a la oficial aunque el ajuste se guarde.
+        const skB = BOLA_ASPECTOS.find((s) => s.id === arg);
+        if (skB) {
+          if (skB.lock && !this._mesaLibre(skB.lock)) {
+            this.rules.message = this._mesaLockTxt(skB.lock) || T('mesa_lock_hint');
+            this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          } else {
+            try { localStorage.setItem('pp_bolaskin', skB.id); } catch { /* */ }
+            this._bolaTinte(skB);   // aplica en vivo (champ → oficial)
+            this.rules.message = T('msg_bola_skin', { v: T(skB.nameKey) });
+            this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+          }
+        }
+        this.drawMenu();
+        break;
+      }
       case 'music': {
         // v2.29: música de fondo (portada + menú en VR), preferencia
         // compartida con el botón 🔊 de la portada
@@ -5720,6 +5779,8 @@ export class PingPongGame {
    *  aspecto del dueño es cosa de partidas y entrenamiento. */
   _mesaNativo() {
     this._mesaTinte(MESA_ASPECTOS[0]);
+    // r21 · la bola también cae a la OFICIAL durante el campeonato
+    try { this._bolaTinte(BOLA_ASPECTOS[0]); } catch { /* */ }
   }
   /** r96 · vuelta de campeonato: reaplica el aspecto guardado del dueño
    *  (sólo si de verdad hay aspecto propio distinto del nativo). */
@@ -5727,6 +5788,60 @@ export class PingPongGame {
     let id = 'azul';
     try { id = localStorage.getItem('pp_mesaskin') || 'azul'; } catch { /* */ }
     this._mesaTinte(this._mesaSkinDef(id));
+    // r21 · la bola también recobra SU skin al salir del campeonato
+    try { this._bolaSkinReapply(); } catch { /* */ }
+  }
+
+  /* ====================================================================
+   *  r21 (v3.6.117) · SKINS DE BOLA — espejo del sistema de mesas (r96)
+   *  ====================================================================
+   *  Regla del dueño: en campeonato la bola cae a la OFICIAL (blanca) —
+   *  _bolaTinte() lo resuelve solo leyendo mesaOcupada(); los hooks
+   *  _mesaNativo()/_mesaSkinReapply() ya la cubren (champloader c11 no
+   *  cambia). ONLINE: la bola viste la skin del ANFITRIÓN (campo sk del
+   *  HELLO v2); el invitado la adopta vía onPeerSkin(). */
+  /** id guardado del dueño (sin tocar: para reaplicar tras el champ). */
+  _bolaSkinLS() {
+    try { return localStorage.getItem('pp_bolaskin') || 'blanca'; } catch { return 'blanca'; }
+  }
+  /** definición por id CON candado (para elegir la PROPIA skin). */
+  _bolaSkinDef(skinId) {
+    let sk = BOLA_ASPECTOS.find((s) => s.id === skinId) || BOLA_ASPECTOS[0];
+    if (sk.lock && !this._mesaLibre(sk.lock)) sk = BOLA_ASPECTOS[0];
+    return sk;
+  }
+  /** RGB de reposo de la estela para las chispas (color de skin vivo). */
+  _chispaRGB() {
+    return this._bolaTrailRest || [0.75, 0.75, 0.75];
+  }
+  /** aplica una skin a la bola viva (gestiona champ → oficial, estela y
+   *  skin visible). NO escribe localStorage: eso sólo en el click. */
+  _bolaTinte(skin) {
+    const def = (skin && skin.id) ? skin : BOLA_ASPECTOS[0];
+    const nativo = this.mesaOcupada();   // regla del dueño (como la mesa)
+    const use = nativo ? BOLA_ASPECTOS[0] : def;
+    if (this.ballMesh) {
+      try { this._bolaTrailRest = applyBallSkin(this.ballMesh, use); } catch { /* cosmético */ }
+    }
+    this.bolaSkin = nativo ? 'blanca' : use.id;
+  }
+  /** reaplica el aspecto guardado del dueño (fin de campeonato). */
+  _bolaSkinReapply() {
+    this._bolaTinte(this._bolaSkinDef(this._bolaSkinLS()));
+  }
+  /** ONLINE (r21): la skin del anfitrión llega por el HELLO v2 (sk).
+   *  El invitado la viste SIN candado (el anfitrión ya la desbloqueó);
+   *  el anfitrión mantiene la suya. El campeonato sigue mandando
+   *  (oficial para ambos). Builds viejos no envían sk → nada cambia. */
+  onPeerSkin(id) {
+    const limpio = (typeof id === 'string') ? id.slice(0, 24) : '';
+    if (!limpio) return;
+    this._peerSkinId = limpio;
+    try {
+      if (this.net && this.net.online && this.net.role === 'guest' && !this.mesaOcupada()) {
+        this._bolaTinte(bolaAspectoPorId(limpio));
+      }
+    } catch { /* */ }
   }
 
   /* ====================================================================
@@ -11330,15 +11445,21 @@ export class PingPongGame {
         ob[2] += (firma[2] - ob[2]) * kT;
         this._trailTint = ob;
       } else if (this._trailTint) {
-        ob[0] += (0.75 - ob[0]) * kT;
-        ob[1] += (0.75 - ob[1]) * kT;
-        ob[2] += (0.75 - ob[2]) * kT;
-        if (Math.abs(ob[0] - 0.75) + Math.abs(ob[1] - 0.75) +
-            Math.abs(ob[2] - 0.75) < 0.02) this._trailTint = null;
+        // r21 · el reposo vuelve al RGB de la SKIN (no al gris genérico)
+        const rt = this._bolaTrailRest || [0.75, 0.75, 0.75];
+        ob[0] += (rt[0] - ob[0]) * kT;
+        ob[1] += (rt[1] - ob[1]) * kT;
+        ob[2] += (rt[2] - ob[2]) * kT;
+        if (Math.abs(ob[0] - rt[0]) + Math.abs(ob[1] - rt[1]) +
+            Math.abs(ob[2] - rt[2]) < 0.02) this._trailTint = null;
       }
-      this.trailUpdate(this.ball, dt, this._trailTint);   // v2.18: ocultable
+      this.trailUpdate(this.ball, dt, this._trailTint, this._bolaTrailRest);   // v2.18: ocultable · r21: base de skin
     }
     this.updateBlobShadow();
+    // r21 · chispas de bote: paso de física visual (barato, pool fijo)
+    if (this.chispas) {
+      try { this.chispas.update(dt); } catch { /* */ }
+    }
 
     // poses de las palas IA: postura natural, saque con toss y swing real
     this.aiStrikeT = Math.max(0, this.aiStrikeT - dt);
@@ -11681,11 +11802,14 @@ export class PingPongGame {
       this.ballMesh.visible = !hide;
       this.ballMesh.scale.setScalar(1);
       this.ballMesh.position.copy(this.ball.pos);
-      const bm = this.ballMesh.material;
-      if (bm) {
-        // restaurar color/emisivo por si un campeonato teñió la bola
-        try { bm.color.setHex(0xffffff); } catch (e0) { /* */ }
-        if (bm.emissive) { try { bm.emissive.setHex(0x000000); } catch (e1) { /* */ } }
+      // r21 · restaurar la SKIN del dueño (antes: blanco seco — un champ
+      // podía dejar la bola blanca para siempre en partidas normales)
+      try { this._bolaTinte(this._bolaSkinDef(this._bolaSkinLS())); } catch (eSkin) {
+        const bm = this.ballMesh.material;
+        if (bm) {
+          try { bm.color.setHex(0xffffff); } catch (e0) { /* */ }
+          if (bm.emissive) { try { bm.emissive.setHex(0x000000); } catch (e1) { /* */ } }
+        }
       }
     }
     if (this.trailObj) this.trailObj.visible = !hide && this.showTrail !== false;
@@ -12230,6 +12354,12 @@ export class PingPongGame {
     m.visible = true;
     m.scale.setScalar(1);
     m.material.opacity = 0.55;
+    // r21 · chispas del color de la skin al botar (cosmético, pool fijo)
+    try {
+      if (this.chispas && this.showTrail !== false) {
+        this.chispas.burst({ x: pos.x, y: pos.y - DIMS.ballRadius + 0.01, z: pos.z }, this._chispaRGB());
+      }
+    } catch { /* nunca rompe el juego */ }
   }
 
   /** r97 · MAPA DE CALOR — clasifica un bote del lado del JUGADOR en la
@@ -12669,12 +12799,12 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, CARRERA_DIVISIONES, DIMS, ELO_CPU, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, estiloAplicar, estiloDePersonalidad, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, BOLA_ASPECTOS, CARRERA_DIVISIONES, DIMS, ELO_CPU, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
-import { createBall, createBlobShadow, createChampDecor, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
+import { applyBallSkin, createBall, createBlobShadow, createChampDecor, createChispas, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
 import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, drawHallSign, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { PPNET } from './c09b_red_nucleo.js';

@@ -1121,7 +1121,8 @@ export class NetLink {
     // (P2P) o túnel PeerJS activo (el ICE no llegó a abrir pero la sala vive)
     if (!((this._fastOpen && this._relOpen) || this._tunnel) || this.v2 !== 'pending') return;
     // HELLO (reliable): versión de protocolo, build y ballPhysics (spec §3.5)
-    this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD });
+    this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD,
+      sk: (this.game && typeof this.game.bolaSkin === 'string' && this.game.bolaSkin) || 'blanca' });   // r21 · skin de bola del dueño (la viste el invitado)
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
     // r81 · 15 s para el HELLO de respuesta (el ICE ya está abierto aquí:
     // esto sólo cubre un peer colgado a medias)
@@ -1169,6 +1170,14 @@ export class NetLink {
           this.game?.onBuildMismatch?.(null);
         }
         this._helloDone = true;
+        // r21 (v3.6.117) · SKIN DE BOLA DEL ANFITRIÓN: campo OPCIONAL del
+        // HELLO v2 — los builds viejos no lo envían y NUNCA lo leen (JSON
+        // tolerante: PROTO/PHYS/códec intactos). El juego decide: sólo el
+        // invitado la viste (la bola es UNA para ambos: la del host).
+        try {
+          const skR = (typeof m.sk === 'string') ? m.sk.slice(0, 24) : '';
+          if (skR) this.game?.onPeerSkin?.(skR);
+        } catch { /* cosmético: jamás rompe el enlace */ }
         // ráfaga de reloj: 8 intercambios a ~50 ms (spec §3.6)
         for (let i = 0; i < 8; i++) {
           window.setTimeout(() => {

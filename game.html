@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.112-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.113-SDK6</span>
     </div>
   </main>
 
@@ -826,6 +826,18 @@ const I18N_STRINGS = {
     arc_rank_empty1: 'Aún sin rondas ganadas',
     arc_rank_empty2: '¡derrota al Clown!',
     best_arcade: 'Rondas ganadas: {n}',
+    // M7e (r124) · historial de torneos + perfil recordado
+    hist_title: 'HISTORIAL DE TORNEOS',
+    hist_btn: '📜 Ver historial de torneos',
+    hist_empty: 'Aún no has sellado ningún torneo. Gana un campeonato y quedará aquí para siempre.',
+    hist_wins: '{n} victorias',
+    hist_sellado: 'sellado el {f}',
+    perfil_titulo: 'TU PERFIL · RECORDADO',
+    perfil_skin: 'Piel de la mesa: {v}',
+    perfil_alto: 'Alto de la mesa: {v}',
+    perfil_pala: 'Pala mejorada: {v}',
+    perfil_estilo: 'Rivales con estilo: {v}',
+    perfil_pid: 'Jugador anónimo: {v}…',
     msg_arcade: '¡CAMPEONATO DE LA LOCURA! Derrota al Clown',
     msg_arcade_menu: 'El Clown te espera en el Campeonato de la Locura',
     arc_title: 'CAMPEONATO DE LA LOCURA',
@@ -1693,6 +1705,18 @@ const I18N_STRINGS = {
     arc_rank_empty1: 'No rounds won yet',
     arc_rank_empty2: 'beat the Clown!',
     best_arcade: 'Rounds won: {n}',
+    // M7e (r124) · historial de torneos + perfil recordado
+    hist_title: 'TOURNAMENT HISTORY',
+    hist_btn: '📜 View tournament history',
+    hist_empty: 'No tournaments sealed yet. Win a championship and it will live here forever.',
+    hist_wins: '{n} wins',
+    hist_sellado: 'sealed on {f}',
+    perfil_titulo: 'YOUR PROFILE · REMEMBERED',
+    perfil_skin: 'Table skin: {v}',
+    perfil_alto: 'Table height: {v}',
+    perfil_pala: 'Enhanced paddle: {v}',
+    perfil_estilo: 'Styled rivals: {v}',
+    perfil_pid: 'Anonymous player: {v}…',
     msg_arcade: 'CHAMPIONSHIP OF MADNESS! Beat the Clown',
     msg_arcade_menu: 'The Clown awaits you in the Championship of Madness',
     arc_title: 'CHAMPIONSHIP OF MADNESS',
@@ -3108,7 +3132,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.112-SDK6';
+  const VERSION = '3.6.113-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -14502,6 +14526,41 @@ class ChampLoader {
     return false;
   }
 
+  /** M7e (r124) · HISTORIAL DE TORNEOS — escanea los campeonatos y sella
+   *  en 'pp_torneos_historial_v1' la FECHA en que cada uno se ve campeón
+   *  por primera vez (retroactivo y honesto: lo ya ganado entra con la
+   *  fecha de esta primera pasada — nunca se inventa una fecha antigua).
+   *  Una fila por torneo, append-only; victorias y LEYENDA se refrescan
+   *  de sus registros en cada pasada; cap 50 (historialFusionar). Barata:
+   *  ~10 lecturas de localStorage por pasada — el menú la llama al pintar
+   *  las páginas CAMPEONATOS e HISTORIAL. Devuelve el historial vigente. */
+  historialTorneos() {
+    const KEY = 'pp_torneos_historial_v1';
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { hist = []; }
+    if (!Array.isArray(hist)) hist = [];
+    const filas = [];
+    try {
+      for (const e of this.entries || []) {
+        const base = String(e.storage || '').replace(/\*$/, '');
+        if (!base) continue;
+        let w = 0;
+        try { w = parseInt(localStorage.getItem(base + 'wins') || '0', 10) || 0; } catch (eW) { /* */ }
+        filas.push({
+          id: e.id,
+          esCampeon: this.championFlag(e.id) === true,
+          wins: w,
+          leyenda: this.leyendaFlag(e.id) === true,
+        });
+      }
+    } catch (e2) { /* sin registros: el historial queda como esté */ }
+    const [nuevo, dirty] = historialFusionar(hist, filas);
+    if (dirty) {
+      try { localStorage.setItem(KEY, JSON.stringify(nuevo)); } catch { /* */ }
+    }
+    return nuevo;
+  }
+
   /** v3.6.17 · ronda 21 · «Etapa X/5 · sigue donde la dejaste» — hint de
    *  progreso para las tarjetas del menú y el subtítulo de la sección.
    *  Convención de registros: <base>stage. Oeste guarda 1..5 (su constructor
@@ -14919,6 +14978,40 @@ class ChampLoader {
     if (m && m.testStep) { try { m.testStep(dt); } catch (e) { console.warn('[champs.testStep]', e); } }
   }
 }
+/* M7e (r124) · FUSIÓN PURA DEL HISTORIAL DE TORNEOS (testeable headless,
+ * sin localStorage ni DOM). filas = estado ACTUAL de cada campeonato
+ * [{ id, esCampeon, wins, leyenda }]. Reglas:
+ *  · Un torneo ENTRA el primer día que se ve campeón (fecha de sellado) y
+ *    JAMÁS sale — el historial es append-only.
+ *  · wins y leyenda se REFRESCAN en cada pasada (viven en sus registros).
+ *  · Devuelve [nuevo, dirty] — dirty=sé si hay que persistir.
+ *  · Cap 50 filas (orden estable: fecha de sellado, luego id).
+ *  · Al FINAL del módulo: el ensamblador exige el token de identidad
+ *    ('class ChampLoader') en la 1.ª línea de la pieza. */
+function historialFusionar(hist, filas) {
+  const h0 = Array.isArray(hist) ? hist.filter((x) => x && x.id) : [];
+  let hoy = '';
+  try { hoy = new Date().toISOString().slice(0, 10); } catch { hoy = ''; }
+  let dirty = false;
+  const out = h0.slice();
+  for (const f of filas || []) {
+    if (!f || !f.id || f.esCampeon !== true) continue;
+    let r = out.find((x) => x.id === f.id);
+    if (!r) {
+      r = { id: f.id, fecha: hoy, wins: 0, leyenda: false };
+      out.push(r);
+      dirty = true;
+    }
+    const w = f.wins | 0;
+    if (w !== r.wins) { r.wins = w; dirty = true; }
+    const ley = f.leyenda === true;
+    if (ley !== r.leyenda) { r.leyenda = ley; dirty = true; }
+  }
+  out.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1
+    : (a.id < b.id ? -1 : 1)));
+  return [out.slice(-50), dirty];
+}
+
 
 // temporales del anti-clipping de palas (mesa / red / suelo)
 const pcA = new THREE.Vector3();
@@ -17516,6 +17609,15 @@ class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // M7e (r124) · página HISTORIAL DE TORNEOS
+    if (this.menuPage === 'champhist') {
+      this.drawMenuChampHist(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     if (this.menuPage === 'opts') {
       this.drawMenuOpts(rects);
       this.menuRects = rects;
@@ -18318,6 +18420,67 @@ class PingPongGame {
     // describía una tarjeta vieja, se leía como si aplicara a todos los
     // campeonatos y la MEGA PALA es poder exclusivo de La Locura (Crazy
     // Combo). Cada tarjeta ya cuenta lo suyo.
+    // M7e (r124) · HISTORIAL DE TORNEOS: la pasada de sellado es barata
+    // (~10 lecturas de localStorage) y corre al pintar la página — un
+    // campeonato recién vencido queda sellado aunque no entres al panel.
+    try { this.champs.historialTorneos(); } catch (eH7) { /* */ }
+    if (y < 1320) {
+      btn('page:champhist', 56, y + 4, 912, 56, T('hist_btn'),
+        false, undefined, undefined, 22);
+      y += 72;
+    }
+    const closeY = Math.min(Math.max(y + 4, 1392), 1428);
+    btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
+  }
+
+  /** M7e (r124) · página HISTORIAL DE TORNEOS — una fila por campeonato
+   *  vencido: nombre vivo por idioma, victorias corrientes de SU registro,
+   *  sello LEYENDA y la fecha en que el torneo quedó sellado. Los datos
+   *  viven en 'pp_torneos_historial_v1' (c11.historialTorneos) y se
+   *  refrescan al pintar la página. */
+  drawMenuChampHist(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const label = this._menuLabel;
+    this.drawMenuHeader(rects);
+    btn('page:champs', 40, 216, 240, 60, T('page_back'), false, undefined, undefined, 25);
+    c.fillStyle = '#ffd257';
+    c.font = '900 42px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(T('hist_title'), 664, 246);
+
+    let hist = [];
+    try { hist = (this.champs && this.champs.historialTorneos()) || []; } catch (eH) { /* */ }
+    let y = 320;
+    if (!hist.length) {
+      label(T('hist_empty'), y + 20, 21, '#98a6b4', 'center');
+      y += 64;
+    }
+    for (const h of hist) {
+      const ent = ((this.champs && this.champs.entries) || []).find((e) => e.id === h.id) || {};
+      const nom = String((ent.title && ((ent.title[__ppLang] || ent.title.es) || h.id)) || h.id);
+      let fila = (h.leyenda ? '★ ' : '🏆 ') + nom
+        + ' · ' + T('hist_wins', { n: h.wins | 0 })
+        + ' · ' + T('hist_sellado', { f: h.fecha || '' });
+      c.beginPath();
+      if (c.roundRect) c.roundRect(56, y, 912, 54, 14); else c.rect(56, y, 912, 54);
+      c.fillStyle = 'rgba(255,210,87,0.08)';
+      c.fill();
+      c.strokeStyle = 'rgba(255,210,87,0.35)';
+      c.lineWidth = 2;
+      c.stroke();
+      c.fillStyle = h.leyenda ? '#ffd257' : '#ffe9b3';
+      c.font = '700 24px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      const _f0 = fila;
+      while (fila.length > 2 && c.measureText(fila).width > 856) fila = fila.slice(0, -1);
+      if (fila !== _f0) fila += '…';
+      c.fillText(fila, 76, y + 28);
+      y += 62;
+      if (y > 1432) break;   // cap visible: el registro ya está sellado igualmente
+    }
     const closeY = Math.min(Math.max(y + 4, 1392), 1428);
     btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
   }
@@ -18675,6 +18838,28 @@ class PingPongGame {
         y += 72;
         label(T('tele_hint'), y + 10, 18, '#98a6b4');
         y += 36;
+        // M7e (r124) · TU PERFIL RECORDADO — lectura VIVA de los registros
+        // que el juego ya mantiene (pp_mesaskin, pp_mesaalto, pp_mesaaltoy,
+        // pp_pala_mejorada_v1, pp_rivstyle_v1, pp_pid): nada nuevo que
+        // sincronizar — el perfil ES el estado, aquí se ve de un vistazo.
+        label(T('perfil_titulo'), y + 14, 26, '#ffd257');
+        y += 44;
+        const _sk = this._mesaSkinDef(this.mesaSkin);
+        label(T('perfil_skin', { v: T(_sk.nameKey) }), y + 8, 20);
+        y += 32;
+        let _altoId = 'normal';
+        try { _altoId = localStorage.getItem('pp_mesaalto') || 'normal'; } catch { /* */ }
+        const _alto = MESA_ALTOS.find((a) => a.id === _altoId);
+        label(T('perfil_alto', { v: _alto ? T(_alto.nameKey) : _altoId }), y + 8, 20);
+        y += 32;
+        label(T('perfil_pala', { v: yn(this.palaMejorada) }), y + 8, 20);
+        y += 32;
+        label(T('perfil_estilo', { v: yn(this.rivStyleOn) }), y + 8, 20);
+        y += 32;
+        let _pid = '';
+        try { _pid = (localStorage.getItem('pp_pid') || '').slice(0, 8); } catch { /* */ }
+        if (_pid) label(T('perfil_pid', { v: _pid }), y + 8, 20, '#7e8ea8');
+        if (_pid) y += 32;
         break;
       }
       case 'rendi': {
@@ -19556,7 +19741,7 @@ class PingPongGame {
         // r71 · + subpáginas de AJUSTES (optsJuego/optsSala/optsSonido/
         // optsVisual/optsPerfil) — las categorías del nuevo AJUSTES.
         // r81 · + optsRendi (RENDIMIENTO: autocalibrador de FPS).
-        if (arg === 'main' || arg === 'champs' || arg === 'opts' ||
+        if (arg === 'main' || arg === 'champs' || arg === 'champhist' || arg === 'opts' ||
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
             arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi' ||
             arg === 'optsPala' ||

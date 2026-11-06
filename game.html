@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.115-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.116-SDK6</span>
     </div>
   </main>
 
@@ -702,6 +702,11 @@ const I18N_STRINGS = {
     // veía el del menú con la visera puesta). Texto genérico, versiones vivas.
     net_build_warn: 'Tu rival usa OTRA versión ({a} vs {b}): recargad el juego en los DOS visores y cread la sala de nuevo',
     net_build_voice: 'rival con otra versión recargad el juego en los dos visores',
+    // r127 · P4.2 · autodiagnóstico de versión al arrancar: si los DOS
+    // cascos quedaron viejos, el HELLO no lo ve — el propio build se
+    // compara contra la web (PAGES-VERSION.txt, red primero).
+    net_selfcheck_warn: 'Estás en una versión ANTIGUA ({b}) · en la web hay la {a}: cierra y reabre la web para actualizarte',
+    net_selfcheck_voice: 'versión antigua cierra y reabre la web para actualizarte',
     net_v2_down: 'Sin enlace binario con el rival · revisad Internet y recargad',
     join_title: 'CÓDIGO DE LA SALA DE TU AMIGO',
     btn_connect: 'CONECTAR',
@@ -1586,6 +1591,11 @@ const I18N_STRINGS = {
     // r126 · P4.1 · build warning inside the room (first real match lesson)
     net_build_warn: 'Your rival runs ANOTHER build ({a} vs {b}): reload the game on BOTH headsets and re-create the room',
     net_build_voice: 'rival on another build reload the game on both headsets',
+    // r127 · P4.2 · boot-time version self-check: if BOTH headsets stayed
+    // old, the HELLO cannot see it — the running build is compared against
+    // the web itself (PAGES-VERSION.txt, network-first).
+    net_selfcheck_warn: 'You are on an OLD build ({b}) · the web has {a}: close and reopen the web to update',
+    net_selfcheck_voice: 'old version close and reopen the web to update',
     net_v2_down: 'No binary link with your rival · check Internet and reload',
     join_title: 'YOUR FRIEND’S ROOM CODE',
     // ---- v2.28 · MAIN MENU (big floating panel with accordion)
@@ -3137,7 +3147,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.115-SDK6';
+  const VERSION = '3.6.116-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -13727,12 +13737,71 @@ const PPNET = (() => {
     };
   }
 
+  /* ---------- r127 · P4.2 · autodiagnóstico contra la web -----------
+   * verCompara sólo ve al RIVAL. Si los DOS cascos retoman pestañas
+   * viejas de la MISMA versión, el enlace queda limpio y el desajuste
+   * con la web es invisible (lección P4: boots de 3.6.100/107/108/110/
+   * 111 conviviendo). verSelf es la decisión pura y testable del propio
+   * build (arranque) contra PAGES-VERSION.txt, que el service worker
+   * sirve RED PRIMERO. Mismas convenciones que verCompara: igual SOLO
+   * si ambas cadenas existen y son idénticas; '?' si falta un lado. */
+  function verSelf(mine, site) {
+    const m = (typeof mine === 'string') ? mine : '';
+    const s = (typeof site === 'string') ? site : '';
+    const igual = m !== '' && s !== '' && m === s;
+    return {
+      igual,
+      mine: m, site: s,
+      mineC: m ? m.slice(-6) : '?',
+      siteC: s ? s.slice(-6) : '?',
+    };
+  }
+
+  /* ---------- r127 · P4.2 · AUTODIAGNÓSTICO DE VERSIÓN AL ARRANCAR ---
+   * Al arrancar, el juego pregunta a PAGES-VERSION.txt?now=<ts> — el SW
+   * lo sirve RED PRIMERO (VIVAS): fresco siempre que haya Internet — y
+   * compara la versión de la web con el build corriendo. Distinto →
+   * game.onSelfcheckOutdated(vs) (aviso EN LA SALA: pista + megáfono +
+   * fila del panel). Telemetría ver_selfcheck UNA vez por sesión y
+   * SIEMPRE (coincida o no): es el censo de builds vivos que P4
+   * necesita para ver los «boots conviviendo». Sin red, sin fichero o
+   * sin sello → silencio absoluto: fire-and-forget, jamás bloquea el
+   * arranque ni el juego offline. Vive en el núcleo para no estirar el
+   * grafo DEPS-FASE2: c12 ya importa PPNET. */
+  let _selfTele = false;   // censo: una sola emisión ver_selfcheck por sesión
+  async function selfcheckVersion(game) {
+    try {
+      const resp = await fetch('PAGES-VERSION.txt?now=' + Date.now(), {
+        cache: 'no-store',
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
+          ? AbortSignal.timeout(4000) : undefined,
+      });
+      if (!resp || !resp.ok) return;
+      const txt = await resp.text();
+      const m = /^version=(.+)$/m.exec(txt || '');
+      if (!m) return;                     // fichero sin sello → nada
+      const site = m[1].trim();
+      const mine = (typeof VERSION !== 'undefined') ? VERSION : '';
+      const vs = verSelf(mine, site);
+      try {
+        if (!_selfTele) {
+          _selfTele = true;
+          const g = (typeof window !== 'undefined') ? window : globalThis;
+          g.__PP_TELE?.ev?.('ver_selfcheck', { mine: vs.mine, site: vs.site });
+        }
+      } catch (eT) { /* la telemetría nunca revienta */ }
+      if (!vs.igual && game && typeof game.onSelfcheckOutdated === 'function') {
+        game.onSelfcheckOutdated(vs);
+      }
+    } catch (e) { /* sin red / timeout: silencio, el arranque manda */ }
+  }
+
   return {
     VP, clamp, lerp, wrapDiff, u32, median, qNorm, qSlerp, pLerp,
     Writer, Reader, quatPack, quatUnpack, encodePacket, decodePacket,
     F_POSE, F_EV,
     NetClock, JitterBuf, BallAuth, Validator, NetSim, NetStats, MatchSync,
-    verCompara,
+    verCompara, verSelf, selfcheckVersion,
   };
 })();
 class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón de invitaciones (c09c)
@@ -15601,6 +15670,13 @@ class PingPongGame {
     this._megaIconModo = '';          // '' | 'inv' inventario | 'act' activo
     // MULTIJUGADOR ONLINE (v2.19): P2P por WebRTC (PeerJS) + voz
     this.net = new NetLink(this);
+    // r127 · P4.2 · AUTODIAGNÓSTICO DE VERSIÓN: mi build contra la web
+    // (PAGES-VERSION.txt, red primero). Fire-and-forget: jamás bloquea el
+    // arranque; sin red o sin fichero → silencio. Si los DOS cascos
+    // retoman pestañas viejas de la MISMA versión, el HELLO no puede ver
+    // el desajuste — esto sí (PPNET.selfcheckVersion, en el núcleo c09b).
+    this._selfWarnInfo = null;
+    try { PPNET.selfcheckVersion?.(this); } catch (e127) { /* el arranque manda */ }
     this.menuPage = 'main';       // 'main' | 'multi' | 'join' | 'name' | 'rank'
     this.menuSec = 'match';       // v2.28: sección ABIERTA del acordeón
     this._menuAnchorUntil = 0;    // v2.28: flotación inicial del panel
@@ -16559,6 +16635,20 @@ class PingPongGame {
     if (this.menuOpen) this.drawMenu();
   }
 
+  /** r127 · P4.2 · la web tiene una versión NUEVA que la mía: el build
+   *  corriendo es un residuo de caché (SWR de un ciclo o pestaña vieja
+   *  del Quest Browser). Mismo camino EN LA SALA que onBuildMismatch:
+   *  mensaje de pista + voz de megáfono; la fila del panel online le da
+   *  prioridad (recargar MI build lo arregla todo, el rival incluido). */
+  onSelfcheckOutdated(vs) {
+    this._selfWarnInfo = vs || null;
+    if (vs) {
+      this.rules.message = T('net_selfcheck_warn', { a: vs.siteC, b: vs.mineC });
+      this.audio.announce(T('net_selfcheck_voice'), true);
+    }
+    if (this.menuOpen) this.drawMenu();
+  }
+
   /** Máquina de bolas: saque reglamentario (bote propio + bote rival) hacia
    *  el campo del jugador, para entrenar golpes con el agarre ajustado. */
   feedPracticeBall() {
@@ -17173,8 +17263,18 @@ class PingPongGame {
       btn('net:hangup', 520, yPanel + 146, 448, 72, T('btn_hangup'), false, undefined, undefined, 25);
       // r126 · P4.1 · aviso de BUILD distinto, visible EN la sala: sustituye
       // la pista de revancha mientras el rival hable otro build.
+      // r127 · P4.2 · el autodiagnóstico de versión (mi build vs la web)
+      // tiene PRIORIDAD sobre el del rival: si MI build es viejo, recargar
+      // mi visor lo arregla TODO (el del rival también, si era caché).
       const bm126 = net.buildMismatch ? net.buildMismatch() : null;
-      if (bm126) {
+      const sc126 = this._selfWarnInfo || null;
+      if (sc126) {
+        c.fillStyle = '#ff6b57';
+        c.font = '700 24px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        wrapText(c, T('net_selfcheck_warn', { a: sc126.siteC, b: sc126.mineC }), 512, yPanel + 250, 880, 30);
+      } else if (bm126) {
         c.fillStyle = '#ff6b57';
         c.font = '700 24px system-ui, sans-serif';
         c.textAlign = 'center';

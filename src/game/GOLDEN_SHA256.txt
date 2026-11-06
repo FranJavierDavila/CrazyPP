@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.113-SDK6, fase 115 · M7e · persistencia completa: historial de torneos (c11 historialTorneos + página HISTORIAL en el menú) y perfil recordado (AJUSTES › PERFIL Y DATOS); sello actualizado
-# por bump_version.py desde 3.6.112-SDK6)
-bc1d80a9680dbbc75721b3aa422355fc377dcf387c3fe2976a04a89893a71fa7
+# SHA256 del game.html que produjo esta división (3.6.114-SDK6, fase 116 · P4 primera partida real; sello actualizado
+# por bump_version.py desde 3.6.113-SDK6)
+63eec6162905b0da341ca3eb52a7ec6c853b3009570f474391a28cccfe87e5ab

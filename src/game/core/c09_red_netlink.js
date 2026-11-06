@@ -822,20 +822,87 @@ export class NetLink {
    *  Si la subida falla → degradación HONESTA al modo v1 (30 Hz JSON).
    *  ===================================================================== */
 
+  /* r125 · P4 — ICE para la PRIMERA PARTIDA REAL sobre internet:
+   *  · LOCAL (fallback inmediato): STUN Google + Cloudflare. El TURN público
+   *    OpenRelay/metered.ca que ocupaba este sitio está MUERTO y las
+   *    credenciales fijas jamás deben vivir en código público — fuera.
+   *  · REMOTO: el worker crazypp-tele sirve /api/ice con TURN de Cloudflare
+   *    Realtime (credenciales efímeras, TTL 6 h). ICE_ASYNC() lo consulta
+   *    (tope 4 s) y cachea 4 min; worker caído → STUN local honesto.
+   *  El túnel PeerJS r82 queda como última red de emergencia (intacto).
+   *  ICE_CFG() se conserva: es el fallback local y lo usan los tests. */
   static ICE_CFG() {
-    // STUN público + TURN libre (openrelay/metered) — decisión abierta de la
-    // spec §18 (coturn propio y regiones: hito posterior, ver worklog).
     return {
       iceServers: [
-        { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
-        {
-          urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443',
-            'turn:openrelay.metered.ca:443?transport=tcp'],
-          username: 'openrelayproject', credential: 'openrelayproject',
-        },
+        { urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] },
       ],
       iceCandidatePoolSize: 4,
     };
+  }
+
+  static ICE_REM_TTL = 4 * 60 * 1000;   // caché de la respuesta del worker
+  static ICE_FAIL_TTL = 60 * 1000;      // si el worker falla, no martillear
+  static _iceRem = null;                // cfg remoto sano (caché)
+  static _iceRemT0 = 0;
+  static _iceFailT0 = 0;
+
+  /** base del worker: PP_ICE_ENDPOINT manda (QA/banco); si no, se deriva
+   *  del endpoint de telemetría (mismo worker): /api/tele → /api — hermana
+   *  de c09c.base(). '' = sin worker → STUN local. */
+  static _iceBase() {
+    try {
+      if (typeof globalThis !== 'undefined' && globalThis.PP_ICE_ENDPOINT) {
+        return String(globalThis.PP_ICE_ENDPOINT).replace(/\/+$/, '');
+      }
+      const ep = (typeof globalThis !== 'undefined' && globalThis.PP_TELEMETRY_ENDPOINT) || '';
+      if (!ep) return '';
+      const m = ep.match(/^(.*\/)api\/tele\/?$/);
+      return m ? m[1] + 'api' : '';
+    } catch { return ''; }
+  }
+
+  /** cinturón Y tirantes del lado juego: urls válidas, sin :53 (los
+   *  navegadores lo bloquean — nota oficial CF), TURN sin credencial fuera. */
+  static _sanearICE(lista) {
+    if (!Array.isArray(lista)) return [];
+    const fuera = [];
+    for (const s of lista) {
+      if (!s || !Array.isArray(s.urls)) continue;
+      const urls = s.urls.filter((u) =>
+        typeof u === 'string' && /^(stun|turn|turns):/.test(u) && !/:53(\?|$)/.test(u));
+      if (!urls.length) continue;
+      if (/^turn/.test(urls[0]) &&
+          (typeof s.username !== 'string' || !s.username ||
+           typeof s.credential !== 'string' || !s.credential)) continue;
+      const limpio = { urls };
+      if (typeof s.username === 'string' && s.username) limpio.username = s.username;
+      if (typeof s.credential === 'string' && s.credential) limpio.credential = s.credential;
+      fuera.push(limpio);
+    }
+    return fuera;
+  }
+
+  /** cfg para RTCPeerConnection: remoto fresco si hay; STUN local si no. */
+  static async ICE_ASYNC() {
+    const ahora = Date.now();
+    if (NetLink._iceRem && ahora - NetLink._iceRemT0 < NetLink.ICE_REM_TTL) return NetLink._iceRem;
+    if (NetLink._iceFailT0 && ahora - NetLink._iceFailT0 < NetLink.ICE_FAIL_TTL) return NetLink.ICE_CFG();
+    const base = NetLink._iceBase();
+    if (!base) return NetLink.ICE_CFG();
+    try {
+      const ctl = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(4000) : undefined;
+      const r = await fetch(base + '/api/ice', { signal: ctl });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const j = await r.json();
+      const servs = NetLink._sanearICE(j && j.iceServers);
+      if (!servs.length) throw new Error('sin iceServers');
+      const cfg = { iceServers: servs, iceCandidatePoolSize: 4 };
+      NetLink._iceRem = cfg; NetLink._iceRemT0 = ahora; NetLink._iceFailT0 = 0;
+      return cfg;
+    } catch {
+      NetLink._iceFailT0 = ahora;
+      return NetLink.ICE_CFG();
+    }
   }
 
   /** FASE 0 · subida del transporte. El INVITADO ofrece; el anfitrión
@@ -865,6 +932,7 @@ export class NetLink {
     this._lastFastAt = 0; this._iceRestarts = 0;
     this._helloDone = false; this._helloTO = null;
     this._iceQ = [];                            // r81: ICE tempranos en cola
+    this._iceVigilado = false; this._iceOkT = null;   // r125: diagnóstico ICE
     this._tunnel = false;                       // r82: túnel PeerJS (emergencia)
     this._v2T0 = performance.now();             // r82: nacimiento de la subida
     this._buildWarn = false;                    // r82: HELLO con build distinto
@@ -902,11 +970,12 @@ export class NetLink {
 
   async _v2Offer() {
     try {
-      const pc = new RTCPeerConnection(NetLink.ICE_CFG());
+      const pc = new RTCPeerConnection(await NetLink.ICE_ASYNC());
       this._pc = pc;
       this._fast = pc.createDataChannel('fast', { ordered: false, maxRetransmits: 0 });
       this._rel = pc.createDataChannel('rel', { ordered: true });
       this._wireDC();
+      this._vigilarICE(pc);
       pc.onicecandidate = (e) => {
         if (e.candidate) this.send({ k: 'ice', c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate });
       };
@@ -924,8 +993,9 @@ export class NetLink {
     try {
       if (!desc || !desc.type) return;
       if (!this._pc) {
-        const pc = new RTCPeerConnection(NetLink.ICE_CFG());
+        const pc = new RTCPeerConnection(await NetLink.ICE_ASYNC());
         this._pc = pc;
+        this._vigilarICE(pc);
         pc.onicecandidate = (e) => {
           if (e.candidate) this.send({ k: 'ice', c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate });
         };
@@ -964,6 +1034,54 @@ export class NetLink {
       if (this._pc && rd && rd.type) this._pc.addIceCandidate(c).catch(() => { /* */ });
       else (this._iceQ = this._iceQ || []).push(c);
     } catch { /* */ }
+  }
+
+  /* r125 · P4 — diagnóstico del ENLACE REAL: qué camino abrió el ICE
+   *  (host=LAN · srflx=internet directo · relay=TURN) y con qué RTT.
+   *  Un evento net_ice por partida (y failed si muere) — telemetría
+   *  anónima que JAMÁS rompe la red. */
+  _vigilarICE(pc) {
+    if (!pc || this._iceVigilado) return;
+    this._iceVigilado = true;
+    const tele = (d) => {
+      try { window.__PP_TELE && window.__PP_TELE.ev && window.__PP_TELE.ev('net_ice', d); } catch { /* */ }
+    };
+    pc.oniceconnectionstatechange = () => {
+      let st = '';
+      try { st = pc.iceConnectionState || ''; } catch { /* */ }
+      if ((st === 'connected' || st === 'completed') && !this._iceOkT) {
+        this._iceOkT = setTimeout(() => { this._iceOkT = null; this._iceStats(pc, tele); }, 1500);
+      } else if (st === 'failed') {
+        tele({ st: 'failed', v2: this.v2, tun: !!this._tunnel });
+      }
+    };
+  }
+
+  async _iceStats(pc, tele) {
+    try {
+      const rep = await pc.getStats();
+      let par = null;
+      const cands = new Map();
+      rep.forEach((x) => {
+        if (x.type === 'candidate-pair') {
+          if (x.selected || x.nominated || x.state === 'succeeded') {
+            par = (x.selected || x.nominated) ? x : (par || x);
+          }
+        } else if (x.type === 'local-candidate' || x.type === 'remote-candidate') {
+          cands.set(x.id, x);
+        }
+      });
+      if (!par) return;
+      const loc = cands.get(par.localCandidateId);
+      const rem = cands.get(par.remoteCandidateId);
+      tele({
+        st: 'ok',
+        via: this._tunnel ? 'tunel' : 'p2p',
+        lt: (loc && loc.candidateType) || '?',
+        rt: (rem && rem.candidateType) || '?',
+        rtt: (par.currentRoundTripTime != null) ? Math.round(par.currentRoundTripTime * 1000) : null,
+      });
+    } catch { /* telemetría jamás rompe la red */ }
   }
 
   _wireDC() {

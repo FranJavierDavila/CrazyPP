@@ -428,6 +428,113 @@ try {
   chk(al(j).nivel === "verde" && al(j).items.length === 0,
     "O5c · tras la purga el almacén vuelve a VERDE sin items");
 
+  // ================================================================
+  // P4 · ronda 19 — /api/ice (TURN efímero de Cloudflare Realtime)
+  // OJO: req() cuelga de BASE (…/api/tele) — aquí usamos reqIce con base
+  // limpia, y UNA sola D1 para toda la fase (los flags de init del módulo
+  // son por isolate: el primer socialInit crea las tablas en esa DB).
+  // ================================================================
+  const _fetchReal = globalThis.fetch;
+  const reqIce = (path, opts = {}) => new Request("https://worker.test" + path, opts);
+  const DBICE = new D1Sim();
+  try {
+    // P1 · sin token → STUN honesto, turn:false (degradación limpia)
+    const envIce = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0 };
+    r = await worker.fetch(reqIce("/api/ice"), envIce, {});
+    j = await cuerpo(r);
+    chk(r.status === 200 && j.ok === true && j.turn === false,
+      `P1 · /api/ice sin token → turn:false (${r.status})`);
+    chk(Array.isArray(j.iceServers) && j.iceServers.length === 1 &&
+        j.iceServers[0].urls.every((u) => u.startsWith("stun:")),
+      `P1 · sin token: sólo STUN (${JSON.stringify(j.iceServers)})`);
+
+    // P2 · POST → 405
+    r = await worker.fetch(reqIce("/api/ice", { method: "POST", body: "{}" }), envIce, {});
+    chk(r.status === 405, `P2 · POST /api/ice → 405 (${r.status})`);
+
+    // P3 · token+key → TURN de Cloudflare saneado (sin :53, con credencial)
+    const RESP_RTC = {
+      iceServers: [
+        { urls: ["stun:stun.cloudflare.com:3478"] },
+        { urls: ["turn:turn.cloudflare.com:3478?transport=udp", "turn:turn.cloudflare.com:53?transport=udp"],
+          username: "u123", credential: "c456" },
+        { urls: ["turn:turn.cloudflare.com:80?transport=tcp"], username: "", credential: "" },
+        { urls: ["nota:mal"] },
+        { urls: ["turns:turn.cloudflare.com:5349?transport=tcp"], username: "u123", credential: "c456" },
+      ],
+    };
+    let llamadasRtc = 0;
+    globalThis.fetch = async (url) => {
+      const s = String(url);
+      if (s.includes("/credentials/generate-ice-servers")) {
+        llamadasRtc++;
+        return { status: 201, json: async () => RESP_RTC };
+      }
+      return { status: 400, json: async () => ({ success: false, errors: [], result: null }) };
+    };
+    const envIce2 = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0,
+      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key" };
+    r = await worker.fetch(reqIce("/api/ice"), envIce2, {});
+    j = await cuerpo(r);
+    chk(r.status === 200 && j.turn === true && j.ttl === 21600,
+      `P3 · token+key → turn:true ttl 6 h (${j.turn})`);
+    const turnServs = j.iceServers.filter((s) => s.urls.some((u) => u.startsWith("turn")));
+    chk(j.iceServers.length === 3 && turnServs.length === 2,
+      `P3 · saneo: 3 servidores (stun + 2 turn con credencial) (${JSON.stringify(j.iceServers)})`);
+    chk(j.iceServers.every((s) => s.urls.every((u) => !/:53(\?|$)/.test(u))),
+      "P3 · el puerto 53 NO sale en las urls (sin confundirlo con :5349)");
+    chk(turnServs.every((s) => s.username && s.credential),
+      "P3 · TURN siempre con username/credential");
+
+    // P4 · caché por isolate: dos llamadas seguidas sin upstream y misma ts
+    const envIce3 = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 600000,
+      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key" };
+    const j1 = await cuerpo(await worker.fetch(reqIce("/api/ice"), envIce3, {}));
+    const antes = llamadasRtc;
+    const j2 = await cuerpo(await worker.fetch(reqIce("/api/ice"), envIce3, {}));
+    chk(llamadasRtc === antes && j1.ts === j2.ts && j1.turn === true,
+      `P4 · caché: 2ª llamada sin upstream y misma ts (${llamadasRtc - antes} llamadas)`);
+
+    // P5 · auto-provisión de la TURN key (token sin TURN_KEY_ID) + persistencia en cfg
+    globalThis.fetch = async (url) => {
+      const s = String(url);
+      if (s.includes("/accounts?per_page=1")) {
+        return { status: 200, json: async () => ({ success: true, result: [{ id: "a".repeat(32) }] }) };
+      }
+      if (s.includes("/calls/turn_keys")) {
+        return { status: 200, json: async () => ({ success: true, result: { key_id: "k9" } }) };
+      }
+      if (s.includes("/credentials/generate-ice-servers")) {
+        llamadasRtc++;
+        return { status: 201, json: async () => ({
+          iceServers: [{ urls: ["turn:turn.cloudflare.com:3478?transport=udp"], username: "u", credential: "c" }] }) };
+      }
+      return { status: 400, json: async () => ({ success: false }) };
+    };
+    const envIce4 = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0, TURN_API_TOKEN: "qa-token" };
+    r = await worker.fetch(reqIce("/api/ice"), envIce4, {});
+    j = await cuerpo(r);
+    chk(j.turn === true, `P5 · auto-provisión de key → turn:true (${j.turn})`);
+    const filaKey = await envIce4.DB.prepare("SELECT v FROM cfg WHERE k = 'turn_key_id'").first();
+    chk(filaKey && filaKey.v === "k9", `P5 · key persistida en cfg (${filaKey && filaKey.v})`);
+
+    // P6 · upstream caído → STUN honesto con error:'turn_upstream'
+    globalThis.fetch = async () => ({ status: 500, json: async () => ({}) });
+    const envIce5 = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0,
+      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key" };
+    r = await worker.fetch(reqIce("/api/ice"), envIce5, {});
+    j = await cuerpo(r);
+    chk(r.status === 200 && j.turn === false && j.error === "turn_upstream" &&
+        j.iceServers.every((s) => s.urls.some((u) => u.startsWith("stun:"))),
+      `P6 · rtc.live caído → STUN honesto (${j.error})`);
+
+    // P7 · CORS
+    r = await worker.fetch(reqIce("/api/ice"), envIce5, {});
+    chk(r.headers.get("access-control-allow-origin") === "*", "P7 · /api/ice lleva CORS");
+  } finally {
+    globalThis.fetch = _fetchReal;
+  }
+
   // J · CORS en todas las respuestas
   r = await worker.fetch(req("/", { method: "OPTIONS" }), env, {});
   chk(r.status === 204 && r.headers.get("access-control-allow-origin") === "*",

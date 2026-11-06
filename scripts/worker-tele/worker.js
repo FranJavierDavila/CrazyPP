@@ -14,6 +14,10 @@
  *   DELETE /api/tele?sid=…      → purga (REQUIERE clave; sin sid → total)
  *   OPTIONS                    → preflight CORS
  *
+ *   GET    /api/ice             → {ok, ts, turn, iceServers, ttl?} (público)
+ *                                 TURN efímero de Cloudflare para la partida
+ *                                 real (ronda 19 · P4) — ver su sección abajo
+ *
  * CLAVE (variable del worker, nombre exacto: CLAVE): protege resumen/eventos/
  * DELETE. Se pasa por ?clave=… o cabecera X-Clave. El POST NO lleva clave
  * (el juego no puede guardar secretos: es código público).
@@ -45,6 +49,13 @@
  *   errores_js  eventos `error` por sesión ≥1 (amarillo; ≥3 rojo, top incluido)
  *   vr_cortas   sesiones VR cerradas de <60 s ≥25% con ≥3 (amarillo; ≥50% rojo)
  *   Estructura: {nivel:"verde"|"amarillo"|"rojo", items:[{id,nivel,msg,datos}]}
+ *
+ * Ronda 19 (P4 · primera partida real con 2 Quest): nace /api/ice —
+ *   TURN de Cloudflare Realtime con credenciales efímeras (TTL 6 h)
+ *   para que el enlace abra aunque haya NAT simétrico de por medio.
+ *   El worker se auto-provisiona la TURN key (tabla cfg de D1) y sanea
+ *   las urls (fuera el puerto 53, bloqueado por los navegadores).
+ *   Sin TURN_API_TOKEN → STUN honesto y turn:false (degradación limpia).
  */
 
 const CORS = {
@@ -116,6 +127,157 @@ function claveOk(url, request, env) {
 }
 
 /* ======================================================================
+ * ronda 19 · P4 — /api/ice · ICE servers para la PRIMERA PARTIDA REAL
+ * --------------------------------------------------------------------
+ * El TURN público OpenRelay/metered.ca que traía el juego está MUERTO:
+ * sin TURN vivo, un casco tras NAT simétrico (hotspot, algunas fibras)
+ * no llega a abrir el enlace P2P. Cloudflare Realtime ofrece TURN con
+ * CREDENCIALES EFÍMERAS — este endpoint las acuña y las reparte:
+ *
+ *   GET  /api/ice → {ok, ts, turn: bool, iceServers: [...], ttl?}
+ *                    público, sin clave: las credenciales son efímeras
+ *                    y el juego es código público (nunca guarda secretos)
+ *   POST /api/ice → 405
+ *
+ * Variables del worker (por dashboard, LEEME-P4-PRIMERA-PARTIDA.md):
+ *   TURN_API_TOKEN  secret · API token del dueño con permiso
+ *                   Realtime TURN → Edit. Si falta: STUN y turn:false.
+ *   TURN_KEY_ID     opcional · si falta, el worker SE AUTO-PROVISIONA
+ *                   la TURN key (POST /accounts/{id}/calls/turn_keys)
+ *                   y la recuerda en la tabla `cfg` de D1.
+ *   CF_ACCOUNT_ID   opcional · si falta, se deriva del token (GET /accounts).
+ *   ICE_TTL_MS      opcional · caché por isolate (QA; defecto 4 min).
+ *
+ * Credenciales: POST rtc.live.cloudflare.com/v1/turn/keys/{key_id}/
+ * credentials/generate-ice-servers {"ttl":21600} → 201 {iceServers}
+ * (documentación oficial de Cloudflare Realtime, «Generate Credentials»).
+ * Saneo local: sólo urls stun/turn/turns y FUERA el puerto 53 — nota
+ * oficial de CF: los navegadores lo bloquean y el ICE esperaría el timeout.
+ * ==================================================================== */
+const ICE_TTL_DEFECTO = 21600;        // 6 h de vida de la credencial TURN
+const ICE_CACHE_MS = 4 * 60 * 1000;   // caché por isolate (≤15 llamadas/h)
+const ICE_STUN_BASE = [
+  { urls: ["stun:stun.cloudflare.com:3478", "stun:stun1.l.google.com:19302"] },
+];
+let iceCache = null;                  // { t0, resp } — por isolate
+
+function iceTtlMs(env) {
+  const n = Number(env && env.ICE_TTL_MS);
+  return Number.isFinite(n) && n >= 0 ? n : ICE_CACHE_MS;
+}
+
+/** Sanea la respuesta de rtc.live: urls válidas, sin :53, TURN sin
+ *  credencial fuera. Defensa en profundidad (el upstream ya es de CF). */
+function saneaIceServers(lista) {
+  if (!Array.isArray(lista)) return [];
+  const fuera = [];
+  for (const s of lista) {
+    if (!s || !Array.isArray(s.urls)) continue;
+    const urls = s.urls.filter((u) =>
+      typeof u === "string" &&
+      /^(stun|turn|turns):/.test(u) && !/:53(\?|$)/.test(u)
+    );
+    if (!urls.length) continue;
+    if (/^turn/.test(urls[0]) &&
+        (typeof s.username !== "string" || !s.username ||
+         typeof s.credential !== "string" || !s.credential)) continue;
+    const limpio = { urls };
+    if (typeof s.username === "string" && s.username) limpio.username = s.username;
+    if (typeof s.credential === "string" && s.credential) limpio.credential = s.credential;
+    fuera.push(limpio);
+  }
+  return fuera;
+}
+
+/** Id de la cuenta: variable explícita o derivada del token (una vez). */
+let iceAccId = "";
+async function cuentaId(env, token, fetchImpl) {
+  const a = env && env.CF_ACCOUNT_ID;
+  if (typeof a === "string" && /^[0-9a-f]{32}$/.test(a)) return a;
+  if (iceAccId) return iceAccId;
+  const r = await fetchImpl("https://api.cloudflare.com/client/v4/accounts?per_page=1", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const j = await r.json();
+  const id = j && j.success && Array.isArray(j.result) && j.result[0] && j.result[0].id;
+  if (typeof id !== "string" || !/^[0-9a-f]{32}$/.test(id)) {
+    throw new Error("sin acceso a cuentas (token sin permiso?)");
+  }
+  iceAccId = id;
+  return id;
+}
+
+/** Acuña credenciales y devuelve la respuesta /api/ice (con caché). */
+async function iceRespuesta(env, fetchImpl) {
+  const ahora = Date.now();
+  if (iceCache && ahora - iceCache.t0 < iceTtlMs(env)) return iceCache.resp;
+
+  let resp = null;
+  const token = env && env.TURN_API_TOKEN;
+  if (token) {
+    try {
+      await socialInit(env);                        // tabla cfg
+      let keyId = env.TURN_KEY_ID;
+      if (!keyId) {
+        const fila = await env.DB.prepare("SELECT v FROM cfg WHERE k = 'turn_key_id'").first();
+        keyId = fila && fila.v;
+      }
+      if (!keyId) {
+        const acc = await cuentaId(env, token, fetchImpl);
+        const r = await fetchImpl(
+          `https://api.cloudflare.com/client/v4/accounts/${acc}/calls/turn_keys`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ name: "crazypp-worker", buckets: 1, bucket_duration_seconds: 86400 }),
+          }
+        );
+        const j = await r.json();
+        if (j && j.success && j.result && j.result.key_id) {
+          keyId = j.result.key_id;
+          await env.DB.prepare(
+            "INSERT INTO cfg (k, v) VALUES ('turn_key_id', ?) ON CONFLICT(k) DO UPDATE SET v=excluded.v"
+          ).bind(keyId).run();
+        }
+      }
+      if (keyId) {
+        const r = await fetchImpl(
+          `https://rtc.live.cloudflare.com/v1/turn/keys/${keyId}/credentials/generate-ice-servers`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ ttl: ICE_TTL_DEFECTO }),
+          }
+        );
+        if (r.status === 201) {
+          const j = await r.json();
+          const servs = saneaIceServers(j && j.iceServers);
+          if (servs.length) {
+            resp = { ok: true, ts: ahora, turn: true, iceServers: servs, ttl: ICE_TTL_DEFECTO };
+          }
+        }
+      }
+    } catch { /* cae abajo → STUN honesto */ }
+    if (!resp) resp = { ok: true, ts: ahora, turn: false, iceServers: ICE_STUN_BASE, error: "turn_upstream" };
+  } else {
+    resp = { ok: true, ts: ahora, turn: false, iceServers: ICE_STUN_BASE };
+  }
+  iceCache = { t0: ahora, resp };
+  return resp;
+}
+
+async function iceEndpoint(request, env, url, metodo) {
+  if (metodo !== "GET") {
+    return json({ ok: false, error: "método no soportado en /api/ice" }, 405);
+  }
+  try {
+    return json(await iceRespuesta(env, fetch));
+  } catch (e) {
+    return json({ ok: true, ts: Date.now(), turn: false, iceServers: ICE_STUN_BASE, error: "ice_interno" });
+  }
+}
+
+/* ======================================================================
  * r87 · RED SOCIAL DEL PULSO (presencia + invitaciones sobre D1)
  * ==================================================================== */
 const SOCIAL_SCHEMA = [
@@ -135,6 +297,10 @@ const SOCIAL_SCHEMA = [
      t INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS idx_inv_para ON invitas(para)`,
   `CREATE INDEX IF NOT EXISTS idx_inv_t ON invitas(t)`,
+  // ronda 19: pequeño almacén de configuración (turn_key_id)
+  `CREATE TABLE IF NOT EXISTS cfg (
+     k TEXT PRIMARY KEY,
+     v TEXT)`,
 ];
 let socialListo = false;
 async function socialInit(env) {
@@ -312,6 +478,10 @@ export default {
      * código de sala. SIN IP, SIN user-agent, SIN cabeceras.
      * No requiere clave (el juego es público: nunca guarda secretos).
      * ================================================================ */
+    if (url.pathname === "/api/ice") {
+      return iceEndpoint(request, env, url, metodo);
+    }
+
     if (url.pathname === "/api/presencia" || url.pathname === "/api/invita") {
       return social(request, env, url, metodo);
     }

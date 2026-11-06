@@ -1,10 +1,10 @@
 {
-  "version": "3.6.113-SDK6",
-  "fase": 115,
-  "faseNombre": "M7e · persistencia completa: historial de torneos (c11 historialTorneos + página HISTORIAL en el menú) y perfil recordado (AJUSTES › PERFIL Y DATOS)",
+  "version": "3.6.114-SDK6",
+  "fase": 116,
+  "faseNombre": "P4 primera partida real",
   "sdk": "1.6.0",
   "fecha": "2026-11-06",
-  "hub": "v36113-sdk6",
+  "hub": "v36114-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -14,5 +14,5 @@
   },
   "nota": "r119",
   "tamano": 10691069,
-  "golden": "bc1d80a9680dbbc75721b3aa422355fc377dcf387c3fe2976a04a89893a71fa7"
+  "golden": "63eec6162905b0da341ca3eb52a7ec6c853b3009570f474391a28cccfe87e5ab"
 }

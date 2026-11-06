@@ -1362,7 +1362,12 @@ export class NetLink {
     const o = this._pktIn || (this._pktIn = {});
     o.yAnchor = DIMS.tableTopY;                    // ancla Y del tapete
     o.evs = [];
-    const pkt = PPNET.decodePacket(buf, o);
+    // r123 · ESCUDO DEL CANAL FAST (hardening F1): un paquete malformado
+    // (nEvs > bytes reales) lanzaba RangeError DENTRO del handler del
+    // datachannel y abortaba el procesado del paquete (eco NTP, acks,
+    // reloj, pérdida). Ahora se descarta como caído y el enlace sigue.
+    let pkt = null;
+    try { pkt = PPNET.decodePacket(buf, o); } catch (_e) { pkt = null; }
     if (!pkt) return;
     // v3.6.74 · r82 · ECO NTP VIVO: la cabecera fast lleva echoTime/echoDelay
     // para que EL OTRO reconstruya t1 y refine el reloj (spec §4) — pero

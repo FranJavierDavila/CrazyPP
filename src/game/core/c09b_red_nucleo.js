@@ -311,7 +311,10 @@ export const PPNET = (() => {
       pv.fl = r.r8();
       o.pose = pv;
     }
-    for (let i = 0; i < nEvs && i < VP.MAX_EVENTS + 8; i++) {
+    // r123 · CAP AL MÁXIMO DEL PROTOCOLO (spec §5, hardening): el emisor
+    // YA sella a MAX_EVENTS (8) al codificar — aceptar más (hasta 16) sólo
+    // ampliaba la superficie de un paquete corrupto/hostil.
+    for (let i = 0; i < nEvs && i < VP.MAX_EVENTS; i++) {
       const t = r.r8(), id = r.r16();
       if (t === VP.EV.HIT) {
         const kind = r.r8(), shot = r.r16(), tHit = r.r32();

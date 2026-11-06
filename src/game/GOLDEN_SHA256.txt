@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.111-SDK6, fase 113 · M-RED2 · revision completa del netcode: resync con perspectiva, guardia de estado, claim sin autoridad, toss caido, higiene + fuga 2v2 + PULSO vivo; sello actualizado
-# por bump_version.py desde 3.6.110-SDK6)
-86e291d113fcb6c3607001c52399ccd0271f8af4a7cbc11da1c55f01bdcf5ebc
+# SHA256 del game.html que produjo esta división (3.6.112-SDK6, fase 114 · M-RED3 · endurecimiento del decodificador fast: cap de eventos al maximo del protocolo + escudo en el canal fast; sello actualizado
+# por bump_version.py desde 3.6.111-SDK6)
+abfd35d72d35c9a6fac084076ad8afa134ac61249c7b7498d98fc263bea0aba9

@@ -456,6 +456,14 @@ async def punto_duelo(P, sac_pg, rec_pg, nom_sac, nom_rec, num, reintenta=True, 
     # HANDOFF → AUTH + bote válido en mi mitad
     gAuth = await wait_cond(rec_pg, JS_WAIT_AUTH, 45)
     if not P.chk(gAuth, f"punto {num}: TRASPASO de la bola al cruzar la red (HANDOFF → AUTH) y bote VÁLIDO"):
+        # r123 · diagnóstico al fallo: por qué el receptor no llegó a AUTH
+        try:
+            d_rec = await rec_pg.evaluate("() => { const G = window.__PP_GAME; const F = window.__FAST_LOG || {}; return { st: G.rules.state, ball: G.net._ball.state, rej: G.net._val.rejects, log: G.net._val.log.slice(-4), ping: G.net.pingMs(), stale: Math.round(G.net.avatarStaleMs()), jb: G.net._jb.s.length, pkts: F.pkts, evsIn: F.evs, onfast: (F.onfast || []).slice(-4), aplicados: (F.aplicados || []).slice(-6), handoffs: F.handoffs }; }")
+            d_snd = await sac_pg.evaluate("() => { const G = window.__PP_GAME; return { st: G.rules.state, ball: G.net._ball.state, pend: G.net._pend.length, evId: G.net._evId, fastOpen: G.net._fastOpen, v2: G.net.v2 }; }")
+            print(f"    [{P.pid}] HANDOFF-fallo RECEPTOR: {d_rec}", flush=True)
+            print(f"    [{P.pid}] HANDOFF-fallo SACADOR: {d_snd}", flush=True)
+        except Exception as e:
+            print(f"    [{P.pid}] HANDOFF-fallo: dump no disponible ({repr(e)[:80]})", flush=True)
         return False
     # DEVOLUCIÓN (pose congelada 60 ms para el validador del sacador)
     brazo = await rec_pg.evaluate(JS_BRAZO_DEVUELVE)

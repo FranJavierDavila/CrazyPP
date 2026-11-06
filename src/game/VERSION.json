@@ -1,10 +1,10 @@
 {
-  "version": "3.6.114-SDK6",
-  "fase": 116,
-  "faseNombre": "P4 primera partida real",
+  "version": "3.6.115-SDK6",
+  "fase": 117,
+  "faseNombre": "P4.1 aviso de build + cache-busting",
   "sdk": "1.6.0",
   "fecha": "2026-11-06",
-  "hub": "v36114-sdk6",
+  "hub": "v36115-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r119",
-  "tamano": 10691069,
-  "golden": "63eec6162905b0da341ca3eb52a7ec6c853b3009570f474391a28cccfe87e5ab"
+  "tamano": 10725856,
+  "golden": "6f6c300c3e1907b097657a8eae7e4fe29e4b14a188dc466711639ac16863d632"
 }

@@ -1266,6 +1266,19 @@ export class PingPongGame {
     if (this.menuOpen) this.drawMenu();
   }
 
+  /** r126 · P4.1 · el rival habla otro BUILD (HELLO v2): el aviso entra EN
+   *  LA SALA — mensaje de pista + voz de megáfono. El del menú no lo ve
+   *  nadie con la visera puesta (lección de la primera partida real P4:
+   *  host 3.6.114 vs invitado 3.6.102 jugando «correcto a medias»). */
+  onBuildMismatch(vc) {
+    this._buildWarnInfo = vc || null;
+    if (vc) {
+      this.rules.message = T('net_build_warn', { a: vc.peerC, b: vc.mineC });
+      this.audio.announce(T('net_build_voice'), true);
+    }
+    if (this.menuOpen) this.drawMenu();
+  }
+
   /** Máquina de bolas: saque reglamentario (bote propio + bote rival) hacia
    *  el campo del jugador, para entrenar golpes con el agarre ajustado. */
   feedPracticeBall() {
@@ -1878,11 +1891,22 @@ export class PingPongGame {
       c.fillText(voz, 512, yPanel + 114);
       btn('net:mic', 56, yPanel + 146, 448, 72, T('btn_voz', { v: net.micOn ? T('yes') : T('no') }), net.micOn && net.voiceState === 'on', undefined, !!net.micOn, 25);
       btn('net:hangup', 520, yPanel + 146, 448, 72, T('btn_hangup'), false, undefined, undefined, 25);
-      c.fillStyle = '#9aa7b4';
-      c.font = '500 21px system-ui, sans-serif';
-      c.textAlign = 'center';
-      c.textBaseline = 'middle';
-      c.fillText(T('mj_rematch_hint'), 512, yPanel + 252);
+      // r126 · P4.1 · aviso de BUILD distinto, visible EN la sala: sustituye
+      // la pista de revancha mientras el rival hable otro build.
+      const bm126 = net.buildMismatch ? net.buildMismatch() : null;
+      if (bm126) {
+        c.fillStyle = '#ff6b57';
+        c.font = '700 24px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        wrapText(c, T('net_build_warn', { a: bm126.peerC, b: bm126.mineC }), 512, yPanel + 250, 880, 30);
+      } else {
+        c.fillStyle = '#9aa7b4';
+        c.font = '500 21px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(T('mj_rematch_hint'), 512, yPanel + 252);
+      }
     } else if (st === 'waiting') {
       c.fillStyle = '#e8b45a';
       c.font = '700 28px system-ui, sans-serif';

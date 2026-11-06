@@ -838,10 +838,30 @@ export const PPNET = (() => {
     onResync() { this.pending = null; this.applied = -1; this.appliedW = null; }
   }
 
+  /* ---------- r126 · P4.1 · comparación honesta de builds (HELLO b=) ---
+   * El HELLO v2 lleva el BUILD desde r82, pero el aviso vivía SOLO en el
+   * menú (invisible con la visera puesta). La primera partida real (P4:
+   * host 3.6.114 vs invitado 3.6.102) acabó en bola espejada, pala a 45º
+   * y sin voz — cable COMPATIBLE (PROTO/PHYS iguales) con semánticas
+   * distintas. verCompara es la decisión pura y testable: igual SOLO si
+   * ambos builds existen y son idénticos. */
+  function verCompara(peer, mine) {
+    const p = (typeof peer === 'string') ? peer : '';
+    const m = (typeof mine === 'string') ? mine : '';
+    const igual = p !== '' && m !== '' && p === m;
+    return {
+      igual,
+      peer: p, mine: m,
+      peerC: p ? p.slice(-6) : '?',
+      mineC: m ? m.slice(-6) : '?',
+    };
+  }
+
   return {
     VP, clamp, lerp, wrapDiff, u32, median, qNorm, qSlerp, pLerp,
     Writer, Reader, quatPack, quatUnpack, encodePacket, decodePacket,
     F_POSE, F_EV,
     NetClock, JitterBuf, BallAuth, Validator, NetSim, NetStats, MatchSync,
+    verCompara,
   };
 })();

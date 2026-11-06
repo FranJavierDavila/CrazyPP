@@ -200,6 +200,12 @@ export class NetLink {
     this.game?.onNetStatus?.();
   }
 
+  /** r126 · P4.1: ¿el rival habla otro BUILD? (estado vivo del HELLO v2).
+   *  Devuelve verCompara(peer, mine) o null si los builds coinciden. */
+  buildMismatch() {
+    return this._buildWarn ? PPNET.verCompara(this.buildPeer, PPNET.VP.BUILD) : null;
+  }
+
   /* ---------------- crear sala (anfitrión) ---------------- */
   hostRoom() {
     if (!this.available()) { this.setStatus('error', T('net_unavailable')); return; }
@@ -936,6 +942,8 @@ export class NetLink {
     this._tunnel = false;                       // r82: túnel PeerJS (emergencia)
     this._v2T0 = performance.now();             // r82: nacimiento de la subida
     this._buildWarn = false;                    // r82: HELLO con build distinto
+    this.buildPeer = '';                        // r126: build del rival (HELLO)
+    this._verTele = false;                      // r126: ver_mismatch una vez por sesión
     this._anchors = 0; this._readyMe = false; this._readyOpp = false;
     this._mstart = null;                        // {startAt, fs, bo}
     this._clock = new PPNET.NetClock(this.role === 'host');
@@ -1137,10 +1145,28 @@ export class NetLink {
         // 3.6.73) rechazaban el HELLO y caían EN SILENCIO al v1 cosmético:
         // el dueño veía «movimiento de palas pero poco más». Ahora el enlace
         // sube igual y se AVISA (menú + voz) para recargar ambos visores.
-        this._buildWarn = m.b !== PPNET.VP.BUILD;
+        // r126 · P4.1 · BUILD TOLERANTE pero AVISADO EN LA SALA: el aviso
+        // vivía SOLO en el menú y con la visera puesta nadie lo veía (P4
+        // real: host 3.6.114 vs invitado 3.6.102 → bola espejada, pala a
+        // 45º y sin voz, con PROTO/PHYS iguales). Ahora la sala entera se
+        // entera (mensaje en pista + voz + fila del panel) y la telemetría
+        // lo cuenta como ver_mismatch.
+        const vc = PPNET.verCompara(m.b, PPNET.VP.BUILD);
+        const habiaAviso = this._buildWarn;
+        this._buildWarn = !vc.igual;
+        this.buildPeer = vc.peer;
         if (this._buildWarn) {
-          this.statusMsg = T('net_build_warn', { a: (m.b || '?').slice(-6), b: (PPNET.VP.BUILD || '?').slice(-6) });
+          this.statusMsg = T('net_build_warn', { a: vc.peerC, b: vc.mineC });
           this.game?.onNetStatus?.();
+          this.game?.onBuildMismatch?.(vc);
+          if (!this._verTele) {
+            this._verTele = true;
+            try { window.__PP_TELE?.ev?.('ver_mismatch', { peer: vc.peer, mine: vc.mine }); } catch { /* */ }
+          }
+        } else if (habiaAviso) {
+          // pareja NUEVA con build idéntico: limpia el aviso heredado
+          this.statusMsg = '';
+          this.game?.onBuildMismatch?.(null);
         }
         this._helloDone = true;
         // ráfaga de reloj: 8 intercambios a ~50 ms (spec §3.6)

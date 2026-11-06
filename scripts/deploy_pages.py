@@ -161,7 +161,7 @@ LANDING = """<!doctype html>
   <p class="chip">V@@VERSION@@ · commit @@COMMIT@@ · QA verde</p>
   <h1>CRAZY PING&nbsp;PONG</h1>
   <p class="sub">Ping-pong de superpoderes para Meta&nbsp;Quest&nbsp;3 · WebXR</p>
-  <a class="jugar" href="game.html">▶&nbsp; JUGAR</a>
+  <a class="jugar" href="game.html?v=@@VERSION@@">▶&nbsp; JUGAR</a>
   <section class="como">
     <h2>Cómo jugar en Meta Quest 3</h2>
     <ol>

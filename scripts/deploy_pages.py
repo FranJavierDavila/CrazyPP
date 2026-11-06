@@ -67,7 +67,8 @@ SMOKE_ALLOW_PREFIX = ('/socket.io',      # sondeo del cliente incluido en vendor
 
 
 def sh(args, **kw):
-    return subprocess.run(args, cwd=REPO, check=True, capture_output=True, text=True, **kw)
+    kw.setdefault('cwd', REPO)   # r126: permite cwd distinto (p. ej. SITE)
+    return subprocess.run(args, check=True, capture_output=True, text=True, **kw)
 
 
 def out(args, **kw):
@@ -300,12 +301,10 @@ def commit_pages_branch(version, head, game_sha, nfiles):
         os.remove(idx)
     env = dict(os.environ, GIT_INDEX_FILE=idx)
     sh(['git', 'read-tree', '--empty'], env=env)
-    for root, _dirs, fs in os.walk(SITE):
-        for f in fs:
-            ap = os.path.join(root, f)
-            rel = os.path.relpath(ap, SITE).replace(os.sep, '/')
-            blob = out(['git', 'hash-object', '-w', ap])
-            out(['git', 'update-index', '--add', '--cacheinfo', f'100644,{blob},{rel}'], env=env)
+    # r126 · bulk update: un solo `git add` con GIT_INDEX_FILE propio (antes:
+    # hash-object + update-index POR FICHERO = 2 subprocessos por fichero y
+    # timeouts en el mount lento del sandbox).
+    sh(['git', 'add', '-f', '--all', '--', '.'], env=env, cwd=SITE)
     tree = out(['git', 'write-tree'], env=env)
     parent = None
     try:

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.120-SDK6",
-  "fase": 122,
-  "faseNombre": "super red + super electricidad + bola blindada",
+  "version": "3.6.121-SDK6",
+  "fase": 123,
+  "faseNombre": "niebla densa + mas rayos + barrera electrica",
   "sdk": "1.6.0",
   "fecha": "2026-11-07",
-  "hub": "v36120-sdk6",
+  "hub": "v36121-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 10972943,
-  "golden": "db4ad92b7c2d4b95d006f4c13b21e4818cfd7588be6801666c078333d31132eb"
+  "tamano": 10984244,
+  "golden": "0a3e5d6504ff167f85fcbdecc093a08b0232025aa963f4a787b393e004b80837"
 }

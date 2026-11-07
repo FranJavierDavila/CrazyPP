@@ -118,7 +118,8 @@ chk(c12.includes("c2.moveTo(128, 42); c2.lineTo(110, 70); c2.lineTo(146, 70);"),
 /* — 4 · SÚPER ELECTRICIDAD · tormenta sobre el rival ——————————————————— */
 console.log('4 · SÚPER ELECTRICIDAD · tormenta (nubes, rayos, noche, estallido)');
 chk(c12.includes('const ELEC_DUR = 10;'), 'ELEC_DUR = 10 s');
-chk(c12.includes('const ELEC_BOLT_CD = 1.15;'), 'cadencia de rayos (≈8-9 por ventana)');
+// r26: re-anclada — la cadencia baja 1.15→0.42 (dueño: «bastantes más rayos»)
+chk(c12.includes('const ELEC_BOLT_CD = 0.42;'), 'cadencia de descargas (ráfagas ≈35 rayos/ventana — r26)');
 chk(c12.includes('const ELEC_BOLT_R = 0.17;'), 'radio de interceptación rayo↔bola');
 chk(c12.includes('const ELEC_ALTO_NUBE = 1.5; // m sobre la mesa del rival (spec literal)'), 'nubes a 1,5 m (spec literal)');
 chk(c12.includes('D.tableTopY + ELEC_ALTO_NUBE;      // a 1,5 m (spec literal)'), 'posición Y de las nubes = mesa + 1,5 m');

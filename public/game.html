@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.120-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.121-SDK6</span>
     </div>
   </main>
 
@@ -3251,7 +3251,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.120-SDK6';
+  const VERSION = '3.6.121-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -16286,6 +16286,12 @@ class PingPongGame {
     this._redWarn = false;
     this._redTickN = 0;
     this._redNetH0 = 0;             // altura reglamentaria capturada (m)
+    // r26 (v3.6.121) · BARRERA ELÉCTRICA de la SÚPER RED (informe del
+    // dueño: «que la red al crecer parezca una barrera de electricidad»).
+    this._redFx = null;             // { cuerpo, arcos[], riel, cd, … }
+    this._redFxOn = false;
+    this._redFlashT = 0;            // destello de energizado al crecer
+    this._redSpark = new THREE.Vector3();     // chispa del riel (reuso)
     // r25 (v3.6.120) · SÚPER ELECTRICIDAD: tormenta sobre el campo rival.
     this._elecT = 0;
     this._elecWarn = false;
@@ -16295,7 +16301,7 @@ class PingPongGame {
     this._elecRotoT = 0;            // bola rota: oculta mientras (s)
     this._elecThunderIx = 0;        // alterna los dos truenos
     this._elecBase = null;          // luces capturadas al activar
-    this._elecFx = null;            // { nubes[], rayos[], rayosIx, metales[] }
+    this._elecFx = null;            // { niebla[], rayos[], rayosIx, metales[] }
     this._elecFxOn = false;
     this._elecTarget = new THREE.Vector3();   // objetivo del rayo (reuso)
     this._elecSegA = new THREE.Vector3();     // segmento rayo (reuso)
@@ -23099,6 +23105,7 @@ class PingPongGame {
       () => { try { this._megaVozPrecalentar('elec'); } catch (e) { /* */ } },  // r25: voz concesión
       () => { try { this._buildElecFx(); } catch (e) { /* */ } },   // r25: tormenta lista
       () => { try { this._elecTruenoPrewarm(); } catch (e) { /* */ } }, // r25: truenos
+      () => { try { this._buildRedFx(); } catch (e) { /* */ } },    // r26: barrera lista
     ];
   }
 
@@ -23495,6 +23502,14 @@ class PingPongGame {
     }
     D.netTopY = D.tableTopY + h0 * RED_MUL;
     this._redNetFit();
+    // r26 (v3.6.121) · la red crecida se VÉ como BARRERA ELÉCTRICA
+    // (dueño: «que la red al crecer parezca una barrera de electricidad»):
+    // campo aditivo + arcos vivos + riel + chispas + zumbido. Sólo render:
+    // DIMS.netTopY sigue siendo la única verdad (física c04/c05 intacta).
+    try { this._buildRedFx(); } catch (eB) { this._redFx = null; }
+    this._redFxVis(true);
+    this._redFlashT = 0.3;          // destello de energizado al crecer
+    try { this.audio.playOsc(1500, 240, 0.14, 'square', 0.07, 0); } catch (eZ) { /* */ }
   }
 
   /** Re-acomoda la red VIVA a la altura vigente (patrón relayoutMesa
@@ -23523,6 +23538,7 @@ class PingPongGame {
 
   /** La red vuelve EXACTA a su altura reglamentaria. */
   _redRestaurar() {
+    this._redFxVis(false);          // r26: la barrera eléctrica se apaga
     if (this._redNetH0 > 0) {
       DIMS.netTopY = DIMS.tableTopY + this._redNetH0;
       this._redNetH0 = 0;
@@ -23538,6 +23554,168 @@ class PingPongGame {
     this._redRestaurar();
     this.rules.message = T('arc_red_fin');
     try { this.audio.playOsc(520, 260, 0.16, 'triangle', 0.12, 0); } catch (e) { /* */ }
+  }
+
+  /* =====================================================================
+   *  r26 (v3.6.121) · BARRERA ELÉCTRICA de la SÚPER RED (informe del
+   *  dueño: «el efecto también más vistoso, que la red al crecer parezca
+   *  una barrera de electricidad»). El plano estirado se VISTE de campo
+   *  de energía: cuerpo aditivo cian + arcos dentados regenerados en
+   *  vivo + riel superior nervioso + chispas + zumbido eléctrico. Sólo
+   *  capa de render: DIMS.netTopY sigue siendo la única verdad y la
+   *  física c04/c05 no sabe que existe. Cero asignaciones por frame
+   *  (posiciones recicladas) y cero luces nuevas (lección v2.92).
+   *  ===================================================================== */
+  _buildRedFx() {
+    if (this._redFx) return;
+    // — cuerpo del campo: plano aditivo (unidad; se ajusta EN VIVO) —
+    const cuerpo = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({
+        color: 0x59d6ff, transparent: true, opacity: RED_BODY_OP,
+        side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }));
+    cuerpo.visible = false;
+    cuerpo.renderOrder = 6;
+    cuerpo.frustumCulled = false;
+    this.scene.add(cuerpo);
+    // — arcos: polilíneas dentadas (pool, cero asignaciones por frame) —
+    const arcos = [];
+    for (let i = 0; i < RED_ARC_N; i++) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position',
+        new THREE.BufferAttribute(new Float32Array(RED_ARC_PTS * 3), 3));
+      const mat = new THREE.LineBasicMaterial({
+        color: i % 2 ? 0x9fd8ff : 0xbfe4ff, transparent: true, opacity: 0,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      const ln = new THREE.Line(geo, mat);
+      ln.visible = false;
+      ln.frustumCulled = false;
+      ln.renderOrder = 7;
+      ln.userData.vida = 0; ln.userData.f = i * 1.31;
+      this.scene.add(ln);
+      arcos.push(ln);
+    }
+    // — riel superior: la coronación del campo, brillante y nerviosa —
+    const geoR = new THREE.BufferGeometry();
+    geoR.setAttribute('position',
+      new THREE.BufferAttribute(new Float32Array(RED_ARC_PTS * 3), 3));
+    const riel = new THREE.Line(geoR, new THREE.LineBasicMaterial({
+      color: 0xdff2ff, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    riel.visible = false;
+    riel.frustumCulled = false;
+    riel.renderOrder = 8;
+    riel.userData.vida = 1;
+    this.scene.add(riel);
+    this._redFx = {
+      cuerpo, arcos, riel, cd: 0, rielCd: 0, buzzCd: 0.3, sparkCd: 1.1,
+    };
+  }
+
+  _redFxVis(vis) {
+    this._redFxOn = vis;
+    const fx = this._redFx;
+    if (!fx) return;
+    fx.cuerpo.visible = vis;
+    fx.riel.visible = vis;
+    fx.riel.userData.vida = vis ? 1 : 0;
+    if (!vis) {
+      for (const a of fx.arcos) { a.userData.vida = 0; a.visible = false; }
+      fx.riel.material.opacity = 0;
+      fx.cuerpo.material.opacity = RED_BODY_OP;
+    }
+  }
+
+  /** Frame de la barrera: cuerpo pegado a la red VIVA (lee DIMS cada
+   *  frame), arcos que se regeneran (parpadeo eléctrico), riel superior,
+   *  chispas del riel y zumbido. Nunca tumba el frame (try en el tick). */
+  _redFrame(dt) {
+    const fx = this._redFx;
+    if (!fx) return;
+    const D = DIMS;
+    const topY = D.tableTopY;
+    const netH = Math.max(0.05,
+      (D.netTopY != null ? D.netTopY : topY + 0.1525) - topY);
+    const zC = D.tableCenterZ;
+    const W = D.netHalfWidth;
+    const tt = performance.now() * 0.001;
+    if (this._redFlashT > 0) this._redFlashT -= dt;
+    const fl = this._redFlashT > 0 ? Math.min(1, this._redFlashT / 0.3) : 0;
+    // cuerpo: sigue la altura vigente de la red (una sola verdad: DIMS)
+    fx.cuerpo.scale.set(W * 2, netH, 1);
+    fx.cuerpo.position.set(0, topY + netH / 2, zC);
+    const pulso = 0.75 + 0.25 * Math.sin(tt * 9.0);
+    fx.cuerpo.material.opacity = (RED_BODY_OP + fl * 0.30) * pulso;
+    // arcos: regeneración periódica con vida corta = parpadeo eléctrico
+    fx.cd -= dt;
+    if (fx.cd <= 0) {
+      fx.cd = RED_ARC_CD;
+      for (const a of fx.arcos) {
+        if (Math.random() < 0.45) continue;    // no todos cada ciclo
+        const pos = a.geometry.attributes.position;
+        const N = pos.count;
+        const h = topY + netH * (0.08 + Math.random() * 0.86);
+        const zL = zC + (Math.random() < 0.5 ? -0.006 : 0.006);
+        for (let i = 0; i < N; i++) {
+          const f = i / (N - 1);
+          const j = (i === 0 || i === N - 1) ? 0 : (Math.random() * 2 - 1) * 0.03;
+          pos.setXYZ(i, -W + W * 2 * f, h + j,
+            zL + (Math.random() * 2 - 1) * 0.004);
+        }
+        pos.needsUpdate = true;
+        a.geometry.computeBoundingSphere();
+        a.userData.vida = 0.16;
+        a.visible = true;
+      }
+    }
+    for (const a of fx.arcos) {
+      const U = a.userData;
+      if (U.vida > 0) {
+        U.vida -= dt;
+        a.material.opacity = Math.max(0, Math.min(1, U.vida / 0.16)) *
+          (0.45 + 0.55 * Math.sin(tt * 21 + U.f));
+        a.visible = a.material.opacity > 0.02;
+      } else if (a.visible) a.visible = false;
+    }
+    // riel superior: nervioso SIEMPRE (puntos con jitter, vida plena)
+    fx.rielCd -= dt;
+    if (fx.rielCd <= 0) {
+      fx.rielCd = 0.11;
+      const pos = fx.riel.geometry.attributes.position;
+      const N = pos.count;
+      const yR = topY + netH;
+      for (let i = 0; i < N; i++) {
+        const f = i / (N - 1);
+        const j = (i === 0 || i === N - 1) ? 0 : (Math.random() * 2 - 1) * 0.018;
+        pos.setXYZ(i, -W + W * 2 * f, yR + j,
+          zC + (Math.random() * 2 - 1) * 0.005);
+      }
+      pos.needsUpdate = true;
+      fx.riel.geometry.computeBoundingSphere();
+    }
+    fx.riel.material.opacity = Math.min(1,
+      0.55 + 0.30 * Math.sin(tt * 17) + fl * 0.3);
+    // chispas del riel (pool de la casa) + zumbido eléctrico suave
+    fx.sparkCd -= dt;
+    if (fx.sparkCd <= 0) {
+      fx.sparkCd = RED_SPARK_CD * (0.75 + Math.random() * 0.5);
+      if (this.chispas) {
+        try {
+          this._redSpark.set(
+            (Math.random() * 2 - 1) * W * 0.9, topY + netH, zC);
+          this.chispas.burst(this._redSpark, [0.55, 0.85, 1.0]);
+        } catch (eS) { /* */ }
+      }
+    }
+    fx.buzzCd -= dt;
+    if (fx.buzzCd <= 0) {
+      fx.buzzCd = RED_BUZZ_CD * (0.8 + Math.random() * 0.4);
+      try { this.audio.playOsc(108, 96, 0.09, 'sawtooth', 0.035, 0); } catch (eB2) { /* */ }
+    }
   }
 
   /* =====================================================================
@@ -23634,46 +23812,71 @@ class PingPongGame {
     } catch (e) { /* */ }
   }
 
-  /** Construye la tormenta UNA vez (pool reutilizable): 2 nubes sprite
-   *  procedurales, 3 rayos de 9 puntos y 12 pedacitos negros. Cero
-   *  asignaciones por rayo: posiciones recicladas (needsUpdate). */
+  /** Construye la tormenta UNA vez (pool reutilizable): banco de NIEBLA
+   *  DENSA — r26, adiós borrones «cutres»: ELEC_NIEBLA_N puffs suaves
+   *  solapados que HIERVE sobre el rival —, ELEC_RAYOS_N rayos de 9
+   *  puntos y 12 pedacitos negros. Cero asignaciones por rayo:
+   *  posiciones recicladas (needsUpdate). */
   _buildElecFx() {
     if (this._elecFx) return;
     const D = DIMS;
     const zC = D.tableCenterZ;
-    // — nubes: canvas procedural (borrones grises con panza oscura) —
+    // — r26 · NIEBLA DENSA: textura suave (gradiente radial, bordes que
+    //    se funden) y banco de puffs solapados en dos masas + halo —
     const cv = document.createElement('canvas');
-    cv.width = 128; cv.height = 64;
+    cv.width = 128; cv.height = 128;
     const c2 = cv.getContext('2d');
     if (c2) {
-      const borron = (x, y, r, col) => {
-        c2.fillStyle = col; c2.beginPath(); c2.arc(x, y, r, 0, Math.PI * 2); c2.fill();
-      };
-      borron(38, 30, 17, '#59616e'); borron(64, 22, 21, '#6b7482');
-      borron(92, 31, 16, '#525a66'); borron(64, 38, 24, '#454c58');
-      borron(64, 48, 18, '#31363f');
+      const gRad = c2.createRadialGradient(64, 64, 4, 64, 64, 62);
+      gRad.addColorStop(0, 'rgba(255,255,255,0.95)');
+      gRad.addColorStop(0.45, 'rgba(255,255,255,0.42)');
+      gRad.addColorStop(1, 'rgba(255,255,255,0)');
+      c2.fillStyle = gRad;
+      c2.fillRect(0, 0, 128, 128);
     }
     const tex = new THREE.CanvasTexture(cv);
-    const nubes = [];
-    for (let i = 0; i < 2; i++) {
+    const niebla = [];
+    const sy0 = D.tableTopY + ELEC_ALTO_NUBE;      // a 1,5 m (spec literal)
+    const sz0 = zC - D.tableHalfLength * 0.5;      // mitad del RIVAL
+    // LCG semillado (patrón casa: la MISMA niebla en cada build y QA)
+    let sem = 20261126;
+    const rnd = () => {
+      sem = (sem * 1664525 + 1013904223) >>> 0;
+      return sem / 4294967296;
+    };
+    const NIEBLA_COLS = [0x39404e, 0x454e5e, 0x2f3542, 0x525c6e, 0x3c4453];
+    for (let i = 0; i < ELEC_NIEBLA_N; i++) {
       const mat = new THREE.SpriteMaterial({
         map: tex, transparent: true, opacity: 0, depthWrite: false,
       });
       const sp = new THREE.Sprite(mat);
-      const sx = i === 0 ? -0.42 : 0.42;
-      const sy = D.tableTopY + ELEC_ALTO_NUBE;      // a 1,5 m (spec literal)
-      const sz = zC - D.tableHalfLength * 0.5;      // mitad del RIVAL
-      sp.scale.set(1.05, 0.55, 1);
+      const lado = i % 2 === 0 ? -1 : 1;
+      const sx = lado * (0.14 + rnd() * 0.46) + (rnd() * 2 - 1) * 0.20;
+      const sy = sy0 + (rnd() * 2 - 1) * 0.20;
+      const sz = sz0 + (rnd() * 2 - 1) * 0.42;
+      const sxB = 0.90 + rnd() * 0.75;             // puffs anchos, bajos
+      const syB = 0.50 + rnd() * 0.34;
+      const col = new THREE.Color(NIEBLA_COLS[i % NIEBLA_COLS.length]);
+      const lit = new THREE.Color(0xbdd3ea);       // iluminada por el rayo
+      sp.scale.set(sxB, syB, 1);
       sp.position.set(sx, sy, sz);
-      sp.userData.x0 = sx; sp.userData.y0 = sy; sp.userData.f = i * 2.1;
+      sp.userData = {
+        x0: sx, y0: sy, z0: sz, sxB, syB,
+        f: rnd() * Math.PI * 2,                    // fase propia de hervor
+        orb: 0.06 + rnd() * 0.10,                  // radio de hervor
+        sp: 0.22 + rnd() * 0.30,                   // velocidad de hervor
+        op: 0.34 + rnd() * 0.18,                   // solape → densidad
+        r0: col.r, g0: col.g, b0: col.b,
+        r1: lit.r, g1: lit.g, b1: lit.b,
+      };
       sp.renderOrder = 6;
       sp.visible = false;
       this.scene.add(sp);
-      nubes.push(sp);
+      niebla.push(sp);
     }
-    // — rayos: 3 líneas de 9 puntos, material aditivo azul-blanco —
+    // — rayos: ELEC_RAYOS_N líneas de 9 puntos, aditivo azul-blanco —
     const rayos = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < ELEC_RAYOS_N; i++) {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position',
         new THREE.BufferAttribute(new Float32Array(9 * 3), 3));
@@ -23702,14 +23905,14 @@ class PingPongGame {
       this.scene.add(mt);
       metales.push(mt);
     }
-    this._elecFx = { nubes, rayos, rayosIx: 0, metales };
+    this._elecFx = { niebla, rayos, rayosIx: 0, metales };
   }
 
   _elecFxVis(vis) {
     this._elecFxOn = vis;
     const fx = this._elecFx;
     if (!fx) return;
-    for (const nb of fx.nubes) nb.visible = vis;  // la opacidad la pone _elecFrame
+    for (const nb of fx.niebla) nb.visible = vis; // la opacidad la pone _elecFrame
     if (!vis) {
       for (const rb of fx.rayos) { rb.userData.vida = 0; rb.visible = false; }
       for (const mt of fx.metales) { mt.userData.vida = 0; mt.visible = false; }
@@ -23727,10 +23930,20 @@ class PingPongGame {
     const fx = this._elecFx;
     if (fx) {
       const tt = performance.now() * 0.001;
-      for (const nb of fx.nubes) {
-        nb.position.x = nb.userData.x0 + Math.sin(tt * 0.9 + nb.userData.f) * 0.10;
-        nb.position.y = nb.userData.y0 + Math.sin(tt * 1.3 + nb.userData.f * 2.0) * 0.05;
-        nb.material.opacity = 0.82 * k;   // entran y salen con la tormenta
+      // r26 · la niebla HIERVE (fase propia por puff) y se ILUMINA con
+      // cada descarga (fl: la niebla recibe el destello como una nube real)
+      const fl = this._elecFlashT > 0 ? Math.min(1, this._elecFlashT / 0.25) : 0;
+      for (const nb of fx.niebla) {
+        const U = nb.userData;
+        nb.position.x = U.x0 + Math.sin(tt * U.sp + U.f) * U.orb;
+        nb.position.y = U.y0 + Math.sin(tt * U.sp * 1.35 + U.f * 2.1) * 0.05;
+        nb.position.z = U.z0 + Math.cos(tt * U.sp * 0.8 + U.f) * U.orb * 0.7;
+        const br = 1 + Math.sin(tt * 0.9 + U.f * 3.0) * 0.07;   // respiración
+        nb.scale.set(U.sxB * br, U.syB * br, 1);
+        nb.material.opacity = (U.op + fl * 0.30) * k;   // con la tormenta
+        const c = nb.material.color;   // gris pizarra ↔ azul pálido (rayo)
+        c.setRGB(U.r0 + (U.r1 - U.r0) * fl, U.g0 + (U.g1 - U.g0) * fl,
+          U.b0 + (U.b1 - U.b0) * fl);
       }
       for (const rb of fx.rayos) {
         const U = rb.userData;
@@ -23767,11 +23980,18 @@ class PingPongGame {
         if (this.ballMesh) this.ballMesh.visible = true;
       }
     }
-    // cadencia de descargas (con jitter natural)
+    // cadencia de descargas (con jitter natural) — r26 (v3.6.121): RÁFAGAS
+    // de hasta 3 rayos por descarga ≈ 35 rayos por ventana de tormenta
     this._elecBoltCd -= dt;
     if (this._elecBoltCd <= 0) {
       this._elecBoltCd = ELEC_BOLT_CD * (0.85 + Math.random() * 0.4);
       try { this._elecRayo(); } catch (eR) { /* un rayo nunca tumba el frame */ }
+      if (Math.random() < 0.38) {
+        try { this._elecRayo(); } catch (eR2) { /* */ }
+      }
+      if (Math.random() < 0.16) {
+        try { this._elecRayo(); } catch (eR3) { /* */ }
+      }
     }
   }
 
@@ -23787,12 +24007,15 @@ class PingPongGame {
     const tz = zC - 0.12 - Math.random() * (D.tableHalfLength - 0.22);
     const ty = D.tableTopY + 0.005;
     this._elecTarget.set(tx, ty, tz);
-    // nube emisora: la más cercana al objetivo (coherencia visual)
-    let nube = fx.nubes[0];
-    if (fx.nubes.length > 1) {
-      nube = (Math.abs(fx.nubes[0].position.x - tx) <=
-              Math.abs(fx.nubes[1].position.x - tx))
-        ? fx.nubes[0] : fx.nubes[1];
+    // puff emisora: el MÁS CERCANO al objetivo del banco de niebla (r26)
+    let nube = fx.niebla[0];
+    let md = (fx.niebla[0].position.x - tx) * (fx.niebla[0].position.x - tx) +
+      (fx.niebla[0].position.z - tz) * (fx.niebla[0].position.z - tz);
+    for (let iN = 1; iN < fx.niebla.length; iN++) {
+      const nbN = fx.niebla[iN];
+      const dN = (nbN.position.x - tx) * (nbN.position.x - tx) +
+        (nbN.position.z - tz) * (nbN.position.z - tz);
+      if (dN < md) { md = dN; nube = nbN; }
     }
     const rb = fx.rayos[fx.rayosIx % fx.rayos.length];
     fx.rayosIx++;
@@ -23897,7 +24120,7 @@ class PingPongGame {
           const src = A.ctx.createBufferSource();
           src.buffer = buf;
           const g = A.ctx.createGain();
-          g.gain.value = 0.95;
+          g.gain.value = 0.55 + Math.random() * 0.4;   // r26: volumen vivo
           src.connect(g); g.connect(out);
           src.start();
         } catch { /* */ }
@@ -26028,7 +26251,13 @@ class PingPongGame {
       this._redT = 0;
       try { this._redFin(); } catch (eRF) { /* */ }
     }
-    // r25 (v3.6.120) · SÚPER ELECTRICIDAD ACTIVA: tormenta viva (nubes,
+    // r26 (v3.6.121) · BARRERA ELÉCTRICA viva mientras la SÚPER RED corre.
+    if (this._redT > 0) {
+      try { this._redFrame(dt); } catch (eRB) { /* la barrera nunca tumba el frame */ }
+    } else if (this._redFxOn) {
+      this._redFxVis(false);
+    }
+    // r25 (v3.6.120) · SÚPER ELECTRICIDAD ACTIVA: tormenta viva (niebla densa,
     // rayos, truenos, noche, destello y colisión) durante SU ventana.
     if (on && this._elecT > 0) {
       this._elecT -= dt;
@@ -30512,12 +30741,25 @@ const MEGA_GOLPES = 20; // cada 20 toques del rally = +1 carga (r56: regla
 const RED_DUR = 10;         // s de red alta
 const RED_MUL = 2;          // «el doble del valor actual» (spec literal)
 const ELEC_DUR = 10;        // s de tormenta sobre el campo del rival
-const ELEC_BOLT_CD = 1.15;  // s entre rayos (≈8-9 descargas por ventana)
+const ELEC_BOLT_CD = 0.42;  // s entre descargas — r26 (dueño: «bastantes
+                            // más rayos»): ráfagas ≈35 rayos por ventana
 const ELEC_BOLT_R = 0.17;   // radio de interceptación rayo↔bola (m) —
                             // colisión RÁPIDA: distancia punto-segmento
                             // (un hipot, cero asignaciones) < bola+margen
 const ELEC_ALTO_NUBE = 1.5; // m sobre la mesa del rival (spec literal)
 const ELEC_NEGRO = new THREE.Color(0x05070c);   // noche de la tormenta
+// r26 (v3.6.121) · NIEBLA DENSA + MÁS RAYOS (informe del dueño: las nubes
+// sprite «están muy cutres… debemos sustituirlas por una especie de niebla
+// muy densa que simule que son nubes» y «deben descargar bastantes más
+// rayos de tormenta») + BARRERA ELÉCTRICA en la SÚPER RED.
+const ELEC_NIEBLA_N = 14;   // puffs de niebla del banco (antes: 2 borrones)
+const ELEC_RAYOS_N = 10;    // pool de rayos (antes 3) + ráfagas en _elecFrame
+const RED_ARC_N = 7;        // polilíneas de arco en la barrera de la red
+const RED_ARC_PTS = 12;     // puntos por arco (jitter vivo)
+const RED_ARC_CD = 0.085;   // s entre regeneraciones de arcos (parpadeo)
+const RED_BODY_OP = 0.13;   // opacidad base del cuerpo del campo eléctrico
+const RED_BUZZ_CD = 0.42;   // s entre zumbidos eléctricos
+const RED_SPARK_CD = 1.4;   // s entre chispas del riel superior
 
 // v3.6.36 · SÚPER EFECTO (reglas del dueño): multiplicador al spin GENERADO
 // por el golpe (NUNCA al acumulado que ya traía la bola), ventana de 10 s

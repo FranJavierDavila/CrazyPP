@@ -263,6 +263,33 @@ function bolaTex(tipo) {
     c.fillStyle = 'rgba(255,255,255,0.12)';
     c.beginPath(); c.arc(x - r * 0.3, y - r * 0.3, r * 0.5, 0, Math.PI * 2); c.fill();
   };
+  /* r24 (v3.6.119) · SPIN LEGIBLE EN LAS PLANAS — queja del dueño tras
+   * probar la r23: «el giro es muy sutil y poco realista». Causa raíz:
+   * blanca/naranja/menta/neón eran COLOR LISO (sin mapa) — una esfera
+   * uniforme NO delata su ω aunque gire. Las pinto como las bolas de
+   * verdad: COSTURA ecuatorial de poliplástico + MARCA de fábrica
+   * («CRAZY» con pala en miniatura, dos caras opuestas — legible desde
+   * cualquier ángulo). El mapa multiplica el color del material: las
+   * marcas salen del tono de cada bola. Canvas procedural: cero bytes
+   * en el bundle. La ganancia sube aparte en c12 (0.14 → 0.45). */
+  if (tipo === 'blanca' || tipo === 'naranja' || tipo === 'menta' || tipo === 'neon') {
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, 512, 256);
+    // costura ecuatorial (el reborde de la bola de poliplástico)
+    c.strokeStyle = 'rgba(58,50,42,0.32)'; c.lineWidth = 3;
+    c.beginPath(); c.moveTo(0, 128); c.lineTo(512, 128); c.stroke();
+    // marca de fábrica en dos caras opuestas (U=0.25 y U=0.75)
+    c.fillStyle = 'rgba(58,50,42,0.5)';
+    for (const mx of [128, 384]) {
+      c.save();
+      c.translate(mx, 116); c.rotate(-0.5);
+      c.beginPath(); c.ellipse(0, -8, 11, 14, 0, 0, Math.PI * 2); c.fill();
+      c.fillRect(-2.5, 2, 5, 17);
+      c.restore();
+      c.font = '700 17px system-ui, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('CRAZY', mx, 158);
+    }
+  }
   if (tipo === 'estrellas') {
     c.fillStyle = '#fff6e8'; c.fillRect(0, 0, 512, 256);
     for (let i = 0; i < 14; i++) {

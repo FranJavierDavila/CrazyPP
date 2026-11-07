@@ -652,7 +652,7 @@ export class PingPongGame {
     // v3.0.9-HALL1 · HALL DEL ANFITRIÓN: estancia de bienvenida decorada
     // con logros. Nace OCULTA: enterHall() la enciende al entrar en VR y
     // exitHall() la apaga al salir a la cancha (nunca ambas a la vez).
-    this.hallGroup = createHall();
+    this.hallGroup = createHall(this._hallVarDef().base);   // r24 · viste la variante guardada (museo o CABAÑA)
     this.hallGroup.visible = false;
     this.scene.add(this.hallGroup);
     this.inHall = false;
@@ -3781,6 +3781,26 @@ export class PingPongGame {
         }
         btn('hall_entrar', 56, y, 912, 62, T('hall_entrar'), false, undefined, undefined, 25);
         y += 80;
+        /* r24 (v3.6.119) · VARIANTE DEL HALL: el arte de TU estancia — el
+         * museo clásico o LA CABAÑA (chimenea, barra y nieve; candado
+         * wins10). Local SOLO: de visita online ves la del anfitrión. */
+        if (!per.peer) {
+          label(T('hall_var_lbl'), y + 2, 17, '#98a6b4');
+          y += 26;
+          HALL_VARIANTES.forEach((v, i) => {
+            const libreH = !v.lock || this._mesaLibre(v.lock);
+            const activoH = this._hallVarDef().id === v.id;
+            btn('hall_var:' + v.id, 56 + i * 468, y, 444, 54,
+              (libreH ? '' : '🔒 ') + T(v.nameKey),
+              activoH, undefined, activoH, 21);
+          });
+          y += 62;
+          const hayCerradaH = HALL_VARIANTES.some((v) => v.lock && !this._mesaLibre(v.lock));
+          if (hayCerradaH) {
+            label(T('mesa_lock_hint'), y + 2, 16, '#93a1b0');
+            y += 28;
+          }
+        }
         label(T('hall_cosmetica'), y + 2, 16, '#8ce99a');
         y += 28;
         break;
@@ -4570,6 +4590,7 @@ export class PingPongGame {
       'page:optsSalaRoom': 'hint_sala_sala', 'page:optsSalaMesa': 'hint_sala_mesa',
       'page:optsSalaBola': 'hint_sala_bola',
       'page:optsSalaHall': 'hint_sala_hall', 'hall_entrar': 'hint_hall_entrar',
+      'hall_var:anfitrion': 'hint_hall_var_a', 'hall_var:cabana': 'hint_hall_var_c',
       'start': 'hint_modo_match', 'traingo': 'hint_modo_train',
       'survgo': 'hint_modo_surv', 'tab:multi': 'hint_modo_multi',
       'page:champs': 'hint_modo_champs', 'wrl:open': 'hint_modo_rank',
@@ -5465,6 +5486,26 @@ export class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'hall_var': {
+        // r24 · ARTE DEL HALL: museo clásico o LA CABAÑA (10 victorias,
+        // candado wins10 — el mismo de las skins de gala). Se guarda en
+        // LS y re-viste el hall EN VIVO (applyHallVariant, c08): cero
+        // reconstrucción, como applyBallSkin con la bola. Cosmético.
+        const hv = HALL_VARIANTES.find((v) => v.id === arg);
+        if (hv) {
+          if (hv.lock && !this._mesaLibre(hv.lock)) {
+            this.rules.message = this._mesaLockTxt(hv.lock) || T('mesa_lock_hint');
+            this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          } else {
+            try { localStorage.setItem('pp_hallvar', hv.id); } catch { /* */ }
+            try { applyHallVariant(this.hallGroup, hv.base); } catch (eHV) { /* */ }
+            this.rules.message = T('msg_hall_var', { v: T(hv.nameKey) });
+            this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+          }
+        }
+        this.drawMenu();
+        break;
+      }
       case 'hall_entrar': {
         // r23 · ENTRAR AL HALL desde el menú — también ONLINE (visita al
         // Hall del Anfitrión). En pleno rally no se sale: mensaje y fuera.
@@ -5869,6 +5910,22 @@ export class PingPongGame {
     if (sk.lock && !this._mesaLibre(sk.lock)) sk = BOLA_ASPECTOS[0];
     return sk;
   }
+  /* r24 (v3.6.119) · VARIANTE DEL HALL — el arte de la estancia: el museo
+   * clásico o LA CABAÑA (10 victorias). Mismo patrón que la skin de bola:
+   * LS 'pp_hallvar' + catálogo con candado (_mesaLibre). La crea el
+   * constructor (createHall(this._hallVarDef().base)) y la re-veste
+   * applyHallVariant (c08) al elegirla o al VISITAR la del anfitrión. */
+  /** id guardado de la variante (sin validar: sólo LS). */
+  _hallVarLS() {
+    try { return localStorage.getItem('pp_hallvar') || ''; } catch { return ''; }
+  }
+  /** definición VALIDADA (existe + candado): la del dueño. */
+  _hallVarDef() {
+    let hv = HALL_VARIANTES.find((v) => v.id === this._hallVarLS());
+    if (!hv) hv = HALL_VARIANTES[0];
+    if (hv.lock && !this._mesaLibre(hv.lock)) hv = HALL_VARIANTES[0];
+    return hv;
+  }
   /** RGB de reposo de la estela para las chispas (color de skin vivo). */
   _chispaRGB() {
     return this._bolaTrailRest || [0.75, 0.75, 0.75];
@@ -5934,6 +5991,7 @@ export class PingPongGame {
     return {
       w: d.won | 0, bs: d.bestStreak | 0, st: this._retosEstrellas() | 0,
       el: Math.round(d.elo || 1000),
+      hv: this._hallVarDef().id,   // r24 · arte del hall del dueño (id de catálogo)
       a: ACHIEVEMENTS.filter((x) => d.ach && d.ach[x.key]).map((x) => x.key).slice(0, 8),
       bl: BOLA_ASPECTOS.filter(libre).map((s) => s.id).slice(0, 16),
       ms: MESA_ASPECTOS.filter(libre).map((s) => s.id).slice(0, 8),
@@ -5951,13 +6009,20 @@ export class PingPongGame {
       const A_OK = ACHIEVEMENTS.map((x) => x.key);
       const B_OK = BOLA_ASPECTOS.map((s) => s.id);
       const M_OK = MESA_ASPECTOS.map((s) => s.id);
+      const H_OK = HALL_VARIANTES.map((v) => v.id);   // r24 · variantes de hall
       this._hallPeer = {
         w: num(hp.w), bs: num(hp.bs), st: num(hp.st), el: num(hp.el) || 1000,
+        hv: (typeof hp.hv === 'string' && H_OK.indexOf(hp.hv) >= 0) ? hp.hv : '',
         a: ids(hp.a, A_OK, 8), bl: ids(hp.bl, B_OK, 16), ms: ids(hp.ms, M_OK, 8),
       };
       // el invitado CONECTA DESDE SU HALL (la sesión nace ahí): si sigue
       // dentro, la pared de insignias se viste con el anfitrión AL VUELO
+      // (r24 · y el ARTE también: si el dueño tiene LA CABAÑA, se visita
+      // SU cabaña — patrón sk/hp: id saneado contra catálogo)
       if (this.net && this.net.online && this.net.role === 'guest' && this.inHall) {
+        if (this._hallPeer.hv) {
+          try { applyHallVariant(this.hallGroup, hallVariantePorId(this._hallPeer.hv).base); } catch (eHV) { /* */ }
+        }
         this.drawHall();
       }
     } catch { /* cosmético: jamás rompe el enlace */ }
@@ -11880,6 +11945,15 @@ export class PingPongGame {
    * spinMax) la bola marca ~2,4 rev/s — legible a 72 Hz sin estrobar; con
    * |ω|=25 (EFECTO_SPIN_MIN) ~0,6 rev/s, claramente perceptible. El factor
    * físico 1:1 sería invisible (17 rev/s = ruido de aliasing).
+   * r24 (v3.6.119) · «EL GIRO ES MUY SUTIL Y POCO REALISTA» (dueño tras
+   * probar la r23). Dos causas y DOS CURAS:
+   *   1) Ganancia 0.14 → 0.45 (×3.2): con |ω|=110 (tope) la bola marca
+   *      ~7,9 rev/s — 39,5°/frame a 72 Hz, bajo el umbral de estrobo y
+   *      perfectamente legible; con |ω|=25 (EFECTO_SPIN_MIN) ~1,8 rev/s;
+   *      un efecto medio (|ω|≈60) rueda a ~4,3 rev/s: SE VE girar.
+   *   2) Textura: las 4 skins planas (blanca/naranja/menta/neón) eran
+   *      color liso — una esfera uniforme no delata su ω NI a 8 rev/s.
+   *      bolaTex (c07) les pinta costura + marca CRAZY (c02 tex).
    * F1b · RED: ω YA viaja al invitado — v1 lo trae en el stream ('h' y
    * estado de bola con s:[x,y,z], spinFromNet) y v2 lo traen los eventos
    * HIT/TOSS/HANDOFF (ev.s) mientras el fantasma de la mitad propia sigue
@@ -11914,6 +11988,14 @@ export class PingPongGame {
     if (online && this.rules.state === 'rally') return;
     this.inHall = true;
     this._hallVisit = online;
+    /* r24 (v3.6.119) · EL ARTE DE LA VISITA: local → TU variante (museo o
+     * CABAÑA); online como invitado → LA DEL ANFITRIÓN (hp.hv saneado en
+     * onPeerHall). applyHallVariant es no-op si ya viste ese arte. El
+     * candado no aplica aquí: se ve la del dueño, no se elige. */
+    const hvTgt = (online && this._hallPeer && this._hallPeer.hv)
+      ? hallVariantePorId(this._hallPeer.hv)
+      : this._hallVarDef();
+    try { applyHallVariant(this.hallGroup, hvTgt.base); } catch (eHV) { /* */ }
     if (!online) {
       this._megaNormReset();   // v3.6.34: el hall es zona neutra — pala como siempre
     }
@@ -13021,13 +13103,13 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, BOLA_ASPECTOS, CARRERA_DIVISIONES, DIMS, ELO_CPU, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, BOLA_ASPECTOS, CARRERA_DIVISIONES, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
 import { applyBallSkin, createBall, createBlobShadow, createChampDecor, createChispas, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
-import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, drawHallGloria, drawHallSign, updateHallFx } from './c08_hall_hud.js';
+import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, applyHallVariant, drawHallGloria, drawHallSign, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { PPNET } from './c09b_red_nucleo.js';
 import { RedSocial } from './c09c_red_social.js';
@@ -13041,7 +13123,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();
-const BOLA_SPIN_GANANCIA = 0.14;   // rad visibles por rad de ω (ver _bolaSpinTick)
+const BOLA_SPIN_GANANCIA = 0.45;   // rad visibles por rad de ω (ver _bolaSpinTick) — r24: 0.14→0.45 (queja: «giro muy sutil»)
 /* =====================================================================
  *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy

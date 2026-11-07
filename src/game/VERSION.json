@@ -1,10 +1,10 @@
 {
-  "version": "3.6.118-SDK6",
-  "fase": 120,
-  "faseNombre": "spin visible + hall del anfitrion",
+  "version": "3.6.119-SDK6",
+  "fase": 121,
+  "faseNombre": "spin realista + hall cabana",
   "sdk": "1.6.0",
   "fecha": "2026-11-07",
-  "hub": "v36118-sdk6",
+  "hub": "v36119-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 10777222,
-  "golden": "261954e70046906f82854770b7678268b95c20120b14e0778fd3e2a96b39d1c4"
+  "tamano": 10787766,
+  "golden": "50fc0842076bd36b0d9d9fcffcb9a9f9f8c9d3131fe5c32d185c5af0d3ba0572"
 }

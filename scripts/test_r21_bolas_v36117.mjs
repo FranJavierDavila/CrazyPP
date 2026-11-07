@@ -49,8 +49,10 @@ chk(BOLA_ASPECTOS.every((s) => Array.isArray(s.trail) && s.trail.length === 3 &&
     s.trail.every((v) => v >= 0 && v <= 1)), 'trail RGB válido (3 canales 0..1)');
 chk(BOLA_ASPECTOS.every((s) => s.ring === true || s.ring === false), 'ring booleano');
 chk(BOLA_ASPECTOS.filter((s) => s.ring).map((s) => s.id).join() === 'saturno', 'aro SOLO en Saturno');
-const TEXS = new Set(['estrellas', 'playa', 'futbol', 'ocho', 'ojo', 'holo', 'disco', 'marte', 'luna', 'tierra', 'lava', 'saturno']);
-chk(BOLA_ASPECTOS.every((s) => s.tex === null || TEXS.has(s.tex)), 'tex ids conocidos por el pintor');
+/* r24: las 4 planas (blanca/naranja/menta/neon) llevan tex propia
+ * (costura + marca CRAZY en bolaTex) — el giro ya no es invisible. */
+const TEXS = new Set(['blanca', 'naranja', 'menta', 'neon', 'estrellas', 'playa', 'futbol', 'ocho', 'ojo', 'holo', 'disco', 'marte', 'luna', 'tierra', 'lava', 'saturno']);
+chk(BOLA_ASPECTOS.every((s) => s.tex && TEXS.has(s.tex)), 'tex ids conocidos por el pintor (r24: TODAS llevan textura)');
 chk(BOLA_ASPECTOS.every((s) => typeof s.rough === 'number' && typeof s.metal === 'number' &&
     typeof s.emis === 'number' && typeof s.emisInt === 'number'), 'material completo (rough/metal/emis/emisInt)');
 chk(bolaAspectoPorId('no-existe').id === 'blanca', 'id basura → blanca (respaldo)');

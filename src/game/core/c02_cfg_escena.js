@@ -501,14 +501,15 @@ export const MESA_NET_H = 0.1525;
  *  ring (Saturno: aro hijo decorativo).
  *  ===================================================================== */
 export const BOLA_ASPECTOS = [
-  /* — clásicas (3) — */
-  { id: 'blanca', lock: null, nameKey: 'bola_asp_blanca', tex: null,
+  /* — clásicas (3) — r24 · las 3 planas llevan costura + marca CRAZY
+   * (bolaTex): color liso = giro invisible (queja del dueño en r24). */
+  { id: 'blanca', lock: null, nameKey: 'bola_asp_blanca', tex: 'blanca',
     color: 0xfff8ef, rough: 0.35, metal: 0.0, emis: 0x555044, emisInt: 0.35,
     trail: [0.75, 0.75, 0.75], ring: false },
-  { id: 'naranja', lock: null, nameKey: 'bola_asp_naranja', tex: null,
+  { id: 'naranja', lock: null, nameKey: 'bola_asp_naranja', tex: 'naranja',
     color: 0xff8a3d, rough: 0.35, metal: 0.0, emis: 0x553418, emisInt: 0.35,
     trail: [1.0, 0.54, 0.24], ring: false },
-  { id: 'menta', lock: null, nameKey: 'bola_asp_menta', tex: null,
+  { id: 'menta', lock: null, nameKey: 'bola_asp_menta', tex: 'menta',
     color: 0x8fe3c8, rough: 0.35, metal: 0.0, emis: 0x2e5548, emisInt: 0.35,
     trail: [0.56, 0.89, 0.78], ring: false },
   /* — locura (5) — */
@@ -528,7 +529,7 @@ export const BOLA_ASPECTOS = [
     color: 0xffffff, rough: 0.3, metal: 0.0, emis: 0x555055, emisInt: 0.35,
     trail: [0.85, 0.75, 0.9], ring: false },
   /* — neón / arcade (3) — */
-  { id: 'neon', lock: null, nameKey: 'bola_asp_neon', tex: null,
+  { id: 'neon', lock: null, nameKey: 'bola_asp_neon', tex: 'neon',
     color: 0xff3fa4, rough: 0.25, metal: 0.0, emis: 0xff2f96, emisInt: 0.85,
     trail: [1.0, 0.25, 0.64], ring: false },
   { id: 'holo', lock: 'wins10', nameKey: 'bola_asp_holo', tex: 'holo',
@@ -554,6 +555,28 @@ export const BOLA_ASPECTOS = [
     color: 0xffffff, rough: 0.45, metal: 0.0, emis: 0x554a30, emisInt: 0.3,
     trail: [0.9, 0.78, 0.5], ring: true },
 ];
+/* =====================================================================
+ *  r24 (v3.6.119) · VARIANTES DEL HALL DEL ANFITRIÓN — el arte de la
+ *  estancia que PRESUME. El hall es una caja de 6 planos con JPGs
+ *  externos (assets/hall/ · patrón v3.6.28); cada variante apunta a SU
+ *  carpeta de arte (mismos nombres de ficha y mismas proporciones exactas
+ *  de los planos). 'cabana' viste el refugio de montaña del dueño
+ *  (chimenea de piedra, barra, ventana nevada) y se libera con 10
+ *  victorias ('wins10' — el mismo candado de las skins de gala, ver
+ *  _mesaLibre). Online, el invitado ve la del ANFITRIÓN: hp lleva hv
+ *  (id saneado contra este catálogo, patrón sk/hp de las r22/r23).
+ *  ===================================================================== */
+export const HALL_VARIANTES = [
+  { id: 'anfitrion', lock: null, nameKey: 'hall_var_anfitrion',
+    base: 'assets/hall/' },
+  { id: 'cabana', lock: 'wins10', nameKey: 'hall_var_cabana',
+    base: 'assets/hall/cabana/' },
+];
+/** r24 · variante por id SIN chequeo de candado (el id ya viaja saneado;
+ *  el candado sólo gobierna ELEGIRLA, no verla en casa del anfitrión). */
+export function hallVariantePorId(id) {
+  return HALL_VARIANTES.find((v) => v.id === id) || HALL_VARIANTES[0];
+}
 /** r21 · id de la skin OFICIAL (campeonato y respaldo de red). */
 export const BOLA_ID_OFICIAL = BOLA_ASPECTOS[0].id;
 /** r21 · skin por id SIN chequeo de candado (para la skin del RIVAL: el

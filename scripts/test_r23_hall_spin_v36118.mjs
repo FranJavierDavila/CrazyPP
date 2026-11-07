@@ -52,7 +52,7 @@ const lee = (p) => readFileSync(raiz + p, 'utf8');
 console.log('1 · F1 · SPIN VISIBLE (c12 · capa render)');
 const c12 = lee('src/game/core/c12_pingponggame.js');
 chk(c12.includes('const BOLA_SPIN_AX = new THREE.Vector3();'), 'scratch de módulo (cero asignaciones por frame)');
-chk(c12.includes('BOLA_SPIN_GANANCIA = 0.14'), 'ganancia visual 0.14 (|ω|=110 → ~2,4 rev/s legibles a 72 Hz)');
+chk(c12.includes('BOLA_SPIN_GANANCIA = 0.45'), 'ganancia visual (r23: 0.14 → r24: 0.45 — «el giro era muy sutil»; |ω|=110 → ~7,9 rev/s)');
 chk(c12.includes('_bolaSpinTick(dt) {'), '_bolaSpinTick: el giro vive en un método propio');
 chk(c12.includes('this._bolaSpinTick(dt);'), 'integrado en el tick §7 (sincronizar visuales)');
 chk(c12.includes('BOLA_SPIN_AX.set(spin.x, spin.y, spin.z).multiplyScalar(1 / w);'), 'eje = ω normalizado (el vector EXACTO de la física)');
@@ -84,7 +84,9 @@ chk(c12.includes('onPeerHall(hp) {'), 'onPeerHall: saneado a fondo');
 chk(c12.includes('const num = (v) => { const n = +v; return isFinite(n) ? Math.max(0, Math.min(99999, n | 0)) : 0; };'), 'números: finitos, ≥0, ≤99999, enteros');
 chk(c12.includes('.filter((s) => typeof s === \'string\' && ok.indexOf(s) >= 0)'), 'ids SOLO contra catálogo (sin inyección de strings)');
 chk(c12.includes('a: ids(hp.a, A_OK, 8), bl: ids(hp.bl, B_OK, 16), ms: ids(hp.ms, M_OK, 8),'), 'arrays con tope (8 logros · 16 bolas · 8 mesas)');
-chk(c12.includes('if (this.net && this.net.online && this.net.role === \'guest\' && this.inHall) {\n        this.drawHall();'), 'si el invitado está DENTRO del hall: repinta al vuelo');
+/* r24: dentro del if ahora se viste TAMBIÉN el arte del anfitrión
+ * (applyHallVariant con hp.hv) antes de repintar la placa. */
+chk(c12.includes('if (this.net && this.net.online && this.net.role === \'guest\' && this.inHall) {\n        if (this._hallPeer.hv) {\n          try { applyHallVariant(this.hallGroup, hallVariantePorId(this._hallPeer.hv).base); } catch (eHV) { /* */ }\n        }\n        this.drawHall();'), 'si el invitado está DENTRO del hall: repinta al vuelo (r24: y viste el ARTE del anfitrión)');
 chk(c12.includes('_hallPerfil() {'), '_hallPerfil: perfil ACTIVO (propio o del anfitrión)');
 chk(c12.includes('return { p: this._hallPeer, peer: true };'), 'invitado online → EL DEL ANFITRIÓN');
 

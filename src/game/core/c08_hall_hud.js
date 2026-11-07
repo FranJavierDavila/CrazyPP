@@ -416,7 +416,14 @@ export function drawHallQuote(cv, text) {
  *  petición del dueño: la copa y su haz salen del Hall y el espacio
  *  central queda libre. La placa no tiene ya dónde colgarse.) */
 
-export function createHall() {
+export function createHall(base) {
+  /* r24 (v3.6.119) · VARIANTE DE ARTE: 'assets/hall/' (museo, siempre) o
+   * 'assets/hall/cabana/' (LA CABAÑA — HALL_VARIANTES en c02). Los seis
+   * JPG comparten nombres y proporciones exactas de los planos, así que
+   * la caja es LA MISMA: sólo cambia la carpeta que viste los materiales.
+   * applyHallVariant() re-viste en vivo sin reconstruir el grupo (la red
+   * guarda referencias — igual que applyBallSkin con la bola). */
+  const vbase = (typeof base === 'string' && base) ? base : 'assets/hall/';
   const g = new THREE.Group();
   const W = HALL.hx * 2;
   const z0 = HALL.cz - HALL.depth / 2;   // pared FRENTE: la primera que mira el anfitrión
@@ -433,24 +440,42 @@ export function createHall() {
   const loader = new THREE.TextureLoader();
   const texs = {};
   const texPaths = {
-    front: 'assets/hall/frente.jpg',     // 1849×864 → plano 6,10×2,85
-    back: 'assets/hall/fondo.jpg',       // 1849×864 → plano 6,10×2,85 (la puerta)
-    left: 'assets/hall/izquierda.jpg',   // 2395×864 → plano 7,90×2,85 (ventanal)
-    right: 'assets/hall/derecha.jpg',    // 2395×864 → plano 7,90×2,85 (insignias)
-    floor: 'assets/hall/suelo.jpg',      // 1296×1678 → plano 6,10×7,90 (emblema)
-    ceil: 'assets/hall/techo.jpg',       // 1296×1678 → plano 6,10×7,90 (círculo)
+    front: vbase + 'frente.jpg',     // 1849×864 → plano 6,10×2,85
+    back: vbase + 'fondo.jpg',       // 1849×864 → plano 6,10×2,85 (la puerta)
+    left: vbase + 'izquierda.jpg',   // 2395×864 → plano 7,90×2,85 (ventanal)
+    right: vbase + 'derecha.jpg',    // 2395×864 → plano 7,90×2,85 (insignias)
+    floor: vbase + 'suelo.jpg',      // 1296×1678 → plano 6,10×7,90 (emblema)
+    ceil: vbase + 'techo.jpg',       // 1296×1678 → plano 6,10×7,90 (círculo)
   };
+  const texMats = {};   // r24 · material por clave — vestir() re-viste en vivo
   const applyTex = (key, mat) => {
     loader.load(texPaths[key], (tex) => {
       try {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = 4;
+        // r24 · re-vestido: el arte anterior se libera (cambio de variante)
+        if (texs[key] && texs[key] !== tex && texs[key].dispose) {
+          try { texs[key].dispose(); } catch (eDis) { /* */ }
+        }
         texs[key] = tex;
         mat.map = tex;
         mat.color.set(0xffffff);
         mat.needsUpdate = true;
       } catch { /* el arte NUNCA rompe el juego */ }
     }, undefined, () => { /* sin arte (file://): plano con su color */ });
+  };
+  /* r24 · vestir(base): la MISMA estancia con OTRO arte (cambia la
+   * carpeta y recarga las 6 claves sobre los materiales registrados).
+   * Falla suave: si un JPG no llega, el plano conserva su color. */
+  const vestir = (b) => {
+    if (typeof b !== 'string' || !b) return;
+    texPaths.front = b + 'frente.jpg';
+    texPaths.back = b + 'fondo.jpg';
+    texPaths.left = b + 'izquierda.jpg';
+    texPaths.right = b + 'derecha.jpg';
+    texPaths.floor = b + 'suelo.jpg';
+    texPaths.ceil = b + 'techo.jpg';
+    for (const k in texMats) applyTex(k, texMats[k]);
   };
 
   /* ---- paleta del mobiliario 3D (luces, bolas) ----
@@ -464,6 +489,7 @@ export function createHall() {
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0, 0.001, HALL.cz);
   g.add(floor);
+  texMats.floor = floorMat;   // r24 · registro para re-vestido en vivo
   applyTex('floor', floorMat);
 
   /* ---- TECHO: el arte trae el círculo luminoso sobre el trofeo ---- */
@@ -472,6 +498,7 @@ export function createHall() {
   ceil.rotation.x = Math.PI / 2;
   ceil.position.set(0, HALL.h, HALL.cz);
   g.add(ceil);
+  texMats.ceil = ceilMat;   // r24 · registro para re-vestido en vivo
   applyTex('ceil', ceilMat);
 
   /* ---- PAREDES: rotaciones EXACTAS de createRoom (las cuatro leen sin
@@ -491,6 +518,10 @@ export function createHall() {
   const wallRight = mkWall(wallRightMat, HALL.depth, HALL.h, HALL.hx, HALL.cz, -Math.PI / 2);
   const wallFront = mkWall(wallFrontMat, W, HALL.h, 0, z0, 0);
   const wallBack  = mkWall(wallBackMat, W, HALL.h, 0, z1, Math.PI);
+  texMats.left = wallLeftMat;    // r24 · registro para re-vestido en vivo
+  texMats.right = wallRightMat;
+  texMats.front = wallFrontMat;
+  texMats.back = wallBackMat;
   applyTex('left', wallLeftMat);
   applyTex('right', wallRightMat);
   applyTex('front', wallFrontMat);
@@ -591,6 +622,7 @@ export function createHall() {
      * VIVO: las 7 bolas doradas y las 2 luces — el trofeo y su haz ya no
      * existen (espacio central libre, petición del dueño). */
     texs, texWant: Object.keys(texPaths),
+    base: vbase, vestir,   // r24 · variante de arte activa + re-vestido
     floor, walls: [wallLeft, wallRight, wallFront, wallBack], ceil,
     insigniaCache: {},   // (retirado v3.6.28: las paredes visten arte fijo)
     lights,
@@ -600,6 +632,20 @@ export function createHall() {
     gloria: { cv: gloriaCv, tex: gloriaTex },   // r23 · pared de insignias
   };
   return g;
+}
+
+/** r24 (v3.6.119) · RE-VESTIR EL HALL con otra variante de arte (en vivo,
+ *  sin reconstruir el grupo — la red y el rig guardan referencias). Devuelve
+ *  true si cambió algo. Cadenas ajenas o iguales: no-op. */
+export function applyHallVariant(g, base) {
+  try {
+    const ud = g && g.userData && g.userData.hall;
+    if (!ud || typeof ud.vestir !== 'function') return false;
+    if (typeof base !== 'string' || !base || ud.base === base) return false;
+    ud.vestir(base);
+    ud.base = base;
+    return true;
+  } catch { return false; }
 }
 
 /* v3.6.50 (r58) · las sorpresas del museo respiran: las 7 bolas doradas

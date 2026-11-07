@@ -86,7 +86,7 @@ chk(c12.includes('_bolaSkinLS() {'), '_bolaSkinLS para reaplicar sin tocar lo gu
 chk(c12.includes('const nativo = this.mesaOcupada();   // regla del dueño (como la mesa)'), 'REGLA DEL DUEÑO: champ → oficial');
 chk(c12.includes('this._bolaTinte(BOLA_ASPECTOS[0])'), '_mesaNativo también pone la bola oficial');
 chk(c12.includes('try { this._bolaSkinReapply(); } catch { /* */ }'), '_mesaSkinReapply recobra la skin al salir del champ');
-chk(c12.includes('try { this._bolaTinte(this._bolaSkinDef(this._bolaSkinLS())); } catch (eSkin)'), 'salida del hall: restauración consciente de skin (adiós blanco seco)');
+chk(c12.includes('try { this._bolaTinte(this._bolaSkinEfectiva()); } catch (eSkin)'), 'salida del hall: restauración consciente de skin (adiós blanco seco) — r23: efectiva (invitado viste la del host)');
 chk(c12.includes('const rt = this._bolaTrailRest || [0.75, 0.75, 0.75];'), 'estela de reposo = RGB de la skin');
 chk(c12.includes('this.trailUpdate(this.ball, dt, this._trailTint, this._bolaTrailRest)'), 'trailUpdate recibe la base de skin');
 chk(c12.includes('this.chispas.burst({ x: pos.x'), 'chispas en flashMarker (bote)');

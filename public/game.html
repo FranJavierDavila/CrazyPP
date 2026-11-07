@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.117-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.118-SDK6</span>
     </div>
   </main>
 
@@ -960,6 +960,21 @@ const I18N_STRINGS = {
     mesa_lock_wins_stars: '10 victorias — o {n}★ de retos',
     mesa_lock_streak_stars: 'racha de 5 — o {n}★ de retos',
     sala_lock_stars: 'consigue {n}★ en los retos semanales',
+    // r23 (v3.6.118) · HALL DEL ANFITRIÓN (ES) — pared de insignias + visita
+    cat_salahall: 'HALL',
+    sub_hall_sub: 'el Hall del Anfitrión: insignias y skins a la vista',
+    hall_gloria_t: 'PARED DE INSIGNIAS',
+    hall_gloria_peer: 'HALL DEL ANFITRIÓN',
+    hall_gloria_sub: '{w} victorias · racha {r} · {s}★ · ELO {e}',
+    hall_gloria_sub_peer: 'victorias {w} · racha {r} · {s}★ · ELO {e}',
+    hall_stats: '{w} victorias · racha {r} · {s}★ de retos · ELO {e}',
+    hall_visitando: 'Estás viendo EL HALL DEL ANFITRIÓN: su vitrina, su gloria',
+    hall_en_rally: 'En pleno rally no se visita el museo',
+    hall_entrar: '⌂ ENTRAR AL HALL',
+    hall_cosmetica: 'El hall es de todos: conecta online y presume de lo tuyo',
+    hint_sala_bola: 'Las 16 skins de la bola: clásicas, locura y planetas — solo visual',
+    hint_sala_hall: 'Entra al Hall: tus insignias… o las del anfitrión si juegas online',
+    hint_hall_entrar: 'Visita el museo de las insignias (en online, el del anfitrión)',
     // r96 · SALA Y ESCENA: submenús-botón, deslizador de altura, vista en
     // vivo de la sala de partidos y HINTS al apuntar en el menú
     cat_salaroom: 'SALA',
@@ -1867,6 +1882,21 @@ const I18N_STRINGS = {
     mesa_lock_wins_stars: '10 wins — or {n}★ from challenges',
     mesa_lock_streak_stars: '5 streak — or {n}★ from challenges',
     sala_lock_stars: 'earn {n}★ in the weekly challenges',
+    // r23 (v3.6.118) · HALL DEL ANFITRIÓN (EN) — badge wall + visit
+    cat_salahall: 'HALL',
+    sub_hall_sub: 'the Host’s Hall: badges and skins on display',
+    hall_gloria_t: 'BADGE WALL',
+    hall_gloria_peer: 'HOST’S HALL',
+    hall_gloria_sub: '{w} wins · streak {r} · {s}★ · ELO {e}',
+    hall_gloria_sub_peer: 'wins {w} · streak {r} · {s}★ · ELO {e}',
+    hall_stats: '{w} wins · streak {r} · {s}★ challenges · ELO {e}',
+    hall_visitando: 'You are looking at THE HOST’S HALL: his showcase, his glory',
+    hall_en_rally: 'No museum visits mid-rally',
+    hall_entrar: '⌂ ENTER THE HALL',
+    hall_cosmetica: 'The hall belongs to everyone: go online and show yours off',
+    hint_sala_bola: 'All 16 ball skins: classic, crazy and planets — visual only',
+    hint_sala_hall: 'Enter the Hall: your badges… or the host’s when playing online',
+    hint_hall_entrar: 'Visit the badge museum (online: the host’s hall)',
     // r96 · SALA Y ESCENA: button submenus, height slider, live game-room
     // view and HINTS when aiming at menu controls (EN)
     cat_salaroom: 'ROOM',
@@ -3191,7 +3221,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.117-SDK6';
+  const VERSION = '3.6.118-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -9906,6 +9936,132 @@ function drawHallSign(cv, title, sub) {
   }
 }
 
+/* r23 (v3.6.118) · PARED DE INSIGNIAS DEL HALL (F2 · Hall del Anfitrión):
+ * placa de museo 1024×640 que c12.drawHall() repinta con el perfil ACTIVO
+ * (el del dueño… o EL DEL ANFITRIÓN cuando el invitado visita su hall
+ * online). 100 % procedural — misma técnica que los carteles y las
+ * texturas de bola: cero bytes nuevos en el bundle, cero descargas.
+ *  · logros: 6 medallones (emoji + nombre) — oro si está conseguido, gris
+ *    apagado si no: la vitrina que ANIMA a por él.
+ *  · bolas: chips circulares con el color de CADA skin (16) — apagadas las
+ *    que el anfitrión no tiene abiertas.
+ *  · mesas: paletas de color (5) con la misma regla.
+ * Todo lo que pinta llega ya traducido/saneado desde drawHall (c12). */
+function drawHallGloria(cv, d) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const g = x.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#241c15'); g.addColorStop(1, '#120c08');
+  x.fillStyle = g;
+  x.fillRect(0, 0, W, H);
+  x.strokeStyle = '#c9932f'; x.lineWidth = 6;
+  x.strokeRect(8, 8, W - 16, H - 16);
+  x.strokeStyle = 'rgba(201,147,47,0.35)'; x.lineWidth = 2;
+  x.strokeRect(20, 20, W - 40, H - 40);
+  // título en oro con sombra (SIEMPRE cabe: se encoge)
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  const grad = x.createLinearGradient(0, 24, 0, 104);
+  grad.addColorStop(0, '#ffe08a'); grad.addColorStop(1, '#c9932f');
+  let ts = 62;
+  x.font = '900 ' + ts + 'px system-ui, sans-serif';
+  while (x.measureText(d.titulo).width > W - 120 && ts > 30) {
+    ts -= 4;
+    x.font = '900 ' + ts + 'px system-ui, sans-serif';
+  }
+  x.fillStyle = grad;
+  x.shadowColor = 'rgba(0,0,0,.65)'; x.shadowBlur = 10;
+  x.fillText(d.titulo, W / 2, 88);
+  x.shadowBlur = 0;
+  // subtítulo: las CIFRAS del anfitrión (victorias · racha · ★ · ELO)
+  if (d.sub) {
+    x.fillStyle = '#b9a77f';
+    let s2 = 30;
+    x.font = '600 ' + s2 + 'px system-ui, sans-serif';
+    while (x.measureText(d.sub).width > W - 120 && s2 > 16) {
+      s2 -= 2;
+      x.font = '600 ' + s2 + 'px system-ui, sans-serif';
+    }
+    x.fillText(d.sub, W / 2, 128);
+  }
+  // — medallones de LOGROS (6): 2 filas × 3 —
+  const LG = d.logros || [];
+  const mR = 58, mCY = [216, 352], mCX = [222, 512, 802];
+  for (let i = 0; i < Math.min(LG.length, 6); i++) {
+    const L = LG[i];
+    const cx = mCX[i % 3], cy = mCY[Math.floor(i / 3)];
+    x.beginPath(); x.arc(cx, cy, mR, 0, Math.PI * 2);
+    x.fillStyle = L.on ? '#3a2a14' : '#171a20';
+    x.fill();
+    x.lineWidth = 6;
+    x.strokeStyle = L.on ? '#e9b83c' : '#3a4048';
+    x.stroke();
+    if (L.on) {
+      x.beginPath(); x.arc(cx, cy, mR + 8, 0, Math.PI * 2);
+      x.strokeStyle = 'rgba(233,184,60,0.30)'; x.lineWidth = 3;
+      x.stroke();
+    }
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.globalAlpha = L.on ? 1 : 0.30;
+    x.font = '44px system-ui, sans-serif';
+    x.fillText(L.e || '★', cx, cy - 13);
+    x.globalAlpha = 1;
+    x.font = '700 20px system-ui, sans-serif';
+    x.fillStyle = L.on ? '#ffe9a8' : '#5d6570';
+    const nm = String(L.n || '').toUpperCase();
+    x.fillText(nm.length > 15 ? nm.slice(0, 14) + '…' : nm, cx, cy + 33);
+  }
+  // — fila de BOLAS (16 skins): chip circular con el color de la skin —
+  const BY = 486;
+  x.textAlign = 'left'; x.textBaseline = 'middle';
+  x.fillStyle = '#b9a77f';
+  x.font = '700 21px system-ui, sans-serif';
+  x.fillText('BOLA', 52, BY);
+  x.textAlign = 'center';
+  const BL = d.bolas || [];
+  for (let i = 0; i < Math.min(BL.length, 16); i++) {
+    const B = BL[i];
+    const cx = 210 + i * 47;
+    x.globalAlpha = B.on ? 1 : 0.22;
+    x.beginPath(); x.arc(cx, BY, 20, 0, Math.PI * 2);
+    x.fillStyle = B.col || '#ffffff';
+    x.fill();
+    x.lineWidth = 3;
+    x.strokeStyle = B.on ? 'rgba(233,184,60,0.85)' : '#3a4048';
+    x.stroke();
+    if (B.on) {   // brillo de goma: arco alto-izquierdo
+      x.beginPath(); x.arc(cx - 6, BY - 7, 7, Math.PI * 0.9, Math.PI * 1.55);
+      x.strokeStyle = 'rgba(255,255,255,0.75)'; x.lineWidth = 3;
+      x.stroke();
+    }
+    x.globalAlpha = 1;
+  }
+  // — fila de MESAS (5 aspectos): paleta rectangular redondeada —
+  const MY = 560;
+  x.textAlign = 'left';
+  x.fillStyle = '#b9a77f';
+  x.font = '700 21px system-ui, sans-serif';
+  x.fillText('MESA', 52, MY);
+  x.textAlign = 'center';
+  const MS = d.mesas || [];
+  for (let i = 0; i < Math.min(MS.length, 8); i++) {
+    const M = MS[i];
+    const cx = 236 + i * 120;
+    x.globalAlpha = M.on ? 1 : 0.22;
+    if (x.roundRect) {
+      x.beginPath(); x.roundRect(cx - 45, MY - 17, 90, 34, 10);
+      x.fillStyle = M.col || '#17539e';
+      x.fill();
+      x.lineWidth = 3;
+      x.strokeStyle = M.on ? 'rgba(233,184,60,0.85)' : '#3a4048';
+      x.stroke();
+    } else {
+      x.fillStyle = M.col || '#17539e';
+      x.fillRect(cx - 45, MY - 17, 90, 34);
+    }
+    x.globalAlpha = 1;
+  }
+}
+
 function drawHallDoor(cv, label) {
   const x = cv.getContext('2d');
   const W = cv.width, H = cv.height;
@@ -10273,6 +10429,19 @@ function createHall() {
   pulsoMeshR.rotation.y = Math.PI;
   g.add(pulsoMeshR);
 
+  /* r23 (v3.6.118) · PARED DE INSIGNIAS (F2): placa de museo en la pared
+   * FRONTAL (la primera que mira el anfitrión al entrar — z0). drawHall()
+   * (c12) la repinta con el perfil ACTIVO: el propio, o EL DEL ANFITRIÓN
+   * cuando el invitado visita su hall online (hello2 `hp`). */
+  const gloriaCv = hallCanvas(1024, 640);
+  drawHallGloria(gloriaCv, { titulo: '· · ·', sub: '' });
+  const gloriaTex = new THREE.CanvasTexture(gloriaCv);
+  try { gloriaTex.colorSpace = THREE.SRGBColorSpace; gloriaTex.anisotropy = 4; } catch (eTG1) { /* */ }
+  const gloriaMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.00, 1.25),
+    new THREE.MeshBasicMaterial({ map: gloriaTex, transparent: true }));
+  gloriaMesh.position.set(0, 1.60, z0 + 0.012);   // un pelín delante del arte
+  g.add(gloriaMesh);
+
   g.userData.hall = {
     /* v3.6.50 (r58): las SEIS CARAS visten el arte del artista (texs llega
      * async; texWant = contrato de las 6 claves). Del museo sobrevive lo
@@ -10285,6 +10454,7 @@ function createHall() {
     fx: { balls },
     pulsoL: { cv: pulsoCvL, tex: pulsoTexL },   // r84 · placas EL PULSO
     pulsoR: { cv: pulsoCvR, tex: pulsoTexR },
+    gloria: { cv: gloriaCv, tex: gloriaTex },   // r23 · pared de insignias
   };
   return g;
 }
@@ -12204,8 +12374,13 @@ class NetLink {
     // (P2P) o túnel PeerJS activo (el ICE no llegó a abrir pero la sala vive)
     if (!((this._fastOpen && this._relOpen) || this._tunnel) || this.v2 !== 'pending') return;
     // HELLO (reliable): versión de protocolo, build y ballPhysics (spec §3.5)
+    // r23 · + hp: HALL DEL ANFITRIÓN (F2) — perfil OPCIONAL del dueño
+    // (logros, skins, cifras) para vestir la pared de insignias del
+    // invitado. Builds viejos no lo envían ni lo leen (JSON tolerante:
+    // PROTO/PHYS/códec intactos — mismo patrón que `sk`, r21).
     this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD,
-      sk: (this.game && typeof this.game.bolaSkin === 'string' && this.game.bolaSkin) || 'blanca' });   // r21 · skin de bola del dueño (la viste el invitado)
+      sk: (this.game && typeof this.game.bolaSkin === 'string' && this.game.bolaSkin) || 'blanca',   // r21 · skin de bola del dueño (la viste el invitado)
+      hp: (this.game && typeof this.game.hallProfile === 'function') ? this.game.hallProfile() : undefined });   // r23 · hall profile del anfitrión
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
     // r81 · 15 s para el HELLO de respuesta (el ICE ya está abierto aquí:
     // esto sólo cubre un peer colgado a medias)
@@ -12260,6 +12435,12 @@ class NetLink {
         try {
           const skR = (typeof m.sk === 'string') ? m.sk.slice(0, 24) : '';
           if (skR) this.game?.onPeerSkin?.(skR);
+        } catch { /* cosmético: jamás rompe el enlace */ }
+        // r23 (v3.6.118) · HALL DEL ANFITRIÓN (F2): campo OPCIONAL `hp` del
+        // HELLO v2 — el invitado lo sanea en onPeerHall y su hall se viste
+        // con EL DEL ANFITRIÓN. Builds viejos no lo envían y NUNCA lo leen.
+        try {
+          if (m.hp && typeof m.hp === 'object') this.game?.onPeerHall?.(m.hp);
         } catch { /* cosmético: jamás rompe el enlace */ }
         // ráfaga de reloj: 8 intercambios a ~50 ms (spec §3.6)
         for (let i = 0; i < 8; i++) {
@@ -16966,6 +17147,9 @@ class PingPongGame {
    *  reloj del anfitrión (spec §3.8: startAt ≈ ahora + 3000 ms). */
   onNetMatchStart(m) {
     const guest = this.net.role === 'guest';
+    // r23 · si alguien está visitando el museo, la cancha VUELVE antes de
+    // la cuenta atrás (el hall escondía mesa/marcador: nacería invisible)
+    if (this.inHall) this.exitHall();
     this.doblesActivo = false;   // M7c (r119): online JAMÁS lleva dobles
     // r84 · DUELOS LOCOS: el modo lo sella el mstart del anfitrión (md) —
     // antes era 'match' hard-coded; sin eso el invitado jamás jugaba duelos.
@@ -17030,6 +17214,16 @@ class PingPongGame {
     this._netTossLive = false;
     this._netStartWhenReady = false;
     if (this._netVisor) this._netVisor.visible = false;
+    // r23 · fuera perfiles del rival: el hall vuelve a ser el TUYO y la
+    // bola recobra la skin propia (el anfitrión se fue con la suya)
+    this._hallPeer = null;
+    this._peerSkinId = null;
+    if (this.inHall) {
+      this.exitHall();       // visita en curso: la cancha vuelve primero
+      this.enterHall();      // …y re-entra ya con TU perfil repintado
+    } else {
+      try { this._bolaSkinReapply(); } catch { /* */ }
+    }
     this.rules.oppLabel = 'cpu';
     this.resetToss();
     this.aiToss = null;
@@ -19380,6 +19574,11 @@ class PingPongGame {
         this._modeCard(rects, 'page:optsSalaBola', 40, y, 944, CH_CARD,
           T('cat_salabola'), T('sub_bola_sub'), '#e8b45a', '#b3841f', PP_ICONS.mesa);
         y += CH_CARD + 16;
+        // r23 · tarjeta HALL (4.ª de SALA): la estancia de las insignias —
+        // la tuya, o EL DEL ANFITRIÓN cuando juegas online (presumir)
+        this._modeCard(rects, 'page:optsSalaHall', 40, y, 944, CH_CARD,
+          T('cat_salahall'), T('sub_hall_sub'), '#b07aff', '#7a3fc0', PP_ICONS.sala);
+        y += CH_CARD + 16;
         // recordatorio honesto: la mesa es de partidas/entrenamiento
         label(T('mesa_no_champ') + ' · ' + T('mesa_lock_hint'), y + 6, 16, '#93a1b0');
         y += 30;
@@ -19498,6 +19697,31 @@ class PingPongGame {
           y += 28;
         }
         label(T('bola_cosmetica'), y + 2, 16, '#8ce99a');
+        y += 28;
+        break;
+      }
+      case 'salahall': {
+        /* r23 (v3.6.118) · subpágina HALL: entrar a la estancia de las
+         * insignias. Local: la TUYA. Online como invitado: EL DEL ANFITRIÓN
+         * (su perfil viaja en el HELLO v2 y viste la pared). En pleno
+         * rally no se visita el museo (la bola sigue viva). */
+        const per = this._hallPerfil();
+        const pH = per.p;
+        label(per.peer ? T('hall_gloria_peer') : T('hall_gloria_t'), y + 2, 19, '#f0c85a');
+        y += 34;
+        label(T('hall_stats', { w: pH.w, r: pH.bs, s: pH.st, e: pH.el }), y + 2, 16, '#a9b8cc');
+        y += 34;
+        if (per.peer) {
+          label(T('hall_visitando'), y + 2, 16, '#b07aff');
+          y += 28;
+        }
+        if (this.net && this.net.online && this.rules.state === 'rally') {
+          label(T('hall_en_rally'), y + 2, 16, '#ffa94d');
+          y += 28;
+        }
+        btn('hall_entrar', 56, y, 912, 62, T('hall_entrar'), false, undefined, undefined, 25);
+        y += 80;
+        label(T('hall_cosmetica'), y + 2, 16, '#8ce99a');
         y += 28;
         break;
       }
@@ -20284,6 +20508,8 @@ class PingPongGame {
       'page:optsPerfil': 'hint_cat_perfil', 'page:optsRendi': 'hint_cat_rendi',
       'page:optsPala': 'hint_cat_pala',
       'page:optsSalaRoom': 'hint_sala_sala', 'page:optsSalaMesa': 'hint_sala_mesa',
+      'page:optsSalaBola': 'hint_sala_bola',
+      'page:optsSalaHall': 'hint_sala_hall', 'hall_entrar': 'hint_hall_entrar',
       'start': 'hint_modo_match', 'traingo': 'hint_modo_train',
       'survgo': 'hint_modo_surv', 'tab:multi': 'hint_modo_multi',
       'page:champs': 'hint_modo_champs', 'wrl:open': 'hint_modo_rank',
@@ -20488,7 +20714,7 @@ class PingPongGame {
             arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi' ||
             arg === 'optsPala' ||
             arg === 'optsSalaRoom' || arg === 'optsSalaMesa' ||
-            arg === 'optsSalaBola') {   // r96 · submenús SALA/MESA · r21 · BOLA
+            arg === 'optsSalaBola' || arg === 'optsSalaHall') {   // r96 · submenús SALA/MESA · r21 · BOLA · r23 · HALL
           this.menuPage = arg;
           this._resetArm = false;
           if (arg === 'champs') {
@@ -21179,6 +21405,20 @@ class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'hall_entrar': {
+        // r23 · ENTRAR AL HALL desde el menú — también ONLINE (visita al
+        // Hall del Anfitrión). En pleno rally no se sale: mensaje y fuera.
+        if (this.net && this.net.online && this.rules.state === 'rally') {
+          this.rules.message = T('hall_en_rally');
+          this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          this.drawMenu();
+        } else {
+          this.closeMenu();
+          this.enterHall();
+          this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+        }
+        break;
+      }
       case 'music': {
         // v2.29: música de fondo (portada + menú en VR), preferencia
         // compartida con el botón 🔊 de la portada
@@ -21601,6 +21841,83 @@ class PingPongGame {
         this._bolaTinte(bolaAspectoPorId(limpio));
       }
     } catch { /* */ }
+  }
+
+  /* ====================================================================
+   *  r23 (v3.6.118) · HALL DEL ANFITRIÓN — F2 · la vitrina que PRESUME
+   *  ====================================================================
+   *  Petición del dueño: «en la partida multijugador sería posible que
+   *  ambos jugadores se encuentren en el Hall del Anfitrión (sería una
+   *  forma de presumir de lo conseguido por este, pues el Hall mostrará
+   *  las insignias, y otras mejoras conseguidas, lo que puede ser un
+   *  motivo para que otros jugadores quieran esos logros cosméticos para
+   *  sus Halls también)».
+   *
+   *  · El ANFITRIÓN viaja en su HELLO v2 con `hp` (hall profile): un
+   *    objeto OPCIONAL y compacto — victorias, mejor racha, estrellas de
+   *    retos, ELO, logros ACHIEVEMENTS y skins de bola/mesa desbloqueadas.
+   *    Builds viejos no lo envían ni lo leen (JSON tolerante, como `sk`).
+   *  · El INVITADO lo sanea (onPeerHall) y su hall SE VISTE con él:
+   *    pared de insignias procedural (c08 drawHallGloria) + estado real.
+   *    Si el invitado está DENTRO del hall cuando llega el hello, la
+   *    placa repinta al vuelo: ambos jugadores SE ENCUENTRAN en el hall
+   *    del anfitrión sin teleportes forzados.
+   *  · La visita en persona: enterHall() ahora admite online (modo
+   *    _hallVisit — la física de red sigue viva detrás del museo).
+   *  · Todo es COSMÉTICO: cero cambios en física, árbitro ni códec.
+   *  ==================================================================== */
+  /** Perfil COMPACTO del dueño para el HELLO v2 (campo hp). Números
+   *  acotados e ids filtrados: el paquete ronda ~150 B. */
+  hallProfile() {
+    const d = (this.stats && this.stats.data) || {};
+    const libre = (s) => !s.lock || this._mesaLibre(s.lock);
+    return {
+      w: d.won | 0, bs: d.bestStreak | 0, st: this._retosEstrellas() | 0,
+      el: Math.round(d.elo || 1000),
+      a: ACHIEVEMENTS.filter((x) => d.ach && d.ach[x.key]).map((x) => x.key).slice(0, 8),
+      bl: BOLA_ASPECTOS.filter(libre).map((s) => s.id).slice(0, 16),
+      ms: MESA_ASPECTOS.filter(libre).map((s) => s.id).slice(0, 8),
+    };
+  }
+  /** Perfil del RIVAL (HELLO v2): saneado a fondo — el taller confía,
+   *  el render no. Números acotados, ids contra catálogo, arrays con tope. */
+  onPeerHall(hp) {
+    try {
+      if (!hp || typeof hp !== 'object') return;
+      const num = (v) => { const n = +v; return isFinite(n) ? Math.max(0, Math.min(99999, n | 0)) : 0; };
+      const ids = (arr, ok, max) => (Array.isArray(arr) ? arr : [])
+        .filter((s) => typeof s === 'string' && ok.indexOf(s) >= 0)
+        .slice(0, max);
+      const A_OK = ACHIEVEMENTS.map((x) => x.key);
+      const B_OK = BOLA_ASPECTOS.map((s) => s.id);
+      const M_OK = MESA_ASPECTOS.map((s) => s.id);
+      this._hallPeer = {
+        w: num(hp.w), bs: num(hp.bs), st: num(hp.st), el: num(hp.el) || 1000,
+        a: ids(hp.a, A_OK, 8), bl: ids(hp.bl, B_OK, 16), ms: ids(hp.ms, M_OK, 8),
+      };
+      // el invitado CONECTA DESDE SU HALL (la sesión nace ahí): si sigue
+      // dentro, la pared de insignias se viste con el anfitrión AL VUELO
+      if (this.net && this.net.online && this.net.role === 'guest' && this.inHall) {
+        this.drawHall();
+      }
+    } catch { /* cosmético: jamás rompe el enlace */ }
+  }
+  /** Perfil ACTIVO de la placa del hall: el propio… o EL DEL ANFITRIÓN
+   *  cuando juegas online como invitado (el hall que visitas es EL SUYO). */
+  _hallPerfil() {
+    if (this._hallPeer && this.net && this.net.online && this.net.role === 'guest') {
+      return { p: this._hallPeer, peer: true };
+    }
+    return { p: this.hallProfile(), peer: false };
+  }
+  /** r23 · skin EFECTIVA de la bola para RESTAURACIONES (hall/cancha):
+   *  online el invitado vuelve SIEMPRE a la del anfitrión (_peerSkinId,
+   *  r22), nunca a la propia — sin tocar la regla del campeonato. */
+  _bolaSkinEfectiva() {
+    if (this.net && this.net.online && this.net.role === 'guest' && this._peerSkinId) {
+      return bolaAspectoPorId(this._peerSkinId);
+    }
+    return this._bolaSkinDef(this._bolaSkinLS());
   }
 
   /* ====================================================================
@@ -27177,8 +27494,11 @@ class PingPongGame {
 
     // 7) Sincronizar visuales
     this.ballMesh.position.copy(this.ball.pos);
-    this.ballMesh.rotation.x += this.ball.spin.x * dt * 0.05;
-    this.ballMesh.rotation.y += this.ball.spin.y * dt * 0.05;
+    // r23 (v3.6.118) · SPIN VISIBLE (F1): la bola GIRA sobre el eje de su
+    // ω real (antes: Euler X/Y con factor 0.05 — la textura parecía pintada
+    // y estática). El latigazo del bote sale GRATIS: la fricción de la
+    // física ya actualiza ω en cada rebote (c04 bounceOnTable).
+    this._bolaSpinTick(dt);
     this.apexPulse = Math.max(0, this.apexPulse - dt * 2.2);
     const ballHeld = holdLock;
     this.ballMesh.material.emissiveIntensity = ballHeld
@@ -27267,7 +27587,9 @@ class PingPongGame {
           this.aiPaddleMesh.position.lerp(netTmpV, f2);
           this.aiPaddleMesh.quaternion.slerp(netTmpQ, f2);
         }
-        this.aiPaddleMesh.visible = true;
+        // r23 · durante la VISITA al hall el avatar del rival duerme (el
+        // museo no tiene cancha: ni pala ni visor flotando entre cuadros)
+        this.aiPaddleMesh.visible = !this.inHall;
         // visor del rival: presencia mínima a partir de la CABEZA del packet
         if (!this._netVisor) {
           const vg = new THREE.SphereGeometry(0.06, 12, 10);
@@ -27276,7 +27598,7 @@ class PingPongGame {
           this.scene.add(this._netVisor);
         }
         const stale = this.net.avatarStaleMs();
-        const show = code >= 0 && stale < 500;
+        const show = code >= 0 && stale < 500 && !this.inHall;   // r23: tampoco el visor
         this._netVisor.visible = show;
         if (show) {
           NetLink.posFromNetPose(smp.hp, netTmpP);   // r81: pose, no bola
@@ -27306,7 +27628,7 @@ class PingPongGame {
           this.aiPaddleMesh.position.lerp(netTmpP, f);
           this.aiPaddleMesh.quaternion.slerp(netTmpQ, f);
         }
-        this.aiPaddleMesh.visible = true;
+        this.aiPaddleMesh.visible = !this.inHall;   // r23: silencio visual en la visita
       }
     } else {
       // v2.40: congelado — la pala IA conserva su última pose
@@ -27489,16 +27811,52 @@ class PingPongGame {
     return SERVE_ASSIST_TIERS[this.difficulty] || SERVE_ASSIST_TIERS.medium;
   }
 
+  /* r23 (v3.6.118) · SPIN VISIBLE DE LA BOLA (F1) — la física de c04/c05
+   * lleva AÑOS calculando el vector de giro ω (ball.spin, rad/s en ejes
+   * mundo: Magnus y el bote lo consumen). Esto es SOLO la capa de render:
+   * cada tick el mesh gira sobre ese eje EXACTO, de modo que la textura
+   * rueda en la dirección del efecto (top la revienta hacia delante, back
+   * la frena y el lateral la torce). Ganancia 0.14: con |ω|=110 (tope
+   * spinMax) la bola marca ~2,4 rev/s — legible a 72 Hz sin estrobar; con
+   * |ω|=25 (EFECTO_SPIN_MIN) ~0,6 rev/s, claramente perceptible. El factor
+   * físico 1:1 sería invisible (17 rev/s = ruido de aliasing).
+   * F1b · RED: ω YA viaja al invitado — v1 lo trae en el stream ('h' y
+   * estado de bola con s:[x,y,z], spinFromNet) y v2 lo traen los eventos
+   * HIT/TOSS/HANDOFF (ev.s) mientras el fantasma de la mitad propia sigue
+   * simulando con la física real (spin vivo local). Cero código nuevo de
+   * red: el invitado ya recibe el mismo ω y ve el MISMO giro.
+   * Física intacta: c04/c05 no conocen el mesh (garantía del test r23). */
+  _bolaSpinTick(dt) {
+    const m = this.ballMesh;
+    const spin = this.ball && this.ball.spin;
+    if (!m || !spin) return;
+    const w = spin.length();
+    if (w < 0.5) return;   // bola quieta: reposo honesto (sin giro fantasma)
+    BOLA_SPIN_AX.set(spin.x, spin.y, spin.z).multiplyScalar(1 / w);
+    m.rotateOnWorldAxis(BOLA_SPIN_AX, w * dt * BOLA_SPIN_GANANCIA);
+    // Saturno: el aro viaja con la bola (es parte del objeto — el planeta
+    // gira y SU aro con él). Cero compensación: código 100 % cosmético.
+  }
+
   /* v3.0.9-HALL1 · ENTRAR EN EL HALL DEL ANFITRIÓN — la sesión VR nace en
    * la estancia (nunca en la cancha vacía): el menú principal se abre aquí
    * delante y la pared de trofeos luce lo conseguido. Passthrough (inAR)
-   * y online se quedan como estaban: el hall es una sala virtual y ahí no
-   * la hay. El jugador aparece junto a la puerta, de cara a los trofeos. */
+   * se queda como estaba.
+   * r23 (v3.6.118) · ONLINE TAMBIÉN ENTRA (F2): ambos jugadores pueden
+   * estar en el Hall del Anfitrión — el invitado visita EL DEL ANFITRIÓN
+   * (su perfil viaja en el HELLO v2, campo hp, y viste la pared de
+   * insignias). Reglas de la visita: no se entra en pleno rally y la
+   * física de red NO se toca (sin startMatch ni reset de bola: el fantasma
+   * v2 / el stream v1 siguen vivos detrás del decorado — _hallVisit). */
   enterHall() {
     if (this.inHall || (this.inAR && this.pstOn)) return;
-    if (this.net && this.net.online) return;
+    const online = !!(this.net && this.net.online);
+    if (online && this.rules.state === 'rally') return;
     this.inHall = true;
-    this._megaNormReset();   // v3.6.34: el hall es zona neutra — pala como siempre
+    this._hallVisit = online;
+    if (!online) {
+      this._megaNormReset();   // v3.6.34: el hall es zona neutra — pala como siempre
+    }
     this.rig.position.set(0, 0, HALL.cz + 2.3);
     // v3.5.0-ESC1 · HALL SIN ARRASTRES (informe del dueño: «al volver al Hall
     // desde un campeonato puede quedar la pelota sobre la mesa sin aparecer
@@ -27510,10 +27868,19 @@ class PingPongGame {
     // escala/color/base por defecto y sin
     // estela. Los módulos ya restauran lo suyo en leave(); esto es la red de
     // seguridad del NÚCLEO, sirve igual al arrancar sesión.
-    this.rules.startMatch(this.mode === 'survival' ? 'survival' : 'match');
-    this.resetToss();
-    this.aiToss = null;
-    this.demoToss = null;
+    if (!online) {
+      // arranque LIMPIO local (como siempre): árbitro a cero y bola en saque
+      this.rules.startMatch(this.mode === 'survival' ? 'survival' : 'match');
+      this.resetToss();
+      this.aiToss = null;
+      this.demoToss = null;
+    } else {
+      // r23 · visita online: la bola SIGUE VIVA (fantasma v2 / stream v1) —
+      // sólo se esconde su malla: ni posición ni velocidad ni spin se tocan
+      if (this.ballMesh) this.ballMesh.visible = false;
+      if (this.trailObj) this.trailObj.visible = false;
+      if (this.blob) this.blob.visible = false;
+    }
     // v3.6.30 · HALL SIN PALA NI BOLA (informe del dueño: «en el hall no
     // tiene sentido que tengamos la pala y la pelota, ahí nunca se va a
     // jugar»): la estancia es un museo, no una cancha. La bola nace OCULTA
@@ -27521,7 +27888,7 @@ class PingPongGame {
     // ballMesh.visible, así que no hay repintado que la resucite) y la pala
     // de AMBOS mandos se apaga (exitHall la reenciende según paddleHand).
     // El gesto de saque sigue intacto al volver a la cancha.
-    this._hallResetBall(true);
+    if (!online) this._hallResetBall(true);   // r23: en visita la bola no se resetea
     for (const m of this.paddleMounts || []) if (m) m.visible = false;
     // v3.0.9-HALL1 · EL MUNDO VIVE DENTRO DEL RIG (mesa, IA y marcador son
     // hijos del rig — así funciona el recentrado de sala completa): al
@@ -27561,9 +27928,10 @@ class PingPongGame {
       this.ballMesh.visible = !hide;
       this.ballMesh.scale.setScalar(1);
       this.ballMesh.position.copy(this.ball.pos);
-      // r21 · restaurar la SKIN del dueño (antes: blanco seco — un champ
-      // podía dejar la bola blanca para siempre en partidas normales)
-      try { this._bolaTinte(this._bolaSkinDef(this._bolaSkinLS())); } catch (eSkin) {
+      // r21 · restaurar la skin EFECTIVA del dueño (r23: online el invitado
+      // viste la DEL ANFITRIÓN — antes un pase por el hall la devolvía a la
+      // propia y desvestía la skin del anfitrión)
+      try { this._bolaTinte(this._bolaSkinEfectiva()); } catch (eSkin) {
         const bm = this.ballMesh.material;
         if (bm) {
           try { bm.color.setHex(0xffffff); } catch (e0) { /* */ }
@@ -27579,15 +27947,25 @@ class PingPongGame {
    * guardapolvo y deja la sala exactamente como estaba (passthrough incl.). */
   exitHall() {
     if (!this.inHall) return;
+    const visita = !!this._hallVisit;   // r23 · visita online: salida sin tocar la bola
     this.inHall = false;
+    this._hallVisit = false;
     this._salaPreview = false;   // r96: la vista de sala no sobrevive a la cancha
     this.rig.position.set(0, 0, 0);
     for (const o of this._hallHidden || []) o.visible = true;
     this._hallHidden = null;
     if (this.hallGroup) this.hallGroup.visible = false;
     if (this.roomGroup && !(this.inAR && this.pstOn)) this.roomGroup.visible = true;
-    // v3.5.0-ESC1 · bola limpia al volver a la cancha (nada del hall arrastrado)
-    this._hallResetBall(false);
+    if (visita) {
+      // r23 · la bola vuelve TAL CUAL (la física de red siguió viva detrás
+      // del decorado: ni posición, ni velocidad, ni spin se tocan)
+      if (this.ballMesh) this.ballMesh.visible = true;
+      if (this.trailObj) this.trailObj.visible = this.showTrail !== false;
+      if (this.blob) this.blob.visible = true;
+    } else {
+      // v3.5.0-ESC1 · bola limpia al volver a la cancha (nada del hall arrastrado)
+      this._hallResetBall(false);
+    }
     // M4 (r111) · GUÍA DEL PRIMER SAQUE: al pisar la cancha real se oferta
     // (todos los caminos a la cancha pasan por aquí; nunca rompe).
     try { this._srvGuideTry(); } catch (eSG) { /* nunca rompe */ }
@@ -27774,6 +28152,31 @@ class PingPongGame {
         ud.pulsoR.tex.needsUpdate = true;
       }
     } catch (eHP) { /* el cartel nunca rompe la entrada al hall */ }
+    // r23 (v3.6.118) · PARED DE INSIGNIAS (F2): la placa del frente repinta
+    // el perfil ACTIVO — el dueño ve el suyo; el invitado online ve EL DEL
+    // ANFITRIÓN (su hello trajo hp). Logros, skins de bola y mesas: lo
+    // conseguido luce y lo pendiente invita (vitrina que anima).
+    try {
+      const udG = this.hallGroup && this.hallGroup.userData && this.hallGroup.userData.hall;
+      if (udG && udG.gloria) {
+        const per = this._hallPerfil();
+        const p = per.p;
+        const achSet = {};
+        for (const k of p.a) achSet[k] = true;
+        const hex = (n) => '#' + ('000000' + (n || 0xffffff).toString(16)).slice(-6);
+        drawHallGloria(udG.gloria.cv, {
+          titulo: per.peer ? T('hall_gloria_peer') : T('hall_gloria_t'),
+          sub: T(per.peer ? 'hall_gloria_sub_peer' : 'hall_gloria_sub',
+            { w: p.w, r: p.bs, s: p.st, e: p.el }),
+          logros: ACHIEVEMENTS.map((a0) => ({
+            e: a0.emoji, n: T(a0.nameKey), on: !!achSet[a0.key],
+          })),
+          bolas: BOLA_ASPECTOS.map((s) => ({ col: hex(s.color), on: p.bl.indexOf(s.id) >= 0 })),
+          mesas: MESA_ASPECTOS.map((s) => ({ col: hex(s.top), on: p.ms.indexOf(s.id) >= 0 })),
+        });
+        udG.gloria.tex.needsUpdate = true;
+      }
+    } catch (eHG) { /* la placa nunca rompe la entrada al hall */ }
   }
 
   updateRecenter() {
@@ -28555,6 +28958,10 @@ class PingPongGame {
     }
   }
 }
+/* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
+ * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
+const BOLA_SPIN_AX = new THREE.Vector3();
+const BOLA_SPIN_GANANCIA = 0.14;   // rad visibles por rad de ω (ver _bolaSpinTick)
 /* =====================================================================
  *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy

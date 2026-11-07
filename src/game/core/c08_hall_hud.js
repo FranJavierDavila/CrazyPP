@@ -79,6 +79,132 @@ export function drawHallSign(cv, title, sub) {
   }
 }
 
+/* r23 (v3.6.118) · PARED DE INSIGNIAS DEL HALL (F2 · Hall del Anfitrión):
+ * placa de museo 1024×640 que c12.drawHall() repinta con el perfil ACTIVO
+ * (el del dueño… o EL DEL ANFITRIÓN cuando el invitado visita su hall
+ * online). 100 % procedural — misma técnica que los carteles y las
+ * texturas de bola: cero bytes nuevos en el bundle, cero descargas.
+ *  · logros: 6 medallones (emoji + nombre) — oro si está conseguido, gris
+ *    apagado si no: la vitrina que ANIMA a por él.
+ *  · bolas: chips circulares con el color de CADA skin (16) — apagadas las
+ *    que el anfitrión no tiene abiertas.
+ *  · mesas: paletas de color (5) con la misma regla.
+ * Todo lo que pinta llega ya traducido/saneado desde drawHall (c12). */
+export function drawHallGloria(cv, d) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const g = x.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#241c15'); g.addColorStop(1, '#120c08');
+  x.fillStyle = g;
+  x.fillRect(0, 0, W, H);
+  x.strokeStyle = '#c9932f'; x.lineWidth = 6;
+  x.strokeRect(8, 8, W - 16, H - 16);
+  x.strokeStyle = 'rgba(201,147,47,0.35)'; x.lineWidth = 2;
+  x.strokeRect(20, 20, W - 40, H - 40);
+  // título en oro con sombra (SIEMPRE cabe: se encoge)
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  const grad = x.createLinearGradient(0, 24, 0, 104);
+  grad.addColorStop(0, '#ffe08a'); grad.addColorStop(1, '#c9932f');
+  let ts = 62;
+  x.font = '900 ' + ts + 'px system-ui, sans-serif';
+  while (x.measureText(d.titulo).width > W - 120 && ts > 30) {
+    ts -= 4;
+    x.font = '900 ' + ts + 'px system-ui, sans-serif';
+  }
+  x.fillStyle = grad;
+  x.shadowColor = 'rgba(0,0,0,.65)'; x.shadowBlur = 10;
+  x.fillText(d.titulo, W / 2, 88);
+  x.shadowBlur = 0;
+  // subtítulo: las CIFRAS del anfitrión (victorias · racha · ★ · ELO)
+  if (d.sub) {
+    x.fillStyle = '#b9a77f';
+    let s2 = 30;
+    x.font = '600 ' + s2 + 'px system-ui, sans-serif';
+    while (x.measureText(d.sub).width > W - 120 && s2 > 16) {
+      s2 -= 2;
+      x.font = '600 ' + s2 + 'px system-ui, sans-serif';
+    }
+    x.fillText(d.sub, W / 2, 128);
+  }
+  // — medallones de LOGROS (6): 2 filas × 3 —
+  const LG = d.logros || [];
+  const mR = 58, mCY = [216, 352], mCX = [222, 512, 802];
+  for (let i = 0; i < Math.min(LG.length, 6); i++) {
+    const L = LG[i];
+    const cx = mCX[i % 3], cy = mCY[Math.floor(i / 3)];
+    x.beginPath(); x.arc(cx, cy, mR, 0, Math.PI * 2);
+    x.fillStyle = L.on ? '#3a2a14' : '#171a20';
+    x.fill();
+    x.lineWidth = 6;
+    x.strokeStyle = L.on ? '#e9b83c' : '#3a4048';
+    x.stroke();
+    if (L.on) {
+      x.beginPath(); x.arc(cx, cy, mR + 8, 0, Math.PI * 2);
+      x.strokeStyle = 'rgba(233,184,60,0.30)'; x.lineWidth = 3;
+      x.stroke();
+    }
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.globalAlpha = L.on ? 1 : 0.30;
+    x.font = '44px system-ui, sans-serif';
+    x.fillText(L.e || '★', cx, cy - 13);
+    x.globalAlpha = 1;
+    x.font = '700 20px system-ui, sans-serif';
+    x.fillStyle = L.on ? '#ffe9a8' : '#5d6570';
+    const nm = String(L.n || '').toUpperCase();
+    x.fillText(nm.length > 15 ? nm.slice(0, 14) + '…' : nm, cx, cy + 33);
+  }
+  // — fila de BOLAS (16 skins): chip circular con el color de la skin —
+  const BY = 486;
+  x.textAlign = 'left'; x.textBaseline = 'middle';
+  x.fillStyle = '#b9a77f';
+  x.font = '700 21px system-ui, sans-serif';
+  x.fillText('BOLA', 52, BY);
+  x.textAlign = 'center';
+  const BL = d.bolas || [];
+  for (let i = 0; i < Math.min(BL.length, 16); i++) {
+    const B = BL[i];
+    const cx = 210 + i * 47;
+    x.globalAlpha = B.on ? 1 : 0.22;
+    x.beginPath(); x.arc(cx, BY, 20, 0, Math.PI * 2);
+    x.fillStyle = B.col || '#ffffff';
+    x.fill();
+    x.lineWidth = 3;
+    x.strokeStyle = B.on ? 'rgba(233,184,60,0.85)' : '#3a4048';
+    x.stroke();
+    if (B.on) {   // brillo de goma: arco alto-izquierdo
+      x.beginPath(); x.arc(cx - 6, BY - 7, 7, Math.PI * 0.9, Math.PI * 1.55);
+      x.strokeStyle = 'rgba(255,255,255,0.75)'; x.lineWidth = 3;
+      x.stroke();
+    }
+    x.globalAlpha = 1;
+  }
+  // — fila de MESAS (5 aspectos): paleta rectangular redondeada —
+  const MY = 560;
+  x.textAlign = 'left';
+  x.fillStyle = '#b9a77f';
+  x.font = '700 21px system-ui, sans-serif';
+  x.fillText('MESA', 52, MY);
+  x.textAlign = 'center';
+  const MS = d.mesas || [];
+  for (let i = 0; i < Math.min(MS.length, 8); i++) {
+    const M = MS[i];
+    const cx = 236 + i * 120;
+    x.globalAlpha = M.on ? 1 : 0.22;
+    if (x.roundRect) {
+      x.beginPath(); x.roundRect(cx - 45, MY - 17, 90, 34, 10);
+      x.fillStyle = M.col || '#17539e';
+      x.fill();
+      x.lineWidth = 3;
+      x.strokeStyle = M.on ? 'rgba(233,184,60,0.85)' : '#3a4048';
+      x.stroke();
+    } else {
+      x.fillStyle = M.col || '#17539e';
+      x.fillRect(cx - 45, MY - 17, 90, 34);
+    }
+    x.globalAlpha = 1;
+  }
+}
+
 export function drawHallDoor(cv, label) {
   const x = cv.getContext('2d');
   const W = cv.width, H = cv.height;
@@ -446,6 +572,19 @@ export function createHall() {
   pulsoMeshR.rotation.y = Math.PI;
   g.add(pulsoMeshR);
 
+  /* r23 (v3.6.118) · PARED DE INSIGNIAS (F2): placa de museo en la pared
+   * FRONTAL (la primera que mira el anfitrión al entrar — z0). drawHall()
+   * (c12) la repinta con el perfil ACTIVO: el propio, o EL DEL ANFITRIÓN
+   * cuando el invitado visita su hall online (hello2 `hp`). */
+  const gloriaCv = hallCanvas(1024, 640);
+  drawHallGloria(gloriaCv, { titulo: '· · ·', sub: '' });
+  const gloriaTex = new THREE.CanvasTexture(gloriaCv);
+  try { gloriaTex.colorSpace = THREE.SRGBColorSpace; gloriaTex.anisotropy = 4; } catch (eTG1) { /* */ }
+  const gloriaMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.00, 1.25),
+    new THREE.MeshBasicMaterial({ map: gloriaTex, transparent: true }));
+  gloriaMesh.position.set(0, 1.60, z0 + 0.012);   // un pelín delante del arte
+  g.add(gloriaMesh);
+
   g.userData.hall = {
     /* v3.6.50 (r58): las SEIS CARAS visten el arte del artista (texs llega
      * async; texWant = contrato de las 6 claves). Del museo sobrevive lo
@@ -458,6 +597,7 @@ export function createHall() {
     fx: { balls },
     pulsoL: { cv: pulsoCvL, tex: pulsoTexL },   // r84 · placas EL PULSO
     pulsoR: { cv: pulsoCvR, tex: pulsoTexR },
+    gloria: { cv: gloriaCv, tex: gloriaTex },   // r23 · pared de insignias
   };
   return g;
 }

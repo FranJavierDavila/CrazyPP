@@ -1,10 +1,10 @@
 {
-  "version": "3.6.117-SDK6",
-  "fase": 119,
-  "faseNombre": "skins de bola",
+  "version": "3.6.118-SDK6",
+  "fase": 120,
+  "faseNombre": "spin visible + hall del anfitrion",
   "sdk": "1.6.0",
   "fecha": "2026-11-07",
-  "hub": "v36117-sdk6",
+  "hub": "v36118-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 10756498,
-  "golden": "348de39c5ad727972fbacd9216717f610f968ff6fe6e5761b508c254dae396d9"
+  "tamano": 10777222,
+  "golden": "261954e70046906f82854770b7678268b95c20120b14e0778fd3e2a96b39d1c4"
 }

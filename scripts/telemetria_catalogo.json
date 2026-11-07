@@ -1,8 +1,8 @@
 {
   "catalogo": "telemetria-crazypp",
-  "version": "v8",
+  "version": "v9",
   "actualizado": "r115 · M5b escalera de carrera",
-  "ronda": 115,
+  "ronda": 123,
   "politica_pii": {
     "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
     "sin_ip": true,
@@ -413,6 +413,29 @@
           "desc": "acción registrada: 'start' (partido de dobles arrancado)"
         }
       ]
+    },
+    {
+      "nombre": "net_ice",
+      "origen": "src/game/core/c09_red_netlink.js (r20/r22) — ciclo de vida del ICE",
+      "momento": "cuando el ICE de la sala online pasa de estado (fallos, túnel, srflx ok)",
+      "campos": [
+        {
+          "nombre": "st",
+          "tipo": "string",
+          "desc": "estado del enlace: failed | ok | tunel"
+        },
+        {
+          "nombre": "v2",
+          "tipo": "string",
+          "desc": "transporte v2 resultante (ok/pending/off)"
+        },
+        {
+          "nombre": "tun",
+          "tipo": "boolean",
+          "desc": "¿el enlace vive por el túnel PeerJS?"
+        }
+      ],
+      "pii": "sin PII — métrica técnica de red (patrón net_match)"
     }
   ],
   "hallazgos_ronda6": [
@@ -474,5 +497,5 @@
       "curva": "muestras {m: minutos desde vr_start, fps} — hasta 24 por ciclo; dibuja la caída o estabilidad del rendimiento DENTRO de la sesión"
     }
   },
-  "nota_r119": "r119 (M7c): +dobles (19 eventos) — arranque del prototipo DOBLES 2v2; sin PII."
+  "nota_r119": "r123 · +net_ice (r20/r22 ya lo emitía; el catálogo no lo documentaba — deriva sellada en la r23)"
 }

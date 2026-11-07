@@ -1,10 +1,10 @@
 {
-  "version": "3.6.119-SDK6",
-  "fase": 121,
-  "faseNombre": "spin realista + hall cabana",
+  "version": "3.6.120-SDK6",
+  "fase": 122,
+  "faseNombre": "super red + super electricidad + bola blindada",
   "sdk": "1.6.0",
   "fecha": "2026-11-07",
-  "hub": "v36119-sdk6",
+  "hub": "v36120-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 10787766,
-  "golden": "50fc0842076bd36b0d9d9fcffcb9a9f9f8c9d3131fe5c32d185c5af0d3ba0572"
+  "tamano": 10972943,
+  "golden": "db4ad92b7c2d4b95d006f4c13b21e4818cfd7588be6801666c078333d31132eb"
 }

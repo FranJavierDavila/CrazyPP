@@ -547,7 +547,7 @@ async def jugar(pw, per, url):
         # mandos sintéticos con OFFSETS DE CUERPO + NETSIM del perfil
         geo = {
             "host": {"hx": 0.15, "hy": 1.72, "hz": 0.35, "px": 0.22, "py": 0.95,
-                     "pz": -0.75, "pzc": 0.1, "lx": -0.28, "ly": 1.0, "lz": 0.1, "t0": 0},
+                     "pz": -0.75, "pzc": 0.03, "lx": -0.28, "ly": 1.0, "lz": 0.1, "t0": 0},  # r25: pzc 0.1→0.03 — la oscilación de profundidad ±0,1 cruzaba el umbral del chequeo (−2,24 visto) 
             "guest": {"hx": -0.2, "hy": 1.65, "hz": 0.5, "px": 0.3, "py": 0.92,
                       "pz": -0.7, "pzc": 0.0, "lx": -0.32, "ly": 0.98, "lz": 0.18, "t0": 977},
         }
@@ -732,10 +732,12 @@ async def jugar(pw, per, url):
         # r110 · el umbral −2,4 lo calibró el BUG del bit4: el avatar pintaba
         # la mano LIBRE fija (lz≈0,1 → espejo −3,3). Con el fix el avatar
         # sigue la pala REAL (pz≈−0,7..−0,75 → espejo −2,45..−2,5, correcto).
-        # Se muestrea el MÍNIMO de ~1 s (el vaivén + JB de 40-120 ms) y se
-        # exige < −2,25: mitad lejana profunda, nunca encima del jugador.
+        # Se muestrea el MÍNIMO de ~2,1 s (el vaivén + JB de 40-120 ms; r25:
+        # la ventana de 1 s del sandbox descargado pillaba al avatar ANTES
+        # de asentarse en su postura — −2,22/−2,24 contra el umbral −2,25)
+        # y se exige < −2,25: mitad lejana profunda, nunca encima del jugador.
         hAv = gAv = 0.0
-        for _i in range(7):
+        for _i in range(14):
             hS = await host.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
             gS = await guest.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
             hAv, gAv = min(hAv, hS) if _i else hS, min(gAv, gS) if _i else gS

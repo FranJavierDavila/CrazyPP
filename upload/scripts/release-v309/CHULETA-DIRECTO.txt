@@ -1,0 +1,41 @@
+==========================================================
+CRAZY PING PONG · V3.0.9-HALL1 · CHULETA DIRECTA
+==========================================================
+
+LA VERSIÓN EN 30 SEGUNDOS
+-------------------------
+· FÍSICA VIVA: la goma roza y ARRASTRA la bola; bloquear un topspin
+  ya no limpia el efecto (lo revierte); el CANTO de la hoja pega
+  sordo; al BOTAR, el topspin patea hacia delante, el backspin frena
+  en seco y el lateral desvía — todo escala con la velocidad.
+· PALAS CON CARÁCTER: las pieles del entrenamiento ya son juego.
+    FUEGO    → OFENSIVA  (+12 % potencia · +8 % efecto · canto castiga)
+    HIELO    → DEFENSIVA (+30 % control · el canto perdona)
+    ORO      → POTENCIA  (golpes más fuertes)
+    ARCOÍRIS → EFECTO    (+22 % de brush y agarre)
+    PRO CARBON → DOBLE GOMA por caras (A giro · B dura), teñidas
+      en el visor: cian = goma de giro, naranja = goma dura.
+  Las equipas en el HUB de entrenamiento (PRO TRAINING · pieles).
+  La IA siempre juega neutra.
+· Interruptores en el código (DIMS): physicsRealism y paddlePerks
+  a 0 devuelven el comportamiento exacto de siempre.
+
+SUBIR EL JUEGO (2 MINUTOS)
+-------------------------
+1. Descomprime el paquete.
+2. Netlify Drop: arrastra la carpeta a https://app.netlify.com/drop
+   (Cloudflare Pages: usa el paquete CLOUDFLARE, es estático puro).
+3. Abre el enlace en el Meta Quest 3 y pulsa JUGAR EN VR.
+
+CRAZY TV EN VIVO (OPCIONAL)
+---------------------------
+1. Antena: cd live-service && npm install && node server.mjs
+   (prueba sin Quest: node tools/mock_host.mjs → canal DEMO).
+2. Quest:  https://tu-enlace/?relay=http://IP:3004
+   TV:     https://tu-enlace/tv.html?relay=http://IP:3004
+3. La partida se publica sola (sello "● EN VIVO" en la mesa).
+
+MÁS AYUDA
+---------
+LEEME-DESPLIEGUE.txt (guía completa, HTTPS, nginx, Railway) y
+VERSION.txt (hashes SHA256 de esta build).

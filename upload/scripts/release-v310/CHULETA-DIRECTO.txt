@@ -1,0 +1,55 @@
+==========================================================
+CRAZY PING PONG · V3.1.0-SRV2 · CHULETA DIRECTA
+==========================================================
+
+LA VERSIÓN EN 30 SEGUNDOS
+-------------------------
+· SAQUE VR REALISTA — EL GESTO MANDA (lo realmente importante):
+    · La bola descansa en la mano libre; SOLTAR EL GRIP la lanza con
+      la velocidad EXACTA de la mano. El GATillo es la ayuda explícita
+      (subida por dificultad).
+    · El impacto se detecta con CCD fina contra el plano REAL de la
+      pala y tolerancias pequeñas: la tolerancia no crea golpes a
+      distancia.
+    · La salida sale SIEMPRE del modelo físico real (orientación de la
+      cara, velocidades, restitución, fricción, punto dulce): pala mal
+      orientada = salida lateral/débil/fallida. Sin sustituciones.
+    · Asistencia PROGRESIVA ACOTADA: sólo mezcla (máx 35 % en medio,
+      decaída lineal, margen 17° medio · 24° fácil · 12° difícil)
+      hacia una referencia legal. Un saque legal, un LET o un roce NO
+      se tocan; un mal gesto JAMÁS se convierte en válido.
+    · El árbitro juzga el VUELO REAL: bote propio → bote rival →
+      LET/falta.
+    · TODO configurable: consola → __ppDebug.serveTune (assistAngle,
+      assistMax, skin, serveMinExit…) + __ppDebug.lastServe (telemetría
+      del último saque) + __PP_SERVE_LAB (9 casos de QA).
+· EL HALL ES EL HUB: cerrar el menú en el hall te QUEDA en el hall;
+  en partida el menú añade «⌂ VOLVER AL HALL» (recoge todo y te sube
+  a la estancia con el menú abierto).
+· FÍSICA VIVA (FIS1): la goma roza y ARRASTRA la bola; bloquear un
+  topspin lo revierte; el CANTO pega sordo; al BOTAR el topspin patea,
+  el backspin frena y el lateral desvía.
+· PALAS CON CARÁCTER: FUEGO ofensiva · HIELO defensiva · ORO potencia ·
+  ARCOÍRIS efecto · PRO CARBON doble goma por caras. La IA, neutra.
+· Interruptores en el código (DIMS): physicsRealism y paddlePerks
+  a 0 devuelven el comportamiento exacto de siempre.
+
+SUBIR EL JUEGO (2 MINUTOS)
+--------------------------
+1. Descomprime el paquete.
+2. Netlify Drop: arrastra la carpeta a https://app.netlify.com/drop
+   (Cloudflare Pages: usa el paquete CLOUDFLARE, es estático puro).
+3. Abre el enlace en el Meta Quest 3 y pulsa JUGAR EN VR.
+
+CRAZY TV EN VIVO (OPCIONAL)
+---------------------------
+1. Antena: cd live-service && npm install && node server.mjs
+   (prueba sin Quest: node tools/mock_host.mjs → canal DEMO).
+2. Quest:  https://tu-enlace/?relay=http://IP:3004
+   TV:     https://tu-enlace/tv.html?relay=http://IP:3004
+3. La partida se publica sola (sello "● EN VIVO" en la mesa).
+
+MÁS AYUDA
+---------
+LEEME-DESPLIEGUE.txt (guía completa, HTTPS, nginx, Railway) y
+VERSION.txt (hashes SHA256 de esta build).

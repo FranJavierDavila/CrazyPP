@@ -85,7 +85,7 @@ export function createRoom() {
   return g;
 }
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { COLORS, DIMS } from './c02_cfg_escena.js';
+import { COLORS, DIMS, bolaAspectoPorId } from './c02_cfg_escena.js';
 import { tmpV } from './c04_fisica_ccd.js';
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
@@ -109,6 +109,7 @@ export function createTable() {
   const mkLine = (w, d, x, z) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, lineH, d), lineMat);
     m.position.set(x, topY + lineH / 2 - 0.0005, DIMS.tableCenterZ + z);
+    m.name = 'ppTableLine';   // r95: relayoutMesa() las reacomoda al cambiar la altura
     g.add(m);
   };
   mkLine(W, 0.02, 0, -DIMS.tableHalfLength + 0.01);
@@ -134,6 +135,7 @@ export function createTable() {
       leg.position.set(lx, (topY - DIMS.tableThickness) / 2, DIMS.tableCenterZ + lz);
       leg.castShadow = true;
       leg.name = 'ppTableLeg';    // v2.87
+      leg.userData.h = topY - DIMS.tableThickness;   // r95: escala honesta en relayoutMesa
       g.add(leg);
     }
   }
@@ -163,6 +165,7 @@ export function createTable() {
     new THREE.MeshBasicMaterial({ map: netTex, transparent: true, side: THREE.DoubleSide, alphaTest: 0.05 }),
   );
   netMesh.position.set(0, topY + (DIMS.netTopY - topY) / 2, DIMS.tableCenterZ);
+  netMesh.name = 'ppTableNet';   // r95: relayoutMesa()
   g.add(netMesh);
 
   const band = new THREE.Mesh(
@@ -170,6 +173,7 @@ export function createTable() {
     new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 }),
   );
   band.position.set(0, DIMS.netTopY, DIMS.tableCenterZ);
+  band.name = 'ppTableBand';   // r95: relayoutMesa()
   g.add(band);
 
   const postMat = new THREE.MeshStandardMaterial({ color: 0x30343a, roughness: 0.4, metalness: 0.6 });
@@ -179,13 +183,248 @@ export function createTable() {
       postMat,
     );
     post.position.set(px, topY + (DIMS.netTopY - topY) / 2, DIMS.tableCenterZ);
+    post.name = 'ppTablePost';   // r95: relayoutMesa()
     g.add(post);
   }
 
   return g;
 }
 
-export function createBall() {
+/* =====================================================================
+ *  r95 · RELAYOUT DE LA MESA VIVA (AJUSTES › MESA › altura)
+ *  La altura elegida MUTA DIMS.tableTopY/netTopY (física, IA y saque la
+ *  leen en vivo — una sola fuente de verdad) y ESTA función reacomoda la
+ *  mesa ya montada SIN reconstruirla: sólo POSICIONES y la ESCALA de las
+ *  patas. Cero dispose — las referencias del núcleo y de los campeonatos
+ *  (ppTableTop de la mesa.webp de Halloween, _netParts, arkanoide...)
+ *  siguen siendo el MISMO objeto. La red mantiene su altura regla-
+ *  mentaria (15,25 cm) sobre la nueva superficie.
+ * ===================================================================== */
+export function relayoutMesa(group) {
+  if (!group) return;
+  const topY = DIMS.tableTopY;
+  const th = DIMS.tableThickness;
+  const netH = (DIMS.netTopY != null) ? (DIMS.netTopY - topY) : 0.1525;
+  const top = group.getObjectByName('ppTableTop');
+  if (top) top.position.y = topY - th / 2;
+  for (const m of group.children) {
+    if (m.name === 'ppTableLine') {
+      m.position.y = topY + 0.002 / 2 - 0.0005;
+    } else if (m.name === 'ppTableApron') {
+      m.position.y = topY - th - 0.06;
+    } else if (m.name === 'ppTableLeg') {
+      const h0 = m.userData && m.userData.h ? m.userData.h : (topY - th);
+      const h1 = topY - th;
+      m.scale.y = h1 / h0;
+      m.position.y = h1 / 2;
+    } else if (m.name === 'ppTableNet') {
+      m.position.y = topY + netH / 2;
+    } else if (m.name === 'ppTableBand') {
+      m.position.y = topY + netH;
+    } else if (m.name === 'ppTablePost') {
+      m.position.y = topY + netH / 2;
+    }
+  }
+}
+
+/* =====================================================================
+ *  r21 (v3.6.117) · SKINS DE BOLA — pintores PROCEDURALES (canvas 2D).
+ *  Cero bytes nuevos en el bundle: cada textura nace en runtime de un
+ *  canvas 512×256 (equirect de la esfera) y se dibuja con primitivas.
+ *  Deterministas: RNG con semilla fija para que la skin sea SIEMPRE igual
+ *  (mismo cráter en el mismo punto de Marte en cada casco).
+ *  ===================================================================== */
+function _bolRng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+const BOLA_TEX_CANVAS = {};
+function bolaTex(tipo) {
+  if (BOLA_TEX_CANVAS[tipo]) return BOLA_TEX_CANVAS[tipo];
+  const cv = document.createElement('canvas');
+  cv.width = 512; cv.height = 256;
+  const c = cv.getContext('2d');
+  const rng = _bolRng(20261107);
+  const estrella = (x, y, r, col) => {
+    c.fillStyle = col; c.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const rr = i % 2 ? r * 0.45 : r;
+      const a = (Math.PI / 5) * i - Math.PI / 2;
+      const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+      if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
+    }
+    c.closePath(); c.fill();
+  };
+  const crater = (x, y, r, col) => {
+    c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.12)';
+    c.beginPath(); c.arc(x - r * 0.3, y - r * 0.3, r * 0.5, 0, Math.PI * 2); c.fill();
+  };
+  if (tipo === 'estrellas') {
+    c.fillStyle = '#fff6e8'; c.fillRect(0, 0, 512, 256);
+    for (let i = 0; i < 14; i++) {
+      estrella(rng() * 512, rng() * 256, 10 + rng() * 16, '#e8b45a');
+    }
+  } else if (tipo === 'playa') {
+    const cols = ['#ffffff', '#e34d4d', '#ffffff', '#3f7fe0', '#ffffff', '#3fb55f'];
+    const nw = cols.length;
+    for (let i = 0; i < nw; i++) {
+      c.fillStyle = cols[i];
+      c.fillRect((i / nw) * 512, 0, 512 / nw + 1, 256);
+    }
+    c.fillStyle = 'rgba(255,255,255,0.5)'; c.fillRect(0, 118, 512, 20);
+  } else if (tipo === 'futbol') {
+    c.fillStyle = '#f4f4f4'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#1a1a1a';
+    const pent = (x, y, r, rot) => {
+      c.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = rot + (Math.PI * 2 / 5) * i;
+        const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+        if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
+      }
+      c.closePath(); c.fill();
+    };
+    pent(256, 128, 52, 0);
+    for (let i = 0; i < 5; i++) {
+      pent(256 + Math.cos((Math.PI * 2 / 5) * i) * 128, 128 + Math.sin((Math.PI * 2 / 5) * i) * 78, 44, 0.6);
+    }
+  } else if (tipo === 'ocho') {
+    c.fillStyle = '#141418'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#f4f4f4';
+    c.beginPath(); c.arc(256, 128, 78, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#141418';
+    c.font = '800 96px system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('8', 256, 130);
+  } else if (tipo === 'ojo') {
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#d9e6f7';
+    c.beginPath(); c.arc(256, 128, 92, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#2f7fd0';
+    c.beginPath(); c.arc(286, 118, 56, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#101418';
+    c.beginPath(); c.arc(298, 112, 26, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.85)';
+    c.beginPath(); c.arc(272, 98, 10, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#b03a3a'; c.lineWidth = 6;
+    for (let i = 0; i < 6; i++) {
+      const a0 = rng() * Math.PI * 2;
+      c.beginPath(); c.moveTo(256 + Math.cos(a0) * 100, 128 + Math.sin(a0) * 100);
+      c.lineTo(256 + Math.cos(a0) * 130, 128 + Math.sin(a0) * 130); c.stroke();
+    }
+  } else if (tipo === 'holo') {
+    const g = c.createLinearGradient(0, 0, 512, 256);
+    g.addColorStop(0, '#39d0ff'); g.addColorStop(0.35, '#ff3fa4');
+    g.addColorStop(0.7, '#ffe14d'); g.addColorStop(1, '#39d0ff');
+    c.fillStyle = g; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = 'rgba(255,255,255,0.28)';
+    for (let y = 0; y < 256; y += 14) c.fillRect(0, y, 512, 5);
+  } else if (tipo === 'disco') {
+    c.fillStyle = '#c9d1da'; c.fillRect(0, 0, 512, 256);
+    for (let i = 0; i < 60; i++) {
+      const w = 4 + rng() * 26, h = 4 + rng() * 18;
+      c.fillStyle = ['#ffffff', '#aebccf', '#eef3f8', '#8fa3bd'][i % 4];
+      c.fillRect(rng() * 512, rng() * 256, w, h);
+    }
+  } else if (tipo === 'marte') {
+    c.fillStyle = '#b0502a'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#8f3c1e';
+    for (let i = 0; i < 7; i++) c.fillRect(0, 30 + i * 34 + rng() * 8, 512, 12 + rng() * 10);
+    for (let i = 0; i < 12; i++) {
+      crater(rng() * 512, rng() * 256, 8 + rng() * 22, '#7a3116');
+    }
+  } else if (tipo === 'luna') {
+    c.fillStyle = '#c9ccd2'; c.fillRect(0, 0, 512, 256);
+    for (let i = 0; i < 16; i++) {
+      crater(rng() * 512, rng() * 256, 6 + rng() * 24, '#a6abb4');
+    }
+  } else if (tipo === 'tierra') {
+    c.fillStyle = '#1e6ed0'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#3fae5a';
+    for (let i = 0; i < 9; i++) {
+      const x = rng() * 512, y = rng() * 256;
+      c.beginPath();
+      c.ellipse(x, y, 40 + rng() * 70, 26 + rng() * 40, rng() * 3, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.fillStyle = 'rgba(255,255,255,0.65)';
+    for (let i = 0; i < 8; i++) {
+      c.beginPath(); c.ellipse(rng() * 512, rng() * 256, 20 + rng() * 40, 8 + rng() * 10, 0, 0, Math.PI * 2); c.fill();
+    }
+  } else if (tipo === 'lava') {
+    c.fillStyle = '#1c0c08'; c.fillRect(0, 0, 512, 256);
+    c.strokeStyle = '#ff5a1e'; c.lineWidth = 5;
+    for (let i = 0; i < 12; i++) {
+      c.beginPath();
+      let x = rng() * 512, y = rng() * 256;
+      c.moveTo(x, y);
+      for (let k = 0; k < 4; k++) {
+        x += (rng() - 0.5) * 120; y += (rng() - 0.5) * 90;
+        c.lineTo(x, y);
+      }
+      c.stroke();
+    }
+    c.fillStyle = '#ff9a3d';
+    for (let i = 0; i < 20; i++) {
+      c.beginPath(); c.arc(rng() * 512, rng() * 256, 2 + rng() * 4, 0, Math.PI * 2); c.fill();
+    }
+  } else if (tipo === 'saturno') {
+    const bands = ['#e8d9a8', '#d9bd7a', '#f0e6c0', '#c9a86a', '#e8d9a8', '#d0b080'];
+    for (let i = 0; i < bands.length; i++) {
+      c.fillStyle = bands[i];
+      c.fillRect(0, (i / bands.length) * 256, 512, 256 / bands.length + 1);
+    }
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  BOLA_TEX_CANVAS[tipo] = tex;
+  return tex;
+}
+
+/** r21 · aplica una skin al material de la bola VIVA (sin reconstruir la
+ *  malla: la red guarda referencias a ballMesh). Gestiona mapa (dispose del
+ *  anterior) y el aro de Saturno. Devuelve el RGB de reposo de la estela. */
+export function applyBallSkin(mesh, skin) {
+  if (!mesh || !mesh.material || !skin) return [0.75, 0.75, 0.75];
+  const mat = mesh.material;
+  const prevMap = mat.map;
+  mat.map = skin.tex ? bolaTex(skin.tex) : null;
+  if (prevMap && prevMap !== mat.map && prevMap.dispose) {
+    try { prevMap.dispose(); } catch { /* */ }
+  }
+  if (mat.map) { mat.map.needsUpdate = true; }
+  try { mat.color.setHex(skin.color); } catch { /* */ }
+  try { mat.roughness = skin.rough; mat.metalness = skin.metal; } catch { /* */ }
+  try { mat.emissive.setHex(skin.emis); mat.emissiveIntensity = skin.emisInt; } catch { /* */ }
+  try { mat.needsUpdate = true; } catch { /* */ }
+  // aro de Saturno (hijo decorativo — la física vive en ball.pos, intacta)
+  let aro = mesh.getObjectByName('ppBolaAro');
+  if (skin.ring && !aro) {
+    aro = new THREE.Mesh(
+      new THREE.TorusGeometry(DIMS.ballRadius * 2.1, DIMS.ballRadius * 0.18, 10, 40),
+      new THREE.MeshStandardMaterial({
+        color: 0xd9bd7a, roughness: 0.5, metalness: 0.2,
+        emissive: 0x554a30, emissiveIntensity: 0.3,
+      }),
+    );
+    aro.name = 'ppBolaAro';
+    aro.rotation.x = Math.PI / 2 - 0.35;
+    mesh.add(aro);
+  } else if (!skin.ring && aro) {
+    aro.visible = false;
+  }
+  if (aro) aro.visible = !!skin.ring;
+  const t = skin.trail || [0.75, 0.75, 0.75];
+  return [t[0], t[1], t[2]];
+}
+
+export function createBall(skin) {
+  const def = bolaAspectoPorId(skin && skin.id);
   const mesh = new THREE.Mesh(
     new THREE.SphereGeometry(DIMS.ballRadius, 48, 32),
     new THREE.MeshStandardMaterial({
@@ -193,6 +432,7 @@ export function createBall() {
     }),
   );
   mesh.castShadow = true;
+  try { applyBallSkin(mesh, def); } catch { /* skin es cosmética: nunca rompe */ }
 
   const TRAIL_N = 22;
   const positions = new Float32Array(TRAIL_N * 3);
@@ -212,14 +452,23 @@ export function createBall() {
   const tmpSpinCross = new THREE.Vector3();
   /** Estela "de retransmisión": color según el EFECTO de la bola.
    *  naranja = lift/topspin (la Magnus la hunde), azul = slice/backspin
-   *  (flota), violeta = lateral. Se desvanece con la edad del punto. */
-  const trailUpdate = (ball, dt) => {
+   *  (flota), violeta = lateral. Se desvanece con la edad del punto.
+   *  r61 · ESTELA DE PODER: si el juego pasa un tinte (poder de pala
+   *  ACTIVO), la estela viste SU firma y el color por spin pasa a ser el
+   *  respaldo — un vistazo a la bola y sabes qué poder está corriendo. */
+  /* r21 · base = RGB de REPOSO de la estela (lo que la skin pinta cuando
+   *  no hay poder ni efecto). Por defecto, el gris de siempre. */
+  const trailUpdate = (ball, dt, tint, base) => {
     positions[idx * 3] = mesh.position.x;
     positions[idx * 3 + 1] = mesh.position.y;
     positions[idx * 3 + 2] = mesh.position.z;
     ages[idx] = 0;
     let r = 0.75, g = 0.75, b = 0.75;
-    if (ball && ball.spin && ball.vel) {
+    if (base && base.length === 3) { r = base[0]; g = base[1]; b = base[2]; }
+    if (tint && tint.length === 3) {
+      // firma del poder ACTIVO (el núcleo la prepara ya lerp-eada)
+      r = tint[0]; g = tint[1]; b = tint[2];
+    } else if (ball && ball.spin && ball.vel) {
       tmpSpinCross.crossVectors(ball.spin, ball.vel);   // dirección de la Magnus
       const lift = tmpSpinCross.y;                      // + flota · - se hunde
       const force = Math.min(1, Math.abs(lift) / 9);
@@ -251,6 +500,83 @@ export function createBall() {
   };
 
   return { mesh, trail, trailUpdate };
+}
+
+/* =====================================================================
+ *  r21 (v3.6.117) · CHISPAS DE BOTE — mini-estallido del color de la skin
+ *  cuando la bola toca algo (flashMarker). 100 % cosmético y AYUNO:
+ *  pool FIJO de 5 estallidos × 8 partículas (40 puntos totales), cero
+ *  asignaciones por bote (todo pre-alocado), vida 0,32 s y se ocultan.
+ *  Nada de sombras ni luces: puntos básicos que el Quest 3 no nota.
+ *  ===================================================================== */
+export function createChispas() {
+  const N_BURST = 5, N_PART = 8;
+  const VIDA = 0.32;
+  const bursts = [];
+  for (let b = 0; b < N_BURST; b++) {
+    const pos = new Float32Array(N_PART * 3);
+    const vel = new Float32Array(N_PART * 3);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({
+      size: 0.016, transparent: true, opacity: 0, depthWrite: false,
+    });
+    const pts = new THREE.Points(geo, mat);
+    pts.visible = false;
+    pts.frustumCulled = false;
+    bursts.push({ pts, pos, vel, t: -1 });
+  }
+  let prox = 0;   // siguiente burst del pool (round-robin, sin buscar libre)
+  const group = new THREE.Group();
+  for (const b of bursts) group.add(b.pts);
+
+  return {
+    group,
+    /** Dispara un estallido en `p` con el RGB de la skin (r,g,b 0..1). */
+    burst(p, rgb) {
+      const b = bursts[prox];
+      prox = (prox + 1) % N_BURST;
+      const r = (rgb && rgb.length === 3) ? rgb[0] : 0.75;
+      const g = (rgb && rgb.length === 3) ? rgb[1] : 0.75;
+      const bl = (rgb && rgb.length === 3) ? rgb[2] : 0.75;
+      for (let i = 0; i < N_PART; i++) {
+        b.pos[i * 3] = p.x; b.pos[i * 3 + 1] = p.y; b.pos[i * 3 + 2] = p.z;
+        // cono hacia arriba: dispersión horizontal + empuje vertical
+        const a = Math.random() * Math.PI * 2;
+        const sp = 0.25 + Math.random() * 0.5;
+        b.vel[i * 3] = Math.cos(a) * sp * 0.6;
+        b.vel[i * 3 + 1] = 0.5 + Math.random() * 0.6;
+        b.vel[i * 3 + 2] = Math.sin(a) * sp * 0.6;
+      }
+      b.pts.material.color.setRGB(r, g, bl);
+      b.t = 0;
+      b.pts.visible = true;
+      b.pts.material.opacity = 0.9;
+      b.pts.geometry.attributes.position.needsUpdate = true;
+    },
+    /** Paso por frame: gravedad suave + fade. Barato (sólo bursts vivos). */
+    update(dt) {
+      for (const b of bursts) {
+        if (b.t < 0) continue;
+        b.t += dt;
+        if (b.t >= VIDA) { b.t = -1; b.pts.visible = false; continue; }
+        const k = 1 - b.t / VIDA;
+        for (let i = 0; i < N_PART; i++) {
+          b.vel[i * 3 + 1] -= dt * 1.8;                 // gravedad
+          b.pos[i * 3] += b.vel[i * 3] * dt;
+          b.pos[i * 3 + 1] += b.vel[i * 3 + 1] * dt;
+          b.pos[i * 3 + 2] += b.vel[i * 3 + 2] * dt;
+        }
+        b.pts.material.opacity = 0.9 * k;
+        b.pts.geometry.attributes.position.needsUpdate = true;
+      }
+    },
+    dispose() {
+      for (const b of bursts) {
+        try { b.pts.geometry.dispose(); b.pts.material.dispose(); } catch { /* */ }
+      }
+    },
+  };
 }
 
 export function createBlobShadow() {
@@ -398,13 +724,20 @@ export function createChampDecor(game) {
     /** Campeonato del set construido ('' = sala sin decorado). */
     get builtFor() { return builtFor || ''; },
     /** Reconstrucción perezosa al cambiar de campeonato + animación viva.
-     *  Visible SOLO con el campeonato ACTIVO que declara decor (y fuera de AR). */
+     *  Visible SIEMPRE con el campeonato ACTIVO que declara decor (r70:
+     *  también con passthrough — el dueño quiere sus troqueles siempre). */
     update(dt, now) {
       const activeId = (game.champs && game.champs.activeId) || '';
       if (activeId !== builtFor) buildFor(activeId);
       // v2.80: visible sólo si el campeonato activo TRAE decor (v2.81:
       // locura y magia lo traen — cada uno monta SOLO el suyo al activarse).
-      const want = !!(set && set.pieces.length) && !game.inAR &&
+      // r70 · VISIBLE SIEMPRE, también con passthrough (inAR): el dueño
+      // insiste en que los troqueles «han desaparecido» — jugaba con el
+      // passthrough del Quest y la condición !game.inAR los escondía
+      // SIEMPRE en esas sesiones (la QA headless no lo veía: inAR=false).
+      // Los troqueles son cartón apoyado en el suelo del JUGADOR: con
+      // passthrough quedan en su sala real, que es donde los quiere.
+      const want = !!(set && set.pieces.length) &&
         !game.champDecorHidden;   // v2.95: las pruebas pueden taparlo
       if (group.visible !== want) group.visible = want;
       if (!want || !set) return;
@@ -465,8 +798,9 @@ export function createChampDecor(game) {
  *    }
  *
  *  Rutas RELATIVAS a la carpeta del campeonato (como «decor»). Cada clave
- *  es independiente: si falta, ese plano conserva el color del tema. El
- *  sistema es del núcleo (patrón createChampDecor v2.80): se monta al
+ *  es independiente: si falta, ese plano VISTE EL ARTE POR DEFECTO DEL
+ *  PARTIDO (v3.6.29, assets/partido/ — antes quedaba con el color del
+ *  tema). El sistema es del núcleo (patrón createChampDecor v2.80): se monta al
  *  activar el campeonato, se destruye (dispose GPU) al salir y un fallo
  *  de carga NUNCA rompe el juego (file:// incluido). Los complementos de
  *  la sala clásica que ensuciarían el arte (rejilla del suelo, paneles

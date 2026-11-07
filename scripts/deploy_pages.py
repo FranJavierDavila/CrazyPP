@@ -39,7 +39,8 @@ import sys
 import threading
 import glob
 
-REPO = '/home/z/my-project'
+REPO = '/home/z/my-project/upload'   # r126: el mount vivo del repo (el template
+                                     # reciclado dejó su propio .git en la raíz)
 SITE = os.path.join(REPO, 'pages-site')
 OWNER_REPO = 'FranJavierDavila/CrazyPP'
 PAGES_URL = 'https://franjavierdavila.github.io/CrazyPP/'
@@ -49,7 +50,11 @@ MAX_FILE = 100_000_000
 SOLO_ZIP = 'crazypp-live-service-SOLO.zip'
 
 SITE_PATHS = ['public/game.html', 'public/championships', 'public/assets',
-              'public/vendor', 'public/tv.html', 'public/robots.txt', 'public/logo.svg']
+              'public/vendor', 'public/tv.html', 'public/robots.txt', 'public/logo.svg',
+              'public/ugc',          # r85: EL TALLER UGC (editor de etapas/campeonatos)
+              'public/telemetria.html',   # r87: PANEL de telemetría (URL estable en Pages)
+              'public/manifest.webmanifest', 'public/sw.js',   # r109 · M3 PWA
+              'public/logo-192.png', 'public/logo-512.png', 'public/logo-maskable-512.png']
 
 # (original, sustituto, ocurrencias esperadas) — cualquier desvío ABORTA el despliegue
 REWRITES = [
@@ -62,7 +67,8 @@ SMOKE_ALLOW_PREFIX = ('/socket.io',      # sondeo del cliente incluido en vendor
 
 
 def sh(args, **kw):
-    return subprocess.run(args, cwd=REPO, check=True, capture_output=True, text=True, **kw)
+    kw.setdefault('cwd', REPO)   # r126: permite cwd distinto (p. ej. SITE)
+    return subprocess.run(args, check=True, capture_output=True, text=True, **kw)
 
 
 def out(args, **kw):
@@ -157,7 +163,7 @@ LANDING = """<!doctype html>
   <p class="chip">V@@VERSION@@ · commit @@COMMIT@@ · QA verde</p>
   <h1>CRAZY PING&nbsp;PONG</h1>
   <p class="sub">Ping-pong de superpoderes para Meta&nbsp;Quest&nbsp;3 · WebXR</p>
-  <a class="jugar" href="game.html">▶&nbsp; JUGAR</a>
+  <a class="jugar" href="game.html?v=@@VERSION@@">▶&nbsp; JUGAR</a>
   <section class="como">
     <h2>Cómo jugar en Meta Quest 3</h2>
     <ol>
@@ -295,12 +301,16 @@ def commit_pages_branch(version, head, game_sha, nfiles):
         os.remove(idx)
     env = dict(os.environ, GIT_INDEX_FILE=idx)
     sh(['git', 'read-tree', '--empty'], env=env)
-    for root, _dirs, fs in os.walk(SITE):
-        for f in fs:
-            ap = os.path.join(root, f)
-            rel = os.path.relpath(ap, SITE).replace(os.sep, '/')
-            blob = out(['git', 'hash-object', '-w', ap])
-            out(['git', 'update-index', '--add', '--cacheinfo', f'100644,{blob},{rel}'], env=env)
+    # r126 · bulk update: un solo `git add` con GIT_INDEX_FILE propio (antes:
+    # hash-object + update-index POR FICHERO = 2 subprocessos por fichero y
+    # timeouts en el mount lento del sandbox). CUIDADO (lección de ESTA ronda,
+    # deploy da84c162a → sitio 404): el índice guarda rutas RELATIVAS A LA
+    # RAÍZ DEL REPO — un `git add .` con cwd=SITE anida todo bajo
+    # «pages-site/». Con --work-tree=SITE las rutas quedan en la RAÍZ del
+    # tree, y core.fileMode=false sella 100644 como el bucle antiguo.
+    sh(['git', '-c', 'core.fileMode=false',
+        '--git-dir', os.path.join(REPO, '.git'), '--work-tree', SITE,
+        'add', '-f', '--all', '--', '.'], env=env, cwd=SITE)
     tree = out(['git', 'write-tree'], env=env)
     parent = None
     try:

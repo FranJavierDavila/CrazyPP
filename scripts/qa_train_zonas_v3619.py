@@ -344,7 +344,9 @@ async def main():
             '--enable-unsafe-swiftshader',
             '--autoplay-policy=no-user-gesture-required',
         ])
-        page = await browser.new_page(viewport={'width': 1280, 'height': 800})
+        # r111 · el arnés declara SU idioma (detección M4 en c00 respeta
+        # navigator.language; el Chromium de QA nace en-US)
+        page = await browser.new_page(viewport={'width': 1280, 'height': 800}, locale='es-ES')
         page.on('pageerror', lambda e: errs.append(str(e)))
         await page.goto(BASE + '/game.html', wait_until='domcontentloaded')
         await page.wait_for_function("() => window.__PP_GAME && window.__PP_TRAIN", timeout=45000)

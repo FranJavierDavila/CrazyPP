@@ -8,6 +8,11 @@ import { CCD_TUNE, MAX_SUBSTEP_DT, applyAerodynamics, applyBounceSpin, bladeNorm
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
 
+// r113 · temporales de la DIRECCIÓN AL OBJETIVO (módulo-local, cero colisión
+// con los temporales compartidos de c04)
+const tmpAim = new THREE.Vector3();
+const tmpAim2 = new THREE.Vector3();
+
 /* v3.1.2-CCD1 · DETECCIÓN CCD POR SDF (reemplaza al cruce de plano + disco).
  * Barrido del segmento de bola [tmpPrev → ball.pos] contra la pala barrida
  * entre las poses kA y kB del frame (pad.prev → pad.pos). kA/kB son las
@@ -17,6 +22,7 @@ import * as THREE from 'three';
  * segmento se transforma con la pose τa y el fin con la pose τb).
  * Devuelve true si hubo golpe (respuesta clásica ya aplicada). */
 export function collidePaddleSweep(ball, pad, kA, kB, events) {
+  let imanAimUsado = false;   // v3.6.49: el golpe de este subpaso fue GUIADO por el Súper Imán
   // --- poses A (kA) y B (kB) de la pala dentro del frame (nlerp como v2.29) ---
   ccdPosA.copy(pad.prev).lerp(pad.pos, kA);
   ccdNrmA.copy(pad.prevNormal).lerp(pad.normal, kA).normalize();
@@ -116,6 +122,52 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   const vRelN = relVel.dot(tmpN);
   if (vRelN >= 0) return false;   // ya se separan: no es un golpe (spec F)
 
+  /* ================================================================
+   * r100/r101 · CONTACTO DE REPOSO pala-bola (el estándar Eleven).
+   * r100 lo estrenó con umbral dual 0,95 (pala lenta) / 0,65 (pala
+   * viva) y el dueño lo devolvió: «no has sabido resolver lo del
+   * contacto de la bola parada y has estropeado los saques» — con
+   * 0,95 la pala SECUESTRABA botes legítimos (botar la bola sobre la
+   * pala moría al tercer toque; llegadas suaves quedaban pegadas en
+   * pleno intercambio). r101: umbral ÚNICO 0,25 m/s — se posa SÓLO
+   * una bola realmente quieta (el redil de gravedad por frame ~0,14
+   * m/s a 72 Hz queda dentro: el apoyo re-captura en silencio cada
+   * frame, sin trompicones) y todo lo que llegue con vida BOTA por la
+   * vía de golpe normal (restitución, spin y suelo FEEL1 de siempre,
+   * byte a byte). El transporte en stepPhysics (bloque r100) sigue
+   * arrastrando la bola apoyada 1:1 y el swing la suelta limpio:
+   * levantar la pala la lanza al aire — Eleven. */
+  if (pad.who === 'player' && !pad.serveFlight && !onHandle &&
+      Math.abs(lhz) >= hT &&
+      -vRelN <= DIMS.paddleRestSpeed) {
+    // proyección a la cara (mismo patrón que la colocación del golpe)
+    ball.pos.copy(padPos).addScaledVector(tmpN, rB + 0.001)
+      .addScaledVector(ipRight, lx).addScaledVector(ipUp, ly);
+    // anular la aproximación normal (la bola comparte la normal de la pala)
+    ball.vel.addScaledVector(tmpN, -vRelN);
+    // fricción tangencial + acople de giro (rueda en vez de vibrar)
+    relVel.copy(ball.vel).sub(pad.vel);
+    relVel.addScaledVector(tmpN, -relVel.dot(tmpN));      // tangencial relativa
+    const slipR = relVel.length();
+    if (slipR > 1e-4) {
+      let dvR = slipR * DIMS.paddleRestFric;
+      if (dvR > slipR) dvR = slipR;
+      relVel.setLength(-dvR);
+      ball.vel.add(relVel);
+      // Δω = −(3/2r)·(N × Δv): el mismo acople cascarón del bote (FIS1)
+      ball.spin.addScaledVector(tmpD.copy(tmpN).cross(relVel), -1.5 / DIMS.ballRadius);
+    }
+    const nuevo = ball.__ppRestIdx !== pad.index ||
+      (ball.__ppRestT === undefined) || ball.__ppRestT > DIMS.paddleRestDrop;
+    ball.__ppRestIdx = pad.index;
+    ball.__ppRestSide = tmpN.dot(ipNormal) >= 0 ? 1 : -1;
+    ball.__ppRestLx = lx;
+    ball.__ppRestDy = dyy;
+    ball.__ppRestT = 0;
+    if (nuevo) events.push({ type: 'restTouch', speed: -vRelN, pos: crossPoint.clone() });
+    return true;   // padHit: el subpaso aplaza mesa/red (la bola está en la pala)
+  }
+
   // v3.0.5 P1: PUNTO DULCE — offC: 0 = centro de la hoja, 1 = canto.
   // El canto pega «sordo» (menos restitución), dispersa y da menos efecto.
   // El anillo de asistencia del saque (fuera de la hoja) penalización fija
@@ -141,8 +193,13 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
 
   // Golpe con CUERPO: transfiere parte de la velocidad de la pala en la
   // dirección de salida (acelerar la mano = bola más rápida, siempre)
+  // r113 · FÍSICA DEL GOLPE FUERTE (petición del dueño: la bola debe salir
+  // con la VELOCIDAD REAL del swing): 0,22 sólo transfería una quinta parte
+  // del empuje — un smash de 10 m/s aportaba 2,2 m/s y el golpe «no se
+  // sentía». 0,40 transfiere el doble sin romper los toques suaves (el
+  // término sólo opera con padN > 0: pala acercándose a la bola).
   const padN = pad.vel.dot(tmpN);
-  if (padN > 0) ball.vel.addScaledVector(tmpN, padN * 0.22 * (PK ? PK.power : 1));
+  if (padN > 0) ball.vel.addScaledVector(tmpN, padN * 0.40 * (PK ? PK.power : 1));
 
   // v3.0.5 P1: bamboleo del canto — golpes cerca del borde dispersan
   if (FIS && offC > 0.7) {
@@ -171,6 +228,39 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   }
   if (vn < exitFloor) ball.vel.addScaledVector(tmpN, exitFloor - vn);
 
+  // r113 · DIRECCIÓN AL OBJETIVO (petición del dueño: «cuesta apuntar hacia
+  // donde apunto»): la salida reflejaba sobre la NORMAL de la cara — con la
+  // hoja un poco girada la bola se iba a donde apuntaba LA MADERA, no el
+  // brazo. En un golpe real la dirección la manda el SWING: giramos la
+  // componente horizontal de la salida hacia la dirección del movimiento de
+  // la pala (proporcional a la energía del swing y SOLO en swings vivos —
+  // los toques suaves no se tocan). Jugador only (la IA ya apunta con su
+  // solver), nunca en vuelo de saque (el solver valida esa trayectoria) y
+  // sólo en intercambio (misma puerta honesta del súper efecto, r55).
+  if (pad.who === 'player' && !pad.serveFlight &&
+      pad.intercambio !== false && FIS) {
+    const swing = pad.vel.length();
+    if (swing > 2.5) {
+      // mezcla hasta 45°: k = 0..0.45 según la energía por encima del umbral
+      const kAim = 0.45 * Math.min(1, (swing - 2.5) / 6);
+      tmpAim.copy(pad.vel); tmpAim.y = 0;
+      if (tmpAim.lengthSq() > 1e-6) {
+        tmpAim.normalize();
+        tmpAim2.set(ball.vel.x, 0, ball.vel.z);
+        const spH = tmpAim2.length();
+        if (spH > 1e-4) {
+          tmpAim2.divideScalar(spH).lerp(tmpAim, kAim).normalize();
+          // guardia: el giro JAMÁS invierte el sentido de cruce (la salida
+          // hacia el lado rival se conserva: mismo signo de z)
+          if (tmpAim2.z * ball.vel.z >= 0) {
+            ball.vel.x = tmpAim2.x * spH;
+            ball.vel.z = tmpAim2.z * spH;
+          }
+        }
+      }
+    }
+  }
+
   // Límite de velocidad
   const sp = ball.vel.length();
   if (sp > DIMS.maxBallSpeed) ball.vel.multiplyScalar(DIMS.maxBallSpeed / sp);
@@ -181,7 +271,21 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   tmpSurf.copy(pad.omega).cross(tmpR.copy(pad.up).multiplyScalar(DIMS.bladeCenterUp))
     .multiplyScalar(DIMS.paddleWristSpin).add(pad.vel);
   tmpS.copy(tmpSurf).cross(tmpN).multiplyScalar(DIMS.spinImpulse);
-  if (tmpS.length() > DIMS.spinMax) tmpS.setLength(DIMS.spinMax);
+  // v3.6.36 · SÚPER EFECTO: ×2 al brush GENERADO por el golpe del jugador
+  // (pad.ppEfectoMul lo pone el núcleo SOLO con el poder activo) — NUNCA
+  // al giro acumulado que ya traía la bola — con tope de seguridad 2×
+  // spinMax. Sin poder el multiplicador es 1: física IDÉNTICA (golden).
+  // v3.6.47 · EL EFECTO SOLO VIVE EN EL INTERCAMBIO (spec del dueño, r55):
+  // «SOLO debe aplicar el efecto durante el intercambio de pelotas NUNCA
+  // sobre el saca ni mío ni del rival» — con la pala EN VUELO DE SAQUE
+  // (pad.serveFlight, mi saca) o FUERA DEL RALLY (pad.intercambio en false:
+  // ventana del rival, arkanoid, punto muerto) la pala es HONESTA: sin
+  // brush ×2, sin marca, sin clasificación — todo juego normal.
+  const eMul = (pad.ppEfectoMul || 1) > 1 && !pad.serveFlight &&
+    pad.intercambio !== false ? pad.ppEfectoMul : 1;
+  const eTope = DIMS.spinMax * (eMul > 1 ? (DIMS.efectoSpinTope || 2) : 1);
+  if (eMul > 1) tmpS.multiplyScalar(eMul);
+  if (tmpS.length() > eTope) tmpS.setLength(eTope);
 
   if (FIS) {
     // v3.0.5 P1a · REVERSIÓN PARCIAL del spin entrante: la goma NO limpia el
@@ -191,6 +295,14 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     const spinMul = (PK ? PK.spin : 1) *
                     (1 - DIMS.edgeSpinLoss * offC * offC / ctl);
     ball.spin.multiplyScalar(-0.35).addScaledVector(tmpS, spinMul);
+    // v3.6.36 · tope de seguridad sobre el RESULTADO con el súper efecto
+    // activo (reversión −35 % del giro entrante + brush duplicado) y
+    // MARCA de la bola: Magnus y bote amplificados hasta que la IA la
+    // golpee (c06 limpia la marca) o el efecto acabe.
+    if (eMul > 1) {
+      if (ball.spin.length() > eTope) ball.spin.setLength(eTope);
+      ball.ppEfecto = true;
+    }
 
     // v3.0.5 P1b · FRICCIÓN TANGENCIAL de la goma (impulso de contacto con
     // I de cascarón, m_eff = 2/5·m): rozar ARRASTRA la bola, no sólo le da
@@ -213,7 +325,43 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     }
   } else {
     ball.spin.copy(tmpS);
+    if (eMul > 1) ball.ppEfecto = true;   // v3.6.36: bola marcada
   }
+
+  // v3.6.46 · CLASIFICACIÓN del SPIN (ronda 54, spec del dueño): con el
+  // Súper Efecto activo, el movimiento REAL de la pala al golpear decide
+  // el tipo — barrido de abajo hacia arriba = TOPSPIN (liftado), de arriba
+  // hacia abajo = BACKSPIN (cortado), lateral = SIDESPIN (lado del barrido,
+  // +x = derecha del jugador). Golpe SIN barrido claro (recto o por debajo
+  // del umbral) no lleva tipo: bote FÍSICO PURO (el acople ×2,4 de la r51
+  // quedó RETIRADO en la r57 — un bote amplificado podía salir «amable»
+  // y favorecer al rival; la ventaja del bote es SÓLO la firma tipificada).
+  // El tipo viaja en la bola y lo traduce el BOTE en c05/collideTable; la
+  // marca la limpia la IA al devolver.
+  if (eMul > 1) {
+    const pvx = pad.vel.x, pvy = pad.vel.y;
+    const avx = Math.abs(pvx), avy = Math.abs(pvy);
+    if (Math.max(avx, avy) <= (DIMS.efectoTipoUmbral || 0.55)) {
+      ball.ppEfectoTipo = '';
+      ball.ppEfectoLado = 0;
+    } else if (avy >= avx) {
+      ball.ppEfectoTipo = pvy > 0 ? 'top' : 'back';
+      ball.ppEfectoLado = 0;
+    } else {
+      ball.ppEfectoTipo = 'side';
+      ball.ppEfectoLado = pvx > 0 ? 1 : -1;
+    }
+  } else {
+    ball.ppEfectoTipo = '';
+    ball.ppEfectoLado = 0;
+  }
+  // v3.6.49 · PALA HONESTA TOTAL (bug del dueño, r57: «persiste más allá
+  // del tiempo indicado»): un golpe SIN poder activo (eMul = 1) MATA la
+  // marca vieja que la bola pudiera arrastrar (ventana expirada, saque,
+  // rebote loco). La marca nace SOLO de un golpe con la ventana viva y
+  // muere con el reloj (c12/_efectoFin), con la devolución de la IA (c06)
+  // y con CUALQUIER golpe honesto — jamás sobrevive a los 10 s.
+  if (eMul <= 1 && ball.ppEfecto) ball.ppEfecto = false;
 
   // Colocar la bola sobre la cara de contacto
   const front = DIMS.ballRadius + 0.002;
@@ -222,6 +370,44 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     .addScaledVector(tmpN, front)
     .addScaledVector(ipRight, lx)
     .addScaledVector(ipUp, ly);
+  // r100 · un GOLPE rompe cualquier apoyo previo (el transporte r100 en
+  // stepPhysics jamás persigue una bola ya golpeada)
+  ball.__ppRestIdx = -1;
+  ball.__ppRestT = 0;
+
+  // v3.6.49 · SÚPER IMÁN — GUÍA DE TIRO EN EL GOLPE (spec literal r57):
+  // la trayectoria real del golpe se prolonga hacia la mitad rival y se
+  // CLAMPA dentro de la mesa (LA corrección de dirección del dueño);
+  // computeShotVelocityReal — el solver de la casa, con arrastre real y
+  // despeje de red garantizado, el mismo que usa la IA — reconstruye la
+  // velocidad para BOTAR EXACTAMENTE en el objetivo (bote correcto
+  // asegurado). Potencia: piso fuerte + empuje ×1,2 con tope honesto.
+  // GUARDAS: sólo pala del jugador (ppImanAim la arma el núcleo SOLO con
+  // la ventana viva), NUNCA en vuelo de saque (serveFlight), NUNCA fuera
+  // del rally (intercambio) y sólo tiros hacia la mitad rival (vel.z <
+  // −0,4): el saque propio y los tiros hacia atrás son juego normal.
+  // Simuladores y golden jamás lo ven (ventana apagada — patrón r56).
+  if (pad.ppImanAim && pad.who === 'player' && !pad.serveFlight &&
+      pad.intercambio !== false &&
+      ball.vel.z < (DIMS.imanAimVzMin || -0.4)) {
+    const tz0 = DIMS.tableCenterZ -
+      DIMS.tableHalfLength * (DIMS.imanAimProfundidad || 0.62);
+    let tx0 = ball.pos.x + ball.vel.x * ((tz0 - ball.pos.z) / ball.vel.z);
+    const lim0 = DIMS.tableHalfWidth - DIMS.ballRadius - 0.05;
+    tx0 = THREE.MathUtils.clamp(tx0, -lim0, lim0);   // LA corrección de dirección
+    _imObjetivo.set(tx0, DIMS.tableTopY + DIMS.ballRadius, tz0);
+    const sp0 = ball.vel.length();
+    const vMax0 = Math.min(DIMS.maxBallSpeed * (DIMS.imanAimTopeFrac || 0.8),
+      Math.max(sp0 * (DIMS.imanAimEmpuje || 1.2), DIMS.imanAimPisoVel || 9.5));
+    const D0 = Math.hypot(_imObjetivo.x - ball.pos.x, _imObjetivo.z - ball.pos.z);
+    const T0 = THREE.MathUtils.clamp(D0 / (vMax0 * 0.82), 0.32, 0.85);
+    ball.vel.copy(computeShotVelocityReal(ball.pos, _imObjetivo, T0, vMax0, _imSpinCero));
+    ball.spin.set(0, 0, 0);              // misil guiado: cero Magnus (bote seguro)
+    ball.ppEfecto = false;               // el imán manda la trayectoria: bola limpia
+    ball.ppEfectoTipo = '';
+    ball.ppEfectoLado = 0;
+    imanAimUsado = true;
+  }
 
   // v3.1.1-FEEL1 · el evento (audio, háptica, árbitro, contadores) sólo
   // existe si el impacto es de verdad: los micro-contactos de REPOSO (botes
@@ -230,7 +416,7 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   // lanzamiento necesitan ver TAMBIÉN los roces flojos (semántica SRV2).
   if (pad.serveFlight || Math.abs(vRelN) >= SERVE_TUNE.restEventMin) {
     pad.cooldown = DIMS.paddleHitCooldown;
-    events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index });
+    events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index, imanAim: imanAimUsado });
   }
   return true;
 }
@@ -249,6 +435,19 @@ function collideTable(ball, prevY, events) {
   if (vel.y < 0 && prevY >= topR && pos.y < topR && inX && inZ) {
     pos.y = topR;
     const impact = -vel.y;
+    // v3.6.46 · con TIPO claro (top/back/side) el bote lleva la FIRMA
+    // tipificada de abajo. Las bolas marcadas SIN tipo bote FÍSICO PURO:
+    // v3.6.49 (r57, regla del dueño «la ventaja del bote sólo es para el
+    // jugador, el perjudicado siempre es el rival») RETIRA el acople
+    // ×2,4 de la r51 — un bote amplificado dependía del giro real y
+    // podía salir amable (bola muerta o bote alto y cómodo) y BENEFICIAR
+    // AL RIVAL. La ventaja del efecto en los botes es hoy SÓLO la firma
+    // tipificada, que siempre castiga: top acelera y achica, back mata
+    // el ritmo en su campo, side patada lateral a perseguir.
+    // v3.6.47 · «siempre en el bote sobre la MESA DEL RIVAL» (spec r55):
+    // TODO el Súper Efecto vive SOLO en la mitad del rival (z < C); un
+    // bote en NUESTRA mitad (mishit, bola loca) es juego normal.
+    const boteRival = pos.z < C;
     if (DIMS.physicsRealism >= 0.5) {
       // v3.0.5-FIS1 · P2: bote físico con deslizamiento (slip-coupled)
       bounceOnTable(vel, spin, impact);
@@ -257,6 +456,35 @@ function collideTable(ball, prevY, events) {
       vel.x *= DIMS.tableFriction;
       vel.z *= DIMS.tableFriction;
       applyBounceSpin(vel, spin);
+    }
+    // v3.6.46 · SPIN TIPIFICADO — el bote traduce el giro (spec literal
+    // del dueño, ronda 54):
+    //   TOPSPIN  → «al botar la pelota sale muy acelerada hacia delante
+    //              del bote» (y baja: bote tenso de ataque);
+    //   BACKSPIN → «la pelota prácticamente se queda parada con muy poca
+    //              velocidad» (bola muerta en la mesa del rival);
+    //   SIDESPIN → «dependiendo del lado exagera el bote en la dirección
+    //              del efecto» (patada lateral proporcional al vuelo).
+    // v3.6.47 · las tres firmas SOLO en la mitad del RIVAL (boteRival).
+    if (boteRival && ball.ppEfectoTipo === 'top') {
+      const vz0 = vel.z;
+      if (Math.abs(vz0) > 1e-3) {
+        const fwd = vz0 > 0 ? 1 : -1;
+        vel.z = fwd * Math.min(
+          Math.abs(vz0) * (DIMS.efectoBoteTopAvance || 1.55) + 0.4,
+          DIMS.maxBallSpeed);
+        vel.y *= (DIMS.efectoBoteTopVy || 0.62);
+      }
+    } else if (boteRival && ball.ppEfectoTipo === 'back') {
+      vel.z *= (DIMS.efectoBoteBackH || 0.16);
+      vel.x *= (DIMS.efectoBoteBackFx || 0.35);
+      vel.y *= (DIMS.efectoBoteBackVy || 0.32);
+    } else if (boteRival && ball.ppEfectoTipo === 'side') {
+      const lado = ball.ppEfectoLado || 1;
+      const kick = THREE.MathUtils.clamp(
+        Math.abs(vel.z) * (DIMS.efectoBoteSideKick || 0.42),
+        0.45, DIMS.efectoBoteSideMax || 1.5);
+      vel.x += lado * kick;
     }
     events.push({ type: 'table', side: pos.z > C ? 'player' : 'ai', speed: impact, pos: pos.clone() });
     return;
@@ -287,7 +515,9 @@ function collideTable(ball, prevY, events) {
     }
     spin.multiplyScalar(0.6);
     // Regla ITTF: tocar el canto cuenta como bote válido
-    events.push({ type: 'table', side: pos.z > C ? 'player' : 'ai', speed: 1.5, pos: pos.clone() });
+    // r62: el evento lleva edge:true — el sonido del CANTO es el «ping»
+    // metálico con cola (muestra física propia en c03.tableEdge)
+    events.push({ type: 'table', edge: true, side: pos.z > C ? 'player' : 'ai', speed: 1.5, pos: pos.clone() });
   }
 }
 
@@ -322,11 +552,28 @@ function collideWorld(ball, events) {
   if (pos.y < r && vel.y < 0) {
     const impact = -vel.y;
     pos.y = r;
-    vel.y = impact * 0.45;
-    vel.x *= 0.85;
-    vel.z *= 0.85;
-    spin.multiplyScalar(0.35);
-    events.push({ type: 'floor', speed: impact, pos: pos.clone() });
+    // r74 · ZONA MUERTA DEL SUELO (el «sonido de la bola con el bote
+    // infinito» del dueño): una bola en reposo vuelve a tocar el suelo CADA
+    // SUBPASO — la gravedad la hunde unas centésimas, la colisión la
+    // devuelve y cada toque disparaba un «thud» (y un evento con su
+    // pos.clone(): basura por frame). Con bola APARCADA bajo el suelo
+    // (salas de campeonato) además rebotaba hacia la sala en bucle.
+    // Ahora, con impacto despreciable la bola SE POSA: sin evento, sin
+    // sonido, sin rebote fantasma. Un bote real (>= 0,3 m/s ≈ caída de
+    // 4,6 mm — el golden de física juega con velocidades de metros/segundo)
+    // suena exactamente igual que siempre.
+    if (impact < 0.3) {
+      vel.y = 0;
+      vel.x *= 0.9;
+      vel.z *= 0.9;
+      spin.multiplyScalar(0.5);
+    } else {
+      vel.y = impact * 0.45;
+      vel.x *= 0.85;
+      vel.z *= 0.85;
+      spin.multiplyScalar(0.35);
+      events.push({ type: 'floor', speed: impact, pos: pos.clone() });
+    }
   }
   // v2.101: ball.ignoreWalls — las PRUEBAS al AIRE LIBRE (asedio del oeste)
   // juegan SIN los muros invisibles de la sala (roomHalfX ±3,05 tapaba las
@@ -363,11 +610,103 @@ function collideWorld(ball, events) {
   ) {
     pos.set(0, 0.5, DIMS.tableCenterZ);
     vel.set(0, 0, 0);
-    events.push({ type: 'floor', speed: 1, pos: pos.clone() });
+    // r74 · SIN evento: el rescate es un TELETRANSPORTE, no un bote — sonar
+    // aquí era uno de los «thud» fantasma del bote infinito (la bola
+    // aparcada a -10 m saltaba aquí y caía botando audible e invisible).
   }
 }
 
+/* ---------- v3.6.49 (ronda 57) · SÚPER IMÁN REESCRITO — GUÍA DE TIRO ----------
+ *  El dueño retira el gancho y el freno («olvidemos el efecto anterior de
+ *  atracción y ralentización»): el nuevo Súper Imán «asegura que nuestros
+ *  ataques den SIEMPRE en la mesa del rival corrigiendo su dirección y
+ *  permitiendo golpes muy fuertes y a gran velocidad; aunque la dirección
+ *  sea errónea (siempre que se dirija hacia la parte de la mesa rival)
+ *  acertarán sobre su mesa mediante una corrección de su trayectoria…
+ *  el poder asegura un bote correcto sobre la mesa del rival (10 segundos
+ *  de duración)».
+ *  La mecánica ya NO es un campo por subpaso: es GUÍA DE TIRO EN EL GOLPE
+ *  y vive DENTRO de collidePaddleSweep (ver el bloque r57 allí): el
+ *  solver de la casa computeShotVelocityReal reconstruye la velocidad para
+ *  botar EN LA MESA DEL RIVAL con despeje de red garantizado. Sin marcas
+ *  por subpaso, sin gasto de cargas por asistencia — la ventana vive SUS
+ *  10 s (regla del dueño) y el golden de física jamás la ve. */
+const _imObjetivo = new THREE.Vector3();   // objetivo de la guía del imán
+const _imSpinCero = new THREE.Vector3();   // spin nulo del misil guiado
+
+/* r100 · TEMPORALES del transporte del apoyo (una pasada por frame: CERO
+ * asignaciones en el camino caliente). */
+const _rsBase = new THREE.Vector3();
+const _rsN = new THREE.Vector3();
+const _rsG = new THREE.Vector3();
+const _rsSlip = new THREE.Vector3();
+const _rsOm = new THREE.Vector3();
+
 export function stepPhysics(dt, ball, paddles, events, extra) {
+  /* ================================================================
+   * r100 · TRANSPORTE DEL APOYO (bloque complementario del contacto de
+   * reposo en collidePaddleSweep). La bola apoyada en la pala del jugador
+   * VIAJA con ella mientras el gesto sea suave: posición re-proyectada a la
+   * cara con la pose del frame nuevo (punto local conservado), gravedad
+   * tangencial con fricción estática (pala plana = bola quieta; pala
+   * inclinada = la bola rueda cuesta abajo) y rodadura del cascarón. Al
+   * acelerar la pala (swing, > paddleRestCarry) el apoyo se SUELTA y el
+   * barrido CCD del subpaso decide el golpe natural — nunca atraviesa.
+   * Despegues: pala rápida, bola deslizada fuera del disco, edad sin
+   * re-confirmar > paddleRestDrop o pala ausente (auto-limpieza).        */
+  if (ball.__ppRestIdx >= 0) {
+    let rp = null;
+    for (const p of paddles) if (p && p.index === ball.__ppRestIdx) { rp = p; break; }
+    ball.__ppRestT = (ball.__ppRestT || 0) + dt;
+    if (!rp || !rp.active || rp.who !== 'player' ||
+        ball.__ppRestT > DIMS.paddleRestDrop ||
+        rp.vel.lengthSq() > DIMS.paddleRestCarry * DIMS.paddleRestCarry) {
+      ball.__ppRestIdx = -1;                       // despegue: física normal
+    } else {
+      _rsN.copy(rp.normal).multiplyScalar(ball.__ppRestSide || 1);  // normal hacia la bola
+      // 1) deslizamiento propio: gravedad proyectada en el plano de la hoja
+      _rsG.set(0, DIMS.gravity, 0);
+      const gn = _rsG.dot(_rsN);                   // componente normal (negativa)
+      _rsG.addScaledVector(_rsN, -gn);             // tangencial (cuesta abajo)
+      const ax = _rsG.dot(rp.right), ay = _rsG.dot(rp.up);
+      const amax = DIMS.paddleRestFric * Math.abs(gn);
+      let sx = ball.__ppRestSx || 0, sy = ball.__ppRestSy || 0;
+      const quieta = (sx * sx + sy * sy) < 1e-6 &&
+        Math.hypot(ax, ay) <= DIMS.paddleRestMuS * Math.abs(gn);
+      if (quieta) { sx = 0; sy = 0; }              // fricción estática: no rueda
+      else {
+        sx += ax * dt; sy += ay * dt;
+        const sLen = Math.hypot(sx, sy);
+        if (sLen > 1e-9) {
+          const sNew = Math.max(0, sLen - amax * dt * 2.2);
+          const sK = sNew / sLen; sx *= sK; sy *= sK;
+        }
+      }
+      // 2) punto de apoyo actualizado y clamped al disco de la hoja
+      const lx2 = ball.__ppRestLx + sx * dt, dy2 = ball.__ppRestDy + sy * dt;
+      const rIn = DIMS.bladeRadius - DIMS.ballRadius * 0.35;
+      if (lx2 * lx2 + dy2 * dy2 > rIn * rIn) {
+        ball.__ppRestIdx = -1;                     // rodó fuera del borde
+      } else {
+        ball.__ppRestLx = lx2; ball.__ppRestDy = dy2;
+        ball.__ppRestSx = sx; ball.__ppRestSy = sy;
+        // 3) posición pegada a la cara con la pose del frame nuevo
+        _rsBase.copy(rp.pos).addScaledVector(rp.up, DIMS.bladeCenterUp);
+        ball.pos.copy(_rsBase)
+          .addScaledVector(rp.right, lx2)
+          .addScaledVector(rp.up, dy2)
+          .addScaledVector(_rsN, DIMS.ballRadius + 0.001);
+        // 4) velocidad: la de la pala + el deslizamiento propio (al soltar
+        //    la bola hereda ambos — botes y deslices naturales)
+        _rsSlip.set(0, 0, 0).addScaledVector(rp.right, sx).addScaledVector(rp.up, sy);
+        ball.vel.copy(rp.vel).add(_rsSlip);
+        // 5) rodadura del cascarón (ω ideal = (N × v)/r, aproximada suave)
+        _rsOm.copy(_rsN).cross(_rsSlip).divideScalar(DIMS.ballRadius);
+        ball.spin.lerp(_rsOm, 0.15);
+      }
+    }
+  }
+
   const n = Math.max(1, Math.min(96, Math.ceil(dt / MAX_SUBSTEP_DT)));
   const h = dt / n;
 
@@ -379,7 +718,11 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
     const prevZ = ball.pos.z;
 
     ball.vel.y += DIMS.gravity * h;
-    applyAerodynamics(ball.vel, ball.spin, h, ball.dragMul);
+    applyAerodynamics(ball.vel, ball.spin, h, ball.dragMul,
+      ball.ppEfecto ? (DIMS.efectoMagnusMul || 1.5) : 1);   // v3.6.36: bola marcada
+    // v3.6.49 (r57): FUERA el campo por subpaso del imán — la guía de tiro
+    // del Súper Imán vive ahora EN EL GOLPE (collidePaddleSweep, bloque
+    // r57) y el golden de física no ve nada nuevo aquí.
     ball.pos.addScaledVector(ball.vel, h);
 
     // v2.29: si la pala golpea en este subpaso, la bola se RECOLOCA sobre la

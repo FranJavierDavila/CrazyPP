@@ -77,9 +77,9 @@ chk((OESTE / 'assets' / 'tren' / 'Tren_Llegada.mp3').stat().st_size > 120000,
     'Tren_Llegada.mp3 re-codificado a 256 kbps (perfil caballos)')
 
 # ── 2 · SDK v1.5.4 + IMPORT ───────────────────────────────────────────────
-chk("const SDK_VERSION = '1.5.4'" in sdk, 'SDK_VERSION = 1.5.4')
+chk("const SDK_VERSION = '1.6.0'" in sdk, 'SDK_VERSION = 1.6.0 (re-ancla honesto r98 — 1.6.0 desde la r97)')
 chk('export function createBucle' in sdk, 'SDK exporta createBucle')
-chk('createBucle, createPowerSign' in sdk, 'createBucle en el export default')
+chk('createBucle, createRivalVoz, createPowerSign' in sdk, 'createBucle en el export default (con createRivalVoz r97)')
 chk(re.search(r"import \{[^}]*createBucle[^}]*assetURL[^}]*\} from '\.\./sdk/champ_sdk\.js'", mod) is not None,
     'oeste importa createBucle + assetURL del SDK')
 

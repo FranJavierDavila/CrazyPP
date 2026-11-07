@@ -1,0 +1,909 @@
+{
+  "fase": 2,
+  "generado": "2026-10-28T17:24:54.366Z",
+  "golden": "# SHA256 del game.html que produjo esta división (3.6.78-SDK6, fase 80 · Escenario real de Halloween + 4 superpoderes; sello actualizado",
+  "ficheros": {
+    "c00_pre_three.js": {
+      "lineas": 2756,
+      "declara": 15,
+      "exporta": [
+        "PP_ICONS",
+        "T",
+        "TLang",
+        "VOICE_B64",
+        "VOICE_B64_EN",
+        "WORLDRANK",
+        "__PP_TELE",
+        "__ppLang",
+        "applyLangDOM",
+        "ppDebugMode",
+        "ppPlayerName",
+        "setLang",
+        "wrlBadgeImg"
+      ],
+      "importa": {},
+      "muta": {},
+      "biblioteca": [],
+      "globalesTop": [
+        "c×416",
+        "y×150",
+        "x×150",
+        "st×63",
+        "Math×59",
+        "window×35",
+        "i×28",
+        "e×17"
+      ]
+    },
+    "c01_modelos_3d.js": {
+      "lineas": 306,
+      "declara": 16,
+      "exporta": [
+        "PALA_BLADE_Y",
+        "PALA_GRIP_Y",
+        "PALA_SCALE",
+        "fixInvertedMeshes",
+        "loadGunModel",
+        "loadPaddleModel",
+        "makeGunVisual",
+        "makePaddleVisual"
+      ],
+      "importa": {},
+      "muta": {},
+      "biblioteca": [],
+      "globalesTop": [
+        "THREE×34",
+        "m×27",
+        "i×20",
+        "o×14",
+        "idx×11",
+        "model×10",
+        "resolve×8",
+        "g×8"
+      ]
+    },
+    "c02_cfg_escena.js": {
+      "lineas": 324,
+      "declara": 13,
+      "exporta": [
+        "AI_PRESETS",
+        "COLORS",
+        "DIMS",
+        "MOUNT_QUAT_RIGHT",
+        "ROOM_THEMES",
+        "SERVE_ASSIST_TIERS",
+        "SERVE_TUNE",
+        "mountQuatFor",
+        "scalePreset"
+      ],
+      "importa": {},
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "Math×14",
+        "THREE×13",
+        "cfg×10",
+        "kk×9",
+        "k×1",
+        "roll×1",
+        "rollQ×1",
+        "pitch×1"
+      ]
+    },
+    "c03_audio_voz.js": {
+      "lineas": 1774,
+      "declara": 6,
+      "exporta": [
+        "GameAudio"
+      ],
+      "importa": {
+        "c00_pre_three.js": [
+          "TLang",
+          "VOICE_B64",
+          "VOICE_B64_EN"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [],
+      "globalesTop": [
+        "Math×79",
+        "g×77",
+        "t×76",
+        "now×53",
+        "ctx×50",
+        "src×48",
+        "window×33",
+        "i×33"
+      ]
+    },
+    "c04_fisica_ccd.js": {
+      "lineas": 351,
+      "declara": 52,
+      "exporta": [
+        "CCD_TUNE",
+        "MAX_SUBSTEP_DT",
+        "applyAerodynamics",
+        "applyBounceSpin",
+        "bladeNormalLocal",
+        "bounceOnTable",
+        "ccdC0",
+        "ccdC1",
+        "ccdNL",
+        "ccdNrmA",
+        "ccdNrmB",
+        "ccdP",
+        "ccdPosA",
+        "ccdPosB",
+        "ccdRgtA",
+        "ccdRgtB",
+        "ccdUpA",
+        "ccdUpB",
+        "createPaddleSim",
+        "crossPoint",
+        "ipNormal",
+        "ipRight",
+        "ipUp",
+        "padPos",
+        "paddlePerkFor",
+        "relVel",
+        "sdfBlade",
+        "setPaddleBasis",
+        "sweepBallVsBlade",
+        "sweepBallVsCapsuleY",
+        "tmpD",
+        "tmpM",
+        "tmpMountQ",
+        "tmpN",
+        "tmpPrev",
+        "tmpR",
+        "tmpS",
+        "tmpSurf",
+        "tmpT",
+        "tmpTarget",
+        "tmpV",
+        "updatePaddleSim"
+      ],
+      "importa": {
+        "c02_cfg_escena.js": [
+          "DIMS",
+          "SERVE_TUNE"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "THREE×46",
+        "ps×34",
+        "Math×19",
+        "t×12",
+        "vel×11",
+        "spin×10",
+        "p×9",
+        "y×8"
+      ]
+    },
+    "c05_colisiones_ia_golpeo.js": {
+      "lineas": 1018,
+      "declara": 21,
+      "exporta": [
+        "__ppServeTelemetry",
+        "applyServeProgressiveAssist",
+        "collidePaddle",
+        "collidePaddleSweep",
+        "computeShotVelocity",
+        "computeShotVelocityReal",
+        "findServeVelocity",
+        "predictStrike",
+        "simulateServePath",
+        "stepPhysics",
+        "testPaddleContact"
+      ],
+      "importa": {
+        "c04_fisica_ccd.js": [
+          "CCD_TUNE",
+          "MAX_SUBSTEP_DT",
+          "applyAerodynamics",
+          "applyBounceSpin",
+          "bladeNormalLocal",
+          "bounceOnTable",
+          "ccdC0",
+          "ccdC1",
+          "ccdNL",
+          "ccdNrmA",
+          "ccdNrmB",
+          "ccdP",
+          "ccdPosA",
+          "ccdPosB",
+          "ccdRgtA",
+          "ccdRgtB",
+          "ccdUpA",
+          "ccdUpB",
+          "crossPoint",
+          "ipNormal",
+          "ipRight",
+          "ipUp",
+          "padPos",
+          "paddlePerkFor",
+          "relVel",
+          "sweepBallVsBlade",
+          "sweepBallVsCapsuleY",
+          "tmpD",
+          "tmpM",
+          "tmpN",
+          "tmpPrev",
+          "tmpR",
+          "tmpS",
+          "tmpSurf",
+          "tmpT"
+        ],
+        "c02_cfg_escena.js": [
+          "DIMS",
+          "SERVE_TUNE"
+        ],
+        "c00_pre_three.js": [
+          "T"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "pos×105",
+        "ball×93",
+        "vel×69",
+        "Math×59",
+        "pad×54",
+        "out×36",
+        "C×27",
+        "from×26"
+      ]
+    },
+    "c06_logros_stats_ia_rival.js": {
+      "lineas": 877,
+      "declara": 11,
+      "exporta": [
+        "ACHIEVEMENTS",
+        "GameStats",
+        "OpponentAI",
+        "Rules"
+      ],
+      "importa": {
+        "c02_cfg_escena.js": [
+          "DIMS"
+        ],
+        "c05_colisiones_ia_golpeo.js": [
+          "computeShotVelocityReal",
+          "predictStrike"
+        ],
+        "c04_fisica_ccd.js": [
+          "tmpD",
+          "tmpT",
+          "tmpTarget"
+        ]
+      },
+      "muta": {
+        "T": "c00_pre_three.js"
+      },
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "Math×53",
+        "ball×48",
+        "intents×19",
+        "sign×17",
+        "THREE×17",
+        "winner×14",
+        "cause×13",
+        "ctx×13"
+      ]
+    },
+    "c07_escena_sala.js": {
+      "lineas": 496,
+      "declara": 5,
+      "exporta": [
+        "createBall",
+        "createBlobShadow",
+        "createChampDecor",
+        "createRoom",
+        "createTable"
+      ],
+      "importa": {
+        "c02_cfg_escena.js": [
+          "COLORS",
+          "DIMS"
+        ],
+        "c04_fisica_ccd.js": [
+          "tmpV"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "THREE×83",
+        "p×49",
+        "g×30",
+        "Math×26",
+        "nctx×12",
+        "topY×11",
+        "game×11",
+        "pc×10"
+      ]
+    },
+    "c08_hall_hud.js": {
+      "lineas": 1259,
+      "declara": 24,
+      "exporta": [
+        "HALL",
+        "createBounceMarkers",
+        "createCalibPanel",
+        "createChampRoom",
+        "createConfetti",
+        "createFanfareBanner",
+        "createHall",
+        "createReplayBanner",
+        "createScoreboard",
+        "drawHallSign",
+        "updateHallFx"
+      ],
+      "importa": {
+        "c02_cfg_escena.js": [
+          "DIMS"
+        ],
+        "c00_pre_three.js": [
+          "T",
+          "TLang"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "x×192",
+        "ctx×124",
+        "THREE×75",
+        "W×71",
+        "g2×71",
+        "i×58",
+        "H×54",
+        "d×48"
+      ]
+    },
+    "c09_red_netlink.js": {
+      "lineas": 1930,
+      "declara": 1,
+      "exporta": [
+        "NetLink"
+      ],
+      "importa": {
+        "c02_cfg_escena.js": [
+          "DIMS",
+          "mountQuatFor"
+        ],
+        "c00_pre_three.js": [
+          "T"
+        ],
+        "c01_modelos_3d.js": [
+          "PALA_BLADE_Y",
+          "PALA_GRIP_Y",
+          "PALA_SCALE"
+        ],
+        "c09b_red_nucleo.js": [
+          "PPNET"
+        ],
+        "c05_colisiones_ia_golpeo.js": [
+          "stepPhysics"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "g×119",
+        "r×103",
+        "d×49",
+        "e×46",
+        "m×41",
+        "performance×39",
+        "ev×36",
+        "out×34"
+      ]
+    },
+    "c09b_red_nucleo.js": {
+      "lineas": 811,
+      "declara": 1,
+      "exporta": [
+        "PPNET"
+      ],
+      "importa": {},
+      "muta": {},
+      "biblioteca": [],
+      "globalesTop": [
+        "r×59",
+        "i×50",
+        "out×45",
+        "Math×42",
+        "VP×35",
+        "a×32",
+        "w×29",
+        "b×28"
+      ]
+    },
+    "c09c_red_social.js": {
+      "lineas": 361,
+      "declara": 1,
+      "exporta": [
+        "RedSocial"
+      ],
+      "importa": {
+        "c00_pre_three.js": [
+          "T",
+          "ppPlayerName"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [],
+      "globalesTop": [
+        "r×20",
+        "net×10",
+        "g×10",
+        "base×8",
+        "e×8",
+        "window×7",
+        "nuevo×6",
+        "p×4"
+      ]
+    },
+    "c10_menu_saque.js": {
+      "lineas": 105,
+      "declara": 39,
+      "exporta": [
+        "AIM_BLADE",
+        "AIM_BX",
+        "AIM_BY",
+        "AIM_BZ",
+        "AIM_FACE",
+        "AIM_FWD",
+        "AIM_RIGHT",
+        "AIM_XA",
+        "AIM_Z",
+        "AI_TOSS_T",
+        "BALL_HAND_LIFT",
+        "CHAMPS_STATE",
+        "MENU_LOGO_SRC",
+        "SWING_POSE",
+        "_dbQ1",
+        "_dbQ2",
+        "_dbV1",
+        "_rbQ",
+        "_rbV1",
+        "_rbV2",
+        "_rbV3",
+        "_rbV4",
+        "_rpSize",
+        "_rpV1",
+        "aimM",
+        "aimPitchQ",
+        "aimRollQ",
+        "poseQ",
+        "rpDir",
+        "rpOrigin",
+        "rpQuat",
+        "rpRaycaster",
+        "swingV"
+      ],
+      "importa": {},
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "THREE×34"
+      ]
+    },
+    "c11_champloader.js": {
+      "lineas": 955,
+      "declara": 17,
+      "exporta": [
+        "ChampLoader",
+        "NORMAS_SKIN",
+        "muDir",
+        "muGrip",
+        "muHead",
+        "muQ",
+        "muRaycaster",
+        "netTmpP",
+        "netTmpQ",
+        "netTmpQ2",
+        "netTmpV",
+        "pcA",
+        "pcC",
+        "pcN",
+        "pcT"
+      ],
+      "importa": {
+        "c00_pre_three.js": [
+          "T",
+          "__ppLang",
+          "ppDebugMode"
+        ],
+        "c10_menu_saque.js": [
+          "CHAMPS_STATE",
+          "_dbQ1",
+          "_dbQ2",
+          "_dbV1",
+          "_rbQ",
+          "_rbV1",
+          "_rbV2",
+          "_rbV3",
+          "_rbV4",
+          "_rpSize",
+          "_rpV1",
+          "rpDir",
+          "rpOrigin",
+          "rpQuat",
+          "rpRaycaster"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three"
+      ],
+      "globalesTop": [
+        "m×96",
+        "e×68",
+        "id×48",
+        "g×36",
+        "THREE×31",
+        "console×22",
+        "raw×18",
+        "cx×18"
+      ]
+    },
+    "c12_pingponggame.js": {
+      "lineas": 10889,
+      "declara": 91,
+      "exporta": [
+        "PingPongGame",
+        "arBtn",
+        "overlay",
+        "playEn",
+        "playEs",
+        "statusEl",
+        "vrbtn"
+      ],
+      "importa": {
+        "c03_audio_voz.js": [
+          "GameAudio"
+        ],
+        "c06_logros_stats_ia_rival.js": [
+          "ACHIEVEMENTS",
+          "GameStats",
+          "OpponentAI",
+          "Rules"
+        ],
+        "c02_cfg_escena.js": [
+          "AI_PRESETS",
+          "DIMS",
+          "MOUNT_QUAT_RIGHT",
+          "ROOM_THEMES",
+          "SERVE_ASSIST_TIERS",
+          "SERVE_TUNE",
+          "mountQuatFor",
+          "scalePreset"
+        ],
+        "c04_fisica_ccd.js": [
+          "CCD_TUNE",
+          "applyAerodynamics",
+          "createPaddleSim",
+          "sweepBallVsBlade",
+          "sweepBallVsCapsuleY",
+          "tmpMountQ",
+          "tmpTarget",
+          "tmpV",
+          "updatePaddleSim"
+        ],
+        "c09_red_netlink.js": [
+          "NetLink"
+        ],
+        "c07_escena_sala.js": [
+          "createBall",
+          "createBlobShadow",
+          "createChampDecor",
+          "createRoom",
+          "createTable"
+        ],
+        "c08_hall_hud.js": [
+          "HALL",
+          "createBounceMarkers",
+          "createCalibPanel",
+          "createChampRoom",
+          "createConfetti",
+          "createFanfareBanner",
+          "createHall",
+          "createReplayBanner",
+          "createScoreboard",
+          "drawHallSign",
+          "updateHallFx"
+        ],
+        "c01_modelos_3d.js": [
+          "PALA_BLADE_Y",
+          "PALA_GRIP_Y",
+          "PALA_SCALE",
+          "makePaddleVisual"
+        ],
+        "c11_champloader.js": [
+          "ChampLoader",
+          "NORMAS_SKIN",
+          "muDir",
+          "muGrip",
+          "muHead",
+          "muQ",
+          "muRaycaster",
+          "netTmpP",
+          "netTmpQ",
+          "netTmpQ2",
+          "netTmpV",
+          "pcA",
+          "pcC",
+          "pcN",
+          "pcT"
+        ],
+        "c09c_red_social.js": [
+          "RedSocial"
+        ],
+        "c00_pre_three.js": [
+          "PP_ICONS",
+          "T",
+          "TLang",
+          "WORLDRANK",
+          "__PP_TELE",
+          "__ppLang",
+          "ppPlayerName",
+          "setLang",
+          "wrlBadgeImg"
+        ],
+        "c09b_red_nucleo.js": [
+          "PPNET"
+        ],
+        "c05_colisiones_ia_golpeo.js": [
+          "__ppServeTelemetry",
+          "applyServeProgressiveAssist",
+          "collidePaddle",
+          "collidePaddleSweep",
+          "computeShotVelocity",
+          "computeShotVelocityReal",
+          "findServeVelocity",
+          "predictStrike",
+          "simulateServePath",
+          "stepPhysics",
+          "testPaddleContact"
+        ],
+        "c10_menu_saque.js": [
+          "AIM_BLADE",
+          "AIM_BX",
+          "AIM_BY",
+          "AIM_BZ",
+          "AIM_FACE",
+          "AIM_FWD",
+          "AIM_RIGHT",
+          "AIM_XA",
+          "AIM_Z",
+          "AI_TOSS_T",
+          "BALL_HAND_LIFT",
+          "CHAMPS_STATE",
+          "MENU_LOGO_SRC",
+          "SWING_POSE",
+          "aimM",
+          "aimPitchQ",
+          "aimRollQ",
+          "poseQ",
+          "swingV"
+        ],
+        "c13_ui_arranque.js": [
+          "wrapText"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three",
+        "GLTFLoader ← three/addons/loaders/GLTFLoader.js",
+        "RoomEnvironment ← three/addons/environments/RoomEnvironment.js"
+      ],
+      "globalesTop": [
+        "c×918",
+        "Math×299",
+        "THREE×219",
+        "e×205",
+        "S×192",
+        "y×160",
+        "undefined×145",
+        "c2×144"
+      ]
+    },
+    "c13_ui_arranque.js": {
+      "lineas": 5787,
+      "declara": 4,
+      "exporta": [
+        "wrapText"
+      ],
+      "importa": {
+        "c00_pre_three.js": [
+          "PP_ICONS",
+          "T",
+          "TLang",
+          "WORLDRANK",
+          "__ppLang",
+          "applyLangDOM",
+          "ppPlayerName",
+          "setLang"
+        ],
+        "c12_pingponggame.js": [
+          "PingPongGame",
+          "arBtn",
+          "overlay",
+          "playEn",
+          "playEs",
+          "statusEl",
+          "vrbtn"
+        ],
+        "c01_modelos_3d.js": [
+          "fixInvertedMeshes",
+          "loadGunModel",
+          "loadPaddleModel",
+          "makeGunVisual",
+          "makePaddleVisual"
+        ],
+        "c09_red_netlink.js": [
+          "NetLink"
+        ],
+        "c09b_red_nucleo.js": [
+          "PPNET"
+        ],
+        "c04_fisica_ccd.js": [
+          "CCD_TUNE",
+          "bladeNormalLocal",
+          "createPaddleSim",
+          "sdfBlade",
+          "setPaddleBasis",
+          "sweepBallVsBlade",
+          "tmpPrev"
+        ],
+        "c05_colisiones_ia_golpeo.js": [
+          "__ppServeTelemetry",
+          "applyServeProgressiveAssist",
+          "collidePaddleSweep",
+          "computeShotVelocityReal",
+          "findServeVelocity",
+          "simulateServePath",
+          "stepPhysics",
+          "testPaddleContact"
+        ],
+        "c02_cfg_escena.js": [
+          "AI_PRESETS",
+          "DIMS",
+          "SERVE_ASSIST_TIERS",
+          "SERVE_TUNE",
+          "scalePreset"
+        ],
+        "c10_menu_saque.js": [
+          "BALL_HAND_LIFT"
+        ]
+      },
+      "muta": {},
+      "biblioteca": [
+        "* as THREE ← three",
+        "GLTFLoader ← three/addons/loaders/GLTFLoader.js"
+      ],
+      "globalesTop": [
+        "c×525",
+        "G×350",
+        "g×256",
+        "st×235",
+        "Math×209",
+        "b×166",
+        "THREE×160",
+        "S×152"
+      ]
+    }
+  },
+  "duplicados": [],
+  "ciclos": [
+    [
+      "c12_pingponggame.js",
+      "c13_ui_arranque.js",
+      "c12_pingponggame.js"
+    ]
+  ],
+  "sdk_candidatos_fase3": [
+    {
+      "simbolo": "DIMS",
+      "ficherosQueImportan": 8
+    },
+    {
+      "simbolo": "T",
+      "ficherosQueImportan": 7
+    },
+    {
+      "simbolo": "TLang",
+      "ficherosQueImportan": 4
+    },
+    {
+      "simbolo": "SERVE_TUNE",
+      "ficherosQueImportan": 4
+    },
+    {
+      "simbolo": "CCD_TUNE",
+      "ficherosQueImportan": 3
+    },
+    {
+      "simbolo": "sweepBallVsBlade",
+      "ficherosQueImportan": 3
+    },
+    {
+      "simbolo": "computeShotVelocityReal",
+      "ficherosQueImportan": 3
+    },
+    {
+      "simbolo": "PPNET",
+      "ficherosQueImportan": 3
+    },
+    {
+      "simbolo": "stepPhysics",
+      "ficherosQueImportan": 3
+    },
+    {
+      "simbolo": "ppPlayerName",
+      "ficherosQueImportan": 3
+    },
+    {
+      "simbolo": "__ppLang",
+      "ficherosQueImportan": 3
+    },
+    {
+      "simbolo": "tmpPrev",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "sweepBallVsCapsuleY",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "bladeNormalLocal",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "tmpT",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "tmpD",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "applyAerodynamics",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "predictStrike",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "tmpTarget",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "tmpV",
+      "ficherosQueImportan": 2
+    }
+  ]
+}

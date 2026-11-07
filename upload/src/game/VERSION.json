@@ -1,0 +1,18 @@
+{
+  "version": "3.6.118-SDK6",
+  "fase": 120,
+  "faseNombre": "spin visible + hall del anfitrion",
+  "sdk": "1.6.0",
+  "fecha": "2026-11-07",
+  "hub": "v36118-sdk6",
+  "manifests": {
+    "oeste": 56,
+    "magia": 33,
+    "locura": 27,
+    "estacion_orbital": 17,
+    "halloween": 3
+  },
+  "nota": "r21",
+  "tamano": 10777222,
+  "golden": "261954e70046906f82854770b7678268b95c20120b14e0778fd3e2a96b39d1c4"
+}

@@ -1,0 +1,236 @@
+<header>
+  <h1>⚡ CRAZY PING PONG · EL TALLER UGC</h1>
+  <div class="sub">Editor de ETAPAS y CAMPEONATOS · genera tu <span class="kbd">manifest.json</span> sin tocar código · r85</div>
+</header>
+
+<div class="barra">
+  <label style="display:contents"><input type="file" id="cargaMan" accept=".json,application/json" hidden>
+    <button id="btnCargar">📂 Cargar manifest.json</button></label>
+  <button id="btnPlantilla">🌱 Empezar de cero (plantilla)</button>
+  <button id="btnValidar" class="prim">✔ Validar</button>
+  <button id="btnExportar" class="prim">⬇ Exportar manifest.json</button>
+  <button id="btnGuia">📖 Guía</button>
+</div>
+
+<main>
+  <div id="estado" class="aviso info">Carga un <b>manifest.json</b> existente (p. ej. <span class="kbd">public/championships/halloween/manifest.json</span>) o empieza de cero.</div>
+
+  <section class="seccion abierta" id="sec-identidad">
+    <h2><span class="flecha">▶</span> IDENTIDAD DEL CAMPEONATO</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo corto"><label>ID (carpeta)</label><input id="f_id" readonly></div>
+        <div class="campo corto"><label>versión</label><input id="f_version" type="number" min="1" step="1"></div>
+        <div class="campo corto"><label>estado</label>
+          <select id="f_estado">
+            <option>borrador</option><option>validacion</option><option>listo</option>
+            <option>publicado</option><option>desactivado</option>
+          </select></div>
+        <div class="campo"><label>tema (libre)</label><input id="f_tema" placeholder="halloween / circo / espacio…"></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>título (ES) · máx 40</label><input id="f_titulo_es" maxlength="40"></div>
+        <div class="campo"><label>título (EN)</label><input id="f_titulo_en" maxlength="40"></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>descripción (ES) · máx 400</label><textarea id="f_desc_es" maxlength="400"></textarea></div>
+        <div class="campo largo"><label>descripción (EN)</label><textarea id="f_desc_en" maxlength="400"></textarea></div>
+      </div>
+      <div class="fila">
+        <div class="campo corto"><label>storage</label><input id="f_storage" readonly></div>
+        <div class="campo largo"><label>nota de versión (notes +)</label><input id="f_note" placeholder="v2 · qué cambia en esta versión"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-rival">
+    <h2><span class="flecha">▶</span> RIVAL Y SUS POSES</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo"><label>nombre del rival</label><input id="f_rival_nombre" maxlength="14"></div>
+        <div class="campo corto"><label>kind (motor)</label>
+          <select id="f_rival_kind"><option>stock</option><option>clown</option><option>wizard</option><option>forajido</option></select></div>
+        <div class="campo corto"><label>alto (m)</label><input id="f_rival_alto" type="number" step="0.05" min="1.2" max="3"></div>
+        <div class="campo corto"><label>ext arte</label>
+          <select id="f_rival_ext"><option>webp</option><option>png</option></select></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>celebración (texto)</label><input id="f_rival_celebracion" maxlength="90"></div>
+        <div class="campo"><label>carácter</label><input id="f_rival_caracter" maxlength="16" placeholder="siniestro / frio / feliz…"></div>
+      </div>
+      <div class="fila">
+        <div class="campo corto"><label>agresividad 1-5</label><input id="f_rival_agresividad" type="number" min="1" max="5" step="1"></div>
+        <div class="campo corto"><label>precisión 1-5</label><input id="f_rival_precision" type="number" min="1" max="5" step="1"></div>
+        <div class="campo corto"><label>constancia 1-5</label><input id="f_rival_constancia" type="number" min="1" max="5" step="1"></div>
+        <div class="campo"><label>cerebro</label>
+          <select id="f_rival_cerebro"><option>equilibrado</option><option>agresivo</option><option>defensivo</option></select></div>
+      </div>
+      <div class="fila"><div class="campo largo">
+        <label>estados (poses en assets/&lt;estado&gt;.&lt;ext&gt;) · el conjunto rico usa 12</label>
+        <div class="chips" id="chipsEstados"></div>
+        <p class="ayuda">Marca las poses que TIENES en <span class="kbd">assets/</span>. «present» es la base del standee (<span class="kbd">rival.ext</span> o base personalizado).</p>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-camino">
+    <h2><span class="flecha">▶</span> CAMINO DE ETAPAS ⚔ (el corazón del campeonato)</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <button class="min" id="btnAddDuelo">+ DUELO</button>
+        <button class="min" id="btnAddPrueba">+ PRUEBA (dianas)</button>
+        <span class="ayuda" id="infoCamino"></span>
+      </div>
+      <div id="listaEtapas"></div>
+      <div class="fila">
+        <div class="campo corto"><label>dificultad difMul</label>
+          <select id="f_difMul"><option value="0.85">0.85 · fácil</option><option value="1" selected>1.0 · media</option><option value="1.18">1.18 · difícil</option></select></div>
+        <div class="campo corto"><label>paso (curva)</label><input id="f_paso" type="number" step="0.01" min="0" max="0.4"></div>
+        <div class="campo corto"><label>difFinal</label><input id="f_difFinal" type="number" step="0.01" min="1" max="2.2"></div>
+        <div class="campo corto"><label>métrica</label>
+          <select id="f_worldMetric"><option>wins</option><option selected>duelwins</option><option>puntos</option></select></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-mapa">
+    <h2><span class="flecha">▶</span> MAPA DEL CAMINO 🗺 (pica los nodos con un clic)</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo corto"><label>modo</label>
+          <select id="f_mapa_modo"><option value="canvas">canvas (dibujado)</option><option value="arte">arte (póster del dueño)</option></select></div>
+        <div class="campo"><label>ruta del póster (assets/…)</label><input id="f_mapa_arte" placeholder="assets/mapa.webp"></div>
+        <div class="campo corto"><label>ancho plano (m)</label><input id="f_mapa_planoW" type="number" step="0.02" min="0.8" max="3"></div>
+        <div class="campo corto"><label>rotY</label><input id="f_mapa_rotY" type="number" step="0.02"></div>
+      </div>
+      <div class="fila" id="filaMapaArte">
+        <div class="campo largo">
+          <label>cargar imagen del póster para PICAR nodos (no se sube: sólo mide)</label>
+          <input type="file" id="cargaMapa" accept="image/*">
+        </div>
+        <button class="min" id="btnNodoClear">Vaciar nodos</button>
+      </div>
+      <div id="mapaCaja" hidden><div id="mapaWrap"></div></div>
+      <div class="fila"><span class="ayuda" id="infoNodos"></span></div>
+      <div id="listaNodos"></div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-poderes">
+    <h2><span class="flecha">▶</span> SUPERPODERES DEL RIVAL ✨</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo corto"><label>chance disparo</label><input id="f_pt_chance" type="number" step="0.01" min="0" max="1"></div>
+        <div class="campo corto"><label>cooldown (s)</label><input id="f_pt_cooldown" type="number" step="0.5" min="4"></div>
+        <div class="campo corto"><label>bolsa</label>
+          <select id="f_pt_bolsa"><option>rotatoria</option><option>antirepeticion</option></select></div>
+        <button class="min" id="btnAddPoder">+ PODER</button>
+      </div>
+      <div id="listaPoderes"></div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-sala">
+    <h2><span class="flecha">▶</span> SALA Y DECORADO 🏛</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo"><label>floor</label><input id="f_room_floor" placeholder="assets/sala_floor.jpg"></div>
+        <div class="campo"><label>ceil</label><input id="f_room_ceil"></div>
+        <div class="campo"><label>back</label><input id="f_room_back"></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>front</label><input id="f_room_front"></div>
+        <div class="campo"><label>left</label><input id="f_room_left"></div>
+        <div class="campo"><label>right</label><input id="f_room_right"></div>
+      </div>
+      <div class="fila">
+        <div class="campo corto"><label>tint final (decimal)</label><input id="f_tint_final" type="number" step="1" placeholder="0x2a4d2a → 2770474"></div>
+        <div class="campo corto"><label>música</label><input id="f_audio_music" placeholder="assets/bso.wav"></div>
+        <div class="campo corto"><label>vol música</label><input id="f_audio_vol" type="number" step="0.02" min="0" max="1"></div>
+        <div class="campo"><label>risa (sounds.laugh)</label><input id="f_audio_laugh" placeholder="assets/risas.mp3"></div>
+      </div>
+      <div class="fila">
+        <button class="min" id="btnAddDecor">+ TROQUEL (decor)</button>
+        <span class="ayuda">PNG con canal ALFA real — el recorte es el alfa, sin borde añadido. Los troqueles se colocan junto a la pared trasera (x metros, z negros hacia el fondo).</span>
+      </div>
+      <div id="listaDecor"></div>
+    </div>
+  </section>
+
+  <section class="seccion" id="sec-final">
+    <h2><span class="flecha">▶</span> CORONACIÓN, TROFEO Y TEXTOS 🏆</h2>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo"><label>trofeo (ES)</label><input id="f_trophy_es"></div>
+        <div class="campo"><label>trofeo (EN)</label><input id="f_trophy_en"></div>
+        <div class="campo"><label>arte insignia</label><input id="f_insignia" placeholder="assets/insignia.png"></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>coronación · título (ES)</label><input id="f_coro_titulo_es" maxlength="40"></div>
+        <div class="campo"><label>coronación · título (EN)</label><input id="f_coro_titulo_en" maxlength="40"></div>
+        <div class="campo corto"><label>dur (s)</label><input id="f_coro_dur" type="number" step="1" min="6" max="30"></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>coronación · mensaje (ES)</label><textarea id="f_coro_msg_es" maxlength="160"></textarea></div>
+        <div class="campo largo"><label>coronación · mensaje (EN)</label><textarea id="f_coro_msg_en" maxlength="160"></textarea></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>i18n · bienvenida (ES)</label><input id="f_i18n_bienvenida_es"></div>
+        <div class="campo largo"><label>i18n · bienvenida (EN)</label><input id="f_i18n_bienvenida_en"></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo"><label>i18n · título de las normas</label><input id="f_i18n_instr_titulo_es"></div>
+        <div class="campo largo"><label>i18n · rules title (EN)</label><input id="f_i18n_instr_titulo_en"></div>
+      </div>
+      <div class="fila">
+        <div class="campo largo">
+          <label>normas / instrucciones de las PRUEBAS (una línea por norma — ES)</label>
+          <div class="listaTx" id="listaInstrEs"></div>
+          <button class="min" data-addtx="instrEs">+ línea ES</button>
+        </div>
+        <div class="campo largo">
+          <label>normas / instructions (EN)</label>
+          <div class="listaTx" id="listaInstrEn"></div>
+          <button class="min" data-addtx="instrEn">+ línea EN</button>
+        </div>
+      </div>
+      <div class="fila"><span class="ayuda">💡 Si el campeonato tiene CARTEL DEL ARTISTA (<span class="kbd">assets/normas_&lt;id&gt;.png</span> 1024×512 con hueco central), el juego pinta estas líneas SOBRE el arte. Pídele el hueco interior a quien hizo el cartel.</span></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <b>EL TALLER UGC</b> · Crazy Ping Pong · herramienta aparte del juego, sin dependencias, todo local.<br>
+  Exporta el <span class="kbd">manifest.json</span> y cópialo en <span class="kbd">public/championships/&lt;id&gt;/</span> (con su carpeta <span class="kbd">assets/</span>).
+</footer>
+
+<dialog id="dlgGuia">
+  <h3>📖 Los 4 pasos de un campeonato UGC</h3>
+  <pre>1 · ARTE — prepara la carpeta <span class="kbd">championships/&lt;id&gt;/assets/</span> con la convención de nombres:
+      sala_floor/ceil/back/front/left/right.jpg   6 planos de la estancia
+      present.webp + &lt;estado&gt;.webp                poses del rival 512×1024 con ALFA real
+      mapa.webp (o .png)                          póster del camino ~1380×752
+      normas_&lt;id&gt;.png                             cartel de normas 1024×512 (opcional)
+      bso.mp3/wav · risas.mp3 · power_N.png · insignia.png
+2 · MANIFEST — este editor genera el <span class="kbd">manifest.json</span>: cárgalo aquí, edita TODO lo visible
+      y exporta. Las ETAPAS (camino) son lo importante: duelos ↔ pruebas alternos y FINAL.
+3 · VALIDAR — botón «Validar»: ids únicos, kinds conocidos, nodos del mapa == etapas,
+      assets citados con la ruta correcta. Corrige los rojos.
+4 · INSTALAR — copia la carpeta del campeonato a <span class="kbd">public/championships/&lt;id&gt;/</span> y añade
+      el <span class="kbd">id</span> a <span class="kbd">public/championships/championships.json</span>. Con estado <span class="kbd">publicado</span> el menú
+      CAMPEONATOS lo descubre SOLO (botón nuevo, ranking y registros incluidos).
+      Previsualizar sin publicar: abre el juego con <span class="kbd">?champ=&lt;id&gt;</span>.
+REGLAS DE ORO: PNG/WebP con transparencia = recorte exacto al alfa (esquinas alfa&lt;30) ·
+sprites del rival PLANOS 512×1024, pies al borde inferior · no renames: el nombre ES el contrato.</pre>
+  <div style="text-align:right"><button class="prim" onclick="document.getElementById('dlgGuia').close()">Entendido</button></div>
+</dialog>
+
+<dialog id="dlgJson">
+  <h3>⬇ manifest.json generado</h3>
+  <pre id="dlgJsonPre"></pre>
+  <div style="text-align:right; display:flex; gap:8px; justify-content:flex-end">
+    <button id="btnCopiar">📋 Copiar</button>
+    <button class="prim" id="btnDescargar">⬇ Descargar</button>
+    <button onclick="document.getElementById('dlgJson').close()">Cerrar</button>
+  </div>
+</dialog>

@@ -129,7 +129,7 @@
  * ===================================================================== */
 
 /* Versión del SDK (QA la verifica por window.__PP_SDK). */
-const SDK_VERSION = '1.5.4';
+const SDK_VERSION = '1.6.0';
 
 try {
   if (typeof window !== 'undefined') window.__PP_SDK = SDK_VERSION;
@@ -349,6 +349,17 @@ export function createSfx(moduleURL, getGame, opts) {
  *    excluso    () => bool             — true = NO arrancar (otra música suena) */
 export function createMusic(getGame, opts) {
   const o = opts || {};
+  /* r91 · TOLERANCIA DE FORMA (la del createBucle): url y vol admiten
+   * FUNCIÓN (forma canónica — magia/oeste/locura/orbital) o VALOR DIRECTO
+   * (string/number). La r90 del módulo halloween pasó vol como número y
+   * url como string: objetivo() hacía o.vol() sobre un número → TypeError
+   * tragado por el catch de arrancar() → mus=null SIN error visible — la
+   * BSO muda. Con esta forma el motor no puede volver a quedar mudo por
+   * la forma del parámetro, sea cual sea el módulo que lo llame. */
+  const val = (x, def) => {
+    try { if (x == null) return def; return (typeof x === 'function') ? x() : x; }
+    catch (e) { return def; }
+  };
   let mus = null;        // { gain, src } — la RANURA (una melodía por motor)
   let buf = null;        // AudioBuffer decodificado (una sola vez)
   let busy = false;      // petición en vuelo
@@ -359,8 +370,8 @@ export function createMusic(getGame, opts) {
   function ctx() {
     try { const a = gg() && gg().audio; return a && a.ctx; } catch (e) { return null; }
   }
-  function objetivo() { try { return o.vol ? o.vol() : 0.15; } catch (e) { return 0.15; } }
-  function srcURL() { try { return o.url ? o.url() : undefined; } catch (e) { return undefined; } }
+  function objetivo() { return val(o.vol, 0.15) || 0.15; }
+  function srcURL() { return val(o.url, undefined); }
   function puede() { try { return o.puede ? !!o.puede() : true; } catch (e) { return false; } }
   function excluso() { try { return o.excluso ? !!o.excluso() : false; } catch (e) { return true; } }
   function arcPlaying() {
@@ -595,7 +606,13 @@ export function createBucle(getGame, opts) {
       nodo.connect(actx.destination);
       const src = actx.createBufferSource();
       src.buffer = buf;
-      src.loop = true;
+      /* r97 · v1.6 · MODO ONE-SHOT (o.loop === false): src.loop=false — el
+       * clip suena UNA VEZ y muere solo (onended libera). Nace para la VOZ
+       * DE PERSONALIDAD del rival (createRivalVoz): un clip de voz no puede
+       * quedar en bucle huérfano si el módulo muere a mitad de frase — la
+       * lección del zombi en el Hall. createBucle normal: loop=true como
+       * siempre (galopes, enjambres, rodadura). */
+      src.loop = o.loop !== false;
       src.connect(gain);
       src.start(t0, desfase > 0 ? (desfase % buf.duration) : 0); // DESFASE
       inst = { gain, src, pan };
@@ -697,6 +714,102 @@ export function createBucle(getGame, opts) {
   }
 
   return { on, off, setVol, suena, estado, precarga };
+}
+
+/* — VOZ DE PERSONALIDAD DEL RIVAL (createRivalVoz · v1.6 · r97) ————————
+ *  Petición del dueño: «voz de personalidad por rival (el motor rivalSfx
+ *  ya acepta archivos del manifest)». Cada campeonato declara en SU
+ *  manifest:
+ *
+ *    "rival": { ..., "voz": {
+ *      "celebra": "risa_astro.mp3",   // el rival GANA el punto
+ *      "enfada":  "enfado_astro.mp3", // el rival PIERDE el punto
+ *      "poder":   null,               // lanza superpoder (opcional)
+ *      "gana":    null,               // victoria final (opcional)
+ *      "pierde":  null                // derrota final (opcional)
+ *    } }
+ *
+ *  El motor usa createBucle con loop:false (one-shot honesto: sin reloj,
+ *  sin bucles huérfanos) y respeta el PERSONALITY FALLBACK: si el
+ *  manifest no trae clip para un evento, la voz sale del SINTETIZADOR del
+ *  núcleo (playOsc) con un patrón según la personalidad del manifest
+ *  (agresividad): gruñido grave (agresivo ≥4), suspiro suave (defensivo
+ *  ≤2), bip neutro (resto). Cero assets nuevos obligatorios, cero bucles.
+ *
+ *  Uso: const VOZ = createRivalVoz(import.meta.url, () => this.game, () => MAN);
+ *       VOZ.precarga(); VOZ.play('celebra');
+ *  ==================================================================== */
+export function createRivalVoz(moduleURL, getGame, getMan) {
+  const base = (typeof moduleURL === 'string') ? moduleURL : '';
+  const dir = base ? base.slice(0, base.lastIndexOf('/') + 1) : '';
+  function gg() { return (typeof getGame === 'function') ? getGame() : getGame; }
+  function man() {
+    try { const m = (typeof getMan === 'function') ? getMan() : getMan; return m || null; }
+    catch (e) { return null; }
+  }
+  const KITS = new Map();   // evento → createBucle one-shot
+  let mapa = null;
+  function asegurar() {
+    if (mapa) return mapa;
+    mapa = null;
+    try {
+      const m = man();
+      mapa = (m && m.rival && m.rival.voz) || null;
+    } catch (e) { mapa = null; }
+    return mapa;
+  }
+  function kit(ev) {
+    const mapa2 = asegurar();
+    if (!mapa2) return null;
+    const file = mapa2[ev];
+    if (!file) return null;
+    if (!KITS.has(ev)) {
+      try {
+        KITS.set(ev, createBucle(gg, {
+          url: () => dir + 'assets/' + String(file).replace(/^assets\//, ''),
+          vol: () => 0.55, fadeIn: 0.05, stopFade: 0.25,
+          loop: false, ignoraMute: true,   // voz del rival: suena SIEMPRE
+        }));
+      } catch (e) { return null; }
+    }
+    return KITS.get(ev);
+  }
+  /* PERSONALITY FALLBACK: voz sintética según personalidad.caracter y
+   * agresividad del manifest. Barato (playOsc del núcleo) y SIEMPRE suena
+   * aunque el campeonato no tenga arte sonoro del rival. */
+  function procedural(ev) {
+    try {
+      const g = gg(); const A = g && g.audio;
+      if (!A || !A.playOsc) return;
+      let pers = null;
+      try { const m = man(); pers = m && m.rival && m.rival.personalidad; } catch (e) { /* */ }
+      const ag = (pers && pers.agresividad) || 3;
+      if (ev === 'celebra' || ev === 'gana') {
+        if (ag >= 4) { A.playOsc(120, 88, 0.22, 'sawtooth', 0.14, 0); A.playOsc(184, 140, 0.16, 'square', 0.08, 0.09); }
+        else if (ag <= 2) { A.playOsc(330, 392, 0.18, 'sine', 0.10, 0); }
+        else { A.playOsc(262, 330, 0.15, 'triangle', 0.11, 0); }
+      } else if (ev === 'enfada' || ev === 'pierde') {
+        if (ag >= 4) { A.playOsc(98, 62, 0.30, 'sawtooth', 0.15, 0); }
+        else { A.playOsc(294, 220, 0.26, 'sine', 0.10, 0); }
+      } else if (ev === 'poder') {
+        A.playOsc(150, 320, 0.20, 'sawtooth', 0.12, 0);
+      } else {
+        A.playOsc(220, 220, 0.12, 'triangle', 0.08, 0);
+      }
+    } catch (e) { /* la voz jamás rompe */ }
+  }
+  function play(ev) {
+    const k = kit(ev);
+    if (k) { try { k.on(); return true; } catch (e) { /* cae al procedural */ } }
+    procedural(ev);
+    return false;
+  }
+  function precarga() {
+    const mapa2 = asegurar(); if (!mapa2) return;
+    for (const ev of Object.keys(mapa2)) { const k = kit(ev); if (k) { try { k.precarga(); } catch (e) { /* */ } } }
+  }
+  function off() { for (const k of KITS.values()) { try { k.off(true); } catch (e) { /* */ } } }
+  return { play, precarga, off, tiene: (ev) => !!kit(ev) };
 }
 
 /* — CARTEL DE SUPERPODER (createPowerSign · v1.3.0 · FASE 6) ——————————
@@ -1204,30 +1317,53 @@ export function createRival(THREE, getGame, opts) {
   }
 
   /* «precarga»: swap entre caras ya en memoria (caída a la base — que en
-   * la casa era SIEMPRE null: estado desconocido = no-op, igual queda). */
+   * la casa era SIEMPRE null: estado desconocido = no-op, igual queda).
+   * r89: el no-op es REAL — sin cara disponible NO se despinta el material
+   * (ponMapa(null) dejaba el standee como un rectángulo blanco). */
   function estadoPrecarga(st) {
-    ponMapa(stTex[st] || stTex.base || null);
+    const t = stTex[st] || stTex.base || null;
+    if (t) ponMapa(t);
   }
 
   function build() {
     if (mesh) return;
     construir();
+    /* r89 · SUBIDA A GPU INVISIBLE (sustituye al «prewarm» visible de los
+     * módulos): renderer.initTexture(t) sube la cara a GPU SIN colgarla
+     * en el material — el standee deja de parpadear por todas sus caras
+     * y el cambio de emoción en pleno duelo no tira del frame. */
+    const subeGpu = (t) => {
+      try {
+        const gg = (typeof getGame === 'function') ? getGame() : getGame;
+        if (gg && gg.renderer && gg.renderer.initTexture) gg.renderer.initTexture(t);
+      } catch (e) { /* sin renderer (headless): la subida normal bastará */ }
+    };
     if (PRE) {
       // base primero (orden del original: rival.webp → estados); su llegada
-      // pinta el mapa PERO no entra en stTex (key null en el original)
+      // pinta el mapa SÓLO si aún no hay estado vigente (r89) y NO entra en
+      // stTex (convención de la casa: estado desconocido = no-op)
       new THREE.TextureLoader().load(resuelve(o.base || ('rival.' + EXT)), (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         registrar(t);
-        ponMapa(t);
-        escalaAspecto(t);
+        /* r89: la base pinta SIEMPRE que no haya cara viva (evita el flash
+         * blanco del standee mientras llega la cara del estado vigente). */
+        if (!estado_ || !mat.map) { ponMapa(t); escalaAspecto(t); }
+        subeGpu(t);
       }, undefined, () => { /* sin arte: silueta */ });
       (o.estados || []).forEach((st) => {
         new THREE.TextureLoader().load(resuelve(st + '.' + EXT), (t) => {
           t.colorSpace = THREE.SRGBColorSpace;
           registrar(t);
           stTex[st] = t;
-          ponMapa(t);
-          escalaAspecto(t);
+          /* r89 · INFORME DEL DUEÑO («en un determinado momento se super-
+           * ponen dos estados coplanares»): la cara que llega YA NO se
+           * pinta de inmediato — la llegada en vivo hacía al standee
+           * recorrer TODAS sus caras en cuanto arrancaba la sala (y de
+           * quieto mostraba la ÚLTIMA llegada, p.ej. victory, sin que el
+           * estado lógico la pidiera). Sólo se pinta si ES el estado
+           * vigente; el resto queda en caché y sube a GPU por su cuenta. */
+          if (estado_ === st) { ponMapa(t); escalaAspecto(t); }
+          subeGpu(t);
         }, undefined, () => { /* cara ausente: silueta */ });
       });
     } else {
@@ -1345,4 +1481,4 @@ export function createCartel(THREE, getGame, opts) {
   };
 }
 
-export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createBucle, createPowerSign, createRival, createCartel };
+export default { SDK_VERSION, getCore, assetURL, congela, descongela, createSfx, createMusic, createBucle, createRivalVoz, createPowerSign, createRival, createCartel };

@@ -57,7 +57,8 @@ async def main():
             '--enable-unsafe-swiftshader',
             '--autoplay-policy=no-user-gesture-required',
         ])
-        page = await browser.new_page(viewport={'width': 1280, 'height': 800})
+        page = await browser.new_page(viewport={'width': 1280, 'height': 800},
+                                    locale='es-ES')  # r111: la detección M4 respeta navigator.language
         perr = []
         page.on('pageerror', lambda e: perr.append(str(e)))
         await page.add_init_script(

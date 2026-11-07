@@ -8,11 +8,28 @@ export class ChampLoader {
     this.modules = {};      // id -> módulo importado (perezoso)
     this.activeId = '';     // '' = ningún campeonato externo activo
     this.replayHover = -1;  // v2.96: nodo del mapa apuntado con la pala (-1 = ninguno)
+    // r73 · estado de la carga del índice (el menú pinta «CARGANDO…»)
+    this.cargando = false;
+    this._idxListo = false;
     this._loadIndex();
   }
 
   get active() { return !!this.activeId; }
   get mod() { return this.activeId ? (this.modules[this.activeId] || null) : null; }
+
+  /* r72 · CANDADO: campeonatos en PRÓXIMAMENTE — se VEN en el menú con un
+   * candado sobre el nombre, pero la puerta está cerrada: al intentar
+   * entrar una voz dice «Próximamente». Las reglas para desbloquearlos
+   * llegaran después; HOY sólo abre el MODO DEPURACIÓN (nombre de
+   * usuario FORO3D → ppDebugMode, ya existente en el núcleo). */
+  // r85 · el campeonato retirado por el dueño se va con su candado, y
+  // HALLOWEEN nace desbloqueado (juega desde el primer día). Sigue con
+  // candado lo que el dueño tenía cerrado: la Estación Orbital (r72).
+  static LOCKED = ['estacion_orbital'];
+  isLocked(id) {
+    if (!ChampLoader.LOCKED.includes(id)) return false;
+    try { return !ppDebugMode(); } catch (e) { return true; }
+  }
 
   /** v2.125 · ID del campeonato de PORTADA (BSO del núcleo, rankings 2D/VR):
    *  el primero marcado eager en el índice — sustituye a los literales
@@ -29,79 +46,169 @@ export class ChampLoader {
     return !!(m && typeof m.testActive === 'function' && m.testActive());
   }
 
+  /** r73 · FETCH CON REINTENTOS: el índice y los manifest se pedían UNA
+   *  sola vez — una petición perdida (WiFi de la Quest, caché, un 502
+   *  puntual de Pages) eliminaba el campeonato del menú PARA SIEMPRE
+   *  (el «Salvaje Oeste desaparecido»). Ahora: cache:'no-cache' + hasta
+   *  N intentos con espera exponencial. Devuelve null si agota. */
+  async _fetchJSON(url, intentos) {
+    const n = intentos || 3;
+    for (let i = 0; i < n; i++) {
+      try {
+        const r = await fetch(url, { cache: 'no-cache' });
+        if (r.ok) return await r.json();
+      } catch (e) { /* red dormida: reintento */ }
+      if (i < n - 1) {
+        await new Promise((res) => setTimeout(res, 700 * Math.pow(2, i)));
+      }
+    }
+    return null;
+  }
+
   _loadIndex() {
     // file:// no puede fetchear el índice: sin botones y sin ruido en
     // consola (lección v2.52). El juego local sigue igual que siempre.
     if (typeof location !== 'undefined' && !/^https?:$/.test(location.protocol)) return;
-    fetch('championships/championships.json')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('sin índice'))))
-      .then(async (idx) => {
-        const list = (idx && Array.isArray(idx.championships)) ? idx.championships : [];
-        for (const raw of list) {
-          // v2.69: cada entrada es "id" o { id, eager } — eager importa e
-          // inicializa el módulo AL ARRANCAR (sin lanzarlo): La Locura
-          // existe desde el primer frame, igual que hasta v2.68.
-          // v2.125: la entrada también puede llevar "estado" (el del ciclo
-          // de vida); el del manifest manda si lo declara.
-          const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
-          const id = String(ent.id || '');
-          if (!/^[a-z0-9_-]+$/i.test(id)) continue;   // id seguro (sin ../)
-          try {
-            const r2 = await fetch(`championships/${id}/manifest.json`);
-            const man = r2.ok ? await r2.json() : null;
-            if (!man) continue;
-            // v2.125 · CONTRATO: un manifest de un contrato futuro no se
-            // integra (y queda VISIBLE, no mudo).
-            const contrato = man.contract || 1;
-            if (contrato > 1) {
-              console.warn(`[champs] ${id} declara contract ${contrato} > 1 ` +
-                '(núcleo más viejo que el campeonato): no se integra');
-              this.entries.push({
-                id, folder: `championships/${id}/`,
-                title: man.title || { es: id, en: id }, storage: man.storage || '',
-                eager: false, estado: 'incompatible', manifest: man,
-                error: `contract ${contrato} > 1`,
-              });
-              continue;
-            }
-            // v2.125 · CICLO DE VIDA: sólo "publicado" sale en el menú;
-            // borrador/validación/listo se cargan bajo demanda (previsualización
-            // con ?champ=<id>); desactivado ni eso.
-            const estado = man.estado || ent.estado || 'publicado';
-            if (estado === 'desactivado') continue;
-            this.entries.push({
-              id,
-              folder: `championships/${id}/`,
-              title: man.title || { es: id, en: id },
-              storage: man.storage || '',
-              eager: !!ent.eager,
-              estado,
-              manifest: man,
-              error: null,
-            });
-          } catch (e) { /* carpeta incompleta: se ignora sola */ }
+    this.cargando = true;            // r73: el menú puede mostrar «CARGANDO…»
+    this._idxListo = false;
+    this._cargaIdx().catch(() => { /* sin índice: sólo el núcleo */ });
+  }
+
+  /** r73 · CARGA DEL ÍNDICE (async real): índice con 4 intentos, manifest
+   *  en PARALELO (3 intentos cada uno) y DOS OLAS DE RECUPERACIÓN para las
+   *  carpetas que fallaron (+8 s y +25 s). Cada éxito repinta el menú. */
+  async _cargaIdx() {
+    const idx = await this._fetchJSON('championships/championships.json', 4);
+    if (!idx) { this.cargando = false; this._idxListo = true; return; }
+    const list = (idx && Array.isArray(idx.championships)) ? idx.championships : [];
+
+    /** r74 · ORDEN CANÓNICO del índice (el dueño: «me has puesto el
+     *  campeonato del Salvaje Oeste de primero y sería el tercero — el
+     *  primero es el de Clow, el segundo el de Wizard y el tercero el de
+     *  forajido»): con los manifest en PARALELO (r73) el orden del menú era
+     *  el orden de LLEGADA de la red — una carpeta rápida adelantaba a la
+     *  siguiente. Cada entrada guarda SU posición del índice (0 Clow ·
+     *  1 Wizard · 2 Forajido…) y list() ordena SIEMPRE por ella. */
+    const ordenDe = (raw) => {
+      const idq = (typeof raw === 'string') ? raw : String((raw && raw.id) || '');
+      const ix = list.findIndex((r2) =>
+        ((typeof r2 === 'string') ? r2 : String((r2 && r2.id) || '')) === idq);
+      return ix >= 0 ? ix : 99;
+    };
+
+    /** integra UN manifest (mismo contrato que siempre) → bool éxito */
+    const integra = (raw, man) => {
+      // v2.69: cada entrada es "id" o { id, eager } — eager importa e
+      // inicializa el módulo AL ARRANCAR (sin lanzarlo): La Locura
+      // existe desde el primer frame, igual que hasta v2.68.
+      // v2.125: la entrada también puede llevar "estado" (el del ciclo
+      // de vida); el del manifest manda si lo declara.
+      const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+      const id = String(ent.id || '');
+      if (!/^[a-z0-9_-]+$/i.test(id)) return false;
+      if (this.entries.some((x) => x.id === id)) return true;   // ya está
+      if (!man) return false;
+      // v2.125 · CONTRATO: un manifest de un contrato futuro no se
+      // integra (y queda VISIBLE, no mudo).
+      const contrato = man.contract || 1;
+      if (contrato > 1) {
+        console.warn(`[champs] ${id} declara contract ${contrato} > 1 ` +
+          '(núcleo más viejo que el campeonato): no se integra');
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: man.title || { es: id, en: id }, storage: man.storage || '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: `contract ${contrato} > 1`,
+        });
+        return true;
+      }
+      // v2.125 · CICLO DE VIDA: sólo "publicado" sale en el menú;
+      // borrador/validación/listo se cargan bajo demanda (previsualización
+      // con ?champ=<id>); desactivado ni eso.
+      const estado = man.estado || ent.estado || 'publicado';
+      if (estado === 'desactivado') return true;
+      this.entries.push({
+        id,
+        folder: `championships/${id}/`,
+        title: man.title || { es: id, en: id },
+        storage: man.storage || '',
+        eager: !!ent.eager,
+        estado,
+        orden: ordenDe(raw),          // r74 · posición del índice (orden estable)
+        manifest: man,
+        error: null,
+      });
+      return true;
+    };
+
+    // r73 · PARALELO: una carpeta lenta ya no retrasa a las demás.
+    const fallados = [];
+    await Promise.all(list.map(async (raw) => {
+      const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+      const id = String(ent.id || '');
+      if (!/^[a-z0-9_-]+$/i.test(id)) return;
+      const man = await this._fetchJSON(`championships/${id}/manifest.json`, 3);
+      if (!integra(raw, man)) fallados.push(raw);
+    }));
+
+    // v2.69: módulos eager — importar SIN lanzar (init puede devolver
+    // promesa: el campeonato fusiona su data.json antes de estar listo)
+    for (const e of this.entries) {
+      if (!e.eager) continue;
+      try { await this.preload(e.id); }
+      catch (err) { console.warn('[champs.eager] ' + e.id, err); }
+    }
+    this.cargando = false;
+    this._idxListo = true;
+    // el menú pudo dibujarse antes de llegar la carpeta: repíntalo
+    try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (e) { /* */ }
+    this._previsualiza();
+
+    // r73 · OLAS DE RECUPERACIÓN: lo que falló vuelve a intentarlo a los
+    // 8 s y a los 25 s — un campeonato ya NO se pierde por un hipo de red.
+    for (let ola = 0; ola < 2 && fallados.length; ola++) {
+      await new Promise((res) => setTimeout(res, ola === 0 ? 8000 : 17000));
+      const deNuevo = fallados.splice(0, fallados.length);
+      await Promise.all(deNuevo.map(async (raw) => {
+        const ent = (typeof raw === 'string') ? { id: raw } : (raw || {});
+        const id = String(ent.id || '');
+        if (this.entries.some((x) => x.id === id)) return;
+        const man = await this._fetchJSON(`championships/${id}/manifest.json`, 3);
+        if (integra(raw, man)) {
+          try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (eR) { /* */ }
+        } else {
+          fallados.push(raw);
         }
-        // v2.69: módulos eager — importar SIN lanzar (init puede devolver
-        // promesa: el campeonato fusiona su data.json antes de estar listo)
-        for (const e of this.entries) {
-          if (!e.eager) continue;
-          try { await this.preload(e.id); }
-          catch (err) { console.warn('[champs.eager] ' + e.id, err); }
-        }
-        // v2.125 · PREVISUALIZACIÓN AISLADA: ?champ=<id> lanza un campeonato
-        // aunque esté en borrador/validación (jamás altera el menú público).
-        try {
-          const q = new URLSearchParams(location.search).get('champ');
-          const ent = q && this.entries.find((x) => x.id === q && x.estado !== 'incompatible');
-          if (ent) {
-            console.info('[champs] previsualización de ' + q);
-            this.launch(q);
-          }
-        } catch (e) { /* */ }
-        // el menú pudo dibujarse antes de llegar la carpeta: repíntalo
-        try { if (this.game && this.game.drawMenu) this.game.drawMenu(); } catch (e) { /* */ }
-      })
-      .catch(() => { /* sin índice: sólo el núcleo (comportamiento clásico) */ });
+      }));
+    }
+    if (fallados.length) {
+      console.warn('[champs] sin manifest tras las olas:', fallados.map((r) =>
+        (typeof r === 'string' ? r : (r && r.id))).join(', '));
+    }
+  }
+
+  /** r73 · RECARGA MANUAL del índice (botón REINTENTAR del menú cuando no
+   *  llegó ninguno). Idempotente: no duplica entradas ya integradas. */
+  recargar() {
+    if (this.cargando) return;
+    this._loadIndex();
+  }
+
+  /** v2.125 · PREVISUALIZACIÓN AISLADA: ?champ=<id> lanza un campeonato
+   *  aunque esté en borrador/validación (jamás altera el menú público).
+   *  r73: vive en método propio — también dispara si la carpeta llegó
+   *  tarde en una ola de recuperación (una sola vez). */
+  _previsualiza() {
+    if (this._prevLanzada) return;
+    try {
+      const q = new URLSearchParams(location.search).get('champ');
+      const ent = q && this.entries.find((x) => x.id === q && x.estado !== 'incompatible');
+      if (ent) {
+        this._prevLanzada = true;
+        console.info('[champs] previsualización de ' + q);
+        this.launch(q);
+      }
+    } catch (e) { /* */ }
   }
 
   /** v2.69 · IMPORTA E INICIALIZA un módulo SIN lanzarlo (idempotente).
@@ -130,55 +237,188 @@ export class ChampLoader {
         const ent = this.entries.find((x) => x.id === id);
         const r = m.init({ game: this.game, id, stateName: CHAMPS_STATE,
           manifest: ent ? ent.manifest : null });
-        if (r && typeof r.then === 'function') await r;   // data.json listo
+        // v3.6.32 (ronda 40): la promesa de init queda REGISTRADA en el
+        // módulo — el bloque de abajo espera las init EN VUELO.
+        m._ppInitP = (r && typeof r.then === 'function') ? r : null;
+        if (m._ppInitP) await m._ppInitP;                 // data.json listo
       } catch (e) {
         // v2.120: un init roto NO deja pasar el módulo a start() — se
         // re-permite el reintento en el siguiente intento de launch.
         console.warn('[champs] init ' + id, e);
         m._ppInited = false;
+        m._ppInitP = null;
         return null;
       }
+    } else if (m._ppInitP) {
+      // v3.6.32 (ronda 40): CARRERA eager↔launch — el arranque eager marca
+      // _ppInited ANTES de que su init (fetch del manifest) resuelva; un
+      // launch() dentro de esa ventana recibía el módulo con CTRL aún null
+      // y m.start() era un NO-OP silencioso (el campeonato no arrancaba:
+      // informe del QA capa AA). Esperamos la init en vuelo: start() SIEMPRE
+      // encuentra el módulo cableado.
+      try { await m._ppInitP; } catch (eI) { /* init rota: start decidirá */ }
     }
     return m;
   }
 
-  /** Entradas para el menú: [{ id, label }] con el idioma del jugador. */
+  /** Entradas para el menú: [{ id, label }] con el idioma del jugador.
+   *  r74 · ORDEN DEL ÍNDICE SIEMPRE: Clow (1.º) · Wizard (2.º) · Forajido
+   *  (3.º) y los que vengan detrás — jamás el orden de llegada de la red. */
   list() {
     const lang = (typeof __ppLang !== 'undefined' && __ppLang === 'en') ? 'en' : 'es';
     // v2.125: el catálogo público son SOLO los publicados (los borradores se
     // prueban con ?champ=<id>; los incompatibles se avisan en consola).
     return this.entries
       .filter((e) => (e.estado || 'publicado') === 'publicado')
+      .sort((a, b) => ((a.orden == null ? 99 : a.orden) -
+                       (b.orden == null ? 99 : b.orden)) ||
+             String(a.id).localeCompare(String(b.id)))
       .map((e) => ({
         id: e.id,
+        // r72 · flag de CANDADO para el menú (tarjeta atenuada + candado)
+        locked: this.isLocked(e.id),
         label: '▶  ' + String((e.title && (e.title[lang] || e.title.es)) || e.id).toUpperCase(),
       }));
   }
 
+  /** v3.6.31 · ¿TOCA INTRO? — la primera vez que se entra al campeonato
+   *  (registro pp_intro_<id> aún vacío). Las siguientes entradas van
+   *  DIRECTAS a jugar; re-ver el vídeo queda OPCIONAL (botón VER
+   *  PRESENTACIÓN de su tarjeta → launch(id, { intro: true })). */
+  introPendiente(id) {
+    try { return !localStorage.getItem('pp_intro_' + id); } catch (e) { return true; }
+  }
+
   /** Lanza un campeonato externo (botón del menú CRAZY). Importa el
-   *  módulo de su carpeta LA PRIMERA VEZ y le entrega el juego. */
-  async launch(id) {
+   *  módulo de su carpeta LA PRIMERA VEZ y le entrega el juego.
+   *  v3.6.31 · opts.intro = fuerza el vídeo de la historia (VER
+   *  PRESENTACIÓN); sin él, la intro SOLO se muestra la primera vez. */
+  async launch(id, opts) {
     const g = this.game;
+    // r72 · CANDADO ANTES DE NADA: un campeonato PRÓXIMAMENTE no abre —
+    // voz «Próximamente» (chime + locución, force) y FUERA. Cubre el
+    // botón de la tarjeta, VER PRESENTACIÓN y la previsualización ?champ=.
+    if (this.isLocked(id)) {
+      try { g.audio.announce(T('champ_locked_soon'), true); } catch (eV) { /* */ }
+      try { g.rules.message = T('champ_locked_soon'); } catch (eM) { /* */ }
+      return;
+    }
     if (g.closeTrainingV3) g.closeTrainingV3();   // v3.0.3 · estanqueidad
     if (!/^[a-z0-9_-]+$/i.test(id)) return;
     if (g.net.online) { g.rules.message = T('msg_guest_mode'); return; }
     g.exitHall();             // v3.1.0-SRV2: un campeonato se juea en la cancha
+    // r74 · EL MENÚ SE RECOGE AL ENTRAR EN CUALQUIER CAMPEONATO (el dueño:
+    // «al seleccionar este campeonato dentro no desaparece el menú principal
+    // desde el que se llamó»): locura/magia lo cerraban en SU start() y el
+    // oeste NO — comportamiento distinto entre campeonatos. Ahora lo cierra
+    // el NÚCLEO, una sola vez y para todos, ANTES de levantar el telón.
+    try { g.closeMenu(); } catch (eCM0) { /* */ }
+    // r72 · TELÓN DE CARGA: pantalla negra «Montando el escenario…» desde
+    // ANTES de importar el módulo (la importación + texturas son lo que el
+    // dueño veía montarse en vivo). Se levanta solo cuando TODO está.
+    let telon = null;
+    try { if (g.showChampCurtain) telon = g.showChampCurtain(id); } catch (eT0) { /* */ }
     // v2.69: import + init viven en preload() (compartido con el arranque
     // eager); aquí sólo falta arrancar. Excluyente con TODO campeonato.
     const m = await this.preload(id);
-    if (!m) { g.rules.message = T('arc_no_data'); return; }
+    if (!m) {
+      g.rules.message = T('arc_no_data');
+      try { if (telon) telon.cierra(); } catch (eT1) { /* */ }
+      return;
+    }
     this.leaveAll();
     this.activeId = id;
+    // r97 · VOZ DE PERSONALIDAD DEL RIVAL: (a) los ARCHIVOS de voz del
+    // manifest activo (audio.sounds kind→archivo) quedan a la vista del
+    // motor rivalSfx del núcleo — antes SÓLO La Locura los publicaba a
+    // mano (window.__PP_ARCADE_DATA); ahora cualquier campeonato que
+    // declare sounds en SU manifest tiene la voz del rival por ARCHIVO en
+    // los estados estándar (laugh/crazy/angry/victory…), con la síntesis
+    // como respaldo. (b) la personalidad (manifest.rival.personalidad)
+    // queda publicada para que la síntesis se TIÑA (agresivo grave,
+    // defensivo agudo — c03 rivalSfx). El propio módulo sigue mandando:
+    // si él ya publicó __PP_ARCADE_DATA (La Locura, más rico) NO se pisa.
+    try {
+      const entV = this.entries.find((x) => x.id === id);
+      const manV = entV && entV.manifest;
+      if (manV) {
+        window.__PP_CHAMP_PERS = (manV.rival && manV.rival.personalidad) || null;
+        const sndV = (manV.audio && manV.audio.sounds) || {};
+        const claves = Object.keys(sndV);
+        if (claves.length && !(typeof window !== 'undefined' && window.__PP_ARCADE_DATA)) {
+          const urlsV = {};
+          for (const k of claves) {
+            try {
+              urlsV[k] = new URL('championships/' + id + '/' +
+                String(sndV[k]).replace(/^assets\//, 'assets/'), import.meta.url).href;
+            } catch (eU) { /* */ }
+          }
+          window.__PP_ARCADE_DATA = { __ppCoreVoz: true, sounds: urlsV };
+        }
+      }
+    } catch (eV0) { /* la voz jamás rompe el lanzamiento */ }
+    // r96 · REGLA DEL DUEÑO: las pieles de la mesa son de PARTIDAS y
+    // ENTRENAMIENTO — el campeonato ARRANCA con su mesa nativa (azul
+    // oficial), sin heredar el tinte que el dueño eligió en AJUSTES.
+    try { if (g._mesaNativo) g._mesaNativo(); } catch (eMN) { /* */ }
+    // v3.6.29 · MEJOR DE 3: los duelos de campeonato siguen siendo a UN juego
+    // (el mejor de 3 es del partido libre; se reactiva al arrancar cualquier
+    // modo libre — menú/B/online). Así el camino calibrado no se altera.
+    g.rules.bestOf = 1;
     try { m.start(); }
     catch (e) {
       console.warn('[champs] start ' + id, e);
       this.leaveAll();   // un módulo roto nunca deja el juego colgado
+      try { if (telon) telon.cierra(); } catch (eT2) { /* */ }
       return;
+    }
+    // r72 · ¿CUÁNDO SE LEVANTA EL TELÓN? La sala del campeonato con sus
+    // claves de arte cargadas (champRoom.loadedKeys tras el update() que
+    // recoloca builtFor) + la calma del propio tick (0,9 s mínimo + 0,3 s
+    // estable · tope 12 s). Si toca INTRO, YA: la presentación es ella
+    // misma la ventana de espera con su póster/vídeo.
+    if (telon) {
+      let verIntroTemprana = false;
+      try { verIntroTemprana = !!(opts && opts.intro); } catch (eT3) { /* */ }
+      try {
+        verIntroTemprana = verIntroTemprana || this.introPendiente(id);
+      } catch (eT4) { /* */ }
+      if (verIntroTemprana) {
+        try { telon.cierra(); } catch (eT5) { /* */ }
+      } else {
+        try {
+          telon.espera(() => {
+            const room = g.champRoom;
+            if (!room || room.builtFor !== id) return false;
+            const mod = this.moduleIfLoaded(id);
+            const cfg = (mod && mod.room) || null;
+            const KEYS = ['floor', 'ceil', 'left', 'right', 'back', 'front'];
+            const want = cfg ? KEYS.filter((k) => cfg[k]) : [];
+            if (!want.length) return true;   // sin arte propio: la sala clásica ya está
+            const have = room.loadedKeys || [];
+            return want.every((k) => have.includes(k));
+          });
+        } catch (eT6) { try { telon.cierra(); } catch (eT7) { /* */ } }
+      }
     }
     // v2.130 · INTRO común: vídeo de la historia del rival + gran botón
     // JUGAR (estructura común de todos los campeonatos; el vídeo es
     // opcional y si falta assets/intro.mp4 queda un póster con el título).
-    try { this.game.showChampIntro(id); } catch (e2) { /* */ }
+    // v3.6.31 · SÓLO LA PRIMERA VEZ: la primera entrada muestra el vídeo
+    // (conocer al rival y dar contexto); las siguientes entran directo a
+    // jugar. Re-verlo: botón VER PRESENTACIÓN de la tarjeta, o ?intro=1
+    // en la URL (pruebas del dueño). Si no hay localStorage, se muestra
+    // (camino seguro: nadie se pierde la historia).
+    let verIntro = this.introPendiente(id);
+    try {
+      if (verIntro) localStorage.setItem('pp_intro_' + id, '1');
+    } catch (eI0) { /* sin localStorage: se muestra siempre */ }
+    if (!verIntro && opts && opts.intro) verIntro = true;
+    if (!verIntro) {
+      try { verIntro = new URLSearchParams(location.search).has('intro'); }
+      catch (eI1) { /* */ }
+    }
+    if (verIntro) { try { this.game.showChampIntro(id); } catch (e2) { /* */ } }
   }
 
   /* ---------------- v2.69 · enchufe universal del núcleo ----------------
@@ -254,6 +494,41 @@ export class ChampLoader {
     return false;
   }
 
+  /** M7e (r124) · HISTORIAL DE TORNEOS — escanea los campeonatos y sella
+   *  en 'pp_torneos_historial_v1' la FECHA en que cada uno se ve campeón
+   *  por primera vez (retroactivo y honesto: lo ya ganado entra con la
+   *  fecha de esta primera pasada — nunca se inventa una fecha antigua).
+   *  Una fila por torneo, append-only; victorias y LEYENDA se refrescan
+   *  de sus registros en cada pasada; cap 50 (historialFusionar). Barata:
+   *  ~10 lecturas de localStorage por pasada — el menú la llama al pintar
+   *  las páginas CAMPEONATOS e HISTORIAL. Devuelve el historial vigente. */
+  historialTorneos() {
+    const KEY = 'pp_torneos_historial_v1';
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { hist = []; }
+    if (!Array.isArray(hist)) hist = [];
+    const filas = [];
+    try {
+      for (const e of this.entries || []) {
+        const base = String(e.storage || '').replace(/\*$/, '');
+        if (!base) continue;
+        let w = 0;
+        try { w = parseInt(localStorage.getItem(base + 'wins') || '0', 10) || 0; } catch (eW) { /* */ }
+        filas.push({
+          id: e.id,
+          esCampeon: this.championFlag(e.id) === true,
+          wins: w,
+          leyenda: this.leyendaFlag(e.id) === true,
+        });
+      }
+    } catch (e2) { /* sin registros: el historial queda como esté */ }
+    const [nuevo, dirty] = historialFusionar(hist, filas);
+    if (dirty) {
+      try { localStorage.setItem(KEY, JSON.stringify(nuevo)); } catch { /* */ }
+    }
+    return nuevo;
+  }
+
   /** v3.6.17 · ronda 21 · «Etapa X/5 · sigue donde la dejaste» — hint de
    *  progreso para las tarjetas del menú y el subtítulo de la sección.
    *  Convención de registros: <base>stage. Oeste guarda 1..5 (su constructor
@@ -299,6 +574,18 @@ export class ChampLoader {
     if (m && m.fireGun) { try { m.fireGun(i); } catch (e) { console.warn('[champs.fireGun]', e); } }
   }
 
+  /** v3.6.33 · MEGA PALA VOLUNTARIA: con la bola en juego el gatillo llega
+   *  al módulo activo (hoy sólo La Locura lo define). Devuelve true si la
+   *  pulsación fue CONSUMIDA (el módulo liberó el poder, avisó de recarga o
+   *  la ignoró por suya) — así el núcleo no la reenvía a saque/revancha. */
+  megaTrigger(i) {
+    const m = this.mod;
+    if (m && m.megaTrigger) {
+      try { return m.megaTrigger(i) === true; } catch (e) { console.warn('[champs.megaTrigger]', e); }
+    }
+    return false;
+  }
+
   /** BOLA DOBLE (v2.44): clon vivo de la bola del campeonato activo. */
   get _split() {
     const m = this.mod;
@@ -315,12 +602,46 @@ export class ChampLoader {
 
   /** SALIR del campeonato externo activo (se juega otro modo). */
   leaveAll() {
+    // r60 (petición del dueño): «ME HAS QUITADO DE TODOS LOS ESCENARIOS LOS
+    // TROQUELES» — no se borraron: las pruebas especiales (asedio/vagón de
+    // oeste, recortables heredados de orbital) alzan game.champDecorHidden
+    // para esconderlos y lo bajan al terminar; si la salida se cuela por
+    // cualquier camino no previsto (error engullido por un guard, B a mitad
+    // de prueba, red…), el cerrojo quedaba PECHO y los troqueles no volvían
+    // en NINGÚN escenario hasta recargar la página. AUTOCURACIÓN: al salir
+    // SIEMPRE se libera (también en el return temprano, porque el cerrojo
+    // es global); el módulo que quiera esconderlos lo volverá a hacer en su
+    // propio arranque (launch() corre DESPUÉS de leaveAll y antes de start).
+    try { this.game.champDecorHidden = false; } catch (e) { /* */ }
     if (!this.activeId) return;
     const m = this.mod;
     try { this.game.hideChampIntro(false); } catch (e0) { /* */ }
     try { if (m && m.leave) m.leave(); }
     catch (e) { console.warn('[champs] leave', e); }
+    // r97 · INFORME DEL DUEÑO («salí al Hall y seguía escuchando en bucle
+    // al zombi»): candado UNIVERSAL de salida — todo módulo con musicOff()
+    // (música propia + one-shots/bucles propios) lo calla TODO aquí. La
+    // fuga real: los one-shots del zombi son BUCLES cortados por un reloj
+    // que sólo corre desde update(); al salir a mitad de sonido el reloj
+    // muere y el bucle suena eterno en el Hall (más aún con la música del
+    // Hall muteada, porque entonces NADIE llama a mod.musicOff()). El
+    // módulo halloween además corta SU tren en leave() — doble seguro.
+    try { if (m && typeof m.musicOff === 'function') m.musicOff(); }
+    catch (eM) { console.warn('[champs] musicOff', eM); }
     this.activeId = '';
+    // r97 · fuera del campeonato se RETIRA la voz publicada por el núcleo
+    // (los archivos del manifest activo y su personalidad — el siguiente
+    // campeonato publica la suya; fuera de campeonato manda la síntesis
+    // neutra de siempre). El bloque rico de La Locura (__ppCoreVoz ausente)
+    // NO se toca: lo gestiona su propio módulo.
+    try { if (typeof window !== 'undefined' && window.__PP_ARCADE_DATA &&
+              window.__PP_ARCADE_DATA.__ppCoreVoz) window.__PP_ARCADE_DATA = null; }
+    catch (eV1) { /* */ }
+    try { if (typeof window !== 'undefined') window.__PP_CHAMP_PERS = null; }
+    catch (eV2) { /* */ }
+    // r96 · fuera del campeonato vuelve el aspecto de mesa ELEGIDO por el
+    // dueño (partidas/entrenamiento) — tras m.leave(), que restaura lo suyo.
+    try { if (this.game._mesaSkinReapply) this.game._mesaSkinReapply(); } catch (eMR) { /* */ }
   }
 
   /* v2.130 · INTRO DE CAMPEONATO: puentes con el módulo activo — la BSO
@@ -377,8 +698,10 @@ export class ChampLoader {
     const m = this.mod;
     let idx = -1;
     this._rbWant = false;   // v2.98: ¿la pala está apuntando al mapa?
+    // v3.6.31 · durante la INTRO del campeonato el haz lo gobierna la
+    // propia intro (botón JUGAR); el mapa no raycastea ni lo apaga.
     if (m && typeof m.replayMap === 'function' &&
-        g.renderer.xr.isPresenting && !g.menuOpen) {
+        g.renderer.xr.isPresenting && !g.menuOpen && !g.champIntro) {
       let rm = null;
       try { rm = m.replayMap(); } catch (e) { rm = null; }
       if (rm && rm.plane && Array.isArray(rm.nodesPx) && rm.nodesPx.length) {
@@ -500,6 +823,13 @@ export class ChampLoader {
       this._rb.tip.visible = false;
   }
 
+  /** v3.6.31 · haz-puntero de la INTRO (el MISMO haz del mapa del camino,
+   *  v2.98): al apuntar con la pala al panel de la intro sale el rayo y
+   *  se ve DÓNDE se apunta; DORADO sobre el botón JUGAR. El resto del
+   *  tiempo permanece apagado (no molesta). */
+  introBeamShow(oW, dW, len, hot) { this._replayBeamShow(oW, dW, len, hot); }
+  introBeamHide() { this._replayBeamHide(); }
+
   /** v2.96: el gatillo cae con un nodo del camino apuntado → REJUGA esa
    *  etapa (el módulo la relanza). true = gatillo consumido. */
   replayConsume() {
@@ -585,6 +915,15 @@ export class ChampLoader {
     const m = this.mod;
     if (m && m.onPoint) { try { m.onPoint(it); } catch (e) { console.warn('[champs.onPoint]', e); } }
   }
+  /** v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL: el núcleo reparte la
+   *  emoción (idle/crazy/angry/laughing/focused/picando/surprised/panic/
+   *  loosing/victory/defeated) y el módulo ACTIVO la viste con SU arte
+   *  (convención <estado>.webp) y SUS sonidos. Hook opcional: los módulos
+   *  sin rivalEmocion ignoran la norma en silencio. */
+  rivalEmocion(st, info) {
+    const m = this.mod;
+    if (m && m.rivalEmocion) { try { m.rivalEmocion(st, info); } catch (e) { console.warn('[champs.rivalEmocion]', e); } }
+  }
   onMatchOver(w) {
     const m = this.mod;
     if (m && m.onMatchOver) { try { m.onMatchOver(w); } catch (e) { console.warn('[champs.onMatchOver]', e); } }
@@ -607,8 +946,42 @@ export class ChampLoader {
     if (m && m.testStep) { try { m.testStep(dt); } catch (e) { console.warn('[champs.testStep]', e); } }
   }
 }
+/* M7e (r124) · FUSIÓN PURA DEL HISTORIAL DE TORNEOS (testeable headless,
+ * sin localStorage ni DOM). filas = estado ACTUAL de cada campeonato
+ * [{ id, esCampeon, wins, leyenda }]. Reglas:
+ *  · Un torneo ENTRA el primer día que se ve campeón (fecha de sellado) y
+ *    JAMÁS sale — el historial es append-only.
+ *  · wins y leyenda se REFRESCAN en cada pasada (viven en sus registros).
+ *  · Devuelve [nuevo, dirty] — dirty=sé si hay que persistir.
+ *  · Cap 50 filas (orden estable: fecha de sellado, luego id).
+ *  · Al FINAL del módulo: el ensamblador exige el token de identidad
+ *    ('class ChampLoader') en la 1.ª línea de la pieza. */
+export function historialFusionar(hist, filas) {
+  const h0 = Array.isArray(hist) ? hist.filter((x) => x && x.id) : [];
+  let hoy = '';
+  try { hoy = new Date().toISOString().slice(0, 10); } catch { hoy = ''; }
+  let dirty = false;
+  const out = h0.slice();
+  for (const f of filas || []) {
+    if (!f || !f.id || f.esCampeon !== true) continue;
+    let r = out.find((x) => x.id === f.id);
+    if (!r) {
+      r = { id: f.id, fecha: hoy, wins: 0, leyenda: false };
+      out.push(r);
+      dirty = true;
+    }
+    const w = f.wins | 0;
+    if (w !== r.wins) { r.wins = w; dirty = true; }
+    const ley = f.leyenda === true;
+    if (ley !== r.leyenda) { r.leyenda = ley; dirty = true; }
+  }
+  out.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1
+    : (a.id < b.id ? -1 : 1)));
+  return [out.slice(-50), dirty];
+}
+
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { T, __ppLang } from './c00_pre_three.js';
+import { T, __ppLang, ppDebugMode } from './c00_pre_three.js';
 import { CHAMPS_STATE, _dbQ1, _dbQ2, _dbV1, _rbQ, _rbV1, _rbV2, _rbV3, _rbV4, _rpSize, _rpV1, rpDir, rpOrigin, rpQuat, rpRaycaster } from './c10_menu_saque.js';
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
@@ -628,6 +1001,8 @@ export const muQ = new THREE.Quaternion();
 export const muRaycaster = new THREE.Raycaster();
 export const netTmpP = new THREE.Vector3();   // v2.19: poses del rival por red
 export const netTmpQ = new THREE.Quaternion();
+export const netTmpQ2 = new THREE.Quaternion(); // r79: deriva del centro de hoja
+export const netTmpV = new THREE.Vector3();     // r79: centro de hoja derivado
 muRaycaster.far = 2.5;
 
 /* v2.135 · PIELES DE CARTEL del artista para las NORMAS de las etapas:
@@ -673,6 +1048,18 @@ export const NORMAS_SKIN = {
       colTitle: '#7fe8ff', colBody: '#dcecff', colBull: '#ffb347',
       colBand: '#12324a', colBand2: '#0b2033',
     },
+    halloween: {
+      // r85 · CARTEL DEL ARTISTA para el Campeonato de Halloween
+      // (zombi_normas.png 1024×512: marco de tierra con el zombi asomando
+      // por arriba y las manos agarrando el borde). Hueco interior medido
+      // 156..916 × 112..464 con margen de seguridad sobre el arte del dueño.
+      // Colores: título calabaza, cuerpo verde pálido, viñetas ácido.
+      url: 'championships/halloween/assets/normas_halloween.png',
+      rect: [166, 122, 906, 454],
+      fFam: '"Trebuchet MS", Verdana, sans-serif',
+      colTitle: '#ffb347', colBody: '#e8f5d0', colBull: '#9dff57',
+      colBand: '#3f5d2a', colBand2: '#2a3f1c',
+    },
   },
   imgs: {},
 };
@@ -693,5 +1080,5 @@ window.__PP_NORMAS = NORMAS_SKIN;   // v2.135 · gancho QA (el módulo no expone
  * (public/game.html) y bump_version lo regeneró desde aquí — la ronda 21
  * lo rehace en la fuente. */
 const CHAMP_STAGE_TOTAL = {
-  locura: 5, magia: 5, oeste: 5, estacion_orbital: 5, valle_neon: 5,
-};
+  locura: 5, magia: 5, oeste: 5, estacion_orbital: 5, halloween: 5,
+};  // r85 · valle_neon retirado a petición del dueño → su hueco: HALLOWEEN

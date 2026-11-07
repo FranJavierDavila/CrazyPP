@@ -1,0 +1,483 @@
+# SUPERPODER DE PALA · Conocimiento del sistema
+
+> Documento maestro del diseño aprobado por el dueño (FASE 40 · V3.6.38-SDK6,
+> ronda 46). Toda la mecánica vive en el **núcleo** (`game.html`, generado desde
+> `src/game/core/c12_pingponggame.js` + i18n en `c00_pre_three.js` + física en
+> `c02/c04/c05/c06`): TODOS los campeonatos (locura, magia, oeste,
+> estacion_orbital, valle_neon) y cualquier campeonato nuevo la heredan **sin
+> escribir una línea** (norma en `public/championships/PLANTILLA-GUIA.md` §2.4).
+
+## 1 · Reglas del juego (aprobadas)
+
+| Regla | Valor |
+|---|---|
+| DÓNDE | **SOLO en los campeonatos** (Modalidad Campeonato, contra rivales). En un partido contra la máquina FUERA de los campeonatos no aparece nada (petición explícita del dueño; gate = `champs.active`). El HALL y la calibración siguen siendo zona neutra. |
+| Concesión | **Cada 11 golpes del rally** (11, 22, 33…) = **+1 carga** de un poder **aleatorio** del registro `PODERES_PALA`. El rally largo premia con más cargas. Rally nuevo = cuenta nueva. |
+| Matriz | Un poder distinto **NO sustituye**: **ENTRA en la matriz** (orden de llegada; el primero cogido ocupa la posición 0, el siguiente la 1…). Mismo poder → **acumula ×2, ×3** (tope 3; lleno = «toc» honesto). |
+| Selección | **Joystick ⟷ de cualquier mando** cicla el seleccionado (en escritorio, ←/→). En todo momento **SOLO UN icono** se ve en la pala. **Flechas ‹ ›** como sprites PROPIOS anclados EN EL PLANO DEL ICONO (ronda 46: centro del icono + lateral de cámara perpendicular a la línea ojo→icono × separación tangencial — sin solaparse, casi rozándolo, mirando a cámara; ronda 45: dentro del icono «no se nota»), **sin flecha izquierda en el índice 0, sin flecha derecha en el último** — y el joystick tampoco envuelve en los bordes. |
+| Tamaño (LOD) | **Ronda 46 (prueba de sensación):** jugando (rally), icono + flechas miden el **50 %**; **mirando el mango de la pala** (≈12°) o fuera del rally recuperan el **100 %** — el protagonismo llega al enfocarlos. Transición exponencial suave. |
+| Vida | Las cargas viven **solo en la partida en curso**; nueva partida = 0. |
+| Uso | **Gatillo del mando LIBRE** (conmuta al cambiar de mano; respaldo en la pala si la pistola del Oeste ocupa la libre; escritorio = ratón) gasta 1 carga del poder **SELECCIONADO**. |
+| MEGA PALA | 15 s por carga (pala ×1,30 visual + radio ×1,38 + canto oro + onda). Activa + gatillo = **alarga +15 s** (el tamaño nunca apila). |
+| SÚPER EFECTO | Ventana propia: **8 segundos O 5 golpes con efecto**, lo que ocurra primero. Activo + gatillo = **recarga** la ventana. |
+| SÚPER IMÁN | **8 segundos** de campo que atrae SUAVE la bola al **punto dulce**. **Cada impacto asistido válido consume 1 carga** (máx. **3 asistencias por activación**); el gatillo solo abre el campo (las cargas solo se gastan cuando el imán ayuda de verdad). Activo + gatillo = **refresca** la ventana. |
+| Interruptor | **«Pala Mejorada»** en AJUSTES (`pp_pala_mejorada_v1`, por defecto ON) = llave maestra. Apagado = pala 100 % normal. |
+
+## 2 · SÚPER EFECTO — las 4 reglas del dueño (implementadas)
+
+1. **El jugador genera el efecto**: el spin sale del brush real del golpe
+   (velocidad tangencial de la pala + giro de muñeca, `pad.omega` en c05).
+2. **×2 al spin GENERADO** (`EFECTO_SPIN_MUL = 2`) — **nunca** a la rotación
+   acumulada que ya traía la bola (la reversión −35 % del golpe sigue igual) —
+   con **tope de seguridad 2 × spinMax** (`efectoSpinTope`, ≈2.100 rpm).
+3. **El bote exagera el efecto**: la bola golpeada sale **MARCADA**
+   (`ball.ppEfecto`) y hasta que la IA la devuelve (c06 limpia la marca):
+   **Magnus ×1,5** en vuelo (`efectoMagnusMul`) y **acople de bote ×1,8**
+   (`efectoBoteMul`) — topspin patea más hacia delante, sidespin desvía más,
+   backspin frena más. El **tope de Coulomb** del bote sigue mandando: la
+   desviación extra queda limitada y dependiente del spin (el rival hábil
+   PUEDE contrarrestarlo). Golpe sin spin significativo
+   (`|spin| < EFECTO_SPIN_MIN = 25`) no cuenta como golpe con efecto ni
+   recibe bonificación.
+4. **Duración limitada**: 8 s o 5 golpes con efecto, lo primero que ocurra.
+
+> Predicción de la IA y solver del saque NO marcan la bola: siguen prediciendo
+> con la física de siempre (la sorpresa es del jugador). El golden de física
+> determinista no cambia (todos los multiplicadores son inactivos sin el poder).
+
+### 2.b · SÚPER EFECTO NOTORIO (ronda 45 — «no lo noto»)
+
+1. **HALO ROJO** sobre la bola marcada: sprite aditivo anclado a la bola cada
+   frame (`_buildEfectoHalo`), visible mientras `ball.ppEfecto` (la IA limpia
+   la marca al devolver).
+2. **ANILLO DE BOTE amplificado**: cuando la bola marcada (con |spin| ≥ 25)
+   bota en la mesa, anillo rojo one-shot de 0,38 s + barrido sonoro
+   (`_efectoBoteFxShow`, disparado en `processEvents` caso `table`).
+3. **Dificultad % al rival**: con la bola marcada viniendo, la IA sortea su
+   error de puntería **×2** (`efectoRivalErrMul`) y va con **piernas ×0,85**
+   (`efectoRivalVel`) — «dificultar en un %» el éxito del rival sin tocar la
+   física de salida (honesto: se contrarresta con colocación).
+4. **El mensaje enseña a aplicarlo**: «¡SÚPER EFECTO! · golpea con GIRO
+   (arrastra la pala al golpear): spin ×2 · 8 s / 5 golpes» — el dueño no
+   sabía que hay que barrer la pala para generar spin.
+
+### 2.c · SÚPER IMÁN (ronda 45 — 3.er poder, spec completa del dueño)
+
+**Objetivo**: campo magnético temporal alrededor de la pala del jugador que
+atrae suavemente la pelota hacia el punto dulce. Aumenta la probabilidad de
+impacto limpio **sin eliminar la habilidad ni falsear la física**.
+
+**Principios implementados (todos)**: la pala sigue mandada por el movimiento
+real de la mano/mando · la atracción centra el impacto pero NO dirige el
+golpe · no se teletransporta la bola ni se mueve la pala · no se recuperan
+bolas que ya superaron el plano de golpeo · velocidad/giro/energía los
+gestiona el modelo de contacto de siempre · cada impacto asistido válido
+consume 1 carga (máx. 3 por activación) · integración por SUBPASO con h fijo
+(estable ante fluctuaciones de FPS).
+
+| Parámetro (prototipo, a calibrar) | Valor inicial |
+|---|---|
+| Duración | 8 segundos (reloj de juego; respeta la pausa) |
+| Impactos asistidos máximos | 3 |
+| Intensidad | Media (= los valores de la tabla tal cual) |
+| Radio de influencia | 0,45 m |
+| Distancia de máxima asistencia | 0,12 m (plena dentro; lineal hasta el radio) |
+| Aceleración lateral máxima | 3 m/s² |
+| Incremento lateral máximo por aproximación | 0,35 m/s (acumulado real) |
+| Tiempo máximo de predicción del impacto | 0,15 s (predicción lineal) |
+
+> NO son propiedades físicas de un imán real: son parámetros de prototipo del
+> dueño para calibrar con las velocidades reales del juego (DIMS.iman*).
+
+### 2.d · FASE 40 (ronda 46) — gatillo INMEDIATO, halo/bote EXACTOS, flechas
+      en plano y LOD por mirada
+
+Las 4 peticiones del dueño tras probar V3.6.37, con sus decisiones:
+
+1. **LAG DEL GATILLO, FUERA** («debe sentirse que la aplicación es
+   inmediata… a todas costa»). Tres ataques, todos medibles:
+   - *Redibujo diferido*: gasta/cicla/carga marcan `_megaTexDirty` y el
+     redibujo corre en `updateMega` — NUNCA en el frame del gatillo. Al
+     lanzar un poder el icono se oculta: el trabajo se ahorra entero.
+     Además el `megaTrigger` tenía un segundo `_megaIconRefresh()`
+     redundante (doble canvas+GPU en el mismo frame): fuera.
+   - *Textura persistente*: canvas + `CanvasTexture` del icono se crean UNA
+     vez (`_megaIconCv`); cada refresco REDIBUJA y recalienta con
+     `needsUpdate` — ni una asignación ni un disposal por pulsación.
+   - *PRECALIENTE* (`_megaPrewarm`): desde la PRIMERA carga, todo el
+     arsenal que el gatillo podía construir en su primer uso (canto MEGA,
+     canto efecto, canto imán, halo, anillo de bote, flechas) se construye
+     POR ADELANTADO y REPARTIDO — una pieza por frame (cola en
+     `updateMega`). El gatillo ya no crea nada: solo enciende.
+2. **HALO/BOTE EXACTOS** («el halo rojo y el bote rojo desfasados en
+   relación a la bola»): el halo es **HIJO del `ballMesh`** — viaja con su
+   transform, cero desfase posible incluso entre subpasos de física o con
+   extrapolación de red (nadie lo copia: posición gratis). El anillo de
+   bote está precalentado (`_efectoBotePrewarm`): el primer bote marcado ya
+   no construye nada.
+3. **FLECHAS EN EL PLANO DEL ICONO** («mismo plano… prácticamente
+   tocándose tangencialmente… mirando hacia la cámara»): anclaje en MUNDO
+   cada frame — centro del icono + componente del right de cámara
+   **PERPENDICULAR a la línea ojo→icono** × separación tangencial (6 % del
+   tamaño del icono). Nada rota con la muñeca (antes era el eje X local de
+   la montura): siempre a los lados, coplanares, sin solaparse y mirando
+   al ojo (sprites billboard).
+4. **LOD POR MIRADA** («más pequeños mientras jugamos… recuperan su tamaño
+   si miramos el palo de nuestra pala»): `_megaLodUpdate` — en rally el
+   icono y las flechas miden el 50 % (`MEGA_LOD_JUEGO`); mirando el mango
+   (el icono vive sobre el mango; umbral cos ≥ 0,978 ≈ 12°,
+   `MEGA_LOD_MIRA`) o fuera del rally, el 100 %. Exponencial suave (k=12
+   al crecer, k=5 al encoger). **Prueba de sensación**: si el dueño quiere
+   otro porcentaje o umbral, es UNA constante.
+
+### 2.e · FASE 41 (ronda 47) — PARTIDA NUEVA = PALA LIMPIA
+
+Reporte del dueño tras probar V3.6.38: «los poderes de la pala al iniciar
+una partida deben desaparecer — permanecen los de una partida previa que
+no se han gastado».
+
+**Causa raíz.** La recogida completa (`_megaNormReset`: matriz de cargas,
+icono ×N, FX de mega/efecto/imán, flechas, halo, anillo de bote, marcas de
+la bola, escalas LOD y radio de asistencia) SOLO corría en dos sitios:
+al ENTRAR EN EL HALL (v3.6.34, «zona neutra») y al APAGAR «Pala Mejorada»
+(v3.6.34). Todos los caminos de nueva partida que NO pasan por el hall
+arrancaban con el arsenal de la partida anterior colgado de la pala:
+revancha por gatillo al terminar (el más visible), revancha de menú,
+cambio de modo con B, online (anfitrión/revancha/desconexión), vuelta de
+calibración y el REINICIO AUTOMÁTICO del árbitro cuando el estado es
+`over` (c06, línea de siempre) — este último corría DENTRO del árbitro,
+donde el núcleo no puede llegar.
+
+**Solución (un solo punto, imposible olvidar).** HOOK de arranque:
+`rules.onMatchStart`. El árbitro (c06) declara el campo y lo avisa al
+FINAL de CADA `startMatch`, con blindaje `try/catch` (el árbitro nunca
+rompe). El núcleo (c12) lo registra UNA vez, en su constructor, apuntando
+a `_megaNormReset`. Con UN aviso cubren TODOS los caminos presentes y
+futuros — cualquier `startMatch` nuevo que llegue a existir hereda la
+recogida gratis. Idempotente por diseño: el hall recogía ANTES de llamar
+`startMatch`; ahora recoge dos veces y no pasa nada (todo son guardas y
+`null`s; sin dispose doble).
+
+**Regla del juego (queda aprobada así).** Empezar una partida SIEMPRE
+arriba con la pala exacta de siempre: cero cargas, cero icono, cero FX.
+Las cargas se ganan JUGANDO (norma de los 11 golpes del rally, tope ×3)
+y se gastan en ESA partida. Ni el marcador ni el bestOf cambian: el hook
+solo toca la pala.
+
+### 2.f · FASE 42 (ronda 48) — EL PODER ACTIVO SE VE EN LA PALA
+
+Pregunta del dueño: «¿Se te ocurre alguna manera de que el usuario sepa
+el tipo de poder de pala que tiene activo, sin que moleste durante el
+juego?». Hasta V3.6.39 el icono del mango DESAPARECÍA mientras su propio
+efecto corría (regla de V3.6.36): durante los 8-15 s de ventana el
+jugador solo tenía el canto de silueta (oro/cian/azul), los FX en la
+bola y la voz de activación — fácil confundir el cian del efecto con el
+azul del imán en medio de un rally.
+
+**Recomendación ejecutada (la que se aprobó).** El icono del mango NO
+desaparece al activar: pasa a MODO ACTIVO. Es el mismo sprite, en el
+mismo sitio, con dos caras:
+
+- **Modo ACTIVO** (un poder corriendo): muestra el PNG del poder EN
+  MARCHA rodeado de un **ANILLO DE TIEMPO** que se vacía — pista tenue
+  completa + arco en el color del canto de ese poder (oro `#ffc84a`
+  mega / cian `#54d8f0` efecto / azul `#5aa2ff` imán) con cabeza blanca
+  que marca el sentido del vaciado. En los **últimos 2 s** el icono
+  PARPADEA (mismo lenguaje que el canto que se apaga). Sin HUD, sin
+  texto, sin voces nuevas: vive en la pala, en visión periférica.
+- **Modo INVENTARIO** (nada corriendo): el seleccionado de la matriz con
+  su etiqueta ×N de siempre. Al expirar el poder el icono vuelve aquí
+  solo (o se esconde si no quedan cargas).
+
+Reglas que NO cambian: UN solo icono en la pala en todo momento (FASE
+38), el gatillo gasta el seleccionado, el imán refresca sin gastar, el
+ALARGA de la mega llena el anillo con TODO el tiempo restante, las
+flechas ‹ › descansan mientras un poder corre (elijen el SIGUIENTE) y
+el indicador duerme en CADA `_megaNormReset` (FASE 41: partida nueva =
+pala limpia). Último gatillo manda: si hay dos poderes a la vez, el
+icono muestra el que se lanzó más reciente.
+
+**Ingeniería (lecciones de la casa aplicadas).** El anillo se dibuja en
+el canvas PERSISTENTE del icono (cero texturas nuevas, `needsUpdate`
+in-place); el redibujo es DIFERIDO (nunca en el frame del gatillo, r46)
+y AHORRADO: solo cuando el arco cambia 1/24 de vuelta (≈ cada 0,3 s en
+una ventana de 8 s). El modo activo hereda el LOD del icono (50 % en
+rally, 100 % mirando el mango). `_megaActivaRest()` es el único reloj
+nuevo y `updateMega` reconcilia visibilidad/modo/expiración cada frame
+(fuente única de verdad).
+
+### 2.g · FASE 43 (ronda 49) — SÚPER PORTAL, el 4.º poder de pala
+
+Peticion del dueño: «Vamos a crear un nuevo superpoder de pala "Super
+Portal"… el rival es el ordenador deberá penalizarlo de alguna forma
+para que le resulte más complicado acertar el golpe» + spec completa de
+9 parámetros. El portal traslada la bola tras un golpe VÁLIDO: la bola
+desaparece en un vórtice violeta y reaparece más adelante con una
+salida legítima — sorprendente pero CON control del jugador («no debe
+convertirse en una teletransportación arbitraria que ignore la física
+del ping-pong»). Icono del dueño embebido (SuperPala_Portal.png) +
+voces ES/EN (¡SÚPER PORTAL! / SUPER PORTAL!).
+
+**Parámetros (spec del dueño, calibrables):** ventana 8 s / 3 golpes
+portalizados por activación · transición visual 0,16 s (0,12–0,20) ·
+desviación lateral 0,25–0,70 m (NUNCA siempre la máxima) · variación
+vertical 0–0,15 m · conserva 90–100 % de la rapidez del golpe real ·
+antirrebote 0,25 s entre golpes · recarga por la norma de siempre (11
+golpes de rally, tope ×3).
+
+**Las 7 reglas físicas (spec, implementadas una a una):**
+
+1. **Solo tras impacto válido**: `_portalProcesa` exige un evento
+   paddle del jugador SIN consumir en ESTE frame (doble guard con el
+   bloque 5.55: nunca por rozar la pala, por pasar cerca ni por una
+   colisión duplicada). El evento NO se consume: el árbitro registra el
+   golpe y el bote del portal en campo rival (secuencia arbítral
+   intacta — no toca puntuación, identidad, saque ni detección).
+2. **UNA sola bola, UNA sola identidad**: el swap es ATÓMICO
+   (posición + velocidad en el mismo frame, tras el enderezado 5.5 y
+   ANTES del árbitro). La bola NUNCA cruza la red físicamente:
+   reaparece YA al otro lado (plano C−0,22 con margen mínimo de 0,12 m
+   a la red) — cero colisiones fantasma, cero segundo objeto.
+3. **Intención del golpe**: la salida parte de la PROYECCIÓN NATURAL
+   (misma velocidad + gravedad del juego, fórmula de c05) — la desviación
+   se calcula sobre ella, no al azar.
+4. **Desviación viva**: lateral 0,25–0,70 m sobre la perpendicular
+   horizontal al golpe, con SIGNO que lleva la bola hacia el centro de
+   la mesa (y sorteo libre si va centrada); vertical 0–0,15 m. Si la
+   salida se sale de la zona legal (|x| > 0,62 m) se REDUCE; sin margen
+   real, el golpe se procesa NORMAL (spec: «reduce la desviación o
+   cancela el efecto para ese golpe»).
+5. **Bote jugable garantizado**: la velocidad de salida la calcula el
+   SOLVER EXISTENTE (`computeShotVelocity`, el mismo del enderezado 5.5)
+   hacia un bote legítimo medio-fondo del campo rival; después se
+   reescala al 90–100 % de la rapidez del golpe real (sin invertir
+   dirección, sin saltos bruscos, tope maxBallSpeed).
+6. **Spin conservado** (spec v1: sin variación explícita de efecto).
+7. **Consumo honesto**: CADA golpe portalizado gasta 1 carga (3 golpes
+   o cargas agotadas → fin; 8 s → fin natural). El gatillo con la
+   ventana ya abierta REFRESCA sin gastar (mismo lenguaje que el imán).
+
+**Penalización del rival IA (c06, petición expresa del dueño)** — el
+mismo lenguaje honesto del Súper Efecto Notorio, solo con la bola
+marcada viniendo: la predicción de la IA MUERE al cruzar el portal (la
+bola que perseguía desapareció: reacciona tras SU `predictInterval`),
+el error de puntería se re-sortea ×1,6 (`portalRivalErrMul`), las
+piernas van ×0,75 (`portalRivalVel`) y el fallo decidido suma +10 %
+(`portalMissExtra`). La marca `ball.ppPortal` la limpia la IA al
+devolver (golpe limpio y mishit) y el `_megaNormReset` (FASE 41).
+
+### 2.h · FASE 44 (ronda 50) — el portal SE ENTIENDE y la IA RESPONDE
+
+Informe del dueño tras probar V3.6.41 en el Quest 3, corregido pieza a
+pieza:
+
+1. **CRÍTICO — «he sacado y no las devuelve»**: en r49 la muerte de la
+   predicción corría CADA FRAME con la marca viva (y la marca solo se
+   limpiaba al devolver la propia IA: bucle de muerte). FIX: la muerte es
+   un FLANCO único (`_ppPortalVisto` en c06) — la IA pierde la predicción
+   UNA vez al cruzar el portal y reacciona tras su `predictInterval`
+   natural. La penalización queda en PORCENTAJES (error ×1,6 · piernas
+   ×0,75 · +10 % de fallo decidido) — **jamás anulación**. Y las
+   desventajas mueren CON el poder: la marca se limpia al acabar la
+   ventana (`_portalFin`) y al acabar el punto (`updateMega`), además de
+   al devolver la IA y en la recogida de partida nueva.
+2. **«el icono no lo has recortado»**: r49 embebió el PNG en RGB (alfa
+   destruido). FIX: recorte al contenido + transparencia preservada (64
+   colores FASTOCTREE) — verificado con PIL en la capa AK.
+3. **«la voz no sale en castellano»**: la ES de r49 estaba corrupta
+   (2,78 s). FIX: Piper `es_ES-davefx` nativa (0,82 s), verificada por ASR.
+4. **«no se entiende visualmente»** — presentación EXPLÍCITA del dueño:
+   al golpear con el poder activo se abre el **portal de ENTRADA en la
+   zona de impacto** (portals.png del dueño — el arte del rival wizard —
+   al **50 %** de su tamaño real) con el halo creciente; la bola se hunde
+   en su centro (0,16 s) y **viaja OCULTA 1 segundo** (física congelada:
+   `stepPhysics` la salta, el árbitro no ve ni un evento); al segundo el
+   **MISMO portal se abre SOBRE la mesa del rival** y la bola **sale
+   disparada por su centro** con trayectoria del solver (bote jugable
+   garantizado — el rival SIEMPRE puede intentarlo). Una identidad, cero
+   colisiones fantasma, el tránsito se CUMPLE aunque el poder expire en
+   el medio (vigilante anti-bloqueo incluido).
+5. **«congelación al cargar un superpoder»** — ANTI-LAG total: el
+   precaliente arranca AL EMPEZAR LA PARTIDA (13 piezas: 4 cantos + halo
+   + anillo de bote + flechas + imagen del portal + icono + 4 voces del
+   idioma vivo) — la carga y el gatillo ya no construyen ni decodifican
+   nada: solo encienden.
+6. **Conmutador PASSTHROUGH en AJUSTES** (en VR, por defecto
+   DESACTIVADO): cambia la sesión en vivo (fin + re-entrada automática al
+   modo contrario aprovechando el gesto del gatillo; si el navegador no
+   lo permite, queda fijado para la próxima entrada) y persiste en
+   `ppxr_pending_ar` — coherente con el enlace de la portada web.
+
+**Presentación diegética (FASE 42 heredada):** el icono pasa a modo
+ACTIVO con anillo VIOLETA `#a86bff` que se vacía y parpadeo final;
+canto violeta ×1,085 en la silueta de la pala (no pelea con oro ni
+cian); anillos de ENTRADA/SALIDA en el mundo (billboard, one-shot de
+0,42 s) + los DOS portales del mundo (sprites del PNG del dueño, pulso
+y desvanecido); barrido sonoro propio en la entrada y en la salida;
+todo el arsenal del portal en el precaliente (cola de 13 piezas).
+
+### 2.i · FASE 45 (ronda 51) — los superpoderes SE VEN y SE OYEN
+
+Informe del dueño tras probar V3.6.42 en el Quest 3, corregido pieza a
+pieza:
+
+1. **«No noto los efectos del Poder Super Efectos… exagerarlo»**: el brush
+   generado sube a **×3** (`EFECTO_SPIN_MUL`), la curva Magnus en vuelo a
+   **×2,2** y el acople del bote a **×2,4** (c02), con tope de giro **×3**
+   — la bola marcada CURVA a la vista. Su halo rojo crece un **35 %**
+   (0,142 m + pulso vivo).
+2. **Súper IMÁN entendible** (petición literal: «ampliar un poco el radio
+   de influencia y si la bola entra dentro del mismo que aparezcan unas
+   pequeñas flechas desde la bola en dirección al centro de nuestra pala
+   indicando que está siendo atraída y que sea así»): radio **0,45 →
+   0,75 m**, plena 0,20 m, aceleración ×5, Δv 0,60. **TRES FLECHAS cian**
+   (`_imanFlechas`, conos 3D) aparecen EN LÍNEA desde la bola hacia el
+   punto dulce cuando la bola entra en el campo (y laten si el campo está
+   empujando — marca `ppImanEmpuje` que pone `applyIman`); construidas por
+   el precaliente (14.ª pieza, anti-lag). Y el **RESCATE**: una bola que
+   se nos escapa (cruzada o larga, viniendo a nuestra mitad con
+   `vel.z > 0,3`) es atraída de VERDAD hacia el punto dulce
+   (`imanRescateAcel` 6 m/s², tope `imanRescateDv` 0,85 m/s por
+   aproximación, contador `dvRes` independiente del de la asistencia
+   clásica).
+3. **«En el Super Poder Portal a veces puedo golpear varios portales y
+   otras parece que con uno solo me desaparece»**: CAUSA — el gasto iba
+   POR GOLPE: con el sorteo ×1 la ventana moría al primer portal (y el
+   vigilante «sin cargas → fuera» la apagaba encima). NUEVA ECONOMÍA: la
+   **ACTIVACIÓN gasta 1 carga** y la ventana trae **SIEMPRE SUS 3 GOLPES
+   PORTALIZADOS** (u 8 s) — re-activar refresca (otra carga). El
+   vigilante de la matriz se RETIRA. Nunca más «con uno me desaparece».
+4. **«Feedback sonoro cuando está a punto de acabarse, sin mirar el
+   icono»**: **CUENTA SONORA 3·2·1 uniforme en los CUATRO poderes**
+   (`_poderTickBlip`): blips de 1319 Hz al quedar 3 y 2 segundos, y de
+   1568 Hz (más agudo, urgencia) al quedar 1; el sonido de fin propio de
+   cada poder cierra la cuenta. El parpadeo del icono sigue alineado
+   (warn a 2 s).
+5. **«El conmutador de passthrough que no nos lleve a la ventana
+   principal web desde VR»**: la sesión se pide **SIEMPRE
+   `immersive-ar`** (el Quest 3 la soporta — con fondo opaco se ve
+   EXACTAMENTE igual que una sesión VR) y el passthrough ya NO cambia el
+   MODO de la sesión: el conmutador de AJUSTES alterna tu habitación ⇄
+   sala virtual **AL VUELO** con `_pstAplicar` (canje de background/fog/
+   sala/shadowCatcher + clearColor alfa 0) — sin `session.end`, sin salir
+   a la web, sin cortar el partido. La preferencia (`ppxr_pending_ar`)
+   decide el estado inicial; los caminos del hall/menú filtran con
+   `(inAR && pstOn)`; el fallback fin+re-entrada de r49 queda solo para
+   dispositivos SIN `immersive-ar`.
+
+**Capa AL nueva** (`qa_superpoderes_v3643`, 68 checks): agujas de las 5
+piezas + agujas NEGATIVAS (el gasto por golpe y el vigilante del portal
+ya NO existen) + mecánica real headless (precaliente de 14 piezas,
+flechas vivas según el campo, portal ×1 con 3 golpes garantizados, cuenta
+sonora 3·2·1 espiada en el audio, passthrough que canjea y restaura la
+escena, halo exagerado). **AF re-anclada** a la spec v3.6.43 del imán
+(0,75/0,20/5/0,60 + RESCATE) y al brush ×3 (141 checks).
+
+## 3 · Feedback al jugador
+
+1. **Icono anclado al mango** (sprite-billboard 4,8 cm, base de la mano, justo
+   sobre el mando): PNG del poder seleccionado + **etiqueta ×N** (2-3 cargas)
+   + **flechas ‹ ›** de la matriz. Con un poder ACTIVO (FASE 42, §2.f) el
+   MISMO icono pasa a modo activo: poder en marcha + **anillo de tiempo**
+   que se vacía + parpadeo en los últimos 2 s.
+2. **Voz NATIVA** por poder e idioma — Piper **es_ES-davefx** (la MISMA voz
+   castellana de la megafonía del juego: «¡Potenciador de pala gigante!» /
+   «¡Potenciador de súper efecto!») y **en_US-lessac** si se juega en inglés
+   («Giant paddle booster!» / «Super spin booster!»). MP3 embebido data-URI,
+   decode+caché. Adiós a la voz tongtong («horrible, no nativa» — petición
+   del dueño, FASE 38). El PORTAL (FASE 43) añade su voz propia ES/EN
+   («¡Súper portal!» / «Super portal!») embebida igual.
+3. **Jingle de carga** (tríada mayor + brillo) compartido; activación con
+   arpegios PROPIOS por poder (oro square 420→1400 · cian sawtooth 340→1280 ·
+   portal barrido baja-subida 1250→320→1150).
+4. **Canto de energía por poder**: oro ×1,055 (MEGA) / cian ×1,07 (EFECTO) /
+   azul ×1,07 (IMÁN, 0x5aa2ff — familia del icono) / violeta ×1,085 (PORTAL,
+   0xa86bff — el cuarto canto, no pelea con los otros) — pueden convivir (son
+   ortogonales). Onda de choque al liberar. Aviso sonoro
+   descendente <2 s. Megáfono ES/EN con ×N y mensajes propios del efecto
+   (`arc_efecto_go/fin`) y del portal (`arc_portal_go/fin`).
+5. Pista de la norma una vez por navegador (`pp_mega_norm_hint`), ahora con
+   matriz + joystick + «solo campeonatos».
+
+## 4 · Arquitectura (extensible)
+
+```
+PODERES_PALA (c12, final del fichero)   ← REGISTRO: un poder = una entrada
+  { id, nombre: () => T('poder_<id>'), voz, vozEn, png }
+MEGA_DUR=15 · MEGA_TOPE=3 · MEGA_GOLPES=11 · MEGA_ICON_Y/Z/S · MEGA_ARROW_S=0.020
+EFECTO_DUR=8 · EFECTO_GOLPES=5 · EFECTO_SPIN_MUL=2 · EFECTO_SPIN_MIN=25
+IMAN_DUR=8 · IMAN_ASIST=3
+DIMS: efectoSpinTope=2 · efectoMagnusMul=1.5 · efectoBoteMul=1.8
+DIMS: efectoRivalErrMul=2.0 · efectoRivalVel=0.85 (efecto notorio)
+DIMS: imanRadio=0.45 · imanPlena=0.12 · imanAcelMax=3 · imanDvMax=0.35 · imanTPred=0.15
+PNG_PODER_* / VOZ_PODER_*               ← assets data-URI embebidos
+```
+
+| Pieza | Dónde | Qué hace |
+|---|---|---|
+| `updateMega(dt)` | c12 (bucle `animate`) | CARGA (11 golpes) · timers de MEGA y EFECTO · multiplicador del efecto en la pala · ciclo joystick · FX · icono. |
+| `_megaCharge()` | c12 | Poder aleatorio; mismo→acumula (tope 3); distinto→ENTRA en la matriz y se selecciona; icono+voz+jingle+megáfono. |
+| `_megaMatriz` / `_megaIdx` | c12 | La matriz `[{id, n}]` en orden de llegada + índice seleccionado. |
+| `_megaCiclo/_megaCicla` | c12 | Joystick ⟷ (flanco + antirrebote 0,33 s, ambos mandos) y ←/→; SIN envolver en bordes. |
+| `megaTrigger(i)` | c12 | Gatillo del mando libre: libera el poder SELECCIONADO (mega alarga · efecto recarga). |
+| `_efectoTrigger/_efectoFin` | c12 | Ventana del súper efecto (8 s / 5 golpes) + FX cian + onda. |
+| `_megaIconTex()` | c12 | PNG del poder seleccionado + etiqueta ×N (reservas canvas por poder). SIN flechas dentro (ronda 45). |
+| `_megaVoz(id)` | c12 | Voz por poder e idioma (`__ppLang`), decode una vez + caché. |
+| `_fxBuild(col)` | c12 | Canto+onda parametrizado (oro 0xffc84a / cian 0x54d8f0 / azul 0x5aa2ff). |
+| `_imanTrigger/_imanFin/_imanImpacto` | c12 | Campo del imán: abre/refresca sin consumir; **cada impacto asistido gasta 1 carga** (máx. 3/activación); cierra por tiempo/cargas/tope. |
+| `_buildMegaArrows/_megaArrowTex` | c12 | Flechas ‹ › como sprites PROPIOS junto al icono (disco oscuro + oro + pulso), visibilidad por índice. |
+| `_buildEfectoHalo/_efectoBoteFxShow` | c12 | Halo rojo de la bola marcada + anillo de bote amplificado (one-shot 0,38 s). |
+| `_megaNormReset()` | c12 | Recogida COMPLETA con dispose (conmutador OFF, hall, fin de partida). |
+| Física | c02/c04/c05/c06 | `pad.ppEfectoMul` (brush ×2 + tope 2×spinMax) · `ball.ppEfecto` (Magnus ×1,5 + bote ×1,8 solo marcada) · c06 limpia la marca al devolver la IA · c06 castiga al rival con bola marcada (err ×2, piernas ×0,85). |
+| `applyIman(ball, paddles, h)` | c05 (SUBPASO) | Atracción lateral al punto dulce: predicción ≤0,15 s · plena a ≤0,12 m · lineal hasta 0,45 m · a ≤3 m/s² · Δv ≤0,35 m/s por aproximación · solo bolas que se acercan y no pasaron el plano · marca `ball.ppImanTocada` (la consume el gancho 4.95 del animate). Golden intacto: todo detrás de `ball.ppIman`. |
+
+**Añadir un superpoder nuevo** = ① entrada en `PODERES_PALA` + ② i18n
+`poder_<id>` ES/EN + ③ voces ES/EN embebidas + ④ PNG embebido (+ su semántica
+de activación en `megaTrigger`). La matriz, el ciclo, el reparto aleatorio y
+TODOS los campeonatos lo cogen solos.
+
+## 5 · QA y sellado
+
+- Capa **AG** `scripts/qa_poderes_v3638.py` (en vivo, 66 checks): agujas de
+  los 4 cambios de la FASE 40 + mecánica real headless (precaliente que
+  drena solo · textura persistente con identidad estable · gatillo que NO
+  dibuja · halo hijo de la bola que viaja con ella · flechas coplanares y
+  tangenciales medidas contra la cámara · LOD 50 % en rally → 100 % en
+  saque y con la mirada forzada) + regresiones de las reglas de la ronda 45.
+- Capa **AF** `scripts/qa_poderes_iman_v3637.py` (en vivo, 138 checks):
+  actualizada a la geometría de la ronda 46 (flechas por índice con la
+  puerta de montura viva · halo medido en MUNDO como hijo del ballMesh) —
+  mantiene la micro-simulación de física del imán y la norma completa.
+- Capa **AE** `scripts/qa_poderes_matriz_v3636.py` retirada del listado
+  (historial); la capa AD (`qa_mega_cargas_v3635`) también (historial).
+- `scripts/sella_r46.py` sella las capas E/F/G/H/I a 3.6.38-SDK6 con los
+  tamaños reales de los 4 ZIPs (las rondas previas usaron `sella_r44/r45`).
+- Assets de la ronda: `scripts/_poder36/` (4 voces Piper + **icono REAL del
+  dueño** `icono_efecto_real_64.png`, cuantizado a 64 colores con la receta
+  del Crece) y `scripts/_poder36_insertar_assets.py` (inserción data-URI).
+- Ronda 44-b: el icono PROVISIONAL de la casa se sustituyó por el
+  `SuperPala_Efecto.png` del dueño (`scripts/_poder36_swap_icono_real.py`,
+  comparación EXACTA del URI completo). Lección operativa: `deploy_pages.py`
+  ensambla con `git archive HEAD` (solo commiteados) — **commit ANTES de
+  deploy** o producción sirve el build viejo; y tras rodado, re-asentar
+  `refs/heads/pages` a `origin/pages` (non-fast-forward, caso 133/142).
+
+## 6 · Decisiones de diseño y por qué
+
+- **Matriz en vez de sustitución** (cambio de la FASE 37, petición del dueño):
+  «en caso de salir un potenciador distinto que NO elimine los actuales» — la
+  tensión «úsalas o arriésgate» se sustituye por gestión de arsenal: cada
+  poder conserva sus multiplicadores y el jugador elige cuándo y cuál.
+- **Solo 1 icono visible** + flechas condicionales: la petición literal del
+  dueño («en todo momento solo tenemos 1 visible en la pala»; «si estamos en
+  el potenciador 0 no aparece flecha a la izquierda»).
+- **SOLO campeonatos**: «los potenciadores SOLO aparecen en los campeonatos
+  contra rivales, NO en una modalidad diferente con un partido contra la
+  máquina fuera de los campeonatos» — gate en `megaEnabled()` (champs.active).
+- **Voz nativa castellana + audio traducido al inglés**: la voz tongtong
+  pronunciaba español «horrible»; davefx es la voz ES del juego entero. En
+  inglés, el banco lessac con la frase traducida.
+- **Spin ×2 solo generado, con topes**: amplifica lo que hace el jugador sin
+  garantizar fallos del rival (Coulomb cap + tope 2×spinMax + Magnus limitado).
+- **Predicción IA sin marca**: el rival sigue jugando con la física canónica —
+  el efecto es ventaja real, no error del simulex.

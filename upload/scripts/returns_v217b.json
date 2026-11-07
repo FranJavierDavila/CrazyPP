@@ -1,0 +1,370 @@
+[
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.362,
+   "z": -0.719
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": -0.323,
+   "z": -0.31
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": true,
+   "mbo": false,
+   "pos": [
+    0.47,
+    0.05,
+    -4.3
+   ],
+   "vel": [
+    0.24,
+    1.8,
+    -1.83
+   ],
+   "ai": [
+    0.27,
+    1.01,
+    -3.32
+   ],
+   "pv": false,
+   "pred": [
+    0.37,
+    0.93,
+    -3.55
+   ],
+   "cd": -0.15
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU no la devolvi\u00f3"
+ },
+ {
+  "returned": true,
+  "bounce": null,
+  "snap": {
+   "last": "ai",
+   "vb": true,
+   "mbo": false,
+   "pos": [
+    -0.68,
+    0.06,
+    1.62
+   ],
+   "vel": [
+    -0.24,
+    1.65,
+    1.76
+   ],
+   "ai": [
+    -0.18,
+    1.05,
+    -3.42
+   ],
+   "pv": false,
+   "pred": [
+    -0.09,
+    1.02,
+    -2.75
+   ],
+   "cd": -0.8
+  },
+  "msg": "Punto para la CPU \u00b7 no la devolviste"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.493,
+   "z": -0.315
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.224,
+   "z": -1.603
+  },
+  "snap": {
+   "last": "ai",
+   "vb": false,
+   "mbo": true,
+   "pos": [
+    0.22,
+    0.81,
+    -1.6
+   ],
+   "vel": [
+    0.26,
+    2.72,
+    1.19
+   ],
+   "ai": [
+    0.05,
+    1.05,
+    -3.42
+   ],
+   "pv": false,
+   "pred": [
+    0.02,
+    1.02,
+    -2.69
+   ],
+   "cd": -0.05
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU golpe\u00f3 su campo"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.43,
+   "z": -0.578
+  },
+  "snap": {
+   "last": "ai",
+   "vb": true,
+   "mbo": false,
+   "pos": [
+    0.43,
+    0.8,
+    -0.58
+   ],
+   "vel": [
+    0.3,
+    2.3,
+    1.04
+   ],
+   "ai": [
+    0.11,
+    1.05,
+    -3.42
+   ],
+   "pv": false,
+   "pred": [
+    -0.07,
+    1.02,
+    -2.51
+   ],
+   "cd": -0.65
+  },
+  "msg": "Punto para la CPU \u00b7 doble bote: no llegaste \u00b7 6 golpes"
+ },
+ {
+  "returned": true,
+  "bounce": null,
+  "snap": {
+   "last": "ai",
+   "vb": true,
+   "mbo": false,
+   "pos": [
+    0.67,
+    0.04,
+    0.87
+   ],
+   "vel": [
+    0.19,
+    1.89,
+    1.27
+   ],
+   "ai": [
+    0.18,
+    1.05,
+    -3.42
+   ],
+   "pv": false,
+   "pred": [
+    0.17,
+    1.02,
+    -2.57
+   ],
+   "cd": -0.95
+  },
+  "msg": "Punto para la CPU \u00b7 no la devolviste \u00b7 7 golpes"
+ },
+ {
+  "returned": true,
+  "bounce": null,
+  "snap": {
+   "last": "ai",
+   "vb": true,
+   "mbo": false,
+   "pos": [
+    1.28,
+    0.06,
+    1.63
+   ],
+   "vel": [
+    0.83,
+    1.59,
+    1.85
+   ],
+   "ai": [
+    0.32,
+    1.05,
+    -3.42
+   ],
+   "pv": false,
+   "pred": [
+    -0.53,
+    1.02,
+    -2.38
+   ],
+   "cd": -0.65
+  },
+  "msg": "Punto para la CPU \u00b7 no la devolviste \u00b7 8 golpes"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": -0.033,
+   "z": -1.625
+  },
+  "snap": {
+   "last": "ai",
+   "vb": false,
+   "mbo": true,
+   "pos": [
+    -0.03,
+    0.8,
+    -1.63
+   ],
+   "vel": [
+    0.35,
+    1.82,
+    -0.25
+   ],
+   "ai": [
+    -0.09,
+    1.05,
+    -3.35
+   ],
+   "pv": false,
+   "pred": [
+    -0.44,
+    1.02,
+    -2.58
+   ],
+   "cd": 0.05
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU golpe\u00f3 su campo \u00b7 9 golpes"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": true,
+   "mbo": false,
+   "pos": [
+    -0.0,
+    0.04,
+    -4.28
+   ],
+   "vel": [
+    -0.09,
+    1.82,
+    -1.91
+   ],
+   "ai": [
+    0.02,
+    1.06,
+    -3.15
+   ],
+   "pv": false,
+   "pred": [
+    0.05,
+    1.03,
+    -3.14
+   ],
+   "cd": -0.1
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU no la devolvi\u00f3 \u00b7 9 golpes"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": -0.326,
+   "z": -1.293
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": true,
+   "mbo": false,
+   "pos": [
+    0.69,
+    0.09,
+    -4.25
+   ],
+   "vel": [
+    0.16,
+    1.48,
+    -1.91
+   ],
+   "ai": [
+    0.37,
+    1.02,
+    -3.22
+   ],
+   "pv": false,
+   "pred": [
+    0.61,
+    0.95,
+    -3.33
+   ],
+   "cd": -0.15
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU no la devolvi\u00f3 \u00b7 10 golpes"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": -0.18,
+   "z": -1.624
+  },
+  "snap": {
+   "last": "ai",
+   "vb": false,
+   "mbo": true,
+   "pos": [
+    -0.18,
+    0.8,
+    -1.62
+   ],
+   "vel": [
+    0.14,
+    2.25,
+    -0.21
+   ],
+   "ai": [
+    -0.07,
+    1.05,
+    -3.42
+   ],
+   "pv": false,
+   "pred": [
+    -0.4,
+    1.02,
+    -2.65
+   ],
+   "cd": -0.1
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU golpe\u00f3 su campo \u00b7 11 golpes"
+ }
+]

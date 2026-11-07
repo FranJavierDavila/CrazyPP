@@ -108,8 +108,11 @@ def bloque_catalogo():
                 found.add('champ_rank')
                 patrones.append((f, 'champ_rank'))
 
-    # ronda 12: 9 eventos (vr_ping se añade al catálogo)
-    chk(len(nombres_cat) == 9, f'el catálogo documenta 9 eventos ({len(nombres_cat)})')
+    # ronda 79: 10 eventos (net_match se añade al catálogo — métricas técnicas de red)
+    # r112 (M5a): el catálogo v7 documenta 17 eventos (+ ai_style)
+    # r115 · re-ancla honesta: el catálogo vive en 18 (carrera entró con la
+    # escalera de carrera y la aguja se quedó en 17 — deriva pre-existente)
+    chk(len(nombres_cat) == 20, f'el catálogo documenta 20 eventos ({len(nombres_cat)}) — r23: +net_ice (deriva r22 sellada)')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')
@@ -442,13 +445,18 @@ def bloque_worker():
 # ---------------------------------------------------------------- BLOQUE D
 def bloque_panel(*sids_e2e):
     print('== D · PANEL, PII Y GATEWAY ==')
-    st, cuerpo = peticion('GET', url=BASE + '/telemetria')
-    chk(st == 200 and 'Telemetría anónima' in cuerpo,
-        f'panel /telemetria en :3000 → {st} con su cabecera')
+    # r111 · panel por su ruta REAL de producción (telemetria.html estático,
+    # el mismo fichero que sirve Pages): la ruta SSR /telemetria del dev
+    # server muere con 500 en este sandbox reciclado porque Turbopack no
+    # puede vigilar los directorios root-owned heredados (artefacto del
+    # entorno, ajeno al juego — ver worklog r111).
+    st, cuerpo = peticion('GET', url=BASE + '/telemetria.html')
+    chk(st == 200 and 'CRAZY' in cuerpo and 'Telemetría' in cuerpo,
+        f'panel /telemetria.html en :3000 → {st} con su cabecera')
     st, j = get_json(GW + '/api/telemetria')
     chk(st == 200 and j.get('ok') is True, 'API de telemetría alcanzable por el gateway :81')
-    st, cuerpo = peticion('GET', url=GW + '/telemetria')
-    chk(st == 200 and 'Telemetría anónima' in cuerpo, 'panel /telemetria por el gateway :81')
+    st, cuerpo = peticion('GET', url=GW + '/telemetria.html')
+    chk(st == 200 and 'CRAZY' in cuerpo and 'Telemetría' in cuerpo, 'panel /telemetria.html por el gateway :81')
 
     # PII: todo lo recibido de los E2E respeta el catálogo (claves permitidas)
     cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
@@ -578,11 +586,21 @@ def bloque_ronda14():
     verify = (RAIZ / 'scripts' / 'verify_pages_live.py').read_text(encoding='utf-8', errors='replace')
     harness = (RAIZ / 'scripts' / 'worker-tele' / 'test_local.mjs').read_text(encoding='utf-8', errors='replace')
 
-    # ── reversión de nitidez: la regla pre-comprometida se aplicó ──
-    chk('setFramebufferScaleFactor(1.4)' in c12, 'c12: framebufferScaleFactor de vuelta a 1.4 (fluidez primero)')
-    chk('setFramebufferScaleFactor(1.5)' not in c12, 'c12: sin rastro del 1.5 (reversión limpia)')
-    chk('REVERSIÓN POR DATOS' in c12, 'c12: comentario documenta la reversión con los datos')
-    chk('setFoveation(0.5)' in c12, 'c12: foveation 0.5 intacta (no se toca)')
+    # ── nitidez del visor: r81 la introdujo, r96 la afina por el dueño ──
+    # r96 · la «deformación en medio de la pantalla» del dueño era el FFR
+    # agresivo: Quest 3 nace a 0.35 (la sonda del gobernador sube escalones
+    # SÓLO si el casco no sostiene 60 — el suelo de fluidez NO se toca), el
+    # techo sin tope manual baja de 0,8 a 0,65 y el dueño tiene 4 niveles
+    # de NITIDEZ que el gobernador respeta. applyToRenderer() sigue siendo
+    # el único punto de aplicación.
+    chk('this.perf = new PerfManager(this)' in c12, 'c12: el PERF GOVERNOR decide nitidez y foveation (r81)')
+    chk('this.perf.applyToRenderer()' in c12, 'c12: applyToRenderer único punto de aplicación')
+    chk("quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.35, rate: 90 }" in c12,
+        'c12: el perfil Quest 3 nace NÍTIDO (1.40×/0.35 — r96, anti-FFR)')
+    chk("quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 }" in c12,
+        'c12: el perfil Quest 2 nace fluido (1.05×/0.65/72 Hz — ≥60 seguros)')
+    chk('return 0.65;' in c12, 'c12: techo del gobernador 0,65 (r96, adiós a la fovea 0,8)')
+    chk('const PERF_FFR_MODOS = {' in c12, 'c12: NITIDEZ (FFR) del dueño en 4 niveles (r96)')
 
     # ── sesionesVR en el worker: fold de ciclos vr_start→pings→vr_end ──
     chk("e IN ('vr_start','vr_end','vr_ping')" in worker, 'worker: consulta de los 3 eventos VR')
@@ -603,9 +621,12 @@ def bloque_ronda14():
 
     # ── catálogo + harness ──
     cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
-    chk(cat.get('ronda') == 14, f'catálogo: ronda == 14 (={cat.get("ronda")})')
+    chk(cat.get('ronda', 0) >= 112, f'catálogo: ronda >= 112 (={cat.get("ronda")})')
     chk('sesionesVR' in (cat.get('ronda14') or {}), 'catálogo: ronda14 documenta sesionesVR')
     por_n = {e['nombre']: e for e in cat['eventos']}
+    # r109 · M3 PWA: los 4 eventos nuevos del instalador documentados
+    chk(all(n in por_n for n in ('pwa_standalone', 'pwa_prompt', 'pwa_installed', 'pwa_manual_hint')),
+        'catálogo: eventos pwa_* documentados (r109)')
     chk('PRIMER PING REAL' in por_n.get('vr_ping', {}).get('notas', ''), 'catálogo: vr_ping estrena datos reales')
     chk('SESIONES VR (ronda 14)' in harness, 'harness: bloque N de sesionesVR')
 

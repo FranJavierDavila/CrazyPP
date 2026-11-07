@@ -1,0 +1,63 @@
+== PORTADA (dev :3000) ==
+  ✓ __PP_VERSION = '3.6.4-SDK4'
+  ✓ badge 2D = 'V3.6.4-SDK4'
+  ✓ CCD lab intacto (CCD1)
+  ✓ SERVE lab intacto (SRV2)
+  ✓ puente CCD del escudo expuesto (__PP_PADDLE_SWEEP)
+== Ficheros ==
+  ✓ módulo: class EscudoCasco
+  ✓ módulo: const ESC_CFG
+  ✓ módulo: id: 'escudo'
+  ✓ módulo: _empezarEscudo
+  ✓ módulo: _arrancarEscudo
+  ✓ módulo: _dronMuere
+  ✓ módulo: _centRebota
+  ✓ módulo: _canonSiguiente
+  ✓ módulo: escudo_pala/
+  ✓ módulo: BARRERA DE CASCO
+  ✓ módulo: ORBE PERFORANTE
+  ✓ módulo: champDecorHidden
+  ✓ módulo: if (et.id === 'escudo') { this._empezarEscudo(et); return; }
+  ✓ módulo: if (this.escudo) this.escudo.stop();
+  ✓ camino: impulso en la etapa 2
+  ✓ camino: escudo en la etapa 4
+  ✓ camino: el reactor v3.3.0 sale del camino
+  ✓ clase ReactorInestable conservada (re-insertable)
+  ✓ ASTRO v3.5.1 intacto (x 1,26 · z −3,30)
+  ✓ manifest version = 15
+  ✓ manifest stages = duelo1·impulso·duelo2·escudo·final
+  ✓ 7 arte del escudo = 200 ([200, 200, 200, 200, 200, 200, 200])
+== ESCENA EN VIVO: mecánica completa del ESCUDO ==
+  ✓ arranque: fase PREPARACIÓN (arranque)
+  ✓ sala propia SIN mesa/rival/bola/marcador/recortes (sala)
+  ✓ fase 1: 3 drones artilleros (fase1)
+  ✓ disparo enemigo a 9 m/s (fase 1) con telegrafía (disparo)
+  ✓ ningún disparo apunta a la zona segura de cabeza (zonaSegura)
+  ✓ la pala devuelve por el BARRIDO CCD del núcleo (golpeo)
+  ✓ golpe limpio → +Sobrecarga (limpio)
+  ✓ Sobrecarga 100 % + golpe firme → orbe perforante (perforante)
+  ✓ orbe devuelto destruye el dron (una vez) (dronCae)
+  ✓ fin de fase → interludio (inter)
+  ✓ fase 2: 4 drones + Centinela (fase2)
+  ✓ el escudo del Centinela REBOTA el orbe (reboteCent)
+  ✓ rebote con +10 % de velocidad (velGanada)
+  ✓ rally 5 → núcleo expuesto 3 s (expuesto)
+  ✓ núcleo expuesto + orbe → Centinela destruido (centCae)
+  ✓ fase 3: nave abordadora (fase3)
+  ✓ jefe: cañón activo tras la entrada (canon)
+  ✓ golpe limpio = 2 HP (cañón cae) (canon2HP)
+  ✓ barrera: pesado = −25 con onda en el punto (barrera25)
+  ✓ victoria final: 3 cañones → jefe explota (victoria)
+  ✓ regreso a la sala con todo restaurado (regresa)
+== Capturas de evidencia ==
+  ✓ captura qa_esc1_sala.png
+== Limpieza ==
+  ✓ 0 pageerrors dev (0): []
+
+== GATEWAY (:81) ==
+  ✓ gateway: __PP_VERSION 3.6.4-SDK4
+  ✓ gateway: puente CCD
+  ✓ gateway: juego arranca
+  ✓ 0 pageerrors gateway (0): []
+
+RESULTADO: 54 OK · 0 FALLOS

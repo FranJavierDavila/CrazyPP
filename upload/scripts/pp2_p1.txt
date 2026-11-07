@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ping Pong XR · Meta Quest 3</title>
+<meta name="description" content="Tenis de mesa realista en WebXR para Meta Quest 3: física con efecto, rival con cuerpo, saque con lanzamiento." />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #0b0e11; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #e9edf2; }
+  #c { position: fixed; inset: 0; display: block; pointer-events: none; }
+
+  /* ---------- Overlay de bienvenida ---------- */
+  #overlay {
+    position: fixed; inset: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(6, 9, 13, 0.62); backdrop-filter: blur(7px);
+    transition: opacity 0.45s ease;
+  }
+  #overlay.hidden { opacity: 0; pointer-events: none; }
+  .card {
+    width: min(560px, calc(100% - 36px));
+    background: rgba(15, 19, 25, 0.93);
+    border: 1px solid rgba(232, 180, 90, 0.35);
+    border-radius: 20px; padding: 30px 32px 26px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  }
+  .card h1 { font-size: 32px; letter-spacing: 0.5px; }
+  .card h1 span { color: #e8b45a; }
+  .tag { margin: 6px 0 18px; font-size: 14px; color: #9aa7b4; }
+  ul.keys { list-style: none; margin-bottom: 16px; }
+  ul.keys li { font-size: 14.5px; line-height: 2; color: #cfd8e0; }
+  ul.keys b {
+    display: inline-block; min-width: 74px; text-align: center;
+    color: #e8b45a; font-weight: 600;
+    background: rgba(232, 180, 90, 0.1);
+    border: 1px solid rgba(232, 180, 90, 0.4);
+    border-radius: 7px; padding: 1px 8px; margin-right: 8px;
+    font-size: 13px;
+  }
+  .diffrow { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+  .diffrow .lbl { font-size: 13px; color: #9aa7b4; margin-right: 4px; }
+  .diff {
+    flex: 1; padding: 9px 0; font-size: 14px; font-weight: 600;
+    color: #cfd8e0; background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .diff:hover { border-color: rgba(232, 180, 90, 0.5); }
+  .diff.active { color: #10131a; background: #e8b45a; border-color: #e8b45a; }
+  #status { font-size: 13.5px; color: #8d9aa8; min-height: 20px; margin-bottom: 14px; line-height: 1.5; }
+  #vrbtn {
+    width: 100%; padding: 16px; font-size: 17px; font-weight: 800; letter-spacing: 1.2px;
+    color: #10131a; background: linear-gradient(135deg, #f0c069, #e8b45a);
+    border: none; border-radius: 13px; cursor: pointer; margin-bottom: 10px;
+  }
+  #vrbtn:hover:not(:disabled) { filter: brightness(1.08); }
+  #vrbtn:disabled { background: rgba(255, 255, 255, 0.08); color: #6b7683; cursor: not-allowed; }
+  #spectate {
+    width: 100%; padding: 12px; font-size: 14px; font-weight: 600;
+    color: #aeb9c5; background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 11px; cursor: pointer;
+  }
+  #spectate:hover { border-color: rgba(255, 255, 255, 0.4); }
+  .hint { margin-top: 14px; font-size: 12px; line-height: 1.65; color: #75828f; }
+  .hint b { color: #9aa7b4; }
+
+  /* ---------- HUD (modo espectador) ---------- */
+  #hud {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    z-index: 15; display: none; align-items: center; gap: 12px;
+    background: rgba(15, 19, 25, 0.88); border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px; padding: 9px 10px 9px 18px;
+  }
+  #hud.show { display: flex; }
+  #hud-score { font-weight: 800; font-size: 16px; color: #f2f4f6; letter-spacing: 1px; }
+  #hud-msg { font-size: 13px; color: #aeb9c5; max-width: 46vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #hud-info {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(232, 180, 90, 0.15); color: #e8b45a;
+    border: 1px solid rgba(232, 180, 90, 0.4); font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+</style>
+<script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="overlay">
+  <div class="card">
+    <h1>🏓 PING PONG <span>XR</span></h1>
+    <div class="tag">Tenis de mesa realista · efecto (lift/slice) · rival con cuerpo que devuelve · Quest 3</div>
+    <ul class="keys">
+      <li><b>Gatillo</b> Lanza la bola al aire y golpéala para sacar</li>
+      <li><b>Pala</b> Anclada a tu mando · barre de abajo a arriba para dar efecto</li>
+      <li><b>Rival</b> Predice el bote, se coloca, devuelve y remata · a 11 puntos</li>
+    </ul>
+    <div class="diffrow">
+      <span class="lbl">DIFICULTAD</span>
+      <button class="diff" data-diff="easy">Fácil</button>
+      <button class="diff active" data-diff="medium">Media</button>
+      <button class="diff" data-diff="hard">Difícil</button>
+    </div>
+    <div id="status">Comprobando compatibilidad con WebXR…</div>
+    <button id="vrbtn" disabled>ENTRAR EN VR</button>
+    <button id="spectate">Ver demo en pantalla (sin visor)</button>
+    <div class="hint">
+      <b>En el visor:</b> sube esta carpeta a <b>Netlify Drop</b> y abre el enlace con el
+      <b>Meta Quest Browser</b> (requiere HTTPS). Sin visor, el modo demo juega IA contra IA.
+    </div>
+  </div>
+</div>
+
+<div id="hud">
+  <span id="hud-score">0 : 0</span>
+  <span id="hud-msg">…</span>
+  <button id="hud-info" title="Información">i</button>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* =====================================================================
+ *  CONSTANTES (unidades SI · mesa reglamentaria ITTF)
+ * ===================================================================== */
+const DIMS = {
+  tableTopY: 0.76,
+  tableHalfLength: 1.37,
+  tableHalfWidth: 0.7625,
+  tableThickness: 0.05,
+  netTopY: 0.9125,
+  netHalfWidth: 0.915,
+  ballRadius: 0.02,
+  tableCenterZ: -1.6,
+  gravity: -9.81,
+  airDrag: 0.12,
+  tableRestitution: 0.88,
+  tableFriction: 0.94,
+  paddleRestitution: 0.78,
+  bladeRadius: 0.085,
+  paddleHitCooldown: 0.14,
+  maxBallSpeed: 12,
+  // --- efecto (spin) ---
+  magnus: 0.0035,        // curva en el vuelo (fuerza de Magnus)
+  bounceSpinKick: 0.012, // empuje horizontal al botar (topspin "dispara")
+  spinImpulse: 9,        // efecto impartido por la pala (rad/s por m/s)
+  spinMax: 90,           // límite de giro
+  spinDecayAir: 0.3,     // pérdida de giro por segundo en el aire
+  // --- sala ---
+  roomHalfX: 3.05,
+  roomBackZ: 2.35,
+  roomFrontZ: -5.55,
+  roomHeight: 2.85,
+};
+
+const AI_PRESETS = {
+  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.20, minT: 0.62, maxT: 0.88, maxShotSpeed: 5.5, predictInterval: 0.16, smash: 0.05, short: 0.06 },
+  medium: { maxSpeed: 2.9, accel: 9,  errStd: 0.05,  missBase: 0.10, minT: 0.52, maxT: 0.78, maxShotSpeed: 7.5, predictInterval: 0.10, smash: 0.18, short: 0.10 },
+  hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.028, missBase: 0.04, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.12 },
+};
+
+const COLORS = {
+  tableBlue: 0x17539e, tableEdge: 0x0e3a73, frame: 0x22262b,
+  floor: 0x37302b, wall: 0x1a1e23,
+  rubberRed: 0xc0392b, rubberBlack: 0x17181a, wood: 0xb98a5a,
+  ball: 0xfff8ef, accentAmber: 0xe8b45a, accentGreen: 0x7fb069,
+};
+
+const MOUNT_QUAT = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.22, Math.PI, 0));
+const UP = new THREE.Vector3(0, 1, 0);
+
+/* =====================================================================
+ *  AUDIO · sintetizado con Web Audio (sin assets externos)
+ * ===================================================================== */
+class GameAudio {
+  constructor() {
+    this.ctx = null;
+    this.master = null;
+    this.noiseBuffer = null;
+  }
+  ensure() {
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      return;
+    }
+    try {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return;
+      this.ctx = new Ctor();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.5;
+      this.master.connect(this.ctx.destination);
+      const len = Math.floor(this.ctx.sampleRate * 0.25);
+      this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const data = this.noiseBuffer.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    } catch {
+      this.ctx = null;
+    }
+  }
+  panNode(pan) {
+    if (!this.ctx || !this.master) return null;
+    const p = this.ctx.createStereoPanner();
+    p.pan.value = Math.max(-1, Math.min(1, pan));
+    p.connect(this.master);
+    return p;
+  }
+  playOsc(freq, endFreq, dur, type, gain, pan) {
+    if (!this.ctx) return;
+    const dest = this.panNode(pan);
+    if (!dest) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(Math.max(20, freq), t);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t + dur);
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g); g.connect(dest);
+    osc.start(t); osc.stop(t + dur + 0.02);
+  }
+  playNoise(dur, filterFreq, q, gain, pan, type = 'bandpass') {
+    if (!this.ctx || !this.noiseBuffer) return;
+    const dest = this.panNode(pan);
+    if (!dest) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = type;
+    filter.frequency.value = filterFreq;
+    filter.Q.value = q;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(filter); filter.connect(g); g.connect(dest);
+    src.start(t); src.stop(t + dur + 0.02);
+  }
+  paddle(pan, strength) {
+    const s = Math.max(0.15, Math.min(1, strength));
+    this.playNoise(0.05, 1400, 1.2, 0.55 * s, pan);
+    this.playOsc(190 - 40 * s, 110, 0.09, 'triangle', 0.5 * s, pan);
+  }
+  tableBounce(pan, strength) {
+    const s = Math.max(0.1, Math.min(1, strength));
+    this.playOsc(950, 700, 0.05, 'sine', 0.4 * s, pan);
+    this.playNoise(0.02, 3000, 2, 0.18 * s, pan);
+  }
+  net(pan) {
+    this.playOsc(210, 150, 0.1, 'sine', 0.35, pan);
+    this.playNoise(0.06, 420, 1, 0.25, pan, 'lowpass');
+  }
+  thud(pan, strength) {
+    const s = Math.max(0.05, Math.min(1, strength));
+    this.playOsc(140, 90, 0.09, 'sine', 0.28 * s, pan);
+  }
+  serve() { this.playNoise(0.14, 650, 0.8, 0.16, 0); }
+  point(win) {
+    if (win) {
+      this.playOsc(660, 660, 0.12, 'sine', 0.3, -0.3);
+      window.setTimeout(() => this.playOsc(880, 880, 0.18, 'sine', 0.3, -0.3), 110);
+    } else {
+      this.playOsc(440, 440, 0.12, 'sine', 0.28, 0.3);
+      window.setTimeout(() => this.playOsc(330, 330, 0.2, 'sine', 0.28, 0.3), 110);
+    }
+  }
+}

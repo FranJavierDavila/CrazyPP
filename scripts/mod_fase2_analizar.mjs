@@ -40,6 +40,8 @@ const FICHEROS = [
   'c07_escena_sala.js',
   'c08_hall_hud.js',
   'c09_red_netlink.js',
+  'c09b_red_nucleo.js',
+  'c09c_red_social.js',
   'c10_menu_saque.js',
   'c11_champloader.js',
   'c12_pingponggame.js',

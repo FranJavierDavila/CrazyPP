@@ -1,0 +1,24 @@
+MATERIALES DE «Estación Orbital» (estacion_orbital) — qué reemplazar y con qué
+================================================================
+Todo lo provisional es FUNCIONAL: puedes jugar hoy y cambiar el arte luego.
+
+ASSETS/ (reemplaza y conserva el NOMBRE del fichero):
+  rival.webp            rival de pie · 512×1024 PNG/WebP con ALFA real
+  idle.webp; duelo.webp; derrotado.webp; triunfante.webp   estados del rival · 512×1024 con alfa
+  bso.wav               BSO en bucle → sustituir por bso.mp3 (y actualiza
+                        audio.music del manifest)
+  sala_floor/ceil/back/front/left/right.jpg   sala 1024×1024 (6 planos)
+  decor/troquel*.png    troqueles de cartón · PNG CON CANAL ALFA REAL
+                        (esquinas transparentes; el recorte es el alfa)
+  power*.png            iconos de superpoder · 256×256 con alfa
+
+REGLAS DE ORO (scripts/plataforma/AUDITORIA.md):
+  · las esquinas de los PNG recortados deben ser TRANSPARENTES (alfa<30)
+  · verifica con: python3 scripts/plataforma/valida_activos.py championships/estacion_orbital
+  · el campo room/decor del manifest debe seguir apuntando a assets/...
+
+PUBLICAR:
+  1) cambia "estado": "borrador" → "publicado" en manifest.json
+  2) python3 scripts/plataforma/genera_indice.py
+  3) python3 scripts/plataforma/valida_manifiesto.py championships/estacion_orbital/manifest.json
+PREVISUALIZAR sin publicar: abre el juego con ?champ=estacion_orbital

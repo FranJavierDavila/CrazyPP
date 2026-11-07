@@ -36,6 +36,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   getCore, assetURL, congela, descongela,
   createSfx, createMusic, createPowerSign, createRival, createCartel,
+  createRivalVoz,
 } from '../sdk/champ_sdk.js';
 
 /* ------------------------------------------------------------------ */
@@ -48,6 +49,7 @@ let CORE = null;      // window.__PP_CORE vía getCore()
 let GAME = null;      // objeto game del núcleo
 let MAN = null;       // manifest.json (config unificada)
 let CTRL = null;      // PlantillaController
+let VOZ = null;       // r97 · voz de personalidad del rival (SDK v1.6)
 let DIMS = null;      // dimensiones del núcleo
 let STATE_NAME = 'champtest';
 let SFX = null;
@@ -134,10 +136,16 @@ class RivalVivo {
       aspecto: this.rv.aspecto !== false,
       material: this.rv.material || 'basic',
       alphaTest: this.rv.alphaTest != null ? this.rv.alphaTest : 0.25,
-      pos: this.rv.pos || [1.26, 0, -3.3],
+      // r87 · al mundo + pies en el suelo (misma corrección que halloween)
+      pos: this.rv.pos || [1.26, (this.rv.alto || 2.15) / 2, ((DIMS && DIMS.tableCenterZ) || -1.6) - 1.70],
       rotY: this.rv.rotY || 0,
       castShadow: this.rv.material === 'standard',
     });
+    // r87 · AL MUNDO (sin esto el rival no existe: mesh huérfano)
+    try { (this.game.scene || this.game.rig).add(this.r.node); } catch (e) { /* */ }
+    /* r89 · el PREWARM VISIBLE se RETIRA (espejo halloween): el SDK sube
+     * cada cara a GPU al llegar con renderer.initTexture — sin paseo de
+     * poses ni «estados superpuestos» percibidos. */
     this.fallbacks = {
       hungry: ['hungry', 'surprised', 'idle'], surprised: ['surprised', 'idle'],
       crazy: ['crazy', 'laughing', 'idle'], laughing: ['laughing', 'idle'],
@@ -159,6 +167,32 @@ class RivalVivo {
     if (dur) this.timer = dur;
   }
   estadoBase(nombre) { this.base = nombre; if (this.timer <= 0) this._set(nombre, 0); }
+  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño,
+   *  norma en TODOS los campeonatos): el núcleo reparte la emoción
+   *  estándar y el rival la viste con SU arte (convención <estado>.webp
+   *  + _set con fallbacks). Los nuevos campeonatos heredan la norma con
+   *  este punto de entrada único. */
+  rivalEmocion(st) {
+    const DUR = {
+      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
+      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
+      victory: 2.4, defeated: 4.0,
+    };
+    const MAPA = { victory: 'triunfante' };   // convención local del abanico
+    this._set(MAPA[st] || st, DUR[st] != null ? DUR[st] : 2.0);
+    /* r97 · VOZ DE PERSONALIDAD (SDK v1.6 createRivalVoz): la emoción
+     * estándar también SUENA — clip del manifest (rival.voz.celebra/
+     * enfada/poder) si existe, y si no, voz sintética teñida por la
+     * personalidad (agresivo gruñe grave, defensivo suspira). Los nuevos
+     * campeonatos nacen con voz por defecto: declaren archivos en
+     * manifest.rival.voz y el motor los usa solos. */
+    try {
+      if (!VOZ) VOZ = createRivalVoz(MOD_URL, () => GAME, () => MAN);
+      if (st === 'laughing' || st === 'victory') VOZ.play('celebra');
+      else if (st === 'angry' || st === 'loosing') VOZ.play('enfada');
+      else if (st === 'crazy') VOZ.play('poder');
+    } catch (eV) { /* la voz jamás rompe la cara */ }
+  }
   enDuelo(en) { this.estadoBase(en ? this.baseDuelo : 'idle'); }
   final(ganaJugador) { this._set(ganaJugador ? 'defeated' : 'triunfante', 4.0); }
   reaccion(winner, rallyHits, streakAi) {
@@ -182,10 +216,14 @@ class RivalVivo {
     if (hits >= t.picandoRallyHits && this.estado !== 'picando') this._set('picando', 2.2);
     else if (sp - sa >= t.loosingDiff) this.estadoBase('loosing');
     else if (sp >= 10 && this.base === 'duelo') this._set('panic', 2.2);
-    if (this.rv.flotacion && this.rv.flotacion.activo !== false && this.r.group) {
+    if (this.rv.flotacion && this.rv.flotacion.activo !== false && this.r.node) {
+      // r87 · flotación sobre el node REAL (sin grupo: mesh directo)
       const amp = this.rv.flotacion.amplitud || 0.012;
       const per = this.rv.flotacion.periodo || 1.4;
-      this.r.group.position.y = (this.rv.pos ? (this.rv.pos[1] || 0) : 0) + Math.sin(performance.now() / 1000 * (Math.PI * 2 / per)) * amp;
+      const base = this.r.node.position.y;
+      const onda = Math.sin(performance.now() / 1000 * (Math.PI * 2 / per)) * amp;
+      this.r.node.position.y = base + onda - (this._flotAnt || 0);
+      this._flotAnt = onda;
     }
   }
   risa() { if (SFX && SFX.tiene('laugh')) SFX.play('laugh', 0.55, { pan: 0.4 }); }
@@ -220,7 +258,10 @@ function construirCartel(game, man) {
     ctx2.fillStyle = '#e2e8f0';
     ctx2.font = '42px sans-serif';
     const et = CTRL ? CTRL.etapaActual() : null;
-    const linea2 = et ? ('Etapa ' + CTRL.indice() + '/5 · ' + et.name) : tx('bienvenida');
+    /* v3.6.77 (r85) · el total era «/5» fijo: los campeonatos UGC pueden tener
+     * otro número de etapas (el mapa de Halloween trae 5 nodos del artista y
+     * los futuros pueden traer lo que quiera) — total REAL del camino. */
+    const linea2 = et ? ('Etapa ' + CTRL.indice() + '/' + CTRL.totalEtapas() + ' · ' + et.name) : tx('bienvenida');
     ctx2.fillText(linea2, W / 2, 200);
     ctx2.fillStyle = '#94a3b8';
     ctx2.font = '36px sans-serif';
@@ -230,6 +271,8 @@ function construirCartel(game, man) {
     const lineas = (TXT.es && TXT.es.instr_lineas) || [];
     lineas.slice(0, 3).forEach((l, i) => ctx2.fillText(l, W / 2, 350 + i * 46));
   });
+  // r87 · AL MUNDO (igual que el rival: sin esto el cartel no se ve)
+  try { game.scene.add(cartel.mesh); } catch (e) { /* */ }
   return cartel;
 }
 
@@ -242,12 +285,16 @@ class MapaPlantilla {
     const m = man.mapa || {};
     this.modo = m.modo || 'canvas';
     this.planoW = m.planoW || 1.66;
-    this.pos = m.pos || [-1.05, 1.45, -3.58];
-    this.rotY = m.rotY != null ? m.rotY : 0.42;
+    // r87 · NORMATIVA del dueño: pared IZQUIERDA (rotY +π/2)
+    // r89 · espejo halloween: ELEVADO (y=1.66), PEGADO a la pared (7 mm)
+    this.pos = m.pos || [-3.043, 1.66, -1.9];
+    this.rotY = m.rotY != null ? m.rotY : (Math.PI / 2);
     this.nodos = [];        // [{x,y,r}] en píxeles de la imagen
     this.imgW = 1280; this.imgH = 720;
     this.maxIdx = () => Math.max(0, Math.min(ctrl.totalEtapas() - 1, ctrl.indiceReal() - 1));
     this._hover = -1;
+    this._tapas = [];       // r87: tapas sobre las etapas aún no superadas
+    this._tapasIdx = -1;
     this._construir();
   }
   _construir() {
@@ -296,6 +343,15 @@ class MapaPlantilla {
     );
     this.plane.position.set(this.pos[0], this.pos[1], this.pos[2]);
     this.plane.rotation.y = this.rotY;
+    /* r89 · MARCO de anclaje (espejo halloween): el póster lee como un
+     * cuadro COLGADO, no como un cartel flotando hacia el jugador. */
+    this.marco = new THREE.Mesh(
+      new THREE.PlaneGeometry(this.planoW + 0.09, this.planoW * asp + 0.09),
+      new THREE.MeshBasicMaterial({ color: 0x2b1d10 }),
+    );
+    this.marco.position.set(this.pos[0] - 0.004, this.pos[1], this.pos[2]);
+    this.marco.rotation.y = this.rotY;
+    this.game.scene.add(this.marco);
     this.anillo = new THREE.Mesh(
       new THREE.RingGeometry(0.118, 0.144, 48),
       new THREE.MeshBasicMaterial({ color: 0xf6d34c, side: THREE.DoubleSide }),
@@ -303,7 +359,69 @@ class MapaPlantilla {
     this.anillo.visible = false;
     this.game.scene.add(this.plane);
     this.game.scene.add(this.anillo);
+    // r87 · TAPAS: las etapas aún NO superadas quedan CUBIERTAS (normativa
+    // del dueño, igual que el '?' del mapa canvas). Discos hijos del plano
+    // (se mueven con él; el rayo de rejugada NO las ve — intersectObject
+    // es no-recursivo y sólo cubren nodos no apuntables).
+    const texTapa = this._texTapa();
+    for (let i = 0; i < this.nodos.length; i++) {
+      const n = this.nodos[i];
+      const rW = (n.r / this.imgW) * this.planoW;
+      const lx = (n.x / this.imgW - 0.5) * this.planoW;
+      const ly = (0.5 - n.y / this.imgH) * this.planoW * (this.imgH / this.imgW);
+      const tapa = new THREE.Mesh(
+        new THREE.CircleGeometry(rW * 1.12, 40),
+        new THREE.MeshBasicMaterial({ map: texTapa, transparent: true, depthWrite: false }),
+      );
+      tapa.position.set(lx, ly, 0.006);
+      tapa.renderOrder = 2;
+      this.plane.add(tapa);
+      this._tapas.push(tapa);
+    }
+    this._pintaTapas();
   }
+  /* r87 · textura de la TAPA: piedra oscura con «?» de hueso y aro sepia —
+   * casa con el póster del cementerio (UNA textura compartida). */
+  _texTapa() {
+    if (MapaPlantilla._texTapa) return MapaPlantilla._texTapa;
+    const S = 256;
+    const cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d');
+    const r = S / 2;
+    const grad = g.createRadialGradient(r, r * 0.86, r * 0.12, r, r, r);
+    grad.addColorStop(0, '#3a3128');
+    grad.addColorStop(0.78, '#241d16');
+    grad.addColorStop(1, '#171209');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(r, r, r, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 10; g.strokeStyle = '#54463a';
+    g.beginPath(); g.arc(r, r, r - 8, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = 4; g.strokeStyle = 'rgba(232,223,200,0.28)';
+    g.beginPath(); g.arc(r, r, r - 20, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#e8dfc8';
+    g.font = '900 150px Georgia, serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = 'rgba(0,0,0,0.65)'; g.shadowBlur = 10;
+    g.fillText('?', r, r + 8);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    MapaPlantilla._texTapa = t;
+    return t;
+  }
+  /* r87 · pinta/oculta tapas según el progreso: visible ⇔ etapa i aún no
+   * desbloqueada (i > maxIdx) — EXACTAMENTE el criterio del '?' canvas. */
+  _pintaTapas() {
+    const mx = this.maxIdx();
+    if (mx === this._tapasIdx) return;
+    this._tapasIdx = mx;
+    for (let i = 0; i < this._tapas.length; i++) {
+      const t = this._tapas[i];
+      if (t) t.visible = i > mx;
+    }
+  }
+  /* r87 · el progreso cambia sin rebuild (stage clear) → refresco barato
+   * desde update() del módulo (comparación de un entero). */
+  refresco() { this._pintaTapas(); }
   _rejilla(n, W, H) {
     const cols = Math.min(4, n);
     const filas = Math.ceil(n / cols);
@@ -344,6 +462,13 @@ class MapaPlantilla {
     if (this.plane.geometry) this.plane.geometry.dispose();
     if (this.plane.material.map) this.plane.material.map.dispose();
     if (this.plane.material) this.plane.material.dispose();
+    // r87 · las tapas van con el plano; geometría/material propios sí se
+    // disponen (textura estática compartida: NO dispose)
+    for (const t of this._tapas) {
+      try { if (t.geometry) t.geometry.dispose(); } catch (e) { /* */ }
+      try { if (t.material) t.material.dispose(); } catch (e) { /* */ }
+    }
+    this._tapas = []; this._tapasIdx = -1;
   }
 }
 
@@ -455,6 +580,7 @@ class PlantillaPoderes {
       coreo: 'v240', halo: true, arte: 'fit1833',
       url: () => A('superpoder.webp'),
       fallbackURL: () => A('power_0.png'),
+      dims: () => (DIMS ? { netTopY: DIMS.netTopY, tableCenterZ: DIMS.tableCenterZ } : null),   // r87: sin dims el cartel nacía a los pies
     });
     this.sign.build();
   }
@@ -838,7 +964,18 @@ class PlantillaController {
   }
 
   /* ---- ciclo sala ---- */
+  /* r87 · DESMONTA (espejo halloween): re-entrar no duplica rival/mapa/cartel */
+  _desmonta() {
+    if (this.poderes) { try { this.poderes.dispose(); } catch (e) { /* */ } this.poderes = null; }
+    if (this.pistola) { try { this.pistola.beams.forEach((o) => { this.game.scene.remove(o.m); }); this.pistola.beams = []; } catch (e) { /* */ } this.pistola = null; }
+    if (this.rival) { try { this.rival.dispose(); } catch (e) { /* */ } this.rival = null; }
+    if (this.mapa) { try { this.mapa.dispose(); } catch (e) { /* */ } this.mapa = null; }
+    if (this.cartel) { try { this.game.scene.remove(this.cartel.mesh); this.cartel.dispose(); } catch (e) { /* */ } this.cartel = null; }
+    if (this._insignia) { try { this.game.scene.remove(this._insignia); this._insignia.geometry.dispose(); this._insignia.material.dispose(); } catch (e) { /* */ } this._insignia = null; }
+    if (this.prueba) { try { this.prueba.dispose(); } catch (e) { /* */ } this.prueba = null; }
+  }
   startChamp() {
+    this._desmonta();
     this.rival = new RivalVivo(this.game, this.man);
     this.rival.estadoBase('idle');
     this.cartel = construirCartel(this.game, this.man);
@@ -883,7 +1020,10 @@ class PlantillaController {
     this.game.rules.oppLabel = (this.man.rival && this.man.rival.oppLabel) || 'rival';
     this.game.rules.startMatch(this.camino.duelo && this.camino.duelo.modo || 'match');
     if (cfg.primer != null && this.poderes) this.poderes.cd = cfg.primer;
-    try { this.game.showInstrucciones(tx('duelo_vs', { n: this.dueloN }), [], 4.0, () => {}, this.man.id, { empezar: true }); } catch (e) {}
+    /* r95 · REGLA DE CASA (petición del dueño): en las fases de DUELO con el
+     * rival NO hay cartel — sólo en las etapas de HABILIDAD. El aviso vive
+     * en la línea del marcador y el duelo arranca al saque. */
+    this.game.rules.message = tx('duelo_vs', { n: this.dueloN });
   }
   _startPrueba(idx, esReplay) {
     const st = this.etapas()[idx];
@@ -1028,6 +1168,7 @@ class PlantillaController {
   leave() {
     if (this.prueba) { try { this.prueba.stop(); } catch (e) {} this.prueba = null; }
     if (this.poderes) this.poderes.parar();
+    this._desmonta();       // r87: nada queda colgado al salir
     this.dueloVivo = false;
     if (MUSIC) try { MUSIC.off(); } catch (e) {}
     try {
@@ -1039,6 +1180,7 @@ class PlantillaController {
     this._variant(null);
   }
   update(dt) {
+    if (this.mapa) this.mapa.refresco();   // r87: tapas según progreso
     if (this.rival) {
       const r = this.game.rules || {};
       this.rival.update(dt, { rallyHits: r.rallyHits, scorePlayer: r.scorePlayer, scoreAi: r.scoreAi });
@@ -1111,6 +1253,8 @@ function start() { if (CTRL) CTRL.startChamp(); }
 function leave() { if (CTRL) CTRL.leave(); }
 function update(dt) { if (CTRL) CTRL.update(dt); }
 function onPoint(it) { if (CTRL) CTRL.onPoint(it); }
+// v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
+function rivalEmocion(st, info) { if (CTRL && CTRL.rival) CTRL.rival.rivalEmocion(st); }
 function onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); }
 function aiMul() { return CTRL ? CTRL.aiMul() : 1.0; }
 function serveTrigger(i) { if (CTRL) CTRL.serveTrigger(i); }
@@ -1145,6 +1289,7 @@ export default {
   resetRecords,
   update,
   onPoint,
+  rivalEmocion,
   onMatchOver,
   aiMul,
   serveTrigger,

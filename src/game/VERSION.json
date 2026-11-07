@@ -1,17 +1,18 @@
 {
-  "version": "3.6.27-SDK6",
-  "fase": 29,
-  "faseNombre": "Hall Of Fame",
-  "sdk": "1.5.4",
-  "fecha": "2026-10-20",
-  "hub": "v3627-sdk6",
+  "version": "3.6.118-SDK6",
+  "fase": 120,
+  "faseNombre": "spin visible + hall del anfitrion",
+  "sdk": "1.6.0",
+  "fecha": "2026-11-07",
+  "hub": "v36118-sdk6",
   "manifests": {
     "oeste": 56,
-    "magia": 32,
-    "locura": 23,
-    "estacion_orbital": 16,
-    "valle_neon": 4
+    "magia": 33,
+    "locura": 27,
+    "estacion_orbital": 17,
+    "halloween": 3
   },
-  "nota": "ÚNICA FUENTE DE VERDAD de la versión. La leen/escriben: scripts/bump_version.py (único camino para cambiarla), scripts/build_game.py (guard: los sellos c00 + badge deben casar con ESTE fichero) y scripts/qa_version.py (consistencia total). Los sellos físicos son: c00_pre_three.js (const VERSION), 03_body.html (#verBadge), src/app/descargas/page.tsx (hub, 9 menciones).",
-  "golden": "369e1625744cf580398f57f124c9e21f764e59ef4ac108aa35c8b4f80f3b00a4"
+  "nota": "r21",
+  "tamano": 10777222,
+  "golden": "261954e70046906f82854770b7678268b95c20120b14e0778fd3e2a96b39d1c4"
 }

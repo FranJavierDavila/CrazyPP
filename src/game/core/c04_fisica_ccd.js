@@ -174,17 +174,20 @@ export function setPaddleBasis(p, q) {
 
 /** Aerodinámica (arrastre + Magnus + decaimiento del giro) compartida
  *  por la física real y TODOS los simuladores: una sola ecuación. */
-export function applyAerodynamics(vel, spin, h, dragMul) {
+export function applyAerodynamics(vel, spin, h, dragMul, magnusMul) {
   // v2.102: dragMul — la bola-bomba PESA (0.30 en el asedio): corta el aire
   // y los tiros altos llegan a la diana (el drag 0.142 del ping-pong se
   // comía la mitad de la velocidad en 1 s y la bomba caía 2-4 m antes).
+  // v3.6.36 · SÚPER EFECTO: magnusMul amplifica el Magnus SOLO en la bola
+  // marcada (ball.ppEfecto); los simuladores no la marcan → 1 (sin cambio).
   const dm = (dragMul === undefined) ? 1 : dragMul;
+  const mm = (magnusMul === undefined) ? 1 : magnusMul;
   const sp = vel.length();
   if (sp > 1e-6) {
     vel.multiplyScalar(Math.max(0, 1 - DIMS.airDragK * dm * sp * h));
   }
   if (spin.lengthSq() > 1e-4) {
-    tmpM.crossVectors(spin, vel).multiplyScalar(DIMS.magnus * h);
+    tmpM.crossVectors(spin, vel).multiplyScalar(DIMS.magnus * mm * h);
     vel.add(tmpM);
     spin.multiplyScalar(Math.max(0, 1 - DIMS.spinDecayAir * h));
   }
@@ -245,10 +248,13 @@ export function updatePaddleSim(ps, pos, quat, now, dt) {
   ps.prevT = now;
 }
 
-/** Efecto del giro al botar en la mesa: topspin acelera, backspin frena, lateral desvía. */
-export function applyBounceSpin(vel, spin) {
-  vel.x -= DIMS.bounceSpinKick * spin.z;
-  vel.z += DIMS.bounceSpinKick * spin.x;
+/** Efecto del giro al botar en la mesa: topspin acelera, backspin frena, lateral desvía.
+ *  v3.6.36 · kickMul (ruta legada, física < 0.5): amplifica el pateo SOLO
+ *  en la bola marcada por el SÚPER EFECTO. */
+export function applyBounceSpin(vel, spin, kickMul) {
+  const km = (kickMul === undefined) ? 1 : kickMul;
+  vel.x -= DIMS.bounceSpinKick * km * spin.z;
+  vel.z += DIMS.bounceSpinKick * km * spin.x;
   spin.multiplyScalar(0.72);
 }
 
@@ -264,11 +270,18 @@ export function applyBounceSpin(vel, spin) {
  *  Resultado: el TOPSPIN patea al botar y conserva/gana giro, el BACKSPIN
  *  frena en seco y la mesa le come el efecto, el LATERAL desvía — y todo
  *  ESCALA con la velocidad de impacto. `impact` = |vel.y| de entrada. */
-export function bounceOnTable(vel, spin, impact) {
+export function bounceOnTable(vel, spin, impact, coupleMul) {
+  // v3.6.36 · SÚPER EFECTO: coupleMul amplifica el acople giro-mesa SOLO
+  // en la bola marcada (topspin patea más hacia delante, backspin frena
+  // más, lateral desvía más). El TOPE de Coulomb sigue mandando: la
+  // desviación extra queda LIMITADA y dependiente del spin (petición del
+  // dueño: «el rival hábil debe poder contrarrestarlo»). Predicción de la
+  // IA y solver de saque no marcan → 1 (predicen con la física de siempre).
+  const cm = (coupleMul === undefined) ? 1 : coupleMul;
   const r = DIMS.ballRadius;
   vel.y = impact * DIMS.tableRestitution;
-  const ux = vel.x + r * spin.z;
-  const uz = vel.z - r * spin.x;
+  const ux = vel.x + r * spin.z * cm;
+  const uz = vel.z - r * spin.x * cm;
   const g = DIMS.bounceGripMin + (DIMS.bounceGripMax - DIMS.bounceGripMin) *
             Math.min(1, impact / 4.5);
   // Δv (por unidad de masa) que anularía el deslizamiento: −u·m_eff/m = −u·2/5

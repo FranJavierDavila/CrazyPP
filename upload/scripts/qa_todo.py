@@ -1,0 +1,673 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""CRAZY PING PONG · QA TOTAL (un comando, toda la cadena).
+Encadena TODAS las capas de verificación del proyecto, de la más rápida a la
+más lenta, y saca el marcador global. Descubre los QA de la versión actual
+por nombre (qa_sup1_vNNN.py → el más alto), así que no hay que tocarlo en
+cada release.
+
+Capas:
+  A. qa_version.py        — cadena de versión única (23 checks)
+  B. test_fisica.mjs      — determinismo de la física (11 escenarios)
+  C. qa_manifiestos.py    — schema + assets de los 5 campeonatos (29)
+  D. qa_rendimiento.py    — presupuesto (tamaños/física/boot, 14)
+  E. qa_sup1_vNNN.py      — el juego EN VIVO con el orbital cargado (~150)
+  F. qa_imp2_vNNN.py      — reactor de impulso (~66)
+  G. qa_escudo_vNNN.py    — escudo de pala (~54)
+  H. qa_descargas_vNNN.py — hub + 4 ZIPs byte-exactos (~208)
+  I. smoke_sdkN.py        — SDK + 5 módulos en cadena
+  J. qa_telemetria.py     — telemetría anónima: catálogo, receptor, E2E (41)
+  K. qa_hub_hints.py      — (POST-DEPLOY, --produccion) hints del hub en
+                            producción contra el estado real del dueño (11)
+  L. qa_champion_listo.py — (POST-DEPLOY, --produccion) estado champion de
+                            los 5 campeonatos en producción (13)
+
+Uso:
+  python3 scripts/qa_todo.py                # TODO (A-J, pre-deploy)
+  python3 scripts/qa_todo.py --rapido       # solo A-D (sin Playwright pesado)
+  python3 scripts/qa_todo.py --produccion   # A-J + K/L contra PRODUCCIÓN
+                                            # (tras el deploy: K/L exigen
+                                            # que pages sirva la versión
+                                            # de la FUENTE DE VERDAD)
+Salida: marcador global. Exit 1 si CUALQUIER capa falla."""
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+RAIZ = Path('/home/z/my-project')
+SCR = RAIZ / 'scripts'
+TIMEOUT = {  # segundos por capa
+    'qa_version.py': 120, 'test_fisica.mjs': 90, 'qa_manifiestos.py': 60,
+    'qa_rendimiento.py': 300,
+    'qa_arnes_fisico_v3698.py': 300, 'qa_arnes_vivo_v3698.py': 420,
+    'qa_duelo_r110.py': 260,   # r110: banco de duelo NetLink (node, ~45 s)
+    # r112: arnés de estilos (12 × 30 rallies reales en caja modesta)
+    'qa_estilos_r112.mjs': 1200,
+    # r82: la BATERÍA juega 3 partidos completos en paralelo (con reintento
+    # por crash de SwiftShader en cajas modestas) — necesita más margen
+    'bateria_multi_v3674.py': 900,
+}
+
+def ultimo(pat):
+    cand = sorted(SCR.glob(pat))
+    return cand[-1].name if cand else None
+
+CAPAS = [
+    ('A · versión única', 'qa_version.py'),
+    ('B · física determinista', 'test_fisica.mjs'),
+    ('C · manifiestos', 'qa_manifiestos.py'),
+    ('D · presupuesto', 'qa_rendimiento.py'),
+    ('E · juego en vivo (sup1)', ultimo('qa_sup1_v*.py')),
+    ('F · reactor de impulso', 'qa_imp2_v351.py'),
+    ('G · escudo de pala', 'qa_escudo_v350.py'),
+    ('H · hub + ZIPs', ultimo('qa_descargas_v*.py')),
+    ('I · smoke del SDK', ultimo('smoke_sdk*.py')),
+    ('J · telemetría', 'qa_telemetria.py'),
+    # M2a (r107) · ARNÉS ANTI-REGRESIÓN — gate de ronda: si el arnés roja,
+    # NO se despliega (MEJORAS.md). Físico = node puro (200 rallies con
+    # física/árbitro/IA reales + invariantes I1-I5 + determinismo por
+    # semilla). Vivo = partido REAL en navegador (invariantes V1-V3 por
+    # frame + canario sembrado que DEBE ser cazado).
+    ('M2a · arnés físico (200 rallies)', 'qa_arnes_fisico_v3698.py'),
+    ('M2a · arnés vivo + canario', 'qa_arnes_vivo_v3698.py'),
+    # r109 · M3 PWA INSTALABLE (roadmap MEJORAS.md) — en el GATE de ronda:
+    # manifest+SW+iconos de la casa, 4.º sello físico (const CACHE del
+    # sw.js gobernado por el bump), portada instaladora (diálogo nativo o
+    # camino manual), i18n ES/EN, hub con guía PWA, build_zip lleva la PWA
+    # a los 4 ZIPs y regresión r106/r105/r104/r102/r62 intacta. Runtime:
+    # SW registrado y ACTIVO en scope raíz, manifest/iconos servidos,
+    # toasts en la portada.
+    ('r109 · PWA instalable (v3699)', 'qa_r109_v3699.py'),
+    # r110 · DUELO REPARADO (informe del dueño: partida con amigos injugable)
+    # — banco Node con el código REAL de red+física: espejo de pose exacto
+    # (bit4 de pose corregido), duelo completo con autoridad/contacto/0
+    # rechazos del validador. Detalle en la cabecera de qa_duelo_r110.py.
+    ('r110 · banco de duelo NetLink', 'qa_duelo_r110.py'),
+    # r111 · M4 ONBOARDING (roadmap MEJORAS.md) — ▶ JUGAR botón único del
+    # HUB (la academia ya no bloquea la 1.ª vez), LA MESA DE LA CASA
+    # (diorama IA-vs-IA en vivo en el hall, cinemática pura), guía del
+    # primer saque (aros + una línea, pp_srv_v1 a los 3 saques), idioma
+    # detectado y altura de mesa auto; telemetría primer_rally + tut_end
+    # (catálogo v6). Un jugador nuevo en rallye real en <60 s.
+    ('r111 · onboarding <60 s (v36101)', 'qa_r111_v36101.py'),
+    # r112 · M5a IA CON ESTILOS (roadmap MEJORAS.md) — 12 personalidades
+    # sobre la MISMA física: registro OPPONENT_STYLES con multiplicadores
+    # acotados, selector ‹ › en AJUSTES › JUEGO, colocación por el canal
+    # r95, telemetría ai_style (catálogo v7) y ARNÉS DE ESTILOS Node
+    # (12 × 30 rallies reales: cfg acotada + invariantes + 66 parejas
+    # distinguibles — sin trampas).
+    ('r112 · estilos de IA (v36102)', 'qa_r112_v36102.py'),
+    # r113 · AJUSTES DEL DUEÑO — chincheta del menú (ancla/suelta), física del
+    # golpe fuerte (velocidad real + dirección al objetivo), CPU que no falla
+    # bolas fáciles, superpoderes sólo con la bola hacia el rival (5
+    # campeonatos) y etapa 4 de La Locura relajada. En vivo: el pin ancla.
+    ('r113 · ajustes del dueño (v36103)', 'qa_r113_v36103.py'),
+    # r114 · CORRECCIÓN BLOQUEANTE del menú (informe del dueño: «si estoy en
+    # un partido y pulso B para sacar el Menú no lo veo… si anclamos el menú
+    # y nos vamos a otro escenario ya no se ve») — ANCLA POR ESTANCIA: el
+    # ancla se firma (estancia + rig) y el heal por frame la invalida al
+    # viajar (la chincheta se suelta sola, el panel reaparece delante);
+    # reapertura honesta en toggleMenu/openHallAsk; y LA MESA DE LA CASA
+    # (diorama IA-vs-IA del hall, FASE 103) RETIRADA por petición expresa.
+    ('r114 · menú ancla por estancia (v36104)', 'qa_r114_v36104.py'),
+    ('r112 · arnés de estilos (no-trampa)', 'qa_estilos_r112.mjs'),
+    ('T · zonas entrenamiento', 'qa_train_zonas_v3619.py'),
+    ('U · ayudas entrenamiento', 'qa_train_ayudas_v3621.py'),
+    ('V · sonido del tren', 'qa_tren_audio_v3626.py'),
+    ('W · salon del artista', 'qa_hall_salon_v3628.py'),
+    ('X · sala del partido + mejor de 3', 'qa_partido_sala_v3629.py'),
+    ('Y · hall sin pala ni bola', 'qa_hall_sin_pala_v3630.py'),
+    ('Z · menú campeonatos + intro', 'qa_menu_intro_v3631.py'),
+    # AC (qa_mega_norma_v3634) RETIRADA: verificaba la norma v3.6.34 (una
+    # carga por rally, icono canvas, gatillo cualquiera). La sustituye AD
+    # (v3635): SUPERPODER DE PALA con CARGAS ×3 — cada 11 golpes del rally
+    # = +1 (tope ×3, distinto sustituye), icono DEL DUEÑO anclado al mango
+    # con etiqueta ×N, voz TTS embebida y gatillo del mando LIBRE.
+    # AD (qa_mega_cargas_v3635) y AE (qa_poderes_matriz_v3636) RETIRADAS:
+    # la sustituye AF (v3637): SÚPER IMÁN (3.er poder, spec completa del
+    # dueño: campo 8 s al punto dulce, topes 0,45/0,12/3/0,35/0,15, consumo
+    # por impacto asistido, máx. 3) + flechas de la matriz como sprites
+    # PROPIOS (disco+oro+pulso) + SÚPER EFECTO notorio (halo rojo en la
+    # bola, anillo de bote, rival con error ×2 y piernas ×0,85) + toda la
+    # norma de la matriz con 3 poderes y las 6 voces nativas.
+    ('AF · superpoder imán (v3637)', 'qa_poderes_iman_v3637.py'),
+    # AG (v3638): INMEDIATEZ del gatillo (redibujo diferido + textura
+    # persistente + PRECALIENTE repartido) + halo HIJO de la bola (cero
+    # desfase) + flechas EN EL PLANO del icono (anclaje mundo + lateral de
+    # cámara, tangenciales) + LOD 50 % en juego / 100 % mirando el mango.
+    ('AG · poderes inmediatez+LOD (v3638)', 'qa_poderes_v3638.py'),
+    # AH (v3639): PARTIDA NUEVA = PALA LIMPIA (reporte del dueño: los
+    # poderes sin gastar de una partida previa PERMANECÍAN) — hook único
+    # rules.onMatchStart avisado por el árbitro en CADA startMatch (menú,
+    # revancha por gatillo y de menú, cambio de modo, online, calibración
+    # y reinicio automático del estado 'over') → _megaNormReset completo:
+    # matriz, icono ×N, FX de los tres poderes, flechas, halo, marcas de
+    # bola y escalas LOD. Idempotente y sin dispose doble.
+    ('AH · partida nueva pala limpia (v3639)', 'qa_poderes_reset_v3639.py'),
+    # AI (v3640): EL PODER ACTIVO SE VE EN LA PALA (petición del dueño:
+    # «que el usuario sepa el tipo de poder que tiene activo, sin que
+    # moleste») — el icono del mango NO desaparece al activar: pasa a modo
+    # ACTIVO con ANILLO DE TIEMPO que se vacía (oro/cian/azul = firma del
+    # canto), PARPADEA los últimos 2 s y al terminar vuelve al inventario.
+    # Un solo icono (FASE 38), redibujo diferido+ahorrado (r46), el
+    # indicador duerme en CADA _megaNormReset (FASE 41).
+    ('AI · poder activo se ve en pala (v3640)', 'qa_poderes_activo_v3640.py'),
+    # AJ (v3641): SÚPER PORTAL, 4.º PODER DE PALA (spec completa del dueño:
+    # portal que traslada la bola tras cada golpe VÁLIDO — 8 s / 3 golpes,
+    # desviación lateral 0,25–0,70 m, vertical 0–0,15 m, conserva 90–100 %
+    # de la rapidez, antirrebote 0,25 s, salida legal con bote jugable por
+    # el solver existente, swap ATÓMICO: la bola jamás cruza la red
+    # físicamente, cero colisiones fantasma, árbitro y física intactos) +
+    # penalización honesta a la IA rival (c06: predicción muerta al cruzar
+    # el portal, error ×1,6, piernas ×0,75, +10 % de fallo; la marca se
+    # limpia al devolver). Icono del dueño + voces ES/EN embebidos.
+    # AJ (v3641) RETIRADA: verificaba el portal de r49 (swap inmediato +
+    # muerte de predicción por frame — el dueño demostró en el Quest que la
+    # IA dejaba de devolver). La sustituye AK (v3642).
+    # AK (v3642): EL PORTAL SE ENTIENDE Y LA IA RESPONDE (informe del dueño
+    # tras V3.6.41): tránsito EXPLÍCITO en 3 fases (portal de ENTRADA con
+    # portals.png al 50 % en la zona de impacto + halo → la bola viaja
+    # OCULTA 1 s con la física congelada → el MISMO portal se abre SOBRE la
+    # mesa rival y la bola sale por su CENTRO con bote jugable del solver),
+    # IA penalizada en % con FLANCO único (nunca anulada; la marca muere
+    # con la ventana y con el punto), icono del dueño RECORTADO con alfa
+    # (verificación PIL) y voz ES nativa Piper (la de r49 estaba corrupta),
+    # ANTI-LAG (precaliente de 13 piezas al empezar la partida: cantos,
+    # icono, imagen del portal y 4 voces) y PASSTHROUGH en AJUSTES (en VR,
+    # por defecto OFF, cambio de modo en vivo con re-entrada automática).
+    ('AK · portal se entiende + IA responde (v3642)', 'qa_portal_v3642.py'),
+    # AL (v3643): SUPERPODERES QUE SE VEN Y SE OYEN (informe del dueño tras
+    # V3.6.42): Súper EFECTO exagerado (brush ×3, Magnus ×2,2, bote ×2,4,
+    # tope ×3, halo +35 %) · Súper IMÁN con radio 0,75 m, RESCATE real
+    # (bolas escapadas atraídas al punto dulce) y 3 FLECHAS cian bola→pala
+    # · Súper PORTAL con 3 GOLPES GARANTIZADOS por activación (el gasto
+    # por golpe mataba la ventana con sorteo ×1 — «con uno solo me
+    # desaparece»; vigilante de matriz retirado) · CUENTA SONORA 3·2·1
+    # uniforme en los cuatro poderes (sin mirar el icono) · PASSTHROUGH EN
+    # CALIENTE (sesión siempre immersive-ar; _pstAplicar canjea fondo/sala
+    # al vuelo — el conmutador ya NO sale a la web).
+    ('AL · superpoderes se ven y se oyen (v3643)', 'qa_superpoderes_v3643.py'),
+    # r52 (v3644): el informe del dueño tras probar V3.6.43 en el Quest —
+    # «el Super iman no hace nada… en el Super efecto tampoco noto nada,
+    # además de que la marca del bote va desfasada. El sonido de alerta de
+    # que se está agotando no suena o no se percibe» → IMÁN con campo
+    # continuo en la pala + flechas ×1,8 ANCLADAS (la r51 las construyó
+    # pero nadie las llamaba) + física 0,95/6,5/0,80 y rescate 7,5/1,05 ·
+    # EFECTO con halo 0,21 + estela roja + anillo de bote mayor · MARCA DEL
+    # BOTE clavada a la bola visual · BLIPS 988/1319 a gain 0,42 con
+    # háptica 3·2·1 · y el LADRILLO BOMBA del ARKANOID 2 (etapa 4 de La
+    # Locura): negro con bomba.webp, sustituye a un azul (≥1 vez/partida
+    # garantizada), salta cada 4 s, espera sin azules, DETONA radio
+    # 2 filas × 2 columnas (bola o láser) y no vuelve en la partida.
+    ('AM · imán/efecto se notan + bomba (v3644)', 'qa_bomba_v3644.py'),
+    # r53 (v3645): LA BOMBA POR INTERVALOS + EL LADRILLO ELÉCTRICO del
+    # ARKANOID 2 (etapa 4 de La Locura) — «salga de manera aleatoria pero
+    # con intervalos de 15 segundos si tiene ladrillos disponible donde
+    # aparecer» (cadencia r53: 1.ª aparición 2-12 s, siguiente a +15 s) ·
+    # y en los ÚLTIMOS 30 s un azul al azar se ELECTRIFICA (rayitos pool
+    # de 14, chisporroteo, ZAP de sellado; SÓLO la bola lo activa — el
+    # láser ni lo ve) → al darle con la bola ATRAE al resto y los reparte
+    # por ANILLOS en las celdas contiguas (las más próximas primero),
+    # todos eléctricos → CUALQUIER impacto desencadena la REACCIÓN EN
+    # CADENA ramificada (ondas de 0,12 s) que arrasa la pared = misión
+    # SUPERADA, con el reloj CONGELADO durante el destrozo. state0 restaura
+    # el muro de fábrica con cada partida.
+    ('AN · bomba por intervalos + ladrillo eléctrico (v3645)',
+     'qa_electrico_v3645.py'),
+    # AO (ronda 54 · v3.6.46): el SÚPER EFECTO es SPIN REAL — el movimiento
+    # de la pala al golpear clasifica TOPSPIN/BACKSPIN/SIDESPIN y el BOTE
+    # traduce cada uno (acelera hacia delante / casi PARA / patada lateral),
+    # con penalización al rival ya viva (error ×2 · piernas ×0,85) y halo +
+    # anillo de bote TINTADOS por tipo. El SÚPER IMÁN es un GANCHO: la bola
+    # que viene en nuestra dirección de golpeo es arrastrada al CENTRO VIVO
+    # de la pala; fuera flechas/campo/canto — PALA METÁLICA −80 % mientras
+    # dure. Y la pala del rival JAMÁS atraviesa la mesa (clamp del mango
+    # completo: hoja + palo hasta la punta, puerta con el agarre).
+    ('AO · spin real + gancho + pala metálica + clamp mango (v3646)',
+     'qa_spin_pala_v3646.py'),
+    # AP (ronda 55 · v3.6.47): el SÚPER EFECTO SÓLO vive en el INTERCAMBIO
+    # (petición del dueño): NUNCA sobre el saque (ni propio — serveFlight —
+    # ni el del rival — su ventana no es rally) y SÓLO en las jugadas del
+    # JUGADOR (el multiplicador viaja en sus palas); la firma del bote
+    # (topspin/backspin/sidespin) y el acople ×2,4 SÓLO en la MITAD DEL
+    # RIVAL (boteRival = pos.z < C) — mishits y botes propios son juego
+    # normal. Fuera del rally la pala es HONESTA (sin brush ×2 ni marca).
+    ('AP · efecto sólo en el intercambio y en la mesa del rival (v3647)',
+     'qa_efecto_rally_v3647.py'),
+    # AQ (ronda 56 · v3.6.48): LA NORMA DEL DUEÑO — «Todos los superpoderes
+    # de la pala que se concedan superados los 20 toques no antes. El super
+    # iman que ralentice la bola y la dirija hacia el centro de nuestra
+    # pala… el efecto solo entra cuando tenemos que devolver un golpe del
+    # rival… menos en los saques… evidentemente el efecto solo dura 10
+    # segundos. Pasado ese tiempo… todo vuelve a la normalidad. El super
+    # Efecto tambien solo está activo 10 segundos desde la activación y la
+    # ventaja del efecto en los botes solo es para nosotros, el perjudicado
+    # siempre es el rival.» → MEGA_GOLPES 11→20 (19 toques NADA · 20 → +1 ·
+    # 40/60 acumula · 80 tope), EFECTO_DUR/IMAN_DUR 8→10 con ventana
+    # PURAMENTE TEMPORAL (RETIRADOS los topes de golpes: EFECTO_GOLPES,
+    # IMAN_ASIST y el cierre por golpes — el reloj es la única ley), el
+    # r57: el GANCHO/FRENO se RETIRA — el imán es GUÍA DE TIRO (el solver
+    # de la casa corrige cada golpe hacia la mesa del rival; 10 s sin gasto
+    # por asistencia). Golden de física intacto (la guía vive en el golpe).
+    ('AQ · poderes: 20 toques y 10 segundos (v3648)',
+     'qa_poderes_10s20_v3648.py'),
+    # r57: NORMA DE EMOCIONES DEL RIVAL (regla del dueño en TODOS los
+    # campeonatos: idle/crazy/angry/laughing/focused/picando/surprised/
+    # panic/pool>20/victory/defeated) + las 3 imágenes nuevas (pared
+    # izquierda y suelo del Hall, suelo de pista para partido/entrenamiento).
+    ('AR · norma de emociones del rival + imágenes r57 (v3649)',
+     'qa_norma_rival_v3649.py'),
+    ('AS · súper clonación + voz del selector (v3650)',
+     'qa_clon_voz_v3650.py'),
+    # r59 (v3651): LA ACADEMIA — TUTORIAL INTERACTIVO (petición del dueño:
+    # «la gente entra, hay tanto menú y opciones que no saben ni cómo hacer
+    # para sacar»). 9 pasos guiados con práctica real sobre la mesa de
+    # verdad: TU MANDO (diagrama Quest + gatillo), LA PALA (vaivén), EL
+    # SAQUE (bola en mano libre, cruce de red, rearme), EL INTERCAMBIO
+    # (profesor con el solver de la casa, 2 devoluciones), LOS BOTONES
+    # (A/X real), LOS MODOS + 5 poderes, ¡YA SABES JUGAR! Tres puertas
+    # (banner del HUB, oferta de primera vez, AJUSTES) y B/Y de salida.
+    # AT (v3651) CAPA HISTÓRICA desde r69: su aguja «botón de repetir el
+    # tutorial en AJUSTES» contradice la orden del dueño (r69 retiró ese
+    # botón; la academia vive en el banner del HUB y la oferta de primera
+    # vez). La cadena BB (r67) → BD (r69) → BE (r70) → BF (r71) conserva y
+    # amplía sus verificaciones vivas.
+    # AU (ronda 60): aguja del tutorial actualizada a la verdad actual
+    # (SIN tut:go en AJUSTES desde r69).
+    # AV (ronda 61): agujas del adaptativo actualizadas a su casa nueva:
+    # AJUSTES › JUEGO (ronda 71).
+    # AU (ronda 60 · v3.6.52): LOS TRES ARREGLOS del informe del dueño tras
+    # probar LA ACADEMIA en el Quest — (1) «el tutorial se queda bloqueado,
+    # se superpone con otras ventanas del menú y no es pulsable»: el menú
+    # NACÍA del clic y seguía abierto (delante del jugador, order 990 sobre
+    # el 985 del panel, misma altura de ojos) y toggleMenu duerme con calib —
+    # start() ahora lo cierra DIRECTO (3 puertas cubiertas) con salida B/Y
+    # siempre viva; (2) «ME HAS QUITADO DE TODOS LOS ESCENARIOS LOS
+    # TROQUELES»: no se borraron — el cerrojo champDecorHidden de las
+    # pruebas especiales podía quedar PECHO tras una salida no prevista
+    # (reproducido en vivo) → AUTOCURACIÓN en leaveAll (también en el return
+    # temprano) y los 5 campeonatos verifican SU decorado en vivo; (3) «la
+    # etapa 4 del orbe en Wizard… supera los 1000 y pico… como mucho la
+    # mitad… penalizando los FPS»: ORBE_COMPLEJO 1.419 → 515 (−63,7%, tope
+    # ≤710) con la MISMA envergadura (0,625 m), dianas +42%, cima 2,07 < HUD
+    # 2,28 y base en mesa — recuento REAL en la página sobre las constantes
+    # SERVIDAS. BONUS pinzado en la auditoría: el MAPA DEL TALLER de
+    # valle_neon llevaba detached desde SDK5 (add antes de existir el group
+    # perezoso) → build() antes de colgar; la batería vuelve a ir SIN
+    # errores JS.
+    ('AU · tres arreglos del dueño (v3652)', 'qa_r60_v3652.py'),
+    # AV (ronda 61 · v3.6.53): LAS TRES CANDIDATAS APROBADAS por el dueño —
+    # (1) ESTELA DE PODER: la estela viste la firma del poder ACTIVO (mega
+    # ámbar · efecto rojo · imán cian · portal violeta · clon azul fantasma)
+    # con lerp y respaldo por spin; (2) RIVAL ADAPTATIVO visible y decidible
+    # (existía desde v2.x: conmutador persistente HUB+AJUSTES, mensaje y
+    # lerp del factor — gana→aprieta, pierde→afloja, OFF honesto);
+    # (3) REPETICIÓN DEL MEJOR INTERCAMBIO: grabadora por frames y fantasmas
+    # al terminar el partido (mejor = más toques, ≥3; gatillo salta; sin
+    # grabación en calib/academia/online; visibilidades restauradas exactas).
+    ('AV · estela+adaptativo+repetición (v3653)', 'qa_r61_v3653.py'),
+    # AW (v3654): SONIDO REAL por síntesis modal (5 muestras físicas
+    # incrustadas con playbackRate por velocidad + jitter, canto metálico
+    # propio con e.edge, fallback sintético intacto) + HÁPTICA ESCALADA por
+    # impacto (rally+saque, ARKANOID conserva refuerzo v2.44) + CÁMARA LENTA
+    # (repetición al 50% con pastilla ámbar + dilatación de la bola de
+    # partido 0,34×→1 en ~1,15 s, sólo local).
+    ('AW · sonido real+háptica+cine (v3654)', 'qa_r62_v3654.py'),
+    # AX (v3655): LA ACADEMIA CIERRA BIEN — arreglo del panel huérfano del
+    # tutorial (stop anulaba el juego antes de desmontar el panel: el panel
+    # quedaba VISIBLE para siempre). QA sobre el GRAFO DE ESCENA (lo que el
+    # jugador ve): nace en el rig, desaparece con gatillo y B, sin
+    # duplicados ni residuos, sello sólo al jugar, partido jugable tras salir.
+    ('AX · academia cierra bien (v3655)', 'qa_r63_v3655.py'),
+    # AY (v3656): LA ACADEMIA, A PUNTO — las tres correcciones del dueño al
+    # tutorial: (1) textos auto-ajustados (fitFont/pill/wrap2, canvas
+    # 1280×800: nada se corta ya); (2) MANDO 3D PROCEDURAL Touch Plus (6
+    # piezas giratorias con resalte por paso, la promesa del punto 2);
+    # (3) práctica real (3 saques válidos con cerrojo + 6 devoluciones con
+    # rally real) y el panel se APARTA a un lado en la práctica (pose
+    # frente⇄lado con lerp). QA de fuente + grafo con rig real.
+    # AZ (v3657): EL ONBOARDING GAMIFICADO — voz nativa Piper es/en (25
+    # átomos por idioma, narra al entrar, STICK repite), mando GLB REAL
+    # del dueño con halos por pieza (anclas por raycast) y 4 acciones
+    # reales en el paso 1, 2 pasos NUEVOS de reglas visuales sobre la
+    # mesa (holo marcador a 11 + holo rotación del saque con doble bote),
+    # panel PIZARRA del dueño (textos tiza en la zona negra), el saque
+    # demo del espectador DUERME en la academia (adiós al bote continuo)
+    # y gating real en los 11 pasos.
+    # BA (v3658): LA ACADEMIA SOBRE LA MESA — informe del dueño tras
+    # V3.6.57: bola DORMIDA en los pasos quietos (adiós al bote continuo
+    # de la bola apoyada), voces Piper MÁS PAUSADAS (length-scale 1.16 +
+    # respiros), DOS mandos GLB reales centrados (izquierdo Y/X + derecho
+    # B/A espejo), halos OPACOS con etiqueta, RAQUETA FANTASMA sobre los
+    # mandos, pintor 9 sin solapes y las reglas REALES sobre la mesa:
+    # paso 3 (demo de saque con los mandos + 3 saques tuyos), paso 4
+    # (intercambio real: el rival devuelve hasta fallar — rota el sacador)
+    # y paso 5 (marcador BAJO con saques reales: 11 por 2 y 10-10 cada
+    # punto). Panel apartado en 3-6: la mesa nunca tapada.
+    # BB (v3659): LA ACADEMIA EN TUS MANOS — informe del dueño tras
+    # V3.6.58: (1) speakPlan CANCELA la voz viva (adiós al audio doble);
+    # (2) mandos GLB ANCLADOS a los grips XR reales al 75% (nada flotando);
+    # (3) UNA sola raqueta (aura sobre la pala REAL, sin clones fantasma);
+    # (4) guion reorganizado a 9 pasos con demo del PROFESOR sobre la mesa
+    # real + AROS GUÍA y la rejilla de modos 2×3 en UNA pizarra.
+    # BC (v3660): LA RAQUETA DEL RIVAL — informe del dueño tras V3.6.59:
+    # «la pelota en el saque y en el juego debe ser golpeada por la raqueta
+    # del rival; permanece quieta y la golpea un fantasma». El profesor
+    # tiene PALA visible (la misma del juego, hoja en el origen) que arma,
+    # barre y golpea: saques demo/marcador retenidos hasta que la hoja
+    # llega, devoluciones de pasos 3/5 desde la posición exacta de la bola
+    # y el feed del paso 5 con bola VIVA (la renumeración r67 la dejó
+    # congelada: sin tutBolaViva en ese paso, el rally no existía).
+    # BD (v3661): UNA RAQUETA, CERO FANTASMAS — capa histórica, sustituida
+    # por BE (qa_r70_v3662) que conserva sus verificaciones y añade las de
+    # la r70 (anclaje al rig, saque de dos botes, voz cortada, passthrough).
+    # BE (v3662): LA ACADEMIA PERFECTA — capa histórica, sustituida por
+    # BF (qa_r71_v3663) que conserva sus verificaciones y añade las de la
+    # r71 (palma del profesor elevada con solver verificado, botes SOBRE
+    # la mesa con vallas x/z/y, cartel con autoajuste, menú por categorías).
+    # AY (v3656) · AZ (v3657) · BA (v3658) · BB (v3659) CAPAS HISTÓRICAS desde
+    # r70: sus guiones MECÁNICA teletransportan la bola con la semántica del
+    # árbitro PRE-r70 (un solo contacto contaba por «cruzada») y quedaron
+    # sin ejecutar en las rondas 68-70 (subconjunto de 12 capas). La cadena
+    # BD (r69) → BE (r70) → BF (r71) re-verifica la academia COMPLETA con
+    # las reglas VIGENTES (dos botes sobre la mesa, vallas x/z/y, palma
+    # elevada, raqueta al RIG) — sus agujas vivas viven en BF.
+    # BF (v3663): EL SERVICIO HONESTO — el informe del dueño tras V3.6.62:
+    # el saque del profesor debía botar primero en SU campo (la palma vieja
+    # hacía imposible el doble bote: fallback = un solo bote), el saque del
+    # jugador contaba botes en el SUELO (largos y laterales «buenos»), el
+    # cartel del 10-10 recortaba «GANAR», y la CPU + el rival adaptativo
+    # debían vivir DENTRO de un AJUSTES reorganizado por subcategorías con
+    # iconos explícitos.
+    ('BF · servicio honesto (v3663)', 'qa_r71_v3663.py'),
+    # BG (v3664): EL TELÓN Y EL CANDADO — el informe del dueño tras V3.6.63:
+    # los títulos del cartel de la Academia pisaban la cabecera (pasos 3/4/7
+    # solapados, paso 8 con el texto PODERES dentro de la tarjeta ENTRENAR
+    # por el wrap2 sin x), las 5 tarjetas de Entrenamiento sin icono, Astro
+    # invisible (el grupo del orbital colgado de scene y no del rig) y la
+    # entrada a campeonatos viéndose montarse: telón negro + candados con
+    # voz «Próximamente» y bypass FORO3D.
+    ('BG · telón y candado (v3664)', 'qa_r72_v3664.py'),
+    # r73 (FASE 67 · EL MENÚ MANDA): informe del dueño tras V3.6.64 — (1)
+    # «un Menú estemos donde estemos debe ser la ventana que manda y verse
+    # siempre la primera»: familia del menú al cielo del render (panel 9998,
+    # cursores 9999, rayos 9997 — sobre instrucciones 9994/9995 y mapa del
+    # oeste 9990..9996). (2) «los candados están mal colocados y aparecen
+    # desplazados»: la v72 hacía scale(k) ANTES de dibujar en (x,y) — el
+    # candado se pintaba a 1,35× la posición; ahora translate+scale (medido
+    # en píxeles: junto al ancla, cero desplazados). (3) «me ha desaparecido
+    # el campeonato del Salvaje Oeste»: el índice y los manifest se pedían
+    # UNA vez y una petición perdida lo borraba para siempre — fetch con
+    # cache:'no-cache' + reintentos exponenciales + manifest en paralelo +
+    # 2 olas de recuperación (+8 s/+25 s) + estado CARGANDO + botón
+    # REINTENTAR. (4) telón de teatro: esfera negra de 12 m centrada en la
+    # cabeza (adiós al pegote de 0,72 m) + tarjeta de intermedio a 2,00 m
+    # que sigue a la cabeza con el color del campeonato y una bola que va
+    # y viene sobre la pista. Mejora sorpresa del dueño incluida.
+    ('BH · el menú manda, candado y telón de teatro (v3665)', 'qa_r73_v3665.py'),
+    # r74 (V3.6.66-SDK6 FASE 68 «EL MANDO DE SIEMPRE»): (1) «desde el módulo
+    # Pro training, en cualquier modalidad, sacar el Menú con la tecla de
+    # siempre, la B (no la Y)»: la guardia del bloque B ya no se come el
+    # entrenamiento y Y deja de abrir menús (agujas + rama vieja AUSENTE).
+    # (2) «en las etapas 2 y 4 el menú contextual no recibe el foco»: el
+    # bloque menuOpen de onSelectStart sube POR ENCIMA del bloque _instr
+    # (verificado por POSICIÓN de fuente) y los carteles se retiran sin
+    # arrancar al salir al Hall. (3) «el glow no está si cambias la pala de
+    # mano»: la aura se re-papa cada frame a la montura activa. (4) «si
+    # antes de devolver pulsas o haces un saque no puedes avanzar»: el
+    # profesor sirve YA al entrar en la práctica + VIGÍA de re-feed.
+    # (5) «paso 9 modos: sonido de bola por debajo + mal explicado»: bola
+    # DORMIDA en los pasos 6/7/8 (posaBolaMesa), tarjetas con explicación
+    # larga y 3 voces nuevas (tutv8b/8c/9b ES+EN). (6) «el Salvaje Oeste
+    # sería el tercero»: orden canónico del índice medido CON DATOS
+    # (locura→magia→oeste→…). (7) «al abrir un campeonato no desaparece el
+    # menú + bote infinito»: closeMenu en launch para TODOS + ZONA MUERTA
+    # del suelo medida EN VIVO con stepPhysics real (caída 1 mm = 0 eventos,
+    # caída 1 m = 1 evento) + color arcoíris sin allocs (FPS).
+    ('BI · el mando de siempre (v3666)', 'qa_r74_v3666.py'),
+    # r75 (v3667): «EN LA PANTALLA DEL TUTORIAL DE MODOS ALGUNOS TEXTOS
+    # QUEDAN FUERA DEL CONTENEDOR» — diagnóstico medido EN VIVO: la extra
+    # ámbar de RANKING MUNDIAL (353 px) y ENTRENAR (324 px) agotaba el
+    # mínimo de fitFont (10 px) contra 214 px disponibles de las tarjetas
+    # de 300 → el texto SALÍA de la tarjeta y se comía la vecina (también
+    # en EN: 333/341). Arreglo: cardWrap (fitFont + envoltura glotona en
+    # ≤2 líneas que miden TODAS ≤maxW + elipsis de seguridad), modeCard
+    # COMPACTA cuando la extra se parte (sin colisión de tinta, verificado
+    # con métricas reales del canvas) y wrap2 blindado (cada mitad
+    # re-ajustada a maxW). VERIFICACIÓN VIVA: las funciones SERVIDAS se
+    # extraen del game.html y pintan las 6 tarjetas ES+EN en un canvas
+    # real: cada línea dentro de su marco + capturas en download/.
+    ('BJ · todo encaja en los modos (v3667)', 'qa_r75_v3667.py'),
+    # r76 · EL PULSO CRAZY: el latido diario de la academia (reto del
+    # día determinista, racha de asistencia con pieles exclusivas,
+    # fantasma propio y el informe del profesor con datos reales).
+    # BK (qa_r76_v3668) RETIRADA (r109): el RETO DIARIO se mudó a la PUERTA
+    # en r80 (cubierta por BO · qa_r80_v3672, verde) y HALLOWEEN sustituyó al
+    # retirado en la casa (r85); la academia (r59-63) cambió los ids de los
+    # modos y del profesor — los checks del plan/profesor de r76 quedaron
+    # desfasados de forma permanente (4 fallos de semántica antigua, no de
+    # regresión). La sustituye BO.
+    # ('BK · el pulso crazy (v3668)', 'qa_r76_v3668.py'),
+    # r77 · LA RAQUETA MODO FANTASMA: en la academia la pala REAL nace
+    # invisible y materializa EXACTAMENTE cuando la voz dice «tu mando se
+    # convierte en tu raqueta» (subfase 4); cualquier salida la devuelve.
+    ('BL · la raqueta modo fantasma (v3669)', 'qa_r77_v3669.py'),
+    # r78 · EL NARRADOR HONESTO: la voz del paso 7 (modos) ya no promete
+    # superpoderes en el partido normal — «…y campeonatos», el modo arcade
+    # con poderes para rival y jugador (20 toques seguidos · icono en el
+    # mango · gatillo · 10 s · ¡lucha y vence!). Pizarra PODERES sincronizada.
+    ('BM · el narrador honesto (v3670)', 'qa_r78_v3670.py'),
+    # BN (v3671): CRAZY LINK v2 — multijugador binario real (petición del
+    # dueño r79 + spec netcode v1.0): submenú NORMAL/DUELOS LOCOS (candado
+    # + PRÓXIMAMENTE como los campeonatos), transporte fast(UDP-like)+
+    # reliable, reloj NTP, FSM de bola por mitades, CLAIM/ACK, avatar con
+    # jitter buffer, MATCH_START sincronizado, pausas, ping y validación.
+    ('BN · crazy link v2 (v3671)', 'qa_r79_v3671.py'),
+    # BO (r80): EL RETO DIARIO EN LA PUERTA — submenú que respira (tarjetas
+    # fuera del marco y de los idiomas · sala y código SÓLO al elegir modo),
+    # botón estrella «Reto Diario!» al pie del HUB (pala troquelada +
+    # resplandor), panel retirado del entrenamiento y zonas del reto el
+    # DOBLE de anchas (zonaDims compartidas por pintor y juez).
+    ('BO · reto diario en la puerta (v3672)', 'qa_r80_v3672.py'),
+    # BP (r81): SESENTA SEGUROS — el autocalibrador de FPS por casco (PERF
+    # GOVERNOR: detección Adreno, sonda 2,8 s × 3, gobernador vivo, AJUSTES
+    # › RENDIMIENTO) + EL MULTIJUGADOR JUGABLE: un solo espejo por camino
+    # (R∘R = identidad mandaba la bola al lado contrario), validador con la
+    # pala en el MISMO marco y en el instante del golpe, rallySeq en los
+    # claims, ICE tempranos en cola, glue sin indexar el Vector3 (NaN) y
+    # DUELO SIMULADO: dos páginas reales (PeerJS real + NETSIM 35 ms ± 12
+    # con 2 % de pérdida) que SACAN, INTERCAMBIAN y PUNTÚAN con marcador
+    # espejado idéntico — la herramienta que pidió el dueño para revisar el
+    # multiusuario sin dos visores.
+    ('BP · sesenta seguros + duelo simulado (v3673)', 'qa_r81_v3673.py'),
+    # BR (r82): AL MILÍMETRO — el enlace que el dueño no podía jugar, cazado
+    # por un AGENTE AUDITOR de netcode: el golpe propio en v2 nunca se
+    # anunciaba (_localHit sólo en la rama v1 → sin HIT kind 0 no había
+    # traspaso de vuelta y el rival recibía un fantasma injugable), el
+    # JitterBuf guardaba REFERENCIAS (toda la historia era la última pose),
+    # el eco NTP del reloj estaba MUERTO (offset congelado → rechazos «tHit
+    # en el futuro») y el lanzamiento (kind 2) exigía correlativo. Además:
+    # TÚNEL PeerJS de emergencia (v2 sobre la sala si el ICE no abre), HELLO
+    # tolerante a BUILD, v1 silencioso bloqueado, bola HELD del rival EN SU
+    # MANO, montura por mano física (bit 8), enlace cantado por voz y
+    # netInfo() para ver la salud del enlace.
+    ('BR · al milímetro (v3674)', 'qa_r82_v3674.py'),
+    # BQ (r82): LA BATERÍA — 3 parejas de usuarios reales jugando partidos
+    # COMPLETOS EN PARALELO (señalización PeerJS real): LAN 18 ms, WiFi
+    # 35±12 con relojes desiguales (+137/−211 ms) y TÚNEL con el ICE ROTO
+    # a propósito; cuerpos en sitios distintos, dos puntos por partido
+    # (saque de ambos), marcador espejado idéntico, 0 rechazos. La
+    # herramienta del dueño para «jugar en paralelo varias partidas».
+    ('BQ · batería multi en paralelo (v3674)', 'bateria_multi_v3674.py'),
+    # BS (r83): LA PALA AL MILÍMETRO — el ajuste de pala MUDA a AJUSTES ›
+    # PALA (7.ª tarjeta colorida + subpágina con AJUSTAR/GUARDAR/CARGAR/
+    # borrar), entra con PASSTHROUGH INMEDIATO en caliente (_pstAplicar sin
+    # salir de VR), RÉPLICAS GLB de los mandos (modelos del tutorial)
+    # ancladas a los grips, EJES LOCALES RGB sobre la montura con LA FLECHA
+    # DEL AJUSTE por eje (raíl + flecha que viaja con el valor vivo:
+    # dirección = signo, magnitud = distancia), EJES Z DIRECTOS (click de
+    # stick; los atajos GRIP se conservan), panel FRONTAL elevado que sigue
+    # a la cabeza (por encima de la vista, sin pisar la pala), agarres con
+    # nombre PERMANENTES (ppxr_grips_v1) y salidas B/Y que restauran el
+    # Hall sin arrastrar nada.
+    ('BS · pala al milímetro (v3675)', 'qa_r83_v3675.py'),
+    # BT (r84): DUELOS LOCOS — la tarjeta del submenú multi sale del patrón
+    # de bloqueo r79 (velo+candado+PRÓXIMAMENTE) y juega de verdad: el modo
+    # viaja en el mstart (md, autoridad del anfitrión), rules.startMatch
+    # normaliza 'duelos' con la SERIE mejor-de-3 intacta y los TRES PODERES
+    # netcode-safe (GIGANTE por bit 16 de pose, FUEGO ×1,18 con tope 26 <cap
+    # 30 del validador, LOCA por el canal de spin del SÚPER EFECTO) cargan
+    # cada 5 golpes y salen con el gatillo de la mano libre; aviso del rival
+    # por cable fiable 'pow' (solo UX). + EL PULSO EN LA PUERTA DEL HALL:
+    # dos placas de museo (drawHallSign) repintadas con i18n y estado diario
+    # en drawHall() (stub r58 revivido).
+    ('BT · duelos locos + pulso en la puerta (v3676)', 'qa_r84_v3676.py'),
+    # r85 · HALLOWEEN (ZOMBI del dueño + mapa + cartel normas) sustituye al valle
+    # neón · DAILY_DIF (dificultad del Reto Diario escalonada) · EL TALLER UGC.
+    ('BU · halloween + taller UGC + pulso escalonado (v3677)', 'qa_r85_v3677.py'),
+    # r86 · ESCENARIO REAL DE HALLOWEEN: las 6 paredes del artista, los 4
+    # troqueles en decor.pieces, la mesa con la LOSA de piedra (patrón madera
+    # del oeste) y los 4 SUPERPODERES REALES del zombi (Mano de zombi con
+    # montículos y trocitos, Plaga de Moscas espantable con la pala, Calabaza
+    # GLB pesada y caótica, Gelatina Asquerosa verde fosforito con humillo) —
+    # anuncio SuperPower del dueño + medallón circular + congelación v2.40.
+    ('BV · escenario real halloween + 4 superpoderes (v3678)', 'qa_r86_v3678.py'),
+    ('BW · informe del dueño en mano: rival+mapa+cartel+4 poderes+red social (v3679)', 'qa_r87_v3679.py'),
+    ('r88 · halloween a justo (v3680)', 'qa_r88_v3680.py'),
+    # r90 · HALLOWEEN SUENA Y SE JUEGA — informe del dueño tras V3.6.81: BSO
+    # Midnight_Volley.mp3 (fin del bso.wav provisional), sonidos del zombi al
+    # MOTOR PROBADO createBucle (lección del tren; victory re-codificado de
+    # 24 kHz — el perfil que el casco no decodifica), mapa con SRGBColorSpace
+    # (adiós al lavado) + arte nuevo, manos SIN montículo (cortaba la mano),
+    # colisión bola↔mano = MOTOR DE BURLA con CCD por segmento (bug raíz:
+    # bola.vel sobre ball.pos = TypeError tragado — la bola no hacía NADA),
+    # gelatina sin desfase (cuadrado visual exacto por quaternion) + HUMILLO
+    # CONTINUO, calabaza PROCEDURAL garantizada (GLB de Sketchfab retirado).
+    ('r90 · halloween suena y se juega (v3682)', 'qa_r90_v3682.py'),
+    # r91 · EL INFORME QUE POR FIN SE ATACA DE RAÍZ — BSO viva (forma
+    # canónica createMusic + SDK tolerante), mapa con la receta WizardMap
+    # EXACTA y textura por CALLBACK del loader (la sonda r91b cazó al
+    # sondeo dormido: opacity 0 con image vivo), manos con ARTE INTEGRAL
+    # (la tierra y el brazo se ven), calabaza con EL BUG RAÍZ cazado
+    # (material-array sobre geometría sin groups = cero draw calls),
+    # rival bajo la NORMA ÚNICA r57 con hold del final y sonido por
+    # emoción, un solo plano del zombi en todo el ciclo de vida.
+    ('r91 · halloween de raíz: BSO+mapa+manos+calabaza+rival (v3683)', 'qa_r91_v3683.py'),
+    # r92 · LAS CUATRO DEL INFORME — manos ANCLADAS a la mesa (base toca
+    # tablero en todas las fases, fuera el ascenso/bob de la r89), MESA NUEVA
+    # del dueño (mesa.webp, 4 losas con sangre — losa.jpg conservada),
+    # GOLPE DEL RIVAL a la calabaza tangente a la pala (marca ppCalabaza:
+    # alcance 0,12 + contacto arrastrado, probado con la IA REAL en los dos
+    # sentidos) y GIRO SOBRE SÍ MISMA arrastrado por el spin (×3 la tasa de
+    # la bola — se la ve girar al golpearla).
+    ('r92 · manos ancladas + mesa nueva + golpe tangente + giro de la calabaza (v3684)', 'qa_r92_v3684.py'),
+    # r93 · TRES RÁPIDAS — BSO melodia.mp3 del dueño, desfase del rival con
+    # la calabaza cazado (bola en el barrido, hoja en la piel) y etiquetas
+    # terroríficas (medallones 512×512 por poder).
+    ('r93 · BSO nueva + golpe rival en la piel + etiquetas terroríficas (v3685)', 'qa_r93_v3685.py'),
+    # r94 · LA CALABAZA ES LA BOLA — la bola JAMÁS visible mientras la
+    # calabaza vive (re-ocultada cada frame contra todos los caminos del
+    # núcleo), posición EXACTA (copia la bola renderizada), nacimiento en
+    # sitio y guard ppCalabaza (r92 no caduca).
+    ('r94 · calabaza = lugar exacto de la bola, bola oculta mientras viva (v3686)', 'qa_r94_v3686.py'),
+    # r95 · SIN CARTEL EN LOS DUELOS (regla de casa: sólo etapas de
+    # habilidad) + VOLÚMENES SEPARADOS música/efectos + SALA/MESA (altura
+    # que muta DIMS + aspecto con recompensas) + RIVALES CON ESTILO
+    # (colocación + celebración) + ESTADÍSTICAS AL FINAL DEL DUELO.
+    ('r95 · sin cartel en duelos + volúmenes + SALA/MESA + estilo + stats duelo (v3687)', 'qa_r95_v3687.py'),
+    # r96 · SALA Y ESCENA EN VIVO (Hall→cancha), submenús SALA/MESA,
+    # deslizador de altura, tooltips, sonidos limpios, pieles fuera de
+    # campeonatos y NITIDEZ (FFR) con techo del gobernador.
+    ('r96 · sala en vivo + submenús + deslizador + tooltips + pieles de campeonato fuera + FFR (v3688)', 'qa_r96_v3688.py'),
+    # r97 · informe del dueño tras V3.6.88: calabaza CLAVADA a la bola viva
+    # (mismo padre, c06 jamás recoloca la bola calabaza), CERO zombis en el
+    # Hall (leave corta el tren ZONB + candado universal musicOff), voz de
+    # personalidad por rival (SDK 1.6.0), mapa de calor 3×3 persistente y
+    # retos semanales que alimentan Oro/Carbono/Nocturna.
+    ('r97 · calabaza bola viva + cero zombis + voz rival + calor + retos (v3689)', 'qa_r97_v3689.py'),
+    # r98 · GESTOS CONTINUOS del menú (tres peticiones del dueño): bocadillo
+    # BLANCO con texto negro y COLA precisa, deslizadores ARRASTRABLES
+    # (gatillo apretado + mando a izq/der) y MESA AGARRABLE (rayo de
+    # selección + subir/bajar 1:1 con rótulo grande con los cm).
+    ('r98 · bocadillo blanco + sliders arrastrables + mesa agarrable (v3690)', 'qa_r98_v3690.py'),
+    ('BX · red social E2E: 2 jugadores, medallón, invitación y partida real (v3679)', 'qa_social_v3678.py'),
+]
+
+# Capas POST-DEPLOY (--produccion): cargan game.html de PRODUCCIÓN y exigen
+# que pages sirva la versión de la FUENTE DE VERDAD (src/game/VERSION.json).
+CAPAS_PRODUCCION = [
+    ('K · hints del hub (prod)', 'qa_hub_hints.py'),
+    ('L · champion listo (prod)', 'qa_champion_listo.py'),
+]
+
+def main():
+    rapido = '--rapido' in sys.argv
+    produccion = '--produccion' in sys.argv
+    # r60: --desde N --hasta M (1-indexados sobre CAPAS+PRODUCCION) para
+    # poder trocear la suite en turnos cortos sin recortar cobertura.
+    def _num(flag, defecto):
+        return int(sys.argv[sys.argv.index(flag) + 1]) if flag in sys.argv else defecto
+    desde, hasta = _num('--desde', 1), _num('--hasta', 10 ** 6)
+    capas = [(i, n, s) for i, (n, s) in
+             enumerate(CAPAS + (CAPAS_PRODUCCION if produccion else []), 1)
+             if desde <= i <= hasta]
+    filas = []
+    fallos_total = 0
+    t_global = time.monotonic()
+    for _idx, nombre, script in capas:
+        if not script or not (SCR / script).exists():
+            filas.append((nombre, 'AUSENTE', '-', script or '(no encontrado)'))
+            fallos_total += 1
+            continue
+        if rapido and script.startswith('qa_sup1'):
+            break
+        cmd = ['node', '--no-warnings', str(SCR / script)] if script.endswith('.mjs') \
+            else [sys.executable, str(SCR / script)]
+        t0 = time.monotonic()
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True,
+                               timeout=TIMEOUT.get(script, 600))
+            dur = time.monotonic() - t0
+            salida = r.stdout + r.stderr
+            if script.endswith('.mjs'):
+                # test_fisica: 'RESULTADO: N escenarios · 0 desviaciones'
+                linea = next((l for l in salida.splitlines() if l.startswith('RESULTADO')), '')
+                desv = '0 desviaciones' in linea and r.returncode == 0
+                estado = 'OK' if desv else 'FALLO'
+                resumen = linea.replace('RESULTADO: ', '').strip()
+            else:
+                linea = next((l for l in salida.splitlines()
+                              if 'RESULTADO' in l.upper()), '')
+                limpio = linea.replace('RESULTADO:', '').replace('RESULTADO', '').strip()
+                n_fallos = 0
+                for trozo in limpio.replace('OK ·', '·').split('·'):
+                    t = trozo.strip().lower()
+                    for pref in ('fallos', 'fallo', 'desviaciones'):
+                        if t.startswith(pref):
+                            try:
+                                n_fallos = int(t.split()[0])
+                            except (ValueError, IndexError):
+                                n_fallos = 9999
+                estado = 'OK' if (r.returncode == 0 and n_fallos == 0) else 'FALLO'
+                resumen = f'{limpio} ({dur:.0f} s)'
+        except subprocess.TimeoutExpired:
+            dur = time.monotonic() - t0
+            estado, resumen = 'TIMEOUT', f'>{dur:.0f} s'
+        if estado != 'OK':
+            fallos_total += 1
+        filas.append((nombre, estado, resumen, script))
+
+    print('=' * 72)
+    print('CRAZY PING PONG · QA TOTAL')
+    print('=' * 72)
+    for nombre, estado, resumen, script in filas:
+        marca = '✓' if estado == 'OK' else ('·' if estado == 'OMITIDA' else '✗')
+        print(f'  {marca} {nombre:28s} [{estado:7s}] {resumen}  ({script})')
+    print('=' * 72)
+    print(f'  TIEMPO TOTAL: {time.monotonic() - t_global:.0f} s · '
+          f'CAPAS EN FALLO: {fallos_total}')
+    sys.exit(1 if fallos_total else 0)
+
+if __name__ == '__main__':
+    main()

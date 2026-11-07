@@ -1,8 +1,8 @@
 {
   "catalogo": "telemetria-crazypp",
-  "version": 3,
-  "actualizado": "2026-10-19",
-  "ronda": 14,
+  "version": "v9",
+  "actualizado": "r115 · M5b escalera de carrera",
+  "ronda": 123,
   "politica_pii": {
     "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
     "sin_ip": true,
@@ -209,6 +209,233 @@
       ],
       "desde": "v3.6.9-SDK6",
       "notas": "ronda 12: LATIDO EN VR — las sesiones cerradas abruptamente (casco apagado, pestaña muerta) nunca llegan a vr_end ni a page_close y desaparecían del análisis (la ronda 11 cazó una: vr_start+stage sin cierre). El ÚLTIMO ping fecha el fin real aunque no haya vr_end. ronda 14: PRIMER PING REAL en producción (10-19, 68 fps al minuto 5 de la 1.ª sesión 3.6.10) y el resumen ya lo consume: sesionesVR fecha la duración con él"
+    },
+    {
+      "nombre": "net_match",
+      "origen": "src/game/core/c09_red_netlink.js (sendMatchEnd, r79) — transporte binario v2",
+      "momento": "al terminar una partida online (game-over, abandono o colgarse)",
+      "campos": [
+        {
+          "nombre": "role",
+          "tipo": "string",
+          "desc": "'host' | 'guest' — papel del emisor en la partida"
+        },
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "duración de la partida en segundos"
+        },
+        {
+          "nombre": "rtt",
+          "tipo": "object",
+          "desc": "{med,p95,min} en ms (estadística del reloj compartido)"
+        },
+        {
+          "nombre": "jitter",
+          "tipo": "number",
+          "desc": "jitter medio de llegada en ms (EMA RFC3550)"
+        },
+        {
+          "nombre": "turn",
+          "tipo": "boolean",
+          "desc": "true si la conexión pasó por TURN (sin ruta directa)"
+        },
+        {
+          "nombre": "hits/handoffs/snaps",
+          "tipo": "number",
+          "desc": "contadores de eventos del protocolo binario"
+        },
+        {
+          "nombre": "corr",
+          "tipo": "array",
+          "desc": "[sinCorreccion, suaves(2-30cm), saltos(>30cm)] del traspaso"
+        },
+        {
+          "nombre": "provAuth/claims/acks/disputes",
+          "tipo": "number",
+          "desc": "autoridad provisional y libro de reclamos"
+        },
+        {
+          "nombre": "vmax",
+          "tipo": "number",
+          "desc": "velocidad máxima de bola observada (m/s)"
+        },
+        {
+          "nombre": "result",
+          "tipo": "string",
+          "desc": "'win'|'loss'|'abandono'|'' — SIN contenido de partida (ni marcador ni nombres)"
+        },
+        {
+          "nombre": "suspect",
+          "tipo": "boolean",
+          "desc": "true si la validación anti-trampa rechazó 3+ golpes graves"
+        }
+      ],
+      "nota": "r79: SIN resultados identificables — solo métricas técnicas de red (política PII intacta)"
+    },
+    {
+      "nombre": "pwa_standalone",
+      "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
+      "momento": "una vez por sesión: la portada arrancó DENTRO de la app instalada (display-mode fullscreen/standalone/minimal-ui o navigator.standalone)",
+      "campos": [],
+      "desde": "v3.6.99-SDK6",
+      "notas": "r109: mide el uso real de la app instalada frente a la web; el botón instalar se oculta en este estado"
+    },
+    {
+      "nombre": "pwa_prompt",
+      "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
+      "momento": "el dueño responde al diálogo nativo de instalación (beforeinstallprompt capturado y lanzado por el botón de la portada)",
+      "campos": [
+        {
+          "nombre": "o",
+          "tipo": "string",
+          "desc": "outcome del diálogo: 'accepted' | 'dismissed' | '?'"
+        }
+      ],
+      "desde": "v3.6.99-SDK6",
+      "notas": "r109: sin datos de partida ni PII; mide la efectividad del botón instalar"
+    },
+    {
+      "nombre": "pwa_installed",
+      "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
+      "momento": "evento appinstalled del navegador (la app quedó instalada)",
+      "campos": [],
+      "desde": "v3.6.99-SDK6",
+      "notas": "r109: hito de conversión de la PWA"
+    },
+    {
+      "nombre": "pwa_manual_hint",
+      "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
+      "momento": "click en «📲 INSTALAR EN EL CASCO» SIN diálogo nativo disponible (Quest Browser puede no dispararlo): se enseñó el caminito manual de 2 toques",
+      "campos": [],
+      "desde": "v3.6.99-SDK6",
+      "notas": "r109: si aparece mucho, significa que el navegador objetivo no dispara beforeinstallprompt"
+    },
+    {
+      "nombre": "primer_rally",
+      "origen": "src/game/core/c12_pingponggame.js (animate, M4 r111)",
+      "momento": "el árbitro entra en 'rally' por PRIMERA vez de la sesión en partido local (no hall, no calibración, no online)",
+      "campos": [
+        {
+          "nombre": "lat",
+          "tipo": "number",
+          "desc": "segundos desde vr_start (redondeado a 0,1) — la métrica del hito M4: un jugador nuevo en rallye real en <60 s"
+        },
+        {
+          "nombre": "dif",
+          "tipo": "string",
+          "desc": "dificultad de la CPU vigente (easy/medium/hard)"
+        }
+      ],
+      "desde": "v3.6.101",
+      "notas": "M4 (r111): UNA sola vez por sesión; lat + 60 s de media en jugadores nuevos = onboarding cumplido. En duelo online no sale (la mesa la acuerda el anfitrión)."
+    },
+    {
+      "nombre": "tut_end",
+      "origen": "src/game/core/c13_ui_arranque.js (LA ACADEMIA, stop(), M4 r111)",
+      "momento": "cierre de la academia: fin del guion, botón ▶ JUGAR YA o salida con B/Y",
+      "campos": [
+        {
+          "nombre": "res",
+          "tipo": "string",
+          "desc": "'done' fin del guion · 'aJugar' botón ▶ JUGAR YA (paso final) · 'skip' saltó con B/Y"
+        },
+        {
+          "nombre": "paso",
+          "tipo": "number",
+          "desc": "paso del guion en el que acabó (0..8; -1 si no llegó a contarse)"
+        }
+      ],
+      "desde": "v3.6.101",
+      "notas": "M4 (r111): mide si la academia se termina o se salta ahora que ya NO bloquea la primera entrada (el HUB nace en ▶ JUGAR)."
+    },
+    {
+      "nombre": "ai_style",
+      "origen": "src/game/core/c12_pingponggame.js (onMatchStart, M5a r112)",
+      "momento": "arranque de un partido LOCAL con estilo de rival ≠ clásico",
+      "campos": [
+        {
+          "nombre": "est",
+          "tipo": "string",
+          "desc": "id del estilo activo (looper/chopero/bloqueador/atacante/defensivo/dejadas/allround/nervioso/veterano/gigante/relampago)"
+        },
+        {
+          "nombre": "dif",
+          "tipo": "string",
+          "desc": "dificultad de la CPU vigente"
+        }
+      ],
+      "desde": "v3.6.102",
+      "notas": "M5a (r112): mide qué personalidades eligen los jugadores. Sin emisión en online ni con estilo clásico."
+    },
+    {
+      "nombre": "carrera",
+      "origen": "src/game/core/c12_pingponggame.js (_carreraDesafiar / _carreraResultado, M5b r115)",
+      "momento": "arranque de un desafío de la escalera de carrera y cierre de su partido (resultado y ascenso)",
+      "campos": [
+        {
+          "nombre": "div",
+          "tipo": "string",
+          "desc": "división del desafío (bronce/plata/oro/diamante/leyenda)"
+        },
+        {
+          "nombre": "r",
+          "tipo": "string",
+          "desc": "id del rival retado (roko/marta/paco/lulu/paola/fede/carla/oscar/tomas/vera/gus/nina/rayo/muro/leyenda)"
+        },
+        {
+          "nombre": "est",
+          "tipo": "string",
+          "desc": "sólo en acc=reto: estilo del rival (personalidad M5a)"
+        },
+        {
+          "nombre": "acc",
+          "tipo": "string",
+          "desc": "reto (arranque) | win | loss (cierre del partido)"
+        },
+        {
+          "nombre": "promo",
+          "tipo": "number",
+          "desc": "sólo en acc=win/loss: 1 si hubo ascenso de división o corona de Leyenda"
+        }
+      ],
+      "desde": "v3.6.105",
+      "notas": "M5b (r115): mide el uso de la escalera de carrera (reto/rival y ascensos). Nunca en online (el desafío no existe allí)."
+    },
+    {
+      "nombre": "dobles",
+      "origen": "src/game/core/c12_pingponggame.js (case 'dobles' del menú, M7c r119)",
+      "momento": "cuando el dueño arma y arranca un partido de DOBLES 2v2 desde AJUSTES › JUEGO (único disparo por arranque)",
+      "campos": [
+        {
+          "nombre": "acc",
+          "tipo": "string",
+          "desc": "acción registrada: 'start' (partido de dobles arrancado)"
+        }
+      ]
+    },
+    {
+      "nombre": "net_ice",
+      "origen": "src/game/core/c09_red_netlink.js (r20/r22) — ciclo de vida del ICE",
+      "momento": "cuando el ICE de la sala online pasa de estado (fallos, túnel, srflx ok)",
+      "campos": [
+        {
+          "nombre": "st",
+          "tipo": "string",
+          "desc": "estado del enlace: failed | ok | tunel"
+        },
+        {
+          "nombre": "v2",
+          "tipo": "string",
+          "desc": "transporte v2 resultante (ok/pending/off)"
+        },
+        {
+          "nombre": "tun",
+          "tipo": "boolean",
+          "desc": "¿el enlace vive por el túnel PeerJS?"
+        }
+      ],
+      "pii": "sin PII — métrica técnica de red (patrón net_match)"
     }
   ],
   "hallazgos_ronda6": [
@@ -269,5 +496,6 @@
       },
       "curva": "muestras {m: minutos desde vr_start, fps} — hasta 24 por ciclo; dibuja la caída o estabilidad del rendimiento DENTRO de la sesión"
     }
-  }
+  },
+  "nota_r119": "r123 · +net_ice (r20/r22 ya lo emitía; el catálogo no lo documentaba — deriva sellada en la r23)"
 }

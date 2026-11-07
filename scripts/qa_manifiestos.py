@@ -18,13 +18,13 @@ import jsonschema
 
 RAIZ = Path('/home/z/my-project')
 CH = RAIZ / 'public' / 'championships'
-MODOS = ('oeste', 'magia', 'locura', 'estacion_orbital', 'valle_neon')
+MODOS = ('oeste', 'magia', 'locura', 'estacion_orbital', 'halloween')  # r85
 KINDS_OK = {'duelo', 'objetos', 'custom', 'prueba', 'final', 'tren', 'escudo',
-            'impulso', 'arkanoid'}
+            'impulso', 'arkanoid', 'dianas'}  # r85: dianas de la plantilla (halloween)
 # convención de ficheros de estado del rival (FASE 7)
 RIVAL_ESTADO = {
     'estacion_orbital': ('rival.webp', '.webp'),
-    'valle_neon': ('rival_kraken.png', '.png'),
+    'halloween': ('present.webp', '.webp'),
 }
 ok = fails = 0
 

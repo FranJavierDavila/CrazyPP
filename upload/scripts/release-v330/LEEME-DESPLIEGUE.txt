@@ -1,0 +1,115 @@
+==========================================================
+CRAZY PING PONG · V3.3.0-NUC1 (Reactor de energía inestable en la Estación
+Orbital + muros arkanoid sobre la precisión CCD)
+Guía de subida y despliegue — LEEME PRIMERO
+==========================================================
+
+QUÉ ES ESTE PAQUETE
+-------------------
+Tu V3.1.2-CCD1 (precisión de contacto por CCD SDF) más la V3.3.0-NUC1,
+que viste el campeonato de la ESTACIÓN ORBITAL con el arte del dueño:
+
+  · DECORADO REAL: los 6 planos de la sala de la estación (literas y
+    ventanal con la Tierra en los laterales, frente con esclusa, fondo,
+    suelo y techo con luminarias) — el mismo mecanismo que el vagón del
+    Salvaje Oeste.
+  · EL RIVAL ES EL ASTRO: 12 poses del artista con la convención del
+    clown (assets/<estado>.webp). En duelo mira focused, al lanzar un
+    superpoder se vuelve crazy y al caer defeated.
+  · MUROS ORBITALES: el mapa nuevo dibuja las etapas 2 y 4 como muros
+    de ladrillos (misma iconografía que el mapa del clown) y el camino
+    las juega como el ARKANOID de La Locura: variante 1 clásica (30
+    ladrillos, 2 min, 5 vidas) y variante 2 (54 rojos/azules + PISTOLA
+    LÁSER en la mano libre, ladrillo negro del tiempo +1 min, abanico
+    anti-atasco). Carteles de normas con la plantilla del artista.
+  · MAPA NUEVO en la pared izquierda (nodos re-medidos), CARTEL DE
+    SUPERPODER con la etiqueta de la casa (superpower.png) + miniatura
+    del poder, y RECORTABLES reales por el suelo (cohete, astro, lander
+    y telescopio).
+  · Y conserva TODO el recorrido: CCD SDF de contacto (CCD1), saque VR
+    realista con asistencia limitada (SRV2), gracia del saque + bote
+    honesto + prompt B (FEEL1), hall del anfitrión (HALL1), PRO CIRCUITO
+    (PLAY1), intro oficial (SRV1), física viva y palas con carácter
+    (FIS1) y CRAZY TV en directo.
+
+La CRAZY TV sigue igual: las partidas de la Quest se emiten como canales
+y cualquiera las mira EN DIRECTO sin visor. Sin relay, todo lo demás
+funciona como siempre.
+
+CONTENIDO DEL PAQUETE
+---------------------
+  index.html            El juego completo (V3.3.0-NUC1). Es tu game.html
+                        de siempre, renombrado para que el hosting lo sirva
+                        como página principal.
+  tv.html               CRAZY TV: el visor de emisiones en directo.
+  assets/               intro.mp4 (intro oficial, faststart), modelo de
+                        pala y pieles.
+  championships/        Los campeonatos de carpeta (5). (En el paquete
+                        ligera esta carpeta va preparada para copiar.)
+  vendor/               socket.io.min.js (cliente del relay).
+  live-service/         El relay de TV en Node (para Railway/Render/PC).
+  extras-nextjs/        Opcionales: el hub /descargas y el banner TV de
+                        la app Next.js del entorno de pruebas.
+  LEEME-DESPLIEGUE.txt  Esta guía.
+  CHULETA-DIRECTO.txt   La versión de una página, para pegar en el móvil.
+  VERSION.txt           Versión, fecha y hashes SHA256 de los ficheros
+                        clave (verificación de integridad).
+
+SUBIDA RÁPIDA (3 caminos)
+-------------------------
+1) CLOUDFLARE PAGES (recomendado, gratis y con HTTPS):
+   usa el paquete «CLOUDFLARE» (estático puro, sin TS ni package.json).
+   dash.cloudflare.com → Workers & Pages → Create → Pages → Upload
+   assets → arrastra el CONTENIDO del zip descomprimido → Deploy.
+   Queda en https://<algo>.pages.dev
+
+2) NETLIFY DROP (el más rápido):
+   usa el paquete «ligera». app.netlify.com/drop y arrastra el
+   CONTENIDO del zip. Queda en https://<algo>.netlify.app
+
+3) hosting propio: descomprime y sirve la carpeta con cualquier
+   servidor estático (nginx, caddy, python -m http.server…).
+
+EL RELAY DE LA TV (opcional)
+----------------------------
+Sin relay, el juego funciona 100 % (partido, entrenamiento,
+supervivencia, campeonatos y P2P). La TV en directo necesita el relay:
+
+  · PC/servidor: cd live-service && npm install && node server.mjs
+    (escucha en :3004).
+  · Railway/Render: sube el contenido de live-service/ a un repo de
+    GitHub (o usa el mini-zip «SOLO») y despliega: npm start.
+    Railway da una URL https://<algo>.up.railway.app
+
+En el juego, añade ?relay=<URL-del-relay> (ej.: ?relay=https://mi-relay.
+up.railway.app) y arranca una partida: se publica sola. Los
+espectadores abren tv.html con el mismo ?relay=.
+
+NOTA HTTPS (Quest)
+------------------
+El navegador de Meta Quest exige HTTPS (o localhost) para WebXR. Los
+hosting de arriba ya lo dan. Para LAN casera usa caddy o ngrok.
+
+VERIFICACIÓN
+------------
+  · Dentro del juego, la portada muestra el sello V3.3.0-NUC1.
+  · VERSION.txt trae los SHA256; unzip -t <paquete> verifica el ZIP.
+  · Consola del juego: window.__PP_VERSION debe ser '3.3.0-NUC1' y el
+    campeonato Estación Orbital luce el arte del dueño (sala, ASTRO,
+    mapa, normas y muros).
+
+PROBLEMAS FRECUENTES
+--------------------
+  · «La estación se ve con el arte antiguo»: borra la caché del
+    navegador de la Quest (Ajustes → Privacidad → Borrar datos) o
+    fuerza recarga; los JPG/WEBP nuevos pesan distinto y el navegador
+    a veces sirve los viejos.
+  · «El saque me sale flojo / lateral»: es el requisito funcionando —
+    la salida es la que produce TU gesto. Prueba el gatillo para el
+    lanzamiento asistido y golpea con la cara abierta hacia la red.
+    Afina en consola con __ppDebug.serveTune (assistAngle, assistMax…).
+  · «Estoy en el hall y no veo la cancha»: es el hub. Arranca un modo
+    desde el menú (o «A LA CANCHA») y sales al momento.
+  · «En partida quiero cambiar de modo»: menú → «⌂ VOLVER AL HALL».
+  · La TV no conecta: revisa el ?relay= y que el relay esté encendido
+    (node server.mjs). El juego avisa arriba a la derecha.

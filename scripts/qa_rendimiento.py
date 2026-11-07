@@ -25,7 +25,7 @@ from pathlib import Path
 RAIZ = Path('/home/z/my-project')
 SCR = RAIZ / 'scripts'
 PRESUPUESTO = SCR / 'presupuesto.json'
-MODOS = ('oeste', 'magia', 'locura', 'estacion_orbital', 'valle_neon')
+MODOS = ('oeste', 'magia', 'locura', 'estacion_orbital', 'halloween')  # r85: halloween sustituye a valle_neon (retirado)
 ok = fails = 0
 
 def chk(cond, label):
@@ -70,7 +70,7 @@ async def medidas_vivas():
         t1 = time.monotonic()
         r = await pg.evaluate("""async () => {
           const t0 = performance.now();
-          for (const m of ['estacion_orbital','oeste','magia','locura','valle_neon']) {
+          for (const m of ['estacion_orbital','oeste','magia','locura','halloween']) {
             await import('/championships/' + m + '/index.js');
           }
           return { ms: performance.now() - t0,

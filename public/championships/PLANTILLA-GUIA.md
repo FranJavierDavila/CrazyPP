@@ -74,6 +74,29 @@ está en `_plantilla/manifest.json` con comentarios bloque a bloque.
 ### 2.3 Claves de progreso (derivadas del storage, las mismas para todos)
 `stage · champ · fecha · puntos · duelwins · wins · rank · leyenda_1..5 · leyenda`
 
+### 2.4 SUPERPODER DE PALA · MATRIZ + SÚPER EFECTO + SÚPER IMÁN (en el NÚCLEO desde v3.6.34; ×3 v3.6.35; matriz + solo-campeonatos + súper efecto v3.6.36; imán + flechas propias + efecto notorio v3.6.37 — se hereda sola)
+La mecánica del superpoder de la pala del JUGADOR **no se implementa en los
+módulos**: vive en `game.html` y TODO campeonato (existente o nuevo) la
+hereda sin escribir una línea. Los superpoderes SOLO existen en los
+campeonatos (nunca en un partido contra la máquina fuera de ellos).
+
+| Regla | Valor |
+|---|---|
+| Dónde | **SOLO en campeonatos** (Modalidad Campeonato); el HALL y la calibración son zona neutra |
+| Carga | **cada 20 toques del rally** (20, 40, 60… — JAMÁS antes de 20, regla del dueño r56) = **+1 carga** de un poder ALEATORIO del registro `PODERES_PALA` — el rally largo premia con más cargas; rally nuevo = cuenta nueva |
+| Matriz | PODER DISTINTO → **ENTRA en la matriz** (orden de llegada; NO sustituye); MISMO poder → **acumula ×2, ×3 (tope 3**; lleno = «toc» y nada). Joystick ⟷ de cualquier mando CICLA el seleccionado (flechas ‹ › como sprites PROPIOS a los lados del icono — disco + oro + pulso —, sin envolver en los bordes); SOLO UN icono visible en la pala |
+| Vida | las cargas viven SOLO en la partida en curso; nueva partida = 0 |
+| Aviso | icono (PNG) anclado al mango (etiqueta ×N + flechas de matriz) + **voz NATIVA por poder e idioma** (es_ES davefx / en_US lessac, MP3 embebido) + jingle propio + háptica — nada dentro de la hoja |
+| Uso | **gatillo del mando LIBRE** libera 1 carga del poder SELECCIONADO: MEGA PALA = 15 s (pala ×1,30 + radio ×1,38 + canto oro; activo+gatillo = alarga +15 s); SÚPER EFECTO = ventana de **10 s desde la activación** (r56: sólo tiempo — sin tope de golpes; spin generado ×3 con tope 2×spinMax; Magnus ×2,2 y bote ×2,4 SOLO en la bola marcada y la firma del bote SÓLO sobre la MESA DEL RIVAL — el perjudicado siempre el rival; la bola marcada lleva **halo rojo** + anillo tintado por tipo; activo+gatillo = recarga); SÚPER IMÁN = campo de **10 s** (r56: «el efecto sólo dura 10 segundos») que **FRENA la bola** y la arrastra al CENTRO de la pala — GANCHO (radio 1,8 m · aceleración 26 m/s² · tope Δv 3,2 m/s por aproximación · freno exponencial 1,1/s con suelo 0,15 m/s); **NUNCA en los saques** (ni en nuestro saque ni sobre la bola del saque del rival); **cada impacto asistido válido gasta 1 carga** — el gatillo solo abre el campo; en `serve` el gatillo SACA |
+| Interruptor | conmutador **«Pala Mejorada»** en AJUSTES (`pp_pala_mejorada_v1`): apagado = pala 100 % normal |
+| Extender | poder nuevo = una entrada en `PODERES_PALA` (id + nombre i18n + voz ES/EN + PNG) + su semántica en `megaTrigger` — la matriz, el ciclo y el reparto aleatorio lo incluyen solo |
+
+**Prohibido para los módulos**: tocar `DIMS.hitAssistRadius`, escalar
+`g.paddleMounts`, pintar FX sobre la hoja del jugador ni definir
+`megaTrigger` — el núcleo los restauraría y el FX duplicado se ve dos veces.
+Los poderes del RIVAL (bolsa rotatoria, forajido, mago…) siguen siendo cosa
+de cada módulo: la norma solo cubre la pala del jugador.
+
 ---
 
 ## 3 · Comportamientos (kinds de prueba)
@@ -132,6 +155,34 @@ Nombres exactos en `assets/` (lista completa y medidas en `LEEME-ARTE.txt`):
 Reglas: PNG con alfa = recorte exacto sin borde · rival 512×1024 cuerpo entero ·
 medidas de sala canónicas 6.10×7.90 / 6.10×2.85 / 7.90×2.85 m.
 
+### 4.1 · NORMA DE EMOCIONES DEL RIVAL (REGLA del dueño, r57 — no negociable)
+
+Todos los rivales siguen LA MISMA convención `[rival]_[emoción]` (un fichero
+`<estado>.webp` por emoción en `assets/`) y el núcleo la aplica como NORMA
+en TODOS los campeonatos vía el hook opcional `rivalEmocion(st, info)` del
+módulo. El núcleo reparte: `_idle` (espera y principio) · `_crazy` (el rival
+anuncia su superpoder) · `_angry` (+ queja, rival pierde punto) · `_laughing`
+(+ risas burlonas, el jugador falla; luego `_victory` al asegurar el punto) ·
+`_focused` (5 toques) · `_picando` (10) · `_surprised` (15) · `_panic` (20) y
+a partir de ahí pool aleatorio `_loosing`/`_surprised`/`_panic` cada 5 toques ·
+`_defeated` (el rival pierde el partido, persistente). El módulo traduce la
+emoción estándar a SU abanico local (p. ej. el Clown viste `hungry` para
+`angry`) y pone SUS sonidos. Los campeonatos nuevos heredan la norma
+implementando el hook (ver `_plantilla/index.js`, método `rivalEmocion`).
+
+### 4.2 · BLANCOS del SÚPER CLONACIÓN (hook opcional `clonBlancos(out)`, r58)
+
+El 5.º poder de pala (núcleo, r58) crea 2 palas fantasma que CAZAN las
+molestias de visión del campeonato activo. Si el módulo define
+`clonBlancos(out)`, el núcleo lo llama cada frame con la ventana viva y el
+módulo rellena `out` con sus objetos molestos: `{ x, y, z, r, vivo, kill }`
+en el ESPACIO DE JUEGO (el mismo de `game.ball.pos` y `pad.pos`) — `vivo`
+false cuando el blanco ya no existe y `kill()` lo destruye con SU propio
+efecto (sonido/háptica del módulo, p. ej. `_popGlobo`). Los globos del
+Clown lo implementan; el confeti lo barre el propio núcleo
+(`createConfetti.kill`, c08). Regla: el hook es SOLO LECTURA del estado del
+módulo + `kill` — nunca escribe nada más.
+
 ---
 
 ## 5 · Validación y ciclo de vida
@@ -151,6 +202,10 @@ medidas de sala canónicas 6.10×7.90 / 6.10×2.85 / 7.90×2.85 m.
 3. **Contract 1**: el módulo habla con el núcleo SOLO vía champ_sdk.js y el export del contrato.
 4. **Quest first**: pools pre-creados, sin asignaciones por frame, dispose en leave.
 5. **Sin secretos** en ningún fichero versionado (GitHub Push Protection lo vigila).
+6. **Mega Pala = núcleo** (v3.6.34): la pala del JUGADOR y su superpoder son
+   NORMATIVA del núcleo (rally 11+ → carga; gatillo → 8 s; conmutador «Pala
+   Mejorada») — un módulo NUNCA escala `paddleMounts`, toca
+   `DIMS.hitAssistRadius` ni define `megaTrigger` (ver 2.4).
 
 ## 7 · Auditoría de origen (qué aportó cada campeonato a esta plantilla)
 

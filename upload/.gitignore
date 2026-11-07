@@ -1,0 +1,118 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+local-*
+.claude
+.z-ai-config
+*.log
+dev.log
+dev.out.log
+test
+prompt
+
+server.log
+# Skills directory
+/skills/
+# CRAZY PP · no versionar entregables ni transitorios
+download/
+tool-results/
+
+# CRAZY PP · entregables y transitorios fuera del repo
+public/descargas/
+scripts/staging-*/
+scripts/voice/
+upload/*.zip
+/telemetria/
+# clave de lectura del worker de telemetría (NUNCA commitear)
+scripts/worker-tele/.clave-produccion
+# token API de Cloudflare para despliegue nativo del worker (NUNCA commitear)
+scripts/worker-tele/.cf-token
+scripts/worker-tele/.cloudflare-token
+scripts/worker-tele/.telemetry-clave
+# PAT de GitHub para push (NUNCA commitear — lección Task 122: GitHub Push Protection)
+scripts/worker-tele/.github-pat
+
+# pycache global (lección rondas 16/19/24: NUNCA commitear)
+__pycache__/
+*.pyc
+.upload-backup/
+upload/_r65/
+
+scripts/worker-tele/.telemetry-pass
+
+# sandbox Node del banco de duelo (se regenera de src en cada QA)
+scripts/ppdiag/
+
+# credenciales de telemetría (NUNCA commitear)
+scripts/worker-tele/.telemetry-creds
+
+# r115 · respaldos locales >100 MB (GitHub los rechaza)
+respaldos/
+scripts/_upload_bak*/
+recovery/
+
+# r115 · árboles pesados locales (el push de ~600 MB los rechaza)
+npmcache/
+tmp/
+tools/
+recovery/
+beta1/
+scripts/_poder51/
+scripts/tmp_taller_e2e/
+scripts/manual_editor_src/
+scripts/v298/
+scripts/voice_poderes/
+scripts/_r1*_servido_game.html
+public/netlify-drop-*.zip
+public/pingpong-quest3-*.zip
+public/descargas/*.zip
+scripts_game/
+tmp_frames/
+scripts/tmp_seal/
+scripts/stage_*/
+scripts/v299_ref/
+
+# r126: área de ensamblaje del deploy de Pages (vive dentro del repo ahora)
+pages-site/
+
+# r127: ZIPs siempre fuera de git (límite GitHub 100 MB — este fósil pesa 101,6 MB)
+crazypp-v308-trn1-CLOUDFLARE.zip

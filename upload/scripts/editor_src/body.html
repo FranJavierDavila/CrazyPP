@@ -1,0 +1,113 @@
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="logo-mini">🏓</div>
+    <div class="topbar-titulos">
+      <b>CRAZY PING PONG · El Taller</b>
+      <span>Editor de campeonatos — versión del juego V2.124</span>
+    </div>
+    <button class="btn fantasma btn-mini" id="btn-diario" title="El diario de bordo">📒 Diario</button>
+    <button class="btn fantasma btn-mini" id="btn-inicio" title="Volver a mis campeonatos">🏠 Inicio</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ══════════ PANTALLA 1 · MIS CAMPEONATOS ══════════ -->
+  <section class="pantalla visible" id="screen-home">
+    <div class="hero">
+      <span class="kicker">🏗️ EL TALLER · aquí se crean</span>
+      <h1>Crea campeonatos nuevos <span class="naranja">como rellenar una ficha</span></h1>
+      <p>Un asistente te hace preguntas sencillas, tú pones la creatividad —la historia, el rival, los premios— y él monta todo lo demás. Nada de palabras raras: aquí no se programa, se conversa.</p>
+    </div>
+
+    <div class="seccion-tit">
+      <div class="icono">🗂️</div>
+      <h2>Mis campeonatos</h2>
+      <div class="lateral">
+        <button class="btn primario" id="btn-crear">＋ Crear campeonato nuevo</button>
+        <button class="btn" id="btn-importar" style="margin-left:8px">📥 Importar caja</button>
+        <input type="file" id="fichero-importar" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <p style="color:var(--tinta-suave); margin:0 0 14px; font-size:14.5px">
+      Cada campeonato vive en su propia caja, independiente de las demás. Partido, Entrenamiento y
+      Supervivencia viven en sus propias cajas del juego y <b>aquí no se pueden tocar</b>: solo se pueden
+      copiar como plantilla para empezar sin partir de cero.
+    </p>
+    <div id="lista-proys" class="lista-proys"></div>
+  </section>
+
+  <!-- ══════════ PANTALLA 2 · NUEVO CAMPEONATO ══════════ -->
+  <section class="pantalla" id="screen-nuevo">
+    <div class="seccion-tit" style="margin-top:6px">
+      <div class="icono">🌱</div>
+      <h2>¿Cómo quieres empezar?</h2>
+    </div>
+    <p style="color:var(--tinta-suave); margin:0 0 16px; font-size:15px">
+      Puedes empezar de cero o partir de una <b>plantilla</b>: una copia limpia de un campeonato que ya
+      existe. El original queda intacto, para siempre — solo se copia.
+    </p>
+    <div class="plantillas">
+      <button class="plantilla" data-plantilla="cero">
+        <span class="emoji">✨</span>
+        <b>Empezar de cero</b>
+        <span>Tu idea, tus decisiones. El asistente te acompaña fase a fase desde la primera pregunta.</span>
+      </button>
+      <button class="plantilla" data-plantilla="partido">
+        <span class="emoji">🏆</span>
+        <b>Copia de Partido</b>
+        <span>El clásico partido a 11 puntos como punto de partida. El original no se toca.</span>
+      </button>
+      <button class="plantilla" data-plantilla="entrenamiento">
+        <span class="emoji">🎯</span>
+        <b>Copia de Entrenamiento</b>
+        <span>Ideal para campeonatos de retos y práctica. El original no se toca.</span>
+      </button>
+      <button class="plantilla" data-plantilla="supervivencia">
+        <span class="emoji">🔥</span>
+        <b>Copia de Supervivencia</b>
+        <span> Aguanta la lluvia de bolas: perfecto para torneos de resistencia. El original no se toca.</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ══════════ PANTALLA 3 · EL ASISTENTE (7 FASES) ══════════ -->
+  <section class="pantalla" id="screen-editor">
+    <div class="estado-strip" id="estado-strip"></div>
+    <div class="stepper" id="stepper"></div>
+    <div class="tarjeta" id="panel-fase"></div>
+    <div class="asistente-nav">
+      <button class="btn fantasma" id="btn-anterior">← Anterior</button>
+      <span class="punto-guardado" id="punto-guardado"></span>
+      <span class="hueco"></span>
+      <button class="btn primario" id="btn-siguiente">Siguiente →</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pie">
+  Crazy Ping Pong V2.124 · El Taller es la zona 1 de 3: 🏗️ aquí se crea → 🔬 en el Laboratorio se prueba → 🏟️ en el Estadio se juega.
+</footer>
+
+<!-- ══════════ CAJÓN · DIARIO DE BORDO ══════════ -->
+<div class="cajon-fondo" id="cajon-fondo"></div>
+<aside class="cajon" id="cajon-diario" aria-label="Diario de bordo">
+  <header>
+    <span style="font-size:22px">📒</span>
+    <h3>El diario de bordo</h3>
+    <button class="btn fantasma btn-mini" id="btn-cerrar-cajon">Cerrar ✕</button>
+  </header>
+  <div class="cuerpo" id="diario-lista"></div>
+</aside>
+
+<!-- ══════════ MODAL GENÉRICO ══════════ -->
+<div class="modal-fondo" id="modal-fondo">
+  <div class="modal">
+    <h3 id="modal-tit">Título</h3>
+    <p id="modal-txt">Texto</p>
+    <div class="botones" id="modal-botones"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>

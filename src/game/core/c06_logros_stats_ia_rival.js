@@ -27,6 +27,13 @@ export class GameStats {
       pointsWon: 0, pointsLost: 0, aces: 0, bestRally: 0,
       winsByDiff: { easy: 0, medium: 0, hard: 0 },
       ach: {},
+      // M4 (r118) · ELO unificado (roadmap MEJORAS.md M4): el número de
+      // habilidad ÚNICO para IA local, escalera y P2P. eloHist guarda los
+      // últimos 40 cambios {t, d:±delta, m:modo}; mejorDia = el día con más
+      // victorias; hoyDia = contador vivo del día en curso.
+      elo: 1000, eloHist: [],
+      mejorDia: { dia: '', v: 0 },
+      hoyDia: { dia: '', v: 0 },
     };
     try {
       const raw = localStorage.getItem(this.KEY);
@@ -37,6 +44,11 @@ export class GameStats {
         this.data.ach = saved.ach || {};
       }
     } catch { /* datos corruptos: se recrean limpios */ }
+    // M4 · migración tolerante (datos viejos sin ELO o corruptos)
+    if (typeof this.data.elo !== 'number' || !(this.data.elo > 0)) this.data.elo = 1000;
+    if (!Array.isArray(this.data.eloHist)) this.data.eloHist = [];
+    if (!this.data.mejorDia || typeof this.data.mejorDia !== 'object') this.data.mejorDia = { dia: '', v: 0 };
+    if (!this.data.hoyDia || typeof this.data.hoyDia !== 'object') this.data.hoyDia = { dia: '', v: 0 };
   }
 
   save() {
@@ -85,14 +97,37 @@ export class GameStats {
     return out;
   }
 
-  /** Fin de PARTIDO. Devuelve logros nuevos. */
-  recordMatch(win, difficulty) {
+  /** Fin de PARTIDO. Devuelve logros nuevos.
+   *  M4 (r118) · ELO: info opcional { modo, oppElo } — modo 'ia'|'carrera'|
+   *  'p2p' elige el factor K (24 · 20 · 32: los duelos humanos valen más);
+   *  oppElo es el valor de referencia del rival (ELO_CPU / rivalPorElo /
+   *  simétrico en P2P). Sin info, K=24 y rival 1000 — compatibilidad
+   *  byte-idéntica con las llamadas antiguas de dos argumentos. */
+  recordMatch(win, difficulty, info) {
     const out = [];
+    const inf = info || {};
+    const KMOD = { ia: 24, carrera: 20, p2p: 32 };
+    const modo = KMOD[inf.modo] ? inf.modo : 'ia';
+    const miElo = this.data.elo;
+    const oppElo = (typeof inf.oppElo === 'number' && inf.oppElo > 0) ? inf.oppElo : 1000;
+    const esperado = 1 / (1 + Math.pow(10, (oppElo - miElo) / 400));
+    const delta = Math.round(KMOD[modo] * ((win ? 1 : 0) - esperado));
+    this.data.elo = Math.max(100, miElo + delta);
+    this.data.eloHist.push({ t: Date.now(), d: delta, m: modo });
+    if (this.data.eloHist.length > 40) {
+      this.data.eloHist.splice(0, this.data.eloHist.length - 40);
+    }
     if (win) {
       this.data.won++;
       this.data.streak++;
       if (this.data.streak > this.data.bestStreak) this.data.bestStreak = this.data.streak;
       this.data.winsByDiff[difficulty] = (this.data.winsByDiff[difficulty] || 0) + 1;
+      // M4 · mejor día: victorias de HOY contra el récord histórico del día
+      const d = new Date(); const p2 = (n) => (n < 10 ? '0' : '') + n;
+      const hoy = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+      const hv = (this.data.hoyDia.dia === hoy) ? this.data.hoyDia.v + 1 : 1;
+      this.data.hoyDia = { dia: hoy, v: hv };
+      if (hv >= (this.data.mejorDia.v || 0)) this.data.mejorDia = { dia: hoy, v: hv };
       if (this.unlock('primera')) out.push('primera');
       if (this.data.streak >= 3 && this.unlock('racha3')) out.push('racha3');
       if (difficulty === 'hard' && this.unlock('gigante')) out.push('gigante');
@@ -104,6 +139,11 @@ export class GameStats {
     return out;
   }
 }
+
+
+// M4 (r118) · gancho de tests (patrón __PP_WORLD: visible para la QA
+// qa_r118_dirigida — el dev de Next no sirve los módulos crudos)
+try { if (typeof window !== 'undefined') window.__PP_GameStats = GameStats; } catch { }
 
 
 /* =====================================================================
@@ -133,20 +173,59 @@ export class Rules {
     this.mode = 'match';            // 'match' (a 11) | 'survival' (rallyes infinitos)
     this.rallyesSurvived = 0;       // solo supervivencia: rallyes terminados
     this.oppLabel = 'cpu';          // v2.27: CLAVE ('cpu'|'rival') -> T('opp_…')
+    // v3.6.29 · MEJOR DE 3 (ronda 37, petición del dueño): el PARTIDO libre
+    // (vs CPU y online P2P) se disputa al mejor de 3 JUEGOS seguidos — quien
+    // gana 2 juegos es campeón del enfrentamiento. bestOf=1 conserva el
+    // partido a juego único de los campeonatos (sus duelos NO se tocan).
+    this.bestOf = 1;                // 1 = juego único · 3 = mejor de 3
+    this.gamesPlayer = 0;           // juegos ganados por el jugador
+    this.gamesAi = 0;               // juegos ganados por el rival
+    this.gameNo = 1;                // juego en curso dentro del enfrentamiento
+    this.firstServer = 'player';    // primer sacador del ENFRENTAMIENTO
+    // v3.6.71 · r79 · IDENTIDAD DE RALLYE para el multijugador binario:
+    // rallySeq se incrementa en CADA beginServeRally (los dos extremos lo
+    // hacen en el mismo instante lógico: el sacador al golpear y el
+    // receptor al recibir su BALL_HIT kind 1) — determinista y correlativo.
+    // _appliedRally guarda el último rally resuelto para no duplicar puntos
+    // (CLAIM recibido + detección local del mismo rally).
+    this.rallySeq = 0;
+    this._appliedRally = -1;
+    // v3.6.71 · r79: la guardia anti-duplicado SOLO vive con red v2 activa
+    // (NetLink.startV2 la enciende). En local y en los bancos QA el
+    // comportamiento es EXACTAMENTE el de siempre (regresión cero).
+    this._netGuard = false;
+    // v3.6.39 · HOOK de arranque: el núcleo (c12) registra aquí la recogida
+    // de los superpoderes de pala — CADA startMatch avisa y NINGUNA partida
+    // nueva hereda cargas/FX de la anterior (reporte del dueño: «los poderes
+    // de una partida previa que no se han gastado permanecen»). El árbitro
+    // no conoce la pala: solo avisa, el núcleo hace la recogida.
+    this.onMatchStart = null;
   }
 
-  /** Nombre del oponente para los mensajes (CPU o humano remoto). */
-  opp() { return T('opp_' + (this.oppLabel || 'cpu')); }
+  /** Nombre del oponente para los mensajes (CPU o humano remoto).
+   *  M5b (r115) · oppName: nombre PROPIO del rival de la escalera de
+   *  carrera (ROKO, MARTA…); lo pone el núcleo al desafiar y lo retira
+   *  al terminar. Sin él, el rótulo clásico opp_label de siempre. */
+  opp() {
+    if (this.oppName) return this.oppName;
+    return T('opp_' + (this.oppLabel || 'cpu'));
+  }
 
   other(s) { return s === 'player' ? 'ai' : 'player'; }
 
-  startMatch(mode) {
-    this.mode = mode === 'survival' ? 'survival' : 'match';
-    this.rallyesSurvived = 0;
+  /** v3.6.29: reset de UN juego (marcador y botes a cero SIN tocar la serie).
+   *  startMatch = resetGame + serie a cero + bestOf intacto. */
+  resetGame() {
     this.scorePlayer = 0;
     this.scoreAi = 0;
     this.totalPoints = 0;
-    this.server = 'player';
+    this.rallySeq = 0;          // v3.6.71 · r79
+    this._appliedRally = -1;    // v3.6.71 · r79
+    this.server = this.gameNo % 2 === 1
+      ? this.firstServer
+      : this.other(this.firstServer);   // cada juego saca el otro (ITTF)
+    this.gameOpener = this.server;  // v3.6.74 · r82: referencia de la rotación
+                                    // dentro del juego (firstServer es del PARTIDO)
     this.state = 'serve';
     this.stateTimer = 0;
     this.lastHitter = null;
@@ -156,14 +235,51 @@ export class Rules {
     this.validBounce = false;
     this.netTouched = false;
     this.rallyHits = 0;
+  }
+
+  startMatch(mode) {
+    // r84 · DUELOS LOCOS: nuevo id de modo — misma puntuación y fin de
+    // juego que 'match' (el árbitro no cambia NADA), sólo activa los
+    // poderes del núcleo (c12 §DUELOS). Normalizador explícito.
+    this.mode = mode === 'survival' ? 'survival'
+      : (mode === 'duelos' ? 'duelos' : 'match');
+    this.rallyesSurvived = 0;
+    // v3.6.29: NUEVO ENFRENTAMIENTO — la serie arranca a cero (bestOf se
+    // conserva: lo fija el juego en los caminos del partido libre).
+    this.gamesPlayer = 0;
+    this.gamesAi = 0;
+    this.gameNo = 1;
+    this.firstServer = 'player';
+    // r95 · ESTADÍSTICAS DEL PARTIDO (petición del dueño: «estadísticas al
+    // final de cada duelo»: velocidad máx. de bola, rally más largo y %
+    // precisión). Se RESETTAN en cada partida nueva y las alimenta el
+    // núcleo en vivo (vmax en animate, rally en el punto); la fanfarria
+    // las muestra al terminar. El % precisión sale del marcador final.
+    this.mStats = { vmax: 0, bestRally: 0 };
+    // r97 · MAPA DE CALOR (petición del dueño: «zonas donde pierdes puntos»):
+    // por PARTIDO, los botes del lado del jugador en los que se pierde el
+    // punto — rejilla 3×3 (corta/media/fondo × izq/centro/der). La fanfarria
+    // pinta el mapa del partido; el entrenamiento acumula el histórico
+    // (pp_heat_v1 vía c12). Reset por partido como mStats.
+    this.mHeat = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    this.resetGame();
     this.message = this.mode === 'survival'
       ? T('surv_start')
       : T('serve_wait');
+    // v3.6.39 · PARTIDA NUEVA = PALA LIMPIA: UN SOLO punto de aviso cubre
+    // TODOS los caminos (menú, revancha por gatillo, revancha de menú,
+    // cambio de modo, online, vuelta de calibración, hall y el reinicio
+    // automático del estado 'over' — imposible olvidar uno). Idempotente:
+    // el hall ya recogía antes de llamar startMatch y repetir no rompe.
+    try { if (this.onMatchStart) this.onMatchStart(); } catch (e) { /* nunca rompe el árbitro */ }
   }
 
-  /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea). */
+  /** Comienza el rally tras un golpe de saque válido (al caer, tras la línea).
+   *  v3.6.71 · r79: cada rallye recibe identidad única (rallySeq) — viaja
+   *  en los POINT_CLAIM/ACK del multijugador binario. */
   beginServeRally(server) {
     this.state = 'rally';
+    this.rallySeq++;
     this.lastHitter = server;
     this.isServeBall = true;
     this.serveOwnPending = true;
@@ -173,14 +289,20 @@ export class Rules {
     this.rallyHits = 0;
   }
 
-  registerPaddleHit(who) {
+  registerPaddleHit(who, remote) {
     if (this.state !== 'rally') return [];
     // Nadie puede golpear dos veces seguidas (doble golpe = falta)
     if (who === this.lastHitter) {
       return this.applyPoint(this.other(who), 'dblhit');
     }
-    // Volea: golpear antes de que la bote en su campo el receptor
-    if (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce)) {
+    // Volea: golpear antes de que la bote en su campo el receptor.
+    // r81 · la VOLEA la juzga el ÁRBITRO DE ESA MITAD (spec §7): un golpe
+    // REMOTO llega ya validado por el árbitro del que golpea (si hubiera
+    // volea, SU mitad la cantó y llega por CLAIM) — el fantasma propio va
+    // SIEMPRE un poco por detrás del vuelo real (avance ≤120 ms + lag de
+    // red) y un juicio de volea local daba FALTAS FALSAS que partían el
+    // marcador (el duelo simulado r81 lo cazó en vivo).
+    if (!remote && (this.serveOwnPending || (this.mustBounceOpp && !this.validBounce))) {
       return this.applyPoint(this.lastHitter, 'volley');
     }
     this.lastHitter = who;
@@ -192,6 +314,19 @@ export class Rules {
   }
 
   applyPoint(winner, cause) {
+    // v3.6.71 · r79: guardia anti-duplicado — un rallye SOLO puede
+    // resolverse una vez (la detección local y el CLAIM remoto del mismo
+    // rallyId no pueden sumar dos). SOLO con red v2 activa: en local el
+    // árbitro es único y la guardia no existe (comportamiento intacto).
+    if (this._netGuard && this._appliedRally === this.rallySeq) return [];
+    this._appliedRally = this.rallySeq;
+    return this._applyPointSinGuard(winner, cause);
+  }
+
+  /** cuerpo real de applyPoint SIN la guardia de rally (la pone el
+   *  llamador: applyPoint con rallySeq vivo, forcePoint con rallyId
+   *  del CLAIM — nunca las dos, lección de la capa BN en página). */
+  _applyPointSinGuard(winner, cause) {
     if (this.mode === 'survival') {
       // SUPERVIVENCIA: no hay puntos; lo que cuenta es el rallye terminado.
       // La CPU acelera con cada rallye (lo gestiona el juego con el intent).
@@ -225,12 +360,34 @@ export class Rules {
     return [{ type: 'retry-serve', cause }];
   }
 
-  computeNextServer() {
-    const n = this.totalPoints;
-    if (this.scorePlayer >= 10 && this.scoreAi >= 10) {
-      return n % 2 === 0 ? 'player' : 'ai';
+  /** v3.6.71 · r79 · PUNTO IMPUESTO POR LA RED: aplica el resultado de un
+   *  POINT_CLAIM del extremo con autoridad, con guardia por rallyId. Espeja
+   *  EXACTAMENTE applyPoint (mismo intent, mismos mensajes) para que el
+   *  receptor viva el punto idéntico al local. */
+  forcePoint(winner, cause, rallyId) {
+    if (rallyId !== undefined && rallyId !== null) {
+      if (this._appliedRally === rallyId) return [];
+      this._appliedRally = rallyId;
     }
-    return Math.floor(n / 2) % 2 === 0 ? 'player' : 'ai';
+    return this._applyPointSinGuard(winner, cause);
+  }
+
+  computeNextServer() {
+    // v3.6.74 · r82 · LA ROTACIÓN ES RELATIVA AL PRIMER SACADOR DEL JUEGO
+    // (gameOpener), no a 'player': en el INVITADO el abridor es 'ai' en SU
+    // perspectiva (el anfitrión abre) y la fórmula antigua (hardcode
+    // 'player') daba el sacador AL REVÉS desde el primer punto — el
+    // anfitrión creía sacar él y el invitado TAMBIÉN: dos bolas HELD,
+    // ningún saque llega, el partido se atasca tras el punto 1 en
+    // dispositivos reales (cazado EN VIVO por la batería multi). El espejo
+    // de perspectiva sale gratis derivándolo del abridor del juego.
+    const n = this.totalPoints;
+    const base = this.gameOpener || this.firstServer;
+    const otro = base === 'player' ? 'ai' : 'player';
+    if (this.scorePlayer >= 10 && this.scoreAi >= 10) {
+      return n % 2 === 0 ? base : otro;   // deuce: alterna CADA punto
+    }
+    return Math.floor(n / 2) % 2 === 0 ? base : otro;
   }
 
   handleEvents(events) {
@@ -328,13 +485,45 @@ export class Rules {
           (this.scorePlayer >= 11 || this.scoreAi >= 11) &&
           Math.abs(this.scorePlayer - this.scoreAi) >= 2;
         if (finished) {
+          const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
+          const p = this.scorePlayer, q = this.scoreAi;
+          // v3.6.29 · MEJOR DE 3: el juego contado alimenta la serie; el
+          // enfrentamiento se decide al ganar 2 juegos (2·victorias > bestOf).
+          // r84 · DUELOS LOCOS entra en la serie (idéntico al 'match': los
+          // CLAIM/ACK y el espejo de marcador son agnósticos del modo).
+          if ((this.mode === 'match' || this.mode === 'duelos') && this.bestOf > 1) {
+            if (winner === 'player') this.gamesPlayer++; else this.gamesAi++;
+            const a = this.gamesPlayer, b = this.gamesAi;
+            const serieAcabada = a * 2 > this.bestOf || b * 2 > this.bestOf;
+            if (!serieAcabada) {
+              // Juego terminado, el enfrentamiento SIGUE: juego nuevo con la
+              // serie ya escrita y el saque cambiado (el otro abre).
+              this.gameNo++;
+              this.resetGame();
+              this.message = winner === 'player'
+                ? T('game_won_you', { p, q, a, b })
+                : T('game_won_opp', { opp: this.opp(), p, q, a, b });
+              intents.push({
+                type: 'serve', server: this.server,
+                gameEnd: { winner, p, q, gp: a, ga: b, bo: this.bestOf },
+              });
+              return intents;
+            }
+            // SERIE ACABADA: mensaje con el enfrentamiento completo.
+            this.state = 'over';
+            this.stateTimer = 8;
+            this.message = winner === 'player'
+              ? T('over_win_bo', { p, q, a, b })
+              : T('over_lose_bo', { opp: this.opp(), p, q, a, b });
+            intents.push({ type: 'game-over', winner });
+            return intents;
+          }
+          // v2.26: mensajes alineados con los carteles oficiales (v2.27: i18n)
           this.state = 'over';
           this.stateTimer = 8;
-          const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
-          // v2.26: mensajes alineados con los carteles oficiales (v2.27: i18n)
           this.message = winner === 'player'
-            ? T('over_win', { p: this.scorePlayer, q: this.scoreAi })
-            : T('over_lose', { p: this.scorePlayer, q: this.scoreAi });
+            ? T('over_win', { p, q })
+            : T('over_lose', { p, q });
           intents.push({ type: 'game-over', winner });
         } else {
           this.state = 'serve';
@@ -379,12 +568,19 @@ export class OpponentAI {
     this.hitCooldown = 0;
     this.errX = 0;
     this.errY = 0;
+    this._ppPortalVisto = false;   // v3.6.42: flanco de la marca del portal
     this.swing = null;   // animación de follow-through del último golpe (v2.17)
     this.prep = new THREE.Vector3();   // retroceso de preparación (visual)
     // v2.23: lado del golpe en curso — +1 derecha (forehand), -1 revés.
     // Se sortea al APARECER la bola (con la posición del cuerpo aún lejos del
     // punto de contacto) y se mantiene durante todo el rallye de esa bola.
     this.fhSide = 1;
+    // r95 · RIVALES CON ESTILO VISIBLE (petición del dueño): la personalidad
+    // del manifest (agresivo/defensivo) SE NOTA en la COLOCACIÓN y en las
+    // CELEBRACIONES. El juego inyecta { zIdle, bias, celeb } aquí; cero =
+    // comportamiento clásico byte-idéntico (toggle AJUSTES › JUEGO).
+    this.style = null;
+    this.celebT = 0;   // celebración en curso (segundos que quedan)
   }
 
   setConfig(cfg) { this.cfg = cfg; }
@@ -394,10 +590,12 @@ export class OpponentAI {
     this.vel.set(0, 0, 0);
     this.predictValid = false;
     this.hitCooldown = 0;
+    this._ppPortalVisto = false;   // v3.6.42: el flanco del portal a limpio
   }
 
   update(dt, ball, ctx) {
     this.hitCooldown -= dt;
+    if (this.celebT > 0) this.celebT -= dt;   // r95: celebración con estilo
     if (this.swing) {
       this.swing.t += dt;
       if (this.swing.t > this.swing.dur) this.swing = null;
@@ -405,6 +603,24 @@ export class OpponentAI {
     const C = DIMS.tableCenterZ;
     const sign = this.sign;
     const toward = ball.vel.z * sign > 0;
+
+    // v3.6.42 · CORRECCIÓN CRÍTICA (el dueño: «he sacado y no las
+    // devuelve… una cosa es que se le penalice en un % y otra que se anule
+    // su respuesta»): en r49 la predicción moría CADA FRAME mientras la
+    // marca ppPortal estuviera viva — y la marca solo se limpia al
+    // devolver la propia IA, así que la IA pasaba casi TODOS los frames
+    // sin predicción válida (deriva perezosa) y no volvía a golpear NUNCA.
+    // AHORA la muerte de la predicción es PUNTUAL (flanco de subida de la
+    // marca): la bola que desaparece por el portal borra la predicción UNA
+    // sola vez y la IA reacciona tras SU predictInterval natural. La
+    // penalización queda en los % de siempre (error ×1,6 · piernas ×0,75 ·
+    // +10 % de fallo decidido) y SOLO con la ventana del poder viva.
+    if (ball.ppPortal && !this._ppPortalVisto) {
+      this._ppPortalVisto = true;
+      this.predictValid = false;
+      this.predictTimer = Math.max(this.predictTimer, this.cfg.predictInterval);
+    }
+    if (!ball.ppPortal && this._ppPortalVisto) this._ppPortalVisto = false;
 
     if (ctx.canHit && toward) {
       this.predictTimer -= dt;
@@ -420,8 +636,17 @@ export class OpponentAI {
             // bola NUEVA viniendo: el error de puntería se sortea UNA sola vez
             // y se mantiene durante todo el rallye (antes se re-sorteba cada
             // re-predicción y la pala temblaba persiguiendo objetivos distintos)
-            this.errX = gauss() * this.cfg.errStd;
-            this.errY = gauss() * this.cfg.errStd * 0.6;
+            // v3.6.37 · SÚPER EFECTO NOTORIO (petición del dueño): la bola
+            // MARCADA «dificulta en un %» el éxito del rival — el error se
+            // sortea con la marca YA puesta (el golpe con el poder activo
+            // precede al vuelo) y se amplifica ×efectoRivalErrMul.
+            // v3.6.41 · SÚPER PORTAL: la bola que reaparece tras el portal
+            // amplifica TAMBIÉN el error (×portalRivalErrMul) — el sorteo
+            // de una bola recién aparecida es ciego por naturaleza.
+            const eMulIA = (ball.ppEfecto ? (DIMS.efectoRivalErrMul || 1) : 1) *
+              (ball.ppPortal ? (DIMS.portalRivalErrMul || 1) : 1);
+            this.errX = gauss() * this.cfg.errStd * eMulIA;
+            this.errY = gauss() * this.cfg.errStd * 0.6 * eMulIA;
             this.predict.copy(strike.point);
             // v2.23: ¿golpe de DERECHA o de REVÉS? Según el lado en que queda
             // la bola respecto al cuerpo al empezar a reaccionar (con sign:
@@ -465,6 +690,10 @@ export class OpponentAI {
     } else if (this.predictValid) {
       const baseline = C + sign * DIMS.tableHalfLength;
       let inDist = (this.predict.z - baseline) * -sign;
+      // r95 · ESTILO VISIBLE: el agresivo se ADELANTA al golpe (juega más
+      // cerca de la mesa), el defensivo espera más atrás. bias en metros,
+      // simétrico para los dos lados (inDist es normalizada por sign).
+      inDist -= (this.style ? (this.style.bias || 0) : 0);
       inDist = THREE.MathUtils.clamp(inDist, -0.45, DIMS.tableHalfLength + 0.15);
       const zClamp = baseline + inDist * -sign;
       let yClamp = THREE.MathUtils.clamp(this.predict.y + this.errY, 0.55, 1.55);
@@ -478,16 +707,29 @@ export class OpponentAI {
         zClamp,
       );
     } else {
+      // r95 · ESTILO VISIBLE · COLOCACIÓN: el agresivo espera MÁS CERCA de
+      // la mesa (zIdle positivo hacia la red), el defensivo más atrás.
       tmpT.set(
         this.home.x + ball.pos.x * 0.3,
         this.home.y,
-        this.home.z + (toward ? -sign * 0.2 : 0),
+        this.home.z + (toward ? -sign * 0.2 : 0) +
+          (this.style ? (this.style.zIdle || 0) * -sign : 0),
       );
     }
 
     tmpD.copy(tmpT).sub(this.pos);
     const dist = tmpD.length();
-    const desiredSpeed = Math.min(this.cfg.maxSpeed, dist * 4.5);
+    // v3.6.37 · SÚPER EFECTO NOTORIO: con la bola marcada viniendo, el rival
+    // va un % más lento (le CUESTA llegar — visible y honesto: la física de
+    // salida no cambia, solo las piernas de la IA mientras sufre el efecto).
+    // v3.6.41 · SÚPER PORTAL: la bola recién aparecida también frena las
+    // piernas (×portalRivalVel) — dos poderes a la vez se multiplican.
+    let vMulIA = 1;
+    if (toward) {
+      if (ball.ppEfecto) vMulIA *= (DIMS.efectoRivalVel || 1);
+      if (ball.ppPortal) vMulIA *= (DIMS.portalRivalVel || 1);
+    }
+    const desiredSpeed = Math.min(this.cfg.maxSpeed * vMulIA, dist * 4.5);
     if (dist > 1e-5) tmpD.setLength(desiredSpeed); else tmpD.set(0, 0, 0);
     this.vel.lerp(tmpD, Math.min(1, dt * this.cfg.accel));
     this.pos.addScaledVector(this.vel, dt);
@@ -501,7 +743,16 @@ export class OpponentAI {
     // y el contacto se produce en el punto exacto de ese trayecto. Tope de
     // longitud 0,5 m: un salto mayor es un TELEPORTE (reposición de saque,
     // resets) y no debe contar como contacto.
-    const reach = 0.21;
+    // r92 · CALABAZA AL ALCANCE DE LA PALA (informe del dueño: «el rival no
+    // la golpea correctamente con su pala, parece que tiene un desplaza-
+    // miento y el efecto no queda bien»): la calabaza del Halloween mide
+    // Ø 0,13 m (3× la bola) pero el contacto saltaba con el alcance gené-
+    // rico de 21 cm — la pala se paraba JUNTO a la calabaza, nunca sobre
+    // ella. Con la marca ppCalabaza (que ponia el módulo en la bola): el
+    // alcance baja a 0,12 m para que el golpe nazca CERCA de la piel de
+    // la calabaza y el ajuste del punto (abajo) sea de centímetros, no un
+    // salto visible. Sin marca: el alcance probado de siempre.
+    const reach = ball.ppCalabaza ? 0.12 : 0.21;
     const r2 = reach * reach;
     let cx = ball.pos.x, cy = ball.pos.y, cz = ball.pos.z;   // punto de contacto
     const prevB = ctx.prevBall || null;
@@ -516,11 +767,67 @@ export class OpponentAI {
         if (this.pos.distanceToSquared(_segC) > r2) return null;
       } else if (this.pos.distanceToSquared(ball.pos) > r2) return null;
     } else if (this.pos.distanceToSquared(ball.pos) > r2) return null;
+    // r93 · CONTACTO TANGENTE INVERTIDO (informe del dueño tras la r92:
+    // «existe un desfase de la bola cuando la golpea el rival… es una
+    // deriva de precisión entre ambas palas»): la r92 arrastraba el PUNTO
+    // DE CONTACTO hacia la pala y RECOLOCABA la bola en él — con la
+    // calabaza (Ø 0,13 m, 3× la bola) ese salto de hasta 4,5 cm SE VE
+    // (la calabaza salta hacia la pala en el frame del golpe) y encima el
+    // follow-through arrancaba con la hoja 5 cm por encima del contacto.
+    // El golpe del DUEÑO «está correcto» porque su física jamás recoloca
+    // la bola — la deriva era SÓLO del lado de la IA. r93: la bola se
+    // queda en el punto del barrido y es la HOJA la que viaja a la piel.
+    // r97 · INFORME DEL DUEÑO («otra vez veo la calabaza desincronizada
+    // con el bote de la pelota y el rival golpea en un sitio diferente a
+    // donde está la calabaza»): el punto del barrido (cx,cy,cz) vive en el
+    // SUBPASO de física — hasta UN FRAME POR DETRÁS de la posición
+    // RENDERIZADA (ballMesh se sincroniza al final del update). Con la
+    // bola normal (Ø 4 cm, veloz) ese retroceso es invisible; la calabaza
+    // (Ø 13 cm) SALTABA hacia atrás en el frame del golpe y la hoja
+    // golpeaba donde la calabaza YA NO ESTÁ. DOS garantías duras ahora:
+    // (1) LA BOLA CALABAZA JAMÁS SE RECOLOCA al punto del barrido — igual
+    //     que la física del dueño, que nunca recoloca la bola: la salida
+    //     nace de ball.pos VIVO (frame renderizado) y el solver apunta al
+    //     MISMO blanco — trayectoria honesta, cero saltos.
+    // (2) LA HOJA VIAJA A LA CALABAZA RENDERIZADA: el tangente se calcula
+    //     desde ball.pos (donde la calabaza está PINTADA este frame), no
+    //     desde el punto del subpaso — centro de calabaza a 7,5 cm del
+    //     centro de hoja (radio 0,065 + canto), flat sin ascenso (r93).
+    let toca = null;                      // punto tangente para el swing (r93)
+    if (ball.ppCalabaza) {
+      const dcx = ball.pos.x - this.pos.x,
+            dcy = ball.pos.y - this.pos.y,
+            dcz = ball.pos.z - this.pos.z;
+      const dC = Math.sqrt(dcx * dcx + dcy * dcy + dcz * dcz) || 1e-6;
+      const TOCA = 0.075;
+      const sT = Math.min(1, TOCA / dC);  // nunca pasarse de la bola viva
+      toca = { x: this.pos.x + dcx * sT,
+               y: this.pos.y + dcy * sT,
+               z: this.pos.z + dcz * sT };
+    }
     if ((cz - C) * sign < 0.04) return null;
     if (cy < DIMS.tableTopY - 0.08 || cy > 1.65) return null;
 
     const ballSpeed = ball.vel.length();
-    const pMiss = this.cfg.missBase + Math.max(0, ballSpeed - 7) * 0.05;
+    // r113 · CPU INTELIGENTE (petición del dueño: «la CPU no falla bolas
+    // fáciles; sólo escoradas, rápidas o de colocación extrema»). Antes el
+    // fallo era un impuesto FIJO (missBase) que repartía muertes por igual:
+    // la IA fallaba bolas cómodas a la pala. Ahora el fallo es ESFUERZO:
+    //  · base tibia (la torpeza del nivel — easy sigue fallando algo más);
+    //  · RAPIDA: +0,06 por m/s por encima de 7 (sube un pelín: 0,05);
+    //  · ESCORADA/COLOCACIÓN EXTREMA: +0,60 por cada metro de VIAJE por
+    //    encima de 0,85 — una bola al rincón que obliga a desplazarse 1,6 m
+    //    se paga (+0,45); una bola cómoda junto a la pala NO se falla.
+    //  · portal: igual de decisivo que siempre (DIMS.portalMissExtra).
+    // Los estilos M5a (errStd/miss ×) siguen multiplicando la cfg — sus
+    // clamps acotan y la distinción entre personalidades se conserva.
+    // (NOTA: el `reach` de arriba es el RADIO de la pala — este es `viaje`.)
+    const viaje = Math.hypot(cx - this.pos.x, cz - this.pos.z);
+    const pMiss = Math.min(0.85,
+      this.cfg.missBase * 0.25 +
+      Math.max(0, ballSpeed - 7) * 0.06 +
+      Math.max(0, viaje - 0.85) * 0.60 +
+      (ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0));
     this.hitCooldown = 0.55;
     // v2.84 · GOLPE MALO (petición del artista): el fallo decidido de la IA
     // YA NO deja pasar la bola a través de la pala (efecto pésimo). La toca
@@ -528,14 +835,18 @@ export class OpponentAI {
     // se marcha larga/fuera o cruza floja y alta — el punto se pierde igual
     // pero con contacto, sonido y pose creíbles en lugar del cruce fantasma.
     if (Math.random() < pMiss) {
-      if (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z) {
+      // r97: la calabaza NUNCA se recoloca (la bola viva manda — ver arriba)
+      if (!ball.ppCalabaza &&
+          (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z)) {
         ball.pos.set(cx, cy, cz);   // recolocar en el punto del barrido
       }
-      return this.mishit(ball);
+      return this.mishit(ball, toca);   // r93: el swing también toca la piel
     }
     // v2.84: golpe LIMPIO con contacto barrido — la salida parte del punto
-    // real donde la pala alcanzó la bola (no del punto ya pasado)
-    if (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z) {
+    // real donde la pala alcanzó la bola (no del punto ya pasado).
+    // r97: con la calabaza la bola VIVA manda (cero saltos visibles).
+    if (!ball.ppCalabaza &&
+        (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z)) {
       ball.pos.set(cx, cy, cz);
     }
 
@@ -621,6 +932,12 @@ export class OpponentAI {
     // bota donde apunta en vez de 15-27 cm corto
     const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
     ball.spin.copy(shotSpin);
+    ball.ppEfecto = false;   // v3.6.36: la devolución de la IA LIMPIA la marca
+    ball.ppEfectoTipo = '';  // v3.6.46: fuera también el tipo de spin
+    ball.ppEfectoLado = 0;
+    ball.ppPortal = false;   // v3.6.41: la devolución de la IA LIMPIA el portal
+    ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
+    if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
 
     // swing visual: follow-through del golpe en la dirección del tiro.
     // v2.23: lleva TAMBIÉN el tipo de golpe, el lado (derecha/revés) y la
@@ -629,7 +946,11 @@ export class OpponentAI {
     this.swing = {
       t: 0,
       dur: 0.3,
-      contact: ball.pos.clone(),
+      // r93 · CALABAZA: el swing nace en el punto TANGENTE (la hoja en la
+      // piel de la calabaza) — la bola NO se mueve del punto barrido.
+      contact: toca ? new THREE.Vector3(toca.x, toca.y, toca.z)
+                    : ball.pos.clone(),
+      flat: !!toca,               // sin ascenso inicial: hoja ya EN contacto
       dir: new THREE.Vector3(v.x, 0, v.z).normalize(),
       vdir: v.clone().normalize(),
       speed: THREE.MathUtils.clamp(v.length() / 6, 0.6, 1.5),
@@ -651,7 +972,7 @@ export class OpponentAI {
    *  La física (red, mesa, suelo) y el árbitro EXISTENTES resuelven cada
    *  desenlace sin ningún cambio: mismo reparto de puntos, pero el fallo
    *  se VE (la bola sale despedida torpe de la pala) y se OYE (toc flojo). */
-  mishit(ball) {
+  mishit(ball, toca) {
     const s = this.sign;
     const r = Math.random();
     if (r < 0.5) {
@@ -669,9 +990,18 @@ export class OpponentAI {
     }
     _miV.addScaledVector(ball.vel, 0.05);   // hereda un 5% del impulso entrante
     ball.spin.set((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 10, 0);
+    ball.ppEfecto = false;   // v3.6.36: el golpe torpe de la IA LIMPIA la marca
+    ball.ppEfectoTipo = '';  // v3.6.46: fuera también el tipo de spin
+    ball.ppEfectoLado = 0;
+    ball.ppPortal = false;   // v3.6.41: el golpe torpe LIMPIA el portal
+    ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
+    if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
     this.swing = {
       t: 0, dur: 0.26,
-      contact: ball.pos.clone(),
+      // r93 · CALABAZA: contacto tangente también en el golpe torpe
+      contact: toca ? new THREE.Vector3(toca.x, toca.y, toca.z)
+                    : ball.pos.clone(),
+      flat: !!toca,
       dir: _miD.copy(_miV).setY(0).normalize().clone(),
       vdir: _miD.copy(_miV).normalize().clone(),
       speed: 0.5,                 // follow-through corto: toque sin cuerpo

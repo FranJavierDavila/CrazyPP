@@ -1,0 +1,820 @@
+export function createRoom() {
+  const g = new THREE.Group();
+  const zC = (DIMS.roomBackZ + DIMS.roomFrontZ) / 2;
+  const depth = DIMS.roomBackZ - DIMS.roomFrontZ;
+
+  const floorMat = new THREE.MeshStandardMaterial({ color: COLORS.floor, roughness: 0.9, metalness: 0.05 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(DIMS.roomHalfX * 2, depth), floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, 0, zC);
+  floor.receiveShadow = true;
+  g.add(floor);
+
+  const grid = new THREE.GridHelper(Math.max(DIMS.roomHalfX * 2, depth), 20, 0x4a4038, 0x2c2622);
+  grid.position.set(0, 0.002, zC);
+  g.add(grid);
+
+  // refs para los TEMAS DE SALA (v2.14): applyTheme recolorea en vivo
+  g.userData.floorMat = floorMat;
+  g.userData.grid = grid;
+
+  // v2.85: CADA PARED tiene SU material (antes compartían uno) para que el
+  // campeonato activo pueda vestirlas con arte distinto por plano (room).
+  // Visualmente idéntico al núcleo clásico: mismos color/roughness y el
+  // applyTheme recolorea las cuatro. Orden FIJO: [izq, der, trasera, frontal].
+  const wallMats = [0, 1, 2, 3].map(() => new THREE.MeshStandardMaterial({ color: COLORS.wall, roughness: 1 }));
+  g.userData.wallMats = wallMats;
+  g.userData.wallMat = wallMats[0];   // compat con referencias antiguas
+  const mkWall = (i, w, h, pos, rotY) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMats[i]);
+    m.position.copy(pos);
+    m.rotation.y = rotY;
+    g.add(m);
+  };
+  const cx = DIMS.roomHalfX;
+  mkWall(0, depth, DIMS.roomHeight, new THREE.Vector3(-cx, DIMS.roomHeight / 2, zC), Math.PI / 2);
+  mkWall(1, depth, DIMS.roomHeight, new THREE.Vector3(cx, DIMS.roomHeight / 2, zC), -Math.PI / 2);
+  mkWall(2, DIMS.roomHalfX * 2, DIMS.roomHeight, new THREE.Vector3(0, DIMS.roomHeight / 2, DIMS.roomBackZ), Math.PI);
+  mkWall(3, DIMS.roomHalfX * 2, DIMS.roomHeight, new THREE.Vector3(0, DIMS.roomHeight / 2, DIMS.roomFrontZ), 0);
+
+  const ceil = new THREE.Mesh(
+    new THREE.PlaneGeometry(DIMS.roomHalfX * 2, depth),
+    new THREE.MeshStandardMaterial({ color: 0x14171b, roughness: 1 }),
+  );
+  ceil.rotation.x = Math.PI / 2;
+  ceil.position.set(0, DIMS.roomHeight, zC);
+  g.add(ceil);
+  g.userData.ceilMat = ceil.material;
+
+  const panelMat = new THREE.MeshBasicMaterial({ color: 0xf5efe2 });
+  g.userData.panelMat = panelMat;
+  g.userData.panels = [];   // v2.85: refs para ocultarlos bajo el arte del techo
+  for (const px of [-1.4, 1.4]) {
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.4), panelMat);
+    panel.rotation.x = Math.PI / 2;
+    panel.position.set(px, DIMS.roomHeight - 0.01, -1.2);
+    g.add(panel);
+    g.userData.panels.push(panel);
+  }
+
+  const stripMat = new THREE.MeshBasicMaterial({ color: COLORS.accentAmber });
+  g.userData.stripMat = stripMat;
+  g.userData.strips = [];   // v2.85: refs para ocultarlas bajo el arte de las paredes
+  for (const sx of [-cx + 0.02, cx - 0.02]) {
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, depth * 0.9), stripMat);
+    strip.position.set(sx, 2.1, zC);
+    g.add(strip);
+    g.userData.strips.push(strip);
+  }
+
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.26, 0.33, 48),
+    new THREE.MeshBasicMaterial({
+      color: COLORS.accentAmber, transparent: true, opacity: 0.45, side: THREE.DoubleSide,
+    }),
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(0, 0.004, 0);
+  g.add(ring);
+  g.userData.ringMat = ring.material;
+
+  // v2.30: FUERA las vallas publicitarias del suelo — no aportan nada y
+  // distraen al jugador (petición expresa: "fuera todos los carteles del
+  // suelo con los mensajes"). La pista queda limpia.
+
+  return g;
+}
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { COLORS, DIMS, bolaAspectoPorId } from './c02_cfg_escena.js';
+import { tmpV } from './c04_fisica_ccd.js';
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
+
+export function createTable() {
+  const g = new THREE.Group();
+  const topY = DIMS.tableTopY;
+  const L = DIMS.tableHalfLength * 2;
+  const W = DIMS.tableHalfWidth * 2;
+
+  const topMat = new THREE.MeshStandardMaterial({ color: COLORS.tableBlue, roughness: 0.55, metalness: 0.05 });
+  const top = new THREE.Mesh(new THREE.BoxGeometry(W, DIMS.tableThickness, L), topMat);
+  top.name = 'ppTableTop';   // v2.56: los campeonatos pueden teñir la superficie (y restaurarla)
+  top.position.set(0, topY - DIMS.tableThickness / 2, DIMS.tableCenterZ);
+  top.castShadow = true;
+  top.receiveShadow = true;
+  g.add(top);
+
+  const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+  const lineH = 0.002;
+  const mkLine = (w, d, x, z) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, lineH, d), lineMat);
+    m.position.set(x, topY + lineH / 2 - 0.0005, DIMS.tableCenterZ + z);
+    m.name = 'ppTableLine';   // r95: relayoutMesa() las reacomoda al cambiar la altura
+    g.add(m);
+  };
+  mkLine(W, 0.02, 0, -DIMS.tableHalfLength + 0.01);
+  mkLine(W, 0.02, 0, DIMS.tableHalfLength - 0.01);
+  mkLine(0.02, L, -DIMS.tableHalfWidth + 0.01, 0);
+  mkLine(0.02, L, DIMS.tableHalfWidth - 0.01, 0);
+  mkLine(0.003, L, 0, 0);
+
+  const frameMat = new THREE.MeshStandardMaterial({ color: COLORS.frame, roughness: 0.7 });
+  const apron = new THREE.Mesh(new THREE.BoxGeometry(W * 0.96, 0.1, 0.03), frameMat);
+  apron.position.set(0, topY - DIMS.tableThickness - 0.06, DIMS.tableCenterZ - DIMS.tableHalfLength + 0.05);
+  // v2.87: nombres ppTableApron / ppTableLeg para que los campeonatos tiñan
+  // el MARCO (mismo patrón que ppTableTop de v2.56). Sólo nombres aditivos.
+  apron.name = 'ppTableApron';
+  g.add(apron);
+  const apron2 = apron.clone();
+  apron2.position.z = DIMS.tableCenterZ + DIMS.tableHalfLength - 0.05;
+  g.add(apron2);
+
+  for (const lx of [-W / 2 + 0.12, W / 2 - 0.12]) {
+    for (const lz of [-L / 2 + 0.15, L / 2 - 0.15]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, topY - DIMS.tableThickness, 0.06), frameMat);
+      leg.position.set(lx, (topY - DIMS.tableThickness) / 2, DIMS.tableCenterZ + lz);
+      leg.castShadow = true;
+      leg.name = 'ppTableLeg';    // v2.87
+      leg.userData.h = topY - DIMS.tableThickness;   // r95: escala honesta en relayoutMesa
+      g.add(leg);
+    }
+  }
+
+  const netCanvas = document.createElement('canvas');
+  netCanvas.width = 256;
+  netCanvas.height = 64;
+  const nctx = netCanvas.getContext('2d');
+  if (nctx) {
+    nctx.clearRect(0, 0, 256, 64);
+    nctx.strokeStyle = 'rgba(20,22,25,0.9)';
+    nctx.lineWidth = 2;
+    for (let x = 0; x <= 256; x += 10) {
+      nctx.beginPath(); nctx.moveTo(x, 0); nctx.lineTo(x, 64); nctx.stroke();
+    }
+    for (let y = 0; y <= 64; y += 10) {
+      nctx.beginPath(); nctx.moveTo(0, y); nctx.lineTo(256, y); nctx.stroke();
+    }
+  }
+  const netTex = new THREE.CanvasTexture(netCanvas);
+  netTex.wrapS = THREE.RepeatWrapping;
+  netTex.wrapT = THREE.RepeatWrapping;
+  netTex.repeat.set(6, 1.2);
+
+  const netMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(DIMS.netHalfWidth * 2, DIMS.netTopY - topY),
+    new THREE.MeshBasicMaterial({ map: netTex, transparent: true, side: THREE.DoubleSide, alphaTest: 0.05 }),
+  );
+  netMesh.position.set(0, topY + (DIMS.netTopY - topY) / 2, DIMS.tableCenterZ);
+  netMesh.name = 'ppTableNet';   // r95: relayoutMesa()
+  g.add(netMesh);
+
+  const band = new THREE.Mesh(
+    new THREE.BoxGeometry(DIMS.netHalfWidth * 2, 0.014, 0.006),
+    new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 }),
+  );
+  band.position.set(0, DIMS.netTopY, DIMS.tableCenterZ);
+  band.name = 'ppTableBand';   // r95: relayoutMesa()
+  g.add(band);
+
+  const postMat = new THREE.MeshStandardMaterial({ color: 0x30343a, roughness: 0.4, metalness: 0.6 });
+  for (const px of [-DIMS.netHalfWidth, DIMS.netHalfWidth]) {
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.012, DIMS.netTopY - topY + 0.02, 12),
+      postMat,
+    );
+    post.position.set(px, topY + (DIMS.netTopY - topY) / 2, DIMS.tableCenterZ);
+    post.name = 'ppTablePost';   // r95: relayoutMesa()
+    g.add(post);
+  }
+
+  return g;
+}
+
+/* =====================================================================
+ *  r95 · RELAYOUT DE LA MESA VIVA (AJUSTES › MESA › altura)
+ *  La altura elegida MUTA DIMS.tableTopY/netTopY (física, IA y saque la
+ *  leen en vivo — una sola fuente de verdad) y ESTA función reacomoda la
+ *  mesa ya montada SIN reconstruirla: sólo POSICIONES y la ESCALA de las
+ *  patas. Cero dispose — las referencias del núcleo y de los campeonatos
+ *  (ppTableTop de la mesa.webp de Halloween, _netParts, arkanoide...)
+ *  siguen siendo el MISMO objeto. La red mantiene su altura regla-
+ *  mentaria (15,25 cm) sobre la nueva superficie.
+ * ===================================================================== */
+export function relayoutMesa(group) {
+  if (!group) return;
+  const topY = DIMS.tableTopY;
+  const th = DIMS.tableThickness;
+  const netH = (DIMS.netTopY != null) ? (DIMS.netTopY - topY) : 0.1525;
+  const top = group.getObjectByName('ppTableTop');
+  if (top) top.position.y = topY - th / 2;
+  for (const m of group.children) {
+    if (m.name === 'ppTableLine') {
+      m.position.y = topY + 0.002 / 2 - 0.0005;
+    } else if (m.name === 'ppTableApron') {
+      m.position.y = topY - th - 0.06;
+    } else if (m.name === 'ppTableLeg') {
+      const h0 = m.userData && m.userData.h ? m.userData.h : (topY - th);
+      const h1 = topY - th;
+      m.scale.y = h1 / h0;
+      m.position.y = h1 / 2;
+    } else if (m.name === 'ppTableNet') {
+      m.position.y = topY + netH / 2;
+    } else if (m.name === 'ppTableBand') {
+      m.position.y = topY + netH;
+    } else if (m.name === 'ppTablePost') {
+      m.position.y = topY + netH / 2;
+    }
+  }
+}
+
+/* =====================================================================
+ *  r21 (v3.6.117) · SKINS DE BOLA — pintores PROCEDURALES (canvas 2D).
+ *  Cero bytes nuevos en el bundle: cada textura nace en runtime de un
+ *  canvas 512×256 (equirect de la esfera) y se dibuja con primitivas.
+ *  Deterministas: RNG con semilla fija para que la skin sea SIEMPRE igual
+ *  (mismo cráter en el mismo punto de Marte en cada casco).
+ *  ===================================================================== */
+function _bolRng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+const BOLA_TEX_CANVAS = {};
+function bolaTex(tipo) {
+  if (BOLA_TEX_CANVAS[tipo]) return BOLA_TEX_CANVAS[tipo];
+  const cv = document.createElement('canvas');
+  cv.width = 512; cv.height = 256;
+  const c = cv.getContext('2d');
+  const rng = _bolRng(20261107);
+  const estrella = (x, y, r, col) => {
+    c.fillStyle = col; c.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const rr = i % 2 ? r * 0.45 : r;
+      const a = (Math.PI / 5) * i - Math.PI / 2;
+      const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+      if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
+    }
+    c.closePath(); c.fill();
+  };
+  const crater = (x, y, r, col) => {
+    c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.12)';
+    c.beginPath(); c.arc(x - r * 0.3, y - r * 0.3, r * 0.5, 0, Math.PI * 2); c.fill();
+  };
+  if (tipo === 'estrellas') {
+    c.fillStyle = '#fff6e8'; c.fillRect(0, 0, 512, 256);
+    for (let i = 0; i < 14; i++) {
+      estrella(rng() * 512, rng() * 256, 10 + rng() * 16, '#e8b45a');
+    }
+  } else if (tipo === 'playa') {
+    const cols = ['#ffffff', '#e34d4d', '#ffffff', '#3f7fe0', '#ffffff', '#3fb55f'];
+    const nw = cols.length;
+    for (let i = 0; i < nw; i++) {
+      c.fillStyle = cols[i];
+      c.fillRect((i / nw) * 512, 0, 512 / nw + 1, 256);
+    }
+    c.fillStyle = 'rgba(255,255,255,0.5)'; c.fillRect(0, 118, 512, 20);
+  } else if (tipo === 'futbol') {
+    c.fillStyle = '#f4f4f4'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#1a1a1a';
+    const pent = (x, y, r, rot) => {
+      c.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = rot + (Math.PI * 2 / 5) * i;
+        const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+        if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
+      }
+      c.closePath(); c.fill();
+    };
+    pent(256, 128, 52, 0);
+    for (let i = 0; i < 5; i++) {
+      pent(256 + Math.cos((Math.PI * 2 / 5) * i) * 128, 128 + Math.sin((Math.PI * 2 / 5) * i) * 78, 44, 0.6);
+    }
+  } else if (tipo === 'ocho') {
+    c.fillStyle = '#141418'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#f4f4f4';
+    c.beginPath(); c.arc(256, 128, 78, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#141418';
+    c.font = '800 96px system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('8', 256, 130);
+  } else if (tipo === 'ojo') {
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#d9e6f7';
+    c.beginPath(); c.arc(256, 128, 92, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#2f7fd0';
+    c.beginPath(); c.arc(286, 118, 56, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#101418';
+    c.beginPath(); c.arc(298, 112, 26, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.85)';
+    c.beginPath(); c.arc(272, 98, 10, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#b03a3a'; c.lineWidth = 6;
+    for (let i = 0; i < 6; i++) {
+      const a0 = rng() * Math.PI * 2;
+      c.beginPath(); c.moveTo(256 + Math.cos(a0) * 100, 128 + Math.sin(a0) * 100);
+      c.lineTo(256 + Math.cos(a0) * 130, 128 + Math.sin(a0) * 130); c.stroke();
+    }
+  } else if (tipo === 'holo') {
+    const g = c.createLinearGradient(0, 0, 512, 256);
+    g.addColorStop(0, '#39d0ff'); g.addColorStop(0.35, '#ff3fa4');
+    g.addColorStop(0.7, '#ffe14d'); g.addColorStop(1, '#39d0ff');
+    c.fillStyle = g; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = 'rgba(255,255,255,0.28)';
+    for (let y = 0; y < 256; y += 14) c.fillRect(0, y, 512, 5);
+  } else if (tipo === 'disco') {
+    c.fillStyle = '#c9d1da'; c.fillRect(0, 0, 512, 256);
+    for (let i = 0; i < 60; i++) {
+      const w = 4 + rng() * 26, h = 4 + rng() * 18;
+      c.fillStyle = ['#ffffff', '#aebccf', '#eef3f8', '#8fa3bd'][i % 4];
+      c.fillRect(rng() * 512, rng() * 256, w, h);
+    }
+  } else if (tipo === 'marte') {
+    c.fillStyle = '#b0502a'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#8f3c1e';
+    for (let i = 0; i < 7; i++) c.fillRect(0, 30 + i * 34 + rng() * 8, 512, 12 + rng() * 10);
+    for (let i = 0; i < 12; i++) {
+      crater(rng() * 512, rng() * 256, 8 + rng() * 22, '#7a3116');
+    }
+  } else if (tipo === 'luna') {
+    c.fillStyle = '#c9ccd2'; c.fillRect(0, 0, 512, 256);
+    for (let i = 0; i < 16; i++) {
+      crater(rng() * 512, rng() * 256, 6 + rng() * 24, '#a6abb4');
+    }
+  } else if (tipo === 'tierra') {
+    c.fillStyle = '#1e6ed0'; c.fillRect(0, 0, 512, 256);
+    c.fillStyle = '#3fae5a';
+    for (let i = 0; i < 9; i++) {
+      const x = rng() * 512, y = rng() * 256;
+      c.beginPath();
+      c.ellipse(x, y, 40 + rng() * 70, 26 + rng() * 40, rng() * 3, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.fillStyle = 'rgba(255,255,255,0.65)';
+    for (let i = 0; i < 8; i++) {
+      c.beginPath(); c.ellipse(rng() * 512, rng() * 256, 20 + rng() * 40, 8 + rng() * 10, 0, 0, Math.PI * 2); c.fill();
+    }
+  } else if (tipo === 'lava') {
+    c.fillStyle = '#1c0c08'; c.fillRect(0, 0, 512, 256);
+    c.strokeStyle = '#ff5a1e'; c.lineWidth = 5;
+    for (let i = 0; i < 12; i++) {
+      c.beginPath();
+      let x = rng() * 512, y = rng() * 256;
+      c.moveTo(x, y);
+      for (let k = 0; k < 4; k++) {
+        x += (rng() - 0.5) * 120; y += (rng() - 0.5) * 90;
+        c.lineTo(x, y);
+      }
+      c.stroke();
+    }
+    c.fillStyle = '#ff9a3d';
+    for (let i = 0; i < 20; i++) {
+      c.beginPath(); c.arc(rng() * 512, rng() * 256, 2 + rng() * 4, 0, Math.PI * 2); c.fill();
+    }
+  } else if (tipo === 'saturno') {
+    const bands = ['#e8d9a8', '#d9bd7a', '#f0e6c0', '#c9a86a', '#e8d9a8', '#d0b080'];
+    for (let i = 0; i < bands.length; i++) {
+      c.fillStyle = bands[i];
+      c.fillRect(0, (i / bands.length) * 256, 512, 256 / bands.length + 1);
+    }
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  BOLA_TEX_CANVAS[tipo] = tex;
+  return tex;
+}
+
+/** r21 · aplica una skin al material de la bola VIVA (sin reconstruir la
+ *  malla: la red guarda referencias a ballMesh). Gestiona mapa (dispose del
+ *  anterior) y el aro de Saturno. Devuelve el RGB de reposo de la estela. */
+export function applyBallSkin(mesh, skin) {
+  if (!mesh || !mesh.material || !skin) return [0.75, 0.75, 0.75];
+  const mat = mesh.material;
+  const prevMap = mat.map;
+  mat.map = skin.tex ? bolaTex(skin.tex) : null;
+  if (prevMap && prevMap !== mat.map && prevMap.dispose) {
+    try { prevMap.dispose(); } catch { /* */ }
+  }
+  if (mat.map) { mat.map.needsUpdate = true; }
+  try { mat.color.setHex(skin.color); } catch { /* */ }
+  try { mat.roughness = skin.rough; mat.metalness = skin.metal; } catch { /* */ }
+  try { mat.emissive.setHex(skin.emis); mat.emissiveIntensity = skin.emisInt; } catch { /* */ }
+  try { mat.needsUpdate = true; } catch { /* */ }
+  // aro de Saturno (hijo decorativo — la física vive en ball.pos, intacta)
+  let aro = mesh.getObjectByName('ppBolaAro');
+  if (skin.ring && !aro) {
+    aro = new THREE.Mesh(
+      new THREE.TorusGeometry(DIMS.ballRadius * 2.1, DIMS.ballRadius * 0.18, 10, 40),
+      new THREE.MeshStandardMaterial({
+        color: 0xd9bd7a, roughness: 0.5, metalness: 0.2,
+        emissive: 0x554a30, emissiveIntensity: 0.3,
+      }),
+    );
+    aro.name = 'ppBolaAro';
+    aro.rotation.x = Math.PI / 2 - 0.35;
+    mesh.add(aro);
+  } else if (!skin.ring && aro) {
+    aro.visible = false;
+  }
+  if (aro) aro.visible = !!skin.ring;
+  const t = skin.trail || [0.75, 0.75, 0.75];
+  return [t[0], t[1], t[2]];
+}
+
+export function createBall(skin) {
+  const def = bolaAspectoPorId(skin && skin.id);
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(DIMS.ballRadius, 48, 32),
+    new THREE.MeshStandardMaterial({
+      color: COLORS.ball, roughness: 0.35, emissive: 0x555044, emissiveIntensity: 0.35,
+    }),
+  );
+  mesh.castShadow = true;
+  try { applyBallSkin(mesh, def); } catch { /* skin es cosmética: nunca rompe */ }
+
+  const TRAIL_N = 22;
+  const positions = new Float32Array(TRAIL_N * 3);
+  const colors = new Float32Array(TRAIL_N * 3);
+  const ages = new Float32Array(TRAIL_N);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const trail = new THREE.Points(
+    geo,
+    new THREE.PointsMaterial({
+      color: 0xffffff, size: 0.02, transparent: true, opacity: 0.55,
+      vertexColors: true, depthWrite: false,
+    }),
+  );
+  let idx = 0;
+  const tmpSpinCross = new THREE.Vector3();
+  /** Estela "de retransmisión": color según el EFECTO de la bola.
+   *  naranja = lift/topspin (la Magnus la hunde), azul = slice/backspin
+   *  (flota), violeta = lateral. Se desvanece con la edad del punto.
+   *  r61 · ESTELA DE PODER: si el juego pasa un tinte (poder de pala
+   *  ACTIVO), la estela viste SU firma y el color por spin pasa a ser el
+   *  respaldo — un vistazo a la bola y sabes qué poder está corriendo. */
+  /* r21 · base = RGB de REPOSO de la estela (lo que la skin pinta cuando
+   *  no hay poder ni efecto). Por defecto, el gris de siempre. */
+  const trailUpdate = (ball, dt, tint, base) => {
+    positions[idx * 3] = mesh.position.x;
+    positions[idx * 3 + 1] = mesh.position.y;
+    positions[idx * 3 + 2] = mesh.position.z;
+    ages[idx] = 0;
+    let r = 0.75, g = 0.75, b = 0.75;
+    if (base && base.length === 3) { r = base[0]; g = base[1]; b = base[2]; }
+    if (tint && tint.length === 3) {
+      // firma del poder ACTIVO (el núcleo la prepara ya lerp-eada)
+      r = tint[0]; g = tint[1]; b = tint[2];
+    } else if (ball && ball.spin && ball.vel) {
+      tmpSpinCross.crossVectors(ball.spin, ball.vel);   // dirección de la Magnus
+      const lift = tmpSpinCross.y;                      // + flota · - se hunde
+      const force = Math.min(1, Math.abs(lift) / 9);
+      if (force > 0.06) {
+        if (lift < 0) {        // topspin → naranja
+          r = 0.55 + 0.45 * force; g = 0.32 * force; b = 0.12 * force;
+        } else {               // backspin → azul
+          r = 0.16 * force; g = 0.55 * force; b = 0.55 + 0.45 * force;
+        }
+      }
+      const side = Math.abs(ball.spin.y) / 18;
+      if (side > 0.35 && force <= 0.06) {   // lateral → violeta
+        r = 0.55; g = 0.3; b = 0.75;
+      }
+    }
+    colors[idx * 3] = r;
+    colors[idx * 3 + 1] = g;
+    colors[idx * 3 + 2] = b;
+    idx = (idx + 1) % TRAIL_N;
+    for (let i = 0; i < TRAIL_N; i++) {
+      ages[i] += dt;
+      const fade = Math.max(0, 1 - ages[i] / 0.42);
+      colors[i * 3] *= 0.86 + 0.14 * fade;
+      colors[i * 3 + 1] *= 0.86 + 0.14 * fade;
+      colors[i * 3 + 2] *= 0.86 + 0.14 * fade;
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.color.needsUpdate = true;
+  };
+
+  return { mesh, trail, trailUpdate };
+}
+
+/* =====================================================================
+ *  r21 (v3.6.117) · CHISPAS DE BOTE — mini-estallido del color de la skin
+ *  cuando la bola toca algo (flashMarker). 100 % cosmético y AYUNO:
+ *  pool FIJO de 5 estallidos × 8 partículas (40 puntos totales), cero
+ *  asignaciones por bote (todo pre-alocado), vida 0,32 s y se ocultan.
+ *  Nada de sombras ni luces: puntos básicos que el Quest 3 no nota.
+ *  ===================================================================== */
+export function createChispas() {
+  const N_BURST = 5, N_PART = 8;
+  const VIDA = 0.32;
+  const bursts = [];
+  for (let b = 0; b < N_BURST; b++) {
+    const pos = new Float32Array(N_PART * 3);
+    const vel = new Float32Array(N_PART * 3);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({
+      size: 0.016, transparent: true, opacity: 0, depthWrite: false,
+    });
+    const pts = new THREE.Points(geo, mat);
+    pts.visible = false;
+    pts.frustumCulled = false;
+    bursts.push({ pts, pos, vel, t: -1 });
+  }
+  let prox = 0;   // siguiente burst del pool (round-robin, sin buscar libre)
+  const group = new THREE.Group();
+  for (const b of bursts) group.add(b.pts);
+
+  return {
+    group,
+    /** Dispara un estallido en `p` con el RGB de la skin (r,g,b 0..1). */
+    burst(p, rgb) {
+      const b = bursts[prox];
+      prox = (prox + 1) % N_BURST;
+      const r = (rgb && rgb.length === 3) ? rgb[0] : 0.75;
+      const g = (rgb && rgb.length === 3) ? rgb[1] : 0.75;
+      const bl = (rgb && rgb.length === 3) ? rgb[2] : 0.75;
+      for (let i = 0; i < N_PART; i++) {
+        b.pos[i * 3] = p.x; b.pos[i * 3 + 1] = p.y; b.pos[i * 3 + 2] = p.z;
+        // cono hacia arriba: dispersión horizontal + empuje vertical
+        const a = Math.random() * Math.PI * 2;
+        const sp = 0.25 + Math.random() * 0.5;
+        b.vel[i * 3] = Math.cos(a) * sp * 0.6;
+        b.vel[i * 3 + 1] = 0.5 + Math.random() * 0.6;
+        b.vel[i * 3 + 2] = Math.sin(a) * sp * 0.6;
+      }
+      b.pts.material.color.setRGB(r, g, bl);
+      b.t = 0;
+      b.pts.visible = true;
+      b.pts.material.opacity = 0.9;
+      b.pts.geometry.attributes.position.needsUpdate = true;
+    },
+    /** Paso por frame: gravedad suave + fade. Barato (sólo bursts vivos). */
+    update(dt) {
+      for (const b of bursts) {
+        if (b.t < 0) continue;
+        b.t += dt;
+        if (b.t >= VIDA) { b.t = -1; b.pts.visible = false; continue; }
+        const k = 1 - b.t / VIDA;
+        for (let i = 0; i < N_PART; i++) {
+          b.vel[i * 3 + 1] -= dt * 1.8;                 // gravedad
+          b.pos[i * 3] += b.vel[i * 3] * dt;
+          b.pos[i * 3 + 1] += b.vel[i * 3 + 1] * dt;
+          b.pos[i * 3 + 2] += b.vel[i * 3 + 2] * dt;
+        }
+        b.pts.material.opacity = 0.9 * k;
+        b.pts.geometry.attributes.position.needsUpdate = true;
+      }
+    },
+    dispose() {
+      for (const b of bursts) {
+        try { b.pts.geometry.dispose(); b.pts.material.dispose(); } catch { /* */ }
+      }
+    },
+  };
+}
+
+export function createBlobShadow() {
+  const m = new THREE.Mesh(
+    new THREE.CircleGeometry(0.05, 20),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }),
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.renderOrder = 2;
+  return m;
+}
+
+/* =====================================================================
+ *  v2.80 · DECORADO DE CAMPEONATOS — TROQUELES DE CARTÓN
+ *  ---------------------------------------------------------------------
+ *  v2.80 · TROQUELES DE CARTÓN — DECORADO POR CAMPEONATO.
+ *  Cada campeonato decora la sala con SUS troqueles: el módulo ACTIVO
+ *  declara su config en «decor» (locura/index.js y magia/index.js desde
+ *  v2.81) y el núcleo —
+ *  que sigue sin conocer campeonato alguno — se la lee y monta los
+ *  recortes como troqueles de cartón apoyados en el suelo. Un módulo
+ *  sin «decor» no muestra troquel alguno (v2.81: ambos campeonatos
+ *  traen el suyo — el payaso en locura, el wizard en magia —).
+ *  · ANCLADOS AL RIG en offsets fijos respecto a la MESA (el recentrado
+ *    de la Quest los mueve con la sala, lección v2.62) y orientados
+ *    hacia el punto del JUGADOR (rotación fija, son cartón rígido).
+ *  · La textura se usa TAL CUAL: el PNG del artista viene recortado a
+ *    SU propia transparencia (v2.80, sin borde añadido) y el plano
+ *    cuelga de la base, que queda EXACTAMENTE en el suelo.
+ *  · NO tapan nada: marcador y portal (centro del fondo), mapa de
+ *    etapas (pared izquierda) y RIVAL (zona derecha del fondo quedan
+ *    fuera de los troqueles).
+ *  · INTERACTIVOS sin tocar la física de la bola: si la bola pasa cerca
+ *    o el jugador roza un troquel con la pala, el cartón se tambalea
+ *    (muelle amortiguado anclado a la base) con su "toc" de cartón.
+ *    En reposo un vaivén sutil hace que el decorado respire.
+ *  · Al cambiar de campeonato (leaveAll/launch) el set anterior se
+ *    destruye (dispose de GPU) y se construye el del módulo nuevo; si
+ *    el activo no trae decorado, la sala queda limpia.
+ *  · Sin textura (file:// o ruta rota) el troquel simplemente no nace.
+ * ===================================================================== */
+export function createChampDecor(game) {
+  const group = new THREE.Group();     // se añade al RIG una sola vez
+  group.visible = false;
+  let builtFor = null;                 // activeId del set construido (null = aún nada)
+  let set = null;                      // { pieces, disposables } del campeonato activo
+  const loader = new THREE.TextureLoader();
+  let maxAniso = 4;
+  try { maxAniso = game.renderer.capabilities.getMaxAnisotropy(); } catch { /* */ }
+
+  function disposeSet() {
+    group.clear();
+    if (set) for (const d of set.disposables) { try { d.dispose(); } catch { /* */ } }
+    set = null;
+  }
+
+  /** Construye el decorado del campeonato «id» leyendo mod.decor. */
+  function buildFor(id) {
+    disposeSet();
+    builtFor = id;
+    const mod = id ? game.champs.moduleIfLoaded(id) : null;
+    const cfg = (mod && mod.decor && Array.isArray(mod.decor.pieces)) ? mod.decor : null;
+    if (!cfg || !cfg.pieces.length) return;    // campeonato sin troqueles: sala limpia
+    const base = 'championships/' + id + '/';  // rutas relativas a SU carpeta
+    const mine = { pieces: [], disposables: [] };
+    set = mine;
+    for (const pc of cfg.pieces) {
+      const p = {
+        cfg: pc, holder: null, panel: null, h: pc.h || 1, w: 1,
+        angX: 0, avX: 0, angZ: 0, avZ: 0, cool: 0,
+        phase: Math.random() * Math.PI * 2, ready: false,
+      };
+      mine.pieces.push(p);
+      loader.load(base + (pc.file || ''), (tex) => {
+        if (set !== mine) { try { tex.dispose(); } catch { /* */ } return; }  // set ya sustituido
+        try {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.anisotropy = maxAniso;
+          const img = tex.image || {};
+          const aspect = (img.width && img.height) ? (img.width / img.height) : 1;
+          p.h = pc.h || 1;
+          p.w = p.h * aspect;
+          mine.disposables.push(tex);
+
+          // panel con el pivote EN LA BASE: el tambaleo parte del suelo
+          const pg = new THREE.Group();
+          const mat = new THREE.MeshStandardMaterial({
+            map: tex, transparent: true, alphaTest: 0.5,
+            side: THREE.DoubleSide, roughness: 0.95, metalness: 0,
+          });
+          const plane = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.h), mat);
+          plane.position.y = p.h / 2;          // base del arte en y=0 (toca suelo)
+          plane.castShadow = true;
+          // sombra con la FORMA del recorte (no del quad entero)
+          plane.customDepthMaterial = new THREE.MeshDepthMaterial({
+            depthPacking: THREE.RGBADepthPacking, map: tex, alphaTest: 0.5,
+          });
+          pg.add(plane);
+          // pie de apoyo (caballete de cartón, como los troqueles reales)
+          const leg = new THREE.Mesh(
+            new THREE.BoxGeometry(p.w * 0.42, 0.022, 0.26),
+            new THREE.MeshStandardMaterial({ color: 0x9a7448, roughness: 1 }),
+          );
+          leg.position.set(0, 0.012, -0.11);
+          leg.rotation.x = 0.55;
+          pg.add(leg);
+
+          const holder = new THREE.Group();
+          holder.add(pg);
+          holder.position.set(pc.x || 0, 0, pc.z || 0);
+          // ORIENTACIÓN FIJA hacia el punto donde se coloca el jugador
+          holder.rotation.y = Math.atan2(-(pc.x || 0), 0.55 - (pc.z || 0));
+          group.add(holder);
+
+          // sombra suave pintada bajo el troquel (patrón del blob de la bola)
+          const blob = new THREE.Mesh(
+            new THREE.CircleGeometry(Math.max(p.w * 0.55, 0.34), 22),
+            new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.24, depthWrite: false }),
+          );
+          blob.rotation.x = -Math.PI / 2;
+          blob.position.set(pc.x || 0, 0.004, pc.z || 0);
+          blob.renderOrder = 2;
+          group.add(blob);
+
+          mine.disposables.push(plane.geometry, mat, plane.customDepthMaterial,
+            leg.geometry, leg.material, blob.geometry, blob.material);
+          p.holder = holder;
+          p.panel = pg;
+          p.ready = true;
+        } catch { /* el decorado NUNCA rompe el juego */ }
+      }, undefined, () => { /* sin textura: el troquel no nace (file://) */ });
+    }
+  }
+
+  const tmpV = new THREE.Vector3();
+  const knock = (x, strong) => {
+    const pan = THREE.MathUtils.clamp(x / 3, -0.9, 0.9);
+    game.audio.playOsc(150, 88, 0.11, 'triangle', strong ? 0.18 : 0.14, pan);
+    game.audio.playNoise(0.07, 720, 1.1, strong ? 0.12 : 0.09, pan, 'lowpass');
+  };
+  return {
+    group,
+    /** Piezas del set ACTIVO (lectura; [] si el campeonato no trae decor). */
+    get pieces() { return set ? set.pieces : []; },
+    /** Campeonato del set construido ('' = sala sin decorado). */
+    get builtFor() { return builtFor || ''; },
+    /** Reconstrucción perezosa al cambiar de campeonato + animación viva.
+     *  Visible SIEMPRE con el campeonato ACTIVO que declara decor (r70:
+     *  también con passthrough — el dueño quiere sus troqueles siempre). */
+    update(dt, now) {
+      const activeId = (game.champs && game.champs.activeId) || '';
+      if (activeId !== builtFor) buildFor(activeId);
+      // v2.80: visible sólo si el campeonato activo TRAE decor (v2.81:
+      // locura y magia lo traen — cada uno monta SOLO el suyo al activarse).
+      // r70 · VISIBLE SIEMPRE, también con passthrough (inAR): el dueño
+      // insiste en que los troqueles «han desaparecido» — jugaba con el
+      // passthrough del Quest y la condición !game.inAR los escondía
+      // SIEMPRE en esas sesiones (la QA headless no lo veía: inAR=false).
+      // Los troqueles son cartón apoyado en el suelo del JUGADOR: con
+      // passthrough quedan en su sala real, que es donde los quiere.
+      const want = !!(set && set.pieces.length) &&
+        !game.champDecorHidden;   // v2.95: las pruebas pueden taparlo
+      if (group.visible !== want) group.visible = want;
+      if (!want || !set) return;
+      for (const p of set.pieces) {
+        if (!p.ready) continue;
+        p.cool = Math.max(0, p.cool - dt);
+        // muelles amortiguados sobre la base
+        p.avX += (-34 * p.angX - 3.1 * p.avX) * dt;
+        p.avZ += (-30 * p.angZ - 3.0 * p.avZ) * dt;
+        p.angX = THREE.MathUtils.clamp(p.angX + p.avX * dt, -0.22, 0.22);
+        p.angZ = THREE.MathUtils.clamp(p.angZ + p.avZ * dt, -0.26, 0.26);
+        p.panel.rotation.x = p.angX;
+        p.panel.rotation.z = p.angZ + Math.sin(now * 0.9 + p.phase) * 0.006 * p.cfg.sway;
+
+        if (p.cool > 0) continue;
+        // 1) la bola pasa cerca → el cartón se tambalea (la bola NO se toca)
+        const bp = game.ball.pos;
+        if (Math.hypot(bp.x - p.cfg.x, bp.z - p.cfg.z) < 0.5 && bp.y < p.h + 0.25) {
+          p.avX += (game.ball.vel.z > 0 ? -1 : 1) * (1.1 + Math.random() * 0.5);
+          p.avZ += (Math.random() - 0.5) * 1.4;
+          p.cool = 0.8;
+          knock(p.cfg.x, false);
+          continue;
+        }
+        // 2) el jugador roza el troquel con la pala → empujón + háptica
+        for (const sim of game.controllerPaddles) {
+          if (!sim || !sim.pos || sim.pos.lengthSq() < 1e-4) continue;
+          tmpV.copy(sim.pos);
+          if (Math.hypot(tmpV.x - p.cfg.x, tmpV.z - p.cfg.z) < 0.55 && tmpV.y < p.h + 0.2) {
+            p.avZ += (tmpV.x > p.cfg.x ? 1 : -1) * (1.5 + Math.random() * 0.6);
+            p.avX += (Math.random() - 0.5) * 0.8;
+            p.cool = 0.5;
+            knock(p.cfg.x, true);
+            try { game.haptic(sim.index, 0.35, 40); } catch { /* */ }
+            break;
+          }
+        }
+      }
+    },
+  };
+}
+
+/* =====================================================================
+ *  v2.85 · DECORADO DE SALA del campeonato ACTIVO («room»)
+ *  ---------------------------------------------------------------------
+ *  Cada campeonato puede VESTIR LOS 6 PLANOS de la sala (suelo, techo y
+ *  las 4 paredes) declarando en su módulo:
+ *
+ *    room: {
+ *      floor: 'assets/room/suelo.jpg',   ceil: 'assets/room/techo.jpg',
+ *      back:  'assets/room/fondo.jpg',   // trasera (detrás del jugador)
+ *      front: 'assets/room/frente.jpg',  // pared del rival
+ *      left:  'assets/room/izquierda.jpg',
+ *      right: 'assets/room/derecha.jpg',
+ *      variants: {                       // OPCIONAL: mood por etapa
+ *        final: { tint: 0xb06050 },      //   teñido multiplicativo
+ *      },
+ *    }
+ *
+ *  Rutas RELATIVAS a la carpeta del campeonato (como «decor»). Cada clave
+ *  es independiente: si falta, ese plano VISTE EL ARTE POR DEFECTO DEL
+ *  PARTIDO (v3.6.29, assets/partido/ — antes quedaba con el color del
+ *  tema). El sistema es del núcleo (patrón createChampDecor v2.80): se monta al
+ *  activar el campeonato, se destruye (dispose GPU) al salir y un fallo
+ *  de carga NUNCA rompe el juego (file:// incluido). Los complementos de
+ *  la sala clásica que ensuciarían el arte (rejilla del suelo, paneles
+ *  luminosos del techo, tiras ámbar de las paredes) se ocultan SOLO
+ *  mientras haya arte y vuelven solos al salir. El módulo puede cambiar
+ *  el mood por etapa con game.champRoom.useVariant('clave'|null).
+ *  ===================================================================== */
+/* =====================================================================
+ *  v3.0.9-HALL1 · HALL DEL ANFITRIÓN — la estancia donde NACE la sesión
+ *  VR: entrar al juego ya no te planta en la cancha vacía sino en la
+ *  estancia del anfitrión, que se decora sola con lo conseguido
+ *  (insignias de campeonatos, logros CRAZY, PRO CIRCUITO y pieles de
+ *  pala). El menú principal se abre aquí delante; al arrancar un modo
+ *  el guardián del bucle (exitHall) devuelve al jugador a la cancha.
+ *  La estancia vive a 13 m de la cancha: la distancia (y el hecho de
+ *  renderizar sólo una de las dos) las aíslan por completo.
+ *  ===================================================================== */

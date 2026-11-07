@@ -1,0 +1,122 @@
+{
+ "entrada": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "champtest",
+  "music": {
+   "sonando": false,
+   "querido": false,
+   "cargado": false,
+   "cargando": true
+  }
+ },
+ "trasJugar_0": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "champtest",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ },
+ "trasJugar_1": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "champtest",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ },
+ "trasJugar_2": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "champtest",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ },
+ "trasJugar_3": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "champtest",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ },
+ "trasJugar_4": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "champtest",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ },
+ "duelo_0": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "serve",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ },
+ "duelo_1": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "serve",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ },
+ "duelo_2": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "serve",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ },
+ "duelo_3": {
+  "ctx": "running",
+  "arcPlaying": false,
+  "musicPlaying": false,
+  "state": "serve",
+  "music": {
+   "sonando": true,
+   "querido": true,
+   "cargado": true,
+   "cargando": false
+  }
+ }
+}

@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CRAZY PING PONG · Meta Quest 3</title>
+<!-- r109 · M3 PWA: manifest + color del tema (instalable, adiós ?v=) -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0b2050" />
 <meta name="description" content="Tenis de mesa arcade en WebXR para Meta Quest 3: partido, entrenamiento, supervivencia y multijugador online P2P." />
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -267,4 +270,18 @@
   .wrlnone { text-align: center !important; color: #5c6672 !important; padding: 18px 8px !important; }
   .wrlogro { width: 30px; height: 30px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 0 4px rgba(255,210,87,0.65)); }
   .wrlfoot { margin-top: 12px; font-size: 12px; color: #75828f; line-height: 1.5; }
+
+  /* ==== r109 · M3 PWA: toast de instalación en la portada + botón vivo ==== */
+  #ppToast {
+    position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(8px);
+    max-width: min(560px, 86vw); z-index: 60;
+    background: rgba(9, 14, 26, 0.94); border: 1px solid rgba(255, 210, 87, 0.55);
+    border-radius: 14px; padding: 12px 18px;
+    color: #e9edf2; font-size: 14px; line-height: 1.55; text-align: center;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  #ppToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #ppToast b { color: #ffd257; }
+  .footlink.pwaOn { color: #ffd257; font-weight: 700; text-shadow: 0 0 8px rgba(255,210,87,0.45); }
 </style>

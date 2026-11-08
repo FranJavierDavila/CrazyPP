@@ -576,12 +576,22 @@ export const HALL_VARIANTES = [
   // arte 100 % procedural con las MISMAS fichas y proporciones exactas
   // de los planos (frente/fondo 1849×864 · laterales 2395×864 ·
   // suelo/techo 1296×1678), candados por HITOS de ppxr_stats_v1.
+  // r32 (v3.6.128) · MÚSICA AMBIENTAL DEL SALÓN: cada uno de estos tres
+  // salones lleva SU pista (JPGs del dueño + MP3 del dueño — r32 sustituye
+  // el arte IA de r30 por el arte PREPARADO por el dueño, mismas fichas y
+  // medidas exactas). La pista suena en bucle mientras el salón está
+  // ABIERTO (enterHall→exitHall) y manda sobre cualquier otra música en
+  // la estancia (invariante UNA MELODÍA, canal hall en c03); el icono de
+  // la pared frontal la silencia (c08/c12). anfitrion/cabana: sin música.
   { id: 'neon', lock: 'hito_rally20', nameKey: 'hall_var_neon',
-    base: 'assets/hall/neon/' },        // SALÓN NEÓN ARCADE · rally 20
+    base: 'assets/hall/neon/',          // SALÓN NEÓN ARCADE · rally 20
+    musica: 'assets/hall/neon/arcade.mp3' },
   { id: 'observatorio', lock: 'hito_elo1100', nameKey: 'hall_var_observatorio',
-    base: 'assets/hall/observatorio/' },  // OBSERVATORIO ESTELAR · ELO 1100
+    base: 'assets/hall/observatorio/',  // OBSERVATORIO ESTELAR · ELO 1100
+    musica: 'assets/hall/observatorio/observatorio.mp3' },
   { id: 'dojo', lock: 'hito_aces5', nameKey: 'hall_var_dojo',
-    base: 'assets/hall/dojo/' },        // DOJO ZEN · 5 saques directos
+    base: 'assets/hall/dojo/',          // DOJO ZEN · 5 saques directos
+    musica: 'assets/hall/dojo/dojo.mp3' },
 ];
 /** r24 · variante por id SIN chequeo de candado (el id ya viaja saneado;
  *  el candado sólo gobierna ELEGIRLA, no verla en casa del anfitrión). */

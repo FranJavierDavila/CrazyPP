@@ -187,6 +187,26 @@ export class GameAudio {
       if (Number.isFinite(v)) this.arcVol = Math.min(1, Math.max(0, v));
       this.arcMute = localStorage.getItem('pp_arcade_mute') === '1';
     } catch { /* */ }
+    // r32 (v3.6.128) · MÚSICA AMBIENTAL DEL SALÓN: cada salón con música
+    // (neón/arcade.mp3 · observatorio/observatorio.mp3 · dojo/dojo.mp3 —
+    // pistas del dueño, campo `musica` de HALL_VARIANTES en c02) suena en
+    // bucle MIENTRAS EL SALÓN ESTÉ ABIERTO (enterHall→exitHall). PRIORIDAD
+    // del dueño: «cuando en el Hall tenemos activada su música no sonará
+    // ninguna otra en esta estancia (por ejemplo la del Menú…)» — el canal
+    // hall es el de mayor rango del INVARIANTE UNA MELODÍA: al arrancar
+    // RETIRA la música del menú y mientras `hallWanted` viva, startMusic()
+    // ni la deja nacer. El ICONO de la pared frontal del salón (c08/c12)
+    // la silencia: hallMute persistente (pp_hallmus, sin tocar el volumen)
+    // — silenciado el salón, el menú recupera SU música si la quería.
+    this.hallWanted = false;   // ¿el salón ABIERTO pide su pista ahora?
+    this.hallPlaying = false;
+    this.hallMute = false;     // icono de la pared (persistente)
+    try { this.hallMute = localStorage.getItem('pp_hallmus') === '1'; } catch { /* */ }
+    this._hallUrl = null;      // pista ACTIVA (cambia al cambiar de salón)
+    this._hallBufs = {};       // caché de buffers por URL (máx. 3 salones)
+    this._hallSrc = null;
+    this._hallGain = null;
+    this._hallLoading = null;  // URL en vuelo (evita fetch doble)
     // r95 · VOLÚMENES SEPARADOS (petición del dueño: «incorporar Volumen
     // separado música/efectos en AJUSTES»): dos canales PERSISTENTES e
     // independientes. musicVol escala la música del menú Y la BSO de los
@@ -420,6 +440,11 @@ export class GameAudio {
     try {
       this.kick();
       if (!this.ctx || !this.master || !this.musicOn || !this.musicWanted) return;
+      // r32 · INVARIANTE UNA MELODÍA (sentido SALÓN→menú): con la música
+      // del salón activada NO NACE la del menú — «la música del hall
+      // activada es prioritaria sobre las otras que puedan sonar». Si el
+      // icono la silenció (hallMute), el menú recupera SU aire.
+      if (this.hallWanted && !this.hallMute) return;
       if (this.musicPlaying) return;
       // v2.122 · INVARIANTE UNA MELODÍA (ANTES de la carga del buffer): la
       // música del menú JAMÁS comparte aire con la BSO del campeonato. Todos
@@ -609,6 +634,119 @@ export class GameAudio {
     }
   }
 
+  /* ---------- r32 (v3.6.128) · MÚSICA AMBIENTAL DEL SALÓN ----------
+   * La pista del salón ABIERTO (campo `musica` de HALL_VARIANTES, c02 —
+   * arcade.mp3 del NEÓN, observatorio.mp3 del OBSERVATORIO, dojo.mp3 del
+   * DOJO — pistas del dueño). Robustez de la casa (patrón menú/BSO):
+   * UNA decodificación por URL (caché _hallBufs — el AudioBuffer sirve
+   * para cualquier contexto), bucle con fundido de entrada y salida, y
+   * SOLO suena cuando el salón marca hallWanted (enterHall→exitHall).
+   * Volumen 0,30 escalado por el canal MÚSICA del menú (musicVol, r95).
+   * PRIORIDAD (dueño, r32): con la pista del salón viva NO suena ninguna
+   * otra melodía en la estancia — startHallMusic retira la del menú y el
+   * guard de startMusic impide que renazca mientras hallWanted dure. La
+   * BSO de campeonato no necesita guard: SOLO suena en partida y el salón
+   * no coexiste con ninguna (enterHall vive en el menú/visita). El ICONO
+   * de la pared frontal (c08/c12) gobierna hallMute (persistente
+   * pp_hallmus): silenciado el salón, si el menú quería sonar VUELVE. */
+
+  /** El juego marca la pista que debe sonar ahora (salón abierto). Con
+   *  url=null (museo/CABAÑA o salida del salón) se apaga y nada nace. */
+  setHallWanted(wanted, url) {
+    const w = !!wanted && typeof url === 'string' && !!url;
+    const cambioUrl = w && url !== this._hallUrl;
+    this._hallUrl = w ? url : this._hallUrl;
+    this.hallWanted = w;
+    if (!w) { this.stopHallMusic(); return; }
+    if (this.hallMute) { this.stopHallMusic(); return; }   // icono: apagada
+    if (this.hallPlaying && !cambioUrl) return;            // ya suena la suya
+    if (this.hallPlaying && cambioUrl) this.stopHallMusic();  // salón nuevo
+    this.startHallMusic();
+  }
+
+  /** Descarga y decodifica la pista del salón (UNA vez por URL: la caché
+   *  evita re-descargas al alternar salones — patrón _loadMusic v2.31). */
+  _loadHallMusic() {
+    const url = this._hallUrl;
+    if (!url || this._hallBufs[url] || this._hallLoading === url) return;
+    if (typeof fetch !== 'function') return;
+    const ctx = this.ctx;
+    if (!ctx) return;
+    this._hallLoading = url;
+    fetch(url).then((r) => r.arrayBuffer()).then((ab) =>
+      new Promise((res, rej) => {
+        try { res(ctx.decodeAudioData(ab.slice(0))); } catch (e) { rej(e); }
+      }),
+    ).then((buf) => {
+      this._hallBufs[url] = buf;
+      console.info('[Audio] música del salón lista (' +
+        (buf.duration || 0).toFixed(1) + ' s · ' + url + ')');
+      if (this.ctx && this.hallWanted && !this.hallMute &&
+          this._hallUrl === url) this.startHallMusic();
+    }).catch(() => { /* sin pista: nunca rompe el juego */ })
+      .finally(() => { if (this._hallLoading === url) this._hallLoading = null; });
+  }
+
+  /** Bucle de la pista del salón con fundido de entrada (ganancia 0,30
+   *  × musicVol). PRIORIDAD: retira la música del menú si estuviera viva. */
+  startHallMusic() {
+    try {
+      this.kick();
+      if (!this.ctx || !this.master || !this.hallWanted || this.hallMute) return;
+      if (this.hallPlaying) return;
+      // INVARIANTE UNA MELODÍA (sentido SALÓN→menú): la pista del salón
+      // manda — la del menú se retira ELLA (mismo patrón BSO v2.124).
+      if (this.musicPlaying) this.setMusicWanted(false);
+      if (!this._hallBufs[this._hallUrl]) { this._loadHallMusic(); return; }
+      const src = this.ctx.createBufferSource();
+      src.buffer = this._hallBufs[this._hallUrl];
+      src.loop = true;
+      const g = this.ctx.createGain();
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(
+        Math.max(0.0001, 0.30 * this.musicVol), t + 1.2);   // r95: canal música
+      src.connect(g); g.connect(this.master);
+      src.start(t);
+      this._hallSrc = src;
+      this._hallGain = g;
+      this.hallPlaying = true;
+    } catch { /* nunca rompe el juego */ }
+  }
+
+  /** Fundido de salida (1,0 s) y parada del salón. */
+  stopHallMusic() {
+    const src = this._hallSrc;
+    const g = this._hallGain;
+    this._hallSrc = null;
+    this._hallGain = null;
+    this.hallPlaying = false;
+    if (!src || !this.ctx) return;
+    try {
+      const t = this.ctx.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.30), t);
+      g.gain.linearRampToValueAtTime(0.0001, t + 1.0);
+      window.setTimeout(() => { try { src.stop(); } catch { /* ya parada */ } }, 1100);
+    } catch { /* */ }
+  }
+
+  /** ICONO DE LA PARED (c08/c12): silencio del salón — persistente, sin
+   *  tocar musicVol. Al silenciar, el menú recupera su música si la quería
+   *  (hallWanted sigue vivo: el salón sigue abierto). Al reactivar, la
+   *  pista del salón vuelve y retira la del menú (prioridad del dueño). */
+  setHallMute(mute) {
+    this.hallMute = !!mute;
+    try { localStorage.setItem('pp_hallmus', this.hallMute ? '1' : '0'); } catch { /* */ }
+    if (this.hallMute) {
+      this.stopHallMusic();
+      // el aire vuelve al menú SOLO si él ya lo había pedido (musicWanted)
+      if (this.musicWanted && this.musicOn && !this.musicPlaying) this.startMusic();
+    } else if (this.hallWanted) {
+      this.startHallMusic();   // retira la del menú por el camino (prioridad)
+    }
+  }
+
   /** Observador de estado por contexto: reintenta y avisa al recover() global. */
   _hookState(ctx) {
     if (!ctx || ctx.__ppHooked) return;
@@ -691,6 +829,11 @@ export class GameAudio {
       // murieron con él. Rearrancarlos en el nuevo (si tocaba haberlos).
       this.musicPlaying = false;
       if (this._amb) { this._amb = null; }
+      // r32 · la pista del salón también murió con el contexto viejo:
+      // rearranca ELLA PRIMERO (su guard en startMusic deja al menú sin
+      // nacer mientras el salón la tenga activada — prioridad del dueño).
+      this.hallPlaying = false;
+      if (this.hallWanted && !this.hallMute) this.startHallMusic();
       if (this.musicWanted && this.musicOn) this.startMusic();
       if (this.ambWanted && this.ambience) {
         window.setTimeout(() => this.startMurmur(), 250);

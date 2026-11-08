@@ -4416,6 +4416,17 @@ export class PingPongGame {
         dot.visible = false;
       }
       if (idx !== this.menuHover[h]) { this.menuHover[h] = idx; dirty = true; }
+      // r32 · hover del ICONO DE LA MÚSICA del salón: el rayo del mando h
+      // sobre la placa (si el salón la enseña) la agranda con suavizado en
+      // updateHallFx. Al final del trabajo del panel: los temporales
+      // compartidos (muGrip/muQ/muDir) ya no se usan en esta iteración.
+      if (this.inHall) {
+        const udM = this.hallGroup && this.hallGroup.userData &&
+          this.hallGroup.userData.hall;
+        if (udM && udM.musica) {
+          udM.musica.hover = !!(this.connected[h] && this._hallMusicaRay(h));
+        }
+      }
     }
     // r105 · RENDIMIENTO: el repintado por HOVER va THROTTLED (90 ms ≈ 11 Hz).
     // Cada drawMenu repinta el lienzo entero 1024×1536 y sube 6 MB a la GPU;
@@ -5559,6 +5570,14 @@ export class PingPongGame {
           } else {
             try { localStorage.setItem('pp_hallvar', hv.id); } catch { /* */ }
             try { applyHallVariant(this.hallGroup, hv.base); } catch (eHV) { /* */ }
+            // r32 · cambio de salón EN VIVO: su pista nace o muere al vuelo
+            // (y el icono se re-viste con la visibilidad/estado nuevos).
+            if (this.inHall) {
+              try {
+                this.audio.setHallWanted(!!hv.musica, hv.musica || null);
+              } catch (eHM5) { /* */ }
+            }
+            this._hallMusicaRepinta();
             this.rules.message = T('msg_hall_var', { v: T(hv.nameKey) });
             this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
           }
@@ -6101,6 +6120,12 @@ export class PingPongGame {
       if (this.net && this.net.online && this.net.role === 'guest' && this.inHall) {
         if (this._hallPeer.hv) {
           try { applyHallVariant(this.hallGroup, hallVariantePorId(this._hallPeer.hv).base); } catch (eHV) { /* */ }
+          // r32 · el salón del anfitrión SUENA COMO EL SUYO: la pista
+          // viaja con el arte (hallVariantePorId sanea contra el catálogo).
+          try {
+            const hvP = hallVariantePorId(this._hallPeer.hv);
+            this.audio.setHallWanted(!!(hvP && hvP.musica), (hvP && hvP.musica) || null);
+          } catch (eHM6) { /* */ }
         }
         this.drawHall();
       }
@@ -6114,6 +6139,65 @@ export class PingPongGame {
     }
     return { p: this.hallProfile(), peer: false };
   }
+
+  /* ================== r32 (v3.6.128) · MÚSICA DEL SALÓN ================
+   * La pista ambiental del salón ABIERTO (campo `musica` de
+   * HALL_VARIANTES — arcade.mp3 del NEÓN, observatorio.mp3 del
+   * OBSERVATORIO, dojo.mp3 del DOJO; pistas del DUEÑO) vive en el canal
+   * hall de c03: entra (enterHall), cambia en vivo (hall_var, visita del
+   * anfitrión) y muere al salir (exitHall). PRIORIDAD del dueño: con la
+   * pista del salón activada NO suena ninguna otra melodía en la
+   * estancia — el canal hall retiene a la música del menú por construcción
+   * (guard en startMusic). El ICONO de la pared frontal (c08) la
+   * silencia: rayo + gatillo (onSelectStart), estado persistente
+   * pp_hallmus, glyph repintado al vuelo. ================================= */
+
+  /** r32 · REPIINTA el icono de la música (estado + visibilidad): la
+   *  variante ACTIVA decide si el salón tiene pista (en visita online, LA
+   *  DEL ANFITRIÓN — mismo criterio del arte); audio.hallMute el glyph. */
+  _hallMusicaRepinta() {
+    const ud = this.hallGroup && this.hallGroup.userData &&
+      this.hallGroup.userData.hall;
+    if (!ud || !ud.musica) return;
+    const hv = (this._hallVisit && this._hallPeer && this._hallPeer.hv)
+      ? hallVariantePorId(this._hallPeer.hv)
+      : this._hallVarDef();
+    const mute = !!(this.audio && this.audio.hallMute);
+    ud.musica.repinta(mute, !!(hv && hv.musica));
+  }
+
+  /** r32 · ¿el mando i apunta al ICONO de la música? (rayo targetRay →
+   *  placa de la pared frontal). Sólo con el hall abierto y el icono
+   *  visible. Raycaster PROPIO: no pisa el far=2,5 del menú (la pared
+   *  queda a ~6 m del spawn). */
+  _hallMusicaRay(i) {
+    if (!this.inHall || !this.hallGroup || !this.hallGroup.visible) return false;
+    const ud = this.hallGroup.userData && this.hallGroup.userData.hall;
+    if (!ud || !ud.musica || !ud.musica.mesh || !ud.musica.mesh.visible) return false;
+    const ray = this.rays && this.rays[i];
+    if (!ray) return false;
+    if (!this._musRay) this._musRay = new THREE.Raycaster();
+    ray.getWorldPosition(muGrip);
+    ray.getWorldQuaternion(muQ);
+    muDir.set(0, 0, -1).applyQuaternion(muQ);
+    this._musRay.far = 10;            // la pared frontal queda lejos
+    this._musRay.set(muGrip, muDir);
+    return !!this._musRay.intersectObject(ud.musica.mesh, false)[0];
+  }
+
+  /** r32 · GATILLO sobre el icono: conmuta el silencio de la pista del
+   *  salón (persistente), repinta el glyph, avisa en el mensaje y suena.
+   *  Devuelve true si el rayo lo impactó (el llamador consume el clic). */
+  _hallMusicaPulsa(i) {
+    if (!this._hallMusicaRay(i)) return false;
+    const nuevo = !(this.audio && this.audio.hallMute);
+    this.audio.setHallMute(nuevo);
+    this._hallMusicaRepinta();
+    this.rules.message = T('msg_hallmus', { v: nuevo ? T('no') : T('yes') });
+    this.audio.playOsc(nuevo ? 520 : 720, nuevo ? 380 : 940, 0.09, 'sine', 0.14, 0);
+    return true;
+  }
+
   /** r23 · skin EFECTIVA de la bola para RESTAURACIONES (hall/cancha):
    *  online el invitado vuelve SIEMPRE a la del anfitrión (_peerSkinId,
    *  r22), nunca a la propia — sin tocar la regla del campeonato. */
@@ -6660,6 +6744,10 @@ export class PingPongGame {
       // r113 · CHINCHETA: hover -2 = el gatillo pega/suelta el panel
       if (hov === -2) this._menuPinToggle(i);
       else if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
+      // r32 · ICONO DE LA MÚSICA del salón: con el menú abierto manda el
+      // panel — la placa sólo recibe el gatillo si el rayo NO cayó en
+      // ningún botón ni en la chincheta (hov < 0).
+      else if (this.inHall && this._hallMusicaPulsa(i)) { /* conmutada */ }
       // r98 · AGARRE DE LA MESA: gatillo con el rayo sobre la mesa (página
       // MESA) — la altura sigue a la altura del mando 1:1 hasta soltar.
       else if (this._mesaGrabActivo() && this._mesaHover && this._mesaHover[i]) {
@@ -6712,9 +6800,13 @@ export class PingPongGame {
       return;
     }
     // v3.6.30 · HALL SIN JUEGO: en la estancia el gatillo sólo vive en el
-    // menú (arriba) — ni saque, ni revancha, ni pistola, ni rejugada. Si el
-    // menú está cerrado, el gatillo no hace nada (B lo vuelve a abrir).
-    if (this.inHall) return;
+    // menú (arriba) — ni saque, ni revancha, ni pistola, ni rejugada.
+    // r32 · …y en el ICONO DE LA MÚSICA de la pared frontal: apuntar +
+    // gatillo conmuta el silencio de la pista ambiental del salón.
+    if (this.inHall) {
+      this._hallMusicaPulsa(i);
+      return;
+    }
     // v2.38/2.69: PISTOLA DE RAYOS (superpoder de la PRUEBA 2) — el
     // gatillo de la mano LIBRE dispara el rayo con la bola en juego. El
     // módulo activo decide si está armada (variante 2, fase de juego).
@@ -14010,6 +14102,15 @@ export class PingPongGame {
       ? hallVariantePorId(this._hallPeer.hv)
       : this._hallVarDef();
     try { applyHallVariant(this.hallGroup, hvTgt.base); } catch (eHV) { /* */ }
+    // r32 · MÚSICA AMBIENTAL DEL SALÓN: la variante ACTIVA (local = la
+    // tuya; visita online = LA DEL ANFITRIÓN, mismo criterio del arte)
+    // suena mientras la estancia esté abierta. El canal hall (c03) es el
+    // de mayor rango: retiene la música del menú por construcción. Con
+    // museo/CABAÑA (sin pista) se apaga y nada nace.
+    try {
+      const hvMus = hvTgt && hvTgt.musica;
+      this.audio.setHallWanted(!!hvMus, hvMus || null);
+    } catch (eHM) { /* */ }
     if (!online) {
       this._megaNormReset();   // v3.6.34: el hall es zona neutra — pala como siempre
     }
@@ -14107,6 +14208,15 @@ export class PingPongGame {
     this.inHall = false;
     this._hallVisit = false;
     this._salaPreview = false;   // r96: la vista de sala no sobrevive a la cancha
+    // r32 · la pista del salón se apaga con la estancia (fundido 1 s): la
+    // cancha recupera SU aire (silencio/BSO cuando toque) y el icono
+    // pierde el hover que pudiera quedar.
+    try { this.audio.setHallWanted(false, null); } catch (eHM0) { /* */ }
+    try {
+      const ud0 = this.hallGroup && this.hallGroup.userData &&
+        this.hallGroup.userData.hall;
+      if (ud0 && ud0.musica) ud0.musica.hover = false;
+    } catch (eHM1) { /* */ }
     this.rig.position.set(0, 0, 0);
     for (const o of this._hallHidden || []) o.visible = true;
     this._hallHidden = null;
@@ -14333,6 +14443,10 @@ export class PingPongGame {
         udG.gloria.tex.needsUpdate = true;
       }
     } catch (eHG) { /* la placa nunca rompe la entrada al hall */ }
+    // r32 · ICONO DE LA MÚSICA del salón: estado (silenciado o no) y
+    // visibilidad (sólo salones con pista) al día en CADA repintada —
+    // entrada, cambio en vivo y visita del anfitrión incluidas.
+    try { this._hallMusicaRepinta(); } catch (eHMu) { /* */ }
   }
 
   updateRecenter() {

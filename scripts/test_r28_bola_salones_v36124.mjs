@@ -142,11 +142,11 @@ chk(!/new THREE\.PointLight\(/.test(c08.slice(c08.indexOf('MOBILIARIO 3D POR SAL
   'cero PointLights nuevos (lección v2.92)');
 
 /* — 8 · BUILD · sellos ————————————————————————————————————————————————— */
-console.log('8 · BUILD · sello vigente (re-anclada r31: 3.6.127-SDK6)');
+console.log('8 · BUILD · sello vigente (re-anclada r32: 3.6.128-SDK6)');
 const vj = JSON.parse(lee('src/game/VERSION.json'));
-chk(vj.version === '3.6.127-SDK6', 'VERSION.json = 3.6.127-SDK6 (re-anclada r31)');
-chk(vj.fase === 129, 'FASE 129 (re-anclada r31)');
-chk(game.includes('3.6.127-SDK6'), 'bundle con sello vigente (re-anclada r31)');
+chk(vj.version === '3.6.128-SDK6', 'VERSION.json = 3.6.128-SDK6 (re-anclada r32)');
+chk(vj.fase === 130, 'FASE 130 (re-anclada r32)');
+chk(game.includes('3.6.128-SDK6'), 'bundle con sello vigente (re-anclada r32)');
 const golden = (lee('src/game/GOLDEN_SHA256.txt').match(/\b[0-9a-f]{64}\b/) || [''])[0];
 chk(vj.golden === golden, 'golden coherente');
 chk(vj.tamano === Buffer.byteLength(game), 'tamaño coherente');

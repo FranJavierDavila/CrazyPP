@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.127-SDK6, fase 129 · HIGIENE TEXTUAL FÉNIX; sello actualizado
-# por bump_version.py desde 3.6.126-SDK6)
-6badce1bc5cd56bbec7c818b38cca7ba1278fbbe61510bbad18d96978011f456
+# SHA256 del game.html que produjo esta división (3.6.128-SDK6, fase 130 · SALONES DEL DUEÑO; sello actualizado
+# por bump_version.py desde 3.6.127-SDK6)
+780de58f35842de6e621269b184b3799af525ebea63a4f1c4a9da1972a4c90d4

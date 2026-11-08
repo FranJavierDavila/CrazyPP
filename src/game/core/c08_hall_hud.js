@@ -79,6 +79,60 @@ export function drawHallSign(cv, title, sub) {
   }
 }
 
+/* r32 (v3.6.128) · PINTOR DEL ICONO DE LA MÚSICA DEL SALÓN — placa
+ * redonda 256×256 100 % vectorial (misma técnica del museo: cero bytes
+ * nuevos en el bundle). Estados:
+ *   · SONANDO    → altavoz dorado con DOS ondas de sonido.
+ *   · SILENCIADO → el mismo altavoz apagado (gris) con BARRA ROJA en
+ *                  diagonal (censura universal de «mute»).
+ * El aro exterior respira en oro para leerse como mando, no como arte. */
+export function drawHallMusica(cv, mute) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const C = W / 2, R = W / 2 - 6;
+  x.clearRect(0, 0, W, H);
+  // placa: disco oscuro con aro dorado doble (familia de las placas)
+  x.beginPath(); x.arc(C, C, R, 0, Math.PI * 2);
+  const g = x.createRadialGradient(C, C - R * 0.35, R * 0.1, C, C, R);
+  g.addColorStop(0, 'rgba(38,30,20,0.94)'); g.addColorStop(1, 'rgba(14,10,6,0.94)');
+  x.fillStyle = g; x.fill();
+  x.lineWidth = 6; x.strokeStyle = '#c9932f'; x.stroke();
+  x.beginPath(); x.arc(C, C, R - 9, 0, Math.PI * 2);
+  x.lineWidth = 2; x.strokeStyle = 'rgba(201,147,47,0.4)'; x.stroke();
+  // ALTAVOZ vectorial (caja + cono) centrado, ligeramente a la izquierda
+  // para dejar aire a las ondas de la derecha
+  const s = W / 256;                       // escala de diseño (256 base)
+  const cx = C - 14 * s, cy = C;
+  const oro = mute ? '#8d8676' : '#ffd257';
+  const oro2 = mute ? '#6b665a' : '#c9932f';
+  x.save();
+  x.translate(cx, cy);
+  x.beginPath();                            // caja del altavoz
+  x.rect(-30 * s, -16 * s, 22 * s, 32 * s);
+  x.moveTo(-8 * s, -16 * s);                // cono
+  x.lineTo(14 * s, -32 * s);
+  x.lineTo(14 * s, 32 * s);
+  x.lineTo(-8 * s, 16 * s);
+  x.closePath();
+  const gA = x.createLinearGradient(0, -32 * s, 0, 32 * s);
+  gA.addColorStop(0, oro); gA.addColorStop(1, oro2);
+  x.fillStyle = gA; x.fill();
+  x.restore();
+  if (!mute) {
+    // ondas de sonido (dos arcos dorados a la derecha del cono)
+    x.strokeStyle = '#ffd257'; x.lineWidth = 7 * s; x.lineCap = 'round';
+    x.beginPath(); x.arc(cx + 18 * s, cy, 20 * s, -0.9, 0.9); x.stroke();
+    x.beginPath(); x.arc(cx + 18 * s, cy, 34 * s, -0.8, 0.8); x.stroke();
+  } else {
+    // barra roja de SILENCIO en diagonal (con halo oscuro para leerse
+    // sobre cualquier arte del salón)
+    x.strokeStyle = 'rgba(0,0,0,0.55)'; x.lineWidth = 22 * s; x.lineCap = 'round';
+    x.beginPath(); x.moveTo(C - 62 * s, C - 62 * s); x.lineTo(C + 62 * s, C + 62 * s); x.stroke();
+    x.strokeStyle = '#ff4444'; x.lineWidth = 11 * s;
+    x.beginPath(); x.moveTo(C - 62 * s, C - 62 * s); x.lineTo(C + 62 * s, C + 62 * s); x.stroke();
+  }
+}
+
 /* r23 (v3.6.118) · PARED DE INSIGNIAS DEL HALL (F2 · Hall del Anfitrión):
  * placa de museo 1024×640 que c12.drawHall() repinta con el perfil ACTIVO
  * (el del dueño… o EL DEL ANFITRIÓN cuando el invitado visita su hall
@@ -619,6 +673,40 @@ export function createHall(base) {
   g.add(gloriaMesh);
 
   /* =====================================================================
+   *  r32 (v3.6.128) · ICONO DE LA MÚSICA DEL SALÓN — placa redonda en la
+   *  pared FRONTAL, sobre la placa de insignias (el «equipo de sonido» de
+   *  la estancia: la música ambiental del dueño suena mientras el salón
+   *  está abierto — canal hall en c03 — y este icono la silencia).
+   *  El gatillo VR apuntando al icono lo conmuta (raycast en c12,
+   *  onSelectStart); el hover lo agrupa con suavizado (updateHallFx).
+   *  Dibujo 100 % vectorial en canvas (256×256): altavoz con ondas
+   *  doradas = SONANDO · barra roja en diagonal = SILENCIADO. Sólo se
+   *  ve en salones CON música (neón/observatorio/dojo): repinta() decide
+   *  visibilidad y estado — drawHall (c12) la llama en cada entrada.
+   *  ===================================================================== */
+  const musCv = hallCanvas(256, 256);
+  drawHallMusica(musCv, false);
+  const musTex = new THREE.CanvasTexture(musCv);
+  try { musTex.colorSpace = THREE.SRGBColorSpace; musTex.anisotropy = 4; } catch (eTM1) { /* */ }
+  const musMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.36),
+    new THREE.MeshBasicMaterial({ map: musTex, transparent: true }));
+  musMesh.position.set(0, 2.42, z0 + 0.016);   // sobre la placa de insignias
+  g.add(musMesh);
+  const musica = {
+    mesh: musMesh, cv: musCv, tex: musTex,
+    hover: false,          // el rayo de algún mando encima (c12, ray loop)
+    /** Estado + visibilidad: sólo salones CON música enseñan el icono. */
+    repinta(mute, visible) {
+      try {
+        musMesh.visible = !!visible;
+        if (!visible) return;
+        drawHallMusica(musCv, !!mute);
+        musTex.needsUpdate = true;
+      } catch { /* el icono nunca rompe el hall */ }
+    },
+  };
+
+  /* =====================================================================
    *  r28 (v3.6.124) · MOBILIARIO 3D POR SALÓN — la lección de los
    *  decorados de La Locura y Wizard (dueño: «los diseñaste tú con
    *  muchísimo más detalle… la diferencia es abismal») es que el lujo
@@ -738,6 +826,7 @@ export function createHall(base) {
     pulsoL: { cv: pulsoCvL, tex: pulsoTexL },   // r84 · placas EL PULSO
     pulsoR: { cv: pulsoCvR, tex: pulsoTexR },
     gloria: { cv: gloriaCv, tex: gloriaTex },   // r23 · pared de insignias
+    musica,   // r32 · icono de la música del salón (silencio por gatillo)
   };
   return g;
 }
@@ -781,6 +870,14 @@ export function updateHallFx(g, dt, now) {
           Math.sin(now * 23.7) * 0.08;
       }
     }
+  }
+  // r32 · ICONO DE LA MÚSICA: el hover del rayo (c12) lo agranda con
+  // suavizado — feedback de «esto es un mando», no un adorno.
+  const mu = ud.musica;
+  if (mu && mu.mesh && mu.mesh.visible) {
+    const tgt = mu.hover ? 1.16 : 1.0;
+    const cur = mu.mesh.scale.x || 1;
+    mu.mesh.scale.setScalar(cur + (tgt - cur) * Math.min(1, dt * 12));
   }
 }
 

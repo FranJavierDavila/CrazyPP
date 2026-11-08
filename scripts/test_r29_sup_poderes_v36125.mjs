@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r29 · v3.6.127-SDK6 · FASE 127 · TEST: SUPERPODERES
+/* CRAZY PING PONG · r29 · v3.6.128-SDK6 · FASE 127 · TEST: SUPERPODERES
  * SEGÚN EL INFORME DEL DUEÑO.
  *
  *   A · SÚPER FÉNIX — «No aparece la llama en la bola ni las ascuas
@@ -65,13 +65,13 @@ const c00 = lee('src/game/core/c00_pre_three.js');
 const vjson = JSON.parse(lee('src/game/VERSION.json'));
 
 /* — 1 · SELLOS · versión, fase y golden ——————————————————————————————— */
-console.log('1 · SELLOS · v3.6.127-SDK6 · FASE 129 (re-anclada r31)');
-chk(vjson.version === '3.6.127-SDK6', 'VERSION.json: 3.6.127-SDK6');
-chk(vjson.fase === 129, 'FASE 129 (re-anclada r31)');
-chk(vjson.faseNombre === 'HIGIENE TEXTUAL FÉNIX', 'faseNombre (re-anclada r31)');
-chk(c12.includes("const VERSION = '3.6.127-SDK6'") ||
-    c00.includes("const VERSION = '3.6.127-SDK6'"), 'sello c00 = 3.6.127-SDK6');
-chk(vjson.tamano === 11166858, 'tamaño del build: 11.166.858 B');
+console.log('1 · SELLOS · v3.6.128-SDK6 · FASE 130 (re-anclada r32)');
+chk(vjson.version === '3.6.128-SDK6', 'VERSION.json: 3.6.128-SDK6');
+chk(vjson.fase === 130, 'FASE 130 (re-anclada r32)');
+chk(vjson.faseNombre === 'SALONES DEL DUEÑO', 'faseNombre (re-anclada r32)');
+chk(c12.includes("const VERSION = '3.6.128-SDK6'") ||
+    c00.includes("const VERSION = '3.6.128-SDK6'"), 'sello c00 = 3.6.128-SDK6');
+chk(vjson.tamano === 11185934, 'tamaño del build: 11.185.934 B');
 chk(vjson.golden && vjson.golden.length === 64, 'golden de 64 hex en VERSION.json');
 chk(lee('src/game/GOLDEN_SHA256.txt').includes(vjson.golden), 'GOLDEN_SHA256.txt casa con VERSION.json');
 chk(sha256('public/game.html') === vjson.golden, 'public/game.html es BYTE-EXACTO al golden');
@@ -104,7 +104,7 @@ chk(c12.includes('for (const p of fx.ascuas) this._fenixParticula(p, dt, 3.4);')
 chk(c12.includes("if (this._megaActivaId === 'fenix') return TRAIL_PODER.fenix; // r26b") &&
     c12.includes('fenix: [1.0, 0.55, 0.18],'), 'estela NARANJA (TRAIL_PODER.fenix)');
 chk(!c12.includes('multiplyScalar(FENIX') && c12.includes('const FENIX_OUT_P = 0.15;'),
-    're-anclada r31: boost ANULADO por el dueño — dinámica normal + falta 15 %');
+    're-anclada r32: boost ANULADO por el dueño — dinámica normal + falta 15 %');
 chk(!c12.includes("this.scene.add(halo);"), 'SIN halo en this.scene (el bug del desplazamiento, eliminado)');
 
 /* — 4 · CRONO · anillos centrados por construcción ————————————————————— */

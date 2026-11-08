@@ -1,74 +1,79 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""RONDA 31 · SELLADO EN CASCADA de las capas QA (E/F/G/H/I) a 3.6.25-SDK6.
+"""RONDA 32 · RE-ANCLADO de los sellos de los tests de regresión a 3.6.128.
 
-Actualiza IN SITU los sellos de versión, los tamaños esperados de los ZIPs
-y el PIN del SDK (v1.5.3 · play booleano + sinPend + huérfana muerta +
-busyAt) en las capas que los llevan clavados (lección de las rondas
-10-30: cada bump necesita su sellado o el QA TOTAL compara contra la
-versión vieja).
+Los tests de las rondas 27-31 llevan sus secciones de SELLOS clavadas a la
+versión de SU ronda (lección r30/r31: cada bump necesita el re-anclado o la
+regresión compara contra la versión vieja). Este sellador actualiza IN SITU:
+  · 3.6.127-SDK6 → 3.6.128-SDK6 (y menciones v3.6.127 → v3.6.128)
+  · FASE 129 → FASE 130 · faseNombre → SALONES DEL DUEÑO (solo r30)
+  · tamaño 11.166.858 → 11.185.934 (y su forma con puntos)
+  · golden 6badce1b… → 780de58f… (64 hex)
+  · hub v36127-sdk6 → v36128-sdk6
+  · etiquetas «re-anclada r31» → «re-anclada r32»
 
-Capas y sellos (configuración REAL heredada de las rondas 13-30):
-  E · qa_sup1_v365.py    — versión + SDK v1.5.3 (literal y runtime) + oeste v55
-  F · qa_imp2_v351.py    — versión (1)
-  G · qa_escudo_v350.py  — versión (1)
-  H · qa_descargas_v365.py — versión + tag de hub + tamaños + SDK v1.5.3 + oeste v55
-  I · smoke_sdk5.py      — versión + sdkVer v1.5.3
-  (el tag de hub v3624-sdk6 → v3625-sdk6 SOLO vive en la capa H)
-
-Idempotente: si la aguja da ×0 pero el sello NUEVO ya está presente,
-cuenta como «ya sellado» (no falla) — lección de la ronda 13."""
+Idempotente: si la aguja da ×0 pero el sello NUEVO ya está presente, cuenta
+como «ya anclado» (no falla) — lección de la ronda 13."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
-VERSIONES = [('3.6.24-SDK6', '3.6.25-SDK6'), ('v3624-sdk6', 'v3625-sdk6')]
-TAMANOS = [  # H: tamaños byte-exactos de los ZIPs v3625 (construidos esta ronda)
-    ('126301679', '126303860'),   # COMPLETO
-    ('11459657', '11459651'),     # ligera
-    ('126288292', '126290473'),   # CLOUDFLARE
-]
-SDK_PIN = [("const SDK_VERSION = '1.5.2'", "const SDK_VERSION = '1.5.3'")]
-# pins del SDK vivo en las capas E/I (qa_sup1 usa el literal y el runtime;
-# smoke_sdk5 exige r['sdkVer']; qa_version compara con VERSION.json — esa
-# se alimenta del bump --sdk 1.5.3, no de este sellado)
-SDK_EI = [
-    ("const SDK_VERSION = '1.5.2'", "const SDK_VERSION = '1.5.3'"),
-    ("\"window.__PP_SDK || ''\") == '1.5.2'", "\"window.__PP_SDK || ''\") == '1.5.3'"),
-    ("window.__PP_SDK = 1.5.2", "window.__PP_SDK = 1.5.3"),
-    ("r['sdkVer'] == '1.5.2'", "r['sdkVer'] == '1.5.3'"),
-]
-# manifest de oeste v54 → v55 en los adopcioneros de E/H
-OESTE_V55 = [("('oeste', 54,", "('oeste', 55,")]
+GOLDEN_VIEJO = '6badce1bc5cd56bbec7c818b38cca7ba1278fbbe61510bbad18d96978011f456'
+GOLDEN_NUEVO = '780de58f35842de6e621269b184b3799af525ebea63a4f1c4a9da1972a4c90d4'
 
+REGS = [
+    ('3.6.127-SDK6', '3.6.128-SDK6'),
+    ('v3.6.127', 'v3.6.128'),
+    ('FASE 129', 'FASE 130'),
+    ('fase === 129', 'fase === 130'),
+    ('fase 129', 'fase 130'),
+    ('11.166.858', '11.185.934'),
+    ('11166858', '11185934'),
+    (GOLDEN_VIEJO, GOLDEN_NUEVO),
+    ('6badce1b…', '780de58f…'),
+    ('6badce1b', '780de58f'),
+    ('v36127-sdk6', 'v36128-sdk6'),
+    ('re-anclada r31', 're-anclada r32'),
+    ('Fase 129', 'Fase 130'),
+]
+
+FASENOMBRE = [('HIGIENE TEXTUAL FÉNIX', 'SALONES DEL DUEÑO')]
+
+# (test, regs extra) — r30 pina el faseNombre de SU ronda; r27/r28/r29/r31 no
 PLAN = [
-    ('qa_sup1_v365.py', VERSIONES[:1] + SDK_EI[:3] + OESTE_V55),
-    ('qa_imp2_v351.py', VERSIONES[:1]),
-    ('qa_escudo_v350.py', VERSIONES[:1]),
-    ('smoke_sdk5.py', VERSIONES[:1] + SDK_EI[3:]),
-    ('qa_descargas_v365.py', VERSIONES + TAMANOS + SDK_PIN + OESTE_V55),
+    ('test_r31_higiene_v36127.mjs', []),
+    ('test_r30_fenix_salones_v36126.mjs', FASENOMBRE),
+    ('test_r29_sup_poderes_v36125.mjs', FASENOMBRE),
+    ('test_r28_bola_salones_v36124.mjs', FASENOMBRE),
+    ('test_r27_foro3d_v36123.mjs', FASENOMBRE),
 ]
 
 fallos = 0
-for nombre, regs in PLAN:
+for nombre, regs_extra in PLAN:
     p = SCR / nombre
     txt = p.read_text(encoding='utf-8')
     total = 0
     ya = 0
-    for viejo, nuevo in regs:
+    for viejo, nuevo in REGS + regs_extra:
         n = txt.count(viejo)
         if n:
             txt = txt.replace(viejo, nuevo)
             total += n
         elif nuevo in txt:
-            ya += 1
+            ya += 1   # ya anclado en una pasada anterior
+        else:
+            # aguja ×0 y sello nuevo ausente: puede ser legítimo (el test no
+            # menciona ese literal) — se informa, no aborta
+            print(f'  · {nombre}: literal ausente ({viejo[:40]}…) — ok si no aplica')
     p.write_text(txt, encoding='utf-8')
-    estado = 'YA' if (total == 0 and ya) else 'OK'
-    print(f'  · {nombre}: {total} agujas ({ya} ya selladas) {estado}')
+    print(f'  ✓ {nombre}: {total} agujas · {ya} ya ancladas')
     if total == 0 and ya == 0:
-        print(f'    FALLO: ni aguja ni sello nuevo en {nombre}')
         fallos += 1
+        print(f'  ✗ {nombre}: NADA anclado — revisar a mano')
 
-sys.exit(1 if fallos else 0)
+if fallos:
+    print(f'\nRE-ANCLADO con {fallos} test(s) sospechoso(s)')
+    sys.exit(1)
+print('\nRE-ANCLADO COMPLETO · tests 27-31 miran a 3.6.128-SDK6 (FASE 130)')

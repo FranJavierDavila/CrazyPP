@@ -1,10 +1,10 @@
 {
-  "version": "3.6.127-SDK6",
-  "fase": 129,
-  "faseNombre": "HIGIENE TEXTUAL FÉNIX",
+  "version": "3.6.128-SDK6",
+  "fase": 130,
+  "faseNombre": "SALONES DEL DUEÑO",
   "sdk": "1.6.0",
   "fecha": "2026-11-08",
-  "hub": "v36127-sdk6",
+  "hub": "v36128-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11166858,
-  "golden": "6badce1bc5cd56bbec7c818b38cca7ba1278fbbe61510bbad18d96978011f456"
+  "tamano": 11185934,
+  "golden": "780de58f35842de6e621269b184b3799af525ebea63a4f1c4a9da1972a4c90d4"
 }

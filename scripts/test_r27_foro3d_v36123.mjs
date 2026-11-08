@@ -114,11 +114,11 @@ chk(sha('src/game/core/c04_fisica_ccd.js') === SHA_C04, 'c04_fisica_ccd.js BYTE-
 chk(sha('src/game/core/c05_colisiones_ia_golpeo.js') === SHA_C05, 'c05_colisiones_ia_golpeo.js BYTE-EXACTO r26b');
 
 /* — 9 · BUILD · sellos de versión ——————————————————————————————————————— */
-console.log('9 · BUILD · sello vigente (re-anclada r28: 3.6.124)');
+console.log('9 · BUILD · sello vigente (re-anclada r29: 3.6.125)');
 const vj = JSON.parse(lee('src/game/VERSION.json'));
-chk(vj.version === '3.6.124-SDK6', 'VERSION.json = 3.6.124-SDK6 (re-anclada r28)');
-chk(vj.fase === 126, 'FASE 126 (re-anclada r28)');
-chk(game.includes('3.6.124-SDK6'), 'el bundle lleva el sello vigente (re-anclada r28)');
+chk(vj.version === '3.6.125-SDK6', 'VERSION.json = 3.6.125-SDK6 (re-anclada r29)');
+chk(vj.fase === 127, 'FASE 127 (re-anclada r29)');
+chk(game.includes('3.6.125-SDK6'), 'el bundle lleva el sello vigente (re-anclada r29)');
 const golden = (lee('src/game/GOLDEN_SHA256.txt').match(/\b[0-9a-f]{64}\b/) || [''])[0];
 chk(vj.golden === golden, 'golden refrescado y coherente con VERSION.json');
 chk(vj.tamano === game.length || vj.tamano === Buffer.byteLength(game), 'tamaño del bundle coherente');

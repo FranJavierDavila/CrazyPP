@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.124-SDK6, fase 126 · BUG BOLA OCULTA + SALONES DE LUJO; sello actualizado
-# por bump_version.py desde 3.6.123-SDK6)
-bbe61385cd95c64954b4a4891c48d918713fdf1ced01de08c7ba0cf900e0fc46
+# SHA256 del game.html que produjo esta división (3.6.125-SDK6, fase 127 · SUPERPODERES R29; sello actualizado
+# por bump_version.py desde 3.6.124-SDK6)
+12e7a09ae388a7c237b78e4a20a7128138a97ed77e5a6eca4e38cd7f78a359e6

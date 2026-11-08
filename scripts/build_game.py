@@ -26,6 +26,7 @@ Nota: `export ` en columna 0 dentro de core/ queda RESERVADO al generador.
 """
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -155,7 +156,14 @@ def main() -> None:
         print(f'! public/game.html DIFIERE de lo ensamblado ({len(actual):,} B en disco).')
         print('  Ensayo sin escribir. Para aplicar: python3 scripts/build_game.py --escribir')
         sys.exit(1)
-    GAME.write_bytes(datos)
+    # r29 · el mount del repo NO trunca al sobrescribir (el O_TRUNC no se
+    # honra en el filesystem de red): si el build nuevo es MÁS PEQUEÑO que
+    # el anterior, quedaban bytes viejos en la cola (build HÍBRIDO — pasó
+    # en el bump del 3.6.125: los assets Piper pesan menos que espeak).
+    # Escritura ATÓMICA: temp + os.replace (patrón deploy_pages.py).
+    tmp = GAME.with_name(GAME.name + '.tmp')
+    tmp.write_bytes(datos)
+    os.replace(tmp, GAME)
     print(f'✓ public/game.html REGENERADO ({len(datos):,} B)')
 
 if __name__ == '__main__':

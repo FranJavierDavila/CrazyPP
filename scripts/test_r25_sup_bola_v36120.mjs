@@ -167,8 +167,11 @@ chk(!!pngElec && pngElec[1].length > 20000 && pngElec[1].length < 80000,
 const cabeceraPng = (b64) => Buffer.from(b64.slice(0, 12), 'base64').toString('hex');
 chk(pngRed && cabeceraPng(pngRed[1]) .startsWith('89504e470d0a1a0a'), 'PNG_RED con cabecera PNG real');
 chk(pngElec && cabeceraPng(pngElec[1]) .startsWith('89504e470d0a1a0a'), 'PNG_ELEC con cabecera PNG real');
-for (const [k, min] of [['VOZ_PODER_RED', 8000], ['VOZ_PODER_RED_EN', 8000],
-                        ['VOZ_PODER_ELEC', 12000], ['VOZ_PODER_ELEC_EN', 12000],
+// r29 · re-anclada — las voces de red/elec pasaron de espeak-ng a PIPER
+// (davefx/lessac, la voz animosa de la casa: informe del dueño en r29);
+// los MP3 Piper son más ligeros, el umbral baja de 8/12 KB a 4/6 KB.
+for (const [k, min] of [['VOZ_PODER_RED', 4000], ['VOZ_PODER_RED_EN', 4000],
+                        ['VOZ_PODER_ELEC', 6000], ['VOZ_PODER_ELEC_EN', 6000],
                         ['AUDIO_TRUENO_A', 12000], ['AUDIO_TRUENO_B', 14000]]) {
   const m = c12.match(new RegExp(`const ${k} = '([^']*)'`));
   chk(!!m && m[1].startsWith('data:audio/mpeg;base64,') && m[1].length >= min,

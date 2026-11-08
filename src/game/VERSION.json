@@ -1,10 +1,10 @@
 {
-  "version": "3.6.124-SDK6",
-  "fase": 126,
-  "faseNombre": "BUG BOLA OCULTA + SALONES DE LUJO",
+  "version": "3.6.125-SDK6",
+  "fase": 127,
+  "faseNombre": "SUPERPODERES R29",
   "sdk": "1.6.0",
   "fecha": "2026-11-08",
-  "hub": "v36124-sdk6",
+  "hub": "v36125-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11183014,
-  "golden": "bbe61385cd95c64954b4a4891c48d918713fdf1ced01de08c7ba0cf900e0fc46"
+  "tamano": 11165405,
+  "golden": "12e7a09ae388a7c237b78e4a20a7128138a97ed77e5a6eca4e38cd7f78a359e6"
 }

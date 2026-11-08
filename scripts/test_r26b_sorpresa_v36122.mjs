@@ -13,10 +13,13 @@
  *   C · «crear otros 3 superpoderes de pala muy llamativos y
  *       sorprendentes que repliquen la forma actual… icono circular…
  *       ventaja de juego… duraciones sobre 10 segundos… SuperPoder de
- *       XXXX» — SÚPER FÉNIX (bola de fuego: +18 % en mis golpes, halo
- *       de llama, ascuas), SÚPER CRONO (tiempo lento: bola al 62 % con
- *       anillos de reloj y restauración EXACTA) y SÚPER HIELO (3 ráfagas
- *       de 1,6 s dejan la pala de la IA congelada, cascarón + copos).
+ *       XXXX» — SÚPER FÉNIX (bola de fuego: +18 % en mis golpes, fuego
+ *       REAL del Wizard — magia v2.120 —, ascuas al golpear pala/mesa
+ *       desde r29), SÚPER CRONO (tiempo lento: bola al 62 % con anillos
+ *       de reloj HIJOS DE LA BOLA — r29 — y restauración EXACTA) y
+ *       SÚPER OSCURIDAD (r29: sustituye al Hielo por orden del dueño —
+ *       bola negra con halo rojo fuego + niebla densa en cada golpeo
+ *       del rival, 5 s + 2 s, IA con 35 % de bolas fuera).
  *
  *   D · «otros 3 diseños de Hall nuevos bien cuidados para mapear y que
  *       podamos conseguirlos con desbloqueos por hitos conseguidos» —
@@ -67,34 +70,41 @@ console.log('2 · REGISTRO · PODERES_PALA llega a 10 entradas');
 const bloqueRegistro = c12.slice(c12.indexOf('const PODERES_PALA = ['),
   c12.indexOf('const MEGA_DUR'));
 for (const id of ['mega', 'efecto', 'iman', 'portal', 'clon', 'red', 'elec',
-  'fenix', 'crono', 'hielo']) {
+  'fenix', 'crono', 'oscuridad']) {
   chk(bloqueRegistro.includes(`{ id: '${id}'`), `poder '${id}' en el registro`);
 }
-for (const p of ['FENIX', 'CRONO', 'HIELO']) {
+for (const p of ['FENIX', 'CRONO', 'OSCURIDAD']) {
   chk(c12.includes(`const PNG_PODER_${p} = 'data:image/png;base64,iVBORw0KGgo`), `insignia circular PNG_PODER_${p} embebida (PNG) `);
   chk(c12.includes(`const VOZ_PODER_${p} = 'data:audio/mpeg;base64,SUQz`), `voz ES de ${p} embebida (MP3)`);
   chk(c12.includes(`const VOZ_PODER_${p}_EN = 'data:audio/mpeg;base64,SUQz`), `voz EN de ${p} embebida (MP3)`);
 }
 chk(c12.includes('const FENIX_DUR = 10;') && c12.includes('const CRONO_DUR = 10;') &&
-    c12.includes('const HIELO_DUR = 10;'), 'los 3 poderes nuevos: ventanas de 10 s (regla del dueño)');
+    c12.includes('const OSCURIDAD_DUR = 20;'), 'ventanas: fénix/crono 10 s · oscuridad 20 s (spec literal)');
 chk(c12.includes('const FENIX_MUL = 1.18;'), 'FÉNIX: +18 % de rapidez en mis golpes');
 chk(c12.includes('const FENIX_CAP = 26;'), 'FÉNIX: tope 26 m/s (validador §12)');
 chk(c12.includes('const CRONO_F = 0.62;'), 'CRONO: bola al 62 % (38 % más lenta)');
 chk(c12.includes('const CRONO_RAMP = 0.4;'), 'CRONO: rampa suave de entrada/salida');
-chk(c12.includes('const HIELO_RAFAGA = 1.6;'), 'HIELO: ráfagas de 1,6 s');
-chk(c12.includes('const HIELO_INICIOS = [1.0, 4.2, 7.4];'), 'HIELO: 3 ráfagas repartidas en la ventana');
+chk(c12.includes('const OSCURIDAD_OUT_P = 0.35;'), 'OSCURIDAD: IA manda fuera el 35 % (spec literal)');
+chk(c12.includes('const OSCURIDAD_VIDA = 5;') && c12.includes('const OSCURIDAD_DISIPA = 2;'), 'OSCURIDAD: niebla 5 s plena + ~2 s de disipación');
 
 /* — 3 · SÚPER FÉNIX · la bola de fuego ————————————————————————————————— */
-console.log('3 · SÚPER FÉNIX · bola de fuego (+18 %, halo, ascuas)');
+console.log('3 · SÚPER FÉNIX · fuego REAL del Wizard (+18 %, bocanadas, ascuas)');
 chk(c12.includes('_fenixTrigger(ent) {'), '_fenixTrigger (refresco honesto + gasto)');
 chk(c12.includes("if (!this._megaMatriz.find((x) => x.id === 'fenix')) return false;"), 'sin carga no arranca');
-chk(c12.includes('_buildFenixFx() {'), '_buildFenixFx: halo de llama');
-chk(c12.includes("g.addColorStop(0, 'rgba(255,244,214,0.95)');"), 'núcleo blanco-caliente del halo');
-chk(c12.includes("g.addColorStop(1, 'rgba(255,60,10,0)');"), 'borde que se funde (fuego, no cartón)');
-chk(c12.includes('blending: THREE.AdditiveBlending, depthWrite: false,'), 'halo ADITIVO (fuego real)');
-chk(c12.includes('_fenixFrame(dt) {'), '_fenixFrame: el halo sigue y respira');
-chk(c12.includes('fx.halo.position.set(p.x, p.y, p.z);'), 'halo PEGADO a la bola viva');
-chk(c12.includes('const br = 0.30 + Math.sin(tt * 9.0) * 0.028;'), 'respiración de la llama');
+chk(c12.includes('_buildFenixFx() {'), '_buildFenixFx: pool de fuego de la bola');
+chk(c12.includes("g.addColorStop(0, 'rgba(255,242,180,1)');"), 'núcleo blanco-caliente de la textura de fuego (magia v2.120)');
+chk(c12.includes("g.addColorStop(1, 'rgba(160,20,0,0)');"), 'borde que se funde (fuego real, no cartón)');
+chk(c12.includes('blending: THREE.AdditiveBlending, depthWrite: false,'), 'fuego ADITIVO');
+chk(c12.includes('this.rig.add(grp);            // ¡espacio de la mesa, NO this.scene!'), 'pool en el RIG (lección r29: this.scene desplazaba la llama)');
+chk(c12.includes('_fenixTintAplicar() {'), 'tinta brasa de la bola (patrón magia _startFuego)');
+chk(c12.includes("m.material.color.setHex(0xff5a12);"), 'color brasa 0xff5a12 (el del Wizard)');
+chk(c12.includes('_fenixTintRestaurar() {'), 'tinta original restaurada al acabar');
+chk(c12.includes('_fenixFrame(dt) {'), '_fenixFrame: bocanadas nacen en la bola y suben');
+chk(c12.includes('this._fenixCad = 0.028;'), '~35 bocanadas/s (cadencia del Wizard)');
+chk(c12.includes('_fenixEstallido(pos) {'), '_fenixEstallido: EXPLOSIÓN de ascuas al golpear');
+chk(c12.includes('if (this._fenixT > 0) {\n            try { this._fenixEstallido(e.pos); } catch (eFxT) { /* */ }\n          }'), 'gancho TABLE: ascuas al botar en la mesa');
+chk(c12.includes('if (this._fenixT > 0) {\n            try { this._fenixEstallido(e.pos); } catch (eFxP) { /* */ }\n          }'), 'gancho PADDLE: ascuas al golpear la pala');
+chk(c12.includes('_fenixParticula(p, dt, grav) {'), 'gravedad de las ascuas (caen como chispas de hoguera)');
 chk(c12.includes('_fenixFin() {') && c12.includes("this.rules.message = T('arc_fenix_fin');"), 'fin con aviso');
 chk(c12.includes('this.ball.vel.multiplyScalar(FENIX_MUL);'), '5.55b: el golpe sale con +18 %');
 chk(c12.includes('if (this.ball.vel.length() > FENIX_CAP) this.ball.vel.setLength(FENIX_CAP);'), 'tope 26 m/s respetado');
@@ -123,53 +133,63 @@ chk(c12.includes('a.rotation.x = tt * (0.8 + i * 0.5) + i * 2.1;'), 'anillos ORB
 chk(c12.includes("if (ent.id === 'crono') return this._cronoTrigger(ent); // v3.6.122 (r26b)"), 'gatillo despacha crono');
 chk(c12.includes("if (this._megaActivaId === 'crono') return TRAIL_PODER.crono; // r26b"), 'estela plata-cian');
 chk(c12.includes('crono: [0.78, 0.92, 1.0],'), 'TRAIL_PODER.crono');
+// r29 · CENTRADO EXACTO (informe del dueño: los anillos «tienen un
+// desplazamiento hacia la derecha de la bola») — HIJOS de ballMesh:
+chk(c12.includes('if (this._cronoFx && this._cronoFx.grupo.parent === this.ballMesh) return;'), '_buildCronoFx idempotente por parent');
+chk(c12.includes('this.ballMesh.add(grupo);'), 'anillos HIJOS DE LA BOLA (centrado SIEMPRE, cero lag)');
+chk(c12.includes('if (gC.parent) gC.parent.remove(gC);'), 're-anclaje en el trigger por si la malla viva cambió');
+chk(!c12.includes('fx.grupo.position.set(p.x, p.y, p.z);'), 'SIN posición manual por frame (era la fuente del desplazamiento)');
 
-/* — 5 · SÚPER HIELO · pala rival congelada ————————————————————————————— */
-console.log('5 · SÚPER HIELO · 3 ráfagas dejan la IA sin moverse');
-chk(c12.includes('_hieloTrigger(ent) {'), '_hieloTrigger (refresco honesto + gasto)');
-chk(c12.includes('_hieloCongela() {'), '_hieloCongela: ¿ráfaga ahora?');
-chk(c12.includes('if (this._hieloT <= 0 || !this.rules || this.rules.state !== \'rally\') {'), 'SOLO rally: el saque del rival JAMÁS se congela');
-chk(c12.includes('if (transcurrido >= ini && transcurrido < ini + HIELO_RAFAGA) return true;'), 'ventanas de 1,6 s dentro de los 10 s');
-chk(c12.includes('_buildHieloFx() {'), '_buildHieloFx: cascarones + copos');
-chk(c12.includes('new THREE.IcosahedronGeometry(0.16, 1),'), 'cascarón facetado');
-chk(c12.includes('wireframe: true, depthWrite: false,'), 'aristas cristalinas');
-chk(c12.includes('const cascarones = [];') && c12.includes('const copos = [];'), 'pool de cascarones y copos');
-chk(c12.includes('let sem = 20261208;'), 'LCG semillado (copos idénticos en cada build/QA)');
-chk(c12.includes('frozen || this._hieloCongela())      // r26b: ráfaga de SÚPER HIELO'), 'ai.update SALTADO durante la ráfaga');
-chk(c12.includes('if (!_dbCercaRiv && !this._hieloCongela()) {'), 'rival 2 (dobles) también se congela');
-chk(c12.includes('const palas = [this.aiPaddleMesh];'), 'cascarón sobre la pala rival');
-chk(c12.includes('if (this._dbOn && this.riv2PaddleMesh) palas.push(this.riv2PaddleMesh);'), 'y sobre el rival 2 en dobles');
-chk(c12.includes('if (visible && !this._hieloVisOn) {'), 'CRACK sólo en el borde de subida (1 por ráfaga)');
-chk(c12.includes('g.position.copy(pala.position);'), 'cascarón pegado a la pala congelada');
-chk(c12.includes('_hieloFin() {') && c12.includes("this.rules.message = T('arc_hielo_fin');"), 'fin con aviso');
-chk(c12.includes("if (ent.id === 'hielo') return this._hieloTrigger(ent); // v3.6.122 (r26b)"), 'gatillo despacha hielo');
-chk(c12.includes('hielo: [0.62, 0.85, 1.0],'), 'TRAIL_PODER.hielo');
+/* — 5 · SÚPER OSCURIDAD · niebla en el golpeo rival (r29) ————————————— */
+console.log('5 · SÚPER OSCURIDAD · bola negra + niebla (r29: sustituye al Hielo)');
+chk(c12.includes('_oscuridadTrigger(ent) {'), '_oscuridadTrigger (refresco honesto + gasto)');
+chk(c12.includes("if (!this._megaMatriz.find((x) => x.id === 'oscuridad')) return false;"), 'sin carga no arranca');
+chk(c12.includes('_oscuridadTintAplicar() {'), 'bola NEGRA (tinta guardada, patrón fénix/magia)');
+chk(c12.includes("m.material.color.setHex(0x0d0b0e);"), 'carbón apagado 0x0d0b0e');
+chk(c12.includes("m.material.emissive.setHex(0xff2a08);"), 'emisivo rojo fuego');
+chk(c12.includes('_buildOscuridadFx() {'), '_buildOscuridadFx: pool de zonas de niebla');
+chk(c12.includes("gH.addColorStop(0, 'rgba(40,34,38,0.96)');"), 'humo OSCURO (tapa la escena, no ilumina)');
+chk(c12.includes("gB.addColorStop(0, 'rgba(255,120,60,1)');"), 'destellos rojos (los «pequeños ojos» del dueño)');
+chk(c12.includes('this.rig.add(g);          // ¡espacio de la mesa, NO this.scene!'), 'zonas en el RIG (lección r29)');
+chk(c12.includes('const OSCURIDAD_ZONAS = 6;'), 'pool de 6 zonas simultáneas');
+chk(c12.includes('_oscuridadNiebla(pos) {'), '_oscuridadNiebla: nace en la zona de golpeo');
+chk(c12.includes('for (const cand of zonas) {'), 'reciclado de la zona MÁS VIEJA (nunca crece sin tope)');
+chk(c12.includes('if (Math.random() < OSCURIDAD_OUT_P) {'), 'sorteo del 35 % por golpeo de la IA');
+chk(c12.includes('_oscuridadFalla(pos) {'), '_oscuridadFalla: la IA manda LARGO (fuera de mesa)');
+chk(c12.includes('computeShotVelocity(pos, tmpO,'), 'el solucionador de la casa (c05) apunta fuera — c04/c05 INTACTOS');
+chk(c12.includes('const fin = OSCURIDAD_VIDA + OSCURIDAD_DISIPA;'), 'ciclo natural 5 s + 2 s en el frame');
+chk(c12.includes('if (this._oscuridadT > 0 || this._oscuridadZonasVivas()) {'), 'la niebla vive SU ciclo aunque la ventana muera (patrón clon)');
+chk(c12.includes('_oscuridadFin() {') && c12.includes("this.rules.message = T('arc_oscuridad_fin');"), 'fin con aviso');
+chk(c12.includes("if (ent.id === 'oscuridad') return this._oscuridadTrigger(ent); // r29 (sustituye a hielo)"), 'gatillo despacha oscuridad');
+chk(c12.includes('oscuridad: [0.85, 0.14, 0.10],'), 'TRAIL_PODER.oscuridad (rojo fuego)');
+chk(!c12.includes('_hieloCongela'), 'HIELO ANULADO: cero rastros del congelador (orden del dueño)');
+chk(!c12.includes("id: 'hielo'"), 'HIELO fuera del registro PODERES_PALA');
 
 /* — 6 · PLANTILLA COMÚN · ventanas, cortina y precalentado ————————————— */
 console.log('6 · PLANTILLA COMÚN · ventanas 3·2·1, cortina, precaliente');
 chk(c12.includes('if (on && this._fenixT > 0) {') && c12.includes('if (on && this._cronoT > 0) {') &&
-    c12.includes('if (on && this._hieloT > 0) {'), 'ventanas propias en el tick (patrón red/elec)');
+    c12.includes('if (on && this._oscuridadT > 0) {'), 'ventanas propias en el tick (patrón red/elec)');
 chk(c12.includes('try { this._fenixFin(); } catch (eFF) { /* */ }') &&
     c12.includes('try { this._cronoFin(); } catch (eCF2) { /* */ }') &&
-    c12.includes('try { this._hieloFin(); } catch (eHF) { /* */ }'), 'apagado garantizado si «on» desaparece');
+    c12.includes('try { this._oscuridadFin(); } catch (eOF) { /* */ }'), 'apagado garantizado si «on» desaparece');
 chk(c12.includes('try { this._fenixFrame(dt); } catch (eFF2) {') &&
     c12.includes('try { this._cronoFrame(dt); } catch (eCF3) {') &&
-    c12.includes('try { this._hieloFrame(dt); } catch (eHF2) {'), 'frames con try (nunca tumban el tick)');
+    c12.includes('try { this._oscuridadFrame(dt); } catch (eOF2) {'), 'frames con try (nunca tumban el tick)');
 chk(c12.includes("try { this._fenixFin(); } catch (eF) { /* */ }") &&
     c12.includes('try { this._cronoFin(); } catch (eC) { /* */ }') &&
-    c12.includes('try { this._hieloFin(); } catch (eH) { /* */ }'), '_poderesCortina: etapas 2/4 cortan las 3 ventanas');
+    c12.includes('try { this._oscuridadFin(); } catch (eO) { /* */ }'), '_poderesCortina: etapas 2/4 cortan las 3 ventanas');
 chk(c12.includes("() => { try { this._megaVozPrecalentar('fenix'); } catch (e) { /* */ } }, // r26b: voz concesión") &&
     c12.includes("() => { try { this._megaVozPrecalentar('crono'); } catch (e) { /* */ } }, // r26b: voz concesión") &&
-    c12.includes("() => { try { this._megaVozPrecalentar('hielo'); } catch (e) { /* */ } }, // r26b: voz concesión"), 'voces precalentadas (anti-lag)');
-chk(c12.includes('() => { try { this._buildFenixFx(); } catch (e) { /* */ } },  // r26b: halo de llama listo') &&
-    c12.includes('() => { try { this._buildCronoFx(); } catch (e) { /* */ } },  // r26b: anillos de tiempo listos') &&
-    c12.includes('() => { try { this._buildHieloFx(); } catch (e) { /* */ } },  // r26b: cascarones listos'), 'FX preconstruidos');
+    c12.includes("() => { try { this._megaVozPrecalentar('oscuridad'); } catch (e) { /* */ } }, // r29: voz concesión"), 'voces precalentadas (anti-lag)');
+chk(c12.includes('() => { try { this._buildFenixFx(); } catch (e) { /* */ } },  // r29: fuego de la bola listo') &&
+    c12.includes('() => { try { this._buildCronoFx(); } catch (e) { /* */ } },  // r29: anillos HIJOS de la bola') &&
+    c12.includes('() => { try { this._buildOscuridadFx(); } catch (e) { /* */ } },  // r29: niebla lista'), 'FX preconstruidos');
 
 /* — 7 · I18N · nombres «SuperPoder de XXXX» ES/EN ————————————————————— */
 console.log('7 · I18N · 9 claves de poderes + 12 de halls (ES/EN)');
 for (const k of ['poder_fenix', 'arc_fenix_go', 'arc_fenix_fin',
   'poder_crono', 'arc_crono_go', 'arc_crono_fin',
-  'poder_hielo', 'arc_hielo_go', 'arc_hielo_fin',
+  'poder_oscuridad', 'arc_oscuridad_go', 'arc_oscuridad_fin',
   'hall_var_neon', 'hall_var_observatorio', 'hall_var_dojo',
   'hint_hall_var_neon', 'hint_hall_var_observatorio', 'hint_hall_var_dojo',
   'mesa_lock_rally20', 'mesa_lock_elo1100', 'mesa_lock_aces5']) {
@@ -178,7 +198,7 @@ for (const k of ['poder_fenix', 'arc_fenix_go', 'arc_fenix_fin',
 }
 chk(c00.includes("poder_fenix: '¡SUPERPODER DE FÉNIX!'"), 'nombre pedido por el dueño: SuperPoder de Fénix');
 chk(c00.includes("poder_crono: '¡SUPERPODER DE CRONO!'"), 'nombre pedido por el dueño: SuperPoder de Crono');
-chk(c00.includes("poder_hielo: '¡SUPERPODER DE HIELO!'"), 'nombre pedido por el dueño: SuperPoder de Hielo');
+chk(c00.includes("poder_oscuridad: '¡SUPERPODER DE OSCURIDAD!'"), 'nombre del 10.º poder: SuperPoder de Oscuridad (r29, sustituye a Hielo)');
 
 /* — 8 · 3 HALL NUEVOS · catálogo, candados por hitos y arte ———————————— */
 console.log('8 · HALLS · neón/orbital/dojo con candados por HITOS');

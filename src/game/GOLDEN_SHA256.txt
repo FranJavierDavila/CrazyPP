@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.123-SDK6, fase 125 · MODO DEPURACION COMPLETO (FORO3D); sello actualizado
-# por bump_version.py desde 3.6.122-SDK6)
-30a0f2b8f5f7a5ca183daee7f5983a8fdab3d9b68becd434d3da3f88b512db9f
+# SHA256 del game.html que produjo esta división (3.6.124-SDK6, fase 126 · BUG BOLA OCULTA + SALONES DE LUJO; sello actualizado
+# por bump_version.py desde 3.6.123-SDK6)
+bbe61385cd95c64954b4a4891c48d918713fdf1ced01de08c7ba0cf900e0fc46

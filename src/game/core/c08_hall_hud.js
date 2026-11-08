@@ -476,6 +476,8 @@ export function createHall(base) {
     texPaths.floor = b + 'suelo.jpg';
     texPaths.ceil = b + 'techo.jpg';
     for (const k in texMats) applyTex(k, texMats[k]);
+    // r28 · el mobiliario 3D ES PARTE del vestido: cada salón monta el suyo
+    try { if (typeof montarProps === 'function') montarProps(b); } catch (eMP) { /* */ }
   };
 
   /* ---- paleta del mobiliario 3D (luces, bolas) ----
@@ -616,6 +618,112 @@ export function createHall(base) {
   gloriaMesh.position.set(0, 1.60, z0 + 0.012);   // un pelín delante del arte
   g.add(gloriaMesh);
 
+  /* =====================================================================
+   *  r28 (v3.6.124) · MOBILIARIO 3D POR SALÓN — la lección de los
+   *  decorados de La Locura y Wizard (dueño: «los diseñaste tú con
+   *  muchísimo más detalle… la diferencia es abismal») es que el lujo
+   *  vive en la GEOMETRÍA, no sólo en las texturas. Cada variante monta
+   *  SU props 3D (vestir() los reconstruye en vivo; dispose del anterior):
+   *    · NEÓN      → dos RECREATIVAS reales flanqueando la mesa (marquesina
+   *                  y pantalla EMISIVAS con flicker, panel de mandos)
+   *    · OBSERVATORIO → GLOBO TERRÁQUEO flotante con anillo orbital (gira
+   *                  y flota en updateHallFx)
+   *    · DOJO      → farolillo TŌRŌ de piedra encendido + trío de bambúes
+   *  Materiales EMISIVOS — CERO PointLights nuevos (lección v2.92) — y
+   *  pegados a las paredes: jamás estorban la mesa ni el juego (el hall
+   *  no juega: «el museo no juega», v3.6.30).
+   *  ===================================================================== */
+  const props = new THREE.Group();
+  g.add(props);
+  const _propAnim = [];      // meshes con userData de animación (updateHallFx)
+  const _propTodo = [];      // todo lo creado (dispose al re-montar)
+  const _limpiaProps = () => {
+    for (const m of _propTodo) {
+      try { if (m.geometry) m.geometry.dispose(); } catch (eG) { /* */ }
+      try { if (m.material && m.material.dispose) m.material.dispose(); } catch (eM) { /* */ }
+    }
+    _propTodo.length = 0;
+    _propAnim.length = 0;
+    while (props.children.length) props.remove(props.children[0]);
+  };
+  const _malla = (geo, mat, x, y, z, ry) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    if (ry) m.rotation.y = ry;
+    props.add(m);
+    _propTodo.push(m);
+    return m;
+  };
+  const montarProps = (b) => {
+    _limpiaProps();
+    const zf = z0 + 0.62;    // pegados a la pared FRONTAL, flancos libres
+    if (b === 'assets/hall/neon/') {
+      for (const [px, colPant] of [[-2.42, 0x66e2ff], [2.42, 0xff5cb0]]) {
+        const cuerpo = new THREE.MeshStandardMaterial({ color: 0x241f3c, roughness: 0.7 });
+        _malla(new THREE.BoxGeometry(0.66, 1.58, 0.58), cuerpo, px, 0.79, zf);
+        const marq = new THREE.MeshStandardMaterial({
+          color: colPant, emissive: colPant, emissiveIntensity: 1.35, roughness: 0.5 });
+        _malla(new THREE.BoxGeometry(0.70, 0.16, 0.62), marq, px, 1.67, zf - 0.02);
+        const pantMat = new THREE.MeshStandardMaterial({
+          color: 0x0a1428, emissive: colPant, emissiveIntensity: 0.85, roughness: 0.25 });
+        const pantalla = _malla(new THREE.PlaneGeometry(0.46, 0.36), pantMat, px, 1.18, zf + 0.30);
+        pantalla.userData.flicker = pantMat;       // CRT vivo (updateHallFx)
+        _propAnim.push(pantalla);
+        const mando = new THREE.MeshStandardMaterial({ color: 0x1a1730, roughness: 0.6 });
+        _malla(new THREE.BoxGeometry(0.60, 0.10, 0.30), mando, px, 0.92, zf + 0.36);
+      }
+    } else if (b === 'assets/hall/observatorio/') {
+      // GLOBO TERRÁQUEO: textura canvas procedural (océano + continentes)
+      const cvG = hallCanvas(256, 128);
+      const cx2 = cvG.getContext('2d');
+      cx2.fillStyle = '#1a5cb0'; cx2.fillRect(0, 0, 256, 128);
+      const rndG = [[36, 34, 44, 20], [120, 26, 40, 16], [190, 60, 34, 18], [80, 84, 30, 13],
+        [220, 96, 24, 11], [16, 92, 26, 12], [150, 100, 28, 10], [58, 20, 18, 9]];
+      cx2.fillStyle = '#3f8a48';
+      for (const [bx2, by2, br2] of rndG) {
+        cx2.beginPath();
+        cx2.ellipse(bx2 * 2.56, by2 * 1.28, br2 * 2.2, br2 * 1.5, 0.6, 0, Math.PI * 2);
+        cx2.fill();
+      }
+      const texG = new THREE.CanvasTexture(cvG);
+      try { texG.colorSpace = THREE.SRGBColorSpace; } catch (eTG2) { /* */ }
+      const globoMat = new THREE.MeshStandardMaterial({
+        map: texG, emissive: 0x11335f, emissiveIntensity: 0.4, roughness: 0.55 });
+      const globo = _malla(new THREE.SphereGeometry(0.30, 24, 18), globoMat,
+        -2.35, 1.52, zf + 0.25);
+      globo.userData.giro = 0.35;
+      globo.userData.flote = 0.05;
+      globo.userData.y0 = 1.52;
+      globo.userData.fase = 1.3;
+      _propAnim.push(globo);
+      const anilloMat = new THREE.MeshStandardMaterial({
+        color: 0x50c8ff, emissive: 0x50c8ff, emissiveIntensity: 1.1, roughness: 0.4 });
+      const anillo = _malla(new THREE.TorusGeometry(0.46, 0.012, 8, 48), anilloMat,
+        -2.35, 1.52, zf + 0.25);
+      anillo.rotation.x = 1.25;
+      anillo.userData.giro = -0.22;
+      _propAnim.push(anillo);
+    } else if (b === 'assets/hall/dojo/') {
+      // TŌRŌ (farolillo de piedra) con luz cálida + trío de bambúes
+      const piedra = new THREE.MeshStandardMaterial({ color: 0x8d8d86, roughness: 0.95 });
+      const luzMat = new THREE.MeshStandardMaterial({
+        color: 0xffd9a0, emissive: 0xffc06a, emissiveIntensity: 1.5, roughness: 0.4 });
+      const lx = -2.45, lz = zf + 0.1;
+      _malla(new THREE.CylinderGeometry(0.16, 0.20, 0.10, 10), piedra, lx, 0.05, lz);
+      _malla(new THREE.CylinderGeometry(0.055, 0.055, 0.62, 8), piedra, lx, 0.40, lz);
+      _malla(new THREE.BoxGeometry(0.30, 0.26, 0.30), luzMat, lx, 0.82, lz);
+      _malla(new THREE.CylinderGeometry(0.24, 0.06, 0.18, 10), piedra, lx, 1.03, lz);
+      // bambúes (varillas con nudos)
+      const bambu = new THREE.MeshStandardMaterial({ color: 0x5e8c46, roughness: 0.7 });
+      for (const [bx3, alt, tilt] of [[2.42, 1.55, 0.05], [2.58, 1.30, -0.07], [2.30, 1.15, 0.10]]) {
+        const bmb = _malla(new THREE.CylinderGeometry(0.030, 0.038, alt, 7), bambu,
+          bx3, alt / 2, zf + 0.15);
+        bmb.rotation.z = tilt;
+      }
+    }
+  };
+  montarProps(vbase);
+
   g.userData.hall = {
     /* v3.6.50 (r58): las SEIS CARAS visten el arte del artista (texs llega
      * async; texWant = contrato de las 6 claves). Del museo sobrevive lo
@@ -626,7 +734,7 @@ export function createHall(base) {
     floor, walls: [wallLeft, wallRight, wallFront, wallBack], ceil,
     insigniaCache: {},   // (retirado v3.6.28: las paredes visten arte fijo)
     lights,
-    fx: { balls },
+    fx: { balls, props: _propAnim },   // r28 · props animables por salón
     pulsoL: { cv: pulsoCvL, tex: pulsoTexL },   // r84 · placas EL PULSO
     pulsoR: { cv: pulsoCvR, tex: pulsoTexR },
     gloria: { cv: gloriaCv, tex: gloriaTex },   // r23 · pared de insignias
@@ -660,6 +768,19 @@ export function updateHallFx(g, dt, now) {
     const p = b.userData.fx;
     b.position.y = p.y0 + Math.sin(now * p.s + p.ph) * p.a;
     b.position.x = p.x0 + Math.sin(now * p.s * 0.6 + p.ph * 1.7) * 0.09;
+  }
+  // r28 · mobiliario 3D del salón VIVO: giro/flote/flicker según userData
+  const pr = fx.props;
+  if (pr && pr.length) {
+    for (const m of pr) {
+      const u = m.userData;
+      if (u.giro) m.rotation.y += dt * u.giro;
+      if (u.flote) m.position.y = u.y0 + Math.sin(now * 0.8 + (u.fase || 0)) * u.flote;
+      if (u.flicker) {
+        u.flicker.emissiveIntensity = 0.78 + Math.sin(now * 7.3) * 0.16 +
+          Math.sin(now * 23.7) * 0.08;
+      }
+    }
   }
 }
 

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.123-SDK6",
-  "fase": 125,
-  "faseNombre": "MODO DEPURACION COMPLETO (FORO3D)",
+  "version": "3.6.124-SDK6",
+  "fase": 126,
+  "faseNombre": "BUG BOLA OCULTA + SALONES DE LUJO",
   "sdk": "1.6.0",
   "fecha": "2026-11-08",
-  "hub": "v36123-sdk6",
+  "hub": "v36124-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11174904,
-  "golden": "30a0f2b8f5f7a5ca183daee7f5983a8fdab3d9b68becd434d3da3f88b512db9f"
+  "tamano": 11183014,
+  "golden": "bbe61385cd95c64954b4a4891c48d918713fdf1ced01de08c7ba0cf900e0fc46"
 }

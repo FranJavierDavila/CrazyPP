@@ -7964,14 +7964,22 @@ export class PingPongGame {
       }
     }
     // bola rota: oculta mientras dura el efecto (el árbitro ya aplicó el
-    // punto; el siguiente saque la re-enciende por sus caminos de siempre)
+    // punto). v3.6.124 (r28) · BUG DEL DUEÑO: «tras lanzar el poder de
+    // Súper Electricidad cuando el rival estaba sacando, la bola no se
+    // veía, quedaba oculta… imposibilita el juego». La caducidad RE-
+    // ENCIENDE SIEMPRE, decida lo que decida el estado: el saque del
+    // rival en magia/Wizard vive como 'rally' y el guard anterior
+    // (state !== 'rally') saltaba la reaparición → bola invisible
+    // durante TODO el rally. El tránsito de portal conserva su propio
+    // ocultamiento (la estela vuelve con el showTrail del dueño).
     if (this._elecRotoT > 0) {
       this._elecRotoT -= dt;
-      if (this._elecRotoT <= 0 && this.rules.state !== 'rally') {
-        // el estallido ya aplicó su punto: la bola (muerta volando o en el
-        // próximo saque) reaparece YA — con saque de la CPU nadie más la
-        // reenciende (el guardián de la bola es sólo online)
-        if (this.ballMesh) this.ballMesh.visible = true;
+      if (this._elecRotoT <= 0 && this.ballMesh &&
+          !(this.ball && this.ball.ppTransito)) {
+        this.ballMesh.visible = true;
+        if (this.trailObj) {
+          this.trailObj.visible = (this.showTrail !== false) && !this.inHall;
+        }
       }
     }
     // cadencia de descargas (con jitter natural) — r26 (v3.6.121): RÁFAGAS
@@ -8109,9 +8117,20 @@ export class PingPongGame {
         if (++dados >= 10) break;
       }
     }
-    if (this.ballMesh) this.ballMesh.visible = false;   // estalló
-    if (this.trailObj) this.trailObj.visible = false;
-    this._elecRotoT = 0.9;
+    // v3.6.124 (r28) · SOLO se oculta si la bola está VOLANDO (informe
+    // del dueño: con el rival sacando, la bola «no se veía… imposibilita
+    // el juego»). Bola quieta o preparando un saque = estallido visual
+    // + punto del árbitro SIN ocultarla (nada que "revivir" después).
+    const vR28 = (this.ball && this.ball.vel) || null;
+    const volandoR28 = !vR28 ||
+      (Math.abs(vR28.x) + Math.abs(vR28.y) + Math.abs(vR28.z)) > 0.5;
+    if (volandoR28) {
+      if (this.ballMesh) this.ballMesh.visible = false;   // estalló
+      if (this.trailObj) this.trailObj.visible = false;
+      this._elecRotoT = 0.9;
+    } else {
+      this._elecRotoT = 0;   // bola quieta (saque): visible y al asunto
+    }
     // estruendo del estallido + háptica fuerte
     try { this.audio.playOsc(1400, 90, 0.32, 'sawtooth', 0.14, 0); } catch (e) { /* */ }
     try { this.audio.playOsc(70, 45, 0.5, 'sine', 0.18, 0.02); } catch (e) { /* */ }
@@ -8208,8 +8227,22 @@ export class PingPongGame {
       } catch (e) { /* */ }
       this._elecBase = null;
     }
-    if (this.rules.state === 'rally' && this._elecRotoT <= 0) {
-      if (this.ballMesh) this.ballMesh.visible = true;   // red de seguridad
+    // v3.6.124 (r28) · red de seguridad SIN condición de estado: si la
+    // tormenta se apaga con la bola rota-oculta (fin de la ventana de
+    // 10 s, cortina de etapas 2/4 o salida del partido), reaparece
+    // SIEMPRE — el tick que contaba los 0,9 s muere con la tormenta
+    // (_elecFrame sólo corre con _elecT > 0) y nadie más la
+    // reencendería: la bola quedaba oculta para siempre.
+    if (this._elecRotoT > 0) {
+      this._elecRotoT = 0;
+      if (this.ballMesh && !(this.ball && this.ball.ppTransito)) {
+        this.ballMesh.visible = true;
+      }
+      if (this.trailObj) {
+        this.trailObj.visible = (this.showTrail !== false) && !this.inHall;
+      }
+    } else if (this.rules.state === 'rally' && this.ballMesh) {
+      this.ballMesh.visible = true;   // red de seguridad r25 (intacta)
     }
     this.rules.message = T('arc_elec_fin');
     try { this.audio.playOsc(300, 180, 0.22, 'sine', 0.10, 0); } catch (e) { /* */ }

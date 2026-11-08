@@ -312,7 +312,15 @@ class MapaPlantilla {
     this.rotY = m.rotY != null ? m.rotY : (Math.PI / 2);
     this.nodos = [];        // [{x,y,r}] en píxeles de la imagen
     this.imgW = 1280; this.imgH = 720;
-    this.maxIdx = () => Math.max(0, Math.min(ctrl.totalEtapas() - 1, ctrl.indiceReal() - 1));
+    // v3.6.123 (r27) · MODO DEPURACIÓN («foro3d»): el mapa levanta TODAS las
+    // tapas y el gatillo salta a CUALQUIER etapa — patrón ppDbg de oeste/
+    // locura/magia (v2.108) que a este módulo le faltaba. El progreso real
+    // se conserva vía _replay y el interceptor del núcleo (c00) no persiste
+    // nada de pp_champ_* en esta sesión.
+    this.maxIdx = () => {
+      try { if (typeof window !== 'undefined' && window.__PP_DEBUG) return ctrl.totalEtapas() - 1; } catch (e) { /* */ }
+      return Math.max(0, Math.min(ctrl.totalEtapas() - 1, ctrl.indiceReal() - 1));
+    };
     this._hover = -1;
     this._tapas = [];       // r87: tapas sobre las etapas aún no superadas
     this._tapasIdx = -1;    // r87: último maxIdx pintado (refresco barato)

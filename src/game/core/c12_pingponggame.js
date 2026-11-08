@@ -5867,6 +5867,13 @@ export class PingPongGame {
     try { return !!(this.champs && this.champs.active); } catch { return false; }
   }
   _mesaLibre(lock) {
+    // v3.6.123 (r27) · MODO DEPURACIÓN («foro3d»): el creador revisa con
+    // TODO abierto — salones por hitos (r26b: Neón Arcade, Observatorio
+    // Estelar, Dojo Zen), aspectos de mesa (Oro/Carbono) y de bola — sin
+    // tocar los contadores reales (el interceptor de c00 no persiste nada
+    // de esta sesión). Los campeonatos ya abrían vía c11 · isLocked();
+    // éste era el único candado que NO consultaba window.__PP_DEBUG.
+    try { if (typeof window !== 'undefined' && window.__PP_DEBUG) return true; } catch { /* */ }
     const d = (this.stats && this.stats.data) || {};
     // r97 · los RETOS SEMANALES ALIMENTAN los desbloqueos: las estrellas
     // abren Oro (6★) y Carbono (3★) sin exigir las marcas clásicas.

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.122-SDK6",
-  "fase": 124,
-  "faseNombre": "ATRACTORA + 3 SUPERPODERES + 3 HALLS",
+  "version": "3.6.123-SDK6",
+  "fase": 125,
+  "faseNombre": "MODO DEPURACION COMPLETO (FORO3D)",
   "sdk": "1.6.0",
   "fecha": "2026-11-08",
-  "hub": "v36122-sdk6",
+  "hub": "v36123-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11174354,
-  "golden": "fd9d9bada9f4b93a651e3c6e364a2ee8587b19093eca631417bcf091928a0a0e"
+  "tamano": 11174904,
+  "golden": "30a0f2b8f5f7a5ca183daee7f5983a8fdab3d9b68becd434d3da3f88b512db9f"
 }

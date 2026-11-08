@@ -8538,7 +8538,13 @@ class MapaEO {
       plane: this.plane,
       nodesPx: this.nodesPx,
       imgW: this.IMG_W, imgH: this.IMG_H,
-      maxIdx: this.ctrl._champion ? 4 : Math.min(this.ctrl.stage | 0, 4),
+      // v3.6.123 (r27) · MODO DEPURACIÓN («foro3d»): mapa completo para
+      // revisión — patrón ppDbg de oeste/locura/magia (v2.108). El salto
+      // replayLaunch ya aceptaba cualquier etapa; el progreso real se
+      // conserva (_replay) y c00 no persiste pp_champ_* en esta sesión.
+      maxIdx: (typeof window !== 'undefined' && !!window.__PP_DEBUG)
+        ? 4
+        : (this.ctrl._champion ? 4 : Math.min(this.ctrl.stage | 0, 4)),
     };
   }
 

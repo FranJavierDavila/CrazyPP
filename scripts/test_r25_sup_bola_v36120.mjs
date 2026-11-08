@@ -148,7 +148,7 @@ chk(c12.includes('color: 0x0b0b0e'), 'pedacitos NEGROS');
 chk(c12.includes('if (++dados >= 10) break;'), 'hasta 10 pedacitos por estallido (pool de 12)');
 chk(c12.includes('this.processIntents(this.rules.applyPoint(\'player\', \'elec\'));'), 'PUNTO por el cauce del árbitro (causa elec)');
 chk(c12.includes('this._elecRotoT = 0.9;'), 'bola rota oculta 0,9 s (nunca se toca el integrador)');
-chk(c12.includes('try { this.chispas.burst(this._elecTarget, [0.62, 0.85, 1.0]); } catch (e) { /* */ }'), 'chispas azules en el punto de impacto');
+chk(c12.includes("this.chispas.burst(this._elecTarget,\n          atractora ? [0.85, 0.70, 1.0] : [0.62, 0.85, 1.0]);"), 'chispas del impacto (re-anclada r26b: violetas si el rayo es atractor)');
 chk(c12.includes('_elecFrame(dt) {'), 'frame de la tormenta (nubes/rayos/pedacitos/cadencia)');
 chk(c12.includes('} else if (this._elecT > 0) {\n      this._elecT = 0;\n      try { this._elecFin(); } catch (eEF2) { /* */ }\n    }'), 'red de seguridad: sin «on» la tormenta se disipa YA');
 chk(c12.includes("try { this._elecFin(); } catch (eR1) { /* */ }"), 'startMatch disipa la tormenta');

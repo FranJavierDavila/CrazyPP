@@ -571,6 +571,17 @@ export const HALL_VARIANTES = [
     base: 'assets/hall/' },
   { id: 'cabana', lock: 'wins10', nameKey: 'hall_var_cabana',
     base: 'assets/hall/cabana/' },
+  // r26b (v3.6.122) · 3 HALL NUEVOS del dueño («otros 3 diseños de Hall
+  // nuevos bien cuidados para mapear… desbloqueos por hitos conseguidos»):
+  // arte 100 % procedural con las MISMAS fichas y proporciones exactas
+  // de los planos (frente/fondo 1849×864 · laterales 2395×864 ·
+  // suelo/techo 1296×1678), candados por HITOS de ppxr_stats_v1.
+  { id: 'neon', lock: 'hito_rally20', nameKey: 'hall_var_neon',
+    base: 'assets/hall/neon/' },        // SALÓN NEÓN ARCADE · rally 20
+  { id: 'observatorio', lock: 'hito_elo1100', nameKey: 'hall_var_observatorio',
+    base: 'assets/hall/observatorio/' },  // OBSERVATORIO ESTELAR · ELO 1100
+  { id: 'dojo', lock: 'hito_aces5', nameKey: 'hall_var_dojo',
+    base: 'assets/hall/dojo/' },        // DOJO ZEN · 5 saques directos
 ];
 /** r24 · variante por id SIN chequeo de candado (el id ya viaja saneado;
  *  el candado sólo gobierna ELEGIRLA, no verla en casa del anfitrión). */

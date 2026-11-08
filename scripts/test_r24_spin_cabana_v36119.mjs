@@ -87,7 +87,7 @@ for (const [nombre, src] of [['c04', c04], ['c05', c05]]) {
 
 /* — 4 · HALL CABAÑA · catálogo (c02) ————————————————————————————————— */
 console.log('4 · HALL CABAÑA · catálogo HALL_VARIANTES (c02)');
-chk(Array.isArray(HALL_VARIANTES) && HALL_VARIANTES.length === 2, '2 variantes (museo + cabaña)');
+chk(Array.isArray(HALL_VARIANTES) && HALL_VARIANTES.length === 5, '5 variantes (re-anclada r26b: museo + cabaña + neón + orbital + dojo)');
 chk(HALL_VARIANTES[0].id === 'anfitrion' && HALL_VARIANTES[0].lock === null && HALL_VARIANTES[0].base === 'assets/hall/', "'anfitrion': museo clásico, sin candado, arte base");
 chk(HALL_VARIANTES[1].id === 'cabana' && HALL_VARIANTES[1].lock === 'wins10', "'cabana' se libera con el logro wins10 (10 victorias — o 6★)");
 chk(HALL_VARIANTES[1].base === 'assets/hall/cabana/', "'cabana' apunta a su carpeta de arte");
@@ -119,7 +119,7 @@ chk(c12.includes("case 'hall_var': {"), "case 'hall_var' en el dispatcher");
 chk(c12.includes("try { localStorage.setItem('pp_hallvar', hv.id); } catch { /* */ }"), 'elección persistente');
 chk(c12.includes('try { applyHallVariant(this.hallGroup, hv.base); } catch (eHV) { /* */ }'), 'al elegir se re-viste EN VIVO');
 chk(c12.includes("if (hv.lock && !this._mesaLibre(hv.lock)) {"), "candado en el handler (mensaje de _mesaLockTxt)");
-chk(c12.includes("btn('hall_var:' + v.id, 56 + i * 468, y, 444, 54,"), 'fila de variantes en salahall (2 botones 444px)');
+chk(c12.includes("btn('hall_var:' + v.id, 56 + (i % 3) * 312,"), 'rejilla de variantes en salahall (3 col — re-anclada r26b: 5 halls)');
 chk(c12.includes("(libreH ? '' : '🔒 ') + T(v.nameKey)"), 'candado visible en la UI');
 chk(c12.includes('if (!per.peer) {') && c12.includes("label(T('hall_var_lbl')"), 'selector oculto de visita (el arte manda el anfitrión)');
 chk(c12.includes("'hall_var:anfitrion': 'hint_hall_var_a', 'hall_var:cabana': 'hint_hall_var_c',"), 'hints de las dos variantes');

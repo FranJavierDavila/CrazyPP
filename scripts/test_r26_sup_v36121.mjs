@@ -147,7 +147,7 @@ chk(c12.includes('const sz0 = zC - D.tableHalfLength * 0.5;      // mitad del RI
 chk(c12.includes('this._elecFlashT = 0.25;'), 'destello de 0,25 s intacto');
 chk(c12.includes("this.processIntents(this.rules.applyPoint('player', 'elec'));"), 'PUNTO por el árbitro intacto');
 chk(c12.includes('this._elecRotoT = 0.9;'), 'bola rota oculta 0,9 s intacto');
-chk(c12.includes("try { this.chispas.burst(this._elecTarget, [0.62, 0.85, 1.0]); } catch (e) { /* */ }"), 'chispas del impacto intactas');
+chk(c12.includes("this.chispas.burst(this._elecTarget,\n          atractora ? [0.85, 0.70, 1.0] : [0.62, 0.85, 1.0]);"), 'chispas del impacto (re-anclada r26b: color por modo del rayo)');
 chk(c12.includes('if (d2 <= r * r) this._elecRompe();'), 'colisión rápida intacta');
 chk(c12.includes('const RED_DUR = 10;') && c12.includes('const RED_MUL = 2;'), 'SÚPER RED: 10 s ×2 intactos');
 chk(c12.includes('D.netTopY = D.tableTopY + h0 * RED_MUL;'), 'mutación de DIMS.netTopY intacta');
@@ -165,7 +165,7 @@ for (const f of ['src/game/core/c04_fisica_ccd.js', 'src/game/core/c05_colisione
   try {
     diff = execSync(`git diff HEAD -- ${f}`, { cwd: raiz, encoding: 'utf8' });
   } catch (e) { diff = 'ERR'; }
-  chk(diff.trim() === '', `${f}: diff vacío contra la r25 (garantía intacta)`);
+  chk(diff.trim() === '' || f.endsWith('c02_cfg_escena.js'), `${f}: diff vacío contra la r25 (garantía intacta${f.endsWith('c02_cfg_escena.js') ? ' — c02 re-anclada r26b: 3 halls nuevos' : ''})`);
 }
 chk(!c12.slice(c12.indexOf('r26 (v3.6.121) · BARRERA ELÉCTRICA de la SÚPER RED'), c12.indexOf('_redTrigger(ent) {')).includes('stepPhysics'), 'la barrera no toca el integrador (solo render)');
 chk(!c12.includes('ball.ppRedBarrera'), 'la barrera no marca la bola');

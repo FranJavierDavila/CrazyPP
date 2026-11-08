@@ -15655,8 +15655,11 @@ const PODERES_PALA = [
     voz: VOZ_PODER_ELEC, vozEn: VOZ_PODER_ELEC_EN, png: PNG_PODER_ELEC },
   // r29 (v3.6.125) · SÚPER FÉNIX con el FUEGO REAL del Wizard (magia
   // v2.120 — informe del dueño: «ya teníamos una bola en llamas… que
-  // funcionaba bien»): +18 % de rapidez, tinta brasa, bocanadas que
-  // suben de la bola, estela naranja y ASCUAS al golpear pala/mesa.
+  // funcionaba bien»): tinta brasa, bocanadas que suben de la bola,
+  // estela naranja y ASCUAS al golpear pala/mesa. r31 (v3.6.127) ·
+  // este comentario ya NO presume el «+18 % de rapidez» de r29: ese
+  // boost quedó ANULADO en r30 por orden del dueño (dinámica NORMAL,
+  // saques intactos) — toda la ventaja de juego es FENIX_OUT_P 0.15.
   { id: 'fenix', nombre: () => T('poder_fenix'),
     voz: VOZ_PODER_FENIX, vozEn: VOZ_PODER_FENIX_EN, png: PNG_PODER_FENIX },
   // r26b (v3.6.122) · SÚPER CRONO (noveno poder; arte propio r26b): «el

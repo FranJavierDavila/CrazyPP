@@ -1,10 +1,10 @@
 {
-  "version": "3.6.126-SDK6",
-  "fase": 128,
-  "faseNombre": "FENIX NORMAL · SALONES IA",
+  "version": "3.6.127-SDK6",
+  "fase": 129,
+  "faseNombre": "HIGIENE TEXTUAL FÉNIX",
   "sdk": "1.6.0",
   "fecha": "2026-11-08",
-  "hub": "v36126-sdk6",
+  "hub": "v36127-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11166642,
-  "golden": "345c9a8db19732ae909e32bc09ec15c28d92a1adfef331f0654d345d0047da04"
+  "tamano": 11166858,
+  "golden": "6badce1bc5cd56bbec7c818b38cca7ba1278fbbe61510bbad18d96978011f456"
 }

@@ -111,7 +111,25 @@ def apply_rewrites():
             sys.exit(f'✗ Reescritura {orig!r}: esperaba {expected}, hay {n}. '
                      f'Revisa game.html antes de desplegar.')
         html = html.replace(orig, repl)
-    open(path, 'w', encoding='utf-8').write(html)
+    # r31 · escritura ATÓMICA (temp + os.replace) — el mount del repo no
+    # honra O_TRUNC (lección r29): la escritura directa del game.html
+    # REESCRITO dejó 2 bytes nulos de cola en el despliegue v3.6.127
+    # (el tar extrae el fichero COMPLETO y la reescritura lo encoge).
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        f.write(html)
+    os.replace(tmp, path)
+    # GUARD byte-exacto: el game.html del sitio debe ser EXACTAMENTE el
+    # del repo con las 2 reescrituras — ni un byte de más (los nulos de
+    # cola de una escritura no truncada se detectan aquí y ABORTAN).
+    esperado = open(os.path.join(REPO, 'public', 'game.html'), 'rb').read()
+    for orig, repl, _ in REWRITES:
+        esperado = esperado.replace(orig.encode('utf-8'), repl.encode('utf-8'))
+    real = open(path, 'rb').read()
+    if real != esperado:
+        sys.exit(f'✗ game.html del sitio DIFIERE del esperado '
+                 f'({len(real):,} B vs {len(esperado):,} B). Escritura sin '
+                 f'truncar o corrupción — despliegue abortado.')
 
 
 def sha256(path):

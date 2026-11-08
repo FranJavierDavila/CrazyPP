@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r29 · v3.6.125-SDK6 · FASE 127 · TEST: SUPERPODERES
+/* CRAZY PING PONG · r29 · v3.6.126-SDK6 · FASE 127 · TEST: SUPERPODERES
  * SEGÚN EL INFORME DEL DUEÑO.
  *
  *   A · SÚPER FÉNIX — «No aparece la llama en la bola ni las ascuas
@@ -65,13 +65,13 @@ const c00 = lee('src/game/core/c00_pre_three.js');
 const vjson = JSON.parse(lee('src/game/VERSION.json'));
 
 /* — 1 · SELLOS · versión, fase y golden ——————————————————————————————— */
-console.log('1 · SELLOS · v3.6.125-SDK6 · FASE 127');
-chk(vjson.version === '3.6.125-SDK6', 'VERSION.json: 3.6.125-SDK6');
-chk(vjson.fase === 127, 'FASE 127');
-chk(vjson.faseNombre === 'SUPERPODERES R29', 'faseNombre: SUPERPODERES R29');
-chk(c12.includes("const VERSION = '3.6.125-SDK6'") ||
-    c00.includes("const VERSION = '3.6.125-SDK6'"), 'sello c00 = 3.6.125-SDK6');
-chk(vjson.tamano === 11165405, 'tamaño del build: 11.165.405 B');
+console.log('1 · SELLOS · v3.6.126-SDK6 · FASE 128 (re-anclada r30)');
+chk(vjson.version === '3.6.126-SDK6', 'VERSION.json: 3.6.126-SDK6');
+chk(vjson.fase === 128, 'FASE 128 (re-anclada r30)');
+chk(vjson.faseNombre === 'FENIX NORMAL · SALONES IA', 'faseNombre (re-anclada r30)');
+chk(c12.includes("const VERSION = '3.6.126-SDK6'") ||
+    c00.includes("const VERSION = '3.6.126-SDK6'"), 'sello c00 = 3.6.126-SDK6');
+chk(vjson.tamano === 11166642, 'tamaño del build: 11.166.642 B');
 chk(vjson.golden && vjson.golden.length === 64, 'golden de 64 hex en VERSION.json');
 chk(lee('src/game/GOLDEN_SHA256.txt').includes(vjson.golden), 'GOLDEN_SHA256.txt casa con VERSION.json');
 chk(sha256('public/game.html') === vjson.golden, 'public/game.html es BYTE-EXACTO al golden');
@@ -103,9 +103,8 @@ chk(c12.includes('if (this._fenixT > 0) {\n            try { this._fenixEstallid
 chk(c12.includes('for (const p of fx.ascuas) this._fenixParticula(p, dt, 3.4);'), 'las ascuas CAEN con gravedad');
 chk(c12.includes("if (this._megaActivaId === 'fenix') return TRAIL_PODER.fenix; // r26b") &&
     c12.includes('fenix: [1.0, 0.55, 0.18],'), 'estela NARANJA (TRAIL_PODER.fenix)');
-chk(c12.includes('this.ball.vel.multiplyScalar(FENIX_MUL);') &&
-    c12.includes('const FENIX_MUL = 1.18;') &&
-    c12.includes('const FENIX_CAP = 26;'), '+18 % con tope 26 m/s intactos');
+chk(!c12.includes('multiplyScalar(FENIX') && c12.includes('const FENIX_OUT_P = 0.15;'),
+    're-anclada r30: boost ANULADO por el dueño — dinámica normal + falta 15 %');
 chk(!c12.includes("this.scene.add(halo);"), 'SIN halo en this.scene (el bug del desplazamiento, eliminado)');
 
 /* — 4 · CRONO · anillos centrados por construcción ————————————————————— */

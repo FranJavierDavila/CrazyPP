@@ -80,8 +80,7 @@ for (const p of ['FENIX', 'CRONO', 'OSCURIDAD']) {
 }
 chk(c12.includes('const FENIX_DUR = 10;') && c12.includes('const CRONO_DUR = 10;') &&
     c12.includes('const OSCURIDAD_DUR = 20;'), 'ventanas: fénix/crono 10 s · oscuridad 20 s (spec literal)');
-chk(c12.includes('const FENIX_MUL = 1.18;'), 'FÉNIX: +18 % de rapidez en mis golpes');
-chk(c12.includes('const FENIX_CAP = 26;'), 'FÉNIX: tope 26 m/s (validador §12)');
+chk(!c12.includes('const FENIX_MUL'), 'FÉNIX re-anclada r30: boost +18 % ANULADO (dinámica normal)');
 chk(c12.includes('const CRONO_F = 0.62;'), 'CRONO: bola al 62 % (38 % más lenta)');
 chk(c12.includes('const CRONO_RAMP = 0.4;'), 'CRONO: rampa suave de entrada/salida');
 chk(c12.includes('const OSCURIDAD_OUT_P = 0.35;'), 'OSCURIDAD: IA manda fuera el 35 % (spec literal)');
@@ -106,11 +105,10 @@ chk(c12.includes('if (this._fenixT > 0) {\n            try { this._fenixEstallid
 chk(c12.includes('if (this._fenixT > 0) {\n            try { this._fenixEstallido(e.pos); } catch (eFxP) { /* */ }\n          }'), 'gancho PADDLE: ascuas al golpear la pala');
 chk(c12.includes('_fenixParticula(p, dt, grav) {'), 'gravedad de las ascuas (caen como chispas de hoguera)');
 chk(c12.includes('_fenixFin() {') && c12.includes("this.rules.message = T('arc_fenix_fin');"), 'fin con aviso');
-chk(c12.includes('this.ball.vel.multiplyScalar(FENIX_MUL);'), '5.55b: el golpe sale con +18 %');
-chk(c12.includes('if (this.ball.vel.length() > FENIX_CAP) this.ball.vel.setLength(FENIX_CAP);'), 'tope 26 m/s respetado');
-chk(c12.includes('this.chispas.burst(this.ball.pos, [1.0, 0.55, 0.18]);'), 'ascuas naranjas al golpear');
+chk(!c12.includes('multiplyScalar(FENIX'), 're-anclada r30: cero multiplicación por frame (bola normal)');
+chk(c12.includes('const FENIX_OUT_P = 0.15;'), 're-anclada r30: la ventaja es la falta PEQUEÑA de la IA (15 %)');
 chk(c12.includes('!(this.net.online && this.net.role === \'guest\')) {'), 'el invitado online no enciende (no simula)');
-chk(c12.includes('Corre DESPUÉS del portal (el fénix\n    //      respeta el swap)'), 'el fénix corre tras el portal');
+chk(c12.includes('ANULADO por orden del dueño'), 're-anclada r30: crónica del veto del boost (dinámica normal)');
 chk(c12.includes("if (ent.id === 'fenix') return this._fenixTrigger(ent); // v3.6.122 (r26b)"), 'gatillo despacha fénix');
 chk(c12.includes("if (ent.id === 'fenix') return this._fenixT > 0; // v3.6.122 (r26b)"), 'modo ACTIVO del icono para fénix');
 chk(c12.includes("if (this._megaActivaId === 'fenix') return this._fenixT; // v3.6.122 (r26b)"), 'anillo de tiempo para fénix');

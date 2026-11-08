@@ -1,10 +1,10 @@
 {
-  "version": "3.6.125-SDK6",
-  "fase": 127,
-  "faseNombre": "SUPERPODERES R29",
+  "version": "3.6.126-SDK6",
+  "fase": 128,
+  "faseNombre": "FENIX NORMAL · SALONES IA",
   "sdk": "1.6.0",
   "fecha": "2026-11-08",
-  "hub": "v36125-sdk6",
+  "hub": "v36126-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11165405,
-  "golden": "12e7a09ae388a7c237b78e4a20a7128138a97ed77e5a6eca4e38cd7f78a359e6"
+  "tamano": 11166642,
+  "golden": "345c9a8db19732ae909e32bc09ec15c28d92a1adfef331f0654d345d0047da04"
 }

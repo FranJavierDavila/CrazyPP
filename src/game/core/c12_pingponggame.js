@@ -8259,14 +8259,21 @@ export class PingPongGame {
    *  tenemos… deben llevar icono circular representativo del poder y
    *  deben afectar al juego de alguna manera para otorgar cierta
    *  ventaja de juego al jugador… duraciones sobre 10 segundos»).
-   *    · SÚPER FÉNIX  — LA BOLA DE FUEGO (r29): mis golpes válidos salen
-   *      con +18 % de rapidez (tope 26 m/s, el techo del validador §12 y
-   *      del «fuego» de DUELOS LOCOS r84) y la bola ARDE con el fuego REAL
-   *      del Wizard (el de magia v2.120, informe del dueño: «ya teníamos
-   *      una bola en llamas… que funcionaba bien»): tinta brasa +
-   *      bocanadas del pool que nacen en la bola, suben y se apagan,
-   *      estela naranja (TRAIL_PODER.fenix) y EXPLOSIÓN de ascuas cuando
-   *      la bola encendida golpea pala o mesa.
+   *    · SÚPER FÉNIX  — LA BOLA DE FUEGO (r30, DINÁMICA NORMAL por orden
+   *      del dueño: «no es jugable… la bola salía disparada a mucha
+   *      velocidad de forma incontrolable… debe permitir una partida
+   *      normal, solo que con una pequeña penalización para la IA; los
+   *      saques deben permitirse normales»): CERO boost de rapidez (el
+   *      +18 % de r26b/r29 multiplicaba la bola CADA FRAME del rally y
+   *      la disparaba hasta el tope — anulado), saques intactos y la
+   *      PEQUEÑA ventaja prometida: la IA manda el 15 % de sus
+   *      devoluciones LARGAS (FENIX_OUT_P). Los efectos SE QUEDAN
+   *      («mantener los efectos»): la bola ARDE con el fuego REAL del
+   *      Wizard (el de magia v2.120: «ya teníamos una bola en llamas…
+   *      que funcionaba bien») — tinta brasa + bocanadas del pool que
+   *      nacen en la bola, suben y se apagan, estela naranja
+   *      (TRAIL_PODER.fenix) y EXPLOSIÓN de ascuas cuando la bola
+   *      encendida golpea pala o mesa.
    *    · SÚPER CRONO  — EL TIEMPO LENTO: la bola vuela al 62 % (rampa
    *      suave de entrada/salida 0,4 s; rapidez RESTAURADA exacta al
    *      cerrar) con 3 anillos de reloj orbitando la bola.
@@ -8818,7 +8825,9 @@ export class PingPongGame {
    *  la mesa»): su devolución sale LARGA — el solucionador de la casa
    *  (c05, el mismo que usa la IA) apunta 0,25–0,70 m MÁS ALLÁ de la
    *  línea de fondo del jugador. El árbitro canta la falta; c04/c05
-   *  intactos (sólo cambiamos la velocidad que la IA ACABA de elegir). */
+   *  intactos (sólo cambiamos la velocidad que la IA ACABA de elegir).
+   *  r30 · helper COMPARTIDO: también la falta PEQUEÑA de SÚPER FÉNIX
+   *  (15 %, FENIX_OUT_P — la bola ardiente intimida a la IA). */
   _oscuridadFalla(pos) {
     const tz = DIMS.tableCenterZ - DIMS.tableHalfLength -
       (0.25 + Math.random() * 0.45);
@@ -13068,6 +13077,16 @@ export class PingPongGame {
           try { this._oscuridadFalla(this.ball.pos); } catch (eOsF) { /* */ }
         }
       }
+      // r30 · SÚPER FÉNIX: la PEQUEÑA penalización del dueño — la bola
+      // ARDE y la IA, intimidada, manda el 15 % de sus devoluciones
+      // LARGAS (la misma mecánica de falta que la Oscuridad, a escala
+      // pequeña; el saque de la IA — estado 'serve' guiado — jamás se
+      // toca: los saques se permiten normales).
+      if (this._fenixT > 0 && this.rules.state === 'rally') {
+        if (Math.random() < FENIX_OUT_P) {
+          try { this._oscuridadFalla(this.ball.pos); } catch (eFeF) { /* */ }
+        }
+      }
       // registro opcional para tests headless (solo si un test lo activa)
       if (window.__logAiHits) {
         (window.__aiHits = window.__aiHits || []).push({
@@ -13138,6 +13157,12 @@ export class PingPongGame {
             try { this._oscuridadNiebla(this.ball.pos); } catch (eOsN2) { /* */ }
             if (Math.random() < OSCURIDAD_OUT_P) {
               try { this._oscuridadFalla(this.ball.pos); } catch (eOsF2) { /* */ }
+            }
+          }
+          // r30 · FÉNIX en dobles: el rival 2 también come la falta pequeña
+          if (this._fenixT > 0 && this.rules.state === 'rally') {
+            if (Math.random() < FENIX_OUT_P) {
+              try { this._oscuridadFalla(this.ball.pos); } catch (eFeF2) { /* */ }
             }
           }
           this.processIntents(this.rules.registerPaddleHit('ai'));
@@ -13550,25 +13575,16 @@ export class PingPongGame {
       try { this._portalProcesa(); } catch (eP0) { /* nunca rompe el frame */ }
     }
 
-    // 5.55b) r26b (v3.6.122) · SÚPER FÉNIX: mis golpes VÁLIDOS salen de
-    //      FUEGO — +18 % de rapidez (tope 26 m/s, el techo del validador
-    //      §12 que ya respetaba el «fuego» de DUELOS LOCOS r84), estallido
-    //      de ascuas y latigazo sonoro. Corre DESPUÉS del portal (el fénix
-    //      respeta el swap) y ANTES del anuncio 5.6 (la velocidad enviada
-    //      es la FINAL). El saque NO se enciende; el invitado no simula.
-    if (presenting && this._fenixT > 0 && this.rules.state === 'rally' &&
-        !(this.net.online && this.net.role === 'guest')) {
-      try {
-        if (this.ball && this.ball.vel) {
-          this.ball.vel.multiplyScalar(FENIX_MUL);
-          if (this.ball.vel.length() > FENIX_CAP) this.ball.vel.setLength(FENIX_CAP);
-          if (this.chispas) {
-            try { this.chispas.burst(this.ball.pos, [1.0, 0.55, 0.18]); } catch (eF2) { /* */ }
-          }
-          try { this.audio.playOsc(600, 1200, 0.10, 'sawtooth', 0.07, 0); } catch (eF3) { /* */ }
-        }
-      } catch (eFenix) { /* el fuego nunca rompe el frame */ }
-    }
+    // 5.55b) r30 (v3.6.126) · SÚPER FÉNIX: el boost de rapidez r26b/r29
+    //      está ANULADO por orden del dueño («la bola salía disparada a
+    //      mucha velocidad de forma incontrolable»): el viejo bloque
+    //      multiplicaba la velocidad CADA FRAME del rally (×1,18
+    //      compuesto — tope 26 m/s en un par de décimas) y de paso
+    //      disparaba el saque. La dinámica es la de una partida NORMAL;
+    //      la ventaja de Fénix es la PEQUEÑA falta de la IA
+    //      (FENIX_OUT_P, en los bloqueos de la IA) y los efectos de
+    //      fuego quedan INTACTOS (estallidos en los eventos 'table' y
+    //      'paddle', llamas por frame en _fenixFrame, estela naranja).
 
     // 5.6) v2.19 online: anunciar MI golpeo al rival (con la velocidad final,
     //      ya enderezada por el asistente del 5.5)
@@ -15694,14 +15710,16 @@ const RED_SPARK_CD = 1.4;   // s entre chispas del riel superior
 // rayos sigue cayendo al azar y conserva su colisión de siempre.
 const ELEC_ATRAE_P = 0.25;  // probabilidad por rayo de modo ATRACTORA
 const ELEC_ATRAE_COL = 0xd9c8ff; // tinte violeta del rayo cazador
-// r26b (v3.6.122) · SÚPER FÉNIX (8.º poder; informe del dueño: «otros 3
-// superpoderes de pala muy llamativos… icono circular… ventaja de juego…
-// duraciones sobre 10 segundos») — LA BOLA DE FUEGO: mis golpes salen
-// con +18 % de rapidez (tope 26 m/s del validador §12, precedido por el
-// «fuego» de DUELOS LOCOS r84), estela naranja y ascuas del pool.
+// r30 (v3.6.126) · SÚPER FÉNIX (8.º poder; orden del dueño tras probarlo:
+// «no es jugable… que la dinámica del juego sea la de una partida normal
+// con una pequeña penalización para la IA… los saques deben permitirse
+// normales») — LA BOLA DE FUEGO: efectos puros, DINÁMICA NORMAL. El
+// boost de r26b/r29 (+18 % por frame, tope 26 m/s) está ANULADO y sus
+// constantes FENIX_MUL/FENIX_CAP retiradas; la ventaja de juego es la
+// PEQUEÑA penalización de la IA (15 % de faltas largas — la mecánica de
+// la Oscuridad a escala pequeña) y los saques quedan intactos.
 const FENIX_DUR = 10;       // s de ventana (regla de la casa: ~10 s)
-const FENIX_MUL = 1.18;     // rapidez del golpe (+18 %)
-const FENIX_CAP = 26;       // m/s — tope interno del validador de red
+const FENIX_OUT_P = 0.15;   // prob. PEQUEÑA de falta larga de la IA (15 %)
 // r26b (v3.6.122) · SÚPER CRONO (9.º poder) — EL TIEMPO LENTO: la bola
 // vuela al 62 % durante la ventana (entrada y salida suaves de 0,4 s;
 // al terminar, la rapidez se RESTAURA exacta). Ventaja honesta: más

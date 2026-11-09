@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r36 (v3.6.132, FASE 134) — TEST de la ronda.
+/* CRAZY PING PONG · r36 (v3.6.133, FASE 135) — TEST de la ronda.
  * Revisión del multijugador pedida por el dueño («revisa el funcionamiento
  * de las partidas multijugador por si cazas algún bug»). TRES BUGS cazados
  * en la auditoría completa de c09/c09b/c12:
@@ -16,7 +16,7 @@
  *       → un ack posterior daba por ENTREGADOS eventos jamás enviados
  *       (pérdida silenciosa de HIT/HANDOFF). FIX: seq sólo a los que
  *       viajan.
- * Uso: node scripts/test_r36_red_v36132.mjs */
+ * Uso: node scripts/test_r36_red_v36133.mjs */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
@@ -39,7 +39,7 @@ chk(c09.includes('if (d > 1 && d <= 64) this._gaps += d - 1;'),
 chk(!c09.includes('this._recvs = this._recvRing.length + this._gaps;'),
   'fuera la recalibración vitalicia (_recvs = anillo + gaps)');
 chk(c09.includes('_lossWin() {'), 'helper de ventana _lossWin()');
-chk(c09.includes('const span = PPNET.wrapDiff(ring[n - 1], ring[0]);') &&
+chk(c09.includes('const span = NetLink._seqDiff(ring[n - 1], ring[0]);   // r37: u16-safe') &&
     c09.includes('const g = Math.max(0, Math.min(this._gaps, span - (n - 1)));'),
   'ventana = span del anillo − recibidos (clamp ≥0 y al contado)');
 chk(c09.includes('const lw = this._lossWin();') &&
@@ -103,7 +103,7 @@ chk(r3.degradado && r3.hz === 30,
   `A3 · pérdida crónica del 12,5 % mantiene la degradación honesta → hz=${r3.hz}`);
 
 console.log('== 2) FIX B · PAUSA ANUNCIADA NO MUERE (60 s de gracia) ==');
-chk(c09.includes('const SILENCIO = this._pausedRemote ? 60000 : 12000;'),
+chk(c09.includes('const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);'),
   'watchdog consciente de la pausa (60 s anunciada · 12 s sin pausa)');
 chk(cuenta(c09, "now - this._lastRelAt > SILENCIO") === 1 &&
     cuenta(c09, "now - this._lastFastAt > SILENCIO") === 1,
@@ -130,12 +130,12 @@ chk(sha(`${RAIZ}/src/game/core/c05_colisiones_ia_golpeo.js`).startsWith('8bb6208
   'c05 sha256 8bb62082… (física byte-exacta)');
 
 console.log('== 5) VERSIÓN Y SELLOS ==');
-chk(vjson.version === '3.6.132-SDK6', `VERSION.json 3.6.132-SDK6 (${vjson.version})`);
-chk(vjson.fase === 134, `FASE 134 (${vjson.fase})`);
-chk(game.includes('const VERSION') && game.includes('3.6.132-SDK6'),
-  'game.html sellado a 3.6.132-SDK6');
+chk(vjson.version === '3.6.133-SDK6', `VERSION.json 3.6.133-SDK6 (${vjson.version})`);
+chk(vjson.fase === 135, `FASE 135 (${vjson.fase})`);
+chk(game.includes('const VERSION') && game.includes('3.6.133-SDK6'),
+  'game.html sellado a 3.6.133-SDK6');
 chk(cuenta(game, '_lossWin') === 3, `game.html: _lossWin (def + trackLoss + netInfo) ×3: ${cuenta(game, '_lossWin')}`);
-chk(game.includes('const SILENCIO = this._pausedRemote ? 60000 : 12000;'),
+chk(game.includes('const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);'),
   'game.html lleva el watchdog consciente de pausa');
 chk(cuenta(game, 'this._pend.slice(0, PPNET.VP.MAX_EVENTS)) e.seqs.push(pk.seq);') === 2,
   'game.html lleva los dos etiquetados corregidos');

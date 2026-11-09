@@ -923,6 +923,7 @@ export class NetLink {
     this._fastOpen = false; this._relOpen = false;
     this._seq = (Math.random() * 0xffff) | 0;
     this._ackP = 0; this._ackBits = 0;
+    this._ackInit = false;                      // r37: ack SOLO avanza
     this._echoTime = 0; this._echoAt = 0;       // eco del último paquete recibido
     this._pend = [];                            // eventos pendientes de ack
     this._evId = 1;
@@ -1042,6 +1043,22 @@ export class NetLink {
       if (this._pc && rd && rd.type) this._pc.addIceCandidate(c).catch(() => { /* */ });
       else (this._iceQ = this._iceQ || []).push(c);
     } catch { /* */ }
+  }
+
+  /** r37 (v3.6.133) · REINICIO DE ICE REAL: oferta nueva con iceRestart
+   *  por la señalización viva (el TÚNEL PeerJS del menú, no el enlace
+   *  caído). Sólo el INVITADO la emite (el anfitrión responde en
+   *  _v2RemoteDesc — sin glare por diseño); el reinicio refresca los
+   *  candidatos de los DOS extremos en una sola renegociación. El error
+   *  se traga: si la señalización también murió, el silencio corta. */
+  async _iceRestartIntento() {
+    try {
+      const pc = this._pc;
+      if (!pc || pc.signalingState === 'closed') return;
+      const of = await pc.createOffer({ iceRestart: true });
+      await pc.setLocalDescription(of);
+      this.send({ k: 'sdp', d: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+    } catch { /* sin recuperación posible: el watchdog de silencio decide */ }
   }
 
   /* r125 · P4 — diagnóstico del ENLACE REAL: qué camino abrió el ICE
@@ -1327,20 +1344,42 @@ export class NetLink {
     if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
     const now = performance.now();
     this._clock.apply(now, this.game?.rules?.state === 'rally');
-    // watchdog de ICE: sin paquetes fast 5 s → restartIce (spec §11)
-    // (r82: sólo en modo P2P — con túnel el ICE es irrelevante)
-    if (!this._tunnel && this._lastFastAt && now - this._lastFastAt > 5000 &&
+    // r37 (v3.6.133) · watchdog de ICE: sin paquetes fast 5 s → REINICIO
+    // DE ICE REAL (spec §11). La r125 llamaba pc.restartIce(), que SÓLO
+    // arma una bandera interna del agente: sin una oferta nueva
+    // (createOffer iceRestart → setLocal → 'sdp') el ICE NUNCA se
+    // renegociaba — el enlace muerto (Wi-Fi→LTE, router que cambia la
+    // ruta) se quedaba helado hasta que el silencio de 12 s mataba la
+    // partida. Ahora el INVITADO (el que ofrece por diseño, sin riesgo
+    // de glare) renegocia de verdad por la señalización viva (PeerJS) y
+    // el anfitrión responde por el camino que ya existía (_v2RemoteDesc:
+    // setRemoteDescription + answer). UNA renegociación refresca los
+    // candidatos de AMBOS extremos. SÓLO EL INVITADO ofrece: si el enlace
+    // muere para los dos a la vez, dos ofertas simultáneas serían glare
+    // SDP (setRemoteDescription en have-local-offer revienta) — con un
+    // solo ofensor el papel de cada extremo es el del arranque y no hay
+    // colisión posible. (r82: sólo en modo P2P — con túnel el ICE es
+    // irrelevante)
+    if (!this._tunnel && this.role === 'guest' && this._lastFastAt &&
+        now - this._lastFastAt > 5000 &&
         now - (this._lastIceTry || 0) > PPNET.VP.ICE_RESTART_MS &&
         this._iceRestarts < PPNET.VP.ICE_RESTART_MAX) {
       this._iceRestarts++;
       this._lastIceTry = now;
-      try { this._pc?.restartIce(); } catch { /* */ }
+      this._iceRestartIntento();
     }
     // r36 (v3.6.132) · el rival que AVISÓ de pausa ('pause', visor quitado)
     // está VIVO: su silencio no puede matar la partida a los 12 s — con
     // pausa anunciada el corte tarda 60 s (y al volver, 'resume' restaura
     // el estado exacto). Sin pausa anunciada: 12 s de siempre.
-    const SILENCIO = this._pausedRemote ? 60000 : 12000;
+    // r37 (v3.6.133) · con un reinicio de ICE EN VUELO (<15 s desde el
+    // intento) el silencio tolerado sube a 25 s: el apretón de manos real
+    // puede tardar 2-6 s y el corte a los 12 mataba la recuperación en el
+    // último tramo. Sin reinicio ni pausa: 12 s de siempre (el abandono
+    // real se corta igual — el rival que se va cierra el PeerJS y cae por
+    // conn.on('close'), no por silencio).
+    const reinicioVivo = this._lastIceTry && (now - this._lastIceTry) < 15000;
+    const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);
     if (this._lastRelAt && now - this._lastRelAt > SILENCIO && this._lastFastAt &&
         now - this._lastFastAt > SILENCIO) {
       this.onPeerGone(T('conn_lost'));
@@ -1592,14 +1631,35 @@ export class NetLink {
       }
       if (e.done) this._pend.splice(i, 1);
     }
-    // (b) registra el seq recibido para mi própi ack/ackBits de envío
-    this._ackP = pkt.seq;
+    // (b) registra el seq recibido para mi propio ack/ackBits de envío
+    //     r37 (v3.6.133) · el ack SOLO AVANZA: en el canal sin orden un
+    //     paquete viejo que llega tarde movía _ackP hacia ATRÁS y la
+    //     máscara dejaba de cubrir los seqs recientes — el rival
+    //     retransmitía eventos YA entregados hasta que un paquete nuevo
+    //     restauraba la ventana (tráfico y presión de dedupe de más).
+    //     r37b · el seq es u16: el wrapDiff u32 del reloj se pierde en la
+    //     envoltura de 16 bits (0xffff→0 le parece un salto de −65535) —
+    //     se usa _seqDiff, la MISMA aritmética que _ackCovers/_myAckBits.
+    if (!this._ackInit || NetLink._seqDiff(pkt.seq, this._ackP) > 0) {
+      this._ackP = pkt.seq;
+      this._ackInit = true;
+    }
     this._recvHist.push(pkt.seq);
     if (this._recvHist.length > 40) this._recvHist.shift();
   }
+  /** r37 (v3.6.133) · diferencia con envoltura u16 para los SEQ del canal
+   *  fast (el PPNET.wrapDiff del reloj es u32: en el giro 0xffff→0 de los
+   *  seq ve un salto hacia atrás de 65535 y los acks/máscaras/pérdida se
+   *  quedaban CIEGOS durante media vuelta del contador (~18 min a 60 Hz,
+   *  una partida larga lo cruza). Firma con signo, como wrapDiff. */
+  static _seqDiff(a, b) {
+    let d = (a - b) & 0xffff;
+    if (d >= 0x8000) d -= 0x10000;
+    return d;
+  }
   _ackCovers(ack, bits, seq) {
     if (seq === ack) return true;
-    const d = PPNET.wrapDiff(ack, seq);
+    const d = NetLink._seqDiff(ack, seq);
     if (d > 0 && d <= 32) return ((bits >>> (d - 1)) & 1) === 1;
     return false;
   }
@@ -1608,7 +1668,7 @@ export class NetLink {
     let bits = 0;
     for (const s of this._recvHist) {
       if (s === this._ackP) continue;
-      const d = PPNET.wrapDiff(this._ackP, s);
+      const d = NetLink._seqDiff(this._ackP, s);
       if (d >= 1 && d <= 32) bits |= (1 << (d - 1));
     }
     return bits >>> 0;
@@ -1616,7 +1676,7 @@ export class NetLink {
   _trackLoss(seq) {
     const ring = this._recvRing;
     const last = ring.length ? ring[ring.length - 1] : seq;
-    const d = PPNET.wrapDiff(seq, last);
+    const d = NetLink._seqDiff(seq, last);   // r37: u16-safe (el giro 0xffff→0 NO es un salto)
     // r36 (v3.6.132) · hueco de PÉRDIDA real: 2..64 paquetes. Un salto
     // mayor es una PARADA (reinicio de ICE, pestaña congelada), no pérdida:
     // antes se sumaba entero a _gaps (acumulativo DE POR VIDA) y un único
@@ -1650,7 +1710,7 @@ export class NetLink {
     const ring = this._recvRing || [];
     const n = ring.length;
     if (n < 2) return { g: 0, n };
-    const span = PPNET.wrapDiff(ring[n - 1], ring[0]);
+    const span = NetLink._seqDiff(ring[n - 1], ring[0]);   // r37: u16-safe
     const g = Math.max(0, Math.min(this._gaps, span - (n - 1)));
     return { g, n };
   }
@@ -2201,7 +2261,9 @@ export class NetLink {
     // r79: firma honesta del abandono antes de cortar (spec §11)
     try { if (this.v2 === 'ok') this.sendMatchEnd('abandono'); } catch { /* */ }
     this.send({ k: 'bye' });
-    this.onPeerGone('Has cerrado la conexión');
+    // r37 (v3.6.133) · i18n: el texto del colgado viajaba hardcodeado en
+    // español — un jugador en inglés cerraba su sala y leía español
+    this.onPeerGone(T('bye_self'));
   }
 
   teardown() {

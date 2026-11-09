@@ -1,10 +1,10 @@
 {
-  "version": "3.6.132-SDK6",
-  "fase": 134,
-  "faseNombre": "Revisión del multijugador — 3 bugs de red",
+  "version": "3.6.133-SDK6",
+  "fase": 135,
+  "faseNombre": "Revisión del multijugador II — reconexión ICE real",
   "sdk": "1.6.0",
   "fecha": "2026-11-09",
-  "hub": "v36132-sdk6",
+  "hub": "v36133-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11380008,
-  "golden": "49d01478b0cbbc0218df31b0099671098cf991dc1d87b3e9f8643e127b2ecb5d"
+  "tamano": 11384002,
+  "golden": "726f262ca69f9781c7fd7f3bd509651cb71884e4790164e9595ab03f98695b0f"
 }

@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.132-SDK6, fase 134 · Revisión del multijugador — 3 bugs de red; sello actualizado
-# por bump_version.py desde 3.6.131-SDK6)
-49d01478b0cbbc0218df31b0099671098cf991dc1d87b3e9f8643e127b2ecb5d
+# SHA256 del game.html que produjo esta división (3.6.133-SDK6, fase 135 · Revisión del multijugador II — reconexión ICE real; sello actualizado
+# por bump_version.py desde 3.6.132-SDK6 · re-sellado por _r37_resellar.py)
+726f262ca69f9781c7fd7f3bd509651cb71884e4790164e9595ab03f98695b0f

@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.132-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.133-SDK6</span>
     </div>
   </main>
 
@@ -1230,6 +1230,7 @@ const I18N_STRINGS = {
     peer_gone: 'El rival se ha ido',
     conn_lost: 'Conexión perdida',
     peer_closed: 'El rival cerró la sala',
+    bye_self: 'Has cerrado la conexión',   // r37 (v3.6.133): hangup i18n
     net_unavailable: 'Red no disponible en este navegador',
     invalid_code: 'Código no válido (5 caracteres)',
     net_fail: 'No se pudo iniciar la red: {m}',
@@ -2202,6 +2203,7 @@ const I18N_STRINGS = {
     peer_gone: 'Your rival has left',
     conn_lost: 'Connection lost',
     peer_closed: 'Your rival closed the room',
+    bye_self: 'You closed the connection',   // r37 (v3.6.133): hangup i18n
     net_unavailable: 'Network unavailable in this browser',
     invalid_code: 'Invalid code (5 characters)',
     net_fail: 'Couldn’t start the network: {m}',
@@ -3326,7 +3328,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.132-SDK6';
+  const VERSION = '3.6.133-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -12759,6 +12761,7 @@ class NetLink {
     this._fastOpen = false; this._relOpen = false;
     this._seq = (Math.random() * 0xffff) | 0;
     this._ackP = 0; this._ackBits = 0;
+    this._ackInit = false;                      // r37: ack SOLO avanza
     this._echoTime = 0; this._echoAt = 0;       // eco del último paquete recibido
     this._pend = [];                            // eventos pendientes de ack
     this._evId = 1;
@@ -12878,6 +12881,22 @@ class NetLink {
       if (this._pc && rd && rd.type) this._pc.addIceCandidate(c).catch(() => { /* */ });
       else (this._iceQ = this._iceQ || []).push(c);
     } catch { /* */ }
+  }
+
+  /** r37 (v3.6.133) · REINICIO DE ICE REAL: oferta nueva con iceRestart
+   *  por la señalización viva (el TÚNEL PeerJS del menú, no el enlace
+   *  caído). Sólo el INVITADO la emite (el anfitrión responde en
+   *  _v2RemoteDesc — sin glare por diseño); el reinicio refresca los
+   *  candidatos de los DOS extremos en una sola renegociación. El error
+   *  se traga: si la señalización también murió, el silencio corta. */
+  async _iceRestartIntento() {
+    try {
+      const pc = this._pc;
+      if (!pc || pc.signalingState === 'closed') return;
+      const of = await pc.createOffer({ iceRestart: true });
+      await pc.setLocalDescription(of);
+      this.send({ k: 'sdp', d: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+    } catch { /* sin recuperación posible: el watchdog de silencio decide */ }
   }
 
   /* r125 · P4 — diagnóstico del ENLACE REAL: qué camino abrió el ICE
@@ -13163,20 +13182,42 @@ class NetLink {
     if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
     const now = performance.now();
     this._clock.apply(now, this.game?.rules?.state === 'rally');
-    // watchdog de ICE: sin paquetes fast 5 s → restartIce (spec §11)
-    // (r82: sólo en modo P2P — con túnel el ICE es irrelevante)
-    if (!this._tunnel && this._lastFastAt && now - this._lastFastAt > 5000 &&
+    // r37 (v3.6.133) · watchdog de ICE: sin paquetes fast 5 s → REINICIO
+    // DE ICE REAL (spec §11). La r125 llamaba pc.restartIce(), que SÓLO
+    // arma una bandera interna del agente: sin una oferta nueva
+    // (createOffer iceRestart → setLocal → 'sdp') el ICE NUNCA se
+    // renegociaba — el enlace muerto (Wi-Fi→LTE, router que cambia la
+    // ruta) se quedaba helado hasta que el silencio de 12 s mataba la
+    // partida. Ahora el INVITADO (el que ofrece por diseño, sin riesgo
+    // de glare) renegocia de verdad por la señalización viva (PeerJS) y
+    // el anfitrión responde por el camino que ya existía (_v2RemoteDesc:
+    // setRemoteDescription + answer). UNA renegociación refresca los
+    // candidatos de AMBOS extremos. SÓLO EL INVITADO ofrece: si el enlace
+    // muere para los dos a la vez, dos ofertas simultáneas serían glare
+    // SDP (setRemoteDescription en have-local-offer revienta) — con un
+    // solo ofensor el papel de cada extremo es el del arranque y no hay
+    // colisión posible. (r82: sólo en modo P2P — con túnel el ICE es
+    // irrelevante)
+    if (!this._tunnel && this.role === 'guest' && this._lastFastAt &&
+        now - this._lastFastAt > 5000 &&
         now - (this._lastIceTry || 0) > PPNET.VP.ICE_RESTART_MS &&
         this._iceRestarts < PPNET.VP.ICE_RESTART_MAX) {
       this._iceRestarts++;
       this._lastIceTry = now;
-      try { this._pc?.restartIce(); } catch { /* */ }
+      this._iceRestartIntento();
     }
     // r36 (v3.6.132) · el rival que AVISÓ de pausa ('pause', visor quitado)
     // está VIVO: su silencio no puede matar la partida a los 12 s — con
     // pausa anunciada el corte tarda 60 s (y al volver, 'resume' restaura
     // el estado exacto). Sin pausa anunciada: 12 s de siempre.
-    const SILENCIO = this._pausedRemote ? 60000 : 12000;
+    // r37 (v3.6.133) · con un reinicio de ICE EN VUELO (<15 s desde el
+    // intento) el silencio tolerado sube a 25 s: el apretón de manos real
+    // puede tardar 2-6 s y el corte a los 12 mataba la recuperación en el
+    // último tramo. Sin reinicio ni pausa: 12 s de siempre (el abandono
+    // real se corta igual — el rival que se va cierra el PeerJS y cae por
+    // conn.on('close'), no por silencio).
+    const reinicioVivo = this._lastIceTry && (now - this._lastIceTry) < 15000;
+    const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);
     if (this._lastRelAt && now - this._lastRelAt > SILENCIO && this._lastFastAt &&
         now - this._lastFastAt > SILENCIO) {
       this.onPeerGone(T('conn_lost'));
@@ -13428,14 +13469,35 @@ class NetLink {
       }
       if (e.done) this._pend.splice(i, 1);
     }
-    // (b) registra el seq recibido para mi própi ack/ackBits de envío
-    this._ackP = pkt.seq;
+    // (b) registra el seq recibido para mi propio ack/ackBits de envío
+    //     r37 (v3.6.133) · el ack SOLO AVANZA: en el canal sin orden un
+    //     paquete viejo que llega tarde movía _ackP hacia ATRÁS y la
+    //     máscara dejaba de cubrir los seqs recientes — el rival
+    //     retransmitía eventos YA entregados hasta que un paquete nuevo
+    //     restauraba la ventana (tráfico y presión de dedupe de más).
+    //     r37b · el seq es u16: el wrapDiff u32 del reloj se pierde en la
+    //     envoltura de 16 bits (0xffff→0 le parece un salto de −65535) —
+    //     se usa _seqDiff, la MISMA aritmética que _ackCovers/_myAckBits.
+    if (!this._ackInit || NetLink._seqDiff(pkt.seq, this._ackP) > 0) {
+      this._ackP = pkt.seq;
+      this._ackInit = true;
+    }
     this._recvHist.push(pkt.seq);
     if (this._recvHist.length > 40) this._recvHist.shift();
   }
+  /** r37 (v3.6.133) · diferencia con envoltura u16 para los SEQ del canal
+   *  fast (el PPNET.wrapDiff del reloj es u32: en el giro 0xffff→0 de los
+   *  seq ve un salto hacia atrás de 65535 y los acks/máscaras/pérdida se
+   *  quedaban CIEGOS durante media vuelta del contador (~18 min a 60 Hz,
+   *  una partida larga lo cruza). Firma con signo, como wrapDiff. */
+  static _seqDiff(a, b) {
+    let d = (a - b) & 0xffff;
+    if (d >= 0x8000) d -= 0x10000;
+    return d;
+  }
   _ackCovers(ack, bits, seq) {
     if (seq === ack) return true;
-    const d = PPNET.wrapDiff(ack, seq);
+    const d = NetLink._seqDiff(ack, seq);
     if (d > 0 && d <= 32) return ((bits >>> (d - 1)) & 1) === 1;
     return false;
   }
@@ -13444,7 +13506,7 @@ class NetLink {
     let bits = 0;
     for (const s of this._recvHist) {
       if (s === this._ackP) continue;
-      const d = PPNET.wrapDiff(this._ackP, s);
+      const d = NetLink._seqDiff(this._ackP, s);
       if (d >= 1 && d <= 32) bits |= (1 << (d - 1));
     }
     return bits >>> 0;
@@ -13452,7 +13514,7 @@ class NetLink {
   _trackLoss(seq) {
     const ring = this._recvRing;
     const last = ring.length ? ring[ring.length - 1] : seq;
-    const d = PPNET.wrapDiff(seq, last);
+    const d = NetLink._seqDiff(seq, last);   // r37: u16-safe (el giro 0xffff→0 NO es un salto)
     // r36 (v3.6.132) · hueco de PÉRDIDA real: 2..64 paquetes. Un salto
     // mayor es una PARADA (reinicio de ICE, pestaña congelada), no pérdida:
     // antes se sumaba entero a _gaps (acumulativo DE POR VIDA) y un único
@@ -13486,7 +13548,7 @@ class NetLink {
     const ring = this._recvRing || [];
     const n = ring.length;
     if (n < 2) return { g: 0, n };
-    const span = PPNET.wrapDiff(ring[n - 1], ring[0]);
+    const span = NetLink._seqDiff(ring[n - 1], ring[0]);   // r37: u16-safe
     const g = Math.max(0, Math.min(this._gaps, span - (n - 1)));
     return { g, n };
   }
@@ -14037,7 +14099,9 @@ class NetLink {
     // r79: firma honesta del abandono antes de cortar (spec §11)
     try { if (this.v2 === 'ok') this.sendMatchEnd('abandono'); } catch { /* */ }
     this.send({ k: 'bye' });
-    this.onPeerGone('Has cerrado la conexión');
+    // r37 (v3.6.133) · i18n: el texto del colgado viajaba hardcodeado en
+    // español — un jugador en inglés cerraba su sala y leía español
+    this.onPeerGone(T('bye_self'));
   }
 
   teardown() {

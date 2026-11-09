@@ -14,7 +14,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 PUB = RAIZ / 'public'
 SRC = RAIZ / 'scripts' / 'release-v304'
 STAGE = RAIZ / 'scripts' / 'staging-v304'

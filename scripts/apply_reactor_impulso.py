@@ -14,7 +14,7 @@ import re
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 MOD = RAIZ / 'public/championships/estacion_orbital/index.js'
 CLS = RAIZ / 'scripts/reactor_impulso_class.js'
 MAN = RAIZ / 'public/championships/estacion_orbital/manifest.json'

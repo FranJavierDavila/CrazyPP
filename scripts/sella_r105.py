@@ -17,7 +17,7 @@ gen_release_v3697 (qa_descargas_v366: COMPLETO 146.642.414 · ligera
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.96-SDK6', '3.6.97-SDK6'), ('v3696-sdk6', 'v3697-sdk6')]

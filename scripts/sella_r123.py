@@ -12,7 +12,7 @@ escudo try/catch en el canal fast (_onFast) + test_f1_decode_v36112 (6/0)."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.111-SDK6', '3.6.112-SDK6'), ('v36111-sdk6', 'v36112-sdk6')]

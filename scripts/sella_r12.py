@@ -17,7 +17,7 @@ Idempotente por contador: si un reemplazo da 0, FALLA (sello perdido)."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.8-SDK6', '3.6.9-SDK6'), ('v368-sdk6', 'v369-sdk6')]

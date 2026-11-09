@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r32 · v3.6.128-SDK6 · FASE 130 · TEST: SALONES DEL
+/* CRAZY PING PONG · r32 · v3.6.129-SDK6 · FASE 131 · TEST: SALONES DEL
  * DUEÑO (arte preparado por el dueño + música ambiental con icono).
  *
  *   A · ARTE DEL DUEÑO — los 18 JPG de los tres salones (DOJO ZEN ·
@@ -61,25 +61,25 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.128-SDK6 · FASE 130 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.128-SDK6 · FASE 130 · SALONES DEL DUEÑO');
-chk(vjson.version === '3.6.128-SDK6', 'VERSION.json: 3.6.128-SDK6');
-chk(vjson.fase === 130, 'FASE 130');
-chk(vjson.faseNombre === 'SALONES DEL DUEÑO', 'faseNombre = SALONES DEL DUEÑO');
-chk(vjson.tamano === 11185934, 'tamaño del build: 11.185.934 B');
+/* — 1 · SELLOS · v3.6.129-SDK6 · FASE 131 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.129-SDK6 · FASE 131 · SALONES DEL DUEÑO');
+chk(vjson.version === '3.6.129-SDK6', 'VERSION.json: 3.6.129-SDK6');
+chk(vjson.fase === 131, 'FASE 131');
+chk(vjson.faseNombre === 'Lote Aprobado', 'faseNombre = SALONES DEL DUEÑO');
+chk(vjson.tamano === 11365004, 'tamaño del build: 11.365.004 B');
 chk(vjson.golden ===
-  '780de58f35842de6e621269b184b3799af525ebea63a4f1c4a9da1972a4c90d4',
-  'VERSION.json golden 780de58f…');
+  '9213fc5966ac243314fbc8a1c9804509f6ccea6136c337738f6430624c0eae5a',
+  'VERSION.json golden 9213fc59…');
 chk(sha256('public/game.html') ===
-  '780de58f35842de6e621269b184b3799af525ebea63a4f1c4a9da1972a4c90d4',
-  'golden 780de58f… (build byte-exacto)');
-chk(game.includes('3.6.128-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.128-SDK6'"), 'sello c00 = 3.6.128-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.128-SDK6'"),
-  'sw.js CACHE v3.6.128-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.128-SDK6</span>'), 'badge V3.6.128-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36128-sdk6'),
-  'hub /descargas sellado a v36128-sdk6');
+  '9213fc5966ac243314fbc8a1c9804509f6ccea6136c337738f6430624c0eae5a',
+  'golden 9213fc59… (build byte-exacto)');
+chk(game.includes('3.6.129-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.129-SDK6'"), 'sello c00 = 3.6.129-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.129-SDK6'"),
+  'sw.js CACHE v3.6.129-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.129-SDK6</span>'), 'badge V3.6.129-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36129-sdk6'),
+  'hub /descargas sellado a v36129-sdk6');
 
 /* — 2 · ARTE DEL DUEÑO · 18 JPG byte-exacto contra los ZIPs ———————— */
 console.log('2 · ARTE DEL DUEÑO · sha256 byte-exacto (ZIPs → public/assets/hall)');

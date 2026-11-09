@@ -15,7 +15,7 @@ cuenta como «ya sellado» (no falla) — lección de la ronda 13."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.59-SDK6', '3.6.60-SDK6'), ('v3659-sdk6', 'v3660-sdk6')]

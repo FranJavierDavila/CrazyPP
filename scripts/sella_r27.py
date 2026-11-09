@@ -19,7 +19,7 @@ cuenta como «ya sellado» (no falla) — lección de la ronda 13."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.19-SDK6', '3.6.20-SDK6'), ('v3619-sdk6', 'v3620-sdk6')]

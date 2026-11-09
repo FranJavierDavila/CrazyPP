@@ -14,7 +14,7 @@ El SDK (1.6.0) NO cambia esta ronda. El cambio r115 vive en c12+c08+c00
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.104-SDK6', '3.6.105-SDK6'), ('v36104-sdk6', 'v36105-sdk6')]

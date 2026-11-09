@@ -9,7 +9,7 @@ orbital v15). Re-entrante: si un bloque ya está migrado, no lo toca."""
 import json
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 CH = RAIZ / 'public' / 'championships'
 
 DELEGADOR_COMUN = """  }

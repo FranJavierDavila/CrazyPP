@@ -24,7 +24,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 PUB = RAIZ / 'public'
 
 FONDO_IN = (11, 32, 80)      # #0b2050 (portada)

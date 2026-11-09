@@ -21,7 +21,7 @@ NUEVO ya está presente, cuenta como «ya sellado» (no falla)."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.9-SDK6', '3.6.10-SDK6'), ('v369-sdk6', 'v3610-sdk6')]

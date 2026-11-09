@@ -18,7 +18,7 @@ import re
 import sys
 from pathlib import Path
 
-BASE = Path('/home/z/my-project')
+BASE = Path('/home/z/my-project/upload')
 CHAMPS = BASE / 'public/championships'
 CORE = BASE / 'src/game/core'
 

@@ -8,7 +8,7 @@
 Cada reemplazo se cuenta y se aserta: si el origen cambia, el derivador FALLA."""
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 def reemplazar(s, viejo, nuevo, esperado, etiqueta):

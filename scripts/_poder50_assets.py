@@ -21,7 +21,7 @@ from pathlib import Path
 
 from PIL import Image
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 C12 = RAIZ / 'src' / 'game' / 'core' / 'c12_pingponggame.js'
 OUT = RAIZ / 'scripts' / '_poder50'
 OUT.mkdir(parents=True, exist_ok=True)

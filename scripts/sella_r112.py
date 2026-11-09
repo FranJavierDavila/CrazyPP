@@ -12,7 +12,7 @@ tut_end) — hito M4 del roadmap MEJORAS.md."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.101-SDK6', '3.6.102-SDK6'), ('v36101-sdk6', 'v36102-sdk6')]

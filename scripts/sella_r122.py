@@ -13,7 +13,7 @@ fuga del 2v2 a la academia y PULSO/reto semanal en el camino vivo."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.110-SDK6', '3.6.111-SDK6'), ('v36110-sdk6', 'v36111-sdk6')]

@@ -14,7 +14,7 @@ import shutil
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SRC = RAIZ / 'src' / 'game'
 MARK_INI = b'DEPS-FASE2-INICIO'
 MARK_FIN = b'DEPS-FASE2-FIN'

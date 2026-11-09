@@ -13,7 +13,7 @@ import base64
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 C12 = RAIZ / 'src' / 'game' / 'core' / 'c12_pingponggame.js'
 BZ = RAIZ / 'scripts' / 'release-v3636' / 'build_zip.py'
 P36 = RAIZ / 'scripts' / '_poder36'

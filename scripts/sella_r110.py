@@ -12,7 +12,7 @@ jugable en fantasma) — informe del dueño del multijugador con amigos."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.99-SDK6', '3.6.100-SDK6'), ('v3699-sdk6', 'v36100-sdk6')]

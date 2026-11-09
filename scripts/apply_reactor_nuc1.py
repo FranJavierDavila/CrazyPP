@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 IDX = RAIZ / 'public/championships/estacion_orbital/index.js'
 MAN = RAIZ / 'public/championships/estacion_orbital/manifest.json'
 GLB_SRC = RAIZ / 'upload/nucleo_gravedad_lp.glb'

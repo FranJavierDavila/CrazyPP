@@ -14,7 +14,7 @@ botón en AJUSTES › JUEGO, limpieza al terminar y i18n ES/EN)."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.107-SDK6', '3.6.108-SDK6'), ('v36107-sdk6', 'v36108-sdk6')]

@@ -22,7 +22,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')   # r33: el repo real es upload/ (el raíz es el fósil de octubre)
 SCR = RAIZ / 'scripts'
 PRESUPUESTO = SCR / 'presupuesto.json'
 MODOS = ('oeste', 'magia', 'locura', 'estacion_orbital', 'halloween')  # r85: halloween sustituye a valle_neon (retirado)

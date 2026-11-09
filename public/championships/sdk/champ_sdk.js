@@ -1266,6 +1266,17 @@ export function createRival(THREE, getGame, opts) {
   function eco(st) { if (o.onEstado) { try { o.onEstado(st); } catch (e) { /* */ } } }
   function registrar(t) { if (o.onTex) { try { o.onTex(t); } catch (e) { /* */ } } }
 
+  /* r89 · SUBIDA A GPU INVISIBLE: renderer.initTexture(t) sube la cara a
+   * GPU SIN colgarla en el material — el standee deja de parpadear por
+   * todas sus caras y el cambio de emoción en pleno duelo no tira del
+   * frame.  r33: al CLOSURE — la usa también el perezoso. */
+  function subeGpu(t) {
+    try {
+      const gg = (typeof getGame === 'function') ? getGame() : getGame;
+      if (gg && gg.renderer && gg.renderer.initTexture) gg.renderer.initTexture(t);
+    } catch (e) { /* sin renderer (headless): la subida normal bastará */ }
+  }
+
   function construir() {
     mat = (o.material === 'standard')
       ? new THREE.MeshStandardMaterial(Object.assign({
@@ -1307,11 +1318,27 @@ export function createRival(THREE, getGame, opts) {
     } catch (e) { /* escala por defecto */ }
   }
 
-  /* «perezoso»: la cara llega por Image() sobre LA MISMA textura. */
+  /* «perezoso»: la cara llega por Image() sobre LA MISMA textura.
+   *  r33 (v3.6.129) · FIX del INFORME DEL DUEÑO («en el campeonato de la
+   *  Estación Orbital no aparece el rival Astro en las partidas»): la cara
+   *  llegaba a la textura viva (tex.image = img) pero el MATERIAL seguía
+   *  SIN map — el branch «precarga» pinta con ponMapa(t) y el «perezoso»
+   *  NUNCA lo hacía: el standee de la Orbital llevaba desde la FASE 7
+   *  (r72) siendo un plano blanco invisible (diagnóstico en vivo:
+   *  mat.map === null con visible/enEscena/posición correctos). AHORA:
+   *  (a) la textura viva SE CUELGA del material en el build perezoso y
+   *  (b) cada cara de estado que llega sube a GPU por el camino invisible
+   *  (initTexture — mismo trato que las caras del precarga). */
   function estadoPerezoso(st) {
     try {
       const img = new Image();
-      img.onload = () => { if (tex) { tex.image = img; tex.needsUpdate = true; } };
+      img.onload = () => {
+        if (tex) {
+          tex.image = img;
+          tex.needsUpdate = true;
+          subeGpu(tex);   // r33: la cara nueva, a GPU sin tirar del frame
+        }
+      };
       img.src = resuelve(st + '.' + EXT);
     } catch (e) { estado_ = ''; eco(''); }
   }
@@ -1328,16 +1355,8 @@ export function createRival(THREE, getGame, opts) {
   function build() {
     if (mesh) return;
     construir();
-    /* r89 · SUBIDA A GPU INVISIBLE (sustituye al «prewarm» visible de los
-     * módulos): renderer.initTexture(t) sube la cara a GPU SIN colgarla
-     * en el material — el standee deja de parpadear por todas sus caras
-     * y el cambio de emoción en pleno duelo no tira del frame. */
-    const subeGpu = (t) => {
-      try {
-        const gg = (typeof getGame === 'function') ? getGame() : getGame;
-        if (gg && gg.renderer && gg.renderer.initTexture) gg.renderer.initTexture(t);
-      } catch (e) { /* sin renderer (headless): la subida normal bastará */ }
-    };
+    /* r89 · la subida a GPU vive en el closure (subeGpu, arriba).
+     *  r33: comentario movido — el perezoso también la usa. */
     if (PRE) {
       // base primero (orden del original: rival.webp → estados); su llegada
       // pinta el mapa SÓLO si aún no hay estado vigente (r89) y NO entra en
@@ -1369,9 +1388,14 @@ export function createRival(THREE, getGame, opts) {
     } else {
       // perezoso (orbital): textura viva SIN callback — colorSpace y registro
       // síncronos, exactamente como el original v3.2.1
+      // r33 · FIX ASTRO: la textura viva SE CUELGA del material — el
+      // original v3.2.1 asignaba mat.map a mano tras crearla y el portado
+      // al SDK perdió esa asignación (plano blanco invisible desde r72).
       tex = new THREE.TextureLoader().load(resuelve(o.base || ('rival.' + EXT)));
       tex.colorSpace = THREE.SRGBColorSpace;
       registrar(tex);
+      ponMapa(tex);
+      subeGpu(tex);
     }
   }
 

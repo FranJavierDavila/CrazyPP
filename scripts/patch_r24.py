@@ -21,7 +21,7 @@ Idempotente: aguja ×0 + cambio ya presente = «ya aplicado».
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 OESTE = RAIZ / 'public/championships/oeste/index.js'
 C00 = RAIZ / 'src/game/core/c00_pre_three.js'
 C11 = RAIZ / 'src/game/core/c11_champloader.js'

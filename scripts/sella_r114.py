@@ -13,7 +13,7 @@ ancla por estancia + heal del menú + retiro del diorama del hall."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.103-SDK6', '3.6.104-SDK6'), ('v36103-sdk6', 'v36104-sdk6')]

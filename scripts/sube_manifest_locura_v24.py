@@ -33,7 +33,7 @@ leave y monturas a escala 1).
 import json
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 P = RAIZ / 'public/championships/locura/manifest.json'
 VJ = RAIZ / 'src/game/VERSION.json'
 

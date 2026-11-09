@@ -22,7 +22,7 @@ cuenta como «ya sellado» (no falla) — lección de la ronda 13."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.29-SDK6', '3.6.30-SDK6'), ('v3629-sdk6', 'v3630-sdk6')]

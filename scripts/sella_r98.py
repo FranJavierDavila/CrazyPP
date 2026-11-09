@@ -17,7 +17,7 @@ tamaños r97 — qa_descargas se re-ancla en ese momento."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.89-SDK6', '3.6.90-SDK6'), ('v3689-sdk6', 'v3690-sdk6')]

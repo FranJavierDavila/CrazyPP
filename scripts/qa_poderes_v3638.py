@@ -128,7 +128,7 @@ async def main():
         ('const MEGA_ARROW_S = 0.020;', 'flechas: tamaño base intacto'),
         ('return !!(this.champs && this.champs.active);',
          'gate: superpoderes SOLO en campeonatos'),
-        ('V3.6.111-SDK6', 'sello de versión servida'),
+        ('V3.6.129-SDK6', 'sello de versión servida'),
     ]:
         chk(needle in game, label)
     # REGRESIONES de los defects que se atacan
@@ -171,13 +171,13 @@ async def main():
           G.rules.startMatch('match');
           out.colaAlEmpezar = Array.isArray(G._megaPrewarmQ) &&
             G._megaPrewarmQ.length >= 13;   // r50: anti-lag total
-          Math.random = () => 0.1;                 // siempre 'mega'
+          Math.random = () => 0.03;                 // siempre 'mega' (registro a 14: floor(0.03·14)=0)
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errU0 = String(e); }
           G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errU1 = String(e); }
-          // drenar: una pieza por frame — SIN tocar el gatillo
-          for (let i = 0; i < 20; i++) {
+          // drenar: una pieza por frame — SIN tocar el gatillo (r33: 34 piezas)
+          for (let i = 0; i < 45; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }
           }
           out.colaArmada = out.colaAlEmpezar === true;
@@ -206,7 +206,7 @@ async def main():
           out.iconoModoActivo = G._megaIconOn === true &&
             G._megaIconModo === 'act' && G._megaActivaId === 'mega';
           // MEGA ya activa + gatillo = ALARGA (regresión v3.6.36/37)
-          Math.random = () => 0.1;
+          Math.random = () => 0.03;   // r33: mega sigue en el índice 0
           G.rules.state = 'point'; G.updateMega(1 / 60);
           G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           const tAntes = G._megaT;
@@ -237,10 +237,10 @@ async def main():
           // anteriores la matriz está vacía: se reconstruye aquí)
           G._efectoT = 0; G._megaT = 0; G._megaActivaId = null;
           G.updateMega(1 / 60);          // v3.6.40: todo apagado → inventario
-          Math.random = () => 0.5;
+          Math.random = () => 0.18;   // r33: imán (índice 2)
           G.rules.state = 'point'; G.updateMega(1 / 60);
           G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
-          Math.random = () => 0.9;
+          Math.random = () => 0.1;    // r33: efecto (índice 1) — la 2.ª entrada
           G.rules.state = 'point'; G.updateMega(1 / 60);
           G.rules.state = 'rally'; G.rules.rallyHits = 20; G.updateMega(1 / 60);
           out.dosEnMatriz = G._megaMatriz.length === 2;

@@ -82,7 +82,7 @@ async def main():
         sys.exit(1)
     for needle, label in [
         # · SELLO DE VERSIÓN (ronda 51)
-        ('3.6.111-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 52)'),
+        ('3.6.129-SDK6', 'versión servida: 3.6.91-SDK6 (ronda 52)'),
         # · 1) SÚPER EFECTO EXAGERADO
         ('const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)',
          'efecto: el brush generado sube a ×3 (antes ×2)'),
@@ -155,10 +155,10 @@ async def main():
     chk(game.count('(this.inAR && this.pstOn)') >= 5,
         f'passthrough: los usos de sala/hall filtran con (inAR && pstOn) '
         f'({game.count("(this.inAR && this.pstOn)")} usos)')
-    chk(game.count('this._poderTickBlip(2)') == 6 and
-        game.count('this._poderTickBlip(1)') == 5 and
-        game.count('this._poderTickBlip(3)') == 5,
-        'ticks: los CINCO poderes + el aviso DUELOS comparten la cuenta 3·2·1 (16 llamadas)')
+    chk(game.count('this._poderTickBlip(2)') == 15 and
+        game.count('this._poderTickBlip(1)') == 14 and
+        game.count('this._poderTickBlip(3)') == 14,
+        'ticks: TODOS los poderes + el aviso DUELOS comparten la cuenta 3·2·1 (43 llamadas — re-anclada r33: medida real del ensamblado)')
 
     # ---------- 2 · MECÁNICA REAL (headless) ----------
     async with async_playwright() as p:
@@ -185,8 +185,8 @@ async def main():
           // · PRECALIENTE de 13 piezas (r54: fuera flechas/campo/estela)
           G.champs.activeId = 'locura';
           G.rules.startMatch('match');
-          out.precaliente13 = !!(G._megaPrewarmQ && G._megaPrewarmQ.length === 16);
-          Math.random = () => 0.5;                 // siembra IMÁN (tercer tercio)
+          out.precaliente13 = !!(G._megaPrewarmQ && G._megaPrewarmQ.length === 34);   // r33: +7 piezas (4 voces + 3 builds) sobre las 27 de la r32
+          Math.random = () => 0.18;                 // siembra IMÁN (índice 2 con registro a 14)
           for (let i = 0; i < 20; i++) {
             try { G.updateMega(1 / 60); } catch (e) { out.errD = String(e); }
           }
@@ -237,7 +237,7 @@ async def main():
           //   se quede sin el poder
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errP0 = String(e); }
-          Math.random = () => 0.65;               // siembra PORTAL (4.º de 5)
+          Math.random = () => 0.25;               // siembra PORTAL (índice 3 con registro a 14)
           G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG2 = String(e); }
           out.sembradoPortal1 = !!(G._megaMatriz.find((x) => x.id === 'portal')) &&
@@ -277,7 +277,7 @@ async def main():
           if (G.ball) { try { delete G.ball.ppIman; } catch (e) { /* */ } }
           G.rules.state = 'point';
           try { G.updateMega(1 / 60); } catch (e) { out.errT0 = String(e); }
-          Math.random = () => 0.30;               // siembra EFECTO (1.º tercio)
+          Math.random = () => 0.1;               // siembra EFECTO (índice 1 con registro a 14)
           G.rules.state = 'rally'; G.rules.rallyHits = 20;
           try { G.updateMega(1 / 60); } catch (e) { out.errG3 = String(e); }
           let blips = 0;
@@ -327,7 +327,7 @@ async def main():
             if k.startswith('err'):
                 chk(not rt[k], f'sin error en runtime ({k}): {rt[k]}')
         esperados = [
-            ('precaliente13', 'precaliente: cola de 16 piezas (r54: sin flechas/campo/estela)'),
+            ('precaliente13', 'precaliente: cola de 34 piezas (27 de la r32 + 7 de la r33: voces y builds de los 4 poderes nuevos)'),
             ('palaMetalicaMontada', 'imán (r54): _imanPalaOsc montada (pala metálica)'),
             ('sembradoIman', 'mecánica: imán sembrado'),
             ('campoAbre', 'mecánica: el gatillo abre la ventana del imán (8 s)'),

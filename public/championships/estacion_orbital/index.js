@@ -7982,6 +7982,10 @@ class StockController {
 
   _poderArrancar(def) {
     const g = this.game;
+    // r33 (v3.6.129) · SÚPER ANCLA: con las cadenas activas el poder del
+    // ASTRO se ESTRELLA contra el jugador (puerta central del núcleo) —
+    // el aviso ya se pagó, pero el efecto nunca entra en juego.
+    if (g.anclaBloqueo && g.anclaBloqueo()) return;
     this._act = { def, t: def.duration || 8 };
     this._lastPowerT = this._dueloT || 0;
     g.rules.message = tx('¡' + def.name.toUpperCase() + '!', def.name.toUpperCase() + '!');

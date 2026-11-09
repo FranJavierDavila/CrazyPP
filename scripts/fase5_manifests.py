@@ -6,7 +6,7 @@ con nota de historial. Re-entrante: si el bump ya está hecho, no toca nada."""
 import json
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 PUB = RAIZ / 'public' / 'championships'
 
 BUMPS = {

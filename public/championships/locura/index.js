@@ -4231,6 +4231,15 @@ class ArcadeController {
     this._pendT = 0;
     if (!cfg) return;
     const g = this.game;
+    // r33 (v3.6.129) · SÚPER ANCLA: con las cadenas activas el poder del
+    // rival se ESTRELLA contra el jugador (puerta central del núcleo) —
+    // el aviso ya se pagó (cartel + congelación), pero el efecto nunca
+    // entra en juego: destello metálico, mensaje y háptica del bloqueo.
+    if (g.anclaBloqueo && g.anclaBloqueo()) {
+      this._powerCd = 4;
+      this._rallyFired = false;
+      return;
+    }
     if (g.rules.state !== 'rally') {
       // v2.126 (módulo v17) · LANZAMIENTO GARANTIZADO: el aviso ya se pagó
       // (cartel SUPER POWER!! + congelación + voz + háptica) — el efecto

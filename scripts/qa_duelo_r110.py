@@ -32,7 +32,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 BANCO = RAIZ / 'scripts' / 'diag_multijugador_r110.mjs'
 SB = RAIZ / 'scripts' / 'ppdiag'
 CORE = RAIZ / 'src' / 'game' / 'core'

@@ -17,7 +17,7 @@ módulo NO cambia (poderes, arte, BSO intactos)."""
 import json
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 P = RAIZ / 'public/championships/locura/manifest.json'
 
 m = json.loads(P.read_text(encoding='utf-8'))

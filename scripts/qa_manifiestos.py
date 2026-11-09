@@ -16,7 +16,7 @@ from pathlib import Path
 
 import jsonschema
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 CH = RAIZ / 'public' / 'championships'
 MODOS = ('oeste', 'magia', 'locura', 'estacion_orbital', 'halloween')  # r85
 KINDS_OK = {'duelo', 'objetos', 'custom', 'prueba', 'final', 'tren', 'escudo',

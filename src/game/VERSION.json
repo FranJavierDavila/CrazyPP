@@ -1,10 +1,10 @@
 {
-  "version": "3.6.128-SDK6",
-  "fase": 130,
-  "faseNombre": "SALONES DEL DUEÑO",
+  "version": "3.6.129-SDK6",
+  "fase": 131,
+  "faseNombre": "Lote Aprobado",
   "sdk": "1.6.0",
-  "fecha": "2026-11-08",
-  "hub": "v36128-sdk6",
+  "fecha": "2026-11-09",
+  "hub": "v36129-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11185934,
-  "golden": "780de58f35842de6e621269b184b3799af525ebea63a4f1c4a9da1972a4c90d4"
+  "tamano": 11365004,
+  "golden": "9213fc5966ac243314fbc8a1c9804509f6ccea6136c337738f6430624c0eae5a"
 }

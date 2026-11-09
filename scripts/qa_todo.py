@@ -35,7 +35,7 @@ import sys
 import time
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')   # r33: el repo real es upload/
 SCR = RAIZ / 'scripts'
 TIMEOUT = {  # segundos por capa
     'qa_version.py': 120, 'test_fisica.mjs': 90, 'qa_manifiestos.py': 60,

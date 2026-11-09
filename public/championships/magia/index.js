@@ -4300,6 +4300,15 @@ class WizardController {
     this._pendT = 0;
     if (!cfg) return;
     const g = this.game;
+    // r33 (v3.6.129) · SÚPER ANCLA: con las cadenas activas el poder del
+    // WIZARD se ESTRELLA contra el jugador (puerta central del núcleo) —
+    // el aviso ya se pagó (cartel + congelación), pero el efecto nunca
+    // entra en juego: destello metálico, mensaje y háptica del bloqueo.
+    if (g.anclaBloqueo && g.anclaBloqueo()) {
+      this._powerCd = 4;
+      this._rallyFired = false;
+      return;
+    }
     if (g.rules.state !== 'rally') {
       // el punto murió durante el aviso: sin efecto, reintentará pronto
       this._powerCd = 3;

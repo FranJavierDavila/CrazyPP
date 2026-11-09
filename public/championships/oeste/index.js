@@ -13056,6 +13056,14 @@ class ForajidoStand {
     this._pendT = 0;
     if (!cfg) return;
     const g = this.game;
+    // r33 (v3.6.129) · SÚPER ANCLA: con las cadenas activas el poder del
+    // FORAJIDO se ESTRELLA contra el jugador (puerta central del núcleo) —
+    // el aviso ya se pagó, pero el efecto nunca entra en juego.
+    if (g.anclaBloqueo && g.anclaBloqueo()) {
+      this._powerCd = 4;
+      this._rallyFired = false;
+      return;
+    }
     if (g.rules.state !== 'rally') {
       this._powerCd = 3;
       this._rallyFired = false;

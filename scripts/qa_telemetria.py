@@ -38,7 +38,7 @@ from pathlib import Path
 
 from playwright.async_api import async_playwright
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 BASE = 'http://localhost:3000'
 GW = 'http://localhost:81'
 API = BASE + '/api/telemetria'

@@ -14,7 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SRC = RAIZ / 'src' / 'game'
 ok = fails = 0
 

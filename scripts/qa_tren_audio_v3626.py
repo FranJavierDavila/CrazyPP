@@ -41,7 +41,7 @@ import re
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 OESTE = RAIZ / 'public' / 'championships' / 'oeste'
 SDK = RAIZ / 'public' / 'championships' / 'sdk' / 'champ_sdk.js'
 

@@ -12,7 +12,7 @@ de MEJORAS.md) y en el HUB (descargas al día con la versión)."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.97-SDK6', '3.6.98-SDK6'), ('v3697-sdk6', 'v3698-sdk6')]

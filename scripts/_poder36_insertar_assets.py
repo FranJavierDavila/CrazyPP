@@ -16,7 +16,7 @@ import re
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 C12 = RAIZ / 'src' / 'game' / 'core' / 'c12_pingponggame.js'
 P = RAIZ / 'scripts' / '_poder36'
 

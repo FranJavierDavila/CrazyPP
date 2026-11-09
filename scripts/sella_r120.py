@@ -15,7 +15,7 @@ congelado y m50/m100 re-anclados al juez vivo)."""
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 SCR = RAIZ / 'scripts'
 
 VERSIONES = [('3.6.108-SDK6', '3.6.109-SDK6'), ('v36108-sdk6', 'v36109-sdk6')]

@@ -10,7 +10,7 @@ import base64
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project')
+RAIZ = Path('/home/z/my-project/upload')
 C12 = RAIZ / 'src' / 'game' / 'core' / 'c12_pingponggame.js'
 PNG = RAIZ / 'scripts' / '_poder35' / 'icono_mega_64.png'
 VOZ = RAIZ / 'scripts' / '_poder35' / 'voz_mega_final.mp3'

@@ -718,7 +718,11 @@ export function createHall(base) {
    *  mismo patrón que el icono de la música). Mientras llega la textura
    *  (o si falla), un búho vectorial dibujado en canvas hace de fondo.
    *  ===================================================================== */
-  const ARC_W = 0.78, ARC_H = 0.52;          // proporción 1024×683 (1.5:1)
+  // r40 (v3.6.136) · EL BÚHO, UN 25 % MÁS PEQUEÑO (petición del dueño:
+  // «el búho, un poco más pequeño, como un 25 % más pequeño que ahora»):
+  // 0,78×0,52 → 0,585×0,39 · misma proporción 1024×683 (1.5:1), misma
+  // pared y mismos destellos (los ojos escalan con ARC_W/ARC_H).
+  const ARC_W = 0.585, ARC_H = 0.39;         // proporción 1024×683 (1.5:1)
   const arcCv = hallCanvas(512, 342);
   drawArcanoBuho(arcCv);                      // fallback vectorial (glow azul)
   const arcTex = new THREE.CanvasTexture(arcCv);
@@ -1056,72 +1060,28 @@ export function drawArcanoBuho(cv) {
   x.shadowBlur = 0;
 }
 
-/** Lienzo de la BÓVEDA: noche celeste profunda + VÍA LÁCTEA diagonal +
- *  campo de estrellas (dos pasadas, brillantes y tenues). 1024×512,
- *  mapeada equirectangular en la esfera. */
+/** Lienzo de la BÓVEDA — r40 (v3.6.136), petición del dueño: «el fondo
+ *  completamente azul oscuro SIN IMAGEN, simulando una noche oscura».
+ *  Se retira la Vía Láctea y el campo de estrellas de la r39: la vida del
+ *  cielo la ponen las 240 motas y los cometas que serpentean por
+ *  DELANTE. Sólo un degradado vertical muy sutil (cenit más profundo,
+ *  horizonte un pelo más claro) para dar profundidad sin dejar de ser
+ *  «solo color». 1024×512 equirectangular sobre la esfera invertida. */
 function pintaBoveda(cv) {
   const x = cv.getContext('2d');
   const W = cv.width, H = cv.height;
   const bg = x.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#020409');
-  bg.addColorStop(0.55, '#071228');
-  bg.addColorStop(1, '#0a1a33');
+  bg.addColorStop(0, '#03061a');     // cenit: azul noche profundo
+  bg.addColorStop(0.55, '#071129');  // medio del cielo
+  bg.addColorStop(1, '#0a1a36');     // horizonte: el color con el que el
+                                     // suelo se funde (CIELO del suelo)
   x.fillStyle = bg;
   x.fillRect(0, 0, W, H);
-  // — VÍA LÁCTEA: banda diagonal de nubes estelares —
-  x.save();
-  x.translate(W * 0.5, H * 0.5);
-  x.rotate(-0.5);
-  for (let i = 0; i < 90; i++) {
-    const bx = (Math.random() - 0.5) * W * 1.6;
-    const by = (Math.random() - 0.5) * H * 0.34;
-    const r = 20 + Math.random() * 90;
-    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
-    const a = 0.028 + Math.random() * 0.05;
-    g.addColorStop(0, `rgba(190,215,255,${a})`);
-    g.addColorStop(1, 'rgba(190,215,255,0)');
-    x.fillStyle = g;
-    x.beginPath();
-    x.arc(bx, by, r, 0, Math.PI * 2);
-    x.fill();
-  }
-  // núcleo algo más denso
-  for (let i = 0; i < 40; i++) {
-    const bx = (Math.random() - 0.5) * W * 0.7;
-    const by = (Math.random() - 0.5) * H * 0.12;
-    const r = 10 + Math.random() * 40;
-    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
-    g.addColorStop(0, `rgba(225,235,255,${0.05 + Math.random() * 0.06})`);
-    g.addColorStop(1, 'rgba(225,235,255,0)');
-    x.fillStyle = g;
-    x.beginPath();
-    x.arc(bx, by, r, 0, Math.PI * 2);
-    x.fill();
-  }
-  x.restore();
-  // — ESTRELLAS: 520 tenues + 90 brillantes con cruz de brillo —
-  for (let i = 0; i < 520; i++) {
-    x.globalAlpha = 0.12 + Math.random() * 0.5;
-    x.fillStyle = '#cfe2ff';
-    x.fillRect(Math.random() * W, Math.random() * H, 1.4, 1.4);
-  }
-  for (let i = 0; i < 90; i++) {
-    const sx = Math.random() * W, sy = Math.random() * H;
-    const rr = 1 + Math.random() * 1.6;
-    x.globalAlpha = 0.7;
-    x.fillStyle = '#ffffff';
-    x.beginPath();
-    x.arc(sx, sy, rr, 0, Math.PI * 2);
-    x.fill();
-    x.globalAlpha = 0.22;
-    x.fillRect(sx - rr * 3, sy - 0.5, rr * 6, 1);
-    x.fillRect(sx - 0.5, sy - rr * 3, 1, rr * 6);
-  }
-  x.globalAlpha = 1;
 }
 
 /** MOTAS AZULES: nube de puntos con base + fase propios (serpenteo en
- *  updateArcanoFx). Brillo azul como el búho, aditivas. */
+ *  updateArcanoFx). Brillo azul como el búho, aditivas. r40: fog:false —
+ *  los destellos flotan a cualquier distancia SIN la niebla de la cancha. */
 function montaMotas(N) {
   const base = new Float32Array(N * 3);
   const fase = new Float32Array(N);
@@ -1138,10 +1098,66 @@ function montaMotas(N) {
   const mat = new THREE.PointsMaterial({
     color: 0x49b6ff, size: 0.055, transparent: true, opacity: 0.85,
     blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+    fog: false,
   });
   const pts = new THREE.Points(geo, mat);
   pts.userData = { base, fase, n: N };
   return pts;
+}
+
+/* r40 (v3.6.136) · EL SUELO INFINITO DEL ARCANO — petición del dueño:
+ * «un suelo infinito que se pierde en el horizonte… cuadrículas delgadas
+ * y sutiles como grandes losetas de sutiles tonos azulados que cambian
+ * de forma aleatoria sus tonos azules, dentro de un rango de color un
+ * poco más claro que el cielo oscuro». Implementación de la casa:
+ *  · un plano 72×72 m con losetas GRANDES de 8 m (9×9), retícula fina y
+ *    sutil en cada canto;
+ *  · cada loseta vive en una BANDA azulada apenas más clara que el cielo
+ *    (#10284e → #1a3868) y MUTA su tono AL AZAR dentro de la banda
+ *    (updateArcanoFx re-pinta sólo las losetas que cambian);
+ *  · una viñeta radial funde cada loseta con el color del horizonte
+ *    (#0a1a36 — el mismo del degradado de la bóveda): el plano termina
+ *    ANTES que la esfera del cielo y el horizonte queda LIMPIO, el suelo
+ *    «se pierde» sin costura alguna;
+ *  · fog:false — la niebla de la cancha (Fog 9/18) jamás toca el suelo. */
+function montaSueloArcano() {
+  const N = 9;                       // 9×9 losetas de 8 m → plano 72×72 m
+  const cv = hallCanvas(1024, 1024);
+  const x = cv.getContext('2d');
+  const CIELO = [10, 26, 54];        // #0a1a36 · color del horizonte (bóveda)
+  const BANDA = [[16, 40, 78], [26, 56, 104]];   // el rango azul del dueño
+  const cols = [], tgts = [];
+  const mezcla = () => {
+    const k = Math.random();
+    return [0, 1, 2].map((i) => Math.round(BANDA[0][i] + (BANDA[1][i] - BANDA[0][i]) * k));
+  };
+  for (let i = 0; i < N * N; i++) { const c = mezcla(); cols.push(c); tgts.push(c.slice()); }
+  const px = cv.width / N;           // ~113 px por loseta
+  const pinta = (ix, iy) => {
+    const idx = iy * N + ix;
+    // viñeta radial: 1 en el centro → 0 en el borde (fundido al cielo)
+    const cx = (ix + 0.5) / N * 2 - 1, cy = (iy + 0.5) / N * 2 - 1;
+    const d = Math.min(1, Math.sqrt(cx * cx + cy * cy) / 1.02);
+    const f = 1 - d * d;
+    const c = cols[idx];
+    const fin = [0, 1, 2].map((i) => Math.round(CIELO[i] + (c[i] - CIELO[i]) * f));
+    x.fillStyle = 'rgb(' + fin[0] + ',' + fin[1] + ',' + fin[2] + ')';
+    x.fillRect(ix * px, iy * px, px + 1, px + 1);
+    // retícula fina y sutil en los cantos de la loseta (con la viñeta
+    // aplicada: hacia el horizonte la cuadrícula desaparece sola)
+    x.strokeStyle = 'rgba(140,205,255,' + (0.10 * f).toFixed(3) + ')';
+    x.lineWidth = 1.5;
+    x.strokeRect(ix * px + 0.75, iy * px + 0.75, px - 1.5, px - 1.5);
+  };
+  for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) pinta(ix, iy);
+  const tex = new THREE.CanvasTexture(cv);
+  try { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; } catch { /* */ }
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(N * 8, N * 8),
+    new THREE.MeshBasicMaterial({ map: tex, fog: false }));
+  mesh.rotation.x = -Math.PI / 2;    // tumbado, mirando arriba
+  mesh.position.y = -0.01;
+  mesh.userData = { cv, tex, ctx: x, cols, tgts, N, px, pinta, acc: 0, mezcla };
+  return mesh;
 }
 
 /** Sprite radial genérico (cabeza de cometa, halo, destello del búho). */
@@ -1318,14 +1334,18 @@ export function drawArcanoPanel(cv, d) {
 }
 
 /** MONTA el espacio arcano. Devuelve el Group con userData.arcono = {
- *  motas, cometas, buho: {mesh, glints, hover}, panel: {mesh, cv, tex},
- *  flechaL/R: {mesh, cv, tex}, pop (0..1 materialización) } — c12 lo
- *  añade a la escena OCULTO y lo gobierna. El anfitrión queda en el
- *  centro: el búho flota delante, la galería debajo, el cielo alrededor. */
+ *  motas, cometas, suelo, buho: {mesh, glints, hover}, panel: {mesh, cv,
+ *  tex}, flechaL/R: {mesh, cv, tex}, pop (0..1 materialización) } — c12
+ *  lo añade a la escena OCULTO y lo gobierna (r40: enterArcano lo PLANTA
+ *  sobre los pies del anfitrión mirando hacia donde mira él — nunca más
+ *  «la galería a la espalda»). Centro del grupo = los pies del jugador:
+ *  el búho flota delante, la galería debajo, el cielo y el suelo
+ *  infinito alrededor. TODA pieza con fog:false: la niebla de la cancha
+ *  jamás alcanza la estancia infinita. */
 export function montarArcano(base) {
   const g = new THREE.Group();
   const vbase = (typeof base === 'string' && base) ? base : 'assets/hall/';
-  // — BÓVEDA CELESTE (esfera invertida; la Vía Láctea vive en el lienzo) —
+  // — BÓVEDA CELESTE (esfera invertida; r40: azul oscuro LISO, sin imagen) —
   const bovCv = hallCanvas(1024, 512);
   pintaBoveda(bovCv);
   const bovTex = new THREE.CanvasTexture(bovCv);
@@ -1335,6 +1355,9 @@ export function montarArcano(base) {
     new THREE.MeshBasicMaterial({ map: bovTex, side: THREE.BackSide, fog: false }),
   );
   g.add(boveda);
+  // — EL SUELO INFINITO (r40): losetas grandes que mutan su azul —
+  const suelo = montaSueloArcano();
+  g.add(suelo);
   // — MOTAS azules que serpentean —
   const motas = montaMotas(240);
   g.add(motas);
@@ -1344,11 +1367,11 @@ export function montarArcano(base) {
   const cometas = [];
   for (let i = 0; i < 3; i++) {
     const head = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: headTex, transparent: true, opacity: 0.95,
+      map: headTex, transparent: true, opacity: 0.95, fog: false,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: haloTex, transparent: true, opacity: 0.5,
+      map: haloTex, transparent: true, opacity: 0.5, fog: false,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     head.scale.setScalar(0.5);
@@ -1363,7 +1386,7 @@ export function montarArcano(base) {
   const buhoTex = new THREE.CanvasTexture(buhoCv);
   try { buhoTex.colorSpace = THREE.SRGBColorSpace; buhoTex.anisotropy = 4; } catch { /* */ }
   const buhoMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.32, 0.88),
-    new THREE.MeshBasicMaterial({ map: buhoTex, transparent: true }));
+    new THREE.MeshBasicMaterial({ map: buhoTex, transparent: true, fog: false }));
   buhoMesh.position.set(0, 2.28, -2.55);
   g.add(buhoMesh);
   try {
@@ -1381,7 +1404,7 @@ export function montarArcano(base) {
   const buhoGlints = [];
   for (const rel of [[0.452, 0.392], [0.557, 0.376]]) {
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glintTex, transparent: true, opacity: 0.35,
+      map: glintTex, transparent: true, opacity: 0.35, fog: false,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     sp.scale.setScalar(0.115);
@@ -1395,7 +1418,7 @@ export function montarArcano(base) {
   const panTex = new THREE.CanvasTexture(panCv);
   try { panTex.colorSpace = THREE.SRGBColorSpace; panTex.anisotropy = 4; } catch { /* */ }
   const panMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.46, 1.0),
-    new THREE.MeshBasicMaterial({ map: panTex, transparent: true }));
+    new THREE.MeshBasicMaterial({ map: panTex, transparent: true, fog: false }));
   panMesh.position.set(0, 1.32, -2.35);
   g.add(panMesh);
   const flechas = {};
@@ -1405,13 +1428,13 @@ export function montarArcano(base) {
     const tex = new THREE.CanvasTexture(cv);
     try { tex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.20, 0.20),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }));
     mesh.position.set(k === 'L' ? -0.93 : 0.93, 1.32, -2.35);
     g.add(mesh);
     flechas[k] = { mesh, cv, tex, hover: false };
   }
   g.userData.arcono = {
-    motas, cometas, buho: { mesh: buhoMesh, glints: buhoGlints, hover: false },
+    motas, cometas, suelo, buho: { mesh: buhoMesh, glints: buhoGlints, hover: false },
     panel: { mesh: panMesh, cv: panCv, tex: panTex }, flechas, pop: 1,
   };
   return g;
@@ -1433,6 +1456,33 @@ export function updateArcanoFx(g, dt, now) {
     pos.array[i * 3 + 2] = base[i * 3 + 2] + Math.cos(now * 0.28 + f * 0.9) * 0.55;
   }
   pos.needsUpdate = true;
+  // — r40 · SUELO: las losetas MUTAN su tono azul al azar dentro de la
+  //  banda del dueño. Cada 0,35 s unas cuantas losetas eligen tono nuevo
+  //  y todas las vivas dan un mordisco hacia su objetivo; sólo se
+  //  re-pintan las losetas que cambian (el repintado del canvas completo
+  //  jamás ocurre en el frame — la textura sube una vez por tick).
+  const S = A.suelo && A.suelo.userData;
+  if (S) {
+    S.acc += dt;
+    if (S.acc >= 0.35) {
+      S.acc = 0;
+      let cambio = false;
+      for (let k = 0; k < 7; k++) {   // 7 losetas eligen tono nuevo
+        const idx = (Math.random() * S.N * S.N) | 0;
+        S.tgts[idx] = S.mezcla();
+      }
+      for (let i = 0; i < S.N * S.N; i++) {
+        const c = S.cols[i], t = S.tgts[i];
+        if (c[0] === t[0] && c[1] === t[1] && c[2] === t[2]) continue;
+        c[0] += Math.round((t[0] - c[0]) * 0.35);   // mordisco suave
+        c[1] += Math.round((t[1] - c[1]) * 0.35);
+        c[2] += Math.round((t[2] - c[2]) * 0.35);
+        S.pinta(i % S.N, (i / S.N) | 0);
+        cambio = true;
+      }
+      if (cambio) S.tex.needsUpdate = true;
+    }
+  }
   // — cometas: cruce lejano cada tanto; el halo azul queda tras la cabeza —
   for (const c of A.cometas) {
     if (!c.on) {

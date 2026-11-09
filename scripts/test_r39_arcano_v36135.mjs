@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r39 · v3.6.135-SDK6 · FASE 137 · TEST: EL APARTADO
+/* CRAZY PING PONG · r39 · v3.6.136-SDK6 · FASE 138 · TEST: EL APARTADO
  * ARCANO — el búho del hall, el espacio infinito y la galería de
  * superpoderes con desbloqueo por campeonato ganado.
  *
@@ -53,7 +53,7 @@
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
  *   (df8f71a3… / 8bb62082…).
  *
- * Uso: node --no-warnings scripts/test_r39_arcano_v36135.mjs
+ * Uso: node --no-warnings scripts/test_r39_arcano_v36136.mjs
  */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -76,24 +76,24 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.135-SDK6 · FASE 137 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.135-SDK6 · FASE 137 · EL APARTADO ARCANO');
-chk(vjson.version === '3.6.135-SDK6', 'VERSION.json: 3.6.135-SDK6');
-chk(vjson.fase === 137, 'FASE 137');
-chk(vjson.faseNombre === 'El apartado arcano — superpoderes', 'faseNombre = EL APARTADO ARCANO');
-chk(vjson.tamano === 11453242, 'tamaño del build: 11.453.242 B');
+/* — 1 · SELLOS · v3.6.136-SDK6 · FASE 138 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.136-SDK6 · FASE 138 · EL APARTADO ARCANO');
+chk(vjson.version === '3.6.136-SDK6', 'VERSION.json: 3.6.136-SDK6');
+chk(vjson.fase === 138, 'FASE 138');
+chk(vjson.faseNombre === 'El Arcano a la vista — revisión del dueño', 'faseNombre = EL APARTADO ARCANO');
+chk(vjson.tamano === 11461098, 'tamaño del build: 11.461.098 B');
 chk(vjson.golden ===
-  '70049f9c258c575cd50f836cc5e44686615e53e62b12d3ef1b3419268b60f5b4',
-  'VERSION.json golden 70049f9c…');
+  '3e54690b9abd48818ec97ff3fc87262988fde2c0cacb74e7a201aafbaf2ff997',
+  'VERSION.json golden 3e54690b…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.135-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.135-SDK6'"), 'sello c00 = 3.6.135-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.135-SDK6'"),
-  'sw.js CACHE v3.6.135-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.135-SDK6</span>'), 'badge V3.6.135-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36135-sdk6'),
-  'hub /descargas sellado a v36135-sdk6');
+chk(game.includes('3.6.136-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.136-SDK6'"), 'sello c00 = 3.6.136-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.136-SDK6'"),
+  'sw.js CACHE v3.6.136-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.136-SDK6</span>'), 'badge V3.6.136-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36136-sdk6'),
+  'hub /descargas sellado a v36136-sdk6');
 
 /* — 2 · ARTE DEL DUEÑO · arcano.png byte-exacto ———————————————————— */
 console.log('2 · ARTE · Arcano.png del dueño → public/assets/hall/arcano.png');
@@ -123,8 +123,8 @@ console.log('4 · EL ESPACIO INFINITO · bóveda con Vía Láctea · motas · co
 chk(c08.includes('export function montarArcano(base)'), 'montarArcano exportado');
 chk(c08.includes('export function updateArcanoFx(g, dt, now)'), 'updateArcanoFx exportado');
 chk(c08.includes('pintaBoveda(bovCv)'), 'bóveda celeste pintada en canvas');
-chk(c08.includes('VÍA LÁCTEA: banda diagonal de nubes estelares'),
-  'VÍA LÁCTEA: banda diagonal de nubes estelares');
+chk(c08.includes("bg.addColorStop(1, '#0a1a36')"),
+  're-anclada r40: cielo azul oscuro LISO (sin Vía Láctea ni estrellas)');
 chk(c08.includes('new THREE.SphereGeometry(58, 40, 24)'),
   'gran bóveda esférica (BackSide, r=58)');
 chk(c08.includes('function montaMotas(N)'), 'montaMotas (nube de puntos)');
@@ -304,6 +304,6 @@ chk(game.includes('EL APARTADO ARCANO'), 'bundle: sección arcano embebida');
 chk(game.includes('pp_poderes_v1'), 'bundle: persistencia de desbloqueos embebida');
 chk(game.includes('DL_SURTIDO'), 'bundle: surto extendido de Duelos Locos embebido');
 
-console.log('\n=== r39 · v3.6.135-SDK6 · EL APARTADO ARCANO ===');
+console.log('\n=== r39 · v3.6.136-SDK6 · EL APARTADO ARCANO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 process.exit(fails ? 1 : 0);

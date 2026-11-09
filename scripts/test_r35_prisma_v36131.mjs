@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r35 (v3.6.135, FASE 137) — TEST de la ronda.
+/* CRAZY PING PONG · r35 (v3.6.136, FASE 138) — TEST de la ronda.
  * Petición del dueño: «en el superpoder de prisma no se nota la desventaja
  * ni que se está aplicado, refuerza visualmente cambiando el color de la
  * bola por los colores del arcoiris de forma aleatoria mientras duré el
@@ -9,7 +9,7 @@
  *   C · cooperativo: Prisma ↔ Oscuridad se ceden la bola (nadie queda
  *       prisionero de un tinte ajeno; la bola nunca acaba rota).
  *   D · física c04/c05 BYTE-EXACTA (intocada, como siempre).
- * Uso: node scripts/test_r35_prisma_v36135.mjs */
+ * Uso: node scripts/test_r35_prisma_v36136.mjs */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
@@ -93,10 +93,10 @@ chk(c04.startsWith('df8f71a3'), `c04 sha256 df8f71a3… (${c04.slice(0, 8)})`);
 chk(c05.startsWith('8bb62082'), `c05 sha256 8bb62082… (${c05.slice(0, 8)})`);
 
 console.log('== 6) VERSIÓN Y SELLOS ==');
-chk(vjson.version === '3.6.135-SDK6', `VERSION.json 3.6.135-SDK6 (${vjson.version})`);
-chk(vjson.fase === 137, `FASE 137 (${vjson.fase})`);
-chk(game.includes('const VERSION') && game.includes('3.6.135-SDK6'),
-  'game.html sellado a 3.6.135-SDK6');
+chk(vjson.version === '3.6.136-SDK6', `VERSION.json 3.6.136-SDK6 (${vjson.version})`);
+chk(vjson.fase === 138, `FASE 138 (${vjson.fase})`);
+chk(game.includes('const VERSION') && game.includes('3.6.136-SDK6'),
+  'game.html sellado a 3.6.136-SDK6');
 chk(cuenta(game, '_prismaBolaTintAplicar') === 3,
   `game.html: aplicar (def + 2 llamadas) ×3: ${cuenta(game, '_prismaBolaTintAplicar')}`);
 chk(cuenta(game, '_prismaBolaTintRestaurar') === 4,

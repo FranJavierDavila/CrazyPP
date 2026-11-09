@@ -1,10 +1,10 @@
 {
-  "version": "3.6.135-SDK6",
-  "fase": 137,
-  "faseNombre": "El apartado arcano — superpoderes",
+  "version": "3.6.136-SDK6",
+  "fase": 138,
+  "faseNombre": "El Arcano a la vista — revisión del dueño",
   "sdk": "1.6.0",
   "fecha": "2026-11-09",
-  "hub": "v36135-sdk6",
+  "hub": "v36136-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11453242,
-  "golden": "70049f9c258c575cd50f836cc5e44686615e53e62b12d3ef1b3419268b60f5b4"
+  "tamano": 11461098,
+  "golden": "3e54690b9abd48818ec97ff3fc87262988fde2c0cacb74e7a201aafbaf2ff997"
 }

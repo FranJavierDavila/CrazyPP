@@ -4402,11 +4402,16 @@ export class PingPongGame {
         // r98 · altura viva del mando (el AGARRE de la mesa la sigue 1:1)
         if (!this._menuGripPos) this._menuGripPos = [null, null];
         this._menuGripPos[h] = muGrip.y;
-        const hit = muRaycaster.intersectObject(this.menuMesh, false)[0] || null;
+        // r40 · el panel del menú SÓLO es objetivo con el menú ABIERTO
+        // (oculto en el salón y en el Arcano: un rayo que lo cruza a
+        // ciegas no pinta botón fantasma ni cursor en el aire).
+        const hit = (this.menuOpen && !this._arconoOn)
+          ? (muRaycaster.intersectObject(this.menuMesh, false)[0] || null)
+          : null;
         // r113 · CHINCHETA: el rayo también busca el pin (prioridad sobre el
         // panel: cuelga 6 mm por delante del plano). Sólo con el menú abierto.
         let pinHit = null;
-        if (this.menuOpen && this._menuPinMesh) {
+        if (this.menuOpen && !this._arconoOn && this._menuPinMesh) {
           pinHit = muRaycaster.intersectObject(this._menuPinMesh, false)[0] || null;
         }
         // r98 · MESA AGARRABLE: mano agarrando (el rayo sigue a la mesa
@@ -4464,12 +4469,19 @@ export class PingPongGame {
           dot.visible = true;
           dot.position.copy(this.menuGroup.worldToLocal(pinHit.point.clone()));
         }
-        line.visible = true;
+        // r40 · el HAZ vive en el salón y en el Arcano AUNQUE el menú
+        // duerma (petición del dueño: «si existen botones repartidos por
+        // el hall estos se deben poder pulsar sin necesidad de sacar el
+        // menú»): es la mirilla con la que apunta al búho del Arcano y a
+        // la placa de la música. Largo honesto: hasta el objetivo del
+        // menú si lo hay; 3 m de puntero limpio si no lo hay.
+        const enEstancia = !!this.inHall || !!this._arconoOn;
+        line.visible = enEstancia || !!hit || !!pinHit;
         line.position.copy(muGrip);
         line.quaternion.copy(muQ);
         // r98 · el haz alcanza la MESA cuando es ella la que se apunta
         line.scale.z = sobreMesa ? sobreMesa.dist :
-          (pinHit ? pinHit.distance : (hit ? hit.distance : 0.5));
+          (pinHit ? pinHit.distance : (hit ? hit.distance : (enEstancia ? 3 : 0.5)));
         // el haz engorda al pasar sobre un botón (o sobre la mesa — r98)
         const thick = (idx >= 0 || idx === -2 || sobreMesa) ? 1.7 : 1;
         line.scale.x = thick;
@@ -6564,7 +6576,20 @@ export class PingPongGame {
   }
 
   /** ENTRAR al espacio arcano: fundido a negro, canje hall→arcano en la
-   *  sombra, desvanecimiento de vuelta. El menú del hall duerme dentro. */
+   *  sombra, desvanecimiento de vuelta. El menú del hall duerme dentro.
+   *  r40 (v3.6.136) · DOS ARREGLOS DEL INFORME DEL DUEÑO:
+   *  1 · EL ESCENARIO NACE DELANTE — bug raíz de la r39: el grupo arcano
+   *      se montaba en el ORIGEN de la escena (galería a z −2,35) mientras
+   *      el rig del salón vive en HALL.cz+2,3 (z −16,2): el panel, el búho
+   *      y las flechas quedaban a ~14 m A LA ESPALDA y «no aparecía nada».
+   *      Ahora el grupo se PLANTA sobre los pies del jugador (XZ del rig)
+   *      y gira hacia DONDE MIRA ÉL (yaw de la cabeza): búho, galería y
+   *      flechas SIEMPRE delante, esté donde esté y mirando a donde mire.
+   *  2 · MELODÍA PROPIA — dentro NO suena la pista del salón sino
+   *      assets/hall/arcano.mp3, por el ÚNICO canal de música ambiental
+   *      (canal hall de c03: misma maquinaria probada — caché, fundidos,
+   *      prioridad sobre el menú). Al salir, _arconoSalir restaura el aire
+   *      del salón tal cual enterHall lo armaría. */
   _arconoEntrar() {
     if (this._arconoOn || !this.inHall || !this.arcaneGroup) return;
     this._arconoFundir(() => {
@@ -6572,15 +6597,46 @@ export class PingPongGame {
       this._arconoIdx = 0;
       if (this.hallGroup) this.hallGroup.visible = false;
       if (this.menuGroup) this.menuGroup.visible = false;
+      try {
+        const fwd = new THREE.Vector3();
+        this.camera.getWorldDirection(fwd);
+        fwd.y = 0;
+        if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1);
+        fwd.normalize();
+        if (this.rig) {
+          this.arcaneGroup.position.set(this.rig.position.x, 0, this.rig.position.z);
+        } else {
+          this.arcaneGroup.position.set(0, 0, HALL.cz + 2.3);
+        }
+        // el −Z del escenario apunta a DONDE MIRA el anfitrión
+        this.arcaneGroup.rotation.y = Math.atan2(-fwd.x, -fwd.z);
+      } catch (eArcPos) {
+        this.arcaneGroup.position.set(0, 0, HALL.cz + 2.3);
+        this.arcaneGroup.rotation.y = 0;
+      }
       this.arcaneGroup.visible = true;
       this._arconoRepinta();
+      try { this.audio.setHallWanted(true, 'assets/hall/arcano.mp3'); } catch (eArcM1) { /* */ }
       try { this.audio.announce(T('arcono_hint'), true); } catch (eA1) { /* */ }
     });
     this.rules.message = T('arcono_hint');
   }
 
+  /** r40 · la pista AMBIENTAL que corresponde al salón abierto (TU
+   *  variante local, o LA DEL ANFITRIÓN en visita online — el mismo
+   *  criterio del arte que aplica enterHall). '' = salón sin música. */
+  _hallMusicaVariante() {
+    const online = !!(this.net && this.net.online);
+    const hv = (online && this._hallPeer && this._hallPeer.hv)
+      ? hallVariantePorId(this._hallPeer.hv)
+      : this._hallVarDef();
+    return (hv && hv.musica) || '';
+  }
+
   /** SALIR: el búho del espacio devuelve al salón con el desvanecimiento
-   *  (el hall reaparece tal cual quedó — arte, música e insignias). */
+   *  (el hall reaparece tal cual quedó — arte, música e insignias).
+   *  r40 · la pista del ARCANO se apaga y vuelve el aire del salón
+   *  (SU variante — o la del anfitrión en visita online). */
   _arconoSalir() {
     if (!this._arconoOn || !this.arcaneGroup) return;
     this._arconoFundir(() => {
@@ -6589,6 +6645,10 @@ export class PingPongGame {
       if (this.hallGroup) this.hallGroup.visible = true;
       if (this.menuGroup && this.menuOpen) this.menuGroup.visible = true;
       this.rules.message = T('arcono_salir');
+      try {
+        const mus = this._hallMusicaVariante();
+        this.audio.setHallWanted(!!mus, mus || null);
+      } catch (eArcM2) { /* */ }
       try { this.audio.playOsc(440, 660, 0.12, 'sine', 0.1, 0); } catch (eA2) { /* */ }
     });
   }
@@ -14612,18 +14672,29 @@ export class PingPongGame {
         this.anchorMenu();
         this.drawMenu();
         this.audio.setMusicWanted(true);
-      } else if (this.menuOpen || this.inHall || this.net.online ||
-          (this.inAR && this.pstOn)) {
+      } else if (!this._arconoOn && (this.menuOpen || this.inHall ||
+          this.net.online || (this.inAR && this.pstOn))) {
         // si cerramos el PROMPT con B, la próxima apertura vuelve al menú normal
         if (this.menuOpen && this.menuPage === 'hallask') this.menuPage = 'main';
         this.toggleMenu();
-      } else {
+      } else if (!this._arconoOn) {
         this.openHallAsk();
       }
+      // r40 · DENTRO del Arcano B no hace nada: la única puerta de vuelta
+      // es EL BÚHO (petición del dueño: «es la única forma que tenemos de
+      // volver al Hall desde este nuevo escenario»).
     }
 
     // 0.7) menú abierto: anclar a la muñeca libre + rayo de apuntado
-    if (presenting && this.menuOpen) this.updateMenu(dt);   // r87: dt para el pulso del medallón
+    // r40 · TAMBIÉN SIN MENÚ en el salón y en el Arcano (petición del
+    //      dueño: «los elementos del Hall por defecto no son pulsables
+    //      hasta que sacamos el menú… eso no debería ser así»): el rayo,
+    //      el haz y el hover del búho y de la placa de la música viven
+    //      SIEMPRE en las estancias — los botones del hall son pulsables
+    //      desde el primer segundo, sin abrir nada.
+    if (presenting && (this.menuOpen || this.inHall || this._arconoOn)) {
+      this.updateMenu(dt);   // r87: dt para el pulso del medallón
+    }
 
     // 0.8) v2.19: red online — emitir pose/bola/sync (v1: 30 Hz JSON)
     //      v3.6.71 · r79: transporte binario v2 (pose 60 Hz + eventos fast)

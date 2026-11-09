@@ -1336,8 +1336,13 @@ export class NetLink {
       this._lastIceTry = now;
       try { this._pc?.restartIce(); } catch { /* */ }
     }
-    if (this._lastRelAt && now - this._lastRelAt > 12000 && this._lastFastAt &&
-        now - this._lastFastAt > 12000) {
+    // r36 (v3.6.132) · el rival que AVISÓ de pausa ('pause', visor quitado)
+    // está VIVO: su silencio no puede matar la partida a los 12 s — con
+    // pausa anunciada el corte tarda 60 s (y al volver, 'resume' restaura
+    // el estado exacto). Sin pausa anunciada: 12 s de siempre.
+    const SILENCIO = this._pausedRemote ? 60000 : 12000;
+    if (this._lastRelAt && now - this._lastRelAt > SILENCIO && this._lastFastAt &&
+        now - this._lastFastAt > SILENCIO) {
       this.onPeerGone(T('conn_lost'));
       return;
     }
@@ -1398,7 +1403,9 @@ export class NetLink {
     const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
     const n2 = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
     if (!n2) return;
-    for (const e of this._pend) e.seqs.push(pk.seq);
+    // r36 (v3.6.132): seq sólo a los que VIAJAN en este paquete (los 8
+    // primeros) — el ack no puede dar por recibido lo que no se envió
+    for (const e of this._pend.slice(0, PPNET.VP.MAX_EVENTS)) e.seqs.push(pk.seq);
     this._fastSend(buf.slice(0, n2), now);
   }
 
@@ -1416,7 +1423,9 @@ export class NetLink {
     const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
     const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
     if (!n) return;
-    for (const e of this._pend) e.seqs.push(pk.seq);
+    // r36 (v3.6.132): seq sólo a los que VIAJAN en este paquete (los 8
+    // primeros) — el ack no puede dar por recibido lo que no se envió
+    for (const e of this._pend.slice(0, PPNET.VP.MAX_EVENTS)) e.seqs.push(pk.seq);
     this._fastSend(buf.slice(0, n), now);
   }
 
@@ -1605,16 +1614,26 @@ export class NetLink {
     return bits >>> 0;
   }
   _trackLoss(seq) {
-    this._recvs++;
-    const last = this._recvRing.length ? this._recvRing[this._recvRing.length - 1] : seq;
-    if (PPNET.wrapDiff(seq, last) > 1) this._gaps += PPNET.wrapDiff(seq, last) - 1;
-    this._recvRing.push(seq);
-    if (this._recvRing.length > 128) {
-      this._recvRing.shift();
-      this._recvs = this._recvRing.length + this._gaps;
-    }
-    // degradación honesta: pérdida sostenida >10 % → pose 30 Hz (spec §11)
-    const loss = this._gaps / Math.max(1, this._gaps + this._recvs);
+    const ring = this._recvRing;
+    const last = ring.length ? ring[ring.length - 1] : seq;
+    const d = PPNET.wrapDiff(seq, last);
+    // r36 (v3.6.132) · hueco de PÉRDIDA real: 2..64 paquetes. Un salto
+    // mayor es una PARADA (reinicio de ICE, pestaña congelada), no pérdida:
+    // antes se sumaba entero a _gaps (acumulativo DE POR VIDA) y un único
+    // atasco de 5 s (watchdog de ICE) dejaba la pose degradada a 30 Hz
+    // PARA SIEMPRE — la recuperación exigía <4 % de pérdida vital,
+    // imposible tras el atasco (y con ~15 pérdidas totales en la sesión,
+    // ya no se recuperaba ni sin atascos).
+    if (d > 1 && d <= 64) this._gaps += d - 1;
+    ring.push(seq);
+    if (ring.length > 128) ring.shift();
+    // r36 (v3.6.132) · ventana VIVA: los huecos que cuentan son los DENTRO
+    // del anillo (span − recibidos); cuando la ráfaga de pérdida sale de
+    // la ventana, el ratio cae y la pose recupera sus 60 Hz (spec §11:
+    // «pérdida SOSTENIDA», no vitalicia).
+    const lw = this._lossWin();
+    this._recvs = lw.n;
+    const loss = lw.g / Math.max(1, lw.g + lw.n);
     if (loss > PPNET.VP.LOSS_LOW) {
       this._lossLowT += 1;
       if (this._lossLowT > 90 && !this._degraded) { this._degraded = true; this._poseHz = PPNET.VP.POSE_HZ_LOW; }
@@ -1622,6 +1641,18 @@ export class NetLink {
       this._lossLowT = Math.max(0, this._lossLowT - 2);
       if (this._degraded && loss < 0.04) { this._degraded = false; this._poseHz = PPNET.VP.POSE_HZ; }
     }
+  }
+
+  /** r36 (v3.6.132) · huecos y recibidos DENTRO de la ventana del anillo
+   *  (anillo NO monótono por reordenación: clamp a ≥0 y al total contado
+   *  — el mismo número que usa _trackLoss y el que enseña netInfo). */
+  _lossWin() {
+    const ring = this._recvRing || [];
+    const n = ring.length;
+    if (n < 2) return { g: 0, n };
+    const span = PPNET.wrapDiff(ring[n - 1], ring[0]);
+    const g = Math.max(0, Math.min(this._gaps, span - (n - 1)));
+    return { g, n };
   }
 
   /* ---- eventos de bola del juego (llamados por c12) ---- */
@@ -2098,13 +2129,14 @@ export class NetLink {
         online: !!this.online, buildWarn: !!this._buildWarn };
     }
     const rs = this._clock ? this._clock.rttStats() : { med: 0, p95: 0, min: 0 };
+    const lw = this._lossWin();   // r36 (v3.6.132): pérdida de la VENTANA
     return {
       v2: 'ok', via: this._tunnel ? 'tunel' : 'p2p', online: true,
       buildWarn: !!this._buildWarn,
       rtt: rs.med, rttP95: rs.p95, jitter: Math.round(this._clock.jitter || 0),
       clockOff: Math.round(this._clock.offset || 0), clockReady: !!this._clock.ready,
       jbDelay: Math.round(this._jb.delayMs || 0), starves: this._jb.starves || 0,
-      loss: Math.round((1 - (this._recvs || 0) / Math.max(1, (this._recvs || 0) + (this._gaps || 0))) * 100),
+      loss: Math.round((1 - lw.n / Math.max(1, lw.g + lw.n)) * 100),
       ball: this._ball.state, shot: this._ball.shot, mine: this._ball.mine,
       val: { rej: this._val.rejects, serious: this._val.serious,
              log: this._val.log.slice(0, 6) },

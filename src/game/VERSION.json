@@ -1,10 +1,10 @@
 {
-  "version": "3.6.131-SDK6",
-  "fase": 133,
-  "faseNombre": "Prisma visible — bola arcoíris",
+  "version": "3.6.132-SDK6",
+  "fase": 134,
+  "faseNombre": "Revisión del multijugador — 3 bugs de red",
   "sdk": "1.6.0",
   "fecha": "2026-11-09",
-  "hub": "v36131-sdk6",
+  "hub": "v36132-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11378159,
-  "golden": "c9c65ff52117556fc225f590c96189fef6c77ac5e262d11f833aecdf0d8ff81a"
+  "tamano": 11380008,
+  "golden": "49d01478b0cbbc0218df31b0099671098cf991dc1d87b3e9f8643e127b2ecb5d"
 }

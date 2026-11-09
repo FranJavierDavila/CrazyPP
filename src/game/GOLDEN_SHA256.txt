@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.131-SDK6, fase 133 · Prisma visible — bola arcoíris; sello actualizado
-# por bump_version.py desde 3.6.130-SDK6)
-c9c65ff52117556fc225f590c96189fef6c77ac5e262d11f833aecdf0d8ff81a
+# SHA256 del game.html que produjo esta división (3.6.132-SDK6, fase 134 · Revisión del multijugador — 3 bugs de red; sello actualizado
+# por bump_version.py desde 3.6.131-SDK6)
+49d01478b0cbbc0218df31b0099671098cf991dc1d87b3e9f8643e127b2ecb5d

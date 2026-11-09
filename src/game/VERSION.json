@@ -1,10 +1,10 @@
 {
-  "version": "3.6.129-SDK6",
-  "fase": 131,
-  "faseNombre": "Lote Aprobado",
+  "version": "3.6.130-SDK6",
+  "fase": 132,
+  "faseNombre": "Correcciones a los superpoderes de pala",
   "sdk": "1.6.0",
   "fecha": "2026-11-09",
-  "hub": "v36129-sdk6",
+  "hub": "v36130-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11365004,
-  "golden": "9213fc5966ac243314fbc8a1c9804509f6ccea6136c337738f6430624c0eae5a"
+  "tamano": 11375288,
+  "golden": "e00e508ab0616dec7c9cb8c694ae66227ea70eea83fe9dc16c2d0af06dd82d7f"
 }

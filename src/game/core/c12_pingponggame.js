@@ -240,6 +240,13 @@ export class PingPongGame {
     this._elecTarget = new THREE.Vector3();   // objetivo del rayo (reuso)
     this._elecSegA = new THREE.Vector3();     // segmento rayo (reuso)
     this._elecSegB = new THREE.Vector3();
+    // r34 (v3.6.130) · RETENCIÓN del rayo: bola congelada 1 s (ppTransito
+    // del portal — c04/c05 INTACTOS) con halo de luz y mini-rayos; al
+    // agotarse ESTALLA, cae el punto y la TORMENTA TERMINA (máx. 1 bola
+    // perdida por activación — fin por baja).
+    this._elecAgarraT = 0;                     // s de retención restantes
+    this._elecAgarraPos = new THREE.Vector3(); // punto de agarre (reuso)
+    this._elecAgarraFx = null;                 // { halo, rayos[], cd }
     // r26b (v3.6.122) · estado de los 3 poderes nuevos (patrón red/elec)
     this._fenixT = 0;               // s restantes de bola de fuego
     this._fenixWarn = false;
@@ -7166,7 +7173,16 @@ export class PingPongGame {
     if (this._megaActivaId === 'fenix') return TRAIL_PODER.fenix; // r26b
     if (this._megaActivaId === 'crono') return TRAIL_PODER.crono; // r26b
     if (this._megaActivaId === 'oscuridad') return TRAIL_PODER.oscuridad; // r29
-    if (this._megaActivaId === 'prisma') return TRAIL_PODER.prisma; // r33
+    if (this._megaActivaId === 'prisma') {
+      // r34 (v3.6.130) · petición del dueño: el arcoíris SÓLO se ve en el
+      // campo del RIVAL — cuando la bola entra en NUESTRO campo la estela
+      // vuelve al color de la skin (el efecto no molesta en casa). El
+      // lerp del frame (kT = dt·6) suaviza el tránsito y los puntos ya
+      // nacidos se apagan solos (color por vértice, vida 0,42 s).
+      const enCampoRival = this.ball && this.ball.pos.z < DIMS.tableCenterZ;
+      if (!enCampoRival) return null;
+      return TRAIL_PODER.prisma;
+    }
     if (this._megaActivaId === 'onda') return TRAIL_PODER.onda;     // r33
     if (this._megaActivaId === 'salva') return TRAIL_PODER.salva;   // r33
     if (this._megaActivaId === 'ancla') return TRAIL_PODER.ancla;   // r33
@@ -7715,7 +7731,11 @@ export class PingPongGame {
     cuerpo.visible = false;
     cuerpo.renderOrder = 6;
     cuerpo.frustumCulled = false;
-    this.scene.add(cuerpo);
+    // r34 (v3.6.130) · ESPACIO DE LA MESA (this.rig — patrón r33 de
+    // prisma/oscuridad/onda): el recentrado del visor ROTA el rig y los
+    // FX en this.scene quedaban DESALINEADOS del plano de la red (informe
+    // del dueño). La red vive en el rig: la barrera también.
+    this.rig.add(cuerpo);
     // — arcos: polilíneas dentadas (pool, cero asignaciones por frame) —
     const arcos = [];
     for (let i = 0; i < RED_ARC_N; i++) {
@@ -7731,7 +7751,7 @@ export class PingPongGame {
       ln.frustumCulled = false;
       ln.renderOrder = 7;
       ln.userData.vida = 0; ln.userData.f = i * 1.31;
-      this.scene.add(ln);
+      this.rig.add(ln);   // r34: espacio de la mesa
       arcos.push(ln);
     }
     // — riel superior: la coronación del campo, brillante y nerviosa —
@@ -7746,7 +7766,7 @@ export class PingPongGame {
     riel.frustumCulled = false;
     riel.renderOrder = 8;
     riel.userData.vida = 1;
-    this.scene.add(riel);
+    this.rig.add(riel);   // r34: espacio de la mesa
     this._redFx = {
       cuerpo, arcos, riel, cd: 0, rielCd: 0, buzzCd: 0.3, sparkCd: 1.1,
     };
@@ -8007,7 +8027,10 @@ export class PingPongGame {
       };
       sp.renderOrder = 6;
       sp.visible = false;
-      this.scene.add(sp);
+      // r34 (v3.6.130) · ESPACIO DE LA MESA (this.rig): la tormenta vive
+      // sobre el campo del RIVAL de la mesa — con el recentrado del visor
+      // quedaba rotada (misma causa raíz que la barrera desalineada).
+      this.rig.add(sp);
       niebla.push(sp);
     }
     // — rayos: ELEC_RAYOS_N líneas de 9 puntos, aditivo azul-blanco —
@@ -8025,7 +8048,7 @@ export class PingPongGame {
       ln.frustumCulled = false;
       ln.userData.vida = 0; ln.userData.f = i * 1.7;
       ln.renderOrder = 7;
-      this.scene.add(ln);
+      this.rig.add(ln);   // r34: espacio de la mesa
       rayos.push(ln);
     }
     // — pedacitos negros: 12 tetraedros (pool de la explosión) —
@@ -8038,7 +8061,7 @@ export class PingPongGame {
       const mt = new THREE.Mesh(geoM, matM);
       mt.visible = false;
       mt.userData = { vida: 0, vx: 0, vy: 0, vz: 0, rx: 0, ry: 0 };
-      this.scene.add(mt);
+      this.rig.add(mt);   // r34: espacio de la mesa
       metales.push(mt);
     }
     this._elecFx = { niebla, rayos, rayosIx: 0, metales };
@@ -8063,6 +8086,51 @@ export class PingPongGame {
       Math.min(1, this._elecT / 0.6)));               // sale suave
     this._elecLuces(k, this._elecFlashT > 0 ? this._elecFlashT / 0.25 : 0);
     if (this._elecFlashT > 0) this._elecFlashT -= dt;
+    // r34 (v3.6.130) · RETENCIÓN viva (informe del dueño: «parando la
+    // bola 1 segundo con un halo de luz y pequeños rayos saliendo de
+    // ella antes de ser destruida»): la bola cuelga CONGELADA (ppTransito
+    // — c04 ni la integra, c05 no la golpea), el halo late y los
+    // mini-rayos saltan; al agotarse el segundo, ESTALLA (punto por el
+    // árbitro + FIN de la tormenta — máx. 1 bola perdida por activación).
+    if (this._elecAgarraT > 0) {
+      this._elecAgarraT -= dt;
+      if (this.ball) {
+        this.ball.pos.copy(this._elecAgarraPos);
+        this.ball.vel.set(0, 0, 0);
+      }
+      const fxA = this._elecAgarraFx;
+      if (fxA) {
+        const ttA = performance.now() * 0.001;
+        if (fxA.halo.visible) {
+          fxA.halo.position.copy(this._elecAgarraPos);
+          const plA = 0.78 + 0.22 * Math.sin(ttA * 9.0);
+          fxA.halo.material.opacity = 0.9 * plA;
+          const esA = 0.30 + 0.06 * Math.sin(ttA * 7.3);
+          fxA.halo.scale.set(esA, esA, 1);
+        }
+        fxA.cd -= dt;
+        if (fxA.cd <= 0) {
+          fxA.cd = 0.055;
+          for (const rA of fxA.rayos) {
+            const aA = Math.random() * Math.PI * 2;
+            const lA = 0.07 + Math.random() * 0.10;
+            const pA = rA.geometry.attributes.position;
+            pA.setXYZ(0, this._elecAgarraPos.x, this._elecAgarraPos.y,
+              this._elecAgarraPos.z);
+            pA.setXYZ(1,
+              this._elecAgarraPos.x + Math.cos(aA) * lA,
+              this._elecAgarraPos.y + (Math.random() * 2 - 1) * lA * 0.7,
+              this._elecAgarraPos.z + Math.sin(aA) * lA);
+            pA.needsUpdate = true;
+            rA.material.opacity = 0.45 + Math.random() * 0.55;
+          }
+        }
+      }
+      if (this._elecAgarraT <= 0) {
+        try { this._elecRompe(); } catch (eR34) { /* */ }
+        return;           // la tormenta terminó DENTRO de _elecRompe
+      }
+    }
     const fx = this._elecFx;
     if (fx) {
       const tt = performance.now() * 0.001;
@@ -8231,7 +8299,97 @@ export class PingPongGame {
       const dz = apz - abz * t;
       const d2 = dx * dx + dy * dy + dz * dz;
       const r = ELEC_BOLT_R + (D.ballRadius || 0.02);
-      if (d2 <= r * r) this._elecRompe();
+      // r34 (v3.6.130) · el impacto YA NO rompe al vuelo: AGARRA la bola
+      // (retención visible de 1 s con halo de luz y mini-rayos — Fix D
+      // del dueño); el estallido llega al agotarse la retención.
+      if (d2 <= r * r && this._elecAgarraT <= 0) this._elecAgarra();
+    }
+  }
+
+  /** r34 (v3.6.130) · FX del AGARRE: halo de luz + 6 mini-rayos que
+   *  saltan de la bola retenida (pool propio, cero asignaciones por
+   *  frame — las posiciones se reciclan en _elecFrame). ESPACIO DE LA
+   *  MESA (this.rig — patrón r33: el recentrado rota el rig). */
+  _buildElecAgarraFx() {
+    if (this._elecAgarraFx) return;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 128;
+    const c2 = cv.getContext('2d');
+    if (c2) {
+      const gR = c2.createRadialGradient(64, 64, 6, 64, 64, 62);
+      gR.addColorStop(0, 'rgba(235,248,255,0.95)');
+      gR.addColorStop(0.4, 'rgba(170,220,255,0.5)');
+      gR.addColorStop(1, 'rgba(120,180,255,0)');
+      c2.fillStyle = gR;
+      c2.fillRect(0, 0, 128, 128);
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, opacity: 0, depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }));
+    halo.renderOrder = 66;
+    halo.visible = false;
+    halo.frustumCulled = false;
+    this.rig.add(halo);           // ¡espacio de la mesa, NO this.scene!
+    const rayos = [];
+    for (let i = 0; i < 6; i++) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position',
+        new THREE.BufferAttribute(new Float32Array(2 * 3), 3));
+      const mat = new THREE.LineBasicMaterial({
+        color: 0xbfe4ff, transparent: true, opacity: 0.8,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      const ln = new THREE.Line(geo, mat);
+      ln.visible = false;
+      ln.frustumCulled = false;
+      ln.renderOrder = 67;
+      this.rig.add(ln);           // ¡espacio de la mesa!
+      rayos.push(ln);
+    }
+    this._elecAgarraFx = { halo, rayos, cd: 0 };
+  }
+
+  /** r34 · apaga el FX del agarre (halo y mini-rayos fuera). */
+  _elecAgarraFxOff() {
+    const fx = this._elecAgarraFx;
+    if (!fx) return;
+    if (fx.halo) fx.halo.visible = false;
+    for (const r2 of fx.rayos) r2.visible = false;
+  }
+
+  /** r34 (v3.6.130) · EL RAYO AGARRA LA BOLA (informe del dueño: «no te
+   *  enteras de que un rayo ha alcanzado la bola… parando la bola 1
+   *  segundo con un halo de luz y pequeños rayos saliendo de ella antes
+   *  de ser destruida»): se congela con el ppTransito del PORTAL (c04 no
+   *  la integra, c05 no la golpea, el árbitro no ve un evento — física
+   *  INTACTA), cuelga VISTA con su halo y al agotarse el segundo estalla
+   *  en _elecFrame → _elecRompe. */
+  _elecAgarra() {
+    const b = this.ball;
+    if (!b || this._elecAgarraT > 0) return;    // ya agarrada: UNA vez
+    this._elecAgarraPos.copy(b.pos);
+    b.vel.set(0, 0, 0);                          // congelada
+    b.ppTransito = true;
+    if (this.ballMesh) this.ballMesh.visible = true;
+    this._elecAgarraT = ELEC_AGARRA_T;
+    try { this._buildElecAgarraFx(); } catch (eA34) { this._elecAgarraFx = null; }
+    const fx = this._elecAgarraFx;
+    if (fx) {
+      if (fx.halo) {
+        fx.halo.position.copy(this._elecAgarraPos);
+        fx.halo.visible = true;
+      }
+      for (const r2 of fx.rayos) r2.visible = true;
+    }
+    // firma sonora de la caza: zumbido ascendente + crujido seco
+    try { this.audio.playOsc(220, 880, 0.5, 'sawtooth', 0.10, 0); } catch (eS34) { /* */ }
+    try { this.audio.playOsc(1500, 500, 0.16, 'square', 0.08, 0.02); } catch (eS35) { /* */ }
+    this._elecFlashT = 0.25;
+    try { this.rules.message = T('arc_elec_caza'); } catch (eM34) { /* */ }
+    if (this.renderer.xr && this.renderer.xr.isPresenting) {
+      try { this.haptic(this.paddleHand, 0.6, 120); } catch (eH34) { /* */ }
     }
   }
 
@@ -8259,20 +8417,17 @@ export class PingPongGame {
         if (++dados >= 10) break;
       }
     }
-    // v3.6.124 (r28) · SOLO se oculta si la bola está VOLANDO (informe
-    // del dueño: con el rival sacando, la bola «no se veía… imposibilita
-    // el juego»). Bola quieta o preparando un saque = estallido visual
-    // + punto del árbitro SIN ocultarla (nada que "revivir" después).
-    const vR28 = (this.ball && this.ball.vel) || null;
-    const volandoR28 = !vR28 ||
-      (Math.abs(vR28.x) + Math.abs(vR28.y) + Math.abs(vR28.z)) > 0.5;
-    if (volandoR28) {
-      if (this.ballMesh) this.ballMesh.visible = false;   // estalló
-      if (this.trailObj) this.trailObj.visible = false;
-      this._elecRotoT = 0.9;
-    } else {
-      this._elecRotoT = 0;   // bola quieta (saque): visible y al asunto
-    }
+    // r34 (v3.6.130) · SIN ocultamiento: la tormenta TERMINA con la baja
+    // (petición del dueño: «el superpoder se suspende y termina — la
+    // penalización no puede ser mayor de 1 bola perdida») y la bola sale
+    // del agarre para caer MUERTA y VISIBLE (patrón de punto normal: el
+    // árbitro ya decidió y la bola vuela de adorno). El hide+revive del
+    // r28 vivía del ciclo CONTINUADO de la tormenta: tras un estallido ya
+    // no hay más ciclo — nada que "revivir", nada que ocultar (el saque
+    // del rival sigue indemne: bola quieta nunca llegó a ocultarse).
+    try { this._elecAgarraFxOff(); } catch (eRl34) { /* */ }
+    this._elecAgarraT = 0;
+    if (this.ball) this.ball.ppTransito = false;
     // estruendo del estallido + háptica fuerte
     try { this.audio.playOsc(1400, 90, 0.32, 'sawtooth', 0.14, 0); } catch (e) { /* */ }
     try { this.audio.playOsc(70, 45, 0.5, 'sine', 0.18, 0.02); } catch (e) { /* */ }
@@ -8283,6 +8438,12 @@ export class PingPongGame {
     try {
       this.processIntents(this.rules.applyPoint('player', 'elec'));
     } catch (eP) { /* */ }
+    // r34 (v3.6.130) · FIN POR BAJA (petición del dueño: «si al aplicarlo
+    // en algún momento el rival pierde una bola, el superpoder se suspende
+    // y termina — la penalización no puede ser mayor de 1 bola perdida»):
+    // la tormenta SE DISIPA al instante y SIN mensaje propio (el del
+    // punto debe verse); un nuevo gatillo puede reabrirla con otra carga.
+    try { this._elecFin(true); } catch (eF34) { /* */ }
   }
 
   /** Trueno ALTERNO (2 muestras sintetizadas) — fetch+decode+cache. */
@@ -8342,8 +8503,24 @@ export class PingPongGame {
     } catch { /* */ }
   }
 
-  /** Fin de la tormenta: luces y fondo EXACTOS de vuelta, FX fuera. */
-  _elecFin() {
+  /** Fin de la tormenta: luces y fondo EXACTOS de vuelta, FX fuera.
+   *  r34 (v3.6.130) · porBaja=true cuando el fin llega POR ESTALLAR la
+   *  bola (no pisa el mensaje del punto). Toda salida LIBERA el AGARRE
+   *  si la tormenta muere con la bola retenida (cortina etapas 2/4,
+   *  salida del partido, fin de ventana): la bola viva cae — nunca
+   *  congelada para siempre (lección r28). */
+  _elecFin(porBaja) {
+    if (this._elecAgarraT > 0) {
+      this._elecAgarraT = 0;
+      try { this._elecAgarraFxOff(); } catch (eRl35) { /* */ }
+      try {
+        if (this.ball) {
+          this.ball.ppTransito = false;
+          this.ball.vel.set(0, 0, 0);
+        }
+        if (this.ballMesh) this.ballMesh.visible = true;
+      } catch (eRl36) { /* */ }
+    }
     this._elecT = 0;
     this._elecWarn = false;
     this._elecTickN = 0;
@@ -8386,7 +8563,7 @@ export class PingPongGame {
     } else if (this.rules.state === 'rally' && this.ballMesh) {
       this.ballMesh.visible = true;   // red de seguridad r25 (intacta)
     }
-    this.rules.message = T('arc_elec_fin');
+    if (!porBaja) this.rules.message = T('arc_elec_fin');   // r34: la baja no pisa el punto
     try { this.audio.playOsc(300, 180, 0.22, 'sine', 0.10, 0); } catch (e) { /* */ }
   }
 
@@ -10220,6 +10397,14 @@ export class PingPongGame {
     // r25 · red/elec: sin voz corta propia — reutilizan la de concesión
     else if (id === 'red') par = [VOZ_PODER_RED, VOZ_PODER_RED_EN];
     else if (id === 'elec') par = [VOZ_PODER_ELEC, VOZ_PODER_ELEC_EN];
+    // r34 (v3.6.130) · informe del dueño: «todos los nuevos deben tener
+    // el audio disparador al seleccionarlos — en inglés el poder de Fénix
+    // no tiene su audio». Fénix/Crono/Oscuridad (r26b/r29) no estaban en
+    // el selector: el joystick los ciclaba EN SILENCIO. Entran con su voz
+    // de concesión (mismo patrón red/elec de la r25).
+    else if (id === 'fenix') par = [VOZ_PODER_FENIX, VOZ_PODER_FENIX_EN];
+    else if (id === 'crono') par = [VOZ_PODER_CRONO, VOZ_PODER_CRONO_EN];
+    else if (id === 'oscuridad') par = [VOZ_PODER_OSCURIDAD, VOZ_PODER_OSCURIDAD_EN];
     // r33 · los 4 nuevos: sin voz corta propia — reutilizan la de concesión
     else if (id === 'prisma') par = [VOZ_PODER_PRISMA, VOZ_PODER_PRISMA_EN];
     else if (id === 'onda') par = [VOZ_PODER_ONDA, VOZ_PODER_ONDA_EN];
@@ -10274,6 +10459,7 @@ export class PingPongGame {
       this._vozSelHecha = true;
       A._megaVozBuf = A._megaVozBuf || {};
       const ids = ['mega', 'efecto', 'iman', 'portal', 'clon', 'nada', 'red', 'elec',
+        'fenix', 'crono', 'oscuridad',          // r34: el selector YA los habla
         'prisma', 'onda', 'salva', 'ancla'];   // r33: los 4 nuevos precalientan
       for (const id of ids) {
         const key = id + ((__ppLang === 'en') ? '_en' : '_es');
@@ -10679,7 +10865,7 @@ export class PingPongGame {
       sp.visible = false;
       sp.renderOrder = 7;
       sp.userData.ppVida = 0;
-      this.scene.add(sp);
+      this.rig.add(sp);   // r34: espacio de la mesa (Sprite: billboard propio)
       return sp;
     };
     this._portalSpriteA = mk();
@@ -10776,7 +10962,7 @@ export class PingPongGame {
     this._efectoBoteFx.rotation.x = -Math.PI / 2;
     this._efectoBoteFx.renderOrder = 6;
     this._efectoBoteFx.visible = false;
-    this.scene.add(this._efectoBoteFx);
+    this.rig.add(this._efectoBoteFx);   // r34: espacio de la mesa
   }
 
   /** v3.6.37 · ANILLO DE BOTE amplificado (SÚPER EFECTO notorio): one-shot
@@ -12288,8 +12474,10 @@ export class PingPongGame {
         this.ballMesh.scale.setScalar(Math.max(0.02, 1 - fs * 0.98));
         if (this._portalSinkT === 0) this.ballMesh.visible = false;
       }
-    } else if (this.ball && this.ball.ppTransito && this.ballMesh) {
-      this.ballMesh.visible = false;                          // viaje oculto
+    } else if (this.ball && this.ball.ppTransito &&
+               this._elecAgarraT <= 0 && this.ballMesh) {
+      this.ballMesh.visible = false;    // viaje oculto (r34: el AGARRE de
+      // la SÚPER ELECTRICIDAD mantiene la bola VISTA mientras cuelga)
     }
     if (this._portalRiseT > 0) {
       this._portalRiseT = Math.max(0, this._portalRiseT - dt);
@@ -16715,6 +16903,14 @@ const RED_SPARK_CD = 1.4;   // s entre chispas del riel superior
 // rayos sigue cayendo al azar y conserva su colisión de siempre.
 const ELEC_ATRAE_P = 0.25;  // probabilidad por rayo de modo ATRACTORA
 const ELEC_ATRAE_COL = 0xd9c8ff; // tinte violeta del rayo cazador
+// r34 (v3.6.130) · RETENCIÓN DEL RAYO + FIN TRAS LA BAJA (informe del
+// dueño: «no te enteras de que un rayo ha alcanzado la bola; más bien
+// reforzar el efecto cuando existe alcance parando la bola 1 segundo
+// con un halo de luz y pequeños rayos saliendo de ella antes de ser
+// destruida» y «si al aplicarlo en algún momento el rival pierde una
+// bola, el superpoder se suspende y termina — la penalización no puede
+// ser mayor de 1 bola perdida»).
+const ELEC_AGARRA_T = 1.0;  // s de retención visible antes del estallido
 // r30 (v3.6.126) · SÚPER FÉNIX (8.º poder; orden del dueño tras probarlo:
 // «no es jugable… que la dinámica del juego sea la de una partida normal
 // con una pequeña penalización para la IA… los saques deben permitirse

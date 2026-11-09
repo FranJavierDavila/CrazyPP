@@ -87,7 +87,7 @@ for (const [nombre, src] of [['c04', c04], ['c05', c05]]) {
 
 /* — 4 · HALL CABAÑA · catálogo (c02) ————————————————————————————————— */
 console.log('4 · HALL CABAÑA · catálogo HALL_VARIANTES (c02)');
-chk(Array.isArray(HALL_VARIANTES) && HALL_VARIANTES.length === 5, '5 variantes (re-anclada r26b: museo + cabaña + neón + orbital + dojo)');
+chk(Array.isArray(HALL_VARIANTES) && HALL_VARIANTES.length === 6, '6 variantes (re-anclada r38: museo + cabaña + neón + orbital + dojo + rascacielos)');
 chk(HALL_VARIANTES[0].id === 'anfitrion' && HALL_VARIANTES[0].lock === null && HALL_VARIANTES[0].base === 'assets/hall/', "'anfitrion': museo clásico, sin candado, arte base");
 chk(HALL_VARIANTES[1].id === 'cabana' && HALL_VARIANTES[1].lock === 'wins10', "'cabana' se libera con el logro wins10 (10 victorias — o 6★)");
 chk(HALL_VARIANTES[1].base === 'assets/hall/cabana/', "'cabana' apunta a su carpeta de arte");

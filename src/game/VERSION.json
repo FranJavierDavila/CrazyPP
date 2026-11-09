@@ -1,10 +1,10 @@
 {
-  "version": "3.6.133-SDK6",
-  "fase": 135,
-  "faseNombre": "Revisión del multijugador II — reconexión ICE real",
+  "version": "3.6.134-SDK6",
+  "fase": 136,
+  "faseNombre": "El salón de la partida — Rascacielos",
   "sdk": "1.6.0",
   "fecha": "2026-11-09",
-  "hub": "v36133-sdk6",
+  "hub": "v36134-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11384002,
-  "golden": "726f262ca69f9781c7fd7f3bd509651cb71884e4790164e9595ab03f98695b0f"
+  "tamano": 11395884,
+  "golden": "951940900bdefb5d27498257e5adf01a3188e25f449945f6fa678da98a0e786f"
 }

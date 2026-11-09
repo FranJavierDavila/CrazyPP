@@ -576,13 +576,18 @@ export const HALL_VARIANTES = [
   // arte 100 % procedural con las MISMAS fichas y proporciones exactas
   // de los planos (frente/fondo 1849×864 · laterales 2395×864 ·
   // suelo/techo 1296×1678), candados por HITOS de ppxr_stats_v1.
-  // r32 (v3.6.128) · MÚSICA AMBIENTAL DEL SALÓN: cada uno de estos tres
-  // salones lleva SU pista (JPGs del dueño + MP3 del dueño — r32 sustituye
+  // r32 (v3.6.128) · MÚSICA AMBIENTAL DEL SALÓN: cada uno de estos salones
+  // lleva SU pista (JPGs del dueño + MP3 del dueño — r32 sustituye
   // el arte IA de r30 por el arte PREPARADO por el dueño, mismas fichas y
   // medidas exactas). La pista suena en bucle mientras el salón está
   // ABIERTO (enterHall→exitHall) y manda sobre cualquier otra música en
   // la estancia (invariante UNA MELODÍA, canal hall en c03); el icono de
   // la pared frontal la silencia (c08/c12). anfitrion/cabana: sin música.
+  // r38 (v3.6.134) · EL SALÓN DE LA PARTIDA: la cancha de los PARTIDOS
+  // (libre, supervivencia, duelos y online) se viste y suena como el hall
+  // configurado por el ANFITRIÓN (local = el tuyo; online = el del
+  // anfitrión, viajado en hp.hv y en el evento fiable hallv). Los
+  // campeonatos conservan SU decorado (champTex gana en la cadena).
   { id: 'neon', lock: 'hito_rally20', nameKey: 'hall_var_neon',
     base: 'assets/hall/neon/',          // SALÓN NEÓN ARCADE · rally 20
     musica: 'assets/hall/neon/arcade.mp3' },
@@ -592,6 +597,14 @@ export const HALL_VARIANTES = [
   { id: 'dojo', lock: 'hito_aces5', nameKey: 'hall_var_dojo',
     base: 'assets/hall/dojo/',          // DOJO ZEN · 5 saques directos
     musica: 'assets/hall/dojo/dojo.mp3' },
+  // r38 (v3.6.134) · 4.º SALÓN DEL DUEÑO («te doy material para un nuevo
+  // hall, "Rascacielos" rascacielos.zip y su melodía "rascacielos.mp3".
+  // Mismo comportamiento que el resto de halls») — arte EXACTO a la spec
+  // (1849×864 · 2395×864 · 1296×1678, verificado al instalar) y SU pista.
+  // Hito: 25 victorias («un rascacielos se construye victoria a victoria»).
+  { id: 'rascacielos', lock: 'hito_won25', nameKey: 'hall_var_rascacielos',
+    base: 'assets/hall/rascacielos/',   // RASCACIELOS · 25 victorias
+    musica: 'assets/hall/rascacielos/rascacielos.mp3' },
 ];
 /** r24 · variante por id SIN chequeo de candado (el id ya viaja saneado;
  *  el candado sólo gobierna ELEGIRLA, no verla en casa del anfitrión). */

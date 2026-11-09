@@ -553,7 +553,7 @@ export class NetLink {
     switch (d.k) {
       case 'hello2': case 'tick2': case 'tock2': case 'ready2':
       case 'mstart': case 'claim': case 'ack': case 'resync': case 'resync-req':
-      case 'pause': case 'resume': case 'mend': case 'v2off':
+      case 'pause': case 'resume': case 'mend': case 'v2off': case 'hallv':
         this._onRel(d);
         return;
     }
@@ -1296,6 +1296,12 @@ export class NetLink {
       }
       case 'mend': {
         this.game?.onNetMatchEnd?.(m);
+        break;
+      }
+      case 'hallv': {
+        // r38 (v3.6.134) · EL SALÓN DEL ANFITRIÓN EN VIVO: la cancha de la
+        // partida se re-viste y su pista suena en la otra pantalla al vuelo.
+        this.game?.onPeerHallVar?.(m.v);
         break;
       }
       case 'v2off': {

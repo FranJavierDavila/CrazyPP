@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r31 · v3.6.133-SDK6 · FASE 135 · TEST: HIGIENE TEXTUAL
+/* CRAZY PING PONG · r31 · v3.6.134-SDK6 · FASE 136 · TEST: HIGIENE TEXTUAL
  * FÉNIX.
  *
  *   A · DEUDA COSMÉTICA PAGADA — el comentario del registro PODERES_PALA
@@ -20,8 +20,8 @@
  *       Protege contra re-introducir un boost en la ruta de Fénix.
  *
  *   D · SÚPER HIELO sigue anulado (cero rastros vivos) y los sellos de
- *       la ronda: VERSION.json 3.6.133-SDK6 / FASE 135 / build
- *       11.384.002 B / golden 726f262c… / sw.js / badge / hub.
+ *       la ronda: VERSION.json 3.6.134-SDK6 / FASE 136 / build
+ *       11.395.884 B / golden 95194090… / sw.js / badge / hub.
  *
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
  *   (df8f71a3… / 8bb62082…).
@@ -47,24 +47,24 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.133-SDK6 · FASE 135 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.133-SDK6 · FASE 135');
-chk(vjson.version === '3.6.133-SDK6', 'VERSION.json: 3.6.133-SDK6');
-chk(vjson.fase === 135, 'FASE 135');
-chk(vjson.tamano === 11384002, 'tamaño del build: 11.384.002 B');
+/* — 1 · SELLOS · v3.6.134-SDK6 · FASE 136 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.134-SDK6 · FASE 136');
+chk(vjson.version === '3.6.134-SDK6', 'VERSION.json: 3.6.134-SDK6');
+chk(vjson.fase === 136, 'FASE 136');
+chk(vjson.tamano === 11395884, 'tamaño del build: 11.395.884 B');
 chk(vjson.golden ===
-  '726f262ca69f9781c7fd7f3bd509651cb71884e4790164e9595ab03f98695b0f',
-  'VERSION.json golden 726f262c…');
+  '951940900bdefb5d27498257e5adf01a3188e25f449945f6fa678da98a0e786f',
+  'VERSION.json golden 95194090…');
 chk(sha256('public/game.html') ===
-  '726f262ca69f9781c7fd7f3bd509651cb71884e4790164e9595ab03f98695b0f',
-  'golden 726f262c… (build byte-exacto)');
-chk(game.includes('3.6.133-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.133-SDK6'"), 'sello c00 = 3.6.133-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.133-SDK6'"),
-  'sw.js CACHE v3.6.133-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.133-SDK6</span>'), 'badge V3.6.133-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36133-sdk6'),
-  'hub /descargas sellado a v36133-sdk6');
+  '951940900bdefb5d27498257e5adf01a3188e25f449945f6fa678da98a0e786f',
+  'golden 95194090… (build byte-exacto)');
+chk(game.includes('3.6.134-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.134-SDK6'"), 'sello c00 = 3.6.134-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.134-SDK6'"),
+  'sw.js CACHE v3.6.134-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.134-SDK6</span>'), 'badge V3.6.134-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36134-sdk6'),
+  'hub /descargas sellado a v36134-sdk6');
 
 /* — 2 · LA CURA r31 — comentario del registro SIN el boost ———————— */
 console.log('2 · HIGIENE FÉNIX · el registro ya no presume el «+18 %»');

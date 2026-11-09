@@ -100,6 +100,13 @@ export class PingPongGame {
             this.rules.message = T('srv_guide');
           }
         }
+        // r38 (v3.6.134) · EL SALÓN DE LA PARTIDA: cada partida nueva (menú,
+        // revancha, cambio de modo, online, reinicio del 'over', vuelta del
+        // hall) se disputa en el hall configurado por el ANFITRIÓN — su
+        // pista ambiental nace aquí (un solo punto, los 15 caminos del
+        // árbitro). Idempotente: mismo URL → sin restart. En campeonato
+        // calla (SU BSO) y en la estancia manda enterHall.
+        try { this._hallMusicaPartidoAplicar(); } catch (eHM8) { /* */ }
       };
     } catch (eH) { /* */ }
     this.ball = {
@@ -5610,6 +5617,15 @@ export class PingPongGame {
               } catch (eHM5) { /* */ }
             }
             this._hallMusicaRepinta();
+            // r38 · EL SALÓN NUEVO VIAJA AL RIVAL EN VIVO: evento FIABLE
+            // hallv — la cancha de la partida (y la visita) se re-visten en
+            // la otra pantalla al vuelo. Builds viejos no lo conocen: el
+            // switch de _onRel lo ignora sin romper (JSON tolerante).
+            try {
+              if (this.net && this.net.online && this.net.role === 'host') {
+                this.net.sendRel({ k: 'hallv', v: hv.id });
+              }
+            } catch (eHV3) { /* */ }
             this.rules.message = T('msg_hall_var', { v: T(hv.nameKey) });
             this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
           }
@@ -5943,6 +5959,8 @@ export class PingPongGame {
     if (lock === 'hito_rally20') return (d.bestRally || 0) >= 20;
     if (lock === 'hito_elo1100') return (d.elo || 1000) >= 1100;
     if (lock === 'hito_aces5') return (d.aces || 0) >= 5;
+    // r38 (v3.6.134) · RASCACIELOS: 25 victorias (se construye piso a piso)
+    if (lock === 'hito_won25') return (d.won || 0) >= 25;
     return true;
   }
   _mesaLockTxt(lock) {
@@ -5953,6 +5971,8 @@ export class PingPongGame {
     if (lock === 'hito_rally20') return T('mesa_lock_rally20');
     if (lock === 'hito_elo1100') return T('mesa_lock_elo1100');
     if (lock === 'hito_aces5') return T('mesa_lock_aces5');
+    // r38 (v3.6.134) · RASCACIELOS
+    if (lock === 'hito_won25') return T('mesa_lock_won25');
     return '';
   }
   /** r96 · definición de aspecto por id (con guard de recompensas). */
@@ -6055,6 +6075,76 @@ export class PingPongGame {
     if (!hv) hv = HALL_VARIANTES[0];
     if (hv.lock && !this._mesaLibre(hv.lock)) hv = HALL_VARIANTES[0];
     return hv;
+  }
+  /* ====================================================================
+   *  r38 (v3.6.134) · EL SALÓN DE LA PARTIDA — «Vamos a permitir que las
+   *  partidas se realicen en el hall que tenga configurado el anfitrión,
+   *  tanto para las modalidades contra la IA como en el modo multijugador»
+   *  ====================================================================
+   *  · La cancha viste las 6 fichas del salón del ANFITRIÓN y suena con
+   *    SU pista (createChampRoom c08, cadena campeonato→salón→por defecto;
+   *    canal hall de c03 con la prioridad de la r32).
+   *  · LOCAL (partido/supervivencia contra la IA): TU variante validada
+   *    (_hallVarDef — candado incluido). ONLINE: el ANFITRIÓN manda — el
+   *    invitado viste el hall que viaja en hp.hv (HELLO v2) y en el evento
+   *    fiable hallv (cambios EN VIVO); sin hp (build viejo), cancha clásica.
+   *  · Campeonato: SU decorado y SU BSO — el salón calla (mesaOcupada).
+   *  · El mute es el de SIEMPRE: icono de la pared del salón, persistente
+   *    (pp_hallmus) — la cancha lo respeta por construcción (canal hall).
+   *  ==================================================================== */
+  /** VARIANTE del salón que acoge la partida (objeto del catálogo). */
+  _hallVariantePartido() {
+    try {
+      if (this.net && this.net.online && this.net.role === 'guest') {
+        const id = (this._hallPeer && this._hallPeer.hv) || '';
+        if (!id) return null;          // anfitrión build viejo: cancha clásica
+        return hallVariantePorId(id);  // saneado contra el catálogo (r24)
+      }
+      return this._hallVarDef();
+    } catch { return null; }
+  }
+  /** base (carpeta de arte) del salón de la partida — la lee champRoom. */
+  hallBasePartido() {
+    const hv = this._hallVariantePartido();
+    return (hv && hv.base) || '';
+  }
+  /** Aplica la PISTA del salón de la partida al canal hall (idempotente:
+   *  mismo URL → sin restart). Campeonato y estancia del hall gestionan la
+   *  suya por su cuenta — aquí sólo la cancha de una partida viva. */
+  _hallMusicaPartidoAplicar() {
+    try {
+      if (this.inHall) return;               // la estancia manda (enterHall)
+      if (this.mesaOcupada()) {              // campeonato: SU aire (BSO)
+        this.audio.setHallWanted(false, null);
+        return;
+      }
+      const hv = this._hallVariantePartido();
+      this.audio.setHallWanted(!!(hv && hv.musica), (hv && hv.musica) || null);
+    } catch { /* cosmético: jamás rompe la partida */ }
+  }
+  /** r38 · el anfitrión cambió de salón EN VIVO (evento fiable hallv):
+   *  el invitado re-viste estancia (si visita) y cancha (champRoom nota el
+   *  cambio de base en su update) y re-arma la pista del salón nuevo. */
+  onPeerHallVar(id) {
+    try {
+      const limpio = (typeof id === 'string') ? id.slice(0, 24) : '';
+      if (!limpio) return;
+      const hv = hallVariantePorId(limpio);   // desconocido caería a museo:
+      if (hv.id !== limpio) return;           // …un id que no existe NO viste
+      if (!(this.net && this.net.online && this.net.role === 'guest')) return;
+      if (!this._hallPeer) {
+        this._hallPeer = { w: 0, bs: 0, st: 0, el: 1000, hv: '', a: [], bl: [], ms: [] };
+      }
+      this._hallPeer.hv = hv.id;
+      if (this.inHall) {
+        try { applyHallVariant(this.hallGroup, hv.base); } catch (eHV) { /* */ }
+        try { this.audio.setHallWanted(!!hv.musica, hv.musica || null); } catch (eHM) { /* */ }
+        this.drawHall();
+        this._hallMusicaRepinta();
+      } else {
+        this._hallMusicaPartidoAplicar();     // la cancha ya viste sola (c08)
+      }
+    } catch { /* cosmético: jamás rompe el enlace */ }
   }
   /** RGB de reposo de la estela para las chispas (color de skin vivo). */
   _chispaRGB() {
@@ -6160,6 +6250,12 @@ export class PingPongGame {
           } catch (eHM6) { /* */ }
         }
         this.drawHall();
+      } else if (this.net && this.net.online && this.net.role === 'guest' &&
+                 this._hallPeer && this._hallPeer.hv) {
+        // r38 · el hp llegó con el invitado EN LA CANCHA (partida en curso
+        // o a punto de arrancar): la pista del salón del anfitrión nace
+        // aquí (el arte lo repinta champRoom — cambio de base).
+        try { this._hallMusicaPartidoAplicar(); } catch (eHM9) { /* */ }
       }
     } catch { /* cosmético: jamás rompe el enlace */ }
   }

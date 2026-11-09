@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r30 · v3.6.133-SDK6 · FASE 135 · TEST: FÉNIX JUGABLE +
+/* CRAZY PING PONG · r30 · v3.6.134-SDK6 · FASE 136 · TEST: FÉNIX JUGABLE +
  * SALONES DE LUJO IA.
  *
  *   A · SÚPER FÉNIX — DINÁMICA NORMAL (orden del dueño tras probar la
@@ -61,23 +61,23 @@ const sha256 = (p) =>
 const c12 = lee('src/game/core/c12_pingponggame.js');
 const vjson = JSON.parse(lee('src/game/VERSION.json'));
 
-/* — 1 · SELLOS · v3.6.133-SDK6 · FASE 135 ————————————————————————————— */
-console.log('1 · SELLOS · v3.6.133-SDK6 · FASE 135');
-chk(vjson.version === '3.6.133-SDK6', 'VERSION.json: 3.6.133-SDK6');
-chk(vjson.fase === 135, 'FASE 135');
-chk(vjson.faseNombre === 'Revisión del multijugador II — reconexión ICE real', 'faseNombre');
+/* — 1 · SELLOS · v3.6.134-SDK6 · FASE 136 ————————————————————————————— */
+console.log('1 · SELLOS · v3.6.134-SDK6 · FASE 136');
+chk(vjson.version === '3.6.134-SDK6', 'VERSION.json: 3.6.134-SDK6');
+chk(vjson.fase === 136, 'FASE 136');
+chk(vjson.faseNombre === 'El salón de la partida — Rascacielos', 'faseNombre');
 const game = lee('public/game.html');
-chk(game.includes('3.6.133-SDK6'), 'bundle con sello vigente');
+chk(game.includes('3.6.134-SDK6'), 'bundle con sello vigente');
 const c00 = lee('src/game/core/c00_pre_three.js');
-chk(c00.includes("const VERSION = '3.6.133-SDK6'"), 'sello c00 = 3.6.133-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.133-SDK6'"),
-  'sw.js CACHE v3.6.133-SDK6 (purga de cachés viejas)');
-chk(vjson.tamano === 11384002, 'tamaño del build: 11.384.002 B');
+chk(c00.includes("const VERSION = '3.6.134-SDK6'"), 'sello c00 = 3.6.134-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.134-SDK6'"),
+  'sw.js CACHE v3.6.134-SDK6 (purga de cachés viejas)');
+chk(vjson.tamano === 11395884, 'tamaño del build: 11.395.884 B');
 chk(lee('src/game/GOLDEN_SHA256.txt').includes(
-  '726f262ca69f9781c7fd7f3bd509651cb71884e4790164e9595ab03f98695b0f'),
-'golden 726f262c… (build byte-exacto)');
+  '951940900bdefb5d27498257e5adf01a3188e25f449945f6fa678da98a0e786f'),
+'golden 95194090… (build byte-exacto)');
 chk(sha256('public/game.html') ===
-  '726f262ca69f9781c7fd7f3bd509651cb71884e4790164e9595ab03f98695b0f',
+  '951940900bdefb5d27498257e5adf01a3188e25f449945f6fa678da98a0e786f',
 'game.html REAL casan con golden');
 
 /* — 2 · FÉNIX · EL BOOST ESTÁ ANULADO (dinámica normal) ———————————————— */

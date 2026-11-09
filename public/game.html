@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.133-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.134-SDK6</span>
     </div>
   </main>
 
@@ -996,6 +996,8 @@ const I18N_STRINGS = {
     mesa_lock_rally20: 'Hito: un rally de 20 golpes',
     mesa_lock_elo1100: 'Hito: alcanza ELO 1100',
     mesa_lock_aces5: 'Hito: 5 saques directos',
+    // r38 (v3.6.134) · hito del RASCACIELOS
+    mesa_lock_won25: 'Hito: 25 victorias',
     sala_lock_stars: 'consigue {n}★ en los retos semanales',
     // r23 (v3.6.118) · HALL DEL ANFITRIÓN (ES) — pared de insignias + visita
     cat_salahall: 'HALL',
@@ -1023,6 +1025,9 @@ const I18N_STRINGS = {
     hall_var_neon: 'SALÓN NEÓN ARCADE',
     hall_var_observatorio: 'OBSERVATORIO ESTELAR',
     hall_var_dojo: 'DOJO ZEN',
+    // r38 (v3.6.134) · 4.º salón del dueño (mismo comportamiento)
+    hall_var_rascacielos: 'RASCACIELOS',
+    hint_hall_var_rascacielos: 'Vistas de ciudad al anochecer: 25 victorias levantan tu torre',
     hint_hall_var_neon: 'Synthwave: recreativas, rejillas de neón — un rally de 20 golpes lo abre',
     hint_hall_var_observatorio: 'La Tierra al ventanal del observatorio: ELO 1100 lo abre',
     hint_hall_var_dojo: 'Shoji, tatami y ensō: 5 saques directos y entra a meditar',
@@ -1971,6 +1976,8 @@ const I18N_STRINGS = {
     mesa_lock_rally20: 'Milestone: a 20-hit rally',
     mesa_lock_elo1100: 'Milestone: reach ELO 1100',
     mesa_lock_aces5: 'Milestone: 5 aces',
+    // r38 (v3.6.134) · SKYSCRAPER milestone
+    mesa_lock_won25: 'Milestone: 25 wins',
     sala_lock_stars: 'earn {n}★ in the weekly challenges',
     // r23 (v3.6.118) · HALL DEL ANFITRIÓN (EN) — badge wall + visit
     cat_salahall: 'HALL',
@@ -1998,6 +2005,9 @@ const I18N_STRINGS = {
     hall_var_neon: 'NEON ARCADE LOUNGE',
     hall_var_observatorio: 'STAR OBSERVATORY',
     hall_var_dojo: 'ZEN DOJO',
+    // r38 (v3.6.134) · 4th owner hall (same behavior)
+    hall_var_rascacielos: 'SKYSCRAPER',
+    hint_hall_var_rascacielos: 'City views at dusk: 25 wins raise your tower',
     hint_hall_var_neon: 'Synthwave: arcade cabinets and neon grids — a 20-hit rally opens it',
     hint_hall_var_observatorio: 'Earth at the observatory window: ELO 1100 opens it',
     hint_hall_var_dojo: 'Shoji, tatami and ensō: 5 aces and come in to meditate',
@@ -3328,7 +3338,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.133-SDK6';
+  const VERSION = '3.6.134-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -4655,13 +4665,18 @@ const HALL_VARIANTES = [
   // arte 100 % procedural con las MISMAS fichas y proporciones exactas
   // de los planos (frente/fondo 1849×864 · laterales 2395×864 ·
   // suelo/techo 1296×1678), candados por HITOS de ppxr_stats_v1.
-  // r32 (v3.6.128) · MÚSICA AMBIENTAL DEL SALÓN: cada uno de estos tres
-  // salones lleva SU pista (JPGs del dueño + MP3 del dueño — r32 sustituye
+  // r32 (v3.6.128) · MÚSICA AMBIENTAL DEL SALÓN: cada uno de estos salones
+  // lleva SU pista (JPGs del dueño + MP3 del dueño — r32 sustituye
   // el arte IA de r30 por el arte PREPARADO por el dueño, mismas fichas y
   // medidas exactas). La pista suena en bucle mientras el salón está
   // ABIERTO (enterHall→exitHall) y manda sobre cualquier otra música en
   // la estancia (invariante UNA MELODÍA, canal hall en c03); el icono de
   // la pared frontal la silencia (c08/c12). anfitrion/cabana: sin música.
+  // r38 (v3.6.134) · EL SALÓN DE LA PARTIDA: la cancha de los PARTIDOS
+  // (libre, supervivencia, duelos y online) se viste y suena como el hall
+  // configurado por el ANFITRIÓN (local = el tuyo; online = el del
+  // anfitrión, viajado en hp.hv y en el evento fiable hallv). Los
+  // campeonatos conservan SU decorado (champTex gana en la cadena).
   { id: 'neon', lock: 'hito_rally20', nameKey: 'hall_var_neon',
     base: 'assets/hall/neon/',          // SALÓN NEÓN ARCADE · rally 20
     musica: 'assets/hall/neon/arcade.mp3' },
@@ -4671,6 +4686,14 @@ const HALL_VARIANTES = [
   { id: 'dojo', lock: 'hito_aces5', nameKey: 'hall_var_dojo',
     base: 'assets/hall/dojo/',          // DOJO ZEN · 5 saques directos
     musica: 'assets/hall/dojo/dojo.mp3' },
+  // r38 (v3.6.134) · 4.º SALÓN DEL DUEÑO («te doy material para un nuevo
+  // hall, "Rascacielos" rascacielos.zip y su melodía "rascacielos.mp3".
+  // Mismo comportamiento que el resto de halls») — arte EXACTO a la spec
+  // (1849×864 · 2395×864 · 1296×1678, verificado al instalar) y SU pista.
+  // Hito: 25 victorias («un rascacielos se construye victoria a victoria»).
+  { id: 'rascacielos', lock: 'hito_won25', nameKey: 'hall_var_rascacielos',
+    base: 'assets/hall/rascacielos/',   // RASCACIELOS · 25 victorias
+    musica: 'assets/hall/rascacielos/rascacielos.mp3' },
 ];
 /** r24 · variante por id SIN chequeo de candado (el id ya viaja saneado;
  *  el candado sólo gobierna ELEGIRLA, no verla en casa del anfitrión). */
@@ -10986,6 +11009,42 @@ function createHall(base) {
           bx3, alt / 2, zf + 0.15);
         bmb.rotation.z = tilt;
       }
+    } else if (b === 'assets/hall/rascacielos/') {
+      // r38 (v3.6.134) · MAQUETA DEL RASCACIELOS: dos torres con ventanas
+      // encendidas (emisivo cálido) + BALIZA ROJA parpadeante en la antena
+      // (flicker de updateHallFx — el mobiliario vive como el resto).
+      const cvTo = hallCanvas(64, 128);
+      const xTo = cvTo.getContext('2d');
+      xTo.fillStyle = '#1c2430'; xTo.fillRect(0, 0, 64, 128);
+      xTo.fillStyle = '#ffd98a';
+      for (let wy = 6; wy < 124; wy += 8) {
+        for (let wx = 6; wx < 58; wx += 10) {
+          if (Math.random() < 0.62) xTo.fillRect(wx, wy, 5, 4);
+        }
+      }
+      const texTo = new THREE.CanvasTexture(cvTo);
+      try { texTo.colorSpace = THREE.SRGBColorSpace; } catch (eTT) { /* */ }
+      const torreMat = new THREE.MeshStandardMaterial({
+        map: texTo, emissive: 0xffd98a, emissiveMap: texTo,
+        emissiveIntensity: 0.55, roughness: 0.6 });
+      // torre ALTA (izquierda) + torre BAJA (derecha), pegadas a la pared
+      const tAlta = _malla(new THREE.BoxGeometry(0.44, 1.72, 0.40), torreMat,
+        -2.40, 0.86, zf + 0.18);
+      tAlta.rotation.y = 0.22;
+      const tBaja = _malla(new THREE.BoxGeometry(0.38, 1.10, 0.36), torreMat,
+        -2.02, 0.55, zf + 0.34);
+      tBaja.rotation.y = -0.15;
+      // corona de la torre alta + antena + baliza (flicker)
+      const coronaMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.5 });
+      _malla(new THREE.BoxGeometry(0.48, 0.07, 0.44), coronaMat, -2.40, 1.76, zf + 0.18);
+      _malla(new THREE.CylinderGeometry(0.010, 0.014, 0.34, 6), coronaMat,
+        -2.40, 1.96, zf + 0.18);
+      const balizaMat = new THREE.MeshStandardMaterial({
+        color: 0xff3b30, emissive: 0xff2418, emissiveIntensity: 1.8, roughness: 0.3 });
+      const baliza = _malla(new THREE.SphereGeometry(0.035, 10, 8), balizaMat,
+        -2.40, 2.14, zf + 0.18);
+      baliza.userData.flicker = balizaMat;   // parpadeo vivo (updateHallFx)
+      _propAnim.push(baliza);
     }
   };
   montarProps(vbase);
@@ -11100,6 +11159,46 @@ function createChampRoom(game) {
     } catch { /* */ }
   }, undefined, () => { /* */ });
 
+  /* r38 (v3.6.134) · EL ARTE DEL SALÓN DE LA PARTIDA — tercera fuente de
+   * la cadena: campeonato → SALÓN DEL ANFITRIÓN → arte por defecto.
+   * Petición del dueño: «las partidas se realizan en el hall que tenga
+   * configurado el anfitrión, tanto para las modalidades contra la IA como
+   * en el modo multijugador». Las salas de campeonato (las 5 traen room)
+   * conservan SU identidad (champTex gana); fuera de campeonato la cancha
+   * viste las 6 fichas del salón (mismos nombres/proporciones: la caja es
+   * LA MISMA — patrón createHall). game.hallBasePartido() resuelve QUÉ
+   * salón manda (local = el tuyo; online invitado = el del anfitrión
+   * viajado en hp.hv/hallv); carga perezosa + a prueba de fallos: si una
+   * ficha no llega, ese plano cae a la fuente siguiente y el juego SIGUE. */
+  let hallSet = null;        // { base, texs, disposables }
+  let hallBuiltFor = null;   // base construida ('' = sin salón → nada)
+  const HALL_FICHAS = {
+    floor: 'suelo.jpg', ceil: 'techo.jpg', left: 'izquierda.jpg',
+    right: 'derecha.jpg', back: 'fondo.jpg', front: 'frente.jpg',
+  };
+  /** Construye (carga perezosa) el vestido del salón «base» ('' = quita). */
+  function buildHallFor(base) {
+    if (hallSet) {
+      for (const d of hallSet.disposables) { try { d.dispose(); } catch { /* */ } }
+      hallSet = null;
+    }
+    hallBuiltFor = base;
+    if (!base) return;                        // sin salón: cadena sin él
+    const mine = { base, texs: {}, disposables: [] };
+    hallSet = mine;
+    for (const key of KEYS) {
+      loader.load(base + HALL_FICHAS[key], (tex) => {
+        if (hallSet !== mine) { try { tex.dispose(); } catch { /* */ } return; }
+        try {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.anisotropy = maxAniso;
+          mine.texs[key] = tex;
+          mine.disposables.push(tex);
+        } catch { /* el arte NUNCA rompe el juego */ }
+      }, undefined, () => { /* file:// o arte ausente: fuente siguiente */ });
+    }
+  }
+
   const ud = () => (game.roomGroup ? game.roomGroup.userData : null);
 
   /** Quita mapas y colores forzados y re-aplica el tema del jugador. */
@@ -11162,14 +11261,27 @@ function createChampRoom(game) {
   /** Refuerzo por frame (barato e idempotente): mapas + blanco/tinte + */
   /** complementos de la sala clásica ocultos mientras haya arte. v3.6.29:
    *  el arte EFECTIVO por cara es el del campeonato activo (si trae) o el
-   *  arte por defecto del partido — la cancha nunca vuelve a estar desnuda. */
+   *  arte por defecto del partido — la cancha nunca vuelve a estar desnuda.
+   *  r38: y ENTRE el campeonato y el por defecto, el SALÓN DEL ANFITRIÓN
+   *  (la partida se disputa en su hall — fuera de campeonato). */
   function update() {
     const activeId = (game.champs && game.champs.activeId) || '';
     if (activeId !== builtFor) buildFor(activeId);
     const U = ud();
     if (!U) return;
+    // r38 · el salón de la partida SOLO fuera de campeonato (la mesa
+    // ocupada por un torneo manda: su decorado no se mezcla con el hall).
+    let enSalon = false;
+    try { enSalon = !(game.mesaOcupada && game.mesaOcupada()); } catch { /* */ }
+    let hb = '';
+    try {
+      hb = (enSalon && typeof game.hallBasePartido === 'function')
+        ? (game.hallBasePartido() || '') : '';
+    } catch { /* */ }
+    if (hb !== hallBuiltFor) buildHallFor(hb);
     const champTex = (k) => (set && set.texs[k]) || null;
-    const eff = (k) => champTex(k) || defaultTexs[k] || null;
+    const hallTex = (k) => (hallSet && hallSet.texs[k]) || null;
+    const eff = (k) => champTex(k) || hallTex(k) || defaultTexs[k] || null;
     const anyArt = KEYS.some(eff);
     if (anyArt) {
       const tint = variantTint;
@@ -12391,7 +12503,7 @@ class NetLink {
     switch (d.k) {
       case 'hello2': case 'tick2': case 'tock2': case 'ready2':
       case 'mstart': case 'claim': case 'ack': case 'resync': case 'resync-req':
-      case 'pause': case 'resume': case 'mend': case 'v2off':
+      case 'pause': case 'resume': case 'mend': case 'v2off': case 'hallv':
         this._onRel(d);
         return;
     }
@@ -13134,6 +13246,12 @@ class NetLink {
       }
       case 'mend': {
         this.game?.onNetMatchEnd?.(m);
+        break;
+      }
+      case 'hallv': {
+        // r38 (v3.6.134) · EL SALÓN DEL ANFITRIÓN EN VIVO: la cancha de la
+        // partida se re-viste y su pista suena en la otra pantalla al vuelo.
+        this.game?.onPeerHallVar?.(m.v);
         break;
       }
       case 'v2off': {
@@ -16719,6 +16837,13 @@ class PingPongGame {
             this.rules.message = T('srv_guide');
           }
         }
+        // r38 (v3.6.134) · EL SALÓN DE LA PARTIDA: cada partida nueva (menú,
+        // revancha, cambio de modo, online, reinicio del 'over', vuelta del
+        // hall) se disputa en el hall configurado por el ANFITRIÓN — su
+        // pista ambiental nace aquí (un solo punto, los 15 caminos del
+        // árbitro). Idempotente: mismo URL → sin restart. En campeonato
+        // calla (SU BSO) y en la estancia manda enterHall.
+        try { this._hallMusicaPartidoAplicar(); } catch (eHM8) { /* */ }
       };
     } catch (eH) { /* */ }
     this.ball = {
@@ -22229,6 +22354,15 @@ class PingPongGame {
               } catch (eHM5) { /* */ }
             }
             this._hallMusicaRepinta();
+            // r38 · EL SALÓN NUEVO VIAJA AL RIVAL EN VIVO: evento FIABLE
+            // hallv — la cancha de la partida (y la visita) se re-visten en
+            // la otra pantalla al vuelo. Builds viejos no lo conocen: el
+            // switch de _onRel lo ignora sin romper (JSON tolerante).
+            try {
+              if (this.net && this.net.online && this.net.role === 'host') {
+                this.net.sendRel({ k: 'hallv', v: hv.id });
+              }
+            } catch (eHV3) { /* */ }
             this.rules.message = T('msg_hall_var', { v: T(hv.nameKey) });
             this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
           }
@@ -22562,6 +22696,8 @@ class PingPongGame {
     if (lock === 'hito_rally20') return (d.bestRally || 0) >= 20;
     if (lock === 'hito_elo1100') return (d.elo || 1000) >= 1100;
     if (lock === 'hito_aces5') return (d.aces || 0) >= 5;
+    // r38 (v3.6.134) · RASCACIELOS: 25 victorias (se construye piso a piso)
+    if (lock === 'hito_won25') return (d.won || 0) >= 25;
     return true;
   }
   _mesaLockTxt(lock) {
@@ -22572,6 +22708,8 @@ class PingPongGame {
     if (lock === 'hito_rally20') return T('mesa_lock_rally20');
     if (lock === 'hito_elo1100') return T('mesa_lock_elo1100');
     if (lock === 'hito_aces5') return T('mesa_lock_aces5');
+    // r38 (v3.6.134) · RASCACIELOS
+    if (lock === 'hito_won25') return T('mesa_lock_won25');
     return '';
   }
   /** r96 · definición de aspecto por id (con guard de recompensas). */
@@ -22674,6 +22812,76 @@ class PingPongGame {
     if (!hv) hv = HALL_VARIANTES[0];
     if (hv.lock && !this._mesaLibre(hv.lock)) hv = HALL_VARIANTES[0];
     return hv;
+  }
+  /* ====================================================================
+   *  r38 (v3.6.134) · EL SALÓN DE LA PARTIDA — «Vamos a permitir que las
+   *  partidas se realicen en el hall que tenga configurado el anfitrión,
+   *  tanto para las modalidades contra la IA como en el modo multijugador»
+   *  ====================================================================
+   *  · La cancha viste las 6 fichas del salón del ANFITRIÓN y suena con
+   *    SU pista (createChampRoom c08, cadena campeonato→salón→por defecto;
+   *    canal hall de c03 con la prioridad de la r32).
+   *  · LOCAL (partido/supervivencia contra la IA): TU variante validada
+   *    (_hallVarDef — candado incluido). ONLINE: el ANFITRIÓN manda — el
+   *    invitado viste el hall que viaja en hp.hv (HELLO v2) y en el evento
+   *    fiable hallv (cambios EN VIVO); sin hp (build viejo), cancha clásica.
+   *  · Campeonato: SU decorado y SU BSO — el salón calla (mesaOcupada).
+   *  · El mute es el de SIEMPRE: icono de la pared del salón, persistente
+   *    (pp_hallmus) — la cancha lo respeta por construcción (canal hall).
+   *  ==================================================================== */
+  /** VARIANTE del salón que acoge la partida (objeto del catálogo). */
+  _hallVariantePartido() {
+    try {
+      if (this.net && this.net.online && this.net.role === 'guest') {
+        const id = (this._hallPeer && this._hallPeer.hv) || '';
+        if (!id) return null;          // anfitrión build viejo: cancha clásica
+        return hallVariantePorId(id);  // saneado contra el catálogo (r24)
+      }
+      return this._hallVarDef();
+    } catch { return null; }
+  }
+  /** base (carpeta de arte) del salón de la partida — la lee champRoom. */
+  hallBasePartido() {
+    const hv = this._hallVariantePartido();
+    return (hv && hv.base) || '';
+  }
+  /** Aplica la PISTA del salón de la partida al canal hall (idempotente:
+   *  mismo URL → sin restart). Campeonato y estancia del hall gestionan la
+   *  suya por su cuenta — aquí sólo la cancha de una partida viva. */
+  _hallMusicaPartidoAplicar() {
+    try {
+      if (this.inHall) return;               // la estancia manda (enterHall)
+      if (this.mesaOcupada()) {              // campeonato: SU aire (BSO)
+        this.audio.setHallWanted(false, null);
+        return;
+      }
+      const hv = this._hallVariantePartido();
+      this.audio.setHallWanted(!!(hv && hv.musica), (hv && hv.musica) || null);
+    } catch { /* cosmético: jamás rompe la partida */ }
+  }
+  /** r38 · el anfitrión cambió de salón EN VIVO (evento fiable hallv):
+   *  el invitado re-viste estancia (si visita) y cancha (champRoom nota el
+   *  cambio de base en su update) y re-arma la pista del salón nuevo. */
+  onPeerHallVar(id) {
+    try {
+      const limpio = (typeof id === 'string') ? id.slice(0, 24) : '';
+      if (!limpio) return;
+      const hv = hallVariantePorId(limpio);   // desconocido caería a museo:
+      if (hv.id !== limpio) return;           // …un id que no existe NO viste
+      if (!(this.net && this.net.online && this.net.role === 'guest')) return;
+      if (!this._hallPeer) {
+        this._hallPeer = { w: 0, bs: 0, st: 0, el: 1000, hv: '', a: [], bl: [], ms: [] };
+      }
+      this._hallPeer.hv = hv.id;
+      if (this.inHall) {
+        try { applyHallVariant(this.hallGroup, hv.base); } catch (eHV) { /* */ }
+        try { this.audio.setHallWanted(!!hv.musica, hv.musica || null); } catch (eHM) { /* */ }
+        this.drawHall();
+        this._hallMusicaRepinta();
+      } else {
+        this._hallMusicaPartidoAplicar();     // la cancha ya viste sola (c08)
+      }
+    } catch { /* cosmético: jamás rompe el enlace */ }
   }
   /** RGB de reposo de la estela para las chispas (color de skin vivo). */
   _chispaRGB() {
@@ -22779,6 +22987,12 @@ class PingPongGame {
           } catch (eHM6) { /* */ }
         }
         this.drawHall();
+      } else if (this.net && this.net.online && this.net.role === 'guest' &&
+                 this._hallPeer && this._hallPeer.hv) {
+        // r38 · el hp llegó con el invitado EN LA CANCHA (partida en curso
+        // o a punto de arrancar): la pista del salón del anfitrión nace
+        // aquí (el arte lo repinta champRoom — cambio de base).
+        try { this._hallMusicaPartidoAplicar(); } catch (eHM9) { /* */ }
       }
     } catch { /* cosmético: jamás rompe el enlace */ }
   }

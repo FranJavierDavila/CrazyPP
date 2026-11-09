@@ -808,6 +808,42 @@ export function createHall(base) {
           bx3, alt / 2, zf + 0.15);
         bmb.rotation.z = tilt;
       }
+    } else if (b === 'assets/hall/rascacielos/') {
+      // r38 (v3.6.134) · MAQUETA DEL RASCACIELOS: dos torres con ventanas
+      // encendidas (emisivo cálido) + BALIZA ROJA parpadeante en la antena
+      // (flicker de updateHallFx — el mobiliario vive como el resto).
+      const cvTo = hallCanvas(64, 128);
+      const xTo = cvTo.getContext('2d');
+      xTo.fillStyle = '#1c2430'; xTo.fillRect(0, 0, 64, 128);
+      xTo.fillStyle = '#ffd98a';
+      for (let wy = 6; wy < 124; wy += 8) {
+        for (let wx = 6; wx < 58; wx += 10) {
+          if (Math.random() < 0.62) xTo.fillRect(wx, wy, 5, 4);
+        }
+      }
+      const texTo = new THREE.CanvasTexture(cvTo);
+      try { texTo.colorSpace = THREE.SRGBColorSpace; } catch (eTT) { /* */ }
+      const torreMat = new THREE.MeshStandardMaterial({
+        map: texTo, emissive: 0xffd98a, emissiveMap: texTo,
+        emissiveIntensity: 0.55, roughness: 0.6 });
+      // torre ALTA (izquierda) + torre BAJA (derecha), pegadas a la pared
+      const tAlta = _malla(new THREE.BoxGeometry(0.44, 1.72, 0.40), torreMat,
+        -2.40, 0.86, zf + 0.18);
+      tAlta.rotation.y = 0.22;
+      const tBaja = _malla(new THREE.BoxGeometry(0.38, 1.10, 0.36), torreMat,
+        -2.02, 0.55, zf + 0.34);
+      tBaja.rotation.y = -0.15;
+      // corona de la torre alta + antena + baliza (flicker)
+      const coronaMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.5 });
+      _malla(new THREE.BoxGeometry(0.48, 0.07, 0.44), coronaMat, -2.40, 1.76, zf + 0.18);
+      _malla(new THREE.CylinderGeometry(0.010, 0.014, 0.34, 6), coronaMat,
+        -2.40, 1.96, zf + 0.18);
+      const balizaMat = new THREE.MeshStandardMaterial({
+        color: 0xff3b30, emissive: 0xff2418, emissiveIntensity: 1.8, roughness: 0.3 });
+      const baliza = _malla(new THREE.SphereGeometry(0.035, 10, 8), balizaMat,
+        -2.40, 2.14, zf + 0.18);
+      baliza.userData.flicker = balizaMat;   // parpadeo vivo (updateHallFx)
+      _propAnim.push(baliza);
     }
   };
   montarProps(vbase);
@@ -922,6 +958,46 @@ export function createChampRoom(game) {
     } catch { /* */ }
   }, undefined, () => { /* */ });
 
+  /* r38 (v3.6.134) · EL ARTE DEL SALÓN DE LA PARTIDA — tercera fuente de
+   * la cadena: campeonato → SALÓN DEL ANFITRIÓN → arte por defecto.
+   * Petición del dueño: «las partidas se realizan en el hall que tenga
+   * configurado el anfitrión, tanto para las modalidades contra la IA como
+   * en el modo multijugador». Las salas de campeonato (las 5 traen room)
+   * conservan SU identidad (champTex gana); fuera de campeonato la cancha
+   * viste las 6 fichas del salón (mismos nombres/proporciones: la caja es
+   * LA MISMA — patrón createHall). game.hallBasePartido() resuelve QUÉ
+   * salón manda (local = el tuyo; online invitado = el del anfitrión
+   * viajado en hp.hv/hallv); carga perezosa + a prueba de fallos: si una
+   * ficha no llega, ese plano cae a la fuente siguiente y el juego SIGUE. */
+  let hallSet = null;        // { base, texs, disposables }
+  let hallBuiltFor = null;   // base construida ('' = sin salón → nada)
+  const HALL_FICHAS = {
+    floor: 'suelo.jpg', ceil: 'techo.jpg', left: 'izquierda.jpg',
+    right: 'derecha.jpg', back: 'fondo.jpg', front: 'frente.jpg',
+  };
+  /** Construye (carga perezosa) el vestido del salón «base» ('' = quita). */
+  function buildHallFor(base) {
+    if (hallSet) {
+      for (const d of hallSet.disposables) { try { d.dispose(); } catch { /* */ } }
+      hallSet = null;
+    }
+    hallBuiltFor = base;
+    if (!base) return;                        // sin salón: cadena sin él
+    const mine = { base, texs: {}, disposables: [] };
+    hallSet = mine;
+    for (const key of KEYS) {
+      loader.load(base + HALL_FICHAS[key], (tex) => {
+        if (hallSet !== mine) { try { tex.dispose(); } catch { /* */ } return; }
+        try {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.anisotropy = maxAniso;
+          mine.texs[key] = tex;
+          mine.disposables.push(tex);
+        } catch { /* el arte NUNCA rompe el juego */ }
+      }, undefined, () => { /* file:// o arte ausente: fuente siguiente */ });
+    }
+  }
+
   const ud = () => (game.roomGroup ? game.roomGroup.userData : null);
 
   /** Quita mapas y colores forzados y re-aplica el tema del jugador. */
@@ -984,14 +1060,27 @@ export function createChampRoom(game) {
   /** Refuerzo por frame (barato e idempotente): mapas + blanco/tinte + */
   /** complementos de la sala clásica ocultos mientras haya arte. v3.6.29:
    *  el arte EFECTIVO por cara es el del campeonato activo (si trae) o el
-   *  arte por defecto del partido — la cancha nunca vuelve a estar desnuda. */
+   *  arte por defecto del partido — la cancha nunca vuelve a estar desnuda.
+   *  r38: y ENTRE el campeonato y el por defecto, el SALÓN DEL ANFITRIÓN
+   *  (la partida se disputa en su hall — fuera de campeonato). */
   function update() {
     const activeId = (game.champs && game.champs.activeId) || '';
     if (activeId !== builtFor) buildFor(activeId);
     const U = ud();
     if (!U) return;
+    // r38 · el salón de la partida SOLO fuera de campeonato (la mesa
+    // ocupada por un torneo manda: su decorado no se mezcla con el hall).
+    let enSalon = false;
+    try { enSalon = !(game.mesaOcupada && game.mesaOcupada()); } catch { /* */ }
+    let hb = '';
+    try {
+      hb = (enSalon && typeof game.hallBasePartido === 'function')
+        ? (game.hallBasePartido() || '') : '';
+    } catch { /* */ }
+    if (hb !== hallBuiltFor) buildHallFor(hb);
     const champTex = (k) => (set && set.texs[k]) || null;
-    const eff = (k) => champTex(k) || defaultTexs[k] || null;
+    const hallTex = (k) => (hallSet && hallSet.texs[k]) || null;
+    const eff = (k) => champTex(k) || hallTex(k) || defaultTexs[k] || null;
     const anyArt = KEYS.some(eff);
     if (anyArt) {
       const tint = variantTint;

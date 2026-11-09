@@ -707,6 +707,65 @@ export function createHall(base) {
   };
 
   /* =====================================================================
+   *  r39 (v3.6.135) · EL BÚHO DEL ARCANO — placa con el arte del dueño
+   *  (assets/hall/arcano.png, 1024×683 RGBA) en la esquina superior
+   *  DERECHA de la pared que el anfitrión mira al entrar (z0, «pared del
+   *  fondo» de la estancia). El búho emite un LIGERO DESTELLO a través
+   *  de sus dos ojos: dos sprites aditivos sobre los centros de los ojos
+   *  (medidos sobre el arte: 0.452/0.392 y 0.557/0.376 en fracción del
+   *  lienzo) que laten con fases distintas en updateHallFx. El gatillo
+   *  VR apuntando al búho abre EL ESPACIO ARCANO (raycast en c12,
+   *  mismo patrón que el icono de la música). Mientras llega la textura
+   *  (o si falla), un búho vectorial dibujado en canvas hace de fondo.
+   *  ===================================================================== */
+  const ARC_W = 0.78, ARC_H = 0.52;          // proporción 1024×683 (1.5:1)
+  const arcCv = hallCanvas(512, 342);
+  drawArcanoBuho(arcCv);                      // fallback vectorial (glow azul)
+  const arcTex = new THREE.CanvasTexture(arcCv);
+  try { arcTex.colorSpace = THREE.SRGBColorSpace; arcTex.anisotropy = 4; } catch (eTA0) { /* */ }
+  const arcMesh = new THREE.Mesh(new THREE.PlaneGeometry(ARC_W, ARC_H),
+    new THREE.MeshBasicMaterial({ map: arcTex, transparent: true }));
+  arcMesh.position.set(2.28, 2.26, z0 + 0.016);
+  g.add(arcMesh);
+  try {   // el arte REAL del dueño sustituye al fallback en cuanto llega
+    const urlArcano = 'assets/hall/arcano.png';   // fijo del hall (no arte de variante)
+    new THREE.TextureLoader().load(urlArcano, (t) => {
+      try {
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 4;
+        arcMesh.material.map = t;
+        arcMesh.material.needsUpdate = true;
+        arcTex.dispose();
+      } catch { /* seguimos con el fallback */ }
+    }, undefined, () => { /* sin arte: el búho vectorial manda */ });
+  } catch (eTL0) { /* */ }
+  // — los DOS OJOS: sprites de destello en los centros medidos del arte —
+  const glintCv = hallCanvas(64, 64);
+  {
+    const xg = glintCv.getContext('2d');
+    const gg = xg.createRadialGradient(32, 32, 2, 32, 32, 30);
+    gg.addColorStop(0, 'rgba(235,250,255,0.95)');
+    gg.addColorStop(0.35, 'rgba(120,210,255,0.55)');
+    gg.addColorStop(1, 'rgba(60,140,255,0)');
+    xg.fillStyle = gg;
+    xg.fillRect(0, 0, 64, 64);
+  }
+  const glintTex = new THREE.CanvasTexture(glintCv);
+  try { glintTex.colorSpace = THREE.SRGBColorSpace; } catch (eTG0) { /* */ }
+  const glints = [];
+  for (const rel of [[0.452, 0.392], [0.557, 0.376]]) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glintTex, transparent: true, opacity: 0.3,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    sp.scale.setScalar(0.075);
+    sp.position.set((rel[0] - 0.5) * ARC_W, (0.5 - rel[1]) * ARC_H, 0.012);
+    arcMesh.add(sp);
+    glints.push(sp);
+  }
+  const arcono = { mesh: arcMesh, glints, hover: false };
+
+  /* =====================================================================
    *  r28 (v3.6.124) · MOBILIARIO 3D POR SALÓN — la lección de los
    *  decorados de La Locura y Wizard (dueño: «los diseñaste tú con
    *  muchísimo más detalle… la diferencia es abismal») es que el lujo
@@ -863,6 +922,7 @@ export function createHall(base) {
     pulsoR: { cv: pulsoCvR, tex: pulsoTexR },
     gloria: { cv: gloriaCv, tex: gloriaTex },   // r23 · pared de insignias
     musica,   // r32 · icono de la música del salón (silencio por gatillo)
+    arcono,   // r39 · el búho del Arcano (destello en los ojos; entra c12)
   };
   return g;
 }
@@ -914,6 +974,518 @@ export function updateHallFx(g, dt, now) {
     const tgt = mu.hover ? 1.16 : 1.0;
     const cur = mu.mesh.scale.x || 1;
     mu.mesh.scale.setScalar(cur + (tgt - cur) * Math.min(1, dt * 12));
+  }
+  // r39 · EL BÚHO DEL ARCANO: el hover lo agranda (mismo lenguaje que el
+  // icono de la música) y los DOS OJOS emiten su ligero destello — dos
+  // fases distintas, un latido suave que nunca duerme del todo.
+  const ar = ud.arcono;
+  if (ar && ar.mesh && ar.mesh.visible) {
+    const tgtA = ar.hover ? 1.14 : 1.0;
+    const curA = ar.mesh.scale.x || 1;
+    ar.mesh.scale.setScalar(curA + (tgtA - curA) * Math.min(1, dt * 12));
+    if (ar.glints && ar.glints.length === 2) {
+      ar.glints[0].material.opacity = 0.30 + Math.sin(now * 2.1) * 0.17 +
+        Math.sin(now * 0.7) * 0.08;
+      ar.glints[1].material.opacity = 0.30 + Math.sin(now * 2.1 + 1.9) * 0.17 +
+        Math.sin(now * 0.7 + 2.6) * 0.08;
+    }
+  }
+}
+
+/* =======================================================================
+ *  r39 (v3.6.135) · EL ESPACIO ARCANO — la estancia infinita del búho.
+ *  Todo PROCEDURAL (cero assets nuevos): bóveda celeste oscura con la
+ *  VÍA LÁCTEA pintada en canvas sobre una esfera invertida, MOTAS AZULES
+ *  brillantes que serpentean en el aire (THREE.Points con fase propia),
+ *  COMETAS ocasionales que cruzan a lo lejos dejando un halo azul, el
+ *  BÚHO presente (el arte del dueño, grande, flotando) y LA GALERÍA:
+ *  panel con el icono del poder materializado, su nombre, su tipo
+ *  (ataque/defensa/distracción), su descripción y sus métricas, con
+ *  flechas ‹ › azules con glow y candado azul translúcido en los
+ *  bloqueados. c12 monta el grupo una vez, lo enciende al entrar y
+ *  anima con updateArcanoFx.
+ *  ======================================================================= */
+
+/** Fallback vectorial del búho (mientras llega el arte del dueño — o si
+ *  falla la carga): silueta con ojos encendidos, glow azul del Arcano. */
+export function drawArcanoBuho(cv) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  x.fillStyle = 'rgba(4,10,22,0.92)';
+  x.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H * 0.52;
+  // alas
+  x.strokeStyle = '#5fd4ff';
+  x.lineWidth = W * 0.02;
+  x.shadowColor = 'rgba(70,170,255,0.9)';
+  x.shadowBlur = W * 0.05;
+  for (const s of [-1, 1]) {
+    x.beginPath();
+    x.moveTo(cx, cy - H * 0.12);
+    x.quadraticCurveTo(cx + s * W * 0.30, cy - H * 0.30, cx + s * W * 0.44, cy + H * 0.05);
+    x.quadraticCurveTo(cx + s * W * 0.26, cy + H * 0.02, cx + s * W * 0.13, cy + H * 0.16);
+    x.stroke();
+  }
+  // cuerpo y cabeza
+  x.fillStyle = 'rgba(70,170,255,0.85)';
+  x.beginPath();
+  x.ellipse(cx, cy + H * 0.16, W * 0.09, H * 0.20, 0, 0, Math.PI * 2);
+  x.fill();
+  x.beginPath();
+  x.arc(cx, cy - H * 0.06, W * 0.105, 0, Math.PI * 2);
+  x.fill();
+  // orejas
+  for (const s of [-1, 1]) {
+    x.beginPath();
+    x.moveTo(cx + s * W * 0.075, cy - H * 0.14);
+    x.lineTo(cx + s * W * 0.13, cy - H * 0.30);
+    x.lineTo(cx + s * W * 0.015, cy - H * 0.17);
+    x.closePath();
+    x.fill();
+  }
+  // ojos encendidos
+  x.shadowBlur = W * 0.04;
+  x.shadowColor = 'rgba(200,240,255,1)';
+  x.fillStyle = '#eafaff';
+  for (const s of [-1, 1]) {
+    x.beginPath();
+    x.arc(cx + s * W * 0.045, cy - H * 0.055, W * 0.026, 0, Math.PI * 2);
+    x.fill();
+  }
+  x.shadowBlur = 0;
+}
+
+/** Lienzo de la BÓVEDA: noche celeste profunda + VÍA LÁCTEA diagonal +
+ *  campo de estrellas (dos pasadas, brillantes y tenues). 1024×512,
+ *  mapeada equirectangular en la esfera. */
+function pintaBoveda(cv) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const bg = x.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#020409');
+  bg.addColorStop(0.55, '#071228');
+  bg.addColorStop(1, '#0a1a33');
+  x.fillStyle = bg;
+  x.fillRect(0, 0, W, H);
+  // — VÍA LÁCTEA: banda diagonal de nubes estelares —
+  x.save();
+  x.translate(W * 0.5, H * 0.5);
+  x.rotate(-0.5);
+  for (let i = 0; i < 90; i++) {
+    const bx = (Math.random() - 0.5) * W * 1.6;
+    const by = (Math.random() - 0.5) * H * 0.34;
+    const r = 20 + Math.random() * 90;
+    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
+    const a = 0.028 + Math.random() * 0.05;
+    g.addColorStop(0, `rgba(190,215,255,${a})`);
+    g.addColorStop(1, 'rgba(190,215,255,0)');
+    x.fillStyle = g;
+    x.beginPath();
+    x.arc(bx, by, r, 0, Math.PI * 2);
+    x.fill();
+  }
+  // núcleo algo más denso
+  for (let i = 0; i < 40; i++) {
+    const bx = (Math.random() - 0.5) * W * 0.7;
+    const by = (Math.random() - 0.5) * H * 0.12;
+    const r = 10 + Math.random() * 40;
+    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
+    g.addColorStop(0, `rgba(225,235,255,${0.05 + Math.random() * 0.06})`);
+    g.addColorStop(1, 'rgba(225,235,255,0)');
+    x.fillStyle = g;
+    x.beginPath();
+    x.arc(bx, by, r, 0, Math.PI * 2);
+    x.fill();
+  }
+  x.restore();
+  // — ESTRELLAS: 520 tenues + 90 brillantes con cruz de brillo —
+  for (let i = 0; i < 520; i++) {
+    x.globalAlpha = 0.12 + Math.random() * 0.5;
+    x.fillStyle = '#cfe2ff';
+    x.fillRect(Math.random() * W, Math.random() * H, 1.4, 1.4);
+  }
+  for (let i = 0; i < 90; i++) {
+    const sx = Math.random() * W, sy = Math.random() * H;
+    const rr = 1 + Math.random() * 1.6;
+    x.globalAlpha = 0.7;
+    x.fillStyle = '#ffffff';
+    x.beginPath();
+    x.arc(sx, sy, rr, 0, Math.PI * 2);
+    x.fill();
+    x.globalAlpha = 0.22;
+    x.fillRect(sx - rr * 3, sy - 0.5, rr * 6, 1);
+    x.fillRect(sx - 0.5, sy - rr * 3, 1, rr * 6);
+  }
+  x.globalAlpha = 1;
+}
+
+/** MOTAS AZULES: nube de puntos con base + fase propios (serpenteo en
+ *  updateArcanoFx). Brillo azul como el búho, aditivas. */
+function montaMotas(N) {
+  const base = new Float32Array(N * 3);
+  const fase = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const r = 2.2 + Math.random() * 7.5;
+    const a = Math.random() * Math.PI * 2;
+    base[i * 3] = Math.cos(a) * r;
+    base[i * 3 + 1] = 0.4 + Math.random() * 4.4;
+    base[i * 3 + 2] = Math.sin(a) * r;
+    fase[i] = Math.random() * Math.PI * 2;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(base.slice(), 3));
+  const mat = new THREE.PointsMaterial({
+    color: 0x49b6ff, size: 0.055, transparent: true, opacity: 0.85,
+    blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+  });
+  const pts = new THREE.Points(geo, mat);
+  pts.userData = { base, fase, n: N };
+  return pts;
+}
+
+/** Sprite radial genérico (cabeza de cometa, halo, destello del búho). */
+function spriteRadial(r0, c0, c1, c2) {
+  const cv = hallCanvas(64, 64);
+  const x = cv.getContext('2d');
+  const g = x.createRadialGradient(32, 32, r0, 32, 32, 31);
+  g.addColorStop(0, c0);
+  g.addColorStop(0.4, c1);
+  g.addColorStop(1, c2);
+  x.fillStyle = g;
+  x.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(cv);
+  try { t.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+  return t;
+}
+
+/** CHEVRON ‹ › de la galería: flecha azul con glow del búho (el disco
+ *  oscuro tras la flecha es el lenguaje de las flechas ‹ › del icono). */
+export function drawArcanoFlecha(cv, dir) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  // disco oscuro translúcido
+  x.beginPath();
+  x.arc(W / 2, H / 2, W * 0.44, 0, Math.PI * 2);
+  x.fillStyle = 'rgba(6,14,30,0.72)';
+  x.fill();
+  x.lineWidth = W * 0.045;
+  x.strokeStyle = 'rgba(80,180,255,0.85)';
+  x.stroke();
+  // chevron con glow
+  x.strokeStyle = '#8fdcff';
+  x.lineWidth = W * 0.075;
+  x.lineCap = 'round';
+  x.lineJoin = 'round';
+  x.shadowColor = 'rgba(80,180,255,0.95)';
+  x.shadowBlur = W * 0.09;
+  const s = dir === 'L' ? -1 : 1;
+  x.beginPath();
+  x.moveTo(W / 2 + s * W * 0.13, H * 0.27);
+  x.lineTo(W / 2 - s * W * 0.13, H * 0.5);
+  x.lineTo(W / 2 + s * W * 0.13, H * 0.73);
+  x.stroke();
+  x.shadowBlur = 0;
+}
+
+/** PINTA el panel de la galería. d = {
+ *   titulo, sub, pie, idxTxt, nombre, tipoTexto, tipoCol, desc, metricas,
+ *   estadoTxt, estadoCol, icono (Image|null), bloqueado } — NUNCA se
+ *  corta: todo texto se mide y se encoge. */
+export function drawArcanoPanel(cv, d) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  // — cristal azul oscuro con marco del búho —
+  const bg = x.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, 'rgba(10,24,48,0.94)');
+  bg.addColorStop(0.6, 'rgba(6,14,32,0.96)');
+  bg.addColorStop(1, 'rgba(3,8,20,0.97)');
+  x.fillStyle = bg;
+  if (x.roundRect) { x.beginPath(); x.roundRect(0, 0, W, H, 42); x.fill(); }
+  else x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(80,180,255,0.9)';
+  x.lineWidth = 5;
+  if (x.roundRect) { x.beginPath(); x.roundRect(7, 7, W - 14, H - 14, 38); x.stroke(); }
+  else x.strokeRect(7, 7, W - 14, H - 14);
+  const envuelve = (txt, fs, col, y0, maxW, maxLn, bold) => {
+    x.font = (bold ? '700 ' : '400 ') + fs + 'px system-ui, sans-serif';
+    const palabras = String(txt).split(' ');
+    const lns = [];
+    let cur = '';
+    for (const p of palabras) {
+      const pr = cur ? cur + ' ' + p : p;
+      if (x.measureText(pr).width > maxW && cur) { lns.push(cur); cur = p; }
+      else cur = pr;
+    }
+    if (cur) lns.push(cur);
+    x.fillStyle = col;
+    x.textAlign = 'left';
+    let y = y0;
+    for (let i = 0; i < Math.min(lns.length, maxLn); i++) {
+      x.fillText(lns[i], 56, y);
+      y += fs * 1.3;
+    }
+    return y;
+  };
+  // — cabecera: título del Arcano + índice —
+  x.textAlign = 'left';
+  x.fillStyle = '#8fdcff';
+  x.font = '900 46px system-ui, sans-serif';
+  x.shadowColor = 'rgba(80,180,255,0.8)';
+  x.shadowBlur = 18;
+  x.fillText(d.titulo || '', 56, 78);
+  x.shadowBlur = 0;
+  x.font = '600 27px system-ui, sans-serif';
+  x.fillStyle = '#5f88b8';
+  x.fillText(d.idxTxt || '', 56, 116);
+  x.textAlign = 'right';
+  x.font = '700 26px system-ui, sans-serif';
+  x.fillStyle = '#5f88b8';
+  x.fillText(d.sub || '', W - 56, 78);
+  // — icono del poder en su medallón —
+  const icX = 56 + 96, icY = 236, icR = 96;
+  x.beginPath();
+  x.arc(icX, icY, icR, 0, Math.PI * 2);
+  x.fillStyle = 'rgba(9,20,42,0.9)';
+  x.fill();
+  x.lineWidth = 4;
+  x.strokeStyle = 'rgba(80,180,255,0.65)';
+  x.stroke();
+  if (d.icono) {
+    const iw = d.icono.width || 64, ih = d.icono.height || 64;
+    const k = (icR * 1.28) / Math.max(iw, ih);
+    x.drawImage(d.icono, icX - (iw * k) / 2, icY - (ih * k) / 2, iw * k, ih * k);
+  } else {
+    x.fillStyle = '#3d5a80';
+    x.font = '700 60px system-ui, sans-serif';
+    x.textAlign = 'center';
+    x.fillText('?', icX, icY + 20);
+  }
+  // — candado azul translúcido sobre el icono si está bloqueado —
+  if (d.bloqueado) {
+    x.save();
+    x.globalAlpha = 0.9;
+    const lx = icX, ly = icY + 8, ls = 74;
+    x.fillStyle = 'rgba(10,26,52,0.72)';
+    x.beginPath();
+    x.roundRect ? x.roundRect(lx - ls * 0.52, ly - ls * 0.18, ls * 1.04, ls * 0.86, 12)
+      : x.rect(lx - ls * 0.52, ly - ls * 0.18, ls * 1.04, ls * 0.86);
+    x.fill();
+    x.lineWidth = 9;
+    x.strokeStyle = 'rgba(120,205,255,0.95)';
+    x.beginPath();
+    x.arc(lx, ly - ls * 0.18, ls * 0.30, Math.PI, 0);
+    x.stroke();
+    x.beginPath();
+    x.arc(lx, ly + ls * 0.16, ls * 0.075, 0, Math.PI * 2);
+    x.fillStyle = 'rgba(120,205,255,0.95)';
+    x.fill();
+    x.restore();
+  }
+  // — nombre + tipo + estado —
+  const txX = 56 + 96 + icR + 34;
+  x.textAlign = 'left';
+  let nombre = String(d.nombre || '').replace(/[¡!]/g, '').trim();
+  x.font = '900 40px system-ui, sans-serif';
+  while (x.measureText(nombre).width > W - txX - 56 && nombre.length > 8) {
+    nombre = nombre.slice(0, nombre.length - 2);
+  }
+  x.fillStyle = d.bloqueado ? '#7f9cc0' : '#eaf6ff';
+  x.fillText(nombre, txX, 190);
+  x.font = '800 27px system-ui, sans-serif';
+  x.fillStyle = d.tipoCol || '#8fdcff';
+  x.fillText('◈ ' + (d.tipoTexto || ''), txX, 232);
+  x.font = '600 24px system-ui, sans-serif';
+  x.fillStyle = d.estadoCol || '#7f9cc0';
+  x.fillText(d.estadoTxt || '', txX, 270);
+  // — descripción —
+  let y = envuelve(d.desc || '', 27.5, d.bloqueado ? '#93a9c4' : '#c7d9ee', 390, W - 112, 5);
+  // — métricas —
+  y += 14;
+  x.font = '700 25px system-ui, sans-serif';
+  x.fillStyle = '#8fdcff';
+  x.fillText('◆ ' + (d.metricasLbl || 'Métricas'), 56, y);
+  y += 38;
+  y = envuelve(d.metricas || '', 26, '#a8c4e2', y, W - 112, 2);
+  // — pie —
+  x.font = '600 23px system-ui, sans-serif';
+  x.fillStyle = '#4f76a4';
+  x.textAlign = 'center';
+  x.fillText(d.pie || '', W / 2, H - 34);
+  return y;
+}
+
+/** MONTA el espacio arcano. Devuelve el Group con userData.arcono = {
+ *  motas, cometas, buho: {mesh, glints, hover}, panel: {mesh, cv, tex},
+ *  flechaL/R: {mesh, cv, tex}, pop (0..1 materialización) } — c12 lo
+ *  añade a la escena OCULTO y lo gobierna. El anfitrión queda en el
+ *  centro: el búho flota delante, la galería debajo, el cielo alrededor. */
+export function montarArcano(base) {
+  const g = new THREE.Group();
+  const vbase = (typeof base === 'string' && base) ? base : 'assets/hall/';
+  // — BÓVEDA CELESTE (esfera invertida; la Vía Láctea vive en el lienzo) —
+  const bovCv = hallCanvas(1024, 512);
+  pintaBoveda(bovCv);
+  const bovTex = new THREE.CanvasTexture(bovCv);
+  try { bovTex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+  const boveda = new THREE.Mesh(
+    new THREE.SphereGeometry(58, 40, 24),
+    new THREE.MeshBasicMaterial({ map: bovTex, side: THREE.BackSide, fog: false }),
+  );
+  g.add(boveda);
+  // — MOTAS azules que serpentean —
+  const motas = montaMotas(240);
+  g.add(motas);
+  // — COMETAS ocasionales (cabeza + halo alargado) —
+  const headTex = spriteRadial(2, 'rgba(240,250,255,0.98)', 'rgba(130,210,255,0.6)', 'rgba(60,140,255,0)');
+  const haloTex = spriteRadial(6, 'rgba(120,200,255,0.5)', 'rgba(70,150,255,0.22)', 'rgba(30,80,200,0)');
+  const cometas = [];
+  for (let i = 0; i < 3; i++) {
+    const head = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: headTex, transparent: true, opacity: 0.95,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: haloTex, transparent: true, opacity: 0.5,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    head.scale.setScalar(0.5);
+    halo.scale.set(3.4, 1.1, 1);
+    head.visible = halo.visible = false;
+    g.add(head); g.add(halo);
+    cometas.push({ head, halo, on: false, t: 0, dur: 0, p: new THREE.Vector3(), q: new THREE.Vector3(), prox: 2 + i * 4 });
+  }
+  // — EL BÚHO presente (grande, flotando delante del anfitrión) —
+  const buhoCv = hallCanvas(512, 342);
+  drawArcanoBuho(buhoCv);
+  const buhoTex = new THREE.CanvasTexture(buhoCv);
+  try { buhoTex.colorSpace = THREE.SRGBColorSpace; buhoTex.anisotropy = 4; } catch { /* */ }
+  const buhoMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.32, 0.88),
+    new THREE.MeshBasicMaterial({ map: buhoTex, transparent: true }));
+  buhoMesh.position.set(0, 2.28, -2.55);
+  g.add(buhoMesh);
+  try {
+    new THREE.TextureLoader().load(vbase + 'arcano.png', (t) => {
+      try {
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 4;
+        buhoMesh.material.map = t;
+        buhoMesh.material.needsUpdate = true;
+        buhoTex.dispose();
+      } catch { /* seguimos con el vectorial */ }
+    }, undefined, () => { /* */ });
+  } catch { /* */ }
+  const glintTex = spriteRadial(2, 'rgba(235,250,255,0.95)', 'rgba(120,210,255,0.55)', 'rgba(60,140,255,0)');
+  const buhoGlints = [];
+  for (const rel of [[0.452, 0.392], [0.557, 0.376]]) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glintTex, transparent: true, opacity: 0.35,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    sp.scale.setScalar(0.115);
+    sp.position.set((rel[0] - 0.5) * 1.32, (0.5 - rel[1]) * 0.88, 0.02);
+    buhoMesh.add(sp);
+    buhoGlints.push(sp);
+  }
+  // — LA GALERÍA: panel + dos flechas con glow —
+  const panCv = hallCanvas(1024, 700);
+  drawArcanoPanel(panCv, { titulo: '· · ·' });
+  const panTex = new THREE.CanvasTexture(panCv);
+  try { panTex.colorSpace = THREE.SRGBColorSpace; panTex.anisotropy = 4; } catch { /* */ }
+  const panMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.46, 1.0),
+    new THREE.MeshBasicMaterial({ map: panTex, transparent: true }));
+  panMesh.position.set(0, 1.32, -2.35);
+  g.add(panMesh);
+  const flechas = {};
+  for (const k of ['L', 'R']) {
+    const cv = hallCanvas(128, 128);
+    drawArcanoFlecha(cv, k);
+    const tex = new THREE.CanvasTexture(cv);
+    try { tex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.20, 0.20),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    mesh.position.set(k === 'L' ? -0.93 : 0.93, 1.32, -2.35);
+    g.add(mesh);
+    flechas[k] = { mesh, cv, tex, hover: false };
+  }
+  g.userData.arcono = {
+    motas, cometas, buho: { mesh: buhoMesh, glints: buhoGlints, hover: false },
+    panel: { mesh: panMesh, cv: panCv, tex: panTex }, flechas, pop: 1,
+  };
+  return g;
+}
+
+/** ANIMA el espacio arcano (sólo se llama con la estancia encendida):
+ *  motas que serpentean, cometas ocasionales con su halo, el búho que
+ *  flota con sus ojos encendidos y la materialización (pop) del panel. */
+export function updateArcanoFx(g, dt, now) {
+  const A = g.userData && g.userData.arcono;
+  if (!A) return;
+  // — motas: serpenteo suave (posición base + dos senos por punto) —
+  const pos = A.motas.geometry.attributes.position;
+  const { base, fase, n } = A.motas.userData;
+  for (let i = 0; i < n; i++) {
+    const f = fase[i];
+    pos.array[i * 3] = base[i * 3] + Math.sin(now * 0.35 + f) * 0.55;
+    pos.array[i * 3 + 1] = base[i * 3 + 1] + Math.sin(now * 0.5 + f * 1.7) * 0.4;
+    pos.array[i * 3 + 2] = base[i * 3 + 2] + Math.cos(now * 0.28 + f * 0.9) * 0.55;
+  }
+  pos.needsUpdate = true;
+  // — cometas: cruce lejano cada tanto; el halo azul queda tras la cabeza —
+  for (const c of A.cometas) {
+    if (!c.on) {
+      c.prox -= dt;
+      if (c.prox <= 0) {
+        c.on = true;
+        c.t = 0;
+        c.dur = 5.5 + Math.random() * 3.5;
+        const lado = Math.random() < 0.5 ? -1 : 1;
+        c.p.set(lado * 30, 7 + Math.random() * 9, -22 - Math.random() * 16);
+        c.q.set(-lado * 60, -1.5 - Math.random() * 2, (Math.random() - 0.5) * 6);
+        c.head.visible = c.halo.visible = true;
+      }
+      continue;
+    }
+    c.t += dt;
+    const k = c.t / c.dur;
+    if (k >= 1) {
+      c.on = false;
+      c.prox = 4 + Math.random() * 8;
+      c.head.visible = c.halo.visible = false;
+      continue;
+    }
+    c.head.position.set(c.p.x + c.q.x * k, c.p.y + c.q.y * k, c.p.z + c.q.z * k);
+    c.halo.position.copy(c.head.position);
+    c.halo.position.x -= Math.sign(c.q.x) * 0.9;   // el halo, tras la cabeza
+    const fade = Math.sin(Math.min(1, k) * Math.PI);
+    c.head.material.opacity = 0.95 * fade;
+    c.halo.material.opacity = 0.5 * fade;
+  }
+  // — búho: flote + yaw vivo + ojos latiendo (más presente que en el hall) —
+  const B = A.buho;
+  B.mesh.position.y = 2.28 + Math.sin(now * 0.7) * 0.05;
+  B.mesh.rotation.y = Math.sin(now * 0.4) * 0.06;
+  if (B.glints.length === 2) {
+    B.glints[0].material.opacity = 0.38 + Math.sin(now * 2.4) * 0.2;
+    B.glints[1].material.opacity = 0.38 + Math.sin(now * 2.4 + 2.1) * 0.2;
+  }
+  const tgtB = B.hover ? 1.1 : 1.0;
+  const curB = B.mesh.scale.x || 1;
+  B.mesh.scale.setScalar(curB + (tgtB - curB) * Math.min(1, dt * 10));
+  // — galería: materialización (pop elástico al cambiar de poder) —
+  if (A.pop < 1) {
+    A.pop = Math.min(1, A.pop + dt * 3.2);
+    const e = 1 + Math.sin(A.pop * Math.PI) * 0.06;   // ligero overshoot
+    A.panel.mesh.scale.setScalar((0.86 + A.pop * 0.14) * e);
+  }
+  // — flechas: hover agranda, y el glow late suave —
+  for (const k of ['L', 'R']) {
+    const F = A.flechas[k];
+    const tgt = F.hover ? 1.22 : 1.0;
+    const cur = F.mesh.scale.x || 1;
+    F.mesh.scale.setScalar(cur + (tgt - cur) * Math.min(1, dt * 12));
   }
 }
 

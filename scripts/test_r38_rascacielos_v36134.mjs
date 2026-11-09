@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r38 · v3.6.134-SDK6 · FASE 136 · TEST: EL SALÓN DE LA
+/* CRAZY PING PONG · r38 · v3.6.135-SDK6 · FASE 137 · TEST: EL SALÓN DE LA
  * PARTIDA — RASCACIELOS (4.º hall del dueño + partidas en el hall del
  * anfitrión, IA y multijugador).
  *
@@ -35,7 +35,7 @@
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
  *   (df8f71a3… / 8bb62082…).
  *
- * Uso: node --no-warnings scripts/test_r38_rascacielos_v36134.mjs
+ * Uso: node --no-warnings scripts/test_r38_rascacielos_v36135.mjs
  */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -60,25 +60,25 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.134-SDK6 · FASE 136 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.134-SDK6 · FASE 136 · EL SALÓN DE LA PARTIDA');
-chk(vjson.version === '3.6.134-SDK6', 'VERSION.json: 3.6.134-SDK6');
-chk(vjson.fase === 136, 'FASE 136');
-chk(vjson.faseNombre === 'El salón de la partida — Rascacielos', 'faseNombre = EL SALÓN DE LA PARTIDA');
-chk(vjson.tamano === 11395884, 'tamaño del build: 11.395.884 B');
+/* — 1 · SELLOS · v3.6.135-SDK6 · FASE 137 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.135-SDK6 · FASE 137 · EL SALÓN DE LA PARTIDA');
+chk(vjson.version === '3.6.135-SDK6', 'VERSION.json: 3.6.135-SDK6');
+chk(vjson.fase === 137, 'FASE 137');
+chk(vjson.faseNombre === 'El apartado arcano — superpoderes', 'faseNombre = EL SALÓN DE LA PARTIDA');
+chk(vjson.tamano === 11453242, 'tamaño del build: 11.453.242 B');
 chk(vjson.golden ===
-  '951940900bdefb5d27498257e5adf01a3188e25f449945f6fa678da98a0e786f',
-  'VERSION.json golden 95194090…');
+  '70049f9c258c575cd50f836cc5e44686615e53e62b12d3ef1b3419268b60f5b4',
+  'VERSION.json golden 70049f9c…');
 chk(sha256('public/game.html') ===
-  '951940900bdefb5d27498257e5adf01a3188e25f449945f6fa678da98a0e786f',
-  'golden 95194090… (build byte-exacto)');
-chk(game.includes('3.6.134-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.134-SDK6'"), 'sello c00 = 3.6.134-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.134-SDK6'"),
-  'sw.js CACHE v3.6.134-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.134-SDK6</span>'), 'badge V3.6.134-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36134-sdk6'),
-  'hub /descargas sellado a v36134-sdk6');
+  '70049f9c258c575cd50f836cc5e44686615e53e62b12d3ef1b3419268b60f5b4',
+  'golden 70049f9c… (build byte-exacto)');
+chk(game.includes('3.6.135-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.135-SDK6'"), 'sello c00 = 3.6.135-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.135-SDK6'"),
+  'sw.js CACHE v3.6.135-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.135-SDK6</span>'), 'badge V3.6.135-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36135-sdk6'),
+  'hub /descargas sellado a v36135-sdk6');
 
 /* — 2 · ARTE RASCACIELOS · 7 ficheros byte-exactos contra el ZIP ———— */
 console.log('2 · ARTE RASCACIELOS · sha256 byte-exacto (ZIP del dueño → public/assets/hall/rascacielos)');

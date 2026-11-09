@@ -4659,7 +4659,7 @@ class WizardController {
         g.confettiBurst = Math.max(g.confettiBurst, 6);
         g.audio.announce(tx('trophy_get'), true);
         // v2.128: INSIGNIA «¡CONSEGUIDO!» en grande (panel del núcleo)
-        try { const C = window.__PP_CORE; if (C && C.showChampConseguido) C.showChampConseguido('magia'); } catch (e) { /* */ }
+        try { const C = window.__PP_CORE; if (C && C.showChampConseguido) C.showChampConseguido('magia', { coronacion: true }); } catch (e) { /* */ }
         if (g.renderer.xr.isPresenting) {
           g.haptic(g.paddleHand, 1.0, 300);
           window.setTimeout(() => g.haptic(g.paddleHand, 0.8, 240), 400);

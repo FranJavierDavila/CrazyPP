@@ -1107,6 +1107,7 @@ class PlantillaController {
     try {
       if (CORE.showChampConseguido) CORE.showChampConseguido(this.man.id, {
         campeon: true,
+        coronacion: true,   // r39 · la coronación libera un poder del Arcano
         title: tx('coronacion_titulo'),
         msg: tx('coronacion_msg'),
         dur: C.dur || 14,

@@ -12819,6 +12819,7 @@ class ForajidoStand {
           : fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
         C.showChampConseguido('oeste', {
           campeon: true,
+          coronacion: true,   // r39 · la coronación libera un poder del Arcano
           title: tx('coronacion_titulo'),
           msg: tx('coronacion_msg'),
           dur: 14,

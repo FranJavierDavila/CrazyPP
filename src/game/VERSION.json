@@ -1,10 +1,10 @@
 {
-  "version": "3.6.134-SDK6",
-  "fase": 136,
-  "faseNombre": "El salón de la partida — Rascacielos",
+  "version": "3.6.135-SDK6",
+  "fase": 137,
+  "faseNombre": "El apartado arcano — superpoderes",
   "sdk": "1.6.0",
   "fecha": "2026-11-09",
-  "hub": "v36134-sdk6",
+  "hub": "v36135-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11395884,
-  "golden": "951940900bdefb5d27498257e5adf01a3188e25f449945f6fa678da98a0e786f"
+  "tamano": 11453242,
+  "golden": "70049f9c258c575cd50f836cc5e44686615e53e62b12d3ef1b3419268b60f5b4"
 }

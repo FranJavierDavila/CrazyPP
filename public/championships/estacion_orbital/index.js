@@ -7769,7 +7769,7 @@ class StockController {
         g.rules.message = tx('¡¡ESTACIÓN ORBITAL CONSEGUIDA!!', 'ORBITAL STATION COMPLETED!!');
         try {
           const C = window.__PP_CORE;
-          if (C && C.showChampConseguido) C.showChampConseguido('estacion_orbital');
+          if (C && C.showChampConseguido) C.showChampConseguido('estacion_orbital', { coronacion: true });
         } catch (e2) { /* */ }
         // v3.6.15 (ronda 18 · EMBUDO COMPLETO): ¡la estación tiene campeón!
         try { __PP_TELE.ev('champion', { id: 'estacion_orbital' }); } catch (eC) { /* */ }

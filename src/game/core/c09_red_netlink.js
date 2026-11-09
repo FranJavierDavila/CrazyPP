@@ -1556,7 +1556,9 @@ export class NetLink {
     // r84 · DUELOS LOCOS · GIGANTE (bit 16): el tamaño de MI pala viaja en
     // la pose — el avatar rival crece/decrece sin mensaje ni códec nuevo
     // (POSE=31 B intacto: el bit comparte el byte fl ya existente)
-    if (g._dlOn && g._dlOn('gigante')) fl |= 16;
+    // r39 · la MEGA del Arcano comparte el bit 16: el rival VE la pala
+    // grande igual que la GIGANTE de r84 (mismo transporte, gratis).
+    if (g._dlOn && (g._dlOn('gigante') || g._dlOn('mega'))) fl |= 16;
     out.fl = fl;
     return out;
   }

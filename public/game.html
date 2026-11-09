@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.134-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.135-SDK6</span>
     </div>
   </main>
 
@@ -916,6 +916,65 @@ const I18N_STRINGS = {
     ancla_bloqueo: '¡Las cadenas del ANCLA bloquean el poder rival!',
     arc_oscuridad_fin: 'la oscuridad se disipa',
     sin_poder: 'Sin poder',
+    // =====================================================================
+    // r39 (v3.6.135) · FASE 137 · EL APARTADO ARCANO — el búho del hall
+    // guarda la galería de superpoderes de pala: espacio infinito azul,
+    // materialización uno a uno, candados y desbloqueo por campeonato
+    // ganado. Los desbloqueados se juegan en DUELOS LOCOS.
+    // =====================================================================
+    arcono_titulo: 'EL ARCANO',
+    arcono_sub: 'SUPERPODERES DE PALA',
+    arcono_pie: 'Los desbloqueados se juegan en DUELOS LOCOS',
+    arcono_candado: 'BLOQUEADO · gana un campeonato para revelarlo',
+    arcono_desbloq: 'DESBLOQUEADO',
+    arcono_tipo_ataque: 'ATAQUE',
+    arcono_tipo_defensa: 'DEFENSA',
+    arcono_tipo_distraccion: 'DISTRACCIÓN',
+    arcono_metricas: 'Métricas',
+    arcono_indice: '{i} de {n}',
+    arcono_gana: 'Cada campeonato completo ganado libera un superpoder al azar',
+    arcono_todos: 'El Arcano te lo ha revelado todo',
+    arcono_hint: 'El búho del Arcano custodia los superpoderes de pala · apunta y gatillo',
+    arcono_salir: 'El búho te devuelve al salón',
+    arcono_nuevo: 'EL ARCANO TE REVELA: {p}',
+    arcono_ninguno: 'El Arcano ya lo sabía todo · nada nuevo que revelar',
+    // — descripciones de la galería (una por poder; el índice es AUTOMÁTICO:
+    //   un poder nuevo en PODERES_PALA hereda galería con añadir aquí su
+    //   arc_desc_<id> y arc_met_<id>) —
+    arc_desc_mega: 'Tu pala crece con canto de oro y onda de choque: más superficie, más radio de golpeo. Activa y vuelve a disparar para alargar la ventana.',
+    arc_met_mega: 'Pala ×1,30 · radio ×1,38 · 15 s por carga · tope ×3',
+    arc_desc_efecto: 'Golpea con GIRO arrastrando la pala: el spin que generas se triplica, la bola curva en vuelo y el bote muerde el campo rival.',
+    arc_met_efecto: 'Spin ×3 · Magnus ×2,2 · bote amplificado · 10 s / 5 golpes',
+    arc_desc_iman: 'Un campo magnético suave atrae la bola hacia el punto dulce de tu pala: la asistencia centra el impacto, tú sigues dirigiendo el golpe.',
+    arc_met_iman: 'Radio 0,95 m · plena a 0,26 m · acel. 6,5 m/s² · 10 s',
+    arc_desc_portal: 'Tras tu golpe válido la bola se hunde en un vórtice, viaja oculta un segundo y sale disparada sobre la mesa rival con bote jugable garantizado.',
+    arc_met_portal: 'Desvío 0,25–0,70 m · rapidez 90–100 % · 8 s / 3 golpes',
+    arc_desc_clon: 'Dos palas fantasma flotan a tus lados y cazan la bola escapada; de paso limpian globos y confeti que el rival suelte sobre tu campo.',
+    arc_met_clon: 'Palas a ±0,50 m · rescate 90 % · 10 s',
+    arc_desc_red: 'La red crece al doble de su altura reglamentaria y cierra el paso a los tiros rasos; al acabar vuelve exacta a su altura.',
+    arc_met_red: 'Altura ×2 · física viva en ambos campos · 10 s',
+    arc_desc_elec: 'Nubes a metro y medio sobre la mesa rival descargan ráfagas con gran estruendo y destello; si un rayo intercepta la bola, la rompe en pedacitos y pierde el punto.',
+    arc_met_elec: 'Nubes a 1,5 m · ~35 rayos · noche eléctrica · 10 s',
+    arc_desc_fenix: 'Tu bola arde con bocanadas, ascuas y estela naranja: el rival, deslumbrado, decide mal y estrella más devoluciones.',
+    arc_met_fenix: 'Faltas del rival +15 % · bola de fuego · 10 s',
+    arc_desc_crono: 'El tiempo se dobla: la bola vuela al 62 % de su rapidez rodeada de anillos de reloj; al acabar, la velocidad se restaura exacta.',
+    arc_met_crono: 'Rapidez ×0,62 · restauración exacta · 10 s',
+    arc_desc_oscuridad: 'Niebla densa en cada zona de golpeo del rival y bola negra con halo de fuego: el rival, ciego, manda fuera buena parte de sus devoluciones.',
+    arc_met_oscuridad: 'Niebla 5 s + 2 s de disipación · 6 zonas · faltas +35 % · 20 s',
+    arc_desc_prisma: 'Tu bola deja una estela arcoíris viva y al golpear ves una guía sutil de trayectoria; la estela del rival parpadea y le cuesta leer el vuelo.',
+    arc_met_prisma: 'Guía 3 s tras tu golpeo · estela arcoíris · faltas rival +10 % · 10 s',
+    arc_desc_onda: 'Cada smash tuyo genera un anillo expansivo con temblor de sala: si el rival está en pleno swing, su devolución sale floja.',
+    arc_met_onda: 'Smash ≥ 5,2 m/s · devolución rival ×0,75 · margen 1 s · 10 s',
+    arc_desc_salva: 'Una vez por activación, si la bola te pasa, tu pala hace un warp de luz hasta su punto de caída y la devuelve sola, aunque llega cansada.',
+    arc_met_salva: '1 rescate por activación · devolución ×0,80 · 10 s',
+    arc_desc_ancla: 'Cadenas de energía anclan tu pala al suelo: los poderes del rival se estrellan contra ti con destello metálico, sin entrar en juego.',
+    arc_met_ancla: 'Inmunidad a poderes rivales · sin bonus activo · 10 s',
+    // — nombres cortos para el cable 'pow' de DUELOS LOCOS —
+    dl_mega: 'MEGA PALA', dl_efecto: 'SÚPER EFECTO', dl_iman: 'SÚPER IMÁN',
+    dl_portal: 'SÚPER PORTAL', dl_clon: 'SÚPER CLONACIÓN', dl_red: 'SÚPER RED',
+    dl_elec: 'SÚPER ELECTRICIDAD', dl_fenix: 'SÚPER FÉNIX', dl_crono: 'SÚPER CRONO',
+    dl_oscuridad: 'SÚPER OSCURIDAD', dl_prisma: 'SÚPER PRISMA', dl_onda: 'ONDA DE CHOQUE',
+    dl_salva: 'SALVAVIDAS', dl_ancla: 'SÚPER ANCLA',
     // v3.6.42 · conmutador de PASSTHROUGH dentro de la sesión (por defecto off)
     btn_psthru: 'Passthrough · tu habitación: {v}',
     msg_psthru_on: 'Passthrough ACTIVADO · tu habitación (sin salir de la partida)',
@@ -1896,6 +1955,58 @@ const I18N_STRINGS = {
     ancla_bloqueo: 'The ANCHOR chains block the rival power!',
     arc_oscuridad_fin: 'the darkness fades away',
     sin_poder: 'No power',
+    // r39 (v3.6.135) · FASE 137 · THE ARCANE WING — hall owl, infinite
+    // space, one-by-one gallery, locks and championship unlocks. The
+    // unlocked ones are playable in CRAZY DUELS.
+    arcono_titulo: 'THE ARCANE',
+    arcono_sub: 'PADDLE SUPERPOWERS',
+    arcono_pie: 'Unlocked ones are playable in CRAZY DUELS',
+    arcono_candado: 'LOCKED · win a championship to reveal it',
+    arcono_desbloq: 'UNLOCKED',
+    arcono_tipo_ataque: 'ATTACK',
+    arcono_tipo_defensa: 'DEFENSE',
+    arcono_tipo_distraccion: 'DISTRACTION',
+    arcono_metricas: 'Metrics',
+    arcono_indice: '{i} of {n}',
+    arcono_gana: 'Every full championship win releases one random superpower',
+    arcono_todos: 'The Arcane has revealed everything to you',
+    arcono_hint: 'The Arcane owl guards the paddle superpowers · aim and trigger',
+    arcono_salir: 'The owl takes you back to the lounge',
+    arcono_nuevo: 'THE ARCANE REVEALS: {p}',
+    arcono_ninguno: 'The Arcane already knew it all · nothing new to reveal',
+    arc_desc_mega: 'Your paddle grows with a golden rim and a shock wave: more surface, wider hit radius. Activate and fire again to extend the window.',
+    arc_met_mega: 'Paddle ×1.30 · radius ×1.38 · 15 s per charge · max ×3',
+    arc_desc_efecto: 'Hit WITH SPIN by dragging the paddle: the spin you generate triples, the ball curves in flight and the bounce bites into the rival court.',
+    arc_met_efecto: 'Spin ×3 · Magnus ×2.2 · amplified bounce · 10 s / 5 hits',
+    arc_desc_iman: 'A soft magnetic field pulls the ball toward your paddle sweet spot: the assist centers the impact, you still own the shot.',
+    arc_met_iman: 'Radius 0.95 m · full under 0.26 m · accel 6.5 m/s² · 10 s',
+    arc_desc_portal: 'After your valid hit the ball sinks into a vortex, travels hidden for a second and shoots out over the rival table with a guaranteed playable bounce.',
+    arc_met_portal: 'Drift 0.25–0.70 m · speed 90–100% · 8 s / 3 hits',
+    arc_desc_clon: 'Two ghost paddles float at your sides and catch the runaway ball; they also clear balloons and confetti the rival drops on your court.',
+    arc_met_clon: 'Paddles at ±0.50 m · 90% rescue · 10 s',
+    arc_desc_red: 'The net grows to twice its regulation height and blocks low shots; when it ends it returns to its exact height.',
+    arc_met_red: 'Height ×2 · live physics on both courts · 10 s',
+    arc_desc_elec: 'Clouds a meter and a half over the rival table fire bolt barrages with thunder and flash; if a bolt catches the ball it shatters it and the point is lost.',
+    arc_met_elec: 'Clouds at 1.5 m · ~35 bolts · electric night · 10 s',
+    arc_desc_fenix: 'Your ball burns with flames, embers and an orange trail: the rival, dazzled, misjudges and sends more returns out.',
+    arc_met_fenix: 'Rival faults +15% · fireball · 10 s',
+    arc_desc_crono: 'Time bends: the ball flies at 62% of its speed wrapped in clock rings; when it ends the speed is restored exactly.',
+    arc_met_crono: 'Speed ×0.62 · exact restore · 10 s',
+    arc_desc_oscuridad: 'Dense fog on every rival hit zone and a black ball with a fire halo: the rival, blind, sends a good share of returns out.',
+    arc_met_oscuridad: 'Fog 5 s + 2 s fade · 6 zones · faults +35% · 20 s',
+    arc_desc_prisma: 'Your ball leaves a living rainbow trail and on your hits you see a subtle trajectory guide; the rival trail blinks and costs them reads.',
+    arc_met_prisma: 'Guide 3 s after your hit · rainbow trail · rival faults +10% · 10 s',
+    arc_desc_onda: 'Every smash of yours spawns an expanding ring with a room shake: if the rival is mid-swing, their return comes out weak.',
+    arc_met_onda: 'Smash ≥ 5.2 m/s · rival return ×0.75 · 1 s window · 10 s',
+    arc_desc_salva: 'Once per activation, if the ball gets past you, your paddle warps with a light trail to its landing spot and returns it alone, though tired.',
+    arc_met_salva: '1 rescue per activation · return ×0.80 · 10 s',
+    arc_desc_ancla: 'Energy chains anchor your paddle to the floor: rival powers crash against you with a metallic flash, never entering play.',
+    arc_met_ancla: 'Immune to rival powers · no active bonus · 10 s',
+    dl_mega: 'MEGA PADDLE', dl_efecto: 'SUPER SPIN', dl_iman: 'SUPER MAGNET',
+    dl_portal: 'SUPER PORTAL', dl_clon: 'SUPER CLONE', dl_red: 'SUPER NET',
+    dl_elec: 'SUPER ELECTRICITY', dl_fenix: 'SUPER PHOENIX', dl_crono: 'SUPER CHRONO',
+    dl_oscuridad: 'SUPER DARKNESS', dl_prisma: 'SUPER PRISM', dl_onda: 'SHOCKWAVE',
+    dl_salva: 'LIFE SAVER', dl_ancla: 'SUPER ANCHOR',
     // v3.6.42 · in-session passthrough switch (default off)
     btn_psthru: 'Passthrough · your room: {v}',
     msg_psthru_on: 'Passthrough ON · your room (no leaving the match)',
@@ -3338,7 +3449,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.134-SDK6';
+  const VERSION = '3.6.135-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -10908,6 +11019,65 @@ function createHall(base) {
   };
 
   /* =====================================================================
+   *  r39 (v3.6.135) · EL BÚHO DEL ARCANO — placa con el arte del dueño
+   *  (assets/hall/arcano.png, 1024×683 RGBA) en la esquina superior
+   *  DERECHA de la pared que el anfitrión mira al entrar (z0, «pared del
+   *  fondo» de la estancia). El búho emite un LIGERO DESTELLO a través
+   *  de sus dos ojos: dos sprites aditivos sobre los centros de los ojos
+   *  (medidos sobre el arte: 0.452/0.392 y 0.557/0.376 en fracción del
+   *  lienzo) que laten con fases distintas en updateHallFx. El gatillo
+   *  VR apuntando al búho abre EL ESPACIO ARCANO (raycast en c12,
+   *  mismo patrón que el icono de la música). Mientras llega la textura
+   *  (o si falla), un búho vectorial dibujado en canvas hace de fondo.
+   *  ===================================================================== */
+  const ARC_W = 0.78, ARC_H = 0.52;          // proporción 1024×683 (1.5:1)
+  const arcCv = hallCanvas(512, 342);
+  drawArcanoBuho(arcCv);                      // fallback vectorial (glow azul)
+  const arcTex = new THREE.CanvasTexture(arcCv);
+  try { arcTex.colorSpace = THREE.SRGBColorSpace; arcTex.anisotropy = 4; } catch (eTA0) { /* */ }
+  const arcMesh = new THREE.Mesh(new THREE.PlaneGeometry(ARC_W, ARC_H),
+    new THREE.MeshBasicMaterial({ map: arcTex, transparent: true }));
+  arcMesh.position.set(2.28, 2.26, z0 + 0.016);
+  g.add(arcMesh);
+  try {   // el arte REAL del dueño sustituye al fallback en cuanto llega
+    const urlArcano = 'assets/hall/arcano.png';   // fijo del hall (no arte de variante)
+    new THREE.TextureLoader().load(urlArcano, (t) => {
+      try {
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 4;
+        arcMesh.material.map = t;
+        arcMesh.material.needsUpdate = true;
+        arcTex.dispose();
+      } catch { /* seguimos con el fallback */ }
+    }, undefined, () => { /* sin arte: el búho vectorial manda */ });
+  } catch (eTL0) { /* */ }
+  // — los DOS OJOS: sprites de destello en los centros medidos del arte —
+  const glintCv = hallCanvas(64, 64);
+  {
+    const xg = glintCv.getContext('2d');
+    const gg = xg.createRadialGradient(32, 32, 2, 32, 32, 30);
+    gg.addColorStop(0, 'rgba(235,250,255,0.95)');
+    gg.addColorStop(0.35, 'rgba(120,210,255,0.55)');
+    gg.addColorStop(1, 'rgba(60,140,255,0)');
+    xg.fillStyle = gg;
+    xg.fillRect(0, 0, 64, 64);
+  }
+  const glintTex = new THREE.CanvasTexture(glintCv);
+  try { glintTex.colorSpace = THREE.SRGBColorSpace; } catch (eTG0) { /* */ }
+  const glints = [];
+  for (const rel of [[0.452, 0.392], [0.557, 0.376]]) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glintTex, transparent: true, opacity: 0.3,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    sp.scale.setScalar(0.075);
+    sp.position.set((rel[0] - 0.5) * ARC_W, (0.5 - rel[1]) * ARC_H, 0.012);
+    arcMesh.add(sp);
+    glints.push(sp);
+  }
+  const arcono = { mesh: arcMesh, glints, hover: false };
+
+  /* =====================================================================
    *  r28 (v3.6.124) · MOBILIARIO 3D POR SALÓN — la lección de los
    *  decorados de La Locura y Wizard (dueño: «los diseñaste tú con
    *  muchísimo más detalle… la diferencia es abismal») es que el lujo
@@ -11064,6 +11234,7 @@ function createHall(base) {
     pulsoR: { cv: pulsoCvR, tex: pulsoTexR },
     gloria: { cv: gloriaCv, tex: gloriaTex },   // r23 · pared de insignias
     musica,   // r32 · icono de la música del salón (silencio por gatillo)
+    arcono,   // r39 · el búho del Arcano (destello en los ojos; entra c12)
   };
   return g;
 }
@@ -11115,6 +11286,518 @@ function updateHallFx(g, dt, now) {
     const tgt = mu.hover ? 1.16 : 1.0;
     const cur = mu.mesh.scale.x || 1;
     mu.mesh.scale.setScalar(cur + (tgt - cur) * Math.min(1, dt * 12));
+  }
+  // r39 · EL BÚHO DEL ARCANO: el hover lo agranda (mismo lenguaje que el
+  // icono de la música) y los DOS OJOS emiten su ligero destello — dos
+  // fases distintas, un latido suave que nunca duerme del todo.
+  const ar = ud.arcono;
+  if (ar && ar.mesh && ar.mesh.visible) {
+    const tgtA = ar.hover ? 1.14 : 1.0;
+    const curA = ar.mesh.scale.x || 1;
+    ar.mesh.scale.setScalar(curA + (tgtA - curA) * Math.min(1, dt * 12));
+    if (ar.glints && ar.glints.length === 2) {
+      ar.glints[0].material.opacity = 0.30 + Math.sin(now * 2.1) * 0.17 +
+        Math.sin(now * 0.7) * 0.08;
+      ar.glints[1].material.opacity = 0.30 + Math.sin(now * 2.1 + 1.9) * 0.17 +
+        Math.sin(now * 0.7 + 2.6) * 0.08;
+    }
+  }
+}
+
+/* =======================================================================
+ *  r39 (v3.6.135) · EL ESPACIO ARCANO — la estancia infinita del búho.
+ *  Todo PROCEDURAL (cero assets nuevos): bóveda celeste oscura con la
+ *  VÍA LÁCTEA pintada en canvas sobre una esfera invertida, MOTAS AZULES
+ *  brillantes que serpentean en el aire (THREE.Points con fase propia),
+ *  COMETAS ocasionales que cruzan a lo lejos dejando un halo azul, el
+ *  BÚHO presente (el arte del dueño, grande, flotando) y LA GALERÍA:
+ *  panel con el icono del poder materializado, su nombre, su tipo
+ *  (ataque/defensa/distracción), su descripción y sus métricas, con
+ *  flechas ‹ › azules con glow y candado azul translúcido en los
+ *  bloqueados. c12 monta el grupo una vez, lo enciende al entrar y
+ *  anima con updateArcanoFx.
+ *  ======================================================================= */
+
+/** Fallback vectorial del búho (mientras llega el arte del dueño — o si
+ *  falla la carga): silueta con ojos encendidos, glow azul del Arcano. */
+function drawArcanoBuho(cv) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  x.fillStyle = 'rgba(4,10,22,0.92)';
+  x.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H * 0.52;
+  // alas
+  x.strokeStyle = '#5fd4ff';
+  x.lineWidth = W * 0.02;
+  x.shadowColor = 'rgba(70,170,255,0.9)';
+  x.shadowBlur = W * 0.05;
+  for (const s of [-1, 1]) {
+    x.beginPath();
+    x.moveTo(cx, cy - H * 0.12);
+    x.quadraticCurveTo(cx + s * W * 0.30, cy - H * 0.30, cx + s * W * 0.44, cy + H * 0.05);
+    x.quadraticCurveTo(cx + s * W * 0.26, cy + H * 0.02, cx + s * W * 0.13, cy + H * 0.16);
+    x.stroke();
+  }
+  // cuerpo y cabeza
+  x.fillStyle = 'rgba(70,170,255,0.85)';
+  x.beginPath();
+  x.ellipse(cx, cy + H * 0.16, W * 0.09, H * 0.20, 0, 0, Math.PI * 2);
+  x.fill();
+  x.beginPath();
+  x.arc(cx, cy - H * 0.06, W * 0.105, 0, Math.PI * 2);
+  x.fill();
+  // orejas
+  for (const s of [-1, 1]) {
+    x.beginPath();
+    x.moveTo(cx + s * W * 0.075, cy - H * 0.14);
+    x.lineTo(cx + s * W * 0.13, cy - H * 0.30);
+    x.lineTo(cx + s * W * 0.015, cy - H * 0.17);
+    x.closePath();
+    x.fill();
+  }
+  // ojos encendidos
+  x.shadowBlur = W * 0.04;
+  x.shadowColor = 'rgba(200,240,255,1)';
+  x.fillStyle = '#eafaff';
+  for (const s of [-1, 1]) {
+    x.beginPath();
+    x.arc(cx + s * W * 0.045, cy - H * 0.055, W * 0.026, 0, Math.PI * 2);
+    x.fill();
+  }
+  x.shadowBlur = 0;
+}
+
+/** Lienzo de la BÓVEDA: noche celeste profunda + VÍA LÁCTEA diagonal +
+ *  campo de estrellas (dos pasadas, brillantes y tenues). 1024×512,
+ *  mapeada equirectangular en la esfera. */
+function pintaBoveda(cv) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const bg = x.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#020409');
+  bg.addColorStop(0.55, '#071228');
+  bg.addColorStop(1, '#0a1a33');
+  x.fillStyle = bg;
+  x.fillRect(0, 0, W, H);
+  // — VÍA LÁCTEA: banda diagonal de nubes estelares —
+  x.save();
+  x.translate(W * 0.5, H * 0.5);
+  x.rotate(-0.5);
+  for (let i = 0; i < 90; i++) {
+    const bx = (Math.random() - 0.5) * W * 1.6;
+    const by = (Math.random() - 0.5) * H * 0.34;
+    const r = 20 + Math.random() * 90;
+    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
+    const a = 0.028 + Math.random() * 0.05;
+    g.addColorStop(0, `rgba(190,215,255,${a})`);
+    g.addColorStop(1, 'rgba(190,215,255,0)');
+    x.fillStyle = g;
+    x.beginPath();
+    x.arc(bx, by, r, 0, Math.PI * 2);
+    x.fill();
+  }
+  // núcleo algo más denso
+  for (let i = 0; i < 40; i++) {
+    const bx = (Math.random() - 0.5) * W * 0.7;
+    const by = (Math.random() - 0.5) * H * 0.12;
+    const r = 10 + Math.random() * 40;
+    const g = x.createRadialGradient(bx, by, 0, bx, by, r);
+    g.addColorStop(0, `rgba(225,235,255,${0.05 + Math.random() * 0.06})`);
+    g.addColorStop(1, 'rgba(225,235,255,0)');
+    x.fillStyle = g;
+    x.beginPath();
+    x.arc(bx, by, r, 0, Math.PI * 2);
+    x.fill();
+  }
+  x.restore();
+  // — ESTRELLAS: 520 tenues + 90 brillantes con cruz de brillo —
+  for (let i = 0; i < 520; i++) {
+    x.globalAlpha = 0.12 + Math.random() * 0.5;
+    x.fillStyle = '#cfe2ff';
+    x.fillRect(Math.random() * W, Math.random() * H, 1.4, 1.4);
+  }
+  for (let i = 0; i < 90; i++) {
+    const sx = Math.random() * W, sy = Math.random() * H;
+    const rr = 1 + Math.random() * 1.6;
+    x.globalAlpha = 0.7;
+    x.fillStyle = '#ffffff';
+    x.beginPath();
+    x.arc(sx, sy, rr, 0, Math.PI * 2);
+    x.fill();
+    x.globalAlpha = 0.22;
+    x.fillRect(sx - rr * 3, sy - 0.5, rr * 6, 1);
+    x.fillRect(sx - 0.5, sy - rr * 3, 1, rr * 6);
+  }
+  x.globalAlpha = 1;
+}
+
+/** MOTAS AZULES: nube de puntos con base + fase propios (serpenteo en
+ *  updateArcanoFx). Brillo azul como el búho, aditivas. */
+function montaMotas(N) {
+  const base = new Float32Array(N * 3);
+  const fase = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const r = 2.2 + Math.random() * 7.5;
+    const a = Math.random() * Math.PI * 2;
+    base[i * 3] = Math.cos(a) * r;
+    base[i * 3 + 1] = 0.4 + Math.random() * 4.4;
+    base[i * 3 + 2] = Math.sin(a) * r;
+    fase[i] = Math.random() * Math.PI * 2;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(base.slice(), 3));
+  const mat = new THREE.PointsMaterial({
+    color: 0x49b6ff, size: 0.055, transparent: true, opacity: 0.85,
+    blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+  });
+  const pts = new THREE.Points(geo, mat);
+  pts.userData = { base, fase, n: N };
+  return pts;
+}
+
+/** Sprite radial genérico (cabeza de cometa, halo, destello del búho). */
+function spriteRadial(r0, c0, c1, c2) {
+  const cv = hallCanvas(64, 64);
+  const x = cv.getContext('2d');
+  const g = x.createRadialGradient(32, 32, r0, 32, 32, 31);
+  g.addColorStop(0, c0);
+  g.addColorStop(0.4, c1);
+  g.addColorStop(1, c2);
+  x.fillStyle = g;
+  x.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(cv);
+  try { t.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+  return t;
+}
+
+/** CHEVRON ‹ › de la galería: flecha azul con glow del búho (el disco
+ *  oscuro tras la flecha es el lenguaje de las flechas ‹ › del icono). */
+function drawArcanoFlecha(cv, dir) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  // disco oscuro translúcido
+  x.beginPath();
+  x.arc(W / 2, H / 2, W * 0.44, 0, Math.PI * 2);
+  x.fillStyle = 'rgba(6,14,30,0.72)';
+  x.fill();
+  x.lineWidth = W * 0.045;
+  x.strokeStyle = 'rgba(80,180,255,0.85)';
+  x.stroke();
+  // chevron con glow
+  x.strokeStyle = '#8fdcff';
+  x.lineWidth = W * 0.075;
+  x.lineCap = 'round';
+  x.lineJoin = 'round';
+  x.shadowColor = 'rgba(80,180,255,0.95)';
+  x.shadowBlur = W * 0.09;
+  const s = dir === 'L' ? -1 : 1;
+  x.beginPath();
+  x.moveTo(W / 2 + s * W * 0.13, H * 0.27);
+  x.lineTo(W / 2 - s * W * 0.13, H * 0.5);
+  x.lineTo(W / 2 + s * W * 0.13, H * 0.73);
+  x.stroke();
+  x.shadowBlur = 0;
+}
+
+/** PINTA el panel de la galería. d = {
+ *   titulo, sub, pie, idxTxt, nombre, tipoTexto, tipoCol, desc, metricas,
+ *   estadoTxt, estadoCol, icono (Image|null), bloqueado } — NUNCA se
+ *  corta: todo texto se mide y se encoge. */
+function drawArcanoPanel(cv, d) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  // — cristal azul oscuro con marco del búho —
+  const bg = x.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, 'rgba(10,24,48,0.94)');
+  bg.addColorStop(0.6, 'rgba(6,14,32,0.96)');
+  bg.addColorStop(1, 'rgba(3,8,20,0.97)');
+  x.fillStyle = bg;
+  if (x.roundRect) { x.beginPath(); x.roundRect(0, 0, W, H, 42); x.fill(); }
+  else x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(80,180,255,0.9)';
+  x.lineWidth = 5;
+  if (x.roundRect) { x.beginPath(); x.roundRect(7, 7, W - 14, H - 14, 38); x.stroke(); }
+  else x.strokeRect(7, 7, W - 14, H - 14);
+  const envuelve = (txt, fs, col, y0, maxW, maxLn, bold) => {
+    x.font = (bold ? '700 ' : '400 ') + fs + 'px system-ui, sans-serif';
+    const palabras = String(txt).split(' ');
+    const lns = [];
+    let cur = '';
+    for (const p of palabras) {
+      const pr = cur ? cur + ' ' + p : p;
+      if (x.measureText(pr).width > maxW && cur) { lns.push(cur); cur = p; }
+      else cur = pr;
+    }
+    if (cur) lns.push(cur);
+    x.fillStyle = col;
+    x.textAlign = 'left';
+    let y = y0;
+    for (let i = 0; i < Math.min(lns.length, maxLn); i++) {
+      x.fillText(lns[i], 56, y);
+      y += fs * 1.3;
+    }
+    return y;
+  };
+  // — cabecera: título del Arcano + índice —
+  x.textAlign = 'left';
+  x.fillStyle = '#8fdcff';
+  x.font = '900 46px system-ui, sans-serif';
+  x.shadowColor = 'rgba(80,180,255,0.8)';
+  x.shadowBlur = 18;
+  x.fillText(d.titulo || '', 56, 78);
+  x.shadowBlur = 0;
+  x.font = '600 27px system-ui, sans-serif';
+  x.fillStyle = '#5f88b8';
+  x.fillText(d.idxTxt || '', 56, 116);
+  x.textAlign = 'right';
+  x.font = '700 26px system-ui, sans-serif';
+  x.fillStyle = '#5f88b8';
+  x.fillText(d.sub || '', W - 56, 78);
+  // — icono del poder en su medallón —
+  const icX = 56 + 96, icY = 236, icR = 96;
+  x.beginPath();
+  x.arc(icX, icY, icR, 0, Math.PI * 2);
+  x.fillStyle = 'rgba(9,20,42,0.9)';
+  x.fill();
+  x.lineWidth = 4;
+  x.strokeStyle = 'rgba(80,180,255,0.65)';
+  x.stroke();
+  if (d.icono) {
+    const iw = d.icono.width || 64, ih = d.icono.height || 64;
+    const k = (icR * 1.28) / Math.max(iw, ih);
+    x.drawImage(d.icono, icX - (iw * k) / 2, icY - (ih * k) / 2, iw * k, ih * k);
+  } else {
+    x.fillStyle = '#3d5a80';
+    x.font = '700 60px system-ui, sans-serif';
+    x.textAlign = 'center';
+    x.fillText('?', icX, icY + 20);
+  }
+  // — candado azul translúcido sobre el icono si está bloqueado —
+  if (d.bloqueado) {
+    x.save();
+    x.globalAlpha = 0.9;
+    const lx = icX, ly = icY + 8, ls = 74;
+    x.fillStyle = 'rgba(10,26,52,0.72)';
+    x.beginPath();
+    x.roundRect ? x.roundRect(lx - ls * 0.52, ly - ls * 0.18, ls * 1.04, ls * 0.86, 12)
+      : x.rect(lx - ls * 0.52, ly - ls * 0.18, ls * 1.04, ls * 0.86);
+    x.fill();
+    x.lineWidth = 9;
+    x.strokeStyle = 'rgba(120,205,255,0.95)';
+    x.beginPath();
+    x.arc(lx, ly - ls * 0.18, ls * 0.30, Math.PI, 0);
+    x.stroke();
+    x.beginPath();
+    x.arc(lx, ly + ls * 0.16, ls * 0.075, 0, Math.PI * 2);
+    x.fillStyle = 'rgba(120,205,255,0.95)';
+    x.fill();
+    x.restore();
+  }
+  // — nombre + tipo + estado —
+  const txX = 56 + 96 + icR + 34;
+  x.textAlign = 'left';
+  let nombre = String(d.nombre || '').replace(/[¡!]/g, '').trim();
+  x.font = '900 40px system-ui, sans-serif';
+  while (x.measureText(nombre).width > W - txX - 56 && nombre.length > 8) {
+    nombre = nombre.slice(0, nombre.length - 2);
+  }
+  x.fillStyle = d.bloqueado ? '#7f9cc0' : '#eaf6ff';
+  x.fillText(nombre, txX, 190);
+  x.font = '800 27px system-ui, sans-serif';
+  x.fillStyle = d.tipoCol || '#8fdcff';
+  x.fillText('◈ ' + (d.tipoTexto || ''), txX, 232);
+  x.font = '600 24px system-ui, sans-serif';
+  x.fillStyle = d.estadoCol || '#7f9cc0';
+  x.fillText(d.estadoTxt || '', txX, 270);
+  // — descripción —
+  let y = envuelve(d.desc || '', 27.5, d.bloqueado ? '#93a9c4' : '#c7d9ee', 390, W - 112, 5);
+  // — métricas —
+  y += 14;
+  x.font = '700 25px system-ui, sans-serif';
+  x.fillStyle = '#8fdcff';
+  x.fillText('◆ ' + (d.metricasLbl || 'Métricas'), 56, y);
+  y += 38;
+  y = envuelve(d.metricas || '', 26, '#a8c4e2', y, W - 112, 2);
+  // — pie —
+  x.font = '600 23px system-ui, sans-serif';
+  x.fillStyle = '#4f76a4';
+  x.textAlign = 'center';
+  x.fillText(d.pie || '', W / 2, H - 34);
+  return y;
+}
+
+/** MONTA el espacio arcano. Devuelve el Group con userData.arcono = {
+ *  motas, cometas, buho: {mesh, glints, hover}, panel: {mesh, cv, tex},
+ *  flechaL/R: {mesh, cv, tex}, pop (0..1 materialización) } — c12 lo
+ *  añade a la escena OCULTO y lo gobierna. El anfitrión queda en el
+ *  centro: el búho flota delante, la galería debajo, el cielo alrededor. */
+function montarArcano(base) {
+  const g = new THREE.Group();
+  const vbase = (typeof base === 'string' && base) ? base : 'assets/hall/';
+  // — BÓVEDA CELESTE (esfera invertida; la Vía Láctea vive en el lienzo) —
+  const bovCv = hallCanvas(1024, 512);
+  pintaBoveda(bovCv);
+  const bovTex = new THREE.CanvasTexture(bovCv);
+  try { bovTex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+  const boveda = new THREE.Mesh(
+    new THREE.SphereGeometry(58, 40, 24),
+    new THREE.MeshBasicMaterial({ map: bovTex, side: THREE.BackSide, fog: false }),
+  );
+  g.add(boveda);
+  // — MOTAS azules que serpentean —
+  const motas = montaMotas(240);
+  g.add(motas);
+  // — COMETAS ocasionales (cabeza + halo alargado) —
+  const headTex = spriteRadial(2, 'rgba(240,250,255,0.98)', 'rgba(130,210,255,0.6)', 'rgba(60,140,255,0)');
+  const haloTex = spriteRadial(6, 'rgba(120,200,255,0.5)', 'rgba(70,150,255,0.22)', 'rgba(30,80,200,0)');
+  const cometas = [];
+  for (let i = 0; i < 3; i++) {
+    const head = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: headTex, transparent: true, opacity: 0.95,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: haloTex, transparent: true, opacity: 0.5,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    head.scale.setScalar(0.5);
+    halo.scale.set(3.4, 1.1, 1);
+    head.visible = halo.visible = false;
+    g.add(head); g.add(halo);
+    cometas.push({ head, halo, on: false, t: 0, dur: 0, p: new THREE.Vector3(), q: new THREE.Vector3(), prox: 2 + i * 4 });
+  }
+  // — EL BÚHO presente (grande, flotando delante del anfitrión) —
+  const buhoCv = hallCanvas(512, 342);
+  drawArcanoBuho(buhoCv);
+  const buhoTex = new THREE.CanvasTexture(buhoCv);
+  try { buhoTex.colorSpace = THREE.SRGBColorSpace; buhoTex.anisotropy = 4; } catch { /* */ }
+  const buhoMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.32, 0.88),
+    new THREE.MeshBasicMaterial({ map: buhoTex, transparent: true }));
+  buhoMesh.position.set(0, 2.28, -2.55);
+  g.add(buhoMesh);
+  try {
+    new THREE.TextureLoader().load(vbase + 'arcano.png', (t) => {
+      try {
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 4;
+        buhoMesh.material.map = t;
+        buhoMesh.material.needsUpdate = true;
+        buhoTex.dispose();
+      } catch { /* seguimos con el vectorial */ }
+    }, undefined, () => { /* */ });
+  } catch { /* */ }
+  const glintTex = spriteRadial(2, 'rgba(235,250,255,0.95)', 'rgba(120,210,255,0.55)', 'rgba(60,140,255,0)');
+  const buhoGlints = [];
+  for (const rel of [[0.452, 0.392], [0.557, 0.376]]) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glintTex, transparent: true, opacity: 0.35,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    sp.scale.setScalar(0.115);
+    sp.position.set((rel[0] - 0.5) * 1.32, (0.5 - rel[1]) * 0.88, 0.02);
+    buhoMesh.add(sp);
+    buhoGlints.push(sp);
+  }
+  // — LA GALERÍA: panel + dos flechas con glow —
+  const panCv = hallCanvas(1024, 700);
+  drawArcanoPanel(panCv, { titulo: '· · ·' });
+  const panTex = new THREE.CanvasTexture(panCv);
+  try { panTex.colorSpace = THREE.SRGBColorSpace; panTex.anisotropy = 4; } catch { /* */ }
+  const panMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.46, 1.0),
+    new THREE.MeshBasicMaterial({ map: panTex, transparent: true }));
+  panMesh.position.set(0, 1.32, -2.35);
+  g.add(panMesh);
+  const flechas = {};
+  for (const k of ['L', 'R']) {
+    const cv = hallCanvas(128, 128);
+    drawArcanoFlecha(cv, k);
+    const tex = new THREE.CanvasTexture(cv);
+    try { tex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.20, 0.20),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    mesh.position.set(k === 'L' ? -0.93 : 0.93, 1.32, -2.35);
+    g.add(mesh);
+    flechas[k] = { mesh, cv, tex, hover: false };
+  }
+  g.userData.arcono = {
+    motas, cometas, buho: { mesh: buhoMesh, glints: buhoGlints, hover: false },
+    panel: { mesh: panMesh, cv: panCv, tex: panTex }, flechas, pop: 1,
+  };
+  return g;
+}
+
+/** ANIMA el espacio arcano (sólo se llama con la estancia encendida):
+ *  motas que serpentean, cometas ocasionales con su halo, el búho que
+ *  flota con sus ojos encendidos y la materialización (pop) del panel. */
+function updateArcanoFx(g, dt, now) {
+  const A = g.userData && g.userData.arcono;
+  if (!A) return;
+  // — motas: serpenteo suave (posición base + dos senos por punto) —
+  const pos = A.motas.geometry.attributes.position;
+  const { base, fase, n } = A.motas.userData;
+  for (let i = 0; i < n; i++) {
+    const f = fase[i];
+    pos.array[i * 3] = base[i * 3] + Math.sin(now * 0.35 + f) * 0.55;
+    pos.array[i * 3 + 1] = base[i * 3 + 1] + Math.sin(now * 0.5 + f * 1.7) * 0.4;
+    pos.array[i * 3 + 2] = base[i * 3 + 2] + Math.cos(now * 0.28 + f * 0.9) * 0.55;
+  }
+  pos.needsUpdate = true;
+  // — cometas: cruce lejano cada tanto; el halo azul queda tras la cabeza —
+  for (const c of A.cometas) {
+    if (!c.on) {
+      c.prox -= dt;
+      if (c.prox <= 0) {
+        c.on = true;
+        c.t = 0;
+        c.dur = 5.5 + Math.random() * 3.5;
+        const lado = Math.random() < 0.5 ? -1 : 1;
+        c.p.set(lado * 30, 7 + Math.random() * 9, -22 - Math.random() * 16);
+        c.q.set(-lado * 60, -1.5 - Math.random() * 2, (Math.random() - 0.5) * 6);
+        c.head.visible = c.halo.visible = true;
+      }
+      continue;
+    }
+    c.t += dt;
+    const k = c.t / c.dur;
+    if (k >= 1) {
+      c.on = false;
+      c.prox = 4 + Math.random() * 8;
+      c.head.visible = c.halo.visible = false;
+      continue;
+    }
+    c.head.position.set(c.p.x + c.q.x * k, c.p.y + c.q.y * k, c.p.z + c.q.z * k);
+    c.halo.position.copy(c.head.position);
+    c.halo.position.x -= Math.sign(c.q.x) * 0.9;   // el halo, tras la cabeza
+    const fade = Math.sin(Math.min(1, k) * Math.PI);
+    c.head.material.opacity = 0.95 * fade;
+    c.halo.material.opacity = 0.5 * fade;
+  }
+  // — búho: flote + yaw vivo + ojos latiendo (más presente que en el hall) —
+  const B = A.buho;
+  B.mesh.position.y = 2.28 + Math.sin(now * 0.7) * 0.05;
+  B.mesh.rotation.y = Math.sin(now * 0.4) * 0.06;
+  if (B.glints.length === 2) {
+    B.glints[0].material.opacity = 0.38 + Math.sin(now * 2.4) * 0.2;
+    B.glints[1].material.opacity = 0.38 + Math.sin(now * 2.4 + 2.1) * 0.2;
+  }
+  const tgtB = B.hover ? 1.1 : 1.0;
+  const curB = B.mesh.scale.x || 1;
+  B.mesh.scale.setScalar(curB + (tgtB - curB) * Math.min(1, dt * 10));
+  // — galería: materialización (pop elástico al cambiar de poder) —
+  if (A.pop < 1) {
+    A.pop = Math.min(1, A.pop + dt * 3.2);
+    const e = 1 + Math.sin(A.pop * Math.PI) * 0.06;   // ligero overshoot
+    A.panel.mesh.scale.setScalar((0.86 + A.pop * 0.14) * e);
+  }
+  // — flechas: hover agranda, y el glow late suave —
+  for (const k of ['L', 'R']) {
+    const F = A.flechas[k];
+    const tgt = F.hover ? 1.22 : 1.0;
+    const cur = F.mesh.scale.x || 1;
+    F.mesh.scale.setScalar(cur + (tgt - cur) * Math.min(1, dt * 12));
   }
 }
 
@@ -13506,7 +14189,9 @@ class NetLink {
     // r84 · DUELOS LOCOS · GIGANTE (bit 16): el tamaño de MI pala viaja en
     // la pose — el avatar rival crece/decrece sin mensaje ni códec nuevo
     // (POSE=31 B intacto: el bit comparte el byte fl ya existente)
-    if (g._dlOn && g._dlOn('gigante')) fl |= 16;
+    // r39 · la MEGA del Arcano comparte el bit 16: el rival VE la pala
+    // grande igual que la GIGANTE de r84 (mismo transporte, gratis).
+    if (g._dlOn && (g._dlOn('gigante') || g._dlOn('mega'))) fl |= 16;
     out.fl = fl;
     return out;
   }
@@ -16954,7 +17639,8 @@ class PingPongGame {
     this._dlCargue = 0;               // golpes propios desde la última carga
     this._dlLista = false;            // carga lista esperando el gatillo
     this._dlProximo = '';             // poder que saldrá al disparar
-    this._dlId = '';                  // poder ACTIVO (''|'gigante'|'fuego'|'loca')
+    this._dlId = '';                  // poder ACTIVO (''|'gigante'|'fuego'|'loca'|<id arcano>)
+    this._dlOndaFlojoT = 0;           // r39 · onda rival: MI próxima devolución floja (s)
     this._dlT = 0;                    // s restantes del poder activo
     this._dlWarn = false;             // aviso «se agota» ya disparado
     this._dlRemotoT = 0;              // aviso del poder del rival (solo UX)
@@ -17486,6 +18172,29 @@ class PingPongGame {
     this.hallGroup.visible = false;
     this.scene.add(this.hallGroup);
     this.inHall = false;
+    // r39 (v3.6.135) · EL ESPACIO ARCANO: la estancia infinita del búho
+    // (bóveda con Vía Láctea, motas azules, cometas y la galería de
+    // superpoderes). Nace OCULTO junto al hall; enterArcano lo enciende
+    // tras el fundido a negro y exitArcano devuelve el salón.
+    this.arcaneGroup = montarArcano('assets/hall/');
+    this.arcaneGroup.visible = false;
+    this.scene.add(this.arcaneGroup);
+    this._arconoOn = false;      // dentro del espacio arcano (el hall sigue «abierto»)
+    this._arconoIdx = 0;         // superpoder mostrado (índice AUTOMÁTICO del registro)
+    this._arconoIconos = {};     // Image por id (caché de los PNG embebidos)
+    this._arconoFade = 0;        // 0 transparente · 1 negro total
+    this._arconoFadeDir = 0;     // +1 cerrando · −1 abriendo · 0 quieto
+    this._arconoFadeCb = null;   // el canje de estancias corre EN NEGRO
+    this._arconoNegro = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.6, 1.6),
+      new THREE.MeshBasicMaterial({
+        color: 0x000000, transparent: true, opacity: 0,
+        depthTest: false, depthWrite: false,
+      }),
+    );
+    this._arconoNegro.renderOrder = 99999;
+    this._arconoNegro.visible = false;
+    this.rig.add(this._arconoNegro);
     // v2.30: FUERA el mini-indicador "♪ audio" bajo el marcador — era un
     // estímulo de depuración que desconcentraba al jugador (el diagnóstico
     // del audio sigue disponible vía consola/tereados, no en el campo visual).
@@ -21202,6 +21911,12 @@ class PingPongGame {
         if (udM && udM.musica) {
           udM.musica.hover = !!(this.connected[h] && this._hallMusicaRay(h));
         }
+        // r39 · hover del BÚHO del Arcano (salón) y de búho/flechas
+        // (espacio): mismo lenguaje del rayo que el icono de la música.
+        if (udM && udM.arcono) {
+          udM.arcono.hover = !!(this.connected[h] && this._arconoRayHall(h));
+        }
+        if (this._arconoOn) this._arconoHover(h);
       }
     }
     // r105 · RENDIMIENTO: el repintado por HOVER va THROTTLED (90 ms ≈ 11 Hz).
@@ -23063,6 +23778,261 @@ class PingPongGame {
     return true;
   }
 
+  /* ======================================================================
+   *  r39 (v3.6.135) · EL APARTADO ARCANO — petición del dueño: el hall
+   *  estrena un icono con forma de búho (Arcano.png) que emite un ligero
+   *  destello por sus dos ojos; al pulsarlo la pantalla vira a NEGRO y
+   *  aparecemos en un ESCENARIO INFINITO con motas azules que serpentean,
+   *  cometas ocasionales con halo azul y una gran bóveda celeste oscura
+   *  donde se intuye la VÍA LÁCTEA. Allí, uno a uno, SE MATERIALIZAN los
+   *  superpoderes de pala cargados AUTOMÁTICAMENTE del registro
+   *  PODERES_PALA (un poder nuevo hereda la galería solo), con su
+   *  descripción, su tipo (ataque/defensa/distracción) y las métricas del
+   *  juego que altera. Flechas ‹ › con la estética azul y glow del búho
+   *  (sin flecha izquierda en el 0, sin flecha derecha en el último —
+   *  índice detectado del registro, como manda la casa). Todo poder lleva
+   *  un CANDADO azul translúcido hasta desbloquearse: cada campeonato
+   *  COMPLETO ganado (la coronación) libera uno AL AZAR que aún no esté
+   *  (nunca repetido), junto a la copa y la insignia de siempre. Los
+   *  desbloqueados se JUEGAN en la modalidad multijugador DUELOS LOCOS.
+   *  El búho sigue presente en el espacio: pulsarlo devuelve al hall con
+   *  el mismo desvanecimiento. Física c04/c05 INTACTA: la estancia es un
+   *  museo más (el hall no juega).
+   *  ==================================================================== */
+
+  /** Los superpoderes DESBLOQUEADOS del dueño (persistente, saneado contra
+   *  el registro — un id desconocido jamás sale). Todos nacen con candado. */
+  poderesDesbloqueados() {
+    try {
+      const raw = JSON.parse(localStorage.getItem('pp_poderes_v1') || '[]');
+      const ok = PODERES_PALA.map((p) => p.id);
+      return (Array.isArray(raw) ? raw : [])
+        .filter((s) => typeof s === 'string' && ok.indexOf(s) >= 0);
+    } catch { return []; }
+  }
+
+  /** CORONACIÓN de un campeonato (duelo final ganado): libera UN superpoder
+   *  AL AZAR que aún esté con candado — el azar COMPRUEBA que no esté ya
+   *  desbloqueado para no repetirlo (spec literal del dueño). Devuelve el
+   *  id liberado o '' si ya se revelaron todos. */
+  _arconoCampeonGanado() {
+    const tengo = this.poderesDesbloqueados();
+    const faltan = PODERES_PALA.map((p) => p.id)
+      .filter((id) => tengo.indexOf(id) < 0);
+    if (!faltan.length) return '';
+    const id = faltan[(Math.random() * faltan.length) | 0];
+    tengo.push(id);
+    try {
+      localStorage.setItem('pp_poderes_v1', JSON.stringify(tengo));
+    } catch { /* la sesión lo lleva en memoria */ }
+    return id;
+  }
+
+  /** Image (caché) del icono embebido de un poder, para el panel. */
+  _arconoIconoImg(id) {
+    if (this._arconoIconos[id]) return this._arconoIconos[id];
+    const p = PODERES_PALA.find((x) => x.id === id);
+    if (!p || !p.png) return null;
+    try {
+      const img = new Image();
+      img.src = p.png;
+      this._arconoIconos[id] = img;
+      return img;
+    } catch { return null; }
+  }
+
+  /** Tipo del poder para la ficha (ataque/defensa/distracción) + color.
+   *  El mapa vive junto al registro PODERES_PALA (fin del módulo). */
+  _arconoTipoDe(id) {
+    const t = ARCONO_TIPOS[id] || ['arcono_tipo_defensa', '#7fe08f'];
+    return t;
+  }
+
+  /** REPIINTA el panel de la galería con el poder del índice vivo. */
+  _arconoRepinta() {
+    if (!this.arcaneGroup) return;
+    const A = this.arcaneGroup.userData && this.arcaneGroup.userData.arcono;
+    if (!A) return;
+    const n = PODERES_PALA.length;
+    if (this._arconoIdx >= n) this._arconoIdx = n - 1;
+    if (this._arconoIdx < 0) this._arconoIdx = 0;
+    const p = PODERES_PALA[this._arconoIdx];
+    const des = this.poderesDesbloqueados();
+    const bloqueado = des.indexOf(p.id) < 0;
+    const tipo = this._arconoTipoDe(p.id);
+    drawArcanoPanel(A.panel.cv, {
+      titulo: T('arcono_titulo'),
+      sub: T('arcono_sub'),
+      pie: T('arcono_pie'),
+      idxTxt: T('arcono_indice', { i: this._arconoIdx + 1, n }),
+      nombre: p.nombre(),
+      tipoTexto: T(tipo[0]),
+      tipoCol: tipo[1],
+      desc: T('arc_desc_' + p.id),
+      metricas: T('arc_met_' + p.id),
+      metricasLbl: T('arcono_metricas'),
+      estadoTxt: bloqueado ? T('arcono_candado') : T('arcono_desbloq'),
+      estadoCol: bloqueado ? '#8fb6e0' : '#7fe08f',
+      icono: this._arconoIconoImg(p.id),
+      bloqueado,
+    });
+    A.panel.tex.needsUpdate = true;
+    // flechas: SIN flecha izquierda en el 0, SIN flecha derecha en el
+    // último — bordes detectados del registro (automático al crecer)
+    if (A.flechas.L) A.flechas.L.mesh.visible = this._arconoIdx > 0;
+    if (A.flechas.R) A.flechas.R.mesh.visible = this._arconoIdx < n - 1;
+    A.pop = 0;   // materialización del poder entrante
+  }
+
+  /** ¿el mando i apunta a ESTE mesh? (rayo targetRay → Raycaster propio,
+   *  mismo patrón del icono de la música — no pisa el far del menú). */
+  _arconoRayMesh(i, mesh) {
+    if (!mesh || !mesh.visible) return false;
+    const ray = this.rays && this.rays[i];
+    if (!ray) return false;
+    if (!this._musRay) this._musRay = new THREE.Raycaster();
+    ray.getWorldPosition(muGrip);
+    ray.getWorldQuaternion(muQ);
+    muDir.set(0, 0, -1).applyQuaternion(muQ);
+    this._musRay.far = 12;
+    this._musRay.set(muGrip, muDir);
+    return !!this._musRay.intersectObject(mesh, false)[0];
+  }
+
+  /** HOVER por frame (laser loop): el búho y las flechas respiran con el
+   *  rayo, igual que el icono de la música en el salón. */
+  _arconoHover(i) {
+    if (!this.arcaneGroup) return;
+    const A = this.arcaneGroup.userData && this.arcaneGroup.userData.arcono;
+    if (!A) return;
+    A.buho.hover = this._arconoRayMesh(i, A.buho.mesh);
+    if (A.flechas.L) A.flechas.L.hover = this._arconoRayMesh(i, A.flechas.L.mesh);
+    if (A.flechas.R) A.flechas.R.hover = this._arconoRayMesh(i, A.flechas.R.mesh);
+  }
+
+  /** GATILLO DENTRO del espacio arcano: flechas navegan la galería y el
+   *  búho devuelve al salón. Devuelve true si consumió el clic. */
+  _arconoClic(i) {
+    if (!this._arconoOn || !this.arcaneGroup) return false;
+    const A = this.arcaneGroup.userData && this.arcaneGroup.userData.arcono;
+    if (!A) return false;
+    if (A.flechas.R && A.flechas.R.mesh.visible &&
+        this._arconoRayMesh(i, A.flechas.R.mesh)) {
+      this._arconoIdx = Math.min(PODERES_PALA.length - 1, this._arconoIdx + 1);
+      this._arconoRepinta();
+      this.audio.playOsc(620, 880, 0.08, 'sine', 0.1, 0);
+      return true;
+    }
+    if (A.flechas.L && A.flechas.L.mesh.visible &&
+        this._arconoRayMesh(i, A.flechas.L.mesh)) {
+      this._arconoIdx = Math.max(0, this._arconoIdx - 1);
+      this._arconoRepinta();
+      this.audio.playOsc(620, 430, 0.08, 'sine', 0.1, 0);
+      return true;
+    }
+    if (this._arconoRayMesh(i, A.buho.mesh)) {
+      this._arconoSalir();
+      return true;
+    }
+    return false;
+  }
+
+  /** FUNDIDO genérico a negro: sube la cortina (0,38 s), ejecuta el canje
+   *  de estancias EN NEGRO y baja (0,55 s). Sólo una a la vez. */
+  _arconoFundir(cb) {
+    if (this._arconoFadeDir !== 0) return;
+    this._arconoFadeCb = cb || null;
+    this._arconoFadeDir = 1;
+    this._arconoNegro.visible = true;
+    this.audio.playOsc(880, 220, 0.4, 'sine', 0.08, 0);
+  }
+
+  /** Tick del fundido + seguimiento de la cortina a la cabeza (en VR la
+   *  placa negra viaja delante del ojo; en escritorio, fija al rig). */
+  _arconoUpdate(dt) {
+    if (this._arconoFadeDir !== 0) {
+      const vel = this._arconoFadeDir > 0 ? 2.6 : 1.8;
+      this._arconoFade += this._arconoFadeDir * dt * vel;
+      if (this._arconoFade >= 1) {
+        this._arconoFade = 1;
+        this._arconoFadeDir = -1;
+        try { if (this._arconoFadeCb) this._arconoFadeCb(); } catch (eF1) { /* */ }
+        this._arconoFadeCb = null;
+      } else if (this._arconoFade <= 0) {
+        this._arconoFade = 0;
+        this._arconoFadeDir = 0;
+        this._arconoNegro.visible = false;
+      }
+      const m = this._arconoNegro.material;
+      if (m) m.opacity = this._arconoFade;
+    }
+    if (this._arconoNegro.visible) {
+      let presenting = false;
+      try { presenting = !!(this.renderer.xr && this.renderer.xr.isPresenting); } catch { /* */ }
+      if (presenting) {
+        const cam = this.renderer.xr.getCamera();
+        this._arconoNegro.position.setFromMatrixPosition(cam.matrixWorld);
+        this._arconoNegro.quaternion.copy(cam.quaternion);
+        this._arconoNegro.translateZ(-0.42);
+      } else {
+        this._arconoNegro.position.set(0, 1.6, -0.42);
+        this._arconoNegro.quaternion.identity();
+      }
+    }
+    // el panel del salón duerme dentro del Arcano (algo pudo re-enseñarlo)
+    if (this._arconoOn && this.menuGroup && this.menuGroup.visible) {
+      this.menuGroup.visible = false;
+    }
+  }
+
+  /** ENTRAR al espacio arcano: fundido a negro, canje hall→arcano en la
+   *  sombra, desvanecimiento de vuelta. El menú del hall duerme dentro. */
+  _arconoEntrar() {
+    if (this._arconoOn || !this.inHall || !this.arcaneGroup) return;
+    this._arconoFundir(() => {
+      this._arconoOn = true;
+      this._arconoIdx = 0;
+      if (this.hallGroup) this.hallGroup.visible = false;
+      if (this.menuGroup) this.menuGroup.visible = false;
+      this.arcaneGroup.visible = true;
+      this._arconoRepinta();
+      try { this.audio.announce(T('arcono_hint'), true); } catch (eA1) { /* */ }
+    });
+    this.rules.message = T('arcono_hint');
+  }
+
+  /** SALIR: el búho del espacio devuelve al salón con el desvanecimiento
+   *  (el hall reaparece tal cual quedó — arte, música e insignias). */
+  _arconoSalir() {
+    if (!this._arconoOn || !this.arcaneGroup) return;
+    this._arconoFundir(() => {
+      this._arconoOn = false;
+      this.arcaneGroup.visible = false;
+      if (this.hallGroup) this.hallGroup.visible = true;
+      if (this.menuGroup && this.menuOpen) this.menuGroup.visible = true;
+      this.rules.message = T('arcono_salir');
+      try { this.audio.playOsc(440, 660, 0.12, 'sine', 0.1, 0); } catch (eA2) { /* */ }
+    });
+  }
+
+  /** ¿el mando i apunta al BÚHO del salón? (raycast de la placa). */
+  _arconoRayHall(i) {
+    if (!this.inHall || this._arconoOn || !this.hallGroup ||
+        !this.hallGroup.visible) return false;
+    const ud = this.hallGroup.userData && this.hallGroup.userData.hall;
+    if (!ud || !ud.arcono || !ud.arcono.mesh) return false;
+    return this._arconoRayMesh(i, ud.arcono.mesh);
+  }
+
+  /** GATILLO en el salón sobre el búho: abre el apartado arcano.
+   *  Devuelve true si el rayo lo impactó (el llamador consume el clic). */
+  _arconoPulsa(i) {
+    if (!this._arconoRayHall(i)) return false;
+    this._arconoEntrar();
+    return true;
+  }
+
+
   /** r23 · skin EFECTIVA de la bola para RESTAURACIONES (hall/cancha):
    *  online el invitado vuelve SIEMPRE a la del anfitrión (_peerSkinId,
    *  r22), nunca a la propia — sin tocar la regla del campeonato. */
@@ -23595,6 +24565,15 @@ class PingPongGame {
     if (nowSel - (this._lastSelect[i] || 0) < 0.07) return;
     this._lastSelect[i] = nowSel;
 
+    // r39 · EL ESPACIO ARCANO manda PRIMERO: con la estancia infinita
+    // abierta el gatillo sólo vive en el búho (volver al salón) y en las
+    // flechas ‹ › de la galería — el panel del salón está dormido y ni
+    // saques ni pistolas alcanzan este vacío (el museo no juega).
+    if (this._arconoOn) {
+      this._arconoClic(i);
+      return;
+    }
+
     // r74 · MENÚ PRIORITARIO AHORA SÍ SOBRE TODO: la comprobación del menú
     // sube POR ENCIMA del cartel explicativo (antes el bloque `_instr` iba
     // primero y se comía el gatillo: sobre el cartel de las etapas del
@@ -23612,6 +24591,7 @@ class PingPongGame {
       // r32 · ICONO DE LA MÚSICA del salón: con el menú abierto manda el
       // panel — la placa sólo recibe el gatillo si el rayo NO cayó en
       // ningún botón ni en la chincheta (hov < 0).
+      else if (this.inHall && this._arconoPulsa(i)) { /* el Arcano abre */ }
       else if (this.inHall && this._hallMusicaPulsa(i)) { /* conmutada */ }
       // r98 · AGARRE DE LA MESA: gatillo con el rayo sobre la mesa (página
       // MESA) — la altura sigue a la altura del mando 1:1 hasta soltar.
@@ -23669,6 +24649,9 @@ class PingPongGame {
     // r32 · …y en el ICONO DE LA MÚSICA de la pared frontal: apuntar +
     // gatillo conmuta el silencio de la pista ambiental del salón.
     if (this.inHall) {
+      // r39 · el BÚHO del Arcano manda primero (pared del fondo); sin él,
+      // la placa de la música como siempre.
+      if (this._arconoPulsa(i)) return;
       this._hallMusicaPulsa(i);
       return;
     }
@@ -28645,14 +29628,17 @@ class PingPongGame {
     this._dlWarn = false;
     this._dlRemotoT = 0;
   }
-  /** un golpe propio (saque o rally) cuenta para la carga: cada 5, poder */
+  /** un golpe propio (saque o rally) cuenta para la carga: cada 5, poder.
+   *  r39 · el surto crece con LOS DESBLOQUEADOS DEL ARCANO: gigante/fuego/
+   *  loca (los tres NETCODE-SAFE de r84) + los superpoderes revelados en
+   *  el apartado arcano, cada uno con SU forma online segura. */
   _dlChargeHit() {
     if (!this._dlEnabled() || this._dlLista) return;
     this._dlCargue++;
     if (this._dlCargue < 5) return;
     this._dlCargue = 0;
     this._dlLista = true;
-    const ids = ['gigante', 'fuego', 'loca'];
+    const ids = DL_SURTIDO(this);
     this._dlProximo = ids[(Math.random() * ids.length) | 0];
     try {
       this.audio.playOsc(523, 659, 0.09, 'triangle', 0.12, 0);
@@ -28663,31 +29649,114 @@ class PingPongGame {
     } catch (eDLc) { /* nunca rompe el golpe */ }
     this.rules.message = T('dl_poder_listo');
   }
-  /** gatillo: libera el poder cargado (true = consumido) */
+
+  /** gatillo: libera el poder cargado (true = consumido). r39 · los ids
+   *  del Arcano ARMAN su ventana de campeonato (los triggers con un ent
+   *  sintético — cero consumo de matriz) y viajan por el cable fiable
+   *  'pow' con SU nombre corto. */
   _dlTrigger(i) {
     if (!this._dlEnabled() || !this._dlLista) return false;
     const id = this._dlProximo || 'gigante';
     this._dlLista = false;
     this._dlProximo = '';
     this._dlId = id;
-    this._dlT = id === 'gigante' ? 12 : 10;
+    this._dlT = DL_DUR[id] || (id === 'gigante' ? 12 : 10);
     this._dlWarn = false;
     try {
-      this.net.sendDueloPower(id);       // aviso UX al rival ('pow')
+      this._dlArma(id);
+      this.net.sendDueloPower(id);       // aviso fiable al rival ('pow')
       const nombre = T('dl_' + id);
       this.rules.message = nombre;
       this.audio.announce(nombre, true);
       this.haptic(i, 0.6, 120);
-      if (id === 'gigante') this.audio.playOsc(220, 440, 0.16, 'square', 0.1, 0);
-      else if (id === 'fuego') this.audio.playOsc(340, 760, 0.14, 'sawtooth', 0.1, 0);
+      if (id === 'gigante' || id === 'mega') this.audio.playOsc(220, 440, 0.16, 'square', 0.1, 0);
+      else if (id === 'fuego' || id === 'fenix') this.audio.playOsc(340, 760, 0.14, 'sawtooth', 0.1, 0);
       else this.audio.playOsc(760, 340, 0.14, 'sine', 0.1, 0);
     } catch (eDLt) { /* el efecto local ya está armado */ }
     return true;
   }
-  /** el rival disparó un poder (cable fiable): SOLO aviso local */
+
+  /** r39 · ARMA la ventana de campeonato de un poder del Arcano DENTRO de
+   *  Duelos Locos: el trigger de la casa con un ent SINTÉTICO (n:1) —
+   *  _megaGasta lo consume sin tocar nada más (indexOf de un ent ajeno =
+   *  −1) y toda la maquinaria de la ventana (FX, tintes, voces, marcas)
+   *  nace idéntica a la del campeonato. */
+  _dlArma(id) {
+    try {
+      const fn = {
+        efecto: '_efectoTrigger', iman: '_imanTrigger', portal: '_portalTrigger',
+        clon: '_clonTrigger', red: '_redTrigger', elec: '_elecTrigger',
+        fenix: '_fenixTrigger', crono: '_cronoTrigger', oscuridad: '_oscuridadTrigger',
+        prisma: '_prismaTrigger', onda: '_ondaTrigger', salva: '_salvaTrigger',
+        ancla: '_anclaTrigger',
+      }[id];
+      if (!fn || typeof this[fn] !== 'function') return;
+      const ent = { id, n: 1 };
+      this._megaMatriz.push(ent);
+      const ok = this[fn](ent);
+      if (!ok && ent.n > 0) {          // rechazado sin consumir: retiro el ent
+        const ix = this._megaMatriz.indexOf(ent);
+        if (ix >= 0) this._megaMatriz.splice(ix, 1);
+      }
+    } catch { /* el armado nunca rompe el duelos */ }
+  }
+
+  /** r39 · ¿la ventana `id` está armada POR DUELOS LOCOS (local o del
+   *  rival)? — abre el tick de las ventanas de campeonato (updateMega las
+   *  gobierna bajo `on`, que en duelos es false). */
+  _dlVentana(id) {
+    return this._dlEnabled() && this._dlT > 0 && this._dlId === id;
+  }
+
+  /** r39 · recoge TODAS las ventanas de campeonato armadas por duelos
+   *  (fin de partida, vuelta al salón…): cada una con SU fin natural
+   *  (red exacta, rapidez restaurada, marcas limpias). */
+  _dlVentanasApaga() {
+    const pares = [['_efectoT', '_efectoFin'], ['_imanT', '_imanFin'],
+      ['_portalT', '_portalFin'], ['_clonT', '_clonFin'], ['_redT', '_redFin'],
+      ['_elecT', '_elecFin'], ['_fenixT', '_fenixFin'], ['_cronoT', '_cronoFin'],
+      ['_oscuridadT', '_oscuridadFin'], ['_prismaT', '_prismaFin'],
+      ['_ondaT', '_ondaFin'], ['_salvaT', '_salvaFin'], ['_anclaT', '_anclaFin']];
+    for (const [reloj, fin] of pares) {
+      if (this[reloj] > 0) {
+        this[reloj] = 0;
+        try { if (this[fin]) this[fin](); } catch { /* */ }
+      }
+    }
+  }
+
+  /** el rival disparó un poder (cable fiable): r84 aviso UX; r39 · los
+   *  ids del Arcano APLICAN SU FORMA DE RECEPTOR — la mitad de efectos
+   *  vive en MI cliente (la niebla sobre MI golpeo, la red alta y el
+   *  ritmo lento compartidos, la onda que flojea MI próxima devolución).
+   *  El ANCLA propia los ESTRELLA a todos (bloqueo, mensaje y blip). */
   onRemoteDueloPower(id) {
     if (!this._dlEnabled()) return;
-    if (id !== 'gigante' && id !== 'fuego' && id !== 'loca') return;
+    const base = DL_BASE.indexOf(id) >= 0;
+    const arcano = !base && PODERES_PALA.some((p) => p.id === id);
+    if (!base && !arcano) return;   // desconocido: build viejo ignora igual
+    if (arcano) {
+      // r39 · EL ANCLA PROPIA BLOQUEA el poder entrante (spec del dueño:
+      // «sus poderes se estrellan contra ti con efecto visual de bloqueo»)
+      if (this._dlOn('ancla')) {
+        try {
+          this.rules.message = T('ancla_bloqueo');
+          this.audio.announce(T('ancla_bloqueo'), true);
+          this.audio.playOsc(180, 90, 0.16, 'square', 0.1, 0);
+          this._anclaFlashT = 0.6;
+        } catch (eAn2) { /* */ }
+        return;
+      }
+      // r39 · FORMAS DE RECEPTOR: lo que vive en mi mitad se arma AQUÍ
+      if (id === 'red' || id === 'crono' || id === 'oscuridad') {
+        this._dlId = id;               // mi reloj de duelos lleva la ventana…
+        this._dlT = DL_DUR[id] || 10;
+        this._dlWarn = false;
+        this._dlArma(id);              // …y el trigger de la casa arma TODO
+      } else if (id === 'onda') {
+        this._dlOndaFlojoT = ONDA_FLOJO_T + 0.4;   // mi próxima devolución, floja
+      }
+    }
     this._dlRemotoT = 12;
     try {
       this.rules.message = T('dl_' + id) + ' · ' + T('dl_rival');
@@ -28701,8 +29770,13 @@ class PingPongGame {
     if (!this._dlEnabled()) {
       if (this._dlT > 0) { this._dlT = 0; this._dlId = ''; }
       this._dlLista = false;
+      // r39 · al morir duelos, las ventanas del Arcano armadas se recogen
+      // con SU fin natural (red exacta, rapidez restaurada, marcas limpias)
+      try { this._dlVentanasApaga(); } catch (eVA) { /* */ }
+      this._dlOndaFlojoT = 0;
       return;
     }
+    if (this._dlOndaFlojoT > 0) this._dlOndaFlojoT -= dt;
     if (this._dlRemotoT > 0) this._dlRemotoT -= dt;
     if (this._dlT > 0) {
       this._dlT -= dt;
@@ -28723,9 +29797,10 @@ class PingPongGame {
     if (this._poderesEnPrueba()) {
       this._poderesCortina();
     }
-    // r84 · DUELOS LOCOS · GIGANTE: mismo radio de golpeo y misma escala
-    // que la MEGA de campeonatos, gobernado por el estado duelos (§DUELOS)
-    const dlGig = this._dlOn('gigante');
+    // r84 · DUELOS LOCOS · GIGANTE / r39 · MEGA del Arcano: mismo radio de
+    // golpeo y misma escala que la MEGA de campeonatos, gobernados por el
+    // estado duelos (§DUELOS) — la MEGA del Arcano vive 15 s en duelos.
+    const dlGig = this._dlOn('gigante') || this._dlOn('mega');
     // v3.6.38 · PRECALIENTE: UNA pieza del arsenal por frame (solo con
     // cargas vivas — mientras duerme, coste cero). El gatillo nunca crea.
     if (on && this._megaPrewarmQ && this._megaPrewarmQ.length) {
@@ -28770,7 +29845,7 @@ class PingPongGame {
     }
     // v3.6.36 · SÚPER EFECTO ACTIVO: ventana PROPIA de 10 s (r56: regla
     // del dueño — «sólo está activo 10 segundos desde la activación»).
-    if (on && this._efectoT > 0) {
+    if ((on || this._dlVentana('efecto')) && this._efectoT > 0) {
       this._efectoT -= dt;
       if (this._efectoT <= 0) {
         this._efectoFin();               // fin natural (tiempo agotado)
@@ -28788,7 +29863,7 @@ class PingPongGame {
     // v3.6.49 (r57) · SÚPER IMÁN ACTIVO: ventana PROPIA de 10 s (regla
     // del dueño; la GUÍA vive en el golpe, c05; aquí solo el reloj y la
     // cuenta sonora — sin vigilantes de cargas desde la r57).
-    if (on && this._imanT > 0) {
+    if ((on || this._dlVentana('iman')) && this._imanT > 0) {
       this._imanT -= dt;
       if (this._imanT <= 0) {
         this._imanFin();                 // fin natural (10 s agotados)
@@ -28813,7 +29888,7 @@ class PingPongGame {
     // v3.6.43: el vigilante «sin cargas → portal fuera» se RETIRA — la
     // ventana tiene SUS 3 golpes garantizados y ya no depende de la matriz.
     if (this._portalCd > 0) this._portalCd -= dt;    // antirrebote SIEMPRE
-    if (on && this._portalT > 0) {
+    if ((on || this._dlVentana('portal')) && this._portalT > 0) {
       this._portalT -= dt;
       if (this._portalT <= 0) {
         this._portalFin();               // fin natural (8 s agotados)
@@ -28828,7 +29903,7 @@ class PingPongGame {
         this._poderTickBlip(3);
       }
     }
-    if (on && this._clonT > 0) {
+    if ((on || this._dlVentana('clon')) && this._clonT > 0) {
       this._clonT -= dt;
       if (this._clonT <= 0) {
         this._clonFin();                 // fin natural (10 s agotados)
@@ -28847,7 +29922,7 @@ class PingPongGame {
     // acabar la red vuelve EXACTA a su altura reglamentaria. Sin «on»
     // (salir del campeonato, prueba) la red se recoge YA: un entorno
     // mutado no puede sobrevivir a su contexto.
-    if (on && this._redT > 0) {
+    if ((on || this._dlVentana('red')) && this._redT > 0) {
       this._redT -= dt;
       if (this._redT <= 0) {
         this._redFin();                  // fin natural (10 s agotados)
@@ -28861,7 +29936,7 @@ class PingPongGame {
         this._redTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._redT > 0) {
+    } else if (this._redT > 0 && !this._dlVentana('red')) {
       this._redT = 0;
       try { this._redFin(); } catch (eRF) { /* */ }
     }
@@ -28873,7 +29948,7 @@ class PingPongGame {
     }
     // r25 (v3.6.120) · SÚPER ELECTRICIDAD ACTIVA: tormenta viva (niebla densa,
     // rayos, truenos, noche, destello y colisión) durante SU ventana.
-    if (on && this._elecT > 0) {
+    if ((on || this._dlVentana('elec')) && this._elecT > 0) {
       this._elecT -= dt;
       if (this._elecT <= 0) {
         this._elecFin();                 // fin natural (10 s agotados)
@@ -28887,7 +29962,7 @@ class PingPongGame {
         this._elecTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._elecT > 0) {
+    } else if (this._elecT > 0 && !this._dlVentana('elec')) {
       this._elecT = 0;
       try { this._elecFin(); } catch (eEF2) { /* */ }
     }
@@ -28899,7 +29974,7 @@ class PingPongGame {
     // r26b (v3.6.122) · LOS 3 PODERES NUEVOS viven SUS 10 s (patrón
     // red/elec: reloj único por ventana, blips 3·2·1 y apagado garantizado
     // si el entorno «on» desaparece).
-    if (on && this._fenixT > 0) {
+    if ((on || this._dlVentana('fenix')) && this._fenixT > 0) {
       this._fenixT -= dt;
       if (this._fenixT <= 0) {
         this._fenixFin();
@@ -28913,7 +29988,7 @@ class PingPongGame {
         this._fenixTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._fenixT > 0) {
+    } else if (this._fenixT > 0 && !this._dlVentana('fenix')) {
       this._fenixT = 0;
       try { this._fenixFin(); } catch (eFF) { /* */ }
     }
@@ -28922,7 +29997,7 @@ class PingPongGame {
     } else if (this._fenixFxOn) {
       this._fenixFxVis(false);
     }
-    if (on && this._cronoT > 0) {
+    if ((on || this._dlVentana('crono')) && this._cronoT > 0) {
       this._cronoT -= dt;
       if (this._cronoT <= 0) {
         this._cronoFin();              // fin natural: rapidez RESTAURADA
@@ -28936,7 +30011,7 @@ class PingPongGame {
         this._cronoTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._cronoT > 0) {
+    } else if (this._cronoT > 0 && !this._dlVentana('crono')) {
       this._cronoT = 0;
       try { this._cronoFin(); } catch (eCF2) { /* */ }
     }
@@ -28945,7 +30020,7 @@ class PingPongGame {
     } else if (this._cronoFxOn) {
       this._cronoFxVis(false);
     }
-    if (on && this._oscuridadT > 0) {
+    if ((on || this._dlVentana('oscuridad')) && this._oscuridadT > 0) {
       this._oscuridadT -= dt;
       if (this._oscuridadT <= 0) {
         this._oscuridadFin();
@@ -28959,7 +30034,7 @@ class PingPongGame {
         this._oscuridadTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._oscuridadT > 0) {
+    } else if (this._oscuridadT > 0 && !this._dlVentana('oscuridad')) {
       this._oscuridadT = 0;
       try { this._oscuridadFin(); } catch (eOF) { /* */ }
     }
@@ -28970,7 +30045,7 @@ class PingPongGame {
     }
     // r33 (v3.6.129) · ventanas de los 4 poderes nuevos (reloj único de la
     // casa: blips 3·2·1, refresco honesto y fin natural exacto).
-    if (on && this._prismaT > 0) {
+    if ((on || this._dlVentana('prisma')) && this._prismaT > 0) {
       this._prismaT -= dt;
       if (this._prismaT <= 0) {
         this._prismaFin();
@@ -28984,14 +30059,14 @@ class PingPongGame {
         this._prismaTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._prismaT > 0) {
+    } else if (this._prismaT > 0 && !this._dlVentana('prisma')) {
       this._prismaT = 0;
       try { this._prismaFin(); } catch (ePF33) { /* */ }
     }
     if (this._prismaT > 0 || this._prismaGuiaT > 0) {
       try { this._prismaFrame(dt); } catch (ePF2) { /* el arcoíris nunca tumba el frame */ }
     }
-    if (on && this._ondaT > 0) {
+    if ((on || this._dlVentana('onda')) && this._ondaT > 0) {
       this._ondaT -= dt;
       if (this._ondaT <= 0) {
         this._ondaFin();
@@ -29005,7 +30080,7 @@ class PingPongGame {
         this._ondaTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._ondaT > 0) {
+    } else if (this._ondaT > 0 && !this._dlVentana('onda')) {
       this._ondaT = 0;
       try { this._ondaFin(); } catch (eOF33) { /* */ }
     }
@@ -29014,7 +30089,7 @@ class PingPongGame {
     } else if (this._ondaFxOn) {
       this._ondaFxVis(false);
     }
-    if (on && this._salvaT > 0) {
+    if ((on || this._dlVentana('salva')) && this._salvaT > 0) {
       this._salvaT -= dt;
       if (this._salvaT <= 0) {
         this._salvaFin();
@@ -29028,7 +30103,7 @@ class PingPongGame {
         this._salvaTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._salvaT > 0) {
+    } else if (this._salvaT > 0 && !this._dlVentana('salva')) {
       this._salvaT = 0;
       try { this._salvaFin(); } catch (eSF33) { /* */ }
     }
@@ -29037,7 +30112,7 @@ class PingPongGame {
     } else if (this._salvaFx && this._salvaFx.ghost) {
       this._salvaGhostVis(false);
     }
-    if (on && this._anclaT > 0) {
+    if ((on || this._dlVentana('ancla')) && this._anclaT > 0) {
       this._anclaT -= dt;
       if (this._anclaT <= 0) {
         this._anclaFin();
@@ -29051,7 +30126,7 @@ class PingPongGame {
         this._anclaTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._anclaT > 0) {
+    } else if (this._anclaT > 0 && !this._dlVentana('ancla')) {
       this._anclaT = 0;
       try { this._anclaFin(); } catch (eAF33) { /* */ }
     }
@@ -29110,12 +30185,12 @@ class PingPongGame {
     // tope de seguridad en c05. Apagado → multiplicador 1 (pala honesta).
     // r84 · DUELOS LOCOS · LOCA: el MISMO canal de spin (×2, no ×3) con la
     // ventana del poder duelos — curva real que viaja en el HIT/HANDOFF.
-    const emul = (on && this._efectoT > 0) ? EFECTO_SPIN_MUL
+    const emul = (on || this._dlVentana('efecto')) && this._efectoT > 0 ? EFECTO_SPIN_MUL
       : (this._dlOn('loca') ? 2 : 1);
     // v3.6.49 (r57) · el SÚPER IMÁN REESCRITO viaja TAMBIÉN EN LA PALA
     // (ppImanAim lo lee collidePaddleSweep en el golpe): guía de tiro que
     // asegura mesa rival. Sin ventana → false (golpes 100 % normales).
-    const imanAim = !!(on && this._imanT > 0);
+    const imanAim = !!((on || this._dlVentana('iman')) && this._imanT > 0);
     if (this.controllerPaddles) {
       for (const ps of this.controllerPaddles) {
         if (ps) { ps.ppEfectoMul = emul; ps.ppImanAim = imanAim; }
@@ -29125,7 +30200,7 @@ class PingPongGame {
     // NO EXISTE marca en ninguna bola — red de seguridad por frame (por
     // si el fin natural llegara a saltarse en algún camino raro). Barato
     // e idempotente; con ventana viva no entra.
-    if (!(on && this._efectoT > 0) && this.ball &&
+    if (!((on || this._dlVentana('efecto')) && this._efectoT > 0) && this.ball &&
         (this.ball.ppEfecto || this.ball.ppEfectoTipo || this.ball.ppEfectoLado)) {
       this.ball.ppEfecto = false;
       this.ball.ppEfectoTipo = '';
@@ -29581,9 +30656,29 @@ class PingPongGame {
           if (tt) ttl = String((__ppLang === 'en') ? (tt.en || tt.es) : (tt.es || tt.en)) || '';
         } catch (e0) { /* */ }
       }
+      // r39 (v3.6.135) · CORONACIÓN = DESBLOQUEO ARCANO: cada campeonato
+      // COMPLETO ganado (duelo final) libera un superpoder AL AZAR que aún
+      // esté con candado (el azar nunca repite). La marca `coronacion` la
+      // pasan los módulos SOLO en la coronación — la medalla LEYENDA y los
+      // rejuegos no repiten desbloqueo. La revelación viaja en el panel
+      // ¡CONSEGUIDO! (línea propia bajo el título) y en la megafonía.
+      let arconoRevelado = '';
+      if (opts.coronacion) {
+        try {
+          const nuevoId = this._arconoCampeonGanado();
+          if (nuevoId) {
+            const P = PODERES_PALA.find((x) => x.id === nuevoId);
+            arconoRevelado = P ? P.nombre() : nuevoId;
+            try { this.audio.announce(T('arcono_nuevo', { p: arconoRevelado }), true); } catch (eAR2) { /* */ }
+          } else {
+            arconoRevelado = T('arcono_ninguno');
+          }
+        } catch (eAR1) { /* el desbloqueo nunca rompe la coronación */ }
+      }
       this.champDone = {
         id, group, cv, c, tex, t: 0, dur: opts.dur || 9.5,
         title: ttl, img: null, mat: mesh.material,
+        arcano: arconoRevelado,   // r39 · el poder revelado por el Arcano ('' = nada)
         stats: Array.isArray(opts.stats) ? opts.stats.slice(0, 3) : null,   // v3.6.18 (ronda 24): coronación con estadísticas
         campeon: !!opts.campeon,   // v3.6.18 (ronda 24): coronación = más confeti
       };
@@ -29675,26 +30770,41 @@ class PingPongGame {
       c.shadowBlur = 0;
       c.fillStyle = '#f2f4f6';
       c.font = '800 46px system-ui, sans-serif';
-      c.fillText(S.title || T('champdone_sub'), W / 2, H * 0.845);
+      c.fillText(S.title || T('champdone_sub'), W / 2, H * (S.arcano ? 0.825 : 0.845));
+      // r39 · LA REVELACIÓN DEL ARCANO: la coronación libera un superpoder
+      // al azar — la línea azul (estética del búho) lo anuncia bajo el título.
+      if (S.arcano) {
+        c.fillStyle = '#8fdcff';
+        c.shadowColor = 'rgba(90,180,255,0.9)'; c.shadowBlur = 22;
+        c.font = '800 37px system-ui, sans-serif';
+        let arTxt = String(S.arcano);
+        while (c.measureText(arTxt).width > W - 160 && arTxt.length > 10) {
+          arTxt = arTxt.slice(0, arTxt.length - 2);
+        }
+        c.fillText(arTxt, W / 2, H * 0.868);
+        c.shadowBlur = 0;
+      }
       // v3.6.18 (ronda 24): CORONACIÓN — fila de estadísticas en lugar del
       // recordatorio de rejuego (puntos · duelos ganados · fecha).
       if (S.stats && S.stats.length) {
         const nS = S.stats.length, colW = (W - 220) / Math.max(1, nS);
+        const yLab = H * (S.arcano ? 0.897 : 0.872);
+        const yVal = H * (S.arcano ? 0.938 : 0.922);
         for (let i = 0; i < nS; i++) {
           const lab = String((S.stats[i] && S.stats[i][0]) || '');
           const val = String((S.stats[i] && S.stats[i][1]) || '');
           const cx = 110 + colW * (i + 0.5);
           c.fillStyle = '#9fb2c4';
           c.font = '600 28px system-ui, sans-serif';
-          c.fillText(lab.toUpperCase(), cx, H * 0.872);
+          c.fillText(lab.toUpperCase(), cx, yLab);
           c.fillStyle = '#ffd257';
           c.font = '900 44px system-ui, sans-serif';
-          c.fillText(val, cx, H * 0.922);
+          c.fillText(val, cx, yVal);
         }
       } else {
         c.fillStyle = '#9fb2c4';
         c.font = '600 30px system-ui, sans-serif';
-        c.fillText(T('champdone_replay'), W / 2, H * 0.912);
+        c.fillText(S.arcano ? '' : T('champdone_replay'), W / 2, H * 0.912);
       }
       S.tex.needsUpdate = true;
     } catch (e) { console.warn('[champDone] paint', e); }
@@ -31568,10 +32678,14 @@ class PingPongGame {
     //      ANTES del árbitro (la secuencia arbítral del golpe y del bote
     //      queda intacta) y DESPUÉS del enderezado 5.5 (la velocidad que
     //      el portal conserva es la FINAL del golpe real). El saque NO se
-    //      portaliza (solo rally, _portalProcesa lo garantiza) y el
-    //      invitado online no simula la bola.
+    //      portaliza (solo rally, _portalProcesa lo garantiza). r84: el
+    //      invitado online no simula la bola — r39 · EXCEPCIÓN DUELOS
+    //      LOCOS: el propietario de la bola es quien GOLPEA (claim en el
+    //      HIT), así que el invitado portaliza SU golpe y su trayectoria
+    //      viaja en el propio HIT (validador intacto, cap 30).
     if (presenting && this._portalT > 0 && this.rules.state === 'rally' &&
-        !(this.net.online && this.net.role === 'guest')) {
+        !(this.net.online && this.net.role === 'guest' &&
+          this.rules.mode !== 'duelos')) {
       try { this._portalProcesa(); } catch (eP0) { /* nunca rompe el frame */ }
     }
 
@@ -31598,6 +32712,28 @@ class PingPongGame {
         this.ball.vel.multiplyScalar(1.18);
         if (this.ball.vel.length() > 26) this.ball.vel.setLength(26);
         try { this.audio.playOsc(900, 1400, 0.08, 'sawtooth', 0.08, 0); } catch (eDLf) { /* */ }
+      }
+      // r39 · DUELOS LOCOS · ONDA: mi SMASH (≥ ONDA_SMASH_V) mientras la
+      // ventana corre avisa al rival por cable fiable — SU próxima
+      // devolución saldrá floja (×0,75) en SU cliente.
+      if (this._dlOn('onda') && this.ball.vel && this.ball.vel.z < -0.5 &&
+          this.ball.vel.length() >= ONDA_SMASH_V) {
+        try { this.net.sendDueloPower('onda'); } catch (eONd) { /* */ }
+      }
+      // r39 · DUELOS LOCOS · OSCURIDAD (forma de RECEPTOR): con la niebla
+      // armada POR EL RIVAL, MI golpeo abre sus zonas de humo en MI campo
+      // (el campeonato la gancha a los golpeos de la IA — aquí, a los míos).
+      if (this.rules.mode === 'duelos' && this._oscuridadT > 0 &&
+          this._oscuridadFx && this.ball) {
+        try { this._oscuridadNiebla(this.ball.pos.clone()); } catch (eOSd) { /* */ }
+      }
+      // r39 · DUELOS LOCOS · ONDA (forma de RECEPTOR): la devolución que
+      // yo mando con la marca viva sale FLOJA (×0,75) — el anillo rival me
+      // alcanzó en pleno swing.
+      if (this._dlOndaFlojoT > 0 && this.ball.vel && this.ball.vel.z < -0.5) {
+        this._dlOndaFlojoT = 0;
+        this.ball.vel.multiplyScalar(ONDA_FLOJO);
+        try { this.audio.playOsc(520, 300, 0.1, 'sine', 0.08, 0); } catch (eONf) { /* */ }
       }
       this.net.sendHit(false);
     }
@@ -31847,6 +32983,10 @@ class PingPongGame {
     // estancia visible (trofeo que rota, haz que respira, anillo que pulsa,
     // bolas doradas en vaivén) — coste cero en la cancha
     if (this.inHall && this.hallGroup) updateHallFx(this.hallGroup, dt, now);
+    // r39 · EL ESPACIO ARCANO respira sólo encendido; el fundido a negro
+    // corre siempre que tenga algo que decir (cortina subiendo o bajando).
+    if (this._arconoOn && this.arcaneGroup) updateArcanoFx(this.arcaneGroup, dt, now);
+    if (this._arconoFadeDir !== 0 || this._arconoNegro.visible) this._arconoUpdate(dt);
     // M4 (r111) · LA MESA DE LA CASA: r114 la RETIRA — sin latido, el
     // guard muerto se elimina del todo. Y aquí la telemetría del embudo: el
     // PRIMER rallye real de la sesión en partido local (una sola vez) — la
@@ -32112,6 +33252,18 @@ class PingPongGame {
    * guardapolvo y deja la sala exactamente como estaba (passthrough incl.). */
   exitHall() {
     if (!this.inHall) return;
+    // r39 · si el jugador sale del salón estando en el Arcano, la estancia
+    // infinita se cierra con él: nadie se queda flotando en el vacío ni
+    // arrastra la cortina negra a la cancha.
+    if (this._arconoOn) {
+      this._arconoOn = false;
+      if (this.arcaneGroup) this.arcaneGroup.visible = false;
+      this._arconoFadeDir = 0;
+      this._arconoFade = 0;
+      this._arconoFadeCb = null;
+      if (this._arconoNegro) this._arconoNegro.visible = false;
+      if (this.menuGroup && this.menuOpen) this.menuGroup.visible = true;
+    }
     const visita = !!this._hallVisit;   // r23 · visita online: salida sin tocar la bola
     this.inHall = false;
     this._hallVisit = false;
@@ -33724,6 +34876,41 @@ const PODERES_PALA = [
     voz: VOZ_PODER_ANCLA, vozEn: VOZ_PODER_ANCLA_EN,
     png: PNG_PODER_ANCLA },
 ];
+// r39 (v3.6.135) · LA GALERÍA DEL ARCANO — el TIPO de cada poder para la
+// ficha (ataque/defensa/distracción) y su color. Junto al registro a
+// propósito: un poder nuevo declara aquí SU tipo (si no, nace DEFENSA).
+const ARCONO_TIPOS = {
+  mega: ['arcono_tipo_defensa', '#7fe08f'],
+  efecto: ['arcono_tipo_ataque', '#ff8f5f'],
+  iman: ['arcono_tipo_defensa', '#7fe08f'],
+  portal: ['arcono_tipo_distraccion', '#c39bff'],
+  clon: ['arcono_tipo_defensa', '#7fe08f'],
+  red: ['arcono_tipo_defensa', '#7fe08f'],
+  elec: ['arcono_tipo_ataque', '#ff8f5f'],
+  fenix: ['arcono_tipo_ataque', '#ff8f5f'],
+  crono: ['arcono_tipo_distraccion', '#c39bff'],
+  oscuridad: ['arcono_tipo_distraccion', '#c39bff'],
+  prisma: ['arcono_tipo_distraccion', '#c39bff'],
+  onda: ['arcono_tipo_ataque', '#ff8f5f'],
+  salva: ['arcono_tipo_defensa', '#7fe08f'],
+  ancla: ['arcono_tipo_defensa', '#7fe08f'],
+};
+// r39 (v3.6.135) · DUELOS LOCOS — el cableado online de los desbloqueados.
+//   DL_BASE    : los tres poderes NETCODE-SAFE de r84 (siempre en el surto).
+//   DL_DUR     : ventana de cada id del Arcano en duelos (la del campeonato).
+//   DL_SURTIDO : el surto aleatorio del jugador = base + SUS desbloqueados.
+const DL_BASE = ['gigante', 'fuego', 'loca'];
+const DL_DUR = {
+  gigante: 12, fuego: 10, loca: 10,
+  mega: 15, efecto: 10, iman: 10, portal: 8, clon: 10, red: 10,
+  elec: 10, fenix: 10, crono: 10, oscuridad: 20, prisma: 10,
+  onda: 10, salva: 10, ancla: 10,
+};
+const DL_SURTIDO = (game) => {
+  let extra = [];
+  try { extra = game.poderesDesbloqueados(); } catch { /* sin arcano: base */ }
+  return DL_BASE.concat(extra);
+};
 // r33 · constantes de los 4 poderes nuevos (ventanas de 10 s, regla del dueño)
 const PRISMA_DUR = 10;      // s de ventana
 const PRISMA_OUT_P = 0.10;  // falta PEQUEÑA de la IA ante la estela arcoíris

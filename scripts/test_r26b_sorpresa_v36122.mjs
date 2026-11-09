@@ -107,7 +107,7 @@ chk(c12.includes('_fenixParticula(p, dt, grav) {'), 'gravedad de las ascuas (cae
 chk(c12.includes('_fenixFin() {') && c12.includes("this.rules.message = T('arc_fenix_fin');"), 'fin con aviso');
 chk(!c12.includes('multiplyScalar(FENIX'), 're-anclada r30: cero multiplicación por frame (bola normal)');
 chk(c12.includes('const FENIX_OUT_P = 0.15;'), 're-anclada r30: la ventaja es la falta PEQUEÑA de la IA (15 %)');
-chk(c12.includes('!(this.net.online && this.net.role === \'guest\')) {'), 'el invitado online no enciende (no simula)');
+chk(c12.includes("this.rules.mode !== 'duelos'"), 're-anclada r39: el invitado no enciende fuera de duelos (allí portaliza SU golpe)');
 chk(c12.includes('ANULADO por orden del dueño'), 're-anclada r30: crónica del veto del boost (dinámica normal)');
 chk(c12.includes("if (ent.id === 'fenix') return this._fenixTrigger(ent); // v3.6.122 (r26b)"), 'gatillo despacha fénix');
 chk(c12.includes("if (ent.id === 'fenix') return this._fenixT > 0; // v3.6.122 (r26b)"), 'modo ACTIVO del icono para fénix');
@@ -165,8 +165,8 @@ chk(!c12.includes("id: 'hielo'"), 'HIELO fuera del registro PODERES_PALA');
 
 /* — 6 · PLANTILLA COMÚN · ventanas, cortina y precalentado ————————————— */
 console.log('6 · PLANTILLA COMÚN · ventanas 3·2·1, cortina, precaliente');
-chk(c12.includes('if (on && this._fenixT > 0) {') && c12.includes('if (on && this._cronoT > 0) {') &&
-    c12.includes('if (on && this._oscuridadT > 0) {'), 'ventanas propias en el tick (patrón red/elec)');
+chk(c12.includes("(on || this._dlVentana('fenix')) && this._fenixT > 0") && c12.includes("(on || this._dlVentana('crono')) && this._cronoT > 0") &&
+    c12.includes("(on || this._dlVentana('oscuridad')) && this._oscuridadT > 0"), 're-anclada r39: ventanas propias en el tick (campeonato + duelos)');
 chk(c12.includes('try { this._fenixFin(); } catch (eFF) { /* */ }') &&
     c12.includes('try { this._cronoFin(); } catch (eCF2) { /* */ }') &&
     c12.includes('try { this._oscuridadFin(); } catch (eOF) { /* */ }'), 'apagado garantizado si «on» desaparece');

@@ -3904,7 +3904,8 @@ class ArcadeController {
         this.game.confettiBurst = Math.max(this.game.confettiBurst, 6);
         this.game.audio.announce(T('trophy_get'), true);
         // v2.128: INSIGNIA «¡CONSEGUIDO!» en grande (panel del núcleo)
-        try { const C = window.__PP_CORE; if (C && C.showChampConseguido) C.showChampConseguido('locura'); } catch (e) { /* */ }
+        // r39 · la coronación libera un poder del Arcano
+        try { const C = window.__PP_CORE; if (C && C.showChampConseguido) C.showChampConseguido('locura', { coronacion: true }); } catch (e) { /* */ }
         if (this.game.renderer.xr.isPresenting) {
           this.game.haptic(this.game.paddleHand, 1.0, 300);
           window.setTimeout(() => this.game.haptic(this.game.paddleHand, 0.8, 240), 400);

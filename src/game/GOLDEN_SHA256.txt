@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.130-SDK6, fase 132 · Correcciones a los superpoderes de pala; sello actualizado
-# por bump_version.py desde 3.6.129-SDK6)
-e00e508ab0616dec7c9cb8c694ae66227ea70eea83fe9dc16c2d0af06dd82d7f
+# SHA256 del game.html que produjo esta división (3.6.131-SDK6, fase 133 · Prisma visible — bola arcoíris; sello actualizado
+# por bump_version.py desde 3.6.130-SDK6)
+c9c65ff52117556fc225f590c96189fef6c77ac5e262d11f833aecdf0d8ff81a

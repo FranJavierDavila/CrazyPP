@@ -1,10 +1,10 @@
 {
-  "version": "3.6.130-SDK6",
-  "fase": 132,
-  "faseNombre": "Correcciones a los superpoderes de pala",
+  "version": "3.6.131-SDK6",
+  "fase": 133,
+  "faseNombre": "Prisma visible — bola arcoíris",
   "sdk": "1.6.0",
   "fecha": "2026-11-09",
-  "hub": "v36130-sdk6",
+  "hub": "v36131-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11375288,
-  "golden": "e00e508ab0616dec7c9cb8c694ae66227ea70eea83fe9dc16c2d0af06dd82d7f"
+  "tamano": 11378159,
+  "golden": "c9c65ff52117556fc225f590c96189fef6c77ac5e262d11f833aecdf0d8ff81a"
 }

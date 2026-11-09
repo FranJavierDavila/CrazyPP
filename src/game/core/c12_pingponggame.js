@@ -274,6 +274,8 @@ export class PingPongGame {
     this._prismaTickN = 0;
     this._prismaGuiaT = 0;          // s restantes de la guía del golpeo
     this._prismaFx = null;          // línea-guía del golpeo (grupo del rig)
+    this._prismaBolaT = 0;          // r35: reloj del salto arcoíris de la bola
+    this._prismaBolaTint = null;    // r35: tinta original de la bola (restaurar)
     this._ondaT = 0;                // s restantes de ondas de choque
     this._ondaWarn = false;
     this._ondaTickN = 0;
@@ -9000,6 +9002,7 @@ export class PingPongGame {
    *  el sprite aditivo del frame). Guarda la tinta original y la
    *  restaura al acabar — mismo patrón que la brasa del Fénix. */
   _oscuridadTintAplicar() {
+    if (this._prismaBolaTint) this._prismaBolaTintRestaurar();  // r35: cede la bola
     const m = this.ballMesh;
     if (!m || !m.material || this._oscuridadTint) return;
     this._oscuridadTint = {
@@ -9405,6 +9408,7 @@ export class PingPongGame {
       this._megaActivaId = 'prisma';
       this._megaActivaDur = PRISMA_DUR;
       this._megaTexDirty = true;
+      this._prismaBolaTintAplicar();  // r35: la bola sigue pintando (cede si hace falta)
       this.rules.message = T('arc_prisma_go');
       return true;
     }
@@ -9416,6 +9420,7 @@ export class PingPongGame {
     this._megaActivaId = 'prisma';
     this._megaActivaDur = PRISMA_DUR;
     this._megaTexDirty = true;
+    this._prismaBolaTintAplicar();    // r35 (v3.6.131): la bola pinta arcoíris AL ACTIVAR
     // firma sonora «cristal»: dos campanas ascendentes
     try { this.audio.playOsc(523, 1046, 0.18, 'sine', 0.12, 0); } catch (e) { /* */ }
     try { this.audio.playOsc(659, 1318, 0.16, 'sine', 0.1, 0.06); } catch (e2) { /* */ }
@@ -9432,7 +9437,37 @@ export class PingPongGame {
     this._prismaTickN = 0;
     this._prismaGuiaT = 0;
     if (this._prismaFx && this._prismaFx.line) this._prismaFx.line.visible = false;
+    this._prismaBolaTintRestaurar();  // r35: la bola vuelve a SU tinta
     if (this._megaActivaId === 'prisma') this._megaActivaId = null;
+  }
+
+  /** r35 (v3.6.131) · petición del dueño: «no se nota la desventaja ni que
+   *  se está aplicado» — la BOLA pinta arcoíris ALEATORIO mientras Prisma
+   *  vive (saltos ~6/s, visibles desde los dos lados de la mesa; la estela
+   *  sólo habla en el campo rival desde r34). Patrón de tinte de la
+   *  Oscuridad: guardar → pintar → restaurar; COOPERATIVO: el último poder
+   *  disparado dueño de la bola gana y el anterior suelta sin dejar rastro
+   *  (la bola nunca queda prisionera del arcoíris). */
+  _prismaBolaTintAplicar() {
+    if (this._oscuridadTint) this._oscuridadTintRestaurar();  // cede la bola
+    const m = this.ballMesh;
+    if (!m || !m.material || this._prismaBolaTint) return;
+    this._prismaBolaTint = {
+      col: m.material.color.getHex(),
+      em: m.material.emissive ? m.material.emissive.getHex() : null,
+    };
+    this._prismaBolaT = 0;            // primer salto YA (se ve al activar)
+  }
+
+  _prismaBolaTintRestaurar() {
+    if (!this._prismaBolaTint) return;
+    const f = this._prismaBolaTint;
+    this._prismaBolaTint = null;
+    const m = this.ballMesh;
+    if (m && m.material) {
+      m.material.color.setHex(f.col);
+      if (m.material.emissive && f.em !== null) m.material.emissive.setHex(f.em);
+    }
   }
 
   _prismaFrame(dt) {
@@ -9444,6 +9479,27 @@ export class PingPongGame {
       TRAIL_ARCOIRIS[1] = _colPrisma.g;
       TRAIL_ARCOIRIS[2] = _colPrisma.b;
     } catch (eH) { /* el color nunca tumba el frame */ }
+    // r35 (v3.6.131) · la BOLA arcoíris: saltos de color ALEATORIOS (~6/s)
+    // mientras Prisma ES el poder vivo. Si otro poder toma el testigo, el
+    // tinte se suelta SOLO (la bola nunca queda prisionera del arcoíris).
+    if (this._prismaBolaTint && this._megaActivaId !== 'prisma') {
+      this._prismaBolaTintRestaurar();    // otro poder mandó: soltar YA
+    } else if (this._prismaT > 0 && this.ballMesh && this.ballMesh.material &&
+               this._prismaBolaTint) {
+      this._prismaBolaT -= dt;
+      if (this._prismaBolaT <= 0) {
+        this._prismaBolaT = 0.16;         // ~6 saltos/s: vivo pero legible
+        try {
+          const h35 = Math.random();      // arcoíris ALEATORIO (no barrido)
+          _colPrisma.setHSL(h35, 0.95, 0.62);
+          this.ballMesh.material.color.copy(_colPrisma);
+          if (this.ballMesh.material.emissive) {
+            _colPrisma.setHSL(h35, 0.95, 0.30);   // brasa del salto (glow)
+            this.ballMesh.material.emissive.copy(_colPrisma);
+          }
+        } catch (eB35) { /* el color nunca tumba el frame */ }
+      }
+    }
     // la guía del golpeo se funde linealmente hasta agotar sus 3 s
     if (this._prismaGuiaT > 0) {
       this._prismaGuiaT -= dt;

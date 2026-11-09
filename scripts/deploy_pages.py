@@ -330,22 +330,21 @@ def commit_pages_branch(version, head, game_sha, nfiles):
         '--git-dir', os.path.join(REPO, '.git'), '--work-tree', SITE,
         'add', '-f', '--all', '--', '.'], env=env, cwd=SITE)
     tree = out(['git', 'write-tree'], env=env)
-    parent = None
-    try:
-        parent = out(['git', 'rev-parse', 'refs/heads/pages'])
-    except subprocess.CalledProcessError:
-        pass
+    # r39 · COMMIT HUÉRFANO SIEMPRE (lección del incidente r39): el builder
+    # legacy de Pages clona la rama y el historial ENCADENADO crece con cada
+    # deploy (árboles completos por ronda) — dos builds seguidos marcaron
+    # «Page build failed» hasta que la rama se APLASTÓ a un commit raíz
+    # (1a266cb7, construido en ~2 min). Cada deploy nace RAÍZ: el clon del
+    # builder pesa SIEMPRE lo mismo (solo el árbol del sitio).
     fecha = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
     msg = (f'deploy pages: {version} · fuente {head[:9]} · '
            f'game {game_sha[:12]} (+{len(REWRITES)} reescrituras) · {fecha}')
-    args = ['git', 'commit-tree', tree] + (['-p', parent] if parent else []) + ['-m', msg]
-    commit = out(args, env=env)
+    commit = out(['git', 'commit-tree', tree, '-m', msg], env=env)
     out(['git', 'update-ref', 'refs/heads/pages', commit])
     listed = int(out(['git', 'ls-tree', '-r', '--name-only', 'refs/heads/pages']).count('\n')) + 1
     if listed != nfiles:
         sys.exit(f'✗ la rama pages tiene {listed} ficheros pero el sitio {nfiles}')
-    print(f'  ✓ refs/heads/pages → {commit[:9]} ({nfiles} ficheros'
-          f'{" · commit encadenado" if parent else " · primer deploy"})')
+    print(f'  ✓ refs/heads/pages → {commit[:9]} ({nfiles} ficheros · commit huérfano — historia aplastada)')
 
 
 def need_token():

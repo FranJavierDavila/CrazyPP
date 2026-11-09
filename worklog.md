@@ -5757,3 +5757,24 @@ Stage Summary:
 - La Electricidad se lee en pista: el rayo AGARRA la bola un segundo (halo + mini-rayos) antes de reventarla, y no puede costar más de una bola.
 - El Prisma pinta sólo donde estorba: campo rival; en el nuestro, la estela vuelve a la skin.
 - Producción: deploy_pages --push --release --backup ejecutado tras el commit de la ronda.
+
+---
+Task ID: 243 (ronda 35 de la línea viva)
+Agent: principal (Z.ai)
+Task: Petición del dueño — «en el superpoder de prisma no se nota la desventaja ni que se está aplicado, refuerza visualmente cambiando el color de la bola por los colores del arcoiris de forma aleatoria mientras duré el super poder».
+
+Work Log:
+- DIAGNÓSTICO: la r34 dejó el Prisma sutil — la estela arcoíris sólo habla en el campo rival y la guía del golpeo dura 3 s: el dueño no percibe CUÁNDO el poder está vivo ni su desventaja. La bola era el único elemento que no firmaba el poder.
+- IMPLANTACIÓN (c12, patrón de tinte de la Oscuridad): _prismaBolaTintAplicar guarda color+emisivo originales (getHex) y pinta arcoíris ALEATORIO (~6 saltos/s, Math.random — no barrido; paleta S 0,95 · L 0,62; emisivo L 0,30 = glow del salto) en _prismaFrame mientras _megaActivaId === 'prisma'; _prismaBolaTintRestaurar devuelve la tinta en _prismaFin (fin natural, cortina etapas 2/4, salida del partido). Aplicar en AMBAS ramas del trigger (activación y refresco honesto) con primer salto inmediato.
+- COOPERACIÓN Prisma ↔ Oscuridad (los dos pintores de bola): se CE DEN la bola — _prismaBolaTintAplicar suelta el tinte de la Oscuridad y _oscuridadTintAplicar el del Prisma antes de guardar el «original» (nadie guarda el arcoíris como original; la bola nunca queda prisionera de un tinte ajeno). Auto-soltado en _prismaFrame si otro poder toma el testigo con la ventana aún viva.
+- QA: test_r35_prisma_v36131 NUEVO (36/0: bola arcoíris aleatoria, restauración honesta, cooperación, r34 intacto, física c04/c05 byte-exacto df8f71a3/8bb62082, sellos 3.6.131) · probe EN VIVO _r35_probe_prisma.py (Playwright, estacion_orbital): 5/5 — bola muestreada en vivo (saltos reales 0xfdb48b→0xbefd8b), refresco re-conquista, cesión a Oscuridad y devolución intacta, auto-soltado con Onda, fin natural restaura color+emisivo · 0 errores de página · foto download/_r35_prisma_bola.png.
+- REGRESIÓN re-anclada (sella_r35_viva NUEVO, patrón sella_r31/r32/r33): r34 61/0 · r33 77/0 · r32 49/0 · r31 47/0 · r30 54/0.
+- PRESUPUESTO: game.html 11.378.159 B (+2.871) · golden c9c65ff5 · bump FASE 133 (3.6.131-SDK6) · qa_rendimiento --update · gen_release_v36131 (notas FASE 133 sustituidas 1/1 asertadas) · 4 ZIPs (COMPLETO 170.280.068 · ligera 42.071.396 · CLOUDFLARE 170.265.903 · SOLO 6.221).
+- DESPLIEGUE: deploy_pages --push --release --backup → pages 4dd2c734b (464 ficheros, smoke 31 peticiones 0 fallos) · Release v3.6.131-SDK6 con 4 ZIPs · respaldo main→proyecto al día.
+- VERIFICACIÓN PRODUCCIÓN (curl): PAGES-VERSION 3.6.131-SDK6 fuente 9b7a61f · game.html servido 11.378.157 B (reescrituras=2 documentadas) con agujas (_prismaBolaTintAplicar ×3 · _prismaBolaTintRestaurar ×4 · h35 = Math.random ×1) · los 3 ZIPs HTTP 200.
+- NOTA DE ENTORNO: :3000/:81 de este sandbox sirven el snapshot raíz (v3.6.27, infra del gateway, no tocable) — los checks byte-exacto de qa_version contra esos puertos son ajenos a esta ronda; el smoke del deploy (31 peticiones bajo /CrazyPP/) y la verificación curl de producción cubren esa capa.
+
+Stage Summary:
+- EL PRISMA SE VE: la bola pinta arcoíris ALEATORIO mientras el poder vive (activación y desventaja legibles en pista desde los dos lados de la mesa) y la devuelve a su tinta SIEMPRE que muere — con cesión limpia a la Oscuridad y auto-soltado si otro poder toma el testigo.
+- Producción en V3.6.131-SDK6 (pages 4dd2c734b, release 4/4). El dueño debe recargar (si el Quest cachea: cerrar pestaña / game.html?v=36131).
+- Pendientes vivos: reponer .cf-token y .clave-produccion desde el respaldo del Task 122 (Cloudflare); rotar el PAT del dueño (higiene de seguridad de siempre).

@@ -56,6 +56,19 @@
  *   El worker se auto-provisiona la TURN key (tabla cfg de D1) y sanea
  *   las urls (fuera el puerto 53, bloqueado por los navegadores).
  *   Sin TURN_API_TOKEN → STUN honesto y turn:false (degradación limpia).
+ *
+ * ronda 42 · TELEMETRÍA PROFESIONAL (control absoluto desde el repo):
+ *   GET  /api/tele?salud=1        → PÚBLICO {ok, total, ultimoRec, haceSeg}
+ *                                   (LED de salud del panel: ¿llegan lotes?)
+ *   GET  /api/tele?csv=1          → CSV crudo (CLAVE; tope 20.000 filas;
+ *                                   ?tope=N; filtros ?sid= y ?dias=N)
+ *   ?dias=N                       → filtra por LLEGADA (columna rec) en
+ *                                   resumen, eventos, csv y DELETE —
+ *                                   combinable con ?sid= en todos
+ *   DELETE /api/tele?dias=N       → retención: purga sólo lo ANTERIOR a N
+ *                                   días (con ?sid= acota a esa sesión)
+ *   El POST, el latido, el resumen y /api/ice quedan INTACTOS (contrato
+ *   del juego 3.6.5-SDK6 sin cambios; el cliente no se toca).
  */
 
 const CORS = {
@@ -592,10 +605,28 @@ export default {
     if (metodo === "GET") {
       await init(env);
 
+      // ronda 42 · SALUD pública (sin detalle): LED del panel. total y la
+      // frescura del último lote recibido (MAX(rec)) — nada sensible.
+      if (url.searchParams.get("salud") !== null) {
+        const filaS = await env.DB
+          .prepare("SELECT COUNT(*) n, MAX(rec) ultimo FROM eventos")
+          .first();
+        return json({
+          ok: true,
+          ts: Date.now(),
+          total: filaS ? filaS.n : 0,
+          ultimoRec: filaS ? filaS.ultimo : null,
+          haceSeg: filaS && filaS.ultimo
+            ? Math.round((Date.now() - filaS.ultimo) / 1000)
+            : null,
+        });
+      }
+
       // latido público (sin detalle): {ok, total, ts} — filtro sid opcional
       if (
         url.searchParams.get("resumen") === null &&
-        url.searchParams.get("eventos") === null
+        url.searchParams.get("eventos") === null &&
+        url.searchParams.get("csv") === null
       ) {
         const sid = url.searchParams.get("sid");
         const total = sid
@@ -624,8 +655,22 @@ export default {
       }
 
       const sid = url.searchParams.get("sid");
-      const fil = sid ? " WHERE instr(sid, ?) > 0" : "";
-      const arg = sid ? [sid] : [];
+      // ronda 42 · FILTRO ?dias=N — lo llegado en los últimos N días
+      // (columna rec, llegada al SERVIDOR: robusta ante relojes de cliente).
+      // Combina con ?sid= en resumen, eventos, csv y DELETE.
+      const diasQ = parseInt(url.searchParams.get("dias"), 10);
+      const diasMs = Number.isFinite(diasQ) && diasQ > 0
+        ? Date.now() - diasQ * 86400000
+        : null;
+      const conds = [];
+      const arg = [];
+      if (sid) { conds.push("instr(sid, ?) > 0"); arg.push(sid); }
+      if (diasMs !== null) { conds.push("rec >= ?"); arg.push(diasMs); }
+      const fil = conds.length ? " WHERE " + conds.join(" AND ") : "";
+      // sufijo para consultas que YA llevan WHERE base (p.ej. e='error')
+      const suf =
+        (sid ? " AND instr(sid, ?) > 0" : "") +
+        (diasMs !== null ? " AND rec >= ?" : "");
 
       // GET ?eventos=N → últimos N crudos (ascendente, igual que el local)
       if (url.searchParams.get("eventos") !== null) {
@@ -646,6 +691,49 @@ export default {
         });
       }
 
+      // ronda 42 · GET ?csv=1 → exportación cruda (CLAVE). Columnas: e,
+      // fecha_iso, t_ms, version, sid, json (el JSON completo, citado y
+      // escapado). ?tope=N (defecto 20.000, máx 50.000) · ?sid= · ?dias=.
+      if (url.searchParams.get("csv") !== null) {
+        const topeQ = parseInt(url.searchParams.get("tope"), 10);
+        const tope = Math.min(
+          50000,
+          Math.max(1, Number.isFinite(topeQ) ? topeQ : 20000)
+        );
+        const filas = (
+          await env.DB
+            .prepare(
+              "SELECT e, t, v, sid, json FROM eventos" + fil +
+                " ORDER BY id DESC LIMIT ?"
+            )
+            .bind(...arg, tope)
+            .all()
+        ).results.reverse();
+        const esc = (s) => '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"';
+        const lineas = ["e,fecha_iso,t_ms,version,sid,json"];
+        for (const r of filas) {
+          lineas.push(
+            [
+              esc(r.e),
+              r.t ? new Date(r.t).toISOString() : "",
+              r.t == null ? "" : String(r.t),
+              esc(r.v),
+              esc(r.sid),
+              esc(r.json),
+            ].join(",")
+          );
+        }
+        // BOM para que Excel respete el UTF-8
+        return new Response("\uFEFF" + lineas.join("\r\n"), {
+          status: 200,
+          headers: {
+            "content-type": "text/csv; charset=utf-8",
+            "content-disposition": 'attachment; filename="telemetria-crazypp.csv"',
+            ...CORS,
+          },
+        });
+      }
+
       // GET ?resumen=1 → agregados (misma forma que el receptor local)
       const total = (
         await env.DB.prepare("SELECT COUNT(*) n FROM eventos" + fil).bind(...arg).first()
@@ -660,9 +748,9 @@ export default {
         await env.DB
           .prepare(
             "SELECT COUNT(*) n FROM eventos WHERE e='boot' AND t >= ?" +
-              (sid ? " AND instr(sid, ?) > 0" : "")
+              suf
           )
-          .bind(Date.now() - 86400000, ...(sid ? [sid] : []))
+          .bind(Date.now() - 86400000, ...arg)
           .first()
       ).n;
       const porEvento = {};
@@ -689,9 +777,9 @@ export default {
           .prepare(
             "SELECT AVG(CAST(json_extract(json,'$.fps') AS REAL)) m, COUNT(*) n " +
               "FROM eventos WHERE e='vr_end' AND json_extract(json,'$.fps') IS NOT NULL" +
-              (sid ? " AND instr(sid, ?) > 0" : "")
+              suf
           )
-          .bind(...(sid ? [sid] : []))
+          .bind(...arg)
           .first()
       );
       const erroresTop = (
@@ -699,10 +787,10 @@ export default {
           .prepare(
             "SELECT json_extract(json,'$.m') m, COUNT(*) n FROM eventos " +
               "WHERE e='error' AND json_extract(json,'$.m') IS NOT NULL" +
-              (sid ? " AND instr(sid, ?) > 0" : "") +
+              suf +
               " GROUP BY m ORDER BY n DESC LIMIT 8"
           )
-          .bind(...(sid ? [sid] : []))
+          .bind(...arg)
           .all()
       ).results.map((r) => [r.m, r.n]);
       // ── sin_sonido (M5b): señales de audio roto. Cuenta errores cuyo
@@ -718,10 +806,10 @@ export default {
               "instr(lower(COALESCE(json_extract(json,'$.m'),'')),'sonido') > 0 OR " +
               "instr(lower(COALESCE(json_extract(json,'$.m'),'')),'decode') > 0 OR " +
               "instr(lower(COALESCE(json_extract(json,'$.m'),'')),'sfx') > 0)))" +
-              (sid ? " AND instr(sid, ?) > 0" : "") +
+              suf +
               ")"
           )
-          .bind(...(sid ? [sid] : []))
+          .bind(...arg)
           .first()
       );
       const champRank = {};
@@ -733,7 +821,7 @@ export default {
               "COALESCE(MAX(json_extract(json,'$.score')), 0) mejor, " +
               "COALESCE(SUM(json_extract(json,'$.stars')), 0) estrellas " +
               "FROM eventos WHERE e='champ_rank' AND json_extract(json,'$.champ') IS NOT NULL" +
-              (sid ? " AND instr(sid, ?) > 0" : "") + " GROUP BY champ"
+              suf + " GROUP BY champ"
           )
           .bind(...arg)
           .all()
@@ -760,9 +848,9 @@ export default {
             "SELECT AVG(CAST(json_extract(json,'$.dur') AS REAL)) m, " +
               "MAX(CAST(json_extract(json,'$.dur') AS REAL)) mx, COUNT(*) n " +
               "FROM eventos WHERE e='page_close' AND json_extract(json,'$.dur') IS NOT NULL" +
-              (sid ? " AND instr(sid, ?) > 0" : "")
+              suf
           )
-          .bind(...(sid ? [sid] : []))
+          .bind(...arg)
           .first()
       );
       const vrDurRow = (
@@ -771,9 +859,9 @@ export default {
             "SELECT AVG(CAST(json_extract(json,'$.dur') AS REAL)) m, " +
               "MAX(CAST(json_extract(json,'$.dur') AS REAL)) mx, COUNT(*) n " +
               "FROM eventos WHERE e='vr_end' AND json_extract(json,'$.dur') IS NOT NULL" +
-              (sid ? " AND instr(sid, ?) > 0" : "")
+              suf
           )
-          .bind(...(sid ? [sid] : []))
+          .bind(...arg)
           .first()
       );
       const whereDia = fil ? fil + " AND t IS NOT NULL" : " WHERE t IS NOT NULL";
@@ -813,7 +901,7 @@ export default {
           .prepare(
             "SELECT json_extract(json,'$.id') champ, e, COUNT(*) n FROM eventos " +
               "WHERE e IN ('stage','champion') AND json_extract(json,'$.id') IS NOT NULL" +
-              (sid ? " AND instr(sid, ?) > 0" : "") +
+              suf +
               " GROUP BY champ, e"
           )
           .bind(...arg)
@@ -833,10 +921,10 @@ export default {
         await env.DB
           .prepare(
             "SELECT json FROM eventos WHERE e IN ('vr_start','vr_end','vr_ping')" +
-              (sid ? " AND instr(sid, ?) > 0" : "") +
+              suf +
               " ORDER BY id ASC LIMIT 2000"
           )
-          .bind(...(sid ? [sid] : []))
+          .bind(...arg)
           .all()
       ).results.map((r) => JSON.parse(r.json));
       const ciclosVR = [];
@@ -1006,9 +1094,17 @@ export default {
       }
       await init(env);
       const sid = url.searchParams.get("sid");
+      // ronda 42 · ?dias=N → retención: purga SÓLO lo anterior a N días
+      // (rec < llegada). Con ?sid= acota a esa sesión. Sin filtros → total.
+      const diasD = parseInt(url.searchParams.get("dias"), 10);
       const r = sid
         ? await env.DB.prepare("DELETE FROM eventos WHERE instr(sid, ?) > 0").bind(sid).run()
-        : await env.DB.prepare("DELETE FROM eventos").run();
+        : Number.isFinite(diasD) && diasD > 0
+          ? await env.DB
+              .prepare("DELETE FROM eventos WHERE rec < ?")
+              .bind(Date.now() - diasD * 86400000)
+              .run()
+          : await env.DB.prepare("DELETE FROM eventos").run();
       return json({ ok: true, borrados: r.meta ? r.meta.changes : 0, ts: Date.now() });
     }
 

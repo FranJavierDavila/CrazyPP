@@ -3,72 +3,115 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CRAZY PING PONG · Telemetría (D1)</title>
+<title>CRAZY PING PONG · Centro de Telemetría</title>
 <style>
-  :root { color-scheme: dark; }
+  :root { color-scheme: dark; --azul:#49b6ff; --azul2:#2f7dd1; --fondo:#05070f; --panel:#0b1220; --linea:#1b2a45; --texto:#dbe7f5; --tenue:#7e93b4; }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:#0b0e14; color:#e6ebf2; }
-  header { padding:18px 22px; border-bottom:1px solid #1c2230; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-  header h1 { font-size:19px; margin:0; letter-spacing:.5px; }
-  header h1 b { color:#fbbf24; }
-  .pill { font-size:12px; padding:3px 10px; border-radius:999px; background:#13203a; color:#7ec8ff; border:1px solid #24406b; }
+  body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background:
+    radial-gradient(1200px 500px at 70% -10%, #0a1a33 0%, transparent 60%), var(--fondo);
+    color:var(--texto); min-height:100vh; }
+  header { padding:16px 22px 12px; border-bottom:1px solid var(--linea); display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:linear-gradient(180deg,#071021,#05070f); position:sticky; top:0; z-index:5; }
+  header h1 { font-size:18px; margin:0; letter-spacing:.6px; font-weight:800; }
+  header h1 b { color:var(--azul); }
+  .led { width:11px; height:11px; border-radius:50%; background:#3a4557; box-shadow:0 0 0 0 rgba(0,0,0,0); display:inline-block; }
+  .led.verde { background:#3fd97a; box-shadow:0 0 8px #3fd97a88; animation:pulso 2.2s infinite; }
+  .led.rojo { background:#ff5a4e; box-shadow:0 0 8px #ff5a4e88; }
+  .led.ambar { background:#fbbf24; box-shadow:0 0 8px #fbbf2488; }
+  @keyframes pulso { 0%,100% { opacity:1; } 50% { opacity:.55; } }
+  .saludtxt { font-size:12px; color:var(--tenue); }
   .zonas { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  input, button { font:inherit; }
-  input[type=password], input[type=text] { background:#101623; border:1px solid #2a3550; color:#e6ebf2; border-radius:9px; padding:7px 11px; min-width:230px; }
-  button { background:#1c7ed6; color:#fff; border:0; border-radius:9px; padding:8px 15px; cursor:pointer; font-weight:700; }
-  button.sec { background:#243050; }
-  button.rojo { background:#a03028; }
-  button:disabled { opacity:.5; cursor:default; }
-  main { padding:18px 22px; max-width:1180px; margin:0 auto; }
-  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin:14px 0; }
-  .kpi { background:#101623; border:1px solid #1e2740; border-radius:14px; padding:14px 16px; }
-  .kpi .n { font-size:26px; font-weight:900; color:#fbbf24; }
-  .kpi .t { font-size:12px; color:#8b98ad; margin-top:3px; letter-spacing:.4px; text-transform:uppercase; }
-  section { background:#0f1522; border:1px solid #1c2438; border-radius:14px; padding:16px 18px; margin:14px 0; }
-  section h2 { font-size:14px; margin:0 0 10px; color:#9fb3cc; text-transform:uppercase; letter-spacing:.8px; }
+  input, select, button { font:inherit; }
+  input[type=password], input[type=text], select { background:#0d1730; border:1px solid #253a63; color:var(--texto); border-radius:9px; padding:7px 11px; }
+  input[type=password] { min-width:210px; }
+  input[type=text] { min-width:130px; }
+  button { background:var(--azul2); color:#fff; border:0; border-radius:9px; padding:8px 14px; cursor:pointer; font-weight:700; }
+  button:hover { filter:brightness(1.12); }
+  button.sec { background:#16233f; }
+  button.rojo { background:#8e2b25; }
+  button:disabled { opacity:.45; cursor:default; }
+  main { padding:16px 22px 40px; max-width:1220px; margin:0 auto; }
+  .aviso { background:#2b1c10; border:1px solid #6b4413; color:#ffd257; padding:10px 14px; border-radius:12px; font-size:13px; margin:12px 0; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px; margin:14px 0; }
+  .kpi { background:linear-gradient(180deg,#0c1526,#0a1120); border:1px solid var(--linea); border-radius:14px; padding:13px 15px; }
+  .kpi .n { font-size:24px; font-weight:900; color:var(--azul); font-variant-numeric:tabular-nums; }
+  .kpi .t { font-size:11px; color:var(--tenue); margin-top:3px; letter-spacing:.5px; text-transform:uppercase; }
+  section { background:var(--panel); border:1px solid var(--linea); border-radius:14px; padding:15px 17px; margin:13px 0; }
+  section h2 { font-size:13px; margin:0 0 10px; color:#9fb3cc; text-transform:uppercase; letter-spacing:.9px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #1a2234; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #14203a; }
   th { color:#7e8ea6; font-weight:600; }
   td.num { text-align:right; font-variant-numeric:tabular-nums; }
-  .barras { display:flex; align-items:flex-end; gap:3px; height:64px; }
-  .bar { flex:1; background:linear-gradient(180deg,#2f7dd1,#1b4f8f); border-radius:3px 3px 0 0; position:relative; min-height:2px; }
-  .bar:hover::after { content:attr(data-l); position:absolute; bottom:-22px; left:50%; transform:translateX(-50%); font-size:10px; color:#9fb3cc; white-space:nowrap; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  @media (max-width:820px){ .grid2 { grid-template-columns:1fr; } }
-  .vacio { color:#5d6b82; font-size:13px; padding:8px 0; }
-  .aviso { background:#2b1c10; border:1px solid #6b4413; color:#ffd257; padding:10px 14px; border-radius:12px; font-size:13px; margin:12px 0; }
-  code { background:#182034; padding:1px 6px; border-radius:6px; font-size:12px; }
-  .meta { color:#5d6b82; font-size:11px; }
-  /* ronda 18 · alarmas del worker (MEJORAS.md M2b) */
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+  @media (max-width:860px){ .grid2 { grid-template-columns:1fr; } }
+  .vacio { color:#5d6b82; font-size:13px; padding:6px 0; }
+  .barras { display:flex; align-items:flex-end; gap:3px; height:70px; margin-top:6px; }
+  .bar { flex:1; background:linear-gradient(180deg,#3a9ae8,#1b4f8f); border-radius:3px 3px 0 0; position:relative; min-height:2px; }
+  .bar:hover::after { content:attr(data-l); position:absolute; bottom:110%; left:50%; transform:translateX(-50%); font-size:10px; color:#9fb3cc; white-space:nowrap; background:#0d1730; border:1px solid #253a63; padding:2px 6px; border-radius:6px; z-index:2; }
+  .hbar { display:grid; grid-template-columns:150px 1fr 64px; gap:8px; align-items:center; font-size:12.5px; margin:4px 0; }
+  .hbar .pista { background:#0d1730; border-radius:6px; height:14px; overflow:hidden; }
+  .hbar .relleno { height:100%; background:linear-gradient(90deg,#2f7dd1,#49b6ff); border-radius:6px; }
+  .hbar .val { text-align:right; font-variant-numeric:tabular-nums; color:#9fb3cc; }
   .ala { padding:9px 13px; border-radius:10px; font-size:13px; margin:6px 0; line-height:1.35; }
   .ala.rojo { background:#2b1010; border:1px solid #6b1313; color:#ff9d93; }
   .ala.amarillo { background:#2b1c10; border:1px solid #6b4413; color:#ffd257; }
   .ala.verde { background:#10240f; border:1px solid #2c5b22; color:#9ae66e; }
   .ala b { font-size:14px; margin-right:6px; }
+  code { background:#12203c; padding:1px 6px; border-radius:6px; font-size:12px; }
+  .meta { color:#5d6b82; font-size:11px; margin-top:14px; }
+  .fila-ev { cursor:pointer; }
+  .fila-ev:hover td { background:#0e1a33; }
+  pre.json { max-height:240px; overflow:auto; background:#0a1120; border:1px solid var(--linea); border-radius:10px; padding:10px 12px; font-size:11.5px; color:#9fd0ff; margin:4px 0 8px; }
+  .pill2 { font-size:11px; padding:2px 9px; border-radius:999px; background:#0d1a33; border:1px solid #25406b; color:#7ec8ff; }
+  .fila-ex { display:none; }
+  .fila-ex.abierta { display:table-row; }
+  .accionfila { font-size:11px; color:var(--tenue); }
+  label.chk { font-size:12.5px; color:var(--tenue); display:flex; gap:6px; align-items:center; }
+  .herr { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+  .ok_ms { color:#3fd97a; } .err_ms { color:#ff5a4e; }
 </style>
 </head>
 <body>
 <header>
-  <h1>🏓 CRAZY <b>PING PONG</b> · Telemetría</h1>
-  <span class="pill">Producción · Cloudflare D1</span>
+  <h1>CRAZY <b>PING PONG</b> · Centro de Telemetría</h1>
+  <span class="led" id="led"></span>
+  <span class="saludtxt" id="saludtxt">comprobando salud del receptor…</span>
   <div class="zonas">
-    <input id="clave" type="password" placeholder="clave de lectura (CLAVE del worker)">
+    <input id="clave" type="password" placeholder="CLAVE de lectura del worker">
+    <select id="dias" title="rango temporal (por llegada al servidor)">
+      <option value="1">Últimas 24 h</option>
+      <option value="7">Últimos 7 días</option>
+      <option value="30" selected>Últimos 30 días</option>
+      <option value="90">Últimos 90 días</option>
+      <option value="0">Todo el histórico</option>
+    </select>
+    <input id="sid" type="text" placeholder="filtrar por sid (opcional)">
     <button id="cargar">Ver datos</button>
-    <button id="refresca" class="sec" disabled>Refrescar</button>
-    <button id="purga" class="rojo" disabled>Purgar todo</button>
+    <button id="refresca" class="sec" disabled>Actualizar</button>
   </div>
 </header>
 <main>
   <div id="aviso" class="aviso" style="display:none"></div>
-  <div id="contenido">
-    <div class="vacio">Introduce la <b>CLAVE</b> del worker (la guarda el dueño; vive sólo en tu navegador) y pulsa «Ver datos».</div>
+
+  <div class="herr">
+    <button id="csv" class="sec" disabled>Exportar CSV</button>
+    <button id="json" class="sec" disabled>Exportar JSON</button>
+    <button id="prueba" class="sec" disabled>Probar ingestión</button>
+    <button id="purga" class="rojo" disabled>Purgar…</button>
+    <span class="pill2" id="rangotxt">rango: —</span>
+    <label class="chk"><input type="checkbox" id="auto"> auto-refrescar 60 s</label>
   </div>
-  <p class="meta">Fuente: <code id="fuente">worker /api/tele</code> · el panel lee agregados y crudos con tu clave · sin cookies · sin IP.</p>
+
+  <div id="contenido">
+    <div class="vacio">Introduce la <b>CLAVE</b> del worker (vive sólo en tu navegador, en localStorage) y pulsa «Ver datos».</div>
+  </div>
+
+  <p class="meta">Receptor: <code id="fuente">worker /api/tele</code> (Cloudflare D1) · panel servido desde el propio sitio (repo CrazyPP) · la clave jamás sale de tu navegador salvo hacia el receptor · sin cookies · sin IP.</p>
 </main>
 <script>
 const DEF = 'https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele';
 const $ = (id) => document.getElementById(id);
-let CLAVE = '';
+let CLAVE = '', timerAuto = null, ultimoResumen = null;
 try { CLAVE = localStorage.getItem('pp_tele_clave') || ''; } catch (e) {}
 if (CLAVE) $('clave').value = CLAVE;
 
@@ -78,13 +121,44 @@ function base() {
   return (u || DEF).replace(/\/+$/, '');
 }
 function aviso(txt) { const a = $('aviso'); a.style.display = txt ? '' : 'none'; a.textContent = txt || ''; }
+function filtros() {
+  const dias = $('dias').value;
+  const sid = $('sid').value.trim();
+  let q = [];
+  if (dias && dias !== '0') q.push('dias=' + encodeURIComponent(dias));
+  if (sid) q.push('sid=' + encodeURIComponent(sid));
+  return q.length ? '&' + q.join('&') : '';
+}
 async function pide(q) {
   const r = await fetch(base() + q + (q.includes('?') ? '&' : '?') + 'clave=' + encodeURIComponent(CLAVE));
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
 }
 const fnum = (n) => (n == null ? '—' : Number(n).toLocaleString('es-ES'));
-const fms = (n) => (n == null ? '—' : n >= 1000 ? (n / 1000).toFixed(1) + ' s' : Math.round(n) + ' ms');
+const fseg = (s) => (s == null ? '—' : s >= 3600 ? Math.floor(s/3600) + ' h ' + Math.round((s%3600)/60) + ' min' : s >= 60 ? Math.floor(s/60) + ' min ' + Math.round(s%60) + ' s' : Math.round(s) + ' s');
+const limpia = (s) => String(s == null ? '' : s).replace(/[<>&]/g, '');
+
+/* ── SALUD (público, sin clave): LED + frescura del último lote ── */
+async function salud() {
+  const led = $('led'), txt = $('saludtxt');
+  try {
+    const r = await fetch(base() + '?salud=1');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const hace = d.haceSeg;
+    let nivel = 'rojo', leyenda = 'sin lotes nunca';
+    if (hace != null) {
+      if (hace < 3600) { nivel = 'verde'; leyenda = 'lotes llegando (último hace ' + fseg(hace) + ')'; }
+      else if (hace < 86400) { nivel = 'ambar'; leyenda = 'último lote hace ' + fseg(hace); }
+      else { nivel = 'ambar'; leyenda = 'último lote hace ' + fseg(hace); }
+    }
+    led.className = 'led ' + nivel;
+    txt.textContent = 'receptor vivo · ' + fnum(d.total) + ' eventos almacenados · ' + leyenda;
+  } catch (e) {
+    led.className = 'led rojo';
+    txt.textContent = 'receptor NO responde (' + e.message + ')';
+  }
+}
 
 function kpi(n, t) { return '<div class="kpi"><div class="n">' + n + '</div><div class="t">' + t + '</div></div>'; }
 function tabla(cabs, filas) {
@@ -93,54 +167,92 @@ function tabla(cabs, filas) {
     filas.map((f) => '<tr>' + f.map((v, i) => '<td' + (i ? ' class="num"' : '') + '>' + v + '</td>').join('') + '</tr>').join('') + '</table>';
 }
 
+/* ── gráficas ── */
+function barrasDia(porDia) {
+  const dias = (porDia || []).slice().reverse(); // ascendente: hoy a la derecha
+  if (!dias.length) return '<div class="vacio">sin datos</div>';
+  const max = Math.max(1, ...dias.map((x) => x.eventos || 0));
+  return '<div class="barras">' + dias.map((x) =>
+    '<div class="bar" data-l="' + limpia(x.dia) + ' · ' + fnum(x.eventos) + ' eventos · ' + fnum(x.boots) + ' boots · ' + fnum(x.sesiones) + ' sesiones" style="height:' + Math.max(2, Math.round((x.eventos || 0) / max * 100)) + '%"></div>').join('') + '</div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#5d6b82;margin-top:4px"><span>' + limpia(dias[0].dia) + '</span><span>' + limpia(dias[dias.length-1].dia) + '</span></div>';
+}
+function barrasH(pares, total) {
+  if (!pares.length) return '<div class="vacio">sin datos</div>';
+  const max = Math.max(1, ...pares.map((p) => p[1]));
+  return pares.map(([k, v]) =>
+    '<div class="hbar"><span title="' + limpia(k) + '">' + limpia(k) + '</span>' +
+    '<div class="pista"><div class="relleno" style="width:' + Math.round(v / max * 100) + '%"></div></div>' +
+    '<span class="val">' + fnum(v) + '</span></div>').join('');
+}
+
+function filaEvento(e, idx) {
+  const extras = Object.keys(e).filter((k) => !['e','t','v','sid'].includes(k));
+  const resumen = extras.map((k) => k + '=' + String(JSON.stringify(e[k])).slice(0, 40)).join(' · ');
+  return '<tr class="fila-ev" data-i="' + idx + '"><td><b>' + limpia(e.e || '?') + '</b></td><td>' + limpia(e.v || '—') + '</td><td>' +
+    new Date(e.t || 0).toLocaleString('es-ES') + '</td><td style="color:#7e93b4">' + limpia(resumen).slice(0, 110) + '</td></tr>' +
+    '<tr class="fila-ex" data-x="' + idx + '"><td colspan="4"><pre class="json">' + limpia(JSON.stringify(e, null, 2)) + '</pre></td></tr>';
+}
+
 function pinta(d) {
+  ultimoResumen = d;
   const ev = d.porEvento || {};
-  // ronda 18 · alarmas del worker: nivel global + items (tolerante si el
-  // worker vivo todavía no trae el bloque — verde por defecto)
   const al = d.alarmas || { nivel: 'verde', items: [] };
-  const limpia = (s) => String(s || '').replace(/[<>&]/g, '');
   const alHTML = (al.items || []).length
     ? (al.items || []).map((i) => '<div class="ala ' + limpia(i.nivel) + '"><b>' +
         (i.nivel === 'rojo' ? '✖' : '⚠') + '</b>' + limpia(i.msg) + '</div>').join('')
     : '<div class="ala verde"><b>✓</b>Sin alarmas — FPS, errores JS y sesiones VR dentro de umbral</div>';
-  const evFilas = Object.entries(ev).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, fnum(v)]);
+  const topEv = Object.entries(ev).sort((a, b) => b[1] - a[1]).slice(0, 10);
   const dur = d.duraciones || {};
   const vr = d.vrDuracion || {};
-  const dias = (d.porDia || []).slice(-30);
-  const maxD = Math.max(1, ...dias.map((x) => x.eventos || 0));
-  const barras = '<div class="barras">' + dias.map((x) =>
-    '<div class="bar" data-l="' + (x.dia || '') + ' · ' + fnum(x.eventos) + ' ev · ' + fnum(x.boots) + ' boots" style="height:' + Math.max(2, Math.round((x.eventos || 0) / maxD * 100)) + '%"></div>').join('') + '</div>';
-  // porCampeonato llega como dict {champ: {evento: n}} (ronda 9)
   const pc = d.porCampeonato || {};
-  const pcEsDict = !Array.isArray(pc);
-  const pcFilas = pcEsDict
-    ? Object.entries(pc).map(([ch, evs]) => [ch, Object.entries(evs || {}).map(([e, n]) => e + ' ' + fnum(n)).join(' · ') || '—'])
-    : pc.map((c) => [c.champ || c.id || '—', fnum(c.n ?? c.jugadas), fnum(c.jugadores ?? '—')]);
+  const pcFilas = Object.entries(pc).map(([ch, evs]) => [ch, Object.entries(evs || {}).map(([e, n]) => e + ' ' + fnum(n)).join(' · ') || '—']);
+  const ses = (d.sesiones || []).slice(0, 14);
+  const vrS = (d.sesionesVR || []);
   const ult = d.ultimos || [];
-  const ultFilas = (Array.isArray(ult) ? ult : []).slice(0, 15).map((e) => [
-    (e.e || '?'), (e.v || '—'), new Date(e.t || 0).toLocaleTimeString('es-ES'),
-    '<span style="color:#8b98ad">' + String(e.json || '').replace(/[<>&]/g, '').slice(0, 90) + '</span>',
+
+  const vrFilas = vrS.map((c) => [
+    c.sid || '—', c.v || '—',
+    new Date(c.inicio || 0).toLocaleString('es-ES'),
+    c.dur != null ? fseg(c.dur) : '—',
+    c.durReal ? 'real' : 'estimada',
+    c.estado || '—',
+    c.fps != null ? fnum(c.fps) : '—',
+    c.fpsMin != null ? fnum(c.fpsMin) + ' / ' + fnum(c.fpsMax) : '—',
   ]);
+
+  $('rangotxt').textContent = 'rango: ' + ($('dias').value === '0' ? 'histórico completo' : 'últimos ' + $('dias').value + ' días') + ($('sid').value.trim() ? ' · sid «' + $('sid').value.trim() + '»' : '');
+
   $('contenido').innerHTML =
+    '<div class="kpis">' +
+    kpi(fnum(d.total), 'eventos') +
+    kpi(fnum(d.sesionesUnicas), 'sesiones únicas') +
+    kpi(fnum(d.arranques24h), 'arranques 24 h') +
+    kpi(fseg(dur.media), 'permanencia media') +
+    kpi(fseg(dur.max), 'permanencia máx.') +
+    kpi(fseg(vr.media), 'en VR (media)') +
+    kpi(d.fps && d.fps.medio != null ? fnum(d.fps.medio) : '—', 'fps medio VR') +
+    '</div>' +
     '<section><h2>Alarmas de producción · nivel <b style="color:' +
     (al.nivel === 'rojo' ? '#ff6b61' : al.nivel === 'amarillo' ? '#fbbf24' : '#7ddb6a') +
     '">' + limpia(al.nivel).toUpperCase() + '</b></h2>' + alHTML + '</section>' +
-    '<div class="kpis">' +
-    kpi(fnum(d.total), 'eventos totales') +
-    kpi(fnum(d.sesionesUnicas), 'sesiones únicas') +
-    kpi(fnum(d.arranques24h), 'arranques 24 h') +
-    kpi(fms(dur.max), 'permanencia máx.') +
-    kpi(fms(dur.media), 'permanencia media') +
-    kpi(fms(vr.media), 'en VR (media)') +
-    '</div>' +
-    '<section><h2>Eventos por día (30 d)</h2>' + (dias.length ? barras : '<div class="vacio">sin datos</div>') + '</section>' +
+    '<section><h2>Eventos por día</h2>' + barrasDia(d.porDia) + '</section>' +
     '<div class="grid2">' +
-    '<section><h2>Por evento</h2>' + tabla(['evento', 'n'], evFilas) + '</section>' +
-    '<section><h2>Versiones</h2>' + tabla(['versión', 'eventos', 'sesiones'], (d.versiones || []).map((v) => [v.v || '—', fnum(v.eventos), fnum(v.sesiones)])) +
-    '<h2 style="margin-top:14px">Campeonatos</h2>' + tabla(['champ', 'eventos'], pcFilas) + '</section>' +
+    '<section><h2>Top eventos</h2>' + barrasH(topEv) + '</section>' +
+    '<section><h2>Versiones</h2>' + tabla(['versión', 'eventos', 'sesiones'], (d.versiones || []).map((v) => [limpia(v.v || '—'), fnum(v.eventos), fnum(v.sesiones)])) +
+    '<h2 style="margin-top:14px">Embudo por campeonato</h2>' + tabla(['champ', 'eventos'], pcFilas) + '</section>' +
     '</div>' +
-    '<section><h2>Sesiones recientes</h2>' + tabla(['sid', 'eventos', 'primero', 'último'], (d.sesiones || []).slice(0, 12).map((s) => [s.sid, fnum(s.n), new Date(s.primero).toLocaleString('es-ES'), new Date(s.ultimo).toLocaleTimeString('es-ES')])) + '</section>' +
-    '<section><h2>Últimos eventos (crudos)</h2>' + tabla(['evento', 'versión', 'hora', 'detalle'], ultFilas) + '</section>';
+    '<section><h2>Sesiones VR</h2>' + tabla(['sid', 'versión', 'inicio', 'duración', 'tipo', 'estado', 'fps', 'mín/máx'], vrFilas) + '</section>' +
+    '<section><h2>Sesiones recientes</h2>' + tabla(['sid', 'eventos', 'primero', 'último'], ses.map((s) => [limpia(s.sid), fnum(s.n), new Date(s.primero).toLocaleString('es-ES'), new Date(s.ultimo).toLocaleTimeString('es-ES')])) + '</section>' +
+    '<section><h2>Últimos eventos (crudos · clic para ver el JSON)</h2>' +
+    (ult.length ? '<table><tr><th>evento</th><th>versión</th><th>hora</th><th>detalle</th></tr>' + ult.map(filaEvento).join('') + '</table>' : '<div class="vacio">sin datos</div>') +
+    '</section>';
+
+  document.querySelectorAll('.fila-ev').forEach((tr) => {
+    tr.addEventListener('click', () => {
+      const ex = document.querySelector('.fila-ex[data-x="' + tr.dataset.i + '"]');
+      if (ex) ex.classList.toggle('abierta');
+    });
+  });
 }
 
 async function cargar() {
@@ -150,9 +262,10 @@ async function cargar() {
   aviso('');
   $('cargar').disabled = true; $('cargar').textContent = 'Cargando…';
   try {
-    const d = await pide('?resumen=1');
+    const d = await pide('?resumen=1' + filtros());
     pinta(d);
-    $('refresca').disabled = false; $('purga').disabled = false;
+    $('refresca').disabled = false; $('csv').disabled = false; $('json').disabled = false;
+    $('purga').disabled = false; $('prueba').disabled = false;
     $('fuente').textContent = base();
   } catch (e) {
     aviso('No se pudo leer (' + e.message + '). ¿Clave correcta? ¿Worker vivo? Prueba: ' + base() + '?resumen=1&clave=…');
@@ -160,14 +273,75 @@ async function cargar() {
     $('cargar').disabled = false; $('cargar').textContent = 'Ver datos';
   }
 }
+
+/* ── exportaciones ── */
+$('csv').onclick = () => {
+  window.open(base() + '?csv=1&clave=' + encodeURIComponent(CLAVE) + filtros(), '_blank');
+};
+$('json').onclick = () => {
+  if (!ultimoResumen) return;
+  const blob = new Blob([JSON.stringify(ultimoResumen, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'telemetria-resumen-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/* ── prueba de ingestión de extremo a extremo ── */
+$('prueba').onclick = async () => {
+  const sid = 'panel-prueba-' + Date.now().toString(36);
+  const t0 = performance.now();
+  try {
+    const lote = [{ e: 'panel_prueba', t: Date.now(), v: 'panel-r42', sid: sid, nota: 'prueba del panel' }];
+    const r = await fetch(base(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify(lote) });
+    const msIda = Math.round(performance.now() - t0);
+    if (r.status !== 204) throw new Error('el POST devolvió HTTP ' + r.status + ' (esperado 204)');
+    const d = await pide('?resumen=1&sid=' + encodeURIComponent(sid));
+    const n = ((d.porEvento || {})['panel_prueba']) || 0;
+    if (n < 1) throw new Error('el evento no aparece en el resumen');
+    const t1 = performance.now();
+    await fetch(base() + '?clave=' + encodeURIComponent(CLAVE) + '&sid=' + encodeURIComponent(sid), { method: 'DELETE' });
+    aviso('');
+    window.alert('INGESTIÓN OK · POST 204 en ' + msIda + ' ms · evento visible en el resumen · limpieza ' + Math.round(performance.now() - t1) + ' ms. Producción operativa de extremo a extremo.');
+    cargar();
+  } catch (e) {
+    aviso('PRUEBA DE INGESTIÓN FALLIDA: ' + e.message);
+  }
+};
+
+/* ── purga con confirmación fuerte ── */
+$('purga').onclick = async () => {
+  const sid = $('sid').value.trim();
+  const dias = $('dias').value;
+  let qs = '?clave=' + encodeURIComponent(CLAVE);
+  let desc;
+  if (sid) { qs += '&sid=' + encodeURIComponent(sid); desc = 'los eventos de la sesión «' + sid + '»'; }
+  else if (dias !== '0') { qs += '&dias=' + dias; desc = 'los eventos ANTERIORES a ' + dias + ' días (retención)'; }
+  else desc = 'TODOS los eventos de telemetría (histórico completo)';
+  if (sid) {
+    if (!confirm('¿Borrar ' + desc + '?')) return;
+  } else {
+    const teclea = prompt('Esto borra ' + desc + ' de forma PERMANENTE.\nEscribe BORRAR para confirmar:');
+    if (teclea !== 'BORRAR') return;
+  }
+  try {
+    const r = await fetch(base() + qs, { method: 'DELETE' });
+    const d = await r.json();
+    aviso('Purga completada: ' + fnum(d.borrados) + ' evento(s) borrado(s).');
+    salud(); cargar();
+  } catch (e) { aviso('La purga falló: ' + e.message); }
+};
+
 $('cargar').onclick = cargar;
 $('refresca').onclick = cargar;
-$('purga').onclick = async () => {
-  if (!confirm('¿Borrar TODOS los eventos de telemetría?')) return;
-  try { await fetch(base() + '?clave=' + encodeURIComponent(CLAVE), { method: 'DELETE' }); cargar(); }
-  catch (e) { aviso('La purga falló: ' + e.message); }
+$('auto').onchange = () => {
+  if (timerAuto) { clearInterval(timerAuto); timerAuto = null; }
+  if ($('auto').checked) timerAuto = setInterval(() => { if (CLAVE) { cargar(); } salud(); }, 60000);
 };
 if (CLAVE) cargar();
+salud();
+setInterval(salud, 60000);
 </script>
 </body>
 </html>

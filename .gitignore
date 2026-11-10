@@ -116,3 +116,6 @@ pages-site/
 
 # r127: ZIPs siempre fuera de git (límite GitHub 100 MB — este fósil pesa 101,6 MB)
 crazypp-v308-trn1-CLOUDFLARE.zip
+
+# r42: uuid cacheado de la D1 (d1_sql.py)
+scripts/worker-tele/.d1-id

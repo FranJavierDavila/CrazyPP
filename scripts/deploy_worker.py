@@ -227,6 +227,7 @@ def main():
 
     # ── 5 · clave de lectura
     paso(5, "clave de lectura (CLAVE)")
+    clave_nueva = False
     clave = os.environ.get("TELE_CLAVE", "").strip()
     if clave:
         ok("clave del dueño (TELE_CLAVE)")
@@ -236,6 +237,7 @@ def main():
         ok("clave reutilizada de .clave-produccion")
     else:
         clave = "cpp-" + secrets.token_urlsafe(18)
+        clave_nueva = True
         ok("clave nueva generada")
     guarda_clave(clave)
     ok("guardada en scripts/worker-tele/.clave-produccion (600, gitignored)")
@@ -368,12 +370,14 @@ def main():
     print("DESPLIEGUE COMPLETO Y VERIFICADO EN PRODUCCIÓN")
     print("=" * 74)
     print(f"\n  URL del worker : {base_url}/api/tele")
-    print(f"  CLAVE (léela UNA vez y guárdala en tu gestor de contraseñas):\n")
-    print(f"      {clave}\n")
-    print("  Siguiente paso (tuyo, 30 s): abre el panel /telemetria → botón")
-    print("  «Producción (D1)» → pega esta CLAVE (se recuerda en el navegador).")
-    print("  El test en casco será entonces la primera lectura real del visor.")
-    print("\n  (esta clave también queda en scripts/worker-tele/.clave-produccion)")
+    if clave_nueva:
+        print("  CLAVE (léela UNA vez y guárdala en tu gestor de contraseñas):\n")
+        print(f"      {clave}\n")
+    else:
+        print("  CLAVE: conservada (la del dueño) — vive en scripts/worker-tele/")
+        print("  .clave-produccion (gitignored). NO se imprime en la consola.")
+    print("  Siguiente paso (tuyo, 30 s): abre el panel /telemetria → pega la")
+    print("  CLAVE si el navegador no la recuerda (localStorage).")
     sys.exit(0)
 
 

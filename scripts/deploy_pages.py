@@ -355,15 +355,21 @@ def need_token():
     return t
 
 
-def git_push(refspec):
+def git_push(refspec, forzar=False):
     helper = "!f() { echo username=FranJavierDavila; echo password=$GIT_TOKEN; }; f"
-    sh(['git', '-c', 'http.postBuffer=524288000',
-        '-c', f'credential.helper={helper}', 'push', 'origin', refspec])
+    cmd = ['git', '-c', 'http.postBuffer=524288000',
+           '-c', f'credential.helper={helper}', 'push', 'origin', refspec]
+    if forzar:
+        cmd.insert(cmd.index('push') + 1, '--force')
+    sh(cmd)
 
 
 def do_push():
     need_token()
-    git_push('refs/heads/pages:refs/heads/pages')
+    # r42 · --force DE SERIE (lección r41): cada deploy crea un COMMIT
+    # HUÉRFANO (update-ref a un commit raíz), así que el push es SIEMPRE
+    # non-fast-forward y antes se tenía que forzar a mano.
+    git_push('refs/heads/pages:refs/heads/pages', forzar=True)
     remote = out(['git', 'ls-remote', 'origin', 'refs/heads/pages'])
     print(f'  ✓ rama pages en GitHub → {remote.split()[0][:9]}')
     print(f'    ACTIVA PAGES (una vez): Settings → Pages → Deploy from a branch → pages /(root) → Save')

@@ -14,10 +14,16 @@ CONTRATO (hermano del receptor local /api/telemetria)
 -----------------------------------------------------
   POST   /api/tele            lote → D1 · 204 (acepta array directo y wrapper)
   GET    /api/tele            latido público {ok, total, ts}
+  GET    /api/tele?salud=1    PÚBLICO {ok, total, ultimoRec, haceSeg} (r42)
   GET    /api/tele?resumen=1  agregados completos   → REQUIERE clave
   GET    /api/tele?eventos=N  últimos N crudos      → REQUIERE clave
+  GET    /api/tele?csv=1      CSV crudo (tope 20.000)→ REQUIERE clave (r42)
   DELETE /api/tele?sid=…      purga (sin sid → todo)→ REQUIERE clave
+  DELETE /api/tele?dias=N     retención: borra lo anterior a N días (r42)
   OPTIONS                      preflight CORS
+
+  Filtros (r42): ?dias=N limita por LLEGADA al servidor (columna rec) en
+  resumen, eventos, csv y DELETE; combinable con ?sid= en todos.
 
 La clave se declara como VARIABLE del worker con nombre exacto: CLAVE.
 En las lecturas se pasa por ?clave=… o cabecera X-Clave. El POST no lleva

@@ -1,8 +1,20 @@
 {
  "catalogo": "telemetria-crazypp",
- "version": "v10",
- "actualizado": "r115 · M5b escalera de carrera",
+ "version": "v11",
+ "actualizado": "r42 · telemetría profesional (salud + CSV + filtros por día + retención + panel v2 + consola SQL directa)",
  "ronda": 123,
+ "r42_infra": {
+  "resumen": "CONTROL ABSOLUTO desde el repo: worker v2 (endpoints nuevos sin tocar el contrato del juego), panel v2 (public/telemetria.html) y consola SQL directa contra D1 (scripts/d1_sql.py).",
+  "endpoints_nuevos": {
+   "GET ?salud=1": "PÚBLICO {ok, ts, total, ultimoRec, haceSeg} — LED de salud del panel: ¿llegan lotes y hace cuánto?",
+   "GET ?csv=1": "CSV crudo (CLAVE) · columnas e,fecha_iso,t_ms,version,sid,json · ?tope=N (defecto 20.000, máx 50.000) · filtros ?sid= y ?dias= · BOM UTF-8 para Excel",
+   "?dias=N": "filtro por LLEGADA (columna rec) en resumen, eventos, csv y DELETE; combinable con ?sid=",
+   "DELETE ?dias=N": "retención: purga sólo lo anterior a N días (combinable con ?sid=)"
+  },
+  "panel_v2": "public/telemetria.html (URL estable en Pages) — salud con LED, KPIs, alarmas, gráficas (día/eventos/versiones), sesiones VR, eventos crudos expandibles con JSON, filtros días+sid, exportar CSV/JSON, prueba de ingestión E2E con un clic, purga con confirmación fuerte, auto-refresco 60 s",
+  "control_directo": "python3 scripts/d1_sql.py \"SELECT …\" (sólo SELECT) · --escritura para DELETE · --tablas para esquema — pasa POR ENCIMA del worker vía API de Cloudflare con .cf-token",
+  "diagnostico_r42": "El pipeline FUNCIONA (E2E verificado: POST 204, resumen con clave, purga). Los datos son escasos porque el tráfico de producción real es mínimo: 8 boots (4 del preview de infra v3.6.27 + 4 de producción v3.6.136), todos '2d', sin eventos de juego ni boots de 3.6.137 (posible caché del navegador del casco)."
+ },
  "politica_pii": {
   "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
   "sin_ip": true,

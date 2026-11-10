@@ -570,7 +570,8 @@ export const HALL_VARIANTES = [
   { id: 'anfitrion', lock: null, nameKey: 'hall_var_anfitrion',
     base: 'assets/hall/' },
   { id: 'cabana', lock: 'wins10', nameKey: 'hall_var_cabana',
-    base: 'assets/hall/cabana/' },
+    base: 'assets/hall/cabana/',        // REFUGIO DE MONTAÑA · 10 victorias
+    musica: 'assets/hall/cabana/cabana.mp3' },
   // r26b (v3.6.122) · 3 HALL NUEVOS del dueño («otros 3 diseños de Hall
   // nuevos bien cuidados para mapear… desbloqueos por hitos conseguidos»):
   // arte 100 % procedural con las MISMAS fichas y proporciones exactas
@@ -582,7 +583,12 @@ export const HALL_VARIANTES = [
   // medidas exactas). La pista suena en bucle mientras el salón está
   // ABIERTO (enterHall→exitHall) y manda sobre cualquier otra música en
   // la estancia (invariante UNA MELODÍA, canal hall en c03); el icono de
-  // la pared frontal la silencia (c08/c12). anfitrion/cabana: sin música.
+  // la pared frontal la silencia (c08/c12). anfitrion: sin música.
+  // r48 (v3.6.141) · LA CABAÑA SUENA: el dueño entrega «cabana.mp3» —
+  // «incorpora en el Hall de la cabaña la melodia que te indico 'cabana.mp3',
+  // puesto que no teníamos aún ninguna asignada a ese escenario». La cabaña
+  // abandona el grupo «sin música» y suena como el resto de salones (canal
+  // hall, bucle enterHall→exitHall, manda sobre cualquier otra melodía).
   // r38 (v3.6.134) · EL SALÓN DE LA PARTIDA: la cancha de los PARTIDOS
   // (libre, supervivencia, duelos y online) se viste y suena como el hall
   // configurado por el ANFITRIÓN (local = el tuyo; online = el del

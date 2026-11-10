@@ -291,6 +291,57 @@ JS_ARM = """() => {
   G.net._fastSend = (buf, now) => sim.emit(buf, now, (b) => orig(b, performance.now()));
   G.__simPump = setInterval(() => sim.pump(performance.now()), 6);
   G.__simReady = true;
+  // r48 · REFLEJO DE PÁGINA: el devolvedor «humano» del guion vive AHORA
+  // DENTRO de la página y dispara en el MISMO tick JS en que el árbitro
+  // ve el bote válido (≤16 ms), sin viajes de evaluate (cada ida/vuelta
+  // cuesta un marco rAF de ~700 ms en SwiftShader). Con la física en
+  // tiempo real (dtFis, r43) el fantasma del sacador detecta el DOBLE
+  // BOTE a ~0,5 s de juego (~4 s reales en headless a ~1,5 fps) y la
+  // cadena de evaluates del guion r82 (~8-10 s reales) PERDÍA esa
+  // carrera: el árbitro — honesto — cantaba el punto (dbl_opp) antes de
+  // que el golpeo llegara (la sonda lo mostró: point@164 · HIT@165).
+  // El reflejo es legal: bote válido + bola AUTH + rallye vivo, UNA vez,
+  // y el guion comprueba su resultado igual que antes.
+  window.__qaRefleja = false;      // el guion lo arma por punto
+  window.__qaReflejaRes = null;
+  // r48 · el DISPARO vive en el tap del árbitro (handleEvents): el bote que
+  // pone validBounce=true se procesa DENTRO de un marco rAF (~700 ms en
+  // SwiftShader) y un setInterval de 8 ms puede ir ESTRANGULADO a ~1 Hz en
+  // páginas ocultas de headless (lección P3: el HIT salía 1-2 s tarde y
+  // perdía la carrera contra el doble bote del fantasma del sacador,
+  // ~0,35 s de juego tras el bote). Disparar JUSTO tras handleEvents es
+  // el MISMO tick JS del bote — el golpe sale en el siguiente flush.
+  if (!G.__qaReflejoEnganchado) {
+    G.__qaReflejoEnganchado = true;
+    G.__qaReflejaIntenta = () => {
+      if (!window.__qaRefleja) return;
+      const G2 = window.__PP_GAME;
+      if (!G2 || !G2.net || !G2.net._ball || !G2.rules) return;
+      if (G2.rules.state !== 'rally' || !G2.rules.validBounce) return;
+      if (G2.net._ball.state !== 'auth') return;
+      window.__qaRefleja = false;            // UNA devolución por arma
+      try {
+        G2.__simHold = true;                 // pose determinista para el validador
+        G2.grips[1].position.set(0.05, 0.88, -1.38);
+        G2.grips[1].quaternion.set(0, 0, 0, 1);
+        G2.ball.pos.set(0.05, 1.00, -1.35);
+        G2.ball.vel.set(-0.05, 0.50, -2.90); // hacia el rival (mitad lejana)
+        G2.ball.spin.set(0, 0, 0);
+        G2.processIntents(G2.rules.registerPaddleHit('player'));
+        G2.net.sendHit(false);
+        G2.__simHold = false;              // la oscilación vuelve tras el golpe
+        window.__qaReflejaRes = 'ok';
+      } catch (e) { window.__qaReflejaRes = 'exc:' + (e && e.message); }
+    };
+    const _heR = G.rules.handleEvents.bind(G.rules);
+    G.rules.handleEvents = (evs) => {
+      const r = _heR(evs);
+      try { G.__qaReflejaIntenta(); } catch (eR) { /* */ }
+      return r;
+    };
+    // red de seguridad por si un punto muere sin bote procesado
+    G.__qaReflejoIv = setInterval(() => { try { G.__qaReflejaIntenta(); } catch (e) { /* */ } }, 250);
+  }
   return true;
 }"""
 
@@ -465,11 +516,13 @@ async def punto_duelo(P, sac_pg, rec_pg, nom_sac, nom_rec, num, reintenta=True, 
         except Exception as e:
             print(f"    [{P.pid}] HANDOFF-fallo: dump no disponible ({repr(e)[:80]})", flush=True)
         return False
-    # DEVOLUCIÓN (pose congelada 60 ms para el validador del sacador)
-    brazo = await rec_pg.evaluate(JS_BRAZO_DEVUELVE)
-    if brazo:
-        await rec_pg.wait_for_timeout(60)
-    ret = await rec_pg.evaluate(JS_DEVUELVE)
+    # DEVOLUCIÓN (r48 · reflejo de página: se ARMA y se espera su resultado —
+    # la cadena evaluate+BRAZO+60 ms+evaluate del r82 perdía la carrera contra
+    # el doble bote del fantasma en headless; el reflejo dispara ≤16 ms tras
+    # el bote válido, dentro del tiempo de juego real)
+    await rec_pg.evaluate("() => { window.__qaReflejaRes = null; window.__qaRefleja = true; return true; }")
+    ret_ok = await wait_cond(rec_pg, "() => window.__qaReflejaRes !== null", 30)
+    ret = await rec_pg.evaluate("() => window.__qaReflejaRes") if ret_ok else "sin disparo"
     if not P.chk(ret == "ok", f"punto {num}: {nom_rec} DEVUELVE tras el bote ({ret})"):
         return False
     # el golpe del rival cuenta en el árbitro del sacador
@@ -737,11 +790,15 @@ async def jugar(pw, per, url):
         # de asentarse en su postura — −2,22/−2,24 contra el umbral −2,25)
         # y se exige < −2,25: mitad lejana profunda, nunca encima del jugador.
         hAv = gAv = 0.0
-        for _i in range(14):
+        # r48 · ventana de un PERIODO completo de la oscilación (cos(t/700)
+        # ≈ 4,4 s): con 14×150 ms (2,1 s) y marcos rAF de ~700 ms en
+        # SwiftShader la malla sólo se repinta 3-4 veces y el mínimo caía
+        # donde tocara (flaky −1,69). 24×200 ms cubre el periodo entero.
+        for _i in range(24):
             hS = await host.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
             gS = await guest.evaluate("() => window.__PP_GAME.aiPaddleMesh.position.z")
             hAv, gAv = min(hAv, hS) if _i else hS, min(gAv, gS) if _i else gS
-            await host.wait_for_timeout(150)
+            await host.wait_for_timeout(200)
         P.chk(hAv < -2.25 and gAv < -2.25,
               f"cuerpos con offsets: la pala del rival vive en la mitad LEJANA de cada página (min z={hAv:.2f} / {gAv:.2f})")
 

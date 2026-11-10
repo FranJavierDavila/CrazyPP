@@ -7420,6 +7420,17 @@ export class PingPongGame {
       // en 'over' es YA revancha en el MISMO modo (camino v3.6.29 intacto)
       // v3.6.29: PRESERVA bestOf — la revancha por gatillo repite el contexto
       // (libre = nueva serie al mejor de 3; campeonato = duelo a juego único)
+      // r48 · REVANCHA ONLINE POR EL CABLE: en v2 el gatillo-révancha NO
+      // puede rearrancar en local (el anfitrión resetearía shot/rallySeq
+      // mientras el invitado sigue en 'over' — correlativo roto, atasco tipo
+      // r122). Ruta por startOnlineMatch: manda el mstart (md incluido) y
+      // ambos extremos arrancan la serie ESPEJADA por el mismo camino del
+      // MATCH_START. En local: el camino de siempre.
+      if (this.net && this.net.online) {
+        this.startOnlineMatch();          // mstart nuevo (md, HELD, countdown)
+        this.resetToss();
+        return;
+      }
       this.rules.startMatch(this.mode);   // revancha en el MISMO modo de juego
       this.resetToss();
       return;

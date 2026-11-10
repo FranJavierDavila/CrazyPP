@@ -1,7 +1,7 @@
 {
-  "version": "3.6.140-SDK6",
-  "fase": 142,
-  "faseNombre": "La voz del oráculo — voz solemne del Arcano, candado siempre visible y constelación del arte nuevo",
+  "version": "3.6.141-SDK6",
+  "fase": 143,
+  "faseNombre": "La cabaña suena — cabana.mp3 en el Hall y batería multijugador lista para clientes reales",
   "sdk": "1.6.0",
   "fecha": "2026-11-10",
   "hub": "v36139-sdk6",
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11507255,
-  "golden": "2b3dffca315d787eea3818e44621ed1a85355bf4e3c088ae818a4b7c0b67e927"
+  "tamano": 11529358,
+  "golden": "515f135e03b4d44eb2ae40b0a3b396f1c9963dc6098afe8d137189a46d8bb1d1"
 }

@@ -1599,7 +1599,23 @@ export class NetLink {
     return [-v3.x, v3.y - T, -3.2 - v3.z];
   }
   _velNet(v3) { return [-v3.x, v3.y, -v3.z]; }
-  _spinNet(v3) { return [-v3.x, v3.y, -v3.z]; }
+  /* r48 · CLAMP DEL CABLE: LOCA (y el EFECTO del Arcano) multiplica el giro
+   * local ×2 y el tope LOCAL sube a spinMax×efectoSpinTope = 330 rad/s —
+   * pero el validador §12 del RECEPTOR rechaza spin > VP.MAX_SPIN (220) como
+   * GRAVE: golpe desaparecido + resync-req en plena partida. El giro LOCAL
+   * queda intacto (la curva que yo veo es la buena); sólo lo que VIAJA se
+   * clampa a la magnitud máxima legal — el receptor integra la curva al
+   * máximo que su árbitro acepta. Emisión por _spinNet = un solo punto que
+   * cubre localHit, crossedNet y cualquier evolución futura. */
+  _spinNet(v3) {
+    const MAX = PPNET.VP.MAX_SPIN;
+    const m = Math.hypot(v3.x, v3.y, v3.z);
+    if (m > MAX && m > 0) {
+      const k = MAX / m;
+      return [-v3.x * k, v3.y * k, -v3.z * k];
+    }
+    return [-v3.x, v3.y, -v3.z];
+  }
 
   _onFast(buf) {
     if (this.v2 !== 'ok') return;
@@ -1880,6 +1896,13 @@ export class NetLink {
       // seguía juzgando el rally con lastHitter/validBounce suyos (puntos
       // fantasma tras un RESYNC en pleno intercambio)
       lh: r.lastHitter || null, vb: !!r.validBounce,
+      // r48 · IDENTITY DEL RALLYE: si el rechazo de un saque/HIT dejó al
+      // receptor con rallySeq/shot ATRÁS, el correlativo del validador
+      // rechazaría TODO el rallye siguiente (degradación a puntuación por
+      // CLAIM del anfitrión). El resync lleva el rallySeq vivo y el
+      // aplicador lo ancla (appliedRally incluido — sin él el guardia
+      // anti-duplicado bloquearía el CLAIM del rallye re-anclado).
+      rs: r.rallySeq | 0,
     });
   }
 
@@ -1907,6 +1930,20 @@ export class NetLink {
     // r82: el árbitro de mitad hereda las banderas del anfitrión
     if (m.lh !== undefined) r.lastHitter = gu ? flip(m.lh) : m.lh;
     if (m.vb !== undefined) r.validBounce = !!m.vb;
+    // r48 · rallySeq del anfitrión (identidad del rallye vivo): re-ancla la
+    // identidad y la guardia anti-duplicado — tras un rechazo de saque el
+    // correlativo del validador vuelve a cuadrar y el CLAIM del rallye
+    // re-anclado NO queda bloqueado por _appliedRally viejo.
+    if (typeof m.rs === 'number' && m.rs > 0) {
+      r.rallySeq = m.rs;
+      r._appliedRally = m.rs;
+    }
+    // r48 · y si el resync aterriza en SAQUE, la FSM de bola vuelve al HELD
+    // reglamentario (shot a 0 — el correlativo del próximo saque cuadra;
+    // camino del agent A: «si m.st === 'serve', re-armar setHeld»).
+    if (m.st === 'serve' && this._ball) {
+      this._ball.setHeld(r.server === 'player');
+    }
   }
 
   /** intents de PUNTO local (processIntents, c12): enviar/suprimir

@@ -1,2 +1,2 @@
-# SHA256 del game.html que produjo esta división (3.6.139-SDK6, fase 141 · La vitrina del cielo — candado del dueño, constelación de palas y rankings mundiales; re-sellado por sella_r46.py tras el gobernador de telemetría, el evento 'logro' y el worker v3 ?rank=1/retención/logrosTop)
-42d07e64e1071243ecac63700080cf37350928d2e57a2089111e3af9e3d5edc6
+# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r47_viva)
+2b3dffca315d787eea3818e44621ed1a85355bf4e3c088ae818a4b7c0b67e927

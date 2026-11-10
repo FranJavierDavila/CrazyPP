@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r45 · v3.6.139-SDK6 · FASE 141 · TEST: LA VITRINA DEL
+/* CRAZY PING PONG · r45 · v3.6.140-SDK6 · FASE 142 · TEST: LA VITRINA DEL
  * CIELO — informe del dueño tras la v3.6.138 en el casco (cuatro frentes):
  *
  *   1 · CANDADO CON LA IMAGEN DEL DUEÑO — «los candados vamos a
@@ -73,8 +73,8 @@ chk(c08.includes('candMesh.material.map = t;') && c08.includes('candTex.dispose(
   'c08: la textura del dueño sustituye al glifo vectorial (respaldo conservado)');
 chk(c08.includes('drawArcanoCandado(candCv);'),
   'c08: el glifo vectorial de la casa sigue pintado como FALLBACK');
-chk(c08.includes('candado.position.set(-0.612, 1.585, -2.28);'),
-  'c08: el candado vive en la ZONA SUPERIOR IZQUIERDA del medallón');
+chk(c08.includes('candado.position.set(-0.612, 1.585, -2.20);'),
+  'c08: el candado vive en la ZONA SUPERIOR IZQUIERDA (r47: un paso más cerca — jamás coplanar)');
 chk(c08.includes('candHalo.scale.setScalar(0.32);'),
   'c08: HALO ROJO mayor (la silueta negra recorta contra él)');
 chk(c08.includes('rgba(255,45,30,0.4)') && c08.includes('color: 0xff4530'),
@@ -202,15 +202,15 @@ chk(c08.includes('drawArcanoSalir') && c08.includes('montaSueloArcano'),
 chk(c08.includes('this.rig.add') === false || true, 'c08: rig sin cambios (asunto c12)');
 chk(c12.includes('this.rig.add(this._netVisor);'),
   'c12: la esfera del rival en el RIG (fix r43 intacto)');
-chk(vjson.version === '3.6.139-SDK6' && vjson.fase === 141,
-  'VERSION.json: 3.6.139-SDK6 · FASE 141 (la vitrina del cielo)');
+chk(vjson.version === '3.6.140-SDK6' && vjson.fase === 142,
+  'VERSION.json: 3.6.140-SDK6 · FASE 142 (la vitrina del cielo)');
 chk(lee('public/game.html').includes('ARCANO_PALAS_TRAZO') &&
     lee('public/game.html').includes('onPeerPala'),
   'game.html: la build lleva la r45 dentro');
 
 /* — 6 · RESULTADO ———————————————————————————————————————————— */
 console.log('');
-console.log('=== r45 · v3.6.139-SDK6 · LA VITRINA DEL CIELO ===');
+console.log('=== r45 · v3.6.140-SDK6 · LA VITRINA DEL CIELO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

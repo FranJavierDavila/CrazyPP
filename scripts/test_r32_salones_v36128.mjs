@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r32 · v3.6.139-SDK6 · FASE 141 · TEST: SALONES DEL
+/* CRAZY PING PONG · r32 · v3.6.140-SDK6 · FASE 142 · TEST: SALONES DEL
  * DUEÑO (arte preparado por el dueño + música ambiental con icono).
  *
  *   A · ARTE DEL DUEÑO — los 18 JPG de los tres salones (DOJO ZEN ·
@@ -61,23 +61,23 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.139-SDK6 · FASE 141 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.139-SDK6 · FASE 141 · SALONES DEL DUEÑO');
-chk(vjson.version === '3.6.139-SDK6', 'VERSION.json: 3.6.139-SDK6');
-chk(vjson.fase === 141, 'FASE 141');
-chk(vjson.faseNombre === 'La vitrina del cielo — candado del dueño, constelación de palas y rankings mundiales', 'faseNombre = SALONES DEL DUEÑO');
+/* — 1 · SELLOS · v3.6.140-SDK6 · FASE 142 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.140-SDK6 · FASE 142 · SALONES DEL DUEÑO');
+chk(vjson.version === '3.6.140-SDK6', 'VERSION.json: 3.6.140-SDK6');
+chk(vjson.fase === 142, 'FASE 142');
+chk(vjson.faseNombre === 'La voz del oráculo — voz solemne del Arcano, candado siempre visible y constelación del arte nuevo', 'faseNombre = SALONES DEL DUEÑO');
 chk(vjson.tamano === 11507255, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  '42d07e64e1071243ecac63700080cf37350928d2e57a2089111e3af9e3d5edc6',
+  '2b3dffca315d787eea3818e44621ed1a85355bf4e3c088ae818a4b7c0b67e927',
   'VERSION.json golden 10a24300…');
 chk(sha256('public/game.html') ===
-  '42d07e64e1071243ecac63700080cf37350928d2e57a2089111e3af9e3d5edc6',
+  '2b3dffca315d787eea3818e44621ed1a85355bf4e3c088ae818a4b7c0b67e927',
   'golden 10a24300… (build byte-exacto)');
-chk(game.includes('3.6.139-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.139-SDK6'"), 'sello c00 = 3.6.139-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.139-SDK6'"),
-  'sw.js CACHE v3.6.139-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.139-SDK6</span>'), 'badge V3.6.139-SDK6 en 03_body');
+chk(game.includes('3.6.140-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.140-SDK6'"), 'sello c00 = 3.6.140-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.140-SDK6'"),
+  'sw.js CACHE v3.6.140-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.140-SDK6</span>'), 'badge V3.6.140-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 

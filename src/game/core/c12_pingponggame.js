@@ -6506,10 +6506,12 @@ export class PingPongGame {
     // r41 · CANDADO FLOTANTE sincronizado con el estado REAL de
     // desbloqueo (delante del icono, halo rojo pulsante — jamás encima)
     if (A.candado) A.candado.grupo.visible = bloqueado;
-    // r41 · LA VOZ PRESENTA el poder: su nombre corto embebido (ES/EN),
-    // la misma vía del selector — la ficha se OYEA, no sólo se lee.
+    // r41+r47 · LA VOZ PRESENTA el poder — SOLEMNE: su nombre corto
+    // embebido (ES/EN) por el conducto ceremonial (pausada, grave, sala
+    // ritual): en el Arcano la ficha se OYE como en un templo, no con
+    // la voz ágil del selector de juego.
     if (conVoz !== false) {
-      try { this._vozSel(p.id); } catch (eV1) { /* sin audio: nunca rompe */ }
+      try { this._vozSelSolemne(p.id); } catch (eV1) { /* sin audio: nunca rompe */ }
     }
     // flechas: SIN flecha izquierda en el 0, SIN flecha derecha en el
     // último — bordes detectados del registro (automático al crecer)
@@ -6669,13 +6671,13 @@ export class PingPongGame {
       this._arconoRepinta(false);   // r41 · el hint habla primero…
       try { this.audio.setHallWanted(true, 'assets/hall/arcano.mp3'); } catch (eArcM1) { /* */ }
       try { this.audio.announce(T('arcono_hint'), true); } catch (eA1) { /* */ }
-      // r41 · …y la VOZ presenta el poder cuando el holograma ya se
-      // está condensando (UNA voz viva: jamás dos a la vez).
+      // r41+r47 · …y la VOZ SOLEMNE presenta el poder cuando el holograma
+      // ya se está condensando (UNA voz viva: jamás dos a la vez).
       setTimeout(() => {
         try {
           if (this._arconoOn && this.arcaneGroup) {
             const p0 = PODERES_PALA[this._arconoIdx] || PODERES_PALA[0];
-            if (p0) this._vozSel(p0.id);
+            if (p0) this._vozSelSolemne(p0.id);
           }
         } catch (eV0) { /* sin audio: nunca rompe */ }
       }, 2300);
@@ -11039,6 +11041,88 @@ export class PingPongGame {
         .then((r2) => r2.arrayBuffer())
         .then((ab) => A.ctx.decodeAudioData(ab))
         .then((buf) => { entry.buf = buf; entry.busy = false; play(buf); })
+        .catch(() => { entry.busy = false; entry.failed = true; });
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
+  }
+
+  /* =====================================================================
+   *  r47 · LA VOZ SOLEMNE DEL ARCANO (petición del dueño): dentro del
+   *  espacio Arcano los superpoderes no los nombra la voz ágil del
+   *  selector de juego, sino una voz CEREMONIAL — pausada, profunda,
+   *  grave, «casi un dios, un ser superior». Mismo banco ES/EN (los
+   *  mismos átomos y la MISMA caché de decodificados que _vozSel) —
+   *  sólo cambia el CONDUCTO: la cadena del oráculo
+   *      cinta lenta ×0,82 → paso-bajo 2,8 kHz → sala ritual (convolución
+   *  1,7 s sintética, generada UNA vez por AudioContext). Cero bytes
+   *  nuevos en el juego: no hay assets, sólo el conducto de reproducción.
+   *  ==================================================================== */
+  /** El impulso de la sala ceremonial (una vez por ctx: decaimiento
+   *  exponencial estéreo con arranque suave — nadie lo ve, sólo se oye). */
+  _vozSolemneImpulso() {
+    const A = this.audio;
+    if (A._solConv) return A._solConv;
+    const ctx = A.ctx;
+    const sr = ctx.sampleRate, dur = 1.7, n = (sr * dur) | 0;
+    const ir = ctx.createBuffer(2, n, sr);
+    for (let c = 0; c < 2; c++) {
+      const d = ir.getChannelData(c);
+      for (let i = 0; i < n; i++) {
+        const atk = i < sr * 0.012 ? i / (sr * 0.012) : 1;
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.6) * atk;
+      }
+    }
+    A._solConv = ctx.createConvolver();
+    A._solConv.buffer = ir;
+    return A._solConv;
+  }
+
+  /** El conducto del oráculo: cinta lenta (×0,82 — pausa y cae el tono
+   *  ~3 semitonos, la voz del gigante) → paso-bajo (redondea y oscurece)
+   *  → seco + sala ceremonial → mezcla al pan del anfitrión. */
+  _vozSolemneToca(buf) {
+    try {
+      const A = this.audio;
+      if (!A.ctx || !A.master) return;
+      const out = A.panNode(0);
+      if (!out) return;
+      const src = A.ctx.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = 0.82;
+      const lp = A.ctx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 2800; lp.Q.value = 0.6;
+      const seco = A.ctx.createGain(); seco.gain.value = 0.92;
+      const sala = A.ctx.createGain(); sala.gain.value = 0.30;
+      const mezcla = A.ctx.createGain(); mezcla.gain.value = 1.18;
+      const conv = this._vozSolemneImpulso();
+      src.connect(lp);
+      lp.connect(seco); seco.connect(mezcla);
+      lp.connect(conv); conv.connect(sala); sala.connect(mezcla);
+      mezcla.connect(out);
+      src.start();
+    } catch { /* el audio NUNCA rompe el bucle del juego */ }
+  }
+
+  /** La voz SOLEMNE nombra el poder (id null = «Sin poder»): idéntico a
+   *  _vozSel (mismas claves de caché 'sel_' — reusa el decodificado del
+   *  juego) pero reproduce por el conducto r47. ES/EN automáticos. */
+  _vozSelSolemne(id) {
+    try {
+      const A = this.audio;
+      if (!A || !A.ctx) return;
+      const key = (id || 'nada') + ((__ppLang === 'en') ? '_en' : '_es');
+      A._megaVozBuf = A._megaVozBuf || {};
+      const kbuf = 'sel_' + key;
+      const cached = A._megaVozBuf[kbuf];
+      if (cached && cached.ctx === A.ctx && cached.buf) { this._vozSolemneToca(cached.buf); return; }
+      if (cached && (cached.busy || cached.failed)) return;
+      const fuente = this._vozSelFuente(key);
+      if (!fuente) return;
+      const entry = { ctx: A.ctx, buf: null, busy: true };
+      A._megaVozBuf[kbuf] = entry;
+      fetch(fuente)
+        .then((r2) => r2.arrayBuffer())
+        .then((ab) => A.ctx.decodeAudioData(ab))
+        .then((buf) => { entry.buf = buf; entry.busy = false; this._vozSolemneToca(buf); })
         .catch(() => { entry.busy = false; entry.failed = true; });
     } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }

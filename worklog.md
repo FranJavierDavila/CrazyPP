@@ -5981,3 +5981,24 @@ Stage Summary:
 - LA FASE 141 QUEDA COMPLETA Y EN PRODUCCIÓN: candado del dueño con halo rojo, constelación de palas en la bóveda (~10 s, glow azul), skin de la pala del invitado visible en el duelo, y un CENTRO DE TELEMETRÍA que ya responde a las dos preguntas del dueño — análisis con gráficas (rankings mundiales por ELO/victorias/puntos/logros, retención D1/D7/D30, desbloqueos, FPS, alarmas, embudos, exportación CSV/JSON) y telemetría que SE CONGELA SOLA si la partida en red baja de 58 fps (la experiencia de juego manda).
 - Pendiente del dueño (único): actualizar el worker v3 en el dashboard de Cloudflare (~5 min, LEEME actualizado con el contrato: pegar scripts/worker-tele/worker.js en crazypp-tele → Deploy) o reponer scripts/worker-tele/.cf-token para que lo haga deploy_worker.py. Mientras el worker sea v2, el panel muestra «este worker aún no publica rankings» y TODO lo demás funciona igual.
 - El dueño debe recargar en el casco (game.html?v=36139) para la build con gobernador y skin `sp`.
+
+---
+Task ID: 252 (ronda 47 de la línea viva)
+Agent: principal (Z.ai)
+Task: Informe del dueño desde el Arcano — «la voz que nombra los superpoderes es la del juego y no cuadra; quiero voz solemne de dios (ES/EN)» + «el candado rojo fluctúa, debe estar un poco por encima del plano del icono» + «el efecto de escritura del cielo igual pero con MI nueva palas.png (logo CRAZY PING PONG)».
+
+Work Log:
+- RECUPERACIÓN 9.º rodado del sandbox: HEAD en ronda 35 (FASE 29) — fetch anónimo + checkout 0d32e5f (r45+r46 · FASE 141) con los 93 ficheros del dueño preservados en tmp_owner_backup/ y restaurados. El deploy vive en REPO=upload (r126) y el repo vivo exige safe.directory (dubious ownership del mount).
+- VIGILANTE DEL ENTORNEO identificado: restaura cada ~15 s los generados (game.html, GOLDEN, VERSION.json, sellos) a HEAD. Defensa: sella_r47_viva.py — sellado + ensamblado (in-process, pieza_pura del build) + verificación de agujas + commit + RE-verificación a 22 s, todo atómico.
+- (A) VOZ SOLEMNE del oráculo (c12 r47): los ÁTOMOS del banco (ES/EN) y la MISMA caché 'sel_' — sólo cambia el CONDUCTO: _vozSolemneToca = cinta ×0,82 (pausada, tono −~3 semitonos) → paso-bajo 2,8 kHz (grave) → sala CEREMONIAL por convolución sintética (impulso 1,7 s, generado UNA vez por ctx) → mezcla 1,18 al pan del anfitrión. CERO bytes nuevos (sin assets). Los DOS sitios del Arcano (repinta al navegar ‹ › y la presentación a 2,3 s de la entrada) usan _vozSelSolemne; el selector de juego sigue con la voz ágil de siempre.
+- (B) CANDADO SIEMPRE VISIBLE (c08 r47): grupo z −2,28 → −2,20 (15 cm delante del panel −2,35) + renderOrder FIJO (halo 6 · candado 7 — tras panel y constelación): el sort de transparentes jamás lo traga; se ve SIEMPRE en cualquier ángulo y re-entrada.
+- (C) CONSTELACIÓN con el ARTE NUEVO (c08 r47): palas.png del dueño (logo CRAZY PING PONG macizo, 1024² con alfa) → 34 polilíneas por CONTORNO (marching squares skimage sobre alfa suavizado + Douglas-Peucker 1,6 px — gen_trazo_palas_r47.py; el arte macizo pide contorno, no el esqueleto de la silueta lineal r45). Mismo efecto de bolígrafo (montaConstelacion intacto: 3 pasadas de glow, espera→trazo→sostén→fundido→otro lugar al azar), verificado a ojo (/tmp/trazo_check.png dibuja el logo perfecto).
+- QA: gen_trazo + sella + reancla; tests re-anclados a FASE 142 (convención r46): r39 165/0 · r40 62/0 · r41 92/0 · r43 79/0 · r45 55/0 · física c04/c05 byte-exacto intacta.
+- RELEASE: bump a mano por el vigilante (sella_r47_viva: sellos + build in-process + golden 2b3dffca → game.html 11.526.284 B) · reancla_r47_tests.py (sdk casa 1.6.0 restaurado) · commit enmiendado 2× hasta verificación post-vigilante VERDE.
+- DESPLIEGUE (repo vivo upload, HEAD 601501bd): deploy_pages --push --backup → smoke Playwright 33 peticiones 0 fallos 0 pageerrors · pages → a40e0fadd · respaldo main→proyecto al día · PRODUCCIÓN VERIFICADA por curl: game.html sirve V3.6.140-SDK6 con vozSolemneToca ×3 y trazo nuevo ×1.
+- Telemetría D1 en producción (worker crazypp-tele desplegado por el dueño esta misma tarde): latido {ok:true,total:99} — los 99 eventos históricos ya almacenados; el gobernador de la r46 congela el envío si el duelo online baja de 58 FPS.
+
+Stage Summary:
+- EL ARCANO HABLA COMO UN ORÁCULO: cada superpoder se nombra con la voz pausada, grave y ceremonial que pidió el dueño (ES y EN), el candado rojo se ve SIEMPRE (adelantado y con orden de pintado fijo) y la bóveda traza el logo CRAZY PING PONG del artista con el mismo bolígrafo de luz de siempre.
+- Producción en V3.6.140-SDK6 (pages a40e0fadd). El dueño debe recargar el casco con game.html?v=36140.
+- Pendientes vivos: partida en red (TURN sin configurar — variables TURN_API_TOKEN o METERED_*), rankings mundiales en el panel (worker v3 ?rank=1 ya desplegado), y la limpieza de tmp_owner_backup del histórico (artefacto de sesión, fuera del sitio).

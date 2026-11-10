@@ -1353,6 +1353,7 @@ export class PingPongGame {
     this.demoToss = null;
     this._netStart = { startAt: m.startAt, fs: m.fs };
     this._netTossLive = false;
+    this._netTossAt = 0;   // r43: sello temporal del toss (caducidad 2,5 s)
     this.net.setServeHeld(this.rules.server === 'player');
     // r81 · bola HELD del rival OCULTA también en el arranque (el intent
     // 'serve' la esconde en cada punto, pero el MATCH_START llegaba antes:
@@ -6481,6 +6482,13 @@ export class PingPongGame {
     // último — bordes detectados del registro (automático al crecer)
     if (A.flechas.L) A.flechas.L.mesh.visible = this._arconoIdx > 0;
     if (A.flechas.R) A.flechas.R.mesh.visible = this._arconoIdx < n - 1;
+    // r43 · EL LETRERO DE SALIDA: repintado con el IDIOMA VIVO (la
+    // repinta corre en la entrada, la navegación y el cambio ES/EN) —
+    // letras azules con el halo azulón, la misma estética del búho.
+    if (A.salir && A.salir.cv) {
+      drawArcanoSalir(A.salir.cv, T('arcono_boton_salir'));
+      A.salir.tex.needsUpdate = true;
+    }
     A.pop = 0;   // materialización del poder entrante
   }
 
@@ -7458,7 +7466,10 @@ export class PingPongGame {
     this.ball.spin.set(0, 0, 0);
     // r79 · v2: el lanzamiento al aire del saque es VISUAL para el rival
     // (BALL_HIT kind 2 — no regla, no punto: spec §10)
+    // r43 · _netTossAt SELLA el instante: el flag del toss CADUCA a los
+    // 2,5 s (guardián de saque) — jamás bloquea el siguiente punto.
     this._netTossLive = true;
+    this._netTossAt = performance.now();
     if (this.ballMesh) this.ballMesh.visible = true;
     if (this.net.online && this.net.v2 === 'ok') this.net.netLocalToss();
     this.rules.message = T('hint_hit');
@@ -9782,7 +9793,22 @@ export class PingPongGame {
             }
             this._bgTele('mi_saque');
           }
-        } else if (!this._netTossLive) {
+        } else if (this._netTossLive) {
+          // — r43 · LANZAMIENTO DEL RIVAL EN VUELO (toss anunciado): la
+          // bola la lleva la física del fantasma y JAMÁS puede verse
+          // oculta en este tramo (informe del dueño: «en algunos momentos
+          // no se ve la pelota, sobre todo en los saques»). Si algo la
+          // escondió se reenciende SIN tocar su estado; y el flag CADUCA
+          // a los 2,5 s — si el HIT del saque se perdió o fue rechazado,
+          // el guardián vuelve a tomar el mando y el saque no se congela. —
+          if (!this.ballMesh.visible) {
+            this.ballMesh.visible = true;
+            this._bgTele('rival_toss');
+          }
+          if (performance.now() - (this._netTossAt || 0) > 2500) {
+            this._netTossLive = false;
+          }
+        } else {
           // — SAQUE DEL RIVAL: su mano libre si la pose llega fresca;
           //   si no, punto de saque reglamentario (JAMÁS invisible)
           let fresca = false;
@@ -9803,6 +9829,8 @@ export class PingPongGame {
             if (this.ball.spin) this.ball.spin.set(0, 0, 0);
           } else {
             this._bgRival += dt;
+            // r43 · el fallback entra YA si la malla está oculta (antes
+            // esperaba 0,6 s: medio segundo de bola invisible en el saque)
             if (this._bgRival > 0.6 || !this.ballMesh.visible) {
               this.ballMesh.visible = true;
               this.ball.vel.set(0, 0, 0);
@@ -14533,7 +14561,16 @@ export class PingPongGame {
     // la física prefiere ir lenta antes que barrer un intervalo enorme con
     // poses P0→P1 degradadas. Orden por frame: leer poses (three.js ya las
     // actualizó de XRFrame antes de este callback) → simular → renderizar.
-    const dt = this.lastTime < 0 ? 0.016 : Math.min(now - this.lastTime, 1 / 30);
+    // r43 · FÍSICA EN TIEMPO REAL (informe del dueño: «no va nada fluido,
+    // la bola flota y va lenta… una partida no puede bajar NUNCA de los
+    // 60 FPS»): dt (timers/UI/red) sigue capado a 1/30, pero la BOLA
+    // integra con dtFis = el tiempo REAL del frame (capado a 1/12 s —
+    // stepPhysics subescala a 480 Hz: 40 subpasos, dentro del tope 96).
+    // Con frames de 35-50 ms la bola ya NO va a cámara lenta: recorre su
+    // tiempo real y el vuelo se siente VERDADERO aunque el render sufra.
+    const _rawDt = this.lastTime < 0 ? 0.016 : Math.max(0.0001, now - this.lastTime);
+    const dt = Math.min(_rawDt, 1 / 30);
+    const dtFis = Math.min(_rawDt, 1 / 12);
     // r87 · RED SOCIAL: latidos/polls espaciados (fetch cada 10-30 s) —
     // corren SIEMPRE (también congelados y en 2D: el medallón es del menú)
     try { if (this.social) this.social.tick(dt); } catch (eRS2) { /* nunca rompe */ }
@@ -15154,7 +15191,8 @@ export class PingPongGame {
       const v2on = this.net.online && this.net.v2 === 'ok';
       if (v2on && !this.net.ballMine()) {
         const enMiMitad = this.ball.pos.z > DIMS.tableCenterZ;
-        stepPhysics(dt * this._dilF, this.ball, enMiMitad ? pads : [], this.events);
+        // r43: la bola integra su tiempo REAL (dtFis) — jamás cámara lenta
+        stepPhysics(dtFis * this._dilF, this.ball, enMiMitad ? pads : [], this.events);
         this.net.observeGhost(this.ball);
         if (enMiMitad && this.rules.state === 'rally') {
           for (const e of this.events) {
@@ -15190,7 +15228,8 @@ export class PingPongGame {
           const _xNet = (v2on && this.net.ballState() === 'own')
             ? (bX) => { this.net.watchOwnCross(bX); }
             : null;
-          stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);
+          // r43: física en tiempo REAL (dtFis) — la bola nunca va lenta
+          stepPhysics(dtFis * this._dilF, this.ball, pads, this.events, _xNet);
           // v3.6.74 · r82 · EL GOLPE PROPIO EN v2 SE ANUNCIA (era EL defecto
           // que dejaba el multijugador injugable en dispositivo real): la
           // única marca de _localHit vivía en la rama v1 — con el transporte
@@ -15539,7 +15578,16 @@ export class PingPongGame {
           const vg = new THREE.SphereGeometry(0.06, 12, 10);
           const vm = new THREE.MeshBasicMaterial({ color: 0x10141c, transparent: true, opacity: 0.85 });
           this._netVisor = new THREE.Mesh(vg, vm);
-          this.scene.add(this._netVisor);
+          // r43 · HIJO DEL RIG (era de la ESCENA): la pala rival, la mesa, la
+          // bola y TODO el mundo del juego son hijos del rig — el recentrado
+          // de la sesión (updateRecenter gira el rig con el yaw del casco al
+          // entrar en VR) gira el mundo ENTERO menos lo que cuelga de la
+          // escena raíz. La esfera era el ÚNICO objeto fuera del rig: con un
+          // rig girado se veía DESPLAZADA ~1 m respecto a la vertical de la
+          // pala (deriva fija, altura correcta, persistente en cualquier
+          // extremo — informe del dueño). En el rig comparte marco con la
+          // pala: si la pala está bien alineada, la cabeza TAMBIÉN.
+          this.rig.add(this._netVisor);
         }
         const stale = this.net.avatarStaleMs();
         const show = code >= 0 && stale < 500 && !this.inHall;   // r23: tampoco el visor
@@ -16975,7 +17023,7 @@ import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBa
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
 import { applyBallSkin, createBall, createBlobShadow, createChampDecor, createChispas, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
-import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, applyHallVariant, drawArcanoPanel, drawHallGloria, drawHallSign, montarArcano, updateArcanoFx, updateHallFx } from './c08_hall_hud.js';
+import { HALL, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, applyHallVariant, drawArcanoPanel, drawArcanoSalir, drawHallGloria, drawHallSign, montarArcano, updateArcanoFx, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { PPNET } from './c09b_red_nucleo.js';
 import { RedSocial } from './c09c_red_social.js';

@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.137-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.138-SDK6</span>
     </div>
   </main>
 
@@ -936,6 +936,7 @@ const I18N_STRINGS = {
     arcono_todos: 'El Arcano te lo ha revelado todo',
     arcono_hint: 'El búho del Arcano custodia los superpoderes de pala · apunta y gatillo',
     arcono_salir: 'El búho te devuelve al salón',
+    arcono_boton_salir: 'Salir',   // r43 · el letrero sobre el búho al apuntarlo
     arcono_nuevo: 'EL ARCANO TE REVELA: {p}',
     arcono_ninguno: 'El Arcano ya lo sabía todo · nada nuevo que revelar',
     // — descripciones de la galería (una por poder; el índice es AUTOMÁTICO:
@@ -1972,6 +1973,7 @@ const I18N_STRINGS = {
     arcono_todos: 'The Arcane has revealed everything to you',
     arcono_hint: 'The Arcane owl guards the paddle superpowers · aim and trigger',
     arcono_salir: 'The owl takes you back to the lounge',
+    arcono_boton_salir: 'Exit',   // r43 · the sign above the owl while aiming at it
     arcono_nuevo: 'THE ARCANE REVEALS: {p}',
     arcono_ninguno: 'The Arcane already knew it all · nothing new to reveal',
     arc_desc_mega: 'Your paddle grows with a golden rim and a shock wave: more surface, wider hit radius. Activate and fire again to extend the window.',
@@ -3449,7 +3451,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.137-SDK6';
+  const VERSION = '3.6.138-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -11433,19 +11435,32 @@ function montaMotas(N) {
  *  · BASE NEGRA con gradiente radial: negro azulado bajo los pies →
  *    color del horizonte (#0a1a36, el de la bóveda) en el borde — la
  *    costura con el cielo sigue siendo IMPOSIBLE de ver (lección r40);
- *  · MATRIZ ESTÁTICA: 48×48 losetas de 1,5 m (la r40 eran 9×9 de 8 m —
- *    ahora MÁS PEQUEÑAS y MEJOR DEFINIDAS), líneas finas SIEMPRE
- *    visibles y nodos algo más marcados cada 8 losetas; una viñeta la
- *    disuelve hacia el horizonte;
- *  · RELLENOS VIVOS: canvas propio que updateArcanoFx repinta — cada
- *    loseta NACE (subida rápida), AGUANTA y MUERE (apagado) en
- *    posiciones TOTALMENTE aleatorias, con el azul de la banda del
- *    dueño (#10284e → #1a3868, apenas más claro que el cielo). */
+ *  · r43 · EL TRAZADO DE DESTELLOS (petición del dueño: «eliminar del
+ *    suelo el tramado de líneas… que de forma completamente aleatoria se
+ *    vean líneas que dibujan algunas partes, que den la sensación de que
+ *    en un lado y en otro se dibujan las líneas partiendo de un fondo y
+ *    llegando al otro, como destellos que dejan una estela que es la
+ *    propia línea, que se ve durante unos 5 segundos y desaparece… varias
+ *    líneas que se cruzan tanto en un sentido como en el opuesto,
+ *    cruzadas 90 grados, descubriendo la trama fina que existe por debajo
+ *    pero que sólo se ve al pasar esta estela de líneas»): FUERA la
+ *    matriz estática de la r41 — ahora UN lienzo vivo repinta cada frame
+ *    DESTELLOS-corredores que recorren líneas de la retícula fina
+ *    (48×48 losetas de 1,5 m) en AMBOS ejes (cruces de 90°) y en AMBOS
+ *    sentidos, naciendo en un borde y muriendo en el opuesto; tras la
+ *    cabeza viaja la ESTELA = la propia línea (mucho más delgada que la
+ *    r41: 0,8 px ≈ 5 cm reales), que aguanta ~5 s y se desvanece. La
+ *    trama fina SÓLO existe donde un destello la ha dibujado;
+ *  · RELLENOS VIVOS (r41, ahora en el MISMO lienzo): cada celda que un
+ *    destello atraviesa puede encender su relleno azul (banda del dueño
+ *    #10284e → #1a3868) con envolvente nacer→aguantar→morir — «los
+ *    rellenos igual, en esas cuadrículas sutiles y bien definidas». */
 function montaSueloArcano() {
-  const N = 48;                      // r41 · 48×48 losetas de 1,5 m → 72 m
+  const N = 48;                      // 48×48 losetas de 1,5 m → 72 m (trama fina)
   const LADO = N * 1.5;
   const CIELO = [10, 26, 54];        // #0a1a36 · color del horizonte (bóveda)
   const BANDA = [[16, 40, 78], [26, 56, 104]];   // el rango azul del dueño
+  const VIDA = 5.0;                  // r43 · la línea dibujada aguanta ~5 s
   const g = new THREE.Group();
   // — CAPA 0 · la BASE NEGRA (radial al color del horizonte) —
   const bcv = hallCanvas(512, 512);
@@ -11463,44 +11478,25 @@ function montaSueloArcano() {
   mesh.rotation.x = -Math.PI / 2;    // tumbado, mirando arriba
   mesh.position.y = -0.01;
   g.add(mesh);
-  // — CAPA 1 · la MATRIZ: líneas finas SIEMPRE visibles (estáticas) —
-  const gcv = hallCanvas(1024, 1024);
-  const gx = gcv.getContext('2d');
-  const paso = 1024 / N;
-  gx.clearRect(0, 0, 1024, 1024);
-  for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
-    const cx = (ix + 0.5) / N * 2 - 1, cy = (iy + 0.5) / N * 2 - 1;
-    const d = Math.min(1, Math.sqrt(cx * cx + cy * cy) / 1.02);
-    const f = 1 - d * d;
-    gx.strokeStyle = 'rgba(130,195,252,' + (0.16 * f).toFixed(3) + ')';
-    gx.lineWidth = 1.4;
-    gx.strokeRect(ix * paso + 0.7, iy * paso + 0.7, paso - 1.4, paso - 1.4);
-    if (!(ix % 8) && !(iy % 8)) {    // nodos cada 8 losetas: mejor definida
-      gx.fillStyle = 'rgba(150,210,255,' + (0.30 * f).toFixed(3) + ')';
-      gx.fillRect(ix * paso - 1.5, iy * paso - 1.5, 3, 3);
-    }
-  }
-  const gTex = new THREE.CanvasTexture(gcv);
-  try { gTex.colorSpace = THREE.SRGBColorSpace; gTex.anisotropy = 4; } catch { /* */ }
+  // — CAPA 1 · EL TRAZADO VIVO (r43): destellos que DIBUJAN la trama —
+  const tcv = hallCanvas(512, 512);
+  const tex = new THREE.CanvasTexture(tcv);
+  try { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; } catch { /* */ }
   const malla = new THREE.Mesh(new THREE.PlaneGeometry(LADO, LADO),
-    new THREE.MeshBasicMaterial({ map: gTex, transparent: true, fog: false }));
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false }));
   malla.rotation.x = -Math.PI / 2;
   malla.position.y = 0.002;
   g.add(malla);
-  // — CAPA 2 · los RELLENOS vivos (nacen y mueren AL AZAR) —
-  const fcv = hallCanvas(512, 512);
-  const tex = new THREE.CanvasTexture(fcv);
-  try { tex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
-  const fills = new THREE.Mesh(new THREE.PlaneGeometry(LADO, LADO),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false }));
-  fills.rotation.x = -Math.PI / 2;
-  fills.position.y = 0.004;
-  g.add(fills);
   const mezcla = () => {
     const k = Math.random();
     return [0, 1, 2].map((i) => Math.round(BANDA[0][i] + (BANDA[1][i] - BANDA[0][i]) * k));
   };
-  g.userData = { N, paso: 512 / N, fcv, fCtx: fcv.getContext('2d'), tex, lit: [], mezcla };
+  g.userData = {
+    N, paso: 512 / N, tcv, tCtx: tcv.getContext('2d'), tex, mezcla, VIDA,
+    trazos: [],     // destellos vivos {ax, ln, desde, hasta, head, vel, t, col, nac}
+    lit: [],        // rellenos vivos de celdas atravesadas (envolvente r41)
+    prox: 0.4,      // temporizador hasta el próximo destello
+  };
   return g;
 }
 
@@ -11606,6 +11602,38 @@ function drawArcanoCandado(cv) {
   x.arc(lx, ly + ls * 0.16, ls * 0.075, 0, Math.PI * 2);
   x.fillStyle = 'rgba(120,205,255,0.95)';
   x.fill();
+}
+
+/** r43 · TEXTO DE SALIDA del espacio arcano («Cuando apuntamos al icono
+ *  del búho encima debe aparecer un texto que diga "Salir" o "Exit",
+ *  con letras azules con el halo azulón, también con la misma estética
+ *  que el búho»): letras azules con TRIPLE pasada de halo (halo→cuerpo→
+ *  alma, la técnica del neón del Hall) en el lienzo 256×96 que cuelga
+ *  sobre el búho. c12 la llama con el idioma vivo (T('arcono_salir'));
+ *  la visibilidad la conduce updateArcanoFx con el hover del búho. */
+function drawArcanoSalir(cv, txt) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  const t = String(txt || 'Salir');
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.font = '800 40px system-ui, sans-serif';
+  const cx0 = W / 2, cy0 = H / 2 + 2;
+  // — 1 · el HALO AZULÓN: tres pasadas de sombra azul creciente —
+  x.shadowColor = 'rgba(73,182,255,0.95)';
+  x.fillStyle = 'rgba(73,182,255,0.85)';
+  for (const bl of [10, 18, 26]) {
+    x.shadowBlur = bl;
+    x.fillText(t, cx0, cy0);
+  }
+  x.shadowBlur = 0;
+  // — 2 · el CUERPO azul claro del texto —
+  x.fillStyle = '#8fd4ff';
+  x.fillText(t, cx0, cy0);
+  // — 3 · el ALMA interior casi blanca (la firma del búho) —
+  x.fillStyle = 'rgba(235,250,255,0.5)';
+  x.fillText(t, cx0, cy0);
 }
 
 /** Sprite radial genérico (cabeza de cometa, halo, destello del búho). */
@@ -11862,6 +11890,32 @@ function montarArcano(base) {
     buhoMesh.add(sp);
     buhoGlints.push(sp);
   }
+  // — r43 · EL LETRERO DE SALIDA: «Salir/Exit» sobre el búho cuando el
+  //  anfitrión lo APUNTA — letras azules con el halo azulón, la misma
+  //  estética del búho. El texto lo rellena c12 con el idioma vivo
+  //  (drawArcanoSalir + T('arcono_salir')); updateArcanoFx lo funde con
+  //  el hover y le da un leve ascenso al aparecer. —
+  const salCv = hallCanvas(256, 96);
+  drawArcanoSalir(salCv, 'Salir');
+  const salTex = new THREE.CanvasTexture(salCv);
+  try { salTex.colorSpace = THREE.SRGBColorSpace; salTex.anisotropy = 4; } catch { /* */ }
+  const salMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.1725),
+    new THREE.MeshBasicMaterial({
+      map: salTex, transparent: true, opacity: 0,
+      depthWrite: false, fog: false,
+    }));
+  salMesh.position.set(0, 2.95, -2.55);       // justo ENCIMA del búho
+  salMesh.visible = false;
+  g.add(salMesh);
+  const salHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: spriteRadial(6, 'rgba(120,200,255,0.5)', 'rgba(73,182,255,0.22)', 'rgba(30,80,200,0)'),
+    transparent: true, opacity: 0, fog: false, color: 0x49b6ff,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  salHalo.scale.set(0.62, 0.30, 1);
+  salHalo.position.set(0, 2.95, -2.56);
+  salHalo.visible = false;
+  g.add(salHalo);
   // — LA GALERÍA: panel + dos flechas con glow —
   // r41 · DOS lienzos: «cv» (la ficha COMPLETA que pinta c12) y «holo»
   // (el lienzo VIVO de la textura) — updateArcanoFx COMPONE el
@@ -11919,6 +11973,8 @@ function montarArcano(base) {
     motas, cometas, suelo, buho: { mesh: buhoMesh, glints: buhoGlints, hover: false },
     panel: { mesh: panMesh, cv: panCv, tex: panTex, holo: panHolo }, flechas,
     candado: { grupo: candado, halo: candHalo }, pop: 1, holoSem: 0,
+    // r43 · el letrero de salida («Salir/Exit» sobre el búho al apuntarlo)
+    salir: { mesh: salMesh, halo: salHalo, cv: salCv, tex: salTex, op: 0 },
   };
   return g;
 }
@@ -11942,26 +11998,37 @@ function updateArcanoFx(g, dt, now) {
     pos.array[i * 3 + 2] = base[i * 3 + 2] + Math.cos(now * 0.28 + f * 0.9) * 0.55;
   }
   pos.needsUpdate = true;
-  // — r41 · SUELO: losetas que NACEN y MUEREN completamente al azar —
-  //  sobre el negro la matriz de líneas es FIJA y el relleno azul de
-  //  cada loseta es un ser vivo: sube rápido (nace), aguanta, se apaga.
-  //  Nacen 0-2 por frame (tope ~140 vivas); el repintado es clear + las
-  //  vivas — la matriz JAMÁS se redibuja (es estática, lección r40).
+  // — r43 · SUELO: DESTELLOS que dibujan la trama fina — corredores que
+  //  nacen en un borde del suelo, recorren UNA línea de la retícula
+  //  (fila en X o columna en Z — cruces de 90°, ambos sentidos) y dejan
+  //  tras de sí la ESTELA = la propia línea, que aguanta ~5 s y se
+  //  desvanece. Las celdas que el destello atraviesa pueden encender su
+  //  RELLENO azul (la misma envolvente nacer→aguantar→morir de la r41).
+  //  Repintado: clear + los trazos y rellenos vivos (~100 ops máx en
+  //  512²: el mismo orden de coste que la capa de rellenos de la r41).
   const S = A.suelo && A.suelo.userData;
   if (S) {
-    if (S.lit.length < 140 && Math.random() < 0.55) {
-      const nac = 1 + ((Math.random() * 2) | 0);
-      for (let k = 0; k < nac; k++) {
-        S.lit.push({
-          i: (Math.random() * S.N) | 0, j: (Math.random() * S.N) | 0,
-          t: 0, tIn: 0.25 + Math.random() * 0.7, hold: 0.6 + Math.random() * 2.6,
-          tOut: 0.45 + Math.random() * 1.1,
-          col: S.mezcla(), alfa: 0.45 + Math.random() * 0.45,
-        });
-      }
+    // — 1 · nace un destello (temporizador propio, tope ~9 vivos) —
+    S.prox -= dt;
+    if (S.prox <= 0 && S.trazos.length < 9) {
+      S.prox = 0.30 + Math.random() * 0.70;
+      const ax = Math.random() < 0.5 ? 'x' : 'z';      // 90°: filas y columnas
+      const dir = Math.random() < 0.5 ? 1 : -1;        // ambos sentidos
+      const ln = (Math.random() * (S.N + 1)) | 0;      // línea de la retícula (0..N)
+      S.trazos.push({
+        ax, ln, dir,
+        head: dir > 0 ? 0 : S.N,          // parte de UN fondo («partiendo de
+        desde: dir > 0 ? 0 : S.N,         //  un fondo y llegando al otro»)
+        vel: 2.4 + Math.random() * 3.6,   // losetas/s (1,5 m por loseta)
+        t: 0, col: S.mezcla(),
+        ultima: -1,                       // última celda cruzada (rellenos)
+      });
     }
-    const fx = S.fCtx, L = S.N, pw = S.paso;
+    // — 2 · repintado del lienzo: clear + rellenos + trazos vivos —
+    const fx = S.tCtx, pw = S.paso, L = S.N;
     fx.clearRect(0, 0, 512, 512);
+    // — rellenos: celdas azules de la banda del dueño (nacen→aguantan→
+    //   mueren; una celda ya encendida no se re-enciende) —
     for (let k = S.lit.length - 1; k >= 0; k--) {
       const q = S.lit[k];
       q.t += dt;
@@ -11970,14 +12037,73 @@ function updateArcanoFx(g, dt, now) {
       const aV = q.t < q.tIn ? q.t / q.tIn
         : q.t < q.tIn + q.hold ? 1
         : 1 - (q.t - q.tIn - q.hold) / q.tOut;
-      // viñeta del horizonte: hacia el borde de la matriz se disuelven
       const dx = (q.i + 0.5) / L * 2 - 1, dy = (q.j + 0.5) / L * 2 - 1;
       const rr = Math.min(1, Math.sqrt(dx * dx + dy * dy) / 1.02);
       const al = q.alfa * aV * (1 - rr * rr);
       if (al <= 0.012) continue;
       fx.globalAlpha = al;
       fx.fillStyle = 'rgb(' + q.col[0] + ',' + q.col[1] + ',' + q.col[2] + ')';
-      fx.fillRect(q.i * pw + 1, q.j * pw + 1, pw - 2, pw - 2);
+      fx.fillRect(q.i * pw + 1.5, q.j * pw + 1.5, pw - 3, pw - 3);
+    }
+    fx.globalAlpha = 1;
+    // — trazos: la ESTELA dibujada (origen → cabeza) + cabeza brillante —
+    fx.lineCap = 'round';
+    for (let k = S.trazos.length - 1; k >= 0; k--) {
+      const q = S.trazos[k];
+      q.t += dt;
+      const corriendo = q.head !== (q.dir > 0 ? L : 0);
+      if (corriendo) {
+        q.head += q.vel * q.dir * dt;
+        if (q.dir > 0) q.head = Math.min(L, q.head);
+        else q.head = Math.max(0, q.head);
+        // rellenos: la celda que acabo de cruzar puede encenderse
+        const cel = Math.min(L - 1, Math.floor(q.head));
+        if (cel !== q.ultima && S.lit.length < 70 && Math.random() < 0.20) {
+          q.ultima = cel;
+          S.lit.push({
+            i: q.ax === 'x' ? cel : Math.max(0, q.ln - 1),
+            j: q.ax === 'x' ? Math.max(0, q.ln - 1) : cel,
+            t: 0, tIn: 0.3 + Math.random() * 0.5, hold: 1.2 + Math.random() * 2.4,
+            tOut: 0.7 + Math.random() * 1.1,
+            col: S.mezcla(), alfa: 0.38 + Math.random() * 0.34,
+          });
+        }
+      }
+      const vida = q.t;                          // desde el NACIMIENTO
+      const dibujo = Math.abs(q.desde - q.head) / q.vel;   // s de trazado
+      const resto = vida - dibujo;               // s desde que COMPLETÓ
+      if (!corriendo && resto >= S.VIDA) { S.trazos.splice(k, 1); continue; }
+      // viñeta del horizonte: hacia el borde del suelo se disuelve
+      const cn = q.ln / L * 2 - 1;
+      const fVi = 1 - Math.min(1, Math.abs(cn) / 1.02) ** 2;
+      // alpha: 0,50 mientras corre y aguanta; fundido final de 0,9 s
+      let al = 0.50 * fVi;
+      if (!corriendo && resto > S.VIDA - 0.9) {
+        al *= Math.max(0, (S.VIDA - resto) / 0.9);
+      }
+      if (al <= 0.012) continue;
+      const hx = q.ax === 'x' ? q.head * pw : q.ln * pw;
+      const hy = q.ax === 'x' ? q.ln * pw : q.head * pw;
+      const ox = q.ax === 'x' ? q.desde * pw : q.ln * pw;
+      const oy = q.ax === 'x' ? q.ln * pw : q.desde * pw;
+      // la ESTELA = la línea fina de la trama (0,8 px ≈ 5 cm reales)
+      fx.globalAlpha = al;
+      fx.strokeStyle = 'rgba(' + q.col[0] + ',' + q.col[1] + ',' + q.col[2] + ',0.9)';
+      fx.lineWidth = 0.8;
+      fx.beginPath();
+      fx.moveTo(ox, oy);
+      fx.lineTo(hx, hy);
+      fx.stroke();
+      // la CABEZA: el destello que viaja (aditivo, blanco-azul)
+      if (corriendo) {
+        fx.globalCompositeOperation = 'lighter';
+        fx.globalAlpha = Math.min(1, al * 2.1);
+        fx.fillStyle = '#bfe0ff';
+        fx.beginPath();
+        fx.arc(hx, hy, 1.6, 0, Math.PI * 2);
+        fx.fill();
+        fx.globalCompositeOperation = 'source-over';
+      }
     }
     fx.globalAlpha = 1;
     S.tex.needsUpdate = true;
@@ -12035,6 +12161,26 @@ function updateArcanoFx(g, dt, now) {
   const tgtB = B.hover ? 1.1 : 1.0;
   const curB = B.mesh.scale.x || 1;
   B.mesh.scale.setScalar(curB + (tgtB - curB) * Math.min(1, dt * 10));
+  // — r43 · EL LETRERO «Salir/Exit»: se funde con el hover del búho
+  //  (aparece al apuntarlo, se retira al apartar la mano) con un leve
+  //  ascenso al entrar — la misma respuesta viva que las flechas. —
+  const SA = A.salir;
+  if (SA) {
+    SA.op += ((B.hover ? 1 : 0) - SA.op) * Math.min(1, dt * 9);
+    if (SA.op < 0.015) {
+      if (SA.mesh.visible) { SA.mesh.visible = false; SA.halo.visible = false; }
+      SA.op = 0;
+    } else {
+      SA.mesh.visible = true;
+      SA.halo.visible = true;
+      SA.mesh.material.opacity = SA.op;
+      SA.halo.material.opacity = 0.62 * SA.op;
+      const sc = 0.94 + SA.op * 0.06;
+      SA.mesh.scale.setScalar(sc);
+      SA.mesh.position.y = 2.95 + SA.op * 0.045;
+      SA.halo.position.y = SA.mesh.position.y;
+    }
+  }
   // — r41 · galería: MATERIALIZACIÓN HOLOGRÁFICA — la ficha se FORMA
   //  (bandas que viajan, disolución de motas, barrido de condensación,
   //  parpadeo de encendido y aberración que se cierra); al terminar,
@@ -13837,6 +13983,14 @@ class NetLink {
     this._gaps = 0; this._recvs = 0;
     this._poseAcc = 0; this._snapAcc = 0;
     this._poseHz = PPNET.VP.POSE_HZ;
+    // r43 · BÚFER DE TX REUTILIZADO: antes cada paquete (60 pose + ~20 snap
+    // por segundo) nacía en un `new ArrayBuffer(1200)` y viajaba con un
+    // `buf.slice()` — ~160 allocations + copias por segundo ALIMENTANDO AL
+    // GC en plena partida: los micro-parones del Quest («a trompicones»).
+    // Ahora el códec escribe SIEMPRE aquí y se envía una VISTA (n bytes;
+    // RTCDataChannel.send copia la vista de forma síncrona: reutilizar el
+    // búfer es seguro). El túnel PeerJS conserva el slice (serializa).
+    this._txBuf = new ArrayBuffer(PPNET.VP.MAX_PKT);
     this._lossLowT = 0; this._degraded = false;
     this._lastFastAt = 0; this._iceRestarts = 0;
     this._helloDone = false; this._helloTO = null;
@@ -14320,11 +14474,10 @@ class NetLink {
         // SNAP no es fiable ni con ack (spec §5): va directo
         const pk = { seq: (this._seq + 1) & 0xffff, ack: this._ackP, ackBits: this._myAckBits(),
           sendTime: now, echoTime: this._echoTime, echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
-          pose: null, evs };
+          pose: null, evs, yAnchor: DIMS.tableTopY };
         this._seq = pk.seq;
-        const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
-        const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
-        if (n) this._fastSend(buf.slice(0, n), now);
+        const n = PPNET.encodePacket(this._txBuf, pk);   // r43: búfer reutilizado
+        if (n) this._fastSend(this._txOut(n), now);
         evs = null;
       }
     }
@@ -14347,13 +14500,22 @@ class NetLink {
     };
     this._seq = pk.seq;
     this._clock.markSent(now);
-    const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
-    const n2 = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+    // r43: yAnchor viaja en el paquete (el spread {...pk} moría aquí)
+    pk.yAnchor = DIMS.tableTopY;
+    const n2 = PPNET.encodePacket(this._txBuf, pk);   // r43: búfer reutilizado
     if (!n2) return;
     // r36 (v3.6.132): seq sólo a los que VIAJAN en este paquete (los 8
     // primeros) — el ack no puede dar por recibido lo que no se envió
     for (const e of this._pend.slice(0, PPNET.VP.MAX_EVENTS)) e.seqs.push(pk.seq);
-    this._fastSend(buf.slice(0, n2), now);
+    this._fastSend(this._txOut(n2), now);
+  }
+
+  /** r43 · la SALIDA del búfer reutilizado: DataChannel directo = VISTA
+   *  (cero copia/cero allocation — send() clona los bytes de la vista);
+   *  túnel PeerJS = slice (BinaryPack serializa su propia copia igual). */
+  _txOut(n) {
+    return this._tunnel ? this._txBuf.slice(0, n)
+      : new Uint8Array(this._txBuf, 0, n);
   }
 
   _flushEvents(now) {
@@ -14364,16 +14526,16 @@ class NetLink {
       echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
       pose: null,
       evs: this._pend.slice(0, PPNET.VP.MAX_EVENTS).map((e) => e.ev),
+      yAnchor: DIMS.tableTopY,
     };
     this._seq = pk.seq;
     this._clock.markSent(now);
-    const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
-    const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+    const n = PPNET.encodePacket(this._txBuf, pk);   // r43: búfer reutilizado
     if (!n) return;
     // r36 (v3.6.132): seq sólo a los que VIAJAN en este paquete (los 8
     // primeros) — el ack no puede dar por recibido lo que no se envió
     for (const e of this._pend.slice(0, PPNET.VP.MAX_EVENTS)) e.seqs.push(pk.seq);
-    this._fastSend(buf.slice(0, n), now);
+    this._fastSend(this._txOut(n), now);
   }
 
   _fastSend(buf, now) {
@@ -14865,15 +15027,30 @@ class NetLink {
         g.ball.pos.copy(pR);
         g.ball.vel.copy(vR);
         if (g.ballMesh) g.ballMesh.visible = true;
-        g._netTossLive = true;
+        g._netTossLive = true;   // r43: sellado con _netTossAt (caduca 2,5 s)
+        g._netTossAt = performance.now();
         return;
       }
       // corrección suave del fantasma (sin ack, spec §5/§8)
       if (this._ball.state === 'ghost') {
         const p = NetLink.posFromNetArr(ev.p);
         const v = NetLink.vecFromNetArr(ev.v);
-        g.ball.pos.lerp(p, 0.25);
-        g.ball.vel.lerp(v, 0.12);
+        // r43 · CONVERGENCIA EN EL MOMENTO DE LA VERDAD (informe del dueño:
+        // «puntos que yo veo como fallos el anfitrión los vio como buenos,
+        // como si el cálculo de la mesa estuviese desplazado durante
+        // momentos del juego»): el fantasma integra SU física local y los
+        // SNAP la corrigen con un lerp blando (0,25) — sobre la MESA, donde
+        // se juzga el bote bueno/fallo, unos pocos cm de divergencia cambian
+        // la PERCEPCIÓN del punto. Dentro del rectángulo de mesa y bajo la
+        // altura de juicio, la corrección se endurece (0,62/0,38): el dueño
+        // VE lo mismo que juzga el árbitro del emisor. Fuera de la mesa
+        // sigue el lerp suave de siempre (nada de teleports perceptibles).
+        const D = DIMS;
+        const enJuicio = Math.abs(p.x) <= D.tableHalfWidth + 0.30 &&
+          Math.abs(p.z - D.tableCenterZ) <= D.tableHalfLength + 0.30 &&
+          p.y <= D.tableTopY + 0.42;
+        g.ball.pos.lerp(p, enJuicio ? 0.62 : 0.25);
+        g.ball.vel.lerp(v, enJuicio ? 0.38 : 0.12);
       }
       return;
     }
@@ -14930,7 +15107,8 @@ class NetLink {
         this._ball.state = 'ghost';
         this._ball.mine = false;
         g.ballMesh.visible = true;
-        g._netTossLive = true;
+        g._netTossLive = true;   // r43: sellado con _netTossAt (caduca 2,5 s)
+        g._netTossAt = performance.now();
         return;
       }
       // avance de nacimiento: dt·k con tope (spec §8)
@@ -19044,6 +19222,7 @@ class PingPongGame {
     this.demoToss = null;
     this._netStart = { startAt: m.startAt, fs: m.fs };
     this._netTossLive = false;
+    this._netTossAt = 0;   // r43: sello temporal del toss (caducidad 2,5 s)
     this.net.setServeHeld(this.rules.server === 'player');
     // r81 · bola HELD del rival OCULTA también en el arranque (el intent
     // 'serve' la esconde en cada punto, pero el MATCH_START llegaba antes:
@@ -24172,6 +24351,13 @@ class PingPongGame {
     // último — bordes detectados del registro (automático al crecer)
     if (A.flechas.L) A.flechas.L.mesh.visible = this._arconoIdx > 0;
     if (A.flechas.R) A.flechas.R.mesh.visible = this._arconoIdx < n - 1;
+    // r43 · EL LETRERO DE SALIDA: repintado con el IDIOMA VIVO (la
+    // repinta corre en la entrada, la navegación y el cambio ES/EN) —
+    // letras azules con el halo azulón, la misma estética del búho.
+    if (A.salir && A.salir.cv) {
+      drawArcanoSalir(A.salir.cv, T('arcono_boton_salir'));
+      A.salir.tex.needsUpdate = true;
+    }
     A.pop = 0;   // materialización del poder entrante
   }
 
@@ -25149,7 +25335,10 @@ class PingPongGame {
     this.ball.spin.set(0, 0, 0);
     // r79 · v2: el lanzamiento al aire del saque es VISUAL para el rival
     // (BALL_HIT kind 2 — no regla, no punto: spec §10)
+    // r43 · _netTossAt SELLA el instante: el flag del toss CADUCA a los
+    // 2,5 s (guardián de saque) — jamás bloquea el siguiente punto.
     this._netTossLive = true;
+    this._netTossAt = performance.now();
     if (this.ballMesh) this.ballMesh.visible = true;
     if (this.net.online && this.net.v2 === 'ok') this.net.netLocalToss();
     this.rules.message = T('hint_hit');
@@ -27473,7 +27662,22 @@ class PingPongGame {
             }
             this._bgTele('mi_saque');
           }
-        } else if (!this._netTossLive) {
+        } else if (this._netTossLive) {
+          // — r43 · LANZAMIENTO DEL RIVAL EN VUELO (toss anunciado): la
+          // bola la lleva la física del fantasma y JAMÁS puede verse
+          // oculta en este tramo (informe del dueño: «en algunos momentos
+          // no se ve la pelota, sobre todo en los saques»). Si algo la
+          // escondió se reenciende SIN tocar su estado; y el flag CADUCA
+          // a los 2,5 s — si el HIT del saque se perdió o fue rechazado,
+          // el guardián vuelve a tomar el mando y el saque no se congela. —
+          if (!this.ballMesh.visible) {
+            this.ballMesh.visible = true;
+            this._bgTele('rival_toss');
+          }
+          if (performance.now() - (this._netTossAt || 0) > 2500) {
+            this._netTossLive = false;
+          }
+        } else {
           // — SAQUE DEL RIVAL: su mano libre si la pose llega fresca;
           //   si no, punto de saque reglamentario (JAMÁS invisible)
           let fresca = false;
@@ -27494,6 +27698,8 @@ class PingPongGame {
             if (this.ball.spin) this.ball.spin.set(0, 0, 0);
           } else {
             this._bgRival += dt;
+            // r43 · el fallback entra YA si la malla está oculta (antes
+            // esperaba 0,6 s: medio segundo de bola invisible en el saque)
             if (this._bgRival > 0.6 || !this.ballMesh.visible) {
               this.ballMesh.visible = true;
               this.ball.vel.set(0, 0, 0);
@@ -32224,7 +32430,16 @@ class PingPongGame {
     // la física prefiere ir lenta antes que barrer un intervalo enorme con
     // poses P0→P1 degradadas. Orden por frame: leer poses (three.js ya las
     // actualizó de XRFrame antes de este callback) → simular → renderizar.
-    const dt = this.lastTime < 0 ? 0.016 : Math.min(now - this.lastTime, 1 / 30);
+    // r43 · FÍSICA EN TIEMPO REAL (informe del dueño: «no va nada fluido,
+    // la bola flota y va lenta… una partida no puede bajar NUNCA de los
+    // 60 FPS»): dt (timers/UI/red) sigue capado a 1/30, pero la BOLA
+    // integra con dtFis = el tiempo REAL del frame (capado a 1/12 s —
+    // stepPhysics subescala a 480 Hz: 40 subpasos, dentro del tope 96).
+    // Con frames de 35-50 ms la bola ya NO va a cámara lenta: recorre su
+    // tiempo real y el vuelo se siente VERDADERO aunque el render sufra.
+    const _rawDt = this.lastTime < 0 ? 0.016 : Math.max(0.0001, now - this.lastTime);
+    const dt = Math.min(_rawDt, 1 / 30);
+    const dtFis = Math.min(_rawDt, 1 / 12);
     // r87 · RED SOCIAL: latidos/polls espaciados (fetch cada 10-30 s) —
     // corren SIEMPRE (también congelados y en 2D: el medallón es del menú)
     try { if (this.social) this.social.tick(dt); } catch (eRS2) { /* nunca rompe */ }
@@ -32845,7 +33060,8 @@ class PingPongGame {
       const v2on = this.net.online && this.net.v2 === 'ok';
       if (v2on && !this.net.ballMine()) {
         const enMiMitad = this.ball.pos.z > DIMS.tableCenterZ;
-        stepPhysics(dt * this._dilF, this.ball, enMiMitad ? pads : [], this.events);
+        // r43: la bola integra su tiempo REAL (dtFis) — jamás cámara lenta
+        stepPhysics(dtFis * this._dilF, this.ball, enMiMitad ? pads : [], this.events);
         this.net.observeGhost(this.ball);
         if (enMiMitad && this.rules.state === 'rally') {
           for (const e of this.events) {
@@ -32881,7 +33097,8 @@ class PingPongGame {
           const _xNet = (v2on && this.net.ballState() === 'own')
             ? (bX) => { this.net.watchOwnCross(bX); }
             : null;
-          stepPhysics(dt * this._dilF, this.ball, pads, this.events, _xNet);
+          // r43: física en tiempo REAL (dtFis) — la bola nunca va lenta
+          stepPhysics(dtFis * this._dilF, this.ball, pads, this.events, _xNet);
           // v3.6.74 · r82 · EL GOLPE PROPIO EN v2 SE ANUNCIA (era EL defecto
           // que dejaba el multijugador injugable en dispositivo real): la
           // única marca de _localHit vivía en la rama v1 — con el transporte
@@ -33230,7 +33447,16 @@ class PingPongGame {
           const vg = new THREE.SphereGeometry(0.06, 12, 10);
           const vm = new THREE.MeshBasicMaterial({ color: 0x10141c, transparent: true, opacity: 0.85 });
           this._netVisor = new THREE.Mesh(vg, vm);
-          this.scene.add(this._netVisor);
+          // r43 · HIJO DEL RIG (era de la ESCENA): la pala rival, la mesa, la
+          // bola y TODO el mundo del juego son hijos del rig — el recentrado
+          // de la sesión (updateRecenter gira el rig con el yaw del casco al
+          // entrar en VR) gira el mundo ENTERO menos lo que cuelga de la
+          // escena raíz. La esfera era el ÚNICO objeto fuera del rig: con un
+          // rig girado se veía DESPLAZADA ~1 m respecto a la vertical de la
+          // pala (deriva fija, altura correcta, persistente en cualquier
+          // extremo — informe del dueño). En el rig comparte marco con la
+          // pala: si la pala está bien alineada, la cabeza TAMBIÉN.
+          this.rig.add(this._netVisor);
         }
         const stale = this.net.avatarStaleMs();
         const show = code >= 0 && stale < 500 && !this.inHall;   // r23: tampoco el visor

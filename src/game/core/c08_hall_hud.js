@@ -1121,19 +1121,32 @@ function montaMotas(N) {
  *  · BASE NEGRA con gradiente radial: negro azulado bajo los pies →
  *    color del horizonte (#0a1a36, el de la bóveda) en el borde — la
  *    costura con el cielo sigue siendo IMPOSIBLE de ver (lección r40);
- *  · MATRIZ ESTÁTICA: 48×48 losetas de 1,5 m (la r40 eran 9×9 de 8 m —
- *    ahora MÁS PEQUEÑAS y MEJOR DEFINIDAS), líneas finas SIEMPRE
- *    visibles y nodos algo más marcados cada 8 losetas; una viñeta la
- *    disuelve hacia el horizonte;
- *  · RELLENOS VIVOS: canvas propio que updateArcanoFx repinta — cada
- *    loseta NACE (subida rápida), AGUANTA y MUERE (apagado) en
- *    posiciones TOTALMENTE aleatorias, con el azul de la banda del
- *    dueño (#10284e → #1a3868, apenas más claro que el cielo). */
+ *  · r43 · EL TRAZADO DE DESTELLOS (petición del dueño: «eliminar del
+ *    suelo el tramado de líneas… que de forma completamente aleatoria se
+ *    vean líneas que dibujan algunas partes, que den la sensación de que
+ *    en un lado y en otro se dibujan las líneas partiendo de un fondo y
+ *    llegando al otro, como destellos que dejan una estela que es la
+ *    propia línea, que se ve durante unos 5 segundos y desaparece… varias
+ *    líneas que se cruzan tanto en un sentido como en el opuesto,
+ *    cruzadas 90 grados, descubriendo la trama fina que existe por debajo
+ *    pero que sólo se ve al pasar esta estela de líneas»): FUERA la
+ *    matriz estática de la r41 — ahora UN lienzo vivo repinta cada frame
+ *    DESTELLOS-corredores que recorren líneas de la retícula fina
+ *    (48×48 losetas de 1,5 m) en AMBOS ejes (cruces de 90°) y en AMBOS
+ *    sentidos, naciendo en un borde y muriendo en el opuesto; tras la
+ *    cabeza viaja la ESTELA = la propia línea (mucho más delgada que la
+ *    r41: 0,8 px ≈ 5 cm reales), que aguanta ~5 s y se desvanece. La
+ *    trama fina SÓLO existe donde un destello la ha dibujado;
+ *  · RELLENOS VIVOS (r41, ahora en el MISMO lienzo): cada celda que un
+ *    destello atraviesa puede encender su relleno azul (banda del dueño
+ *    #10284e → #1a3868) con envolvente nacer→aguantar→morir — «los
+ *    rellenos igual, en esas cuadrículas sutiles y bien definidas». */
 function montaSueloArcano() {
-  const N = 48;                      // r41 · 48×48 losetas de 1,5 m → 72 m
+  const N = 48;                      // 48×48 losetas de 1,5 m → 72 m (trama fina)
   const LADO = N * 1.5;
   const CIELO = [10, 26, 54];        // #0a1a36 · color del horizonte (bóveda)
   const BANDA = [[16, 40, 78], [26, 56, 104]];   // el rango azul del dueño
+  const VIDA = 5.0;                  // r43 · la línea dibujada aguanta ~5 s
   const g = new THREE.Group();
   // — CAPA 0 · la BASE NEGRA (radial al color del horizonte) —
   const bcv = hallCanvas(512, 512);
@@ -1151,44 +1164,25 @@ function montaSueloArcano() {
   mesh.rotation.x = -Math.PI / 2;    // tumbado, mirando arriba
   mesh.position.y = -0.01;
   g.add(mesh);
-  // — CAPA 1 · la MATRIZ: líneas finas SIEMPRE visibles (estáticas) —
-  const gcv = hallCanvas(1024, 1024);
-  const gx = gcv.getContext('2d');
-  const paso = 1024 / N;
-  gx.clearRect(0, 0, 1024, 1024);
-  for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
-    const cx = (ix + 0.5) / N * 2 - 1, cy = (iy + 0.5) / N * 2 - 1;
-    const d = Math.min(1, Math.sqrt(cx * cx + cy * cy) / 1.02);
-    const f = 1 - d * d;
-    gx.strokeStyle = 'rgba(130,195,252,' + (0.16 * f).toFixed(3) + ')';
-    gx.lineWidth = 1.4;
-    gx.strokeRect(ix * paso + 0.7, iy * paso + 0.7, paso - 1.4, paso - 1.4);
-    if (!(ix % 8) && !(iy % 8)) {    // nodos cada 8 losetas: mejor definida
-      gx.fillStyle = 'rgba(150,210,255,' + (0.30 * f).toFixed(3) + ')';
-      gx.fillRect(ix * paso - 1.5, iy * paso - 1.5, 3, 3);
-    }
-  }
-  const gTex = new THREE.CanvasTexture(gcv);
-  try { gTex.colorSpace = THREE.SRGBColorSpace; gTex.anisotropy = 4; } catch { /* */ }
+  // — CAPA 1 · EL TRAZADO VIVO (r43): destellos que DIBUJAN la trama —
+  const tcv = hallCanvas(512, 512);
+  const tex = new THREE.CanvasTexture(tcv);
+  try { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; } catch { /* */ }
   const malla = new THREE.Mesh(new THREE.PlaneGeometry(LADO, LADO),
-    new THREE.MeshBasicMaterial({ map: gTex, transparent: true, fog: false }));
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false }));
   malla.rotation.x = -Math.PI / 2;
   malla.position.y = 0.002;
   g.add(malla);
-  // — CAPA 2 · los RELLENOS vivos (nacen y mueren AL AZAR) —
-  const fcv = hallCanvas(512, 512);
-  const tex = new THREE.CanvasTexture(fcv);
-  try { tex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
-  const fills = new THREE.Mesh(new THREE.PlaneGeometry(LADO, LADO),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false }));
-  fills.rotation.x = -Math.PI / 2;
-  fills.position.y = 0.004;
-  g.add(fills);
   const mezcla = () => {
     const k = Math.random();
     return [0, 1, 2].map((i) => Math.round(BANDA[0][i] + (BANDA[1][i] - BANDA[0][i]) * k));
   };
-  g.userData = { N, paso: 512 / N, fcv, fCtx: fcv.getContext('2d'), tex, lit: [], mezcla };
+  g.userData = {
+    N, paso: 512 / N, tcv, tCtx: tcv.getContext('2d'), tex, mezcla, VIDA,
+    trazos: [],     // destellos vivos {ax, ln, desde, hasta, head, vel, t, col, nac}
+    lit: [],        // rellenos vivos de celdas atravesadas (envolvente r41)
+    prox: 0.4,      // temporizador hasta el próximo destello
+  };
   return g;
 }
 
@@ -1294,6 +1288,38 @@ export function drawArcanoCandado(cv) {
   x.arc(lx, ly + ls * 0.16, ls * 0.075, 0, Math.PI * 2);
   x.fillStyle = 'rgba(120,205,255,0.95)';
   x.fill();
+}
+
+/** r43 · TEXTO DE SALIDA del espacio arcano («Cuando apuntamos al icono
+ *  del búho encima debe aparecer un texto que diga "Salir" o "Exit",
+ *  con letras azules con el halo azulón, también con la misma estética
+ *  que el búho»): letras azules con TRIPLE pasada de halo (halo→cuerpo→
+ *  alma, la técnica del neón del Hall) en el lienzo 256×96 que cuelga
+ *  sobre el búho. c12 la llama con el idioma vivo (T('arcono_salir'));
+ *  la visibilidad la conduce updateArcanoFx con el hover del búho. */
+export function drawArcanoSalir(cv, txt) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  const t = String(txt || 'Salir');
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.font = '800 40px system-ui, sans-serif';
+  const cx0 = W / 2, cy0 = H / 2 + 2;
+  // — 1 · el HALO AZULÓN: tres pasadas de sombra azul creciente —
+  x.shadowColor = 'rgba(73,182,255,0.95)';
+  x.fillStyle = 'rgba(73,182,255,0.85)';
+  for (const bl of [10, 18, 26]) {
+    x.shadowBlur = bl;
+    x.fillText(t, cx0, cy0);
+  }
+  x.shadowBlur = 0;
+  // — 2 · el CUERPO azul claro del texto —
+  x.fillStyle = '#8fd4ff';
+  x.fillText(t, cx0, cy0);
+  // — 3 · el ALMA interior casi blanca (la firma del búho) —
+  x.fillStyle = 'rgba(235,250,255,0.5)';
+  x.fillText(t, cx0, cy0);
 }
 
 /** Sprite radial genérico (cabeza de cometa, halo, destello del búho). */
@@ -1550,6 +1576,32 @@ export function montarArcano(base) {
     buhoMesh.add(sp);
     buhoGlints.push(sp);
   }
+  // — r43 · EL LETRERO DE SALIDA: «Salir/Exit» sobre el búho cuando el
+  //  anfitrión lo APUNTA — letras azules con el halo azulón, la misma
+  //  estética del búho. El texto lo rellena c12 con el idioma vivo
+  //  (drawArcanoSalir + T('arcono_salir')); updateArcanoFx lo funde con
+  //  el hover y le da un leve ascenso al aparecer. —
+  const salCv = hallCanvas(256, 96);
+  drawArcanoSalir(salCv, 'Salir');
+  const salTex = new THREE.CanvasTexture(salCv);
+  try { salTex.colorSpace = THREE.SRGBColorSpace; salTex.anisotropy = 4; } catch { /* */ }
+  const salMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.1725),
+    new THREE.MeshBasicMaterial({
+      map: salTex, transparent: true, opacity: 0,
+      depthWrite: false, fog: false,
+    }));
+  salMesh.position.set(0, 2.95, -2.55);       // justo ENCIMA del búho
+  salMesh.visible = false;
+  g.add(salMesh);
+  const salHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: spriteRadial(6, 'rgba(120,200,255,0.5)', 'rgba(73,182,255,0.22)', 'rgba(30,80,200,0)'),
+    transparent: true, opacity: 0, fog: false, color: 0x49b6ff,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  salHalo.scale.set(0.62, 0.30, 1);
+  salHalo.position.set(0, 2.95, -2.56);
+  salHalo.visible = false;
+  g.add(salHalo);
   // — LA GALERÍA: panel + dos flechas con glow —
   // r41 · DOS lienzos: «cv» (la ficha COMPLETA que pinta c12) y «holo»
   // (el lienzo VIVO de la textura) — updateArcanoFx COMPONE el
@@ -1607,6 +1659,8 @@ export function montarArcano(base) {
     motas, cometas, suelo, buho: { mesh: buhoMesh, glints: buhoGlints, hover: false },
     panel: { mesh: panMesh, cv: panCv, tex: panTex, holo: panHolo }, flechas,
     candado: { grupo: candado, halo: candHalo }, pop: 1, holoSem: 0,
+    // r43 · el letrero de salida («Salir/Exit» sobre el búho al apuntarlo)
+    salir: { mesh: salMesh, halo: salHalo, cv: salCv, tex: salTex, op: 0 },
   };
   return g;
 }
@@ -1630,26 +1684,37 @@ export function updateArcanoFx(g, dt, now) {
     pos.array[i * 3 + 2] = base[i * 3 + 2] + Math.cos(now * 0.28 + f * 0.9) * 0.55;
   }
   pos.needsUpdate = true;
-  // — r41 · SUELO: losetas que NACEN y MUEREN completamente al azar —
-  //  sobre el negro la matriz de líneas es FIJA y el relleno azul de
-  //  cada loseta es un ser vivo: sube rápido (nace), aguanta, se apaga.
-  //  Nacen 0-2 por frame (tope ~140 vivas); el repintado es clear + las
-  //  vivas — la matriz JAMÁS se redibuja (es estática, lección r40).
+  // — r43 · SUELO: DESTELLOS que dibujan la trama fina — corredores que
+  //  nacen en un borde del suelo, recorren UNA línea de la retícula
+  //  (fila en X o columna en Z — cruces de 90°, ambos sentidos) y dejan
+  //  tras de sí la ESTELA = la propia línea, que aguanta ~5 s y se
+  //  desvanece. Las celdas que el destello atraviesa pueden encender su
+  //  RELLENO azul (la misma envolvente nacer→aguantar→morir de la r41).
+  //  Repintado: clear + los trazos y rellenos vivos (~100 ops máx en
+  //  512²: el mismo orden de coste que la capa de rellenos de la r41).
   const S = A.suelo && A.suelo.userData;
   if (S) {
-    if (S.lit.length < 140 && Math.random() < 0.55) {
-      const nac = 1 + ((Math.random() * 2) | 0);
-      for (let k = 0; k < nac; k++) {
-        S.lit.push({
-          i: (Math.random() * S.N) | 0, j: (Math.random() * S.N) | 0,
-          t: 0, tIn: 0.25 + Math.random() * 0.7, hold: 0.6 + Math.random() * 2.6,
-          tOut: 0.45 + Math.random() * 1.1,
-          col: S.mezcla(), alfa: 0.45 + Math.random() * 0.45,
-        });
-      }
+    // — 1 · nace un destello (temporizador propio, tope ~9 vivos) —
+    S.prox -= dt;
+    if (S.prox <= 0 && S.trazos.length < 9) {
+      S.prox = 0.30 + Math.random() * 0.70;
+      const ax = Math.random() < 0.5 ? 'x' : 'z';      // 90°: filas y columnas
+      const dir = Math.random() < 0.5 ? 1 : -1;        // ambos sentidos
+      const ln = (Math.random() * (S.N + 1)) | 0;      // línea de la retícula (0..N)
+      S.trazos.push({
+        ax, ln, dir,
+        head: dir > 0 ? 0 : S.N,          // parte de UN fondo («partiendo de
+        desde: dir > 0 ? 0 : S.N,         //  un fondo y llegando al otro»)
+        vel: 2.4 + Math.random() * 3.6,   // losetas/s (1,5 m por loseta)
+        t: 0, col: S.mezcla(),
+        ultima: -1,                       // última celda cruzada (rellenos)
+      });
     }
-    const fx = S.fCtx, L = S.N, pw = S.paso;
+    // — 2 · repintado del lienzo: clear + rellenos + trazos vivos —
+    const fx = S.tCtx, pw = S.paso, L = S.N;
     fx.clearRect(0, 0, 512, 512);
+    // — rellenos: celdas azules de la banda del dueño (nacen→aguantan→
+    //   mueren; una celda ya encendida no se re-enciende) —
     for (let k = S.lit.length - 1; k >= 0; k--) {
       const q = S.lit[k];
       q.t += dt;
@@ -1658,14 +1723,73 @@ export function updateArcanoFx(g, dt, now) {
       const aV = q.t < q.tIn ? q.t / q.tIn
         : q.t < q.tIn + q.hold ? 1
         : 1 - (q.t - q.tIn - q.hold) / q.tOut;
-      // viñeta del horizonte: hacia el borde de la matriz se disuelven
       const dx = (q.i + 0.5) / L * 2 - 1, dy = (q.j + 0.5) / L * 2 - 1;
       const rr = Math.min(1, Math.sqrt(dx * dx + dy * dy) / 1.02);
       const al = q.alfa * aV * (1 - rr * rr);
       if (al <= 0.012) continue;
       fx.globalAlpha = al;
       fx.fillStyle = 'rgb(' + q.col[0] + ',' + q.col[1] + ',' + q.col[2] + ')';
-      fx.fillRect(q.i * pw + 1, q.j * pw + 1, pw - 2, pw - 2);
+      fx.fillRect(q.i * pw + 1.5, q.j * pw + 1.5, pw - 3, pw - 3);
+    }
+    fx.globalAlpha = 1;
+    // — trazos: la ESTELA dibujada (origen → cabeza) + cabeza brillante —
+    fx.lineCap = 'round';
+    for (let k = S.trazos.length - 1; k >= 0; k--) {
+      const q = S.trazos[k];
+      q.t += dt;
+      const corriendo = q.head !== (q.dir > 0 ? L : 0);
+      if (corriendo) {
+        q.head += q.vel * q.dir * dt;
+        if (q.dir > 0) q.head = Math.min(L, q.head);
+        else q.head = Math.max(0, q.head);
+        // rellenos: la celda que acabo de cruzar puede encenderse
+        const cel = Math.min(L - 1, Math.floor(q.head));
+        if (cel !== q.ultima && S.lit.length < 70 && Math.random() < 0.20) {
+          q.ultima = cel;
+          S.lit.push({
+            i: q.ax === 'x' ? cel : Math.max(0, q.ln - 1),
+            j: q.ax === 'x' ? Math.max(0, q.ln - 1) : cel,
+            t: 0, tIn: 0.3 + Math.random() * 0.5, hold: 1.2 + Math.random() * 2.4,
+            tOut: 0.7 + Math.random() * 1.1,
+            col: S.mezcla(), alfa: 0.38 + Math.random() * 0.34,
+          });
+        }
+      }
+      const vida = q.t;                          // desde el NACIMIENTO
+      const dibujo = Math.abs(q.desde - q.head) / q.vel;   // s de trazado
+      const resto = vida - dibujo;               // s desde que COMPLETÓ
+      if (!corriendo && resto >= S.VIDA) { S.trazos.splice(k, 1); continue; }
+      // viñeta del horizonte: hacia el borde del suelo se disuelve
+      const cn = q.ln / L * 2 - 1;
+      const fVi = 1 - Math.min(1, Math.abs(cn) / 1.02) ** 2;
+      // alpha: 0,50 mientras corre y aguanta; fundido final de 0,9 s
+      let al = 0.50 * fVi;
+      if (!corriendo && resto > S.VIDA - 0.9) {
+        al *= Math.max(0, (S.VIDA - resto) / 0.9);
+      }
+      if (al <= 0.012) continue;
+      const hx = q.ax === 'x' ? q.head * pw : q.ln * pw;
+      const hy = q.ax === 'x' ? q.ln * pw : q.head * pw;
+      const ox = q.ax === 'x' ? q.desde * pw : q.ln * pw;
+      const oy = q.ax === 'x' ? q.ln * pw : q.desde * pw;
+      // la ESTELA = la línea fina de la trama (0,8 px ≈ 5 cm reales)
+      fx.globalAlpha = al;
+      fx.strokeStyle = 'rgba(' + q.col[0] + ',' + q.col[1] + ',' + q.col[2] + ',0.9)';
+      fx.lineWidth = 0.8;
+      fx.beginPath();
+      fx.moveTo(ox, oy);
+      fx.lineTo(hx, hy);
+      fx.stroke();
+      // la CABEZA: el destello que viaja (aditivo, blanco-azul)
+      if (corriendo) {
+        fx.globalCompositeOperation = 'lighter';
+        fx.globalAlpha = Math.min(1, al * 2.1);
+        fx.fillStyle = '#bfe0ff';
+        fx.beginPath();
+        fx.arc(hx, hy, 1.6, 0, Math.PI * 2);
+        fx.fill();
+        fx.globalCompositeOperation = 'source-over';
+      }
     }
     fx.globalAlpha = 1;
     S.tex.needsUpdate = true;
@@ -1723,6 +1847,26 @@ export function updateArcanoFx(g, dt, now) {
   const tgtB = B.hover ? 1.1 : 1.0;
   const curB = B.mesh.scale.x || 1;
   B.mesh.scale.setScalar(curB + (tgtB - curB) * Math.min(1, dt * 10));
+  // — r43 · EL LETRERO «Salir/Exit»: se funde con el hover del búho
+  //  (aparece al apuntarlo, se retira al apartar la mano) con un leve
+  //  ascenso al entrar — la misma respuesta viva que las flechas. —
+  const SA = A.salir;
+  if (SA) {
+    SA.op += ((B.hover ? 1 : 0) - SA.op) * Math.min(1, dt * 9);
+    if (SA.op < 0.015) {
+      if (SA.mesh.visible) { SA.mesh.visible = false; SA.halo.visible = false; }
+      SA.op = 0;
+    } else {
+      SA.mesh.visible = true;
+      SA.halo.visible = true;
+      SA.mesh.material.opacity = SA.op;
+      SA.halo.material.opacity = 0.62 * SA.op;
+      const sc = 0.94 + SA.op * 0.06;
+      SA.mesh.scale.setScalar(sc);
+      SA.mesh.position.y = 2.95 + SA.op * 0.045;
+      SA.halo.position.y = SA.mesh.position.y;
+    }
+  }
   // — r41 · galería: MATERIALIZACIÓN HOLOGRÁFICA — la ficha se FORMA
   //  (bandas que viajan, disolución de motas, barrido de condensación,
   //  parpadeo de encendido y aberración que se cierra); al terminar,

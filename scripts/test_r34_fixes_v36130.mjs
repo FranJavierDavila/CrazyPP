@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r34 (v3.6.137, FASE 139) — TEST de la ronda.
+/* CRAZY PING PONG · r34 (v3.6.138, FASE 140) — TEST de la ronda.
  * Correcciones a los superpoderes de pala (informe del dueño):
  *   A · FX de mesa al this.rig (Red/Elec/Efecto/Portal) — alineación.
  *   B · voz del selector para fenix/crono/oscuridad (ES/EN).
  *   C · SÚPER ELECTRICIDAD termina tras 1 bola perdida (fin por baja).
  *   D · retención del rayo: 1 s con halo + mini-rayos (ppTransito).
  *   E · Prisma: estela arcoíris sólo en el campo del rival.
- * Uso: node scripts/test_r34_fixes_v36137.mjs */
+ * Uso: node scripts/test_r34_fixes_v36138.mjs */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
@@ -41,8 +41,10 @@ chk(c12.includes('this.rig.add(sp);   // r34: espacio de la mesa (Sprite: billbo
 chk(!c12.includes('this.scene.add(cuerpo)') && !c12.includes('this.scene.add(riel)') &&
     !c12.includes('this.scene.add(mt)') && !c12.includes('this.scene.add(ln)'),
   'sin restos de FX de mesa en scene');
-chk(cuenta(c12, 'this.scene.add(') === 12,
-  `scene.add sólo los 12 legítimos (re-anclada r39: +el espacio arcano): ${cuenta(c12, 'this.scene.add(')}`);
+chk(cuenta(c12, 'this.scene.add(') === 11,
+  `scene.add sólo los 11 legítimos (re-anclada r43: el visor del rival pasa al RIG — la esfera del casco remoto comparte marco con la pala): ${cuenta(c12, 'this.scene.add(')}`);
+chk(c12.includes('this.rig.add(this._netVisor);'),
+  're-anclada r43: la esfera del casco remoto en el RIG (alineada con la pala)');
 
 console.log('== 2) FIX B · VOZ DEL SELECTOR (los 3 olvidados) ==');
 for (const id of ['fenix', 'crono', 'oscuridad']) {
@@ -98,12 +100,12 @@ chk(c12.includes('return TRAIL_PODER.prisma;'),
 chk(c12.includes('if (!enCampoRival) return null;\n      return TRAIL_PODER.prisma;'),
   'secuencia exacta null → prisma');
 
-console.log('== 6) VERSIÓN 3.6.137-SDK6 · FASE 139 ==');
-chk(c00.includes("const VERSION = '3.6.137-SDK6';"), 'c00 VERSION 3.6.137-SDK6');
-chk(body.includes('>V3.6.137-SDK6</span>'), 'badge V3.6.137-SDK6');
-chk(game.includes("const VERSION = '3.6.137-SDK6';") &&
-    game.includes('>V3.6.137-SDK6</span>'), 'game.html sincronizado');
-chk(sw.includes("crazypp-v3.6.137-SDK6"), 'sw.js CACHE 3.6.137-SDK6');
+console.log('== 6) VERSIÓN 3.6.138-SDK6 · FASE 140 ==');
+chk(c00.includes("const VERSION = '3.6.138-SDK6';"), 'c00 VERSION 3.6.138-SDK6');
+chk(body.includes('>V3.6.138-SDK6</span>'), 'badge V3.6.138-SDK6');
+chk(game.includes("const VERSION = '3.6.138-SDK6';") &&
+    game.includes('>V3.6.138-SDK6</span>'), 'game.html sincronizado');
+chk(sw.includes("crazypp-v3.6.138-SDK6"), 'sw.js CACHE 3.6.138-SDK6');
 
 console.log('== 7) REGRESIÓN · registro, física y anclas r33 ==');
 for (const id of ['mega', 'efecto', 'iman', 'portal', 'clon', 'red', 'elec',

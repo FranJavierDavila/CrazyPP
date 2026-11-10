@@ -70,7 +70,7 @@ chk(c09.includes('if (s.s) NetLink.spinFromNet(s.s, ball.spin);'), 'v1: applyBal
 chk(c09.includes('_spinNet(v3)'), 'v2: el estado de bola del host lleva spin saneado');
 chk(c09.includes('NetLink.spinFromNetArr(ev.s)'), 'v2: HIT/TOSS/HANDOFF traen ev.s');
 chk(c09.includes('this._spinNet(g.ball.spin)'), 'v2: netLocalHit/TITLE emiten el spin del golpe');
-chk(c12.includes('stepPhysics(dt * this._dilF, this.ball, enMiMitad ? pads : [], this.events);'), 'v2: el fantasma del invitado simula con la FÍSICA REAL (spin vivo local)');
+chk(c12.includes('stepPhysics(dtFis * this._dilF, this.ball, enMiMitad ? pads : [], this.events);'), 'v2: el fantasma del invitado simula con la FÍSICA REAL (spin vivo local — re-anclada r43: física en tiempo real dtFis)');
 chk(c12.includes('_bolaSpinTick(dt) {') && c12.includes('this.ballMesh.position.copy(this.ball.pos);'), 'el mismo tick visual corre para host e invitado');
 
 /* — 3 · F2 · perfil en la red (c09 + c12) ————————————————————————— */

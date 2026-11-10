@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r41 · v3.6.137-SDK6 · FASE 139 · TEST: EL ARCANO
+/* CRAZY PING PONG · r41 · v3.6.138-SDK6 · FASE 140 · TEST: EL ARCANO
  * HOLOGRÁFICO — el pulido del dueño sobre el espacio arcano (ocho
  * informes en uno):
  *
@@ -64,7 +64,7 @@
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
  *   (df8f71a3… / 8bb62082…).
  *
- * Uso: node --no-warnings scripts/test_r41_arcano_holo_v36137.mjs
+ * Uso: node --no-warnings scripts/test_r41_arcano_holo_v36138.mjs
  */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -86,25 +86,25 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.137-SDK6 · FASE 139 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.137-SDK6 · FASE 139 · EL ARCANO HOLOGRÁFICO');
-chk(vjson.version === '3.6.137-SDK6', 'VERSION.json: 3.6.137-SDK6');
-chk(vjson.fase === 139, 'FASE 139');
-chk(vjson.faseNombre === 'El Arcano holográfico — pulido del dueño', 'faseNombre = EL ARCANO HOLOGRÁFICO');
+/* — 1 · SELLOS · v3.6.138-SDK6 · FASE 140 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.138-SDK6 · FASE 140 · EL ARCANO HOLOGRÁFICO');
+chk(vjson.version === '3.6.138-SDK6', 'VERSION.json: 3.6.138-SDK6');
+chk(vjson.fase === 140, 'FASE 140');
+chk(vjson.faseNombre === 'El suelo de destellos — duelo honesto y fluido', 'faseNombre = EL ARCANO HOLOGRÁFICO');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
-chk(vjson.tamano === 11473088, 'tamaño del build: 11.473.088 B');
+chk(vjson.tamano === 11485463, 'tamaño del build: 11.485.463 B');
 chk(vjson.golden ===
-  '543863157c0d8ab3348d7b78edc52a0d262c7ebd132c42db1933e878b1325227',
-  'VERSION.json golden 54386315…');
+  '3e454e33b855c335e6a291764077e96078ef724cc5171067029fe03abcc6e93a',
+  'VERSION.json golden 3e454e33…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.137-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.137-SDK6'"), 'sello c00 = 3.6.137-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.137-SDK6'"),
-  'sw.js CACHE v3.6.137-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.137-SDK6</span>'), 'badge V3.6.137-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36137-sdk6'),
-  'hub /descargas sellado a v36137-sdk6');
+chk(game.includes('3.6.138-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.138-SDK6'"), 'sello c00 = 3.6.138-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.138-SDK6'"),
+  'sw.js CACHE v3.6.138-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.138-SDK6</span>'), 'badge V3.6.138-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36138-sdk6'),
+  'hub /descargas sellado a v36138-sdk6');
 
 /* — 2 · MOTAS DE POLVO · circulares y más pequeñas ———————————————— */
 console.log('2 · MOTAS DE POLVO · circulares (textura radial) y la mitad de tamaño');
@@ -123,16 +123,23 @@ chk(c08.includes('const N = 48;') && c08.includes('const LADO = N * 1.5;'),
 chk(c08.includes("bgR.addColorStop(0, '#03060d');"), 'c08: la BASE es NEGRA bajo los pies');
 chk(c08.includes("bgR.addColorStop(1, 'rgb(' + CIELO[0] + ',' + CIELO[1] + ',' + CIELO[2] + ')');"),
   'c08: la base funde al color del horizonte (#0a1a36 — costura imposible)');
-chk(c08.includes('gx.strokeRect(ix * paso + 0.7, iy * paso + 0.7, paso - 1.4, paso - 1.4);'),
-  'c08: las LÍNEAS de la matriz, finas y SIEMPRE visibles');
-chk(c08.includes('if (!(ix % 8) && !(iy % 8)) {'), 'c08: nodos cada 8 losetas (mejor definida)');
+/* r43 · RE-ANCLAJE (petición del dueño: «eliminar del suelo el tramado de
+ * líneas… destellos que dejan una estela que es la propia línea, que se ve
+ * unos 5 segundos y desaparece»): la MATRIZ ESTÁTICA de la r41 desaparece —
+ * las 5 agujas de líneas siempre visibles/nodos/rellenos aleatorios se
+ * sustituyen por las del trazado de destellos (test_r43 las detalla). */
+chk(c08.includes('S.trazos.push({') && c08.includes("ax, ln, dir,"),
+  'c08 [r43]: el trazado de DESTELLOS sustituye a la matriz estática (re-anclado)');
+chk(c08.includes('const VIDA = 5.0;'),
+  'c08 [r43]: la línea dibujada aguanta ~5 s (re-anclado)');
 chk(c08.includes('const BANDA = [[16, 40, 78], [26, 56, 104]];'),
   'c08: el RELLENO usa la banda azul del dueño (#10284e → #1a3868)');
-chk(c08.includes('lit: [], mezcla'), 'c08: estado de las losetas VIVAS en el userData');
-chk(c08.includes('i: (Math.random() * S.N) | 0, j: (Math.random() * S.N) | 0,'),
-  'c08: posición de nacimiento TOTALMENTE aleatoria');
-chk(c08.includes('t: 0, tIn: 0.25 + Math.random() * 0.7, hold: 0.6 + Math.random() * 2.6,'),
-  'c08: vida aleatoria (nace → aguanta → muere)');
+chk(c08.includes('lit: [],        // rellenos vivos de celdas atravesadas'),
+  'c08 [r43]: rellenos vivos LIGADOS a las celdas que los destellos cruzan (re-anclado)');
+chk(c08.includes('if (cel !== q.ultima && S.lit.length < 70 && Math.random() < 0.20) {'),
+  'c08 [r43]: los rellenos nacen EN el recorrido del destello (re-anclado)');
+chk(c08.includes('t: 0, tIn: 0.3 + Math.random() * 0.5, hold: 1.2 + Math.random() * 2.4,'),
+  'c08 [r43]: vida aleatoria del relleno (nace → aguanta → muere) (re-anclado)');
 chk(c08.includes('if (q.t >= fin) { S.lit.splice(k, 1); continue; }'),
   'c08: las losetas SE APAGAN solas (unas aparecen, otras desaparecen)');
 chk(c08.includes('const al = q.alfa * aV * (1 - rr * rr);'),
@@ -140,10 +147,10 @@ chk(c08.includes('const al = q.alfa * aV * (1 - rr * rr);'),
 chk(c08.includes('const mesh = new THREE.Mesh(new THREE.PlaneGeometry(LADO, LADO),') &&
     c08.includes('new THREE.MeshBasicMaterial({ map: bTex, fog: false }));'),
   'c08: base/malla/rellenos con fog:false (la niebla jamás toca el suelo)');
-chk(c08.includes('malla.position.y = 0.002;') && c08.includes('fills.position.y = 0.004;'),
-  'c08: matriz y rellenos flotan sobre la base (sin z-fighting)');
-chk(c08.includes('g.userData = { N, paso: 512 / N, fcv, fCtx: fcv.getContext(\'2d\'), tex, lit: [], mezcla };'),
-  'c08: el estado vivo del suelo viaja en el userData del grupo');
+chk(c08.includes('malla.position.y = 0.002;') && !c08.includes('fills.position.y'),
+  'c08 [r43]: el trazado vivo flota sobre la base (un solo plano de líneas+rellenos — sin z-fighting) (re-anclado)');
+chk(c08.includes("tCtx: tcv.getContext('2d')"),
+  'c08 [r43]: el estado vivo del suelo (trazos + lit) viaja en el userData (re-anclado)');
 
 /* — 4 · FLECHAS INTERCAMBIADAS (glifos descruzados) ————————————————— */
 console.log('4 · FLECHAS · ‹ a la IZQUIERDA · › a la DERECHA (icono = lado = acción)');

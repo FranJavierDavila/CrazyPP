@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r40 · v3.6.137-SDK6 · FASE 139 · TEST: EL ARCANO A LA
+/* CRAZY PING PONG · r40 · v3.6.138-SDK6 · FASE 140 · TEST: EL ARCANO A LA
  * VISTA — revisión del dueño sobre la r39 (cuatro informes en uno):
  *
  *   A · EL BÚHO, UN 25 % MÁS PEQUEÑO — «Veamos el buho (un poco más
@@ -49,7 +49,7 @@
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
  *   (df8f71a3… / 8bb62082…).
  *
- * Uso: node --no-warnings scripts/test_r40_arcano_v36137.mjs
+ * Uso: node --no-warnings scripts/test_r40_arcano_v36138.mjs
  */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -71,25 +71,25 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.137-SDK6 · FASE 139 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.137-SDK6 · FASE 139 · EL ARCANO A LA VISTA');
-chk(vjson.version === '3.6.137-SDK6', 'VERSION.json: 3.6.137-SDK6');
-chk(vjson.fase === 139, 'FASE 139');
-chk(vjson.faseNombre === 'El Arcano holográfico — pulido del dueño', 'faseNombre = EL ARCANO A LA VISTA');
+/* — 1 · SELLOS · v3.6.138-SDK6 · FASE 140 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.138-SDK6 · FASE 140 · EL ARCANO A LA VISTA');
+chk(vjson.version === '3.6.138-SDK6', 'VERSION.json: 3.6.138-SDK6');
+chk(vjson.fase === 140, 'FASE 140');
+chk(vjson.faseNombre === 'El suelo de destellos — duelo honesto y fluido', 'faseNombre = EL ARCANO A LA VISTA');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
-chk(vjson.tamano === 11473088, 'tamaño del build: 11.473.088 B');
+chk(vjson.tamano === 11485463, 'tamaño del build: 11.485.463 B');
 chk(vjson.golden ===
-  '543863157c0d8ab3348d7b78edc52a0d262c7ebd132c42db1933e878b1325227',
-  'VERSION.json golden 54386315…');
+  '3e454e33b855c335e6a291764077e96078ef724cc5171067029fe03abcc6e93a',
+  'VERSION.json golden 3e454e33…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.137-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.137-SDK6'"), 'sello c00 = 3.6.137-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.137-SDK6'"),
-  'sw.js CACHE v3.6.137-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.137-SDK6</span>'), 'badge V3.6.137-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36137-sdk6'),
-  'hub /descargas sellado a v36137-sdk6');
+chk(game.includes('3.6.138-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.138-SDK6'"), 'sello c00 = 3.6.138-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.138-SDK6'"),
+  'sw.js CACHE v3.6.138-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.138-SDK6</span>'), 'badge V3.6.138-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36138-sdk6'),
+  'hub /descargas sellado a v36138-sdk6');
 
 /* — 2 · EL BÚHO DEL HALL, UN 25 % MÁS PEQUEÑO ————————————————————— */
 console.log('2 · BÚHO · 0,78×0,52 → 0,585×0,39 (25 % más pequeño)');
@@ -121,20 +121,24 @@ chk(c08.includes('const BANDA = [[16, 40, 78], [26, 56, 104]];'),
   'c08: la banda azulada del dueño (#10284e → #1a3868, más clara que el cielo)');
 chk(c08.includes('const CIELO = [10, 26, 54];'),
   'c08: la viñeta funde al color del horizonte (#0a1a36) — suelo sin costura');
-chk(c08.includes("gx.strokeStyle = 'rgba(130,195,252,' + (0.16 * f).toFixed(3) + ')'"),
-  're-anclada r41: matriz fina SIEMPRE visible, desvanecida al horizonte');
+/* r43 · RE-ANCLAJE 2 (petición del dueño: el tramado fijo de la r41 pasa a
+ * DESTELLOS que dibujan la trama fina — la línea nace de un borde, deja
+ * su estela ~5 s y muere; la matriz SIEMPRE visible desaparece). */
+chk(c08.includes("ax = Math.random() < 0.5 ? 'x' : 'z'") &&
+    c08.includes('dir = Math.random() < 0.5 ? 1 : -1'),
+  're-anclada r43: destellos en ambos ejes (90°) y ambos sentidos');
 chk(c08.includes('mesh.rotation.x = -Math.PI / 2;') &&
     c08.includes('mesh.position.y = -0.01;'),
   'c08: el suelo tumbado bajo los pies');
-chk(c08.includes('S.lit.length < 140') && c08.includes('Math.random() < 0.55'),
-  're-anclada r41: losetas que NACEN al azar (tope ~140 vivas)');
-chk(c08.includes('i: (Math.random() * S.N) | 0, j: (Math.random() * S.N) | 0,'),
-  're-anclada r41: posición de nacimiento TOTALMENTE aleatoria');
+chk(c08.includes('S.trazos.length < 9') && c08.includes('S.lit.length < 70'),
+  're-anclada r43: tope de destellos (~9) y rellenos (~70) vivos');
+chk(c08.includes('const cel = Math.min(L - 1, Math.floor(q.head));'),
+  're-anclada r43: los rellenos nacen EN las celdas que el destello cruza');
 chk(c08.includes('const aV = q.t < q.tIn ? q.t / q.tIn'),
   're-anclada r41: envolvente nace→aguanta→muere (apagado aleatorio)');
 chk(c08.includes('fx.clearRect(0, 0, 512, 512);') &&
     c08.includes('S.tex.needsUpdate = true;'),
-  're-anclada r41: capa de rellenos viva repintada (matriz estática)');
+  're-anclada r43: lienzo vivo de trazos+rellenos repintado por frame');
 chk(c08.includes("new THREE.MeshBasicMaterial({ map: bTex, fog: false }));"),
   're-anclada r41: la BASE NEGRA del suelo sin niebla');
 chk(c08.split('fog: false').length >= 9,

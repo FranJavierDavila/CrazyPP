@@ -935,6 +935,14 @@ export class NetLink {
     this._gaps = 0; this._recvs = 0;
     this._poseAcc = 0; this._snapAcc = 0;
     this._poseHz = PPNET.VP.POSE_HZ;
+    // r43 · BÚFER DE TX REUTILIZADO: antes cada paquete (60 pose + ~20 snap
+    // por segundo) nacía en un `new ArrayBuffer(1200)` y viajaba con un
+    // `buf.slice()` — ~160 allocations + copias por segundo ALIMENTANDO AL
+    // GC en plena partida: los micro-parones del Quest («a trompicones»).
+    // Ahora el códec escribe SIEMPRE aquí y se envía una VISTA (n bytes;
+    // RTCDataChannel.send copia la vista de forma síncrona: reutilizar el
+    // búfer es seguro). El túnel PeerJS conserva el slice (serializa).
+    this._txBuf = new ArrayBuffer(PPNET.VP.MAX_PKT);
     this._lossLowT = 0; this._degraded = false;
     this._lastFastAt = 0; this._iceRestarts = 0;
     this._helloDone = false; this._helloTO = null;
@@ -1418,11 +1426,10 @@ export class NetLink {
         // SNAP no es fiable ni con ack (spec §5): va directo
         const pk = { seq: (this._seq + 1) & 0xffff, ack: this._ackP, ackBits: this._myAckBits(),
           sendTime: now, echoTime: this._echoTime, echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
-          pose: null, evs };
+          pose: null, evs, yAnchor: DIMS.tableTopY };
         this._seq = pk.seq;
-        const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
-        const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
-        if (n) this._fastSend(buf.slice(0, n), now);
+        const n = PPNET.encodePacket(this._txBuf, pk);   // r43: búfer reutilizado
+        if (n) this._fastSend(this._txOut(n), now);
         evs = null;
       }
     }
@@ -1445,13 +1452,22 @@ export class NetLink {
     };
     this._seq = pk.seq;
     this._clock.markSent(now);
-    const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
-    const n2 = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+    // r43: yAnchor viaja en el paquete (el spread {...pk} moría aquí)
+    pk.yAnchor = DIMS.tableTopY;
+    const n2 = PPNET.encodePacket(this._txBuf, pk);   // r43: búfer reutilizado
     if (!n2) return;
     // r36 (v3.6.132): seq sólo a los que VIAJAN en este paquete (los 8
     // primeros) — el ack no puede dar por recibido lo que no se envió
     for (const e of this._pend.slice(0, PPNET.VP.MAX_EVENTS)) e.seqs.push(pk.seq);
-    this._fastSend(buf.slice(0, n2), now);
+    this._fastSend(this._txOut(n2), now);
+  }
+
+  /** r43 · la SALIDA del búfer reutilizado: DataChannel directo = VISTA
+   *  (cero copia/cero allocation — send() clona los bytes de la vista);
+   *  túnel PeerJS = slice (BinaryPack serializa su propia copia igual). */
+  _txOut(n) {
+    return this._tunnel ? this._txBuf.slice(0, n)
+      : new Uint8Array(this._txBuf, 0, n);
   }
 
   _flushEvents(now) {
@@ -1462,16 +1478,16 @@ export class NetLink {
       echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
       pose: null,
       evs: this._pend.slice(0, PPNET.VP.MAX_EVENTS).map((e) => e.ev),
+      yAnchor: DIMS.tableTopY,
     };
     this._seq = pk.seq;
     this._clock.markSent(now);
-    const buf = new ArrayBuffer(PPNET.VP.MAX_PKT);
-    const n = PPNET.encodePacket(buf, { ...pk, yAnchor: DIMS.tableTopY });
+    const n = PPNET.encodePacket(this._txBuf, pk);   // r43: búfer reutilizado
     if (!n) return;
     // r36 (v3.6.132): seq sólo a los que VIAJAN en este paquete (los 8
     // primeros) — el ack no puede dar por recibido lo que no se envió
     for (const e of this._pend.slice(0, PPNET.VP.MAX_EVENTS)) e.seqs.push(pk.seq);
-    this._fastSend(buf.slice(0, n), now);
+    this._fastSend(this._txOut(n), now);
   }
 
   _fastSend(buf, now) {
@@ -1963,15 +1979,30 @@ export class NetLink {
         g.ball.pos.copy(pR);
         g.ball.vel.copy(vR);
         if (g.ballMesh) g.ballMesh.visible = true;
-        g._netTossLive = true;
+        g._netTossLive = true;   // r43: sellado con _netTossAt (caduca 2,5 s)
+        g._netTossAt = performance.now();
         return;
       }
       // corrección suave del fantasma (sin ack, spec §5/§8)
       if (this._ball.state === 'ghost') {
         const p = NetLink.posFromNetArr(ev.p);
         const v = NetLink.vecFromNetArr(ev.v);
-        g.ball.pos.lerp(p, 0.25);
-        g.ball.vel.lerp(v, 0.12);
+        // r43 · CONVERGENCIA EN EL MOMENTO DE LA VERDAD (informe del dueño:
+        // «puntos que yo veo como fallos el anfitrión los vio como buenos,
+        // como si el cálculo de la mesa estuviese desplazado durante
+        // momentos del juego»): el fantasma integra SU física local y los
+        // SNAP la corrigen con un lerp blando (0,25) — sobre la MESA, donde
+        // se juzga el bote bueno/fallo, unos pocos cm de divergencia cambian
+        // la PERCEPCIÓN del punto. Dentro del rectángulo de mesa y bajo la
+        // altura de juicio, la corrección se endurece (0,62/0,38): el dueño
+        // VE lo mismo que juzga el árbitro del emisor. Fuera de la mesa
+        // sigue el lerp suave de siempre (nada de teleports perceptibles).
+        const D = DIMS;
+        const enJuicio = Math.abs(p.x) <= D.tableHalfWidth + 0.30 &&
+          Math.abs(p.z - D.tableCenterZ) <= D.tableHalfLength + 0.30 &&
+          p.y <= D.tableTopY + 0.42;
+        g.ball.pos.lerp(p, enJuicio ? 0.62 : 0.25);
+        g.ball.vel.lerp(v, enJuicio ? 0.38 : 0.12);
       }
       return;
     }
@@ -2028,7 +2059,8 @@ export class NetLink {
         this._ball.state = 'ghost';
         this._ball.mine = false;
         g.ballMesh.visible = true;
-        g._netTossLive = true;
+        g._netTossLive = true;   // r43: sellado con _netTossAt (caduca 2,5 s)
+        g._netTossAt = performance.now();
         return;
       }
       // avance de nacimiento: dt·k con tope (spec §8)

@@ -656,6 +656,7 @@ export class PingPongGame {
     try { this.bolaSkin = localStorage.getItem('pp_bolaskin') || 'blanca'; } catch { /* */ }
     this._bolaTrailRest = [0.75, 0.75, 0.75];
     this._peerSkinId = null;   // skin del anfitrión (online, via HELLO sk)
+    this._peerPalaId = null;   // r45 · skin de pala del peer (via HELLO sp)
     try { this._bolaTinte(this._bolaSkinDef(this.bolaSkin)); } catch { /* */ }
     /* r21 · chispas de bote: pool fijo (5×8 puntos), color de la skin. */
     this.chispas = createChispas();
@@ -1396,6 +1397,8 @@ export class PingPongGame {
     // bola recobra la skin propia (el anfitrión se fue con la suya)
     this._hallPeer = null;
     this._peerSkinId = null;
+    this._peerPalaId = null;      // r45 · la pala remota vuelve a la clásica
+    try { this._palaAplicarRemota(); } catch { /* */ }
     if (this.inHall) {
       this.exitHall();       // visita en curso: la cancha vuelve primero
       this.enterHall();      // …y re-entra ya con TU perfil repintado
@@ -5873,6 +5876,8 @@ export class PingPongGame {
     for (const k of keys) {
       const d = ACHIEVEMENTS.find((a) => a.key === k);
       if (!d) continue;
+      // r45 · TELEMETRÍA: el logro recién estrenado alimenta los rankings
+      try { window.__PP_TELE && window.__PP_TELE.ev('logro', { k }); } catch (eLG) { /* */ }
       this.rules.message = `LOGRO · ${d.name}`;
       this.audio.announce(T('ann_ach', { name: d.name }), true);
     }
@@ -6221,6 +6226,34 @@ export class PingPongGame {
         this._bolaTinte(bolaAspectoPorId(limpio));
       }
     } catch { /* */ }
+  }
+  /** r45 · skin de PALA propia (id real del Pro Training, incluso las de
+   *  racha que el perk no registra) para el HELLO v2 (campo sp). */
+  palaSkinPropia() {
+    try {
+      const d = JSON.parse(localStorage.getItem('ppxr_train_v1') || '{}');
+      if (typeof d.skin === 'string' && d.skin) return d.skin;
+    } catch { /* */ }
+    try { return String(window.__PP_PADDLE_SKIN || 'clasica'); } catch { return 'clasica'; }
+  }
+  /** ONLINE (r45): la skin de pala del PEER llega por el HELLO v2 (sp).
+   *  La pala es de cada uno: anfitrión e invitado visten la del otro en
+   *  su pala remota (aiPaddleMesh). Builds viejos no envían sp → nada
+   *  cambia; sin Pro Training (puente ausente) queda la de siempre. */
+  onPeerPala(id) {
+    const limpio = (typeof id === 'string') ? id.slice(0, 24) : '';
+    if (!limpio) return;
+    this._peerPalaId = limpio;
+    this._palaAplicarRemota();
+  }
+  /** pinta la pala REMOTA con la skin del peer (o la clásica al salir). */
+  _palaAplicarRemota() {
+    try {
+      if (!this.aiPaddleMesh) return;
+      if (typeof window !== 'undefined' && typeof window.__PP_TRAIN_PINTA_PALA === 'function') {
+        window.__PP_TRAIN_PINTA_PALA(this.aiPaddleMesh, this._peerPalaId || 'clasica');
+      }
+    } catch { /* cosmético */ }
   }
 
   /* ====================================================================
@@ -7114,6 +7147,7 @@ export class PingPongGame {
     // v2.50 · FASE 1: telemetría anónima — inicio de sesión VR + onboarding
     // v2.77: flag anónimo de multijugador (rival P2P conectado en este momento)
     try { __PP_TELE.ev('vr_start', { mode: this.mode, multi: !!(this.net && this.net.online) }); } catch { /* */ }
+    this._telePerfil();   // r45 · foto de perfil para los rankings mundiales
     this._vrT0 = Date.now();
     try { __PP_TELE.resetFps(); } catch { /* */ }
     // ronda 12: LATIDO EN VR — un vr_ping cada 5 min mientras dura la sesión;
@@ -7147,6 +7181,7 @@ export class PingPongGame {
         fpsMin: __PP_TELE.fpsLo(),
         fpsMax: __PP_TELE.fpsHi(),
       });
+      this._telePerfil();   // r45 · perfil fresco al cerrar la sesión
       // v2.76: la sesión VR terminó → mandar el lote YA (no esperar 30 s;
       // si el casco cierra el visor justo después, el beacon de pagehide
       // puede no llegar a dispararse).
@@ -14612,6 +14647,17 @@ export class PingPongGame {
     // v2.50 · FASE 1: FPS para telemetría + ciclo de CONSEJOS de 1ª sesión
     // (los consejos ceden el cartel al árbitro y solo se marcan la 1ª vez)
     try { __PP_TELE.noteFrame(dt); } catch { /* */ }
+    // r46 · GOBERNADOR DE TELEMETRÍA EN PARTIDA EN RED: declara si hay un
+    // duelo online vivo (estado de reglas, no un flag propio — cero estado
+    // nuevo). Dentro, si los fps caen de 58 dos ventanas seguidas, la
+    // telemetría se congela sola (c00·__PP_TELE.partida); al terminar el
+    // partido el flanco false descongela y vacía la cola. Coste por frame:
+    // una comparación booleana.
+    try {
+      const enPartidaRed = !!(this.net && this.net.online &&
+        this.rules && this.rules.state === 'playing');
+      __PP_TELE.partida(enPartidaRed);
+    } catch (eGP) { /* jamás rompe el bucle */ }
     // r81 · PERF GOVERNOR: EMA de FPS, sonda de calibración y gobernador
     // (≥60 seguros en cualquier casco; ver PerfManager al inicio de c12)
     try { this.perf.feed(dt, presenting); } catch (ePerf) { /* nunca rompe */ }
@@ -16773,6 +16819,16 @@ export class PingPongGame {
           if (this.net.online && this.net.v2 === 'ok') {
             this.net.sendMatchEnd(it.winner === 'player' ? 'win' : 'loss');
           }
+          // r45 · RESULTADO del partido para los RANKINGS MUNDIALES: modo,
+          // marcador y victoria (el pid+nombre ya viajan en cada evento).
+          try {
+            window.__PP_TELE && window.__PP_TELE.ev('resultado', {
+              m: this.carreraMatch ? 'carrera' : (this.net && this.net.online ? 'p2p' : 'ia'),
+              a: this.rules.scorePlayer | 0, b: this.rules.scoreAi | 0,
+              w: it.winner === 'player' ? 1 : 0,
+              bo: this.rules.bestOf | 0,
+            });
+          } catch (eREs) { /* */ }
           // r62 · BOLA DE PARTIDO EN CÁMARA LENTA: el último vuelo se dilata
           // (física 0,34× con regreso suave ~1,1 s) ANTES de la fanfarria.
           // SOLO local: online la bola la conduce el stream del rival.
@@ -16860,6 +16916,25 @@ export class PingPongGame {
         window.setTimeout(() => this.haptic(this.paddleHand, 0.22, 380), 300);
       }
     }
+  }
+
+  /** r45 · TELEMETRÍA DE PERFIL: foto COMPACTA del progreso (pid y nombre
+   *  ya viajan solos en cada evento) para los RANKINGS MUNDIALES del
+   *  panel — ELO, victorias, mejor racha, estrellas de retos, puntos del
+   *  Pro Training y logros. Se manda al entrar y al salir de VR. */
+  _telePerfil() {
+    try {
+      const d = (this.stats && this.stats.data) || {};
+      let pts = 0;
+      try { pts = (JSON.parse(localStorage.getItem('ppxr_train_v1') || '{}').pts) | 0; } catch { /* */ }
+      window.__PP_TELE && window.__PP_TELE.ev('perfil', {
+        el: Math.round(d.elo || 1000),
+        w: d.won | 0, bs: d.bestStreak | 0,
+        st: this._retosEstrellas ? (this._retosEstrellas() | 0) : 0,
+        pt: pts,
+        ach: d.ach ? Object.keys(d.ach).length : 0,
+      });
+    } catch (eTP) { /* telemetría jamás rompe el juego */ }
   }
 
   /** r62 · Arranca la dilatación de la bola de partido: factor 0,34 al

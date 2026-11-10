@@ -1,62 +1,70 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""RONDA 46 · SELLADO EN CASCADA de las capas QA (E/F/G/H/I) a 3.6.38-SDK6.
+"""SELLA R46 · v3.6.139-SDK6 (FASE 141) — re-sella el golden tras los cambios
+legítimos de src/ de esta ronda (r46):
 
-Actualiza IN SITU los sellos de versión y los tamaños esperados de los
-ZIPs en las capas que los llevan clavados (lección de las rondas 10-45:
-cada bump necesita su sellado o el QA TOTAL compara contra la versión
-vieja). El SDK (1.5.4) y los manifests del oeste (v56) y de la locura
-(v26) NO cambian esta ronda (la mecánica vive en el núcleo).
+  · c00_pre_three.js  — gobernador de telemetría (__PP_TELE.partida + hold)
+  · c12_pingponggame.js — declara partida online viva al gobernador (animate)
+  · c06_logros_stats_ia_rival.js — evento 'logro' en unlock() (desbloqueos)
+  · (r45, sesión anterior, ya en el build: candado.png, constelación de palas,
+    skin de pala por HELLO v2 `sp`, perfil/resultado para rankings mundiales)
+  · worker-tele v3 — ?rank=1 · retencion · logrosTop (probado 102/0 en local)
+  · telemetria.html — secciones Retención + Desbloqueos de logros
 
-Capas y sellos (configuración REAL heredada de las rondas 13-45):
-  E · qa_sup1_v365.py    — versión (+ SDK v1.5.4 y oeste v56 intactos)
-  F · qa_imp2_v351.py    — versión (1)
-  G · qa_escudo_v350.py  — versión (1)
-  H · qa_descargas_v365.py — versión + tag de hub + tamaños (los ZIPs
-                             crecen por el arsenal + LOD: código y QA;
-                             SOLO intacto)
-  I · smoke_sdk5.py      — versión (+ sdkVer 1.5.4 intacto)
-  (el tag de hub v3637-sdk6 → v3638-sdk6 SOLO vive en la capa H)
-
-Idempotente: si la aguja da ×0 pero el sello NUEVO ya está presente,
-cuenta como «ya sellado» (no falla) — lección de la ronda 13."""
+Pasos: build_game.py --escribir → golden nuevo (GOLDEN_SHA256.txt + VERSION.json
+golden/tamano) → contra-verificación BYTE-EXACTO → qa_version.
+"""
+import hashlib
+import json
+import subprocess
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project/upload')
-SCR = RAIZ / 'scripts'
+RAIZ = Path(__file__).resolve().parent.parent
+GAME = RAIZ / "public" / "game.html"
+GOLDEN = RAIZ / "src" / "game" / "GOLDEN_SHA256.txt"
+VJSON = RAIZ / "src" / "game" / "VERSION.json"
 
-VERSIONES = [('3.6.37-SDK6', '3.6.38-SDK6'), ('v3637-sdk6', 'v3638-sdk6')]
-TAMANOS = [  # H: tamaños byte-exactos de los ZIPs v3638 (ronda 46)
-    ('131059105', '131062581'),   # COMPLETO
-    ('16024480', '16027956'),     # ligera
-    ('131045718', '131049194'),   # CLOUDFLARE
-]
+NOTA = ("# SHA256 del game.html que produjo esta división (3.6.139-SDK6, fase 141 · "
+        "La vitrina del cielo — candado del dueño, constelación de palas y rankings "
+        "mundiales; re-sellado por sella_r46.py tras el gobernador de telemetría, "
+        "el evento 'logro' y el worker v3 ?rank=1/retención/logrosTop)\n")
 
-PLAN = [
-    ('qa_sup1_v365.py', VERSIONES[:1]),
-    ('qa_imp2_v351.py', VERSIONES[:1]),
-    ('qa_escudo_v350.py', VERSIONES[:1]),
-    ('smoke_sdk5.py', VERSIONES[:1]),
-    ('qa_descargas_v365.py', VERSIONES + TAMANOS),
-]
 
-fallos = 0
-for nombre, susts in PLAN:
-    p = SCR / nombre
-    txt = p.read_text(encoding='utf-8')
-    for viejo, nuevo in susts:
-        n = txt.count(viejo)
-        if n == 0 and nuevo in txt:
-            print(f'  = {nombre}: {viejo} → ya sellado')
-            continue
-        if n == 0:
-            print(f'  ✗ {nombre}: aguja no encontrada: {viejo}')
-            fallos += 1
-            continue
-        txt = txt.replace(viejo, nuevo)
-        print(f'  ✓ {nombre}: {viejo} → {nuevo} (×{n})')
-    p.write_text(txt, encoding='utf-8')
+def main() -> int:
+    # 1. build definitivo
+    r = subprocess.run([sys.executable, str(RAIZ / "scripts" / "build_game.py"), "--escribir"],
+                       capture_output=True, text=True)
+    sys.stdout.write(r.stdout[-400:])
+    if r.returncode != 0:
+        sys.stdout.write(r.stderr)
+        return 1
 
-print('SELLA_R46:', 'OK' if not fallos else f'{fallos} FALLOS')
-sys.exit(1 if fallos else 0)
+    # 2. golden nuevo
+    sha = hashlib.sha256(GAME.read_bytes()).hexdigest()
+    tam = GAME.stat().st_size
+    GOLDEN.write_text(NOTA + sha + "\n", encoding="utf-8")
+    vdat = json.loads(VJSON.read_text(encoding="utf-8"))
+    vdat["golden"] = sha
+    vdat["tamano"] = tam
+    VJSON.write_text(json.dumps(vdat, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"· golden nuevo: {sha[:16]}… ({tam:,} B) · VERSION.json actualizado")
+
+    # 3. contra-verificación BYTE-EXACTO
+    r2 = subprocess.run([sys.executable, str(RAIZ / "scripts" / "build_game.py")],
+                        capture_output=True, text=True)
+    exacto = "BYTE-EXACTO" in r2.stdout
+    print("· contra-verificación BYTE-EXACTO:", "OK" if exacto else "FALLO")
+    if not exacto:
+        sys.stdout.write(r2.stdout[-400:])
+        return 1
+
+    # 4. qa_version
+    r3 = subprocess.run([sys.executable, str(RAIZ / "scripts" / "qa_version.py")],
+                        capture_output=True, text=True)
+    cola = [l for l in r3.stdout.splitlines() if "RESULTADO" in l or "FALLO" in l]
+    sys.stdout.write("\n".join(cola[-8:]) + "\n")
+    return 0 if "0 FALLOS" in r3.stdout else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -112,7 +112,9 @@ def bloque_catalogo():
     # r112 (M5a): el catálogo v7 documenta 17 eventos (+ ai_style)
     # r115 · re-ancla honesta: el catálogo vive en 18 (carrera entró con la
     # escalera de carrera y la aguja se quedó en 17 — deriva pre-existente)
-    chk(len(nombres_cat) == 20, f'el catálogo documenta 20 eventos ({len(nombres_cat)}) — r23: +net_ice (deriva r22 sellada)')
+    # r46 · catálogo v12: 24 eventos (+perfil +resultado +logro — rankings
+    # mundiales con identidad mínima pid/n de la 3.6.139)
+    chk(len(nombres_cat) == 24, f'el catálogo documenta 24 eventos ({len(nombres_cat)}) — r46: +perfil +resultado +logro')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')
@@ -461,7 +463,8 @@ def bloque_panel(*sids_e2e):
     # PII: todo lo recibido de los E2E respeta el catálogo (claves permitidas)
     cat = json.loads((RAIZ / 'scripts' / 'telemetria_catalogo.json').read_text(encoding='utf-8'))
     campos = {e['nombre']: {c['nombre'] for c in e['campos']} for e in cat['eventos']}
-    base = {'e', 't', 'v', 'sid', '_rec'}
+    base = {'e', 't', 'v', 'sid', '_rec',
+            'pid', 'n'}   # r45 · identidad mínima GLOBAL: pid anónimo + nombre elegido viajan en CADA evento cuando existen (catálogo v12)
     for sid_aud in sids_e2e:
         st, j = get_json(API + '?eventos=500&sid=' + str(sid_aud))
         malos = []
@@ -551,7 +554,7 @@ def bloque_ronda12():
         'c00: vr_ping lleva dur')
     chk('300000' in c00, 'c00: intervalo del latido = 5 min (300000 ms)')
     chk('fps: fpsAvg()' in c00, 'c00: vr_ping lleva fps del momento')
-    chk('vrPing, get on()' in c00, 'c00: vrPing exportado en __PP_TELE')
+    chk('vrPing, partida, get on()' in c00, 'c00: vrPing exportado en __PP_TELE (r46 añade partida)')
     chk('__PP_TELE.vrPing(true)' in c12, 'c12: latido ARRANCA al vr_start')
     chk('__PP_TELE.vrPing(false)' in c12, 'c12: latido PARA al vr_end')
 

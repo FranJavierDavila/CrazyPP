@@ -16,11 +16,23 @@ CONTRATO (hermano del receptor local /api/telemetria)
   GET    /api/tele            latido público {ok, total, ts}
   GET    /api/tele?salud=1    PÚBLICO {ok, total, ultimoRec, haceSeg} (r42)
   GET    /api/tele?resumen=1  agregados completos   → REQUIERE clave
+  GET    /api/tele?rank=1     RANKINGS MUNDIALES por pid (ELO/victorias/
+                            puntos/logros)        → REQUIERE clave (r46)
   GET    /api/tele?eventos=N  últimos N crudos      → REQUIERE clave
   GET    /api/tele?csv=1      CSV crudo (tope 20.000)→ REQUIERE clave (r42)
   DELETE /api/tele?sid=…      purga (sin sid → todo)→ REQUIERE clave
   DELETE /api/tele?dias=N     retención: borra lo anterior a N días (r42)
   OPTIONS                      preflight CORS
+
+Eventos con IDENTIDAD MÍNIMA (desde la build 3.6.139 · r45/r46): cada
+evento lleva opcionalmente `pid` (16 hex anónimos persistentes) y `n`
+(nombre elegido, ≤12 chars). Tres eventos alimentan los rankings y el
+análisis de retención:
+  perfil     {el,w,bs,st,pt,ach} → foto de progreso (al entrar/salir de VR)
+  resultado  {m,a,b,w,bo}       → fin de partido (m: ia|p2p|carrera)
+  logro      {id}               → desbloqueo NUEVO de un logro (uno por logro)
+El resumen añade `retencion` (D1/D7/D30 por pid + % recurrentes) y
+`logrosTop` (desbloqueos agregados); `?rank=1` agrega por jugador.
 
   Filtros (r42): ?dias=N limita por LLEGADA al servidor (columna rec) en
   resumen, eventos, csv y DELETE; combinable con ?sid= en todos.

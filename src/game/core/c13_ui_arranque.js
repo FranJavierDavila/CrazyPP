@@ -3105,6 +3105,51 @@ loadPaddleModel().then((paddleModel) => {
         }
       }
     }
+    /* r45 · PINTA UNA INSTANCIA CUALQUIERA de la pala con la skin pedida
+     * (la usa el JUEGO para la pala del rival en red — c12 onPeerPala):
+     * teñido de goma/canto/mango con la caché de pieles de la casa (claves
+     * por skin.id — pieles distintas jamás sangran entre sí) y, si la piel
+     * trae modelo alternativo (Pro Carbon), sustitución de la hoja base.
+     * Las pieles de racha (neón/fantasma/campeón) van por tinte. Nunca
+     * toca localStorage ni el perk del dueño: SOLO pintura. */
+    function pintaPalaExterna(obj, skinId) {
+      try {
+        if (!obj || !obj.isObject3D) return;
+        const sk = SKINS.find((s0) => s0.id === skinId) || SKINS[0];
+        obj.userData.ppSkinWanted = sk.id;
+        applySkinMaterials(obj, sk);
+        if (sk.modelUrl) {
+          const p = altModelCache[sk.modelUrl];
+          if (p && typeof p.then !== 'function') _montaAltExterna(obj, sk);
+          else if (!p) loadAltModel(sk.modelUrl).then(() => {
+            if (obj.userData.ppSkinWanted === sk.id) _montaAltExterna(obj, sk);
+          }).catch(() => { /* respaldo: queda el tinte */ });
+        } else {
+          // sin modelo alternativo: fuera la hoja sustituida (si la hubo)
+          // y la base vuelve a la vista con su tinte nuevo
+          clearNamed(obj, 'skin');
+          for (const c0 of obj.children) {
+            if (!c0.userData || c0.userData.ppTrainTag !== 'skin') c0.visible = true;
+          }
+        }
+      } catch (e) { /* cosmético: jamás rompe el juego */ }
+    }
+    function _montaAltExterna(obj, sk) {
+      const alt = altModelCache[sk.modelUrl];
+      if (!alt || typeof alt.then === 'function') return;
+      clearNamed(obj, 'skin');
+      const base = obj.children.find((c0) => !c0.userData || c0.userData.ppTrainTag !== 'skin');
+      if (!base) return;
+      base.visible = false;
+      const inst = alt.clone(true);
+      inst.scale.copy(base.scale);
+      inst.position.copy(base.position);
+      inst.rotation.copy(base.rotation);
+      inst.userData.ppTrainTag = 'skin';
+      obj.add(inst);
+    }
+    try { window.__PP_TRAIN_PINTA_PALA = pintaPalaExterna; } catch (e) { /* */ }
+
     function applySkin(skinId) {
       const sk = SKINS.find((s) => s.id === skinId) || SKINS[0];
       S.skin = sk.id; save();

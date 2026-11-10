@@ -137,6 +137,7 @@ async function pide(q) {
 const fnum = (n) => (n == null ? '—' : Number(n).toLocaleString('es-ES'));
 const fseg = (s) => (s == null ? '—' : s >= 3600 ? Math.floor(s/3600) + ' h ' + Math.round((s%3600)/60) + ' min' : s >= 60 ? Math.floor(s/60) + ' min ' + Math.round(s%60) + ' s' : Math.round(s) + ' s');
 const limpia = (s) => String(s == null ? '' : s).replace(/[<>&]/g, '');
+const medalla = (i) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + 'º');
 
 /* ── SALUD (público, sin clave): LED + frescura del último lote ── */
 async function salud() {
@@ -193,7 +194,50 @@ function filaEvento(e, idx) {
     '<tr class="fila-ex" data-x="' + idx + '"><td colspan="4"><pre class="json">' + limpia(JSON.stringify(e, null, 2)) + '</pre></td></tr>';
 }
 
-function pinta(d) {
+/* ── r45 · RANKINGS MUNDIALES (worker ?rank=1): agrega por jugador ── */
+function pintaRank(rk) {
+  if (!rk || !rk.ok || !rk.rank) {
+    return '<section><h2>Rankings mundiales</h2><div class="vacio">este worker aún no publica rankings (despliega worker v3 con ?rank=1)</div></section>';
+  }
+  const R = rk.rank;
+  if (!R.jugadores) {
+    return '<section><h2>Rankings mundiales</h2><div class="vacio">aún sin jugadores con identidad (pid): llegan en cuanto jueguen con la build v3.6.139 o posterior — cada sesión VR y cada partido firmado deja perfil, resultado y logros</div></section>';
+  }
+  const L = (arr, cabs, fn) => tabla(cabs, arr.map(fn));
+  const elo = L(R.elo || [], ['#', 'jugador', 'ELO', 'victorias', 'visto'], (j, i) =>
+    [medalla(i), limpia(j.n), fnum(j.el), fnum(Math.max(j.w, j.vics)), j.hace != null ? fseg(j.hace) : '—']);
+  const vics = L(R.vics || [], ['#', 'jugador', 'victorias', 'partidas', 'online'], (j, i) =>
+    [medalla(i), limpia(j.n), fnum(Math.max(j.w, j.vics)), fnum(j.part), fnum(j.p2p)]);
+  const pts = L(R.pts || [], ['#', 'jugador', 'puntos', 'estrellas', 'racha'], (j, i) =>
+    [medalla(i), limpia(j.n), fnum(j.pt), fnum(j.st), fnum(j.bs)]);
+  const logros = L(R.logros || [], ['#', 'jugador', 'logros', 'ELO', 'visto'], (j, i) =>
+    [medalla(i), limpia(j.n), fnum(j.ach), fnum(j.el), j.hace != null ? fseg(j.hace) : '—']);
+  return '<section><h2>Rankings mundiales · ' + fnum(R.jugadores) + ' jugador(es) identificado(s) por pid anónimo</h2>' +
+    '<div class="grid2">' +
+    '<div><h3 style="margin:6px 0 4px;color:#9fb3cc">ELO</h3>' + elo + '</div>' +
+    '<div><h3 style="margin:6px 0 4px;color:#9fb3cc">Victorias</h3>' + vics + '</div>' +
+    '<div><h3 style="margin:6px 0 4px;color:#9fb3cc">Puntos · Pro Training</h3>' + pts + '</div>' +
+    '<div><h3 style="margin:6px 0 4px;color:#9fb3cc">Logros</h3>' + logros + '</div>' +
+    '</div></section>';
+}
+
+/* ── r46 · RETENCIÓN (D1/D7/D30) del resumen del worker ── */
+function pintaRetencion(r) {
+  if (!r || !r.jugadores) {
+    return '<section><h2>Retención</h2><div class="vacio">aún sin jugadores identificados (pid): las curvas D1/D7/D30 nacen con la build 3.6.139 — cada jugador que juega deja su cohorte</div></section>';
+  }
+  const curva = (k, m, nom) =>
+    '<div class="hbar"><span title="' + nom + '">' + nom + '</span>' +
+    '<div class="pista"><div class="relleno" style="width:' + (r[k] == null ? 0 : Math.min(100, r[k])) + '%"></div></div>' +
+    '<span class="val">' + (r[k] == null ? '—' : r[k] + '%') + ' <i style="color:#5c7191">(' + fnum(m) + ')</i></span></div>';
+  return '<section><h2>Retención · ' + fnum(r.jugadores) + ' jugador(es) · ' + fnum(r.recurrentes == null ? 0 : r.recurrentes) + '% recurrentes</h2>' +
+    curva('d1', r.muestra1 || 0, 'Día 1') +
+    curva('d7', r.muestra7 || 0, 'Semana 1') +
+    curva('d30', r.muestra30 || 0, 'Mes 1') +
+    '<p class="meta" style="margin:8px 0 0">% de jugadores que vuelven a jugar (día +1 · dentro de la semana · dentro del mes). Entre paréntesis, la muestra elegible de cada curva.</p></section>';
+}
+
+function pinta(d, rk) {
   ultimoResumen = d;
   const ev = d.porEvento || {};
   const al = d.alarmas || { nivel: 'verde', items: [] };
@@ -232,6 +276,8 @@ function pinta(d) {
     kpi(fseg(vr.media), 'en VR (media)') +
     kpi(d.fps && d.fps.medio != null ? fnum(d.fps.medio) : '—', 'fps medio VR') +
     '</div>' +
+    pintaRank(rk) +
+    pintaRetencion(d.retencion) +
     '<section><h2>Alarmas de producción · nivel <b style="color:' +
     (al.nivel === 'rojo' ? '#ff6b61' : al.nivel === 'amarillo' ? '#fbbf24' : '#7ddb6a') +
     '">' + limpia(al.nivel).toUpperCase() + '</b></h2>' + alHTML + '</section>' +
@@ -241,6 +287,11 @@ function pinta(d) {
     '<section><h2>Versiones</h2>' + tabla(['versión', 'eventos', 'sesiones'], (d.versiones || []).map((v) => [limpia(v.v || '—'), fnum(v.eventos), fnum(v.sesiones)])) +
     '<h2 style="margin-top:14px">Embudo por campeonato</h2>' + tabla(['champ', 'eventos'], pcFilas) + '</section>' +
     '</div>' +
+    '<section><h2>Desbloqueos de logros</h2>' +
+    ((d.logrosTop || []).length
+      ? barrasH(d.logrosTop)
+      : '<div class="vacio">aún sin desbloqueos firmados: cada logro NUEVO deja un evento «logro» desde la build 3.6.139</div>') +
+    '</section>' +
     '<section><h2>Sesiones VR</h2>' + tabla(['sid', 'versión', 'inicio', 'duración', 'tipo', 'estado', 'fps', 'mín/máx'], vrFilas) + '</section>' +
     '<section><h2>Sesiones recientes</h2>' + tabla(['sid', 'eventos', 'primero', 'último'], ses.map((s) => [limpia(s.sid), fnum(s.n), new Date(s.primero).toLocaleString('es-ES'), new Date(s.ultimo).toLocaleTimeString('es-ES')])) + '</section>' +
     '<section><h2>Últimos eventos (crudos · clic para ver el JSON)</h2>' +
@@ -262,8 +313,13 @@ async function cargar() {
   aviso('');
   $('cargar').disabled = true; $('cargar').textContent = 'Cargando…';
   try {
-    const d = await pide('?resumen=1' + filtros());
-    pinta(d);
+    // r45 · resumen + rankings EN PARALELO (el rank es opcional: si el
+    // worker aún no lo publica, el panel sigue entero sin él)
+    const [d, rk] = await Promise.all([
+      pide('?resumen=1' + filtros()),
+      pide('?rank=1' + filtros()).catch(() => null),
+    ]);
+    pinta(d, rk);
     $('refresca').disabled = false; $('csv').disabled = false; $('json').disabled = false;
     $('purga').disabled = false; $('prueba').disabled = false;
     $('fuente').textContent = base();

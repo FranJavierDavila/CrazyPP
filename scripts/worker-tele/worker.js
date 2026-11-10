@@ -626,7 +626,8 @@ export default {
       if (
         url.searchParams.get("resumen") === null &&
         url.searchParams.get("eventos") === null &&
-        url.searchParams.get("csv") === null
+        url.searchParams.get("csv") === null &&
+        url.searchParams.get("rank") === null   // r45 · el rank va detrás
       ) {
         const sid = url.searchParams.get("sid");
         const total = sid
@@ -688,6 +689,79 @@ export default {
           ok: true,
           eventos: filas.map((r) => JSON.parse(r.json)).reverse(),
           ts: Date.now(),
+        });
+      }
+
+      // ================================================================
+      // r45/r46 · RANKINGS MUNDIALES (?rank=1 · CLAVE) — agrega por JUGADOR
+      // ----------------------------------------------------------------
+      // Fuente: los eventos con identidad mínima (pid anónimo + nombre
+      // elegido) desde la build 3.6.139:
+      //   perfil    {el,w,bs,st,pt,ach} → foto de progreso (último manda)
+      //   resultado {m,a,b,w,bo}        → partidas, victorias, online
+      //   logro     {k}                 → desbloqueos (c12·celebrate)
+      // Ventana ?dias (defecto 90) por LLEGADA al servidor (rec): el
+      // ranking es de temporada viva. Fold en JS sobre UNA consulta.
+      // Devuelve {ok, rank:{jugadores, elo[], vics[], pts[], logros[]}} —
+      // el panel (telemetria.html · pintaRank) pinta las 4 tablas.
+      // ================================================================
+      if (url.searchParams.get("rank") !== null) {
+        const diasRankQ = parseInt(url.searchParams.get("dias"), 10);
+        const diasRank = Number.isFinite(diasRankQ) && diasRankQ > 0
+          ? diasRankQ : 90;
+        const filasR = (
+          await env.DB
+            .prepare(
+              "SELECT json FROM eventos WHERE rec >= ? AND " +
+              "(e = 'perfil' OR e = 'resultado' OR e = 'logro') " +
+              "ORDER BY id ASC LIMIT 8000"
+            )
+            .bind(Date.now() - diasRank * 86400000)
+            .all()
+        ).results.map((r) => JSON.parse(r.json));
+        const porPid = new Map();
+        for (const e of filasR) {
+          const pid = String(e.pid || "").slice(0, 40);
+          if (!pid) continue;   // sin pid (builds viejos) no hay ranking
+          let j = porPid.get(pid);
+          if (!j) {
+            j = { n: "", el: 1000, w: 0, bs: 0, st: 0, pt: 0, ach: 0,
+              part: 0, p2p: 0, ultimo: 0 };
+            porPid.set(pid, j);
+          }
+          if (e.n) j.n = String(e.n).slice(0, 16);
+          if ((e.t || 0) > j.ultimo) j.ultimo = e.t || 0;
+          if (e.e === "perfil") {
+            // ÚLTIMO perfil manda (la foto fresca del progreso)
+            for (const k of ["el", "w", "bs", "st", "pt", "ach"]) {
+              if (typeof e[k] === "number") j[k] = e[k];
+            }
+          } else if (e.e === "resultado") {
+            // el w del PERFIL (victorias de por vida) manda: el resultado
+            // sólo añade contadores de partidos firmados (part/p2p)
+            j.part++;
+            if (e.m === "p2p") j.p2p++;
+          }
+        }
+        const ahora = Date.now();
+        const todos = [...porPid.entries()].map(([pid, j]) => ({
+          pid,
+          n: j.n || ("jugador-" + pid.slice(0, 4)),
+          el: j.el, w: j.w, part: j.part, p2p: j.p2p,
+          pt: j.pt, st: j.st, bs: j.bs, ach: j.ach,
+          hace: j.ultimo ? Math.max(0, Math.round((ahora - j.ultimo) / 1000)) : null,
+        }));
+        const top = (cmp) => todos.slice().sort(cmp).slice(0, 20);
+        return json({
+          ok: true,
+          ts: ahora,
+          rank: {
+            jugadores: todos.length,
+            elo: top((a, b) => b.el - a.el),
+            vics: top((a, b) => b.w - a.w),
+            pts: top((a, b) => b.pt - a.pt),
+            logros: top((a, b) => b.ach - a.ach),
+          },
         });
       }
 
@@ -1053,6 +1127,76 @@ export default {
         return { nivel, items };
       })();
 
+      // ── RETENCIÓN (r46 · D1/D7/D30) y DESBLOQUEOS (r46) — campos nuevos
+      //    y tolerantes del resumen: sin datos de pid el panel muestra
+      //    «sin datos» y nada se rompe.
+      //    Retención por pid: primer día visto, días activos, y retorno el
+      //    día +1 / dentro de la semana / dentro del mes. Con la identidad
+      //    de la 3.6.139 la muestra crece sola al jugar.
+      const retFilas = (
+        await env.DB
+          .prepare(
+            "SELECT json_extract(json,'$.pid') pid, date(t/1000,'unixepoch') d " +
+              "FROM eventos WHERE json_extract(json,'$.pid') IS NOT NULL AND " +
+              "json_extract(json,'$.pid') != '' AND t IS NOT NULL " +
+              "GROUP BY pid, d LIMIT 5000"
+          )
+          .all()
+      ).results;
+      const diasPorPid = new Map();
+      for (const r of retFilas) {
+        if (!diasPorPid.has(r.pid)) diasPorPid.set(r.pid, []);
+        diasPorPid.get(r.pid).push(r.d);
+      }
+      const retencion = (() => {
+        const hoy = new Date().toISOString().slice(0, 10);
+        const msDia = 86400000;
+        let eleg1 = 0, vol1 = 0, eleg7 = 0, vol7 = 0, eleg30 = 0, vol30 = 0;
+        let recurrentes = 0;
+        for (const [, dias] of diasPorPid) {
+          if (dias.length > 1) recurrentes++;
+          const ds = dias.slice().sort();
+          const d0 = new Date(ds[0] + "T00:00:00Z").getTime();
+          const set = new Set(dias);
+          const diasVivos = Math.floor((Date.now() - d0) / msDia);
+          if (diasVivos >= 1) {
+            eleg1++;
+            if (set.has(new Date(d0 + msDia).toISOString().slice(0, 10))) vol1++;
+          }
+          if (diasVivos >= 7) {
+            eleg7++;
+            for (let k = 2; k <= 7; k++) {
+              if (set.has(new Date(d0 + k * msDia).toISOString().slice(0, 10))) { vol7++; break; }
+            }
+          }
+          if (diasVivos >= 30) {
+            eleg30++;
+            for (let k = 8; k <= 30; k++) {
+              if (set.has(new Date(d0 + k * msDia).toISOString().slice(0, 10))) { vol30++; break; }
+            }
+          }
+        }
+        void hoy;
+        const pct = (v, e) => (e > 0 ? Math.round((v / e) * 100) : null);
+        return {
+          jugadores: diasPorPid.size,
+          recurrentes: diasPorPid.size ? Math.round((recurrentes / diasPorPid.size) * 100) : null,
+          d1: pct(vol1, eleg1), muestra1: eleg1,
+          d7: pct(vol7, eleg7), muestra7: eleg7,
+          d30: pct(vol30, eleg30), muestra30: eleg30,
+        };
+      })();
+      const logrosTop = (
+        await env.DB
+          .prepare(
+            "SELECT json_extract(json,'$.k') logro, COUNT(*) n FROM eventos " +
+              "WHERE e='logro' AND json_extract(json,'$.k') IS NOT NULL" +
+              suf + " GROUP BY logro ORDER BY n DESC LIMIT 24"
+          )
+          .bind(...arg)
+          .all()
+      ).results.map((r) => [r.logro, r.n]);
+
       return json({
         ok: true,
         ts: Date.now(),
@@ -1082,6 +1226,8 @@ export default {
         versiones,
         porCampeonato,
         sesionesVR,
+        retencion,
+        logrosTop,
         alarmas,
         almacen: "d1:crazypp-tele",
       });

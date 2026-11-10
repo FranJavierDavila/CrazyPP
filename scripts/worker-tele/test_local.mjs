@@ -611,6 +611,75 @@ try {
   chk(!/headers\.get\(\s*['"]user-agent/i.test(FUENTE), "el worker NO lee la cabecera user-agent");
   chk(!FUENTE.includes("request.headers.get('cf") && !FUENTE.includes('request.headers.get("cf'),
     "el worker NO lee cabeceras cf-* (IP/geo)");
+
+  // ================================================================
+  // R46 · RANKINGS MUNDIALES (?rank=1) · RETENCIÓN · LOGROSTOP
+  // ================================================================
+  // Limpieza total y un lote con identidad: 2 jugadores (pids) con
+  // perfil + resultado + logro; fechas antiguas para las cohortes.
+  await worker.fetch(req("/?clave=qa-clave-r8", { method: "DELETE" }), env, {});
+  const DIA = 86400000;
+  const tBase = Date.now() - 40 * DIA; // hace 40 días → cohortes d1/d7/d30 elegibles
+  const loteR46 = [];
+  // jugador A: primer día t0, vuelve al día +1, +5 (D7), +8 y +35 · 2 victorias online
+  const pidA = "aaaaaaaaaaaaaaaa";
+  for (const [k, t] of [[0, tBase], [1, tBase + 1 * DIA], [5, tBase + 5 * DIA], [8, tBase + 8 * DIA], [35, tBase + 35 * DIA]]) {
+    loteR46.push(ev("boot", { t, sid: "sA" + k, pid: pidA, n: "Ana" }));
+  }
+  loteR46.push(ev("perfil", { t: tBase + 36 * DIA, sid: "sA9", pid: pidA, n: "Ana", el: 1240, w: 7, bs: 5, st: 12, pt: 380, ach: 4 }));
+  loteR46.push(ev("resultado", { t: tBase + 36 * DIA, sid: "sA9", pid: pidA, n: "Ana", m: "p2p", a: 11, b: 7, w: 1, bo: 1 }));
+  loteR46.push(ev("resultado", { t: tBase + 36 * DIA, sid: "sA9", pid: pidA, n: "Ana", m: "ia", a: 11, b: 3, w: 1, bo: 1 }));
+  loteR46.push(ev("logro", { t: tBase + 36 * DIA, sid: "sA9", pid: pidA, n: "Ana", k: "aces10" }));
+  // jugador B: un solo día hoy · ELO más bajo · 1 logro compartido + 1 propio
+  loteR46.push(ev("boot", { t: Date.now(), sid: "sB0", pid: "bbbbbbbbbbbbbbbb", n: "Bo" }));
+  loteR46.push(ev("perfil", { t: Date.now(), sid: "sB0", pid: "bbbbbbbbbbbbbbbb", n: "Bo", el: 990, w: 1, bs: 2, st: 3, pt: 120, ach: 2 }));
+  loteR46.push(ev("resultado", { t: Date.now(), sid: "sB0", pid: "bbbbbbbbbbbbbbbb", n: "Bo", m: "p2p", a: 5, b: 11, w: 0, bo: 1 }));
+  loteR46.push(ev("logro", { t: Date.now(), sid: "sB0", pid: "bbbbbbbbbbbbbbbb", n: "Bo", k: "aces10" }));
+  loteR46.push(ev("logro", { t: Date.now(), sid: "sB0", pid: "bbbbbbbbbbbbbbbb", n: "Bo", k: "primera" }));
+  r = await worker.fetch(req("/", { method: "POST", body: JSON.stringify(loteR46) }), env, {});
+  chk(r.status === 204, "R46 · lote con identidad aceptado (204)");
+
+  // rank sin clave → 403
+  r = await worker.fetch(req("/?rank=1"), env, {});
+  chk(r.status === 403, "R46 · ?rank=1 sin clave → 403");
+  // rank NO cae en el latido público
+  r = await worker.fetch(req("/?rank=1&clave=qa-clave-r8"), env, {});
+  j = await cuerpo(r);
+  chk(!!(j && j.rank), "R46 · ?rank=1 devuelve rank (no el latido)");
+  chk(j.rank.jugadores === 2, `R46 · 2 jugadores identificados (${j.rank.jugadores})`);
+  chk(j.rank.elo[0] && j.rank.elo[0].n === "Ana" && j.rank.elo[0].el === 1240,
+    `R46 · ELO: Ana primero con 1240 (${j.rank.elo[0] && j.rank.elo[0].n}/${j.rank.elo[0] && j.rank.elo[0].el})`);
+  chk(j.rank.vics[0] && j.rank.vics[0].w === 7 && j.rank.vics[0].part === 2 && j.rank.vics[0].p2p === 1,
+    `R46 · victorias: perfil manda (7), 2 firmadas, 1 online (${JSON.stringify(j.rank.vics[0])})`);
+  chk(j.rank.pts[0] && j.rank.pts[0].pt === 380 && j.rank.pts[0].st === 12,
+    `R46 · puntos Pro Training: Ana 380 · 12 estrellas`);
+  chk(j.rank.logros[0] && j.rank.logros[0].ach === 4,
+    `R46 · logros: Ana 4 al frente (${j.rank.logros[0] && j.rank.logros[0].ach})`);
+  chk(j.rank.elo[1] && j.rank.elo[1].n === "Bo" && j.rank.elo[1].hace != null && j.rank.elo[1].hace < 5,
+    `R46 · «hace» fresco para Bo (${j.rank.elo[1] && j.rank.elo[1].hace}s)`);
+
+  // resumen: retención + logrosTop
+  r = await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {});
+  j = await cuerpo(r);
+  const ret = j.retencion || {};
+  chk(ret.jugadores === 2, `R46 · retención: 2 jugadores (${ret.jugadores})`);
+  chk(ret.d1 === 100 && ret.muestra1 === 1,
+    `R46 · D1 100% con muestra 1 (A vuelve al día +1; B aún no tiene día+1) (${ret.d1}/${ret.muestra1})`);
+  chk(ret.d7 === 100 && ret.muestra7 === 1, `R46 · D7 100% (A vuelve el día +8) (${ret.d7})`);
+  chk(ret.d30 === 100 && ret.muestra30 === 1, `R46 · D30 100% (A vuelve el día +35) (${ret.d30})`);
+  chk(ret.recurrentes === 50, `R46 · 50% recurrentes (sólo A tiene 2+ días) (${ret.recurrentes})`);
+  chk(Array.isArray(j.logrosTop) && j.logrosTop.length === 2 &&
+      j.logrosTop[0][0] === "aces10" && j.logrosTop[0][1] === 2,
+    `R46 · logrosTop: aces10 ×2 al frente (${JSON.stringify(j.logrosTop)})`);
+
+  // sin identidad alguna → secciones vacías y nada roto
+  await worker.fetch(req("/?clave=qa-clave-r8", { method: "DELETE" }), env, {});
+  r = await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {});
+  j = await cuerpo(r);
+  chk(j.retencion && j.retencion.jugadores === 0 && j.retencion.d1 === null,
+    "R46 · sin pid: retención vacía tolerante (jugadores 0, d1 null)");
+  chk(Array.isArray(j.logrosTop) && j.logrosTop.length === 0,
+    "R46 · sin pid: logrosTop vacío");
 } catch (e) {
   chk(false, "excepción del harness: " + (e?.stack || String(e)));
 }

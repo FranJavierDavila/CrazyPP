@@ -1,527 +1,611 @@
 {
- "catalogo": "telemetria-crazypp",
- "version": "v11",
- "actualizado": "r42 · telemetría profesional (salud + CSV + filtros por día + retención + panel v2 + consola SQL directa)",
- "ronda": 123,
- "r42_infra": {
-  "resumen": "CONTROL ABSOLUTO desde el repo: worker v2 (endpoints nuevos sin tocar el contrato del juego), panel v2 (public/telemetria.html) y consola SQL directa contra D1 (scripts/d1_sql.py).",
-  "endpoints_nuevos": {
-   "GET ?salud=1": "PÚBLICO {ok, ts, total, ultimoRec, haceSeg} — LED de salud del panel: ¿llegan lotes y hace cuánto?",
-   "GET ?csv=1": "CSV crudo (CLAVE) · columnas e,fecha_iso,t_ms,version,sid,json · ?tope=N (defecto 20.000, máx 50.000) · filtros ?sid= y ?dias= · BOM UTF-8 para Excel",
-   "?dias=N": "filtro por LLEGADA (columna rec) en resumen, eventos, csv y DELETE; combinable con ?sid=",
-   "DELETE ?dias=N": "retención: purga sólo lo anterior a N días (combinable con ?sid=)"
+  "catalogo": "telemetria-crazypp",
+  "version": "v12",
+  "actualizado": "r46 · rankings mundiales: +perfil +resultado +logro (identidad mínima pid/n, worker v3 ?rank=1, retención D1/D7/D30 y desbloqueos en el panel)",
+  "ronda": 126,
+  "r42_infra": {
+    "resumen": "CONTROL ABSOLUTO desde el repo: worker v2 (endpoints nuevos sin tocar el contrato del juego), panel v2 (public/telemetria.html) y consola SQL directa contra D1 (scripts/d1_sql.py).",
+    "endpoints_nuevos": {
+      "GET ?salud=1": "PÚBLICO {ok, ts, total, ultimoRec, haceSeg} — LED de salud del panel: ¿llegan lotes y hace cuánto?",
+      "GET ?csv=1": "CSV crudo (CLAVE) · columnas e,fecha_iso,t_ms,version,sid,json · ?tope=N (defecto 20.000, máx 50.000) · filtros ?sid= y ?dias= · BOM UTF-8 para Excel",
+      "?dias=N": "filtro por LLEGADA (columna rec) en resumen, eventos, csv y DELETE; combinable con ?sid=",
+      "DELETE ?dias=N": "retención: purga sólo lo anterior a N días (combinable con ?sid=)"
+    },
+    "panel_v2": "public/telemetria.html (URL estable en Pages) — salud con LED, KPIs, alarmas, gráficas (día/eventos/versiones), sesiones VR, eventos crudos expandibles con JSON, filtros días+sid, exportar CSV/JSON, prueba de ingestión E2E con un clic, purga con confirmación fuerte, auto-refresco 60 s",
+    "control_directo": "python3 scripts/d1_sql.py \"SELECT …\" (sólo SELECT) · --escritura para DELETE · --tablas para esquema — pasa POR ENCIMA del worker vía API de Cloudflare con .cf-token",
+    "diagnostico_r42": "El pipeline FUNCIONA (E2E verificado: POST 204, resumen con clave, purga). Los datos son escasos porque el tráfico de producción real es mínimo: 8 boots (4 del preview de infra v3.6.27 + 4 de producción v3.6.136), todos '2d', sin eventos de juego ni boots de 3.6.137 (posible caché del navegador del casco)."
   },
-  "panel_v2": "public/telemetria.html (URL estable en Pages) — salud con LED, KPIs, alarmas, gráficas (día/eventos/versiones), sesiones VR, eventos crudos expandibles con JSON, filtros días+sid, exportar CSV/JSON, prueba de ingestión E2E con un clic, purga con confirmación fuerte, auto-refresco 60 s",
-  "control_directo": "python3 scripts/d1_sql.py \"SELECT …\" (sólo SELECT) · --escritura para DELETE · --tablas para esquema — pasa POR ENCIMA del worker vía API de Cloudflare con .cf-token",
-  "diagnostico_r42": "El pipeline FUNCIONA (E2E verificado: POST 204, resumen con clave, purga). Los datos son escasos porque el tráfico de producción real es mínimo: 8 boots (4 del preview de infra v3.6.27 + 4 de producción v3.6.136), todos '2d', sin eventos de juego ni boots de 3.6.137 (posible caché del navegador del casco)."
- },
- "politica_pii": {
-  "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
-  "sin_ip": true,
-  "sin_user_agent": true,
-  "sin_contenido_de_partida": true,
-  "sid": "id de sesión aleatorio (Math.random+Date.now, base36) SIN valor identificativo; caduca con la sesión",
-  "opt_out": "Opciones → «Telemetría anónima: Sí/No» (localStorage pp_tele='0' detiene TODO envío)",
-  "debug": "con window.__PP_DEBUG el modo revisión NO genera telemetría (v2.108)"
- },
- "transporte": {
-  "emisor": "__PP_TELE (src/game/core/c00_pre_three.js)",
-  "endpoint_shell": "window.PP_TELEMETRY_ENDPOINT (04_boot.html) — se lee EN CADA envío (perezoso)",
-  "routing": "POR HOST (desde 3.6.5-SDK6, ronda 7): localhost/127.0.0.1/[::1] → /api/telemetria (receptor local con panel); resto (github.io, Cloudflare, …) → worker de producción",
-  "formato": "lote JSON por sendBeacon (text/plain, CORS-safelisted) o fetch keepalive no-cors",
-  "forma_del_lote": "ARRAY DIRECTO [{e,t,v,sid,…},…] (desde 3.6.5-SDK6, ronda 7 — el receptor de producción rechazaba con 400 el wrapper {\"app\",\"events\"}; es el mismo contrato que champ_rank de Magia). El receptor local tolera AMBOS formatos",
-  "cola": "localStorage pp_tele_q, máx 60 eventos (MAXQ), persistente",
-  "flush": "auto al llegar a 10 encolados · 5 s tras arrancar · cada 30 s · visibilitychange hidden · pagehide (sync)",
-  "diagnostico": "window.__PP_TELE.st → {on, q, sid, sent, lastOk, lastErr, fpsSamples}"
- },
- "eventos": [
-  {
-   "nombre": "boot",
-   "origen": "src/game/core/c00_pre_three.js (__PP_TELE, auto al cargar el módulo)",
-   "momento": "carga de game.html (el módulo se evalúa)",
-   "campos": [
+  "politica_pii": {
+    "resumen": "Telemetría LIGERA Y ANÓNIMA: sólo contadores de uso. Sin IP almacenada, sin user-agent, sin identificadores de usuario, sin contenido de partida.",
+    "sin_ip": true,
+    "sin_user_agent": true,
+    "sin_contenido_de_partida": true,
+    "sid": "id de sesión aleatorio (Math.random+Date.now, base36) SIN valor identificativo; caduca con la sesión",
+    "opt_out": "Opciones → «Telemetría anónima: Sí/No» (localStorage pp_tele='0' detiene TODO envío)",
+    "debug": "con window.__PP_DEBUG el modo revisión NO genera telemetría (v2.108)"
+  },
+  "transporte": {
+    "emisor": "__PP_TELE (src/game/core/c00_pre_three.js)",
+    "endpoint_shell": "window.PP_TELEMETRY_ENDPOINT (04_boot.html) — se lee EN CADA envío (perezoso)",
+    "routing": "POR HOST (desde 3.6.5-SDK6, ronda 7): localhost/127.0.0.1/[::1] → /api/telemetria (receptor local con panel); resto (github.io, Cloudflare, …) → worker de producción",
+    "formato": "lote JSON por sendBeacon (text/plain, CORS-safelisted) o fetch keepalive no-cors",
+    "forma_del_lote": "ARRAY DIRECTO [{e,t,v,sid,…},…] (desde 3.6.5-SDK6, ronda 7 — el receptor de producción rechazaba con 400 el wrapper {\"app\",\"events\"}; es el mismo contrato que champ_rank de Magia). El receptor local tolera AMBOS formatos",
+    "cola": "localStorage pp_tele_q, máx 60 eventos (MAXQ), persistente",
+    "flush": "auto al llegar a 10 encolados · 5 s tras arrancar · cada 30 s · visibilitychange hidden · pagehide (sync)",
+    "diagnostico": "window.__PP_TELE.st → {on, q, sid, sent, lastOk, lastErr, fpsSamples}"
+  },
+  "eventos": [
     {
-     "nombre": "platform",
-     "tipo": "string",
-     "desc": "ronda 12: 'xr' si el dispositivo declara soporte WebXR inmersivo al cargar (navigator.xr.isSessionSupported, p. ej. Quest) · '2d' escritorio/navegador sin XR. Antes estaba CLAVADO a '2d' y el casco era indistinguible del escritorio"
+      "nombre": "boot",
+      "origen": "src/game/core/c00_pre_three.js (__PP_TELE, auto al cargar el módulo)",
+      "momento": "carga de game.html (el módulo se evalúa)",
+      "campos": [
+        {
+          "nombre": "platform",
+          "tipo": "string",
+          "desc": "ronda 12: 'xr' si el dispositivo declara soporte WebXR inmersivo al cargar (navigator.xr.isSessionSupported, p. ej. Quest) · '2d' escritorio/navegador sin XR. Antes estaba CLAVADO a '2d' y el casco era indistinguible del escritorio"
+        }
+      ],
+      "desde": "v2.50",
+      "notas": "ronda 12: la detección XR es asíncrona (tope 1.5 s) — el boot sale ya con '2d' y se corrige IN SITU en la cola si la promesa confirma XR; el evento no se duplica ni se reordena"
+    },
+    {
+      "nombre": "page_close",
+      "origen": "src/game/core/c00_pre_three.js (listener pagehide)",
+      "momento": "cierre/ocultación definitiva de la pestaña",
+      "campos": [
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "segundos de sesión desde el boot"
+        }
+      ],
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "error",
+      "origen": "src/game/core/c00_pre_three.js (listener window error)",
+      "momento": "excepción no capturada en la página",
+      "campos": [
+        {
+          "nombre": "m",
+          "tipo": "string",
+          "desc": "mensaje del error recortado a 140 caracteres"
+        }
+      ],
+      "desde": "v2.76"
+    },
+    {
+      "nombre": "vr_start",
+      "origen": "src/game/core/c12_pingponggame.js",
+      "momento": "entrada en sesión VR inmersiva",
+      "campos": [
+        {
+          "nombre": "mode",
+          "tipo": "string",
+          "desc": "modo de juego activo"
+        },
+        {
+          "nombre": "multi",
+          "tipo": "boolean",
+          "desc": "true si la sesión es multijugador online (NetLink)"
+        }
+      ],
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "vr_end",
+      "origen": "src/game/core/c12_pingponggame.js",
+      "momento": "salida de la sesión VR (inmediatamente hace flush(true))",
+      "campos": [
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "segundos de sesión VR"
+        },
+        {
+          "nombre": "fps",
+          "tipo": "number|null",
+          "desc": "FPS medio de la sesión (muestreo cada 5 s; null si no hubo muestras)"
+        },
+        {
+          "nombre": "fpsMin",
+          "tipo": "number|null",
+          "desc": "FPS mínimo de la sesión VR (ronda 10; peor intervalo de 5 s)"
+        },
+        {
+          "nombre": "fpsMax",
+          "tipo": "number|null",
+          "desc": "FPS máximo de la sesión VR (ronda 10; mejor intervalo de 5 s)"
+        }
+      ],
+      "desde": "v2.50 (fps desde v2.76)"
+    },
+    {
+      "nombre": "stage",
+      "origen": "public/championships/locura/index.js · public/championships/magia/index.js",
+      "momento": "avance de etapa en el camino del campeonato",
+      "campos": [
+        {
+          "nombre": "n",
+          "tipo": "number",
+          "desc": "etapa alcanzada"
+        },
+        {
+          "nombre": "id",
+          "tipo": "string",
+          "desc": "ronda 11: id del campeonato ('magia', 'locura'); los eventos anteriores a 3.6.8-SDK6 no lo llevan"
+        }
+      ],
+      "notas": "NO lleva id de campeonato (limitación conocida: no se puede atribuir al módulo desde el receptor)",
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "champion",
+      "origen": "public/championships/locura/index.js · public/championships/magia/index.js",
+      "momento": "primer trofeo del campeonato (win && firstTrophy)",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "string",
+          "desc": "ronda 11: id del campeonato ganado (los anteriores a 3.6.8-SDK6 no lo llevan)"
+        }
+      ],
+      "notas": "sin campos extra; NO lleva id de campeonato (misma limitación)",
+      "desde": "v2.50"
+    },
+    {
+      "nombre": "champ_rank",
+      "origen": "public/championships/magia/index.js (_reportRank) — ronda 11: viaja POR la cola __PP_TELE.ev (antes: POST propio application/json)",
+      "momento": "fin de la prueba del orbe con ranking",
+      "campos": [
+        {
+          "nombre": "champ",
+          "tipo": "string",
+          "desc": "id del campeonato (p.ej. 'magia')"
+        },
+        {
+          "nombre": "win",
+          "tipo": "boolean",
+          "desc": "prueba superada"
+        },
+        {
+          "nombre": "score",
+          "tipo": "number",
+          "desc": "puntuación recortada a rangos imposibles de falsear"
+        },
+        {
+          "nombre": "stars",
+          "tipo": "number",
+          "desc": "0..3 estrellas"
+        },
+        {
+          "nombre": "bricks",
+          "tipo": "number",
+          "desc": "ladrillos destruidos"
+        },
+        {
+          "nombre": "ext",
+          "tipo": "number",
+          "desc": "extensiones de tiempo usadas"
+        },
+        {
+          "nombre": "left",
+          "tipo": "number",
+          "desc": "segundos restantes (×10 redondeados)"
+        },
+        {
+          "nombre": "v",
+          "tipo": "string",
+          "desc": "versión del juego (ronda 11: la REAL de __PP_TELE; antes '2.81.0' hardcodeado — drift conocido cerrado)"
+        }
+      ],
+      "notas": "ronda 11: va en la cola estándar de __PP_TELE (t, sid, v reales; respeta opt-out pp_tele=0 y modo depuración; la cola persistida reintenta si no hay red)",
+      "desde": "v2.77"
+    },
+    {
+      "nombre": "vr_ping",
+      "origen": "src/game/core/c00_pre_three.js (vrPing, intervalo 300000 ms) — activado desde c12_pingponggame.js al vr_start, parado al vr_end",
+      "momento": "cada 5 min mientras dura la sesión VR",
+      "campos": [
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "segundos de VR transcurridos en el momento del ping"
+        },
+        {
+          "nombre": "fps",
+          "tipo": "number",
+          "desc": "fps medio del momento (misma métrica que vr_end) — dibuja la curva a lo largo de la sesión"
+        }
+      ],
+      "desde": "v3.6.9-SDK6",
+      "notas": "ronda 12: LATIDO EN VR — las sesiones cerradas abruptamente (casco apagado, pestaña muerta) nunca llegan a vr_end ni a page_close y desaparecían del análisis (la ronda 11 cazó una: vr_start+stage sin cierre). El ÚLTIMO ping fecha el fin real aunque no haya vr_end. ronda 14: PRIMER PING REAL en producción (10-19, 68 fps al minuto 5 de la 1.ª sesión 3.6.10) y el resumen ya lo consume: sesionesVR fecha la duración con él"
+    },
+    {
+      "nombre": "net_match",
+      "origen": "src/game/core/c09_red_netlink.js (sendMatchEnd, r79) — transporte binario v2",
+      "momento": "al terminar una partida online (game-over, abandono o colgarse)",
+      "campos": [
+        {
+          "nombre": "role",
+          "tipo": "string",
+          "desc": "'host' | 'guest' — papel del emisor en la partida"
+        },
+        {
+          "nombre": "dur",
+          "tipo": "number",
+          "desc": "duración de la partida en segundos"
+        },
+        {
+          "nombre": "rtt",
+          "tipo": "object",
+          "desc": "{med,p95,min} en ms (estadística del reloj compartido)"
+        },
+        {
+          "nombre": "jitter",
+          "tipo": "number",
+          "desc": "jitter medio de llegada en ms (EMA RFC3550)"
+        },
+        {
+          "nombre": "turn",
+          "tipo": "boolean",
+          "desc": "true si la conexión pasó por TURN (sin ruta directa)"
+        },
+        {
+          "nombre": "hits/handoffs/snaps",
+          "tipo": "number",
+          "desc": "contadores de eventos del protocolo binario"
+        },
+        {
+          "nombre": "corr",
+          "tipo": "array",
+          "desc": "[sinCorreccion, suaves(2-30cm), saltos(>30cm)] del traspaso"
+        },
+        {
+          "nombre": "provAuth/claims/acks/disputes",
+          "tipo": "number",
+          "desc": "autoridad provisional y libro de reclamos"
+        },
+        {
+          "nombre": "vmax",
+          "tipo": "number",
+          "desc": "velocidad máxima de bola observada (m/s)"
+        },
+        {
+          "nombre": "result",
+          "tipo": "string",
+          "desc": "'win'|'loss'|'abandono'|'' — SIN contenido de partida (ni marcador ni nombres)"
+        },
+        {
+          "nombre": "suspect",
+          "tipo": "boolean",
+          "desc": "true si la validación anti-trampa rechazó 3+ golpes graves"
+        }
+      ],
+      "nota": "r79: SIN resultados identificables — solo métricas técnicas de red (política PII intacta)"
+    },
+    {
+      "nombre": "pwa_standalone",
+      "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
+      "momento": "una vez por sesión: la portada arrancó DENTRO de la app instalada (display-mode fullscreen/standalone/minimal-ui o navigator.standalone)",
+      "campos": [],
+      "desde": "v3.6.99-SDK6",
+      "notas": "r109: mide el uso real de la app instalada frente a la web; el botón instalar se oculta en este estado"
+    },
+    {
+      "nombre": "pwa_prompt",
+      "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
+      "momento": "el dueño responde al diálogo nativo de instalación (beforeinstallprompt capturado y lanzado por el botón de la portada)",
+      "campos": [
+        {
+          "nombre": "o",
+          "tipo": "string",
+          "desc": "outcome del diálogo: 'accepted' | 'dismissed' | '?'"
+        }
+      ],
+      "desde": "v3.6.99-SDK6",
+      "notas": "r109: sin datos de partida ni PII; mide la efectividad del botón instalar"
+    },
+    {
+      "nombre": "pwa_installed",
+      "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
+      "momento": "evento appinstalled del navegador (la app quedó instalada)",
+      "campos": [],
+      "desde": "v3.6.99-SDK6",
+      "notas": "r109: hito de conversión de la PWA"
+    },
+    {
+      "nombre": "pwa_manual_hint",
+      "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
+      "momento": "click en «📲 INSTALAR EN EL CASCO» SIN diálogo nativo disponible (Quest Browser puede no dispararlo): se enseñó el caminito manual de 2 toques",
+      "campos": [],
+      "desde": "v3.6.99-SDK6",
+      "notas": "r109: si aparece mucho, significa que el navegador objetivo no dispara beforeinstallprompt"
+    },
+    {
+      "nombre": "primer_rally",
+      "origen": "src/game/core/c12_pingponggame.js (animate, M4 r111)",
+      "momento": "el árbitro entra en 'rally' por PRIMERA vez de la sesión en partido local (no hall, no calibración, no online)",
+      "campos": [
+        {
+          "nombre": "lat",
+          "tipo": "number",
+          "desc": "segundos desde vr_start (redondeado a 0,1) — la métrica del hito M4: un jugador nuevo en rallye real en <60 s"
+        },
+        {
+          "nombre": "dif",
+          "tipo": "string",
+          "desc": "dificultad de la CPU vigente (easy/medium/hard)"
+        }
+      ],
+      "desde": "v3.6.101",
+      "notas": "M4 (r111): UNA sola vez por sesión; lat + 60 s de media en jugadores nuevos = onboarding cumplido. En duelo online no sale (la mesa la acuerda el anfitrión)."
+    },
+    {
+      "nombre": "tut_end",
+      "origen": "src/game/core/c13_ui_arranque.js (LA ACADEMIA, stop(), M4 r111)",
+      "momento": "cierre de la academia: fin del guion, botón ▶ JUGAR YA o salida con B/Y",
+      "campos": [
+        {
+          "nombre": "res",
+          "tipo": "string",
+          "desc": "'done' fin del guion · 'aJugar' botón ▶ JUGAR YA (paso final) · 'skip' saltó con B/Y"
+        },
+        {
+          "nombre": "paso",
+          "tipo": "number",
+          "desc": "paso del guion en el que acabó (0..8; -1 si no llegó a contarse)"
+        }
+      ],
+      "desde": "v3.6.101",
+      "notas": "M4 (r111): mide si la academia se termina o se salta ahora que ya NO bloquea la primera entrada (el HUB nace en ▶ JUGAR)."
+    },
+    {
+      "nombre": "ai_style",
+      "origen": "src/game/core/c12_pingponggame.js (onMatchStart, M5a r112)",
+      "momento": "arranque de un partido LOCAL con estilo de rival ≠ clásico",
+      "campos": [
+        {
+          "nombre": "est",
+          "tipo": "string",
+          "desc": "id del estilo activo (looper/chopero/bloqueador/atacante/defensivo/dejadas/allround/nervioso/veterano/gigante/relampago)"
+        },
+        {
+          "nombre": "dif",
+          "tipo": "string",
+          "desc": "dificultad de la CPU vigente"
+        }
+      ],
+      "desde": "v3.6.102",
+      "notas": "M5a (r112): mide qué personalidades eligen los jugadores. Sin emisión en online ni con estilo clásico."
+    },
+    {
+      "nombre": "carrera",
+      "origen": "src/game/core/c12_pingponggame.js (_carreraDesafiar / _carreraResultado, M5b r115)",
+      "momento": "arranque de un desafío de la escalera de carrera y cierre de su partido (resultado y ascenso)",
+      "campos": [
+        {
+          "nombre": "div",
+          "tipo": "string",
+          "desc": "división del desafío (bronce/plata/oro/diamante/leyenda)"
+        },
+        {
+          "nombre": "r",
+          "tipo": "string",
+          "desc": "id del rival retado (roko/marta/paco/lulu/paola/fede/carla/oscar/tomas/vera/gus/nina/rayo/muro/leyenda)"
+        },
+        {
+          "nombre": "est",
+          "tipo": "string",
+          "desc": "sólo en acc=reto: estilo del rival (personalidad M5a)"
+        },
+        {
+          "nombre": "acc",
+          "tipo": "string",
+          "desc": "reto (arranque) | win | loss (cierre del partido)"
+        },
+        {
+          "nombre": "promo",
+          "tipo": "number",
+          "desc": "sólo en acc=win/loss: 1 si hubo ascenso de división o corona de Leyenda"
+        }
+      ],
+      "desde": "v3.6.105",
+      "notas": "M5b (r115): mide el uso de la escalera de carrera (reto/rival y ascensos). Nunca en online (el desafío no existe allí)."
+    },
+    {
+      "nombre": "dobles",
+      "origen": "src/game/core/c12_pingponggame.js (case 'dobles' del menú, M7c r119)",
+      "momento": "cuando el dueño arma y arranca un partido de DOBLES 2v2 desde AJUSTES › JUEGO (único disparo por arranque)",
+      "campos": [
+        {
+          "nombre": "acc",
+          "tipo": "string",
+          "desc": "acción registrada: 'start' (partido de dobles arrancado)"
+        }
+      ]
+    },
+    {
+      "nombre": "net_ice",
+      "origen": "src/game/core/c09_red_netlink.js (r20/r22) — ciclo de vida del ICE",
+      "momento": "cuando el ICE de la sala online pasa de estado (fallos, túnel, srflx ok)",
+      "campos": [
+        {
+          "nombre": "st",
+          "tipo": "string",
+          "desc": "estado del enlace: failed | ok | tunel"
+        },
+        {
+          "nombre": "v2",
+          "tipo": "string",
+          "desc": "transporte v2 resultante (ok/pending/off)"
+        },
+        {
+          "nombre": "tun",
+          "tipo": "boolean",
+          "desc": "¿el enlace vive por el túnel PeerJS?"
+        }
+      ],
+      "pii": "sin PII — métrica técnica de red (patrón net_match)"
+    },
+    {
+      "nombre": "bola_guard",
+      "origen": "src/game/core/c12_pingponggame.js (_bolaGuard, r25: guardián de la bola online)",
+      "momento": "cuando el guardián corrige la propiedad/visibilidad de la bola (throttle 1/5 s por tipo)",
+      "campos": [
+        {
+          "nombre": "k",
+          "tipo": "string",
+          "desc": "r25: 'mi_saque' (bola re-anclada a mi mano), 'rival_saque' (punto de saque reglamentario del rival por pose apagada), 'rally_vis' (bola oculta en rallye re-encendida) o 'rally_loca' (bola NaN/fuera de mundo devuelta jugable)"
+        }
+      ],
+      "desde": "v3.6.120",
+      "notas": "r25: telemetría del CONTROL TOTAL de la bola online — la propiedad se re-afirma cada frame desde el árbitro; el evento cuenta las CORRECCIONES (una partida sana apenas emite)"
+    },
+    {
+      "nombre": "perfil",
+      "origen": "src/game/core/c12_pingponggame.js (_telePerfil, r45)",
+      "momento": "al entrar en VR y al cerrar la sesión VR",
+      "campos": [
+        {
+          "nombre": "el",
+          "tipo": "number",
+          "desc": "ELO del jugador (stats.data.elo redondeado)"
+        },
+        {
+          "nombre": "w",
+          "tipo": "number",
+          "desc": "victorias de por vida"
+        },
+        {
+          "nombre": "bs",
+          "tipo": "number",
+          "desc": "mejor racha"
+        },
+        {
+          "nombre": "st",
+          "tipo": "number",
+          "desc": "estrellas de retos semanales"
+        },
+        {
+          "nombre": "pt",
+          "tipo": "number",
+          "desc": "puntos del Pro Training (ppxr_train_v1)"
+        },
+        {
+          "nombre": "ach",
+          "tipo": "number",
+          "desc": "nº de logros desbloqueados"
+        }
+      ],
+      "desde": "v3.6.139 (r45)"
+    },
+    {
+      "nombre": "resultado",
+      "origen": "src/game/core/c12_pingponggame.js (game-over, r45)",
+      "momento": "fin de partido (local, carrera o p2p)",
+      "campos": [
+        {
+          "nombre": "m",
+          "tipo": "string",
+          "desc": "modo: 'ia' | 'p2p' | 'carrera'"
+        },
+        {
+          "nombre": "a",
+          "tipo": "number",
+          "desc": "puntos del jugador"
+        },
+        {
+          "nombre": "b",
+          "tipo": "number",
+          "desc": "puntos del rival"
+        },
+        {
+          "nombre": "w",
+          "tipo": "number",
+          "desc": "1 si ganó el jugador, 0 si no"
+        },
+        {
+          "nombre": "bo",
+          "tipo": "number",
+          "desc": "bestOf del partido"
+        }
+      ],
+      "desde": "v3.6.139 (r45)"
+    },
+    {
+      "nombre": "logro",
+      "origen": "src/game/core/c12_pingponggame.js (celebrate, r45)",
+      "momento": "un evento por logro NUEVO desbloqueado",
+      "campos": [
+        {
+          "nombre": "k",
+          "tipo": "string",
+          "desc": "clave del logro (ACHIEVEMENTS.key, ≤32 chars)"
+        }
+      ],
+      "desde": "v3.6.139 (r45)"
     }
-   ],
-   "desde": "v2.50",
-   "notas": "ronda 12: la detección XR es asíncrona (tope 1.5 s) — el boot sale ya con '2d' y se corrige IN SITU en la cola si la promesa confirma XR; el evento no se duplica ni se reordena"
-  },
-  {
-   "nombre": "page_close",
-   "origen": "src/game/core/c00_pre_three.js (listener pagehide)",
-   "momento": "cierre/ocultación definitiva de la pestaña",
-   "campos": [
-    {
-     "nombre": "dur",
-     "tipo": "number",
-     "desc": "segundos de sesión desde el boot"
-    }
-   ],
-   "desde": "v2.50"
-  },
-  {
-   "nombre": "error",
-   "origen": "src/game/core/c00_pre_three.js (listener window error)",
-   "momento": "excepción no capturada en la página",
-   "campos": [
-    {
-     "nombre": "m",
-     "tipo": "string",
-     "desc": "mensaje del error recortado a 140 caracteres"
-    }
-   ],
-   "desde": "v2.76"
-  },
-  {
-   "nombre": "vr_start",
-   "origen": "src/game/core/c12_pingponggame.js",
-   "momento": "entrada en sesión VR inmersiva",
-   "campos": [
-    {
-     "nombre": "mode",
-     "tipo": "string",
-     "desc": "modo de juego activo"
-    },
-    {
-     "nombre": "multi",
-     "tipo": "boolean",
-     "desc": "true si la sesión es multijugador online (NetLink)"
-    }
-   ],
-   "desde": "v2.50"
-  },
-  {
-   "nombre": "vr_end",
-   "origen": "src/game/core/c12_pingponggame.js",
-   "momento": "salida de la sesión VR (inmediatamente hace flush(true))",
-   "campos": [
-    {
-     "nombre": "dur",
-     "tipo": "number",
-     "desc": "segundos de sesión VR"
-    },
-    {
-     "nombre": "fps",
-     "tipo": "number|null",
-     "desc": "FPS medio de la sesión (muestreo cada 5 s; null si no hubo muestras)"
-    },
-    {
-     "nombre": "fpsMin",
-     "tipo": "number|null",
-     "desc": "FPS mínimo de la sesión VR (ronda 10; peor intervalo de 5 s)"
-    },
-    {
-     "nombre": "fpsMax",
-     "tipo": "number|null",
-     "desc": "FPS máximo de la sesión VR (ronda 10; mejor intervalo de 5 s)"
-    }
-   ],
-   "desde": "v2.50 (fps desde v2.76)"
-  },
-  {
-   "nombre": "stage",
-   "origen": "public/championships/locura/index.js · public/championships/magia/index.js",
-   "momento": "avance de etapa en el camino del campeonato",
-   "campos": [
-    {
-     "nombre": "n",
-     "tipo": "number",
-     "desc": "etapa alcanzada"
-    },
-    {
-     "nombre": "id",
-     "tipo": "string",
-     "desc": "ronda 11: id del campeonato ('magia', 'locura'); los eventos anteriores a 3.6.8-SDK6 no lo llevan"
-    }
-   ],
-   "notas": "NO lleva id de campeonato (limitación conocida: no se puede atribuir al módulo desde el receptor)",
-   "desde": "v2.50"
-  },
-  {
-   "nombre": "champion",
-   "origen": "public/championships/locura/index.js · public/championships/magia/index.js",
-   "momento": "primer trofeo del campeonato (win && firstTrophy)",
-   "campos": [
-    {
-     "nombre": "id",
-     "tipo": "string",
-     "desc": "ronda 11: id del campeonato ganado (los anteriores a 3.6.8-SDK6 no lo llevan)"
-    }
-   ],
-   "notas": "sin campos extra; NO lleva id de campeonato (misma limitación)",
-   "desde": "v2.50"
-  },
-  {
-   "nombre": "champ_rank",
-   "origen": "public/championships/magia/index.js (_reportRank) — ronda 11: viaja POR la cola __PP_TELE.ev (antes: POST propio application/json)",
-   "momento": "fin de la prueba del orbe con ranking",
-   "campos": [
-    {
-     "nombre": "champ",
-     "tipo": "string",
-     "desc": "id del campeonato (p.ej. 'magia')"
-    },
-    {
-     "nombre": "win",
-     "tipo": "boolean",
-     "desc": "prueba superada"
-    },
-    {
-     "nombre": "score",
-     "tipo": "number",
-     "desc": "puntuación recortada a rangos imposibles de falsear"
-    },
-    {
-     "nombre": "stars",
-     "tipo": "number",
-     "desc": "0..3 estrellas"
-    },
-    {
-     "nombre": "bricks",
-     "tipo": "number",
-     "desc": "ladrillos destruidos"
-    },
-    {
-     "nombre": "ext",
-     "tipo": "number",
-     "desc": "extensiones de tiempo usadas"
-    },
-    {
-     "nombre": "left",
-     "tipo": "number",
-     "desc": "segundos restantes (×10 redondeados)"
-    },
-    {
-     "nombre": "v",
-     "tipo": "string",
-     "desc": "versión del juego (ronda 11: la REAL de __PP_TELE; antes '2.81.0' hardcodeado — drift conocido cerrado)"
-    }
-   ],
-   "notas": "ronda 11: va en la cola estándar de __PP_TELE (t, sid, v reales; respeta opt-out pp_tele=0 y modo depuración; la cola persistida reintenta si no hay red)",
-   "desde": "v2.77"
-  },
-  {
-   "nombre": "vr_ping",
-   "origen": "src/game/core/c00_pre_three.js (vrPing, intervalo 300000 ms) — activado desde c12_pingponggame.js al vr_start, parado al vr_end",
-   "momento": "cada 5 min mientras dura la sesión VR",
-   "campos": [
-    {
-     "nombre": "dur",
-     "tipo": "number",
-     "desc": "segundos de VR transcurridos en el momento del ping"
-    },
-    {
-     "nombre": "fps",
-     "tipo": "number",
-     "desc": "fps medio del momento (misma métrica que vr_end) — dibuja la curva a lo largo de la sesión"
-    }
-   ],
-   "desde": "v3.6.9-SDK6",
-   "notas": "ronda 12: LATIDO EN VR — las sesiones cerradas abruptamente (casco apagado, pestaña muerta) nunca llegan a vr_end ni a page_close y desaparecían del análisis (la ronda 11 cazó una: vr_start+stage sin cierre). El ÚLTIMO ping fecha el fin real aunque no haya vr_end. ronda 14: PRIMER PING REAL en producción (10-19, 68 fps al minuto 5 de la 1.ª sesión 3.6.10) y el resumen ya lo consume: sesionesVR fecha la duración con él"
-  },
-  {
-   "nombre": "net_match",
-   "origen": "src/game/core/c09_red_netlink.js (sendMatchEnd, r79) — transporte binario v2",
-   "momento": "al terminar una partida online (game-over, abandono o colgarse)",
-   "campos": [
-    {
-     "nombre": "role",
-     "tipo": "string",
-     "desc": "'host' | 'guest' — papel del emisor en la partida"
-    },
-    {
-     "nombre": "dur",
-     "tipo": "number",
-     "desc": "duración de la partida en segundos"
-    },
-    {
-     "nombre": "rtt",
-     "tipo": "object",
-     "desc": "{med,p95,min} en ms (estadística del reloj compartido)"
-    },
-    {
-     "nombre": "jitter",
-     "tipo": "number",
-     "desc": "jitter medio de llegada en ms (EMA RFC3550)"
-    },
-    {
-     "nombre": "turn",
-     "tipo": "boolean",
-     "desc": "true si la conexión pasó por TURN (sin ruta directa)"
-    },
-    {
-     "nombre": "hits/handoffs/snaps",
-     "tipo": "number",
-     "desc": "contadores de eventos del protocolo binario"
-    },
-    {
-     "nombre": "corr",
-     "tipo": "array",
-     "desc": "[sinCorreccion, suaves(2-30cm), saltos(>30cm)] del traspaso"
-    },
-    {
-     "nombre": "provAuth/claims/acks/disputes",
-     "tipo": "number",
-     "desc": "autoridad provisional y libro de reclamos"
-    },
-    {
-     "nombre": "vmax",
-     "tipo": "number",
-     "desc": "velocidad máxima de bola observada (m/s)"
-    },
-    {
-     "nombre": "result",
-     "tipo": "string",
-     "desc": "'win'|'loss'|'abandono'|'' — SIN contenido de partida (ni marcador ni nombres)"
-    },
-    {
-     "nombre": "suspect",
-     "tipo": "boolean",
-     "desc": "true si la validación anti-trampa rechazó 3+ golpes graves"
-    }
-   ],
-   "nota": "r79: SIN resultados identificables — solo métricas técnicas de red (política PII intacta)"
-  },
-  {
-   "nombre": "pwa_standalone",
-   "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
-   "momento": "una vez por sesión: la portada arrancó DENTRO de la app instalada (display-mode fullscreen/standalone/minimal-ui o navigator.standalone)",
-   "campos": [],
-   "desde": "v3.6.99-SDK6",
-   "notas": "r109: mide el uso real de la app instalada frente a la web; el botón instalar se oculta en este estado"
-  },
-  {
-   "nombre": "pwa_prompt",
-   "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
-   "momento": "el dueño responde al diálogo nativo de instalación (beforeinstallprompt capturado y lanzado por el botón de la portada)",
-   "campos": [
-    {
-     "nombre": "o",
-     "tipo": "string",
-     "desc": "outcome del diálogo: 'accepted' | 'dismissed' | '?'"
-    }
-   ],
-   "desde": "v3.6.99-SDK6",
-   "notas": "r109: sin datos de partida ni PII; mide la efectividad del botón instalar"
-  },
-  {
-   "nombre": "pwa_installed",
-   "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
-   "momento": "evento appinstalled del navegador (la app quedó instalada)",
-   "campos": [],
-   "desde": "v3.6.99-SDK6",
-   "notas": "r109: hito de conversión de la PWA"
-  },
-  {
-   "nombre": "pwa_manual_hint",
-   "origen": "src/game/core/c13_ui_arranque.js (r109, M3 PWA)",
-   "momento": "click en «📲 INSTALAR EN EL CASCO» SIN diálogo nativo disponible (Quest Browser puede no dispararlo): se enseñó el caminito manual de 2 toques",
-   "campos": [],
-   "desde": "v3.6.99-SDK6",
-   "notas": "r109: si aparece mucho, significa que el navegador objetivo no dispara beforeinstallprompt"
-  },
-  {
-   "nombre": "primer_rally",
-   "origen": "src/game/core/c12_pingponggame.js (animate, M4 r111)",
-   "momento": "el árbitro entra en 'rally' por PRIMERA vez de la sesión en partido local (no hall, no calibración, no online)",
-   "campos": [
-    {
-     "nombre": "lat",
-     "tipo": "number",
-     "desc": "segundos desde vr_start (redondeado a 0,1) — la métrica del hito M4: un jugador nuevo en rallye real en <60 s"
-    },
-    {
-     "nombre": "dif",
-     "tipo": "string",
-     "desc": "dificultad de la CPU vigente (easy/medium/hard)"
-    }
-   ],
-   "desde": "v3.6.101",
-   "notas": "M4 (r111): UNA sola vez por sesión; lat + 60 s de media en jugadores nuevos = onboarding cumplido. En duelo online no sale (la mesa la acuerda el anfitrión)."
-  },
-  {
-   "nombre": "tut_end",
-   "origen": "src/game/core/c13_ui_arranque.js (LA ACADEMIA, stop(), M4 r111)",
-   "momento": "cierre de la academia: fin del guion, botón ▶ JUGAR YA o salida con B/Y",
-   "campos": [
-    {
-     "nombre": "res",
-     "tipo": "string",
-     "desc": "'done' fin del guion · 'aJugar' botón ▶ JUGAR YA (paso final) · 'skip' saltó con B/Y"
-    },
-    {
-     "nombre": "paso",
-     "tipo": "number",
-     "desc": "paso del guion en el que acabó (0..8; -1 si no llegó a contarse)"
-    }
-   ],
-   "desde": "v3.6.101",
-   "notas": "M4 (r111): mide si la academia se termina o se salta ahora que ya NO bloquea la primera entrada (el HUB nace en ▶ JUGAR)."
-  },
-  {
-   "nombre": "ai_style",
-   "origen": "src/game/core/c12_pingponggame.js (onMatchStart, M5a r112)",
-   "momento": "arranque de un partido LOCAL con estilo de rival ≠ clásico",
-   "campos": [
-    {
-     "nombre": "est",
-     "tipo": "string",
-     "desc": "id del estilo activo (looper/chopero/bloqueador/atacante/defensivo/dejadas/allround/nervioso/veterano/gigante/relampago)"
-    },
-    {
-     "nombre": "dif",
-     "tipo": "string",
-     "desc": "dificultad de la CPU vigente"
-    }
-   ],
-   "desde": "v3.6.102",
-   "notas": "M5a (r112): mide qué personalidades eligen los jugadores. Sin emisión en online ni con estilo clásico."
-  },
-  {
-   "nombre": "carrera",
-   "origen": "src/game/core/c12_pingponggame.js (_carreraDesafiar / _carreraResultado, M5b r115)",
-   "momento": "arranque de un desafío de la escalera de carrera y cierre de su partido (resultado y ascenso)",
-   "campos": [
-    {
-     "nombre": "div",
-     "tipo": "string",
-     "desc": "división del desafío (bronce/plata/oro/diamante/leyenda)"
-    },
-    {
-     "nombre": "r",
-     "tipo": "string",
-     "desc": "id del rival retado (roko/marta/paco/lulu/paola/fede/carla/oscar/tomas/vera/gus/nina/rayo/muro/leyenda)"
-    },
-    {
-     "nombre": "est",
-     "tipo": "string",
-     "desc": "sólo en acc=reto: estilo del rival (personalidad M5a)"
-    },
-    {
-     "nombre": "acc",
-     "tipo": "string",
-     "desc": "reto (arranque) | win | loss (cierre del partido)"
-    },
-    {
-     "nombre": "promo",
-     "tipo": "number",
-     "desc": "sólo en acc=win/loss: 1 si hubo ascenso de división o corona de Leyenda"
-    }
-   ],
-   "desde": "v3.6.105",
-   "notas": "M5b (r115): mide el uso de la escalera de carrera (reto/rival y ascensos). Nunca en online (el desafío no existe allí)."
-  },
-  {
-   "nombre": "dobles",
-   "origen": "src/game/core/c12_pingponggame.js (case 'dobles' del menú, M7c r119)",
-   "momento": "cuando el dueño arma y arranca un partido de DOBLES 2v2 desde AJUSTES › JUEGO (único disparo por arranque)",
-   "campos": [
-    {
-     "nombre": "acc",
-     "tipo": "string",
-     "desc": "acción registrada: 'start' (partido de dobles arrancado)"
-    }
-   ]
-  },
-  {
-   "nombre": "net_ice",
-   "origen": "src/game/core/c09_red_netlink.js (r20/r22) — ciclo de vida del ICE",
-   "momento": "cuando el ICE de la sala online pasa de estado (fallos, túnel, srflx ok)",
-   "campos": [
-    {
-     "nombre": "st",
-     "tipo": "string",
-     "desc": "estado del enlace: failed | ok | tunel"
-    },
-    {
-     "nombre": "v2",
-     "tipo": "string",
-     "desc": "transporte v2 resultante (ok/pending/off)"
-    },
-    {
-     "nombre": "tun",
-     "tipo": "boolean",
-     "desc": "¿el enlace vive por el túnel PeerJS?"
-    }
-   ],
-   "pii": "sin PII — métrica técnica de red (patrón net_match)"
-  },
-  {
-   "nombre": "bola_guard",
-   "origen": "src/game/core/c12_pingponggame.js (_bolaGuard, r25: guardián de la bola online)",
-   "momento": "cuando el guardián corrige la propiedad/visibilidad de la bola (throttle 1/5 s por tipo)",
-   "campos": [
-    {
-     "nombre": "k",
-     "tipo": "string",
-     "desc": "r25: 'mi_saque' (bola re-anclada a mi mano), 'rival_saque' (punto de saque reglamentario del rival por pose apagada), 'rally_vis' (bola oculta en rallye re-encendida) o 'rally_loca' (bola NaN/fuera de mundo devuelta jugable)"
-    }
-   ],
-   "desde": "v3.6.120",
-   "notas": "r25: telemetría del CONTROL TOTAL de la bola online — la propiedad se re-afirma cada frame desde el árbitro; el evento cuenta las CORRECCIONES (una partida sana apenas emite)"
-  }
- ],
- "hallazgos_ronda6": [
-  "El receptor de PRODUCCIÓN (crazypp-tele.escala3dcorreoia.workers.dev/api/tele) rechaza con 400 el wrapper {\"app\",\"events\"} que envía __PP_TELE.flush(): SOLO acepta arrays directos (204). sendBeacon devuelve true (éxito de transporte) → el juego vacía la cola → LOS EVENTOS DEL LOTE SE PIERDEN en producción.",
-  "El mismo Worker no expone NINGÚN modo de lectura (GET devuelve un texto fijo): aunque los POST entraran, no hay forma de consultar los datos.",
-  "FIX propuesto (requiere release): en c00_pre_three.js enviar JSON.stringify(st.q) (array directo, el mismo contrato que champ_rank de Magia) — 1 línea. Además, receptor LOCAL propio de esta ronda (/api/telemetria) con lectura y panel. → APLICADO en la ronda 7 (3.6.5-SDK6), junto con el routing por host del endpoint en 04_boot.",
-  "Cloudflare bloquea UAs no-navegador con error 1010/403: cualquier sondeo debe emular UA de Chromium (scripts/sondea_tele_worker.py lo hace)."
- ],
- "fix_ronda7": [
-  "c00_pre_three.js (flush): el lote pasa a JSON.stringify(st.q) — ARRAY DIRECTO; el receptor local sigue aceptando el wrapper antiguo por tolerancia.",
-  "04_boot.html: ROUTING POR HOST — localhost/127.0.0.1/[::1] → /api/telemetria (panel /telemetria); resto de hosts → worker de producción.",
-  "Efecto en producción: los lotes dejan de morir en un 400 — el Worker los acepta (204) aunque SIGA sin API de lectura (el panel local es la vía para VER datos hoy).",
-  "Pendiente para rondas futuras: id de campeonato en stage/champion y v real en champ_rank (drift '2.81.0')."
- ],
- "receptor_local": {
-  "ruta": "/api/telemetria (Next.js, :3000 y :81 vía gateway)",
-  "panel": "/telemetria",
-  "almacen": "telemetria/eventos.jsonl (git-ignorado, rotación ~8 MB → .old, SIN IP ni UA)",
-  "contrato": "POST acepta array directo O wrapper {app,events} (tolerante) · GET ?resumen=1&sid=… · GET ?eventos=N · DELETE ?sid=… · OPTIONS preflight 204"
- },
- "lectura_ronda8": {
-  "worker": "scripts/worker-tele/worker.js — reemplazo del worker de producción: los lotes caen en D1 (SQLite serverless de Cloudflare, binding DB) y la lectura se expone con la clave",
-  "clave": "variable CLAVE del worker (?clave=… o cabecera X-Clave); protege resumen/eventos/DELETE; el POST no lleva clave (el juego es código público)",
-  "contrato": "POST → 204 sin cuerpo (mismo contrato) · GET latido público {ok,total,ts} · GET ?resumen=1 y ?eventos=N con clave (misma forma JSON que el receptor local) · DELETE ?sid con clave",
-  "privacidad": "se guarda exactamente el JSON del evento — sin IP, sin UA, sin cf-*; verificado por la capa J (bloque E: contrato estático + E2E con SQLite real vía node:sqlite, 30 checks)",
-  "panel": "/telemetria añade el selector Local ⇄ Producción (D1): la clave se guarda solo en el navegador del dueño (pp_tele_prod_clave)",
-  "instrucciones": "scripts/worker-tele/LEEME.md — despliegue por dashboard (~10 min) o CLI (wrangler)",
-  "pendiente_despliegue": "el dueño pega el código + crea la base D1 crazypp-tele + pone la CLAVE; verificación: latido público y resumen con clave"
- },
- "ronda11": {
-  "cambios": [
-   "stage y champion llevan id del campeonato (magia + locura) desde 3.6.8-SDK6",
-   "champ_rank viaja por __PP_TELE: v real del juego (antes 2.81.0 clavado), t y sid propios, respeta opt-out y modo depuración",
-   "resumen nuevo: porCampeonato {id: {stage, champion}} en worker y receptor local (tolerante con datos sin id)",
-   "panel: tabla «Embudo por campeonato» (etapas, títulos, partidas, victorias, mejor, estrellas)"
-  ]
- },
- "ronda12": {
-  "cambios": [
-   "boot.platform REAL: xr (dispositivo con WebXR inmersivo) vs 2d (escritorio) — antes clavado a 2d",
-   "evento nuevo vr_ping cada 5 min en VR: fecha sesiones cerradas abruptamente y dibuja la curva de fps",
-   "worker y receptor local sin cambios (vr_ping es un evento estándar de la cola: lo cuentan porEvento y el embudo lo ignora)",
-   "nitidez 1.4→1.5 pospuesta a datos: la sesión 3.6.8 seguía abierta al cerrar la ronda"
-  ]
- },
- "ronda14": {
-  "cambios": [
-   "resumen.sesionesVR (worker + receptor local en paridad): hasta 12 ciclos VR recientes — sid, versión, inicio, dur (real del vr_end o ≈ estimada del último vr_ping), durReal, estado (cerrada/interrumpida/abierta), fps media (min-max) del vr_end, pings y curva (hasta 24 pings: minuto de sesión + fps)",
-   "panel /telemetria: tabla «Sesiones VR (lentes)» con sparkline de fps (línea punteada = 72 de confort) y badge de estado; ≈ marca la duración estimada",
-   "reversión de nitidez 1.5→1.4 (regla pre-comprometida: media 63 < 72 en la 1.ª sesión real 3.6.10) — el juego recupera fluidez; nota en el catálogo por ser la decisión que gobierna qué fps veremos en la curva",
-   "verify_pages_live con opt-out pp_tele=0: los bots de verificación dejan de emitir boot 2d a producción (contaminación cazada el 10-19: 6 boots de bots)"
   ],
-  "sesionesVR": {
-   "estado": {
-    "cerrada": "el ciclo terminó con vr_end: dur real y fps/fpsMin/fpsMax del vr_end",
-    "interrumpida": "sin vr_end pero CON vr_ping: dur ≈ estimada por el último ping (caso k5ui6abo)",
-    "abierta": "vr_start sin vr_end ni pings (sesión de < 5 min, en curso o muerta muy pronto)"
-   },
-   "curva": "muestras {m: minutos desde vr_start, fps} — hasta 24 por ciclo; dibuja la caída o estabilidad del rendimiento DENTRO de la sesión"
-  }
- },
- "nota_r119": "r123 · +net_ice (r20/r22 ya lo emitía; el catálogo no lo documentaba — deriva sellada en la r23)"
+  "hallazgos_ronda6": [
+    "El receptor de PRODUCCIÓN (crazypp-tele.escala3dcorreoia.workers.dev/api/tele) rechaza con 400 el wrapper {\"app\",\"events\"} que envía __PP_TELE.flush(): SOLO acepta arrays directos (204). sendBeacon devuelve true (éxito de transporte) → el juego vacía la cola → LOS EVENTOS DEL LOTE SE PIERDEN en producción.",
+    "El mismo Worker no expone NINGÚN modo de lectura (GET devuelve un texto fijo): aunque los POST entraran, no hay forma de consultar los datos.",
+    "FIX propuesto (requiere release): en c00_pre_three.js enviar JSON.stringify(st.q) (array directo, el mismo contrato que champ_rank de Magia) — 1 línea. Además, receptor LOCAL propio de esta ronda (/api/telemetria) con lectura y panel. → APLICADO en la ronda 7 (3.6.5-SDK6), junto con el routing por host del endpoint en 04_boot.",
+    "Cloudflare bloquea UAs no-navegador con error 1010/403: cualquier sondeo debe emular UA de Chromium (scripts/sondea_tele_worker.py lo hace)."
+  ],
+  "fix_ronda7": [
+    "c00_pre_three.js (flush): el lote pasa a JSON.stringify(st.q) — ARRAY DIRECTO; el receptor local sigue aceptando el wrapper antiguo por tolerancia.",
+    "04_boot.html: ROUTING POR HOST — localhost/127.0.0.1/[::1] → /api/telemetria (panel /telemetria); resto de hosts → worker de producción.",
+    "Efecto en producción: los lotes dejan de morir en un 400 — el Worker los acepta (204) aunque SIGA sin API de lectura (el panel local es la vía para VER datos hoy).",
+    "Pendiente para rondas futuras: id de campeonato en stage/champion y v real en champ_rank (drift '2.81.0')."
+  ],
+  "receptor_local": {
+    "ruta": "/api/telemetria (Next.js, :3000 y :81 vía gateway)",
+    "panel": "/telemetria",
+    "almacen": "telemetria/eventos.jsonl (git-ignorado, rotación ~8 MB → .old, SIN IP ni UA)",
+    "contrato": "POST acepta array directo O wrapper {app,events} (tolerante) · GET ?resumen=1&sid=… · GET ?eventos=N · DELETE ?sid=… · OPTIONS preflight 204"
+  },
+  "lectura_ronda8": {
+    "worker": "scripts/worker-tele/worker.js — reemplazo del worker de producción: los lotes caen en D1 (SQLite serverless de Cloudflare, binding DB) y la lectura se expone con la clave",
+    "clave": "variable CLAVE del worker (?clave=… o cabecera X-Clave); protege resumen/eventos/DELETE; el POST no lleva clave (el juego es código público)",
+    "contrato": "POST → 204 sin cuerpo (mismo contrato) · GET latido público {ok,total,ts} · GET ?resumen=1 y ?eventos=N con clave (misma forma JSON que el receptor local) · DELETE ?sid con clave",
+    "privacidad": "se guarda exactamente el JSON del evento — sin IP, sin UA, sin cf-*; verificado por la capa J (bloque E: contrato estático + E2E con SQLite real vía node:sqlite, 30 checks)",
+    "panel": "/telemetria añade el selector Local ⇄ Producción (D1): la clave se guarda solo en el navegador del dueño (pp_tele_prod_clave)",
+    "instrucciones": "scripts/worker-tele/LEEME.md — despliegue por dashboard (~10 min) o CLI (wrangler)",
+    "pendiente_despliegue": "el dueño pega el código + crea la base D1 crazypp-tele + pone la CLAVE; verificación: latido público y resumen con clave"
+  },
+  "ronda11": {
+    "cambios": [
+      "stage y champion llevan id del campeonato (magia + locura) desde 3.6.8-SDK6",
+      "champ_rank viaja por __PP_TELE: v real del juego (antes 2.81.0 clavado), t y sid propios, respeta opt-out y modo depuración",
+      "resumen nuevo: porCampeonato {id: {stage, champion}} en worker y receptor local (tolerante con datos sin id)",
+      "panel: tabla «Embudo por campeonato» (etapas, títulos, partidas, victorias, mejor, estrellas)"
+    ]
+  },
+  "ronda12": {
+    "cambios": [
+      "boot.platform REAL: xr (dispositivo con WebXR inmersivo) vs 2d (escritorio) — antes clavado a 2d",
+      "evento nuevo vr_ping cada 5 min en VR: fecha sesiones cerradas abruptamente y dibuja la curva de fps",
+      "worker y receptor local sin cambios (vr_ping es un evento estándar de la cola: lo cuentan porEvento y el embudo lo ignora)",
+      "nitidez 1.4→1.5 pospuesta a datos: la sesión 3.6.8 seguía abierta al cerrar la ronda"
+    ]
+  },
+  "ronda14": {
+    "cambios": [
+      "resumen.sesionesVR (worker + receptor local en paridad): hasta 12 ciclos VR recientes — sid, versión, inicio, dur (real del vr_end o ≈ estimada del último vr_ping), durReal, estado (cerrada/interrumpida/abierta), fps media (min-max) del vr_end, pings y curva (hasta 24 pings: minuto de sesión + fps)",
+      "panel /telemetria: tabla «Sesiones VR (lentes)» con sparkline de fps (línea punteada = 72 de confort) y badge de estado; ≈ marca la duración estimada",
+      "reversión de nitidez 1.5→1.4 (regla pre-comprometida: media 63 < 72 en la 1.ª sesión real 3.6.10) — el juego recupera fluidez; nota en el catálogo por ser la decisión que gobierna qué fps veremos en la curva",
+      "verify_pages_live con opt-out pp_tele=0: los bots de verificación dejan de emitir boot 2d a producción (contaminación cazada el 10-19: 6 boots de bots)"
+    ],
+    "sesionesVR": {
+      "estado": {
+        "cerrada": "el ciclo terminó con vr_end: dur real y fps/fpsMin/fpsMax del vr_end",
+        "interrumpida": "sin vr_end pero CON vr_ping: dur ≈ estimada por el último ping (caso k5ui6abo)",
+        "abierta": "vr_start sin vr_end ni pings (sesión de < 5 min, en curso o muerta muy pronto)"
+      },
+      "curva": "muestras {m: minutos desde vr_start, fps} — hasta 24 por ciclo; dibuja la caída o estabilidad del rendimiento DENTRO de la sesión"
+    }
+  },
+  "nota_r119": "r123 · +net_ice (r20/r22 ya lo emitía; el catálogo no lo documentaba — deriva sellada en la r23)"
 }

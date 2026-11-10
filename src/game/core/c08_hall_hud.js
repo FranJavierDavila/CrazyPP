@@ -1496,6 +1496,63 @@ export function drawArcanoPanel(cv, d) {
   return y;
 }
 
+/* =====================================================================
+ *  r45 · TRAZOS DE LA CONSTELACIÓN DE PALAS — el contorno de palas.png
+ *  (arte del dueño) reducido a 16 polilíneas ordenadas como traza un
+ *  bolígrafo (encadenado por extremos próximos, extraído del canal
+ *  alfa del PNG con esqueleto + grafo 8-conexo + Douglas-Peucker 0.8).
+ *  Coordenadas normalizadas: x −0.5..0.5, y abajo→arriba positivo.
+ *  La consume montaConstelacion() (mismo fichero).
+ *  ===================================================================== */
+const ARCANO_PALAS_TRAZO = [[[0.0856,-0.0839],[0.0993,-0.0651],[0.125,-0.0154],[0.1438,0.0411],[0.1507,0.0753],[0.1507,0.0856],[0.1524,0.0873],[0.1524,0.1027],[0.1541,0.1045],[0.1541,0.1404],[0.1524,0.1421],[0.1507,0.1695],[0.1421,0.2089],[0.1318,0.2414],[0.1113,0.2842],[0.0976,0.3065],[0.0736,0.3373],[0.0411,0.3699],[0.0188,0.387],[-0.0034,0.4007],[-0.0051,0.4058],[-0.0017,0.4127],[0.0377,0.4401],[0.0753,0.4572],[0.1164,0.4692],[0.1387,0.4709],[0.1404,0.4726],[0.1592,0.4726],[0.161,0.4743],[0.1918,0.4743],[0.1935,0.4726],[0.2123,0.4726],[0.214,0.4709],[0.2363,0.4692],[0.2723,0.4589],[0.3236,0.4349],[0.3682,0.4024],[0.4024,0.3682],[0.4366,0.3219],[0.4914,0.1027],[0.4932,0.1473],[0.4914,0.149],[0.4914,0.1661],[0.4897,0.1678],[0.4897,0.1781],[0.4846,0.2055],[0.4675,0.262],[0.4486,0.3014],[0.4384,0.3168]],[[0.4914,0.1027],[0.4897,0.0822],[0.4846,0.0582],[0.4555,-0.0188],[0.4709,0.012],[0.4795,0.0377],[0.4829,0.0565]],[[0.3493,-0.0839],[0.3562,-0.113],[0.3716,-0.1592]],[[0.2825,-0.2003],[0.274,-0.1849],[0.2449,-0.1455]],[[0.238,-0.1935],[0.25,-0.1969],[0.2654,-0.2055]],[[0.286,-0.2175],[0.3065,-0.2466],[0.3253,-0.2842],[0.3647,-0.387],[0.4212,-0.464],[0.411,-0.4658],[0.4024,-0.464],[0.3904,-0.4555],[0.3664,-0.3887]],[[0.4623,-0.4452],[0.4949,-0.4281],[0.4983,-0.4229],[0.5,-0.4144],[0.4983,-0.4007],[0.4709,-0.3545],[0.4144,-0.2466],[0.411,-0.2432],[0.399,-0.2175],[0.387,-0.1798],[0.3904,-0.1661],[0.3921,-0.1387],[0.399,-0.1182],[0.4127,-0.0908],[0.4332,-0.0582],[0.4332,-0.0514],[0.4298,-0.0445],[0.4247,-0.0445],[0.4041,-0.0531],[0.3527,-0.0788],[0.3476,-0.0839],[0.3373,-0.0856],[0.2517,-0.1284],[0.2397,-0.137],[0.2312,-0.1387],[0.1781,-0.1661]],[[0.1575,-0.1832],[0.161,-0.1884],[0.2106,-0.1901],[0.2363,-0.1935],[0.226,-0.1901],[0.2158,-0.1901]],[[0.137,-0.1849],[0.0993,-0.1781],[0.0719,-0.1695],[0.0377,-0.1541],[0.0325,-0.1473],[0.0171,-0.1524],[-0.0103,-0.1712],[-0.0514,-0.1884],[-0.0394,-0.1849],[-0.0308,-0.1798]],[[-0.0822,-0.1969],[-0.1096,-0.2021],[-0.1199,-0.2021],[-0.1216,-0.2038],[-0.1353,-0.2038],[-0.149,-0.2003]],[[-0.1678,-0.2038],[-0.2192,-0.2038],[-0.2346,-0.2072],[-0.2654,-0.2209],[-0.2757,-0.2295],[-0.2877,-0.2329],[-0.2928,-0.238],[-0.3031,-0.2534],[-0.3253,-0.2979],[-0.3562,-0.3716],[-0.3836,-0.4486],[-0.3904,-0.464],[-0.3955,-0.4692],[-0.411,-0.4743],[-0.4247,-0.4709],[-0.4777,-0.4435],[-0.4863,-0.4384],[-0.4966,-0.4281],[-0.5,-0.4212],[-0.5,-0.4127],[-0.4212,-0.2774],[-0.3921,-0.2192],[-0.3818,-0.1832],[-0.3853,-0.1541],[-0.3904,-0.1336],[-0.4058,-0.1027],[-0.4264,-0.0719],[-0.4281,-0.0565],[-0.4452,-0.0394],[-0.4572,-0.012],[-0.4675,0.0188],[-0.4675,0.0257],[-0.4726,0.0428],[-0.4743,0.0753],[-0.476,0.0771],[-0.476,0.1164],[-0.4743,0.1182],[-0.4743,0.1387],[-0.4726,0.1404],[-0.4692,0.1695],[-0.4589,0.2055],[-0.4452,0.2397],[-0.4315,0.2671],[-0.4144,0.2945],[-0.3904,0.3253],[-0.3527,0.363],[-0.3305,0.3801],[-0.2979,0.4007],[-0.2397,0.4247],[-0.2021,0.4332],[-0.1695,0.4349],[-0.1678,0.4366],[-0.1301,0.4366],[-0.1284,0.4349],[-0.1113,0.4349],[-0.1096,0.4332],[-0.0873,0.4315],[-0.0788,0.4281],[-0.0651,0.4264],[-0.0291,0.4127]],[[0.0651,-0.1096],[0.0411,-0.1336]],[[0.0377,-0.262],[0.0137,-0.2517],[-0.0257,-0.2517],[-0.0582,-0.2654],[-0.0753,-0.2808],[-0.0873,-0.2962],[-0.0976,-0.3219],[-0.0976,-0.339],[-0.0993,-0.3408],[-0.0976,-0.3613],[-0.089,-0.3853],[-0.0839,-0.3938],[-0.0548,-0.4212],[-0.036,-0.4298],[-0.0086,-0.4349],[0.0223,-0.4298],[0.0325,-0.4264],[0.0497,-0.4161],[0.0668,-0.399],[0.0736,-0.3887],[0.0822,-0.3682],[0.0822,-0.3579],[0.0856,-0.3476],[0.0822,-0.3168],[0.0736,-0.2962],[0.0651,-0.2842],[0.0479,-0.2671],[0.0377,-0.262],[0.0377,-0.262]],[[-0.1712,-0.1815],[-0.2312,-0.149],[-0.238,-0.149],[-0.2414,-0.1575],[-0.2654,-0.1849],[-0.2894,-0.2243],[-0.2842,-0.2123],[-0.2705,-0.1935]],[[-0.2603,-0.1336],[-0.3339,-0.0959],[-0.3425,-0.0942],[-0.3476,-0.0976],[-0.351,-0.113],[-0.3682,-0.1592]],[[-0.3733,-0.0771],[-0.4144,-0.0565],[-0.4195,-0.0548],[-0.4247,-0.0565]]];
+
+/** r45 · MONTA la constelación de palas: un plano tangente a la bóveda
+ *  (15 × 11,25 m a 45 m del centro, SIEMPRE en el cielo) con su lienzo
+ *  512×384 y el estado del bolígrafo de luz: espera → trazo (el contorno
+ *  se dibuja poco a poco, naciendo en un punto) → sostén → fundido →
+ *  espera (y vuelve a nacer en OTRO lugar al azar). El repintado del
+ *  lienzo ocurre SÓLO durante el trazado; el sostén y el fundido son
+ *  opacity del material (cero lienzo, cero subidas de textura). */
+function montaConstelacion() {
+  const cv = hallCanvas(512, 384);
+  const tex = new THREE.CanvasTexture(cv);
+  try { tex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(15, 11.25),
+    new THREE.MeshBasicMaterial({
+      map: tex, transparent: true, opacity: 0, depthWrite: false,
+      fog: false, blending: THREE.AdditiveBlending,
+    }),
+  );
+  mesh.visible = false;
+  mesh.renderOrder = 1;            // sobre la bóveda (opaca), bajo el resto
+  // — los trazos a coordenadas DE LIENZO + longitudes acumuladas —
+  const CX = 256, CY = 182, S = 330;      // centro y escala (px por unidad)
+  const trazos = [];
+  let total = 0;
+  for (const s of ARCANO_PALAS_TRAZO) {
+    const pts = [];
+    const cum = [0];
+    for (let i = 0; i < s.length; i++) {
+      pts.push({ x: CX + s[i][0] * S, y: CY - s[i][1] * S });
+      if (i) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+    }
+    trazos.push({ pts, cum, len: cum[cum.length - 1], ini: total });
+    total += cum[cum.length - 1];
+  }
+  // — las TRES PASADAS de glow (la firma del búho: halo→cuerpo→alma) —
+  mesh.userData.conste = {
+    cv, tex, trazos, total,
+    pasadas: [
+      { lw: 3.4, col: 'rgba(56,140,255,0.32)', blur: 13 },
+      { lw: 2.1, col: 'rgba(120,205,255,0.78)', blur: 5 },
+      { lw: 1.0, col: 'rgba(226,246,255,0.5)', blur: 0 },
+    ],
+    estado: 'espera', t: 2.4, prog: 0, opMax: 0.62,
+  };
+  return mesh;
+}
+
 /** MONTA el espacio arcano. Devuelve el Group con userData.arcono = {
  *  motas, cometas, suelo, buho: {mesh, glints, hover}, panel: {mesh, cv,
  *  tex}, flechaL/R: {mesh, cv, tex}, pop (0..1 materialización) } — c12
@@ -1525,6 +1582,11 @@ export function montarArcano(base) {
   // — MOTAS azules que serpentean —
   const motas = montaMotas(240);
   g.add(motas);
+  // — r45 · LA CONSTELACIÓN DE PALAS: el contorno del arte del dueño
+  //    trazado a bolígrafo en el cielo (nace, se dibuja, se funde y
+  //    reaparece en otro lugar al azar) —
+  const conste = montaConstelacion();
+  g.add(conste);
   // — COMETAS ocasionales (cabeza + halo alargado) —
   const headTex = spriteRadial(2, 'rgba(240,250,255,0.98)', 'rgba(130,210,255,0.6)', 'rgba(60,140,255,0)');
   const haloTex = spriteRadial(6, 'rgba(120,200,255,0.5)', 'rgba(70,150,255,0.22)', 'rgba(30,80,200,0)');
@@ -1633,32 +1695,51 @@ export function montarArcano(base) {
     g.add(mesh);
     flechas[k] = { mesh, cv, tex, hover: false };
   }
-  // — r41 · EL CANDADO FLOTANTE de los bloqueados: GRUPO propio DELANTE
-  // del medallón (borde inf-derecho del círculo, SIN tapar el icono —
-  // petición literal del dueño): glifo azul en su lienzo + HALO ROJO
-  // pulsante (sprite aditivo que updateArcanoFx respira). —
+  // — r45 · EL CANDADO FLOTANTE de los bloqueados: GRUPO propio DELANTE
+  // del medallón, ahora en la ZONA SUPERIOR IZQUIERDA del icono (petición
+  // literal del dueño: «colocándolos en la zona superior izquierda del
+  // icono de superpoder») con SU IMAGEN (candado.png, silueta negra del
+  // artista sobre transparencia — la misma carga perezosa del búho, con
+  // el glifo vectorial de respaldo) y el MISMO HALO ROJO pulsante
+  // (sprite aditivo que updateArcanoFx respira): la silueta negra recorta
+  // contra el resplandor rojo y el bloqueo se lee vivo y claro. —
   const candCv = hallCanvas(128, 128);
   drawArcanoCandado(candCv);
   const candTex = new THREE.CanvasTexture(candCv);
   try { candTex.colorSpace = THREE.SRGBColorSpace; candTex.anisotropy = 4; } catch { /* */ }
-  const candMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15),
+  const candMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.16),
     new THREE.MeshBasicMaterial({ map: candTex, transparent: true, depthWrite: false, fog: false }));
+  try {
+    new THREE.TextureLoader().load(vbase + 'candado.png', (t) => {
+      try {
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 4;
+        candMesh.material.map = t;      // la IMAGEN del dueño manda
+        candMesh.material.needsUpdate = true;
+        candTex.dispose();              // el vectorial era el respaldo
+      } catch { /* seguimos con el vectorial */ }
+    }, undefined, () => { /* sin imagen: glifo vectorial de la casa */ });
+  } catch { /* */ }
   const candHalo = new THREE.Sprite(new THREE.SpriteMaterial({
     map: spriteRadial(4, 'rgba(255,150,120,0.92)', 'rgba(255,45,30,0.4)', 'rgba(255,0,0,0)'),
     transparent: true, opacity: 0.5, fog: false, color: 0xff4530,
     blending: THREE.AdditiveBlending, depthWrite: false,
   }));
-  candHalo.scale.setScalar(0.26);
+  candHalo.scale.setScalar(0.32);       // halo algo mayor: la silueta negra recorta contra él
   const candado = new THREE.Group();
   candado.add(candHalo);
   candado.add(candMesh);
-  candado.position.set(-0.388, 1.358, -2.28);   // borde del medallón, DELANTE
+  // r45 · zona SUPERIOR IZQUIERDA del medallón del icono (centro del
+  // icono en el lienzo 1024×700: x 152, y 236, r 96 → 3D x −0.512,
+  // y 1.483, radio 0.137; el candado se apoya en el borde, a −45°)
+  candado.position.set(-0.612, 1.585, -2.28);   // delante del panel, esquina sup-izq
   candado.visible = false;
   g.add(candado);
   g.userData.arcono = {
     motas, cometas, suelo, buho: { mesh: buhoMesh, glints: buhoGlints, hover: false },
     panel: { mesh: panMesh, cv: panCv, tex: panTex, holo: panHolo }, flechas,
     candado: { grupo: candado, halo: candHalo }, pop: 1, holoSem: 0,
+    conste,   // r45 · la constelación de palas de la bóveda
     // r43 · el letrero de salida («Salir/Exit» sobre el búho al apuntarlo)
     salir: { mesh: salMesh, halo: salHalo, cv: salCv, tex: salTex, op: 0 },
   };
@@ -1823,6 +1904,101 @@ export function updateArcanoFx(g, dt, now) {
     const fade = Math.sin(Math.min(1, k) * Math.PI);
     c.head.material.opacity = 0.95 * fade;
     c.halo.material.opacity = 0.5 * fade;
+  }
+  // — r45 · LA CONSTELACIÓN DE PALAS: un bolígrafo de luz traza en el
+  //  cielo el contorno de palas.png (16 polilíneas del arte del dueño,
+  //  encadenadas como pluma humana): nace en un punto, va perfilando las
+  //  líneas con el glow del búho hasta completarlo, aguanta, se funde y
+  //  unos segundos más tarde nace en OTRO lugar al azar de la bóveda —
+  //  como una constelación, muy sutil. Lienzo vivo SÓLO durante el
+  //  trazado; sostén y fundido viven de la opacity del material. —
+  const CN = A.conste && A.conste.userData.conste;
+  if (CN) {
+    CN.t -= dt;
+    if (CN.estado === 'espera') {
+      if (CN.t <= 0) {
+        // nace en OTRO lugar: azimut amplio alrededor del frente, altura
+        // 18°..47°, escala y giro en plano al azar (constelación viva)
+        const az = (Math.random() - 0.5) * 3.1;
+        const el = 0.32 + Math.random() * 0.52;
+        const rr = 45;
+        A.conste.position.set(
+          Math.sin(az) * Math.cos(el) * rr,
+          Math.sin(el) * rr,
+          -Math.cos(az) * Math.cos(el) * rr);
+        A.conste.lookAt(0, 1.55, 0);
+        A.conste.rotateZ((Math.random() - 0.5) * 1.0);
+        A.conste.scale.setScalar(0.85 + Math.random() * 0.5);
+        CN.cv.getContext('2d').clearRect(0, 0, 512, 384);
+        CN.tex.needsUpdate = true;
+        CN.estado = 'trazo';
+        CN.prog = 0;
+        A.conste.visible = true;
+        A.conste.material.opacity = CN.opMax;
+      }
+    } else if (CN.estado === 'trazo') {
+      CN.prog += dt * (CN.total / 7.2);   // el dibujo completo en ~7,2 s
+      const cx = CN.cv.getContext('2d');
+      cx.clearRect(0, 0, 512, 384);
+      cx.lineCap = 'round';
+      cx.lineJoin = 'round';
+      let punta = null;
+      for (const tr of CN.trazos) {
+        if (tr.ini >= CN.prog) break;
+        const frac = Math.min(1, (CN.prog - tr.ini) / tr.len);
+        if (frac <= 0) break;
+        // — hasta dónde llega la pluma EN ESTE trazo —
+        const objetivo = frac * tr.len;
+        let k = 1;
+        while (k < tr.cum.length && tr.cum[k] < objetivo) k++;
+        if (k >= tr.pts.length) k = tr.pts.length - 1;
+        const l0 = tr.cum[k - 1], l1 = tr.cum[k];
+        const fSeg = l1 > l0 ? (objetivo - l0) / (l1 - l0) : 0;
+        const px = tr.pts[k - 1].x + (tr.pts[k].x - tr.pts[k - 1].x) * fSeg;
+        const py = tr.pts[k - 1].y + (tr.pts[k].y - tr.pts[k - 1].y) * fSeg;
+        // — el trazo VISIBLE con las tres pasadas del búho —
+        for (const pa of CN.pasadas) {
+          cx.shadowColor = pa.col;
+          cx.shadowBlur = pa.blur;
+          cx.strokeStyle = pa.col;
+          cx.lineWidth = pa.lw;
+          cx.beginPath();
+          cx.moveTo(tr.pts[0].x, tr.pts[0].y);
+          for (let i = 1; i < k; i++) cx.lineTo(tr.pts[i].x, tr.pts[i].y);
+          cx.lineTo(px, py);
+          cx.stroke();
+        }
+        cx.shadowBlur = 0;
+        punta = { x: px, y: py };   // la pluma se queda en el trazo vivo
+        if (frac < 1) break;
+      }
+      // — la punta del bolígrafo: chispa aditiva blanco-azul —
+      if (punta) {
+        cx.globalCompositeOperation = 'lighter';
+        cx.shadowColor = 'rgba(150,215,255,0.95)';
+        cx.shadowBlur = 9;
+        cx.fillStyle = '#eaf6ff';
+        cx.beginPath();
+        cx.arc(punta.x, punta.y, 2.6, 0, Math.PI * 2);
+        cx.fill();
+        cx.shadowBlur = 0;
+        cx.globalCompositeOperation = 'source-over';
+      }
+      CN.tex.needsUpdate = true;
+      if (CN.prog >= CN.total) { CN.estado = 'sosten'; CN.t = 2.4; }
+    } else if (CN.estado === 'sosten') {
+      if (CN.t <= 0) { CN.estado = 'fundido'; CN.t = 2.3; }
+    } else if (CN.estado === 'fundido') {
+      A.conste.material.opacity = CN.opMax * Math.max(0, CN.t / 2.3);
+      if (CN.t <= 0) {
+        A.conste.visible = false;
+        CN.cv.getContext('2d').clearRect(0, 0, 512, 384);
+        CN.tex.needsUpdate = true;
+        CN.estado = 'espera';
+        // «unos segundos más tarde… cada 10 segundos o algo más»
+        CN.t = 3.5 + Math.random() * 4.5;
+      }
+    }
   }
   // — búho: flote + yaw vivo + ojos latiendo (más presente que en el hall) —
   const B = A.buho;

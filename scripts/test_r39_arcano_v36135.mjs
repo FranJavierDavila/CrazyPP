@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r39 · v3.6.137-SDK6 · FASE 139 · TEST: EL APARTADO
+/* CRAZY PING PONG · r39 · v3.6.139-SDK6 · FASE 141 · TEST: EL APARTADO
  * ARCANO — el búho del hall, el espacio infinito y la galería de
  * superpoderes con desbloqueo por campeonato ganado.
  *
@@ -53,7 +53,7 @@
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
  *   (df8f71a3… / 8bb62082…).
  *
- * Uso: node --no-warnings scripts/test_r39_arcano_v36137.mjs
+ * Uso: node --no-warnings scripts/test_r39_arcano_v36139.mjs
  */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -76,24 +76,24 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.137-SDK6 · FASE 139 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.137-SDK6 · FASE 139 · EL APARTADO ARCANO');
-chk(vjson.version === '3.6.137-SDK6', 'VERSION.json: 3.6.137-SDK6');
-chk(vjson.fase === 139, 'FASE 139');
-chk(vjson.faseNombre === 'El Arcano holográfico — pulido del dueño', 'faseNombre = EL APARTADO ARCANO');
-chk(vjson.tamano === 11473088, 'tamaño del build: 11.473.088 B');
+/* — 1 · SELLOS · v3.6.139-SDK6 · FASE 141 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.139-SDK6 · FASE 141 · EL APARTADO ARCANO');
+chk(vjson.version === '3.6.139-SDK6', 'VERSION.json: 3.6.139-SDK6');
+chk(vjson.fase === 141, 'FASE 141');
+chk(vjson.faseNombre === 'La vitrina del cielo — candado del dueño, constelación de palas y rankings mundiales', 'faseNombre = EL APARTADO ARCANO');
+chk(vjson.tamano === 11507255, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  '543863157c0d8ab3348d7b78edc52a0d262c7ebd132c42db1933e878b1325227',
-  'VERSION.json golden 54386315…');
+  '42d07e64e1071243ecac63700080cf37350928d2e57a2089111e3af9e3d5edc6',
+  'VERSION.json golden 10a24300…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.137-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.137-SDK6'"), 'sello c00 = 3.6.137-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.137-SDK6'"),
-  'sw.js CACHE v3.6.137-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.137-SDK6</span>'), 'badge V3.6.137-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36137-sdk6'),
-  'hub /descargas sellado a v36137-sdk6');
+chk(game.includes('3.6.139-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.139-SDK6'"), 'sello c00 = 3.6.139-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.139-SDK6'"),
+  'sw.js CACHE v3.6.139-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.139-SDK6</span>'), 'badge V3.6.139-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
+  'hub /descargas sellado a v36139-sdk6');
 
 /* — 2 · ARTE DEL DUEÑO · arcano.png byte-exacto ———————————————————— */
 console.log('2 · ARTE · Arcano.png del dueño → public/assets/hall/arcano.png');
@@ -304,6 +304,6 @@ chk(game.includes('EL APARTADO ARCANO'), 'bundle: sección arcano embebida');
 chk(game.includes('pp_poderes_v1'), 'bundle: persistencia de desbloqueos embebida');
 chk(game.includes('DL_SURTIDO'), 'bundle: surto extendido de Duelos Locos embebido');
 
-console.log('\n=== r39 · v3.6.137-SDK6 · EL APARTADO ARCANO ===');
+console.log('\n=== r39 · v3.6.139-SDK6 · EL APARTADO ARCANO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 process.exit(fails ? 1 : 0);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.138-SDK6 · FASE 140 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.139-SDK6 · FASE 141 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -58,7 +58,7 @@
  *   CONSERVADO: c04/c05 BYTE-EXACTO (física intocable), PROTO 3 del cable
  *   (contrato del juego intacto), la telemetría r42, todo el Arcano r41.
  *
- * Uso: node --no-warnings scripts/test_r43_destellos_red_v36138.mjs
+ * Uso: node --no-warnings scripts/test_r43_destellos_red_v36139.mjs
  */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -83,26 +83,28 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.138-SDK6 · FASE 140 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.138-SDK6 · FASE 140 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.138-SDK6', 'VERSION.json: 3.6.138-SDK6');
-chk(vjson.fase === 140, 'FASE 140');
-chk(vjson.faseNombre === 'El suelo de destellos — duelo honesto y fluido',
-  'faseNombre = EL SUELO DE DESTELLOS — DUELO HONESTO Y FLUIDO');
+/* — 1 · SELLOS · v3.6.139-SDK6 · FASE 141 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.139-SDK6 · FASE 141 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.139-SDK6', 'VERSION.json: 3.6.139-SDK6');
+chk(vjson.fase === 141, 'FASE 141');
+chk(vjson.faseNombre === 'La vitrina del cielo — candado del dueño, constelación de palas y rankings mundiales',
+  'faseNombre = LA VITRINA DEL CIELO — CANDADO DEL DUEÑO, CONSTELACIÓN DE PALAS Y RANKINGS MUNDIALES');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
-chk(vjson.tamano === 11485463, 'tamaño del build: 11.485.463 B');
+// r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
+// legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
+chk(vjson.tamano === 11507255, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '3e454e33b855c335e6a291764077e96078ef724cc5171067029fe03abcc6e93a',
-  'VERSION.json golden 3e454e33…');
+  '42d07e64e1071243ecac63700080cf37350928d2e57a2089111e3af9e3d5edc6',
+  'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.138-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.138-SDK6'"), 'sello c00 = 3.6.138-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.138-SDK6'"),
-  'sw.js CACHE v3.6.138-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.138-SDK6</span>'), 'badge V3.6.138-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36138-sdk6'),
-  'hub /descargas sellado a v36138-sdk6');
+chk(game.includes('3.6.139-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.139-SDK6'"), 'sello c00 = 3.6.139-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.139-SDK6'"),
+  'sw.js CACHE v3.6.139-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.139-SDK6</span>'), 'badge V3.6.139-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
+  'hub /descargas sellado a v36139-sdk6');
 
 /* — 2 · EL SUELO DE DESTELLOS ————————————————————————————————————— */
 console.log('2 · SUELO DE DESTELLOS · la trama fina SÓLO existe donde un destello la dibuja');
@@ -274,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.138-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.139-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

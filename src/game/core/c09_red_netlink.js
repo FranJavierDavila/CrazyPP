@@ -1152,6 +1152,7 @@ export class NetLink {
     // PROTO/PHYS/códec intactos — mismo patrón que `sk`, r21).
     this.sendRel({ k: 'hello2', v: PPNET.VP.PROTO, ph: PPNET.VP.PHYS, b: PPNET.VP.BUILD,
       sk: (this.game && typeof this.game.bolaSkin === 'string' && this.game.bolaSkin) || 'blanca',   // r21 · skin de bola del dueño (la viste el invitado)
+      sp: (this.game && typeof this.game.palaSkinPropia === 'function') ? this.game.palaSkinPropia() : 'clasica',   // r45 · skin de pala propia (la viste el PEER — la pala es de cada uno)
       hp: (this.game && typeof this.game.hallProfile === 'function') ? this.game.hallProfile() : undefined });   // r23 · hall profile del anfitrión
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
     // r81 · 15 s para el HELLO de respuesta (el ICE ya está abierto aquí:
@@ -1207,6 +1208,15 @@ export class NetLink {
         try {
           const skR = (typeof m.sk === 'string') ? m.sk.slice(0, 24) : '';
           if (skR) this.game?.onPeerSkin?.(skR);
+        } catch { /* cosmético: jamás rompe el enlace */ }
+        // r45 · SKIN DE PALA DEL PEER (campo OPCIONAL `sp` del HELLO v2):
+        // la pala es DE CADA UNO — aquí SÍ visten ambos extremos (el
+        // anfitrión ve la pala del invitado y el invitado la del
+        // anfitrión). Builds viejos no la envían y NUNCA la leen (JSON
+        // tolerante: PROTO/PHYS/códec intactos — mismo patrón que `sk`).
+        try {
+          const spR = (typeof m.sp === 'string') ? m.sp.slice(0, 24) : '';
+          if (spR) this.game?.onPeerPala?.(spR);
         } catch { /* cosmético: jamás rompe el enlace */ }
         // r23 (v3.6.118) · HALL DEL ANFITRIÓN (F2): campo OPCIONAL `hp` del
         // HELLO v2 — el invitado lo sanea en onPeerHall y su hall se viste

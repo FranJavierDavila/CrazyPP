@@ -1,10 +1,10 @@
 {
-  "version": "3.6.138-SDK6",
-  "fase": 140,
-  "faseNombre": "El suelo de destellos — duelo honesto y fluido",
+  "version": "3.6.139-SDK6",
+  "fase": 141,
+  "faseNombre": "La vitrina del cielo — candado del dueño, constelación de palas y rankings mundiales",
   "sdk": "1.6.0",
   "fecha": "2026-11-10",
-  "hub": "v36138-sdk6",
+  "hub": "v36139-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11485463,
-  "golden": "3e454e33b855c335e6a291764077e96078ef724cc5171067029fe03abcc6e93a"
+  "tamano": 11507255,
+  "golden": "42d07e64e1071243ecac63700080cf37350928d2e57a2089111e3af9e3d5edc6"
 }

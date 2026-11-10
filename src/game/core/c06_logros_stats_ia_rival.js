@@ -59,6 +59,9 @@ export class GameStats {
     if (this.data.ach[key]) return false;
     this.data.ach[key] = Date.now();
     this.save();
+    // r46 · el evento de DESBLOQUEO lo firma c12·celebrate (única vía por la
+    // que pasan TODOS los logros: recordPoint/survival/match → celebrate) —
+    // aquí NO se duplica: un logro = un evento 'logro'.
     return true;
   }
 

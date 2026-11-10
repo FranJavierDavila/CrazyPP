@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r41 · v3.6.138-SDK6 · FASE 140 · TEST: EL ARCANO
+/* CRAZY PING PONG · r41 · v3.6.139-SDK6 · FASE 141 · TEST: EL ARCANO
  * HOLOGRÁFICO — el pulido del dueño sobre el espacio arcano (ocho
  * informes en uno):
  *
@@ -64,7 +64,7 @@
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
  *   (df8f71a3… / 8bb62082…).
  *
- * Uso: node --no-warnings scripts/test_r41_arcano_holo_v36138.mjs
+ * Uso: node --no-warnings scripts/test_r41_arcano_holo_v36139.mjs
  */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -86,25 +86,26 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.138-SDK6 · FASE 140 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.138-SDK6 · FASE 140 · EL ARCANO HOLOGRÁFICO');
-chk(vjson.version === '3.6.138-SDK6', 'VERSION.json: 3.6.138-SDK6');
-chk(vjson.fase === 140, 'FASE 140');
-chk(vjson.faseNombre === 'El suelo de destellos — duelo honesto y fluido', 'faseNombre = EL ARCANO HOLOGRÁFICO');
+/* — 1 · SELLOS · v3.6.139-SDK6 · FASE 141 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.139-SDK6 · FASE 141 · EL ARCANO HOLOGRÁFICO');
+chk(vjson.version === '3.6.139-SDK6', 'VERSION.json: 3.6.139-SDK6');
+chk(vjson.fase === 141, 'FASE 141');
+chk(vjson.faseNombre === 'La vitrina del cielo — candado del dueño, constelación de palas y rankings mundiales', 'faseNombre = EL ARCANO HOLOGRÁFICO');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
-chk(vjson.tamano === 11485463, 'tamaño del build: 11.485.463 B');
+// r46 · RE-ANCLAJE: build legítimamente cambiado por la r46 (gobernador + worker v3)
+chk(vjson.tamano === 11507255, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '3e454e33b855c335e6a291764077e96078ef724cc5171067029fe03abcc6e93a',
-  'VERSION.json golden 3e454e33…');
+  '42d07e64e1071243ecac63700080cf37350928d2e57a2089111e3af9e3d5edc6',
+  'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.138-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.138-SDK6'"), 'sello c00 = 3.6.138-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.138-SDK6'"),
-  'sw.js CACHE v3.6.138-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.138-SDK6</span>'), 'badge V3.6.138-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36138-sdk6'),
-  'hub /descargas sellado a v36138-sdk6');
+chk(game.includes('3.6.139-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.139-SDK6'"), 'sello c00 = 3.6.139-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.139-SDK6'"),
+  'sw.js CACHE v3.6.139-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.139-SDK6</span>'), 'badge V3.6.139-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
+  'hub /descargas sellado a v36139-sdk6');
 
 /* — 2 · MOTAS DE POLVO · circulares y más pequeñas ———————————————— */
 console.log('2 · MOTAS DE POLVO · circulares (textura radial) y la mitad de tamaño');
@@ -247,8 +248,8 @@ chk(c08.includes("x.strokeStyle = 'rgba(120,205,255,0.95)'"),
   'c08: candado en TONOS AZULES (la estética del búho, conservada)');
 chk(c08.includes("x.strokeStyle = 'rgba(255,70,50,0.6)';"),
   'c08: el aro del discoscape AVISA en rojo (bloqueo)');
-chk(c08.includes('candado.position.set(-0.388, 1.358, -2.28);'),
-  'c08: DELANTE del medallón (z −2,28 vs panel −2,35) y al BORDE del círculo');
+chk(c08.includes('candado.position.set(-0.612, 1.585, -2.28);'),
+  'c08: DELANTE del medallón (z −2,28 vs panel −2,35) — r45: ZONA SUPERIOR IZQUIERDA del icono (candado.png del dueño, halo rojo conservado)');
 chk(c08.includes('candado.visible = false;'),
   'c08: nace oculto (sólo los bloqueados lo enseñan)');
 chk(c08.includes("map: spriteRadial(4, 'rgba(255,150,120,0.92)', 'rgba(255,45,30,0.4)', 'rgba(255,0,0,0)'),"),

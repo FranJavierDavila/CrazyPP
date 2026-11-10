@@ -6438,8 +6438,10 @@ export class PingPongGame {
     return t;
   }
 
-  /** REPIINTA el panel de la galería con el poder del índice vivo. */
-  _arconoRepinta() {
+  /** REPIINTA el panel de la galería con el poder del índice vivo.
+   *  r41 · conVoz=false silencia la presentación (la ENTRADA anuncia el
+   *  hint primero y presenta el poder 2,3 s después — UNA voz viva). */
+  _arconoRepinta(conVoz) {
     if (!this.arcaneGroup) return;
     const A = this.arcaneGroup.userData && this.arcaneGroup.userData.arcono;
     if (!A) return;
@@ -6467,6 +6469,14 @@ export class PingPongGame {
       bloqueado,
     });
     A.panel.tex.needsUpdate = true;
+    // r41 · CANDADO FLOTANTE sincronizado con el estado REAL de
+    // desbloqueo (delante del icono, halo rojo pulsante — jamás encima)
+    if (A.candado) A.candado.grupo.visible = bloqueado;
+    // r41 · LA VOZ PRESENTA el poder: su nombre corto embebido (ES/EN),
+    // la misma vía del selector — la ficha se OYEA, no sólo se lee.
+    if (conVoz !== false) {
+      try { this._vozSel(p.id); } catch (eV1) { /* sin audio: nunca rompe */ }
+    }
     // flechas: SIN flecha izquierda en el 0, SIN flecha derecha en el
     // último — bordes detectados del registro (automático al crecer)
     if (A.flechas.L) A.flechas.L.mesh.visible = this._arconoIdx > 0;
@@ -6615,9 +6625,19 @@ export class PingPongGame {
         this.arcaneGroup.rotation.y = 0;
       }
       this.arcaneGroup.visible = true;
-      this._arconoRepinta();
+      this._arconoRepinta(false);   // r41 · el hint habla primero…
       try { this.audio.setHallWanted(true, 'assets/hall/arcano.mp3'); } catch (eArcM1) { /* */ }
       try { this.audio.announce(T('arcono_hint'), true); } catch (eA1) { /* */ }
+      // r41 · …y la VOZ presenta el poder cuando el holograma ya se
+      // está condensando (UNA voz viva: jamás dos a la vez).
+      setTimeout(() => {
+        try {
+          if (this._arconoOn && this.arcaneGroup) {
+            const p0 = PODERES_PALA[this._arconoIdx] || PODERES_PALA[0];
+            if (p0) this._vozSel(p0.id);
+          }
+        } catch (eV0) { /* sin audio: nunca rompe */ }
+      }, 2300);
     });
     this.rules.message = T('arcono_hint');
   }

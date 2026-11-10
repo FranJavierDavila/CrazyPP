@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r40 · v3.6.136-SDK6 · FASE 138 · TEST: EL ARCANO A LA
+/* CRAZY PING PONG · r40 · v3.6.137-SDK6 · FASE 139 · TEST: EL ARCANO A LA
  * VISTA — revisión del dueño sobre la r39 (cuatro informes en uno):
  *
  *   A · EL BÚHO, UN 25 % MÁS PEQUEÑO — «Veamos el buho (un poco más
@@ -49,7 +49,7 @@
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
  *   (df8f71a3… / 8bb62082…).
  *
- * Uso: node --no-warnings scripts/test_r40_arcano_v36136.mjs
+ * Uso: node --no-warnings scripts/test_r40_arcano_v36137.mjs
  */
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -71,25 +71,25 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.136-SDK6 · FASE 138 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.136-SDK6 · FASE 138 · EL ARCANO A LA VISTA');
-chk(vjson.version === '3.6.136-SDK6', 'VERSION.json: 3.6.136-SDK6');
-chk(vjson.fase === 138, 'FASE 138');
-chk(vjson.faseNombre === 'El Arcano a la vista — revisión del dueño', 'faseNombre = EL ARCANO A LA VISTA');
+/* — 1 · SELLOS · v3.6.137-SDK6 · FASE 139 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.137-SDK6 · FASE 139 · EL ARCANO A LA VISTA');
+chk(vjson.version === '3.6.137-SDK6', 'VERSION.json: 3.6.137-SDK6');
+chk(vjson.fase === 139, 'FASE 139');
+chk(vjson.faseNombre === 'El Arcano holográfico — pulido del dueño', 'faseNombre = EL ARCANO A LA VISTA');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
-chk(vjson.tamano === 11461098, 'tamaño del build: 11.461.098 B');
+chk(vjson.tamano === 11473088, 'tamaño del build: 11.473.088 B');
 chk(vjson.golden ===
-  '3e54690b9abd48818ec97ff3fc87262988fde2c0cacb74e7a201aafbaf2ff997',
-  'VERSION.json golden 3e54690b…');
+  '543863157c0d8ab3348d7b78edc52a0d262c7ebd132c42db1933e878b1325227',
+  'VERSION.json golden 54386315…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.136-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.136-SDK6'"), 'sello c00 = 3.6.136-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.136-SDK6'"),
-  'sw.js CACHE v3.6.136-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.136-SDK6</span>'), 'badge V3.6.136-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36136-sdk6'),
-  'hub /descargas sellado a v36136-sdk6');
+chk(game.includes('3.6.137-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.137-SDK6'"), 'sello c00 = 3.6.137-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.137-SDK6'"),
+  'sw.js CACHE v3.6.137-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.137-SDK6</span>'), 'badge V3.6.137-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36137-sdk6'),
+  'hub /descargas sellado a v36137-sdk6');
 
 /* — 2 · EL BÚHO DEL HALL, UN 25 % MÁS PEQUEÑO ————————————————————— */
 console.log('2 · BÚHO · 0,78×0,52 → 0,585×0,39 (25 % más pequeño)');
@@ -114,28 +114,29 @@ chk(c08.includes("bg.addColorStop(0, '#03061a')") &&
     c08.includes("bg.addColorStop(1, '#0a1a36')"),
   'c08: bóveda = degradado azul noche sutil (#03061a → #0a1a36)');
 chk(c08.includes('function montaSueloArcano()'), 'c08: el SUELO INFINITO existe');
-chk(c08.includes('const N = 9;') && c08.includes('new THREE.PlaneGeometry(N * 8, N * 8)'),
-  'c08: plano 72×72 m con losetas GRANDES de 8 m (9×9)');
+chk(c08.includes('const N = 48;') && c08.includes('const LADO = N * 1.5;') &&
+    c08.includes('new THREE.PlaneGeometry(LADO, LADO)'),
+  're-anclada r41: plano 72 m con losetas PEQUEÑAS de 1,5 m (48×48)');
 chk(c08.includes('const BANDA = [[16, 40, 78], [26, 56, 104]];'),
   'c08: la banda azulada del dueño (#10284e → #1a3868, más clara que el cielo)');
 chk(c08.includes('const CIELO = [10, 26, 54];'),
   'c08: la viñeta funde al color del horizonte (#0a1a36) — suelo sin costura');
-chk(c08.includes("x.strokeStyle = 'rgba(140,205,255,' + (0.10 * f).toFixed(3) + ')'"),
-  'c08: retícula fina y sutil en los cantos, desvanecida por la viñeta');
+chk(c08.includes("gx.strokeStyle = 'rgba(130,195,252,' + (0.16 * f).toFixed(3) + ')'"),
+  're-anclada r41: matriz fina SIEMPRE visible, desvanecida al horizonte');
 chk(c08.includes('mesh.rotation.x = -Math.PI / 2;') &&
     c08.includes('mesh.position.y = -0.01;'),
   'c08: el suelo tumbado bajo los pies');
-chk(c08.includes('S.acc += dt;') && c08.includes('if (S.acc >= 0.35) {'),
-  'c08: las losetas MUTAN cada 0,35 s');
-chk(c08.includes('for (let k = 0; k < 7; k++) {'),
-  'c08: 7 losetas eligen tono nuevo por tick (aleatorio)');
-chk(c08.includes('c[0] += Math.round((t[0] - c[0]) * 0.35);'),
-  'c08: mordisco suave hacia el tono objetivo (transición viva)');
-chk(c08.includes('S.pinta(i % S.N, (i / S.N) | 0);') &&
-    c08.includes('if (cambio) S.tex.needsUpdate = true;'),
-  'c08: re-pintado SÓLO de las losetas que cambian');
-chk(c08.includes('new THREE.MeshBasicMaterial({ map: tex, fog: false }));'),
-  'c08: el suelo sin niebla (la Fog(9,18) de la cancha jamás lo toca)');
+chk(c08.includes('S.lit.length < 140') && c08.includes('Math.random() < 0.55'),
+  're-anclada r41: losetas que NACEN al azar (tope ~140 vivas)');
+chk(c08.includes('i: (Math.random() * S.N) | 0, j: (Math.random() * S.N) | 0,'),
+  're-anclada r41: posición de nacimiento TOTALMENTE aleatoria');
+chk(c08.includes('const aV = q.t < q.tIn ? q.t / q.tIn'),
+  're-anclada r41: envolvente nace→aguanta→muere (apagado aleatorio)');
+chk(c08.includes('fx.clearRect(0, 0, 512, 512);') &&
+    c08.includes('S.tex.needsUpdate = true;'),
+  're-anclada r41: capa de rellenos viva repintada (matriz estática)');
+chk(c08.includes("new THREE.MeshBasicMaterial({ map: bTex, fog: false }));"),
+  're-anclada r41: la BASE NEGRA del suelo sin niebla');
 chk(c08.split('fog: false').length >= 9,
   'c08: fog:false en TODAS las piezas del Arcano (bóveda+motas+2 cometas+búho+glints+panel+suelo)');
 chk(c08.includes('g.userData.arcono = {\n    motas, cometas, suelo,'),

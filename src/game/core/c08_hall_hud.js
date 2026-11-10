@@ -1095,8 +1095,13 @@ function montaMotas(N) {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(base.slice(), 3));
+  // r41 · MOTAS DE POLVO (petición del dueño: «partículas flotantes más
+  // pequeñas y circulares, como motas de polvo»): textura radial — punto
+  // REDONDO y suave, jamás el cuadrado pelado del PointsMaterial — y la
+  // MITAD de tamaño que en la r40.
+  const dot = spriteRadial(3, 'rgba(240,250,255,1)', 'rgba(150,215,255,0.72)', 'rgba(90,160,255,0)');
   const mat = new THREE.PointsMaterial({
-    color: 0x49b6ff, size: 0.055, transparent: true, opacity: 0.85,
+    color: 0x49b6ff, size: 0.026, map: dot, transparent: true, opacity: 0.9,
     blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
     fog: false,
   });
@@ -1105,59 +1110,190 @@ function montaMotas(N) {
   return pts;
 }
 
-/* r40 (v3.6.136) · EL SUELO INFINITO DEL ARCANO — petición del dueño:
- * «un suelo infinito que se pierde en el horizonte… cuadrículas delgadas
- * y sutiles como grandes losetas de sutiles tonos azulados que cambian
- * de forma aleatoria sus tonos azules, dentro de un rango de color un
- * poco más claro que el cielo oscuro». Implementación de la casa:
- *  · un plano 72×72 m con losetas GRANDES de 8 m (9×9), retícula fina y
- *    sutil en cada canto;
- *  · cada loseta vive en una BANDA azulada apenas más clara que el cielo
- *    (#10284e → #1a3868) y MUTA su tono AL AZAR dentro de la banda
- *    (updateArcanoFx re-pinta sólo las losetas que cambian);
- *  · una viñeta radial funde cada loseta con el color del horizonte
- *    (#0a1a36 — el mismo del degradado de la bóveda): el plano termina
- *    ANTES que la esfera del cielo y el horizonte queda LIMPIO, el suelo
- *    «se pierde» sin costura alguna;
- *  · fog:false — la niebla de la cancha (Fog 9/18) jamás toca el suelo. */
+/* r41 (v3.6.137) · EL SUELO NEGRO DE LOSETAS — refinamiento del dueño
+ * sobre el suelo de la r40: «el patrón de losetas más pequeñas y mejor
+ * definidas… vamos a hacer que el suelo sea NEGRO y se descubran las
+ * losetas en posiciones aleatorias: en el suelo se verán las LÍNEAS de
+ * la matriz de losetas pero su RELLENO azul será aleatorio — unas
+ * aparecen, otras se apagan, de forma completamente aleatoria».
+ * Tres planos (fog:false en los tres — la niebla de la cancha jamás
+ * toca la estancia):
+ *  · BASE NEGRA con gradiente radial: negro azulado bajo los pies →
+ *    color del horizonte (#0a1a36, el de la bóveda) en el borde — la
+ *    costura con el cielo sigue siendo IMPOSIBLE de ver (lección r40);
+ *  · MATRIZ ESTÁTICA: 48×48 losetas de 1,5 m (la r40 eran 9×9 de 8 m —
+ *    ahora MÁS PEQUEÑAS y MEJOR DEFINIDAS), líneas finas SIEMPRE
+ *    visibles y nodos algo más marcados cada 8 losetas; una viñeta la
+ *    disuelve hacia el horizonte;
+ *  · RELLENOS VIVOS: canvas propio que updateArcanoFx repinta — cada
+ *    loseta NACE (subida rápida), AGUANTA y MUERE (apagado) en
+ *    posiciones TOTALMENTE aleatorias, con el azul de la banda del
+ *    dueño (#10284e → #1a3868, apenas más claro que el cielo). */
 function montaSueloArcano() {
-  const N = 9;                       // 9×9 losetas de 8 m → plano 72×72 m
-  const cv = hallCanvas(1024, 1024);
-  const x = cv.getContext('2d');
+  const N = 48;                      // r41 · 48×48 losetas de 1,5 m → 72 m
+  const LADO = N * 1.5;
   const CIELO = [10, 26, 54];        // #0a1a36 · color del horizonte (bóveda)
   const BANDA = [[16, 40, 78], [26, 56, 104]];   // el rango azul del dueño
-  const cols = [], tgts = [];
+  const g = new THREE.Group();
+  // — CAPA 0 · la BASE NEGRA (radial al color del horizonte) —
+  const bcv = hallCanvas(512, 512);
+  const bx = bcv.getContext('2d');
+  const bgR = bx.createRadialGradient(256, 256, 30, 256, 256, 256);
+  bgR.addColorStop(0, '#03060d');    // negro azulado bajo los pies
+  bgR.addColorStop(0.55, '#04070f');
+  bgR.addColorStop(1, 'rgb(' + CIELO[0] + ',' + CIELO[1] + ',' + CIELO[2] + ')');
+  bx.fillStyle = bgR;
+  bx.fillRect(0, 0, 512, 512);
+  const bTex = new THREE.CanvasTexture(bcv);
+  try { bTex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(LADO, LADO),
+    new THREE.MeshBasicMaterial({ map: bTex, fog: false }));
+  mesh.rotation.x = -Math.PI / 2;    // tumbado, mirando arriba
+  mesh.position.y = -0.01;
+  g.add(mesh);
+  // — CAPA 1 · la MATRIZ: líneas finas SIEMPRE visibles (estáticas) —
+  const gcv = hallCanvas(1024, 1024);
+  const gx = gcv.getContext('2d');
+  const paso = 1024 / N;
+  gx.clearRect(0, 0, 1024, 1024);
+  for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
+    const cx = (ix + 0.5) / N * 2 - 1, cy = (iy + 0.5) / N * 2 - 1;
+    const d = Math.min(1, Math.sqrt(cx * cx + cy * cy) / 1.02);
+    const f = 1 - d * d;
+    gx.strokeStyle = 'rgba(130,195,252,' + (0.16 * f).toFixed(3) + ')';
+    gx.lineWidth = 1.4;
+    gx.strokeRect(ix * paso + 0.7, iy * paso + 0.7, paso - 1.4, paso - 1.4);
+    if (!(ix % 8) && !(iy % 8)) {    // nodos cada 8 losetas: mejor definida
+      gx.fillStyle = 'rgba(150,210,255,' + (0.30 * f).toFixed(3) + ')';
+      gx.fillRect(ix * paso - 1.5, iy * paso - 1.5, 3, 3);
+    }
+  }
+  const gTex = new THREE.CanvasTexture(gcv);
+  try { gTex.colorSpace = THREE.SRGBColorSpace; gTex.anisotropy = 4; } catch { /* */ }
+  const malla = new THREE.Mesh(new THREE.PlaneGeometry(LADO, LADO),
+    new THREE.MeshBasicMaterial({ map: gTex, transparent: true, fog: false }));
+  malla.rotation.x = -Math.PI / 2;
+  malla.position.y = 0.002;
+  g.add(malla);
+  // — CAPA 2 · los RELLENOS vivos (nacen y mueren AL AZAR) —
+  const fcv = hallCanvas(512, 512);
+  const tex = new THREE.CanvasTexture(fcv);
+  try { tex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
+  const fills = new THREE.Mesh(new THREE.PlaneGeometry(LADO, LADO),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false }));
+  fills.rotation.x = -Math.PI / 2;
+  fills.position.y = 0.004;
+  g.add(fills);
   const mezcla = () => {
     const k = Math.random();
     return [0, 1, 2].map((i) => Math.round(BANDA[0][i] + (BANDA[1][i] - BANDA[0][i]) * k));
   };
-  for (let i = 0; i < N * N; i++) { const c = mezcla(); cols.push(c); tgts.push(c.slice()); }
-  const px = cv.width / N;           // ~113 px por loseta
-  const pinta = (ix, iy) => {
-    const idx = iy * N + ix;
-    // viñeta radial: 1 en el centro → 0 en el borde (fundido al cielo)
-    const cx = (ix + 0.5) / N * 2 - 1, cy = (iy + 0.5) / N * 2 - 1;
-    const d = Math.min(1, Math.sqrt(cx * cx + cy * cy) / 1.02);
-    const f = 1 - d * d;
-    const c = cols[idx];
-    const fin = [0, 1, 2].map((i) => Math.round(CIELO[i] + (c[i] - CIELO[i]) * f));
-    x.fillStyle = 'rgb(' + fin[0] + ',' + fin[1] + ',' + fin[2] + ')';
-    x.fillRect(ix * px, iy * px, px + 1, px + 1);
-    // retícula fina y sutil en los cantos de la loseta (con la viñeta
-    // aplicada: hacia el horizonte la cuadrícula desaparece sola)
-    x.strokeStyle = 'rgba(140,205,255,' + (0.10 * f).toFixed(3) + ')';
-    x.lineWidth = 1.5;
-    x.strokeRect(ix * px + 0.75, iy * px + 0.75, px - 1.5, px - 1.5);
+  g.userData = { N, paso: 512 / N, fcv, fCtx: fcv.getContext('2d'), tex, lit: [], mezcla };
+  return g;
+}
+
+/* r41 · COLORES del halo de los OJOS del búho: azul búho ↔ rojo de
+ * bloqueo — el dueño: «un efecto de halo en sus ojos animado que oscila
+ * de azul a rojo». Constantes de módulo: cero basura por frame. */
+const _ARCO_OJO_A = new THREE.Color(0x49b6ff);
+const _ARCO_OJO_B = new THREE.Color(0xff3524);
+const _arcoOjoT = new THREE.Color();
+
+/* r41 · COMPOSICIÓN HOLOGRÁFICA del panel (k = 0..1) — la ficha se
+ * FORMA sobre el lienzo vivo (petición del dueño: «un efecto de
+ * holograma que se va formando, un efecto futurista y llamativo, con
+ * disolución»): bandas horizontales que aún viajan y se asientan, una
+ * DISOLUCIÓN de motas que se re-compone, el BARRIDO de condensación
+ * que baja dejando la ficha fija, líneas de escaneo con parpadeo de
+ * encendido y una ABERRACIÓN fantasma que se cierra. A k=1 el llamador
+ * copia la base exacta y el efecto duerme (coste cero en reposo). */
+function arconoHoloFrame(x, base, k, sem) {
+  const W = base.width, H = base.height;
+  x.clearRect(0, 0, W, H);
+  const rev = Math.min(1.12, k * 1.3);        // frente de condensación
+  const revY = rev * H;
+  const ruido = (n) => {
+    const s = Math.sin(n * 127.1 + sem * 311.7) * 43758.5453;
+    return (s - Math.floor(s)) * 2 - 1;
   };
-  for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) pinta(ix, iy);
-  const tex = new THREE.CanvasTexture(cv);
-  try { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; } catch { /* */ }
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(N * 8, N * 8),
-    new THREE.MeshBasicMaterial({ map: tex, fog: false }));
-  mesh.rotation.x = -Math.PI / 2;    // tumbado, mirando arriba
-  mesh.position.y = -0.01;
-  mesh.userData = { cv, tex, ctx: x, cols, tgts, N, px, pinta, acc: 0, mezcla };
-  return mesh;
+  // — aberración fantasma que se cierra (el holograma «encaja») —
+  const ab = (1 - k) * 7;
+  x.globalAlpha = 0.20 * (1 - k);
+  x.drawImage(base, -ab, 0, W, H);
+  x.drawImage(base, ab, 0, W, H);
+  x.globalAlpha = 1;
+  // — bandas horizontales: cada franja viaja en x y se asienta —
+  const NB = 26, bh = H / NB;
+  for (let i = 0; i < NB; i++) {
+    const y = i * bh;
+    if (y > revY) break;                       // aún no condensada
+    const viaja = (1 - k) * (1 - y / H);
+    x.drawImage(base, 0, y, W, bh, ruido(i + 0.5) * 95 * viaja, y, W, bh);
+  }
+  // — disolución: motas que aún faltan por condensar (densidad cae) —
+  const dens = ((1 - k) * 240) | 0;
+  x.globalCompositeOperation = 'destination-out';
+  x.fillStyle = '#000';
+  for (let i = 0; i < dens; i++) {
+    const px = (ruido(i * 1.7 + 3) * 0.5 + 0.5) * W;
+    const py = (ruido(i * 2.3 + 7) * 0.5 + 0.5) * revY;
+    const r = 1.2 + (ruido(i * 3.1 + 11) * 0.5 + 0.5) * 4.2 * (1 - k);
+    x.beginPath();
+    x.arc(px, py, r, 0, Math.PI * 2);
+    x.fill();
+  }
+  x.globalCompositeOperation = 'source-over';
+  // — barrido: el frente holográfico que baja FORMANDO la ficha —
+  if (revY < H - 4) {
+    const g = x.createLinearGradient(0, revY - 44, 0, revY + 8);
+    g.addColorStop(0, 'rgba(120,200,255,0)');
+    g.addColorStop(0.72, 'rgba(150,215,255,0.28)');
+    g.addColorStop(1, 'rgba(215,240,255,0.55)');
+    x.globalCompositeOperation = 'lighter';
+    x.fillStyle = g;
+    x.fillRect(0, revY - 44, W, 52);
+    x.globalCompositeOperation = 'source-over';
+  }
+  // — líneas de escaneo + parpadeo de encendido (se calman al asentarse) —
+  const flick = 1 - (1 - k) * (0.5 + 0.5 * Math.sin(sem * 1.7 + k * 55));
+  x.globalAlpha = (1 - k) * 0.15 * flick;
+  x.fillStyle = '#9fd4ff';
+  for (let y = 2; y < revY; y += 4) x.fillRect(0, y, W, 1);
+  x.globalAlpha = 1;
+}
+
+/** r41 · GLIFO DEL CANDADO en SU lienzo (128×128): el candado azul
+ *  translúcido de siempre — ahora FLOTANDO DELANTE del medallón (borde
+ *  inf-derecho, sin tapar jamás el icono) con su HALO ROJO pulsante
+ *  (sprite hermano en montarArcano, animado en updateArcanoFx). */
+export function drawArcanoCandado(cv) {
+  const x = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  const lx = W / 2, ly = H * 0.56, ls = W * 0.5;
+  // discoscape oscuro tras el glifo (legible sobre cualquier ficha)
+  x.beginPath();
+  x.arc(W / 2, H / 2, W * 0.44, 0, Math.PI * 2);
+  x.fillStyle = 'rgba(6,14,30,0.72)';
+  x.fill();
+  x.lineWidth = 3;
+  x.strokeStyle = 'rgba(255,70,50,0.6)';
+  x.stroke();
+  // cuerpo + arco + mira (la estética azul del búho)
+  x.fillStyle = 'rgba(10,26,52,0.8)';
+  x.beginPath();
+  x.roundRect ? x.roundRect(lx - ls * 0.52, ly - ls * 0.18, ls * 1.04, ls * 0.86, 10)
+    : x.rect(lx - ls * 0.52, ly - ls * 0.18, ls * 1.04, ls * 0.86);
+  x.fill();
+  x.lineWidth = 7;
+  x.strokeStyle = 'rgba(120,205,255,0.95)';
+  x.beginPath();
+  x.arc(lx, ly - ls * 0.18, ls * 0.30, Math.PI, 0);
+  x.stroke();
+  x.beginPath();
+  x.arc(lx, ly + ls * 0.16, ls * 0.075, 0, Math.PI * 2);
+  x.fillStyle = 'rgba(120,205,255,0.95)';
+  x.fill();
 }
 
 /** Sprite radial genérico (cabeza de cometa, halo, destello del búho). */
@@ -1176,7 +1312,12 @@ function spriteRadial(r0, c0, c1, c2) {
 }
 
 /** CHEVRON ‹ › de la galería: flecha azul con glow del búho (el disco
- *  oscuro tras la flecha es el lenguaje de las flechas ‹ › del icono). */
+ *  oscuro tras la flecha es el lenguaje de las flechas ‹ › del icono).
+ *  r41 · LOS GLIFOS ESTABAN CRUZADOS (informe del dueño: «las flechas
+ *  están al revés, intercambiar los iconos»): dir 'L' dibuja AHORA el
+ *  chevron ‹ (apunta a la izquierda, va a la IZQUIERDA del panel y
+ *  retrocede) y dir 'R' el › (derecha del panel, avanza) — el icono
+ *  coincide SIEMPRE con el lado y con la acción. */
 export function drawArcanoFlecha(cv, dir) {
   const x = cv.getContext('2d');
   const W = cv.width, H = cv.height;
@@ -1196,7 +1337,7 @@ export function drawArcanoFlecha(cv, dir) {
   x.lineJoin = 'round';
   x.shadowColor = 'rgba(80,180,255,0.95)';
   x.shadowBlur = W * 0.09;
-  const s = dir === 'L' ? -1 : 1;
+  const s = dir === 'L' ? 1 : -1;   // r41 · ‹ a la IZQUIERDA · › a la DERECHA (glifos descruzados)
   x.beginPath();
   x.moveTo(W / 2 + s * W * 0.13, H * 0.27);
   x.lineTo(W / 2 - s * W * 0.13, H * 0.5);
@@ -1271,35 +1412,31 @@ export function drawArcanoPanel(cv, d) {
   x.stroke();
   if (d.icono) {
     const iw = d.icono.width || 64, ih = d.icono.height || 64;
-    const k = (icR * 1.28) / Math.max(iw, ih);
+    // r41 · SANGRE COMPLETA (petición del dueño: «deben ser más grande,
+    // es la forma que tenemos de identificarlos, deben ocupar TODO el
+    // espacio del círculo azul que los perimetra») — recortado al
+    // propio círculo, sin letterbox ni margen. Bloqueado: atenuado.
+    const k = (icR * 1.96) / Math.max(iw, ih);
+    if (d.bloqueado) {
+      x.globalAlpha = 0.42;          // el icono se apaga tras el candado
+    }
+    x.save();
+    x.beginPath();
+    x.arc(icX, icY, icR - 1, 0, Math.PI * 2);
+    x.clip();
     x.drawImage(d.icono, icX - (iw * k) / 2, icY - (ih * k) / 2, iw * k, ih * k);
+    x.restore();
+    if (d.bloqueado) x.globalAlpha = 1;
   } else {
     x.fillStyle = '#3d5a80';
     x.font = '700 60px system-ui, sans-serif';
     x.textAlign = 'center';
     x.fillText('?', icX, icY + 20);
   }
-  // — candado azul translúcido sobre el icono si está bloqueado —
-  if (d.bloqueado) {
-    x.save();
-    x.globalAlpha = 0.9;
-    const lx = icX, ly = icY + 8, ls = 74;
-    x.fillStyle = 'rgba(10,26,52,0.72)';
-    x.beginPath();
-    x.roundRect ? x.roundRect(lx - ls * 0.52, ly - ls * 0.18, ls * 1.04, ls * 0.86, 12)
-      : x.rect(lx - ls * 0.52, ly - ls * 0.18, ls * 1.04, ls * 0.86);
-    x.fill();
-    x.lineWidth = 9;
-    x.strokeStyle = 'rgba(120,205,255,0.95)';
-    x.beginPath();
-    x.arc(lx, ly - ls * 0.18, ls * 0.30, Math.PI, 0);
-    x.stroke();
-    x.beginPath();
-    x.arc(lx, ly + ls * 0.16, ls * 0.075, 0, Math.PI * 2);
-    x.fillStyle = 'rgba(120,205,255,0.95)';
-    x.fill();
-    x.restore();
-  }
+  // r41 · el candado YA NO se pinta sobre el icono (lo tapaba): ahora
+  // es un GRUPO flotante DELANTE del medallón con HALO ROJO pulsante —
+  // drawArcanoCandado dibuja el glifo, montarArcano lo cuelga delante
+  // del círculo y c12 sincroniza su visibilidad con el estado REAL.
   // — nombre + tipo + estado —
   const txX = 56 + 96 + icR + 34;
   x.textAlign = 'left';
@@ -1355,7 +1492,8 @@ export function montarArcano(base) {
     new THREE.MeshBasicMaterial({ map: bovTex, side: THREE.BackSide, fog: false }),
   );
   g.add(boveda);
-  // — EL SUELO INFINITO (r40): losetas grandes que mutan su azul —
+  // — EL SUELO (r41): negro, con la matriz fina de losetas y rellenos
+  //    azules que nacen y mueren completamente al azar —
   const suelo = montaSueloArcano();
   g.add(suelo);
   // — MOTAS azules que serpentean —
@@ -1413,9 +1551,15 @@ export function montarArcano(base) {
     buhoGlints.push(sp);
   }
   // — LA GALERÍA: panel + dos flechas con glow —
+  // r41 · DOS lienzos: «cv» (la ficha COMPLETA que pinta c12) y «holo»
+  // (el lienzo VIVO de la textura) — updateArcanoFx COMPONE el
+  // holograma cv→holo mientras la ficha se materializa; condensada,
+  // copia exacta y a dormir (el holograma es el nacimiento, no el aire).
   const panCv = hallCanvas(1024, 700);
   drawArcanoPanel(panCv, { titulo: '· · ·' });
-  const panTex = new THREE.CanvasTexture(panCv);
+  const panHolo = hallCanvas(1024, 700);
+  panHolo.getContext('2d').drawImage(panCv, 0, 0);
+  const panTex = new THREE.CanvasTexture(panHolo);
   try { panTex.colorSpace = THREE.SRGBColorSpace; panTex.anisotropy = 4; } catch { /* */ }
   const panMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.46, 1.0),
     new THREE.MeshBasicMaterial({ map: panTex, transparent: true, fog: false }));
@@ -1429,20 +1573,50 @@ export function montarArcano(base) {
     try { tex.colorSpace = THREE.SRGBColorSpace; } catch { /* */ }
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.20, 0.20),
       new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }));
+    // r41 · INTERCAMBIADOS (petición del dueño: «las flechas están al
+    // revés, intercambiar los iconos»): los GLIFOS se descruzan en
+    // drawArcanoFlecha — en la IZQUIERDA vive el ‹ (retrocede) y en la
+    // DERECHA el › (avanza); antes la izquierda mostraba › y la derecha ‹.
     mesh.position.set(k === 'L' ? -0.93 : 0.93, 1.32, -2.35);
     g.add(mesh);
     flechas[k] = { mesh, cv, tex, hover: false };
   }
+  // — r41 · EL CANDADO FLOTANTE de los bloqueados: GRUPO propio DELANTE
+  // del medallón (borde inf-derecho del círculo, SIN tapar el icono —
+  // petición literal del dueño): glifo azul en su lienzo + HALO ROJO
+  // pulsante (sprite aditivo que updateArcanoFx respira). —
+  const candCv = hallCanvas(128, 128);
+  drawArcanoCandado(candCv);
+  const candTex = new THREE.CanvasTexture(candCv);
+  try { candTex.colorSpace = THREE.SRGBColorSpace; candTex.anisotropy = 4; } catch { /* */ }
+  const candMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15),
+    new THREE.MeshBasicMaterial({ map: candTex, transparent: true, depthWrite: false, fog: false }));
+  const candHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: spriteRadial(4, 'rgba(255,150,120,0.92)', 'rgba(255,45,30,0.4)', 'rgba(255,0,0,0)'),
+    transparent: true, opacity: 0.5, fog: false, color: 0xff4530,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  candHalo.scale.setScalar(0.26);
+  const candado = new THREE.Group();
+  candado.add(candHalo);
+  candado.add(candMesh);
+  candado.position.set(-0.388, 1.358, -2.28);   // borde del medallón, DELANTE
+  candado.visible = false;
+  g.add(candado);
   g.userData.arcono = {
     motas, cometas, suelo, buho: { mesh: buhoMesh, glints: buhoGlints, hover: false },
-    panel: { mesh: panMesh, cv: panCv, tex: panTex }, flechas, pop: 1,
+    panel: { mesh: panMesh, cv: panCv, tex: panTex, holo: panHolo }, flechas,
+    candado: { grupo: candado, halo: candHalo }, pop: 1, holoSem: 0,
   };
   return g;
 }
 
 /** ANIMA el espacio arcano (sólo se llama con la estancia encendida):
  *  motas que serpentean, cometas ocasionales con su halo, el búho que
- *  flota con sus ojos encendidos y la materialización (pop) del panel. */
+ *  flota con sus ojos en HALO azul↔rojo (r41), las losetas del suelo
+ *  naciendo y muriendo AL AZAR (r41), el candado flotante con su halo
+ *  rojo pulsante (r41) y la MATERIALIZACIÓN HOLOGRÁFICA del panel (r41:
+ *  bandas que viajan, disolución, barrido y parpadeo de encendido). */
 export function updateArcanoFx(g, dt, now) {
   const A = g.userData && g.userData.arcono;
   if (!A) return;
@@ -1456,32 +1630,45 @@ export function updateArcanoFx(g, dt, now) {
     pos.array[i * 3 + 2] = base[i * 3 + 2] + Math.cos(now * 0.28 + f * 0.9) * 0.55;
   }
   pos.needsUpdate = true;
-  // — r40 · SUELO: las losetas MUTAN su tono azul al azar dentro de la
-  //  banda del dueño. Cada 0,35 s unas cuantas losetas eligen tono nuevo
-  //  y todas las vivas dan un mordisco hacia su objetivo; sólo se
-  //  re-pintan las losetas que cambian (el repintado del canvas completo
-  //  jamás ocurre en el frame — la textura sube una vez por tick).
+  // — r41 · SUELO: losetas que NACEN y MUEREN completamente al azar —
+  //  sobre el negro la matriz de líneas es FIJA y el relleno azul de
+  //  cada loseta es un ser vivo: sube rápido (nace), aguanta, se apaga.
+  //  Nacen 0-2 por frame (tope ~140 vivas); el repintado es clear + las
+  //  vivas — la matriz JAMÁS se redibuja (es estática, lección r40).
   const S = A.suelo && A.suelo.userData;
   if (S) {
-    S.acc += dt;
-    if (S.acc >= 0.35) {
-      S.acc = 0;
-      let cambio = false;
-      for (let k = 0; k < 7; k++) {   // 7 losetas eligen tono nuevo
-        const idx = (Math.random() * S.N * S.N) | 0;
-        S.tgts[idx] = S.mezcla();
+    if (S.lit.length < 140 && Math.random() < 0.55) {
+      const nac = 1 + ((Math.random() * 2) | 0);
+      for (let k = 0; k < nac; k++) {
+        S.lit.push({
+          i: (Math.random() * S.N) | 0, j: (Math.random() * S.N) | 0,
+          t: 0, tIn: 0.25 + Math.random() * 0.7, hold: 0.6 + Math.random() * 2.6,
+          tOut: 0.45 + Math.random() * 1.1,
+          col: S.mezcla(), alfa: 0.45 + Math.random() * 0.45,
+        });
       }
-      for (let i = 0; i < S.N * S.N; i++) {
-        const c = S.cols[i], t = S.tgts[i];
-        if (c[0] === t[0] && c[1] === t[1] && c[2] === t[2]) continue;
-        c[0] += Math.round((t[0] - c[0]) * 0.35);   // mordisco suave
-        c[1] += Math.round((t[1] - c[1]) * 0.35);
-        c[2] += Math.round((t[2] - c[2]) * 0.35);
-        S.pinta(i % S.N, (i / S.N) | 0);
-        cambio = true;
-      }
-      if (cambio) S.tex.needsUpdate = true;
     }
+    const fx = S.fCtx, L = S.N, pw = S.paso;
+    fx.clearRect(0, 0, 512, 512);
+    for (let k = S.lit.length - 1; k >= 0; k--) {
+      const q = S.lit[k];
+      q.t += dt;
+      const fin = q.tIn + q.hold + q.tOut;
+      if (q.t >= fin) { S.lit.splice(k, 1); continue; }
+      const aV = q.t < q.tIn ? q.t / q.tIn
+        : q.t < q.tIn + q.hold ? 1
+        : 1 - (q.t - q.tIn - q.hold) / q.tOut;
+      // viñeta del horizonte: hacia el borde de la matriz se disuelven
+      const dx = (q.i + 0.5) / L * 2 - 1, dy = (q.j + 0.5) / L * 2 - 1;
+      const rr = Math.min(1, Math.sqrt(dx * dx + dy * dy) / 1.02);
+      const al = q.alfa * aV * (1 - rr * rr);
+      if (al <= 0.012) continue;
+      fx.globalAlpha = al;
+      fx.fillStyle = 'rgb(' + q.col[0] + ',' + q.col[1] + ',' + q.col[2] + ')';
+      fx.fillRect(q.i * pw + 1, q.j * pw + 1, pw - 2, pw - 2);
+    }
+    fx.globalAlpha = 1;
+    S.tex.needsUpdate = true;
   }
   // — cometas: cruce lejano cada tanto; el halo azul queda tras la cabeza —
   for (const c of A.cometas) {
@@ -1518,17 +1705,49 @@ export function updateArcanoFx(g, dt, now) {
   B.mesh.position.y = 2.28 + Math.sin(now * 0.7) * 0.05;
   B.mesh.rotation.y = Math.sin(now * 0.4) * 0.06;
   if (B.glints.length === 2) {
-    B.glints[0].material.opacity = 0.38 + Math.sin(now * 2.4) * 0.2;
-    B.glints[1].material.opacity = 0.38 + Math.sin(now * 2.4 + 2.1) * 0.2;
+    // r41 · HALO EN LOS OJOS que OSCILA de AZUL a ROJO (y de vuelta —
+    // petición del dueño): el color del destello viaja la banda azul
+    // búho ↔ rojo bloqueo con un seno lento y el halo RESPIRA con la
+    // misma fase (escala del sprite).
+    const tO = 0.5 + 0.5 * Math.sin(now * 1.5);
+    _arcoOjoT.copy(_ARCO_OJO_A).lerp(_ARCO_OJO_B, tO);
+    B.glints[0].material.color.copy(_arcoOjoT);
+    _arcoOjoT.copy(_ARCO_OJO_A).lerp(_ARCO_OJO_B, Math.min(1, tO + 0.07));
+    B.glints[1].material.color.copy(_arcoOjoT);
+    B.glints[0].material.opacity = 0.5 + Math.sin(now * 2.4) * 0.22;
+    B.glints[1].material.opacity = 0.5 + Math.sin(now * 2.4 + 2.1) * 0.22;
+    const scO = 0.115 + tO * 0.05;
+    B.glints[0].scale.setScalar(scO);
+    B.glints[1].scale.setScalar(scO * 1.03);
   }
   const tgtB = B.hover ? 1.1 : 1.0;
   const curB = B.mesh.scale.x || 1;
   B.mesh.scale.setScalar(curB + (tgtB - curB) * Math.min(1, dt * 10));
-  // — galería: materialización (pop elástico al cambiar de poder) —
+  // — r41 · galería: MATERIALIZACIÓN HOLOGRÁFICA — la ficha se FORMA
+  //  (bandas que viajan, disolución de motas, barrido de condensación,
+  //  parpadeo de encendido y aberración que se cierra); al terminar,
+  //  copia exacta y la textura duerme (coste cero en reposo). —
   if (A.pop < 1) {
-    A.pop = Math.min(1, A.pop + dt * 3.2);
-    const e = 1 + Math.sin(A.pop * Math.PI) * 0.06;   // ligero overshoot
-    A.panel.mesh.scale.setScalar((0.86 + A.pop * 0.14) * e);
+    A.pop = Math.min(1, A.pop + dt * 0.92);
+    A.holoSem++;
+    const P = A.panel;
+    arconoHoloFrame(P.holo.getContext('2d'), P.cv, A.pop, A.holoSem);
+    P.tex.needsUpdate = true;
+    if (A.pop >= 1) {
+      const c2 = P.holo.getContext('2d');
+      c2.clearRect(0, 0, P.holo.width, P.holo.height);
+      c2.drawImage(P.cv, 0, 0);
+      P.tex.needsUpdate = true;
+    }
+    const e = 1 + Math.sin(A.pop * Math.PI) * 0.045;   // leve respiración
+    P.mesh.scale.setScalar((0.945 + A.pop * 0.055) * e);
+  }
+  // — r41 · candado flotante: HALO ROJO pulsante (bloqueo vivo y claro) —
+  const CD = A.candado;
+  if (CD && CD.grupo.visible) {
+    const pC = 0.5 + 0.5 * Math.sin(now * 3.2);
+    CD.halo.scale.setScalar(0.24 + pC * 0.13);
+    CD.halo.material.opacity = 0.34 + pC * 0.5;
   }
   // — flechas: hover agranda, y el glow late suave —
   for (const k of ['L', 'R']) {

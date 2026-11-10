@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.136-SDK6, fase 138 · El Arcano a la vista — revisión del dueño; sello actualizado
-# por bump_version.py desde 3.6.135-SDK6)
-3e54690b9abd48818ec97ff3fc87262988fde2c0cacb74e7a201aafbaf2ff997
+# SHA256 BYTE-EXACTO de public/game.html (build de la casa)
+# r41 · v3.6.137-SDK6 · FASE 139 · El Arcano holográfico
+543863157c0d8ab3348d7b78edc52a0d262c7ebd132c42db1933e878b1325227

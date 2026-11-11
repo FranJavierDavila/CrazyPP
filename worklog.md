@@ -6177,3 +6177,15 @@ Stage Summary:
 - ENTORNO: la sesión anterior murió con el sandbox caído a medias de esta fase
   (sella ejecutado, commit y worklog no). Esta sesión retoma el estado real
   del árbol, re-ancla qa_sup1, ejecuta la batería COMPLETA y despliega.
+- DESPLIEGUE: commit d5c700a8a → deploy_pages --push → pages b0010bcc2 (476 ficheros ·
+  194,8 MB · smoke Playwright verde bajo /CrazyPP/ 0 fallos) · VERIFICACIÓN EN
+  PRODUCCIÓN (verifica_r52_produccion.py): PAGES-VERSION 3.6.144-SDK6
+  (game_sha256 3bec427a7301… byte-exacto con las 2 reescrituras), las OCHO
+  agujas presentes en el game.html SERVIDO, sw.js CACHE crazypp-v3.6.144-SDK6,
+  y PROD SMOKE r52 (scripts/prod_smoke_r52.py) TODO OK: __PP_VERSION
+  3.6.144-SDK6 · badge V3.6.144-SDK6 · __PP_GAME presente · PRECALENTAMIENTO
+  OBSERVABLE EN PRODUCCIÓN: _arconoIconos = 14 (los 14 poderes nacen
+  decodificados) · 0 pageerrors. Cache-buster de la portada regenerado
+  ?v=3.6.144-SDK6 · ventana SWR despejada antes del push (última partida real
+  hace ~11,6 h; el único evento reciente era un boot de una versión vieja
+  cacheada 3.6.27).

@@ -13263,13 +13263,17 @@ class ForajidoStand {
     // v2.90: SOLO existe el disparo del DUELO (revólver en la mano de la
     // pala). Sin pistola en la mano libre no hay más blancos: la dinamita
     // ya no se neutraliza a tiros (se batea con la pala o estalla).
-    if (!this.active || !this._duelOn) return;
-    if (!(this._duelo && this._duelo.phase === 'duel')) return;
+    // v3.6.142 · CONTRATO DE CONSUMO: true = «el pulso es del arma» (dispara
+    // o está en la ventana de duelo, también en cadencia); false = «no es
+    // mío» — el núcleo deja caer el pulso al superpoder de pala (FIX: el
+    // gatillo libre vuelve a soltar el poder seleccionado entre salvas).
+    if (!this.active || !this._duelOn) return false;
+    if (!(this._duelo && this._duelo.phase === 'duel')) return false;
     const g = this.game;
     const ray = this._gunRay();
-    if (!ray) return;
+    if (!ray) return false;
     const now = performance.now() / 1000;
-    if (now - (this._gunLast || 0) < 0.16) return;   // disparos libres 3 s
+    if (now - (this._gunLast || 0) < 0.16) return true;   // cadencia: el pulso sigue siendo del arma
     this._gunLast = now;
     const rPos = ray.pos, rDir = ray.dir;
     // ¿acierta a la DIANA del duelo? (rayo vs esfera generosa, v2.89)
@@ -13290,6 +13294,7 @@ class ForajidoStand {
       this.fx.flash(ray.pos, 1.1, 0xffd98a);
     }
     this.sfx('disparo', 0);   // v2.91: ¡BANG! del revólver del oeste en cada disparo
+    return true;
   }
 
   /* ================= GLB del revólver y la dinamita (caché) =============== */
@@ -14049,7 +14054,7 @@ export default {
   },
   serveTrigger(i) { if (CTRL) CTRL.serveTrigger(i); },   // v2.98: con mano
   get gunArmed() { return !!(CTRL && CTRL.active && CTRL._duelOn); },
-  fireGun(i) { if (CTRL) CTRL.fireGun(i); },
+  fireGun(i) { return CTRL ? (CTRL.fireGun(i) === true) : false; },
   /* v2.89 · EL DUELO: el gatillo de la mano de la PALA dispara mientras el
    *  duelo del Disparo certero esté vivo (la pala ES un revólver). */
   get paddleGunArmed() { return !!(CTRL && CTRL._paddleGunFlag); },

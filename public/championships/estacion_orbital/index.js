@@ -7442,9 +7442,9 @@ class StockController {
   fireGun(i) {
     const g = this.game;
     const mount = g.gunMounts && g.gunMounts[i];
-    if (!mount) return;
+    if (!mount) return false;   // v3.6.143: contrato de consumo (pulso no es del arma)
     const now = performance.now() / 1000;
-    if (now - this._gunLast < 0.16) return;
+    if (now - this._gunLast < 0.16) return true;   // cadencia: el pulso sigue siendo del arma
     this._gunLast = now;
     const pos = new THREE.Vector3();
     const q = new THREE.Quaternion();
@@ -7534,6 +7534,7 @@ class StockController {
     g.audio.playOsc(2640, 660, 0.08, 'sine', 0.045, 0);
     g.audio.playNoise(0.05, 3400, 2.2, 0.035, 0);
     if (g.renderer.xr.isPresenting) g.haptic(i, 0.4, 60);
+    return true;   // v3.6.143: contrato de consumo — el pulso fue del arma
   }
 
   _loadGunArt() {
@@ -8620,7 +8621,7 @@ export default {
   // módulo (game.html L8585/L11645) — el export de EO nunca los exponía y
   // el gatillo del láser no llegaba a StockController.fireGun.
   get gunArmed() { return !!(CTRL && CTRL.gunArmed); },
-  fireGun(i) { if (CTRL) { try { CTRL.fireGun(i); } catch (e) { console.warn('[estacion.fireGun]', e); } } },
+  fireGun(i) { if (CTRL) { try { return CTRL.fireGun(i) === true; } catch (e) { console.warn('[estacion.fireGun]', e); } } return false; },
   reenter() {   // v3.2.0: en plena prueba, reanuda
     if (CTRL && CTRL.reactor && CTRL.reactor.active) {
       try { CTRL.reactor.reenter(); } catch (e) { /* */ }

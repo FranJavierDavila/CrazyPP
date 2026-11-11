@@ -212,7 +212,7 @@ export function drawHallGloria(cv, d) {
   x.textAlign = 'left'; x.textBaseline = 'middle';
   x.fillStyle = '#b9a77f';
   x.font = '700 21px system-ui, sans-serif';
-  x.fillText('BOLA', 52, BY);
+  x.fillText(T('gloria_bola'), 52, BY);   // v3.6.143: el chip sigue al idioma
   x.textAlign = 'center';
   const BL = d.bolas || [];
   for (let i = 0; i < Math.min(BL.length, 16); i++) {
@@ -237,7 +237,7 @@ export function drawHallGloria(cv, d) {
   x.textAlign = 'left';
   x.fillStyle = '#b9a77f';
   x.font = '700 21px system-ui, sans-serif';
-  x.fillText('MESA', 52, MY);
+  x.fillText(T('gloria_mesa'), 52, MY);   // v3.6.143: el chip sigue al idioma
   x.textAlign = 'center';
   const MS = d.mesas || [];
   for (let i = 0; i < Math.min(MS.length, 8); i++) {

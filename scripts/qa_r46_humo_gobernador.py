@@ -25,7 +25,7 @@ with sync_playwright() as p:
 
 print(json.dumps(res, ensure_ascii=False, indent=1))
 fallos = []
-if res["version"] != "3.6.142-SDK6":
+if res["version"] != "3.6.143-SDK6":
     fallos.append("version")
 if not res["telemetria"]:
     fallos.append("telemetria ausente")

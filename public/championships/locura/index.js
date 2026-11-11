@@ -5204,9 +5204,9 @@ class ArcadeController {
   fireGun(i) {
     const g = this.game;
     const mount = g.gunMounts && g.gunMounts[i];
-    if (!mount) return;
+    if (!mount) return false;   // v3.6.143: contrato de consumo (pulso no es del arma)
     const now = performance.now() / 1000;
-    if (now - this._gunLast < 0.16) return;
+    if (now - this._gunLast < 0.16) return true;   // cadencia: el pulso sigue siendo del arma
     this._gunLast = now;
     const pos = new THREE.Vector3();
     const q = new THREE.Quaternion();
@@ -5303,6 +5303,7 @@ class ArcadeController {
     g.audio.playOsc(2640, 660, 0.08, 'sine', 0.045, 0);
     g.audio.playNoise(0.05, 3400, 2.2, 0.035, 0);
     if (g.renderer.xr.isPresenting) g.haptic(i, 0.4, 60);
+    return true;   // v3.6.143: contrato de consumo — el pulso fue del arma
   }
 
   /** Pistola LÁSER (v2.44): visible SOLO dentro del ARKANOID 2 — en la mano
@@ -5641,7 +5642,7 @@ export default {
    *     (La MEGA PALA es NORMATIVA del núcleo desde v3.6.34: el módulo ya
    *     no expone megaTrigger ni pinta FX de pala.) ---- */
   get gunArmed() { return !!(CTRL && CTRL.gunArmed); },
-  fireGun(i) { if (CTRL) CTRL.fireGun(i); },
+  fireGun(i) { return CTRL ? (CTRL.fireGun(i) === true) : false; },
   get _split() { return (CTRL && CTRL.active && CTRL._split) ? CTRL._split : null; },
   splitFilterEvents(evs) { if (CTRL) CTRL.splitFilterEvents(evs); },
   updateSplit(dt) { if (CTRL) CTRL.updateSplit(dt); },

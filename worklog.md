@@ -6073,3 +6073,68 @@ Stage Summary:
   sw CACHE crazypp-v3.6.142-SDK6, cabana.mp3 200 byte-exacto (4.216.750 B),
   telemetría viva (total 103→128), y PROD SMOKE r49 (scripts/prod_smoke_r49.py)
   TODO OK: __PP_VERSION 3.6.142-SDK6 · __PP_GAME presente · 0 pageerrors.
+
+━━━ FASE 145 · v3.6.143-SDK6 · r50 · EL GATILLO DEL OESTE DEVUELVE EL SUPERPODER + CARTELES DEL HALL CON IDIOMA (2026-11-11) ━━━
+
+- DOS FRENTES del informe post-demo del dueño:
+  (A) SUPERPODERES DE PALA NO SE APLICABAN EN EL SALVAJE OESTE — causa raíz
+      encontrada en el ENRUTADO del gatillo (no en la mecánica): el duelo del
+      forajido mantiene gunArmed=true TODO el partido (CTRL.active && _duelOn),
+      y la rama del revólver (c12.onSelectStart) se comía el pulso del gatillo
+      libre con champs.fireGun(i) aunque éste fuera un NO-OP silencioso fuera
+      de su ventana de fuego (phase !== 'duel' → return sin consumir nada).
+      El gatillo libre nunca llegaba al megaTrigger → el superpoder jamás
+      salía en el Oeste (en los demás campeonatos gunArmed es false y pasaba
+      directo). FIX · CONTRATO DE CONSUMO (mismo patrón del megaTrigger
+      v3.6.33 «true = pulsación consumida»):
+      · c11 (ChampLoader.fireGun): devuelve m.fireGun(i) === true (propaga el
+        contrato; false en excepción).
+      · c12 (onSelectStart): la rama del arma sólo returna si fireGun
+        CONSUMIÓ (gunConsuma); si no, el pulso CAE al megaTrigger de siempre.
+      · oeste (CTRL.fireGun): false fuera de duelo/ventana/rayo; TRUE en la
+        ventana (disparo real y también en cadencia 0,16 s — el pulso es del
+        arma aunque el cañón esté recargando); wrapper del módulo propaga.
+      · locura + estacion_orbital (CTRL.fireGun): mismo contrato (false sin
+        montura, true en cadencia y tras disparar); wrappers propagan.
+      · halloween/plantilla YA devolvían bool (pistola.disparo) — intactos.
+      Diseño respetado: durante la ventana de 3 s el revólver manda (bola
+      congelada); entre salvas el gatillo libre suelta el poder seleccionado
+      y el gatillo de la pala sigue de respaldo (gunVive).
+  (B) CARTELES DEL HALL SOLO EN CASTELLANO — auditoría completa (nueva
+      scripts/auditoria_i18n_hall.mjs): las 40 claves directas de los
+      pintores del hall YA tenían su par EN en c00 (T() cae a ES sólo con
+      clave ausente — cero ausencias). Los residuales reales:
+      (1) chips 'BOLA'/'MESA' de la pared de insignias (c08.drawHallGloria)
+          HARDCODEADOS → claves nuevas gloria_bola/gloria_mesa (ES BOLA/MESA ·
+          EN BALL/TABLE) y pintado con T().
+      (2) CAMBIO DE IDIOMA EN CALIENTE: las placas 3D del salón (EL PULSO
+          CRAZY, TU RACHA, pared de insignias, ficha del Arcano) nacen en ES
+          y se repintaban SOLO al re-entrar — listener 'pp-lang' nuevo en el
+          constructor de PingPongGame (handler con nombre, no apila): si
+          inHall, drawHall() + _arconoRepinta(false) al vuelo.
+      (3) ARTE HORNEADO verificado a ojo (museo frente/izquierda/derecha):
+          las panorámicas del museo no llevan castellano (solo la marca CRAZY
+          PING PONG) — sin deuda de arte. Pendiente documented: panel de
+          AJUSTE DE PALA (calibración) sigue con literales ES (fuera de
+          alcance de esta fase).
+- SELLADO: sella_r50_oeste_i18n.py (patrón r49, golden VIEJO capturado antes
+  de sobrescribir — reancla REAL): VERSION.json 3.6.143-SDK6 FASE 145 «El
+  gatillo del Oeste…», c00 VERSION, badge 03_body, sw.js CACHE
+  crazypp-v3.6.143-SDK6, ensamblado 11.538.499 B · golden 1364dd47af4abe2f…,
+  13 test_r*.mjs re-anclados. Bumper oficial abortado a propósito por el
+  guard del hub (convención r48: el hub apunta al release publicado) — mismo
+  camino que la FASE 144. qa_sup1_v366 + qa_r46_humo re-anclados a 3.6.143.
+- QA VERDE COMPLETA: red_nucleo 60/0 · r30 54/0 · r31 47/0 · r32 49/0 ·
+  r33 77/0 · r34 62/0 · r35 36/0 · r36 30/0 · r37 46/0 · r38 51/0 ·
+  r39 165/0 · r40 62/0 · r41 92/0 · r43 79/0 · r45 55/0 · QA NUEVA
+  qa_r50_gatillo_oeste 22/0 (contrato estático de 4 módulos + enrutado REAL
+  onSelectStart con visor simulado: arma-consume / arma-delega / arma-que-
+  lanza / respaldo por pala, 0 pageerrors) · qa_r84 67/0 · qa_sup1_v366 151/0 ·
+  qa_r46_humo OK · qa_telemetria 132/0 · qa_rendimiento 14/0 · qa_version 31/0
+  (clon raíz :3000/:81 sincronizado a 3.6.143 byte-exacto) · RED LEGADO fuera
+  de batería (r29/r26b: sellos congelados de su ronda y diff-cero de c08,
+  esperados). Legado qa_mega_cargas_v3635 reintrodujo el fallo pre-existente
+  de internos _megaLoads/_megaPoder retirados por la MATRIZ v3.6.36 (no está
+  en la batería desde r33; sin relación con este cambio).
+- DESPLIEGUE: ventana SWR despejada (última telemetría haceSeg=3114 — 52 min
+  sin actividad) → commit + deploy_pages --push.

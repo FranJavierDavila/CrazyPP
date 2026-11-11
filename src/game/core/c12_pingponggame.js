@@ -559,6 +559,25 @@ export class PingPongGame {
     window.addEventListener('resize', this.onResize);
     this.renderer.xr.addEventListener('sessionstart', this.onSessionStart);
     this.renderer.xr.addEventListener('sessionend', this.onSessionEnd);
+    // v3.6.143 · I18N DEL HALL EN CALIENTE: al cambiar ES/EN con el salón
+    // abierto, las placas 3D (Pulso, racha, pared de insignias, panel del
+    // Arcano) se repintaban SOLO al re-entrar — el visitante veía carteles
+    // en el idioma viejo. Handler con nombre (no apila) y jamás rompe:
+    // drawHall/_arconoRepinta ya son tolerantes a fallos por dentro.
+    this._onLang = () => {
+      try {
+        if (this.inHall) {
+          this.drawHall();
+          // v3.6.143: el espacio Arcano vive DENTRO del hall — su ficha y
+          // su letrero de salida también siguen al idioma en caliente.
+          if (this.arcaneGroup && this.arcaneGroup.userData &&
+              this.arcaneGroup.userData.arcono && this._arconoOn) {
+            this._arconoRepinta(false);
+          }
+        }
+      } catch (eLang) { /* el cambio de idioma nunca tumba el frame */ }
+    };
+    document.addEventListener('pp-lang', this._onLang);
     this.renderer.setAnimationLoop(this.animate);
     window.__pingpong = this;
   }
@@ -7411,8 +7430,17 @@ export class PingPongGame {
     if (this.champs && this.champs.gunArmed &&
         (i !== this.paddleHand || this.champs.paddleGunArmed === true) &&
         (this.rules.state === 'rally' || this.rules.state === 'arkanoid')) {
-      this.champs.fireGun(i);
-      return;
+      // v3.6.143 · FIX SUPERPODERES EN EL OESTE: el arma estaba ARMADA todo
+      // el duelo del forajido (gunArmed = active && _duelOn) y se comía el
+      // gatillo libre AUNQUE fuera de su ventana de fuego (fireGun era un
+      // no-op silencioso entre salvas) — el superpoder de pala jamás salía
+      // por la mano libre en el campeonato del Salvaje Oeste. Ahora el arma
+      // declara si el pulso es SUYO (contrato true/false de consumo); si no
+      // lo es, el pulso CAE al megaTrigger de siempre: el gatillo libre
+      // vuelve a soltar el poder seleccionado en TODOS los campeonatos.
+      let gunConsuma = false;
+      try { gunConsuma = this.champs.fireGun(i) === true; } catch (e) { /* */ }
+      if (gunConsuma) return;
     }
     // v3.6.35 · SUPERPODER DE PALA (núcleo): con la bola en juego el
     // GATILLO DEL MANDO LIBRE suelta el poder en TODOS los campeonatos

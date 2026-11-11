@@ -570,8 +570,15 @@ export class ChampLoader {
     return !!(m && m.paddleGunArmed);
   }
   fireGun(i) {
+    // v3.6.143 · CONTRATO DE CONSUMO (igual que megaTrigger): el módulo
+    // devuelve true SOLO cuando el pulso es del ARMA (dispara o está en su
+    // ventana de fuego). false/undefined = «no es mío» — el núcleo deja
+    // caer el pulso al siguiente candidato (superpoder de pala).
     const m = this.mod;
-    if (m && m.fireGun) { try { m.fireGun(i); } catch (e) { console.warn('[champs.fireGun]', e); } }
+    if (m && m.fireGun) {
+      try { return m.fireGun(i) === true; } catch (e) { console.warn('[champs.fireGun]', e); }
+    }
+    return false;
   }
 
   /** v3.6.33 · MEGA PALA VOLUNTARIA: con la bola en juego el gatillo llega

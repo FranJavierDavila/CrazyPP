@@ -6555,3 +6555,14 @@ Stage Summary:
   qa_rendimiento 14/0 · qa_telemetria 132/0 · qa_dashboard_r56 TODO OK.
   ROJOS HISTÓRICOS PREEXISTENTES (congelados en su era): r23 (1), r25 (6),
   r26 (6), r27 (3), r28 (9), r29 (7).
+- DESPLIEGUE r57: commit b4d1b7b → deploy_pages --push (rama pages →
+  c9be9de8b, 476 ficheros · smoke de prefijo /CrazyPP 33 peticiones, 0
+  fallos de red, 0 pageerrors). VERIFICACIÓN EN PRODUCCIÓN
+  (prod_smoke_r57.py): 30 OK · 0 FALLOS — R1 PASO_TUNE + pala midiendo con
+  dtFis SERVIDOS · R2 margen alineado en los 3 simuladores SERVIDO · R3
+  Magnus ×1 vs ×2,2 documentado SERVIDO · conservación r55/r56 íntegra
+  (ARCANO_CFG · pwViva 1+13 · búho dato · dur ×14 · BOTE_TUNE ·
+  BOLA_TUNE) · sw.js crazypp-v3.6.148-SDK6 · portada cache-buster ·
+  __PP_VERSION 3.6.148-SDK6 · 0 pageerrors · IMÁN nace (9,97 s), sin
+  «agotado», VIVO 1 s después · EFECTO convive (9,88/9,50 s) · DATO
+  MANDA: MEGA nace a los 15,00 s de ARCANO_CFG (14,85 s medidos).

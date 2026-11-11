@@ -23,7 +23,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import * as acorn from 'acorn';
 
-const RAIZ = '/home/z/my-project';
+// r57 · raíz derivada de ESTE fichero (scripts/ → ..), sin ruta de máquina
+const RAIZ = new URL('..', import.meta.url).pathname;
 const CORE = `${RAIZ}/src/game/core`;
 const SALIDA_JSON = `${RAIZ}/src/game/DEPS.json`;
 const SALIDA_MD = `${RAIZ}/src/game/DEPENDENCIAS.md`;

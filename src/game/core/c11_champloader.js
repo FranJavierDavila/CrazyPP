@@ -953,6 +953,11 @@ export class ChampLoader {
     if (m && m.testStep) { try { m.testStep(dt); } catch (e) { console.warn('[champs.testStep]', e); } }
   }
 }
+/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
+import { T, __ppLang, ppDebugMode } from './c00_pre_three.js';
+import { CHAMPS_STATE, _dbQ1, _dbQ2, _dbV1, _rbQ, _rbV1, _rbV2, _rbV3, _rbV4, _rpSize, _rpV1, rpDir, rpOrigin, rpQuat, rpRaycaster } from './c10_menu_saque.js';
+import * as THREE from 'three';
+/* DEPS-FASE2-FIN */
 /* M7e (r124) · FUSIÓN PURA DEL HISTORIAL DE TORNEOS (testeable headless,
  * sin localStorage ni DOM). filas = estado ACTUAL de cada campeonato
  * [{ id, esCampeon, wins, leyenda }]. Reglas:
@@ -987,11 +992,6 @@ export function historialFusionar(hist, filas) {
   return [out.slice(-50), dirty];
 }
 
-/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { T, __ppLang, ppDebugMode } from './c00_pre_three.js';
-import { CHAMPS_STATE, _dbQ1, _dbQ2, _dbV1, _rbQ, _rbV1, _rbV2, _rbV3, _rbV4, _rpSize, _rpV1, rpDir, rpOrigin, rpQuat, rpRaycaster } from './c10_menu_saque.js';
-import * as THREE from 'three';
-/* DEPS-FASE2-FIN */
 
 // temporales del anti-clipping de palas (mesa / red / suelo)
 export const pcA = new THREE.Vector3();

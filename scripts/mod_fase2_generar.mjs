@@ -23,7 +23,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import * as acorn from 'acorn';
 import { analizar, declaracionesTop, quitarBloque } from './mod_fase2_analizar.mjs';
 
-const CORE = '/home/z/my-project/src/game/core';
+// r57 · la raíz se deriva de ESTE fichero (scripts/ → ../src/game/core):
+// el generador corre donde esté el repo, sin rutas de máquina clavadas
+// (deuda r55: la ruta /home/z/my-project/src/game/core quedó fuera del
+// mount upload/ y obligó a editar los DEPS-FASE2 a mano).
+const CORE = new URL('../src/game/core', import.meta.url).pathname;
 const MARK_INI = '/* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */';
 const MARK_FIN = '/* DEPS-FASE2-FIN */';
 

@@ -1,10 +1,10 @@
 {
   "fase": 2,
-  "generado": "2026-10-28T17:24:54.366Z",
-  "golden": "# SHA256 del game.html que produjo esta división (3.6.78-SDK6, fase 80 · Escenario real de Halloween + 4 superpoderes; sello actualizado",
+  "generado": "2026-11-11T18:41:39.563Z",
+  "golden": "# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r56_fisica_datos)",
   "ficheros": {
     "c00_pre_three.js": {
-      "lineas": 2756,
+      "lineas": 3553,
       "declara": 15,
       "exporta": [
         "PP_ICONS",
@@ -25,11 +25,11 @@
       "muta": {},
       "biblioteca": [],
       "globalesTop": [
-        "c×416",
-        "y×150",
-        "x×150",
-        "st×63",
-        "Math×59",
+        "c×467",
+        "y×168",
+        "x×168",
+        "st×81",
+        "Math×61",
         "window×35",
         "i×28",
         "e×17"
@@ -63,17 +63,33 @@
       ]
     },
     "c02_cfg_escena.js": {
-      "lineas": 324,
-      "declara": 13,
+      "lineas": 770,
+      "declara": 30,
       "exporta": [
         "AI_PRESETS",
+        "ARCANO_CFG",
+        "BOLA_ASPECTOS",
+        "CARRERA_DIVISIONES",
         "COLORS",
         "DIMS",
+        "ELO_CPU",
+        "HALL_VARIANTES",
+        "MESA_ALTOS",
+        "MESA_ALTO_MAX",
+        "MESA_ALTO_MIN",
+        "MESA_ASPECTOS",
+        "MESA_NET_H",
         "MOUNT_QUAT_RIGHT",
+        "OPPONENT_STYLES",
         "ROOM_THEMES",
         "SERVE_ASSIST_TIERS",
         "SERVE_TUNE",
+        "bolaAspectoPorId",
+        "estiloAplicar",
+        "estiloDePersonalidad",
+        "hallVariantePorId",
         "mountQuatFor",
+        "rivalPorElo",
         "scalePreset"
       ],
       "importa": {},
@@ -82,18 +98,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "Math×14",
-        "THREE×13",
-        "cfg×10",
+        "cfg×21",
+        "Math×21",
+        "THREE×16",
         "kk×9",
-        "k×1",
-        "roll×1",
-        "rollQ×1",
-        "pitch×1"
+        "m×9",
+        "cl×6",
+        "pers×5",
+        "k×3"
       ]
     },
     "c03_audio_voz.js": {
-      "lineas": 1774,
+      "lineas": 2037,
       "declara": 6,
       "exporta": [
         "GameAudio"
@@ -108,19 +124,19 @@
       "muta": {},
       "biblioteca": [],
       "globalesTop": [
-        "Math×79",
-        "g×77",
-        "t×76",
+        "Math×100",
+        "t×91",
+        "g×86",
+        "src×55",
+        "ctx×53",
         "now×53",
-        "ctx×50",
-        "src×48",
-        "window×33",
-        "i×33"
+        "window×36",
+        "i×35"
       ]
     },
     "c04_fisica_ccd.js": {
-      "lineas": 351,
-      "declara": 52,
+      "lineas": 369,
+      "declara": 53,
       "exporta": [
         "CCD_TUNE",
         "MAX_SUBSTEP_DT",
@@ -187,8 +203,8 @@
       ]
     },
     "c05_colisiones_ia_golpeo.js": {
-      "lineas": 1018,
-      "declara": 21,
+      "lineas": 1183,
+      "declara": 28,
       "exporta": [
         "__ppServeTelemetry",
         "applyServeProgressiveAssist",
@@ -253,18 +269,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
+        "ball×132",
         "pos×105",
-        "ball×93",
         "vel×69",
-        "Math×59",
-        "pad×54",
+        "Math×66",
+        "pad×64",
         "out×36",
         "C×27",
-        "from×26"
+        "THREE×26"
       ]
     },
     "c06_logros_stats_ia_rival.js": {
-      "lineas": 877,
+      "lineas": 1025,
       "declara": 11,
       "exporta": [
         "ACHIEVEMENTS",
@@ -293,30 +309,34 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "Math×53",
-        "ball×48",
+        "Math×61",
+        "ball×55",
         "intents×19",
-        "sign×17",
-        "THREE×17",
+        "THREE×19",
+        "sign×18",
         "winner×14",
         "cause×13",
         "ctx×13"
       ]
     },
     "c07_escena_sala.js": {
-      "lineas": 496,
-      "declara": 5,
+      "lineas": 843,
+      "declara": 11,
       "exporta": [
+        "applyBallSkin",
         "createBall",
         "createBlobShadow",
         "createChampDecor",
+        "createChispas",
         "createRoom",
-        "createTable"
+        "createTable",
+        "relayoutMesa"
       ],
       "importa": {
         "c02_cfg_escena.js": [
           "COLORS",
-          "DIMS"
+          "DIMS",
+          "bolaAspectoPorId"
         ],
         "c04_fisica_ccd.js": [
           "tmpV"
@@ -327,39 +347,45 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "THREE×83",
-        "p×49",
-        "g×30",
-        "Math×26",
-        "nctx×12",
-        "topY×11",
-        "game×11",
-        "pc×10"
+        "c×123",
+        "THREE×94",
+        "Math×60",
+        "p×52",
+        "i×50",
+        "g×36",
+        "rng×32",
+        "b×31"
       ]
     },
     "c08_hall_hud.js": {
-      "lineas": 1259,
-      "declara": 24,
+      "lineas": 2925,
+      "declara": 43,
       "exporta": [
         "HALL",
+        "applyHallVariant",
         "createBounceMarkers",
         "createCalibPanel",
         "createChampRoom",
         "createConfetti",
         "createFanfareBanner",
         "createHall",
-        "createReplayBanner",
         "createScoreboard",
+        "drawArcanoPanel",
+        "drawArcanoSalir",
+        "drawHallGloria",
         "drawHallSign",
+        "montarArcano",
+        "updateArcanoFx",
         "updateHallFx"
       ],
       "importa": {
-        "c02_cfg_escena.js": [
-          "DIMS"
-        ],
         "c00_pre_three.js": [
           "T",
           "TLang"
+        ],
+        "c02_cfg_escena.js": [
+          "ARCANO_CFG",
+          "DIMS"
         ]
       },
       "muta": {},
@@ -367,18 +393,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "x×192",
-        "ctx×124",
-        "THREE×75",
-        "W×71",
-        "g2×71",
-        "i×58",
-        "H×54",
-        "d×48"
+        "x×511",
+        "THREE×206",
+        "Math×161",
+        "W×131",
+        "ctx×119",
+        "i×111",
+        "H×94",
+        "d×77"
       ]
     },
     "c09_red_netlink.js": {
-      "lineas": 1930,
+      "lineas": 2424,
       "declara": 1,
       "exporta": [
         "NetLink"
@@ -391,13 +417,13 @@
         "c00_pre_three.js": [
           "T"
         ],
+        "c09b_red_nucleo.js": [
+          "PPNET"
+        ],
         "c01_modelos_3d.js": [
           "PALA_BLADE_Y",
           "PALA_GRIP_Y",
           "PALA_SCALE"
-        ],
-        "c09b_red_nucleo.js": [
-          "PPNET"
         ],
         "c05_colisiones_ia_golpeo.js": [
           "stepPhysics"
@@ -408,18 +434,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "g×119",
-        "r×103",
-        "d×49",
+        "g×139",
+        "r×113",
+        "m×71",
+        "d×58",
         "e×46",
-        "m×41",
-        "performance×39",
-        "ev×36",
+        "performance×42",
+        "ev×41",
         "out×34"
       ]
     },
     "c09b_red_nucleo.js": {
-      "lineas": 811,
+      "lineas": 927,
       "declara": 1,
       "exporta": [
         "PPNET"
@@ -428,14 +454,14 @@
       "muta": {},
       "biblioteca": [],
       "globalesTop": [
-        "r×59",
+        "r×60",
         "i×50",
         "out×45",
         "Math×42",
         "VP×35",
         "a×32",
-        "w×29",
-        "b×28"
+        "p×31",
+        "w×30"
       ]
     },
     "c09c_red_social.js": {
@@ -511,8 +537,8 @@
       ]
     },
     "c11_champloader.js": {
-      "lineas": 955,
-      "declara": 17,
+      "lineas": 1087,
+      "declara": 18,
       "exporta": [
         "ChampLoader",
         "NORMAS_SKIN",
@@ -523,7 +549,6 @@
         "muRaycaster",
         "netTmpP",
         "netTmpQ",
-        "netTmpQ2",
         "netTmpV",
         "pcA",
         "pcC",
@@ -559,19 +584,19 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "m×96",
-        "e×68",
-        "id×48",
-        "g×36",
+        "m×99",
+        "e×72",
+        "id×50",
+        "g×38",
         "THREE×31",
-        "console×22",
+        "console×23",
         "raw×18",
         "cx×18"
       ]
     },
     "c12_pingponggame.js": {
-      "lineas": 10889,
-      "declara": 91,
+      "lineas": 18291,
+      "declara": 172,
       "exporta": [
         "PingPongGame",
         "arBtn",
@@ -591,14 +616,41 @@
           "OpponentAI",
           "Rules"
         ],
+        "c00_pre_three.js": [
+          "PP_ICONS",
+          "T",
+          "TLang",
+          "WORLDRANK",
+          "__PP_TELE",
+          "__ppLang",
+          "ppPlayerName",
+          "setLang",
+          "wrlBadgeImg"
+        ],
         "c02_cfg_escena.js": [
           "AI_PRESETS",
+          "ARCANO_CFG",
+          "BOLA_ASPECTOS",
+          "CARRERA_DIVISIONES",
           "DIMS",
+          "ELO_CPU",
+          "HALL_VARIANTES",
+          "MESA_ALTOS",
+          "MESA_ALTO_MAX",
+          "MESA_ALTO_MIN",
+          "MESA_ASPECTOS",
+          "MESA_NET_H",
           "MOUNT_QUAT_RIGHT",
+          "OPPONENT_STYLES",
           "ROOM_THEMES",
           "SERVE_ASSIST_TIERS",
           "SERVE_TUNE",
+          "bolaAspectoPorId",
+          "estiloAplicar",
+          "estiloDePersonalidad",
+          "hallVariantePorId",
           "mountQuatFor",
+          "rivalPorElo",
           "scalePreset"
         ],
         "c04_fisica_ccd.js": [
@@ -615,24 +667,35 @@
         "c09_red_netlink.js": [
           "NetLink"
         ],
+        "c09b_red_nucleo.js": [
+          "PPNET"
+        ],
         "c07_escena_sala.js": [
+          "applyBallSkin",
           "createBall",
           "createBlobShadow",
           "createChampDecor",
+          "createChispas",
           "createRoom",
-          "createTable"
+          "createTable",
+          "relayoutMesa"
         ],
         "c08_hall_hud.js": [
           "HALL",
+          "applyHallVariant",
           "createBounceMarkers",
           "createCalibPanel",
           "createChampRoom",
           "createConfetti",
           "createFanfareBanner",
           "createHall",
-          "createReplayBanner",
           "createScoreboard",
+          "drawArcanoPanel",
+          "drawArcanoSalir",
+          "drawHallGloria",
           "drawHallSign",
+          "montarArcano",
+          "updateArcanoFx",
           "updateHallFx"
         ],
         "c01_modelos_3d.js": [
@@ -651,7 +714,6 @@
           "muRaycaster",
           "netTmpP",
           "netTmpQ",
-          "netTmpQ2",
           "netTmpV",
           "pcA",
           "pcC",
@@ -660,20 +722,6 @@
         ],
         "c09c_red_social.js": [
           "RedSocial"
-        ],
-        "c00_pre_three.js": [
-          "PP_ICONS",
-          "T",
-          "TLang",
-          "WORLDRANK",
-          "__PP_TELE",
-          "__ppLang",
-          "ppPlayerName",
-          "setLang",
-          "wrlBadgeImg"
-        ],
-        "c09b_red_nucleo.js": [
-          "PPNET"
         ],
         "c05_colisiones_ia_golpeo.js": [
           "__ppServeTelemetry",
@@ -720,18 +768,18 @@
         "RoomEnvironment ← three/addons/environments/RoomEnvironment.js"
       ],
       "globalesTop": [
-        "c×918",
-        "Math×299",
-        "THREE×219",
-        "e×205",
-        "S×192",
-        "y×160",
-        "undefined×145",
-        "c2×144"
+        "c×1233",
+        "Math×548",
+        "THREE×364",
+        "e×282",
+        "i×269",
+        "y×256",
+        "c2×213",
+        "S×198"
       ]
     },
     "c13_ui_arranque.js": {
-      "lineas": 5787,
+      "lineas": 6681,
       "declara": 4,
       "exporta": [
         "wrapText"
@@ -805,14 +853,14 @@
         "GLTFLoader ← three/addons/loaders/GLTFLoader.js"
       ],
       "globalesTop": [
-        "c×525",
-        "G×350",
-        "g×256",
-        "st×235",
-        "Math×209",
-        "b×166",
-        "THREE×160",
-        "S×152"
+        "c×595",
+        "G×374",
+        "g×273",
+        "st×260",
+        "Math×229",
+        "S×173",
+        "b×173",
+        "THREE×171"
       ]
     }
   },
@@ -882,11 +930,11 @@
       "ficherosQueImportan": 2
     },
     {
-      "simbolo": "tmpT",
+      "simbolo": "tmpD",
       "ficherosQueImportan": 2
     },
     {
-      "simbolo": "tmpD",
+      "simbolo": "tmpT",
       "ficherosQueImportan": 2
     },
     {
@@ -902,7 +950,7 @@
       "ficherosQueImportan": 2
     },
     {
-      "simbolo": "tmpV",
+      "simbolo": "bolaAspectoPorId",
       "ficherosQueImportan": 2
     }
   ]

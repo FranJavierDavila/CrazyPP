@@ -3,401 +3,701 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CRAZY PING PONG · Centro de Telemetría</title>
+<title>CRAZY PING PONG · Telemetría</title>
 <style>
-  :root { color-scheme: dark; --azul:#49b6ff; --azul2:#2f7dd1; --fondo:#05070f; --panel:#0b1220; --linea:#1b2a45; --texto:#dbe7f5; --tenue:#7e93b4; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background:
-    radial-gradient(1200px 500px at 70% -10%, #0a1a33 0%, transparent 60%), var(--fondo);
+  :root { color-scheme: dark;
+    --fondo:#05070f; --panel:#0b1220; --panel2:#0c1526; --linea:#1b2a45;
+    --texto:#dbe7f5; --tenue:#7e93b4; --naranja:#ff7a18; --naranja2:#ffb347;
+    --cian:#22d3ee; --azul:#49b6ff; --verde:#3fd97a; --rojo:#ff5a4e; --ambar:#fbbf24; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    background: radial-gradient(1100px 480px at 75% -10%, #0a1a33 0%, transparent 60%),
+                radial-gradient(900px 420px at 8% 108%, #101a2e 0%, transparent 55%),
+                var(--fondo);
     color:var(--texto); min-height:100vh; }
-  header { padding:16px 22px 12px; border-bottom:1px solid var(--linea); display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    background:linear-gradient(180deg,#071021,#05070f); position:sticky; top:0; z-index:5; }
+  header { padding:14px 22px 12px; border-bottom:1px solid var(--linea);
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:linear-gradient(180deg,#071021f2,#05070ff2); backdrop-filter:blur(6px);
+    position:sticky; top:0; z-index:9; }
   header h1 { font-size:18px; margin:0; letter-spacing:.6px; font-weight:800; }
-  header h1 b { color:var(--azul); }
-  .led { width:11px; height:11px; border-radius:50%; background:#3a4557; box-shadow:0 0 0 0 rgba(0,0,0,0); display:inline-block; }
-  .led.verde { background:#3fd97a; box-shadow:0 0 8px #3fd97a88; animation:pulso 2.2s infinite; }
-  .led.rojo { background:#ff5a4e; box-shadow:0 0 8px #ff5a4e88; }
-  .led.ambar { background:#fbbf24; box-shadow:0 0 8px #fbbf2488; }
-  @keyframes pulso { 0%,100% { opacity:1; } 50% { opacity:.55; } }
+  header h1 b { color:var(--naranja2); }
+  .led { width:11px; height:11px; border-radius:50%; background:#3a4557; display:inline-block; flex:none; }
+  .led.verde { background:var(--verde); box-shadow:0 0 8px #3fd97a88; animation:pulso 2.2s infinite; }
+  .led.rojo  { background:var(--rojo);  box-shadow:0 0 8px #ff5a4e88; }
+  .led.ambar { background:var(--ambar); box-shadow:0 0 8px #fbbf2488; }
+  @keyframes pulso { 0%,100%{opacity:1} 50%{opacity:.55} }
   .saludtxt { font-size:12px; color:var(--tenue); }
   .zonas { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  input, select, button { font:inherit; }
-  input[type=password], input[type=text], select { background:#0d1730; border:1px solid #253a63; color:var(--texto); border-radius:9px; padding:7px 11px; }
-  input[type=password] { min-width:210px; }
-  input[type=text] { min-width:130px; }
-  button { background:var(--azul2); color:#fff; border:0; border-radius:9px; padding:8px 14px; cursor:pointer; font-weight:700; }
-  button:hover { filter:brightness(1.12); }
-  button.sec { background:#16233f; }
-  button.rojo { background:#8e2b25; }
+  input, button, label { font:inherit; }
+  input[type=password] { background:#0d1730; border:1px solid #253a63; color:var(--texto);
+    border-radius:9px; padding:7px 11px; min-width:210px; }
+  button { background:#1b4f8f; color:#fff; border:0; border-radius:9px; padding:8px 14px;
+    cursor:pointer; font-weight:700; transition:filter .12s ease; }
+  button:hover { filter:brightness(1.15); }
+  button.naranja { background:linear-gradient(92deg,#ff7a18,#ffb347); color:#160c02; }
   button:disabled { opacity:.45; cursor:default; }
-  main { padding:16px 22px 40px; max-width:1220px; margin:0 auto; }
-  .aviso { background:#2b1c10; border:1px solid #6b4413; color:#ffd257; padding:10px 14px; border-radius:12px; font-size:13px; margin:12px 0; }
-  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px; margin:14px 0; }
-  .kpi { background:linear-gradient(180deg,#0c1526,#0a1120); border:1px solid var(--linea); border-radius:14px; padding:13px 15px; }
-  .kpi .n { font-size:24px; font-weight:900; color:var(--azul); font-variant-numeric:tabular-nums; }
-  .kpi .t { font-size:11px; color:var(--tenue); margin-top:3px; letter-spacing:.5px; text-transform:uppercase; }
-  section { background:var(--panel); border:1px solid var(--linea); border-radius:14px; padding:15px 17px; margin:13px 0; }
-  section h2 { font-size:13px; margin:0 0 10px; color:#9fb3cc; text-transform:uppercase; letter-spacing:.9px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #14203a; }
-  th { color:#7e8ea6; font-weight:600; }
-  td.num { text-align:right; font-variant-numeric:tabular-nums; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
-  @media (max-width:860px){ .grid2 { grid-template-columns:1fr; } }
-  .vacio { color:#5d6b82; font-size:13px; padding:6px 0; }
-  .barras { display:flex; align-items:flex-end; gap:3px; height:70px; margin-top:6px; }
-  .bar { flex:1; background:linear-gradient(180deg,#3a9ae8,#1b4f8f); border-radius:3px 3px 0 0; position:relative; min-height:2px; }
-  .bar:hover::after { content:attr(data-l); position:absolute; bottom:110%; left:50%; transform:translateX(-50%); font-size:10px; color:#9fb3cc; white-space:nowrap; background:#0d1730; border:1px solid #253a63; padding:2px 6px; border-radius:6px; z-index:2; }
-  .hbar { display:grid; grid-template-columns:150px 1fr 64px; gap:8px; align-items:center; font-size:12.5px; margin:4px 0; }
-  .hbar .pista { background:#0d1730; border-radius:6px; height:14px; overflow:hidden; }
-  .hbar .relleno { height:100%; background:linear-gradient(90deg,#2f7dd1,#49b6ff); border-radius:6px; }
+  label.chk { font-size:12.5px; color:var(--tenue); display:flex; gap:6px; align-items:center; cursor:pointer; }
+  main { padding:18px 22px 46px; max-width:1240px; margin:0 auto; }
+  .tarjeta { background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--linea); border-radius:16px; padding:16px 18px; margin:14px 0; }
+  .tarjeta h2 { font-size:13px; margin:0 0 2px; color:#9fb3cc; text-transform:uppercase; letter-spacing:.9px; }
+  .tarjeta .sub { font-size:12.5px; color:var(--tenue); margin:0 0 12px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(172px,1fr)); gap:12px; margin:14px 0; }
+  .kpi { background:linear-gradient(180deg,#0d1830,#0a1120); border:1px solid var(--linea);
+    border-radius:16px; padding:14px 16px; position:relative; overflow:hidden; }
+  .kpi::before { content:''; position:absolute; inset:0 auto 0 0; width:4px;
+    background:linear-gradient(180deg,var(--acento,#49b6ff),transparent); }
+  .kpi .n { font-size:27px; font-weight:900; color:var(--acento,#49b6ff);
+    font-variant-numeric:tabular-nums; line-height:1.1; white-space:nowrap; }
+  .kpi .t { font-size:11px; color:var(--tenue); margin-top:4px; letter-spacing:.5px; text-transform:uppercase; }
+  .kpi .d { font-size:11px; color:#5d6b82; margin-top:2px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:900px){ .grid2 { grid-template-columns:1fr; } }
+  .aviso { border-radius:12px; padding:11px 15px; font-size:13.5px; margin:12px 0; line-height:1.4; }
+  .aviso.verde   { background:#10240f; border:1px solid #2c5b22; color:#9ae66e; }
+  .aviso.amarillo{ background:#2b1c10; border:1px solid #6b4413; color:#ffd257; }
+  .aviso.rojo    { background:#2b1010; border:1px solid #6b1313; color:#ff9d93; }
+  /* portada sin clave */
+  .portada { text-align:center; padding:38px 22px; }
+  .portada h2 { font-size:26px; margin:0 0 10px; letter-spacing:-.02em; }
+  .portada h2 b { background:linear-gradient(92deg,#ffb347,#ff7a18 55%,#22d3ee);
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .portada p { color:var(--tenue); max-width:560px; margin:8px auto; font-size:14.5px; line-height:1.55; }
+  .pasos { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px;
+    max-width:760px; margin:22px auto; text-align:left; }
+  .paso { background:var(--panel2); border:1px solid var(--linea); border-radius:14px; padding:14px; }
+  .paso .num { display:inline-flex; width:26px; height:26px; border-radius:50%; align-items:center;
+    justify-content:center; font-weight:800; font-size:13px; color:#160c02;
+    background:linear-gradient(92deg,#ffb347,#ff7a18); margin-bottom:8px; }
+  .paso p { margin:0; font-size:13px; color:var(--texto); }
+  /* gráficas */
+  .svgwrap { width:100%; overflow:hidden; }
+  .svgwrap svg { display:block; width:100%; height:auto; }
+  .hbar { display:grid; grid-template-columns:minmax(120px,190px) 1fr 58px; gap:9px;
+    align-items:center; font-size:12.5px; margin:7px 0; }
+  .hbar .lbl { color:var(--texto); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hbar .pista { background:#0d1730; border-radius:7px; height:15px; overflow:hidden;
+    border:1px solid #16233f; }
+  .hbar .relleno { height:100%; border-radius:7px; transition:width .5s ease; }
   .hbar .val { text-align:right; font-variant-numeric:tabular-nums; color:#9fb3cc; }
-  .ala { padding:9px 13px; border-radius:10px; font-size:13px; margin:6px 0; line-height:1.35; }
-  .ala.rojo { background:#2b1010; border:1px solid #6b1313; color:#ff9d93; }
-  .ala.amarillo { background:#2b1c10; border:1px solid #6b4413; color:#ffd257; }
-  .ala.verde { background:#10240f; border:1px solid #2c5b22; color:#9ae66e; }
-  .ala b { font-size:14px; margin-right:6px; }
-  code { background:#12203c; padding:1px 6px; border-radius:6px; font-size:12px; }
-  .meta { color:#5d6b82; font-size:11px; margin-top:14px; }
-  .fila-ev { cursor:pointer; }
-  .fila-ev:hover td { background:#0e1a33; }
-  pre.json { max-height:240px; overflow:auto; background:#0a1120; border:1px solid var(--linea); border-radius:10px; padding:10px 12px; font-size:11.5px; color:#9fd0ff; margin:4px 0 8px; }
-  .pill2 { font-size:11px; padding:2px 9px; border-radius:999px; background:#0d1a33; border:1px solid #25406b; color:#7ec8ff; }
-  .fila-ex { display:none; }
-  .fila-ex.abierta { display:table-row; }
-  .accionfila { font-size:11px; color:var(--tenue); }
-  label.chk { font-size:12.5px; color:var(--tenue); display:flex; gap:6px; align-items:center; }
-  .herr { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:10px 0; }
-  .ok_ms { color:#3fd97a; } .err_ms { color:#ff5a4e; }
+  .leyenda { display:flex; flex-direction:column; gap:7px; font-size:13px; }
+  .leyenda .fil { display:flex; align-items:center; gap:8px; }
+  .leyenda .chip { width:11px; height:11px; border-radius:3px; flex:none; }
+  .leyenda .nm { flex:1; }
+  .leyenda .vv { color:#9fb3cc; font-variant-numeric:tabular-nums; }
+  .donutfila { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+  .donutfila svg { flex:none; }
+  /* tablas */
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:7px 9px; border-bottom:1px solid #14203a; }
+  th { color:#7e8ea6; font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; }
+  tr:last-child td { border-bottom:0; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .avatar { display:inline-flex; width:30px; height:30px; border-radius:50%; align-items:center;
+    justify-content:center; font-weight:800; font-size:13px; color:#05070f; flex:none; }
+  .jug { display:flex; gap:10px; align-items:center; }
+  .jug .nombre { font-weight:700; }
+  .jug .sid { font-size:10.5px; color:#5d6b82; }
+  .pill { font-size:11px; padding:2px 9px; border-radius:999px; background:#0d1a33;
+    border:1px solid #25406b; color:#7ec8ff; white-space:nowrap; }
+  .pill.naranja { border-color:#6b4413; color:var(--naranja2); background:#231309; }
+  .pill.gris { border-color:#233048; color:#8ea0ba; background:#0c1424; }
+  .mini { height:8px; background:#0d1730; border-radius:5px; overflow:hidden; min-width:60px; }
+  .mini i { display:block; height:100%; border-radius:5px;
+    background:linear-gradient(90deg,#2f7dd1,#49b6ff); }
+  /* timeline */
+  .ev { display:flex; gap:11px; padding:7px 0; border-bottom:1px dashed #14203a; font-size:13.5px; }
+  .ev:last-child { border-bottom:0; }
+  .ev .punto { width:9px; height:9px; border-radius:50%; margin-top:5px; flex:none; }
+  .ev .cuando { margin-left:auto; color:#5d6b82; font-size:11.5px; white-space:nowrap; padding-left:10px; }
+  .vacio { color:#5d6b82; font-size:13px; padding:8px 0; }
+  .vacio.ok { color:#9ae66e; }
+  .meta { color:#5d6b82; font-size:11px; margin-top:16px; line-height:1.6; }
+  code { background:#12203c; padding:1px 6px; border-radius:6px; font-size:11.5px; }
+  .estado { font-size:12px; color:var(--tenue); }
+  .spinner { display:inline-block; width:13px; height:13px; border:2px solid #253a63;
+    border-top-color:var(--azul); border-radius:50%; animation:girar .8s linear infinite; vertical-align:-2px; }
+  @keyframes girar { to { transform:rotate(360deg); } }
+  details.json { margin-top:8px; }
+  details.json summary { cursor:pointer; font-size:12px; color:var(--tenue); }
+  details.json pre { max-height:260px; overflow:auto; background:#0a1120; border:1px solid var(--linea);
+    border-radius:10px; padding:10px 12px; font-size:11.5px; color:#9fd0ff; }
+  .oculto { display:none; }
+  .refresco { font-size:11.5px; color:#5d6b82; }
 </style>
 </head>
 <body>
 <header>
-  <h1>CRAZY <b>PING PONG</b> · Centro de Telemetría</h1>
+  <h1>CRAZY <b>PING PONG</b> · Telemetría</h1>
   <span class="led" id="led"></span>
-  <span class="saludtxt" id="saludtxt">comprobando salud del receptor…</span>
+  <span class="saludtxt" id="saludtxt">comprobando receptor…</span>
   <div class="zonas">
-    <input id="clave" type="password" placeholder="CLAVE de lectura del worker">
-    <select id="dias" title="rango temporal (por llegada al servidor)">
-      <option value="1">Últimas 24 h</option>
-      <option value="7">Últimos 7 días</option>
-      <option value="30" selected>Últimos 30 días</option>
-      <option value="90">Últimos 90 días</option>
-      <option value="0">Todo el histórico</option>
-    </select>
-    <input id="sid" type="text" placeholder="filtrar por sid (opcional)">
-    <button id="cargar">Ver datos</button>
-    <button id="refresca" class="sec" disabled>Actualizar</button>
+    <span class="refresco" id="refresco"></span>
+    <label class="chk"><input type="checkbox" id="auto" checked> cada 60 s</label>
+    <input id="clave" type="password" placeholder="CLAVE de lectura del worker" autocomplete="off">
+    <button id="btn" class="naranja">Ver datos</button>
   </div>
 </header>
+
 <main>
-  <div id="aviso" class="aviso" style="display:none"></div>
+  <!-- PORTADA (sin clave) -->
+  <section class="tarjeta portada" id="portada">
+    <h2>El cuadro de mando de <b>CRAZY PING PONG</b></h2>
+    <p>Aquí se convierte la actividad del juego en gráficas sencillas: quién juega,
+       cuándo se juega, cómo va el rendimiento en el casco y si hay algún problema.</p>
+    <div class="pasos">
+      <div class="paso"><span class="num">1</span><p>Pega arriba la <b>CLAVE de lectura</b> del receptor de telemetría.</p></div>
+      <div class="paso"><span class="num">2</span><p>Pulsa <b>Ver datos</b>. La clave se guarda sólo en tu navegador.</p></div>
+      <div class="paso"><span class="num">3</span><p>El panel se <b>actualiza solo</b> cada 60 segundos.</p></div>
+    </div>
+    <p class="estado" id="portadaSalud"></p>
+  </section>
 
-  <div class="herr">
-    <button id="csv" class="sec" disabled>Exportar CSV</button>
-    <button id="json" class="sec" disabled>Exportar JSON</button>
-    <button id="prueba" class="sec" disabled>Probar ingestión</button>
-    <button id="purga" class="rojo" disabled>Purgar…</button>
-    <span class="pill2" id="rangotxt">rango: —</span>
-    <label class="chk"><input type="checkbox" id="auto"> auto-refrescar 60 s</label>
+  <!-- CONTENIDO (con datos) -->
+  <div id="contenido" class="oculto">
+    <div class="kpis" id="kpis"></div>
+    <div id="alarma"></div>
+
+    <section class="tarjeta">
+      <h2>¿Cuándo se juega?</h2>
+      <p class="sub">Cada barra es un día: las barras azules son encendidos del juego y la línea naranja es toda la actividad registrada.</p>
+      <div class="svgwrap" id="gDias"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="tarjeta">
+        <h2>¿Qué ocurre en el juego?</h2>
+        <p class="sub">Cómo se reparte toda la actividad registrada, por familias.</p>
+        <div class="donutfila" id="gTipos"></div>
+        <div style="margin-top:14px" id="gTiposDetalle"></div>
+      </section>
+      <section class="tarjeta">
+        <h2>¿Están todos al día?</h2>
+        <p class="sub">Qué versión del juego usa cada jugador. Si salen burbujas fuera de la grande, hay navegadores con versión vieja cacheada.</p>
+        <div class="donutfila" id="gVersiones"></div>
+        <p class="estado" id="notaVersion" style="margin-top:10px"></p>
+      </section>
+    </div>
+
+    <section class="tarjeta">
+      <h2>Los jugadores</h2>
+      <p class="sub">Cada fila es una sesión de juego distinta, de la más activa a la menos activa. Los nombres son los elegidos por los jugadores.</p>
+      <div style="overflow-x:auto"><table id="tJugadores"></table></div>
+      <details class="json"><summary>ver los datos en bruto de jugadores</summary><pre id="jsonJugadores"></pre></details>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Realidad virtual · el casco</h2>
+      <p class="sub">Sesiones con el visor: cuánto duraron, si se cortaron y a cuántos frames por segundo (más de 72 es perfecto en Quest).</p>
+      <div id="vrResumen" style="margin-bottom:8px"></div>
+      <div class="svgwrap" id="gFps" style="max-width:680px"></div>
+      <div style="overflow-x:auto;margin-top:10px"><table id="tVR"></table></div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Campeonatos</h2>
+      <p class="sub">Partidas jugadas y mejores puntuaciones por campeonato.</p>
+      <div id="gCampeonatos"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="tarjeta">
+        <h2>Lo último que ha pasado</h2>
+        <p class="sub">Los 20 acontecimientos más recientes, contados en claro.</p>
+        <div id="timeline"></div>
+      </section>
+      <section class="tarjeta">
+        <h2>Problemas vistos</h2>
+        <p class="sub">Errores que el juego ha avisado y alarmas del receptor.</p>
+        <div id="problemas"></div>
+      </section>
+    </div>
+
+    <details class="json"><summary>ver el resumen completo en bruto (JSON)</summary><pre id="jsonResumen"></pre></details>
   </div>
 
-  <div id="contenido">
-    <div class="vacio">Introduce la <b>CLAVE</b> del worker (vive sólo en tu navegador, en localStorage) y pulsa «Ver datos».</div>
-  </div>
-
-  <p class="meta">Receptor: <code id="fuente">worker /api/tele</code> (Cloudflare D1) · panel servido desde el propio sitio (repo CrazyPP) · la clave jamás sale de tu navegador salvo hacia el receptor · sin cookies · sin IP.</p>
+  <p class="meta">
+    Receptor: <code>worker /api/tele</code> (Cloudflare D1) · panel servido desde el propio sitio.
+    La clave jamás sale de tu navegador salvo hacia el receptor · sin cookies · sin IP.
+    Los jugadores aparecen por el nombre que eligen en el juego y por un identificador anónimo de sesión.
+  </p>
 </main>
+
 <script>
+'use strict';
+/* ═══ CRAZY PING PONG · PANEL DE TELEMETRÍA VISUAL (FASE 147 · r53)
+   Sustituye al panel técnico: mismas claves de localStorage
+   (pp_tele_clave / pp_tele_url), mismos endpoints del worker,
+   cero dependencias externas — todas las gráficas son SVG propio. */
+
 const DEF = 'https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele';
 const $ = (id) => document.getElementById(id);
-let CLAVE = '', timerAuto = null, ultimoResumen = null;
+let CLAVE = '', DATOS = null, EVENTOS = null, TS_CARGA = 0, TEMP = null;
+
 try { CLAVE = localStorage.getItem('pp_tele_clave') || ''; } catch (e) {}
 if (CLAVE) $('clave').value = CLAVE;
 
-function base() {
-  let u = '';
-  try { u = localStorage.getItem('pp_tele_url') || ''; } catch (e) {}
-  return (u || DEF).replace(/\/+$/, '');
-}
-function aviso(txt) { const a = $('aviso'); a.style.display = txt ? '' : 'none'; a.textContent = txt || ''; }
-function filtros() {
-  const dias = $('dias').value;
-  const sid = $('sid').value.trim();
-  let q = [];
-  if (dias && dias !== '0') q.push('dias=' + encodeURIComponent(dias));
-  if (sid) q.push('sid=' + encodeURIComponent(sid));
-  return q.length ? '&' + q.join('&') : '';
-}
-async function pide(q) {
-  const r = await fetch(base() + q + (q.includes('?') ? '&' : '?') + 'clave=' + encodeURIComponent(CLAVE));
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
-}
-const fnum = (n) => (n == null ? '—' : Number(n).toLocaleString('es-ES'));
-const fseg = (s) => (s == null ? '—' : s >= 3600 ? Math.floor(s/3600) + ' h ' + Math.round((s%3600)/60) + ' min' : s >= 60 ? Math.floor(s/60) + ' min ' + Math.round(s%60) + ' s' : Math.round(s) + ' s');
-const limpia = (s) => String(s == null ? '' : s).replace(/[<>&]/g, '');
-const medalla = (i) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + 'º');
+const base = () => {
+  try { const u = localStorage.getItem('pp_tele_url'); if (u) return u; } catch (e) {}
+  return DEF;
+};
 
-/* ── SALUD (público, sin clave): LED + frescura del último lote ── */
+/* — utilidades — */
+const esc = (s) => String(s).replace(/[&<>"']/g,
+  (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const fnum = (n) => new Intl.NumberFormat('es-ES').format(n || 0);
+const fdur = (s) => {
+  s = Math.max(0, Math.round(s || 0));
+  if (s < 60) return s + ' s';
+  if (s < 3600) return Math.floor(s / 60) + ' min' + (s % 60 ? ' ' + (s % 60) + ' s' : '');
+  return (s / 3600).toFixed(1).replace('.', ',') + ' h';
+};
+const fdurCorta = (s) => {
+  s = Math.max(0, Math.round(s || 0));
+  if (s < 60) return s + ' s';
+  if (s < 3600) return Math.round(s / 60) + ' min';
+  return (s / 3600).toFixed(1).replace('.', ',') + ' h';
+};
+const ftermin = (v) => ({ easy:'fácil', medium:'medio', hard:'difícil',
+  expert:'experto', normal:'normal' }[v] || v);
+const fplataforma = (v) => ({ '2d':'pantalla', vr:'casco' }[v] || v);
+const hace = (t) => {
+  if (!t) return '—';
+  const d = Math.max(0, Date.now() - t) / 1000;
+  if (d < 45) return 'ahora mismo';
+  if (d < 3600) { const m = Math.round(d / 60); return 'hace ' + m + ' min'; }
+  if (d < 86400) { const h = Math.round(d / 3600); return 'hace ' + h + ' h'; }
+  const dd = Math.round(d / 86400);
+  return 'hace ' + dd + (dd === 1 ? ' día' : ' días');
+};
+const ffecha = (t) => {
+  if (!t) return '—';
+  const d = new Date(t);
+  return d.toLocaleDateString('es-ES', { day:'numeric', month:'short' }) + ' · ' +
+         d.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+};
+const colorNombre = (s) => {
+  let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  return 'hsl(' + h + ' 85% 68%)';
+};
+const vnum = (v) => String(v || '').split(/[^0-9]+/).filter(Boolean).map(Number);
+const esMasNueva = (a, b) => {
+  const A = vnum(a), B = vnum(b);
+  for (let i = 0; i < Math.max(A.length, B.length); i++)
+    if ((A[i] || 0) !== (B[i] || 0)) return (A[i] || 0) > (B[i] || 0);
+  return false;
+};
+
+/* — nombres amables — */
+const ETIQUETA = {
+  boot:'Arranques del juego', page_close:'Cierres de la página',
+  vr_start:'Entradas en el casco (VR)', vr_end:'Salidas del casco (VR)',
+  vr_ping:'Pulsos de rendimiento en VR', ai_style:'Cambios del rival IA',
+  perfil:'Cambios de perfil', bola_guard:'Protecciones de la bola',
+  net_match:'Partidas conectadas', net_ice:'Conexiones directas',
+  carrera:'Campeonatos en marcha', resultado:'Resultados de partida',
+  champ_rank:'Récords de campeonato', ver_selfcheck:'Comprobaciones de versión',
+  ver_mismatch:'Avisos de versión distinta',
+};
+const FAMILIAS = [
+  ['Partidas y red', ['net_match','net_ice','carrera','resultado','champ_rank'], '#ff7a18'],
+  ['Realidad virtual', ['vr_start','vr_end','vr_ping'], '#22d3ee'],
+  ['Arranques y cierres', ['boot','page_close'], '#8fdcff'],
+  ['Ajustes y juego', ['ai_style','perfil','bola_guard'], '#a78bfa'],
+  ['Control de versiones', ['ver_selfcheck','ver_mismatch'], '#fbbf24'],
+];
+const familiaDe = (e) => {
+  for (const [nm, evs, col] of FAMILIAS) if (evs.indexOf(e) >= 0) return [nm, col];
+  return ['Otros', '#64748b'];
+};
+const fraseDe = (ev) => {
+  const k = ev.e || '', x = esc(ev.n || '') || 'Alguien';
+  const d = (campo) => esc(ev[campo] || '');
+  switch (k) {
+    case 'boot': return x + ' encendió el juego (' + fplataforma(ev.platform) + ')';
+    case 'page_close': return x + ' cerró la página';
+    case 'vr_start': return x + ' puso el casco (VR)';
+    case 'vr_end': return x + ' sacó el casco' + (ev.dur ? ' tras ' + fdur(ev.dur) : '');
+    case 'vr_ping': return 'Pulso de rendimiento' + (ev.fps ? ' · ' + esc(ev.fps) + ' FPS' : '') +
+                             (ev.dur ? ' en el minuto ' + Math.round((ev.dur || 0) / 60) : '');
+    case 'ai_style': return x + ' ajustó el rival IA (' + d('est') + ' · ' +
+                             ftermin(ev.dif || '') + ')';
+    case 'perfil': return x + ' cambió su perfil';
+    case 'bola_guard': {
+      const m = esc(ev.motivo || ev.msg || '');
+      return 'La red protegió una bola dudosa' + (m ? ' (' + m + ')' : '');
+    }
+    case 'net_match': return x + ' jugó una partida conectada';
+    case 'net_ice': return 'Se estableció una conexión directa entre jugadores';
+    case 'carrera': return x + ' tiene un campeonato en marcha (' + (d('div') || 'división') + ')';
+    case 'resultado': return x + ' terminó una partida' + (ev.div ? ' (' + d('div') + ')' : '') +
+                                (ev.r ? ' contra ' + d('r') : '');
+    case 'champ_rank': return 'Nuevo récord de campeonato' + (ev.mejor !== undefined ? ' · ' + esc(ev.mejor) + ' puntos' : '');
+    case 'ver_selfcheck': return 'El juego comprobó su versión (' + d('v') + ')';
+    case 'ver_mismatch': return 'Aviso: versión distinta a la del anfitrión (' + d('v') + ')';
+    default: return ETIQUETA[k] || ('Evento: ' + k);
+  }
+};
+
+/* — gráficas SVG — */
+function svgArea(el, dias) {
+  if (!dias.length) { el.innerHTML = '<p class="vacio">Aún no hay días registrados.</p>'; return; }
+  const W = 720, H = 210, mL = 40, mR = 12, mT = 14, mB = 30;
+  const max = Math.max(1, ...dias.map((d) => d.eventos || 0));
+  const paso = dias.length > 1 ? (W - mL - mR) / (dias.length - 1) : 0;
+  const X = (i) => mL + i * paso;
+  const Y = (v) => mT + (1 - v / max) * (H - mT - mB);
+  let bars = '', pts = [], labels = '';
+  dias.forEach((d, i) => {
+    const bY = Y(d.boots || 0), bw = Math.max(5, Math.min(26, paso * 0.42));
+    bars += '<rect x="' + (X(i) - bw / 2) + '" y="' + bY + '" width="' + bw + '" height="' +
+            (H - mB - bY) + '" rx="3" fill="#22d3ee" opacity="0.32"><title>' +
+            esc(d.dia + ' · ' + fnum(d.boots) + ' encendidos') + '</title></rect>';
+    pts.push([X(i), Y(d.eventos || 0), d]);
+  });
+  const lin = pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const area = 'M' + mL + ',' + (H - mB) + ' L' + lin.split(' ').join(' L') + ' L' +
+               (pts[pts.length - 1][0]).toFixed(1) + ',' + (H - mB) + ' Z';
+  const cada = Math.ceil(dias.length / 7);
+  dias.forEach((d, i) => {
+    if (i % cada === 0 || i === dias.length - 1)
+      labels += '<text x="' + X(i) + '" y="' + (H - 9) + '" text-anchor="middle" font-size="10" fill="#5d6b82">' +
+                esc(d.dia.slice(5)) + '</text>';
+  });
+  const ticks = [0, .5, 1].map((f) =>
+    '<line x1="' + mL + '" x2="' + (W - mR) + '" y1="' + Y(max * f) + '" y2="' + Y(max * f) +
+    '" stroke="#16233f" stroke-dasharray="3 4"/>' +
+    '<text x="' + (mL - 6) + '" y="' + (Y(max * f) + 3) + '" text-anchor="end" font-size="10" fill="#5d6b82">' +
+    fnum(Math.round(max * f)) + '</text>').join('');
+  const puntos = pts.map((p, i) =>
+    '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.2" fill="#ffb347" stroke="#05070f" stroke-width="1.5">' +
+    '<title>' + esc(p[2].dia + ' · ' + fnum(p[2].eventos) + ' eventos · ' +
+                    fnum(p[2].boots) + ' encendidos · ' + fnum(p[2].sesiones) + ' sesiones') +
+    '</title></circle>').join('');
+  el.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Actividad por día">' +
+    '<defs><linearGradient id="gradA" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#ff7a18" stop-opacity="0.45"/>' +
+    '<stop offset="1" stop-color="#ff7a18" stop-opacity="0"/></linearGradient></defs>' +
+    ticks + bars +
+    '<path d="' + area + '" fill="url(#gradA)"/>' +
+    '<polyline points="' + lin + '" fill="none" stroke="#ffb347" stroke-width="2.4" ' +
+    'stroke-linejoin="round" stroke-linecap="round"/>' + puntos + labels + '</svg>';
+}
+
+function svgDonut(el, items, centro) {
+  const total = items.reduce((s, x) => s + x.v, 0);
+  if (!total) { el.innerHTML = '<p class="vacio">Sin datos todavía.</p>'; return; }
+  const R = 52, C = 2 * Math.PI * R;
+  let off = 0, segs = '';
+  for (const it of items) {
+    const frac = it.v / total, len = frac * C;
+    segs += '<circle r="' + R + '" cx="70" cy="70" fill="none" stroke="' + it.c + '" stroke-width="17" ' +
+      'stroke-dasharray="' + Math.max(0, len - 1.5) + ' ' + (C - len + 1.5) + '" ' +
+      'stroke-dashoffset="' + (-off) + '" transform="rotate(-90 70 70)"><title>' +
+      esc(it.n + ' · ' + fnum(it.v) + ' (' + Math.round(frac * 100) + '%)') + '</title></circle>';
+    off += len;
+  }
+  const ley = items.map((it) =>
+    '<div class="fil"><span class="chip" style="background:' + it.c + '"></span>' +
+    '<span class="nm">' + esc(it.n) + '</span>' +
+    '<span class="vv">' + fnum(it.v) + ' · ' + Math.round(it.v / total * 100) + '%</span></div>').join('');
+  el.innerHTML =
+    '<svg viewBox="0 0 140 140" width="140" height="140" role="img" aria-label="reparto">' +
+    '<circle r="52" cx="70" cy="70" fill="none" stroke="#0d1730" stroke-width="17"/>' + segs +
+    '<text x="70" y="66" text-anchor="middle" font-size="21" font-weight="800" fill="#dbe7f5">' +
+    esc(centro.v1) + '</text>' +
+    '<text x="70" y="84" text-anchor="middle" font-size="9.5" fill="#7e93b4">' + esc(centro.v2) + '</text></svg>' +
+    '<div class="leyenda" style="flex:1;min-width:170px">' + ley + '</div>';
+}
+
+function hbars(el, items, color) {
+  const max = Math.max(1, ...items.map((x) => x.v));
+  el.innerHTML = items.map((x) =>
+    '<div class="hbar"><span class="lbl" title="' + esc(x.n) + '">' + esc(x.n) + '</span>' +
+    '<span class="pista"><span class="relleno" style="width:' +
+    Math.max(2, x.v / max * 100).toFixed(1) + '%;background:linear-gradient(90deg,' +
+    (x.c || color || '#2f7dd1') + '88,' + (x.c || color || '#49b6ff') + ')"></span></span>' +
+    '<span class="val">' + fnum(x.v) + '</span></div>').join('');
+}
+
+function svgSpark(el, curva) {
+  if (!curva || !curva.length) { el.innerHTML = ''; return; }
+  const W = 660, H = 120, mL = 34, mR = 10, mT = 12, mB = 22;
+  const maxT = curva[curva.length - 1].m || 1;
+  const minF = Math.min(...curva.map((p) => p.fps)), maxF = Math.max(...curva.map((p) => p.fps));
+  const lo = Math.max(0, minF - 8), hi = maxF + 8;
+  const X = (m) => mL + (m / Math.max(1, maxT)) * (W - mL - mR);
+  const Y = (f) => mT + (1 - (f - lo) / Math.max(1, hi - lo)) * (H - mT - mB);
+  const lin = curva.map((p) => X(p.m).toFixed(1) + ',' + Y(p.fps).toFixed(1)).join(' ');
+  const area = 'M' + X(curva[0].m) + ',' + (H - mB) + ' L' + lin.split(' ').join(' L') +
+               ' L' + X(curva[curva.length - 1].m) + ',' + (H - mB) + ' Z';
+  const pts = curva.map((p) =>
+    '<circle cx="' + X(p.m) + '" cy="' + Y(p.fps) + '" r="3" fill="#22d3ee">' +
+    '<title>' + esc('minuto ' + p.m + ' · ' + p.fps + ' FPS') + '</title></circle>').join('');
+  el.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="FPS durante la sesión">' +
+    '<defs><linearGradient id="gradF" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#22d3ee" stop-opacity="0.4"/>' +
+    '<stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></linearGradient></defs>' +
+    '<line x1="' + mL + '" x2="' + (W - mR) + '" y1="' + Y(90) + '" y2="' + Y(90) +
+    '" stroke="#2c5b22" stroke-dasharray="3 4"/>' +
+    '<text x="' + (mL - 5) + '" y="' + (Y(90) + 3) + '" text-anchor="end" font-size="9.5" fill="#9ae66e">90</text>' +
+    '<line x1="' + mL + '" x2="' + (W - mR) + '" y1="' + Y(72) + '" y2="' + Y(72) +
+    '" stroke="#6b4413" stroke-dasharray="3 4"/>' +
+    '<text x="' + (mL - 5) + '" y="' + (Y(72) + 3) + '" text-anchor="end" font-size="9.5" fill="#ffd257">72</text>' +
+    '<path d="' + area + '" fill="url(#gradF)"/>' +
+    '<polyline points="' + lin + '" fill="none" stroke="#22d3ee" stroke-width="2.2"/>' + pts +
+    '<text x="' + (W - mR) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" fill="#5d6b82">minuto ' +
+    esc(maxT) + '</text></svg>' +
+    '<p class="estado">Línea verde = 90 FPS (ideal) · línea ámbar = 72 FPS (mínimo cómodo en Quest)</p>';
+}
+
+/* — salud pública (sin clave) — */
 async function salud() {
   const led = $('led'), txt = $('saludtxt');
   try {
     const r = await fetch(base() + '?salud=1');
-    if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
-    const hace = d.haceSeg;
-    let nivel = 'rojo', leyenda = 'sin lotes nunca';
-    if (hace != null) {
-      if (hace < 3600) { nivel = 'verde'; leyenda = 'lotes llegando (último hace ' + fseg(hace) + ')'; }
-      else if (hace < 86400) { nivel = 'ambar'; leyenda = 'último lote hace ' + fseg(hace); }
-      else { nivel = 'ambar'; leyenda = 'último lote hace ' + fseg(hace); }
-    }
-    led.className = 'led ' + nivel;
-    txt.textContent = 'receptor vivo · ' + fnum(d.total) + ' eventos almacenados · ' + leyenda;
+    led.className = 'led verde';
+    txt.textContent = 'receptor vivo · ' + fnum(d.total) + ' eventos guardados';
+    const ps = $('portadaSalud');
+    if (ps) ps.textContent = 'Receptor en línea · ' + fnum(d.total) + ' eventos guardados.';
   } catch (e) {
     led.className = 'led rojo';
-    txt.textContent = 'receptor NO responde (' + e.message + ')';
+    txt.textContent = 'receptor no responde';
   }
 }
 
-function kpi(n, t) { return '<div class="kpi"><div class="n">' + n + '</div><div class="t">' + t + '</div></div>'; }
-function tabla(cabs, filas) {
-  if (!filas.length) return '<div class="vacio">sin datos todavía</div>';
-  return '<table><tr>' + cabs.map((c) => '<th>' + c + '</th>').join('') + '</tr>' +
-    filas.map((f) => '<tr>' + f.map((v, i) => '<td' + (i ? ' class="num"' : '') + '>' + v + '</td>').join('') + '</tr>').join('') + '</table>';
-}
-
-/* ── gráficas ── */
-function barrasDia(porDia) {
-  const dias = (porDia || []).slice().reverse(); // ascendente: hoy a la derecha
-  if (!dias.length) return '<div class="vacio">sin datos</div>';
-  const max = Math.max(1, ...dias.map((x) => x.eventos || 0));
-  return '<div class="barras">' + dias.map((x) =>
-    '<div class="bar" data-l="' + limpia(x.dia) + ' · ' + fnum(x.eventos) + ' eventos · ' + fnum(x.boots) + ' boots · ' + fnum(x.sesiones) + ' sesiones" style="height:' + Math.max(2, Math.round((x.eventos || 0) / max * 100)) + '%"></div>').join('') + '</div>' +
-    '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#5d6b82;margin-top:4px"><span>' + limpia(dias[0].dia) + '</span><span>' + limpia(dias[dias.length-1].dia) + '</span></div>';
-}
-function barrasH(pares, total) {
-  if (!pares.length) return '<div class="vacio">sin datos</div>';
-  const max = Math.max(1, ...pares.map((p) => p[1]));
-  return pares.map(([k, v]) =>
-    '<div class="hbar"><span title="' + limpia(k) + '">' + limpia(k) + '</span>' +
-    '<div class="pista"><div class="relleno" style="width:' + Math.round(v / max * 100) + '%"></div></div>' +
-    '<span class="val">' + fnum(v) + '</span></div>').join('');
-}
-
-function filaEvento(e, idx) {
-  const extras = Object.keys(e).filter((k) => !['e','t','v','sid'].includes(k));
-  const resumen = extras.map((k) => k + '=' + String(JSON.stringify(e[k])).slice(0, 40)).join(' · ');
-  return '<tr class="fila-ev" data-i="' + idx + '"><td><b>' + limpia(e.e || '?') + '</b></td><td>' + limpia(e.v || '—') + '</td><td>' +
-    new Date(e.t || 0).toLocaleString('es-ES') + '</td><td style="color:#7e93b4">' + limpia(resumen).slice(0, 110) + '</td></tr>' +
-    '<tr class="fila-ex" data-x="' + idx + '"><td colspan="4"><pre class="json">' + limpia(JSON.stringify(e, null, 2)) + '</pre></td></tr>';
-}
-
-/* ── r45 · RANKINGS MUNDIALES (worker ?rank=1): agrega por jugador ── */
-function pintaRank(rk) {
-  if (!rk || !rk.ok || !rk.rank) {
-    return '<section><h2>Rankings mundiales</h2><div class="vacio">este worker aún no publica rankings (despliega worker v3 con ?rank=1)</div></section>';
-  }
-  const R = rk.rank;
-  if (!R.jugadores) {
-    return '<section><h2>Rankings mundiales</h2><div class="vacio">aún sin jugadores con identidad (pid): llegan en cuanto jueguen con la build v3.6.139 o posterior — cada sesión VR y cada partido firmado deja perfil, resultado y logros</div></section>';
-  }
-  const L = (arr, cabs, fn) => tabla(cabs, arr.map(fn));
-  const elo = L(R.elo || [], ['#', 'jugador', 'ELO', 'victorias', 'visto'], (j, i) =>
-    [medalla(i), limpia(j.n), fnum(j.el), fnum(Math.max(j.w, j.vics)), j.hace != null ? fseg(j.hace) : '—']);
-  const vics = L(R.vics || [], ['#', 'jugador', 'victorias', 'partidas', 'online'], (j, i) =>
-    [medalla(i), limpia(j.n), fnum(Math.max(j.w, j.vics)), fnum(j.part), fnum(j.p2p)]);
-  const pts = L(R.pts || [], ['#', 'jugador', 'puntos', 'estrellas', 'racha'], (j, i) =>
-    [medalla(i), limpia(j.n), fnum(j.pt), fnum(j.st), fnum(j.bs)]);
-  const logros = L(R.logros || [], ['#', 'jugador', 'logros', 'ELO', 'visto'], (j, i) =>
-    [medalla(i), limpia(j.n), fnum(j.ach), fnum(j.el), j.hace != null ? fseg(j.hace) : '—']);
-  return '<section><h2>Rankings mundiales · ' + fnum(R.jugadores) + ' jugador(es) identificado(s) por pid anónimo</h2>' +
-    '<div class="grid2">' +
-    '<div><h3 style="margin:6px 0 4px;color:#9fb3cc">ELO</h3>' + elo + '</div>' +
-    '<div><h3 style="margin:6px 0 4px;color:#9fb3cc">Victorias</h3>' + vics + '</div>' +
-    '<div><h3 style="margin:6px 0 4px;color:#9fb3cc">Puntos · Pro Training</h3>' + pts + '</div>' +
-    '<div><h3 style="margin:6px 0 4px;color:#9fb3cc">Logros</h3>' + logros + '</div>' +
-    '</div></section>';
-}
-
-/* ── r46 · RETENCIÓN (D1/D7/D30) del resumen del worker ── */
-function pintaRetencion(r) {
-  if (!r || !r.jugadores) {
-    return '<section><h2>Retención</h2><div class="vacio">aún sin jugadores identificados (pid): las curvas D1/D7/D30 nacen con la build 3.6.139 — cada jugador que juega deja su cohorte</div></section>';
-  }
-  const curva = (k, m, nom) =>
-    '<div class="hbar"><span title="' + nom + '">' + nom + '</span>' +
-    '<div class="pista"><div class="relleno" style="width:' + (r[k] == null ? 0 : Math.min(100, r[k])) + '%"></div></div>' +
-    '<span class="val">' + (r[k] == null ? '—' : r[k] + '%') + ' <i style="color:#5c7191">(' + fnum(m) + ')</i></span></div>';
-  return '<section><h2>Retención · ' + fnum(r.jugadores) + ' jugador(es) · ' + fnum(r.recurrentes == null ? 0 : r.recurrentes) + '% recurrentes</h2>' +
-    curva('d1', r.muestra1 || 0, 'Día 1') +
-    curva('d7', r.muestra7 || 0, 'Semana 1') +
-    curva('d30', r.muestra30 || 0, 'Mes 1') +
-    '<p class="meta" style="margin:8px 0 0">% de jugadores que vuelven a jugar (día +1 · dentro de la semana · dentro del mes). Entre paréntesis, la muestra elegible de cada curva.</p></section>';
-}
-
-function pinta(d, rk) {
-  ultimoResumen = d;
-  const ev = d.porEvento || {};
-  const al = d.alarmas || { nivel: 'verde', items: [] };
-  const alHTML = (al.items || []).length
-    ? (al.items || []).map((i) => '<div class="ala ' + limpia(i.nivel) + '"><b>' +
-        (i.nivel === 'rojo' ? '✖' : '⚠') + '</b>' + limpia(i.msg) + '</div>').join('')
-    : '<div class="ala verde"><b>✓</b>Sin alarmas — FPS, errores JS y sesiones VR dentro de umbral</div>';
-  const topEv = Object.entries(ev).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  const dur = d.duraciones || {};
-  const vr = d.vrDuracion || {};
-  const pc = d.porCampeonato || {};
-  const pcFilas = Object.entries(pc).map(([ch, evs]) => [ch, Object.entries(evs || {}).map(([e, n]) => e + ' ' + fnum(n)).join(' · ') || '—']);
-  const ses = (d.sesiones || []).slice(0, 14);
-  const vrS = (d.sesionesVR || []);
-  const ult = d.ultimos || [];
-
-  const vrFilas = vrS.map((c) => [
-    c.sid || '—', c.v || '—',
-    new Date(c.inicio || 0).toLocaleString('es-ES'),
-    c.dur != null ? fseg(c.dur) : '—',
-    c.durReal ? 'real' : 'estimada',
-    c.estado || '—',
-    c.fps != null ? fnum(c.fps) : '—',
-    c.fpsMin != null ? fnum(c.fpsMin) + ' / ' + fnum(c.fpsMax) : '—',
-  ]);
-
-  $('rangotxt').textContent = 'rango: ' + ($('dias').value === '0' ? 'histórico completo' : 'últimos ' + $('dias').value + ' días') + ($('sid').value.trim() ? ' · sid «' + $('sid').value.trim() + '»' : '');
-
-  $('contenido').innerHTML =
-    '<div class="kpis">' +
-    kpi(fnum(d.total), 'eventos') +
-    kpi(fnum(d.sesionesUnicas), 'sesiones únicas') +
-    kpi(fnum(d.arranques24h), 'arranques 24 h') +
-    kpi(fseg(dur.media), 'permanencia media') +
-    kpi(fseg(dur.max), 'permanencia máx.') +
-    kpi(fseg(vr.media), 'en VR (media)') +
-    kpi(d.fps && d.fps.medio != null ? fnum(d.fps.medio) : '—', 'fps medio VR') +
-    '</div>' +
-    pintaRank(rk) +
-    pintaRetencion(d.retencion) +
-    '<section><h2>Alarmas de producción · nivel <b style="color:' +
-    (al.nivel === 'rojo' ? '#ff6b61' : al.nivel === 'amarillo' ? '#fbbf24' : '#7ddb6a') +
-    '">' + limpia(al.nivel).toUpperCase() + '</b></h2>' + alHTML + '</section>' +
-    '<section><h2>Eventos por día</h2>' + barrasDia(d.porDia) + '</section>' +
-    '<div class="grid2">' +
-    '<section><h2>Top eventos</h2>' + barrasH(topEv) + '</section>' +
-    '<section><h2>Versiones</h2>' + tabla(['versión', 'eventos', 'sesiones'], (d.versiones || []).map((v) => [limpia(v.v || '—'), fnum(v.eventos), fnum(v.sesiones)])) +
-    '<h2 style="margin-top:14px">Embudo por campeonato</h2>' + tabla(['champ', 'eventos'], pcFilas) + '</section>' +
-    '</div>' +
-    '<section><h2>Desbloqueos de logros</h2>' +
-    ((d.logrosTop || []).length
-      ? barrasH(d.logrosTop)
-      : '<div class="vacio">aún sin desbloqueos firmados: cada logro NUEVO deja un evento «logro» desde la build 3.6.139</div>') +
-    '</section>' +
-    '<section><h2>Sesiones VR</h2>' + tabla(['sid', 'versión', 'inicio', 'duración', 'tipo', 'estado', 'fps', 'mín/máx'], vrFilas) + '</section>' +
-    '<section><h2>Sesiones recientes</h2>' + tabla(['sid', 'eventos', 'primero', 'último'], ses.map((s) => [limpia(s.sid), fnum(s.n), new Date(s.primero).toLocaleString('es-ES'), new Date(s.ultimo).toLocaleTimeString('es-ES')])) + '</section>' +
-    '<section><h2>Últimos eventos (crudos · clic para ver el JSON)</h2>' +
-    (ult.length ? '<table><tr><th>evento</th><th>versión</th><th>hora</th><th>detalle</th></tr>' + ult.map(filaEvento).join('') + '</table>' : '<div class="vacio">sin datos</div>') +
-    '</section>';
-
-  document.querySelectorAll('.fila-ev').forEach((tr) => {
-    tr.addEventListener('click', () => {
-      const ex = document.querySelector('.fila-ex[data-x="' + tr.dataset.i + '"]');
-      if (ex) ex.classList.toggle('abierta');
-    });
-  });
+/* — carga de datos — */
+async function pedir(q) {
+  const r = await fetch(base() + q + (q.includes('?') ? '&' : '?') +
+    'clave=' + encodeURIComponent(CLAVE));
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
 }
 
 async function cargar() {
-  CLAVE = $('clave').value.trim();
-  if (!CLAVE) { aviso('Falta la CLAVE de lectura (variable CLAVE del worker).'); return; }
-  try { localStorage.setItem('pp_tele_clave', CLAVE); } catch (e) {}
-  aviso('');
-  $('cargar').disabled = true; $('cargar').textContent = 'Cargando…';
+  if (!CLAVE) { $('portada').classList.remove('oculto'); return; }
+  $('portada').classList.add('oculto');
+  $('btn').disabled = true;
+  $('refresco').innerHTML = '<span class="spinner"></span> actualizando…';
   try {
-    // r45 · resumen + rankings EN PARALELO (el rank es opcional: si el
-    // worker aún no lo publica, el panel sigue entero sin él)
-    const [d, rk] = await Promise.all([
-      pide('?resumen=1' + filtros()),
-      pide('?rank=1' + filtros()).catch(() => null),
+    const [res, ev] = await Promise.all([
+      pedir('?resumen=1'),
+      pedir('?eventos=400').catch(() => ({ eventos: [] })),
     ]);
-    pinta(d, rk);
-    $('refresca').disabled = false; $('csv').disabled = false; $('json').disabled = false;
-    $('purga').disabled = false; $('prueba').disabled = false;
-    $('fuente').textContent = base();
+    DATOS = res; EVENTOS = ev.eventos || []; TS_CARGA = Date.now();
+    render();
+    $('refresco').textContent = 'actualizado ' + new Date(TS_CARGA).toLocaleTimeString('es-ES',
+      { hour:'2-digit', minute:'2-digit' });
   } catch (e) {
-    aviso('No se pudo leer (' + e.message + '). ¿Clave correcta? ¿Worker vivo? Prueba: ' + base() + '?resumen=1&clave=…');
-  } finally {
-    $('cargar').disabled = false; $('cargar').textContent = 'Ver datos';
+    $('refresco').textContent = '';
+    $('alarma').innerHTML = '<div class="aviso rojo"><b>No se pudieron leer los datos.</b> ' +
+      'Revisa la clave de lectura y vuelve a intentarlo. <code>' + esc(String(e.message || e)) +
+      '</code></div>';
   }
+  $('btn').disabled = false;
 }
 
-/* ── exportaciones ── */
-$('csv').onclick = () => {
-  window.open(base() + '?csv=1&clave=' + encodeURIComponent(CLAVE) + filtros(), '_blank');
-};
-$('json').onclick = () => {
-  if (!ultimoResumen) return;
-  const blob = new Blob([JSON.stringify(ultimoResumen, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'telemetria-resumen-' + new Date().toISOString().slice(0, 10) + '.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-};
+function kpi(n, t, d, color) {
+  return '<div class="kpi" style="--acento:' + color + '"><div class="n">' + n +
+         '</div><div class="t">' + t + '</div>' + (d ? '<div class="d">' + d + '</div>' : '') + '</div>';
+}
 
-/* ── prueba de ingestión de extremo a extremo ── */
-$('prueba').onclick = async () => {
-  const sid = 'panel-prueba-' + Date.now().toString(36);
-  const t0 = performance.now();
-  try {
-    const lote = [{ e: 'panel_prueba', t: Date.now(), v: 'panel-r42', sid: sid, nota: 'prueba del panel' }];
-    const r = await fetch(base(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify(lote) });
-    const msIda = Math.round(performance.now() - t0);
-    if (r.status !== 204) throw new Error('el POST devolvió HTTP ' + r.status + ' (esperado 204)');
-    const d = await pide('?resumen=1&sid=' + encodeURIComponent(sid));
-    const n = ((d.porEvento || {})['panel_prueba']) || 0;
-    if (n < 1) throw new Error('el evento no aparece en el resumen');
-    const t1 = performance.now();
-    await fetch(base() + '?clave=' + encodeURIComponent(CLAVE) + '&sid=' + encodeURIComponent(sid), { method: 'DELETE' });
-    aviso('');
-    window.alert('INGESTIÓN OK · POST 204 en ' + msIda + ' ms · evento visible en el resumen · limpieza ' + Math.round(performance.now() - t1) + ' ms. Producción operativa de extremo a extremo.');
-    cargar();
-  } catch (e) {
-    aviso('PRUEBA DE INGESTIÓN FALLIDA: ' + e.message);
+function render() {
+  const R = DATOS;
+  $('contenido').classList.remove('oculto');
+
+  /* KPIs */
+  $('kpis').innerHTML =
+    kpi(fnum(R.sesionesUnicas), 'Jugadores', 'personas que han entrado', '#49b6ff') +
+    kpi(fnum(R.total), 'Eventos guardados', 'acciones registradas en total', '#ff7a18') +
+    kpi(fnum(R.arranques24h), 'Arranques · 24 h', 'veces que se encendió el juego hoy', '#22d3ee') +
+    kpi(R.duraciones && R.duraciones.n ? fdurCorta(R.duraciones.media) : '—', 'Sesión media',
+        R.duraciones && R.duraciones.n ? fnum(R.duraciones.n) + ' sesiones largas' : '', '#a78bfa') +
+    kpi(fnum(R.vrDuracion ? R.vrDuracion.n : 0), 'Sesiones de casco', 'con el visor puesto', '#8fdcff') +
+    kpi(R.fps && R.fps.medio ? fnum(R.fps.medio) + ' FPS' : '—', 'Rendimiento en casco',
+        R.fps && R.fps.muestras ? fnum(R.fps.muestras) + ' muestras' : 'sin muestras', '#3fd97a');
+
+  /* alarma global */
+  const al = R.alarmas || { nivel: 'verde', items: [] };
+  const txtAlarma = {
+    verde:  ['verde',   '<b>Todo en orden.</b> El receptor no ha detectado nada raro.'],
+    amarillo:['amarillo','<b>Ojo:</b> hay avisos que conviene mirar cuando puedas.'],
+    rojo:   ['rojo',    '<b>Atención:</b> hay alarmas activas que necesitan revisión.'],
+  }[al.nivel] || ['verde', '<b>Todo en orden.</b>'];
+  $('alarma').innerHTML = (al.items && al.items.length)
+    ? '<div class="aviso ' + txtAlarma[0] + '">' + txtAlarma[1] + '<br>' +
+      al.items.map((x) => '· ' + esc(typeof x === 'string' ? x : JSON.stringify(x))).join('<br>') + '</div>'
+    : '<div class="aviso ' + txtAlarma[0] + '">' + txtAlarma[1] + '</div>';
+
+  /* ¿cuándo se juega? */
+  svgArea($('gDias'), (R.porDia || []).slice().sort((a, b) => a.dia < b.dia ? -1 : 1));
+
+  /* ¿qué ocurre? (donut de familias + detalle) */
+  const porEv = R.porEvento || {};
+  const fams = FAMILIAS.map(([nm, evs, col]) => ({
+    n: nm, c: col, v: evs.reduce((s, e) => s + (porEv[e] || 0), 0),
+  })).filter((x) => x.v > 0);
+  const sumaFams = fams.reduce((s, x) => s + x.v, 0);
+  const otros = Math.max(0, R.total - sumaFams);
+  if (otros > 0) fams.push({ n: 'Otros', c: '#64748b', v: otros });
+  svgDonut($('gTipos'), fams, { v1: fnum(R.total), v2: 'eventos' });
+  const det = Object.keys(porEv).map((k) => ({ n: ETIQUETA[k] || k, v: porEv[k] }))
+    .sort((a, b) => b.v - a.v).slice(0, 7);
+  hbars($('gTiposDetalle'), det, '#2f7dd1');
+
+  /* ¿están al día? (versiones) */
+  const vers = (R.versiones || []).slice().sort((a, b) => b.eventos - a.eventos);
+  let laNueva = '';
+  for (const x of (R.versiones || [])) if (!laNueva || esMasNueva(x.v, laNueva)) laNueva = x.v;
+  const PALETA = ['#ff7a18', '#22d3ee', '#8fdcff', '#a78bfa', '#fbbf24', '#64748b', '#3fd97a'];
+  svgDonut($('gVersiones'), vers.map((x, i) => ({ n: x.v, v: x.eventos, c: PALETA[i % PALETA.length] })),
+    { v1: fnum(vers.length), v2: 'versiones' });
+
+  /* jugadores */
+  const mapa = new Map();
+  const anade = (sid) => {
+    if (!mapa.has(sid)) mapa.set(sid, { sid, n: '', count: 0, primero: Infinity, ultimo: 0,
+      vr: 0, partidas: 0, v: '' });
+    return mapa.get(sid);
+  };
+  for (const s of (R.sesiones || [])) {
+    const p = anade(s.sid);
+    p.count = Math.max(p.count, s.n || 0);
+    p.primero = Math.min(p.primero, s.primero || Infinity);
+    p.ultimo = Math.max(p.ultimo, s.ultimo || 0);
   }
-};
-
-/* ── purga con confirmación fuerte ── */
-$('purga').onclick = async () => {
-  const sid = $('sid').value.trim();
-  const dias = $('dias').value;
-  let qs = '?clave=' + encodeURIComponent(CLAVE);
-  let desc;
-  if (sid) { qs += '&sid=' + encodeURIComponent(sid); desc = 'los eventos de la sesión «' + sid + '»'; }
-  else if (dias !== '0') { qs += '&dias=' + dias; desc = 'los eventos ANTERIORES a ' + dias + ' días (retención)'; }
-  else desc = 'TODOS los eventos de telemetría (histórico completo)';
-  if (sid) {
-    if (!confirm('¿Borrar ' + desc + '?')) return;
-  } else {
-    const teclea = prompt('Esto borra ' + desc + ' de forma PERMANENTE.\nEscribe BORRAR para confirmar:');
-    if (teclea !== 'BORRAR') return;
+  for (const ev of EVENTOS) {
+    if (!ev.sid) continue;
+    const p = anade(ev.sid);
+    p.count += 1;
+    p.primero = Math.min(p.primero, ev.t || Infinity);
+    p.ultimo = Math.max(p.ultimo, ev.t || 0);
+    if (ev.n) p.n = ev.n;
+    if (ev.v) p.v = ev.v;
+    if (ev.e === 'vr_start') p.vr += 1;
+    if (ev.e === 'net_match' || ev.e === 'carrera') p.partidas += 1;
   }
-  try {
-    const r = await fetch(base() + qs, { method: 'DELETE' });
-    const d = await r.json();
-    aviso('Purga completada: ' + fnum(d.borrados) + ' evento(s) borrado(s).');
-    salud(); cargar();
-  } catch (e) { aviso('La purga falló: ' + e.message); }
-};
+  const jugadores = [...mapa.values()].sort((a, b) => b.count - a.count);
+  const maxEv = Math.max(1, ...jugadores.map((j) => j.count));
+  const ses = jugadores.length;
+  const alDia = jugadores.filter((j) => j.v === laNueva).length;
+  $('notaVersion').innerHTML = laNueva
+    ? 'La versión más reciente es <b>' + esc(laNueva) + '</b> · ' + fnum(alDia) + ' de ' +
+      fnum(ses) + ' sesiones juegan ya con ella.'
+    : '';
+  $('tJugadores').innerHTML =
+    '<thead><tr><th>Jugador</th><th>Visto</th><th class="num">Actividad</th>' +
+    '<th class="num">Casco</th><th class="num">Conectado</th><th>Versión</th></tr></thead><tbody>' +
+    jugadores.slice(0, 14).map((j) => {
+      const nm = j.n || 'Jugador anónimo';
+      const ini = esc((j.n || j.sid || '?')[0].toUpperCase());
+      return '<tr><td><div class="jug"><span class="avatar" style="background:' +
+        colorNombre(j.sid) + '">' + ini + '</span><span><span class="nombre">' + esc(nm) +
+        '</span><br><span class="sid">' + esc(j.sid) + '</span></span></div></td>' +
+        '<td>' + hace(j.ultimo) + '</td>' +
+        '<td class="num"><div style="display:flex;gap:8px;align-items:center">' +
+        '<span class="mini" style="flex:1"><i style="width:' +
+        Math.max(6, j.count / maxEv * 100).toFixed(0) + '%"></i></span>' +
+        '<span>' + fnum(j.count) + '</span></div></td>' +
+        '<td class="num">' + (j.vr ? fnum(j.vr) : '—') + '</td>' +
+        '<td class="num">' + (j.partidas ? fnum(j.partidas) : '—') + '</td>' +
+        '<td>' + (j.v ? '<span class="pill">' + esc(j.v) + '</span>' : '—') + '</td></tr>';
+    }).join('') + '</tbody>';
+  $('jsonJugadores').textContent = JSON.stringify(jugadores.slice(0, 40), null, 2);
 
-$('cargar').onclick = cargar;
-$('refresca').onclick = cargar;
-$('auto').onchange = () => {
-  if (timerAuto) { clearInterval(timerAuto); timerAuto = null; }
-  if ($('auto').checked) timerAuto = setInterval(() => { if (CLAVE) { cargar(); } salud(); }, 60000);
-};
-if (CLAVE) cargar();
+  /* VR */
+  const vrs = (R.sesionesVR || []).slice().sort((a, b) => (b.inicio || 0) - (a.inicio || 0));
+  $('vrResumen').innerHTML = vrs.length
+    ? '<p class="estado">' + fnum(vrs.length) + ' sesiones con el casco · media ' +
+      fdur((R.vrDuracion || {}).media || 0) + ' · la más larga ' +
+      fdur((R.vrDuracion || {}).max || 0) + '</p>'
+    : '<p class="vacio">Todavía no hay sesiones con el casco registradas.</p>';
+  const conCurva = vrs.find((x) => x.curva && x.curva.length);
+  if (conCurva) {
+    $('gFps').innerHTML = '<p class="estado" style="margin:0 0 4px">FPS durante la última sesión VR con datos (' +
+      esc(conCurva.v || '') + ' · ' + hace(conCurva.inicio) + '):</p>';
+    const div = document.createElement('div');
+    svgSpark(div, conCurva.curva);
+    $('gFps').appendChild(div);
+  } else $('gFps').innerHTML = '';
+  $('tVR').innerHTML = vrs.length
+    ? '<thead><tr><th>Cuando</th><th>Jugador</th><th>Duración</th><th>¿Cómo acabó?</th>' +
+      '<th class="num">FPS medio</th><th class="num">Mín–Máx</th></tr></thead><tbody>' +
+      vrs.slice(0, 10).map((x) => {
+        const nombre = (EVENTOS.filter((e) => e.sid === x.sid && e.n).map((e) => e.n)[0]) || 'Anónimo';
+        const estado = { completa: '<span class="pill" style="border-color:#2c5b22;color:#9ae66e">completa</span>',
+          interrumpida: '<span class="pill naranja">se cortó</span>' }[x.estado] ||
+          '<span class="pill gris">' + esc(x.estado || '—') + '</span>';
+        return '<tr><td>' + ffecha(x.inicio) + '</td>' +
+          '<td><div class="jug"><span class="avatar" style="background:' + colorNombre(x.sid) +
+          ';width:24px;height:24px;font-size:11px">' + esc((nombre[0] || '?').toUpperCase()) +
+          '</span>' + esc(nombre) + '</div></td>' +
+          '<td>' + fdur(x.dur) + '</td><td>' + estado + '</td>' +
+          '<td class="num">' + (x.fps ? fnum(x.fps) : '—') + '</td>' +
+          '<td class="num">' + (x.fpsMin ? fnum(x.fpsMin) + '–' + fnum(x.fpsMax) : '—') + '</td></tr>';
+      }).join('') + '</tbody>'
+    : '';
+
+  /* campeonatos */
+  const champs = Object.keys(R.champRank || {});
+  $('gCampeonatos').innerHTML = champs.length
+    ? champs.map((c) => {
+        const d = R.champRank[c];
+        return '<div style="margin-bottom:12px"><div class="hbar">' +
+          '<span class="lbl" style="font-weight:700;text-transform:capitalize">' + esc(c) + '</span>' +
+          '<span class="pista"><span class="relleno" style="width:' +
+          Math.max(3, (d.partidas || 0) * 25) + '%;background:linear-gradient(90deg,#ff7a1888,#ffb347)"></span></span>' +
+          '<span class="val">' + fnum(d.partidas) + '</span></div>' +
+          '<p class="estado" style="margin:2px 0 0">Victorias: <b>' + fnum(d.victorias || 0) +
+          '</b> · Mejor puntuación: <b>' + fnum(d.mejor || 0) + '</b> · Estrellas: <b>' +
+          fnum(d.estrellas || 0) + '</b></p></div>';
+      }).join('')
+    : '<p class="vacio">Aún no hay campeonatos registrados. Cuando alguien juegue uno, aparecerá aquí.</p>';
+
+  /* timeline */
+  $('timeline').innerHTML = (R.ultimos || []).slice(0, 20).map((ev) => {
+    const [nm, col] = familiaDe(ev.e);
+    return '<div class="ev"><span class="punto" style="background:' + col + '"></span>' +
+      '<span>' + fraseDe(ev) + ' <span class="pill gris" style="margin-left:6px">' + esc(nm) +
+      '</span></span><span class="cuando">' + hace(ev.t) + '</span></div>';
+  }).join('') || '<p class="vacio">Sin eventos todavía.</p>';
+
+  /* problemas */
+  const err = R.erroresTop || [];
+  $('problemas').innerHTML = err.length
+    ? err.slice(0, 8).map((x) => '<div class="aviso amarillo">' +
+        esc(x.e || x.ev || x.msg || JSON.stringify(x)) +
+        (x.n ? ' · ' + fnum(x.n) + ' veces' : '') + '</div>').join('')
+    : '<p class="vacio ok">Ningún problema registrado. El juego está siendo de los buenos.</p>';
+
+  $('jsonResumen').textContent = JSON.stringify(R, null, 2);
+}
+
+/* — arranque — */
+$('btn').addEventListener('click', () => {
+  CLAVE = $('clave').value.trim();
+  try { localStorage.setItem('pp_tele_clave', CLAVE); } catch (e) {}
+  cargar();
+});
+$('clave').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btn').click(); });
+$('auto').addEventListener('change', () => {
+  if (TEMP) { clearInterval(TEMP); TEMP = null; }
+  armarAuto();
+});
+function armarAuto() {
+  if ($('auto').checked && CLAVE) TEMP = setInterval(cargar, 60000);
+}
+armarAuto();
+setInterval(() => {
+  if (TS_CARGA) $('refresco').textContent =
+    'actualizado hace ' + Math.max(0, Math.round((Date.now() - TS_CARGA) / 1000)) + ' s';
+}, 5000);
 salud();
-setInterval(salud, 60000);
+setInterval(salud, 45000);
+if (CLAVE) cargar();
 </script>
 </body>
 </html>

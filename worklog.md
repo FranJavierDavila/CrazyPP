@@ -6189,3 +6189,59 @@ Stage Summary:
   ?v=3.6.144-SDK6 · ventana SWR despejada antes del push (última partida real
   hace ~11,6 h; el único evento reciente era un boot de una versión vieja
   cacheada 3.6.27).
+
+━━━ FASE 147 · r53 · EL PANEL DE TELEMETRÍA SE VUELVE DASHBOARD (2026-11-11) ━━━
+
+- PETICIÓN DEL DUEÑO tras la partida de prueba: «telemetría formateada como un
+  dashboard muy visual, con gráficas y datos de los diferentes jugadores,
+  agradable y entendible por personal no técnico». El panel técnico
+  (tablas + JSON crudo) se reescribe COMPLETO manteniendo contratos:
+  misma ruta (telemetria.html), mismas claves de localStorage
+  (pp_tele_clave / pp_tele_url), mismos endpoints del worker
+  (?salud=1 público · ?resumen=1 · ?eventos=400 con clave) y cero
+  dependencias externas — TODAS las gráficas son SVG propio (área con
+  degradado, donuts con segmentos y leyenda, barras horizontales,
+  sparkline de FPS con líneas guía 90/72). Los QA del panel (CRAZY +
+  Telemetría en la cabecera) siguen en verde.
+- QUÉ VE EL DUEÑO, EN SU IDIOMA (todo en claro, sin códigos):
+  · 6 KPIs: jugadores, eventos guardados, arranques 24 h, sesión media,
+    sesiones de casco y FPS medio en VR.
+  · Semáforo de salud (verde/ámbar/rojo) con las alarmas del receptor.
+  · «¿Cuándo se juega?» — actividad por día (encendidos como barras
+    azules + línea naranja de actividad total, con tooltips).
+  · «¿Qué ocurre en el juego?» — donut por FAMILIAS amables (partidas y
+    red / realidad virtual / arranques y cierres / ajustes y juego /
+    control de versiones) + top 7 de tipos con nombre humano
+    (ETIQUETA: boot→Arranques del juego, ai_style→Cambios del rival IA…).
+  · «¿Están todos al día?» — donut de versiones + nota calculada EN LOCAL
+    (la versión más reciente por comparación numérica y cuántas sesiones
+    juegan ya con ella — el campo sesiones del worker era inconsistente
+    para esto; lección: esa métrica se deriva de los eventos, no del
+    agregado).
+  · «Los jugadores» — tabla fusionada sesiones+eventos: avatar con color
+    estable por sid, nombre elegido por el jugador (esc() SIEMPRE — es
+    input del usuario), «visto hace X», barras de actividad, nº de
+    sesiones de casco, partidas conectadas y versión; JSON crudo
+    plegable para el dueño técnico.
+  · «Realidad virtual · el casco» — resumen de duraciones, sparkline de
+    FPS de la última sesión VR con curva, tabla con estado (completa /
+    se cortó) y FPS medio y mín–máx.
+  · «Campeonatos», «Lo último que ha pasado» (timeline de 20 eventos con
+    frases: «XAVIER ajustó el rival IA (bloqueador · medio)»,
+    «Alguien encendió el juego (pantalla)», «Pulso de rendimiento · 75 FPS
+    en el minuto 5» — dif/plataforma traducidas) y «Problemas vistos»
+    (erroresTop + estado verde amable si no hay nada).
+  · Auto-refresco cada 60 s (conmutable), contador «actualizado hace X s»,
+    LED de salud público sondeando ?salud=1 cada 45 s.
+- FIXES DURANTE EL MONTAJE (cazados por la propia QA Playwright):
+  (1) nota de versiones usaba `jugadores` antes de declararse (TDZ dentro
+      del try de cargar → sin pageerror, sección vacía) — reordenado.
+  (2) frase de bola_guard con || partiendo la concatenación (precedencia).
+  (3) KPI «21 min» partiendo en dos líneas (nowrap + fdurCorta).
+  (4) «hace 1 días» → singular; medium→medio, 2d→pantalla, «a los 300 s»
+      → «en el minuto 5».
+- QA VERDE: qa_dashboard_r53 (12/0: portada sin clave, dashboard con clave
+  por localStorage — la clave JAMÁS en la URL —, 6 KPIs, área + 15
+  segmentos de donut, tabla de jugadores, timeline legible, 0 pageerrors,
+  captura full-page revisada a ojo) · qa_telemetria 132/0 (panel por :3000
+  y gateway :81 + PII intacta).

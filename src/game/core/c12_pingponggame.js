@@ -8187,6 +8187,10 @@ export class PingPongGame {
       return true;
     }
     if (!this._megaMatriz.find((x) => x.id === 'iman')) return false;
+    this._megaGasta(ent);   // r54 · la ACTIVACIÓN gasta su carga — igual que
+    // efecto/portal/clon/red/elec/fenix/… (r57 retiró el gasto por
+    // ASISTENCIA de la guía, no éste; sin él el imán re-disparaba gratis
+    // para siempre y el ent sintético de _dlArma quedaba huérfano).
     this._imanT = IMAN_DUR;
     this._imanAsistidas = 0;
     this._imanWarn = false;
@@ -12619,8 +12623,12 @@ export class PingPongGame {
   }
 
   /** r39 · ¿la ventana `id` está armada POR DUELOS LOCOS (local o del
-   *  rival)? — abre el tick de las ventanas de campeonato (updateMega las
-   *  gobierna bajo `on`, que en duelos es false). */
+   *  rival)? r54 · el tick de las ventanas de campeonato YA NO la exige:
+   *  updateMega las gobierna con la puerta ÚNICA (on || _dlEnabled()) —
+   *  el slot único _dlId/_dlT de duelos no puede APAGAR la ventana ajena
+   *  (el poder del rival o tu siguiente lanzamiento jamás marcan
+   *  «agotado» al recién nacido; informe del dueño: los poderes «nacen
+   *  agotados»). El método sigue vivo para el reloj/warn del duelo. */
   _dlVentana(id) {
     return this._dlEnabled() && this._dlT > 0 && this._dlId === id;
   }
@@ -12685,12 +12693,20 @@ export class PingPongGame {
   _dlUpdate(dt) {
     if (this.disposed || !this.rules) return;
     if (!this._dlEnabled()) {
-      if (this._dlT > 0) { this._dlT = 0; this._dlId = ''; }
       this._dlLista = false;
-      // r39 · al morir duelos, las ventanas del Arcano armadas se recogen
-      // con SU fin natural (red exacta, rapidez restaurada, marcas limpias)
-      try { this._dlVentanasApaga(); } catch (eVA) { /* */ }
       this._dlOndaFlojoT = 0;
+      // r54 · LA RECOGIDA DE VENTANAS SÓLO EN LA TRANSICIÓN (duelos vivos
+      // → muertos, reloj o id aún calientes). Antes corría CADA FRAME fuera
+      // de duelos y _dlVentanasApaga ejecutaba el fin de CUALQUIER ventana
+      // del Arcano recién armada — en campeonato, el poder moría al frame
+      // SIGUIENTE del disparo con su «SÚPER X agotado» y efecto cero: el
+      // bug «nacen agotados» del dueño (sonda: imanFin 1 frame tras el
+      // gatillo). Fuera de la transición, NADA toca las ventanas: las
+      // gobierna updateMega (on) y sus relojes propios.
+      if (this._dlT > 0 || this._dlId) {
+        this._dlT = 0; this._dlId = ''; this._dlWarn = false;
+        try { this._dlVentanasApaga(); } catch (eVA) { /* */ }
+      }
       return;
     }
     if (this._dlOndaFlojoT > 0) this._dlOndaFlojoT -= dt;
@@ -12709,6 +12725,15 @@ export class PingPongGame {
     if (this.disposed || !this.rules) return;
     const r = this.rules;
     const on = this.megaEnabled() && !this.inHall && !this.calib;
+    // r54 · DUELOS LOCOS vivos — puerta ÚNICA de las ventanas del Arcano
+    // armadas por duelos (las MÍAS y las del RIVAL a la vez). Antes cada
+    // ventana sólo vivía bajo _dlVentana(id) y el slot único _dlId/_dlT
+    // de duelos hacía que CUALQUIER otro disparo (el del rival o tu
+    // siguiente carga) la apagara al instante con su «SÚPER X agotado»:
+    // los poderes «nacen agotados y no tienen efecto alguno». Ahora las
+    // ventanas arman SU reloj propio (los *_T de siempre) y viven SUS
+    // segundos completos; al morir duelos las recoge _dlVentanasApaga.
+    const dlV = this._dlEnabled();
     // r25 (v3.6.120) · ETAPAS 2/4: CORTINA de poderes (nunca aparecen en
     // las pruebas de habilidad — ni icono, ni cargas nuevas, ni ventanas).
     if (this._poderesEnPrueba()) {
@@ -12762,7 +12787,7 @@ export class PingPongGame {
     }
     // v3.6.36 · SÚPER EFECTO ACTIVO: ventana PROPIA de 10 s (r56: regla
     // del dueño — «sólo está activo 10 segundos desde la activación»).
-    if ((on || this._dlVentana('efecto')) && this._efectoT > 0) {
+    if ((on || dlV) && this._efectoT > 0) {   // r54: puerta única duelos
       this._efectoT -= dt;
       if (this._efectoT <= 0) {
         this._efectoFin();               // fin natural (tiempo agotado)
@@ -12780,7 +12805,7 @@ export class PingPongGame {
     // v3.6.49 (r57) · SÚPER IMÁN ACTIVO: ventana PROPIA de 10 s (regla
     // del dueño; la GUÍA vive en el golpe, c05; aquí solo el reloj y la
     // cuenta sonora — sin vigilantes de cargas desde la r57).
-    if ((on || this._dlVentana('iman')) && this._imanT > 0) {
+    if ((on || dlV) && this._imanT > 0) {     // r54: puerta única duelos
       this._imanT -= dt;
       if (this._imanT <= 0) {
         this._imanFin();                 // fin natural (10 s agotados)
@@ -12805,7 +12830,7 @@ export class PingPongGame {
     // v3.6.43: el vigilante «sin cargas → portal fuera» se RETIRA — la
     // ventana tiene SUS 3 golpes garantizados y ya no depende de la matriz.
     if (this._portalCd > 0) this._portalCd -= dt;    // antirrebote SIEMPRE
-    if ((on || this._dlVentana('portal')) && this._portalT > 0) {
+    if ((on || dlV) && this._portalT > 0) {   // r54: puerta única duelos
       this._portalT -= dt;
       if (this._portalT <= 0) {
         this._portalFin();               // fin natural (8 s agotados)
@@ -12820,7 +12845,7 @@ export class PingPongGame {
         this._poderTickBlip(3);
       }
     }
-    if ((on || this._dlVentana('clon')) && this._clonT > 0) {
+    if ((on || dlV) && this._clonT > 0) {     // r54: puerta única duelos
       this._clonT -= dt;
       if (this._clonT <= 0) {
         this._clonFin();                 // fin natural (10 s agotados)
@@ -12839,7 +12864,7 @@ export class PingPongGame {
     // acabar la red vuelve EXACTA a su altura reglamentaria. Sin «on»
     // (salir del campeonato, prueba) la red se recoge YA: un entorno
     // mutado no puede sobrevivir a su contexto.
-    if ((on || this._dlVentana('red')) && this._redT > 0) {
+    if ((on || dlV) && this._redT > 0) {      // r54: puerta única duelos
       this._redT -= dt;
       if (this._redT <= 0) {
         this._redFin();                  // fin natural (10 s agotados)
@@ -12853,7 +12878,7 @@ export class PingPongGame {
         this._redTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._redT > 0 && !this._dlVentana('red')) {
+    } else if (this._redT > 0) {              // r54: contexto muerto → fin
       this._redT = 0;
       try { this._redFin(); } catch (eRF) { /* */ }
     }
@@ -12865,7 +12890,7 @@ export class PingPongGame {
     }
     // r25 (v3.6.120) · SÚPER ELECTRICIDAD ACTIVA: tormenta viva (niebla densa,
     // rayos, truenos, noche, destello y colisión) durante SU ventana.
-    if ((on || this._dlVentana('elec')) && this._elecT > 0) {
+    if ((on || dlV) && this._elecT > 0) {     // r54: puerta única duelos
       this._elecT -= dt;
       if (this._elecT <= 0) {
         this._elecFin();                 // fin natural (10 s agotados)
@@ -12879,7 +12904,7 @@ export class PingPongGame {
         this._elecTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._elecT > 0 && !this._dlVentana('elec')) {
+    } else if (this._elecT > 0) {             // r54: contexto muerto → fin
       this._elecT = 0;
       try { this._elecFin(); } catch (eEF2) { /* */ }
     }
@@ -12891,7 +12916,7 @@ export class PingPongGame {
     // r26b (v3.6.122) · LOS 3 PODERES NUEVOS viven SUS 10 s (patrón
     // red/elec: reloj único por ventana, blips 3·2·1 y apagado garantizado
     // si el entorno «on» desaparece).
-    if ((on || this._dlVentana('fenix')) && this._fenixT > 0) {
+    if ((on || dlV) && this._fenixT > 0) {    // r54: puerta única duelos
       this._fenixT -= dt;
       if (this._fenixT <= 0) {
         this._fenixFin();
@@ -12905,7 +12930,7 @@ export class PingPongGame {
         this._fenixTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._fenixT > 0 && !this._dlVentana('fenix')) {
+    } else if (this._fenixT > 0) {            // r54: contexto muerto → fin
       this._fenixT = 0;
       try { this._fenixFin(); } catch (eFF) { /* */ }
     }
@@ -12914,7 +12939,7 @@ export class PingPongGame {
     } else if (this._fenixFxOn) {
       this._fenixFxVis(false);
     }
-    if ((on || this._dlVentana('crono')) && this._cronoT > 0) {
+    if ((on || dlV) && this._cronoT > 0) {    // r54: puerta única duelos
       this._cronoT -= dt;
       if (this._cronoT <= 0) {
         this._cronoFin();              // fin natural: rapidez RESTAURADA
@@ -12928,7 +12953,7 @@ export class PingPongGame {
         this._cronoTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._cronoT > 0 && !this._dlVentana('crono')) {
+    } else if (this._cronoT > 0) {            // r54: contexto muerto → fin
       this._cronoT = 0;
       try { this._cronoFin(); } catch (eCF2) { /* */ }
     }
@@ -12937,7 +12962,7 @@ export class PingPongGame {
     } else if (this._cronoFxOn) {
       this._cronoFxVis(false);
     }
-    if ((on || this._dlVentana('oscuridad')) && this._oscuridadT > 0) {
+    if ((on || dlV) && this._oscuridadT > 0) {  // r54: puerta única duelos
       this._oscuridadT -= dt;
       if (this._oscuridadT <= 0) {
         this._oscuridadFin();
@@ -12951,7 +12976,7 @@ export class PingPongGame {
         this._oscuridadTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._oscuridadT > 0 && !this._dlVentana('oscuridad')) {
+    } else if (this._oscuridadT > 0) {        // r54: contexto muerto → fin
       this._oscuridadT = 0;
       try { this._oscuridadFin(); } catch (eOF) { /* */ }
     }
@@ -12962,7 +12987,7 @@ export class PingPongGame {
     }
     // r33 (v3.6.129) · ventanas de los 4 poderes nuevos (reloj único de la
     // casa: blips 3·2·1, refresco honesto y fin natural exacto).
-    if ((on || this._dlVentana('prisma')) && this._prismaT > 0) {
+    if ((on || dlV) && this._prismaT > 0) {   // r54: puerta única duelos
       this._prismaT -= dt;
       if (this._prismaT <= 0) {
         this._prismaFin();
@@ -12976,14 +13001,14 @@ export class PingPongGame {
         this._prismaTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._prismaT > 0 && !this._dlVentana('prisma')) {
+    } else if (this._prismaT > 0) {           // r54: contexto muerto → fin
       this._prismaT = 0;
       try { this._prismaFin(); } catch (ePF33) { /* */ }
     }
     if (this._prismaT > 0 || this._prismaGuiaT > 0) {
       try { this._prismaFrame(dt); } catch (ePF2) { /* el arcoíris nunca tumba el frame */ }
     }
-    if ((on || this._dlVentana('onda')) && this._ondaT > 0) {
+    if ((on || dlV) && this._ondaT > 0) {     // r54: puerta única duelos
       this._ondaT -= dt;
       if (this._ondaT <= 0) {
         this._ondaFin();
@@ -12997,7 +13022,7 @@ export class PingPongGame {
         this._ondaTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._ondaT > 0 && !this._dlVentana('onda')) {
+    } else if (this._ondaT > 0) {             // r54: contexto muerto → fin
       this._ondaT = 0;
       try { this._ondaFin(); } catch (eOF33) { /* */ }
     }
@@ -13006,7 +13031,7 @@ export class PingPongGame {
     } else if (this._ondaFxOn) {
       this._ondaFxVis(false);
     }
-    if ((on || this._dlVentana('salva')) && this._salvaT > 0) {
+    if ((on || dlV) && this._salvaT > 0) {    // r54: puerta única duelos
       this._salvaT -= dt;
       if (this._salvaT <= 0) {
         this._salvaFin();
@@ -13020,7 +13045,7 @@ export class PingPongGame {
         this._salvaTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._salvaT > 0 && !this._dlVentana('salva')) {
+    } else if (this._salvaT > 0) {            // r54: contexto muerto → fin
       this._salvaT = 0;
       try { this._salvaFin(); } catch (eSF33) { /* */ }
     }
@@ -13029,7 +13054,7 @@ export class PingPongGame {
     } else if (this._salvaFx && this._salvaFx.ghost) {
       this._salvaGhostVis(false);
     }
-    if ((on || this._dlVentana('ancla')) && this._anclaT > 0) {
+    if ((on || dlV) && this._anclaT > 0) {    // r54: puerta única duelos
       this._anclaT -= dt;
       if (this._anclaT <= 0) {
         this._anclaFin();
@@ -13043,7 +13068,7 @@ export class PingPongGame {
         this._anclaTickN = 3;
         this._poderTickBlip(3);
       }
-    } else if (this._anclaT > 0 && !this._dlVentana('ancla')) {
+    } else if (this._anclaT > 0) {            // r54: contexto muerto → fin
       this._anclaT = 0;
       try { this._anclaFin(); } catch (eAF33) { /* */ }
     }
@@ -13102,12 +13127,12 @@ export class PingPongGame {
     // tope de seguridad en c05. Apagado → multiplicador 1 (pala honesta).
     // r84 · DUELOS LOCOS · LOCA: el MISMO canal de spin (×2, no ×3) con la
     // ventana del poder duelos — curva real que viaja en el HIT/HANDOFF.
-    const emul = (on || this._dlVentana('efecto')) && this._efectoT > 0 ? EFECTO_SPIN_MUL
+    const emul = (on || dlV) && this._efectoT > 0 ? EFECTO_SPIN_MUL   // r54
       : (this._dlOn('loca') ? 2 : 1);
     // v3.6.49 (r57) · el SÚPER IMÁN REESCRITO viaja TAMBIÉN EN LA PALA
     // (ppImanAim lo lee collidePaddleSweep en el golpe): guía de tiro que
     // asegura mesa rival. Sin ventana → false (golpes 100 % normales).
-    const imanAim = !!((on || this._dlVentana('iman')) && this._imanT > 0);
+    const imanAim = !!((on || dlV) && this._imanT > 0);   // r54: puerta única
     if (this.controllerPaddles) {
       for (const ps of this.controllerPaddles) {
         if (ps) { ps.ppEfectoMul = emul; ps.ppImanAim = imanAim; }
@@ -13117,7 +13142,7 @@ export class PingPongGame {
     // NO EXISTE marca en ninguna bola — red de seguridad por frame (por
     // si el fin natural llegara a saltarse en algún camino raro). Barato
     // e idempotente; con ventana viva no entra.
-    if (!((on || this._dlVentana('efecto')) && this._efectoT > 0) && this.ball &&
+    if (!((on || dlV) && this._efectoT > 0) && this.ball &&
         (this.ball.ppEfecto || this.ball.ppEfectoTipo || this.ball.ppEfectoLado)) {
       this.ball.ppEfecto = false;
       this.ball.ppEfectoTipo = '';
@@ -13148,11 +13173,13 @@ export class PingPongGame {
     // cian = SÚPER EFECTO; pueden convivir, son ortogonales)
     const fxOn = on && this._megaT > 0 && !!this._megaFx;
     if (fxOn !== this._megaFxOn) this._megaFxVis(fxOn);
-    const fxOnEf = on && this._efectoT > 0 && !!this._efectoFx;
+    const fxOnEf = (on || dlV) && this._efectoT > 0 && !!this._efectoFx;
+    // r54 · el HALO vive también en duelos (antes `on` solo lo mataba un
+    // frame tras el disparo: el poder sonaba pero la pala no enseñaba NADA).
     if (fxOnEf !== this._efectoFxOn) this._efectoFxVis(fxOnEf);
-    const fxOnIm = on && this._imanT > 0 && !!this._imanFx;
+    const fxOnIm = (on || dlV) && this._imanT > 0 && !!this._imanFx;
     if (fxOnIm !== this._imanFxOn) this._imanFxVis(fxOnIm);
-    const fxOnPt = on && this._portalT > 0 && !!this._portalFx;
+    const fxOnPt = (on || dlV) && this._portalT > 0 && !!this._portalFx;
     if (fxOnPt !== this._portalFxOn) this._portalFxVis(fxOnPt);
     for (const par of [[this._megaFx, fxOn, this._megaT],
                        [this._efectoFx, fxOnEf, this._efectoT],

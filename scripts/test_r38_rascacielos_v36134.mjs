@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r38 · v3.6.144-SDK6 · FASE 146 · TEST: EL SALÓN DE LA
+/* CRAZY PING PONG · r38 · v3.6.145-SDK6 · FASE 148 · TEST: EL SALÓN DE LA
  * PARTIDA — RASCACIELOS (4.º hall del dueño + partidas en el hall del
  * anfitrión, IA y multijugador).
  *
@@ -60,23 +60,23 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.144-SDK6 · FASE 146 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.144-SDK6 · FASE 146 · EL SALÓN DE LA PARTIDA');
-chk(vjson.version === '3.6.144-SDK6', 'VERSION.json: 3.6.144-SDK6');
-chk(vjson.fase === 146, 'FASE 146');
-chk(vjson.faseNombre === 'Los iconos del Arcano nacen cargados — precalentamiento de la galería y repintado onload de la ficha', 'faseNombre = EL SALÓN DE LA PARTIDA');
-chk(vjson.tamano === 11540068, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.145-SDK6 · FASE 148 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.145-SDK6 · FASE 148 · EL SALÓN DE LA PARTIDA');
+chk(vjson.version === '3.6.145-SDK6', 'VERSION.json: 3.6.145-SDK6');
+chk(vjson.fase === 148, 'FASE 148');
+chk(vjson.faseNombre === 'Los superpoderes de Duelos Locos viven su ventana completa (puerta única on||dlV, halo vivo en duelos, imán gasta su carga) + búho del Arcano en la esquina superior derecha del Hall', 'faseNombre = EL SALÓN DE LA PARTIDA');
+chk(vjson.tamano === 11542635, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  '0fd11519a5702477323ffc4f31c37f4badae5317c5b89174b56b8e9f5716eb1a',
+  'c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') ===
-  '0fd11519a5702477323ffc4f31c37f4badae5317c5b89174b56b8e9f5716eb1a',
+  'c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298',
   'golden 1836d13f… (build byte-exacto)');
-chk(game.includes('3.6.144-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.144-SDK6'"), 'sello c00 = 3.6.144-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.144-SDK6'"),
-  'sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.144-SDK6</span>'), 'badge V3.6.144-SDK6 en 03_body');
+chk(game.includes('3.6.145-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.145-SDK6'"), 'sello c00 = 3.6.145-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.145-SDK6'"),
+  'sw.js CACHE v3.6.145-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.145-SDK6</span>'), 'badge V3.6.145-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 

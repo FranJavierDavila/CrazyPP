@@ -6255,3 +6255,88 @@ Stage Summary:
   clave por localStorage (jamás en la URL), 6 KPIs · área por día · donuts ·
   tabla de jugadores · timeline · 0 pageerrors · captura full-page revisada.
   URL estable: https://franjavierdavila.github.io/CrazyPP/telemetria.html
+
+━━━ FASE 148 · v3.6.145-SDK6 · r54 · LOS SUPERPODERES VIVEN SU VENTANA COMPLETA + BÚHO EN LA ESQUINA (2026-11-11) ━━━
+
+- INFORME DEL DUEÑO (con aclaración de diseño): «los superpoderes de pala se
+  aplican pero nacen agotados y no se pueden jugar; es como que los lanzas y
+  al mismo tiempo los marca como agotados con lo cual no tienen efecto
+  alguno». ACLARACIÓN CLAVE: en campeonatos los superpoderes NUNCA están
+  bloqueados (nacen al azar con la regla de los 20 toques); los candados del
+  espacio arcano SOLO rigen en los duelos multijugador con poderes (DUELOS
+  LOCOS), donde cada jugador usa SUS desbloqueados (1 al azar nuevo por
+  campeonato ganado, viajan con el usuario como la skin de pala). Y: «en los
+  Halls poner el icono del búho alineado con la esquina superior derecha, lo
+  más ajustado a los bordes posible (más arriba y más a la derecha)».
+- CAUSA RAÍZ del «nacen agotados» (sonda scripts/sonda_r54_asesino.py, con
+  contadores sobre el juego real): _dlUpdate corre CADA FRAME (bucle
+  animate) y su rama «fuera de duelos» llamaba _dlVentanasApaga() SIEMPRE —
+  esa recogida ejecuta el FIN NATURAL de las 13 ventanas del Arcano que
+  estén vivas. En campeonato (duelos apagados), el poder recién lanzado
+  moría al FRAME SIGUIENTE del gatillo con su mensaje «SÚPER X agotado» y
+  efecto cero. La sonda lo atrapó in fraganti: imanFin 1 frame tras el
+  disparo (t0=10 → t250=0, msg «worn off»). Secundarios del mismo
+  síntoma: (a) el slot ÚNICO _dlId/_dlT de duelos hacía que el poder del
+  rival (red/crono/oscuridad) o tu siguiente carga APAGARAN la ventana
+  ajena al sobrescribirlo; (b) fxOnEf/fxOnIm/fxOnPt sólo miraban `on` — el
+  halo moría un frame tras el disparo en duelos (sonaba, no se veía);
+  (c) _imanTrigger no gastaba su carga (r57 retiró el gasto por ASISTENCIA,
+  no el de activación): re-disparo gratis para siempre + ent sintético de
+  _dlArma huérfano en la matriz.
+- FIXES (c12, todo aditivo; física c04/c05 y netcode INTACTOS):
+  (1) RECOGIDA SOLO EN LA TRANSICIÓN: _dlUpdate ya no llama
+      _dlVentanasApaga() cada frame fuera de duelos — sólo cuando hay
+      reloj/id de duelos calientes (_dlT>0 || _dlId) mueren de verdad los
+      duelos. En campeonato NADA toca las ventanas: las gobierna updateMega
+      con `on` y sus relojes propios (13 compuertas + 9 apagados de
+      contexto + emul + imanAim + ley de las marcas → puerta ÚNICA
+      (on || dlV) con dlV=_dlEnabled()).
+  (2) VENTANAS DE DUELOS CONVIDAN: puerta única (on || dlV) en las 13
+      compuertas de tick y en los 9 apagados; ventanas locales Y del rival
+      CONVIVEN (cada una su reloj); el slot _dlId/_dlT queda como reloj de
+      duelos (warn/blip) y para gigante/fuego/loca/mega (_dlOn), que no
+      cambia.
+  (3) FX VIVOS EN DUELOS: fxOnEf/fxOnIm/fxOnPt también bajo (on || dlV) —
+      el halo/guía/portal SE VEN durante la ventana; el canto dorado de la
+      MEGA sigue siendo de campeonato (la GIGANTE tiene su escala propia).
+  (4) IMÁN HONESTO: _imanTrigger gasta su carga al ACTIVAR (igual que los
+      demás); el refresco con ventana viva sigue sin gasto (patrón r57).
+  (5) BÚHO EN LA ESQUINA (c08): arcMesh (2,28 · 2,26) → (2,70 · 2,60) —
+      sube 0,34 m y va a la derecha 0,42 m; quedan ~6 cm a pared (3,05) y
+      techo (2,85), margen justo para el hover ×1,14. Los destellos de los
+      ojos son hijos del mesh: viajan solos.
+- AUDITORÍA DE LA ACLARACIÓN (repro nueva scripts/qa_r54_poderes_agotados
+  .py, 30/0 sobre el juego real): los 14 poderes NACEN con su ventana
+  (mega 15 s, oscuridad 20 s, portal 8 s, resto 10 s), icono ACTIVO,
+  decaen a ritmo 1×, la carga n=1 se consume y la ventana SIGUE; y
+  CONFIRMADO el diseño del dueño: las cargas de campeonato salen del
+  registro COMPLETO sin mirar candados (183/200 cayeron en poderes con
+  candado forzando pp_poderes_v1=['mega']) — en campeonatos no existen
+  bloqueos; los candados solo pesan en DL_SURTIDO (base + desbloqueados).
+- SELLADO: sella_r54_poderes_duelos.py (patrón r52; lección r53 aplicada:
+  qa Python con versión en la lista de re-ancla): VERSION.json
+  3.6.145-SDK6 FASE 148, c00 VERSION, badge 03_body, sw.js CACHE
+  crazypp-v3.6.145-SDK6, ensamblado 11.542.635 B · golden
+  c584ca86ec91b671…, 14 test_r*.mjs + qa_sup1 + qa_r46_humo re-anclados,
+  19 agujas + 2 regex (13 compuertas/9 apagados) TODO OK.
+- RE-ANCLA DE CONTRATOS r53 (stale de la reescritura del dashboard, no de
+  r54): test_r43 (panel r42 → dashboard «CRAZY PING PONG · Telemetría») y
+  test_r45 (rank/médallas del panel viejo → dashboard: Los jugadores,
+  pp_tele_clave, gráficas SVG, salud). Vuelven al verde de r52 (79/0 y
+  55/0). test_r39 re-anclado al contrato r54 (13 compuertas (on||dlV),
+  9 apagados, emul/imanAim, búho 2,70·2,60) — 165/0.
+- QA VERDE COMPLETA: repro r54 30/0 · test_fisica 11/0 · test_r21 63/0 ·
+  r24 89/0 · r26b 171/0 · r30 54/0 · r31 47/0 · r32 49/0 · r33 77/0 ·
+  r34 62/0 · r35 36/0 · r36 30/0 · r37 46/0 · r38 51/0 · r39 165/0 ·
+  r40 62/0 · r41 92/0 · r43 79/0 · r45 55/0 · red_nucleo 60/0 ·
+  qa_version 31/0 · qa_sup1 151/0 · qa_r84 67/0 · qa_r50 22/0 ·
+  qa_r46_humo OK · qa_rendimiento 14/0 · qa_telemetria 132/0. ROJOS
+  HISTÓRICOS PREEXISTENTES (no de r54; congelados en su era, fuera de la
+  lista verde de r52): r23 (1), r25 (6), r26 (6), r27 (3), r28 (9),
+  r29 (5 — sellos congelados a 3.6.129/FASE 131).
+- ENTORNO: el disco se llenó de nuevo con el espejo (rsync public/ →
+  descargas 8,9 GB; lección r37 OTRA VEZ: el espejo nunca lleva descargas)
+  — liberado (2,3 G usados), rsync con --exclude=descargas, node_modules
+  del clon se perdió con el llenado: bun install (835 paquetes) y next dev
+  relanzado; :3000/:81 sirven 3.6.145 byte-exacto (qa_version 31/0 con
+  servidores).

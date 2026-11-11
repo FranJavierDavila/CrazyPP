@@ -722,6 +722,11 @@ export function createHall(base) {
   // «el búho, un poco más pequeño, como un 25 % más pequeño que ahora»):
   // 0,78×0,52 → 0,585×0,39 · misma proporción 1024×683 (1.5:1), misma
   // pared y mismos destellos (los ojos escalan con ARC_W/ARC_H).
+  // r54 (v3.6.145) · ALINEADO CON LA ESQUINA SUPERIOR DERECHA (petición
+  // del dueño: «que se vea bien pero esté lo más ajustado a los bordes»):
+  // (2,28 · 2,26) → (2,70 · 2,60) — sube 0,34 m y va a la derecha 0,42 m;
+  // con el tamaño 0,585×0,39 quedan ~6 cm libres a pared (3,05) y techo
+  // (2,85) — margen justo para el hover ×1,14 sin morder la esquina.
   const ARC_W = 0.585, ARC_H = 0.39;         // proporción 1024×683 (1.5:1)
   const arcCv = hallCanvas(512, 342);
   drawArcanoBuho(arcCv);                      // fallback vectorial (glow azul)
@@ -729,7 +734,7 @@ export function createHall(base) {
   try { arcTex.colorSpace = THREE.SRGBColorSpace; arcTex.anisotropy = 4; } catch (eTA0) { /* */ }
   const arcMesh = new THREE.Mesh(new THREE.PlaneGeometry(ARC_W, ARC_H),
     new THREE.MeshBasicMaterial({ map: arcTex, transparent: true }));
-  arcMesh.position.set(2.28, 2.26, z0 + 0.016);
+  arcMesh.position.set(2.70, 2.60, z0 + 0.016);   // r54: esquina sup. dcha
   g.add(arcMesh);
   try {   // el arte REAL del dueño sustituye al fallback en cuanto llega
     const urlArcano = 'assets/hall/arcano.png';   // fijo del hall (no arte de variante)

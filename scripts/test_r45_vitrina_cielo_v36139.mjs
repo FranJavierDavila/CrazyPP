@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r45 · v3.6.144-SDK6 · FASE 146 · TEST: LA VITRINA DEL
+/* CRAZY PING PONG · r45 · v3.6.145-SDK6 · FASE 148 · TEST: LA VITRINA DEL
  * CIELO — informe del dueño tras la v3.6.138 en el casco (cuatro frentes):
  *
  *   1 · CANDADO CON LA IMAGEN DEL DUEÑO — «los candados vamos a
@@ -171,14 +171,14 @@ chk(worker.includes('jugadores: todos.length,') && worker.includes('elo: top((a,
   'worker: 4 tablas top-20 (ELO · victorias · puntos · logros)');
 chk(worker.includes('if (!pid) continue;   // sin pid (builds viejos) no hay ranking'),
   'worker: builds sin pid quedan fuera (compatibilidad limpia)');
-chk(panel.includes('function pintaRank(rk)') && panel.includes('Rankings mundiales'),
-  'panel: sección RANKINGS MUNDIALES presente');
-chk(panel.includes("pide('?rank=1' + filtros()).catch(() => null),"),
-  'panel: el rank se pide EN PARALELO y es opcional (worker viejo no rompe)');
-chk(panel.includes("'<div><h3 style=\"margin:6px 0 4px;color:#9fb3cc\">ELO</h3>' + elo + '</div>' +"),
-  'panel: las cuatro tablas con medallas (ELO/victorias/puntos/logros)');
-chk(panel.includes('const medalla = (i) => (i === 0 ? \'🥇\''),
-  'panel: medallas 🥇🥈🥉 en los top-3');
+chk(panel.includes('CRAZY PING PONG · Telemetría') && panel.includes('Los jugadores'),
+  're-anclada r53: dashboard vivo (LOS JUGADORES fusiona sesiones+eventos)');
+chk(panel.includes('pp_tele_clave'),
+  're-anclada r53: la clave sigue por localStorage (jamás en la URL)');
+chk(panel.includes('¿Cuándo se juega?') && panel.includes('¿Están todos al día?'),
+  're-anclada r53: gráficas SVG propias (área por día, donuts, barras)');
+chk(panel.includes('salud'),
+  're-anclada r53: LED de salud público sondeando ?salud=1');
 
 /* — 5 · CONSERVADO · el cable y la física intactos ——————————————— */
 console.log('5 · CONSERVADO · nada del contrato se movió');
@@ -202,15 +202,15 @@ chk(c08.includes('drawArcanoSalir') && c08.includes('montaSueloArcano'),
 chk(c08.includes('this.rig.add') === false || true, 'c08: rig sin cambios (asunto c12)');
 chk(c12.includes('this.rig.add(this._netVisor);'),
   'c12: la esfera del rival en el RIG (fix r43 intacto)');
-chk(vjson.version === '3.6.144-SDK6' && vjson.fase === 146,
-  'VERSION.json: 3.6.144-SDK6 · FASE 146 (la vitrina del cielo)');
+chk(vjson.version === '3.6.145-SDK6' && vjson.fase === 148,
+  'VERSION.json: 3.6.145-SDK6 · FASE 148 (la vitrina del cielo)');
 chk(lee('public/game.html').includes('ARCANO_PALAS_TRAZO') &&
     lee('public/game.html').includes('onPeerPala'),
   'game.html: la build lleva la r45 dentro');
 
 /* — 6 · RESULTADO ———————————————————————————————————————————— */
 console.log('');
-console.log('=== r45 · v3.6.144-SDK6 · LA VITRINA DEL CIELO ===');
+console.log('=== r45 · v3.6.145-SDK6 · LA VITRINA DEL CIELO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

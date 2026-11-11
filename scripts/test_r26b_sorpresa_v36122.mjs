@@ -165,8 +165,8 @@ chk(!c12.includes("id: 'hielo'"), 'HIELO fuera del registro PODERES_PALA');
 
 /* — 6 · PLANTILLA COMÚN · ventanas, cortina y precalentado ————————————— */
 console.log('6 · PLANTILLA COMÚN · ventanas 3·2·1, cortina, precaliente');
-chk(c12.includes("(on || this._dlVentana('fenix')) && this._fenixT > 0") && c12.includes("(on || this._dlVentana('crono')) && this._cronoT > 0") &&
-    c12.includes("(on || this._dlVentana('oscuridad')) && this._oscuridadT > 0"), 're-anclada r39: ventanas propias en el tick (campeonato + duelos)');
+chk(c12.includes("(on || dlV) && this._fenixT > 0") && c12.includes("(on || dlV) && this._cronoT > 0") &&
+    c12.includes("(on || dlV) && this._oscuridadT > 0"), 're-anclada r54: puertas ÚNICAS (on || dlV) — ventanas de campeonato Y duelos');
 chk(c12.includes('try { this._fenixFin(); } catch (eFF) { /* */ }') &&
     c12.includes('try { this._cronoFin(); } catch (eCF2) { /* */ }') &&
     c12.includes('try { this._oscuridadFin(); } catch (eOF) { /* */ }'), 'apagado garantizado si «on» desaparece');

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.144-SDK6 · FASE 146 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.145-SDK6 · FASE 148 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -83,26 +83,26 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.144-SDK6 · FASE 146 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.144-SDK6 · FASE 146 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.144-SDK6', 'VERSION.json: 3.6.144-SDK6');
-chk(vjson.fase === 146, 'FASE 146');
-chk(vjson.faseNombre === 'Los iconos del Arcano nacen cargados — precalentamiento de la galería y repintado onload de la ficha',
-  'faseNombre = LOS ICONOS DEL ARCANO NACEN CARGADOS — PRECALENTAMIENTO DE LA GALERÍA Y REPINTADO ONLOAD DE LA FICHA');
+/* — 1 · SELLOS · v3.6.145-SDK6 · FASE 148 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.145-SDK6 · FASE 148 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.145-SDK6', 'VERSION.json: 3.6.145-SDK6');
+chk(vjson.fase === 148, 'FASE 148');
+chk(vjson.faseNombre === 'Los superpoderes de Duelos Locos viven su ventana completa (puerta única on||dlV, halo vivo en duelos, imán gasta su carga) + búho del Arcano en la esquina superior derecha del Hall',
+  'faseNombre = LOS SUPERPODERES DE DUELOS LOCOS VIVEN SU VENTANA COMPLETA (PUERTA ÚNICA ON||DLV, HALO VIVO EN DUELOS, IMÁN GASTA SU CARGA) + BÚHO DEL ARCANO EN LA ESQUINA SUPERIOR DERECHA DEL HALL');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
 // legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
-chk(vjson.tamano === 11540068, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11542635, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '0fd11519a5702477323ffc4f31c37f4badae5317c5b89174b56b8e9f5716eb1a',
+  'c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.144-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.144-SDK6'"), 'sello c00 = 3.6.144-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.144-SDK6'"),
-  'sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.144-SDK6</span>'), 'badge V3.6.144-SDK6 en 03_body');
+chk(game.includes('3.6.145-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.145-SDK6'"), 'sello c00 = 3.6.145-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.145-SDK6'"),
+  'sw.js CACHE v3.6.145-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.145-SDK6</span>'), 'badge V3.6.145-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -267,8 +267,8 @@ const c04sha = sha256('src/game/core/c04_fisica_ccd.js');
 const c05sha = sha256('src/game/core/c05_colisiones_ia_golpeo.js');
 chk(c04sha.startsWith('df8f71a3'), 'c04 byte-exacto (df8f71a3… — física intocada)');
 chk(c05sha.startsWith('8bb62082'), 'c05 byte-exacto (8bb62082… — física intocada)');
-chk(lee('public/telemetria.html').includes('Centro de Telemetría'),
-  'panel de telemetría r42 intacto');
+chk(lee('public/telemetria.html').includes('CRAZY PING PONG · Telemetría'),
+  're-anclada r53: dashboard de telemetría vivo (sustituye al panel r42)');
 chk(c08.includes('arconoHoloFrame') && c08.includes('drawArcanoCandado'),
   'el Arcano holográfico r41 conservado (holo + candado)');
 chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
@@ -276,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.144-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.145-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

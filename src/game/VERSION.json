@@ -1,7 +1,7 @@
 {
-  "version": "3.6.144-SDK6",
-  "fase": 146,
-  "faseNombre": "Los iconos del Arcano nacen cargados — precalentamiento de la galería y repintado onload de la ficha",
+  "version": "3.6.145-SDK6",
+  "fase": 148,
+  "faseNombre": "Los superpoderes de Duelos Locos viven su ventana completa (puerta única on||dlV, halo vivo en duelos, imán gasta su carga) + búho del Arcano en la esquina superior derecha del Hall",
   "sdk": "1.6.0",
   "fecha": "2026-11-11",
   "hub": "v36139-sdk6",
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r21",
-  "tamano": 11540068,
-  "golden": "0fd11519a5702477323ffc4f31c37f4badae5317c5b89174b56b8e9f5716eb1a"
+  "nota": "r54",
+  "tamano": 11542635,
+  "golden": "c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298"
 }

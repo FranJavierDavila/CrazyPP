@@ -204,6 +204,9 @@ export class GameAudio {
     try { this.hallMute = localStorage.getItem('pp_hallmus') === '1'; } catch { /* */ }
     this._hallUrl = null;      // pista ACTIVA (cambia al cambiar de salón)
     this._hallBufs = {};       // caché de buffers por URL (máx. 3 salones)
+    // v3.6.142 · FASE 144 · orden LRU de la caché (la expulsión era una
+    // promesa del comentario, no código: 5 salones retenidos para siempre)
+    this._hallBufsLRU = [];
     this._hallSrc = null;
     this._hallGain = null;
     this._hallLoading = null;  // URL en vuelo (evita fetch doble)
@@ -665,10 +668,23 @@ export class GameAudio {
   }
 
   /** Descarga y decodifica la pista del salón (UNA vez por URL: la caché
-   *  evita re-descargas al alternar salones — patrón _loadMusic v2.31). */
+   *  evita re-descargas al alternar salones — patrón _loadMusic v2.31).
+   *  v3.6.142 · FASE 144 · LRU REAL con tope 3: cada AudioBuffer son PCM
+   *  decodificado (~10× el MP3 — cabana.mp3 4,2 MB ≈ 40 MB en memoria);
+   *  antes se retenían TODOS los salones visitados para siempre. */
   _loadHallMusic() {
     const url = this._hallUrl;
-    if (!url || this._hallBufs[url] || this._hallLoading === url) return;
+    if (!this._hallBufsLRU) this._hallBufsLRU = [];   // defensa por si un
+    // camino antiguo llegó antes que el constructor (reciclaje de escena)
+    if (!url || this._hallLoading === url) return;
+    if (this._hallBufs[url]) {
+      // caché-hit: refresca el LRU (acceso = uso — sin esto un salón
+      // recurrente envejece y la expulsión podría tocar el que suena)
+      const lru = this._hallBufsLRU;
+      const i = lru.indexOf(url);
+      if (i >= 0) { lru.splice(i, 1); lru.push(url); }
+      return;
+    }
     if (typeof fetch !== 'function') return;
     const ctx = this.ctx;
     if (!ctx) return;
@@ -679,6 +695,19 @@ export class GameAudio {
       }),
     ).then((buf) => {
       this._hallBufs[url] = buf;
+      // v3.6.142 · inserción LRU + expulsión (tope 3): el recién llegado
+      // es el ÚLTIMO usado y nunca se expulsa a sí mismo; el que suena es
+      // siempre el más reciente (startHallMusic pasa por aquí), así que el
+      // shift sólo toca buffers dormidos — la fuente viva guarda SU
+      // referencia y sigue sonando aunque su URL saliera de la caché.
+      const lru = this._hallBufsLRU;
+      const ya = lru.indexOf(url);
+      if (ya >= 0) lru.splice(ya, 1);
+      lru.push(url);
+      while (lru.length > 3) {
+        const viejo = lru.shift();
+        if (viejo && viejo !== url) delete this._hallBufs[viejo];
+      }
       console.info('[Audio] música del salón lista (' +
         (buf.duration || 0).toFixed(1) + ' s · ' + url + ')');
       if (this.ctx && this.hallWanted && !this.hallMute &&

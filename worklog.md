@@ -6022,3 +6022,47 @@ Work Log:
 Stage Summary:
 - LA FASE 143 QUEDA COMPLETA Y EN PRODUCCIÓN: la cabaña del dueño SUENA (cabana.mp3 en bucle por el canal del salón, como neon/observatorio/dojo/rascacielos), y las DOS modalidades multijugador ('match' y 'duelos') están certificadas con baterías EN VIVO (LAN, WiFi con relojes desiguales, túnel con ICE roto), arneses de partido y física (275 checks de red + 311 invariantes), 3 fixes de netcode del sistema de agentes (clamp de spin, revancha online, resync con identidad) y auditoría anti-cuelgues sin hallazgos bloqueantes: 20 watchdogs con salida garantizada, 0 estados huérfanos, caminos calientes protegidos y suelo de 60 FPS garantizado por el PerfManager.
 - PARA MAÑANA: producción lista (v3.6.141-SDK6, cabana.mp3 incluido). Recomendaciones operativas: NO re-desplegar durante las partidas (ventana SWR del SW), usar el cache-buster ?v=36141 en el casco, y probar en el casco un duelo LOCA (el clamp del cable es nuevo) y una revancha por gatillo online (el nuevo camino mstart).
+
+━━━ FASE 144 · v3.6.142-SDK6 · r49 · LOS SEIS RESIDUALES (2026-11-11) ━━━
+
+- SEIS FIXES QUIRÚRGICOS de la lista PENDIENTE VIVO post-demo, todos aditivos:
+  (1) RESYNC CON CORRELATIVO DE GOLPES EN RALLYE (c09): _sendResync lleva `sh`
+      (BallAuth.shot del anfitrión) y _applyResync lo re-ancla cuando st ≠ 'serve'
+      — en saque setHeld ya lo re-arma. Antes, un resync en rallye vivo dejaba el
+      shot del receptor ATRÁS y el validador rechazaba el próximo HIT como trampa
+      grave (shot X ≠ Y+1) degradando a CLAIM.
+  (2) SURVGO ONLINE EN V2 (c09+c12): el ANFITRIÓN online SÍ arranca supervivencia
+      (switchMode/startMatch + sendMode('survival')) y el RECEPTOR k:'m' del
+      invitado cambia SU modo en espejo — antes el host caía en el mensaje del
+      invitado y nada arrancaba en ningún extremo.
+  (3) ELO DEL ABANDONO (c12.onNetEnded): duelo P2P en curso (match/duelos, sin
+      terminar) se registra por el marcador DEL CORTE (decisión, como el boxeo):
+      líder suma victoria K=32 y rezagado derrota — en AMBOS extremos (perspectiva
+      espejada scorePlayer=YO). Empate (0-0 típico) → nada: caída de red neutra.
+      Partido ya terminado → nada (el ELO real ya viajó en st='over').
+  (4) GIGANTE RESIDUAL (c12.onNetEnded): aiPaddleMesh.scale a 1,0 + _dlReset() —
+      el último fl&16 dejaba la pala del rival clavada a 1,30 tras desconexión.
+  (5) LRU REAL DE _hallBufs (c03): tope 3 con orden LRU (init + defensa + refresco
+      en caché-hit + expulsión en inserción) — el comentario prometía «máx. 3
+      salones» y no expulsaba NADA (PCM decodificado ~10× el MP3 retenido para
+      siempre; el que suena nunca se expulsa: siempre es el más reciente).
+  (6) ESCUDO DEL BUCLE (c12.animate): try global por frame con dedupe por firma,
+      console.error y telemetría anim_shield (catálogo v13) — el casco no se queda
+      en negro por una excepción puntual de un subsistema; la defensa fina por
+      gancho sigue siendo la primera capa.
+- SELLADO: sella_r49_residuales.py (patrón r48 con el golden VIEJO capturado antes
+  de sobrescribir — reancla REAL): VERSION.json 3.6.142-SDK6 FASE 144 «Los seis
+  residuales», c00 VERSION, badge 03_body, sw.js CACHE crazypp-v3.6.142-SDK6,
+  ensamblado 11.536.191 B · golden f96e4e15e2b81956…, 13 test_r*.mjs re-anclados.
+- QA VERDE COMPLETA: red_nucleo 60/0 · r30 54/0 · r31 47/0 · r32 49/0 · r33 77/0 ·
+  r34 62/0 · r35 36/0 · r36 30/0 · r37 46/0 · r38 51/0 · r39 165/0 · r40 62/0 ·
+  r41 92/0 · r43 79/0 · r45 55/0 · Duelos Locos qa_r84 67/0 · BATERÍA EN VIVO:
+  P1 LAN 67/0 · P2 WIFI relojes desiguales 68/0 · P3 túnel 19/20 (la MISMA carrera
+  residual documentada de FASE 143: reflejo del banco headless bajo latencia de
+  túnel — CLAIM/ACK espejado, guardia anti-dup y 0 pageerrors verificados) ·
+  arnés físico 200 rallies/0 · arnés vivo 11/0 (canario cazado) · qa_version 31/0
+  (check del hub re-anclado a la verdad r48: la página de descargas apunta al
+  Release REAL v36139/V3.6.140, no a la versión en desarrollo) · qa_telemetria
+  132/0 (+anim_shield en catálogo) · worker test_local 102/0 · qa_sup1 151/0
+  (re-anclada 3.6.139→3.6.142 — iba roja desde r47) · qa_r46_humo OK ·
+  qa_rendimiento 14/0 · clon raíz :3000 sincronizado (sirve 3.6.142).

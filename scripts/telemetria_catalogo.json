@@ -76,6 +76,20 @@
       "desde": "v2.76"
     },
     {
+      "nombre": "anim_shield",
+      "origen": "src/game/core/c12_pingponggame.js (escudo del bucle animate, FASE 144)",
+      "momento": "primera vez que una firma de excepción del bucle queda atrapada por el try global (dedupe por firma — recurrentes no re-emiten)",
+      "campos": [
+        {
+          "nombre": "msg",
+          "tipo": "string",
+          "desc": "primera línea del stack/message recortada a 160 caracteres"
+        }
+      ],
+      "desde": "v3.6.142",
+      "notas": "FASE 144 (los seis residuales): última capa defensiva del bucle — la excepción queda registrada y el frame continúa (el casco no se queda en negro por un efecto/UI puntual). Complementa el evento 'error' (excepciones NO capturadas): anim_shield atrapa las que SÍ se capturan dentro del bucle."
+    },
+    {
       "nombre": "vr_start",
       "origen": "src/game/core/c12_pingponggame.js",
       "momento": "entrada en sesión VR inmersiva",

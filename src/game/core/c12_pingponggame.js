@@ -1388,6 +1388,32 @@ export class PingPongGame {
 
   /** El rival se desconecta: vuelta al juego local contra la CPU. */
   onNetEnded(msg) {
+    // v3.6.142 · FASE 144 · ELO: el abandono YA NO es impune. Si había un
+    // duelo P2P EN CURSO (empezado, sin terminar), se registra por el
+    // marcador DEL CORTE (regla de decisión, como el boxeo): quien va
+    // arriba suma victoria K=32 y quien va abajo derrota — en AMBOS
+    // extremos, porque cada lado ve el marcador en SU perspectiva
+    // (scorePlayer = YO). Empate (típico 0-0 antes del primer punto) →
+    // nada: una caída de red neutra no premia ni castiga. Con el partido
+    // YA terminado no se toca nada (el ELO real ya viajó por recordMatch
+    // en el flanco st='over'). En supervivencia tampoco (sin ELO).
+    try {
+      const rE = this.rules;
+      if (this.net.online && this.net.role &&
+          (rE.mode === 'match' || rE.mode === 'duelos') &&
+          rE.state !== 'over') {
+        const misJ = rE.gamesPlayer | 0, susJ = rE.gamesAi | 0;
+        const misP = rE.scorePlayer | 0, susP = rE.scoreAi | 0;
+        let gano = null;
+        if (misJ !== susJ) gano = misJ > susJ;
+        else if (misP !== susP) gano = misP > susP;
+        if (gano !== null) {
+          this.stats.recordMatch(gano, this.difficulty,
+            { modo: 'p2p', oppElo: this.stats.data.elo });
+          this.emitStats();
+        }
+      }
+    } catch (eElo) { /* el ELO no puede romper la vuelta a CPU */ }
     // r79: retirar todo lo vivo del transporte v2
     this._netStart = null;
     this._netTossLive = false;
@@ -1398,6 +1424,13 @@ export class PingPongGame {
     this._hallPeer = null;
     this._peerSkinId = null;
     this._peerPalaId = null;      // r45 · la pala remota vuelve a la clásica
+    // v3.6.142 · FASE 144 · DUELOS LOCOS: la GIGANTE del rival NO sobrevive
+    // a la desconexión — el último fl&16 dejaba su pala clavada a 1,30
+    // para siempre (el sample de pose ya no llega para devolverla a 1,0;
+    // residual visible incluso contra la CPU). Y mi propia carga/poder
+    // muere con la sesión (_dlReset: _dlId/_dlT/_dlRemotoT a cero).
+    try { if (this.aiPaddleMesh) this.aiPaddleMesh.scale.setScalar(1.0); } catch { /* */ }
+    try { this._dlReset(); } catch { /* */ }
     try { this._palaAplicarRemota(); } catch { /* */ }
     if (this.inHall) {
       this.exitHall();       // visita en curso: la cancha vuelve primero
@@ -5068,9 +5101,21 @@ export class PingPongGame {
         this.exitHall();          // v3.1.0-SRV2: arrancar un modo saca del hall
         this.doblesActivo = false;   // M7c (r119): el dobles no entra en supervivencia
         if (this.net.online) {
-          if (this.net.role === 'guest') this.net.sendMode('survival');
-          this.rules.message = T('msg_guest_mode');
-          this.drawMenu();
+          if (this.net.role === 'guest') {
+            // invitado: SU petición viaja por el cable y el anfitrión manda
+            this.net.sendMode('survival');
+            this.rules.message = T('msg_guest_mode');
+            this.drawMenu();
+          } else {
+            // v3.6.142 · FASE 144 · el ANFITRIÓN online SÍ arranca la
+            // supervivencia y avisa al invitado por el cable (antes caía
+            // en el mensaje del invitado: nada arrancaba en NINGÚN extremo
+            // — «survgo online no notifica al invitado en v2»)
+            this.net.sendMode('survival');
+            if (this.mode !== 'survival') this.switchMode('survival');
+            else { this.rules.startMatch('survival'); this.resetToss(); }
+            this.closeMenu();
+          }
           break;
         }
         if (this.mode !== 'survival') this.switchMode('survival');
@@ -14686,6 +14731,12 @@ export class PingPongGame {
 
   animate = (time) => {
     if (this.disposed) return;
+    // v3.6.142 · FASE 144 · ESCUDO DEL BUCLE: el cuerpo entero corre bajo
+    // un try global por frame (la defensa fina por subsistema — try por
+    // gancho — sigue siendo la primera capa; ésta es la última). El catch
+    // registra UNA vez por firma y el frame continúa: el casco no se
+    // queda en negro por una excepción puntual de un efecto/UI.
+    try {
     const now = time * 0.001;
     // v3.1.2-CCD1 · dtFrame limitado a 1/30 s (spec A): con un bajón de FPS
     // la física prefiere ir lenta antes que barrer un intervalo enorme con
@@ -15936,6 +15987,25 @@ export class PingPongGame {
 
     // 9) Render
     this.renderer.render(this.scene, this.camera);
+    } catch (eAnim) {
+      // v3.6.142 · FASE 144 · ESCUDO DEL BUCLE: dedupe por firma (una
+      // excepción recurrente no inunda consola ni telemetría) y el bucle
+      // SIGUE — el siguiente frame reintenta con el estado vivo.
+      try {
+        const sig = String((eAnim && (eAnim.stack || eAnim.message)) || eAnim)
+          .split('\n')[0].slice(0, 160);
+        if (!this._animErrSeen) this._animErrSeen = {};
+        if (!this._animErrSeen[sig]) {
+          this._animErrSeen[sig] = true;
+          console.error('[animate] escudo del bucle:', sig);
+          try {
+            if (window.__PP_TELE && window.__PP_TELE.ev) {
+              window.__PP_TELE.ev('anim_shield', { msg: sig });
+            }
+          } catch { /* la telemetría jamás rompe el escudo */ }
+        }
+      } catch { /* el escudo jamás rompe el bucle */ }
+    }
   };
 
   /** Recentrado: gira el mundo para que la mesa quede frente al usuario. */

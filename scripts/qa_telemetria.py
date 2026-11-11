@@ -112,9 +112,10 @@ def bloque_catalogo():
     # r112 (M5a): el catálogo v7 documenta 17 eventos (+ ai_style)
     # r115 · re-ancla honesta: el catálogo vive en 18 (carrera entró con la
     # escalera de carrera y la aguja se quedó en 17 — deriva pre-existente)
+    # FASE 144 · catálogo v13: 25 eventos (+anim_shield — escudo del bucle)
+    chk(len(nombres_cat) == 25, f'el catálogo documenta 25 eventos ({len(nombres_cat)}) — FASE 144: +anim_shield')
     # r46 · catálogo v12: 24 eventos (+perfil +resultado +logro — rankings
     # mundiales con identidad mínima pid/n de la 3.6.139)
-    chk(len(nombres_cat) == 24, f'el catálogo documenta 24 eventos ({len(nombres_cat)}) — r46: +perfil +resultado +logro')
     chk(found == nombres_cat,
         f'todos los eventos del código están en el catálogo y viceversa '
         f'(fuente: {sorted(found)} / catálogo: {sorted(nombres_cat)})')

@@ -1,7 +1,7 @@
 {
-  "version": "3.6.141-SDK6",
-  "fase": 143,
-  "faseNombre": "La cabaña suena — cabana.mp3 en el Hall y batería multijugador lista para clientes reales",
+  "version": "3.6.142-SDK6",
+  "fase": 144,
+  "faseNombre": "Los seis residuales — resync en rallye, survgo online, ELO del abandono, GIGANTE residual, LRU de salones y escudo del bucle",
   "sdk": "1.6.0",
   "fecha": "2026-11-10",
   "hub": "v36139-sdk6",
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11529358,
-  "golden": "515f135e03b4d44eb2ae40b0a3b396f1c9963dc6098afe8d137189a46d8bb1d1"
+  "tamano": 11536191,
+  "golden": "f96e4e15e2b819561fa799f4221fbc3edb75e34dff0b1f8ab03ee3d14999d8f7"
 }

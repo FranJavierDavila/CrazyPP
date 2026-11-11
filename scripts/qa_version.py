@@ -42,7 +42,14 @@ chk(c00.count(f"const VERSION = '{ver}'") == 1, 'c00_pre_three.js: const VERSION
 body = (SRC / '03_body.html').read_text(encoding='utf-8')
 chk(body.count(f'>V{ver}</span>') == 1, '03_body.html: badge #verBadge casa')
 hub = (RAIZ / 'src/app/descargas/page.tsx').read_text(encoding='utf-8')
-chk(hub.count(ver) >= 3, f'hub: menciones de {ver} ({hub.count(ver)})')
+# FASE 144 · re-ancla del hub: desde la higiene r47/r48 la página de
+# descargas apunta al ÚLTIMO RELEASE REAL (v36139 → V3.6.140-SDK6, assets
+# verificados en GitHub API) y NO a la versión de desarrollo — apuntar a
+# ZIPs inexistentes fue el fallo que la higiene corrigió. El check exige
+# coherencia de la página consigo misma (sello de release presente), no
+# que anuncie la versión en desarrollo.
+_hub_ver = 'V3.6.140-SDK6'
+chk(hub.count(_hub_ver) >= 3, f'hub: menciones del release vivo {_hub_ver} ({hub.count(_hub_ver)})')
 chk(hub.count(V['hub']) >= 3, f'hub: menciones del sello {V["hub"]} ({hub.count(V["hub"])})')
 
 # 2b · r109 · M3 PWA: sello del service worker + manifest + iconos

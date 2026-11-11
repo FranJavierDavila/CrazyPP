@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r39 · v3.6.141-SDK6 · FASE 143 · TEST: EL APARTADO
+/* CRAZY PING PONG · r39 · v3.6.142-SDK6 · FASE 144 · TEST: EL APARTADO
  * ARCANO — el búho del hall, el espacio infinito y la galería de
  * superpoderes con desbloqueo por campeonato ganado.
  *
@@ -76,22 +76,22 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.141-SDK6 · FASE 143 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.141-SDK6 · FASE 143 · EL APARTADO ARCANO');
-chk(vjson.version === '3.6.141-SDK6', 'VERSION.json: 3.6.141-SDK6');
-chk(vjson.fase === 143, 'FASE 143');
-chk(vjson.faseNombre === 'La cabaña suena — cabana.mp3 en el Hall y batería multijugador lista para clientes reales', 'faseNombre = EL APARTADO ARCANO');
-chk(vjson.tamano === 11529358, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.142-SDK6 · FASE 144 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.142-SDK6 · FASE 144 · EL APARTADO ARCANO');
+chk(vjson.version === '3.6.142-SDK6', 'VERSION.json: 3.6.142-SDK6');
+chk(vjson.fase === 144, 'FASE 144');
+chk(vjson.faseNombre === 'Los seis residuales — resync en rallye, survgo online, ELO del abandono, GIGANTE residual, LRU de salones y escudo del bucle', 'faseNombre = EL APARTADO ARCANO');
+chk(vjson.tamano === 11536191, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  '515f135e03b4d44eb2ae40b0a3b396f1c9963dc6098afe8d137189a46d8bb1d1',
+  'f96e4e15e2b819561fa799f4221fbc3edb75e34dff0b1f8ab03ee3d14999d8f7',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.141-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.141-SDK6'"), 'sello c00 = 3.6.141-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.141-SDK6'"),
-  'sw.js CACHE v3.6.141-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.141-SDK6</span>'), 'badge V3.6.141-SDK6 en 03_body');
+chk(game.includes('3.6.142-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.142-SDK6'"), 'sello c00 = 3.6.142-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.142-SDK6'"),
+  'sw.js CACHE v3.6.142-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.142-SDK6</span>'), 'badge V3.6.142-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -304,6 +304,6 @@ chk(game.includes('EL APARTADO ARCANO'), 'bundle: sección arcano embebida');
 chk(game.includes('pp_poderes_v1'), 'bundle: persistencia de desbloqueos embebida');
 chk(game.includes('DL_SURTIDO'), 'bundle: surto extendido de Duelos Locos embebido');
 
-console.log('\n=== r39 · v3.6.141-SDK6 · EL APARTADO ARCANO ===');
+console.log('\n=== r39 · v3.6.142-SDK6 · EL APARTADO ARCANO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 process.exit(fails ? 1 : 0);

@@ -603,6 +603,13 @@ export class NetLink {
     if (d.k === 'm') {
       if (this.role === 'host' && (d.md === 'match' || d.md === 'survival')) {
         this.game.switchMode(d.md);
+      } else if (this.role === 'guest' && d.md === 'survival') {
+        // v3.6.142 · FASE 144 · el anfitrión arrancó SUPERVIVENCIA: el
+        // invitado cambia SU modo en espejo (antes el mensaje sólo lo
+        // entendía el anfitrión — la supervivencia online quedaba muerta
+        // si la pedía el anfitrión). El estado de la partida vive en el
+        // sync; esto alinea modo, cartel y voz en el extremo invitado.
+        this.game.switchMode('survival');
       }
       return;
     }
@@ -1903,6 +1910,14 @@ export class NetLink {
       // aplicador lo ancla (appliedRally incluido — sin él el guardia
       // anti-duplicado bloquearía el CLAIM del rallye re-anclado).
       rs: r.rallySeq | 0,
+      // v3.6.142 · FASE 144 · correlativo de GOLPES del rallye vivo
+      // (BallAuth.shot — ctx.lastShot del validador): sin él, un resync
+      // en RALLYE (st ≠ 'serve') re-anclaba rallySeq pero dejaba el shot
+      // del receptor ATRÁS → el próximo HIT del anfitrión caía como
+      // TRAMPA grave (shot X ≠ Y+1) y la partida se degradaba a CLAIM.
+      // Autoridad del anfitrión: su contador viaja y el aplicador lo
+      // re-ancla (en saque no hace falta: setHeld lo re-arma a 0).
+      sh: this._ball ? (this._ball.shot | 0) : 0,
     });
   }
 
@@ -1943,6 +1958,15 @@ export class NetLink {
     // camino del agent A: «si m.st === 'serve', re-armar setHeld»).
     if (m.st === 'serve' && this._ball) {
       this._ball.setHeld(r.server === 'player');
+    }
+    // v3.6.142 · FASE 144 · resync EN RALLYE (st ≠ 'serve'): re-ancla el
+    // correlativo de golpes del validador (ctx.lastShot = _ball.shot).
+    // Hoy sólo se re-anclaba en saque vía setHeld: en rallye vivo un HIT
+    // perdido dejaba el shot atrás y el próximo HIT del anfitrión caía
+    // como trampa grave. Sólo el NÚMERO — el estado visual de la bola lo
+    // reconcilia el próximo evento HIT/HANDOFF (autoridad: anfitrión).
+    if (m.st !== 'serve' && typeof m.sh === 'number' && this._ball) {
+      this._ball.shot = m.sh | 0;
     }
   }
 

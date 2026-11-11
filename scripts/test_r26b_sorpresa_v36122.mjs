@@ -78,8 +78,8 @@ for (const p of ['FENIX', 'CRONO', 'OSCURIDAD']) {
   chk(c12.includes(`const VOZ_PODER_${p} = 'data:audio/mpeg;base64,SUQz`), `voz ES de ${p} embebida (MP3)`);
   chk(c12.includes(`const VOZ_PODER_${p}_EN = 'data:audio/mpeg;base64,SUQz`), `voz EN de ${p} embebida (MP3)`);
 }
-chk(c12.includes('const FENIX_DUR = 10;') && c12.includes('const CRONO_DUR = 10;') &&
-    c12.includes('const OSCURIDAD_DUR = 20;'), 'ventanas: fénix/crono 10 s · oscuridad 20 s (spec literal)');
+chk(c12.includes('const FENIX_DUR = ARCANO_CFG.ventanas.fenix;') && c12.includes('const CRONO_DUR = ARCANO_CFG.ventanas.crono;') &&
+    c12.includes('const OSCURIDAD_DUR = ARCANO_CFG.ventanas.oscuridad;'), 're-anclada r55: ventanas DATA-DRIVEN — fénix/crono 10 s · oscuridad 20 s (ARCANO_CFG)');
 chk(!c12.includes('const FENIX_MUL'), 'FÉNIX re-anclada r30: boost +18 % ANULADO (dinámica normal)');
 chk(c12.includes('const CRONO_F = 0.62;'), 'CRONO: bola al 62 % (38 % más lenta)');
 chk(c12.includes('const CRONO_RAMP = 0.4;'), 'CRONO: rampa suave de entrada/salida');
@@ -165,8 +165,8 @@ chk(!c12.includes("id: 'hielo'"), 'HIELO fuera del registro PODERES_PALA');
 
 /* — 6 · PLANTILLA COMÚN · ventanas, cortina y precalentado ————————————— */
 console.log('6 · PLANTILLA COMÚN · ventanas 3·2·1, cortina, precaliente');
-chk(c12.includes("(on || dlV) && this._fenixT > 0") && c12.includes("(on || dlV) && this._cronoT > 0") &&
-    c12.includes("(on || dlV) && this._oscuridadT > 0"), 're-anclada r54: puertas ÚNICAS (on || dlV) — ventanas de campeonato Y duelos');
+chk(c12.includes("pwViva(this._fenixT)") && c12.includes("pwViva(this._cronoT)") &&
+    c12.includes("pwViva(this._oscuridadT)"), 're-anclada r55: puertas pwViva — ventanas de campeonato Y duelos (regla única)');
 chk(c12.includes('try { this._fenixFin(); } catch (eFF) { /* */ }') &&
     c12.includes('try { this._cronoFin(); } catch (eCF2) { /* */ }') &&
     c12.includes('try { this._oscuridadFin(); } catch (eOF) { /* */ }'), 'apagado garantizado si «on» desaparece');

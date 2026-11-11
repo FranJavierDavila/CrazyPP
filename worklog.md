@@ -6352,3 +6352,65 @@ Stage Summary:
   3.6.145-SDK6 · badge V3.6.145-SDK6 · 0 pageerrors · IMÁN: ventana NACIDA
   (9,97 s) sin «agotado» y VIVA 1 s después (9,62 s) · EFECTO convive con
   el imán (9,87 s / 9,48 s) — el bug «nacen agotados» MUERTO en producción.
+
+## FASE 149 · v3.6.146-SDK6 · r55 — EL ARCANO ES DATA-DRIVEN (directiva del dueño: «No queremos NADA hardcodeado. TODO el juego debe ser Data-drive!»)
+- CAPA DE DATOS (c02, junto a DIMS): ARCANO_CFG — ÚNICA FUENTE DE VERDAD
+  del Arcano: ventanas por poder (mega 15 · oscuridad 20 · portal 8 ·
+  resto 10 · prismaGuia 3.0 · dlGigante/dlFuego/dlLoca), reglas por
+  modalidad (golpesPorCarga 20 = regla de los 20 toques · campeonato:
+  registro_completo sin candados · duelos: surtido base+desbloqueados)
+  y ui.buho (x 2,70 · y 2,60 · zOff 0,016). Modelo del dueño documentado
+  EN LOS DATOS (aclaración r54).
+- c12: las 15 consts *_DUR se vuelven ALIAS de la tabla (cero cambios en
+  los puntos de activación); MEGA_GOLPES lee reglas.golpesPorCarga;
+  DL_DUR se CONSTRUYE de la tabla (muere la duplicación de duraciones
+  campeonato/duelos); PODERES_PALA gana `dur` por fila (14 filas) — el
+  catálogo queda auto-descripto.
+- PUERTA ÚNICA pwViva(t) = (on || dlV) && t > 0 en updateMega: la REGLA
+  de la ventana vive en UN sitio y las 19 compuertas r54 la LEEN
+  (13 ifs + emul + imanAim + guardia + fxOnEf/Im/Pt). Aguja dura: en el
+  ensamblado quedan EXACTAMENTE 1 ocurrencia de (on || dlV) — cero
+  patrones copiados. Semántica r54 intacta (imán gasta su carga,
+  recogida sólo en transición _dlT>0||_dlId, FX vivos).
+- BÚHO DEL ARCANO (c08): arcMesh.position.set(ARCANO_CFG.ui.buho.x, .y,
+  z0 + .zOff) — mover el búho ahora es editar UN dato en c02.
+- HALLAZGO DE ENTORNO: scripts/mod_fase2_generar.mjs tiene HARDCODEADA
+  la ruta /home/z/my-project/src/game/core (sin upload/) y no puede
+  correr en este sandbox — DEPS-FASE2 de c08/c12 editados a mano en su
+  forma canónica (import ARCANO_CFG). Pendiente futuro: parametrizar la
+  ruta del generador (él mismo era deudor de la directiva data-driven).
+- SELLADO: sella_r55_capa_datos.py (patrón r54; golden VIEJO capturado
+  antes de sobrescribir): VERSION.json 3.6.146-SDK6 FASE 149, c00
+  VERSION, badge 03_body, sw.js CACHE crazypp-v3.6.146-SDK6, ensamblado
+  11.547.159 B · golden f8d1859df863f709… · 14 tests re-anclados
+  (versión/fase/nombre/tamaño/golden). Verificación de agujas: TODO OK
+  (capa de datos 6 agujas · puerta única 1+3 RE · búho 1 · conservación
+  r54/r145/r144/r143 · cero copias de la regla).
+- RE-ANCLES DE CONTRATO (agujas que vigilaban literales ahora data):
+  test_r39 (13 compuertas → LEEN pwViva; definición única; búho via c02;
+  import ARCANO_CFG) — 167/0 · test_r26b (FENIX/CRONO/OSCURIDAD_DUR +
+  puertas pwViva) — 171/0 · test_r30 (FENIX_DUR) — 54/0 · test_r31
+  (3 consts) — 47/0 · test_r33 (registro con dur + PRISMA/ONDA/SALVA/
+  ANCLA_DUR) — 77/0 · test_r34 (registro con dur) — 62/0 ·
+  qa_r46_humo_gobernador (versión viva 3.6.146) — OK.
+- QA VERDE COMPLETA (misma lista verde que r54, re-ejecutada): repro del
+  bug qa_r54_poderes_agotados 30/0 (en vivo sobre :3000 sirviendo r55
+  byte-exacto: ventana nace 9,88 s · carga consumida · ventana VIVA) ·
+  test_fisica 11/0 · test_r21 63/0 · r24 89/0 · r26b 171/0 · r30 54/0 ·
+  r31 47/0 · r32 49/0 · r33 77/0 · r34 62/0 · r35 36/0 · r36 30/0 ·
+  r37 46/0 · r38 51/0 · r39 167/0 · r40 62/0 · r41 92/0 · r43 OK ·
+  red_nucleo 60/0 · qa_version 31/0 · qa_sup1 151/0 · qa_r84 67/0 ·
+  qa_r50 22/0 · qa_r46_humo OK · qa_rendimiento 14/0 · qa_telemetria
+  132/0. ROJOS HISTÓRICOS PREEXISTENTES (no de r55; congelados en su
+  era): r23 (1), r25 (6), r26 (6), r27 (3), r28 (9), r29 (5).
+- ENTORNO: el next dev del driver de la plataforma sirve /home/z/
+  my-project/public (copia vieja 6,4 MB del 20-oct) — espejo sincronizado
+  rsync upload/public/ → public/ CON --exclude=descargas (lección r37
+  otra vez: el espejo nunca lleva descargas; 8,9 GB quedaron fuera).
+  :3000 sirve 3.6.146 byte-exacto (sha f8d1859d…) para la QA en vivo.
+- DESPLIEGUE: commit → deploy_pages --push → verificación en producción
+  con prod_smoke_r55.py (estática: ARCANO_CFG/reglas/búho/pwViva/13
+  compuertas/cero copias/14 dur/sw 3.6.146/portada cache-buster;
+  funcional: __PP_VERSION · badge · 0 pageerrors · IMÁN nace y SOBREVIVE
+  · EFECTO convive · MEGA nace a los 15,00 s EXACTOS de la tabla — el
+  dato manda sobre el código).

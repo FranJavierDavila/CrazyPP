@@ -12734,6 +12734,12 @@ export class PingPongGame {
     // ventanas arman SU reloj propio (los *_T de siempre) y viven SUS
     // segundos completos; al morir duelos las recoge _dlVentanasApaga.
     const dlV = this._dlEnabled();
+    // r55 · FASE 149 · LA PUERTA ÚNICA (data-driven): una ventana del
+    // Arcano está viva si hay modo con poderes (campeonato `on` · duelos
+    // `dlV`) y su timer > 0. La REGLA vive AQUÍ — un solo sitio — y los
+    // 19 puntos de uso la LEEN (cero patrones copiados; r54 los unió,
+    // r55 los vuelve datos+lectura).
+    const pwViva = (t) => (on || dlV) && t > 0;
     // r25 (v3.6.120) · ETAPAS 2/4: CORTINA de poderes (nunca aparecen en
     // las pruebas de habilidad — ni icono, ni cargas nuevas, ni ventanas).
     if (this._poderesEnPrueba()) {
@@ -12787,7 +12793,7 @@ export class PingPongGame {
     }
     // v3.6.36 · SÚPER EFECTO ACTIVO: ventana PROPIA de 10 s (r56: regla
     // del dueño — «sólo está activo 10 segundos desde la activación»).
-    if ((on || dlV) && this._efectoT > 0) {   // r54: puerta única duelos
+    if (pwViva(this._efectoT)) {   // r54: puerta única duelos
       this._efectoT -= dt;
       if (this._efectoT <= 0) {
         this._efectoFin();               // fin natural (tiempo agotado)
@@ -12805,7 +12811,7 @@ export class PingPongGame {
     // v3.6.49 (r57) · SÚPER IMÁN ACTIVO: ventana PROPIA de 10 s (regla
     // del dueño; la GUÍA vive en el golpe, c05; aquí solo el reloj y la
     // cuenta sonora — sin vigilantes de cargas desde la r57).
-    if ((on || dlV) && this._imanT > 0) {     // r54: puerta única duelos
+    if (pwViva(this._imanT)) {     // r54: puerta única duelos
       this._imanT -= dt;
       if (this._imanT <= 0) {
         this._imanFin();                 // fin natural (10 s agotados)
@@ -12830,7 +12836,7 @@ export class PingPongGame {
     // v3.6.43: el vigilante «sin cargas → portal fuera» se RETIRA — la
     // ventana tiene SUS 3 golpes garantizados y ya no depende de la matriz.
     if (this._portalCd > 0) this._portalCd -= dt;    // antirrebote SIEMPRE
-    if ((on || dlV) && this._portalT > 0) {   // r54: puerta única duelos
+    if (pwViva(this._portalT)) {   // r54: puerta única duelos
       this._portalT -= dt;
       if (this._portalT <= 0) {
         this._portalFin();               // fin natural (8 s agotados)
@@ -12845,7 +12851,7 @@ export class PingPongGame {
         this._poderTickBlip(3);
       }
     }
-    if ((on || dlV) && this._clonT > 0) {     // r54: puerta única duelos
+    if (pwViva(this._clonT)) {     // r54: puerta única duelos
       this._clonT -= dt;
       if (this._clonT <= 0) {
         this._clonFin();                 // fin natural (10 s agotados)
@@ -12864,7 +12870,7 @@ export class PingPongGame {
     // acabar la red vuelve EXACTA a su altura reglamentaria. Sin «on»
     // (salir del campeonato, prueba) la red se recoge YA: un entorno
     // mutado no puede sobrevivir a su contexto.
-    if ((on || dlV) && this._redT > 0) {      // r54: puerta única duelos
+    if (pwViva(this._redT)) {      // r54: puerta única duelos
       this._redT -= dt;
       if (this._redT <= 0) {
         this._redFin();                  // fin natural (10 s agotados)
@@ -12890,7 +12896,7 @@ export class PingPongGame {
     }
     // r25 (v3.6.120) · SÚPER ELECTRICIDAD ACTIVA: tormenta viva (niebla densa,
     // rayos, truenos, noche, destello y colisión) durante SU ventana.
-    if ((on || dlV) && this._elecT > 0) {     // r54: puerta única duelos
+    if (pwViva(this._elecT)) {     // r54: puerta única duelos
       this._elecT -= dt;
       if (this._elecT <= 0) {
         this._elecFin();                 // fin natural (10 s agotados)
@@ -12916,7 +12922,7 @@ export class PingPongGame {
     // r26b (v3.6.122) · LOS 3 PODERES NUEVOS viven SUS 10 s (patrón
     // red/elec: reloj único por ventana, blips 3·2·1 y apagado garantizado
     // si el entorno «on» desaparece).
-    if ((on || dlV) && this._fenixT > 0) {    // r54: puerta única duelos
+    if (pwViva(this._fenixT)) {    // r54: puerta única duelos
       this._fenixT -= dt;
       if (this._fenixT <= 0) {
         this._fenixFin();
@@ -12939,7 +12945,7 @@ export class PingPongGame {
     } else if (this._fenixFxOn) {
       this._fenixFxVis(false);
     }
-    if ((on || dlV) && this._cronoT > 0) {    // r54: puerta única duelos
+    if (pwViva(this._cronoT)) {    // r54: puerta única duelos
       this._cronoT -= dt;
       if (this._cronoT <= 0) {
         this._cronoFin();              // fin natural: rapidez RESTAURADA
@@ -12962,7 +12968,7 @@ export class PingPongGame {
     } else if (this._cronoFxOn) {
       this._cronoFxVis(false);
     }
-    if ((on || dlV) && this._oscuridadT > 0) {  // r54: puerta única duelos
+    if (pwViva(this._oscuridadT)) {  // r54: puerta única duelos
       this._oscuridadT -= dt;
       if (this._oscuridadT <= 0) {
         this._oscuridadFin();
@@ -12987,7 +12993,7 @@ export class PingPongGame {
     }
     // r33 (v3.6.129) · ventanas de los 4 poderes nuevos (reloj único de la
     // casa: blips 3·2·1, refresco honesto y fin natural exacto).
-    if ((on || dlV) && this._prismaT > 0) {   // r54: puerta única duelos
+    if (pwViva(this._prismaT)) {   // r54: puerta única duelos
       this._prismaT -= dt;
       if (this._prismaT <= 0) {
         this._prismaFin();
@@ -13008,7 +13014,7 @@ export class PingPongGame {
     if (this._prismaT > 0 || this._prismaGuiaT > 0) {
       try { this._prismaFrame(dt); } catch (ePF2) { /* el arcoíris nunca tumba el frame */ }
     }
-    if ((on || dlV) && this._ondaT > 0) {     // r54: puerta única duelos
+    if (pwViva(this._ondaT)) {     // r54: puerta única duelos
       this._ondaT -= dt;
       if (this._ondaT <= 0) {
         this._ondaFin();
@@ -13031,7 +13037,7 @@ export class PingPongGame {
     } else if (this._ondaFxOn) {
       this._ondaFxVis(false);
     }
-    if ((on || dlV) && this._salvaT > 0) {    // r54: puerta única duelos
+    if (pwViva(this._salvaT)) {    // r54: puerta única duelos
       this._salvaT -= dt;
       if (this._salvaT <= 0) {
         this._salvaFin();
@@ -13054,7 +13060,7 @@ export class PingPongGame {
     } else if (this._salvaFx && this._salvaFx.ghost) {
       this._salvaGhostVis(false);
     }
-    if ((on || dlV) && this._anclaT > 0) {    // r54: puerta única duelos
+    if (pwViva(this._anclaT)) {    // r54: puerta única duelos
       this._anclaT -= dt;
       if (this._anclaT <= 0) {
         this._anclaFin();
@@ -13127,12 +13133,12 @@ export class PingPongGame {
     // tope de seguridad en c05. Apagado → multiplicador 1 (pala honesta).
     // r84 · DUELOS LOCOS · LOCA: el MISMO canal de spin (×2, no ×3) con la
     // ventana del poder duelos — curva real que viaja en el HIT/HANDOFF.
-    const emul = (on || dlV) && this._efectoT > 0 ? EFECTO_SPIN_MUL   // r54
+    const emul = pwViva(this._efectoT) ? EFECTO_SPIN_MUL   // r54
       : (this._dlOn('loca') ? 2 : 1);
     // v3.6.49 (r57) · el SÚPER IMÁN REESCRITO viaja TAMBIÉN EN LA PALA
     // (ppImanAim lo lee collidePaddleSweep en el golpe): guía de tiro que
     // asegura mesa rival. Sin ventana → false (golpes 100 % normales).
-    const imanAim = !!((on || dlV) && this._imanT > 0);   // r54: puerta única
+    const imanAim = !!pwViva(this._imanT);     // r55: puerta única pwViva
     if (this.controllerPaddles) {
       for (const ps of this.controllerPaddles) {
         if (ps) { ps.ppEfectoMul = emul; ps.ppImanAim = imanAim; }
@@ -13142,7 +13148,7 @@ export class PingPongGame {
     // NO EXISTE marca en ninguna bola — red de seguridad por frame (por
     // si el fin natural llegara a saltarse en algún camino raro). Barato
     // e idempotente; con ventana viva no entra.
-    if (!((on || dlV) && this._efectoT > 0) && this.ball &&
+    if (!(pwViva(this._efectoT)) && this.ball &&
         (this.ball.ppEfecto || this.ball.ppEfectoTipo || this.ball.ppEfectoLado)) {
       this.ball.ppEfecto = false;
       this.ball.ppEfectoTipo = '';
@@ -13173,13 +13179,13 @@ export class PingPongGame {
     // cian = SÚPER EFECTO; pueden convivir, son ortogonales)
     const fxOn = on && this._megaT > 0 && !!this._megaFx;
     if (fxOn !== this._megaFxOn) this._megaFxVis(fxOn);
-    const fxOnEf = (on || dlV) && this._efectoT > 0 && !!this._efectoFx;
+    const fxOnEf = pwViva(this._efectoT) && !!this._efectoFx;
     // r54 · el HALO vive también en duelos (antes `on` solo lo mataba un
     // frame tras el disparo: el poder sonaba pero la pala no enseñaba NADA).
     if (fxOnEf !== this._efectoFxOn) this._efectoFxVis(fxOnEf);
-    const fxOnIm = (on || dlV) && this._imanT > 0 && !!this._imanFx;
+    const fxOnIm = pwViva(this._imanT) && !!this._imanFx;
     if (fxOnIm !== this._imanFxOn) this._imanFxVis(fxOnIm);
-    const fxOnPt = (on || dlV) && this._portalT > 0 && !!this._portalFx;
+    const fxOnPt = pwViva(this._portalT) && !!this._portalFx;
     if (fxOnPt !== this._portalFxOn) this._portalFxVis(fxOnPt);
     for (const par of [[this._megaFx, fxOn, this._megaT],
                        [this._efectoFx, fxOnEf, this._efectoT],
@@ -17340,7 +17346,7 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, BOLA_ASPECTOS, CARRERA_DIVISIONES, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ALTOS, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
@@ -17785,7 +17791,7 @@ const VOZ_PODER_PORTAL_EN = 'data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAAD
 // «dura 10 segundos y crea 2 palas virtuales a una distancia de 50
 // centímetros… cazar cualquier bola que se le escape… tasa de éxito de
 // devolución del 90 %… material Ghost, medio transparente azulado».
-const CLON_DUR = 10;        // s de ventana por activación (regla del dueño)
+const CLON_DUR = ARCANO_CFG.ventanas.clon;        // s de ventana por activación (regla del dueño)
 const CLON_DIST = 0.5;      // m del flanqueo (50 cm — petición literal)
 const CLON_EXITO = 0.9;     // tasa de acierto de la devolución (90 %)
 const CLON_CATCH = 0.32;    // radio de caza alrededor de cada clon (m)
@@ -17865,17 +17871,17 @@ const VOZ_PODER_ANCLA = 'data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2
 const VOZ_PODER_ANCLA_EN = 'data:audio/mpeg;base64,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';
 
 const PODERES_PALA = [
-  { id: 'mega', nombre: () => T('poder_mega'),
+  { id: 'mega', dur: ARCANO_CFG.ventanas.mega, nombre: () => T('poder_mega'),
     voz: VOZ_PODER_MEGA, vozEn: VOZ_PODER_MEGA_EN, png: PNG_PODER_MEGA },
-  { id: 'efecto', nombre: () => T('poder_efecto'),
+  { id: 'efecto', dur: ARCANO_CFG.ventanas.efecto, nombre: () => T('poder_efecto'),
     voz: VOZ_PODER_EFECTO, vozEn: VOZ_PODER_EFECTO_EN, png: PNG_PODER_EFECTO },
-  { id: 'iman', nombre: () => T('poder_iman'),
+  { id: 'iman', dur: ARCANO_CFG.ventanas.iman, nombre: () => T('poder_iman'),
     voz: VOZ_PODER_IMAN, vozEn: VOZ_PODER_IMAN_EN, png: PNG_PODER_IMAN },
-  { id: 'portal', nombre: () => T('poder_portal'),
+  { id: 'portal', dur: ARCANO_CFG.ventanas.portal, nombre: () => T('poder_portal'),
     voz: VOZ_PODER_PORTAL, vozEn: VOZ_PODER_PORTAL_EN, png: PNG_PODER_PORTAL },
   // v3.6.50 (r58) · SÚPER CLONACIÓN (quinto poder): 2 palas fantasma a
   // ±50 cm que cazan la bola escapada (90 %) y limpian globos/confeti.
-  { id: 'clon', nombre: () => T('poder_clon'),
+  { id: 'clon', dur: ARCANO_CFG.ventanas.clon, nombre: () => T('poder_clon'),
     voz: VOZ_PODER_CLON, vozEn: VOZ_PODER_CLON_EN, png: PNG_PODER_CLON },
   // r25 (v3.6.120) · SÚPER RED (sexto poder; spec literal del dueño):
   // «al activarlo hace crecer la altura de la red el doble del valor
@@ -17884,7 +17890,7 @@ const PODERES_PALA = [
   // lección r95: una sola fuente de verdad) y el visual se re-acomoda
   // con el patrón relayoutMesa (plano, cinta y postes). Al acabar,
   // la red vuelve EXACTA a su altura reglamentaria.
-  { id: 'red', nombre: () => T('poder_red'),
+  { id: 'red', dur: ARCANO_CFG.ventanas.red, nombre: () => T('poder_red'),
     voz: VOZ_PODER_RED, vozEn: VOZ_PODER_RED_EN, png: PNG_PODER_RED },
   // r25 (v3.6.120) · SÚPER ELECTRICIDAD (séptimo poder; spec literal del
   // dueño): «de la bola salen rayos de electricidad… nubes a metro y
@@ -17895,7 +17901,7 @@ const PODERES_PALA = [
   // negros y pierde el punto». Física c04/c05 INTACTA: el punto lo
   // aplica el árbitro (applyPoint causa 'elec') y la bola rota sólo se
   // oculta — nunca se toca el integrador.
-  { id: 'elec', nombre: () => T('poder_elec'),
+  { id: 'elec', dur: ARCANO_CFG.ventanas.elec, nombre: () => T('poder_elec'),
     voz: VOZ_PODER_ELEC, vozEn: VOZ_PODER_ELEC_EN, png: PNG_PODER_ELEC },
   // r29 (v3.6.125) · SÚPER FÉNIX con el FUEGO REAL del Wizard (magia
   // v2.120 — informe del dueño: «ya teníamos una bola en llamas… que
@@ -17904,35 +17910,35 @@ const PODERES_PALA = [
   // este comentario ya NO presume el «+18 % de rapidez» de r29: ese
   // boost quedó ANULADO en r30 por orden del dueño (dinámica NORMAL,
   // saques intactos) — toda la ventaja de juego es FENIX_OUT_P 0.15.
-  { id: 'fenix', nombre: () => T('poder_fenix'),
+  { id: 'fenix', dur: ARCANO_CFG.ventanas.fenix, nombre: () => T('poder_fenix'),
     voz: VOZ_PODER_FENIX, vozEn: VOZ_PODER_FENIX_EN, png: PNG_PODER_FENIX },
   // r26b (v3.6.122) · SÚPER CRONO (noveno poder; arte propio r26b): «el
   // tiempo lento» — la bola vuela al 62 % con anillos de reloj; la
   // rapidez se RESTAURA exacta al acabar la ventana.
-  { id: 'crono', nombre: () => T('poder_crono'),
+  { id: 'crono', dur: ARCANO_CFG.ventanas.crono, nombre: () => T('poder_crono'),
     voz: VOZ_PODER_CRONO, vozEn: VOZ_PODER_CRONO_EN, png: PNG_PODER_CRONO },
   // r29 (v3.6.125) · SÚPER OSCURIDAD (décimo poder; SUSTITUYE a SÚPER
   // HIELO por orden del dueño): bola negra con halo rojo fuego y NIEBLA
   // densa en cada zona de golpeo del rival (5 s + 2 s de disipación);
   // la IA, ciega, manda fuera el 35 % de sus devoluciones. Icono y voz
   // DEL DUEÑO (SuperPala_Oscuridad.png · voz Piper de la casa).
-  { id: 'oscuridad', nombre: () => T('poder_oscuridad'),
+  { id: 'oscuridad', dur: ARCANO_CFG.ventanas.oscuridad, nombre: () => T('poder_oscuridad'),
     voz: VOZ_PODER_OSCURIDAD, vozEn: VOZ_PODER_OSCURIDAD_EN,
     png: PNG_PODER_OSCURIDAD },
   // r33 (v3.6.129) · EL LOTE APROBADO por el dueño (de los 16 propuestos:
   // «Vamos con estos poderes de momento») — 11.º a 14.º del registro.
   // Ventanas de 10 s, cada uno con su ventaja y su desventaja LIGERA para
   // el rival (spec literal del dueño en cada bloque de implementación).
-  { id: 'prisma', nombre: () => T('poder_prisma'),
+  { id: 'prisma', dur: ARCANO_CFG.ventanas.prisma, nombre: () => T('poder_prisma'),
     voz: VOZ_PODER_PRISMA, vozEn: VOZ_PODER_PRISMA_EN,
     png: PNG_PODER_PRISMA },
-  { id: 'onda', nombre: () => T('poder_onda'),
+  { id: 'onda', dur: ARCANO_CFG.ventanas.onda, nombre: () => T('poder_onda'),
     voz: VOZ_PODER_ONDA, vozEn: VOZ_PODER_ONDA_EN,
     png: PNG_PODER_ONDA },
-  { id: 'salva', nombre: () => T('poder_salva'),
+  { id: 'salva', dur: ARCANO_CFG.ventanas.salva, nombre: () => T('poder_salva'),
     voz: VOZ_PODER_SALVA, vozEn: VOZ_PODER_SALVA_EN,
     png: PNG_PODER_SALVA },
-  { id: 'ancla', nombre: () => T('poder_ancla'),
+  { id: 'ancla', dur: ARCANO_CFG.ventanas.ancla, nombre: () => T('poder_ancla'),
     voz: VOZ_PODER_ANCLA, vozEn: VOZ_PODER_ANCLA_EN,
     png: PNG_PODER_ANCLA },
 ];
@@ -17960,11 +17966,17 @@ const ARCONO_TIPOS = {
 //   DL_DUR     : ventana de cada id del Arcano en duelos (la del campeonato).
 //   DL_SURTIDO : el surto aleatorio del jugador = base + SUS desbloqueados.
 const DL_BASE = ['gigante', 'fuego', 'loca'];
-const DL_DUR = {
-  gigante: 12, fuego: 10, loca: 10,
-  mega: 15, efecto: 10, iman: 10, portal: 8, clon: 10, red: 10,
-  elec: 10, fenix: 10, crono: 10, oscuridad: 20, prisma: 10,
-  onda: 10, salva: 10, ancla: 10,
+const DL_DUR = {   // r55: construida de ARCANO_CFG.ventanas (c02) — un solo dato
+  gigante: ARCANO_CFG.ventanas.dlGigante,
+  fuego: ARCANO_CFG.ventanas.dlFuego,
+  loca: ARCANO_CFG.ventanas.dlLoca,
+  mega: ARCANO_CFG.ventanas.mega, efecto: ARCANO_CFG.ventanas.efecto,
+  iman: ARCANO_CFG.ventanas.iman, portal: ARCANO_CFG.ventanas.portal,
+  clon: ARCANO_CFG.ventanas.clon, red: ARCANO_CFG.ventanas.red,
+  elec: ARCANO_CFG.ventanas.elec, fenix: ARCANO_CFG.ventanas.fenix,
+  crono: ARCANO_CFG.ventanas.crono, oscuridad: ARCANO_CFG.ventanas.oscuridad,
+  prisma: ARCANO_CFG.ventanas.prisma, onda: ARCANO_CFG.ventanas.onda,
+  salva: ARCANO_CFG.ventanas.salva, ancla: ARCANO_CFG.ventanas.ancla,
 };
 const DL_SURTIDO = (game) => {
   let extra = [];
@@ -17972,25 +17984,25 @@ const DL_SURTIDO = (game) => {
   return DL_BASE.concat(extra);
 };
 // r33 · constantes de los 4 poderes nuevos (ventanas de 10 s, regla del dueño)
-const PRISMA_DUR = 10;      // s de ventana
+const PRISMA_DUR = ARCANO_CFG.ventanas.prisma;      // s de ventana
 const PRISMA_OUT_P = 0.10;  // falta PEQUEÑA de la IA ante la estela arcoíris
-const PRISMA_GUIA_T = 3.0;  // s de guía de trayectoria tras cada golpeo
-const ONDA_DUR = 10;        // s de ventana
+const PRISMA_GUIA_T = ARCANO_CFG.ventanas.prismaGuia;  // s de guía de trayectoria tras cada golpeo
+const ONDA_DUR = ARCANO_CFG.ventanas.onda;        // s de ventana
 const ONDA_SMASH_V = 5.2;   // m/s de golpeo que cuenta como SMASH
 const ONDA_FLOJO = 0.75;    // la devolución rival sale al 75 % tras el smash
 const ONDA_FLOJO_T = 1.0;   // s de margen del «en pleno swing»
-const SALVA_DUR = 10;       // s de ventana
+const SALVA_DUR = ARCANO_CFG.ventanas.salva;       // s de ventana
 const SALVA_FLOJO = 0.80;   // la pala llega «cansada»: bola al 80 %
-const ANCLA_DUR = 10;       // s de ventana
-const MEGA_DUR = 15;    // s de MEGA PALA por carga (apilable: +15 s cada una)
+const ANCLA_DUR = ARCANO_CFG.ventanas.ancla;       // s de ventana
+const MEGA_DUR = ARCANO_CFG.ventanas.mega;    // s de MEGA PALA por carga (apilable: +15 s cada una)
 const MEGA_TOPE = 3;    // cargas máximas de un poder (×3)
-const MEGA_GOLPES = 20; // cada 20 toques del rally = +1 carga (r56: regla
+const MEGA_GOLPES = ARCANO_CFG.reglas.golpesPorCarga; // cada 20 toques del rally = +1 carga (r56: regla
                         // del dueño — «superados los 20 toques, no antes»)
 // r25 (v3.6.120) · los DOS poderes nuevos (regla de la casa del dueño:
 // ventanas de 10 s — patrón efecto/iman/portal/clon — y tope ×3 igual).
-const RED_DUR = 10;         // s de red alta
+const RED_DUR = ARCANO_CFG.ventanas.red;         // s de red alta
 const RED_MUL = 2;          // «el doble del valor actual» (spec literal)
-const ELEC_DUR = 10;        // s de tormenta sobre el campo del rival
+const ELEC_DUR = ARCANO_CFG.ventanas.elec;        // s de tormenta sobre el campo del rival
 const ELEC_BOLT_CD = 0.42;  // s entre descargas — r26 (dueño: «bastantes
                             // más rayos»): ráfagas ≈35 rayos por ventana
 const ELEC_BOLT_R = 0.17;   // radio de interceptación rayo↔bola (m) —
@@ -18035,14 +18047,14 @@ const ELEC_AGARRA_T = 1.0;  // s de retención visible antes del estallido
 // constantes FENIX_MUL/FENIX_CAP retiradas; la ventaja de juego es la
 // PEQUEÑA penalización de la IA (15 % de faltas largas — la mecánica de
 // la Oscuridad a escala pequeña) y los saques quedan intactos.
-const FENIX_DUR = 10;       // s de ventana (regla de la casa: ~10 s)
+const FENIX_DUR = ARCANO_CFG.ventanas.fenix;       // s de ventana (regla de la casa: ~10 s)
 const FENIX_OUT_P = 0.15;   // prob. PEQUEÑA de falta larga de la IA (15 %)
 // r26b (v3.6.122) · SÚPER CRONO (9.º poder) — EL TIEMPO LENTO: la bola
 // vuela al 62 % durante la ventana (entrada y salida suaves de 0,4 s;
 // al terminar, la rapidez se RESTAURA exacta). Ventaja honesta: más
 // tiempo de reacción. Sólo capa de juego (multiplicador de velocidad de
 // la bola viva — nunca toca el integrador c04 ni el solucionador c05).
-const CRONO_DUR = 10;       // s de ventana
+const CRONO_DUR = ARCANO_CFG.ventanas.crono;       // s de ventana
 const CRONO_F = 0.62;       // rapidez objetivo (38 % más lenta)
 const CRONO_RAMP = 0.4;     // s de entrada/salida suave
 // r29 (v3.6.125) · SÚPER OSCURIDAD (10.º poder; SUSTITUYE a SÚPER HIELO —
@@ -18053,7 +18065,7 @@ const CRONO_RAMP = 0.4;     // s de entrada/salida suave
 // que reduce la visibilidad de la zona ~75 %: 5 s plena + ~2 s de
 // disipación, varias zonas a la vez, con destellos rojos dentro (como
 // pequeños ojos). La IA, ciega, manda el 35 % de sus bolas fuera.
-const OSCURIDAD_DUR = 20;        // s de ventana (spec literal del dueño)
+const OSCURIDAD_DUR = ARCANO_CFG.ventanas.oscuridad;        // s de ventana (spec literal del dueño)
 const OSCURIDAD_OUT_P = 0.35;    // prob. de falta larga de la IA (35 %)
 const OSCURIDAD_VIDA = 5;        // s de niebla plena (spec literal)
 const OSCURIDAD_DISIPA = 2;      // s de disipación (spec: ~2 s más)
@@ -18067,7 +18079,7 @@ const OSCURIDAD_RADIO = 0.25;    // radio de la nube ≈ 0,5 m de diámetro
 // v3.6.43 (ronda 51 · el dueño: «no noto los efectos… es preciso exagerarlo
 // para que visualmente veamos el resultado»): el brush generado sube ×3
 // (y con él Magnus ×2,2 y bote ×2,4, en c02) — la curva de la bola se VE.
-const EFECTO_DUR = 10;      // s de ventana (r56: regla del dueño — 10 s
+const EFECTO_DUR = ARCANO_CFG.ventanas.efecto;      // s de ventana (r56: regla del dueño — 10 s
                             // desde la activación, sin tope de golpes)
 const EFECTO_SPIN_MUL = 3;  // multiplicador del brush generado (antes ×2)
 const EFECTO_SPIN_MIN = 25; // |spin| mínimo para el anillo de bote notorio
@@ -18077,7 +18089,7 @@ const EFECTO_SPIN_MIN = 25; // |spin| mínimo para el anillo de bote notorio
 // ventana de 10 s de GUÍA DE TIRO (el solver de la casa corrige cada
 // golpe hacia la mesa del rival, c05). El gatillo solo abre la ventana:
 // sin gasto de cargas por asistencia, sin campo por subpaso.
-const IMAN_DUR = 10;        // s de campo magnético por activación (r56:
+const IMAN_DUR = ARCANO_CFG.ventanas.iman;        // s de campo magnético por activación (r56:
                             // regla del dueño — «el efecto sólo dura
                             // 10 segundos»)
 // v3.6.41 · SÚPER PORTAL (4.º poder; spec completa del dueño): ventana de
@@ -18085,7 +18097,7 @@ const IMAN_DUR = 10;        // s de campo magnético por activación (r56:
 // del golpe real; desviación lateral 0,25–0,70 m y vertical 0–0,15 m;
 // tránsito visual 0,16 s (0,12–0,20 spec); antirrebote 0,25 s. Prototipo:
 // a calibrar con las velocidades reales del Quest.
-const PORTAL_DUR = 8;         // s de ventana por activación
+const PORTAL_DUR = ARCANO_CFG.ventanas.portal;         // s de ventana por activación
 const PORTAL_GOLPES = 3;      // golpes portalizados máximos por activación
 const PORTAL_LAT_MIN = 0.25;  // desviación lateral mínima (m)
 const PORTAL_LAT_MAX = 0.70;  // desviación lateral máxima (m)

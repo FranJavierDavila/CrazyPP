@@ -1,2 +1,2 @@
-# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r54_poderes_duelos)
-c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298
+# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r55_capa_datos)
+f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4

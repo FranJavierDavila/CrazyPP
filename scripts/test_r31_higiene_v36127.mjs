@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r31 · v3.6.145-SDK6 · FASE 148 · TEST: HIGIENE TEXTUAL
+/* CRAZY PING PONG · r31 · v3.6.146-SDK6 · FASE 149 · TEST: HIGIENE TEXTUAL
  * FÉNIX.
  *
  *   A · DEUDA COSMÉTICA PAGADA — el comentario del registro PODERES_PALA
@@ -20,7 +20,7 @@
  *       Protege contra re-introducir un boost en la ruta de Fénix.
  *
  *   D · SÚPER HIELO sigue anulado (cero rastros vivos) y los sellos de
- *       la ronda: VERSION.json 3.6.145-SDK6 / FASE 148 / build
+ *       la ronda: VERSION.json 3.6.146-SDK6 / FASE 149 / build
  *       11.504.235 B / golden 10a24300… / sw.js / badge / hub.
  *
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
@@ -47,22 +47,22 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.145-SDK6 · FASE 148 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.145-SDK6 · FASE 148');
-chk(vjson.version === '3.6.145-SDK6', 'VERSION.json: 3.6.145-SDK6');
-chk(vjson.fase === 148, 'FASE 148');
-chk(vjson.tamano === 11542635, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.146-SDK6 · FASE 149 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.146-SDK6 · FASE 149');
+chk(vjson.version === '3.6.146-SDK6', 'VERSION.json: 3.6.146-SDK6');
+chk(vjson.fase === 149, 'FASE 149');
+chk(vjson.tamano === 11547159, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  'c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298',
+  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
   'VERSION.json golden 10a24300…');
 chk(sha256('public/game.html') ===
-  'c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298',
+  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
   'golden 10a24300… (build byte-exacto)');
-chk(game.includes('3.6.145-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.145-SDK6'"), 'sello c00 = 3.6.145-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.145-SDK6'"),
-  'sw.js CACHE v3.6.145-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.145-SDK6</span>'), 'badge V3.6.145-SDK6 en 03_body');
+chk(game.includes('3.6.146-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.146-SDK6'"), 'sello c00 = 3.6.146-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.146-SDK6'"),
+  'sw.js CACHE v3.6.146-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.146-SDK6</span>'), 'badge V3.6.146-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -107,9 +107,9 @@ if (ms118.length === 1) {
 
 /* — 4 · COHERENCIA VENTANA↔TEXTO (10/10/20 s en ES y EN) —————————— */
 console.log('4 · VENTANAS · código↔i18n casan');
-chk(c12.includes('const FENIX_DUR = 10'), 'FENIX_DUR = 10');
-chk(c12.includes('const CRONO_DUR = 10'), 'CRONO_DUR = 10');
-chk(c12.includes('const OSCURIDAD_DUR = 20'), 'OSCURIDAD_DUR = 20');
+chk(c12.includes('const FENIX_DUR = ARCANO_CFG.ventanas.fenix;'), 're-anclada r55: FENIX_DUR = ARCANO_CFG (10 s)');
+chk(c12.includes('const CRONO_DUR = ARCANO_CFG.ventanas.crono;'), 're-anclada r55: CRONO_DUR = ARCANO_CFG (10 s)');
+chk(c12.includes('const OSCURIDAD_DUR = ARCANO_CFG.ventanas.oscuridad;'), 're-anclada r55: OSCURIDAD_DUR = ARCANO_CFG (20 s)');
 for (const [arc, seg] of [['arc_fenix_go', '10 s'],
   ['arc_crono_go', '10 s'], ['arc_oscuridad_go', '20 s']]) {
   const esc = seg.replace('.', '\\.');

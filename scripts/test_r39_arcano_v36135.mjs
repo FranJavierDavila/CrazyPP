@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r39 · v3.6.145-SDK6 · FASE 148 · TEST: EL APARTADO
+/* CRAZY PING PONG · r39 · v3.6.146-SDK6 · FASE 149 · TEST: EL APARTADO
  * ARCANO — el búho del hall, el espacio infinito y la galería de
  * superpoderes con desbloqueo por campeonato ganado.
  *
@@ -70,28 +70,29 @@ const sha256 = (p) => createHash('sha256').update(leeB(p)).digest('hex');
 
 const c00 = lee('src/game/core/c00_pre_three.js');
 const c08 = lee('src/game/core/c08_hall_hud.js');
+const c02 = lee('src/game/core/c02_cfg_escena.js');
 const c09 = lee('src/game/core/c09_red_netlink.js');
 const c12 = lee('src/game/core/c12_pingponggame.js');
 const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.145-SDK6 · FASE 148 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.145-SDK6 · FASE 148 · EL APARTADO ARCANO');
-chk(vjson.version === '3.6.145-SDK6', 'VERSION.json: 3.6.145-SDK6');
-chk(vjson.fase === 148, 'FASE 148');
-chk(vjson.faseNombre === 'Los superpoderes de Duelos Locos viven su ventana completa (puerta única on||dlV, halo vivo en duelos, imán gasta su carga) + búho del Arcano en la esquina superior derecha del Hall', 'faseNombre = EL APARTADO ARCANO');
-chk(vjson.tamano === 11542635, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.146-SDK6 · FASE 149 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.146-SDK6 · FASE 149 · EL APARTADO ARCANO');
+chk(vjson.version === '3.6.146-SDK6', 'VERSION.json: 3.6.146-SDK6');
+chk(vjson.fase === 149, 'FASE 149');
+chk(vjson.faseNombre === 'El Arcano es data-driven: ARCANO_CFG única fuente de verdad (ventanas, reglas por modalidad, búho) + puerta única pwViva', 'faseNombre = EL APARTADO ARCANO');
+chk(vjson.tamano === 11547159, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  'c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298',
+  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.145-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.145-SDK6'"), 'sello c00 = 3.6.145-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.145-SDK6'"),
-  'sw.js CACHE v3.6.145-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.145-SDK6</span>'), 'badge V3.6.145-SDK6 en 03_body');
+chk(game.includes('3.6.146-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.146-SDK6'"), 'sello c00 = 3.6.146-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.146-SDK6'"),
+  'sw.js CACHE v3.6.146-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.146-SDK6</span>'), 'badge V3.6.146-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -106,8 +107,11 @@ chk(c08.includes("drawArcanoBuho(arcCv);"), 'fallback vectorial del búho pintad
 chk(c08.includes("const urlArcano = 'assets/hall/arcano.png';") &&
     c08.includes('new THREE.TextureLoader().load(urlArcano'),
   'arte REAL del dueño cargado por URL (assets/hall/arcano.png)');
-chk(c08.includes('arcMesh.position.set(2.70, 2.60, z0 + 0.016);'),
-  're-anclada r54: esquina superior DERECHA ajustada a bordes (2,70 · 2,60)');
+chk(c08.includes('arcMesh.position.set(ARCANO_CFG.ui.buho.x, ARCANO_CFG.ui.buho.y,\n                       z0 + ARCANO_CFG.ui.buho.zOff);') &&
+    c02.includes('ui: { buho: { x: 2.70, y: 2.60, zOff: 0.016 } }'),
+  're-anclada r55: búho DATA-DRIVEN — c08 lee ARCANO_CFG.ui.buho (c02), esquina sup. dcha');
+chk(c12.includes("import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, DIMS,"),
+  're-anclada r55: c12 importa ARCANO_CFG de la capa de datos (c02)');
 chk(c08.includes('[[0.452, 0.392], [0.557, 0.376]]') ||
     c08.includes('[0.452, 0.392], [0.557, 0.376]'),
   'destellos en los centros de los OJOS medidos del arte');
@@ -262,15 +266,18 @@ chk(c12.includes('this._megaMatriz.push(ent);') &&
     c12.includes('const ok = this[fn](ent);'),
   'armado por triggers (FX/marcas/tintes idénticos al campeonato)');
 chk(c12.includes('_dlVentana(id) {'), '_dlVentana: reloj de duelos (r54: el tick ya no la exige)');
-chk((c12.match(/if \(\(on \|\| dlV\) && this\._\w+T > 0\)/g) || []).length === 13,
-  're-anclada r54: 13 compuertas tick bajo la puerta ÚNICA (on || dlV)');
+chk((c12.match(/if \(pwViva\(this\._\w+T\)\)/g) || []).length === 13,
+  're-anclada r55: 13 compuertas tick LEEN la puerta ÚNICA pwViva (cero patrones copiados)');
+chk((c12.match(/\(on \|\| dlV\)/g) || []).length === 1 &&
+    c12.includes('const pwViva = (t) => (on || dlV) && t > 0;'),
+  're-anclada r55: la REGLA de la ventana vive en UN sitio (definición única)');
 chk(c12.includes('_dlVentanasApaga() {'), 'recogida con FIN NATURAL al morir duelos');
 chk((c12.match(/else if \(this\._\w+T > 0\) \{/g) || []).length === 9,
   're-anclada r54: 9 apagados cuando el contexto muere (sin on ni duelos)');
-chk(c12.includes("const emul = (on || dlV) && this._efectoT > 0 ? EFECTO_SPIN_MUL"),
-  're-anclada r54 · EFECTO del Arcano: spin ×3 en duelos (canal de la LOCA)');
-chk(c12.includes("const imanAim = !!((on || dlV) && this._imanT > 0);"),
-  're-anclada r54 · IMÁN del Arcano: guía al punto dulce en duelos');
+chk(c12.includes("const emul = pwViva(this._efectoT) ? EFECTO_SPIN_MUL"),
+  're-anclada r55 · EFECTO del Arcano: spin ×3 en duelos (canal de la LOCA)');
+chk(c12.includes("const imanAim = !!pwViva(this._imanT);"),
+  're-anclada r55 · IMÁN del Arcano: guía al punto dulce en duelos');
 chk(c12.includes("const dlGig = this._dlOn('gigante') || this._dlOn('mega');"),
   'MEGA del Arcano: pala ×1,30/radio ×1,38 en duelos (mecánica GIGANTE)');
 chk(c12.includes("if (id === 'red' || id === 'crono' || id === 'oscuridad') {"),
@@ -304,6 +311,6 @@ chk(game.includes('EL APARTADO ARCANO'), 'bundle: sección arcano embebida');
 chk(game.includes('pp_poderes_v1'), 'bundle: persistencia de desbloqueos embebida');
 chk(game.includes('DL_SURTIDO'), 'bundle: surto extendido de Duelos Locos embebido');
 
-console.log('\n=== r39 · v3.6.145-SDK6 · EL APARTADO ARCANO ===');
+console.log('\n=== r39 · v3.6.146-SDK6 · EL APARTADO ARCANO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 process.exit(fails ? 1 : 0);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r37 (v3.6.139, FASE 148) — TEST de la ronda.
+/* CRAZY PING PONG · r37 (v3.6.139, FASE 149) — TEST de la ronda.
  * Segunda pasada de la revisión del multijugador (petición del dueño:
  * «no me fío, pasa otra revisión a fondo del juego en red multijugador»).
  * TRES BUGS cazados sobre la r36, leídos c09 (2.296 líneas), c09b (926),
@@ -188,12 +188,12 @@ chk(sha(`${RAIZ}/src/game/core/c05_colisiones_ia_golpeo.js`).startsWith('8bb6208
   'c05 sha256 8bb62082… (física byte-exacta)');
 
 console.log('== 5) VERSIÓN Y SELLOS ==');
-chk(vjson.version === '3.6.145-SDK6', `VERSION.json 3.6.145-SDK6 (${vjson.version})`);
-chk(vjson.fase === 148, `FASE 148 (${vjson.fase})`);
-chk(vjson.tamano === 11542635, `tamaño sellado (${vjson.tamano})`);
-chk(vjson.golden.startsWith('c584ca86'), 'golden c584ca86… (build re-sellado)');
-chk(game.includes('const VERSION') && game.includes('3.6.145-SDK6'),
-  'game.html sellado a 3.6.145-SDK6');
+chk(vjson.version === '3.6.146-SDK6', `VERSION.json 3.6.146-SDK6 (${vjson.version})`);
+chk(vjson.fase === 149, `FASE 149 (${vjson.fase})`);
+chk(vjson.tamano === 11547159, `tamaño sellado (${vjson.tamano})`);
+chk(vjson.golden.startsWith('f8d1859d'), 'golden f8d1859d… (build re-sellado)');
+chk(game.includes('const VERSION') && game.includes('3.6.146-SDK6'),
+  'game.html sellado a 3.6.146-SDK6');
 chk(cuenta(game, '_iceRestartIntento') === 2,
   `game.html lleva el reinicio de ICE (def + llamada): ×${cuenta(game, '_iceRestartIntento')}`);
 chk(cuenta(game, 'this._ackInit') === 3,

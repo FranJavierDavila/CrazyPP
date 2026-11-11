@@ -25,7 +25,7 @@ const orbital = readFileSync(`${RAIZ}/public/championships/estacion_orbital/inde
 console.log('== 1) REGISTRO PODERES_PALA a 14 entradas ==');
 for (const id of ['mega', 'efecto', 'iman', 'portal', 'clon', 'red', 'elec',
   'fenix', 'crono', 'oscuridad', 'prisma', 'onda', 'salva', 'ancla']) {
-  const patron = "id: '" + id + "', nombre: () => T('poder_" + id + "')";
+  const patron = "id: '" + id + "', dur: ARCANO_CFG.ventanas." + id + ", nombre: () => T('poder_" + id + "')";
   chk(c12.includes(patron), `registro: entrada ${id}`);
 }
 chk((c12.match(/data:image\/png;base64,/g) || []).length >= 14,
@@ -61,14 +61,14 @@ for (const id of ['prisma', 'onda', 'salva', 'ancla']) {
 }
 
 console.log('== 4) MECÁNICA (ventanas 10 s, constantes y equilibrio) ==');
-chk(c12.includes('const PRISMA_DUR = 10;'), 'PRISMA_DUR 10 s');
+chk(c12.includes('const PRISMA_DUR = ARCANO_CFG.ventanas.prisma;'), 're-anclada r55: PRISMA_DUR = ARCANO_CFG (10 s)');
 chk(c12.includes('const PRISMA_OUT_P = 0.10;'), 'PRISMA_OUT_P 0.10 (ligera)');
-chk(c12.includes('const ONDA_DUR = 10;') && c12.includes('const ONDA_FLOJO = 0.75;'),
-  'ONDA: ventana 10 s · devolución rival al 75 %');
+chk(c12.includes('const ONDA_DUR = ARCANO_CFG.ventanas.onda;') && c12.includes('const ONDA_FLOJO = 0.75;'),
+  're-anclada r55: ONDA ventana DATA-DRIVEN (10 s) · devolución rival al 75 %');
 chk(c12.includes('const ONDA_SMASH_V = 5.2;'), 'ONDA: sólo en smash (umbral 5.2 m/s)');
-chk(c12.includes('const SALVA_DUR = 10;') && c12.includes('const SALVA_FLOJO = 0.80;'),
-  'SALVA: ventana 10 s · bola al 80 % (pala «cansada»)');
-chk(c12.includes('const ANCLA_DUR = 10;'), 'ANCLA_DUR 10 s');
+chk(c12.includes('const SALVA_DUR = ARCANO_CFG.ventanas.salva;') && c12.includes('const SALVA_FLOJO = 0.80;'),
+  're-anclada r55: SALVA ventana DATA-DRIVEN (10 s) · bola al 80 % (pala «cansada»)');
+chk(c12.includes('const ANCLA_DUR = ARCANO_CFG.ventanas.ancla;'), 're-anclada r55: ANCLA_DUR = ARCANO_CFG (10 s)');
 chk(c12.includes('this._salvaUsado = false'), 'SALVA: warp ÚNICO por activación');
 chk(c12.includes('this._ondaFlojoT = 0;\n        this.ball.vel.multiplyScalar(ONDA_FLOJO);') ||
     c12.includes('this._ondaFlojoT = 0;'), 'ONDA: se consume con la devolución');

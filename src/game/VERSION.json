@@ -1,7 +1,7 @@
 {
-  "version": "3.6.145-SDK6",
-  "fase": 148,
-  "faseNombre": "Los superpoderes de Duelos Locos viven su ventana completa (puerta única on||dlV, halo vivo en duelos, imán gasta su carga) + búho del Arcano en la esquina superior derecha del Hall",
+  "version": "3.6.146-SDK6",
+  "fase": 149,
+  "faseNombre": "El Arcano es data-driven: ARCANO_CFG única fuente de verdad (ventanas, reglas por modalidad, búho) + puerta única pwViva",
   "sdk": "1.6.0",
   "fecha": "2026-11-11",
   "hub": "v36139-sdk6",
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r54",
-  "tamano": 11542635,
-  "golden": "c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298"
+  "nota": "r55",
+  "tamano": 11547159,
+  "golden": "f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4"
 }

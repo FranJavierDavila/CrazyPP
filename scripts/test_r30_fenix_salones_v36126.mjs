@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r30 · v3.6.145-SDK6 · FASE 148 · TEST: FÉNIX JUGABLE +
+/* CRAZY PING PONG · r30 · v3.6.146-SDK6 · FASE 149 · TEST: FÉNIX JUGABLE +
  * SALONES DE LUJO IA.
  *
  *   A · SÚPER FÉNIX — DINÁMICA NORMAL (orden del dueño tras probar la
@@ -61,23 +61,23 @@ const sha256 = (p) =>
 const c12 = lee('src/game/core/c12_pingponggame.js');
 const vjson = JSON.parse(lee('src/game/VERSION.json'));
 
-/* — 1 · SELLOS · v3.6.145-SDK6 · FASE 148 ————————————————————————————— */
-console.log('1 · SELLOS · v3.6.145-SDK6 · FASE 148');
-chk(vjson.version === '3.6.145-SDK6', 'VERSION.json: 3.6.145-SDK6');
-chk(vjson.fase === 148, 'FASE 148');
-chk(vjson.faseNombre === 'Los superpoderes de Duelos Locos viven su ventana completa (puerta única on||dlV, halo vivo en duelos, imán gasta su carga) + búho del Arcano en la esquina superior derecha del Hall', 'faseNombre');
+/* — 1 · SELLOS · v3.6.146-SDK6 · FASE 149 ————————————————————————————— */
+console.log('1 · SELLOS · v3.6.146-SDK6 · FASE 149');
+chk(vjson.version === '3.6.146-SDK6', 'VERSION.json: 3.6.146-SDK6');
+chk(vjson.fase === 149, 'FASE 149');
+chk(vjson.faseNombre === 'El Arcano es data-driven: ARCANO_CFG única fuente de verdad (ventanas, reglas por modalidad, búho) + puerta única pwViva', 'faseNombre');
 const game = lee('public/game.html');
-chk(game.includes('3.6.145-SDK6'), 'bundle con sello vigente');
+chk(game.includes('3.6.146-SDK6'), 'bundle con sello vigente');
 const c00 = lee('src/game/core/c00_pre_three.js');
-chk(c00.includes("const VERSION = '3.6.145-SDK6'"), 'sello c00 = 3.6.145-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.145-SDK6'"),
-  'sw.js CACHE v3.6.145-SDK6 (purga de cachés viejas)');
-chk(vjson.tamano === 11542635, 'tamaño del build: 11.504.235 B');
+chk(c00.includes("const VERSION = '3.6.146-SDK6'"), 'sello c00 = 3.6.146-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.146-SDK6'"),
+  'sw.js CACHE v3.6.146-SDK6 (purga de cachés viejas)');
+chk(vjson.tamano === 11547159, 'tamaño del build: 11.504.235 B');
 chk(lee('src/game/GOLDEN_SHA256.txt').includes(
-  'c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298'),
+  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4'),
 'golden 10a24300… (build byte-exacto)');
 chk(sha256('public/game.html') ===
-  'c584ca86ec91b67142c1685091863811e8130e725d54d7d4019a54fbdb7e0298',
+  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
 'game.html REAL casan con golden');
 
 /* — 2 · FÉNIX · EL BOOST ESTÁ ANULADO (dinámica normal) ———————————————— */
@@ -87,7 +87,7 @@ chk(!c12.includes('const FENIX_CAP'), 'constante FENIX_CAP retirada');
 chk(!c12.includes('multiplyScalar(FENIX'), 'ningún multiplyScalar del poder');
 chk(!c12.includes('setLength(FENIX_CAP'), 'ningún tope de velocidad del poder');
 chk(!/5\.55b\).*\n.*FENIX_MUL/.test(c12), 'bloque 5.55b del boost desaparecido');
-chk(c12.includes('const FENIX_DUR = 10;'), 'ventana Fénix intacta (10 s)');
+chk(c12.includes('const FENIX_DUR = ARCANO_CFG.ventanas.fenix;'), 're-anclada r55: ventana Fénix DATA-DRIVEN (ARCANO_CFG.ventanas.fenix = 10 s)');
 chk(c12.includes('ANULADO por orden del dueño'), 'crónica del veto en el código');
 
 /* — 3 · FÉNIX · LOS EFECTOS SE QUEDAN (el dueño: «mantener los efectos») */

@@ -719,3 +719,54 @@ const UP = new THREE.Vector3(0, 1, 0);
  * activo (TLang()): VOICE_FULL/VOICE_ACH por idioma. Claves NORMALIZADAS
  * (minúsculas, sin acentos ni signos).
  * -------------------------------------------------------------------- */
+
+/* =====================================================================
+ *  r55 · FASE 149 · ARCANO_CFG — ÚNICA FUENTE DE VERDAD DEL ARCANO
+ *  ---------------------------------------------------------------------
+ *  El Arcano es DATA-DRIVEN: las duraciones de ventana, las reglas por
+ *  modalidad y la posición del búho del Hall viven AQUÍ (datos, junto a
+ *  DIMS), NO en el código. c12 (poderes) y c08 (búho) LEEN esta tabla.
+ *  · Tocar una ventana = editar UN número de esta tabla.
+ *  · Un poder nuevo = SU fila aquí + SU fila en el registro PODERES_PALA
+ *    de c12 (id/nombre/voz/png/dur). Sin lógica nueva dispersa.
+ *  · Modelo del dueño (r54): en CAMPEONATOS los poderes NUNCA están
+ *    bloqueados (surgen al azar con la regla de los 20 toques, cargas
+ *    del registro COMPLETO sin mirar candados); los candados sólo rigen
+ *    en los DUELOS con poderes (surtido = base + desbloqueados del
+ *    jugador, que viajan con su cuenta como la skin de pala).
+ *  ===================================================================== */
+export const ARCANO_CFG = {
+  // Ventana (s) por poder. La MESA: misma en campeonato y en duelos —
+  // DL_DUR de c12 se construye de aquí; dlGigante/dlFuego/dlLoca son los
+  // 3 NETCODE-SAFE exclusivos de Duelos Locos.
+  ventanas: {
+    mega: 15,       // MEGA PALA por carga (apilable: +15 s cada una)
+    efecto: 10,     // SÚPER EFECTO (regla del dueño, r56)
+    iman: 10,       // campo magnético por activación (r56)
+    portal: 8,      // ventana del portal
+    clon: 10,       // SÚPER CLONACIÓN
+    red: 10,        // red alta (el doble de la altura actual)
+    elec: 10,       // tormenta sobre el campo del rival
+    fenix: 10,      // bola de fuego (regla de la casa: ~10 s)
+    crono: 10,      // tiempo lento (bola al 62 %)
+    oscuridad: 20,  // niebla en el golpeo del rival (spec literal del dueño)
+    prisma: 10,     // prismas
+    prismaGuia: 3.0, // guía de trayectoria tras cada golpeo (prisma)
+    onda: 10,       // ondas de choque
+    salva: 10,      // ventana del salvavidas
+    ancla: 10,      // cadenas del ancla
+    dlGigante: 12,  // DUELOS LOCOS · GIGANTE (r84)
+    dlFuego: 10,    // DUELOS LOCOS · FUEGO
+    dlLoca: 10,     // DUELOS LOCOS · LOCA
+  },
+  // Reglas por modalidad (la puerta ÚNICA pwViva de c12 las aplica).
+  reglas: {
+    golpesPorCarga: 20,  // regla de los 20 toques: cada 20 toques = +1 carga (r56)
+    campeonato: { origen: 'registro_completo', candados: false },
+    duelos: { origen: 'surtido_base_mas_desbloqueados', candados: true },
+  },
+  // UI · búho del Arcano en el Hall: esquina superior derecha, lo más
+  // ajustado a los bordes (r54): ~6 cm a pared (x pared 3,05) y techo
+  // (2,85); margen justo para el hover ×1,14. Moverlo = editar aquí.
+  ui: { buho: { x: 2.70, y: 2.60, zOff: 0.016 } },
+};

@@ -6,7 +6,7 @@ export const HALL = {
 };
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { T, TLang } from './c00_pre_three.js';
-import { DIMS } from './c02_cfg_escena.js';
+import { ARCANO_CFG, DIMS } from './c02_cfg_escena.js';
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
 /* paleta de pieles en el orden de SKINS (la lista vive en el módulo de
@@ -734,7 +734,10 @@ export function createHall(base) {
   try { arcTex.colorSpace = THREE.SRGBColorSpace; arcTex.anisotropy = 4; } catch (eTA0) { /* */ }
   const arcMesh = new THREE.Mesh(new THREE.PlaneGeometry(ARC_W, ARC_H),
     new THREE.MeshBasicMaterial({ map: arcTex, transparent: true }));
-  arcMesh.position.set(2.70, 2.60, z0 + 0.016);   // r54: esquina sup. dcha
+  // r55 · DATA-DRIVEN: la posición vive en ARCANO_CFG.ui.buho (c02) —
+  // mover el búho = editar UN dato, sin tocar código del Hall.
+  arcMesh.position.set(ARCANO_CFG.ui.buho.x, ARCANO_CFG.ui.buho.y,
+                       z0 + ARCANO_CFG.ui.buho.zOff);
   g.add(arcMesh);
   try {   // el arte REAL del dueño sustituye al fallback en cuanto llega
     const urlArcano = 'assets/hall/arcano.png';   // fijo del hall (no arte de variante)

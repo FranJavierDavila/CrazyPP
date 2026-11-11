@@ -6245,3 +6245,13 @@ Stage Summary:
   segmentos de donut, tabla de jugadores, timeline legible, 0 pageerrors,
   captura full-page revisada a ojo) · qa_telemetria 132/0 (panel por :3000
   y gateway :81 + PII intacta).
+- DESPLIEGUE: sin partidas activas (0 eventos vr_ping/net_match/carrera en los
+  últimos 10 min) → commit c0d491a → deploy_pages --push → pages 9bb2a1b1c
+  (476 ficheros · smoke verde bajo /CrazyPP/ 0 fallos). game.html NO cambia
+  ni un byte (versión 3.6.144-SDK6 intacta): cero impacto en jugadores y sin
+  bump del Service Worker. VERIFICACIÓN EN PRODUCCIÓN
+  (verifica_r53_produccion.py, con sondeo del builder de Pages): panel nuevo
+  servido con sus gráficas SVG, dashboard vivo contra el worker REAL con la
+  clave por localStorage (jamás en la URL), 6 KPIs · área por día · donuts ·
+  tabla de jugadores · timeline · 0 pageerrors · captura full-page revisada.
+  URL estable: https://franjavierdavila.github.io/CrazyPP/telemetria.html

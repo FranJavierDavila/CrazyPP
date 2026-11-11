@@ -6066,3 +6066,10 @@ Stage Summary:
   132/0 (+anim_shield en catálogo) · worker test_local 102/0 · qa_sup1 151/0
   (re-anclada 3.6.139→3.6.142 — iba roja desde r47) · qa_r46_humo OK ·
   qa_rendimiento 14/0 · clon raíz :3000 sincronizado (sirve 3.6.142).
+- DESPLIEGUE: commit 56aaf0fac → deploy_pages --push → pages 88dd6990c (476 ficheros ·
+  194,8 MB · smoke Playwright verde bajo /CrazyPP/ 0 fallos) · VERIFICACIÓN EN
+  PRODUCCIÓN: PAGES-VERSION 3.6.142-SDK6 (game_sha256 205ba80d… byte-exacto), las
+  SEIS agujas de los fixes presentes en el game.html servido, badge V3.6.142-SDK6,
+  sw CACHE crazypp-v3.6.142-SDK6, cabana.mp3 200 byte-exacto (4.216.750 B),
+  telemetría viva (total 103→128), y PROD SMOKE r49 (scripts/prod_smoke_r49.py)
+  TODO OK: __PP_VERSION 3.6.142-SDK6 · __PP_GAME presente · 0 pageerrors.

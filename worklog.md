@@ -6138,3 +6138,42 @@ Stage Summary:
   en la batería desde r33; sin relación con este cambio).
 - DESPLIEGUE: ventana SWR despejada (última telemetría haceSeg=3114 — 52 min
   sin actividad) → commit + deploy_pages --push.
+
+━━━ FASE 146 · v3.6.144-SDK6 · r52 · LOS ICONOS DEL ARCANO NACEN CARGADOS (2026-11-11) ━━━
+
+- INFORME DEL DUEÑO: «la primera vez que entras al espacio arcano los iconos
+  de los superpoderes no aparecen; hay que abrir la ventana con la descripción
+  para que salgan, y a la segunda ya están». CAUSA RAÍZ encontrada: los PNG de
+  PODERES_PALA son data URLs que decodifican ASÍNCRONO — la 1.ª _arconoRepinta
+  de _arconoEntrar dibujaba el medallón con drawImage de un Image SIN
+  decodificar (no-op silencioso del canvas): ficha pintada, icono VACÍO. El
+  Image quedaba cacheado en _arconoIconos y CUALQUIER repinta posterior
+  (descripción, navegación, 2.ª visita, cambio ES/EN) ya lo encontraba
+  cargado — por eso «a la segunda siempre sale».
+- FIX (todo aditivo, física y netcode INTACTOS):
+  (1) PRECALENTAMIENTO (c12 constructor → _arconoPrecalentar()): UNA Image por
+      poder del registro creada al arrancar la página — al entrar por primera
+      vez la galería ya decodificó y la ficha nace con el icono de verdad
+      (el '?' del medallón queda como plan B, no como norma).
+  (2) CONTRATO DE CARGA (c12._arconoIconoImg): img.onload repinta la ficha
+      SIN voz cuando el PNG está listo y ESE poder es el mostrado (índice
+      vivo) — cubre dispositivo lento o icono gigante: el icono se
+      materializa al momento, sin navegación ni segunda visita, y JAMÁS tumba
+      el frame (try propio).
+- SELLADO: sella_r52_arcono_iconos.py (patrón r49/r50, golden VIEJO capturado
+  antes de sobrescribir — reancla REAL): VERSION.json 3.6.144-SDK6 FASE 146
+  «Los iconos del Arcano nacen cargados», c00 VERSION, badge 03_body, sw.js
+  CACHE crazypp-v3.6.144-SDK6, ensamblado 11.540.068 B · golden
+  0fd11519a5702477…, 13 test_r*.mjs re-anclados. qa_sup1_v366 re-anclada a
+  mano a 3.6.144 (el sellador sólo re-ancla test_r*.mjs: la ejecución previa
+  murió antes de tocarla y salía 148/3 — lección: los QA Python con versión
+  hardcodeada van en la lista del sellador a partir de r53).
+- QA VERDE COMPLETA: red_nucleo 60/0 · r30 54/0 · r31 47/0 · r32 49/0 ·
+  r33 77/0 · r34 62/0 · r35 36/0 · r36 30/0 · r37 46/0 · r38 51/0 · r39 165/0 ·
+  r40 62/0 · r41 92/0 · r43 79/0 · r45 55/0 · qa_r50_gatillo_oeste 22/0 ·
+  qa_r84 67/0 · qa_sup1 151/0 (tras re-ancla) · qa_r46_humo OK ·
+  qa_telemetria 132/0 · qa_rendimiento 14/0 · qa_version 31/0 · verificación
+  de AGUJAS del sellador TODO OK (8/8 + VERSION).
+- ENTORNO: la sesión anterior murió con el sandbox caído a medias de esta fase
+  (sella ejecutado, commit y worklog no). Esta sesión retoma el estado real
+  del árbol, re-ancla qa_sup1, ejecuta la batería COMPLETA y despliega.

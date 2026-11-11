@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.143-SDK6 · FASE 145 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.144-SDK6 · FASE 146 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -83,26 +83,26 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.143-SDK6 · FASE 145 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.143-SDK6 · FASE 145 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.143-SDK6', 'VERSION.json: 3.6.143-SDK6');
-chk(vjson.fase === 145, 'FASE 145');
-chk(vjson.faseNombre === 'El gatillo del Oeste devuelve el superpoder (contrato de consumo fireGun) + carteles del Hall con idioma (chips BOLA/MESA y repintado pp-lang en caliente)',
-  'faseNombre = EL GATILLO DEL OESTE DEVUELVE EL SUPERPODER (CONTRATO DE CONSUMO FIREGUN) + CARTELES DEL HALL CON IDIOMA (CHIPS BOLA/MESA Y REPINTADO PP-LANG EN CALIENTE)');
+/* — 1 · SELLOS · v3.6.144-SDK6 · FASE 146 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.144-SDK6 · FASE 146 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.144-SDK6', 'VERSION.json: 3.6.144-SDK6');
+chk(vjson.fase === 146, 'FASE 146');
+chk(vjson.faseNombre === 'Los iconos del Arcano nacen cargados — precalentamiento de la galería y repintado onload de la ficha',
+  'faseNombre = LOS ICONOS DEL ARCANO NACEN CARGADOS — PRECALENTAMIENTO DE LA GALERÍA Y REPINTADO ONLOAD DE LA FICHA');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
 // legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
-chk(vjson.tamano === 11538499, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11540068, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '1364dd47af4abe2f5dc124c1f056fd8798aec6fde0b9c687a475daa1be251a52',
+  '0fd11519a5702477323ffc4f31c37f4badae5317c5b89174b56b8e9f5716eb1a',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.143-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.143-SDK6'"), 'sello c00 = 3.6.143-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.143-SDK6'"),
-  'sw.js CACHE v3.6.143-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.143-SDK6</span>'), 'badge V3.6.143-SDK6 en 03_body');
+chk(game.includes('3.6.144-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.144-SDK6'"), 'sello c00 = 3.6.144-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.144-SDK6'"),
+  'sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.144-SDK6</span>'), 'badge V3.6.144-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -276,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.143-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.144-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

@@ -780,6 +780,13 @@ export class PingPongGame {
     this._arconoOn = false;      // dentro del espacio arcano (el hall sigue «abierto»)
     this._arconoIdx = 0;         // superpoder mostrado (índice AUTOMÁTICO del registro)
     this._arconoIconos = {};     // Image por id (caché de los PNG embebidos)
+    // v3.6.144 · PRECALENTAMIENTO de la galería (informe del dueño: «la
+    // primera vez los iconos no aparecen»): los PNG son data URLs que
+    // decodifican ASÍNCRONO — la 1.ª repinta del panel dibujaba el medallón
+    // VACÍO y el icono no salía hasta la 2.ª visita (o hasta navegar). Cada
+    // Image, al terminar de cargar, repinta la ficha si es la viva (contrato
+    // del onload en _arconoIconoImg) — y con esto la galería nace cargada.
+    this._arconoPrecalentar();
     this._arconoFade = 0;        // 0 transparente · 1 negro total
     this._arconoFadeDir = 0;     // +1 cerrando · −1 abriendo · 0 quieto
     this._arconoFadeCb = null;   // el canje de estancias corre EN NEGRO
@@ -6516,17 +6523,38 @@ export class PingPongGame {
     return id;
   }
 
-  /** Image (caché) del icono embebido de un poder, para el panel. */
+  /** Image (caché) del icono embebido de un poder, para el panel.
+   *  v3.6.144 · CONTRATO DE CARGA: el data URL decodifica asíncrono — la
+   *  1.ª vez el panel se pintó SIN icono. El onload repinta la ficha
+   *  cuando el PNG está listo y ESE poder es el mostrado: el medallón se
+   *  materializa al momento, sin navegación ni segunda visita. */
   _arconoIconoImg(id) {
     if (this._arconoIconos[id]) return this._arconoIconos[id];
     const p = PODERES_PALA.find((x) => x.id === id);
     if (!p || !p.png) return null;
     try {
       const img = new Image();
+      img.onload = () => {
+        try {
+          if (!this._arconoOn || !this.arcaneGroup) return;
+          const vivo = PODERES_PALA[this._arconoIdx];
+          if (vivo && vivo.id === id) this._arconoRepinta(false);
+        } catch (eArL) { /* un icono jamás tumba el frame */ }
+      };
       img.src = p.png;
       this._arconoIconos[id] = img;
       return img;
     } catch { return null; }
+  }
+
+  /** v3.6.144 · Precalienta la caché de iconos: UNA Image por poder del
+   *  registro, creada en el constructor — al entrar por PRIMERA vez al
+   *  espacio arcano la galería ya decodificó y la ficha pinta el icono
+   *  de verdad (el '?' del medallón queda como plan B, no como norma). */
+  _arconoPrecalentar() {
+    try {
+      for (const p of PODERES_PALA) this._arconoIconoImg(p.id);
+    } catch (eArP) { /* sin precalentado: '?' al primer intento, nunca crash */ }
   }
 
   /** Tipo del poder para la ficha (ataque/defensa/distracción) + color.

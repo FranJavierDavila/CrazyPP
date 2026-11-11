@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r40 · v3.6.143-SDK6 · FASE 145 · TEST: EL ARCANO A LA
+/* CRAZY PING PONG · r40 · v3.6.144-SDK6 · FASE 146 · TEST: EL ARCANO A LA
  * VISTA — revisión del dueño sobre la r39 (cuatro informes en uno):
  *
  *   A · EL BÚHO, UN 25 % MÁS PEQUEÑO — «Veamos el buho (un poco más
@@ -71,24 +71,24 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.143-SDK6 · FASE 145 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.143-SDK6 · FASE 145 · EL ARCANO A LA VISTA');
-chk(vjson.version === '3.6.143-SDK6', 'VERSION.json: 3.6.143-SDK6');
-chk(vjson.fase === 145, 'FASE 145');
-chk(vjson.faseNombre === 'El gatillo del Oeste devuelve el superpoder (contrato de consumo fireGun) + carteles del Hall con idioma (chips BOLA/MESA y repintado pp-lang en caliente)', 'faseNombre = EL ARCANO A LA VISTA');
+/* — 1 · SELLOS · v3.6.144-SDK6 · FASE 146 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.144-SDK6 · FASE 146 · EL ARCANO A LA VISTA');
+chk(vjson.version === '3.6.144-SDK6', 'VERSION.json: 3.6.144-SDK6');
+chk(vjson.fase === 146, 'FASE 146');
+chk(vjson.faseNombre === 'Los iconos del Arcano nacen cargados — precalentamiento de la galería y repintado onload de la ficha', 'faseNombre = EL ARCANO A LA VISTA');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: build legítimamente cambiado por la r46 (gobernador + worker v3)
-chk(vjson.tamano === 11538499, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11540068, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '1364dd47af4abe2f5dc124c1f056fd8798aec6fde0b9c687a475daa1be251a52',
+  '0fd11519a5702477323ffc4f31c37f4badae5317c5b89174b56b8e9f5716eb1a',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.143-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.143-SDK6'"), 'sello c00 = 3.6.143-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.143-SDK6'"),
-  'sw.js CACHE v3.6.143-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.143-SDK6</span>'), 'badge V3.6.143-SDK6 en 03_body');
+chk(game.includes('3.6.144-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.144-SDK6'"), 'sello c00 = 3.6.144-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.144-SDK6'"),
+  'sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.144-SDK6</span>'), 'badge V3.6.144-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 

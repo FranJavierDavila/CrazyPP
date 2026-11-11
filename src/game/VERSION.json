@@ -1,7 +1,7 @@
 {
-  "version": "3.6.143-SDK6",
-  "fase": 145,
-  "faseNombre": "El gatillo del Oeste devuelve el superpoder (contrato de consumo fireGun) + carteles del Hall con idioma (chips BOLA/MESA y repintado pp-lang en caliente)",
+  "version": "3.6.144-SDK6",
+  "fase": 146,
+  "faseNombre": "Los iconos del Arcano nacen cargados — precalentamiento de la galería y repintado onload de la ficha",
   "sdk": "1.6.0",
   "fecha": "2026-11-11",
   "hub": "v36139-sdk6",
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r21",
-  "tamano": 11538499,
-  "golden": "1364dd47af4abe2f5dc124c1f056fd8798aec6fde0b9c687a475daa1be251a52"
+  "tamano": 11540068,
+  "golden": "0fd11519a5702477323ffc4f31c37f4badae5317c5b89174b56b8e9f5716eb1a"
 }

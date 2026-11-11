@@ -6414,3 +6414,15 @@ Stage Summary:
   funcional: __PP_VERSION · badge · 0 pageerrors · IMÁN nace y SOBREVIVE
   · EFECTO convive · MEGA nace a los 15,00 s EXACTOS de la tabla — el
   dato manda sobre el código).
+- VERIFICACIÓN EN PRODUCCIÓN (prod_smoke_r55.py): PAGES game.html SERVIDO
+  con la capa data-driven (ARCANO_CFG + reglas + búho como datos · pwViva
+  ×1 definición · 13 compuertas leyéndola · CERO patrones copiados ·
+  catálogo con 14 dur), sw.js CACHE crazypp-v3.6.146-SDK6, portada con
+  cache-buster ?v=3.6.146-SDK6, y FUNCIONAL EN PRODUCCIÓN: __PP_VERSION
+  3.6.146-SDK6 · badge V3.6.146-SDK6 · 0 pageerrors · IMÁN: ventana NACIDA
+  (9,97 s) sin «agotado» y VIVA 1 s después (9,47 s) · EFECTO convive
+  (9,85 s / 9,32 s) · DATO MANDA: la MEGA nace a los 15,00 s EXACTOS de
+  ARCANO_CFG.ventanas.mega (14,85 s medidos) — la directiva del dueño
+  «todo data-driven» VERIFICADA en producción. PROD SMOKE r55: 20 OK ·
+  0 FALLOS · deploy pages cf9bf449f (476 ficheros · 194,9 MB · smoke de
+  prefijo 33 peticiones 0 fallos).

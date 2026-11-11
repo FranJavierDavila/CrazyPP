@@ -6340,3 +6340,15 @@ Stage Summary:
   del clon se perdió con el llenado: bun install (835 paquetes) y next dev
   relanzado; :3000/:81 sirven 3.6.145 byte-exacto (qa_version 31/0 con
   servidores).
+- DESPLIEGUE: 0 partidas activas en los últimos 10 min (consulta al worker)
+  → commit d5d117b7e → deploy_pages --push → pages 50153bc62 (476 ficheros ·
+  194,8 MB · smoke Playwright bajo /CrazyPP/ 33 peticiones, 0 fallos, 0
+  pageerrors) · VERIFICACIÓN EN PRODUCCIÓN (prod_smoke_r54.py): PAGES-VERSION
+  3.6.145-SDK6 (game_sha256 ed680df6… = sha del servido; las 2 reescrituras
+  de rutas del ensamblador), las agujas r54 presentes en el game.html
+  SERVIDO (búho 2,70·2,60 · dlV · transición _dlT>0||_dlId · 13 compuertas
+  (on||dlV) · 9 apagados), sw.js CACHE crazypp-v3.6.145-SDK6, portada con
+  cache-buster ?v=3.6.145-SDK6, y FUNCIONAL EN PRODUCCIÓN: __PP_VERSION
+  3.6.145-SDK6 · badge V3.6.145-SDK6 · 0 pageerrors · IMÁN: ventana NACIDA
+  (9,97 s) sin «agotado» y VIVA 1 s después (9,62 s) · EFECTO convive con
+  el imán (9,87 s / 9,48 s) — el bug «nacen agotados» MUERTO en producción.

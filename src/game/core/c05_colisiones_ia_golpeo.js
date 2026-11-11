@@ -776,7 +776,12 @@ export function testPaddleContact(ball, prevPos, paddles, events) {
  *  v2.17: `bounced` (ya botó en este campo, lo da rules.validBounce) siembra
  *  el contador de botes — antes, tras el bote la simulación no encontraba
  *  candidatos futuros y devolvía null: la IA se quedaba CIEGA justo cuando
- *  debía golpear y la bola se le pasaba (los fallos "no llega"). */
+ *  debía golpear y la bola se le pasaba (los fallos "no llega").
+ *  r57 · AUDITORÍA R2: el margen de bote en X está ALINEADO con collideTable
+ *  (media bola de canto: |x| ≤ halfWidth + r·0,5) — la mesa real SÍ bota una
+ *  bola cuyo centro sobresale hasta media bola del canto y la IA no debía
+ *  darla por perdida. Mismo margen en simulateBounceUntilTable y
+ *  simulateServePath: los TRES simuladores predicen con la física REAL. */
 export function predictStrike(ball, sign, bounced) {
   const C = DIMS.tableCenterZ;
   const topR = DIMS.tableTopY + DIMS.ballRadius;
@@ -800,7 +805,7 @@ export function predictStrike(ball, sign, bounced) {
     t += h;
 
     if (vel.y < 0 && prevY >= topR && pos.y < topR &&
-        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+        Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5 && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
       pos.y = topR;
       if (DIMS.physicsRealism >= 0.5) {
         // v3.0.5-FIS1 · P2: la IA predice con la MISMA física nueva
@@ -908,7 +913,7 @@ function simulateBounceUntilTable(from, vel, spin, maxT, out) {
       crossed = true;
     }
     if (v.y < 0 && prevY >= topR && pos.y < topR &&
-        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+        Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5 && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
       out.land = pos.clone();
       out.t = t;
       out.netY = netY;
@@ -1023,7 +1028,7 @@ export function simulateServePath(from, v0, spin, ownSign) {
 
     // bote en la mesa
     if (vel.y < 0 && prevY >= topR && pos.y < topR &&
-        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+        Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5 && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
       pos.y = topR;
       if (DIMS.physicsRealism >= 0.5) {
         // v3.0.5-FIS1 · P2: el solver de saque usa la MISMA física nueva

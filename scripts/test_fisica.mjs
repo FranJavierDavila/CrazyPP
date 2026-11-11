@@ -117,6 +117,30 @@ function escenario(nombre, datos) {
   });
 }
 
+/* — 4b · r57 · R1 (auditoría): FRAME CAÍDO — la pala mide con la base
+ * temporal de la FÍSICA. Swing a 90 Hz con un frame caído de 50 ms en el
+ * centro: la velocidad medida debe seguir siendo la REAL del gesto
+ * (Δpos/Δt real), no la inflada por dividir entre 1/30. El contrato lo
+ * aplica el llamador (c12 pasa dtFis); este escenario congela el valor
+ * correcto de updatePaddleSim ante dt real. */
+{
+  const ps = c04.createPaddleSim('player', 0);
+  const q = new THREE.Quaternion();
+  const pos = new THREE.Vector3();
+  const frameMs = [13.9, 13.9, 13.9, 50, 13.9, 13.9, 13.9, 13.9]; // 4.º frame caído
+  let t = 0;
+  const velInstPorFrame = [];
+  for (let i = 0; i < frameMs.length; i++) {
+    const dt = frameMs[i] / 1000;
+    const s = t / 0.15; // avance lineal del gesto en 150 ms
+    pos.set(0.15 - 0.30 * s, 0.9, -0.2 + 0.35 * s);
+    c04.updatePaddleSim(ps, pos, q, t, dt);
+    velInstPorFrame.push(ps.velInst.toArray());
+    t += dt;
+  }
+  escenario('paddleSim.frameCaido50ms', { velInst: velInstPorFrame, vel: ps.vel.toArray() });
+}
+
 /* — 5 · aerodinámica (480 substeps fijos) —————————————————————————— */
 {
   const vel = new THREE.Vector3(3.0, -4.0, -6.0);

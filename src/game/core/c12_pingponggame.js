@@ -14839,8 +14839,8 @@ export class PingPongGame {
     // Con frames de 35-50 ms la bola ya NO va a cámara lenta: recorre su
     // tiempo real y el vuelo se siente VERDADERO aunque el render sufra.
     const _rawDt = this.lastTime < 0 ? 0.016 : Math.max(0.0001, now - this.lastTime);
-    const dt = Math.min(_rawDt, 1 / 30);
-    const dtFis = Math.min(_rawDt, 1 / 12);
+    const dt = Math.min(_rawDt, PASO_TUNE.uiMax);     // timers/UI/red (spec A)
+    const dtFis = Math.min(_rawDt, PASO_TUNE.fisMax); // bola + PALA (r43/R1)
     // r87 · RED SOCIAL: latidos/polls espaciados (fetch cada 10-30 s) —
     // corren SIEMPRE (también congelados y en 2D: el medallón es del menú)
     try { if (this.social) this.social.tick(dt); } catch (eRS2) { /* nunca rompe */ }
@@ -15075,7 +15075,11 @@ export class PingPongGame {
         tmpMountQ.copy(grip.quaternion).multiply(mountQuatFor(this.handOf[i])).multiply(this.gripOffsetQ);
         // la pala nunca atraviesa la mesa: se frena sobre la superficie
         this.clampPaddlePose(grip.position, tmpMountQ, true);
-        updatePaddleSim(ps, grip.position, tmpMountQ, now, dt);
+        // r57 · R1 (auditoría): la pala mide su velocidad/giro con la MISMA
+        // base temporal que la bola (dtFis) — con frames caídos de 33-83 ms
+        // el swing ya no se infla (Δpos real ÷ 1/30) y el golpe no depende
+        // del lag del casco. Frames < 33 ms: dtFis == dt, idéntico.
+        updatePaddleSim(ps, grip.position, tmpMountQ, now, dtFis);
         ps.active = this.connected[i];
         // margen de detección extra SOLO mientras la bola del saque vuela:
         // golpear de forma natural no exige milimetrar la muñeca
@@ -17370,6 +17374,18 @@ const BOLA_SPIN_AX = new THREE.Vector3();
  * tabla BOLA_TUNE (dato, no literal suelto). Valor IDÉNTICO al de r24. */
 const BOLA_TUNE = { spinGanancia: 0.45 };   // rad visibles por rad de ω (ver _bolaSpinTick) — r24: 0.14→0.45 (queja: «giro muy sutil»)
 const BOLA_SPIN_GANANCIA = BOLA_TUNE.spinGanancia;
+/* r57 · FASE 151 · data-driven (auditoría R1): los dos CAPS del paso de
+ * simulación viven en tabla — nada de literales sueltos.
+ *  uiMax  1/30 → dt de timers/UI/red (spec A: con bajón de FPS se prefiere
+ *          ir lento antes que barrer un intervalo enorme con poses P0→P1
+ *          degradadas)
+ *  fisMax 1/12 → dtFis de la BOLA (r43: la bola integra su tiempo REAL;
+ *          stepPhysics subescala a 480 Hz, 40 subpasos dentro del tope 96)
+ * La PALA mide con fisMax (ver updatePaddleSim en el tick de mandos):
+ * misma base temporal que la bola — con frames de 33-83 ms la velocidad
+ * del swing ya no se infla (Δpos real ÷ cap de 1/30) y el golpe no depende
+ * del lag del casco. Frames < 33 ms (72-120 Hz): dt == dtFis, bit a bit. */
+const PASO_TUNE = { uiMax: 1 / 30, fisMax: 1 / 12 };
 /* =====================================================================
  *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy

@@ -85,8 +85,8 @@ chk(mencionesTrail === 2, 'estela restaurada en caducidad Y en _elecFin (2 sitio
 
 /* — 5 · FÍSICA INTACTA · c04/c05 sha256 = r26b/r27 ———————————————————— */
 console.log('5 · FÍSICA INTACTA · c04/c05 sha256');
-const SHA_C04 = 'e4abb6ebb55bcfa7d412df50f72e09c3afc44dc4f0390a5c85661d4b77be6eb2';
-const SHA_C05 = '8bb620820e4974d4ccab8308060d4b8fd7328c812b103f9309bd98654cf81d65';
+const SHA_C04 = 'd792b5e777629d63c9e1dbfed4c7ae1ff2f1a7b3bcddd4c6b5c76486e575666d';
+const SHA_C05 = 'b195a0db04e0cdc2d9812c66b8c33decb2fac237643d936f84e55095decc73b3';
 const sha = (p) => execSync(`sha256sum "${raiz}${p}"`).toString().split(' ')[0];
 chk(sha('src/game/core/c04_fisica_ccd.js') === SHA_C04, 'c04 BYTE-EXACTO');
 chk(sha('src/game/core/c05_colisiones_ia_golpeo.js') === SHA_C05, 'c05 BYTE-EXACTO');

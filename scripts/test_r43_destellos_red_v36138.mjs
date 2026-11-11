@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.147-SDK6 · FASE 150 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.148-SDK6 · FASE 151 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -83,26 +83,26 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.147-SDK6 · FASE 150 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.147-SDK6 · FASE 150 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.147-SDK6', 'VERSION.json: 3.6.147-SDK6');
-chk(vjson.fase === 150, 'FASE 150');
-chk(vjson.faseNombre === 'Data-driven FASE 150: BOTE_TUNE (física fina de c04) + BOLA_TUNE (giro visible de c12) — valores idénticos, golden 0 desviaciones',
-  'faseNombre = DATA-DRIVEN FASE 150: BOTE_TUNE (FÍSICA FINA DE C04) + BOLA_TUNE (GIRO VISIBLE DE C12) — VALORES IDÉNTICOS, GOLDEN 0 DESVIACIONES');
+/* — 1 · SELLOS · v3.6.148-SDK6 · FASE 151 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.148-SDK6 · FASE 151 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.148-SDK6', 'VERSION.json: 3.6.148-SDK6');
+chk(vjson.fase === 151, 'FASE 151');
+chk(vjson.faseNombre === 'Auditoría de físicas r57 aplicada: R1 pala mide con la base temporal de la física (PASO_TUNE c12) · R2 golden c05 (16 escenarios) + margen de bote alineado en los 3 simuladores · R3 Magnus ×1 predicho vs ×2,2 documentado',
+  'faseNombre = AUDITORÍA DE FÍSICAS R57 APLICADA: R1 PALA MIDE CON LA BASE TEMPORAL DE LA FÍSICA (PASO_TUNE C12) · R2 GOLDEN C05 (16 ESCENARIOS) + MARGEN DE BOTE ALINEADO EN LOS 3 SIMULADORES · R3 MAGNUS ×1 PREDICHO VS ×2,2 DOCUMENTADO');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
 // legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
-chk(vjson.tamano === 11548808, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11551209, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581',
+  'ecf7ccb662fbcdc9473392122a3d210d617a13c08280538d4fb7c459304b060e',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.147-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.147-SDK6'"), 'sello c00 = 3.6.147-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.147-SDK6'"),
-  'sw.js CACHE v3.6.147-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.147-SDK6</span>'), 'badge V3.6.147-SDK6 en 03_body');
+chk(game.includes('3.6.148-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.148-SDK6'"), 'sello c00 = 3.6.148-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.148-SDK6'"),
+  'sw.js CACHE v3.6.148-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.148-SDK6</span>'), 'badge V3.6.148-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -232,14 +232,14 @@ chk(!c09.includes('g.ball.pos.lerp(p, 0.25);\n        g.ball.vel.lerp(v, 0.12);'
 console.log('7 · FLUIDEZ · la bola en tiempo REAL · el GC en dieta');
 chk(c12.includes('const _rawDt = this.lastTime < 0 ? 0.016 : Math.max(0.0001, now - this.lastTime);'),
   'c12: dt REAL del frame separado del capado');
-chk(c12.includes('const dt = Math.min(_rawDt, 1 / 30);') &&
-    c12.includes('const dtFis = Math.min(_rawDt, 1 / 12);'),
-  'c12: timers a 1/30 (spec A intacta) · la BOLA a tiempo real (capo 1/12)');
+chk(c12.includes('const dt = Math.min(_rawDt, PASO_TUNE.uiMax);') &&
+    c12.includes('const dtFis = Math.min(_rawDt, PASO_TUNE.fisMax);'),
+  'c12: timers a uiMax 1/30 (spec A intacta, dato) · bola y PALA a fisMax 1/12 (capo dato, R1 r57)');
 chk((c12.match(/stepPhysics\(dtFis \* this\._dilF/g) || []).length === 2,
   'c12: las DOS integraciones de bola (fantasma + propia) en tiempo real');
 chk(c12.includes('recorre su\n    // tiempo real y el vuelo se siente VERDADERO'),
   'c12: el POR QUÉ documentado («la bola flota y va lenta» = dt clampeado)');
-chk(c12.includes('const dt = Math.min(_rawDt, 1 / 30);') &&
+chk(c12.includes('const dt = Math.min(_rawDt, PASO_TUNE.uiMax);') &&
     c12.includes('stepPhysics(dtFis * this._dilF'),
   'c12: dilatación CRONOS intacta (_dilF se aplica sobre dtFis)');
 chk(c09.includes('this._txBuf = new ArrayBuffer(PPNET.VP.MAX_PKT);'),
@@ -265,8 +265,8 @@ chk(sha256('src/game/core/c04_fisica_ccd.js') ===
   'c04_fisica_ccd.js presente');
 const c04sha = sha256('src/game/core/c04_fisica_ccd.js');
 const c05sha = sha256('src/game/core/c05_colisiones_ia_golpeo.js');
-chk(c04sha.startsWith('e4abb6eb'), 'c04 byte-exacto (e4abb6eb… — física intocada, re-ancla r56 BOTE_TUNE)');
-chk(c05sha.startsWith('8bb62082'), 'c05 byte-exacto (8bb62082… — física intocada)');
+chk(c04sha.startsWith('d792b5e7'), 'c04 byte-exacto (d792b5e7… — física intocada, re-ancla r56 BOTE_TUNE)');
+chk(c05sha.startsWith('b195a0db'), 'c05 byte-exacto (b195a0db… — física intocada)');
 chk(lee('public/telemetria.html').includes('CRAZY PING PONG · Telemetría'),
   're-anclada r53: dashboard de telemetría vivo (sustituye al panel r42)');
 chk(c08.includes('arconoHoloFrame') && c08.includes('drawArcanoCandado'),
@@ -276,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.147-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.148-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

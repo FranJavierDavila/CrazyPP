@@ -405,9 +405,11 @@ escena, halo exagerado). **AF re-anclada** a la spec v3.6.43 del imán
 PODERES_PALA (c12, final del fichero)   ← REGISTRO: un poder = una entrada
   { id, nombre: () => T('poder_<id>'), voz, vozEn, png }
 MEGA_DUR=15 · MEGA_TOPE=3 · MEGA_GOLPES=11 · MEGA_ICON_Y/Z/S · MEGA_ARROW_S=0.020
-EFECTO_DUR=8 · EFECTO_GOLPES=5 · EFECTO_SPIN_MUL=2 · EFECTO_SPIN_MIN=25
+EFECTO_DUR=8 · EFECTO_GOLPES=5 · EFECTO_SPIN_MUL=3 · EFECTO_SPIN_MIN=25
 IMAN_DUR=8 · IMAN_ASIST=3
-DIMS: efectoSpinTope=2 · efectoMagnusMul=1.5 · efectoBoteMul=1.8
+DIMS: efectoSpinTope=3 · efectoMagnusMul=2.2 (r57: el bote amplificado
+     efectoBoteMul quedó RETIRADO en v3.6.49 — la ventaja en los botes es
+     hoy sólo la firma tipificada top/back/side)
 DIMS: efectoRivalErrMul=2.0 · efectoRivalVel=0.85 (efecto notorio)
 DIMS: imanRadio=0.45 · imanPlena=0.12 · imanAcelMax=3 · imanDvMax=0.35 · imanTPred=0.15
 PNG_PODER_* / VOZ_PODER_*               ← assets data-URI embebidos
@@ -428,7 +430,7 @@ PNG_PODER_* / VOZ_PODER_*               ← assets data-URI embebidos
 | `_buildMegaArrows/_megaArrowTex` | c12 | Flechas ‹ › como sprites PROPIOS junto al icono (disco oscuro + oro + pulso), visibilidad por índice. |
 | `_buildEfectoHalo/_efectoBoteFxShow` | c12 | Halo rojo de la bola marcada + anillo de bote amplificado (one-shot 0,38 s). |
 | `_megaNormReset()` | c12 | Recogida COMPLETA con dispose (conmutador OFF, hall, fin de partida). |
-| Física | c02/c04/c05/c06 | `pad.ppEfectoMul` (brush ×2 + tope 2×spinMax) · `ball.ppEfecto` (Magnus ×1,5 + bote ×1,8 solo marcada) · c06 limpia la marca al devolver la IA · c06 castiga al rival con bola marcada (err ×2, piernas ×0,85). |
+| Física | c02/c04/c05/c06 | `pad.ppEfectoMul` (brush ×3 + tope 3×spinMax) · `ball.ppEfecto` (Magnus ×2,2 en vuelo; bote amplificado RETIRADO v3.6.49 → firma tipificada top/back/side) · c05 `stepPhysics` marca el vuelo ×2,2, los simuladores predicen ×1 (ver §6) · c06 limpia la marca al devolver la IA · c06 castiga al rival con bola marcada (err ×2, piernas ×0,85). |
 | `applyIman(ball, paddles, h)` | c05 (SUBPASO) | Atracción lateral al punto dulce: predicción ≤0,15 s · plena a ≤0,12 m · lineal hasta 0,45 m · a ≤3 m/s² · Δv ≤0,35 m/s por aproximación · solo bolas que se acercan y no pasaron el plano · marca `ball.ppImanTocada` (la consume el gancho 4.95 del animate). Golden intacto: todo detrás de `ball.ppIman`. |
 
 **Añadir un superpoder nuevo** = ① entrada en `PODERES_PALA` + ② i18n
@@ -477,7 +479,24 @@ TODOS los campeonatos lo cogen solos.
 - **Voz nativa castellana + audio traducido al inglés**: la voz tongtong
   pronunciaba español «horrible»; davefx es la voz ES del juego entero. En
   inglés, el banco lessac con la frase traducida.
-- **Spin ×2 solo generado, con topes**: amplifica lo que hace el jugador sin
-  garantizar fallos del rival (Coulomb cap + tope 2×spinMax + Magnus limitado).
+- **Spin ×3 solo generado, con topes** (FASE 45, «no noto los efectos»):
+  amplifica lo que hace el jugador sin garantizar fallos del rival (Coulomb
+  cap + tope 3×spinMax + Magnus limitado).
 - **Predicción IA sin marca**: el rival sigue jugando con la física canónica —
   el efecto es ventaja real, no error del simulex.
+- **Magnus ×1 predicho vs ×2,2 real** (auditoría de físicas r57, ítem R3 —
+  formaliza la decisión anterior): la bola marcada por el SÚPER EFECTO vuela
+  con `DIMS.magnus × DIMS.efectoMagnusMul` (×2,2; subió de ×1,5 en la FASE 45
+  — ronda 51: «no noto los efectos del Poder Super Efectos… exagerarlo»),
+  mientras TODOS los simuladores — la
+  IA (`predictStrike`), el solver de saque (`simulateServePath` +
+  `simulateBounceUntilTable`) y cualquier predicción — llaman a
+  `applyAerodynamics` SIN `magnusMul` (×1). Es a propósito: el rival no puede
+  pre-leer la curva de una bola marcada — la sorpresa ES el poder. Coste
+  asumido y acotado: contra bolas marcadas la IA coloca la pala con el error
+  de la curva no vista, y ese es justamente el hueco que la firma tipificada
+  del bote (top acelera · back mata · side patada lateral) castiga siempre
+  (regla del dueño v3.6.49: «la ventaja del bote sólo es para el jugador, el
+  perjudicado siempre es el rival»). Nota de ajuste: subir
+  `efectoMagnusMul` agranda el error de predicción de la IA contra bolas
+  marcadas — querido, y limitado por `efectoSpinTope` (3 × spinMax).

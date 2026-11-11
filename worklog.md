@@ -6495,3 +6495,63 @@ Stage Summary:
   re-arcano r55; revisado este fase, sin cambios de r56).
 - PENDIENTE FUTURO (de la auditoría, no bloquea): R1/R2/R3 del informe;
   parametrizar la ruta de scripts/mod_fase2_generar.mjs (deuda r55).
+
+## FASE 151 · v3.6.148-SDK6 · r57 — EL TOP-3 DE LA AUDITORÍA DE FÍSICAS, APLICADO (pendiente futuro de la FASE 150) + DEUDA r55 SANADA
+- DEUDA r55: mod_fase2_analizar.mjs y mod_fase2_generar.mjs AUTO-UBICABLES
+  (RAIZ/CORE derivados de import.meta.url — la ruta /home/z/my-project/src/
+  game/core quedó fuera del mount upload/). El generador VOLVIÓ A CORRER:
+  2/16 ficheros tocados (bloque DEPS-FASE2 de c11 a su posición canónica;
+  importes de c12 re-ordenados) y build_game.py BYTE-EXACTO contra el
+  golden 37cadc1d… — la herramienta del dueño del patrón data-driven sana.
+- R1 · BASE TEMPORAL DE LA PALA (auditoría: dt 1/30 vs dtFis 1/12,
+  c12:15078): la pala mide su velocidad/giro con la MISMA base temporal que
+  la bola — updatePaddleSim(…, dtFis) — y no el dt de UI. PASO_TUNE (c12,
+  patrón BOLA_TUNE r56): uiMax 1/30 (timers/UI/red, spec A) · fisMax 1/12
+  (bola + pala, r43) — los dos caps del paso como DATOS. Con frames caídos
+  de 33-83 ms el swing ya no se infla (Δpos real ÷ 1/30) y el golpe no
+  depende del lag del casco; frames < 33 ms (72-120 Hz): idéntico bit a
+  bit. Contrato documentado en c04 (updatePaddleSim: NUNCA el dt de UI).
+- R2 · GOLDEN c05 (nuevo arnés scripts/test_fisica_c05.mjs +
+  fisica_golden_c05.json): 16 escenarios deterministas — stepPhysics
+  (vuelo libre, bote slip-coupled top/back, red, suelo/paredes, golpe de
+  pala CCD, apoyo+rodadura, arkanoid sin red, bola marcada por el Súper
+  Efecto), predictStrike (topspin/smash/corta/borde), testPaddleContact,
+  simulateServePath y computeShotVelocity. PRNG sembrado (mulberry32) para
+  el jitter de canto v3.0.5 (Math.random en c05:207); globals de navegador
+  aportados por el arnés (patrón bench_fisica). MARGEN DE BOTE ALINEADO:
+  collideTable boté con |x| ≤ halfWidth + r·0,5 y los TRES simuladores
+  (predictStrike · simulateBounceUntilTable · simulateServePath) predicen
+  AHORA con el mismo margen — antes daban por perdida la bola que
+  sobresale media bola del canto. Único delta del golden: predictStrike.
+  borde (null → punto de interceptación real y=1,002); los otros 15
+  escenarios intactos.
+- R3 · MAGNUS ×1 PREDICHO vs ×2,2 REAL documentado: fila de datos en c02
+  (efectoMagnusMul 2,2 + por qué los simuladores predicen ×1) y decisión
+  formalizada en docs/SUPERPODER-DE-PALA.md §6 (la sorpresa ES el poder;
+  coste asumido y acotado por efectoSpinTope). Doc §4 refrescada a los
+  valores vivos (brush ×3, Magnus ×2,2, bote amplificado retirado v3.6.49).
+- SELLADO: sella_r57_auditoria_fisica.py (patrón r56): VERSION.json
+  3.6.148-SDK6 FASE 151, c00 VERSION, badge 03_body, sw.js CACHE
+  crazypp-v3.6.148-SDK6, ensamblado 11.551.209 B · golden ecf7ccb662fbcdc9…
+  · agujas PASO_TUNE (×3 + RE ×3) / margen R2 (×3) / R3 + conservación
+  r56/r55/r54/145/144/143 TODO OK. LECCIÓN DE SELLADO: el reemplazo de
+  «FASE 150→151» corrompe un VIEJO_NOMBRE que CONTIENE «FASE 150» — los
+  nombres van 1.º; y los hashes de contrato se re-anclan COMPLETOS (los
+  tests comparan el sha256 entero, no prefijos — 4 frankensteins
+  reparados). qa_version requiere el espejo :3000/:81 al día (rsync
+  upload/public → public, sin descargas — lección r55/r37 otra vez).
+- RE-ANCLES DE CONTRATO r57: test_r27…r41/r43 (hashes COMPLETOS c02/c04/
+  c05/c12 + versión/fase/nombre/tamaño/golden) · test_r43 re-anclado a la
+  forma PASO_TUNE (su ancla vigilaba el literal 1/30 que R1 convirtió en
+  dato) · test_fisica: +1 escenario paddleSim.frameCaido50ms (el contrato
+  R1 a nivel de updatePaddleSim: 12 escenarios) · fisica_golden.json
+  version → 3.6.148.
+- QA VERDE COMPLETA r57: repro del bug qa_r54_poderes_agotados 30/0 (la
+  ventana SIGUE viva) · test_fisica 12/0 · test_fisica_c05 16/0 (NUEVO) ·
+  test_r21 63/0 · r24 89/0 · r26b GARANTÍA · r30 54/0 · r31 47/0 · r32
+  49/0 · r33 77/0 · r34 62/0 · r35 36/0 · r36 30/0 · r37 46/0 · r38 51/0 ·
+  r39 167/0 · r40 62/0 · r41 92/0 · r43 OK · red_nucleo 60/0 · qa_version
+  31/0 · qa_sup1 151/0 · qa_r84 67/0 · qa_r50 22/0 · qa_r46_humo OK ·
+  qa_rendimiento 14/0 · qa_telemetria 132/0 · qa_dashboard_r56 TODO OK.
+  ROJOS HISTÓRICOS PREEXISTENTES (congelados en su era): r23 (1), r25 (6),
+  r26 (6), r27 (3), r28 (9), r29 (7).

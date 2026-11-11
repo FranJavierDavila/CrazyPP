@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r37 (v3.6.139, FASE 150) — TEST de la ronda.
+/* CRAZY PING PONG · r37 (v3.6.139, FASE 151) — TEST de la ronda.
  * Segunda pasada de la revisión del multijugador (petición del dueño:
  * «no me fío, pasa otra revisión a fondo del juego en red multijugador»).
  * TRES BUGS cazados sobre la r36, leídos c09 (2.296 líneas), c09b (926),
@@ -182,18 +182,18 @@ chk(cuenta(c09, 'static _seqDiff(a, b)') === 1 &&
     cuenta(c09, 'NetLink._seqDiff(') === 5,
   'aritmética u16 _seqDiff: def + 5 usos (ack, covers, máscara, pérdida, ventana)');
 const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
-chk(sha(`${RAIZ}/src/game/core/c04_fisica_ccd.js`).startsWith('e4abb6eb'),
-  'c04 sha256 e4abb6eb… (física byte-exacta)');
-chk(sha(`${RAIZ}/src/game/core/c05_colisiones_ia_golpeo.js`).startsWith('8bb62082'),
-  'c05 sha256 8bb62082… (física byte-exacta)');
+chk(sha(`${RAIZ}/src/game/core/c04_fisica_ccd.js`).startsWith('d792b5e7'),
+  'c04 sha256 d792b5e7… (física byte-exacta)');
+chk(sha(`${RAIZ}/src/game/core/c05_colisiones_ia_golpeo.js`).startsWith('b195a0db'),
+  'c05 sha256 b195a0db… (física byte-exacta)');
 
 console.log('== 5) VERSIÓN Y SELLOS ==');
-chk(vjson.version === '3.6.147-SDK6', `VERSION.json 3.6.147-SDK6 (${vjson.version})`);
-chk(vjson.fase === 150, `FASE 150 (${vjson.fase})`);
-chk(vjson.tamano === 11548808, `tamaño sellado (${vjson.tamano})`);
-chk(vjson.golden.startsWith('37cadc1d'), 'golden 37cadc1d… (build re-sellado)');
-chk(game.includes('const VERSION') && game.includes('3.6.147-SDK6'),
-  'game.html sellado a 3.6.147-SDK6');
+chk(vjson.version === '3.6.148-SDK6', `VERSION.json 3.6.148-SDK6 (${vjson.version})`);
+chk(vjson.fase === 151, `FASE 151 (${vjson.fase})`);
+chk(vjson.tamano === 11551209, `tamaño sellado (${vjson.tamano})`);
+chk(vjson.golden.startsWith('ecf7ccb6'), 'golden ecf7ccb6… (build re-sellado)');
+chk(game.includes('const VERSION') && game.includes('3.6.148-SDK6'),
+  'game.html sellado a 3.6.148-SDK6');
 chk(cuenta(game, '_iceRestartIntento') === 2,
   `game.html lleva el reinicio de ICE (def + llamada): ×${cuenta(game, '_iceRestartIntento')}`);
 chk(cuenta(game, 'this._ackInit') === 3,

@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.147-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.148-SDK6</span>
     </div>
   </main>
 
@@ -3455,7 +3455,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.147-SDK6';
+  const VERSION = '3.6.148-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -4352,6 +4352,11 @@ const DIMS = {
   // los botes es hoy SÓLO la firma tipificada (abajo), que siempre castiga.
   efectoSpinTope: 3,        // tope de rotación = 3 × spinMax (antes ×2)
   efectoMagnusMul: 2.2,     // Magnus ×2,2 en vuelo (antes ×1,5: curva VISIBLE)
+  // r57 · AUDITORÍA R3: el ×2,2 sólo vuela en la bola MARCADA (ball.ppEfecto,
+  // c05 stepPhysics). Los simuladores (IA predictStrike, solver de saque
+  // simulateServePath/simulateBounceUntilTable) predicen SIEMPRE con Magnus
+  // ×1 — a propósito: el rival no puede pre-leer la curva del Súper Efecto
+  // (la sorpresa ES el poder). Ver docs/SUPERPODER-DE-PALA.md §6.
   // v3.6.46 (ronda 54 · el dueño redefine el SÚPER EFECTO: la estela se
   // retira y el efecto pasa a ser REAL según el movimiento de la pala al
   // golpear): el brush se CLASIFICA en tres spins y el BOTE traduce cada
@@ -7283,6 +7288,11 @@ function applyAerodynamics(vel, spin, h, dragMul, magnusMul) {
  *    el jitter del tracking, imprescindible para golpes reproducibles);
  *  - velocidad angular (rad/s) a partir del delta de cuaterniones, para
  *    poder dar efecto con la muñeca como con una pala real.
+ * r57 · CONTRATO (auditoría R1): `dt` es la base temporal de la FÍSICA —
+ * el dtFis del frame (PASO_TUNE.fisMax, cap 1/12), la misma con la que
+ * integra la bola. NUNCA el dt de UI (cap 1/30): con frames caídos de
+ * 33-83 ms dividir el Δpos real por 1/30 infla el swing y el golpe pasa a
+ * depender del lag del casco. Llamador: c12, tick de mandos.
  */
 function updatePaddleSim(ps, pos, quat, now, dt) {
   ps.prev.copy(ps.pos);
@@ -8208,7 +8218,12 @@ function testPaddleContact(ball, prevPos, paddles, events) {
  *  v2.17: `bounced` (ya botó en este campo, lo da rules.validBounce) siembra
  *  el contador de botes — antes, tras el bote la simulación no encontraba
  *  candidatos futuros y devolvía null: la IA se quedaba CIEGA justo cuando
- *  debía golpear y la bola se le pasaba (los fallos "no llega"). */
+ *  debía golpear y la bola se le pasaba (los fallos "no llega").
+ *  r57 · AUDITORÍA R2: el margen de bote en X está ALINEADO con collideTable
+ *  (media bola de canto: |x| ≤ halfWidth + r·0,5) — la mesa real SÍ bota una
+ *  bola cuyo centro sobresale hasta media bola del canto y la IA no debía
+ *  darla por perdida. Mismo margen en simulateBounceUntilTable y
+ *  simulateServePath: los TRES simuladores predicen con la física REAL. */
 function predictStrike(ball, sign, bounced) {
   const C = DIMS.tableCenterZ;
   const topR = DIMS.tableTopY + DIMS.ballRadius;
@@ -8232,7 +8247,7 @@ function predictStrike(ball, sign, bounced) {
     t += h;
 
     if (vel.y < 0 && prevY >= topR && pos.y < topR &&
-        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+        Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5 && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
       pos.y = topR;
       if (DIMS.physicsRealism >= 0.5) {
         // v3.0.5-FIS1 · P2: la IA predice con la MISMA física nueva
@@ -8340,7 +8355,7 @@ function simulateBounceUntilTable(from, vel, spin, maxT, out) {
       crossed = true;
     }
     if (v.y < 0 && prevY >= topR && pos.y < topR &&
-        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+        Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5 && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
       out.land = pos.clone();
       out.t = t;
       out.netY = netY;
@@ -8455,7 +8470,7 @@ function simulateServePath(from, v0, spin, ownSign) {
 
     // bote en la mesa
     if (vel.y < 0 && prevY >= topR && pos.y < topR &&
-        Math.abs(pos.x) <= DIMS.tableHalfWidth && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
+        Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5 && Math.abs(pos.z - C) <= DIMS.tableHalfLength) {
       pos.y = topR;
       if (DIMS.physicsRealism >= 0.5) {
         // v3.0.5-FIS1 · P2: el solver de saque usa la MISMA física nueva
@@ -33148,8 +33163,8 @@ class PingPongGame {
     // Con frames de 35-50 ms la bola ya NO va a cámara lenta: recorre su
     // tiempo real y el vuelo se siente VERDADERO aunque el render sufra.
     const _rawDt = this.lastTime < 0 ? 0.016 : Math.max(0.0001, now - this.lastTime);
-    const dt = Math.min(_rawDt, 1 / 30);
-    const dtFis = Math.min(_rawDt, 1 / 12);
+    const dt = Math.min(_rawDt, PASO_TUNE.uiMax);     // timers/UI/red (spec A)
+    const dtFis = Math.min(_rawDt, PASO_TUNE.fisMax); // bola + PALA (r43/R1)
     // r87 · RED SOCIAL: latidos/polls espaciados (fetch cada 10-30 s) —
     // corren SIEMPRE (también congelados y en 2D: el medallón es del menú)
     try { if (this.social) this.social.tick(dt); } catch (eRS2) { /* nunca rompe */ }
@@ -33384,7 +33399,11 @@ class PingPongGame {
         tmpMountQ.copy(grip.quaternion).multiply(mountQuatFor(this.handOf[i])).multiply(this.gripOffsetQ);
         // la pala nunca atraviesa la mesa: se frena sobre la superficie
         this.clampPaddlePose(grip.position, tmpMountQ, true);
-        updatePaddleSim(ps, grip.position, tmpMountQ, now, dt);
+        // r57 · R1 (auditoría): la pala mide su velocidad/giro con la MISMA
+        // base temporal que la bola (dtFis) — con frames caídos de 33-83 ms
+        // el swing ya no se infla (Δpos real ÷ 1/30) y el golpe no depende
+        // del lag del casco. Frames < 33 ms: dtFis == dt, idéntico.
+        updatePaddleSim(ps, grip.position, tmpMountQ, now, dtFis);
         ps.active = this.connected[i];
         // margen de detección extra SOLO mientras la bola del saque vuela:
         // golpear de forma natural no exige milimetrar la muñeca
@@ -35659,6 +35678,18 @@ const BOLA_SPIN_AX = new THREE.Vector3();
  * tabla BOLA_TUNE (dato, no literal suelto). Valor IDÉNTICO al de r24. */
 const BOLA_TUNE = { spinGanancia: 0.45 };   // rad visibles por rad de ω (ver _bolaSpinTick) — r24: 0.14→0.45 (queja: «giro muy sutil»)
 const BOLA_SPIN_GANANCIA = BOLA_TUNE.spinGanancia;
+/* r57 · FASE 151 · data-driven (auditoría R1): los dos CAPS del paso de
+ * simulación viven en tabla — nada de literales sueltos.
+ *  uiMax  1/30 → dt de timers/UI/red (spec A: con bajón de FPS se prefiere
+ *          ir lento antes que barrer un intervalo enorme con poses P0→P1
+ *          degradadas)
+ *  fisMax 1/12 → dtFis de la BOLA (r43: la bola integra su tiempo REAL;
+ *          stepPhysics subescala a 480 Hz, 40 subpasos dentro del tope 96)
+ * La PALA mide con fisMax (ver updatePaddleSim en el tick de mandos):
+ * misma base temporal que la bola — con frames de 33-83 ms la velocidad
+ * del swing ya no se infla (Δpos real ÷ cap de 1/30) y el golpe no depende
+ * del lag del casco. Frames < 33 ms (72-120 Hz): dt == dtFis, bit a bit. */
+const PASO_TUNE = { uiMax: 1 / 30, fisMax: 1 / 12 };
 /* =====================================================================
  *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy

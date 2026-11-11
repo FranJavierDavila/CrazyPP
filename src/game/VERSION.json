@@ -1,7 +1,7 @@
 {
-  "version": "3.6.147-SDK6",
-  "fase": 150,
-  "faseNombre": "Data-driven FASE 150: BOTE_TUNE (física fina de c04) + BOLA_TUNE (giro visible de c12) — valores idénticos, golden 0 desviaciones",
+  "version": "3.6.148-SDK6",
+  "fase": 151,
+  "faseNombre": "Auditoría de físicas r57 aplicada: R1 pala mide con la base temporal de la física (PASO_TUNE c12) · R2 golden c05 (16 escenarios) + margen de bote alineado en los 3 simuladores · R3 Magnus ×1 predicho vs ×2,2 documentado",
   "sdk": "1.6.0",
   "fecha": "2026-11-11",
   "hub": "v36139-sdk6",
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r56",
-  "tamano": 11548808,
-  "golden": "37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581"
+  "nota": "r57",
+  "tamano": 11551209,
+  "golden": "ecf7ccb662fbcdc9473392122a3d210d617a13c08280538d4fb7c459304b060e"
 }

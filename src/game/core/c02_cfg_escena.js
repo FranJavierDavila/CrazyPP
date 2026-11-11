@@ -87,6 +87,11 @@ export const DIMS = {
   // los botes es hoy SÓLO la firma tipificada (abajo), que siempre castiga.
   efectoSpinTope: 3,        // tope de rotación = 3 × spinMax (antes ×2)
   efectoMagnusMul: 2.2,     // Magnus ×2,2 en vuelo (antes ×1,5: curva VISIBLE)
+  // r57 · AUDITORÍA R3: el ×2,2 sólo vuela en la bola MARCADA (ball.ppEfecto,
+  // c05 stepPhysics). Los simuladores (IA predictStrike, solver de saque
+  // simulateServePath/simulateBounceUntilTable) predicen SIEMPRE con Magnus
+  // ×1 — a propósito: el rival no puede pre-leer la curva del Súper Efecto
+  // (la sorpresa ES el poder). Ver docs/SUPERPODER-DE-PALA.md §6.
   // v3.6.46 (ronda 54 · el dueño redefine el SÚPER EFECTO: la estela se
   // retira y el efecto pasa a ser REAL según el movimiento de la pala al
   // golpear): el brush se CLASIFICA en tres spins y el BOTE traduce cada

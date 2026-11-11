@@ -1,0 +1,18 @@
+{
+  "stepPhysics.vueloLibre": "b81f07da070c2d31",
+  "stepPhysics.boteTopspin": "75606d096ccf0cee",
+  "stepPhysics.boteBackspin": "2314cc762a59eabe",
+  "stepPhysics.red": "494d570e8213f52a",
+  "stepPhysics.sueloParedes": "0f950faa44d42a43",
+  "stepPhysics.golpePala": "41a21b5c269616b3",
+  "stepPhysics.apoyoRodadura": "c5808568ce6dd29d",
+  "stepPhysics.arkanoidSinRed": "7b44f86be7d8754b",
+  "stepPhysics.efectoMarcado": "e6afb99be8e66e00",
+  "predictStrike.topspin": "35b8334398a859a8",
+  "predictStrike.smash": "b3cc3e42e3045a4e",
+  "predictStrike.corta": "1d372a016d12005a",
+  "predictStrike.borde": "370e0fb546a4bed1",
+  "testPaddleContact.online": "98c6040dec2bf18d",
+  "simulateServePath.saque": "daa2e3579400bc65",
+  "computeShotVelocity.parabola": "4a970b39cdfb9285"
+}

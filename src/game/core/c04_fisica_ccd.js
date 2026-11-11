@@ -217,6 +217,11 @@ export function applyAerodynamics(vel, spin, h, dragMul, magnusMul) {
  *    el jitter del tracking, imprescindible para golpes reproducibles);
  *  - velocidad angular (rad/s) a partir del delta de cuaterniones, para
  *    poder dar efecto con la muñeca como con una pala real.
+ * r57 · CONTRATO (auditoría R1): `dt` es la base temporal de la FÍSICA —
+ * el dtFis del frame (PASO_TUNE.fisMax, cap 1/12), la misma con la que
+ * integra la bola. NUNCA el dt de UI (cap 1/30): con frames caídos de
+ * 33-83 ms dividir el Δpos real por 1/30 infla el swing y el golpe pasa a
+ * depender del lag del casco. Llamador: c12, tick de mandos.
  */
 export function updatePaddleSim(ps, pos, quat, now, dt) {
   ps.prev.copy(ps.pos);

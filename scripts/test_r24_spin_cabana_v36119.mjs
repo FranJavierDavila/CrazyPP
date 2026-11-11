@@ -53,8 +53,9 @@ const lee = (p) => readFileSync(raiz + p, 'utf8');
 /* — 1 · SPIN REALISTA · ganancia y tick intactos (c12) ————————————— */
 console.log('1 · SPIN REALISTA · ganancia ×3.2 (c12)');
 const c12 = lee('src/game/core/c12_pingponggame.js');
-chk(c12.includes('BOLA_SPIN_GANANCIA = 0.45'), 'ganancia 0.45 (|ω|=110 → ~7,9 rev/s · |ω|=25 → ~1,8 rev/s)');
-chk(!c12.includes('BOLA_SPIN_GANANCIA = 0.14'), 'no queda rastro de la 0.14');
+chk(c12.includes('BOLA_TUNE = { spinGanancia: 0.45 }') &&
+    c12.includes('const BOLA_SPIN_GANANCIA = BOLA_TUNE.spinGanancia;'), 'ganancia 0.45 (|ω|=110 → ~7,9 rev/s · |ω|=25 → ~1,8 rev/s) — r56: dato en BOLA_TUNE');
+chk(!c12.includes('BOLA_SPIN_GANANCIA = 0.14') && !c12.includes('spinGanancia: 0.14'), 'no queda rastro de la 0.14');
 chk(c12.includes('m.rotateOnWorldAxis(BOLA_SPIN_AX, w * dt * BOLA_SPIN_GANANCIA);'), 'rotateOnWorldAxis sobre el ω real (sin tocar)');
 chk(c12.includes('if (w < 0.5) return;'), 'reposo honesto intacto');
 chk(c12.includes('r24 (v3.6.119) · «EL GIRO ES MUY SUTIL Y POCO REALISTA»'), 'comentario de la ronda junto al tick');

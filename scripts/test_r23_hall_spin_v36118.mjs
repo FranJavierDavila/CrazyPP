@@ -52,7 +52,8 @@ const lee = (p) => readFileSync(raiz + p, 'utf8');
 console.log('1 · F1 · SPIN VISIBLE (c12 · capa render)');
 const c12 = lee('src/game/core/c12_pingponggame.js');
 chk(c12.includes('const BOLA_SPIN_AX = new THREE.Vector3();'), 'scratch de módulo (cero asignaciones por frame)');
-chk(c12.includes('BOLA_SPIN_GANANCIA = 0.45'), 'ganancia visual (r23: 0.14 → r24: 0.45 — «el giro era muy sutil»; |ω|=110 → ~7,9 rev/s)');
+chk(c12.includes('BOLA_TUNE = { spinGanancia: 0.45 }') &&
+    c12.includes('const BOLA_SPIN_GANANCIA = BOLA_TUNE.spinGanancia;'), 'ganancia visual (r23: 0.14 → r24: 0.45 — «el giro era muy sutil»; |ω|=110 → ~7,9 rev/s) — r56: el dato vive en BOLA_TUNE');
 chk(c12.includes('_bolaSpinTick(dt) {'), '_bolaSpinTick: el giro vive en un método propio');
 chk(c12.includes('this._bolaSpinTick(dt);'), 'integrado en el tick §7 (sincronizar visuales)');
 chk(c12.includes('BOLA_SPIN_AX.set(spin.x, spin.y, spin.z).multiplyScalar(1 / w);'), 'eje = ω normalizado (el vector EXACTO de la física)');
@@ -162,7 +163,8 @@ chk(!c04.includes('hallProfile') && !c05.includes('hallProfile'), 'el hall profi
 chk(!c04.includes('rotateOnWorldAxis') && !c05.includes('rotateOnWorldAxis'), 'cero rotación de mesh en la física');
 chk(c04.includes('export function applyBounceSpin(vel, spin, kickMul)') &&
     c04.includes('export function bounceOnTable(vel, spin, impact, coupleMul)'), 'el bote sigue actualizando ω (el latigazo del F1 sale de AHÍ)');
-chk(c04.includes('spin.multiplyScalar(0.72);'), 'fricción del bote intacta (0.72)');
+chk(c04.includes('spinDecayBote: 0.72') &&
+    c04.includes('spin.multiplyScalar(BOTE_TUNE.spinDecayBote);'), 'fricción del bote intacta (0.72 → r56: dato BOTE_TUNE.spinDecayBote en c04)');
 chk(c12.includes('import * as THREE from \'three\';'), 'c12 usa el THREE real (rotateOnWorldAxis existe desde r101)');
 
 /* — 9 · catálogos vivos (fuente c06 + importados c02) ———————————————— */

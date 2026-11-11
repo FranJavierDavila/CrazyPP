@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.146-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.147-SDK6</span>
     </div>
   </main>
 
@@ -3455,7 +3455,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.146-SDK6';
+  const VERSION = '3.6.147-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -7129,6 +7129,24 @@ const CCD_TUNE = {
                           // idéntica al detector antiguo); menos ⇒ rim (normal SDF)
 };
 
+/* =====================================================================
+ *  r56 · FASE 150 · BOTE_TUNE — LOS NÚMEROS FINOS DEL BOTE Y DEL GIRO
+ *  ---------------------------------------------------------------------
+ *  Directiva del dueño («todo data-driven», extendida a la física):
+ *  los números que antes vivían DENTRO de las funciones ahora son DATOS
+ *  aquí, junto a su hermana CCD_TUNE. Valores IDÉNTICOS a los de siempre
+ *  (el golden de trayectorias test_fisica.mjs manda): moverlos no cambia
+ *  ni un milímetro la simulación — afinarlos ahora es editar UNA fila.
+ *  ===================================================================== */
+const BOTE_TUNE = {
+  spinDecayBote: 0.72,    // applyBounceSpin: giro que sobrevive al bote (ruta legada)
+  gripImpactRef: 4.5,     // bounceOnTable: impacto (m/s) que satura el agarre de la mesa
+  cascaronInercia: 0.4,   // m_eff/m = 2/5 de la bola reglamentaria HUECA (impulso tangencial)
+  cascaronAcoplo: 1.5,    // 3/2: acoplo cascarón Δω = (3/2r)·Δv (topspin patea y conserva)
+  omegaLerp: 0.5,         // updatePaddleSim: suavizado del giro de muñeca (media con el anterior)
+  omegaDecay: 8,          // updatePaddleSim: decaimiento del giro sin movimiento (por segundo)
+};
+
 /* SDF del disco con grosor (pala), en espacio LOCAL (origen = centro de la
  * hoja, eje Z = normal de cara). Devuelve distancia con signo al sólido.
  * Fórmula exacta para el cilindro: cara (qy), canto (qx) y esquina
@@ -7306,9 +7324,9 @@ function updatePaddleSim(ps, pos, quat, now, dt) {
   if (ang > 1e-4 && dt > 0) {
     const s = Math.sqrt(Math.max(1e-12, 1 - tmpDeltaQ.w * tmpDeltaQ.w));
     tmpV.set(tmpDeltaQ.x / s, tmpDeltaQ.y / s, tmpDeltaQ.z / s).multiplyScalar(ang / dt);
-    ps.omega.lerp(tmpV, 0.5);
+    ps.omega.lerp(tmpV, BOTE_TUNE.omegaLerp);
   } else {
-    ps.omega.multiplyScalar(Math.max(0, 1 - dt * 8));
+    ps.omega.multiplyScalar(Math.max(0, 1 - dt * BOTE_TUNE.omegaDecay));
   }
   ps.prevQuat.copy(quat);
   ps.prevT = now;
@@ -7321,7 +7339,7 @@ function applyBounceSpin(vel, spin, kickMul) {
   const km = (kickMul === undefined) ? 1 : kickMul;
   vel.x -= DIMS.bounceSpinKick * km * spin.z;
   vel.z += DIMS.bounceSpinKick * km * spin.x;
-  spin.multiplyScalar(0.72);
+  spin.multiplyScalar(BOTE_TUNE.spinDecayBote);
 }
 
 /** v3.0.5-FIS1 · P2 — BOTE FÍSICO con deslizamiento (slip-coupled).
@@ -7349,18 +7367,18 @@ function bounceOnTable(vel, spin, impact, coupleMul) {
   const ux = vel.x + r * spin.z * cm;
   const uz = vel.z - r * spin.x * cm;
   const g = DIMS.bounceGripMin + (DIMS.bounceGripMax - DIMS.bounceGripMin) *
-            Math.min(1, impact / 4.5);
-  // Δv (por unidad de masa) que anularía el deslizamiento: −u·m_eff/m = −u·2/5
+            Math.min(1, impact / BOTE_TUNE.gripImpactRef);
+  // Δv (por unidad de masa) que anularía el deslizamiento: −u·m_eff/m = −u·cascaronInercia
   // con tope de Coulomb: |Δv| ≤ grip·(1+e)·impacto
-  let dvx = -ux * 0.4 * g;
-  let dvz = -uz * 0.4 * g;
+  let dvx = -ux * BOTE_TUNE.cascaronInercia * g;
+  let dvz = -uz * BOTE_TUNE.cascaronInercia * g;
   const dvm = Math.hypot(dvx, dvz);
   const cap = g * (1 + DIMS.tableRestitution) * impact;
   if (dvm > cap) { const s = cap / dvm; dvx *= s; dvz *= s; }
   vel.x += dvx;
   vel.z += dvz;
-  // acoplo giro-velocidad del cascarón: Δωx = −(3/2r)·Δvz · Δωz = +(3/2r)·Δvx
-  const kf = 1.5 / r;
+  // acoplo giro-velocidad del cascarón: Δωx = −(cascaronAcoplo/r)·Δvz · Δωz = +(cascaronAcoplo/r)·Δvx
+  const kf = BOTE_TUNE.cascaronAcoplo / r;
   spin.x += -kf * dvz;
   spin.z += +kf * dvx;
 }
@@ -35637,7 +35655,10 @@ class PingPongGame {
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();
-const BOLA_SPIN_GANANCIA = 0.45;   // rad visibles por rad de ω (ver _bolaSpinTick) — r24: 0.14→0.45 (queja: «giro muy sutil»)
+/* r56 · FASE 150 · data-driven: la ganancia del giro visible vive en la
+ * tabla BOLA_TUNE (dato, no literal suelto). Valor IDÉNTICO al de r24. */
+const BOLA_TUNE = { spinGanancia: 0.45 };   // rad visibles por rad de ω (ver _bolaSpinTick) — r24: 0.14→0.45 (queja: «giro muy sutil»)
+const BOLA_SPIN_GANANCIA = BOLA_TUNE.spinGanancia;
 /* =====================================================================
  *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy

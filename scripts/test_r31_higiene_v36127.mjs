@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r31 · v3.6.146-SDK6 · FASE 149 · TEST: HIGIENE TEXTUAL
+/* CRAZY PING PONG · r31 · v3.6.147-SDK6 · FASE 150 · TEST: HIGIENE TEXTUAL
  * FÉNIX.
  *
  *   A · DEUDA COSMÉTICA PAGADA — el comentario del registro PODERES_PALA
@@ -20,11 +20,11 @@
  *       Protege contra re-introducir un boost en la ruta de Fénix.
  *
  *   D · SÚPER HIELO sigue anulado (cero rastros vivos) y los sellos de
- *       la ronda: VERSION.json 3.6.146-SDK6 / FASE 149 / build
+ *       la ronda: VERSION.json 3.6.147-SDK6 / FASE 150 / build
  *       11.504.235 B / golden 10a24300… / sw.js / badge / hub.
  *
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
- *   (df8f71a3… / 8bb62082…).
+ *   (e4abb6eb… / 8bb62082…).
  *
  * Uso: node --no-warnings scripts/test_r31_higiene_v36127.mjs
  */
@@ -47,22 +47,22 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.146-SDK6 · FASE 149 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.146-SDK6 · FASE 149');
-chk(vjson.version === '3.6.146-SDK6', 'VERSION.json: 3.6.146-SDK6');
-chk(vjson.fase === 149, 'FASE 149');
-chk(vjson.tamano === 11547159, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.147-SDK6 · FASE 150 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.147-SDK6 · FASE 150');
+chk(vjson.version === '3.6.147-SDK6', 'VERSION.json: 3.6.147-SDK6');
+chk(vjson.fase === 150, 'FASE 150');
+chk(vjson.tamano === 11548808, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
+  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581',
   'VERSION.json golden 10a24300…');
 chk(sha256('public/game.html') ===
-  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
+  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581',
   'golden 10a24300… (build byte-exacto)');
-chk(game.includes('3.6.146-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.146-SDK6'"), 'sello c00 = 3.6.146-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.146-SDK6'"),
-  'sw.js CACHE v3.6.146-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.146-SDK6</span>'), 'badge V3.6.146-SDK6 en 03_body');
+chk(game.includes('3.6.147-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.147-SDK6'"), 'sello c00 = 3.6.147-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.147-SDK6'"),
+  'sw.js CACHE v3.6.147-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.147-SDK6</span>'), 'badge V3.6.147-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -132,8 +132,8 @@ chk(c12.includes('sustituye a hielo'),
 /* — 6 · FÍSICA INTACTA · c04/c05 byte-exacto contra la r26b ———————— */
 console.log('6 · FÍSICA · c04/c05 byte-exacto');
 chk(sha256('src/game/core/c04_fisica_ccd.js') ===
-  'df8f71a3a91e06b6f3e31e21baf2eee78cb563defd358d4560a7bb6fb1aa70ec',
-  'c04_fisica_ccd.js = df8f71a3…');
+  'e4abb6ebb55bcfa7d412df50f72e09c3afc44dc4f0390a5c85661d4b77be6eb2',
+  'c04_fisica_ccd.js = e4abb6eb…');
 chk(sha256('src/game/core/c05_colisiones_ia_golpeo.js') ===
   '8bb620820e4974d4ccab8308060d4b8fd7328c812b103f9309bd98654cf81d65',
   'c05_colisiones_ia_golpeo.js = 8bb62082…');

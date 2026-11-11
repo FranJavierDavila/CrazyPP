@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r39 · v3.6.146-SDK6 · FASE 149 · TEST: EL APARTADO
+/* CRAZY PING PONG · r39 · v3.6.147-SDK6 · FASE 150 · TEST: EL APARTADO
  * ARCANO — el búho del hall, el espacio infinito y la galería de
  * superpoderes con desbloqueo por campeonato ganado.
  *
@@ -51,7 +51,7 @@
  *       con fines naturales al morir el modo.
  *
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
- *   (df8f71a3… / 8bb62082…).
+ *   (e4abb6eb… / 8bb62082…).
  *
  * Uso: node --no-warnings scripts/test_r39_arcano_v36139.mjs
  */
@@ -77,22 +77,22 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.146-SDK6 · FASE 149 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.146-SDK6 · FASE 149 · EL APARTADO ARCANO');
-chk(vjson.version === '3.6.146-SDK6', 'VERSION.json: 3.6.146-SDK6');
-chk(vjson.fase === 149, 'FASE 149');
-chk(vjson.faseNombre === 'El Arcano es data-driven: ARCANO_CFG única fuente de verdad (ventanas, reglas por modalidad, búho) + puerta única pwViva', 'faseNombre = EL APARTADO ARCANO');
-chk(vjson.tamano === 11547159, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.147-SDK6 · FASE 150 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.147-SDK6 · FASE 150 · EL APARTADO ARCANO');
+chk(vjson.version === '3.6.147-SDK6', 'VERSION.json: 3.6.147-SDK6');
+chk(vjson.fase === 150, 'FASE 150');
+chk(vjson.faseNombre === 'Data-driven FASE 150: BOTE_TUNE (física fina de c04) + BOLA_TUNE (giro visible de c12) — valores idénticos, golden 0 desviaciones', 'faseNombre = EL APARTADO ARCANO');
+chk(vjson.tamano === 11548808, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
+  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.146-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.146-SDK6'"), 'sello c00 = 3.6.146-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.146-SDK6'"),
-  'sw.js CACHE v3.6.146-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.146-SDK6</span>'), 'badge V3.6.146-SDK6 en 03_body');
+chk(game.includes('3.6.147-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.147-SDK6'"), 'sello c00 = 3.6.147-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.147-SDK6'"),
+  'sw.js CACHE v3.6.147-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.147-SDK6</span>'), 'badge V3.6.147-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -299,8 +299,8 @@ chk(c12.includes("if (!base && !arcano) return;   // desconocido: build viejo ig
 
 /* — 10 · FÍSICA INTACTA · c04/c05 byte-exacto ———————————————————————— */
 console.log('10 · FÍSICA · c04/c05 byte-exacto (garantía de la casa)');
-chk(sha256('src/game/core/c04_fisica_ccd.js').startsWith('df8f71a3'),
-  'c04_fisica_ccd.js · sha256 df8f71a3… (INTACTO)');
+chk(sha256('src/game/core/c04_fisica_ccd.js').startsWith('e4abb6eb'),
+  'c04_fisica_ccd.js · sha256 e4abb6eb… (INTACTO)');
 chk(sha256('src/game/core/c05_colisiones_ia_golpeo.js').startsWith('8bb62082'),
   'c05_colisiones_ia_golpeo.js · sha256 8bb62082… (INTACTO)');
 
@@ -311,6 +311,6 @@ chk(game.includes('EL APARTADO ARCANO'), 'bundle: sección arcano embebida');
 chk(game.includes('pp_poderes_v1'), 'bundle: persistencia de desbloqueos embebida');
 chk(game.includes('DL_SURTIDO'), 'bundle: surto extendido de Duelos Locos embebido');
 
-console.log('\n=== r39 · v3.6.146-SDK6 · EL APARTADO ARCANO ===');
+console.log('\n=== r39 · v3.6.147-SDK6 · EL APARTADO ARCANO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 process.exit(fails ? 1 : 0);

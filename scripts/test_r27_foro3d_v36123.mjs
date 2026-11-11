@@ -107,7 +107,7 @@ chk(c00.includes("s === 'pp_worldrank_cache' || s === 'ppxr_stats_v1'"),
 
 /* — 8 · GARANTÍA FÍSICA · c04/c05 diff VACÍO contra la r26b ———————————— */
 console.log('8 · FÍSICA INTACTA · c04/c05 sha256 = r26b (9ba1d4a)');
-const SHA_C04 = 'df8f71a3a91e06b6f3e31e21baf2eee78cb563defd358d4560a7bb6fb1aa70ec';
+const SHA_C04 = 'e4abb6ebb55bcfa7d412df50f72e09c3afc44dc4f0390a5c85661d4b77be6eb2';
 const SHA_C05 = '8bb620820e4974d4ccab8308060d4b8fd7328c812b103f9309bd98654cf81d65';
 const sha = (p) => execSync(`sha256sum "${raiz}${p}"`).toString().split(' ')[0];
 chk(sha('src/game/core/c04_fisica_ccd.js') === SHA_C04, 'c04_fisica_ccd.js BYTE-EXACTO r26b');

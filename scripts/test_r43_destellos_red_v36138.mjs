@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.146-SDK6 · FASE 149 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.147-SDK6 · FASE 150 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -83,26 +83,26 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.146-SDK6 · FASE 149 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.146-SDK6 · FASE 149 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.146-SDK6', 'VERSION.json: 3.6.146-SDK6');
-chk(vjson.fase === 149, 'FASE 149');
-chk(vjson.faseNombre === 'El Arcano es data-driven: ARCANO_CFG única fuente de verdad (ventanas, reglas por modalidad, búho) + puerta única pwViva',
-  'faseNombre = EL ARCANO ES DATA-DRIVEN: ARCANO_CFG ÚNICA FUENTE DE VERDAD (VENTANAS, REGLAS POR MODALIDAD, BÚHO) + PUERTA ÚNICA PWVIVA');
+/* — 1 · SELLOS · v3.6.147-SDK6 · FASE 150 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.147-SDK6 · FASE 150 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.147-SDK6', 'VERSION.json: 3.6.147-SDK6');
+chk(vjson.fase === 150, 'FASE 150');
+chk(vjson.faseNombre === 'Data-driven FASE 150: BOTE_TUNE (física fina de c04) + BOLA_TUNE (giro visible de c12) — valores idénticos, golden 0 desviaciones',
+  'faseNombre = DATA-DRIVEN FASE 150: BOTE_TUNE (FÍSICA FINA DE C04) + BOLA_TUNE (GIRO VISIBLE DE C12) — VALORES IDÉNTICOS, GOLDEN 0 DESVIACIONES');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
 // legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
-chk(vjson.tamano === 11547159, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11548808, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
+  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.146-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.146-SDK6'"), 'sello c00 = 3.6.146-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.146-SDK6'"),
-  'sw.js CACHE v3.6.146-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.146-SDK6</span>'), 'badge V3.6.146-SDK6 en 03_body');
+chk(game.includes('3.6.147-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.147-SDK6'"), 'sello c00 = 3.6.147-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.147-SDK6'"),
+  'sw.js CACHE v3.6.147-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.147-SDK6</span>'), 'badge V3.6.147-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -265,7 +265,7 @@ chk(sha256('src/game/core/c04_fisica_ccd.js') ===
   'c04_fisica_ccd.js presente');
 const c04sha = sha256('src/game/core/c04_fisica_ccd.js');
 const c05sha = sha256('src/game/core/c05_colisiones_ia_golpeo.js');
-chk(c04sha.startsWith('df8f71a3'), 'c04 byte-exacto (df8f71a3… — física intocada)');
+chk(c04sha.startsWith('e4abb6eb'), 'c04 byte-exacto (e4abb6eb… — física intocada, re-ancla r56 BOTE_TUNE)');
 chk(c05sha.startsWith('8bb62082'), 'c05 byte-exacto (8bb62082… — física intocada)');
 chk(lee('public/telemetria.html').includes('CRAZY PING PONG · Telemetría'),
   're-anclada r53: dashboard de telemetría vivo (sustituye al panel r42)');
@@ -276,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.146-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.147-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

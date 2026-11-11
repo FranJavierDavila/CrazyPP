@@ -17366,7 +17366,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();
-const BOLA_SPIN_GANANCIA = 0.45;   // rad visibles por rad de ω (ver _bolaSpinTick) — r24: 0.14→0.45 (queja: «giro muy sutil»)
+/* r56 · FASE 150 · data-driven: la ganancia del giro visible vive en la
+ * tabla BOLA_TUNE (dato, no literal suelto). Valor IDÉNTICO al de r24. */
+const BOLA_TUNE = { spinGanancia: 0.45 };   // rad visibles por rad de ω (ver _bolaSpinTick) — r24: 0.14→0.45 (queja: «giro muy sutil»)
+const BOLA_SPIN_GANANCIA = BOLA_TUNE.spinGanancia;
 /* =====================================================================
  *  r81 · PERF GOVERNOR — AUTOCALIBRADOR DE FPS (≥60 seguros en cualquier
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy

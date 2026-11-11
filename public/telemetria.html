@@ -124,6 +124,19 @@
     border-radius:10px; padding:10px 12px; font-size:11.5px; color:#9fd0ff; }
   .oculto { display:none; }
   .refresco { font-size:11.5px; color:#5d6b82; }
+  /* r56 · rankings y ficha del jugador */
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px; }
+  .tabs button { background:#0d1730; border:1px solid #25406b; color:#7ec8ff;
+    border-radius:9px; padding:6px 13px; font-size:12.5px; font-weight:700; }
+  .tabs button.act { background:linear-gradient(92deg,#ff7a18,#ffb347); color:#160c02; border-color:transparent; }
+  #tJugadores tbody tr, #tVR tbody tr, #tRank tbody tr { cursor:pointer; transition:background .12s; }
+  #tJugadores tbody tr:hover, #tVR tbody tr:hover, #tRank tbody tr:hover { background:#0d1730; }
+  .ficha-cab { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
+  .ficha-cab .avatar { width:38px; height:38px; font-size:16px; }
+  .ficha-cab .nombre { font-size:17px; font-weight:800; }
+  .ficha-cab button { margin-left:auto; background:#0d1730; border:1px solid #25406b; color:#7ec8ff; }
+  .seccion { font-size:11.5px; color:#9fb3cc; text-transform:uppercase; letter-spacing:.7px;
+    margin:16px 0 8px; font-weight:700; }
 </style>
 </head>
 <body>
@@ -179,11 +192,24 @@
       </section>
     </div>
 
+    <section class="tarjeta oculto" id="ficha">
+      <div class="ficha-cab" id="fichaCab"></div>
+      <p class="sub" id="fichaSub"></p>
+      <div id="fichaCuerpo"></div>
+    </section>
+
     <section class="tarjeta">
       <h2>Los jugadores</h2>
-      <p class="sub">Cada fila es una sesión de juego distinta, de la más activa a la menos activa. Los nombres son los elegidos por los jugadores.</p>
+      <p class="sub">Cada fila es una sesión de juego distinta, de la más activa a la menos activa. Los nombres son los elegidos por los jugadores. <b>Pulsa una fila para abrir su ficha.</b></p>
       <div style="overflow-x:auto"><table id="tJugadores"></table></div>
       <details class="json"><summary>ver los datos en bruto de jugadores</summary><pre id="jsonJugadores"></pre></details>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Rankings por jugador</h2>
+      <p class="sub">Temporada viva: lo jugado en los últimos 90 días según el perfil que cada jugador lleva dentro del juego. Pulsa una fila para abrir su ficha.</p>
+      <div class="tabs" id="tabsRank"></div>
+      <div style="overflow-x:auto"><table id="tRank"></table></div>
     </section>
 
     <section class="tarjeta">
@@ -233,6 +259,7 @@
 const DEF = 'https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele';
 const $ = (id) => document.getElementById(id);
 let CLAVE = '', DATOS = null, EVENTOS = null, TS_CARGA = 0, TEMP = null;
+let RANK = null, ULT_JUG = [], TAB_RANK = 'elo';
 
 try { CLAVE = localStorage.getItem('pp_tele_clave') || ''; } catch (e) {}
 if (CLAVE) $('clave').value = CLAVE;
@@ -483,11 +510,12 @@ async function cargar() {
   $('btn').disabled = true;
   $('refresco').innerHTML = '<span class="spinner"></span> actualizando…';
   try {
-    const [res, ev] = await Promise.all([
+    const [res, ev, rk] = await Promise.all([
       pedir('?resumen=1'),
       pedir('?eventos=400').catch(() => ({ eventos: [] })),
+      pedir('?rank=1').catch(() => null),
     ]);
-    DATOS = res; EVENTOS = ev.eventos || []; TS_CARGA = Date.now();
+    DATOS = res; EVENTOS = ev.eventos || []; RANK = rk; TS_CARGA = Date.now();
     render();
     $('refresco').textContent = 'actualizado ' + new Date(TS_CARGA).toLocaleTimeString('es-ES',
       { hour:'2-digit', minute:'2-digit' });
@@ -594,7 +622,7 @@ function render() {
     jugadores.slice(0, 14).map((j) => {
       const nm = j.n || 'Jugador anónimo';
       const ini = esc((j.n || j.sid || '?')[0].toUpperCase());
-      return '<tr><td><div class="jug"><span class="avatar" style="background:' +
+      return '<tr data-sid="' + esc(j.sid) + '"><td><div class="jug"><span class="avatar" style="background:' +
         colorNombre(j.sid) + '">' + ini + '</span><span><span class="nombre">' + esc(nm) +
         '</span><br><span class="sid">' + esc(j.sid) + '</span></span></div></td>' +
         '<td>' + hace(j.ultimo) + '</td>' +
@@ -607,6 +635,8 @@ function render() {
         '<td>' + (j.v ? '<span class="pill">' + esc(j.v) + '</span>' : '—') + '</td></tr>';
     }).join('') + '</tbody>';
   $('jsonJugadores').textContent = JSON.stringify(jugadores.slice(0, 40), null, 2);
+  ULT_JUG = jugadores;
+  renderRank();
 
   /* VR */
   const vrs = (R.sesionesVR || []).slice().sort((a, b) => (b.inicio || 0) - (a.inicio || 0));
@@ -631,7 +661,7 @@ function render() {
         const estado = { completa: '<span class="pill" style="border-color:#2c5b22;color:#9ae66e">completa</span>',
           interrumpida: '<span class="pill naranja">se cortó</span>' }[x.estado] ||
           '<span class="pill gris">' + esc(x.estado || '—') + '</span>';
-        return '<tr><td>' + ffecha(x.inicio) + '</td>' +
+        return '<tr data-sid="' + esc(x.sid) + '"><td>' + ffecha(x.inicio) + '</td>' +
           '<td><div class="jug"><span class="avatar" style="background:' + colorNombre(x.sid) +
           ';width:24px;height:24px;font-size:11px">' + esc((nombre[0] || '?').toUpperCase()) +
           '</span>' + esc(nombre) + '</div></td>' +
@@ -698,6 +728,143 @@ setInterval(() => {
 salud();
 setInterval(salud, 45000);
 if (CLAVE) cargar();
+
+/* ═══ r56 · RANKINGS POR JUGADOR + FICHA INDIVIDUAL (drill-down)
+   Usa endpoints que el worker YA tenía: ?rank=1 (temporada 90 días
+   agregada por pid) y ?eventos=500&sid=… (actividad de una sesión).
+   Cero cambios en el worker. Cero dependencias externas. ═══ */
+
+const TABS_RANK = [
+  ['elo', 'Elo'],
+  ['vics', 'Victorias'],
+  ['pts', 'Puntos'],
+  ['logros', 'Logros'],
+];
+const METRICA_RANK = { elo: ['el', 'Elo'], vics: ['w', 'Victorias'],
+  pts: ['pt', 'Puntos'], logros: ['ach', 'Logros'] };
+
+function renderRank() {
+  const tabs = $('tabsRank'), tabla = $('tRank');
+  if (!RANK || !RANK.rank) {
+    tabs.innerHTML = '';
+    tabla.innerHTML = '<tbody><tr><td><p class="vacio">Rankings no disponibles ahora mismo.</p></td></tr></tbody>';
+    return;
+  }
+  tabs.innerHTML = TABS_RANK.map(([k, nm]) =>
+    '<button data-rk="' + k + '" class="' + (k === TAB_RANK ? 'act' : '') + '">' + nm + '</button>').join('');
+  const filas = RANK.rank[TAB_RANK] || [];
+  const met = METRICA_RANK[TAB_RANK];
+  tabla.innerHTML = filas.length
+    ? '<thead><tr><th class="num">#</th><th>Jugador</th><th class="num">' + met[1] + '</th>' +
+      '<th class="num">Partidas</th><th class="num">En línea</th><th>Visto</th></tr></thead><tbody>' +
+      filas.map((j, i) =>
+        '<tr data-pid="' + esc(j.pid) + '"><td class="num">' + (i + 1) + '</td>' +
+        '<td><div class="jug"><span class="avatar" style="background:' + colorNombre(j.pid) + '">' +
+        esc((j.n || '?')[0].toUpperCase()) + '</span><span class="nombre">' + esc(j.n || 'Anónimo') + '</span></div></td>' +
+        '<td class="num"><b>' + fnum(j[met[0]]) + '</b></td>' +
+        '<td class="num">' + fnum(j.part) + '</td>' +
+        '<td class="num">' + fnum(j.p2p) + '</td>' +
+        '<td>' + (j.hace != null ? hace(Date.now() - j.hace * 1000) : '—') + '</td></tr>').join('') +
+      '</tbody>'
+    : '<tbody><tr><td colspan="6"><p class="vacio">Aún no hay jugadores con perfil esta temporada. Se apuntan solos al jugar con la versión 3.6.139 o posterior.</p></td></tr></tbody>';
+}
+
+function timelineEvs(evs) {
+  return evs.length
+    ? evs.map((ev) => {
+        const [nm, col] = familiaDe(ev.e);
+        return '<div class="ev"><span class="punto" style="background:' + col + '"></span>' +
+          '<span>' + fraseDe(ev) + ' <span class="pill gris" style="margin-left:6px">' + esc(nm) + '</span></span>' +
+          '<span class="cuando">' + ffecha(ev.t) + '</span></div>';
+      }).join('')
+    : '<p class="vacio">Sin acciones registradas en lo cargado hasta ahora.</p>';
+}
+
+function cerrarFicha() {
+  $('ficha').classList.add('oculto');
+}
+
+function abrirFichaRank(pid) {
+  if (!RANK || !RANK.rank) return;
+  const listas = [].concat(RANK.rank.elo || [], RANK.rank.vics || [], RANK.rank.pts || [], RANK.rank.logros || []);
+  const j = listas.find((x) => x.pid === pid);
+  if (!j) return;
+  $('ficha').classList.remove('oculto');
+  $('ficha').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('fichaCab').innerHTML =
+    '<span class="avatar" style="background:' + colorNombre(pid) + '">' + esc((j.n || '?')[0].toUpperCase()) + '</span>' +
+    '<span class="nombre">' + esc(j.n || 'Jugador anónimo') + '</span>' +
+    '<button data-cerrar="1">Cerrar ficha</button>';
+  $('fichaSub').textContent = 'Su perfil dentro del juego · temporada de los últimos 90 días' +
+    (j.hace != null ? ' · última actividad ' + hace(Date.now() - j.hace * 1000) : '');
+  const suyos = (EVENTOS || []).filter((e) => e.pid === pid);
+  $('fichaCuerpo').innerHTML =
+    '<div class="kpis">' +
+      kpi(fnum(j.el), 'Elo de temporada', 'empieza en 1000', '#49b6ff') +
+      kpi(fnum(j.w), 'Victorias', 'en su perfil', '#3fd97a') +
+      kpi(fnum(j.part), 'Partidas', fnum(j.p2p) + ' en línea', '#ff7a18') +
+      kpi(fnum(j.ach), 'Logros', 'desbloqueados', '#a78bfa') +
+    '</div>' +
+    '<p class="estado">Mejor puntuación: <b>' + fnum(j.bs || 0) + '</b> · Puntos: <b>' + fnum(j.pt || 0) +
+    '</b> · Mejor serie: <b>' + fnum(j.st || 0) + '</b></p>' +
+    '<p class="seccion">Sus últimas acciones conocidas por el panel</p>' + timelineEvs(suyos.slice(-12).reverse()) +
+    '<p class="estado">Para ver su actividad completa por sesión, búscalo en «Los jugadores» y pulsa su fila.</p>';
+}
+
+async function abrirFichaSid(sid) {
+  const j = (ULT_JUG || []).find((x) => x.sid === sid) || { sid: sid, count: 0 };
+  $('ficha').classList.remove('oculto');
+  $('ficha').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('fichaCab').innerHTML =
+    '<span class="avatar" style="background:' + colorNombre(sid) + '">' + esc((j.n || sid || '?')[0].toUpperCase()) + '</span>' +
+    '<span class="nombre">' + esc(j.n || 'Jugador anónimo') + '</span>' +
+    (j.v ? '<span class="pill">' + esc(j.v) + '</span>' : '') +
+    '<button data-cerrar="1">Cerrar ficha</button>';
+  $('fichaSub').textContent = 'Sesión ' + sid + ' · última actividad ' + hace(j.ultimo);
+  $('fichaCuerpo').innerHTML = '<p class="vacio">Buscando su actividad en el receptor…</p>';
+  let evs = null;
+  try {
+    const r = await pedir('?eventos=500&sid=' + encodeURIComponent(sid));
+    evs = r.eventos || [];
+  } catch (e) { evs = null; }
+  if (evs === null) evs = (EVENTOS || []).filter((x) => x.sid === sid);
+  const porFam = {};
+  for (const ev of evs) { const [nm] = familiaDe(ev.e); porFam[nm] = (porFam[nm] || 0) + 1; }
+  const fams = Object.keys(porFam).map((k) => {
+    const f = FAMILIAS.find((x) => x[0] === k);
+    return { n: k, v: porFam[k], c: f ? f[2] : '#64748b' };
+  }).sort((a, b) => b.v - a.v);
+  const vrs = ((DATOS || {}).sesionesVR || []).filter((x) => x.sid === sid);
+  const ult = evs.slice(-12).reverse();
+  $('fichaCuerpo').innerHTML =
+    '<div class="kpis">' +
+      kpi(fnum(j.count), 'Acciones registradas', evs.length >= 500 ? 'las 500 más recientes' : '', '#49b6ff') +
+      kpi(fnum(vrs.length), 'Sesiones de casco', '', '#22d3ee') +
+      kpi(fnum(j.partidas || 0), 'Partidas conectadas', '', '#ff7a18') +
+      kpi(j.v ? esc(j.v) : '—', 'Versión del juego', '', '#a78bfa') +
+    '</div>' +
+    (fams.length ? '<p class="seccion">Cómo se reparte su actividad</p><div id="fichaFams"></div>' : '') +
+    (vrs.length ? '<p class="seccion">Sesiones con el casco</p>' +
+      '<table><thead><tr><th>Cuando</th><th>Duración</th><th>¿Cómo acabó?</th><th class="num">FPS medio</th></tr></thead><tbody>' +
+      vrs.slice(0, 6).map((x) =>
+        '<tr><td>' + ffecha(x.inicio) + '</td><td>' + fdur(x.dur) + '</td>' +
+        '<td>' + esc(x.estado || '—') + '</td><td class="num">' + (x.fps ? fnum(x.fps) : '—') + '</td></tr>').join('') +
+      '</tbody></table>' : '') +
+    '<p class="seccion">Sus últimas acciones</p>' + timelineEvs(ult) +
+    (evs.length >= 500 ? '<p class="estado">Hay más actividad guardada: aquí se muestran las 500 acciones más recientes.</p>' : '');
+  if (fams.length) hbars($('fichaFams'), fams);
+}
+
+document.addEventListener('click', (e) => {
+  const cer = e.target.closest('[data-cerrar]');
+  if (cer) { cerrarFicha(); return; }
+  const tab = e.target.closest('#tabsRank button');
+  if (tab) { TAB_RANK = tab.getAttribute('data-rk'); renderRank(); return; }
+  const trP = e.target.closest('tr[data-pid]');
+  if (trP) { abrirFichaRank(trP.getAttribute('data-pid')); return; }
+  const trS = e.target.closest('tr[data-sid]');
+  if (trS) { abrirFichaSid(trS.getAttribute('data-sid')); return; }
+});
 </script>
 </body>
 </html>

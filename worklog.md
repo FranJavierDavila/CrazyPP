@@ -6426,3 +6426,72 @@ Stage Summary:
   «todo data-driven» VERIFICADA en producción. PROD SMOKE r55: 20 OK ·
   0 FALLOS · deploy pages cf9bf449f (476 ficheros · 194,9 MB · smoke de
   prefijo 33 peticiones 0 fallos).
+
+## FASE 150 · v3.6.147-SDK6 · r56 — EL PATRÓN DATA-DRIVEN SE EXTIENDE A FÍSICA Y BOLA + PANEL DE TELEMETRÍA POR JUGADOR (directiva del dueño: «extender el patrón a más subsistemas, el dashboard de telemetría pendiente y la auditoría de físicas»)
+- LIMPIEZA DEL REPOSITORIO (petición del dueño: «borrar copias de más de
+  1 semana»): 78 zips de lanzamiento de versiones superadas (v36112→
+  v36138 · 8,51 GiB lógicos, gitignoradas, regenerables) + upload_backup_
+  20261023 (13 ficheros del 23-oct). CONSERVADO: set vigente v36139
+  (COMPLETO/CLOUDFLARE/ligera) + crazypp-live-service-SOLO.zip + backups
+  de <1 semana (backup-upload-local, backup_rodado_r48, backup_r57,
+  pala.glb.bak). git gc descartado por timeout del sandbox (reanudable).
+- BOTE_TUNE (c04, junto a CCD_TUNE): los 6 números finos del bote y del
+  giro de muñeca dejan de ser literales en las funciones — spinDecayBote
+  0,72 · gripImpactRef 4,5 · cascaronInercia 0,4 (m_eff/m = 2/5 bola
+  hueca) · cascaronAcoplo 1,5 · omegaLerp 0,5 · omegaDecay 8. Valores
+  IDÉNTICOS: golden test_fisica 11 escenarios · 0 DESVIACIONES (la
+  simulación no cambia ni un milímetro; afinar = editar UNA fila).
+- BOLA_TUNE (c12): la ganancia del giro visible (r23/r24: 0,14→0,45)
+  vive en tabla; BOLA_SPIN_GANANCIA queda en ALIAS de BOLA_TUNE.
+  spinGanancia. Cero cambios en los puntos de uso.
+- PANEL DE TELEMETRÍA r56 (public/telemetria.html): RANKINGS POR JUGADOR
+  (4 pestañas Elo/Victorias/Puntos/Logros del endpoint ?rank=1 del worker,
+  temporada 90 días por pid) + FICHA INDIVIDUAL con drill-down (clic en
+  cualquier fila de jugadores/VR/rankings → KPIs, reparto por familias,
+  sesiones de casco y últimas acciones; por sesión vía ?eventos=500&sid=
+  del worker, por perfil vía pid de los eventos cargados). CERO cambios
+  en el worker para el panel… pero el worker DESPLEGADO era anterior a
+  r45/r46: el ?rank=1 respondía el latido {ok,total,ts}. REDESPLEGADO
+  worker.js con deploy_worker.py (E2E en producción: latido · 403 sin
+  clave · POST prueba 204 · resumen · DELETE limpio · total restaurado)
+  — el rank vive: XAVIER 895 elo en las 4 tablas.
+- QA DASHBOARD r56 (scripts/qa_dashboard_r56.py, arnés r53 + Chromium):
+  13/13 — portada/KPIs/SVG intactos · 4 pestañas · cambio de pestaña ·
+  ficha por sesión con KPIs y últimas acciones · cierre · ficha de
+  ranking por pid · 0 pageerrors. Captura scripts/_dashboard_r56.png.
+- AUDITORÍA DE FÍSICAS (solo lectura, 8 ítems, agente auditor): 3
+  SÓLIDO (integración temporal 480 Hz · CCD bola-pala SDF · bote
+  slip-coupled sin doble contabilidad) + 5 OK CON MATICES (aerodinámica,
+  entorno, red autoridad-por-mitad, IA/predicción mismas ecuaciones,
+  rendimiento cero-alloc en ruta caliente) · 0 RIESGO. INFORME
+  entregado: download/Auditoria_Fisicas_Guardianes_Ecosfera_r56.pdf
+  (10 págs, portada HTML + ReportLab, pdf_qa PASS) + fuente de portada.
+  Top-3: R1 base temporal de la pala (dt 1/30 vs dtFis 1/12, c12:15078)
+  · R2 goldenizar c05 (stepPhysics/predictStrike) y alinear margen de
+  bote · R3 documentar Magnus ×1 predicho vs ×2,2 real del Súper Efecto.
+- SELLADO: sella_r56_fisica_datos.py (patrón r55; golden VIEJO capturado
+  antes de sobrescribir): VERSION.json 3.6.147-SDK6 FASE 150, c00
+  VERSION, badge 03_body, sw.js CACHE crazypp-v3.6.147-SDK6, ensamblado
+  11.548.808 B · golden 37cadc1d0d557334… · agujas BOTE_TUNE (13 exactas
+  + RE ×7 lectores) y BOLA_TUNE (2) + conservación r55/r54/145/144/143
+  TODO OK.
+- RE-ANCLES DE CONTRATO r56: 14 tests de versión (sella) · hash c04
+  a91e06b6→e4abb6eb en r27/r28/r29/r30-r41 (14 ficheros, prefijos
+  incluidos) · r43 startsWith c04 (línea 268 SOLO; su constante ca7c de
+  la 263 es otro ancla y se respeta) · r23/r24 re-anclados a BOLA_TUNE/
+  BOTE_TUNE en su fase · qa_r46_humo_gobernador versión →3.6.147 ·
+  espejo rsync upload/public→public (sin descargas, lección r37) para
+  los QA :3000/:81.
+- QA VERDE COMPLETA r56 (misma lista verde que r55, re-ejecutada):
+  repro del bug qa_r54_poderes_agotados 30/0 (la ventana SIGUE viva en
+  el build nuevo) · test_fisica 11/0 · test_r21 63/0 · r24 89/0 · r26b
+  171/0 · r30 54/0 · r31 47/0 · r32 49/0 · r33 77/0 · r34 62/0 · r35
+  36/0 · r36 30/0 · r37 46/0 · r38 51/0 · r39 167/0 · r40 62/0 · r41
+  92/0 · r43 79/0 · red_nucleo 60/0 · qa_version 31/0 · qa_sup1 151/0 ·
+  qa_r84 67/0 · qa_r50 22/0 · qa_r46_humo OK · qa_rendimiento 14/0 ·
+  qa_telemetria 132/0 · qa_dashboard_r56 13/13. ROJOS HISTÓRICOS
+  PREEXISTENTES (no de r56; congelados en su era): r23 (1), r25 (6),
+  r26 (6), r27 (3), r28 (9), r29 (7 = 5 de sello 3.6.129 + 2 del
+  re-arcano r55; revisado este fase, sin cambios de r56).
+- PENDIENTE FUTURO (de la auditoría, no bloquea): R1/R2/R3 del informe;
+  parametrizar la ruta de scripts/mod_fase2_generar.mjs (deuda r55).

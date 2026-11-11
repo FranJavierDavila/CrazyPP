@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r30 · v3.6.146-SDK6 · FASE 149 · TEST: FÉNIX JUGABLE +
+/* CRAZY PING PONG · r30 · v3.6.147-SDK6 · FASE 150 · TEST: FÉNIX JUGABLE +
  * SALONES DE LUJO IA.
  *
  *   A · SÚPER FÉNIX — DINÁMICA NORMAL (orden del dueño tras probar la
@@ -41,7 +41,7 @@
  *       exigida: cada salón pesa MÁS que su versión plana r28.
  *
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
- *   (df8f71a3… / 8bb62082…).
+ *   (e4abb6eb… / 8bb62082…).
  *
  * Uso: node --no-warnings scripts/test_r30_fenix_salones_v36126.mjs
  */
@@ -61,23 +61,23 @@ const sha256 = (p) =>
 const c12 = lee('src/game/core/c12_pingponggame.js');
 const vjson = JSON.parse(lee('src/game/VERSION.json'));
 
-/* — 1 · SELLOS · v3.6.146-SDK6 · FASE 149 ————————————————————————————— */
-console.log('1 · SELLOS · v3.6.146-SDK6 · FASE 149');
-chk(vjson.version === '3.6.146-SDK6', 'VERSION.json: 3.6.146-SDK6');
-chk(vjson.fase === 149, 'FASE 149');
-chk(vjson.faseNombre === 'El Arcano es data-driven: ARCANO_CFG única fuente de verdad (ventanas, reglas por modalidad, búho) + puerta única pwViva', 'faseNombre');
+/* — 1 · SELLOS · v3.6.147-SDK6 · FASE 150 ————————————————————————————— */
+console.log('1 · SELLOS · v3.6.147-SDK6 · FASE 150');
+chk(vjson.version === '3.6.147-SDK6', 'VERSION.json: 3.6.147-SDK6');
+chk(vjson.fase === 150, 'FASE 150');
+chk(vjson.faseNombre === 'Data-driven FASE 150: BOTE_TUNE (física fina de c04) + BOLA_TUNE (giro visible de c12) — valores idénticos, golden 0 desviaciones', 'faseNombre');
 const game = lee('public/game.html');
-chk(game.includes('3.6.146-SDK6'), 'bundle con sello vigente');
+chk(game.includes('3.6.147-SDK6'), 'bundle con sello vigente');
 const c00 = lee('src/game/core/c00_pre_three.js');
-chk(c00.includes("const VERSION = '3.6.146-SDK6'"), 'sello c00 = 3.6.146-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.146-SDK6'"),
-  'sw.js CACHE v3.6.146-SDK6 (purga de cachés viejas)');
-chk(vjson.tamano === 11547159, 'tamaño del build: 11.504.235 B');
+chk(c00.includes("const VERSION = '3.6.147-SDK6'"), 'sello c00 = 3.6.147-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.147-SDK6'"),
+  'sw.js CACHE v3.6.147-SDK6 (purga de cachés viejas)');
+chk(vjson.tamano === 11548808, 'tamaño del build: 11.504.235 B');
 chk(lee('src/game/GOLDEN_SHA256.txt').includes(
-  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4'),
+  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581'),
 'golden 10a24300… (build byte-exacto)');
 chk(sha256('public/game.html') ===
-  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
+  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581',
 'game.html REAL casan con golden');
 
 /* — 2 · FÉNIX · EL BOOST ESTÁ ANULADO (dinámica normal) ———————————————— */
@@ -158,8 +158,8 @@ chk(statSync(raiz + 'scripts/_r30_postproceso_halls.py').size > 1500,
 /* — 7 · FÍSICA INTACTA · c04/c05 BYTE-EXACTO ——————————————————————————— */
 console.log('7 · FÍSICA · c04/c05 byte-exacto contra la r26b');
 chk(sha256('src/game/core/c04_fisica_ccd.js') ===
-  'df8f71a3a91e06b6f3e31e21baf2eee78cb563defd358d4560a7bb6fb1aa70ec',
-  'c04_fisica_ccd.js = df8f71a3…');
+  'e4abb6ebb55bcfa7d412df50f72e09c3afc44dc4f0390a5c85661d4b77be6eb2',
+  'c04_fisica_ccd.js = e4abb6eb…');
 chk(sha256('src/game/core/c05_colisiones_ia_golpeo.js') ===
   '8bb620820e4974d4ccab8308060d4b8fd7328c812b103f9309bd98654cf81d65',
   'c05_colisiones_ia_golpeo.js = 8bb62082…');

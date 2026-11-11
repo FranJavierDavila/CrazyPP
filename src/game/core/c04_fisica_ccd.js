@@ -63,6 +63,24 @@ export const CCD_TUNE = {
                           // idéntica al detector antiguo); menos ⇒ rim (normal SDF)
 };
 
+/* =====================================================================
+ *  r56 · FASE 150 · BOTE_TUNE — LOS NÚMEROS FINOS DEL BOTE Y DEL GIRO
+ *  ---------------------------------------------------------------------
+ *  Directiva del dueño («todo data-driven», extendida a la física):
+ *  los números que antes vivían DENTRO de las funciones ahora son DATOS
+ *  aquí, junto a su hermana CCD_TUNE. Valores IDÉNTICOS a los de siempre
+ *  (el golden de trayectorias test_fisica.mjs manda): moverlos no cambia
+ *  ni un milímetro la simulación — afinarlos ahora es editar UNA fila.
+ *  ===================================================================== */
+export const BOTE_TUNE = {
+  spinDecayBote: 0.72,    // applyBounceSpin: giro que sobrevive al bote (ruta legada)
+  gripImpactRef: 4.5,     // bounceOnTable: impacto (m/s) que satura el agarre de la mesa
+  cascaronInercia: 0.4,   // m_eff/m = 2/5 de la bola reglamentaria HUECA (impulso tangencial)
+  cascaronAcoplo: 1.5,    // 3/2: acoplo cascarón Δω = (3/2r)·Δv (topspin patea y conserva)
+  omegaLerp: 0.5,         // updatePaddleSim: suavizado del giro de muñeca (media con el anterior)
+  omegaDecay: 8,          // updatePaddleSim: decaimiento del giro sin movimiento (por segundo)
+};
+
 /* SDF del disco con grosor (pala), en espacio LOCAL (origen = centro de la
  * hoja, eje Z = normal de cara). Devuelve distancia con signo al sólido.
  * Fórmula exacta para el cilindro: cara (qy), canto (qx) y esquina
@@ -240,9 +258,9 @@ export function updatePaddleSim(ps, pos, quat, now, dt) {
   if (ang > 1e-4 && dt > 0) {
     const s = Math.sqrt(Math.max(1e-12, 1 - tmpDeltaQ.w * tmpDeltaQ.w));
     tmpV.set(tmpDeltaQ.x / s, tmpDeltaQ.y / s, tmpDeltaQ.z / s).multiplyScalar(ang / dt);
-    ps.omega.lerp(tmpV, 0.5);
+    ps.omega.lerp(tmpV, BOTE_TUNE.omegaLerp);
   } else {
-    ps.omega.multiplyScalar(Math.max(0, 1 - dt * 8));
+    ps.omega.multiplyScalar(Math.max(0, 1 - dt * BOTE_TUNE.omegaDecay));
   }
   ps.prevQuat.copy(quat);
   ps.prevT = now;
@@ -255,7 +273,7 @@ export function applyBounceSpin(vel, spin, kickMul) {
   const km = (kickMul === undefined) ? 1 : kickMul;
   vel.x -= DIMS.bounceSpinKick * km * spin.z;
   vel.z += DIMS.bounceSpinKick * km * spin.x;
-  spin.multiplyScalar(0.72);
+  spin.multiplyScalar(BOTE_TUNE.spinDecayBote);
 }
 
 /** v3.0.5-FIS1 · P2 — BOTE FÍSICO con deslizamiento (slip-coupled).
@@ -283,18 +301,18 @@ export function bounceOnTable(vel, spin, impact, coupleMul) {
   const ux = vel.x + r * spin.z * cm;
   const uz = vel.z - r * spin.x * cm;
   const g = DIMS.bounceGripMin + (DIMS.bounceGripMax - DIMS.bounceGripMin) *
-            Math.min(1, impact / 4.5);
-  // Δv (por unidad de masa) que anularía el deslizamiento: −u·m_eff/m = −u·2/5
+            Math.min(1, impact / BOTE_TUNE.gripImpactRef);
+  // Δv (por unidad de masa) que anularía el deslizamiento: −u·m_eff/m = −u·cascaronInercia
   // con tope de Coulomb: |Δv| ≤ grip·(1+e)·impacto
-  let dvx = -ux * 0.4 * g;
-  let dvz = -uz * 0.4 * g;
+  let dvx = -ux * BOTE_TUNE.cascaronInercia * g;
+  let dvz = -uz * BOTE_TUNE.cascaronInercia * g;
   const dvm = Math.hypot(dvx, dvz);
   const cap = g * (1 + DIMS.tableRestitution) * impact;
   if (dvm > cap) { const s = cap / dvm; dvx *= s; dvz *= s; }
   vel.x += dvx;
   vel.z += dvz;
-  // acoplo giro-velocidad del cascarón: Δωx = −(3/2r)·Δvz · Δωz = +(3/2r)·Δvx
-  const kf = 1.5 / r;
+  // acoplo giro-velocidad del cascarón: Δωx = −(cascaronAcoplo/r)·Δvz · Δωz = +(cascaronAcoplo/r)·Δvx
+  const kf = BOTE_TUNE.cascaronAcoplo / r;
   spin.x += -kf * dvz;
   spin.z += +kf * dvx;
 }

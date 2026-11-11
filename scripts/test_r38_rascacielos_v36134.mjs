@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r38 · v3.6.146-SDK6 · FASE 149 · TEST: EL SALÓN DE LA
+/* CRAZY PING PONG · r38 · v3.6.147-SDK6 · FASE 150 · TEST: EL SALÓN DE LA
  * PARTIDA — RASCACIELOS (4.º hall del dueño + partidas en el hall del
  * anfitrión, IA y multijugador).
  *
@@ -33,7 +33,7 @@
  *       Builds viejos: el switch ignora la clave sin romper (JSON tolerante).
  *
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
- *   (df8f71a3… / 8bb62082…).
+ *   (e4abb6eb… / 8bb62082…).
  *
  * Uso: node --no-warnings scripts/test_r38_rascacielos_v36139.mjs
  */
@@ -60,23 +60,23 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.146-SDK6 · FASE 149 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.146-SDK6 · FASE 149 · EL SALÓN DE LA PARTIDA');
-chk(vjson.version === '3.6.146-SDK6', 'VERSION.json: 3.6.146-SDK6');
-chk(vjson.fase === 149, 'FASE 149');
-chk(vjson.faseNombre === 'El Arcano es data-driven: ARCANO_CFG única fuente de verdad (ventanas, reglas por modalidad, búho) + puerta única pwViva', 'faseNombre = EL SALÓN DE LA PARTIDA');
-chk(vjson.tamano === 11547159, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.147-SDK6 · FASE 150 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.147-SDK6 · FASE 150 · EL SALÓN DE LA PARTIDA');
+chk(vjson.version === '3.6.147-SDK6', 'VERSION.json: 3.6.147-SDK6');
+chk(vjson.fase === 150, 'FASE 150');
+chk(vjson.faseNombre === 'Data-driven FASE 150: BOTE_TUNE (física fina de c04) + BOLA_TUNE (giro visible de c12) — valores idénticos, golden 0 desviaciones', 'faseNombre = EL SALÓN DE LA PARTIDA');
+chk(vjson.tamano === 11548808, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
+  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') ===
-  'f8d1859df863f709c7cf0f12bc5a2314087915e6d88cf46c2374e74fb807f1e4',
+  '37cadc1d0d5573347c8caaf61dc3c9933f6c7d01091527e613dc8190c4142581',
   'golden 1836d13f… (build byte-exacto)');
-chk(game.includes('3.6.146-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.146-SDK6'"), 'sello c00 = 3.6.146-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.146-SDK6'"),
-  'sw.js CACHE v3.6.146-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.146-SDK6</span>'), 'badge V3.6.146-SDK6 en 03_body');
+chk(game.includes('3.6.147-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.147-SDK6'"), 'sello c00 = 3.6.147-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.147-SDK6'"),
+  'sw.js CACHE v3.6.147-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.147-SDK6</span>'), 'badge V3.6.147-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -169,8 +169,8 @@ chk(c12.includes('try { this._hallMusicaPartidoAplicar(); } catch (eHM9) { /* */
 
 /* — 6 · GARANTÍA · física byte-exacto ————————————————————————————— */
 console.log('6 · GARANTÍA · física c04/c05 INTACTA (byte-exacto r26b)');
-chk(sha256('src/game/core/c04_fisica_ccd.js').startsWith('df8f71a3'),
-  'c04_fisica_ccd.js byte-exacto (df8f71a3…)');
+chk(sha256('src/game/core/c04_fisica_ccd.js').startsWith('e4abb6eb'),
+  'c04_fisica_ccd.js byte-exacto (e4abb6eb…)');
 chk(sha256('src/game/core/c05_colisiones_ia_golpeo.js').startsWith('8bb62082'),
   'c05_colisiones_ia_golpeo.js byte-exacto (8bb62082…)');
 

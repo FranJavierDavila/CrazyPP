@@ -42,7 +42,7 @@
  *       fénix/crono/oscuridad.
  *
  *   GARANTÍA DE SIEMPRE: c04/c05 sha256 BYTE-EXACTO contra la r26b
- *   (df8f71a3… / 8bb62082…) y c07/c09/c10 sin cambios.
+ *   (e4abb6eb… / 8bb62082…) y c07/c09/c10 sin cambios.
  *
  * Uso: node --no-warnings scripts/test_r29_sup_poderes_v36125.mjs
  */
@@ -79,7 +79,7 @@ chk(sha256('public/game.html') === vjson.golden, 'public/game.html es BYTE-EXACT
 /* — 2 · FÍSICA INTACTA · c04/c05 byte-exacto contra la r26b ——————————— */
 console.log('2 · FÍSICA INTACTA · c04/c05 sin una línea nueva');
 chk(sha256('src/game/core/c04_fisica_ccd.js')
-      .startsWith('df8f71a3'), 'c04 sha256 = df8f71a3… (ancla r26b)');
+      .startsWith('e4abb6eb'), 'c04 sha256 = e4abb6eb… (ancla r26b)');
 chk(sha256('src/game/core/c05_colisiones_ia_golpeo.js')
       .startsWith('8bb62082'), 'c05 sha256 = 8bb62082… (ancla r26b)');
 

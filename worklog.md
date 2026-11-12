@@ -6617,3 +6617,20 @@ Stage Summary:
   3.6.147 (r55) — re-anclada a 3.6.149-SDK6 (OK). Lección r53 aplicada:
   los QA Python con versión hardcodeada van en la lista del sellador
   (pendiente añadir qa_r46 a futuros selladores).
+- DESPLIEGUE r58: commit 269948f → deploy_pages --push (rama pages →
+  fc5da9b28, 476 ficheros · smoke de prefijo /CrazyPP 33 peticiones, 0
+  fallos de red, 0 pageerrors). VERIFICACIÓN EN PRODUCCIÓN
+  (prod_smoke_r58.py): 38 OK · 0 FALLOS — CONFIG_MENU servida (tabla
+  íntegra: id/destino/guardia/telemetría/XR/confirmación i18n) · tarjeta
+  'salirweb' dibujada VIVA desde datos en el HUB · página 'salirask' viva
+  (SI/NO desde datos) · puerta salirALaWeb() existe · AUTO_ORIGIN
+  resuelto VIVO: navega a la carpeta que sirve el juego
+  (https://franjavierdavila.github.io/CrazyPP/), sin game.html —
+  probado en página desechable con navegación real (Location es
+  inforgeable: sin stub posible) · conservación r55/r56/r57 íntegra
+  (ARCANO_CFG · pwViva 1+13 · dur ×14 · búho dato · BOTE_TUNE ·
+  BOLA_TUNE · PASO_TUNE · R2 ×3 · R3 Magnus) · sw.js
+  crazypp-v3.6.149-SDK6 · portada cache-buster · __PP_VERSION
+  3.6.149-SDK6 · 0 pageerrors · IMÁN nace (9,97 s), sin «agotado», VIVO
+  1 s después (9,52 s) · EFECTO convive (9,87/9,38 s) · DATO MANDA: MEGA
+  nace a los 15,00 s de ARCANO_CFG (14,83 s medidos).

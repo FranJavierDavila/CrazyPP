@@ -813,3 +813,48 @@ export const CONFIG_MENU = {
     eventoTelemetria: 'salir_web',       // __PP_TELE.ev + flush(true) antes de navegar
   },
 };
+
+/* =====================================================================
+ *  r59 · FASE 153 · CONFIG_AUDIO — ÚNICA FUENTE DE VERDAD DE LA MEZCLA
+ *  ---------------------------------------------------------------------
+ *  El audio entra en el patrón data-driven (mismo contrato que
+ *  ARCANO_CFG / CONFIG_MENU): la MEZCLA vive AQUÍ como DATOS y c03 la
+ *  LEE — cambiar un volumen, un fundido o el tono de un golpe es editar
+ *  esta tabla, sin tocar una línea de lógica.
+ *  · buses: ganancias de fábrica del grafo de salida (master → compresor
+ *    → destino) y el bus del ambiente; reajusteFxS = el fundido EN VIVO
+ *    del canal efectos (barras −/+ de AJUSTES › SONIDOS).
+ *  · canales: valores de FÁBRICA de los canales PERSISTENTES del usuario
+ *    (pp_musicvol / pp_fxvol / pp_arcade_vol) — el estado del usuario
+ *    vive aparte (localStorage), la fábrica AQUÍ.
+ *  · musica / bso / salon: base y fundidos de los tres canales de
+ *    melodía (INVARIANTE UNA MELODÍA). Los timeouts de parada se DERIVAN
+ *    (salidaS·1000 + 100) para que jamás queden cortos frente a su rampa.
+ *  · sfx: nivel, piso de fuerza y rango de tono por IMPACTO de las cinco
+ *    muestras reales (r62) + clamps absolutos + jitter anti-ametralladora.
+ *  · FUERA DE ÁMBITO (fila futura): los TIMBRES sintéticos de respaldo
+ *    (playOsc/playNoise, blips de UI y del Arcano) — otra tabla, otra ronda.
+ *  ===================================================================== */
+export const CONFIG_AUDIO = {
+  version: 1,
+  buses: {
+    master: 0.9,
+    ambiente: 1,
+    reajusteFxS: 0.1,
+    compresor: { umbral: -16, rodilla: 22, ratio: 5, ataqueS: 0.002, liberacionS: 0.12 },
+    murmullo: { base: 0.05, entradaS: 1.5, salidaS: 0.8 },   // el pabellón de fondo
+  },
+  canales: { musica: 1, efectos: 1, locutor: 0.18 },
+  musica: { base: 0.26, entradaS: 0.9, salidaS: 0.7, reajusteS: 0.15 },
+  bso: { entradaS: 0.8, salidaS: 0.6, reajusteMs: 150, duckMs: 250, restauraMs: 500 },
+  salon: { base: 0.30, entradaS: 1.2, salidaS: 1.0 },
+  sfx: {
+    tonoMinAbs: 0.5, tonoMaxAbs: 2.2, gananciaMaxAbs: 1.2,
+    jitterBase: 0.985, jitterAmplitud: 0.03,
+    pala:  { nivel: 0.72, piso: 0.15, tonoMin: 0.84, tonoMax: 1.34 },
+    mesa:  { nivel: 0.5,  piso: 0.1,  tonoMin: 0.86, tonoMax: 1.30 },
+    canto: { nivel: 0.42, piso: 0.2,  tonoMin: 0.90, tonoMax: 1.18 },
+    red:   { nivel: 0.5,  piso: 0.25, tonoMin: 0.88, tonoMax: 1.22 },
+    suelo: { nivel: 0.42, piso: 0.05, tonoMin: 0.86, tonoMax: 1.18 },
+  },
+};

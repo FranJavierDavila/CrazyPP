@@ -54,6 +54,7 @@ const VOICE_FULL = {
 };
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { TLang, VOICE_B64, VOICE_B64_EN } from './c00_pre_three.js';
+import { CONFIG_AUDIO } from './c02_cfg_escena.js';
 /* DEPS-FASE2-FIN */
 /* PP_SFX_REALES-INICIO (generado por scripts/_r62_insertar_sfx.py — no editar a mano) */
 // r62 · MUESTRAS SFX REALES (síntesis modal física, semilla 62) —
@@ -180,7 +181,7 @@ export class GameAudio {
     this._arcGain = null;
     this._arcLoading = false;
     this._arcDucked = false; // v2.37: silenciada por el MENÚ abierto
-    this.arcVol = 0.18;      // "bajita" por defecto
+    this.arcVol = CONFIG_AUDIO.canales.locutor;   // r59: fábrica de la tabla (el usuario manda después)
     this.arcMute = false;
     try {
       const v = parseFloat(localStorage.getItem('pp_arcade_vol'));
@@ -216,8 +217,8 @@ export class GameAudio {
     // campeonatos; fxVol escala el BUS de efectos (golpes, botes, canto,
     // red, suelo, rival, UI, fanfarria). La voz del megáfono y el ambiente
     // conservan SUS canales propios (no son ni música ni efectos).
-    this.musicVol = 1;
-    this.fxVol = 1;
+    this.musicVol = CONFIG_AUDIO.canales.musica;   // r59: fábrica de la tabla
+    this.fxVol = CONFIG_AUDIO.canales.efectos;
     try {
       const mv = parseFloat(localStorage.getItem('pp_musicvol'));
       if (Number.isFinite(mv)) this.musicVol = Math.min(1, Math.max(0, mv));
@@ -257,21 +258,21 @@ export class GameAudio {
    *  de ruido SOBRE un contexto dado. */
   _wire(ctx) {
     this.master = ctx.createGain();
-    this.master.gain.value = 0.9;
+    this.master.gain.value = CONFIG_AUDIO.buses.master;   // r59: dato
     // Compresor: golpes más presentes y audibles en el altavoz del visor
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -16;
-    comp.knee.value = 22;
-    comp.ratio.value = 5;
-    comp.attack.value = 0.002;
-    comp.release.value = 0.12;
+    comp.threshold.value = CONFIG_AUDIO.buses.compresor.umbral;
+    comp.knee.value = CONFIG_AUDIO.buses.compresor.rodilla;
+    comp.ratio.value = CONFIG_AUDIO.buses.compresor.ratio;
+    comp.attack.value = CONFIG_AUDIO.buses.compresor.ataqueS;
+    comp.release.value = CONFIG_AUDIO.buses.compresor.liberacionS;
     this.master.connect(comp);
     comp.connect(ctx.destination);
     // v2.23 · BUS del ambiente (murmullo, aplausos, "ohh"): se agrupa para
     // poder AGACHARLO (ducking) mientras el megáfono dice las cifras — los
     // números se oyen por ENCIMA del pabellón, sin ruido de fondo.
     this.ambBus = ctx.createGain();
-    this.ambBus.gain.value = 1;
+    this.ambBus.gain.value = CONFIG_AUDIO.buses.ambiente;   // r59: dato
     this.ambBus.connect(this.master);
     // r95 · BUS de EFECTOS: todo lo que sale por panNode (playOsc/playNoise,
     // muestras reales, rival, fanfarria) pasa por aquí — el canal de volumen
@@ -369,7 +370,8 @@ export class GameAudio {
         this._musicGain.gain.setValueAtTime(
           Math.max(0.0001, this._musicGain.gain.value || 0.0001), t);
         this._musicGain.gain.linearRampToValueAtTime(
-          Math.max(0.0001, 0.26 * v), t + 0.15);
+          Math.max(0.0001, CONFIG_AUDIO.musica.base * v),
+          t + CONFIG_AUDIO.musica.reajusteS);
       }
     } catch { /* el audio NUNCA rompe el bucle del juego */ }
     try {
@@ -382,7 +384,8 @@ export class GameAudio {
         this._arcGain.gain.cancelScheduledValues(t);
         this._arcGain.gain.setValueAtTime(
           Math.max(0.0001, this._arcGain.gain.value || 0.0001), t);
-        this._arcGain.gain.linearRampToValueAtTime(vol, t + 0.15);
+        this._arcGain.gain.linearRampToValueAtTime(vol,
+          t + CONFIG_AUDIO.bso.reajusteMs / 1000);   // r59: dato (150 ms)
       }
     } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }
@@ -398,7 +401,8 @@ export class GameAudio {
         this.fxBus.gain.cancelScheduledValues(t);
         this.fxBus.gain.setValueAtTime(
           Math.max(0.0001, this.fxBus.gain.value || 0.0001), t);
-        this.fxBus.gain.linearRampToValueAtTime(Math.max(0.0001, v), t + 0.1);
+        this.fxBus.gain.linearRampToValueAtTime(Math.max(0.0001, v),
+          t + CONFIG_AUDIO.buses.reajusteFxS);
       }
     } catch { /* el audio NUNCA rompe el bucle del juego */ }
   }
@@ -464,7 +468,9 @@ export class GameAudio {
       const g = this.ctx.createGain();
       const t = this.ctx.currentTime;
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(Math.max(0.0001, 0.26 * this.musicVol), t + 0.9);   // r95: canal música
+      g.gain.linearRampToValueAtTime(
+        Math.max(0.0001, CONFIG_AUDIO.musica.base * this.musicVol),
+        t + CONFIG_AUDIO.musica.entradaS);   // r95: canal música · r59: dato
       src.connect(g); g.connect(this.master);
       src.start(t);
       this._musicSrc = src;
@@ -484,9 +490,11 @@ export class GameAudio {
     try {
       const t = this.ctx.currentTime;
       g.gain.cancelScheduledValues(t);
-      g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.26), t);
-      g.gain.linearRampToValueAtTime(0.0001, t + 0.7);
-      window.setTimeout(() => { try { src.stop(); } catch { /* ya parada */ } }, 800);
+      g.gain.setValueAtTime(
+        Math.max(0.0001, g.gain.value || CONFIG_AUDIO.musica.base), t);
+      g.gain.linearRampToValueAtTime(0.0001, t + CONFIG_AUDIO.musica.salidaS);
+      window.setTimeout(() => { try { src.stop(); } catch { /* ya parada */ } },
+        CONFIG_AUDIO.musica.salidaS * 1000 + 100);
     } catch { /* */ }
   }
 
@@ -553,7 +561,8 @@ export class GameAudio {
       const vol = Math.max(0.0001,
         (this.arcMute || this._arcDucked) ? 0.0001 : this.arcVol * this.musicVol);   // r95: canal música
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(vol, t + 0.8);
+      g.gain.linearRampToValueAtTime(vol,
+        t + CONFIG_AUDIO.bso.entradaS);
       src.connect(g); g.connect(this.master);
       src.start(t);
       this._arcSrc = src;
@@ -582,14 +591,15 @@ export class GameAudio {
       const t = this.ctx.currentTime;
       g.gain.cancelScheduledValues(t);
       g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || this.arcVol), t);
-      g.gain.linearRampToValueAtTime(0.0001, t + 0.6);
-      window.setTimeout(() => { try { src.stop(); } catch { /* ya parada */ } }, 700);
+      g.gain.linearRampToValueAtTime(0.0001, t + CONFIG_AUDIO.bso.salidaS);
+      window.setTimeout(() => { try { src.stop(); } catch { /* ya parada */ } },
+        CONFIG_AUDIO.bso.salidaS * 1000 + 100);
     } catch { /* */ }
   }
 
   /** Aplica EN VIVO la ganancia que toca a la BSO según mute/duck/vol.
    *  v2.37: unifica los rampas de setArcVol/setArcMute/setArcDuck. */
-  _applyArcGain(ms = 150) {
+  _applyArcGain(ms = CONFIG_AUDIO.bso.reajusteMs) {   // r59: dato
     if (!this.arcPlaying || !this._arcGain || !this.ctx) return;
     try {
       const t = this.ctx.currentTime;
@@ -613,7 +623,8 @@ export class GameAudio {
       // el menú abrió antes de que la BSO llegara a sonar: arranca ahora
       this.startArcadeMusic();   // nace silenciosa si sigue el duck
     }
-    this._applyArcGain(duck ? 250 : 500);
+    this._applyArcGain(duck ? CONFIG_AUDIO.bso.duckMs
+                            : CONFIG_AUDIO.bso.restauraMs);
   }
 
   /** Volumen de la BSO (0..1) — persistente y aplicado EN VIVO. */
@@ -734,7 +745,8 @@ export class GameAudio {
       const t = this.ctx.currentTime;
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(
-        Math.max(0.0001, 0.30 * this.musicVol), t + 1.2);   // r95: canal música
+        Math.max(0.0001, CONFIG_AUDIO.salon.base * this.musicVol),
+        t + CONFIG_AUDIO.salon.entradaS);   // r95: canal música · r59: dato
       src.connect(g); g.connect(this.master);
       src.start(t);
       this._hallSrc = src;
@@ -754,9 +766,11 @@ export class GameAudio {
     try {
       const t = this.ctx.currentTime;
       g.gain.cancelScheduledValues(t);
-      g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.30), t);
-      g.gain.linearRampToValueAtTime(0.0001, t + 1.0);
-      window.setTimeout(() => { try { src.stop(); } catch { /* ya parada */ } }, 1100);
+      g.gain.setValueAtTime(
+        Math.max(0.0001, g.gain.value || CONFIG_AUDIO.salon.base), t);
+      g.gain.linearRampToValueAtTime(0.0001, t + CONFIG_AUDIO.salon.salidaS);
+      window.setTimeout(() => { try { src.stop(); } catch { /* ya parada */ } },
+        CONFIG_AUDIO.salon.salidaS * 1000 + 100);
     } catch { /* */ }
   }
 
@@ -1124,9 +1138,11 @@ export class GameAudio {
       const t = this.ctx.currentTime;
       const src = this.ctx.createBufferSource();
       src.buffer = buf;
-      src.playbackRate.value = Math.max(0.5, Math.min(2.2, rate));
+      src.playbackRate.value = Math.max(CONFIG_AUDIO.sfx.tonoMinAbs,
+        Math.min(CONFIG_AUDIO.sfx.tonoMaxAbs, rate));   // r59: dato
       const g = this.ctx.createGain();
-      g.gain.value = Math.max(0.0001, Math.min(1.2, gain));
+      g.gain.value = Math.max(0.0001,
+        Math.min(CONFIG_AUDIO.sfx.gananciaMaxAbs, gain));   // r59: dato
       src.connect(g); g.connect(dest);
       src.start(t);
       return true;
@@ -1137,42 +1153,53 @@ export class GameAudio {
    *  botes idénticos JAMÁS suenan clavados — nada de ametralladora). */
   _sfxRate(strength, lo, hi) {
     const s = Math.max(0, Math.min(1, Number.isFinite(strength) ? strength : 0));
-    const jit = 0.985 + Math.random() * 0.03;
+    const jit = CONFIG_AUDIO.sfx.jitterBase +
+      Math.random() * CONFIG_AUDIO.sfx.jitterAmplitud;   // r59: dato
     return (lo + (hi - lo) * s) * jit;
   }
 
   paddle(pan, strength) {
-    const s = Math.max(0.15, Math.min(1, strength));
+    const P = CONFIG_AUDIO.sfx.pala;   // r59: la fila MANDA
+    const s = Math.max(P.piso, Math.min(1, strength));
     // r62: muestra real «tock» de goma+hoja — el tono sube con la velocidad
-    if (this._playReal('pala', pan, 0.72 * s, this._sfxRate(strength, 0.84, 1.34))) return;
+    if (this._playReal('pala', pan, P.nivel * s,
+        this._sfxRate(strength, P.tonoMin, P.tonoMax))) return;
     this.playNoise(0.05, 1400, 1.2, 0.55 * s, pan);
     this.playOsc(190 - 40 * s, 110, 0.09, 'triangle', 0.5 * s, pan);
   }
   tableBounce(pan, strength) {
-    const s = Math.max(0.1, Math.min(1, strength));
+    const P = CONFIG_AUDIO.sfx.mesa;   // r59: la fila MANDA
+    const s = Math.max(P.piso, Math.min(1, strength));
     // r62: muestra real «pock» de la mesa — el tono sube con la velocidad
-    if (this._playReal('mesa', pan, 0.5 * s, this._sfxRate(strength, 0.86, 1.30))) return;
+    if (this._playReal('mesa', pan, P.nivel * s,
+        this._sfxRate(strength, P.tonoMin, P.tonoMax))) return;
     this.playOsc(950, 700, 0.05, 'sine', 0.4 * s, pan);
     this.playNoise(0.02, 3000, 2, 0.18 * s, pan);
   }
   /** r62 · CANTO de la mesa: «ping» metálico con cola (muestra física
    *  propia — modos inarmónicos con beating). Sin muestra: el pock seco. */
   tableEdge(pan, strength) {
-    const s = Math.max(0.2, Math.min(1, strength));
-    if (this._playReal('canto', pan, 0.42 * s, this._sfxRate(strength, 0.90, 1.18))) return;
+    const P = CONFIG_AUDIO.sfx.canto;   // r59: la fila MANDA
+    const s = Math.max(P.piso, Math.min(1, strength));
+    if (this._playReal('canto', pan, P.nivel * s,
+        this._sfxRate(strength, P.tonoMin, P.tonoMax))) return;
     this.tableBounce(pan, s);
   }
   net(pan, strength) {
-    const s = Math.max(0.25, Math.min(1, Number.isFinite(strength) ? strength : 0.5));
+    const P = CONFIG_AUDIO.sfx.red;   // r59: la fila MANDA
+    const s = Math.max(P.piso, Math.min(1, Number.isFinite(strength) ? strength : 0.5));
     // r62: muestra real de la tela — thud amortiguado con vaín de trama
-    if (this._playReal('red', pan, 0.5 * s, this._sfxRate(s, 0.88, 1.22))) return;
+    if (this._playReal('red', pan, P.nivel * s,
+        this._sfxRate(s, P.tonoMin, P.tonoMax))) return;
     this.playOsc(210, 150, 0.1, 'sine', 0.35, pan);
     this.playNoise(0.06, 420, 1, 0.25, pan, 'lowpass');
   }
   thud(pan, strength) {
-    const s = Math.max(0.05, Math.min(1, strength));
+    const P = CONFIG_AUDIO.sfx.suelo;   // r59: la fila MANDA
+    const s = Math.max(P.piso, Math.min(1, strength));
     // r62: muestra real del suelo (knock sordo); los muros caen aquí
-    if (this._playReal('suelo', pan, 0.42 * s, this._sfxRate(s, 0.86, 1.18))) return;
+    if (this._playReal('suelo', pan, P.nivel * s,
+        this._sfxRate(s, P.tonoMin, P.tonoMax))) return;
     this.playOsc(140, 90, 0.09, 'sine', 0.28 * s, pan);
   }
   serve() { this.playNoise(0.14, 650, 0.8, 0.16, 0); }
@@ -1575,7 +1602,8 @@ export class GameAudio {
       lp.frequency.value = 520;
       const g = this.ctx.createGain();
       g.gain.setValueAtTime(0.0001, this.ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 1.5);
+      g.gain.linearRampToValueAtTime(CONFIG_AUDIO.buses.murmullo.base,
+        this.ctx.currentTime + CONFIG_AUDIO.buses.murmullo.entradaS);   // r59: dato
       const lfo = this.ctx.createOscillator();
       lfo.frequency.value = 0.13;
       const lfoG = this.ctx.createGain();
@@ -1597,10 +1625,11 @@ export class GameAudio {
       const t = this.ctx.currentTime;
       amb.gain.gain.cancelScheduledValues(t);
       amb.gain.gain.setValueAtTime(amb.gain.gain.value, t);
-      amb.gain.gain.linearRampToValueAtTime(0.0001, t + 0.8);
+      amb.gain.gain.linearRampToValueAtTime(0.0001,
+        t + CONFIG_AUDIO.buses.murmullo.salidaS);   // r59: dato
       window.setTimeout(() => {
         try { amb.src.stop(); amb.lfo.stop(); } catch { /* ya parado */ }
-      }, 900);
+      }, CONFIG_AUDIO.buses.murmullo.salidaS * 1000 + 100);
     } catch { /* */ }
   }
 

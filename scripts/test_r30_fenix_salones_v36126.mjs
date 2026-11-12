@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r30 · v3.6.149-SDK6 · FASE 152 · TEST: FÉNIX JUGABLE +
+/* CRAZY PING PONG · r30 · v3.6.150-SDK6 · FASE 153 · TEST: FÉNIX JUGABLE +
  * SALONES DE LUJO IA.
  *
  *   A · SÚPER FÉNIX — DINÁMICA NORMAL (orden del dueño tras probar la
@@ -61,23 +61,23 @@ const sha256 = (p) =>
 const c12 = lee('src/game/core/c12_pingponggame.js');
 const vjson = JSON.parse(lee('src/game/VERSION.json'));
 
-/* — 1 · SELLOS · v3.6.149-SDK6 · FASE 152 ————————————————————————————— */
-console.log('1 · SELLOS · v3.6.149-SDK6 · FASE 152');
-chk(vjson.version === '3.6.149-SDK6', 'VERSION.json: 3.6.149-SDK6');
-chk(vjson.fase === 152, 'FASE 152');
-chk(vjson.faseNombre === 'CONFIG_MENU r58: menú data-driven + botón SALIR A LA WEB en el HUB (confirmación desde datos · telemetría salir_web con flush síncrono · session.end() con guardia 2 s · AUTO_ORIGIN sin dominios hardcodeados)', 'faseNombre');
+/* — 1 · SELLOS · v3.6.150-SDK6 · FASE 153 ————————————————————————————— */
+console.log('1 · SELLOS · v3.6.150-SDK6 · FASE 153');
+chk(vjson.version === '3.6.150-SDK6', 'VERSION.json: 3.6.150-SDK6');
+chk(vjson.fase === 153, 'FASE 153');
+chk(vjson.faseNombre === 'CONFIG_AUDIO r59: la MEZCLA de audio es data-driven — buses+compresor+murmullo · canales de fábrica música/efectos/locutor · fundidos menú/BSO/salón con timeouts derivados · SFX pala/mesa/canto/red/suelo (nivel/piso/tono) · clamps + jitter como datos (44 lectores en c03)', 'faseNombre');
 const game = lee('public/game.html');
-chk(game.includes('3.6.149-SDK6'), 'bundle con sello vigente');
+chk(game.includes('3.6.150-SDK6'), 'bundle con sello vigente');
 const c00 = lee('src/game/core/c00_pre_three.js');
-chk(c00.includes("const VERSION = '3.6.149-SDK6'"), 'sello c00 = 3.6.149-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.149-SDK6'"),
-  'sw.js CACHE v3.6.149-SDK6 (purga de cachés viejas)');
-chk(vjson.tamano === 11559455, 'tamaño del build: 11.504.235 B');
+chk(c00.includes("const VERSION = '3.6.150-SDK6'"), 'sello c00 = 3.6.150-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.150-SDK6'"),
+  'sw.js CACHE v3.6.150-SDK6 (purga de cachés viejas)');
+chk(vjson.tamano === 11563859, 'tamaño del build: 11.504.235 B');
 chk(lee('src/game/GOLDEN_SHA256.txt').includes(
-  '08bc33f93553e6349faaffb050270a636c8be30eccba4bb16a47ec20b1aea226'),
+  '5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171'),
 'golden 10a24300… (build byte-exacto)');
 chk(sha256('public/game.html') ===
-  '08bc33f93553e6349faaffb050270a636c8be30eccba4bb16a47ec20b1aea226',
+  '5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171',
 'game.html REAL casan con golden');
 
 /* — 2 · FÉNIX · EL BOOST ESTÁ ANULADO (dinámica normal) ———————————————— */

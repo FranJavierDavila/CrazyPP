@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r32 · v3.6.149-SDK6 · FASE 152 · TEST: SALONES DEL
+/* CRAZY PING PONG · r32 · v3.6.150-SDK6 · FASE 153 · TEST: SALONES DEL
  * DUEÑO (arte preparado por el dueño + música ambiental con icono).
  *
  *   A · ARTE DEL DUEÑO — los 18 JPG de los tres salones (DOJO ZEN ·
@@ -61,23 +61,23 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.149-SDK6 · FASE 152 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.149-SDK6 · FASE 152 · SALONES DEL DUEÑO');
-chk(vjson.version === '3.6.149-SDK6', 'VERSION.json: 3.6.149-SDK6');
-chk(vjson.fase === 152, 'FASE 152');
-chk(vjson.faseNombre === 'CONFIG_MENU r58: menú data-driven + botón SALIR A LA WEB en el HUB (confirmación desde datos · telemetría salir_web con flush síncrono · session.end() con guardia 2 s · AUTO_ORIGIN sin dominios hardcodeados)', 'faseNombre = SALONES DEL DUEÑO');
-chk(vjson.tamano === 11559455, 'tamaño del build: 11.526.764 B');
+/* — 1 · SELLOS · v3.6.150-SDK6 · FASE 153 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.150-SDK6 · FASE 153 · SALONES DEL DUEÑO');
+chk(vjson.version === '3.6.150-SDK6', 'VERSION.json: 3.6.150-SDK6');
+chk(vjson.fase === 153, 'FASE 153');
+chk(vjson.faseNombre === 'CONFIG_AUDIO r59: la MEZCLA de audio es data-driven — buses+compresor+murmullo · canales de fábrica música/efectos/locutor · fundidos menú/BSO/salón con timeouts derivados · SFX pala/mesa/canto/red/suelo (nivel/piso/tono) · clamps + jitter como datos (44 lectores en c03)', 'faseNombre = SALONES DEL DUEÑO');
+chk(vjson.tamano === 11563859, 'tamaño del build: 11.526.764 B');
 chk(vjson.golden ===
-  '08bc33f93553e6349faaffb050270a636c8be30eccba4bb16a47ec20b1aea226',
+  '5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') ===
-  '08bc33f93553e6349faaffb050270a636c8be30eccba4bb16a47ec20b1aea226',
+  '5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171',
   'golden 10a24300… (build byte-exacto)');
-chk(game.includes('3.6.149-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.149-SDK6'"), 'sello c00 = 3.6.149-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.149-SDK6'"),
-  'sw.js CACHE v3.6.149-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.149-SDK6</span>'), 'badge V3.6.149-SDK6 en 03_body');
+chk(game.includes('3.6.150-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.150-SDK6'"), 'sello c00 = 3.6.150-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.150-SDK6'"),
+  'sw.js CACHE v3.6.150-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.150-SDK6</span>'), 'badge V3.6.150-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -142,8 +142,8 @@ chk(c03.includes('_loadHallMusic()') && c03.includes('this._hallBufs'),
 chk(c03.includes("localStorage.getItem('pp_hallmus')") &&
    c03.includes("localStorage.setItem('pp_hallmus'"),
   'c03 · silencio del salón PERSISTENTE (pp_hallmus)');
-chk(c03.includes('0.30 * this.musicVol'),
-  'c03 · volumen del salón escala por el canal MÚSICA (musicVol, r95)');
+chk(c03.includes('CONFIG_AUDIO.salon.base * this.musicVol'),
+  'c03 · volumen del salón escala por el canal MÚSICA (musicVol, r95 · forma CONFIG_AUDIO r59)');
 chk(c03.includes("'[Audio] música del salón lista ('"),
   'c03 · log de la pista lista (familia de la casa)');
 

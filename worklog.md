@@ -6634,3 +6634,57 @@ Stage Summary:
   3.6.149-SDK6 · 0 pageerrors · IMÁN nace (9,97 s), sin «agotado», VIVO
   1 s después (9,52 s) · EFECTO convive (9,87/9,38 s) · DATO MANDA: MEGA
   nace a los 15,00 s de ARCANO_CFG (14,83 s medidos).
+
+## FASE 153 · v3.6.150-SDK6 · r59 — CONFIG_AUDIO: LA MEZCLA DE AUDIO ES DATA-DRIVEN (directiva del dueño: «seguir extendiendo el patrón data-driven a otro subsistemas»)
+- CONFIG_AUDIO (c02, patrón ARCANO_CFG/CONFIG_MENU): ÚNICA FUENTE DE
+  VERDAD DE LA MEZCLA — buses (master 0,9 → compresor −16/22/5/0,002/0,12
+  → destino · ambiente 1 · murmullo base 0,05/entrada 1,5 s/salida 0,8 s
+  · reajusteFxS 0,1), canales de FÁBRICA (música 1 · efectos 1 · locutor
+  0,18 «bajita» — el estado del usuario sigue aparte en
+  pp_musicvol/pp_fxvol/pp_arcade_vol: la tabla da la fábrica, no el
+  estado), los TRES canales de melodía con sus fundidos (musica base
+  0,26 · bso 0,8/0,6 con duck 250/restaura 500/reajuste 150 ms · salon
+  base 0,30 — INVARIANTE UNA MELODÍA) y las CINCO muestras SFX reales
+  r62 (pala 0,72/0,15/0,84-1,34 · mesa 0,5/0,1/0,86-1,30 · canto
+  0,42/0,2/0,90-1,18 · red 0,5/0,25/0,88-1,22 · suelo 0,42/0,05/0,86-1,18
+  — nivel/piso/tonoMin/tonoMax) + clamps absolutos (tono 0,5-2,2 ·
+  ganancia ≤1,2) + jitter anti-ametralladora (0,985 + rnd·0,03).
+- C03 · 44 LECTORES enchufados a la tabla (import desde c02, patrón c04
+  DIMS/SERVE_TUNE): grafo de salida (_wire), setMusicVol/setFxVol EN
+  VIVO, start/stop del menú (fundidos + timeouts DERIVADOS
+  salidaS·1000+100 para que jamás queden cortos frente a su rampa),
+  start/stop/duck de la BSO, start/stop del salón, murmullo
+  (base/entrada/salida), _playReal (clamps), _sfxRate (jitter) y las 5
+  filas de golpeo (paddle/tableBounce/tableEdge/net/thud leen SU fila:
+  «la fila MANDA»). Cambiar la mezcla = editar la tabla, cero lógica.
+- GENERADOR r55 al día: el import c03→c02 dentro del bloque DEPS-FASE2
+  verificado con mod_fase2_generar.mjs (188 exports · 59 imports ·
+  salida byte-estable).
+- SELLADO: sella_r59_audio.py (patrón r58 + lección r58 APLICADA:
+  qa_r46_humo_gobernador.py ENTRA en la lista de re-ancla): VERSION.json
+  3.6.150-SDK6 FASE 153 · ensamblado con golden nuevo · agujas
+  CONFIG_AUDIO (tabla ×13 + lectores clave ×12) + RE de los 44 lectores
+  (buses 12 · canales 3 · musica 7 · bso 7 · salon 5 · sfx 10) +
+  conservación r58 (CONFIG_MENU/salirweb) · r57 (PASO_TUNE/R2) · r56
+  (BOTE/BOLA) · r55 (ARCANO/pwViva/dur×14) · r54/145/144/143 TODO OK.
+- RE-ANCLA r59: test_r32 vigilaba el literal «0.30 * this.musicVol» que
+  ahora es dato — re-anclado a la forma CONFIG_AUDIO.salon.base (misma
+  cura que r43/r57/r45; 49/0).
+- INCIDENCIA DE ENTORNO (lección r57 repetida): el sandbox se recicló a
+  mitad de batería y el :3000 rebrotó como next dev del andamiaje
+  sirviendo la public/ raíz del 20-oct (v3.6.27) — los QA de navegador
+  fallaron en bloque (qa_r84 57 fallos, qa_rendimiento 10/14, qa_r50 6,
+  qa_r46, qa_sup1, qa_r54). CURA documentada: rsync upload/public →
+  public/ raíz SIN descargas y re-ejecutar; los 6 QA rojos volvieron a
+  VERDE sin tocar una línea de juego.
+- QA VERDE COMPLETA r59 (23 capas · 0 fallos): test_fisica 12/0 ·
+  test_fisica_c05 16/0 · repro r54 qa_r54_poderes_agotados 30/0 (la
+  ventana SIGUE viva) · test_r21 63/0 · r24 89/0 · r26b 171/0 · r30 54/0 ·
+  r31 47/0 · r32 49/0 (re-anclado) · r33 77/0 · r34 62/0 · r35 36/0 ·
+  r36 30/0 · r37 46/0 · r38 51/0 · r39 167/0 · r40 62/0 · r41 92/0 ·
+  r43 OK · r45 OK · red_nucleo 60/0 · qa_version 31/0 (espejos
+  :3000/:81 sirviendo 3.6.150 byte-exacto tras el rsync) · qa_sup1 151/0 ·
+  qa_r84 67/0 · qa_rendimiento 14/0 · qa_r50 22/0 · qa_r46_humo OK ·
+  qa_telemetria 132/0 · qa_dashboard_r53 OK · qa_dashboard_r56 OK.
+  ROJOS HISTÓRICOS PREEXISTENTES (congelados en su era): r23 (1), r25 (6),
+  r26 (6), r27 (3), r28 (9), r29 (7).

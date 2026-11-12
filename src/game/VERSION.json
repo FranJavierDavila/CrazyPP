@@ -1,7 +1,7 @@
 {
-  "version": "3.6.149-SDK6",
-  "fase": 152,
-  "faseNombre": "CONFIG_MENU r58: menú data-driven + botón SALIR A LA WEB en el HUB (confirmación desde datos · telemetría salir_web con flush síncrono · session.end() con guardia 2 s · AUTO_ORIGIN sin dominios hardcodeados)",
+  "version": "3.6.150-SDK6",
+  "fase": 153,
+  "faseNombre": "CONFIG_AUDIO r59: la MEZCLA de audio es data-driven — buses+compresor+murmullo · canales de fábrica música/efectos/locutor · fundidos menú/BSO/salón con timeouts derivados · SFX pala/mesa/canto/red/suelo (nivel/piso/tono) · clamps + jitter como datos (44 lectores en c03)",
   "sdk": "1.6.0",
   "fecha": "2026-11-12",
   "hub": "v36139-sdk6",
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r58",
-  "tamano": 11559455,
-  "golden": "08bc33f93553e6349faaffb050270a636c8be30eccba4bb16a47ec20b1aea226"
+  "nota": "r59",
+  "tamano": 11563859,
+  "golden": "5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171"
 }

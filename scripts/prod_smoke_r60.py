@@ -255,7 +255,7 @@ async def main():
             out.get('easyMiss') == 0.15,
             f"alias vivos: ELO_CPU.medium={out.get('cpuMedium')} · "
             f"hard.maxSpeed={out.get('hardVelo')} · easy.missBase={out.get('easyMiss')}")
-        chk(out.get('mm1') == ['medium', 1.0, 1050] and
+        chk(out.get('mm1') == ['medium', 0.7499, 1000] and
             out.get('mm2') == ['easy', 950] and out.get('mm3') == ['hard', 1200],
             f"bandas del matchmaking VIVAS: {out.get('mm1')} · "
             f"{out.get('mm2')} · {out.get('mm3')}")

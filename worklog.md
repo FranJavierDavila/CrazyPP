@@ -6705,3 +6705,84 @@ Stage Summary:
   3.6.150-SDK6 · 0 pageerrors · IMÁN nace (9,93 s), sin «agotado», VIVO
   1 s después (9,38 s) · EFECTO convive (9,85/9,23 s) · DATO MANDA: MEGA
   nace a los 15,00 s de ARCANO_CFG (14,85 s medidos).
+
+## FASE 154 · v3.6.151-SDK6 · r60 — CONFIG_DIFICULTAD: LA DIFICULTAD ES DATA-DRIVEN (directiva del dueño: «seguir extendiendo el patrón data-driven a otro subsistemas» — quinta parada tras ARCANO_CFG/física/menú/audio)
+- CONFIG_DIFICULTAD (c02, patrón ARCANO_CFG/CONFIG_MENU/CONFIG_AUDIO):
+  ÚNICA FUENTE DE VERDAD DE LA DIFICULTAD — presets (las TRES CURVAS de
+  la CPU easy/medium/hard: piernas maxSpeed/accel · puntería errStd ·
+  fallo decidido missBase · reacción predictInterval · tiempos minT/maxT ·
+  potencia maxShotSpeed · selección smash/short), saque (asistencia por
+  nivel reach/vy/angleMul/assistMul de v3.0.9-HALL1/v3.1.0-SRV2), escala
+  (TOPE y EXPONENTES de scalePreset: k 0,7-2,2 · speed 0,55-1,9 · accel
+  tope 30 exp 1,4 · err/pred piso 0,6 exp 0,8 · miss inverso 2 · t 0,6/0,5 ·
+  shot 0,5-1,8 · smash piso 0,5), elo (anclas CPU 900/1050/1200 · K por
+  modo ia 24/carrera 20/p2p 32 · paso 400 · piso 100 · inicial 1000 ·
+  historial 40 · bandas matchmaking 975/1125 · jitter ±120 · k 0,7-1,6),
+  adaptativo (pasoSube 0,055 · pasoBaja 0,05 · topeDif 6), supervivencia
+  (porRallye 0,08 · techo 2,1) y esfuerzo (la fórmula r113: baseFrac
+  0,25 · vel umbral 7 paso 0,06 · viaje umbral 0,85 paso 0,60 · tope
+  0,85 · cadencia 0,55 s).
+- ALIAS DEL CONTRATO (patrón FASE 149): AI_PRESETS / SERVE_ASSIST_TIERS
+  / ELO_CPU se vuelven alias de la tabla — c12/c13/tests/__PP_ELO siguen
+  importando el nombre histórico (cero cambios de plomería); el DATO
+  vive en la tabla.
+- 12 LECTORES enchufados: c02 (scalePreset lee escala · rivalPorElo lee
+  elo), c06 (constructor ELO · migración · recordMatch kModo/paso/piso/
+  historial/rivalPorDefecto · fórmula pMiss + hitCooldown leen esfuerzo)
+  y c12 (applyAISkill adaptativo+supervivencia · rango legal del k en
+  _aiKTarget). Cambiar la dificultad = editar la tabla, cero lógica.
+- GENERADOR: mod_fase2_generar.mjs verificado — 189 exports · 59 imports
+  · 0 ficheros tocados (imports manuales ya en forma canónica).
+- SELLADO: sella_r60_dificultad.py (patrón r59): VERSION.json 3.6.151-SDK6
+  FASE 154 · ensamblado 11.568.289 B · golden 8e94ae7daf5ab49f… · agujas
+  CONFIG_DIFICULTAD (tabla + alias + lectores) + RE ×9 familias +
+  conservación r55/r56/r57/r58/r59 ÍNTEGRA · re-ancla del hash de
+  contrato c02 (f40acc1a→22b03781). Presupuesto refrescado
+  (qa_rendimiento --update · boot 2.989 ms dentro de presupuesto).
+- RE-ANCLES DE CONTRATO r60: test_r39 (el import de c12 lleva
+  CONFIG_DIFICULTAD — el bloque DEPS no viaja en el ensamblado) y
+  qa_r113 (agujas CPU a la forma dato: EF.baseFrac/velUmbral/
+  viajeUmbral/tope/cooldownS). NEGATIVA r113 conservada (el fallo plano
+  ×0,05 sin esfuerzo sigue ausente).
+- QA VERDE r60 (34 capas · 32 OK · 0 fallos nuevos): node 20/20
+  (test_fisica · test_fisica_c05 · r21 · r24 · r26b · r30-r41 · r43 ·
+  r45 · red_nucleo — test_r39 con su re-ancla) · python 12/14
+  (qa_r54_poderes_agotados · qa_version espejos :3000/:81 a 3.6.151 ·
+  qa_sup1 151 checks · qa_r84 · qa_rendimiento 14/0 · qa_r50 ·
+  qa_r46_humo · qa_telemetria · dashboards r53/r56 · qa_r118_dirigida
+  29/0 (matchmaking puro sobre la tabla) · qa_r119_dirigida (dobles
+  cfg)) · qa_r112/qa_r113 arrastran sus sellos de la era 3.6.27 (rojos
+  históricos congelados, fuera de la batería verde desde r33) — sus
+  secciones r60 (esfuerzo CPU) en VERDE.
+- INCIDENCIA DE HUMO (auto-corregida): la 1.ª pasada del prod smoke
+  esperaba k=1 a ELO 1000 — el ancla medium es 1050 y el CONTRATO
+  documentado devuelve k=10^((1000−1050)/400)=0,7499 con elo=objetivo
+  1000 EXACTO; expectativa del humo corregida (el juego estaba en lo
+  cierto; qa_r118 lo valida desde su era).
+- DESPLIEGUE r60: commit e92d3d8 → deploy_pages --push (rama pages →
+  60782e57d, 476 ficheros · smoke de prefijo /CrazyPP 33 peticiones, 0
+  fallos de red, 0 pageerrors). VERIFICACIÓN EN PRODUCCIÓN
+  (prod_smoke_r60.py): 47 OK · 0 FALLOS — CONFIG_DIFICULTAD servida
+  íntegra (presets/saque/escala/elo/adaptativo/supervivencia/esfuerzo) ·
+  12 lectores · ALIAS VIVOS (ELO_CPU.medium 1050 · hard.maxSpeed 3,8 ·
+  easy.missBase 0,15) · EL DATO MANDA VIVO: bandas del matchmaking
+  (1000→medium k 0,7499/elo 1000 · 950→easy/950 · 1200→hard/1200 ·
+  techo k 1,6→elo 1282) · ADAPTATIVO 4-0 → k 1,22 (1+4×0,055 de la
+  tabla) · SUPERVIVENCIA 10 rallyes → 1,8 · TECHO 50 rallyes → 2,1 ·
+  restauración honesta del estado · conservación r59 (master.gain 0,9
+  float32 · fábrica 1/1/0,18) · r58 (tarjeta 'salirweb' viva · puerta →
+  https://franjavierdavila.github.io/CrazyPP/) · r55 (MEGA nace a los
+  15,00 s de ARCANO_CFG — 14,87 medidos) · sw.js crazypp-v3.6.151-SDK6 ·
+  portada cache-buster · __PP_VERSION 3.6.151-SDK6 · 0 pageerrors.
+
+Stage Summary:
+- LA DIFICULTAD ENTERA ES UNA TABLA: curvas de la CPU, asistencia de
+  saque, escala del factor k, matemática ELO/matchmaking, adaptativo,
+  supervivencia y la fórmula del esfuerzo r113. Cambiar un valor es
+  editar CONFIG_DIFICULTAD en c02 — cero lógica — y el humo de
+  producción lo verifica EN VIVO (k adaptativo y rampa de supervivencia
+  medidos contra la tabla).
+- Producción en V3.6.151-SDK6 (pages 60782e57d). Siguiente parada
+  natural de la ola data-driven: CONFIG_TORNEOS (rondas/puntuación/
+  premios de los campeonatos) o CONFIG_LOGROS (catálogo de logros) — la
+  dificultad/rival ya es dato.

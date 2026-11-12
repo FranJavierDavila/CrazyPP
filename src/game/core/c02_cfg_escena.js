@@ -775,3 +775,41 @@ export const ARCANO_CFG = {
   // (2,85); margen justo para el hover ×1,14. Moverlo = editar aquí.
   ui: { buho: { x: 2.70, y: 2.60, zOff: 0.016 } },
 };
+
+/* =====================================================================
+ *  r58 · FASE 152 · CONFIG_MENU — ÚNICA FUENTE DE VERDAD DE LA SALIDA
+ *  ---------------------------------------------------------------------
+ *  El Menú Principal entra en el patrón data-driven (mismo contrato que
+ *  ARCANO_CFG): la tarjeta SALIR A LA WEB del HUB vive AQUÍ como DATOS —
+ *  etiquetas (claves i18n), gradiente, icono, confirmación, telemetría,
+ *  destino y guardia de la sesión XR. c12 LEE esta tabla: cambiar el
+ *  texto, los colores, el destino o desactivar la tarjeta es editar
+ *  AQUÍ, sin tocar una línea de lógica.
+ *  · urlDestino 'AUTO_ORIGIN' se resuelve en runtime: la «web principal»
+ *    es la carpeta que sirve este game.html (location.origin + la ruta
+ *    sin game.html) — cero dominios hardcodeados: vale en Pages, en el
+ *    espejo local y en cualquier dominio.
+ *  ===================================================================== */
+export const CONFIG_MENU = {
+  version: 1,
+  salir: {
+    habilitada: true,                    // la tarjeta vive al pie del HUB
+    id: 'salirweb',                      // id del rect y del caso del despachador
+    etiquetaKey: 'hub_salirweb',
+    subKey: 'hub_salirweb_sub',
+    gradientes: ['#5f7183', '#3a4754'],  // gris acero: es una salida, no un modo
+    icono: 'salir',                      // resuelto por nombre en c12 (_iconoDeMenu)
+    urlDestino: 'AUTO_ORIGIN',
+    confirmacion: {
+      activa: true,                      // prompt «¿SALIR A LA WEB?» antes de navegar
+      tituloKey: 'salirask_title',
+      subKey: 'salirask_sub',
+      siKey: 'salirask_yes_btn',
+      noKey: 'salirask_no_btn',
+      hintKey: 'salirask_hint',
+    },
+    cerrarSesionXR: true,                // session.end() antes de navegar (Quest → navegador 2D)
+    tiempoMaxEsperaXRms: 2000,           // guardia: si end() no responde, se navega igualmente
+    eventoTelemetria: 'salir_web',       // __PP_TELE.ev + flush(true) antes de navegar
+  },
+};

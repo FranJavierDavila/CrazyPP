@@ -6566,3 +6566,54 @@ Stage Summary:
   __PP_VERSION 3.6.148-SDK6 · 0 pageerrors · IMÁN nace (9,97 s), sin
   «agotado», VIVO 1 s después · EFECTO convive (9,88/9,50 s) · DATO
   MANDA: MEGA nace a los 15,00 s de ARCANO_CFG (14,85 s medidos).
+
+## FASE 152 · v3.6.149-SDK6 · r58 — CONFIG_MENU: MENÚ DATA-DRIVEN + BOTÓN «SALIR A LA WEB» (petición del dueño: «Colocar un botón desde el Menú principal para cerrar el juego y salir a la web principal» · «seguir extendiendo el patrón data-driven a otro subsistemas»)
+- CONFIG_MENU (c02, patrón ARCANO_CFG r55): el Menú Principal entra en el
+  patrón data-driven — la tarjeta de salida vive como DATOS (id
+  'salirweb' · etiquetaKey/subKey i18n · gradientes gris acero · icono
+  'salir' por nombre · habilitada · urlDestino 'AUTO_ORIGIN' ·
+  confirmación con sus 5 claves i18n · cerrarSesionXR ·
+  tiempoMaxEsperaXRms 2000 · eventoTelemetria 'salir_web'). Cambiar el
+  texto, el color, el destino o retirar la tarjeta = editar la tabla,
+  cero lógica.
+- C12 · TARJETA en el HUB al pie (bajo el reto diario, ancho completo 96
+  px) dibujada DESDE los datos con el _modeCard existente + resolutor de
+  iconos por NOMBRE (_iconoDeMenu; icono «salir» dibujado: puerta con
+  flecha, sin PNG) · PÁGINA de confirmación «¿SALIR A LA WEB?» gemela del
+  PROMPT B del hall (salirask; SI/NO, B cancela) · DESPACHADOR con los 3
+  casos (salirweb respeta confirmacion.activa como dato) ·
+  salirALaWeb(): la ÚNICA puerta — telemetría 'salir_web' con flush
+  síncrono (sendBeacon/keepalive vía __PP_TELE.flush(true)) →
+  session.end() con guardia Promise.race 2 s → location.assign
+  (AUTO_ORIGIN = location.origin + ruta sin game.html: cero dominios
+  hardcodeados, vale en Pages, espejo y cualquier dominio). La
+  persistencia ya es event-driven (localStorage en cada cambio) — sin
+  cola que vaciar. Tooltip EXACT 'salirweb' → hint_salirweb.
+- C00 · i18n es/en simétricos: hub_salirweb(+_sub) · salirask_title/_sub/
+  _yes_btn/_no_btn/_hint · hint_salirweb. Badge 03_body y sw.js CACHE a
+  3.6.149-SDK6.
+- SELLADO: sella_r58_menu_salir.py (patrón r57): VERSION.json
+  3.6.149-SDK6 FASE 152 · ensamblado 11.559.455 B · golden 08bc33f93553e
+  634… · agujas CONFIG_MENU (×12 + RE CONFIG_MENU.salir ×8) + conservación
+  r57 (PASO_TUNE ×3+RE×3 · margen R2 ×3 · R3 Magnus) · r56 (BOTE_TUNE
+  ×7+RE×7 · BOLA_TUNE) · r55 (ARCANO_CFG · pwViva · dur ×14 · búho dato) ·
+  r54/r145/r144/r143 TODO OK (re-ejecutado idempotente en el relevo:
+  TODO OK).
+- QA VERDE COMPLETA r58 (22 capas · 0 fallos): test_fisica 12/0 ·
+  test_fisica_c05 16/0 · repro r54 qa_r54_poderes_agotados 30/0 (la
+  ventana SIGUE viva) · test_r21 63/0 · r24 89/0 · r26b 171/0 · r30 54/0 ·
+  r31 47/0 · r32 49/0 · r33 77/0 · r34 62/0 · r35 36/0 · r36 30/0 · r37
+  46/0 · r38 51/0 · r39 167/0 · r40 62/0 · r41 92/0 · r43 79/0 · r45 55/0 ·
+  red_nucleo 60/0 · qa_version 31/0 (espejos :3000/:81 sirviendo
+  3.6.149 byte-exacto) · qa_sup1 151/0 · qa_r84 67/0 · qa_rendimiento
+  14/0 · qa_r50 22/0 · qa_telemetria 132/0 · qa_dashboard_r53 OK ·
+  qa_dashboard_r56 OK · qa_r46_humo OK. ROJOS HISTÓRICOS PREEXISTENTES
+  (congelados en su era): r23 (1), r25 (6), r26 (6), r27 (3), r28 (9),
+  r29 (7).
+- RE-ANCLES DE DEUDA r58 (hallados en el relevo, no eran de r58):
+  test_r45 vigilaba los literales 1/30 · 1/12 que la R1 de r57 convirtió
+  en datos (PASO_TUNE) — re-anclado a la forma PASO_TUNE (misma cura que
+  r43 en su día; 55/0) · qa_r46_humo_gobernador vigilaba la versión dura
+  3.6.147 (r55) — re-anclada a 3.6.149-SDK6 (OK). Lección r53 aplicada:
+  los QA Python con versión hardcodeada van en la lista del sellador
+  (pendiente añadir qa_r46 a futuros selladores).

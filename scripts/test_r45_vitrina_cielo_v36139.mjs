@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r45 · v3.6.148-SDK6 · FASE 151 · TEST: LA VITRINA DEL
+/* CRAZY PING PONG · r45 · v3.6.149-SDK6 · FASE 152 · TEST: LA VITRINA DEL
  * CIELO — informe del dueño tras la v3.6.138 en el casco (cuatro frentes):
  *
  *   1 · CANDADO CON LA IMAGEN DEL DUEÑO — «los candados vamos a
@@ -194,23 +194,23 @@ function c09b_proto() {
       b.includes('if (ver !== VP.PROTO) return null;');
   } catch { return false; }
 }
-chk(c12.includes('const dt = Math.min(_rawDt, 1 / 30);') &&
-    c12.includes('const dtFis = Math.min(_rawDt, 1 / 12);'),
-  'c12: la fluidez r43 intacta (dtFis ×2 integraciones)');
+chk(c12.includes('const dt = Math.min(_rawDt, PASO_TUNE.uiMax);') &&
+    c12.includes('const dtFis = Math.min(_rawDt, PASO_TUNE.fisMax);'),
+  'c12: la fluidez r43 intacta (dtFis ×2 integraciones · forma PASO_TUNE r57)');
 chk(c08.includes('drawArcanoSalir') && c08.includes('montaSueloArcano'),
   'c08: el Arcano r43 conservado (destellos + Salir/Exit)');
 chk(c08.includes('this.rig.add') === false || true, 'c08: rig sin cambios (asunto c12)');
 chk(c12.includes('this.rig.add(this._netVisor);'),
   'c12: la esfera del rival en el RIG (fix r43 intacto)');
-chk(vjson.version === '3.6.148-SDK6' && vjson.fase === 151,
-  'VERSION.json: 3.6.148-SDK6 · FASE 151 (la vitrina del cielo)');
+chk(vjson.version === '3.6.149-SDK6' && vjson.fase === 152,
+  'VERSION.json: 3.6.149-SDK6 · FASE 152 (la vitrina del cielo)');
 chk(lee('public/game.html').includes('ARCANO_PALAS_TRAZO') &&
     lee('public/game.html').includes('onPeerPala'),
   'game.html: la build lleva la r45 dentro');
 
 /* — 6 · RESULTADO ———————————————————————————————————————————— */
 console.log('');
-console.log('=== r45 · v3.6.148-SDK6 · LA VITRINA DEL CIELO ===');
+console.log('=== r45 · v3.6.149-SDK6 · LA VITRINA DEL CIELO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

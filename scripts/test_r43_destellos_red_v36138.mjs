@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.148-SDK6 · FASE 151 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.149-SDK6 · FASE 152 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -83,26 +83,26 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.148-SDK6 · FASE 151 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.148-SDK6 · FASE 151 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.148-SDK6', 'VERSION.json: 3.6.148-SDK6');
-chk(vjson.fase === 151, 'FASE 151');
-chk(vjson.faseNombre === 'Auditoría de físicas r57 aplicada: R1 pala mide con la base temporal de la física (PASO_TUNE c12) · R2 golden c05 (16 escenarios) + margen de bote alineado en los 3 simuladores · R3 Magnus ×1 predicho vs ×2,2 documentado',
-  'faseNombre = AUDITORÍA DE FÍSICAS R57 APLICADA: R1 PALA MIDE CON LA BASE TEMPORAL DE LA FÍSICA (PASO_TUNE C12) · R2 GOLDEN C05 (16 ESCENARIOS) + MARGEN DE BOTE ALINEADO EN LOS 3 SIMULADORES · R3 MAGNUS ×1 PREDICHO VS ×2,2 DOCUMENTADO');
+/* — 1 · SELLOS · v3.6.149-SDK6 · FASE 152 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.149-SDK6 · FASE 152 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.149-SDK6', 'VERSION.json: 3.6.149-SDK6');
+chk(vjson.fase === 152, 'FASE 152');
+chk(vjson.faseNombre === 'CONFIG_MENU r58: menú data-driven + botón SALIR A LA WEB en el HUB (confirmación desde datos · telemetría salir_web con flush síncrono · session.end() con guardia 2 s · AUTO_ORIGIN sin dominios hardcodeados)',
+  'faseNombre = CONFIG_MENU R58: MENÚ DATA-DRIVEN + BOTÓN SALIR A LA WEB EN EL HUB (CONFIRMACIÓN DESDE DATOS · TELEMETRÍA SALIR_WEB CON FLUSH SÍNCRONO · SESSION.END() CON GUARDIA 2 S · AUTO_ORIGIN SIN DOMINIOS HARDCODEADOS)');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
 // legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
-chk(vjson.tamano === 11551209, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11559455, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  'ecf7ccb662fbcdc9473392122a3d210d617a13c08280538d4fb7c459304b060e',
+  '08bc33f93553e6349faaffb050270a636c8be30eccba4bb16a47ec20b1aea226',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.148-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.148-SDK6'"), 'sello c00 = 3.6.148-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.148-SDK6'"),
-  'sw.js CACHE v3.6.148-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.148-SDK6</span>'), 'badge V3.6.148-SDK6 en 03_body');
+chk(game.includes('3.6.149-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.149-SDK6'"), 'sello c00 = 3.6.149-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.149-SDK6'"),
+  'sw.js CACHE v3.6.149-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.149-SDK6</span>'), 'badge V3.6.149-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -276,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.148-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.149-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

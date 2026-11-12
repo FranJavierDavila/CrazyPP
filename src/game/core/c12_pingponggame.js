@@ -2796,6 +2796,16 @@ export class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // r58 · FASE 152 · CONFIG_MENU: página de CONFIRMACIÓN de SALIR A LA
+    // WEB (gemela del PROMPT B del hall; textos desde CONFIG_MENU.salir).
+    if (this.menuPage === 'salirask') {
+      this.drawMenuSalidaAsk(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     // v3.6.51 (r59) · LA ACADEMIA: página de la OFERTA de primera vez
     // (el menú nace aquí si el jugador nunca ha hecho el tutorial).
     if (this.menuPage === 'tutask' && window.__PP_TUT) {
@@ -3006,6 +3016,90 @@ export class PingPongGame {
     this.menuTex.needsUpdate = true;
   }
 
+  /** r58 · FASE 152 · CONFIG_MENU · página «¿SALIR A LA WEB?» — gemela del
+   *  PROMPT B (hallask) pero leyendo TODOS sus textos de
+   *  CONFIG_MENU.salir.confirmacion: SI navega a la web principal,
+   *  NO vuelve al HUB sin tocar nada. B también cancela (c00). */
+  drawMenuSalidaAsk(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const label = this._menuLabel;
+    const CONF = CONFIG_MENU.salir.confirmacion;
+
+    label(T(CONF.tituloKey), 240, 54, '#e8b45a', 'center');
+    label(T(CONF.subKey), 310, 28, '#9aa7b4', 'center');
+    c.strokeStyle = 'rgba(232,180,90,0.35)';
+    c.lineWidth = 2;
+    c.beginPath(); c.moveTo(132, 360); c.lineTo(892, 360); c.stroke();
+
+    btn('salirweb_si', 132, 470, 760, 170, T(CONF.siKey), true, 'green', undefined, 46);
+    btn('salirweb_no', 132, 700, 760, 170, T(CONF.noKey), false, undefined, undefined, 46);
+
+    label(T(CONF.hintKey), 940, 22, '#9aa7b4', 'center');
+    this.menuRects = rects;
+    this._menuState = this.rules.state;
+    this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
+    this.menuTex.needsUpdate = true;
+  }
+
+  /** r58 · FASE 152 · CONFIG_MENU · la ÚNICA puerta de salida a la web.
+   *  Orden (todo desde CONFIG_MENU.salir): telemetría con flush síncrono
+   *  (sendBeacon/keepalive) → cerrar la sesión XR con guardia de tiempo →
+   *  navegar a urlDestino ('AUTO_ORIGIN' = la carpeta que sirve este
+   *  game.html: location.origin + la ruta sin game.html). La persistencia
+   *  del juego ya es event-driven (localStorage en cada cambio) — no hay
+   *  cola de estado que vaciar aquí. */
+  async salirALaWeb() {
+    const S = CONFIG_MENU.salir;
+    try {
+      if (S.eventoTelemetria && window.__PP_TELE) {
+        window.__PP_TELE.ev(S.eventoTelemetria, {});
+        if (window.__PP_TELE.flush) window.__PP_TELE.flush(true);
+      }
+    } catch (eTW) { /* la telemetría nunca rompe */ }
+    if (S.cerrarSesionXR) {
+      try {
+        const ses = this.renderer.xr && this.renderer.xr.getSession
+          ? this.renderer.xr.getSession() : null;
+        if (ses) {
+          await Promise.race([
+            ses.end(),
+            new Promise((res) => setTimeout(res, S.tiempoMaxEsperaXRms)),
+          ]);
+        }
+      } catch (eXR) { /* navegamos igualmente */ }
+    }
+    let url = S.urlDestino;
+    if (url === 'AUTO_ORIGIN') {
+      url = window.location.origin +
+        window.location.pathname.replace(/game\.html$/, '');
+    }
+    try { window.location.assign(url); } catch (eNav) { /* */ }
+  }
+
+  /** r58 · FASE 152 · CONFIG_MENU · icono de la salida: puerta con flecha
+   *  hacia fuera (dibujo propio, sin PNG). */
+  _iconoSalir(c, cx, cy) {
+    c.strokeStyle = '#ffffff';
+    c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.beginPath();
+    c.moveTo(cx - 14, cy + 24); c.lineTo(cx - 14, cy - 24);
+    c.lineTo(cx + 8, cy - 24); c.lineTo(cx + 8, cy + 24);
+    c.closePath(); c.stroke();
+    c.beginPath();
+    c.moveTo(cx + 2, cy); c.lineTo(cx + 26, cy);
+    c.moveTo(cx + 18, cy - 8); c.lineTo(cx + 26, cy);
+    c.lineTo(cx + 18, cy + 8);
+    c.stroke();
+  }
+
+  /** r58 · FASE 152 · CONFIG_MENU · resolución de iconos del menú por
+   *  NOMBRE (dato CONFIG_MENU.salir.icono): icono nuevo = fila aquí. */
+  _iconoDeMenu(nombre) {
+    if (nombre === 'salir') return (c, cx, cy) => this._iconoSalir(c, cx, cy);
+    return PP_ICONS[nombre] || PP_ICONS.opts;
+  }
+
   /** Página principal: el HUB. 6 tarjetas (2×3) + dificultad + tarjeta
    *  AJUSTES contraída (v2.123: el dock de AJUSTES RÁPIDOS se retiró — el
    *  apartado de opciones va plegado y con la MISMA estética que el resto;
@@ -3117,6 +3211,17 @@ export class PingPongGame {
     // logros que desbloquean apariencias poco a poco)
     this._retoDiarioCard(rects, 40, y, 944, 118);
     y += 118;
+
+    // r58 · FASE 152 · CONFIG_MENU: tarjeta SALIR A LA WEB (datos en c02:
+    // id/etiquetas/gradiente/icono/orden — cambiarla es editar la tabla).
+    const SALIRCFG = CONFIG_MENU.salir;
+    if (SALIRCFG.habilitada) {
+      this._modeCard(rects, SALIRCFG.id, 40, y, 944, 96,
+        T(SALIRCFG.etiquetaKey), T(SALIRCFG.subKey),
+        SALIRCFG.gradientes[0], SALIRCFG.gradientes[1],
+        this._iconoDeMenu(SALIRCFG.icono), false);
+      y += 96 + 14;
+    }
 
     // cierre + ayuda
     btn('close', 56, y + 28, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
@@ -4794,6 +4899,7 @@ export class PingPongGame {
     if (id.indexOf('gripLoad:') === 0 || id.indexOf('gripDel:') === 0) return 'hint_cat_pala';
     const EXACT = {
       'close': 'hint_close', 'kofi': 'hint_kofi',
+      'salirweb': 'hint_salirweb',   // r58 · FASE 152 · CONFIG_MENU
       'page:main': 'hint_back', 'page:opts': 'hint_back', 'homehall': 'hint_back',
       'page:optsJuego': 'hint_cat_juego', 'page:optsSala': 'hint_cat_sala',
       'page:optsSonido': 'hint_cat_sonido', 'page:optsVisual': 'hint_cat_visual',
@@ -5095,6 +5201,26 @@ export class PingPongGame {
         // escena actual, sin tocar modo, saque ni nada de lo activo.
         this.menuPage = 'main';
         this.closeMenu();
+        break;
+      case 'salirweb':
+        // r58 · FASE 152 · CONFIG_MENU: tarjeta SALIR A LA WEB. Con
+        // confirmación activa (dato) abre el prompt; sin ella, salida directa.
+        if (CONFIG_MENU.salir.confirmacion.activa) {
+          this.menuPage = 'salirask';
+          this.drawMenu();
+        } else {
+          this.salirALaWeb();
+        }
+        break;
+      case 'salirweb_si':
+        // r58 · SI del prompt de salida: la única puerta a la web principal.
+        this.menuPage = 'main';
+        this.salirALaWeb();
+        break;
+      case 'salirweb_no':
+        // r58 · NO del prompt: de vuelta al HUB sin tocar nada.
+        this.menuPage = 'main';
+        this.drawMenu();
         break;
       case 'tut':
         // v3.6.51 (r59) · LA ACADEMIA: el tutorial interactivo arranca desde
@@ -15013,7 +15139,9 @@ export class PingPongGame {
       } else if (!this._arconoOn && (this.menuOpen || this.inHall ||
           this.net.online || (this.inAR && this.pstOn))) {
         // si cerramos el PROMPT con B, la próxima apertura vuelve al menú normal
-        if (this.menuOpen && this.menuPage === 'hallask') this.menuPage = 'main';
+        // r58 · también el prompt de SALIR A LA WEB: B cancela y vuelve al HUB.
+        if (this.menuOpen && (this.menuPage === 'hallask' ||
+            this.menuPage === 'salirask')) this.menuPage = 'main';
         this.toggleMenu();
       } else if (!this._arconoOn) {
         this.openHallAsk();
@@ -17350,7 +17478,7 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTOS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_MENU, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTOS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';

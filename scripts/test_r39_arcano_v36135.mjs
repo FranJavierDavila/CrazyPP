@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r39 · v3.6.148-SDK6 · FASE 151 · TEST: EL APARTADO
+/* CRAZY PING PONG · r39 · v3.6.149-SDK6 · FASE 152 · TEST: EL APARTADO
  * ARCANO — el búho del hall, el espacio infinito y la galería de
  * superpoderes con desbloqueo por campeonato ganado.
  *
@@ -77,22 +77,22 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.148-SDK6 · FASE 151 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.148-SDK6 · FASE 151 · EL APARTADO ARCANO');
-chk(vjson.version === '3.6.148-SDK6', 'VERSION.json: 3.6.148-SDK6');
-chk(vjson.fase === 151, 'FASE 151');
-chk(vjson.faseNombre === 'Auditoría de físicas r57 aplicada: R1 pala mide con la base temporal de la física (PASO_TUNE c12) · R2 golden c05 (16 escenarios) + margen de bote alineado en los 3 simuladores · R3 Magnus ×1 predicho vs ×2,2 documentado', 'faseNombre = EL APARTADO ARCANO');
-chk(vjson.tamano === 11551209, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.149-SDK6 · FASE 152 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.149-SDK6 · FASE 152 · EL APARTADO ARCANO');
+chk(vjson.version === '3.6.149-SDK6', 'VERSION.json: 3.6.149-SDK6');
+chk(vjson.fase === 152, 'FASE 152');
+chk(vjson.faseNombre === 'CONFIG_MENU r58: menú data-driven + botón SALIR A LA WEB en el HUB (confirmación desde datos · telemetría salir_web con flush síncrono · session.end() con guardia 2 s · AUTO_ORIGIN sin dominios hardcodeados)', 'faseNombre = EL APARTADO ARCANO');
+chk(vjson.tamano === 11559455, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  'ecf7ccb662fbcdc9473392122a3d210d617a13c08280538d4fb7c459304b060e',
+  '08bc33f93553e6349faaffb050270a636c8be30eccba4bb16a47ec20b1aea226',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.148-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.148-SDK6'"), 'sello c00 = 3.6.148-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.148-SDK6'"),
-  'sw.js CACHE v3.6.148-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.148-SDK6</span>'), 'badge V3.6.148-SDK6 en 03_body');
+chk(game.includes('3.6.149-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.149-SDK6'"), 'sello c00 = 3.6.149-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.149-SDK6'"),
+  'sw.js CACHE v3.6.149-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.149-SDK6</span>'), 'badge V3.6.149-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -110,8 +110,8 @@ chk(c08.includes("const urlArcano = 'assets/hall/arcano.png';") &&
 chk(c08.includes('arcMesh.position.set(ARCANO_CFG.ui.buho.x, ARCANO_CFG.ui.buho.y,\n                       z0 + ARCANO_CFG.ui.buho.zOff);') &&
     c02.includes('ui: { buho: { x: 2.70, y: 2.60, zOff: 0.016 } }'),
   're-anclada r55: búho DATA-DRIVEN — c08 lee ARCANO_CFG.ui.buho (c02), esquina sup. dcha');
-chk(c12.includes("import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, DIMS,"),
-  're-anclada r55: c12 importa ARCANO_CFG de la capa de datos (c02)');
+chk(c12.includes("import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_MENU, DIMS,"),
+  're-anclada r55/r58: c12 importa ARCANO_CFG y CONFIG_MENU de la capa de datos (c02)');
 chk(c08.includes('[[0.452, 0.392], [0.557, 0.376]]') ||
     c08.includes('[0.452, 0.392], [0.557, 0.376]'),
   'destellos en los centros de los OJOS medidos del arte');
@@ -311,6 +311,6 @@ chk(game.includes('EL APARTADO ARCANO'), 'bundle: sección arcano embebida');
 chk(game.includes('pp_poderes_v1'), 'bundle: persistencia de desbloqueos embebida');
 chk(game.includes('DL_SURTIDO'), 'bundle: surto extendido de Duelos Locos embebido');
 
-console.log('\n=== r39 · v3.6.148-SDK6 · EL APARTADO ARCANO ===');
+console.log('\n=== r39 · v3.6.149-SDK6 · EL APARTADO ARCANO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 process.exit(fails ? 1 : 0);

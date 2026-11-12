@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r36 (v3.6.139, FASE 151) — TEST de la ronda.
+/* CRAZY PING PONG · r36 (v3.6.139, FASE 152) — TEST de la ronda.
  * Revisión del multijugador pedida por el dueño («revisa el funcionamiento
  * de las partidas multijugador por si cazas algún bug»). TRES BUGS cazados
  * en la auditoría completa de c09/c09b/c12:
@@ -130,10 +130,10 @@ chk(sha(`${RAIZ}/src/game/core/c05_colisiones_ia_golpeo.js`).startsWith('b195a0d
   'c05 sha256 b195a0db… (física byte-exacta)');
 
 console.log('== 5) VERSIÓN Y SELLOS ==');
-chk(vjson.version === '3.6.148-SDK6', `VERSION.json 3.6.148-SDK6 (${vjson.version})`);
-chk(vjson.fase === 151, `FASE 151 (${vjson.fase})`);
-chk(game.includes('const VERSION') && game.includes('3.6.148-SDK6'),
-  'game.html sellado a 3.6.148-SDK6');
+chk(vjson.version === '3.6.149-SDK6', `VERSION.json 3.6.149-SDK6 (${vjson.version})`);
+chk(vjson.fase === 152, `FASE 152 (${vjson.fase})`);
+chk(game.includes('const VERSION') && game.includes('3.6.149-SDK6'),
+  'game.html sellado a 3.6.149-SDK6');
 chk(cuenta(game, '_lossWin') === 3, `game.html: _lossWin (def + trackLoss + netInfo) ×3: ${cuenta(game, '_lossWin')}`);
 chk(game.includes('const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);'),
   'game.html lleva el watchdog consciente de pausa');

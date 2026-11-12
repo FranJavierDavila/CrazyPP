@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.148-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.149-SDK6</span>
     </div>
   </main>
 
@@ -451,6 +451,15 @@ const I18N_STRINGS = {
     serve_wait: 'Tu saque · la bola espera en tu mano libre',
     // M4 (r111) · ONBOARDING < 60 s: tres claves nuevas (ES)
     hub_play: '▶ JUGAR',
+    // r58 · FASE 152 · CONFIG_MENU: tarjeta SALIR A LA WEB del HUB (ES)
+    hub_salirweb: 'SALIR A LA WEB',
+    hub_salirweb_sub: 'Cerrar el juego y volver a la página principal',
+    salirask_title: '¿SALIR A LA WEB?',
+    salirask_sub: 'El juego se cerrará y volverás a la página principal.',
+    salirask_yes_btn: 'SÍ, SALIR',
+    salirask_no_btn: 'NO, SEGUIR JUGANDO',
+    salirask_hint: 'B: cancelar',
+    hint_salirweb: 'Cierra el juego · vuelve a la web principal',
     first_hint: 'Bienvenido · pulsa ▶ JUGAR y estarás jugando en segundos',
     srv_guide: 'GUÍA DE SAQUE · GATILLO para lanzar → golpéala al caer y pásala por el aro dorado',
     // M5a (r112) · IA CON ESTILOS: selector y anuncio
@@ -1503,6 +1512,15 @@ const I18N_STRINGS = {
     serve_wait: 'Your serve · the ball waits in your free hand',
     // M4 (r111) · ONBOARDING < 60 s: tres claves nuevas (EN)
     hub_play: '▶ PLAY',
+    // r58 · FASE 152 · CONFIG_MENU: EXIT TO WEB card in the HUB (EN)
+    hub_salirweb: 'EXIT TO WEB',
+    hub_salirweb_sub: 'Close the game and return to the main website',
+    salirask_title: 'EXIT TO WEB?',
+    salirask_sub: 'The game will close and you will return to the main website.',
+    salirask_yes_btn: 'YES, EXIT',
+    salirask_no_btn: 'NO, KEEP PLAYING',
+    salirask_hint: 'B: cancel',
+    hint_salirweb: 'Close the game · back to the main website',
     first_hint: 'Welcome · press ▶ PLAY and you will be playing in seconds',
     srv_guide: 'SERVE GUIDE · TRIGGER to toss → hit it as it falls and send it through the golden ring',
     // M5a (r112) · IA STYLES: selector and announcement
@@ -3455,7 +3473,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.148-SDK6';
+  const VERSION = '3.6.149-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -5036,6 +5054,44 @@ const ARCANO_CFG = {
   // ajustado a los bordes (r54): ~6 cm a pared (x pared 3,05) y techo
   // (2,85); margen justo para el hover ×1,14. Moverlo = editar aquí.
   ui: { buho: { x: 2.70, y: 2.60, zOff: 0.016 } },
+};
+
+/* =====================================================================
+ *  r58 · FASE 152 · CONFIG_MENU — ÚNICA FUENTE DE VERDAD DE LA SALIDA
+ *  ---------------------------------------------------------------------
+ *  El Menú Principal entra en el patrón data-driven (mismo contrato que
+ *  ARCANO_CFG): la tarjeta SALIR A LA WEB del HUB vive AQUÍ como DATOS —
+ *  etiquetas (claves i18n), gradiente, icono, confirmación, telemetría,
+ *  destino y guardia de la sesión XR. c12 LEE esta tabla: cambiar el
+ *  texto, los colores, el destino o desactivar la tarjeta es editar
+ *  AQUÍ, sin tocar una línea de lógica.
+ *  · urlDestino 'AUTO_ORIGIN' se resuelve en runtime: la «web principal»
+ *    es la carpeta que sirve este game.html (location.origin + la ruta
+ *    sin game.html) — cero dominios hardcodeados: vale en Pages, en el
+ *    espejo local y en cualquier dominio.
+ *  ===================================================================== */
+const CONFIG_MENU = {
+  version: 1,
+  salir: {
+    habilitada: true,                    // la tarjeta vive al pie del HUB
+    id: 'salirweb',                      // id del rect y del caso del despachador
+    etiquetaKey: 'hub_salirweb',
+    subKey: 'hub_salirweb_sub',
+    gradientes: ['#5f7183', '#3a4754'],  // gris acero: es una salida, no un modo
+    icono: 'salir',                      // resuelto por nombre en c12 (_iconoDeMenu)
+    urlDestino: 'AUTO_ORIGIN',
+    confirmacion: {
+      activa: true,                      // prompt «¿SALIR A LA WEB?» antes de navegar
+      tituloKey: 'salirask_title',
+      subKey: 'salirask_sub',
+      siKey: 'salirask_yes_btn',
+      noKey: 'salirask_no_btn',
+      hintKey: 'salirask_hint',
+    },
+    cerrarSesionXR: true,                // session.end() antes de navegar (Quest → navegador 2D)
+    tiempoMaxEsperaXRms: 2000,           // guardia: si end() no responde, se navega igualmente
+    eventoTelemetria: 'salir_web',       // __PP_TELE.ev + flush(true) antes de navegar
+  },
 };
 const VOICE_FULL = {
   es: {
@@ -21120,6 +21176,16 @@ class PingPongGame {
       this.menuTex.needsUpdate = true;
       return;
     }
+    // r58 · FASE 152 · CONFIG_MENU: página de CONFIRMACIÓN de SALIR A LA
+    // WEB (gemela del PROMPT B del hall; textos desde CONFIG_MENU.salir).
+    if (this.menuPage === 'salirask') {
+      this.drawMenuSalidaAsk(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     // v3.6.51 (r59) · LA ACADEMIA: página de la OFERTA de primera vez
     // (el menú nace aquí si el jugador nunca ha hecho el tutorial).
     if (this.menuPage === 'tutask' && window.__PP_TUT) {
@@ -21330,6 +21396,90 @@ class PingPongGame {
     this.menuTex.needsUpdate = true;
   }
 
+  /** r58 · FASE 152 · CONFIG_MENU · página «¿SALIR A LA WEB?» — gemela del
+   *  PROMPT B (hallask) pero leyendo TODOS sus textos de
+   *  CONFIG_MENU.salir.confirmacion: SI navega a la web principal,
+   *  NO vuelve al HUB sin tocar nada. B también cancela (c00). */
+  drawMenuSalidaAsk(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const label = this._menuLabel;
+    const CONF = CONFIG_MENU.salir.confirmacion;
+
+    label(T(CONF.tituloKey), 240, 54, '#e8b45a', 'center');
+    label(T(CONF.subKey), 310, 28, '#9aa7b4', 'center');
+    c.strokeStyle = 'rgba(232,180,90,0.35)';
+    c.lineWidth = 2;
+    c.beginPath(); c.moveTo(132, 360); c.lineTo(892, 360); c.stroke();
+
+    btn('salirweb_si', 132, 470, 760, 170, T(CONF.siKey), true, 'green', undefined, 46);
+    btn('salirweb_no', 132, 700, 760, 170, T(CONF.noKey), false, undefined, undefined, 46);
+
+    label(T(CONF.hintKey), 940, 22, '#9aa7b4', 'center');
+    this.menuRects = rects;
+    this._menuState = this.rules.state;
+    this._menuTipDraw(c, rects);   // r96 · tooltip del control apuntado
+    this.menuTex.needsUpdate = true;
+  }
+
+  /** r58 · FASE 152 · CONFIG_MENU · la ÚNICA puerta de salida a la web.
+   *  Orden (todo desde CONFIG_MENU.salir): telemetría con flush síncrono
+   *  (sendBeacon/keepalive) → cerrar la sesión XR con guardia de tiempo →
+   *  navegar a urlDestino ('AUTO_ORIGIN' = la carpeta que sirve este
+   *  game.html: location.origin + la ruta sin game.html). La persistencia
+   *  del juego ya es event-driven (localStorage en cada cambio) — no hay
+   *  cola de estado que vaciar aquí. */
+  async salirALaWeb() {
+    const S = CONFIG_MENU.salir;
+    try {
+      if (S.eventoTelemetria && window.__PP_TELE) {
+        window.__PP_TELE.ev(S.eventoTelemetria, {});
+        if (window.__PP_TELE.flush) window.__PP_TELE.flush(true);
+      }
+    } catch (eTW) { /* la telemetría nunca rompe */ }
+    if (S.cerrarSesionXR) {
+      try {
+        const ses = this.renderer.xr && this.renderer.xr.getSession
+          ? this.renderer.xr.getSession() : null;
+        if (ses) {
+          await Promise.race([
+            ses.end(),
+            new Promise((res) => setTimeout(res, S.tiempoMaxEsperaXRms)),
+          ]);
+        }
+      } catch (eXR) { /* navegamos igualmente */ }
+    }
+    let url = S.urlDestino;
+    if (url === 'AUTO_ORIGIN') {
+      url = window.location.origin +
+        window.location.pathname.replace(/game\.html$/, '');
+    }
+    try { window.location.assign(url); } catch (eNav) { /* */ }
+  }
+
+  /** r58 · FASE 152 · CONFIG_MENU · icono de la salida: puerta con flecha
+   *  hacia fuera (dibujo propio, sin PNG). */
+  _iconoSalir(c, cx, cy) {
+    c.strokeStyle = '#ffffff';
+    c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.beginPath();
+    c.moveTo(cx - 14, cy + 24); c.lineTo(cx - 14, cy - 24);
+    c.lineTo(cx + 8, cy - 24); c.lineTo(cx + 8, cy + 24);
+    c.closePath(); c.stroke();
+    c.beginPath();
+    c.moveTo(cx + 2, cy); c.lineTo(cx + 26, cy);
+    c.moveTo(cx + 18, cy - 8); c.lineTo(cx + 26, cy);
+    c.lineTo(cx + 18, cy + 8);
+    c.stroke();
+  }
+
+  /** r58 · FASE 152 · CONFIG_MENU · resolución de iconos del menú por
+   *  NOMBRE (dato CONFIG_MENU.salir.icono): icono nuevo = fila aquí. */
+  _iconoDeMenu(nombre) {
+    if (nombre === 'salir') return (c, cx, cy) => this._iconoSalir(c, cx, cy);
+    return PP_ICONS[nombre] || PP_ICONS.opts;
+  }
+
   /** Página principal: el HUB. 6 tarjetas (2×3) + dificultad + tarjeta
    *  AJUSTES contraída (v2.123: el dock de AJUSTES RÁPIDOS se retiró — el
    *  apartado de opciones va plegado y con la MISMA estética que el resto;
@@ -21441,6 +21591,17 @@ class PingPongGame {
     // logros que desbloquean apariencias poco a poco)
     this._retoDiarioCard(rects, 40, y, 944, 118);
     y += 118;
+
+    // r58 · FASE 152 · CONFIG_MENU: tarjeta SALIR A LA WEB (datos en c02:
+    // id/etiquetas/gradiente/icono/orden — cambiarla es editar la tabla).
+    const SALIRCFG = CONFIG_MENU.salir;
+    if (SALIRCFG.habilitada) {
+      this._modeCard(rects, SALIRCFG.id, 40, y, 944, 96,
+        T(SALIRCFG.etiquetaKey), T(SALIRCFG.subKey),
+        SALIRCFG.gradientes[0], SALIRCFG.gradientes[1],
+        this._iconoDeMenu(SALIRCFG.icono), false);
+      y += 96 + 14;
+    }
 
     // cierre + ayuda
     btn('close', 56, y + 28, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
@@ -23118,6 +23279,7 @@ class PingPongGame {
     if (id.indexOf('gripLoad:') === 0 || id.indexOf('gripDel:') === 0) return 'hint_cat_pala';
     const EXACT = {
       'close': 'hint_close', 'kofi': 'hint_kofi',
+      'salirweb': 'hint_salirweb',   // r58 · FASE 152 · CONFIG_MENU
       'page:main': 'hint_back', 'page:opts': 'hint_back', 'homehall': 'hint_back',
       'page:optsJuego': 'hint_cat_juego', 'page:optsSala': 'hint_cat_sala',
       'page:optsSonido': 'hint_cat_sonido', 'page:optsVisual': 'hint_cat_visual',
@@ -23419,6 +23581,26 @@ class PingPongGame {
         // escena actual, sin tocar modo, saque ni nada de lo activo.
         this.menuPage = 'main';
         this.closeMenu();
+        break;
+      case 'salirweb':
+        // r58 · FASE 152 · CONFIG_MENU: tarjeta SALIR A LA WEB. Con
+        // confirmación activa (dato) abre el prompt; sin ella, salida directa.
+        if (CONFIG_MENU.salir.confirmacion.activa) {
+          this.menuPage = 'salirask';
+          this.drawMenu();
+        } else {
+          this.salirALaWeb();
+        }
+        break;
+      case 'salirweb_si':
+        // r58 · SI del prompt de salida: la única puerta a la web principal.
+        this.menuPage = 'main';
+        this.salirALaWeb();
+        break;
+      case 'salirweb_no':
+        // r58 · NO del prompt: de vuelta al HUB sin tocar nada.
+        this.menuPage = 'main';
+        this.drawMenu();
         break;
       case 'tut':
         // v3.6.51 (r59) · LA ACADEMIA: el tutorial interactivo arranca desde
@@ -33337,7 +33519,9 @@ class PingPongGame {
       } else if (!this._arconoOn && (this.menuOpen || this.inHall ||
           this.net.online || (this.inAR && this.pstOn))) {
         // si cerramos el PROMPT con B, la próxima apertura vuelve al menú normal
-        if (this.menuOpen && this.menuPage === 'hallask') this.menuPage = 'main';
+        // r58 · también el prompt de SALIR A LA WEB: B cancela y vuelve al HUB.
+        if (this.menuOpen && (this.menuPage === 'hallask' ||
+            this.menuPage === 'salirask')) this.menuPage = 'main';
         this.toggleMenu();
       } else if (!this._arconoOn) {
         this.openHallAsk();

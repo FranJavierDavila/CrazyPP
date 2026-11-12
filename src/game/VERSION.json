@@ -1,9 +1,9 @@
 {
-  "version": "3.6.148-SDK6",
-  "fase": 151,
-  "faseNombre": "Auditoría de físicas r57 aplicada: R1 pala mide con la base temporal de la física (PASO_TUNE c12) · R2 golden c05 (16 escenarios) + margen de bote alineado en los 3 simuladores · R3 Magnus ×1 predicho vs ×2,2 documentado",
+  "version": "3.6.149-SDK6",
+  "fase": 152,
+  "faseNombre": "CONFIG_MENU r58: menú data-driven + botón SALIR A LA WEB en el HUB (confirmación desde datos · telemetría salir_web con flush síncrono · session.end() con guardia 2 s · AUTO_ORIGIN sin dominios hardcodeados)",
   "sdk": "1.6.0",
-  "fecha": "2026-11-11",
+  "fecha": "2026-11-12",
   "hub": "v36139-sdk6",
   "manifests": {
     "oeste": 56,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r57",
-  "tamano": 11551209,
-  "golden": "ecf7ccb662fbcdc9473392122a3d210d617a13c08280538d4fb7c459304b060e"
+  "nota": "r58",
+  "tamano": 11559455,
+  "golden": "08bc33f93553e6349faaffb050270a636c8be30eccba4bb16a47ec20b1aea226"
 }

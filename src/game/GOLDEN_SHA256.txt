@@ -1,2 +1,2 @@
-# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r59_audio)
-5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171
+# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r60_dificultad)
+8e94ae7daf5ab49fee1cc0f28443efe7a8800e05cc15b310282123e88c410d5e

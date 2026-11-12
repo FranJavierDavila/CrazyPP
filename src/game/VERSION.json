@@ -1,7 +1,7 @@
 {
-  "version": "3.6.150-SDK6",
-  "fase": 153,
-  "faseNombre": "CONFIG_AUDIO r59: la MEZCLA de audio es data-driven — buses+compresor+murmullo · canales de fábrica música/efectos/locutor · fundidos menú/BSO/salón con timeouts derivados · SFX pala/mesa/canto/red/suelo (nivel/piso/tono) · clamps + jitter como datos (44 lectores en c03)",
+  "version": "3.6.151-SDK6",
+  "fase": 154,
+  "faseNombre": "CONFIG_DIFICULTAD r60: la DIFICULTAD es data-driven — presets (curvas CPU easy/medium/hard) · asistencia de saque por nivel · topes/exponentes de scalePreset · ELO (anclas/K por modo/paso/bandas matchmaking) · adaptativo · supervivencia · fórmula de esfuerzo r113 (12 lectores c02/c06/c12 · alias AI_PRESETS/SERVE_ASSIST_TIERS/ELO_CPU)",
   "sdk": "1.6.0",
   "fecha": "2026-11-12",
   "hub": "v36139-sdk6",
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r59",
-  "tamano": 11563859,
-  "golden": "5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171"
+  "nota": "r60",
+  "tamano": 11568289,
+  "golden": "8e94ae7daf5ab49fee1cc0f28443efe7a8800e05cc15b310282123e88c410d5e"
 }

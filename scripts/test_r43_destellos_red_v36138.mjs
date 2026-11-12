@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.150-SDK6 · FASE 153 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.151-SDK6 · FASE 154 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -83,26 +83,26 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.150-SDK6 · FASE 153 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.150-SDK6 · FASE 153 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.150-SDK6', 'VERSION.json: 3.6.150-SDK6');
-chk(vjson.fase === 153, 'FASE 153');
-chk(vjson.faseNombre === 'CONFIG_AUDIO r59: la MEZCLA de audio es data-driven — buses+compresor+murmullo · canales de fábrica música/efectos/locutor · fundidos menú/BSO/salón con timeouts derivados · SFX pala/mesa/canto/red/suelo (nivel/piso/tono) · clamps + jitter como datos (44 lectores en c03)',
-  'faseNombre = CONFIG_AUDIO R59: LA MEZCLA DE AUDIO ES DATA-DRIVEN — BUSES+COMPRESOR+MURMULLO · CANALES DE FÁBRICA MÚSICA/EFECTOS/LOCUTOR · FUNDIDOS MENÚ/BSO/SALÓN CON TIMEOUTS DERIVADOS · SFX PALA/MESA/CANTO/RED/SUELO (NIVEL/PISO/TONO) · CLAMPS + JITTER COMO DATOS (44 LECTORES EN C03)');
+/* — 1 · SELLOS · v3.6.151-SDK6 · FASE 154 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.151-SDK6 · FASE 154 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.151-SDK6', 'VERSION.json: 3.6.151-SDK6');
+chk(vjson.fase === 154, 'FASE 154');
+chk(vjson.faseNombre === 'CONFIG_DIFICULTAD r60: la DIFICULTAD es data-driven — presets (curvas CPU easy/medium/hard) · asistencia de saque por nivel · topes/exponentes de scalePreset · ELO (anclas/K por modo/paso/bandas matchmaking) · adaptativo · supervivencia · fórmula de esfuerzo r113 (12 lectores c02/c06/c12 · alias AI_PRESETS/SERVE_ASSIST_TIERS/ELO_CPU)',
+  'faseNombre = CONFIG_DIFICULTAD R60: LA DIFICULTAD ES DATA-DRIVEN — PRESETS (CURVAS CPU EASY/MEDIUM/HARD) · ASISTENCIA DE SAQUE POR NIVEL · TOPES/EXPONENTES DE SCALEPRESET · ELO (ANCLAS/K POR MODO/PASO/BANDAS MATCHMAKING) · ADAPTATIVO · SUPERVIVENCIA · FÓRMULA DE ESFUERZO R113 (12 LECTORES C02/C06/C12 · ALIAS AI_PRESETS/SERVE_ASSIST_TIERS/ELO_CPU)');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
 // legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
-chk(vjson.tamano === 11563859, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11568289, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171',
+  '8e94ae7daf5ab49fee1cc0f28443efe7a8800e05cc15b310282123e88c410d5e',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.150-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.150-SDK6'"), 'sello c00 = 3.6.150-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.150-SDK6'"),
-  'sw.js CACHE v3.6.150-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.150-SDK6</span>'), 'badge V3.6.150-SDK6 en 03_body');
+chk(game.includes('3.6.151-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.151-SDK6'"), 'sello c00 = 3.6.151-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.151-SDK6'"),
+  'sw.js CACHE v3.6.151-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.151-SDK6</span>'), 'badge V3.6.151-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -276,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.150-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.151-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

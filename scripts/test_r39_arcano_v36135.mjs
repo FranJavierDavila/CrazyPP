@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r39 · v3.6.150-SDK6 · FASE 153 · TEST: EL APARTADO
+/* CRAZY PING PONG · r39 · v3.6.151-SDK6 · FASE 154 · TEST: EL APARTADO
  * ARCANO — el búho del hall, el espacio infinito y la galería de
  * superpoderes con desbloqueo por campeonato ganado.
  *
@@ -77,22 +77,22 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.150-SDK6 · FASE 153 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.150-SDK6 · FASE 153 · EL APARTADO ARCANO');
-chk(vjson.version === '3.6.150-SDK6', 'VERSION.json: 3.6.150-SDK6');
-chk(vjson.fase === 153, 'FASE 153');
-chk(vjson.faseNombre === 'CONFIG_AUDIO r59: la MEZCLA de audio es data-driven — buses+compresor+murmullo · canales de fábrica música/efectos/locutor · fundidos menú/BSO/salón con timeouts derivados · SFX pala/mesa/canto/red/suelo (nivel/piso/tono) · clamps + jitter como datos (44 lectores en c03)', 'faseNombre = EL APARTADO ARCANO');
-chk(vjson.tamano === 11563859, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.151-SDK6 · FASE 154 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.151-SDK6 · FASE 154 · EL APARTADO ARCANO');
+chk(vjson.version === '3.6.151-SDK6', 'VERSION.json: 3.6.151-SDK6');
+chk(vjson.fase === 154, 'FASE 154');
+chk(vjson.faseNombre === 'CONFIG_DIFICULTAD r60: la DIFICULTAD es data-driven — presets (curvas CPU easy/medium/hard) · asistencia de saque por nivel · topes/exponentes de scalePreset · ELO (anclas/K por modo/paso/bandas matchmaking) · adaptativo · supervivencia · fórmula de esfuerzo r113 (12 lectores c02/c06/c12 · alias AI_PRESETS/SERVE_ASSIST_TIERS/ELO_CPU)', 'faseNombre = EL APARTADO ARCANO');
+chk(vjson.tamano === 11568289, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  '5ffd179b69fb32189ff7c4a8ff768c6fe5bb450d5d57a7eaeb71197eddb24171',
+  '8e94ae7daf5ab49fee1cc0f28443efe7a8800e05cc15b310282123e88c410d5e',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.150-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.150-SDK6'"), 'sello c00 = 3.6.150-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.150-SDK6'"),
-  'sw.js CACHE v3.6.150-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.150-SDK6</span>'), 'badge V3.6.150-SDK6 en 03_body');
+chk(game.includes('3.6.151-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.151-SDK6'"), 'sello c00 = 3.6.151-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.151-SDK6'"),
+  'sw.js CACHE v3.6.151-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.151-SDK6</span>'), 'badge V3.6.151-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -110,8 +110,8 @@ chk(c08.includes("const urlArcano = 'assets/hall/arcano.png';") &&
 chk(c08.includes('arcMesh.position.set(ARCANO_CFG.ui.buho.x, ARCANO_CFG.ui.buho.y,\n                       z0 + ARCANO_CFG.ui.buho.zOff);') &&
     c02.includes('ui: { buho: { x: 2.70, y: 2.60, zOff: 0.016 } }'),
   're-anclada r55: búho DATA-DRIVEN — c08 lee ARCANO_CFG.ui.buho (c02), esquina sup. dcha');
-chk(c12.includes("import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_MENU, DIMS,"),
-  're-anclada r55/r58: c12 importa ARCANO_CFG y CONFIG_MENU de la capa de datos (c02)');
+chk(c12.includes("import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFICULTAD, CONFIG_MENU, DIMS,"),
+  're-anclada r55/r58/r60: c12 importa ARCANO_CFG/CONFIG_MENU/CONFIG_DIFICULTAD de la capa de datos (c02)');
 chk(c08.includes('[[0.452, 0.392], [0.557, 0.376]]') ||
     c08.includes('[0.452, 0.392], [0.557, 0.376]'),
   'destellos en los centros de los OJOS medidos del arte');
@@ -311,6 +311,6 @@ chk(game.includes('EL APARTADO ARCANO'), 'bundle: sección arcano embebida');
 chk(game.includes('pp_poderes_v1'), 'bundle: persistencia de desbloqueos embebida');
 chk(game.includes('DL_SURTIDO'), 'bundle: surto extendido de Duelos Locos embebido');
 
-console.log('\n=== r39 · v3.6.150-SDK6 · EL APARTADO ARCANO ===');
+console.log('\n=== r39 · v3.6.151-SDK6 · EL APARTADO ARCANO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 process.exit(fails ? 1 : 0);

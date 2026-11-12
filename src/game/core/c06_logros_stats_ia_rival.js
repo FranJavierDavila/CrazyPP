@@ -7,7 +7,7 @@ export const ACHIEVEMENTS = [
   { key: 'aces10',   emoji: '🎯', nameKey: 'ach_aces',     descKey: 'ach_aces_d' },
 ];
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { DIMS } from './c02_cfg_escena.js';
+import { CONFIG_DIFICULTAD, DIMS } from './c02_cfg_escena.js';
 import { tmpD, tmpT, tmpTarget } from './c04_fisica_ccd.js';
 import { computeShotVelocityReal, predictStrike } from './c05_colisiones_ia_golpeo.js';
 import * as THREE from 'three';
@@ -31,7 +31,8 @@ export class GameStats {
       // habilidad ÚNICO para IA local, escalera y P2P. eloHist guarda los
       // últimos 40 cambios {t, d:±delta, m:modo}; mejorDia = el día con más
       // victorias; hoyDia = contador vivo del día en curso.
-      elo: 1000, eloHist: [],
+      elo: CONFIG_DIFICULTAD.elo.inicial,   // r60: dato (fábrica del número)
+      eloHist: [],
       mejorDia: { dia: '', v: 0 },
       hoyDia: { dia: '', v: 0 },
     };
@@ -45,7 +46,7 @@ export class GameStats {
       }
     } catch { /* datos corruptos: se recrean limpios */ }
     // M4 · migración tolerante (datos viejos sin ELO o corruptos)
-    if (typeof this.data.elo !== 'number' || !(this.data.elo > 0)) this.data.elo = 1000;
+    if (typeof this.data.elo !== 'number' || !(this.data.elo > 0)) this.data.elo = CONFIG_DIFICULTAD.elo.inicial;   // r60: dato
     if (!Array.isArray(this.data.eloHist)) this.data.eloHist = [];
     if (!this.data.mejorDia || typeof this.data.mejorDia !== 'object') this.data.mejorDia = { dia: '', v: 0 };
     if (!this.data.hoyDia || typeof this.data.hoyDia !== 'object') this.data.hoyDia = { dia: '', v: 0 };
@@ -109,16 +110,17 @@ export class GameStats {
   recordMatch(win, difficulty, info) {
     const out = [];
     const inf = info || {};
-    const KMOD = { ia: 24, carrera: 20, p2p: 32 };
+    const M = CONFIG_DIFICULTAD.elo;   // r60: el K por modo y los límites del número viven en datos
+    const KMOD = M.kModo;
     const modo = KMOD[inf.modo] ? inf.modo : 'ia';
     const miElo = this.data.elo;
-    const oppElo = (typeof inf.oppElo === 'number' && inf.oppElo > 0) ? inf.oppElo : 1000;
-    const esperado = 1 / (1 + Math.pow(10, (oppElo - miElo) / 400));
+    const oppElo = (typeof inf.oppElo === 'number' && inf.oppElo > 0) ? inf.oppElo : M.rivalPorDefecto;
+    const esperado = 1 / (1 + Math.pow(10, (oppElo - miElo) / M.paso));
     const delta = Math.round(KMOD[modo] * ((win ? 1 : 0) - esperado));
-    this.data.elo = Math.max(100, miElo + delta);
+    this.data.elo = Math.max(M.piso, miElo + delta);   // r60: piso de la tabla
     this.data.eloHist.push({ t: Date.now(), d: delta, m: modo });
-    if (this.data.eloHist.length > 40) {
-      this.data.eloHist.splice(0, this.data.eloHist.length - 40);
+    if (this.data.eloHist.length > M.historialMax) {
+      this.data.eloHist.splice(0, this.data.eloHist.length - M.historialMax);
     }
     if (win) {
       this.data.won++;
@@ -826,12 +828,13 @@ export class OpponentAI {
     // clamps acotan y la distinción entre personalidades se conserva.
     // (NOTA: el `reach` de arriba es el RADIO de la pala — este es `viaje`.)
     const viaje = Math.hypot(cx - this.pos.x, cz - this.pos.z);
-    const pMiss = Math.min(0.85,
-      this.cfg.missBase * 0.25 +
-      Math.max(0, ballSpeed - 7) * 0.06 +
-      Math.max(0, viaje - 0.85) * 0.60 +
+    const EF = CONFIG_DIFICULTAD.esfuerzo;   // r60: la fórmula del fallo vive en datos
+    const pMiss = Math.min(EF.tope,
+      this.cfg.missBase * EF.baseFrac +
+      Math.max(0, ballSpeed - EF.velUmbral) * EF.velPaso +
+      Math.max(0, viaje - EF.viajeUmbral) * EF.viajePaso +
       (ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0));
-    this.hitCooldown = 0.55;
+    this.hitCooldown = EF.cooldownS;   // r60: cadencia de la tabla
     // v2.84 · GOLPE MALO (petición del artista): el fallo decidido de la IA
     // YA NO deja pasar la bola a través de la pala (efecto pésimo). La toca
     // MAL: contacto flojo y desviado que se queda en su campo (red o corto),

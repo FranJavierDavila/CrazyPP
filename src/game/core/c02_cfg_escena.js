@@ -173,11 +173,75 @@ export const DIMS = {
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
 
-export const AI_PRESETS = {
-  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.15, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.03 },
-  medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.05,  missBase: 0.08, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.05 },
-  hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.024, missBase: 0.03, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
+/* =====================================================================
+ *  r60 · FASE 154 · CONFIG_DIFICULTAD — ÚNICA FUENTE DE VERDAD DE LA
+ *  DIFICULTAD (directiva del dueño: «seguir extendiendo el patrón
+ *  data-driven a otro subsistemas» — quinta parada tras ARCANO_CFG,
+ *  física/bola, menú y audio).
+ *  ---------------------------------------------------------------------
+ *  · presets: las TRES CURVAS de la CPU (IA del rival): piernas
+ *    (maxSpeed/accel), puntería (errStd), fallo decidido (missBase),
+ *    reacción (predictInterval), tiempos de golpe (minT/maxT), potencia
+ *    (maxShotSpeed) y selección (smash/short). ALIAS AI_PRESETS.
+ *  · saque: asistencia del saque por dificultad (reach/vy/angleMul/
+ *    assistMul — v3.0.9-HALL1/v3.1.0-SRV2). ALIAS SERVE_ASSIST_TIERS.
+ *  · escala: los TOPE y EXPONENTES de scalePreset — el factor k con que
+ *    adaptativo, supervivencia, escalera y matchmaking deforman un preset.
+ *  · elo: anclas de la CPU (ALIAS ELO_CPU), factor K por modo, paso/piso/
+ *    inicial del número, bandas del matchmaking y su jitter.
+ *  · adaptativo: paso por punto de ventaja/desventaja y tope (c12).
+ *  · supervivencia: aceleración por rallye completado y techo (c12).
+ *  · esfuerzo: la fórmula r113 del fallo de la CPU INTELIGENTE (c06) —
+ *    base tibia, penalidad por velocidad y por desplazamiento, tope y
+ *    cadencia de golpeo. Cambiar la dificultad = editar esta tabla.
+ *  ===================================================================== */
+export const CONFIG_DIFICULTAD = {
+  version: 1,
+  presets: {
+    easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.15, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.03 },
+    medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.05,  missBase: 0.08, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.05 },
+    hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.024, missBase: 0.03, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
+  },
+  saque: {
+    easy:   { reach: 0.060, vy: 3.5,  angleMul: 1.4,  assistMul: 1.35 },
+    medium: { reach: 0.045, vy: 3.10, angleMul: 1.0,  assistMul: 1.0  },
+    hard:   { reach: 0.028, vy: 2.70, angleMul: 0.7,  assistMul: 0.6  },
+  },
+  escala: {
+    kMin: 0.7, kMax: 2.2,        // rango legal del factor k (invariante del arnés)
+    speedMin: 0.55, speedMax: 1.9,
+    accelTope: 30, accelExp: 1.4,
+    errPiso: 0.6, errExp: 0.8,
+    predPiso: 0.6, predExp: 0.8,
+    missInverso: 2, missPiso: 0.25, missMin: 0.005, missMax: 0.45,
+    tPiso: 0.6, tExp: 0.5, minTMin: 0.24, minTMax: 1.0, maxTMin: 0.4, maxTMax: 1.3,
+    shotMin: 0.5, shotMax: 1.8,
+    smashPiso: 0.5, smashMin: 0.01, smashMax: 0.75,
+  },
+  elo: {
+    cpu: { easy: 900, medium: 1050, hard: 1200 },
+    kModo: { ia: 24, carrera: 20, p2p: 32 },   // los duelos humanos valen más
+    paso: 400, piso: 100, inicial: 1000, historialMax: 40,
+    rivalPorDefecto: 1000,
+    objetivoMin: 400, objetivoMax: 2000, jitterMax: 120,
+    bandaEasyHasta: 975, bandaMediumHasta: 1125,
+    kMin: 0.7, kMax: 1.6,   // el matchmaking nunca propone un muro
+  },
+  adaptativo: { pasoSube: 0.055, pasoBaja: 0.05, topeDif: 6 },
+  supervivencia: { porRallye: 0.08, techo: 2.1 },
+  esfuerzo: {                  // r113 · CPU INTELIGENTE (c06 lee la tabla)
+    baseFrac: 0.25,            // base tibia: la torpeza del nivel, suavizada
+    velUmbral: 7, velPaso: 0.06,          // +0,06 por m/s por encima de 7
+    viajeUmbral: 0.85, viajePaso: 0.60,   // +0,60 por m de desplazamiento extra
+    tope: 0.85,                // techo honesto del fallo decidido
+    cooldownS: 0.55,           // cadencia mínima entre golpes IA
+  },
 };
+
+// r60 · ALIAS del contrato (patrón FASE 149): los lectores de siempre
+// (c12/c13/tests/__PP_ELO) importan el nombre histórico — el DATO vive
+// en la tabla de arriba.
+export const AI_PRESETS = CONFIG_DIFICULTAD.presets;
 
 /* v3.0.9-HALL1 · ASISTENCIA DEL SAQUE POR DIFICULTAD — el pilar «sentirse
  * dueño del juego» escala con la CPU elegida: en FÁCIL el saque perdona
@@ -189,11 +253,7 @@ export const AI_PRESETS = {
  * SIEMPRE el gesto real), angleMul/assistMul = margen angular e intensidad
  * de la asistencia progresiva (v3.1.0-SRV2). La legalidad NO cambia:
  * tossMinRise y línea de fondo son reglas, no asistencia. */
-export const SERVE_ASSIST_TIERS = {
-  easy:   { reach: 0.060, vy: 3.5,  angleMul: 1.4,  assistMul: 1.35 },
-  medium: { reach: 0.045, vy: 3.10, angleMul: 1.0,  assistMul: 1.0  },
-  hard:   { reach: 0.028, vy: 2.70, angleMul: 0.7,  assistMul: 0.6  },
-};
+export const SERVE_ASSIST_TIERS = CONFIG_DIFICULTAD.saque;   // r60: dato
 
 /* =====================================================================
  *  v3.1.0-SRV2 · SAQUE VR REALISTA CON ASISTENCIA LIMITADA — parámetros
@@ -258,17 +318,18 @@ export const SERVE_TUNE = {
  *  Se usa para la IA ADAPTATIVA (según el marcador) y el modo SUPERVIVENCIA
  *  (la CPU acelera rallye a rallye). Devuelve un preset NUEVO. */
 export function scalePreset(cfg, k) {
-  const kk = THREE.MathUtils.clamp(k, 0.7, 2.2);
+  const E = CONFIG_DIFICULTAD.escala;   // r60: topes y exponentes como datos
+  const kk = THREE.MathUtils.clamp(k, E.kMin, E.kMax);
   return {
-    maxSpeed: cfg.maxSpeed * THREE.MathUtils.clamp(kk, 0.55, 1.9),
-    accel: Math.min(30, cfg.accel * Math.pow(kk, 1.4)),
-    errStd: cfg.errStd / Math.max(0.6, Math.pow(kk, 0.8)),
-    missBase: THREE.MathUtils.clamp(cfg.missBase * Math.max(0.25, 2 - kk), 0.005, 0.45),
-    minT: THREE.MathUtils.clamp(cfg.minT / Math.max(0.6, Math.pow(kk, 0.5)), 0.24, 1.0),
-    maxT: THREE.MathUtils.clamp(cfg.maxT / Math.max(0.6, Math.pow(kk, 0.5)), 0.4, 1.3),
-    maxShotSpeed: cfg.maxShotSpeed * THREE.MathUtils.clamp(kk, 0.5, 1.8),
-    predictInterval: cfg.predictInterval / Math.max(0.6, Math.pow(kk, 0.8)),
-    smash: THREE.MathUtils.clamp(cfg.smash * Math.max(0.5, kk), 0.01, 0.75),
+    maxSpeed: cfg.maxSpeed * THREE.MathUtils.clamp(kk, E.speedMin, E.speedMax),
+    accel: Math.min(E.accelTope, cfg.accel * Math.pow(kk, E.accelExp)),
+    errStd: cfg.errStd / Math.max(E.errPiso, Math.pow(kk, E.errExp)),
+    missBase: THREE.MathUtils.clamp(cfg.missBase * Math.max(E.missPiso, E.missInverso - kk), E.missMin, E.missMax),
+    minT: THREE.MathUtils.clamp(cfg.minT / Math.max(E.tPiso, Math.pow(kk, E.tExp)), E.minTMin, E.minTMax),
+    maxT: THREE.MathUtils.clamp(cfg.maxT / Math.max(E.tPiso, Math.pow(kk, E.tExp)), E.maxTMin, E.maxTMax),
+    maxShotSpeed: cfg.maxShotSpeed * THREE.MathUtils.clamp(kk, E.shotMin, E.shotMax),
+    predictInterval: cfg.predictInterval / Math.max(E.predPiso, Math.pow(kk, E.predExp)),
+    smash: THREE.MathUtils.clamp(cfg.smash * Math.max(E.smashPiso, kk), E.smashMin, E.smashMax),
     short: cfg.short,
   };
 }
@@ -280,7 +341,7 @@ export function scalePreset(cfg, k) {
  *  rival cerca de tu nivel). r109 (PWA) ya reservaba la página 'rank';
  *  esto es la base numérica local, sin servidor nuevo.
  * ===================================================================== */
-export const ELO_CPU = { easy: 900, medium: 1050, hard: 1200 };
+export const ELO_CPU = CONFIG_DIFICULTAD.elo.cpu;   // r60: dato
 
 /** M4 · MATCHMAKING LOCAL POR ELO — rival propuesto cerca de tu nivel con
  *  variedad. Dado tu ELO y un jitter en ±120 (la VARIEDAD: cada propuesta
@@ -292,12 +353,13 @@ export const ELO_CPU = { easy: 900, medium: 1050, hard: 1200 };
  *  Devuelve {preset, k, elo} — elo = objetivo REAL tras el clamp de k.
  *  FUNCIÓN PURA (testable sin instancia de juego: qa_r118_dirigida). */
 export function rivalPorElo(elo, jitter) {
-  const j = THREE.MathUtils.clamp(Number(jitter) || 0, -120, 120);
-  const objetivo = THREE.MathUtils.clamp(Math.round(elo + j), 400, 2000);
-  const preset = objetivo < 975 ? 'easy' : objetivo < 1125 ? 'medium' : 'hard';
+  const M = CONFIG_DIFICULTAD.elo;   // r60: bandas, jitter y paso como datos
+  const j = THREE.MathUtils.clamp(Number(jitter) || 0, -M.jitterMax, M.jitterMax);
+  const objetivo = THREE.MathUtils.clamp(Math.round(elo + j), M.objetivoMin, M.objetivoMax);
+  const preset = objetivo < M.bandaEasyHasta ? 'easy' : objetivo < M.bandaMediumHasta ? 'medium' : 'hard';
   const base = ELO_CPU[preset];
-  const k = THREE.MathUtils.clamp(Math.pow(10, (objetivo - base) / 400), 0.7, 1.6);
-  return { preset, k, elo: Math.round(base + 400 * Math.log10(k)) };
+  const k = THREE.MathUtils.clamp(Math.pow(10, (objetivo - base) / M.paso), M.kMin, M.kMax);
+  return { preset, k, elo: Math.round(base + M.paso * Math.log10(k)) };
 }
 
 // M4 · gancho de tests (patrón __PP_WORLD/__PP_WRL_BADGE: visible para QA)

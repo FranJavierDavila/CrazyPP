@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.150-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.151-SDK6</span>
     </div>
   </main>
 
@@ -3473,7 +3473,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.150-SDK6';
+  const VERSION = '3.6.151-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -4453,11 +4453,75 @@ const DIMS = {
   roomHeight: 2.85,
 };
 
-const AI_PRESETS = {
-  easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.15, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.03 },
-  medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.05,  missBase: 0.08, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.05 },
-  hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.024, missBase: 0.03, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
+/* =====================================================================
+ *  r60 · FASE 154 · CONFIG_DIFICULTAD — ÚNICA FUENTE DE VERDAD DE LA
+ *  DIFICULTAD (directiva del dueño: «seguir extendiendo el patrón
+ *  data-driven a otro subsistemas» — quinta parada tras ARCANO_CFG,
+ *  física/bola, menú y audio).
+ *  ---------------------------------------------------------------------
+ *  · presets: las TRES CURVAS de la CPU (IA del rival): piernas
+ *    (maxSpeed/accel), puntería (errStd), fallo decidido (missBase),
+ *    reacción (predictInterval), tiempos de golpe (minT/maxT), potencia
+ *    (maxShotSpeed) y selección (smash/short). ALIAS AI_PRESETS.
+ *  · saque: asistencia del saque por dificultad (reach/vy/angleMul/
+ *    assistMul — v3.0.9-HALL1/v3.1.0-SRV2). ALIAS SERVE_ASSIST_TIERS.
+ *  · escala: los TOPE y EXPONENTES de scalePreset — el factor k con que
+ *    adaptativo, supervivencia, escalera y matchmaking deforman un preset.
+ *  · elo: anclas de la CPU (ALIAS ELO_CPU), factor K por modo, paso/piso/
+ *    inicial del número, bandas del matchmaking y su jitter.
+ *  · adaptativo: paso por punto de ventaja/desventaja y tope (c12).
+ *  · supervivencia: aceleración por rallye completado y techo (c12).
+ *  · esfuerzo: la fórmula r113 del fallo de la CPU INTELIGENTE (c06) —
+ *    base tibia, penalidad por velocidad y por desplazamiento, tope y
+ *    cadencia de golpeo. Cambiar la dificultad = editar esta tabla.
+ *  ===================================================================== */
+const CONFIG_DIFICULTAD = {
+  version: 1,
+  presets: {
+    easy:   { maxSpeed: 2.0, accel: 6,  errStd: 0.09,  missBase: 0.15, minT: 0.62, maxT: 0.88, maxShotSpeed: 4.8, predictInterval: 0.16, smash: 0.04, short: 0.03 },
+    medium: { maxSpeed: 2.7, accel: 9,  errStd: 0.05,  missBase: 0.08, minT: 0.52, maxT: 0.78, maxShotSpeed: 6.2, predictInterval: 0.10, smash: 0.15, short: 0.05 },
+    hard:   { maxSpeed: 3.8, accel: 14, errStd: 0.024, missBase: 0.03, minT: 0.42, maxT: 0.62, maxShotSpeed: 10,  predictInterval: 0.06, smash: 0.30, short: 0.06 },
+  },
+  saque: {
+    easy:   { reach: 0.060, vy: 3.5,  angleMul: 1.4,  assistMul: 1.35 },
+    medium: { reach: 0.045, vy: 3.10, angleMul: 1.0,  assistMul: 1.0  },
+    hard:   { reach: 0.028, vy: 2.70, angleMul: 0.7,  assistMul: 0.6  },
+  },
+  escala: {
+    kMin: 0.7, kMax: 2.2,        // rango legal del factor k (invariante del arnés)
+    speedMin: 0.55, speedMax: 1.9,
+    accelTope: 30, accelExp: 1.4,
+    errPiso: 0.6, errExp: 0.8,
+    predPiso: 0.6, predExp: 0.8,
+    missInverso: 2, missPiso: 0.25, missMin: 0.005, missMax: 0.45,
+    tPiso: 0.6, tExp: 0.5, minTMin: 0.24, minTMax: 1.0, maxTMin: 0.4, maxTMax: 1.3,
+    shotMin: 0.5, shotMax: 1.8,
+    smashPiso: 0.5, smashMin: 0.01, smashMax: 0.75,
+  },
+  elo: {
+    cpu: { easy: 900, medium: 1050, hard: 1200 },
+    kModo: { ia: 24, carrera: 20, p2p: 32 },   // los duelos humanos valen más
+    paso: 400, piso: 100, inicial: 1000, historialMax: 40,
+    rivalPorDefecto: 1000,
+    objetivoMin: 400, objetivoMax: 2000, jitterMax: 120,
+    bandaEasyHasta: 975, bandaMediumHasta: 1125,
+    kMin: 0.7, kMax: 1.6,   // el matchmaking nunca propone un muro
+  },
+  adaptativo: { pasoSube: 0.055, pasoBaja: 0.05, topeDif: 6 },
+  supervivencia: { porRallye: 0.08, techo: 2.1 },
+  esfuerzo: {                  // r113 · CPU INTELIGENTE (c06 lee la tabla)
+    baseFrac: 0.25,            // base tibia: la torpeza del nivel, suavizada
+    velUmbral: 7, velPaso: 0.06,          // +0,06 por m/s por encima de 7
+    viajeUmbral: 0.85, viajePaso: 0.60,   // +0,60 por m de desplazamiento extra
+    tope: 0.85,                // techo honesto del fallo decidido
+    cooldownS: 0.55,           // cadencia mínima entre golpes IA
+  },
 };
+
+// r60 · ALIAS del contrato (patrón FASE 149): los lectores de siempre
+// (c12/c13/tests/__PP_ELO) importan el nombre histórico — el DATO vive
+// en la tabla de arriba.
+const AI_PRESETS = CONFIG_DIFICULTAD.presets;
 
 /* v3.0.9-HALL1 · ASISTENCIA DEL SAQUE POR DIFICULTAD — el pilar «sentirse
  * dueño del juego» escala con la CPU elegida: en FÁCIL el saque perdona
@@ -4469,11 +4533,7 @@ const AI_PRESETS = {
  * SIEMPRE el gesto real), angleMul/assistMul = margen angular e intensidad
  * de la asistencia progresiva (v3.1.0-SRV2). La legalidad NO cambia:
  * tossMinRise y línea de fondo son reglas, no asistencia. */
-const SERVE_ASSIST_TIERS = {
-  easy:   { reach: 0.060, vy: 3.5,  angleMul: 1.4,  assistMul: 1.35 },
-  medium: { reach: 0.045, vy: 3.10, angleMul: 1.0,  assistMul: 1.0  },
-  hard:   { reach: 0.028, vy: 2.70, angleMul: 0.7,  assistMul: 0.6  },
-};
+const SERVE_ASSIST_TIERS = CONFIG_DIFICULTAD.saque;   // r60: dato
 
 /* =====================================================================
  *  v3.1.0-SRV2 · SAQUE VR REALISTA CON ASISTENCIA LIMITADA — parámetros
@@ -4538,17 +4598,18 @@ const SERVE_TUNE = {
  *  Se usa para la IA ADAPTATIVA (según el marcador) y el modo SUPERVIVENCIA
  *  (la CPU acelera rallye a rallye). Devuelve un preset NUEVO. */
 function scalePreset(cfg, k) {
-  const kk = THREE.MathUtils.clamp(k, 0.7, 2.2);
+  const E = CONFIG_DIFICULTAD.escala;   // r60: topes y exponentes como datos
+  const kk = THREE.MathUtils.clamp(k, E.kMin, E.kMax);
   return {
-    maxSpeed: cfg.maxSpeed * THREE.MathUtils.clamp(kk, 0.55, 1.9),
-    accel: Math.min(30, cfg.accel * Math.pow(kk, 1.4)),
-    errStd: cfg.errStd / Math.max(0.6, Math.pow(kk, 0.8)),
-    missBase: THREE.MathUtils.clamp(cfg.missBase * Math.max(0.25, 2 - kk), 0.005, 0.45),
-    minT: THREE.MathUtils.clamp(cfg.minT / Math.max(0.6, Math.pow(kk, 0.5)), 0.24, 1.0),
-    maxT: THREE.MathUtils.clamp(cfg.maxT / Math.max(0.6, Math.pow(kk, 0.5)), 0.4, 1.3),
-    maxShotSpeed: cfg.maxShotSpeed * THREE.MathUtils.clamp(kk, 0.5, 1.8),
-    predictInterval: cfg.predictInterval / Math.max(0.6, Math.pow(kk, 0.8)),
-    smash: THREE.MathUtils.clamp(cfg.smash * Math.max(0.5, kk), 0.01, 0.75),
+    maxSpeed: cfg.maxSpeed * THREE.MathUtils.clamp(kk, E.speedMin, E.speedMax),
+    accel: Math.min(E.accelTope, cfg.accel * Math.pow(kk, E.accelExp)),
+    errStd: cfg.errStd / Math.max(E.errPiso, Math.pow(kk, E.errExp)),
+    missBase: THREE.MathUtils.clamp(cfg.missBase * Math.max(E.missPiso, E.missInverso - kk), E.missMin, E.missMax),
+    minT: THREE.MathUtils.clamp(cfg.minT / Math.max(E.tPiso, Math.pow(kk, E.tExp)), E.minTMin, E.minTMax),
+    maxT: THREE.MathUtils.clamp(cfg.maxT / Math.max(E.tPiso, Math.pow(kk, E.tExp)), E.maxTMin, E.maxTMax),
+    maxShotSpeed: cfg.maxShotSpeed * THREE.MathUtils.clamp(kk, E.shotMin, E.shotMax),
+    predictInterval: cfg.predictInterval / Math.max(E.predPiso, Math.pow(kk, E.predExp)),
+    smash: THREE.MathUtils.clamp(cfg.smash * Math.max(E.smashPiso, kk), E.smashMin, E.smashMax),
     short: cfg.short,
   };
 }
@@ -4560,7 +4621,7 @@ function scalePreset(cfg, k) {
  *  rival cerca de tu nivel). r109 (PWA) ya reservaba la página 'rank';
  *  esto es la base numérica local, sin servidor nuevo.
  * ===================================================================== */
-const ELO_CPU = { easy: 900, medium: 1050, hard: 1200 };
+const ELO_CPU = CONFIG_DIFICULTAD.elo.cpu;   // r60: dato
 
 /** M4 · MATCHMAKING LOCAL POR ELO — rival propuesto cerca de tu nivel con
  *  variedad. Dado tu ELO y un jitter en ±120 (la VARIEDAD: cada propuesta
@@ -4572,12 +4633,13 @@ const ELO_CPU = { easy: 900, medium: 1050, hard: 1200 };
  *  Devuelve {preset, k, elo} — elo = objetivo REAL tras el clamp de k.
  *  FUNCIÓN PURA (testable sin instancia de juego: qa_r118_dirigida). */
 function rivalPorElo(elo, jitter) {
-  const j = THREE.MathUtils.clamp(Number(jitter) || 0, -120, 120);
-  const objetivo = THREE.MathUtils.clamp(Math.round(elo + j), 400, 2000);
-  const preset = objetivo < 975 ? 'easy' : objetivo < 1125 ? 'medium' : 'hard';
+  const M = CONFIG_DIFICULTAD.elo;   // r60: bandas, jitter y paso como datos
+  const j = THREE.MathUtils.clamp(Number(jitter) || 0, -M.jitterMax, M.jitterMax);
+  const objetivo = THREE.MathUtils.clamp(Math.round(elo + j), M.objetivoMin, M.objetivoMax);
+  const preset = objetivo < M.bandaEasyHasta ? 'easy' : objetivo < M.bandaMediumHasta ? 'medium' : 'hard';
   const base = ELO_CPU[preset];
-  const k = THREE.MathUtils.clamp(Math.pow(10, (objetivo - base) / 400), 0.7, 1.6);
-  return { preset, k, elo: Math.round(base + 400 * Math.log10(k)) };
+  const k = THREE.MathUtils.clamp(Math.pow(10, (objetivo - base) / M.paso), M.kMin, M.kMax);
+  return { preset, k, elo: Math.round(base + M.paso * Math.log10(k)) };
 }
 
 // M4 · gancho de tests (patrón __PP_WORLD/__PP_WRL_BADGE: visible para QA)
@@ -8789,7 +8851,8 @@ class GameStats {
       // habilidad ÚNICO para IA local, escalera y P2P. eloHist guarda los
       // últimos 40 cambios {t, d:±delta, m:modo}; mejorDia = el día con más
       // victorias; hoyDia = contador vivo del día en curso.
-      elo: 1000, eloHist: [],
+      elo: CONFIG_DIFICULTAD.elo.inicial,   // r60: dato (fábrica del número)
+      eloHist: [],
       mejorDia: { dia: '', v: 0 },
       hoyDia: { dia: '', v: 0 },
     };
@@ -8803,7 +8866,7 @@ class GameStats {
       }
     } catch { /* datos corruptos: se recrean limpios */ }
     // M4 · migración tolerante (datos viejos sin ELO o corruptos)
-    if (typeof this.data.elo !== 'number' || !(this.data.elo > 0)) this.data.elo = 1000;
+    if (typeof this.data.elo !== 'number' || !(this.data.elo > 0)) this.data.elo = CONFIG_DIFICULTAD.elo.inicial;   // r60: dato
     if (!Array.isArray(this.data.eloHist)) this.data.eloHist = [];
     if (!this.data.mejorDia || typeof this.data.mejorDia !== 'object') this.data.mejorDia = { dia: '', v: 0 };
     if (!this.data.hoyDia || typeof this.data.hoyDia !== 'object') this.data.hoyDia = { dia: '', v: 0 };
@@ -8867,16 +8930,17 @@ class GameStats {
   recordMatch(win, difficulty, info) {
     const out = [];
     const inf = info || {};
-    const KMOD = { ia: 24, carrera: 20, p2p: 32 };
+    const M = CONFIG_DIFICULTAD.elo;   // r60: el K por modo y los límites del número viven en datos
+    const KMOD = M.kModo;
     const modo = KMOD[inf.modo] ? inf.modo : 'ia';
     const miElo = this.data.elo;
-    const oppElo = (typeof inf.oppElo === 'number' && inf.oppElo > 0) ? inf.oppElo : 1000;
-    const esperado = 1 / (1 + Math.pow(10, (oppElo - miElo) / 400));
+    const oppElo = (typeof inf.oppElo === 'number' && inf.oppElo > 0) ? inf.oppElo : M.rivalPorDefecto;
+    const esperado = 1 / (1 + Math.pow(10, (oppElo - miElo) / M.paso));
     const delta = Math.round(KMOD[modo] * ((win ? 1 : 0) - esperado));
-    this.data.elo = Math.max(100, miElo + delta);
+    this.data.elo = Math.max(M.piso, miElo + delta);   // r60: piso de la tabla
     this.data.eloHist.push({ t: Date.now(), d: delta, m: modo });
-    if (this.data.eloHist.length > 40) {
-      this.data.eloHist.splice(0, this.data.eloHist.length - 40);
+    if (this.data.eloHist.length > M.historialMax) {
+      this.data.eloHist.splice(0, this.data.eloHist.length - M.historialMax);
     }
     if (win) {
       this.data.won++;
@@ -9584,12 +9648,13 @@ class OpponentAI {
     // clamps acotan y la distinción entre personalidades se conserva.
     // (NOTA: el `reach` de arriba es el RADIO de la pala — este es `viaje`.)
     const viaje = Math.hypot(cx - this.pos.x, cz - this.pos.z);
-    const pMiss = Math.min(0.85,
-      this.cfg.missBase * 0.25 +
-      Math.max(0, ballSpeed - 7) * 0.06 +
-      Math.max(0, viaje - 0.85) * 0.60 +
+    const EF = CONFIG_DIFICULTAD.esfuerzo;   // r60: la fórmula del fallo vive en datos
+    const pMiss = Math.min(EF.tope,
+      this.cfg.missBase * EF.baseFrac +
+      Math.max(0, ballSpeed - EF.velUmbral) * EF.velPaso +
+      Math.max(0, viaje - EF.viajeUmbral) * EF.viajePaso +
       (ball.ppPortal ? (DIMS.portalMissExtra || 0) : 0));
-    this.hitCooldown = 0.55;
+    this.hitCooldown = EF.cooldownS;   // r60: cadencia de la tabla
     // v2.84 · GOLPE MALO (petición del artista): el fallo decidido de la IA
     // YA NO deja pasar la bola a través de la pala (efecto pésimo). La toca
     // MAL: contacto flojo y desviado que se queda en su campo (red o corto),
@@ -24560,11 +24625,14 @@ class PingPongGame {
     if (this.carreraMatch) k *= this.carreraMatch.k;
     else if (this.mmMatch) k *= this.mmMatch.k;
     if (this.adaptive) {
+      const AD = CONFIG_DIFICULTAD.adaptativo;   // r60: el paso vive en datos
       const diff = this.rules.scorePlayer - this.rules.scoreAi;
-      k += diff > 0 ? Math.min(diff, 6) * 0.055 : Math.max(diff, -6) * 0.05;
+      k += diff > 0 ? Math.min(diff, AD.topeDif) * AD.pasoSube
+                    : Math.max(diff, -AD.topeDif) * AD.pasoBaja;
     }
     if (this.mode === 'survival') {
-      k *= Math.min(2.1, 1 + this.survivalRallies * 0.08);
+      const SV = CONFIG_DIFICULTAD.supervivencia;   // r60: la rampa vive en datos
+      k *= Math.min(SV.techo, 1 + this.survivalRallies * SV.porRallye);
     }
     // v2.44/2.69: nivel del rival del campeonato (Nv.2 ×1,22 · Nv.3 ×1,5)
     // — lo decide cada módulo en su aiMul(); locura devuelve ×1 si no es
@@ -24573,7 +24641,8 @@ class PingPongGame {
     if (this.champs && this.champs.active) k *= this.champs.aiMul();
     // r61 · el resultado es el OBJETIVO: el factor REAL persigue al objetivo
     // con un lerp en el tick (la adaptación se siente, no se trompea).
-    this._aiKTarget = THREE.MathUtils.clamp(k, 0.7, 2.2);
+    const ES = CONFIG_DIFICULTAD.escala;   // r60: rango legal de la tabla
+    this._aiKTarget = THREE.MathUtils.clamp(k, ES.kMin, ES.kMax);
     this._aiKAplica();
     this._rivStyleAplicar();   // r95: estilo del rival vigente en cada recalculo
   }

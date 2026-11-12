@@ -6107,11 +6107,14 @@ export class PingPongGame {
     if (this.carreraMatch) k *= this.carreraMatch.k;
     else if (this.mmMatch) k *= this.mmMatch.k;
     if (this.adaptive) {
+      const AD = CONFIG_DIFICULTAD.adaptativo;   // r60: el paso vive en datos
       const diff = this.rules.scorePlayer - this.rules.scoreAi;
-      k += diff > 0 ? Math.min(diff, 6) * 0.055 : Math.max(diff, -6) * 0.05;
+      k += diff > 0 ? Math.min(diff, AD.topeDif) * AD.pasoSube
+                    : Math.max(diff, -AD.topeDif) * AD.pasoBaja;
     }
     if (this.mode === 'survival') {
-      k *= Math.min(2.1, 1 + this.survivalRallies * 0.08);
+      const SV = CONFIG_DIFICULTAD.supervivencia;   // r60: la rampa vive en datos
+      k *= Math.min(SV.techo, 1 + this.survivalRallies * SV.porRallye);
     }
     // v2.44/2.69: nivel del rival del campeonato (Nv.2 ×1,22 · Nv.3 ×1,5)
     // — lo decide cada módulo en su aiMul(); locura devuelve ×1 si no es
@@ -6120,7 +6123,8 @@ export class PingPongGame {
     if (this.champs && this.champs.active) k *= this.champs.aiMul();
     // r61 · el resultado es el OBJETIVO: el factor REAL persigue al objetivo
     // con un lerp en el tick (la adaptación se siente, no se trompea).
-    this._aiKTarget = THREE.MathUtils.clamp(k, 0.7, 2.2);
+    const ES = CONFIG_DIFICULTAD.escala;   // r60: rango legal de la tabla
+    this._aiKTarget = THREE.MathUtils.clamp(k, ES.kMin, ES.kMax);
     this._aiKAplica();
     this._rivStyleAplicar();   // r95: estilo del rival vigente en cada recalculo
   }
@@ -17478,7 +17482,7 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_MENU, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTOS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFICULTAD, CONFIG_MENU, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTOS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';

@@ -93,10 +93,13 @@ CHK('maxBallSpeed: 14,' not in GH, 'física: el techo viejo de bola (14) desapar
 AGUJAS_CPU = [
     ('const viaje = Math.hypot(cx - this.pos.x, cz - this.pos.z);',
      'cpu: viaje = distancia que la IA debe recorrer'),
-    ('this.cfg.missBase * 0.25 +', 'cpu: base tibia (la torpeza del nivel, suavizada)'),
-    ('Math.max(0, ballSpeed - 7) * 0.06 +', 'cpu: bolas rápidas pagan (+0,06/m/s sobre 7)'),
-    ('Math.max(0, viaje - 0.85) * 0.60 +', 'cpu: escoradas/colocación extrema pagan (+0,60/m sobre 0,85)'),
-    ('Math.min(0.85,', 'cpu: tope honesto del fallo (0,85)'),
+    ('const EF = CONFIG_DIFICULTAD.esfuerzo;   // r60: la fórmula del fallo vive en datos',
+     'cpu: la fórmula vive en CONFIG_DIFICULTAD.esfuerzo (re-anclada r60)'),
+    ('this.cfg.missBase * EF.baseFrac +', 'cpu: base tibia (la torpeza del nivel, suavizada — dato r60)'),
+    ('Math.max(0, ballSpeed - EF.velUmbral) * EF.velPaso +', 'cpu: bolas rápidas pagan (+0,06/m/s sobre 7 — dato r60)'),
+    ('Math.max(0, viaje - EF.viajeUmbral) * EF.viajePaso +', 'cpu: escoradas/colocación extrema pagan (+0,60/m sobre 0,85 — dato r60)'),
+    ('Math.min(EF.tope,', 'cpu: tope honesto del fallo (0,85 — dato r60)'),
+    ('this.hitCooldown = EF.cooldownS;   // r60: cadencia de la tabla', 'cpu: cadencia de golpeo 0,55 s como dato (r60)'),
 ]
 for aguja, nombre in AGUJAS_CPU:
     CHK(aguja in GH, nombre)

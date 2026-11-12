@@ -6688,3 +6688,20 @@ Stage Summary:
   qa_telemetria 132/0 · qa_dashboard_r53 OK · qa_dashboard_r56 OK.
   ROJOS HISTÓRICOS PREEXISTENTES (congelados en su era): r23 (1), r25 (6),
   r26 (6), r27 (3), r28 (9), r29 (7).
+- DESPLIEGUE r59: commit de FASE 153 → deploy_pages --push (rama pages →
+  79a710cf7, 476 ficheros · smoke de prefijo /CrazyPP 33 peticiones, 0
+  fallos de red, 0 pageerrors). VERIFICACIÓN EN PRODUCCIÓN
+  (prod_smoke_r59.py): 33 OK · 0 FALLOS — CONFIG_AUDIO servida (tabla
+  íntegra: buses/compresor/murmullo · canales de fábrica · fundidos de
+  los 3 canales de melodía · SFX nivel/piso/tono) · 44 lectores
+  verificados por familias (buses 12 · canales 3 · musica 7 · bso 7 ·
+  salon 5 · sfx 10) · EL DATO MANDA VIVO: el grafo de audio se construye
+  desde la tabla (master.gain 0,9 — AudioParam float32, tolerancia 1e-3
+  en el humo · fábrica música 1/efectos 1/locutor 0,18) · conservación
+  r58 (CONFIG_MENU · tarjeta 'salirweb' viva · puerta →
+  https://franjavierdavila.github.io/CrazyPP/) · r57 (PASO_TUNE · R2) ·
+  r55 (ARCANO_CFG · pwViva 1+13 · dur ×14) · r56 (BOTE/BOLA) · sw.js
+  crazypp-v3.6.150-SDK6 · portada cache-buster · __PP_VERSION
+  3.6.150-SDK6 · 0 pageerrors · IMÁN nace (9,93 s), sin «agotado», VIVO
+  1 s después (9,38 s) · EFECTO convive (9,85/9,23 s) · DATO MANDA: MEGA
+  nace a los 15,00 s de ARCANO_CFG (14,85 s medidos).

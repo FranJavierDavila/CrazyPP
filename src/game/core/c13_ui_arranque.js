@@ -8,7 +8,7 @@ function renderPlayBtn() {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __ppLang, applyLangDOM, ppPlayerName, setLang } from './c00_pre_three.js';
 import { fixInvertedMeshes, loadGunModel, loadPaddleModel, makeGunVisual, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, CONFIG_LOGROS, CONFIG_PIELES, CONFIG_RALLY, CONFIG_TORNEOS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, CONFIG_LOGROS, CONFIG_MEDALLAS, CONFIG_PIELES, CONFIG_RALLY, CONFIG_TORNEOS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
 import { CCD_TUNE, bladeNormalLocal, createPaddleSim, sdfBlade, setPaddleBasis, sweepBallVsBlade, tmpPrev } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddleSweep, computeShotVelocityReal, findServeVelocity, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { NetLink } from './c09_red_netlink.js';
@@ -1105,13 +1105,14 @@ loadPaddleModel().then((paddleModel) => {
      *  M7d (r120) · MEDALLAS POR EJERCICIO — honor derivado de los datos
      *  que YA existen: sin migración y RETROACTIVO (quien ya dominó un
      *  ejercicio despierta con su medalla puesta).
+     *  r64 · FASE 158 · umbrales = DATO (CONFIG_MEDALLAS en c02):
      *  · modos de HABILIDAD (t1/t2/t3/t4): estrellas + precisión
-     *    🥉 1 bronce: meta completada alguna vez (stars ≥ 1)
-     *    🥈 2 plata:  2 estrellas y precisión ≥ 70 %
-     *    🥇 3 oro:    3 estrellas y precisión ≥ 85 %
+     *    🥉 1 bronce: meta completada alguna vez (stars ≥ MDE.bronce)
+     *    🥈 2 plata:  MDE.plata estrellas y precisión ≥ MDP.plata
+     *    🥇 3 oro:    MDE.oro estrellas y precisión ≥ MDP.oro
      *  · modos RALLY (t5a/t5b): la MARCA manda (no hay precisión que
      *    grabar en un rally infinito — los hitos SON la meta):
-     *    🥉 marca ≥ meta1 · 🥈 ≥ meta2 · 🥇 ≥ meta3 (30/50/100 · 20/40/80)
+     *    🥉 marca ≥ meta1 · 🥈 ≥ meta2 · 🥇 ≥ meta3 (CONFIG_RALLY.metas)
      *  Con gamify=0 (GAMF=0) no hay medallas: flujo legacy intacto.
      *  ================================================================= */
     function medallaDe(id) {
@@ -1124,10 +1125,12 @@ loadPaddleModel().then((paddleModel) => {
         if (best >= MI[0]) return 1;
         return 0;
       }
+      /* r64 · FASE 158 · la escalera vive en CONFIG_MEDALLAS (c02) */
+      const MDE = CONFIG_MEDALLAS.estrellas, MDP = CONFIG_MEDALLAS.precision;
       const stN = S.stars[id] || 0;
-      if (stN >= 3) return (S.acc[id] || 0) >= 85 ? 3 : 2;
-      if (stN === 2) return (S.acc[id] || 0) >= 70 ? 2 : 1;
-      if (stN === 1) return 1;
+      if (stN >= MDE.oro) return (S.acc[id] || 0) >= MDP.oro ? 3 : 2;
+      if (stN >= MDE.plata) return (S.acc[id] || 0) >= MDP.plata ? 2 : 1;
+      if (stN >= MDE.bronce) return 1;
       return 0;
     }
     const MED_GLYPH = ['', '\u{1F949}', '\u{1F948}', '\u{1F947}'];
@@ -3665,7 +3668,8 @@ loadPaddleModel().then((paddleModel) => {
         c.fillText((S.best[id] ? t('mejor') + ': ' + S.best[id] + '  ·  ' : '') + t('obj') + ': ' + M.n, 68, y + 142);
         // v3.0.7-PLAY1 · estrellas logradas + mejor precisión de la prueba
         // M7d (r120) · MEDALLA del ejercicio delante de las estrellas
-        // (🥉 meta completada · 🥈 2★ y ≥70 % · 🥇 3★ y ≥85 %)
+        // (🥉 meta completada · 🥈/🥇 por estrellas y precisión — umbrales
+        //  = CONFIG_MEDALLAS en c02, r64)
         if (GAMF()) {
           const stN = S.stars[id] || 0;
           c.textAlign = 'right';

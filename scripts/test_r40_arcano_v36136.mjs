@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r40 · v3.6.154-SDK6 · FASE 157 · TEST: EL ARCANO A LA
+/* CRAZY PING PONG · r40 · v3.6.155-SDK6 · FASE 158 · TEST: EL ARCANO A LA
  * VISTA — revisión del dueño sobre la r39 (cuatro informes en uno):
  *
  *   A · EL BÚHO, UN 25 % MÁS PEQUEÑO — «Veamos el buho (un poco más
@@ -71,26 +71,26 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.154-SDK6 · FASE 157 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.154-SDK6 · FASE 157 · EL ARCANO A LA VISTA');
-chk(vjson.version === '3.6.154-SDK6', 'VERSION.json: 3.6.154-SDK6');
-chk(vjson.fase === 157, 'FASE 157');
-chk(vjson.faseNombre === 'CONFIG_RALLY r63: HITOS Y BONOS DEL RALLY DATA-DRIVEN — metas [30/50/100 t5a · 20/40/80 t5b] y bonos [15/25/50] por modo viven en c02 — octava parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles (lectores c13: RALLY_MILL = CONFIG_RALLY.metas · RALLY_BONUS = CONFIG_RALLY.bonos — juez del rally, okHit t5a, estrellas, medallas y HUD intactos)', 'faseNombre = EL ARCANO A LA VISTA');
+/* — 1 · SELLOS · v3.6.155-SDK6 · FASE 158 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.155-SDK6 · FASE 158 · EL ARCANO A LA VISTA');
+chk(vjson.version === '3.6.155-SDK6', 'VERSION.json: 3.6.155-SDK6');
+chk(vjson.fase === 158, 'FASE 158');
+chk(vjson.faseNombre === 'CONFIG_MEDALLAS r64: MEDALLAS POR EJERCICIO DATA-DRIVEN — la escalera bronce/plata/oro (estrellas 1/2/3 · precisión 70/85) de medallaDe vive en c02 — novena parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles/rally (lector c13: MDE/MDP = CONFIG_MEDALLAS.estrellas/.precision — HUD, MEDALLERO y or5 intactos)', 'faseNombre = EL ARCANO A LA VISTA');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: build legítimamente cambiado por la r46 (gobernador + worker v3)
-chk(vjson.tamano === 11580273, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11582172, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '9a46bfe0daf1449fe6f295c9e9aeabe5518bc155bb021209dd6f1f36b597ec1d',
+  '91001a63531fa5931a60e6a4614122db72ffa4567c60d2eb7b94f7e7748b087f',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.154-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.154-SDK6'"), 'sello c00 = 3.6.154-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.154-SDK6'"),
-  'sw.js CACHE v3.6.154-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.154-SDK6</span>'), 'badge V3.6.154-SDK6 en 03_body');
-chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
-  'hub /descargas sellado a v36139-sdk6');
+chk(game.includes('3.6.155-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.155-SDK6'"), 'sello c00 = 3.6.155-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.155-SDK6'"),
+  'sw.js CACHE v3.6.155-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.155-SDK6</span>'), 'badge V3.6.155-SDK6 en 03_body');
+chk(lee('src/app/descargas/page.tsx').includes('v36154-sdk6'),
+  'hub /descargas sellado a v36154-sdk6');
 
 /* — 2 · EL BÚHO DEL HALL, UN 25 % MÁS PEQUEÑO ————————————————————— */
 console.log('2 · BÚHO · 0,78×0,52 → 0,585×0,39 (25 % más pequeño)');

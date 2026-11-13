@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.154-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.155-SDK6</span>
     </div>
   </main>
 
@@ -3473,7 +3473,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.154-SDK6';
+  const VERSION = '3.6.155-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -5220,8 +5220,9 @@ const CONFIG_AUDIO = {
  *  · circuito: el PRO TRAINING (c13) — niveles de puntos, escalones del
  *    combo (×2/×3) y estrellas por ronda sin fallos.
  *  · FUERA DE ÁMBITO (filas futuras): la ola de c13 está COMPLETA —
- *    las pieles son CONFIG_PIELES (r62) y las metas/bonos de rally
- *    son CONFIG_RALLY (r63), ambas al pie del fichero.
+ *    las pieles son CONFIG_PIELES (r62), las metas/bonos de rally son
+ *    CONFIG_RALLY (r63) y las medallas son CONFIG_MEDALLAS (r64), las
+ *    tres al pie del fichero.
  *  ===================================================================== */
 const CONFIG_TORNEOS = {
   version: 1,
@@ -5361,6 +5362,33 @@ const CONFIG_RALLY = {
   version: 1,
   metas: { t5a: [30, 50, 100], t5b: [20, 40, 80] },
   bonos: { t5a: [15, 25, 50], t5b: [15, 25, 50] },
+};
+
+/* =====================================================================
+ *  CONFIG_MEDALLAS (r64 · FASE 158) — NOVENA PARADA data-driven tras
+ *  ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles/rally.
+ *  Las MEDALLAS POR EJERCICIO del PRO TRAINING (M7d, r120). ANTES la
+ *  escalera era literal en medallaDe de c13; AHORA vive aquí y c13 se
+ *  limita a consumirla. Campos:
+ *  ---------------------------------------------------------------------
+ *  · estrellas  umbral de S.stars para cada nivel de medalla en los
+ *               modos de HABILIDAD (t1/t2/t3/t4): bronce 1 (meta
+ *               completada alguna vez) · plata 2 · oro 3.
+ *  · precision  % mínimo de S.acc que exige cada nivel en esos modos:
+ *               plata 70 · oro 85 (el bronce no exige precisión).
+ *  · Los modos RALLY (t5a/t5b) NO usan esta tabla: su medalla es la
+ *    MARCA (best ≥ meta_i) y ya lee CONFIG_RALLY.metas desde r63.
+ *  LECTORES: c13 (medallaDe — medalla del HUD/tienda, recuento del
+ *  MEDALLERO y logro or5). Cambiar un umbral = editar AQUÍ, sin tocar
+ *  una línea de lógica.
+ *  · FUERA DE ÁMBITO (filas futuras): la escala de ESTRELLAS dibujada
+ *    en el HUD (repeat(3 - stN)) es presentación; el texto i18n que
+ *    cita números sigue siendo cadena de traducción.
+ *  ===================================================================== */
+const CONFIG_MEDALLAS = {
+  version: 1,
+  estrellas: { bronce: 1, plata: 2, oro: 3 },
+  precision: { plata: 70, oro: 85 },
 };
 const VOICE_FULL = {
   es: {
@@ -38221,13 +38249,14 @@ loadPaddleModel().then((paddleModel) => {
      *  M7d (r120) · MEDALLAS POR EJERCICIO — honor derivado de los datos
      *  que YA existen: sin migración y RETROACTIVO (quien ya dominó un
      *  ejercicio despierta con su medalla puesta).
+     *  r64 · FASE 158 · umbrales = DATO (CONFIG_MEDALLAS en c02):
      *  · modos de HABILIDAD (t1/t2/t3/t4): estrellas + precisión
-     *    🥉 1 bronce: meta completada alguna vez (stars ≥ 1)
-     *    🥈 2 plata:  2 estrellas y precisión ≥ 70 %
-     *    🥇 3 oro:    3 estrellas y precisión ≥ 85 %
+     *    🥉 1 bronce: meta completada alguna vez (stars ≥ MDE.bronce)
+     *    🥈 2 plata:  MDE.plata estrellas y precisión ≥ MDP.plata
+     *    🥇 3 oro:    MDE.oro estrellas y precisión ≥ MDP.oro
      *  · modos RALLY (t5a/t5b): la MARCA manda (no hay precisión que
      *    grabar en un rally infinito — los hitos SON la meta):
-     *    🥉 marca ≥ meta1 · 🥈 ≥ meta2 · 🥇 ≥ meta3 (30/50/100 · 20/40/80)
+     *    🥉 marca ≥ meta1 · 🥈 ≥ meta2 · 🥇 ≥ meta3 (CONFIG_RALLY.metas)
      *  Con gamify=0 (GAMF=0) no hay medallas: flujo legacy intacto.
      *  ================================================================= */
     function medallaDe(id) {
@@ -38240,10 +38269,12 @@ loadPaddleModel().then((paddleModel) => {
         if (best >= MI[0]) return 1;
         return 0;
       }
+      /* r64 · FASE 158 · la escalera vive en CONFIG_MEDALLAS (c02) */
+      const MDE = CONFIG_MEDALLAS.estrellas, MDP = CONFIG_MEDALLAS.precision;
       const stN = S.stars[id] || 0;
-      if (stN >= 3) return (S.acc[id] || 0) >= 85 ? 3 : 2;
-      if (stN === 2) return (S.acc[id] || 0) >= 70 ? 2 : 1;
-      if (stN === 1) return 1;
+      if (stN >= MDE.oro) return (S.acc[id] || 0) >= MDP.oro ? 3 : 2;
+      if (stN >= MDE.plata) return (S.acc[id] || 0) >= MDP.plata ? 2 : 1;
+      if (stN >= MDE.bronce) return 1;
       return 0;
     }
     const MED_GLYPH = ['', '\u{1F949}', '\u{1F948}', '\u{1F947}'];
@@ -40781,7 +40812,8 @@ loadPaddleModel().then((paddleModel) => {
         c.fillText((S.best[id] ? t('mejor') + ': ' + S.best[id] + '  ·  ' : '') + t('obj') + ': ' + M.n, 68, y + 142);
         // v3.0.7-PLAY1 · estrellas logradas + mejor precisión de la prueba
         // M7d (r120) · MEDALLA del ejercicio delante de las estrellas
-        // (🥉 meta completada · 🥈 2★ y ≥70 % · 🥇 3★ y ≥85 %)
+        // (🥉 meta completada · 🥈/🥇 por estrellas y precisión — umbrales
+        //  = CONFIG_MEDALLAS en c02, r64)
         if (GAMF()) {
           const stN = S.stars[id] || 0;
           c.textAlign = 'right';

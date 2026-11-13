@@ -940,8 +940,9 @@ export const CONFIG_AUDIO = {
  *  · circuito: el PRO TRAINING (c13) — niveles de puntos, escalones del
  *    combo (×2/×3) y estrellas por ronda sin fallos.
  *  · FUERA DE ÁMBITO (filas futuras): la ola de c13 está COMPLETA —
- *    las pieles son CONFIG_PIELES (r62) y las metas/bonos de rally
- *    son CONFIG_RALLY (r63), ambas al pie del fichero.
+ *    las pieles son CONFIG_PIELES (r62), las metas/bonos de rally son
+ *    CONFIG_RALLY (r63) y las medallas son CONFIG_MEDALLAS (r64), las
+ *    tres al pie del fichero.
  *  ===================================================================== */
 export const CONFIG_TORNEOS = {
   version: 1,
@@ -1081,4 +1082,31 @@ export const CONFIG_RALLY = {
   version: 1,
   metas: { t5a: [30, 50, 100], t5b: [20, 40, 80] },
   bonos: { t5a: [15, 25, 50], t5b: [15, 25, 50] },
+};
+
+/* =====================================================================
+ *  CONFIG_MEDALLAS (r64 · FASE 158) — NOVENA PARADA data-driven tras
+ *  ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles/rally.
+ *  Las MEDALLAS POR EJERCICIO del PRO TRAINING (M7d, r120). ANTES la
+ *  escalera era literal en medallaDe de c13; AHORA vive aquí y c13 se
+ *  limita a consumirla. Campos:
+ *  ---------------------------------------------------------------------
+ *  · estrellas  umbral de S.stars para cada nivel de medalla en los
+ *               modos de HABILIDAD (t1/t2/t3/t4): bronce 1 (meta
+ *               completada alguna vez) · plata 2 · oro 3.
+ *  · precision  % mínimo de S.acc que exige cada nivel en esos modos:
+ *               plata 70 · oro 85 (el bronce no exige precisión).
+ *  · Los modos RALLY (t5a/t5b) NO usan esta tabla: su medalla es la
+ *    MARCA (best ≥ meta_i) y ya lee CONFIG_RALLY.metas desde r63.
+ *  LECTORES: c13 (medallaDe — medalla del HUD/tienda, recuento del
+ *  MEDALLERO y logro or5). Cambiar un umbral = editar AQUÍ, sin tocar
+ *  una línea de lógica.
+ *  · FUERA DE ÁMBITO (filas futuras): la escala de ESTRELLAS dibujada
+ *    en el HUD (repeat(3 - stN)) es presentación; el texto i18n que
+ *    cita números sigue siendo cadena de traducción.
+ *  ===================================================================== */
+export const CONFIG_MEDALLAS = {
+  version: 1,
+  estrellas: { bronce: 1, plata: 2, oro: 3 },
+  precision: { plata: 70, oro: 85 },
 };

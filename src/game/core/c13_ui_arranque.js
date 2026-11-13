@@ -8,7 +8,7 @@ function renderPlayBtn() {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __ppLang, applyLangDOM, ppPlayerName, setLang } from './c00_pre_three.js';
 import { fixInvertedMeshes, loadGunModel, loadPaddleModel, makeGunVisual, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, CONFIG_LOGROS, CONFIG_TORNEOS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
 import { CCD_TUNE, bladeNormalLocal, createPaddleSim, sdfBlade, setPaddleBasis, sweepBallVsBlade, tmpPrev } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddleSweep, computeShotVelocityReal, findServeVelocity, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { NetLink } from './c09_red_netlink.js';
@@ -851,10 +851,9 @@ loadPaddleModel().then((paddleModel) => {
     };
   
     /* ---------------- niveles y skins ---------------- */
-    const LEVELS = [
-      { min: 0, k: 'lvl0' }, { min: 150, k: 'lvl1' }, { min: 400, k: 'lvl2' },
-      { min: 800, k: 'lvl3' }, { min: 1500, k: 'lvl4' },
-    ];
+    // r61 · FASE 155 · la escalera de niveles es DATO (CONFIG_TORNEOS
+    // .circuito.niveles en c02) — puntos mínimos y clave i18n por nivel.
+    const LEVELS = CONFIG_TORNEOS.circuito.niveles;
     const levelOf = (p) => { let l = LEVELS[0]; for (const it of LEVELS) if (p >= it.min) l = it; return l; };
 
     /* =================================================================
@@ -1051,7 +1050,9 @@ loadPaddleModel().then((paddleModel) => {
      *  NUNCA toca física, juez, feeds ni reglas. Interruptor DIMS.trainGamify.
      *  ================================================================= */
     const GAMF = () => (typeof DIMS !== 'undefined' && DIMS.trainGamify === 0) ? 0 : 1;
-    const ACHS = ['r10', 'r20', 'p1', 'p5', 'all9', 'm50', 'm100', 'x3', 'leg', 'or5'];
+    // r61 · FASE 155 · el catálogo de honores es DATO (CONFIG_LOGROS.train
+    // en c02) — el orden del panel es el orden de inserción de la tabla.
+    const ACHS = Object.keys(CONFIG_LOGROS.train);
     function grant(id) {
       if (!GAMF() || S.ach[id]) return;
       S.ach[id] = 1; save(); panelDirty = true;
@@ -1064,8 +1065,16 @@ loadPaddleModel().then((paddleModel) => {
       if (!GAMF() || !active) return 1;
       return comboMulN(isRallyM() ? st.rally : st.streak);
     }
-    function comboMulN(r) { return r >= 8 ? 3 : (r >= 4 ? 2 : 1); }
-    function starsFor(faults) { return faults === 0 ? 3 : (faults <= 2 ? 2 : 1); }
+    // r61 · FASE 155 · escalones del combo y estrellas por ronda: DATO
+    // (CONFIG_TORNEOS.circuito.combo / .estrellas en c02).
+    function comboMulN(r) {
+      const C = CONFIG_TORNEOS.circuito.combo;
+      return r >= C.x3Desde ? 3 : (r >= C.x2Desde ? 2 : 1);
+    }
+    function starsFor(faults) {
+      const E = CONFIG_TORNEOS.circuito.estrellas;
+      return faults === 0 ? E.tresSinFallo : (faults <= E.dosHastaFallos ? E.dosEstrellas : 1);
+    }
     function recordStars(mode, n) {
       if (!GAMF() || !n) return;
       if ((S.stars[mode] || 0) < n) { S.stars[mode] = n; save(); panelDirty = true; }
@@ -1076,19 +1085,21 @@ loadPaddleModel().then((paddleModel) => {
     }
     function checkStreakAch() {
       const r = isRallyM() ? st.rally : st.streak;
-      if (r >= 10) grant('r10');
-      if (r >= 20) grant('r20');
+      // r61 · FASE 155 · umbrales = DATO (CONFIG_LOGROS.train en c02)
+      if (r >= CONFIG_LOGROS.train.r10.cond.valor) grant('r10');
+      if (r >= CONFIG_LOGROS.train.r20.cond.valor) grant('r20');
     }
     function checkGlobalAch() {
       const modes = Object.keys(MODES);
       /* M7d (r120) · all9 queda anclado al CIRCUITO CLÁSICO (PLAN_POOL):
        * «CIRCUITO COMPLETO» prometía los 9 ejercicios de siempre — los
        * nuevos no endurecen retroactivamente un logro veterano. */
-      if (PLAN_POOL.every((m) => (S.stars[m] || 0) >= 1)) grant('all9');
-      if (modes.filter((m) => S.stars[m] === 3).length >= 5) grant('p5');
+      // r61 · FASE 155 · umbrales = DATO (CONFIG_LOGROS.train en c02)
+      if (PLAN_POOL.every((m) => (S.stars[m] || 0) >= CONFIG_LOGROS.train.all9.cond.estrellas)) grant('all9');
+      if (modes.filter((m) => S.stars[m] === CONFIG_LOGROS.train.p5.cond.estrellas).length >= CONFIG_LOGROS.train.p5.cond.cuenta) grant('p5');
       /* M7d (r120) · MEDALLERO DE ORO: 5 ejercicios con medalla de ORO */
-      if (modes.filter((m) => medallaDe(m) === 3).length >= 5) grant('or5');
-      if (S.pts >= 1500) grant('leg');
+      if (modes.filter((m) => medallaDe(m) === 3).length >= CONFIG_LOGROS.train.or5.cond.cuenta) grant('or5');
+      if (S.pts >= CONFIG_LOGROS.train.leg.cond.valor) grant('leg');
     }
     /* =================================================================
      *  M7d (r120) · MEDALLAS POR EJERCICIO — honor derivado de los datos
@@ -2077,10 +2088,13 @@ loadPaddleModel().then((paddleModel) => {
       }
       const M = MODES[active];
       const hitGoal = active === 't5a'
-        ? (st.rally === 30 || st.rally === 50 || st.rally === 100)
+        ? RALLY_MILL.t5a.includes(st.rally)   // r61: los hitos ya eran tabla (RALLY_MILL)
         : (st.streak >= objN());
       if (hitGoal) {
-        const bonus = active === 't5a' ? (st.rally === 30 ? 15 : st.rally === 50 ? 25 : 50) : M.bonus;
+        // r61 · FASE 155 · el bonus del hito sale de RALLY_BONUS (la tabla
+        // que ya existía junto a RALLY_MILL — adiós al literal duplicado)
+        const hi = RALLY_MILL.t5a.indexOf(st.rally);
+        const bonus = active === 't5a' ? RALLY_BONUS.t5a[hi] : M.bonus;
         addPts(bonus);
         // r97 · RETO SEMANAL «entrenamiento»: una meta completada cuenta
         try { if (G && G._retosEvento) G._retosEvento('entrenamiento', 1); } catch (eRE) { /* */ }
@@ -2089,17 +2103,18 @@ loadPaddleModel().then((paddleModel) => {
         let suffix = '';
         if (GAMF()) {
           if (active === 't5a') {
-            const stR = st.rally >= 100 ? 3 : (st.rally >= 50 ? 2 : 1);
+            const MI5 = RALLY_MILL.t5a;   // r61: umbrales de estrella = la tabla
+            const stR = st.rally >= MI5[2] ? 3 : (st.rally >= MI5[1] ? 2 : 1);
             recordStars('t5a', stR);
-            if (st.rally >= 50) grant('m50');
-            if (st.rally >= 100) grant('m100');
+            if (st.rally >= CONFIG_LOGROS.train.m50.cond.valor) grant('m50');   // r61: dato
+            if (st.rally >= CONFIG_LOGROS.train.m100.cond.valor) grant('m100');   // r61: dato
           } else {
             const tries = st.roundHits + st.roundFaults;
             const acc = tries ? Math.round(st.roundHits / tries * 100) : 100;
             const stars = starsFor(st.roundFaults);
             recordStars(active, stars);
             recordAcc(active, acc);
-            if (stars === 3) grant('p1');
+            if (stars === CONFIG_LOGROS.train.p1.cond.valor) grant('p1');   // r61: dato
             suffix = '  ' + '\u2605'.repeat(stars) + '\u2606'.repeat(3 - stars);
           }
           burst({ x: 0, y: TOP() + 0.5, z: C() }, active !== 't5a' && st.roundFaults === 0);

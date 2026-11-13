@@ -75,13 +75,34 @@ def out(args, **kw):
     return sh(args, **kw).stdout.strip()
 
 
+def git_dir():
+    """r61 · GIT_DIR real del repo (compatible con .git-dir y con WORKTREE:
+    el reciclaje del sandbox convirtió upload/.git en un PUNTERO de worktree
+    "gitdir: …/.git/worktrees/upload" — rev-parse resuelve el gitdir verdadero
+    en ambos casos)."""
+    try:
+        return out(['git', 'rev-parse', '--absolute-git-dir']) or \
+            os.path.join(REPO, '.git')
+    except Exception:
+        return os.path.join(REPO, '.git')
+
+
 def ensure_excluded():
-    exc = os.path.join(REPO, '.git', 'info', 'exclude')
-    with open(exc) as f:
-        cur = f.read()
-    if 'pages-site' not in cur:
-        with open(exc, 'a') as f:
-            f.write('\npages-site\n')
+    # r61 · con upload/.git como PUNTERO de worktree no hay info/exclude
+    # propio: el exclude era higiene local (que pages-site no aparezca en
+    # el status) — si no se puede escribir, se continúa (el deploy usa
+    # plumbing y jamás toca el índice del worktree).
+    try:
+        exc = os.path.join(git_dir(), 'info', 'exclude')
+        os.makedirs(os.path.dirname(exc), exist_ok=True)
+        with open(exc) as f:
+            cur = f.read()
+        if 'pages-site' not in cur:
+            with open(exc, 'a') as f:
+                f.write('\npages-site\n')
+    except OSError as e:
+        print(f'  · info/exclude no escribible ({e.__class__.__name__}): '
+              'higiene local omitida — el deploy no la necesita')
 
 
 def assemble():
@@ -314,7 +335,7 @@ async def smoke(version):
 
 
 def commit_pages_branch(version, head, game_sha, nfiles):
-    idx = os.path.join(REPO, '.git', 'pages-index')
+    idx = os.path.join(git_dir(), 'pages-index')
     if os.path.exists(idx):
         os.remove(idx)
     env = dict(os.environ, GIT_INDEX_FILE=idx)
@@ -327,7 +348,7 @@ def commit_pages_branch(version, head, game_sha, nfiles):
     # «pages-site/». Con --work-tree=SITE las rutas quedan en la RAÍZ del
     # tree, y core.fileMode=false sella 100644 como el bucle antiguo.
     sh(['git', '-c', 'core.fileMode=false',
-        '--git-dir', os.path.join(REPO, '.git'), '--work-tree', SITE,
+        '--git-dir', git_dir(), '--work-tree', SITE,
         'add', '-f', '--all', '--', '.'], env=env, cwd=SITE)
     tree = out(['git', 'write-tree'], env=env)
     # r39 · COMMIT HUÉRFANO SIEMPRE (lección del incidente r39): el builder

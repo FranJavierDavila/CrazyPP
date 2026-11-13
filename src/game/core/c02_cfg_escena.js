@@ -920,3 +920,96 @@ export const CONFIG_AUDIO = {
     suelo: { nivel: 0.42, piso: 0.05, tonoMin: 0.86, tonoMax: 1.18 },
   },
 };
+
+/* =====================================================================
+ *  r61 · FASE 155 · CONFIG_TORNEOS — ÚNICA FUENTE DE VERDAD DE LOS
+ *  TORNEOS (directiva del dueño: «seguir extendiendo el patrón
+ *  data-driven» — sexta parada tras ARCANO_CFG, física/bola, menú,
+ *  audio y dificultad).
+ *  ---------------------------------------------------------------------
+ *  · partido: el FORMATO que aplica el ÁRBITRO (c06 Rules) a cualquier
+ *    enfrentamiento — puntos para ganar, ventaja mínima, umbral de
+ *    iguala, cadencia del saque (normal y en iguala), pausas de punto,
+ *    best-of de fábrica y del PARTIDO libre (c12) y el factor que decide
+ *    una serie (victorias × serieFactor > N).
+ *  · caminos: etapas de TU CAMINO por campeonato (antes la tabla
+ *    CHAMP_STAGE_TOTAL de c11) + respaldo etapasPorDefecto.
+ *  · portada: campeonato de respaldo para BSO/rankings cuando el índice
+ *    no trae ninguno eager (antes el literal 'locura' de c11).
+ *  · candados: ids en PRÓXIMAMENTE (antes ChampLoader.LOCKED, r72).
+ *  · circuito: el PRO TRAINING (c13) — niveles de puntos, escalones del
+ *    combo (×2/×3) y estrellas por ronda sin fallos.
+ *  · FUERA DE ÁMBITO (filas futuras): los metadatos visuales y costes de
+ *    las pieles de pala (SKINS de c13, tabla autocontenida) y las metas y
+ *    bonos de rally RALLY_MILL/RALLY_BONUS por modo (tablas locales c13).
+ *  ===================================================================== */
+export const CONFIG_TORNEOS = {
+  version: 1,
+  partido: {
+    puntosGanar: 11,          // partido a 11 (ITTF simplificadas)
+    ventajaMinima: 2,         // y con ventaja de 2
+    igualaEn: 10,             // 10-10 = iguala (deuce)
+    saqueCada: 2,             // saque alternado cada 2 puntos
+    saqueIguala: 1,           // en iguala: alterna CADA punto
+    pausaPuntoS: 2.2,         // pausa tras un punto de PARTIDO
+    pausaSupervivenciaS: 1.7, // pausa tras un rallye de SUPERVIVENCIA
+    bestOfLibre: 3,           // el PARTIDO libre (CPU/P2P): mejor de 3
+    bestOfFabrica: 1,         // fábrica del árbitro: juego único (campeonatos)
+    serieFactor: 2,           // serie acabada cuando victorias × factor > N
+  },
+  caminos: { locura: 5, magia: 5, oeste: 5, estacion_orbital: 5, halloween: 5 },
+  etapasPorDefecto: 5,
+  portada: 'locura',
+  candados: ['estacion_orbital'],
+  circuito: {
+    niveles: [
+      { min: 0, k: 'lvl0' }, { min: 150, k: 'lvl1' }, { min: 400, k: 'lvl2' },
+      { min: 800, k: 'lvl3' }, { min: 1500, k: 'lvl4' },
+    ],
+    combo: { x2Desde: 4, x3Desde: 8 },
+    estrellas: { tresSinFallo: 3, dosHastaFallos: 2, dosEstrellas: 2 },
+  },
+};
+
+/* =====================================================================
+ *  r61 · FASE 155 · CONFIG_LOGROS — ÚNICA FUENTE DE VERDAD DE LOS
+ *  LOGROS (mismo contrato). DOS familias:
+ *  ---------------------------------------------------------------------
+ *  · core: los SEIS medallones CRAZY del Hall — ACHIEVEMENTS (c06) se
+ *    DERIVA de esta lista (orden, emoji y claves i18n intactos; c08/c12
+ *    los pintan igual) y AQUÍ viven también sus CONDICIONES, hoy
+ *    dispersas en GameStats: primera victoria, racha de victorias,
+ *    victoria en dificultad, rallye maratón, mejor supervivencia y aces.
+ *  · train: los DIEZ honores del PRO TRAINING (c13 — antes el array ACHS
+ *    con umbrales repartidos por el módulo): rachas de sesión, estrellas
+ *    por prueba, circuito completo, hitos del metrónomo, combo, medallas
+ *    de oro y puntos del circuito.
+ *  Cambiar un umbral, un emoji o añadir un logro = editar AQUÍ, sin
+ *  tocar una línea de lógica. El disparo del evento sigue siendo ÚNICO
+ *  (unlock → celebrate, r46: un logro = un evento).
+ *  · FUERA DE ÁMBITO (fila futura): los textos ach_* de c00 (ya son
+ *    claves i18n) y las medallas por ejercicio r120 (bronce/plata/oro).
+ *  ===================================================================== */
+export const CONFIG_LOGROS = {
+  version: 1,
+  core: [
+    { key: 'primera',  emoji: '🥇', nameKey: 'ach_first',    descKey: 'ach_first_d',    cond: { tipo: 'primeraVictoria' } },
+    { key: 'racha3',   emoji: '🔥', nameKey: 'ach_streak',   descKey: 'ach_streak_d',   cond: { tipo: 'rachaVictorias', valor: 3 } },
+    { key: 'gigante',  emoji: '💪', nameKey: 'ach_giant',    descKey: 'ach_giant_d',    cond: { tipo: 'victoriaEn', dificultad: 'hard' } },
+    { key: 'maraton',  emoji: '🏃', nameKey: 'ach_marathon', descKey: 'ach_marathon_d', cond: { tipo: 'rallye', valor: 20 } },
+    { key: 'superviv', emoji: '⏱️', nameKey: 'ach_survivor', descKey: 'ach_survivor_d', cond: { tipo: 'mejorSupervivencia', valor: 25 } },
+    { key: 'aces10',   emoji: '🎯', nameKey: 'ach_aces',     descKey: 'ach_aces_d',     cond: { tipo: 'aces', valor: 10 } },
+  ],
+  train: {
+    r10:  { cond: { tipo: 'rachaSesion', valor: 10 } },
+    r20:  { cond: { tipo: 'rachaSesion', valor: 20 } },
+    p1:   { cond: { tipo: 'estrellasPrueba', valor: 3 } },
+    p5:   { cond: { tipo: 'pruebasConEstrellas', estrellas: 3, cuenta: 5 } },
+    all9: { cond: { tipo: 'circuitoConEstrellas', estrellas: 1 } },
+    m50:  { cond: { tipo: 'rallyMetronomo', valor: 50 } },
+    m100: { cond: { tipo: 'rallyMetronomo', valor: 100 } },
+    x3:   { cond: { tipo: 'combo', valor: 3 } },
+    leg:  { cond: { tipo: 'puntosCircuito', valor: 1500 } },
+    or5:  { cond: { tipo: 'medallasOro', cuenta: 5 } },
+  },
+};

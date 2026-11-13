@@ -25,7 +25,8 @@ export class ChampLoader {
   // r85 · el campeonato retirado por el dueño se va con su candado, y
   // HALLOWEEN nace desbloqueado (juega desde el primer día). Sigue con
   // candado lo que el dueño tenía cerrado: la Estación Orbital (r72).
-  static LOCKED = ['estacion_orbital'];
+  // r61 · FASE 155: la lista de candados es DATO (CONFIG_TORNEOS.candados).
+  static LOCKED = CONFIG_TORNEOS.candados;
   isLocked(id) {
     if (!ChampLoader.LOCKED.includes(id)) return false;
     try { return !ppDebugMode(); } catch (e) { return true; }
@@ -36,7 +37,7 @@ export class ChampLoader {
    *  'locura' repartidos por el núcleo (descubrimiento dinámico real). */
   get portadaId() {
     const e = this.entries.find((x) => x.eager);
-    return e ? e.id : 'locura';
+    return e ? e.id : CONFIG_TORNEOS.portada;   // r61: respaldo como dato
   }
 
   /** ¿Hay una PRUEBA externa con la bola tomada? (El núcleo consulta
@@ -540,7 +541,9 @@ export class ChampLoader {
     try {
       const sv = parseInt(localStorage.getItem(base + 'stage') || '', 10);
       if (isNaN(sv)) return '';
-      const total = CHAMP_STAGE_TOTAL[id] || 5;
+      // r61 · FASE 155: el camino de cada campeonato es DATO
+      // (CONFIG_TORNEOS.caminos, antes CHAMP_STAGE_TOTAL) con respaldo.
+      const total = CONFIG_TORNEOS.caminos[id] || CONFIG_TORNEOS.etapasPorDefecto;
       let n;                                                            // 1..total
       if (id === 'oeste') n = (sv >= 2 && sv <= total) ? sv : 0;        // 1-indexed
       else n = (sv >= 1 && sv <= total - 1) ? sv + 1 : 0;               // 0-indexed
@@ -955,6 +958,7 @@ export class ChampLoader {
 }
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { T, __ppLang, ppDebugMode } from './c00_pre_three.js';
+import { CONFIG_TORNEOS } from './c02_cfg_escena.js';
 import { CHAMPS_STATE, _dbQ1, _dbQ2, _dbV1, _rbQ, _rbV1, _rbV2, _rbV3, _rbV4, _rpSize, _rpV1, rpDir, rpOrigin, rpQuat, rpRaycaster } from './c10_menu_saque.js';
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
@@ -1079,13 +1083,13 @@ window.__PP_NORMAS = NORMAS_SKIN;   // v2.135 · gancho QA (el módulo no expone
 
 
 /* v3.6.17 · ronda 21 · TU CAMINO TE ESPERA — total de etapas del camino de
- * cada campeonato (NODOS/nodesPx/etapas de cada módulo; los 5 declaran ruta
- * de 5 hoy). Un campeonato futuro con otra longitud: añadir aquí. Va AL
- * FINAL de la pieza porque build_game.py exige el token de identidad en la
- * 1.ª línea (class ChampLoader) y _stageHint sólo lo lee en runtime.
+ * cada campeonato. r61 · FASE 155: la TABLA manda en c02
+ * (CONFIG_TORNEOS.caminos + etapasPorDefecto); este alias conserva el
+ * nombre histórico por si algún lector/QA lo cita. Va AL FINAL de la pieza
+ * porque build_game.py exige el token de identidad en la 1.ª línea (class
+ * ChampLoader) y _stageHint sólo lo lee en runtime.
  * HISTORIA: el parche de la ronda 19 se escribió en el ARTEFACTO
  * (public/game.html) y bump_version lo regeneró desde aquí — la ronda 21
  * lo rehace en la fuente. */
-const CHAMP_STAGE_TOTAL = {
-  locura: 5, magia: 5, oeste: 5, estacion_orbital: 5, halloween: 5,
-};  // r85 · valle_neon retirado a petición del dueño → su hueco: HALLOWEEN
+const CHAMP_STAGE_TOTAL = CONFIG_TORNEOS.caminos;   // r61: alias del dato
+

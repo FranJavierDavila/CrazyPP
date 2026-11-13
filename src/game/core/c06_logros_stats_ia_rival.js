@@ -1,13 +1,11 @@
-export const ACHIEVEMENTS = [
-  { key: 'primera',  emoji: '🥇', nameKey: 'ach_first',    descKey: 'ach_first_d' },
-  { key: 'racha3',   emoji: '🔥', nameKey: 'ach_streak',   descKey: 'ach_streak_d' },
-  { key: 'gigante',  emoji: '💪', nameKey: 'ach_giant',    descKey: 'ach_giant_d' },
-  { key: 'maraton',  emoji: '🏃', nameKey: 'ach_marathon', descKey: 'ach_marathon_d' },
-  { key: 'superviv', emoji: '⏱️', nameKey: 'ach_survivor', descKey: 'ach_survivor_d' },
-  { key: 'aces10',   emoji: '🎯', nameKey: 'ach_aces',     descKey: 'ach_aces_d' },
-];
+export const ACHIEVEMENTS = CONFIG_LOGROS.core.map((a) => ({   // r61 · FASE 155: deriva de CONFIG_LOGROS.core (c02)
+  key: a.key, emoji: a.emoji, nameKey: a.nameKey, descKey: a.descKey,
+}));
+// La tabla manda: orden/emoji/i18n/condiciones viven en CONFIG_LOGROS.core —
+// copia plana por entrada para que los getters name/desc de abajo vengan en
+// las copias, como siempre.
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { CONFIG_DIFICULTAD, DIMS } from './c02_cfg_escena.js';
+import { CONFIG_DIFICULTAD, CONFIG_LOGROS, CONFIG_TORNEOS, DIMS } from './c02_cfg_escena.js';
 import { tmpD, tmpT, tmpTarget } from './c04_fisica_ccd.js';
 import { computeShotVelocityReal, predictStrike } from './c05_colisiones_ia_golpeo.js';
 import * as THREE from 'three';
@@ -18,6 +16,13 @@ for (const a of ACHIEVEMENTS) {
   Object.defineProperty(a, 'name', { get() { return T(this.nameKey); } });
   Object.defineProperty(a, 'desc', { get() { return T(this.descKey); } });
 }
+
+// r61 · FASE 155 · condición de un logro del catálogo — el DATO manda
+// (CONFIG_LOGROS.core en c02); el umbral ya no vive en la lógica.
+const COND_LOGRO = (key) => {
+  const e = CONFIG_LOGROS.core.find((a) => a.key === key);
+  return (e && e.cond) || {};
+};
 
 export class GameStats {
   constructor() {
@@ -74,7 +79,7 @@ export class GameStats {
       // SAQUE DIRECTO (ace): solo tocó la bola el sacador
       if (rallyHits === 1) {
         this.data.aces++;
-        if (this.data.aces >= 10 && this.unlock('aces10')) out.push('aces10');
+        if (this.data.aces >= COND_LOGRO('aces10').valor && this.unlock('aces10')) out.push('aces10');   // r61: dato
       }
     } else {
       this.data.pointsLost++;
@@ -89,14 +94,14 @@ export class GameStats {
     const out = [];
     const n = rallyHits || 0;
     if (n > this.data.bestRally) this.data.bestRally = n;
-    if (n >= 20 && this.unlock('maraton')) out.push('maraton');
+    if (n >= COND_LOGRO('maraton').valor && this.unlock('maraton')) out.push('maraton');   // r61: dato
     return out;
   }
 
   /** Rallye de SUPERVIVENCIA: récord histórico + logro dedicado. */
   recordSurvivalRally(golpes, bestEver) {
     const out = this.recordRally(golpes);
-    if (bestEver >= 25 && this.unlock('superviv')) out.push('superviv');
+    if (bestEver >= COND_LOGRO('superviv').valor && this.unlock('superviv')) out.push('superviv');   // r61: dato
     this.save();
     return out;
   }
@@ -134,8 +139,8 @@ export class GameStats {
       this.data.hoyDia = { dia: hoy, v: hv };
       if (hv >= (this.data.mejorDia.v || 0)) this.data.mejorDia = { dia: hoy, v: hv };
       if (this.unlock('primera')) out.push('primera');
-      if (this.data.streak >= 3 && this.unlock('racha3')) out.push('racha3');
-      if (difficulty === 'hard' && this.unlock('gigante')) out.push('gigante');
+      if (this.data.streak >= COND_LOGRO('racha3').valor && this.unlock('racha3')) out.push('racha3');   // r61: dato
+      if (difficulty === COND_LOGRO('gigante').dificultad && this.unlock('gigante')) out.push('gigante');   // r61: dato
     } else {
       this.data.lost++;
       this.data.streak = 0;
@@ -182,7 +187,7 @@ export class Rules {
     // (vs CPU y online P2P) se disputa al mejor de 3 JUEGOS seguidos — quien
     // gana 2 juegos es campeón del enfrentamiento. bestOf=1 conserva el
     // partido a juego único de los campeonatos (sus duelos NO se tocan).
-    this.bestOf = 1;                // 1 = juego único · 3 = mejor de 3
+    this.bestOf = CONFIG_TORNEOS.partido.bestOfFabrica;   // r61: dato (c12 sube el PARTIDO libre a bestOfLibre)
     this.gamesPlayer = 0;           // juegos ganados por el jugador
     this.gamesAi = 0;               // juegos ganados por el rival
     this.gameNo = 1;                // juego en curso dentro del enfrentamiento
@@ -338,7 +343,7 @@ export class Rules {
       this.totalPoints++;
       this.rallyesSurvived++;
       this.state = 'point';
-      this.stateTimer = 1.7;
+      this.stateTimer = CONFIG_TORNEOS.partido.pausaSupervivenciaS;   // r61: dato
       const golpes = this.rallyHits;
       const causeTxt = T('cause_' + cause, { opp: this.opp() });
       this.message = golpes >= 8
@@ -350,7 +355,7 @@ export class Rules {
     else this.scoreAi++;
     this.totalPoints++;
     this.state = 'point';
-    this.stateTimer = 2.2;
+    this.stateTimer = CONFIG_TORNEOS.partido.pausaPuntoS;   // r61: dato
     const rallyTxt = this.rallyHits >= 6 ? T('rally_suffix', { n: this.rallyHits }) : '';
     const causeTxt = T('cause_' + cause, { opp: this.opp() });
     this.message = winner === 'player'
@@ -389,10 +394,11 @@ export class Rules {
     const n = this.totalPoints;
     const base = this.gameOpener || this.firstServer;
     const otro = base === 'player' ? 'ai' : 'player';
-    if (this.scorePlayer >= 10 && this.scoreAi >= 10) {
-      return n % 2 === 0 ? base : otro;   // deuce: alterna CADA punto
+    const F = CONFIG_TORNEOS.partido;   // r61: el formato del partido es dato
+    if (this.scorePlayer >= F.igualaEn && this.scoreAi >= F.igualaEn) {
+      return Math.floor(n / F.saqueIguala) % 2 === 0 ? base : otro;   // deuce: alterna cada saqueIguala
     }
-    return Math.floor(n / 2) % 2 === 0 ? base : otro;
+    return Math.floor(n / F.saqueCada) % 2 === 0 ? base : otro;
   }
 
   handleEvents(events) {
@@ -486,20 +492,22 @@ export class Rules {
           intents.push({ type: 'serve', server: this.server });
           return intents;
         }
+        const F2 = CONFIG_TORNEOS.partido;   // r61: dato (a 11 con ventaja de 2)
         const finished =
-          (this.scorePlayer >= 11 || this.scoreAi >= 11) &&
-          Math.abs(this.scorePlayer - this.scoreAi) >= 2;
+          (this.scorePlayer >= F2.puntosGanar || this.scoreAi >= F2.puntosGanar) &&
+          Math.abs(this.scorePlayer - this.scoreAi) >= F2.ventajaMinima;
         if (finished) {
           const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
           const p = this.scorePlayer, q = this.scoreAi;
           // v3.6.29 · MEJOR DE 3: el juego contado alimenta la serie; el
-          // enfrentamiento se decide al ganar 2 juegos (2·victorias > bestOf).
+          // enfrentamiento se decide al ganar 2 juegos (v×serieFactor > bestOf).
           // r84 · DUELOS LOCOS entra en la serie (idéntico al 'match': los
           // CLAIM/ACK y el espejo de marcador son agnósticos del modo).
           if ((this.mode === 'match' || this.mode === 'duelos') && this.bestOf > 1) {
             if (winner === 'player') this.gamesPlayer++; else this.gamesAi++;
             const a = this.gamesPlayer, b = this.gamesAi;
-            const serieAcabada = a * 2 > this.bestOf || b * 2 > this.bestOf;
+            const SF = CONFIG_TORNEOS.partido.serieFactor;   // r61: dato
+            const serieAcabada = a * SF > this.bestOf || b * SF > this.bestOf;
             if (!serieAcabada) {
               // Juego terminado, el enfrentamiento SIGUE: juego nuevo con la
               // serie ya escrita y el saque cambiado (el otro abre).

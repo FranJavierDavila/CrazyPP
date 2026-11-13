@@ -167,14 +167,16 @@ chk(c04.includes('spinDecayBote: 0.72') &&
     c04.includes('spin.multiplyScalar(BOTE_TUNE.spinDecayBote);'), 'fricción del bote intacta (0.72 → r56: dato BOTE_TUNE.spinDecayBote en c04)');
 chk(c12.includes('import * as THREE from \'three\';'), 'c12 usa el THREE real (rotateOnWorldAxis existe desde r101)');
 
-/* — 9 · catálogos vivos (fuente c06 + importados c02) ———————————————— */
-console.log('9 · catálogos vivos (c06 fuente + c02 importado)');
+/* — 9 · catálogos vivos (r61: la TABLA CONFIG_LOGROS en c02 manda) ———— */
+console.log('9 · catálogos vivos (CONFIG_LOGROS.core en c02 · ACHIEVEMENTS deriva)');
 const c06 = lee('src/game/core/c06_logros_stats_ia_rival.js');
-const mAch = c06.match(/export const ACHIEVEMENTS = \[([\s\S]*?)\];/);
-const achItems = mAch ? (mAch[1].match(/\{ key:/g) || []).length : 0;
-chk(achItems === 6, `6 logros en ACHIEVEMENTS (${achItems})`);
-const achOk = /export const ACHIEVEMENTS = \[[\s\S]*?\];/.test(c06) &&
-  c06.includes("emoji: '🥇'") && c06.includes("emoji: '🎯'");
+const mAch = c06.match(/export const ACHIEVEMENTS = CONFIG_LOGROS\.core\.map/);
+chk(mAch, 'ACHIEVEMENTS se deriva de CONFIG_LOGROS.core (r61 · data-driven)');
+const c02src = lee('src/game/core/c02_cfg_escena.js');
+const mCore = c02src.match(/export const CONFIG_LOGROS = \{[\s\S]*?core: \[([\s\S]*?)\],\n  train:/);
+const achItems = mCore ? (mCore[1].match(/\{ key:/g) || []).length : 0;
+chk(achItems === 6, `6 logros en CONFIG_LOGROS.core (${achItems})`);
+const achOk = !!mAch && c02src.includes("emoji: '🥇'") && c02src.includes("emoji: '🎯'");
 chk(achOk, 'cada logro con emoji (los que pinta la placa)');
 chk(BOLA_ASPECTOS.length === 16 && MESA_ASPECTOS.length === 5, '16 skins de bola + 5 mesas (los chips de la placa)');
 chk(BOLA_ASPECTOS.every((s) => typeof s.color === 'number'), 'todas las skins con color (chip de la placa)');

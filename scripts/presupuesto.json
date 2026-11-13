@@ -1,6 +1,6 @@
 {
   "tamano": {
-    "game.html": 11568289,
+    "game.html": 11576284,
     "sdk": 68319,
     "oeste": 645979,
     "magia": 224159,
@@ -9,13 +9,13 @@
     "halloween": 132314
   },
   "fisica": {
-    "sweep200k": 45.1,
-    "bounce100k": 5.1,
-    "aero200k": 6.5
+    "sweep200k": 42.2,
+    "bounce100k": 4.9,
+    "aero200k": 5.9
   },
   "vivo": {
-    "boot_ms": 2434.8,
-    "cadena_ms": 7112.5
+    "boot_ms": 2350.3,
+    "cadena_ms": 7965
   },
   "nota": "L\u00edneas base del presupuesto de rendimiento. Refrescar SOLO tras un cambio intencional: python3 scripts/qa_rendimiento.py --update",
   "fecha": "2026-11-12"

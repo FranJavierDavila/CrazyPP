@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r41 · v3.6.151-SDK6 · FASE 154 · TEST: EL ARCANO
+/* CRAZY PING PONG · r41 · v3.6.152-SDK6 · FASE 155 · TEST: EL ARCANO
  * HOLOGRÁFICO — el pulido del dueño sobre el espacio arcano (ocho
  * informes en uno):
  *
@@ -86,24 +86,24 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.151-SDK6 · FASE 154 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.151-SDK6 · FASE 154 · CONFIG_DIFICULTAD r60: la DIFICULTAD es data-driven — presets (curvas CPU easy/medium/hard) · asistencia de saque por nivel · topes/exponentes de scalePreset · ELO (anclas/K por modo/paso/bandas matchmaking) · adaptativo · supervivencia · fórmula de esfuerzo r113 (12 lectores c02/c06/c12 · alias AI_PRESETS/SERVE_ASSIST_TIERS/ELO_CPU)');
-chk(vjson.version === '3.6.151-SDK6', 'VERSION.json: 3.6.151-SDK6');
-chk(vjson.fase === 154, 'FASE 154');
-chk(vjson.faseNombre === 'CONFIG_DIFICULTAD r60: la DIFICULTAD es data-driven — presets (curvas CPU easy/medium/hard) · asistencia de saque por nivel · topes/exponentes de scalePreset · ELO (anclas/K por modo/paso/bandas matchmaking) · adaptativo · supervivencia · fórmula de esfuerzo r113 (12 lectores c02/c06/c12 · alias AI_PRESETS/SERVE_ASSIST_TIERS/ELO_CPU)', 'faseNombre = CONFIG_DIFICULTAD r60: la DIFICULTAD es data-driven — presets (curvas CPU easy/medium/hard) · asistencia de saque por nivel · topes/exponentes de scalePreset · ELO (anclas/K por modo/paso/bandas matchmaking) · adaptativo · supervivencia · fórmula de esfuerzo r113 (12 lectores c02/c06/c12 · alias AI_PRESETS/SERVE_ASSIST_TIERS/ELO_CPU)');
+/* — 1 · SELLOS · v3.6.152-SDK6 · FASE 155 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.152-SDK6 · FASE 155 · CONFIG_TORNEOS+LOGROS r61: TORNEOS y LOGROS data-driven — formato del árbitro (a 11/ventaja/iguala/saque/pausas/best-of/serie) · caminos+portada+candados de campeonatos · circuito (niveles/combo/estrellas) · catálogo core 6 medallones derivado + condiciones GameStats · train 10 honores c13 (lectores c06/c11/c12/c13 · alias CHAMP_STAGE_TOTAL)');
+chk(vjson.version === '3.6.152-SDK6', 'VERSION.json: 3.6.152-SDK6');
+chk(vjson.fase === 155, 'FASE 155');
+chk(vjson.faseNombre === 'CONFIG_TORNEOS+LOGROS r61: TORNEOS y LOGROS data-driven — formato del árbitro (a 11/ventaja/iguala/saque/pausas/best-of/serie) · caminos+portada+candados de campeonatos · circuito (niveles/combo/estrellas) · catálogo core 6 medallones derivado + condiciones GameStats · train 10 honores c13 (lectores c06/c11/c12/c13 · alias CHAMP_STAGE_TOTAL)', 'faseNombre = CONFIG_TORNEOS+LOGROS r61: TORNEOS y LOGROS data-driven — formato del árbitro (a 11/ventaja/iguala/saque/pausas/best-of/serie) · caminos+portada+candados de campeonatos · circuito (niveles/combo/estrellas) · catálogo core 6 medallones derivado + condiciones GameStats · train 10 honores c13 (lectores c06/c11/c12/c13 · alias CHAMP_STAGE_TOTAL)');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: build legítimamente cambiado por la r46 (gobernador + worker v3)
-chk(vjson.tamano === 11568289, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11576284, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '8e94ae7daf5ab49fee1cc0f28443efe7a8800e05cc15b310282123e88c410d5e',
+  '51af940b2946f25edd547abdc63ffad95278fc11c2a0d8e7d5475da8218e06c3',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.151-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.151-SDK6'"), 'sello c00 = 3.6.151-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.151-SDK6'"),
-  'sw.js CACHE v3.6.151-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.151-SDK6</span>'), 'badge V3.6.151-SDK6 en 03_body');
+chk(game.includes('3.6.152-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.152-SDK6'"), 'sello c00 = 3.6.152-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.152-SDK6'"),
+  'sw.js CACHE v3.6.152-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.152-SDK6</span>'), 'badge V3.6.152-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 

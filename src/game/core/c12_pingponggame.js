@@ -1265,7 +1265,7 @@ export class PingPongGame {
     this.survivalRallies = 0;
     // v3.6.29 · MEJOR DE 3: el PARTIDO libre se disputa al mejor de 3 juegos
     // (2 victorias = campeón del enfrentamiento, petición del dueño).
-    this.rules.bestOf = 3;
+    this.rules.bestOf = CONFIG_TORNEOS.partido.bestOfLibre;   // r61: dato (el PARTIDO libre va al mejor de N)
     this.rules.startMatch(mode);
     this.applyAISkill();
     this.resetToss();
@@ -1360,7 +1360,7 @@ export class PingPongGame {
     const md = (m && m.md === 'duelos') ? 'duelos' : 'match';
     this.mode = md;
     this.pendingMode = md;
-    this.rules.bestOf = m.bo || 3;
+    this.rules.bestOf = m.bo || CONFIG_TORNEOS.partido.bestOfLibre;   // r61: dato
     this.rules.startMatch(md);
     if (md === 'duelos') {
       // r84 · el enlace se canta y el modo también: los DOS extremos saben
@@ -1467,7 +1467,7 @@ export class PingPongGame {
     this.rules.oppLabel = 'cpu';
     this.resetToss();
     this.aiToss = null;
-    this.rules.bestOf = 3;   // v3.6.29: de vuelta con la CPU, seguimos al mejor de 3
+    this.rules.bestOf = CONFIG_TORNEOS.partido.bestOfLibre;   // v3.6.29: de vuelta con la CPU · r61: dato
     this.rules.startMatch(this.mode);
     this.rules.message = T('net_ended', { msg: msg || T('opp_disconnected') });
     this.audio.announce(T('opp_disconnected'), true);
@@ -5241,7 +5241,7 @@ export class PingPongGame {
           this.startOnlineMatch();   // anfitrión reinicia; invitado pide revancha
         } else {
           if (this.mode !== 'match') this.switchMode('match');
-          else { this.rules.bestOf = 3; this.rules.startMatch('match'); this.resetToss(); }
+          else { this.rules.bestOf = CONFIG_TORNEOS.partido.bestOfLibre; this.rules.startMatch('match'); this.resetToss(); }
         }
         this.closeMenu();
         break;
@@ -5586,7 +5586,7 @@ export class PingPongGame {
         this.aiRiv2.reset();
         this.applyAISkill();          // rival 2 + compañero reciben su cfg YA
         if (this.mode !== 'match') this.switchMode('match');
-        else { this.rules.bestOf = 3; this.rules.startMatch('match'); this.resetToss(); }
+        else { this.rules.bestOf = CONFIG_TORNEOS.partido.bestOfLibre; this.rules.startMatch('match'); this.resetToss(); }
         this.rules.oppName = null;
         this.rules.message = T('dobles_msg');
         this.audio.announce(T('dobles_msg'), true);
@@ -6052,7 +6052,7 @@ export class PingPongGame {
         this.closeMenu();
         if (this.net.online) this.startOnlineMatch();   // invitado: pide por red
         else {
-          this.rules.bestOf = 3;   // v3.6.29: revancha de menú = enfrentamiento nuevo al mejor de 3
+          this.rules.bestOf = CONFIG_TORNEOS.partido.bestOfLibre;   // v3.6.29: revancha de menú · r61: dato
           this.rules.startMatch(this.mode);
           this.resetToss();
         }
@@ -7134,7 +7134,7 @@ export class PingPongGame {
     this.doblesActivo = false;   // M7c (r119): la escalera es 1v1 siempre
     this.carreraMatch = { div: divIdx, rId: rival.id, nombre: rival.es, estilo: rival.estilo, preset: rival.preset, k: rival.k };
     if (this.mode !== 'match') this.switchMode('match');
-    else { this.rules.bestOf = 3; this.rules.startMatch('match'); this.resetToss(); }
+    else { this.rules.bestOf = CONFIG_TORNEOS.partido.bestOfLibre; this.rules.startMatch('match'); this.resetToss(); }
     this.rules.oppName = (__ppLang === 'en') ? rival.en : rival.es;
     this.rules.message = T('carrera_challenge', { v: this.rules.oppName });
     this.audio.announce(T('carrera_challenge', { v: this.rules.oppName }), true);
@@ -17482,7 +17482,7 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFICULTAD, CONFIG_MENU, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTOS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFICULTAD, CONFIG_MENU, CONFIG_TORNEOS, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTOS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';

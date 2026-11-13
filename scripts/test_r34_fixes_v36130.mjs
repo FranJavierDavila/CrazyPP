@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r34 (v3.6.139, FASE 156) — TEST de la ronda.
+/* CRAZY PING PONG · r34 (v3.6.139, FASE 157) — TEST de la ronda.
  * Correcciones a los superpoderes de pala (informe del dueño):
  *   A · FX de mesa al this.rig (Red/Elec/Efecto/Portal) — alineación.
  *   B · voz del selector para fenix/crono/oscuridad (ES/EN).
@@ -100,12 +100,12 @@ chk(c12.includes('return TRAIL_PODER.prisma;'),
 chk(c12.includes('if (!enCampoRival) return null;\n      return TRAIL_PODER.prisma;'),
   'secuencia exacta null → prisma');
 
-console.log('== 6) VERSIÓN 3.6.153-SDK6 · FASE 156 ==');
-chk(c00.includes("const VERSION = '3.6.153-SDK6';"), 'c00 VERSION 3.6.153-SDK6');
-chk(body.includes('>V3.6.153-SDK6</span>'), 'badge V3.6.153-SDK6');
-chk(game.includes("const VERSION = '3.6.153-SDK6';") &&
-    game.includes('>V3.6.153-SDK6</span>'), 'game.html sincronizado');
-chk(sw.includes("crazypp-v3.6.153-SDK6"), 'sw.js CACHE 3.6.153-SDK6');
+console.log('== 6) VERSIÓN 3.6.154-SDK6 · FASE 157 ==');
+chk(c00.includes("const VERSION = '3.6.154-SDK6';"), 'c00 VERSION 3.6.154-SDK6');
+chk(body.includes('>V3.6.154-SDK6</span>'), 'badge V3.6.154-SDK6');
+chk(game.includes("const VERSION = '3.6.154-SDK6';") &&
+    game.includes('>V3.6.154-SDK6</span>'), 'game.html sincronizado');
+chk(sw.includes("crazypp-v3.6.154-SDK6"), 'sw.js CACHE 3.6.154-SDK6');
 
 console.log('== 7) REGRESIÓN · registro, física y anclas r33 ==');
 for (const id of ['mega', 'efecto', 'iman', 'portal', 'clon', 'red', 'elec',

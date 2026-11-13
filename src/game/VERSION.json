@@ -1,7 +1,7 @@
 {
-  "version": "3.6.153-SDK6",
-  "fase": 156,
-  "faseNombre": "CONFIG_PIELES r62: LAS PIELES SON DATA-DRIVEN — los metadatos de las 9 pieles de pala (id · nombre ES/EN · coste min o días/vía racha · pintura tex/edge/grip · anim · modelUrl GLB) viven en c02 — séptima parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros (lector c13: SKINS = CONFIG_PIELES.pieles · RACHA_SKINS por filtro · orden/save/pintura/tienda intactos)",
+  "version": "3.6.154-SDK6",
+  "fase": 157,
+  "faseNombre": "CONFIG_RALLY r63: HITOS Y BONOS DEL RALLY DATA-DRIVEN — metas [30/50/100 t5a · 20/40/80 t5b] y bonos [15/25/50] por modo viven en c02 — octava parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles (lectores c13: RALLY_MILL = CONFIG_RALLY.metas · RALLY_BONUS = CONFIG_RALLY.bonos — juez del rally, okHit t5a, estrellas, medallas y HUD intactos)",
   "sdk": "1.6.0",
   "fecha": "2026-11-13",
   "hub": "v36139-sdk6",
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r62",
-  "tamano": 11578430,
-  "golden": "c2b75fe924b10a1a0161fedfda4a88f005910356e617c8407c2e6a2dcebf24e0"
+  "nota": "r63",
+  "tamano": 11580273,
+  "golden": "9a46bfe0daf1449fe6f295c9e9aeabe5518bc155bb021209dd6f1f36b597ec1d"
 }

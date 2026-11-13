@@ -1,2 +1,2 @@
-# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r62_pieles)
-c2b75fe924b10a1a0161fedfda4a88f005910356e617c8407c2e6a2dcebf24e0
+# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r63_rally)
+9a46bfe0daf1449fe6f295c9e9aeabe5518bc155bb021209dd6f1f36b597ec1d

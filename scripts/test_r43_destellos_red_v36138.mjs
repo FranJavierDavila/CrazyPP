@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.153-SDK6 · FASE 156 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.154-SDK6 · FASE 157 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -83,26 +83,26 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.153-SDK6 · FASE 156 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.153-SDK6 · FASE 156 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.153-SDK6', 'VERSION.json: 3.6.153-SDK6');
-chk(vjson.fase === 156, 'FASE 156');
-chk(vjson.faseNombre === 'CONFIG_PIELES r62: LAS PIELES SON DATA-DRIVEN — los metadatos de las 9 pieles de pala (id · nombre ES/EN · coste min o días/vía racha · pintura tex/edge/grip · anim · modelUrl GLB) viven en c02 — séptima parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros (lector c13: SKINS = CONFIG_PIELES.pieles · RACHA_SKINS por filtro · orden/save/pintura/tienda intactos)',
-  'faseNombre = CONFIG_PIELES R62: LAS PIELES SON DATA-DRIVEN — LOS METADATOS DE LAS 9 PIELES DE PALA (ID · NOMBRE ES/EN · COSTE MIN O DÍAS/VÍA RACHA · PINTURA TEX/EDGE/GRIP · ANIM · MODELURL GLB) VIVEN EN C02 — SÉPTIMA PARADA TRAS ARCANO_CFG/FÍSICA/MENÚ/AUDIO/DIFICULTAD/TORNEOS+LOGROS (LECTOR C13: SKINS = CONFIG_PIELES.PIELES · RACHA_SKINS POR FILTRO · ORDEN/SAVE/PINTURA/TIENDA INTACTOS)');
+/* — 1 · SELLOS · v3.6.154-SDK6 · FASE 157 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.154-SDK6 · FASE 157 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.154-SDK6', 'VERSION.json: 3.6.154-SDK6');
+chk(vjson.fase === 157, 'FASE 157');
+chk(vjson.faseNombre === 'CONFIG_RALLY r63: HITOS Y BONOS DEL RALLY DATA-DRIVEN — metas [30/50/100 t5a · 20/40/80 t5b] y bonos [15/25/50] por modo viven en c02 — octava parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles (lectores c13: RALLY_MILL = CONFIG_RALLY.metas · RALLY_BONUS = CONFIG_RALLY.bonos — juez del rally, okHit t5a, estrellas, medallas y HUD intactos)',
+  'faseNombre = CONFIG_RALLY R63: HITOS Y BONOS DEL RALLY DATA-DRIVEN — METAS [30/50/100 T5A · 20/40/80 T5B] Y BONOS [15/25/50] POR MODO VIVEN EN C02 — OCTAVA PARADA TRAS ARCANO_CFG/FÍSICA/MENÚ/AUDIO/DIFICULTAD/TORNEOS+LOGROS/PIELES (LECTORES C13: RALLY_MILL = CONFIG_RALLY.METAS · RALLY_BONUS = CONFIG_RALLY.BONOS — JUEZ DEL RALLY, OKHIT T5A, ESTRELLAS, MEDALLAS Y HUD INTACTOS)');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
 // legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
-chk(vjson.tamano === 11578430, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11580273, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  'c2b75fe924b10a1a0161fedfda4a88f005910356e617c8407c2e6a2dcebf24e0',
+  '9a46bfe0daf1449fe6f295c9e9aeabe5518bc155bb021209dd6f1f36b597ec1d',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.153-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.153-SDK6'"), 'sello c00 = 3.6.153-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.153-SDK6'"),
-  'sw.js CACHE v3.6.153-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.153-SDK6</span>'), 'badge V3.6.153-SDK6 en 03_body');
+chk(game.includes('3.6.154-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.154-SDK6'"), 'sello c00 = 3.6.154-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.154-SDK6'"),
+  'sw.js CACHE v3.6.154-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.154-SDK6</span>'), 'badge V3.6.154-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -276,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.153-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.154-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

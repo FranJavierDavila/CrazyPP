@@ -939,10 +939,9 @@ export const CONFIG_AUDIO = {
  *  · candados: ids en PRÓXIMAMENTE (antes ChampLoader.LOCKED, r72).
  *  · circuito: el PRO TRAINING (c13) — niveles de puntos, escalones del
  *    combo (×2/×3) y estrellas por ronda sin fallos.
- *  · FUERA DE ÁMBITO (filas futuras): las metas y bonos de rally
- *    RALLY_MILL/RALLY_BONUS por modo (tablas locales c13) — las pieles
- *    de pala dejan de estar fuera: CONFIG_PIELES (r62, al pie del
- *    fichero) las convierte en dato.
+ *  · FUERA DE ÁMBITO (filas futuras): la ola de c13 está COMPLETA —
+ *    las pieles son CONFIG_PIELES (r62) y las metas/bonos de rally
+ *    son CONFIG_RALLY (r63), ambas al pie del fichero.
  *  ===================================================================== */
 export const CONFIG_TORNEOS = {
   version: 1,
@@ -1056,4 +1055,30 @@ export const CONFIG_PIELES = {
     { id: 'fantasma', name: { es: 'Fantasma', en: 'Ghost' }, min: Infinity, days: 14, via: 'racha', tex: 'fantasma', edge: 0xbfe9ff, grip: 0x43545e },
     { id: 'campeon', name: { es: 'Campeón', en: 'Champion' }, min: Infinity, days: 30, via: 'racha', tex: 'oro', edge: 0xffd700, grip: 0x4a3808, anim: true },
   ],
+};
+
+/* =====================================================================
+ *  CONFIG_RALLY (r63 · FASE 157) — OCTAVA PARADA data-driven tras
+ *  ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles.
+ *  Los HITOS y BONOS del rally por modo. ANTES las tablas RALLY_MILL
+ *  y RALLY_BONUS vivían locales en c13 (M7d, r120); AHORA cada modo
+ *  rally lleva su fila y c13 se limita a consumirla. Campos:
+ *  ---------------------------------------------------------------------
+ *  · metas  [meta1, meta2, meta3] por modo: el hito del rally que
+ *           dispara bonus, estrella y medalla (t5a RALLY 30/50/100 ·
+ *           t5b LOCO 20/40/80 — la máquina traiciona cada bola).
+ *  · bonos  PUNTOS del hito i-ésimo, paralelo a metas (t5a 15/25/50 ·
+ *           t5b 15/25/50 — los dos modos comparten escala).
+ *  LECTORES: c13 (RALLY_MILL = CONFIG_RALLY.metas · RALLY_BONUS =
+ *  CONFIG_RALLY.bonos — juez del rally, okHit de t5a, estrellas,
+ *  medallas medallaDe). Cambiar una meta o un bonus = editar AQUÍ,
+ *  sin tocar una línea de lógica.
+ *  · FUERA DE ÁMBITO (filas futuras): el texto i18n que cita números
+ *    (m_t5b_d «hitos a 20·40·80» ES/EN) sigue siendo cadena de
+ *    traducción; BEAT_INT y el latido del LOCO son lógica de c13.
+ *  ===================================================================== */
+export const CONFIG_RALLY = {
+  version: 1,
+  metas: { t5a: [30, 50, 100], t5b: [20, 40, 80] },
+  bonos: { t5a: [15, 25, 50], t5b: [15, 25, 50] },
 };

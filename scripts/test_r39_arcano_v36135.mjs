@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r39 · v3.6.153-SDK6 · FASE 156 · TEST: EL APARTADO
+/* CRAZY PING PONG · r39 · v3.6.154-SDK6 · FASE 157 · TEST: EL APARTADO
  * ARCANO — el búho del hall, el espacio infinito y la galería de
  * superpoderes con desbloqueo por campeonato ganado.
  *
@@ -77,22 +77,22 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.153-SDK6 · FASE 156 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.153-SDK6 · FASE 156 · EL APARTADO ARCANO');
-chk(vjson.version === '3.6.153-SDK6', 'VERSION.json: 3.6.153-SDK6');
-chk(vjson.fase === 156, 'FASE 156');
-chk(vjson.faseNombre === 'CONFIG_PIELES r62: LAS PIELES SON DATA-DRIVEN — los metadatos de las 9 pieles de pala (id · nombre ES/EN · coste min o días/vía racha · pintura tex/edge/grip · anim · modelUrl GLB) viven en c02 — séptima parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros (lector c13: SKINS = CONFIG_PIELES.pieles · RACHA_SKINS por filtro · orden/save/pintura/tienda intactos)', 'faseNombre = EL APARTADO ARCANO');
-chk(vjson.tamano === 11578430, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.154-SDK6 · FASE 157 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.154-SDK6 · FASE 157 · EL APARTADO ARCANO');
+chk(vjson.version === '3.6.154-SDK6', 'VERSION.json: 3.6.154-SDK6');
+chk(vjson.fase === 157, 'FASE 157');
+chk(vjson.faseNombre === 'CONFIG_RALLY r63: HITOS Y BONOS DEL RALLY DATA-DRIVEN — metas [30/50/100 t5a · 20/40/80 t5b] y bonos [15/25/50] por modo viven en c02 — octava parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles (lectores c13: RALLY_MILL = CONFIG_RALLY.metas · RALLY_BONUS = CONFIG_RALLY.bonos — juez del rally, okHit t5a, estrellas, medallas y HUD intactos)', 'faseNombre = EL APARTADO ARCANO');
+chk(vjson.tamano === 11580273, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  'c2b75fe924b10a1a0161fedfda4a88f005910356e617c8407c2e6a2dcebf24e0',
+  '9a46bfe0daf1449fe6f295c9e9aeabe5518bc155bb021209dd6f1f36b597ec1d',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.153-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.153-SDK6'"), 'sello c00 = 3.6.153-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.153-SDK6'"),
-  'sw.js CACHE v3.6.153-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.153-SDK6</span>'), 'badge V3.6.153-SDK6 en 03_body');
+chk(game.includes('3.6.154-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.154-SDK6'"), 'sello c00 = 3.6.154-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.154-SDK6'"),
+  'sw.js CACHE v3.6.154-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.154-SDK6</span>'), 'badge V3.6.154-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 
@@ -311,6 +311,6 @@ chk(game.includes('EL APARTADO ARCANO'), 'bundle: sección arcano embebida');
 chk(game.includes('pp_poderes_v1'), 'bundle: persistencia de desbloqueos embebida');
 chk(game.includes('DL_SURTIDO'), 'bundle: surto extendido de Duelos Locos embebido');
 
-console.log('\n=== r39 · v3.6.153-SDK6 · EL APARTADO ARCANO ===');
+console.log('\n=== r39 · v3.6.154-SDK6 · EL APARTADO ARCANO ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 process.exit(fails ? 1 : 0);

@@ -8,7 +8,7 @@ function renderPlayBtn() {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __ppLang, applyLangDOM, ppPlayerName, setLang } from './c00_pre_three.js';
 import { fixInvertedMeshes, loadGunModel, loadPaddleModel, makeGunVisual, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, CONFIG_LOGROS, CONFIG_PIELES, CONFIG_TORNEOS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, CONFIG_LOGROS, CONFIG_PIELES, CONFIG_RALLY, CONFIG_TORNEOS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
 import { CCD_TUNE, bladeNormalLocal, createPaddleSim, sdfBlade, setPaddleBasis, sweepBallVsBlade, tmpPrev } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddleSweep, computeShotVelocityReal, findServeVelocity, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { NetLink } from './c09_red_netlink.js';
@@ -1237,6 +1237,14 @@ loadPaddleModel().then((paddleModel) => {
       { id: 'saque', ic: 'saque', ik: 'a_saq', sk: 'a_saq_s', g0: '#c05621', g1: '#652a12', col: '#f6ad55' },
       { id: 'rit', ic: 'rit', ik: 'a_rit', sk: 'a_rit_s', g0: '#b83280', g1: '#5f1e42', col: '#f687b3' },
     ];
+    /* hitos del rally por modo (M7d): [meta1, meta2, meta3] · bonus fijo 15/25/50
+     * r63 · LA TABLA VIVE EN c02 (CONFIG_RALLY — única fuente de verdad;
+     * octava parada data-driven). c13 SÓLO CONSUME: cambiar una meta o
+     * un bonus = editar la tabla de c02, cero lógica. Vive ANTES de MODES
+     * (TDZ): los modos rally DEDUPAN su meta1/bonus1 de la tabla — el
+     * objetivo jugable (objN) y la fila de MODES son LA MISMA fila. */
+    const RALLY_MILL = CONFIG_RALLY.metas;
+    const RALLY_BONUS = CONFIG_RALLY.bonos;
     const MODES = {
       t1a: { area: 'dir', nk: 'm_t1a', dk: 'm_t1a_d', n: 5, ok: 'ok_zona', pts: 1, bonus: 15 },
       t1b: { area: 'dir', nk: 'm_t1b', dk: 'm_t1b_d', n: 5, ok: 'ok_banda', pts: 2, bonus: 20 },
@@ -1249,10 +1257,10 @@ loadPaddleModel().then((paddleModel) => {
       t3b: { area: 'spin', nk: 'm_t3b', dk: 'm_t3b_d', n: 6, ok: 'ok_bloqueo', pts: 2, bonus: 25 },
       t4a: { area: 'saque', nk: 'm_t4a', dk: 'm_t4a_d', n: 3, ok: 'ok_doble', pts: 3, bonus: 15 },
       t4b: { area: 'saque', nk: 'm_t4b', dk: 'm_t4b_d', n: 3, ok: 'ok_fondo', pts: 3, bonus: 15 },
-      t5a: { area: 'rit', nk: 'm_t5a', dk: 'm_t5a_d', n: 30, ok: 'ok_beat', pts: 1, bonus: 15 },
+      t5a: { area: 'rit', nk: 'm_t5a', dk: 'm_t5a_d', n: RALLY_MILL.t5a[0], ok: 'ok_beat', pts: 1, bonus: RALLY_BONUS.t5a[0] },
       /* M7d (r120) · METRÓNOMO LOCO: el mismo rally con la máquina
        * TRAICIONERA (velocidad variable por bola). Hitos 20 · 40 · 80. */
-      t5b: { area: 'rit', nk: 'm_t5b', dk: 'm_t5b_d', n: 20, ok: 'ok_beat', pts: 1, bonus: 15 },
+      t5b: { area: 'rit', nk: 'm_t5b', dk: 'm_t5b_d', n: RALLY_MILL.t5b[0], ok: 'ok_beat', pts: 1, bonus: RALLY_BONUS.t5b[0] },
     };
     /* M7d (r120) · POOL DE LOS RETOS — el PULSO diario (r76) y el semanal
      * (r118) sembraban sobre Object.keys(MODES): con ejercicios nuevos el
@@ -1261,9 +1269,6 @@ loadPaddleModel().then((paddleModel) => {
      * clásicos EN ORDEN: los planes de hoy son byte-idénticos a 3.6.108
      * y los dos ejercicios nuevos son entrenamiento libre puro. */
     const PLAN_POOL = ['t1a', 't1b', 't2a', 't2b', 't3a', 't3b', 't4a', 't4b', 't5a'];
-    /* hitos del rally por modo (M7d): [meta1, meta2, meta3] · bonus fijo 15/25/50 */
-    const RALLY_MILL = { t5a: [30, 50, 100], t5b: [20, 40, 80] };
-    const RALLY_BONUS = { t5a: [15, 25, 50], t5b: [15, 25, 50] };
     /* M7d (r120) · modos RALLY (el contador manda sobre la racha): t5a y
      * t5b comparten juez, HUD y latido; la máquina del LOCO traiciona. */
     const isRallyM = () => active === 't5a' || active === 't5b';

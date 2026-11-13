@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.153-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.154-SDK6</span>
     </div>
   </main>
 
@@ -3473,7 +3473,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.153-SDK6';
+  const VERSION = '3.6.154-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -5219,10 +5219,9 @@ const CONFIG_AUDIO = {
  *  · candados: ids en PRÓXIMAMENTE (antes ChampLoader.LOCKED, r72).
  *  · circuito: el PRO TRAINING (c13) — niveles de puntos, escalones del
  *    combo (×2/×3) y estrellas por ronda sin fallos.
- *  · FUERA DE ÁMBITO (filas futuras): las metas y bonos de rally
- *    RALLY_MILL/RALLY_BONUS por modo (tablas locales c13) — las pieles
- *    de pala dejan de estar fuera: CONFIG_PIELES (r62, al pie del
- *    fichero) las convierte en dato.
+ *  · FUERA DE ÁMBITO (filas futuras): la ola de c13 está COMPLETA —
+ *    las pieles son CONFIG_PIELES (r62) y las metas/bonos de rally
+ *    son CONFIG_RALLY (r63), ambas al pie del fichero.
  *  ===================================================================== */
 const CONFIG_TORNEOS = {
   version: 1,
@@ -5336,6 +5335,32 @@ const CONFIG_PIELES = {
     { id: 'fantasma', name: { es: 'Fantasma', en: 'Ghost' }, min: Infinity, days: 14, via: 'racha', tex: 'fantasma', edge: 0xbfe9ff, grip: 0x43545e },
     { id: 'campeon', name: { es: 'Campeón', en: 'Champion' }, min: Infinity, days: 30, via: 'racha', tex: 'oro', edge: 0xffd700, grip: 0x4a3808, anim: true },
   ],
+};
+
+/* =====================================================================
+ *  CONFIG_RALLY (r63 · FASE 157) — OCTAVA PARADA data-driven tras
+ *  ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles.
+ *  Los HITOS y BONOS del rally por modo. ANTES las tablas RALLY_MILL
+ *  y RALLY_BONUS vivían locales en c13 (M7d, r120); AHORA cada modo
+ *  rally lleva su fila y c13 se limita a consumirla. Campos:
+ *  ---------------------------------------------------------------------
+ *  · metas  [meta1, meta2, meta3] por modo: el hito del rally que
+ *           dispara bonus, estrella y medalla (t5a RALLY 30/50/100 ·
+ *           t5b LOCO 20/40/80 — la máquina traiciona cada bola).
+ *  · bonos  PUNTOS del hito i-ésimo, paralelo a metas (t5a 15/25/50 ·
+ *           t5b 15/25/50 — los dos modos comparten escala).
+ *  LECTORES: c13 (RALLY_MILL = CONFIG_RALLY.metas · RALLY_BONUS =
+ *  CONFIG_RALLY.bonos — juez del rally, okHit de t5a, estrellas,
+ *  medallas medallaDe). Cambiar una meta o un bonus = editar AQUÍ,
+ *  sin tocar una línea de lógica.
+ *  · FUERA DE ÁMBITO (filas futuras): el texto i18n que cita números
+ *    (m_t5b_d «hitos a 20·40·80» ES/EN) sigue siendo cadena de
+ *    traducción; BEAT_INT y el latido del LOCO son lógica de c13.
+ *  ===================================================================== */
+const CONFIG_RALLY = {
+  version: 1,
+  metas: { t5a: [30, 50, 100], t5b: [20, 40, 80] },
+  bonos: { t5a: [15, 25, 50], t5b: [15, 25, 50] },
 };
 const VOICE_FULL = {
   es: {
@@ -38328,6 +38353,14 @@ loadPaddleModel().then((paddleModel) => {
       { id: 'saque', ic: 'saque', ik: 'a_saq', sk: 'a_saq_s', g0: '#c05621', g1: '#652a12', col: '#f6ad55' },
       { id: 'rit', ic: 'rit', ik: 'a_rit', sk: 'a_rit_s', g0: '#b83280', g1: '#5f1e42', col: '#f687b3' },
     ];
+    /* hitos del rally por modo (M7d): [meta1, meta2, meta3] · bonus fijo 15/25/50
+     * r63 · LA TABLA VIVE EN c02 (CONFIG_RALLY — única fuente de verdad;
+     * octava parada data-driven). c13 SÓLO CONSUME: cambiar una meta o
+     * un bonus = editar la tabla de c02, cero lógica. Vive ANTES de MODES
+     * (TDZ): los modos rally DEDUPAN su meta1/bonus1 de la tabla — el
+     * objetivo jugable (objN) y la fila de MODES son LA MISMA fila. */
+    const RALLY_MILL = CONFIG_RALLY.metas;
+    const RALLY_BONUS = CONFIG_RALLY.bonos;
     const MODES = {
       t1a: { area: 'dir', nk: 'm_t1a', dk: 'm_t1a_d', n: 5, ok: 'ok_zona', pts: 1, bonus: 15 },
       t1b: { area: 'dir', nk: 'm_t1b', dk: 'm_t1b_d', n: 5, ok: 'ok_banda', pts: 2, bonus: 20 },
@@ -38340,10 +38373,10 @@ loadPaddleModel().then((paddleModel) => {
       t3b: { area: 'spin', nk: 'm_t3b', dk: 'm_t3b_d', n: 6, ok: 'ok_bloqueo', pts: 2, bonus: 25 },
       t4a: { area: 'saque', nk: 'm_t4a', dk: 'm_t4a_d', n: 3, ok: 'ok_doble', pts: 3, bonus: 15 },
       t4b: { area: 'saque', nk: 'm_t4b', dk: 'm_t4b_d', n: 3, ok: 'ok_fondo', pts: 3, bonus: 15 },
-      t5a: { area: 'rit', nk: 'm_t5a', dk: 'm_t5a_d', n: 30, ok: 'ok_beat', pts: 1, bonus: 15 },
+      t5a: { area: 'rit', nk: 'm_t5a', dk: 'm_t5a_d', n: RALLY_MILL.t5a[0], ok: 'ok_beat', pts: 1, bonus: RALLY_BONUS.t5a[0] },
       /* M7d (r120) · METRÓNOMO LOCO: el mismo rally con la máquina
        * TRAICIONERA (velocidad variable por bola). Hitos 20 · 40 · 80. */
-      t5b: { area: 'rit', nk: 'm_t5b', dk: 'm_t5b_d', n: 20, ok: 'ok_beat', pts: 1, bonus: 15 },
+      t5b: { area: 'rit', nk: 'm_t5b', dk: 'm_t5b_d', n: RALLY_MILL.t5b[0], ok: 'ok_beat', pts: 1, bonus: RALLY_BONUS.t5b[0] },
     };
     /* M7d (r120) · POOL DE LOS RETOS — el PULSO diario (r76) y el semanal
      * (r118) sembraban sobre Object.keys(MODES): con ejercicios nuevos el
@@ -38352,9 +38385,6 @@ loadPaddleModel().then((paddleModel) => {
      * clásicos EN ORDEN: los planes de hoy son byte-idénticos a 3.6.108
      * y los dos ejercicios nuevos son entrenamiento libre puro. */
     const PLAN_POOL = ['t1a', 't1b', 't2a', 't2b', 't3a', 't3b', 't4a', 't4b', 't5a'];
-    /* hitos del rally por modo (M7d): [meta1, meta2, meta3] · bonus fijo 15/25/50 */
-    const RALLY_MILL = { t5a: [30, 50, 100], t5b: [20, 40, 80] };
-    const RALLY_BONUS = { t5a: [15, 25, 50], t5b: [15, 25, 50] };
     /* M7d (r120) · modos RALLY (el contador manda sobre la racha): t5a y
      * t5b comparten juez, HUD y latido; la máquina del LOCO traiciona. */
     const isRallyM = () => active === 't5a' || active === 't5b';

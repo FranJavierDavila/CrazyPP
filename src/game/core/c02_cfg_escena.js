@@ -939,9 +939,10 @@ export const CONFIG_AUDIO = {
  *  · candados: ids en PRÓXIMAMENTE (antes ChampLoader.LOCKED, r72).
  *  · circuito: el PRO TRAINING (c13) — niveles de puntos, escalones del
  *    combo (×2/×3) y estrellas por ronda sin fallos.
- *  · FUERA DE ÁMBITO (filas futuras): los metadatos visuales y costes de
- *    las pieles de pala (SKINS de c13, tabla autocontenida) y las metas y
- *    bonos de rally RALLY_MILL/RALLY_BONUS por modo (tablas locales c13).
+ *  · FUERA DE ÁMBITO (filas futuras): las metas y bonos de rally
+ *    RALLY_MILL/RALLY_BONUS por modo (tablas locales c13) — las pieles
+ *    de pala dejan de estar fuera: CONFIG_PIELES (r62, al pie del
+ *    fichero) las convierte en dato.
  *  ===================================================================== */
 export const CONFIG_TORNEOS = {
   version: 1,
@@ -1012,4 +1013,47 @@ export const CONFIG_LOGROS = {
     leg:  { cond: { tipo: 'puntosCircuito', valor: 1500 } },
     or5:  { cond: { tipo: 'medallasOro', cuenta: 5 } },
   },
+};
+
+/* =====================================================================
+ *  r62 · FASE 156 · CONFIG_PIELES — ÚNICA FUENTE DE VERDAD DE LAS
+ *  PIELES DE PALA (directiva del dueño: «seguir extendiendo el patrón
+ *  data-driven» — séptima parada tras ARCANO_CFG, física/bola, menú,
+ *  audio, dificultad y torneos+logros). ANTES la tabla SKINS vivía
+ *  autocontenida en c13 (v3.0.3); AHORA cada fila es UNA PIEL completa
+ *  y c13 se limita a consumirla. Campos de cada fila:
+ *  ---------------------------------------------------------------------
+ *  · id        clave única (save S.skin/S.unlocked · perks · HUD · red).
+ *  · name      etiqueta ES/EN de la tarjeta y del aviso «¡nueva piel!».
+ *  · min       coste en PUNTOS de entrenamiento (Infinity = jamás por
+ *              puntos — el addPts de c13 la salta por comparación).
+ *  · via/days  vía de desbloqueo alternativa: 'racha' + hito de DÍAS del
+ *              Reto del Día (EL PULSO, r76 — fila propia de asistencia;
+ *              la tienda las oculta y el diario las libera).
+ *  · tex       clave de la fábrica de texturas TEX_BUILDERS (c13).
+ *  · edge      color del CANTO real de la hoja (mesh «trim» del GLB).
+ *  · grip      color de la cinta de agarre sobre el mango real.
+ *  · anim      matiz animado (arcoíris) sobre la textura.
+ *  · modelUrl  GLB externo que reemplaza el modelo entero (respaldo: tex).
+ *  LECTOR: c13 (SKINS = CONFIG_PIELES.pieles · RACHA_SKINS por filtro —
+ *  orden intacto, claves de save intactas, pintura/tienda/avisos intactos).
+ *  Añadir o retocar una piel = editar AQUÍ, sin tocar una línea de lógica.
+ *  · FUERA DE ÁMBITO (filas futuras): el CARÁCTER de juego de cada piel
+ *    (PADDLE_PERKS de c04 — comportamiento, no metadato) y las paletas
+ *    estáticas del Hall (HALL_SKIN_* de c08, duplicadas a propósito:
+ *    el tono 'clasica' del Hall #8a6a4a ≠ grip #6b4a2f).
+ *  ===================================================================== */
+export const CONFIG_PIELES = {
+  version: 1,
+  pieles: [
+    { id: 'clasica', name: { es: 'Clásica', en: 'Classic' }, min: 0, grip: 0x6b4a2f },
+    { id: 'fuego', name: { es: 'Fuego', en: 'Fire' }, min: 150, tex: 'fuego', edge: 0xff5a2a, grip: 0xc22a12 },
+    { id: 'hielo', name: { es: 'Hielo', en: 'Ice' }, min: 400, tex: 'hielo', edge: 0x35c4e8, grip: 0x1479a3 },
+    { id: 'oro', name: { es: 'Oro', en: 'Gold' }, min: 800, tex: 'oro', edge: 0xf2c14e, grip: 0x3a2c10 },
+    { id: 'arcoiris', name: { es: 'Arcoíris', en: 'Rainbow' }, min: 1500, tex: 'holo', edge: 0xb07aff, grip: 0x8e44ad, anim: true },
+    { id: 'carbon', name: { es: 'Pro Carbon', en: 'Pro Carbon' }, min: 2500, tex: 'carbon', edge: 0xff2d2d, grip: 0x17181c, modelUrl: 'assets/pala/pala_pro.glb' },
+    { id: 'neon', name: { es: 'Neón', en: 'Neon' }, min: Infinity, days: 7, via: 'racha', tex: 'neon', edge: 0x39ff88, grip: 0x0f3d2e },
+    { id: 'fantasma', name: { es: 'Fantasma', en: 'Ghost' }, min: Infinity, days: 14, via: 'racha', tex: 'fantasma', edge: 0xbfe9ff, grip: 0x43545e },
+    { id: 'campeon', name: { es: 'Campeón', en: 'Champion' }, min: Infinity, days: 30, via: 'racha', tex: 'oro', edge: 0xffd700, grip: 0x4a3808, anim: true },
+  ],
 };

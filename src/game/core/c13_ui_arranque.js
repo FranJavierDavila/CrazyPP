@@ -8,7 +8,7 @@ function renderPlayBtn() {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __ppLang, applyLangDOM, ppPlayerName, setLang } from './c00_pre_three.js';
 import { fixInvertedMeshes, loadGunModel, loadPaddleModel, makeGunVisual, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, CONFIG_LOGROS, CONFIG_TORNEOS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, CONFIG_LOGROS, CONFIG_PIELES, CONFIG_TORNEOS, DIMS, SERVE_ASSIST_TIERS, SERVE_TUNE, scalePreset } from './c02_cfg_escena.js';
 import { CCD_TUNE, bladeNormalLocal, createPaddleSim, sdfBlade, setPaddleBasis, sweepBallVsBlade, tmpPrev } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddleSweep, computeShotVelocityReal, findServeVelocity, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { NetLink } from './c09_red_netlink.js';
@@ -1216,23 +1216,14 @@ loadPaddleModel().then((paddleModel) => {
      *   edge     color del CANTO real de la hoja (mesh «trim»)
      *   grip     color de la cinta de agarre sobre el mango real
      *   modelUrl GLB externo que reemplaza el modelo entero (respaldo: tex)
-     *   anim     matiz animado (arcoíris) sobre la textura */
-    const SKINS = [
-      { id: 'clasica', name: { es: 'Clásica', en: 'Classic' }, min: 0, grip: 0x6b4a2f },
-      { id: 'fuego', name: { es: 'Fuego', en: 'Fire' }, min: 150, tex: 'fuego', edge: 0xff5a2a, grip: 0xc22a12 },
-      { id: 'hielo', name: { es: 'Hielo', en: 'Ice' }, min: 400, tex: 'hielo', edge: 0x35c4e8, grip: 0x1479a3 },
-      { id: 'oro', name: { es: 'Oro', en: 'Gold' }, min: 800, tex: 'oro', edge: 0xf2c14e, grip: 0x3a2c10 },
-      { id: 'arcoiris', name: { es: 'Arcoíris', en: 'Rainbow' }, min: 1500, tex: 'holo', edge: 0xb07aff, grip: 0x8e44ad, anim: true },
-      { id: 'carbon', name: { es: 'Pro Carbon', en: 'Pro Carbon' }, min: 2500, tex: 'carbon', edge: 0xff2d2d, grip: 0x17181c, modelUrl: 'assets/pala/pala_pro.glb' },
-      /* v3.6.68 · EL PULSO CRAZY (r76) — pieles de ASISTENCIA: min:Infinity
-       * ⇒ JAMÁS salen por puntos; sólo la racha de días del Reto del Día
-       * las libera (via:'racha' · days = hito de asistencia). */
-      { id: 'neon', name: { es: 'Neón', en: 'Neon' }, min: Infinity, days: 7, via: 'racha', tex: 'neon', edge: 0x39ff88, grip: 0x0f3d2e },
-      { id: 'fantasma', name: { es: 'Fantasma', en: 'Ghost' }, min: Infinity, days: 14, via: 'racha', tex: 'fantasma', edge: 0xbfe9ff, grip: 0x43545e },
-      { id: 'campeon', name: { es: 'Campeón', en: 'Champion' }, min: Infinity, days: 30, via: 'racha', tex: 'oro', edge: 0xffd700, grip: 0x4a3808, anim: true },
-    ];
-    // r76 · EL PULSO CRAZY: pieles de asistencia (definidas aquí por TDZ —
-    // SKINS ya existe) — sólo la racha de días las libera
+     *   anim     matiz animado (arcoíris) sobre la textura
+     * r62 · LA TABLA VIVE EN c02 (CONFIG_PIELES — única fuente de verdad;
+     * séptima parada data-driven tras ARCANO_CFG/física/menú/audio/
+     * dificultad/torneos+logros). c13 SÓLO CONSUME: añadir o retocar una
+     * piel = editar la tabla de c02, cero lógica. */
+    const SKINS = CONFIG_PIELES.pieles;
+    // r76 · EL PULSO CRAZY: pieles de asistencia (derivadas por su vía —
+    // sólo la racha de días del Reto del Diario las libera)
     const RACHA_SKINS = SKINS.filter((s) => s.via === 'racha');
   
     /* ---------------- registro de modos ----------------

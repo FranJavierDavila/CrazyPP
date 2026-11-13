@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r38 · v3.6.152-SDK6 · FASE 155 · TEST: EL SALÓN DE LA
+/* CRAZY PING PONG · r38 · v3.6.153-SDK6 · FASE 156 · TEST: EL SALÓN DE LA
  * PARTIDA — RASCACIELOS (4.º hall del dueño + partidas en el hall del
  * anfitrión, IA y multijugador).
  *
@@ -60,23 +60,23 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.152-SDK6 · FASE 155 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.152-SDK6 · FASE 155 · EL SALÓN DE LA PARTIDA');
-chk(vjson.version === '3.6.152-SDK6', 'VERSION.json: 3.6.152-SDK6');
-chk(vjson.fase === 155, 'FASE 155');
-chk(vjson.faseNombre === 'CONFIG_TORNEOS+LOGROS r61: TORNEOS y LOGROS data-driven — formato del árbitro (a 11/ventaja/iguala/saque/pausas/best-of/serie) · caminos+portada+candados de campeonatos · circuito (niveles/combo/estrellas) · catálogo core 6 medallones derivado + condiciones GameStats · train 10 honores c13 (lectores c06/c11/c12/c13 · alias CHAMP_STAGE_TOTAL)', 'faseNombre = EL SALÓN DE LA PARTIDA');
-chk(vjson.tamano === 11576284, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.153-SDK6 · FASE 156 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.153-SDK6 · FASE 156 · EL SALÓN DE LA PARTIDA');
+chk(vjson.version === '3.6.153-SDK6', 'VERSION.json: 3.6.153-SDK6');
+chk(vjson.fase === 156, 'FASE 156');
+chk(vjson.faseNombre === 'CONFIG_PIELES r62: LAS PIELES SON DATA-DRIVEN — los metadatos de las 9 pieles de pala (id · nombre ES/EN · coste min o días/vía racha · pintura tex/edge/grip · anim · modelUrl GLB) viven en c02 — séptima parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros (lector c13: SKINS = CONFIG_PIELES.pieles · RACHA_SKINS por filtro · orden/save/pintura/tienda intactos)', 'faseNombre = EL SALÓN DE LA PARTIDA');
+chk(vjson.tamano === 11578430, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  '51af940b2946f25edd547abdc63ffad95278fc11c2a0d8e7d5475da8218e06c3',
+  'c2b75fe924b10a1a0161fedfda4a88f005910356e617c8407c2e6a2dcebf24e0',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') ===
-  '51af940b2946f25edd547abdc63ffad95278fc11c2a0d8e7d5475da8218e06c3',
+  'c2b75fe924b10a1a0161fedfda4a88f005910356e617c8407c2e6a2dcebf24e0',
   'golden 1836d13f… (build byte-exacto)');
-chk(game.includes('3.6.152-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.152-SDK6'"), 'sello c00 = 3.6.152-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.152-SDK6'"),
-  'sw.js CACHE v3.6.152-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.152-SDK6</span>'), 'badge V3.6.152-SDK6 en 03_body');
+chk(game.includes('3.6.153-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.153-SDK6'"), 'sello c00 = 3.6.153-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.153-SDK6'"),
+  'sw.js CACHE v3.6.153-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.153-SDK6</span>'), 'badge V3.6.153-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36139-sdk6'),
   'hub /descargas sellado a v36139-sdk6');
 

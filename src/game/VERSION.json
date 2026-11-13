@@ -1,9 +1,9 @@
 {
-  "version": "3.6.152-SDK6",
-  "fase": 155,
-  "faseNombre": "CONFIG_TORNEOS+LOGROS r61: TORNEOS y LOGROS data-driven — formato del árbitro (a 11/ventaja/iguala/saque/pausas/best-of/serie) · caminos+portada+candados de campeonatos · circuito (niveles/combo/estrellas) · catálogo core 6 medallones derivado + condiciones GameStats · train 10 honores c13 (lectores c06/c11/c12/c13 · alias CHAMP_STAGE_TOTAL)",
+  "version": "3.6.153-SDK6",
+  "fase": 156,
+  "faseNombre": "CONFIG_PIELES r62: LAS PIELES SON DATA-DRIVEN — los metadatos de las 9 pieles de pala (id · nombre ES/EN · coste min o días/vía racha · pintura tex/edge/grip · anim · modelUrl GLB) viven en c02 — séptima parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros (lector c13: SKINS = CONFIG_PIELES.pieles · RACHA_SKINS por filtro · orden/save/pintura/tienda intactos)",
   "sdk": "1.6.0",
-  "fecha": "2026-11-12",
+  "fecha": "2026-11-13",
   "hub": "v36139-sdk6",
   "manifests": {
     "oeste": 56,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r61",
-  "tamano": 11576284,
-  "golden": "51af940b2946f25edd547abdc63ffad95278fc11c2a0d8e7d5475da8218e06c3"
+  "nota": "r62",
+  "tamano": 11578430,
+  "golden": "c2b75fe924b10a1a0161fedfda4a88f005910356e617c8407c2e6a2dcebf24e0"
 }

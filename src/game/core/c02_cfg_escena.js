@@ -935,21 +935,30 @@ export const ICONOS_MENUS = {
  *    fina al pie de TU CASA.
  *  ===================================================================== */
 export const CONFIG_MENUS = {
-  version: 2,
+  version: 3,
   lienzo: { ancho: 3696, alto: 1400 },
   arco: {
-    yawGrados: 36,
+    // r70 · EL YAW YA NO ES UN LITERAL: buildMenu lo CALCULA con la fórmula
+    // r69 (yaw = γC + γL + ranura · γ = atan(w/2/d)) desde las anchuras
+    // reales, y el ANCHO FÍSICO se deriva del aspecto de la rodaja:
+    // anchoM = (w / altoLienzo) · altoM. Cada panela muestra su rodaja SIN
+    // deformar — los medallones pintados como círculos en el lienzo son
+    // círculos en el mundo (informe del dueño: «los bloques están
+    // achicados… se nota que los círculos de los iconos no son circulares
+    // por estar el panel escalado»). r69 estrechó los anchos físicos
+    // (0,98→0,88 · 0,74→0,66) para tangar sin retocar el lienzo: la textura
+    // se estiraba y los círculos salían ELIPSES. Con el aspecto exacto el
+    // central vuelve a ~1,00 m y los lados a ~0,75 m (tamaño original), y
+    // las TRES siguen tangentes y seguidas a 1,15 m con ranura uniforme.
+    ranuraM: 0.017,         // ranura física uniforme entre panelas (r69)
+    radioEsquinaM: 0.036,   // r70 · SILUETA REDONDEADA: las 4 esquinas de
+                            // cada panela en curva — los cortes del troceo
+                            // también redondeados, sin bordes vivos
     yCentro: -0.05,
     panelas: [
-      // r69 · TANGENTES y SEGUIDAS (petición del dueño: «no se pueden pisar
-      // o superponer, deben ir unos seguidos a los otros»): las TRES a la
-      // MISMA distancia 1,15 m (equidistancia real), cada panela
-      // perpendicular a su radio — los bordes quedan paralelos con una
-      // ranura uniforme de ~1,7 cm. yaw = γC + γL + 0,8° con
-      // γ = atan(w/2 / d): sin solape angular ni físico.
-      { id: 'L', x: 0, w: 1112, anchoM: 0.66, altoM: 0.95, yaw: 37.8, dist: 1.15 },
-      { id: 'C', x: 1112, w: 1472, anchoM: 0.88, altoM: 0.95, yaw: 0, dist: 1.15 },
-      { id: 'R', x: 2584, w: 1112, anchoM: 0.66, altoM: 0.95, yaw: -37.8, dist: 1.15 },
+      { id: 'L', x: 0, w: 1112, altoM: 0.95, dist: 1.15 },
+      { id: 'C', x: 1112, w: 1472, altoM: 0.95, dist: 1.15 },
+      { id: 'R', x: 2584, w: 1112, altoM: 0.95, dist: 1.15 },
     ],
   },
   cabecera: { logo: true, idiomas: true, cierre: true, sello: true },
@@ -1002,16 +1011,49 @@ export const CONFIG_MENUS = {
  *  concha nueva.
  *  ===================================================================== */
 export const CONFIG_SECCIONES = {
-  version: 1,
+  version: 2,
+  /* r70 · BLOQUES CONDICIONALES (petición del dueño: «no tiene sentido
+   * mantener siempre los tres bloques, si no hay contenido no se coloca
+   * el bloque… no coloques bloques si quedan vacíos o con poco contenido»):
+   * cada página DECLARA qué lados del arco tienen contenido — buildMenu
+   * monta SÓLO esas panelas (1 centrada, 2 tangentes, 3 como ahora) y la
+   * concha pinta el cristal sólo donde hay pantalla. La panela C existe
+   * siempre (título + navegación común viven en ella). */
+  lados: {
+    main: ['L', 'C', 'R'],
+    // rejillas y estados de MULTIJUGADOR: todo el contenido vive en la C
+    multi: ['C'], join: ['C'], name: ['C'], gripname: ['C'],
+    // RANKING: landing (2 tarjetas) y tabla profunda en la C
+    rankini: ['C'], rank: ['C'], rankme: ['C'],
+    // CAMPEONATOS: landing con rejilla C+R · detalle e historial en la C
+    champs: ['C', 'R'], champuno: ['C'], champhist: ['C'],
+    // ENTRENAR: landing C+R · área y perfil/extras
+    train: ['C', 'R'], trainarea: ['C'], trainext: ['C', 'R'],
+    // CARRERA: landing (divisiones) y división abierta en la C
+    carrera: ['C'], carreradiv: ['C'],
+    // AJUSTES: rejilla en C+R (como r68) · cada categoría en su C
+    opts: ['C', 'R'],
+    optsJuego: ['C'], optsSala: ['C'], optsSonido: ['C'], optsVisual: ['C'],
+    optsPerfil: ['C'], optsRendi: ['C'], optsPala: ['C'],
+    optsSalaRoom: ['C'], optsSalaMesa: ['C'], optsSalaBola: ['C'],
+    optsSalaHall: ['C'],
+    salirask: ['C'], hallask: ['C'], tutask: ['C'],
+  },
+  defaultLados: ['C'],
   shell: {
     multi: { tituloKey: 'tab_multi', icono: 'multijugador', volver: 'page:main' },
-    join: { tituloKey: 'join_title', icono: 'entrar', volver: 'tab:multi' },
+    join: { tituloKey: 'join_title', icono: 'entrar', volver: 'page:multi' },
     name: { tituloKey: 'name_title', icono: 'usuario', volver: 'page:optsPerfil' },
     gripname: { tituloKey: 'pala_gname_title', icono: 'partido', volver: 'page:optsPala' },
-    rank: { tituloKey: 'sec_rank', icono: 'ranking', volver: 'page:main' },
-    rankme: { tituloKey: 'rankme_t', icono: 'usuario', volver: 'page:main' },
+    rankini: { tituloKey: 'sec_rank', icono: 'ranking', volver: 'page:main' },
+    rank: { tituloKey: 'sec_rank', icono: 'ranking', volver: 'page:rankini' },
+    rankme: { tituloKey: 'rankme_t', icono: 'usuario', volver: 'page:rankini' },
     champs: { tituloKey: 'sec_crazy', icono: 'campeonatos', volver: 'page:main' },
-    champhist: { tituloKey: 'sec_crazy', icono: 'campeonatos', volver: 'page:champs' },
+    // r70 · DETALLE DE CAMPEONATO: título DINÁMICO (el nombre vivo del
+    // campeonato elegido — la concha lo resuelve con _champSel)
+    champuno: { tituloKey: '', icono: 'campeonatos', volver: 'page:champs',
+      dinamico: 'champ' },
+    champhist: { tituloKey: 'hist_title', icono: 'campeonatos', volver: 'page:champs' },
     opts: { tituloKey: 'opts_title', icono: 'ajustes', volver: 'page:main',
       rejilla: 'ajustes' },
     optsJuego: { tituloKey: 'cat_juego', icono: 'consola', volver: 'page:opts' },
@@ -1025,7 +1067,12 @@ export const CONFIG_SECCIONES = {
     hallask: { tituloKey: 'hallask_title', icono: 'vestibulo', volver: 'page:main' },
     tutask: { tituloKey: 'tut_hub', icono: 'academia', volver: 'page:main' },
     train: { tituloKey: 'sec_train', icono: 'entrenar', volver: 'page:main' },
+    trainarea: { tituloKey: '', icono: 'entrenar', volver: 'trv3:back',
+      dinamico: 'trainarea' },
+    trainext: { tituloKey: 'trainext_t', icono: 'usuario', volver: 'traingo' },
     carrera: { tituloKey: 'carrera_lbl', icono: 'carrera', volver: 'page:main' },
+    carreradiv: { tituloKey: '', icono: 'carrera', volver: 'carrera:abre',
+      dinamico: 'carreradiv' },
   },
   rejillas: {
     ajustes: { columnas: ['C', 'R'], y: 300, h: 220, gap: 24,
@@ -1046,6 +1093,54 @@ export const CONFIG_SECCIONES = {
           gradiente: ['#ec407a', '#ad1457'] },
         { id: 'kofi', icono: 'apoyar', etiquetaKey: 'btn_kofi',
           gradiente: ['#ffd25e', '#e8a80e'] },
+      ] },
+    /* r70 · MULTIJUGADOR — landing del apartado con el formato Ajustes
+     * (petición del dueño): dos modos + unirse con código. Los estados de
+     * sala (creando/código/conectado/error) visten la concha y pintan SU
+     * panel en la panela C. Fuera la pantalla legada. */
+    multi: { columnas: ['C'], y: 300, h: 250, gap: 30,
+      tarjetas: [
+        { id: 'mjnorm', icono: 'multijugador', etiquetaKey: 'mj_norm_t',
+          gradiente: ['#2f9e44', '#1e7c33'] },
+        { id: 'mjduel', icono: 'arcano', etiquetaKey: 'mj_duel_t',
+          gradiente: ['#ba58ff', '#7a1fd0'] },
+        { id: 'net:join', icono: 'entrar', etiquetaKey: 'join_title',
+          gradiente: ['#1ed8cc', '#0a8892'] },
+      ] },
+    /* r70 · RANKING MUNDIAL — landing: tabla global + mi posición. */
+    rank: { columnas: ['C'], y: 300, h: 250, gap: 30,
+      tarjetas: [
+        { id: 'wrl:tab', icono: 'ranking', etiquetaKey: 'rank_tab_t',
+          gradiente: ['#1ed8cc', '#0a8892'] },
+        { id: 'page:rankme', icono: 'usuario', etiquetaKey: 'rankme_t',
+          gradiente: ['#ff7043', '#bf360c'] },
+      ] },
+    /* r70 · CAMPEONATOS — landing C+R (marco): las tarjetas son VIVAS del
+     * índice (música global + un campeonato por tarjeta + historial) y las
+     * genera drawMenuChamps en cada pintado. */
+    champs: { columnas: ['C', 'R'], y: 300, h: 220, gap: 24 },
+    /* r70 · CARRERA — landing C: una tarjeta viva por división
+     * (BRONCE → LEYENDA) con su estado; abre la división con rivales. */
+    carrera: { columnas: ['C'], y: 300, h: 185, gap: 24 },
+    /* r70 · ENTRENAR — landing: las 5 áreas + reto semanal + perfil y
+     * extras. FUERA «Volver al Hall» (petición del dueño: no tiene
+     * sentido dentro de Entrenar). */
+    train: { columnas: ['C', 'R'], y: 300, h: 220, gap: 24,
+      tarjetas: [
+        { id: 'trv3:area:dir', icono: 'gauge', etiquetaKey: 'a_dir',
+          gradiente: ['#2b6cb0', '#16324f'] },
+        { id: 'trv3:area:alt', icono: 'ojo', etiquetaKey: 'a_alt',
+          gradiente: ['#2f855a', '#1a4433'] },
+        { id: 'trv3:area:spin', icono: 'arcano', etiquetaKey: 'a_spin',
+          gradiente: ['#805ad5', '#44337a'] },
+        { id: 'trv3:area:saque', icono: 'entrenar', etiquetaKey: 'a_saq',
+          gradiente: ['#c05621', '#652a12'] },
+        { id: 'trv3:area:rit', icono: 'audio', etiquetaKey: 'a_rit',
+          gradiente: ['#b83280', '#5f1e42'] },
+        { id: 'trv3:semana', icono: 'supervivencia', etiquetaKey: 'semana_t',
+          gradiente: ['#8c6d1f', '#4a3a10'] },
+        { id: 'page:trainext', icono: 'usuario', etiquetaKey: 'trainext_t',
+          gradiente: ['#96a8c2', '#586884'] },
       ] },
   },
 };

@@ -3607,8 +3607,10 @@ loadPaddleModel().then((paddleModel) => {
     function drawArea(game, c, rects, btn, label) {
       LANG = (typeof __ppLang !== 'undefined' && __ppLang) || 'es';
       const a = AREAS.find((x) => x.id === uiArea) || AREAS[0];
-      drawHeader(game, c, rects, btn, label, t(a.ik) + ' · ' + t(a.sk));
-      let y = 196;
+      // r70 · la CONCHA manda (ATRÁS flotante sobre el bloque central):
+      // fuera la cabecera legada y el botón VOLVER del pie — la división
+      // de área mantiene SU mecánica íntegra (tarjetas de ejercicios).
+      let y = 226;
       for (const id of Object.keys(MODES)) {
         const M = MODES[id];
         if (M.area !== a.id) continue;
@@ -3687,14 +3689,105 @@ loadPaddleModel().then((paddleModel) => {
         c.restore();
         y += 190;
       }
-      btn('trv3:back', 40, 1380, 944, 76, t('volver'), false, undefined, undefined, 28);
+    }
+
+    /* r70 · FASE 164 · PERFIL Y EXTRAS DE ENTRENAMIENTO (página trainext,
+     *  destino de la tarjeta «Perfil y extras» del landing REJILLA): el
+     *  chip de perfil (puntos, nivel, progreso, LOGROS), las ayudas
+     *  visuales y las pieles de pala — lo que quedaba en el hub legado.
+     *  FUERA «Volver al Hall» (petición del dueño: no tiene sentido
+     *  dentro de Entrenar). La concha pinta ATRÁS sobre el bloque C. */
+    function drawExtras(game, c, rects, btn, label) {
+      LANG = (typeof __ppLang !== 'undefined' && __ppLang) || 'es';
+      // — chip de perfil: puntos · nivel —
+      const lvl = levelOf(S.pts);
+      c.textAlign = 'left'; c.textBaseline = 'middle';
+      c.fillStyle = '#f0c85a'; c.font = '900 58px system-ui, sans-serif';
+      c.fillText(S.pts + ' ' + t('pts'), 56, 300);
+      c.fillStyle = '#a9b8cc'; c.font = '600 24px system-ui, sans-serif';
+      c.fillText(t('nivel') + ' · ' + t(lvl.k), 56, 348);
+      // progreso al siguiente nivel + LOGROS n/9 (v3.0.7-PLAY1)
+      if (GAMF()) {
+        const li = LEVELS.indexOf(lvl), nx = LEVELS[li + 1] || null;
+        const bw = 320, bx = 56, by = 388;
+        const prog = nx ? Math.min(1, (S.pts - lvl.min) / (nx.min - lvl.min)) : 1;
+        c.fillStyle = 'rgba(255,255,255,0.14)';
+        c.fillRect(bx, by, bw, 8);
+        c.fillStyle = nx ? '#f0c85a' : '#68d391';
+        c.fillRect(bx, by, Math.max(4, bw * prog), 8);
+        c.font = '600 17px system-ui, sans-serif';
+        c.fillStyle = '#a9b8cc';
+        c.fillText(nx ? (S.pts + ' / ' + nx.min) : t('max'), bx + bw + 14, by + 5);
+        const got = ACHS.filter((a) => S.ach[a]).length;
+        c.font = '700 17px system-ui, sans-serif';
+        c.fillText(t('logros') + ' ' + got + '/' + ACHS.length, bx, by + 34);
+        for (let i = 0; i < ACHS.length; i++) {
+          const cx = bx + i * 30;
+          c.beginPath(); c.arc(cx, by + 62, 7, 0, Math.PI * 2);
+          c.fillStyle = S.ach[ACHS[i]] ? '#f0c85a' : 'rgba(255,255,255,0.16)';
+          c.fill();
+        }
+      }
+      // — ayudas visuales (fb toggles, ids intactos) —
+      label(t('fb_t'), 470, 22, '#a9b8cc');
+      const toggles = [['marks', t('fb_marks')], ['line', t('fb_line')], ['spin', t('fb_spin')]];
+      let tx2 = 40;
+      for (const [k, lbl] of toggles) {
+        const w = 300;
+        btn('trv3:fb:' + k, tx2, 490, w, 68, lbl, !!S.fb[k], undefined, !!S.fb[k], 22);
+        tx2 += w + 12;
+      }
+      // — pieles de pala (mismas tarjetas miniatura del hub legado) —
+      label(t('skins_t'), 620, 22, '#a9b8cc');
+      let sx = 40, sy = 640;
+      for (const sk of SKINS) {
+        if (sk.via === 'racha') continue;   // r76: las de asistencia en EL PULSO
+        if (sx + 164 > 984) { sx = 40; sy += 100; }
+        const w = 150, h = 84;
+        const un = S.unlocked.indexOf(sk.id) >= 0;
+        const idb = 'trv3:skin:' + sk.id;
+        const idx = rects.length;
+        btn(idb, sx, sy, w, h, '', false);
+        c.save();
+        c.beginPath();
+        if (c.roundRect) c.roundRect(sx, sy, w, h, 14); else c.rect(sx, sy, w, h);
+        c.fillStyle = S.skin === sk.id ? 'rgba(240,200,90,0.30)' : 'rgba(255,255,255,0.06)';
+        c.fill();
+        c.strokeStyle = S.skin === sk.id ? '#f0c85a' : (un ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)');
+        c.lineWidth = S.skin === sk.id ? 4 : 2;
+        c.stroke();
+        c.beginPath(); c.arc(sx + 30, sy + 42, 22, 0, Math.PI * 2);
+        c.fillStyle = un ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.12)';
+        c.fill();
+        c.strokeStyle = 'rgba(255,255,255,0.5)'; c.lineWidth = 2; c.stroke();
+        if (un) {
+          c.save();
+          c.beginPath(); c.arc(sx + 30, sy + 42, 20, 0, Math.PI * 2); c.clip();
+          c.drawImage(skinPreviewCv(sk), sx + 10, sy + 22, 40, 40);
+          c.restore();
+        }
+        c.fillStyle = un ? '#e9edf2' : '#5a6a7d';
+        const nmFull = un ? (sk.name[LANG] || sk.name.es) : '\u{1F512} ' + sk.min;
+        let nm = nmFull;
+        c.font = '700 17px system-ui, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+        while (nm.length > 2 && c.measureText(nm).width > 86) nm = nm.slice(0, -1);
+        c.fillText(nm, sx + 58, sy + 30);
+        if (un && S.skin === sk.id) {
+          c.fillStyle = '#f0c85a'; c.font = '600 13px system-ui, sans-serif';
+          c.fillText(t('skin_sel'), sx + 58, sy + 62);
+        }
+        c.restore();
+        sx += w + 14;
+      }
+      // r70 · parar la prueba activa (si la hay) — sin HALL aquí
+      if (active) btn('trv3:stop', 40, 1380, 944, 76, t('parar'), false, 'surv', undefined, 28);
     }
   
     /* ---------------- acciones del menú (case 'trv3') ---------------- */
     function menuAction(game, arg) {
       const p = arg.split(':');
       const cmd = p[0];
-      if (cmd === 'area') { uiArea = p[1] || 'dir'; uiPage = 'area'; game.menuPage = 'trainarea'; game.drawMenu(); }
+      if (cmd === 'area') { uiArea = p[1] || 'dir'; uiPage = 'area'; game._trainSel = p[1] || 'dir'; game.menuPage = 'trainarea'; game.drawMenu(); }
       else if (cmd === 'back') {
         // v3.0.3 · «VOLVER» desde un área regresa al HUB de entrenamiento
         // (antes: menú principal); el «MENÚ» de la cabecera, en el hub, sí
@@ -3810,6 +3903,22 @@ loadPaddleModel().then((paddleModel) => {
       serveTrigger: () => { try { serveTossFromTee(true); } catch (e) { /* nunca rompe */ } },
       serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(false); } catch (e) { /* nunca rompe */ } },
       drawHub, drawArea,
+      // r70 · puentes de la landing REJILLA de Entrenar: traductor local,
+      // área por id, sub del reto semanal, sub del perfil y la página de
+      // perfil/extras (trainext)
+      tx: t,
+      drawExtras,
+      areaDe: (id) => AREAS.find((a) => a.id === id) || null,
+      semanaSub: () => {
+        const wp = weeklyPlan(weekKey());
+        const hecho = !!(S.semana.done && S.semana.done[weekKey()]);
+        return t('semana_sub', { m: t(MODES[wp.mode].nk), n: wp.n }) +
+          (hecho ? ' · ' + t('semana_ya') : '');
+      },
+      perfilSub: () => {
+        const lvl = levelOf(S.pts);
+        return S.pts + ' ' + t('pts') + ' · ' + t('nivel') + ' · ' + t(lvl.k);
+      },
       get state() { return { active, pts: S.pts, best: S.best, skin: S.skin, unlocked: S.unlocked.slice(),
         stars: Object.assign({}, S.stars), acc: Object.assign({}, S.acc),
         ach: Object.assign({}, S.ach), comboBest: S.comboBest || 0,

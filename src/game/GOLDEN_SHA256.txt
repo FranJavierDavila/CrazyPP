@@ -1,1 +1,3 @@
-255fb05d1505796b507419ad189fcc2f023209f8edfaa901bde25f27c997d845
+# SHA256 del game.html que produjo esta división (3.6.161-SDK6, fase 164 · EL APARTADO COMPLETO (informe del dueño): panelas a ASPECTO EXACTO (fin de los círculos elípticos — anchoM derivado de la rodaja, el central vuelve a ~1,00 m), yaw CALCULADO por la fórmula r69 desde anchuras reales, silueta redondeada en las 4 esquinas (los cortes también en redondo), bloques CONDICIONALES por página (sin panelas vacías), banda ATRÁS/título flotante sobre el bloque central y los 5 apartados (Multi, Campeonatos, Ranking, Carrera, Entrenar) reconstruidos con el formato Ajustes; sello actualizado
+# por bump_version.py desde 3.6.160-SDK6)
+a43fec1d159ee628f6c414ae6305681bbc27f49863beb69e27583ef9a371acba

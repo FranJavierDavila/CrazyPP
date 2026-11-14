@@ -1,10 +1,10 @@
 {
-  "version": "3.6.160-SDK6",
-  "fase": 163,
-  "faseNombre": "CORRECCION DEL ARCO r69 (informe del dueño): los tres bloques NO se pisan — panelas tangentes y seguidas, las tres a 1,15 m (equidistancia real), yaw 37,8 grados, ranura uniforme de 1,7 cm · EL MENU YA NO NACE A LA ESPALDA: restaurada la convencion r67 (grupo delante de la cara mirando a la cara) con el arco centrado en la cabeza por posiciones locales · ANCLAJE pedido: al abrir nace justo delante de la mirada y queda fijo; sin chincheta sigue SIEMPRE de frente a donde miramos; el boton chincheta congela donde esta y lo recuerda; heal r114 intacto · TOOLTIPS espacio-conscientes (1024 legado / 3696 virtual), siempre sobre el objeto apuntado, sin desbordes · dedup de 7 titulos legados que duplicaban la concha (multi/join/name/gripname/rank/rankme/carrera) · chincheta otra vez clicable (z +6 mm)",
+  "version": "3.6.161-SDK6",
+  "fase": 164,
+  "faseNombre": "EL APARTADO COMPLETO (informe del dueño): panelas a ASPECTO EXACTO (fin de los círculos elípticos — anchoM derivado de la rodaja, el central vuelve a ~1,00 m), yaw CALCULADO por la fórmula r69 desde anchuras reales, silueta redondeada en las 4 esquinas (los cortes también en redondo), bloques CONDICIONALES por página (sin panelas vacías), banda ATRÁS/título flotante sobre el bloque central y los 5 apartados (Multi, Campeonatos, Ranking, Carrera, Entrenar) reconstruidos con el formato Ajustes",
   "sdk": "1.6.0",
   "fecha": "2026-11-14",
-  "hub": "v36159-sdk6",
+  "hub": "v36161-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r69",
-  "tamano": 12163159,
-  "golden": "255fb05d1505796b507419ad189fcc2f023209f8edfaa901bde25f27c997d845"
+  "nota": "r70",
+  "tamano": 12179103,
+  "golden": "a43fec1d159ee628f6c414ae6305681bbc27f49863beb69e27583ef9a371acba"
 }

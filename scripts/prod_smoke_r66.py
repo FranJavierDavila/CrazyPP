@@ -134,12 +134,16 @@ async def main():
         chk("const CACHE = 'crazypp-v3.6.157-SDK6'" in sw, 'sw.js a 3.6.157')
     except Exception as e:
         chk(False, f'sw.js servido ({e})')
+    # hub (app Next.js desplegada aparte, NO en GitHub Pages): se verifica
+    # el fichero fuente re-vendido, como hacía el humo de r65
     try:
-        hub = get(BASE + '/descargas')
-        chk('v36157-sdk6' in hub and 'V3.6.157-SDK6' in hub,
-            'hub /descargas apunta a v36157 (titular FASE 160)')
-    except Exception as e:
-        chk(False, f'hub /descargas ({e})')
+        hub_src = open('/home/z/my-project/upload/src/app/descargas/page.tsx',
+                       encoding='utf-8').read()
+        chk('v36157-sdk6' in hub_src and 'V3.6.157-SDK6' in hub_src
+            and 'BOLA LOCA' in hub_src and 'v36156' not in hub_src,
+            'hub src/app/descargas/page.tsx apunta a v36157 (titular FASE 160)')
+    except OSError as e:
+        chk(False, f'hub page.tsx ({e})')
 
     # FUNCIONAL
     errors = []

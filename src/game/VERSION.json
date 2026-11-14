@@ -1,9 +1,9 @@
 {
-  "version": "3.6.155-SDK6",
-  "fase": 158,
-  "faseNombre": "CONFIG_MEDALLAS r64: MEDALLAS POR EJERCICIO DATA-DRIVEN — la escalera bronce/plata/oro (estrellas 1/2/3 · precisión 70/85) de medallaDe vive en c02 — novena parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles/rally (lector c13: MDE/MDP = CONFIG_MEDALLAS.estrellas/.precision — HUD, MEDALLERO y or5 intactos)",
+  "version": "3.6.156-SDK6",
+  "fase": 159,
+  "faseNombre": "EL SAQUE VUELVE A LA MANO r65: blindaje del saque en 4 capas — gatillo SAQUE-PRIMERO (el lanzamiento ya no compite con replayConsume/arma del Oeste), respaldo del saque RELATIVO A LA CABEZA (el punto fijo 0,3·1,05·fondo+0,4 podía quedar detrás del jugador), pose del mando con FRESCURA de 400 ms, grip vivo (el evento squeeze es prueba de liveness) y WATCHDOG bola→mano (saque atascado = la bola vuelve a la mano libre en ~1 s — petición del dueño: «la pelota aparece detrás del jugador y no responde a los controles»)",
   "sdk": "1.6.0",
-  "fecha": "2026-11-13",
+  "fecha": "2026-11-14",
   "hub": "v36154-sdk6",
   "manifests": {
     "oeste": 56,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r64",
-  "tamano": 11582172,
-  "golden": "91001a63531fa5931a60e6a4614122db72ffa4567c60d2eb7b94f7e7748b087f"
+  "nota": "r65",
+  "tamano": 11588233,
+  "golden": "93b32b4a58aad538167a00eafd347e2cfc030735db06dcd5ceffcf3ea0cb9dbf"
 }

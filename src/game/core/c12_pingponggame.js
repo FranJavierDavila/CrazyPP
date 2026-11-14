@@ -7580,6 +7580,21 @@ export class PingPongGame {
       this._hallMusicaPulsa(i);
       return;
     }
+    // r65 · EL SAQUE ES EL DUEÑO DEL GATILLO (petición del dueño, máxima
+    // prioridad: «no se puede sacar… no responde a los controles
+    // correctamente»). Hasta hoy el lanzamiento vivía AL FINAL de la cadena
+    // y cualquier consumidor previo podía comérselo (v3.6.31 puso el
+    // replayConsume en 'serve' para el mapa del camino; el arma del Oeste
+    // se arma por estado y una reintroducción futura competiría igual).
+    // La rama usa LA MISMA condición que la de abajo (reordenación pura,
+    // cero cambio de comportamiento en el camino feliz): con el jugador por
+    // sacar y bola en mano, el gatillo LANZA SIEMPRE. El mapa/replay siguen
+    // vivos en 'over'/'arkanoid'/CHAMPS_STATE y el megaTrigger en 'rally'.
+    if (this.rules.state === 'serve' &&
+        this.rules.server === 'player' && !this.tossed) {
+      this.tossFromHand(this.ballHand, true);
+      return;
+    }
     // v2.38/2.69: PISTOLA DE RAYOS (superpoder de la PRUEBA 2) — el
     // gatillo de la mano LIBRE dispara el rayo con la bola en juego. El
     // módulo activo decide si está armada (variante 2, fase de juego).
@@ -7715,8 +7730,12 @@ export class PingPongGame {
     if (this._netStart) return;   // r79: cuenta atrás del MATCH_START en curso
     if (this.tossed || i !== this.ballHand) return;
     if (!this.renderer.xr.isPresenting) return;
-    const hand = this.controllerPaddles[i];
-    if (!hand.active) return;
+    // r65 · el EVENTO squeeze acaba de llegar de ESTE mando: el gesto es
+    // prueba vivísima de que el controlador responde. La guardia antigua
+    // (hand.active = connected[] del mando) podía negar el saque natural
+    // con un connected[] desactualizado (mando dormido/reemparejado) —
+    // «no responde a los controles correctamente». La velocidad sigue
+    // siendo la REAL de la mano (requisito A de v3.1.0-SRV2 intacto).
     // v3.1.0-SRV2 · LANZAMIENTO SIEMPRE NATURAL al soltar el grip (requisito
     // A: «se liberará con una velocidad inicial calculada a partir del
     // movimiento de la mano… no se debe reposicionar ni redirigir la bola»).
@@ -7724,6 +7743,20 @@ export class PingPongGame {
     // se repite. La subida mínima asistida queda SOLO en el gatillo
     // (tossFromHand con assisted=true), que es la ayuda explícita.
     this.tossFromHand(i, false);
+  }
+
+  /** r65 · validez de la pose del mando libre para el SAQUE: activo, pose
+   *  sellada hace <400 ms (los mocks de QA sin seenT cuentan como frescos)
+   *  y PLAUSIBLE (a menos de 2,2 m de la cabeza — un mando nunca queda más
+   *  lejos: una pose congelada del pasado, p. ej. de la era del museo, se
+   *  descarta y la bola nace delante de la mirada). */
+  _srvManoValida(bh) {
+    if (!bh || !bh.active) return false;
+    if (bh.seenT !== undefined &&
+        (performance.now() - bh.seenT) >= 400) return false;
+    try {
+      return bh.pos.distanceTo(this.camera.position) < 2.2;
+    } catch (eMV) { return true; }   // sin cámara (pruebas headless): aceptada
   }
 
   tossFromHand(i, assisted) {
@@ -10067,11 +10100,24 @@ export class PingPongGame {
             if (this.ball.spin) this.ball.spin.set(0, 0, 0);
             const bh = this.controllerPaddles
               ? this.controllerPaddles[this.ballHand] : null;
-            if (this.renderer.xr.isPresenting && bh && bh.active) {
+            // r65 · misma armadura que el pegado local: pose VÁLIDA
+            // (_srvManoValida: fresca Y plausible) o RESPALDO RELATIVO A LA
+            // CABEZA (0,35 m delante de la mirada, altura de pecho) — el
+            // punto fijo antiguo podía quedar DETRÁS del jugador y el punto
+            // online quedaba bloqueado igual. EN ESCRITORIO (sin visor) el
+            // punto reglamentario se QUEDA (r25: allí no hay cabeza — la
+            // cámara es la orbital del espectador).
+            if (this.renderer.xr.isPresenting && this._srvManoValida(bh)) {
               this.ball.pos.copy(bh.pos);
               this.ball.pos.y += BALL_HAND_LIFT;
+            } else if (this.renderer.xr.isPresenting) {
+              const fBg = tmpV.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
+              fBg.y = 0;
+              if (fBg.lengthSq() < 1e-6) fBg.set(0, 0, -1);
+              fBg.normalize();
+              this.ball.pos.copy(this.camera.position).addScaledVector(fBg, 0.35);
+              this.ball.pos.y = Math.max(0.55, this.ball.pos.y - 0.55);
             } else {
-              // escritorio (sin visor): punto de saque reglamentario
               this.ball.pos.set(0.3, 1.05, D.tableCenterZ + D.tableHalfLength + 0.4);
             }
             this._bgTele('mi_saque');
@@ -15213,6 +15259,7 @@ export class PingPongGame {
         // del lag del casco. Frames < 33 ms: dtFis == dt, idéntico.
         updatePaddleSim(ps, grip.position, tmpMountQ, now, dtFis);
         ps.active = this.connected[i];
+        ps.seenT = performance.now();   // r65: frescura de la pose (saque)
         // margen de detección extra SOLO mientras la bola del saque vuela:
         // golpear de forma natural no exige milimetrar la muñeca
         // v3.1.0-SRV2: margen REBAJADO y pequeño (fácil 6 cm, medio 4,5 cm,
@@ -15419,11 +15466,26 @@ export class PingPongGame {
             const bh = this.controllerPaddles[this.ballHand];
             this.ball.vel.set(0, 0, 0);
             this.ball.spin.set(0, 0, 0);
-            if (bh.active) {
+            // r65 · la pose del mando libre debe ser VÁLIDA (fresca Y
+            // plausible — _srvManoValida): una bh.pos vieja apoyaba la bola
+            // en una esquina del pasado — «la pelota aparece detrás del
+            // jugador y no en su mano».
+            if (this._srvManoValida(bh)) {
               this.ball.pos.copy(bh.pos);
               this.ball.pos.y += BALL_HAND_LIFT;
             } else {
-              this.ball.pos.set(0.3, 1.05, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.4);
+              // r65 · RESPALDO EN LA MANO VIRTUAL DEL JUGADOR: el punto fijo
+              // antiguo (0,3 · 1,05 · fondo+0,4) podía quedar DETRÁS del
+              // jugador según dónde estuviese de pie (el museo mueve el rig,
+              // el casco no re-centra al arrancar partida). Ahora nace 0,35 m
+              // por delante de la mirada y a la altura del pecho: SIEMPRE
+              // delante del jugador, mire donde mire y esté donde esté.
+              const fSrv = tmpV.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
+              fSrv.y = 0;
+              if (fSrv.lengthSq() < 1e-6) fSrv.set(0, 0, -1);
+              fSrv.normalize();
+              this.ball.pos.copy(this.camera.position).addScaledVector(fSrv, 0.35);
+              this.ball.pos.y = Math.max(0.55, this.ball.pos.y - 0.55);
             }
           } else {
             // bola lanzada: física real
@@ -15543,6 +15605,47 @@ export class PingPongGame {
       holdLock = true;
       this.ball.vel.set(0, 0, 0);
       this.ball.spin.set(0, 0, 0);
+    }
+
+    // r65 · WATCHDOG DEL SAQUE — «LA BOLA SIEMPRE VUELVE A TU MANO»
+    // (petición del dueño, máxima prioridad: «no se puede sacar… la pelota
+    // aparece detrás del jugador y no en su mano y no responde a los
+    // controles»). El pegado de arriba exige MUCHAS guardias a la vez
+    // (presenting · frozen · netFrozen · inHall · _netStart · estado/servidor
+    // · frescura del mando): si UNA falla en el casco, la bola quedaba donde
+    // murió el punto anterior — a menudo detrás del jugador — y el punto
+    // quedaba bloqueado. Este guardián corre FUERA de esas guardias: si el
+    // jugador es el sacador, la bola está en saque y NO está en la mano
+    // libre durante ~1 s, la DEVUELVE a la mano (pose fresca) o delante de
+    // la mirada (respaldo r65) y anula su velocidad (cinemática). En el
+    // camino feliz es un no-op (distancia < 0,45 m cada frame) y en la
+    // academia/entrenamiento no entra (ellos gestionan su bola).
+    if (presenting && !this.inHall && !this.tutV1 && !this.calib &&
+        !this._netStart && this.rules.state === 'serve' &&
+        this.rules.server === 'player' && !this.tossed) {
+      const bhW = this.controllerPaddles[this.ballHand];
+      const cerca = bhW.active &&
+        this.ball.pos.distanceTo(bhW.pos) < 0.45;
+      this._srvWdT = cerca ? 0 : (this._srvWdT || 0) + dt;
+      if (this._srvWdT > 1.0) {
+        this.ball.vel.set(0, 0, 0);
+        this.ball.spin.set(0, 0, 0);
+        if (this._srvManoValida(bhW)) {
+          this.ball.pos.copy(bhW.pos);
+          this.ball.pos.y += BALL_HAND_LIFT;
+        } else {
+          const fWd = tmpV.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
+          fWd.y = 0;
+          if (fWd.lengthSq() < 1e-6) fWd.set(0, 0, -1);
+          fWd.normalize();
+          this.ball.pos.copy(this.camera.position).addScaledVector(fWd, 0.35);
+          this.ball.pos.y = Math.max(0.55, this.ball.pos.y - 0.55);
+        }
+        if (this.ball.__exPrev) this.ball.__exPrev.copy(this.ball.pos);
+        if (this.ballMesh) this.ballMesh.visible = true;
+      }
+    } else {
+      this._srvWdT = 0;
     }
 
     // r88 · SALA DE CAMPEONATO EN CALMA (informe del dueño: «cuando arranca

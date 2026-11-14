@@ -492,7 +492,14 @@ async function salud() {
     if (ps) ps.textContent = 'Receptor en línea · ' + fnum(d.total) + ' eventos guardados.';
   } catch (e) {
     led.className = 'led rojo';
-    txt.textContent = 'receptor no responde';
+    // r65 · «receptor no responde» ahora DICE QUÉ receptor probó: si el
+    // navegador guardó una URL vieja en localStorage (pp_tele_url), el
+    // usuario ve al instante a dónde falló el fetch y puede corregirla
+    // arriba. Sin clamor: la URL base, sin clave ni query.
+    let urlProbada = base();
+    try { urlProbada = new URL(urlProbada).origin + new URL(urlProbada).pathname; }
+    catch (eU) { /* URL relativa: se muestra tal cual */ }
+    txt.textContent = 'receptor no responde · probó ' + urlProbada;
   }
 }
 

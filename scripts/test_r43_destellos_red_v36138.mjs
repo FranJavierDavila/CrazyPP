@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r43 · v3.6.155-SDK6 · FASE 158 · TEST: EL SUELO DE
+/* CRAZY PING PONG · r43 · v3.6.156-SDK6 · FASE 159 · TEST: EL SUELO DE
  * DESTELLOS + DUELO HONESTO Y FLUIDO — el informe del dueño tras la
  * v3.6.137 en el casco (cuatro frentes):
  *
@@ -83,26 +83,26 @@ const cuerpo = lee('src/game/03_body.html');
 const c09b = lee('src/game/core/c09b_red_nucleo.js');
 const c09b_proto = () => /PROTO: 3,\s*\/\/ versión del protocolo binario \(HELLO\)/.test(c09b);
 
-/* — 1 · SELLOS · v3.6.155-SDK6 · FASE 158 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.155-SDK6 · FASE 158 · EL SUELO DE DESTELLOS');
-chk(vjson.version === '3.6.155-SDK6', 'VERSION.json: 3.6.155-SDK6');
-chk(vjson.fase === 158, 'FASE 158');
-chk(vjson.faseNombre === 'CONFIG_MEDALLAS r64: MEDALLAS POR EJERCICIO DATA-DRIVEN — la escalera bronce/plata/oro (estrellas 1/2/3 · precisión 70/85) de medallaDe vive en c02 — novena parada tras ARCANO_CFG/física/menú/audio/dificultad/torneos+logros/pieles/rally (lector c13: MDE/MDP = CONFIG_MEDALLAS.estrellas/.precision — HUD, MEDALLERO y or5 intactos)',
-  'faseNombre = CONFIG_MEDALLAS R64: MEDALLAS POR EJERCICIO DATA-DRIVEN — LA ESCALERA BRONCE/PLATA/ORO (ESTRELLAS 1/2/3 · PRECISIÓN 70/85) DE MEDALLADE VIVE EN C02 — NOVENA PARADA TRAS ARCANO_CFG/FÍSICA/MENÚ/AUDIO/DIFICULTAD/TORNEOS+LOGROS/PIELES/RALLY (LECTOR C13: MDE/MDP = CONFIG_MEDALLAS.ESTRELLAS/.PRECISION — HUD, MEDALLERO Y OR5 INTACTOS)');
+/* — 1 · SELLOS · v3.6.156-SDK6 · FASE 159 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.156-SDK6 · FASE 159 · EL SUELO DE DESTELLOS');
+chk(vjson.version === '3.6.156-SDK6', 'VERSION.json: 3.6.156-SDK6');
+chk(vjson.fase === 159, 'FASE 159');
+chk(vjson.faseNombre === 'EL SAQUE VUELVE A LA MANO r65: blindaje del saque en 4 capas — gatillo SAQUE-PRIMERO (el lanzamiento ya no compite con replayConsume/arma del Oeste), respaldo del saque RELATIVO A LA CABEZA (el punto fijo 0,3·1,05·fondo+0,4 podía quedar detrás del jugador), pose del mando con FRESCURA de 400 ms, grip vivo (el evento squeeze es prueba de liveness) y WATCHDOG bola→mano (saque atascado = la bola vuelve a la mano libre en ~1 s — petición del dueño: «la pelota aparece detrás del jugador y no responde a los controles»)',
+  'faseNombre = EL SAQUE VUELVE A LA MANO R65: BLINDAJE DEL SAQUE EN 4 CAPAS — GATILLO SAQUE-PRIMERO (EL LANZAMIENTO YA NO COMPITE CON REPLAYCONSUME/ARMA DEL OESTE), RESPALDO DEL SAQUE RELATIVO A LA CABEZA (EL PUNTO FIJO 0,3·1,05·FONDO+0,4 PODÍA QUEDAR DETRÁS DEL JUGADOR), POSE DEL MANDO CON FRESCURA DE 400 MS, GRIP VIVO (EL EVENTO SQUEEZE ES PRUEBA DE LIVENESS) Y WATCHDOG BOLA→MANO (SAQUE ATASCADO = LA BOLA VUELVE A LA MANO LIBRE EN ~1 S — PETICIÓN DEL DUEÑO: «LA PELOTA APARECE DETRÁS DEL JUGADOR Y NO RESPONDE A LOS CONTROLES»)');
 chk(vjson.sdk === '1.6.0', 'SDK de la casa intacto (1.6.0)');
 // r46 · RE-ANCLAJE: la r46 (gobernador de telemetría + worker v3) cambia
 // legítimamente el build — el sello vivo lo da sella_r46/VERSION.json.
-chk(vjson.tamano === 11582172, 'tamaño del build: 11.507.255 B (re-anclado r46)');
+chk(vjson.tamano === 11588233, 'tamaño del build: 11.507.255 B (re-anclado r46)');
 chk(vjson.golden ===
-  '91001a63531fa5931a60e6a4614122db72ffa4567c60d2eb7b94f7e7748b087f',
+  '93b32b4a58aad538167a00eafd347e2cfc030735db06dcd5ceffcf3ea0cb9dbf',
   'VERSION.json golden 42d07e64… (re-anclado r46)');
 chk(sha256('public/game.html') === vjson.golden,
   'golden = sha256 real del build (byte-exacto)');
-chk(game.includes('3.6.155-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.155-SDK6'"), 'sello c00 = 3.6.155-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.155-SDK6'"),
-  'sw.js CACHE v3.6.155-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.155-SDK6</span>'), 'badge V3.6.155-SDK6 en 03_body');
+chk(game.includes('3.6.156-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.156-SDK6'"), 'sello c00 = 3.6.156-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.156-SDK6'"),
+  'sw.js CACHE v3.6.156-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.156-SDK6</span>'), 'badge V3.6.156-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36154-sdk6'),
   'hub /descargas sellado a v36154-sdk6');
 
@@ -276,7 +276,7 @@ chk(c12.includes('_arconoRepinta(conVoz)') || c12.includes('_arconoRepinta('),
 
 /* — 9 · RESULTADO ———————————————————————————————————————————————— */
 console.log('');
-console.log('=== r43 · v3.6.155-SDK6 · EL SUELO DE DESTELLOS ===');
+console.log('=== r43 · v3.6.156-SDK6 · EL SUELO DE DESTELLOS ===');
 console.log(`  ${ok} comprobaciones verdes · ${fails} fallos`);
 console.log(fails === 0 ? 'TODO OK' : 'FALLOS: revisar arriba');
 process.exit(fails === 0 ? 0 : 1);

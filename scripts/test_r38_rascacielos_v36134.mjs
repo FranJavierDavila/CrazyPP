@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* CRAZY PING PONG · r38 · v3.6.156-SDK6 · FASE 159 · TEST: EL SALÓN DE LA
+/* CRAZY PING PONG · r38 · v3.6.157-SDK6 · FASE 160 · TEST: EL SALÓN DE LA
  * PARTIDA — RASCACIELOS (4.º hall del dueño + partidas en el hall del
  * anfitrión, IA y multijugador).
  *
@@ -60,23 +60,23 @@ const vjson = JSON.parse(lee('src/game/VERSION.json'));
 const game = lee('public/game.html');
 const cuerpo = lee('src/game/03_body.html');
 
-/* — 1 · SELLOS · v3.6.156-SDK6 · FASE 159 ————————————————————————— */
-console.log('1 · SELLOS · v3.6.156-SDK6 · FASE 159 · EL SALÓN DE LA PARTIDA');
-chk(vjson.version === '3.6.156-SDK6', 'VERSION.json: 3.6.156-SDK6');
-chk(vjson.fase === 159, 'FASE 159');
-chk(vjson.faseNombre === 'EL SAQUE VUELVE A LA MANO r65: blindaje del saque en 4 capas — gatillo SAQUE-PRIMERO (el lanzamiento ya no compite con replayConsume/arma del Oeste), respaldo del saque RELATIVO A LA CABEZA (el punto fijo 0,3·1,05·fondo+0,4 podía quedar detrás del jugador), pose del mando con FRESCURA de 400 ms, grip vivo (el evento squeeze es prueba de liveness) y WATCHDOG bola→mano (saque atascado = la bola vuelve a la mano libre en ~1 s — petición del dueño: «la pelota aparece detrás del jugador y no responde a los controles»)', 'faseNombre = EL SALÓN DE LA PARTIDA');
-chk(vjson.tamano === 11588233, 'tamaño del build: 11.504.235 B');
+/* — 1 · SELLOS · v3.6.157-SDK6 · FASE 160 ————————————————————————— */
+console.log('1 · SELLOS · v3.6.157-SDK6 · FASE 160 · EL SALÓN DE LA PARTIDA');
+chk(vjson.version === '3.6.157-SDK6', 'VERSION.json: 3.6.157-SDK6');
+chk(vjson.fase === 160, 'FASE 160');
+chk(vjson.faseNombre === 'BOLA LOCA + SOLO 1 SUPERPODER EN MARCHA r66: la BOLA LOCA original del Wizard de magia entra como 15.º poder — PRIMERO del registro y SIEMPRE desbloqueado (sala Arcana sin candado · Duelos Locos de inicio · excluida del sorteo de coronación · la vieja loca de spin sale del surto) — bola ×1,65 con radio físico, ciclo arcoíris 0,30 vueltas/s y deriva aleatoria del mago (vaivén 4 m/s² a 8,5 rad/s + ráfagas 2,5 m/s² cada 0,22 s) en ventana de 10 s, icono del dueño y voces Piper nativas — Y la regla del dueño: solo 1 superpoder de pala puede estar ejecutándose al mismo tiempo (_poderVivoAlguno gobierna los dos gatillos; relanzar el MISMO poder sigue permitido)', 'faseNombre = EL SALÓN DE LA PARTIDA');
+chk(vjson.tamano === 11640599, 'tamaño del build: 11.504.235 B');
 chk(vjson.golden ===
-  '93b32b4a58aad538167a00eafd347e2cfc030735db06dcd5ceffcf3ea0cb9dbf',
+  'fa177d0ffef15b23fd8cb19ba5ce409032af7a1ec1b0f66a1b0b87c781c9d376',
   'VERSION.json golden 1836d13f…');
 chk(sha256('public/game.html') ===
-  '93b32b4a58aad538167a00eafd347e2cfc030735db06dcd5ceffcf3ea0cb9dbf',
+  'fa177d0ffef15b23fd8cb19ba5ce409032af7a1ec1b0f66a1b0b87c781c9d376',
   'golden 1836d13f… (build byte-exacto)');
-chk(game.includes('3.6.156-SDK6'), 'bundle con sello vigente');
-chk(c00.includes("const VERSION = '3.6.156-SDK6'"), 'sello c00 = 3.6.156-SDK6');
-chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.156-SDK6'"),
-  'sw.js CACHE v3.6.156-SDK6 (purga de cachés viejas)');
-chk(cuerpo.includes('>V3.6.156-SDK6</span>'), 'badge V3.6.156-SDK6 en 03_body');
+chk(game.includes('3.6.157-SDK6'), 'bundle con sello vigente');
+chk(c00.includes("const VERSION = '3.6.157-SDK6'"), 'sello c00 = 3.6.157-SDK6');
+chk(lee('public/sw.js').includes("CACHE = 'crazypp-v3.6.157-SDK6'"),
+  'sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)');
+chk(cuerpo.includes('>V3.6.157-SDK6</span>'), 'badge V3.6.157-SDK6 en 03_body');
 chk(lee('src/app/descargas/page.tsx').includes('v36154-sdk6'),
   'hub /descargas sellado a v36154-sdk6');
 

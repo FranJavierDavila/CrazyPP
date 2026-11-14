@@ -1,10 +1,10 @@
 {
-  "version": "3.6.156-SDK6",
-  "fase": 159,
-  "faseNombre": "EL SAQUE VUELVE A LA MANO r65: blindaje del saque en 4 capas — gatillo SAQUE-PRIMERO (el lanzamiento ya no compite con replayConsume/arma del Oeste), respaldo del saque RELATIVO A LA CABEZA (el punto fijo 0,3·1,05·fondo+0,4 podía quedar detrás del jugador), pose del mando con FRESCURA de 400 ms, grip vivo (el evento squeeze es prueba de liveness) y WATCHDOG bola→mano (saque atascado = la bola vuelve a la mano libre en ~1 s — petición del dueño: «la pelota aparece detrás del jugador y no responde a los controles»)",
+  "version": "3.6.157-SDK6",
+  "fase": 160,
+  "faseNombre": "BOLA LOCA + SOLO 1 SUPERPODER EN MARCHA r66: la BOLA LOCA original del Wizard de magia entra como 15.º poder — PRIMERO del registro y SIEMPRE desbloqueado (sala Arcana sin candado · Duelos Locos de inicio · excluida del sorteo de coronación · la vieja loca de spin sale del surto) — bola ×1,65 con radio físico, ciclo arcoíris 0,30 vueltas/s y deriva aleatoria del mago (vaivén 4 m/s² a 8,5 rad/s + ráfagas 2,5 m/s² cada 0,22 s) en ventana de 10 s, icono del dueño y voces Piper nativas — Y la regla del dueño: solo 1 superpoder de pala puede estar ejecutándose al mismo tiempo (_poderVivoAlguno gobierna los dos gatillos; relanzar el MISMO poder sigue permitido)",
   "sdk": "1.6.0",
   "fecha": "2026-11-14",
-  "hub": "v36154-sdk6",
+  "hub": "v36156-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r65",
-  "tamano": 11588233,
-  "golden": "93b32b4a58aad538167a00eafd347e2cfc030735db06dcd5ceffcf3ea0cb9dbf"
+  "nota": "r66",
+  "tamano": 11640599,
+  "golden": "fa177d0ffef15b23fd8cb19ba5ce409032af7a1ec1b0f66a1b0b87c781c9d376"
 }

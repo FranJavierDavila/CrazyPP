@@ -822,9 +822,13 @@ export const ARCANO_CFG = {
     onda: 10,       // ondas de choque
     salva: 10,      // ventana del salvavidas
     ancla: 10,      // cadenas del ancla
+    bolaloca: 10,   // FASE 160 · BOLA LOCA (la original del Wizard de magia:
+                    // crece ×1,65, ciclo arcoíris y deriva aleatoria — nace
+                    // SIEMPRE desbloqueada, primer puesto del Arcano)
     dlGigante: 12,  // DUELOS LOCOS · GIGANTE (r84)
     dlFuego: 10,    // DUELOS LOCOS · FUEGO
-    dlLoca: 10,     // DUELOS LOCOS · LOCA
+    dlLoca: 10,     // DUELOS LOCOS · LOCA (retirada del surto en FASE 160:
+                    // la sustituye bolaloca — queda para builds viejos)
   },
   // Reglas por modalidad (la puerta ÚNICA pwViva de c12 las aplica).
   reglas: {

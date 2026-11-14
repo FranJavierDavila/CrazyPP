@@ -81,16 +81,18 @@ JS = """async () => {
     try { G.rules.startMatch('match'); } catch (e) { /* */ }
     G.champs.activeId = 'locura';
     G.rules.state = 'rally';
-    G._megaMatriz.length = 0;
-    G._megaMatriz.push({ id: 'bolaloca', n: 1 }, { id: 'efecto', n: 1 });
-    G._megaIdx = 0;
     const libre = (G.paddleHand === 0) ? 1 : 0;
+    const entB = { id: 'bolaloca', n: 1 };
+    const entE = { id: 'efecto', n: 1 };
+    G._megaMatriz.length = 0;
+    G._megaMatriz.push(entB, entE);
+    G._megaIdx = 0;
     out.bolalocaActiva = G.megaTrigger(libre) === true && G._bolalocaT > 9.5;
     out.vivo = G._poderVivoAlguno() === 'bolaloca';
     G._megaIdx = 1;
-    const nE = G._megaMatriz[1].n;
+    const nE = entE.n;
     out.bloquea = G.megaTrigger(libre) === true && G._efectoT === 0 &&
-      G._megaMatriz[1].n === nE;
+      entE.n === nE;
     try { localStorage.removeItem('pp_poderes_v1'); } catch (e) { /* */ }
     out.siembra = G.poderesDesbloqueados().indexOf('bolaloca') === 0;
     try { localStorage.removeItem('pp_poderes_v1'); } catch (e) { /* */ }

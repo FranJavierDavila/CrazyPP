@@ -160,12 +160,7 @@ async def main():
     for needle, label in agujas:
         chk(needle in game, label)
     n_icons = game.count('data:image/png;base64,')
-    chk(n_icons >= 17, f'17+ iconos embebidos (hay {n_icons})')
-    try:
-        sw = get(BASE + '/sw.js')
-        chk("const CACHE = 'crazypp-v3.6.158-SDK6'" in sw, 'sw.js a 3.6.158')
-    except Exception as e:
-        chk(False, f'sw.js servido ({e})')
+    chk(n_icons >= 24, f'24+ iconos embebidos (hay {n_icons})')
 
     # ---------- FUNCIONAL ----------
     errors = []

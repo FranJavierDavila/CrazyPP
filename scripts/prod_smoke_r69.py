@@ -163,8 +163,8 @@ async def main():
         ('if (!this.menuPin) this.anchorMenu();', 'sin ancla: sigue siempre'),
         ('this.anchorMenu(true);', 'aperturas con forzar'),
         ('const ESP = this._menuMap', 'tooltip espacio-consciente'),
-        ('yU6fW' if False else "    label(T('tab_multi'), 244, 26)",
-         'título multi duplicado FUERA', ),
+        ("    label(T('tab_multi'), 244, 26)",
+         'título multi duplicado FUERA', True),
         ("const VERSION = '3.6.160-SDK6'", 'sello a 3.6.160'),
         ('REGLA DEL DUEÑO: SOLO 1 superpoder de pala en marcha', 'r160: regla'),
         ('const BOLALOCA_SCALE = 1.65;', 'r160: bola loca'),
@@ -182,19 +182,6 @@ async def main():
         chk("const CACHE = 'crazypp-v3.6.160-SDK6'" in sw, 'sw.js a 3.6.160')
     except Exception as e:
         chk(False, f'sw.js servido ({e})')
-    for needle, label in agujas:
-        chk(needle in game, label)
-    n_icons = game.count('data:image/png;base64,')
-    chk(n_icons >= 24, f'24+ iconos embebidos (hay {n_icons})')
-    try:
-        sw = get(BASE + '/sw.js')
-        chk("const CACHE = 'crazypp-v3.6.159-SDK6'" in sw, 'sw.js a 3.6.159')
-    except Exception as e:
-        chk(False, f'sw.js servido ({e})')
-    for needle, label in agujas:
-        chk(needle in game, label)
-    n_icons = game.count('data:image/png;base64,')
-    chk(n_icons >= 24, f'24+ iconos embebidos (hay {n_icons})')
 
     # ---------- FUNCIONAL ----------
     errors = []

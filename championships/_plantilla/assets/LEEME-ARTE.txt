@@ -1,0 +1,43 @@
+CONVENCIÓN DE ARTE · PLANTILLA DE CAMPEONATOS · CRAZY PING PONG
+================================================================
+Sube aquí los ficheros con ESTOS nombres exactos (el módulo y el generador
+los buscan por nombre). Todo lo opcional puede faltar: el módulo usa
+respaldos dibujados en canvas.
+
+OBLIGATORIOS (mínimo viable, referencia valle_neon)
+---------------------------------------------------
+  sala_floor.jpg   suelo de la sala      · 1296x1678 o similar (se ajusta)
+  sala_ceil.jpg    techo                 · 1296x1678
+  sala_back.jpg    pared trasera         · 1849x864
+  sala_front.jpg   pared frontal         · 1849x864
+  sala_left.jpg    pared izquierda       · 2395x864 (aquí cuelga el mapa si modo='arte')
+  sala_right.jpg   pared derecha         · 2395x864
+  Medidas canónicas de los planos 3D: suelo/techo 6.10x7.90 m ·
+  trasera/frontal 6.10x2.85 m · laterales 7.90x2.85 m.
+
+  rival.webp       rival cuerpo entero, pies al borde inferior · 512x1024
+                   (un fichero por estado del manifest.rival.states:
+                    idle.webp, duelo.webp, derrotado.webp, triunfante.webp...
+                    el conjunto rico usa 12: present, idle, focused, surprised,
+                    hungry, panic, laughing, crazy, angry, picando, loosing,
+                    defeated, victory)
+  bso.mp3          música (también vale .ogg o .wav; ajusta manifest.audio)
+  superpoder.webp  cartel del aviso de superpoder (los 5 lo usan)
+  insignia.png     insignia/trofeo que aparece en la sala al coronar
+
+RECOMENDADOS
+------------
+  power_0.png, power_1.png...   iconos de los superpoderes declarados
+  mapa.png                      póster del camino (solo si mapa.modo='arte';
+                                 aprox 1380x752, nodos en píxeles en manifest.mapa.nodos)
+  intro.mp4                     vídeo de presentación (lo reproduce el núcleo)
+  decor1.png, decor2.png...     troqueles de cartón (PNG con alfa, recorte exacto)
+  pistol.glb                    pistola del jugador (solo si playerGun.activo)
+  risas.mp3                     risa del rival (mapeada en manifest.audio.sounds)
+
+REGLAS DE ORO (heredadas del proyecto)
+--------------------------------------
+  · PNG con transparencia = recorte exacto al alfa, sin borde añadido.
+  · Los sprites del rival son PLANOS (billboard suave), arte 512x1024.
+  · Pesos: imágenes JPG/WebP comprimidas; el Quest lo agradece.
+  · No renames: el nombre ES el contrato.

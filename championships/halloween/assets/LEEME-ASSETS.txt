@@ -1,0 +1,24 @@
+LEEME-ASSETS · Campeonato de Halloween (r86 / manifest v2)
+===========================================================
+DEL ARTISTA (el dueño):
+  sala_front/left/right/back.jpg  → paredes.zip (paredes de la estancia)
+  sala_floor.jpg · sala_ceil.jpg  → paredes.zip (suelo y techo)
+  decor_arana/calabaza/lapida/ojos.png → troqueles.zip (los 4 troqueles)
+  mano1/2/3.webp                  → manos.zip (manos zombi; traen el montículo
+                                    de tierra INTEGRADO — no existe
+                                    monticulo.png como pieza aparte: las manos
+                                    salen de su propia tierra)
+  losa.jpg                        → mesa.jpg (losa de piedra de la mesa)
+  superpower.webp                 → SuperPower.png (cartel del anuncio)
+  gelatina.webp                   → gelatina.png (manchas Gelatina Asquerosa)
+  calabaza.glb                    → calabaza.glb (bola-calabaza)
+  zombi *.webp (12 poses) · mapa.webp · normas_halloween.png · insignia.png
+
+DE LA CASA (provisional hasta que el artista mande lo suyo):
+  power_mano/power_moscas/power_calabaza/power_gelatina.webp
+    → medallones circulares del anuncio de superpoder (diseño PIL sobre el
+      arte del dueño donde fue posible: mano y gelatina usan su arte).
+  mosca.webp → sprite de la Plaga de Moscas.
+  bso.wav (del valle) · risas.mp3 · insignia.png → siguen PROVISIONALES.
+RETIRADO en r86: power_0.png / power_1.png (Niebla de tumba / Orbe espectral,
+poderes provisionales de la r85 — sustituidos por los 4 reales del dueño).

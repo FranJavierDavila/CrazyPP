@@ -1,10 +1,10 @@
 {
-  "version": "3.6.157-SDK6",
-  "fase": 160,
-  "faseNombre": "BOLA LOCA + SOLO 1 SUPERPODER EN MARCHA r66: la BOLA LOCA original del Wizard de magia entra como 15.º poder — PRIMERO del registro y SIEMPRE desbloqueado (sala Arcana sin candado · Duelos Locos de inicio · excluida del sorteo de coronación · la vieja loca de spin sale del surto) — bola ×1,65 con radio físico, ciclo arcoíris 0,30 vueltas/s y deriva aleatoria del mago (vaivén 4 m/s² a 8,5 rad/s + ráfagas 2,5 m/s² cada 0,22 s) en ventana de 10 s, icono del dueño y voces Piper nativas — Y la regla del dueño: solo 1 superpoder de pala puede estar ejecutándose al mismo tiempo (_poderVivoAlguno gobierna los dos gatillos; relanzar el MISMO poder sigue permitido)",
+  "version": "3.6.158-SDK6",
+  "fase": 161,
+  "faseNombre": "EL VESTIBULO r67: los menus principales se redisenan al estilo caramelo de la referencia del dueno (3 paneles de cristal JUGAR/COMPITE/TU CASA + dock de utilidades + cabecera con logo y palas de idioma + 17 iconos del set \"CRAZY ICONOS v1\" disenados a mano) — TODO data-driven: ICONOS_MENUS (iconos intercambiables sin tocar codigo) y CONFIG_MENUS (layout, gradientes y orden de las tarjetas) en c02; lienzo panoramico 2560x1440 sobre plano 1,60x0,90 m con rayo leido vivo del canvas/geometry; las 15 paginas legadas 1024x1536 se pintan escaladas y centradas (transform 0,9375/dx 800) con sus rects mapeados; despacho de acciones intacto (ids identicos) y dock que reutiliza los botones DOM de siempre (intro/PWA/Ko-fi/TV)",
   "sdk": "1.6.0",
   "fecha": "2026-11-14",
-  "hub": "v36156-sdk6",
+  "hub": "v36157-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r66",
-  "tamano": 11640599,
-  "golden": "fa177d0ffef15b23fd8cb19ba5ce409032af7a1ec1b0f66a1b0b87c781c9d376"
+  "nota": "r67",
+  "tamano": 12014947,
+  "golden": "19eda7b5d5fd3d0687ffff23f8c467cb837c03960b5d56b99a6a36fa5912e453"
 }

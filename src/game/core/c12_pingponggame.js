@@ -1797,8 +1797,13 @@ export class PingPongGame {
   buildMenu() {
     this.menuGroup = new THREE.Group();
     this.menuCanvas = document.createElement('canvas');
-    this.menuCanvas.width = 1024;
-    this.menuCanvas.height = 1536;
+    // r67 · FASE 161 · EL VESTÍBULO: el lienzo pasa a PANORÁMICO 2560×1440
+    // (16:9) para componer los TRES paneles + dock de la página principal;
+    // las páginas legadas 1024×1536 se pintan escaladas y centradas (ver
+    // drawMenu). A ~1,08 m: ~1600 texel/m horizontal (antes ~1138) — MÁS
+    // nitidez, mismo presupuesto de repintado (sin mips, como r105).
+    this.menuCanvas.width = 2560;
+    this.menuCanvas.height = 1440;
     this.menuTex = new THREE.CanvasTexture(this.menuCanvas);
     this.menuTex.colorSpace = THREE.SRGBColorSpace;
     // r104 · MENÚS A PANTALLA COMPLETA (petición del dueño: «los textos
@@ -1817,8 +1822,12 @@ export class PingPongGame {
     this.menuTex.generateMipmaps = false;
     this.menuTex.minFilter = THREE.LinearFilter;
     this.menuTex.anisotropy = 1;   // sin mips el anisotrópico no aplica (era 8)
+    // r67 · plano panorámico 1,60×0,90 m (16:9, misma área visible que la
+    // referencia del dueño): los 3 paneles en arco caben en el FOV a 1,08 m.
+    // El mapeo del rayo (uv→px y cursor) se lee VIVO de canvas/geometry —
+    // ya no puede desincronizarse (fin del FIX DERIVA r105 por literales).
     this.menuMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.90, 1.35),
+      new THREE.PlaneGeometry(1.60, 0.90),
       new THREE.MeshBasicMaterial({ map: this.menuTex, transparent: true, depthTest: false }),
     );
     // r73 · EL MENÚ MANDA: el panel del menú es la ventana que manda donde
@@ -1852,7 +1861,9 @@ export class PingPongGame {
     );
     // centro superior del panel 0,90×1,35: borde arriba en y=+0,675 — la
     // chincheta cabalga el borde (+0,032 hacia arriba) como un pin real
-    this._menuPinMesh.position.set(0, 0.707, 0.006);
+    // r67 · el pin cuelga sobre el borde SUPERIOR del plano panorámico
+    // (alto 0,90 → 0,45 + 0,032 de pie = 0,482; antes 0,707 con 1,35)
+    this._menuPinMesh.position.set(0, 0.482, 0.006);
     this._menuPinMesh.renderOrder = 9998;
     this.menuGroup.add(this._menuPinMesh);
     this._menuPinDraw();
@@ -2020,9 +2031,20 @@ export class PingPongGame {
     c.fillText('V' + (typeof window !== 'undefined' && window.__PP_VERSION ? window.__PP_VERSION : '3.0.4-EXP.TV1'), 996, 190);
   }
 
+  /** r67 · FASE 161 · mapea un rect del espacio LEGADO (1024×1536) al
+   *  lienzo 2560×1440 cuando el pintado va bajo transform (páginas legadas).
+   *  En el Vestíbulo (_menuMap = null) devuelve el rect intacto. */
+  _mapRect(o) {
+    const mm = this._menuMap;
+    if (!mm) return o;
+    const r2 = { x: o.x * mm.s + mm.dx, y: o.y * mm.s + mm.dy,
+      w: o.w * mm.s, h: o.h * mm.s, id: o.id };
+    if (o.slider) r2.slider = true;
+    return r2;
+  }
+
   /** Pala-bandera del selector de idioma (v2.28): anillo dorado si activa. */
-  _langPaddle(rects, lang, x, y) {
-    const c = this.menuCanvas.getContext('2d');
+  _langPaddle(rects, lang, x, y) {    const c = this.menuCanvas.getContext('2d');
     const img = lang === 'es' ? this.padES : this.padEN;
     const act = TLang() === lang;
     const hovered = this.menuHover.includes(rects.length);
@@ -2058,7 +2080,7 @@ export class PingPongGame {
       c.lineWidth = 5;
       c.stroke();
     }
-    rects.push({ x: x - 6, y: y - 6, w: S + 12, h: S + 12, id: 'lang:' + lang });
+    rects.push(this._mapRect({ x: x - 6, y: y - 6, w: S + 12, h: S + 12, id: 'lang:' + lang }));
   }
 
   /** Página MULTIJUGADOR: crear/unirse por código, estado y voz (v2.19;
@@ -2357,7 +2379,7 @@ export class PingPongGame {
     c.lineTo(x + w - 46, y + h / 2 + 16);
     c.closePath(); c.fill();
 
-    rects.push({ x, y: y - 3, w, h: h + 6, id: 'retoDiario' });
+    rects.push(this._mapRect({ x, y: y - 3, w, h: h + 6, id: 'retoDiario' }));
   }
 
   /** Página JOIN: teclado en el panel para escribir el código (v2.19;
@@ -2611,7 +2633,11 @@ export class PingPongGame {
     this._menuDrawPend = false;   // r105 · cualquier repintado real atiende el hover pendiente
     const c = this.menuCanvas.getContext('2d');
     if (!c) return;
-    const W = 1024, H = 1536;
+    // r67 · FASE 161 · lienzo PANORÁMICO: el Vestíbulo ('main') pinta a
+    // canvas completo; las páginas legadas siguen pintando su tarjeta
+    // retrato 1024×1536 ESCALADA (0,9375) y CENTRADA (dx 800). Cada
+    // repintado arranca de transform identidad — cero fugas entre páginas.
+    const W = 2560, H = 1440;
     const rects = [];
     const over = this.rules.state === 'over';
 
@@ -2625,14 +2651,24 @@ export class PingPongGame {
       c.closePath();
     };
 
-    // tarjeta
+    // r67 · transform por tipo de página: legado mapea TAMBIÉN los rects
+    // (btn y todos los pushes pasan por this._menuMap — misma cuenta).
+    const LEG = this.menuPage !== 'main';
+    c.setTransform(1, 0, 0, 1, 0, 0);
     c.clearRect(0, 0, W, H);
-    rr(8, 8, W - 16, H - 16, 36);
-    c.fillStyle = 'rgba(10,13,20,0.95)';
-    c.fill();
-    c.strokeStyle = 'rgba(232,180,90,0.6)';
-    c.lineWidth = 4;
-    c.stroke();
+    if (LEG) {
+      this._menuMap = { s: 0.9375, dx: 800, dy: 0 };
+      c.setTransform(0.9375, 0, 0, 0.9375, 800, 0);
+      // tarjeta (sólo legado: el Vestíbulo compone sus propios paneles)
+      rr(8, 8, 1024 - 16, 1536 - 16, 36);
+      c.fillStyle = 'rgba(10,13,20,0.95)';
+      c.fill();
+      c.strokeStyle = 'rgba(232,180,90,0.6)';
+      c.lineWidth = 4;
+      c.stroke();
+    } else {
+      this._menuMap = null;
+    }
 
     // botón genérico (compartido por todas las páginas)
     // v2.23: activos responden al apuntado, casilla ☑/☐ explícita y zona
@@ -2694,7 +2730,13 @@ export class PingPongGame {
         tx += 20;
       }
       c.fillText(label2, tx, y + h / 2 + 1);
-      rects.push({ x: x - 5, y: y - 3, w: w + 10, h: h + 6, id });
+      // r67 · el rect se empuja en coordenadas de CANVAS (mapeado por
+      // _menuMap en las páginas legadas): el hit-test del rayo vive ahí.
+      const mm = this._menuMap;
+      rects.push(mm
+        ? { x: (x - 5) * mm.s + mm.dx, y: (y - 3) * mm.s + mm.dy,
+            w: (w + 10) * mm.s, h: (h + 6) * mm.s, id }
+        : { x: x - 5, y: y - 3, w: w + 10, h: h + 6, id });
     };
     this._menuBtn = btn;
     this._menuRects = rects;
@@ -2709,6 +2751,16 @@ export class PingPongGame {
     };
     this._menuLabel = label;
 
+    // r67 · FASE 161 · EL VESTÍBULO: la página principal se compone a
+    // canvas completo desde CONFIG_MENUS (cabecera + 3 paneles + dock).
+    if (this.menuPage === 'main') {
+      this.drawMenuVestibulo(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);   // tooltip del control apuntado
+      this.menuTex.needsUpdate = true;
+      return;
+    }
     if (this.menuPage === 'multi') {
       this.drawMenuMulti(rects);
       this.menuRects = rects;
@@ -2931,7 +2983,7 @@ export class PingPongGame {
     c.lineTo(x + w - 26, y + h / 2);
     c.lineTo(x + w - 46, y + h / 2 + 15);
     c.closePath(); c.fill();
-    rects.push({ x, y: y - 3, w, h: h + 6, id });
+    rects.push(this._mapRect({ x, y: y - 3, w, h: h + 6, id }));
   }
 
   /** r87 · EL MEDALLÓN DEL PULSO — badge numerado sobre la tarjeta
@@ -2942,6 +2994,11 @@ export class PingPongGame {
   _pintaMedallon(r, rs) {
     if (!r) return;
     const c = this.menuCanvas.getContext('2d');
+    // r67 · pinta SIEMPRE en coordenadas de canvas: save/reset/restore —
+    // vive tanto en el legado (transform activo) como en el Vestíbulo y en
+    // el repintado del temporizador de updateMenu (transform heredado).
+    c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
     const cx = r.x + r.w - 30, cy = r.y + 2;
     const conInvita = rs.hayInvitas();
     const t = performance.now() / 1000;
@@ -2963,6 +3020,7 @@ export class PingPongGame {
     c.font = '900 ' + Math.round(R * 1.15) + 'px system-ui, sans-serif';
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(conInvita ? '!' : String(rs.nOnline), cx, cy + 1);
+    c.restore();   // r67 · devuelve el transform del pintado en curso
   }
 
   /** r87 · TARJETA DE INVITACIÓN en el submenú Multijugador — Fortnite/
@@ -3110,6 +3168,343 @@ export class PingPongGame {
   _iconoDeMenu(nombre) {
     if (nombre === 'salir') return (c, cx, cy) => this._iconoSalir(c, cx, cy);
     return PP_ICONS[nombre] || PP_ICONS.opts;
+  }
+
+  /* ================== r67 · FASE 161 · EL VESTÍBULO ====================
+   *  La página 'main' se compone a canvas completo (2560×1440) desde
+   *  CONFIG_MENUS: TRES paneles de cristal (JUGAR al centro, COMPITE a la
+   *  izquierda, TU CASA a la derecha) + dock de utilidades + cabecera con
+   *  logo, palas de idioma y sello de versión — el estilo «caramelo» de la
+   *  referencia del dueño (gradiente glossy + aro oscuro + brillo) y los
+   *  iconos del set ICONOS_MENUS. Reordenar/recolorar/cambiar un icono es
+   *  editar la tabla en c02 — cero lógica. Los ids de acción son EXACTOS
+   *  del despachador (start, carrera:abre, tut:go, traingo, survgo,
+   *  tab:multi, page:champs, wrl:open, page:opts, homehall, salirweb,
+   *  docktv/dockintro/dockpwa/dockkofi, lang:xx, close) — despacho intacto.
+   *  Los subtítulos vivos los resuelve _vestSubPorId con las MISMAS
+   *  expresiones que pintaba el HUB de r111-r115.
+   *  ===================================================================== */
+  _vestSubPorId(id, def) {
+    const yn = (v) => (v ? T('yes') : T('no'));
+    switch (id) {
+      case 'start':
+        return this.rules.state === 'over'
+          ? T('btn_rematch')
+          : T('hub_vs', { v: { easy: T('diff_easy_btn'),
+            medium: T('diff_medium_btn'), hard: T('diff_hard_btn') }[this.difficulty] || '' });
+      case 'carrera:abre': {
+        const st = this._carreraEstado();
+        const dv = CARRERA_DIVISIONES[st.div];
+        const n = dv.rivales.filter((r) => st.done[r.id]).length;
+        return st.crowned ? '\u2726 ' + T('carrera_d_leyenda')
+          : T('carrera_hub_sub', { v: T(dv.nameKey), n });
+      }
+      case 'tut:go': return T('tut_hub_sub');
+      case 'traingo': return T('hub_train_sub');
+      case 'survgo':
+        return this.survivalBest > 0
+          ? T('best_surv', { n: this.survivalBest }) : T('hub_surv_sub');
+      case 'tab:multi':
+        return this.net.online ? T('hub_multi_on', { c: this.net.code })
+          : T('hub_multi_sub');
+      case 'page:champs':
+        return (this.champs && this.champs.menuHint()) || T('hub_champ_sub');
+      case 'wrl:open':
+        return WORLDRANK.status === 'online' ? T('wrl_online')
+          : T('hub_rank_sub');
+      case 'page:opts': {
+        const themeDef = ROOM_THEMES.find((t) => t.key === this.theme);
+        const themeName = themeDef
+          ? (themeDef.nameKey ? T(themeDef.nameKey) : themeDef.name) : '';
+        const short = (k) => T(k, { v: yn(true) }).split(':')[0];
+        return (themeName ? themeName + ' \u00b7 ' : '')
+          + short('btn_music') + ': ' + yn(this.audio.musicOn)
+          + ' \u00b7 ' + T('dock_mic') + ': ' + yn(this.audio.voice);
+      }
+      case 'homehall': return T('hall_home_hint');
+      case 'salirweb': return T(CONFIG_MENU.salir.subKey);
+      default: return def && def.subKey ? T(def.subKey) : '';
+    }
+  }
+
+  drawMenuVestibulo(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const CM = CONFIG_MENUS, IM = ICONOS_MENUS;
+    const W = CM.lienzo.ancho, H = CM.lienzo.alto;
+
+    // iconos: decode + cache — cambiar un icono = otra data-URI en c02
+    if (!this._menuIconos) this._menuIconos = {};
+    const icono = (nombre) => {
+      const ent = IM.iconos[nombre];
+      if (!ent) return null;
+      let im = this._menuIconos[nombre];
+      if (!im) {
+        im = new Image();
+        im.src = ent.src;
+        this._menuIconos[nombre] = im;
+      }
+      return (im.complete && im.naturalWidth) ? im : null;
+    };
+
+    const RR = (x, y, w, h, r) => {
+      if (c.roundRect) { c.beginPath(); c.roundRect(x, y, w, h, r); }
+      else { c.beginPath(); c.rect(x, y, w, h); }
+    };
+
+    // hover del rect que se va a push (mismo contrato que btn())
+    const hov = () => this.menuHover.includes(rects.length);
+
+    // — botón caramelo: gradiente glossy + aro oscuro + brillo superior —
+    const candy = (x, y, w, h, grad, r) => {
+      const g = c.createLinearGradient(0, y, 0, y + h);
+      g.addColorStop(0, grad[0]);
+      g.addColorStop(1, grad[1]);
+      c.save();
+      c.shadowColor = 'rgba(0,0,0,0.45)';
+      c.shadowBlur = 14;
+      c.shadowOffsetY = 5;
+      RR(x, y, w, h, r);
+      c.fillStyle = g;
+      c.fill();
+      c.restore();
+      RR(x, y, w, h, r);
+      c.strokeStyle = 'rgba(6,12,26,0.85)';
+      c.lineWidth = 4;
+      c.stroke();
+      RR(x + 4, y + 4, w - 8, h - 8, Math.max(6, r - 4));
+      c.strokeStyle = 'rgba(255,255,255,0.30)';
+      c.lineWidth = 2;
+      c.stroke();
+      c.save();
+      RR(x + 4, y + 4, w - 8, h * 0.46, Math.max(6, r - 2));
+      c.clip();
+      const sg = c.createLinearGradient(0, y, 0, y + h * 0.55);
+      sg.addColorStop(0, 'rgba(255,255,255,0.32)');
+      sg.addColorStop(1, 'rgba(255,255,255,0.02)');
+      c.fillStyle = sg;
+      c.fillRect(x, y, w, h * 0.58);
+      c.restore();
+    };
+
+    // — medallón circular oscuro con el icono del registro —
+    const medallion = (cx, cy, r, nombre) => {
+      c.beginPath();
+      c.arc(cx, cy, r, 0, Math.PI * 2);
+      c.fillStyle = 'rgba(10,16,34,0.92)';
+      c.fill();
+      c.lineWidth = 4;
+      c.strokeStyle = 'rgba(255,255,255,0.85)';
+      c.stroke();
+      const im = icono(nombre);
+      if (im) {
+        const esc = (IM.iconos[nombre].escala || 1) * (r * 1.52) / 256;
+        const dw = im.naturalWidth * esc, dh = im.naturalHeight * esc;
+        c.drawImage(im, cx - dw / 2, cy - dh / 2, dw, dh);
+      }
+    };
+
+    // — tarjeta de modalidad (texto con auto-ajuste + estado vivo) —
+    const card = (cardDef, x, y, w, h) => {
+      const hovered = hov();
+      const rad = cardDef.heroe ? 34 : 26;
+      candy(x, y, w, h, cardDef.gradiente, rad);
+      const ir = cardDef.heroe ? 62 : (h < 110 ? 30 : 44);
+      const icx = x + 30 + ir, icy = y + h / 2;
+      medallion(icx, icy, ir, cardDef.icono);
+      const tx = icx + ir + 24, maxw = x + w - tx - 28;
+      const sub = this._vestSubPorId(cardDef.id, cardDef);
+      c.textAlign = 'left';
+      let f1 = cardDef.heroe ? 62 : (w >= 780 ? 48 : 38);
+      c.font = `800 ${f1}px system-ui, sans-serif`;
+      let lab = T(cardDef.etiquetaKey);
+      while (c.measureText(lab).width > maxw && f1 > 20) {
+        f1 -= 2;
+        c.font = `800 ${f1}px system-ui, sans-serif`;
+      }
+      if (sub) {
+        c.textBaseline = 'alphabetic';
+        c.fillStyle = hovered ? '#ffffff' : 'rgba(255,255,255,0.97)';
+        c.fillText(lab, tx, y + h * 0.46);
+        let f2 = cardDef.heroe ? 30 : 24;
+        c.font = `600 ${f2}px system-ui, sans-serif`;
+        let sub2 = sub;
+        while (c.measureText(sub2).width > maxw && f2 > 14) {
+          f2 -= 2;
+          c.font = `600 ${f2}px system-ui, sans-serif`;
+        }
+        while (c.measureText(sub2).width > maxw && sub2.length > 2) {
+          sub2 = sub2.slice(0, -1);
+        }
+        if (sub2 !== sub) sub2 += '\u2026';
+        c.fillStyle = 'rgba(228,240,255,0.92)';
+        c.fillText(sub2, tx, y + h * 0.76);
+      } else {
+        c.textBaseline = 'middle';
+        c.fillStyle = hovered ? '#ffffff' : 'rgba(255,255,255,0.97)';
+        c.fillText(lab, tx, y + h / 2 + 1);
+      }
+      if (hovered) {
+        RR(x, y, w, h, rad);
+        c.strokeStyle = '#ffffff';
+        c.lineWidth = 4;
+        c.stroke();
+      }
+      rects.push({ x: x - 6, y: y - 4, w: w + 12, h: h + 8, id: cardDef.id });
+    };
+
+    // — panel de cristal con borde cian (chasis de la referencia) —
+    const panel = (p) => {
+      c.save();
+      c.shadowColor = 'rgba(60,150,255,0.35)';
+      c.shadowBlur = 26;
+      RR(p.x, p.y, p.w, p.h, 30);
+      c.fillStyle = 'rgba(16,28,62,0.94)';
+      c.fill();
+      c.restore();
+      RR(p.x, p.y, p.w, p.h, 30);
+      c.strokeStyle = 'rgba(90,190,255,0.75)';
+      c.lineWidth = 3;
+      c.stroke();
+      RR(p.x + 5, p.y + 5, p.w - 10, p.h - 10, 26);
+      c.strokeStyle = 'rgba(255,255,255,0.14)';
+      c.lineWidth = 2;
+      c.stroke();
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillStyle = '#ffffff';
+      c.font = '800 40px system-ui, sans-serif';
+      c.fillText(T(p.tituloKey), p.x + 34, p.y + 40);
+      c.strokeStyle = 'rgba(255,255,255,0.18)';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(p.x + 34, p.y + 72);
+      c.lineTo(p.x + p.w - 34, p.y + 72);
+      c.stroke();
+    };
+
+    // — 1 · CABECERA (logo + idiomas + sello de versión + cierre) —
+    const HC = CM.cabecera;
+    candy(HC.x, HC.y, HC.w, HC.h, ['#1d5ad4', '#0c2e83'], 30);
+    if (this.menuLogo.complete && this.menuLogo.naturalWidth) {
+      const lh = HC.h - 30;
+      const lw = lh * (this.menuLogo.naturalWidth / this.menuLogo.naturalHeight);
+      c.drawImage(this.menuLogo, HC.x + 26, HC.y + 15, lw, lh);
+    } else {
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillStyle = '#f2f4f6';
+      c.font = '800 56px system-ui, sans-serif';
+      c.fillText('CRAZY PING PONG', HC.x + 40, HC.y + HC.h / 2);
+    }
+    if (HC.idiomas) {
+      // r67 · MISMAS palas de idioma del header legado (id 'lang:xx' intacto)
+      this._langPaddle(rects, 'es', HC.x + HC.w - 310, HC.y + 9);
+      this._langPaddle(rects, 'en', HC.x + HC.w - 166, HC.y + 9);
+    }
+    c.textAlign = 'right';
+    c.textBaseline = 'alphabetic';
+    c.fillStyle = '#ffd257';
+    c.font = '800 22px system-ui, sans-serif';
+    c.fillText('V' + (typeof window !== 'undefined' && window.__PP_VERSION
+      ? window.__PP_VERSION : ''), HC.x + HC.w, HC.y + HC.h + 26);
+    // cierre (esquina superior derecha del lienzo)
+    {
+      const cx = 2478, cy = 106, r = 46;
+      const hovered = hov();
+      candy(cx - r, cy - r, r * 2, r * 2, ['#96a8c2', '#4a5872'], r);
+      c.beginPath();
+      c.arc(cx, cy, r - 4, 0, Math.PI * 2);
+      c.fillStyle = 'rgba(10,16,34,0.92)';
+      c.fill();
+      c.lineWidth = 3;
+      c.strokeStyle = 'rgba(255,255,255,0.8)';
+      c.stroke();
+      c.strokeStyle = hovered ? '#ffffff' : 'rgba(255,255,255,0.92)';
+      c.lineWidth = 7;
+      c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(cx - 15, cy - 15);
+      c.lineTo(cx + 15, cy + 15);
+      c.moveTo(cx + 15, cy - 15);
+      c.lineTo(cx - 15, cy + 15);
+      c.stroke();
+      if (hovered) {
+        c.beginPath();
+        c.arc(cx, cy, r, 0, Math.PI * 2);
+        c.strokeStyle = '#ffffff';
+        c.lineWidth = 4;
+        c.stroke();
+      }
+      rects.push({ x: cx - r - 6, y: cy - r - 6, w: r * 2 + 12,
+        h: r * 2 + 12, id: 'close' });
+    }
+
+    // — 2 · PANELES (layout data-driven: heroe a toda fila · par media fila) —
+    CM.paneles.forEach((p) => {
+      panel(p);
+      const pad = 30, gap = 22;
+      let y = p.y + 92;
+      const wIn = p.w - pad * 2;
+      const hero = p.tarjetas.find((t) => t.heroe);
+      const pars = p.tarjetas.filter((t) => t.par);
+      const rest = p.tarjetas.filter((t) => !t.heroe && !t.par);
+      if (hero) {
+        card(hero, p.x + pad, y, wIn, 150);
+        y += 150 + gap;
+      }
+      for (let i = 0; i < pars.length; i += 2) {
+        const cw = (wIn - gap) / 2;
+        card(pars[i], p.x + pad, y, cw, 210);
+        if (pars[i + 1]) card(pars[i + 1], p.x + pad + cw + gap, y, cw, 210);
+        y += 210 + gap;
+      }
+      if (rest.length) {
+        const ch = Math.max(120, Math.floor(
+          (p.y + p.h - 26 - y - (rest.length - 1) * gap) / rest.length));
+        rest.forEach((t) => {
+          card(t, p.x + pad, y, wIn, ch);
+          y += ch + gap;
+        });
+      }
+    });
+    // r87 · EL MEDALLÓN DEL PULSO sobre la tarjeta Multijugador (intacto)
+    if (this.social && this.social.medallonVivo && this.social.medallonVivo()) {
+      const rMulti = rects.find((r) => r.id === 'tab:multi');
+      if (rMulti) this._pintaMedallon(rMulti, this.social);
+    }
+
+    // — 3 · DOCK (utilidades de usar-y-olvidar) —
+    const DK = CM.dock;
+    RR(DK.x, DK.y, DK.w, DK.h, 40);
+    c.fillStyle = 'rgba(12,20,46,0.92)';
+    c.fill();
+    c.strokeStyle = 'rgba(90,190,255,0.6)';
+    c.lineWidth = 3;
+    c.stroke();
+    const step = DK.w / DK.items.length;
+    DK.items.forEach((it, i) => {
+      const cx = DK.x + step * i + step / 2;
+      const cy = DK.y + 62;
+      const r = 44;
+      const hovered = hov();
+      candy(cx - r, cy - r, r * 2, r * 2,
+        it.gradiente || ['#96a8c2', '#586884'], r);
+      medallion(cx, cy, r - 4, it.icono);
+      if (hovered) {
+        c.beginPath();
+        c.arc(cx, cy, r, 0, Math.PI * 2);
+        c.strokeStyle = '#ffffff';
+        c.lineWidth = 4;
+        c.stroke();
+      }
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillStyle = 'rgba(228,240,255,0.94)';
+      c.font = '600 24px system-ui, sans-serif';
+      c.fillText(T(it.etiquetaKey), cx, DK.y + 134);
+      rects.push({ x: cx - r - 6, y: cy - r - 6, w: r * 2 + 12,
+        h: r * 2 + 12, id: it.id });
+    });
   }
 
   /** Página principal: el HUB. 6 tarjetas (2×3) + dificultad + tarjeta
@@ -3390,7 +3785,7 @@ export class PingPongGame {
         c.font = '700 22px system-ui, sans-serif';
         c.fillText(T('carrera_bloqueada'), 952, y + stripH / 2 + 1);
       }
-      if (clickable) rects.push({ x: 56, y: y - 3, w: 912, h: stripH + 6, id: 'carrera:sel:' + i });
+      if (clickable) rects.push(this._mapRect({ x: 56, y: y - 3, w: 912, h: stripH + 6, id: 'carrera:sel:' + i }));
       y += stripH + stripGap;
     }
     // --- detalle de la división vista ---
@@ -3436,7 +3831,7 @@ export class PingPongGame {
         c.font = '700 20px system-ui, sans-serif';
         c.fillText('▶ ' + (estDef ? (__ppLang === 'en' ? estDef.en : estDef.es) : ''), 948, y + rowH / 2 + 1);
       }
-      if (retable) rects.push({ x: 56, y: y - 3, w: 912, h: rowH + 6, id: 'carrera:des:' + vi + ':' + r.id });
+      if (retable) rects.push(this._mapRect({ x: 56, y: y - 3, w: 912, h: rowH + 6, id: 'carrera:des:' + vi + ':' + r.id }));
       y += rowH + rowGap;
     }
     // --- DESAFIAR / corona ---
@@ -3633,7 +4028,7 @@ export class PingPongGame {
         c.moveTo(924, y + 40); c.lineTo(944, y + 55); c.lineTo(924, y + 70);
         c.closePath(); c.fill();
       }
-      rects.push({ x: 56, y: y - 3, w: 912, h: 116, id: 'ppchamp:' + ch.id });
+      rects.push(this._mapRect({ x: 56, y: y - 3, w: 912, h: 116, id: 'ppchamp:' + ch.id }));
       y += 122;
       // v3.6.31 · VER PRESENTACIÓN (opcional): la intro del rival sólo se
       // muestra SOLA la primera vez que se entra; este botón la re-ve a
@@ -4139,7 +4534,7 @@ export class PingPongGame {
           c.font = '800 17px system-ui, sans-serif';
           c.textAlign = 'center'; c.textBaseline = 'middle';
           c.fillText(Math.round(vol * 100) + '%', 512, vy + 2);
-          rects.push({ x: rx - 8, y: vy - 4, w: rw + 16, h: 62, id: idSet, slider: true });
+          rects.push(this._mapRect({ x: rx - 8, y: vy - 4, w: rw + 16, h: 62, id: idSet, slider: true }));
         };
         c.fillStyle = '#9aa7b4';
         c.font = '700 20px system-ui, sans-serif';
@@ -4618,20 +5013,21 @@ export class PingPongGame {
         // v2.24: se descartan intersecciones degeneradas (el mando tocando el
         // propio plano del panel, distancia ~0) para no pintar un cursor falso.
         if (hit && hit.uv && hit.distance > 0.02) {
-          const px = hit.uv.x * 1024;
-          const py = (1 - hit.uv.y) * 1536;
+          // r67 · px/py se leen VIVOS de las dimensiones del canvas
+          // (2560×1440) — ya no hay literales que desincronizar.
+          const px = hit.uv.x * this.menuCanvas.width;
+          const py = (1 - hit.uv.y) * this.menuCanvas.height;
           idx = this.menuRects.findIndex((r) =>
             px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h);
           // cursor sobre el panel (uv -> plano del panel). El eje Y del plano
           // es uv.y=1 ARRIBA (v2.24: nunca se pinta espejado en vertical).
-          // r105 · FIX DERIVA: el punto seguía proyectándose en el plano
-          // ANTIGUO 0,72×1,08 mientras el panel es 0,90×1,35 desde r104 — el
-          // cursor quedaba desviado hasta 0,09 m (X) y 0,135 m (Y) hacia el
-          // centro respecto al rayo real (la «deriva» reportada). Las dos
-          // dimensiones DEBEN coincidir con PlaneGeometry(0.90, 1.35) de
-          // buildMenu — mantener sincronizadas.
+          // r67 · dimensiones leídas VIVAS de geometry.parameters (1.60×0.90)
+          // — el FIX DERIVA r105 se vuelve estructural: impossible que el
+          // cursor y el plano diverjan (mismo objeto THREE del que nace uv).
           dot.visible = true;
-          dot.position.set((hit.uv.x - 0.5) * 0.90, (hit.uv.y - 0.5) * 1.35, 0.004);
+          const gp = this.menuMesh.geometry.parameters;
+          dot.position.set((hit.uv.x - 0.5) * gp.width,
+            (hit.uv.y - 0.5) * gp.height, 0.004);
           // r96 · punto EXACTO del panel (px canvas) por mano: los
           // deslizadores (mesa, volúmenes) fijan el valor AL PUNTO apuntado.
           if (!this._menuHitPx) this._menuHitPx = [null, null];
@@ -5304,6 +5700,21 @@ export class PingPongGame {
         }
         this.drawMenu();
         break;
+      case 'docktv':
+      case 'dockintro':
+      case 'dockpwa':
+      case 'dockkofi': {
+        // r67 · FASE 161 · DOCK del Vestíbulo: utilidades de usar-y-olvidar.
+        // Reutiliza los botones DOM de SIEMPRE (intro, PWA, Ko-fi, TV) —
+        // única implementación de cada flujo, cero duplicación.
+        const elId = { docktv: 'tvlink', dockintro: 'introbtn',
+          dockpwa: 'pwabtn', dockkofi: 'kofibtn' }[ns];
+        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        this.closeMenu();
+        const elDock = document.getElementById(elId);
+        if (elDock) elDock.click();
+        break;
+      }
       case 'tab':
         // v2.28: pestaña 'multi' abre la página completa; 'main' vuelve
         this.menuPage = arg === 'multi' ? 'multi' : 'main';
@@ -17827,7 +18238,7 @@ export class PingPongGame {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { PP_ICONS, T, TLang, WORLDRANK, __PP_TELE, __ppLang, ppPlayerName, setLang, wrlBadgeImg } from './c00_pre_three.js';
 import { PALA_BLADE_Y, PALA_GRIP_Y, PALA_SCALE, makePaddleVisual } from './c01_modelos_3d.js';
-import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFICULTAD, CONFIG_MENU, CONFIG_TORNEOS, DIMS, ELO_CPU, HALL_VARIANTES, MESA_ALTOS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
+import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFICULTAD, CONFIG_MENU, CONFIG_MENUS, CONFIG_TORNEOS, DIMS, ELO_CPU, HALL_VARIANTES, ICONOS_MENUS, MESA_ALTOS, MESA_ALTO_MAX, MESA_ALTO_MIN, MESA_ASPECTOS, MESA_NET_H, MOUNT_QUAT_RIGHT, OPPONENT_STYLES, ROOM_THEMES, SERVE_ASSIST_TIERS, SERVE_TUNE, bolaAspectoPorId, estiloAplicar, estiloDePersonalidad, hallVariantePorId, mountQuatFor, rivalPorElo, scalePreset } from './c02_cfg_escena.js';
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';

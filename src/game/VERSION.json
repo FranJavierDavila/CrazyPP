@@ -1,10 +1,10 @@
 {
-  "version": "3.6.158-SDK6",
-  "fase": 161,
-  "faseNombre": "EL VESTIBULO r67: los menus principales se redisenan al estilo caramelo de la referencia del dueno (3 paneles de cristal JUGAR/COMPITE/TU CASA + dock de utilidades + cabecera con logo y palas de idioma + 17 iconos del set \"CRAZY ICONOS v1\" disenados a mano) — TODO data-driven: ICONOS_MENUS (iconos intercambiables sin tocar codigo) y CONFIG_MENUS (layout, gradientes y orden de las tarjetas) en c02; lienzo panoramico 2560x1440 sobre plano 1,60x0,90 m con rayo leido vivo del canvas/geometry; las 15 paginas legadas 1024x1536 se pintan escaladas y centradas (transform 0,9375/dx 800) con sus rects mapeados; despacho de acciones intacto (ids identicos) y dock que reutiliza los botones DOM de siempre (intro/PWA/Ko-fi/TV)",
+  "version": "3.6.159-SDK6",
+  "fase": 162,
+  "faseNombre": "EL ARCO r68: el menu ocupa practicamente toda la pantalla — 3 panelas fisicas equidistantes como pantalla curva (centro 0,98 m a 1,15 m · lados 0,74 m a 1,25 m · yaw 36 grados) alimentadas por un lienzo virtual 3696x1400 troceado a 3 texturas, rayo y cursor por panela · chincheta ON por defecto (cada apertura ancla el arco en la cabeza, sin flotacion) · dock eliminado y Salir a la Web reubicado en TU CASA · heroe JUGAR con protagonismo (380 px, halo verde) y Carrera al nivel del resto · concha de secciones data-driven (CONFIG_SECCIONES) para TODOS los subapartados: cristal continuo, atras con icono, titulo con medallon, idiomas y sello · rejilla de AJUSTES en tarjetas-icono (8: 7 categorias + Ko-fi) · prompts caramelo (salida y hall) · 7 iconos nuevos (24 en ICONOS_MENUS v2) · 15 paginas legadas vestidas con la concha nueva con su mecanica intacta",
   "sdk": "1.6.0",
   "fecha": "2026-11-14",
-  "hub": "v36157-sdk6",
+  "hub": "v36158-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r67",
-  "tamano": 12014947,
-  "golden": "19eda7b5d5fd3d0687ffff23f8c467cb837c03960b5d56b99a6a36fa5912e453"
+  "nota": "r68",
+  "tamano": 12161485,
+  "golden": "460eb8e3fa36df651e95ff6b86faaea38276f283a624f317c70dae897a0a8355"
 }

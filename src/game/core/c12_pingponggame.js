@@ -1107,7 +1107,7 @@ export class PingPongGame {
       this.menuOpen = true;
       this.menuGroup.visible = true;
       this.menuHover = [-1, -1];
-      this.anchorMenu();
+      this.anchorMenu(true);
       this.drawMenu();
       this.haptic(this.paddleHand, 0.4);
       return;
@@ -1832,8 +1832,12 @@ export class PingPongGame {
       // anchorMenu): centro al frente, lados abiertos en yaw a su dist,
       // cada panela GIRADA hacia el jugador (pantalla curva real).
       const yaw = (pa.yaw * Math.PI) / 180;
+      // r69 · arco centrado en la CABEZA (que vive en local (0,0,D_REF)
+      // porque el grupo va delante y mira a la cara): cada panela a su
+      // dist sobre el arco — tangentes y seguidas, sin pisarse
+      const D_REF = CONFIG_MENUS.arco.panelas[1].dist;
       mesh.position.set(-Math.sin(yaw) * pa.dist,
-        CONFIG_MENUS.arco.yCentro, -Math.cos(yaw) * pa.dist);
+        CONFIG_MENUS.arco.yCentro, D_REF - Math.cos(yaw) * pa.dist);
       // r68 · signo verificado por QA: con yaw=+36 (panela L) la normal
       // local +z queda en (sin36, 0, cos36) → APUNTA a la cabeza ✓
       mesh.rotation.y = yaw;
@@ -1889,8 +1893,7 @@ export class PingPongGame {
     // chincheta cabalga el borde (+0,032 hacia arriba) como un pin real
     // r68 · el pin cabalga el borde superior de la PANELA CENTRAL del arco
     this._menuPinMesh.position.set(0,
-      CONFIG_MENUS.arco.yCentro + 0.475 + 0.032,
-      -(CONFIG_MENUS.arco.panelas[1].dist - 0.006));
+      CONFIG_MENUS.arco.yCentro + 0.475 + 0.032, 0.006);
     this._menuPinMesh.renderOrder = 9998;
     this.menuGroup.add(this._menuPinMesh);
     this._menuPinDraw();
@@ -2105,7 +2108,6 @@ export class PingPongGame {
     // aparecen las opciones de sala y código»: sin modo elegido NO hay
     // sala — this._mjMode gobierna el panel de abajo.
     this.drawMenuHeader(rects);
-    label(T('tab_multi'), 244, 26);
     this._modeCard(rects, 'mjnorm', 40, 216, 944, 96, T('mj_norm_t'),
       T('mj_norm_s'), '#2f9e44', '#1e7c33', PP_ICONS.multi);
     // r84 · DUELOS LOCOS desbloqueado: tarjeta estándar con identidad propia
@@ -2388,7 +2390,6 @@ export class PingPongGame {
     const CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // sin 0/O/1/I/L
 
     this.drawMenuHeader(rects);
-    label(T('join_title'), 240, 26);
 
     // 5 huecos del código
     c.textAlign = 'center';
@@ -2430,7 +2431,6 @@ export class PingPongGame {
     const label = this._menuLabel;
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     this.drawMenuHeader(rects);
-    label(T('name_title'), 240, 26);
     // caja del nombre (12 caracteres máximo) con cursor fino
     c.textAlign = 'center';
     c.textBaseline = 'middle';
@@ -2478,7 +2478,6 @@ export class PingPongGame {
     const label = this._menuLabel;
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     this.drawMenuHeader(rects);
-    label(T('pala_gname_title'), 240, 26);
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     const nm = this._gripBuf || '';
@@ -2520,7 +2519,6 @@ export class PingPongGame {
     const btn = this._menuBtn;
     const label = this._menuLabel;
     this.drawMenuHeader(rects);
-    label(T('sec_rank'), 240, 26);
 
     // v2.125: el campeonato de portada manda (eager del índice), no un literal
     const _portada = this.champs ? this.champs.portadaId : 'locura';
@@ -3871,7 +3869,6 @@ export class PingPongGame {
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillStyle = '#ffd257';
     c.font = '900 44px system-ui, sans-serif';
-    c.fillText(T('rankme_t'), 512, 312);
     c.fillStyle = '#9aa7b4';
     c.font = '500 20px system-ui, sans-serif';
     c.fillText(T('rankme_sub'), 512, 350);
@@ -3952,7 +3949,6 @@ export class PingPongGame {
     c.font = '900 44px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(T('carrera_lbl'), 512, 312);
     c.fillStyle = '#9aa7b4';
     c.font = '500 20px system-ui, sans-serif';
     c.fillText(T('carrera_sub'), 512, 350);
@@ -4080,11 +4076,7 @@ export class PingPongGame {
     const btn = this._menuBtn;
     const label = this._menuLabel;
     this.drawMenuHeader(rects);
-    c.fillStyle = '#ffd257';
-    c.font = '900 42px system-ui, sans-serif';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(T('page_champs'), 664, 246);
+    // r69 · el título lo pinta la concha: sin duplicado
 
     let y = 304;
     // música global de los campeonatos (v2.78 — mismo canal del núcleo)
@@ -4425,11 +4417,7 @@ export class PingPongGame {
     const btn = this._menuBtn;
     const label = this._menuLabel;
     this.drawMenuHeader(rects);
-    c.fillStyle = '#ffd257';
-    c.font = '900 42px system-ui, sans-serif';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(T('cat_' + cat), 664, 246);
+    // r69 · el título lo pinta la concha (medallón + cat_*): sin duplicado
 
     const yn = (v) => (v ? T('yes') : T('no'));
     let y = 330;
@@ -4894,7 +4882,7 @@ export class PingPongGame {
       // (estancia + rig z) y el heal r114 re-ancla si la escena viaja.
       this.menuPin = true;
       this._menuPinDraw();
-      this.anchorMenu();          // r68: el arco nace en la cabeza
+      this.anchorMenu(true);      // r69: nace delante de la mirada y fijo
       this.rules.message = T('menu_open');
       this.drawMenu();
       this.audio.playOsc(660, 990, 0.07, 'sine', 0.15, 0);
@@ -4931,7 +4919,7 @@ export class PingPongGame {
     // r68 · el prompt B también nace en la cabeza con la chincheta puesta
     this.menuPin = true;
     this._menuPinDraw();
-    this.anchorMenu();
+    this.anchorMenu(true);
     this.rules.message = '';
     this.drawMenu();
     this.audio.playOsc(520, 660, 0.08, 'sine', 0.12, 0);
@@ -4994,18 +4982,31 @@ export class PingPongGame {
    * (pantalla curva equidistante). Con chincheta (r68: por defecto) el
    * arco queda FIJO (sin flotación); sin chincheta, flotación r113 de
    * 1,8 s. La firma r114 (estancia + rig z) se conserva intacta. */
-  anchorMenu() {
+  anchorMenu(forzar) {
+    // r69 · SEMÁNTICA DEL ANCLA (petición del dueño): al ABRIR, el menú
+    // nace SIEMPRE justo delante de la mirada y queda FIJO (anclado).
+    // Con chincheta, anchorMenu sólo mueve el arco cuando se le OBLIGA
+    // (aperturas y heal r114): el botón chincheta congela DONDE ESTÁ y
+    // ahí recuerda. Sin chincheta, updateMenu lo re-ancla cada frame:
+    // sigue a la cabeza siempre de frente a donde miramos (comportamiento
+    // anterior). La firma r114 (estancia + rig z) se conserva.
+    if (this.menuPin && !forzar) { this._menuAnchorUntil = 0; return; }
     this.camera.getWorldPosition(muHead);
     this.camera.getWorldQuaternion(muQ);
     muDir.set(0, 0, -1).applyQuaternion(muQ);
     muDir.y = 0;
     if (muDir.lengthSq() < 1e-6) muDir.set(0, 0, -1);
     muDir.normalize();
-    // r68 · el ORIGEN del grupo es la cabeza: el arco se despliega delante
-    this.menuGroup.position.copy(muHead);
-    this.menuGroup.lookAt(muHead.x + muDir.x, muHead.y, muHead.z + muDir.z);
-    if (this.menuPin) this._menuAnchorUntil = 0;   // fijo: sin flotación
-    else this._menuAnchorUntil = performance.now() / 1000 + 1.8;
+    // r69 · CONVENCIÓN r67 RESTAURADA (informe del dueño: «estás colocando
+    // mal el menú»): el grupo va DELANTE de la cara y mira A la cara
+    // (+Z hacia el jugador — así las panelas en -Z quedan delante, como
+    // toda la vida). r68 puso el origen EN la cabeza y el arco nacía a la
+    // espalda. El arco se centra en la cabeza con las posiciones locales
+    // de las panelas (ver buildMenu).
+    const D_REF = CONFIG_MENUS.arco.panelas[1].dist;
+    this.menuGroup.position.copy(muHead).addScaledVector(muDir, D_REF);
+    this.menuGroup.lookAt(muHead);
+    this._menuAnchorUntil = 0;
     this._menuAnchorEst = this._menuEstancia();
     this._menuAnchorRigZ = this.rig ? this.rig.position.z : 0;
   }
@@ -5144,7 +5145,9 @@ export class PingPongGame {
     // heal testeable en su propio método (sin XR delante).
     this._menuAnclaHeal();
     // flotación inicial: el panel acompaña a la cabeza antes de fijarse
-    if ((performance.now() / 1000) < (this._menuAnchorUntil || 0)) this.anchorMenu();
+    // r69 · sin chincheta el arco SIGUE a la cabeza SIEMPRE (de frente a
+    // donde miramos — petición del dueño); con chincheta queda clavado
+    if (!this.menuPin) this.anchorMenu();
 
     // estado del partido cambió (p.ej. fin) → repintar botones
     if (this.rules.state !== this._menuState) this.drawMenu();
@@ -5543,24 +5546,35 @@ export class PingPongGame {
     let txt = '';
     try { txt = T(key); } catch { return; }
     if (!txt) return;
-    // envoltura a 2 líneas máx. (860 px de ancho)
+    // r69 · ESPACIO CONSCIENTE: bajo el transform del legado el rect
+    // vive en 1024×1536; en el Vestíbulo/rejilla/prompts (identidad) en
+    // el lienzo virtual 3696×1400. La burbuja se abrazadera a SU espacio:
+    // siempre sobre el objeto apuntado, sin desbordes ni fuera de lugar.
+    const ESP = this._menuMap
+      ? { w: 1024, techo: 60, env: 860 }
+      : { w: CONFIG_MENUS.lienzo.ancho, techo: 226, env: 2200 };
+    // envoltura a 2 líneas máx.
     c.font = '600 21px system-ui, sans-serif';
     const words = String(txt).split(' ');
     const lines = [];
     let lin = '';
     for (const w of words) {
       const cand = lin ? lin + ' ' + w : w;
-      if (c.measureText(cand).width > 860 && lin) { lines.push(lin); lin = w; }
+      if (c.measureText(cand).width > ESP.env && lin) { lines.push(lin); lin = w; }
       else lin = cand;
       if (lines.length === 2) break;
     }
     if (lin && lines.length < 2) lines.push(lin);
-    const wBox = Math.min(924, Math.max(...lines.map((l) => c.measureText(l).width)) + 48);
+    const wBox = Math.min(ESP.w - 100,
+      Math.max(...lines.map((l) => c.measureText(l).width)) + 48);
     const hBox = lines.length * 28 + 22;
-    const cx = Math.min(Math.max(r.x + r.w / 2, wBox / 2 + 14), 1024 - wBox / 2 - 14);
-    // encima del botón; si no cabe, debajo (14 px de hueco para la cola)
-    const above = r.y - hBox - 14 > 60;
-    const yBox = above ? r.y - hBox - 14 : r.y + r.h + 14;
+    const cx = Math.min(Math.max(r.x + r.w / 2, wBox / 2 + 14),
+      ESP.w - wBox / 2 - 14);
+    // encima del objeto; si no cabe o invade la cabecera, debajo
+    const above = r.y - hBox - 14 > ESP.techo;
+    let yBox = above ? r.y - hBox - 14 : r.y + r.h + 14;
+    yBox = Math.min(yBox, (this._menuMap ? 1536 : CONFIG_MENUS.lienzo.alto)
+      - hBox - 10);
     const rr2 = (x, y, w, h, rad) => {
       c.beginPath();
       c.moveTo(x + rad, y);

@@ -1,10 +1,10 @@
 {
-  "version": "3.6.159-SDK6",
-  "fase": 162,
-  "faseNombre": "EL ARCO r68: el menu ocupa practicamente toda la pantalla — 3 panelas fisicas equidistantes como pantalla curva (centro 0,98 m a 1,15 m · lados 0,74 m a 1,25 m · yaw 36 grados) alimentadas por un lienzo virtual 3696x1400 troceado a 3 texturas, rayo y cursor por panela · chincheta ON por defecto (cada apertura ancla el arco en la cabeza, sin flotacion) · dock eliminado y Salir a la Web reubicado en TU CASA · heroe JUGAR con protagonismo (380 px, halo verde) y Carrera al nivel del resto · concha de secciones data-driven (CONFIG_SECCIONES) para TODOS los subapartados: cristal continuo, atras con icono, titulo con medallon, idiomas y sello · rejilla de AJUSTES en tarjetas-icono (8: 7 categorias + Ko-fi) · prompts caramelo (salida y hall) · 7 iconos nuevos (24 en ICONOS_MENUS v2) · 15 paginas legadas vestidas con la concha nueva con su mecanica intacta",
+  "version": "3.6.160-SDK6",
+  "fase": 163,
+  "faseNombre": "CORRECCION DEL ARCO r69 (informe del dueño): los tres bloques NO se pisan — panelas tangentes y seguidas, las tres a 1,15 m (equidistancia real), yaw 37,8 grados, ranura uniforme de 1,7 cm · EL MENU YA NO NACE A LA ESPALDA: restaurada la convencion r67 (grupo delante de la cara mirando a la cara) con el arco centrado en la cabeza por posiciones locales · ANCLAJE pedido: al abrir nace justo delante de la mirada y queda fijo; sin chincheta sigue SIEMPRE de frente a donde miramos; el boton chincheta congela donde esta y lo recuerda; heal r114 intacto · TOOLTIPS espacio-conscientes (1024 legado / 3696 virtual), siempre sobre el objeto apuntado, sin desbordes · dedup de 7 titulos legados que duplicaban la concha (multi/join/name/gripname/rank/rankme/carrera) · chincheta otra vez clicable (z +6 mm)",
   "sdk": "1.6.0",
   "fecha": "2026-11-14",
-  "hub": "v36158-sdk6",
+  "hub": "v36159-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r68",
-  "tamano": 12161485,
-  "golden": "460eb8e3fa36df651e95ff6b86faaea38276f283a624f317c70dae897a0a8355"
+  "nota": "r69",
+  "tamano": 12163159,
+  "golden": "255fb05d1505796b507419ad189fcc2f023209f8edfaa901bde25f27c997d845"
 }

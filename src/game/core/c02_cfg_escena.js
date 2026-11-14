@@ -941,9 +941,15 @@ export const CONFIG_MENUS = {
     yawGrados: 36,
     yCentro: -0.05,
     panelas: [
-      { id: 'L', x: 0, w: 1112, anchoM: 0.74, altoM: 0.95, yaw: 36, dist: 1.25 },
-      { id: 'C', x: 1112, w: 1472, anchoM: 0.98, altoM: 0.95, yaw: 0, dist: 1.15 },
-      { id: 'R', x: 2584, w: 1112, anchoM: 0.74, altoM: 0.95, yaw: -36, dist: 1.25 },
+      // r69 · TANGENTES y SEGUIDAS (petición del dueño: «no se pueden pisar
+      // o superponer, deben ir unos seguidos a los otros»): las TRES a la
+      // MISMA distancia 1,15 m (equidistancia real), cada panela
+      // perpendicular a su radio — los bordes quedan paralelos con una
+      // ranura uniforme de ~1,7 cm. yaw = γC + γL + 0,8° con
+      // γ = atan(w/2 / d): sin solape angular ni físico.
+      { id: 'L', x: 0, w: 1112, anchoM: 0.66, altoM: 0.95, yaw: 37.8, dist: 1.15 },
+      { id: 'C', x: 1112, w: 1472, anchoM: 0.88, altoM: 0.95, yaw: 0, dist: 1.15 },
+      { id: 'R', x: 2584, w: 1112, anchoM: 0.66, altoM: 0.95, yaw: -37.8, dist: 1.15 },
     ],
   },
   cabecera: { logo: true, idiomas: true, cierre: true, sello: true },

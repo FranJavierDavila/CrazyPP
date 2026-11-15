@@ -8146,7 +8146,13 @@ export class PingPongGame {
     this.menuOpen = true;
     if (this.menuGroup) {
       this.menuGroup.visible = true;
-      this.anchorMenu();
+      // r71 · EL ARRANQUE NACE ANCLADO (informe del dueño: «el menú no
+      // aparece anclado… bloquea el juego»): anchorMenu() sin forzar
+      // retornaba con la chincheta puesta SIN anclar ni firmar la estancia
+      // → el heal la soltaba en el frame 1 y el menú nacía SIGUIENDO la
+      // cara (nunca fijo, delante de todo, gatillos comidos). Forzado:
+      // nace delante de la mirada, FIJO y con la firma al día.
+      this.anchorMenu(true);
       this.drawMenu();
     }
     this.audio.setArcDuck(true);   // v2.37: menú abierto -> BSO del arcade en silencio
@@ -8170,6 +8176,13 @@ export class PingPongGame {
     // v3.0.9-HALL1 · NACER EN EL HALL: la primera vez (y cada sesión) el
     // jugador aparece en la estancia del anfitrión, no en la cancha vacía.
     this.enterHall();
+    // r71 · EL ANCLA VIAJA CON EL RIG (mitad 2 del informe del dueño: «el
+    // menú no aparece anclado… bloquea el juego»): enterHall mueve el rig
+    // ~17 m DESPUÉS del ancla M4 → el heal ve un viaje y SUELTA la
+    // chincheta en el frame 1 (menú siguiendo la cara: nunca fijo, delante
+    // de todo). Re-ancla forzado ya EN EL HALL: nace delante de la mirada,
+    // FIJO, y con la firma de estancia al día (el heal calla).
+    this.anchorMenu(true);
     // RE-VINCULACIÓN al entrar en VR: el contexto creado en 2D puede perder
     // la salida al pasar a inmersivo ('running' pero MUDO). v2.31:
     // markVRStart() re-apunta la salida al dispositivo vigente (setSinkId) y
@@ -16255,7 +16268,9 @@ export class PingPongGame {
         this.menuOpen = true;
         this.menuGroup.visible = true;
         this.menuHover = [-1, -1];
-        this.anchorMenu();
+        // r71 · apertura REAL (B en entrenamiento): nace ANCLADA Y FIJA,
+        // como el resto de aperturas (mismo informe del dueño).
+        this.anchorMenu(true);
         this.drawMenu();
         this.audio.setMusicWanted(true);
       } else if (!this._arconoOn && (this.menuOpen || this.inHall ||

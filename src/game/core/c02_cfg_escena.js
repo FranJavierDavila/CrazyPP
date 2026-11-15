@@ -985,7 +985,7 @@ export const CONFIG_MENUS = {
       ] },
     { id: 'casa', tituloKey: 'vest_casa', x: 2624, y: 250, w: 1032, h: 1100,
       tarjetas: [
-        { id: 'homehall', icono: 'vestibulo', etiquetaKey: 'hall_home_btn',
+        { id: 'page:hallpick', icono: 'vestibulo', etiquetaKey: 'hall_pick_btn',
           gradiente: ['#7c94c4', '#3c5280'] },
         { id: 'tut:go', icono: 'academia', etiquetaKey: 'tut_hub',
           gradiente: ['#ffba2a', '#e27c00'] },
@@ -1054,6 +1054,9 @@ export const CONFIG_SECCIONES = {
     champuno: { tituloKey: '', icono: 'campeonatos', volver: 'page:champs',
       dinamico: 'champ' },
     champhist: { tituloKey: 'hist_title', icono: 'campeonatos', volver: 'page:champs' },
+    // r74 · FASE 168 · ESCOGER HALL (MI CASA): las 6 variantes + candados
+    hallpick: { tituloKey: 'hall_pick_t', icono: 'vestibulo',
+      volver: 'page:main' },
     opts: { tituloKey: 'opts_title', icono: 'ajustes', volver: 'page:main',
       rejilla: 'ajustes' },
     optsJuego: { tituloKey: 'cat_juego', icono: 'consola', volver: 'page:opts' },
@@ -1064,6 +1067,9 @@ export const CONFIG_SECCIONES = {
     optsRendi: { tituloKey: 'cat_rendi', icono: 'gauge', volver: 'page:opts' },
     optsPala: { tituloKey: 'cat_pala', icono: 'partido', volver: 'page:opts' },
     salirask: { tituloKey: 'salirask_title', icono: 'salir', volver: 'page:main' },
+    // r74 · FASE 170 · la confirmación del DUELO PENDIENTE
+    dueloask: { tituloKey: 'dueloask_t', icono: 'multijugador',
+      volver: 'page:main' },
     hallask: { tituloKey: 'hallask_title', icono: 'vestibulo', volver: 'page:main' },
     tutask: { tituloKey: 'tut_hub', icono: 'academia', volver: 'page:main' },
     train: { tituloKey: 'sec_train', icono: 'entrenar', volver: 'page:main' },

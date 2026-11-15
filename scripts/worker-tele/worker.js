@@ -374,6 +374,16 @@ let socialListo = false;
 async function socialInit(env) {
   if (socialListo) return;
   await env.DB.batch(SOCIAL_SCHEMA.map((s) => env.DB.prepare(s)));
+  // r74 · FASE 169 · MODALIDAD + VISIBILIDAD de las salas (listado público
+  // del Multijugador) y MODALIDAD de las invitaciones. ALTER idempotente:
+  // si la columna ya existe el error se ignora — nunca se borra nada.
+  for (const ALTER of [
+    "ALTER TABLE presencia ADD COLUMN mj TEXT",
+    "ALTER TABLE presencia ADD COLUMN vis TEXT",
+    "ALTER TABLE invitas ADD COLUMN mj TEXT",
+  ]) {
+    try { await env.DB.prepare(ALTER).run(); } catch (e) { /* ya existe */ }
+  }
   socialListo = true;
 }
 
@@ -427,11 +437,17 @@ async function social(request, env, url, metodo) {
       const v = texto(cuerpo.v, 24);
       const st = ["libre", "sala", "juego"].includes(cuerpo.st) ? cuerpo.st : "libre";
       const code = texto(cuerpo.code, 12).toUpperCase();
+      // r74 · FASE 169 · modalidad ('normal'|'duelos') y visibilidad de la
+      // sala ('pub'|'pri'): PRIVADA por defecto — el listado público sólo
+      // muestra salas anunciadas expresamente como PÚBLICAS.
+      const mj = cuerpo.mj === "duelos" ? "duelos" : "normal";
+      const vis = cuerpo.vis === "pub" ? "pub" : "pri";
       await env.DB.prepare(
-        `INSERT INTO presencia (pid, n, v, st, code, t) VALUES (?, ?, ?, ?, ?, ?)
+        `INSERT INTO presencia (pid, n, v, st, code, mj, vis, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(pid) DO UPDATE SET n=excluded.n, v=excluded.v,
-           st=excluded.st, code=excluded.code, t=excluded.t`
-      ).bind(pid, n, v, st, st === "sala" ? code : "", ahora).run();
+           st=excluded.st, code=excluded.code, mj=excluded.mj, vis=excluded.vis, t=excluded.t`
+      ).bind(pid, n, v, st, st === "sala" ? code : "",
+        st === "sala" ? mj : "normal", st === "sala" ? vis : "pri", ahora).run();
       const { n: total } = await env.DB.prepare("SELECT COUNT(*) n FROM presencia").first();
       return json({ ok: true, n: total, ts: ahora });
     }
@@ -442,10 +458,11 @@ async function social(request, env, url, metodo) {
         return json({ ok: true, n: total, ts: ahora });
       }
       const { results } = await env.DB.prepare(
-        "SELECT pid, n, st, code, t FROM presencia ORDER BY t DESC LIMIT 30"
+        "SELECT pid, n, st, code, mj, vis, t FROM presencia ORDER BY t DESC LIMIT 30"
       ).all();
       const jugadores = (results || []).map((r) => ({
         pid: r.pid, n: r.n, st: r.st, code: r.code || "",
+        mj: r.mj || "normal", vis: r.vis || "pri",   // r74 · FASE 169
         hace: Math.max(0, Math.round((ahora - (r.t || ahora)) / 1000)),
       }));
       return json({ ok: true, n: total, jugadores, ts: ahora });
@@ -477,9 +494,10 @@ async function social(request, env, url, metodo) {
         "SELECT COUNT(*) n FROM invitas WHERE para = ?"
       ).bind(para).first();
       if (ya >= INVITA_TOPE) return json({ ok: false, error: "buzón lleno" }, 429);
+      const mjI = cuerpo.mj === "duelos" ? "duelos" : "normal";   // r74
       const r = await env.DB.prepare(
-        "INSERT INTO invitas (de, deN, para, code, t) VALUES (?, ?, ?, ?, ?)"
-      ).bind(de, texto(cuerpo.deN, 20) || "Jugador", para, code, ahora).run();
+        "INSERT INTO invitas (de, deN, para, code, mj, t) VALUES (?, ?, ?, ?, ?, ?)"
+      ).bind(de, texto(cuerpo.deN, 20) || "Jugador", para, code, mjI, ahora).run();
       return json({ ok: true, id: r.meta && r.meta.last_row_id, ts: ahora });
     }
 
@@ -487,10 +505,11 @@ async function social(request, env, url, metodo) {
       const pid = url.searchParams.get("pid");
       if (!pidOk(pid)) return json({ ok: false, error: "pid inválido" }, 400);
       const { results } = await env.DB.prepare(
-        "SELECT id, de, deN, code, t FROM invitas WHERE para = ? ORDER BY t DESC LIMIT 8"
+        "SELECT id, de, deN, code, mj, t FROM invitas WHERE para = ? ORDER BY t DESC LIMIT 8"
       ).bind(pid).all();
       const invitas = (results || []).map((r) => ({
         id: r.id, de: r.de, deN: r.deN, code: r.code || "",
+        mj: r.mj || "normal",                          // r74 · FASE 169
         hace: Math.max(0, Math.round((ahora - (r.t || ahora)) / 1000)),
       }));
       return json({ ok: true, invitas, ts: ahora });

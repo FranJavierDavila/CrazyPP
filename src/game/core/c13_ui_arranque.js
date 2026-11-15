@@ -3621,10 +3621,11 @@ loadPaddleModel().then((paddleModel) => {
         c.save();
         c.beginPath();
         if (c.roundRect) c.roundRect(40, y, 944, 172, 22); else c.rect(40, y, 944, 172);
-        const gr = c.createLinearGradient(40, y, 984, y + 172);
-        gr.addColorStop(0, a.g0); gr.addColorStop(1, a.g1);
-        c.fillStyle = gr; c.globalAlpha = isOn ? 0.95 : 0.8; c.fill(); c.globalAlpha = 1;
-        c.strokeStyle = isOn ? '#f0c85a' : 'rgba(255,255,255,0.28)'; c.lineWidth = isOn ? 5 : 3;
+        // r74 · FASE 168 · placa de museo en las tarjetas del ÁREA (el
+        // color del área sobrevive en el aro del medallón, no en el relleno
+        // saturado) — la estética nueva hasta el último subnivel.
+        if (game._vestPlaca73) game._vestPlaca73(c, 40, y, 944, 172, 22);
+        c.strokeStyle = isOn ? '#f0c85a' : 'rgba(232,180,90,0.32)'; c.lineWidth = isOn ? 5 : 3;
         c.stroke();
         c.textAlign = 'left'; c.textBaseline = 'middle';
         c.fillStyle = '#ffffff'; c.font = '800 34px system-ui, sans-serif';

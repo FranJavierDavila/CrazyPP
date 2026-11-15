@@ -7,6 +7,11 @@ export class NetLink {
     this.micStream = null;
     this.remoteAudio = null;   // <audio autoplay> con la voz del rival
     this.role = null;          // 'host' | 'guest'
+    // r74 · FASE 169 · modalidad y visibilidad de MI sala (viajan en el
+    // latido de presencia): el listado público sólo anuncia vis='pub'.
+    // PRIVADA por defecto: una sala jamás se anuncia salvo elección.
+    this.modoSala = 'normal';  // 'normal' | 'duelos'
+    this.visSala = 'pri';      // 'pub' | 'pri'
     this.status = 'off';       // off|creating|waiting|joining|online|error
     this.code = '';            // código de sala (propio o introducido)
     this.online = false;

@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.164-SDK6, fase 167 · EL NIVEL 3, PLACA A PLACA; sello actualizado
-# por bump_version.py desde 3.6.163-SDK6)
-edeaab80b0d6a015a8548a8cc1b6f14031bd352dfb112e71bf1355c49fa75792
+# SHA256 del game.html que produjo esta división (3.6.165-SDK6, fase 170 · HALLS, CANDADOS, MULTIJUGADOR EN ZONAS Y LA ALERTA DE DUELO; sello actualizado
+# por bump_version.py desde 3.6.164-SDK6)
+177ef401ebf457f1b55e1e60e3f3456d0b3d849e40b4bbb21c5abc118bf5024e

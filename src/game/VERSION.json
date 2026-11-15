@@ -1,10 +1,10 @@
 {
-  "version": "3.6.164-SDK6",
-  "fase": 167,
-  "faseNombre": "EL NIVEL 3, PLACA A PLACA",
+  "version": "3.6.165-SDK6",
+  "fase": 170,
+  "faseNombre": "HALLS, CANDADOS, MULTIJUGADOR EN ZONAS Y LA ALERTA DE DUELO",
   "sdk": "1.6.0",
   "fecha": "2026-11-15",
-  "hub": "v36164-sdk6",
+  "hub": "v36165-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r70",
-  "tamano": 12183852,
-  "golden": "edeaab80b0d6a015a8548a8cc1b6f14031bd352dfb112e71bf1355c49fa75792"
+  "tamano": 12239444,
+  "golden": "177ef401ebf457f1b55e1e60e3f3456d0b3d849e40b4bbb21c5abc118bf5024e"
 }

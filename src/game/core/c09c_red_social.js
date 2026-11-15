@@ -125,7 +125,12 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
     const net = this.game && this.game.net;
     if (!net) return { st: 'libre' };
     if (net.online || net.status === 'online') return { st: 'juego' };
-    if (net.status === 'waiting' && net.code) return { st: 'sala', code: net.code };
+    if (net.status === 'waiting' && net.code) {
+      // r74 · FASE 169 · la sala anuncia SU modalidad y visibilidad
+      return { st: 'sala', code: net.code,
+        mj: net.modoSala === 'duelos' ? 'duelos' : 'normal',
+        vis: net.visSala === 'pub' ? 'pub' : 'pri' };
+    }
     return { st: 'libre' };
   }
 
@@ -157,6 +162,7 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
     const body = JSON.stringify({
       pid: this.pid, n: this.nombre(), v: (typeof VERSION !== 'undefined') ? VERSION : '',
       st: e.st, code: e.code || '',
+      mj: e.mj || 'normal', vis: e.vis || 'pri',   // r74 · FASE 169
     });
     this._pendBeat = true;
     try {
@@ -258,6 +264,8 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
         body: JSON.stringify({
           de: this.pid, deN: this.nombre(), para: pidRival, code: net.code,
+          k: 'inv',                                        // r74 · FASE 169
+          mj: net.modoSala === 'duelos' ? 'duelos' : 'normal',
         }),
       }, '_pendPostCtl', 8000);
       return !!(r && r.ok);
@@ -274,7 +282,8 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
     const g = this.game;
     if (!g || !g.net) return false;
     try {
-      g._mjMode = 'normal';                 // el panel de sala/código visible
+      // r74 · FASE 169 · la invitación viaja con SU modalidad
+      g._mjMode = (inv.mj === 'duelos') ? 'duelos' : 'normal';
       g.net.joinRoom(inv.code);
       return true;
     } catch { return false; }
@@ -296,6 +305,21 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
   }
 
   hayInvitas() { return this.invitas.length > 0; }
+
+  /** r74 · FASE 169 · partidas PÚBLICAS disponibles ahora mismo: salas
+   *  vivas del pulso anunciadas con vis='pub' — las PRIVADAS jamás se
+   *  listan (y si el worker viejo no manda vis, tampoco: seguro). */
+  publicas() {
+    return (this.lista || []).filter((j) =>
+      j && j.st === 'sala' && j.code && j.vis === 'pub');
+  }
+
+  /** r74 · FASE 169 · el landing MULTIJUGADOR quiere la lista fresca:
+   *  fuerza pollLista (el tick también la sondea con la página abierta). */
+  pideLista() {
+    if (!this.on) return;
+    this.pollLista().catch(() => { /* */ });
+  }
 
   /* ¿hay medallón vivo? (presencia detectada o buzón con algo) */
   medallonVivo() {
@@ -339,14 +363,18 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
       this._beatAcc = 0;
       this.latido().catch(() => { /* */ });
     }
-    if (this._pollNAcc >= (this.nOnline > 0 ? 30 : 10)) {
+    // r74 · FASE 169 · con el landing MULTI abierto la lista se sondea
+    // cada 6 s («partidas disponibles en ese momento»); el resto, igual.
+    if (this._pollNAcc >= ((this.game && this.game.menuPage === 'multi')
+      ? 6 : (this.nOnline > 0 ? 30 : 10))) {
       this._pollNAcc = 0;
       // intervalo ADAPTATIVO: sin gente detectada se sondea cada 10 s (el
       // medallón aparece pronto); con gente, 30 s basta (el dato no baila).
       // la lista sólo interesa con el submenú multi abierto (sala waiting):
       // el resto del tiempo, número barato.
-      const quieroLista = this.game && this.game.net &&
-        this.game.net.status === 'waiting';
+      const quieroLista = (this.game && this.game.net &&
+        this.game.net.status === 'waiting') ||
+        (this.game && this.game.menuPage === 'multi');
       (quieroLista ? this.pollLista() : this.pollNumero()).catch(() => { /* */ });
     }
     if (this._pollIAcc >= 20) {

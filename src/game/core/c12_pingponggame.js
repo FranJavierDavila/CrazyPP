@@ -1304,6 +1304,25 @@ export class PingPongGame {
    * estado por red (reglas sombra). Cada lado simula la bola cuando es su
    * dueño (último golpeador / sacador) y la emite a 20 Hz. */
   startOnlineSession() {
+    // r74 · FASE 170 · EL DUELO NO IRRUMPE: si soy el ANFITRIÓN, la sesión
+    // queda PENDIENTE y salta LA ALERTA DE DUELO (icono de DOS PERSONAS
+    // parpadeante + pitidos + voz) — nada se cierra hasta que el dueño de
+    // la sala acepte (petición del dueño: la alerta llega «estando en
+    // cualquier parte del juego jugando: entrenando, en un campeonato, en
+    // el tutorial…»). El INVITADO entra igual que siempre (él la aceptó).
+    if (this.net && this.net.role === 'host') {
+      this._dueloPend = true;
+      this.rules.message = T('duelo_alerta_msg');
+      this.alertaDuelo();
+      return;
+    }
+    this._dueloArrancar();
+  }
+
+  /** r74 · FASE 170 · el arranque REAL de la sesión online (el cuerpo de
+   *  siempre): lo llama el INVITADO al entrar y el ANFITRIÓN al aceptar
+   *  la alerta (dueloask SÍ). */
+  _dueloArrancar() {
     if (this.calib) this.exitCalib();
     this.exitHall();          // v3.1.0-SRV2: la sesión online se juea en la cancha
     this.closeMenu();
@@ -2173,13 +2192,110 @@ export class PingPongGame {
       this._multiSalaElegir(rects);        // modo elegido: crear/unirse
       return;
     }
-    // LANDING: rejilla del apartado (CONFIG_SECCIONES.rejillas.multi)
-    this._menuRejilla(rects, 'multi', {
-      mjnorm: T('mj_norm_s'),
-      mjduel: T('mj_duel_s'),
-      'net:join': T('mj_off_hint'),
-    });
+    // LANDING r74 · TRES ZONAS (petición del dueño): «Zona Crear
+    // partida · Zona Partidas disponibles · Zona Privada» — fuera la
+    // rejilla de tres tarjetas sueltas que no se entendía.
+    this._multiZonas(rects);
     // r87 · invitación pendiente: tarjeta ámbar bajo la rejilla (ids vivos)
+    if (this.social && this.social.hayInvitas()) this._invitaCardVirtual(rects);
+  }
+
+  /** r74 · FASE 169 · LANDING DEL MULTIJUGADOR EN TRES ZONAS:
+   *  1 · CREAR PARTIDA — dos modalidades (cada una abre la elección
+   *      PÚBLICA/PRIVADA); 2 · PARTIDAS DISPONIBLES — salas públicas vivas
+   *      del pulso (modalidad + retador + ENTRAR); 3 · SALA PRIVADA — el
+   *      código del creador. La tarjeta de invitación (r87) sigue viva. */
+  _multiZonas(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const btn = this._menuBtn;
+    const soc = this.social;
+    const { x0, w0 } = this._multiEnC();
+    const mm0 = this._menuMap;
+    this._menuMap = null;
+    c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    let y = 236;
+    if (this._dueloPend) {
+      // r74 · FASE 170 · duelo EN ESPERA: aceptar también desde aquí
+      btn('page:dueloask', x0, y, w0, 78, T('dueloask_t'), false,
+        undefined, undefined, 26);
+      y += 94;
+    }
+    const zona = (txt, yy) => {
+      c.fillStyle = '#e8b45a';
+      c.font = '800 27px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.textBaseline = 'alphabetic';
+      c.fillText(txt, x0, yy);
+    };
+    const nota = (txt, yy, col) => {
+      c.fillStyle = col || '#9aa7b4';
+      c.font = '600 22px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.textBaseline = 'alphabetic';
+      c.fillText(txt, x0, yy);
+    };
+    // — ZONA 1 · CREAR PARTIDA —
+    zona(T('mj_crear_t'), y);
+    y += 20;
+    this._modeCard(rects, 'mjnorm', x0, y, w0 / 2 - 14, 124,
+      T('mj_norm_t'), T('mj_norm_s'), '#2f9e44', '#1e7c33',
+      PP_ICONS.match);
+    this._modeCard(rects, 'mjduel', x0 + w0 / 2 + 14, y, w0 / 2 - 14, 124,
+      T('mj_duel_t'), T('mj_duel_s'), '#ba58ff', '#7a1fd0',
+      PP_ICONS.match);
+    y += 160;
+    // — ZONA 2 · PARTIDAS DISPONIBLES (públicas del pulso, en vivo) —
+    zona(T('mj_disp_t'), y);
+    y += 20;
+    const pub = soc ? soc.publicas() : [];
+    if (!pub.length) {
+      nota(soc ? T('mj_sin_pub') : T('mj_sin_soc'), y + 34);
+      y += 66;
+    } else {
+      pub.slice(0, 3).forEach((fila, i) => {
+        const hF = 86;
+        const hovered = this.menuHover.includes(rects.length);
+        this._vestPlaca73(c, x0, y, w0, hF, 20);
+        this._vestRR(c, x0, y, w0, hF, 20);
+        c.strokeStyle = hovered ? '#ffffff' : 'rgba(232,180,90,0.32)';
+        c.lineWidth = hovered ? 4 : 2;
+        c.stroke();
+        const esDuel = fila.mj === 'duelos';
+        const ir = 30;
+        this._vestMedallion(c, x0 + 24 + ir, y + hF / 2, ir, 'partido',
+          esDuel ? '#ba58ff' : '#2f9e44');
+        c.textAlign = 'left';
+        c.textBaseline = 'alphabetic';
+        c.fillStyle = '#ffffff';
+        c.font = '800 28px system-ui, sans-serif';
+        const nom = String(fila.n || T('rs_jugador')).slice(0, 22);
+        c.fillText(nom, x0 + 70, y + 36);
+        c.fillStyle = esDuel ? '#d6bcfa' : '#8ce99a';
+        c.font = '700 19px system-ui, sans-serif';
+        c.fillText(T(esDuel ? 'mj_duel_t' : 'mj_norm_t') +
+          (fila.hace ? ' · ' + T('mj_hace', { n: fila.hace }) : ''),
+          x0 + 70, y + 66);
+        btn('mjsal:' + i, x0 + w0 - 214, y + 15, 190, 56,
+          T('mj_entrar'), false, undefined, undefined, 25);
+        y += hF + 14;
+      });
+      if (pub.length > 3) {
+        nota(T('mj_mas_pub', { n: pub.length - 3 }), y + 10);
+        y += 40;
+      }
+    }
+    y += 10;
+    // — ZONA 3 · SALA PRIVADA (el código del creador) —
+    zona(T('mj_priv_t'), y);
+    y += 20;
+    btn('net:join', x0, y, w0, 92, T('join_title'), false,
+      undefined, undefined, 27);
+    y += 108;
+    nota(T('mj_priv_hint'), y + 4);
+    c.restore();
+    this._menuMap = mm0;
+    // r87 · invitación pendiente: tarjeta ámbar bajo las zonas (ids vivos)
     if (this.social && this.social.hayInvitas()) this._invitaCardVirtual(rects);
   }
 
@@ -2336,16 +2452,29 @@ export class PingPongGame {
     c.stroke();
     const centro = CONFIG_MENUS.arco.panelas[1].x +
       CONFIG_MENUS.arco.panelas[1].w / 2;
-    c.fillStyle = '#cfd8e0';
-    c.font = '600 28px system-ui, sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(T('mj_off_hint'), centro, 330);
-    btn('net:host', x0, 400, w0, 108, T('btn_host'), false, 'green',
-      undefined, 30);
-    btn('net:join', x0, 540, w0, 108, T('btn_join'), false,
-      undefined, undefined, 30);
-    btn('mjsel', x0, 700, w0, 76, T('mj_sel_back'), false,
+    // r74 · FASE 169 · CREAR SALA (la modalidad ya se eligió en la Zona 1):
+    // sólo falta la VISIBILIDAD — PÚBLICA se anuncia en «Partidas
+    // disponibles» a los conectados; PRIVADA vive sólo para el código.
+    c.fillStyle = '#cfd8e0';
+    c.font = '600 28px system-ui, sans-serif';
+    c.fillText((this._mjMode === 'duelos' ? T('mj_duel_t') : T('mj_norm_t')) +
+      ' · ' + T('mj_crear_t'), centro, 316);
+    c.fillStyle = '#9aa7b4';
+    c.font = '600 23px system-ui, sans-serif';
+    c.fillText(T('mj_vis_pregunta'), centro, 362);
+    btn('mjvis:pub', x0, 420, w0, 118, T('mj_vis_pub'), false,
+      undefined, undefined, 28);
+    c.fillStyle = '#9aa7b4';
+    c.font = '600 20px system-ui, sans-serif';
+    c.fillText(T('mj_vis_pub_sub'), centro, 564);
+    btn('mjvis:pri', x0, 600, w0, 118, T('mj_vis_pri'), false,
+      undefined, undefined, 28);
+    c.fillStyle = '#9aa7b4';
+    c.font = '600 20px system-ui, sans-serif';
+    c.fillText(T('mj_vis_pri_sub'), centro, 744);
+    btn('mjsel', x0, 796, w0, 72, T('mj_sel_back'), false,
       undefined, undefined, 26);
     c.restore();
     this._menuMap = mm0;
@@ -3033,6 +3162,15 @@ export class PingPongGame {
     }
     // r71 · SUBPÁGINAS de AJUSTES (optsJuego · optsSala · optsSonido ·
     // optsVisual · optsPerfil): cada una dibuja SU categoría.
+    // r74 · FASE 168 · ESCOGER HALL: MI CASA ya no «vuelve» — elige.
+    if (this.menuPage === 'hallpick') {
+      this.drawMenuHallPick(rects);
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);
+      this._menuTexSube();
+      return;
+    }
     if (this.menuPage && this.menuPage.indexOf('opts') === 0 &&
         this.menuPage !== 'opts') {
       this.drawMenuOptsCat(rects, this.menuPage.slice(4).toLowerCase());
@@ -3044,6 +3182,21 @@ export class PingPongGame {
     }
     // v3.1.1-FEEL1 · página PROMPT «Menú Principal ¿SI/No?» (botón B fuera
     // del hall): panel mínimo con las dos respuestas, sin acordeón ni secciones.
+    // r74 · FASE 170 · ASK DEL DUELO PENDIENTE: salir y aceptar = cerrar
+    // lo que esté haciendo (perderás los registros) y saltar al duelo.
+    if (this.menuPage === 'dueloask') {
+      this._vestPrompt(rects, {
+        icono: 'multijugador', tituloKey: 'dueloask_t',
+        subKey: 'dueloask_sub', hintKey: 'dueloask_hint',
+        si: { id: 'dueloask_si', key: 'dueloask_si' },
+        no: { id: 'dueloask_no', key: 'dueloask_no' },
+      });
+      this.menuRects = rects;
+      this._menuState = this.rules.state;
+      this._menuTipDraw(c, rects);
+      this._menuTexSube();
+      return;
+    }
     if (this.menuPage === 'hallask') {
       this.drawMenuHallAsk(rects);
       this.menuRects = rects;
@@ -3632,6 +3785,9 @@ export class PingPongGame {
         const ir = 44, icx = gx + 30 + ir, icy = y + hAuto / 2;
         this._vestMedallion(c, icx, icy, ir, t.icono,
           t.gradiente ? t.gradiente[0] : null);
+        // r74 · FASE 168 · SIEMPRE que un apartado está bloqueado: el
+        // candado de ARCANOS pintado SOBRE la placa (petición del dueño)
+        if (t.bloq) PP_ICONS.candado(c, gx + gw - 56, y + hAuto / 2, 1.0);
         const tx = icx + ir + 24, maxw = gx + gw - tx - 28;
         c.textAlign = 'left';
         c.textBaseline = 'alphabetic';
@@ -3727,6 +3883,8 @@ export class PingPongGame {
           + ' \u00b7 ' + T('dock_mic') + ': ' + yn(this.audio.voice);
       }
       case 'homehall': return T('hall_home_hint');
+      // r74 · FASE 168 · la tarjeta de MI CASA abre el ESCOGER HALL
+      case 'page:hallpick': return T('hall_pick_hint');
       case 'salirweb': return T(CONFIG_MENU.salir.subKey);
       default: return def && def.subKey ? T(def.subKey) : '';
     }
@@ -3956,6 +4114,66 @@ export class PingPongGame {
   /** r68 · PROMPT caramelo genérico (salir a la web / volver al hall):
    *  medallón protagonista + pregunta + dos respuestas lado a lado en la
    *  panela C del arco. Sin ambigüedad, mínimo texto, ids intactos. */
+  /** r74 · FASE 168 · ESCOGER HALL (MI CASA → sustituye «Volver al
+   *  Hall», que no tenía sentido en el primer nivel): las 6 variantes de
+   *  HALL_VARIANTES como placas de museo — la ACTIVA en oro, las libres
+   *  con aro de latón y las BLOQUEADAS con el candado de ARCANOS pintado
+   *  SOBRE la placa + su hito (petición del dueño). La elección reusa el
+   *  handler hallv:<id> (LS + re-viste el salón EN VIVO). */
+  drawMenuHallPick(rects) {
+    const c = this.menuCanvas.getContext('2d');
+    const per = this._hallPerfil();
+    const pC = CONFIG_MENUS.arco.panelas[1];
+    const mm0 = this._menuMap;
+    this._menuMap = null;
+    c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    const x0 = pC.x + 40, w0 = pC.w - 80;
+    let y = 300;
+    if (per.peer) {
+      c.fillStyle = '#b07aff';
+      c.font = '600 26px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.textBaseline = 'alphabetic';
+      c.fillText(T('hall_visita'), x0, y + 20);
+      y += 56;
+    }
+    for (const v of HALL_VARIANTES) {
+      const libreH = !v.lock || this._mesaLibre(v.lock);
+      const activoH = this._hallVarDef().id === v.id;
+      const hR = 136;
+      const hovered = this.menuHover.includes(rects.length);
+      this._vestPlaca73(c, x0, y, w0, hR, 22);
+      this._vestRR(c, x0, y, w0, hR, 22);
+      c.strokeStyle = activoH ? 'rgba(255,210,87,0.85)'
+        : (hovered && libreH ? '#ffffff' : 'rgba(232,180,90,0.32)');
+      c.lineWidth = (activoH || hovered) ? 4 : 2;
+      c.stroke();
+      const ir = 46;
+      this._vestMedallion(c, x0 + 34 + ir, y + hR / 2, ir, 'vestibulo',
+        activoH ? '#ffd25e' : (libreH ? null : '#5f7183'));
+      c.textAlign = 'left';
+      c.textBaseline = 'alphabetic';
+      c.fillStyle = '#ffffff';
+      c.font = '800 34px system-ui, sans-serif';
+      c.fillText(T(v.nameKey), x0 + 112, y + 56);
+      c.font = '600 22px system-ui, sans-serif';
+      c.fillStyle = activoH ? '#ffd257'
+        : (libreH ? 'rgba(228,240,255,0.92)' : '#93a1b0');
+      c.fillText(activoH ? T('hall_actual')
+        : (libreH ? T('hall_disponible')
+          : (this._mesaLockTxt(v.lock) || T('mesa_lock_hint'))),
+        x0 + 112, y + 98);
+      // r74 · el candado de ARCANOS sobre las variantes bloqueadas
+      if (!libreH) PP_ICONS.candado(c, x0 + w0 - 64, y + hR / 2, 1.15);
+      rects.push({ x: x0 - 6, y: y - 4, w: w0 + 12, h: hR + 8,
+        id: 'hallv:' + v.id });
+      y += hR + 20;
+    }
+    c.restore();
+    this._menuMap = mm0;
+  }
+
   _vestPrompt(rects, cfg) {
     const c = this.menuCanvas.getContext('2d');
     const pC = CONFIG_MENUS.arco.panelas[1];
@@ -4322,6 +4540,10 @@ export class PingPongGame {
       const ir = 42;
       this._vestMedallion(c, x0 + 34 + ir, y + rh / 2, ir, 'partido',
         vencido ? '#7fb069' : '#4a5872');
+      if (!retable) {
+        // r74 · FASE 168 · rivales de OTRAS divisiones: candado de ARCANOS
+        PP_ICONS.candado(c, x0 + w0 - 56, y + rh / 2, 1.0);
+      }
       c.textAlign = 'left';
       c.fillStyle = '#ffffff';
       c.font = '800 32px system-ui, sans-serif';
@@ -4413,6 +4635,7 @@ export class PingPongGame {
           : leyenda ? ['#ffd25e', '#e8a80e'] : ['#ffca1e', '#d88c00'],
         sub: lockado ? T('champ_locked_hint')
           : (hint || T('hub_champ_hint')),
+        bloq: lockado,
         leyenda,
       });
     }
@@ -4755,12 +4978,18 @@ export class PingPongGame {
         // convivía apretado con la MESA en una sola página).
         // r97 · los temas salen DE ROOM_THEMES con su candado — Nocturna se
         // abre con 4★ de los retos semanales (setTheme rechaza y avisa).
+        // r74 · FASE 168 · los temas bloqueados llevan el candado de
+        // ARCANOS dibujado sobre el botón (fuera el prefijo textual 🔒)
         const themes = ROOM_THEMES.map((t0) => ['theme:' + t0.key,
-          (t0.lock && !this._salaTemaLibre(t0.lock) ? '🔒 ' : '') +
-          (t0.nameKey ? T(t0.nameKey) : t0.name)]);
-        themes.forEach(([id, name], i) => {
+          (t0.nameKey ? T(t0.nameKey) : t0.name),
+          t0.lock && !this._salaTemaLibre(t0.lock)]);
+        themes.forEach(([id, name, cerrado], i) => {
           btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 64, 448, 56, name,
             this.theme === id.split(':')[1], undefined, undefined, 23);
+          if (cerrado) {
+            PP_ICONS.candado(c, 56 + (i % 2) * 464 + 448 - 30,
+              y + Math.floor(i / 2) * 64 + 28, 0.8);
+          }
         });
         y += Math.ceil(themes.length / 2) * 64 + 8;
         const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
@@ -4853,8 +5082,12 @@ export class PingPongGame {
           const libre = !s.lock || this._mesaLibre(s.lock);
           const activo = this._bolaSkinLS() === s.id;
           btn('bola_skin:' + s.id, 56 + (i % 3) * 312, y + Math.floor(i / 3) * 62,
-            288, 54, (libre ? '' : '🔒 ') + T(s.nameKey),
+            288, 54, T(s.nameKey),
             activo, undefined, activo, 21);
+          if (!libre) {
+            PP_ICONS.candado(c, 56 + (i % 3) * 312 + 288 - 30,
+              y + Math.floor(i / 3) * 62 + 27, 0.8);
+          }
         });
         y += Math.ceil(BOLA_ASPECTOS.length / 3) * 62 + 6;
         const hayCerradaB = BOLA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock));
@@ -4900,8 +5133,12 @@ export class PingPongGame {
             // con 5 variantes la fila única de la r24 ya no cabía.
             btn('hall_var:' + v.id, 56 + (i % 3) * 312,
               y + Math.floor(i / 3) * 62, 288, 54,
-              (libreH ? '' : '🔒 ') + T(v.nameKey),
+              T(v.nameKey),
               activoH, undefined, activoH, 21);
+            if (!libreH) {
+              PP_ICONS.candado(c, 56 + (i % 3) * 312 + 288 - 30,
+                y + Math.floor(i / 3) * 62 + 27, 0.8);
+            }
           });
           y += Math.ceil(HALL_VARIANTES.length / 3) * 62 + 6;
           const hayCerradaH = HALL_VARIANTES.some((v) => v.lock && !this._mesaLibre(v.lock));
@@ -6043,6 +6280,28 @@ export class PingPongGame {
         }
         break;
       }
+      case 'dueloask_si': {
+        // r74 · FASE 170 · SÍ: cerrar lo que esté haciendo y saltar al
+        // duelo (el arranque real de la sesión online ya conectada).
+        this._dueloPend = false;
+        this.hideDueloAlerta(true);
+        this.audio.playOsc(760, 1180, 0.08, 'triangle', 0.12, 0);
+        this._dueloArrancar();
+        break;
+      }
+      case 'dueloask_no': {
+        // r74 · FASE 170 · NO: se cuelga la sala (el rival queda libre) y
+        // el juego sigue donde estaba — nada se ha cerrado.
+        this._dueloPend = false;
+        this.hideDueloAlerta(true);
+        try { this.net.hangup(); } catch (eH) { /* */ }
+        this._mjMode = null;
+        this.rules.message = '';
+        this.audio.playOsc(420, 300, 0.06, 'sine', 0.08, 0);
+        this.menuPage = 'main';
+        this.drawMenu();
+        break;
+      }
       case 'hallask_si': {
         // v3.1.1-FEEL1 · SI del prompt B: al HALL con el menú principal en
         // pantalla (misma recogida estanca que «⌂ VOLVER AL HALL»). El prompt
@@ -6188,6 +6447,37 @@ export class PingPongGame {
         this.rules.message = '';
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.drawMenu();
+        break;
+      case 'mjvis':
+        // r74 · FASE 169 · CREAR SALA con la visibilidad elegida: PÚBLICA
+        // se anuncia en el latido (mj/vis → «Partidas disponibles»);
+        // PRIVADA vive sólo para quien tenga el código.
+        if (arg === 'pub' || arg === 'pri') {
+          this.net.modoSala = (this._mjMode === 'duelos') ? 'duelos' : 'normal';
+          this.net.visSala = arg;
+          this.menuPage = 'multi';
+          this.net.hostRoom();
+        }
+        this.audio.playOsc(760, 1140, 0.08, 'triangle', 0.12, 0);
+        this.drawMenu();
+        break;
+      case 'mjsal':
+        // r74 · FASE 169 · ENTRAR en una partida PÚBLICA del listado: la
+        // modalidad viaja en la presencia (mj); el mstart del anfitrión
+        // sigue sellando el modo real (spec §3.8).
+        {
+          const filas = (this.social && this.social.publicas) ?
+            this.social.publicas() : [];
+          const fila = filas[parseInt(arg, 10) || 0];
+          if (fila && fila.code && this.net &&
+              (this.net.status === 'off' || this.net.status === 'error')) {
+            this._mjMode = (fila.mj === 'duelos') ? 'duelos' : 'normal';
+            this.menuPage = 'multi';
+            this.net.joinRoom(fila.code);
+          }
+          this.audio.playOsc(760, 1180, 0.08, 'triangle', 0.12, 0);
+          this.drawMenu();
+        }
         break;
       case 'mjsel':
         // r80 · volver a la selección de modos (sólo posible en reposo: el
@@ -8433,6 +8723,14 @@ export class PingPongGame {
     // saques ni pistolas alcanzan este vacío (el museo no juega).
     if (this._arconoOn) {
       this._arconoClic(i);
+      return;
+    }
+
+    // r74 · FASE 170 · LA ALERTA DE DUELO manda: gatillo sobre el icono
+    // de DOS PERSONAS abre la confirmación (antes que cualquier otra cosa)
+    if (this.dueloAlerta && this._dueloAlertaPulsa(i)) {
+      this.audio.playOsc(760, 1180, 0.08, 'triangle', 0.12, 0);
+      this._dueloAsk();
       return;
     }
 
@@ -15148,6 +15446,135 @@ export class PingPongGame {
    *    ping pong nunca se apaga. Fundido de salida que desmonta TODO.
    *  Tick en TIEMPO REAL (r72), tope 12 s, API {cierra, espera} intacta.
    *  ==================================================================== */
+  /** r74 · FASE 170 · LA ALERTA DE DUELO — quad pegado al RIG en la
+   *  esquina superior: icono de DOS PERSONAS parpadeando 5 s, cinco
+   *  pitidos y la voz del banco. Apuntar y gatillar abre el ASK. */
+  alertaDuelo() {
+    try {
+      if (!this.rig) { this._dueloAsk(); return; }   // sin rig (2D): al ask
+      this.hideDueloAlerta(true);
+      const cv = document.createElement('canvas');
+      cv.width = 256; cv.height = 256;
+      const c = cv.getContext('2d');
+      this._pintaDueloIcono(c, 256, 256);
+      const tex = new THREE.CanvasTexture(cv);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true,
+        depthTest: false, depthWrite: false, fog: false });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.44), mat);
+      mesh.renderOrder = 90;
+      const group = new THREE.Group();
+      group.add(mesh);
+      group.position.set(0.58, 0.58, -1.35);   // esquina superior derecha
+      this.rig.add(group);
+      this.dueloAlerta = { group, mesh, mat, tex, cv, c, t: 0 };
+      // los 5 PITIDOS (cada 0,9 s) …
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          try {
+            this.audio.playOsc(880, 1320, 0.12, 'square', 0.14, 0);
+          } catch (eB) { /* */ }
+        }, Math.round(i * 900));
+      }
+      // … y la VOZ al segundo (banco de c03: en XR speechSynthesis no va)
+      setTimeout(() => {
+        try { this.audio.announce(T('duelo_alerta_voz'), true); } catch (eV) { /* */ }
+      }, 1000);
+    } catch (e) {
+      console.warn('[duelo-alerta]', e);
+      this._dueloAsk();
+    }
+  }
+
+  /** r74 · el ICONO: placa oscura + marco de latón + DOS PERSONAS
+   *  (siluetas cabeza y cuerpo) y el signo de exclamación. */
+  _pintaDueloIcono(c, W, H) {
+    c.clearRect(0, 0, W, H);
+    c.fillStyle = 'rgba(8,12,24,0.94)';
+    c.beginPath();
+    if (c.roundRect) c.roundRect(8, 8, W - 16, H - 16, 30);
+    else c.rect(8, 8, W - 16, H - 16);
+    c.fill();
+    c.strokeStyle = '#e8b45a';
+    c.lineWidth = 6;
+    c.beginPath();
+    if (c.roundRect) c.roundRect(8, 8, W - 16, H - 16, 30);
+    else c.rect(8, 8, W - 16, H - 16);
+    c.stroke();
+    const persona = (cx, cy, r, col) => {
+      c.fillStyle = col;
+      c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.fill();
+      c.beginPath();
+      if (c.roundRect) c.roundRect(cx - r * 1.5, cy + r + 6, r * 3, r * 1.7,
+        r * 0.8);
+      else c.rect(cx - r * 1.5, cy + r + 6, r * 3, r * 1.7);
+      c.fill();
+    };
+    persona(W * 0.38, H * 0.42, 26, '#c9d4de');
+    persona(W * 0.62, H * 0.42, 26, '#e8b45a');
+    c.fillStyle = '#ffd257';
+    c.font = '900 44px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText('!', W * 0.5, H * 0.78);
+  }
+
+  /** r74 · latido de la alerta: PARPADEO 3 Hz durante 5 s y fundido — el
+   *  duelo queda PENDIENTE (aceptable desde el Multijugador). */
+  _updateDueloAlerta(dt) {
+    const S = this.dueloAlerta;
+    if (!S) return;
+    S.t += dt;
+    if (S.t < 5) {
+      S.mat.opacity = 0.55 + 0.45 * Math.abs(Math.sin(S.t * Math.PI * 3));
+    } else {
+      S.mat.opacity = Math.max(0, 1 - (S.t - 5) / 0.8);
+      if (S.t > 5.8) this.hideDueloAlerta(true);
+    }
+  }
+
+  hideDueloAlerta(inmediato) {
+    const S = this.dueloAlerta;
+    if (!S) return;
+    this.dueloAlerta = null;
+    try {
+      if (S.group.parent) S.group.parent.remove(S.group);
+      S.group.clear();
+      S.tex.dispose();
+      S.mat.dispose();
+      S.mesh.geometry.dispose();
+    } catch (e) { /* */ }
+  }
+
+  /** r74 · ¿el gatillo del mando i pulsa el icono? (rayo del control) */
+  _dueloAlertaPulsa(i) {
+    try {
+      const S = this.dueloAlerta;
+      if (!S) return false;
+      const ray = this.rays && this.rays[i | 0];
+      if (!ray) return false;
+      if (!this._dueloRC) {
+        this._dueloRC = new THREE.Raycaster();
+        this._dueloO = new THREE.Vector3();
+        this._dueloQ = new THREE.Quaternion();
+        this._dueloD = new THREE.Vector3();
+      }
+      ray.getWorldPosition(this._dueloO);
+      ray.getWorldQuaternion(this._dueloQ);
+      this._dueloD.set(0, 0, -1).applyQuaternion(this._dueloQ);
+      this._dueloRC.set(this._dueloO, this._dueloD);
+      return !!this._dueloRC.intersectObject(S.mesh, false)[0];
+    } catch (e) { return false; }
+  }
+
+  /** r74 · abre la confirmación (el menú se pone encima de lo que sea) */
+  _dueloAsk() {
+    this.menuPage = 'dueloask';
+    try { this.rules.message = ''; } catch (eM) { /* */ }
+    if (!this.menuOpen) this.toggleMenu();
+    else this.drawMenu();
+  }
+
   showChampCurtain(id) {
     try {
       if (!this.rig) return null;
@@ -17360,6 +17787,8 @@ export class PingPongGame {
     this._updateChampIntro(dt);
     // r72 · TELÓN DE CARGA de campeonatos (pinta puntos, funde y desmonta)
     this._updateChampCurtain();
+    // r74 · FASE 170 · LA ALERTA DE DUELO respira (parpadeo + fundido)
+    this._updateDueloAlerta(dt);
     // v2.128: panel ¡CONSEGUIDO! del campeonato superado (pop + fundido)
     this._updateChampConseguido(dt);
     // v2.79: el decorado de troqueles respira con la sala (visibilidad

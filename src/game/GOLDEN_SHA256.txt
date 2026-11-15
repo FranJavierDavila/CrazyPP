@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.162-SDK6, fase 165 · EL MENÚ NACE ANCLADO (informe del dueño): el arranque XR ancla FORZADO tras enterHall (el heal ya no suelta la chincheta el frame 1 — el menú nace delante de la mirada, FIJO salvo chincheta manual) y la apertura B-entrenar también — fin del menú siguiendo la cara y de los gatillos comidos; sello actualizado
-# por bump_version.py desde 3.6.161-SDK6)
-698a6d766a913f0deb30824042180e86af387b7c63d5a1fc8f83f313a13d36bb
+# SHA256 del game.html que produjo esta división (3.6.163-SDK6, fase 166 · EL NIVEL 3 MAQUETADO; sello actualizado
+# por bump_version.py desde 3.6.162-SDK6)
+53266b4b5108d33e1e3d735d57eaae4799fee2187cfe84432e194e96051e90f2

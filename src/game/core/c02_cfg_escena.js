@@ -1091,8 +1091,9 @@ export const CONFIG_SECCIONES = {
           gradiente: ['#ffa726', '#e65100'] },
         { id: 'page:optsPala', icono: 'partido', etiquetaKey: 'cat_pala',
           gradiente: ['#ec407a', '#ad1457'] },
-        { id: 'kofi', icono: 'apoyar', etiquetaKey: 'btn_kofi',
-          gradiente: ['#ffd25e', '#e8a80e'] },
+        // r72 · FUERA «Apoyar el proyecto (Ko-fi)» de AJUSTES (petición del
+        // dueño): la tarjeta se retira de la rejilla; el canal kofi de la
+        // portada web (dock/footlink) no se toca.
       ] },
     /* r70 · MULTIJUGADOR — landing del apartado con el formato Ajustes
      * (petición del dueño): dos modos + unirse con código. Los estados de

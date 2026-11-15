@@ -3150,20 +3150,21 @@ export class PingPongGame {
     const hovered = this.menuHover.includes(rects.length);
     c.beginPath();
     if (c.roundRect) c.roundRect(x, y, w, h, 22); else c.rect(x, y, w, h);
-    const g = c.createLinearGradient(x, y, x, y + h);
-    g.addColorStop(0, g0);
-    g.addColorStop(1, g1);
-    c.fillStyle = g;
-    c.fill();
+    // r73 · FASE 167 · placa de museo en _modeCard (SALA y hub legado):
+    // fuera el relleno saturado — base oscura + overlay sutil + marco de
+    // latón (gold conserva su aro dorado); el color del modo sobrevive
+    // como ARO del medallón, no como caramelo.
+    this._vestPlaca73(c, x, y, w, h, 22);
     c.strokeStyle = hovered ? '#ffffff'
-      : (gold ? 'rgba(255,210,87,0.85)' : 'rgba(255,255,255,0.24)');
+      : (gold ? 'rgba(255,210,87,0.85)' : 'rgba(232,180,90,0.32)');
     c.lineWidth = hovered ? 5 : 2;
     c.stroke();
-    // insignia circular con el icono del modo
+    // insignia circular con el icono del modo (aro teñido por categoría)
     const cx = x + 76, cy = y + h / 2;
     c.beginPath(); c.arc(cx, cy, 50, 0, Math.PI * 2);
     c.fillStyle = 'rgba(0,0,0,0.30)'; c.fill();
-    c.strokeStyle = 'rgba(255,255,255,0.4)'; c.lineWidth = 2.5; c.stroke();
+    c.strokeStyle = this._aroTinte(g0) || 'rgba(255,255,255,0.4)';
+    c.lineWidth = 2.5; c.stroke();
     try { icon(c, cx, cy); } catch (e) { /* icono decorativo */ }
     // títulos (v2.110: AUTOAJUSTE — el título nunca pisa el chevron y el
     // subtítulo se recorta con ellipsis; mismas reglas en todos los modos)
@@ -3415,13 +3416,45 @@ export class PingPongGame {
     c.restore();
   }
 
-  _vestMedallion(c, cx, cy, r, nombre) {
+  // r73 · FASE 167 · hex → rgba de ARO (0,62). Lo no-hex devuelve ''
+  // (sin tinte: el medallón queda con su blanco de siempre).
+  _aroTinte(col) {
+    const s = String(col || '');
+    if (!/^#[0-9a-fA-F]{6}$/.test(s)) return '';
+    const n = parseInt(s.slice(1), 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' +
+      (n & 255) + ',0.62)';
+  }
+
+  // r73 · FASE 167 · LA PLACA DE MUSEO — mismo lenguaje que el botón
+  // compartido r72: base oscura + overlay blanco sutil + MARCO DE LATÓN.
+  // Visten así las rejillas del nivel 3 (AJUSTES, MULTIJUGADOR, RANKING,
+  // CAMPEONATOS, ENTRENAR, CARRERA), las filas de rivales de la división
+  // y las tarjetas de _modeCard. El Vestíbulo (referencia del dueño), los
+  // prompts y los héroes de acción conservan su caramelo.
+  _vestPlaca73(c, x, y, w, h, r) {
+    this._vestRR(c, x, y, w, h, r);
+    c.fillStyle = 'rgba(8,12,24,0.55)';
+    c.fill();
+    const g = c.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, 'rgba(255,255,255,0.10)');
+    g.addColorStop(1, 'rgba(255,255,255,0.045)');
+    c.fillStyle = g;
+    c.fill();
+    c.strokeStyle = 'rgba(232,180,90,0.32)';
+    c.lineWidth = 2;
+    c.stroke();
+  }
+
+  // r73 · FASE 167 · el medallón admite ARO teñido: en las placas del
+  // nivel 3 el color de categoría sobrevive en el aro (no en el relleno).
+  _vestMedallion(c, cx, cy, r, nombre, aro) {
     c.beginPath();
     c.arc(cx, cy, r, 0, Math.PI * 2);
     c.fillStyle = 'rgba(10,16,34,0.92)';
     c.fill();
     c.lineWidth = 4;
-    c.strokeStyle = 'rgba(255,255,255,0.85)';
+    c.strokeStyle = this._aroTinte(aro) || 'rgba(255,255,255,0.85)';
     c.stroke();
     const im = this._vestIcono(nombre);
     if (im) {
@@ -3591,9 +3624,14 @@ export class PingPongGame {
       items.forEach((t, i) => {
         const y = rej.y + i * (hAuto + rej.gap);
         const hovered = this.menuHover.includes(rects.length);
-        this._vestCandy(c, gx, y, gw, hAuto, t.gradiente, 26);
+        // r73 · FASE 167 · la tarjeta de rejilla viste PLACA DE MUSEO
+        // (r72 maquetó el botón compartido; aquí la tarjeta entera): el
+        // color de categoría sobrevive como ARO del medallón — wayfinding
+        // sin caramelo (petición del dueño sobre el formato antiguo).
+        this._vestPlaca73(c, gx, y, gw, hAuto, 26);
         const ir = 44, icx = gx + 30 + ir, icy = y + hAuto / 2;
-        this._vestMedallion(c, icx, icy, ir, t.icono);
+        this._vestMedallion(c, icx, icy, ir, t.icono,
+          t.gradiente ? t.gradiente[0] : null);
         const tx = icx + ir + 24, maxw = gx + gw - tx - 28;
         c.textAlign = 'left';
         c.textBaseline = 'alphabetic';
@@ -4271,8 +4309,10 @@ export class PingPongGame {
       const retable = esTuDiv;
       const hovered = this.menuHover.includes(rects.length);
       const rh = 118;
-      this._vestCandy(c, x0, y, w0, rh, vencido
-        ? ['#7fb069', '#3f6e3a'] : ['#4a5872', '#28324a'], 22);
+      // r73 · FASE 167 · placa de museo por RIVAL: el estado sobrevive en
+      // el aro del medallón (vencido verde, pendiente acero), no en el
+      // relleno saturado.
+      this._vestPlaca73(c, x0, y, w0, rh, 22);
       if (hovered && retable) {
         this._vestRR(c, x0, y, w0, rh, 22);
         c.strokeStyle = '#ffffff';
@@ -4280,7 +4320,8 @@ export class PingPongGame {
         c.stroke();
       }
       const ir = 42;
-      this._vestMedallion(c, x0 + 34 + ir, y + rh / 2, ir, 'partido');
+      this._vestMedallion(c, x0 + 34 + ir, y + rh / 2, ir, 'partido',
+        vencido ? '#7fb069' : '#4a5872');
       c.textAlign = 'left';
       c.fillStyle = '#ffffff';
       c.font = '800 32px system-ui, sans-serif';

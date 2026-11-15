@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.163-SDK6, fase 166 · EL NIVEL 3 MAQUETADO; sello actualizado
-# por bump_version.py desde 3.6.162-SDK6)
-53266b4b5108d33e1e3d735d57eaae4799fee2187cfe84432e194e96051e90f2
+# SHA256 del game.html que produjo esta división (3.6.164-SDK6, fase 167 · EL NIVEL 3, PLACA A PLACA; sello actualizado
+# por bump_version.py desde 3.6.163-SDK6)
+edeaab80b0d6a015a8548a8cc1b6f14031bd352dfb112e71bf1355c49fa75792

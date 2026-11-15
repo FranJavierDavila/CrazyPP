@@ -10,7 +10,7 @@
     exacto por panela, silueta redondeada, arco recalculado por página,
     lados condicionales, banda ATRÁS sobre la C, landings formato Ajustes,
     «Volver al Hall» fuera de Entrenar) + ancla r69 íntegra + sw a 3.6.162
-    + PAGES-VERSION.txt con fuente_commit=42bc68934b9d476f677ffc28f4bdcd0ecbe2f540.
+    + PAGES-VERSION.txt con fuente_commit=2d5bc8302e50f5be1ea23e1ad3745fa01fc130f2.
   · FUNCIONAL: el juego VIVO — aspecto texel==rodaja, central ~1 m, yaw por
     fórmula, colocación en mundo, congela/sigue, lados condicionales en 26
     páginas, barrido en bounds, banda ATRÁS flotante, 5 landings nuevas,
@@ -165,10 +165,13 @@ JS = """async () => {
   G.drawMenu();
   await dorme(200);
   const ids2 = (G.menuRects || []).map((r) => r.id);
+  // r72 · FUERA kofi (petición del dueño): la rejilla de AJUSTES tiene 7
+  // tarjetas y kofi NO debe estar.
   out.paginaOpts = G.menuPage === 'opts' &&
     ['page:optsJuego', 'page:optsSala', 'page:optsSonido', 'page:optsVisual',
-     'page:optsPerfil', 'page:optsRendi', 'page:optsPala', 'kofi']
-      .every((id) => ids2.includes(id));
+     'page:optsPerfil', 'page:optsRendi', 'page:optsPala']
+      .every((id) => ids2.includes(id)) &&
+    !ids2.includes('kofi');
 
   // — 10 · prompt de salida (caramelo en la C) —
   G.menuPage = 'main';
@@ -287,13 +290,13 @@ async def main():
         'sin «Volver al Hall» en drawExtras (train)')
     try:
         sw = get(BASE + '/sw.js')
-        chk("const CACHE = 'crazypp-v3.6.163-SDK6'" in sw, 'sw.js a 3.6.162')
+        chk("const CACHE = 'crazypp-v3.6.163-SDK6'" in sw, 'sw.js a 3.6.163')
     except Exception as e:
         chk(False, f'sw.js servido ({e})')
     try:
         pv = get(BASE + '/PAGES-VERSION.txt')
-        chk('version=3.6.163-SDK6' in pv and 'fuente_commit=42bc68934b9d476f677ffc28f4bdcd0ecbe2f540' in pv,
-            'PAGES-VERSION.txt: 3.6.162 desde 42bc68934b9d476f677ffc28f4bdcd0ecbe2f540')
+        chk('version=3.6.163-SDK6' in pv and 'fuente_commit=2d5bc8302e50f5be1ea23e1ad3745fa01fc130f2' in pv,
+            'PAGES-VERSION.txt: 3.6.163 desde 2d5bc8302e50f5be1ea23e1ad3745fa01fc130f2')
     except Exception as e:
         chk(False, f'PAGES-VERSION.txt ({e})')
 
@@ -340,7 +343,7 @@ async def main():
         ('idsOk', 'en vivo: los 14 ids del Vestíbulo'),
         ('sinDock', 'en vivo: dock desaparecido'),
         ('iconosListos', 'en vivo: iconos decodificados'),
-        ('paginaOpts', 'en vivo: rejilla de AJUSTES (8 tarjetas)'),
+        ('paginaOpts', 'en vivo: rejilla de AJUSTES (7 tarjetas, kofi fuera)'),
         ('promptSalida', 'en vivo: prompt caramelo de salida'),
         ('bolalocaActiva', 'en vivo (r160): BOLA LOCA se activa'),
         ('bloquea', 'en vivo (r160): regla solo-1 bloquea'),

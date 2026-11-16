@@ -6973,4 +6973,4 @@ Stage Summary:
 
 **Versionado:** bump 3.6.168-SDK6 · FASE 173 «GARANTIA DE RED» (4 sellos + hub, golden **61e60b6f**, 12.253.200 B byte-exacto) · gen_release_v36168 (notas FASE 173, veto v36167) · 4 ZIPs (COMPLETO 186.787.460 · ligera 58.578.314 · CLOUDFLARE 186.772.057 · SOLO 6.221) · VERSION.txt dentro del ZIP lleva FASE 173.
 
-**Verificación:** deploy_pages --push + --release y prod_smoke_r77 en producción — va tras el commit.
+**Verificación:** **EN PRODUCCIÓN 2026-11-16 ~16:45 UTC — prod_smoke_r77 30/0**: el game.html SERVIDO lleva 3.6.168-SDK6 + las 4 capas de la GARANTÍA DE RED (salida del túnel, túnel adaptativo, snap adaptativo, qos/net_qos/qosTexto) + las agujas r76/r75 íntegras; sw.js servido sella v3.6.168; PAGES-VERSION.txt fuente_commit=932b579; y EN VIVO: qos() EXCELENTE con ping 24/jit 8, túnel 30→60 con 2 ventanas sanas, vuelta a 30 con jitter 40 ms y salida del túnel a 60 Hz — todo verificado EN PRODUCCIÓN · deploy_pages --push (pages 167909b67 · 476 ficheros · smoke local 33 peticiones 0 fallos) + --release (tag v3.6.168-SDK6 con los 4 ZIPs).

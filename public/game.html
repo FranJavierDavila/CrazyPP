@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.166-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.167-SDK6</span>
     </div>
   </main>
 
@@ -3577,7 +3577,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.166-SDK6';
+  const VERSION = '3.6.167-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -3726,17 +3726,19 @@ const __PP_TELE = (() => {
       // ronda 10: récord de la sesión (no solo las últimas 12 muestras)
       if (st.fpsLo === null || red < st.fpsLo) st.fpsLo = red;
       if (st.fpsHi === null || red > st.fpsHi) st.fpsHi = red;
-      // r46 · GOBERNADOR DE PARTIDA ONLINE: dos ventanas de 5 s bajo 58 fps
-      // congelan la telemetría; dos ventanas en 60+ la descongelan. La
-      // experiencia de juego manda — la telemetría es la primera en pagar.
+      // r46 · GOBERNADOR DE PARTIDA ONLINE: dos ventanas de 5 s por debajo
+      // del piso congelan la telemetría; dos ventanas recuperadas la
+      // descongelan. La experiencia de juego manda — la telemetría es la
+      // primera en pagar. r76 · el piso es 72: congela bajo 68, descongela
+      // en 70+ (antes 58/60 para el suelo de 60).
       if (st.partida) {
-        if (red < 58) {
+        if (red < 68) {
           st.bajas++;
           if (st.bajas >= 2 && !st.hold) {
             st.hold = true; st.congelada++;
             try { console.info('[TELE] gobernador: telemetría congelada (fps ' + red + ' en partida en red)'); } catch { /* */ }
           }
-        } else if (red >= 60) {
+        } else if (red >= 70) {
           st.bajas = 0;
           if (st.hold) {
             st.hold = false;
@@ -3771,7 +3773,22 @@ const __PP_TELE = (() => {
       if (on) {
         var tvr = Date.now();
         st.vrPingT = window.setInterval(function () {
-          ev('vr_ping', { dur: Math.round((Date.now() - tvr) / 1000), fps: fpsAvg() });
+          // r76 · CADENCIA ASEGURADA: el ping lleva el ESTADO DEL
+          // GOBERNADOR — tasa objetivo y real del visor, perfil y
+          // escalones — para ver en el panel si el casco RINDE a 72/90
+          // y si una partida en red degrada la imagen.
+          var perf = null;
+          try {
+            var pf = (typeof window !== 'undefined' && window.__PP_PERF) || null;
+            if (pf && typeof pf.status === 'function') {
+              var s2 = pf.status();
+              perf = { tgt: s2.rate, srate: s2.sessionRate, tier: s2.tier,
+                       sc: s2.scale, fv: s2.fovea, onl: st.partida ? 1 : 0 };
+            }
+          } catch (ePP) { perf = null; }
+          var d2 = { dur: Math.round((Date.now() - tvr) / 1000), fps: fpsAvg() };
+          if (perf) d2.perf = perf;
+          ev('vr_ping', d2);
         }, 300000);
       }
     } catch (e) { /* entornos sin timers */ }
@@ -38393,6 +38410,9 @@ const PASO_TUNE = { uiMax: 1 / 30, fisMax: 1 / 12 };
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy
  *  lentas y la experiencia es muy mala… un autocalibrador que asegure al
  *  menos 60 FPS seguros en cualquier dispositivo».
+ *  r76 · FASE 172 · CADENCIA ASEGURADA: la barra sube a ≥72 (lo mínimo
+ *  recomendado para las gafas) — piso PERF_PISO, orden de regalo imagen
+ *  antes que tasa y ping de telemetría con el estado del gobernador.
  *
  *  Tres palancas, de más a menos agresiva:
  *    · fixedFoveation      — VIVO (se aplica al vuelo, three la clava en
@@ -38429,6 +38449,16 @@ const PERF_TIERS = {
   quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 },
   gen: { label: 'VR', scale: 1.20, fovea: 0.55, rate: 72 },
 };
+/* =====================================================================
+ *  r76 · FASE 172 · CADENCIA ASEGURADA — el dueño fija la barra: «al
+ *  menos 72 FPS, lo mínimo recomendado para las gafas». El PISO de la
+ *  casa sube de 60 a 72 Hz: la degradación primero regala IMAGEN (fovea
+ *  → escala) y el 90 → 72 (más presupuesto de GPU por frame SIN bajar
+ *  del piso). El 60 queda SOLO como emergencia honesta cuando incluso
+ *  al mínimo de imagen la media no llega a 60. La sonda pasa con 68 de
+ *  media y peor segundo ≥55 (72 sostenidos con margen).
+ *  ===================================================================== */
+const PERF_PISO = 72;
 class PerfManager {
   constructor(game) {
     this.g = game;
@@ -38478,7 +38508,9 @@ class PerfManager {
     if (d && d.tier === this.tier && typeof d.scale === 'number') {
       this.scale = d.scale;
       this.fovea = typeof d.fovea === 'number' ? d.fovea : PERF_TIERS[this.tier].fovea;
-      this.rate = typeof d.rate === 'number' ? d.rate : PERF_TIERS[this.tier].rate;
+      // r76 · perfil guardado bajo el piso 72 → se recupera al piso (la
+      // barra del dueño manda; el gobernador regala imagen, no tasa)
+      this.rate = Math.max(PERF_PISO, typeof d.rate === 'number' ? d.rate : PERF_TIERS[this.tier].rate);
       this.auto = d.auto !== false;
       this.ffr = PERF_FFR_MODOS[d.ffr] != null ? d.ffr : 'def';
       this.lastCal = d.cal || null;
@@ -38577,7 +38609,9 @@ class PerfManager {
   }
   _probeRound(fpsAvg, fpsMin) {
     const p = this.probe;
-    const pasa = fpsAvg >= 63 && fpsMin >= 55;
+    // r76 · barra del dueño: 72 sostenidos — 68 de media con peor segundo
+    // ≥55 es margen honesto sobre el piso 72 (antes: 63/55 para el 60)
+    const pasa = fpsAvg >= 68 && fpsMin >= 55;
     if (pasa) {
       this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: p.round };
       this.save();
@@ -38588,18 +38622,25 @@ class PerfManager {
     // escalón de degradación (de más sutil a más fuerte)
     // r96 · el techo del FFR (tope del dueño o 0,65 honesto) manda aquí:
     // nunca más anillos de compresión en plena vista.
+    // r76 · el piso 72 respeta el orden: imagen primero, tasa 60 al final
     if (p.round === 0) this.fovea = Math.min(this.foveaMax(), this.fovea + 0.10);
-    else if (p.round === 1) this.rate = this.rate > 62 ? 60 : this.rate;
+    else if (p.round === 1) {
+      // 90 → 72: más presupuesto de GPU por frame SIN bajar del piso; en
+      // cascos que ya van a 72 regala ESCALA
+      if (this.rate > PERF_PISO + 0.5) this.rate = PERF_PISO;
+      else this.scale = Math.max(0.8, this.scale - 0.15);
+    }
     else {
-      this.scale = Math.max(0.9, this.scale - 0.15);   // próxima sesión
+      this.scale = Math.max(0.8, this.scale - 0.15);   // próxima sesión
       this.fovea = Math.min(this.foveaMax(), this.fovea + 0.05);
     }
     this.applyLive();
     this.save();
     p.round++;
     if (p.round >= 3) {
-      // sin margen ni al mínimo: 60 Hz ESTABLES como suelo digno
-      this.rate = Math.min(this.rate, 60);
+      // r76 · sin margen ni al mínimo de imagen: 72 Hz como suelo digno;
+      // 60 SOLO si la media ni siquiera llega a 60 (emergencia honesta)
+      this.rate = fpsAvg >= 60 ? Math.min(this.rate, PERF_PISO) : 60;
       this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: 3 };
       this.applyLive();
       this.save();
@@ -38646,9 +38687,15 @@ class PerfManager {
       const avg = this._hist.reduce((s, h) => s + h.avg, 0) / this._hist.length;
       const min = Math.min(...this._hist.map((h) => h.min));
       const rally = this.g.rules && this.g.rules.state === 'rally';
-      const bajando = avg < 56 || (avg < 60 && min < 48);
+      // r76 · PISO 72: a 90 que no se sostiene → 72 (más margen por frame,
+      // el piso intacto); en el piso → regala IMAGEN; la tasa 60 SOLO como
+      // emergencia honesta (lo decide _stepDown con la imagen al mínimo)
+      const bajandoTasa = this.rate > PERF_PISO + 0.5 && avg < this.rate * 0.87;
+      const bajandoImg = this.rate <= PERF_PISO + 0.5 &&
+        (avg < PERF_PISO * 0.92 || (avg < PERF_PISO - 4 && min < PERF_PISO * 0.7));
+      const bajando = bajandoTasa || bajandoImg;
       if (bajando && this._coolDown <= 0) {
-        if (!rally || avg < 50) this._stepDown();
+        if (!rally || avg < 50) this._stepDown(bajandoTasa);
       }
       const sobra = avg > Math.min(this.rate, 90) * 0.93 && min > this.rate * 0.8;
       this._upStreak = sobra ? this._upStreak + 1 : 0;
@@ -38656,14 +38703,23 @@ class PerfManager {
     }
   }
 
-  /** bajo un escalón: fovea → tasa → escala (próxima sesión) */
-  _stepDown() {
+  /** bajo un escalón — r76 · el piso 72 manda: tasa 90→72 primero, luego
+   *  fovea, luego escala (tope 0,8) y SOLO con la imagen al mínimo la
+   *  emergencia 60 */
+  _stepDown(bajaTasa) {
     // r96 · techo del FFR también en el gobernador continuo
-    if (this.fovea < this.foveaMax() - 0.005) this.fovea = Math.min(this.foveaMax(), this.fovea + 0.08);
-    else if (this.rate > 62) this.rate = 60;
-    else {
-      this.scale = Math.max(0.9, this.scale - 0.10);   // ya para la próxima
-      this.fovea = this.foveaMax();
+    if (bajaTasa && this.rate > PERF_PISO + 0.5) {
+      this.rate = PERF_PISO;
+    } else if (this.fovea < this.foveaMax() - 0.005) {
+      this.fovea = Math.min(this.foveaMax(), this.fovea + 0.08);
+    } else if (this.scale > 0.805) {
+      this.scale = Math.max(0.8, this.scale - 0.10);   // ya para la próxima
+    } else if (this.rate > PERF_PISO + 0.5) {
+      this.rate = PERF_PISO;         // entró con 90 y la imagen ya al mínimo
+    } else if (this.rate > 62) {
+      this.rate = 60;                // EMERGENCIA honesta (imagen al mínimo)
+    } else {
+      this.scale = Math.max(0.75, this.scale - 0.05);  // colchón final
     }
     this._coolDown = 15; this._upStreak = 0;
     this.applyLive(); this.save();

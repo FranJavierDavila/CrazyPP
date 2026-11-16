@@ -1,10 +1,10 @@
 {
-  "version": "3.6.166-SDK6",
-  "fase": 171,
-  "faseNombre": "LA RED EN SERIO",
+  "version": "3.6.167-SDK6",
+  "fase": 172,
+  "faseNombre": "CADENCIA ASEGURADA",
   "sdk": "1.6.0",
   "fecha": "2026-11-16",
-  "hub": "v36166-sdk6",
+  "hub": "v36167-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r70",
-  "tamano": 12244118,
-  "golden": "6929c4902eca0ca154a3d70a2ae239bce888af8c59ee5932363962446f897603"
+  "tamano": 12247534,
+  "golden": "c3def1e5c3c3adf5ec0e43135d567ec9768cfdfa6f07231dc582c2bd2d36cfe3"
 }

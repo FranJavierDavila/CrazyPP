@@ -19225,6 +19225,9 @@ const PASO_TUNE = { uiMax: 1 / 30, fisMax: 1 / 12 };
  *  casco). Informe del dueño: «para unas Oculus 2 las partidas van muy
  *  lentas y la experiencia es muy mala… un autocalibrador que asegure al
  *  menos 60 FPS seguros en cualquier dispositivo».
+ *  r76 · FASE 172 · CADENCIA ASEGURADA: la barra sube a ≥72 (lo mínimo
+ *  recomendado para las gafas) — piso PERF_PISO, orden de regalo imagen
+ *  antes que tasa y ping de telemetría con el estado del gobernador.
  *
  *  Tres palancas, de más a menos agresiva:
  *    · fixedFoveation      — VIVO (se aplica al vuelo, three la clava en
@@ -19261,6 +19264,16 @@ const PERF_TIERS = {
   quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 },
   gen: { label: 'VR', scale: 1.20, fovea: 0.55, rate: 72 },
 };
+/* =====================================================================
+ *  r76 · FASE 172 · CADENCIA ASEGURADA — el dueño fija la barra: «al
+ *  menos 72 FPS, lo mínimo recomendado para las gafas». El PISO de la
+ *  casa sube de 60 a 72 Hz: la degradación primero regala IMAGEN (fovea
+ *  → escala) y el 90 → 72 (más presupuesto de GPU por frame SIN bajar
+ *  del piso). El 60 queda SOLO como emergencia honesta cuando incluso
+ *  al mínimo de imagen la media no llega a 60. La sonda pasa con 68 de
+ *  media y peor segundo ≥55 (72 sostenidos con margen).
+ *  ===================================================================== */
+const PERF_PISO = 72;
 class PerfManager {
   constructor(game) {
     this.g = game;
@@ -19310,7 +19323,9 @@ class PerfManager {
     if (d && d.tier === this.tier && typeof d.scale === 'number') {
       this.scale = d.scale;
       this.fovea = typeof d.fovea === 'number' ? d.fovea : PERF_TIERS[this.tier].fovea;
-      this.rate = typeof d.rate === 'number' ? d.rate : PERF_TIERS[this.tier].rate;
+      // r76 · perfil guardado bajo el piso 72 → se recupera al piso (la
+      // barra del dueño manda; el gobernador regala imagen, no tasa)
+      this.rate = Math.max(PERF_PISO, typeof d.rate === 'number' ? d.rate : PERF_TIERS[this.tier].rate);
       this.auto = d.auto !== false;
       this.ffr = PERF_FFR_MODOS[d.ffr] != null ? d.ffr : 'def';
       this.lastCal = d.cal || null;
@@ -19409,7 +19424,9 @@ class PerfManager {
   }
   _probeRound(fpsAvg, fpsMin) {
     const p = this.probe;
-    const pasa = fpsAvg >= 63 && fpsMin >= 55;
+    // r76 · barra del dueño: 72 sostenidos — 68 de media con peor segundo
+    // ≥55 es margen honesto sobre el piso 72 (antes: 63/55 para el 60)
+    const pasa = fpsAvg >= 68 && fpsMin >= 55;
     if (pasa) {
       this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: p.round };
       this.save();
@@ -19420,18 +19437,25 @@ class PerfManager {
     // escalón de degradación (de más sutil a más fuerte)
     // r96 · el techo del FFR (tope del dueño o 0,65 honesto) manda aquí:
     // nunca más anillos de compresión en plena vista.
+    // r76 · el piso 72 respeta el orden: imagen primero, tasa 60 al final
     if (p.round === 0) this.fovea = Math.min(this.foveaMax(), this.fovea + 0.10);
-    else if (p.round === 1) this.rate = this.rate > 62 ? 60 : this.rate;
+    else if (p.round === 1) {
+      // 90 → 72: más presupuesto de GPU por frame SIN bajar del piso; en
+      // cascos que ya van a 72 regala ESCALA
+      if (this.rate > PERF_PISO + 0.5) this.rate = PERF_PISO;
+      else this.scale = Math.max(0.8, this.scale - 0.15);
+    }
     else {
-      this.scale = Math.max(0.9, this.scale - 0.15);   // próxima sesión
+      this.scale = Math.max(0.8, this.scale - 0.15);   // próxima sesión
       this.fovea = Math.min(this.foveaMax(), this.fovea + 0.05);
     }
     this.applyLive();
     this.save();
     p.round++;
     if (p.round >= 3) {
-      // sin margen ni al mínimo: 60 Hz ESTABLES como suelo digno
-      this.rate = Math.min(this.rate, 60);
+      // r76 · sin margen ni al mínimo de imagen: 72 Hz como suelo digno;
+      // 60 SOLO si la media ni siquiera llega a 60 (emergencia honesta)
+      this.rate = fpsAvg >= 60 ? Math.min(this.rate, PERF_PISO) : 60;
       this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: 3 };
       this.applyLive();
       this.save();
@@ -19478,9 +19502,15 @@ class PerfManager {
       const avg = this._hist.reduce((s, h) => s + h.avg, 0) / this._hist.length;
       const min = Math.min(...this._hist.map((h) => h.min));
       const rally = this.g.rules && this.g.rules.state === 'rally';
-      const bajando = avg < 56 || (avg < 60 && min < 48);
+      // r76 · PISO 72: a 90 que no se sostiene → 72 (más margen por frame,
+      // el piso intacto); en el piso → regala IMAGEN; la tasa 60 SOLO como
+      // emergencia honesta (lo decide _stepDown con la imagen al mínimo)
+      const bajandoTasa = this.rate > PERF_PISO + 0.5 && avg < this.rate * 0.87;
+      const bajandoImg = this.rate <= PERF_PISO + 0.5 &&
+        (avg < PERF_PISO * 0.92 || (avg < PERF_PISO - 4 && min < PERF_PISO * 0.7));
+      const bajando = bajandoTasa || bajandoImg;
       if (bajando && this._coolDown <= 0) {
-        if (!rally || avg < 50) this._stepDown();
+        if (!rally || avg < 50) this._stepDown(bajandoTasa);
       }
       const sobra = avg > Math.min(this.rate, 90) * 0.93 && min > this.rate * 0.8;
       this._upStreak = sobra ? this._upStreak + 1 : 0;
@@ -19488,14 +19518,23 @@ class PerfManager {
     }
   }
 
-  /** bajo un escalón: fovea → tasa → escala (próxima sesión) */
-  _stepDown() {
+  /** bajo un escalón — r76 · el piso 72 manda: tasa 90→72 primero, luego
+   *  fovea, luego escala (tope 0,8) y SOLO con la imagen al mínimo la
+   *  emergencia 60 */
+  _stepDown(bajaTasa) {
     // r96 · techo del FFR también en el gobernador continuo
-    if (this.fovea < this.foveaMax() - 0.005) this.fovea = Math.min(this.foveaMax(), this.fovea + 0.08);
-    else if (this.rate > 62) this.rate = 60;
-    else {
-      this.scale = Math.max(0.9, this.scale - 0.10);   // ya para la próxima
-      this.fovea = this.foveaMax();
+    if (bajaTasa && this.rate > PERF_PISO + 0.5) {
+      this.rate = PERF_PISO;
+    } else if (this.fovea < this.foveaMax() - 0.005) {
+      this.fovea = Math.min(this.foveaMax(), this.fovea + 0.08);
+    } else if (this.scale > 0.805) {
+      this.scale = Math.max(0.8, this.scale - 0.10);   // ya para la próxima
+    } else if (this.rate > PERF_PISO + 0.5) {
+      this.rate = PERF_PISO;         // entró con 90 y la imagen ya al mínimo
+    } else if (this.rate > 62) {
+      this.rate = 60;                // EMERGENCIA honesta (imagen al mínimo)
+    } else {
+      this.scale = Math.max(0.75, this.scale - 0.05);  // colchón final
     }
     this._coolDown = 15; this._upStreak = 0;
     this.applyLive(); this.save();

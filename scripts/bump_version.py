@@ -23,13 +23,14 @@ Uso:
   python3 scripts/bump_version.py 3.7.0-P1 --fase 8 --fase-nombre "Roadmap P1" --sdk 1.4.0
 """
 import json
+import os
 import re
 import subprocess
 import sys
 from datetime import date
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project/upload')   # r127: el mount vivo del repo (higiene, como deploy_pages.py)
+RAIZ = Path(os.environ.get('CPP_RAIZ') or '/home/z/my-project/upload')   # r127: el mount vivo del repo (higiene) · r76: CPP_RAIZ para clones limpios
 SRC = RAIZ / 'src' / 'game'
 C00 = SRC / 'core' / 'c00_pre_three.js'
 BODY = SRC / '03_body.html'

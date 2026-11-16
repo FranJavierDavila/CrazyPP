@@ -39,8 +39,7 @@ import sys
 import threading
 import glob
 
-REPO = '/home/z/my-project/upload'   # r126: el mount vivo del repo (el template
-                                     # reciclado dejó su propio .git en la raíz)
+REPO = os.environ.get('CPP_RAIZ') or '/home/z/my-project/upload'   # r126: mount vivo · r76: CPP_RAIZ para clones limpios
 SITE = os.path.join(REPO, 'pages-site')
 OWNER_REPO = 'FranJavierDavila/CrazyPP'
 PAGES_URL = 'https://franjavierdavila.github.io/CrazyPP/'

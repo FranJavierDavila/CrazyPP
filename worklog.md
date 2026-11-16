@@ -6959,4 +6959,4 @@ Stage Summary:
 
 **Versionado:** bump 3.6.167-SDK6 · FASE 172 «CADENCIA ASEGURADA» (c00 + badge 03_body + hub descargas + sw.js CACHE v3.6.167) · gen_release_v36167 (notas FASE 172, veto v36166).
 
-**Verificación:** el deploy de la r76 va tras el commit (deploy_pages --push --backup --release + prod_smoke_r76 contra producción).
+**Verificación:** **EN PRODUCCIÓN 2026-11-16 16:05 UTC — prod_smoke_r76 21/0**: el game.html SERVIDO lleva 3.6.167-SDK6 + PERF_PISO + sonda 68/55 + emergencia honesta + congelado 68 + vr_ping con perf + las agujas r75 íntegras; sw.js servido sella v3.6.167 (purga PWA); PAGES-VERSION.txt fuente_commit=d7516d3; y EN VIVO: __PP_PERF con piso ≥72, 90→72 con el piso intacto, imagen primero, emergencia 60, sonda 69/56 pasa y el perfil guardado a 60 recupera EL PISO 72 en producción (segunda visita pre-sembrada) · deploy_pages --push (pages 91d463b35 · 476 ficheros · smoke local 33 peticiones 0 fallos) + --release (tag v3.6.167-SDK6 con los 4 ZIPs).

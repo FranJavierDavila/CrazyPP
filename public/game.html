@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.167-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.168-SDK6</span>
     </div>
   </main>
 
@@ -859,6 +859,13 @@ const I18N_STRINGS = {
     perf_stepdown: 'Optimizando la imagen para ir fluido',
     msg_perf_auto: 'Autocalibración {v}: la calidad se adapta sola a tu visor',
     msg_perf_recal_next: 'Perfecto: la calibración arrancará al entrar en VR',
+    // r77 · FASE 173 · RED: calidad de servicio en una línea
+    net_red: 'RED {p} ms · {e}',
+    net_q_excelente: 'EXCELENTE',
+    net_q_bien: 'BIEN',
+    net_q_ajustada: 'AJUSTADA',
+    net_q_tun60: 'TÚNEL · 60',
+    net_q_tun30: 'TÚNEL · 30',
     // r83 · AJUSTES › PALA: el ajuste de la pala abandona el PRO TRAINING y
     // gana su propio subapartado con botón bonito, passthrough al instante,
     // ejes X/Y/Z completos y agarres guardados en el dispositivo.
@@ -1964,6 +1971,13 @@ const I18N_STRINGS = {
     perf_stepdown: 'Optimizing visuals to keep it smooth',
     msg_perf_auto: 'Auto calibration {v}: quality adapts to your headset',
     msg_perf_recal_next: 'Great: calibration will start when you enter VR',
+    // r77 · FASE 173 · NET: quality of service in one line
+    net_red: 'NET {p} ms · {e}',
+    net_q_excelente: 'EXCELLENT',
+    net_q_bien: 'GOOD',
+    net_q_ajustada: 'STRAINED',
+    net_q_tun60: 'TUNNEL · 60',
+    net_q_tun30: 'TUNNEL · 30',
     // r83 · AJUSTES › PADDLE: the paddle fitting leaves PRO TRAINING and
     // gets its own subsection with instant passthrough, full X/Y/Z axes and
     // named grips stored on the device.
@@ -3577,7 +3591,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.167-SDK6';
+  const VERSION = '3.6.168-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -15181,6 +15195,9 @@ class NetLink {
     this._gaps = 0; this._recvs = 0;
     this._poseAcc = 0; this._snapAcc = 0;
     this._poseHz = PPNET.VP.POSE_HZ;
+    // r77 · FASE 173 · GARANTÍA DE RED: salud del túnel (ventanas de 2 s
+    // para subir 30→60 Hz) y latido de QoS (net_qos cada 60 s en partida)
+    this._tunT = 0; this._tunSalud = 0; this._qosAcc = 0;
     // r43 · BÚFER DE TX REUTILIZADO: antes cada paquete (60 pose + ~20 snap
     // por segundo) nacía en un `new ArrayBuffer(1200)` y viajaba con un
     // `buf.slice()` — ~160 allocations + copias por segundo ALIMENTANDO AL
@@ -15612,6 +15629,40 @@ class NetLink {
       this._enterTunnel();
     }
     if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
+    // r77 · FASE 173 · SALIDA DEL TÚNEL: el ICE directo (hoy CON EL TURN de
+    // Cloudflare el handshake puede tardar >11 s — hotspot, NAT simétrica)
+    // puede abrir DESPUÉS de que el túnel tomó el mando. Si AMBOS canales
+    // propios abren, el túnel se retira SOLO: pose a 60 Hz y el watchdog
+    // de ICE vuelve a armar (el túnel ya no lo tapa).
+    if (this._tunnel && this._fastOpen && this._relOpen) {
+      this._exitTunnel('directo');
+    }
+    // r77 · FASE 173 · TÚNEL ADAPTATIVO: el túnel SCTP ENTRA a 30 Hz
+    // (seguro contra head-of-line), pero el relevo de Cloudflare es un
+    // enlace SANO cuando el ICE directo no abre. Salud = DOS ventanas de
+    // 2 s con muestra suficiente, pérdida < 4 % y jitter < 18 ms → el
+    // túnel sube a 60 Hz; si se aprieta, vuelve a 30 en el momento. La
+    // pose es reemplazable (contrapresión r75): el cambio de cadencia no
+    // toca la FSM ni la fiabilidad de los eventos.
+    this._tunT -= dt;
+    if (this._tunnel && this._tunT <= 0) {
+      this._tunT = 2;
+      const lw = this._lossWin();
+      const sano = lw.n >= 30 && lw.g / Math.max(1, lw.g + lw.n) < 0.04 &&
+        (!this._clock || this._clock.jitter < 18);
+      this._tunSalud = sano ? this._tunSalud + 1 : 0;
+      const quiero = this._tunSalud >= 2 ? PPNET.VP.POSE_HZ : PPNET.VP.POSE_HZ_LOW;
+      if (this._poseHz !== quiero) {
+        this._poseHz = quiero;
+        this._teleQos(quiero === PPNET.VP.POSE_HZ ? 'tun_sube' : 'tun_baja');
+      }
+    }
+    // r77 · FASE 173 · QOS CON DATOS: la garantía del dueño se DEMUESTRA
+    // con números: un net_qos cada 60 s de enlace (ping, jitter, pérdida,
+    // cadencia, camino) deja la calidad de CADA duelo en el panel de
+    // telemetría — y qosTexto() la enseña en AJUSTES al momento.
+    this._qosAcc += dt;
+    if (this._qosAcc >= 60) { this._qosAcc = 0; this._teleQos('latido'); }
     const now = performance.now();
     this._clock.apply(now, this.game?.rules?.state === 'rally');
     // r37 (v3.6.133) · watchdog de ICE: sin paquetes fast 5 s → REINICIO
@@ -15667,10 +15718,14 @@ class NetLink {
     const g = this.game;
     const hasPose = !!(g && g.camera && g.grips);
     let evs = null;
-    // BALL_SNAP a 20 Hz mientras la bola vuela en MI lado (spec §5)
+    // BALL_SNAP mientras la bola vuela en MI lado (spec §5) — r77 · la
+    // cadencia del SNAP SIGUE a la pose: 20 Hz con enlace apretado, 30 Hz
+    // cuando el enlace va sano (túnel a 60 o directo sin degradar) — la
+    // bola que ve el RIVAL fluye con el mismo ritmo que el enlace aguanta.
+    const snapHz = this._poseHz >= PPNET.VP.POSE_HZ ? 30 : PPNET.VP.SNAP_HZ;
     if (this._ball.mine && (this._ball.state === 'own' || this._ball.state === 'auth')) {
       this._snapAcc += dt;
-      if (this._snapAcc >= 1 / PPNET.VP.SNAP_HZ) {
+      if (this._snapAcc >= 1 / snapHz) {
         this._snapAcc = 0;
         evs = evs || [];
         evs.push({
@@ -15780,8 +15835,66 @@ class NetLink {
     // r75 · v3.6.166 · el túnel es SCTP FIABLE+ORDENADO por internet: a
     // 60 Hz cada pérdida cuesta un parón de TODA la cola (head-of-line) —
     // 30 Hz honestos desde el origen + contrapresión (ver _sendFast).
+    // r77 · FASE 173 · ya NO es para siempre: _tunSalud vigila el enlace
+    // y sube a 60 Hz cuando aguanta; y si el ICE directo abre después,
+    // _exitTunnel retira el túnel y devuelve el mando al camino rápido.
     this._poseHz = PPNET.VP.POSE_HZ_LOW;
+    this._tunT = 0; this._tunSalud = 0;
     this._v2ChannelsUp();
+  }
+
+  /** r77 · FASE 173 · retira el túnel: el ICE directo abrió DESPUÉS (con
+   *  el TURN de Cloudflare el handshake lento ya tiene final feliz) — la
+   *  pose vuelve a 60 Hz por el camino rápido y el watchdog de ICE vuelve
+   *  a armar (el gate `!this._tunnel` deja de taparlo). Deja huella QoS. */
+  _exitTunnel(why) {
+    if (!this._tunnel) return;
+    this._tunnel = false;
+    this._poseHz = PPNET.VP.POSE_HZ;
+    this._tunT = 0; this._tunSalud = 0;
+    try { this.game?.onNetStatus?.(); } catch { /* */ }
+    this._teleQos('exit_tun_' + (why || 'ok'));
+  }
+
+  /** r77 · FASE 173 · CALIDAD DE SERVICIO legible: la garantía del dueño
+   *  hecha números — camino, ping, jitter, pérdida de la ventana y
+   *  cadencia de pose actual. Todo de las señales que YA medía el enlace
+   *  (reloj compartido r79 + ventana de pérdida r36). */
+  qos() {
+    if (this.v2 !== 'ok') {
+      return { e: 'off', ping: 0, jit: 0, per: 0, hz: 0, tun: this._tunnel ? 1 : 0 };
+    }
+    const rs = this._clock ? this._clock.rttStats() : { med: 0 };
+    const lw = this._lossWin();
+    const per = Math.round((1 - lw.n / Math.max(1, lw.g + lw.n)) * 100);
+    const jit = Math.round(this._clock?.jitter || 0);
+    const ping = Math.round(rs.med || 0);
+    const directo = !this._tunnel;
+    let e;
+    if (directo) e = this._degraded ? 'ajustada'
+      : (ping > 0 && ping < 60 && jit < 15 && per < 2 ? 'excelente' : 'bien');
+    else e = this._poseHz >= PPNET.VP.POSE_HZ ? 'tun60' : 'tun30';
+    return { e, ping, jit, per, hz: this._poseHz, tun: this._tunnel ? 1 : 0 };
+  }
+
+  /** r77 · una línea para el subtítulo de AJUSTES › RENDIMIENTO:
+   *  «RED 24 ms · EXCELENTE» — i18n con las claves net_* de c00. */
+  qosTexto() {
+    try {
+      const q = this.qos();
+      if (q.e === 'off') return '';
+      const est = T('net_q_' + q.e);
+      return T('net_red', { p: q.ping, e: est });
+    } catch { return ''; }
+  }
+
+  /** r77 · huella de QoS en telemetría (jamás rompe la red — patrón r82) */
+  _teleQos(ev) {
+    try {
+      if (window.__PP_TELE && window.__PP_TELE.ev && this.v2 === 'ok') {
+        window.__PP_TELE.ev('net_qos', Object.assign({ ev: ev || 'q' }, this.qos()));
+      }
+    } catch { /* telemetría jamás rompe la red */ }
   }
 
   /** muestreo de pose: cabeza (cámara XR) + manos (grips), en marco NET */
@@ -24083,9 +24196,12 @@ class PingPongGame {
     const subPerfil = T('opts_name', { v: _pn || T('no_name') })
       + ' · ' + T('btn_tele', { v: yn(__PP_TELE.on) });
     // r81 · RENDIMIENTO: casco detectado + FPS en vivo de un vistazo
+    // r77 · FASE 173 · + RED en vivo cuando hay enlace (qosTexto de c09)
     const pf = this.perf ? this.perf.status() : null;
     const subRendi = pf
-      ? pf.tierLabel + ' · ' + T('perf_fps_short', { v: pf.fps })
+      ? pf.tierLabel + ' · ' + T('perf_fps_short', { v: pf.fps }) +
+        (this.net && this.net.online && typeof this.net.qosTexto === 'function'
+          ? ' · ' + (this.net.qosTexto() || '') : '')
       : '';
 
     // r68 · FASE 162 · la rejilla de AJUSTES es DATO (CONFIG_SECCIONES.

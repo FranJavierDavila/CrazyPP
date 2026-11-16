@@ -4878,9 +4878,12 @@ export class PingPongGame {
     const subPerfil = T('opts_name', { v: _pn || T('no_name') })
       + ' · ' + T('btn_tele', { v: yn(__PP_TELE.on) });
     // r81 · RENDIMIENTO: casco detectado + FPS en vivo de un vistazo
+    // r77 · FASE 173 · + RED en vivo cuando hay enlace (qosTexto de c09)
     const pf = this.perf ? this.perf.status() : null;
     const subRendi = pf
-      ? pf.tierLabel + ' · ' + T('perf_fps_short', { v: pf.fps })
+      ? pf.tierLabel + ' · ' + T('perf_fps_short', { v: pf.fps }) +
+        (this.net && this.net.online && typeof this.net.qosTexto === 'function'
+          ? ' · ' + (this.net.qosTexto() || '') : '')
       : '';
 
     // r68 · FASE 162 · la rejilla de AJUSTES es DATO (CONFIG_SECCIONES.

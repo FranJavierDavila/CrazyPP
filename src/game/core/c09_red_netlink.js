@@ -958,6 +958,9 @@ export class NetLink {
     this._gaps = 0; this._recvs = 0;
     this._poseAcc = 0; this._snapAcc = 0;
     this._poseHz = PPNET.VP.POSE_HZ;
+    // r77 · FASE 173 · GARANTÍA DE RED: salud del túnel (ventanas de 2 s
+    // para subir 30→60 Hz) y latido de QoS (net_qos cada 60 s en partida)
+    this._tunT = 0; this._tunSalud = 0; this._qosAcc = 0;
     // r43 · BÚFER DE TX REUTILIZADO: antes cada paquete (60 pose + ~20 snap
     // por segundo) nacía en un `new ArrayBuffer(1200)` y viajaba con un
     // `buf.slice()` — ~160 allocations + copias por segundo ALIMENTANDO AL
@@ -1389,6 +1392,40 @@ export class NetLink {
       this._enterTunnel();
     }
     if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
+    // r77 · FASE 173 · SALIDA DEL TÚNEL: el ICE directo (hoy CON EL TURN de
+    // Cloudflare el handshake puede tardar >11 s — hotspot, NAT simétrica)
+    // puede abrir DESPUÉS de que el túnel tomó el mando. Si AMBOS canales
+    // propios abren, el túnel se retira SOLO: pose a 60 Hz y el watchdog
+    // de ICE vuelve a armar (el túnel ya no lo tapa).
+    if (this._tunnel && this._fastOpen && this._relOpen) {
+      this._exitTunnel('directo');
+    }
+    // r77 · FASE 173 · TÚNEL ADAPTATIVO: el túnel SCTP ENTRA a 30 Hz
+    // (seguro contra head-of-line), pero el relevo de Cloudflare es un
+    // enlace SANO cuando el ICE directo no abre. Salud = DOS ventanas de
+    // 2 s con muestra suficiente, pérdida < 4 % y jitter < 18 ms → el
+    // túnel sube a 60 Hz; si se aprieta, vuelve a 30 en el momento. La
+    // pose es reemplazable (contrapresión r75): el cambio de cadencia no
+    // toca la FSM ni la fiabilidad de los eventos.
+    this._tunT -= dt;
+    if (this._tunnel && this._tunT <= 0) {
+      this._tunT = 2;
+      const lw = this._lossWin();
+      const sano = lw.n >= 30 && lw.g / Math.max(1, lw.g + lw.n) < 0.04 &&
+        (!this._clock || this._clock.jitter < 18);
+      this._tunSalud = sano ? this._tunSalud + 1 : 0;
+      const quiero = this._tunSalud >= 2 ? PPNET.VP.POSE_HZ : PPNET.VP.POSE_HZ_LOW;
+      if (this._poseHz !== quiero) {
+        this._poseHz = quiero;
+        this._teleQos(quiero === PPNET.VP.POSE_HZ ? 'tun_sube' : 'tun_baja');
+      }
+    }
+    // r77 · FASE 173 · QOS CON DATOS: la garantía del dueño se DEMUESTRA
+    // con números: un net_qos cada 60 s de enlace (ping, jitter, pérdida,
+    // cadencia, camino) deja la calidad de CADA duelo en el panel de
+    // telemetría — y qosTexto() la enseña en AJUSTES al momento.
+    this._qosAcc += dt;
+    if (this._qosAcc >= 60) { this._qosAcc = 0; this._teleQos('latido'); }
     const now = performance.now();
     this._clock.apply(now, this.game?.rules?.state === 'rally');
     // r37 (v3.6.133) · watchdog de ICE: sin paquetes fast 5 s → REINICIO
@@ -1444,10 +1481,14 @@ export class NetLink {
     const g = this.game;
     const hasPose = !!(g && g.camera && g.grips);
     let evs = null;
-    // BALL_SNAP a 20 Hz mientras la bola vuela en MI lado (spec §5)
+    // BALL_SNAP mientras la bola vuela en MI lado (spec §5) — r77 · la
+    // cadencia del SNAP SIGUE a la pose: 20 Hz con enlace apretado, 30 Hz
+    // cuando el enlace va sano (túnel a 60 o directo sin degradar) — la
+    // bola que ve el RIVAL fluye con el mismo ritmo que el enlace aguanta.
+    const snapHz = this._poseHz >= PPNET.VP.POSE_HZ ? 30 : PPNET.VP.SNAP_HZ;
     if (this._ball.mine && (this._ball.state === 'own' || this._ball.state === 'auth')) {
       this._snapAcc += dt;
-      if (this._snapAcc >= 1 / PPNET.VP.SNAP_HZ) {
+      if (this._snapAcc >= 1 / snapHz) {
         this._snapAcc = 0;
         evs = evs || [];
         evs.push({
@@ -1557,8 +1598,66 @@ export class NetLink {
     // r75 · v3.6.166 · el túnel es SCTP FIABLE+ORDENADO por internet: a
     // 60 Hz cada pérdida cuesta un parón de TODA la cola (head-of-line) —
     // 30 Hz honestos desde el origen + contrapresión (ver _sendFast).
+    // r77 · FASE 173 · ya NO es para siempre: _tunSalud vigila el enlace
+    // y sube a 60 Hz cuando aguanta; y si el ICE directo abre después,
+    // _exitTunnel retira el túnel y devuelve el mando al camino rápido.
     this._poseHz = PPNET.VP.POSE_HZ_LOW;
+    this._tunT = 0; this._tunSalud = 0;
     this._v2ChannelsUp();
+  }
+
+  /** r77 · FASE 173 · retira el túnel: el ICE directo abrió DESPUÉS (con
+   *  el TURN de Cloudflare el handshake lento ya tiene final feliz) — la
+   *  pose vuelve a 60 Hz por el camino rápido y el watchdog de ICE vuelve
+   *  a armar (el gate `!this._tunnel` deja de taparlo). Deja huella QoS. */
+  _exitTunnel(why) {
+    if (!this._tunnel) return;
+    this._tunnel = false;
+    this._poseHz = PPNET.VP.POSE_HZ;
+    this._tunT = 0; this._tunSalud = 0;
+    try { this.game?.onNetStatus?.(); } catch { /* */ }
+    this._teleQos('exit_tun_' + (why || 'ok'));
+  }
+
+  /** r77 · FASE 173 · CALIDAD DE SERVICIO legible: la garantía del dueño
+   *  hecha números — camino, ping, jitter, pérdida de la ventana y
+   *  cadencia de pose actual. Todo de las señales que YA medía el enlace
+   *  (reloj compartido r79 + ventana de pérdida r36). */
+  qos() {
+    if (this.v2 !== 'ok') {
+      return { e: 'off', ping: 0, jit: 0, per: 0, hz: 0, tun: this._tunnel ? 1 : 0 };
+    }
+    const rs = this._clock ? this._clock.rttStats() : { med: 0 };
+    const lw = this._lossWin();
+    const per = Math.round((1 - lw.n / Math.max(1, lw.g + lw.n)) * 100);
+    const jit = Math.round(this._clock?.jitter || 0);
+    const ping = Math.round(rs.med || 0);
+    const directo = !this._tunnel;
+    let e;
+    if (directo) e = this._degraded ? 'ajustada'
+      : (ping > 0 && ping < 60 && jit < 15 && per < 2 ? 'excelente' : 'bien');
+    else e = this._poseHz >= PPNET.VP.POSE_HZ ? 'tun60' : 'tun30';
+    return { e, ping, jit, per, hz: this._poseHz, tun: this._tunnel ? 1 : 0 };
+  }
+
+  /** r77 · una línea para el subtítulo de AJUSTES › RENDIMIENTO:
+   *  «RED 24 ms · EXCELENTE» — i18n con las claves net_* de c00. */
+  qosTexto() {
+    try {
+      const q = this.qos();
+      if (q.e === 'off') return '';
+      const est = T('net_q_' + q.e);
+      return T('net_red', { p: q.ping, e: est });
+    } catch { return ''; }
+  }
+
+  /** r77 · huella de QoS en telemetría (jamás rompe la red — patrón r82) */
+  _teleQos(ev) {
+    try {
+      if (window.__PP_TELE && window.__PP_TELE.ev && this.v2 === 'ok') {
+        window.__PP_TELE.ev('net_qos', Object.assign({ ev: ev || 'q' }, this.qos()));
+      }
+    } catch { /* telemetría jamás rompe la red */ }
   }
 
   /** muestreo de pose: cabeza (cámara XR) + manos (grips), en marco NET */

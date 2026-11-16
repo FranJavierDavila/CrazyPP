@@ -124,11 +124,11 @@ const P = PPNET;
   const o = { hp: [0, 0, 0], hq: [0, 0, 0, 1], lp: [0, 0, 0], lq: [0, 0, 0, 1], rp: [0, 0, 0], rq: [0, 0, 0, 1], fl: 0 };
   const r1 = jb.sample(1180, o);
   chk(r1 === 0 && Math.abs(o.hp[2] - (-0.813)) < 0.02, `jitter: interpolación exacta (hp.z ${o.hp[2].toFixed(4)})`);
-  const r2 = jb.sample(1180 + 700, o);            // más allá de 100 ms del final
-  chk(r2 === 2, 'jitter: más de 100 ms sin datos → CONGELA (código 2)');
+  const r2 = jb.sample(1180 + 700, o);            // más allá de 160 ms del final (EXTRAP_MAX r75)
+  chk(r2 === 2, 'jitter: más de 160 ms sin datos → CONGELA (código 2)');
   chk(jb.starves > 0, 'jitter: el vaciado queda registrado para telemetría');
-  const r3 = jb.sample(1627 + 80, o);             // último 1627 · 80 ms ≤ 100
-  chk(r3 === 1, `jitter: extrapolación ≤100 ms con velocidad (código ${r3}, hp.z ${o.hp[2].toFixed(3)})`);
+  const r3 = jb.sample(1627 + 90, o);             // r75: retraso 81,7 ms (3×jitter) → 1717-81,7 = 1635,3 > último 1627 · 90 ms ≤ EXTRAP_MAX 160
+  chk(r3 === 1, `jitter: extrapolación ≤160 ms con velocidad (código ${r3}, hp.z ${o.hp[2].toFixed(3)})`);
   chk(jb.autoDelay(60, 0) === undefined || true, 'jitter: autoDelay calc');
   jb.autoDelay(60, 0);
   chk(jb.delayMs === P.VP.INTERP_MIN, `jitter: delay adaptativo al mínimo con red perfecta (${P.VP.INTERP_MIN} ms)`);

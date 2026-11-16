@@ -43,8 +43,15 @@ export const PPNET = (() => {
     SNAP_HZ: 20,          // BALL_SNAP mientras la bola vuela en mi lado
 
     INTERP_MIN: 40,       // retraso de reproducción del avatar (ms)
-    INTERP_MAX: 120,
-    EXTRAP_MAX: 0.100,    // extrapolación máxima del avatar (s)
+    // r75 · v3.6.166 · 120→220: en Wi-Fi real de casco (ahorro de energía,
+    // dos cascos en la misma red, bandas mezcladas) el jitter EMA supera de
+    // sobra 30-40 ms y el tope 120 VACIABA el buffer (starves → freeze →
+    // salto al llegar la ráfaga) — el «a saltos y trompicones» del informe
+    // del dueño con Quest 3 + Quest 2. El retraso del avatar es PURAMENTE
+    // visual (principio 3 de la spec: lo visual del rival nunca afecta a la
+    // jugabilidad): mejor 200 ms de respiro que un salto seco.
+    INTERP_MAX: 220,
+    EXTRAP_MAX: 0.160,    // extrapolación máxima del avatar (s) (r75: 100→160)
 
     FF_K: 0.6,            // avance de la bola al nacer (× tiempo en tránsito)
     FF_MAX: 0.120,        // avance máximo (s)
@@ -494,10 +501,14 @@ export const PPNET = (() => {
       return true;
     }
     clear() { this.s.length = 0; this._frozen = false; }
-    /** retraso adaptativo: clamp(2·intervalo + 2·jitter, 40, 120) ms */
+    /** retraso adaptativo: clamp(2·intervalo + 3·jitter, 40, 220) ms
+     *  r75 · 2→3×jitter: el 2× cubría la MEDIA del jitter, no su PICO — con
+     *  Wi-Fi de casco real la media engaña (ráfagas de ahorro de energía:
+     *  llegadas juntas + huecos) y el buffer se vaciaba entre ráfaga y
+     *  ráfaga. El 3× reserva para el pico; el tope INTERP_MAX 220 manda. */
     autoDelay(poseHz, jitterMs) {
       const iv = 1000 / Math.max(1, poseHz);
-      this.delayMs = clamp(2 * iv + 2 * jitterMs, VP.INTERP_MIN, VP.INTERP_MAX);
+      this.delayMs = clamp(2 * iv + 3 * jitterMs, VP.INTERP_MIN, VP.INTERP_MAX);
     }
     /** muestreo en tNowHost - delayMs; out = {hp,hq,lp,lq,rp,rq,fl}
      *  devuelve 0 OK · 1 extrapolada · 2 congelada · -1 vacío */

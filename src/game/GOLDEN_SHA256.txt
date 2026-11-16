@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.165-SDK6, fase 170 · HALLS, CANDADOS, MULTIJUGADOR EN ZONAS Y LA ALERTA DE DUELO; sello actualizado
-# por bump_version.py desde 3.6.164-SDK6)
-177ef401ebf457f1b55e1e60e3f3456d0b3d849e40b4bbb21c5abc118bf5024e
+# SHA256 del game.html que produjo esta división (3.6.166-SDK6, fase 171 · LA RED EN SERIO; sello actualizado
+# por bump_version.py desde 3.6.165-SDK6)
+6929c4902eca0ca154a3d70a2ae239bce888af8c59ee5932363962446f897603

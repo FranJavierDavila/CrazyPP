@@ -1412,7 +1412,25 @@ export class PingPongGame {
     this._netStart = { startAt: m.startAt, fs: m.fs };
     this._netTossLive = false;
     this._netTossAt = 0;   // r43: sello temporal del toss (caducidad 2,5 s)
+    // r75 · v3.6.166 · SELLO DE ARRANQUE: un solo mstart vale — el 'r'
+    // (revancha del rival) que llegue dentro de la ventana se ignora
+    // (guarda en c09) y el anfitrión empuja SU estado como autoridad.
+    this.net._mstartAt = performance.now();
     this.net.setServeHeld(this.rules.server === 'player');
+    // r75 · v3.6.166 · EL SAQUE DE LA SEGUNDA PARTIDA SE SELA: informe del
+    // dueño (Quest 3 + Quest 2, misma WiFi) — «yo tenía que sacar y la bola
+    // la tenía el rival». Cualquier resto del partido anterior (CLAIM
+    // perdido, mend sin aplicar, resync viejo en vuelo) dejaba al invitado
+    // con OTRA idea del sacador. 700 ms tras abrir la cuenta atrás, el
+    // anfitrión empuja su estado autoridad (_sendResync): marcador, sacador,
+    // gameOpener, rallySeq y — al llevar st='serve' — setHeld del sacador
+    // en el invitado. Auto-curación al inicio de CADA partida online.
+    if (this.net.role === 'host' && this.net.v2 === 'ok') {
+      clearTimeout(this._netResyncT);
+      this._netResyncT = setTimeout(() => {
+        try { if (this.net && this.net.online) this.net._sendResync(); } catch { /* */ }
+      }, 700);
+    }
     // r81 · bola HELD del rival OCULTA también en el arranque (el intent
     // 'serve' la esconde en cada punto, pero el MATCH_START llegaba antes:
     // el invitado veía una bola congelada flotando hasta el primer punto)

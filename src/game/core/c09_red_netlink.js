@@ -602,7 +602,18 @@ export class NetLink {
       return;
     }
     if (d.k === 'r') {    // el invitado pide revancha
-      if (this.role === 'host') this.game.startOnlineMatch();
+      // r75 · v3.6.166 · GUARDA ANTI DOBLE ARRANQUE (el saque fantasma de
+      // la segunda partida): la revancha de AMBOS pulsada casi a la vez
+      // dispara DOS mstart con startAt distintos (el propio del anfitrión
+      // y el del 'r' que llega ~RTT después) — dos resetMatch encadenados
+      // y el saque/bola desacollados («yo tenía que sacar y la bola la
+      // tenía el rival»). Una sola partida nueva por ventana: si hay un
+      // mstart en los últimos 8 s o el partido está vivo (serve/rally),
+      // el pedido que llega tarde se IGNORA — el mstart en vuelo manda.
+      const st = this.game && this.game.rules ? this.game.rules.state : '';
+      const enMarcha = st === 'rally' || st === 'serve';
+      const recien = performance.now() - (this._mstartAt || 0) < 8000;
+      if (this.role === 'host' && !recien && !enMarcha) this.game.startOnlineMatch();
       return;
     }
     if (d.k === 'm') {
@@ -1460,6 +1471,19 @@ export class NetLink {
       if (this._pend.length) this._flushEvents(now);
       return;
     }
+    // r75 · v3.6.166 · CONTRAPRESIÓN — la otra mitad del «a saltos y
+    // trompicones»: el DataChannel (y el túnel SCTP FIABLE+ORDENADO por el
+    // relevo de PeerJS) ENCOLA cuando la red no da abasto; una cola
+    // creciente son segundos de retraso y el buffer del receptor salta al
+    // llegar la ráfaga (head-of-line blocking en el túnel: un paquete
+    // perdido congela TODOS los que vienen detrás). La pose es REEMPLAZABLE
+    // (la nueva corrige la vieja — spec §5): si el canal arrastra cola,
+    // este tick de pose NO se envía; los eventos SÍ (viajan en el paquete
+    // o en su _flushEvents — son la parte irremplazable).
+    const dc = this._tunnel ? (this.conn && this.conn.dataChannel) : this._fast;
+    const bp = dc && dc.bufferedAmount ? dc.bufferedAmount : 0;
+    if (bp > 131072) return;                        // ahogado: ni eventos (van al próximo tick)
+    if (bp > 32768 && !this._pend.length) return;   // pose nueva descarta la vieja
     this._poseAcc = 0;
     const pose = hasPose ? this._samplePose(g) : null;
     // reenvío de eventos no confirmados (spec §5: hasta ack, máx 8/paquete)
@@ -1530,6 +1554,10 @@ export class NetLink {
     if (this._tunnel || this.v2 !== 'pending') return;
     this._tunnel = true;
     this._stats.turn = true;   // reutiliza la marca «camino no directo»
+    // r75 · v3.6.166 · el túnel es SCTP FIABLE+ORDENADO por internet: a
+    // 60 Hz cada pérdida cuesta un parón de TODA la cola (head-of-line) —
+    // 30 Hz honestos desde el origen + contrapresión (ver _sendFast).
+    this._poseHz = PPNET.VP.POSE_HZ_LOW;
     this._v2ChannelsUp();
   }
 
@@ -1756,12 +1784,20 @@ export class NetLink {
     const lw = this._lossWin();
     this._recvs = lw.n;
     const loss = lw.g / Math.max(1, lw.g + lw.n);
-    if (loss > PPNET.VP.LOSS_LOW) {
+    // r75 · v3.6.166 · degradación también por JITTER: el Wi-Fi del casco
+    // (ahorro de energía, dos cascos en la misma red) junta paquetes SIN
+    // «perderlos» — llegadas en ráfaga con huecos — y a 60 Hz el resultado
+    // es exactamente el «va a saltos» del informe: la cola entra en ráfaga,
+    // el buffer escupe y se vacía. Bajar a 30 Hz en jitter EMA > 28 ms
+    // (recuperar con < 18 ms) reparte las ráfagas.
+    const jitterAlto = this._clock && this._clock.jitter > 28;
+    if (loss > PPNET.VP.LOSS_LOW || jitterAlto) {
       this._lossLowT += 1;
       if (this._lossLowT > 90 && !this._degraded) { this._degraded = true; this._poseHz = PPNET.VP.POSE_HZ_LOW; }
     } else {
       this._lossLowT = Math.max(0, this._lossLowT - 2);
-      if (this._degraded && loss < 0.04) { this._degraded = false; this._poseHz = PPNET.VP.POSE_HZ; }
+      const jitterOk = !this._clock || this._clock.jitter < 18;
+      if (this._degraded && loss < 0.04 && jitterOk) { this._degraded = false; this._poseHz = PPNET.VP.POSE_HZ; }
     }
   }
 

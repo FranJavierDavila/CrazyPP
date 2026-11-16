@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.165-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.166-SDK6</span>
     </div>
   </main>
 
@@ -3577,7 +3577,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.165-SDK6';
+  const VERSION = '3.6.166-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -14808,7 +14808,18 @@ class NetLink {
       return;
     }
     if (d.k === 'r') {    // el invitado pide revancha
-      if (this.role === 'host') this.game.startOnlineMatch();
+      // r75 · v3.6.166 · GUARDA ANTI DOBLE ARRANQUE (el saque fantasma de
+      // la segunda partida): la revancha de AMBOS pulsada casi a la vez
+      // dispara DOS mstart con startAt distintos (el propio del anfitrión
+      // y el del 'r' que llega ~RTT después) — dos resetMatch encadenados
+      // y el saque/bola desacollados («yo tenía que sacar y la bola la
+      // tenía el rival»). Una sola partida nueva por ventana: si hay un
+      // mstart en los últimos 8 s o el partido está vivo (serve/rally),
+      // el pedido que llega tarde se IGNORA — el mstart en vuelo manda.
+      const st = this.game && this.game.rules ? this.game.rules.state : '';
+      const enMarcha = st === 'rally' || st === 'serve';
+      const recien = performance.now() - (this._mstartAt || 0) < 8000;
+      if (this.role === 'host' && !recien && !enMarcha) this.game.startOnlineMatch();
       return;
     }
     if (d.k === 'm') {
@@ -15666,6 +15677,19 @@ class NetLink {
       if (this._pend.length) this._flushEvents(now);
       return;
     }
+    // r75 · v3.6.166 · CONTRAPRESIÓN — la otra mitad del «a saltos y
+    // trompicones»: el DataChannel (y el túnel SCTP FIABLE+ORDENADO por el
+    // relevo de PeerJS) ENCOLA cuando la red no da abasto; una cola
+    // creciente son segundos de retraso y el buffer del receptor salta al
+    // llegar la ráfaga (head-of-line blocking en el túnel: un paquete
+    // perdido congela TODOS los que vienen detrás). La pose es REEMPLAZABLE
+    // (la nueva corrige la vieja — spec §5): si el canal arrastra cola,
+    // este tick de pose NO se envía; los eventos SÍ (viajan en el paquete
+    // o en su _flushEvents — son la parte irremplazable).
+    const dc = this._tunnel ? (this.conn && this.conn.dataChannel) : this._fast;
+    const bp = dc && dc.bufferedAmount ? dc.bufferedAmount : 0;
+    if (bp > 131072) return;                        // ahogado: ni eventos (van al próximo tick)
+    if (bp > 32768 && !this._pend.length) return;   // pose nueva descarta la vieja
     this._poseAcc = 0;
     const pose = hasPose ? this._samplePose(g) : null;
     // reenvío de eventos no confirmados (spec §5: hasta ack, máx 8/paquete)
@@ -15736,6 +15760,10 @@ class NetLink {
     if (this._tunnel || this.v2 !== 'pending') return;
     this._tunnel = true;
     this._stats.turn = true;   // reutiliza la marca «camino no directo»
+    // r75 · v3.6.166 · el túnel es SCTP FIABLE+ORDENADO por internet: a
+    // 60 Hz cada pérdida cuesta un parón de TODA la cola (head-of-line) —
+    // 30 Hz honestos desde el origen + contrapresión (ver _sendFast).
+    this._poseHz = PPNET.VP.POSE_HZ_LOW;
     this._v2ChannelsUp();
   }
 
@@ -15962,12 +15990,20 @@ class NetLink {
     const lw = this._lossWin();
     this._recvs = lw.n;
     const loss = lw.g / Math.max(1, lw.g + lw.n);
-    if (loss > PPNET.VP.LOSS_LOW) {
+    // r75 · v3.6.166 · degradación también por JITTER: el Wi-Fi del casco
+    // (ahorro de energía, dos cascos en la misma red) junta paquetes SIN
+    // «perderlos» — llegadas en ráfaga con huecos — y a 60 Hz el resultado
+    // es exactamente el «va a saltos» del informe: la cola entra en ráfaga,
+    // el buffer escupe y se vacía. Bajar a 30 Hz en jitter EMA > 28 ms
+    // (recuperar con < 18 ms) reparte las ráfagas.
+    const jitterAlto = this._clock && this._clock.jitter > 28;
+    if (loss > PPNET.VP.LOSS_LOW || jitterAlto) {
       this._lossLowT += 1;
       if (this._lossLowT > 90 && !this._degraded) { this._degraded = true; this._poseHz = PPNET.VP.POSE_HZ_LOW; }
     } else {
       this._lossLowT = Math.max(0, this._lossLowT - 2);
-      if (this._degraded && loss < 0.04) { this._degraded = false; this._poseHz = PPNET.VP.POSE_HZ; }
+      const jitterOk = !this._clock || this._clock.jitter < 18;
+      if (this._degraded && loss < 0.04 && jitterOk) { this._degraded = false; this._poseHz = PPNET.VP.POSE_HZ; }
     }
   }
 
@@ -16677,8 +16713,15 @@ const PPNET = (() => {
     SNAP_HZ: 20,          // BALL_SNAP mientras la bola vuela en mi lado
 
     INTERP_MIN: 40,       // retraso de reproducción del avatar (ms)
-    INTERP_MAX: 120,
-    EXTRAP_MAX: 0.100,    // extrapolación máxima del avatar (s)
+    // r75 · v3.6.166 · 120→220: en Wi-Fi real de casco (ahorro de energía,
+    // dos cascos en la misma red, bandas mezcladas) el jitter EMA supera de
+    // sobra 30-40 ms y el tope 120 VACIABA el buffer (starves → freeze →
+    // salto al llegar la ráfaga) — el «a saltos y trompicones» del informe
+    // del dueño con Quest 3 + Quest 2. El retraso del avatar es PURAMENTE
+    // visual (principio 3 de la spec: lo visual del rival nunca afecta a la
+    // jugabilidad): mejor 200 ms de respiro que un salto seco.
+    INTERP_MAX: 220,
+    EXTRAP_MAX: 0.160,    // extrapolación máxima del avatar (s) (r75: 100→160)
 
     FF_K: 0.6,            // avance de la bola al nacer (× tiempo en tránsito)
     FF_MAX: 0.120,        // avance máximo (s)
@@ -17128,10 +17171,14 @@ const PPNET = (() => {
       return true;
     }
     clear() { this.s.length = 0; this._frozen = false; }
-    /** retraso adaptativo: clamp(2·intervalo + 2·jitter, 40, 120) ms */
+    /** retraso adaptativo: clamp(2·intervalo + 3·jitter, 40, 220) ms
+     *  r75 · 2→3×jitter: el 2× cubría la MEDIA del jitter, no su PICO — con
+     *  Wi-Fi de casco real la media engaña (ráfagas de ahorro de energía:
+     *  llegadas juntas + huecos) y el buffer se vaciaba entre ráfaga y
+     *  ráfaga. El 3× reserva para el pico; el tope INTERP_MAX 220 manda. */
     autoDelay(poseHz, jitterMs) {
       const iv = 1000 / Math.max(1, poseHz);
-      this.delayMs = clamp(2 * iv + 2 * jitterMs, VP.INTERP_MIN, VP.INTERP_MAX);
+      this.delayMs = clamp(2 * iv + 3 * jitterMs, VP.INTERP_MIN, VP.INTERP_MAX);
     }
     /** muestreo en tNowHost - delayMs; out = {hp,hq,lp,lq,rp,rq,fl}
      *  devuelve 0 OK · 1 extrapolada · 2 congelada · -1 vacío */
@@ -20553,7 +20600,25 @@ class PingPongGame {
     this._netStart = { startAt: m.startAt, fs: m.fs };
     this._netTossLive = false;
     this._netTossAt = 0;   // r43: sello temporal del toss (caducidad 2,5 s)
+    // r75 · v3.6.166 · SELLO DE ARRANQUE: un solo mstart vale — el 'r'
+    // (revancha del rival) que llegue dentro de la ventana se ignora
+    // (guarda en c09) y el anfitrión empuja SU estado como autoridad.
+    this.net._mstartAt = performance.now();
     this.net.setServeHeld(this.rules.server === 'player');
+    // r75 · v3.6.166 · EL SAQUE DE LA SEGUNDA PARTIDA SE SELA: informe del
+    // dueño (Quest 3 + Quest 2, misma WiFi) — «yo tenía que sacar y la bola
+    // la tenía el rival». Cualquier resto del partido anterior (CLAIM
+    // perdido, mend sin aplicar, resync viejo en vuelo) dejaba al invitado
+    // con OTRA idea del sacador. 700 ms tras abrir la cuenta atrás, el
+    // anfitrión empuja su estado autoridad (_sendResync): marcador, sacador,
+    // gameOpener, rallySeq y — al llevar st='serve' — setHeld del sacador
+    // en el invitado. Auto-curación al inicio de CADA partida online.
+    if (this.net.role === 'host' && this.net.v2 === 'ok') {
+      clearTimeout(this._netResyncT);
+      this._netResyncT = setTimeout(() => {
+        try { if (this.net && this.net.online) this.net._sendResync(); } catch { /* */ }
+      }, 700);
+    }
     // r81 · bola HELD del rival OCULTA también en el arranque (el intent
     // 'serve' la esconde en cada punto, pero el MATCH_START llegaba antes:
     // el invitado veía una bola congelada flotando hasta el primer punto)

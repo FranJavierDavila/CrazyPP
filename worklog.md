@@ -6913,3 +6913,22 @@ Stage Summary:
 - CRON 533069 (requisitos r73) sigue armado pero ya es innecesario: su guarda anti-duplicado verifica producción ≥ v3.6.164 y se autoelimina en el próximo disparo (15:00 Madrid del 16 nov). RECORDATORIO al dueño: ROTAR el PAT tras este deploy.
 
 **Verificación:** curl a producción (PAGES-VERSION 3.6.165) + prod_smoke_r74 87/0 en vivo.
+
+## Task ID: 138 (ronda 75) — V3.6.166-SDK6 · FASE 171 «LA RED EN SERIO» — el informe del dueño manda
+
+**Fecha:** 2026-11-16 · **Informe:** dos cascos (Quest 3 + Quest 2) en la MISMA WiFi: «la partida va a saltos y trompicones y no es jugable» y «al iniciar una segunda partida yo tenía que sacar y la bola la tenía el rival». Palabra del dueño: «mientras la experiencia de red no sea 100 % satisfactoria todo lo demás pasa a segundo plano». Todo lo demás (worker r169, nuevos encargos) ESPERA.
+
+**Diagnóstico (código real, no conjeturas):**
+- TIRONES · causa 1 — JITTER BUFFER SIN RESPIRO: el tope adaptativo INTERP_MAX 120 ms era más pequeño que el jitter EMA real del Wi-Fi de casco (ráfagas de ahorro de energía: llegadas juntas + huecos, pérdida 0 %) → el buffer se VACIABA entre ráfaga y ráfaga (starves → congelar → SALTO al llegar la siguiente) — el «trompicon» exacto.
+- TIRONES · causa 2 — COLA SIN CONTRAPRESIÓN: el DataChannel (y sobre todo el TÚNEL de emergencia r82: SCTP FIABLE+ORDENADO encapsulado por el relevo de PeerJS, que entra a los 11 s si el ICE directo no abre — camino probable entre dos cascos con candidatos mDNS no resolubles) ENCOLA la pose a 60 Hz sin mirar bufferedAmount: cada pérdida en fiable+ordenado para TODA la cola (head-of-line) → segundos de retraso acumulándose → ráfaga → salto. La pose es reemplazable y se enviaba como si no.
+- TIRONES · causa 3 — DEGRADACIÓN CIEGA AL JITTER: sólo la pérdida >10 % bajaba la pose a 30 Hz; el Wi-Fi que junta paquetes SIN perderlos jamás la activaba.
+- SAQUE FANTASMA · causa — DOBLE ARRANQUE DE REVANCHA: el 'r' (revancha del invitado) re-disparaba startOnlineMatch SIN guarda; con la revancha de AMBOS pulsada casi a la vez, DOS mstart con startAt distintos + cualquier resto del partido 1 (CLAIM/mend/resync en vuelo) dejaba al invitado con OTRA idea del sacador — bola en manos del rival mientras el anfitrión oía «te toca sacar».
+- No es causa de los tirones: el worker de presencia (solo latidos/listado; la partida viaja P2P WebRTC). El TURN de producción sigue apagado (turn:false — sin TURN_API_TOKEN); con el ICE directo fallido el juego caía al túnel → relevo por internet → saltos asegurados. Redesplegar el worker con TURN sigue PENDIENTE del dueño (CF_API_TOKEN + TURN_API_TOKEN) y es LA pieza que dará camino sano cuando el LAN directo no abra.
+
+**Fixes (FASE 171, 7):** (1) INTERP_MAX 120→220 + EXTRAP_MAX 100→160 ms; (2) autoDelay 3×jitter (el pico, no la media); (3) contrapresión en _sendFast: pose NO se envía con bufferedAmount > 32 KB (reemplazable) y nada a > 128 KB (ahogado); (4) _enterTunnel baja la pose a 30 Hz de origen; (5) degradación también por jitter (EMA > 28 ms → 30 Hz; < 18 ms recupera); (6) GUARDA anti doble-arranque en el 'r' (mstart en los últimos 8 s o partido vivo → ignorar); (7) el anfitrión SELA cada partida: _mstartAt + RESYNC autoridad 700 ms tras el MATCH_START (marcador, sacador, gameOpener, rallySeq y setHeld del invitado — auto-curación).
+
+**QA:** test_red_nucleo 60/0 (agujas r75: tope 220 ms, extrap 160 ms, 3×jitter — la aguja del contratto viejo 100 ms actualizada) · qa_vestibulo_r75 35/0 (regresión r74 ÍNTEGRA: hallpick, candado 6/6, zonas, pública/privada, GATE+alerta+ask, 28 páginas en lados/bounds, 0 pageerrors + 7 agujas de red) · arnes_r75 6/0 (30 páginas · rankini 1 GET · 0 errores) · gen_release_v36166 (notas FASE 171, veto v36165, kit auxiliar al kit) · 4 ZIPs (COMPLETO 186.780.278 · ligera 58.571.132 · CLOUDFLARE 186.764.874 · SOLO 6.221).
+
+**Versionado:** bump 3.6.166-SDK6 · FASE 171 «LA RED EN SERIO» (golden 6929c490, game.html 12.244.118 B) · c00 + badge + hub descargas + sw.js CACHE.
+
+**Verificación:** producción 3.6.165 (r74) sigue servida; el deploy de la r75 va tras el commit.

@@ -154,9 +154,12 @@ function claveOk(url, request, env) {
  *
  * Variables del worker (por dashboard, LEEME-P4-PRIMERA-PARTIDA.md):
  *   TURN_API_TOKEN  secret · API token del dueño con permiso
- *                   Realtime TURN → Edit. Si falta: STUN y turn:false.
+ *                   Realtime (Calls) → Edit. Si falta: STUN y turn:false.
  *   TURN_KEY_ID     opcional · si falta, el worker SE AUTO-PROVISIONA
- *                   la TURN key (POST /accounts/{id}/calls/turn_keys)
+ *                   la TURN key (POST /accounts/{id}/calls/turn_keys →
+ *                   result {uid, secret}; también acepta key_id antiguo)
+ *   TURN_KEY_SECRET opcional · secreto de la key para ACUÑAR; si falta,
+ *                   se guarda al crear la key (cfg «turn_key_secret»):
  *                   y la recuerda en la tabla `cfg` de D1.
  *   CF_ACCOUNT_ID   opcional · si falta, se deriva del token (GET /accounts).
  *   ICE_TTL_MS      opcional · caché por isolate (QA; defecto 4 min).
@@ -264,7 +267,12 @@ async function iceRespuesta(env, fetchImpl) {
         const fila = await env.DB.prepare("SELECT v FROM cfg WHERE k = 'turn_key_id'").first();
         keyId = fila && fila.v;
       }
-      if (!keyId) {
+      let keySec = env.TURN_KEY_SECRET;
+      if (!keySec) {
+        const filaS = await env.DB.prepare("SELECT v FROM cfg WHERE k = 'turn_key_secret'").first();
+        keySec = filaS && filaS.v;
+      }
+      if (!keyId || !keySec) {
         const acc = await cuentaId(env, token, fetchImpl);
         const r = await fetchImpl(
           `https://api.cloudflare.com/client/v4/accounts/${acc}/calls/turn_keys`,
@@ -275,19 +283,27 @@ async function iceRespuesta(env, fetchImpl) {
           }
         );
         const j = await r.json();
-        if (j && j.success && j.result && j.result.key_id) {
-          keyId = j.result.key_id;
+        // API Realtime actual (2026): result {uid, secret} — antiguos {key_id}
+        const nuevoId = j && j.success && j.result && (j.result.key_id || j.result.uid);
+        const nuevoSec = j && j.result && j.result.secret;
+        if (nuevoId && nuevoSec) {
+          keyId = nuevoId;
+          keySec = nuevoSec;
           await env.DB.prepare(
             "INSERT INTO cfg (k, v) VALUES ('turn_key_id', ?) ON CONFLICT(k) DO UPDATE SET v=excluded.v"
           ).bind(keyId).run();
+          await env.DB.prepare(
+            "INSERT INTO cfg (k, v) VALUES ('turn_key_secret', ?) ON CONFLICT(k) DO UPDATE SET v=excluded.v"
+          ).bind(keySec).run();
         }
       }
-      if (keyId) {
+      if (keyId && keySec) {
         const r = await fetchImpl(
           `https://rtc.live.cloudflare.com/v1/turn/keys/${keyId}/credentials/generate-ice-servers`,
           {
+            // la acuñación pide el SECRETO de la TURN key, no el token de cuenta
             method: "POST",
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            headers: { Authorization: `Bearer ${keySec}`, "Content-Type": "application/json" },
             body: JSON.stringify({ ttl: ICE_TTL_DEFECTO }),
           }
         );

@@ -253,6 +253,10 @@ def main():
             if not nombre or nombre in nombres_conocidos:
                 continue
             if b.get("type") == "secret_text":
+                if os.environ.get(nombre, "").strip():
+                    # el entorno aporta valor fresco con «text»; la API ya no
+                    # acepta secret_text sin text (error 10021)
+                    continue
                 # sin "text" → Cloudflare conserva el valor que ya había
                 extras.append({"type": "secret_text", "name": nombre})
                 nombres_conocidos.add(nombre)

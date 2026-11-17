@@ -1066,6 +1066,16 @@ export const CONFIG_SECCIONES = {
     optsPerfil: { tituloKey: 'cat_perfil', icono: 'usuario', volver: 'page:opts' },
     optsRendi: { tituloKey: 'cat_rendi', icono: 'gauge', volver: 'page:opts' },
     optsPala: { tituloKey: 'cat_pala', icono: 'partido', volver: 'page:opts' },
+    // r80 · NIVEL 3: VOLVER al menú ANTERIOR (antes caían al principal por
+    // el fallback page:main) + TÍTULO propio (la concha salía sin título)
+    optsSalaRoom: { tituloKey: 'cat_salaroom', icono: 'sala',
+      volver: 'page:optsSala' },
+    optsSalaMesa: { tituloKey: 'cat_salamesa', icono: 'mesa',
+      volver: 'page:optsSala' },
+    optsSalaBola: { tituloKey: 'cat_salabola', icono: 'mesa',
+      volver: 'page:optsSala' },
+    optsSalaHall: { tituloKey: 'cat_salahall', icono: 'sala',
+      volver: 'page:optsSala' },
     salirask: { tituloKey: 'salirask_title', icono: 'salir', volver: 'page:main' },
     // r74 · FASE 170 · la confirmación del DUELO PENDIENTE
     dueloask: { tituloKey: 'dueloask_t', icono: 'multijugador',

@@ -7039,4 +7039,4 @@ Stage Summary:
 
 **Versionado:** bump_version.py 3.6.172→3.6.173-SDK6 · FASE 178 (c00 + verBadge + hub 6× + sw.js CACHE · golden nuevo 994b4d07… · byte-exacto OK · nota=r82) · kit release-v36173 (mk_kit_v36173.py: tokens + veto v36172 en la cadena + nota FASE 178) · 4 ZIPs v36173 en download/ y public/descargas/.
 
-**Despliegue:** deploy_pages --push (PAT del dueño) → Pages sirviendo 3.6.173 · release v3.6.173-SDK6 · backups main/proyecto.
+**Despliegue:** deploy_pages --push (PAT del dueño): ensamblado 506 ficheros · 202,9 MB, smoke verde (33 peticiones, 0 fallos, 0 pageerrors), refs/heads/pages → e378d6dc8 · **EN PRODUCCIÓN verificado en vivo: PAGES-VERSION.txt = 3.6.173-SDK6 · const VERSION = '3.6.173-SDK6' y el parche (generateMipmaps=true · LinearMipmapLinearFilter · anisotropy=4) presente en los bytes servidos** · Release v3.6.173-SDK6 con los 4 ZIPs (COMPLETO 193.758.172 · ligera 58.815.294 · CLOUDFLARE 193.742.769 · SOLO 6.221) · backups main/proyecto.

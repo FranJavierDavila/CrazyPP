@@ -363,7 +363,7 @@ ficheros = {
     '    espera, sistema de alertas, garantía de red, Hall, ELO, taller UGC,\n'
     '    PWA).\n'
     '  · sellada a\n'
-    '  3.6.172\n'
+    '  3.6.173\n'
 
 
 
@@ -480,11 +480,11 @@ out = run(f'unzip -t "{zip_sr}" | tail -1')
 print(f'  {zip_sr.name}: {out.strip()}')
 
 # ── 6. Verificación de extras del paquete COMPLETO ───────────────
-out = run(f'unzip -p "{zip_c}" extras-nextjs/descargas/page.tsx | grep -c "3.6.172" || true')
+out = run(f'unzip -p "{zip_c}" extras-nextjs/descargas/page.tsx | grep -c "3.6.173" || true')
 n3688 = int(out.strip() or '0')
-print(f'  page.tsx dentro del COMPLETO: {n3688} menciones 3.6.172')
+print(f'  page.tsx dentro del COMPLETO: {n3688} menciones 3.6.173')
 if n3688 < 4:
-    sys.exit('FALLO: el hub empaquetado no es el v36172 (¿se editó después de construir?)')
+    sys.exit('FALLO: el hub empaquetado no es el v36173 (¿se editó después de construir?)')
 out2 = run(f'unzip -l "{zip_c}" | grep -c reactor_impulso || true')
 if int(out2.strip() or '0') < 9:
     sys.exit('FALLO: las 9 imágenes del REACTOR DE IMPULSO no van dentro del COMPLETO')

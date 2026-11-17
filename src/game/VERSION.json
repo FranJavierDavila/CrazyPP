@@ -1,10 +1,10 @@
 {
-  "version": "3.6.173-SDK6",
-  "fase": 178,
-  "faseNombre": "MENUS SIN ALIASING",
+  "version": "3.6.174-SDK6",
+  "fase": 179,
+  "faseNombre": "MENUS NITIDOS",
   "sdk": "1.6.0",
   "fecha": "2026-11-17",
-  "hub": "v36173-sdk6",
+  "hub": "v36174-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r82",
-  "tamano": 12284220,
-  "golden": "994b4d07f1e7d2702edc389f374cf7111cb70096181cfeb2b1a7f5ec38d22813"
+  "nota": "r83",
+  "tamano": 12290636,
+  "golden": "22ae238a9a1b295064c8d3ed34d7878ed7b8ee1abcb33968920d22eb8f0b187e"
 }

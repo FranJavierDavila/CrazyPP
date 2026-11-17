@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_vestibulo_r81.py — QA de la FASE 177 «MENÚS EN ESCENA» · r81 · V3.6.172-SDK6 — ampliado r82 (FASE 178 «MENUS SIN ALIASING» · V3.6.173-SDK6: mipmaps+aniso en las texturas del arco, el aliasing que reportó el dueño).
+"""qa_vestibulo_r81.py — QA de la FASE 177 «MENÚS EN ESCENA» · r81 · V3.6.172-SDK6 — ampliado r82 (FASE 178 · V3.6.173) y r83 (FASE 179 «MENÚS NÍTIDOS» · V3.6.174-SDK6: FX sin escala — posición+opacidad+brillo por color, barrido de luz, arrastre chmus arreglado y barras maquetadas, informe del dueño).
 
 FASE 177 (el dueño: «el menú al pulsar B, fijo y sin seguimiento de la vista, con
 las animaciones y efectos de la competencia»): el arco ENTRA EN ESCENA con
@@ -427,7 +427,8 @@ JS = """async () => {
   })();
 
 
-  // — F177 · MENUS EN ESCENA: cascada, pulso, flash y salida (r81) —
+  // — F179 · MENÚS NÍTIDOS: cascada POR POSICIÓN, pulso POR BRILLO,
+  //   barrido de luz, flash y salida (r83; el FX ya no escala nada) —
   //   En el casco el bucle corre a 72-90 fps; en este sim el rAF va a
   //   golpes, así que el FX se CONDUCE A MANO con un reloj sintético
   //   (paso = avanzar el reloj + un tick del FX). Duraciones y recetas
@@ -438,32 +439,51 @@ JS = """async () => {
     performance.now = () => fxT;
     const pasoFx = (ms) => { fxT += ms; G.menuFxTick(); };
     try {
-      // 1 · ENTRADA: C nace 0.82 y rebota; L/R 70 ms detrás; ancla intacta
+      // 1 · ENTRADA: C CAE desde +0,09 m y rebota; L/R 70 ms detrás; ancla intacta
       G.menuPage = 'main'; G.menuOpen = true;
       const posFx0 = JSON.stringify(G.menuGroup.position.toArray());
+      const yBaseC = G._menuPanelaDe.C.position.y;
+      const yBaseL = G._menuPanelaDe.L.position.y;
       G.menuFxInicia('in');
-      const sC0 = G._menuPanelaDe.C.scale.x;
-      const sL0 = G._menuPanelaDe.L.scale.x;
+      const yC0 = G._menuPanelaDe.C.position.y - yBaseC;
+      const yL0 = G._menuPanelaDe.L.position.y - yBaseL;
+      const escSinFX = Math.abs(G._menuPanelaDe.C.scale.x - 1) < 1e-6;
       pasoFx(140);
-      const sC140 = G._menuPanelaDe.C.scale.x;
-      const sL140 = G._menuPanelaDe.L.scale.x;
+      const yC140 = G._menuPanelaDe.C.position.y - yBaseC;
+      const yL140 = G._menuPanelaDe.L.position.y - yBaseL;
       const op140 = G._menuPanelaDe.C.material.opacity;
       pasoFx(280);   // 140+280=420 ms ≥ 70+320: TODAS las panelas asientan
-      out.fxInNace = sC0 < 0.95 && sL0 < 0.95 && G.menuGroup.visible;
-      out.fxInCascada = sC140 > sL140 + 0.02 && op140 < 1;
-      out.fxInAsienta = Math.abs(G._menuPanelaDe.C.scale.x - 1) < 0.001 &&
+      out.fxInNace = yC0 > 0.05 && yL0 > 0.05 && G.menuGroup.visible &&
+        escSinFX && Math.abs(G._menuPanelaDe.C.material.color.r - 1) < 1e-6;
+      out.fxInCascada = yC140 < yL140 - 0.02 && op140 < 1;
+      out.fxInAsienta = Math.abs(G._menuPanelaDe.C.position.y - yBaseC) < 1e-6 &&
+        Math.abs(G._menuPanelaDe.L.position.y - yBaseL) < 1e-6 &&
         G._menuPanelaDe.C.material.opacity === 1 &&
         G._menuFxCascada === null;
       out.fxInAnclaIntacta = JSON.stringify(
         G.menuGroup.position.toArray()) === posFx0;
-      // 2 · PULSO de pulsación: 1→1.03→1 exacto
+      // 2 · PULSO de pulsación: BRILLO por color (1+k→1), SIN escala
       G.menuFxInicia('pulse');
       pasoFx(65);
-      const sPulso = G.menuGroup.scale.x;
+      const brilloPulso = G._menuPanelaDe.C.material.color.r;
+      const escPulso = G._menuPanelaDe.C.scale.x;
       pasoFx(100);
-      out.fxPulso = sPulso > 1.02 &&
-        Math.abs(G.menuGroup.scale.x - 1) < 0.0001;
-      // 3 · FLASH: menuClick lo deja puesto (reloj real) y decae solo
+      out.fxPulso = brilloPulso > 1.05 && Math.abs(escPulso - 1) < 1e-6 &&
+        Math.abs(G._menuPanelaDe.C.material.color.r - 1) < 1e-6;
+      // 3 · BARRIDO DE LUZ: banda cruzando C (a +300 ms), L 120 ms detrás,
+      //     moviéndose y apagada al acabar (+1000 ms)
+      G._menuSweep.t0 = fxT; G._menuSweep.last = fxT;
+      G.menuFxSweep(fxT + 300);
+      const swOpC = G._menuSweep.meshes.C.material.opacity;
+      const swOpL = G._menuSweep.meshes.L.material.opacity;
+      const swXC = G._menuSweep.meshes.C.position.x;
+      G.menuFxSweep(fxT + 320);
+      const swMovio = Math.abs(
+        G._menuSweep.meshes.C.position.x - swXC) > 0.001;
+      G.menuFxSweep(fxT + 1000);
+      out.fxSweep = swOpC > 0.05 && swOpC < 0.4 && swOpL > 0.02 &&
+        swMovio && G._menuSweep.meshes.C.material.opacity === 0;
+      // 4 · FLASH: menuClick lo deja puesto (reloj real) y decae solo
       performance.now = realNow;
       G.drawMenu(); await dorme(20);
       const idsF177 = (G.menuRects || []).map((r) => String(r.id));
@@ -479,17 +499,17 @@ JS = """async () => {
       performance.now = () => fxT;
       if (G._menuFlash) { pasoFx(60); pasoFx(60); pasoFx(60); pasoFx(40); }
       out.fxFlashDecae = !G._menuFlash;
-      // 4 · SALIDA: encoge + funde (150 ms), esconde y RESTAURA (ancla igual)
+      // 5 · SALIDA: sube + funde (150 ms), esconde y RESTAURA (ancla igual)
       const posFx1 = JSON.stringify(G.menuGroup.position.toArray());
       G.menuFxInicia('out');
       const visFx0 = G.menuGroup.visible;
       pasoFx(80);
-      const sOut80 = G._menuPanelaDe.C.scale.x;
+      const yOut80 = G._menuPanelaDe.C.position.y - yBaseC;
       const opOut80 = G._menuPanelaDe.C.material.opacity;
       pasoFx(100);
       out.fxOut = visFx0 && G.menuGroup.visible === false &&
-        sOut80 < 0.995 && opOut80 < 1 &&
-        Math.abs(G._menuPanelaDe.C.scale.x - 1) < 0.0001 &&
+        yOut80 > 0.001 && opOut80 < 1 &&
+        Math.abs(G._menuPanelaDe.C.position.y - yBaseC) < 1e-6 &&
         G._menuPanelaDe.C.material.opacity === 1 &&
         JSON.stringify(G.menuGroup.position.toArray()) === posFx1;
       // estado limpio para el resto del QA: menú delante y asentado
@@ -641,23 +661,38 @@ async def main():
         print('✗ No se pudo leer el game.html local:', e)
         return
     # ---- sellos de versión ----
-    chk('3.6.173-SDK6' in game, 'game.html sello 3.6.173-SDK6 (FASE 178 «MENUS SIN ALIASING»)')
+    chk('3.6.174-SDK6' in game, 'game.html sello 3.6.174-SDK6 (FASE 179 «MENUS NITIDOS»)')
     vjson = open(os.path.join(RAIZ, 'src/game/VERSION.json'), encoding='utf-8').read()
-    chk('3.6.173-SDK6' in vjson and 'MENUS SIN ALIASING' in vjson,
-        'VERSION.json sella 3.6.173 + FASE 178')
+    chk('3.6.174-SDK6' in vjson and 'MENUS NITIDOS' in vjson,
+        'VERSION.json sella 3.6.174 + FASE 179')
     swjs = open(os.path.join(RAIZ, 'public/sw.js'), encoding='utf-8').read()
-    chk("crazypp-v3.6.173-SDK6" in swjs, 'sw.js CACHE sella v3.6.173 (purga de cachés viejas)')
+    chk("crazypp-v3.6.174-SDK6" in swjs, 'sw.js CACHE sella v3.6.174 (purga de cachés viejas)')
     hub = open(os.path.join(RAIZ, 'src/app/descargas/page.tsx'), encoding='utf-8').read()
-    chk('V3.6.173-SDK6' in hub, 'hub /descargas sella V3.6.173-SDK6')
+    chk('V3.6.174-SDK6' in hub, 'hub /descargas sella V3.6.174-SDK6')
 
-    # ---- F178 · agujas estáticas SIN ALIASING (r82) ----
-    chk('tex.generateMipmaps = true' in game and
-        'THREE.LinearMipmapLinearFilter' in game,
-        'texturas del arco con mipmaps+trilineal (r105 anulado: el FX r81 escala las panelas)')
-    chk('tex.anisotropy = 4' in game,
-        'anisotropy 4 en las panelas (texto nítido en ángulo y distancia)')
-    chk('tex.generateMipmaps = false' not in game,
-        'no queda ninguna textura del menú con mips desactivados')
+    # ---- F179 · agujas estáticas MENÚS NÍTIDOS (r83) ----
+    chk('tex.generateMipmaps = false' in game and
+        'tex.minFilter = THREE.LinearFilter' in game and
+        'tex.anisotropy = 1' in game,
+        'texturas del arco en estado r105 (bilinear sin mips: NÍTIDO, informe del dueño)')
+    chk('THREE.LinearMipmapLinearFilter' not in game,
+        'ningún mipmap trilineal en el build (el r82 suavizaba el texto)')
+    chk('menuGroup.scale.setScalar' not in game and
+        'scale.setScalar(0.82' not in game,
+        'el FX ya no ESCALA panela alguna (causa del crawleo de la r81)')
+    chk('menuFxSweep' in game and 'THREE.AdditiveBlending' in game and
+        'mS.raycast = () => {};' in game,
+        'BARRIDO DE LUZ: banda aditiva por panela, raycast anulado (r83)')
+    chk('m.position.y = y0 + 0.09 * (1 - eOB(p))' in game,
+        'la cascada cae en POSICIÓN con rebote easeOutBack (sin re-muestreo)')
+    chk('m.material.color.setRGB(1 + k, 1 + k, 1 + k * 0.9)' in game,
+        'el pulso brilla POR COLOR (1+k decae), no por escala')
+    chk('esChmus' in game and 'this.audio.setArcVol(nuevo)' in game,
+        'ARRASTRE chmus arreglado: regula arcVol, no el volumen de FX')
+    chk('etq(it.et, rx + 4' in game and 'const ry = y + h * 0.72' in game,
+        'barras: etiqueta SOBRE el raíl (ya no pisa el botón −)')
+    chk('{ y0: 1228, yMax: 1304' in game,
+        'banda de champs en su hueco limpio (rejilla ~1150 · leyenda 1348)')
 
 
     # ---- F177 · agujas estáticas MENÚS EN ESCENA (r81) ----
@@ -869,15 +904,16 @@ async def main():
     chk(out.get('pisoOk'), 'el piso de arranque es ≥72 (perfil del casco)')
     chk(out.get('noventaATierra'), '90 que no se sostiene → 72 (el piso intacto)')
     chk(out.get('imagenPrimero'), 'en el piso regala IMAGEN (fovea) antes que la tasa')
-    # — F177 · MENÚS EN ESCENA —
-    chk(out.get('fxInNace'), 'entrada FX: las panelas nacen pequeñas y visibles')
+    # — F179 · MENÚS NÍTIDOS —
+    chk(out.get('fxInNace'), 'entrada FX: las panelas CAEN desde +0,09 m (sin escala)')
     chk(out.get('fxInCascada'), 'cascada C→L/R: el centro va por delante (+70 ms)')
-    chk(out.get('fxInAsienta'), 'la cascada asienta en escala 1 · opacidad 1')
+    chk(out.get('fxInAsienta'), 'la cascada asienta en la y EXACTA · opacidad 1')
     chk(out.get('fxInAnclaIntacta'), 'el FX no recoloca el ancla fija (posición intacta)')
-    chk(out.get('fxPulso'), 'pulso de pulsación: el arco respira 1→1.03→1')
+    chk(out.get('fxPulso'), 'pulso de pulsación: BRILLO por color 1+k→1 (sin escala)')
+    chk(out.get('fxSweep'), 'barrido de luz: banda cruzando C→lados y apagada al acabar')
     chk(out.get('fxFlashWired'), 'menuClick deja el flash de fila')
     chk(out.get('fxFlashDecae'), 'el flash decae solo (≤170 ms)')
-    chk(out.get('fxOut'), 'salida FX: encoge, funde, esconde y restaura (ancla intacta)')
+    chk(out.get('fxOut'), 'salida FX: sube, funde, esconde y restaura (ancla intacta)')
     if not out.get('fxOut'):
         print('  DIAG fxOut:', out.get('diagFxOut'), '·fin:', out.get('diagFxOutFin'),
               '·cascada sC/sL/op:', out.get('diagCasc'))

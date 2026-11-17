@@ -1,10 +1,10 @@
 {
-  "version": "3.6.168-SDK6",
-  "fase": 173,
-  "faseNombre": "GARANTIA DE RED",
+  "version": "3.6.169-SDK6",
+  "fase": 174,
+  "faseNombre": "MENUS EN PROFUNDIDAD",
   "sdk": "1.6.0",
-  "fecha": "2026-11-16",
-  "hub": "v36168-sdk6",
+  "fecha": "2026-11-17",
+  "hub": "v36169-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,5 @@
     "halloween": 3
   },
   "nota": "r70",
-  "tamano": 12253200,
-  "golden": "61e60b6f01b87e5a2083d83a1123c6afc385f393da07e90ebb5e9429e9b5761b"
+  "tamano": 12265139
 }

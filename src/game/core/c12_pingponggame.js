@@ -184,6 +184,10 @@ export class PingPongGame {
     // v2.50 · FASE 1 · CONFORO: háptica desactivable + consejos de 1ª vez
     try { this.hapticsOn = localStorage.getItem('pp_hapt') !== '0'; } catch { this.hapticsOn = true; }
     try { this.showTips = localStorage.getItem('pp_tips_v1') !== '0'; } catch { this.showTips = true; }
+    // r78 · FASE 174 · SISTEMA DE ALERTAS: abierto para todos POR
+    // DEFECTO; AJUSTES › JUEGO lo silencia (pp_alertas_v1)
+    try { this.alertasOn = localStorage.getItem('pp_alertas_v1') !== '0'; } catch { this.alertasOn = true; }
+    this._salaEnEspera = false;               // r78 · sala pública esperando en segundo plano
     this._tipsIdx = -1;          // -1 = sin ciclo activo; 0..2 = consejos; 3 = despedida
     this._tipsTimer = 0;
     // v3.6.34 · MEGA PALA NORMATIVA (núcleo): mecánica que TODOS los
@@ -1304,16 +1308,20 @@ export class PingPongGame {
    * estado por red (reglas sombra). Cada lado simula la bola cuando es su
    * dueño (último golpeador / sacador) y la emite a 20 Hz. */
   startOnlineSession() {
+    this._salaEnEspera = false;   // r78 · la sala dejó de esperar: hay duelo
     // r74 · FASE 170 · EL DUELO NO IRRUMPE: si soy el ANFITRIÓN, la sesión
     // queda PENDIENTE y salta LA ALERTA DE DUELO (icono de DOS PERSONAS
     // parpadeante + pitidos + voz) — nada se cierra hasta que el dueño de
     // la sala acepte (petición del dueño: la alerta llega «estando en
     // cualquier parte del juego jugando: entrenando, en un campeonato, en
     // el tutorial…»). El INVITADO entra igual que siempre (él la aceptó).
+    // r78 · SISTEMA DE ALERTAS: si el dueño silenció las alertas PÚBLICAS
+    // en AJUSTES › JUEGO, nada irrumpe (ni quad, ni pitidos, ni voz): el
+    // duelo PENDIENTE espera en MULTIJUGADOR (chip r74) y se acepta allí.
     if (this.net && this.net.role === 'host') {
       this._dueloPend = true;
       this.rules.message = T('duelo_alerta_msg');
-      this.alertaDuelo();
+      if (this.alertasOn !== false) this.alertaDuelo();
       return;
     }
     this._dueloArrancar();
@@ -2404,8 +2412,15 @@ export class PingPongGame {
       y += 168;
       nota(T('mj_waiting'), '#9aa7b4', 24);
       y += 56;
-      btn('net:cancel', x0, y, w0, 74, T('btn_cancel_room'), false,
-        undefined, undefined, 27);
+      // r78 · SALA PÚBLICA EN ESPERA: dejar la sala VIVA y salir hacia
+      // atrás (MI CASA) — el código sigue anunciándose en el listado
+      // público («Partidas disponibles») y LA ALERTA de duelo avisará al
+      // anfitrión cuando alguien entre, esté donde esté. Cancelar sigue
+      // siendo cancelar (botón de la derecha).
+      btn('net:espera', x0, y, (w0 - 24) / 2, 74, T('btn_espera'),
+        this._salaEnEspera === true, undefined, undefined, 24);
+      btn('net:cancel', x0 + (w0 + 24) / 2, y, (w0 - 24) / 2, 74,
+        T('btn_cancel_room'), false, undefined, undefined, 24);
       y += 100;
       // r87 · LISTA DEL PULSO: jugadores online con INVITAR (el anfitrión
       // convoca sin que nadie teclee el código)
@@ -2627,88 +2642,55 @@ export class PingPongGame {
    *  v2.28 reescala al panel grande 1024×1536). */
   drawMenuJoin(rects) {
     const c = this.menuCanvas.getContext('2d');
-    const btn = this._menuBtn;
-    const label = this._menuLabel;
     const CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // sin 0/O/1/I/L
-
     this.drawMenuHeader(rects);
-
-    // 5 huecos del código
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    for (let i = 0; i < 5; i++) {
-      const x = 56 + i * 186;
-      c.beginPath();
-      if (c.roundRect) c.roundRect(x, 268, 156, 112, 16);
-      else c.rect(x, 268, 156, 112);
-      c.fillStyle = 'rgba(255,255,255,0.06)';
-      c.fill();
-      c.strokeStyle = i === this._joinCode.length ? '#e8b45a' : 'rgba(255,255,255,0.18)';
-      c.lineWidth = i === this._joinCode.length ? 5 : 2;
-      c.stroke();
-      const ch = this._joinCode[i];
-      if (ch) {
-        c.fillStyle = '#f2f4f6';
-        c.font = '800 68px ui-monospace, monospace';
-        c.fillText(ch, x + 78, 324);
-      }
-    }
-
-    // teclado 7×5
-    for (let i = 0; i < CHARS.length; i++) {
-      const col = i % 7, row = Math.floor(i / 7);
-      btn(`key:${CHARS[i]}`, 56 + col * 128, 430 + row * 96, 118, 86, CHARS[i], false, undefined, undefined, 34);
-    }
-    btn('key:del', 56 + 4 * 128, 430 + 4 * 96, 118, 86, '⌫', false, undefined, undefined, 34);
-    btn('key:ok', 56, 940, 448, 82, T('btn_connect'), this._joinCode.length === 5, 'green', undefined, 28);
-    btn('key:cancel', 520, 940, 448, 82, T('btn_back'), false, undefined, undefined, 28);
-    btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
+    // r78 · FASE 174 · teclado y código a BANDA COMPLETA (el mismo
+    // lenguaje museo de las rejillas; ids EXACTOS del despacho legado:
+    // key:<char> · key:del · key:ok · key:cancel · tab:main)
+    const ids = [];
+    for (const ch of CHARS) ids.push('key:' + ch);
+    ids.push('key:del');
+    this._menuBandas(rects, [
+      { tipo: 'codigo', len: 5, txt: this._joinCode,
+        cursor: this._joinCode.length },
+      { tipo: 'teclado', chars: CHARS + '⌫', ids, cols: 6, fs: 30 },
+      { tipo: 'filaN', wFr: [0.22, 0.39, 0.39], cells: [
+        { id: 'key:del', et: '⌫' },
+        { id: 'key:ok', et: T('btn_connect'),
+          act: this._joinCode.length === 5 },
+        { id: 'key:cancel', et: T('btn_back') },
+      ] },
+      { id: 'tab:main', icono: 'salir', et: '◀  ' + T('btn_back'),
+        fino: true },
+    ], { y0: 264, yMax: 1248 });
   }
 
   /** v2.66 · Página TU NOMBRE: teclado 7×4 (A–Z + espacio + ⌫), caja con
    *  el nombre en curso y guardar/volver. El nombre preside el ranking. */
   drawMenuName(rects) {
     const c = this.menuCanvas.getContext('2d');
-    const btn = this._menuBtn;
-    const label = this._menuLabel;
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     this.drawMenuHeader(rects);
-    // caja del nombre (12 caracteres máximo) con cursor fino
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
+    // r78 · FASE 174 · caja + teclado + dígitos a BANDA COMPLETA (ids
+    // EXACTOS: nkey:<char> · nkey:sp · nkey:del · nkey:ok · nkey:cancel)
+    const ids = [];
+    for (const ch of CHARS) ids.push('nkey:' + ch);
+    ids.push('nkey:sp', 'nkey:del');
     const nm = this._nameBuf || '';
-    c.beginPath();
-    if (c.roundRect) c.roundRect(112, 268, 800, 112, 16);
-    else c.rect(112, 268, 800, 112);
-    c.fillStyle = 'rgba(255,255,255,0.06)';
-    c.fill();
-    c.strokeStyle = '#e8b45a';
-    c.lineWidth = 5;
-    c.stroke();
-    c.fillStyle = '#f2f4f6';
-    c.font = '800 64px ui-monospace, monospace';
-    c.fillText(nm + '_', 512, 324);
-    c.fillStyle = '#98a6b4';
-    c.font = '600 22px system-ui, sans-serif';
-    c.fillText(nm.length + ' / 12', 512, 402);
-    // teclado 7×4: 26 letras + ␣ + ⌫
-    for (let i = 0; i < CHARS.length; i++) {
-      const col = i % 7, row = Math.floor(i / 7);
-      btn('nkey:' + CHARS[i], 56 + col * 128, 430 + row * 96, 118, 86, CHARS[i], false, undefined, undefined, 34);
-    }
-    btn('nkey:sp', 56 + 5 * 128, 430 + 3 * 96, 118, 86, '␣', false, undefined, undefined, 34);
-    btn('nkey:del', 56 + 6 * 128, 430 + 3 * 96, 118, 86, '⌫', false, undefined, undefined, 34);
-    // v2.108: fila de DÍGITOS bajo las letras (86 px de ancho, paso 90) —
-    // nombres con números (p.ej. FORO3D del modo depuración, «Juan2»…).
-    // Termina en x≈956 y y≈892: no roza ni las letras (fin 804) ni los
-    // botones GUARDAR/VOLVER (y 940).
-    for (let d = 0; d <= 9; d++) {
-      btn('nkey:' + d, 56 + d * 90, 814, 86, 78, String(d), false, undefined, undefined, 30);
-    }
-    btn('nkey:ok', 56, 940, 448, 82, T('name_save'), true, 'green', undefined, 28);
-    btn('nkey:cancel', 520, 940, 448, 82, T('btn_back'), false, undefined, undefined, 28);
-    label(T('name_hint'), 1080, 20, '#98a6b4', 'center');
-    btn('tab:main', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
+    const items = [
+      { tipo: 'codigo', len: 1, txt: nm, anchoFull: true },
+      { tipo: 'lectura', et: nm.length + ' / 12 · ' + T('name_hint'),
+        col: '#98a6b4', f: 18 },
+      { tipo: 'teclado', chars: CHARS + '␣⌫', ids, cols: 7, fs: 30 },
+      { tipo: 'teclado', chars: '0123456789', prefix: 'nkey:', cols: 10 },
+      { tipo: 'filaN', wFr: [0.5, 0.5], cells: [
+        { id: 'nkey:ok', et: T('name_save'), act: true },
+        { id: 'nkey:cancel', et: T('btn_back') },
+      ] },
+      { id: 'tab:main', icono: 'salir', et: '◀  ' + T('btn_back'),
+        fino: true },
+    ];
+    this._menuBandas(rects, items, { y0: 258, yMax: 1252, gap: 12 });
   }
 
   /** r83 · Página NOMBRE DEL AGARRE: el mismo teclado del nombre del
@@ -2716,40 +2698,27 @@ export class PingPongGame {
    *  PERMANENTE en el dispositivo (ppxr_grips_v1) y se usa en el juego. */
   drawMenuGripName(rects) {
     const c = this.menuCanvas.getContext('2d');
-    const btn = this._menuBtn;
-    const label = this._menuLabel;
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     this.drawMenuHeader(rects);
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
+    // r78 · FASE 174 · el mismo teclado del nombre, a banda completa
+    // (ids EXACTOS: gkey:<char> · gkey:sp · gkey:del · gkey:ok · gkey:cancel)
+    const ids = [];
+    for (const ch of CHARS) ids.push('gkey:' + ch);
+    ids.push('gkey:sp', 'gkey:del');
     const nm = this._gripBuf || '';
-    c.beginPath();
-    if (c.roundRect) c.roundRect(112, 268, 800, 112, 16);
-    else c.rect(112, 268, 800, 112);
-    c.fillStyle = 'rgba(255,255,255,0.06)';
-    c.fill();
-    c.strokeStyle = '#e8b45a';
-    c.lineWidth = 5;
-    c.stroke();
-    c.fillStyle = '#f2f4f6';
-    c.font = '800 64px ui-monospace, monospace';
-    c.fillText(nm + '_', 512, 324);
-    c.fillStyle = '#98a6b4';
-    c.font = '600 22px system-ui, sans-serif';
-    c.fillText(nm.length + ' / 12', 512, 402);
-    for (let i = 0; i < CHARS.length; i++) {
-      const col = i % 7, row = Math.floor(i / 7);
-      btn('gkey:' + CHARS[i], 56 + col * 128, 430 + row * 96, 118, 86, CHARS[i], false, undefined, undefined, 34);
-    }
-    btn('gkey:sp', 56 + 5 * 128, 430 + 3 * 96, 118, 86, '␣', false, undefined, undefined, 34);
-    btn('gkey:del', 56 + 6 * 128, 430 + 3 * 96, 118, 86, '⌫', false, undefined, undefined, 34);
-    for (let d = 0; d <= 9; d++) {
-      btn('gkey:' + d, 56 + d * 90, 814, 86, 78, String(d), false, undefined, undefined, 30);
-    }
-    btn('gkey:ok', 56, 940, 448, 82, T('name_save'), true, 'green', undefined, 28);
-    btn('gkey:cancel', 520, 940, 448, 82, T('btn_back'), false, undefined, undefined, 28);
-    label(T('pala_help'), 1080, 20, '#98a6b4', 'center');
-    btn('page:optsPala', 56, 1380, 912, 76, '◀  ' + T('btn_back'), false, undefined, undefined, 28);
+    this._menuBandas(rects, [
+      { tipo: 'codigo', len: 1, txt: nm, anchoFull: true },
+      { tipo: 'lectura', et: nm.length + ' / 12 · ' + T('pala_help'),
+        col: '#98a6b4', f: 18 },
+      { tipo: 'teclado', chars: CHARS + '␣⌫', ids, cols: 7, fs: 30 },
+      { tipo: 'teclado', chars: '0123456789', prefix: 'gkey:', cols: 10 },
+      { tipo: 'filaN', wFr: [0.5, 0.5], cells: [
+        { id: 'gkey:ok', et: T('name_save'), act: true },
+        { id: 'gkey:cancel', et: T('btn_back') },
+      ] },
+      { id: 'page:optsPala', icono: 'salir', et: '◀  ' + T('btn_back'),
+        fino: true },
+    ], { y0: 258, yMax: 1252, gap: 12 });
   }
 
   /** v2.67 · Página RANKING MUNDIAL: top 10 por campeonato con nombre,
@@ -2967,8 +2936,16 @@ export class PingPongGame {
       // r68 · placa de contenido SOLO para páginas con contenido legado
       // (r70 · las landings en rejilla y los estados/páginas que pintan a
       // canvas lleno también van sin placa)
+      // r78 · FASE 174 · las BANDAS (nivel 3+) pintan a panel completo:
+      // fuera la placa en TODAS las páginas migradas.
       const sinPlaca = ['opts', 'salirask', 'hallask', 'multi', 'rankini',
-        'champs', 'train', 'carrera', 'carreradiv', 'champuno']
+        'champs', 'train', 'carrera', 'carreradiv', 'champuno',
+        'rankme', 'champhist', 'hallpick', 'dueloask', 'tutask',
+        'trainext', 'trainarea',
+        'optsJuego', 'optsSala', 'optsSalaRoom', 'optsSalaMesa',
+        'optsSalaBola', 'optsSalaHall', 'optsSonido', 'optsVisual',
+        'optsPerfil', 'optsRendi', 'optsPala',
+        'join', 'name', 'gripname']
         .includes(this.menuPage);
       if (!sinPlaca) {
         c.setTransform(S68, 0, 0, S68, DX68, 0);
@@ -3884,6 +3861,11 @@ export class PingPongGame {
         return this.survivalBest > 0
           ? T('best_surv', { n: this.survivalBest }) : T('hub_surv_sub');
       case 'tab:multi':
+        // r78 · SALA PÚBLICA EN ESPERA: la sala vive en segundo plano y el
+        // Vestíbulo lo declara (el anfitrión navega sin perder su canal)
+        if (!this.net.online && this.net.status === 'waiting') {
+          return T('hub_multi_espera', { c: this.net.code });
+        }
         return this.net.online ? T('hub_multi_on', { c: this.net.code })
           : T('hub_multi_sub');
       case 'page:champs':
@@ -4902,474 +4884,738 @@ export class PingPongGame {
    * volver a la página de categorías. Los ids de los controles NO cambian
    * (diff:*, adapt, pmej, theme:*, amb, voz, music, hapt, trail, tips,
    * sndtest, tele, pname, reset, psthru) — los handlers siguen intactos. */
+  /* ============ r78 · FASE 174 · MENÚS EN PROFUNDIDAD ================
+   *  «Todos los subniveles con el mismo tipo de maquetación ocupando todo
+   *  el espacio que tenemos ahora en los paneles… repasa los menús hasta
+   *  su nivel más profundo… nada de desbordamientos ni solapamientos»
+   *  (dueño). _menuBandas es el motor de las FILAS A PANEL COMPLETO del
+   *  nivel 3+: el MISMO lenguaje de las rejillas (placa de museo +
+   *  medallón + etiqueta + sub) aplicado a los controles profundos.
+   *  Pinta en IDENTIDAD sobre la banda interior de la panela C (inner 80
+   *  → 1312 px de ancho), reparte la altura POR CUENTA (si sobran filas
+   *  encoge el paso con suelos mínimos — jamás desborda ni solapa por
+   *  construcción: el cursor Y es secuencial), encoge el texto al ancho
+   *  real y devuelve el cursor Y. Los ids SON EXACTOS del despacho
+   *  legado: la interactividad no cambia una coma. Tipos de fila:
+   *  titulo · lectura · fila (id+icono+et+sub+check+ciclo‹›+✕) · filaN
+   *  (n botones en una fila) · grid (celdas pequeñas) · barra (volumen)
+   *  · teclado · codigo (cajas del código / caja de texto). */
+  _menuBandas(rects, items, opts) {
+    const c = this.menuCanvas.getContext('2d');
+    const pC = CONFIG_MENUS.arco.panelas.find((p) => p.id === 'C');
+    const gx = pC.x + 80, gw = pC.w - 160;      // banda interior C: 1312 px
+    const y0 = (opts && opts.y0) || 288;
+    const yMax = (opts && opts.yMax) || 1312;
+    const gap0 = (opts && opts.gap) || 16;
+    // peso vertical de cada fila (para repartir la altura disponible)
+    const peso = (it) => {
+      switch (it.tipo) {
+        case 'titulo': return 0.40;
+        case 'lectura': return 0.55;
+        case 'filaN': return 0.85;
+        case 'grid': return Math.max(1, Math.ceil(it.celdas.length /
+          (it.cols || 3))) * 0.62;
+        case 'barra': return 0.92;
+        case 'teclado': return Math.max(1, Math.ceil(it.chars.length /
+          (it.cols || 7))) * 0.95;
+        case 'codigo': return 0.95;
+        default: return it.fino ? 0.80 : 1;
+      }
+    };
+    const nP = items.reduce((a, it) => a + peso(it), 0);
+    const disp = yMax - y0 - gap0 * Math.max(0, items.length - 1);
+    const hRow = Math.max(56, Math.min(124, Math.floor(disp / Math.max(1, nP))));
+    const hDe = (it) => {
+      switch (it.tipo) {
+        case 'titulo': return Math.max(30, Math.round(hRow * 0.40));
+        case 'lectura': return Math.max(38, Math.round(hRow * 0.55));
+        case 'filaN': return Math.max(52, Math.round(hRow * 0.85));
+        case 'grid': return Math.min(80, Math.max(56,
+          Math.round(hRow * 0.62)));
+        case 'barra': return Math.max(56, Math.round(hRow * 0.92));
+        case 'teclado': return Math.min(92, Math.max(62,
+          Math.round(hRow * 0.95)));
+        case 'codigo': return Math.max(80, Math.round(hRow * 0.95));
+        default: return Math.round(hRow * (it.fino ? 0.80 : 1));
+      }
+    };
+    // encogimiento seguro de texto (mismo patrón que la rejilla r68)
+    const etq = (txt, tx, ty, maxw, f0, fw, col, align) => {
+      c.fillStyle = col || 'rgba(255,255,255,0.97)';
+      let f = f0;
+      c.font = `${fw} ${f}px system-ui, sans-serif`;
+      while (f > 15 && c.measureText(String(txt)).width > maxw) {
+        f -= 2;
+        c.font = `${fw} ${f}px system-ui, sans-serif`;
+      }
+      c.textAlign = align || 'left';
+      c.textBaseline = 'alphabetic';
+      c.fillText(String(txt), tx, ty);
+    };
+    const checkDibuja = (chk, cx, cy, act) => {
+      const bs = 15;
+      c.lineWidth = 3;
+      if (chk) {
+        c.fillStyle = act ? 'rgba(16,19,26,0.88)' : 'rgba(207,216,224,0.92)';
+        c.fillRect(cx - bs, cy - bs, bs * 2, bs * 2);
+        c.strokeStyle = act ? '#e8b45a' : '#10131a';
+        c.beginPath();
+        c.moveTo(cx - 8, cy + 1);
+        c.lineTo(cx - 2, cy + 7);
+        c.lineTo(cx + 8.5, cy - 7);
+        c.stroke();
+      } else {
+        c.strokeStyle = act ? 'rgba(16,19,26,0.8)' : 'rgba(255,255,255,0.55)';
+        c.strokeRect(cx - bs, cy - bs, bs * 2, bs * 2);
+      }
+    };
+    let y = y0;
+    c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    const mm0 = this._menuMap;
+    this._menuMap = null;                       // identidad: rects en canvas
+    for (const it of items) {
+      const hovered = this.menuHover.includes(rects.length);
+      if (it.tipo === 'titulo') {
+        const h = hDe(it);
+        etq(it.et, gx + 4, y + h * 0.62, gw - 8, 27, 800, it.col || '#e9edf2');
+        y += h + gap0;
+        continue;
+      }
+      if (it.tipo === 'lectura') {
+        const h = hDe(it);
+        etq(it.et, gx + 4, y + h * 0.5, gw - 8, it.f || 23, 700,
+          it.col || 'rgba(228,240,255,0.92)');
+        if (it.sub) etq(it.sub, gx + 4, y + h * 0.88, gw - 8, 18, 600,
+          '#98a6b4');
+        y += h + gap0;
+        continue;
+      }
+      if (it.tipo === 'barra') {
+        // volumen: etiqueta + raíl CLICABLE (r99: % sobre el raíl) + −/+
+        const h = hDe(it);
+        const bw = 170;
+        etq(it.et, gx + 4, y + h * 0.42, gw - 8, 21, 700, '#9aa7b4');
+        const ry = y + h * 0.66, rx = gx + bw + 24, rw = gw - 2 * bw - 88;
+        c.fillStyle = 'rgba(255,255,255,0.14)';
+        c.fillRect(rx, ry - 7, rw, 14);
+        c.fillStyle = it.vol > 0.001 ? '#ffd257' : 'rgba(255,255,255,0.25)';
+        c.fillRect(rx, ry - 7, Math.round(rw * it.vol), 14);
+        c.beginPath();
+        c.arc(rx + rw * it.vol, ry, 12, 0, Math.PI * 2);
+        c.fillStyle = '#ffd257';
+        c.fill();
+        c.strokeStyle = '#10131a';
+        c.lineWidth = 3;
+        c.stroke();
+        etq(Math.round(it.vol * 100) + '%', rx + rw / 2, ry - 18, 120, 17,
+          800, '#ffd257', 'center');
+        rects.push({ x: rx - 8, y: y - 4, w: rw + 16, h: h + 8, id: it.idSet,
+          slider: true });
+        const btn2 = this._menuBtn;
+        btn2(it.minus, gx, y + h * 0.18, bw - 24, h * 0.64, '−', false,
+          undefined, undefined, 24);
+        btn2(it.plus, gx + gw - bw + 24, y + h * 0.18, bw - 24, h * 0.64,
+          '+', false, undefined, undefined, 24);
+        y += h + gap0;
+        continue;
+      }
+      if (it.tipo === 'codigo') {
+        // caja(s) del código: cajas monoespaciadas a banda completa
+        // (anchoFull: UNA caja ancha para el texto largo — nombre/agarre)
+        const h = hDe(it);
+        const n = it.len || 5;
+        const paso = it.anchoFull
+          ? Math.floor(gw * 0.62)
+          : Math.min(190, Math.floor(gw / n) - 16);
+        const totW = n * paso + (n - 1) * 14;
+        const cx0 = gx + (gw - totW) / 2;
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        for (let i = 0; i < n; i++) {
+          const bx = cx0 + i * (paso + 14);
+          c.beginPath();
+          if (c.roundRect) c.roundRect(bx, y, paso, h, 16);
+          else c.rect(bx, y, paso, h);
+          c.fillStyle = 'rgba(255,255,255,0.06)';
+          c.fill();
+          c.strokeStyle = (it.anchoFull || it.cursor === i) ? '#e8b45a'
+            : 'rgba(255,255,255,0.18)';
+          c.lineWidth = (it.anchoFull || it.cursor === i) ? 5 : 2;
+          c.stroke();
+          const ch = it.anchoFull ? (it.txt || '') : (it.txt || '')[i];
+          if (ch) {
+            c.fillStyle = '#f2f4f6';
+            c.font = `800 ${Math.round(h * (it.anchoFull ? 0.40 : 0.58))}px ui-monospace, monospace`;
+            c.fillText(ch, bx + paso / 2, y + h / 2);
+          }
+        }
+        y += h + gap0;
+        continue;
+      }
+      if (it.tipo === 'teclado') {
+        // teclado a banda completa: celdas placa de museo
+        const cols = it.cols || 7, n = it.chars.length;
+        const rows = Math.ceil(n / cols);
+        const cellH = Math.max(62, Math.min(92,
+          Math.floor((hDe(it) - (rows - 1) * 10) / rows)));
+        const cellW = Math.floor((gw - (cols - 1) * 12) / cols);
+        const btn2 = this._menuBtn;
+        for (let i = 0; i < n; i++) {
+          const col = i % cols, row = (i / cols) | 0;
+          const bx = gx + col * (cellW + 12);
+          const by = y + row * (cellH + 10);
+          const hovered2 = this.menuHover.includes(rects.length);
+          this._vestPlaca73(c, bx, by, cellW, cellH, 14);
+          if (hovered2) {
+            this._vestRR(c, bx, by, cellW, cellH, 14);
+            c.strokeStyle = '#ffffff';
+            c.lineWidth = 4;
+            c.stroke();
+          }
+          c.fillStyle = '#f2f4f6';
+          c.font = `800 ${Math.round(cellH * 0.42)}px system-ui, sans-serif`;
+          c.textAlign = 'center';
+          c.textBaseline = 'middle';
+          c.fillText(it.chars[i], bx + cellW / 2, by + cellH / 2 + 1);
+          rects.push({ x: bx, y: by, w: cellW, h: cellH,
+            id: (it.ids && it.ids[i]) || (it.prefix + it.chars[i]) });
+        }
+        y += rows * (cellH + 10) - 10 + gap0;
+        continue;
+      }
+      if (it.tipo === 'filaN') {
+        // n botones en UNA fila (tríos, dúos, cuádruples)
+        const h = hDe(it);
+        const frs = it.wFr ||
+          it.cells.map(() => 1 / it.cells.length);
+        let cx0 = gx;
+        it.cells.forEach((cl, i) => {
+          const cw = Math.floor(gw * frs[i]) - (i < it.cells.length - 1 ? 12 : 0);
+          const hovered2 = this.menuHover.includes(rects.length);
+          this._vestPlaca73(c, cx0, y, cw, h, 18);
+          if (cl.grad) {
+            c.save();
+            const g = c.createLinearGradient(cx0, y, cx0, y + h);
+            g.addColorStop(0, cl.grad[0]);
+            g.addColorStop(1, cl.grad[1]);
+            c.globalAlpha = 0.30;
+            c.fillStyle = g;
+            c.fill();
+            c.restore();
+          }
+          if (hovered2) {
+            this._vestRR(c, cx0, y, cw, h, 18);
+            c.strokeStyle = '#ffffff';
+            c.lineWidth = 4;
+            c.stroke();
+          }
+          const hasCheck = cl.check !== undefined;
+          const maxw = cw - 28 - (hasCheck ? 46 : 0);
+          etq(cl.et, cx0 + 16, y + h * 0.52, maxw, it.fs || 23, 700,
+            cl.act ? '#ffe9a8' : 'rgba(255,255,255,0.97)');
+          if (hasCheck) checkDibuja(cl.check, cx0 + cw - 30, y + h / 2,
+            cl.act);
+          rects.push({ x: cx0 - 4, y: y - 4, w: cw + 8, h: h + 8, id: cl.id });
+          cx0 += cw + 12;
+        });
+        y += h + gap0;
+        continue;
+      }
+      if (it.tipo === 'grid') {
+        // rejilla pequeña: skins/temas/agarres (lock + check + ✕ opcional)
+        const cols = it.cols || 3, n = it.celdas.length;
+        const rows = Math.ceil(n / cols);
+        const cellH = Math.max(56, Math.min(78,
+          Math.floor((hDe(it) - (rows - 1) * 10) / rows)));
+        const cellW = Math.floor((gw - (cols - 1) * 12) / cols);
+        it.celdas.forEach((cl, i) => {
+          const col = i % cols, row = (i / cols) | 0;
+          const bx = gx + col * (cellW + 12);
+          const by = y + row * (cellH + 10);
+          const hovered2 = this.menuHover.includes(rects.length);
+          this._vestPlaca73(c, bx, by, cellW, cellH, 16);
+          if (hovered2) {
+            this._vestRR(c, bx, by, cellW, cellH, 16);
+            c.strokeStyle = '#ffffff';
+            c.lineWidth = 4;
+            c.stroke();
+          }
+          const hasCheck = cl.check !== undefined;
+          const delW = cl.del ? 52 : 0;
+          const maxw = cellW - 24 - (hasCheck ? 40 : 0) - delW;
+          etq(cl.et, bx + 14, by + cellH * 0.54, maxw, it.fs || 21, 700,
+            cl.act ? '#ffe9a8' : 'rgba(255,255,255,0.95)');
+          if (hasCheck) checkDibuja(cl.check, bx + cellW - 26 - delW,
+            by + cellH / 2, cl.act);
+          if (cl.lock) PP_ICONS.candado(c, bx + cellW - 28, by + cellH / 2,
+            0.8);
+          rects.push({ x: bx, y: by, w: cellW - delW, h: cellH, id: cl.id });
+          if (cl.del) rects.push({ x: bx + cellW - delW + 4, y: by,
+            w: delW - 4, h: cellH, id: cl.del });
+        });
+        y += rows * (cellH + 10) - 10 + gap0;
+        continue;
+      }
+      // — FILA (el tipo por defecto): placa + medallón + etiqueta + sub —
+      const h = hDe(it);
+      this._vestPlaca73(c, gx, y, gw, h, 24);
+      if (hovered) {
+        this._vestRR(c, gx, y, gw, h, 24);
+        c.strokeStyle = '#ffffff';
+        c.lineWidth = 4;
+        c.stroke();
+      }
+      let tx = gx + 24;
+      if (it.izq) {
+        // ciclo ‹ › : zona pequeña a la IZQUIERDA dentro de la placa
+        const zw = 92;
+        c.fillStyle = 'rgba(255,255,255,0.10)';
+        c.beginPath();
+        if (c.roundRect) c.roundRect(tx, y + 10, zw - 12, h - 20, 12);
+        else c.rect(tx, y + 10, zw - 12, h - 20);
+        c.fill();
+        c.fillStyle = '#f2f4f6';
+        c.font = '800 30px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(it.izq.et || '‹', tx + (zw - 12) / 2, y + h / 2);
+        rects.push({ x: tx, y: y + 6, w: zw - 8, h: h - 12, id: it.izq.id });
+        tx += zw + 6;
+      }
+      const ir = Math.min(40, Math.round(h * 0.42));
+      const icx = tx + 12 + ir, icy = y + h / 2;
+      this._vestMedallion(c, icx, icy, ir, it.icono || 'partido',
+        it.grad ? it.grad[0] : null);
+      tx = icx + ir + 18;
+      const hasCheck = it.check !== undefined;
+      const delW = it.del ? 74 : 0;
+      const maxw = gx + gw - tx - (hasCheck ? 52 : 0) - delW - 24;
+      etq(it.et, tx, y + (it.sk ? h * 0.40 : h * 0.54), maxw, it.f || 26,
+        800, it.col || (it.act ? '#ffe9a8' : 'rgba(255,255,255,0.97)'));
+      if (it.sk) etq(it.sk, tx, y + h * 0.74, maxw, 19, 600,
+        'rgba(228,240,255,0.90)');
+      if (hasCheck) checkDibuja(it.check, gx + gw - 30 - delW, y + h / 2,
+        it.act);
+      if (it.del) {
+        const dw = delW - 14;
+        c.fillStyle = 'rgba(240,135,63,0.16)';
+        c.beginPath();
+        if (c.roundRect) c.roundRect(gx + gw - dw - 12, y + 10, dw, h - 20, 12);
+        else c.rect(gx + gw - dw - 12, y + 10, dw, h - 20);
+        c.fill();
+        c.fillStyle = '#ffc09a';
+        c.font = '800 24px system-ui, sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText('✕', gx + gw - dw / 2 - 12, y + h / 2);
+        rects.push({ x: gx + gw - dw - 10, y: y + 6, w: dw, h: h - 12,
+          id: it.del });
+      }
+      // r78 · la zona ‹ del ciclo queda FUERA del rect principal: nada
+      // se solapa (el rayo jamás duda entre la flecha y la fila)
+      rects.push({ x: (it.izq ? tx - 4 : gx - 6), y: y - 4,
+        w: (it.izq ? gx + gw - delW - tx + 10 : gw + 12 - delW), h: h + 8,
+        id: it.id });
+      y += h + gap0;
+    }
+    this._menuMap = mm0;
+    c.restore();
+    return y;
+  }
+
   drawMenuOptsCat(rects, cat) {
     const c = this.menuCanvas.getContext('2d');
-    const btn = this._menuBtn;
-    const label = this._menuLabel;
     this.drawMenuHeader(rects);
     // r69 · el título lo pinta la concha (medallón + cat_*): sin duplicado
-
+    // r78 · FASE 174 · TODOS los casos en BANDAS a panel completo — el
+    // MISMO lenguaje que las rejillas (placa de museo + medallón), fuera
+    // la tarjeta legada 1024×1536. Los ids son EXACTOS del despacho.
     const yn = (v) => (v ? T('yes') : T('no'));
-    let y = 330;
+    const items = [];
     switch (cat) {
       case 'juego': {
-        // r71 · LA CASA NUEVA del Nivel de la CPU y el Rival Adaptativo
-        label(T('hub_diff'), y + 10, 22);
-        y += 42;
-        btn('diff:easy', 56, y, 292, 66, T('diff_easy_btn'),
-          this.difficulty === 'easy', undefined, undefined, 25);
-        btn('diff:medium', 366, y, 292, 66, T('diff_medium_btn'),
-          this.difficulty === 'medium', undefined, undefined, 25);
-        btn('diff:hard', 676, y, 292, 66, T('diff_hard_btn'),
-          this.difficulty === 'hard', undefined, undefined, 25);
-        y += 86;
-        // M4 (r118) · MATCHMAKING POR ELO + MI RANKING: el rival propuesto
-        // cerca de tu nivel (la propuesta REAL sortea ±120 al armar; aquí
-        // se muestra tu ELO como centro de la banda) y el panel personal.
-        label(T('mm_label'), y + 10, 22);
-        y += 42;
-        btn('mm:go', 56, y, 912, 62,
-          T('mm_btn', { n: (this.stats && this.stats.data.elo) || 1000 }),
-          !!this.mmMatch, undefined, undefined, 23);
-        y += 78;
-        btn('rankme', 56, y, 912, 62, T('rankme_btn'), false, undefined, undefined, 23);
-        y += 78;
-        btn('adapt', 56, y, 912, 62,
-          T('btn_adapt', { v: yn(this.adaptive) }),
-          !!this.adaptive, undefined, !!this.adaptive, 23);
-        y += 78;
-        btn('pmej', 56, y, 912, 62, T('btn_pmej', { v: yn(this.palaMejorada) }),
-          !!this.palaMejorada, undefined, !!this.palaMejorada, 23);
-        y += 78;
-        // r95 · RIVALES CON ESTILO VISIBLE: la personalidad del manifest
-        // (agresivo/defensivo) se nota en COLOCACIÓN y CELEBRACIONES.
-        btn('rivstyle', 56, y, 912, 62,
-          T('btn_rivstyle', { v: yn(this.rivStyleOn !== false) }),
-          this.rivStyleOn !== false, undefined, this.rivStyleOn !== false, 23);
-        y += 78;
-        // M5a (r112) · ESTILO DEL RIVAL: 12 personalidades sobre la MISMA
-        // física (‹ › para ciclar). El nombre queda a la vista y persiste
-        // en pp_estilo_v1; 'clasico' = el rival de siempre, byte-idéntico.
-        btn('estilo:prev', 56, y, 120, 62, '‹', false, undefined, undefined, 30);
-        const estAct = OPPONENT_STYLES.find((s0) => s0.id === (this.ppEstilo || 'clasico')) || OPPONENT_STYLES[0];
-        btn('estilo:next', 192, y, 776, 62,
-          T('estilo_lbl') + ': ' + (__ppLang === 'en' ? estAct.en : estAct.es),
-          this.ppEstilo !== 'clasico', undefined, undefined, 23);
-        y += 78;
-        // M7c (r119) · DOBLES 2v2 (PROTOTIPO): partido 2 contra 2 local —
-        // tú + compañero IA contra dos rivales IA, con la MISMA física y
-        // árbitro del 1v1. Botón naranja 'surv' = experimental de la casa.
-        btn('dobles', 56, y, 912, 62, T('dobles_btn'), !!this.doblesActivo,
-          'surv', undefined, 23);
-        y += 78;
+        // r78 · nivel de la CPU en TRÍO de placas (antes 3 botones grises)
+        items.push(
+          { tipo: 'titulo', et: T('hub_diff') },
+          { tipo: 'filaN', cells: [
+            { id: 'diff:easy', et: T('diff_easy_btn'),
+              act: this.difficulty === 'easy' },
+            { id: 'diff:medium', et: T('diff_medium_btn'),
+              act: this.difficulty === 'medium' },
+            { id: 'diff:hard', et: T('diff_hard_btn'),
+              act: this.difficulty === 'hard' },
+          ] },
+          // M4 (r118) · MATCHMAKING POR ELO: el ELO sube a la etiqueta y
+          // la explicación a la sub-línea de la fila (banda completa)
+          { id: 'mm:go', icono: 'ranking', grad: ['#1ed8cc', '#0a8892'],
+            et: T('mm_btn', { n: (this.stats && this.stats.data.elo) || 1000 }),
+            sk: T('mm_label'), act: !!this.mmMatch },
+          { id: 'rankme', icono: 'usuario', et: T('rankme_btn'), fino: true },
+          { id: 'adapt', icono: 'consola',
+            et: T('btn_adapt', { v: yn(this.adaptive) }),
+            check: !!this.adaptive, act: !!this.adaptive },
+          { id: 'pmej', icono: 'partido',
+            et: T('btn_pmej', { v: yn(this.palaMejorada) }),
+            check: !!this.palaMejorada, act: !!this.palaMejorada },
+          // r95 · RIVALES CON ESTILO VISIBLE (agresivo/defensivo)
+          { id: 'rivstyle', icono: 'partido',
+            et: T('btn_rivstyle', { v: yn(this.rivStyleOn !== false) }),
+            check: this.rivStyleOn !== false, act: this.rivStyleOn !== false },
+          // M5a (r112) · ESTILO DEL RIVAL: ciclo ‹ › dentro de la fila
+          { id: 'estilo:next', icono: 'partido',
+            izq: { id: 'estilo:prev', et: '‹' }, et: T('estilo_lbl'),
+            sk: (() => {
+              const estAct = OPPONENT_STYLES.find((s0) => s0.id ===
+                (this.ppEstilo || 'clasico')) || OPPONENT_STYLES[0];
+              return __ppLang === 'en' ? estAct.en : estAct.es;
+            })(), act: this.ppEstilo !== 'clasico' },
+          // M7c (r119) · DOBLES 2v2 (PROTOTIPO) — naranja experimental
+          { id: 'dobles', icono: 'multijugador',
+            grad: ['#ff6026', '#d02c00'], et: T('dobles_btn'),
+            act: !!this.doblesActivo },
+          // r78 · SISTEMA DE ALERTAS (petición del dueño): abierto para
+          // todos POR DEFECTO; aquí se silencia (AJUSTES › JUEGO)
+          { id: 'alertas', icono: 'multijugador',
+            et: T('btn_alertas', { v: yn(this.alertasOn !== false) }),
+            check: this.alertasOn !== false, act: this.alertasOn !== false },
+        );
         break;
       }
       case 'sala': {
-        // r96 · SALA Y ESCENA como SUBMENÚS-BOTÓN (petición del dueño):
-        // al entrar en esta categoría el entorno deja el HALL y salta a la
-        // SALA DE PARTIDOS (la mesa a la vista — _salaPreviewUpdate), y los
-        // dos apartados pasan a ser TARJETAS con color e icono que abren
-        // SU página: «SALA» (temas + passthrough) y «MESA» (altura con
-        // deslizador + aspecto). El cambio se ve EN VIVO en la mesa.
-        const CH_CARD = 128;   // misma altura de tarjeta que la página AJUSTES
-        label(T('sala_preview'), y + 8, 20, '#8ce99a');
-        y += 52;
-        this._modeCard(rects, 'page:optsSalaRoom', 40, y, 944, CH_CARD,
-          T('cat_salaroom'), T('sub_sala_sub'), '#1c7ed6', '#145c9e', PP_ICONS.sala);
-        y += CH_CARD + 16;
-        this._modeCard(rects, 'page:optsSalaMesa', 40, y, 944, CH_CARD,
-          T('cat_salamesa'), T('sub_mesa_sub'), '#2f9e44', '#1e7c33', PP_ICONS.mesa);
-        y += CH_CARD + 16;
-        // r21 · tarjeta BOLA (skins de bola): tercera tarjeta de SALA
-        this._modeCard(rects, 'page:optsSalaBola', 40, y, 944, CH_CARD,
-          T('cat_salabola'), T('sub_bola_sub'), '#e8b45a', '#b3841f', PP_ICONS.mesa);
-        y += CH_CARD + 16;
-        // r23 · tarjeta HALL (4.ª de SALA): la estancia de las insignias —
-        // la tuya, o EL DEL ANFITRIÓN cuando juegas online (presumir)
-        this._modeCard(rects, 'page:optsSalaHall', 40, y, 944, CH_CARD,
-          T('cat_salahall'), T('sub_hall_sub'), '#b07aff', '#7a3fc0', PP_ICONS.sala);
-        y += CH_CARD + 16;
-        // recordatorio honesto: la mesa es de partidas/entrenamiento
-        label(T('mesa_no_champ') + ' · ' + T('mesa_lock_hint'), y + 6, 16, '#93a1b0');
-        y += 38;
+        // r96 · SALA Y ESCENA como submenús-BOTÓN (r78: filas con sub)
+        items.push(
+          { tipo: 'titulo', et: T('sala_preview'), col: '#8ce99a' },
+          { id: 'page:optsSalaRoom', icono: 'sala',
+            grad: ['#1c7ed6', '#145c9e'], et: T('cat_salaroom'),
+            sk: T('sub_sala_sub') },
+          { id: 'page:optsSalaMesa', icono: 'mesa',
+            grad: ['#2f9e44', '#1e7c33'], et: T('cat_salamesa'),
+            sk: T('sub_mesa_sub') },
+          { id: 'page:optsSalaBola', icono: 'mesa',
+            grad: ['#e8b45a', '#b3841f'], et: T('cat_salabola'),
+            sk: T('sub_bola_sub') },
+          { id: 'page:optsSalaHall', icono: 'sala',
+            grad: ['#b07aff', '#7a3fc0'], et: T('cat_salahall'),
+            sk: T('sub_hall_sub') },
+          { tipo: 'lectura',
+            et: T('mesa_no_champ') + ' · ' + T('mesa_lock_hint'),
+            col: '#93a1b0', f: 18 },
+        );
         break;
       }
       case 'salaroom': {
-        // r96 · subpágina SALA: los temas + passthrough (lo que antes
-        // convivía apretado con la MESA en una sola página).
-        // r97 · los temas salen DE ROOM_THEMES con su candado — Nocturna se
-        // abre con 4★ de los retos semanales (setTheme rechaza y avisa).
-        // r74 · FASE 168 · los temas bloqueados llevan el candado de
-        // ARCANOS dibujado sobre el botón (fuera el prefijo textual 🔒)
-        const themes = ROOM_THEMES.map((t0) => ['theme:' + t0.key,
-          (t0.nameKey ? T(t0.nameKey) : t0.name),
-          t0.lock && !this._salaTemaLibre(t0.lock)]);
-        themes.forEach(([id, name, cerrado], i) => {
-          btn(id, 56 + (i % 2) * 464, y + Math.floor(i / 2) * 64, 448, 56, name,
-            this.theme === id.split(':')[1], undefined, undefined, 23);
-          if (cerrado) {
-            PP_ICONS.candado(c, 56 + (i % 2) * 464 + 448 - 30,
-              y + Math.floor(i / 2) * 64 + 28, 0.8);
-          }
-        });
-        y += Math.ceil(themes.length / 2) * 64 + 8;
-        const pstOn = this.renderer.xr.isPresenting ? this.pstOn : this.pendingAR;
-        btn('psthru', 56, y, 912, 62, T('btn_psthru', { v: yn(pstOn) }),
-          !!pstOn, undefined, !!pstOn, 23);
-        y += 86;
+        // r97 · temas de ROOM_THEMES con candado (grid 2 col a banda)
+        const pstOn = this.renderer.xr.isPresenting ? this.pstOn
+          : this.pendingAR;
+        items.push(
+          { tipo: 'grid', cols: 2, fs: 22,
+            celdas: ROOM_THEMES.map((t0) => ({
+              id: 'theme:' + t0.key,
+              et: (t0.nameKey ? T(t0.nameKey) : t0.name),
+              act: this.theme === t0.key,
+              check: this.theme === t0.key,
+              lock: !!(t0.lock && !this._salaTemaLibre(t0.lock)),
+            })) },
+          { id: 'psthru', icono: 'vestibulo',
+            et: T('btn_psthru', { v: yn(pstOn) }),
+            check: !!pstOn, act: !!pstOn },
+        );
         break;
       }
       case 'salamesa': {
-        // r96 · subpágina MESA: altura y aspecto con recompensas.
-        // r98 · ADIÓS AL RAÍL (petición del dueño: «poder cogerla simplemente
-        // apuntando con los mandos hacia ella — aparece un rayo de selección
-        // — y moviendo hacia arriba o hacia abajo la subimos o bajamos, con
-        // un texto bien grande sobre nuestro lado de la mesa con su altura»):
-        // la mesa se AGARRA en 3D (_mesaGrab) y el panel muestra la lectura
-        // viva + paso fino −/+; la pista del gesto vive en el tooltip del
-        // control Y en la página (mesa_alto_grab).
-        if (this.mesaOcupada()) {
-          label(T('mesa_no_champ'), y + 2, 18, '#ffa94d');
-          y += 40;
+        // r96/r98 · MESA: altura con LECTURA viva (se agarra en 3D) y
+        // −/+ a banda completa; aspectos en grid 3 col; retos como filas.
+        const ocup = this.mesaOcupada();
+        const y0m = this.mesaAltoY;
+        const cm = Math.round(y0m * 100);
+        const zona = y0m < 0.735 ? T('mesa_zona_baja')
+          : (y0m < 0.80 ? T('mesa_zona_media') : T('mesa_zona_alta'));
+        items.push(
+          { tipo: 'titulo', et: T('mesa_alto_lbl'), col: '#98a6b4' },
+          { tipo: 'lectura', et: cm + ' cm · ' + zona, f: 30, col: '#e9edf2' },
+        );
+        if (ocup) {
+          items.push({ tipo: 'lectura', et: T('mesa_no_champ'),
+            col: '#ffa94d', f: 18 });
+        } else {
+          items.push({ tipo: 'lectura', et: T('mesa_alto_grab'),
+            col: '#8ce99a', f: 18 });
         }
-        label(T('mesa_alto_lbl'), y + 2, 17, '#98a6b4');
-        y += 34;
-        // ---- altura: LECTURA viva (la mesa se agarra en 3D) ----
-        {
-          const ocup = this.mesaOcupada();
-          const y0 = this.mesaAltoY;
-          const cm = Math.round(y0 * 100);
-          const zona = y0 < 0.735 ? T('mesa_zona_baja')
-            : (y0 < 0.80 ? T('mesa_zona_media') : T('mesa_zona_alta'));
-          c.fillStyle = '#e9edf2';
-          c.font = '800 30px system-ui, sans-serif';
-          c.textAlign = 'center';
-          c.textBaseline = 'middle';
-          c.fillText(cm + ' cm · ' + zona, 512, y + 30);
-          y += 70;
-          if (!ocup) {
-            label(T('mesa_alto_grab'), y + 2, 17, '#8ce99a');
-            y += 38;
-          }
-          btn('mesa_altomen', 176, y, 148, 58, '−', false, undefined, undefined, 26);
-          btn('mesa_altomas', 684, y, 148, 58, '+', false, undefined, undefined, 26);
-          y += 72;
-        }
-        label(T('mesa_aspecto_lbl'), y + 2, 17, '#98a6b4');
-        y += 34;
-        MESA_ASPECTOS.forEach((s, i) => {
-          const libre = !s.lock || this._mesaLibre(s.lock);
-          const activo = this.mesaSkin === s.id;
-          btn('mesa_skin:' + s.id, 56 + (i % 3) * 312, y + Math.floor(i / 3) * 62,
-            288, 54, (libre ? '' : '🔒 ') + T(s.nameKey),
-            activo, undefined, activo, 21);
-        });
-        y += Math.ceil(MESA_ASPECTOS.length / 3) * 62 + 6;
-        const hayCerrada = MESA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock));
-        if (hayCerrada) {
-          label(T('mesa_lock_hint'), y + 2, 16, '#93a1b0');
-          y += 36;
+        items.push(
+          { tipo: 'filaN', wFr: [0.5, 0.5], cells: [
+            { id: 'mesa_altomen', et: '−' },
+            { id: 'mesa_altomas', et: '+' },
+          ] },
+          { tipo: 'titulo', et: T('mesa_aspecto_lbl'), col: '#98a6b4' },
+          { tipo: 'grid', cols: 3, fs: 20,
+            celdas: MESA_ASPECTOS.map((s) => ({
+              id: 'mesa_skin:' + s.id, et: T(s.nameKey),
+              act: this.mesaSkin === s.id,
+              check: this.mesaSkin === s.id,
+              lock: !!(s.lock && !this._mesaLibre(s.lock)),
+            })) },
+        );
+        if (MESA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock))) {
+          items.push({ tipo: 'lectura', et: T('mesa_lock_hint'),
+            col: '#93a1b0', f: 17 });
         }
         // r97 · RETOS DE LA SEMANA: lo que ALIMENTA los candados de arriba
-        {
-          const act97 = this._retosActivos();
-          const st97 = this._retosEstado();
-          label(T('retos_t'), y + 2, 17, '#f0c85a');
-          y += 36;
-          for (const r of act97) {
-            const hecho = st97.done.indexOf(r.id) >= 0;
-            const p97 = Math.min(st97.p[r.id] || 0, r.n);
-            const progTxt = r.id === 'vmax65'
-              ? p97.toFixed(1) + ' / ' + r.n
-              : Math.floor(p97) + ' / ' + r.n;
-            btn('reto97', 56, y, 912, 52,
-              (hecho ? '✓ ' : '') + T(r.k, { n: r.n }) + '   ·   ' + progTxt,
-              hecho, undefined, false, 20);
-            y += 60;
-          }
-          label(T('retos_star', { n: st97.stars | 0 }) + ' · ' + T('retos_premio'),
-            y + 2, 15, '#a9b8cc');
-          y += 34;
-        }
+        const act97 = this._retosActivos();
+        const st97 = this._retosEstado();
+        items.push({ tipo: 'titulo', et: T('retos_t'), col: '#f0c85a' });
+        act97.forEach((r) => {
+          const hecho = st97.done.indexOf(r.id) >= 0;
+          const p97 = Math.min(st97.p[r.id] || 0, r.n);
+          const progTxt = r.id === 'vmax65'
+            ? p97.toFixed(1) + ' / ' + r.n
+            : Math.floor(p97) + ' / ' + r.n;
+          items.push({ tipo: 'grid', cols: 1, fs: 20,
+            celdas: [{ id: 'reto97',
+              et: (hecho ? '✓ ' : '') + T(r.k, { n: r.n }) + '   ·   ' + progTxt,
+              act: hecho }] });
+        });
+        items.push({ tipo: 'lectura',
+          et: T('retos_star', { n: st97.stars | 0 }) + ' · ' + T('retos_premio'),
+          col: '#a9b8cc', f: 17 });
         break;
       }
       case 'salabola': {
-        /* r21 (v3.6.117) · subpágina BOLA: 16 skins (clásicas + locura +
-         * planetas), candados iguales que la mesa y regla del dueño: en
-         * campeonato el selector se AVISA (cae a la oficial al jugar). */
-        label(T('bola_aspecto_lbl'), y + 2, 17, '#98a6b4');
-        y += 34;
-        BOLA_ASPECTOS.forEach((s, i) => {
-          const libre = !s.lock || this._mesaLibre(s.lock);
-          const activo = this._bolaSkinLS() === s.id;
-          btn('bola_skin:' + s.id, 56 + (i % 3) * 312, y + Math.floor(i / 3) * 62,
-            288, 54, T(s.nameKey),
-            activo, undefined, activo, 21);
-          if (!libre) {
-            PP_ICONS.candado(c, 56 + (i % 3) * 312 + 288 - 30,
-              y + Math.floor(i / 3) * 62 + 27, 0.8);
-          }
-        });
-        y += Math.ceil(BOLA_ASPECTOS.length / 3) * 62 + 6;
-        const hayCerradaB = BOLA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock));
-        if (hayCerradaB) {
-          label(T('mesa_lock_hint'), y + 2, 16, '#93a1b0');
-          y += 36;
+        // r21 · BOLA: 16 skins (clásicas + locura + planetas), candados
+        items.push(
+          { tipo: 'titulo', et: T('bola_aspecto_lbl'), col: '#98a6b4' },
+          { tipo: 'grid', cols: 3, fs: 20,
+            celdas: BOLA_ASPECTOS.map((s) => ({
+              id: 'bola_skin:' + s.id, et: T(s.nameKey),
+              act: this._bolaSkinLS() === s.id,
+              check: this._bolaSkinLS() === s.id,
+              lock: !!(s.lock && !this._mesaLibre(s.lock)),
+            })) },
+        );
+        if (BOLA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock))) {
+          items.push({ tipo: 'lectura', et: T('mesa_lock_hint'),
+            col: '#93a1b0', f: 17 });
         }
-        label(T('bola_cosmetica'), y + 2, 16, '#8ce99a');
-        y += 36;
+        items.push({ tipo: 'lectura', et: T('bola_cosmetica'),
+          col: '#8ce99a', f: 18 });
         break;
       }
       case 'salahall': {
-        /* r23 (v3.6.118) · subpágina HALL: entrar a la estancia de las
-         * insignias. Local: la TUYA. Online como invitado: EL DEL ANFITRIÓN
-         * (su perfil viaja en el HELLO v2 y viste la pared). En pleno
-         * rally no se visita el museo (la bola sigue viva). */
+        /* r23 · HALL: entrar a la estancia de las insignias. Local: la
+         * TUYA. Online como invitado: EL DEL ANFITRIÓN. En pleno rally no
+         * se visita el museo (la bola sigue viva). */
         const per = this._hallPerfil();
         const pH = per.p;
-        label(per.peer ? T('hall_gloria_peer') : T('hall_gloria_t'), y + 2, 19, '#f0c85a');
-        y += 42;
-        label(T('hall_stats', { w: pH.w, r: pH.bs, s: pH.st, e: pH.el }), y + 2, 16, '#a9b8cc');
-        y += 42;
+        items.push(
+          { tipo: 'titulo',
+            et: per.peer ? T('hall_gloria_peer') : T('hall_gloria_t'),
+            col: '#f0c85a' },
+          { tipo: 'lectura',
+            et: T('hall_stats', { w: pH.w, r: pH.bs, s: pH.st, e: pH.el }),
+            col: '#a9b8cc', f: 19 },
+        );
         if (per.peer) {
-          label(T('hall_visitando'), y + 2, 16, '#b07aff');
-          y += 36;
+          items.push({ tipo: 'lectura', et: T('hall_visitando'),
+            col: '#b07aff', f: 18 });
         }
         if (this.net && this.net.online && this.rules.state === 'rally') {
-          label(T('hall_en_rally'), y + 2, 16, '#ffa94d');
-          y += 36;
+          items.push({ tipo: 'lectura', et: T('hall_en_rally'),
+            col: '#ffa94d', f: 18 });
         }
-        btn('hall_entrar', 56, y, 912, 68, T('hall_entrar'), false, undefined, undefined, 25);
-        y += 88;
-        /* r24 (v3.6.119) · VARIANTE DEL HALL: el arte de TU estancia — el
-         * museo clásico o LA CABAÑA (chimenea, barra y nieve; candado
+        items.push({ id: 'hall_entrar', icono: 'vestibulo',
+          et: T('hall_entrar'), grad: ['#7c94c4', '#3c5280'] });
+        /* r24 · VARIANTE DEL HALL: el museo clásico o LA CABAÑA (candado
          * wins10). Local SOLO: de visita online ves la del anfitrión. */
         if (!per.peer) {
-          label(T('hall_var_lbl'), y + 2, 17, '#98a6b4');
-          y += 34;
-          HALL_VARIANTES.forEach((v, i) => {
-            const libreH = !v.lock || this._mesaLibre(v.lock);
-            const activoH = this._hallVarDef().id === v.id;
-            // r26b · rejilla de 3 columnas (patrón salamesa/salabola):
-            // con 5 variantes la fila única de la r24 ya no cabía.
-            btn('hall_var:' + v.id, 56 + (i % 3) * 312,
-              y + Math.floor(i / 3) * 62, 288, 54,
-              T(v.nameKey),
-              activoH, undefined, activoH, 21);
-            if (!libreH) {
-              PP_ICONS.candado(c, 56 + (i % 3) * 312 + 288 - 30,
-                y + Math.floor(i / 3) * 62 + 27, 0.8);
-            }
-          });
-          y += Math.ceil(HALL_VARIANTES.length / 3) * 62 + 6;
-          const hayCerradaH = HALL_VARIANTES.some((v) => v.lock && !this._mesaLibre(v.lock));
-          if (hayCerradaH) {
-            label(T('mesa_lock_hint'), y + 2, 16, '#93a1b0');
-            y += 36;
+          items.push({ tipo: 'titulo', et: T('hall_var_lbl'),
+            col: '#98a6b4' });
+          items.push({ tipo: 'grid', cols: 3, fs: 20,
+            celdas: HALL_VARIANTES.map((v) => ({
+              id: 'hall_var:' + v.id, et: T(v.nameKey),
+              act: this._hallVarDef().id === v.id,
+              check: this._hallVarDef().id === v.id,
+              lock: !!(v.lock && !this._mesaLibre(v.lock)),
+            })) });
+          if (HALL_VARIANTES.some((v) => v.lock && !this._mesaLibre(v.lock))) {
+            items.push({ tipo: 'lectura', et: T('mesa_lock_hint'),
+              col: '#93a1b0', f: 17 });
           }
         }
-        label(T('hall_cosmetica'), y + 2, 16, '#8ce99a');
-        y += 36;
+        items.push({ tipo: 'lectura', et: T('hall_cosmetica'),
+          col: '#8ce99a', f: 18 });
         break;
       }
       case 'sonido': {
-        btn('music', 56, y, 448, 62, T('btn_music', { v: yn(this.audio.musicOn) }),
-          !!this.audio.musicOn, undefined, !!this.audio.musicOn, 23);
-        btn('amb', 520, y, 448, 62, T('btn_amb', { v: yn(this.audio.ambience) }),
-          !!this.audio.ambience, undefined, !!this.audio.ambience, 23);
-        y += 72;
-        btn('voz', 56, y, 448, 62, T('btn_mic', { v: yn(this.audio.voice) }),
-          !!this.audio.voice, undefined, !!this.audio.voice, 23);
-        btn('sndtest', 520, y, 448, 62, T('btn_sndtest'), false, undefined, undefined, 23);
-        y += 84;
-        // r95 · VOLUMENES SEPARADOS (petición del dueño): música y efectos
-        // con sendas barras −/+ (paso 10%, aplicado EN VIVO y persistente).
-        // r96 · LAYOUT LIMPIO (el dueño: «están mal colocados y se
-        // superponen»): cada volumen tiene SU fila de etiqueta y SU fila de
-        // controles — nada de texto pisando botones — y la barra pasa a ser
-        // CLICABLE (fija el volumen al punto apuntado, como el deslizador
-        // de la mesa).
-        const barra = (vy, vol, idSet) => {
-          const rx = 168, rw = 664;
-          c.fillStyle = 'rgba(255,255,255,0.14)';
-          c.fillRect(rx, vy + 19, rw, 14);
-          c.fillStyle = vol > 0.001 ? '#ffd257' : 'rgba(255,255,255,0.25)';
-          c.fillRect(rx, vy + 19, Math.round(rw * vol), 14);
-          c.beginPath();
-          c.arc(rx + rw * vol, vy + 26, 13, 0, Math.PI * 2);
-          c.fillStyle = '#ffd257'; c.fill();
-          c.strokeStyle = '#10131a'; c.lineWidth = 3; c.stroke();
-          // r99 · % LIGERAMENTE ENCIMA de la barra (petición del dueño:
-          // «que no se pisen por la barra al moverlo»): la lectura vive
-          // SOBRE el raíl y la bola del deslizador ya no la tapa nunca.
-          c.fillStyle = '#ffd257';
-          c.font = '800 17px system-ui, sans-serif';
-          c.textAlign = 'center'; c.textBaseline = 'middle';
-          c.fillText(Math.round(vol * 100) + '%', 512, vy + 2);
-          rects.push(this._mapRect({ x: rx - 8, y: vy - 4, w: rw + 16, h: 62, id: idSet, slider: true }));
-        };
-        c.fillStyle = '#9aa7b4';
-        c.font = '700 20px system-ui, sans-serif';
-        c.textAlign = 'left'; c.textBaseline = 'middle';
-        c.fillText(T('btn_musvol'), 56, y + 12);   // etiqueta en SU fila
-        y += 38;
-        btn('mvol-', 56, y, 96, 58, '−', false, undefined, undefined, 26);
-        btn('mvol+', 872, y, 96, 58, '+', false, undefined, undefined, 26);
-        barra(y, this.audio.musicVol, 'mvolset');
-        y += 74;
-        c.fillStyle = '#9aa7b4';
-        c.font = '700 20px system-ui, sans-serif';
-        c.textAlign = 'left'; c.textBaseline = 'middle';
-        c.fillText(T('btn_fxvol'), 56, y + 12);
-        y += 38;
-        btn('fvol-', 56, y, 96, 58, '−', false, undefined, undefined, 26);
-        btn('fvol+', 872, y, 96, 58, '+', false, undefined, undefined, 26);
-        barra(y, this.audio.fxVol, 'fvolset');
-        y += 78;
+        // r95/r96/r99 · volúmenes SEPARADOS con barras CLICABLES (r78:
+        // barra a banda completa — etiqueta, raíl y % sin pisarse)
+        items.push(
+          { tipo: 'filaN', cells: [
+            { id: 'music', et: T('btn_music', { v: yn(this.audio.musicOn) }),
+              act: !!this.audio.musicOn, check: !!this.audio.musicOn },
+            { id: 'amb', et: T('btn_amb', { v: yn(this.audio.ambience) }),
+              act: !!this.audio.ambience, check: !!this.audio.ambience },
+          ] },
+          { tipo: 'filaN', cells: [
+            { id: 'voz', et: T('btn_mic', { v: yn(this.audio.voice) }),
+              act: !!this.audio.voice, check: !!this.audio.voice },
+            { id: 'sndtest', et: T('btn_sndtest') },
+          ] },
+          { tipo: 'barra', et: T('btn_musvol'), vol: this.audio.musicVol,
+            idSet: 'mvolset', minus: 'mvol-', plus: 'mvol+' },
+          { tipo: 'barra', et: T('btn_fxvol'), vol: this.audio.fxVol,
+            idSet: 'fvolset', minus: 'fvol-', plus: 'fvol+' },
+        );
         break;
       }
       case 'visual': {
-        btn('trail', 56, y, 448, 62, T('btn_trail', { v: yn(this.showTrail) }),
-          !!this.showTrail, undefined, !!this.showTrail, 23);
-        btn('tips', 520, y, 448, 62, T('btn_tips', { v: yn(this.showTips) }),
-          !!this.showTips, undefined, !!this.showTips, 23);
-        y += 72;
-        btn('hapt', 56, y, 448, 62, T('btn_hapt', { v: yn(this.hapticsOn) }),
-          !!this.hapticsOn, undefined, !!this.hapticsOn, 23);
-        y += 78;
+        items.push(
+          { tipo: 'filaN', cells: [
+            { id: 'trail', et: T('btn_trail', { v: yn(this.showTrail) }),
+              act: !!this.showTrail, check: !!this.showTrail },
+            { id: 'tips', et: T('btn_tips', { v: yn(this.showTips) }),
+              act: !!this.showTips, check: !!this.showTips },
+          ] },
+          { id: 'hapt', icono: 'partido',
+            et: T('btn_hapt', { v: yn(this.hapticsOn) }),
+            check: !!this.hapticsOn, act: !!this.hapticsOn },
+        );
         break;
       }
       case 'perfil': {
-        const _pn = ppPlayerName();
-        btn('pname', 56, y, 448, 64, T('opts_name', { v: _pn || T('no_name') }),
-          !!_pn, undefined, undefined, 22);
-        btn('tele', 520, y, 448, 64, T('btn_tele', { v: yn(__PP_TELE.on) }),
-          !!__PP_TELE.on, undefined, !!__PP_TELE.on, 23);
-        y += 80;
-        btn('reset', 56, y, 912, 64, this._resetArm ? T('reset_arm') : T('reset_btn'),
-          false, this._resetArm ? 'surv' : undefined, undefined, 21);
-        y += 80;
-        label(T('tele_hint'), y + 10, 18, '#98a6b4');
-        y += 44;
         // M7e (r124) · TU PERFIL RECORDADO — lectura VIVA de los registros
-        // que el juego ya mantiene (pp_mesaskin, pp_mesaalto, pp_mesaaltoy,
-        // pp_pala_mejorada_v1, pp_rivstyle_v1, pp_pid): nada nuevo que
-        // sincronizar — el perfil ES el estado, aquí se ve de un vistazo.
-        label(T('perfil_titulo'), y + 14, 26, '#ffd257');
-        y += 52;
+        // que el juego ya mantiene (r78: filas de lectura a banda completa)
+        const _pn = ppPlayerName();
+        items.push(
+          { tipo: 'filaN', cells: [
+            { id: 'pname', et: T('opts_name', { v: _pn || T('no_name') }),
+              act: !!_pn },
+            { id: 'tele', et: T('btn_tele', { v: yn(__PP_TELE.on) }),
+              act: !!__PP_TELE.on, check: !!__PP_TELE.on },
+          ] },
+          { id: 'reset', icono: 'salir',
+            et: this._resetArm ? T('reset_arm') : T('reset_btn'),
+            grad: this._resetArm ? ['#f0873f', '#d05c1f'] : null,
+            col: this._resetArm ? '#ffc09a' : null },
+          { tipo: 'lectura', et: T('tele_hint'), col: '#98a6b4', f: 18 },
+          { tipo: 'titulo', et: T('perfil_titulo'), col: '#ffd257' },
+        );
         const _sk = this._mesaSkinDef(this.mesaSkin);
-        label(T('perfil_skin', { v: T(_sk.nameKey) }), y + 8, 20);
-        y += 40;
+        items.push({ tipo: 'lectura',
+          et: T('perfil_skin', { v: T(_sk.nameKey) }) });
         let _altoId = 'normal';
         try { _altoId = localStorage.getItem('pp_mesaalto') || 'normal'; } catch { /* */ }
         const _alto = MESA_ALTOS.find((a) => a.id === _altoId);
-        label(T('perfil_alto', { v: _alto ? T(_alto.nameKey) : _altoId }), y + 8, 20);
-        y += 40;
-        label(T('perfil_pala', { v: yn(this.palaMejorada) }), y + 8, 20);
-        y += 40;
-        label(T('perfil_estilo', { v: yn(this.rivStyleOn) }), y + 8, 20);
-        y += 40;
+        items.push({ tipo: 'lectura',
+          et: T('perfil_alto', { v: _alto ? T(_alto.nameKey) : _altoId }) });
+        items.push({ tipo: 'lectura',
+          et: T('perfil_pala', { v: yn(this.palaMejorada) }) });
+        items.push({ tipo: 'lectura',
+          et: T('perfil_estilo', { v: yn(this.rivStyleOn) }) });
         let _pid = '';
         try { _pid = (localStorage.getItem('pp_pid') || '').slice(0, 8); } catch { /* */ }
-        if (_pid) label(T('perfil_pid', { v: _pid }), y + 8, 20, '#7e8ea8');
-        if (_pid) y += 40;
+        if (_pid) items.push({ tipo: 'lectura',
+          et: T('perfil_pid', { v: _pid }), col: '#7e8ea8' });
         break;
       }
       case 'rendi': {
-        // r81 · RENDIMIENTO: el autocalibrador a la vista (petición del
-        // dueño: «una herramienta para poder calibrar los FPS según el
-        // modelo de gafas… que asegure al menos 60 FPS seguros»)
+        // r81 · RENDIMIENTO: el autocalibrador a la vista (r78: lecturas
+        // y filas a banda completa; el RED en vivo de la r77 preside)
         const pf = this.perf ? this.perf.status() : null;
         if (pf) {
-          label(T('perf_device', { v: pf.tierLabel }), y + 12, 24, '#e9edf2');
-          y += 42;
-          label(pf.gpu ? pf.gpu.slice(0, 60) : '', y + 2, 17, '#98a6b4');
-          y += 38;
+          items.push(
+            { tipo: 'titulo', et: T('perf_device', { v: pf.tierLabel }) },
+            { tipo: 'lectura', et: pf.gpu ? pf.gpu.slice(0, 60) : '',
+              col: '#98a6b4', f: 18 },
+          );
           const estado = pf.calibrating
             ? T('perf_calibrando', { s: pf.probeRound + 1 })
             : (pf.fps >= 58 ? T('perf_estado_ok') : T('perf_estado_bajo'));
-          label(T('perf_fps', { v: pf.fps, r: pf.sessionRate || pf.rate })
-            + ' · ' + estado, y + 2, 20, pf.fps >= 58 || pf.calibrating ? '#8ce99a' : '#ffa94d');
-          y += 48;
-          btn('perfAuto', 56, y, 912, 62, T('perf_auto', { v: yn(pf.auto) }),
-            !!pf.auto, undefined, !!pf.auto, 23);
-          y += 78;
-          label(T('perf_calidad'), y + 10, 22);
-          y += 42;
-          btn('perfTier:auto', 56, y, 292, 62, T('perf_tier_auto'),
-            this.perf.tierAuto, undefined, this.perf.tierAuto, 21);
-          btn('perfTier:quest3', 366, y, 292, 62, T('perf_t_quest3'),
-            this.perf.tier === 'quest3' && !this.perf.tierAuto,
-            undefined, this.perf.tier === 'quest3' && !this.perf.tierAuto, 20);
-          btn('perfTier:quest2', 676, y, 292, 62, T('perf_t_quest2'),
-            this.perf.tier === 'quest2' && !this.perf.tierAuto,
-            undefined, this.perf.tier === 'quest2' && !this.perf.tierAuto, 20);
-          y += 78;
-          label(T('perf_escala', { v: pf.scale.toFixed(2) }), y + 8, 18, '#98a6b4');
-          y += 42;
-          btn('perfRecal', 56, y, 912, 62,
-            pf.presenting ? T('perf_recal') : T('perf_recal_next'),
-            false, pf.presenting ? 'gold' : undefined, undefined, 22);
-          y += 78;
-          // r96 · NITIDEZ DEL VISOR (FFR): tope manual del dueño — el
-          // gobernador nunca pasará de aquí. Cuatro niveles aplicados EN VIVO.
-          label(T('perf_ffr'), y + 10, 22);
-          y += 42;
-          const ffrBtn = (modo, name2, sz) => btn('perfFfr:' + modo, 56, y, 220, 62, name2,
-            this.perf.ffr === modo, undefined, this.perf.ffr === modo, sz || 21);
-          ffrBtn('max', T('perf_ffr_max'), 20);
-          ffrBtn('alta', T('perf_ffr_alta'));
-          ffrBtn('normal', T('perf_ffr_normal'));
-          ffrBtn('rinde', T('perf_ffr_rinde'));
-          y += 70;
-          btn('perfFfr:def', 56, y, 912, 54,
-            (this.perf.ffr === 'def' ? '✓ ' : '') + T('perf_tier_auto')
-            + ' · ' + T('perf_ffr_v', { v: pf.fovea.toFixed(2) }),
-            this.perf.ffr === 'def', undefined, this.perf.ffr === 'def', 19);
-          y += 70;
+          items.push({ tipo: 'lectura',
+            et: T('perf_fps', { v: pf.fps, r: pf.sessionRate || pf.rate })
+              + ' · ' + estado,
+            col: pf.fps >= 58 || pf.calibrating ? '#8ce99a' : '#ffa94d',
+            f: 22 });
+          items.push(
+            { id: 'perfAuto', icono: 'gauge',
+              et: T('perf_auto', { v: yn(pf.auto) }),
+              check: !!pf.auto, act: !!pf.auto },
+            { tipo: 'titulo', et: T('perf_calidad') },
+            { tipo: 'filaN', cells: [
+              { id: 'perfTier:auto', et: T('perf_tier_auto'),
+                act: this.perf.tierAuto, check: this.perf.tierAuto },
+              { id: 'perfTier:quest3', et: T('perf_t_quest3'),
+                act: this.perf.tier === 'quest3' && !this.perf.tierAuto,
+                check: this.perf.tier === 'quest3' && !this.perf.tierAuto },
+              { id: 'perfTier:quest2', et: T('perf_t_quest2'),
+                act: this.perf.tier === 'quest2' && !this.perf.tierAuto,
+                check: this.perf.tier === 'quest2' && !this.perf.tierAuto },
+            ] },
+            { tipo: 'lectura', et: T('perf_escala', { v: pf.scale.toFixed(2) }),
+              col: '#98a6b4', f: 18 },
+            { id: 'perfRecal', icono: 'gauge',
+              et: pf.presenting ? T('perf_recal') : T('perf_recal_next'),
+              grad: pf.presenting ? ['#ffd257', '#b3841f'] : null,
+              col: pf.presenting ? '#ffe9a8' : null },
+            // r96 · NITIDEZ DEL VISOR (FFR): cuatro niveles EN VIVO
+            { tipo: 'titulo', et: T('perf_ffr') },
+            { tipo: 'filaN', fs: 20, cells: [
+              { id: 'perfFfr:max', et: T('perf_ffr_max'),
+                act: this.perf.ffr === 'max' },
+              { id: 'perfFfr:alta', et: T('perf_ffr_alta'),
+                act: this.perf.ffr === 'alta' },
+              { id: 'perfFfr:normal', et: T('perf_ffr_normal'),
+                act: this.perf.ffr === 'normal' },
+              { id: 'perfFfr:rinde', et: T('perf_ffr_rinde'),
+                act: this.perf.ffr === 'rinde' },
+            ] },
+            { id: 'perfFfr:def', icono: 'gauge', fino: true,
+              et: (this.perf.ffr === 'def' ? '✓ ' : '') + T('perf_tier_auto')
+                + ' · ' + T('perf_ffr_v', { v: pf.fovea.toFixed(2) }),
+              act: this.perf.ffr === 'def' },
+          );
         }
         break;
       }
       case 'pala': {
-        // r83 · LA PALA EN AJUSTES: el subapartado que pide el dueño. Cargar
-        // y borrar agarres guardados, natural, GUARDAR CON NOMBRE y el gran
-        // botón dorado que arranca el ajuste en VR (passthrough al instante).
-        label(T('pala_actual', { v: this.gripName }), y + 10, 24, '#e9edf2');
-        y += 44;
-        label(T('pala_help'), y + 2, 17, '#98a6b4');
-        y += 40;
-        btn('palaGo', 56, y, 912, 70, T('pala_go'), false, 'gold', undefined, 26);
-        y += 86;
-        btn('gname', 56, y, 912, 62, T('pala_gname'), false, undefined, undefined, 23);
-        y += 78;
-        btn('gripNat', 56, y, 912, 62, T('pala_nat'), false, undefined, undefined, 23);
-        y += 78;
-        label(T('pala_guardados'), y + 10, 22);
-        y += 42;
+        // r83 · LA PALA EN AJUSTES: gran botón dorado, agarres guardados
+        // en grid con ✕ (r78: todo a banda completa)
+        items.push(
+          { tipo: 'lectura', et: T('pala_actual', { v: this.gripName }),
+            f: 26, col: '#e9edf2' },
+          { tipo: 'lectura', et: T('pala_help'), col: '#98a6b4', f: 18 },
+          { id: 'palaGo', icono: 'partido', grad: ['#ffd257', '#b3841f'],
+            et: T('pala_go'), col: '#ffe9a8' },
+          { id: 'gname', icono: 'usuario', et: T('pala_gname') },
+          { id: 'gripNat', icono: 'partido', et: T('pala_nat') },
+          { tipo: 'titulo', et: T('pala_guardados') },
+        );
         const _gripNombres = this.gripList().slice(0, 8);
         if (!_gripNombres.length) {
-          label(T('pala_ninguno'), y + 6, 19, '#93a1b0');
-          y += 44;
+          items.push({ tipo: 'lectura', et: T('pala_ninguno'),
+            col: '#93a1b0', f: 19 });
         } else {
-          _gripNombres.forEach((nm, i) => {
-            const col = i % 2, row = (i / 2) | 0;
-            btn('gripLoad:' + nm, 56 + col * 464, y + row * 64, 380, 56, nm,
-              this.gripName === nm, undefined, this.gripName === nm, 22);
-            btn('gripDel:' + nm, 444 + col * 464, y + row * 64, 68, 56, '✕',
-              false, 'surv', undefined, 22);
-          });
-          y += Math.ceil(_gripNombres.length / 2) * 64;
+          items.push({ tipo: 'grid', cols: 2, fs: 21,
+            celdas: _gripNombres.map((nm) => ({
+              id: 'gripLoad:' + nm, et: nm,
+              act: this.gripName === nm,
+              check: this.gripName === nm,
+              del: 'gripDel:' + nm,
+            })) });
         }
         // salida limpia al Hall desde AQUÍ (la misma recogida estanca)
-        btn('homehall', 56, y + 6, 912, 56, '⌂ ' + T('hall_home_btn'), false, undefined, undefined, 23);
-        y += 78;
+        items.push({ id: 'homehall', icono: 'vestibulo',
+          et: '⌂ ' + T('hall_home_btn') });
         break;
       }
       default:
         break;
     }
-    const closeY = Math.min(Math.max(y + 4, 1392), 1428);
-    btn('close', 56, closeY, 912, 68, T('close_menu') + ' · B', false, undefined, undefined, 26);
+    // r78 · cierre: fila fina justo bajo el contenido (nunca flotando)
+    const yFin = this._menuBandas(rects, items, { yMax: 1244 });
+    this._menuBandas(rects, [
+      { id: 'close', icono: 'salir', et: T('close_menu') + ' · B',
+        fino: true },
+    ], { y0: Math.min(yFin + 2, 1330), yMax: 1378, gap: 8 });
   }
 
   toggleMenu() {
@@ -6235,6 +6481,11 @@ export class PingPongGame {
             arg === 'optsSalaRoom' || arg === 'optsSalaMesa' ||
             arg === 'optsSalaBola' || arg === 'optsSalaHall') {   // r96 · submenús SALA/MESA · r21 · BOLA · r23 · HALL
           this.menuPage = arg;
+          // r78 · SALA PÚBLICA EN ESPERA: ATRÁS desde MULTIJUGADOR con la
+          // sala abierta NO la cierra — queda viva como canal público y la
+          // alerta de duelo avisa al anfitrión de cada entrada.
+          if (arg === 'main' && this.net && !this.net.online &&
+              this.net.status === 'waiting') this._salaEnEspera = true;
           this._resetArm = false;
           if (arg === 'rankini') this._rankiniFresh = false;   // r72 · reloj único de aterrizaje
           if (arg === 'champs') {
@@ -6476,6 +6727,7 @@ export class PingPongGame {
         if (arg === 'pub' || arg === 'pri') {
           this.net.modoSala = (this._mjMode === 'duelos') ? 'duelos' : 'normal';
           this.net.visSala = arg;
+          this._salaEnEspera = false;   // r78 · sala recién creada: al frente
           this.menuPage = 'multi';
           this.net.hostRoom();
         }
@@ -6550,8 +6802,14 @@ export class PingPongGame {
         else if (arg === 'join') { this.menuPage = 'join'; this._joinCode = ''; }
         else if (arg === 'cancel') {
           this.net.cancel();
+          this._salaEnEspera = false;   // r78 · cancelar ES cancelar
           // r80 · sala cancelada: vuelta a la selección de modos
           this._mjMode = (this.net.online || this.net.status !== 'off') ? 'normal' : null;
+        }
+        else if (arg === 'espera') {
+          // r78 · la sala PÚBLICA queda viva en segundo plano; MI CASA
+          this._salaEnEspera = true;
+          this.menuPage = 'main';
         }
         else if (arg === 'hangup') { this.net.hangup(); this._mjMode = null; }
         else if (arg === 'mic') { this.net.toggleMic(); if (!this.net.micStream) this.net.initVoice().catch(() => {}); }
@@ -6860,6 +7118,20 @@ export class PingPongGame {
         this.applyAISkill();      // recalcula el objetivo ya (el lerp lleva)
         this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
         this.rules.message = T('msg_adapt', { v: this.adaptive ? T('yes') : T('no') });
+        this.drawMenu();
+        break;
+      }
+      case 'alertas': {
+        // r78 · FASE 174 · SISTEMA DE ALERTAS (petición del dueño):
+        // abierto para todos por defecto; aquí se silencian las alertas
+        // PÚBLICAS (duelo pendiente: quad + pitidos + voz). El duelo
+        // PENDIENTE sigue esperando en MULTIJUGADOR y se acepta desde allí.
+        this.alertasOn = !(this.alertasOn !== false);
+        try { localStorage.setItem('pp_alertas_v1', this.alertasOn ? '1' : '0'); } catch { /* */ }
+        this.audio.playOsc(this.alertasOn ? 880 : 420,
+          this.alertasOn ? 1320 : 300, 0.08, 'triangle', 0.12, 0);
+        this.rules.message = T(this.alertasOn ? 'msg_alertas_on'
+          : 'msg_alertas_off');
         this.drawMenu();
         break;
       }

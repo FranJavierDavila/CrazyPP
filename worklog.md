@@ -7077,4 +7077,4 @@ Stage Summary:
 
 **Versionado:** bump 3.6.174→3.6.175-SDK6 · FASE 180 (golden f76cd5d3… tras el wrap+etiquetas · nota=r84) · kit release-v36175 (tokens + veto v36174 + nota FASE 180) · 4 ZIPs.
 
-**Despliegue:** deploy_pages --push (PAT del dueño) → Pages sirviendo 3.6.175 (verificación en vivo) · release v3.6.175-SDK6 · backups main/proyecto.
+**Despliegue:** deploy_pages --push (PAT del dueño): ensamblado 506 ficheros, smoke verde (33 peticiones, 0 fallos, 0 pageerrors), refs/heads/pages → fbe5eeaed · **EN PRODUCCIÓN verificado en vivo: PAGES-VERSION.txt = 3.6.175-SDK6 · const VERSION = '3.6.175-SDK6' · MENÚ CON IMAGEN PLENA + menuViendo ×2 (guard del gobernador) · 'trainext','trainarea' en sinPlaca + game._menuMap=null ×2 (migración) · dist 1.00 ×3 y dist 1.15 = 0 (arco cerca) en los bytes servidos** · Release v3.6.175-SDK6 con los 4 ZIPs · backups main/proyecto.

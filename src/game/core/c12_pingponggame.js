@@ -1874,10 +1874,16 @@ export class PingPongGame {
       cv.height = CONFIG_MENUS.lienzo.alto;
       const tex = new THREE.CanvasTexture(cv);
       tex.colorSpace = THREE.SRGBColorSpace;
-      // sin mips (r105): magnificación pura a ~1,15 m
-      tex.generateMipmaps = false;
-      tex.minFilter = THREE.LinearFilter;
-      tex.anisotropy = 1;
+      // r82 · MIPMAPS+ANISO: r105 los quitó («magnificación pura a ~1,15 m»)
+      // y con el menú ESTÁTICO era cierto — pero el FX r81 ESCALA las
+      // panelas (cascada 0.82→1.06→1 + pulso 1.03) y en minificación el
+      // bilinear puro con anisotropy=1 hace CRAWLEAR el texto (aliasing del
+      // arco que reportó el dueño). WebGL2 (Quest) admite NPOT con mips;
+      // la magnificación sigue Lineal y el coste (mips en trozos de lienzo,
+      // ~3 repintados del flash a 60 ms) es despreciable.
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.anisotropy = 4;
       const mesh = new THREE.Mesh(
         this._menuShapePanela(pa),
         new THREE.MeshBasicMaterial({

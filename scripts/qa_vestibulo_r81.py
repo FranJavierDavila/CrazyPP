@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_vestibulo_r81.py — QA de la FASE 177 «MENÚS EN ESCENA» · r81 · V3.6.172-SDK6.
+"""qa_vestibulo_r81.py — QA de la FASE 177 «MENÚS EN ESCENA» · r81 · V3.6.172-SDK6 — ampliado r82 (FASE 178 «MENUS SIN ALIASING» · V3.6.173-SDK6: mipmaps+aniso en las texturas del arco, el aliasing que reportó el dueño).
 
 FASE 177 (el dueño: «el menú al pulsar B, fijo y sin seguimiento de la vista, con
 las animaciones y efectos de la competencia»): el arco ENTRA EN ESCENA con
@@ -641,14 +641,23 @@ async def main():
         print('✗ No se pudo leer el game.html local:', e)
         return
     # ---- sellos de versión ----
-    chk('3.6.172-SDK6' in game, 'game.html sello 3.6.172-SDK6 (FASE 177 «MENÚS EN ESCENA»)')
+    chk('3.6.173-SDK6' in game, 'game.html sello 3.6.173-SDK6 (FASE 178 «MENUS SIN ALIASING»)')
     vjson = open(os.path.join(RAIZ, 'src/game/VERSION.json'), encoding='utf-8').read()
-    chk('3.6.172-SDK6' in vjson and 'MENUS EN ESCENA' in vjson,
-        'VERSION.json sella 3.6.172 + FASE 177')
+    chk('3.6.173-SDK6' in vjson and 'MENUS SIN ALIASING' in vjson,
+        'VERSION.json sella 3.6.173 + FASE 178')
     swjs = open(os.path.join(RAIZ, 'public/sw.js'), encoding='utf-8').read()
-    chk("crazypp-v3.6.172-SDK6" in swjs, 'sw.js CACHE sella v3.6.172 (purga de cachés viejas)')
+    chk("crazypp-v3.6.173-SDK6" in swjs, 'sw.js CACHE sella v3.6.173 (purga de cachés viejas)')
     hub = open(os.path.join(RAIZ, 'src/app/descargas/page.tsx'), encoding='utf-8').read()
-    chk('V3.6.172-SDK6' in hub, 'hub /descargas sella V3.6.172-SDK6')
+    chk('V3.6.173-SDK6' in hub, 'hub /descargas sella V3.6.173-SDK6')
+
+    # ---- F178 · agujas estáticas SIN ALIASING (r82) ----
+    chk('tex.generateMipmaps = true' in game and
+        'THREE.LinearMipmapLinearFilter' in game,
+        'texturas del arco con mipmaps+trilineal (r105 anulado: el FX r81 escala las panelas)')
+    chk('tex.anisotropy = 4' in game,
+        'anisotropy 4 en las panelas (texto nítido en ángulo y distancia)')
+    chk('tex.generateMipmaps = false' not in game,
+        'no queda ninguna textura del menú con mips desactivados')
 
 
     # ---- F177 · agujas estáticas MENÚS EN ESCENA (r81) ----

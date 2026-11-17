@@ -2210,7 +2210,11 @@ export class PingPongGame {
   drawMenuMulti(rects) {
     const net = this.net;
     const st = net.online ? 'online' : net.status;
-    if (net.online || st !== 'off') {
+    // r79 · SALA EN ESPERA: si el anfitrión dio ATRÁS (o «Dejar en espera»),
+    // el subnivel anterior (ZONAS) vuelve a la vista CON la sala viva —
+    // sólo «online» (duelo abierto) manda siempre al panel de sala.
+    if (net.online || (st !== 'off' &&
+        !(st === 'waiting' && this._salaEnEspera))) {
       this._multiSala(rects, st);          // sala viva: estados en la C
       return;
     }
@@ -2246,6 +2250,33 @@ export class PingPongGame {
       btn('page:dueloask', x0, y, w0, 78, T('dueloask_t'), false,
         undefined, undefined, 26);
       y += 94;
+    }
+    // r79 · SALA PÚBLICA EN ESPERA: tarjeta viva sobre las ZONAS (el
+    // subnivel anterior sigue usable con la sala anunciándose en segundo
+    // plano). GESTIONAR vuelve al panel de espera; CANCELAR es cancelar.
+    if (this._salaEnEspera && this.net && this.net.status === 'waiting' &&
+        !this.net.online) {
+      this._vestRR(c, x0 - 12, y - 6, w0 + 24, 148, 22);
+      c.fillStyle = 'rgba(44,28,4,0.88)';
+      c.fill();
+      c.lineWidth = 3;
+      c.strokeStyle = '#ffb340';
+      c.stroke();
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillStyle = '#ffd45e';
+      c.font = '800 27px system-ui, sans-serif';
+      c.fillText(T('hub_multi_espera', { c: this.net.code }) + ' · ' +
+        (this.net.visSala === 'pub' ? T('mj_pub_t') : T('mj_pri_t')),
+        x0, y + 24);
+      c.fillStyle = '#9aa7b4';
+      c.font = '600 21px system-ui, sans-serif';
+      c.fillText(T('mj_waiting'), x0, y + 58);
+      btn('net:gestiona', x0, y + 78, (w0 - 24) / 2, 56,
+        T('btn_gestiona'), true, undefined, undefined, 22);
+      btn('net:cancel', x0 + (w0 + 24) / 2, y + 78, (w0 - 24) / 2, 56,
+        T('btn_cancel_room'), false, undefined, undefined, 22);
+      y += 162;
     }
     const zona = (txt, yy) => {
       c.fillStyle = '#e8b45a';
@@ -2785,10 +2816,11 @@ export class PingPongGame {
   drawMenuRank(rects) {
     const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
-    const label = this._menuLabel;
     this.drawMenuHeader(rects);
-
-    // v2.125: el campeonato de portada manda (eager del índice), no un literal
+    // r79 · RANKING MUNDIAL a PANEL COMPLETO (el dueño: «conserva
+    // maquetación antigua» — ADIÓS a la tarjeta 1024×1536): tabla de museo
+    // en la banda de la C con el selector ‹ ›, YO en oro, insignias de
+    // campeón, estado + refresco y recordatorio de nombre.
     const _portada = this.champs ? this.champs.portadaId : 'locura';
     const ids = [_portada].concat(this.champs ? this.champs.list().map((x) => x.id) : [])
       .filter((v, i, a2) => a2.indexOf(v) === i);
@@ -2801,41 +2833,46 @@ export class PingPongGame {
     };
     // v2.70: todos los campeonatos puntúan por VICTORIAS (arquitectura común)
     const ptsLbl = T('wrl_wins');
-
-    // desplegable ‹ campeonato ›
-    btn('wrl:left', 56, 268, 110, 68, '‹', false, undefined, undefined, 40);
-    btn('wrl:right', 858, 268, 110, 68, '›', false, undefined, undefined, 40);
+    const pC = CONFIG_MENUS.arco.panelas[1];
+    const x0 = pC.x + 80, w0 = pC.w - 160;
+    const mm0 = this._menuMap;
+    this._menuMap = null;
+    c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    // selector ‹ campeonato › a banda completa
+    btn('wrl:left', x0, 272, 96, 64, '‹', false, undefined, undefined, 36);
+    btn('wrl:right', x0 + w0 - 96, 272, 96, 64, '›', false, undefined, undefined, 36);
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.beginPath();
-    if (c.roundRect) c.roundRect(178, 268, 668, 68, 14); else c.rect(178, 268, 668, 68);
+    if (c.roundRect) c.roundRect(x0 + 112, 272, w0 - 224, 64, 14); else c.rect(x0 + 112, 272, w0 - 224, 64);
     c.fillStyle = 'rgba(232,180,90,0.14)';
     c.fill();
     c.strokeStyle = 'rgba(232,180,90,0.5)';
     c.lineWidth = 2;
     c.stroke();
     c.fillStyle = '#ffd257';
-    c.font = '800 25px system-ui, sans-serif';
-    c.fillText(wrLabel(this._wrlChamp), 512, 303);
+    c.font = '800 27px system-ui, sans-serif';
+    c.fillText(wrLabel(this._wrlChamp), pC.x + pC.w / 2, 304);
 
     // cabecera de columnas — r72 · en ORO (placa de museo, lenguaje nuevo)
     c.fillStyle = '#e8b45a';
-    c.font = '800 22px system-ui, sans-serif';
+    c.font = '800 23px system-ui, sans-serif';
     c.textAlign = 'left';
-    c.fillText(T('wrl_col_name'), 150, 372);
+    c.fillText(T('wrl_col_name'), x0 + 96, 372);
     c.textAlign = 'right';
-    c.fillText(ptsLbl, 872, 372);
-    c.fillText(T('wrl_col_logros'), 986, 372);
+    c.fillText(ptsLbl, x0 + w0 - 200, 372);
+    c.fillText(T('wrl_col_logros'), x0 + w0 - 24, 372);
 
-    // filas top 10
+    // filas top 10 — banda completa, placa en las filas pares
     const rows = WORLDRANK.list(this._wrlChamp).slice(0, 10);
     const my = (ppPlayerName() || '').toLowerCase();
     for (let i = 0; i < 10; i++) {
       const e = rows[i];
-      const ry = 396 + i * 48;
+      const ry = 392 + i * 50;
       if (!(i % 2)) {
         c.beginPath();
-        if (c.roundRect) c.roundRect(56, ry - 3, 912, 44, 10); else c.rect(56, ry - 3, 912, 44);
+        if (c.roundRect) c.roundRect(x0, ry - 3, w0, 44, 10); else c.rect(x0, ry - 3, w0, 44);
         c.fillStyle = 'rgba(255,255,255,0.045)';
         c.fill();
       }
@@ -2844,20 +2881,20 @@ export class PingPongGame {
       const isMe = !!(e && my && e.n.toLowerCase() === my);
       c.font = '700 24px system-ui, sans-serif';
       c.fillStyle = e ? '#cfd8e0' : '#4a5560';
-      c.fillText(String(i + 1), 74, ry + 19);
+      c.fillText(String(i + 1), x0 + 18, ry + 19);
       c.font = (isMe ? '800 ' : '600 ') + '25px system-ui, sans-serif';
       c.fillStyle = isMe ? '#ffd257' : (e ? '#f2f4f6' : '#4a5560');
       const nm = e ? e.n : '—';
-      c.fillText(nm.length > 15 ? nm.slice(0, 14) + '…' : nm, 150, ry + 19);
+      c.fillText(nm.length > 17 ? nm.slice(0, 16) + '…' : nm, x0 + 94, ry + 19);
       if (isMe) {
         c.fillStyle = '#e8b45a';
         c.font = '800 18px system-ui, sans-serif';
-        c.fillText(T('wrl_you'), 452, ry + 20);
+        c.fillText(T('wrl_you'), x0 + 420, ry + 20);
       }
       c.textAlign = 'right';
       c.font = '800 25px system-ui, sans-serif';
       c.fillStyle = e ? '#9fe088' : '#4a5560';
-      c.fillText(e ? String(e.p) : '·', 872, ry + 19);
+      c.fillText(e ? String(e.p) : '·', x0 + w0 - 200, ry + 19);
       c.font = '700 23px system-ui, sans-serif';
       c.fillStyle = e ? '#ffd257' : '#4a5560';
       // v2.75: los CAMPEONES (a === '🏆') lucen SU insignia del campeonato
@@ -2866,13 +2903,13 @@ export class PingPongGame {
       if (_bg && _bg.complete && _bg.naturalWidth > 0) {
         const _s = 38 / Math.max(_bg.naturalWidth, _bg.naturalHeight);
         const _w = _bg.naturalWidth * _s, _h = _bg.naturalHeight * _s;
-        c.drawImage(_bg, 986 - _w / 2, ry + 19 - _h / 2, _w, _h);
+        c.drawImage(_bg, x0 + w0 - 116 - _w / 2, ry + 19 - _h / 2, _w, _h);
       } else {
-        c.fillText(e ? (e.a || '·') : '·', 986, ry + 19);
+        c.fillText(e ? (e.a || '·') : '·', x0 + w0 - 116, ry + 19);
       }
     }
 
-    // estado de la conexión + botón de refresco
+    // estado de la conexión + botón de refresco (banda completa)
     let stTxt = T('wrl_loading');
     let stCol = '#e8b45a';
     if (WORLDRANK.status === 'online') { stTxt = T('wrl_online'); stCol = '#93c97e'; }
@@ -2880,12 +2917,20 @@ export class PingPongGame {
     c.textAlign = 'left';
     c.textBaseline = 'middle';
     c.fillStyle = stCol;
-    c.font = '600 20px system-ui, sans-serif';
-    c.fillText(stTxt, 70, 914);
-    btn('wrl:refresh', 700, 882, 268, 62, T('wrl_refresh'), false, undefined, undefined, 22);
+    c.font = '600 21px system-ui, sans-serif';
+    c.fillText(stTxt, x0 + 14, 930);
+    btn('wrl:refresh', x0 + w0 - 292, 896, 292, 64, T('wrl_refresh'), false, undefined, undefined, 23);
 
     // sin nombre: recordatorio de que puede firmar sus registros
-    if (!ppPlayerName()) label(T('wrl_need_name'), 966, 19, '#98a6b4', 'center');
+    if (!ppPlayerName()) {
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillStyle = '#98a6b4';
+      c.font = '600 20px system-ui, sans-serif';
+      c.fillText(T('wrl_need_name'), pC.x + pC.w / 2, 1008);
+    }
+    c.restore();
+    this._menuMap = mm0;
   }
 
   /** Pinta el panel y deja en menuRects las zonas clicables (px canvas).
@@ -3783,6 +3828,42 @@ export class PingPongGame {
         // r74 · FASE 168 · SIEMPRE que un apartado está bloqueado: el
         // candado de ARCANOS pintado SOBRE la placa (petición del dueño)
         if (t.bloq) PP_ICONS.candado(c, gx + gw - 56, y + hAuto / 2, 1.0);
+        // r79 · ESTADOS DE LA ESCALERA (petición del dueño): superada =
+        // marco VERDE + ASPA grande superpuesta; actual = aro DORADO
+        // ANIMADO (pulso suave, repintado encadenado ligero); bloqueada =
+        // candado GRANDE y SIN rect — no seleccionable («pulsar sobre una
+        // liga bloqueada te entra en la liga actual, lo que es incorrecto»).
+        if (t.hecha) {
+          this._vestRR(c, gx, y, gw, hAuto, 26);
+          c.strokeStyle = 'rgba(127,176,105,0.9)';
+          c.lineWidth = 5;
+          c.stroke();
+          const ax = gx + gw - 62, ay = y + hAuto / 2, r0 = 24;
+          c.lineCap = 'round';
+          c.strokeStyle = '#7ddb6a';
+          c.lineWidth = 10;
+          c.beginPath();
+          c.moveTo(ax - r0, ay - r0);
+          c.lineTo(ax + r0, ay + r0);
+          c.moveTo(ax + r0, ay - r0);
+          c.lineTo(ax - r0, ay + r0);
+          c.stroke();
+        }
+        if (t.actual) {
+          const ph = (performance.now() % 1600) / 1600;
+          const pul = 0.5 + 0.5 * Math.sin(ph * Math.PI * 2);
+          this._vestRR(c, gx, y, gw, hAuto, 26);
+          c.strokeStyle = 'rgba(255,210,87,' + (0.45 + 0.5 * pul).toFixed(3) + ')';
+          c.lineWidth = 6;
+          c.stroke();
+          this._vestRR(c, gx - 7, y - 7, gw + 14, hAuto + 14, 30);
+          c.strokeStyle = 'rgba(255,210,87,' + (0.28 * pul).toFixed(3) + ')';
+          c.lineWidth = 2;
+          c.stroke();
+        }
+        if (t.muerta) PP_ICONS.candado(c, gx + gw - 58, y + hAuto / 2, 2.2);
+        if (!t.muerta) rects.push({ x: gx - 6, y: y - 4, w: gw + 12, h: hAuto + 8,
+          id: t.id });
         const tx = icx + ir + 24, maxw = gx + gw - tx - 28;
         c.textAlign = 'left';
         c.textBaseline = 'alphabetic';
@@ -3819,8 +3900,9 @@ export class PingPongGame {
           c.lineWidth = 4;
           c.stroke();
         }
-        rects.push({ x: gx - 6, y: y - 4, w: gw + 12, h: hAuto + 8,
-          id: t.id });
+        // r79 · el push ÚNICO vive arriba (condicional a !t.muerta): aquí
+        // sólo quedaba el push doble legado, que volvía seleccionables las
+        // ligas bloqueadas y solapaba los rects.
       });
     });
     c.restore();
@@ -4370,79 +4452,52 @@ export class PingPongGame {
    *  ===================================================================== */
   drawMenuRankMe(rects) {
     const c = this.menuCanvas.getContext('2d');
-    const btn = this._menuBtn;
     const D = (this.stats && this.stats.data) || { elo: 1000, eloHist: [] };
     this.drawMenuHeader(rects);
-    c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillStyle = '#ffd257';
-    c.font = '900 44px system-ui, sans-serif';
-    c.fillStyle = '#9aa7b4';
-    c.font = '500 20px system-ui, sans-serif';
-    c.fillText(T('rankme_sub'), 512, 350);
-    // ELO grande + delta del último cambio
+    // r79 · MI RANKING a PANEL COMPLETO (el dueño: «el ranking personal de
+    // nuestro nivel no se ve» — fuera la tarjeta pequeña de 1024): ELO
+    // héroe + delta, tres tarjetas de marca y el historial, todo en la
+    // banda de museo; sin partidas lo dice con filas propias.
     const hist = Array.isArray(D.eloHist) ? D.eloHist : [];
     const last = hist.length ? hist[hist.length - 1] : null;
-    // r72 · ELO en ORO (placa de RÉCORD del museo, lenguaje nuevo)
-    c.fillStyle = '#ffd257';
-    c.font = '900 92px system-ui, sans-serif';
-    c.fillText(String(D.elo || 1000), 512, 445);
-    if (last) {
-      c.fillStyle = last.d >= 0 ? '#7ddb6a' : '#ff6b61';
-      c.font = '800 26px system-ui, sans-serif';
-      c.fillText((last.d >= 0 ? '+' : '') + last.d, 706, 425);
-    }
-    c.fillStyle = '#8fa0b8'; c.font = '500 16px system-ui, sans-serif';
-    c.fillText(T('rankme_leyenda'), 512, 512);
-    // tres tarjetas: marca · rachas · mejor día
-    const colY = 580;
-    const cols = [
-      [T('rankme_marca', { w: D.won || 0, l: D.lost || 0 })],
-      [T('rankme_racha_a') + ': ' + (D.streak || 0), T('rankme_racha_m') + ': ' + (D.bestStreak || 0)],
-      [T('rankme_mejordia'), (D.mejorDia && D.mejorDia.dia)
-        ? D.mejorDia.dia + ' · ' + T('rankme_dia', { v: D.mejorDia.v })
-        : '—'],
+    const items = [
+      { tipo: 'titulo', et: T('rankme_sub'), col: '#9aa7b4' },
+      { id: 'rankme', icono: 'ranking', grad: ['#ffd25e', '#e8a80e'],
+        et: 'ELO ' + String(D.elo || 1000),
+        sk: (last ? ((last.d >= 0 ? '+' : '') + last.d + ' · ') : '') +
+          T('rankme_leyenda'), col: '#ffe9a8', f: 34 },
+      { tipo: 'grid', cols: 3, fs: 20, celdas: [
+        { id: 'rankme_marca', et: T('rankme_marca', { w: D.won || 0, l: D.lost || 0 }) },
+        { id: 'rankme_racha',
+          et: T('rankme_racha_a') + ': ' + (D.streak || 0) + ' · ' +
+            T('rankme_racha_m') + ': ' + (D.bestStreak || 0) },
+        { id: 'rankme_dia',
+          et: T('rankme_mejordia') + ': ' + ((D.mejorDia && D.mejorDia.dia)
+            ? D.mejorDia.dia + ' · ' + T('rankme_dia', { v: D.mejorDia.v })
+            : '—') },
+      ] },
+      { tipo: 'titulo', et: T('rankme_hist'), col: '#a9b8cc' },
     ];
-    for (let i = 0; i < 3; i++) {
-      const cx = 200 + i * 312;
-      c.fillStyle = 'rgba(255,255,255,0.06)';
-      c.beginPath();
-      if (c.roundRect) c.roundRect(cx - 140, colY, 280, 92, 14); else c.rect(cx - 140, colY, 280, 92);
-      c.fill();
-      // r72 · marco de latón (lenguaje de las landings)
-      c.strokeStyle = 'rgba(232,180,90,0.35)';
-      c.lineWidth = 2;
-      c.stroke();
-      c.fillStyle = '#e9edf2';
-      c.font = '700 20px system-ui, sans-serif';
-      for (let j = 0; j < cols[i].length; j++) c.fillText(cols[i][j], cx, colY + 32 + j * 32);
-    }
-    // historial (últimos 8, más reciente arriba)
-    c.fillStyle = '#a9b8cc'; c.font = '700 20px system-ui, sans-serif';
-    c.textAlign = 'left';
-    c.fillText(T('rankme_hist'), 56, 742);
     if (!hist.length) {
-      c.fillStyle = '#5a6a7d'; c.font = '500 19px system-ui, sans-serif';
-      c.fillText(T('rankme_vacio'), 56, 782);
+      items.push({ tipo: 'lectura', et: T('rankme_vacio'),
+        col: '#5a6a7d', f: 21 });
     } else {
       const filas = hist.slice(-8).reverse();
-      for (let i = 0; i < filas.length; i++) {
-        const e2 = filas[i];
-        const y2 = 786 + i * 44;
+      const p2 = (n) => (n < 10 ? '0' : '') + n;
+      filas.forEach((e2) => {
         const d2 = new Date(e2.t);
-        const p2 = (n) => (n < 10 ? '0' : '') + n;
-        c.fillStyle = '#e9edf2'; c.font = '600 20px system-ui, sans-serif';
-        c.fillText(p2(d2.getDate()) + '/' + p2(d2.getMonth() + 1), 76, y2);
-        c.fillStyle = '#8fa0b8'; c.font = '500 18px system-ui, sans-serif';
-        c.fillText(T('rankme_' + (e2.m || 'ia')), 170, y2);
-        c.fillStyle = e2.d >= 0 ? '#7ddb6a' : '#ff6b61';
-        c.font = '800 22px system-ui, sans-serif';
-        c.textAlign = 'right';
-        c.fillText((e2.d >= 0 ? '+' : '') + e2.d, 940, y2);
-        c.textAlign = 'left';
-        c.strokeStyle = 'rgba(255,255,255,0.08)';
-        c.beginPath(); c.moveTo(56, y2 + 21); c.lineTo(968, y2 + 21); c.stroke();
-      }
+        items.push({ tipo: 'grid', cols: 1, fs: 21, celdas: [{
+          id: 'rankme_fila',
+          et: p2(d2.getDate()) + '/' + p2(d2.getMonth() + 1) + ' · ' +
+            T('rankme_' + (e2.m || 'ia')) + '   ·   ' +
+            (e2.d >= 0 ? '+' : '') + e2.d + ' ELO',
+        }] });
+      });
     }
+    const yFin = this._menuBandas(rects, items, { yMax: 1244 });
+    this._menuBandas(rects, [
+      { id: 'close', icono: 'salir', et: T('close_menu') + ' · B', fino: true },
+    ], { y0: Math.min(yFin + 2, 1330), yMax: 1378, gap: 8 });
   }
 
   /* ============ M5b (r115→r70) · ESCALERA DE CARRERA ==============
@@ -4451,6 +4506,18 @@ export class PingPongGame {
    *  (BRONCE → LEYENDA) con su estado (n/3 · superada · bloqueada). La
    *  tarjeta abre la DIVISIÓN (carreradiv) con los rivales en candy,
    *  DESAFIAR verde y la corona — mecánica r115 intacta. */
+  /** r79 · repintado ANIMADO ligero: un solo repintado encadenado mientras
+   *  la página activa lo pida (el pulso de la liga actual en la escalera).
+   *  Se autodetiene al cerrar el menú o al cambiar de página — sin bucles
+   *  huérfanos (clearTimeout antes de pedir el siguiente). */
+  _menuAnimPide(ms) {
+    clearTimeout(this._menuAnimT);
+    this._menuAnimT = setTimeout(() => {
+      if (!this.menuOpen || this.menuPage !== 'carrera') return;
+      this.drawMenu();
+    }, ms || 130);
+  }
+
   drawMenuCarrera(rects) {
     const st = this._carreraEstado();
     const tarjetas = CARRERA_DIVISIONES.map((div, i) => {
@@ -4471,10 +4538,18 @@ export class PingPongGame {
           : ['#5f7183', '#3a4754'],
         sub,
         bloq: !superada && !esActual,
+        // r79 · ESTADOS VIVOS de la escalera: superada verde + ASPA grande,
+        // actual con aro DORADO ANIMADO, bloqueada con candado GRANDE y sin
+        // rect (no seleccionable — antes caía en la liga actual por el
+        // clamp vi = min(sel, st.div); el clamp queda como defensa).
+        hecha: superada,
+        actual: esActual,
+        muerta: !superada && !esActual,
       };
     });
     const subsC = {};
     this._menuRejilla(rects, 'carrera', subsC, tarjetas);
+    this._menuAnimPide();   // r79 · el pulso de la liga actual respira
     // corona de leyenda bajo la rejilla (si el dueño ya la alzó)
     if (st.crowned) {
       const c = this.menuCanvas.getContext('2d');
@@ -4604,10 +4679,10 @@ export class PingPongGame {
     const AM = this.audio;
     const chList = this.champs ? this.champs.list() : [];
     // tarjetas VIVAS (rejilla con datos del índice de campeonatos)
-    const tarjetas = [{
-      id: 'champs:musica', icono: 'audio', etiqueta: T('arc_music_global'),
-      gradiente: ['#7e57c2', '#4527a0'],
-    }];
+    // r79 · la música sale de la rejilla: gana SU BARRA DESLIZANTE a banda
+    // completa al pie (chmus:set/down/up) — el dueño pidió «un control
+    // deslizante para regular su nivel, y no como está ahora».
+    const tarjetas = [];
     for (const ch of chList) {
       let hint = '';
       let done = false;
@@ -4644,14 +4719,12 @@ export class PingPongGame {
       gradiente: ['#ffca1e', '#d88c00'],
     });
     // r73 · estado honesto si el índice no llega (nunca un hueco vacío)
-    const subsM = { 'champs:musica': AM.arcMute ? T('arc_music_off_word')
-      : Math.round(AM.arcVol * 100) + '%' };
+    const subsM = {};
     if (!chList.length) {
       if (this.champs && this.champs.cargando) {
-        subsM['champs:musica'] = T('champ_cargando');
+        // cargando: la rejilla de campeonatos llega en el próximo repintado
       } else {
-        subsM['champs:musica'] = T('arc_no_data');
-        tarjetas.splice(1, 0, {
+        tarjetas.splice(0, 0, {
           id: 'champretry', icono: 'consola',
           etiqueta: T('champ_reintentar'),
           gradiente: ['#96a8c2', '#586884'],
@@ -4659,6 +4732,14 @@ export class PingPongGame {
       }
     }
     this._menuRejilla(rects, 'champs', subsM, tarjetas);
+    // r79 · CONTROL DESLIZANTE de la música a banda completa (clicable:
+    // fija el volumen al punto apuntado, como los volúmenes de SONIDO)
+    // + −/+ de la casa.
+    this._menuBandas(rects, [{
+      tipo: 'barra', et: T('arc_music_global'),
+      vol: AM.arcMute ? 0 : AM.arcVol,
+      idSet: 'chmus:set', minus: 'chmus:down', plus: 'chmus:up',
+    }], { y0: 1258, yMax: 1334, gap: 8 });
     // M7e (r124) · sellado barato al pintar (el historial queda al día)
     try { this.champs.historialTorneos(); } catch (eH7) { /* */ }
   }
@@ -4781,46 +4862,29 @@ export class PingPongGame {
    *  refrescan al pintar la página. */
   drawMenuChampHist(rects) {
     const c = this.menuCanvas.getContext('2d');
-    const btn = this._menuBtn;
-    const label = this._menuLabel;
     this.drawMenuHeader(rects);
-    c.fillStyle = '#ffd257';
-    c.font = '900 42px system-ui, sans-serif';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(T('hist_title'), 664, 246);
-
+    // r79 · HISTORIAL en BANDAS a panel completo (fuera la tarjeta legada):
+    // una fila fina por campeonato vencido; SIN registros lo dice GRANDE
+    // (el dueño: «no está mostrando nada… debería indicarlo»).
     let hist = [];
     try { hist = (this.champs && this.champs.historialTorneos()) || []; } catch (eH) { /* */ }
-    let y = 320;
+    const items = [];
     if (!hist.length) {
-      label(T('hist_empty'), y + 20, 21, '#98a6b4', 'center');
-      y += 64;
+      items.push(
+        { tipo: 'titulo', et: T('hist_empty'), col: '#98a6b4' },
+        { tipo: 'lectura', et: T('hist_empty_hint'), col: '#7e8ea8', f: 20 },
+      );
     }
     for (const h of hist) {
       const ent = ((this.champs && this.champs.entries) || []).find((e) => e.id === h.id) || {};
       const nom = String((ent.title && ((ent.title[__ppLang] || ent.title.es) || h.id)) || h.id);
-      let fila = (h.leyenda ? '★ ' : '🏆 ') + nom
-        + ' · ' + T('hist_wins', { n: h.wins | 0 })
-        + ' · ' + T('hist_sellado', { f: h.fecha || '' });
-      c.beginPath();
-      if (c.roundRect) c.roundRect(56, y, 912, 54, 14); else c.rect(56, y, 912, 54);
-      c.fillStyle = 'rgba(255,210,87,0.08)';
-      c.fill();
-      c.strokeStyle = 'rgba(255,210,87,0.35)';
-      c.lineWidth = 2;
-      c.stroke();
-      c.fillStyle = h.leyenda ? '#ffd257' : '#ffe9b3';
-      c.font = '700 24px system-ui, sans-serif';
-      c.textAlign = 'left';
-      c.textBaseline = 'middle';
-      const _f0 = fila;
-      while (fila.length > 2 && c.measureText(fila).width > 856) fila = fila.slice(0, -1);
-      if (fila !== _f0) fila += '…';
-      c.fillText(fila, 76, y + 28);
-      y += 62;
-      if (y > 1432) break;   // cap visible: el registro ya está sellado igualmente
+      items.push({ id: 'champsel:' + h.id, icono: 'campeonatos',
+        grad: h.leyenda ? ['#ffd25e', '#e8a80e'] : ['#ffca1e', '#d88c00'],
+        et: (h.leyenda ? '★ ' : '🏆 ') + nom,
+        sk: T('hist_wins', { n: h.wins | 0 }) + ' · ' +
+          T('hist_sellado', { f: h.fecha || '' }) });
     }
+    this._menuBandas(rects, items, { y0: 300, yMax: 1252 });
   }
 
   /** v2.110 · página AJUSTES: TODAS las opciones juntas (nada se pierde:
@@ -5579,6 +5643,21 @@ export class PingPongGame {
       case 'pala': {
         // r83 · LA PALA EN AJUSTES: gran botón dorado, agarres guardados
         // en grid con ✕ (r78: todo a banda completa)
+        if (this._palaSalirAsk) {
+          // r79 · AUTORIZACIÓN PARA SALIR del ajuste en VR (B): pregunta
+          // grande y dos respuestas — nada se abandona sin confirmar.
+          items.push(
+            { tipo: 'titulo', et: T('pala_salir_ask'), col: '#ffd257' },
+            { tipo: 'lectura', et: T('pala_salir_hint'), col: '#98a6b4',
+              f: 20 },
+            { tipo: 'filaN', wFr: [0.5, 0.5], cells: [
+              { id: 'pala:si', et: T('yes'), act: true,
+                grad: ['#f0873f', '#d05c1f'] },
+              { id: 'pala:no', et: T('no') },
+            ] },
+          );
+          break;
+        }
         items.push(
           { tipo: 'lectura', et: T('pala_actual', { v: this.gripName }),
             f: 26, col: '#e9edf2' },
@@ -5753,8 +5832,22 @@ export class PingPongGame {
     // toda la vida). r68 puso el origen EN la cabeza y el arco nacía a la
     // espalda. El arco se centra en la cabeza con las posiciones locales
     // de las panelas (ver buildMenu).
+    // r79 · ANCLADO SIEMPRE EN EL CENTRO (petición del dueño: «debe
+    // aparecer ANCLADO SIEMPRE EN EL CENTRO»): el arco nace en el CENTRO
+    // DEL CUERPO (yaw del rig, no de la mirada) — sacar el menú con la
+    // cabeza girada ya no lo coloca de lado. La posición sigue siendo
+    // delante de la cara y mirando a la cara (convenio r67).
     const D_REF = CONFIG_MENUS.arco.panelas[1].dist;
-    this.menuGroup.position.copy(muHead).addScaledVector(muDir, D_REF);
+    let fwdX = 0, fwdZ = -1;
+    if (this.rig) {
+      const rq = new THREE.Quaternion();
+      this.rig.getWorldQuaternion(rq);
+      const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(rq);
+      fwd.y = 0;
+      if (fwd.lengthSq() > 1e-6) { fwd.normalize(); fwdX = fwd.x; fwdZ = fwd.z; }
+    } else { fwdX = muDir.x; fwdZ = muDir.z; }
+    this.menuGroup.position.copy(muHead).addScaledVector(
+      new THREE.Vector3(fwdX, 0, fwdZ), D_REF);
     this.menuGroup.lookAt(muHead);
     this._menuAnchorUntil = 0;
     this._menuAnchorEst = this._menuEstancia();
@@ -5787,8 +5880,13 @@ export class PingPongGame {
       Math.abs(rigZMenu - (this._menuAnchorRigZ !== undefined ?
         this._menuAnchorRigZ : rigZMenu)) > 2;
     if (!anclaVieja) return;
-    if (this.menuPin) { this.menuPin = false; this._menuPinDraw(); }
-    this.anchorMenu();
+    // r79 · LA CHINCHETA JAMÁS SE SUELTA SOLA (petición del dueño: «no se
+    // desancle NUNCA salvo que el usuario desactiva la chincheta»): si el
+    // ancla quedó en otra estancia o el rig viajó, el panel se RE-ANCLA
+    // delante del jugador pero la chincheta SIGUE clavada — el menú vuelve
+    // a ser FIJO en el centro. Antes se soltaba el pin y el menú quedaba
+    // siguiendo a la cabeza para siempre (el informe del dueño).
+    this.anchorMenu(true);
   }
 
   /* r113 · CHINCHETA DEL MENÚ — dibujo del icono (128², estilo de la casa):
@@ -6479,8 +6577,11 @@ export class PingPongGame {
             arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi' ||
             arg === 'optsPala' ||
             arg === 'optsSalaRoom' || arg === 'optsSalaMesa' ||
-            arg === 'optsSalaBola' || arg === 'optsSalaHall') {   // r96 · submenús SALA/MESA · r21 · BOLA · r23 · HALL
+            arg === 'optsSalaBola' || arg === 'optsSalaHall' ||
+            arg === 'hallpick') {   // r96 · submenús SALA/MESA · r21 · BOLA · r23 · HALL
           this.menuPage = arg;
+          // r79 · FIX «ESCOGER HALL NO HACE NADA»: 'hallpick' faltaba en la
+          // lista del despacho page: la tarjeta de MI CASA era un id muerto.
           // r78 · SALA PÚBLICA EN ESPERA: ATRÁS desde MULTIJUGADOR con la
           // sala abierta NO la cierra — queda viva como canal público y la
           // alerta de duelo avisa al anfitrión de cada entrada.
@@ -6806,6 +6907,12 @@ export class PingPongGame {
           // r80 · sala cancelada: vuelta a la selección de modos
           this._mjMode = (this.net.online || this.net.status !== 'off') ? 'normal' : null;
         }
+        else if (arg === 'gestiona') {
+          // r79 · GESTIONAR la sala en espera desde las zonas: vuelve al
+          // panel de espera (código, lista del pulso, cancelar)
+          this._salaEnEspera = false;
+          this.drawMenu();
+        }
         else if (arg === 'espera') {
           // r78 · la sala PÚBLICA queda viva en segundo plano; MI CASA
           this._salaEnEspera = true;
@@ -6877,6 +6984,18 @@ export class PingPongGame {
         }
         break;
       }
+      case 'pala:si':
+        // r79 · AUTORIZACIÓN concedida: recoger el ajuste (passthrough,
+        // ejes, mandos) con la salida limpia al Hall de la r83.
+        this._palaSalirAsk = false;
+        this.closeMenu();
+        this.exitCalib();
+        break;
+      case 'pala:no':
+        // r79 · seguir ajustando: el menú se cierra, el modo sigue vivo
+        this._palaSalirAsk = false;
+        this.closeMenu();
+        break;
       case 'gripLoad':
         // r83 · cargar un agarre guardado (persigue su nombre exacto)
         if (this.loadGripByName(arg)) {
@@ -7087,6 +7206,17 @@ export class PingPongGame {
         if (arg === 'off') AM.setArcMute(!AM.arcMute);
         else if (arg === 'down') AM.setArcVol(AM.arcVol - 0.1);
         else if (arg === 'up') AM.setArcVol(AM.arcVol + 0.1);
+        else if (arg === 'set') {
+          // r79 · barra CLICABLE: fija el volumen al punto apuntado
+          // (mismo mecanismo r96/r98 de los volúmenes de SONIDO) y el
+          // gatillo sigue arrastrando el valor en vivo.
+          const v = this._menuSliderFrac(r, this._menuClickPx);
+          if (v != null) {
+            AM.setArcVol(Math.round(v * 20) / 20);
+            if (AM.arcMute) AM.setArcMute(false);
+            this._menuDrag = { hand, id: 'chmus' };
+          }
+        }
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
         this.rules.message = T('arc_music_msg', {
           v: AM.arcMute ? T('arc_music_off_word') : Math.round(AM.arcVol * 100) + '%',
@@ -17012,9 +17142,13 @@ export class PingPongGame {
     //      la B (no la Y), en cualquier modalidad». El menú del entrenamiento
     //      lo abre B (bloque 0.6) exactamente igual que en el resto del
     //      juego; el ajuste de pala puro conserva su Y = volver.
-    if (presenting && this.calib && !this.tutV1 &&
+    if (presenting && this.calib && !this.tutV1 && !this.calibPala &&
         !this.trainV3 && !this.trainV3Hub &&
         this.readButton(this.handIndex('left'), 5)) {
+      // r79 · la Y ya NO sale del AJUSTE DE PALA (petición del dueño:
+      // «olvidemos el botón Y, no se usa nunca») — la salida del ajuste es
+      // con B pidiendo autorización; la Y conserva su papel en la
+      // calibración clásica.
       this.exitCalib();
     }
 
@@ -17024,7 +17158,17 @@ export class PingPongGame {
     //       recupera la estancia; el ajuste sigue vivo si sólo cierras.
     if (presenting && this.calibPala && !this.menuOpen &&
         this.readButton(this.handIndex('right'), 5)) {
-      this.toggleMenu();
+      // r79 · B durante el AJUSTE DE PALA = AUTORIZACIÓN PARA SALIR (el
+      // dueño: «volver con la tecla de siempre la B, pidiéndonos
+      // autorización para abandonar ese modo»): el menú nace ANCLADO y
+      // FIJO en AJUSTES › PALA con la pregunta SÍ/NO delante.
+      this.menuPage = 'optsPala';
+      this._palaSalirAsk = true;
+      this.menuOpen = true;
+      this.menuGroup.visible = true;
+      this.menuHover = [-1, -1];
+      this.anchorMenu(true);
+      this.drawMenu();
     }
 
     // 0.6) botón B (mando derecho): v3.1.1-FEEL1 · en el HALL (y en online/
@@ -17852,9 +17996,11 @@ export class PingPongGame {
     this.processEvents(this.events);
     if (this.net.online) this.net.collectEvents(this.events);
     if (this.calib) this.updateCalibration(dt);
-    // r83 · panel frontal + ejes vivos del ajuste de pala (sólo en su modo)
+    // r83 · ejes vivos del ajuste de pala (sólo en su modo)
+    // r79 · el panel de ajuste queda FIJO donde se ancló al entrar (el
+    // informe del dueño: «debe mostrar su menú de ajustes FIJO no se debe
+    // MOVER») — fuera el lerp hacia la cabeza de cada frame.
     if (this.calibPala) {
-      this._palaPanelAnclar();
       if (this._palaAxes) this._palaAxes.tick(dt);
       this._palaMandosTick();
     }

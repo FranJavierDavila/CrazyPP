@@ -1,10 +1,10 @@
 {
-  "version": "3.6.169-SDK6",
-  "fase": 174,
-  "faseNombre": "MENUS EN PROFUNDIDAD",
+  "version": "3.6.170-SDK6",
+  "fase": 175,
+  "faseNombre": "SIEMPRE ANCLADO",
   "sdk": "1.6.0",
   "fecha": "2026-11-17",
-  "hub": "v36169-sdk6",
+  "hub": "v36170-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,5 +13,6 @@
     "halloween": 3
   },
   "nota": "r70",
-  "tamano": 12265139
+  "tamano": 12273786,
+  "golden": "c1b8e4f808dd848419e4bdbf43c341b483c9f5c59d00ec701e353bb9f5372575"
 }

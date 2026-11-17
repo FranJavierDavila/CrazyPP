@@ -7057,4 +7057,4 @@ Stage Summary:
 
 **Versionado:** bump 3.6.173→3.6.174-SDK6 · FASE 179 (c00 + verBadge + hub 6× + sw.js CACHE · golden 22ae238a… · nota=r83) · kit release-v36174 (tokens + veto v36173 + nota FASE 179) · 4 ZIPs v36174.
 
-**Despliegue:** deploy_pages --push (PAT del dueño) → Pages sirviendo 3.6.174 (verificación en vivo) · release v3.6.174-SDK6 · backups main/proyecto.
+**Despliegue:** deploy_pages --push (PAT del dueño): ensamblado 506 ficheros · 202,9 MB, smoke verde (33 peticiones, 0 fallos, 0 pageerrors), refs/heads/pages → 4194dcc09 · **EN PRODUCCIÓN verificado en vivo: PAGES-VERSION.txt = 3.6.174-SDK6 · const VERSION = '3.6.174-SDK6' · LinearMipmapLinearFilter = 0 apariciones (borrosidad muerta) · menuFxSweep/esChmus/banda 1228-1304 presentes en los bytes servidos** · NOTA: el reciclaje del sandbox volvió a rodar el .git local a la ronda 35 y el primer commit r83 (40c7468) cayó sobre él sin los paths del sitio — reconstruido por plumbing: snapshot completo del working tree reparentado sobre el linaje real r82-bis (main → ab4521d, padre e9f0d93, fast-forward) · Release v3.6.174-SDK6 con los 4 ZIPs · backups main/proyecto.

@@ -3063,13 +3063,12 @@ export class PingPongGame {
         'optsJuego', 'optsSala', 'optsSalaRoom', 'optsSalaMesa',
         'optsSalaBola', 'optsSalaHall', 'optsSonido', 'optsVisual',
         'optsPerfil', 'optsRendi', 'optsPala',
-        'join', 'name', 'gripname']
+        'join', 'name', 'gripname', 'trainext', 'trainarea']
         .includes(this.menuPage);
       // r80 · 'rank' se migra a banda (fuera la placa legada que se pintaba
-      // DETRÁS de la tabla nueva); trainext/trainarea/tutask siguen siendo
-      // painters legados en coords de tarjeta — SIN el transform LEG sus
-      // tarjetas quedaban en la esquina del lienzo (las «áreas vacías» del
-      // informe): vuelven al mapa y a la placa hasta su migración.
+      // DETRÁS de la tabla nueva). r84 · F180: trainext y trainarea quedan
+      // MIGRADOS al interior C del arco (painters nativos, _menuMap nulo) —
+      // fuera de la placa y del transform LEG; tutask sigue legado.
       if (!sinPlaca) {
         c.setTransform(S68, 0, 0, S68, DX68, 0);
         rr(8, 200, 1024 - 16, 1536 - 208, 30);
@@ -20266,6 +20265,21 @@ class PerfManager {
     // gobernador continuo (con histéresis y enFred durante el rallye para
     // los cambios notables: la tasa se cambia fuera del intercambio)
     if (!this.auto) return;
+    // r84 · F180 · MENÚ CON IMAGEN PLENA: el informe del dueño («se sigue
+    // leyendo mal») — si el gobernador degradó imagen (fovea/escala),
+    // abrir el menú RESTAURA el perfil del tier AL INSTANTE: el menú es
+    // barato (tres panelas de texto) y es el momento de LEER. La tasa no
+    // se toca (no afecta a la nitidez del texto); al cerrar, el gobernador
+    // sigue desde el perfil y volverá a degradar si no lo sostiene.
+    const pTier = PERF_TIERS[this.tier];
+    const menuViendo = this.g.menuOpen && this.g.menuGroup &&
+      this.g.menuGroup.visible;
+    if (menuViendo && (this.fovea > pTier.fovea + 0.005 ||
+        this.scale < pTier.scale - 0.005)) {
+      this.fovea = pTier.fovea;
+      this.scale = pTier.scale;
+      this.applyLive(); this.save();
+    }
     if (this._coolDown > 0) this._coolDown -= dt;
     if (this._upCool > 0) this._upCool -= dt;
     if (this._hist.length >= 4) {
@@ -20293,17 +20307,22 @@ class PerfManager {
    *  emergencia 60 */
   _stepDown(bajaTasa) {
     // r96 · techo del FFR también en el gobernador continuo
+    // r84 · F180 · con el MENÚ ABIERTO la imagen NO se degrada (el dueño
+    // está LEYENDO): fovea/escala intactas — sólo baja la tasa, que no
+    // afecta a la nitidez del texto del arco.
+    const menuViendo = this.g.menuOpen && this.g.menuGroup &&
+      this.g.menuGroup.visible;
     if (bajaTasa && this.rate > PERF_PISO + 0.5) {
       this.rate = PERF_PISO;
-    } else if (this.fovea < this.foveaMax() - 0.005) {
+    } else if (!menuViendo && this.fovea < this.foveaMax() - 0.005) {
       this.fovea = Math.min(this.foveaMax(), this.fovea + 0.08);
-    } else if (this.scale > 0.805) {
+    } else if (!menuViendo && this.scale > 0.805) {
       this.scale = Math.max(0.8, this.scale - 0.10);   // ya para la próxima
     } else if (this.rate > PERF_PISO + 0.5) {
       this.rate = PERF_PISO;         // entró con 90 y la imagen ya al mínimo
     } else if (this.rate > 62) {
       this.rate = 60;                // EMERGENCIA honesta (imagen al mínimo)
-    } else {
+    } else if (!menuViendo) {
       this.scale = Math.max(0.75, this.scale - 0.05);  // colchón final
     }
     this._coolDown = 15; this._upStreak = 0;

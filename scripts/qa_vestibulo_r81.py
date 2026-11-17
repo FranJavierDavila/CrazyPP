@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""qa_vestibulo_r81.py — QA de la FASE 177 «MENÚS EN ESCENA» · r81 · V3.6.172-SDK6 — ampliado r82 (FASE 178 · V3.6.173) y r83 (FASE 179 «MENÚS NÍTIDOS» · V3.6.174-SDK6: FX sin escala — posición+opacidad+brillo por color, barrido de luz, arrastre chmus arreglado y barras maquetadas, informe del dueño).
+"""qa_vestibulo_r81.py — QA de la FASE 177 «MENÚS EN ESCENA» · r81 · V3.6.172-SDK6 — ampliado r82 (FASE 178 · V3.6.173), r83 (FASE 179 «MENÚS NÍTIDOS» · V3.6.174) y r84 (FASE 180 «ENTRENAMIENTO AL DÍA» · V3.6.175: imagen plena en el gobernador con el menú abierto, subpáginas trainarea/trainext migradas al interior C del arco y arco a 1,00 m, informe del dueño).
 
 FASE 177 (el dueño: «el menú al pulsar B, fijo y sin seguimiento de la vista, con
 las animaciones y efectos de la competencia»): el arco ENTRA EN ESCENA con
@@ -118,6 +118,53 @@ JS = """async () => {
     // restaurar estado honesto para el resto del QA
     pf.rate = 72; pf.scale = 1.2; pf.fovea = Math.min(pf.fovea, pf.foveaMax());
     pf.save();
+  }
+
+  // — F180 · MENÚ CON IMAGEN PLENA + entrenamiento migrado (r84) —
+  // (a) gobernador: degradado + menú abierto → la imagen vuelve al perfil
+  //     del tier AL INSTANTE; con el menú ABIERTO _stepDown no toca imagen
+  //     (sólo la tasa, que no afecta a la nitidez del texto del arco)
+  if (pf) {
+    pf.auto = true;
+    pf.fovea = 0.62; pf.scale = 0.8; pf.rate = 72;
+    G.menuOpen = true;
+    if (G.menuGroup) G.menuGroup.visible = true;
+    pf.feed(0.016, true);
+    out.menuImagenPlena = pf.fovea < 0.62 && pf.scale > 0.8;
+    const fvMenu = pf.fovea, scMenu = pf.scale;
+    pf._stepDown(false);
+    out.menuSinDegradar = pf.fovea === fvMenu && pf.scale === scMenu &&
+      pf.rate === 60;
+    // menú cerrado: la escalera vuelve a degradar imagen con normalidad
+    G.menuOpen = false;
+    if (G.menuGroup) G.menuGroup.visible = false;
+    pf.fovea = 0.36; pf.scale = 1.3; pf.rate = 72;
+    pf._stepDown(false);
+    out.escaleraImagen = pf.fovea > 0.36 || pf.scale < 1.3;
+    // restaurar estado honesto
+    pf.fovea = Math.min(pf.fovea, 0.4); pf.scale = 1.2; pf.rate = 72;
+    pf.save();
+  }
+  // (b) subapartados de entrenamiento: los rects del CONTENIDO (trv3:*)
+  //     dentro del interior C del arco (migración F180) y NADA perdido en
+  //     la esquina legada (x<1100); la concha puede tocar sus lados (C+R)
+  for (const pg of ['trainarea', 'trainext']) {
+    G.menuPage = pg;
+    if (G.menuGroup) G.menuGroup.visible = true;
+    G.drawMenu();
+    await dorme(25);
+    const rsPg = (G.menuRects || []).filter((r) => r && r.id);
+    const legada = rsPg.filter((r) => r.x < 1100 || r.y < -2 ||
+      r.y + r.h > 1402).length;
+    const cont = rsPg.filter((r) => {
+      const s = String(r.id);
+      // el ATRÁS de la concha (trv3:back en trainarea) es el MARCO, no el
+      // contenido migrado: se excluye del chequeo de interior C
+      return s.indexOf('trv3:') === 0 && s !== 'trv3:back';
+    });
+    const fueraC = cont.filter((r) => r.x < 1150 || r.x + r.w > 2570 ||
+      r.y < 200).length;
+    out['train_' + pg] = cont.length > 2 && legada === 0 && fueraC === 0;
   }
 
   // — F173 · GARANTÍA DE RED: QoS legible + túnel adaptativo + salida —
@@ -661,14 +708,14 @@ async def main():
         print('✗ No se pudo leer el game.html local:', e)
         return
     # ---- sellos de versión ----
-    chk('3.6.174-SDK6' in game, 'game.html sello 3.6.174-SDK6 (FASE 179 «MENUS NITIDOS»)')
+    chk('3.6.175-SDK6' in game, 'game.html sello 3.6.175-SDK6 (FASE 180 «ENTRENAMIENTO AL DIA»)')
     vjson = open(os.path.join(RAIZ, 'src/game/VERSION.json'), encoding='utf-8').read()
-    chk('3.6.174-SDK6' in vjson and 'MENUS NITIDOS' in vjson,
-        'VERSION.json sella 3.6.174 + FASE 179')
+    chk('3.6.175-SDK6' in vjson and 'ENTRENAMIENTO AL DIA' in vjson,
+        'VERSION.json sella 3.6.175 + FASE 180')
     swjs = open(os.path.join(RAIZ, 'public/sw.js'), encoding='utf-8').read()
-    chk("crazypp-v3.6.174-SDK6" in swjs, 'sw.js CACHE sella v3.6.174 (purga de cachés viejas)')
+    chk("crazypp-v3.6.175-SDK6" in swjs, 'sw.js CACHE sella v3.6.175 (purga de cachés viejas)')
     hub = open(os.path.join(RAIZ, 'src/app/descargas/page.tsx'), encoding='utf-8').read()
-    chk('V3.6.174-SDK6' in hub, 'hub /descargas sella V3.6.174-SDK6')
+    chk('V3.6.175-SDK6' in hub, 'hub /descargas sella V3.6.175-SDK6')
 
     # ---- F179 · agujas estáticas MENÚS NÍTIDOS (r83) ----
     chk('tex.generateMipmaps = false' in game and
@@ -693,6 +740,17 @@ async def main():
         'barras: etiqueta SOBRE el raíl (ya no pisa el botón −)')
     chk('{ y0: 1228, yMax: 1304' in game,
         'banda de champs en su hueco limpio (rejilla ~1150 · leyenda 1348)')
+
+    # ---- F180 · agujas estáticas ENTRENAMIENTO AL DÍA (r84) ----
+    chk("'trainext', 'trainarea']" in game,
+        'trainext/trainarea MIGRADAS: fuera de la placa y del transform LEG')
+    chk('game._menuMap = null;' in game and 'gx + gw - 34' in game,
+        'subpáginas train pintan NATIVAS al interior C del arco (r84)')
+    chk('MENÚ CON IMAGEN PLENA' in game and
+        game.count('const menuViendo') >= 2,
+        'gobernador: con el menú abierto restaura imagen y no degrada (r84)')
+    chk('dist: 1.00' in game and 'dist: 1.15' not in game,
+        'arco a 1,00 m: texto del menú +15 % angular (fórmula r69 intacta)')
 
 
     # ---- F177 · agujas estáticas MENÚS EN ESCENA (r81) ----
@@ -914,6 +972,12 @@ async def main():
     chk(out.get('fxFlashWired'), 'menuClick deja el flash de fila')
     chk(out.get('fxFlashDecae'), 'el flash decae solo (≤170 ms)')
     chk(out.get('fxOut'), 'salida FX: sube, funde, esconde y restaura (ancla intacta)')
+    # — F180 · imagen plena + entrenamiento migrado —
+    chk(out.get('menuImagenPlena'), 'menú abierto: la imagen vuelve al perfil del tier al instante')
+    chk(out.get('menuSinDegradar'), 'menú abierto: _stepDown no toca imagen (sólo la tasa)')
+    chk(out.get('escaleraImagen'), 'menú cerrado: la escalera degrada imagen con normalidad')
+    chk(out.get('train_trainarea'), 'trainarea migrada: todos los rects en el interior C del arco')
+    chk(out.get('train_trainext'), 'trainext migrada: todos los rects en el interior C del arco')
     if not out.get('fxOut'):
         print('  DIAG fxOut:', out.get('diagFxOut'), '·fin:', out.get('diagFxOutFin'),
               '·cascada sC/sL/op:', out.get('diagCasc'))

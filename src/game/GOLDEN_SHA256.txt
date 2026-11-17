@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.174-SDK6, fase 179 · MENUS NITIDOS; sello actualizado
-# por bump_version.py desde 3.6.173-SDK6)
-22ae238a9a1b295064c8d3ed34d7878ed7b8ee1abcb33968920d22eb8f0b187e
+# SHA256 del game.html que produjo esta división (3.6.175-SDK6, fase 180 · ENTRENAMIENTO AL DIA; sello actualizado
+# por bump_version.py desde 3.6.174-SDK6)
+f76cd5d3500d74b0cfacd4586ff1b83f70171757f1a9d13b2cb5114f3282b74b

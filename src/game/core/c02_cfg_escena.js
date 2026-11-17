@@ -956,9 +956,12 @@ export const CONFIG_MENUS = {
                             // también redondeados, sin bordes vivos
     yCentro: -0.05,
     panelas: [
-      { id: 'L', x: 0, w: 1112, altoM: 0.95, dist: 1.15 },
-      { id: 'C', x: 1112, w: 1472, altoM: 0.95, dist: 1.15 },
-      { id: 'R', x: 2584, w: 1112, altoM: 0.95, dist: 1.15 },
+      // r84 · F180 · dist 1,15 → 1,00 m (informe del dueño: «se sigue
+      // leyendo mal»): el texto del arco gana +15 % angular sin tocar el
+      // lienzo; la fórmula r69 recalcula tangencias y yaws sola.
+      { id: 'L', x: 0, w: 1112, altoM: 0.95, dist: 1.00 },
+      { id: 'C', x: 1112, w: 1472, altoM: 0.95, dist: 1.00 },
+      { id: 'R', x: 2584, w: 1112, altoM: 0.95, dist: 1.00 },
     ],
   },
   cabecera: { logo: true, idiomas: true, cierre: true, sello: true },

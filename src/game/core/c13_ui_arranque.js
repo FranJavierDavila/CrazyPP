@@ -3607,91 +3607,100 @@ loadPaddleModel().then((paddleModel) => {
     function drawArea(game, c, rects, btn, label) {
       LANG = (typeof __ppLang !== 'undefined' && __ppLang) || 'es';
       const a = AREAS.find((x) => x.id === uiArea) || AREAS[0];
-      // r70 · la CONCHA manda (ATRÁS flotante sobre el bloque central):
-      // fuera la cabecera legada y el botón VOLVER del pie — la división
-      // de área mantiene SU mecánica íntegra (tarjetas de ejercicios).
-      let y = 226;
+      // r84 · F180 · MIGRACIÓN al interior C del arco (la deuda r80: «hasta
+      // su migración»): fuera el espacio legado 1024×1536, la placa y su
+      // escala 0.911 — las tarjetas pintan NATIVAS a banda completa de la
+      // panela C (gx/gw como _menuBandas). El informe del dueño: «los
+      // subapartados de entrenamiento están con una maquetación antigua».
+      // La división de área mantiene SU mecánica íntegra (ids intactos).
+      game._menuMap = null;
+      const pC = CONFIG_MENUS.arco.panelas.find((p) => p.id === 'C');
+      const gx = pC.x + 80, gw = pC.w - 160;
+      let y = 262;
       for (const id of Object.keys(MODES)) {
         const M = MODES[id];
         if (M.area !== a.id) continue;
         const isOn = active === id;
         // tarjeta del modo
         const idx = rects.length;
-        btn('trv3:start:' + id, 40, y, 944, 172, '', false);
+        btn('trv3:start:' + id, gx, y, gw, 180, '', false);
         c.save();
         c.beginPath();
-        if (c.roundRect) c.roundRect(40, y, 944, 172, 22); else c.rect(40, y, 944, 172);
+        if (c.roundRect) c.roundRect(gx, y, gw, 180, 22); else c.rect(gx, y, gw, 180);
         // r74 · FASE 168 · placa de museo en las tarjetas del ÁREA (el
         // color del área sobrevive en el aro del medallón, no en el relleno
         // saturado) — la estética nueva hasta el último subnivel.
-        if (game._vestPlaca73) game._vestPlaca73(c, 40, y, 944, 172, 22);
+        if (game._vestPlaca73) game._vestPlaca73(c, gx, y, gw, 180, 22);
         c.strokeStyle = isOn ? '#f0c85a' : 'rgba(232,180,90,0.32)'; c.lineWidth = isOn ? 5 : 3;
         c.stroke();
         c.textAlign = 'left'; c.textBaseline = 'middle';
         c.fillStyle = '#ffffff'; c.font = '800 34px system-ui, sans-serif';
-        c.fillText(t(M.nk), 68, y + 42);
+        c.fillText(t(M.nk), gx + 28, y + 40);
         c.fillStyle = 'rgba(255,255,255,0.85)';
         const desc = t(M.dk, { n: M.n });
-        // r116 · CUERPO A PRUEBA DE DESBORDE (informe del dueño: en «PASE
-        // BAJO» el texto se salía de su tarjeta): envoltura propia a 620 px
-        // y hasta 3 líneas, rebaje de fuente si hace falta y elipsis dura
-        // como red de seguridad. Nada sale ya del contenedor.
-        let dFs = 20;
+        // r116 · CUERPO A PRUEBA DE DESBORDE — ahora a lo ancho de la C
+        // (gw−72 = 1240 px: casi todas las descripciones caben en 1-2 líneas)
+        let dFs = 22;
         const wrapAt = (fs) => {
           c.font = '600 ' + fs + 'px system-ui, sans-serif';
           const ls = [''];
           for (const w of desc.split(' ')) {
             const cur = ls[ls.length - 1];
             const cand = cur ? cur + ' ' + w : w;
-            if (!cur || c.measureText(cand).width <= 620) ls[ls.length - 1] = cand;
-            else ls.push(w);
+            if (!cur || c.measureText(cand).width <= gw - 320) {
+              ls[ls.length - 1] = cand;
+            } else {
+              ls.push(w);
+            }
           }
           return ls;
         };
         let dLines = wrapAt(dFs);
-        if (dLines.length > 3) { dFs = 18; dLines = wrapAt(dFs); }
+        if (dLines.length > 2) { dFs = 20; dLines = wrapAt(dFs); }
         const dCorta = dLines.length > 3;
         dLines = dLines.slice(0, 3);
         for (let i = 0; i < dLines.length; i++) {
-          while (dLines[i].length > 2 && c.measureText(dLines[i]).width > 620) {
+          while (dLines[i].length > 2 &&
+              c.measureText(dLines[i]).width > gw - 320) {
             dLines[i] = dLines[i].slice(0, -1);
           }
         }
         if (dCorta && dLines[2]) dLines[2] += '…';
         c.font = '600 ' + dFs + 'px system-ui, sans-serif';
         if (dLines.length > 2) {
-          c.fillText(dLines[0], 68, y + 70);
-          c.fillText(dLines[1], 68, y + 92);
-          c.fillText(dLines[2], 68, y + 114);
+          c.fillText(dLines[0], gx + 28, y + 72);
+          c.fillText(dLines[1], gx + 28, y + 96);
+          c.fillText(dLines[2], gx + 28, y + 120);
+        } else if (dLines.length === 2) {
+          c.fillText(dLines[0], gx + 28, y + 84);
+          c.fillText(dLines[1], gx + 28, y + 110);
         } else {
-          c.fillText(dLines[0] || '', 68, y + 82);
-          if (dLines[1]) c.fillText(dLines[1], 68, y + 110);
+          c.fillText(dLines[0] || '', gx + 28, y + 96);
         }
         c.fillStyle = '#f0c85a'; c.font = '700 20px system-ui, sans-serif';
-        c.fillText((S.best[id] ? t('mejor') + ': ' + S.best[id] + '  ·  ' : '') + t('obj') + ': ' + M.n, 68, y + 142);
+        c.fillText((S.best[id] ? t('mejor') + ': ' + S.best[id] + '  ·  ' : '') +
+          t('obj') + ': ' + M.n, gx + 28, y + 148);
         // v3.0.7-PLAY1 · estrellas logradas + mejor precisión de la prueba
         // M7d (r120) · MEDALLA del ejercicio delante de las estrellas
-        // (🥉 meta completada · 🥈/🥇 por estrellas y precisión — umbrales
-        //  = CONFIG_MEDALLAS en c02, r64)
         if (GAMF()) {
           const stN = S.stars[id] || 0;
           c.textAlign = 'right';
           const md = medallaDe(id);
-          let meta = (md ? MED_GLYPH[md] + ' ' : '') + '\u2605'.repeat(stN) + '\u2606'.repeat(3 - stN);
+          let meta = (md ? MED_GLYPH[md] + ' ' : '') +
+            '\u2605'.repeat(stN) + '\u2606'.repeat(3 - stN);
           if (S.acc[id]) meta += '  ' + S.acc[id] + '%';
           c.fillStyle = stN ? '#f0c85a' : 'rgba(255,255,255,0.35)';
           c.font = '800 22px system-ui, sans-serif';
-          c.fillText(meta, 950, y + 142);
+          c.fillText(meta, gx + gw - 34, y + 148);
         }
         c.textAlign = 'right';
         c.fillStyle = isOn ? '#f0c85a' : '#ffffff';
         c.font = '900 26px system-ui, sans-serif';
-        c.fillText(isOn ? t('activo') : t('iniciar'), 950, y + 86);
+        c.fillText(isOn ? t('activo') : t('iniciar'), gx + gw - 34, y + 88);
         c.restore();
-        y += 190;
+        y += 198;
       }
     }
-
     /* r70 · FASE 164 · PERFIL Y EXTRAS DE ENTRENAMIENTO (página trainext,
      *  destino de la tarjeta «Perfil y extras» del landing REJILLA): el
      *  chip de perfil (puntos, nivel, progreso, LOGROS), las ayudas
@@ -3700,17 +3709,25 @@ loadPaddleModel().then((paddleModel) => {
      *  dentro de Entrenar). La concha pinta ATRÁS sobre el bloque C. */
     function drawExtras(game, c, rects, btn, label) {
       LANG = (typeof __ppLang !== 'undefined' && __ppLang) || 'es';
+      // r84 · F180 · MIGRACIÓN al interior C del arco (la deuda r80):
+      // chip de perfil, ayudas visuales y pieles NATIVOS a banda completa
+      // de la panela C (gx/gw como _menuBandas) — fuera espacio legado,
+      // placa y escala. El botón PARAR, que antes pintaba a y=1380 legado
+      // (fuera de banda), ahora vive DENTRO del lienzo visible.
+      game._menuMap = null;
+      const pC = CONFIG_MENUS.arco.panelas.find((p) => p.id === 'C');
+      const gx = pC.x + 80, gw = pC.w - 160;
       // — chip de perfil: puntos · nivel —
       const lvl = levelOf(S.pts);
       c.textAlign = 'left'; c.textBaseline = 'middle';
       c.fillStyle = '#f0c85a'; c.font = '900 58px system-ui, sans-serif';
-      c.fillText(S.pts + ' ' + t('pts'), 56, 300);
+      c.fillText(S.pts + ' ' + t('pts'), gx + 8, 316);
       c.fillStyle = '#a9b8cc'; c.font = '600 24px system-ui, sans-serif';
-      c.fillText(t('nivel') + ' · ' + t(lvl.k), 56, 348);
+      c.fillText(t('nivel') + ' · ' + t(lvl.k), gx + 8, 364);
       // progreso al siguiente nivel + LOGROS n/9 (v3.0.7-PLAY1)
       if (GAMF()) {
         const li = LEVELS.indexOf(lvl), nx = LEVELS[li + 1] || null;
-        const bw = 320, bx = 56, by = 388;
+        const bw = 460, bx = gx + 8, by = 404;
         const prog = nx ? Math.min(1, (S.pts - lvl.min) / (nx.min - lvl.min)) : 1;
         c.fillStyle = 'rgba(255,255,255,0.14)';
         c.fillRect(bx, by, bw, 8);
@@ -3719,7 +3736,7 @@ loadPaddleModel().then((paddleModel) => {
         c.font = '600 17px system-ui, sans-serif';
         c.fillStyle = '#a9b8cc';
         c.fillText(nx ? (S.pts + ' / ' + nx.min) : t('max'), bx + bw + 14, by + 5);
-        const got = ACHS.filter((a) => S.ach[a]).length;
+        const got = ACHS.filter((a2) => S.ach[a2]).length;
         c.font = '700 17px system-ui, sans-serif';
         c.fillText(t('logros') + ' ' + got + '/' + ACHS.length, bx, by + 34);
         for (let i = 0; i < ACHS.length; i++) {
@@ -3730,60 +3747,74 @@ loadPaddleModel().then((paddleModel) => {
         }
       }
       // — ayudas visuales (fb toggles, ids intactos) —
-      label(t('fb_t'), 470, 22, '#a9b8cc');
-      const toggles = [['marks', t('fb_marks')], ['line', t('fb_line')], ['spin', t('fb_spin')]];
-      let tx2 = 40;
+      // r84 · etiqueta de sección NATIVA: el helper label() del dispatcher
+      // es LEGADO (firma (txt, y, size) y x fijo 56) — llamada como
+      // (txt, x, y) pintaba «TECH AIDS» a 500 px en el centro del lienzo
+      c.fillStyle = '#a9b8cc';
+      c.font = '700 22px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillText(t('fb_t'), gx + 8, 500);
+      const toggles = [['marks', t('fb_marks')], ['line', t('fb_line')],
+        ['spin', t('fb_spin')]];
+      const wT = Math.floor((gw - 34) / 3);
+      let tx2 = gx;
       for (const [k, lbl] of toggles) {
-        const w = 300;
-        btn('trv3:fb:' + k, tx2, 490, w, 68, lbl, !!S.fb[k], undefined, !!S.fb[k], 22);
-        tx2 += w + 12;
+        btn('trv3:fb:' + k, tx2, 522, wT, 72, lbl, !!S.fb[k],
+          undefined, !!S.fb[k], 22);
+        tx2 += wT + 17;
       }
-      // — pieles de pala (mismas tarjetas miniatura del hub legado) —
-      label(t('skins_t'), 620, 22, '#a9b8cc');
-      let sx = 40, sy = 640;
+      // — pieles de pala (tarjetas miniatura, ahora a lo ancho de la C) —
+      c.fillStyle = '#a9b8cc';
+      c.fillText(t('skins_t'), gx + 8, 636);
+      const wS = 180, hS = 92, pasoS = 208;   // 6 por fila (6×208 ≤ gw)
+      let sx = gx, sy = 664;
       for (const sk of SKINS) {
         if (sk.via === 'racha') continue;   // r76: las de asistencia en EL PULSO
-        if (sx + 164 > 984) { sx = 40; sy += 100; }
-        const w = 150, h = 84;
+        if (sx + wS > gx + gw) { sx = gx; sy += hS + 16; }
         const un = S.unlocked.indexOf(sk.id) >= 0;
         const idb = 'trv3:skin:' + sk.id;
         const idx = rects.length;
-        btn(idb, sx, sy, w, h, '', false);
+        btn(idb, sx, sy, wS, hS, '', false);
         c.save();
         c.beginPath();
-        if (c.roundRect) c.roundRect(sx, sy, w, h, 14); else c.rect(sx, sy, w, h);
+        if (c.roundRect) c.roundRect(sx, sy, wS, hS, 14); else c.rect(sx, sy, wS, hS);
         c.fillStyle = S.skin === sk.id ? 'rgba(240,200,90,0.30)' : 'rgba(255,255,255,0.06)';
         c.fill();
         c.strokeStyle = S.skin === sk.id ? '#f0c85a' : (un ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)');
         c.lineWidth = S.skin === sk.id ? 4 : 2;
         c.stroke();
-        c.beginPath(); c.arc(sx + 30, sy + 42, 22, 0, Math.PI * 2);
+        c.beginPath(); c.arc(sx + 36, sy + hS / 2, 26, 0, Math.PI * 2);
         c.fillStyle = un ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.12)';
         c.fill();
         c.strokeStyle = 'rgba(255,255,255,0.5)'; c.lineWidth = 2; c.stroke();
         if (un) {
           c.save();
-          c.beginPath(); c.arc(sx + 30, sy + 42, 20, 0, Math.PI * 2); c.clip();
-          c.drawImage(skinPreviewCv(sk), sx + 10, sy + 22, 40, 40);
+          c.beginPath(); c.arc(sx + 36, sy + hS / 2, 24, 0, Math.PI * 2); c.clip();
+          c.drawImage(skinPreviewCv(sk), sx + 14, sy + 24, 44, 44);
           c.restore();
         }
         c.fillStyle = un ? '#e9edf2' : '#5a6a7d';
         const nmFull = un ? (sk.name[LANG] || sk.name.es) : '\u{1F512} ' + sk.min;
         let nm = nmFull;
         c.font = '700 17px system-ui, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
-        while (nm.length > 2 && c.measureText(nm).width > 86) nm = nm.slice(0, -1);
-        c.fillText(nm, sx + 58, sy + 30);
+        while (nm.length > 2 && c.measureText(nm).width > wS - 70) {
+          nm = nm.slice(0, -1);
+        }
+        c.fillText(nm, sx + 70, sy + hS / 2 - 12);
         if (un && S.skin === sk.id) {
           c.fillStyle = '#f0c85a'; c.font = '600 13px system-ui, sans-serif';
-          c.fillText(t('skin_sel'), sx + 58, sy + 62);
+          c.fillText(t('skin_sel'), sx + 70, sy + hS / 2 + 14);
         }
         c.restore();
-        sx += w + 14;
+        sx += pasoS;
       }
       // r70 · parar la prueba activa (si la hay) — sin HALL aquí
-      if (active) btn('trv3:stop', 40, 1380, 944, 76, t('parar'), false, 'surv', undefined, 28);
+      if (active) {
+        btn('trv3:stop', gx, 1140, gw, 76, t('parar'), false, 'surv',
+          undefined, 28);
+      }
     }
-  
     /* ---------------- acciones del menú (case 'trv3') ---------------- */
     function menuAction(game, arg) {
       const p = arg.split(':');

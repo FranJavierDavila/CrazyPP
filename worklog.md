@@ -7058,3 +7058,23 @@ Stage Summary:
 **Versionado:** bump 3.6.173→3.6.174-SDK6 · FASE 179 (c00 + verBadge + hub 6× + sw.js CACHE · golden 22ae238a… · nota=r83) · kit release-v36174 (tokens + veto v36173 + nota FASE 179) · 4 ZIPs v36174.
 
 **Despliegue:** deploy_pages --push (PAT del dueño): ensamblado 506 ficheros · 202,9 MB, smoke verde (33 peticiones, 0 fallos, 0 pageerrors), refs/heads/pages → 4194dcc09 · **EN PRODUCCIÓN verificado en vivo: PAGES-VERSION.txt = 3.6.174-SDK6 · const VERSION = '3.6.174-SDK6' · LinearMipmapLinearFilter = 0 apariciones (borrosidad muerta) · menuFxSweep/esChmus/banda 1228-1304 presentes en los bytes servidos** · NOTA: el reciclaje del sandbox volvió a rodar el .git local a la ronda 35 y el primer commit r83 (40c7468) cayó sobre él sin los paths del sitio — reconstruido por plumbing: snapshot completo del working tree reparentado sobre el linaje real r82-bis (main → ab4521d, padre e9f0d93, fast-forward) · Release v3.6.174-SDK6 con los 4 ZIPs · backups main/proyecto.
+
+## Ronda 84 (r84 · FASE 180 «ENTRENAMIENTO AL DIA») · V3.6.175-SDK6 — 2026-11-17
+
+**Informe del dueño tras la V3.6.174 en el visor:** «se sigue leyendo mal» · «dentro del apartado de entrenamiento los subapartados están con una maquetación antigua».
+
+**1 · «SE SIGUE LEYENDO MAL» (dos palancas):**
+- **El GOBERNADOR degradaba imagen con el menú abierto**: _stepDown bajaba fovea→tope y escala→0.8 sin saber que el dueño estaba LEYENDO — con el visor escalonado el menú se renderizaba a resolución rebajada y NADA de textura lo arregla. Ahora `feed()` RESTAURA el perfil del tier AL INSTANTE al abrir el menú (el menú es barato: tres panelas de texto) y `_stepDown` con el menú abierto NO toca imagen (sólo la tasa, que no afecta a la nitidez); al cerrar, la escalera sigue con normalidad.
+- **El arco se acerca**: dist 1,15 → **1,00 m** (+15 % angular del texto) — la fórmula r69 recalcula tangencias y yaws sola.
+
+**2 · SUBAPARTADOS DE ENTRENAMIENTO (la deuda r80 «hasta su migración»):** trainarea y trainext pintaban en espacio LEGADO 1024×1536 con placa y escala 0.911. **Migradas al interior C del arco** (gx/gw como _menuBandas, placa cero, fuera del transform LEG, `_menuMap` nulo, ids de acción intactos): trainarea con tarjetas nativas (título 34px, descripciones envueltas con la columna derecha RESERVADA para «▶ START» — la primera pasada pisaba la descripción con el raíl a gw−72, corregido a gw−320), trainext con chip de perfil + toggles a 3 columnas + pieles a lo ancho. El botón PARAR, que pintaba a y=1380 legado (fuera de banda), ahora vive dentro del lienzo visible.
+- **Lección pillada por el diag visual**: el helper `label()` del dispatcher tiene firma LEGADO `(txt, y, size)` con x fijo 56 — mis llamadas `(txt, x, y)` pintaban «TECH AIDS» a **500 px** sobre el lienzo (el hook de fillText del diag lo cazó: era mi propia etiqueta). Etiquetas de sección ahora nativas con fillText directo.
+- Verificado visualmente: capturas del lienzo de ambas páginas limpias (sin texto gigante, sin colisiones, concha + idiomas + sello en su sitio).
+
+**Parche:** scripts/patch_r84_fase180.py (P1-P6: sinPlaca+=trainext/trainarea, guard del gobernador en feed+stepDown, dist 1.00 en c02, drawArea/drawExtras reescritas por span en c13) · fix del wrap gw−320 y de las etiquetas label() posteriores al parche.
+
+**QA:** test_red_nucleo **60/0** · qa_vestibulo_r81 **156/0** (9 vivas F180 nuevas: imagen plena al abrir el menú, _stepDown sin imagen con menú abierto, escalera normal al cerrar, trainarea/trainext migradas con el contenido trv3:* dentro del interior C y nada en la esquina legada — la concha (trv3:back / lado R) queda fuera del chequeo por ser el MARCO) · agujas estáticas F180 (sinPlaca con las dos subpáginas, painters nativos, «MENÚ CON IMAGEN PLENA» + menuViendo ×2, dist 1.00 sin 1.15) · diag visual train/trainarea/trainext · arranque 0 pageerrors.
+
+**Versionado:** bump 3.6.174→3.6.175-SDK6 · FASE 180 (golden f76cd5d3… tras el wrap+etiquetas · nota=r84) · kit release-v36175 (tokens + veto v36174 + nota FASE 180) · 4 ZIPs.
+
+**Despliegue:** deploy_pages --push (PAT del dueño) → Pages sirviendo 3.6.175 (verificación en vivo) · release v3.6.175-SDK6 · backups main/proyecto.

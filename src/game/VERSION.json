@@ -1,10 +1,10 @@
 {
-  "version": "3.6.174-SDK6",
-  "fase": 179,
-  "faseNombre": "MENUS NITIDOS",
+  "version": "3.6.175-SDK6",
+  "fase": 180,
+  "faseNombre": "ENTRENAMIENTO AL DIA",
   "sdk": "1.6.0",
   "fecha": "2026-11-17",
-  "hub": "v36174-sdk6",
+  "hub": "v36175-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r83",
-  "tamano": 12290636,
-  "golden": "22ae238a9a1b295064c8d3ed34d7878ed7b8ee1abcb33968920d22eb8f0b187e"
+  "nota": "r84",
+  "tamano": 12293367,
+  "golden": "f76cd5d3500d74b0cfacd4586ff1b83f70171757f1a9d13b2cb5114f3282b74b"
 }

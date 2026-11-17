@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  /* Portada · Template 01 (HUD Data Terminal) · A4 794x1123 @96dpi · U = 39.7px */
+  :root {
+    --c-bg: #f3f4f3;
+    --c-primary: #3d6752;
+    --c-accent: #298959;
+    --c-text: #1e211f;
+    --c-muted: #727c77;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--c-bg); }
+  body { overflow: hidden; }
+  .cover-page {
+    position: relative; width: 794px; height: 1123px;
+    background: var(--c-bg);
+    font-family: 'Inter', 'Liberation Sans', sans-serif;
+    color: var(--c-text);
+    border: none; outline: none; box-shadow: none;
+  }
+  /* Layer 1 · fondo: retícula al 2% (clip SOLO aquí) */
+  .layer1 { position: absolute; inset: 0; overflow: hidden; z-index: 1; }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(61,103,82,0.05) 0.5px, transparent 0.5px),
+      linear-gradient(to bottom, rgba(61,103,82,0.05) 0.5px, transparent 0.5px);
+    background-size: 50px 50px;
+  }
+  /* Layer 2 · estructura: línea de anclaje vertical ultra gruesa */
+  .layer2 { position: absolute; inset: 0; z-index: 2; }
+  .anchor-line {
+    position: absolute;
+    left: 95px; top: 112px; height: 899px; width: 8px;
+    background: var(--c-primary);
+  }
+  /* Layer 3 · contenido (sin overflow hidden) */
+  .layer3 { position: absolute; inset: 0; z-index: 3; }
+  .kicker {
+    position: absolute; left: 145px; top: 168px; width: 560px;
+    font-size: 16px; font-weight: 400; letter-spacing: 3px;
+    text-transform: uppercase; opacity: 0.6; color: var(--c-text);
+  }
+  .hero {
+    position: absolute; left: 145px; top: 337px; width: 580px;
+    font-size: 56px; line-height: 1.15; font-weight: 900;
+    color: var(--c-text); letter-spacing: -0.5px;
+  }
+  .hero b { color: var(--c-primary); font-weight: 900; }
+  .summary {
+    position: absolute; left: 145px; top: 561px; width: 476px;
+    font-size: 17px; line-height: 1.6; font-weight: 400;
+    opacity: 0.85; color: var(--c-text);
+  }
+  .meta {
+    position: absolute; left: 145px; top: 842px; width: 520px;
+    font-size: 18px; line-height: 1.55; font-weight: 500; color: var(--c-text);
+  }
+  .meta .sub { font-weight: 300; color: var(--c-muted); font-size: 16px; }
+  .footer {
+    position: absolute; left: 145px; top: 1010px; width: 560px;
+    font-size: 16px; font-weight: 400; letter-spacing: 3px;
+    text-transform: uppercase; opacity: 0.6; color: var(--c-text);
+  }
+  @media screen {
+    html { background: var(--c-bg); }
+    body { transform-origin: top left; }
+  }
+</style>
+</head>
+<body>
+<div class="cover-page">
+  <div class="layer1"><div class="grid"></div></div>
+  <div class="layer2"><div class="anchor-line"></div></div>
+  <div class="layer3">
+    <div class="kicker">Informe de auditor&iacute;a &middot; Sistema de f&iacute;sicas</div>
+    <div class="hero">GUARDIANES<br>DE LA<br>ECOSFERA</div>
+    <div class="summary">
+      Auditor&iacute;a de solo lectura del n&uacute;cleo de simulaci&oacute;n:
+      integraci&oacute;n temporal, CCD bola&ndash;pala por SDF, bote con giro,
+      aerodin&aacute;mica, colisiones de entorno, determinismo en red, predicci&oacute;n
+      de la IA y rendimiento en Quest. Ocho &iacute;tems con evidencia fichero:l&iacute;nea.
+    </div>
+    <div class="meta">
+      r56 &middot; FASE 150 &middot; v3.6.146-SDK6<br>
+      <span class="sub">8 &iacute;tems auditados &middot; c02 / c04 / c05 / c09 / c12 &middot; 12 de noviembre de 2026</span>
+    </div>
+    <div class="footer">Crazy Ping Pong &middot; motor propio &middot; Meta Quest</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+ "mega_salida_gd:es": {
+  "esperado": "Pasajeros al tren, partimos hacia Gold Dust.",
+  "asr": "我们乘坐火车出发，前往戈尔多斯。",
+  "ok": true
+ },
+ "mega_salida_gd_fon:es": {
+  "esperado": "Pasajeros al tren, partimos hacia Gold Dust.",
+  "asr": "我们去往Golds.",
+  "ok": false
+ },
+ "mega_salida_sc:es": {
+  "esperado": "Pasajeros al tren, partimos hacia Silver Creek.",
+  "asr": "我们乘坐火车出发，前往Silver Creek。",
+  "ok": true
+ },
+ "mega_salida_sc_fon:es": {
+  "esperado": "Pasajeros al tren, partimos hacia Silver Creek.",
+  "asr": "我们乘坐火车前往Silver Creek.",
+  "ok": true
+ },
+ "mega_llega_gd:es": {
+  "esperado": "En menos de veinticinco segundos llegaremos a Gold Dust.",
+  "asr": "En menos de veinticinco segundos llegaremos a Golduz.",
+  "ok": false
+ },
+ "mega_llega_gd_fon:es": {
+  "esperado": "En menos de veinticinco segundos llegaremos a Gold Dust.",
+  "asr": "En menos de 25 segundos llegaremos a Goldas.",
+  "ok": false
+ },
+ "mega_llega_sc:es": {
+  "esperado": "En menos de veinticinco segundos llegaremos a Silver Creek.",
+  "asr": "在25秒内，我们会到达Silvercreek。",
+  "ok": true
+ },
+ "mega_llega_sc_fon:es": {
+  "esperado": "En menos de veinticinco segundos llegaremos a Silver Creek.",
+  "asr": "在25秒内，我们会到达Silver Creek。",
+  "ok": true
+ },
+ "mega_salida_gd:en": {
+  "esperado": "All aboard! We are departing towards Gold Dust.",
+  "asr": "All aboard, we are departing towards Gold Dust.",
+  "ok": true
+ },
+ "mega_salida_sc:en": {
+  "esperado": "All aboard! We are departing towards Silver Creek.",
+  "asr": "All aboard, we are departing towards Silver Creek.",
+  "ok": true
+ },
+ "mega_llega_gd:en": {
+  "esperado": "In less than twenty-five seconds we will arrive at Gold Dust.",
+  "asr": "In less than twenty five seconds, we will arrive at Gold Dust.",
+  "ok": false
+ },
+ "mega_llega_sc:en": {
+  "esperado": "In less than twenty-five seconds we will arrive at Silver Creek.",
+  "asr": "In less than twenty five seconds, we will arrive at Silver Creek.",
+  "ok": false
+ }
+}

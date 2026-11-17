@@ -1,0 +1,61 @@
+==========================================================
+CRAZY PING PONG · CHULETA DE DIRECTO (Quest + CRAZY TV)
+==========================================================
+
+QUÉ VAS A MONTAR
+-----------------
+  Pantalla 1 (imagen real del casco): casting nativo de Meta.
+  Pantalla 2 (la televisión)        : tv.html con cámaras,
+                                      repeticiones y marcador.
+  Como una retransmisión de verdad: imagen + datos, cada uno
+  por su carril. El casting NO toca el juego: usa el
+  codificador de vídeo por hardware del casco.
+
+ANTES DE LA PRIMERA VEZ (una sola vez)
+--------------------------------------
+  1. Relay de TV encendido (Railway/Render) y web subida
+     (Workers/Netlify) — ver LEEME-DESPLIEGUE.txt.
+  2. Dos pantallas donde mirar: PC y móvil (o dos ventanas
+     del mismo PC).
+
+EL DIRECTO, PASO A PASO (cada sesión)
+-------------------------------------
+  1. EN LA QUEST: entra al juego con la URL de anfitrión:
+        https://TU-WEB/?relay=https://TU-RELAY:puerto
+     (el botón "TV en vivo" hereda el relay solo).
+  2. EN LA QUEST: botón de la cámara de la barra inferior
+     → "Enviar" → elige destino:
+        · PC:  abre https://oculus.com/casting y acepta.
+        · Móvil: app Meta Horizon → tu casco → Enviar.
+  3. Arranca la partida: aparece el sello "● EN VIVO" en la
+     mesa y el canal nace en la parrilla de la TV.
+  4. ESPECTADORES: les pasas el enlace de la tele:
+        https://TU-WEB/tv.html?relay=https://TU-RELAY:puerto
+  5. TÚ (el director): casting en una ventana + tv.html en
+     otra. Imagen real a un lado, cámaras y datos al otro.
+
+CONTROLES DEL ESPECTADOR
+------------------------
+  1-6 cámaras · R repetición · ESPACIO pausa · S silencio
+  ESC volver a la parrilla. Repetición automática en cámara
+  lenta tras cada punto (5 s a 0,35x).
+
+CONSEJOS
+--------
+  · WiFi de 5 GHz para que casting y juego convivan sin roce.
+  · Sesiones largas: casco con carga y algo ventilado.
+  · El canal desaparece solo ~12 s tras cerrar la partida o
+    la pestaña del juego (canales fantasma se retiran).
+  · Parrilla vacía: revisa ?relay= en AMBAS URLs (juego y
+    tele). Sin relay, el juego funciona igual que siempre.
+  · La señal es interpolada: 120 ms de colchón, así que un
+    microcorte de red ni se nota.
+
+PROBLEMAS FRECUENTES DEL CASTING
+--------------------------------
+  · No aparece "Enviar": actualiza el software del casco
+    (Ajustes → Sistema → Actualización de software).
+  · Cortes a ratos: acerca el router o cambia a 5 GHz;
+    cierra descargas/backup que consuman WiFi en el PC.
+  · El móvil no ve el casco: misma cuenta Meta y misma red.
+  · Pide permiso en el casco la primera vez: acéptalo ahí.

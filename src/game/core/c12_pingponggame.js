@@ -1109,7 +1109,7 @@ export class PingPongGame {
       }
       this.menuPage = 'opts';
       this.menuOpen = true;
-      this.menuGroup.visible = true;
+      this.menuFxInicia('in');   // r81 · nace EN ESCENA (cascada+rebote)
       this.menuHover = [-1, -1];
       this.anchorMenu(true);
       this.drawMenu();
@@ -1925,6 +1925,12 @@ export class PingPongGame {
      * cómoda, incluso los textos más pequeños»): cada APERTURA ancla el
      * arco EN LA CABEZA (anchorMenu) y el pin lo deja FIJO sin flotación.
      * Soltarla devuelve el modo flotante r113 (sigue a la cabeza 1,8 s). */
+    // r81 · FASE 177 · estado del FX de entrada/salida/pulso del arco
+    this._menuFxCascada = null;
+    this._menuFxOut = 0;
+    this._menuFxPulso = 0;
+    this._menuFlash = null;
+    this._menuFlashRepinta = 0;
     this.menuPin = true;              // r68: ON por defecto (petición expresa)
     this._menuAnchorEst = '';         // r114: estancia donde nació el ancla
     this._menuAnchorRigZ = 0;         // r114: z del rig al firmar el ancla
@@ -5746,11 +5752,11 @@ export class PingPongGame {
   toggleMenu() {
     if (this.calib) return;   // en entrenamiento manda el panel propio
     this.menuOpen = !this.menuOpen;
-    this.menuGroup.visible = this.menuOpen;
     for (const l of this.menuLines) l.visible = false;
     for (const d of this.menuDots) d.visible = false;
     this.menuHover = [-1, -1];
     if (this.menuOpen) {
+      this.menuFxInicia('in');   // r81 · FASE 177: entra en escena (cascada+rebote)
       // r68 · cada apertura nace EN LA CABEZA y CON LA CHINCHETA PUESTA
       // (petición del dueño): el arco aparece centrado, equidistante y fijo.
       // La honestidad r114 sigue garantizada: el ancla se re-firma aquí
@@ -5769,6 +5775,7 @@ export class PingPongGame {
         if (this.menuOpen) this.drawMenu();
       }).catch(() => { /* nunca rompe */ });
     } else {
+      this.menuFxInicia('out');   // r81 · FASE 177: sale de escena (encoge y se funde)
       this.audio.playOsc(990, 660, 0.06, 'sine', 0.1, 0);
       // v2.29: al cerrar el menú la música se apaga con fundido (partido en marcha)
       this.audio.setMusicWanted(false);
@@ -5789,7 +5796,7 @@ export class PingPongGame {
     this.menuPage = 'hallask';
     this.menuSec = '';
     this.menuOpen = true;
-    this.menuGroup.visible = true;
+    this.menuFxInicia('in');   // r81 · nace EN ESCENA (cascada+rebote)
     this.menuHover = [-1, -1];
     // r68 · el prompt B también nace en la cabeza con la chincheta puesta
     this.menuPin = true;
@@ -5839,6 +5846,25 @@ export class PingPongGame {
    * su panela (L/C/R). Los «needsUpdate» del drawMenu delegan AQUÍ. */
   _menuTexSube() {
     const li = CONFIG_MENUS.lienzo;
+    // r81 · FASE 177 · FLASH de pulsación: velo blanco sobre la fila
+    // pulsada, horneado en el troceo; decae con los repintados vivos
+    // (menuFxTick re-pinta a 60 ms mientras el flash esté vivo).
+    const fl = this._menuFlash;
+    if (fl) {
+      const dtF = performance.now() - fl.t0;
+      if (dtF >= 170) this._menuFlash = null;
+      else {
+        const aF = 0.5 * (1 - dtF / 170);
+        const cF = this.menuCanvas.getContext('2d');
+        cF.save();
+        cF.fillStyle = 'rgba(255,255,255,' + aF.toFixed(3) + ')';
+        cF.beginPath();
+        if (cF.roundRect) cF.roundRect(fl.r.x, fl.r.y, fl.r.w, fl.r.h, 14);
+        else cF.rect(fl.r.x, fl.r.y, fl.r.w, fl.r.h);
+        cF.fill();
+        cF.restore();
+      }
+    }
     for (const mesh of this._menuPanelas) {
       const pa = mesh.userData.panela;
       const cv = mesh.userData.cv;
@@ -5857,6 +5883,109 @@ export class PingPongGame {
    * (pantalla curva equidistante). Con chincheta (r68: por defecto) el
    * arco queda FIJO (sin flotación); sin chincheta, flotación r113 de
    * 1,8 s. La firma r114 (estancia + rig z) se conserva intacta. */
+  /* r81 · FASE 177 «MENÚS EN ESCENA» — el arco ENTRA con cascada
+   * (panela C primero, lados +70 ms) con rebote easeOutBack y fundido,
+   * SALE encogiendo y desvaneciendo, y cada PULSACIÓN respira
+   * (pulso 1→1.03→1 del arco). El ancla fija r69/r114 NO se toca:
+   * el FX sólo escala panelas y opacidad, nunca recoloca el grupo. */
+  menuFxInicia(dir) {
+    if (!this.menuGroup) return;
+    const ahora = performance.now();
+    if (dir === 'in') {
+      this.menuGroup.visible = true;
+      this._menuFxOut = 0;
+      this._menuFxPulso = 0;
+      const tC = ahora, tL = ahora + 70, tR = ahora + 70;
+      this._menuFxCascada = { C: tC, L: tL, R: tR };
+    } else if (dir === 'out') {
+      if (!this.menuGroup.visible) return;
+      this._menuFxCascada = null;
+      this._menuFxPulso = 0;
+      this._menuFxOut = ahora;
+    } else if (dir === 'pulse') {
+      if (this._menuFxOut) return;   // nunca pisa una salida en curso
+      this._menuFxPulso = ahora;
+    }
+    this.menuFxTick();
+  }
+
+  menuFxTick() {
+    const ahora = performance.now();
+    const meshes = [this._menuPanelaDe && this._menuPanelaDe.L,
+      this._menuPanelaDe && this._menuPanelaDe.C,
+      this._menuPanelaDe && this._menuPanelaDe.R];
+    // SALIDA: encoge + funde (150 ms, easeInQuad) y esconde al terminar
+    if (this._menuFxOut) {
+      const p = Math.min(1, (ahora - this._menuFxOut) / 150);
+      const e = p * p;
+      for (const m of meshes) {
+        if (!m) continue;
+        m.scale.setScalar(1 - 0.12 * e);
+        m.material.opacity = 1 - e;
+      }
+      if (this._menuPinMesh) this._menuPinMesh.material.opacity = 1 - e;
+      if (p >= 1) {
+        this.menuGroup.visible = false;
+        this._menuFxOut = 0;
+        for (const m of meshes) {
+          if (!m) continue;
+          m.scale.setScalar(1);
+          m.material.opacity = 1;
+        }
+        if (this._menuPinMesh) this._menuPinMesh.material.opacity = 1;
+      }
+      return;
+    }
+    // ENTRADA: cascada por panela (C, luego L/R) con rebote y fundido
+    if (this._menuFxCascada) {
+      let fin = true;
+      const eOB = (p) => {
+        const c1 = 1.70158, c3 = c1 + 1;
+        return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+      };
+      for (const id of ['C', 'L', 'R']) {
+        const m = this._menuPanelaDe[id];
+        if (!m) continue;
+        const p = Math.min(1, Math.max(0,
+          (ahora - this._menuFxCascada[id]) / 320));
+        if (p < 1) fin = false;
+        m.scale.setScalar(0.82 + 0.18 * eOB(p));
+        m.material.opacity = Math.min(1, p * 1.6);
+      }
+      if (this._menuPinMesh) {
+        const pC = Math.min(1, Math.max(0,
+          (ahora - this._menuFxCascada.C) / 320));
+        this._menuPinMesh.material.opacity = Math.min(1, pC * 1.6);
+      }
+      if (fin) this._menuFxCascada = null;
+      return;
+    }
+    // PULSO de pulsación (130 ms) + repintado del flash a 60 ms
+    if (this._menuFxPulso) {
+      const p = (ahora - this._menuFxPulso) / 130;
+      if (p >= 1) {
+        this._menuFxPulso = 0;
+        this.menuGroup.scale.setScalar(1);
+      } else {
+        this.menuGroup.scale.setScalar(1 + 0.03 * Math.sin(Math.PI * p));
+      }
+      if (this._menuFlash && ahora - (this._menuFlashRepinta || 0) >= 60) {
+        this._menuFlashRepinta = ahora;
+        this.drawMenu();
+      }
+      return;
+    }
+    // flash residual sin pulso (el pulso acabó antes que el flash)
+    if (this._menuFlash) {
+      if (performance.now() - this._menuFlash.t0 >= 170) {
+        this._menuFlash = null;
+      } else if (ahora - (this._menuFlashRepinta || 0) >= 60) {
+        this._menuFlashRepinta = ahora;
+        this.drawMenu();
+      }
+    }
+  }
+
   anchorMenu(forzar) {
     // r69 · SEMÁNTICA DEL ANCLA (petición del dueño): al ABRIR, el menú
     // nace SIEMPRE justo delante de la mirada y queda FIJO (anclado).
@@ -6160,7 +6289,17 @@ export class PingPongGame {
         line.visible = false;    // mando ausente: sin láser (no dejarlo congelado)
         dot.visible = false;
       }
-      if (idx !== this.menuHover[h]) { this.menuHover[h] = idx; dirty = true; }
+      if (idx !== this.menuHover[h]) {
+        this.menuHover[h] = idx; dirty = true;
+        // r81 · FASE 177 · FOCO VIVO: tick sonoro + haptic al ganar el
+        // foco una fila (la competencia navega «con vida»).
+        if (idx >= 0) {
+          try { this.audio.playOsc(1180, 1180, 0.028, 'sine', 0.05, 0); } catch (eFoco) { /* */ }
+          if (this.renderer.xr && this.renderer.xr.isPresenting) {
+            this.haptic(h, 0.15, 18);
+          }
+        }
+      }
       // r32 · hover del ICONO DE LA MÚSICA del salón: el rayo del mando h
       // sobre la placa (si el salón la enseña) la agranda con suavizado en
       // updateHallFx. Al final del trabajo del panel: los temporales
@@ -6578,6 +6717,13 @@ export class PingPongGame {
   menuClick(idx, hand) {
     const r = this.menuRects[idx];
     if (!r) return;
+    // r81 · FASE 177 · PULSACIÓN VIVA (feedback de la competencia): flash
+    // blanco en la fila pulsada + pulso del arco + haptic fuerte.
+    this._menuFlash = { r: { x: r.x, y: r.y, w: r.w, h: r.h },
+      t0: performance.now() };
+    this._menuFlashRepinta = 0;
+    this.menuFxInicia('pulse');
+    this.haptic(hand, 0.5, 55);
     // r96 · la mano que pulsa alimenta los deslizadores (con fallback al
     // último punto conocido de cualquier mando)
     const mh = this._menuHitPx || [null, null];
@@ -8977,7 +9123,7 @@ export class PingPongGame {
     this.menuSec = 'match';
     this.menuOpen = true;
     if (this.menuGroup) {
-      this.menuGroup.visible = true;
+      this.menuFxInicia('in');   // r81 · el HUB nace EN ESCENA (cascada+rebote)
       // r71 · EL ARRANQUE NACE ANCLADO (informe del dueño: «el menú no
       // aparece anclado… bloquea el juego»): anchorMenu() sin forzar
       // retornaba con la chincheta puesta SIN anclar ni firmar la estancia
@@ -17223,7 +17369,7 @@ export class PingPongGame {
       this.menuPage = 'optsPala';
       this._palaSalirAsk = true;
       this.menuOpen = true;
-      this.menuGroup.visible = true;
+      this.menuFxInicia('in');   // r81 · nace EN ESCENA (cascada+rebote)
       this.menuHover = [-1, -1];
       this.anchorMenu(true);
       this.drawMenu();
@@ -17253,7 +17399,7 @@ export class PingPongGame {
         this.trainV3Hub = false;
         this.menuPage = 'train';
         this.menuOpen = true;
-        this.menuGroup.visible = true;
+        this.menuFxInicia('in');   // r81 · nace EN ESCENA (cascada+rebote)
         this.menuHover = [-1, -1];
         // r71 · apertura REAL (B en entrenamiento): nace ANCLADA Y FIJA,
         // como el resto de aperturas (mismo informe del dueño).
@@ -17285,6 +17431,7 @@ export class PingPongGame {
     if (presenting && (this.menuOpen || this.inHall || this._arconoOn)) {
       this.updateMenu(dt);   // r87: dt para el pulso del medallón
     }
+    this.menuFxTick();   // r81 · vida del arco (cascada/pulso/salida), con o sin menú
 
     // 0.8) v2.19: red online — emitir pose/bola/sync (v1: 30 Hz JSON)
     //      v3.6.71 · r79: transporte binario v2 (pose 60 Hz + eventos fast)

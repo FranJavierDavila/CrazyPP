@@ -1,0 +1,42 @@
+{
+ "mega_salida_dg:es": {
+  "esperado": "Pasajeros al tren, partimos hacia Dry Gulch.",
+  "asr": "我们乘坐火车出发去希腊国王的城堡。",
+  "ok": false
+ },
+ "mega_salida_dg_fon:es": {
+  "esperado": "Pasajeros al tren, partimos hacia Drai Gulch.",
+  "asr": "我们乘坐火车前往德雷克堡。",
+  "ok": false
+ },
+ "mega_salida_pd:es": {
+  "esperado": "Pasajeros al tren, partimos hacia Perdido.",
+  "asr": "我们乘坐火车出发了，我们在车站集合。",
+  "ok": false
+ },
+ "mega_salida_br:es": {
+  "esperado": "Pasajeros al tren, partimos hacia Bravos.",
+  "asr": "我们乘坐火车前往巴拉博斯。",
+  "ok": false
+ },
+ "mega_oro:es": {
+  "esperado": "Cargamento de oro a buen recaudo.",
+  "asr": "Cargamento de oro a buen recargo.",
+  "ok": true
+ },
+ "mega_salida_dg:en": {
+  "esperado": "All aboard! We are departing towards Dry Gulch.",
+  "asr": "All aboard, we are departing towards Dry Gulch.",
+  "ok": true
+ },
+ "mega_llega_dg:en": {
+  "esperado": "In less than twenty-five seconds we will arrive at Dry Gulch.",
+  "asr": "In less than twenty five seconds, we will arrive at Dry Gulch.",
+  "ok": true
+ },
+ "mega_oro:en": {
+  "esperado": "The gold shipment is safe and sound.",
+  "asr": null,
+  "ok": false
+ }
+}

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --c-bg:#ffffff;
+    --c-accent:#58513d;
+    --c-mid:#988445;
+    --c-text:#262523;
+    --c-muted:#78766f;
+  }
+  html,body{margin:0;padding:0;background:var(--c-bg);}
+  .poster{
+    position:relative;width:794px;height:1123px;background:var(--c-bg);
+    font-family:'Archivo',Arial,sans-serif;color:var(--c-text);overflow:hidden;
+  }
+  /* Layer 1 · rejilla al 2% */
+  .grid{position:absolute;inset:0;
+    background-image:
+      repeating-linear-gradient(0deg,rgba(88,81,61,.05) 0 .5px,transparent .5px 50px),
+      repeating-linear-gradient(90deg,rgba(88,81,61,.05) 0 .5px,transparent .5px 50px);}
+  /* Layer 2 · línea de anclaje ultra gruesa */
+  .vline{position:absolute;left:95px;top:112px;bottom:112px;width:6px;background:var(--c-accent);}
+  /* Layer 3 · contenido (X = 0.12*W + 30 + margen de 1U) */
+  .kicker{position:absolute;left:150px;top:168px;font-size:16pt;font-weight:400;
+    letter-spacing:3pt;text-transform:uppercase;color:var(--c-muted);opacity:.85;}
+  .hero{position:absolute;left:150px;top:300px;width:560px;
+    font-size:54pt;font-weight:900;line-height:1.15;color:var(--c-text);}
+  .hero .thin{font-weight:300;color:var(--c-accent);}
+  .summary{position:absolute;left:150px;top:610px;width:476px;
+    font-size:16.5pt;font-weight:400;line-height:1.6;color:var(--c-text);opacity:.85;}
+  .meta{position:absolute;left:150px;top:842px;font-size:17pt;font-weight:600;
+    line-height:1.55;color:var(--c-accent);}
+  .meta .sub{font-weight:400;color:var(--c-muted);font-size:15pt;}
+  .footer{position:absolute;left:150px;bottom:64px;font-size:16pt;font-weight:400;
+    letter-spacing:3pt;text-transform:uppercase;color:var(--c-muted);opacity:.6;}
+  .chip{position:absolute;right:64px;top:56px;font-size:15pt;font-weight:600;
+    color:var(--c-accent);border:1.5px solid var(--c-mid);padding:8px 18px;border-radius:999px;
+    letter-spacing:1pt;}
+  @media screen{html{background:#e8e6e2;}}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="grid"></div>
+  <div class="vline"></div>
+  <div class="kicker">Informe de certificación · multijugador</div>
+  <div class="chip">v3.6.141-SDK6</div>
+  <div class="hero">CRAZY<br>PING<br><span class="thin">PONG</span></div>
+  <div class="summary">
+    Batería completa de pruebas con agentes sobre las dos modalidades
+    multijugador — duelo «match» y Duelos Locos «duelos» —: partidas reales
+    en LAN, WiFi y túnel, arneses de física y árbitro, auditoría
+    anti-cuelgues y verificación de producción. Listo para clientes reales.
+  </div>
+  <div class="meta">
+    1.041 comprobaciones · 0 errores de página<br>
+    <span class="sub">Ronda 48 · FASE 143 · 10 de noviembre de 2026</span>
+  </div>
+  <div class="footer">Producción verificada · GitHub Pages · D1 telemetría</div>
+</div>
+</body>
+</html>

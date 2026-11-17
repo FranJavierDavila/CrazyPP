@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "query": "ISS international space station cupola observatory window view of earth interior",
+  "count": 3,
+  "ranked": true,
+  "captioned_count": 3,
+  "results": [
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/92cfabb8386f.jpg",
+      "caption": "The ISS Cupola observatory module with multiple panoramic windows overlooking Earth's blue oceans and white clouds from orbit.",
+      "source": "NASA Science",
+      "original_width": "1280px",
+      "original_height": "720px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/b50d9c4f8581.jpg",
+      "caption": "The ISS Cupola module with multiple windows viewing Earth and space; contains Alamy watermarks and text, so not suitable for background image.",
+      "source": "Alamy",
+      "original_width": "1300px",
+      "original_height": "956px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/6c2303e0b151.jpg",
+      "caption": "A cluttered spacecraft interior filled with dense equipment, cables, and panels; high clarity, contains some small text labels.",
+      "source": "Colossal",
+      "original_width": "1200px",
+      "original_height": "788px"
+    }
+  ]
+}

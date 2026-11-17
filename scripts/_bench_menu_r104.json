@@ -1,0 +1,106 @@
+{
+ "setup": {
+  "ok": true
+ },
+ "paginas": {
+  "main": {
+   "dt": 1,
+   "err": null
+  },
+  "opts": {
+   "dt": 3,
+   "err": null
+  },
+  "multi": {
+   "dt": 1.3000000000465661,
+   "err": null
+  },
+  "champs": {
+   "dt": 7,
+   "err": null
+  },
+  "wrl": {
+   "dt": 2.300000000046566,
+   "err": null
+  },
+  "train": {
+   "dt": 12.900000000139698,
+   "err": null
+  },
+  "optsSalaMesa": {
+   "dt": 3.8999999999068677,
+   "err": null
+  },
+  "ajustes": {
+   "dt": 0.39999999990686774,
+   "err": null
+  }
+ },
+ "raster": {
+  "N": 432,
+  "tUpd": 17.49999999953434,
+  "msFrame": 0.040509259258181336,
+  "hovers": 0,
+  "drawMenuN": 15,
+  "drawMenuT": 37.10000000009313,
+  "tTotal": 18
+ },
+ "upload": {
+  "conUpload": 406.11999999999534,
+  "sinUpload": 2.1099999999976715,
+  "delta": 404.00999999999766
+ },
+ "deriva": [
+  {
+   "apunta": [
+    -0.405,
+    0
+   ],
+   "dot": [
+    0.0708,
+    0.0489
+   ],
+   "esperado": [
+    -0.405,
+    0
+   ]
+  },
+  {
+   "apunta": [
+    0.405,
+    0
+   ],
+   "dot": null,
+   "esperado": [
+    0.405,
+    0
+   ]
+  },
+  {
+   "apunta": [
+    0,
+    -0.6
+   ],
+   "dot": [
+    0.3475,
+    -0.4311
+   ],
+   "esperado": [
+    0,
+    -0.6
+   ]
+  },
+  {
+   "apunta": [
+    0,
+    0.6
+   ],
+   "dot": null,
+   "esperado": [
+    0,
+    0.6
+   ]
+  }
+ ],
+ "errs": []
+}

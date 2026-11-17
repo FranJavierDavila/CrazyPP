@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>CRAZY PING PONG · Guía sin tecnicismos · V2.126</title>
+<style>
+/* Fuentes autohospedadas (Baloo 2 + Nunito Sans) */
+/* devanagari */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* devanagari */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* devanagari */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* cyrillic-ext */
+
+/* cyrillic */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+
+</style>
+<style>
+/* ============ PÁGINA ============ */
+@page { size: 720px 1020px; margin: 0; }
+
+:root{
+  --c-bg:    #F5F3ED;   /* crema papel */
+  --c-ink:   #26313D;   /* texto */
+  --c-blue:  #0E2A47;   /* azul profundo de marca */
+  --c-orange:#F97316;   /* naranja bola */
+  --c-card:  #FFFFFF;
+  --soft-blue:  rgba(14,42,71,.06);
+  --soft-orange:rgba(249,115,22,.10);
+}
+
+html, body{
+  margin:0; padding:0;
+  width:720px;
+  background:var(--c-bg); /* mismo color que el contenido: evita bandas al paginar */
+  color:var(--c-ink);
+  font-family:'Nunito Sans','Noto Color Emoji',sans-serif;
+  font-size:15.5px; line-height:1.62;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+
+@media screen{
+  html{ height:auto; display:flex; justify-content:center; background:#222222; }
+  body{ transform-origin:top center; margin:20px auto; box-shadow:0 12px 60px rgba(0,0,0,.45); }
+}
+
+h1,h2,h3,h4{ font-family:'Baloo 2','Noto Color Emoji',sans-serif; margin:0; }
+p{ margin:0 0 12px 0; }
+strong{ font-weight:900; color:var(--c-blue); }
+
+/* ============ PORTADA ============ */
+.cover{
+  width:720px; height:1020px; box-sizing:border-box;
+  break-after:page; overflow:hidden;
+  background:
+    radial-gradient(340px 340px at 88% 12%, rgba(249,115,22,.22), transparent 68%),
+    radial-gradient(420px 420px at 8% 96%, rgba(255,255,255,.07), transparent 70%),
+    linear-gradient(160deg, #0E2A47 0%, #12345A 100%),
+    #0E2A47;
+  color:#F7F5EF;
+  display:flex; flex-direction:column; justify-content:center;
+  padding:64px; position:relative;
+}
+.cover .net-line{
+  position:absolute; left:0; right:0; top:118px; height:2px;
+  background:repeating-linear-gradient(90deg, rgba(247,245,239,.35) 0 14px, transparent 14px 26px);
+}
+.cover .ball{
+  position:absolute; border-radius:50%;
+  background:radial-gradient(circle at 32% 30%, #FFB25C, #F97316 62%, #C2410C);
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+.cover .ball.b1{ width:118px; height:118px; right:64px; top:170px; }
+.cover .ball.b2{ width:34px; height:34px; right:150px; top:120px; opacity:.85; }
+.cover .ball.b3{ width:20px; height:20px; left:84px; bottom:180px; opacity:.6; }
+.cover .ring{
+  position:absolute; width:230px; height:230px; border-radius:50%;
+  border:2px dashed rgba(247,245,239,.22); left:-70px; top:-70px;
+}
+.cover-tag{
+  display:inline-block; align-self:flex-start;
+  font-size:12px; font-weight:900; letter-spacing:2.6px; text-transform:uppercase;
+  color:#0E2A47; background:#F7F5EF; border-radius:999px; padding:8px 16px;
+  margin-bottom:34px;
+}
+.cover .h1a, .cover .h1b{
+  font-family:'Baloo 2','Noto Color Emoji',sans-serif;
+  font-size:64px; line-height:1.06; font-weight:800; letter-spacing:.5px;
+}
+.cover .h1a{ color:#FFFFFF; margin-bottom:0; }
+.cover .h1b{ color:#F97316; }
+.cover .cover-bar{ width:120px; height:7px; border-radius:4px; background:#F97316; margin:42px 0 44px; }
+.cover .cover-sub{ font-size:21px; line-height:1.5; font-weight:600; color:#F7F5EF; max-width:520px; margin-bottom:16px; }
+.cover .cover-aud{
+  font-size:14.5px; line-height:1.55; color:rgba(247,245,239,.82); max-width:500px;
+  border-left:3px solid #F97316; padding-left:14px; margin-top:10px;
+}
+.cover .cover-aud strong{ color:#FFB25C; font-weight:900; }
+.cover .cover-zones{
+  display:flex; gap:10px; margin-top:38px;
+}
+.cover .zone-chip{
+  flex:1; border:1.5px solid rgba(247,245,239,.28); border-radius:14px;
+  padding:12px 10px 11px; text-align:center;
+}
+.cover .zone-chip .z-ic{ font-size:22px; display:block; margin-bottom:5px; }
+.cover .zone-chip .z-t{ font-family:'Baloo 2','Noto Color Emoji',sans-serif; font-size:14.5px; font-weight:700; color:#FFFFFF; display:block; letter-spacing:.4px; }
+.cover .zone-chip .z-s{ font-size:11.5px; color:rgba(247,245,239,.75); display:block; margin-top:2px; }
+.cover .cover-foot{
+  position:absolute; left:64px; right:64px; bottom:46px;
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:11.5px; letter-spacing:2.2px; text-transform:uppercase; color:rgba(247,245,239,.62);
+  border-top:1px solid rgba(247,245,239,.18); padding-top:16px;
+}
+
+/* ============ CONTENIDO ============ */
+.main-content{
+  width:720px; box-sizing:border-box;
+  background:var(--c-bg);
+  padding:58px 62px 8px 62px;
+}
+.section-tag{
+  font-size:11px; font-weight:900; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--c-orange); margin-bottom:6px;
+}
+.section-title{
+  font-size:29px; font-weight:800; color:var(--c-blue); line-height:1.14; margin-bottom:10px;
+}
+.divider{ width:54px; height:5px; border-radius:3px; background:var(--c-orange); margin:0 0 18px 0; }
+.chapter-header{ break-after:avoid; break-inside:avoid; margin-top:26px; }
+.chapter-header:first-child{ margin-top:0; }
+
+.body-text{ margin-bottom:12px; }
+.lead{ font-size:16px; font-weight:600; color:var(--c-blue); }
+
+.card{
+  background:var(--c-card); border:1px solid rgba(14,42,71,.09);
+  border-radius:14px; padding:16px 18px; margin-bottom:13px; break-inside:avoid;
+}
+.card h3{ font-size:17.5px; font-weight:700; color:var(--c-blue); margin-bottom:6px; }
+.card p:last-child{ margin-bottom:0; }
+
+.zone-card{
+  border-left:5px solid var(--c-orange); border-radius:14px;
+  background:var(--c-card); border-top:1px solid rgba(14,42,71,.09);
+  border-right:1px solid rgba(14,42,71,.09); border-bottom:1px solid rgba(14,42,71,.09);
+  padding:15px 18px; margin-bottom:12px; break-inside:avoid;
+}
+.zone-card.blue{ border-left-color:var(--c-blue); }
+.zone-card .z-head{ display:flex; align-items:center; gap:10px; margin-bottom:5px; }
+.zone-card .z-ic{ font-size:21px; }
+.zone-card h3{ font-size:17px; font-weight:800; color:var(--c-blue); letter-spacing:.3px; }
+.zone-card .z-role{
+  margin-left:auto; font-size:10.5px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--c-orange); background:var(--soft-orange); border-radius:999px; padding:4px 10px; white-space:nowrap;
+}
+.zone-card p{ margin-bottom:0; font-size:14.8px; }
+.zone-card .z-io{ font-size:13px; color:rgba(38,49,61,.75); margin-top:7px; }
+.zone-card .z-io b{ color:var(--c-blue); }
+
+.flow{ display:flex; align-items:center; gap:6px; margin:14px 0 4px; break-inside:avoid; }
+.flow .f-node{
+  flex:1; text-align:center; background:var(--c-card);
+  border:1.5px solid rgba(14,42,71,.14); border-radius:11px; padding:9px 4px;
+  font-size:12.2px; font-weight:900; color:var(--c-blue); letter-spacing:.2px;
+}
+.flow .f-node.hot{ background:var(--c-blue); color:#FFFFFF; border-color:var(--c-blue); }
+.flow .f-arrow{ color:var(--c-orange); font-weight:900; font-size:15px; flex:0 0 auto; }
+
+.pill-note{
+  background:var(--soft-blue); border-radius:12px; padding:13px 16px;
+  font-size:14.2px; margin:4px 0 13px; break-inside:avoid;
+}
+.pill-note b{ color:var(--c-blue); }
+.pill-note.orange{ background:var(--soft-orange); }
+
+.two-col{ display:flex; gap:12px; }
+.two-col > .card{ flex:1; margin-bottom:13px; }
+
+.mini-list{ list-style:none; margin:2px 0 0 0; padding:0; }
+.mini-list li{
+  position:relative; padding:0 0 0 22px; margin-bottom:7px; font-size:14.6px;
+  break-inside:avoid;
+}
+.mini-list li::before{
+  content:""; position:absolute; left:0; top:7px; width:9px; height:9px; border-radius:3px;
+  background:var(--c-orange);
+}
+.mini-list.blue li::before{ background:var(--c-blue); }
+.mini-list b{ color:var(--c-blue); }
+
+/* fases del taller */
+.phase{ break-inside:avoid; background:var(--c-card); border:1px solid rgba(14,42,71,.09);
+  border-radius:14px; padding:15px 17px 13px; margin-bottom:12px; }
+.phase .p-head{ display:flex; align-items:center; gap:11px; margin-bottom:8px; }
+.phase .p-num{
+  width:30px; height:30px; border-radius:50%; background:var(--c-orange); color:#fff;
+  font-family:'Baloo 2','Noto Color Emoji',sans-serif; font-weight:800; font-size:16px;
+  display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+}
+.phase h3{ font-size:17px; font-weight:800; color:var(--c-blue); }
+.phase .row{ display:flex; gap:9px; margin-bottom:6px; }
+.phase .row .lab{
+  flex:0 0 112px; font-size:10.5px; font-weight:900; letter-spacing:1.1px; text-transform:uppercase;
+  padding:3px 0; text-align:center; border-radius:7px; height:fit-content; margin-top:2px;
+}
+.phase .row.you .lab{ background:var(--soft-blue); color:var(--c-blue); }
+.phase .row.ia  .lab{ background:var(--soft-orange); color:#B4530A; }
+.phase .row p{ margin:0; font-size:14.4px; }
+.phase .p-ej{ font-size:13.4px; font-style:italic; color:rgba(38,49,61,.78);
+  border-top:1px dashed rgba(14,42,71,.16); padding-top:7px; margin-top:2px; }
+.phase .p-ej b{ color:var(--c-orange); font-style:normal; }
+
+/* semáforo de estados */
+.states{ margin:6px 0 4px; }
+.state{ display:flex; gap:14px; break-inside:avoid; }
+.state .rail{ display:flex; flex-direction:column; align-items:center; flex:0 0 30px; }
+.state .dot{
+  width:26px; height:26px; border-radius:50%; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+  background:var(--c-orange); color:#fff; box-shadow:0 0 0 4px var(--soft-orange);
+}
+.state.azul .dot{ background:var(--c-blue); box-shadow:0 0 0 4px var(--soft-blue); }
+.state .rail .wire{ width:3px; flex:1; min-height:14px; background:rgba(14,42,71,.15); border-radius:2px; }
+.state .s-card{ flex:1; background:var(--c-card); border:1px solid rgba(14,42,71,.09);
+  border-radius:12px; padding:10px 14px 9px; margin-bottom:10px; }
+.state .s-card h4{ font-size:15.5px; font-weight:800; color:var(--c-blue); margin-bottom:2px; }
+.state .s-card p{ margin:0; font-size:13.8px; }
+
+/* pasos numerados */
+.step{ display:flex; gap:13px; break-inside:avoid; margin-bottom:11px; }
+.step .s-num{
+  width:29px; height:29px; border-radius:50%; background:var(--c-blue); color:#fff; flex:0 0 auto;
+  font-family:'Baloo 2','Noto Color Emoji',sans-serif; font-weight:800; font-size:15.5px;
+  display:flex; align-items:center; justify-content:center; margin-top:2px;
+}
+.step .s-body{ flex:1; }
+.step .s-body h4{ font-size:15.8px; font-weight:800; color:var(--c-blue); margin-bottom:2px; }
+.step .s-body p{ margin:0; font-size:14.5px; }
+
+/* checklist */
+.check{ list-style:none; margin:0; padding:0; }
+.check li{
+  position:relative; padding:0 0 0 30px; margin-bottom:8px; font-size:14.4px; break-inside:avoid;
+}
+.check li::before{
+  content:""; position:absolute; left:2px; top:3px; width:14px; height:14px;
+  border:2.5px solid var(--c-orange); border-radius:4px; background:#fff;
+}
+.check.blue li::before{ border-color:var(--c-blue); }
+
+.callout{
+  background:var(--c-blue); color:#F7F5EF; border-radius:14px; padding:16px 19px;
+  margin:4px 0 13px; break-inside:avoid; font-size:14.6px;
+}
+.callout .c-t{ font-family:'Baloo 2','Noto Color Emoji',sans-serif; font-size:16px; font-weight:700;
+  color:#FFB25C; margin-bottom:5px; }
+.callout p{ color:rgba(247,245,239,.92); }
+.callout b, .callout strong{ color:#FFFFFF; }
+
+/* chuleta */
+.cheat{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:13px; }
+.cheat .c-box{ flex:1 1 44%; background:var(--c-card); border:1px solid rgba(14,42,71,.10);
+  border-radius:14px; padding:14px 16px; break-inside:avoid; box-sizing:border-box; }
+.cheat .c-box.full{ flex:1 1 100%; }
+.cheat h4{ font-size:15px; font-weight:800; color:var(--c-blue); margin-bottom:8px; letter-spacing:.3px; }
+.chain{ font-size:13.2px; font-weight:700; color:var(--c-ink); line-height:2.05; }
+.chain span{ display:inline-block; background:var(--soft-blue); border-radius:8px; padding:3px 9px; white-space:nowrap; margin:0 2px 6px 0; }
+.chain i{ color:var(--c-orange); font-style:normal; font-weight:900; padding:0 5px; }
+
+/* glosario */
+.gloss{ column-count:2; column-gap:14px; margin-top:2px; }
+.g-item{ break-inside:avoid; background:var(--c-card); border:1px solid rgba(14,42,71,.09);
+  border-radius:12px; padding:11px 13px; margin-bottom:11px; }
+.g-item h4{ font-size:14.8px; font-weight:800; color:var(--c-orange); margin-bottom:3px; }
+.g-item p{ margin:0; font-size:13.3px; line-height:1.5; }
+
+/* banda de cierre dentro del contenido */
+.close-band{
+  margin:20px -62px -44px -62px; background:var(--c-blue); color:rgba(247,245,239,.85);
+  padding:26px 62px; text-align:center; font-size:12px; letter-spacing:2.4px; text-transform:uppercase;
+}
+
+/* ============ CIERRE ============ */
+.ending{
+  width:720px; height:1020px; box-sizing:border-box;
+  break-before:page; overflow:hidden; position:relative;
+  background:
+    radial-gradient(300px 300px at 12% 10%, rgba(249,115,22,.16), transparent 70%),
+    #0E2A47;
+  color:#F7F5EF;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  text-align:center; padding:70px;
+}
+.ending .ball{
+  width:74px; height:74px; border-radius:50%;
+  background:radial-gradient(circle at 32% 30%, #FFB25C, #F97316 62%, #C2410C);
+  box-shadow:0 10px 30px rgba(0,0,0,.35); margin-bottom:34px;
+}
+.ending .e-kicker{ font-size:12px; letter-spacing:2.6px; text-transform:uppercase; color:#FFB25C; font-weight:900; margin-bottom:18px; }
+.ending h2{ font-size:34px; line-height:1.3; font-weight:800; color:#FFFFFF; max-width:540px; margin-bottom:26px; }
+.ending .e-recap{ font-size:16px; line-height:1.9; color:rgba(247,245,239,.85); max-width:480px; margin-bottom:40px; }
+.ending .e-recap b{ color:#FFB25C; }
+.ending .e-close{
+  font-family:'Baloo 2','Noto Color Emoji',sans-serif;
+  font-size:19px; font-weight:700; color:#FFB25C; margin-bottom:42px;
+}
+.ending .e-id{
+  border-top:1px solid rgba(247,245,239,.22); padding-top:18px; width:340px;
+  font-size:11.5px; letter-spacing:2.2px; text-transform:uppercase; color:rgba(247,245,239,.6);
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== PORTADA ==================== -->
+<div class="cover">
+  <div class="net-line"></div>
+  <div class="ring"></div>
+  <div class="ball b1"></div>
+  <div class="ball b2"></div>
+  <div class="ball b3"></div>
+
+  <div class="cover-tag">Guía sin tecnicismos&nbsp;· V2.126</div>
+  <div class="h1a">CRAZY</div>
+  <div class="h1b">PING PONG</div>
+  <div class="cover-bar"></div>
+  <div class="cover-sub">Cómo se crean los campeonatos nuevos, dónde los probamos y desde dónde se juega al juego final.</div>
+  <div class="cover-aud">Escrita para alguien que <strong>nunca ha visto el desarrollo</strong> y debe entenderlo todo sin conocimientos técnicos: aquí no hay palabras raras, solo pasos cotidianos.</div>
+
+  <div class="cover-zones">
+    <div class="zone-chip"><span class="z-ic">🏗️</span><span class="z-t">EL TALLER</span><span class="z-s">aquí se crean</span></div>
+    <div class="zone-chip"><span class="z-ic">🔬</span><span class="z-t">EL LABORATORIO</span><span class="z-s">aquí se prueban</span></div>
+    <div class="zone-chip"><span class="z-ic">🏟️</span><span class="z-t">EL ESTADIO</span><span class="z-s">aquí se juega</span></div>
+  </div>
+
+  <div class="cover-foot">
+    <span>Crazy Ping Pong</span>
+    <span>Meta Quest 3&nbsp;· V2.126</span>
+  </div>
+</div>
+
+<!-- ==================== CONTENIDO ==================== -->
+<div class="main-content">
+
+  <!-- ~~~~ 1&nbsp;· EL MAPA ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">Antes de empezar</div>
+    <div class="section-title">El mapa completo: las 3 zonas del juego</div>
+    <div class="divider"></div>
+  </div>
+
+  <p class="body-text lead">Bienvenida y bienvenido. Esta guía te cuenta, paso a paso, toda la vida de un campeonato de Crazy Ping Pong: cómo nace, cómo se comprueba que funciona y cómo llega hasta las manos de los jugadores. No necesitas saber nada de ordenadores ni de programación: todo está explicado con comparaciones de la vida diaria.</p>
+
+  <p class="body-text">Hoy el juego ya tiene un plantel de campeonatos que funciona a las mil maravillas&nbsp;— los de siempre, <strong>Partido</strong>, <strong>Entrenamiento</strong> y <strong>Supervivencia</strong>&nbsp;— y la familia exterior que crece con cada versión: el <strong>Salvaje Oeste</strong>, el <strong>Taller del Mago</strong>, <strong>La Locura del Clown</strong> y <strong>Estación Orbital</strong>. El sistema está pensado para que añadir uno nuevo sea como añadir una habitación nueva a una casa ya construida: se trabaja en un espacio propio, con sus puertas y sus cerraduras, sin tocar los cimientos ni las habitaciones que ya están amuebladas.</p>
+
+  <p class="body-text">Para orientarte, imagina un <strong>restaurante con tres espacios</strong>. En la cocina se cocina la receta nueva (nadie la prueba ahí). En la cata se prueba en un plato aparte antes de servirla al público (si sale mal, se corrige sin que el cliente se entere). Y en la sala se sirve ya, lista, a todos los comensales. Con el juego es igual: existen <strong>tres zonas separadas</strong>, y cada una tiene su propia dirección y su propio propósito.</p>
+
+  <div class="zone-card">
+    <div class="z-head"><span class="z-ic">🏗️</span><h3>ZONA 1&nbsp;— EL TALLER</h3><span class="z-role">aquí se crean</span></div>
+    <p>El lugar donde nace un campeonato. Con la ayuda de un asistente que pregunta y prepara las cosas, se va definiendo la ficha del torneo, el rival, los superpoderes, los materiales, los retos y la sala. Todo a base de decisiones sencillas, como rellenar una ficha de inscripción.</p>
+    <div class="z-io"><b>Entra:</b> una idea contada con palabras &nbsp;·&nbsp; <b>Sale:</b> un campeonato en borrador, completo y ordenado.</div>
+  </div>
+
+  <div class="zone-card blue">
+    <div class="z-head"><span class="z-ic">🔬</span><h3>ZONA 2&nbsp;— EL LABORATORIO</h3><span class="z-role">aquí se prueban</span></div>
+    <p>El lugar de las pruebas. El campeonato nuevo se monta en una copia paralela del juego, con su propia dirección web privada, y se prueba con el casco puesto tantas veces como haga falta. El juego que ya usan los jugadores ni se entera de que esto está pasando.</p>
+    <div class="z-io"><b>Entra:</b> el campeonato en borrador &nbsp;·&nbsp; <b>Sale:</b> el visto bueno, o una lista de correcciones.</div>
+  </div>
+
+  <div class="zone-card">
+    <div class="z-head"><span class="z-ic">🏟️</span><h3>ZONA 3&nbsp;— EL ESTADIO</h3><span class="z-role">aquí se juega</span></div>
+    <p>El lugar del juego final, la versión publicada. Una única dirección web, la oficial, que todos los jugadores abren desde el navegador de sus gafas Meta Quest 3. Solo llegan aquí los campeonatos que ya han pasado el taller y el laboratorio.</p>
+    <div class="z-io"><b>Entra:</b> cualquier jugador con la Quest 3 &nbsp;·&nbsp; <b>Sale:</b> ¡partidas!</div>
+  </div>
+
+  <div class="flow">
+    <div class="f-node">💡 La idea</div><div class="f-arrow">→</div>
+    <div class="f-node">🏗️ Taller<br><span style="font-weight:600;font-size:10.5px">se crea</span></div><div class="f-arrow">→</div>
+    <div class="f-node">🔬 Laboratorio<br><span style="font-weight:600;font-size:10.5px">se prueba</span></div><div class="f-arrow">→</div>
+    <div class="f-node hot">🏟️ Estadio<br><span style="font-weight:600;font-size:10.5px">se juega</span></div>
+  </div>
+
+  <!-- ~~~~ 2&nbsp;· REGLA DE ORO ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">La promesa del sistema</div>
+    <div class="section-title">La regla de oro: nada nuevo rompe lo que ya funciona</div>
+    <div class="divider"></div>
+  </div>
+
+  <p class="body-text">Antes de aprender a crear, conviene conocer la promesa sobre la que está construido todo el sistema: <strong>ningún campeonato nuevo puede poner en riesgo los campeonatos que ya están hechos ni el funcionamiento general del juego</strong>. No es un deseo, es el diseño: hay tres protecciones permanentes que trabajan solas mientras tú creas.</p>
+
+  <div class="card">
+    <h3>📦 Cada campeonato vive en su propia caja</h3>
+    <p>Cuando se crea un campeonato, todo lo suyo se guarda dentro de una caja propia e independiente: su ficha, su rival, sus materiales, sus retos y su sala. Las cajas no se mezclan entre sí, y el juego descubre las que existen y las muestra en el menú automáticamente, sin que nadie tenga que apuntarlas a mano en ninguna lista. Añadir una caja nueva no mueve ni una sola pieza de las demás.</p>
+  </div>
+
+  <div class="card">
+    <h3>🧯 Copia íntegra de seguridad y vuelta atrás</h3>
+    <p>Antes de cualquier cambio importante, el sistema toma una <strong>foto completa</strong> del estado actual del juego y la guarda sellada. Si algún día algo saliera raro, se puede restaurar esa foto y todo vuelve a estar exactamente como estaba, en un solo paso y sin pérdidas. Es como el historial de un documento en la nube, pero para el juego entero.</p>
+  </div>
+
+  <div class="card">
+    <h3>🚫 Los campeonatos existentes están congelados</h3>
+    <p>Partido, Entrenamiento y Supervivencia son intocables: crear campeonatos nuevos <strong>nunca</strong> modifica sus cajas. Si para crear uno nuevo quieres apoyarte en uno de ellos (por ejemplo, para usar a su rival o su sala como punto de partida), el sistema hace <strong>una copia limpia</strong> y trabaja sobre la copia. El original queda tal cual, para siempre.</p>
+  </div>
+
+  <p class="body-text">¿Y qué guarda exactamente cada caja? Piensa en la <strong>ficha de inscripción de un torneo</strong>, pero completa. La caja de un campeonato contiene: su <strong>nombre, descripción e historia</strong>; el <strong>rival</strong> contra el que se juega (quién es, cómo se ve, cómo golpea y cómo falla); sus <strong>superpoderes</strong> (efectos especiales y cómo se activan); sus <strong>materiales</strong> (imágenes, sonidos y música); sus <strong>pruebas de habilidad</strong> (los retos concretos y sus premios); el <strong>decorado de la sala</strong> (decoración, luces y música ambiental); la <strong>dificultad y las reglas</strong> para ganar o perder; y una <strong>etiqueta de versión</strong> que indica de qué edición se trata. Con la ficha completa, el juego sabe presentar el campeonato en el menú y hacerlo funcionar de principio a fin.</p>
+
+  <!-- ~~~~ 3&nbsp;· ZONA 1: EL TALLER ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">Zona 1&nbsp;· 🏗️ El Taller</div>
+    <div class="section-title">Cómo se crea un campeonato, fase a fase</div>
+    <div class="divider"></div>
+  </div>
+
+  <p class="body-text">Crear un campeonato no es técnico: es <strong>conversar</strong>. Un asistente de creación te va haciendo preguntas sencillas, tú tomas las decisiones creativas —la historia, el rival, los premios— y él se encarga del trabajo fino de montar todo correctamente. Empezar es tan fácil como contar tu idea con tus palabras. Por ejemplo: <em>«Quiero un campeonato en una estación espacial abandonada, con un rival robótico, tres superpoderes, una sala futurista y cinco pruebas de habilidad»</em>. A partir de ahí, la creación avanza en <strong>siete fases</strong>, siempre en el mismo orden.</p>
+
+  <div class="pill-note orange"><b>Pista de oro:</b> puedes empezar de cero o partir de una <b>plantilla</b>&nbsp;— una copia limpia de un campeonato que ya existe, para no empezar la casa desde el cimiento. El original no se toca jamás: solo se copia.</div>
+
+  <div class="phase">
+    <div class="p-head"><div class="p-num">1</div><h3>La ficha del campeonato</h3></div>
+    <div class="row you"><div class="lab">Tú decides</div><p>El nombre, la historia y la ambientación, el estilo visual y la dificultad general.</p></div>
+    <div class="row ia"><div class="lab">El asistente</div><p>Le pone una etiqueta única de identificación, prepara la ficha completa y propone una plantilla de partida si quieres apoyarte en uno existente.</p></div>
+    <div class="p-ej"><b>Por ejemplo:</b> «Campeonato Órbita Cero», ambientado en el espacio, dificultad media, etiqueta propia e inconfundible.</div>
+  </div>
+
+  <div class="phase">
+    <div class="p-head"><div class="p-num">2</div><h3>El rival</h3></div>
+    <div class="row you"><div class="lab">Tú decides</div><p>Quién es tu oponente: su identidad, su aspecto, su carácter y su forma de jugar (si es frío y calculador, arriesgado, bromista…).</p></div>
+    <div class="row ia"><div class="lab">El asistente</div><p>Reutiliza el «cerebro» de rivales que el juego ya tiene —los mismos movimientos, errores y celebraciones— y lo adapta a tu personaje nuevo.</p></div>
+    <div class="p-ej"><b>Por ejemplo:</b> el robot COSMOS juega frío y metódico, falla poco de lejos y celebra con luces azules.</div>
+  </div>
+
+  <div class="phase">
+    <div class="p-head"><div class="p-num">3</div><h3>Los superpoderes</h3></div>
+    <div class="row you"><div class="lab">Tú decides</div><p>Cuáles son, cómo se activan, cuánto duran y cuánto tardan en volver a estar disponibles.</p></div>
+    <div class="row ia"><div class="lab">El asistente</div><p>Reconoce cuándo un efecto ya está inventado y lo reutiliza, y avisa con claridad cuando algo sería <strong>realmente nuevo</strong>, para decidirlo con calma y no desequilibrar el juego.</p></div>
+    <div class="p-ej"><b>Por ejemplo:</b> bola fantasma (atraviesa la red), escudo magnético y cámara lenta: tres efectos ya conocidos por el sistema.</div>
+  </div>
+
+  <div class="phase">
+    <div class="p-head"><div class="p-num">4</div><h3>Los materiales: imágenes, sonidos y música</h3></div>
+    <div class="row you"><div class="lab">Tú decides</div><p>Aprobar el estilo de lo que se genera y, si quieres, aportar materiales propios.</p></div>
+    <div class="row ia"><div class="lab">El asistente</div><p>Hace el inventario de todo lo que hace falta, <strong>genera automáticamente</strong> lo que se puede y subraya en una lista los que falten o no encajen, para resolverlos uno a uno.</p></div>
+    <div class="p-ej"><b>Por ejemplo:</b> murmullo de nave, luces azules, música ambiental espacial; falta la voz del robot → el asistente la señala.</div>
+  </div>
+
+  <div class="phase">
+    <div class="p-head"><div class="p-num">5</div><h3>Las pruebas de habilidad y los retos</h3></div>
+    <div class="row you"><div class="lab">Tú decides</div><p>Qué retos hay que superar, qué cuenta como acierto y qué premios se reciben.</p></div>
+    <div class="row ia"><div class="lab">El asistente</div><p>Encaja cada reto con las reglas del juego, asigna puntuaciones y premios, y comprueba que ganar y perder esté equilibrado.</p></div>
+    <div class="p-ej"><b>Por ejemplo:</b> cinco pruebas&nbsp;— derriba objetivos flotantes, devuelve bola rápida, aguanta la lluvia de bolas…</div>
+  </div>
+
+  <div class="phase">
+    <div class="p-head"><div class="p-num">6</div><h3>La sala: decorado, luces y ambiente</h3></div>
+    <div class="row you"><div class="lab">Tú decides</div><p>Cómo se viste el escenario: decoración, iluminación, música ambiental y transiciones de entrada.</p></div>
+    <div class="row ia"><div class="lab">El asistente</div><p>Monta la sala con las piezas estándar del juego —las mismas de las salas pabellón, ártico, atardecer y neón— vestidas a tu manera.</p></div>
+    <div class="p-ej"><b>Por ejemplo:</b> sala futurista con ventana a las estrellas, luces frías y eco metálico en los golpes.</div>
+  </div>
+
+  <div class="phase">
+    <div class="p-head"><div class="p-num">7</div><h3>El montaje final y la revisión</h3></div>
+    <div class="row you"><div class="lab">Tú decides</div><p>Repasar el resumen final y dar el visto bueno, o pedir cambios antes de continuar.</p></div>
+    <div class="row ia"><div class="lab">El asistente</div><p>Junta todo en la caja del campeonato, crea su <strong>lista de material</strong>, lo registra en el catálogo del juego y lanza la revisión automática. Resultado: un borrador listo para el laboratorio.</p></div>
+    <div class="p-ej"><b>Por ejemplo:</b> «Órbita Cero» queda montado y revisado: ni una pieza fuera de sitio.</div>
+  </div>
+
+  <div class="callout">
+    <div class="c-t">🙋 Cuando el asistente no está seguro, pregunta</div>
+    <p>Si llega a una decisión técnica dudosa —por ejemplo, si un superpoder sería totalmente nuevo— <strong>no adivina: se detiene y te consulta</strong>. Tú siempre mantienes el control de las decisiones importantes, y el asistente nunca inventa por su cuenta y riesgo.</p>
+  </div>
+
+  <!-- ~~~~ 4&nbsp;· EL VIAJE: 6 ESTADOS ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">El viaje del campeonato</div>
+    <div class="section-title">Seis estados: de la idea al trofeo (y vuelta)</div>
+    <div class="divider"></div>
+  </div>
+
+  <p class="body-text">Todo campeonato recorre <strong>seis estaciones</strong>, como un pasaporte con seis sellos. En cada momento está clarísimo en qué punto del viaje está, qué se le permite hacer y quién puede verlo. Nada salta etapas: primero se crea, luego se revisa, después se prueba y solo al final se publica.</p>
+
+  <div class="states">
+    <div class="state">
+      <div class="rail"><div class="dot">✏️</div><div class="wire"></div></div>
+      <div class="s-card"><h4>Borrador</h4><p>El campeonato se está creando o retocando en el Taller. Solo tú lo ves: para los jugadores todavía no existe.</p></div>
+    </div>
+    <div class="state">
+      <div class="rail"><div class="dot">🧰</div><div class="wire"></div></div>
+      <div class="s-card"><h4>En preparación</h4><p>Se completan las piezas que faltaban: un material pendiente, un ajuste de la ficha, un reto por definir. La caja se termina.</p></div>
+    </div>
+    <div class="state">
+      <div class="rail"><div class="dot">🕵️</div><div class="wire"></div></div>
+      <div class="s-card"><h4>En validación</h4><p>La revisión automática lo examina de arriba abajo. Si encuentra fallos, lo devuelve con la lista completa de lo que hay que corregir: nada se publica con errores.</p></div>
+    </div>
+    <div class="state">
+      <div class="rail"><div class="dot">✅</div><div class="wire"></div></div>
+      <div class="s-card"><h4>Listo para probar</h4><p>Ha pasado el examen y baja al Laboratorio: se genera una versión de pruebas para coger el casco y jugarla de verdad.</p></div>
+    </div>
+    <div class="state azul">
+      <div class="rail"><div class="dot">🏆</div><div class="wire"></div></div>
+      <div class="s-card"><h4>Publicado</h4><p>Aparece en el menú del juego final para todos los jugadores, junto a Partido, Entrenamiento y Supervivencia. Es un gran momento… y sigue siendo reversible.</p></div>
+    </div>
+    <div class="state azul">
+      <div class="rail"><div class="dot">🌙</div></div>
+      <div class="s-card"><h4>Desactivado</h4><p>Se retira del menú sin borrar nada: la caja se conserva íntegra y puede volver a publicarse cuando quieras. Jubilación reversible, no cementerio.</p></div>
+    </div>
+  </div>
+
+  <p class="body-text">Dos comodidades más del viaje. Primero: <strong>todo cambio queda registrado</strong>&nbsp;— qué se modificó, cuándo y por quién&nbsp;— así que siempre se puede recuperar una versión anterior, como con los historiales de los documentos. Segundo: <strong>publicar no es para siempre</strong>; si algún día un campeonato se retira, se desactiva sin dramas y sin dejar huellas rotas, y los demás siguen jugando como si nada.</p>
+
+  <!-- ~~~~ 5&nbsp;· ZONA 2: EL LABORATORIO ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">Zona 2&nbsp;· 🔬 El Laboratorio</div>
+    <div class="section-title">Dónde testeamos: probar sin tocar lo publicado</div>
+    <div class="divider"></div>
+  </div>
+
+  <p class="body-text">Probar un campeonato <strong>nunca</strong> se hace sobre el juego que ya usan los jugadores. Se hace en una <strong>copia paralela</strong>: una versión de pruebas que contiene el juego de siempre más tu campeonato nuevo marcado como «en pruebas». Esta copia vive en una <strong>dirección web privada</strong>, distinta de la dirección definitiva. Piensa en un restaurante: la puerta principal es la dirección definitiva, por donde entra todo el mundo; la puerta de servicio es la dirección de pruebas, por donde solo entra quien está trabajando.</p>
+
+  <div class="step">
+    <div class="s-num">1</div>
+    <div class="s-body"><h4>Genera el paquete de pruebas</h4>
+    <p>Cuando el campeonato está «Listo para probar», se pide al sistema el <strong>paquete de pruebas</strong>: un único archivo que contiene el juego completo con tu campeonato nuevo dentro, pero solo visible en ese paquete. Se puede generar tantas veces como se necesite, cada vez con los últimos cambios.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="s-num">2</div>
+    <div class="s-body"><h4>Crea el enlace privado de pruebas</h4>
+    <p>Desde el navegador de un ordenador, entra en <strong>app.netlify.com/drop</strong> y <strong>arrastra el archivo</strong> a la página. En unos segundos te entrega una dirección web (una URL) que empieza por HTTPS. Esa es tu <strong>dirección de pruebas</strong>: privada, solo para quien tú se la des.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="s-num">3</div>
+    <div class="s-body"><h4>Ábrela en el casco</h4>
+    <p>Ponte las gafas Meta Quest 3, abre el <strong>Meta Quest Browser</strong> (el navegador de las gafas), escribe la dirección de pruebas y pulsa el gran botón <strong>ENTRAR EN VR</strong>. Ya estás dentro de la copia de pruebas: verás el menú de siempre… y el campeonato nuevo.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="s-num">4</div>
+    <div class="s-body"><h4>Recorre la lista de comprobación</h4>
+    <p>Juega con calma y repasa la lista de abajo. Es la «prueba del algodón»: si todos los puntos se cumplen, el campeonato está preparado para publicarse.</p></div>
+  </div>
+
+  <div class="card">
+    <h3>📋 La lista de comprobación (la prueba del algodón)</h3>
+    <ul class="check">
+      <li>El campeonato nuevo <strong>aparece en el menú</strong> con su nombre y su sala.</li>
+      <li>Los tres campeonatos de siempre&nbsp;— <strong>Partido, Entrenamiento y Supervivencia</strong>&nbsp;— funcionan exactamente igual que antes.</li>
+      <li>El <strong>rival</strong> se comporta como lo definiste: golpea, falla donde debía fallar y celebra como acordaste.</li>
+      <li>Los <strong>superpoderes</strong> se activan bien, duran lo acordado y no desequilibran el partido.</li>
+      <li>La <strong>sala</strong> se ve y suena como decidiste: decoración, luces y música ambiental.</li>
+      <li>Las <strong>pruebas de habilidad</strong> puntúan correctamente y dan los premios previstos.</li>
+      <li>Se puede <strong>ganar y se puede perder</strong>, y ambos finales se muestran con sus carteles.</li>
+      <li>Nada del juego de siempre se ha movido de sitio: menú, salas, opciones e idioma intactos.</li>
+    </ul>
+  </div>
+
+  <div class="callout">
+    <div class="c-t">🔧 ¿Y si algo falla? Tranquilidad total</div>
+    <p>Si la prueba no convence, el campeonato <strong>vuelve a Borrador</strong>, se corrige en el Taller, se genera un paquete de pruebas nuevo y se vuelve a probar. Puedes repetir el ciclo <strong>las veces que haga falta</strong>: el juego publicado vive en su propia dirección y <strong>no se entera de nada</strong> hasta que tú decidas publicar. Probar mil veces no rompe nada, nunca.</p>
+  </div>
+
+  <!-- ~~~~ 6&nbsp;· ZONA 3: EL ESTADIO ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">Zona 3&nbsp;· 🏟️ El Estadio</div>
+    <div class="section-title">Dónde jugamos al juego final</div>
+    <div class="divider"></div>
+  </div>
+
+  <p class="body-text">El juego final es la <strong>versión publicada</strong>: la que reúne todos los campeonatos aprobados y vive en <strong>una única dirección web oficial</strong>. Publicar la versión definitiva se hace igual que crear el enlace de pruebas&nbsp;— arrastrando el paquete final a la misma página&nbsp;— solo que esta vez el resultado es la dirección que usarán <strong>todos los jugadores</strong>. Primero, la publicación; después, la partida.</p>
+
+  <div class="pill-note"><b>A&nbsp;· Publicar la versión definitiva (3 pasos):</b> ① generar el paquete definitivo con todos los campeonatos publicados; ② arrastrarlo a <b>app.netlify.com/drop</b> y copiar la dirección que entrega&nbsp;— esa es «la dirección del estadio»; ③ compartirla: es la que usarán todos los jugadores desde sus gafas.</div>
+
+  <p class="body-text lead" style="margin-top:4px">B&nbsp;· Jugar en la Quest 3 (2 minutos)</p>
+
+  <div class="step">
+    <div class="s-num">1</div>
+    <div class="s-body"><h4>Ponte el casco y abre el navegador de las gafas</h4>
+    <p>Abre el <strong>Meta Quest Browser</strong>. Ojo con esto: el juego se disfruta en el navegador del propio casco, <strong>no</strong> conectando las gafas al ordenador por cable ni en el Chrome del escritorio.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="s-num">2</div>
+    <div class="s-body"><h4>Escribe la dirección del estadio</h4>
+    <p>Teclea la URL definitiva en la barra del navegador. Truco: <strong>guárdala en favoritos</strong> la primera vez y no volverás a teclearla nunca más.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="s-num">3</div>
+    <div class="s-body"><h4>Pulsa ENTRAR EN VR</h4>
+    <p>Aparece la portada del juego, con su arte y su música, y el gran botón <strong>ENTRAR EN VR</strong>. Al pulsarlo, la sala cobra vida a tu alrededor.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="s-num">4</div>
+    <div class="s-body"><h4>Elige campeonato en el menú y juega</h4>
+    <p>El menú flotante muestra todos los campeonatos publicados: <strong>Partido</strong> (con su dificultad y el modo online), <strong>Entrenamiento</strong>, <strong>Supervivencia</strong> (con tu récord), <strong>Crazy</strong>… y cada campeonato nuevo que se vaya publicando, que <strong>aparece solo</strong>, sin que nadie tenga que apuntarlo en ninguna lista.</p></div>
+  </div>
+
+  <div class="card">
+    <h3>⭐ Consejos de oro para el estadio</h3>
+    <ul class="mini-list">
+      <li><b>Siempre en el navegador del casco.</b> Es donde todo&nbsp;— imagen, sonido y seguimiento&nbsp;— funciona como debe. Evita Quest Link (cable) y el navegador del ordenador.</li>
+      <li><b>La dirección debe empezar por HTTPS</b> (una web segura): las gafas lo exigen para entrar en modo inmersivo. Por eso usamos Netlify, que la da de serie.</li>
+      <li><b>¿Silencio al entrar?</b> Pulsa de nuevo o usa «Probar sonido» en Opciones: el juego se repara solo.</li>
+      <li><b>Guarda la URL en favoritos</strong> del navegador de las gafas: la dirección oficial nunca cambia si no tú lo decides.</li>
+    </ul>
+  </div>
+
+  <div class="pill-note orange"><b>¿Qué verá el jugador?</b> Portada con arte y música → gran botón ENTRAR EN VR → menú flotante con secciones desplegables (campeonatos, dificultad, récord) → Opciones con las salas <b>pabellón, ártico, atardecer y neón</b>, megáfono, estela y el selector de idioma <b>castellano / inglés</b>.</div>
+
+  <!-- ~~~~ 7&nbsp;· RED DE SEGURIDAD ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">Tranquilidad garantizada</div>
+    <div class="section-title">La red de seguridad completa</div>
+    <div class="divider"></div>
+  </div>
+
+  <p class="body-text">Antes de que un campeonato pueda pasar al laboratorio, el sistema lo somete a una <strong>revisión automática</strong>: un control de calidad que examina la caja entera en segundos y que nunca se cansa ni se salta puntos. Estos son los chequeos, contados en cristiano:</p>
+
+  <div class="card">
+    <h3>🕵️ La revisión automática, punto por punto</h3>
+    <ul class="check blue">
+      <li>Que la <strong>caja esté completa</strong>: no falta ninguna pieza de la ficha del campeonato.</li>
+      <li>Que <strong>todos los materiales estén y en su sitio</strong>: imágenes, sonidos y música con el formato y el tamaño correctos.</li>
+      <li>Que <strong>no haya dos campeonatos con la misma etiqueta</strong>: nada de gemelos que confundan al juego.</li>
+      <li>Que <strong>todas las piezas encajen entre sí</strong>: los retos con sus premios, el rival con su sala, los superpoderes con sus reglas.</li>
+      <li>Que <strong>todo lo que se menciona exista de verdad</strong>: ninguna pieza apunta a algo que no está.</li>
+      <li>Que los <strong>campeonatos de siempre sigan pasando sus propias pruebas</strong> después de añadir el nuevo. Este es el chequeo más importante de todos.</li>
+      <li>Que una <strong>partida automática de control</strong> se juegue de principio a fin sin errores.</li>
+    </ul>
+  </div>
+
+  <p class="body-text">El resultado es binario y sin trampas: si todo pasa, el campeonato queda <strong>«Listo para probar»</strong> y baja al laboratorio; si algo falla, <strong>se queda en borrador</strong> acompañado de la lista completa de fallos, que se corrigen uno a uno. En ningún caso el juego publicado recibe algo sin revisar: la puerta del estadio solo se abre con el sello de la validación.</p>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>🧯 Copia y vuelta atrás</h3>
+      <p>La foto de seguridad del juego entero se puede <strong>restaurar en un paso</strong>. Además, los <strong>materiales compartidos</strong> entre campeonatos están protegidos: no se pueden borrar por accidente si alguien más los está usando.</p>
+    </div>
+    <div class="card">
+      <h3>📒 El diario de bordo</h3>
+      <p>Toda modificación queda <strong>anotada</strong>: qué cambió, cuándo y a cargo de quién. Si un cambio no gustó, se recupera la versión anterior sin drama, como con los historiales de un documento.</p>
+    </div>
+  </div>
+
+  <!-- ~~~~ 8&nbsp;· CHULETA ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">Para tener a mano</div>
+    <div class="section-title">Chuleta rápida de una página</div>
+    <div class="divider"></div>
+  </div>
+
+  <div class="cheat">
+    <div class="c-box">
+      <h4>🗺️ Las 3 zonas</h4>
+      <div class="chain"><span>🏗️ Taller&nbsp;· se crea</span> <i>→</i> <span>🔬 Laboratorio&nbsp;· se prueba</span> <i>→</i> <span>🏟️ Estadio&nbsp;· se juega</span></div>
+    </div>
+    <div class="c-box">
+      <h4>🚦 Los 6 estados</h4>
+      <div class="chain"><span>Borrador</span> <i>→</i> <span>En preparación</span> <i>→</i> <span>En validación</span> <i>→</i> <span>Listo para probar</span> <i>→</i> <span>Publicado</span> <i>→</i> <span>Desactivado</span></div>
+    </div>
+    <div class="c-box full">
+      <h4>🏗️ Las 7 fases de creación</h4>
+      <div class="chain"><span>1&nbsp;· Ficha</span> <i>→</i> <span>2&nbsp;· Rival</span> <i>→</i> <span>3&nbsp;· Superpoderes</span> <i>→</i> <span>4&nbsp;· Materiales</span> <i>→</i> <span>5&nbsp;· Pruebas de habilidad</span> <i>→</i> <span>6&nbsp;· Sala</span> <i>→</i> <span>7&nbsp;· Montaje y revisión</span></div>
+    </div>
+    <div class="c-box">
+      <h4>🔗 Las 2 direcciones web</h4>
+      <div class="chain">
+        <span>🔬 De pruebas&nbsp;· privada&nbsp;· solo para testear</span><br>
+        <span>🏟️ Definitiva&nbsp;· pública&nbsp;· todos los jugadores</span>
+      </div>
+    </div>
+    <div class="c-box">
+      <h4>📜 Las 3 reglas de oro</h4>
+      <div class="chain">
+        <span>1&nbsp;· Nada nuevo toca lo viejo</span><br>
+        <span>2&nbsp;· Sin validación no hay publicación</span><br>
+        <span>3&nbsp;· Todo es reversible</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ~~~~ 9&nbsp;· GLOSARIO ~~~~ -->
+  <div class="chapter-header">
+    <div class="section-tag">Vocabulario de bolsillo</div>
+    <div class="section-title">Glosario sin tecnicismos</div>
+    <div class="divider"></div>
+  </div>
+
+  <p class="body-text">Las diez palabras que aparecerán en cualquier conversación sobre campeonatos, traducidas al idioma de todos los días. Con esto leído, ninguna charla sobre el juego te pillará desprevenido.</p>
+
+  <div class="gloss">
+    <div class="g-item"><h4>Campeonato</h4><p>Una experiencia de juego completa: rival, retos, sala y premios. Lo que eliges en el menú para jugar.</p></div>
+    <div class="g-item"><h4>La caja (módulo)</h4><p>El espacio propio e independiente de cada campeonato, donde viven todas sus piezas. Las cajas no se mezclan.</p></div>
+    <div class="g-item"><h4>Plantilla</h4><p>Copia limpia de un campeonato ya hecho, para empezar sin partir de cero. El original no se toca.</p></div>
+    <div class="g-item"><h4>Borrador</h4><p>Campeonato en construcción, visible solo para ti. El juego de los jugadores aún no lo ve.</p></div>
+    <div class="g-item"><h4>La revisión (validación)</h4><p>El chequeo automático que busca piezas ausentes, errores y conflictos antes de permitir publicar.</p></div>
+    <div class="g-item"><h4>Publicar</h4><p>Abrir la puerta del estadio: el campeonato aparece en el menú del juego final para todo el mundo. Es reversible.</p></div>
+    <div class="g-item"><h4>Versión de pruebas</h4><p>Copia paralela del juego con el campeonato nuevo, en una dirección privada, para probar con el casco.</p></div>
+    <div class="g-item"><h4>El paquete</h4><p>El archivo único con el juego completo dentro, listo para arrastrar y ponerlo en internet.</p></div>
+    <div class="g-item"><h4>La lista de material</h4><p>El inventario de todo lo que lleva dentro un campeonato: imágenes, sonidos y música, con nombre y formato.</p></div>
+    <div class="g-item"><h4>Restaurar</h4><p>Devolver el juego a una foto anterior de sí mismo: entero, en un paso y sin pérdidas.</p></div>
+  </div>
+
+</div>
+
+<!-- ==================== CIERRE ==================== -->
+<div class="ending">
+  <div class="ball"></div>
+  <div class="e-kicker">El camino completo, en una frase</div>
+  <h2>Se crea en el Taller, se prueba en el Laboratorio y se juega en el Estadio.</h2>
+  <div class="e-recap">
+    La idea se convierte en campeonato en <b>siete fases acompañadas</b>, con copia de seguridad y revisión automática.<br>
+    Las pruebas se hacen en una <b>copia privada</b> con el casco, sin tocar el juego publicado.<br>
+    Y la versión definitiva vive en <b>una sola dirección web</b> que se abre desde el navegador de la Quest 3.
+  </div>
+  <div class="e-close">El juego pone la red de seguridad; tú pones la imaginación.</div>
+  <div class="e-id">Crazy Ping Pong&nbsp;· Guía sin tecnicismos&nbsp;· V2.126</div>
+</div>
+
+</body>
+</html>

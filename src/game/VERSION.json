@@ -1,10 +1,10 @@
 {
-  "version": "3.6.171-SDK6",
-  "fase": 176,
-  "faseNombre": "MENUS QUE RESPIRAN",
+  "version": "3.6.172-SDK6",
+  "fase": 177,
+  "faseNombre": "MENUS EN ESCENA",
   "sdk": "1.6.0",
   "fecha": "2026-11-17",
-  "hub": "v36171-sdk6",
+  "hub": "v36172-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r70",
-  "tamano": 12277909,
-  "golden": "47dae806b3bbc65291d687e3b352aef9f32b0f25a355fc9285826e76b0fdc975"
+  "nota": "r81",
+  "tamano": 12283739,
+  "golden": "4fdde207cbb839a6594e144b7143f408986474f8f4b4b9df8438aeb99837b325"
 }

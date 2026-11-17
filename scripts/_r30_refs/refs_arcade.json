@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "query": "retro 1980s neon arcade room glowing cabinets purple pink lights dark floor",
+  "count": 3,
+  "ranked": true,
+  "captioned_count": 2,
+  "results": [
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/4d9baddb5b95.jpg",
+      "caption": "A retro arcade machine with glowing pink and blue neon lights, joystick, red buttons, dark moody atmosphere. Suitable for background image.",
+      "source": "StockCake",
+      "original_width": "768px",
+      "original_height": "1344px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/24681182c227.jpg",
+      "caption": "Retro arcade machine with floating cassettes and vinyl in purple neon smoke. Suitable for background image.",
+      "source": "StockCake",
+      "original_width": "768px",
+      "original_height": "1344px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/b9b3c5e1d0c8.png",
+      "caption": "",
+      "source": "TrueParity",
+      "original_width": "1408px",
+      "original_height": "768px"
+    }
+  ]
+}

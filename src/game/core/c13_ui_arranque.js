@@ -6574,7 +6574,7 @@ if (typeof window !== 'undefined') {
     try {
       if (G.menuOpen) {
         G.menuOpen = false;
-        G.menuGroup.visible = false;
+        G.menuFxInicia('out');   // r81 · la academia sale DE ESCENA
         for (const l of G.menuLines || []) l.visible = false;
         for (const d of G.menuDots || []) d.visible = false;
         G.menuHover = [-1, -1];

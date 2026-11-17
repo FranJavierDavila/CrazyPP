@@ -1,0 +1,54 @@
+{
+ "errors": [
+  "Failed to load resource: the server responded with a status of 400 ()"
+ ],
+ "steps": [
+  {
+   "step": "boot",
+   "ok": true,
+   "rules": "champtest",
+   "st": "sala"
+  },
+  {
+   "step": "1-trigger-duelo",
+   "st": "duelo",
+   "rules": "serve",
+   "powerCd": 8
+  },
+  {
+   "step": "2-duelo-natural",
+   "warns": [],
+   "acts": [],
+   "onPointCalls": 17,
+   "puntos": 17,
+   "matchOver": {
+    "st": "sala",
+    "rules": "champtest"
+   },
+   "st": null,
+   "tiradas": 17,
+   "powerCd": 8,
+   "warnNow": null,
+   "actNow": null,
+   "marcador": [
+    0,
+    0
+   ]
+  },
+  {
+   "step": "3-post-duelo",
+   "st": "sala",
+   "stage": 1,
+   "rules": "champtest",
+   "msg": "Tu saque · la bola espera en tu mano libre"
+  },
+  {
+   "step": "4-hold-posicion",
+   "holdModulo": null,
+   "nearZ": -0.23,
+   "distHold": null,
+   "distNearEdge": null,
+   "jugadorEn": "z=0 (origen, convención del núcleo)"
+  }
+ ]
+}

@@ -1,0 +1,98 @@
+{
+ "mega_salida_gd:es": {
+  "lang": "es",
+  "text": "Pasajeros al tren, partimos hacia Gold Dust.",
+  "seg": 2.58,
+  "wav_kb": 111.2,
+  "ogg_b": 9012,
+  "b64_b": 12016
+ },
+ "mega_salida_gd_fon:es": {
+  "lang": "es",
+  "text": "Pasajeros al tren, partimos hacia Gol Dast.",
+  "seg": 2.58,
+  "wav_kb": 111.2,
+  "ogg_b": 8977,
+  "b64_b": 11972
+ },
+ "mega_salida_sc:es": {
+  "lang": "es",
+  "text": "Pasajeros al tren, partimos hacia Silver Creek.",
+  "seg": 2.82,
+  "wav_kb": 121.7,
+  "ogg_b": 9796,
+  "b64_b": 13064
+ },
+ "mega_salida_sc_fon:es": {
+  "lang": "es",
+  "text": "Pasajeros al tren, partimos hacia Silver Cric.",
+  "seg": 2.85,
+  "wav_kb": 122.7,
+  "ogg_b": 9876,
+  "b64_b": 13168
+ },
+ "mega_llega_gd:es": {
+  "lang": "es",
+  "text": "En menos de veinticinco segundos llegaremos a Gold Dust.",
+  "seg": 3.13,
+  "wav_kb": 134.7,
+  "ogg_b": 10931,
+  "b64_b": 14576
+ },
+ "mega_llega_gd_fon:es": {
+  "lang": "es",
+  "text": "En menos de veinticinco segundos llegaremos a Gol Dast.",
+  "seg": 2.86,
+  "wav_kb": 123.2,
+  "ogg_b": 10517,
+  "b64_b": 14024
+ },
+ "mega_llega_sc:es": {
+  "lang": "es",
+  "text": "En menos de veinticinco segundos llegaremos a Silver Creek.",
+  "seg": 3.18,
+  "wav_kb": 137.2,
+  "ogg_b": 11179,
+  "b64_b": 14908
+ },
+ "mega_llega_sc_fon:es": {
+  "lang": "es",
+  "text": "En menos de veinticinco segundos llegaremos a Silver Cric.",
+  "seg": 3.08,
+  "wav_kb": 132.7,
+  "ogg_b": 10797,
+  "b64_b": 14396
+ },
+ "mega_salida_gd:en": {
+  "lang": "en",
+  "text": "All aboard! We are departing towards Gold Dust.",
+  "seg": 3.29,
+  "wav_kb": 141.8,
+  "ogg_b": 10001,
+  "b64_b": 13336
+ },
+ "mega_salida_sc:en": {
+  "lang": "en",
+  "text": "All aboard! We are departing towards Silver Creek.",
+  "seg": 3.26,
+  "wav_kb": 140.3,
+  "ogg_b": 10160,
+  "b64_b": 13548
+ },
+ "mega_llega_gd:en": {
+  "lang": "en",
+  "text": "In less than twenty-five seconds we will arrive at Gold Dust.",
+  "seg": 3.6,
+  "wav_kb": 155.2,
+  "ogg_b": 11891,
+  "b64_b": 15856
+ },
+ "mega_llega_sc:en": {
+  "lang": "en",
+  "text": "In less than twenty-five seconds we will arrive at Silver Creek.",
+  "seg": 3.39,
+  "wav_kb": 146.2,
+  "ogg_b": 11539,
+  "b64_b": 15388
+ }
+}

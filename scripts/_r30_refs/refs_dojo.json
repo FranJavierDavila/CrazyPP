@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "query": "traditional japanese dojo interior tatami shoji screens tokonoma scroll warm light",
+  "count": 3,
+  "ranked": true,
+  "captioned_count": 3,
+  "results": [
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/b481db9aa64f.jpg",
+      "caption": "Warm traditional Japanese interior with tatami flooring, wooden ceiling beams, shoji sliding doors, and a small bamboo garden. High clarity, strong visual appeal, no watermark. Suitable for background image",
+      "source": "Wanova",
+      "original_width": "1500px",
+      "original_height": "1500px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/5b51858b21aa.jpg",
+      "caption": "Cozy Japanese-style bedroom with tatami flooring, futon bedding, shoji screens, floral artwork, and warm lighting. Contains Dreamstime watermarks (ID 351073385, © Vadym Medvediev).",
+      "source": "Dreamstime",
+      "original_width": "1600px",
+      "original_height": "1156px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/86ad7c91cb0e.jpg",
+      "caption": "An empty traditional Japanese room with tatami mats, wooden beams, and shoji sliding doors illuminated by sunlight.",
+      "source": "JeePe - Japan Travel Guide | Japan Travel Guide",
+      "original_width": "1200px",
+      "original_height": "800px"
+    }
+  ]
+}

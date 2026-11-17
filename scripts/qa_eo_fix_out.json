@@ -1,0 +1,135 @@
+{
+ "errors": [
+  "Failed to load resource: the server responded with a status of 400 ()"
+ ],
+ "steps": [
+  {
+   "step": "boot",
+   "ok": true,
+   "rules": "champtest",
+   "st": "sala"
+  },
+  {
+   "step": "1-sala",
+   "rules": "champtest",
+   "st": "sala",
+   "stage": 0,
+   "ballPos": [
+    0,
+    0.78,
+    -1.15
+   ],
+   "cartel": true,
+   "mapa": true
+  },
+  {
+   "step": "2-trigger→duelo1",
+   "before": {
+    "rules": "champtest",
+    "st": "sala",
+    "stage": 0
+   },
+   "reached": true,
+   "after": {
+    "rules": "serve",
+    "st": "duelo",
+    "stage": 0,
+    "cartel": false,
+    "msg": "¡Duelo contra Androide AX-9!"
+   }
+  },
+  {
+   "step": "3-powers-duelo",
+   "warn": "Lluvia de estrellas",
+   "act": "Lluvia de estrellas",
+   "msg": "¡LLUVIA DE ESTRELLAS!"
+  },
+  {
+   "step": "4-duelo1-win",
+   "st": "sala",
+   "stage": 1,
+   "rules": "champtest",
+   "cartel": true,
+   "msg": "Tu saque · la bola espera en tu mano libre"
+  },
+  {
+   "step": "5-trigger→prueba-instr",
+   "before": {
+    "rules": "champtest",
+    "st": "sala",
+    "stage": 1
+   },
+   "reached": true,
+   "after": {
+    "rules": "champtest",
+    "st": "prueba",
+    "stage": 1,
+    "cartel": false,
+    "msg": "Tu saque · la bola espera en tu mano libre"
+   }
+  },
+  {
+   "step": "6-prueba-run",
+   "st": "prueba",
+   "rules": "champtest",
+   "testActive": true,
+   "running": true,
+   "ignoreNet": true,
+   "msg": "¡Destruye las dianas!"
+  },
+  {
+   "step": "7-prueba-fin",
+   "st": "sala",
+   "stage": 2,
+   "rules": "champtest",
+   "testActive": false,
+   "cartel": true,
+   "ignoreNet": false,
+   "msg": "Siguiente: Duelo 2"
+  },
+  {
+   "step": "8-trigger→duelo2",
+   "before": {
+    "rules": "champtest",
+    "st": "sala",
+    "stage": 2
+   },
+   "reached": true,
+   "after": {
+    "rules": "serve",
+    "st": "duelo",
+    "stage": 2,
+    "cartel": false,
+    "msg": "¡Duelo contra Androide AX-9!"
+   }
+  },
+  {
+   "step": "9-duelo2-lose",
+   "st": "sala",
+   "stage": 2,
+   "rules": "champtest",
+   "msg": "Tu saque · la bola espera en tu mano libre"
+  },
+  {
+   "step": "10-rejugada-duelo",
+   "inReplay": true,
+   "st": "duelo",
+   "stage": 0,
+   "rules": "serve",
+   "msg": "¡Duelo contra Androide AX-9!"
+  },
+  {
+   "step": "11-rejugada-fin",
+   "replayCleared": true,
+   "st": "sala",
+   "stage": 2,
+   "rules": "champtest",
+   "cartel": true
+  },
+  {
+   "step": "12-leave-árbitro",
+   "rulesAfterLeave": "serve",
+   "activeId": ""
+  }
+ ]
+}

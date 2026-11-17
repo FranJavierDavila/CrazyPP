@@ -1,0 +1,428 @@
+commit a61de97ba36f80e187e2619ed4b2bcb9385fdc05
+Author: Z User <z@container>
+Date:   Tue Oct 13 21:52:13 2026 +0000
+
+    V2.134: SALVAJE OESTE «EL TREN A PUNTO» — 5 observaciones del dueño en el casco (etapa 4 ASALTO AL TREN): (1) PARADAS SIN REPETIR: la estación de SALIDA (BRAVOS) lucía PARADA1.png = la MISMA imagen que la parada 1 → nueva PARADA0.png (render depósito con placa BRAVOS, recorte por inundación + bolsas de cielo limpiadas + encaje 1024×512) y _signArt(0) carga SU arte · (2) MÁS VEGETACIÓN en la panorámica exterior p1_*: 184 arbustos/cactus/rocas del propio artista compuestos sobre el suelo de arena de las 2 panorámicas con perspectiva, racimos y bruma (scripts/make_vegetacion_p1.py, respaldo en scripts/backup_p1_v2133/, franja inferior 64px virgen por el EXT de _buildPano) · (3) TÚNEL CON PROFUNDIDAD: las 3 piezas coplanares a 0,5 m de la ventana → subgrupos por lado con rotación Y ∓0,24 rad y TU.x 3,55→3,75 (boca junto a la ventana, interior se pierde a lo lejos; costura y fases por distancia intactas) · (4) LA PARED DEL FONDO REBOTA: la bola ya no muere al pasar z=-5,5 — rebota en el frontal del vagón (paredZ -5,55, restitución 0,72, _paredRebote con chispazo + golpe seco) y puede golpear las cajas desde atrás; también las EXTRAS · (5) SUPERPODERES DE VERDAD: X3 = 3 bolas con TIRO BALÍSTICO (_apuntaBalistica) a cajas apiladas reales izq·centro·der escalonadas, BOLAS DE PLOMO dragMul 0,30 (el drag se comía el 30% de la velocidad y caían cortas), fuerza el tope del pool; DINAMITA = CADENA: la bola-bomba estalla SIEMPRE que toca caja, rebota y sale cazando la caja viva más cercana hasta agotar la SERIE (foto de las activas al activarse) con brote final, vigilante anti-atasco 3,2 s, bomba del tren pesada (dragMul 0,30 como la del asedio) y resets limpios en kill/muereExtra/recambio · módulo OESTE v44 (manifest v44) · núcleo 2.134.0 (solo marcador) · QA 7/7 por ruta natural con FRAME NATURAL (G.animate: la física del tren corre en testStep del núcleo — la lección: rules.update NO simula la prueba), smoke 4/4 sin errores
+
+diff --git a/public/championships/oeste/index.js b/public/championships/oeste/index.js
+index 2507d11..358e17c 100755
+--- a/public/championships/oeste/index.js
++++ b/public/championships/oeste/index.js
+@@ -1,6 +1,33 @@
+ /* ============================================================================
+  *  CAMPEONATO DEL SALVAJE OESTE — módulo v2 (ANDAMIO «sala de espera»).
+  *  ---------------------------------------------------------------------
++ *  v2.134 (módulo v44) · EL TREN A PUNTO — 5 observaciones del dueño en el
++ *  casco (etapa 4 «ASALTO AL TREN»):
++ *  (1) PARADAS SIN REPETIR: la estación de SALIDA (BRAVOS) lucía PARADA1.png
++ *      — la MISMA imagen que la parada 1 — y el jugador veía el arte dos
++ *      veces seguidas. Ahora la salida tiene SU arte PARADA0.png (nueva,
++ *      con placa «BRAVOS») y las 4 estaciones del trayecto son distintas.
++ *  (2) MÁS VEGETACIÓN en la panorámica exterior p1_* (el desierto se veía
++ *      escaso): arbustos/cactus del propio artista compuestos sobre el
++ *      suelo de arena de las DOS panorámicas con perspectiva, racimos y
++ *      bruma de distancia (scripts/make_vegetacion_p1.py).
++ *  (3) TÚNEL CON PROFUNDIDAD: las 3 piezas del túnel (boca·banda·boca)
++ *      vivían COPLANARES a 0,5 m de la ventana — «muy pegado», sin
++ *      perspectiva. Ahora cada pared del túnel se INCLINA hacia fuera
++ *      (rotación Y ∓13,7°) y arranca algo más lejos (x 3,55→3,75): la
++ *      boca queda junto a la ventana y el interior SE PIERDE a lo lejos —
++ *      se ve DENTRO del túnel, no un decorado pegado.
++ *  (4) LA PARED DEL FONDO REBOTA: la bola que sobrevuela la pirámide ya no
++ *      muere contra el frontal del vagón (z=-5,55) — REBOTA (0,72) y puede
++ *      golpear las cajas DESDE ATRÁS, con chispazo y golpe seco de madera.
++ *  (5) SUPERPODERES DE VERDAD sobre la mesa: X3 = TRES bolas con TIRO
++ *      BALÍSTICO a cajas apiladas reales (izquierda·centro·derecha, el
++ *      impacto queda asegurado) y DINAMITA = CADENA: la bola-bomba ya no
++ *      muere en la 1.ª detonación — ESTALLA SIEMPRE que toca caja, rebota
++ *      y sale CAZANDO la caja viva más cercana (tiro balístico) hasta
++ *      agotar TODAS las cajas activas en el momento del poder, con brote
++ *      final. (Vigilante anti-atasco: si la bola encadenada se queda sin
++ *      camino 3,2 s, re-apunta sola.)
+  *  v2.120 (módulo v39) · AUDITORÍA + DOS SUPERPODERES NUEVOS DEL FORAJIDO:
+  *  TORMENTA DE ARENA (polvo cálido sobre tu campo + rodantes, 8 s) y
+  *  ESTAMPIDA (6 bisontes cruzan el pueblo con polvo/retumbe/vibración,
+@@ -771,7 +798,12 @@ const _AS_V6 = new THREE.Vector3();     // v2.103: bala del forajido (destino)
+  * multiplicadores del artista (montañas 0,05 · colinas 0,15 · postes 0,40 ·
+  * arbustos 1,00). */
+ const TREN = {
+-  safeZ: -4.95,              // pared de cajas fuertes (interior del vagón)
++  safeZ: -4.95,              // (v2.134: sustituido por paredZ para la bola)
++  /* v2.134 · PARED DEL FONDO del vagón (el frontal, z=-5,55): la bola
++   * REBOTA en ella (restitución 0,72) en vez de morir — así puede golpear
++   * las cajas de la pirámide DESDE ATRÁS (petición del dueño). */
++  paredZ: -5.55,
++  paredRebote: 0.72,         // restitución del rebote en la pared del fondo
+   time: 120.0,               // 2 minutos MÁXIMO por parada
+   respawnT: 0.55,            // v2.114: recambio de bola tras morir (s) — MÁS FRECUENTE
+   introPause: 4.2,           // espera DETENIDO en la estación 1 (s)
+@@ -846,8 +878,9 @@ const TREN = {
+    * (x 4,75) arranca en y≈1,0-1,6: con PARADA1 a 0,75 y PARADA3 a 1,03
+    * sólo asomaba la azotea. Ahora el CUERPO del edificio llena la ventana
+    * (arte 8,4×4,2 · centro 1,85-1,95 → edificio en y 0,6-3,5) y los
+-   * raíles/hueco quedan bajo la banda visible. */
+-  estacionY: { 1: 1.85, 2: 1.95, 3: 1.85 },
++   * raíles/hueco quedan bajo la banda visible.
++   * v2.134 · la estación de SALIDA (0, BRAVOS) cota SU arte PARADA0. */
++  estacionY: { 0: 1.85, 1: 1.85, 2: 1.95, 3: 1.85 },
+   stationNames: ['BRAVOS', 'DRY GULCH', 'PERDIDO', 'BRAVOS'],
+ 
+   /* ======================================================================
+@@ -915,7 +948,14 @@ const TREN = {
+    * espejada — y las fases cambian por DISTANCIA (sincronía exacta con
+    * la velocidad real del mundo, no por reloj). */
+   tunel: {
+-    x: 3.55,               // pared del túnel (justo fuera de la ventana)
++    /* v2.134 · CON PROFUNDIDAD: la pared del túnel arranca algo más lejos
++     * de la ventana (x 3,55→3,75) y cada lado se INCLINA hacia fuera
++     * (rotación Y ∓incl rad ≈ ∓13,7°): la boca queda junto a la ventana y
++     * el interior del túnel SE PIERDE A LO LEJOS — perspectiva de verdad
++     * («ahora mismo está muy pegado», petición del dueño). La secuencia
++     * boca→banda→boca sigue COSIDA (la rotación mueve el grupo entero). */
++    x: 3.75,               // pared del túnel (justo fuera de la ventana)
++    incl: 0.24,            // rad de reculación del interior (∓ por lado)
+     h: 6.0,                // altura de la BANDA interior (m)
+     bh: 3.4,               // v2.117: tamaño de las BOCAS (m) — caben en la ventana
+     bocaY: 1.72,           // v2.117: centro de las bocas (la ventana mira ahí)
+@@ -7564,10 +7604,14 @@ class TrenAction {
+    * caché) y SUSTITUYE al andén procedural en cuanto está lista. idx es
+    * la PARADA del HUD (1..3); v2.117 · MAPEO CORREGIDO — la parada N
+    * muestra SU imagen PARADAn.png (antes un off-by-one: la parada 1
+-   * mostraba PARADA2, la 2 PARADA3 y la 3 PARADA1). La estación de
+-   * SALIDA (idx 0, BRAVOS) usa PARADA1. */
++   * mostraba PARADA2, la 2 PARADA3 y la 3 PARADA1).
++   * v2.134 · LA SALIDA DEJA DE REPETIR: la estación de SALIDA (idx 0,
++   * BRAVOS) usaba PARADA1 — la MISMA imagen que la parada 1 — y el
++   * jugador veía el arte dos veces seguidas. Ahora idx 0 carga SU arte
++   * PARADA0.png (nuevo, placa «BRAVOS») y las 4 estaciones del trayecto
++   * lucen imágenes distintas. Si PARADA0 tarda/carga mal: andén pintado. */
+   _signArt(idx) {
+-    const n = (idx >= 1 && idx <= 3) ? idx : 1;
++    const n = (idx >= 0 && idx <= 3) ? idx : 1;
+     if (this._paradaTex[n]) { this._signApply(this._paradaTex[n], n); return; }
+     if (this._paradaTry[n]) return;
+     this._paradaTry[n] = true;
+@@ -7972,6 +8016,12 @@ class TrenAction {
+       const copias = Math.max(1, Math.round(TU.len / (TU.h * 2.35)));
+       for (const side of [-1, 1]) {
+         const s = side;
++        /* v2.134 · SUBGRUPO por lado con la INCLINACIÓN hacia fuera: la
++         * boca (z=0) queda junto a la ventana y la banda/boca de salida
++         * SE PIERDEN A LO LEJOS — perspectiva real del túnel. La costura
++         * boca→banda→boca no se toca (la rotación arrastra el conjunto). */
++        const sub = new THREE.Group();
++        sub.rotation.y = s < 0 ? TU.incl : -TU.incl;
+         const bocaIn = new THREE.Mesh(new THREE.PlaneGeometry(TU.bh, TU.bh), bocaMat());
+         bocaIn.rotation.y = s < 0 ? Math.PI / 2 : -Math.PI / 2;
+         /* v2.119 · COSIDO POR EL BORDE u=1 EN LAS DOS PAREDES: la banda
+@@ -7988,21 +8038,22 @@ class TrenAction {
+         bocaIn.position.set(s * TU.x, TU.bocaY, 0);
+         bocaIn.renderOrder = 9;
+         bocaIn.userData.boca = 1;
+-        this.tunelGrp.add(bocaIn);
++        sub.add(bocaIn);
+         const bocaOut = new THREE.Mesh(new THREE.PlaneGeometry(TU.bh, TU.bh), bocaMat());
+         bocaOut.rotation.y = s < 0 ? Math.PI / 2 : -Math.PI / 2;
+         bocaOut.scale.x = s < 0 ? -1 : 1;
+         bocaOut.position.set(s * TU.x, TU.bocaY, -(TU.len + TU.bh));
+         bocaOut.renderOrder = 9;
+         bocaOut.userData.boca = 1;
+-        this.tunelGrp.add(bocaOut);
++        sub.add(bocaOut);
+         const banda = new THREE.Mesh(new THREE.PlaneGeometry(TU.len, TU.h), bandaMat);
+         banda.rotation.y = s < 0 ? Math.PI / 2 : -Math.PI / 2;
+         // v2.117: de -bh/2 (borde de la boca de ENTRADA) a -(bh/2+len)
+         // (borde de la boca de SALIDA) — COSIDA, cero hueco
+         banda.position.set(s * TU.x, TU.h / 2 - 0.35,
+           -(TU.bh / 2 + TU.len / 2));
+-        this.tunelGrp.add(banda);
++        sub.add(banda);
++        this.tunelGrp.add(sub);
+       }
+       try {
+         new THREE.TextureLoader().load(A('tunelboca.png'), (t) => {
+@@ -9061,6 +9112,7 @@ class TrenAction {
+     this.extras = [];
+     this._spawnT = TREN.bolas.cada;   // v2.116: la 1ª EXTRA a los 4 s
+     this._bomba = false; this._bombaSave = null;
++    this._bombaSerie = null;          // v2.134: cadena de la dinamita en cero
+     if (this._fuseMain) this._fuseMain.visible = false;
+     if (this.pods) for (const p of this.pods) p.mesh.visible = false;
+     this._pod = null;
+@@ -9714,8 +9766,21 @@ class TrenAction {
+       this._gastadaT -= dt;
+       if (this._gastadaT <= 0) { this._killBall(); return; }
+     }
+-    if (b.pos.z > 2.3 || b.pos.z < TREN.safeZ - 0.55 ||
+-        b.pos.x > 2.7 || b.pos.x < -2.7) {
++    /* v2.134 · VIGILANTE de la CADENA de la dinamita: si la bola-bomba
++     * lleva 3,2 s sin estallar (rebote imprevisto, camino raro) se
++     * RE-APUNTA sola a la caja viva más cercana de su serie. */
++    if (this._bomba && this._bombaSerie && this._bombaSerie.rest.size > 0) {
++      this._bombaSerie.t += dt;
++      if (this._bombaSerie.t > 3.2) this._bombaReapunta(g.ball, this._bombaSerie);
++    }
++    /* v2.134 · PARED DEL FONDO (frontal del vagón, z=-5,55): la bola que
++     * sobrevuela la pirámide REBOTA en vez de morir — puede volver y
++     * golpear las cajas DESDE ATRÁS (petición del dueño). */
++    if (b.pos.z < TREN.paredZ + 0.02) {
++      b.pos.z = TREN.paredZ + 0.02;
++      if (b.vel.z < 0) this._paredRebote(b);
++    }
++    if (b.pos.z > 2.3 || b.pos.x > 2.7 || b.pos.x < -2.7) {
+       this._killBall();
+       return;
+     }
+@@ -9746,6 +9811,8 @@ class TrenAction {
+     /* v2.115 · la bola-bomba principal SE APAGA al morir */
+     if (this._bomba) {
+       this._bomba = false;
++      this._bombaSerie = null;   // v2.134: la cadena muere con la bola
++      this.game.ball.dragMul = 1;   // v2.134: aire NORMAL fuera de la bomba
+       if (this._bombaSave && this.game.ballMesh && this.game.ballMesh.material) {
+         this.game.ballMesh.material.color.setHex(this._bombaSave.col);
+       }
+@@ -9763,14 +9830,16 @@ class TrenAction {
+     const ps = g.controllerPaddles && g.controllerPaddles[g.paddleHand];
+     return (g.renderer.xr.isPresenting && ps && ps.active) ? [ps] : [];
+   }
+-  /** Nace una bola EXTRA en `pos` (el vórtice o el punto del X3). */
+-  _naceExtraEn(pos) {
++  /** Nace una bola EXTRA en `pos` (el vórtice o el punto del X3).
++   *  v2.134 · `fuerza` SALTÁ el tope de simultáneas: el X3 SACA SIEMPRE
++   *  sus 3 bolas contra las cajas aunque el pool esté lleno. */
++  _naceExtraEn(pos, fuerza) {
+     const g = this.game;
+     const D = ODIMS() || { tableCenterZ: -1.6, tableTopY: 0.76 };
+     const B = TREN.bote;
+     const vivas = (this._dead ? 0 : 1) +
+       this.extras.filter((e) => e.alive).length;
+-    if (vivas >= TREN.bolas.max) return null;
++    if (vivas >= TREN.bolas.max && !fuerza) return null;
+     if (!this._extraGeo) {
+       this._extraGeo = new THREE.SphereGeometry(
+         ODIMS() ? ODIMS().ballRadius : 0.02, 12, 10);
+@@ -9788,6 +9857,7 @@ class TrenAction {
+       e.ball.spin.set(0, 0, 0);
+       e.alive = true; e.gastada = false; e.gastadaT = 0;
+       e.floorB = 0; e.prevVy = 0; e.deadT = 0; e.bomba = false;
++      e.ball.dragMul = 1;                      // v2.134: recambio con aire NORMAL
+       e.zc = 0.75 + Math.random() * 0.55;
+       if (e.fuse) e.fuse.visible = false;
+       e.events.length = 0;
+@@ -9801,7 +9871,7 @@ class TrenAction {
+     this.group.add(mesh);
+     e = {
+       ball: { pos: pos.clone(), vel: new THREE.Vector3(),
+-              spin: new THREE.Vector3(), ignoreNet: false },
++              spin: new THREE.Vector3(), ignoreNet: false, dragMul: 1 },
+       mesh, alive: true, gastada: false, gastadaT: 0,
+       floorB: 0, prevVy: 0, deadT: 0, bomba: false, fuse: null,
+       events: [], zc: 0.75 + Math.random() * 0.55,  // zona cómoda PERSONAL
+@@ -9831,6 +9901,8 @@ class TrenAction {
+     e.mesh.visible = false;
+     if (e.bomba) {
+       e.bomba = false;
++      e.bombaSerie = null;       // v2.134: la cadena muere con la bola
++      e.ball.dragMul = 1;        // v2.134: aire NORMAL fuera de la bomba
+       e.mesh.material.color.setHex(0xf3eee2);
+       if (e.fuse) e.fuse.visible = false;
+     }
+@@ -9860,8 +9932,19 @@ class TrenAction {
+       e.gastadaT -= dt;
+       if (e.gastadaT <= 0) { this._muereExtra(e); return; }
+     }
+-    if (b.pos.z > 2.3 || b.pos.z < TREN.safeZ - 0.55 ||
+-        b.pos.x > 2.7 || b.pos.x < -2.7) {
++    /* v2.134 · VIGILANTE de la cadena (bolas EXTRA bomba): re-apunte
++     * automático si la bola encadenada se queda sin camino. */
++    if (e.bomba && e.bombaSerie && e.bombaSerie.rest.size > 0) {
++      e.bombaSerie.t += dt;
++      if (e.bombaSerie.t > 3.2) this._bombaReapunta(b, e.bombaSerie);
++    }
++    /* v2.134 · PARED DEL FONDO: las EXTRAS también rebotan (mismo trato
++     * que la bola principal — pueden golpear las cajas desde atrás). */
++    if (b.pos.z < TREN.paredZ + 0.02) {
++      b.pos.z = TREN.paredZ + 0.02;
++      if (b.vel.z < 0) this._paredRebote(b);
++    }
++    if (b.pos.z > 2.3 || b.pos.x > 2.7 || b.pos.x < -2.7) {
+       this._muereExtra(e); return;
+     }
+     const overTable = Math.abs(b.pos.x) <= D.tableHalfWidth + 0.25 &&
+@@ -10018,19 +10101,42 @@ class TrenAction {
+     }
+     this.ctrl.sfx('madera', 0);
+   }
+-  /** POWERX3: la bola SE CONVIERTE en 3 con caminos distintos a las cajas
+-   *  (abanico determinista: izquierda · centro · derecha + aleatorio). */
++  /** POWERX3 (v2.134 · «ASEGURA LOS IMPACTOS»): las 3 bolas SALEN con
++   *  TIRO BALÍSTICO contra cajas apiladas REALES de la pirámide (vivas,
++   *  asentadas, sin candado abierto) repartidas izquierda·centro·derecha
++   *  — cada bola vuela a SU caja y el impacto queda asegurado. Si no hay
++   *  apiladas (pirámide recién vaciada) apuntan al centro del muelle,
++   *  donde la siguiente pirámide está a punto de nacer. */
+   _tripleBola(b) {
+     const g = this.game;
+     const C = TREN.cubo;
+-    const fan = [-0.62, 0.02, 0.62];
++    const apiladas = this.cubos
++      .filter((r) => !r.muerto && !r.cayendo && !r.abierto)
++      .sort((p, q) => p.mesh.position.x - q.mesh.position.x);
++    const pool = apiladas.slice();
++    const objs = [];
++    for (const ax of [-0.62, 0, 0.62]) {          // abanico: izq · centro · der
++      if (!pool.length) break;
++      let bi = 0, bd = 1e9;
++      for (let i = 0; i < pool.length; i++) {
++        const d = Math.abs(pool[i].mesh.position.x - ax);
++        if (d < bd) { bd = d; bi = i; }
++      }
++      objs.push(pool.splice(bi, 1)[0]);
++    }
+     for (let i = 0; i < 3; i++) {
+-      const e = this._naceExtraEn(b.pos);
++      const e = this._naceExtraEn(b.pos, true);   // el X3 SACA SIEMPRE 3
+       if (!e) break;
+-      const tx = fan[i] + (Math.random() - 0.5) * 0.2;  // reparto horizontal
+-      const dir = new THREE.Vector3(tx - b.pos.x * 0.3,
+-        0.5 + Math.random() * 0.4, (C.z - 0.25) - b.pos.z).normalize();
+-      e.ball.vel.copy(dir.multiplyScalar(3.9 + Math.random() * 1.3));
++      /* v2.134 · BOLAS DE PLOMO del X3 (receta v2.102 de la bomba del
++       * asedio): dragMul 0.30 — cortan el aire y el tiro balístico llega
++       * al cajón (el drag normal se comía ~30 % de la velocidad en el
++       * vuelo y las 3 bolas caían CORTAS sin tocar la pirámide). */
++      e.ball.dragMul = 0.30;
++      const rec = objs[i % Math.max(1, objs.length)];
++      const dest = rec ? rec.mesh.position
++        : new THREE.Vector3((i - 1) * 0.55, C.peanaH + C.size, C.z);
++      const T = 0.52 + i * 0.09;                  // escalonadas (ola)
++      this._apuntaBalistica(e.ball, dest, T);
+     }
+     if (b === g.ball) this._killBall();       // la original DESAPARECE
+     else {
+@@ -10038,8 +10144,43 @@ class TrenAction {
+       if (e0) this._muereExtra(e0);
+     }
+   }
+-  /** POWERDINAMITA: la bola se vuelve la BOLA-BOMBA del asedio (oscura con
+-   *  mecha encendida); al tocar un cajón REVIENTA su alrededor. */
++  /** v2.134 · TIRO BALÍSTICO: velocidad para llegar a `dest` en `T` s con
++   *  gravedad real (misma receta del lingote: vy = Δy/T + ½gT). Se apunta
++   *  al CENTRO del cajón — la esfera de impacto (r≈0,235) perdona el
++   *  rozamiento del vuelo, así el choque está asegurado. */
++  _apuntaBalistica(ball, dest, T) {
++    const G = 10.2;                    // 9,81 + compensación del roz del núcleo
++    ball.vel.set(
++      (dest.x - ball.pos.x) / T,
++      (dest.y - ball.pos.y + 0.5 * G * T * T) / T,
++      (dest.z - ball.pos.z) / T);
++  }
++  /** v2.134 · La caja viva más cercana de la serie (para re-apuntar). */
++  _bombaCajaVivaDe(serie, pos) {
++    let best = null, bd = 1e9;
++    for (const o of serie.rest) {
++      if (o.muerto || o.abierto) continue;
++      const d = o.mesh.position.distanceTo(pos);
++      if (d < bd) { bd = d; best = o; }
++    }
++    return best;
++  }
++  /** v2.134 · Re-apunte de la bola-bomba (vigilante anti-atasco): tiro
++   *  balístico a la caja viva más cercana y el reloj de la serie a cero. */
++  _bombaReapunta(ball, serie) {
++    const rec = this._bombaCajaVivaDe(serie, ball.pos);
++    if (!rec) { serie.rest.clear(); return; }
++    const T = clamp(0.42 + ball.pos.distanceTo(rec.mesh.position) * 0.075, 0.42, 0.9);
++    this._apuntaBalistica(ball, rec.mesh.position, T);
++    serie.t = 0;
++  }
++  /** POWERDINAMITA (v2.134 · CADENA DE EXPLOSIONES): la bola se vuelve la
++   *  BOLA-BOMBA del asedio (oscura con mecha encendida) y su SERIE toma
++   *  la foto de las cajas ACTIVAS en ese momento. Ya no muere en la
++   *  primera detonación: ESTALLA SIEMPRE que toca caja, rebota y sale
++   *  CAZANDO la caja viva más cercana hasta agotar TODAS las de la foto
++   *  (petición literal del dueño: «una secuencia de explosiones que acaban
++   *  con todas las cajas activas en ese momento»). */
+   _bombaMake(mesh) {
+     const fuse = new THREE.Group();
+     const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0055, 0.052, 6),
+@@ -10061,8 +10202,16 @@ class TrenAction {
+   }
+   _hazBomba(b) {
+     const g = this.game;
++    /* v2.134 · la SERIE de la cadena: FOTO de las cajas activas en el
++     * momento del poder — la bola no descansará hasta agotarlas. */
++    const serie = {
++      rest: new Set(this.cubos.filter((r) => !r.muerto && !r.abierto)),
++      t: 0,
++    };
+     if (b === g.ball) {
+       this._bomba = true;
++      this._bombaSerie = serie;
++      g.ball.dragMul = 0.30;     // v2.134: la bomba del tren PESA (v2.102)
+       if (g.ballMesh && g.ballMesh.material) {
+         if (!this._bombaSave) {
+           const mm = g.ballMesh.material;
+@@ -10077,13 +10226,18 @@ class TrenAction {
+       if (e) {
+         if (!e.fuse) e.fuse = this._bombaMake(e.mesh);
+         e.bomba = true;
++        e.bombaSerie = serie;
++        e.ball.dragMul = 0.30;   // v2.134: bomba pesada también en extras
+         e.mesh.material.color.setHex(0x181310);
+         if (e.fuse) e.fuse.visible = true;
+       }
+     }
+   }
+-  /** BOOM de la bola-bomba: revienta el cajón impactado + TODOS los del
+-   *  radio (el mismo espíritu del asedio) y la bola se consume. */
++  /** BOOM de la bola-bomba (v2.134 · CADENA): revienta el cajón impactado
++   *  + TODOS los del radio y — si quedan cajas de la SERIE — la bola
++   *  SOBREVIVE, rebota y sale CAZANDO la caja viva más cercana con tiro
++   *  balístico. Cuando la serie se agota: brote final y la bola se
++   *  consume (la secuencia acaba con TODAS las cajas activas). */
+   _explotaBomba(recImp, ball) {
+     const g = this.game;
+     const R = 0.65;                       // radio de metralla (m)
+@@ -10099,6 +10253,22 @@ class TrenAction {
+       }
+     }
+     const esMain = ball === this.game.ball;
++    const serie = esMain ? this._bombaSerie
++      : ((this.extras.find((x) => x.ball === ball) || {}).bombaSerie || null);
++    if (serie) {
++      serie.rest.delete(recImp);
++      for (const o of serie.rest) {
++        if (o.muerto || o.abierto) serie.rest.delete(o);   // resueltas fuera
++      }
++      if (serie.rest.size > 0) {
++        /* la bola SIGUE VIVA: sale cazando la caja viva más cercana */
++        this._bombaReapunta(ball, serie);
++        return;
++      }
++    }
++    /* cadena completa (o serie perdida): BROTE FINAL y la bola se consume */
++    this.ctrl.fx.flash(ball.pos.clone(), 1.6, 0xffb45f);
++    this.ctrl.fx.smoke(ball.pos.clone(), 1, true);
+     if (esMain) this._killBall();
+     else {
+       const e = this.extras.find((x) => x.ball === ball);
+@@ -10107,6 +10277,17 @@ class TrenAction {
+   }
+ 
+   /* ------------------------- colisionador extra --------------------------- */
++  /** v2.134 · REBOTE en la PARED DEL FONDO del vagón (el frontal): golpe
++   *  seco de madera + chispazo de polvo. La bola queda viva y vuelve hacia
++   *  la pirámide — puede golpear las cajas desde atrás. */
++  _paredRebote(b) {
++    b.vel.z = -b.vel.z * TREN.paredRebote;
++    b.vel.x *= 0.92;
++    const p = b.pos.clone();
++    p.y = Math.max(0.12, p.y); p.z = TREN.paredZ + 0.05;
++    this.ctrl.fx.spark(p, 6, 0xd9c39a, 1.7, 0.8);
++    this.ctrl.sfx('madera', 0);
++  }
+   _collide(ball) {
+     /* v2.111 · bola vs CAJONES de la pirámide (esfera generosa por cajón,
+      * rebote arkanoid y regla del candado-lingote).

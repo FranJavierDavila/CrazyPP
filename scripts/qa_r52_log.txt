@@ -1,0 +1,1132 @@
+===== scripts/test_red_nucleo.mjs
+  ✓ códec: paquete de 176 B ≤ 1200 B (cabecera 21 + pose 31)
+  ✓ códec: decodifica
+  ✓ códec: cabecera íntegra (seq/ack/echoDelay)
+  ✓ códec: posición i16 @0,5 mm con ancla Y (±0,5 mm)
+  ✓ códec: quat 32 bit roundtrip (dot 0.999999)
+  ✓ códec: 3 eventos (HIT/HANDOFF/SNAP) en orden
+  ✓ códec: vel/spin f32 exactos
+  ✓ códec: 8 eventos caben (420 B) — spec §5
+  ✓ códec: guard de versión presente
+  ✓ quat 20.000 roundtrip: error máx 3.29e-6 < 1e-4
+  ✓ reloj: offset 292.8 ms con host +290 ms (error 2.79 < 3 ms)
+  ✓ reloj: RTT mediana 144 ms ≈ 146 ms
+  ✓ reloj: nowHost dentro de ±5 ms del reloj del anfitrión
+  ✓ reloj: en rallye el offset NO salta (≤1 ms/s)
+  ✓ jitter: interpolación exacta (hp.z -0.8121)
+  ✓ jitter: más de 100 ms sin datos → CONGELA (código 2)
+  ✓ jitter: el vaciado queda registrado para telemetría
+  ✓ jitter: extrapolación ≤100 ms con velocidad (código 1, hp.z 0.146)
+  ✓ jitter: autoDelay calc
+  ✓ jitter: delay adaptativo al mínimo con red perfecta (40 ms)
+  ✓ nearest: localiza la última muestra ≤ t (t=1627)
+  ✓ nearest: la anterior si t cae entre muestras (t=1594)
+  ✓ nearest: fuera de la ventana de 250 ms → null (no juzga)
+  ✓ nearest: copia en el buffer de salida reutilizable (hp.z exacto)
+  ✓ FSM: HELD del sacador local
+  ✓ FSM: golpe propio → OWN_FLIGHT + BALL_HIT kind 1
+  ✓ FSM: cruce limpio → GHOST + BALL_HANDOFF
+  ✓ FSM: el fantasma NO se puede golpear (spec §7)
+  ✓ FSM: provisional NO antes de 300 ms
+  ✓ FSM: autoridad PROVISIONAL a los 300 ms (spec §7)
+  ✓ FSM: handoff con error 1.0 cm < 2 cm → sin corrección
+  ✓ FSM: error 15.0 cm ∈ [2,30] → corrección suave 80 ms
+  ✓ FSM: error 150 cm > 30 → salto directo + registro
+  ✓ FSM: golpe remoto → fantasma avanzado elapsed·k = 0.036 s
+  ✓ FSM: avance CAPADO a 120 ms (spec §17)
+  ✓ validación: golpe normal ACCEPTED
+  ✓ validación: bola a 40 m/s RECHAZADA (máx 30, spec §12)
+  ✓ validación: giro 200 rad/s RECHAZADO
+  ✓ validación: shotNumber no correlativo RECHAZADO
+  ✓ validación: cadencia <150 ms RECHAZADA
+  ✓ validación: golpe a 1,9 m de la pala del rival RECHAZADO
+  ✓ validación: 3 fallos graves → partida sospechosa (5)
+  ✓ sync: el extremo con autoridad EMITE CLAIM
+  ✓ sync: el invitado SIN autoridad TAMBIÉN reclama (r122: divergencia detectable)
+  ✓ sync: cruce de claims SIN autoridad → acuerdo y sin doble aplicación
+  ✓ sync: detección local del guest ENCAJA con el claim → ACK acuerdo
+  ✓ sync: el host confirma el ACK
+  ✓ sync: claim de rally NO visto → se APLICA por la red (spec §7)
+  ✓ sync: ganadores contradictorios → ACK en DESACUERDO
+  ✓ sync: disputa registrada → el HOST resincroniza (spec §7)
+  ✓ sync: rallye nuevo reanuda el libro
+  ✓ netSim 3 % pérdida + jitter 10 ms: offset del invitado 98.1 ms (error 8.10 < 12 ms) tras 383 paquetes
+  ✓ netSim: RTT mediana 100 ms ≈ 80 ms (±25 por cuantización)
+  ✓ netSim: 200 paquetes emitidos con pérdida simulada sin colgar el bucle
+  ✓ JB push CLONA (la muestra antigua sigue en 0.3/0.5, no en 0.30/0.50)
+  ✓ JB interpola ENTRE muestras distintas (rp.x=0.491 — con aliasing sería 0.30 plano)
+  ✓ validador: el LANZAMIENTO (kind 2, shot 0 tras HELD) ACEPTADO — antes rechazado SIEMPRE
+  ✓ validador: el HIT sigue exigiendo shot+1 (anti-trampa intacta)
+  ✓ validador: tHit +80 ms sobre el reloj local ACEPTADO (TOL_FUTURE 250 ms — el eco NTP corrige en vivo)
+  ✓ validador: tHit +400 ms sigue RECHAZADO (anti-trampa viva)
+
+RESULTADO: 60 OK · 0 FALLOS (test_red_nucleo · PPNET r82)
+RESULTADO scripts/test_red_nucleo.mjs rc=0 oks=60
+===== scripts/test_r30_fenix_salones_v36126.mjs
+1 · SELLOS · v3.6.144-SDK6 · FASE 146
+  ✓ VERSION.json: 3.6.144-SDK6
+  ✓ FASE 146
+  ✓ faseNombre
+  ✓ bundle con sello vigente
+  ✓ sello c00 = 3.6.144-SDK6
+  ✓ sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)
+  ✓ tamaño del build: 11.504.235 B
+  ✓ golden 10a24300… (build byte-exacto)
+  ✓ game.html REAL casan con golden
+2 · FÉNIX · dinámica NORMAL — cero boost de rapidez
+  ✓ constante FENIX_MUL retirada
+  ✓ constante FENIX_CAP retirada
+  ✓ ningún multiplyScalar del poder
+  ✓ ningún tope de velocidad del poder
+  ✓ bloque 5.55b del boost desaparecido
+  ✓ ventana Fénix intacta (10 s)
+  ✓ crónica del veto en el código
+3 · FÉNIX · efectos de fuego INTACTOS
+  ✓ fuego real del Wizard (_buildFenixFx)
+  ✓ explosión de ascuas (_fenixEstallido)
+  ✓ ascuas en los DOS eventos (table y paddle)
+  ✓ llamas por frame (_fenixFrame)
+  ✓ tinta brasa de la bola
+  ✓ estela naranja
+  ✓ tinta brasa del fuego de magia v2.120
+4 · FÉNIX · pequeña penalización IA (15 %, saques normales)
+  ✓ FENIX_OUT_P = 0.15
+  ✓ sorteo de falta en las DOS palas rivales (rival 1 + rival 2 dobles)
+  ✓ guard de rally en la penalización
+  ✓ helper _oscuridadFalla reutilizado (2 llamadas Fénix)
+  ✓ el saque de la IA no se toca
+  ✓ dobles: rival 2 incluido
+5 · SALONES IA · 18 planos, spec EXACTA
+  ✓ neon/frente.jpg 1849×864 exacto
+  ✓ neon/fondo.jpg 1849×864 exacto
+  ✓ neon/izquierda.jpg 2395×864 exacto
+  ✓ neon/derecha.jpg 2395×864 exacto
+  ✓ neon/suelo.jpg 1296×1678 exacto
+  ✓ neon/techo.jpg 1296×1678 exacto
+  ✓ neon: riqueza 3.74 MB > arte plano r28
+  ✓ observatorio/frente.jpg 1849×864 exacto
+  ✓ observatorio/fondo.jpg 1849×864 exacto
+  ✓ observatorio/izquierda.jpg 2395×864 exacto
+  ✓ observatorio/derecha.jpg 2395×864 exacto
+  ✓ observatorio/suelo.jpg 1296×1678 exacto
+  ✓ observatorio/techo.jpg 1296×1678 exacto
+  ✓ observatorio: riqueza 2.66 MB > arte plano r28
+  ✓ dojo/frente.jpg 1849×864 exacto
+  ✓ dojo/fondo.jpg 1849×864 exacto
+  ✓ dojo/izquierda.jpg 2395×864 exacto
+  ✓ dojo/derecha.jpg 2395×864 exacto
+  ✓ dojo/suelo.jpg 1296×1678 exacto
+  ✓ dojo/techo.jpg 1296×1678 exacto
+  ✓ dojo: riqueza 3.17 MB > arte plano r28
+6 · GENERADORES r30 (IA + postproceso)
+  ✓ _r30_gen_halls.mjs (18 prompts IA con estilo Locura/Magia)
+  ✓ _r30_postproceso_halls.py (recorte EXACTO + realce)
+7 · FÍSICA · c04/c05 byte-exacto contra la r26b
+  ✓ c04_fisica_ccd.js = df8f71a3…
+  ✓ c05_colisiones_ia_golpeo.js = 8bb62082…
+RESULTADO: 54 ok · 0 fallos
+RESULTADO scripts/test_r30_fenix_salones_v36126.mjs rc=0 oks=114
+===== scripts/test_r31_higiene_v36127.mjs
+1 · SELLOS · v3.6.144-SDK6 · FASE 146
+  ✓ VERSION.json: 3.6.144-SDK6
+  ✓ FASE 146
+  ✓ tamaño del build: 11.504.235 B
+  ✓ VERSION.json golden 10a24300…
+  ✓ golden 10a24300… (build byte-exacto)
+  ✓ bundle con sello vigente
+  ✓ sello c00 = 3.6.144-SDK6
+  ✓ sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)
+  ✓ badge V3.6.144-SDK6 en 03_body
+  ✓ hub /descargas sellado a v36139-sdk6
+2 · HIGIENE FÉNIX · el registro ya no presume el «+18 %»
+  ✓ registro Fénix: nota r31 del veto presente
+  ✓ registro Fénix: causa del veto documentada
+  ✓ registro Fénix: la ventaja real es la falta de la IA (15 %)
+  ✓ «+18 % de rapidez» solo en la cita del veto (1 línea)
+  ✓ FENIX_MUL/FENIX_CAP solo en la anotación histórica (retiradas)
+  ✓ cero multiplyScalar en cualquier línea que hable de fenix
+  ✓ FENIX_OUT_P = 0.15
+  ✓ FENIX_OUT_P usado en los bloqueos de la IA (rival 1 y rival 2)
+3 · ÚNICO ×1,18 · FUEGO de DUELOS LOCOS (r84), no Fénix
+  ✓ exactamente 1 multiplyScalar(1.18) en c12 (1)
+  ✓ el ×1,18 vive bajo el guard _dlOn('fuego') (DUELOS LOCOS online)
+  ✓ …en el bloque de anuncio de MI golpeo (por golpeo, no por frame)
+4 · VENTANAS · código↔i18n casan
+  ✓ FENIX_DUR = 10
+  ✓ CRONO_DUR = 10
+  ✓ OSCURIDAD_DUR = 20
+  ✓ ES arc_fenix_go anuncia 10 s
+  ✓ ES+EN arc_fenix_go anuncia 10 s
+  ✓ ES arc_crono_go anuncia 10 s
+  ✓ ES+EN arc_crono_go anuncia 10 s
+  ✓ ES arc_oscuridad_go anuncia 20 s
+  ✓ ES+EN arc_oscuridad_go anuncia 20 s
+5 · HIELO · sigue anulado desde r29
+  ✓ PODERES_PALA sin entrada hielo
+  ✓ cero identificadores vivos de superHielo
+  ✓ solo queda la anotación histórica «sustituye a hielo»
+6 · FÍSICA · c04/c05 byte-exacto
+  ✓ c04_fisica_ccd.js = df8f71a3…
+  ✓ c05_colisiones_ia_golpeo.js = 8bb62082…
+7 · REGISTRO · 10 poderes con voz e icono
+  ✓ poder mega en PODERES_PALA
+  ✓ poder efecto en PODERES_PALA
+  ✓ poder iman en PODERES_PALA
+  ✓ poder portal en PODERES_PALA
+  ✓ poder clon en PODERES_PALA
+  ✓ poder red en PODERES_PALA
+  ✓ poder elec en PODERES_PALA
+  ✓ poder fenix en PODERES_PALA
+  ✓ poder crono en PODERES_PALA
+  ✓ poder oscuridad en PODERES_PALA
+  ✓ iconos base64 embebidos (≥11)
+  ✓ voces MP3 embebidas (≥34)
+
+RESULTADO: 47 ok · 0 fallos
+RESULTADO scripts/test_r31_higiene_v36127.mjs rc=0 oks=161
+===== scripts/test_r32_salones_v36128.mjs
+1 · SELLOS · v3.6.144-SDK6 · FASE 146 · SALONES DEL DUEÑO
+  ✓ VERSION.json: 3.6.144-SDK6
+  ✓ FASE 146
+  ✓ faseNombre = SALONES DEL DUEÑO
+  ✓ tamaño del build: 11.526.764 B
+  ✓ VERSION.json golden 1836d13f…
+  ✓ golden 10a24300… (build byte-exacto)
+  ✓ bundle con sello vigente
+  ✓ sello c00 = 3.6.144-SDK6
+  ✓ sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)
+  ✓ badge V3.6.144-SDK6 en 03_body
+  ✓ hub /descargas sellado a v36139-sdk6
+2 · ARTE DEL DUEÑO · sha256 byte-exacto (ZIPs → public/assets/hall)
+  ✓ los 18 planos visten el ARTE DEL DUEÑO (18/18)
+3 · MÚSICA DEL SALÓN · pistas + canal hall en c03
+  ✓ las 3 pistas del dueño instaladas (3/3)
+  ✓ c02 · NEÓN lleva arcade.mp3
+  ✓ c02 · OBSERVATORIO lleva observatorio.mp3
+  ✓ c02 · DOJO lleva dojo.mp3
+  ✓ c02 · anfitrion y cabana SIN pista (el museo y la Cabaña callan)
+  ✓ c03 · setHallWanted(wanted, url)
+  ✓ c03 · startHallMusic/stopHallMusic
+  ✓ c03 · setHallMute (icono de la pared)
+  ✓ c03 · caché de buffers por URL (_hallBufs)
+  ✓ c03 · silencio del salón PERSISTENTE (pp_hallmus)
+  ✓ c03 · volumen del salón escala por el canal MÚSICA (musicVol, r95)
+  ✓ c03 · log de la pista lista (familia de la casa)
+4 · PRIORIDAD · la música del salón manda sobre la del menú
+  ✓ startMusic: el menú NO nace con la pista del salón viva (guard r32)
+  ✓ startHallMusic: RETIRA la música del menú si estaba sonando
+  ✓ tryFreshRunning: la pista del salón rearranca ANTES que la del menú
+  ✓ startHallMusic: guard completo (hallWanted sin mute)
+5 · ICONO DE LA PARED · placa vectorial + gatillo VR
+  ✓ c08 · drawHallMusica (pintor vectorial exportado)
+  ✓ c08 · userData.hall registra `musica` (mesh+cv+tex+repinta)
+  ✓ c08 · placa en la pared FRONTAL, sobre la de insignias
+  ✓ c08 · repinta(mute, visible): estado + visibilidad
+  ✓ c08 · hover del rayo agranda la placa con suavizado (updateHallFx)
+  ✓ c12 · raycast PROPIO al icono (no pisa el far=2,5 del menú)
+  ✓ c12 · gatillo en los DOS sitios de onSelectStart (menú abierto + hall)
+  ✓ c12 · con menú abierto, la placa manda SOLO si no hay botón (hov<0)
+  ✓ c12 · repintado del icono en drawHall + hall_var + pulsa (+def)
+  ✓ c12 · enterHall: la variante ACTIVA pide su pista
+  ✓ c12 · exitHall: la pista muere con la estancia
+  ✓ c12 · hall_var: cambio de salón EN VIVO
+  ✓ c12 · visita online: el salón del ANFITRIÓN suena como el suyo
+  ✓ c12 · mensaje i18n al conmutar
+  ✓ i18n · msg_hallmus en ES y EN
+6 · ROBUSTEZ · todo a prueba de fallos
+  ✓ c02 · el registro documenta la música del salón
+  ✓ c03 · el invariante UNA MELODÍA documentado en el nuevo sentido
+  ✓ fallos suaves: icono y pista JAMÁS rompen el salón
+  ✓ exitHall limpia el hover del icono (no queda congelado)
+7 · FÍSICA INTACTA · c04/c05 byte-exacto contra la r26b
+  ✓ c04_fisica_ccd.js = df8f71a3… (r26b)
+  ✓ c05_colisiones_ia_golpeo.js = 8bb62082… (r26b)
+
+R32 · SALONES DEL DUEÑO · 49 OK / 0 FALLOS
+RESULTADO scripts/test_r32_salones_v36128.mjs rc=0 oks=210
+===== scripts/test_r33_poderes_v36129.mjs
+== 1) REGISTRO PODERES_PALA a 14 entradas ==
+  ✓ registro: entrada mega
+  ✓ registro: entrada efecto
+  ✓ registro: entrada iman
+  ✓ registro: entrada portal
+  ✓ registro: entrada clon
+  ✓ registro: entrada red
+  ✓ registro: entrada elec
+  ✓ registro: entrada fenix
+  ✓ registro: entrada crono
+  ✓ registro: entrada oscuridad
+  ✓ registro: entrada prisma
+  ✓ registro: entrada onda
+  ✓ registro: entrada salva
+  ✓ registro: entrada ancla
+  ✓ los 14 poderes llevan PNG embebido
+  ✓ voces embebidas (concesión + selector + truenos)
+== 2) ASSETS de la r33 (iconos + voces de los 4) ==
+  ✓ icon_prisma.png presente (12270 B)
+  ✓ icon_onda.png presente (15720 B)
+  ✓ icon_salva.png presente (12994 B)
+  ✓ icon_ancla.png presente (13045 B)
+  ✓ voz_prisma_es.mp3 presente (6188 B)
+  ✓ voz_prisma_en.mp3 presente (6380 B)
+  ✓ voz_onda_es.mp3 presente (6764 B)
+  ✓ voz_onda_en.mp3 presente (5036 B)
+  ✓ voz_salva_es.mp3 presente (7724 B)
+  ✓ voz_salva_en.mp3 presente (5612 B)
+  ✓ voz_ancla_es.mp3 presente (6572 B)
+  ✓ voz_ancla_en.mp3 presente (5996 B)
+  ✓ sin marcadores de assets en el ensamblado
+== 3) CABLEADO del gatillo y del icono (los 4) ==
+  ✓ megaTrigger despacha prisma
+  ✓ _megaSelActiva lee prisma
+  ✓ _megaActivaRest lee prisma
+  ✓ _trailFirmaPoder firma prisma
+  ✓ megaTrigger despacha onda
+  ✓ _megaSelActiva lee onda
+  ✓ _megaActivaRest lee onda
+  ✓ _trailFirmaPoder firma onda
+  ✓ megaTrigger despacha salva
+  ✓ _megaSelActiva lee salva
+  ✓ _megaActivaRest lee salva
+  ✓ _trailFirmaPoder firma salva
+  ✓ megaTrigger despacha ancla
+  ✓ _megaSelActiva lee ancla
+  ✓ _megaActivaRest lee ancla
+  ✓ _trailFirmaPoder firma ancla
+== 4) MECÁNICA (ventanas 10 s, constantes y equilibrio) ==
+  ✓ PRISMA_DUR 10 s
+  ✓ PRISMA_OUT_P 0.10 (ligera)
+  ✓ ONDA: ventana 10 s · devolución rival al 75 %
+  ✓ ONDA: sólo en smash (umbral 5.2 m/s)
+  ✓ SALVA: ventana 10 s · bola al 80 % (pala «cansada»)
+  ✓ ANCLA_DUR 10 s
+  ✓ SALVA: warp ÚNICO por activación
+  ✓ ONDA: se consume con la devolución
+  ✓ guards de rally presentes (saques intactos)
+  ✓ c04 intacto (autocomprobación)
+  ✓ c04/c05 SIN rastros de la r33 (física intacta)
+== 5) ANCLA: puerta central + los 4 campeonatos ==
+  ✓ núcleo: anclaActiva + anclaBloqueo
+  ✓ locura: puerta del Ancla en el lanzamiento del poder rival
+  ✓ oeste: puerta del Ancla en el lanzamiento del poder rival
+  ✓ magia: puerta del Ancla en el lanzamiento del poder rival
+  ✓ orbital: puerta del Ancla en el lanzamiento del poder rival
+  ✓ los 4 campeonatos con puerta
+== 6) I18N ES/EN (c00) ==
+  ✓ i18n poder_prisma en ES y EN
+  ✓ i18n arc_prisma_go en ES y EN
+  ✓ i18n poder_onda en ES y EN
+  ✓ i18n arc_onda_go en ES y EN
+  ✓ i18n poder_salva en ES y EN
+  ✓ i18n arc_salva_go en ES y EN
+  ✓ i18n arc_salva_save en ES y EN
+  ✓ i18n poder_ancla en ES y EN
+  ✓ i18n arc_ancla_go en ES y EN
+  ✓ i18n ancla_bloqueo en ES y EN
+== 7) FIX ASTRO (createRival perezoso cuelga la textura) ==
+  ✓ SDK: ponMapa(tex) en el build perezoso
+  ✓ SDK: subida a GPU de la textura viva
+  ✓ SDK: subeGpu única (closure)
+  ✓ ensamblado limpio de marcadores
+== 8) ESTADO del ensamblado ==
+  · VERSION.json: 3.6.144-SDK6 (fase 146) — el bump lo sella el bumper
+  ✓ game.html ensamblado (~11.519.817 caracteres)
+
+RESULTADO: 77 ✓ · 0 ✗
+RESULTADO scripts/test_r33_poderes_v36129.mjs rc=0 oks=288
+===== scripts/test_r34_fixes_v36130.mjs
+== 1) FIX A · ESPACIO DE LA MESA (this.rig) ==
+  ✓ Red: cuerpo en el rig
+  ✓ Red+Elec: arcos y rayos en el rig (×2)
+  ✓ Red: riel superior en el rig
+  ✓ Elec: niebla en el rig
+  ✓ Elec: pedacitos en el rig
+  ✓ Efecto: anillo de bote en el rig
+  ✓ Portal: sprites en el rig
+  ✓ sin restos de FX de mesa en scene
+  ✓ scene.add sólo los 11 legítimos (re-anclada r43: el visor del rival pasa al RIG — la esfera del casco remoto comparte marco con la pala): 11
+  ✓ re-anclada r43: la esfera del casco remoto en el RIG (alineada con la pala)
+== 2) FIX B · VOZ DEL SELECTOR (los 3 olvidados) ==
+  ✓ selector habla fenix (voz de concesión)
+  ✓ precaliente incluye fenix
+  ✓ selector habla crono (voz de concesión)
+  ✓ precaliente incluye crono
+  ✓ selector habla oscuridad (voz de concesión)
+  ✓ precaliente incluye oscuridad
+  ✓ lista del precaliente re-anclada (r34)
+== 3) FIX C · FIN POR BAJA (máx. 1 bola perdida) ==
+  ✓ _elecRompe cierra la tormenta (fin por baja)
+  ✓ _elecFin acepta porBaja
+  ✓ la baja NO pisa el mensaje del punto
+== 4) FIX D · RETENCIÓN DEL RAYO (1 s halo + mini-rayos) ==
+  ✓ ELEC_AGARRA_T = 1 s
+  ✓ estado del agarre inicializado
+  ✓ el impacto AGARRA (con guardia anti-reentrante)
+  ✓ FX del agarre (halo + mini-rayos)
+  ✓ _elecAgarra existe
+  ✓ el agarre congela con ppTransito (portal)
+  ✓ apagado del FX del agarre
+  ✓ apagado llamado en _elecRompe + _elecFin (×2)
+  ✓ retención viva en _elecFrame
+  ✓ el tránsito del portal NO oculta la bola agarrada
+  ✓ hide+revive r28 retirado (la bola muerta cae VISIBLE)
+  ✓ mensaje arc_elec_caza al agarrar
+  ✓ i18n arc_elec_caza ES+EN (c00)
+  ✓ textos ES/EN del mensaje
+== 5) FIX E · PRISMA sólo en el campo del rival ==
+  ✓ firma prisma condicionada a la mitad rival
+  ✓ en nuestro campo la estela vuelve a la skin
+  ✓ ancla r33 conservada (return TRAIL_PODER.prisma;)
+  ✓ secuencia exacta null → prisma
+== 6) VERSIÓN 3.6.144-SDK6 · FASE 146 ==
+  ✓ c00 VERSION 3.6.144-SDK6
+  ✓ badge V3.6.144-SDK6
+  ✓ game.html sincronizado
+  ✓ sw.js CACHE 3.6.144-SDK6
+== 7) REGRESIÓN · registro, física y anclas r33 ==
+  ✓ registro intacto: mega
+  ✓ registro intacto: efecto
+  ✓ registro intacto: iman
+  ✓ registro intacto: portal
+  ✓ registro intacto: clon
+  ✓ registro intacto: red
+  ✓ registro intacto: elec
+  ✓ registro intacto: fenix
+  ✓ registro intacto: crono
+  ✓ registro intacto: oscuridad
+  ✓ registro intacto: prisma
+  ✓ registro intacto: onda
+  ✓ registro intacto: salva
+  ✓ registro intacto: ancla
+  ✓ c04 byte-exacto (df8f71a3)
+  ✓ c05 byte-exacto (8bb62082)
+  ✓ c04/c05 sin rastros de la retención (física intacta)
+  ✓ voces embebidas intactas (≥30 data-URI)
+  ✓ voz selector r33 intacta (prisma/onda/salva/ancla)
+== 8) ENSAMBLADO sincronizado ==
+  ✓ game.html == golden (0fd11519a5702477…)
+
+RESULTADO: 62 ok · 0 fallos
+RESULTADO scripts/test_r34_fixes_v36130.mjs rc=0 oks=350
+===== scripts/test_r35_prisma_v36131.mjs
+== 1) FIX A · LA BOLA ARCOÍRIS (aleatoria, mientras vive) ==
+  ✓ reloj del salto: constructor + aplicar (×2): 2
+  ✓ estado del tinte en el constructor
+  ✓ las DOS ramas del trigger aplican el tinte (activar + refresco)
+  ✓ salto ALEATORIO (Math.random, no barrido)
+  ✓ cadencia ~6 saltos/s (0.16 s)
+  ✓ pinta el COLOR de la bola
+  ✓ pinta el EMISIVO (glow visible en el casco)
+  ✓ paleta viva (S 0.95 · L 0.62)
+  ✓ brasa del salto (emisivo L 0.30)
+  ✓ reloj con dt del frame
+  ✓ el color nunca tumba el frame (guard)
+== 2) FIX B · RESTAURACIÓN HONESTA (patrón Oscuridad) ==
+  ✓ aplicar: definición única
+  ✓ restaurar: definición única
+  ✓ _prismaFin restaura la bola SIEMPRE
+  ✓ restaurar idempotente (guard de tinte nulo)
+  ✓ guarda el color ORIGINAL (getHex)
+  ✓ guarda el emisivo ORIGINAL (o null)
+  ✓ restaura el emisivo sólo si existía
+== 3) FIX C · COOPERATIVO (nadie queda prisionero) ==
+  ✓ auto-soltado si otro poder toma el testigo
+  ✓ Prisma cede la bola si Oscuridad la tenía
+  ✓ Oscuridad cede la bola si Prisma la tenía
+  ✓ restaurar llamado exactamente 3 veces (fin + autosoltado + cesión de Oscuridad): 3
+  ✓ las dos cesiones cruzadas presentes (cada una con SU restaurar)
+== 4) SIN REGRESIONES · r34 intacto ==
+  ✓ r34: estela arcoíris sólo en campo rival
+  ✓ firma de estela prisma intacta
+  ✓ cortina etapas 2/4 sigue cerrando Prisma
+  ✓ guía del golpeo intacta
+  ✓ guía nace en el golpeo
+== 5) FÍSICA BYTE-EXACTA (c04/c05 intocados) ==
+  ✓ c04 sha256 df8f71a3… (df8f71a3)
+  ✓ c05 sha256 8bb62082… (8bb62082)
+== 6) VERSIÓN Y SELLOS ==
+  ✓ VERSION.json 3.6.144-SDK6 (3.6.144-SDK6)
+  ✓ FASE 146 (146)
+  ✓ game.html sellado a 3.6.144-SDK6
+  ✓ game.html: aplicar (def + 2 llamadas) ×3: 3
+  ✓ game.html: restaurar (def + fin + autosoltado + cesión de Oscuridad) ×4: 4
+  ✓ game.html lleva el salto aleatorio
+
+RESULTADO: 36 OK · 0 FALLOS
+RESULTADO scripts/test_r35_prisma_v36131.mjs rc=0 oks=386
+===== scripts/test_r36_red_v36132.mjs
+== 1) FIX A · PÉRDIDA POR VENTANA VIVA (no vitalicia) ==
+  ✓ hueco de pérdida acotado a 2..64 (>64 = PARADA, no pérdida)
+  ✓ fuera la recalibración vitalicia (_recvs = anillo + gaps)
+  ✓ helper de ventana _lossWin()
+  ✓ ventana = span del anillo − recibidos (clamp ≥0 y al contado)
+  ✓ _trackLoss se alimenta de la ventana
+  ✓ fuera el ratio de pérdida vitalicio
+  ✓ netInfo() enseña la MISMA ventana (HUD/telemetría coherentes)
+  ✓ umbrales spec §11 intactos (>10 % sostenido · recuperación <4 %)
+  ✓ A1 · atasco de 300 paquetes NO degrada (antes: 30 Hz para siempre) → hz=60
+  ✓ A2 · tras la ráfaga del 20 % la pose RECUPERA 60 Hz (antes imposible) → hz=60
+  ✓ A2b · la ráfaga sostenida del 20 % SÍ degradó en su momento
+  ✓ A3 · pérdida crónica del 12,5 % mantiene la degradación honesta → hz=30
+== 2) FIX B · PAUSA ANUNCIADA NO MUERE (60 s de gracia) ==
+  ✓ watchdog consciente de la pausa (60 s anunciada · 12 s sin pausa)
+  ✓ ambos relojes (rel + fast) usan el mismo SILENCIO
+== 3) FIX C · SEQ SÓLO A LOS EVENTOS QUE VIAJAN ==
+  ✓ los DOS puntos de etiquetado (_sendFast + _flushEvents) corregidos
+  ✓ fuera el etiquetado en masa de los 24 pendientes
+  ✓ el paquete sigue llevando exactamente los 8 primeros (spec §5)
+== 4) SIN REGRESIONES · núcleo y juego intactos ==
+  ✓ PPNET PROTO 3 (el cable no cambia: fixes locales)
+  ✓ mstart intacto
+  ✓ resync del host intacto
+  ✓ HELD del saque intacto
+  ✓ enganche de sesión intacto
+  ✓ c04 sha256 df8f71a3… (física byte-exacta)
+  ✓ c05 sha256 8bb62082… (física byte-exacta)
+== 5) VERSIÓN Y SELLOS ==
+  ✓ VERSION.json 3.6.144-SDK6 (3.6.144-SDK6)
+  ✓ FASE 146 (146)
+  ✓ game.html sellado a 3.6.144-SDK6
+  ✓ game.html: _lossWin (def + trackLoss + netInfo) ×3: 3
+  ✓ game.html lleva el watchdog consciente de pausa
+  ✓ game.html lleva los dos etiquetados corregidos
+
+RESULTADO: 30 OK · 0 FALLOS
+RESULTADO scripts/test_r36_red_v36132.mjs rc=0 oks=416
+===== scripts/test_r37_red_v36133.mjs
+== 1) FIX D · REINICIO DE ICE REAL (renegociación del invitado) ==
+  ✓ método _iceRestartIntento() existe
+  ✓ oferta nueva con iceRestart: true (lo que la r125 nunca hizo)
+  ✓ la oferta viaja por la señalización viva (sdp)
+  ✓ fuera el restartIce() desnudo (bandera sin renegociación = no-op)
+  ✓ SÓLO el invitado ofrece (sin glare SDP) · una llamada en el watchdog
+  ✓ ventana de reinicio en vuelo (<15 s desde el intento)
+  ✓ silencio dinámico: pausa 60 s · reinicio en vuelo 25 s · normal 12 s
+  ✓ guardia de signalingState cerrado (error tragado, sin excepción)
+  ✓ D1 · sin pausa ni reinicio: 12 s de siempre (abandono real se corta igual)
+  ✓ D2 · reinicio de ICE en vuelo (8 s): 25 s de gracia para el handshake
+  ✓ D3 · reinicio vencido (>15 s): vuelve el corte de 12 s
+  ✓ D4 · pausa anunciada MANDA (60 s aunque haya reinicio en vuelo)
+  ✓ D5 · la ventana cubre el peor handshake real (intento a 5 s + 6 s de ICE)
+== 2) FIX E · EL ACK SÓLO AVANZA (canal sin orden) ==
+  ✓ _ackInit arranca a false en startV2
+  ✓ _onAckFrom avanza el ack SÓLO hacia delante (u16-safe)
+  ✓ E1 · ack nuevo se queda en 101 (sin retroceso) → ackP=101
+  ✓ E1b · el ack VIEJO retrocedía a 100 (bug reproducido) → ackP=100
+  ✓ E2 · la máscara nueva sigue cubriendo el 101 (el rival NO retransmite)
+  ✓ E3 · envoltura u16: tras 0xfffe→1 el ack queda en 1 → ackP=1
+  ✓ E3b · el wrapDiff u32 se quedaba clavado en 0xffff (bug reproducido) → 65535
+  ✓ E3c · la máscara cubre seqs ANTES del giro (0xfffe con ack=1)
+  ✓ E4 · el primer seq se adopta siempre (init) → ackP=33059
+== 3) FIX F · COLGADO EN EL IDIOMA DE CADA UNO ==
+  ✓ clave bye_self en ESPAÑOL
+  ✓ clave bye_self en INGLÉS
+  ✓ hangup() ya no lleva español hardcodeado
+  ✓ game.html lleva las dos claves + el uso (i18n íntegro en el build)
+== 4) SIN REGRESIONES · la r36 y el núcleo intactos ==
+  ✓ r36 · pérdida por ventana viva intacta
+  ✓ r36 · seq sólo a los eventos que viajan (2 puntos) intacto
+  ✓ r36 · pausa anunciada 60 s intacta
+  ✓ PPNET PROTO 3 (cero cambios de códec)
+  ✓ MatchSync intacto (claims/ack/resync)
+  ✓ mstart intacto
+  ✓ HELD del saque intacto
+  ✓ enganche de sesión intacto
+  ✓ camino de respuesta del anfitrión intacto (acepta la oferta del reinicio)
+  ✓ aritmética u16 _seqDiff: def + 5 usos (ack, covers, máscara, pérdida, ventana)
+  ✓ c04 sha256 df8f71a3… (física byte-exacta)
+  ✓ c05 sha256 8bb62082… (física byte-exacta)
+== 5) VERSIÓN Y SELLOS ==
+  ✓ VERSION.json 3.6.144-SDK6 (3.6.144-SDK6)
+  ✓ FASE 146 (146)
+  ✓ tamaño sellado (11540068)
+  ✓ golden 0fd11519… (build re-sellado)
+  ✓ game.html sellado a 3.6.144-SDK6
+  ✓ game.html lleva el reinicio de ICE (def + llamada): ×2
+  ✓ game.html lleva el ack monotono (init + guardia ×2): ×3
+  ✓ game.html lleva la aritmética u16 completa: ×5
+
+RESULTADO: 46 OK · 0 FALLOS
+RESULTADO scripts/test_r37_red_v36133.mjs rc=0 oks=462
+===== scripts/test_r38_rascacielos_v36134.mjs
+1 · SELLOS · v3.6.144-SDK6 · FASE 146 · EL SALÓN DE LA PARTIDA
+  ✓ VERSION.json: 3.6.144-SDK6
+  ✓ FASE 146
+  ✓ faseNombre = EL SALÓN DE LA PARTIDA
+  ✓ tamaño del build: 11.504.235 B
+  ✓ VERSION.json golden 1836d13f…
+  ✓ golden 1836d13f… (build byte-exacto)
+  ✓ bundle con sello vigente
+  ✓ sello c00 = 3.6.144-SDK6
+  ✓ sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)
+  ✓ badge V3.6.144-SDK6 en 03_body
+  ✓ hub /descargas sellado a v36139-sdk6
+2 · ARTE RASCACIELOS · sha256 byte-exacto (ZIP del dueño → public/assets/hall/rascacielos)
+  ✓ assets/hall/rascacielos/frente.jpg · sha256 96d7f5c7ff26f6cc…
+  ✓ assets/hall/rascacielos/fondo.jpg · sha256 2bcaca3ce10b45e6…
+  ✓ assets/hall/rascacielos/izquierda.jpg · sha256 8ee8655015704c20…
+  ✓ assets/hall/rascacielos/derecha.jpg · sha256 46955c95636a7107…
+  ✓ assets/hall/rascacielos/suelo.jpg · sha256 19a894e85061684e…
+  ✓ assets/hall/rascacielos/techo.jpg · sha256 d8d7a647d04fc5ac…
+  ✓ assets/hall/rascacielos/rascacielos.mp3 · sha256 81d284acb52cdee6…
+3 · CATÁLOGO · variante rascacielos · hito_won25 · i18n ES/EN
+  ✓ HALL_VARIANTES: entrada rascacielos con hito_won25
+  ✓ base = assets/hall/rascacielos/
+  ✓ musica = rascacielos.mp3 (pista del salón, canal c03 + icono c08)
+  ✓ 6 variantes en el catálogo (anfitrion, cabana, neon, observatorio, dojo, rascacielos)
+  ✓ _mesaLibre: hito_won25 = 25 victorias
+  ✓ _mesaLockTxt: hito_won25 → mesa_lock_won25
+  ✓ i18n hall_var_rascacielos ES/EN
+  ✓ i18n hint_hall_var_rascacielos ES/EN
+  ✓ i18n mesa_lock_won25 ES/EN
+  ✓ montarProps: mobiliario 3D del RASCACIELOS
+  ✓ mobiliario rascacielos: baliza VIVA (flicker en updateHallFx)
+  ✓ selector del menú: rejilla dinámica (6 → 2 filas)
+4 · SALÓN DE LA PARTIDA · cadena campeonato→salón→por defecto
+  ✓ c08: buildHallFor (carga perezosa del vestido del salón)
+  ✓ c08: HALL_FICHAS — los 6 nombres exactos de la casa
+  ✓ c08: cadena EFECTIVA por cara — champ → hall → por defecto
+  ✓ c08: el salón calla en campeonato (mesaOcupada gana su decorado)
+  ✓ c08: carga a prueba de carreras (set sustituido → tex huérfano se libera)
+  ✓ c12: hallBasePartido (la base que lee champRoom)
+  ✓ c12: _hallVariantePartido (resolución local/anfitrión)
+  ✓ c12: invitado sin hp (build viejo) → cancha clásica (JSON tolerante)
+  ✓ c12: id del anfitrión SANEADO contra catálogo (sin candado — el dueño ya lo abrió)
+  ✓ c12: PUNTO ÚNICO onMatchStart → la pista del salón nace en TODA partida
+  ✓ c12: en la estancia del hall manda enterHall (sin pisar la visita)
+  ✓ c12: en campeonato la pista del salón CALLA (BSO del torneo)
+5 · SALÓN EN VIVO · evento fiable hallv (host→invitado)
+  ✓ c09: hallv en la lista de eventos FIABLES (_onRel)
+  ✓ c09: despacho hallv → game.onPeerHallVar
+  ✓ c12: el anfitrión anuncia el salón nuevo EN VIVO (sendRel fiable)
+  ✓ c12: sólo el anfitrión publica hallv
+  ✓ c12: onPeerHallVar (re-viste estancia/cancha + pista)
+  ✓ c12: id desconocido NO viste (saneo estricto, sin caer a museo por accidente)
+  ✓ c12: hp recibido con el invitado EN LA CANCHA re-arma la pista (onPeerHall)
+6 · GARANTÍA · física c04/c05 INTACTA (byte-exacto r26b)
+  ✓ c04_fisica_ccd.js byte-exacto (df8f71a3…)
+  ✓ c05_colisiones_ia_golpeo.js byte-exacto (8bb62082…)
+
+RESULTADO: 51 ✓ · 0 ✗
+RESULTADO scripts/test_r38_rascacielos_v36134.mjs rc=0 oks=514
+===== scripts/test_r39_arcano_v36135.mjs
+1 · SELLOS · v3.6.144-SDK6 · FASE 146 · EL APARTADO ARCANO
+  ✓ VERSION.json: 3.6.144-SDK6
+  ✓ FASE 146
+  ✓ faseNombre = EL APARTADO ARCANO
+  ✓ tamaño del build: 11.504.235 B
+  ✓ VERSION.json golden 1836d13f…
+  ✓ golden = sha256 real del build (byte-exacto)
+  ✓ bundle con sello vigente
+  ✓ sello c00 = 3.6.144-SDK6
+  ✓ sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)
+  ✓ badge V3.6.144-SDK6 en 03_body
+  ✓ hub /descargas sellado a v36139-sdk6
+2 · ARTE · Arcano.png del dueño → public/assets/hall/arcano.png
+  ✓ assets/hall/arcano.png · sha256 6baa1288d99189c9… (byte-exacto)
+3 · EL BÚHO DEL ARCANO EN EL HALL · placa + destello en los ojos
+  ✓ fallback vectorial del búho pintado
+  ✓ arte REAL del dueño cargado por URL (assets/hall/arcano.png)
+  ✓ placa en la esquina superior DERECHA de la pared del fondo (z0)
+  ✓ destellos en los centros de los OJOS medidos del arte
+  ✓ destellos/cometas/motas ADITIVOS (glow azul)
+  ✓ LIGERO DESTELLO latiente en updateHallFx (dos fases)
+  ✓ el búho viaja en el userData del hall (raycast de c12)
+4 · EL ESPACIO INFINITO · bóveda con Vía Láctea · motas · cometas
+  ✓ montarArcano exportado
+  ✓ updateArcanoFx exportado
+  ✓ bóveda celeste pintada en canvas
+  ✓ re-anclada r40: cielo azul oscuro LISO (sin Vía Láctea ni estrellas)
+  ✓ gran bóveda esférica (BackSide, r=58)
+  ✓ montaMotas (nube de puntos)
+  ✓ 240 motas azules
+  ✓ motas que SERPENTEAN (base + fase por punto)
+  ✓ pool de cometas
+  ✓ cometas con HALO AZUL tras la cabeza
+  ✓ cometas OCASIONALES (prox aleatorio)
+  ✓ el búho SIGUE PRESENTE en el espacio
+  ✓ c12 monta el espacio arcano una vez (constructor)
+  ✓ el espacio nace OCULTO
+  ✓ cortina NEGRA renderOrder máximo
+  ✓ cortina que SIGUE a la cabeza en VR (0,42 m del ojo)
+  ✓ el espacio respira SÓLO encendido (coste cero fuera)
+  ✓ el gatillo del espacio manda PRIMERO en onSelectStart
+5 · LA GALERÍA · uno a uno · descripción · tipo · métricas · ‹ ›
+  ✓ drawArcanoPanel (panel de ficha)
+  ✓ drawArcanoFlecha (chevron con glow)
+  ✓ TIPO en la ficha (ataque/defensa/distracción)
+  ✓ MÉTRICAS en la ficha
+  ✓ candado: línea de estado BLOQUEADO
+  ✓ CANDADO dibujado (cuerpo + arco) sobre el icono
+  ✓ candado en TONOS AZULES (estética del búho)
+  ✓ índice AUTOMÁTICO contra el registro (un poder nuevo hereda galería)
+  ✓ SIN flecha izquierda en el 0 · SIN flecha derecha en el último
+  ✓ materialización uno a uno (pop elástico por ficha)
+  ✓ navegación ‹ › con bordes (nunca envuelve)
+  ✓ el candado lee el estado REAL de desbloqueo
+  ✓ ficha = nombre + descripción + métricas DEL REGISTRO (automático)
+  ✓ textos envueltos con measureText (nunca se cortan)
+6 · DOS VÍAS · hall→arcano→hall con desvanecimiento
+  ✓ gatillo del búho del salón (_arconoPulsa)
+  ✓ el búho manda antes que la placa de música
+  ✓ el búho responde TAMBIÉN con el menú abierto (rayo libre)
+  ✓ canje de estancias EN NEGRO (fundido)
+  ✓ entrada: hall fuera, espacio dentro
+  ✓ salida: espacio fuera, hall tal cual quedó
+  ✓ el búho del espacio DEVUELVE al salón
+  ✓ mensaje de vuelta al salón
+  ✓ seguridad: exitHall cierra el Arcano
+  ✓ hover del búho en el lazo del láser (como el icono de la música)
+7 · DESBLOQUEO · campeonato ganado → un poder al azar NUEVO
+  ✓ persistencia pp_poderes_v1
+  ✓ persistencia SANEADA contra el registro (id desconocido jamás sale)
+  ✓ azar que COMPRUEBA: todo desbloqueado → nada que repetir
+  ✓ superpoder AL AZAR entre los que aún tienen candado
+  ✓ hook SOLO en la CORONACIÓN (showChampConseguido)
+  ✓ coronación → _arconoCampeonGanado
+  ✓ megafonía de la revelación
+  ✓ la revelación viaja en el panel ¡CONSEGUIDO!
+  ✓ línea azul de revelación pintada bajo el título
+  ✓ coronacion:true marcada en locura
+  ✓ coronacion:true marcada en estacion_orbital
+  ✓ coronacion:true marcada en magia
+  ✓ coronacion:true marcada en oeste
+  ✓ coronacion:true marcada en halloween
+  ✓ coronacion:true marcada en _plantilla
+  ✓ oeste: la medalla LEYENDA NO desbloquea (solo 1 coronación marcada)
+  ✓ halloween: LEYENDA sin desbloqueo
+  ✓ plantilla: LEYENDA sin desbloqueo (los campeonatos nuevos heredan)
+8 · i18n · arcono_* · descripciones y métricas de los 14 · ES/EN
+  ✓ i18n arcono_titulo ES/EN (×2)
+  ✓ i18n arcono_sub ES/EN (×2)
+  ✓ i18n arcono_pie ES/EN (×2)
+  ✓ i18n arcono_candado ES/EN (×2)
+  ✓ i18n arcono_desbloq ES/EN (×2)
+  ✓ i18n arcono_tipo_ataque ES/EN (×2)
+  ✓ i18n arcono_tipo_defensa ES/EN (×2)
+  ✓ i18n arcono_tipo_distraccion ES/EN (×2)
+  ✓ i18n arcono_metricas ES/EN (×2)
+  ✓ i18n arcono_indice ES/EN (×2)
+  ✓ i18n arcono_gana ES/EN (×2)
+  ✓ i18n arcono_todos ES/EN (×2)
+  ✓ i18n arcono_hint ES/EN (×2)
+  ✓ i18n arcono_salir ES/EN (×2)
+  ✓ i18n arcono_nuevo ES/EN (×2)
+  ✓ i18n arcono_ninguno ES/EN (×2)
+  ✓ i18n arc_desc_mega ES/EN
+  ✓ i18n arc_met_mega ES/EN
+  ✓ i18n dl_mega ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_efecto ES/EN
+  ✓ i18n arc_met_efecto ES/EN
+  ✓ i18n dl_efecto ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_iman ES/EN
+  ✓ i18n arc_met_iman ES/EN
+  ✓ i18n dl_iman ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_portal ES/EN
+  ✓ i18n arc_met_portal ES/EN
+  ✓ i18n dl_portal ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_clon ES/EN
+  ✓ i18n arc_met_clon ES/EN
+  ✓ i18n dl_clon ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_red ES/EN
+  ✓ i18n arc_met_red ES/EN
+  ✓ i18n dl_red ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_elec ES/EN
+  ✓ i18n arc_met_elec ES/EN
+  ✓ i18n dl_elec ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_fenix ES/EN
+  ✓ i18n arc_met_fenix ES/EN
+  ✓ i18n dl_fenix ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_crono ES/EN
+  ✓ i18n arc_met_crono ES/EN
+  ✓ i18n dl_crono ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_oscuridad ES/EN
+  ✓ i18n arc_met_oscuridad ES/EN
+  ✓ i18n dl_oscuridad ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_prisma ES/EN
+  ✓ i18n arc_met_prisma ES/EN
+  ✓ i18n dl_prisma ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_onda ES/EN
+  ✓ i18n arc_met_onda ES/EN
+  ✓ i18n dl_onda ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_salva ES/EN
+  ✓ i18n arc_met_salva ES/EN
+  ✓ i18n dl_salva ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_ancla ES/EN
+  ✓ i18n arc_met_ancla ES/EN
+  ✓ i18n dl_ancla ES/EN (Duelos Locos)
+9 · DUELOS LOCOS · surto con desbloqueados · formas de receptor
+  ✓ DL_BASE: los tres NETCODE-SAFE de r84 siguen
+  ✓ DL_DUR: ventana por poder (mega 15, portal 8, oscuridad 20)
+  ✓ DL_SURTIDO: base + TUS desbloqueados
+  ✓ el surto lee el desbloqueo REAL
+  ✓ _dlArma: trigger de la casa con ent SINTÉTICO
+  ✓ armado por triggers (FX/marcas/tintes idénticos al campeonato)
+  ✓ _dlVentana: abre el tick de ventanas en duelos
+  ✓ 13 compuertas tick + 9 apagados + emul + imanAim + ley (25 usos)
+  ✓ recogida con FIN NATURAL al morir duelos
+  ✓ 9 interruptores de apagado respetan la ventana de duelos
+  ✓ EFECTO del Arcano: spin ×3 en duelos (canal de la LOCA)
+  ✓ IMÁN del Arcano: guía al punto dulce en duelos
+  ✓ MEGA del Arcano: pala ×1,30/radio ×1,38 en duelos (mecánica GIGANTE)
+  ✓ RECEPTOR: red alta y ritmo lento COMPARTIDOS, niebla en MI golpeo
+  ✓ RECEPTOR: la ONDA flojea MI próxima devolución (×0,75)
+  ✓ devolución floja aplicada en el cliente que la sufre
+  ✓ ANCLA: ESTRELLA los poderes entrantes (bloqueo)
+  ✓ bloqueo del Ancla con destello metálico
+  ✓ ONDA: el smash avisa al rival por cable fiable
+  ✓ PORTAL: el invitado portaliza en duelos (owner = quien golpea)
+  ✓ POSE bit 16 compartido por MEGA y GIGANTE (31 B intacto)
+  ✓ cable 'pow' tolerante: un id desconocido NUNCA rompe (builds viejos)
+10 · FÍSICA · c04/c05 byte-exacto (garantía de la casa)
+  ✓ c04_fisica_ccd.js · sha256 df8f71a3… (INTACTO)
+  ✓ c05_colisiones_ia_golpeo.js · sha256 8bb62082… (INTACTO)
+11 · BUNDLE · el juego en vivo lleva el apartado arcano
+  ✓ bundle: montarArcano embebido
+  ✓ bundle: sección arcano embebida
+  ✓ bundle: persistencia de desbloqueos embebida
+  ✓ bundle: surto extendido de Duelos Locos embebido
+
+=== r39 · v3.6.144-SDK6 · EL APARTADO ARCANO ===
+  165 comprobaciones verdes · 0 fallos
+RESULTADO scripts/test_r39_arcano_v36135.mjs rc=0 oks=679
+===== scripts/test_r40_arcano_v36136.mjs
+1 · SELLOS · v3.6.144-SDK6 · FASE 146 · EL ARCANO A LA VISTA
+  ✓ VERSION.json: 3.6.144-SDK6
+  ✓ FASE 146
+  ✓ faseNombre = EL ARCANO A LA VISTA
+  ✓ SDK de la casa intacto (1.6.0)
+  ✓ tamaño del build: 11.507.255 B (re-anclado r46)
+  ✓ VERSION.json golden 42d07e64… (re-anclado r46)
+  ✓ golden = sha256 real del build (byte-exacto)
+  ✓ bundle con sello vigente
+  ✓ sello c00 = 3.6.144-SDK6
+  ✓ sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)
+  ✓ badge V3.6.144-SDK6 en 03_body
+  ✓ hub /descargas sellado a v36139-sdk6
+2 · BÚHO · 0,78×0,52 → 0,585×0,39 (25 % más pequeño)
+  ✓ c08: la placa del hall mide 0,585×0,39 (×0,75 exacto)
+  ✓ c08: la petición del dueño vive en el comentario
+  ✓ c08: el tamaño viejo 0,78 ha desaparecido
+  ✓ bundle: el búho pequeño viaja al build
+  ✓ el ARTE del dueño sigue byte-exacto (arcano.png)
+  ✓ los destellos de los ojos escalan CON la placa (ARC_W/ARC_H)
+3 · CIELO LISO · SUELO INFINITO · losetas que mutan
+  ✓ c08: petición literal del dueño en la bóveda
+  ✓ c08: la Vía Láctea de la r39 RETIRADA
+  ✓ c08: el campo de 610 estrellas RETIRADO
+  ✓ c08: bóveda = degradado azul noche sutil (#03061a → #0a1a36)
+  ✓ c08: el SUELO INFINITO existe
+  ✓ re-anclada r41: plano 72 m con losetas PEQUEÑAS de 1,5 m (48×48)
+  ✓ c08: la banda azulada del dueño (#10284e → #1a3868, más clara que el cielo)
+  ✓ c08: la viñeta funde al color del horizonte (#0a1a36) — suelo sin costura
+  ✓ re-anclada r43: destellos en ambos ejes (90°) y ambos sentidos
+  ✓ c08: el suelo tumbado bajo los pies
+  ✓ re-anclada r43: tope de destellos (~9) y rellenos (~70) vivos
+  ✓ re-anclada r43: los rellenos nacen EN las celdas que el destello cruza
+  ✓ re-anclada r41: envolvente nace→aguanta→muere (apagado aleatorio)
+  ✓ re-anclada r43: lienzo vivo de trazos+rellenos repintado por frame
+  ✓ re-anclada r41: la BASE NEGRA del suelo sin niebla
+  ✓ c08: fog:false en TODAS las piezas del Arcano (bóveda+motas+2 cometas+búho+glints+panel+suelo)
+  ✓ c08: el suelo viaja en userData.arcono (updateArcanoFx lo anima)
+4 · ESCENARIO DELANTE · el grupo se planta sobre el anfitrión
+  ✓ c12: el diagnóstico del bug vive en el comentario
+  ✓ c12: el grupo arcano se PLANTA sobre los pies del jugador (XZ del rig)
+  ✓ c12: el escenario gira al YAW de la cabeza (−Z = donde mira el anfitrión)
+  ✓ c12: forward de la cabeza proyectado al suelo
+  ✓ c12: fallback honesto al centro del salón si algo falla
+  ✓ c12: ENTRAR lanza arcano.mp3 por el canal del salón
+  ✓ c12: el restaurador del aire del salón existe
+  ✓ c12: SALIR devuelve la pista del salón (SU variante / la del anfitrión)
+  ✓ arcano.mp3 del dueño BYTE-EXACTO en assets/hall/ (3,9 MB)
+  ✓ c08: la galería conserva su materialización (pop)
+5 · PULSABLES SIN MENÚ · el haz vive en las estancias
+  ✓ c12: updateMenu corre TAMBIÉN sin menú en salón y Arcano
+  ✓ c12: el panel del menú SÓLO es objetivo con el menú abierto
+  ✓ c12: el HAZ vive en las estancias aunque el menú duerma
+  ✓ c12: mirilla honesta de 3 m cuando el rayo no pisa el menú
+  ✓ c12: el gatillo del BÚHO vive en el salón SIN menú (r39, conservado)
+  ✓ c12: DENTRO del Arcano B no abre nada (el búho es la única puerta)
+  ✓ c12: el búho del espacio devuelve al salón (conservado r39)
+  ✓ c12: exitHall apaga la pista (también la del Arcano) al salir a la cancha
+6 · CONSERVADO · galería ‹ › candados desbloqueo duelos
+  ✓ flechas ‹ › SIN flecha en los extremos (0 y último del registro)
+  ✓ descripción + MÉTRICAS reales del registro i18n
+  ✓ tipo ataque/defensa/distracción con su color
+  ✓ candado azul translúcido en los bloqueados (descripciones legibles)
+  ✓ desbloqueo por coronación (azar sin repetición, pp_poderes_v1)
+  ✓ Duelos Locos con los desbloqueados (conservado)
+  ✓ el bundle lleva el suelo y el búho nuevo al build
+7 · GARANTÍA · física c04/c05 INTACTA (byte-exacto r26b)
+  ✓ c04_fisica_ccd.js byte-exacto (df8f71a3…)
+  ✓ c05_colisiones_ia_golpeo.js byte-exacto (8bb62082…)
+
+RESULTADO: 62 ✓ · 0 ✗
+RESULTADO scripts/test_r40_arcano_v36136.mjs rc=0 oks=742
+===== scripts/test_r41_arcano_holo_v36137.mjs
+1 · SELLOS · v3.6.144-SDK6 · FASE 146 · Los iconos del Arcano nacen cargados — precalentamiento de la galería y repintado onload de la ficha
+  ✓ VERSION.json: 3.6.144-SDK6
+  ✓ FASE 146
+  ✓ faseNombre = Los iconos del Arcano nacen cargados — precalentamiento de la galería y repintado onload de la ficha
+  ✓ SDK de la casa intacto (1.6.0)
+  ✓ tamaño del build: 11.507.255 B (re-anclado r46)
+  ✓ VERSION.json golden 42d07e64… (re-anclado r46)
+  ✓ golden = sha256 real del build (byte-exacto)
+  ✓ bundle con sello vigente
+  ✓ sello c00 = 3.6.144-SDK6
+  ✓ sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)
+  ✓ badge V3.6.144-SDK6 en 03_body
+  ✓ hub /descargas sellado a v36139-sdk6
+2 · MOTAS DE POLVO · circulares (textura radial) y la mitad de tamaño
+  ✓ c08: textura radial de la mota (punto REDONDO)
+  ✓ c08: la MITAD de tamaño (0,055 → 0,026)
+  ✓ c08: el tamaño cuadrado viejo 0,055 desapareció
+  ✓ c08: la mota lleva SU textura (map: dot)
+  ✓ bundle: las motas de polvo viajan al build
+3 · SUELO NEGRO · matriz fija de 48×48 · rellenos que nacen y mueren
+  ✓ c08: montaSueloArcano (rediseñada r41)
+  ✓ c08: losetas PEQUEÑAS de 1,5 m (48×48 — la r40 eran 9×9 de 8 m)
+  ✓ c08: la BASE es NEGRA bajo los pies
+  ✓ c08: la base funde al color del horizonte (#0a1a36 — costura imposible)
+  ✓ c08 [r43]: el trazado de DESTELLOS sustituye a la matriz estática (re-anclado)
+  ✓ c08 [r43]: la línea dibujada aguanta ~5 s (re-anclado)
+  ✓ c08: el RELLENO usa la banda azul del dueño (#10284e → #1a3868)
+  ✓ c08 [r43]: rellenos vivos LIGADOS a las celdas que los destellos cruzan (re-anclado)
+  ✓ c08 [r43]: los rellenos nacen EN el recorrido del destello (re-anclado)
+  ✓ c08 [r43]: vida aleatoria del relleno (nace → aguanta → muere) (re-anclado)
+  ✓ c08: las losetas SE APAGAN solas (unas aparecen, otras desaparecen)
+  ✓ c08: el relleno se disuelve hacia el horizonte (viñeta)
+  ✓ c08: base/malla/rellenos con fog:false (la niebla jamás toca el suelo)
+  ✓ c08 [r43]: el trazado vivo flota sobre la base (un solo plano de líneas+rellenos — sin z-fighting) (re-anclado)
+  ✓ c08 [r43]: el estado vivo del suelo (trazos + lit) viaja en el userData (re-anclado)
+4 · FLECHAS · ‹ a la IZQUIERDA · › a la DERECHA (icono = lado = acción)
+  ✓ c08: glifos DESCruzados — dir L dibuja ‹ (antes dibujaba ›)
+  ✓ c08: el cruce viejo de glifos desapareció
+  ✓ c08: el ‹ vive a la IZQUIERDA (−0,93) y el › a la DERECHA (+0,93)
+  ✓ c08: la petición del dueño vive en el comentario
+  ✓ c12: SIN ‹ en el 0 y SIN › en el último (el icono coincide con la acción)
+  ✓ c12: ‹ retrocede · › avanza (icono = acción, intacto)
+5 · ICONOS · TODO el medallón (1,96R recortado al círculo)
+  ✓ c08: escala 1,96R (ocupa TODO el círculo; antes 1,28R)
+  ✓ c08: el margen viejo 1,28R desapareció
+  ✓ c08: recortado al PROPIO círculo (sin letterbox)
+  ✓ c08: bloqueado → icono ATENUADO (el candado destaca, nada lo tapa)
+  ✓ bundle: el icono grande viaja al build
+6 · HOLOGRAMA · la ficha se FORMA (bandas, disolución, barrido)
+  ✓ c08: arconoHoloFrame (la composición del holograma)
+  ✓ c08: DOS lienzos — cv (ficha completa) + holo (lienzo vivo)
+  ✓ c08: el panel viaja con cv+holo en el userData
+  ✓ c08: frente de condensación (el barrido que baja FORMANDO)
+  ✓ c08: DISOLUCIÓN real (motas que se re-componen)
+  ✓ c08: banda de barrido aditiva (futurista, con glow)
+  ✓ c08: bandas horizontales que viajan y se asientan
+  ✓ c08: updateArcanoFx compone cv→holo mientras pop < 1
+  ✓ c08: ~1,1 s de formación (llamativo pero no eterno)
+  ✓ c08: condensada → copia EXACTA y la textura duerme (coste cero)
+  ✓ c12: cada poder ENTRA materializándose (conservado)
+  ✓ c12: pinta la ficha COMPLETA en cv (el holograma la compone)
+  ✓ bundle: el holograma viaja al build
+7 · VOZ · cada poder se OYE (nombre corto embebido ES/EN)
+  ✓ c12: repinta con control de voz
+  ✓ c12: la voz SOLEMNE r47 suena al materializarse (flechas ‹ ›)
+  ✓ c12: en la ENTRADA el hint habla primero
+  ✓ c12: la voz del poder entra 2,3 s después (UNA voz viva)
+  ✓ c12: el poder del índice vivo se presenta SOLEMNE
+  ✓ c12: las 14 voces embebidas ES/EN intactas
+8 · BÚHO · halo en los ojos OSCILANDO azul ↔ rojo
+  ✓ c08: los dos polos del halo (azul búho ↔ rojo bloqueo)
+  ✓ c08: seno lento (oscila y VUELVE, jamás un salto)
+  ✓ c08: el COLOR de los destellos viaja la banda azul↔rojo
+  ✓ c08: el HALO respira con la misma fase (escala del sprite)
+  ✓ c08: raspador de módulo (cero basura por frame)
+9 · CANDADO · DELANTE del icono · halo rojo pulsante · no tapa
+  ✓ c08: drawArcanoCandado (glifo en SU lienzo, exportado)
+  ✓ c08: el candado azul de siempre (cuerpo + arco) en su lienzo
+  ✓ c08: candado en TONOS AZULES (la estética del búho, conservada)
+  ✓ c08: el aro del discoscape AVISA en rojo (bloqueo)
+  ✓ c08: DELANTE del medallón — r47: un paso MÁS (z −2,20 vs panel −2,35, jamás coplanar: se ve SIEMPRE) con renderOrder fijo 6/7
+  ✓ c08: nace oculto (sólo los bloqueados lo enseñan)
+  ✓ c08: sprite del HALO ROJO (aditivo, fog:false)
+  ✓ c08: el candado viaja en userData.arcono
+  ✓ c08: HALO PULSANTE animado (escala + opacidad por seno)
+  ✓ c08: el halo RESPIRA (0,24 → 0,37)
+  ✓ c12: visibilidad sincronizada con el estado REAL de desbloqueo
+  ✓ c08: el glifo centrado en SU lienzo 128×128 (independiente del panel)
+10 · CONSERVADO · galería automática · desbloqueo · arcano.mp3
+  ✓ 240 motas (conservadas, ahora de polvo)
+  ✓ TIPO en la ficha (conservado)
+  ✓ MÉTRICAS en la ficha (conservado)
+  ✓ descripción + métricas reales del registro (conservado)
+  ✓ desbloqueo por coronación (conservado)
+  ✓ Duelos Locos con los desbloqueados (conservado)
+  ✓ arcano.mp3 suena en el espacio (conservado r40)
+  ✓ salir restaura la pista del salón (conservado r40)
+  ✓ el escenario nace DELANTE (conservado r40)
+  ✓ pulsables SIN menú (conservado r40)
+  ✓ fog:false en TODAS las piezas del Arcano (+base/malla/rellenos/candado)
+11 · GARANTÍA · física c04/c05 INTACTA (byte-exacto r26b)
+  ✓ c04_fisica_ccd.js byte-exacto (df8f71a3…)
+  ✓ c05_colisiones_ia_golpeo.js byte-exacto (8bb62082…)
+
+RESULTADO: 92 ✓ · 0 ✗
+RESULTADO scripts/test_r41_arcano_holo_v36137.mjs rc=0 oks=835
+===== scripts/test_r43_destellos_red_v36138.mjs
+1 · SELLOS · v3.6.144-SDK6 · FASE 146 · EL SUELO DE DESTELLOS
+  ✓ VERSION.json: 3.6.144-SDK6
+  ✓ FASE 146
+  ✓ faseNombre = LOS ICONOS DEL ARCANO NACEN CARGADOS — PRECALENTAMIENTO DE LA GALERÍA Y REPINTADO ONLOAD DE LA FICHA
+  ✓ SDK de la casa intacto (1.6.0)
+  ✓ tamaño del build: 11.507.255 B (re-anclado r46)
+  ✓ VERSION.json golden 42d07e64… (re-anclado r46)
+  ✓ golden = sha256 real del build (byte-exacto)
+  ✓ bundle con sello vigente
+  ✓ sello c00 = 3.6.144-SDK6
+  ✓ sw.js CACHE v3.6.144-SDK6 (purga de cachés viejas)
+  ✓ badge V3.6.144-SDK6 en 03_body
+  ✓ hub /descargas sellado a v36139-sdk6
+2 · SUELO DE DESTELLOS · la trama fina SÓLO existe donde un destello la dibuja
+  ✓ c08: la línea dibujada aguanta ~5 s (petición literal del dueño)
+  ✓ c08: la MATRIZ ESTÁTICA de la r41 desapareció (el tramado fijo, fuera)
+  ✓ c08: los nodos cada 8 losetas, fuera (nadie queda siempre visible)
+  ✓ c08: destellos en AMBOS ejes (cruces de 90°)
+  ✓ c08: destellos en AMBOS sentidos (idavuelta y vuelta)
+  ✓ c08: la línea nace en UN FONDO («partiendo de un fondo y llegando al otro»)
+  ✓ c08: corredores-destello vivos (trazos[])
+  ✓ c08: tope de ~9 destellos simultáneos (coste acotado)
+  ✓ c08: la cabeza del destello AVANZA por la retícula
+  ✓ c08: la estela es la LÍNEA FINA de la trama (0,8 px ≈ 5 cm — mucho más delgada que la r41)
+  ✓ c08: la línea dibujada MUERE a los ~5 s (desaparece)
+  ✓ c08: fundido final de 0,9 s (desvanecimiento, no parpadeo seco)
+  ✓ c08: la CABEZA es un destello brillante aditivo (blanco-azul)
+  ✓ c08: los RELLENOS nacen EN las celdas que el destello atraviesa («los rellenos igual»)
+  ✓ c08: envolvente viva del relleno (nace → aguanta → muere)
+  ✓ c08: el relleno respeta los bordes de SU celda («cuadrículas sutiles y bien definidas»)
+  ✓ c08: lienzo vivo repintado por frame (sólo existen los trazos y rellenos vivos)
+  ✓ c08: el estado vivo (trazos + lit) viaja en el userData del grupo
+  ✓ c08: cada trazo recuerda su eje, línea, sentido y última celda cruzada
+  ✓ bundle: el suelo de destellos viaja al build
+3 · LETRERO DE SALIDA · «Salir/Exit» azul con halo azulón sobre el búho
+  ✓ c08: drawArcanoSalir EXPORTADO (el glifo en SU lienzo)
+  ✓ c08: el HALO AZULÓN en tres pasadas crecientes (la técnica del neón del Hall)
+  ✓ c08: cuerpo azul claro + alma casi blanca (la firma del búho)
+  ✓ c08: montarArcano cuelga el letrero (fallback «Salir» antes del idioma vivo)
+  ✓ c08: el letrero ENCIMA del búho (búho en y 2,28 ± 0,44)
+  ✓ c08: sprite de HALO azul aditivo detrás del texto (la misma estética del búho)
+  ✓ c08: el letrero viaja en userData.arcono.salir
+  ✓ c08: el letrero se FUNDE con el hover del búho (aparece al apuntar, muere al apartar)
+  ✓ c08: leve ascenso al aparecer (respuesta viva, como las flechas)
+  ✓ c12: el texto se repinta con el IDIOMA vivo en _arconoRepinta
+  ✓ c00: i18n ES/EN del letrero («"Salir" o "Exit" en inglés»)
+  ✓ bundle: el letrero con idioma vivo viaja al build
+4 · ESFERA DEL CASCO · HIJO DEL RIG (comparte marco con la pala rival)
+  ✓ c12: la esfera YA NO cuelga de la escena raíz
+  ✓ c12: la esfera cuelga del RIG (misma matriz mundo que pala/bola/mesa)
+  ✓ c12: la RAÍZ documentada (recenter → rig girado → deriva de lo que no cuelga del rig)
+  ✓ c12: el pintado de la cabeza del rival intacto (misma posFromNetPose que la pala)
+  ✓ c12: la muestra de cabeza intacta (mismo sample que la pala — consistencia interna)
+5 · SAQUES · la bola JAMÁS invisible (toss rival con caducidad y re-encendido)
+  ✓ c12: rama del guardián PARA el lanzamiento del rival en vuelo
+  ✓ c12: el re-encendido de la malla queda telemetrizado (rival_toss)
+  ✓ c12: el flag del toss CADUCA a los 2,5 s (el saque jamás se congela)
+  ✓ c12: _netTossAt sellado al lanzar y a cero en MATCH_START
+  ✓ c09: los DOS caminos del toss del rival (SNAP de rescate + HIT kind 2) sellan el instante
+  ✓ c12: el fallback del rival entra YA si la malla está oculta (sin los 0,6 s ciegos)
+  ✓ c12: el arranque MATCH_START conservado (la bola oculta del rival la enciende el guardián)
+6 · DUELO HONESTO · el fantasma converge donde se juzga el bote
+  ✓ c09: la ZONA DE JUICIO = rectángulo de mesa + 30 cm
+  ✓ c09: y bajo la altura de juicio (tapete + 42 cm)
+  ✓ c09: convergencia DURA en la zona (0,62/0,38) · suave de siempre fuera (0,25/0,12)
+  ✓ c09: el POR QUÉ documentado (percepción = juicio del árbitro del emisor)
+  ✓ c09: el lerp ciego viejo desapareció
+7 · FLUIDEZ · la bola en tiempo REAL · el GC en dieta
+  ✓ c12: dt REAL del frame separado del capado
+  ✓ c12: timers a 1/30 (spec A intacta) · la BOLA a tiempo real (capo 1/12)
+  ✓ c12: las DOS integraciones de bola (fantasma + propia) en tiempo real
+  ✓ c12: el POR QUÉ documentado («la bola flota y va lenta» = dt clampeado)
+  ✓ c12: dilatación CRONOS intacta (_dilF se aplica sobre dtFis)
+  ✓ c09: búfer de TX REUTILIZADO (uno por enlace, no uno por paquete)
+  ✓ c09: los TRES puntos de envío (SNAP + pose + flush) escriben en el búfer
+  ✓ c09: salida por VISTA al DataChannel (send() copia los bytes: reutilizar es seguro)
+  ✓ c09: el túnel PeerJS conserva el slice (serializa su copia)
+  ✓ c09: los spreads {...pk} por paquete, fuera (yAnchor viaja en pk)
+  ✓ c09: UN solo new ArrayBuffer en el camino fast (el del constructor)
+  ✓ c09b: PROTO 3 intacto (el contrato del cable no cambia — compatible con 3.6.137)
+8 · CONSERVADO · c04/c05 byte-exacto · telemetría r42 · arcano r41
+  ✓ c04_fisica_ccd.js presente
+  ✓ c04 byte-exacto (df8f71a3… — física intocada)
+  ✓ c05 byte-exacto (8bb62082… — física intocada)
+  ✓ panel de telemetría r42 intacto
+  ✓ el Arcano holográfico r41 conservado (holo + candado)
+  ✓ la galería con voz conservada
+
+=== r43 · v3.6.144-SDK6 · EL SUELO DE DESTELLOS ===
+  79 comprobaciones verdes · 0 fallos
+TODO OK
+RESULTADO scripts/test_r43_destellos_red_v36138.mjs rc=0 oks=914
+===== scripts/test_r45_vitrina_cielo_v36139.mjs
+1 · CANDADO · la imagen del dueño, arriba a la izquierda
+  ✓ c08: carga perezosa de assets/hall/candado.png (la imagen manda)
+  ✓ c08: la textura del dueño sustituye al glifo vectorial (respaldo conservado)
+  ✓ c08: el glifo vectorial de la casa sigue pintado como FALLBACK
+  ✓ c08: el candado vive en la ZONA SUPERIOR IZQUIERDA (r47: un paso más cerca — jamás coplanar)
+  ✓ c08: HALO ROJO mayor (la silueta negra recorta contra él)
+  ✓ c08: el halo sigue siendo EL ROJO de siempre (bloqueo vivo)
+  ✓ asset: candado.png presente en public/assets/hall/ (14661 B)
+  ✓ c12: la sincronía de visibilidad con el estado REAL se conserva
+2 · CONSTELACIÓN · el contorno de palas.png trazado a bolígrafo
+  ✓ c08: los 16 trazos del contorno VIAJAN EN EL BUNDLE (sin descargas)
+  ✓ c08: el const lleva los puntos del arte (línea de ~4 KB · 231 puntos)
+  ✓ c08: montaConstelacion() — plano tangente + lienzo + estado
+  ✓ c08: el lienzo cuelga de un plano de 15 × 11,25 m
+  ✓ c08: la constelación brilla ADITIVA (luz sobre el cielo)
+  ✓ c08: TRES PASADAS de glow (halo→cuerpo→alma — la firma del búho)
+  ✓ c08: ciclo completo trazo→sostén→fundido (el trazo SE DESVANECE)
+  ✓ c08: renace en «unos segundos» (~10 s de cadencia con el dibujo)
+  ✓ c08: lugar aleatorio del cielo (azimut+altura) + giro y escala al azar
+  ✓ c08: SIEMPRE en el cielo (18°..47° sobre el horizonte)
+  ✓ c08: la textura vive SÓLO durante el trazado (sostén/fundido = opacity)
+  ✓ c08: la constelación viaja en userData.arcono (gobierno c12/ r45)
+  ✓ asset: palas.png servida también como archivo (referencia del dueño)
+3 · SKIN DE PALA EN RED · la personalización del invitado SE VE
+  ✓ c09: el HELLO v2 lleva `sp` (skin de pala propia)
+  ✓ c09: el receptor la sanea y la entrega al juego (JSON tolerante)
+  ✓ c12: onPeerPala recoge la skin del peer
+  ✓ c12: la pala REMOTA (aiPaddleMesh) se viste con la skin del peer
+  ✓ c12: la skin PROPIA sale del Pro Training real (incl. pieles de racha)
+  ✓ c13: el puente de pintura queda expuesto al juego
+  ✓ c13: pintaPalaExterna usa la MISMA caché de pieles (sin sangrado)
+  ✓ c13: el Pro Carbon sustituye la hoja (modelo alternativo) también en red
+  ✓ c12: al irse el rival, la pala remota vuelve a la clásica
+  ✓ c12: el estado nace limpio en el constructor
+4 · TELEMETRÍA · rankings mundiales en el panel
+  ✓ c00: cada evento firma el pid anónimo PERSISTENTE (pp_pid)
+  ✓ c00: y el NOMBRE elegido (pp_player_name, ≤12, ya público en presencia)
+  ✓ c12: RESULTADO del partido (modo, marcador, victoria) → rankings
+  ✓ c12: cada LOGRO nuevo deja huella (celebrate)
+  ✓ c12: PERFIL al entrar en VR
+  ✓ c12: PERFIL al entrar Y al cerrar la sesión VR (definido)
+  ✓ c12: el perfil lleva ELO, victorias, racha, estrellas, puntos y logros
+  ✓ worker: ?rank=1 NO lo devora el latido público
+  ✓ worker: el rank agrega perfil+resultado+logro (ventana ?dias, defecto 90)
+  ✓ worker: 4 tablas top-20 (ELO · victorias · puntos · logros)
+  ✓ worker: builds sin pid quedan fuera (compatibilidad limpia)
+  ✓ panel: sección RANKINGS MUNDIALES presente
+  ✓ panel: el rank se pide EN PARALELO y es opcional (worker viejo no rompe)
+  ✓ panel: las cuatro tablas con medallas (ELO/victorias/puntos/logros)
+  ✓ panel: medallas 🥇🥈🥉 en los top-3
+5 · CONSERVADO · nada del contrato se movió
+  ✓ c09: el campo sk de la bola (r21) INTACTO
+  ✓ c09: el campo hp del hall (r23) INTACTO
+  ✓ c09b: PROTO 3 intacto (cable compatible con 3.6.138)
+  ✓ c12: la fluidez r43 intacta (dtFis ×2 integraciones)
+  ✓ c08: el Arcano r43 conservado (destellos + Salir/Exit)
+  ✓ c08: rig sin cambios (asunto c12)
+  ✓ c12: la esfera del rival en el RIG (fix r43 intacto)
+  ✓ VERSION.json: 3.6.144-SDK6 · FASE 146 (la vitrina del cielo)
+  ✓ game.html: la build lleva la r45 dentro
+
+=== r45 · v3.6.144-SDK6 · LA VITRINA DEL CIELO ===
+  55 comprobaciones verdes · 0 fallos
+TODO OK
+RESULTADO scripts/test_r45_vitrina_cielo_v36139.mjs rc=0 oks=969
+BATERIA_MJS_FIN

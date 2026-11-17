@@ -1,0 +1,26 @@
+{
+ "bienvenida_modo": {
+  "lang": "es",
+  "text": "Bienvenido a Crazy Ping Pong, escoge una modalidad de juego.",
+  "seg": 3.58,
+  "wav_kb": 154.2,
+  "ogg_b": 12742,
+  "b64_b": 16992
+ },
+ "bienvenida_modo_fon": {
+  "lang": "es",
+  "text": "Bienvenido a Kreisi Ping Pong, escoge una modalidad de juego.",
+  "seg": 3.67,
+  "wav_kb": 158.2,
+  "ogg_b": 14176,
+  "b64_b": 18904
+ },
+ "bienvenida_modo_en": {
+  "lang": "en",
+  "text": "Welcome to Crazy Ping Pong, choose a game mode.",
+  "seg": 3.14,
+  "wav_kb": 135.2,
+  "ogg_b": 9807,
+  "b64_b": 13076
+ }
+}

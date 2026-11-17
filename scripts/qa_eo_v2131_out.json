@@ -1,0 +1,112 @@
+{
+ "errors": [
+  "[.WebGL-0x1cd400137c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+  "Failed to load resource: the server responded with a status of 400 ()",
+  "[.WebGL-0x1cd400137c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+  "[.WebGL-0x1cd400137c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+  "[.WebGL-0x1cd400137c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+ ],
+ "steps": [
+  {
+   "step": "boot",
+   "hasGame": true,
+   "activeId": "estacion_orbital",
+   "ctrlState": "sala",
+   "stage": 0,
+   "rulesState": "serve"
+  },
+  {
+   "step": "sala",
+   "state": "sala",
+   "stage": 0,
+   "etapas": "class StockController {\n  constructor(ga",
+   "cartelVisible": true,
+   "mapa": true,
+   "rival": true,
+   "etCfg": null,
+   "powerCd": 6,
+   "bolsa": 0,
+   "rules": "serve",
+   "msg": "¡Bienvenido a Estación Orbital!"
+  },
+  {
+   "step": "duelo1-start",
+   "ctrlState": "duelo",
+   "rules": "serve",
+   "rivalEstado": "tex",
+   "cartelVisible": false,
+   "instrOn": true,
+   "msg": "¡Duelo contra Androide AX-9!",
+   "powerCd": 7.95,
+   "bolsa": 0
+  },
+  {
+   "step": "poder-warn",
+   "fired": true,
+   "warn": "Lluvia de estrellas",
+   "act": null,
+   "msg": "Androide AX-9 prepara: ¡Lluvia de estrellas!",
+   "rules": "serve"
+  },
+  {
+   "step": "poder-act",
+   "act": "Lluvia de estrellas",
+   "beam": false,
+   "rocasOn": 0,
+   "msg": "¡LLUVIA DE ESTRELLAS!"
+  },
+  {
+   "step": "duelo1-win",
+   "before": {
+    "state": "duelo",
+    "stage": 0
+   },
+   "after": {
+    "state": "sala",
+    "stage": 1,
+    "cartelVisible": true,
+    "msg": "Tu saque · la bola espera en tu mano libre",
+    "mapaRefresh": true
+   }
+  },
+  {
+   "step": "prueba2-instr",
+   "ctrlState": "prueba",
+   "instrK": "cinturon",
+   "instrOn": true,
+   "instrWaitBtn": false,
+   "rules": "serve",
+   "testActive": false,
+   "pruebaRunning": false,
+   "pruebaBuilt": false,
+   "msg": "Tu saque · la bola espera en tu mano libre"
+  },
+  {
+   "step": "prueba2-run",
+   "ctrlState": "prueba",
+   "rules": "champtest",
+   "testActive": true,
+   "pruebaRunning": true,
+   "stepActive": true,
+   "dianas": null,
+   "err": null,
+   "msg": "¡Destruye las dianas!"
+  },
+  {
+   "step": "core-hooks",
+   "stepPhysics": "function",
+   "coreKeys": [
+    "DIMS",
+    "stepPhysics",
+    "T",
+    "lang",
+    "aiPresets",
+    "scalePreset",
+    "ppPlayerName",
+    "showChampConseguido",
+    "showChampIntro",
+    "hideChampIntro"
+   ]
+  }
+ ]
+}

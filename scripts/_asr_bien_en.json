@@ -1,0 +1,14 @@
+{
+  "created": 1791962735,
+  "id": "202610141525358d3c09f8ac7449c1",
+  "request_id": "202610141525358d3c09f8ac7449c1",
+  "text": "Welcome to Crazy Ping Pong, Choose a Game mode.",
+  "usage": {
+    "completion_tokens": 15,
+    "prompt_tokens": 101,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 116
+  }
+}

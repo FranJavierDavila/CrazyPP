@@ -1,0 +1,168 @@
+{
+ "errors": [
+  "Failed to load resource: the server responded with a status of 400 ()"
+ ],
+ "steps": [
+  {
+   "step": "boot",
+   "ok": true
+  },
+  {
+   "step": "1-duelo",
+   "before": {
+    "rules": "champtest",
+    "st": "sala",
+    "stage": 0
+   },
+   "reached": true,
+   "after": {
+    "rules": "serve",
+    "st": "duelo",
+    "stage": 0
+   }
+  },
+  {
+   "step": "2-poder-por-puntos",
+   "puntos": 34,
+   "warns": [
+    "Meteoritos",
+    "Gravedad cero",
+    "Lluvia de estrellas"
+   ],
+   "actos": [
+    "Meteoritos",
+    "Gravedad cero",
+    "Lluvia de estrellas"
+   ],
+   "cartel": {
+    "visible": true,
+    "pos": [
+     1.02,
+     1.88,
+     -2.65
+    ]
+   },
+   "visibles": {
+    "beam": false,
+    "motas": 0,
+    "confeti": 0,
+    "rocas": 0
+   },
+   "st": "duelo"
+  },
+  {
+   "step": "3-poder-por-rally",
+   "via": "Rayo tractor",
+   "cartel": true
+  },
+  {
+   "step": "4-garantia-22s",
+   "salvado": {
+    "t": 22,
+    "def": "Gravedad cero",
+    "cartel": true
+   },
+   "en22s": true
+  },
+  {
+   "step": "5-duelo1-GANADO",
+   "st": "sala",
+   "stage": 1,
+   "rules": "champtest",
+   "msg": "LOGRO · Primera victoria"
+  },
+  {
+   "step": "6-prueba1-colision-real",
+   "golpeReal": true,
+   "frames": 19,
+   "vivas": 0,
+   "st": "sala",
+   "stage": 2,
+   "rules": "champtest",
+   "testActive": false
+  },
+  {
+   "step": "7-duelo2-PERDIDO",
+   "st": "sala",
+   "stage": 2,
+   "rules": "champtest",
+   "msg": "Tu saque · la bola espera en tu mano libre"
+  },
+  {
+   "step": "8-duelo2-GANADO",
+   "st": "sala",
+   "stage": 3,
+   "rules": "champtest"
+  },
+  {
+   "step": "8-gatillo-prueba4",
+   "before": {
+    "rules": "champtest",
+    "st": "sala",
+    "stage": 3
+   },
+   "reached": true,
+   "after": {
+    "rules": "champtest",
+    "st": "prueba",
+    "stage": 3
+   }
+  },
+  {
+   "step": "9-prueba4-3D",
+   "st": "prueba",
+   "testActive": true,
+   "running": true,
+   "dianas": 14,
+   "cajas": 3,
+   "drones": 2,
+   "escudos": 3,
+   "es3D": true,
+   "rotoresDron": 2,
+   "bonus": 4
+  },
+  {
+   "step": "10-hold-alcanzable",
+   "hold": true,
+   "pos": [
+    0.26,
+    1.04,
+    -0.5
+   ],
+   "dist": 0.564,
+   "cerca": true,
+   "sobreMesa": 0.28
+  },
+  {
+   "step": "11-colision-real-escudo",
+   "hayCaja": true,
+   "g1": {
+    "hp": 1,
+    "alive": true,
+    "escudoOp": 0.53
+   },
+   "g2": {
+    "hp": 0,
+    "alive": false
+   },
+   "escudoOK": true,
+   "vivas": 13
+  },
+  {
+   "step": "12-prueba4-fin",
+   "vivas": 0,
+   "total": 14,
+   "st": "sala",
+   "stage": 4,
+   "rules": "champtest",
+   "testActive": false
+  },
+  {
+   "step": "13-leave",
+   "rules": "serve",
+   "activo": ""
+  }
+ ],
+ "fallos": [],
+ "urls_malas": []
+}

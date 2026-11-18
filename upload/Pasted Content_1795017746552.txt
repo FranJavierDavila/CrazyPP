@@ -1,0 +1,534 @@
+0. Cómo usar este documento
+Este documento define únicamente la simulación física: bola, raqueta, mesa, red, entorno y la capa de tracking que mueve la raqueta. Reglas, puntuación, IA, UI, red, audio y gráficos quedan fuera y se conectan con la física solo mediante la API de la sección 11.
+Convenciones: [OBLIGATORIO] marca decisiones que no deben cambiarse sin una razón medida. [CALIBRAR] marca valores iniciales razonables, basados en la física publicada del tenis de mesa, que hay que ajustar con las pruebas de la sección 12. Las unidades son SI (m, kg, s, rad/s). El eje Y apunta hacia arriba.
+Plataforma: el juego es web (WebXR en Meta Quest Browser y Pico Browser). La sección 17 adapta la implementación a ese entorno y prevalece sobre las partes de este documento específicas de C++, Unity, Unreal, NEON o Burst. Los algoritmos y los parámetros no cambian.
+Una nota de honestidad: no conozco los detalles internos de Eleven Table Tennis ni de Racket Fury, así que no afirmo cómo funcionan. Este diseño parte de la física del deporte y de técnicas estándar de simulación; el objetivo es superar cualquier modelo simplificado en efecto (spin), contacto con la goma y precisión de trayectoria.
+1. Objetivos y presupuesto
+• Realismo: trayectorias, rebotes y generación de efecto creíbles para jugadores avanzados: topspin, backspin, sidespin, bloqueos, chops, flicks, saques con efecto, bolas de red y de canto.
+• Rendimiento: 90 FPS sostenidos (11,1 ms por frame; 8,3 ms a 120 Hz). Presupuesto de toda la física: ≤ 0,5 ms de media y ≤ 1,2 ms en el peor frame en Quest 2 (web, ver sección 17.5). Cero asignaciones de memoria en el bucle.
+• Coherencia visual: lo que el jugador ve es lo que colisiona (sección 7.4).
+• Determinismo: mismo estado y mismas entradas dan el mismo resultado, con independencia de la tasa de frames.
+• Ajustabilidad: todos los parámetros en datos, con presets de gomas y bolas, y una capa opcional de indulgencia separada del núcleo físico.
+Por qué es viable: solo hay un cuerpo dinámico, la bola. Raqueta, mesa y red son cinemáticas o estáticas. No hace falta un solver general de restricciones: se programa un motor específico, analítico y barato, que puede gastar mucha más precisión por contacto que un motor genérico.
+2. Decisión de arquitectura [OBLIGATORIO]
+No usar el motor de físicas genérico del engine para la bola (PhysX, Havok, Unity Physics, Chaos). Motivos: pasos fijos típicos de 50–90 Hz, CCD simplificado, restitución y fricción promediadas entre materiales, sin Magnus ni arrastre cuadrático, y sin modelo de contacto compliant. Se implementa un módulo propio sin dependencias del engine (TypeScript, con WebAssembly como opción; ver sección 17) que pueda ejecutarse y testearse en headless.
+Componente
+Enfoque
+Vuelo
+RK4 a paso fijo de 1 ms: gravedad, arrastre cuadrático, Magnus y atenuación del spin
+Colisiones
+CCD con tiempo de impacto (TOI) sobre campos de distancia (SDF) analíticos
+Contactos
+Micro-simulación compliant a 20 µs: Hunt–Crossley en la normal y muelle–deslizador de Cundall–Strack en la tangente. Solo dura lo que dura el contacto (~1 ms)
+Raqueta
+Cinemática. Pose estimada con filtro de Kalman y evaluada en cada subpaso
+Tiempo
+Reloj entero en microsegundos, sincronizado con el tiempo de visualización predicho
+Salida
+Eventos de contacto y estado de la bola interpolado para render
+Tracking (OpenXR/SDK) -> RacketEstimator (Kalman) -> pose(t) de la raqueta
+                                                          |
+Bola -> [1 kHz] vuelo RK4 -> CCD (TOI) -> micro-solver de contacto -> eventos
+                                                          |
+                                   render: estado de la bola en t_display
+3. Constantes y geometría de referencia
+Magnitud
+Valor
+Bola (plástico 40+)
+Diámetro 40 mm (r = 0,020 m), masa 2,70 g, cascarón hueco: I = (2/3)·m·r² = 7,2×10⁻⁷ kg·m²
+Área frontal
+A = π·r² = 1,257×10⁻³ m²
+Mesa
+2,740 × 1,525 m, superficie a 0,76 m del suelo, tablero de ~0,025 m
+Red
+0,1525 m sobre la mesa, 1,83 m de largo (sobresale 0,1525 m por lado)
+Rebote en mesa (ITTF)
+Caída desde 305 mm, rebote de 230–260 mm, es decir e ≈ 0,87–0,92
+Raqueta
+Pala de ~150–160 mm, hoja de madera de ~6 mm, cubierta (goma + esponja) ≤ 4 mm por cara, ~85–95 g
+Aire
+ρ = 1,20 kg/m³, g = 9,81 m/s²
+Dos comprobaciones de cordura que el agente debe reproducir: la velocidad terminal de la bola (Cd = 0,45) es de ~8,8 m/s, y a 20 m/s el arrastre produce una deceleración de ~50 m/s² (~5 g). Es decir, el arrastre domina el vuelo y no puede omitirse.
+4. Modelo de vuelo
+Fuerzas sobre la bola, con v_rel = v − v_viento (viento = 0 por defecto):
+• Gravedad: m·g hacia abajo.
+• Arrastre: −½·ρ·Cd·A·|v_rel|·v_rel, con Cd ≈ 0,45 (rango 0,40–0,55) [CALIBRAR]. Opcional: tabla Cd(Re).
+• Magnus: ½·ρ·CL·A·|v_rel|² en la dirección de ω × v_rel. Solo cuenta la componente del spin perpendicular a la velocidad: el spin axial (giroscópico) no genera sustentación.
+• Parámetro de spin S = r·|ω × v̂| / |v| y CL(S) = 1 / (2 + 1/S), saturante, con un factor global magnusGain [CALIBRAR].
+• Atenuación del spin: ω(t+dt) = ω·exp(−dt/τ), con τ ≈ 8 s [CALIBRAR].
+Comprobación de signo: una bola que viaja en +X con topspin (la cara superior gira hacia +X) debe recibir una fuerza hacia abajo.
+Vec3 Accel(const Vec3& v, const Vec3& w, const Params& P) {
+    Vec3 a = {0.0f, -P.g, 0.0f};
+    Vec3 vr = v - P.wind;
+    float sp = length(vr);
+    if (sp < 1e-4f) return a;
+    float q = 0.5f * P.rho * P.A / P.m;                  // ½ρA/m
+    a += vr * (-q * P.Cd * sp);                          // arrastre
+    Vec3 wxv = cross(w, vr);
+    float nrm = length(wxv);
+    if (nrm > 1e-6f) {
+        float S  = P.r * nrm / (sp * sp);               // parámetro de spin
+        float CL = P.magnusGain / (2.0f + 1.0f / S);
+        a += wxv * (q * CL * sp * sp / nrm);             // Magnus
+    }
+    return a;
+}
+
+void StepFlight(Ball& b, float dt, const Params& P) {    // RK4
+    Vec3 v1 = b.v,                 a1 = Accel(v1, b.w, P);
+    Vec3 v2 = b.v + a1 * (dt/2),   a2 = Accel(v2, b.w, P);
+    Vec3 v3 = b.v + a2 * (dt/2),   a3 = Accel(v3, b.w, P);
+    Vec3 v4 = b.v + a3 * dt,       a4 = Accel(v4, b.w, P);
+    b.x += (v1 + v2*2.0f + v3*2.0f + v4) * (dt/6.0f);
+    b.v += (a1 + a2*2.0f + a3*2.0f + a4) * (dt/6.0f);
+    b.w *= expf(-dt / P.tauSpin);
+}
+Notas: float32 basta para posiciones (error < 1 µm a 3 m); el tiempo se guarda como entero en µs, nunca como float acumulado. Con ρ = 1,2 resulta q = ½ρA/m ≈ 0,279 m⁻¹. Referencia útil para validar: un topspin de 100 rev/s a 15 m/s da ~20 m/s² hacia abajo (~2 g), unos 15 cm de caída extra en 2 m de vuelo.
+5. Colisiones: CCD sobre SDF
+5.1 Colliders
+Todos exponen la distancia con signo a un punto (≥ 0 fuera) y su gradiente (la normal). La bola es una esfera de radio r: hay contacto cuando d(centro) ≤ r.
+• Mesa: caja con aristas redondeadas (radio 1–2 mm) para que existan bolas de canto reales. El evento indica la cara: Top, Edge o Side (la regla de validez la decide el juego, no la física).
+• Red: caja fina (2 mm) + cápsula en la cinta superior (radio ~7 mm) + cápsulas para los postes.
+• Raqueta: contorno de la pala como polígono convexo 2D de 16–24 vértices, extruido con grosor y bordes redondeados, más una cápsula para el mango. Se evalúa en el sistema local de la raqueta.
+• Suelo y paredes: planos y cajas genéricas.
+// Pala en el plano local XY, normal Z (cara forehand +Z, backhand -Z)
+float BladeSDF(Vec3 pl) {
+    float d2 = PolygonSDF2D(pl.x, pl.y, outlineInset, n);  // <0 dentro del contorno
+    float dz = fabsf(pl.z) - halfThickInset;
+    float ox = fmaxf(d2, 0.0f), oz = fmaxf(dz, 0.0f);
+    return sqrtf(ox*ox + oz*oz) + fminf(fmaxf(d2, dz), 0.0f) - rounding;
+}
+Región de contacto: si el punto más cercano está en una cara (|z| dominante y d2 < 0), el material es la goma de esa cara; si no, es el canto (madera y cinta).
+5.2 Tiempo de impacto por avance conservador [OBLIGATORIO]
+En cada paso, la trayectoria de la bola entre el estado inicial y el final se aproxima con una cúbica de Hermite (posiciones y velocidades de ambos extremos). El impacto más temprano con cada collider se busca con avance conservador: el tiempo avanza lo que permite la holgura dividida por una cota de la velocidad relativa.
+bool FindTOI(const Collider& C, const Hermite& tr, float t0, float dt, float r, float& toi) {
+    float t = 0.0f;
+    float vmax = tr.MaxSpeed() + C.MaxSurfaceSpeed();   // |v_raqueta| + |w_raqueta|·R_max
+    for (int i = 0; i < 24; ++i) {
+        float d = C.Distance(tr.Pos(t), t0 + t) - r;    // holgura
+        if (d <= 1e-5f) { toi = t; return true; }
+        t += d / vmax;
+        if (t > dt) return false;
+    }
+    return false;                                       // roce sin contacto
+}
+• Antes del narrow phase, descartar con AABB: caja barrida de la bola (± r) frente a caja barrida del collider durante el paso.
+• Se toma el TOI mínimo de todos los colliders, se resuelve y se continúa con el tiempo restante (máximo 4 eventos por paso).
+• Con la bola a ~30 m/s y la raqueta a ~20 m/s, la velocidad relativa llega a ~50 m/s: 5 cm por paso de 1 ms. Sin CCD habría tunneling seguro.
+• Penetración inicial (la raqueta «aparece» sobre la bola tras un salto de tracking): empujar la bola fuera por el gradiente y entrar en el micro-solver con la velocidad relativa real, limitada a un máximo.
+6. Modelo de contacto: el núcleo del realismo
+6.1 Marco de contacto
+n = normal de salida del collider hacia la bola. Punto de contacto relativo al centro de la bola: r_c = −r·n. Velocidad del punto de contacto de la bola respecto a la superficie:
+v_c = v_bola + ω_bola × r_c − v_superficie
+con v_superficie = v_R + ω_R × (p_c − c_R) para la raqueta (incluye la rotación de la muñeca) y 0 para mesa y red. Se define v_n = v_c·n (negativo al acercarse) y v_t = v_c − v_n·n.
+6.2 Micro-solver compliant [OBLIGATORIO para mesa y raqueta]
+Durante un contacto (~1 ms) se integra la bola con paso de 20 µs (≈ 50–70 pasos). Normal: Hunt–Crossley con exponente 3/2 (Hertz). Tangente: muelle–deslizador de Cundall–Strack con límite de Coulomb. Esto reproduce, sin trucos, el agarre de la goma, el deslizamiento, la energía elástica tangencial (efecto catapulta) y la inversión parcial del spin, y funciona igual con spin entrante.
+struct Contact { Vec3 u; float vn0; const Material* mat; bool active; };
+
+void ContactStep(Ball& b, Contact& c, const Collider& C, float h, float t) {
+    Vec3 n; float d = C.DistanceNormal(b.x, t, n);
+    float delta = b.r - d;                                  // penetración
+    if (delta <= 0.0f) { c.active = false; return; }
+    Vec3 rc = n * (-b.r);
+    Vec3 vs = C.SurfaceVelocity(b.x + rc, t);
+    Vec3 vc = b.v + cross(b.w, rc) - vs;
+    float vn = dot(vc, n);
+    Vec3 vt = vc - n * vn;
+    const Material& M = *c.mat;
+    float sq = sqrtf(delta);
+    // normal (Hunt-Crossley)
+    float Fn = M.kn * delta * sq * (1.0f + 1.5f * (1.0f - M.e) * (-vn) / c.vn0);
+    Fn = fmaxf(Fn, 0.0f);                                   // sin adhesión
+    // tangencial (muelle-deslizador)
+    c.u += vt * h;
+    float kt = M.kappaT * 1.5f * M.kn * sq;                 // rigidez tangencial
+    Vec3 Ft = c.u * (-kt);
+    float lim = M.mu * Fn, fm = length(Ft);
+    if (fm > lim && fm > 1e-9f) { Ft *= lim / fm; c.u = Ft * (-1.0f / kt); }
+    Vec3 F = n * Fn + Ft;
+    b.v += (F / b.m + Vec3{0.0f, -kG, 0.0f}) * h;           // semi-implícito
+    b.w += cross(rc, F) / b.I * h;
+    b.x += b.v * h;
+    // acumular para el evento: pico de Fn, duración, deslizamiento
+}
+Detalles:
+• vn0 es la velocidad normal de acercamiento al inicio del contacto (mínimo 0,1 m/s). Hunt–Crossley es válido para e ≳ 0,7; para materiales de baja restitución (red, suelo) usar el modelo impulsivo de 6.4.
+• Estabilidad: la rigidez máxima da ω ≈ 3000 rad/s, así que h = 20 µs deja ~70 pasos por periodo. No subir h por encima de 40 µs.
+• La pose de la raqueta se evalúa en cada micro-paso (1 ms a 15 m/s son 1,5 cm de desplazamiento).
+• Multicontacto: hasta 3 contactos activos a la vez (por ejemplo, bola entre raqueta y mesa en un golpe en la subida), sumando fuerzas; el bucle termina cuando todos se separan (límite de seguridad de 3 ms).
+• Rigidez normal: elegir kn para que el contacto en la raqueta dure ~1,0–1,5 ms a 15 m/s. Con una compresión máxima de ~7 mm resulta kn ≈ 2×10⁵ N/m^1,5. Para la mesa, ~4×10⁵.
+6.3 Raqueta: efectos adicionales
+• Punto dulce: la restitución efectiva baja fuera del centro de percusión: e_eff = e0·(1 − s·(ρ/ρ0)²), con ρ la distancia al punto dulce sobre la pala, ρ0 ≈ 0,06 m, s ≈ 0,15 y un mínimo de 0,6·e0 [CALIBRAR]. Un golpe en el hombro o cerca del mango sale lento y emite un evento para el sonido «hueco».
+• Canto: material de madera (e ≈ 0,60, μ ≈ 0,35) y normal procedente de la geometría redondeada: las bolas de canto salen impredecibles de forma natural.
+• Mango: cápsula de madera. La mano del jugador no colisiona con la bola salvo que el juego lo pida.
+• Masa efectiva: la relación de masas bola:raqueta es ~1:30, así que el retroceso de la raqueta es ≈ 3 %. Se ignora (raqueta de masa infinita) y se absorbe en e. Parámetro opcional racketEffectiveMass.
+• Gomas: cada cara tiene su propio material (sección 13): inverted rápida, tacky, pips largos, antispin, etc. Los pips largos y antispin se emulan con μ y κt bajos (menos agarre, spin entrante menos invertido).
+6.4 Modelo impulsivo (red, suelo, paredes y plan B)
+Para materiales de baja restitución, o como camino rápido si hiciera falta:
+void ImpulseContact(Ball& b, Vec3 n, Vec3 vs, const Material& M) {
+    Vec3 rc = n * (-b.r);
+    Vec3 vc = b.v + cross(b.w, rc) - vs;
+    float vn = dot(vc, n);
+    if (vn >= 0.0f) return;
+    Vec3 vt = vc - n * vn;
+    float Jn = -(1.0f + M.e) * vn * b.m;
+    Vec3 Jt = {0.0f, 0.0f, 0.0f};
+    float vtm = length(vt);
+    if (vtm > 1e-5f) {
+        float kEff = 1.0f / b.m + b.r * b.r / b.I;           // 2,5/m para cascarón
+        float JtStick = (1.0f + M.et) * vtm / kEff;          // anula (o invierte parcialmente) vt
+        Jt = vt * (-fminf(JtStick, M.mu * Jn) / vtm);        // límite de Coulomb
+    }
+    Vec3 J = n * Jn + Jt;
+    b.v += J / b.m;
+    b.w += cross(rc, J) / b.I;
+}
+La red usa e ≈ 0,15 y μ ≈ 0,6. La cinta superior es una cápsula aparte para que existan bolas que pasan rozando la red con su desvío característico. El evento distingue Net y NetTape para que el juego decida el let.
+7. Raqueta y tracking en VR
+7.1 Fuente de pose
+Abstraer el SDK tras una interfaz (IPoseProvider) que devuelva, para un instante t: pose (posición y cuaternión), velocidad lineal, velocidad angular y confianza. En OpenXR: pose grip del mando, xrLocateSpace y XrSpaceVelocity. Los SDK de Meta y de Pico tienen equivalentes nativos. Reglas:
+• Guardar cada muestra con su marca de tiempo en un anillo sin bloqueos (últimas 64 muestras por mando).
+• Si el SDK permite consultar poses con más frecuencia que el frame, hacer polling a 250 Hz o más en un hilo ligero. Si no, usar una muestra por frame más la velocidad que entrega el SDK.
+• Convertir todos los tiempos del SDK al reloj entero de µs de la simulación.
+7.2 Estimador de movimiento de la raqueta [OBLIGATORIO]
+La calidad de la velocidad en el momento del impacto decide si un golpe se siente real. Derivar posiciones de dos frames consecutivos es demasiado ruidoso, y usar solo la velocidad del SDK puede introducir sesgo.
+• Traslación: filtro de Kalman de aceleración constante por eje (estado p, v, a). Medidas: posición (σ ≈ 1,5 mm) y velocidad del SDK (σ ≈ 0,15 m/s). Ruido de proceso en el jerk σ_j ≈ 1000 m/s³ [CALIBRAR].
+• Rotación: cuaternión medido + velocidad angular filtrada. La velocidad angular mezcla la del SDK con la diferencia de cuaterniones ω ≈ 2·vec(q_k·q_{k−1}⁻¹)/dt (tomando el camino corto), con filtro exponencial o Kalman (σ ≈ 1–2 rad/s).
+• Evaluación: pose(t) se evalúa por extrapolación polinómica del estado (p + v·Δt + ½·a·Δt²; q·exp(½·ω·Δt)) para cualquier instante dentro de ±30 ms de la última muestra. Más allá, la aceleración se amortigua a cero.
+• Velocidad de un punto de la pala: v_p = v_g + ω × (p − p_g), con el punto de agarre g como referencia del sólido rígido. La contribución de la muñeca (ω) es la que más efecto da a los golpes: no debe perderse.
+Alternativa más simple para una primera iteración: interpolación cúbica de Hermite entre muestras con la velocidad del SDK. Es más ruidosa, pero válida para empezar.
+7.3 Marco de la raqueta
+• Transformación fija agarre → pala (gripToBlade): el centro de la pala está a ~0,10–0,12 m del origen del agarre, y la rotación depende del estilo (shakehand o penhold). Debe ser configurable por jugador, con calibración en un clic: el jugador sostiene la raqueta virtual en su posición natural y se guarda el offset.
+• Contorno de la pala, grosor, punto dulce y materiales por cara en un asset de datos (RacketDef).
+7.4 Tiempo y latencia [OBLIGATORIO]
+Principio: simular hasta el tiempo de visualización predicho de cada frame y renderizar la raqueta y la bola exactamente en ese instante. Lo que el jugador ve es lo que colisiona.
+1.  Al empezar el frame, tD = tiempo de visualización predicho, convertido al reloj de simulación.
+2.  El estimador evalúa la raqueta en los instantes de los subpasos hasta tD + 2 ms.
+3.  La simulación avanza hasta que su reloj ≥ tD. El estado de la bola para render se interpola con Hermite sobre el historial (sección 8).
+4.  Si en el frame siguiente la predicción de pose difiere de la usada, no se corrige el pasado: el filtro absorbe el cambio. No se re-simula.
+Con 90 FPS el tiempo de visualización está ~20–30 ms por delante de la medición. A esa distancia el error de predicción es de pocos milímetros en movimientos normales y puede llegar a algunos centímetros en un latigazo. Es un límite del tracking; por eso la velocidad de salida de la bola se calcula con el estado del filtro y no con la pose predicha cruda.
+7.5 Robustez del tracking
+• Velocidad máxima de raqueta usada por el solver: 40 m/s (recorte). Aceleración y velocidad angular también acotadas.
+• Salto de posición > 0,3 m entre muestras: se considera un glitch, se reinicia el filtro y se desactivan los contactos de esa raqueta durante ≤ 100 ms (sin impulsos por teletransporte).
+• Pérdida de seguimiento (confianza baja): congelar la pose y amortiguar la velocidad estimada a cero en ~50 ms.
+• La raqueta de cada jugador solo interactúa con la bola; no hace falta lógica especial si los mandos se cruzan.
+7.6 Hooks de háptica y audio
+Cada contacto emite un evento con velocidad de impacto normal y tangencial, punto local en la pala, región (cara, canto, mango), duración y deslizamiento. La háptica mapea amplitud a la velocidad normal y frecuencia a la región; el audio distingue golpe limpio (centro), hueco (hombro), canto y roce (deslizamiento alto). La física solo emite el evento en el mismo frame en que se produce.
+8. Orden del bucle principal
+void World::Advance(int64 tTargetUs) {          // tTarget = tiempo de visualización predicho
+    for (auto& r : rackets) r.est.Prepare(tTargetUs + 2000);
+    history.Clear();
+    while (tUs < tTargetUs) {
+        Ball nxt = ball;
+        StepFlight(nxt, kStep, P);                              // 1 ms libre
+        Hit hit;
+        if (FindEarliestTOI(ball, nxt, tUs, kStep, hit)) {      // sección 5
+            StepFlight(ball, hit.toi, P);                       // hasta el impacto
+            tUs += ToUs(hit.toi);
+            tUs += RunContactSolver(ball, hit, tUs, events);    // sección 6, consume tiempo real
+        } else {
+            ball = nxt;
+            tUs += kStepUs;
+        }
+        history.Push(tUs, ball);
+    }
+    renderBall = history.HermiteAt(tTargetUs);                  // interpolado, no extrapolado
+}
+Notas: RunContactSolver itera todos los contactos activos hasta que se separan; el historial incluye los micro-estados del contacto para que el render pueda caer dentro de él. Si no hay ningún collider a menos de 0,25 m de la bola, se puede usar un paso de 2 ms (optimización opcional). El resultado no depende de la tasa de frames, salvo por la evolución de las poses de la raqueta.
+9. Rendimiento
+Estimaciones de coste (órdenes de magnitud para un núcleo grande de Quest 2; deben medirse en dispositivo):
+Parte
+Coste estimado por frame a 90 FPS
+~11 pasos de vuelo RK4 + AABB
+~35 µs
+Estimador (2 raquetas)
+~5 µs
+Un contacto (~60 micro-pasos)
+~90 µs, con 1–2 contactos como máximo por frame
+Total típico
+< 0,2 ms (≈ 2 % del frame)
+Reglas de implementación:
+• Sin asignaciones, llamadas virtuales ni excepciones en el bucle; colliders como structs etiquetados en un array contiguo.
+• float32; evitar powf (usar delta·sqrtf(delta)); sin fast-math global si se quiere determinismo entre dispositivos.
+• Web: módulo TypeScript con arrays tipados y sin asignaciones (sección 17.2).
+• Hilo: ejecutar en el hilo de juego justo antes de enviar el frame, o en un hilo dedicado con afinidad a un núcleo grande y fecha límite por frame. La física es tan barata que el hilo principal suele ser lo más simple y con menos latencia.
+• Varias bolas (máquina de bolas, minijuegos): estructura SoA y bucle por lotes con NEON; el coste crece linealmente.
+• Con la física por debajo del 3 % del frame se reduce también el consumo y la temperatura del visor.
+10. Capa de indulgencia (opcional y desactivable)
+En VR no hay resistencia en la mano y la profundidad se juzga peor, así que conviene una capa separada que no contamine el núcleo físico. Todo ajuste se aplica antes del contacto o sobre su resultado, queda marcado en el evento y se desactiva en modo competitivo:
+• racketScale (1,00–1,15): agranda el collider de la pala.
+• sweetSpotForgiveness: reduce la penalización fuera del punto dulce.
+• aimAssist (0–3°): desvía ligeramente la salida hacia la mesa rival.
+• slowMotionPractice: factor de tiempo para entrenamiento (escala el dt de simulación, nunca las poses).
+Perfiles sugeridos: Simulación (todo a 0), Estándar (valores pequeños), Casual.
+11. API pública
+struct BallState { Vec3 pos, vel, spin; int64 timeUs; };      // spin en rad/s
+
+struct ContactEvent {
+    enum Kind { Table, TableEdge, TableSide, Net, NetTape,
+                RacketFace, RacketRim, RacketHandle, Floor, Other };
+    Kind kind; int racketId; int faceId;                      // faceId: 0 forehand, 1 backhand
+    int64 timeUs; Vec3 point, normal;
+    float impactSpeedN, impactSpeedT, durationMs, peakForce;
+    float sweetSpotDist;                                      // distancia al punto dulce
+    BallState before, after;
+};
+
+class PhysicsWorld {
+public:
+    void Init(const PhysicsConfig&);
+    void SetRacketSample(int id, const PoseSample&);          // por cada muestra de tracking
+    void Advance(int64 displayTimeUs);                        // sin asignaciones
+    BallState GetBallRender() const;                          // interpolado a displayTime
+    void SpawnBall(const BallState&);                         // saque, máquina, reinicio
+    int  PollEvents(ContactEvent* out, int max);
+    int  PredictTrajectory(const BallState&, float horizon,   // mismo código que la simulación
+                           Vec3* pts, int maxPts, ContactEvent* ev, int maxEv) const;
+    void Snapshot(Blob&) const;  void Restore(const Blob&);   // replays y multijugador
+};
+Multijugador (opcional): cada cliente simula localmente los golpes de su propia raqueta (latencia cero) y envía el estado de la bola posterior al golpe; el cliente remoto lo simula hacia adelante con el mismo código. Evitar el lockstep determinista entre dispositivos distintos salvo que se compile con -ffp-contract=off y se pruebe.
+12. Validación y calibración
+12.1 Tests automáticos (headless, en CI)
+1.  Velocidad terminal: una caída larga con Cd = 0,45 converge a ~8,8 m/s.
+2.  Test ITTF: una bola soltada desde 305 mm sobre la mesa rebota entre 230 y 260 mm.
+3.  Energía: ningún contacto con mesa, red o suelo aumenta la energía total (mecánica + rotacional).
+4.  Sentido del spin: un topspin entrante sobre la mesa sale más plano y con más velocidad horizontal; un backspin la frena y la levanta. Signo y orden de magnitud coherentes con la teoría del rebote con fricción.
+5.  Magnus: un topspin de 100 rev/s a 15 m/s cae unos 15 cm más que la misma bola sin spin en 2 m (valor orientativo, depende de CL).
+6.  Tunneling: 10 000 bolas aleatorias de hasta 40 m/s contra una raqueta a 30 m/s: ninguna debe atravesarla.
+7.  Determinismo: el hash del estado tras 10 s de simulación coincide con frame rates de 72, 90 y 120 Hz para las mismas muestras de tracking.
+8.  Rendimiento: telemetría physicsMicros por frame (p50, p99, máximo) en dispositivo, con OVR Metrics Tool o Perfetto.
+12.2 Objetivos de realismo (rangos a verificar con datos publicados y con jugadores)
+• Un loop de topspin competitivo (raqueta a 10–15 m/s, golpe rozante) genera del orden de 80–150 rev/s y una bola a 15–25 m/s con goma rápida.
+• Un bloqueo con la raqueta casi quieta devuelve la bola con una fracción claramente menor de su velocidad, y conserva su spin parcialmente invertido.
+• Un saque con mucho efecto (~100 rev/s) desvía de forma visible la bola en el rebote (más con goma tacky, menos con antispin).
+• Las bolas de canto de mesa y de red deben ser raras pero posibles.
+12.3 Procedimiento de calibración
+1.  Vuelo: ajustar Cd, magnusGain y τ_spin con trayectorias medidas (o publicadas) de bolas lanzadas con spin conocido.
+2.  Mesa: ajustar e, μ, κt y kn con rebotes oblicuos (ángulos de entrada y salida, cambio de spin, tiempo de contacto). Si hay cámara de alta velocidad (≥ 1000 fps), grabarlo.
+3.  Gomas: ajustar cada preset con una máquina o un tiro controlado sobre la raqueta real a varias velocidades y ángulos, comparando velocidad y spin de salida.
+4.  Sensación: sesiones con jugadores de distintos niveles; ajustar los multiplicadores globales powerGain y spinGain (por defecto 1,0). Registrar las poses de swings reales para repetirlas en tests (grabación y reproducción de tracking).
+13. Parámetros por defecto [CALIBRAR]
+Vuelo y simulación:
+Parámetro
+Valor
+Paso de vuelo
+1 ms (1000 Hz), RK4
+Micro-paso de contacto
+20 µs
+Eventos máximos por paso
+4
+Cd
+0,45
+CL(S)
+1/(2 + 1/S), magnusGain = 1,0
+τ de atenuación de spin
+8 s
+ρ del aire, g
+1,20 kg/m³, 9,81 m/s²
+Velocidad máxima de raqueta
+40 m/s
+Kalman: σ posición, σ velocidad, σ jerk
+1,5 mm, 0,15 m/s, 1000 m/s³
+Materiales:
+Material
+kn (N/m^1,5)
+e
+μ
+κt
+Mesa
+4,0×10⁵
+0,90
+0,22
+0,5
+Goma inverted rápida
+2,0×10⁵
+0,86
+0,9
+0,5
+Goma tacky (china)
+1,8×10⁵
+0,80
+1,3
+0,6
+Pips largos
+1,5×10⁵
+0,75
+0,45
+0,3
+Antispin
+1,8×10⁵
+0,70
+0,20
+0,3
+Madera (canto)
+5,0×10⁵
+0,60
+0,35
+0,4
+Red (impulsivo)
+n/d
+0,15
+0,60
+n/d
+Suelo (impulsivo)
+n/d
+0,75
+0,40
+n/d
+Estos valores son puntos de partida plausibles, no mediciones verificadas: el agente debe tratarlos como hipótesis y ajustarlos con la sección 12.
+14. Plan de implementación
+Hito
+Contenido
+Criterio de aceptación
+M1
+Vuelo RK4, tests 1 y 5, proyecto headless
+Tests pasan; < 5 µs por paso
+M2
+Colliders SDF, CCD, mesa/red/suelo con modelo impulsivo
+Test 6 sin tunneling; test 3
+M3
+Micro-solver compliant en la mesa
+Tests 2 y 4
+M4
+Raqueta cinemática con swings grabados o scripted
+Rangos de 12.2
+M5
+Integración de tracking: estimador, tiempos, robustez
+Sin golpes fantasma; test 7
+M6
+Eventos, háptica, audio, predicción de trayectoria
+Latencia evento-háptica ≤ 1 frame
+M7
+Calibración con datos y optimización en dispositivo
+90 FPS estables; física < 0,5 ms
+M8
+Capa de indulgencia y multijugador
+Pruebas A/B con jugadores
+15. Riesgos y decisiones abiertas
+• Ruido de tracking: velocidades erróneas dan golpes antinaturales. Mitigación: Kalman, recortes y grabación de swings reales para depurar.
+• Oclusión de los mandos: congelación y amortiguación (7.5).
+• Sensación sin resistencia en la mano: la bola puede parecer lenta o pegajosa aunque sea fiel. Mitigación: sonido, háptica y los multiplicadores de 12.3.
+• Diferencias entre dispositivos: la frecuencia de tracking y la latencia varían entre Quest y Pico; probar en ambos pronto.
+• Valores de calibración sin verificar: véase la sección 13.
+• Decisión abierta: librería de render WebXR (Three.js, Babylon.js u otra). El módulo de física es independiente de ella.
+16. Referencias recomendadas
+Conviene que el agente las consulte para contrastar fórmulas y valores:
+• ITTF: especificaciones técnicas de la pelota, la mesa y la red, y reglamento de raquetas.
+• Hunt, K. H. y Crossley, F. R. E. (1975), coeficiente de restitución interpretado como amortiguamiento en choques vibratorios, Journal of Applied Mechanics.
+• Cundall, P. A. y Strack, O. D. L. (1979), modelo numérico discreto para ensamblajes granulares, Géotechnique.
+• R. Cross, trabajos sobre el rebote de pelotas con spin y fricción y sobre el impacto de pelotas con raquetas (American Journal of Physics, Sports Engineering).
+• G. Fiedler, «Fix Your Timestep»; E. Catto, charlas de GDC sobre CCD y avance conservador.
+• Especificación OpenXR: xrLocateSpace, XrSpaceVelocity, tiempo de visualización predicho.
+Revisar siempre las fuentes originales: los valores y las citas de este documento están dados de memoria y pueden requerir verificación.
+17. Adaptación a web (WebXR)
+Al ser un juego web, el núcleo se implementa en TypeScript y los algoritmos de las secciones 4 a 8 no cambian. Cambian el lenguaje, la gestión de memoria, el acceso al tracking y el presupuesto de rendimiento. Donde esta sección contradiga otra, prevalece esta.
+17.1 Stack y estructura
+• Núcleo de física en TypeScript puro, como módulo ES sin DOM ni dependencias de la librería de render (Three.js, Babylon.js u otra). Así se ejecuta y se testea en Node (headless, CI). Los vectores de la librería de render no se usan dentro del bucle.
+• Empezar sin WebAssembly. El coste de la simulación es muy bajo y el JIT de V8 basta. Pasar a WASM (Rust o C++ con Emscripten) solo si la medición en dispositivo lo exige o si se necesita determinismo estricto (17.6).
+• Aritmética en float64: JavaScript trabaja siempre en doble precisión, así que se acabaron los problemas de precisión de float32. No usar Math.fround. El tiempo sigue siendo un entero en µs (seguro hasta 2^53).
+• Nada de GPU para la física: la simulación de una bola no lo justifica y añadiría latencia de lectura.
+17.2 Memoria y recolector de basura [OBLIGATORIO]
+Una pausa del GC de pocos milisegundos hace perder un frame y en VR se nota. Regla: cero asignaciones en el bucle de física y en el estimador.
+• Estado en Float64Array planos con índices fijos. Los vectores intermedios son variables escalares locales (x, y, z) o buffers de trabajo preasignados. Nada de new Vec3, literales de objeto o array, spread, map/filter, closures creadas por paso ni cadenas.
+• Eventos de contacto en un anillo preasignado (Float64Array + Int32Array con stride fijo). pollEvents devuelve un contador y el consumidor lee por índice.
+• Mantener los tipos monomórficos: colliders como registros con un campo kind y un switch, no jerarquías de clases; objetos con todos sus campos inicializados en el constructor; no mezclar enteros y dobles en el mismo array.
+• getPose de WebXR crea unos pocos objetos por frame: es inevitable y despreciable. El problema serían las asignaciones del bucle de 1 kHz.
+17.3 Hilos
+La sesión WebXR entrega los XRFrame en el hilo principal, y la física cuesta una fracción pequeña del frame. Ejecutar la física en el hilo principal, dentro del callback de requestAnimationFrame de la sesión XR, antes de actualizar la escena y renderizar. Un Worker añadiría latencia y complejidad (y SharedArrayBuffer exige aislamiento cross-origin con COOP/COEP). Reservar un Worker, si hiciera falta, para trabajo no crítico como la predicción de trayectorias de la IA.
+17.4 Tracking con WebXR
+Equivalencias con la sección 7:
+Sección 7
+En WebXR
+Pose del mando
+frame.getPose(inputSource.gripSpace, refSpace), con refSpace de tipo local-floor. Usar gripSpace, no targetRaySpace
+Velocidades del SDK
+pose.linearVelocity y pose.angularVelocity: pueden ser null según el navegador
+Tiempo de visualización
+frame.predictedDisplayTime (ms, DOMHighResTimeStamp)
+Confianza
+pose.emulatedPosition === true implica confianza baja
+Háptica
+inputSource.gamepad.hapticActuators[0].pulse(intensidad, ms): solo intensidad y duración, sin control de frecuencia
+Frecuencia de frame
+session.supportedFrameRates y session.updateTargetFrameRate(90) si el navegador lo implementa
+Consecuencias de diseño:
+1.  Una muestra por frame. WebXR no ofrece una vía estándar para consultar el mando a más de la frecuencia del frame, así que no hay polling a 250 Hz. El filtro de Kalman de 7.2 es todavía más importante, y la medida de velocidad del SDK debe ser opcional: si linearVelocity es null, el filtro funciona solo con posición.
+2.  predictedDisplayTime puede no existir. Está en el Meta Quest Browser, pero hay navegadores que no lo implementan. Hacer detección de funcionalidad y una alternativa, y comprobarlo en el Pico Browser antes de depender de él.
+3.  Interpolar en vez de extrapolar. En cada frame se actualiza primero el filtro con la muestra de ese frame (instante tD) y después se avanza la simulación desde tD del frame anterior hasta tD del actual, interpolando la raqueta con Hermite cúbico entre los dos estados filtrados (posición y velocidad) y con slerp con velocidad angular para la orientación. Como la muestra ya está en tD, no hace falta extrapolar y la pose de la raqueta en los subpasos es más precisa que en un SDK nativo con extrapolación.
+4.  Verificar en dispositivo que getPose devuelve poses predichas para el instante del frame; si no, tratar la muestra como medida en el tiempo del rAF y extrapolar con el filtro (modo de la sección 7.4).
+const hasPDT = 'predictedDisplayTime' in XRFrame.prototype;
+let frameDtEma = 1000 / 90;                                // ms, media móvil del intervalo de frame
+
+function displayTimeUs(frame: XRFrame, rafMs: number): number {
+  const ms = hasPDT ? (frame as any).predictedDisplayTime : rafMs + frameDtEma;
+  return Math.round(ms * 1000);                              // reloj de simulación en µs
+}
+
+function onXRFrame(rafMs: number, frame: XRFrame) {
+  const tD = displayTimeUs(frame, rafMs);
+  for (const src of frame.session.inputSources) {
+    if (!src.gripSpace) continue;
+    const pose = frame.getPose(src.gripSpace, refSpace);
+    if (!pose) continue;
+    const p = pose.transform.position, o = pose.transform.orientation;
+    const lv = pose.linearVelocity, av = pose.angularVelocity;  // pueden ser null
+    world.setRacketSample(idOf(src), tD, p.x, p.y, p.z, o.x, o.y, o.z, o.w,
+                          lv ? lv.x : NaN, lv ? lv.y : NaN, lv ? lv.z : NaN,
+                          av ? av.x : NaN, av ? av.y : NaN, av ? av.z : NaN,
+                          pose.emulatedPosition);
+  }
+  world.advance(tD);                                          // física hasta el tiempo de visualización
+  // ...actualizar la escena con world.ballRender y las raquetas, y renderizar
+}
+17.5 Rendimiento en el navegador
+• Presupuesto revisado para web: ≤ 0,5 ms de media y ≤ 1,2 ms en el peor frame (en Quest 2). El código JIT suele ser de 2 a 4 veces más lento que el nativo; con la estimación de la sección 9 (< 0,2 ms nativo) queda margen. Es una estimación que hay que medir.
+• Calentar el JIT al cargar. Antes de empezar el partido, ejecutar 2–3 s de simulación sintética (bola contra mesa, red y raqueta virtual) para que V8 optimice las rutas calientes y no haya una desoptimización en el primer golpe real.
+• Evitar funciones caras en el bucle: sustituir Math.pow(x, 1.5) por x * Math.sqrt(x); calcular una vez Math.exp(-dt/tau) para el paso fijo de 1 ms y recalcularlo solo en pasos parciales.
+• Medir en el visor: performance.now() alrededor de advance guardado en un anillo Float64Array (p50, p99 y máximo), un overlay de depuración dentro de la sesión, DevTools remoto por adb para el perfil de CPU y de asignaciones, y OVR Metrics Tool para el nivel de CPU y GPU. Criterio: 0 asignaciones por frame atribuibles a la física.
+• La mayor parte del coste de un juego web en VR suele estar en el renderizado y en las llamadas de dibujo, no en la física; mantener el frame total por debajo de 11,1 ms es un trabajo aparte y la física no debe empeorarlo.
+17.6 Determinismo y multijugador
+• En JavaScript, +, −, ×, ÷ y Math.sqrt están definidos por IEEE 754 y son reproducibles. Las funciones trascendentes (Math.exp, sin, cos, pow, atan2) dependen de la implementación del motor: el Quest Browser y el Pico Browser usan motores basados en Chromium, pero sus versiones pueden diferir.
+• Para multijugador, el esquema de autoridad del golpeador (sección 11) evita necesitar determinismo entre dispositivos: se envía el estado posterior al golpe, un Float64Array de unos 10 valores (~80 bytes más tiempo), por WebRTC DataChannel o WebSocket.
+• Para replays y tests, el determinismo en un mismo navegador y versión es suficiente. Si se quisiera lockstep entre dispositivos, evitar funciones trascendentes en el camino caliente o compilar el núcleo a WASM.
+17.7 API en TypeScript y bucle sin asignaciones
+// Estado de la bola: Float64Array(9) = [x,y,z, vx,vy,vz, wx,wy,wz]
+export class PhysicsWorld {
+  constructor(config: PhysicsConfig);
+  setRacketSample(id: number, tUs: number,
+                  px: number, py: number, pz: number,
+                  qx: number, qy: number, qz: number, qw: number,
+                  vx: number, vy: number, vz: number,          // NaN si el SDK no la da
+                  wx: number, wy: number, wz: number,          // NaN si el SDK no la da
+                  emulated: boolean): void;
+  advance(displayTimeUs: number): void;
+  readonly ballRender: Float64Array;                           // interpolado a displayTime
+  spawnBall(state: Float64Array): void;
+  readonly events: ContactEventRing;                           // anillo preasignado
+  predictTrajectory(state: Float64Array, horizonS: number, out: Float64Array): number;
+  snapshot(out: Float64Array): void;  restore(src: Float64Array): void;
+}
+Aceleración con escalares, sin objetos (el resto del RK4 de la sección 4 se escribe igual, con un Float64Array(3) de trabajo reutilizado):
+function accel(vx: number, vy: number, vz: number,
+               wx: number, wy: number, wz: number, out: Float64Array): void {
+  const rx = vx - WIND_X, ry = vy - WIND_Y, rz = vz - WIND_Z;
+  const sp = Math.sqrt(rx*rx + ry*ry + rz*rz);
+  let ax = 0, ay = -G, az = 0;
+  if (sp > 1e-4) {
+    const kd = -Q * CD * sp;                                   // Q = 0.5*RHO*A/M
+    ax += rx * kd; ay += ry * kd; az += rz * kd;               // arrastre
+    const cx = wy*rz - wz*ry, cy = wz*rx - wx*rz, cz = wx*ry - wy*rx;   // w x vr
+    const nrm = Math.sqrt(cx*cx + cy*cy + cz*cz);
+    if (nrm > 1e-6) {
+      const S = R * nrm / (sp * sp);                           // parámetro de spin
+      const cl = MAGNUS_GAIN / (2 + 1 / S);
+      const km = Q * cl * sp * sp / nrm;
+      ax += cx * km; ay += cy * km; az += cz * km;             // Magnus
+    }
+  }
+  out[0] = ax; out[1] = ay; out[2] = az;
+}
+17.8 Pruebas y mediciones
+• Los tests de la sección 12.1 se ejecutan en Node con un runner (Vitest o Jest) sobre el módulo sin DOM, y un benchmark aparte con performance.now() para el coste por paso.
+• Para integración, un emulador WebXR de escritorio (por ejemplo, Immersive Web Emulator) sirve para depurar el flujo, pero la validación de tracking, latencia y rendimiento debe hacerse en Quest y Pico reales, con sus navegadores.
+• Grabar y reproducir flujos de muestras de tracking (tUs, posición, cuaternión y velocidades opcionales por frame) en JSON para regresión de golpes.
+• Hito adicional M0 (antes de M1): prototipo medido en el Quest Browser con un millón de pasos RK4 sin asignaciones y un bucle de 90 FPS con una bola y una raqueta, para confirmar el presupuesto de 17.5 antes de invertir en el resto.

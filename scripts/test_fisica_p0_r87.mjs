@@ -1,0 +1,180 @@
+#!/usr/bin/env node
+/* CRAZY PING PONG · ARNÉS P0 r87 — los cuatro correctivos del informe del
+ * dueño tras la V3.6.177 en el visor (V3.6.178-SDK6). Ejecuta la FUENTE REAL
+ * en Node (patrón test_fisica_p0_r86) y verifica COMPORTAMIENTO:
+ *   P0-1 REV2 · bola en mano LIBRE: el reanclaje vive SOLO en tossFromHand
+ *               (la rama de bola en mano ya NO empuja nada)
+ *   P0-7      · la inmunidad del toss exige bola SUBIENDO (vel.y > 0): la
+ *               caída vuelve a ver la pala — nunca más la atraviesa
+ *   P0-9      · §7.5-LITE: glitch de tracking (salto implícito > 30 m/s) ⇒
+ *               velocidad CERO + ventana limpia + cuarentena 100 ms que
+ *               BLOQUEA el contacto; un smash real de 12 m/s NO es glitch
+ *   P0-8      · conducción natural del rival: objetivo suavizado (goal) +
+ *               arco de aproximación + SUELO sobre la mesa (comportamiento)
+ * Uso: node --no-warnings scripts/test_fisica_p0_r87.mjs
+ */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import * as THREE from 'three';
+
+globalThis.window = globalThis.window || globalThis;
+const _mr = Math.random;
+let _seed = 0x9e3779b9;
+Math.random = () => {
+  _seed |= 0; _seed = (_seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(_seed ^ (_seed >>> 15), 1 | _seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+const { c05, c04, c06, DIMS } = await (async () => {
+  const m5 = await import(fileURLToPath(new URL('../src/game/core/c05_colisiones_ia_golpeo.js', import.meta.url)));
+  const m4 = await import(fileURLToPath(new URL('../src/game/core/c04_fisica_ccd.js', import.meta.url)));
+  const m2 = await import(fileURLToPath(new URL('../src/game/core/c02_cfg_escena.js', import.meta.url)));
+  const m6 = await import(fileURLToPath(new URL('../src/game/core/c06_logros_stats_ia_rival.js', import.meta.url)));
+  return { c05: m5, c04: m4, c06: m6, DIMS: m2.DIMS };
+})();
+
+const RAIZ = new URL('..', import.meta.url).pathname;
+const src = (f) => readFileSync(RAIZ + f, 'utf-8');
+const c00s = src('src/game/core/c00_pre_three.js');
+const c02s = src('src/game/core/c02_cfg_escena.js');
+const c04s = src('src/game/core/c04_fisica_ccd.js');
+const c05s = src('src/game/core/c05_colisiones_ia_golpeo.js');
+const c06s = src('src/game/core/c06_logros_stats_ia_rival.js');
+const c12s = src('src/game/core/c12_pingponggame.js');
+
+let ok = 0, fails = 0;
+function aguja(nombre, cond, detalle = '') {
+  if (cond) { ok++; console.log(`  ✓ ${nombre}`); }
+  else { fails++; console.log(`  ✗ ${nombre}${detalle ? ' — ' + detalle : ''}`); }
+}
+const C = DIMS.tableCenterZ;
+
+/* — P0-1 REV2 · bola en mano LIBRE; el reanclaje vive en tossFromHand ——— */
+{
+  const i0 = c12s.indexOf('bola apoyada en la mano libre');
+  const iFin = c12s.indexOf('} else {', i0);
+  const ramaMano = c12s.slice(i0, iFin);
+  aguja('P0-1 · la rama de bola en mano NO reancla (bola libre sobre la mesa)',
+    i0 > 0 && iFin > i0 && !ramaMano.includes('srv_reancla'));
+
+  const a0 = c12s.indexOf('tossFromHand(i, assisted)');
+  const aFin = c12s.indexOf('this.tossed = true;', a0);
+  const span = c12s.slice(a0, aFin);
+  aguja('P0-1 · el reanclaje nace en tossFromHand ANTES de sellar el toss',
+    a0 > 0 && aFin > a0 && span.includes('srv_reancla') &&
+    span.includes('DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10'));
+  aguja('P0-1 · el aviso sigue siendo UNA vez por intento (_srvReanclaAviso)',
+    c12s.includes('_srvReanclaAviso = false') && span.includes('_srvReanclaAviso'));
+}
+
+/* — P0-7 · inmunidad del toss SOLO mientras la bola sube ——————————————— */
+{
+  const i0 = c12s.indexOf('const tossImmune');
+  const iFin = c12s.indexOf('if (tossImmune) pads.length = 0;', i0);
+  const span = c12s.slice(i0, iFin);
+  aguja('P0-7 · la inmunidad exige bola SUBIENDO (vel.y > 0)',
+    i0 > 0 && iFin > i0 && span.includes('this.ball.vel.y > 0'));
+  aguja('P0-7 · la inmunidad sigue vaciando pads (el roce prematuro sigue muerto)',
+    iFin > i0);
+  aguja('P0-7 · la altura ABSOLUTA del lanzamiento asistido sigue viva (P0-2)',
+    c12s.includes('2 * Math.abs(DIMS.gravity) * dH'));
+}
+
+/* — P0-9 · §7.5-LITE · glitch de tracking: velocidad CERO + cuarentena —— */
+{
+  // (a) detección + higiene completa
+  const p = c04.createPaddleSim('player', 0);
+  const q = new THREE.Quaternion();
+  c04.updatePaddleSim(p, new THREE.Vector3(0, 1, 1.01), q, 16.7, 0.016);   // primera muestra
+  c04.updatePaddleSim(p, new THREE.Vector3(0, 1, 2.01), q, 16.7 + 16, 0.016); // salto 1 m / 16 ms = 62 m/s
+  aguja('P0-9 · salto implícito 62 m/s > 30 ⇒ glitch detectado',
+    p.glitchT > 0.08 && p.glitchT < 0.10);
+  aguja('P0-9 · velocidad CERO (ni vel ni velInst ni omega contaminadas)',
+    p.vel.lengthSq() === 0 && p.velInst.lengthSq() === 0 && p.omega.lengthSq() === 0);
+  aguja('P0-9 · ventana de velocidad limpia (el buffer no alimenta el lerp)',
+    p.velBuf.length === 0);
+
+  // (b) la cuarentena BLOQUEA el contacto real (mismo barrido que sí golpea)
+  //     Cara de la pala mirando a +z (base por defecto), bola entrando
+  //     PERPENDICULAR a la cara a la altura del centro de la hoja.
+  const yHoja = 1.0 + DIMS.bladeCenterUp;
+  const mkBola = () => ({
+    pos: new THREE.Vector3(0, yHoja, C + 0.05),
+    vel: new THREE.Vector3(0, 0, -2.5), spin: new THREE.Vector3(),
+    __ppRestIdx: -1,
+  });
+  const pC = c04.createPaddleSim('player', 0);
+  pC.pos.set(0, 1.0, C); pC.prev.copy(pC.pos); pC.active = true;
+  const evs = [];
+  pC.glitchT = 0;                       // CONTROL: la bola debe GOLPEAR
+  c05.stepPhysics(0.016, mkBola(), [pC], evs);
+  const golpearonCtrl = evs.some((e) => e.type === 'paddle');
+  const pG = c04.createPaddleSim('player', 1);
+  pG.pos.set(0, 1.0, C); pG.prev.copy(pG.pos); pG.active = true;
+  pG.glitchT = DIMS.paddleGlitchT;      // CUARENTENA: mismo barrido, sin contacto
+  const evsG = [];
+  c05.stepPhysics(0.016, mkBola(), [pG], evsG);
+  aguja('P0-9 · control: la bola que cae sobre la pala quieta GOLPEA (evento)',
+    golpearonCtrl);
+  aguja('P0-9 · con glitchT > 0 el MISMO barrido NO fabrica contacto',
+    !evsG.some((e) => e.type === 'paddle'));
+
+  // (c) un smash REAL (12 m/s implícitos a dt de frame) NUNCA es glitch
+  const pR = c04.createPaddleSim('player', 2);
+  c04.updatePaddleSim(pR, new THREE.Vector3(0, 1, 1), q, 40, 0.0833);
+  c04.updatePaddleSim(pR, new THREE.Vector3(0, 1, 2), q, 56, 0.0833);  // 1 m / 83 ms = 12 m/s
+  aguja('P0-9 · smash real 12 m/s a dt de frame ⇒ SIN cuarentena (vel viva)',
+    pR.glitchT === 0 && pR.vel.length() > 5);
+  aguja('P0-9 · parámetros en datos (DIMS.paddleGlitchSpeed/T)',
+    DIMS.paddleGlitchSpeed === 30 && DIMS.paddleGlitchT === 0.10);
+  aguja('P0-9 · la puerta de cuarentena vive en collidePaddleSweep',
+    c05s.includes('if (pad.glitchT > 0) return false;'));
+}
+
+/* — P0-8 · conducción natural del rival ———————————————————————————————— */
+{
+  const cfg = { predictInterval: 0.2, errStd: 0.03, maxSpeed: 6, accel: 8,
+    missBase: 0.2, smash: 0.3, minT: 0.5, maxT: 0.9, maxShotSpeed: 12 };
+  const ai = new c06.OpponentAI(cfg, 1, new THREE.Vector3(0, 1.0, C + DIMS.tableHalfLength + 0.4));
+  // (a) SUELO sobre la mesa: pala dentro de la huella y por DEBAJO del tablero
+  ai.pos.set(0, DIMS.tableTopY - 0.05, C);
+  ai.vel.set(0, -1, 0);
+  const bolaLejos = { pos: new THREE.Vector3(0, 2, C - 2), vel: new THREE.Vector3(0, 0, 1),
+    spin: new THREE.Vector3() };
+  const ctx = { canHit: false, validBounce: false, rallyHits: 0,
+    holdTarget: null, prevBall: null };
+  ai.update(0.016, bolaLejos, ctx);
+  aguja('P0-8 · la pala de la IA JAMÁS queda bajo la mesa (suelo topR + 3 cm)',
+    ai.pos.y >= DIMS.tableTopY + 0.029);
+
+  // (b) objetivo suavizado: el goal persigue, no salta (anti-zigzag)
+  const bolaMovida = { pos: new THREE.Vector3(1.5, 2, C - 2), vel: new THREE.Vector3(0, 0, 1),
+    spin: new THREE.Vector3() };
+  const goal0 = ai.goal.clone();
+  ai.update(0.016, bolaMovida, ctx);
+  const movio = ai.goal.distanceTo(goal0);
+  const faltaba = ai.goal.distanceTo(new THREE.Vector3(
+    ai.home.x + bolaMovida.pos.x * 0.3, ai.home.y,
+    ai.home.z + (bolaMovida.vel.z * ai.sign > 0 ? -ai.sign * 0.2 : 0)));
+  aguja('P0-8 · el objetivo se PERSIGUE con constante 90 ms (ni salto ni congelado)',
+    movio > 1e-4 && faltaba > 1e-3);
+
+  // (c) agujas estáticas del arco y del suelo (el arnés de rallies valida I1-I5)
+  aguja('P0-8 · arco de aproximación + suelo sobre mesa en el fuente (c06)',
+    c06s.includes('ARCO DE APROXIMACIÓN') && c06s.includes('SUELO SOBRE LA MESA') &&
+    c06s.includes('this.goal.lerp(tmpT'));
+  aguja('P0-8 · rascador sin asignaciones (_aiArc module-scope)',
+    c06s.includes('const _aiArc = new THREE.Vector3()'));
+}
+
+/* — identidad del build ————————————————————————————————————————————————— */
+{
+  aguja('versión · c00 sella 3.6.178-SDK6', c00s.includes('3.6.178-SDK6'));
+  aguja('guard · c02 lleva los parámetros del glitch en datos',
+    c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
+}
+
+console.log(`\nARNÉS P0 r87 · ${ok} OK · ${fails} FALLOS`);
+process.exit(fails ? 1 : 0);

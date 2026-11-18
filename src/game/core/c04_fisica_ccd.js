@@ -178,6 +178,7 @@ export function createPaddleSim(who, index) {
     prevRight: new THREE.Vector3(1, 0, 0),
     prevUp: new THREE.Vector3(0, 1, 0),
     cooldown: 0,
+    glitchT: 0,   // r87 §7.5-lite: s de cuarentena de contactos tras un glitch
     who,
     index,
     active: false,
@@ -232,7 +233,23 @@ export function updatePaddleSim(ps, pos, quat, now, dt) {
   ps.pos.copy(pos);
   setPaddleBasis(ps, quat);
 
-  if (ps.prevT > 0 && dt > 0) {
+  // r87 · §7.5-LITE · DETECCIÓN DEL GLITCH ANTES DE DERIVAR VELOCIDAD: si la
+  // muestra salta más de paddleGlitchSpeed·dt (re-centrado, hitch del casco,
+  // pérdida momentánea de tracking), esta ventana de velocidad está
+  // CONTAMINADA por completo — se descarta, se limpia el buffer y la pala
+  // entra en cuarentena de contactos (paddleGlitchT, consume collidePaddleSweep).
+  // Cero asignaciones: tres escalares + un length = 0.
+  const _gDt = (ps.prevT > 0 && dt > 0 && dt < 0.2) ? dt : 0;
+  const _gGlitch = _gDt > 0 &&
+    ps.pos.distanceToSquared(ps.prev) > DIMS.paddleGlitchSpeed * DIMS.paddleGlitchSpeed * _gDt * _gDt;
+  if (_gGlitch) {
+    ps.glitchT = DIMS.paddleGlitchT;
+    ps.velBuf.length = 0;
+    ps.omega.set(0, 0, 0);   // el Δω del salto también está contaminado
+  }
+  if (ps.glitchT > 0) ps.glitchT = Math.max(0, ps.glitchT - dt);
+
+  if (ps.prevT > 0 && dt > 0 && !_gGlitch) {
     tmpV.copy(ps.pos).sub(ps.prev).divideScalar(dt);
     // v2.29: velocidad INSTANTÁNEA disponible (con techo anti-picos)
     ps.velInst.copy(tmpV);
@@ -260,7 +277,8 @@ export function updatePaddleSim(ps, pos, quat, now, dt) {
   tmpDeltaQ.copy(ps.prevQuat).invert().premultiply(quat);
   if (tmpDeltaQ.w < 0) tmpDeltaQ.set(-tmpDeltaQ.x, -tmpDeltaQ.y, -tmpDeltaQ.z, -tmpDeltaQ.w);
   const ang = 2 * Math.acos(Math.min(1, tmpDeltaQ.w));
-  if (ang > 1e-4 && dt > 0) {
+  // r87: en el frame del glitch el Δω del salto NUNCA entra (omega ya a cero)
+  if (ang > 1e-4 && dt > 0 && !_gGlitch) {
     const s = Math.sqrt(Math.max(1e-12, 1 - tmpDeltaQ.w * tmpDeltaQ.w));
     tmpV.set(tmpDeltaQ.x / s, tmpDeltaQ.y / s, tmpDeltaQ.z / s).multiplyScalar(ang / dt);
     ps.omega.lerp(tmpV, BOTE_TUNE.omegaLerp);

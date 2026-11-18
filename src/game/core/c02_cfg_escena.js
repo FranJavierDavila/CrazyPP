@@ -32,6 +32,20 @@ export const DIMS = {
   // 16 mantiene la guarda anti-picos de tracking (picos de 30+ m/s de un
   // frame siguen recortándose) pero deja pasar el swing real.
   paddleVelClamp: 16,       // r113: antes 12 — el smash real ya no se recorta
+  // --- r87 · §7.5-LITE · CUARENTENA POR GLITCH DE TRACKING (estudio técnico
+  // §7.5: «salto de posición entre muestras = glitch → reiniciar el filtro y
+  // desactivar los contactos ~100 ms, sin impulsos por teletransporte») —
+  // el informe del dueño: «en algunos golpes puntuales la pelota adquiere
+  // una fuerza anormal, con un pequeño gesto sale disparada». La causa era
+  // un re-centrado/hitch del casco convertido en velocidad por diferencias
+  // finitas y multiplicado por el modelo impulsivo. El techo 16 (r113) ya
+  // acota la muestra; aquí se mata el BLOQUE entero (ventana + lerp).
+  // Umbral por VELOCIDAD IMPLÍCITA (salto/dt), no distancia fija: con
+  // dtFis hasta 1/12 s un smash REAL de 16 m/s cubre 1,33 m en un frame —
+  // un umbral de metros lo cuarentenaría. 30 m/s = 2× el techo del swing
+  // real: un gesto humano jamás lo alcanza; un re-centrado sí.
+  paddleGlitchSpeed: 30,    // m/s implícitos que delatan un salto de tracking
+  paddleGlitchT: 0.10,      // s de contactos en cuarentena tras el glitch
   // --- r100/r101 · CONTACTO DE REPOSO pala-bola (el estándar Eleven) ---
   // Petición del dueño: «si paramos la bola sobre la pala va a trompicones…
   // y si levanto la pala la bola la atraviesa». r100 lo implementó con

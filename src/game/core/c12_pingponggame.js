@@ -9979,6 +9979,21 @@ export class PingPongGame {
         if (v.y < vyAbs) v.y = vyAbs;
       }
     }
+    // r87 · P0-1 REV2 · REANCLAJE EN EL INSTANTE DE SOLTAR (venía de r86
+    // P0-1, que lo corría CADA FRAME con la bola en la mano y era imposible
+    // pasearla sobre la mesa — informe del dueño). Mientras la bola está en
+    // la mano es LIBRE; al soltar, si el punto de suelta cae dentro de la
+    // huella del tablero (|x| ≤ halfW+r · |z−C| ≤ halfL+r), la bola se
+    // empuja FUERA a línea de fondo +0,10 con el aviso UNA vez por intento
+    // (el flag se rearma en resetToss) — la legalidad manda SOLO al soltar.
+    if (Math.abs(this.ball.pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius &&
+        Math.abs(this.ball.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + DIMS.ballRadius) {
+      this.ball.pos.z = DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10;
+      if (!this._srvReanclaAviso) {
+        this._srvReanclaAviso = true;
+        this.rules.message = T('srv_reancla');
+      }
+    }
     this.tossed = true;
     this.tossTimer = 0;
     this.apexSignaled = false;
@@ -18064,21 +18079,15 @@ export class PingPongGame {
               this.ball.pos.copy(this.camera.position).addScaledVector(fSrv, 0.35);
               this.ball.pos.y = Math.max(0.55, this.ball.pos.y - 0.55);
             }
-            // r86 · P0-1 · REANCLAJE DEL PUNTO DE SAQUE: la bola en mano NUNCA
-            // nace bajo la huella del tablero (oculta por la geometría y a una
-            // cota sin saque legal — «soltar la bola con la pala bajo la mesa
-            // no funciona y desaparece la bola»). Si la mano queda dentro de
-            // la huella (|x| ≤ halfW+r · |z−C| ≤ halfL+r), la bola se empuja
-            // FUERA hacia el jugador (línea de fondo + 0,10 m) con aviso UNA
-            // vez por intento (el flag se rearma en resetToss).
-            if (Math.abs(this.ball.pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius &&
-                Math.abs(this.ball.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + DIMS.ballRadius) {
-              this.ball.pos.z = DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10;
-              if (!this._srvReanclaAviso) {
-                this._srvReanclaAviso = true;
-                this.rules.message = T('srv_reancla');
-              }
-            }
+            // r87 · P0-1 REV2 (informe del dueño: «si tienes la bola en la
+            // mano para sacar y la desplazas sobre la mesa automáticamente
+            // te la desplaza fuera, lo que es incorrecto»): el reanclaje del
+            // P0-1 CORRÍA CADA FRAME mientras la bola está EN LA MANO —
+            // era imposible pasearla sobre la mesa. La bola en mano vuelve a
+            // ser LIBRE (cinemática pura, sigue al mando donde esté); el
+            // reanclaje vive ahora SOLO en el INSTANTE DE SOLTAR (ver el
+            // arranque del toss, este mismo round): ahí la legalidad del
+            // saque manda — huella dentro ⇒ línea de fondo +0,10 + aviso.
           } else {
             // bola lanzada: física real
             this.tossTimer += dt;
@@ -18298,9 +18307,20 @@ export class PingPongGame {
       // anulaba el saque y la bola CHISPAZABA de vuelta a la mano: el bucle
       // «lanzamiento anulado» que hacía el saque casi imposible. La misma
       // subida continúa y el golpeo legítimo llega unos cm más arriba.
+      // r87 · P0-7 (informe del dueño: «si dejamos caer la bola en el saque
+      // con la pala quieta la atraviesa»): la inmunidad vivía TODO el vuelo
+      // mientras (tossMaxY−tossReleaseY) < tossMinRise — un lanzamiento flojo
+      // o una bola SOLTADA (sin fuerza) jamás alcanzaba el rise mínimo y la
+      // pala quedaba INVISIBLE para la bola en toda la caída: la atravesaba
+      // y moría en el suelo sin feedback. La inmunidad ahora EXIGE que la
+      // bola esté SUBIENDO (vel.y > 0): en cuanto el vuelo se vuelve a caída,
+      // la pala de la casa vuelve a estar ahí (bote, apoyo o golpe — física
+      // de siempre); el rise mínimo sigue decidiendo la LEGALIDAD del golpe
+      // en su sitio (hint_toss_high), no la existencia del contacto.
       const tossImmune = this.tossed && this.rules.state === 'serve' &&
         this.rules.server === 'player' && !this.calib &&
-        ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise;
+        ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise &&
+        this.ball.vel.y > 0;
       if (tossImmune) pads.length = 0;
       // v3.6.71 · r79 · FSM DE LA BOLA (autoridad por mitad, spec §7):
       // fantasma = bola del rival simulo con la FÍSICA REAL.

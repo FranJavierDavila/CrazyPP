@@ -23,6 +23,11 @@ const tmpAim2 = new THREE.Vector3();
  * Devuelve true si hubo golpe (respuesta clásica ya aplicada). */
 export function collidePaddleSweep(ball, pad, kA, kB, events) {
   let imanAimUsado = false;   // v3.6.49: el golpe de este subpaso fue GUIADO por el Súper Imán
+  // r87 · §7.5-LITE · CUARENTENA: con la pala en glitch (salto de tracking
+  // recién detectado) NO hay contacto — el par prev→pos cruza el espacio y
+  // el barrido fabricaría un golpe imposible. Los test headless fijan pos a
+  // mano sin updatePaddleSim: glitchT indefinido ⇒ undefined > 0 = false.
+  if (pad.glitchT > 0) return false;
   // --- poses A (kA) y B (kB) de la pala dentro del frame (nlerp como v2.29) ---
   ccdPosA.copy(pad.prev).lerp(pad.pos, kA);
   ccdNrmA.copy(pad.prevNormal).lerp(pad.normal, kA).normalize();

@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.177-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.178-SDK6</span>
     </div>
   </main>
 
@@ -3642,7 +3642,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.177-SDK6';
+  const VERSION = '3.6.178-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -4507,6 +4507,20 @@ const DIMS = {
   // 16 mantiene la guarda anti-picos de tracking (picos de 30+ m/s de un
   // frame siguen recortándose) pero deja pasar el swing real.
   paddleVelClamp: 16,       // r113: antes 12 — el smash real ya no se recorta
+  // --- r87 · §7.5-LITE · CUARENTENA POR GLITCH DE TRACKING (estudio técnico
+  // §7.5: «salto de posición entre muestras = glitch → reiniciar el filtro y
+  // desactivar los contactos ~100 ms, sin impulsos por teletransporte») —
+  // el informe del dueño: «en algunos golpes puntuales la pelota adquiere
+  // una fuerza anormal, con un pequeño gesto sale disparada». La causa era
+  // un re-centrado/hitch del casco convertido en velocidad por diferencias
+  // finitas y multiplicado por el modelo impulsivo. El techo 16 (r113) ya
+  // acota la muestra; aquí se mata el BLOQUE entero (ventana + lerp).
+  // Umbral por VELOCIDAD IMPLÍCITA (salto/dt), no distancia fija: con
+  // dtFis hasta 1/12 s un smash REAL de 16 m/s cubre 1,33 m en un frame —
+  // un umbral de metros lo cuarentenaría. 30 m/s = 2× el techo del swing
+  // real: un gesto humano jamás lo alcanza; un re-centrado sí.
+  paddleGlitchSpeed: 30,    // m/s implícitos que delatan un salto de tracking
+  paddleGlitchT: 0.10,      // s de contactos en cuarentena tras el glitch
   // --- r100/r101 · CONTACTO DE REPOSO pala-bola (el estándar Eleven) ---
   // Petición del dueño: «si paramos la bola sobre la pala va a trompicones…
   // y si levanto la pala la bola la atraviesa». r100 lo implementó con
@@ -8127,6 +8141,7 @@ function createPaddleSim(who, index) {
     prevRight: new THREE.Vector3(1, 0, 0),
     prevUp: new THREE.Vector3(0, 1, 0),
     cooldown: 0,
+    glitchT: 0,   // r87 §7.5-lite: s de cuarentena de contactos tras un glitch
     who,
     index,
     active: false,
@@ -8181,7 +8196,23 @@ function updatePaddleSim(ps, pos, quat, now, dt) {
   ps.pos.copy(pos);
   setPaddleBasis(ps, quat);
 
-  if (ps.prevT > 0 && dt > 0) {
+  // r87 · §7.5-LITE · DETECCIÓN DEL GLITCH ANTES DE DERIVAR VELOCIDAD: si la
+  // muestra salta más de paddleGlitchSpeed·dt (re-centrado, hitch del casco,
+  // pérdida momentánea de tracking), esta ventana de velocidad está
+  // CONTAMINADA por completo — se descarta, se limpia el buffer y la pala
+  // entra en cuarentena de contactos (paddleGlitchT, consume collidePaddleSweep).
+  // Cero asignaciones: tres escalares + un length = 0.
+  const _gDt = (ps.prevT > 0 && dt > 0 && dt < 0.2) ? dt : 0;
+  const _gGlitch = _gDt > 0 &&
+    ps.pos.distanceToSquared(ps.prev) > DIMS.paddleGlitchSpeed * DIMS.paddleGlitchSpeed * _gDt * _gDt;
+  if (_gGlitch) {
+    ps.glitchT = DIMS.paddleGlitchT;
+    ps.velBuf.length = 0;
+    ps.omega.set(0, 0, 0);   // el Δω del salto también está contaminado
+  }
+  if (ps.glitchT > 0) ps.glitchT = Math.max(0, ps.glitchT - dt);
+
+  if (ps.prevT > 0 && dt > 0 && !_gGlitch) {
     tmpV.copy(ps.pos).sub(ps.prev).divideScalar(dt);
     // v2.29: velocidad INSTANTÁNEA disponible (con techo anti-picos)
     ps.velInst.copy(tmpV);
@@ -8209,7 +8240,8 @@ function updatePaddleSim(ps, pos, quat, now, dt) {
   tmpDeltaQ.copy(ps.prevQuat).invert().premultiply(quat);
   if (tmpDeltaQ.w < 0) tmpDeltaQ.set(-tmpDeltaQ.x, -tmpDeltaQ.y, -tmpDeltaQ.z, -tmpDeltaQ.w);
   const ang = 2 * Math.acos(Math.min(1, tmpDeltaQ.w));
-  if (ang > 1e-4 && dt > 0) {
+  // r87: en el frame del glitch el Δω del salto NUNCA entra (omega ya a cero)
+  if (ang > 1e-4 && dt > 0 && !_gGlitch) {
     const s = Math.sqrt(Math.max(1e-12, 1 - tmpDeltaQ.w * tmpDeltaQ.w));
     tmpV.set(tmpDeltaQ.x / s, tmpDeltaQ.y / s, tmpDeltaQ.z / s).multiplyScalar(ang / dt);
     ps.omega.lerp(tmpV, BOTE_TUNE.omegaLerp);
@@ -8343,6 +8375,11 @@ const tmpAim2 = new THREE.Vector3();
  * Devuelve true si hubo golpe (respuesta clásica ya aplicada). */
 function collidePaddleSweep(ball, pad, kA, kB, events) {
   let imanAimUsado = false;   // v3.6.49: el golpe de este subpaso fue GUIADO por el Súper Imán
+  // r87 · §7.5-LITE · CUARENTENA: con la pala en glitch (salto de tracking
+  // recién detectado) NO hay contacto — el par prev→pos cruza el espacio y
+  // el barrido fabricaría un golpe imposible. Los test headless fijan pos a
+  // mano sin updatePaddleSim: glitchT indefinido ⇒ undefined > 0 = false.
+  if (pad.glitchT > 0) return false;
   // --- poses A (kA) y B (kB) de la pala dentro del frame (nlerp como v2.29) ---
   ccdPosA.copy(pad.prev).lerp(pad.pos, kA);
   ccdNrmA.copy(pad.prevNormal).lerp(pad.normal, kA).normalize();
@@ -10164,6 +10201,13 @@ class OpponentAI {
     this._ppPortalVisto = false;   // v3.6.42: flanco de la marca del portal
     this.swing = null;   // animación de follow-through del último golpe (v2.17)
     this.prep = new THREE.Vector3();   // retroceso de preparación (visual)
+    // r87 · P0-8 · OBJETIVO SUAVIZADO de la conducción (el informe del dueño:
+    // «la pala del rival se teletransporta… nunca describe curvas suaves»).
+    // this.goal persigue el objetivo lógico con constante temporal 90 ms:
+    // ni la re-predicción (lerp 0,45) ni los cambios de estado sacuden la
+    // dirección de la velocidad — la pala entra al punto describiendo curva.
+    this.goal = home.clone();
+    this._goalInit = false;
     // v2.23: lado del golpe en curso — +1 derecha (forehand), -1 revés.
     // Se sortea al APARECER la bola (con la posición del cuerpo aún lejos del
     // punto de contacto) y se mantiene durante todo el rallye de esa bola.
@@ -10181,6 +10225,8 @@ class OpponentAI {
   reset() {
     this.pos.copy(this.home);
     this.vel.set(0, 0, 0);
+    this.goal.copy(this.home);
+    this._goalInit = false;
     this.predictValid = false;
     this.hitCooldown = 0;
     this._ppPortalVisto = false;   // v3.6.42: el flanco del portal a limpio
@@ -10310,8 +10356,34 @@ class OpponentAI {
       );
     }
 
-    tmpD.copy(tmpT).sub(this.pos);
-    const dist = tmpD.length();
+    // r87 · P0-8 · CONDUCCIÓN NATURAL del rival (informe del dueño: «la pala
+    // del rival se teletransporta, va en línea recta; un jugador real no
+    // atraviesa la mesa, procura el punto dulce y describe curvas suaves
+    // que acompañan al golpe»). Tres piezas sobre el steering de siempre
+    // (mismos clamps, cero asignaciones en el bucle):
+    //  (a) OBJETIVO SUAVIZADO: this.goal persigue tmpT con constante 90 ms —
+    //      el lerp 0,45 de la re-predicción y los flancos de estado dejan de
+    //      sacudir la dirección de la velocidad (adiós zigzag/teletransporte).
+    //  (b) ARCO DE APROXIMACIÓN: al cerrar con el punto de contacto (< 0,55 m)
+    //      el rumbo se mezcla con una componente TANGENTE al lado del golpe
+    //      (fhSide), con peso senoidal que NACE en el horizonte, CULMINA a
+    //      media distancia y MUERE en el contacto — la pala entra al punto
+    //      describiendo un arco que acompaña al swing (nunca órbita: al
+    //      llegar, el rumbo es directo).
+    //  (c) SUELO SOBRE LA MESA: el tránsito por la huella JAMÁS baja del
+    //      tablero + 3 cm — la pala nunca atraviesa la mesa.
+    const _gk = 1 - Math.exp(-dt / 0.09);            // (a) k independiente del frame rate
+    if (!this._goalInit) { this.goal.copy(tmpT); this._goalInit = true; }
+    this.goal.lerp(tmpT, _gk);
+    tmpD.copy(this.goal).sub(this.pos);
+    let dist = tmpD.length();
+    if (this.predictValid && ctx.canHit && dist < 0.55 && dist > 0.05) {   // (b)
+      const _u = Math.min(1, Math.max(0, (0.55 - dist) / 0.50));
+      _aiArc.set(-tmpD.z, 0, tmpD.x).normalize()
+        .multiplyScalar(sign * (this.fhSide || 1) * 0.75 * Math.sin(Math.PI * _u));
+      tmpD.add(_aiArc);
+      dist = tmpD.length();
+    }
     // v3.6.37 · SÚPER EFECTO NOTORIO: con la bola marcada viniendo, el rival
     // va un % más lento (le CUESTA llegar — visible y honesto: la física de
     // salida no cambia, solo las piernas de la IA mientras sufre el efecto).
@@ -10326,6 +10398,13 @@ class OpponentAI {
     if (dist > 1e-5) tmpD.setLength(desiredSpeed); else tmpD.set(0, 0, 0);
     this.vel.lerp(tmpD, Math.min(1, dt * this.cfg.accel));
     this.pos.addScaledVector(this.vel, dt);
+    // (c) suelo sobre la mesa: dentro de la huella, jamás bajo topR + 3 cm
+    if (Math.abs(this.pos.x) < DIMS.tableHalfWidth + DIMS.ballRadius &&
+        Math.abs(this.pos.z - DIMS.tableCenterZ) < DIMS.tableHalfLength + DIMS.ballRadius &&
+        this.pos.y < DIMS.tableTopY + 0.03) {
+      this.pos.y = DIMS.tableTopY + 0.03;
+      if (this.vel.y < 0) this.vel.y = 0;
+    }
 
     if (!ctx.canHit || !ctx.validBounce || !toward || this.hitCooldown > 0) return null;
     // v2.84 · ALCANCE BARRIDO (anti-túnel): la decisión llega un frame tarde
@@ -10613,6 +10692,7 @@ const _segAP = new THREE.Vector3();
 const _segC = new THREE.Vector3();
 const _miV = new THREE.Vector3();
 const _miD = new THREE.Vector3();
+const _aiArc = new THREE.Vector3();   // r87 P0-8: rascador del arco de aproximación
 
 /* =====================================================================
  *  ESCENA · sala, mesa reglamentaria, bola con estela, rival con cuerpo,
@@ -29447,6 +29527,21 @@ class PingPongGame {
         if (v.y < vyAbs) v.y = vyAbs;
       }
     }
+    // r87 · P0-1 REV2 · REANCLAJE EN EL INSTANTE DE SOLTAR (venía de r86
+    // P0-1, que lo corría CADA FRAME con la bola en la mano y era imposible
+    // pasearla sobre la mesa — informe del dueño). Mientras la bola está en
+    // la mano es LIBRE; al soltar, si el punto de suelta cae dentro de la
+    // huella del tablero (|x| ≤ halfW+r · |z−C| ≤ halfL+r), la bola se
+    // empuja FUERA a línea de fondo +0,10 con el aviso UNA vez por intento
+    // (el flag se rearma en resetToss) — la legalidad manda SOLO al soltar.
+    if (Math.abs(this.ball.pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius &&
+        Math.abs(this.ball.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + DIMS.ballRadius) {
+      this.ball.pos.z = DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10;
+      if (!this._srvReanclaAviso) {
+        this._srvReanclaAviso = true;
+        this.rules.message = T('srv_reancla');
+      }
+    }
     this.tossed = true;
     this.tossTimer = 0;
     this.apexSignaled = false;
@@ -37532,21 +37627,15 @@ class PingPongGame {
               this.ball.pos.copy(this.camera.position).addScaledVector(fSrv, 0.35);
               this.ball.pos.y = Math.max(0.55, this.ball.pos.y - 0.55);
             }
-            // r86 · P0-1 · REANCLAJE DEL PUNTO DE SAQUE: la bola en mano NUNCA
-            // nace bajo la huella del tablero (oculta por la geometría y a una
-            // cota sin saque legal — «soltar la bola con la pala bajo la mesa
-            // no funciona y desaparece la bola»). Si la mano queda dentro de
-            // la huella (|x| ≤ halfW+r · |z−C| ≤ halfL+r), la bola se empuja
-            // FUERA hacia el jugador (línea de fondo + 0,10 m) con aviso UNA
-            // vez por intento (el flag se rearma en resetToss).
-            if (Math.abs(this.ball.pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius &&
-                Math.abs(this.ball.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + DIMS.ballRadius) {
-              this.ball.pos.z = DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10;
-              if (!this._srvReanclaAviso) {
-                this._srvReanclaAviso = true;
-                this.rules.message = T('srv_reancla');
-              }
-            }
+            // r87 · P0-1 REV2 (informe del dueño: «si tienes la bola en la
+            // mano para sacar y la desplazas sobre la mesa automáticamente
+            // te la desplaza fuera, lo que es incorrecto»): el reanclaje del
+            // P0-1 CORRÍA CADA FRAME mientras la bola está EN LA MANO —
+            // era imposible pasearla sobre la mesa. La bola en mano vuelve a
+            // ser LIBRE (cinemática pura, sigue al mando donde esté); el
+            // reanclaje vive ahora SOLO en el INSTANTE DE SOLTAR (ver el
+            // arranque del toss, este mismo round): ahí la legalidad del
+            // saque manda — huella dentro ⇒ línea de fondo +0,10 + aviso.
           } else {
             // bola lanzada: física real
             this.tossTimer += dt;
@@ -37766,9 +37855,20 @@ class PingPongGame {
       // anulaba el saque y la bola CHISPAZABA de vuelta a la mano: el bucle
       // «lanzamiento anulado» que hacía el saque casi imposible. La misma
       // subida continúa y el golpeo legítimo llega unos cm más arriba.
+      // r87 · P0-7 (informe del dueño: «si dejamos caer la bola en el saque
+      // con la pala quieta la atraviesa»): la inmunidad vivía TODO el vuelo
+      // mientras (tossMaxY−tossReleaseY) < tossMinRise — un lanzamiento flojo
+      // o una bola SOLTADA (sin fuerza) jamás alcanzaba el rise mínimo y la
+      // pala quedaba INVISIBLE para la bola en toda la caída: la atravesaba
+      // y moría en el suelo sin feedback. La inmunidad ahora EXIGE que la
+      // bola esté SUBIENDO (vel.y > 0): en cuanto el vuelo se vuelve a caída,
+      // la pala de la casa vuelve a estar ahí (bote, apoyo o golpe — física
+      // de siempre); el rise mínimo sigue decidiendo la LEGALIDAD del golpe
+      // en su sitio (hint_toss_high), no la existencia del contacto.
       const tossImmune = this.tossed && this.rules.state === 'serve' &&
         this.rules.server === 'player' && !this.calib &&
-        ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise;
+        ((this.tossMaxY || 0) - (this.tossReleaseY || 0)) < DIMS.tossMinRise &&
+        this.ball.vel.y > 0;
       if (tossImmune) pads.length = 0;
       // v3.6.71 · r79 · FSM DE LA BOLA (autoridad por mitad, spec §7):
       // fantasma = bola del rival simulo con la FÍSICA REAL.

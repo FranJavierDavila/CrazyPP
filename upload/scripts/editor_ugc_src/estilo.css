@@ -1,0 +1,100 @@
+:root {
+  --bg: #0b1222; --bg2: #101a30; --card: #14203a; --line: #24365c;
+  --tx: #e8eef8; --tx2: #93a5c4; --oro: #fbbf24; --oro2: #f59e0b;
+  --verde: #68d391; --rojo: #fc8181; --cian: #7ec8ff; --violeta: #b794f4;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: radial-gradient(1200px 700px at 50% -140px, #16243f 0%, var(--bg) 55%);
+  color: var(--tx); font: 15px/1.45 "Trebuchet MS", Verdana, sans-serif; min-height: 100vh;
+}
+header { text-align: center; padding: 26px 16px 10px; }
+header h1 {
+  margin: 0; font-size: 30px; letter-spacing: 2px;
+  background: linear-gradient(180deg, #ffe08a, var(--oro)); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+header .sub { color: var(--tx2); margin-top: 6px; font-size: 13px; }
+.barra { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 14px; position: sticky; top: 0; background: rgba(11,18,34,.92); backdrop-filter: blur(6px); z-index: 30; border-bottom: 1px solid var(--line); }
+button {
+  background: linear-gradient(180deg, #1d2c4e, #16233f); color: var(--tx);
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 16px;
+  font: 700 13px "Trebuchet MS", Verdana, sans-serif; letter-spacing: .4px; cursor: pointer;
+}
+button:hover { border-color: var(--oro); color: var(--oro); }
+button.prim { background: linear-gradient(180deg, #b45309, #92400e); border-color: #d97706; color: #fff7e6; }
+button.prim:hover { filter: brightness(1.12); color: #fff; }
+button.min { padding: 3px 9px; font-size: 12px; border-radius: 7px; }
+button.sel { border-color: var(--oro); color: var(--oro); }
+main { max-width: 1080px; margin: 0 auto; padding: 10px 16px 80px; }
+.seccion {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  margin: 14px 0; overflow: hidden;
+}
+.seccion > h2 {
+  margin: 0; padding: 13px 18px; font-size: 15px; letter-spacing: 1.2px; cursor: pointer;
+  display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, #17254a, #14203a);
+  user-select: none;
+}
+.seccion > h2 .flecha { color: var(--oro); transition: transform .18s; }
+.seccion.abierta > h2 .flecha { transform: rotate(90deg); }
+.seccion .cuerpo { display: none; padding: 6px 18px 18px; }
+.seccion.abierta .cuerpo { display: block; }
+.fila { display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0; align-items: flex-end; }
+.campo { display: flex; flex-direction: column; gap: 4px; min-width: 150px; flex: 1; }
+.campo label { font-size: 11px; letter-spacing: .8px; color: var(--tx2); text-transform: uppercase; }
+.campo input, .campo select, .campo textarea {
+  background: #0d1729; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--tx); padding: 8px 10px; font: 14px "Trebuchet MS", Verdana, sans-serif; width: 100%;
+}
+.campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: var(--oro); }
+.campo input[readonly] { color: var(--tx2); }
+.campo.corto { min-width: 90px; flex: 0 0 110px; }
+.campo.largo { flex: 2 1 340px; }
+.campo textarea { min-height: 62px; resize: vertical; }
+.ayuda { color: var(--tx2); font-size: 12px; margin: 4px 0 0; }
+.aviso { border-radius: 10px; padding: 10px 14px; margin: 10px 0; font-size: 13px; border: 1px solid; }
+.aviso.ok { color: var(--verde); border-color: #2d6a4f; background: rgba(104, 211, 145, .07); }
+.aviso.err { color: var(--rojo); border-color: #7c3a3a; background: rgba(252, 129, 129, .07); }
+.aviso.info { color: var(--cian); border-color: #2b5b7e; background: rgba(126, 200, 255, .06); }
+.etapa {
+  border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 10px 0; background: #0f1a31;
+}
+.etapa .cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.etapa .num {
+  background: linear-gradient(180deg, var(--oro), var(--oro2)); color: #1a1206;
+  font-weight: 900; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.etapa .titulo { font-weight: 800; letter-spacing: .5px; flex: 1; min-width: 140px; }
+.etapa .kind { font-size: 11px; border: 1px solid var(--line); border-radius: 20px; padding: 3px 10px; color: var(--cian); letter-spacing: 1px; }
+.etapa.duelo .kind { color: var(--violeta); }
+.etapa .reglas { border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 6px; }
+#mapaCaja { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 8px; max-width: 720px; background: #0d1729; }
+#mapaCaja img { display: block; width: 100%; cursor: crosshair; user-select: none; -webkit-user-drag: none; }
+.marcaNodo {
+  position: absolute; transform: translate(-50%, -50%); pointer-events: none;
+  border: 2px solid var(--cian); border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,.45), inset 0 0 12px rgba(126,200,255,.35);
+  color: var(--cian); font: 800 12px "Trebuchet MS", sans-serif; display: flex; align-items: center; justify-content: center;
+}
+#mapaWrap { position: relative; }
+.chk { display: flex; gap: 7px; align-items: center; font-size: 13px; color: var(--tx); margin: 3px 0; }
+.chk input { accent-color: var(--oro); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  border: 1px solid var(--line); border-radius: 16px; padding: 3px 10px; font-size: 12px; cursor: pointer; user-select: none;
+}
+.chip.on { border-color: var(--oro); color: var(--oro); background: rgba(251, 191, 36, .08); }
+.listaTx .liTx { display: flex; gap: 8px; margin: 5px 0; }
+.listaTx .liTx input { flex: 1; }
+footer { text-align: center; color: var(--tx2); font-size: 12px; padding: 30px 10px; }
+footer b { color: var(--oro); }
+dialog {
+  background: var(--card); color: var(--tx); border: 1px solid var(--line);
+  border-radius: 14px; max-width: 620px; width: 92vw; padding: 18px 22px;
+}
+dialog::backdrop { background: rgba(4, 8, 16, .72); }
+dialog h3 { margin: 0 0 10px; color: var(--oro); letter-spacing: 1px; }
+dialog pre {
+  background: #0d1729; border: 1px solid var(--line); border-radius: 10px;
+  padding: 12px; font-size: 12.5px; overflow: auto; max-height: 46vh; white-space: pre-wrap;
+}
+.kbd { background: #0d1729; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; font: 700 12px monospace; }

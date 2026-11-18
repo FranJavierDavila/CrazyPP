@@ -1,0 +1,159 @@
+==========================================================
+CRAZY PING PONG · V3.0.6-SRV1 (intro oficial + física viva)
+Guía de subida y despliegue — LEEME PRIMERO
+==========================================================
+
+QUÉ ES ESTE PAQUETE
+-------------------
+Tu V3.0.5-FIS1 (física viva + palas con carácter) más la V3.0.6-SRV1,
+que añade el remate final:
+
+  · INTRO OFICIAL: el vídeo del visor 🎬 INTRO (assets/intro.mp4) es ya
+    el MONTAJE OFICIAL definitivo (1080p30 + AAC, 10 s), remuxado
+    FASTSTART: la reproducción arranca al instante, sin esperar a
+    descargar los 5,8 MB completos.
+
+Y conserva las dos grandes novedades de la FIS1:
+
+  1. FÍSICA VIVA: la goma tiene fricción tangencial real (rozar ARRASTRA
+     la bola), el bloque REVIERTE parcialmente el efecto entrante, la hoja
+     tiene PUNTO DULCE (el canto pega sordo) y el BOTE es físico: el
+     topspin patea al botar, el backspin frena en seco y el lateral
+     desvía, todo escalando con la velocidad del impacto. La IA y el
+     solver de saque predicen con la MISMA física nueva.
+
+  2. PALAS CON CARÁCTER: las pieles que conseguías con puntos del
+     entrenamiento ahora SON JUEGO. Fuego = ofensiva (+12 % potencia,
+     +8 % efecto), Hielo = defensiva (+30 % control, el canto perdona),
+     Oro = potencia, Arcoíris = efecto (+22 %) y Pro Carbon = DOBLE GOMA
+     por caras como las palas reales roja/negra (cara A goma de giro ·
+     cara B goma dura de potencia, teñidas en el visor para reconocerlas).
+     La IA siempre juega con goma neutra.
+
+La CRAZY TV sigue igual: las partidas de la Quest se emiten como canales
+y cualquiera las mira EN DIRECTO sin visor. Sin relay, todo lo demás
+funciona como siempre.
+
+CONTENIDO DEL PAQUETE
+---------------------
+  index.html            El juego completo (V3.0.6-SRV1). Es tu game.html
+                        de siempre, renombrado para que el hosting lo sirva
+                        como página principal.
+  tv.html               CRAZY TV: la guía de canales + el espectador 3D.
+  assets/               Pala (pala.glb, pala_pro.glb) e intro.mp4.
+  championships/        Tus 5 campeonatos (estacion_orbital, valle_neon, ...).
+  vendor/socket.io.min.js  Cliente de tiempo real (autohospedado, sin CDN).
+  live-service/         El "relay": el servidorcito Node que reparte la señal
+                        de TV. Solo hace falta para la opción B.
+  extras-nextjs/        (Opcional) Los 3 ficheros del centro de descargas con
+                        banner de TV que monta la app Next.js del entorno de
+                        pruebas. No hacen falta para Netlify.
+  VERSION.txt           Ficha de versión con hashes SHA256.
+  LEEME-DESPLIEGUE.txt  Este archivo.
+
+OPCIÓN A · SUBIR EL JUEGO A NETLIFY DROP (como siempre)
+-------------------------------------------------------
+1. Entra en https://app.netlify.com/drop
+2. Arrastra la CARPETA descomprimida entera (o el zip: Netlify también lo
+   acepta y lo descomprime solo).
+3. Espera a que publique. Al abrir el enlace verás la portada del juego.
+   - El juego:  https://tu-enlace.netlify.app/          (index.html)
+   - La TV:     https://tu-enlace.netlify.app/tv.html
+
+IMPORTANTE: en Netlify (o cualquier hosting estático) el juego funciona
+perfecto, pero la parrilla de TV saldrá vacía si no hay un "relay" corriendo
+en algún sitio. Es el paso siguiente.
+
+OPCIÓN B · TV EN VIVO COMPLETA (con el relay)
+---------------------------------------------
+La TV necesita un pequeño servidor Node encendido en alguna máquina (tu PC,
+un VPS, Railway, Render, Fly.io...). Esa máquina es la "antena" que reparte
+la señal de la Quest a los espectadores.
+
+1. En la máquina del relay:
+      cd live-service
+      npm install
+      node server.mjs
+   Queda escuchando en el puerto 3004 (cámbialo con LIVE_PORT=8080 node
+   server.mjs). Comprueba que vive abriendo http://IP-del-servidor:3004/api/health
+
+2. Prueba rápida SIN Quest (canal de demostración infinito):
+      cd live-service
+      node tools/mock_host.mjs
+   Abre la TV y verás el canal "DEMO · Rally sintético (QA)".
+
+3. Conecta cada dispositivo al relay añadiendo ?relay= a la dirección:
+      - El que JUEGA en la Quest:
+          https://tu-enlace.netlify.app/?relay=http://IP-del-servidor:3004
+      - Los que MIRAN desde el móvil/PC:
+          https://tu-enlace.netlify.app/tv.html?relay=http://IP-del-servidor:3004
+    (el botón "TV en vivo" de la portada hereda el relay automáticamente).
+
+4. Juega normal: al presentar la partida en VR (o al entrar en P2P/2D),
+   aparece el sello "EN VIVO · CRAZY TV" y el canal nace en la parrilla.
+   Al terminar la partida, el canal se cierra solo.
+
+MIXED CONTENT (HTTPS vs HTTP) — LEER SI NO CONECTA
+--------------------------------------------------
+Si tu web está en https:// (Netlify) y tu relay en http://IP:3004, los
+navegadores BLOQUEAN la conexión (contenido mixto). Dos soluciones:
+
+  a) La fácil para pruebas en casa: abre la web por http y desde el mismo
+     PC/red local (http://localhost:3000/tv.html?relay=http://localhost:3004).
+     En localhost no hay bloqueo.
+
+  b) La buena para producción: pon el relay DETRÁS del mismo dominio con un
+     proxy (nginx/caddy). Ejemplo nginx para el dominio de tu web:
+
+        location /live/socket.io/ {
+            proxy_pass http://127.0.0.1:3004;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+        location /api/ {
+            proxy_pass http://127.0.0.1:3004;
+        }
+
+     Con esto el cliente conecta a su propio dominio y NO hace falta
+     ?relay= (déjalo fuera). En Railway/Render/Fly el dominio ya viene con
+     HTTPS: despliega live-service ahí, copia su URL pública y usa
+     ?relay=https://tu-app.up.railway.app (el relay escucha el puerto que
+     la plataforma le asigne con LIVE_PORT).
+
+CÓMO SE USA (CHULETA)
+---------------------
+  Quest 3 (anfitrión)  → entra al juego, arranca partida o campeonato.
+                         Se publica solo: sello "● EN VIVO" en la mesa.
+  Móvil/PC (espectador) → tv.html, elige canal, cámaras con teclas 1-6
+                         (o botones), R = repetición, ESPACIO = pausa,
+                         S = silencio, ESC = salir al listado.
+  Repeticiones          → automáticas tras cada punto (cámara lenta),
+                         manuales con R.
+
+DETALLES TÉCNICOS POR SI ALGUIEN PREGUNTA
+-----------------------------------------
+  · Protocolo: Socket.io, path /live/socket.io, sala por canal live:<matchId>.
+  · Estado continuo ~30 Hz (bola p/v, palas p/q, marcador, saque, rally) con
+    sello de tiempo del SERVIDOR (reloj único para todos los espectadores).
+  · Eventos discretos: hit (km/h), bounce, net, point, serve, match-end.
+  · El espectador NUNCA simula física: interpola (lerp/slerp) con 120 ms de
+    colchón y extrapola 150 ms como máximo si la red tira atrás.
+  · Repeticiones: anillo de 12 s en memoria del espectador; tras cada punto,
+    5 s a 0.35x con cámara de cine. Cero coste para la Quest.
+  · Canales fantasma: si el anfitrión deja de emitir 12 s, el canal se retira.
+  · Sonido 100% sintetizado en el navegador del espectador: 0 bytes de audio.
+
+PROBLEMAS FRECUENTES
+--------------------
+  · "La parrilla sale vacía"  → no hay relay corriendo o falta ?relay=.
+                                 Prueba con el mock host (paso B-2).
+  · "Sintonizando..." eterno  → el anfitrión cerró la pestaña del juego (las
+                                 pestañas en 2º plano se pausan solas) o el
+                                 relay se cayó. Revisa /api/health.
+  · "Señal interrumpida"      → la partida sigue pero la red dio un corte;
+                                 se reconecta solo en unos segundos.
+  · Puerto 3004 ocupado       → LIVE_PORT=8080 node server.mjs (y ajusta el
+                                 ?relay= de las URLs).
+  · Firewall                  → abre el puerto del relay (TCP 3004) en la
+                                 máquina que lo hospeda.

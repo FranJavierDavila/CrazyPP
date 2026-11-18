@@ -1,0 +1,75 @@
+== PORTADA (dev :3000) ==
+  ✓ __PP_VERSION = '3.6.4-SDK4'
+  ✓ badge 2D = 'V3.6.4-SDK4'
+  ✓ CCD lab intacto (CCD1)
+  ✓ SERVE lab intacto (SRV2)
+  ✓ puente CCD del núcleo expuesto (__PP_PADDLE_SWEEP)
+== Ficheros ==
+  ✓ módulo: class ReactorImpulso
+  ✓ módulo: static HUECOS
+  ✓ módulo: _atractorSepara
+  ✓ módulo: dianaMat
+  ✓ módulo: ShaderMaterial
+  ✓ módulo: uDissolve
+  ✓ módulo: mergeGeometries
+  ✓ módulo: buildMarco
+  ✓ módulo: buildNodos
+  ✓ módulo: warpSpeed
+  ✓ módulo: fondo negro del espacio
+  ✓ módulo: alphaTest: ventanal ? 0.35 : 0
+  ✓ módulo: cubeS: 0.16, cubeHitR: 0.14
+  ✓ módulo: ballT: 0.80, ballH: 0.34
+  ✓ módulo: atrSep: 0.19
+  ✓ módulo: position.set(1.26, RIV_H / 2, (D.tableCenterZ || -1.6) - 1.70)
+  ✓ módulo: (this.arkanoid && this.arkanoid.active) ||
+        (this.impulso && this.impulso.active)) this._gunUpdate(dt);
+  ✓ módulo: imp.phase === 'play' || imp.phase === 'intro'
+  ✓ módulo: d.mesh.getWorldPosition
+  ✓ módulo: uEdge
+  ✓ módulo: dianaIn: 0.26, dianaOut: 0.30
+  ✓ módulo: this.ctrl.dron.visible = false
+  ✓ módulo: OLEADA
+  ✓ manifest version = 15
+  ✓ manifest stages = duelo1·impulso·duelo2·escudo·final
+  ✓ cambios: entrada v3.5.1-IMP2
+== Cristal de los ventanales (alpha real) ==
+  ✓ izquierda.png: 342460 px transparentes (cristal recortado)
+  ✓ derecha.png: 391080 px transparentes (cristal recortado)
+== ESCENA EN VIVO: etapa 1 · ASTRO a distancia fija ==
+  ✓ ASTRO en x 1.26 · z -3.3 (borde lejano − 0,33, dentro de la sala)
+  ✓ cuerpo entero 2.15 m con pies en el suelo
+== ESCENA EN VIVO: reactor de impulso (etapa 2) ==
+  ✓ arranque: intro del reactor
+  ✓ oleada 1 en marcha con 3 cubos
+  ✓ cubo detallado: 4 mallas (marco+nodos+carcasa+núcleo)
+  ✓ cubo a la MITAD: canto 0,16 m
+  ✓ nodos ámbar del decorado (matNodos)
+  ✓ la PALA libera la bola por el barrido CCD (no el agarre)
+  ✓ salida con propósito: 3.00 m/s (≥ min 3,0)
+  ✓ arco jugable tras el golpeo
+  ✓ racimo con 3 cubos
+  ✓ sin penetraciones: distancia mínima 0.190 m (≥ canto 0,16 + gap)
+  ✓ casi unidos: radio del racimo 0.190 m
+  ✓ diana aparece con desintegración INVERSA (u≈1 → 0)
+  ✓ diana intacta tras materializarse (u=0, fase vis)
+  ✓ el LÁSER desintegra la diana (rate 0,16 s)
+  ✓ la diana queda desintegrada (u=1, invisible)
+  ✓ ciclo natural: out a 0,30 s tras 1 s visible
+  ✓ shader de desintegración (uDissolve) montado
+  ✓ las partículas avanzan de DELANTE hacia ATRÁS (Δz 0.272 m ≈ sp·dt)
+  ✓ partículas FUERA de la sala (tras el cristal)
+  ✓ velocidad lumínica activa en las ventanas
+  ✓ HUD: NINGÚN texto fuera de la pantalla del panel (0 px)
+  ✓ HUD: todo el texto DENTRO de la pantalla (152150 px)
+  ✓ PISTOLA montada en la mano libre durante el reactor
+  ✓ gatillo armado (gunArmed) con la pistola puesta
+  ✓ al salir del modo XR la pistola se guarda
+  ✓ núcleo DETALLADO: 15 piezas (columna+blindaje+domo+peana+anillos)
+  ✓ columna de plasma + vidrio contrarrotante
+  ✓ stop(): sala+dron+rival de vuelta y pistola guardada
+== Capturas de evidencia ==
+  ✓ captura qa_imp2_reactor.png
+== Limpieza ==
+  ✓ 0 pageerrors dev (0): []
+
+RESULTADO: 65 OK · 0 fallos

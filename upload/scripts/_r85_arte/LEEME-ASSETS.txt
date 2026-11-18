@@ -1,0 +1,27 @@
+MATERIALES DE «Campeonato de Halloween» — qué es del dueño y qué es provisional
+================================================================================
+DEL DUEÑO (r85):
+  present.webp + idle/focused/surprised/panic/laughing/crazy/angry/picando/
+    loosing/defeated/victory.webp + rival.webp   12 poses del zombi (upload/zombi.zip)
+  mapa.webp                                      póster del camino (upload/Mapa.png 1380x752)
+  normas_halloween.png                           cartel de las NORMAS de las etapas 2 y 4
+                                                 (upload/zombi_normas.png 1024x512)
+
+PROVISIONAL (FUNCIONAL — sustituir en tandas siguientes):
+  sala_floor/ceil/back/front/left/right.jpg      cementerio procedimental — el dueño
+                                                 pasará el escenario real para mapear
+                                                 los 6 planos de la estancia
+  bso.wav                                        música provisional (del valle)
+  risas.mp3                                      risa provisional
+  power_0.png / power_1.png                      iconos procedimentales
+  insignia.png                                   insignia procedimental
+
+PENDIENTE DE LA SIGUIENTE TANDA (dicho por el dueño):
+  · escenario (los 6 planos de la estancia) → sustituye las sala_*.jpg
+  · los 4 troqueles → manifest.decor.pieces (assets/decor1.png ...)
+  · mecánicas de las etapas 2 y 4 (hoy: dianas provisionales)
+
+REGLAS DE ORO (heredadas del proyecto):
+  · PNG/WebP con transparencia = recorte exacto al alfa, sin borde añadido.
+  · Los sprites del rival son PLANOS (billboard suave), arte 512x1024.
+  · No renames: el nombre ES el contrato.

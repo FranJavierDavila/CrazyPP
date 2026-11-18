@@ -1,0 +1,470 @@
+ en 2 líneas centradas (por el espacio más
+   * cercano al centro) tras intentar reducirlo. */
+  function wrap2(c, txt, y, size, col, maxW, lh, x) {
+    fitFont(c, txt, size, '600', maxW, 12);
+    if (c.measureText(txt).width <= maxW) { line(c, txt, y, size, col, undefined, x); return; }
+    const sep = txt.lastIndexOf(' ', Math.ceil(txt.length / 2));
+    if (sep <= 0) { line(c, txt, y, size, col, undefined, x); return; }
+    line(c, txt.slice(0, sep), y - (lh || 14), size, col, undefined, x);
+    line(c, txt.slice(sep + 1), y + (lh || 14), size, col, undefined, x);
+  }
+  /* píldora estilo TIZA: borde blanco translúcido, relleno ámbar/verde
+   * suave y texto blanco — auto-dimensionada al texto (nada cortado). */
+  function pill(c, txt, y, opts) {
+    opts = opts || {};
+    let size = opts.size || 30;
+    c.font = '800 ' + size + 'px system-ui, sans-serif';
+    const need = c.measureText(txt).width + 76;
+    const w = Math.max(opts.w || 640, Math.min(need, 1000));
+    if (c.measureText(txt).width > w - 48) {
+      fitFont(c, txt, size, '800', w - 48, 17);
+    }
+    const h = opts.h || 72;
+    // r72 · centro PROPIO (opts.x): la píldora puede vivir fuera del
+    // centro de la pizarra (p. ej. junto al título de LOS MODOS).
+    const cx = (opts.x != null) ? opts.x : PIZ_CX;
+    const x = cx - w / 2;
+    rr(c, x, y, w, h, 22);
+    c.fillStyle = opts.col || 'rgba(47,158,68,0.30)';
+    c.fill();
+    c.strokeStyle = opts.borde || 'rgba(255,255,255,0.75)';
+    c.lineWidth = 3;
+    c.stroke();
+    c.fillStyle = '#ffffff';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(txt, cx, y + h / 2 + 1);
+  }
+  function paintHeader(c) {
+    // título a la izquierda de la zona negra (el birrete NO se tapa)
+    c.textAlign = 'left';
+    c.textBaseline = 'middle';
+    fitFont(c, T('tut_title'), 40, '900', 600, 26);
+    c.shadowColor = 'rgba(255,210,87,0.4)';
+    c.shadowBlur = 8;
+    c.fillStyle = '#ffd257';
+    c.fillText(T('tut_title'), 300, 212);
+    c.shadowBlur = 0;
+    // contador + puntos de progreso (11) a la derecha, bajo el sticker
+    c.font = '700 20px system-ui, sans-serif';
+    c.fillStyle = '#cfd8e0';
+    c.textAlign = 'right';
+    c.fillText(T('tut_step', { n: step + 1, m: STEPS }), 1150, 206);
+    for (let i = 0; i < STEPS; i++) {
+      const dx = 1146 - (STEPS - 1 - i) * 24;
+      c.beginPath();
+      c.arc(dx, 240, i === step ? 7.5 : 5, 0, Math.PI * 2);
+      c.fillStyle = i < step ? '#7fb069' : (i === step ? '#ffd257' : 'rgba(255,255,255,0.28)');
+      c.fill();
+    }
+  }
+  function modeRow(c, y, col0, ini, title, sub) {
+    rr(c, 190, y, 980, 68, 16);
+    c.fillStyle = 'rgba(255,255,255,0.07)';
+    c.fill();
+    c.strokeStyle = col0;
+    c.lineWidth = 2.5;
+    c.stroke();
+    c.beginPath(); c.arc(248, y + 34, 23, 0, Math.PI * 2);
+    c.fillStyle = col0; c.fill();
+    c.fillStyle = '#ffffff';
+    c.font = '800 24px system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(ini, 248, y + 35);
+    c.textAlign = 'left';
+    fitFont(c, title, 25, '800', 740, 17);
+    c.fillText(title, 288, y + 24);
+    c.fillStyle = 'rgba(255,255,255,0.85)';
+    fitFont(c, sub, 17, '500', 740, 12);
+    c.fillText(sub, 288, y + 50);
+  }
+  /* r67 · tarjeta compacta de la rejilla de modos (2×3) */
+  function modeCard(c, x, y, w, h, col0, ini, title, sub, extra) {
+    rr(c, x, y, w, h, 16);
+    c.fillStyle = 'rgba(255,255,255,0.07)'; c.fill();
+    c.strokeStyle = col0; c.lineWidth = 2.5; c.stroke();
+    c.beginPath(); c.arc(x + 36, y + h / 2, 21, 0, Math.PI * 2);
+    c.fillStyle = col0; c.fill();
+    c.fillStyle = '#ffffff';
+    c.font = '800 22px system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(ini, x + 36, y + h / 2 + 1);
+    c.textAlign = 'left';
+    fitFont(c, title, 21, '800', w - 86, 15);
+    c.fillText(title, x + 68, y + (extra ? 27 : 32));
+    c.fillStyle = 'rgba(255,255,255,0.85)';
+    fitFont(c, sub, 15, '500', w - 86, 11);
+    c.fillText(sub, x + 68, y + (extra ? 50 : 62));
+    // r74 · EXPLICACIÓN LARGA del modo (el dueño: «esta parte de los modos
+    // no está bien explicada, deberías pararte un poco más»): cada tarjeta
+    // gana SU línea de detalle (cómo se juega y cuánto dura), en ámbar.
+    if (extra) {
+      c.fillStyle = 'rgba(255,224,138,0.80)';
+      fitFont(c, extra, 13, '600', w - 86, 10);
+      c.fillText(extra, x + 68, y + h - 14);
+    }
+  }
+  const PAINTERS = [
+    // 0 · BIENVENIDA (voz tutv0a/b)
+    (c) => {
+      line(c, T('tut_s0_t'), 262, 48, '#ffd257');
+      line(c, T('tut_s0_l1'), 340, 26);
+      line(c, T('tut_s0_l2'), 384, 26);
+      pill(c, T('tut_s0_go'), 462, { col: 'rgba(232,180,90,0.30)', size: 32 });
+    },
+    // 1 · TU MANDO, TU RAQUETA (r67 · fusiona mandos+pala: 4 acciones reales
+    //     sobre los mandos ANCLADOS a tus manos y después el vaivén con la
+    //     ÚNICA raqueta — la pala real que ya tienes en la mano)
+    (c) => {
+      // r72 · TÍTULO EN SU FILA: la cabecera (LA ACADEMIA CRAZY · PASO X DE 9
+      // · puntos) ocupa 168..248 — todo título de paso baja a y=272. Antes
+      // «TU MANDO, TU RAQUETA» en 236 pisaba el título de la cabecera.
+      line(c, T('tut_m_t'), 272, 40, '#ffd257');
+      line(c, T('tut_s1_l2'), 320, 20, '#c9d4de');
+      line(c, T('tut_s1_l1'), 350, 17, '#8b98a5');
+      const tareas = [T('tut_m1_gat'), T('tut_m1_grip'), T('tut_m1_stick'), T('tut_m1_a')];
+      for (let i = 0; i < 4; i++) {
+        c.beginPath();
+        c.arc(512 + i * 42, 386, subfase > i ? 9 : 6.5, 0, Math.PI * 2);
+        c.fillStyle = subfase > i ? '#7fb069' : 'rgba(255,255,255,0.30)';
+        c.fill();
+      }
+      if (subfase >= 4) {
+        // momento RAQUETA: barra de vaivén con la pala real en la mano.
+        // r69 · INSTRUCCIÓN EXPLÍCITA en el momento (el dueño: «es preciso
+        // que se le diga que la mueva hacia los lados sino no nos
+        // enteramos») — latiendo mientras la barra sigue vacía.
+        // r70 · SIN SOLAPE: la píldora (caja 406..478 con h=72) y la línea
+        // de la instrucción (glifos 441..463) se comían — DOS textos
+        // superpuestos (el dueño: «ese panel superpone los textos»).
+        // r72 · el reparto r70 baja 20 px con el título (píldora 412..468,
+        // instrucción 494, barra 524..564) — mismos aires, nueva fila libre.
+        pill(c, T('tut_m1_raf'), 412, { col: 'rgba(90,160,255,0.30)', size: 24, h: 56 });
+        const p = Math.min(1, sway / SWAY_META);
+        c.globalAlpha = p > 0.02 ? 1 : (0.55 + 0.45 * Math.sin(mandoT * 5.2));
+        line(c, T('tut_m1_lado'), 494, 21, '#7fb069');
+        c.globalAlpha = 1;
+        rr(c, 280, 524, 800, 40, 20);
+        c.fillStyle = 'rgba(255,255,255,0.12)'; c.fill();
+        if (p > 0.01) {
+          rr(c, 280, 524, Math.max(26, 800 * p), 40, 20);
+          c.fillStyle = 'rgba(127,176,105,0.75)'; c.fill();
+        }
+        c.fillStyle = '#eef2f5';
+        c.font = '700 18px system-ui, sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(Math.round(p * 100) + '%', PIZ_CX, 545);
+      } else {
+        pill(c, tareas[Math.min(subfase, 3)], 412,
+          { col: 'rgba(232,180,90,0.28)', size: 26 });
+      }
+    },
+    // 2 · EL SAQUE · demo del PROFESOR sobre la mesa real y luego 3 saques TUYOS
+    //     r72 · título a 272 (fuera de la cabecera) y cuerpo reexpandido:
+    //     la práctica reparte sus 6 filas con aire (líneas 316/348/380,
+    //     contador 418+466, píldora 514..578) — antes el título en 214
+    //     chocaba con «LA ACADEMIA CRAZY» y el contador vivía apretado.
+    (c) => {
+      if (submodo === 'demo') {
+        line(c, T('tut_d3_t'), 272, 38, '#ffd257');
+        line(c, T('tut_d3_l1'), 336, 22);
+        line(c, T('tut_d3_l2'), 376, 22);
+        line(c, T('tut_d3_l3'), 416, 22);
+        const aviso = demoTxt && demoTxt.t > 0
+          ? { txt: demoTxt.txt, col: demoTxt.col || 'rgba(47,158,68,0.35)' }
+          : (demoT > 4 ? { txt: T('tut_d3_go'), col: 'rgba(232,180,90,0.30)' }
+                       : { txt: T('tut_rep'), col: 'rgba(255,255,255,0.10)' });
+        pill(c, aviso.txt, 478, { col: aviso.col, size: 26 });
+      } else {
+        line(c, T('tut_s3_t'), 272, 40, '#ffd257');
+        line(c, T('tut_s3_l1'), 316, 20);
+        line(c, T('tut_s3_l2'), 348, 20);
+        line(c, T('tut_s3_l3'), 380, 20);
+        line(c, T('tut_s3_cnt'), 418, 18, '#9fb0bd');
+        c.fillStyle = '#ffffff';
+        c.shadowColor = 'rgba(255,255,255,0.4)'; c.shadowBlur = 10;
+        c.font = '900 50px system-ui, sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(Math.min(saqCount, SAQ_META) + ' / ' + SAQ_META, PIZ_CX, 466);
+        c.shadowBlur = 0;
+        if (flashOk > 0) pill(c, T('tut_s3_ok'), 514, { col: 'rgba(47,158,68,0.35)', size: 26, h: 64 });
+        else if (flashAgain > 0) pill(c, T('tut_s3_again'), 514, { col: 'rgba(240,135,63,0.32)', size: 26, h: 64 });
+        else pill(c, T('tut_s3_task'), 514, { size: 28, h: 64 });
+      }
+    },
+    // 3 · EL INTERCAMBIO REAL (saque tuyo + rival que devuelve hasta fallar)
+    //     r72 · título a 272: «EL INTERCAMBIO» en 236 se pintaba ENCIMA de
+    //     la cabecera (el dueño: «se pisa con el texto que tiene arriba»).
+    (c) => {
+      line(c, T('tut_d4_t'), 272, 40, '#ffd257');
+      line(c, T('tut_d4_l1'), 322, 21);
+      line(c, T('tut_d4_l2'), 360, 21);
+      line(c, T('tut_d4_l3'), 398, 21);
+      if (rfHecho) {
+        pill(c, T('tut_d4_ok'), 440, { col: 'rgba(47,158,68,0.35)', size: 27, h: 64 });
+        pill(c, T('tut_hint_next'), 520, { w: 520, h: 50, col: 'rgba(232,180,90,0.28)', size: 23 });
+      } else {
+        pill(c, T('tut_d4_task'), 452, { size: 24 });
+      }
+    },
+    // 4 · EL MARCADOR (holo sobre la mesa + saques reales en bucle) · r72: título a 272
+    (c) => {
+      line(c, T('tut_d5_t'), 272, 40, '#ffd257');
+      line(c, T('tut_d5_l1'), 330, 22);
+      line(c, T('tut_d5_l2'), 368, 22);
+      line(c, T('tut_d5_l3'), 406, 22);
+      pill(c, demoT >= DEMO_MIN ? T('tut_ent')
+        : T('tut_h_saq') + '… ' + Math.ceil(DEMO_MIN - demoT) + ' s',
+        478, { col: demoT >= DEMO_MIN ? 'rgba(47,158,68,0.35)' : 'rgba(255,255,255,0.10)', size: 27 });
+    },
+    // 5 · LA PRÁCTICA (el profesor devuelve 6 bolas) · r72: título a 272
+    //     («EL INTERCAMBIO» en 224 con s42 arrancaba DENTRO de la cabecera).
+    (c) => {
+      line(c, T('tut_s4_t'), 272, 42, '#ffd257');
+      line(c, T('tut_s4_l1'), 330, 23);
+      line(c, T('tut_s4_l2'), 366, 23);
+      c.fillStyle = '#ffffff';
+      c.shadowColor = 'rgba(255,255,255,0.4)'; c.shadowBlur = 10;
+      c.font = '900 74px system-ui, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(T('tut_s4_n', { n: Math.min(hitCount, DEVOL_META) }), PIZ_CX, 446);
+      c.shadowBlur = 0;
+      pill(c, T('tut_s4_task'), 510, { size: 27, h: 64 });
+    },
+    // 6 · LOS BOTONES EN JUEGO · r72: título a 272 (en 240 rozaba la
+    //     cabecera y apretaba todo el bloque — «textos algo pegados»)
+    (c) => {
+      line(c, T('tut_s5_t'), 272, 40, '#ffd257');
+      line(c, T('tut_s5_l1'), 330, 23);
+      line(c, T('tut_s5_l2'), 370, 23);
+      for (const [lb, kx] of [['A', 600], ['X', 760]]) {
+        rr(c, kx - 38, 412, 76, 76, 17);
+        c.fillStyle = 'rgba(255,255,255,0.10)'; c.fill();
+        c.strokeStyle = '#e8b45a'; c.lineWidth = 3.5; c.stroke();
+        c.fillStyle = '#ffe08a';
+        c.font = '900 42px system-ui, sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(lb, kx, 452);
+      }
+      pill(c, T('tut_s5_task'), 522, { w: 600, h: 56, size: 25 });
+    },
+    // 7 · LOS MODOS · rejilla 2×3 (r67 · UNA sola pizarra, antes eran dos)
+    //     r72 · REENCUADRE COMPLETO (el dueño: «los textos están mal
+    //     colocados»): (1) el título baja a 262 — en 208 se pintaba DENTRO
+    //     de la cabecera; (2) la píldora «GATILLO · continuar» sube a la
+    //     fila del título, a su DERECHA (x=986) — antes caía en 552 ENCIMA
+    //     de la fila inferior (496..566); (3) el texto PODERES se dibuja
+    //     DENTRO de su caja ámbar con centro x=996 — el wrap2 antiguo
+    //     pintaba SIEMPRE en el centro de la pizarra (680), o sea ENCIMA
+    //     de la tarjeta ENTRENAR. Fila de tarjetas con aire limpio.
+    (c) => {
+      line(c, T('tut_mods_t'), 262, 34, '#ffd257');
+      pill(c, T('tut_hint_next'), 252, { w: 300, h: 32, x: 986, col: 'rgba(232,180,90,0.28)', size: 18 });
+      const W = 480, H = 88;
+      const cards = [
+        [190, 296, 'rgba(47,158,68,0.8)', 'P', T('hub_match'), T('tut_mod_p'), T('tut_s6_m1')],
+        [690, 296, 'rgba(232,89,12,0.8)', 'S', T('sec_surv'), T('tut_mod_s'), T('tut_s6_m2')],
+        [190, 396, 'rgba(112,72,232,0.8)', 'M', T('hub_multi'), T('tut_mod_m'), T('tut_s6_m3')],
+        [690, 396, 'rgba(184,134,11,0.8)', 'C', T('sec_crazy'), T('tut_mod_c'), T('tut_s7_m1')],
+      ];
+      for (const [x, y, col, ini, ti, su, ex] of cards) {
+        modeCard(c, x, y, W, H, col, ini, ti, su, ex);
+      }
+      // fila inferior: RANKING + ENTRENAR (más estrechas, con la caja de poderes)
+      modeCard(c, 190, 496, 300, 80, 'rgba(12,166,120,0.8)', 'R', T('sec_rank'), T('tut_mod_r'), T('tut_s7_m2'));
+      modeCard(c, 506, 496, 300, 80, 'rgba(28,126,214,0.8)', 'T', T('sec_train'), T('tut_mod_t'), T('tut_s7_m3'));
+      rr(c, 822, 496, 348, 80, 14);
+      c.fillStyle = 'rgba(232,180,90,0.14)'; c.fill();
+      c.strokeStyle = 'rgba(232,180,90,0.45)'; c.lineWidth = 2; c.stroke();
+      wrap2(c, T('tut_pow_t'), 536, 14, '#ffe08a', 312, 11, 996);
+    },
+    // 8 · ¡YA SABES JUGAR!
+    (c) => {
+      line(c, T('tut_s8_t'), 268, 52, '#ffd257');
+      line(c, T('tut_s8_l1'), 352, 25);
+      line(c, T('tut_s8_l2'), 396, 25);
+      pill(c, T('tut_s8_go'), 466, { w: 760, h: 88, col: 'rgba(127,176,105,0.38)', size: 36 });
+    },
+  ];
+  function paintStep() {
+    if (!cc) return;
+    const c = cc;
+    c.clearRect(0, 0, 1408, 768);
+    if (pizImg) {
+      c.drawImage(pizImg, 0, 0, 1408, 768);   // la PIZARRA del dueño de fondo
+    } else {
+      rr(c, 8, 8, 1392, 752, 30);
+      const bg = c.createLinearGradient(0, 0, 0, 768);
+      bg.addColorStop(0, 'rgba(13,19,34,0.97)');
+      bg.addColorStop(1, 'rgba(8,11,20,0.97)');
+      c.fillStyle = bg;
+      c.fill();
+      c.strokeStyle = 'rgba(232,180,90,0.75)';
+      c.lineWidth = 4;
+      c.stroke();
+    }
+    paintHeader(c);
+    try { PAINTERS[step](c); } catch (e) { /* decorativo */ }
+    line(c, T('tut_hint_skip'), 604, 18, '#8b98a5');
+    if (tex) tex.needsUpdate = true;
+  }
+
+  /* ---------------- VOZ NATIVA (r65) · narra cada paso ---------------
+   * Banco Piper es/en (tutv*): cada paso narra al ENTRAR y el STICK la
+   * repite. Respeta el interruptor del megáfono (audio.voice). Si el
+   * banco aún decodifica, reintenta hasta 3 veces.                   */
+  function narra(keys) {
+    narrKeys = keys;
+    if (!G || !G.audio || !G.audio.speakPlan) return;
+    try {
+      if (G.audio.voice === false) return;   // el dueño apagó el megáfono
+      // r66 · MÁS PAUSADA (petición del dueño): respiro entre átomos
+      const plan = keys.map((k) => ({ k, gap: 0.32 }));
+      if (G.audio.speakPlan(plan)) { narrRetry = 0; return; }
+      narrRetry = 1.4;
+    } catch (e) { /* nunca rompe */ }
+  }
+  let narrTries = 0;
+  function tickNarr(dt) {
+    if (narrRetry > 0 && narrKeys) {
+      narrRetry -= dt;
+      if (narrRetry <= 0 && narrTries < 3) {
+        narrTries++;
+        const ks = narrKeys;
+        narrKeys = null;
+        narra(ks);
+      }
+    }
+  }
+
+  /* ---------------- HOLO-MARCADOR sobre la mesa (r65→r66) -------------
+   * El marcador vive EN LA MESA (bajo, sobre la mitad rival — el dueño:
+   * «la simulación a una distancia sobre la mesa no tiene sentido») y los
+   * PUNTOS los anotan saques REALES del bucle demo del paso 5 (no un
+   * reloj abstracto): pip a pip hasta 11 ganando por 2, fichas de saque
+   * 2·2 y CADA punto desde 10-10, cartel «+2 PARA GANAR» en la igualada. */
+  function _holoMat(col, op) {
+    return new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op || 0.85 });
+  }
+  function _cartelTxt(txt, col, px, w, h) {
+    const cvh = document.createElement('canvas');
+    cvh.width = 256; cvh.height = 128;
+    const g2 = cvh.getContext('2d');
+    // r71 · AUTOAJUSTE: el cartel es un canvas de 256 px y un texto largo
+    // («¡+2 PARA GANAR!» a 54 px) se SALÍA del lienzo — en el Quest se veía
+    // la palabra RECORTADA («GAN» en vez de «GANAR», el fallo del dueño en
+    // la explicación del 10-10). Se mide el texto y la fuente se encoge
+    // hasta caber con margen (12 px por lado): el cartel SIEMPRE entero,
+    // en ES y en EN, para cualquier cadena futura.
+    const MARGEN = 244;                       // ancho útil del lienzo (256−2×6)
+    let px2 = px || 64;
+    g2.font = '900 ' + px2 + 'px system-ui, sans-serif';
+    let ancho = g2.measureText(txt).width;
+    if (ancho > MARGEN) {
+      px2 = Math.max(20, Math.floor(px2 * (MARGEN / ancho)));
+      g2.font = '900 ' + px2 + 'px system-ui, sans-serif';
+    }
+    g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.shadowColor = 'rgba(255,255,255,0.5)';
+    g2.shadowBlur = 8;
+    g2.fillStyle = col || '#ffffff';
+    g2.fillText(txt, 128, 64);
+    const t = new THREE.CanvasTexture(cvh);
+    t.colorSpace = THREE.SRGBColorSpace;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w || 0.30, h || 0.15),
+      new THREE.MeshBasicMaterial({ map: t, transparent: true, depthTest: false }));
+    m.renderOrder = 986;
+    return m;
+  }
+  function limpiarHolo() {
+    if (!holo) return;
+    try { if (holo.parent) holo.parent.remove(holo); } catch (e) { /* */ }
+    holo = null; holoPips = null; holoGhost = null; holoTokens = null;
+    holoCartel2 = null;
+  }
+  /* ---- AROS GUÍA del saque (r67) ----------------------------------
+   * Dos aros PLANOS sobre la MESA REAL que marcan DÓNDE debe botar un
+   * saque válido: primero en TU campo y después en el del rival. Pulsan
+   * suave y SE ILUMINAN en verde cuando la bola botó en su zona — la
+   * regla se VE, no se lee (el profesor la usa en su demo y tú en la
+   * práctica). Sin mallas raras: torus fino reutilizando el material holo. */
+  let arosGrp = null;
+  let aroIzq = null, aroDer = null;
+  function construirAros() {
+    limpiarAros();
+    if (!G || !G.scene || typeof THREE === 'undefined') return;
+    const C = DIMS.tableCenterZ, HL = DIMS.tableHalfLength, TY = DIMS.tableTopY;
+    arosGrp = new THREE.Group();
+    const geo = new THREE.TorusGeometry(0.085, 0.008, 8, 28);
+    aroIzq = new THREE.Mesh(geo, _holoMat('#ffd257', 0.5));
+    aroIzq.rotation.x = -Math.PI / 2;
+    aroIzq.position.set(0.10, TY + 0.006, C + HL * 0.62);   // TU campo
+    aroDer = new THREE.Mesh(geo, _holoMat('#ffd257', 0.5));
+    aroDer.rotation.x = -Math.PI / 2;
+    aroDer.position.set(0.10, TY + 0.006, C - HL * 0.62);   // campo del rival
+    arosGrp.add(aroIzq); arosGrp.add(aroDer);
+    arosGrp.__t = 0;
+    G.rig.add(arosGrp);   // r70 · al RIG: las DIMS son coordenadas del rig
+  }
+  function limpiarAros() {
+    if (!arosGrp) return;
+    try { if (arosGrp.parent) arosGrp.parent.remove(arosGrp); } catch (e) { /* */ }
+    arosGrp = null; aroIzq = null; aroDer = null;
+  }
+  function tickAros(dt) {
+    if (!arosGrp) return;
+    arosGrp.__t += dt;
+    const t = arosGrp.__t;
+    const base = 0.42 + 0.18 * Math.sin(t * 3.2);
+    try {
+      if (aroIzq) aroIzq.material.opacity = aroIzq.__ok ? 0.95 : base;
+      if (aroDer) aroDer.material.opacity = aroDer.__ok ? 0.95 : base;
+      if (aroIzq) aroIzq.material.color.set(aroIzq.__ok ? '#7fb069' : '#ffd257');
+      if (aroDer) aroDer.material.color.set(aroDer.__ok ? '#7fb069' : '#ffd257');
+    } catch (e) { /* decorativo */ }
+  }
+  function _holoBase() {
+    limpiarHolo();
+    if (!G || !G.scene || typeof THREE === 'undefined') return null;
+    holo = new THREE.Group();
+    // r66 · BAJO, sobre la mitad rival de la MESA (nunca flotando lejos)
+    holo.position.set(0, DIMS.tableTopY + 0.22, DIMS.tableCenterZ - DIMS.tableHalfLength * 0.34);
+    // r70 · al RIG (espacio de la mesa/bola): en G.scene el recentrado del
+    // Quest lo descolocaba igual que a la raqueta del profesor
+    G.rig.add(holo);
+    holoT = 0;
+    return holo;
+  }
+  function construirHoloMarcador() {
+    const H = _holoBase();
+    if (!H) return;
+    holoPips = { izq: [], der: [] };
+    const geo = new THREE.SphereGeometry(0.014, 10, 8);
+    for (let i = 0; i < 11; i++) {
+      const a = new THREE.Mesh(geo, _holoMat('#7fb069', 0.20));
+      a.position.set(-0.30 + i * 0.030, 0.10, 0);
+      H.add(a); holoPips.izq.push(a);
+      const b = new THREE.Mesh(geo, _holoMat('#e8590c', 0.20));
+      b.position.set(0.30 - i * 0.030, 0.10, 0);
+      H.add(b); holoPips.der.push(b);
+    }
+    const tI = _cartelTxt(T('tut_h_tu'), '#a8e0b0', 56, 0.20, 0.10);
+    tI.position.set(-0.30, 0.24, 0); H.add(tI);
+    const tD = _cartelTxt(T('tut_h_ia'), '#f0a878', 56, 0.20, 0.10);
+    tD.position.set(0.30, 0.24, 0); H.add(tD);
+    const t11 = _cartelTxt('11', '#ffd257', 90, 0.18, 0.18);
+    t11.position.set(0, 0.25, 0); H.add(t11);
+    // fichas de saque (2 por lado) al pie del marcador
+    holoTokens = { fichas: [], cartel10: null };
+    const geoF = new THREE.CylinderGeometry(0.014, 0.014, 0.007, 14);
+    for (let lado = 0; lado < 2; lado++) {
+      for (let f = 0; f < 2; f++) {
+        const tk = new THREE.Mesh(geoF, _holoMat(lado === 0 ? '#7fb069' : '#e8590c', 0.18));
+        tk.position.set((lado === 0 ? -1 : 1) * (0.062 + f * 0.056), 0.015, 0.13);
+        H.add(tk);
+        holoTokens.fichas.push(tk);
+      }
+    }
+    holoTokens.cartel10 = _cartelTxt(T('tut_h_10'), '#ff8a3d', 62, 0.30, 0.15);
+    holoTokens.cartel10.position.set(0, 0.42, 0);
+    h

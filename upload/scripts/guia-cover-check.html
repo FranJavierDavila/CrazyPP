@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>CRAZY PING PONG · Guía sin tecnicismos · V2.124</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============ PÁGINA ============ */
+@page { size: 720px 1020px; margin: 0; }
+
+:root{
+  --c-bg:    #F5F3ED;   /* crema papel */
+  --c-ink:   #26313D;   /* texto */
+  --c-blue:  #0E2A47;   /* azul profundo de marca */
+  --c-orange:#F97316;   /* naranja bola */
+  --c-card:  #FFFFFF;
+  --soft-blue:  rgba(14,42,71,.06);
+  --soft-orange:rgba(249,115,22,.10);
+}
+
+html, body{
+  margin:0; padding:0;
+  width:720px;
+  background:var(--c-blue); /* color dominante oscuro: portada y cierre */
+  color:var(--c-ink);
+  font-family:'Nunito Sans','Noto Color Emoji',sans-serif;
+  font-size:15.5px; line-height:1.62;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+
+@media screen{
+  html{ height:auto; display:flex; justify-content:center; background:#0E2A47; }
+  body{ transform-origin:top center; margin:20px auto; box-shadow:0 12px 60px rgba(0,0,0,.45); }
+}
+
+h1,h2,h3,h4{ font-family:'Baloo 2','Noto Color Emoji',sans-serif; margin:0; }
+p{ margin:0 0 12px 0; }
+strong{ font-weight:900; color:var(--c-blue); }
+
+/* ============ PORTADA ============ */
+.cover{
+  width:720px; height:1020px; box-sizing:border-box;
+  break-after:page; overflow:hidden;
+  background:
+    radial-gradient(340px 340px at 88% 12%, rgba(249,115,22,.22), transparent 68%),
+    radial-gradient(420px 420px at 8% 96%, rgba(255,255,255,.07), transparent 70%),
+    linear-gradient(160deg, #0E2A47 0%, #12345A 100%),
+    #0E2A47;
+  color:#F7F5EF;
+  display:flex; flex-direction:column; justify-content:center;
+  padding:64px; position:relative;
+}
+.cover .net-line{
+  position:absolute; left:0; right:0; top:118px; height:2px;
+  background:repeating-linear-gradient(90deg, rgba(247,245,239,.35) 0 14px, transparent 14px 26px);
+}
+.cover .ball{
+  position:absolute; border-radius:50%;
+  background:radial-gradient(circle at 32% 30%, #FFB25C, #F97316 62%, #C2410C);
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+.cover .ball.b1{ width:118px; height:118px; right:64px; top:170px; }
+.cover .ball.b2{ width:34px; height:34px; right:150px; top:120px; opacity:.85; }
+.cover .ball.b3{ width:20px; height:20px; left:84px; bottom:180px; opacity:.6; }
+.cover .ring{
+  position:absolute; width:230px; height:230px; border-radius:50%;
+  border:2px dashed rgba(247,245,239,.22); left:-70px; top:-70px;
+}
+.cover-tag{
+  display:inline-block; align-self:flex-start;
+  font-size:12px; font-weight:900; letter-spacing:2.6px; text-transform:uppercase;
+  color:#0E2A47; background:#F7F5EF; border-radius:999px; padding:8px 16px;
+  margin-bottom:34px;
+}
+.cover .h1a, .cover .h1b{
+  font-family:'Baloo 2','Noto Color Emoji',sans-serif;
+  font-size:64px; line-height:1.06; font-weight:800; letter-spacing:.5px;
+}
+.cover .h1a{ color:#FFFFFF; margin-bottom:0; }
+.cover .h1b{ color:#F97316; }
+.cover .cover-bar{ width:120px; height:7px; border-radius:4px; background:#F97316; margin:42px 0 44px; }
+.cover .cover-sub{ font-size:21px; line-height:1.5; font-weight:600; color:#F7F5EF; max-width:520px; margin-bottom:16px; }
+.cover .cover-aud{
+  font-size:14.5px; line-height:1.55; color:rgba(247,245,239,.82); max-width:500px;
+  border-left:3px solid #F97316; padding-left:14px; margin-top:10px;
+}
+.cover .cover-zones{
+  display:flex; gap:10px; margin-top:38px;
+}
+.cover .zone-chip{
+  flex:1; border:1.5px solid rgba(247,245,239,.28); border-radius:14px;
+  padding:12px 10px 11px; text-align:center;
+}
+.cover .zone-chip .z-ic{ font-size:22px; display:block; margin-bottom:5px; }
+.cover .zone-chip .z-t{ font-family:'Baloo 2','Noto Color Emoji',sans-serif; font-size:14.5px; font-weight:700; color:#FFFFFF; display:block; letter-spacing:.4px; }
+.cover .zone-chip .z-s{ font-size:11.5px; color:rgba(247,245,239,.75); display:block; margin-top:2px; }
+.cover .cover-foot{
+  position:absolute; left:64px; right:64px; bottom:46px;
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:11.5px; letter-spacing:2.2px; text-transform:uppercase; color:rgba(247,245,239,.62);
+  border-top:1px solid rgba(247,245,239,.18); padding-top:16px;
+}
+
+/* ============ CONTENIDO ============ */
+.main-content{
+  width:720px; box-sizing:border-box;
+  background:var(--c-bg);
+  padding:58px 62px 44px 62px;
+}
+.section-tag{
+  font-size:11px; font-weight:900; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--c-orange); margin-bottom:6px;
+}
+.section-title{
+  font-size:29px; font-weight:800; color:var(--c-blue); line-height:1.14; margin-bottom:10px;
+}
+.divider{ width:54px; height:5px; border-radius:3px; background:var(--c-orange); margin:0 0 18px 0; }
+.chapter-header{ break-after:avoid; break-inside:avoid; margin-top:26px; }
+.chapter-header:first-child{ margin-top:0; }
+
+.body-text{ margin-bottom:12px; }
+.lead{ font-size:16px; font-weight:600; color:var(--c-blue); }
+
+.card{
+  background:var(--c-card); border:1px solid rgba(14,42,71,.09);
+  border-radius:14px; padding:16px 18px; margin-bottom:13px; break-inside:avoid;
+}
+.card h3{ font-size:17.5px; font-weight:700; color:var(--c-blue); margin-bottom:6px; }
+.card p:last-child{ margin-bottom:0; }
+
+.zone-card{
+  border-left:5px solid var(--c-orange); border-radius:14px;
+  background:var(--c-card); border-top:1px solid rgba(14,42,71,.09);
+  border-right:1px solid rgba(14,42,71,.09); border-bottom:1px solid rgba(14,42,71,.09);
+  padding:15px 18px; margin-bottom:12px; break-inside:avoid;
+}
+.zone-card.blue{ border-left-color:var(--c-blue); }
+.zone-card .z-head{ display:flex; align-items:center; gap:10px; margin-bottom:5px; }
+.zone-card .z-ic{ font-size:21px; }
+.zone-card h3{ font-size:17px; font-weight:800; color:var(--c-blue); letter-spacing:.3px; }
+.zone-card .z-role{
+  margin-left:auto; font-size:10.5px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--c-orange); background:var(--soft-orange); border-radius:999px; padding:4px 10px; white-space:nowrap;
+}
+.zone-card p{ margin-bottom:0; font-size:14.8px; }
+.zone-card .z-io{ font-size:13px; color:rgba(38,49,61,.75); margin-top:7px; }
+.zone-card .z-io b{ color:var(--c-blue); }
+
+.flow{ display:flex; align-items:center; gap:6px; margin:14px 0 4px; break-inside:avoid; }
+.flow .f-node{
+  flex:1; text-align:center; background:var(--c-card);
+  border:1.5px solid rgba(14,42,71,.14); border-radius:11px; padding:9px 4px;
+  font-size:12.2px; font-weight:900; color:var(--c-blue); letter-spacing:.2px;
+}
+.flow .f-node.hot{ background:var(--c-blue); color:#FFFFFF; border-color:var(--c-blue); }
+.flow .f-arrow{ color:var(--c-orange); font-weight:900; font-size:15px; flex:0 0 auto; }
+
+.pill-note{
+  background:var(--soft-blue); border-radius:12px; padding:13px 16px;
+  font-size:14.2px; margin:4px 0 13px; break-inside:avoid;
+}
+.pill-note b{ color:var(--c-blue); }
+.pill-note.orange{ background:var(--soft-orange); }
+
+.two-col{ display:flex; gap:12px; }
+.two-col > .card{ flex:1; margin-bottom:13px; }
+
+.mini-list{ list-style:none; margin:2px 0 0 0; padding:0; }
+.mini-list li{
+  position:relative; padding:0 0 0 22px; margin-bottom:7px; font-size:14.6px;
+  break-inside:avoid;
+}
+.mini-list li::before{
+  content:""; position:absolute; left:0; top:7px; width:9px; height:9px; border-radius:3px;
+  background:var(--c-orange);
+}
+.mini-list.blue li::before{ background:var(--c-blue); }
+.mini-list b{ color:var(--c-blue); }
+
+/* fases del taller */
+.phase{ break-inside:avoid; background:var(--c-card); border:1px solid rgba(14,42,71,.09);
+  border-radius:14px; padding:15px 17px 13px; margin-bottom:12px; }
+.phase .p-head{ display:flex; align-items:center; gap:11px; margin-bottom:8px; }
+.phase .p-num{
+  width:30px; height:30px; border-radius:50%; background:var(--c-orange); color:#fff;
+  font-family:'Baloo 2','Noto Color Emoji',sans-serif; font-weight:800; font-size:16px;
+  display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+}
+.phase h3{ font-size:17px; font-weight:800; color:var(--c-blue); }
+.phase .row{ display:flex; gap:9px; margin-bottom:6px; }
+.phase .row .lab{
+  flex:0 0 112px; font-size:10.5px; font-weight:900; letter-spacing:1.1px; text-transform:uppercase;
+  padding:3px 0; text-align:center; border-radius:7px; height:fit-content; margin-top:2px;
+}
+.phase .row.you .lab{ background:var(--soft-blue); color:var(--c-blue); }
+.phase .row.ia  .lab{ background:var(--soft-orange); color:#B4530A; }
+.phase .row p{ margin:0; font-size:14.4px; }
+.phase .p-ej{ font-size:13.4px; font-style:italic; color:rgba(38,49,61,.78);
+  border-top:1px dashed rgba(14,42,71,.16); padding-top:7px; margin-top:2px; }
+.phase .p-ej b{ color:var(--c-orange); font-style:normal; }
+
+/* semáforo de estados */
+.states{ margin:6px 0 4px; }
+.state{ display:flex; gap:14px; break-inside:avoid; }
+.state .rail{ display:flex; flex-direction:column; align-items:center; flex:0 0 30px; }
+.state .dot{
+  width:26px; height:26px; border-radius:50%; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+  background:var(--c-orange); color:#fff; box-shadow:0 0 0 4px var(--soft-orange);
+}
+.state.azul .dot{ background:var(--c-blue); box-shadow:0 0 0 4px var(--soft-blue); }
+.state .rail .wire{ width:3px; flex:1; min-height:14px; background:rgba(14,42,71,.15); border-radius:2px; }
+.state .s-card{ flex:1; background:var(--c-card); border:1px solid rgba(14,42,71,.09);
+  border-radius:12px; padding:10px 14px 9px; margin-bottom:10px; }
+.state .s-card h4{ font-size:15.5px; font-weight:800; color:var(--c-blue); margin-bottom:2px; }
+.state .s-card p{ margin:0; font-size:13.8px; }
+
+/* pasos numerados */
+.step{ display:flex; gap:13px; break-inside:avoid; margin-bottom:11px; }
+.step .s-num{
+  width:29px; height:29px; border-radius:50%; background:var(--c-blue); color:#fff; flex:0 0 auto;
+  font-family:'Baloo 2','Noto Color Emoji',sans-serif; font-weight:800; font-size:15.5px;
+  display:flex; align-items:center; justify-content:center; margin-top:2px;
+}
+.step .s-body{ flex:1; }
+.step .s-body h4{ font-size:15.8px; font-weight:800; color:var(--c-blue); margin-bottom:2px; }
+.step .s-body p{ margin:0; font-size:14.5px; }
+
+/* checklist */
+.check{ list-style:none; margin:0; padding:0; }
+.check li{
+  position:relative; padding:0 0 0 30px; margin-bottom:8px; font-size:14.4px; break-inside:avoid;
+}
+.check li::before{
+  content:""; position:absolute; left:2px; top:3px; width:14px; height:14px;
+  border:2.5px solid var(--c-orange); border-radius:4px; background:#fff;
+}
+.check.blue li::before{ border-color:var(--c-blue); }
+
+.callout{
+  background:var(--c-blue); color:#F7F5EF; border-radius:14px; padding:16px 19px;
+  margin:4px 0 13px; break-inside:avoid; font-size:14.6px;
+}
+.callout .c-t{ font-family:'Baloo 2','Noto Color Emoji',sans-serif; font-size:16px; font-weight:700;
+  color:#FFB25C; margin-bottom:5px; }
+.callout p{ color:rgba(247,245,239,.92); }
+.callout b{ color:#FFFFFF; }
+
+/* chuleta */
+.cheat{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:13px; }
+.cheat .c-box{ flex:1 1 44%; background:var(--c-card); border:1px solid rgba(14,42,71,.10);
+  border-radius:14px; padding:14px 16px; break-inside:avoid; box-sizing:border-box; }
+.cheat .c-box.full{ flex:1 1 100%; }
+.cheat h4{ font-size:15px; font-weight:800; color:var(--c-blue); margin-bottom:8px; letter-spacing:.3px; }
+.chain{ font-size:13.2px; font-weight:700; color:var(--c-ink); line-height:2.0; }
+.chain span{ background:var(--soft-blue); border-radius:8px; padding:3px 9px; white-space:nowrap; }
+.chain i{ color:var(--c-orange); font-style:normal; font-weight:900; padding:0 2px; }
+
+/* glosario */
+.gloss{ column-count:2; column-gap:14px; margin-top:2px; }
+.g-item{ break-inside:avoid; background:var(--c-card); border:1px solid rgba(14,42,71,.09);
+  border-radius:12px; padding:11px 13px; margin-bottom:11px; }
+.g-item h4{ font-size:14.8px; font-weight:800; color:var(--c-orange); margin-bottom:3px; }
+.g-item p{ margin:0; font-size:13.3px; line-height:1.5; }
+
+/* banda de cierre dentro del contenido */
+.close-band{
+  margin:20px -62px -44px -62px; background:var(--c-blue); color:rgba(247,245,239,.85);
+  padding:26px 62px; text-align:center; font-size:12px; letter-spacing:2.4px; text-transform:uppercase;
+}
+
+/* ============ CIERRE ============ */
+.ending{
+  width:720px; height:1020px; box-sizing:border-box;
+  break-before:page; overflow:hidden; position:relative;
+  background:
+    radial-gradient(300px 300px at 12% 10%, rgba(249,115,22,.16), transparent 70%),
+    #0E2A47;
+  color:#F7F5EF;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  text-align:center; padding:70px;
+}
+.ending .ball{
+  width:74px; height:74px; border-radius:50%;
+  background:radial-gradient(circle at 32% 30%, #FFB25C, #F97316 62%, #C2410C);
+  box-shadow:0 10px 30px rgba(0,0,0,.35); margin-bottom:34px;
+}
+.ending .e-kicker{ font-size:12px; letter-spacing:2.6px; text-transform:uppercase; color:#FFB25C; font-weight:900; margin-bottom:18px; }
+.ending h2{ font-size:34px; line-height:1.3; font-weight:800; color:#FFFFFF; max-width:540px; margin-bottom:26px; }
+.ending .e-recap{ font-size:16px; line-height:1.9; color:rgba(247,245,239,.85); max-width:480px; margin-bottom:40px; }
+.ending .e-recap b{ color:#FFB25C; }
+.ending .e-id{
+  border-top:1px solid rgba(247,245,239,.22); padding-top:18px; width:340px;
+  font-size:11.5px; letter-spacing:2.2px; text-transform:uppercase; color:rgba(247,245,239,.6);
+}
+</style>
+</head>
+<body>
+<!-- ==================== PORTADA ==================== -->
+<div class="cover">
+  <div class="net-line"></div>
+  <div class="ring"></div>
+  <div class="ball b1"></div>
+  <div class="ball b2"></div>
+  <div class="ball b3"></div>
+
+  <div class="cover-tag">Guía sin tecnicismos · V2.124</div>
+  <div class="h1a">CRAZY</div>
+  <div class="h1b">PING PONG</div>
+  <div class="cover-bar"></div>
+  <div class="cover-sub">Cómo se crean los campeonatos nuevos, dónde los probamos y desde dónde se juega al juego final.</div>
+  <div class="cover-aud">Escrita para alguien que <strong>nunca ha visto el desarrollo</strong> y debe entenderlo todo sin conocimientos técnicos: aquí no hay palabras raras, solo pasos cotidianos.</div>
+
+  <div class="cover-zones">
+    <div class="zone-chip"><span class="z-ic">🏗️</span><span class="z-t">EL TALLER</span><span class="z-s">aquí se crean</span></div>
+    <div class="zone-chip"><span class="z-ic">🔬</span><span class="z-t">EL LABORATORIO</span><span class="z-s">aquí se prueban</span></div>
+    <div class="zone-chip"><span class="z-ic">🏟️</span><span class="z-t">EL ESTADIO</span><span class="z-s">aquí se juega</span></div>
+  </div>
+
+  <div class="cover-foot">
+    <span>Crazy Ping Pong</span>
+    <span>Meta Quest 3 · V2.124</span>
+  </div>
+</div>
+</body>
+</html>

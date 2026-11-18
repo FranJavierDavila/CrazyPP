@@ -1,0 +1,6 @@
+[safe]
+	directory = /home/z/my-project/upload
+	directory = /home/z/my-project
+[user]
+	email = z@container
+	name = Z User

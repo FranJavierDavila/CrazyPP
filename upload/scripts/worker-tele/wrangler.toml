@@ -1,0 +1,16 @@
+# CRAZY PING PONG · Worker de telemetría de producción (ronda 8)
+# Despliegue por CLI (alternativa al dashboard):
+#   npx wrangler@3 d1 create crazypp-tele          # crea la base y da el database_id
+#   → pega el database_id aquí abajo
+#   npx wrangler@3 d1 execute crazypp-tele --remote --command "SELECT 1"   # prueba
+#   CLAVE=tu-secreto npx wrangler@3 deploy          # lee la variable del entorno
+# (el dueño puede hacerlo todo desde el dashboard: ver LEEME.md)
+
+name = "crazypp-tele"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "crazypp-tele"
+database_id = "PEGA_AQUI_EL_DATABASE_ID"

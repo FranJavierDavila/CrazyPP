@@ -1,0 +1,124 @@
+==========================================================
+CRAZY PING PONG · V3.4.0-IMP1 (Reactor de impulso en la Estación
+Orbital + Reactor de energía inestable, sobre la precisión CCD)
+Guía de subida y despliegue — LEEME PRIMERO
+==========================================================
+
+QUÉ ES ESTE PAQUETE
+-------------------
+Tu V3.1.2-CCD1 (precisión de contacto por CCD SDF) más la V3.3.0-NUC1
+(el Reactor de energía inestable en la etapa 2) y la V3.4.0-IMP1, que
+estrena la etapa 4 del campeonato de la ESTACIÓN ORBITAL:
+
+  · ETAPA 4 NUEVA · REACTOR DE IMPULSO (mecánica del dueño): sala
+    propia con las 6 imágenes del dueño, SIN mesa tradicional — la
+    BASE FLOTANTE (base.png) repone la pelota y las dos ventanas
+    laterales muestran el viaje a velocidad lumínica (estrellas con
+    estelas desde el centro hacia afuera, el mismo efecto en ambas).
+  · EL NÚCLEO DEL REACTOR alterna ESTABLE (azul, rotación uniforme)
+    e INESTABLE (rojo pulsante, rotación caótica, alarma sonora) y
+    expulsa CUBOS CUÁNTICOS en 3 OLEADAS de 3, 5 y 7 cubos con 2
+    minutos independientes por oleada. Se destruyen con la pelota
+    (colisión real, no proximidad) y se fragmentan en cubitos.
+  · PISTOLA LÁSER (pistol.glb) en la mano libre: acierta las DIANAS
+    cuánticas (diana_quantica.png: 1 s visibles, 1 s de espera,
+    posición nueva cada ciclo) y desata PERTURBACIONES — Gravedad 0,
+    Atractor (un golpe destruye TODOS los cubos agrupados) y
+    Supergravedad (caen a ras de suelo, comprimidos). Cambio
+    automático cada 30 s, independiente del disparo.
+  · PANTALLA suspendida del techo (pantallainfo.png) con oleada,
+    tiempo, cubos restantes, estado del reactor y perturbación.
+  · DERROTA: el ASTRO aparece riéndose (astro_laughing.png) frente
+    al jugador y el juego vuelve a la sala de la etapa 1.
+  · Y conserva TODO el recorrido: el REACTOR DE ENERGÍA INESTABLE en
+    la etapa 2 (núcleo de gravedad + esferas de plasma + compuertas),
+    CCD SDF de contacto (CCD1), saque VR realista con asistencia
+    limitada (SRV2), gracia del saque + bote honesto + prompt B
+    (FEEL1), hall del anfitrión (HALL1), PRO CIRCUITO (PLAY1), intro
+    oficial (SRV1), física viva y palas con carácter (FIS1) y CRAZY
+    TV en directo.
+
+La CRAZY TV sigue igual: las partidas de la Quest se emiten como canales
+y cualquiera las mira EN DIRECTO sin visor. Sin relay, todo lo demás
+funciona como siempre.
+
+CONTENIDO DEL PAQUETE
+---------------------
+  index.html            El juego completo (V3.4.0-IMP1). Es tu game.html
+                        de siempre, renombrado para que el hosting lo sirva
+                        como página principal.
+  tv.html               CRAZY TV: el visor de emisiones en directo.
+  assets/               intro.mp4 (intro oficial, faststart), modelo de
+                        pala y pieles.
+  championships/        Los campeonatos de carpeta (5). (En el paquete
+                        ligera esta carpeta va preparada para copiar.)
+  vendor/               socket.io.min.js (cliente del relay).
+  live-service/         El relay de TV en Node (para Railway/Render/PC).
+  extras-nextjs/        Opcionales: el hub /descargas y el banner TV de
+                        la app Next.js del entorno de pruebas.
+  LEEME-DESPLIEGUE.txt  Esta guía.
+  CHULETA-DIRECTO.txt   La versión de una página, para pegar en el móvil.
+  VERSION.txt           Versión, fecha y hashes SHA256 de los ficheros
+                        clave (verificación de integridad).
+
+SUBIDA RÁPIDA (3 caminos)
+-------------------------
+1) CLOUDFLARE PAGES (recomendado, gratis y con HTTPS):
+   usa el paquete «CLOUDFLARE» (estático puro, sin TS ni package.json).
+   dash.cloudflare.com → Workers & Pages → Create → Pages → Upload
+   assets → arrastra el CONTENIDO del zip descomprimido → Deploy.
+   Queda en https://<algo>.pages.dev
+
+2) NETLIFY DROP (el más rápido):
+   usa el paquete «ligera». app.netlify.com/drop y arrastra el
+   CONTENIDO del zip. Queda en https://<algo>.netlify.app
+
+3) hosting propio: descomprime y sirve la carpeta con cualquier
+   servidor estático (nginx, caddy, python -m http.server…).
+
+EL RELAY DE LA TV (opcional)
+----------------------------
+Sin relay, el juego funciona 100 % (partido, entrenamiento,
+supervivencia, campeonatos y P2P). La TV en directo necesita el relay:
+
+  · PC/servidor: cd live-service && npm install && node server.mjs
+    (escucha en :3004).
+  · Railway/Render: sube el contenido de live-service/ a un repo de
+    GitHub (o usa el mini-zip «SOLO») y despliega: npm start.
+    Railway da una URL https://<algo>.up.railway.app
+
+En el juego, añade ?relay=<URL-del-relay> (ej.: ?relay=https://mi-relay.
+up.railway.app) y arranca una partida: se publica sola. Los
+espectadores abren tv.html con el mismo ?relay=.
+
+NOTA HTTPS (Quest)
+------------------
+El navegador de Meta Quest exige HTTPS (o localhost) para WebXR. Los
+hosting de arriba ya lo dan. Para LAN casera usa caddy o ngrok.
+
+VERIFICACIÓN
+------------
+  · Dentro del juego, la portada muestra el sello V3.4.0-IMP1.
+  · VERSION.txt trae los SHA256; unzip -t <paquete> verifica el ZIP.
+  · Consola del juego: window.__PP_VERSION debe ser '3.4.0-IMP1' y el
+    campeonato Estación Orbital luce las DOS pruebas de reactor (la
+    etapa 2 con plasma y compuertas, la etapa 4 con cubos cuánticos).
+
+PROBLEMAS FRECUENTES
+--------------------
+  · «La estación se ve con el arte antiguo»: borra la caché del
+    navegador de la Quest (Ajustes → Privacidad → Borrar datos) o
+    fuerza recarga; los JPG/WEBP nuevos pesan distinto y el navegador
+    a veces sirve los viejos.
+  · «El saque me sale flojo / lateral»: es el requisito funcionando —
+    la salida es la que produce TU gesto. Prueba el gatillo para el
+    lanzamiento asistido y golpea con la cara abierta hacia la red.
+    Afina en consola con __ppDebug.serveTune (assistAngle, assistMax…).
+  · «Estoy en el hall y no veo la cancha»: es el hub. Arranca un modo
+    desde el menú (o «A LA CANCHA») y sales al momento.
+  · «En partida quiero cambiar de modo»: menú → «⌂ VOLVER AL HALL».
+  · «En la etapa 4 no veo la pistola»: aparece al empezar la oleada,
+    en la mano libre. Si no, revisa que el mando de la mano libre
+    está despierto (pulsa el gatillo una vez).
+  · La TV no conecta: revisa el ?relay= y que el relay esté encendido
+    (node server.mjs). El juego avisa arriba a la derecha.

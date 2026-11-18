@@ -1,0 +1,124 @@
+==========================================================
+CRAZY PING PONG · V3.1.0-SRV2 (saque VR realista + hall como hub)
+Guía de subida y despliegue — LEEME PRIMERO
+==========================================================
+
+QUÉ ES ESTE PAQUETE
+-------------------
+Tu V3.0.9-HALL1 (hall del anfitrión + saque por dificultad) más la
+V3.1.0-SRV2, que cumple el requisito «LO REALMENTE IMPORTANTE»:
+
+  · SAQUE VR REALISTA CON ASISTENCIA LIMITADA — el gesto manda:
+    · A) Sujeción y lanzamiento: la bola descansa en la mano libre;
+      soltar el grip la lanza con la velocidad EXACTA de la mano (sin
+      «subida mínima» escondida que reescribiera el gesto: si la mano
+      no impulsa, la bola cae y se repite). El gatillo sigue siendo la
+      ayuda explícita (sube el lanzamiento según la dificultad).
+    · B) Detección del impacto: CCD fina en 2 pasadas (el punto de
+      cruce se reevalúa contra el plano REAL de la pala en el instante
+      del contacto) y tolerancias espaciales PEQUEÑAS y configurables.
+      La tolerancia compensa el tracking: no crea golpes a distancia.
+    · C) Respuesta física: el impulso sale SIEMPRE del modelo real —
+      orientación de la cara, velocidad lineal+angular, restitución,
+      fricción, punto dulce. Pala mal orientada = salida lateral,
+      débil o fallida. Nada sustituye el golpeo; nada te devuelve la
+      bola al campo rival por arte de magia.
+    · D) Asistencia progresiva ACOTADA: sólo se MEZCLA (máximo 35 %
+      en dificultad media, decaída lineal) hacia una referencia legal
+      si el error angular de tu salida real entra en el margen
+      (17° medio · 24° fácil · 12° difícil). Un saque ya legal, un LET
+      o un roce NO se tocan; un mal gesto JAMÁS se convierte en válido.
+    · E) Validación de la trayectoria: el árbitro juzga el vuelo REAL
+      (bote propio → bote rival → LET/falta). Lo que sale, vuela; lo
+      que sale mal, se pitó.
+    · F) Ajustes: SERVE_TUNE (window.__ppDebug.serveTune en consola),
+      telemetría del último saque (__ppDebug.lastServe) y laboratorio
+      de QA (__PP_SERVE_LAB con los 9 casos del requisito).
+
+  · EL HALL ES EL HUB: cerrar el menú dentro del hall YA NO te saca a
+    la cancha — el menú principal vive en el hall. En partida (y en el
+    hub de entrenamiento) el menú añade «⌂ VOLVER AL HALL»: recoge
+    partido/entrenamiento/campeonato y te planta en la estancia con el
+    menú abierto, que es donde se cambian ajustes y modalidad.
+
+Y conserva TODO el recorrido: hall del anfitrión y saque por dificultad
+(HALL1), saque real y zonas fieles al juez (TRN1), PRO CIRCUITO con
+combos y estrellas (PLAY1), intro oficial (SRV1), física viva y palas
+con carácter (FIS1) y CRAZY TV en directo.
+
+La CRAZY TV sigue igual: las partidas de la Quest se emiten como canales
+y cualquiera las mira EN DIRECTO sin visor. Sin relay, todo lo demás
+funciona como siempre.
+
+CONTENIDO DEL PAQUETE
+---------------------
+  index.html            El juego completo (V3.1.0-SRV2). Es tu game.html
+                        de siempre, renombrado para que el hosting lo sirva
+                        como página principal.
+  tv.html               CRAZY TV: el visor de emisiones en directo.
+  assets/               intro.mp4 (intro oficial, faststart), modelo de
+                        pala y pieles.
+  championships/        Los campeonatos de carpeta (5). (En el paquete
+                        ligera esta carpeta va preparada para copiar.)
+  vendor/               socket.io.min.js (cliente del relay).
+  live-service/         El relay de TV en Node (para Railway/Render/PC).
+  extras-nextjs/        Opcionales: el hub /descargas y el banner TV de
+                        la app Next.js del entorno de pruebas.
+  LEEME-DESPLIEGUE.txt  Esta guía.
+  CHULETA-DIRECTO.txt   La versión de una página, para pegar en el móvil.
+  VERSION.txt           Versión, fecha y hashes SHA256 de los ficheros
+                        clave (verificación de integridad).
+
+SUBIDA RÁPIDA (3 caminos)
+-------------------------
+1) CLOUDFLARE PAGES (recomendado, gratis y con HTTPS):
+   usa el paquete «CLOUDFLARE» (estático puro, sin TS ni package.json).
+   dash.cloudflare.com → Workers & Pages → Create → Pages → Upload
+   assets → arrastra el CONTENIDO del zip descomprimido → Deploy.
+   Queda en https://<algo>.pages.dev
+
+2) NETLIFY DROP (el más rápido):
+   usa el paquete «ligera». app.netlify.com/drop y arrastra el
+   CONTENIDO del zip. Queda en https://<algo>.netlify.app
+
+3) hosting propio: descomprime y sirve la carpeta con cualquier
+   servidor estático (nginx, caddy, python -m http.server…).
+
+EL RELAY DE LA TV (opcional)
+----------------------------
+Sin relay, el juego funciona 100 % (partido, entrenamiento,
+supervivencia, campeonatos y P2P). La TV en directo necesita el relay:
+
+  · PC/servidor: cd live-service && npm install && node server.mjs
+    (escucha en :3004).
+  · Railway/Render: sube el contenido de live-service/ a un repo de
+    GitHub (o usa el mini-zip «SOLO») y despliega: npm start.
+    Railway da una URL https://<algo>.up.railway.app
+
+En el juego, añade ?relay=<URL-del-relay> (ej.: ?relay=https://mi-relay.
+up.railway.app) y arranca una partida: se publica sola. Los
+espectadores abren tv.html con el mismo ?relay=.
+
+NOTA HTTPS (Quest)
+------------------
+El navegador de Meta Quest exige HTTPS (o localhost) para WebXR. Los
+hosting de arriba ya lo dan. Para LAN casera usa caddy o ngrok.
+
+VERIFICACIÓN
+------------
+  · Dentro del juego, la portada muestra el sello V3.1.0-SRV2.
+  · VERSION.txt trae los SHA256; unzip -t <paquete> verifica el ZIP.
+  · Consola del juego: window.__PP_VERSION debe ser '3.1.0-SRV2' y
+    window.__ppDebug.serveTune expone los parámetros del saque.
+
+PROBLEMAS FRECUENTES
+--------------------
+  · «El saque me sale flojo / lateral»: es el requisito funcionando —
+    la salida es la que produce TU gesto. Prueba el gatillo para el
+    lanzamiento asistido y golpea con la cara abierta hacia la red.
+    Afina en consola con __ppDebug.serveTune (assistAngle, assistMax…).
+  · «Estoy en el hall y no veo la cancha»: es el hub. Arranca un modo
+    desde el menú (o «A LA CANCHA») y sales al momento.
+  · «En partida quiero cambiar de modo»: menú → «⌂ VOLVER AL HALL».
+  · La TV no conecta: revisa el ?relay= y que el relay esté encendido
+    (node server.mjs). El juego avisa arriba a la derecha.

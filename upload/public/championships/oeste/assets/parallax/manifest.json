@@ -1,0 +1,51 @@
+{
+ "p1": [
+  "p1_paisajedesierto1.png",
+  "p1_paisajedesierto2.png"
+ ],
+ "p2": [
+  "p2_estructura1.png",
+  "p2_estructura2.png",
+  "p2_estructura3.png",
+  "p2_estructura4.png",
+  "p2_estructura5.png",
+  "p2_poste1.png",
+  "p2_poste2.png",
+  "p2_rancho1.png",
+  "p2_rancho2.png",
+  "p2_rancho3.png",
+  "p2_rancho4.png",
+  "p2_roca1.png",
+  "p2_roca2.png",
+  "p2_roca3.png",
+  "p2_roca4.png",
+  "p2_roca5.png",
+  "p2_roca6.png"
+ ],
+ "p3": [
+  "p3_arbusto1.png",
+  "p3_arbusto2.png",
+  "p3_arbusto3.png",
+  "p3_arbusto4.png",
+  "p3_arbusto5.png",
+  "p3_arbusto6.png",
+  "p3_arbusto7.png",
+  "p3_arbusto8.png",
+  "p3_arbusto9.png",
+  "p3_poste1.png",
+  "p3_poste2.png"
+ ],
+ "p4": [
+  "p4_cactus1.png",
+  "p4_cactus2.png",
+  "p4_cambio.png",
+  "p4_caseta.png",
+  "p4_poste1.png",
+  "p4_roca1.png",
+  "p4_roca2.png",
+  "p4_senal.png",
+  "p4_senal2.png",
+  "p4_valla.png",
+  "p4_valla2.png"
+ ]
+}

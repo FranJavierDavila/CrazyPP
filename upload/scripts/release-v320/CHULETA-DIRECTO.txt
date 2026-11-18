@@ -1,0 +1,45 @@
+==========================================================
+CRAZY PING PONG · V3.2.0-ORB1 · CHULETA DE UNA PÁGINA
+==========================================================
+
+QUÉ LLEVA
+  · Decorado REAL de la Estación Orbital (arte del dueño en los 6
+    planos de la sala) · rival ASTRO con 12 poses · mapa nuevo con los
+    MUROS ORBITALES en las etapas 2 y 4 (arkanoid del clown: variante
+    clásica + rojos/azules con pistola láser) · cartel de superpoder
+    «Super Power!!» con miniatura · recortables por el suelo.
+  · Conserva: CCD SDF de contacto (v3.1.2-CCD1), saque VR realista,
+    gracia del saque, bote honesto, prompt B, hall del anfitrión, PRO
+    CIRCUITO, intro oficial, física viva, palas con carácter, CRAZY TV.
+
+SUBIR LA WEB (elige UNO)
+  1) Cloudflare Pages → usa el zip «CLOUDFLARE» (estático puro):
+     dash.cloudflare.com → Workers & Pages → Pages → Upload assets →
+     arrastra el CONTENIDO del zip → Deploy.
+  2) Netlify Drop → usa el zip «ligera»: app.netlify.com/drop y
+     arrastra el CONTENIDO del zip.
+  3) Hosting propio → descomprime y sirve la carpeta (nginx/caddy/
+     python -m http.server).
+
+LA TV EN DIRECTO (opcional)
+  PC: cd live-service && npm install && node server.mjs   (puerto 3004)
+  Railway/Render: sube el contenido de live-service/ (o el mini-zip
+  «SOLO») y despliega con npm start.
+  En el juego añade ?relay=http://IP:3004 (o la URL de Railway). Los
+  espectadores abren tv.html con el mismo ?relay=.
+
+QUEST (IMPORTANTE)
+  El navegador de la Quest exige HTTPS para WebXR: Cloudflare y Netlify
+  ya lo dan. En LAN casera usa caddy o ngrok.
+
+VERIFICACIÓN RÁPIDA
+  · La portada del juego muestra el sello V3.2.0-ORB1.
+  · En consola: window.__PP_VERSION === '3.2.0-ORB1'.
+  · Estación Orbital: sala con literas y la Tierra en el ventanal, el
+    ASTRO a la derecha de la mesa y el mapa nuevo en la pared izquierda.
+
+PROBLEMAS
+  · Arte antiguo en la estación → borra los datos del navegador de la
+    Quest y recarga.
+  · La TV no conecta → ¿relay encendido? ¿?relay= correcto?
+  · Más ayuda: LEEME-DESPLIEGUE.txt dentro del paquete.

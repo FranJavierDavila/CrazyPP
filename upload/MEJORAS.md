@@ -1,0 +1,369 @@
+# CRAZY PING PONG · ROADMAP MAESTRO DE MEJORAS (M1 → M8)
+
+> **Memoria viva del proyecto** — creada r106 (nov 2026). El dueño mandó
+> implementar TODAS las mejoras del análisis crítico; Z (arquitecto) fija el
+> orden **de más sencillo a más complicado**. Este fichero se actualiza al
+> cerrar cada hito: marca `[x]`, anota la ronda/versión en la que se cerró y
+> queda señalado cuál es la SIGUIENTE. Persiste en el repo (GitHub) y en el
+> sandbox — nunca se pierde entre sesiones.
+>
+> Regla de oro: **cada hito = rondas QA→bump→empaquetar→deploy→verificación
+> tres vías** completas, como siempre. Nada se da por hecho sin agujas verdes.
+
+## Cola de ejecución (estado)
+
+| # | Hito | Esfuerzo | Estado |
+|---|------|----------|--------|
+| M1 | Game feel · capas de sonido + hápticas calibradas | ★☆☆ | ✅ HECHA r106 · v3.6.98-SDK6 en producción |
+| M2 | Arnés anti-regresión + alarmas de telemetría | ★★☆ | ✅ HECHA r107 (M2a arnés-gate) + r108 (M2b alarmas, worker vivo) |
+| M3 | PWA instalable (adiós `?v=`, icono en el casco) | ★★☆ | ✅ HECHA r109 · v3.6.99-SDK6 en producción |
+| MP | **MULTIJUGADOR REPARADO** (prioridad del dueño: partida con amigos injugable) | ★★★ | ✅ HECHA r110 · v3.6.100-SDK6 en producción |
+| M4 | Onboarding < 60 s (rally demo + JUGAR + saque guiado) | ★★☆ | ✅ HECHA r111 · v3.6.101-SDK6 en producción |
+| M5 | IA con estilos (8-12 personalidades) + escalera de carrera | ★★★ | ◐ M5a ✅ r112 · M5b escalera → r113 |
+| M6 | Identidad "locura + entrenador" (power-ups, 2v2, campeonatos) | ★★★ | ⬜ pendiente |
+| M7 | Matchmaking + ELO online + reto diario/torneo semanal | ★★★★ | ⬜ pendiente |
+| M8 | Port nativo a tienda (App Lab / Horizon) | ★★★★★ | ⬜ pendiente (decisión estratégica) |
+
+> **HALLAZGO REAL de M2b (r108, estreno del sistema):** con los datos reales
+> del casco del dueño la alarma fps_bajo disparó ROJA al instante — media
+> **58,1 FPS en VR** sobre 17 sesiones vr_end (umbral 60). La pérdida de
+> rendimiento que el dueño reportó en r105 queda CONFIRMADA con telemetría:
+> a investigar en las próximas rondas (candidatos: NITIDEZ/FFR elegida en
+> r96, perfil Quest 2 a 72 Hz mezclado en la media, o coste del hall+HUD).
+>
+> **MP (r110) — REPORTE DEL DUEÑO que reordenó la cola:** «es imposible
+> golpear la bola… las palas no aparecen donde deberían… veo su pelota
+> cuando mueve su pala». Causa raíz: el BIT 4 de la pose (ver sección MP).
+
+---
+
+## MP · MULTIJUGADOR REPARADO ✅ HECHA (r110 · v3.6.100-SDK6) · VERIFICADO AL 100% (r121 · v3.6.110-SDK6)
+
+> **r121 · GARANTÍA EXTENDIDA (requisito Nº 1 del dueño)**: dos defectos
+> REALES del validador §12 cazados por el banco y reparados — (1) la pose
+> para juzgar un golpe/saque remoto ahora es la MÁS PRÓXIMA a tHit en ambas
+> direcciones y a ±150 ms (POSE_FRESH_MS): un hueco sin pose ya no juzga
+> contra una pala fantasma que «no deja sacar»; (2) la cadencia cuenta
+> GOLPES, no lanzamientos: el toss ya no dispara el rechazo del saque
+> rápido. Cobertura nueva del hueco sin probar: el SAQUE DEL INVITADO con
+> ROTACIÓN ITTF — banco S3 (18/0, también a 120 ms ±40/5 %) y batería de 4
+> puntos con PeerJS real (P1 67 · P2 68 · P3 69 checks, 0 fallos).
+
+> **PRIORIDAD MÁXIMA dictada por el dueño** (por delante de M4): el
+> multijugador era INJUGABLE en duelo real. Diagnóstico con un BANCO DE
+> DUELO nuevo en Node (`scripts/diag_multijugador_r110.mjs`): dos extremos
+> completos con el CÓDIGO REAL de producción (c09 NetLink + c09b PPNET +
+> física c04/c05 + c02) sobre un cable simulado (40 ms ±12 ms, pérdida 1 %
+> en fast, canales RTC falsos con SDP/ICE/Hello reales del juego).
+
+**Causa raíz y reparaciones (las 4):**
+- [x] **BIT 4 DE POSE (la madre del cordero)** — el emisor (`c09
+      _samplePose`) ponía `fl |= 4` con la pala en CUALQUIER mano, pero los
+      TRES lectores (c12 render 10311, c12 saque 9928, c09 `_remotePadNet`
+      1754) lo interpretan como «pala en la mano IZQUIERDA (slot 0)». Un
+      jugador diestro (paddleHand=1, el 95 %) viajaba mal leído: el rival
+      pintaba su pala en la MANO LIBRE — donde está la bola del saque («veo
+      su pelota, no su pala», palabra literal del dueño) — y el validador
+      §12 comparaba cada golpe contra la mano equivocada: distancias de >1 m
+      → TODO golpe remoto rechazado → «la bola cae irremediablemente aunque
+      la trate de golpear». Fix en el emisor (bit4 sólo slot 0) + **PROTO 3**
+      (builds mezclados rechazan el HELLO y caen a v1 honesto, sin
+      malinterpretar el cable).
+- [x] **VALIDADOR JUSTO** (c09b VP): MAX_SPIN 160→220 · TOL_FUTURE
+      120→250 ms · HIT_NEAR_PAD 0,60→0,85 m. Con latencia/efecto real se
+      rechazaban golpes LEGÍTIMOS (rechazar un golpe honesto regala un
+      punto y congela el rallye). El anti-trampa sigue vivo: +400 ms sigue
+      rechazado, shot+1 sigue exigido, 0,85 m sigue siendo imposible desde
+      lejos.
+- [x] **MITAD PROPIA JUGABLE EN FANTASMA** (c12 bloque FSM): el fantasma se
+      simulaba con palas VACÍAS aunque la bola ya estuviera EN MI MITAD —
+      ventana muerta de RTT..300 ms por golpeo (a 5 m/s = 1,5 m injugable).
+      Ahora mi pala participa en mi mitad y mi contacto reclama la
+      autoridad (netLocalHit → HIT con validación §12 en el rival). En
+      mitad ajena sigue prohibido tocar.
+- [x] **REPARACIÓN DE SAQUE ATASCADO** (c09 `_applyFastEv` SNAP): si el
+      TOSS/HIT del saque rival se perdía o era rechazado, mi bola quedaba
+      HELD del rival PARA SIEMPRE («no deja ni sacar ni jugar»). Ahora los
+      SNAPs del rival (su bola viva) liberan el hold y pasan a fantasma
+      desde el estado exacto del SNAP.
+
+**Banco de duelo (capa GATE nueva `qa_duelo_r110.py`):** S1 espejo de pose
+EXACTO diestro y zurdo (0,0 cm · 0,1° — el bit4 zurdo viaja ON y el lector
+elige lp) · S2 saque legal con el solucionador REAL del juego → cruce →
+autoridad del invitado → CONTACTO → validación del anfitrión **0 rechazos**
+→ FSM own/ghost/auth correcta. 9/0 verde. `test_red_nucleo` 59/0 (anti-
+trampa intacta: +400 ms rechazado, shot+1 exigido). Batería BQ (3 duelos
+reales en paralelo con PeerJS real) intacta.
+
+**Criterios de aceptación:** dos cascos en el mismo build juegan un duelo
+completo: palas donde deben (diestro y zurdo), bola del saque legible en la
+mano del rival, golpes del invitado ACEPTADOS, sin bolas congeladas.
+Verificación final: el dueño repite la partida con amigos en producción.
+
+---
+
+## M1 · GAME FEEL — capas de sonido de impacto + hápticas calibradas ✅ HECHA (r106 · v3.6.98-SDK6)
+
+> **CORRECCIÓN DE AUDITORÍA (r106):** el análisis crítico inicial se hizo sobre
+> un árbol reciclado a r35 por error del sandbox. El juego r105 YA TRAE desde
+> la r62 «SFX REALES»: muestras físicas modales (cáscara 40 mm + transitorio +
+> cuerpo) para mesa/pala/canto/red/suelo, playbackRate mapeado a la velocidad,
+> jitter ±1,5 % y fallback sintético. La mitad de AUDIO de M1 estaba hecha.
+> Lo que quedaba vivo era la HÁPTICA del bote (0,18 fija, fuera del guard
+> anti-spam) — eso es lo que r106 implementa.
+
+**Alcance:**
+- [x] Capas por material ≥3 variantes × 2 alturas + jitter — **YA EXISTÍA
+      (r62 SFX REALES)**: 5 muestras físicas (mesa/pala/canto/red/suelo),
+      rate 0,84→1,34 por velocidad, jitter ±1,5 %; verificado en r106.
+- [x] Hápticas calibradas (r106): bote de mesa proporcional a velocidad
+      (0,08+0,16·s · 50–80 ms) y DENTRO del guard de 60 ms (antes: 0,18 fija
+      en cada evento = ametralladora en ráfagas esquina+canto).
+- [x] Canto distinguible al tacto (r106): pico más alto (0,14+0,16·s) y seco
+      (28 ms) frente al bote llano.
+- [x] Red palpable (r106): vibración sutil 0,15/45 ms al roce de la malla
+      (eventos raros: sin riesgo de spam).
+- [x] Háptica de pala ya escalada (r62: intensidad 0,35+0,65·s y duración
+      34–96 ms por velocidad) — intacta; anti-ametralladora por diseño.
+
+**Criterios de aceptación:** 12 golpes seguidos suenan distintos (r62 ya
+cumple: jitter + rate por velocidad) · háptica bote suave≠bote fuerte≠canto
+percibible · net-cord se siente · sin regresión de FPS (cascada presupuesto) ·
+agujas r106 en producción.
+
+---
+
+## M2 · ARNÉS ANTI-REGRESIÓN + ALARMAS DE TELEMETRÍA ✅ HECHA (M2a r107 · M2b r108)
+
+> **DIVISIÓN HONESTA (r107):** M2 se parte en dos rondas. **M2a (r107, HECHA)**:
+> el arnés que JUEGA (gate de ronda). **M2b (r108, HECHA)**: alarmas de
+> telemetría en el worker — DESPLEGADAS en producción con deploy_worker.py
+> (sin dashboard: token del dueño, D1 y CLAVE preservadas, E2E de sonda verde).
+
+### M2a · EL ARNÉS QUE JUEGA ✅ HECHA (r107)
+
+**Alcance:**
+- [x] **Arnés físico** (`scripts/arnes_rallies_v3698.mjs`, node puro, 0,6 s):
+      200 rallies completos con el código REAL del juego (c05.stepPhysics +
+      c06.Rules + c06.OpponentAI + c05.findServeVelocity), presets reales
+      (9 combinaciones easy/medium/hard), determinista por semilla (mulberry32,
+      hash estable 81dc1942…). Invariantes por subpaso: I1 finitos · I2 bola en
+      sala · I3 IAs ancladas (nunca cruzan la red; tope legal de persecución
+      2·HL+0,15 de c06) · I4 árbitro vivo (15 s sin golpeo con bola viva) ·
+      I5 reparto de puntos (89-103 en la batería).
+- [x] **Arnés vivo** (`scripts/qa_arnes_vivo_v3698.py`, Playwright): el juego
+      REAL juega 45 s de partido en navegador (bucle completo + piloto IA
+      inyectado en la mitad del jugador, casa espejo del rival). Reloj propio
+      (setAnimationLoop(null) + animate paso a paso — en headless el rAF corre
+      a 1,5 fps). Invariantes V1-V3 por frame; señales de vida exigidas
+      (puntos, botes, saques). Lección clave: el reloj sintético debe arrancar
+      POR DELANTE del real (dt negativo corrompe) y la mesa está en C=−1,6.
+- [x] **Canarios (test canario del criterio de aceptación):** el arnés físico
+      detecta la bola teletransportada (I-2) y el vivo la suya (V2, muestreando
+      antes de que el juego se autocure en 1 frame). Si el canario NO se
+      detecta, el arnés ROJA (un arnés que no muerde no sirve).
+- [x] **Gate de ronda:** `qa_todo.py` gana dos capas M2a (físico 1 s · vivo
+      ~112 s). Si el arnés roja, NO se despliega.
+- [x] Hallazgos del propio arnés (sin cambio de juego necesario): los rallyes
+      largos hard-vs-hard (60+ intercambios, missBase 0,03) son comportamiento
+      ESPERADO, no bug; el juego se autocura de bolas envenenadas en 1 frame;
+      entre puntos la bola se APARCA en (3, 50, 2,3) — el arnés lo tolera.
+
+**Criterios de aceptación:** ✓ canario cazado en ambos arneses · ✓ gate verde
+dentro de qa_todo · ✓ determinismo (mismo hash en 2 ejecuciones).
+
+### M2b · ALARMAS DE TELEMETRÍA ✅ HECHA (r108)
+
+**Alcance:**
+- [x] Bloque `alarmas` en el resumen del worker (worker.js): fps_bajo (media
+      de vr_end.fps <72 amarillo / <60 rojo, ≥3 muestras) · errores_js (media
+      por sesión ≥1 amarillo / ≥3 rojo, mensaje top incluido) · vr_cortas
+      (sesiones VR cerradas de <60 s: ≥25% con ≥3 amarillo / ≥50% rojo).
+      Nivel global = el peor de los items; sin datos suficientes → verde.
+      Tolerante y compatible: campo NUEVO, los lectores viejos no lo leen.
+- [x] E2E local con eventos sembrados (test_local.mjs bloque O, 61 checks
+      en total): perfil malo → rojo global con las 3 alarmas bien caladas ·
+      perfil sano → verde sin items · fronteras (68 = amarillo, 3/sesión =
+      rojo, top inequívoco) · filtro ?sid reescala · almacén vacío → verde.
+- [x] Tarjeta «Alarmas de producción» en el panel de Pages
+      (public/telemetria.html): nivel global coloreado + items (o «Sin
+      alarmas» verde), tolerante con worker viejo. QA capa J 131/0.
+- [x] DESPLIEGUE REAL (r108, sin dashboard): scripts/deploy_worker.py con el
+      token del dueño — D1 reutilizada, CLAVE reutilizada (sin rotación),
+      E2E de sonda en producción verde (latido 270 · 403 sin clave · POST
+      204 · resumen · purga · restauración).
+- [x] **Estreno con hallazgo real:** la alarma fps_bajo disparó ROJA con los
+      datos vivos del dueño — media 58,1 FPS en 17 sesiones vr_end. Ver
+      nota en la cola de ejecución.
+
+---
+
+## M3 · PWA INSTALABLE ✅ HECHA (r109 · v3.6.99-SDK6)
+
+**Por qué:** mata el mayor matador de retención (URL + `?v=` + caché del Quest)
+sin esperar el port nativo. Icono en el casco, arranque en 2 clics, actualización
+por service worker.
+
+**Alcance:**
+- [x] `manifest.webmanifest` (fullscreen landscape, start_url `./game.html`,
+      scope `./` — compatible con Pages bajo `/CrazyPP/`) + iconos 192/512
+      + variante maskable (emblema de la casa: palas cruzadas + bola en oro,
+      `scripts/gen_iconos_pwa.py`) + service worker `sw.js` con estrategia
+      por tipo: game.html stale-while-revalidate · datos vivos
+      (campeonatos/UGC/PAGES-VERSION) network-first · assets cache-first con
+      relleno bajo demanda · purga de cachés viejas en activate.
+- [x] **El bump gobierna la caché (4.º sello físico):** `const CACHE =
+      'crazypp-v<versión>'` en sw.js — `bump_version.py` lo parchea y
+      `qa_version.py` lo verifica; cada versión invalida la caché sola.
+- [x] Portada instaladora (c13): botón «📲 INSTALAR EN EL CASCO» con diálogo
+      nativo (beforeinstallprompt → pwaOn dorado) y caminito manual de 2
+      toques si el navegador no lo dispara (toast `#ppToast`); detección de
+      standalone (el botón se oculta dentro de la app ya instalada);
+      telemetría anónima `pwa_standalone/pwa_prompt/pwa_installed/
+      pwa_manual_hint` (catálogo v5).
+- [x] Deploy compatible con GitHub Pages bajo `/CrazyPP/` (deploy_pages
+      publica manifest+sw+iconos; build_zip los lleva a los 4 ZIPs) + hub
+      /descargas con la guía PWA + i18n ES/EN.
+
+**Criterios de aceptación:** ✓ instalable desde el navegador (headless
+Chromium captura beforeinstallprompt = criterios de instalabilidad
+cumplidos; el dueño instala desde el Quest Browser con el botón o
+⋮ → Instalar app) · ✓ arranque sin teclear URL (icono propio) · ✓ el bump
+de versión invalida la caché sola (4.º sello) · ✓ agujas r109 en producción
+tres vías byte-exacto (31/0) + K/L post-deploy verdes.
+
+---
+
+## M4 · ONBOARDING < 60 SEGUNDOS ✅ HECHA (r111 · v3.6.101-SDK6)
+
+**Alcance:**
+- [x] Rally demostración IA-vs-IA en vivo de fondo en el menú principal —
+      **LA MESA DE LA CASA**: diorama IA-vs-IA sobre pedestal del hall
+      (mesa miniatura ~55 %, palas disco, bola en parábolas scriptadas —
+      cinemática pura, coste cero en cancha, hijo del hallGroup).
+- [x] Botón único **JUGAR** por delante de todo lo demás — tarjeta ▶ JUGAR
+      (hub_play) a toda fila 944×136 en y=240, verde vivo; la academia deja
+      de bloquear (HUB DIRECTO: menuPage='main' SIEMPRE; bienvenida de
+      1.ª instalación en UNA línea del árbitro, first_hint).
+- [x] Saque guiado la primera vez — tres aros dorados aditivos en la cancha
+      real (bola → golpe → red) + UNA línea que sobrevive al startMatch
+      (srv_guide); se marca pp_srv_v1 a los 3 saques legales; nunca en
+      academia ni online; desmonte con dispose.
+- [x] Idioma y altura de mesa detectados/recordados antes del primer toque —
+      c00 detecta navigator.language en la 1.ª instalación (huellas
+      pp_tut_asked/pp_seen_v1 como guardia; es*→ES · resto→EN, recordado en
+      pp_lang) y c12 muestrea la altura de la cabeza (2,6/4,7 s, mediana,
+      <1,30 m → mesa baja 0,70, guardia pp_hauto_v1, nunca online).
+
+**Criterios de aceptación:** un jugador nuevo está en un rally real en <60 s
+sin tocar nada más que JUGAR (medible con telemetría: evento **primer_rally**,
+lat = segundos desde vr_start, una vez por sesión, sólo partido local; catálogo
+v6 con 16 eventos + tut_end del cierre de la academia).
+
+**Cierre (r111):** GATE de ronda VERDE (A 31/0 · B 11/0 · C 29/0 · D 14/0 ·
+F 66/0 · G 54/0 · H 208/0 · J 132/0 · arnés físico 200/0 · arnés vivo 11/0 ·
+r109 VERDE · r110 VERDE · **r111 49/0** · T 17/0 · U 17/0 · V 74/0 · W 43/0 ·
+X 37/0 · Y 31/0 · Z 36/0) + batería multi BQ (P1 LAN verde · P3 túnel 42/42 ·
+P2 con 1 fallo de sincronía = flameo documentado r109/r110, NetLink intacto).
+Re-anclas honestas: qa_telemetria (catálogo v6/16 + panel por su ruta REAL de
+producción /telemetria.html — el SSR del dev server de ESTE sandbox muere por
+los directorios root-owned heredados del reciclado, artefacto del entorno) y
+locale es-ES en los arneses que leen la portada (qa_r109, qa_train_zonas,
+qa_partido_sala — la detección de idioma M4 respeta navigator.language y el
+Chromium de QA nace en-US). QA r111 nueva ya venía del intento perdido de la
+encarnación anterior (qa_r111_v36101 + gen_release_v36101 + sella_r111 en el
+repo) — la implementación en src se reconstruyó sobre esas agujas.
+
+---
+
+## M5 · IA CON ESTILOS + ESCALERA DE CARRERA
+
+> **r112 · M5a ✅ (v3.6.102-SDK6):** DOCE personalidades sobre la MISMA
+> física, sin trampas: Clásico (byte-idéntico, mul=null) · Looper · Chopero ·
+> Bloqueador · Atacante · Defensivo · Dejadas · All-round · Joven nervioso ·
+> Veterano frío · Gigante · Relámpago. Registro `OPPONENT_STYLES` (c02) con
+> multiplicadores ACOTADOS (errStd/missBase/velocidad/predicción/smash/T) +
+> colocación por el canal r95 (zIdle/bias) + celebración propia. Selector ‹ ›
+> en AJUSTES › JUEGO (persistencia pp_estilo_v1, recálculo EN VIVO, anuncio
+> del árbitro). NUNCA en online/campeonato/calibración/academia. PRUEBA DE
+> NO-TRAMPA: arnés Node qa_estilos_r112 (12 estilos × 30 rallies con física,
+> árbitro e IA reales): cfg acotada NT-1, invariantes I1-I4 (la IA jamás
+> cruza la red), firma ≠ clásico D-1 y 66/66 parejas distinguibles D-2.
+> Telemetría ai_style (catálogo v7, 17 eventos). Los rivales de campeonato
+> NO cambian (la herencia de estilos llega con M5b, junto a la escalera).
+
+**Alcance:**
+- [ ] 8-12 personalidades con parámetros y tácticas propias SOBRE la física
+      compartida (sin trampas): Looper (lift desde lejos), Chopero (slice
+      profundo), Bloqueador (pegado, reflejos), Atacante (smash temprano),
+      Defensivo (lobs), Cortador de dejadas, All-round, Joven nervioso,
+      Veterano frío, Gigante (alcance), Pequeño rápido…
+- [ ] Cada estilo = perfil (posición de casa, profundidad, pesos de selección
+      de golpe, errStd, velocidad, estética de swing) + UI con retrato/nombre.
+- [ ] Escalera de carrera: divisiones de bronce→leyenda, rivales concretos por
+      división, progreso guardado, rematches con revancha.
+- [ ] Integración con campeonatos existentes (los rivales heredan estilos).
+
+**Criterios de aceptación:** la IA juega por las MISMA reglas físicas (agujas
+de no-trampa) · 12 rivales distinguibles jugando 1 minuto contra cada uno.
+
+---
+
+## M6 · IDENTIDAD "LOCURA + ENTRENADOR"
+
+**Alcance:**
+- [ ] Modo fiesta: power-ups (bola loca, mesa encogida, pala gigante…) 1v1/2v2
+      local + online-ready.
+- [ ] 2-3 campeonatos temáticos nuevos (heredando champloader).
+- [ ] PRO TRAINING expandido: nuevos ejercicios, progresión semanal y TARJETA
+      DE PROGRESO compartible (captura con stats del mes).
+
+**Criterios de aceptación:** los tres frentes jugables y con agujas; el
+entrenador diferencia frente a Eleven (nuestro estandarte de marketing).
+
+---
+
+## M7 · MATCHMAKING + ELO ONLINE + COMPETICIÓN
+
+**Alcance:**
+- [ ] Backend de emparejamiento en el worker Cloudflare (D1): cola por nivel
+      ELO + región, salas efímeras, señalización PeerJS asistida (el anfitrión
+      publica su ID; el guest lo recibe del servidor — sin compartir códigos).
+- [ ] ELO server-side con antifraude básico (firma de resultados, tasas sospechosas).
+- [ ] Reto diario (semilla por fecha) + torneo semanal con tabla.
+- [ ] Lista de amigos (códigos persistentes) e historial de rivales.
+
+**Criterios de aceptación:** dos cascos se encuentran solos por nivel en <30 s ·
+ELO persiste y sube/baja correctamente · el modo por códigos sigue intacto.
+
+---
+
+## M8 · PORT NATIVO A TIENDA
+
+**La decisión estratégica mayor.** Evaluar: empaquetado nativo del motor propio
+(WebXR→OpenXR) vs reconstrucción. Incluye assets de tienda, cumplimiento de
+políticas, logros/plataforma, precio. Se abre el análisis cuando M1-M4 estén
+cerradas (mejora el producto a presentar) y M7 decida si el online va en web o
+nativo.
+
+---
+
+## Registro de cierre de hitos
+
+| Hito | Ronda(s) | Versión | Fecha | Notas |
+|------|----------|---------|-------|-------|
+| M1 · game feel | r106 | 3.6.98-SDK6 (FASE 100) | 2026-11-01 | Audio r62 verificado como regresión · háptica del bote calibrada dentro del guard · canto distinguible · red palpable · QA 35/0 · cascada verde · tres vías 24/0 |
+| M2a · arnés que juega (gate) | r107 | (sin cambio de juego — 3.6.98-SDK6 sigue) | 2026-11-01 | Arnés físico 200 rallies determinista (0,6 s) + arnés vivo 45 s con piloto IA + canarios cazados en ambos · gate en qa_todo · 0 cambios de gameplay |
+| M2b · alarmas de telemetría | r108 | (sin cambio de juego — 3.6.98-SDK6 sigue) · worker vivo actualizado | 2026-11-02 | Bloque `alarmas` en el resumen (fps_bajo/errores_js/vr_cortas) · harness 61/0 · capa J 131/0 · arneses M2a verdes · desplegado con deploy_worker.py (D1+CLAVE preservadas, E2E sonda verde) · panel Pages con tarjeta · hallazgo real: fps_bajo ROJO 58,1 FPS/17 sesiones |
+| M3 · PWA instalable | r109 | 3.6.99-SDK6 (FASE 101) | 2026-11-02 | manifest+sw.js+iconos de la casa · 4.º sello físico (const CACHE gobernado por el bump) · portada instaladora (diálogo nativo + camino manual + standalone) · telemetría pwa_* (catálogo v5) · build_zip lleva la PWA a los 4 ZIPs · QA gate 13/13 (r109 nueva capa) · cascada histórica re-anclada (20+ capas, BK retirada) · tres vías 31/0 · K/L post-deploy verdes |
+| P4 · verificación de producción + F1-F3 + F4 TURN (ronda 21) | r21 | (sin cambio de juego ni worker — 3.6.116-SDK6 sigue en producción) | 2026-11-07 | game.html?v=3.6.116-SDK6 servido = sha256 f6093b99… EXACTO (10.731.285 B) · marcadores F1-F3 vivos (verCompara×8 · onBuildMismatch×4 · net_build_warn×6) · QA verde: 6 suites juego 174/0 + worker 85/0 · Open Relay re-verificado RETIRADO hoy (192.0.2.1 RFC 5737 + Allocate UDP mudo RFC 5766) → la ruta Metered de ronda 20 espera METERED_APP+METERED_API_KEY del dueño (LEEME: CF 1 TB/mes gratis · Metered 20 GB/mes sin tarjeta) · /api/ice sin secrets responde STUN honesto (turn:false — ningún turn muerto al cliente) · telemetría P4 VIVA en producción: net_ice p2p srflx→srflx rtt 58 ms y net_match completo (rtt med 710 ms · jitter 55 · dur 58 s) — la partida entre casas YA abre por p2p sin TURN en estas redes |
+| SKINS DE BOLA · primera personalización de la bola (ronda 22) | r22 | 3.6.117-SDK6 (FASE 119) | 2026-11-07 | 16 skins 100 % cosméticas (BOLA_ASPECTOS c02): clásicas (blanca/naranja/menta) + locura (estrellas/playa/fútbol/bola 8/ojo) + neón-arcade (neón/holográfica/disco) + planetas (Marte/Luna/Tierra/Lava/Saturno CON ARO) · texturas PROCEDURALES en canvas 512×256 con RNG semillado (deterministas entre cascos · cero bytes en el bundle · cero descargas) · candados igual que mesas reutilizando _mesaLibre (9 libres · 7 por 10 victorias/6★ o racha 5/3★) · REGLA DEL DUEÑO: campeonato → bola oficial, salida del hall recobra la skin (adiós blanco seco) · ESTELA A JUEGO (reposo = RGB de skin; poder/spin siguen mandando) · CHISPAS AL BOTAR (pool fijo 5×8, vida 0,32 s, cero asignaciones por bote) · ONLINE: skin del ANFITRIÓN por el HELLO v2 (campo OPCIONAL sk — JSON tolerante, builds viejos intactos; sólo el invitado la viste, sin candado) · UI: tarjeta BOLA en SALA + subpágina salabola + case bola_skin · I18N 21 claves ES/EN · FÍSICA INTACTA (c04/c05 no conocen las skins — garantía del dueño) · test_r21_bolas_v36117 63/0 · QA 322 checks verde · bump BYTE-EXACTO 10.756.498 B · release v36117 (4 ZIPs + hub) · DESPLEGADO: game ca1a23b0… en producción (commit b6fea97, pages 1717e61, proyecto=backup) |
+| SPIN REALISTA + HALL CABAÑA (ronda 24) | r24 | 3.6.119-SDK6 (FASE 121) | 2026-11-07 | Informe del dueño tras probar la r23: «el giro es muy sutil y poco realista, al dar efecto no se nota el spin» — DOS CURAS: (1) GANANCIA 0.14→0.45 (×3.2, c12): |ω|=110 (tope) ≈ 7,9 rev/s (39,5°/frame a 72 Hz, bajo el umbral de estrobo) · |ω|=25 (EFECTO_SPIN_MIN) ≈ 1,8 rev/s · efecto medio (|ω|≈60) ≈ 4,3 rev/s — el LATIGAZO del bote sigue saliendo gratis (fricción c04) · (2) TEXTURA: las 4 skins planas (blanca/naranja/menta/neón) eran COLOR LISO — una esfera uniforme NO delata su ω ni a 8 rev/s: bolaTex (c07) les pinta como a las bolas de verdad, COSTURA ecuatorial de poliplástico + MARCA de fábrica «CRAZY» con pala en miniatura en dos caras opuestas (mapa × color: las marcas salen del tono de cada bola; canvas procedural, cero bytes) · HALL CABAÑA (las 6 imágenes del dueño, Hallcabana.zip): chimenea de piedra con brasero, barra con botellas y perchero de astas, ventanal nevado con banco de pieles, alfombra sobre parqué de espiga, techo de vigas con lámpara de astas — 2.ª variante del arte del Hall del Anfitrión en assets/hall/cabana/ (1,06 MB recomprimidos, proporciones EXACTAS de los planos 1849×864 · 2395×864 · 1296×1678) · liberada con 10 victorias («wins10», candado _mesaLibre como las skins de gala) · HALL_VARIANTES + hallVariantePorId (c02) · createHall(base) + vestir() + applyHallVariant (c08): re-vestido EN VIVO sin reconstruir el grupo, dispose del arte anterior, carga a prueba de fallos · UI ARTE DEL HALL en AJUSTES→SALA→HALL (MUSEO / LA CABAÑA 🔒 + hints, oculto de visita online) · LS «pp_hallvar» · ONLINE: hp lleva hv (id saneado contra catálogo, patrón sk/hp r22/r23; builds viejos ni lo envían ni lo leen; c09 SIN cambios de códec) — de visita se entra al ARTE DEL ANFITRIÓN aunque no lo tengas liberado (se VE, no se elige; si llega el hello dentro del hall, el arte cambia al vuelo) · I18N 6 claves ES/EN · FÍSICA INTACTA (c04/c05 no conocen mesh, arte del hall ni pp_hallvar) · test_r24_spin_cabana_v36119 89/0 · regresión r23 81/0 y r21 63/0 (2 aserciones re-ancladas a la evolución r24, comentadas) · QA: A 29 · B 11 escenarios · C 29 · D 10 · E 151 (re-anclada 3.6.119) · H 208 (re-anclada v36119 + tamaños ZIP reales) · J 132 · T 17 · U 17 · V 74 · arnés físico 200 rallies 0 fallos · duelo r110 18/0 · bump BYTE-EXACTO 10.787.766 B (+10.544) golden 50fc0842 · release v36119 (4 ZIPs + hub) · FIX del generador de release: el marcador de notas de la r23 nunca llegó a disparar (el ZIP heredaba el bloque P4.2 re-sellado) — la r24 sustituye el bloque de raíz y repara el slice de la comilla de cierre |
+| SÚPER RED + SÚPER ELECTRICIDAD + BOLA BLINDADA (ronda 25) | r25 | 3.6.120-SDK6 (FASE 122) | 2026-11-07 | Informe del dueño tras la r24: (A) «los superpoderes de Pala del jugador nunca deben aparecer en las etapas 2 y 4 de los campeonatos (pruebas de habilidad)» + (B) «añadir otro superpoder de Pala de los que se activan de manera aleatoria cada 20 golpes… "Super Red" (SuperPala_Red.png)… hace crecer la altura de la red el doble del valor actual… dura activo 10 segundos» + (C) «otro superpoder nuevo será Super Electricidad (SuperPala_Electrica.png)… rayos… nubes a metro y medio sobre la mesa del rival que descargan rayos sobre su parte de la mesa con gran estruendo sonoro y destello… la luz de la escena se vuelve bastante oscura (casi parece de noche)… si alguno de los rayos intercepta la bola del rival, la rompe en múltiples pedacitos negros y pierde el punto» + (D) bola online: «en algún saque no se ve la bola hasta que se lanza… al iniciar una segunda partida vemos la bola en la mano del rival cuando debería estar en la nuestra, o incluso no vemos la bola ninguno» · A: CORTINA total en pruebas de habilidad (los 5 módulos exponen testActive(); el núcleo corta gatillo megaEnabled, concesiones _megaCharge y cuelga _poderesCortina cada frame: ventanas/FX/icono/radio fuera; las cargas no gastadas siguen siendo del jugador) · B: SÚPER RED 6.º poder — DIMS.netTopY ×2 EN VIVO (física/IA/saque la leen, lección r95) + re-acomodado visual al vuelo (plano/cinta/postes, altura de nacimiento registrada UNA vez, idempotente) + restauración EXACTA (fin natural, salida del campeonato, cortina o startMatch) · C: SÚPER ELECTRICIDAD 7.º poder — 2 nubes procedurales a tableTopY+1,5 m sobre la mitad del rival, pool de 3 rayos de 9 puntos (cero asignaciones por descarga, cadencia ~1,15 s), destello 0,25 s, noche 0,18 sobre las luces VIVAS capturadas (tema o decorado del campeonato) con vuelta EXACTA y CERO PointLights nuevos (lección v2.92), 2 truenos MP3 sintetizados alternos (ffmpeg brown noise) con precaliente sin sonar, colisión RÁPIDA punto-segmento (un hipot, radio 0,17 m + bola), estallido: 10 pedacitos negros (tetraedros, pool de 12, gravedad visual), bola oculta 0,9 s (el integrador ni se entera) y PUNTO por el cauce del árbitro (applyPoint causa elec) · D: GUARDIÁN DE LA BOLA _bolaGuard — propiedad re-afirmada CADA FRAME desde el árbitro (rules.server determinista por marcador, idéntico en ambos extremos): mi saque = bola en MI mano libre (o punto de saque en escritorio) también durante la cuenta atrás 3·2·1; saque del rival = su mano libre con pose fresca <500 ms o punto de saque reglamentario si se apaga >0,6 s (JAMÁS invisible); FSM idle en saque re-arma HELD (causa raíz de «no la vemos ninguno»); rallye = siempre visible + guardia anti-NaN/anti-mundo (bola perdida vuelve jugable a mi mitad); telemetría bola_guard 1/5 s; c09 SIN cambios de códec · concesión: los DOS poderes entran en la bolsa ALEATORIA de PODERES_PALA (cada 20 toques, tope ×3); iconos PNG del dueño cuantizados 19/26 KB, voces ES/EN espeak embebidas, reservas de icono, voces del selector, precaliente sin lag, firma de estela azul · I18N 7 claves ES/EN · FÍSICA INTACTA (c04/c05 diff vacío contra la r24; la bola rota sólo se oculta) · test_r25_sup_bola_v36120 150/0 · regresión r24 89/0, r23 81/0 y r21 63/0 · QA A-D verde (presupuesto re-anclado: +185 KB de assets del dueño) · bump BYTE-EXACTO 10.972.943 B (+185.177) golden db4ad92b · release v36120 (4 ZIPs + hub) · FIX del generador: los marcadores de notas viven en el estado POST-sweep (la r24 los buscaba pre-sweep) y dos apóstrofes de las notas rompían el literal Python — detectado con py_compile y balance de comillas |
+| NIEBLA DENSA + MÁS RAYOS + BARRERA ELÉCTRICA (ronda 26) | r26 | 3.6.121-SDK6 (FASE 123) | 2026-11-08 | Informe del dueño tras probar los dos poderes nuevos: (A) «el super efecto de electricidad tenemos que mejorarlo bastante, las nubes están muy cutres debemos sustituirlas por una especie de nieble muy densa que simula que son nubes» + (B) «deben descargas bastantes más rayos de tormenta» + (C) «en el super poder de red, el efecto tambien más vistoso que la red al crecer parezca una barrera de electricidad» · A: adiós a los 2 borrones sprite — BANCO DE NIEBLA DENSA de ELEC_NIEBLA_N=14 puffs con textura de GRADIENTE RADIAL 128² (bordes que se funden, cero cartón), paleta pizarra de tormenta (5 tonos), puffs SOLAPADOS con opacidades 0,34-0,52 (densidad real por solape), cada uno HIERVE con fase/velocidad/radio orbital propios (LCG semillado 20261126 — misma niebla en cada build y QA), RESPIRA (escala ±7 %) y se ILUMINA con cada descarga: el destello del rayo lerp el color de cada puff de gris pizarra a azul pálido (setRGB con r0/g0/b0→r1/g1/b1 precomputados, cero Color por frame) y gana +0,30 de opacidad — la niebla recibe la luz del rayo como una nube de verdad · B: pool de rayos 3→10 (ELEC_RAYOS_N, mismas polilíneas recicladas de 9 puntos, cero asignaciones), cadencia ELEC_BOLT_CD 1,15→0,42 s y RÁFAGAS: cada descarga suelta 2.º rayo (38 %) y 3.er rayo (16 %) ≈ 35 rayos por ventana de 10 s; la emisora es el puff de niebla MÁS CERCANO al objetivo (coherencia niebla↔rayo, búsqueda sin asignaciones); trueno con volumen vivo 0,55-0,95 (35 descargas sin fatiga); radio de interceptación 0,17 m, estallido en pedacitos negros y punto por el árbitro INTACTOS · C: BARRERA ELÉCTRICA en la SÚPER RED (_buildRedFx/_redFxVis/_redFrame, pool una vez): el plano crecido se VISTE de campo de energía — CUERPO aditivo cian 0x59d6ff DOBLE CARA (PlaneGeometry unidad escalada EN VIVO a W×2×netH, lee DIMS cada frame, pulso 0,75±0,25) + 7 ARCOS dentados de 12 puntos (Float32Array reciclado) que se REGENERAN cada 0,085 s con flicker 21 rad/s a alturas 8-94 % del campo y AMBAS caras de la red (±0,006) + RIEL superior nervioso en la coronación actual (regen 0,11 s, opacidad ≤1 con clamp) + CHISPAS cian del pool de la casa sobre el riel cada ~1,4 s + ZUMBIDO eléctrico sawtooth 108→96 Hz a 0,035 con jitter ~0,42 s; destello de ENERGIZADO 0,3 s + zap square 1500→240 al crecer; gancho en el tick con try (nunca tumba el frame) y red de seguridad _redFxVis(false) si la ventana muere; apagado garantizado en fin natural/salida/cortina/startMatch vía _redRestaurar · TODO es capa de render: DIMS.netTopY sigue siendo la única verdad, c04/c05/c09/c02/c07 diff VACÍO contra la r25, cero PointLights nuevos (lección v2.92), cero asignaciones por frame · I18N intacto (sin claves nuevas necesarias) · test_r26_sup_v36121 109/0 · regresión r25 150/0 (aguja ELEC_BOLT_CD re-anclada 1.15→0.42 comentada), r24 89/0, r23 81/0, r21 63/0 · QA A-D verde (23+11 esc+29+14) · bump BYTE-EXACTO 10.984.244 B (+11.301) golden 0a3e5d65 · release v36121 (4 ZIPs + hub) · gen_release_v36121 NUEVO (notas FASE 123 por marcadores post-sweep) |
+| BOLA ATRACTORA + 3 SUPERPODERES + 3 HALLS POR HITOS (ronda 26-bis) | r26b | 3.6.122-SDK6 (FASE 124) | 2026-11-08 | Informe del dueño tras la r26: (A) «el superpoder de tormenta eléctrica tiene que aumentar la posibilidad de impactar a la bola que actuará como atractora de los rayos de la tormenta incrementando en un 25 % la posibilidad de alcanzar la bola y destruirla» — UN rayo de cada CUATRO (ELEC_ATRAE_P=0.25) BUSCA la bola cuando juega sobre la mitad del rival: nace en la niebla más cercana, TERMINA EN ELLA, se TIÑE de violeta (material individual del pool) y va casi recto (jitter 0.09→0.018, se la ve curvarse a su blanco), chispas violetas; el resto de rayos cae al azar con su colisión de siempre (0,17 m + bola, punto del árbitro INTACTO); la bola en tránsito de portal jamás se caza · (C) «podrías sorprenderme y crear otros 3 superpoderes de pala muy llamativos y sorprendentes que repliquen la forma actual… icono circular… que afecten al juego… ventaja… duraciones sobre 10 segundos… SuperPoder de XXXX» — 8.º SÚPER FÉNIX (bola de fuego: mis golpes +18 % tope 26 m/s, halo de llama aditivo que respira pegado a la bola, ascuas del pool, estela naranja), 9.º SÚPER CRONO (tiempo lento: bola al 62 % con rampa 0,4 s y RESTAURACIÓN EXACTA al cerrar — también si la cortina corta — 3 anillos de reloj orbitando, sin escala en online), 10.º SÚPER HIELO (3 ráfagas de 1,6 s congelan la IA — ai.update saltado, y el rival 2 en dobles — cascarón de hielo + aristas + 12 copos LCG, CRACK por ráfaga; los saques JAMÁS se congelan); los tres: ventanas de 10 s patrón red/elec (reloj único, blips 3·2·1, refresco honesto, cortina etapas 2/4, precaliente), insignia circular 256×256 propia (r26b, 256 colores) y voces ES/EN espeak-ng→MP3 embebidas, registro PODERES_PALA a 10 entradas, I18N 18 claves · (D) «otros 3 diseños de Hall nuevos bien cuidados para mapear y que podamos conseguirlos con desbloqueos por hitos conseguidos» — SALÓN NEÓN ARCADE (synthwave: recreativas, rejillas, CRTs; hito bestRally≥20), OBSERVATORIO ESTELAR (paneles, ojos de buey, Tierra al ventanal; hito ELO≥1100 — nombre libre: «Estación Orbital» ya era campeonato) y DOJO ZEN (shoji, tokonoma con ensō, tatami, cerezos; hito aces≥5); arte 100 % procedural con fichas y proporciones EXACTAS (frente/fondo 1849×864 · laterales 2395×864 · suelo/techo 1296×1678, verificado leyendo el SOF del JPEG), cero bytes en el bundle, salahall en rejilla 3 columnas con candados de hito y hints · FÍSICA INTACTA (c04/c05/c07/c08/c09/c10 diff vacío contra la r26) · test_r26b_sorpresa_v36122 158/0 · regresión r26 109/0 (chispas y garantía c02 re-ancladas: c02 lleva los 3 halls), r25 150/0 (chispas re-ancladas: color por modo del rayo), r24 89/0 (fila→rejilla y 2→5 variantes re-ancladas), r23 81/0, r21 63/0 · bump BYTE-EXACTO 11.174.354 B (+190.110) golden fd9d9bad · release v36122 (4 ZIPs + hub) · gen_release_v36122 NUEVO (notas FASE 124 post-sweep) |
+| MODO DEPURACIÓN (FORO3D) COMPLETO (ronda 27) | r27 | 3.6.123-SDK6 (FASE 125) | 2026-11-08 | Recordatorio del dueño: «recuerda que teníamos una clave secreta de tal forma que si el nombre de usuario es "FORO3D" entramos en el modo de depuración que nos permite ver o acceder a cualquier recurso aunque esté bloqueado, o nos permite entrar en cualquier prueba o etapa de los campeonatos aunque no estén disponibles para otros usuarios» — la clave VIVÍA desde v2.108 (ppDebugMode en c00: nombre «foro3d» en minúsculas, window.__PP_DEBUG, re-evaluación al guardar el nombre, rótulo 2D/3D, interceptor que descarta pp_champ_*/pp_arcade_*/ranking/stats, cero telemetría) pero la r26b dejó TRES agujeros que esta ronda cierra · AGUJERO 1 — _mesaLibre() (c12) era el ÚNICO candado sin __PP_DEBUG: bypass arriba del todo (devuelve true ANTES de mirar hitos) → SALÓN NEÓN ARCADE (rally 20), OBSERVATORIO ESTELAR (ELO 1100) y DOJO ZEN (aces 5) abiertos para revisión + aspectos de mesa Oro/Carbono + skins de bola con candado; punto ÚNICO de corte (14 llamadas heredan), criterios de hitos/estrellas byte a byte intactos para jugadores normales · AGUJERO 2 — halloween: maxIdx() sin debug (oeste/locura/magia lo hacían desde v2.108 con ppDbg): con __PP_DEBUG devuelve totalEtapas-1 → mapa levanta TODAS las tapas y el gatillo salta a CUALQUIER etapa (hover/rejugar heredan), progreso real conservado vía _replay · AGUJERO 3 — estacion_orbital: replayData().maxIdx sólo completo al CAMPEÓN: con __PP_DEBUG maxIdx=4; replayLaunch ya aceptaba cualquier etapa · campeonatos LOCKED (c11 · isLocked) ya consultaban ppDebugMode — sin cambios · FÍSICA INTACTA: c04/c05 sha256 BYTE-EXACTO contra la r26b, oeste/locura/magia ppDbg sin tocar, interceptor sin cambios · test_r27_foro3d_v36123 40/0 · regresión r26b 158/0, r26 109/0, r25 150/0, r24 89/0, r23 81/0, r21 63/0 · bump BYTE-EXACTO 11.174.904 B (+550) golden 30a0f2b8 · release v36123 (4 ZIPs, descargas solo locales) · gen_release_v36123 NUEVO (notas FASE 125 post-sweep) |
+| BOLA JAMÁS OCULTA + SALONES DE LUJO (ronda 28) | r28 | 3.6.124-SDK6 (FASE 126) | 2026-11-08 | Informe del dueño: (A) «al estar jugando en un campeonato con Wizard, después de lanzar el poder de pala Super Electricidad cuando el rival estaba sacando la bola no se veía, quedaba oculta… revisa si es causa del superpoder y vigila que no queda la bola oculta, ya que imposibilita el juego» — CAUSA RAÍZ TRIPLE en la Súper Electricidad: (1) _elecRompe ocultaba la bola SIEMPRE, incluso quieta preparando el saque; (2) la caducidad de los 0,9 s sólo re-encendía con state!=='rally' (el saque de magia/Wizard vive como rally → saltaba la reaparición y la bola era invisible TODO el rally); (3) _elecFin sólo re-encendía con _elecRotoT<=0 y estado rally, pero _elecFrame (el tick que cuenta los 0,9 s) SÓLO corre con _elecT>0: si la tormenta moría dentro de la ventana (fin de los 10 s, cortina de etapas 2/4, salida del partido) la bola quedaba OCULTA PARA SIEMPRE (offline no corre _bolaGuard y los saques de la CPU no re-encienden) · CURA EN TRES CAPAS: ① el estallido SÓLO oculta si la bola VUELA (|vel|>0,5 — bola quieta preparando saque = estallido visual + punto del árbitro SIN ocultar nada), ② la caducidad re-enciende SIEMPRE decida lo que decida el estado (respetando sólo el tránsito de portal del sistema de portales), ③ _elecFin re-enciende SIEMPRE con bola rota (fin de ventana/cortina/salida) + la ESTELA restaurada con el showTrail del dueño (bug hermano: la estela tampoco volvía nunca) · (B) descripción de los 3 poderes r26b para su modificación: 8.º SuperPoder de Fénix (mis golpes +18% tope 26 m/s, halo de llama, ascuas, estela naranja), 9.º SuperPoder de Crono (bola al 62% con rampa 0,4s y restauración exacta, 3 anillos de reloj), 10.º SuperPoder de Hielo (3 ráfagas de 1,6s congelan la IA, cascarón+12 copos, CRACK; saques jamás congelados) · (C) «las nuevas salas de Hall son muy cutres… los escenarios de la Locura y Wizard los diseñaste tú con muchísimo más detalle… la diferencia es abismal» — REDISEÑO COMPLETO de los 3 salones a nivel Locura/Wizard: arte PIL nuevo (scripts _r28_hall_lib/_r28_halls_neon/_r28_halls_orbital/_r28_halls_dojo, 18 imágenes, 2.312 KB): gradientes MULTI-PARADA, OCLUSIÓN AMBIENTAL (esquinas/contacto suelo/sombra de techo), GLOW aditivo de 3 pasadas y en ANILLO para marcos, grano+viñeta; NEÓN ARCADE: recreativas DETALLADAS con partida de ping-pong viva en pantalla (scanlines CRT), letrero CRAZY ARCADE doble línea, portal INSERT COIN, sol synthwave con cortes clásicos, rejilla en perspectiva geométrica, suelo espejo con emblema; OBSERVATORIO: bahía octogonal con la TIERRA (continentes, nubes, terminador, atmósfera), consolas con órbitas, esclusa con rayas de peligro y volante, paneles con remaches y tuberías, suelo de placas con guías; DOJO ZEN: tokonoma con pergamino ensō e ikebana, shoji con Fuji tras el papel al atardecer, ranma calado, andón encendido, cerezos, tatami con trama y ensō gigante, techo de vigas con washi · MOBILIARIO 3D POR SALÓN (c08, la lección Locura/Wizard: el lujo vive en la geometría): recreativas emisivas con flicker CRT (neón), globo terráqueo con anillo orbital que GIRA y FLOTA (observatorio), tōrō de piedra + bambúes (dojo) — montados por montarProps dentro de vestir() (re-vestido en vivo con dispose), animados en updateHallFx, materiales EMISIVOS, CERO PointLights nuevos (lección v2.92), pegados a las paredes (jamás estorban el juego) · FÍSICA INTACTA: c04/c05 sha256 BYTE-EXACTO · test_r28_bola_salones_v36124 37/0 · regresión r27 40/0 (sellos re-anclados r28), r26b 158/0, r26 109/0, r25 150/0, r24 89/0, r23 81/0, r21 63/0 · bump BYTE-EXACTO 11.183.014 B (+8.110) golden bbe61385 · release v36124 (4 ZIPs, descargas solo locales) · gen_release_v36124 NUEVO (notas FASE 126 post-sweep) |
+| SUPERPODERES DEL INFORME (ronda 29) | r29 | 3.6.125-SDK6 (FASE 127) | 2026-11-08 | Informe del dueño: (A) FÉNIX «No aparece la llama en la bola ni las ascuas naranja en cada golpe (ya teníamos una bola en llamas con un poder que lanza Wizard y que funcionaba bien). Poner ese mismo efecto de fuego y añadirla a la bola la estela naranja y cuando la bola golpea la pala o la mesa desprende una explosión de ascuas de fuego» — CAUSA RAÍZ: el halo de r26b vivía en this.scene con coordenadas del RIG (el rig rota/recentra y el fx se despegaba de la bola); CURA: fuego REAL de magia v2.120 portado a c12 (tinta brasa 0xff5a12 + pool de 16 bocanadas ~35/s que suben y se apagan) + estela naranja + EXPLOSIÓN de 14 ascuas con gravedad al golpear pala o mesa (gancho en eventos 'table' y 'paddle'), TODO en el rig. (B) CRONO «los 3 anillos de reloj deben estar perfectamente centrados en la bola, en estos momentos tienen un desplazamiento hacia la derecha» — el grupo es HIJO de ballMesh: centrado por construcción, cero lag, re-anclaje en trigger. (C) HIELO ANULADO y SUSTITUIDO por «Superpoder de la Oscuridad» (SuperPala_Oscuridad.png): ventana 20 s, bola negra con halo rojo fuego, CADA golpeo del rival cria una niebla densa de humo oscuro de ~medio metro (tres palas) que reduce la visibilidad ~75 % — 5 s plena + ~2 s de disipación, hasta 6 zonas simultáneas con destellos rojos parpadeantes («como pequeños ojos dentro de la oscuridad») — y la IA, ciega, manda el 35 % de sus devoluciones fuera de la mesa (sorteo por golpeo; saque de la IA intacto; dobles incluidos). (D) VOCES «me gustaría que fuese la misma que ya estábamos usando para los superpoderes anteriores… una voz en castellano mucho más animosa y enérgica» — red/elec/fénix/crono regeneradas con Piper es_ES-davefx-medium / en_US-lessac-medium (receta exacta r44) + voz nueva «¡Súper oscuridad!»; iconos del dueño Fenix/Cronos/Oscuridad cuantizados a 256 colores sustituyen a los generados r26b. EXTRA: fix del ensamblador — el mount no trunca al sobrescribir y el 3.6.125 (primer build que ENCOGE: Piper pesa menos que espeak) salió híbrido; escritura atómica temp+os.replace en build_game.py. FÍSICA INTACTA: c04/c05 sha256 BYTE-EXACTO contra la r26b (df8f71a3/8bb62082). test_r29_sup_poderes_v36125 75/0; regresión r28 37/0, r27 40/0, r26b 173/0, r26 109/0, r25 150/0, r24 89/0, r23 81/0, r21 63/0 (r25/r27/r26b/r28 re-ancladas). bump BYTE-EXACTO 11.165.405 B (golden 12e7a09a) |
+| FÉNIX JUGABLE (dinámica normal) + SALONES ILUSTRADOS CON IA (ronda 30) | r30 | 3.6.126-SDK6 (FASE 128) | 2026-11-08 | Informe del dueño: «El efecto de Súper Fénix — no es jugable mantener los efectos pero que la dinámica del juego sea la de una partida normal con una pequeña penalización para la IA. … me daba la sensación de que al activar el superpoder la bola salía disparada a mucha velocidad de forma incontrolable… debe permitir una partida normal solo que con la pequeña penalización para la IA, los saques deben permitirse normales. Vuelvo a insistir en lo cutre de los halles que has creado nuevos, fíjate en el arte y nivel de detalle del Campeonato de la Locura y el Campeonato de la magia… Debe invocar a los skills de arte y generación de imagen para decorar e ilustrar todos los planos con gran riqueza de detalles gráficos busca referencias reales de esos entornos y adáptalas a nuestro espacio» — (A) FÉNIX: CAUSA RAÍZ del «no es jugable»: el bloque 5.55b de r26b/r29 multiplicaba la velocidad de la bola CADA FRAME del rally (×1,18 compuesto — tope 26 m/s en un par de décimas) y de paso disparaba el saque; CURA: boost ANULADO (constantes FENIX_MUL/FENIX_CAP retiradas, cero multiplyScalar del poder) y los efectos SE QUEDAN («mantener los efectos»: fuego real del Wizard, estela naranja, explosiones de ascuas al golpear pala o mesa); la ventaja es la PEQUEÑA penalización de la IA FENIX_OUT_P = 0.15 (15 % de devoluciones largas vía helper _oscuridadFalla, guard de rally — el saque de la IA jamás se sabotea: SAQUES NORMALES; en dobles también el rival 2); (B) SALONES: los 6 planos de NEÓN ARCADE, OBSERVATORIO ORBITAL y DOJO ZEN regenerados con el modelo de generación de imagen (18 ilustraciones ricas, 5 MB, el doble de riqueza que r28) tras consultar referencias reales (arcades ochenteros, cúpula de la ISS, dojos japoneses) — cadena _r30_gen_halls.mjs (18 prompts estilo Locura/Magia) + _r30_postproceso_halls.py (recorte EXACTO frente/fondo 1849×864 · laterales 2395×864 · suelo/techo 1296×1678 + realce); FÍSICA INTACTA: c04/c05 sha256 BYTE-EXACTO (df8f71a3/8bb62082); test_r30_fenix_salones_v36126 54/0; regresión r29 75/0, r28 37/0, r27 40/0, r26b 171/0 (re-ancladas r30), r26 109/0, r25 150/0, r24 89/0, r23 81/0, r21 63/0; bump BYTE-EXACTO 11.166.642 B golden 345c9a8d; release v36126 (4 ZIPs, descargas solo locales); gen_release_v36126 NUEVO (notas FASE 128 post-sweep) |
+| LOTE APROBADO: 4 SUPERPODERES + ASTRO VISIBLE (ronda 33) | r33 | 3.6.129-SDK6 (FASE 131) | 2026-11-09 | Petición del dueño: «Vamos con estos poderes de momento. Recuerda diseñar un icono que los represente de manera muy visual y trabajada en sintonía con el resto de iconos de poder de Pala» (Prisma · Onda de Choque · Salvavidas · Ancla) + «en el campeonato de Estación Estelar no aparece el rival Astro en las partidas» — 11.º SÚPER PRISMA (estela arcoíris VIVA con matiz rotando — TRAIL_ARCOIRIS mutada en _prismaFrame —, guía sutil de trayectoria 3 s tras CADA golpeo propio — línea aditiva con fade, JAMÁS en defensa — y desventaja ligera del rival: PRISMA_OUT_P 0.10 de faltas largas de la IA, la mecánica pequeña del Fénix, saques intactos; rival 2 en dobles incluido) · 12.º ONDA DE CHOQUE (cada SMASH propio ≥ ONDA_SMASH_V 5,2 m/s hacia el rival nace un ANILLO expansivo aditivo EN EL PLANO DE LA MESA (pool de 4) + temblor breve del rig 0,35 s ±9 mm con restauración exacta y la devolución de la IA «en pleno swing» (margen 1,0 s) sale AL 75 % — se CONSUME con esa devolución; sólo en smash, jamás en golpe normal ni saque) · 13.º SALVAVIDAS (UNA vez por activación: si la bola supera nuestra línea de fondo volando hacia fuera y nuestra pala REAL está a más de 0,55 m, la PALA FANTASMA de luz la intercepta y la devuelve AL 80 % por el camino LEGAL del clon (solver de la casa + golpe de jugador); el warp se recarga con cada activación; si llegamos nosotros NO se gasta) · 14.º SÚPER ANCLA (cadenas de energía doradas siguiendo la pala + PUERTA CENTRAL anclaBloqueo() que los 4 campeonatos consultan en el lanzamiento del poder rival: se ESTRELLA contra las cadenas con destello metálico, mensaje y háptica SIN entrar en juego; sin bonus activo: si el rival no lanza nada, no hace nada) · los CUATRO: ventanas de 10 s (reloj único, blips 3·2·1, refresco honesto, cortina etapas 2/4, precaliente +7 piezas), INSIGNIAS 256×256 dibujadas para la ocasión (scripts/_r33_iconos.py — anillos de la casa y escena cartoon: prisma con abanico de 5 colores, pala+estrella+anillos, aro salvavidas con estela warp, ancla clásica dorada con bola) cuantizadas a 256 colores, VOCES Piper ES/EN de la casa (receta r29 → MP3 48 kHz mono 64k, 8 pistas), registro PODERES_PALA a 14, I18N 11 claves ES/EN, selector con las 4 nuevas · FIX ASTRO: CAUSA RAÍZ — el createRival modo «perezoso» del SDK (FASE 7, r72) NUNCA colgaba la textura del material (mat.map = null; el branch «precarga» llama ponMapa y el perezoso no): el standee de la Orbital era un PLANO BLANCO INVISIBLE desde la r72 (diagnóstico en vivo + foto) — CURA: build() perezoso llama ponMapa(tex) + subeGpu(tex) y cada cara de estado sube a GPU — VERIFICADO EN VIVO: mapImg 512×1024 en sala y duelo (leave/re-launch incluido) + FOTO del ASTRO en su sitio · FÍSICA INTACTA: c04/c05 sin rastros r33 (falta y flojedad = decisiones del SOLVER; saques JAMÁS tocados) · test_r33_poderes_v36129 77/0 · regresión re-anclada r33 (sella_r33.py + agujas 3.6.111→129 y siembras Math.random re-mapeadas al registro de 14: imán 0.18 · portal 0.25 · efecto 0.1 · mega 0.03; cola de precaliente 34 piezas): r32 49/0, r31 47/0, r30 54/0, r29 75/0, r28 37/0, r27 40/0 · QA por capas: A 31/0 · B física 11/0 · X/Y/Z ✓ · AF 45/0 · AG 66/0 · AH 37/0 · AI 53/0 · AK 89/0 · AL 58/0 · AM 78/0 · AN 60/0 · AO 57/0 · AP 25/0 · T 17/0 · U 17/0 (capa W = museo de la línea raíz: sus 6 agujas piden el arte procedural v3.6.28 sustituido por el del dueño en la r32 — fuera de alcance) · INFRA: qa_rendimiento/qa_todo/qa_version y 256 scripts más apuntaban a la raíz del template (espejo de octubre) — RAIZ corregida a upload/ (dirección marcada en r126/r127) + espejo del repo sobre el template + three local para los tests node + VERSION.json sdk 1.5.4→1.6.0 (el champ_sdk.js real lleva 1.6.0 desde hace rondas) · bump BYTE-EXACTO 11.365.004 B (+179.070) golden 9213fc59 · release v36129 (4 ZIPs: COMPLETO 170.276.079 · ligera 42.067.407 · CLOUDFLARE 170.261.914 · SOLO 6.221) · gen_release_v36129 NUEVO (notas FASE 131 post-sweep) |

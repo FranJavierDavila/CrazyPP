@@ -1,0 +1,12 @@
+version: 3.6.4-SDK4 · badge: V3.6.4-SDK4
+defaults por módulo: {'estacion_orbital': True, 'oeste': True, 'magia': True, 'locura': True, 'valle_neon': True}
+__PP_SDK: 1.3.0
+exports ausentes (debe ser []): []
+congela [2.15, 2.15, 0]: [2.15, 2.15, 0]
+engine play/tiene/precarga: True
+música on/off/sync/sonando: True
+estado del motor sin game: {'sonando': False, 'querido': False, 'cargado': False, 'cargando': False}
+motor nace en silencio: True
+pageerrors: 0 []
+tablón (createPowerSign) on/off/sync/dispose + T_OUT=1.9: True
+SMOKE SDK4: OK

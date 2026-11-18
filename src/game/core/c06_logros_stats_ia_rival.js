@@ -30,6 +30,7 @@ export class GameStats {
     this.data = {
       won: 0, lost: 0, streak: 0, bestStreak: 0,
       pointsWon: 0, pointsLost: 0, aces: 0, bestRally: 0,
+      monedas: 0,   // r85 · ECONOMÍA CRAZY: el monedero vive con las stats
       winsByDiff: { easy: 0, medium: 0, hard: 0 },
       ach: {},
       // M4 (r118) · ELO unificado (roadmap MEJORAS.md M4): el número de
@@ -55,6 +56,8 @@ export class GameStats {
     if (!Array.isArray(this.data.eloHist)) this.data.eloHist = [];
     if (!this.data.mejorDia || typeof this.data.mejorDia !== 'object') this.data.mejorDia = { dia: '', v: 0 };
     if (!this.data.hoyDia || typeof this.data.hoyDia !== 'object') this.data.hoyDia = { dia: '', v: 0 };
+    // r85 · migración tolerante del MONEDERO (datos viejos sin monedas)
+    if (typeof this.data.monedas !== 'number') this.data.monedas = 0;
   }
 
   save() {
@@ -145,6 +148,10 @@ export class GameStats {
       this.data.lost++;
       this.data.streak = 0;
     }
+    // r85 · ECONOMÍA CRAZY: el monedero se gana JUGANDO — +25 por victoria,
+    // +8 por derrota (participar también paga). Alimenta la TIENDA de
+    // bolas y mesas (c12 · _comprar) sin tocar ELO, logros ni física.
+    this.data.monedas = (this.data.monedas | 0) + (win ? 25 : 8);
     this.save();
     return out;
   }

@@ -1,0 +1,689 @@
+
+/* =====================================================================
+ *  ORQUESTADOR · sesión WebXR, mandos Quest 3, háptica y bucle principal
+ * ===================================================================== */
+const SERVE_OFFSET_Y = 0.11;
+
+class PingPongGame {
+  constructor(canvas, callbacks = {}) {
+    this.canvas = canvas;
+    this.callbacks = callbacks;
+    this.disposed = false;
+
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: true,
+    });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setSize(window.innerWidth, window.innerHeight, false);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.xr.enabled = true;
+    this.renderer.xr.setReferenceSpaceType('local-floor');
+
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x0b0e11);
+    this.scene.fog = new THREE.Fog(0x0b0e11, 9, 18);
+    this.rig = new THREE.Group();
+    this.scene.add(this.rig);
+
+    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 60);
+    this.camera.position.set(2.2, 1.5, 1.4);
+    this.rig.add(this.camera);
+
+    this.audio = new GameAudio();
+    this.rules = new Rules();
+    // la bola lleva ahora giro (spin) para el efecto
+    this.ball = {
+      pos: new THREE.Vector3(0, 1, DIMS.tableCenterZ + 0.4),
+      vel: new THREE.Vector3(),
+      spin: new THREE.Vector3(),
+    };
+
+    this.controllerPaddles = [createPaddleSim('player', 0), createPaddleSim('player', 1)];
+    this.grips = null;
+    this.connected = [false, false];
+    this.sources = [null, null];
+    this.attachHand = 0;
+
+    // IA: lado CPU (-Z) y "jugador demo" en escritorio (+Z)
+    this.ai = new OpponentAI(
+      AI_PRESETS.medium, -1,
+      new THREE.Vector3(0, 1.05, DIMS.tableCenterZ - DIMS.tableHalfLength - 0.45),
+    );
+    this.demoAI = new OpponentAI(
+      AI_PRESETS.easy, 1,
+      new THREE.Vector3(0, 1.05, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.55),
+    );
+
+    this.difficulty = 'medium';
+    this.events = [];
+    this.lastTime = -1;
+    this.orbitAngle = 0.7;
+    this.recenterFrames = 0;
+    this.aiServeTimer = 1.3;
+    this.demoServeTimer = 1.2;
+    // saques con lanzamiento real
+    this.tossed = false;      // el jugador lanzó la bola y está en el aire
+    this.tossTimer = 0;
+    this.aiToss = null;       // { timer } lanzamiento visible de la CPU
+    this.demoToss = null;
+
+    this.buildScene();
+    this.setupControllers();
+    this.rules.startMatch();
+
+    window.addEventListener('resize', this.onResize);
+    this.renderer.xr.addEventListener('sessionstart', this.onSessionStart);
+    this.renderer.xr.addEventListener('sessionend', this.onSessionEnd);
+    this.renderer.setAnimationLoop(this.animate);
+    // Expuesto para depuración y verificación automatizada
+    window.__pingpong = this;
+  }
+
+  // ---------- Construcción ----------
+
+  buildScene() {
+    const hemi = new THREE.HemisphereLight(0xdfe8f0, 0x30271f, 0.85);
+    this.rig.add(hemi);
+
+    const dir = new THREE.DirectionalLight(0xffffff, 2.4);
+    dir.position.set(2.2, 3.6, 0.6);
+    dir.castShadow = true;
+    dir.shadow.mapSize.set(1024, 1024);
+    dir.shadow.camera.left = -3;
+    dir.shadow.camera.right = 3;
+    dir.shadow.camera.top = 3;
+    dir.shadow.camera.bottom = -3;
+    dir.shadow.camera.near = 0.5;
+    dir.shadow.camera.far = 9;
+    dir.shadow.bias = -0.0004;
+    this.rig.add(dir);
+    dir.target.position.set(0, 0.7, DIMS.tableCenterZ);
+    this.rig.add(dir.target);
+
+    this.rig.add(createRoom());
+    this.rig.add(createTable());
+
+    const { mesh, trail, trailUpdate } = createBall();
+    this.ballMesh = mesh;
+    this.trailUpdate = trailUpdate;
+    this.ballMesh.position.copy(this.ball.pos);
+    this.rig.add(mesh);
+    this.rig.add(trail);
+
+    // Sombra de la bola + marcas de bote
+    this.blob = createBlobShadow();
+    this.rig.add(this.blob);
+    this.markers = createBounceMarkers();
+    this.markerIdx = 0;
+    for (const m of this.markers) this.rig.add(m);
+
+    // Rival: pala + cuerpo con brazo
+    this.aiPaddleMesh = createPaddle();
+    this.rig.add(this.aiPaddleMesh);
+    this.aiAvatar = createOpponent(0x2b4a7a);
+    this.aiAvatar.group.position.set(0, 0, DIMS.tableCenterZ - DIMS.tableHalfLength - 0.45);
+    this.rig.add(this.aiAvatar.group);
+
+    // Avatar del "jugador" para el modo demo (invisible en VR: eres tú)
+    this.demoPaddleMesh = createPaddle();
+    this.rig.add(this.demoPaddleMesh);
+    this.demoAvatar = createOpponent(0x7a2b4a);
+    this.demoAvatar.group.position.set(0, 0, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.55);
+    this.demoAvatar.group.rotation.y = Math.PI;
+    this.demoAvatar.group.visible = false;
+    this.rig.add(this.demoAvatar.group);
+
+    const sb = createScoreboard();
+    this.scoreboardUpdate = sb.update;
+    this.rig.add(sb.group);
+  }
+
+  setupControllers() {
+    const grips = [];
+    for (let i = 0; i < 2; i++) {
+      const grip = this.renderer.xr.getControllerGrip(i);
+      const targetRay = this.renderer.xr.getController(i);
+
+      const mount = new THREE.Group();
+      mount.quaternion.copy(MOUNT_QUAT);
+      mount.position.set(0, 0.015, -0.08);
+      mount.add(createPaddle());
+      grip.add(mount);
+
+      grip.addEventListener('connected', (e) => {
+        this.connected[i] = true;
+        this.sources[i] = e.data;
+        if (!this.connected[1 - this.attachHand] || e.data.handedness === 'right') {
+          this.attachHand = i;
+        }
+      });
+      grip.addEventListener('disconnected', () => {
+        this.connected[i] = false;
+        this.sources[i] = null;
+      });
+      const onSelect = () => this.onSelectStart(i);
+      grip.addEventListener('selectstart', onSelect);
+      targetRay.addEventListener('selectstart', onSelect);
+
+      this.rig.add(grip);
+      this.rig.add(targetRay);
+      grips.push(grip);
+    }
+    this.grips = [grips[0], grips[1]];
+  }
+
+  // ---------- API pública ----------
+
+  async enterVR() {
+    this.audio.ensure();
+    const xr = navigator.xr;
+    if (!xr) throw new Error('Este navegador no soporta WebXR. Usa Meta Quest Browser.');
+    const session = await xr.requestSession('immersive-vr', {
+      optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'],
+    });
+    await this.renderer.xr.setSession(session);
+  }
+
+  setDifficulty(d) {
+    this.difficulty = d;
+    this.ai.setConfig(AI_PRESETS[d]);
+  }
+
+  // ---------- Eventos XR ----------
+
+  onResize = () => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h, false);
+  };
+
+  onSessionStart = () => {
+    this.recenterFrames = 25;
+    this.audio.ensure();
+    this.rules.startMatch();
+    this.ai.reset();
+    this.demoAI.reset();
+    this.tossed = false;
+    this.aiToss = null;
+    this.demoToss = null;
+    this.aiServeTimer = 1.3;
+    this.demoServeTimer = 1.4;
+    this.callbacks.onXRState?.(true);
+  };
+
+  onSessionEnd = () => {
+    this.rules.startMatch();
+    this.tossed = false;
+    this.aiToss = null;
+    this.demoToss = null;
+    this.demoServeTimer = 1.4;
+    this.callbacks.onXRState?.(false);
+  };
+
+  onSelectStart(i) {
+    if (this.disposed) return;
+    this.audio.ensure();
+    if (!this.renderer.xr.isPresenting) return;
+
+    // reiniciar partido tras la derrota/victoria
+    if (this.rules.state === 'over') {
+      this.rules.startMatch();
+      this.tossed = false;
+      return;
+    }
+    if (this.rules.state !== 'serve' || this.rules.server !== 'player') return;
+    if (this.tossed) return;
+    if (!this.connected[i] || !this.controllerPaddles[i].active) return;
+
+    this.attachHand = i;
+    // SACO REAL: lanzo la bola al aire y luego debo golpearla con la pala
+    const pad = this.controllerPaddles[i];
+    this.tossed = true;
+    this.tossTimer = 0;
+    this.ball.vel.copy(pad.vel).multiplyScalar(0.25);
+    this.ball.vel.y = 2.75;
+    this.ball.vel.addScaledVector(pad.normal, 0.35);
+    if (this.ball.vel.z > -0.1) this.ball.vel.z = -0.1;
+    this.rules.message = '¡Golpea la bola!';
+    this.audio.serve();
+    this.haptic(i, 0.45);
+  }
+
+  haptic(index, strength) {
+    const gp = this.sources[index]?.gamepad;
+    const act = gp?.hapticActuators?.[0];
+    try {
+      act?.pulse?.(Math.min(1, Math.max(0.2, strength)), 45);
+    } catch {
+      /* algunos navegadores no lo soportan */
+    }
+  }
+
+  // ---------- Bucle principal ----------
+
+  animate = (time) => {
+    if (this.disposed) return;
+    const now = time * 0.001;
+    const dt = this.lastTime < 0 ? 0.016 : Math.min(now - this.lastTime, 0.05);
+    this.lastTime = now;
+
+    const presenting = this.renderer.xr.isPresenting;
+
+    if (presenting && this.recenterFrames > 0) {
+      this.updateRecenter();
+      this.recenterFrames--;
+    }
+
+    // 1) Palas de los mandos (solo en VR)
+    if (presenting && this.grips) {
+      for (let i = 0; i < 2; i++) {
+        const ps = this.controllerPaddles[i];
+        const grip = this.grips[i];
+        ps.prev.copy(ps.pos);
+        ps.pos.copy(grip.position);
+        tmpQ.copy(grip.quaternion).multiply(MOUNT_QUAT);
+        setPaddleBasis(ps, tmpQ);
+        if (dt > 0) {
+          tmpV.copy(ps.pos).sub(ps.prev).divideScalar(dt);
+          ps.vel.lerp(tmpV, 0.55);
+        }
+        ps.active = this.connected[i];
+      }
+    }
+
+    // 2) IA(s)
+    const canHit = this.rules.state === 'rally';
+    const playerPad = this.controllerPaddles[this.attachHand];
+    const oppPadX = presenting
+      ? (playerPad.active ? playerPad.pos.x : 0)
+      : this.demoAI.pos.x;
+    const aiHit = this.ai.update(dt, this.ball, {
+      canHit,
+      validBounce: this.rules.validBounce,
+      oppPadX,
+    });
+    let demoHit = null;
+    if (!presenting) {
+      demoHit = this.demoAI.update(dt, this.ball, {
+        canHit,
+        validBounce: this.rules.validBounce,
+        oppPadX: this.ai.pos.x,
+      });
+    }
+    if (aiHit) {
+      this.ball.vel.copy(aiHit);
+      this.rules.registerPaddleHit('ai');
+      this.audio.paddle(
+        THREE.MathUtils.clamp(this.ball.pos.x / 2.5, -1, 1),
+        Math.min(1, aiHit.length() / 9),
+      );
+    }
+    if (demoHit) {
+      this.ball.vel.copy(demoHit);
+      this.rules.registerPaddleHit('player');
+      this.audio.paddle(
+        THREE.MathUtils.clamp(this.ball.pos.x / 2.5, -1, 1),
+        Math.min(1, demoHit.length() / 9),
+      );
+    }
+
+    // 3) Preparación del saque (con lanzamiento real)
+    if (this.rules.state === 'serve') {
+      if (this.rules.server === 'player') {
+        if (presenting) {
+          const pad = this.controllerPaddles[this.attachHand];
+          if (!this.tossed) {
+            // bola quieta sobre la pala, esperando el lanzamiento
+            this.ball.vel.set(0, 0, 0);
+            this.ball.spin.set(0, 0, 0);
+            if (pad.active) this.ball.pos.copy(pad.pos).add(tmpV.set(0, SERVE_OFFSET_Y, 0));
+          } else {
+            this.tossTimer += dt;
+            if (this.tossTimer > 4 || (this.ball.pos.y < 0.45 && this.ball.vel.y < 0)) {
+              this.tossed = false;
+              this.rules.message = 'Otra vez: gatillo para lanzar';
+            }
+          }
+        } else if (!this.demoToss) {
+          this.ball.vel.set(0, 0, 0);
+          this.ball.spin.set(0, 0, 0);
+          this.ball.pos.copy(this.demoAI.pos).add(tmpV.set(0, SERVE_OFFSET_Y, 0));
+          this.demoServeTimer -= dt;
+          if (this.demoServeTimer <= 0) {
+            this.demoToss = { timer: 0.42 };
+            this.ball.vel.set(0, 2.3, 0.15);
+            this.audio.serve();
+          }
+        } else {
+          this.demoToss.timer -= dt;
+          if (this.demoToss.timer <= 0) {
+            this.demoToss = null;
+            this.serveFromAI('player');
+          }
+        }
+      } else if (!this.aiToss) {
+        // la CPU sostiene la bola y luego la lanza
+        this.ball.vel.set(0, 0, 0);
+        this.ball.spin.set(0, 0, 0);
+        this.ball.pos.copy(this.ai.pos).add(tmpV.set(0, SERVE_OFFSET_Y, 0));
+        this.aiServeTimer -= dt;
+        if (this.aiServeTimer <= 0) {
+          this.aiToss = { timer: 0.42 };
+          this.ball.vel.set(0, 2.3, -0.15);
+          this.audio.serve();
+        }
+      } else {
+        this.aiToss.timer -= dt;
+        if (this.aiToss.timer <= 0) {
+          this.aiToss = null;
+          this.serveFromAI('ai');
+        }
+      }
+    }
+
+    // 4) Física (solo las palas de los mandos colisionan físicamente)
+    this.events.length = 0;
+    const pads = [];
+    if (presenting) {
+      const holdLock = this.rules.state === 'serve' && this.rules.server === 'player' && !this.tossed;
+      if (!holdLock) {
+        for (const ps of this.controllerPaddles) if (ps.active) pads.push(ps);
+      }
+    }
+    stepPhysics(dt, this.ball, pads, this.events);
+
+    // 5) Golpe de saque del jugador: pala toca la bola lanzada -> rally
+    if (presenting && this.rules.state === 'serve' && this.rules.server === 'player') {
+      for (const e of this.events) {
+        if (e.type === 'paddle' && e.who === 'player') {
+          this.tossed = false;
+          this.rules.beginRally('player', true);
+          break;
+        }
+      }
+    }
+
+    // 6) Reglas y eventos
+    const intents = this.rules.handleEvents(this.events);
+    this.processIntents(intents);
+    this.processIntents(this.rules.update(dt));
+    this.processEvents(this.events);
+
+    // 7) Sincronizar visuales
+    this.ballMesh.position.copy(this.ball.pos);
+    this.ballMesh.rotation.x += this.ball.spin.x * dt * 0.05;
+    this.ballMesh.rotation.y += this.ball.spin.y * dt * 0.05;
+    this.trailUpdate();
+    this.updateBlobShadow();
+
+    this.aiPaddleMesh.position.copy(this.ai.pos);
+    this.aiPaddleMesh.lookAt(this.ball.pos);
+    this.aiPaddleMesh.rotateX(0.18);
+    this.demoPaddleMesh.position.copy(this.demoAI.pos);
+    this.demoPaddleMesh.lookAt(this.ball.pos);
+    this.demoPaddleMesh.rotateX(0.18);
+
+    this.updateAvatar(this.aiAvatar, this.ai.pos, dt, now);
+    this.aiAvatar.group.visible = true;
+    this.demoAvatar.group.visible = !presenting;
+    if (!presenting) this.updateAvatar(this.demoAvatar, this.demoAI.pos, dt, now);
+
+    for (const m of this.markers) {
+      if (!m.visible) continue;
+      m.userData.t += dt * 2.4;
+      if (m.userData.t >= 1) {
+        m.visible = false;
+        continue;
+      }
+      m.scale.setScalar(1 + m.userData.t * 1.6);
+      m.material.opacity = 0.55 * (1 - m.userData.t);
+    }
+
+    this.scoreboardUpdate({
+      player: this.rules.scorePlayer,
+      ai: this.rules.scoreAi,
+      server: this.rules.server,
+      message: this.rules.message,
+    });
+    this.syncDom();
+
+    // 8) Cámara de escritorio (órbita suave)
+    if (!presenting) {
+      this.orbitAngle += dt * 0.1;
+      const r = 2.8;
+      const cx = Math.sin(this.orbitAngle) * r;
+      const cz = DIMS.tableCenterZ + Math.cos(this.orbitAngle) * r;
+      this.camera.position.set(cx, 1.45 + Math.sin(this.orbitAngle * 0.6) * 0.25, cz);
+      this.camera.lookAt(0, 0.95, DIMS.tableCenterZ);
+    }
+
+    // 9) Render (en XR usa la cámara del visor automáticamente)
+    this.renderer.render(this.scene, this.camera);
+  };
+
+  /** Recentrado: gira el mundo para que la mesa quede frente al usuario. */
+  updateRecenter() {
+    const f = tmpV.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
+    if (Math.abs(f.x) + Math.abs(f.z) < 1e-4) return;
+    this.rig.rotation.y = Math.atan2(f.x, f.z) - Math.PI;
+  }
+
+  /** Saque de una IA: golpea la bola ya lanzada hacia la mitad del receptor. */
+  serveFromAI(side) {
+    const toPlayer = side === 'ai';
+    const tx = (Math.random() * 2 - 1) * 0.42;
+    const depth = 0.35 + Math.random() * 0.95;
+    const tz = toPlayer
+      ? DIMS.tableCenterZ + depth
+      : DIMS.tableCenterZ - depth;
+    tmpTarget.set(tx, DIMS.tableTopY + DIMS.ballRadius, tz);
+    const v = computeShotVelocity(this.ball.pos, tmpTarget, 0.85, 6.2);
+    this.ball.vel.copy(v);
+    this.ball.spin.set(
+      toPlayer ? 7 + Math.random() * 6 : -(7 + Math.random() * 6),
+      (Math.random() - 0.5) * 5,
+      0,
+    );
+    this.rules.beginRally(side, true);
+    this.audio.serve();
+  }
+
+  /** Cuerpo del rival: pies siguen la pala, brazo une hombro y pala. */
+  updateAvatar(av, paddlePos, dt, time) {
+    const targetX = THREE.MathUtils.clamp(paddlePos.x, -0.62, 0.62);
+    av.group.position.x += (targetX - av.group.position.x) * Math.min(1, dt * 5);
+    av.group.position.y = Math.sin(time * 1.8 + av.phase) * 0.008;
+
+    tmpShoulder.set(0.21, 1.30, 0.02);
+    av.group.localToWorld(tmpShoulder);
+    tmpDir.copy(paddlePos).sub(tmpShoulder);
+    const len = THREE.MathUtils.clamp(tmpDir.length() - 0.10, 0.18, 0.62);
+    if (tmpDir.lengthSq() > 1e-8) tmpDir.normalize();
+    av.upper.position.copy(tmpShoulder).addScaledVector(tmpDir, len * 0.5 + 0.02);
+    av.upper.quaternion.setFromUnitVectors(UP, tmpDir);
+    av.upper.scale.set(1, len / 0.384, 1);
+    av.hand.position.copy(paddlePos).addScaledVector(tmpDir, -0.03);
+  }
+
+  updateBlobShadow() {
+    const b = this.ball.pos;
+    const over =
+      Math.abs(b.x) < DIMS.tableHalfWidth + 0.06 &&
+      Math.abs(b.z - DIMS.tableCenterZ) < DIMS.tableHalfLength + 0.06;
+    const gy = over ? DIMS.tableTopY : 0;
+    this.blob.position.set(b.x, gy + 0.004, b.z);
+    const hgt = Math.max(0, b.y - gy);
+    this.blob.scale.setScalar(THREE.MathUtils.clamp(1.15 - hgt * 0.45, 0.25, 1.15));
+    this.blob.material.opacity = THREE.MathUtils.clamp(0.34 - hgt * 0.12, 0.04, 0.34);
+  }
+
+  flashMarker(pos) {
+    const m = this.markers[this.markerIdx % this.markers.length];
+    this.markerIdx++;
+    m.position.set(pos.x, pos.y - DIMS.ballRadius + 0.004, pos.z);
+    m.userData.t = 0;
+    m.visible = true;
+    m.scale.setScalar(1);
+    m.material.opacity = 0.55;
+  }
+
+  processIntents(intents) {
+    for (const it of intents) {
+      switch (it.type) {
+        case 'point':
+          this.audio.point(it.winner === 'player');
+          if (this.renderer.xr.isPresenting) {
+            this.haptic(this.attachHand, it.winner === 'player' ? 0.8 : 0.35);
+          }
+          break;
+        case 'retry-serve':
+          this.tossed = false;
+          this.aiToss = null;
+          this.demoToss = null;
+          if (this.rules.server === 'ai') this.aiServeTimer = 1.2;
+          else this.demoServeTimer = 1.2;
+          break;
+        case 'serve':
+          this.tossed = false;
+          this.aiToss = null;
+          this.demoToss = null;
+          if (it.server === 'ai') this.aiServeTimer = 1.3 + Math.random() * 0.6;
+          else this.demoServeTimer = 1.4;
+          break;
+        case 'game-over':
+          break;
+      }
+    }
+  }
+
+  processEvents(events) {
+    for (const e of events) {
+      const pan = THREE.MathUtils.clamp(e.pos.x / 2.5, -1, 1);
+      switch (e.type) {
+        case 'table':
+          this.audio.tableBounce(pan, Math.min(1, e.speed / 6));
+          this.flashMarker(e.pos);
+          if (this.renderer.xr.isPresenting) this.haptic(this.attachHand, 0.18);
+          break;
+        case 'net':
+          this.audio.net(pan);
+          break;
+        case 'floor':
+          this.audio.thud(pan, Math.min(1, e.speed / 5));
+          break;
+        case 'wall':
+          this.audio.thud(pan, Math.min(0.5, e.speed / 6));
+          break;
+        case 'paddle':
+          this.audio.paddle(pan, Math.min(1, e.speed / 9));
+          if (e.paddleIndex !== undefined && e.paddleIndex >= 0) {
+            this.haptic(e.paddleIndex, Math.min(1, e.speed / 8));
+          }
+          break;
+      }
+    }
+  }
+
+  syncDom() {
+    const scoreKey = `${this.rules.scorePlayer}-${this.rules.scoreAi}-${this.rules.server}`;
+    if (scoreKey !== this.lastSentScore) {
+      this.lastSentScore = scoreKey;
+      this.callbacks.onScore?.(this.rules.scorePlayer, this.rules.scoreAi, this.rules.server);
+    }
+    if (this.rules.message !== this.lastSentMessage) {
+      this.lastSentMessage = this.rules.message;
+      this.callbacks.onMessage?.(this.rules.message);
+    }
+  }
+}
+
+/* =====================================================================
+ *  INTERFAZ · overlay, botón VR, dificultad y HUD
+ * ===================================================================== */
+const overlay = document.getElementById('overlay');
+const statusEl = document.getElementById('status');
+const vrbtn = document.getElementById('vrbtn');
+const spectateBtn = document.getElementById('spectate');
+const hud = document.getElementById('hud');
+const hudScore = document.getElementById('hud-score');
+const hudMsg = document.getElementById('hud-msg');
+const hudInfo = document.getElementById('hud-info');
+
+const game = new PingPongGame(document.getElementById('c'), {
+  onScore(player, ai) {
+    hudScore.textContent = `${player} : ${ai}`;
+  },
+  onMessage(message) {
+    hudMsg.textContent = message;
+  },
+  onXRState(inVR) {
+    if (inVR) {
+      overlay.classList.add('hidden');
+      hud.classList.remove('show');
+    } else {
+      overlay.classList.remove('hidden');
+      statusEl.textContent = 'Pausa · pulsa ENTRAR EN VR para continuar la partida.';
+    }
+  },
+});
+
+// Compatibilidad WebXR
+if (navigator.xr && navigator.xr.isSessionSupported) {
+  navigator.xr.isSessionSupported('immersive-vr')
+    .then((ok) => {
+      if (ok) {
+        vrbtn.disabled = false;
+        statusEl.textContent = '✅ Visor compatible detectado. Ponte las gafas y pulsa el botón.';
+      } else {
+        statusEl.textContent = '🖥️ Sin visor VR: disfruta del modo espectador (IA contra IA).';
+      }
+    })
+    .catch(() => {
+      statusEl.textContent = '🖥️ WebXR no disponible aquí: modo espectador activo.';
+    });
+} else {
+  statusEl.textContent = '🖥️ Este navegador no soporta WebXR: modo espectador activo.';
+}
+
+vrbtn.addEventListener('click', () => {
+  vrbtn.disabled = true;
+  statusEl.textContent = 'Iniciando sesión VR…';
+  game.enterVR()
+    .then(() => {
+      vrbtn.disabled = false;
+    })
+    .catch((err) => {
+      vrbtn.disabled = false;
+      statusEl.textContent = '⚠️ ' + (err?.message || 'No se pudo iniciar la sesión VR.');
+    });
+});
+
+// Dificultad
+document.querySelectorAll('.diff').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    game.setDifficulty(btn.dataset.diff);
+  });
+});
+
+// Modo espectador / volver a la info
+spectateBtn.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  hud.classList.add('show');
+});
+hudInfo.addEventListener('click', () => {
+  overlay.classList.remove('hidden');
+});
+
+</script>
+</body>
+</html>

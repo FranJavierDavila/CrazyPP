@@ -1,0 +1,100 @@
+==========================================================
+CRAZY PING PONG · V3.6.1-SDK1 · CHULETA DE UNA PÁGINA
+NOVEDADES DE ESTA VERSIÓN: el SDK DE CAMPEONATOS (champ_sdk.js
+v1.0.0) — la FASE 3 de la modularización P0: el kernel que los 5
+campeonatos reimplementaban (motor SFX con la lección v2.125 «forma
+promesa», el congelado del aviso de superpoder patrón La Locura
+v2.40 y el puente al núcleo) vive ahora en UNA sola fuente. La
+Estación Orbital estrena la adopción con conducta idéntica y cero
+cambios de gameplay.
+
+NOVEDADES DE ESTA VERSIÓN: SUPERPODERES REDEFINIDOS por el dueño
++ LA VOZ DEL ASTRO. El aviso «Super Power!!» congela la partida
+de verdad (como en La Locura de siempre); los METEORITOS son ahora
+pequeñas ROCAS EN 3D con vetas de óxido, calor de entrada y
+tumbling; el RAYO TRACTOR sale de un mini DRON y ATRAPA la bola
+flotando dentro del rayo hasta que desaparece y la deja caer en
+vertical; la GRAVEDAD CERO atrae la bola y la hace rebotar ENTRE
+las partículas blancas hasta que desaparecen; el ASTRO estrena los
+audios risa_astro.mp3 (pose de risas) y enfado_astro.mp3 (pierde
+un punto). En el REACTOR DE IMPULSO la diana permanece visible 2 s
+y la pelota SIEMPRE vuelve a botar sobre la base flotante.
+
+NOVEDADES DE ESTA VERSIÓN: AJUSTE FINO del «REACTOR DE IMPULSO»
+por el informe del dueño en casco: el golpeo de la pala es ahora
+REAL (el mismo barrido CCD esfera-pala del juego, no un bumper en
+el agarre), la PISTOLA LÁSER ya aparece en la mano libre, las
+DIANAS aparecen y desaparecen con un efecto de DESINTEGRACIÓN,
+los CUBOS CUÁNTICOS son la mitad de pequeños y están elaborados
+con la estética del decorado, el efecto de VELOCIDAD LUMÍNICA se
+ve a través del cristal de los ventanales con el espacio negro
+pasando a toda velocidad (la nave avanza), el ATRACTOR agrupa los
+cubos casi unidos sin penetrarse, los textos de la PANTALLA viven
+dentro del panel sin cortarse y el NÚCLEO es un modelo detallado.
+El ASTRO de la etapa 1 se coloca a distancia fija de la mesa,
+totalmente visible.
+NOVEDADES DE ESTA VERSIÓN: la etapa 4 estrena el «ESCUDO DE PALA ·
+DEFENSA DEL CASCO» con arte propio (escudo_pala/): la pala es un
+escudo manual que devuelve los orbes de plasma (estándar, pesado,
+inestable y rotor) de los drones piratas; el golpe limpio carga la
+SOBRECARGA hasta el orbe perforante; 3 fases (drones, Centinela de
+rally y nave abordadora de 3 cañones) con INTEGRIDAD DEL CASCO y
+Barrera de Casco trasera. El REACTOR DE IMPULSO sube a la etapa 2
+(orden del dueño) y el reactor v3.3.0 sale del camino. Además: el
+Hall ya no arrastra elementos al volver de un campeonato y el botón
+A/X cambia la pala de mano también en el entrenamiento (zurdos).
+FIX DE ESTA VERSIÓN: el ASTRO (rival de la Estación Orbital) está
+recolocado en la convención de duelos de la casa — junto a la esquina
+lejana derecha de la mesa, en espacio abierto (x 1,26 · z −3,82), la
+misma profundidad que CLOWN y WIZARD — y ya no se lee dentro de la
+pared frontal de la sala.
+==========================================================
+
+QUÉ LLEVA
+  · ETAPA 4 NUEVA — REACTOR DE IMPULSO: sala propia del dueño sin
+    mesa (BASE FLOTANTE de reposición), núcleo azul/rojo con alarma,
+    3 OLEADAS de cubos cuánticos (3/5/7 · 2 min por oleada), destruye
+    los cubos con la bola y acierta las DIANAS con la PISTOLA LÁSER
+    para desatar PERTURBACIONES (Gravedad 0 · Atractor: un golpe los
+    destruye todos · Supergravedad) — también una automática cada 30 s.
+    Pantalla del techo con oleada/tiempo/cubos/estado. Al perder, el
+    ASTRO se ríe frente a ti.
+  · Etapa 2 — REACTOR DE ENERGÍA INESTABLE: núcleo de gravedad que
+    lanza esferas de plasma a las compuertas.
+  · Estación Orbital con el arte del dueño (6 planos), rival ASTRO,
+    mapa con tapas, SuperPower!!, recortables.
+  · Conserva: CCD SDF de contacto (v3.1.2-CCD1), saque VR realista,
+    gracia del saque, bote honesto, prompt B, hall del anfitrión, PRO
+    CIRCUITO, intro oficial, física viva, palas con carácter, CRAZY TV.
+
+SUBIR LA WEB (elige UNO)
+  1) Cloudflare Pages → usa el zip «CLOUDFLARE» (estático puro):
+     dash.cloudflare.com → Workers & Pages → Pages → Upload assets →
+     arrastra el CONTENIDO del zip → Deploy.
+  2) Netlify Drop → usa el zip «ligera»: app.netlify.com/drop y
+     arrastra el CONTENIDO del zip.
+  3) Hosting propio → descomprime y sirve la carpeta (nginx/caddy/
+     python -m http.server).
+
+LA TV EN DIRECTO (opcional)
+  PC: cd live-service && npm install && node server.mjs   (puerto 3004)
+  Railway/Render: sube el contenido de live-service/ (o el mini-zip
+  «SOLO») y despliega con npm start.
+  En el juego añade ?relay=http://IP:3004 (o la URL de Railway). Los
+  espectadores abren tv.html con el mismo ?relay=.
+
+QUEST (IMPORTANTE)
+  El navegador de la Quest exige HTTPS para WebXR: Cloudflare y Netlify
+  ya lo dan. En LAN casera usa caddy o ngrok.
+
+VERIFICACIÓN RÁPIDA
+  · La portada del juego muestra el sello V3.6.1-SDK1.
+  · En consola: window.__PP_VERSION === '3.6.1-SDK1'.
+  · Etapa 4: sala del reactor sin mesa, base flotante con la pelota
+    botando, cubos cuánticos rojos pulsando y pantalla del techo.
+
+PROBLEMAS
+  · Arte antiguo en la estación → borra los datos del navegador de la
+    Quest y recarga.
+  · La TV no conecta → ¿relay encendido? ¿?relay= correcto?
+  · Más ayuda: LEEME-DESPLIEGUE.txt dentro del paquete.

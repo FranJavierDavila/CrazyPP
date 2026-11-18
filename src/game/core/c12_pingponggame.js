@@ -152,6 +152,8 @@ export class PingPongGame {
     // MENÚ DE MUÑECA (v2.15): un solo acceso a modo/dificultad/sala/ambiente
     this.menuOpen = false;
     this.menuHover = [-1, -1];   // hover INDEPENDIENTE por mando (v2.16)
+    this._palaSalirAsk = false;  // r85 · autorización de salida del ajuste
+    this._tiendaCompra = null;   // r85 · TIENDA CRAZY: compra pendiente {tipo, id}
     // r98 · GESTOS CONTINUOS del menú: arrastre de deslizadores (gatillo
     // apretado moviendo el mando a izq/der) y AGARRE de la mesa (rayo de
     // selección + subir/bajar con la altura del mando 1:1).
@@ -1084,6 +1086,12 @@ export class PingPongGame {
     this.calib = false;
     this.calibPala = false;
     this.calibPanel.group.visible = false;
+    // r85 · la ventana se RECOGE DE VERDAD: sin pregunta vieja (que
+    // reaparecía en AJUSTES›PALA) y con la posición a cero — la próxima
+    // entrada nace FRONTAL exacta (el lerp 0,35 ya no arrastra la ancla
+    // de la sesión anterior: «la ventana se arrastra hacia otros menús»).
+    this._palaSalirAsk = false;
+    this.calibPanel.group.position.set(0, 0, 0);
     this._palaAxesOff();
     this._palaMandosOff();
     if (eraPala) {
@@ -1264,6 +1272,14 @@ export class PingPongGame {
   palaRecoger() {
     if (!this.calibPala) return;
     this.calibPala = false;
+    // r85 · ESTANQUEIDAD: la ventana de información se recoge AQUÍ TAMBIÉN.
+    // Los caminos de entrenamiento/tutorial que llaman palaRecoger dejaban
+    // el panel flotando en la escena para siempre (informe del dueño: «se
+    // arrastra hacia otros menús y no desaparece»). Posición a cero: la
+    // próxima entrada nace FRONTAL exacta.
+    this._palaSalirAsk = false;
+    this.calibPanel.group.visible = false;
+    this.calibPanel.group.position.set(0, 0, 0);
     this._palaAxesOff();
     this._palaMandosOff();
     this._pstRestaurar();
@@ -5314,8 +5330,30 @@ export class PingPongGame {
             by + cellH / 2, icoR, cl.icono);
           const txI = bx + (cl.icono ? 22 + icoR * 2 : 14);
           const maxw = cellW - (txI - bx) - 10 - (hasCheck ? 40 : 0) - delW;
-          etq(cl.et, txI, by + cellH * 0.54, maxw, it.fs || 21, 700,
-            cl.act ? '#ffe9a8' : 'rgba(255,255,255,0.95)');
+          if (cl.lock && cl.precio) {
+            // r85 · ECONOMÍA CRAZY: celda bloqueada con PRECIO — fila doble
+            // (nombre arriba · moneda dorada + precio abajo, candado a la derecha)
+            etq(cl.et, txI, by + cellH * 0.36, maxw, it.fs || 21, 700,
+              cl.act ? '#ffe9a8' : 'rgba(255,255,255,0.95)');
+            c.fillStyle = '#ffd257';
+            c.beginPath();
+            c.arc(txI + 9, by + cellH * 0.72, 8, 0, Math.PI * 2);
+            c.fill();
+            c.fillStyle = '#8a6a12';
+            c.font = '800 10px system-ui, sans-serif';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.fillText('C', txI + 9, by + cellH * 0.72 + 0.5);
+            c.textAlign = 'left';
+            c.textBaseline = 'alphabetic';
+            c.font = '800 ' + Math.max(12, (it.fs || 21) - 7) +
+              'px system-ui, sans-serif';
+            c.fillStyle = '#ffd257';
+            c.fillText(String(cl.precio), txI + 21, by + cellH * 0.72 + 5);
+          } else {
+            etq(cl.et, txI, by + cellH * 0.54, maxw, it.fs || 21, 700,
+              cl.act ? '#ffe9a8' : 'rgba(255,255,255,0.95)');
+          }
           if (hasCheck) checkDibuja(cl.check, bx + cellW - 26 - delW,
             by + cellH / 2, cl.act);
           if (cl.lock) PP_ICONS.candado(c, bx + cellW - 28, by + cellH / 2,
@@ -5498,6 +5536,30 @@ export class PingPongGame {
       case 'salamesa': {
         // r96/r98 · MESA: altura con LECTURA viva (se agarra en 3D) y
         // −/+ a banda completa; aspectos en grid 3 col; retos como filas.
+        // r85 · TIENDA CRAZY: modal de compra de aspecto con monedas
+        if (this._tiendaCompra && this._tiendaCompra.tipo === 'mesa') {
+          const skT = MESA_ASPECTOS.find((x) => x.id === this._tiendaCompra.id);
+          if (skT && skT.coste) {
+            const monT = ((this.stats && this.stats.data.monedas) || 0) | 0;
+            const faltaT = Math.max(0, skT.coste - monT);
+            items.push(
+              { tipo: 'titulo', et: T('shop_t'), col: '#ffd257' },
+              { tipo: 'lectura', et: T('shop_ask', { v: T(skT.nameKey), n: skT.coste }),
+                f: 24, col: '#e9edf2' },
+              { tipo: 'lectura', col: faltaT ? '#ffa94d' : '#8ce99a', f: 19,
+                et: T('mon_bal', { n: monT }) +
+                  (faltaT ? ' · ' + T('shop_falta', { n: faltaT }) : '') },
+              { tipo: 'lectura', et: T('mon_hint'), col: '#93a1b0', f: 17 },
+              { tipo: 'filaN', wFr: [0.5, 0.5], cells: [
+                { id: 'shop:si', et: T('shop_buy', { n: skT.coste }), act: true,
+                  grad: ['#f0873f', '#d05c1f'] },
+                { id: 'shop:no', et: T('shop_cancel') },
+              ] },
+            );
+            break;
+          }
+          this._tiendaCompra = null;
+        }
         const ocup = this.mesaOcupada();
         const y0m = this.mesaAltoY;
         const cm = Math.round(y0m * 100);
@@ -5520,16 +5582,20 @@ export class PingPongGame {
             { id: 'mesa_altomas', et: '+' },
           ] },
           { tipo: 'titulo', et: T('mesa_aspecto_lbl'), col: '#98a6b4' },
+          { tipo: 'lectura', col: '#ffd257', f: 20,
+            et: T('mon_bal', { n: ((this.stats && this.stats.data.monedas) || 0) | 0 }) +
+              ' · ' + T('mon_hint') },
           { tipo: 'grid', cols: 3, fs: 20,
             celdas: MESA_ASPECTOS.map((s) => ({
               id: 'mesa_skin:' + s.id, et: T(s.nameKey),
               act: this.mesaSkin === s.id,
               check: this.mesaSkin === s.id,
-              lock: !!(s.lock && !this._mesaLibre(s.lock)),
+              lock: !this._aspectoLibre('mesa', s),   // r85 · hito superado O comprado
+              precio: s.coste || 0,
             })) },
         );
-        if (MESA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock))) {
-          items.push({ tipo: 'lectura', et: T('mesa_lock_hint'),
+        if (MESA_ASPECTOS.some((s) => !this._aspectoLibre('mesa', s))) {
+          items.push({ tipo: 'lectura', et: T('shop_hint'),
             col: '#93a1b0', f: 17 });
         }
         // r97 · RETOS DE LA SEMANA: lo que ALIMENTA los candados de arriba
@@ -5554,18 +5620,46 @@ export class PingPongGame {
       }
       case 'salabola': {
         // r21 · BOLA: 16 skins (clásicas + locura + planetas), candados
+        // r85 · TIENDA CRAZY: modal de compra de aspecto con monedas
+        if (this._tiendaCompra && this._tiendaCompra.tipo === 'bola') {
+          const skT = BOLA_ASPECTOS.find((x) => x.id === this._tiendaCompra.id);
+          if (skT && skT.coste) {
+            const monT = ((this.stats && this.stats.data.monedas) || 0) | 0;
+            const faltaT = Math.max(0, skT.coste - monT);
+            items.push(
+              { tipo: 'titulo', et: T('shop_t'), col: '#ffd257' },
+              { tipo: 'lectura', et: T('shop_ask', { v: T(skT.nameKey), n: skT.coste }),
+                f: 24, col: '#e9edf2' },
+              { tipo: 'lectura', col: faltaT ? '#ffa94d' : '#8ce99a', f: 19,
+                et: T('mon_bal', { n: monT }) +
+                  (faltaT ? ' · ' + T('shop_falta', { n: faltaT }) : '') },
+              { tipo: 'lectura', et: T('mon_hint'), col: '#93a1b0', f: 17 },
+              { tipo: 'filaN', wFr: [0.5, 0.5], cells: [
+                { id: 'shop:si', et: T('shop_buy', { n: skT.coste }), act: true,
+                  grad: ['#f0873f', '#d05c1f'] },
+                { id: 'shop:no', et: T('shop_cancel') },
+              ] },
+            );
+            break;
+          }
+          this._tiendaCompra = null;
+        }
         items.push(
           { tipo: 'titulo', et: T('bola_aspecto_lbl'), col: '#98a6b4' },
+          { tipo: 'lectura', col: '#ffd257', f: 20,
+            et: T('mon_bal', { n: ((this.stats && this.stats.data.monedas) || 0) | 0 }) +
+              ' · ' + T('mon_hint') },
           { tipo: 'grid', cols: 3, fs: 20,
             celdas: BOLA_ASPECTOS.map((s) => ({
               id: 'bola_skin:' + s.id, et: T(s.nameKey),
               act: this._bolaSkinLS() === s.id,
               check: this._bolaSkinLS() === s.id,
-              lock: !!(s.lock && !this._mesaLibre(s.lock)),
+              lock: !this._aspectoLibre('bola', s),   // r85 · hito superado O comprado
+              precio: s.coste || 0,
             })) },
         );
-        if (BOLA_ASPECTOS.some((s) => s.lock && !this._mesaLibre(s.lock))) {
-          items.push({ tipo: 'lectura', et: T('mesa_lock_hint'),
+        if (BOLA_ASPECTOS.some((s) => !this._aspectoLibre('bola', s))) {
+          items.push({ tipo: 'lectura', et: T('shop_hint'),
             col: '#93a1b0', f: 17 });
         }
         items.push({ tipo: 'lectura', et: T('bola_cosmetica'),
@@ -5806,7 +5900,12 @@ export class PingPongGame {
   }
 
   toggleMenu() {
-    if (this.calib) return;   // en entrenamiento manda el panel propio
+    // r85 · FIX «ya no es posible cerrar el menú»: el guard antiguo
+    // (`if (this.calib) return`) también comía el AJUSTE DE PALA, cuya
+    // interfaz ES el menú común (B abre, «CERRAR MENÚ» y «NO» cierran) —
+    // el menú quedaba INCIERRABLE durante el ajuste. El paraguas del
+    // entrenamiento clásico sigue bloqueado (allí manda su panel propio).
+    if (this.calib && !this.calibPala) return;
     this.menuOpen = !this.menuOpen;
     for (const l of this.menuLines) l.visible = false;
     for (const d of this.menuDots) d.visible = false;
@@ -5819,6 +5918,11 @@ export class PingPongGame {
       // (estancia + rig z) y el heal r114 re-ancla si la escena viaja.
       this.menuPin = true;
       this._menuPinDraw();
+      // r85 · en el AJUSTE DE PALA el menú manda: su ventana de información
+      // se aparta mientras se lee el menú (vuelve al cerrarlo).
+      if (this.calibPala && this.calibPanel) {
+        this.calibPanel.group.visible = false;
+      }
       this.anchorMenu(true);      // r69: nace delante de la mirada y fijo
       this.rules.message = T('menu_open');
       this.drawMenu();
@@ -5831,6 +5935,11 @@ export class PingPongGame {
         if (this.menuOpen) this.drawMenu();
       }).catch(() => { /* nunca rompe */ });
     } else {
+      // r85 · el ajuste de pala sigue vivo tras cerrar el menú: su ventana
+      // de información vuelve a su sitio (el modo nunca se fue).
+      if (this.calibPala && this.calibPanel) {
+        this.calibPanel.group.visible = true;
+      }
       this.menuFxInicia('out');   // r81 · FASE 177: sale de escena (encoge y se funde)
       this.audio.playOsc(990, 660, 0.06, 'sine', 0.1, 0);
       // v2.29: al cerrar el menú la música se apaga con fundido (partido en marcha)
@@ -5888,6 +5997,7 @@ export class PingPongGame {
 
   closeMenu() {
     this._resetArm = false;   // v2.66: cerrar el menú desarma el borrado
+    this._tiendaCompra = null;   // r85 · la tienda no sobrevive al cierre
     if (this.menuOpen) this.toggleMenu();
   }
 
@@ -6913,6 +7023,7 @@ export class PingPongGame {
         // r71 · + subpáginas de AJUSTES (optsJuego/optsSala/optsSonido/
         // optsVisual/optsPerfil) — las categorías del nuevo AJUSTES.
         // r81 · + optsRendi (RENDIMIENTO: autocalibrador de FPS).
+        this._tiendaCompra = null;   // r85 · la tienda no sobrevive a la navegación
         if (arg === 'main' || arg === 'champs' || arg === 'champhist' || arg === 'opts' ||
             arg === 'rankini' || arg === 'rankme' || arg === 'multi' ||
             arg === 'trainext' || arg === 'carreradiv' ||
@@ -7327,17 +7438,22 @@ export class PingPongGame {
         }
         break;
       }
-      case 'pala:si':
-        // r79 · AUTORIZACIÓN concedida: recoger el ajuste (passthrough,
-        // ejes, mandos) con la salida limpia al Hall de la r83.
-        this._palaSalirAsk = false;
-        this.closeMenu();
-        this.exitCalib();
-        break;
-      case 'pala:no':
-        // r79 · seguir ajustando: el menú se cierra, el modo sigue vivo
-        this._palaSalirAsk = false;
-        this.closeMenu();
+      case 'pala':
+        // r85 · FIX RAÍZ del panel «cosmético» (informe del dueño: «no se
+        // puede salir… un panel que no hace nada»): el switch compara el
+        // PREFIJO anterior al primer ':' — los casos escritos como
+        // 'pala:si'/'pala:no' JAMÁS casaban (ns era 'pala') y la
+        // autorización SÍ/NO del ajuste era decorativa. SÍ = recoger el
+        // ajuste (passthrough, ejes, mandos) con la salida limpia al Hall
+        // de la r83 · NO = seguir ajustando con el menú cerrado.
+        if (arg === 'si') {
+          this._palaSalirAsk = false;
+          this.closeMenu();
+          this.exitCalib();
+        } else if (arg === 'no') {
+          this._palaSalirAsk = false;
+          this.closeMenu();
+        }
         break;
       case 'gripLoad':
         // r83 · cargar un agarre guardado (persigue su nombre exacto)
@@ -7770,9 +7886,16 @@ export class PingPongGame {
         }
         const skin = MESA_ASPECTOS.find((s) => s.id === arg);
         if (skin) {
-          if (skin.lock && !this._mesaLibre(skin.lock)) {
-            this.rules.message = this._mesaLockTxt(skin.lock) || T('mesa_lock_hint');
-            this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          if (!this._aspectoLibre('mesa', skin)) {
+            // r85 · ECONOMÍA: bloqueado — con precio abre la TIENDA (compra
+            // con monedas); sin precio repite el texto del hito.
+            if (skin.coste) {
+              this._tiendaCompra = { tipo: 'mesa', id: skin.id };
+              this.audio.playOsc(520, 780, 0.08, 'sine', 0.12, 0);
+            } else {
+              this.rules.message = this._mesaLockTxt(skin.lock) || T('mesa_lock_hint');
+              this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+            }
           } else {
             try { localStorage.setItem('pp_mesaskin', skin.id); } catch { /* */ }
             this._mesaTinte(skin);   // r96: la altura NO se toca, sólo el tinte
@@ -7789,14 +7912,50 @@ export class PingPongGame {
         // campeonato la bola cae a la oficial aunque el ajuste se guarde.
         const skB = BOLA_ASPECTOS.find((s) => s.id === arg);
         if (skB) {
-          if (skB.lock && !this._mesaLibre(skB.lock)) {
-            this.rules.message = this._mesaLockTxt(skB.lock) || T('mesa_lock_hint');
-            this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+          if (!this._aspectoLibre('bola', skB)) {
+            // r85 · ECONOMÍA: bloqueado — con precio abre la TIENDA (compra
+            // con monedas); sin precio repite el texto del hito.
+            if (skB.coste) {
+              this._tiendaCompra = { tipo: 'bola', id: skB.id };
+              this.audio.playOsc(520, 780, 0.08, 'sine', 0.12, 0);
+            } else {
+              this.rules.message = this._mesaLockTxt(skB.lock) || T('mesa_lock_hint');
+              this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
+            }
           } else {
             try { localStorage.setItem('pp_bolaskin', skB.id); } catch { /* */ }
             this._bolaTinte(skB);   // aplica en vivo (champ → oficial)
             this.rules.message = T('msg_bola_skin', { v: T(skB.nameKey) });
             this.audio.playOsc(720, 900, 0.06, 'sine', 0.14, 0);
+          }
+        }
+        this.drawMenu();
+        break;
+      }
+      case 'shop': {
+        // r85 · TIENDA CRAZY — compra del aspecto pendiente (_tiendaCompra).
+        // El despacho vive en el PREFIJO ('shop' + arg si/no): la lección
+        // del panel SÍ/NO muerto ('pala:si' jamás casaba en el switch del
+        // ns). Comprado = seleccionado (misma vía que el clic de skin).
+        const tc = this._tiendaCompra;
+        this._tiendaCompra = null;
+        if (tc && arg === 'si') {
+          const def = tc.tipo === 'mesa'
+            ? MESA_ASPECTOS.find((x) => x.id === tc.id)
+            : BOLA_ASPECTOS.find((x) => x.id === tc.id);
+          if (def && def.coste) {
+            if (this._comprar(tc.tipo, tc.id, def.coste)) {
+              try { localStorage.setItem(
+                tc.tipo === 'mesa' ? 'pp_mesaskin' : 'pp_bolaskin', def.id);
+              } catch { /* */ }
+              if (tc.tipo === 'mesa') this._mesaTinte(def);
+              else this._bolaTinte(def);
+              this.rules.message = T('shop_ok', { v: T(def.nameKey), n: def.coste });
+              this.audio.playOsc(720, 1180, 0.12, 'triangle', 0.16, 0);
+            } else {
+              this.rules.message = T('shop_falta', { n: def.coste });
+              this.audio.playOsc(330, 260, 0.12, 'sine', 0.14, 0);
+            }
           }
         }
         this.drawMenu();
@@ -8187,10 +8346,44 @@ export class PingPongGame {
     if (lock === 'hito_won25') return T('mesa_lock_won25');
     return '';
   }
+  /* ---------- r85 · ECONOMÍA CRAZY: MONEDERO + TIENDA -------------------
+   * Las monedas viven en ppxr_stats_v1 (recordMatch las gana JUGANDO:
+   * +25 victoria · +8 derrota) y las compras en pp_compras (JSON
+   * ['mesa:oro', 'bola:saturno'…]). Un aspecto es seleccionable si su
+   * hito está superado O está comprado. El clic sobre uno bloqueado con
+   * precio abre la TIENDA (modal de confirmación en la propia página). */
+  _comprado(tipo, id) {
+    try {
+      const arr = JSON.parse(localStorage.getItem('pp_compras') || '[]');
+      return Array.isArray(arr) && arr.indexOf(tipo + ':' + id) >= 0;
+    } catch { return false; }
+  }
+  _comprar(tipo, id, coste) {
+    const mon = ((this.stats && this.stats.data.monedas) || 0) | 0;
+    if (mon < coste) return false;
+    this.stats.data.monedas = mon - coste;
+    if (this.stats && this.stats.save) this.stats.save();
+    try {
+      const arr = JSON.parse(localStorage.getItem('pp_compras') || '[]');
+      if (Array.isArray(arr) && arr.indexOf(tipo + ':' + id) < 0) {
+        arr.push(tipo + ':' + id);
+        localStorage.setItem('pp_compras', JSON.stringify(arr));
+      }
+    } catch { /* */ }
+    return true;
+  }
+  /** ¿El aspecto (MESA_ASPECTOS/BOLA_ASPECTOS) es seleccionable? Hito
+   *  superado O comprado (r85). */
+  _aspectoLibre(tipo, def) {
+    if (def.lock && this._mesaLibre(def.lock)) return true;
+    return this._comprado(tipo, def.id);
+  }
   /** r96 · definición de aspecto por id (con guard de recompensas). */
   _mesaSkinDef(skinId) {
     let skin = MESA_ASPECTOS.find((s) => s.id === skinId) || MESA_ASPECTOS[0];
-    if (skin.lock && !this._mesaLibre(skin.lock)) skin = MESA_ASPECTOS[0];
+    // r85 · comprado cuenta: la economía desbloquea sin esperar el hito
+    if (skin.lock && !this._mesaLibre(skin.lock) &&
+        !this._comprado('mesa', skin.id)) skin = MESA_ASPECTOS[0];
     return skin;
   }
   /** r96 · ALTURA CONTINUA: muta DIMS + reacomoda la mesa viva. opts.persist
@@ -8266,10 +8459,12 @@ export class PingPongGame {
   _bolaSkinLS() {
     try { return localStorage.getItem('pp_bolaskin') || 'blanca'; } catch { return 'blanca'; }
   }
-  /** definición por id CON candado (para elegir la PROPIA skin). */
+  /** definición por id CON candado (para elegir la PROPIA skin).
+   *  r85 · comprado cuenta: la economía desbloquea sin esperar el hito. */
   _bolaSkinDef(skinId) {
     let sk = BOLA_ASPECTOS.find((s) => s.id === skinId) || BOLA_ASPECTOS[0];
-    if (sk.lock && !this._mesaLibre(sk.lock)) sk = BOLA_ASPECTOS[0];
+    if (sk.lock && !this._mesaLibre(sk.lock) &&
+        !this._comprado('bola', sk.id)) sk = BOLA_ASPECTOS[0];
     return sk;
   }
   /* r24 (v3.6.119) · VARIANTE DEL HALL — el arte de la estancia: el museo
@@ -17512,8 +17707,11 @@ export class PingPongGame {
       this.menuPage = 'optsPala';
       this._palaSalirAsk = true;
       this.menuOpen = true;
+      this.menuPin = true;       // r85 · nace CON CHINCHETA (convención de la casa)
+      this._menuPinDraw();
       this.menuFxInicia('in');   // r81 · nace EN ESCENA (cascada+rebote)
       this.menuHover = [-1, -1];
+      if (this.calibPanel) this.calibPanel.group.visible = false;   // r85 · el menú manda: la ventana se aparta
       this.anchorMenu(true);
       this.drawMenu();
     }
@@ -17530,7 +17728,8 @@ export class PingPongGame {
     //      el HUB DE ENTRENAMIENTO (página ENTRENAR), la misma ventana que
     //      abría Y — y con el menú ya abierto B lo cierra. Antes B estaba
     //      MUERTO ahí (la guardia !this.calib lo comía) y sólo Y abría.
-    if (presenting && (!this.calib || this.trainV3 || this.trainV3Hub) &&
+    if (presenting && (!this.calib || this.calibPala ||
+        this.trainV3 || this.trainV3Hub) &&
         this.readButton(this.handIndex('right'), 5)) {
       if ((this.trainV3 || this.trainV3Hub) && !this.menuOpen) {
         // r74 · mismo desenlace que la antigua Y del entrenamiento: el modo

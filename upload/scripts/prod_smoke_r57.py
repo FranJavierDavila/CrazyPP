@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""prod_smoke_r57.py — VERIFICACIÓN EN PRODUCCIÓN de la FASE 151
+(https://franjavierdavila.github.io/CrazyPP/game.html?v=3.6.148-SDK6):
+  · ESTÁTICO: el game.html SERVIDO lleva la auditoría de físicas aplicada —
+    R1 PASO_TUNE (caps de paso como datos) y la pala midiendo con dtFis;
+    R2 margen de bote ALINEADO en los 3 simuladores; R3 Magnus ×1 vs ×2,2
+    documentado — más la conservación completa r55/r56 (ARCANO_CFG,
+    pwViva única, BOTE_TUNE, BOLA_TUNE) y sw.js/portada a 3.6.148.
+  · FUNCIONAL (herencia r54): en un campeonato simulado, lanzar el SÚPER
+    IMÁN → la ventana NACE y SIGUE viva; un segundo poder CONVIVE; la
+    MEGA nace a los 15,00 s EXACTOS de ARCANO_CFG (el dato manda).
+Uso: python3 scripts/prod_smoke_r57.py"""
+import asyncio
+import re
+import sys
+import urllib.request
+from playwright.async_api import async_playwright
+
+BASE = 'https://franjavierdavila.github.io/CrazyPP'
+URL = BASE + '/game.html?v=3.6.148-SDK6'
+
+ok, fails = 0, 0
+
+
+def chk(cond, label):
+    global ok, fails
+    print(('  OK  ' if cond else '  FALLO: ') + label)
+    ok, fails = ok + (1 if cond else 0), fails + (0 if cond else 1)
+
+
+def get(url: str) -> str:
+    with urllib.request.urlopen(url, timeout=60) as r:
+        return r.read().decode('utf-8', 'replace')
+
+
+JS = """async () => {
+  const G = window.__PP_GAME || window.__pingpong;
+  const out = { presente: !!G };
+  if (!G) return out;
+  const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
+  try { localStorage.setItem('pp_pala_mejorada_v1', '1'); } catch (e) {}
+  G.palaMejorada = true;
+  await dorme(300);
+  G.renderer.xr.isPresenting = true;
+  G.menuOpen = false; G._instr = null; G.champIntro = null;
+  G.tutV1 = false; G.calib = false; G.calibPala = false;
+  G.inHall = false; G._arconoOn = false;
+  try { G.rules.onMatchStart = null; } catch (e) {}
+  G.champs = { active: true, gunArmed: false, paddleGunArmed: false };
+  G.rules.state = 'rally';
+  G.rules.rallyHits = 0;
+  // — el bug del dueño: ¿la ventana del imán NACE y SOBREVIVE? —
+  G._megaMatriz = [{ id: 'iman', n: 1 }]; G._megaIdx = 0;
+  G._imanT = 0; G._efectoT = 0;
+  const iLibre = (G.paddleHand === 0) ? 1 : 0;
+  G.onSelectStart(iLibre);
+  await dorme(150);
+  out.nace = +G._imanT.toFixed(2);
+  out.msg = String(G.rules.message || '');
+  await dorme(1000);
+  out.sigue = +G._imanT.toFixed(2);
+  // y un segundo poder CONVIVE (puerta única pwViva, r55)
+  G._megaMatriz = [{ id: 'efecto', n: 1 }, { id: 'iman', n: 0 }];
+  G._megaIdx = 0;
+  G._efectoT = 0;
+  G.onSelectStart(iLibre);
+  await dorme(150);
+  out.efectoNace = +G._efectoT.toFixed(2);
+  out.imanAun = +G._imanT.toFixed(2);
+  // LA CAPA DE DATOS se observa POR CONDUCTO (r55): la MEGA nace a los
+  // 15,00 s EXACTOS de ARCANO_CFG.ventanas.mega.
+  G._megaMatriz = [{ id: 'mega', n: 1 }, { id: 'efecto', n: 0 },
+                   { id: 'iman', n: 0 }];
+  G._megaIdx = 0;
+  G._megaT = 0;
+  G.onSelectStart(iLibre);
+  await dorme(150);
+  out.megaNace = +G._megaT.toFixed(2);
+  out.fin = true;
+  return out;
+}"""
+
+
+async def main():
+    # — FASE ESTÁTICA: lo que GitHub Pages SIRVE —
+    gh = get(URL)
+    # r57 · R1: PASO_TUNE (los caps del paso como datos) + pala con dtFis
+    chk('const PASO_TUNE = { uiMax: 1 / 30, fisMax: 1 / 12 };' in gh,
+        'PASO_TUNE servida (los caps del paso como DATOS, c12)')
+    chk('const dt = Math.min(_rawDt, PASO_TUNE.uiMax);' in gh and
+        'const dtFis = Math.min(_rawDt, PASO_TUNE.fisMax);' in gh,
+        'dt de UI (uiMax) y dtFis de bola+PALA (fisMax) leyendo la tabla')
+    chk('updatePaddleSim(ps, grip.position, tmpMountQ, now, dtFis);' in gh,
+        'R1: la pala mide con la base temporal de la FÍSICA (dtFis)')
+    # r57 · R2: margen de bote ALINEADO en los 3 simuladores
+    chk(gh.count('DIMS.tableHalfWidth + DIMS.ballRadius * 0.5 &&') == 3,
+        'R2: margen de bote alineado en los 3 simuladores (collideTable ya lo tenía)')
+    # r57 · R3: Magnus ×1 predicho vs ×2,2 real, documentado en los datos
+    chk('r57 · AUDITORÍA R3: el ×2,2 sólo vuela en la bola MARCADA' in gh and
+        'DIMS.efectoMagnusMul || 1.5' in gh,
+        'R3: Magnus ×1 predicho vs ×2,2 real documentado (c02)')
+    # CONSERVACIÓN r55 · ARCANO_CFG
+    chk('const ARCANO_CFG = {' in gh, 'ARCANO_CFG en el game.html SERVIDO')
+    chk("golpesPorCarga: 20," in gh and
+        "campeonato: { origen: 'registro_completo', candados: false }," in gh,
+        'reglas por modalidad en la tabla servida')
+    chk('ui: { buho: { x: 2.70, y: 2.60, zOff: 0.016 } },' in gh,
+        'posición del búho como DATO en la tabla servida')
+    chk('const pwViva = (t) => (on || dlV) && t > 0;' in gh,
+        'puerta ÚNICA pwViva servida (1 definición)')
+    n_pw = len(re.findall(r'if \(pwViva\(this\._\w+T\)\)', gh))
+    chk(n_pw == 13, f'13 compuertas LEEN pwViva (servidas: {n_pw})')
+    chk(len(re.findall(r'\(on \|\| dlV\)', gh)) == 1,
+        'cero patrones copiados (sólo la definición)')
+    chk('arcMesh.position.set(ARCANO_CFG.ui.buho.x, ARCANO_CFG.ui.buho.y,' in gh,
+        'búho del Hall leyendo ARCANO_CFG (c08 servido)')
+    chk('dur: ARCANO_CFG.ventanas.' in gh and
+        gh.count('dur: ARCANO_CFG.ventanas.') == 14,
+        'catálogo PODERES_PALA con su dur (14 filas)')
+    # CONSERVACIÓN r56 · BOTE_TUNE / BOLA_TUNE
+    chk('const BOTE_TUNE = {' in gh and 'spinDecayBote: 0.72,' in gh and
+        'gripImpactRef: 4.5,' in gh and 'cascaronInercia: 0.4,' in gh,
+        'BOTE_TUNE servida (tabla de física fina en c04)')
+    chk('spin.multiplyScalar(BOTE_TUNE.spinDecayBote);' in gh and
+        'const kf = BOTE_TUNE.cascaronAcoplo / r;' in gh,
+        'los lectores de BOTE_TUNE viven en el game.html SERVIDO')
+    chk('const BOLA_TUNE = { spinGanancia: 0.45 };' in gh and
+        'const BOLA_SPIN_GANANCIA = BOLA_TUNE.spinGanancia;' in gh,
+        'BOLA_TUNE servida (giro visible como dato)')
+    tel = get(BASE + '/telemetria.html?v=3.6.148-SDK6')
+    chk('Rankings por jugador' in tel and 'id="tabsRank"' in tel,
+        'panel telemetria.html: rankings por jugador servidos')
+    chk('id="ficha"' in tel and 'abrirFichaSid' in tel and 'renderRank' in tel,
+        'panel telemetria.html: ficha individual (drill-down) servida')
+    sw = get(BASE + '/sw.js')
+    chk('crazypp-v3.6.148-SDK6' in sw, 'sw.js CACHE crazypp-v3.6.148-SDK6')
+    portada = get(BASE + '/')
+    chk('v=3.6.148-SDK6' in portada, 'portada con cache-buster v=3.6.148-SDK6')
+
+    # — FASE FUNCIONAL: el juego VIVO en producción —
+    errs = []
+    async with async_playwright() as p:
+        b = await p.chromium.launch(args=[
+            '--use-gl=swiftshader', '--enable-unsafe-swiftshader',
+            '--autoplay-policy=no-user-gesture-required'])
+        pg = await b.new_page(viewport={'width': 1280, 'height': 800})
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        await pg.goto(URL, wait_until='domcontentloaded', timeout=60000)
+        await pg.wait_for_function(
+            '() => window.__PP_GAME && window.__PP_VERSION', timeout=60000)
+        ver = await pg.evaluate('window.__PP_VERSION || ""')
+        badge = (await pg.locator('#verBadge').count() and
+                 await pg.inner_text('#verBadge')) or ''
+        chk(ver == '3.6.148-SDK6', f'__PP_VERSION = {ver!r}')
+        chk('V3.6.148-SDK6' in badge, f'badge 2D = {badge!r}')
+        out = await pg.evaluate(JS)
+        await b.close()
+    chk(out.get('presente'), 'juego vivo (window.__PP_GAME)')
+    chk(not errs, f'0 pageerrors ({len(errs)}: {errs[:2]})')
+    if out.get('presente'):
+        chk(out.get('nace', 0) > 9.5,
+            f'IMÁN: la ventana NACE ({out.get("nace")} s)')
+        chk('agotado' not in (out.get('msg') or '').lower() and
+            'worn off' not in (out.get('msg') or '').lower(),
+            f'IMÁN: sin «agotado» al lanzar ({out.get("msg", "")[:48]}…)')
+        chk(out.get('sigue', 0) > 8.5,
+            f'IMÁN: la ventana SIGUE viva 1 s después ({out.get("sigue")} s)')
+        chk(out.get('efectoNace', 0) > 9.5,
+            f'EFECTO convive: nace ({out.get("efectoNace")} s)')
+        chk(out.get('imanAun', 0) > 8.0,
+            f'EFECTO convive: el imán SIGUE ({out.get("imanAun")} s)')
+        chk(out.get('megaNace', 0) > 14.5,
+            f'DATO MANDA: la MEGA nace a los 15,00 s de ARCANO_CFG '
+            f'({out.get("megaNace")} s)')
+    print(f'RESULTADO PROD SMOKE r57: {ok} OK · {fails} FALLOS')
+    sys.exit(0 if not fails else 1)
+
+asyncio.run(main())

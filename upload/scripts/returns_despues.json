@@ -1,0 +1,183 @@
+[
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.196,
+   "z": -0.28
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.233,
+   "z": -0.227
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.095,
+   "z": -1.635
+  },
+  "snap": {
+   "last": "ai",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.09,
+    0.78,
+    -1.64
+   ],
+   "vel": [
+    0.48,
+    2.37,
+    -0.23
+   ]
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU golpe\u00f3 su campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": true,
+   "mbo": false,
+   "sop": false,
+   "pos": [
+    -0.55,
+    0.06,
+    -4.19
+   ],
+   "vel": [
+    -0.21,
+    1.69,
+    -1.89
+   ]
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU no la devolvi\u00f3"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": -0.259,
+   "z": -1.33
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": -0.297,
+   "z": -1.294
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": true,
+   "mbo": false,
+   "sop": false,
+   "pos": [
+    -0.43,
+    0.06,
+    -4.6
+   ],
+   "vel": [
+    -0.11,
+    1.66,
+    -2
+   ]
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU no la devolvi\u00f3"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": true,
+   "mbo": false,
+   "sop": false,
+   "pos": [
+    0.77,
+    0.05,
+    -4.29
+   ],
+   "vel": [
+    0.26,
+    1.8,
+    -1.83
+   ]
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU no la devolvi\u00f3"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": -0.288,
+   "z": -1.25
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.525,
+   "z": -0.431
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": true,
+   "mbo": false,
+   "sop": false,
+   "pos": [
+    0.4,
+    0.05,
+    -4.23
+   ],
+   "vel": [
+    0.18,
+    1.8,
+    -1.82
+   ]
+  },
+  "msg": "\u00a1Punto para ti! \u00b7 la CPU no la devolvi\u00f3 \u00b7 7 golpes"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.239,
+   "z": -1.309
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "timeout"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "msg": "timeout"
+ }
+]

@@ -1,0 +1,189 @@
+== HUB /descargas (dev :3000) ==
+  ✓ enlaces v364-sdk4 (9)
+  ✓ menciones 3.6.4-SDK4 (12)
+  ✓ el hub menciona 'createPowerSign'
+  ✓ el hub menciona 'createMusic'
+  ✓ el hub menciona 'SDK de campeonatos'
+  ✓ el hub menciona 'FASE 6'
+  ✓ el hub menciona 'FASE 5'
+  ✓ el hub menciona 'FASE 4'
+  ✓ el hub menciona 'una sola fuente'
+  ✓ el hub menciona 'SUPERPODERES REDEFINIDOS'
+  ✓ el hub menciona 'congela la partida'
+  ✓ el hub menciona 'rocas en 3D'
+  ✓ el hub menciona 'vetas de óxido'
+  ✓ el hub menciona 'rayo tractor'
+  ✓ el hub menciona 'dron'
+  ✓ el hub menciona 'ATRAPADA'
+  ✓ el hub menciona 'caída vertical'
+  ✓ el hub menciona 'gravedad cero'
+  ✓ el hub menciona 'partículas blancas'
+  ✓ el hub menciona 'risa'
+  ✓ el hub menciona 'enfado'
+  ✓ el hub menciona 'ASTRO'
+  ✓ el hub menciona 'diana se ve 2 segundos'
+  ✓ el hub menciona 'siempre vuelve a botar'
+  ✓ el hub menciona 'REACTOR DE IMPULSO'
+  ✓ el hub menciona 'ESCUDO DE PALA'
+  ✓ el hub menciona 'etapa 4'
+  ✓ el hub menciona 'PRECISIÓN CCD'
+  ✓ sin residuos de v310-srv2
+  ✓ sin residuos de v312-ccd1
+  ✓ sin residuos de v320-orb1
+  ✓ sin residuos de v321-orb2
+  ✓ sin residuos de v330-nuc1
+  ✓ sin residuos de v340-imp1
+  ✓ sin residuos de v341-riv1
+  ✓ sin residuos de v350-esc1
+  ✓ sin residuos de v351-imp2
+  ✓ sin residuos de v360-sup1
+  ✓ sin residuos de v361-sdk1
+  ✓ sin residuos de v362-sdk2
+  ✓ sin residuos de v363-sdk3
+  ✓ sin residuos de 3.1.0-SRV2
+  ✓ sin residuos de 3.2.0-ORB1
+  ✓ sin residuos de 3.2.1-ORB2
+  ✓ sin residuos de 3.3.0-NUC1
+  ✓ sin residuos de 3.4.0-IMP1
+  ✓ sin residuos de 3.4.1-RIV1
+  ✓ sin residuos de 3.5.0-ESC1
+  ✓ sin residuos de 3.5.1-IMP2
+  ✓ sin residuos de 3.6.0-SUP1
+  ✓ sin residuos de 3.6.1-SDK1
+  ✓ sin residuos de 3.6.2-SDK2
+  ✓ sin residuos de 3.6.3-SDK3
+  ✓ 4 botones de descarga (4)
+== ZIPs byte-exactos vía dev (:3000) ==
+  ✓ crazypp-v364-sdk4-COMPLETO.zip = 125,213,762 B (esperado 125,213,762)
+  ✓ crazypp-v364-sdk4-ligera.zip = 11,453,534 B (esperado 11,453,534)
+  ✓ crazypp-v364-sdk4-CLOUDFLARE.zip = 125,201,138 B (esperado 125,201,138)
+  ✓ crazypp-live-service-SOLO.zip = 6,089 B (esperado 6,089)
+== ZIPs byte-exactos vía gateway (:81) ==
+  ✓ crazypp-v364-sdk4-COMPLETO.zip = 125,213,762 B vía gateway
+  ✓ crazypp-v364-sdk4-ligera.zip = 11,453,534 B vía gateway
+  ✓ crazypp-v364-sdk4-CLOUDFLARE.zip = 125,201,138 B vía gateway
+  ✓ crazypp-live-service-SOLO.zip = 6,089 B vía gateway
+== El SDK y los 4 campeonatos viajan dentro del COMPLETO ==
+  ✓ COMPLETO incluye championships/sdk/champ_sdk.js
+  ✓ SDK dentro del ZIP = v1.3.0 (música + tablón)
+  ✓ COMPLETO incluye el orbital (adoptante SDK1)
+  ✓ COMPLETO incluye championships/oeste/index.js
+  ✓ oeste (ZIP): importa el SDK
+  ✓ oeste (ZIP): sin freeze duplicado
+  ✓ oeste (ZIP): sin decodeAudioData propio (vive en el SDK)
+  ✓ oeste (ZIP): manifest v51
+  ✓ COMPLETO incluye championships/magia/index.js
+  ✓ magia (ZIP): importa el SDK
+  ✓ magia (ZIP): sin freeze duplicado
+  ✓ magia (ZIP): sin decodeAudioData propio (vive en el SDK)
+  ✓ magia (ZIP): manifest v31
+  ✓ COMPLETO incluye championships/locura/index.js
+  ✓ locura (ZIP): importa el SDK
+  ✓ locura (ZIP): sin freeze duplicado
+  ✓ locura (ZIP): sin decodeAudioData propio (vive en el SDK)
+  ✓ locura (ZIP): manifest v22
+  ✓ COMPLETO incluye championships/valle_neon/index.js
+  ✓ valle_neon (ZIP): importa el SDK
+  ✓ valle_neon (ZIP): sin freeze duplicado
+  ✓ valle_neon (ZIP): sin decodeAudioData propio (vive en el SDK)
+  ✓ valle_neon (ZIP): manifest v3
+  ✓ CLOUDFLARE incluye el SDK
+  ✓ ligera sin campeonatos (solo el marcador de la casa) []
+== Juego + SDK servidos por gateway ==
+  ✓ gateway: game.html = 3.6.4-SDK4
+  ✓ gateway: puente CCD del núcleo
+  ✓ gateway: champ_sdk.js v1.3.0 servido (SFX + música + tablón)
+  ✓ gateway: orbital importa el SDK
+  ✓ gateway: tablón del orbital delega en el SDK (v240)
+  ✓ gateway: módulo sirve el ESCUDO DE PALA (etapa 4)
+  ✓ gateway: impulso en la etapa 2
+  ✓ gateway: meteoritos 3D + dron del tractor
+  ✓ gateway: bola atrapada + caída vertical
+  ✓ gateway: gravedad cero atrae la bola
+  ✓ gateway: audios del ASTRO cableados
+  ✓ gateway: freeze del aviso vía congela() del SDK
+  ✓ gateway: sin el freeze duplicado (una sola fuente)
+  ✓ gateway: diana visible 2 s
+  ✓ gateway: reposo → la pelota vuelve a la base
+  ✓ gateway: ASTRO a distancia fija (z −3,30)
+  ✓ gateway: sin el spot antiguo (z −3,82)
+  ✓ gateway: manifest v15 (orbital adopta el tablón en SDK4)
+  ✓ gateway: camino del manifest = duelo1·impulso·duelo2·escudo·final
+  ✓ gateway: cambios incluye la entrada v3.6.1-SDK1 (historial)
+== FASE 5/6: música + tablón por gateway ==
+  ✓ gateway oeste: import { createSfx, createMusic, createPowerSign, congela,
+  ✓ gateway oeste: __sfxSDK
+  ✓ gateway oeste: precarga('risas_forajido.mp3')
+  ✓ gateway oeste: eng.play('risas.mp3', vol || 0.8, { pan: 0.4 })
+  ✓ gateway oeste: congela(g, DUELO_P.drawT + DUELO_P.window + 0.35)
+  ✓ gateway oeste: congela(g, 0.10)
+  ✓ gateway oeste: congela(g, Math.max(this.powerSign.T_OUT, OESTE_POWER.warn
+  ✓ gateway oeste: const __CORE = getCore() || {}
+  ✓ gateway oeste: get _musSDK()
+  ✓ gateway oeste: puede: () => this._stageMode !== 'tren'
+  ✓ gateway oeste: get _musSDKv()
+  ✓ gateway oeste: syncMode: 'direct'
+  ✓ gateway oeste: excluso: () => this.ctrl._musSDK.sonando()
+  ✓ gateway oeste: _musicStart() { this._musSDKv.on(); }
+  ✓ gateway oeste: _musicStop() { this._musSDKv.off(); }
+  ✓ gateway oeste: createPowerSign(THREE
+  ✓ gateway oeste: coreo: 'clasica'
+  ✓ gateway oeste: arte: 'plano'
+  ✓ gateway oeste: pintar: (aplicar) => this._pintarRespaldo(aplicar)
+  ✓ gateway oeste: oesteCanvas(1024, 560)
+  ✓ gateway oeste: sin freeze duplicado
+  ✓ gateway oeste: decodeAudioData solo en el SDK (0 en el módulo)
+  ✓ gateway oeste: manifest v51
+  ✓ gateway oeste: nota v3.6.4-SDK4 en el historial
+  ✓ gateway magia: import { createSfx, createMusic, createPowerSign, congela,
+  ✓ gateway magia: __sfxSDK
+  ✓ gateway magia: precarga('risas.mp3')
+  ✓ gateway magia: eng.play('risas.mp3', 1.0)
+  ✓ gateway magia: congela(g, Math.max(this.powerSign.T_OUT, warn) + 0.1)
+  ✓ gateway magia: const __CORE = getCore() || {}
+  ✓ gateway magia: get _musSDK()
+  ✓ gateway magia: url: () => this.manifest && this.manifest.musicUrl
+  ✓ gateway magia: this._musSDK.sync();
+  ✓ gateway magia: createPowerSign(THREE
+  ✓ gateway magia: coreo: 'clasica'
+  ✓ gateway magia: arte: 'canvas1024'
+  ✓ gateway magia: fallbackURL: () => paintPowerBanner()
+  ✓ gateway magia: sin freeze duplicado
+  ✓ gateway magia: decodeAudioData solo en el SDK (0 en el módulo)
+  ✓ gateway magia: manifest v31
+  ✓ gateway magia: nota v3.6.4-SDK4 en el historial
+  ✓ gateway locura: import { createPowerSign, congela, getCore } from '../sdk/
+  ✓ gateway locura: congela(g, Math.max(this.powerSign.T_OUT, warn) + 0.1)
+  ✓ gateway locura: const __CORE = getCore() || {}
+  ✓ gateway locura: createPowerSign(THREE
+  ✓ gateway locura: coreo: 'v240'
+  ✓ gateway locura: halo: true
+  ✓ gateway locura: arte: 'fit1833'
+  ✓ gateway locura: sin freeze duplicado
+  ✓ gateway locura: decodeAudioData solo en el SDK (0 en el módulo)
+  ✓ gateway locura: manifest v22
+  ✓ gateway locura: nota v3.6.4-SDK4 en el historial
+  ✓ gateway valle_neon: import { createMusic, getCore } from '../sdk/champ_sdk.js'
+  ✓ gateway valle_neon: const CORE = getCore();
+  ✓ gateway valle_neon: get _musSDK()
+  ✓ gateway valle_neon: fadeIn: 1.2
+  ✓ gateway valle_neon: ancla: false
+  ✓ gateway valle_neon: syncMode: 'none'
+  ✓ gateway valle_neon: gateOn: true
+  ✓ gateway valle_neon: stopFade: 0.4
+  ✓ gateway valle_neon: sin freeze duplicado
+  ✓ gateway valle_neon: decodeAudioData solo en el SDK (0 en el módulo)
+  ✓ gateway valle_neon: manifest v3
+  ✓ gateway valle_neon: nota v3.6.3-SDK3 en el historial
+  ✓ gateway orbital: import { createPowerSign, createSfx, congela } from '../sd
+  ✓ gateway orbital: createPowerSign(THREE
+  ✓ gateway orbital: coreo: 'v240'
+  ✓ gateway orbital: halo: true
+  ✓ gateway orbital: onTex: (tex) => { try { this.ctrl._ownTex.add(tex); }
+  ✓ intro oficial byte-perfecta por gateway
+  ✓ gateway: risa_astro.mp3 byte-exacto (81408 B)
+  ✓ gateway: enfado_astro.mp3 byte-exacto (37616 B)
+  ✓ gateway: diana_quantica.png byte-exacta
+  ✓ 0 pageerrors (0): []
+
+RESULTADO: 181 OK · 0 FALLOS

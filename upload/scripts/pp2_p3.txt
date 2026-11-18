@@ -1,0 +1,334 @@
+
+/* =====================================================================
+ *  ÁRBITRO · reglas simplificadas del tenis de mesa
+ *  Partido a 11 (ventaja de 2), saque alternado cada 2 puntos.
+ *  Saque fallado se repite (modo amable).
+ * ===================================================================== */
+class Rules {
+  constructor() {
+    this.state = 'serve';
+    this.server = 'player';
+    this.scorePlayer = 0;
+    this.scoreAi = 0;
+    this.message = 'Saca cuando quieras: gatillo para lanzar la bola';
+    this.totalPoints = 0;
+    this.stateTimer = 0;
+    this.lastHitter = null;
+    this.firstHitter = null;
+    this.mustBounceOpp = false;
+    this.validBounce = false;
+    this.isServeBall = false;
+    this.netTouched = false;
+    this.rallyHits = 0;
+  }
+
+  other(s) { return s === 'player' ? 'ai' : 'player'; }
+
+  startMatch() {
+    this.scorePlayer = 0;
+    this.scoreAi = 0;
+    this.totalPoints = 0;
+    this.server = 'player';
+    this.state = 'serve';
+    this.stateTimer = 0;
+    this.lastHitter = null;
+    this.firstHitter = null;
+    this.mustBounceOpp = false;
+    this.validBounce = false;
+    this.isServeBall = false;
+    this.netTouched = false;
+    this.rallyHits = 0;
+    this.message = 'Saca cuando quieras: gatillo para lanzar la bola';
+  }
+
+  beginRally(who, isServe) {
+    this.state = 'rally';
+    this.lastHitter = who;
+    this.firstHitter = who;
+    this.mustBounceOpp = true;
+    this.validBounce = false;
+    this.isServeBall = isServe;
+    this.netTouched = false;
+    this.rallyHits = 0;
+  }
+
+  registerPaddleHit(who) {
+    if (this.state !== 'rally') return;
+    if (this.isServeBall && who !== this.firstHitter) this.isServeBall = false;
+    this.lastHitter = who;
+    this.mustBounceOpp = true;
+    this.validBounce = false;
+    this.rallyHits++;
+  }
+
+  applyPoint(winner, cause) {
+    if (winner === 'player') this.scorePlayer++;
+    else this.scoreAi++;
+    this.totalPoints++;
+    this.state = 'point';
+    this.stateTimer = 2.1;
+    const rallyTxt = this.rallyHits >= 6 ? ` · ${this.rallyHits} golpes` : '';
+    this.message = winner === 'player' ? `¡Punto para ti! · ${cause}${rallyTxt}` : `Punto para la CPU · ${cause}${rallyTxt}`;
+    return [{ type: 'point', winner, cause }];
+  }
+
+  retryServe(cause) {
+    this.state = 'serve';
+    this.message = `${cause} · repite el saque`;
+    return [{ type: 'retry-serve', cause }];
+  }
+
+  computeNextServer() {
+    const n = this.totalPoints;
+    if (this.scorePlayer >= 10 && this.scoreAi >= 10) {
+      return n % 2 === 0 ? 'player' : 'ai';
+    }
+    return Math.floor(n / 2) % 2 === 0 ? 'player' : 'ai';
+  }
+
+  handleEvents(events) {
+    const intents = [];
+    for (const e of events) {
+      if (this.state !== 'rally') break;
+
+      switch (e.type) {
+        case 'paddle': {
+          if (e.who) this.registerPaddleHit(e.who);
+          break;
+        }
+        case 'net': {
+          this.netTouched = true;
+          break;
+        }
+        case 'table': {
+          if (!e.side || !this.lastHitter) break;
+          const own = this.lastHitter;
+          const opp = this.other(own);
+          if (this.mustBounceOpp) {
+            if (e.side === opp) {
+              this.mustBounceOpp = false;
+              this.validBounce = true;
+              this.netTouched = false;
+            } else {
+              // Bota en el propio campo: falta
+              if (this.isServeBall) {
+                intents.push(...this.retryServe('Saque a tu campo'));
+              } else {
+                const cause = own === 'player' ? 'golpeaste tu propio campo' : 'la CPU golpeó su campo';
+                intents.push(...this.applyPoint(opp, cause));
+              }
+            }
+          } else if (this.validBounce) {
+            if (e.side === opp) {
+              // Doble bote en el campo rival: el receptor no llegó
+              const cause = own === 'player' ? 'doble bote: la CPU no llegó' : 'doble bote: no llegaste';
+              intents.push(...this.applyPoint(own, cause));
+            } else {
+              // La bola volvió por efecto al campo del que golpeó
+              const cause = own === 'player' ? 'la bola volvió a tu campo' : 'la bola volvió al campo de la CPU';
+              intents.push(...this.applyPoint(opp, cause));
+            }
+          }
+          break;
+        }
+        case 'floor':
+        case 'wall': {
+          if (!this.lastHitter) break;
+          if (this.mustBounceOpp) {
+            // Nunca botó en el campo rival: falta del último golpeador
+            if (this.isServeBall) {
+              intents.push(...this.retryServe(this.netTouched ? 'Saque a la red' : 'Saque fuera'));
+            } else {
+              const cause = this.netTouched
+                ? 'se quedó en la red'
+                : e.type === 'wall' ? 'a la pared' : 'bola fuera';
+              intents.push(...this.applyPoint(this.other(this.lastHitter), cause));
+            }
+          } else {
+            // Botó correctamente y el rival no la devolvió
+            const cause = this.lastHitter === 'player' ? 'la CPU no la devolvió' : 'no la devolviste';
+            intents.push(...this.applyPoint(this.lastHitter, cause));
+          }
+          break;
+        }
+      }
+    }
+    return intents;
+  }
+
+  update(dt) {
+    const intents = [];
+
+    if (this.state === 'point') {
+      this.stateTimer -= dt;
+      if (this.stateTimer <= 0) {
+        const finished =
+          (this.scorePlayer >= 11 || this.scoreAi >= 11) &&
+          Math.abs(this.scorePlayer - this.scoreAi) >= 2;
+        if (finished) {
+          this.state = 'over';
+          this.stateTimer = 6;
+          const winner = this.scorePlayer > this.scoreAi ? 'player' : 'ai';
+          this.message = winner === 'player' ? '¡Has ganado el partido!' : 'La CPU gana el partido';
+          intents.push({ type: 'game-over', winner });
+        } else {
+          this.state = 'serve';
+          this.server = this.computeNextServer();
+          this.message = this.server === 'player' ? 'Tu saque: gatillo para lanzar' : 'Saque de la CPU...';
+          intents.push({ type: 'serve', server: this.server });
+        }
+      }
+    } else if (this.state === 'over') {
+      this.stateTimer -= dt;
+      if (this.stateTimer <= 0) {
+        this.startMatch();
+        this.message = 'Nuevo partido · saca con el gatillo';
+        intents.push({ type: 'serve', server: this.server });
+      }
+    }
+
+    return intents;
+  }
+}
+
+/* =====================================================================
+ *  IA · predice dónde botará la bola en SU campo, camina hasta el punto
+ *  de golpeo, espera el bote (nada de voleas) y devuelve buscando el
+ *  hueco lejos del rival. Puede fallar de forma natural (no llega).
+ * ===================================================================== */
+function gauss() {
+  return (Math.random() * 2 - 1) * 0.7 + (Math.random() * 2 - 1) * 0.3;
+}
+
+class OpponentAI {
+  /**
+   * @param cfg    preset de dificultad
+   * @param sign   -1: lado CPU (z negativa) · +1: lado del jugador demo (z positiva)
+   * @param home   posición de espera de la pala
+   */
+  constructor(cfg, sign, home) {
+    this.cfg = cfg;
+    this.sign = sign;
+    this.home = home.clone();
+    this.pos = home.clone();
+    this.vel = new THREE.Vector3();
+    this.predict = new THREE.Vector3();
+    this.predictValid = false;
+    this.predictTimer = 0;
+    this.hitCooldown = 0;
+    this.errX = 0;
+    this.errY = 0;
+    this.bodyX = 0;
+  }
+
+  setConfig(cfg) { this.cfg = cfg; }
+
+  reset() {
+    this.pos.copy(this.home);
+    this.vel.set(0, 0, 0);
+    this.predictValid = false;
+    this.hitCooldown = 0;
+    this.bodyX = 0;
+  }
+
+  update(dt, ball, ctx) {
+    this.hitCooldown -= dt;
+    const C = DIMS.tableCenterZ;
+    const sign = this.sign;
+    // ¿La bola viaja hacia mi campo?
+    const toward = ball.vel.z * sign > 0;
+
+    if (ctx.canHit && toward) {
+      this.predictTimer -= dt;
+      if (this.predictTimer <= 0) {
+        this.predictTimer = this.cfg.predictInterval;
+        const strike = predictStrike(ball, sign);
+        if (strike) {
+          this.predict.copy(strike.point);
+          this.errX = gauss() * this.cfg.errStd;
+          this.errY = gauss() * this.cfg.errStd * 0.6;
+          this.predictValid = true;
+        } else {
+          // bola que saldrá: no la persigue (la deja pasar)
+          this.predictValid = false;
+        }
+      }
+    } else {
+      this.predictValid = false;
+    }
+
+    // --- objetivo de la pala ---
+    if (this.predictValid) {
+      // rango permitido: desde detrás de su línea de fondo hasta algo pasado la red
+      const baseline = C + sign * DIMS.tableHalfLength;
+      let inDist = (this.predict.z - baseline) * -sign;   // distancia "hacia la red"
+      inDist = THREE.MathUtils.clamp(inDist, -0.45, DIMS.tableHalfLength + 0.15);
+      const zClamp = baseline + inDist * -sign;
+      let yClamp = THREE.MathUtils.clamp(this.predict.y + this.errY, 0.55, 1.55);
+      // si el punto cae sobre la mesa, la pala no atraviesa el tablero
+      const overTable =
+        Math.abs(this.predict.x) < DIMS.tableHalfWidth + 0.1 &&
+        Math.abs(zClamp - C) < DIMS.tableHalfLength;
+      if (overTable) yClamp = Math.max(yClamp, DIMS.tableTopY + 0.08);
+      tmpT.set(
+        THREE.MathUtils.clamp(this.predict.x + this.errX, -(DIMS.tableHalfWidth + 0.35), DIMS.tableHalfWidth + 0.35),
+        yClamp,
+        zClamp,
+      );
+    } else {
+      // posición de espera: sigue la bola de lejos
+      tmpT.set(
+        this.home.x + ball.pos.x * 0.3,
+        this.home.y,
+        this.home.z + (toward ? -sign * 0.2 : 0),
+      );
+    }
+
+    // --- movimiento con aceleración (piernas) ---
+    tmpD.copy(tmpT).sub(this.pos);
+    const dist = tmpD.length();
+    const desiredSpeed = Math.min(this.cfg.maxSpeed, dist * 4.5);
+    if (dist > 1e-5) tmpD.setLength(desiredSpeed); else tmpD.set(0, 0, 0);
+    this.vel.lerp(tmpD, Math.min(1, dt * this.cfg.accel));
+    this.pos.addScaledVector(this.vel, dt);
+
+    // --- intento de golpe (solo tras botar en su campo) ---
+    if (!ctx.canHit || !ctx.validBounce || !toward || this.hitCooldown > 0) return null;
+    const reach = 0.185;
+    if (this.pos.distanceToSquared(ball.pos) > reach * reach) return null;
+    if ((ball.pos.z - C) * sign < 0.04) return null;              // debe estar en su mitad
+    if (ball.pos.y < DIMS.tableTopY - 0.08 || ball.pos.y > 1.65) return null;
+
+    const ballSpeed = ball.vel.length();
+    const pMiss = this.cfg.missBase + Math.max(0, ballSpeed - 7) * 0.05;
+    this.hitCooldown = 0.55;
+    if (Math.random() < pMiss) return null;
+
+    // --- devolución: busca el hueco lejos del rival ---
+    const away = ctx.oppPadX !== undefined
+      ? -Math.sign(ctx.oppPadX || (Math.random() - 0.5))
+      : (Math.random() < 0.5 ? -1 : 1);
+    let tx = away * (0.16 + Math.random() * 0.38) + gauss() * this.cfg.errStd * 0.8;
+    tx = THREE.MathUtils.clamp(tx, -0.55, 0.55);
+    const drop = Math.random() < this.cfg.short;
+    const depthRel = drop ? 0.25 + Math.random() * 0.25 : 0.55 + Math.random() * 0.65;
+    const tz = C - sign * depthRel * DIMS.tableHalfLength;        // mitad contraria
+
+    // remate si la bola viene alta
+    const high = ball.pos.y > 1.15;
+    const smash = high && Math.random() < this.cfg.smash;
+    const T = smash ? this.cfg.minT * 0.8 : this.cfg.minT + Math.random() * (this.cfg.maxT - this.cfg.minT);
+    const maxV = smash ? this.cfg.maxShotSpeed * 1.15 : this.cfg.maxShotSpeed;
+
+    tmpTarget.set(tx, DIMS.tableTopY + DIMS.ballRadius, tz);
+    const v = computeShotVelocity(ball.pos, tmpTarget, T, maxV);
+
+    // efecto del golpe: lift hacia adelante + algo de lateral
+    ball.spin.set(
+      -sign * (8 + Math.random() * 8),
+      (Math.random() - 0.5) * 8,
+      0,
+    );
+    return v;
+  }
+}

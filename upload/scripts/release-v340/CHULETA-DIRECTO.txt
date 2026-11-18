@@ -1,0 +1,52 @@
+==========================================================
+CRAZY PING PONG · V3.4.0-IMP1 · CHULETA DE UNA PÁGINA
+==========================================================
+
+QUÉ LLEVA
+  · ETAPA 4 NUEVA — REACTOR DE IMPULSO: sala propia del dueño sin
+    mesa (BASE FLOTANTE de reposición), núcleo azul/rojo con alarma,
+    3 OLEADAS de cubos cuánticos (3/5/7 · 2 min por oleada), destruye
+    los cubos con la bola y acierta las DIANAS con la PISTOLA LÁSER
+    para desatar PERTURBACIONES (Gravedad 0 · Atractor: un golpe los
+    destruye todos · Supergravedad) — también una automática cada 30 s.
+    Pantalla del techo con oleada/tiempo/cubos/estado. Al perder, el
+    ASTRO se ríe frente a ti.
+  · Etapa 2 — REACTOR DE ENERGÍA INESTABLE: núcleo de gravedad que
+    lanza esferas de plasma a las compuertas.
+  · Estación Orbital con el arte del dueño (6 planos), rival ASTRO,
+    mapa con tapas, SuperPower!!, recortables.
+  · Conserva: CCD SDF de contacto (v3.1.2-CCD1), saque VR realista,
+    gracia del saque, bote honesto, prompt B, hall del anfitrión, PRO
+    CIRCUITO, intro oficial, física viva, palas con carácter, CRAZY TV.
+
+SUBIR LA WEB (elige UNO)
+  1) Cloudflare Pages → usa el zip «CLOUDFLARE» (estático puro):
+     dash.cloudflare.com → Workers & Pages → Pages → Upload assets →
+     arrastra el CONTENIDO del zip → Deploy.
+  2) Netlify Drop → usa el zip «ligera»: app.netlify.com/drop y
+     arrastra el CONTENIDO del zip.
+  3) Hosting propio → descomprime y sirve la carpeta (nginx/caddy/
+     python -m http.server).
+
+LA TV EN DIRECTO (opcional)
+  PC: cd live-service && npm install && node server.mjs   (puerto 3004)
+  Railway/Render: sube el contenido de live-service/ (o el mini-zip
+  «SOLO») y despliega con npm start.
+  En el juego añade ?relay=http://IP:3004 (o la URL de Railway). Los
+  espectadores abren tv.html con el mismo ?relay=.
+
+QUEST (IMPORTANTE)
+  El navegador de la Quest exige HTTPS para WebXR: Cloudflare y Netlify
+  ya lo dan. En LAN casera usa caddy o ngrok.
+
+VERIFICACIÓN RÁPIDA
+  · La portada del juego muestra el sello V3.4.0-IMP1.
+  · En consola: window.__PP_VERSION === '3.4.0-IMP1'.
+  · Etapa 4: sala del reactor sin mesa, base flotante con la pelota
+    botando, cubos cuánticos rojos pulsando y pantalla del techo.
+
+PROBLEMAS
+  · Arte antiguo en la estación → borra los datos del navegador de la
+    Quest y recarga.
+  · La TV no conecta → ¿relay encendido? ¿?relay= correcto?
+  · Más ayuda: LEEME-DESPLIEGUE.txt dentro del paquete.

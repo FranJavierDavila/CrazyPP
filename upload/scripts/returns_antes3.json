@@ -1,0 +1,272 @@
+[
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    -0.29,
+    0.81,
+    -1.54
+   ],
+   "vel": [
+    -0.15,
+    2.01,
+    0.65
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.04,
+    0.85,
+    -1.57
+   ],
+   "vel": [
+    -0.22,
+    2.32,
+    -3.15
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.337,
+   "z": -0.57
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.1,
+    0.83,
+    -1.55
+   ],
+   "vel": [
+    -0.08,
+    1.72,
+    0.66
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    -0.05,
+    0.86,
+    -1.52
+   ],
+   "vel": [
+    0.05,
+    1.64,
+    0.69
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": true,
+  "bounce": {
+   "x": 0.224,
+   "z": -0.585
+  },
+  "snap": null,
+  "msg": ""
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.39,
+    0.78,
+    -1.57
+   ],
+   "vel": [
+    0.09,
+    1.92,
+    0.67
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    -0.46,
+    0.81,
+    -1.55
+   ],
+   "vel": [
+    -0.48,
+    2.42,
+    -3.42
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.19,
+    0.86,
+    -1.51
+   ],
+   "vel": [
+    0.21,
+    1.84,
+    0.65
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.39,
+    0.86,
+    -1.57
+   ],
+   "vel": [
+    0.22,
+    1.69,
+    0.58
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.18,
+    0.85,
+    -1.52
+   ],
+   "vel": [
+    0.19,
+    1.74,
+    0.7
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.2,
+    0.79,
+    -1.37
+   ],
+   "vel": [
+    -0.03,
+    2.72,
+    -2.92
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    0.4,
+    0.88,
+    -1.53
+   ],
+   "vel": [
+    0.18,
+    2.14,
+    -3.11
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ },
+ {
+  "returned": false,
+  "bounce": null,
+  "snap": {
+   "last": "player",
+   "vb": false,
+   "mbo": true,
+   "sop": false,
+   "pos": [
+    -0.36,
+    0.86,
+    -1.56
+   ],
+   "vel": [
+    -0.24,
+    1.67,
+    0.55
+   ]
+  },
+  "msg": "Punto para la CPU \u00b7 golpeaste tu propio campo"
+ }
+]

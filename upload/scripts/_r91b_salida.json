@@ -1,0 +1,239 @@
+{
+ "enum": {
+  "vive": true,
+  "mapa": {
+   "pos": [
+    -2.98,
+    1.5,
+    -0.9
+   ],
+   "visible": true,
+   "opacity": 1,
+   "transparent": true,
+   "depthWrite": false,
+   "colorSpace": "srgb",
+   "texTam": [
+    1380,
+    752
+   ],
+   "padres": "Group>Group:RIG>Scene",
+   "renderOrder": 0,
+   "tapas": 5
+  },
+  "rigHijos": 35,
+  "grupo": {
+   "enRig": true,
+   "pos": [
+    -2.98,
+    1.5,
+    -0.9
+   ],
+   "hijos": 3
+  },
+  "modoMapa": "arte"
+ },
+ "red": [
+  {
+   "url": "normas_halloween.png",
+   "ms": 104,
+   "size": 497390
+  },
+  {
+   "url": "risas.mp3",
+   "ms": 6,
+   "size": 93966
+  },
+  {
+   "url": "zombi_crazy.mp3",
+   "ms": 19,
+   "size": 72189
+  },
+  {
+   "url": "zombi_victory.mp3",
+   "ms": 25,
+   "size": 60529
+  },
+  {
+   "url": "zombi_defeated.mp3",
+   "ms": 72,
+   "size": 259434
+  },
+  {
+   "url": "pistol.glb",
+   "ms": 7,
+   "size": 635
+  },
+  {
+   "url": "midnight_volley.mp3",
+   "ms": 36427,
+   "size": 4918050
+  },
+  {
+   "url": "present.webp",
+   "ms": 28,
+   "size": 110992
+  },
+  {
+   "url": "idle.webp",
+   "ms": 53,
+   "size": 86718
+  },
+  {
+   "url": "focused.webp",
+   "ms": 62,
+   "size": 115894
+  },
+  {
+   "url": "surprised.webp",
+   "ms": 66,
+   "size": 107810
+  },
+  {
+   "url": "panic.webp",
+   "ms": 70,
+   "size": 96900
+  },
+  {
+   "url": "laughing.webp",
+   "ms": 75,
+   "size": 97756
+  },
+  {
+   "url": "crazy.webp",
+   "ms": 81,
+   "size": 109016
+  },
+  {
+   "url": "angry.webp",
+   "ms": 86,
+   "size": 105506
+  },
+  {
+   "url": "picando.webp",
+   "ms": 94,
+   "size": 100242
+  },
+  {
+   "url": "loosing.webp",
+   "ms": 100,
+   "size": 103506
+  },
+  {
+   "url": "defeated.webp",
+   "ms": 105,
+   "size": 113922
+  },
+  {
+   "url": "victory.webp",
+   "ms": 111,
+   "size": 92480
+  },
+  {
+   "url": "mapa.webp",
+   "ms": 117,
+   "size": 244628
+  },
+  {
+   "url": "superpower.webp",
+   "ms": 147,
+   "size": 83062
+  },
+  {
+   "url": "mano1.webp",
+   "ms": 150,
+   "size": 66440
+  },
+  {
+   "url": "mano2.webp",
+   "ms": 157,
+   "size": 76420
+  },
+  {
+   "url": "mano3.webp",
+   "ms": 163,
+   "size": 84070
+  },
+  {
+   "url": "mosca_a.webp",
+   "ms": 169,
+   "size": 1630
+  },
+  {
+   "url": "mosca_b.webp",
+   "ms": 175,
+   "size": 1914
+  },
+  {
+   "url": "gelatina.webp",
+   "ms": 179,
+   "size": 85726
+  },
+  {
+   "url": "losa.jpg",
+   "ms": 187,
+   "size": 776732
+  },
+  {
+   "url": "decor_arana.png",
+   "ms": 12,
+   "size": 319390
+  },
+  {
+   "url": "decor_calabaza.png",
+   "ms": 17,
+   "size": 411995
+  },
+  {
+   "url": "decor_lapida.png",
+   "ms": 22,
+   "size": 428081
+  },
+  {
+   "url": "decor_ojos.png",
+   "ms": 25,
+   "size": 182315
+  },
+  {
+   "url": "sala_floor.jpg",
+   "ms": 28,
+   "size": 399495
+  },
+  {
+   "url": "sala_ceil.jpg",
+   "ms": 32,
+   "size": 274057
+  },
+  {
+   "url": "sala_left.jpg",
+   "ms": 35,
+   "size": 243905
+  },
+  {
+   "url": "sala_right.jpg",
+   "ms": 39,
+   "size": 226761
+  },
+  {
+   "url": "sala_back.jpg",
+   "ms": 42,
+   "size": 282521
+  },
+  {
+   "url": "sala_front.jpg",
+   "ms": 44,
+   "size": 275642
+  },
+  {
+   "url": "intro.mp4",
+   "ms": 36,
+   "size": 635
+  }
+ ],
+ "fallos": [
+  "501 telemetria",
+  "intro.mp4 :: net::ERR_ABORTED",
+  "404 pistol.glb",
+  "404 intro.mp4"
+ ],
+ "pageerrors": []
+}

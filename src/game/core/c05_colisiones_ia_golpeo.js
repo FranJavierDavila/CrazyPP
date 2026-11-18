@@ -137,9 +137,16 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
    * byte a byte). El transporte en stepPhysics (bloque r100) sigue
    * arrastrando la bola apoyada 1:1 y el swing la suelta limpio:
    * levantar la pala la lanza al aire — Eleven. */
+  // r86 · P0-3 · la captura exige además PALA QUIETA (restPadSpeed, el mismo
+  // test del cooldown en stepPhysics): un levantamiento con intención (scoop,
+  // pala subiendo) atraviesa a la vía de golpe normal y el suelo escalado le
+  // da el toque suave — antes el secuestro de reposo se lo quedaba MUDO
+  // (por debajo de restEventMin ni evento ni árbitro: «golpear la bola por
+  // debajo de la altura de la mesa falla»).
   if (pad.who === 'player' && !pad.serveFlight && !onHandle &&
       Math.abs(lhz) >= hT &&
-      -vRelN <= DIMS.paddleRestSpeed) {
+      -vRelN <= DIMS.paddleRestSpeed &&
+      pad.vel.lengthSq() <= SERVE_TUNE.restPadSpeed * SERVE_TUNE.restPadSpeed) {
     // proyección a la cara (mismo patrón que la colocación del golpe)
     ball.pos.copy(padPos).addScaledVector(tmpN, rB + 0.001)
       .addScaledVector(ipRight, lx).addScaledVector(ipUp, ly);
@@ -164,7 +171,10 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
     ball.__ppRestLx = lx;
     ball.__ppRestDy = dyy;
     ball.__ppRestT = 0;
-    if (nuevo) events.push({ type: 'restTouch', speed: -vRelN, pos: crossPoint.clone() });
+    if (nuevo) {
+      ball.__ppRestPush = 0;   // r86 P0-4: apoyo NUEVO = compresión a cero
+      events.push({ type: 'restTouch', speed: -vRelN, pos: crossPoint.clone() });
+    }
     return true;   // padHit: el subpaso aplaza mesa/red (la bola está en la pala)
   }
 
@@ -504,14 +514,36 @@ function collideTable(ball, prevY, events) {
     pos.y > DIMS.tableTopY - DIMS.tableThickness - DIMS.ballRadius &&
     pos.y < topR;
   if (insideSlab) {
+    // r86 · P0-5 · resolución por MÍNIMA PENETRACIÓN en los TRES ejes (x, z
+    // e y-arriba/y-abajo): una bola golpeada desde debajo del tablero (o
+    // soltada dentro de la banda) sale por la cara más CERCANA — antes sólo
+    // se resolvía x/z y la bola era expulsada DE LADO aunque el fondo estuviese
+    // a un centímetro («golpear la bola por debajo de la altura de la mesa
+    // falla»: la pala la mandaba arriba y la mesa la teleportaba lateral).
+    // Los cantos de siempre se conservan: el eje y sólo gana cuando su
+    // penetración es ESTRICTAMENTE menor que x y z.
     const penX = DIMS.tableHalfWidth + DIMS.ballRadius - Math.abs(pos.x);
     const penZ = DIMS.tableHalfLength + DIMS.ballRadius - Math.abs(pos.z - C);
-    if (penX < penZ) {
+    const botY = DIMS.tableTopY - DIMS.tableThickness - DIMS.ballRadius;
+    const penUp = topR - pos.y;            // salir por ENCIMA (queda sobre la mesa)
+    const penDown = pos.y - botY;          // salir por DEBAJO (queda bajo la mesa)
+    let eje = 'x';
+    let penMin = penX;
+    if (penZ < penMin) { penMin = penZ; eje = 'z'; }
+    if (penUp < penMin) { penMin = penUp; eje = 'up'; }
+    if (penDown < penMin) { penMin = penDown; eje = 'down'; }
+    if (eje === 'x') {
       pos.x += Math.sign(pos.x) * penX;
       vel.x *= -0.45;
-    } else {
+    } else if (eje === 'z') {
       pos.z = C + Math.sign(pos.z - C) * (DIMS.tableHalfLength + DIMS.ballRadius);
       vel.z *= -0.45;
+    } else if (eje === 'up') {
+      pos.y = topR;                        // emerge SOBRE la mesa y ahí cae/bota
+      vel.y = -Math.abs(vel.y) * 0.45;
+    } else {
+      pos.y = botY;                        // devuelve POR DEBAJO (la mesa bloquea)
+      vel.y = -Math.abs(vel.y) * 0.45;
     }
     spin.multiplyScalar(0.6);
     // Regla ITTF: tocar el canto cuenta como bote válido
@@ -608,7 +640,12 @@ function collideWorld(ball, events) {
     Math.abs(pos.x) > 30 || Math.abs(pos.z) > 30 || pos.y < -5 ||
     !Number.isFinite(pos.x) || !Number.isFinite(pos.y) || !Number.isFinite(pos.z)
   ) {
-    pos.set(0, 0.5, DIMS.tableCenterZ);
+    // r86 · P0-6 · el punto de rescate sale de la huella del tablero: antes
+    // teleportaba a (0 · 0,5 · centro de mesa) — DEBAJO del tablero y dentro
+    // de su huella — y la bola reaparecía oculta y empujada lateralmente por
+    // la banda insideSlab («no funciona y desaparece la bola»). Ahora nace
+    // VISIBLE detrás de la línea de fondo del jugador, a la altura del pecho.
+    pos.set(0, 1.0, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.5);
     vel.set(0, 0, 0);
     // r74 · SIN evento: el rescate es un TELETRANSPORTE, no un bote — sonar
     // aquí era uno de los «thud» fantasma del bote infinito (la bola
@@ -662,8 +699,35 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
         ball.__ppRestT > DIMS.paddleRestDrop ||
         rp.vel.lengthSq() > DIMS.paddleRestCarry * DIMS.paddleRestCarry) {
       ball.__ppRestIdx = -1;                       // despegue: física normal
+      ball.__ppRestPush = 0;                       // r86 P0-4: compresión fuera
     } else {
       _rsN.copy(rp.normal).multiplyScalar(ball.__ppRestSide || 1);  // normal hacia la bola
+      // r86 · P0-4 · EMPUJE SOSTENIDO → DESPEGUE ANALÓGICO: la pala que avanza
+      // hacia la bola apoyada (velInst·normal > 0) acumula COMPRESIÓN con fuga
+      // exponencial (un temblor se disipa; un empuje sostenido llega). Al
+      // superar el hueco, el apoyo se suelta con un golpe SUAVE proporcional a
+      // la velocidad de empuje — el despegue deja de ser el salto binario del
+      // carry y «empujar desde parada» funciona en continuo (queja del dueño).
+      // El evento 'paddle' (formato idéntico al golpe de c05:419) hace que el
+      // árbitro cuente el empuje como el golpe que es.
+      let _restPin = true;
+      {
+        const pushV = Math.max(0, rp.velInst.dot(_rsN));
+        ball.__ppRestPush = (ball.__ppRestPush || 0) * Math.exp(-6 * dt) + pushV * dt;
+        if (ball.__ppRestPush > DIMS.paddleRestPushGap) {
+          const exit = Math.min(
+            Math.max(pushV * DIMS.paddleRestPushOut, DIMS.paddleRestPushMin),
+            DIMS.minExitSpeed * 0.8);
+          ball.__ppRestIdx = -1;
+          ball.__ppRestPush = 0;
+          ball.vel.copy(rp.vel).addScaledVector(_rsN, exit);
+          rp.cooldown = DIMS.paddleHitCooldown;
+          events.push({ type: 'paddle', who: rp.who, speed: exit,
+            pos: ball.pos.clone(), paddleIndex: rp.index, imanAim: false });
+          _restPin = false;                        // bola en física normal ya
+        }
+      }
+      if (_restPin) {
       // 1) deslizamiento propio: gravedad proyectada en el plano de la hoja
       _rsG.set(0, DIMS.gravity, 0);
       const gn = _rsG.dot(_rsN);                   // componente normal (negativa)
@@ -687,6 +751,7 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
       const rIn = DIMS.bladeRadius - DIMS.ballRadius * 0.35;
       if (lx2 * lx2 + dy2 * dy2 > rIn * rIn) {
         ball.__ppRestIdx = -1;                     // rodó fuera del borde
+        ball.__ppRestPush = 0;                     // r86 P0-4: compresión fuera
       } else {
         ball.__ppRestLx = lx2; ball.__ppRestDy = dy2;
         ball.__ppRestSx = sx; ball.__ppRestSy = sy;
@@ -704,6 +769,7 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
         _rsOm.copy(_rsN).cross(_rsSlip).divideScalar(DIMS.ballRadius);
         ball.spin.lerp(_rsOm, 0.15);
       }
+      }   // fin _restPin (r86 P0-4)
     }
   }
 

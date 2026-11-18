@@ -1,10 +1,10 @@
 {
-  "version": "3.6.176-SDK6",
-  "fase": 181,
-  "faseNombre": "SALIDAS Y MONEDAS",
+  "version": "3.6.177-SDK6",
+  "fase": 182,
+  "faseNombre": "FÍSICA P0: CONTACTO Y SAQUE",
   "sdk": "1.6.0",
   "fecha": "2026-11-18",
-  "hub": "v36176-sdk6",
+  "hub": "v36177-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r85",
-  "tamano": 12305510,
-  "golden": "060270b664267e64f08915e0820dd9c1220d6ff83c3c6e4b07b60ba6ca47604b"
+  "nota": "r86",
+  "tamano": 12313251,
+  "golden": "d922c6214b6c08f896b3a6d68643c9f67ad94391d09d5684680e9b0aff97e113"
 }

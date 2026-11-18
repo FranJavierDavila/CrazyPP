@@ -14,5 +14,6 @@
   "predictStrike.borde": "370e0fb546a4bed1",
   "testPaddleContact.online": "98c6040dec2bf18d",
   "simulateServePath.saque": "daa2e3579400bc65",
-  "computeShotVelocity.parabola": "4a970b39cdfb9285"
+  "computeShotVelocity.parabola": "4a970b39cdfb9285",
+  "stepPhysics.pushDespegue": "7c6d92ae4def9e4b"
 }

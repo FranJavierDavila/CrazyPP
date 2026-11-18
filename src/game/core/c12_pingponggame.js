@@ -9651,6 +9651,7 @@ export class PingPongGame {
   resetToss() {
     this.tossed = false;
     this.tossTimer = 0;
+    this._srvReanclaAviso = false;   // r86 · P0-1: el aviso de reanclaje vive por INTENTO
     this.apexSignaled = false;
     this.gripDown[0] = false;
     this.gripDown[1] = false;
@@ -9964,6 +9965,19 @@ export class PingPongGame {
       v.y = vyMin;
       v.x *= 0.4;
       v.z *= 0.4;
+    }
+    // r86 · P0-2 · ALTURA ABSOLUTA del lanzamiento asistido: si la bola se
+    // suelta POR DEBAJO del plano de la mesa, la subida garantizada es sobre
+    // LA MESA (topR + 0,10), no sobre el punto de suelta — un saque soltado
+    // bajo el tablero alcanza cota golpeable en vez de morir bajo la red
+    // (física pura: vy para subir ΔH con la vy que ya traiga la mano).
+    if (assisted) {
+      const dH = (DIMS.tableTopY + DIMS.ballRadius + 0.10) - this.ball.pos.y;
+      if (dH > 0) {
+        const vy0 = Math.max(0, v.y);
+        const vyAbs = Math.sqrt(2 * Math.abs(DIMS.gravity) * dH + vy0 * vy0);
+        if (v.y < vyAbs) v.y = vyAbs;
+      }
     }
     this.tossed = true;
     this.tossTimer = 0;
@@ -18050,6 +18064,21 @@ export class PingPongGame {
               this.ball.pos.copy(this.camera.position).addScaledVector(fSrv, 0.35);
               this.ball.pos.y = Math.max(0.55, this.ball.pos.y - 0.55);
             }
+            // r86 · P0-1 · REANCLAJE DEL PUNTO DE SAQUE: la bola en mano NUNCA
+            // nace bajo la huella del tablero (oculta por la geometría y a una
+            // cota sin saque legal — «soltar la bola con la pala bajo la mesa
+            // no funciona y desaparece la bola»). Si la mano queda dentro de
+            // la huella (|x| ≤ halfW+r · |z−C| ≤ halfL+r), la bola se empuja
+            // FUERA hacia el jugador (línea de fondo + 0,10 m) con aviso UNA
+            // vez por intento (el flag se rearma en resetToss).
+            if (Math.abs(this.ball.pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius &&
+                Math.abs(this.ball.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + DIMS.ballRadius) {
+              this.ball.pos.z = DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10;
+              if (!this._srvReanclaAviso) {
+                this._srvReanclaAviso = true;
+                this.rules.message = T('srv_reancla');
+              }
+            }
           } else {
             // bola lanzada: física real
             this.tossTimer += dt;
@@ -18063,9 +18092,23 @@ export class PingPongGame {
             }
             this.preVy = vy;
             if (this.tossMaxY < this.ball.pos.y) this.tossMaxY = this.ball.pos.y;
-            if (this.tossTimer > 8) {
+            // r86 · P0-6 · RESCATE HONESTO del lanzamiento caído: si la bola
+            // YA REPOSA en el suelo (o botando muerta en la mesa propia) sin
+            // haber sido golpeada, no hay nada que esperar — mensaje i18n y
+            // bola de vuelta a la mano al momento (antes 8 s mirando una bola
+            // muerta; y si acabó lejos, el rescate la teleportaba sin
+            // explicación). El guardián de 8 s sigue de reserva para un toss
+            // en vuelo que se resiste.
+            const tossAlSuelo = this.ball.pos.y < DIMS.ballRadius + 0.02 &&
+              Math.abs(this.ball.vel.y) < 0.05;
+            const tossMuertaEnMesa =
+              Math.abs(this.ball.pos.z - DIMS.tableCenterZ) < DIMS.tableHalfLength &&
+              Math.abs(this.ball.pos.x) < DIMS.tableHalfWidth &&
+              Math.abs(this.ball.pos.y - (DIMS.tableTopY + DIMS.ballRadius)) < 0.02 &&
+              this.ball.vel.lengthSq() < 0.02;
+            if (tossAlSuelo || tossMuertaEnMesa || this.tossTimer > 8) {
               this.resetToss();
-              this.rules.message = 'Repite el lanzamiento';
+              this.rules.message = T('hint_dropped');
             }
           }
         } else if (!this.net.online && !this.tutV1) {

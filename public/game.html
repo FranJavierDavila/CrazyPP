@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.176-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.177-SDK6</span>
     </div>
   </main>
 
@@ -1382,6 +1382,7 @@ const I18N_STRINGS = {
     hint_hit: '¡Golpea la bola hacia la mesa con la pala!',
     hint_toss_high: 'Lanza la bola un poco más arriba',
     hint_behind: 'Saca desde detrás de la línea de fondo',
+    srv_reancla: 'Bola recolocada · saca tras la línea de fondo',
     hint_dropped: 'Bola caída · repite el lanzamiento',
     online_first: '¡Conectado! Esperando al anfitrión…',
     online_serve: 'Partido online · tu saque (GATILLO para lanzar)',
@@ -2508,6 +2509,7 @@ const I18N_STRINGS = {
     hint_hit: 'Hit the ball toward the table with your paddle!',
     hint_toss_high: 'Toss the ball a bit higher',
     hint_behind: 'Serve from behind the end line',
+    srv_reancla: 'Ball repositioned · serve behind the end line',
     hint_dropped: 'Ball dropped · toss again',
     online_first: 'Connected! Waiting for the host…',
     online_serve: 'Online match · your serve (TRIGGER to toss)',
@@ -3640,7 +3642,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.176-SDK6';
+  const VERSION = '3.6.177-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -4517,9 +4519,19 @@ const DIMS = {
   // bote con vida (>0,25) BOTA con la física de golpe de siempre.
   paddleRestSpeed: 0.25,    // vRelN <= esto al llegar = APOYO (no golpe, sin rebote)
   paddleRestFric: 0.38,     // fricción tangencial por re-contacto (deslizar/rodar)
-  paddleRestMuS: 0.35,      // fricción estática: gravedad tangencial menor no desliza
+  paddleRestMuS: 0.18,      // r86 P0-4: baja de 0,35 → la bola rueda desde ~10° (antes 19°)
   paddleRestDrop: 0.09,     // s de edad del apoyo sin re-confirmar antes de soltar
-  paddleRestCarry: 0.5,     // pala más lenta que esto ARRASTRA la bola apoyada
+  paddleRestCarry: 0.30,    // r86 P0-4: baja de 0,5 → el swing suave ya arrastra y suelta
+  // r86 · P0-4 · DESPEGUE ANALÓGICO por EMPUJE SOSTENIDO: con la bola apoyada,
+  // avanzar la pala hacia ella acumula compresión (avance normal filtrado con
+  // fuga exponencial); al superar paddleRestPushGap el apoyo se suelta con un
+  // golpe SUAVE proporcional (paddleRestPushOut × la velocidad de empuje,
+  // suelo paddleRestPushMin) — empujar desde parada lanza la bola en continuo,
+  // sin necesidad del swing del carry (la queja del dueño: «no se puede
+  // recuperar desde parada para empujarla y comenzar a botarla»).
+  paddleRestPushGap: 0.010, // compresión acumulada (m) que dispara el despegue
+  paddleRestPushOut: 0.6,   // fracción de la velocidad de empuje que sale como golpe
+  paddleRestPushMin: 0.35,  // suelo de salida del despegue por empuje (m/s)
   // r113 · techo de bola sube con el techo de pala: un golpe fuerte AHORA
   // se siente fuerte (hasta 18 m/s ≈ 65 km/h, rango de un smash amateur
   // real). El validador del duelo online (c09b) no impone techo de
@@ -8445,9 +8457,16 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
    * byte a byte). El transporte en stepPhysics (bloque r100) sigue
    * arrastrando la bola apoyada 1:1 y el swing la suelta limpio:
    * levantar la pala la lanza al aire — Eleven. */
+  // r86 · P0-3 · la captura exige además PALA QUIETA (restPadSpeed, el mismo
+  // test del cooldown en stepPhysics): un levantamiento con intención (scoop,
+  // pala subiendo) atraviesa a la vía de golpe normal y el suelo escalado le
+  // da el toque suave — antes el secuestro de reposo se lo quedaba MUDO
+  // (por debajo de restEventMin ni evento ni árbitro: «golpear la bola por
+  // debajo de la altura de la mesa falla»).
   if (pad.who === 'player' && !pad.serveFlight && !onHandle &&
       Math.abs(lhz) >= hT &&
-      -vRelN <= DIMS.paddleRestSpeed) {
+      -vRelN <= DIMS.paddleRestSpeed &&
+      pad.vel.lengthSq() <= SERVE_TUNE.restPadSpeed * SERVE_TUNE.restPadSpeed) {
     // proyección a la cara (mismo patrón que la colocación del golpe)
     ball.pos.copy(padPos).addScaledVector(tmpN, rB + 0.001)
       .addScaledVector(ipRight, lx).addScaledVector(ipUp, ly);
@@ -8472,7 +8491,10 @@ function collidePaddleSweep(ball, pad, kA, kB, events) {
     ball.__ppRestLx = lx;
     ball.__ppRestDy = dyy;
     ball.__ppRestT = 0;
-    if (nuevo) events.push({ type: 'restTouch', speed: -vRelN, pos: crossPoint.clone() });
+    if (nuevo) {
+      ball.__ppRestPush = 0;   // r86 P0-4: apoyo NUEVO = compresión a cero
+      events.push({ type: 'restTouch', speed: -vRelN, pos: crossPoint.clone() });
+    }
     return true;   // padHit: el subpaso aplaza mesa/red (la bola está en la pala)
   }
 
@@ -8812,14 +8834,36 @@ function collideTable(ball, prevY, events) {
     pos.y > DIMS.tableTopY - DIMS.tableThickness - DIMS.ballRadius &&
     pos.y < topR;
   if (insideSlab) {
+    // r86 · P0-5 · resolución por MÍNIMA PENETRACIÓN en los TRES ejes (x, z
+    // e y-arriba/y-abajo): una bola golpeada desde debajo del tablero (o
+    // soltada dentro de la banda) sale por la cara más CERCANA — antes sólo
+    // se resolvía x/z y la bola era expulsada DE LADO aunque el fondo estuviese
+    // a un centímetro («golpear la bola por debajo de la altura de la mesa
+    // falla»: la pala la mandaba arriba y la mesa la teleportaba lateral).
+    // Los cantos de siempre se conservan: el eje y sólo gana cuando su
+    // penetración es ESTRICTAMENTE menor que x y z.
     const penX = DIMS.tableHalfWidth + DIMS.ballRadius - Math.abs(pos.x);
     const penZ = DIMS.tableHalfLength + DIMS.ballRadius - Math.abs(pos.z - C);
-    if (penX < penZ) {
+    const botY = DIMS.tableTopY - DIMS.tableThickness - DIMS.ballRadius;
+    const penUp = topR - pos.y;            // salir por ENCIMA (queda sobre la mesa)
+    const penDown = pos.y - botY;          // salir por DEBAJO (queda bajo la mesa)
+    let eje = 'x';
+    let penMin = penX;
+    if (penZ < penMin) { penMin = penZ; eje = 'z'; }
+    if (penUp < penMin) { penMin = penUp; eje = 'up'; }
+    if (penDown < penMin) { penMin = penDown; eje = 'down'; }
+    if (eje === 'x') {
       pos.x += Math.sign(pos.x) * penX;
       vel.x *= -0.45;
-    } else {
+    } else if (eje === 'z') {
       pos.z = C + Math.sign(pos.z - C) * (DIMS.tableHalfLength + DIMS.ballRadius);
       vel.z *= -0.45;
+    } else if (eje === 'up') {
+      pos.y = topR;                        // emerge SOBRE la mesa y ahí cae/bota
+      vel.y = -Math.abs(vel.y) * 0.45;
+    } else {
+      pos.y = botY;                        // devuelve POR DEBAJO (la mesa bloquea)
+      vel.y = -Math.abs(vel.y) * 0.45;
     }
     spin.multiplyScalar(0.6);
     // Regla ITTF: tocar el canto cuenta como bote válido
@@ -8916,7 +8960,12 @@ function collideWorld(ball, events) {
     Math.abs(pos.x) > 30 || Math.abs(pos.z) > 30 || pos.y < -5 ||
     !Number.isFinite(pos.x) || !Number.isFinite(pos.y) || !Number.isFinite(pos.z)
   ) {
-    pos.set(0, 0.5, DIMS.tableCenterZ);
+    // r86 · P0-6 · el punto de rescate sale de la huella del tablero: antes
+    // teleportaba a (0 · 0,5 · centro de mesa) — DEBAJO del tablero y dentro
+    // de su huella — y la bola reaparecía oculta y empujada lateralmente por
+    // la banda insideSlab («no funciona y desaparece la bola»). Ahora nace
+    // VISIBLE detrás de la línea de fondo del jugador, a la altura del pecho.
+    pos.set(0, 1.0, DIMS.tableCenterZ + DIMS.tableHalfLength + 0.5);
     vel.set(0, 0, 0);
     // r74 · SIN evento: el rescate es un TELETRANSPORTE, no un bote — sonar
     // aquí era uno de los «thud» fantasma del bote infinito (la bola
@@ -8970,8 +9019,35 @@ function stepPhysics(dt, ball, paddles, events, extra) {
         ball.__ppRestT > DIMS.paddleRestDrop ||
         rp.vel.lengthSq() > DIMS.paddleRestCarry * DIMS.paddleRestCarry) {
       ball.__ppRestIdx = -1;                       // despegue: física normal
+      ball.__ppRestPush = 0;                       // r86 P0-4: compresión fuera
     } else {
       _rsN.copy(rp.normal).multiplyScalar(ball.__ppRestSide || 1);  // normal hacia la bola
+      // r86 · P0-4 · EMPUJE SOSTENIDO → DESPEGUE ANALÓGICO: la pala que avanza
+      // hacia la bola apoyada (velInst·normal > 0) acumula COMPRESIÓN con fuga
+      // exponencial (un temblor se disipa; un empuje sostenido llega). Al
+      // superar el hueco, el apoyo se suelta con un golpe SUAVE proporcional a
+      // la velocidad de empuje — el despegue deja de ser el salto binario del
+      // carry y «empujar desde parada» funciona en continuo (queja del dueño).
+      // El evento 'paddle' (formato idéntico al golpe de c05:419) hace que el
+      // árbitro cuente el empuje como el golpe que es.
+      let _restPin = true;
+      {
+        const pushV = Math.max(0, rp.velInst.dot(_rsN));
+        ball.__ppRestPush = (ball.__ppRestPush || 0) * Math.exp(-6 * dt) + pushV * dt;
+        if (ball.__ppRestPush > DIMS.paddleRestPushGap) {
+          const exit = Math.min(
+            Math.max(pushV * DIMS.paddleRestPushOut, DIMS.paddleRestPushMin),
+            DIMS.minExitSpeed * 0.8);
+          ball.__ppRestIdx = -1;
+          ball.__ppRestPush = 0;
+          ball.vel.copy(rp.vel).addScaledVector(_rsN, exit);
+          rp.cooldown = DIMS.paddleHitCooldown;
+          events.push({ type: 'paddle', who: rp.who, speed: exit,
+            pos: ball.pos.clone(), paddleIndex: rp.index, imanAim: false });
+          _restPin = false;                        // bola en física normal ya
+        }
+      }
+      if (_restPin) {
       // 1) deslizamiento propio: gravedad proyectada en el plano de la hoja
       _rsG.set(0, DIMS.gravity, 0);
       const gn = _rsG.dot(_rsN);                   // componente normal (negativa)
@@ -8995,6 +9071,7 @@ function stepPhysics(dt, ball, paddles, events, extra) {
       const rIn = DIMS.bladeRadius - DIMS.ballRadius * 0.35;
       if (lx2 * lx2 + dy2 * dy2 > rIn * rIn) {
         ball.__ppRestIdx = -1;                     // rodó fuera del borde
+        ball.__ppRestPush = 0;                     // r86 P0-4: compresión fuera
       } else {
         ball.__ppRestLx = lx2; ball.__ppRestDy = dy2;
         ball.__ppRestSx = sx; ball.__ppRestSy = sy;
@@ -9012,6 +9089,7 @@ function stepPhysics(dt, ball, paddles, events, extra) {
         _rsOm.copy(_rsN).cross(_rsSlip).divideScalar(DIMS.ballRadius);
         ball.spin.lerp(_rsOm, 0.15);
       }
+      }   // fin _restPin (r86 P0-4)
     }
   }
 
@@ -29041,6 +29119,7 @@ class PingPongGame {
   resetToss() {
     this.tossed = false;
     this.tossTimer = 0;
+    this._srvReanclaAviso = false;   // r86 · P0-1: el aviso de reanclaje vive por INTENTO
     this.apexSignaled = false;
     this.gripDown[0] = false;
     this.gripDown[1] = false;
@@ -29354,6 +29433,19 @@ class PingPongGame {
       v.y = vyMin;
       v.x *= 0.4;
       v.z *= 0.4;
+    }
+    // r86 · P0-2 · ALTURA ABSOLUTA del lanzamiento asistido: si la bola se
+    // suelta POR DEBAJO del plano de la mesa, la subida garantizada es sobre
+    // LA MESA (topR + 0,10), no sobre el punto de suelta — un saque soltado
+    // bajo el tablero alcanza cota golpeable en vez de morir bajo la red
+    // (física pura: vy para subir ΔH con la vy que ya traiga la mano).
+    if (assisted) {
+      const dH = (DIMS.tableTopY + DIMS.ballRadius + 0.10) - this.ball.pos.y;
+      if (dH > 0) {
+        const vy0 = Math.max(0, v.y);
+        const vyAbs = Math.sqrt(2 * Math.abs(DIMS.gravity) * dH + vy0 * vy0);
+        if (v.y < vyAbs) v.y = vyAbs;
+      }
     }
     this.tossed = true;
     this.tossTimer = 0;
@@ -37440,6 +37532,21 @@ class PingPongGame {
               this.ball.pos.copy(this.camera.position).addScaledVector(fSrv, 0.35);
               this.ball.pos.y = Math.max(0.55, this.ball.pos.y - 0.55);
             }
+            // r86 · P0-1 · REANCLAJE DEL PUNTO DE SAQUE: la bola en mano NUNCA
+            // nace bajo la huella del tablero (oculta por la geometría y a una
+            // cota sin saque legal — «soltar la bola con la pala bajo la mesa
+            // no funciona y desaparece la bola»). Si la mano queda dentro de
+            // la huella (|x| ≤ halfW+r · |z−C| ≤ halfL+r), la bola se empuja
+            // FUERA hacia el jugador (línea de fondo + 0,10 m) con aviso UNA
+            // vez por intento (el flag se rearma en resetToss).
+            if (Math.abs(this.ball.pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius &&
+                Math.abs(this.ball.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + DIMS.ballRadius) {
+              this.ball.pos.z = DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10;
+              if (!this._srvReanclaAviso) {
+                this._srvReanclaAviso = true;
+                this.rules.message = T('srv_reancla');
+              }
+            }
           } else {
             // bola lanzada: física real
             this.tossTimer += dt;
@@ -37453,9 +37560,23 @@ class PingPongGame {
             }
             this.preVy = vy;
             if (this.tossMaxY < this.ball.pos.y) this.tossMaxY = this.ball.pos.y;
-            if (this.tossTimer > 8) {
+            // r86 · P0-6 · RESCATE HONESTO del lanzamiento caído: si la bola
+            // YA REPOSA en el suelo (o botando muerta en la mesa propia) sin
+            // haber sido golpeada, no hay nada que esperar — mensaje i18n y
+            // bola de vuelta a la mano al momento (antes 8 s mirando una bola
+            // muerta; y si acabó lejos, el rescate la teleportaba sin
+            // explicación). El guardián de 8 s sigue de reserva para un toss
+            // en vuelo que se resiste.
+            const tossAlSuelo = this.ball.pos.y < DIMS.ballRadius + 0.02 &&
+              Math.abs(this.ball.vel.y) < 0.05;
+            const tossMuertaEnMesa =
+              Math.abs(this.ball.pos.z - DIMS.tableCenterZ) < DIMS.tableHalfLength &&
+              Math.abs(this.ball.pos.x) < DIMS.tableHalfWidth &&
+              Math.abs(this.ball.pos.y - (DIMS.tableTopY + DIMS.ballRadius)) < 0.02 &&
+              this.ball.vel.lengthSq() < 0.02;
+            if (tossAlSuelo || tossMuertaEnMesa || this.tossTimer > 8) {
               this.resetToss();
-              this.rules.message = 'Repite el lanzamiento';
+              this.rules.message = T('hint_dropped');
             }
           }
         } else if (!this.net.online && !this.tutV1) {

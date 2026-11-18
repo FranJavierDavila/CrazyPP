@@ -332,6 +332,33 @@ function snapEventos(events) {
   escenario('computeShotVelocity.parabola', { v: v.toArray() });
 }
 
+/* — 16 · r86 P0-4 · DESPEGUE ANALÓGICO por EMPUJE SOSTENIDO ——————————————
+ * La bola APOYADA sobre pala cara-arriba; la pala empuja hacia ella a
+ * 0,25 m/s sostenido (velInst; p.vel por debajo del carry 0,30). La
+ * compresión acumulada (fuga exponencial) supera el hueco y el apoyo se
+ * suelta con un GOLPE SUAVE proporcional + evento 'paddle' contable.
+ * Escenario determinista: contrata el despegue, la salida y el evento. */
+{
+  const C16 = DIMS.tableCenterZ;
+  const p = palaBase('player', 0, 0, 0.9, C16 + 0.65, 0, 0.05, 0);
+  p.normal.set(0, 1, 0); p.up.set(0, 0, -1); p.right.set(1, 0, 0);
+  p.prevNormal.copy(p.normal); p.prevUp.copy(p.up); p.prevRight.copy(p.right);
+  const b = bolaBase(0, 0, 0);
+  b.__ppRestIdx = 0; b.__ppRestSide = 1; b.__ppRestLx = 0; b.__ppRestDy = 0;
+  b.__ppRestSx = 0; b.__ppRestSy = 0; b.__ppRestT = 0; b.__ppRestPush = 0;
+  const base = new THREE.Vector3().copy(p.pos).addScaledVector(p.up, DIMS.bladeCenterUp);
+  b.pos.copy(base).addScaledVector(p.normal, DIMS.ballRadius + 0.001);
+  p.velInst.set(0, 0.25, 0);
+  const ev = [];
+  const caps = [];
+  for (let f = 0; f < 8; f++) {
+    c05.stepPhysics(1 / 60, b, [p], ev);
+    caps.push({ f, rest: b.__ppRestIdx, push: b.__ppRestPush || 0, ...snapEstado(b), ev: snapEventos(ev) });
+    ev.length = 0;
+  }
+  escenario('stepPhysics.pushDespegue', { caps });
+}
+
 /* — verificación contra el golden ——————————————————————————————————————— */
 const dorado = existsSync(GOLDEN_PATH)
   ? JSON.parse(readFileSync(GOLDEN_PATH, 'utf8'))

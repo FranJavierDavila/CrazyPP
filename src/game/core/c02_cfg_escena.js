@@ -44,9 +44,19 @@ export const DIMS = {
   // bote con vida (>0,25) BOTA con la física de golpe de siempre.
   paddleRestSpeed: 0.25,    // vRelN <= esto al llegar = APOYO (no golpe, sin rebote)
   paddleRestFric: 0.38,     // fricción tangencial por re-contacto (deslizar/rodar)
-  paddleRestMuS: 0.35,      // fricción estática: gravedad tangencial menor no desliza
+  paddleRestMuS: 0.18,      // r86 P0-4: baja de 0,35 → la bola rueda desde ~10° (antes 19°)
   paddleRestDrop: 0.09,     // s de edad del apoyo sin re-confirmar antes de soltar
-  paddleRestCarry: 0.5,     // pala más lenta que esto ARRASTRA la bola apoyada
+  paddleRestCarry: 0.30,    // r86 P0-4: baja de 0,5 → el swing suave ya arrastra y suelta
+  // r86 · P0-4 · DESPEGUE ANALÓGICO por EMPUJE SOSTENIDO: con la bola apoyada,
+  // avanzar la pala hacia ella acumula compresión (avance normal filtrado con
+  // fuga exponencial); al superar paddleRestPushGap el apoyo se suelta con un
+  // golpe SUAVE proporcional (paddleRestPushOut × la velocidad de empuje,
+  // suelo paddleRestPushMin) — empujar desde parada lanza la bola en continuo,
+  // sin necesidad del swing del carry (la queja del dueño: «no se puede
+  // recuperar desde parada para empujarla y comenzar a botarla»).
+  paddleRestPushGap: 0.010, // compresión acumulada (m) que dispara el despegue
+  paddleRestPushOut: 0.6,   // fracción de la velocidad de empuje que sale como golpe
+  paddleRestPushMin: 0.35,  // suelo de salida del despegue por empuje (m/s)
   // r113 · techo de bola sube con el techo de pala: un golpe fuerte AHORA
   // se siente fuerte (hasta 18 m/s ≈ 65 km/h, rango de un smash amateur
   // real). El validador del duelo online (c09b) no impone techo de

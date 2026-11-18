@@ -9956,6 +9956,28 @@ export class PingPongGame {
     } catch (eMV) { return true; }   // sin cámara (pruebas headless): aceptada
   }
 
+  /** r88 · GRACIA DE MANO STALE: si la pose del mando libre se vuelve
+   *  momentáneamente inválida (frescura >400 ms — el parpadeo de tracking
+   *  al BAJAR la mano hacia la mesa), la bola NO salta al pecho: se CONGELA
+   *  en la última pose válida hasta 600 ms — la mano sigue ahí aunque el
+   *  visor la pierda un instante (informe del dueño: «no me la permite
+   *  bajar más de una cierta distancia»: la bola rebotaba de la mano al
+   *  pecho cada vez que el tracking titubeaba). Solo una invalidez
+   *  SOSTENIDA (>600 ms) recurre al respaldo del pecho (r65). Devuelve la
+   *  posición a usar (con BALL_HAND_LIFT encima) o null si toca respaldo. */
+  _srvManoPose(bh) {
+    if (this._srvManoValida(bh)) {
+      if (!this._srvManoPos) this._srvManoPos = new THREE.Vector3();
+      this._srvManoPos.copy(bh.pos);
+      this._srvManoT = performance.now();
+      return this._srvManoPos;
+    }
+    if (this._srvManoPos && performance.now() - this._srvManoT < 600) {
+      return this._srvManoPos;
+    }
+    return null;
+  }
+
   tossFromHand(i, assisted) {
     const hand = this.controllerPaddles[i];
     const v = new THREE.Vector3().copy(hand.vel);
@@ -9981,12 +10003,17 @@ export class PingPongGame {
     }
     // r87 · P0-1 REV2 · REANCLAJE EN EL INSTANTE DE SOLTAR (venía de r86
     // P0-1, que lo corría CADA FRAME con la bola en la mano y era imposible
-    // pasearla sobre la mesa — informe del dueño). Mientras la bola está en
-    // la mano es LIBRE; al soltar, si el punto de suelta cae dentro de la
-    // huella del tablero (|x| ≤ halfW+r · |z−C| ≤ halfL+r), la bola se
-    // empuja FUERA a línea de fondo +0,10 con el aviso UNA vez por intento
-    // (el flag se rearma en resetToss) — la legalidad manda SOLO al soltar.
-    if (Math.abs(this.ball.pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius &&
+    // pasearla sobre la mesa — informe del dueño). r88 · AFINADO con el
+    // segundo informe («es imposible colocar la bola pegada a la mesa, no
+    // me la permite bajar»): el reanclaje SOLO procede cuando la bola está
+    // REALMENTE DEBAJO del plano del tablero dentro de la huella (el caso
+    // roto de r86: bola oculta, cota sin saque) — soltar la bola ENCIMA o al
+    // borde de la mesa es LIBRE (el jugador la coloca donde quiera; si el
+    // saque nace en posición ilegal lo cantan las reglas con su causa:
+    // hint_behind al golpear delante de la línea, rescate honesto si el
+    // toss muere sobre la mesa — jamás un teletransporte silencioso).
+    if (this.ball.pos.y < DIMS.tableTopY - DIMS.ballRadius &&
+        Math.abs(this.ball.pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius &&
         Math.abs(this.ball.pos.z - DIMS.tableCenterZ) <= DIMS.tableHalfLength + DIMS.ballRadius) {
       this.ball.pos.z = DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10;
       if (!this._srvReanclaAviso) {
@@ -12509,8 +12536,12 @@ export class PingPongGame {
             // online quedaba bloqueado igual. EN ESCRITORIO (sin visor) el
             // punto reglamentario se QUEDA (r25: allí no hay cabeza — la
             // cámara es la orbital del espectador).
-            if (this.renderer.xr.isPresenting && this._srvManoValida(bh)) {
-              this.ball.pos.copy(bh.pos);
+            // r88 · GRACIA de mano stale (600 ms) también aquí: mismo
+            // síntoma online — la bola rebotaba de la mano al pecho.
+            const poseMano = this.renderer.xr.isPresenting
+              ? this._srvManoPose(bh) : null;
+            if (poseMano) {
+              this.ball.pos.copy(poseMano);
               this.ball.pos.y += BALL_HAND_LIFT;
             } else if (this.renderer.xr.isPresenting) {
               const fBg = tmpV.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
@@ -18062,8 +18093,12 @@ export class PingPongGame {
             // plausible — _srvManoValida): una bh.pos vieja apoyaba la bola
             // en una esquina del pasado — «la pelota aparece detrás del
             // jugador y no en su mano».
-            if (this._srvManoValida(bh)) {
-              this.ball.pos.copy(bh.pos);
+            // r88 · GRACIA: _srvManoPose congela la última pose válida 600 ms
+            // antes del respaldo — la bola ya no rebota al pecho cuando el
+            // tracking titubea con la mano bajada hacia la mesa.
+            const poseMano = this._srvManoPose(bh);
+            if (poseMano) {
+              this.ball.pos.copy(poseMano);
               this.ball.pos.y += BALL_HAND_LIFT;
             } else {
               // r65 · RESPALDO EN LA MANO VIRTUAL DEL JUGADOR: el punto fijo
@@ -19579,10 +19614,16 @@ export class PingPongGame {
       // nace YA en el punto tangente (la piel de la calabaza) y el golpe se
       // lee sobre el cuerpo de la calabaza, no por encima de él.
       const rise0 = sw.flat ? 0 : 0.05;
+      // r88 · CARGA PREVIA (el acompañamiento que pide el dueño): la hoja
+      // arranca DETRÁS del contacto (−dir·back) y barre A TRAVÉS de él —
+      // el stroke se lee completo (carga → contacto → follow-through) en
+      // vez de nacer clavado en el punto de contacto.
+      const bck = (sw.back || 0) * (1 - e);
       mesh.position.set(
-        sw.contact.x + swingV.x,
-        Math.max(0.42, sw.contact.y + swingV.y * 0.55 + rise0 * (1 - e) + K.rise * e),
-        sw.contact.z + swingV.z,
+        sw.contact.x + swingV.x - sw.dir.x * bck,
+        Math.max(0.42, sw.contact.y + swingV.y * 0.55 + rise0 * (1 - e) +
+          K.rise * e - sw.dir.y * bck),
+        sw.contact.z + swingV.z - sw.dir.z * bck,
       );
       // HOJA: la punta parte cargada hacia el lado del golpe y CRUZA al lado
       // contrario mientras el brazo termina (el giro que le faltaba a la pala);

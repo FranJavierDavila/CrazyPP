@@ -591,13 +591,6 @@ export class OpponentAI {
     this._ppPortalVisto = false;   // v3.6.42: flanco de la marca del portal
     this.swing = null;   // animación de follow-through del último golpe (v2.17)
     this.prep = new THREE.Vector3();   // retroceso de preparación (visual)
-    // r87 · P0-8 · OBJETIVO SUAVIZADO de la conducción (el informe del dueño:
-    // «la pala del rival se teletransporta… nunca describe curvas suaves»).
-    // this.goal persigue el objetivo lógico con constante temporal 90 ms:
-    // ni la re-predicción (lerp 0,45) ni los cambios de estado sacuden la
-    // dirección de la velocidad — la pala entra al punto describiendo curva.
-    this.goal = home.clone();
-    this._goalInit = false;
     // v2.23: lado del golpe en curso — +1 derecha (forehand), -1 revés.
     // Se sortea al APARECER la bola (con la posición del cuerpo aún lejos del
     // punto de contacto) y se mantiene durante todo el rallye de esa bola.
@@ -615,8 +608,6 @@ export class OpponentAI {
   reset() {
     this.pos.copy(this.home);
     this.vel.set(0, 0, 0);
-    this.goal.copy(this.home);
-    this._goalInit = false;
     this.predictValid = false;
     this.hitCooldown = 0;
     this._ppPortalVisto = false;   // v3.6.42: el flanco del portal a limpio
@@ -746,34 +737,8 @@ export class OpponentAI {
       );
     }
 
-    // r87 · P0-8 · CONDUCCIÓN NATURAL del rival (informe del dueño: «la pala
-    // del rival se teletransporta, va en línea recta; un jugador real no
-    // atraviesa la mesa, procura el punto dulce y describe curvas suaves
-    // que acompañan al golpe»). Tres piezas sobre el steering de siempre
-    // (mismos clamps, cero asignaciones en el bucle):
-    //  (a) OBJETIVO SUAVIZADO: this.goal persigue tmpT con constante 90 ms —
-    //      el lerp 0,45 de la re-predicción y los flancos de estado dejan de
-    //      sacudir la dirección de la velocidad (adiós zigzag/teletransporte).
-    //  (b) ARCO DE APROXIMACIÓN: al cerrar con el punto de contacto (< 0,55 m)
-    //      el rumbo se mezcla con una componente TANGENTE al lado del golpe
-    //      (fhSide), con peso senoidal que NACE en el horizonte, CULMINA a
-    //      media distancia y MUERE en el contacto — la pala entra al punto
-    //      describiendo un arco que acompaña al swing (nunca órbita: al
-    //      llegar, el rumbo es directo).
-    //  (c) SUELO SOBRE LA MESA: el tránsito por la huella JAMÁS baja del
-    //      tablero + 3 cm — la pala nunca atraviesa la mesa.
-    const _gk = 1 - Math.exp(-dt / 0.09);            // (a) k independiente del frame rate
-    if (!this._goalInit) { this.goal.copy(tmpT); this._goalInit = true; }
-    this.goal.lerp(tmpT, _gk);
-    tmpD.copy(this.goal).sub(this.pos);
-    let dist = tmpD.length();
-    if (this.predictValid && ctx.canHit && dist < 0.55 && dist > 0.05) {   // (b)
-      const _u = Math.min(1, Math.max(0, (0.55 - dist) / 0.50));
-      _aiArc.set(-tmpD.z, 0, tmpD.x).normalize()
-        .multiplyScalar(sign * (this.fhSide || 1) * 0.75 * Math.sin(Math.PI * _u));
-      tmpD.add(_aiArc);
-      dist = tmpD.length();
-    }
+    tmpD.copy(tmpT).sub(this.pos);
+    const dist = tmpD.length();
     // v3.6.37 · SÚPER EFECTO NOTORIO: con la bola marcada viniendo, el rival
     // va un % más lento (le CUESTA llegar — visible y honesto: la física de
     // salida no cambia, solo las piernas de la IA mientras sufre el efecto).
@@ -788,7 +753,15 @@ export class OpponentAI {
     if (dist > 1e-5) tmpD.setLength(desiredSpeed); else tmpD.set(0, 0, 0);
     this.vel.lerp(tmpD, Math.min(1, dt * this.cfg.accel));
     this.pos.addScaledVector(this.vel, dt);
-    // (c) suelo sobre la mesa: dentro de la huella, jamás bajo topR + 3 cm
+    // r88 · el steering vuelve a ser DIRECTO (revert del arco/goal de r87):
+    // el informe del dueño tras la V3.6.178 — «movimientos curvos muy raros
+    // y falla muchos golpes, totalmente ilógicos». El arco tangente y el
+    // objetivo suavizado (90 ms) AÑADÍAN CAMINO y RETRASO a la llegada: la
+    // pala llegaba tarde al punto de contacto y los barridos fallaban. Un
+    // jugador real se COLOCA donde va a recibir (trayecto corto y decidido)
+    // y la naturalidad vive en el GOLPE (carga previa + follow-through +
+    // giro de hoja según el efecto — ver el swing de devolver()).
+    // Lo que SÍ se conserva del P0-8: el SUELO SOBRE LA MESA.
     if (Math.abs(this.pos.x) < DIMS.tableHalfWidth + DIMS.ballRadius &&
         Math.abs(this.pos.z - DIMS.tableCenterZ) < DIMS.tableHalfLength + DIMS.ballRadius &&
         this.pos.y < DIMS.tableTopY + 0.03) {
@@ -1006,6 +979,19 @@ export class OpponentAI {
     // v2.23: lleva TAMBIÉN el tipo de golpe, el lado (derecha/revés) y la
     // velocidad de salida 3D — la pose de la pala los usa para girar la hoja,
     // abrir/cerrar la cara y cruzar el cuerpo como un jugador real.
+    // r88 · el roll de muñeca ya NO es azar: se LIGA al EFECTO real del tiro
+    // (informe del dueño: «giro de pala según el efecto que quiera darle a
+    // la bola»). lift > 0 = liftado (topspin: la hoja BARRERÁ por ENCIMA,
+    // pronación) · lift < 0 = cortada (backspin: por DEBAJO, supinación).
+    // El azar queda como firma mínima: nunca dos golpes idénticos.
+    // `back` = CARGA PREVIA del golpe (el acompañamiento que pide el dueño):
+    // la hoja arranca DETRÁS del contacto y barre A TRAVÉS de él — el
+    // follow-through existente completa el gesto (carga → contacto → salida).
+    const lift = -spinX * sign;                     // >0 topspin · <0 backspin
+    const carga = kind === 'smash' ? 0.14
+      : kind === 'drive' ? 0.10
+      : kind === 'bloqueo' ? 0.05
+      : 0.08;                                       // push / dejada
     this.swing = {
       t: 0,
       dur: 0.3,
@@ -1017,9 +1003,10 @@ export class OpponentAI {
       dir: new THREE.Vector3(v.x, 0, v.z).normalize(),
       vdir: v.clone().normalize(),
       speed: THREE.MathUtils.clamp(v.length() / 6, 0.6, 1.5),
-      // roll de muñeca propio de cada golpe (la cara acompaña el tiro
-      // con un giro natural, nunca dos golpes idénticos)
-      roll: (Math.random() - 0.5) * 0.34,
+      // r88 · roll de muñeca = EFECTO real del tiro (topspin / cortada)
+      roll: THREE.MathUtils.clamp(lift * 0.016, -0.30, 0.34) +
+        (Math.random() - 0.5) * 0.08,
+      back: carga * (toca ? 0.5 : 1),   // calabaza: la hoja ya está en la piel
       kind,                       // drive/smash/push/dejada/bloqueo
       fh: this.fhSide || 1,       // +1 derecha · -1 revés
     };
@@ -1069,6 +1056,7 @@ export class OpponentAI {
       vdir: _miD.copy(_miV).normalize().clone(),
       speed: 0.5,                 // follow-through corto: toque sin cuerpo
       roll: (Math.random() - 0.5) * 0.5,
+      back: 0.03,                 // r88: carga mínima — el toque no arma brazo
       kind: 'mala',               // pose torpe (SWING_POSE.mala)
       fh: this.fhSide || 1,
     };
@@ -1082,7 +1070,6 @@ const _segAP = new THREE.Vector3();
 const _segC = new THREE.Vector3();
 const _miV = new THREE.Vector3();
 const _miD = new THREE.Vector3();
-const _aiArc = new THREE.Vector3();   // r87 P0-8: rascador del arco de aproximación
 
 /* =====================================================================
  *  ESCENA · sala, mesa reglamentaria, bola con estela, rival con cuerpo,

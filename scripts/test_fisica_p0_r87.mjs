@@ -67,6 +67,16 @@ const C = DIMS.tableCenterZ;
     span.includes('DIMS.tableCenterZ + DIMS.tableHalfLength + 0.10'));
   aguja('P0-1 · el aviso sigue siendo UNA vez por intento (_srvReanclaAviso)',
     c12s.includes('_srvReanclaAviso = false') && span.includes('_srvReanclaAviso'));
+  // r88 · el reanclaje SOLO procede con la bola DEBAJO del plano del tablero:
+  // colocar/soltar la bola pegada a la mesa (encima o al borde) queda LIBRE.
+  aguja('P0-1 · r88 · reanclaje exige bola BAJO el plano (colocar pegada = libre)',
+    span.includes('this.ball.pos.y < DIMS.tableTopY - DIMS.ballRadius'));
+  // r88 · gracia de mano stale: la bola NO salta al pecho en un parpadeo de
+  // tracking (600 ms de congelación en la última pose válida).
+  aguja('P0-1 · r88 · gracia de mano stale (_srvManoPose, 600 ms) en ambas ramas',
+    c12s.includes('_srvManoPose(bh)') &&
+    (c12s.match(/_srvManoPose\(bh\)/g) || []).length >= 2 &&
+    c12s.includes('performance.now() - this._srvManoT < 600'));
 }
 
 /* — P0-7 · inmunidad del toss SOLO mientras la bola sube ——————————————— */
@@ -149,29 +159,26 @@ const C = DIMS.tableCenterZ;
   aguja('P0-8 · la pala de la IA JAMÁS queda bajo la mesa (suelo topR + 3 cm)',
     ai.pos.y >= DIMS.tableTopY + 0.029);
 
-  // (b) objetivo suavizado: el goal persigue, no salta (anti-zigzag)
-  const bolaMovida = { pos: new THREE.Vector3(1.5, 2, C - 2), vel: new THREE.Vector3(0, 0, 1),
-    spin: new THREE.Vector3() };
-  const goal0 = ai.goal.clone();
-  ai.update(0.016, bolaMovida, ctx);
-  const movio = ai.goal.distanceTo(goal0);
-  const faltaba = ai.goal.distanceTo(new THREE.Vector3(
-    ai.home.x + bolaMovida.pos.x * 0.3, ai.home.y,
-    ai.home.z + (bolaMovida.vel.z * ai.sign > 0 ? -ai.sign * 0.2 : 0)));
-  aguja('P0-8 · el objetivo se PERSIGUE con constante 90 ms (ni salto ni congelado)',
-    movio > 1e-4 && faltaba > 1e-3);
-
-  // (c) agujas estáticas del arco y del suelo (el arnés de rallies valida I1-I5)
-  aguja('P0-8 · arco de aproximación + suelo sobre mesa en el fuente (c06)',
-    c06s.includes('ARCO DE APROXIMACIÓN') && c06s.includes('SUELO SOBRE LA MESA') &&
-    c06s.includes('this.goal.lerp(tmpT'));
-  aguja('P0-8 · rascador sin asignaciones (_aiArc module-scope)',
-    c06s.includes('const _aiArc = new THREE.Vector3()'));
+  // (b) r88 · steering DIRECTO restaurado (revert del arco/goal de r87 que
+  //     añadía camino y retraso: «movimientos curvos muy raros y falla
+  //     muchos golpes») + la naturalidad vive en el SWING: roll LIGADO al
+  //     efecto real y carga previa (back) que barre a través del contacto.
+  aguja('P0-8 · steering directo: sin arco ni goal en el fuente (c06)',
+    !c06s.includes('ARCO DE APROXIMACIÓN') && !c06s.includes('this.goal.lerp'));
+  aguja('P0-8 · el roll de muñeca se LIGA al efecto real (lift, no azar)',
+    c06s.includes('const lift = -spinX * sign') &&
+    c06s.includes('roll: THREE.MathUtils.clamp(lift * 0.016'));
+  aguja('P0-8 · carga previa del golpe (back) en el swing y en el render',
+    c06s.includes('back: carga * (toca ? 0.5 : 1)') &&
+    c06s.includes('back: 0.03') &&
+    c12s.includes('const bck = (sw.back || 0) * (1 - e)'));
+  aguja('P0-8 · rascador retirado con el arco (sin _aiArc)',
+    !c06s.includes('_aiArc'));
 }
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.178-SDK6', c00s.includes('3.6.178-SDK6'));
+  aguja('versión · c00 sella 3.6.179-SDK6', c00s.includes('3.6.179-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
 }

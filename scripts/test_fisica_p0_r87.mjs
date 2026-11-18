@@ -176,9 +176,23 @@ const C = DIMS.tableCenterZ;
     !c06s.includes('_aiArc'));
 }
 
+/* — r89 · zona prohibida del saque + mango horizontal ————————————————— */
+{
+  aguja('r89 · mano libre EXENTA del clamp de mesa (solo la pala golpea)',
+    c12s.includes('if (i !== this.ballHand) {') &&
+    c12s.includes('this.clampPaddlePose(grip.position, tmpMountQ, true);'));
+  aguja('r89 · bola APOYADA en la mesa (apoyo en topR) offline y online',
+    (c12s.match(/DIMS.tableTopY - DIMS.tableThickness/g) || []).length >= 2 &&
+    c12s.includes('this.ball.pos.y = DIMS.tableTopY + DIMS.ballRadius;'));
+  aguja('r89 · mango casi horizontal en espera, golpeo y preparación',
+    c12s.includes('AIM_BLADE.set(0, 0.35, 0)') &&
+    c12s.includes('AIM_BLADE.set(0, 0.5 - 0.15 * e, 0)') &&
+    c12s.includes('AIM_BLADE.set(0, 0.4, 0)'));
+}
+
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.179-SDK6', c00s.includes('3.6.179-SDK6'));
+  aguja('versión · c00 sella 3.6.180-SDK6', c00s.includes('3.6.180-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
 }

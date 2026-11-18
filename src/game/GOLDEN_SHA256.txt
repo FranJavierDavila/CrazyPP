@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.179-SDK6, fase 182 · FÍSICA P0: CONTACTO Y SAQUE; sello actualizado
-# por bump_version.py desde 3.6.178-SDK6)
-c4ef0325e3f8cfab4794e7a78d508c3c1463933467b7442e285f721ba395cd99
+# SHA256 del game.html que produjo esta división (3.6.180-SDK6, fase 182 · FÍSICA P0: CONTACTO Y SAQUE; sello actualizado
+# por bump_version.py desde 3.6.179-SDK6)
+8f225e6f1205f67a0886f4373d1f195e8dca3d34cd79fad774399e17f4aae4a1

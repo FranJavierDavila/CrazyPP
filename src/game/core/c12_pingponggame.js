@@ -12543,6 +12543,14 @@ export class PingPongGame {
             if (poseMano) {
               this.ball.pos.copy(poseMano);
               this.ball.pos.y += BALL_HAND_LIFT;
+              // r89 · APOYO en la mesa también online (mismo gesto, misma
+              // regla: tocar la mesa con la bola, sin hundirse en la losa).
+              if (this.ball.pos.y < DIMS.tableTopY + DIMS.ballRadius &&
+                  this.ball.pos.y > DIMS.tableTopY - DIMS.tableThickness &&
+                  Math.abs(this.ball.pos.x) < DIMS.tableHalfWidth &&
+                  Math.abs(this.ball.pos.z - DIMS.tableCenterZ) < DIMS.tableHalfLength) {
+                this.ball.pos.y = DIMS.tableTopY + DIMS.ballRadius;
+              }
             } else if (this.renderer.xr.isPresenting) {
               const fBg = tmpV.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
               fBg.y = 0;
@@ -17874,8 +17882,19 @@ export class PingPongGame {
         const ps = this.controllerPaddles[i];
         const grip = this.grips[i];
         tmpMountQ.copy(grip.quaternion).multiply(mountQuatFor(this.handOf[i])).multiply(this.gripOffsetQ);
-        // la pala nunca atraviesa la mesa: se frena sobre la superficie
-        this.clampPaddlePose(grip.position, tmpMountQ, true);
+        // la pala nunca atraviesa la mesa: se frena sobre la superficie.
+        // r89 · EXCEPCIÓN de la MANO LIBRE (informe del dueño: «existe una
+        // zona prohibida a ~10 cm sobre la mesa y si sigo bajando el mando
+        // me la coloca debajo»): clampPaddlePose MUTA grip.position para
+        // sacar la HOJA del tablero y la bola en mano (mano + BALL_HAND_LIFT)
+        // heredaba ese techo artificial — mano clavada en topR ⇒ bola a
+        // topR+0,10; al hundir el mando el empuje salía por la cara más
+        // cercana (abajo) y la bola aparecía BAJO la mesa. La mano libre no
+        // lleva pala que proteger: sin clamp la bola sigue al mando 1:1 y
+        // VUELVE A TOCAR LA MESA (apoyo honesto, ver el hold del saque).
+        if (i !== this.ballHand) {
+          this.clampPaddlePose(grip.position, tmpMountQ, true);
+        }
         // r57 · R1 (auditoría): la pala mide su velocidad/giro con la MISMA
         // base temporal que la bola (dtFis) — con frames caídos de 33-83 ms
         // el swing ya no se infla (Δpos real ÷ 1/30) y el golpe no depende
@@ -18100,6 +18119,17 @@ export class PingPongGame {
             if (poseMano) {
               this.ball.pos.copy(poseMano);
               this.ball.pos.y += BALL_HAND_LIFT;
+              // r89 · la bola APOYADA en la mesa: con el mando sobre la huella
+              // y la bola entrando en la losa del tablero, descansa en topR
+              // (tocar la mesa, como pedía el dueño) en vez de hundirse en la
+              // madera; hundido el mando por DEBAJO del canto, la bola vuelve
+              // a seguirlo (colocación libre bajo la mesa, honesta y visible).
+              if (this.ball.pos.y < DIMS.tableTopY + DIMS.ballRadius &&
+                  this.ball.pos.y > DIMS.tableTopY - DIMS.tableThickness &&
+                  Math.abs(this.ball.pos.x) < DIMS.tableHalfWidth &&
+                  Math.abs(this.ball.pos.z - DIMS.tableCenterZ) < DIMS.tableHalfLength) {
+                this.ball.pos.y = DIMS.tableTopY + DIMS.ballRadius;
+              }
             } else {
               // r65 · RESPALDO EN LA MANO VIRTUAL DEL JUGADOR: el punto fijo
               // antiguo (0,3 · 1,05 · fondo+0,4) podía quedar DETRÁS del
@@ -19582,14 +19612,15 @@ export class PingPongGame {
         this.clampPaddlePose(mesh.position, mesh.quaternion, false);
         return;
       }
-      // preparación del saque: pala cargada al lado derecho, punta arriba y
-      // cara abierta MIRANDO a la bola (como el jugador que espera el bote)
+      // preparación del saque: pala cargada al lado derecho y cara abierta
+      // MIRANDO a la bola (como el jugador que espera el bote)
+      // r89 · mango casi horizontal también aquí (misma postura natural).
       mesh.position.copy(stance);
       AIM_FACE.copy(this.ball.pos).sub(mesh.position);
       if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
       AIM_FACE.normalize();
-      AIM_BLADE.set(0, 0.9, 0)
-        .addScaledVector(AIM_FWD, 0.3)
+      AIM_BLADE.set(0, 0.4, 0)
+        .addScaledVector(AIM_FWD, 0.9)
         .addScaledVector(AIM_RIGHT, fhServe * 0.55);
       bladePose(AIM_BLADE, AIM_FACE, fhServe * 0.18, -0.18);
       mesh.quaternion.copy(poseQ);
@@ -19629,8 +19660,14 @@ export class PingPongGame {
       // contrario mientras el brazo termina (el giro que le faltaba a la pala);
       // la inclinación hacia delante es PROPIA de cada golpe (tap vertical en
       // la cortada, barrido diagonal en el drive)
-      AIM_BLADE.set(0, 1 - 0.3 * e, 0)
-        .addScaledVector(AIM_FWD, K.fwd0 + K.fwd1 * e)
+      // r89 · MANGO CASI HORIZONTAL (informe del dueño: «la pala está en
+      // posición vertical, con el mango apuntando hacia la mesa; por lo
+      // general se sostiene con el mango casi horizontal»): el EJE de la
+      // hoja (mango→punta) baja de la vertical a ~20-30° sobre la mesa y se
+      // EXTIENDE hacia delante durante el follow-through — la firma de cada
+      // golpe (fwd) y el cruce de lado se conservan sobre esa base baja.
+      AIM_BLADE.set(0, 0.5 - 0.15 * e, 0)
+        .addScaledVector(AIM_FWD, 0.8 + (K.fwd0 * (1 - e) + K.fwd1 * e) * 0.8)
         .addScaledVector(AIM_RIGHT, fh * (K.side0 * (1 - e) - K.side1 * e));
       // CARA: hacia donde vuela la bola; el PITCH de muñeca la CIERRA con
       // liftado (topspin) y la ABRE con cortada (slice), cerrándose un poco
@@ -19659,12 +19696,14 @@ export class PingPongGame {
         ai.pos.z + ai.prep.z,
       );
       // espera: postura de jugador real — hoja delante, inclinada hacia el
-      // lado donde está la bola (nunca una pared vertical), cara ofrecida al
-      // balón (algo abierta si viene baja, cerrada si viene alta) y vaivén
-      // de muñeca relajado
+      // lado donde está la bola, cara ofrecida al balón (algo abierta si
+      // viene baja, cerrada si viene alta) y vaivén de muñeca relajado
+      // r89 · MANGO CASI HORIZONTAL también en espera: el antebrazo manda la
+      // hoja hacia la red con la punta ~20° sobre la mesa (nunca un muro
+      // vertical con el mango colgando hacia el tablero).
       const side = THREE.MathUtils.clamp((this.ball.pos.x - mesh.position.x) * s * 2.6, -1, 1);
-      AIM_BLADE.set(0, 1, 0)
-        .addScaledVector(AIM_FWD, 0.32)
+      AIM_BLADE.set(0, 0.35, 0)
+        .addScaledVector(AIM_FWD, 0.93)
         .addScaledVector(AIM_RIGHT, side * 0.3);
       AIM_FACE.copy(AIM_FWD).multiplyScalar(0.85);
       AIM_FACE.x += (this.ball.pos.x - mesh.position.x) * 0.7;

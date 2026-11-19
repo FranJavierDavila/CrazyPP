@@ -19646,6 +19646,29 @@ export class PingPongGame {
       ];
       if (!body || !capas[0].bra || !capas[0].ant || !capas[0].mano ||
           !capas[1].bra || !capas[1].ant || !capas[1].mano) return;
+      // r94 · EL MATERIAL DE LOS BRAZOS (informe del dueño: «el material de
+      // los brazos no aparece»): vr_arm.glb exige KHR_materials_pbrSpecular
+      // Glossiness (export Sketchfab/FBX) y three r163+ ya no lo trae — el
+      // parse SIGUE (sólo avisa en consola) pero el material cae al PBR por
+      // defecto: blanco METÁLICO sin mapa. Reconstruimos el material con la
+      // textura difusa embebida del propio GLB; sin textura, tono piel.
+      try {
+        const texDifusa = await gltf.parser.getDependency('texture', 0);
+        if (texDifusa) texDifusa.colorSpace = THREE.SRGBColorSpace;
+        gltf.scene.traverse((oM) => {
+          if (oM.isMesh) oM.material = new THREE.MeshStandardMaterial({
+            map: texDifusa || null,
+            color: texDifusa ? 0xffffff : 0xb08a70,   // respaldo tono piel
+            roughness: 0.75, metalness: 0.02,
+            side: THREE.DoubleSide });
+        });
+      } catch (eMat) {
+        gltf.scene.traverse((oM) => {
+          if (oM.isMesh) oM.material = new THREE.MeshStandardMaterial({
+            color: 0xb08a70, roughness: 0.75, metalness: 0.02,
+            side: THREE.DoubleSide });
+        });
+      }
       // longitudes de hueso desde las TRASLACIONES de reposo (cm del FBX) —
       // escala adulta: brazo 0,27 m, antebrazo en la proporción del GLB
       const L1u = capas[0].ant.position.length();
@@ -19680,20 +19703,34 @@ export class PingPongGame {
       root.add(gltf.scene);
       root.visible = false;
       this.rig.add(root);
+      this.rig.updateWorldMatrix(true, false);
       root.updateMatrixWorld(true);
+      // r94 · CAPTURA EN MARCO DEL RIG (video del dueño: «brazos mal colo-
+      // cados, huesos mal posicionados, pala no agarrada»): antes se captu-
+      // raba en MARCO MUNDO — si el rig está movido (hall z+2,3 / menú
+      // z+1,15) o GIRADO (recentrado XR con el yaw del casco) cuando llega
+      // el GLB, ese transform queda HORNEADO en rootToBody/ejes/quats y el
+      // driver nace desplazado y diagonal. Todo el estado se captura rela-
+      // tivo al rig: el driver lo consume en rig-local (ai.pos, pala, bola
+      // y DIMS ya viven ahí) y sobra cualquier transform posterior.
+      const _rigInv = this.rig.matrixWorld.clone().invert();
+      const _rigQinv = new THREE.Quaternion()
+        .setFromRotationMatrix(this.rig.matrixWorld).invert();
+      const _alRig = (v) => v.applyMatrix4(_rigInv);
+      const _qlRig = (q) => q.premultiply(_rigQinv);
       const inst = { root, body, L1, L2, listo: true, yaw: 0, esc,
-        rootToBody: body.getWorldPosition(new THREE.Vector3()),
+        rootToBody: _alRig(body.getWorldPosition(new THREE.Vector3())),
         brazos: capas.map((c, i) => {
-          const S = c.bra.getWorldPosition(new THREE.Vector3());
-          const E = c.ant.getWorldPosition(new THREE.Vector3());
-          const W = c.mano.getWorldPosition(new THREE.Vector3());
+          const S = _alRig(c.bra.getWorldPosition(new THREE.Vector3()));
+          const E = _alRig(c.ant.getWorldPosition(new THREE.Vector3()));
+          const W = _alRig(c.mano.getWorldPosition(new THREE.Vector3()));
           const bra = { lado: c.lado, bra: c.bra, ant: c.ant, mano: c.mano,
             dedos: dedos[i],
             Srest: S.clone(), axisRestU: E.clone().sub(S).normalize(),
             axisRestL: W.clone().sub(E).normalize(),
-            restQbra: c.bra.getWorldQuaternion(new THREE.Quaternion()),
-            restQant: c.ant.getWorldQuaternion(new THREE.Quaternion()),
-            restQmano: c.mano.getWorldQuaternion(new THREE.Quaternion()),
+            restQbra: _qlRig(c.bra.getWorldQuaternion(new THREE.Quaternion())),
+            restQant: _qlRig(c.ant.getWorldQuaternion(new THREE.Quaternion())),
+            restQmano: _qlRig(c.mano.getWorldQuaternion(new THREE.Quaternion())),
             poleSide: 0,
             fG: new OneEuroV3(1.2, 0.045),
             fqU: new OneEuroQ(2.2, 0.09),
@@ -19718,6 +19755,14 @@ export class PingPongGame {
   updateAIArmGlb(ai, dt) {
     const R = this.aiArmGlb;
     if (!R || !R.listo || !this.aiPaddleMesh) return;
+    // r94 · marco del rig al día (cero allocs): el cuerpo, la pala y la bola
+    // viven en RIG-LOCAL; los huesos se leen en MUNDO — convierto las lectu-
+    // ras al marco del rig y las quats deseadas de vuelta a mundo. Con el
+    // recentrado XR girando el rig, los brazos ya no heredan ese giro.
+    this.rig.updateWorldMatrix(true, false);
+    _gRigQ.setFromRotationMatrix(this.rig.matrixWorld);
+    _gRigInvQ.copy(_gRigQ).invert();
+    _gRigP.setFromMatrixPosition(this.rig.matrixWorld);
     const s = ai.sign || -1;
     const D_GRIP = 0.1303;                     // mango → centro de hoja (r54)
     const mesaY = DIMS.tableTopY + 0.02;
@@ -19738,6 +19783,7 @@ export class PingPongGame {
     bp.bra.parent.updateWorldMatrix(true, false);
     bp.bra.parent.getWorldPosition(_gB);       // ancla del cuerpo
     bp.bra.getWorldPosition(_gS);              // hombro = hueso en el mundo
+    _gS.sub(_gRigP).applyQuaternion(_gRigInvQ);   // r94 · al marco del rig
     // — dirección de continuación del brazo (r92): plan en golpeo, si no
     //   el antebrazo que ya tiene la mano
     _gD.set(0, 1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
@@ -19780,10 +19826,10 @@ export class PingPongGame {
     bp.fqU.fcMin = golpeando ? 6.5 : 2.2;
     bp.fqL.fcMin = golpeando ? 6.5 : 2.2;
     bp.fqH.fcMin = golpeando ? 7 : 2.6;
-    _gF.copy(_gH).sub(_gS).normalize();   // d1: eje del brazo
+    _gF.copy(_gH).sub(_gS).normalize();   // d1: eje del brazo (marco rig)
     _gQb.setFromUnitVectors(bp.axisRestU, _gF).multiply(bp.restQbra);
     bp.fqU.filtrar(_gQb, dt);
-    _gQc.copy(bp.fqU.prev);
+    _gQc.copy(bp.fqU.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bp.bra.parent.getWorldQuaternion(_gQd);
     bp.bra.quaternion.copy(_gQd).invert().multiply(_gQc);
     bp.bra.updateWorldMatrix(false, false);
@@ -19791,18 +19837,20 @@ export class PingPongGame {
     _gF.copy(_gA).sub(_gH).normalize();        // d2: eje del antebrazo
     _gQb.setFromUnitVectors(bp.axisRestL, _gF).multiply(bp.restQant);
     bp.fqL.filtrar(_gQb, dt);
-    _gQc.copy(bp.fqL.prev);
+    _gQc.copy(bp.fqL.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bp.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
     bp.ant.updateWorldMatrix(false, false);
-    bp.ant.getWorldQuaternion(_gQd);
     // mano: continúa el antebrazo + ROLLO del agarre shakehand alrededor
     // del eje hoja (el pulgar cabalga el canto, la palma envuelve el mando)
-    _gQb.copy(_gQd);
+    // r94 · rollo en MARCO RIG (el rumbo del antebrazo vive ahí) y la quat
+    // filtrada en rig-local sobrevive al recentrado sin basura de arranque
+    _gQb.copy(bp.fqL.prev);
     _gQe.setFromAxisAngle(_gF, -0.9 * s);
     _gQb.multiply(_gQe);
     bp.fqH.filtrar(_gQb, dt);
+    _gQc.copy(bp.fqH.prev).premultiply(_gRigQ);
     bp.mano.parent.getWorldQuaternion(_gQd);
-    bp.mano.quaternion.copy(_gQd).invert().multiply(bp.fqH.prev);
+    bp.mano.quaternion.copy(_gQd).invert().multiply(_gQc);
     bp.mano.updateWorldMatrix(false, false);
     // — pala: centro = muñeca rígida + continuación·D (agarre por mando) y
     //   la continuación r92 sobre la cara del plan (el eje hoja = antebrazo)
@@ -19830,7 +19878,9 @@ export class PingPongGame {
         this.ball.pos.z);                                 // acompaña el bote
     }
     bl.bra.parent.getWorldPosition(_gB);
+    _gB.sub(_gRigP).applyQuaternion(_gRigInvQ);   // r94 · al marco del rig
     bl.bra.getWorldPosition(_gS);              // hombro L = hueso en el mundo
+    _gS.sub(_gRigP).applyQuaternion(_gRigInvQ);   // r94 · al marco del rig
     _gE.copy(_gC).sub(_gS);
     const dGL = Math.max(_gE.length(), 1e-6);
     if (dGL > maxR) _gE.multiplyScalar(maxR / dGL);
@@ -19847,7 +19897,7 @@ export class PingPongGame {
     _gF.copy(_gH).sub(_gS).normalize();
     _gQb.setFromUnitVectors(bl.axisRestU, _gF).multiply(bl.restQbra);
     bl.fqU.filtrar(_gQb, dt);
-    _gQc.copy(bl.fqU.prev);
+    _gQc.copy(bl.fqU.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bl.bra.parent.getWorldQuaternion(_gQd);
     bl.bra.quaternion.copy(_gQd).invert().multiply(_gQc);
     bl.bra.updateWorldMatrix(false, false);
@@ -19855,16 +19905,16 @@ export class PingPongGame {
     _gF.copy(_gA).sub(_gH).normalize();
     _gQb.setFromUnitVectors(bl.axisRestL, _gF).multiply(bl.restQant);
     bl.fqL.filtrar(_gQb, dt);
-    _gQc.copy(bl.fqL.prev);
+    _gQc.copy(bl.fqL.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bl.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
     bl.ant.updateWorldMatrix(false, false);
-    bl.ant.getWorldQuaternion(_gQd);
-    _gQb.copy(_gQd);
+    _gQb.copy(bl.fqL.prev);                       // r94 · rollo en marco rig
     _gQe.setFromAxisAngle(_gF, 0.9 * s);
     _gQb.multiply(_gQe);
     bl.fqH.filtrar(_gQb, dt);
+    _gQc.copy(bl.fqH.prev).premultiply(_gRigQ);
     bl.mano.parent.getWorldQuaternion(_gQd);
-    bl.mano.quaternion.copy(_gQd).invert().multiply(bl.fqH.prev);
+    bl.mano.quaternion.copy(_gQd).invert().multiply(_gQc);
     bl.mano.updateWorldMatrix(false, false);
   }
 
@@ -20752,6 +20802,12 @@ const _gQe = new THREE.Quaternion();
 const _gS = new THREE.Vector3();
 const _gMx = new THREE.Matrix4(); const _gAx = new THREE.Vector3(1, 0, 0);
 const _gUp = new THREE.Vector3(0, 1, 0); const _gNeg = new THREE.Vector3(-1, 0, 0);
+/* r94 · marco del RIG por frame: el mundo del juego (ai.pos, pala, bola,
+ * DIMS) vive en RIG-LOCAL pero el rig puede estar MOVIDO (hall, menú, onda)
+ * o GIRADO (recentrado XR) — los huesos se leen en mundo y las quats dese-
+ * adas se devuelven a mundo antes de componer locales. Cero allocs. */
+const _gRigQ = new THREE.Quaternion(); const _gRigInvQ = new THREE.Quaternion();
+const _gRigP = new THREE.Vector3();
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();

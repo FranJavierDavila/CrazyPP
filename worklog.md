@@ -7198,3 +7198,21 @@ Stage Summary:
 **Despliegue:** (en curso tras este commit)
 
 **EN PRODUCCIÓN 2026-11-19 (hotfix verificado):** Pages sirviendo 3.6.182-SDK6 con fuente_commit=a3efa37 (hotfix) · servido 12.347.609 B = local −2 · **la declaración `const _armS` ya está en los bytes servidos** (antes solo quedaban los 8 usos huérfanos) · tag v3.6.182-SDK6 forzado a a3efa37 · release recreada limpia con los 4 ZIPs corregidos (la primera recreación chocó con assets no borrables por el token — release borrada 204 y recreada íntegra) · smoke verde · respaldo anti-rollback al día · **el dueño ya puede dar a JUGAR en el casco**: el flujo VR completo quedó reproducido y verde en navegador (onSessionStart → exitHall → startMatch → resetToss → closeMenu, cero errores de escudo, cadena en fase strike, brazo visible). Lección permanente en el arnés: nada de declaraciones dentro de los bloques DEPS-FASE2 — el ensamblado las reconstruye y se come cualquier const huésped.
+
+## Ronda 91c (r91 · «sigue todo igual» — el hotfix no llegaba al casco) · V3.6.183-SDK6 — 2026-11-19
+
+**El informe:** el dueño sigue viendo el bloqueo tras el hotfix. **La causa (doble):**
+1. **SWR del casco**: el service worker sirve game.html con stale-while-revalidate (`return cacheada || fresca`) — la sesión abierta tras el deploy recibió el build ROTO desde la caché al instante.
+2. **El hotfix salió bajo la MISMA versión (3.6.182)**: el sello `CACHE` de sw.js no cambió de byte → el navegador ni actualizó el SW ni purgó la caché → y el selfcheck de arranque (c09b selfcheckVersion, compara CADENAS de versión contra PAGES-VERSION.txt, red-primero) vio «igual» → **sin aviso de build viejo**. El dueño jugó el roto creyéndolo corregido.
+3. **El fix ya estaba en camino**: durante esa sesión congelada el navegador SÍ detectó el sw.js nuevo (sello r91), lo instaló con `cache:'reload'` (bytes corregidos) y activó borrando la caché vieja — la reapertura ya habría funcionado; pero sin versión nueva el estado era indistinguible y frágil.
+
+**La cura (ritual completo):** bump a **V3.6.183-SDK6** — sello SW `crazypp-v3.6.183-SDK6` (reinstalación + purga GARANTIZADAS en el casco), VERSION const, golden `484879c2` (12.347.611 B — byte-exacto contra el hotfix, solo cambian sellos), aguja de versión del P0 actualizada (35/35), kit **release-v36183** (clon limpio, 0 restos, 4 ZIPs), batería TODO VERDE (c04 12 · c05 17 · CADENA 10/10 · red 60/60 · ITTF 8/8 · rallies 0 violaciones), deploy --release con smoke verde, tag + release GitHub v3.6.183-SDK6.
+
+**EN PRODUCCIÓN 2026-11-19:** Pages sirviendo 4e74647 · version=3.6.183-SDK6 · sw.js con sello nuevo verificado en los bytes servidos · game.html servido lleva `const _armS` (fix) y VERSION 3.6.183 · respaldo anti-rollback al día.
+
+**Housekeeping del reciclaje del sandbox (lecciones):**
+- El reciclaje dejó HEAD en 42dabed (era 3.6.27) con el árbol hotfix como cambios sueltos y 7.114 ficheros ausentes → `git reset --hard 3caac01` (7.325 ficheros restaurados, P0 verde inmediato).
+- `bump_version.py` tiene RAIZ por defecto `upload/` (mount vivo en era 3.6.165, con trabajo sin commit del dueño) → el primer bump escribió AHÍ (7 ficheros, rebuild 12.244.118 B desde un src divergente — de ahí el susto de los 103 KB) → revertidos los 7 a su propio HEAD c309552, cero rastro. **Regla anotada: bump/build/deploy SIEMPRE con `CPP_RAIZ=/home/z/my-project`.**
+- Falso susto del «placeholder vX.Y.Z servido»: era el comentario documental de sw.js línea 7; el sello real (línea 24) estaba bien.
+
+**Para el dueño:** cerrar la ventana del juego por completo en el casco y volver a abrirla — ya con 3.6.183 el SW reinstala y purga solo; el bloqueo al dar a JUGAR queda resuelto (flujo VR completo verificado en navegador: 0 errores de escudo, cadena en fase strike, brazo visible). A partir de ahora, cualquier desajuste de build dispara el aviso en la sala (selfcheck compara versiones distintas de verdad).

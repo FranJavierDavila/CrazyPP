@@ -1,6 +1,6 @@
 {
   "nota": "HASHES de física determinista (test_fisica.mjs). Refrescar SOLO con un cambio físico intencional: node --no-warnings scripts/test_fisica.mjs --update",
-  "version": "3.6.177-SDK6",
+  "version": "3.6.181-SDK6",
   "hashes": {
     "sdfBlade.grid": "f3a3fddfe2122235",
     "sweepBallVsBlade.rayos": "1aa6b631293ac35a",
@@ -8,11 +8,11 @@
     "bladeNormalLocal.casos": "ccfe3a6ab7b6dae7",
     "paddleSim.swing120": "119f06c516a6e1e8",
     "paddleSim.frameCaido50ms": "19f8b6103e13de1b",
-    "aero.topspin480": "3c95c4ceee72f0d7",
-    "aero.bomba480.dragMul": "9f9165b43011b202",
-    "bounceOnTable.casos": "6a46b986dc9be21e",
+    "aero.topspin480": "03dafa5f34184a88",
+    "aero.bomba480.dragMul": "caf7fbce42badc90",
+    "bounceOnTable.casos": "896a728a6d3fb6c5",
     "applyBounceSpin.caso": "5b15dc7f20d9213b",
     "paddlePerkFor.clasica": "3cbb0c24e8ba8c50",
-    "tuning.constantes": "682b01f4b8479232"
+    "tuning.constantes": "ab34487117b84f8a"
   }
 }

@@ -184,15 +184,18 @@ const C = DIMS.tableCenterZ;
   aguja('r89 · bola APOYADA en la mesa (apoyo en topR) offline y online',
     (c12s.match(/DIMS.tableTopY - DIMS.tableThickness/g) || []).length >= 2 &&
     c12s.includes('this.ball.pos.y = DIMS.tableTopY + DIMS.ballRadius;'));
-  aguja('r89 · mango casi horizontal en espera, golpeo y preparación',
-    c12s.includes('AIM_BLADE.set(0, 0.35, 0)') &&
-    c12s.includes('AIM_BLADE.set(0, 0.5 - 0.15 * e, 0)') &&
-    c12s.includes('AIM_BLADE.set(0, 0.4, 0)'));
+  aguja('r90 · cara ⟂ mesa y mango ∥ mesa (eje horizontal cruzado, cierre sobre el eje)',
+    (c12s.match(/AIM_BLADE\.set\(0, 0\.22, 0\)/g) || []).length === 2 &&
+    c12s.includes('AIM_BLADE.set(0, 0.25, 0)') &&
+    (c12s.match(/closQ\.setFromAxisAngle/g) || []).length >= 3 &&
+    c12s.includes('AIM_FACE.y *= 0.35;'));
+  aguja('r90 · §12.1 del estudio en DIMS (drag crisis 0.1267 · restitución 0.935)',
+    c02s.includes('airDragK: 0.1267') && c02s.includes('tableRestitution: 0.935'));
 }
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.180-SDK6', c00s.includes('3.6.180-SDK6'));
+  aguja('versión · c00 sella 3.6.181-SDK6', c00s.includes('3.6.181-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
 }

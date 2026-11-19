@@ -9,9 +9,16 @@ export const DIMS = {
   tableCenterZ: -1.6,
   gravity: -9.81,
   // AERODINÁMICA REAL (bola reglamentaria de 40 mm y 2,7 g):
-  // arrastre cuadrático a = k·|v|·v  con k = ½·ρ·Cd·A/m (ρ=1.225, Cd=0.5)
-  airDragK: 0.142,
-  tableRestitution: 0.88,   // ITTF: rebote ~23 cm desde 30.5 cm (e ≈ 0.87)
+  // arrastre cuadrático a = k·|v|·v  con k = ½·ρ·Cd·A/m (ρ=1.225, Cd=0.445)
+  // r90 · §12.1 del estudio: velocidad terminal 8,8 m/s ⇒ región de crisis
+  // de arrastre (Cd≈0,445): k = g/v_t² = 9,81/8,80² = 0,1267 (antes Cd 0.5
+  // ⇒ v_t 8,31). Verificado por el arnés ITTF (test_fisica_ittf.mjs).
+  airDragK: 0.1267,
+  // r90 · §12.1 del estudio: la ITTF mide el rebote EN AIRE — caída de
+  // 300 mm con arrastre real ⇒ e_efectiva ≈ 0,935 para apex ~245 mm
+  // (banda [230, 260] mm). Con 0,88 el apex caía a ~214 mm (arnés ITTF
+  // test_fisica_ittf.mjs T1 lo calibra con la física real del motor).
+  tableRestitution: 0.935,
   tableFriction: 0.94,
   paddleRestitution: 0.85,  // goma viva: los golpes salen con cuerpo
   bladeRadius: 0.0795,      // radio de la hoja (16 cm de diámetro)

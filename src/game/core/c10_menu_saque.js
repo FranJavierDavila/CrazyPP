@@ -19,6 +19,12 @@ export const aimM = new THREE.Matrix4();     // base -> cuaternión
 const aimUP = new THREE.Vector3(0, 1, 0);
 export const aimRollQ = new THREE.Quaternion();
 export const aimPitchQ = new THREE.Quaternion();
+// r90 · cierre de cara sobre el eje del mango: la CARA (no la base)
+// rota alrededor del eje hoja — topspin la baja (cerrada), cortada la
+// sube (abierta); el mango no se mueve (paralelo a la mesa siempre).
+export const closQ = new THREE.Quaternion();
+export const closAx = new THREE.Vector3();
+export const closX = new THREE.Vector3();
 export const AIM_Z = new THREE.Vector3(0, 0, 1);   // normal local de la cara (IA)
 export const AIM_XA = new THREE.Vector3(1, 0, 0);  // eje local X (pitch de muñeca)
 // v2.23 · POSE POR GOLPE: la pala se compone desde DOS direcciones mundiales

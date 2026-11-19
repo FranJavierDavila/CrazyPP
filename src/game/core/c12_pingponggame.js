@@ -19612,17 +19612,24 @@ export class PingPongGame {
         this.clampPaddlePose(mesh.position, mesh.quaternion, false);
         return;
       }
-      // preparación del saque: pala cargada al lado derecho y cara abierta
-      // MIRANDO a la bola (como el jugador que espera el bote)
-      // r89 · mango casi horizontal también aquí (misma postura natural).
+      // preparación del saque: pala cargada al lado y cara ABIERTA esperando
+      // el bote (r90 · spec del dueño: mango horizontal cruzado, cara en el
+      // plano vertical hacia la bola — superficie ⟂ mesa).
       mesh.position.copy(stance);
       AIM_FACE.copy(this.ball.pos).sub(mesh.position);
       if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
+      AIM_FACE.y *= 0.4;
+      if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
       AIM_FACE.normalize();
-      AIM_BLADE.set(0, 0.4, 0)
-        .addScaledVector(AIM_FWD, 0.9)
-        .addScaledVector(AIM_RIGHT, fhServe * 0.55);
-      bladePose(AIM_BLADE, AIM_FACE, fhServe * 0.18, -0.18);
+      AIM_BLADE.set(0, 0.22, 0)
+        .addScaledVector(AIM_RIGHT, 0.45 + fhServe * 0.35);
+      AIM_BLADE.normalize();
+      closAx.copy(AIM_BLADE);
+      closX.crossVectors(closAx, AIM_FACE);
+      if (closX.y < 0) closAx.negate();
+      closQ.setFromAxisAngle(closAx, 0.18);    // cara abierta para el bote
+      AIM_FACE.applyQuaternion(closQ);
+      bladePose(AIM_BLADE, AIM_FACE, fhServe * 0.18, 0);
       mesh.quaternion.copy(poseQ);
       this.clampPaddlePose(mesh.position, mesh.quaternion, false);
       return;
@@ -19656,28 +19663,30 @@ export class PingPongGame {
           K.rise * e - sw.dir.y * bck),
         sw.contact.z + swingV.z - sw.dir.z * bck,
       );
-      // HOJA: la punta parte cargada hacia el lado del golpe y CRUZA al lado
-      // contrario mientras el brazo termina (el giro que le faltaba a la pala);
-      // la inclinación hacia delante es PROPIA de cada golpe (tap vertical en
-      // la cortada, barrido diagonal en el drive)
-      // r89 · MANGO CASI HORIZONTAL (informe del dueño: «la pala está en
-      // posición vertical, con el mango apuntando hacia la mesa; por lo
-      // general se sostiene con el mango casi horizontal»): el EJE de la
-      // hoja (mango→punta) baja de la vertical a ~20-30° sobre la mesa y se
-      // EXTIENDE hacia delante durante el follow-through — la firma de cada
-      // golpe (fwd) y el cruce de lado se conservan sobre esa base baja.
-      AIM_BLADE.set(0, 0.5 - 0.15 * e, 0)
-        .addScaledVector(AIM_FWD, 0.8 + (K.fwd0 * (1 - e) + K.fwd1 * e) * 0.8)
-        .addScaledVector(AIM_RIGHT, fh * (K.side0 * (1 - e) - K.side1 * e));
-      // CARA: hacia donde vuela la bola; el PITCH de muñeca la CIERRA con
-      // liftado (topspin) y la ABRE con cortada (slice), cerrándose un poco
-      // más durante el follow-through (firma de cada golpe)
+      // HOJA (r90 · spec del dueño: «la superficie de la pala no está
+      // paralela a la mesa sino perpendicular, con el mango paralelo»): el
+      // EJE de la hoja (mango→punta) va HORIZONTAL, cruzado hacia el lado
+      // del golpe y cruzando al lado contrario en el follow-through (la
+      // firma side de cada golpe) — el mango no apunta nunca al tablero.
+      AIM_BLADE.set(0, 0.25, 0)
+        .addScaledVector(AIM_RIGHT, fh * (K.side0 * (1 - e) - K.side1 * e) * 0.95);
+      AIM_BLADE.normalize();
+      // CARA (r90): en el plano vertical de la salida — superficie ⟂ mesa —
+      // y el CIERRE por efecto ya no es un pitch de la base sino una
+      // ROTACIÓN DE LA CARA SOBRE EL EJE DEL MANGO: topspin la baja
+      // (cerrada), cortada la sube (abierta); el roll de muñeca se conserva.
       AIM_FACE.copy(sw.vdir || this.ball.vel);
       if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
+      AIM_FACE.y *= 0.35;
+      if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
       AIM_FACE.normalize();
+      closAx.copy(AIM_BLADE);
+      closX.crossVectors(closAx, AIM_FACE);
+      if (closX.y < 0) closAx.negate();      // eje con la cruz hacia ARRIBA
+      closQ.setFromAxisAngle(closAx, -(K.clos0 + K.clos1 * e));
+      AIM_FACE.applyQuaternion(closQ);
       bladePose(AIM_BLADE, AIM_FACE,
-        (sw.roll || 0) * (0.35 + 0.85 * e) + fh * (0.24 - 0.46 * e),
-        K.clos0 + K.clos1 * e);
+        (sw.roll || 0) * (0.35 + 0.85 * e) + fh * (0.24 - 0.46 * e), 0);
       mesh.quaternion.slerp(poseQ, Math.min(1, dt * 18));
     } else {
       // r95 · CELEBRACIÓN CON ESTILO: al ganar el punto, el rival agresivo
@@ -19695,21 +19704,24 @@ export class PingPongGame {
         Math.max(0.42, ai.pos.y + ai.prep.y + bob + celebBob),
         ai.pos.z + ai.prep.z,
       );
-      // espera: postura de jugador real — hoja delante, inclinada hacia el
-      // lado donde está la bola, cara ofrecida al balón (algo abierta si
-      // viene baja, cerrada si viene alta) y vaivén de muñeca relajado
-      // r89 · MANGO CASI HORIZONTAL también en espera: el antebrazo manda la
-      // hoja hacia la red con la punta ~20° sobre la mesa (nunca un muro
-      // vertical con el mango colgando hacia el tablero).
+      // espera (r90 · spec del dueño): mango HORIZONTAL cruzado hacia el lado
+      // de la bola (nunca un muro vertical ni una cuchara plana) y cara en el
+      // plano vertical que mira a la red — superficie ⟂ mesa; algo cerrada si
+      // la bola viene alta, abierta si viene baja, vaivén de muñeca relajado.
       const side = THREE.MathUtils.clamp((this.ball.pos.x - mesh.position.x) * s * 2.6, -1, 1);
-      AIM_BLADE.set(0, 0.35, 0)
-        .addScaledVector(AIM_FWD, 0.93)
-        .addScaledVector(AIM_RIGHT, side * 0.3);
-      AIM_FACE.copy(AIM_FWD).multiplyScalar(0.85);
-      AIM_FACE.x += (this.ball.pos.x - mesh.position.x) * 0.7;
+      AIM_BLADE.set(0, 0.22, 0)
+        .addScaledVector(AIM_RIGHT, 0.8 + side * 0.25);
+      AIM_BLADE.normalize();
+      AIM_FACE.copy(AIM_FWD);
+      AIM_FACE.x += (this.ball.pos.x - mesh.position.x) * 0.5;
+      AIM_FACE.normalize();
+      closAx.copy(AIM_BLADE);
+      closX.crossVectors(closAx, AIM_FACE);
+      if (closX.y < 0) closAx.negate();
+      closQ.setFromAxisAngle(closAx, this.ball.pos.y > 1.25 ? -0.10 : 0.12);
+      AIM_FACE.applyQuaternion(closQ);
       const sway = Math.sin(performance.now() / 1000 * 1.7 + (who === 'ai' ? 1.3 : 4.2)) * 0.06;
-      // bola alta: cara algo cerrada por encima · bola baja: cara abierta
-      bladePose(AIM_BLADE, AIM_FACE, sway + celebRoll, this.ball.pos.y > 1.25 ? 0.1 : -0.12);
+      bladePose(AIM_BLADE, AIM_FACE, sway + celebRoll, 0);
       mesh.quaternion.slerp(poseQ, Math.min(1, dt * 9));
     }
     this.clampPaddlePose(mesh.position, mesh.quaternion, false);
@@ -20305,7 +20317,7 @@ import { HALL, applyHallVariant, createBounceMarkers, createCalibPanel, createCh
 import { NetLink } from './c09_red_netlink.js';
 import { PPNET } from './c09b_red_nucleo.js';
 import { RedSocial } from './c09c_red_social.js';
-import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
+import { AIM_BLADE, AIM_BX, AIM_BY, AIM_BZ, AIM_FACE, AIM_FWD, AIM_RIGHT, AIM_XA, AIM_Z, AI_TOSS_T, BALL_HAND_LIFT, CHAMPS_STATE, MENU_LOGO_SRC, SWING_POSE, closAx, closQ, closX, aimM, aimPitchQ, aimRollQ, poseQ, swingV } from './c10_menu_saque.js';
 import { ChampLoader, NORMAS_SKIN, muDir, muGrip, muHead, muQ, muRaycaster, netTmpP, netTmpQ, netTmpV, pcA, pcC, pcN, pcT } from './c11_champloader.js';
 import { wrapText } from './c13_ui_arranque.js';
 import * as THREE from 'three';

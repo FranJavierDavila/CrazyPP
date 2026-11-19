@@ -13,7 +13,7 @@
  *               arco de aproximación + SUELO sobre la mesa (comportamiento)
  * Uso: node --no-warnings scripts/test_fisica_p0_r87.mjs
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as THREE from 'three';
 
@@ -241,7 +241,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.189-SDK6', c00s.includes('3.6.189-SDK6'));
+  aguja('versión · c00 sella 3.6.190-SDK6', c00s.includes('3.6.190-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
@@ -290,8 +290,8 @@ const C = DIMS.tableCenterZ;
   aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
     (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
     b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.189-SDK6 en el bundle',
-    b94.includes('3.6.189-SDK6'));
+  aguja('r94 · versión sella 3.6.190-SDK6 en el bundle',
+    b94.includes('3.6.190-SDK6'));
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,
@@ -341,6 +341,16 @@ const C = DIMS.tableCenterZ;
     b95.includes("window.__PP_VIGIA = { suelta }") &&
     b95.includes("window.__PP_VIGIA.suelta({ e: 'anim_shield'") &&
     b95.includes('r97 · EL ESCUDO HABLA CON EL VIGÍA'));
+  aguja('r98 · AVISO DE VERSIÓN NUEVA: banner rojo que compara con PAGES-VERSION.txt (network-first) y ofrece actualizar',
+    b95.includes('r98 · AVISO DE VERSIÓN NUEVA') &&
+    b95.includes("getElementById('ppAvisoVer')") &&
+    b95.includes('PAGES-VERSION.txt?cb=') &&
+    b95.includes("postMessage('SKIP_WAITING')") &&
+    b95.includes("NUEVA VERSIÓN ' + nueva + ' DISPONIBLE"));
+  aguja('r98 · la página NUCLEAR actualizar.html existe y borra SW + cachés',
+    existsSync(RAIZ + '/public/actualizar.html') &&
+    readFileSync(RAIZ + '/public/actualizar.html', 'utf-8')
+      .includes('serviceWorker.getRegistrations()'));
 }
 
 console.log(`\nARNÉS P0 r87 · ${ok} OK · ${fails} FALLOS`);

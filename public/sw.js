@@ -8,8 +8,10 @@
  *    bump_version.py parchea ese sello en cada bump: al publicarse una
  *    versión nueva el sw.js cambia de byte → el navegador actualiza el SW →
  *    activate BORRA las cachés viejas → invalidación automática. Adiós ?v=.
- *  · game.html: STALE-WHILE-REVALIDATE (arranque instantáneo desde caché;
- *    la respuesta fresca queda instalada para LA PRÓXIMA visita).
+ *  · game.html: RED-PRIMERO con límite 4 s (r98 — era STALE-WHILE-REVALIDATE
+ *    y el dueño veía SIEMPRE una visita por detrás: abría, leía la versión
+ *    vieja y reportaba «no cambió nada» 4 rondas). Con red manda la red
+ *    (no-store); la caché es la red de seguridad offline.
  *  · Datos vivos (PAGES-VERSION.txt, campeonatos, ugc): NETWORK-FIRST con
  *    fallback a caché (offline) — nunca sirven versiones viejas si hay red.
  *  · Assets estáticos (assets/, vendor/, iconos): CACHE-FIRST con relleno
@@ -21,7 +23,7 @@
  *    instalación no duplica el peso.
  * ===================================================================== */
 
-const CACHE = 'crazypp-v3.6.188-SDK6';   // ← SELLO: bump_version.py lo parchea
+const CACHE = 'crazypp-v3.6.190-SDK6';   // ← SELLO: bump_version.py lo parchea
 
 const SHELL = [
   './game.html',
@@ -79,6 +81,28 @@ async function swr(req) {
   return cacheada || fresca;
 }
 
+async function redPrimero(req, ms) {
+  // r98 · game.html pasa de STALE-WHILE-REVALIDATE a RED-PRIMERO con límite:
+  // el dueño abría UNA vez, veía la copia cacheada («cacheada || fresca» ga-
+  // ranta ver la VIEJA aunque la red responda) y reportaba «no cambió nada»
+  // — 4 rondas seguidas. Ahora la red manda (con no-store: ni el HTTP cache
+  // de Pages puede colar una copia) y la caché es SOLO la red de seguridad
+  // si la red tarda ms o falla (offline / casco sin wifi).
+  const cache = await caches.open(CACHE);
+  const cacheada = await cache.match(req, { ignoreSearch: true });
+  try {
+    const resp = await Promise.race([
+      fetch(new Request(req, { cache: 'no-store' })),
+      new Promise((res, rechaza) => setTimeout(() => rechaza(new Error('tarda')), ms || 4000)),
+    ]);
+    if (resp && resp.ok) cache.put(req, resp.clone()).catch(() => { });
+    return resp;
+  } catch (e) {
+    if (cacheada) return cacheada;
+    throw e;
+  }
+}
+
 async function networkFirst(req) {
   const cache = await caches.open(CACHE);
   try {
@@ -113,7 +137,7 @@ self.addEventListener('fetch', (event) => {
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.origin !== self.location.origin) return;   // worker telemetría · PeerJS · Ko-fi
   if (url.pathname.endsWith('/game.html')) {
-    event.respondWith(swr(req));
+    event.respondWith(redPrimero(req, 4000));
     return;
   }
   if (VIVAS.some((re) => re.test(url.pathname))) {

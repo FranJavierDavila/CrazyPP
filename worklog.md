@@ -7343,3 +7343,19 @@ Stage Summary:
 
 **Verificación:** qa_bundle 15/0 (con 3.6.188 reventaba al instante: escudo desde el boot) · P0 54 · anti-bloqueo 14 · brazos 22/12/16 · física 12 · c05 17 · ITTF 8 · CADENA 14 · rallies 200 · en vivo sup1 151 · escudo 54 · imp2 66 · bump 3.6.189 (golden 47d64d64) · kit release-v36189 (4 ZIPs).
 **EN PRODUCCIÓN:** deploy EXIT=0 (main 378df63→91cc650) · Pages `built` (7c04d86ad) · PAGES-VERSION 3.6.189 · EN VIVO: boot limpio (glb ✓ vigía ✓ **0 escudo**), flujo hall→JUGAR → serve/player, una mano en el mango (13,5 mm; la otra en pleno golpeo de la demo), cero pageerrors — **el bundle de producción se EJECUTA por primera vez desde r93**.
+
+## Ronda 98 (r98 · EL CANAL DE ACTUALIZACIÓN — por qué «ya van 4 cambios y no se arregla») · V3.6.190-SDK6 — 2026-11-19
+
+**Informe del dueño:** «todo sigue igual… la página game.html muestra v3.188.SDK6 pero se trata de la última versión».
+
+**CAUSA RAÍZ — EL ARREGLO NUNCA LLEGÓ AL CASCO (y es fallo mío de proceso):**
+- r97 arregló el juego (crossVectors→_gVz) y verificó el bundle 15/0, PERO en el commit me olvidé de `git add public/sw.js`. El deploy ensambla desde `git archive HEAD` (solo TRACKED): producción recibió game.html 3.6.189 pero el **sw.js de 3.6.188** → el SW del casco nunca cambió de byte → nunca reinstaló → su caché nunca murió.
+- Además el SW servía game.html en **STALE-WHILE-REVALIDATE** (`return cacheada || fresca`): aunque la red respondiese, la 1.ª visita SIEMPRE muestra la copia cacheada. El dueño abre UNA vez para comprobar → ve la versión vieja → «no cambió nada». Ese patrón explica las 4 rondas de frustración.
+
+**FIX r98 (fiabilidad de actualización):**
+1. `public/sw.js`: game.html pasa a **RED-PRIMERO con límite 4 s** (`redPrimero`: fetch con `cache:'no-store'` — ni el HTTP cache de Pages col — y `Promise.race` con la caché como red de seguridad offline).
+2. El juego compara su sello con `PAGES-VERSION.txt` (network-first) al boot y cada 5 min: si hay otra versión, **BANNER ROJO** «NUEVA VERSIÓN X DISPONIBLE — TOCA AQUÍ PARA ACTUALIZAR» → SKIP_WAITING al SW + recarga.
+3. `public/actualizar.html` — **PÁGINA NUCLEAR**: desregistra todos los SW, borra todas las cachés y redirige a `game.html?r=…` (sin SW la carga cae SIEMPRE en red). El botón de escape para el casco, para siempre.
+4. `deploy_pages.py`: gate de **SELLOS** antes de publicar — si el sw.js/game.html ensamblados (de git HEAD) no llevan la versión detectada, o falta actualizar.html, ABORTA. El «me olvidé de committar» ya no puede llegar a producción.
+
+**Verificación:** P0 56/0 (2 agujas r98: banner + nuclear) · anti-bloqueo 14/0 (sello de versión ya DINÁMICO desde VERSION.json + redPrimero) · física 12 · c05 17 · ITTF 8 · CADENA 14 · brazos 22/12/16 · rallies 200 · **QA BUNDLE 3.6.190: 15/0** · en vivo sup1/escudo/imp2 (ver registro de esta ronda) · bump oficial 3.6.190 · kit release-v36190 (4 ZIPs).

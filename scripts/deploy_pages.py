@@ -54,6 +54,7 @@ SITE_PATHS = ['public/game.html', 'public/championships', 'public/assets',
               'public/telemetria.html',   # r87: PANEL de telemetría (URL estable en Pages)
               'public/vr_arm.glb',       # r93 · LOS BRAZOS del rival (GLB del dueño)
               'public/manifest.webmanifest', 'public/sw.js',   # r109 · M3 PWA
+              'public/actualizar.html',  # r98 · PÁGINA NUCLEAR (borra SW+cachés)
               'public/logo-192.png', 'public/logo-512.png', 'public/logo-maskable-512.png']
 
 # (original, sustituto, ocurrencias esperadas) — cualquier desvío ABORTA el despliegue
@@ -460,6 +461,32 @@ def main():
     assemble()
     version = detect_version()
     print(f'· versión detectada: {version}')
+    # r98 · VERIFICACIÓN DE SELLOS EN EL SITIO ENSAMBLADO: el sitio nace de
+    # `git archive HEAD` (solo TRACKED) — en r97 el bump selló public/sw.js
+    # en disco pero el commit SE OLVIDÓ DE ÉL y producción sirvió el sw.js
+    # de 3.6.188: el SW del dueño nunca cambió, su caché nunca murió y el
+    # juego viejo se sirvió 4 rondas («no cambió nada»). Si el sello del
+    # sw.js o del game.html ensamblados no coincide con la versión detec-
+    # tada, ABORTA antes de publicar nada.
+    sw_sitio = os.path.join(SITE, 'sw.js')
+    juego_sitio = os.path.join(SITE, 'game.html')
+    sello_sw = f'crazypp-v{version}'
+    with open(sw_sitio, encoding='utf-8') as f2:
+        sw_txt = f2.read()
+    with open(juego_sitio, encoding='utf-8') as f2:
+        juego_txt = f2.read()
+    if sello_sw not in sw_txt:
+        sys.exit(f'✗ SELLO DEL SW DESALINEADO: el sw.js ensamblado (de git HEAD) '
+                 f'no lleva {sello_sw!r} — ¿se olvidó `git add public/sw.js`? '
+                 f'ABORTA: no publico un sitio que no puede actualizarse.')
+    if version not in juego_txt:
+        sys.exit(f'✗ SELLO DEL JUEGO DESALINEADO: el game.html ensamblado '
+                 f'no lleva {version!r}.')
+    if not os.path.exists(os.path.join(SITE, 'actualizar.html')):
+        sys.exit('✗ FALTA public/actualizar.html en el sitio ensamblado '
+                 '(¿se olvidó en SITE_PATHS o en el commit?)')
+    print(f'· sellos verificados: sw.js {sello_sw} · game.html {version} · '
+          'actualizar.html presente')
     apply_rewrites()
     game_sha = sha256(os.path.join(SITE, 'game.html'))
     write_extras(version, head, game_sha)

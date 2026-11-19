@@ -19676,23 +19676,35 @@ export class PingPongGame {
       const esc = 0.27 / L1u;
       gltf.scene.scale.setScalar(esc);          // uniforme: huesos rígidos
       const L1 = L1u * esc, L2 = L2u * esc;
-      // curl de dedos (agarre shakehand): cada falange gira hacia el lado
-      // del meñique alrededor de la Z local del hueso (los dedos extienden
-      // en +X; el pulgar queda arriba en +Y)
+      // r95 · CURL DE DEDOS MEDIDO (video del dueño: «esos dedos están
+      // retorcidos»): r93 curlaba alrededor de la Z local — el plano LATE-
+      // RAL de la mano — y con el MISMO eje en el brazo espejado (al revés).
+      // Medido del GLB (scripts/r95_dedos_glb.mjs): los dedos EXTENDEN en
+      // +X local de la mano, la PALMA mira a −Z local y el pulgar vive en
+      // −Y (brazo A) o +Y (brazo espejado B). La flexión real es alrededor
+      // de +Y local (los tips van hacia −Z, la palma) y es RELATIVA al bind
+      // del hueso — el GLB trae flexiones pre-horneadas que r93 destruía.
       const dedos = [];
+      const _ejeFlex = new THREE.Vector3(0, 1, 0);   // flexión en marco mano
       for (const capa of capas) {
         const dc = [];
         capa.mano.children.forEach((f1) => {
-          let ant = f1, curvatura = 0;
-          while (ant && ant.children.length && ant.children[0].children !== undefined) {
+          const esPulgar = /thumb/i.test(f1.name);
+          const bindQ = [];
+          let ant = f1;
+          while (ant.children.length) {          // bind de cada falange ANTES de tocar
+            bindQ.push(ant.children[0].quaternion.clone());
+            ant = ant.children[0];
+          }
+          ant = f1;
+          for (let iF = 0; iF < bindQ.length; iF++) {
             const sig = ant.children[0];
-            curvatura += 0.5;
-            const q = new THREE.Quaternion().setFromAxisAngle(
-              new THREE.Vector3(0, 0, -1), Math.min(curvatura, 1.15));
-            sig.quaternion.copy(q);
+            const curva = esPulgar ? 0.32 + iF * 0.22   // pulgar: presiona el mango
+              : Math.min(0.62 + iF * 0.72, 1.9);        // dedos: envuelven (≈109°)
+            const q = new THREE.Quaternion().setFromAxisAngle(_ejeFlex, curva);
+            sig.quaternion.copy(q).multiply(bindQ[iF]); // RELATIVA al bind
             dc.push(sig);
             ant = sig;
-            if (dc.length > 14) break;
           }
         });
         dedos.push(dc);
@@ -19726,6 +19738,9 @@ export class PingPongGame {
           const W = _alRig(c.mano.getWorldPosition(new THREE.Vector3()));
           const bra = { lado: c.lado, bra: c.bra, ant: c.ant, mano: c.mano,
             dedos: dedos[i],
+            pulgarY: (c.lado === 'B') ? 1 : -1,   // r95 · lado del pulgar en el
+              // marco mano, medido del GLB: A −Y · B espejado +Y — el agarre
+              // cruza la palma con hand-Y = pulgarY·ejeHoja (pulgar a la hoja)
             Srest: S.clone(), axisRestU: E.clone().sub(S).normalize(),
             axisRestL: W.clone().sub(E).normalize(),
             restQbra: _qlRig(c.bra.getWorldQuaternion(new THREE.Quaternion())),
@@ -19768,10 +19783,28 @@ export class PingPongGame {
     const mesaY = DIMS.tableTopY + 0.02;
     const ch = ai.chain;
     const golpeando = !!(ch && (ch.phase === 'strike' || ch.phase === 'follow'));
+    // r95 · zona dulce SOLO en strike (video del dueño: «los brazos tiemblan
+    // como una descarga eléctrica»): el follow perseguía con el nudge a una
+    // bola que ya vuela a 6-30 m/s — látigo puro. El follow conserva filtros
+    // intermedios; el resto, reposo suave.
+    const enStrike = !!(ch && ch.phase === 'strike');
     // — cuerpo: pecho adulto + respiración sutil (vaivén 5 mm)
     R._t += dt;
     _gA.set(ai.pos.x, Math.max(ai.pos.y + 0.33, 1.325) + 0.005 * Math.sin(R._t * 2.1),
       ai.pos.z);
+    // r95 · EL CUERPO ES UNA PERSONA (video del dueño: brazos flotando SOBRE
+    // la mesa y hasta en el sofá): el pecho se queda ~0,42 m DETRÁS del borde
+    // de la mesa (de pie, como un jugador real) y no sale de la pista — el
+    // alcance largo sobre la mesa lo hace el BRAZO (clampado a su anillo),
+    // no el cuerpo flotando.
+    const zCuerpo = DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.42);
+    if (s < 0 ? _gA.z > zCuerpo : _gA.z < zCuerpo) _gA.z = zCuerpo;
+    if (_gA.x > 1.15) _gA.x = 1.15; else if (_gA.x < -1.15) _gA.x = -1.15;
+    // r95 · el cuerpo se ORIENTA al juego (un jugador gira el tronco a la
+    // bola): yaw suave con límite ±0,5 rad y_follow perezoso (6 Hz)
+    const yawDeseado = THREE.MathUtils.clamp((this.ball.pos.x - _gA.x) * 0.22,
+      -0.5, 0.5);
+    R.yaw += (yawDeseado - R.yaw) * Math.min(1, dt * 6);
     _gQa.setFromAxisAngle(_gUp, R.yaw);
     R.root.position.copy(_gA).sub(_gB.copy(R.rootToBody).applyQuaternion(_gQa));
     R.root.quaternion.copy(_gQa);
@@ -19792,8 +19825,8 @@ export class PingPongGame {
     // — agarre POR EL MANDO: mando = centro de hoja − continuación·D
     _gC.copy(this.aiPaddleMesh.position);      // centro deseado (plan r92)
     _gE.copy(_gC).addScaledVector(_gD, -D_GRIP);
-    // — zona dulce: en el golpeo el CENTRO de la hoja debe cubrir la bola
-    if (golpeando)
+    // — zona dulce: SOLO en strike el CENTRO de la hoja cubre la bola (r95)
+    if (enStrike)
       _gE.copy(zonaDulceNudge(_gE, this.ball.pos, _gC, DIMS.bladeRadius, _gF));
     // — anillo de alcance RÍGIDO alrededor del hombro
     _gF.copy(_gE).sub(_gS);
@@ -19802,8 +19835,29 @@ export class PingPongGame {
     if (dG > maxR) _gE.copy(_gS).addScaledVector(_gF, maxR / dG);
     else if (dG < minR) _gE.copy(_gS).addScaledVector(_gF.divideScalar(dG), minR);
     if (_gE.y < mesaY) _gE.y = mesaY;          // el mando JAMÁS baja de la mesa
-    // — One Euro del agarre (nítido en golpeo, suave en espera)
-    bp.fG.fcMin = golpeando ? 6.5 : 1.2;
+    // r95 · ENVOLTURA NATURAL del alcance (video del dueño: brazos-antena
+    // por encima de la cabeza): el mando no sube más de ~55° sobre el
+    // horizonte del hombro (bola alta: 72°) y, con la mano alta, el brazo
+    // NO se estira a tope (radio ≤ 88 % del anillo → codo doblado, como se
+    // levanta el brazo una persona de verdad).
+    {
+      const dyE = _gE.y - _gS.y;
+      if (dyE > 0) {
+        const hE = Math.sqrt((_gE.x - _gS.x) * (_gE.x - _gS.x) +
+          (_gE.z - _gS.z) * (_gE.z - _gS.z));
+        const bolaAlta = this.ball.pos.y > DIMS.tableTopY + 0.62;
+        const maxDy = Math.tan(bolaAlta ? 1.25 : 0.96) * Math.max(hE, 0.12);
+        if (dyE > maxDy) _gE.y = _gS.y + maxDy;
+        if (dyE > 0.72) {                        // mano claramente en alto
+          _gF.copy(_gE).sub(_gS);
+          const rE = Math.max(_gF.length(), 1e-6);
+          const rMax2 = 0.88 * (R.L1 + R.L2);
+          if (rE > rMax2) _gE.copy(_gS).addScaledVector(_gF, rMax2 / rE);
+        }
+      }
+    }
+    // — One Euro del agarre (nítido en strike, medio en follow, suave en espera)
+    bp.fG.fcMin = enStrike ? 6.5 : (golpeando ? 3.0 : 1.1);
     _gE.copy(bp.fG.filtrar(_gE, dt));
     // — polo del codo con HISTÉRESIS (adiós a los volteos de IK: el temblor
     //   caótico del informe venía también de estos saltos de solución)
@@ -19823,9 +19877,9 @@ export class PingPongGame {
     }
     if (_gA.y < mesaY) _gA.y = mesaY;          // piso duro de la MUÑECA
     // — huesos: quat mundo deseado (continuación del eje) → local
-    bp.fqU.fcMin = golpeando ? 6.5 : 2.2;
-    bp.fqL.fcMin = golpeando ? 6.5 : 2.2;
-    bp.fqH.fcMin = golpeando ? 7 : 2.6;
+    bp.fqU.fcMin = enStrike ? 6.5 : (golpeando ? 3.0 : 1.5);
+    bp.fqL.fcMin = enStrike ? 6.5 : (golpeando ? 3.0 : 1.5);
+    bp.fqH.fcMin = enStrike ? 7 : (golpeando ? 3.4 : 1.8);
     _gF.copy(_gH).sub(_gS).normalize();   // d1: eje del brazo (marco rig)
     _gQb.setFromUnitVectors(bp.axisRestU, _gF).multiply(bp.restQbra);
     bp.fqU.filtrar(_gQb, dt);
@@ -19840,32 +19894,34 @@ export class PingPongGame {
     _gQc.copy(bp.fqL.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bp.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
     bp.ant.updateWorldMatrix(false, false);
-    // mano: continúa el antebrazo + ROLLO del agarre shakehand alrededor
-    // del eje hoja (el pulgar cabalga el canto, la palma envuelve el mando)
-    // r94 · rollo en MARCO RIG (el rumbo del antebrazo vive ahí) y la quat
-    // filtrada en rig-local sobrevive al recentrado sin basura de arranque
-    _gQb.copy(bp.fqL.prev);
-    _gQe.setFromAxisAngle(_gF, -0.9 * s);
-    _gQb.multiply(_gQe);
+    // mano: r95 · MUÑECA ANATÓMICA (medida del GLB, scripts/r95_dedos_glb.mjs):
+    // el mango CRUZA la palma — hand-Y = pulgarY·ejeHoja (el pulgar cabalga
+    // hacia la hoja), hand-X ≈ antebrazo ortogonalizado (dedos a lo largo
+    // del brazo), hand-Z = X×Y (la palma es −Z, ⟂ al mango). Los dedos con
+    // el curl r95 (+Y local) cierran envolviendo el mango. El r92-r93 for-
+    // zaba hoja ∥ antebrazo («pala chupachups») y un rollo fijo −0,9·s que
+    // desviaba la palma del mango.
+    _gHandY.copy(_gD).multiplyScalar(bp.pulgarY);
+    _gHandZ.copy(_gF);                             // candidato a hand-X
+    _gHandZ.addScaledVector(_gHandY, -_gHandZ.dot(_gHandY));
+    if (_gHandZ.lengthSq() < 1e-6) _gHandZ.set(0, 0, 1); else _gHandZ.normalize();
+    _gQe.crossVectors(_gHandZ, _gHandY).normalize();   // hand-Z (palma = −Z)
+    _gMx.makeBasis(_gHandZ, _gHandY, _gQe);
+    _gQb.setFromRotationMatrix(_gMx);
     bp.fqH.filtrar(_gQb, dt);
     _gQc.copy(bp.fqH.prev).premultiply(_gRigQ);
     bp.mano.parent.getWorldQuaternion(_gQd);
     bp.mano.quaternion.copy(_gQd).invert().multiply(_gQc);
     bp.mano.updateWorldMatrix(false, false);
-    // — pala: centro = muñeca rígida + continuación·D (agarre por mando) y
-    //   la continuación r92 sobre la cara del plan (el eje hoja = antebrazo)
+    // — pala: r95 · EL MANGO VIVE EN LA MANO. La pose del PLAN se conserva
+    //   (caras reales: topspin cierra, cortada abre, follow cruza) y sólo se
+    //   re-ancla el centro a la MUÑECA FINAL por el eje hoja: centro =
+    //   muñeca + ejeHoja·0,1303. El r92-r93 giraba la hoja para hacerla ∥ al
+    //   antebrazo (pala chupachups, cara plana imposible) y además recoloca-
+    //   ba el centro por el eje VIEJO: el mango quedaba flotando junto a la
+    //   mano, no en ella — la queja del vídeo «ni siquiera está agarrando
+    //   bien la pala».
     this.aiPaddleMesh.position.copy(_gA).addScaledVector(_gD, D_GRIP);
-    _armA.set(0, 1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
-    const cosA = THREE.MathUtils.clamp(_armA.dot(_gF), -1, 1);
-    _armBx.crossVectors(_armA, _gF);
-    const sinA = _armBx.length();
-    if (sinA > 1e-4 && Math.abs(cosA) < 0.99999) {
-      _armQ.setFromAxisAngle(_armBx.divideScalar(sinA), Math.acos(cosA));
-      this.aiPaddleMesh.quaternion.premultiply(_armQ);
-    } else if (sinA <= 1e-4 && cosA < 0) {
-      _armQ.setFromAxisAngle(_armX, Math.PI);
-      this.aiPaddleMesh.quaternion.premultiply(_armQ);
-    }
     this.clampPaddlePose(this.aiPaddleMesh.position, this.aiPaddleMesh.quaternion, false);
     // — brazo IZQUIERDO: sostiene la bola en el saque, contrapeso en rally
     _gC.set(_gA.x - s * 0.20, _gA.y - 0.25 + 0.04 * Math.sin(R._t * 2.3),
@@ -19873,7 +19929,10 @@ export class PingPongGame {
     const serviendo = !this.calib && this.rules.state === 'serve' &&
       this.rules.server === 'ai';
     if (serviendo) {
-      if (!this.aiToss) _gC.copy(this.ball.pos);          // mano a la bola
+      if (!this.aiToss) {
+        _gC.copy(this.ball.pos);
+        _gC.y -= 0.045;                         // r95 · la mano DEBAJO de la
+      }                                         //   bola: la bola reposa SOBRE la palma
       else _gC.set(this.ball.pos.x, Math.min(this.ball.pos.y, _gB.y + 0.45),
         this.ball.pos.z);                                 // acompaña el bote
     }
@@ -19887,7 +19946,25 @@ export class PingPongGame {
     else if (dGL < minR) _gE.multiplyScalar(minR / dGL);
     _gE.add(_gS);
     if (_gE.y < mesaY) _gE.y = mesaY;
-    bl.fG.fcMin = serviendo ? 5 : 1.2;
+    // r95 · envoltura natural TAMBIÉN en el brazo libre (el saque alto deja
+    // subir hasta 72° con codo doblado — el resto, ≤55°)
+    {
+      const dyL = _gE.y - _gS.y;
+      if (dyL > 0) {
+        const hL = Math.sqrt((_gE.x - _gS.x) * (_gE.x - _gS.x) +
+          (_gE.z - _gS.z) * (_gE.z - _gS.z));
+        const bolaAltaL = this.ball.pos.y > DIMS.tableTopY + 0.62;
+        const maxDyL = Math.tan(bolaAltaL ? 1.25 : 0.96) * Math.max(hL, 0.12);
+        if (dyL > maxDyL) _gE.y = _gS.y + maxDyL;
+        if (dyL > 0.72) {
+          _gF.copy(_gE).sub(_gS);
+          const rL = Math.max(_gF.length(), 1e-6);
+          const rMaxL = 0.88 * (R.L1 + R.L2);
+          if (rL > rMaxL) _gE.copy(_gS).addScaledVector(_gF, rMaxL / rL);
+        }
+      }
+    }
+    bl.fG.fcMin = serviendo ? 3.5 : 1.0;
     _gE.copy(bl.fG.filtrar(_gE, dt));
     _gG.set(0, -1, 0).addScaledVector(_gNeg, s * -0.5);
     solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
@@ -19909,7 +19986,9 @@ export class PingPongGame {
     bl.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
     bl.ant.updateWorldMatrix(false, false);
     _gQb.copy(bl.fqL.prev);                       // r94 · rollo en marco rig
-    _gQe.setFromAxisAngle(_gF, 0.9 * s);
+    // r95 · rollo NATURAL: el bind del GLB trae la mano casi alineada con
+    // el antebrazo (rel. Z ±0,23 medido) — el 0,9 de r93-r94 la retorcía
+    _gQe.setFromAxisAngle(_gF, 0.3 * s);
     _gQb.multiply(_gQe);
     bl.fqH.filtrar(_gQb, dt);
     _gQc.copy(bl.fqH.prev).premultiply(_gRigQ);
@@ -19959,6 +20038,25 @@ export class PingPongGame {
       }
       return poseQ;
     };
+
+    // r95 · CODA DE CADENA (video del dueño: tirones al acabar cada golpe —
+    // «parece que están recibiendo una descarga eléctrica»): al morir el
+    // plan, la espera parte del ÚLTIMO cur del plan y funde a reposo en
+    // 0,3 s — nunca un teleport de 24 cm. Cero allocs por frame (vectores
+    // persistentes; _codaPala nace una vez en la vida del juego).
+    if (who === 'ai') {
+      const cadenaViva = !!(ai.chain && ai.chain.phase);
+      if (cadenaViva) {
+        if (!this._ppUltCur) this._ppUltCur = new THREE.Vector3();
+        this._ppUltCur.copy(ai.chain.cur || mesh.position);
+        if (this._codaPala) this._codaPala.t = 0;
+      } else if (this._ppChainViva && this._ppUltCur) {
+        if (!this._codaPala) this._codaPala = { p: new THREE.Vector3(), t: 0 };
+        this._codaPala.p.copy(this._ppUltCur);
+        this._codaPala.t = 0.3;
+      }
+      this._ppChainViva = cadenaViva;
+    }
 
     if (serving) {
       if (toss) {
@@ -20156,6 +20254,12 @@ export class PingPongGame {
         Math.max(0.42, ai.pos.y + ai.prep.y + bob + celebBob),
         ai.pos.z + ai.prep.z,
       );
+      // r95 · CODA: funde desde el último cur del plan moribundo — sin tirón
+      if (who === 'ai' && this._codaPala && this._codaPala.t > 0) {
+        this._codaPala.t -= dt;
+        mesh.position.lerp(this._codaPala.p,
+          THREE.MathUtils.clamp(this._codaPala.t / 0.3, 0, 1));
+      }
       // espera (r90 · spec del dueño): mango HORIZONTAL cruzado hacia el lado
       // de la bola (nunca un muro vertical ni una cuchara plana) y cara en el
       // plano vertical que mira a la red — superficie ⟂ mesa; algo cerrada si
@@ -20802,6 +20906,9 @@ const _gQe = new THREE.Quaternion();
 const _gS = new THREE.Vector3();
 const _gMx = new THREE.Matrix4(); const _gAx = new THREE.Vector3(1, 0, 0);
 const _gUp = new THREE.Vector3(0, 1, 0); const _gNeg = new THREE.Vector3(-1, 0, 0);
+// r95 · scratch de la muñeca anatómica (makeBasis) — cero allocs por frame
+// (_gMx ya existía en este módulo: se reutiliza)
+const _gHandY = new THREE.Vector3(); const _gHandZ = new THREE.Vector3();
 /* r94 · marco del RIG por frame: el mundo del juego (ai.pos, pala, bola,
  * DIMS) vive en RIG-LOCAL pero el rig puede estar MOVIDO (hall, menú, onda)
  * o GIRADO (recentrado XR) — los huesos se leen en mundo y las quats dese-

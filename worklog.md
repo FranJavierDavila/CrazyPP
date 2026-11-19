@@ -7216,3 +7216,29 @@ Stage Summary:
 - Falso susto del «placeholder vX.Y.Z servido»: era el comentario documental de sw.js línea 7; el sello real (línea 24) estaba bien.
 
 **Para el dueño:** cerrar la ventana del juego por completo en el casco y volver a abrirla — ya con 3.6.183 el SW reinstala y purga solo; el bloqueo al dar a JUGAR queda resuelto (flujo VR completo verificado en navegador: 0 errores de escudo, cadena en fase strike, brazo visible). A partir de ahora, cualquier desajuste de build dispara el aviso en la sala (selfcheck compara versiones distintas de verdad).
+
+## Ronda 92 (r92 · «la pala es la continuación del brazo» + arco real del golpe) · V3.6.184-SDK6 — 2026-11-19
+
+**El informe del dueño:** la pala está mal agarrada — «la orientación de la pala sea la continuación del brazo: un eje que recorre el brazo atravesaría la pala desde el mango hasta el extremo, siendo este su eje longitudinal». Y el golpeo «es como que da un empujoncito hacia adelante… el brazo describe un movimiento de golpeo curvo que culmina en el impacto y se prolonga después de este un tramo para dar continuidad natural al empuje pero con la continuidad del arco previo, no como ahora que posiciona la pala y la empuja de forma lineal». Referencia: video Gatien (dvzr_F49BM4, Campeón del Mundo 1993) + biomecánica del topspin (OpenSim Healthcare 2023: ciclo de elite 1,45 s, pico EN el contacto, el tronco inicia el brazo).
+
+**Causas exactas cazadas en el código:**
+1. El backswing terminaba en **v0 = 0** — la pala SE PARABA en el punto de carga y luego empujaba (el quíntico aceleraba desde cero).
+2. B→C→F eran **COLINEALES** (B = C − dir·dbs, F = C + dir·dft): línea recta — el «empujón» visible.
+3. La pala se orientaba por fórmulas propias (bladeDir horizontal cruzado) INDEPENDIENTES del brazo — el desalineo del agarre.
+
+**FIX 1 — LA PALA ES LA CONTINUACIÓN DEL BRAZO (c12 updateAIArm):** tras resolver el IK, giro MÍNIMO que lleva el eje mango→punta (+Y local de la pala) EXACTO al antebrazo resuelto (codo→muñeca). La cara viaja con el giro conservando la firma de cierre/topspin alrededor del eje; el golpe físico sale del plan (ball.vel ← aiHit) y la cara es visual → cero impacto en la física (verificado: el sweep del golpe no lee la cara). El wrist offset del mango se auto-consistente con el eje alineado (geometría anatómica estable). Guard antiparalelo (no NaN). Scratch _armBx/_armQ FUERA del bloque DEPS (lección r91).
+
+**FIX 2 — ARCO REAL DEL GOLPE (c06, planCadena + _reanclaCadena + cadenaContacto):**
+- La CARGA se abre al LADO del golpe: B.x += fh·sign·dbs·0.85 (el backswing del drive va atrás y al lado derecho).
+- El ACOMPAÑAMIENTO CRUZA al lado contrario: F.x −= fh·sign·dft·0.62 (el loop termina arriba-cruzado, «hacia la frente»).
+- **Tangente del arco EN el contacto** (bisectriz de las cuerdas B→C y C→F — criterio de paso-suave de splines): la velocidad pico (vPeak) atraviesa C DENTRO del arco. La bola sale por su plan (aiHit); la pala golpea en arco — el empuje continúa el arco previo, como pide el dueño.
+- El brazo NO se para en la carga: v1_back = 0,32·vPico hacia C — el quíntico encadena carga→golpeo con el brazo ya barriendo.
+- Arco medido: 9-19° entre cuerdas (drive) — curvatura visible sin sacar la pala del corredor de contacto.
+
+**Batería TODO VERDE:** P0 37/37 (2 agujas r92 nuevas: el bundle lleva el arco y la alineación) · CADENA 14/14 (3 checks nuevos: arco real con lado+cruce y no-colinealidad · brazo sin parada en la carga · tangente EXACTA en C con dot 1,00000000 · impacto con |v1| del golpe y dirección tangente · contrato de fuente del bloque) · red 60 · c04 12 · c05 17 · ITTF 8 · rallies 200 invariantes íntegras · sup1 151 (agujas de versión actualizadas de la era 3.6.119) · escudo 54 (era 3.6.120) · imp2 66 (era 3.6.120) · qa_descargas OMITIDA con causa documentada (next dev muere tras compilar 4,5 min en frío tras el reciclaje del sandbox; el hub solo cambió sellos de versión — 6 menciones 3.6.184 verificadas por la guarda de build_zip EXIT=0 + smoke del deploy 33 peticiones 0 pageerrors).
+
+**EN PRODUCCIÓN 2026-11-19:** Pages sirviendo c70bc32 · version=3.6.184-SDK6 · sello SW crazypp-v3.6.184-SDK6 (reinstalación + purga garantizadas en el casco) · los bytes servidos llevan el arco y «LA PALA ES LA CONTINUACIÓN DEL BRAZO» · release GitHub v3.6.184-SDK6 con 4 ZIPs · respaldo anti-rollback al día.
+
+**Housekeeping:** guard del kit v36184 corregido (grep del hub a 3.6.184 — el clon heredaba el grep de 3.6.183 sin sufijo) · .next y next dev reiniciados limpios tras el reciclaje.
+
+**En cola (r93):** pala-sim del IA (el contacto contra la superficie REAL del disco con su normal, no contra un punto), micro-solver §6 y Kalman §7.2 del plan de física — con su propio arnés.

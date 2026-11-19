@@ -706,9 +706,25 @@ export class PingPongGame {
     for (const m of this.markers) this.rig.add(m);
 
     // Pala de la IA y del jugador demo: modelo GLB con la hoja en el origen.
-    // Sin cuerpos: solo la pala flotante del rival (más limpio y no estorba).
+    // r91 · CADENA CINEMÁTICA: el rival ya NO es solo una pala flotante —
+    // un brazo sobrio (hombro→brazo→antebrazo→muñeca, cápsulas carbón) la
+    // sujeta; la IK lo articula cada frame desde la posición REAL de la
+    // pala (cadena, saque o espera). El demo sigue sin cuerpo.
     this.aiPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.aiPaddleMesh);
+    {
+      const _am = new THREE.MeshStandardMaterial({ color: 0x2b2e34, roughness: 0.55, metalness: 0.18 });
+      const _arm = new THREE.Group();
+      const hombro = new THREE.Mesh(new THREE.SphereGeometry(0.048, 14, 10), _am);
+      const brazo = new THREE.Mesh(new THREE.CapsuleGeometry(0.030, 1, 5, 10), _am);
+      const antebrazo = new THREE.Mesh(new THREE.CapsuleGeometry(0.025, 1, 5, 10), _am);
+      const muneca = new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 9), _am);
+      _arm.add(hombro, brazo, antebrazo, muneca);
+      _arm.visible = false;
+      _arm.userData = { hombro, brazo, antebrazo, muneca };
+      this.aiArm = _arm;
+      this.rig.add(_arm);
+    }
 
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
@@ -18838,6 +18854,13 @@ export class PingPongGame {
     } else {
       // v2.40: congelado — la pala IA conserva su última pose
       if (!frozen) this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
+      // r91 · el brazo visible va con la pala del rival local (online: la
+      // pala remota llega por red y no hay cuerpo que pintar)
+      if (this.aiArm) {
+        const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;
+        if (this.aiArm.visible !== armVis) this.aiArm.visible = armVis;
+        if (armVis) this.updateAIArm(this.ai);
+      }
     }
     // M7c (r119) · DOBLES 2v2: poses y visibilidad de las DOS palas extra.
     // who='partner'/'ai2' jamás coincide con rules.server → nunca entran
@@ -19523,6 +19546,43 @@ export class PingPongGame {
    *    golpes de izquierda y de derecha creíbles, hoja vertical u horizontal
    *    según el golpe.
    */
+  /** r91 · BRAZO VISIBLE del rival: articulaciones hombro→codo→muñeca
+   *  resueltas por IK analítica desde el hombro anclado al cuerpo del rival,
+   *  SIEMPRE a partir de la posición real de la pala (cadena, saque o espera)
+   *  — el antebrazo nunca se despega del mango. Cápsulas orientadas entre
+   *  articulaciones; polo del codo anatómico (cae en drive, sube en revés). */
+  updateAIArm(ai) {
+    if (!this.aiArm || !ai || !this.aiPaddleMesh) return;
+    const u = this.aiArm.userData;
+    const s = ai.sign || -1;
+    const fh = (ai.chain && ai.chain.fh) || ai.fhSide || 1;
+    // hombro: detrás-bajo de la pala, al lado del brazo (sigue al cuerpo)
+    _armS.copy(ai.pos);
+    _armS.x += fh * s * 0.09;
+    _armS.y += 0.16;
+    _armS.z += s * 0.17;
+    // muñeca: extremo del mango (10,5 cm desde el centro de la hoja por la
+    // dirección REAL del mango en el mundo)
+    _armW.copy(this.aiPaddleMesh.position);
+    _armA.set(0, -1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
+    _armW.addScaledVector(_armA, 0.105);
+    // polo del codo: por debajo-detrás en drive, alzado en revés (±jitter vivo)
+    _armP.set(0, -1, 0).addScaledVector(_armX, fh * s * 0.8);
+    const ik = solveArmIK(_armS, _armW, 0.26, 0.24, _armP, _armE);
+    u.hombro.position.copy(_armS);
+    _armD.copy(_armE).sub(_armS);
+    const l1 = Math.max(0.05, _armD.length());
+    u.brazo.position.copy(_armS).addScaledVector(_armD, 0.5);
+    u.brazo.quaternion.setFromUnitVectors(_armY, _armD.normalize());
+    u.brazo.scale.set(1, l1, 1);
+    _armD.copy(_armW).sub(_armE);
+    const l2 = Math.max(0.05, _armD.length());
+    u.antebrazo.position.copy(_armE).addScaledVector(_armD, 0.5);
+    u.antebrazo.quaternion.setFromUnitVectors(_armY, _armD.normalize());
+    u.antebrazo.scale.set(1, l2, 1);
+    u.muneca.position.copy(_armW);
+  }
+
   updateAIPaddlePose(mesh, ai, who, dt) {
     const s = ai.sign;                       // -1 = CPU, +1 = demo
     AIM_FWD.set(0, 0, s < 0 ? 1 : -1);       // hacia el campo contrario
@@ -19631,6 +19691,63 @@ export class PingPongGame {
       AIM_FACE.applyQuaternion(closQ);
       bladePose(AIM_BLADE, AIM_FACE, fhServe * 0.18, 0);
       mesh.quaternion.copy(poseQ);
+      this.clampPaddlePose(mesh.position, mesh.quaternion, false);
+      return;
+    }
+
+    // r91 · CADENA CINEMÁTICA (solo el rival real): la pala es el extremo
+    // del plan de golpe — fases reacción→carga→golpeo→acompañamiento→
+    // recuperación con trayectorias de mínimo jerk (c06). La pose sigue
+    // la spec del dueño (r90: cara ⟂ mesa, mango ∥ mesa, cierre sobre el
+    // eje del mango) y ai.chain.vel lleva la velocidad REAL de la pala.
+    if (who === 'ai' && ai.chain && ai.chain.phase) {
+      const ch = ai.chain;
+      mesh.position.copy(ch.cur);
+      const pF = ch.u || 0;
+      const Kc = SWING_POSE[ch.kind] || SWING_POSE.drive;
+      const fhC = ch.fh || 1;
+      if (ch.phase === 'react' || ch.phase === 'back') {
+        // CARGA: eje horizontal cruzado al lado del golpe, cara que se
+        // ABRE al armar (el jugador suaviza la cara para acelerar después)
+        AIM_BLADE.set(0, 0.22, 0).addScaledVector(AIM_RIGHT, fhC * 0.9);
+        AIM_BLADE.normalize();
+        AIM_FACE.copy(AIM_FWD);
+        closAx.copy(AIM_BLADE); closX.crossVectors(closAx, AIM_FACE);
+        if (closX.y < 0) closAx.negate();
+        closQ.setFromAxisAngle(closAx, 0.16 - 0.12 * pF);
+        AIM_FACE.applyQuaternion(closQ);
+        bladePose(AIM_BLADE, AIM_FACE, fhC * 0.2, 0);
+      } else if (ch.phase === 'strike' || ch.phase === 'follow') {
+        // GOLPEO/ACOMPAÑAMIENTO: las fórmulas del golpeo r90 con la firma
+        // de cada golpe y el cierre por efecto sobre el eje del mango
+        AIM_BLADE.set(0, 0.25, 0)
+          .addScaledVector(AIM_RIGHT, fhC * (Kc.side0 * (1 - pF) - Kc.side1 * pF) * 0.95);
+        AIM_BLADE.normalize();
+        AIM_FACE.copy(ch.vdir || AIM_FWD);
+        if (AIM_FACE.lengthSq() < 1e-8) AIM_FACE.copy(AIM_FWD);
+        AIM_FACE.y *= 0.35;
+        AIM_FACE.normalize();
+        closAx.copy(AIM_BLADE); closX.crossVectors(closAx, AIM_FACE);
+        if (closX.y < 0) closAx.negate();
+        closQ.setFromAxisAngle(closAx, -(Kc.clos0 + Kc.clos1 * pF));
+        AIM_FACE.applyQuaternion(closQ);
+        bladePose(AIM_BLADE, AIM_FACE,
+          (ch.roll || 0) * (0.35 + 0.85 * pF) + fhC * (0.24 - 0.46 * pF), 0);
+      } else {
+        // RECUPERACIÓN: pose de espera (r90) mientras la pala vuelve al cuerpo
+        const sideR = THREE.MathUtils.clamp((this.ball.pos.x - mesh.position.x) * s * 2.6, -1, 1);
+        AIM_BLADE.set(0, 0.22, 0).addScaledVector(AIM_RIGHT, 0.8 + sideR * 0.25);
+        AIM_BLADE.normalize();
+        AIM_FACE.copy(AIM_FWD);
+        AIM_FACE.x += (this.ball.pos.x - mesh.position.x) * 0.5;
+        AIM_FACE.normalize();
+        closAx.copy(AIM_BLADE); closX.crossVectors(closAx, AIM_FACE);
+        if (closX.y < 0) closAx.negate();
+        closQ.setFromAxisAngle(closAx, this.ball.pos.y > 1.25 ? -0.10 : 0.12);
+        AIM_FACE.applyQuaternion(closQ);
+        bladePose(AIM_BLADE, AIM_FACE, 0, 0);
+      }
+      mesh.quaternion.slerp(poseQ, Math.min(1, dt * 18));
       this.clampPaddlePose(mesh.position, mesh.quaternion, false);
       return;
     }
@@ -20311,7 +20428,12 @@ import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFIC
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
-import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
+import { ACHIEVEMENTS, GameStats, OpponentAI, Rules, solveArmIK } from './c06_logros_stats_ia_rival.js';
+// r91 · arañas del brazo visible del rival (cero allocs por frame)
+const _armS = new THREE.Vector3(); const _armW = new THREE.Vector3();
+const _armE = new THREE.Vector3(); const _armP = new THREE.Vector3();
+const _armD = new THREE.Vector3(); const _armA = new THREE.Vector3();
+const _armY = new THREE.Vector3(0, 1, 0); const _armX = new THREE.Vector3(1, 0, 0);
 import { applyBallSkin, createBall, createBlobShadow, createChampDecor, createChispas, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
 import { HALL, applyHallVariant, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, drawArcanoPanel, drawArcanoSalir, drawHallGloria, drawHallSign, montarArcano, updateArcanoFx, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';

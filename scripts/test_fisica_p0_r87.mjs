@@ -185,7 +185,7 @@ const C = DIMS.tableCenterZ;
     (c12s.match(/DIMS.tableTopY - DIMS.tableThickness/g) || []).length >= 2 &&
     c12s.includes('this.ball.pos.y = DIMS.tableTopY + DIMS.ballRadius;'));
   aguja('r90 · cara ⟂ mesa y mango ∥ mesa (eje horizontal cruzado, cierre sobre el eje)',
-    (c12s.match(/AIM_BLADE\.set\(0, 0\.22, 0\)/g) || []).length === 2 &&
+    (c12s.match(/AIM_BLADE\.set\(0, 0\.22, 0\)/g) || []).length >= 2 &&
     c12s.includes('AIM_BLADE.set(0, 0.25, 0)') &&
     (c12s.match(/closQ\.setFromAxisAngle/g) || []).length >= 3 &&
     c12s.includes('AIM_FACE.y *= 0.35;'));
@@ -193,9 +193,43 @@ const C = DIMS.tableCenterZ;
     c02s.includes('airDragK: 0.1267') && c02s.includes('tableRestitution: 0.935'));
 }
 
+/* — r91 · cadena cinemática del rival (golpe humano creíble) ——————————— */
+{
+  aguja('r91 · cadena en el cerebro (quíntico + IK + tabla por golpe exportados)',
+    c06s.includes('export const CADENA_GOLPE') &&
+    c06s.includes('export function mjQuintic') &&
+    c06s.includes('export function mjQuinticVel') &&
+    c06s.includes('export function solveArmIK') &&
+    c06s.includes('export function adivinaKind'));
+  aguja('r91 · plan de fases vivo (reacción→carga→golpeo→acompañamiento→recuperación)',
+    c06s.includes('planCadena(contact, tBall, kind, fh)') &&
+    c06s.includes('cadenaContacto(cx, cy, cz, v)') &&
+    c06s.includes('updateCadena(dt)') &&
+    c06s.includes("phase: 'react'") && c06s.includes("phase: 'strike'") &&
+    c06s.includes("phase: 'follow'") && c06s.includes("phase: 'recover'"));
+  aguja('r91 · anclajes: plan con la predicción, impacto real afina, swing solo sin plan',
+    c06s.includes('this.predictT = strike.t;') &&
+    c06s.includes('this.cadenaContacto(cx, cy, cz, v);') &&
+    c06s.includes("if (!this.chain || this.chain.phase === 'follow' ||") &&
+    c06s.includes('this.updateCadena(dt);'));
+  aguja('r91 · tiempo LOCAL de segmento (el global nunca agota el plan en cascada)',
+    c06s.includes('ch.tSeg = (ch.tSeg || 0) + dt;') &&
+    (c06s.match(/ch\.tSeg = 0/g) || []).length >= 2);
+  aguja('r91 · c12 consume la cadena (rama de pose por fases del golpe)',
+    c12s.includes("if (who === 'ai' && ai.chain && ai.chain.phase)") &&
+    c12s.includes('mesh.position.copy(ch.cur);') &&
+    c12s.includes('AIM_FACE.copy(ch.vdir || AIM_FWD);'));
+  aguja('r91 · brazo visible (hombro→codo→muñeca, IK desde la pala REAL)',
+    c12s.includes('updateAIArm(ai) {') &&
+    c12s.includes('solveArmIK(_armS, _armW, 0.26, 0.24, _armP, _armE)') &&
+    c12s.includes('new THREE.CapsuleGeometry(0.030, 1, 5, 10)') &&
+    c12s.includes('_armW.addScaledVector(_armA, 0.105);') &&
+    c12s.includes('const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;'));
+}
+
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.181-SDK6', c00s.includes('3.6.181-SDK6'));
+  aguja('versión · c00 sella 3.6.182-SDK6', c00s.includes('3.6.182-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
 }

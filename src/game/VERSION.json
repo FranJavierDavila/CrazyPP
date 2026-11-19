@@ -1,10 +1,10 @@
 {
-  "version": "3.6.181-SDK6",
+  "version": "3.6.182-SDK6",
   "fase": 182,
   "faseNombre": "FÍSICA P0: CONTACTO Y SAQUE",
   "sdk": "1.6.0",
   "fecha": "2026-11-19",
-  "hub": "v36181-sdk6",
+  "hub": "v36182-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r86",
-  "tamano": 12325366,
-  "golden": "a3d5574dbf861a2e203eac2a0f89a217b1672cd64e23f4fe282844d7dc5438cd"
+  "tamano": 12347016,
+  "golden": "78b76167ca252ad6a7edabea17f971c136a07168637a92fcd08c10067794ee0a"
 }

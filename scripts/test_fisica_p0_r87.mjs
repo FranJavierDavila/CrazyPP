@@ -225,6 +225,18 @@ const C = DIMS.tableCenterZ;
     c12s.includes('new THREE.CapsuleGeometry(0.030, 1, 5, 10)') &&
     c12s.includes('_armW.addScaledVector(_armA, 0.105);') &&
     c12s.includes('const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;'));
+  // lección del bloqueo del dueño (hotfix r91): el ensamblado RECONSTRUYE los
+  // bloques DEPS-FASE2 — cualquier const dentro de ellos DESAPARECE del
+  // bundle y el escudo del bucle traga el ReferenceError cada frame (menú
+  // vivo, gatillos muertos). Prohibido declarar dentro del bloque.
+  const span12 = c12s.slice(c12s.indexOf('DEPS-FASE2-INICIO'), c12s.indexOf('DEPS-FASE2-FIN'));
+  aguja('r91-hotfix · arañas _arm* FUERA del bloque DEPS (sobreviven al ensamblado)',
+    span12.length > 0 && !span12.includes('const _arm') &&
+    c12s.slice(c12s.indexOf('DEPS-FASE2-FIN')).includes('const _armS = new THREE.Vector3()'));
+  const construido = readFileSync(RAIZ + 'public/game.html', 'utf-8');
+  aguja('r91-hotfix · el BUNDLE lleva la declaración _armS y ≥8 referencias',
+    construido.includes('const _armS = new THREE.Vector3()') &&
+    (construido.match(/_armS/g) || []).length >= 8);
 }
 
 /* — identidad del build ————————————————————————————————————————————————— */

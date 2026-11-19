@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.182-SDK6, fase 187 · CADENA CINEMÁTICA del rival; refrescado tras el fix de rebalance let en planCadena)
+# SHA256 del game.html que produjo esta división (3.6.182-SDK6, fase 187 · HOTFIX r91: arañas _arm* fuera del bloque DEPS-FASE2 que el ensamblado reconstruye)
 # por bump_version.py desde 3.6.181-SDK6)
-0f5209e14ed6ca35003ae95da0a6bf2177c4a8ce2044288e93fb01cd6b39f7c7
+8c75e1a73850ac8e73066f319eb3f1dc21f45e79b3122cb748c582128b59aefb

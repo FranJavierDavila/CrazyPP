@@ -20429,11 +20429,6 @@ import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
 import { ACHIEVEMENTS, GameStats, OpponentAI, Rules, solveArmIK } from './c06_logros_stats_ia_rival.js';
-// r91 · arañas del brazo visible del rival (cero allocs por frame)
-const _armS = new THREE.Vector3(); const _armW = new THREE.Vector3();
-const _armE = new THREE.Vector3(); const _armP = new THREE.Vector3();
-const _armD = new THREE.Vector3(); const _armA = new THREE.Vector3();
-const _armY = new THREE.Vector3(0, 1, 0); const _armX = new THREE.Vector3(1, 0, 0);
 import { applyBallSkin, createBall, createBlobShadow, createChampDecor, createChispas, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
 import { HALL, applyHallVariant, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, drawArcanoPanel, drawArcanoSalir, drawHallGloria, drawHallSign, montarArcano, updateArcanoFx, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
@@ -20446,6 +20441,14 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /* DEPS-FASE2-FIN */
+/* r91 · arañas del brazo visible del rival (cero allocs por frame). FUERA
+ * del bloque DEPS: el ensamblado RECONSTRUYE ese bloque (importes) y se
+ * comía las declaraciones — 8 usos huérfanos que el escudo del bucle
+ * tragaba cada frame: menú vivo pero gatillos muertos (bloqueo del dueño). */
+const _armS = new THREE.Vector3(); const _armW = new THREE.Vector3();
+const _armE = new THREE.Vector3(); const _armP = new THREE.Vector3();
+const _armD = new THREE.Vector3(); const _armA = new THREE.Vector3();
+const _armY = new THREE.Vector3(0, 1, 0); const _armX = new THREE.Vector3(1, 0, 0);
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();

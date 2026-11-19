@@ -7307,3 +7307,22 @@ Stage Summary:
 **Batería TODO VERDE:** arnés r95 22/22 + P0 50/50 (7 agujas r95) + r94 12/12 + r93 16/16 + física 12 · c05 17 · ITTF 8 · CADENA 14 · rallies 200 · QA en vivo sup1 151 · escudo 54 · imp2 66 (agujas 3.6.187) · bump oficial 3.6.187 (golden afd9c3e5, byte-exacto) · kit release-v36187 con 4 ZIPs.
 
 **EN PRODUCCIÓN:** deploy_pages.py --push --release --backup EXIT=0 · Pages build `built` (80a30cd4) · PAGES-VERSION.txt = 3.6.187-SDK6 · sello 187 verificado en producción 2× + sw.js CACHE v3.6.187 · Release v3.6.187-SDK6 con los 4 ZIPs verificados por API · main 9a901dc en GitHub · vigilancia anti-clobber 5 min estable. Lección r94 aplicada: un solo desplegador.
+
+## Ronda 96 (r96 · «VIGILANTE ANTI-BLOQUEO») · V3.6.188-SDK6 — 2026-11-19
+
+**Informe del dueño:** «otra vez estamos con el bloqueo del juego tan pronto le damos a jugar».
+
+**Diagnóstico (todo medido, nada supuesto):**
+- Repro en PRODUCCIÓN, escritorio, LIMPIO: portada→menú→hall→JUGAR paso a paso con cronómetro (enterHall 31 ms · menú 108 ms · secuencia start 5 ms · 53 fps tras el arranque · 0 pageerrors); el saque del CPU completo y cadenas smash con límites de elevación — NADA se cuelga en 2D.
+- El sandbox NO puede crear una sesión XR → el bloqueo es EXCLUSIVO del casco (presenting=true). Conclusión honesta: no reproducible aquí; se instrumenta el juego para capturarlo en el casco.
+- El worker de telemetría tiene la D1 ROTA: GET latido → error 1101 de Cloudflare (el worker lanza excepción), POST con evento válido → 500 — los errores del visor NUNCA se guardaban (ciego ante el casco). El wrangler.toml del repo conserva el placeholder «PEGA_AQUI_EL_DATABASE_ID» (el worker desplegado necesita re-depliegue con la D1 real — requiere el token CF del dueño).
+
+**Fix r96 (en el juego, c12 + sw.js):**
+1. VIGILANTE DE BLOQUEO: (a) js_error/js_rejection → sendBeacon INMEDIATO (IPC aparte del hilo: llega aunque el juego esté congelado) + localStorage ppxr_* para leerlo en el visor; (b) latido rAF + setInterval (planificador DISTINTO, sigue vivo durante un bloqueo del bucle): silencio ≥1,6 s → freeze_report con estado/XR/hall/menú/GLB/red + últimos 12 huecos de frame (distingue tormenta de shaders de bloqueo total), máx 5 por episodio con rearme al respirar; (c) vr_latido cada ~30 s presentando (pipeline observable sin esperar un error); (d) guard de pestaña oculta (rAF lo para el navegador por diseño — no es bloqueo del juego).
+2. BLINDAJE de la muñeca anatómica r95: la perpendicular de fallback podía ser ∥ al eje hoja a su vez (orientaciones exóticas del recentrado XR) → cruz cero → NaN; ahora se elige el eje mundial de menor componente (JAMÁS paralelo — probado con 4 orientaciones) + cinturón en la cruz final.
+3. SERVICE WORKER: purga de cachés viejas DIFERIDA 5 min (claim inmediato). La página anterior sigue viva en memoria tras una actualización y puede seguir pidiendo assets (audio del saque, voces…) — borrar su caché EN EL INSTANTE del JUGAR era el presunto disparador del bloqueo en el casco tras cada despliegue.
+
+**Verificado en vivo:** error sintético → persistido con versión y sesión (página intacta) · brazos r96: temblor 0,5 mm/frame · grip 2,2 mm · dedos hacia la palma · sin NaN · batería COMPLETA verde: P0 52 (2 agujas r96) · arnés_bloqueo_r96 14 · brazos 22/12/16 · física 12 · c05 17 · ITTF 8 · CADENA 14 · rallies 200 · QA en vivo sup1 151 · escudo 54 · imp2 66 (agujas 3.6.188) · bump oficial 3.6.188 (golden 0293d131, byte-exacto) · kit release-v36188 con 4 ZIPs.
+
+**EN PRODUCCIÓN:** deploy EXIT=0 (main 03da99e→06a8926) · Pages `built` (2e831155f) · PAGES-VERSION = 3.6.188-SDK6 · sello 188 + vigilante verificados en game.html · sw.js CACHE v3.6.188 · anti-clobber 4 min estable · release v3.6.188-SDK6.
+**PENDIENTE DEL DUEÑO:** re-desplegar el worker de telemetría con el token CF (`export CF_API_TOKEN=… && python3 scripts/deploy_worker.py`) para que el vigilante pueda entregar los freeze_report del casco.

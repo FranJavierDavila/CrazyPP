@@ -241,7 +241,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.184-SDK6', c00s.includes('3.6.184-SDK6'));
+  aguja('versión · c00 sella 3.6.185-SDK6', c00s.includes('3.6.185-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
@@ -254,6 +254,21 @@ const C = DIMS.tableCenterZ;
     bundle92.includes('LA PALA ES LA CONTINUACIÓN DEL BRAZO') &&
     bundle92.includes('premultiply(_armQ)') &&
     bundle92.includes('const _armBx = new THREE.Vector3()'));
+}
+
+/* — r93 · brazos GLB ————————————————————————————————————————————— */
+{
+  // r93 · los BRAZOS GLB van en el bundle (los dos brazos reales del dueño)
+  const b93 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
+  aguja('r93 · el BUNDLE lleva los brazos GLB (carga + driver rígido)',
+    b93.includes("fetch('./vr_arm.glb')") &&
+    b93.includes('LOS BRAZOS REALES') &&
+    b93.includes('solveArmIKRigido') &&
+    b93.includes('zonaDulceNudge') &&
+    b93.includes('LA PALA ES LA CONTINUACIÓN DEL BRAZO') &&
+    b93.includes('OneEuroV3'));
+  aguja('r93 · el GLB del rival viaja como fichero público',
+    readFileSync(RAIZ + 'public/vr_arm.glb').length > 2_000_000);
 }
 
 console.log(`\nARNÉS P0 r87 · ${ok} OK · ${fails} FALLOS`);

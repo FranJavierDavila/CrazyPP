@@ -725,6 +725,16 @@ export class PingPongGame {
       this.aiArm = _arm;
       this.rig.add(_arm);
     }
+    // r93 · LOS BRAZOS REALES del rival: vr_arm.glb (subido por el dueño) —
+    // DOS brazos skinneados con manos y dedos (42 huesos). El derecho
+    // agarra la pala POR EL MANDO (la hoja sigue como continuación del
+    // brazo, r92); el izquierdo sostiene la bola en el saque y equilibra
+    // en el rally. IK rígida (huesos que jamás estiran), One Euro contra
+    // el temblor, piso duro de mesa y altura adulta (hombro ≈ 1,37 m —
+    // adiós al efecto enano). El rig de cápsulas de arriba queda como
+    // respaldo si el GLB no llega.
+    this.aiArmGlb = null;
+    this._cargarArmasGLB();
 
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
@@ -18856,10 +18866,18 @@ export class PingPongGame {
       if (!frozen) this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
       // r91 · el brazo visible va con la pala del rival local (online: la
       // pala remota llega por red y no hay cuerpo que pintar)
-      if (this.aiArm) {
+      const glbListo = !!(this.aiArmGlb && this.aiArmGlb.listo);
+      if (this.aiArmGlb) {
+        const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;
+        if (this.aiArmGlb.root.visible !== armVis) this.aiArmGlb.root.visible = armVis;
+        if (this.aiArm && this.aiArm.visible !== (!glbListo && armVis))
+          this.aiArm.visible = !glbListo && armVis;   // cápsulas ocultas si GLB
+        if (armVis && glbListo) this.updateAIArmGlb(this.ai, dt);
+      }
+      if (this.aiArm && !glbListo) {
         const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;
         if (this.aiArm.visible !== armVis) this.aiArm.visible = armVis;
-        if (armVis) this.updateAIArm(this.ai);
+        if (armVis) this.updateAIArm(this.ai);   // respaldo r91/r92
       }
     }
     // M7c (r119) · DOBLES 2v2: poses y visibilidad de las DOS palas extra.
@@ -19605,6 +19623,249 @@ export class PingPongGame {
       this.aiPaddleMesh.quaternion.premultiply(_armQ);
     }
     u.muneca.position.copy(_armW);
+  }
+
+  /* r93 · LOS BRAZOS REALES (vr_arm.glb): carga, identificación de huesos,
+   * escala adulta (brazo 0,27 m + antebrazo proporcional del propio GLB),
+   * captura de quats de reposo (la base del driver rígido) y curl de dedos
+   * para el agarre shakehand. Fallo tolerado: quedan las cápsulas r91. */
+  async _cargarArmasGLB() {
+    if (typeof GLTFLoader === 'undefined') return;
+    try {
+      const resp = await fetch('./vr_arm.glb');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const buf = await resp.arrayBuffer();
+      const gltf = await new Promise((res, rej) =>
+        new GLTFLoader().parse(buf, '', res, rej));
+      const nom = (b) => gltf.scene.getObjectByName(b);
+      const body = nom('Body_01');
+      const capas = [
+        { lado: 'A', bra: nom('U_arm_021'), ant: nom('L_arm_022'), mano: nom('hand_023') },
+        { lado: 'B', bra: nom('U_arm(mirrored)_02'), ant: nom('L_arm(mirrored)_03'),
+          mano: nom('hand(mirrored)_04') },
+      ];
+      if (!body || !capas[0].bra || !capas[0].ant || !capas[0].mano ||
+          !capas[1].bra || !capas[1].ant || !capas[1].mano) return;
+      // longitudes de hueso desde las TRASLACIONES de reposo (cm del FBX) —
+      // escala adulta: brazo 0,27 m, antebrazo en la proporción del GLB
+      const L1u = capas[0].ant.position.length();
+      const L2u = capas[0].mano.position.length();
+      const esc = 0.27 / L1u;
+      gltf.scene.scale.setScalar(esc);          // uniforme: huesos rígidos
+      const L1 = L1u * esc, L2 = L2u * esc;
+      // curl de dedos (agarre shakehand): cada falange gira hacia el lado
+      // del meñique alrededor de la Z local del hueso (los dedos extienden
+      // en +X; el pulgar queda arriba en +Y)
+      const dedos = [];
+      for (const capa of capas) {
+        const dc = [];
+        capa.mano.children.forEach((f1) => {
+          let ant = f1, curvatura = 0;
+          while (ant && ant.children.length && ant.children[0].children !== undefined) {
+            const sig = ant.children[0];
+            curvatura += 0.5;
+            const q = new THREE.Quaternion().setFromAxisAngle(
+              new THREE.Vector3(0, 0, -1), Math.min(curvatura, 1.15));
+            sig.quaternion.copy(q);
+            dc.push(sig);
+            ant = sig;
+            if (dc.length > 14) break;
+          }
+        });
+        dedos.push(dc);
+      }
+      // montaje y captura de reposo (matrices al día ANTES de leer mundo)
+      const root = new THREE.Group();
+      root.name = 'aiArmGlb';
+      root.add(gltf.scene);
+      root.visible = false;
+      this.rig.add(root);
+      root.updateMatrixWorld(true);
+      const inst = { root, body, L1, L2, listo: true, yaw: 0, esc,
+        rootToBody: body.getWorldPosition(new THREE.Vector3()),
+        brazos: capas.map((c, i) => {
+          const S = c.bra.getWorldPosition(new THREE.Vector3());
+          const E = c.ant.getWorldPosition(new THREE.Vector3());
+          const W = c.mano.getWorldPosition(new THREE.Vector3());
+          const bra = { lado: c.lado, bra: c.bra, ant: c.ant, mano: c.mano,
+            dedos: dedos[i],
+            Srest: S.clone(), axisRestU: E.clone().sub(S).normalize(),
+            axisRestL: W.clone().sub(E).normalize(),
+            restQbra: c.bra.getWorldQuaternion(new THREE.Quaternion()),
+            restQant: c.ant.getWorldQuaternion(new THREE.Quaternion()),
+            restQmano: c.mano.getWorldQuaternion(new THREE.Quaternion()),
+            poleSide: 0,
+            fG: new OneEuroV3(1.2, 0.045),
+            fqU: new OneEuroQ(2.2, 0.09),
+            fqL: new OneEuroQ(2.2, 0.09),
+            fqH: new OneEuroQ(2.6, 0.11) };
+          return bra;
+        }),
+        _t: 0 };
+      this.aiArmGlb = inst;
+    } catch (e) {
+      this.aiArmGlb = null;                    // respaldo: cápsulas r91
+    }
+  }
+
+  /* r93 · driver de los brazos GLB: cuerpo adulto (pecho 1,33 m + vaivén),
+   * agarre POR EL MANDO (muñeca = centro de hoja − continuación·0,1303),
+   * zona dulce (la hoja cubre la bola en el impacto), IK RÍGIDA (huesos
+   * que jamás estiran — el objetivo se clampar al anillo de alcance),
+   * One Euro en agarre y articulaciones, polo del codo con histéresis,
+   * piso duro de mesa para codo/muñeca/hoja y brazo izquierdo que sostiene
+   * la bola en el saque y equilibra en el rally. Cero allocs por frame. */
+  updateAIArmGlb(ai, dt) {
+    const R = this.aiArmGlb;
+    if (!R || !R.listo || !this.aiPaddleMesh) return;
+    const s = ai.sign || -1;
+    const D_GRIP = 0.1303;                     // mango → centro de hoja (r54)
+    const mesaY = DIMS.tableTopY + 0.02;
+    const ch = ai.chain;
+    const golpeando = !!(ch && (ch.phase === 'strike' || ch.phase === 'follow'));
+    // — cuerpo: pecho adulto + respiración sutil (vaivén 5 mm)
+    R._t += dt;
+    _gA.set(ai.pos.x, Math.max(ai.pos.y + 0.33, 1.325) + 0.005 * Math.sin(R._t * 2.1),
+      ai.pos.z);
+    _gQa.setFromAxisAngle(_gUp, R.yaw);
+    R.root.position.copy(_gA).sub(_gB.copy(R.rootToBody).applyQuaternion(_gQa));
+    R.root.quaternion.copy(_gQa);
+    R.root.updateMatrixWorld(true);
+    // — brazo de la PALA: el lado del hombro según la mano del rival
+    const bp = (R.brazos[0].Srest.x * s > 0) ? R.brazos[0] : R.brazos[1];
+    const bl = (bp === R.brazos[0]) ? R.brazos[1] : R.brazos[0];
+    // hombro mundo actual
+    bp.bra.parent.updateWorldMatrix(true, false);
+    bp.bra.parent.getWorldPosition(_gB);       // ancla del cuerpo
+    bp.bra.getWorldPosition(_gS);              // hombro = hueso en el mundo
+    // — dirección de continuación del brazo (r92): plan en golpeo, si no
+    //   el antebrazo que ya tiene la mano
+    _gD.set(0, 1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
+    if (_gD.lengthSq() < 1e-8) _gD.set(0, 0, s < 0 ? 1 : -1);
+    _gD.normalize();
+    // — agarre POR EL MANDO: mando = centro de hoja − continuación·D
+    _gC.copy(this.aiPaddleMesh.position);      // centro deseado (plan r92)
+    _gE.copy(_gC).addScaledVector(_gD, -D_GRIP);
+    // — zona dulce: en el golpeo el CENTRO de la hoja debe cubrir la bola
+    if (golpeando)
+      _gE.copy(zonaDulceNudge(_gE, this.ball.pos, _gC, DIMS.bladeRadius, _gF));
+    // — anillo de alcance RÍGIDO alrededor del hombro
+    _gF.copy(_gE).sub(_gS);
+    const dG = Math.max(_gF.length(), 1e-6);
+    const maxR = 0.999 * (R.L1 + R.L2), minR = 0.28 * (R.L1 + R.L2);
+    if (dG > maxR) _gE.copy(_gS).addScaledVector(_gF, maxR / dG);
+    else if (dG < minR) _gE.copy(_gS).addScaledVector(_gF.divideScalar(dG), minR);
+    if (_gE.y < mesaY) _gE.y = mesaY;          // el mando JAMÁS baja de la mesa
+    // — One Euro del agarre (nítido en golpeo, suave en espera)
+    bp.fG.fcMin = golpeando ? 6.5 : 1.2;
+    _gE.copy(bp.fG.filtrar(_gE, dt));
+    // — polo del codo con HISTÉRESIS (adiós a los volteos de IK: el temblor
+    //   caótico del informe venía también de estos saltos de solución)
+    const ladoDeseado = THREE.MathUtils.clamp((_gE.x - _gS.x) * s * 4, -1, 1);
+    if (Math.abs(ladoDeseado) > 0.2 && Math.sign(ladoDeseado) !== bp.poleSide)
+      bp.poleSide = Math.sign(ladoDeseado);
+    _gG.set(0, -1, 0).addScaledVector(_gNeg, s * bp.poleSide * -0.8);
+    // — IK RÍGIDA: el objetivo ya clampa; el hueso JAMÁS estira
+    solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH /*codo*/, _gA /*muñeca*/);
+    if (_gH.y < mesaY + 0.045) {               // piso duro del CODO
+      _gG.y = 0.9;                             // pole hacia arriba, re-solver
+      solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
+      if (_gH.y < mesaY + 0.045) {             // aún bajo: sube la MUÑECA
+        _gE.y = mesaY + 0.045;
+        solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
+      }
+    }
+    if (_gA.y < mesaY) _gA.y = mesaY;          // piso duro de la MUÑECA
+    // — huesos: quat mundo deseado (continuación del eje) → local
+    bp.fqU.fcMin = golpeando ? 6.5 : 2.2;
+    bp.fqL.fcMin = golpeando ? 6.5 : 2.2;
+    bp.fqH.fcMin = golpeando ? 7 : 2.6;
+    _gF.copy(_gH).sub(_gS).normalize();   // d1: eje del brazo
+    _gQb.setFromUnitVectors(bp.axisRestU, _gF).multiply(bp.restQbra);
+    bp.fqU.filtrar(_gQb, dt);
+    _gQc.copy(bp.fqU.prev);
+    bp.bra.parent.getWorldQuaternion(_gQd);
+    bp.bra.quaternion.copy(_gQd).invert().multiply(_gQc);
+    bp.bra.updateWorldMatrix(false, false);
+    bp.bra.getWorldQuaternion(_gQd);
+    _gF.copy(_gA).sub(_gH).normalize();        // d2: eje del antebrazo
+    _gQb.setFromUnitVectors(bp.axisRestL, _gF).multiply(bp.restQant);
+    bp.fqL.filtrar(_gQb, dt);
+    _gQc.copy(bp.fqL.prev);
+    bp.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
+    bp.ant.updateWorldMatrix(false, false);
+    bp.ant.getWorldQuaternion(_gQd);
+    // mano: continúa el antebrazo + ROLLO del agarre shakehand alrededor
+    // del eje hoja (el pulgar cabalga el canto, la palma envuelve el mando)
+    _gQb.copy(_gQd);
+    _gQe.setFromAxisAngle(_gF, -0.9 * s);
+    _gQb.multiply(_gQe);
+    bp.fqH.filtrar(_gQb, dt);
+    bp.mano.parent.getWorldQuaternion(_gQd);
+    bp.mano.quaternion.copy(_gQd).invert().multiply(bp.fqH.prev);
+    bp.mano.updateWorldMatrix(false, false);
+    // — pala: centro = muñeca rígida + continuación·D (agarre por mando) y
+    //   la continuación r92 sobre la cara del plan (el eje hoja = antebrazo)
+    this.aiPaddleMesh.position.copy(_gA).addScaledVector(_gD, D_GRIP);
+    _armA.set(0, 1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
+    const cosA = THREE.MathUtils.clamp(_armA.dot(_gF), -1, 1);
+    _armBx.crossVectors(_armA, _gF);
+    const sinA = _armBx.length();
+    if (sinA > 1e-4 && Math.abs(cosA) < 0.99999) {
+      _armQ.setFromAxisAngle(_armBx.divideScalar(sinA), Math.acos(cosA));
+      this.aiPaddleMesh.quaternion.premultiply(_armQ);
+    } else if (sinA <= 1e-4 && cosA < 0) {
+      _armQ.setFromAxisAngle(_armX, Math.PI);
+      this.aiPaddleMesh.quaternion.premultiply(_armQ);
+    }
+    this.clampPaddlePose(this.aiPaddleMesh.position, this.aiPaddleMesh.quaternion, false);
+    // — brazo IZQUIERDO: sostiene la bola en el saque, contrapeso en rally
+    _gC.set(_gA.x - s * 0.20, _gA.y - 0.25 + 0.04 * Math.sin(R._t * 2.3),
+      _gA.z - s * 0.12);
+    const serviendo = !this.calib && this.rules.state === 'serve' &&
+      this.rules.server === 'ai';
+    if (serviendo) {
+      if (!this.aiToss) _gC.copy(this.ball.pos);          // mano a la bola
+      else _gC.set(this.ball.pos.x, Math.min(this.ball.pos.y, _gB.y + 0.45),
+        this.ball.pos.z);                                 // acompaña el bote
+    }
+    bl.bra.parent.getWorldPosition(_gB);
+    bl.bra.getWorldPosition(_gS);              // hombro L = hueso en el mundo
+    _gE.copy(_gC).sub(_gS);
+    const dGL = Math.max(_gE.length(), 1e-6);
+    if (dGL > maxR) _gE.multiplyScalar(maxR / dGL);
+    else if (dGL < minR) _gE.multiplyScalar(minR / dGL);
+    _gE.add(_gS);
+    if (_gE.y < mesaY) _gE.y = mesaY;
+    bl.fG.fcMin = serviendo ? 5 : 1.2;
+    _gE.copy(bl.fG.filtrar(_gE, dt));
+    _gG.set(0, -1, 0).addScaledVector(_gNeg, s * -0.5);
+    solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
+    if (_gH.y < mesaY + 0.045) { _gG.y = 0.9; solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
+      if (_gH.y < mesaY + 0.045) { _gE.y = mesaY + 0.045; solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA); } }
+    if (_gA.y < mesaY) _gA.y = mesaY;
+    _gF.copy(_gH).sub(_gS).normalize();
+    _gQb.setFromUnitVectors(bl.axisRestU, _gF).multiply(bl.restQbra);
+    bl.fqU.filtrar(_gQb, dt);
+    _gQc.copy(bl.fqU.prev);
+    bl.bra.parent.getWorldQuaternion(_gQd);
+    bl.bra.quaternion.copy(_gQd).invert().multiply(_gQc);
+    bl.bra.updateWorldMatrix(false, false);
+    bl.bra.getWorldQuaternion(_gQd);
+    _gF.copy(_gA).sub(_gH).normalize();
+    _gQb.setFromUnitVectors(bl.axisRestL, _gF).multiply(bl.restQant);
+    bl.fqL.filtrar(_gQb, dt);
+    _gQc.copy(bl.fqL.prev);
+    bl.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
+    bl.ant.updateWorldMatrix(false, false);
+    bl.ant.getWorldQuaternion(_gQd);
+    _gQb.copy(_gQd);
+    _gQe.setFromAxisAngle(_gF, 0.9 * s);
+    _gQb.multiply(_gQe);
+    bl.fqH.filtrar(_gQb, dt);
+    bl.mano.parent.getWorldQuaternion(_gQd);
+    bl.mano.quaternion.copy(_gQd).invert().multiply(bl.fqH.prev);
+    bl.mano.updateWorldMatrix(false, false);
   }
 
   updateAIPaddlePose(mesh, ai, who, dt) {
@@ -20452,7 +20713,8 @@ import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFIC
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
-import { ACHIEVEMENTS, GameStats, OpponentAI, Rules, solveArmIK } from './c06_logros_stats_ia_rival.js';
+import { ACHIEVEMENTS, GameStats, OneEuroQ, OneEuroV3, OpponentAI, Rules,
+  solveArmIK, solveArmIKRigido, zonaDulceNudge } from './c06_logros_stats_ia_rival.js';
 import { applyBallSkin, createBall, createBlobShadow, createChampDecor, createChispas, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
 import { HALL, applyHallVariant, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, drawArcanoPanel, drawArcanoSalir, drawHallGloria, drawHallSign, montarArcano, updateArcanoFx, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
@@ -20478,6 +20740,18 @@ const _armY = new THREE.Vector3(0, 1, 0); const _armX = new THREE.Vector3(1, 0, 
  * mínimo. FUERA del bloque DEPS (lección r91: el ensamblado reconstruye
  * ese bloque y se comería las declaraciones). */
 const _armBx = new THREE.Vector3(); const _armQ = new THREE.Quaternion();
+/* r93 · brazos GLB (vr_arm.glb — los DOS brazos con manos y dedos del
+ * dueño): scratch del driver. FUERA del bloque DEPS (lección r91). */
+const _gA = new THREE.Vector3(); const _gB = new THREE.Vector3();
+const _gC = new THREE.Vector3(); const _gD = new THREE.Vector3();
+const _gE = new THREE.Vector3(); const _gF = new THREE.Vector3();
+const _gG = new THREE.Vector3(); const _gH = new THREE.Vector3();
+const _gQa = new THREE.Quaternion(); const _gQb = new THREE.Quaternion();
+const _gQc = new THREE.Quaternion(); const _gQd = new THREE.Quaternion();
+const _gQe = new THREE.Quaternion();
+const _gS = new THREE.Vector3();
+const _gMx = new THREE.Matrix4(); const _gAx = new THREE.Vector3(1, 0, 0);
+const _gUp = new THREE.Vector3(0, 1, 0); const _gNeg = new THREE.Vector3(-1, 0, 0);
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();

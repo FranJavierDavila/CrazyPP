@@ -660,6 +660,100 @@ export function solveArmIK(S, W, L1, L2, pole, outE) {
   return { dist, flex: 180 - Math.acos(cosE) * 180 / Math.PI };
 }
 
+/* r93 · IK de 2 huesos RÍGIDA para el esqueleto GLB (informe del dueño:
+ * «los huesos no son elásticos… NUNCA se pueden estirar o escalar los
+ * huesos»): las LONGITUDES son invariables — el objetivo se clampar al
+ * anillo de alcance ANTES de resolver y la MUÑECA RESUELTA sale por outW
+ * (puede quedar corta respecto al deseo: el cuerpo cubre la diferencia,
+ * el hueso jamás estira). Devuelve { dist, flex, alcanzado }. */
+export function solveArmIKRigido(S, W, L1, L2, pole, outE, outW) {
+  const dx = W.x - S.x, dy = W.y - S.y, dz = W.z - S.z;
+  const raw = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+  const maxR = 0.999 * (L1 + L2), minR = 0.28 * (L1 + L2);
+  const dist = THREE.MathUtils.clamp(raw, minR, maxR);
+  const nx = dx / raw, ny = dy / raw, nz = dz / raw;
+  const a1 = (L1 * L1 - L2 * L2 + dist * dist) / (2 * dist);
+  const h = Math.sqrt(Math.max(L1 * L1 - a1 * a1, 1e-6));
+  const dp = pole.x * nx + pole.y * ny + pole.z * nz;
+  let px = pole.x - nx * dp, py = pole.y - ny * dp, pz = pole.z - nz * dp;
+  const pl = Math.sqrt(px * px + py * py + pz * pz) || 1e-6;
+  px /= pl; py /= pl; pz /= pl;
+  outE.set(S.x + nx * a1 + px * h, S.y + ny * a1 + py * h, S.z + nz * a1 + pz * h);
+  outW.set(S.x + nx * dist, S.y + ny * dist, S.z + nz * dist);
+  const cosE = THREE.MathUtils.clamp((L1 * L1 + L2 * L2 - dist * dist) / (2 * L1 * L2), -1, 1);
+  return { dist, flex: 180 - Math.acos(cosE) * 180 / Math.PI,
+    alcanzado: raw <= maxR && raw >= minR };
+}
+
+/* r93 · ZONA DULCE: nudge del AGARRE (≤ 4 cm) para que el CENTRO de la
+ * hoja cubra la bola en el impacto — informe del dueño: «en vez de hacerlo
+ * sobre la zona dulce de la pala parece que la golpea desde un canto».
+ * Puro cálculo (testeable en Node): si la bola cae fuera del disco
+ * central (62 % del radio), el agarre se corre hacia ella lo justo. */
+export function zonaDulceNudge(grip, ballPos, bladeCenter, bladeR, out) {
+  const dx = ballPos.x - bladeCenter.x;
+  const dy = ballPos.y - bladeCenter.y;
+  const dz = ballPos.z - bladeCenter.z;
+  const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  const exceso = d - bladeR * 0.62;
+  if (exceso <= 0) return out.copy(grip);
+  const k = Math.min(exceso, 0.04) / (d || 1e-6);
+  return out.set(grip.x + dx * k, grip.y + dy * k, grip.z + dz * k);
+}
+
+/* r93 · ONE EURO (Casiez et al. 2012) para VECTORES — anti-temblor del
+ * informe del dueño («articulaciones con mucho ruido… movimientos
+ * temblorosos y caóticos»): forma canónica — derivada con corte
+ * adaptativo (fc_d = fcMin + β·|ẋ|) y estado integrado. Casi parado
+ * filtra fuerte, movimiento rápido apenas retrasa. Cero allocs. */
+export class OneEuroV3 {
+  constructor(fcMin = 1.2, beta = 0.045) {
+    this.fcMin = fcMin; this.beta = beta;
+    this.init = false;
+    this.prev = new THREE.Vector3();     // x̂ (estado)
+    this.dPrev = new THREE.Vector3();    // ẋ filtrada (por segundo)
+    this.tmp = new THREE.Vector3();
+  }
+  reset() { this.init = false; this.dPrev.set(0, 0, 0); }
+  _alfa(dt, fc) {
+    const tau = 1 / (2 * Math.PI * Math.max(fc, 0.01));
+    return 1 / (1 + tau / Math.max(dt, 1e-4));
+  }
+  filtrar(v, dt) {
+    if (!this.init) { this.init = true; this.prev.copy(v); this.dPrev.set(0, 0, 0); return this.tmp.copy(v); }
+    this.tmp.copy(v).sub(this.prev).divideScalar(Math.max(dt, 1e-4));   // ẋ bruta
+    const ad = this._alfa(dt, this.fcMin + this.beta * this.tmp.length());
+    this.dPrev.lerp(this.tmp, ad);                       // ẋ filtrada
+    this.prev.addScaledVector(this.dPrev, dt);           // integra
+    return this.tmp.copy(this.prev);
+  }
+}
+
+/* r93 · ONE EURO para CUATERNIONES (articulaciones): la «velocidad» es el
+ * ángulo de la diferencia q_prev⁻¹·q_deseado por dt; el mezclado slerp
+ * usa la misma familia de corte adaptativo. FC_MIN por contexto: nítido en
+ * golpeo/acompañamiento (dt·20 en r92), suave en el resto. */
+export class OneEuroQ {
+  constructor(fcMin = 2.2, beta = 0.09) {
+    this.fcMin = fcMin; this.beta = beta;
+    this.init = false;
+    this.prev = new THREE.Quaternion();
+  }
+  reset() { this.init = false; }
+  filtrar(q, dt) {
+    if (!this.init) { this.init = true; this.prev.copy(q); return this.prev; }
+    const qd = _oeqA.copy(q);
+    const dif = Math.abs(2 * Math.acos(THREE.MathUtils.clamp(
+      Math.abs(this.prev.dot(qd)), 0, 1))) / Math.max(dt, 1e-4);   // rad/s
+    const fc = this.fcMin + this.beta * dif;
+    const tau = 1 / (2 * Math.PI * fc);
+    const a = 1 / (1 + tau / Math.max(dt, 1e-4));
+    this.prev.slerp(qd, THREE.MathUtils.clamp(a, 0.05, 1));
+    return this.prev;
+  }
+}
+const _oeqA = new THREE.Quaternion();
+
 /* r91 · adivinanza temprana del golpe (para la CARGA visual, antes de que
  * la bola llegue): el golpe REAL lo decide el cerebro en el contacto de
  * siempre — esto solo elige la firma del backswing. */

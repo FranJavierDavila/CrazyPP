@@ -148,7 +148,7 @@ const VOUT = () => new THREE.Vector3(0.35, 0.9, 6.2);
     `Δ backswing ${(B1.distanceTo(B2) * 100).toFixed(1)} mm`);
 }
 
-/* ---------- 6 · impacto sincronizado ---------- */
+/* ---------- 6 · impacto sincronizado (r92: pico EN el arco) ---------- */
 {
   const ai = mkAI();
   const C = CONTACT();
@@ -157,12 +157,80 @@ const VOUT = () => new THREE.Vector3(0.35, 0.9, 6.2);
   const CR = C.clone(); CR.x += 0.04;                      // punto real del barrido
   const v = VOUT();
   ai.cadenaContacto(CR.x, CR.y, CR.z, v);
-  const s0 = ai.chain.segs[0];
+  const s0 = ai.chain.segs[0], s1 = ai.chain.segs[1];
   const finOk = s0.phase === 'strike' && s0.p1.distanceTo(CR) < 1e-9;
-  const vOk = s0.v1.distanceTo(v.clone().multiplyScalar(c06.CADENA_GOLPE.drive.vPeakMul)) < 1e-9;
+  // r92 · el pico conserva la MAGNITUD del golpe (|v|·vPeakMul) pero su
+  // dirección es la TANGENTE del arco (bisectriz de las cuerdas C−cur y
+  // F−C) — el golpe atraviesa C dentro del gesto curvo, no empuja en línea
+  const vMag = v.clone().multiplyScalar(c06.CADENA_GOLPE.drive.vPeakMul);
+  const magOk = Math.abs(s0.v1.length() - vMag.length()) < 1e-9;
+  const uC = CR.clone().sub(s0.p0).normalize();
+  const uF = s1.p1.clone().sub(CR).normalize();
+  const tEsperada = uC.add(uF).normalize().multiplyScalar(vMag.length());
+  const dirOk = s0.v1.distanceTo(tEsperada) < 1e-6;
+  const contOk = s1.v0 === s0.v1;                          // continuidad exacta
   const tRem = s0.T + ai.chain.segs[1].T + ai.chain.segs[2].T;
-  dije('impacto · strike termina en el punto REAL con v1 alineada a la salida',
-    finOk && vOk, `T_strike ${s0.T.toFixed(3)} s · plan ${tRem.toFixed(2)} s`);
+  dije('impacto · strike termina en el punto REAL con |v1| del golpe y dirección = tangente del arco',
+    finOk && magOk && dirOk && contOk, `T_strike ${s0.T.toFixed(3)} s · plan ${tRem.toFixed(2)} s`);
+}
+
+/* ---------- 8 · r92 · ARCO REAL del golpe ---------- */
+{
+  const ai = mkAI();
+  const C = CONTACT();
+  ai.planCadena(C, 0.70, 'drive', 1);
+  const sgs = ai.chain.segs;
+  const B = sgs[1].p1, F = sgs[3].p1;   // back y follow (strike = sgs[2])
+  // la carga se abre al lado del golpe (diestro CPU sign=-1, fh=1 ⇒ B.x < C.x)
+  const ladoOk = Math.sign(B.x - C.x) === (1 * ai.sign);
+  // el acompañamiento CRUZA al lado contrario
+  const cruceOk = Math.sign(F.x - C.x) === -(1 * ai.sign);
+  // B→C y C→F DEJAN de ser colineales: ángulo de arco apreciable (> 5°)
+  const uC2 = C.clone().sub(B).normalize();
+  const uF2 = F.clone().sub(C).normalize();
+  const angArco = Math.acos(THREE.MathUtils.clamp(uC2.dot(uF2), -1, 1)) * 180 / Math.PI;
+  // la carga NO termina parada: el brazo ya barre hacia C (~32 % del pico)
+  const vBack = sgs[1].v1;
+  const noParada = vBack.length() > 0.2 * c06.CADENA_GOLPE.drive.vPeakMul * 6.5 &&
+    vBack.dot(uC2) > 0.9 * vBack.length();
+  dije('arco r92 · carga al lado del golpe y cruce al contrario (B→C→F no colineales)',
+    ladoOk && cruceOk && angArco > 5, `ángulo de arco ${angArco.toFixed(1)}°`);
+  dije('arco r92 · el brazo NO se para en la carga (v1_back ≈ 0,32·pico hacia C)',
+    noParada, `|v1_back| ${(vBack.length()).toFixed(2)} m/s`);
+  // el pico del golpeo atraviesa C siguiendo la bisectriz del arco (la
+  // MAGNITUD lleva la variabilidad funcional ±10 % del plan: se compara en
+  // rango; la DIRECCIÓN es exacta)
+  const vReal = sgs[2].v1;
+  const vPicoBase = 6.5 * c06.CADENA_GOLPE.drive.vPeakMul;
+  const tDir = uC2.clone().add(uF2).normalize();
+  const picoOk = vReal.length() > 0.85 * vPicoBase && vReal.length() < 1.15 * vPicoBase &&
+    vReal.clone().normalize().dot(tDir) > 1 - 1e-9;
+  dije('arco r92 · v del golpeo = tangente del arco EN C (bisectriz de cuerdas)',
+    picoOk, `|v1| ${vReal.length().toFixed(2)} m/s · dot ${(vReal.clone().normalize().dot(tDir)).toFixed(8)}`);
+}
+
+/* ---------- 9 · r92 · LA PALA ES LA CONTINUACIÓN DEL BRAZO (contrato c12) ---------- */
+{
+  // c12 no importa en Node sin DOM: el contrato se verifica sobre la FUENTE
+  // (el mismo idioma del check 7) + el ángulo real se mide en vivo en el
+  // QA del navegador (qa_cadena_r92). El bloque debe: leer el eje +Y local
+  // de la pala, tomar el antebrazo resuelto (_armD normalizado por el
+  // setFromUnitVectors del antebrazo) y aplicar el GIRO MÍNIMO con
+  // premultiply — sin tocar la cara por separado.
+  const c12src = readFileSync(fileURLToPath(
+    new URL('../src/game/core/c12_pingponggame.js', import.meta.url)), 'utf-8');
+  const tieneBloque = c12src.includes('LA PALA ES LA CONTINUACIÓN DEL BRAZO');
+  const leeEje = /_armA\.set\(0, 1, 0\)\.applyQuaternion\(this\.aiPaddleMesh\.quaternion\)/.test(c12src);
+  const usaAntebrazo = /const cosA = THREE\.MathUtils\.clamp\(_armA\.dot\(_armD\), -1, 1\)/.test(c12src);
+  const giroMinimo = /_armQ\.setFromAxisAngle\(_armBx\.divideScalar\(sinA\), Math\.acos\(cosA\)\)/.test(c12src) &&
+    /premultiply\(_armQ\)/.test(c12src);
+  const despuesDelAnte = c12src.indexOf('_armA.set(0, 1, 0)') >
+    c12src.indexOf('u.antebrazo.quaternion.setFromUnitVectors');
+  const scratchFueraDeps = /const _armBx = new THREE\.Vector3\(\); const _armQ = new THREE\.Quaternion\(\);/.test(c12src) &&
+    c12src.indexOf('const _armBx') < c12src.indexOf('/* DEPS-FASE2-FIN */') === false;
+  dije('pala-brazo r92 · bloque de alineación presente y tras el antebrazo (giro mínimo con premultiply)',
+    tieneBloque && leeEje && usaAntebrazo && giroMinimo && despuesDelAnte && scratchFueraDeps,
+    `bloque ${tieneBloque} · eje ${leeEje} · cos ${usaAntebrazo} · giro ${giroMinimo} · orden ${despuesDelAnte}`);
 }
 
 /* ---------- 7 · física única por modalidad ---------- */

@@ -676,6 +676,7 @@ const _cadB = new THREE.Vector3();
 const _cadC = new THREE.Vector3();
 const _cadD = new THREE.Vector3();
 const _cadV = new THREE.Vector3();
+const _cadT = new THREE.Vector3();   // r92 · cuerda/tangente del ARCO del golpe
 
 export class OpponentAI {
   constructor(cfg, sign, home) {
@@ -746,10 +747,25 @@ export class OpponentAI {
     }
     const cur = this.chain ? this.chain.cur.clone() : this.pos.clone();
     const vel = this.chain ? this.chain.vel.clone() : new THREE.Vector3();
+    // r92 · ARCO REAL del golpe (informe del dueño: «la pala se posiciona y
+    // empuja de forma lineal» + video Gatien): la CARGA se abre al LADO del
+    // golpe y el ACOMPAÑAMIENTO CRUZA al lado contrario — B→C→F dejan de
+    // ser colineales y dibujan el arco que culmina en el impacto y lo
+    // prolonga con la continuidad del arco previo.
     const B = _cadA.copy(contact).addScaledVector(_cadD, -G.dbs * jit() * esc);
+    B.x += fh * this.sign * G.dbs * 0.85 * jit() * esc;
     B.y = Math.max(0.5, contact.y - G.hbs * jit() * esc);
     const F = _cadB.copy(contact).addScaledVector(_cadD, G.dft * jit());
+    F.x -= fh * this.sign * G.dft * 0.62 * jit();
     F.y = Math.max(0.5, contact.y + G.hft * jit());
+    // tangente del arco EN el contacto (suma de las cuerdas B→C y C→F, el
+    // criterio de paso-suave de splines): la velocidad pico atraviesa C
+    // DENTRO del arco — no a lo largo de la cuerda de salida.
+    const uC = _cadT.copy(contact).sub(B).normalize();   // cuerda carga→C
+    const uF = _cadC.copy(F).sub(contact).normalize();   // cuerda C→cruce
+    const tC = uC.clone().add(uF);
+    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);            // degenerado: cuerda
+    tC.normalize().multiplyScalar(vPeak);
     this.chain = {
       phase: 'react', t: 0, tSeg: 0, u: 0, kind, fh, flat: !!(this.chain && this.chain.flat),
       contact: contact.clone(), tBall,
@@ -759,12 +775,12 @@ export class OpponentAI {
         { phase: 'react', T: T_react, p0: cur.clone(), v0: vel.clone(),
           p1: cur.clone().lerp(B, 0.25), v1: new THREE.Vector3() },
         { phase: 'back', T: T_back, p0: cur.clone(), v0: new THREE.Vector3(),
-          p1: B.clone(), v1: new THREE.Vector3() },
+          p1: B.clone(), v1: uC.clone().multiplyScalar(0.32 * vPeak) },
         { phase: 'strike', T: T_strike, p0: B.clone(), v0: new THREE.Vector3(),
-          p1: contact.clone(), v1: _cadD.clone().multiplyScalar(vPeak) },
+          p1: contact.clone(), v1: tC },
         { phase: 'follow', T: 0.16 + Math.random() * 0.06,
-          p0: contact.clone(), v0: _cadD.clone().multiplyScalar(vPeak),
-          p1: F.clone(), v1: _cadD.clone().multiplyScalar(vPeak * 0.25) },
+          p0: contact.clone(), v0: tC,
+          p1: F.clone(), v1: uF.clone().multiplyScalar(vPeak * 0.25) },
         { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
           v0: _cadD.clone().multiplyScalar(vPeak * 0.25), p1: this.pos.clone(),
           v1: new THREE.Vector3() },
@@ -790,19 +806,27 @@ export class OpponentAI {
     const T_strike = Math.max(0.05, tRem - T_back);
     const vPeak = 6.5 * G.vPeakMul;
     const B = _cadA.copy(newContact).addScaledVector(_cadD.copy(ch.dir), -G.dbs * 0.8);
+    B.x += ch.fh * this.sign * G.dbs * 0.68;   // r92 · arco: carga al lado
     B.y = Math.max(0.5, newContact.y - G.hbs * 0.8);
     const F = _cadB.copy(newContact).addScaledVector(_cadD, G.dft);
+    F.x -= ch.fh * this.sign * G.dft * 0.5;    // r92 · arco: cruce al otro
     F.y = Math.max(0.5, newContact.y + G.hft);
+    // r92 · tangente del arco en el re-anclaje (mismo criterio que el plan)
+    const uC = _cadT.copy(newContact).sub(B).normalize();
+    const uF = _cadC.copy(F).sub(newContact).normalize();
+    const tC = uC.clone().add(uF);
+    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);
+    tC.normalize().multiplyScalar(vPeak);
     ch.contact.copy(newContact);
     ch.tBall = newT;
     ch.segs = [
       { phase: 'back', T: T_back, p0: ch.cur.clone(), v0: ch.vel.clone(),
-        p1: B.clone(), v1: new THREE.Vector3() },
+        p1: B.clone(), v1: uC.clone().multiplyScalar(0.32 * vPeak) },
       { phase: 'strike', T: T_strike, p0: B.clone(), v0: new THREE.Vector3(),
-        p1: newContact.clone(), v1: _cadD.clone().multiplyScalar(vPeak) },
+        p1: newContact.clone(), v1: tC },
       { phase: 'follow', T: 0.15 + Math.random() * 0.06, p0: newContact.clone(),
-        v0: _cadD.clone().multiplyScalar(vPeak), p1: F.clone(),
-        v1: _cadD.clone().multiplyScalar(vPeak * 0.25) },
+        v0: tC, p1: F.clone(),
+        v1: uF.clone().multiplyScalar(vPeak * 0.25) },
       { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
         v0: _cadD.clone().multiplyScalar(vPeak * 0.25), p1: this.pos.clone(),
         v1: new THREE.Vector3() },
@@ -826,16 +850,27 @@ export class OpponentAI {
     const d = ch.cur.distanceTo(pC);
     const T = THREE.MathUtils.clamp(d / Math.max(3, vP.length()), 0.03, 0.09);
     const F = _cadB.copy(pC).addScaledVector(_cadD, G.dft);
+    F.x -= ch.fh * this.sign * G.dft * 0.5;    // r92 · arco: cruce del gesto
     F.y = Math.max(0.5, pC.y + G.hft);
+    // r92 · tangente del arco EN el impacto (bisectriz de las cuerdas):
+    // el pico atraviesa C DENTRO del gesto curvo que ya traía el brazo —
+    // la bola sale por su plan (aiHit), la pala golpea en arco (fin del
+    // «empujón» lineal: el empuje ahora continúa el arco previo).
+    const uC = _cadC.copy(pC).sub(ch.cur).normalize();
+    const uF = _cadT.copy(F).sub(pC).normalize();
+    const tC = uC.clone().add(uF);
+    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);
+    tC.normalize().multiplyScalar(vP.length());
     ch.contact.copy(pC);
     ch.dir.copy(_cadD);
     ch.vdir.copy(v).normalize();
     ch.roll = this._rollCadena(ch.kind);
     ch.segs = [
       { phase: 'strike', T, p0: ch.cur.clone(), v0: ch.vel.clone(),
-        p1: pC.clone(), v1: vP.clone() },
+        p1: pC.clone(), v1: tC },
       { phase: 'follow', T: 0.15 + Math.random() * 0.06, p0: pC.clone(),
-        v0: vP.clone(), p1: F.clone(), v1: vP.clone().multiplyScalar(0.25) },
+        v0: tC, p1: F.clone(),
+        v1: uF.clone().multiplyScalar(vP.length() * 0.25) },
       { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
         v0: vP.clone().multiplyScalar(0.25), p1: this.pos.clone(),
         v1: new THREE.Vector3() },

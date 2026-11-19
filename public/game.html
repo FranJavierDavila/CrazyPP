@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.183-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.184-SDK6</span>
     </div>
   </main>
 
@@ -3642,7 +3642,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.183-SDK6';
+  const VERSION = '3.6.184-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -10293,6 +10293,7 @@ const _cadB = new THREE.Vector3();
 const _cadC = new THREE.Vector3();
 const _cadD = new THREE.Vector3();
 const _cadV = new THREE.Vector3();
+const _cadT = new THREE.Vector3();   // r92 · cuerda/tangente del ARCO del golpe
 
 class OpponentAI {
   constructor(cfg, sign, home) {
@@ -10363,10 +10364,25 @@ class OpponentAI {
     }
     const cur = this.chain ? this.chain.cur.clone() : this.pos.clone();
     const vel = this.chain ? this.chain.vel.clone() : new THREE.Vector3();
+    // r92 · ARCO REAL del golpe (informe del dueño: «la pala se posiciona y
+    // empuja de forma lineal» + video Gatien): la CARGA se abre al LADO del
+    // golpe y el ACOMPAÑAMIENTO CRUZA al lado contrario — B→C→F dejan de
+    // ser colineales y dibujan el arco que culmina en el impacto y lo
+    // prolonga con la continuidad del arco previo.
     const B = _cadA.copy(contact).addScaledVector(_cadD, -G.dbs * jit() * esc);
+    B.x += fh * this.sign * G.dbs * 0.85 * jit() * esc;
     B.y = Math.max(0.5, contact.y - G.hbs * jit() * esc);
     const F = _cadB.copy(contact).addScaledVector(_cadD, G.dft * jit());
+    F.x -= fh * this.sign * G.dft * 0.62 * jit();
     F.y = Math.max(0.5, contact.y + G.hft * jit());
+    // tangente del arco EN el contacto (suma de las cuerdas B→C y C→F, el
+    // criterio de paso-suave de splines): la velocidad pico atraviesa C
+    // DENTRO del arco — no a lo largo de la cuerda de salida.
+    const uC = _cadT.copy(contact).sub(B).normalize();   // cuerda carga→C
+    const uF = _cadC.copy(F).sub(contact).normalize();   // cuerda C→cruce
+    const tC = uC.clone().add(uF);
+    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);            // degenerado: cuerda
+    tC.normalize().multiplyScalar(vPeak);
     this.chain = {
       phase: 'react', t: 0, tSeg: 0, u: 0, kind, fh, flat: !!(this.chain && this.chain.flat),
       contact: contact.clone(), tBall,
@@ -10376,12 +10392,12 @@ class OpponentAI {
         { phase: 'react', T: T_react, p0: cur.clone(), v0: vel.clone(),
           p1: cur.clone().lerp(B, 0.25), v1: new THREE.Vector3() },
         { phase: 'back', T: T_back, p0: cur.clone(), v0: new THREE.Vector3(),
-          p1: B.clone(), v1: new THREE.Vector3() },
+          p1: B.clone(), v1: uC.clone().multiplyScalar(0.32 * vPeak) },
         { phase: 'strike', T: T_strike, p0: B.clone(), v0: new THREE.Vector3(),
-          p1: contact.clone(), v1: _cadD.clone().multiplyScalar(vPeak) },
+          p1: contact.clone(), v1: tC },
         { phase: 'follow', T: 0.16 + Math.random() * 0.06,
-          p0: contact.clone(), v0: _cadD.clone().multiplyScalar(vPeak),
-          p1: F.clone(), v1: _cadD.clone().multiplyScalar(vPeak * 0.25) },
+          p0: contact.clone(), v0: tC,
+          p1: F.clone(), v1: uF.clone().multiplyScalar(vPeak * 0.25) },
         { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
           v0: _cadD.clone().multiplyScalar(vPeak * 0.25), p1: this.pos.clone(),
           v1: new THREE.Vector3() },
@@ -10407,19 +10423,27 @@ class OpponentAI {
     const T_strike = Math.max(0.05, tRem - T_back);
     const vPeak = 6.5 * G.vPeakMul;
     const B = _cadA.copy(newContact).addScaledVector(_cadD.copy(ch.dir), -G.dbs * 0.8);
+    B.x += ch.fh * this.sign * G.dbs * 0.68;   // r92 · arco: carga al lado
     B.y = Math.max(0.5, newContact.y - G.hbs * 0.8);
     const F = _cadB.copy(newContact).addScaledVector(_cadD, G.dft);
+    F.x -= ch.fh * this.sign * G.dft * 0.5;    // r92 · arco: cruce al otro
     F.y = Math.max(0.5, newContact.y + G.hft);
+    // r92 · tangente del arco en el re-anclaje (mismo criterio que el plan)
+    const uC = _cadT.copy(newContact).sub(B).normalize();
+    const uF = _cadC.copy(F).sub(newContact).normalize();
+    const tC = uC.clone().add(uF);
+    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);
+    tC.normalize().multiplyScalar(vPeak);
     ch.contact.copy(newContact);
     ch.tBall = newT;
     ch.segs = [
       { phase: 'back', T: T_back, p0: ch.cur.clone(), v0: ch.vel.clone(),
-        p1: B.clone(), v1: new THREE.Vector3() },
+        p1: B.clone(), v1: uC.clone().multiplyScalar(0.32 * vPeak) },
       { phase: 'strike', T: T_strike, p0: B.clone(), v0: new THREE.Vector3(),
-        p1: newContact.clone(), v1: _cadD.clone().multiplyScalar(vPeak) },
+        p1: newContact.clone(), v1: tC },
       { phase: 'follow', T: 0.15 + Math.random() * 0.06, p0: newContact.clone(),
-        v0: _cadD.clone().multiplyScalar(vPeak), p1: F.clone(),
-        v1: _cadD.clone().multiplyScalar(vPeak * 0.25) },
+        v0: tC, p1: F.clone(),
+        v1: uF.clone().multiplyScalar(vPeak * 0.25) },
       { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
         v0: _cadD.clone().multiplyScalar(vPeak * 0.25), p1: this.pos.clone(),
         v1: new THREE.Vector3() },
@@ -10443,16 +10467,27 @@ class OpponentAI {
     const d = ch.cur.distanceTo(pC);
     const T = THREE.MathUtils.clamp(d / Math.max(3, vP.length()), 0.03, 0.09);
     const F = _cadB.copy(pC).addScaledVector(_cadD, G.dft);
+    F.x -= ch.fh * this.sign * G.dft * 0.5;    // r92 · arco: cruce del gesto
     F.y = Math.max(0.5, pC.y + G.hft);
+    // r92 · tangente del arco EN el impacto (bisectriz de las cuerdas):
+    // el pico atraviesa C DENTRO del gesto curvo que ya traía el brazo —
+    // la bola sale por su plan (aiHit), la pala golpea en arco (fin del
+    // «empujón» lineal: el empuje ahora continúa el arco previo).
+    const uC = _cadC.copy(pC).sub(ch.cur).normalize();
+    const uF = _cadT.copy(F).sub(pC).normalize();
+    const tC = uC.clone().add(uF);
+    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);
+    tC.normalize().multiplyScalar(vP.length());
     ch.contact.copy(pC);
     ch.dir.copy(_cadD);
     ch.vdir.copy(v).normalize();
     ch.roll = this._rollCadena(ch.kind);
     ch.segs = [
       { phase: 'strike', T, p0: ch.cur.clone(), v0: ch.vel.clone(),
-        p1: pC.clone(), v1: vP.clone() },
+        p1: pC.clone(), v1: tC },
       { phase: 'follow', T: 0.15 + Math.random() * 0.06, p0: pC.clone(),
-        v0: vP.clone(), p1: F.clone(), v1: vP.clone().multiplyScalar(0.25) },
+        v0: tC, p1: F.clone(),
+        v1: uF.clone().multiplyScalar(vP.length() * 0.25) },
       { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
         v0: vP.clone().multiplyScalar(0.25), p1: this.pos.clone(),
         v1: new THREE.Vector3() },
@@ -39422,6 +39457,30 @@ class PingPongGame {
     u.antebrazo.position.copy(_armE).addScaledVector(_armD, 0.5);
     u.antebrazo.quaternion.setFromUnitVectors(_armY, _armD.normalize());
     u.antebrazo.scale.set(1, l2, 1);
+    // r92 · LA PALA ES LA CONTINUACIÓN DEL BRAZO (informe del dueño: «un
+    // eje que recorre el brazo atravesaría la pala desde el mango hasta el
+    // extremo de la pala, siendo este su eje longitudinal»): giro MÍNIMO
+    // que lleva el eje mango→punta (+Y local) EXACTO al antebrazo resuelto
+    // (codo→muñeca, ya normalizado en _armD por el setFromUnitVectors de
+    // arriba). La cara viaja con el giro conservando la firma de cierre/
+    // topspin alrededor del eje; el golpe físico sale del plan (ball.vel ←
+    // aiHit), la cara es visual — cero impacto en la física. _armD queda
+    // tras el normalize como (elbow→wrist) unitario: el objetivo EXACTO.
+    _armA.set(0, 1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
+    const cosA = THREE.MathUtils.clamp(_armA.dot(_armD), -1, 1);
+    _armBx.crossVectors(_armA, _armD);
+    const sinA = _armBx.length();
+    if (sinA > 1e-4) {
+      if (Math.abs(cosA) < 0.99999) {
+        _armQ.setFromAxisAngle(_armBx.divideScalar(sinA), Math.acos(cosA));
+        this.aiPaddleMesh.quaternion.premultiply(_armQ);
+      }
+    } else if (cosA < 0) {
+      // antiparalelo degenerado (no ocurre con las poses de la casa): giro
+      // medio por un eje lateral en vez de NaN
+      _armQ.setFromAxisAngle(_armX, Math.PI);
+      this.aiPaddleMesh.quaternion.premultiply(_armQ);
+    }
     u.muneca.position.copy(_armW);
   }
 
@@ -40271,6 +40330,11 @@ const _armS = new THREE.Vector3(); const _armW = new THREE.Vector3();
 const _armE = new THREE.Vector3(); const _armP = new THREE.Vector3();
 const _armD = new THREE.Vector3(); const _armA = new THREE.Vector3();
 const _armY = new THREE.Vector3(0, 1, 0); const _armX = new THREE.Vector3(1, 0, 0);
+/* r92 · el eje mango→punta de la pala se ALINEA al antebrazo resuelto (la
+ * pala es la continuación del brazo, informe del dueño): scratch del giro
+ * mínimo. FUERA del bloque DEPS (lección r91: el ensamblado reconstruye
+ * ese bloque y se comería las declaraciones). */
+const _armBx = new THREE.Vector3(); const _armQ = new THREE.Quaternion();
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();

@@ -19580,6 +19580,30 @@ export class PingPongGame {
     u.antebrazo.position.copy(_armE).addScaledVector(_armD, 0.5);
     u.antebrazo.quaternion.setFromUnitVectors(_armY, _armD.normalize());
     u.antebrazo.scale.set(1, l2, 1);
+    // r92 · LA PALA ES LA CONTINUACIÓN DEL BRAZO (informe del dueño: «un
+    // eje que recorre el brazo atravesaría la pala desde el mango hasta el
+    // extremo de la pala, siendo este su eje longitudinal»): giro MÍNIMO
+    // que lleva el eje mango→punta (+Y local) EXACTO al antebrazo resuelto
+    // (codo→muñeca, ya normalizado en _armD por el setFromUnitVectors de
+    // arriba). La cara viaja con el giro conservando la firma de cierre/
+    // topspin alrededor del eje; el golpe físico sale del plan (ball.vel ←
+    // aiHit), la cara es visual — cero impacto en la física. _armD queda
+    // tras el normalize como (elbow→wrist) unitario: el objetivo EXACTO.
+    _armA.set(0, 1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
+    const cosA = THREE.MathUtils.clamp(_armA.dot(_armD), -1, 1);
+    _armBx.crossVectors(_armA, _armD);
+    const sinA = _armBx.length();
+    if (sinA > 1e-4) {
+      if (Math.abs(cosA) < 0.99999) {
+        _armQ.setFromAxisAngle(_armBx.divideScalar(sinA), Math.acos(cosA));
+        this.aiPaddleMesh.quaternion.premultiply(_armQ);
+      }
+    } else if (cosA < 0) {
+      // antiparalelo degenerado (no ocurre con las poses de la casa): giro
+      // medio por un eje lateral en vez de NaN
+      _armQ.setFromAxisAngle(_armX, Math.PI);
+      this.aiPaddleMesh.quaternion.premultiply(_armQ);
+    }
     u.muneca.position.copy(_armW);
   }
 
@@ -20449,6 +20473,11 @@ const _armS = new THREE.Vector3(); const _armW = new THREE.Vector3();
 const _armE = new THREE.Vector3(); const _armP = new THREE.Vector3();
 const _armD = new THREE.Vector3(); const _armA = new THREE.Vector3();
 const _armY = new THREE.Vector3(0, 1, 0); const _armX = new THREE.Vector3(1, 0, 0);
+/* r92 · el eje mango→punta de la pala se ALINEA al antebrazo resuelto (la
+ * pala es la continuación del brazo, informe del dueño): scratch del giro
+ * mínimo. FUERA del bloque DEPS (lección r91: el ensamblado reconstruye
+ * ese bloque y se comería las declaraciones). */
+const _armBx = new THREE.Vector3(); const _armQ = new THREE.Quaternion();
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();

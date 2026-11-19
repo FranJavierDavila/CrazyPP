@@ -241,9 +241,19 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.183-SDK6', c00s.includes('3.6.183-SDK6'));
+  aguja('versión · c00 sella 3.6.184-SDK6', c00s.includes('3.6.184-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
+  // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
+  // pala-brazo (c12) — los dos fixes del informe del dueño
+  const bundle92 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
+  aguja('r92 · el BUNDLE lleva el ARCO del golpe (carga al lado + cruce + tangente)',
+    bundle92.includes('cuerda/tangente del ARCO del golpe') &&
+    (bundle92.match(/tC\.normalize\(\)/g) || []).length >= 3);
+  aguja('r92 · el BUNDLE lleva LA PALA ES LA CONTINUACIÓN DEL BRAZO (giro mínimo premultiply)',
+    bundle92.includes('LA PALA ES LA CONTINUACIÓN DEL BRAZO') &&
+    bundle92.includes('premultiply(_armQ)') &&
+    bundle92.includes('const _armBx = new THREE.Vector3()'));
 }
 
 console.log(`\nARNÉS P0 r87 · ${ok} OK · ${fails} FALLOS`);

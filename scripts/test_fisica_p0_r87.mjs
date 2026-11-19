@@ -241,7 +241,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.182-SDK6', c00s.includes('3.6.182-SDK6'));
+  aguja('versión · c00 sella 3.6.183-SDK6', c00s.includes('3.6.183-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
 }

@@ -7326,3 +7326,20 @@ Stage Summary:
 
 **EN PRODUCCIÓN:** deploy EXIT=0 (main 03da99e→06a8926) · Pages `built` (2e831155f) · PAGES-VERSION = 3.6.188-SDK6 · sello 188 + vigilante verificados en game.html · sw.js CACHE v3.6.188 · anti-clobber 4 min estable · release v3.6.188-SDK6.
 **PENDIENTE DEL DUEÑO:** re-desplegar el worker de telemetría con el token CF (`export CF_API_TOKEN=… && python3 scripts/deploy_worker.py`) para que el vigilante pueda entregar los freeze_report del casco.
+
+## Ronda 97 (r97 · FIX DEL BLOQUEO DEL CASCO) · V3.6.189-SDK6 — 2026-11-19
+
+**Informe del dueño:** «mismo bloqueo… se bloquea el menú que solo se arrastra al mover la cabeza».
+
+**CAUSA RAÍZ ENCONTRADA, REPRODUCIDA Y ARREGLADA:**
+- r95 llamaba `crossVectors` (método de Vector3) sobre `_gQe`, que es un **Quaternion** → `TypeError: _gQe.crossVectors is not a function` **CADA FRAME desde el boot en TODO el juego**.
+- El **ESCUDO DEL BUCLE** (try/catch con dedupe, FASE 144) lo tragaba en silencio: el bucle seguía respirando SIN renderizar (por eso mis «51 fps» de r96 eran humo — contaba ticks de rAF blindado, no frames reales) y el procesado del gatillo XR — que vive DENTRO del frame — quedaba muerto: **«menú vivo pero gatillos muertos»**, el modo r91 ya documentado en el worklog («otra vez», literal). El overlay del menú es un DOM-overlay que pinta el COMPOSITOR del navegador: sigue a la cabeza aunque el juego esté congelado — de ahí el síntoma exacto del dueño.
+- Por qué sobrevivió 4 rondas (r93-r96): los arneses de agujas leen TEXTO y ejecutan MÓDULOS FUENTE; el BUNDLE ensamblado de producción NUNCA se ejecutaba. Mis repros desktop llamaban a la secuencia JUGAR por eval FUERA del frame (el state servía) y `agent-browser errors` no veía nada (el escudo no emite window.onerror). El ensamblado era inocente (el bundle declara Quaternion igual que la fuente).
+
+**FIX r97:**
+1. La cruz hand-Z = handX × handY va a un Vector3 nuevo `_gVz` (`crossVectors` legítimo) + `makeBasis(_gHandZ, _gHandY, _gVz)` — el punto EXACTO donde r95 rompía.
+2. **El escudo AHORA HABLA**: `window.__PP_VIGIA = { suelta }` y el catch del escudo suelta `{e:'anim_shield', msg: firma, estado, xr}` por beacon + localStorage (un try/catch NO emite window.onerror — r96 era ciego a esta modalidad).
+3. **CAPA QA NUEVA Y PERMANENTE `qa_bundle_r97.py`**: sirve `public/` TAL CUAL (el artefacto desplegable), ejecuta el BUNDLE REAL y exige: CERO líneas «escudo del bucle», cero pageerrors/Uncaught, vigía operativo (`suelta` persiste), flujo hall→JUGAR (serve/player, menú cerrado) y los brazos DE VERDAD — agarre AL MONTAR (0,0 mm en el mango en el bundle local; invariantes por muestreo CDP anti-estrangulamiento: rAF y setInterval se clavan en headless bajo SwiftShader).
+
+**Verificación:** qa_bundle 15/0 (con 3.6.188 reventaba al instante: escudo desde el boot) · P0 54 · anti-bloqueo 14 · brazos 22/12/16 · física 12 · c05 17 · ITTF 8 · CADENA 14 · rallies 200 · en vivo sup1 151 · escudo 54 · imp2 66 · bump 3.6.189 (golden 47d64d64) · kit release-v36189 (4 ZIPs).
+**EN PRODUCCIÓN:** deploy EXIT=0 (main 378df63→91cc650) · Pages `built` (7c04d86ad) · PAGES-VERSION 3.6.189 · EN VIVO: boot limpio (glb ✓ vigía ✓ **0 escudo**), flujo hall→JUGAR → serve/player, una mano en el mango (13,5 mm; la otra en pleno golpeo de la demo), cero pageerrors — **el bundle de producción se EJECUTA por primera vez desde r93**.

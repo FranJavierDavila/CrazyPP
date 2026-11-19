@@ -241,7 +241,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.188-SDK6', c00s.includes('3.6.188-SDK6'));
+  aguja('versión · c00 sella 3.6.189-SDK6', c00s.includes('3.6.189-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
@@ -290,8 +290,8 @@ const C = DIMS.tableCenterZ;
   aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
     (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
     b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.188-SDK6 en el bundle',
-    b94.includes('3.6.188-SDK6'));
+  aguja('r94 · versión sella 3.6.189-SDK6 en el bundle',
+    b94.includes('3.6.189-SDK6'));
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,
@@ -331,7 +331,16 @@ const C = DIMS.tableCenterZ;
   aguja('r96 · la muñeca anatómica tiene perpendicular GARANTIZADA (adiós al NaN de la cruz cero)',
     b95.includes('r96 · perpendicular GARANTIZADA') &&
     b95.includes('Math.abs(_gHandY.x) < 0.9') &&
-    b95.includes('if (_gQe.lengthSq() < 1e-6) _gQe.set(0, 1, 0)'));
+    b95.includes('_gVz.crossVectors(_gHandZ, _gHandY)') &&
+    b95.includes('const _gVz = new THREE.Vector3()'));
+  aguja('r97 · FIX BLOQUEO: la cruz hand-Z es Vector3 (JAMÁS sobre un Quaternion)',
+    b95.includes('r97 · FIX DEL BLOQUEO DEL CASCO') &&
+    !/const _gQe = new THREE\.Quaternion\(\)[\s\S]{0,400}_gQe\.crossVectors/.test(b95) &&
+    b95.includes('_gMx.makeBasis(_gHandZ, _gHandY, _gVz)'));
+  aguja('r97 · el ESCUDO DEL BUCLE habla con el vigía (beacon anim_shield: el try/catch no emite window.onerror)',
+    b95.includes("window.__PP_VIGIA = { suelta }") &&
+    b95.includes("window.__PP_VIGIA.suelta({ e: 'anim_shield'") &&
+    b95.includes('r97 · EL ESCUDO HABLA CON EL VIGÍA'));
 }
 
 console.log(`\nARNÉS P0 r87 · ${ok} OK · ${fails} FALLOS`);

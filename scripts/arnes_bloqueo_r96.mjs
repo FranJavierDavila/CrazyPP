@@ -81,7 +81,7 @@ const aguja = (nombre, cond) => {
     sw.includes('5 * 60 * 1000') &&
     sw.indexOf('clients.claim') < sw.indexOf('5 * 60 * 1000'));
   aguja('sw · el sello de caché viaja con la versión 3.6.188',
-    sw.includes("const CACHE = 'crazypp-v3.6.188-SDK6'"));
+    sw.includes("const CACHE = 'crazypp-v3.6.189-SDK6'"));
   aguja('sw · game.html sigue en stale-while-revalidate (arranque instantáneo)',
     sw.includes("endsWith('/game.html')") && sw.includes('function swr('));
 }
@@ -89,7 +89,7 @@ const aguja = (nombre, cond) => {
 /* — D · sellos 3.6.188 en el bundle — */
 {
   const b = readFileSync(RAIZ + '/public/game.html', 'utf-8');
-  aguja('sellos · 3.6.188-SDK6 en c00 y badge',
+  aguja('sellos · 3.6.189-SDK6 en c00 y badge',
     (b.match(/3\.6\.188-SDK6/g) || []).length >= 2);
 }
 

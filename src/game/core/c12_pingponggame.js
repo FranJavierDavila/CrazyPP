@@ -19067,6 +19067,18 @@ export class PingPongGame {
               window.__PP_TELE.ev('anim_shield', { msg: sig });
             }
           } catch { /* la telemetría jamás rompe el escudo */ }
+          // r97 · EL ESCUDO HABLA CON EL VIGÍA: la excepción escupida por el
+          // escudo no pasa por window.onerror (un try/catch NO emite evento)
+          // — r96 era ciego a esta modalidad («menú vivo pero gatillos muer-
+          // tos», bloqueo r91). Beacon directo + localStorage del visor: la
+          // firma (stack 1.ª línea) llega aunque el juego esté congelado.
+          try {
+            if (window.__PP_VIGIA && window.__PP_VIGIA.suelta) {
+              window.__PP_VIGIA.suelta({ e: 'anim_shield', msg: sig,
+                estado: this.rules ? this.rules.state : '-',
+                xr: !!(this.renderer && this.renderer.xr && this.renderer.xr.isPresenting) });
+            }
+          } catch { /* el vigía jamás rompe el escudo */ }
         }
       } catch { /* el escudo jamás rompe el bucle */ }
     }
@@ -19917,9 +19929,15 @@ export class PingPongGame {
     }
     if (_gHandZ.lengthSq() < 1e-6) _gHandZ.set(0, 1, 0);
     else _gHandZ.normalize();
-    _gQe.crossVectors(_gHandZ, _gHandY);           // hand-Z (palma = −Z)
-    if (_gQe.lengthSq() < 1e-6) _gQe.set(0, 1, 0); else _gQe.normalize();
-    _gMx.makeBasis(_gHandZ, _gHandY, _gQe);
+    // r97 · FIX DEL BLOQUEO DEL CASCO: la cruz hand-Z = handX × handY es un
+    // VECTOR (Vector3.crossVectors) — desde r95 se llamaba sobre _gQe (Qua-
+    // ternion: NO tiene crossVectors) → TypeError CADA FRAME desde el boot,
+    // tragado por el escudo del bucle (menú vivo, gatillos muertos: el pro-
+    // cesado del gatillo XR vive DENTRO del frame). El ensamblado y la D1
+    // eran inocentes: el arnés de agujas no EJECUTABA el driver.
+    _gVz.crossVectors(_gHandZ, _gHandY);           // hand-Z (palma = −Z)
+    if (_gVz.lengthSq() < 1e-6) _gVz.set(0, 1, 0); else _gVz.normalize();
+    _gMx.makeBasis(_gHandZ, _gHandY, _gVz);
     _gQb.setFromRotationMatrix(_gMx);
     bp.fqH.filtrar(_gQb, dt);
     _gQc.copy(bp.fqH.prev).premultiply(_gRigQ);
@@ -20973,6 +20991,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         huecos: huecos.slice(-12).map((h) => Math.round(h)) });
     } catch (e4) { /* jamás rompe */ }
   }, 900);
+  // r97 · el ESCUDO del bucle necesita soltar sus firmas por el mismo canal
+  window.__PP_VIGIA = { suelta };
 })();
 /* r91 · arañas del brazo visible del rival (cero allocs por frame). FUERA
  * del bloque DEPS: el ensamblado RECONSTRUYE ese bloque (importes) y se
@@ -21002,6 +21022,7 @@ const _gUp = new THREE.Vector3(0, 1, 0); const _gNeg = new THREE.Vector3(-1, 0, 
 // r95 · scratch de la muñeca anatómica (makeBasis) — cero allocs por frame
 // (_gMx ya existía en este módulo: se reutiliza)
 const _gHandY = new THREE.Vector3(); const _gHandZ = new THREE.Vector3();
+const _gVz = new THREE.Vector3();   // r97 · resultado VECTOR de la cruz hand-Z
 /* r94 · marco del RIG por frame: el mundo del juego (ai.pos, pala, bola,
  * DIMS) vive en RIG-LOCAL pero el rig puede estar MOVIDO (hall, menú, onda)
  * o GIRADO (recentrado XR) — los huesos se leen en mundo y las quats dese-

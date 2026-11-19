@@ -19904,8 +19904,21 @@ export class PingPongGame {
     _gHandY.copy(_gD).multiplyScalar(bp.pulgarY);
     _gHandZ.copy(_gF);                             // candidato a hand-X
     _gHandZ.addScaledVector(_gHandY, -_gHandZ.dot(_gHandY));
-    if (_gHandZ.lengthSq() < 1e-6) _gHandZ.set(0, 0, 1); else _gHandZ.normalize();
-    _gQe.crossVectors(_gHandZ, _gHandY).normalize();   // hand-Z (palma = −Z)
+    // r96 · perpendicular GARANTIZADA: el fallback fijo (0,0,1) de r95 podía
+    // ser ∥ al eje hoja a su vez (orientaciones exóticas del recentrado XR)
+    // → cruz cero → NaN en la quat de la mano. Se elige el eje mundial con
+    // la menor componente sobre Y: JAMÁS paralelo al eje hoja.
+    if (_gHandZ.lengthSq() < 1e-6) {
+      _gHandZ.set(0, 0, 0);
+      if (Math.abs(_gHandY.x) < 0.9) _gHandZ.x = 1;
+      else if (Math.abs(_gHandY.y) < 0.9) _gHandZ.y = 1;
+      else _gHandZ.z = 1;
+      _gHandZ.addScaledVector(_gHandY, -_gHandZ.dot(_gHandY));
+    }
+    if (_gHandZ.lengthSq() < 1e-6) _gHandZ.set(0, 1, 0);
+    else _gHandZ.normalize();
+    _gQe.crossVectors(_gHandZ, _gHandY);           // hand-Z (palma = −Z)
+    if (_gQe.lengthSq() < 1e-6) _gQe.set(0, 1, 0); else _gQe.normalize();
     _gMx.makeBasis(_gHandZ, _gHandY, _gQe);
     _gQb.setFromRotationMatrix(_gMx);
     bp.fqH.filtrar(_gQb, dt);
@@ -20881,6 +20894,86 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /* DEPS-FASE2-FIN */
+/* r96 · VIGILANTE DE BLOQUEO + BARÓMETRO DE ERRORES (el informe del dueño:
+ * «otra vez el bloqueo del juego tan pronto le damos a jugar» — el sandbox
+ * no puede crear una sesión XR, así que el diagnóstico viaja en el JUEGO).
+ *  1 · CUALQUIER excepción/rechazo no capturado se suelta YA por sendBeacon
+ *      (IPC aparte del hilo JS: llega aunque el juego esté congelado) y
+ *      queda en localStorage (ppxr_js_error) para leerla en el visor.
+ *  2 · Un tick de requestAnimationFrame guarda el latido; un setInterval
+ *      (planificador DISTINTO: sigue vivo durante un bloqueo del bucle)
+ *      detecta silencios ≥1,6 s en juego y suelta freeze_report con el
+ *      contexto (estado, XR, hall, menú, GLB) + los últimos 12 huecos de
+ *      frame (distingue tormenta de shaders de bloqueo total). Máximo 5
+ *      informes por episodio; el contador se rearma al volver a latir.
+ *  3 · Latido cada 30 s SOLO en XR presentando: garantiza que el pipeline
+ *      de telemetría se vea vivo sin esperar un error.
+ * El endpoint es el MISMO del TELE de la casa; si el worker cae, localStorage
+ * conserva el informe (ppxr_freeze_report) para recuperarlo en el visor. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const EP = 'https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele';
+  const suelta = (ev) => {
+    try {
+      ev.v = window.__PP_VERSION || '?';
+      let sid = 'ns';
+      try { sid = sessionStorage.getItem('ppxr_sid') || sid; } catch (e1) { /* */ }
+      ev.sid = sid;
+      ev.ts = Date.now();
+      const cuerpo = JSON.stringify([ev]);
+      try { if (navigator.sendBeacon) navigator.sendBeacon(EP,
+        new Blob([cuerpo], { type: 'text/plain;charset=UTF-8' })); } catch (e2) { /* */ }
+      try { localStorage.setItem('ppxr_' + ev.e, cuerpo); } catch (e3) { /* */ }
+    } catch (e0) { /* jamás rompe el juego */ }
+  };
+  window.addEventListener('error', (eE) => suelta({ e: 'js_error',
+    msg: String(eE.message || '').slice(0, 160), ln: eE.lineno || 0,
+    src: String(eE.filename || '').slice(-40),
+    st: String((eE.error && eE.error.stack) || '').slice(0, 420) }));
+  window.addEventListener('unhandledrejection', (eR) => suelta({ e: 'js_rejection',
+    msg: String((eR.reason && eR.reason.message) || eR.reason || '').slice(0, 160),
+    st: String((eR.reason && eR.reason.stack) || '').slice(0, 420) }));
+  let ultLatido = Date.now();
+  const huecos = [];
+  let ultT = ultLatido;
+  const late = () => {
+    const ahora = Date.now();
+    huecos.push(ahora - ultT); ultT = ahora;
+    if (huecos.length > 12) huecos.shift();
+    ultLatido = ahora;
+    informes = 0;                                   // el bucle respira: rearma
+    requestAnimationFrame(late);
+  };
+  let informes = 0;
+  requestAnimationFrame(late);
+  setInterval(() => {
+    try {
+      const G = window.__PP_GAME;
+      const xr = !!(G && G.renderer && G.renderer.xr && G.renderer.xr.isPresenting);
+      const gapo = Date.now() - ultLatido;
+      if (xr && gapo < 1600 && huecos.length === 12) {
+        // latido de presencia (cada ~30 s lo filtra el hueco del bucle)
+        if (huecos[huecos.length - 1] < 100 && !late._ppLat) {
+          late._ppLat = true;
+          setTimeout(() => { late._ppLat = false; }, 30000);
+          suelta({ e: 'vr_latido', estado: G.rules ? G.rules.state : '-',
+            huecoMedio: Math.round(huecos.reduce((a, b) => a + b, 0) / huecos.length) });
+        }
+        return;
+      }
+      if (gapo < 1600 || informes >= 5) return;
+      if (document.visibilityState !== 'visible') return;   // pestaña oculta:
+        // el navegador congela rAF por diseño — NO es un bloqueo del juego
+      informes++;
+      suelta({ e: 'freeze_report', gapo,
+        estado: (G && G.rules) ? G.rules.state : '-',
+        xr, enHall: !!(G && G.inHall), menu: !!(G && G.menuOpen),
+        glb: !!(G && G.aiArmGlb && G.aiArmGlb.listo),
+        net: !!(G && G.net && G.net.online),
+        huecos: huecos.slice(-12).map((h) => Math.round(h)) });
+    } catch (e4) { /* jamás rompe */ }
+  }, 900);
+})();
 /* r91 · arañas del brazo visible del rival (cero allocs por frame). FUERA
  * del bloque DEPS: el ensamblado RECONSTRUYE ese bloque (importes) y se
  * comía las declaraciones — 8 usos huérfanos que el escudo del bucle

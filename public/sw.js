@@ -21,7 +21,7 @@
  *    instalación no duplica el peso.
  * ===================================================================== */
 
-const CACHE = 'crazypp-v3.6.187-SDK6';   // ← SELLO: bump_version.py lo parchea
+const CACHE = 'crazypp-v3.6.188-SDK6';   // ← SELLO: bump_version.py lo parchea
 
 const SHELL = [
   './game.html',
@@ -49,9 +49,19 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
-    const claves = await caches.keys();
-    await Promise.all(claves.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    // r96 · claim INMEDIATO, purga DIFERIDA: la página ANTERIOR sigue viva
+    // en memoria tras el claim y puede seguir pidiendo sus assets (audio
+    // del saque, voces, skins…) — borrar su caché EN EL MISMO INSTANTE fue
+    // el presunto bloqueo del arranque en el casco (cache-first → misses
+    // en cadena justo cuando se pulsa JUGAR tras una actualización). La
+    // caché vieja se borra 5 min después: nadie la necesita ya.
     await self.clients.claim();
+    setTimeout(async () => {
+      try {
+        const claves = await caches.keys();
+        await Promise.all(claves.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+      } catch (e) { /* la próxima activate lo reintenta */ }
+    }, 5 * 60 * 1000);
   })());
 });
 

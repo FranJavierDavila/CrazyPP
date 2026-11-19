@@ -241,7 +241,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.187-SDK6', c00s.includes('3.6.187-SDK6'));
+  aguja('versión · c00 sella 3.6.188-SDK6', c00s.includes('3.6.188-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
@@ -290,8 +290,8 @@ const C = DIMS.tableCenterZ;
   aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
     (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
     b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.187-SDK6 en el bundle',
-    b94.includes('3.6.187-SDK6'));
+  aguja('r94 · versión sella 3.6.188-SDK6 en el bundle',
+    b94.includes('3.6.188-SDK6'));
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,
@@ -322,6 +322,16 @@ const C = DIMS.tableCenterZ;
     b95.includes('_ppUltCur.copy(ai.chain.cur'));
   aguja('r95 · la bola del saque descansa SOBRE la palma (mano −4,5 cm bajo la bola)',
     b95.includes('r95 · la mano DEBAJO de la'));
+  aguja('r96 · el VIGILANTE DE BLOQUEO viaja en el bundle (beacon js_error + freeze_report + latido VR)',
+    b95.includes('r96 · VIGILANTE DE BLOQUEO') &&
+    b95.includes("e: 'freeze_report'") &&
+    b95.includes("e: 'js_error'") &&
+    b95.includes('navigator.sendBeacon(EP') &&
+    b95.includes("document.visibilityState !== 'visible'"));
+  aguja('r96 · la muñeca anatómica tiene perpendicular GARANTIZADA (adiós al NaN de la cruz cero)',
+    b95.includes('r96 · perpendicular GARANTIZADA') &&
+    b95.includes('Math.abs(_gHandY.x) < 0.9') &&
+    b95.includes('if (_gQe.lengthSq() < 1e-6) _gQe.set(0, 1, 0)'));
 }
 
 console.log(`\nARNÉS P0 r87 · ${ok} OK · ${fails} FALLOS`);

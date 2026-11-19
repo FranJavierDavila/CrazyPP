@@ -52,6 +52,7 @@ SITE_PATHS = ['public/game.html', 'public/championships', 'public/assets',
               'public/vendor', 'public/tv.html', 'public/robots.txt', 'public/logo.svg',
               'public/ugc',          # r85: EL TALLER UGC (editor de etapas/campeonatos)
               'public/telemetria.html',   # r87: PANEL de telemetría (URL estable en Pages)
+              'public/vr_arm.glb',       # r93 · LOS BRAZOS del rival (GLB del dueño)
               'public/manifest.webmanifest', 'public/sw.js',   # r109 · M3 PWA
               'public/logo-192.png', 'public/logo-512.png', 'public/logo-maskable-512.png']
 

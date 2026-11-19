@@ -7289,3 +7289,21 @@ Stage Summary:
 - Síntoma del dueño: «no me aparece la v3.6.186, solo la 185» en producción. Diagnóstico por API: tras mi push r94 (pages b30e55a, build verificada en vivo), un ENTORNO EXTERNO con estado r93 (main=edc1a79, árbol con vr_arm.glb tardío 1a2c326 y su propio código de deploy — PAGES-VERSION en formato distinto) forzó main→edc1a79 y pages→cc262046 (contenido r93, fecha interna 14:34:57Z). GitHub Pages no construyó nunca b30e55a (builds list 30/30 sin él) y el sello 185 volvió a producción.
 - Recuperación: deploy_pages.py --push de nuevo desde HEAD 5f78d87 (main al día) → pages ae34afc, build `built`, sello 3.6.186 verificado 3× + sw.js CACHE v3.6.186 en producción; main edc1a79..5f78d87 y proyecto 1a2c326..5f78d87 (force) re-empujados. Vigilancia 5 min: sin nuevo pisado.
 - LECCIÓN r94: sólo UN entorno de despliegue. El otro equipo/máquina debe hacer git pull (está en r93) o dejar de correr deploy_pages.py --push --backup, o pisará cada versión nueva. Token usado desde el entorno y nunca escrito en log/fichero (grep 0 en ambos logs).
+
+## Ronda 95 (r95 · «BRAZOS NATURALES») · V3.6.187-SDK6 — 2026-11-19
+
+**El informe del dueño (video mal.mp4, 44 s de producción):** «ni siquiera está agarrando bien la pala, ni la bola en el saque; esos dedos están retorcidos; los brazos tiemblan y son muy inestables, parece que reciben una descarga eléctrica; repasa los huesos, posiciona los brazos como una persona, movimientos naturales y fluidos».
+
+**Causas raíz (medidas, no supuestas):**
+1. DEDOS: r93 curlaba alrededor de −Z local — el plano LATERAL de la mano — y con el MISMO eje en el brazo espejado (al revés). Medido del GLB (scripts/r95_dedos_glb.mjs): los dedos extienden en +X local, la palma mira a −Z, el pulgar en −Y (A) / +Y (B); la flexión real es alrededor de +Y y es RELATIVA al bind (el GLB trae flexiones horneadas que el sobrescritura absoluta destruía).
+2. AGARRE: el driver r92-r93 forzaba hoja ∥ antebrazo (pala chupachups) y recolocaba el centro del plan por el eje VIEJO tras girar la hoja — el mango quedaba flotando junto a la mano.
+3. TEMBLOR: la zona dulce actuaba también en FOLLOW (persiguiendo a la bola que ya vuela a 6-30 m/s = látigo); filtros OneEuro sin fases; saltos de solución de IK cerca del antipodal; el plan moría con un TELEPORT de ~24 cm a la pose de espera.
+4. POSTURA: el cuerpo anclaba en ai.pos sin límites — los brazos flotaban SOBRE la mesa, se abrían en T y alcanzaban el sofá (el AI se pega al borde).
+
+**Fix (c12, r95):** curl de dedos medido (+Y, bind-relativo, ≈109° dedos, pulgar presiona; pulgarY por brazo) · muñeca ANATÓMICA por base ortonormal (hand-Y=pulgarY·ejeHoja: el mango cruza la palma; hand-X≈antebrazo; palma −Z) · la pala CONSERVA la pose del plan (caras reales topspin/cortada) y solo se ancla el mango a la muñeca final (centro=muñeca+ejeHoja·0,1303) · zona dulce SOLO en strike + filtros por fase (6.5/3/1.1) · ENVOLTURA NATURAL (elevación ≤55°, bola alta ≤72°, radio ≤88 % con la mano alta → codo doblado, nunca antena) · CUERPO DE PERSONA (pecho 0,42 m detrás del borde, x ±1,15, yaw suave ±0,5 rad) · bola del saque SOBRE la palma (mano −4,5 cm) · CODA DE CADENA (funde el último cur en 0,3 s, sin teleport).
+
+**Verificado en vivo (dev :3000, jugando de verdad):** temblor en reposo 0,4 mm/frame · mano↔mango 3 mm · mano↔pala 131,1 mm = EL MANGO EXACTO · bola-palma 1,1 cm en el saque (y el rally completo arrancó desde el saque del CPU: bote 1,48 m) · contacto alto 1,72 → mano máx 1,52 (codo doblado) · fases react→back→strike→follow→recover sin látigo (follow 13 mm/frame) · 0 pageerrors.
+
+**Batería TODO VERDE:** arnés r95 22/22 + P0 50/50 (7 agujas r95) + r94 12/12 + r93 16/16 + física 12 · c05 17 · ITTF 8 · CADENA 14 · rallies 200 · QA en vivo sup1 151 · escudo 54 · imp2 66 (agujas 3.6.187) · bump oficial 3.6.187 (golden afd9c3e5, byte-exacto) · kit release-v36187 con 4 ZIPs.
+
+**EN PRODUCCIÓN:** deploy_pages.py --push --release --backup EXIT=0 · Pages build `built` (80a30cd4) · PAGES-VERSION.txt = 3.6.187-SDK6 · sello 187 verificado en producción 2× + sw.js CACHE v3.6.187 · Release v3.6.187-SDK6 con los 4 ZIPs verificados por API · main 9a901dc en GitHub · vigilancia anti-clobber 5 min estable. Lección r94 aplicada: un solo desplegador.

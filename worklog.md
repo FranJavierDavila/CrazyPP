@@ -7413,3 +7413,32 @@ r94 12/0 · bloqueo 14/0 · física 12. En vivo (headless): partido completo con
 muestra al rival REDUCIDO A LA PALA FLOTANTE (roja, junto a la vitrina), cero brazos.
 **Lección r98 re-validada ×2**: el gate del deploy abortó con HEAD desalineado (180a575 = 3.6.192
 vs árbol 3.6.194) — commit primero, deploy después.
+
+## Ronda 99bis-2 (el dueño: «acompañamiento natural, progresivo, sin brusquedades ni empujones») · V3.6.195-SDK6 — 2026-11-20
+**Petición:** que los golpeos acompañen de forma natural con movimientos progresivos — nada
+brusco, nada de empujones a la bola; gestos que acompañen el movimiento, no solo empujen la pala.
+**Lo que el test destapó (métricas, no opiniones):** los quínticos de la cadena pueden pedir
+PICOS ANTINATURALES para cumplir sus empalmes de velocidad (medido: 25-49 cm en UN frame = 15-30
+m/s) cuando el re-anclaje nace lejos del contacto; y la «atrapada» de la 99bis (chain.cur saltaba
+a la bola) era, en sí misma, un cambio brusco.
+**Tres garantías duras nuevas (c06):**
+1. **TOPE DE PASO por frame** (updateCadena): la pala NUNCA se mueve más de 13 cm por frame
+   (7,8 m/s a 60 fps) — pase lo que pida el quíntico, el gesto se ve siempre progresivo. Medido
+   tras el arreglo: máx 13,0 cm/frame exacto en ambos escenarios de prueba.
+2. **REDIRECCIÓN PROGRESIVA (_enContacto)**: al terminar el strike, si la bola está en el punto
+   de barrido (±5 cm) el golpe es REAL y sale ahí; si quedó lejos, la cadena se RE-ANCLA con un
+   quíntico que vuela a ENCONTRAR la bola en su propio vuelo (T2 = d/6, predicción lineal ×0.9)
+   y continúa con el arco de acompañamiento r92 — sin saltos, la persecución converge
+   (medido: 0,61 → 0,27 → 0,14 m → contacto a 0,9 cm).
+3. **TIEMPOS HUMANOS**: el strike jamás dura menos de 80 ms y su T crece con la distancia
+   (d/6); presupuesto total del disparo diferido 0,75 s con margen de 0,15 s por re-anclaje.
+**Acompañamiento post-contacto verificado**: follow 0,15-0,22 s con arco (r92), recover
+0,30-0,40 s con velocidad de salida que decae a cero (quíntico), coda r95 de 0,3 s al morir el
+plan — el test mide ≥ 6 frames de flujo continuo tras el golpe (obtuvo 10).
+**Verificación**: scripts/test_disparo_diferido_r99.mjs ampliado a 2 escenarios (rally normal +
+pala retrasada 0,4 m detrás) · 9/0. Batería: P0 59/0 (aguja nueva r99bis) · r95 29/0 (3 agujas
+nuevas) · r93 16/0 · r94 12/0 · bloqueo 14/0 · física 12. En vivo: bundle 3.6.195 arranca y
+juega SIN ningún error de página (detector window.onerror en el banco headless).
+**Entorno**: el sandbox recicló node_modules y llenó el disco (/tmp/my-project huérfano: 14 GB;
+staging de kits viejos). three@0.186.0 reinstalado a mano desde el tarball oficial; kits 36194
+retirados de descargas (ya en GitHub Releases).

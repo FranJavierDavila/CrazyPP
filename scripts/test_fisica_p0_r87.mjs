@@ -243,7 +243,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.194-SDK6', c00s.includes('3.6.194-SDK6'));
+  aguja('versión · c00 sella 3.6.195-SDK6', c00s.includes('3.6.195-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
@@ -292,8 +292,8 @@ const C = DIMS.tableCenterZ;
   aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
     (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
     b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.194-SDK6 en el bundle',
-    b94.includes('3.6.194-SDK6'));
+  aguja('r94 · versión sella 3.6.195-SDK6 en el bundle',
+    b94.includes('3.6.195-SDK6'));
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,
@@ -313,6 +313,10 @@ const C = DIMS.tableCenterZ;
   aguja('r99 · DISPARO DIFERIDO (contacto real bola-pala visible)',
     b95.includes('_preparaDisparo') && b95.includes('_aplicaDisparo') &&
     b95.includes('this._retPend') && !b95.includes('ball.pos.set(cx, cy, cz);'));
+  // r99bis · ACOMPAÑAMIENTO NATURAL: gestos progresivos, sin empujones
+  aguja('r99bis · gesto progresivo (strike ≥ 80 ms · tope 8 m/s · re-anclaje _enContacto)',
+    b95.includes('Math.max(TBola, d / 6)') && b95.includes('_enContacto') &&
+    b95.includes('addScaledVector(b.vel, T2 * 0.9)'));
   aguja('r95 · la zona dulce SOLO en strike (el follow ya no persigue la bola: látigo=0)',
     b95.includes('r95 · zona dulce SOLO en strike') &&
     b95.includes("const enStrike = !!(ch && ch.phase === 'strike')"));

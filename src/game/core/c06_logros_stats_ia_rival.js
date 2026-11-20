@@ -771,6 +771,7 @@ const _cadC = new THREE.Vector3();
 const _cadD = new THREE.Vector3();
 const _cadV = new THREE.Vector3();
 const _cadT = new THREE.Vector3();   // r92 · cuerda/tangente del ARCO del golpe
+const _cadP = new THREE.Vector3();   // r99bis · paso por frame del tope de gesto
 
 export class OpponentAI {
   constructor(cfg, sign, home) {
@@ -954,12 +955,14 @@ export class OpponentAI {
     _cadD.copy(vP).normalize();
     const pC = _cadA.set(cx, cy, cz);
     const d = ch.cur.distanceTo(pC);
-    // r99 · el strike dura LO QUE TARDA LA BOLA en llegar al punto de
-    // barrido (vuela a |v| desde ball.pos) — la pala y la bola llegan
-    // JUNTAS al contacto. Piso de velocidad de pala 12 m/s: si el plan
-    // pide más, el ajuste fino del aplicador cubre el resto.
+    // r99bis · ACOMPAÑAMIENTO NATURAL (el dueño: «movimientos progresivos,
+    // nada bruscos, ni empujones»): el strike JAMÁS dura menos de 80 ms y
+    // su T crece con la DISTANCIA (d/3.5): el pico del quíntico (~1.875×d/T)
+    // queda ≤ 7 m/s para cualquier distancia — un gesto humano que acelera,
+    // atraviesa el contacto y acompaña, sin látigos. Si la bola llega antes,
+    // la pala la ENCUENTRA en vuelo (_enContacto), no con un salto.
     const T = TBola !== undefined
-      ? THREE.MathUtils.clamp(Math.max(TBola, d / 12), 0.035, 0.30)
+      ? THREE.MathUtils.clamp(Math.max(TBola, d / 6), 0.08, 0.30)
       : THREE.MathUtils.clamp(d / Math.max(3, vP.length()), 0.03, 0.09);
     const F = _cadB.copy(pC).addScaledVector(_cadD, G.dft);
     F.x -= ch.fh * this.sign * G.dft * 0.5;    // r92 · arco: cruce del gesto
@@ -1003,13 +1006,14 @@ export class OpponentAI {
       this._disparo.t += dt;
       if (!this.chain || this._disparo.t > this._disparo.tMax) this._aplicaDisparo();
     }
-    const ch = this.chain;
-    if (!ch) return;
-    if ((ch.phase === 'react' || ch.phase === 'back') && this.predictValid &&
-        ch.contact.distanceTo(this.predict) > 0.055) {
+    const ch0 = this.chain;
+    if (!ch0) return;
+    if ((ch0.phase === 'react' || ch0.phase === 'back') && this.predictValid &&
+        ch0.contact.distanceTo(this.predict) > 0.055) {
       this._reanclaCadena(this.predict, Math.max(this.predictT, 0.12));
       return;
     }
+    let ch = ch0;
     ch.t += dt;
     ch.tSeg = (ch.tSeg || 0) + dt;          // tiempo LOCAL del segmento activo:
     let seg = ch.segs[ch.segIdx];           // el global ch.t nunca se compara
@@ -1019,17 +1023,60 @@ export class OpponentAI {
       seg = ch.segs[ch.segIdx];
       if (seg) {
         // r99 · la pala ACABA DE LLEGAR al punto de barrido (fin del strike):
-        // la bola sale AQUÍ — el dueño ve el golpe, no un empujón fantasma.
-        if (ch.phase === 'strike' && seg.phase !== 'strike') this._aplicaDisparo();
+        // contacto (la bola sale) o re-anclaje progresivo para encontrarla.
+        if (ch.phase === 'strike' && seg.phase !== 'strike') {
+          this._enContacto();               // r99bis: puede RE-ANCLAR los segs
+          break;                            // el plan nuevo integra el próximo dt
+        }
         ch.phase = seg.phase;
       }
     }
+    if (!this.chain) return;                // el re-anclaje o el vigía la cerraron
+    seg = this.chain.segs[this.chain.segIdx] || this.chain.segs[0];
+    ch = this.chain;                        // misma instancia, segs renovados
     if (!seg) { this.chain = null; return; }
     ch.u = THREE.MathUtils.clamp(ch.tSeg / seg.T, 0, 1);
     mjQuintic(ch.u, seg.p0, seg.v0, seg.p1, seg.v1, seg.T, ch.cur);
     mjQuinticVel(ch.u, seg.p0, seg.v0, seg.p1, seg.v1, seg.T, ch.vel);
+    // r99bis · TOPE DE PASO (garantía dura: «nada brusco, sin empujones»):
+    // el quíntico puede pedir picos antinaturales para cumplir sus empalmes
+    // de velocidad; la pala NUNCA supera 7,8 m/s (13 cm a 60 fps) — el gesto
+    // se ve siempre progresivo y el re-anclaje absorbe el ajuste de llegada.
+    if (!ch._curPrev) ch._curPrev = ch.cur.clone();
+    _cadP.copy(ch.cur).sub(ch._curPrev);
+    if (_cadP.length() > 0.13) {
+      _cadP.setLength(0.13);
+      ch.cur.copy(ch._curPrev).add(_cadP);
+      ch.vel.copy(_cadP).multiplyScalar(60);   // la velocidad REAL acotada
+    }
+    ch._curPrev.copy(ch.cur);
     if (ch.phase === 'recover') ch.cur.lerp(this.pos, Math.min(1, dt * 2.5));
     if (!Number.isFinite(ch.cur.x + ch.cur.y + ch.cur.z)) this.chain = null;
+  }
+
+  /** r99bis · ÁRBITRO DEL CONTACTO (fin del strike): si la bola está en el
+   *  punto de barrido (±5 cm) el golpe es REAL y sale aquí. Si quedó lejos
+   *  (llegó antes que la pala), NADA de saltos: la cadena se re-ancla con
+   *  un quíntico que vuela a ENCONTRAR la bola en su propio vuelo (predic-
+   *  ción lineal al tiempo de encuentro) y continúa con el arco de acompa-
+   *  ñamiento — el dueño ve un gesto que persigue y acompaña, no un empujón. */
+  _enContacto() {
+    const d = this._disparo;
+    if (!d) return;
+    const b = d.ball;
+    if (b.pos.distanceTo(d.pos) < 0.05) { this._aplicaDisparo(); return; }
+    const ch = this.chain;
+    if (!ch) { this._aplicaDisparo(); return; }
+    // T2 de PERSECUCIÓN (d/7): la pala corre cerca de su tope (7 m/s ≈ 11,7
+    // cm/frame, dentro del tope de gesto de 13 cm) — así GANA a la recesión
+    // de la bola y el encuentro converge en 1-2 re-anclajes, sin látigo.
+    const T2 = THREE.MathUtils.clamp(
+      Math.max(ch.cur.distanceTo(b.pos) / 6, 0.08), 0.08, 0.20);
+    const obj = b.pos.clone().addScaledVector(b.vel, T2 * 0.9);
+    this.cadenaContacto(obj.x, obj.y, obj.z, d.v, T2);
+    if (!this.chain) { this._aplicaDisparo(); return; }   // guard NaN
+    d.pos.copy(obj);                       // el nuevo punto de encuentro
+    d.t = Math.max(d.t, d.tMax - 0.15);    // el tope global sigue mandando
   }
 
   reset() {
@@ -1495,7 +1542,7 @@ export class OpponentAI {
       T: T || 0.7,
       maxV: maxV || 10,
       t: 0,
-      tMax: 0.45,
+      tMax: 0.75,
     };
   }
 

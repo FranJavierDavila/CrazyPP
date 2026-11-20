@@ -201,9 +201,16 @@ const V3 = THREE.Vector3, Q4 = THREE.Quaternion;
   aguja('r99 · DISPARO DIFERIDO: la IA guarda la salida hasta que la pala llega',
     b.includes('_preparaDisparo') && b.includes('_aplicaDisparo') &&
     b.includes('_tBolaDe') && b.includes('this._retPend'));
-  aguja('r99 · el strike de la cadena dura LO QUE TARDA LA BOLA (TBola)',
-    b.includes('Math.max(TBola, d / 12)') &&
-    b.includes("ch.phase === 'strike' && seg.phase !== 'strike'"));
+  aguja('r99bis · ACOMPAÑAMIENTO NATURAL: strike ≥ 80 ms · T crece con la distancia (d/6)',
+    b.includes('Math.max(TBola, d / 6)') &&
+    b.includes('THREE.MathUtils.clamp(Math.max(TBola, d / 6), 0.08, 0.30)'));
+  aguja('r99bis · SIN atrapadas bruscas: _enContacto re-ancla con quínticos',
+    b.includes('_enContacto') &&
+    b.includes('addScaledVector(b.vel, T2 * 0.9)') &&
+    b.includes('d.t = Math.max(d.t, d.tMax - 0.15)'));
+  aguja("r99 · el fin del strike pasa por el árbitro de contacto",
+    b.includes("ch.phase === 'strike' && seg.phase !== 'strike'") &&
+    b.includes('this._enContacto();'));
   aguja('r99 · NINGUNA teletransportación de la bola al barrido (la bola viva manda)',
     !b.includes('ball.pos.set(cx, cy, cz);'));
 }

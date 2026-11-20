@@ -7368,3 +7368,19 @@ Stage Summary:
 **IMPLEMENTADO en c12 (r99):** dedos POR NOMBRE (15 huesos/brazo, raíz incluida, bind intacto) · curl DINÁMICO por pose: POSE_AGARRE shakehand (índice 1.2/0.4/0.4 en el borde, medio 1.45/2.0/1.3, anular/meñique envueltos, pulgar bind) · POSE_SAQUE (cuenco uniforme, palma ARRIBA via basis rig-local X=antebrazo/Z=−up/Y=Z×X) · POSE_BALANCE (semicurva) · funde exponencial τ≈125 ms (R.wSaque) · anclaje de pala en la CREASE (muñeca = crease − dirDedos·0.0868; centro = muñeca + handQ·offCrease + ejeHoja·0.0903) · targets del brazo libre (rally: x_ai−s·0.21, 0.98, zCuerpo+s·0.05 + clamp de línea media 0.05·(−s)) · micro-sway de vida (dedos ±0.035 rad, muñeca ±0.03, CERO en strike y saque) · _r99TopeQ listo (tope angular) · pole freeze en strike pendiente.
 **Verificación estática:** P0 56/0 · brazos r93 16/0 · r94 12/0 · r95 22/0 · anti-bloqueo 14/0 · física 12 · sintaxis OK · bump oficial 3.6.191.
 **PENDIENTE (siguiente mensaje):** verificación visual (render de poses + screenshots + VLM contra las capturas), ajuste fino de ángulos tras verlo, pole freeze, deploy y verificación en casco.
+
+## Ronda 99 (continuación · brazos naturales VERIFICADOS) · V3.6.192-SDK6 — 2026-11-20
+**Banco de poses visual** (scripts/render_brazos/, three 0.186 + agent-browser, unidades GLB cm):
+réplica EXACTA del driver c12 (basis handY=pulgarY·ejeHoja, handX=antebrazo ort, handZ=X×Y).
+**VEREDICTO contra las capturas del dueño:** AGARRE shakehand ✓ (mango cruzando la palma en la
+crease, dedos envueltos, pulgar apoyando, hoja continuando la línea del antebrazo) · SAQUE ✓
+(palma arriba en cuenco, bola descansando — idéntico a la foto 1 del dueño) · RALLY ✓ (mano
+libre semicurva relajada). Capturas: scripts/capturas_r99/render_*.png.
+**Fluidez implementada:** _r99TopeQ (tope angular 14/8/5 rad/s) conectado a los 6 filtros One
+Euro de ambos brazos + polo del codo CONGELADO durante el strike (la histéresis ya no puede
+voltear el codo a mitad de swing).
+**Agujas r95→r99 actualizadas** (2 needles que codificaban la mecánica SUSTITUIDA: curl estático
+r95 → curl dinámico por pose; anclaje en muñeca → anclaje en crease). Batería: P0 56/0 · brazos
+r93 16/0 · r94 12/0 · r95 22/0 · anti-bloqueo 14/0 · física 12 · bump oficial 3.6.192.
+**Lección r98 re-validada:** el GATE del deploy abortó el primer intento (HEAD dc8e9f9 = 3.6.191
+vs árbol 3.6.192 sin commitear) — el guardia anti-«me olvidé de committar» funciona.

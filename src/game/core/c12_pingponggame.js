@@ -19896,11 +19896,19 @@ export class PingPongGame {
     // — One Euro del agarre (nítido en strike, medio en follow, suave en espera)
     bp.fG.fcMin = enStrike ? 6.5 : (golpeando ? 3.0 : 1.1);
     _gE.copy(bp.fG.filtrar(_gE, dt));
+    // r99 · TOPE DE VELOCIDAD ANGULAR (ω máx 14/8/5 rad/s): mata los saltos
+    // del re-solve del piso duro y de la histéresis del polo — el brazo
+    // fluye sin tirones («parece que están recibiendo una descarga»).
+    const wMax99 = enStrike ? 14 : (golpeando ? 8 : 5);
     // — polo del codo con HISTÉRESIS (adiós a los volteos de IK: el temblor
     //   caótico del informe venía también de estos saltos de solución)
-    const ladoDeseado = THREE.MathUtils.clamp((_gE.x - _gS.x) * s * 4, -1, 1);
-    if (Math.abs(ladoDeseado) > 0.2 && Math.sign(ladoDeseado) !== bp.poleSide)
-      bp.poleSide = Math.sign(ladoDeseado);
+    // r99 · CONGELADO en strike: la histéresis puede voltear el codo a mitad
+    //   de swing — durante el golpeo el polo no se re-evalúa.
+    if (!enStrike) {
+      const ladoDeseado = THREE.MathUtils.clamp((_gE.x - _gS.x) * s * 4, -1, 1);
+      if (Math.abs(ladoDeseado) > 0.2 && Math.sign(ladoDeseado) !== bp.poleSide)
+        bp.poleSide = Math.sign(ladoDeseado);
+    }
     _gG.set(0, -1, 0).addScaledVector(_gNeg, s * bp.poleSide * -0.8);
     // — IK RÍGIDA: el objetivo ya clampa; el hueso JAMÁS estira
     solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH /*codo*/, _gA /*muñeca*/);
@@ -19919,6 +19927,7 @@ export class PingPongGame {
     bp.fqH.fcMin = enStrike ? 7 : (golpeando ? 3.4 : 1.8);
     _gF.copy(_gH).sub(_gS).normalize();   // d1: eje del brazo (marco rig)
     _gQb.setFromUnitVectors(bp.axisRestU, _gF).multiply(bp.restQbra);
+    _r99TopeQ(bp.fqU, _gQb, dt, wMax99);           // r99 · tope angular
     bp.fqU.filtrar(_gQb, dt);
     _gQc.copy(bp.fqU.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bp.bra.parent.getWorldQuaternion(_gQd);
@@ -19927,6 +19936,7 @@ export class PingPongGame {
     bp.bra.getWorldQuaternion(_gQd);
     _gF.copy(_gA).sub(_gH).normalize();        // d2: eje del antebrazo
     _gQb.setFromUnitVectors(bp.axisRestL, _gF).multiply(bp.restQant);
+    _r99TopeQ(bp.fqL, _gQb, dt, wMax99);           // r99 · tope angular
     bp.fqL.filtrar(_gQb, dt);
     _gQc.copy(bp.fqL.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bp.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
@@ -19964,6 +19974,7 @@ export class PingPongGame {
     if (_gVz.lengthSq() < 1e-6) _gVz.set(0, 1, 0); else _gVz.normalize();
     _gMx.makeBasis(_gHandZ, _gHandY, _gVz);
     _gQb.setFromRotationMatrix(_gMx);
+    _r99TopeQ(bp.fqH, _gQb, dt, wMax99);           // r99 · tope angular
     bp.fqH.filtrar(_gQb, dt);
     _gQc.copy(bp.fqH.prev).premultiply(_gRigQ);
     bp.mano.parent.getWorldQuaternion(_gQd);
@@ -20045,6 +20056,7 @@ export class PingPongGame {
     if (_gA.y < mesaY) _gA.y = mesaY;
     _gF.copy(_gH).sub(_gS).normalize();
     _gQb.setFromUnitVectors(bl.axisRestU, _gF).multiply(bl.restQbra);
+    _r99TopeQ(bl.fqU, _gQb, dt, wMax99);           // r99 · tope angular
     bl.fqU.filtrar(_gQb, dt);
     _gQc.copy(bl.fqU.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bl.bra.parent.getWorldQuaternion(_gQd);
@@ -20053,6 +20065,7 @@ export class PingPongGame {
     bl.bra.getWorldQuaternion(_gQd);
     _gF.copy(_gA).sub(_gH).normalize();
     _gQb.setFromUnitVectors(bl.axisRestL, _gF).multiply(bl.restQant);
+    _r99TopeQ(bl.fqL, _gQb, dt, wMax99);           // r99 · tope angular
     bl.fqL.filtrar(_gQb, dt);
     _gQc.copy(bl.fqL.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bl.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
@@ -20074,6 +20087,7 @@ export class PingPongGame {
       _gQe.setFromAxisAngle(_r99v1, 0.3 * s + 0.03 * Math.sin(R._t * 0.9));
       _gQb.multiply(_gQe);
     }
+    _r99TopeQ(bl.fqH, _gQb, dt, wMax99);           // r99 · tope angular
     bl.fqH.filtrar(_gQb, dt);
     _gQc.copy(bl.fqH.prev).premultiply(_gRigQ);
     bl.mano.parent.getWorldQuaternion(_gQd);

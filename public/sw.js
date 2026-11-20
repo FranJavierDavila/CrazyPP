@@ -23,7 +23,7 @@
  *    instalación no duplica el peso.
  * ===================================================================== */
 
-const CACHE = 'crazypp-v3.6.191-SDK6';   // ← SELLO: bump_version.py lo parchea
+const CACHE = 'crazypp-v3.6.192-SDK6';   // ← SELLO: bump_version.py lo parchea
 
 const SHELL = [
   './game.html',

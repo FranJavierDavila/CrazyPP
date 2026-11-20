@@ -166,17 +166,21 @@ const V3 = THREE.Vector3, Q4 = THREE.Quaternion;
 /* — 6 · BUNDLE: los marcadores r95 viajan en game.html — */
 {
   const b = readFileSync(RAIZ + '/public/game.html', 'utf-8');
-  aguja('bundle · r95 CURL DE DEDOS MEDIDO (flexión +Y, bind-relativa)',
-    b.includes('r95 · CURL DE DEDOS MEDIDO') && b.includes('multiply(bindQ'));
+  // r99 · las 2 agujas del curl estático y del anclaje en muñeca se
+  // ACTUALIZAN a los invariantes del sistema de poses (plan r99): el curl
+  // DINÁMICO por pose relativa al bind y el mango anclado en la CREASE.
+  aguja('bundle · r99 CURL DINÁMICO POR POSE (flexión +Y, relativa al bind)',
+    b.includes('R99_POSE_AGARRE') && b.includes('R99_POSE_SAQUE') &&
+    b.includes('multiply(dd.bindQ)'));
   aguja('bundle · r95 pulgarY por brazo (A −1 · B +1)',
     b.includes("pulgarY: (c.lado === 'B') ? 1 : -1"));
   aguja('bundle · r95 ENVOLTURA NATURAL (tan 0.96 / 1.25 + radio 88 %)',
     b.includes('r95 · ENVOLTURA NATURAL') && b.includes('0.88 * (R.L1 + R.L2)'));
   aguja('bundle · r95 EL CUERPO ES UNA PERSONA (borde +0.42 · x ±1.15)',
     b.includes('r95 · EL CUERPO ES UNA PERSONA') && b.includes('tableHalfLength + 0.42'));
-  aguja('bundle · r95 EL MANGO VIVE EN LA MANO (anclaje a la muñeca final)',
-    b.includes('r95 · EL MANGO VIVE EN LA MANO') &&
-    b.includes('addScaledVector(_gD, D_GRIP)'));
+  aguja('bundle · r99 EL MANGO VIVE EN LA CREASE DE LA MANO (offset medido)',
+    b.includes('R99_CREASE') && b.includes('offCrease[bp.lado]') &&
+    b.includes('D_GRIP - R99_DCREASE'));
   aguja('bundle · r95 CODA DE CADENA (funde el último cur, sin teleport)',
     b.includes('r95 · CODA DE CADENA') && b.includes('_codaPala.t'));
   aguja('bundle · r95 la zona dulce SOLO en strike (adiós al látigo del follow)',

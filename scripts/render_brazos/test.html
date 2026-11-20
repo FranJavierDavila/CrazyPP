@@ -1,0 +1,5 @@
+<script>window.__T="start"</script>
+<script type="module">
+window.__T="mod";
+import("./lib/three.module.js").then(()=>{window.__T="three-ok";return import("./lib/GLTFLoader.js")}).then(()=>{window.__T="loader-ok"}).catch(e=>{window.__T="ERR:"+e.message});
+</script>

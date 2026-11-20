@@ -241,7 +241,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.191-SDK6', c00s.includes('3.6.191-SDK6'));
+  aguja('versión · c00 sella 3.6.192-SDK6', c00s.includes('3.6.192-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
@@ -290,17 +290,18 @@ const C = DIMS.tableCenterZ;
   aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
     (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
     b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.191-SDK6 en el bundle',
-    b94.includes('3.6.191-SDK6'));
+  aguja('r94 · versión sella 3.6.192-SDK6 en el bundle',
+    b94.includes('3.6.192-SDK6'));
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,
  * temblor tipo descarga, pala no agarrada, bola sin sostener) ——————— */
 {
   const b95 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
-  aguja('r95 · el BUNDLE lleva el CURL DE DEDOS medido (flexión +Y local, relativa al bind)',
-    b95.includes('r95 · CURL DE DEDOS MEDIDO') &&
-    b95.includes('multiply(bindQ[iF])') &&
+  // r99 · el curl estático r95 pasa al sistema DINÁMICO por pose (plan r99)
+  aguja('r99 · el BUNDLE lleva el CURL DINÁMICO por pose (+Y local, relativa al bind)',
+    b95.includes('R99_POSE_AGARRE') &&
+    b95.includes('multiply(dd.bindQ)') &&
     b95.includes("pulgarY: (c.lado === 'B') ? 1 : -1"));
   aguja('r95 · la zona dulce SOLO en strike (el follow ya no persigue la bola: látigo=0)',
     b95.includes('r95 · zona dulce SOLO en strike') &&
@@ -313,9 +314,11 @@ const C = DIMS.tableCenterZ;
     b95.includes('r95 · EL CUERPO ES UNA PERSONA') &&
     b95.includes('tableHalfLength + 0.42') &&
     b95.includes('R.yaw += (yawDeseado - R.yaw)'));
-  aguja('r95 · EL MANGO VIVE EN LA MANO (la pala conserva la pose del plan y se ancla a la muñeca)',
-    b95.includes('r95 · EL MANGO VIVE EN LA MANO') &&
-    b95.includes('addScaledVector(_gD, D_GRIP)'));
+  // r99 · el mango vive en la CREASE de los nudillos (offset medido del GLB)
+  aguja('r99 · EL MANGO VIVE EN LA CREASE DE LA MANO (pala anclada a los nudillos)',
+    b95.includes('R99_CREASE') &&
+    b95.includes('offCrease[bp.lado]') &&
+    b95.includes('D_GRIP - R99_DCREASE'));
   aguja('r95 · CODA DE CADENA (la espera funde el último cur: sin tirón de 24 cm)',
     b95.includes('r95 · CODA DE CADENA') &&
     b95.includes('this._codaPala.t') &&

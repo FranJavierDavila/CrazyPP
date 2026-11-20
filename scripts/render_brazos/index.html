@@ -74,25 +74,21 @@ function montarPala(mano, lado) {
   const handY = new THREE.Vector3(0,1,0).applyQuaternion(qW);   // mango→punta
   const handZ = new THREE.Vector3(0,0,1).applyQuaternion(qW);
   const g = new THREE.Group();
-  const mango = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, D_GRIP*0.85, 12),
+  const mango = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, D_GRIP-DCREASE, 12),
     new THREE.MeshStandardMaterial({ color: 0x8a5a2b, roughness: 0.7 }));
-  mango.position.copy(crease).addScaledVector(handY, -(D_GRIP-DCREASE)*0.42);
+  mango.position.copy(crease).addScaledVector(handY, (D_GRIP-DCREASE)/2);
   mango.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), handY);
   const hoja = new THREE.Mesh(new THREE.CylinderGeometry(BLADE_R, BLADE_R, 1.1, 28),
     new THREE.MeshStandardMaterial({ color: 0xd23c30, roughness: 0.5 }));
-  hoja.position.copy(crease).addScaledVector(handY, (D_GRIP-DCREASE)*0.58 + BLADE_R*0.55);
+  hoja.position.copy(crease).addScaledVector(handY, D_GRIP-DCREASE);
   hoja.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), handY);
-  const borde = new THREE.Mesh(new THREE.CylinderGeometry(BLADE_R, BLADE_R, 0.5, 28),
-    new THREE.MeshStandardMaterial({ color: 0xd8b25a, roughness: 0.55 }));
-  borde.position.copy(crease).addScaledVector(handY, (D_GRIP-DCREASE)*0.58 + BLADE_R*0.55 + 0.35);
-  borde.quaternion.copy(hoja.quaternion);
-  g.add(mango, hoja, borde);
+  g.add(mango, hoja);
   scene.add(g);
   return { crease, handY, handZ };
 }
 
 new GLTFLoader().load('../../public/vr_arm.glb', (gltf) => {
-  gltf.scene.scale.setScalar(ESC*1);
+  gltf.scene.scale.setScalar(1);            // 1 unidad = 1 cm GLB (todo el banco en cm)
   gltf.scene.traverse((o) => { if (o.isMesh) o.material = new THREE.MeshStandardMaterial({
     color: 0xb08a70, roughness: 0.75, metalness: 0.02, side: THREE.DoubleSide }); });
   scene.add(gltf.scene);
@@ -102,13 +98,36 @@ new GLTFLoader().load('../../public/vr_arm.glb', (gltf) => {
   if (POSE === 'reposo') {
     cam.position.set(0, -55, 120); cam.lookAt(0, -30, 0);
   } else if (POSE === 'agarre') {
-    curlPose(manoB, 'B', R99_POSE_AGARRE, Q_AGARRE_B);
+    /* r99 · réplica EXACTA del driver c12 (líneas 19916-19946): handY =
+     * pulgarY·ejeHoja, handX = antebrazo ortogonalizado, handZ = X×Y. El
+     * eje de hoja de la postura de espera: adelante-abajo (foto del dueño). */
+    const pulgarY = 1;                            // brazo B (mirrored)
+    const _gD = new THREE.Vector3(0.42, -0.62, 0.66).normalize();
+    manoB.updateWorldMatrix(true, false);
+    const _gF = manoB.getWorldPosition(new THREE.Vector3())
+      .sub(manoB.parent.getWorldPosition(new THREE.Vector3())).normalize();
+    curlPose(manoB, 'B', R99_POSE_AGARRE, null);
+    const handY = _gD.clone().multiplyScalar(pulgarY);
+    const handX = _gF.clone().addScaledVector(handY, -_gF.dot(handY)).normalize();
+    const handZ = new THREE.Vector3().crossVectors(handX, handY).normalize();
+    const _m = new THREE.Matrix4().makeBasis(handX, handY, handZ);
+    const qMundo = new THREE.Quaternion().setFromRotationMatrix(_m);
+    manoB.parent.getWorldQuaternion(_q).invert();
+    manoB.quaternion.copy(_q).multiply(qMundo);          // local = parent⁻¹ · mundo
     info = montarPala(manoB, 'B');
     const c = info.crease;
-    if (CAM === 'frente') { cam.position.set(c.x+2, c.y+6, c.z+34); }
-    else if (CAM === 'lado') { cam.position.set(c.x+30, c.y+10, c.z+16); }
-    else { cam.position.set(c.x+4, c.y+26, c.z+22); }
-    cam.lookAt(c.x, c.y, c.z);
+    if (CAM === 'frente') {            // cara del rival: hoja + mango + dedos
+      cam.position.copy(c).addScaledVector(handX, 24)
+        .addScaledVector(info.handY, -3).add(new THREE.Vector3(0, 8, 0));
+      cam.lookAt(c.x + info.handY.x * 1.5, c.y + info.handY.y * 1.5, c.z + info.handY.z * 1.5);
+    } else if (CAM === 'lado') {       // lado pulgar: envolvimiento del mango
+      cam.position.copy(c).addScaledVector(info.handZ, -20)
+        .addScaledVector(handX, 12).add(new THREE.Vector3(0, 6, 0));
+      cam.lookAt(c.x, c.y, c.z);
+    } else {                           // arriba
+      cam.position.copy(c).add(new THREE.Vector3(4, 26, 20));
+      cam.lookAt(c.x, c.y, c.z);
+    }
   } else if (POSE === 'saque') {
     curlPose(manoA, 'A', R99_POSE_SAQUE, Q_PALMA_A);
     manoA.updateWorldMatrix(true, false);

@@ -7384,3 +7384,9 @@ r95 → curl dinámico por pose; anclaje en muñeca → anclaje en crease). Bate
 r93 16/0 · r94 12/0 · r95 22/0 · anti-bloqueo 14/0 · física 12 · bump oficial 3.6.192.
 **Lección r98 re-validada:** el GATE del deploy abortó el primer intento (HEAD dc8e9f9 = 3.6.191
 vs árbol 3.6.192 sin commitear) — el guardia anti-«me olvidé de committar» funciona.
+
+## Ronda 99 (cierre · deploy 3.6.192 verificado en vivo) — 2026-11-20
+- Deploy completo: gate de sellos ✓ (sw.js + game.html 3.6.192-SDK6) · smoke Playwright /CrazyPP/ 35 peticiones 0 fallos ✓ · pages 08d42613d→(re-arma con ZIPs) ✓ · 4 ZIPs (CLOUDFLARE 193.773.411 B · COMPLETO · ligera 58,9 MB · SOLO) → Release v3.6.192-SDK6 ✓ · respaldo anti-rollback main→proyecto ✓.
+- INCIDENCIA RESUELTA: la recuperación del linaje con add -A había borrado 301 rutas trackeadas (assets partido/hall/halloween + fósiles) — restauradas desde 0fe863b; el repo vuelve a ser r98+r99 sin eliminaciones (103ec9a).
+- Kit release-v36192 (clone del v36190): guards re-anclados (manifest v16 ASTRO vivo) · 4 ZIPs construidos.
+- EN VIVO: PAGES-VERSION.txt = 3.6.192-SDK6 · game.html VERSION = 3.6.192-SDK6 · vr_arm.glb HTTP 200 (2.297.976 B) — el dueño ya puede actualizar desde el casco (banner rojo → actualizar.html).

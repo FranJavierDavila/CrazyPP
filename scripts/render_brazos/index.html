@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>r99 · Banco de poses de brazos</title>
+<style>html,body{margin:0;height:100%;background:#20242a;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script>
+</head>
+<body>
+<script type="module">
+/* r99 · BANCO DE POSES (verificación visual del rigging) — espejo EXACTO de
+ * las constantes r99 de c12 + los números medidos de plan_brazos_r99.md.
+ * Todo en unidades GLB (cm del FBX); esc sólo informa. URL: ?pose=X&cam=Y */
+import * as THREE from 'three';
+import { GLTFLoader } from './lib/GLTFLoader.js';
+
+const P = new URLSearchParams(location.search);
+const POSE = P.get('pose') || 'agarre';
+const CAM = P.get('cam') || 'frente';
+
+/* — constantes r99 (idénticas a c12 / plan §2) — */
+const R99_POSE_AGARRE = { thumb: [0,0,0], index: [1.2,0.4,0.4],
+  mid: [1.45,2.0,1.3], ring: [0.5,1.8,1.3], pinky: [0.5,2.0,1.5] };
+const R99_POSE_SAQUE = { thumb: [0,0,0], index: [0,0.22,0.16],
+  mid: [0.2,0.14,0], ring: [0,0.4,0.24], pinky: [0.2,0.22,0.16] };
+const R99_POSE_BALANCE = { thumb: [0.18,0.12,0.08], index: [0.35,0.55,0.65],
+  mid: [0.35,0.55,0.65], ring: [0.36,0.57,0.67], pinky: [0.38,0.59,0.69] };
+/* deltas de muñeca rel. bind (marco antebrazo) — plan §2.1/§2.2 */
+const Q_AGARRE_A = new THREE.Quaternion(0.0402,-0.0037,0.1132,0.9927);
+const Q_AGARRE_B = new THREE.Quaternion(-0.0402,-0.0037,-0.1132,0.9927);
+const Q_PALMA_A  = new THREE.Quaternion(0.8784,-0.1006,-0.0522,-0.4642);
+/* geometría de pala (GLB units: 1 m adulto = 1/0.02213 = 45.19 u) */
+const ESC = 0.27/12.1985, U = 1/ESC;
+const D_GRIP = 0.1303*U, DCREASE = 0.04*U, BLADE_R = 0.0855*U;
+const OFF_CREASE = { A: new THREE.Vector3(0.0868,0.0240,-0.0022).multiplyScalar(U),
+                     B: new THREE.Vector3(0.0868,-0.0240,-0.0022).multiplyScalar(U) };
+const EJE_FLEX = new THREE.Vector3(0,1,0);
+const NOMBRES = ['thumb','mid','index','ring','pinky'];
+
+/* — escena — */
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(1100, 760);
+renderer.setPixelRatio(1);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x20242a);
+const luz = new THREE.DirectionalLight(0xffffff, 2.6); luz.position.set(30,50,60); scene.add(luz);
+scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+const cam = new THREE.PerspectiveCamera(42, 1100/760, 1, 2000);
+
+const _q = new THREE.Quaternion();
+function curlPose(mano, lado, tabla, deltaWrist) {
+  const dc = [];
+  for (const nombre of NOMBRES) {
+    let raiz = null;
+    mano.traverse((o) => { if (!raiz && o !== mano && o.name.indexOf(nombre) === 0) raiz = o; });
+    const fal = [raiz]; let h = raiz;
+    while (fal.length < 3 && h.children.length) { h = h.children[0]; fal.push(h); }
+    fal.forEach((hueso, iF) => {
+      const curl = tabla[nombre][iF];
+      _q.setFromAxisAngle(EJE_FLEX, curl);
+      hueso.quaternion.copy(_q).multiply(hueso.quaternion);
+      dc.push(hueso);
+    });
+  }
+  if (deltaWrist) mano.quaternion.premultiply(deltaWrist);
+  return dc;
+}
+function montarPala(mano, lado) {
+  mano.updateWorldMatrix(true, false);
+  const qW = mano.getWorldQuaternion(new THREE.Quaternion());
+  const crease = mano.getWorldPosition(new THREE.Vector3())
+    .add(OFF_CREASE[lado].clone().applyQuaternion(qW));
+  const handY = new THREE.Vector3(0,1,0).applyQuaternion(qW);   // mango→punta
+  const handZ = new THREE.Vector3(0,0,1).applyQuaternion(qW);
+  const g = new THREE.Group();
+  const mango = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, D_GRIP*0.85, 12),
+    new THREE.MeshStandardMaterial({ color: 0x8a5a2b, roughness: 0.7 }));
+  mango.position.copy(crease).addScaledVector(handY, -(D_GRIP-DCREASE)*0.42);
+  mango.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), handY);
+  const hoja = new THREE.Mesh(new THREE.CylinderGeometry(BLADE_R, BLADE_R, 1.1, 28),
+    new THREE.MeshStandardMaterial({ color: 0xd23c30, roughness: 0.5 }));
+  hoja.position.copy(crease).addScaledVector(handY, (D_GRIP-DCREASE)*0.58 + BLADE_R*0.55);
+  hoja.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), handY);
+  const borde = new THREE.Mesh(new THREE.CylinderGeometry(BLADE_R, BLADE_R, 0.5, 28),
+    new THREE.MeshStandardMaterial({ color: 0xd8b25a, roughness: 0.55 }));
+  borde.position.copy(crease).addScaledVector(handY, (D_GRIP-DCREASE)*0.58 + BLADE_R*0.55 + 0.35);
+  borde.quaternion.copy(hoja.quaternion);
+  g.add(mango, hoja, borde);
+  scene.add(g);
+  return { crease, handY, handZ };
+}
+
+new GLTFLoader().load('../../public/vr_arm.glb', (gltf) => {
+  gltf.scene.scale.setScalar(ESC*1);
+  gltf.scene.traverse((o) => { if (o.isMesh) o.material = new THREE.MeshStandardMaterial({
+    color: 0xb08a70, roughness: 0.75, metalness: 0.02, side: THREE.DoubleSide }); });
+  scene.add(gltf.scene);
+  const nom = (b) => gltf.scene.getObjectByName(b);
+  const manoA = nom('hand_023'), manoB = nom('hand(mirrored)_04');
+  let bola = null, info = {};
+  if (POSE === 'reposo') {
+    cam.position.set(0, -55, 120); cam.lookAt(0, -30, 0);
+  } else if (POSE === 'agarre') {
+    curlPose(manoB, 'B', R99_POSE_AGARRE, Q_AGARRE_B);
+    info = montarPala(manoB, 'B');
+    const c = info.crease;
+    if (CAM === 'frente') { cam.position.set(c.x+2, c.y+6, c.z+34); }
+    else if (CAM === 'lado') { cam.position.set(c.x+30, c.y+10, c.z+16); }
+    else { cam.position.set(c.x+4, c.y+26, c.z+22); }
+    cam.lookAt(c.x, c.y, c.z);
+  } else if (POSE === 'saque') {
+    curlPose(manoA, 'A', R99_POSE_SAQUE, Q_PALMA_A);
+    manoA.updateWorldMatrix(true, false);
+    const qW = manoA.getWorldQuaternion(new THREE.Quaternion());
+    const palma = manoA.getWorldPosition(new THREE.Vector3())
+      .add(OFF_CREASE.A.clone().applyQuaternion(qW));
+    const palmaN = new THREE.Vector3(0,0,-1).applyQuaternion(qW);   // normal palmar
+    bola = new THREE.Mesh(new THREE.SphereGeometry(0.90, 24, 18),
+      new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.35 }));
+    bola.position.copy(palma).addScaledVector(palmaN, 1.05);
+    scene.add(bola);
+    const c = palma;
+    if (CAM === 'frente') { cam.position.set(c.x-30, c.y+14, c.z+30); }
+    else { cam.position.set(c.x-6, c.y+30, c.z+26); }
+    cam.lookAt(c.x, c.y, c.z);
+  } else if (POSE === 'rally') {
+    curlPose(manoA, 'A', R99_POSE_BALANCE, null);
+    curlPose(manoB, 'B', R99_POSE_AGARRE, Q_AGARRE_B);
+    montarPala(manoB, 'B');
+    cam.position.set(-70, -45, 110); cam.lookAt(-10, -35, 0);
+  }
+  renderer.render(scene, cam);
+  window.__LISTO = true;
+}, undefined, (e) => { document.title = 'ERROR ' + e; window.__FALLO = String(e); });
+</script>
+</body>
+</html>

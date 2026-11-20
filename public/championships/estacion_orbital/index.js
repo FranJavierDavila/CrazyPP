@@ -1577,11 +1577,6 @@ class EOArkanoid {
     if (this.extraPlane) this.extraPlane.visible = false;
     // v2.41: la red vuelve a la mesa
     for (const m of this._netParts || []) m.visible = true;
-    // v3.6.64-SDK6 · FASE 66 (r72): el ASTRO VUELVE — start() lo esconde
-    // («el ASTRO no juega el muro») y el stop() NUNCA lo restauraba: si
-    // la prueba se reactivara, el rival quedaría oculto para siempre.
-    const aStop = this.ctrl;
-    if (aStop && aStop.rivalMesh) aStop.rivalMesh.visible = true;
     g.tableGroup.visible = true;
     g.scoreboardGroup.visible = true;
     g.aiPaddleMesh.visible = true;
@@ -6712,9 +6707,6 @@ class StockController {
     const D = this.D;
 
     // RIVAL: standee del ASTRO (assets/rival.webp, arte del dueño)
-    // v3.6.64-SDK6 · FASE 66 (r72): guard IDEMPOTENTE — build() se vuelve a
-    // llamar en cada re-entrada al campeonato y sin el guard DUPLICABA el
-    // standee (el resto de piezas — dron/mapa/pwSign/beam — ya lo tenían).
     // v3.5.1 · 3.ª CORRECCIÓN DE COLOCACIÓN (informe del dueño: «el rival
     // astro está metido en la pared… que se coloque como en el resto de
     // rivales, totalmente visible a una distancia fija de la mesa»): el
@@ -6729,7 +6721,6 @@ class StockController {
     // Historia: v3.2.1 (x 1,62 · z −4,5) · v3.4.1 (x 1,26 · z −3,82).
     // v3.6.5-SDK5 · FASE 7: el STANDEE vive en el SDK (createRival, motor
     // «perezoso» del orbital: UNA textura viva + guard anti-recarga v3.2.1).
-    if (!this._rivalSDK) {
     this._rivalSDK = createRival(THREE, () => this.game, {
       modo: 'perezoso',
       base: 'rival.webp',
@@ -6745,7 +6736,6 @@ class StockController {
     this.rivalMesh = this._rivalSDK.mesh;  // identidad intacta: el poder de
                                            // meteoritos teletransporta
                                            // rivalMesh a pelo (x 0, z −2,1)
-    }
     this.group.add(this.rivalMesh);
     this._rivalEstado = '';
     this._rivalSDK.rivalEstado('idle');
@@ -6899,16 +6889,7 @@ class StockController {
       this.mapa.show();
     }
 
-    // v3.6.64-SDK6 · FASE 66 (r72 · ASTRO EN EL ESPACIO CORRECTO): el grupo
-    // vivía en g.scene (mundo crudo) mientras mesa, sala, mapa y troqueles
-    // viven en g.rig — el RECENTRADO del Quest (updateRecenter, 25 frames
-    // tras cada sesión XR) gira el rig y deja TODO lo colgado de scene
-    // girado/desplazado respecto a la mesa: era la causa real de las TRES
-    // correcciones de coordenadas anteriores (v3.2.1 → v3.4.1 → v3.5.1) y
-    // del informe del dueño «no se visualiza a Astro». Convención EXACTA
-    // de CLOWN (locura 445) y WIZARD (magia 678): game.rig.add(...) — el
-    // standee vive en el MISMO espacio que la mesa y la sala, SIEMPRE.
-    g.rig.add(this.group);
+    g.scene.add(this.group);
   }
 
   /** Cartel de la sala: ETAPA X/5 · nombre (+ ★ SUPERADO si ya campeón). */
@@ -6960,29 +6941,34 @@ class StockController {
    *  triunfante') no se pisa. */
   _exprSet(est, t) { this._exprT = t || 0; this.rivalEstado(est); }
   _exprBase() {
-    // v3.6.49 (r57): la NORMA DE EMOCIONES del núcleo manda los eventos;
-    // la cara BASE entre eventos es la de duelo (el idle lo pone la norma
-    // en la espera del saque, los hitos en el rallye, los puntos al acabar).
-    return 'duelo';
+    const r = this.game.rules;
+    const dif = (r.scorePlayer | 0) - (r.scoreAi | 0);
+    if (dif >= 6) return 'loosing';                 // el ASTRO lo está pasando mal
+    if ((r.scorePlayer | 0) >= 10) return 'panic';  // match-point en contra
+    return 'duelo';                                 // cara de duelo (base)
   }
   _exprOnPoint(it) {
-    // v3.6.49 (r57): las reacciones de punto las manda la NORMA DE
-    // EMOCIONES del núcleo vía rivalEmocion() — aquí ya no decide nada.
-  }
-  /** v3.6.49 (ronda 57) · NORMA DE EMOCIONES DEL RIVAL (regla del dueño):
-   *  el núcleo reparte la emoción estándar y el ASTRO la viste con SU
-   *  arte (convención <estado>.webp) y SUS sonidos (enfado_astro.mp3 /
-   *  risa_astro.mp3 del dueño). El abanico del ASTRO ya usa los nombres
-   *  estándar → mapeo IDENTIDAD. */
-  rivalEmocion(st) {
-    const DUR = {
-      idle: 0, crazy: 3.2, angry: 2.2, laughing: 2.2, focused: 2.2,
-      picando: 2.2, surprised: 2.0, panic: 2.2, loosing: 2.2,
-      victory: 2.4, defeated: 0,
-    };
-    this._exprSet(st, DUR[st] != null ? DUR[st] : 2.0);
-    if (st === 'laughing') this._sfx('risa_astro.mp3');
-    else if (st === 'angry') this._sfx('enfado_astro.mp3');
+    if (this.state !== 'duelo' || !it || it.survival) return;
+    if (it.winner === 'player') {
+      this._streakP = (this._streakP || 0) + 1; this._streakAi = 0;
+      // v3.6.0: el ASTRO PIERDE el punto → enfado_astro.mp3 (audio del dueño)
+      this._sfx('enfado_astro.mp3');
+      const hits = it.rallyHits | 0;
+      if (hits >= 6) {
+        // COMBO del jugador: el ASTRO se ENFADA (como el clown)
+        this._exprSet('angry', 2.6);
+      } else {
+        this._exprSet('surprised', hits >= 3 ? 1.7 : 1.2);
+      }
+    } else {
+      this._streakAi = (this._streakAi || 0) + 1; this._streakP = 0;
+      if (this._streakAi >= 2) this._exprSet('crazy', 3.4);   // enloquece
+      else {
+        // v3.6.0: se ríe de ti CON LA POSE DE RISAS → risa_astro.mp3
+        this._sfx('risa_astro.mp3');
+        this._exprSet('laughing', 2.4);                       // se ríe de ti
+      }
+    }
   }
   _exprUpdate(dt) {
     if (this.state !== 'duelo') { this._exprT = 0; return; }
@@ -6995,11 +6981,15 @@ class StockController {
       return;
     }
     if (this._warn || this._act) return;  // 'crazy' del aviso de poder manda
-    // v3.6.49 (r57): la NORMA DE EMOCIONES del núcleo manda TODO (idle en
-    // la espera, hitos del rallye, reacciones de punto). Aquí solo se
-    // limpia el _idle filtrado en pleno rallye (cara de duelo) — jamás se
-    // pisa una emoción viva de la norma.
-    if (r.state === 'rally' && this._rivalEstado === 'idle') {
+    if (r.state === 'rally') {
+      if ((r.rallyHits | 0) >= 7 && !this._picandoDone) {
+        this._picandoDone = true;         // rallye largo: ¡se pone picado!
+        this._exprSet('picando', 2.2);
+      } else {
+        this.rivalEstado(this._exprBase());
+      }
+    } else {
+      this._picandoDone = false;
       this.rivalEstado(this._exprBase());
     }
   }
@@ -7133,10 +7123,7 @@ class StockController {
     g.rules.message = (et.id === 'final')
       ? tx('¡DUELO FINAL contra ' + CFG.rival + '!', 'FINAL DUEL vs ' + CFG.rival + '!')
       : tx('¡Duelo contra ' + CFG.rival + '!', CFG.rival + ' duel!');
-    /* r95 · REGLA DE CASA (petición del dueño): en las fases de DUELO con el
-     * rival NO hay cartel explicativo — fuera _showInstr(); el aviso vive en
-     * la línea del marcador y el duelo arranca al saque. Las PRUEBAS de
-     * habilidad conservan SU cartel (regla v2.106 intacta). */
+    this._showInstr(et);
     this.musicOn();
     // poderes: bolsa limpia y el primero tarda en llegar
     this._poderClear();
@@ -7144,13 +7131,30 @@ class StockController {
     this._powerCd = 6;            // v3.2: antes 8 (el primer poder llega antes)
     this._dueloT = 0;             // v3.2: relojes del disparo redundante
     this._lastPowerT = 0;
-    this._hitAi = false;
+    this._toward = false;
     // v3.2.1: expresiones del ASTRO a cero en cada duelo
     this._streakP = 0; this._streakAi = 0;
     this._exprT = 0; this._picandoDone = false;
   }
-  /* r95 · _showInstr(et) RETIRADO — regla de casa: los DUELOS no muestran
-   * cartel explicativo; sólo las pruebas de habilidad (regla v2.106). */
+  _showInstr(et) {
+    try {
+      const final = et.id === 'final';
+      this.game.showInstrucciones(
+        tx('Duelo contra ' + CFG.rival, CFG.rival + ' duel'),
+        final ? [
+          tx('El AX-9 pelea a MÁXIMA POTENCIA. Primero a ' + CFG.puntos + ' puntos.',
+            'AX-9 fights at FULL POWER. First to ' + CFG.puntos + ' points.'),
+          tx('¡Gana y la estación es tuya: insignia ¡CONSEGUIDO!!',
+            'Win and the station is yours: ACHIEVED badge!'),
+        ] : [
+          tx('Primero a ' + CFG.puntos + ' puntos. La dificultad sube con cada duelo ganado.',
+            'First to ' + CFG.puntos + ' points. Difficulty rises with every duel won.'),
+          tx('¡Cuidado con los superpoderes de ' + CFG.rival + '!',
+            'Beware ' + CFG.rival + '\'s super powers!'),
+        ],
+        5.0, null, 'estacion');
+    } catch (e) { /* */ }
+  }
 
   _empezarPrueba(et) {
     const g = this.game;
@@ -7442,9 +7446,9 @@ class StockController {
   fireGun(i) {
     const g = this.game;
     const mount = g.gunMounts && g.gunMounts[i];
-    if (!mount) return false;   // v3.6.143: contrato de consumo (pulso no es del arma)
+    if (!mount) return;
     const now = performance.now() / 1000;
-    if (now - this._gunLast < 0.16) return true;   // cadencia: el pulso sigue siendo del arma
+    if (now - this._gunLast < 0.16) return;
     this._gunLast = now;
     const pos = new THREE.Vector3();
     const q = new THREE.Quaternion();
@@ -7534,7 +7538,6 @@ class StockController {
     g.audio.playOsc(2640, 660, 0.08, 'sine', 0.045, 0);
     g.audio.playNoise(0.05, 3400, 2.2, 0.035, 0);
     if (g.renderer.xr.isPresenting) g.haptic(i, 0.4, 60);
-    return true;   // v3.6.143: contrato de consumo — el pulso fue del arma
   }
 
   _loadGunArt() {
@@ -7770,7 +7773,7 @@ class StockController {
         g.rules.message = tx('¡¡ESTACIÓN ORBITAL CONSEGUIDA!!', 'ORBITAL STATION COMPLETED!!');
         try {
           const C = window.__PP_CORE;
-          if (C && C.showChampConseguido) C.showChampConseguido('estacion_orbital', { coronacion: true });
+          if (C && C.showChampConseguido) C.showChampConseguido('estacion_orbital');
         } catch (e2) { /* */ }
         // v3.6.15 (ronda 18 · EMBUDO COMPLETO): ¡la estación tiene campeón!
         try { __PP_TELE.ev('champion', { id: 'estacion_orbital' }); } catch (eC) { /* */ }
@@ -7925,8 +7928,7 @@ class StockController {
     this._dueloT = (this._dueloT || 0) + dt;
     // v3.2 · DISPARO REDUNDANTE (lección del casco: el gancho por PUNTO
     // puede no llegar; La Locura dispara por RALLY y SÍ funciona):
-    // (a) en rally con el RIVAL ACABANDO DE GOLPEAR (flanco r115 del
-    // dueño: rules.lastHitter pasa a 'ai' con la bola en SU campo) y
+    // (a) en rally con la bola viniendo al jugador (edge vel.z>0.35) y
     // cooldown libre → tirada con la probabilidad del poder;
     // (b) RED DE SEGURIDAD: si en 22 s de duelo no ha saltado NADA, se
     // FUERZA el poder (garantía anti-silencio, pase lo que pase con los
@@ -7936,15 +7938,13 @@ class StockController {
       if (urgente) {
         this._powerCd = 0;
         this._quizasPoder(true);
-      } else if (g.rules.state === 'rally' && g.ball && g.ball.pos) {
-        // r115 · flanco del DUEÑO: el poder nace EN EL GOLPEO del rival —
-        // la bola sigue en SU campo (z < −1,6 del centro de mesa)
-        const golpeAi = g.rules.lastHitter === 'ai' && g.ball.pos.z < -1.6;
-        const edge = golpeAi && !this._hitAi;
-        this._hitAi = golpeAi;
+      } else if (g.rules.state === 'rally' && g.ball && g.ball.vel) {
+        const toward = g.ball.vel.z > 0.35;
+        const edge = toward && !this._toward;
+        this._toward = toward;
         if (edge && this._powerCd <= 0) this._quizasPoder();
       } else {
-        this._hitAi = false;
+        this._toward = false;
       }
     }
     // FASE 1: aviso
@@ -7983,10 +7983,6 @@ class StockController {
 
   _poderArrancar(def) {
     const g = this.game;
-    // r33 (v3.6.129) · SÚPER ANCLA: con las cadenas activas el poder del
-    // ASTRO se ESTRELLA contra el jugador (puerta central del núcleo) —
-    // el aviso ya se pagó, pero el efecto nunca entra en juego.
-    if (g.anclaBloqueo && g.anclaBloqueo()) return;
     this._act = { def, t: def.duration || 8 };
     this._lastPowerT = this._dueloT || 0;
     g.rules.message = tx('¡' + def.name.toUpperCase() + '!', def.name.toUpperCase() + '!');
@@ -8078,7 +8074,7 @@ class StockController {
     const g = this.game;
     this._warn = null;
     this._act = null;
-    this._hitAi = false;
+    this._toward = false;
     this._psOculta();                            // v3.2: fuera el cartel
     if (this.beam) { this.beam.visible = false; this.beamMat.opacity = 0; }
     if (this.dronTractor) this.dronTractor.visible = false;   // v3.6.0
@@ -8543,13 +8539,7 @@ class MapaEO {
       plane: this.plane,
       nodesPx: this.nodesPx,
       imgW: this.IMG_W, imgH: this.IMG_H,
-      // v3.6.123 (r27) · MODO DEPURACIÓN («foro3d»): mapa completo para
-      // revisión — patrón ppDbg de oeste/locura/magia (v2.108). El salto
-      // replayLaunch ya aceptaba cualquier etapa; el progreso real se
-      // conserva (_replay) y c00 no persiste pp_champ_* en esta sesión.
-      maxIdx: (typeof window !== 'undefined' && !!window.__PP_DEBUG)
-        ? 4
-        : (this.ctrl._champion ? 4 : Math.min(this.ctrl.stage | 0, 4)),
+      maxIdx: this.ctrl._champion ? 4 : Math.min(this.ctrl.stage | 0, 4),
     };
   }
 
@@ -8612,8 +8602,6 @@ export default {
   resetRecords() { if (CTRL) CTRL.resetRecords(); },
   update(dt) { if (CTRL && CTRL.state) CTRL.update(dt); },
   onPoint(it) { if (CTRL) CTRL.onPoint(it); },
-  // v3.6.49 (r57) · NORMA DE EMOCIONES DEL RIVAL (contrato opcional)
-  rivalEmocion(st, info) { if (CTRL) CTRL.rivalEmocion(st); },
   onMatchOver(w) { if (CTRL) CTRL.onMatchOver(w); },
   aiMul() { return CTRL ? CTRL.aiMul() : 1; },
   serveTrigger(i) { if (CTRL) CTRL.serveTrigger(i); },
@@ -8621,7 +8609,7 @@ export default {
   // módulo (game.html L8585/L11645) — el export de EO nunca los exponía y
   // el gatillo del láser no llegaba a StockController.fireGun.
   get gunArmed() { return !!(CTRL && CTRL.gunArmed); },
-  fireGun(i) { if (CTRL) { try { return CTRL.fireGun(i) === true; } catch (e) { console.warn('[estacion.fireGun]', e); } } return false; },
+  fireGun(i) { if (CTRL) { try { CTRL.fireGun(i); } catch (e) { console.warn('[estacion.fireGun]', e); } } },
   reenter() {   // v3.2.0: en plena prueba, reanuda
     if (CTRL && CTRL.reactor && CTRL.reactor.active) {
       try { CTRL.reactor.reenter(); } catch (e) { /* */ }

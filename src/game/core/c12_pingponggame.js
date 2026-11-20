@@ -19696,29 +19696,37 @@ export class PingPongGame {
       // −Y (brazo A) o +Y (brazo espejado B). La flexión real es alrededor
       // de +Y local (los tips van hacia −Z, la palma) y es RELATIVA al bind
       // del hueso — el GLB trae flexiones pre-horneadas que r93 destruía.
+      // r99 · DEDOS POR NOMBRE (plan del rigging, scripts/plan_brazos_r99.md):
+      // el bucle children[0] de r95 dejaba el MEÑIQUE EN BIND (pinky__031 es
+      // el hijo 2 de hand__027, que tiene 2 hijos) y no curleaba las RAÍCES
+      // de los dedos — dedos retorcidos con huecos en los nudillos («dos
+      // longanizas»). Ahora: 15 huesos por brazo (5 dedos × 3 falanges, raíz
+      // incluida), bind capturado SIN tocar y el CURL pasa a ser DINÁMICO por
+      // pose en updateAIArmGlb. El pulgar conserva su oposición HORNEADA del
+      // bind (1.75 rad): flexionarlo en +Y lo giraba de lado (eje medido a
+      // 86° del +Y — H4 del plan); en bind ya «presiona el mango».
+      const _ejeFlex = new THREE.Vector3(0, 1, 0);   // flexión de los 4 dedos
+      const _r99Nombres = ['thumb', 'mid', 'index', 'ring', 'pinky'];
       const dedos = [];
-      const _ejeFlex = new THREE.Vector3(0, 1, 0);   // flexión en marco mano
       for (const capa of capas) {
         const dc = [];
-        capa.mano.children.forEach((f1) => {
-          const esPulgar = /thumb/i.test(f1.name);
-          const bindQ = [];
-          let ant = f1;
-          while (ant.children.length) {          // bind de cada falange ANTES de tocar
-            bindQ.push(ant.children[0].quaternion.clone());
-            ant = ant.children[0];
+        for (const nombreD of _r99Nombres) {
+          let raiz = null;
+          capa.mano.traverse((o) => {
+            if (!raiz && o !== capa.mano && o.name.indexOf(nombreD) === 0) raiz = o;
+          });
+          if (!raiz) continue;
+          const fal = [raiz];
+          let h = raiz;
+          while (fal.length < 3 && h.children.length) {
+            h = h.children[0];
+            fal.push(h);
           }
-          ant = f1;
-          for (let iF = 0; iF < bindQ.length; iF++) {
-            const sig = ant.children[0];
-            const curva = esPulgar ? 0.32 + iF * 0.22   // pulgar: presiona el mango
-              : Math.min(0.62 + iF * 0.72, 1.9);        // dedos: envuelven (≈109°)
-            const q = new THREE.Quaternion().setFromAxisAngle(_ejeFlex, curva);
-            sig.quaternion.copy(q).multiply(bindQ[iF]); // RELATIVA al bind
-            dc.push(sig);
-            ant = sig;
-          }
-        });
+          fal.forEach((hueso, iF) => dc.push({
+            hueso, dedo: nombreD, falange: iF,
+            bindQ: hueso.quaternion.clone(), ejeFlex: _ejeFlex,
+          }));
+        }
         dedos.push(dc);
       }
       // montaje y captura de reposo (matrices al día ANTES de leer mundo)
@@ -19744,6 +19752,15 @@ export class PingPongGame {
       const _qlRig = (q) => q.premultiply(_rigQinv);
       const inst = { root, body, L1, L2, listo: true, yaw: 0, esc,
         rootToBody: _alRig(body.getWorldPosition(new THREE.Vector3())),
+        // r99 · anclaje del mango en la CREASE de los nudillos (medido del
+        // GLB, marco mano, unidades GLB → ×esc al usar): el centro de crease
+        // (4 nudillos, sin pulgar) vive a (0.0868, ±0.024, −0.0022) m adulto
+        // del hueso mano — anclar en la muñeca dejaba los dedos sin envolver.
+        offCrease: {
+          A: new THREE.Vector3(0.0868 / esc, 0.0240 / esc, -0.0022 / esc),
+          B: new THREE.Vector3(0.0868 / esc, -0.0240 / esc, -0.0022 / esc),
+        },
+        wSaque: 0,                 // r99 · peso del saque de la mano libre (0=balance)
         brazos: capas.map((c, i) => {
           const S = _alRig(c.bra.getWorldPosition(new THREE.Vector3()));
           const E = _alRig(c.ant.getWorldPosition(new THREE.Vector3()));
@@ -19836,7 +19853,15 @@ export class PingPongGame {
     _gD.normalize();
     // — agarre POR EL MANDO: mando = centro de hoja − continuación·D
     _gC.copy(this.aiPaddleMesh.position);      // centro deseado (plan r92)
-    _gE.copy(_gC).addScaledVector(_gD, -D_GRIP);
+    // r99 · el objetivo del IK nace COHERENTE con la crease: el mango cruza
+    // la mano en los nudillos (no en la muñeca) ⇒ muñeca = crease − dirDedos
+    // ·R99_CREASE, con dirDedos ≈ (hombro→pala) proyectado ⟂ al eje hoja.
+    _gE.copy(_gC).addScaledVector(_gD, -(D_GRIP - R99_DCREASE));
+    _gHandY.copy(_gD).multiplyScalar(bp.pulgarY);
+    _gF.copy(_gC).sub(_gS);
+    _gF.addScaledVector(_gHandY, -_gF.dot(_gHandY));
+    if (_gF.lengthSq() < 1e-6) _gF.set(0, 1, 0); else _gF.normalize();
+    _gE.addScaledVector(_gF, -R99_CREASE);
     // — zona dulce: SOLO en strike el CENTRO de la hoja cubre la bola (r95)
     if (enStrike)
       _gE.copy(zonaDulceNudge(_gE, this.ball.pos, _gC, DIMS.bladeRadius, _gF));
@@ -19944,19 +19969,33 @@ export class PingPongGame {
     bp.mano.parent.getWorldQuaternion(_gQd);
     bp.mano.quaternion.copy(_gQd).invert().multiply(_gQc);
     bp.mano.updateWorldMatrix(false, false);
-    // — pala: r95 · EL MANGO VIVE EN LA MANO. La pose del PLAN se conserva
-    //   (caras reales: topspin cierra, cortada abre, follow cruza) y sólo se
-    //   re-ancla el centro a la MUÑECA FINAL por el eje hoja: centro =
-    //   muñeca + ejeHoja·0,1303. El r92-r93 giraba la hoja para hacerla ∥ al
-    //   antebrazo (pala chupachups, cara plana imposible) y además recoloca-
-    //   ba el centro por el eje VIEJO: el mango quedaba flotando junto a la
-    //   mano, no en ella — la queja del vídeo «ni siquiera está agarrando
-    //   bien la pala».
-    this.aiPaddleMesh.position.copy(_gA).addScaledVector(_gD, D_GRIP);
+    // r99 · CURL DE DEDOS DINÁMICO — el brazo de la pala vive SIEMPRE en
+    // POSE_A (shakehand: medio/anular/meñique envuelven, índice en el borde,
+    // pulgar bind) + micro-sway de vida (cero en strike: «los dedos NO
+    // cambian», lámina del dueño). Cero allocs: escalares + setFromAxisAngle.
+    for (let iD = 0; iD < bp.dedos.length; iD++) {
+      const dd = bp.dedos[iD];
+      let curl = R99_POSE_AGARRE[dd.dedo][dd.falange];
+      if (!enStrike) curl += 0.02 * Math.sin(R._t * 1.7 + iD * 0.9) +
+        0.015 * Math.sin(R._t * 2.9 + 1.3 * iD);
+      _gQe.setFromAxisAngle(dd.ejeFlex, curl);
+      dd.hueso.quaternion.copy(_gQe).multiply(dd.bindQ);
+    }
+    // — pala: r99 · EL MANGO CRUZA LA CREASE DE LA MANO (medido, plan §5.2):
+    //   centro = muñeca + handQ_rig·offCrease + ejeHoja·(D_GRIP − dCrease).
+    //   Anclar en la muñeca (r95) dejaba el mango 3,4 cm GLB detrás de los
+    //   dedos — la queja «no la coge bien».
+    this.aiPaddleMesh.position.copy(_gA)
+      .add(_r99v1.copy(R.offCrease[bp.lado]).applyQuaternion(_r99q1.copy(_gRigInvQ)
+        .multiply(bp.mano.getWorldQuaternion(_r99q2))).multiplyScalar(R.esc))
+      .addScaledVector(_gD, D_GRIP - R99_DCREASE);
     this.clampPaddlePose(this.aiPaddleMesh.position, this.aiPaddleMesh.quaternion, false);
-    // — brazo IZQUIERDO: sostiene la bola en el saque, contrapeso en rally
-    _gC.set(_gA.x - s * 0.20, _gA.y - 0.25 + 0.04 * Math.sin(R._t * 2.3),
-      _gA.z - s * 0.12);
+    // — brazo IZQUIERDO (r99 · NUNCA CRUZA la línea media, targets medidos
+    //   del plan §3): balance abajo-lado pegado al cuerpo en rally; bola en
+    //   la palma durante el saque (como hoy). La mano libre vive en el lado
+    //   propio: x = x_ai − s·0.21 · y 0.98 · z pegado al cuerpo.
+    _gC.set(_gA.x - s * 0.21, 0.98 + 0.02 * Math.sin(R._t * 2.3),
+      zCuerpo + s * 0.05);
     const serviendo = !this.calib && this.rules.state === 'serve' &&
       this.rules.server === 'ai';
     if (serviendo) {
@@ -19966,7 +20005,9 @@ export class PingPongGame {
       }                                         //   bola: la bola reposa SOBRE la palma
       else _gC.set(this.ball.pos.x, Math.min(this.ball.pos.y, _gB.y + 0.45),
         this.ball.pos.z);                                 // acompaña el bote
-    }
+    } else if (_gC.x * (-s) < 0.05) _gC.x = -s * 0.05;   // r99 · jamás cruza
+    // r99 · peso del saque de la mano libre: funde balance↔saque (τ≈125 ms)
+    R.wSaque += ((serviendo ? 1 : 0) - R.wSaque) * Math.min(1, dt * 8);
     bl.bra.parent.getWorldPosition(_gB);
     _gB.sub(_gRigP).applyQuaternion(_gRigInvQ);   // r94 · al marco del rig
     bl.bra.getWorldPosition(_gS);              // hombro L = hueso en el mundo
@@ -20016,16 +20057,41 @@ export class PingPongGame {
     _gQc.copy(bl.fqL.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
     bl.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
     bl.ant.updateWorldMatrix(false, false);
-    _gQb.copy(bl.fqL.prev);                       // r94 · rollo en marco rig
-    // r95 · rollo NATURAL: el bind del GLB trae la mano casi alineada con
-    // el antebrazo (rel. Z ±0,23 medido) — el 0,9 de r93-r94 la retorcía
-    _gQe.setFromAxisAngle(_gF, 0.3 * s);
-    _gQb.multiply(_gQe);
+    // r99 · MUÑECA LIBRE POR POSE (plan §2.1/§5.3): palma ARRIBA en el
+    // saque (bola en la palma — basis rig-local: X=antebrazo, Z=−up ort,
+    // Y=Z×X), neutra en rally; funde con el peso del saque + micro-sway.
+    _r99v1.copy(_gF);                             // eje antebrazo (rig-local)
+    _gQb.copy(bl.fqL.prev);
+    if (R.wSaque > 0.001) {
+      _gHandZ.set(0, -1, 0).addScaledVector(_r99v1, _r99v1.y);   // Z=−up ort
+      if (_gHandZ.lengthSq() < 1e-6) _gHandZ.set(0, 0, 1);
+      else _gHandZ.normalize();
+      _gVz.crossVectors(_gHandZ, _r99v1).normalize();            // Y=Z×X
+      _gMx.makeBasis(_r99v1, _gVz, _gHandZ);
+      _r99q1.setFromRotationMatrix(_gMx);
+      _gQb.slerp(_r99q1, R.wSaque);
+    } else {
+      _gQe.setFromAxisAngle(_r99v1, 0.3 * s + 0.03 * Math.sin(R._t * 0.9));
+      _gQb.multiply(_gQe);
+    }
     bl.fqH.filtrar(_gQb, dt);
     _gQc.copy(bl.fqH.prev).premultiply(_gRigQ);
     bl.mano.parent.getWorldQuaternion(_gQd);
     bl.mano.quaternion.copy(_gQd).invert().multiply(_gQc);
     bl.mano.updateWorldMatrix(false, false);
+    // r99 · dedos de la mano libre: funde balance↔saque con el mismo peso
+    // (+ micro-sway de vida fuera del saque — la palma que sostiene la bola
+    // queda quieta, como una mano real).
+    for (let iD = 0; iD < bl.dedos.length; iD++) {
+      const dd = bl.dedos[iD];
+      const cC = R99_POSE_BALANCE[dd.dedo][dd.falange];
+      const cB = R99_POSE_SAQUE[dd.dedo][dd.falange];
+      let curl = cC + (cB - cC) * R.wSaque;
+      if (!serviendo) curl += 0.02 * Math.sin(R._t * 1.7 + iD * 0.9) +
+        0.015 * Math.sin(R._t * 2.9 + 1.3 * iD);
+      _gQe.setFromAxisAngle(dd.ejeFlex, curl);
+      dd.hueso.quaternion.copy(_gQe).multiply(dd.bindQ);
+    }
   }
 
   updateAIPaddlePose(mesh, ai, who, dt) {
@@ -21023,6 +21089,33 @@ const _gUp = new THREE.Vector3(0, 1, 0); const _gNeg = new THREE.Vector3(-1, 0, 
 // (_gMx ya existía en este módulo: se reutiliza)
 const _gHandY = new THREE.Vector3(); const _gHandZ = new THREE.Vector3();
 const _gVz = new THREE.Vector3();   // r97 · resultado VECTOR de la cruz hand-Z
+/* r99 · POSES DE DEDOS (rad por falange [MCP, PIP, DIP], RELATIVAS al bind —
+ * scripts/plan_brazos_r99.md §2: medido del GLB + referencias del dueño).
+ * AGARRE shakehand: medio/anular/meñique envuelven el mango, índice tumbado
+ * en el borde inferior, pulgar EN BIND (oposición horneada). SAQUE: palma
+ * con cuenco suave y uniforme para la bola. BALANCE: semicurva relajada. */
+const R99_POSE_AGARRE = { thumb: [0, 0, 0], index: [1.2, 0.4, 0.4],
+  mid: [1.45, 2.0, 1.3], ring: [0.5, 1.8, 1.3], pinky: [0.5, 2.0, 1.5] };
+const R99_POSE_SAQUE = { thumb: [0, 0, 0], index: [0, 0.22, 0.16],
+  mid: [0.2, 0.14, 0], ring: [0, 0.4, 0.24], pinky: [0.2, 0.22, 0.16] };
+const R99_POSE_BALANCE = { thumb: [0.18, 0.12, 0.08], index: [0.35, 0.55, 0.65],
+  mid: [0.35, 0.55, 0.65], ring: [0.36, 0.57, 0.67], pinky: [0.38, 0.59, 0.69] };
+const _r99q1 = new THREE.Quaternion(); const _r99q2 = new THREE.Quaternion();
+const _r99v1 = new THREE.Vector3();
+const R99_CREASE = 0.0868;    // muñeca → crease de nudillos (m adulto, medido)
+const R99_DCREASE = 0.04;     // mango → crease [HIPÓTESIS — aguja de render r99]
+/* r99 · TOPE DE VELOCIDAD ANGULAR: el re-solve del piso duro puede saltar la
+ * quat deseada en un frame (tirones); el tope lo convierte en slerp acotado. */
+function _r99TopeQ(fq, qD, dt, wMax) {
+  const ang = qD.angleTo(fq.prev);
+  if (ang > 1e-6) {
+    const lim = wMax * dt;
+    if (ang > lim) {
+      _r99q2.copy(fq.prev).slerp(qD, lim / ang);
+      qD.copy(_r99q2);
+    }
+  }
+}
 /* r94 · marco del RIG por frame: el mundo del juego (ai.pos, pala, bola,
  * DIMS) vive en RIG-LOCAL pero el rig puede estar MOVIDO (hall, menú, onda)
  * o GIRADO (recentrado XR) — los huesos se leen en mundo y las quats dese-

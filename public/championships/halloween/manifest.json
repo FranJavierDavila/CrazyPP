@@ -1,0 +1,449 @@
+{
+  "id": "halloween",
+  "version": 3,
+  "contract": 1,
+  "estado": "publicado",
+  "title": {
+    "es": "Campeonato de Halloween",
+    "en": "Halloween Championship"
+  },
+  "description": {
+    "es": "Un cementerio bajo la luna donde el ZOMBI defiende su cripta: cinco etapas entre niebla, dianas que brotan de la tierra y un duelo final aullante.",
+    "en": "A moonlit graveyard where the ZOMBIE defends his crypt: five stages of fog, targets rising from the soil and a howling final duel."
+  },
+  "tema": "neutro",
+  "rival": {
+    "id": "halloween_rival",
+    "name": "ZOMBI",
+    "kind": "stock",
+    "oppLabel": "rival",
+    "states": [
+      "present",
+      "idle",
+      "focused",
+      "surprised",
+      "panic",
+      "laughing",
+      "crazy",
+      "angry",
+      "picando",
+      "loosing",
+      "defeated",
+      "victory"
+    ],
+    "personalidad": {
+      "agresividad": 4,
+      "precision": 3,
+      "constancia": 4,
+      "caracter": "siniestro",
+      "celebracion": "Alienta a los muertos y estremece la noche con su risa.",
+      "cerebro": "equilibrado"
+    }
+  },
+  "rivalVisual": {
+    "modo": "precarga",
+    "base": "present.webp",
+    "ext": "webp",
+    "alto": 2.15,
+    "anchoFijo": 0,
+    "material": "basic",
+    "alphaTest": 0.25,
+    "flotacion": {
+      "activo": true,
+      "amplitud": 0.012,
+      "periodo": 1.4
+    },
+    "aspecto": true
+  },
+  "storage": "pp_champ_halloween_*",
+  "camino": {
+    "patron": "duelo_prueba",
+    "duelo": {
+      "puntos": 11
+    },
+    "dificultad": {
+      "modo": "formula",
+      "difMul": 1.0,
+      "paso": 0.15,
+      "difFinal": 1.35,
+      "tabla": [
+        {
+          "aiMul": 1.0,
+          "chance": 0.3,
+          "cooldown": 13.0,
+          "primer": 8.0,
+          "warn": 2.0
+        },
+        {
+          "aiMul": 1.2,
+          "chance": 0.38,
+          "cooldown": 11.0,
+          "primer": 6.5,
+          "warn": 2.0
+        },
+        {
+          "aiMul": 1.4,
+          "chance": 0.46,
+          "cooldown": 9.0,
+          "primer": 5.0,
+          "warn": 1.7
+        }
+      ]
+    },
+    "worldMetric": "duelwins",
+    "leyenda": {
+      "activa": true,
+      "aiMulMul": 1.15,
+      "chanceSuma": 0.06,
+      "chanceMax": 0.6,
+      "cooldownResta": 1.5,
+      "cooldownMin": 6.0,
+      "primerResta": 1.0,
+      "primerMin": 3.0,
+      "pruebaExtra": 1
+    }
+  },
+  "stages": [
+    {
+      "id": "duelo1",
+      "name": "Duelo en la Niebla",
+      "kind": "duelo"
+    },
+    {
+      "id": "prueba1",
+      "name": "La Cripta Sellada",
+      "kind": "dianas",
+      "rules": {
+        "modo": "objetivos",
+        "objetivo": 6,
+        "puntos": 2,
+        "premio": "Calavera de Oro"
+      }
+    },
+    {
+      "id": "duelo2",
+      "name": "Duelo de la Luna",
+      "kind": "duelo"
+    },
+    {
+      "id": "prueba2",
+      "name": "El Pozo del Cometa",
+      "kind": "dianas",
+      "rules": {
+        "modo": "movimiento",
+        "objetivo": 4,
+        "puntos": 3,
+        "premio": "Sello del Cometa"
+      }
+    },
+    {
+      "id": "final",
+      "name": "DUELO FINAL",
+      "kind": "duelo",
+      "rules": {
+        "jefe": true
+      }
+    }
+  ],
+  "pruebas": {
+    "dianas": {
+      "spawnX": 0.85,
+      "spawnYMin": 0.45,
+      "spawnYMax": 1.3,
+      "spawnZMin": -0.55,
+      "spawnZMax": -1.7,
+      "radio": 0.155,
+      "maxVivas": [
+        2,
+        4
+      ],
+      "hold": {
+        "x": 0.0,
+        "z": -0.5,
+        "T": 1.5,
+        "H": 0.42
+      },
+      "recambioMs": 900,
+      "deadT": 0.7,
+      "tiempoBase": 20,
+      "tiempoPorObjetivo": 10,
+      "tiempoMax": 90
+    }
+  },
+  "powers": [
+    {
+      "kind": "mano",
+      "name": "Mano de zombi",
+      "icon": "assets/power_mano.webp",
+      "cooldown": 15,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.3
+    },
+    {
+      "kind": "moscas",
+      "name": "Plaga de Moscas",
+      "icon": "assets/power_moscas.webp",
+      "cooldown": 18,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.28
+    },
+    {
+      "kind": "calabaza",
+      "name": "Calabaza",
+      "icon": "assets/power_calabaza.webp",
+      "cooldown": 16,
+      "duration": 10,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.3
+    },
+    {
+      "kind": "gelatina",
+      "name": "Gelatina Asquerosa",
+      "icon": "assets/power_gelatina.webp",
+      "cooldown": 14,
+      "duration": 12,
+      "warn": 2,
+      "activacion": "rally",
+      "chance": 0.3
+    }
+  ],
+  "powerTrigger": {
+    "chance": 0.32,
+    "cooldown": 13.0,
+    "minRallyHits": 1,
+    "warn": 2.0,
+    "bolsa": "rotatoria",
+    "primerCd": 6,
+    "garantiaS": 22,
+    "postCdMin": 10,
+    "postCdMax": 15
+  },
+  "playerPower": {
+    "kind": "mega_pala",
+    "reachMul": 1.38,
+    "duration": 8.0,
+    "trigger": "crazy_combo_rally6"
+  },
+  "audio": {
+    "music": "assets/melodia.mp3",
+    "musicVolume": 0.18,
+    "musicOpts": {
+      "fadeIn": 0.8,
+      "ancla": true,
+      "syncMode": "ramp",
+      "gateStart": true,
+      "gateOn": false,
+      "renace": true,
+      "stopFade": 0
+    },
+    "sounds": {
+      "laugh": "assets/risas.mp3",
+      "crazy": "assets/zombi_crazy.mp3",
+      "victory": "assets/zombi_victory.mp3",
+      "defeated": "assets/zombi_defeated.mp3"
+    }
+  },
+  "room": {
+    "floor": "assets/sala_floor.jpg",
+    "ceil": "assets/sala_ceil.jpg",
+    "back": "assets/sala_back.jpg",
+    "front": "assets/sala_front.jpg",
+    "left": "assets/sala_left.jpg",
+    "right": "assets/sala_right.jpg",
+    "variants": {
+      "final": {
+        "tint": 2770474
+      }
+    }
+  },
+  "decor": {
+    "pieces": [
+      {
+        "file": "assets/decor_arana.png",
+        "h": 1.15,
+        "x": -2.3,
+        "z": -2.75,
+        "sway": 0.5
+      },
+      {
+        "file": "assets/decor_calabaza.png",
+        "h": 1.3,
+        "x": 2.45,
+        "z": -2.35,
+        "sway": 0.5
+      },
+      {
+        "file": "assets/decor_lapida.png",
+        "h": 1.0,
+        "x": -2.35,
+        "z": -1.15,
+        "sway": 0.55
+      },
+      {
+        "file": "assets/decor_ojos.png",
+        "h": 0.85,
+        "x": 2.0,
+        "z": -0.8,
+        "sway": 0.5
+      }
+    ]
+  },
+  "mapa": {
+    "modo": "arte",
+    "arte": "assets/mapa.webp",
+    "planoW": 1.68,
+    "pos": [
+      -2.98,
+      1.5,
+      -0.9
+    ],
+    "rotY": 1.5707963267948966,
+    "nodos": [
+      {
+        "x": 148,
+        "y": 392,
+        "r": 118,
+        "ts": 1
+      },
+      {
+        "x": 355,
+        "y": 592,
+        "r": 110,
+        "ts": 1
+      },
+      {
+        "x": 875,
+        "y": 202,
+        "r": 112,
+        "ts": 1
+      },
+      {
+        "x": 890,
+        "y": 556,
+        "r": 104,
+        "ts": 1
+      },
+      {
+        "x": 1265,
+        "y": 332,
+        "r": 120,
+        "ts": 1
+      }
+    ]
+  },
+  "cartel": {
+    "cvW": 1024,
+    "cvH": 512,
+    "w": 2.3,
+    "h": 1.15,
+    "pos": [
+      -1.9,
+      1.55,
+      -5.42
+    ],
+    "rot": [
+      0,
+      0.12,
+      0
+    ],
+    "oculto": true
+  },
+  "hud": {
+    "activo": true,
+    "pos": [
+      0,
+      2.52,
+      -2.55
+    ]
+  },
+  "rewards": {
+    "wins": "Recompensa por vencer (documental)",
+    "champion": "Recompensa por coronar (documental)"
+  },
+  "trophy": {
+    "name": {
+      "es": "Trofeo de la Calavera",
+      "en": "Skull Trophy"
+    },
+    "arte": "assets/insignia.png",
+    "rotY": 0.62
+  },
+  "coronacion": {
+    "titulo": {
+      "es": "¡ZOMBI DERROTADO!",
+      "en": "ZOMBIE DEFEATED!"
+    },
+    "mensaje": {
+      "es": "La cripta es tuya: el cementerio descansa en paz… por hoy.",
+      "en": "The crypt is yours: the graveyard rests in peace… for today."
+    },
+    "dur": 14,
+    "insignia": "assets/insignia.png",
+    "stats": [
+      "puntos",
+      "duelos",
+      "fecha"
+    ]
+  },
+  "procedural": {
+    "art": false,
+    "audio": false,
+    "binaryAssets": 0
+  },
+  "assets": "assets/ (12 poses del zombi del dueño en webp, mapa.webp del dueño, normas_halloween.png del dueño, sala_*.jpg REALES del dueño (paredes.zip), decor_arana/calabaza/lapida/ojos.png REALES del dueño (troqueles.zip), mano1/2/3.webp del dueño (traen el montículo integrado), mesa.webp del dueño (textura de mesa r92, 4 losas de piedra con sangre; losa.jpg conservada), superpower.webp del dueño (SuperPower.png), gelatina.webp del dueño, calabaza.glb del dueño, power_mano/moscas/calabaza/gelatina.webp de la casa (medallones), mosca.webp de la casa, bso.wav PROVISIONAL, risas.mp3 PROVISIONAL, insignia.png)",
+  "i18n": {
+    "es": {
+      "bienvenida": "Bienvenido al Campeonato de Halloween",
+      "instr_titulo": "Las normas del cementerio",
+      "instr_lineas": [
+        "Las dianas brotan de la tierra entre la niebla: reviéntalas antes de que se agote el tiempo",
+        "En El Pozo del Cometa las dianas se mueven: apunta al vuelo",
+        "Si fallas, el ZOMBI se ríe; si aciertas, la cripta tiembla",
+        "Mecánica secreta de esta prueba: por anunciar"
+      ],
+      "duelo_vs": "¡DUELO! VS ZOMBI · Ronda {n}",
+      "prueba_vs": "¡PRUEBA! {nombre} · Intento {n}",
+      "sello_leyenda": "Sello de leyenda {n} conseguido",
+      "leyenda_medalla": "LEYENDA COMPLETA: los 5 sellos son tuyos.",
+      "coronacion_titulo": "¡CAMPEÓN DE HALLOWEEN!",
+      "coronacion_msg": "El trono de la cripta es tuyo. Bienvenido a la leyenda.",
+      "reset_ok": "Registros eliminados."
+    },
+    "en": {
+      "bienvenida": "Welcome to the Halloween Championship",
+      "instr_titulo": "The graveyard rules",
+      "instr_lineas": [
+        "Targets rise from the foggy soil: smash them before time runs out",
+        "In The Comet Pit targets move: aim on the fly",
+        "Miss and the ZOMBIE laughs; score and the crypt trembles",
+        "Secret mechanic of this trial: to be announced"
+      ],
+      "duelo_vs": "DUEL! VS ZOMBIE · Round {n}",
+      "prueba_vs": "TRIAL! {nombre} · Attempt {n}",
+      "sello_leyenda": "Legend seal {n} earned",
+      "leyenda_medalla": "FULL LEGEND: all 5 seals are yours.",
+      "coronacion_titulo": "HALLOWEEN CHAMPION!",
+      "coronacion_msg": "The crypt throne is yours. Welcome to legend.",
+      "reset_ok": "Records wiped."
+    }
+  },
+  "estructura": "5 etapas: duelo → dianas → duelo → dianas → duelo final (patrón común de los 5 campeonatos)",
+  "notes": [
+    "v1 (r85) · Campeonato de Halloween — el campeonato del Valle Neón se RETIRA a petición del dueño y su hueco lo ocupa Halloween: rival ZOMBI con las 12 poses del artista (upload/zombi.zip), mapa del artista con 5 nodos medidos (upload/Mapa.png) y cartel de normas del artista (upload/zombi_normas.png) para las etapas 2 y 4.",
+    "v2 (r86) · ESCENARIO REAL: las 6 paredes de la estancia del artista sustituyen al cementerio procedimental (paredes.zip), los 4 troqueles del artista entran en decor.pieces (troqueles.zip), la mesa viste la LOSA de piedra del artista (mesa.jpg, patrón madera del Oeste) y los 2 poderes provisionales (Niebla de tumba/Orbe espectral) dejan paso a los 4 SUPERPODERES REALES del zombi (10 s, anuncio SuperPower.png + medallón circular abajo-derecha + congelación): Mano de zombi (las 3 manos del artista salen de su montículo, estorban y frenan la bola — al chocar la bola se para, se cae y la mano revienta en trocitos), Plaga de Moscas (enjambre revoloteando en la cara del jugador, se espantan con la pala), Calabaza (la bola se vuelve calabaza.glb ×3, pesada y con salida aleatoria tras cada bote en la mesa) y Gelatina Asquerosa (manchas que contaminan la bola: verde fosforito, ×3 de peso, arrastra y suelta humillo verde).",
+    "PROVISIONAL pendiente del artista: bso (del valle), risa e insignia; mecánicas de las etapas 2 y 4 (hoy dianas).",
+    "v3 (r88) · A JUSTO DEL INFORME DEL DUEÑO tras V3.6.79: mapa INVISIBLE en la pared izquierda (el dueño venía de V3.6.78, donde el mapa flotaba en [-1.05, 1.45, -3.58] rotY 0.42 — ese cartel flotante 'metido en la pared izquierda hacia el fondo' ERA el mapa sin anclar; r87 ya lo puso en la pared y ahora el CARTEL DE BIENVENIDA se RETIRA (cartel.oculto) porque el dueño no sabía qué hacía ahí) · ZOMBI anclado a la MESA (x = canto derecho +0,69, z = mesa − 1,70) y ALGO MÁS A LA DERECHA · pose idle SUSTITUIDA por el arte nuevo del dueño (upload/zombi_idle.png, la anterior tenía un error) · MANO DE ZOMBI: nace SIEMPRE dentro del tablero (canto − radio del montículo) y la mano pinta POR DELANTE de su tierra (renderOrder montículo 3 → mano 4 → trocitos 5; se ve la parte inferior de la mano) · CALABAZA REESCRITA: centrada en el CENTRO EXACTO de la bola y girando COMO LA BOLA (mismo quaternion), se oscurece (pudre) linealmente hasta que 0,55 s antes del cierre ESTALLA en 12 trozos con CHOFFF y vuelve la bola normal (nunca calabaza y bola a la vez; sin rebotes aleatorios: era injugable) · GELATINA REESCRITA: manchas SIEMPRE dentro del tablero (radio circunscrito del cuadrado girado), CHOFFF al pisarla, bola verde fosforito CON FÍSICA NORMAL (la r87 la pesaba ×3: retirado) y EXPLOSIÓN DE HUMO VERDE al botar en mesa o pala (ráfaga de 18 sprites densa que sobrevive al cierre) · NÚCLEO: la bola queda APARCADA e INERTA en la sala de campeonato (estado champtest) — adiós a los botes y el ruido infinito al arrancar la escena.",
+    "v4 (r90) · EL DÍA DE LAS BRUJAS SUENA Y SE JUEGA — informe del dueño tras V3.6.81: «no se escuchan crazy/defeated/victory · la calabaza sigue sin verse · retirar monticulo.png de la mesa porque corta las manos · la bola no hace nada al atravesar o chocar con las manos (con Clown-Burla era muy similar y funcionaba) · desfase entre la textura de las vísceras y su zona de colisión + humillo verde fosforito CONTINUO desde las texturas mientras dura el poder · añadir la música de fondo Midnight_Volley.mp3 · mapa nuevo (el puesto estaba lavado de color)». BSO REAL: bso.wav PROVISIONAL → Midnight_Volley.mp3 del dueño (153,6 s, re-codificado al perfil probado 44100/256 CBR). SONIDOS DEL ZOMBI AL MOTOR PROBADO: la lección del tren (Tasks 129→134) era createSfx=JAMÁS en el casco, createBucle=SIEMPRE — laugh/crazy/victory/defeated son ahora un createBucle propio por sonido, disparo on() + reloj de corte honesto (suena() + off antes del wrap) y TODOS re-codificados a 44100/256 CBR (victory venía a 24 kHz: el perfil que el casco NO decodifica — la causa del Tunel mudo). CALABAZA GARANTIZADA: el GLB de Sketchfab «cargaba» pero nunca se pintó en el casco (nodos Lamp, pivote desplazado, PBR sin luces del salón) y al marcarse listo bloqueaba el respaldo — bola oculta; el GLB se RETIRA del runtime y la calabaza ES el cuerpo procedural de la casa (LatheGeometry con costillas pintadas + rabo + zarcillo, pipeline del trofeo del Hall) nacido EN EL DISPARO — sin espera de cuerpo (aviso normal 2 s, fuera la congelación extra de 6 s), sin swap. MANOS SIN MONTÍCULO: la textura monticulo.png sale de la mesa (el solape con mano1/2/3 CORTABA la mano en la línea de visión) — la mano nace directa de la mesa con su tierra integrada. COLISIÓN BOLA↔MANO = MOTOR DE BURLA portado (probado en el casco): CCD por segmento prev→actual subdividido a ≤3 cm + caja en el marco LOCAL de la mano (por delante Y por detrás) + banda DESDE LA MESA (el test anterior flotaba a +0,46 m y las bolas de rallye pasaban por debajo) — al chocar la bola SE PARA Y CAE (0,−0.4,0) y la mano REVIENTA. GELATINA SIN DESFASE: zona de impacto = el CUADRADO visual exacto de la mancha (punto de la bola al marco local por quaternion inverso, lim = tam/2 + 3/4 de bola — el círculo salado r89 no cubría esquinas ni respetaba el giro) + HUMILLO VERDE FOSFORITO CONTINUO desde las manchas durante TODO el poder (~6 efluvios/s, tope 70 sprites). MAPA CON SU COLOR: la textura del arte nacía SIN colorSpace (lineal = desaturado) → SRGBColorSpace + anisotropía, y el arte se sustituye por el mapa.png NUEVO del dueño (mismas 1380×752, nodos intactos).",
+    "v5 (r91) · EL INFORME QUE POR FIN SE ATACA DE RAÍZ — informe del dueño tras V3.6.82: «no suena la música de fondo · las manos están mal recortadas y no sale la parte inferior (la tierra y el brazo) · de la calabaza sólo se ve un trocito del rabito verde · NO TENEMOS EL MAPA EN LA PARED (en TODOS los campeonatos aparece perfectamente colocado) · ha vuelto el solapamiento del rival con dos imágenes superpuestas · los sonidos del zombi sólo suenan algunos · no he visto zombi_defeated ni cambios de cara en el resto del partido». BSO MUERTA POR FORMA: la r90 pasó url como STRING y vol como NÚMERO y el motor los INVOCABA (o.url()/o.vol()) → TypeError silencioso bajo el catch → mus=null sin error visible; ahora forma CANÓNICA (funciones) en el módulo + SDK tolerante (val(): función o valor). MAPA = RECETA WIZARDMAP EXACTA (la que el dueño ve en TODOS los campeonatos): GRUPO colgado del RIG, pos [-2.98,1.5,-0.9] rotY π/2, ancho 1.68, respaldo de madera 22 mm, material sin mapa + opacity 0 → la textura se asigna y el gate SE ABRE DENTRO DEL CALLBACK del TextureLoader (la sonda r91b cazó al sondeo con setInterval DORMIDO: opacity 0 con image vivo y descargado) + respaldo por-frame en refresco() (si hay imagen y el póster sigue apagado, se enciende). MANOS CON ARTE INTEGRAL: cultivo 1.0/offset 0.0 — la tierra y el brazo del fondo del arte del dueño YA SE VEN (el recorte 0.70 de la r90 las escondía). CALABAZA — EL BUG RAÍZ: _preparaCuerpoR88 convertía el material SIEMPRE en array y el renderer (THREE r186, projectObject) con material-array SÓLO dibuja los geometry.groups: LatheGeometry (cuerpo) y TorusGeometry (zarcillo) NO TIENEN grupos → CERO draw calls → «sólo el rabito» (el rabo vivía porque CylinderGeometry SÍ trae grupos); material único vuelve SINGLE + DoubleSide + color naranja sólido + frustumCulled off. RIVAL UNA SOLA NORMA: la r57 manda y los DOS motores locales (reaccion() en onPoint + el motor legacy picando/loosing/panic por frame) SE RETIRAN — tres motores pisándose = caras imposibles de seguir y solapes percibidos; la emoción llega SÓLO del núcleo (rivalEmocion: cara + sonido del arte del zombi: laughing→risas, crazy, victory, defeated) y cada etapa nueva recompone la cara (enDuelo timer 0); el FINAL VIVE: hold _finalT 4.2 s — sala() ya NO pisa defeated/victory el mismo frame (el dueño jamás vio zombi_defeated). QA r91: mapa opacity 1 con textura viva en RIG · calabaza cuerpo visible (side/color/frustum) · BSO sonando tras hideChampIntro(true) y DURANTE el duelo · cadena núcleo→champs→módulo→cara verificada (laughing/angry/defeated/idle) · un solo plano del zombi en TODA la vida (entrada→tormenta→duelo→final→re-entrada) · 5 mp3 a 44100 · manos repeat 1/offset 0.",
+    "v6 (r92) · LAS CUATRO DEL INFORME — informe del dueño tras V3.6.83: «las manos deben salir justa de la mesa, su parte inferior toca la mesa y no queda suspendida en el aire · cambiamos la textura de la mesa por la nueva que adjunto · el rival no golpea bien la calabaza con su pala, parece un desplazamiento · la calabaza debería girar sobre sí misma al golpearla tal como haría la bola». (1) MANOS ANCLADAS: base del plano a MANO_Y (tableTopY + 0,005) en TODAS las fases — fuera el ascenso +0,12 y el bob de la r89 que dejaban la mano flotando; el «nacer de abajo» lo sigue leyendo el DESENROLLADO (repeat.y 0→1 con la base fija) y el vaivén queda en rotación (pivote en la base) y respiración de escala. (2) MESA NUEVA: mesa.webp del dueño (2048×1024, cuatro losas de piedra con grietas, musgo y salpicaduras de sangre) viste el ppTableTop por el mismo camino _losaOn (SRGB + anisotropía + marco piedra oscura); losa.jpg se conserva para rollback. (3) GOLPE DEL RIVAL A LA CALABAZA: marca ppCalabaza en la bola (puesta en inicio, limpia en estallido/fin) que lee el núcleo — alcance del rival 0,21→0,12 m y punto de contacto ARRASTRADO hasta la tangente con la hoja (centro de calabaza a 7,5 cm del centro de pala, corrección ≤4,5 cm): la pala ya NO se para junto a la calabaza ni hay salto visible; la salida parte del punto tocado con computeShotVelocityReal al mismo blanco. (4) GIRO SOBRE SÍ MISMA: la calabaza lleva SU rotación arrastrada por el spin de la bola (spin·dt·0,15 = ×3 la tasa visual de la bola — en un cuerpo de 13 cm el quaternion r88 no se apreciaba): cada golpe cambia el spin y la vuelta REARRANCA — se la ve girar al golpearla.",
+    "v7 (r93) · TRES RÁPIDAS — informe del dueño tras V3.6.84: «sustituimos la melodía por Melodia.mp3 que adjunto · en el superpoder calabaza hay un desfase de la bola cuando la golpea el rival (deriva de precisión entre ambas palas) · rediseña las etiquetas de los cuatro superpoderes, más realistas y tenebrosos según cada poder». (1) BSO NUEVA: melodia.mp3 del dueño (178,4 s re-codificado 44100/256 CBR — perfil que el casco decodifica) sustituye a midnight_volley.mp3 (retirado del repo); el camino createMusic/manifest.audio.music no cambia de motor. (2) DESFASE DEL RIVAL CAZADO: la r92 arrastraba el punto de contacto hacia la pala y recolocaba la bola en él — con la calabaza (Ø 0,13 m) el salto de hasta 4,5 cm SE VE y el follow-through arrancaba con la hoja 5 cm por encima; ahora la bola se queda en el punto del barrido (mismo trato que la bola normal — la física del dueño jamás recoloca) y la HOJA viaja a la piel (swing nace en el punto tangente a 7,5 cm, sin ascenso inicial). (3) ETIQUETAS TERRORÍFICAS: los cuatro iconos power_*.webp re-diseñados (medallón circular tenebroso 512×512 RGBA — recorte del arte fotorealista 1024×1024 con anillo de hierro viejo y filo ember — por poder: mano zombi / plaga de moscas / calabaza / gelatina asquerosa).",
+    "v8 (r94) · LA CALABAZA ES LA BOLA, SIN TESTIGOS — informe del dueño tras V3.6.85: «cuando jugamos con calabaza en determinados momentos se produce un desfase y se ve por un lado la calabaza y por otro la bola. No debería pasar, la calabaza debería ocupar el lugar exacto de la bola y esta no ver- se mientras tengamos la calabaza sin destruir». Tres garantías duras cada frame en paso(): (1) LA BOLA JAMÁS SE VE mientras la calabaza vive — el núcleo re-enseñaba ballMesh en varios caminos (toss del saque c12:4417, HELD del sacador c12:8774, reset de punto c12:1132, tránsitos/restauracio- nes c12:6316/10195) y el módulo sólo la ocultaba UNA VEZ en inicio(); ahora paso() la vuelve a ocultar DESPUÉS de esos caminos y ANTES del render — ver bola y calabaza a la vez es imposible. (2) EL LUGAR EXACTO: la calabaza copia la posición RENDERIZADA de la bola (ballMesh.position, sincronizada de ball.pos por el núcleo en el mismo frame) — bit a bit con donde la bola estaría pintada. (3) NACIMIENTO EN SITIO: inicio() la coloca en el punto vivo de la bola (antes pasaba un frame en el origen) y la marca ppCalabaza renace cada frame (si el núcleo recrea la bola entre puntos, el contacto de la IA r92 no caduca). El estallido mantiene su entrega: calabaza se oculta y la bola VUELVE en el mismo punto."
+  ,
+    "v9 (r95) · SIN CARTEL EN LOS DUELOS — regla de casa del dueño: «en todos los campeonatos, en las fases de duelo con el rival no hay cartel explicativo; ese sólo existe en las etapas de habilidades». Los TRES duelos de Halloween (Duelo en la Niebla, Duelo de la Luna y DUELO FINAL) arrancan SIN el splash «VS · Duelo N»: el aviso vive en la línea del marcador (¡DUELO! VS ZOMBI · Ronda n) y el duelo comienza al saque. Las PRUEBAS de habilidad (etapas 2 y 4) conservan SU cartel de normas del artista, intacto."
+  ]
+}

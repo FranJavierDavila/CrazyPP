@@ -245,20 +245,6 @@ shutil.copytree(PUB / 'championships', STAGE / 'championships')
 (STAGE / 'vendor').mkdir()
 shutil.copy2(PUB / 'vendor' / 'socket.io.min.js', STAGE / 'vendor' / 'socket.io.min.js')
 
-# r109 · M3 PWA: la app instalable VIAJA EN LOS 4 PAQUETES (manifest +
-# service worker + iconos de la casa) — el autohospedado también instala.
-print('· Copiando PWA (manifest + sw + iconos)...')
-shutil.copy2(PUB / 'manifest.webmanifest', STAGE / 'manifest.webmanifest')
-shutil.copy2(PUB / 'sw.js', STAGE / 'sw.js')
-for _ic in ('logo-192.png', 'logo-512.png', 'logo-maskable-512.png'):
-    shutil.copy2(PUB / _ic, STAGE / _ic)
-_sw = STAGE / 'sw.js'
-import re as _re_pp
-_vsw = VER[1:] if VER.startswith('V') else VER   # sw.js lleva crazypp-v3.6.99-SDK6 (v minúscula)
-if not _re_pp.search(r"const CACHE = 'crazypp-v" + _vsw + "'", _sw.read_text(encoding='utf-8')):
-    sys.exit(f'FALLO: sw.js del stage no lleva const CACHE = crazypp-v{_vsw} (el bump gobierna la caché)')
-print(f"  PWA OK: manifest + sw.js (CACHE crazypp-v{_vsw}) + 3 iconos")
-
 intro = STAGE / 'assets' / 'intro.mp4'
 if intro.stat().st_size != 5779719:
     sys.exit(f'FALLO: assets/intro.mp4 pesa {intro.stat().st_size} B (esperado 5.779.719 B)')

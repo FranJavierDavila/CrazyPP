@@ -201,20 +201,20 @@ const C = DIMS.tableCenterZ;
     c06s.includes('export function mjQuinticVel') &&
     c06s.includes('export function solveArmIK') &&
     c06s.includes('export function adivinaKind'));
-  aguja('r91 · plan de fases vivo (reacción→carga→golpeo→acompañamiento→recuperación)',
+  aguja('r91/r99ter · la cadena vive (plan → curva del gesto → jinete con fases)',
     c06s.includes('planCadena(contact, tBall, kind, fh)') &&
     c06s.includes('cadenaContacto(cx, cy, cz, v, TBola)') &&
-    c06s.includes('updateCadena(dt)') &&
-    c06s.includes("phase: 'react'") && c06s.includes("phase: 'strike'") &&
-    c06s.includes("phase: 'follow'") && c06s.includes("phase: 'recover'"));
+    c06s.includes('updateCadena(dt, ball)') &&
+    c06s.includes("phase = dRem > 0.30 ? 'back' : 'strike';") &&
+    c06s.includes("ch.phase = 'follow';") && c06s.includes("ch.phase = 'recover';"));
   aguja('r91 · anclajes: plan con la predicción, impacto real afina (r99: con TBola), swing solo sin plan',
     c06s.includes('this.predictT = strike.t;') &&
     c06s.includes('this.cadenaContacto(cx, cy, cz, v, this._tBolaDe(ball, cx, cy, cz));') &&
     c06s.includes("if (!this.chain || this.chain.phase === 'follow' ||") &&
-    c06s.includes('this.updateCadena(dt);'));
-  aguja('r91 · tiempo LOCAL de segmento (el global nunca agota el plan en cascada)',
-    c06s.includes('ch.tSeg = (ch.tSeg || 0) + dt;') &&
-    (c06s.match(/ch\.tSeg = 0/g) || []).length >= 2);
+    c06s.includes('this.updateCadena(dt, ball);'));
+  aguja('r99ter · cronómetro del jinete (esprint si el arco no cabe + tope de paso 13 cm)',
+    c06s.includes('dRem > tRem * 7.8 ? 7.8') &&
+    c06s.includes('if (_cadP.length() > 0.13) {'));
   aguja('r91 · c12 consume la cadena (rama de pose por fases del golpe)',
     c12s.includes("if (who === 'ai' && ai.chain && ai.chain.phase)") &&
     c12s.includes('mesh.position.copy(ch.cur);') &&
@@ -243,15 +243,16 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.195-SDK6', c00s.includes('3.6.195-SDK6'));
+  aguja('versión · c00 sella 3.6.196-SDK6', c00s.includes('3.6.196-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
   // pala-brazo (c12) — los dos fixes del informe del dueño
   const bundle92 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
-  aguja('r92 · el BUNDLE lleva el ARCO del golpe (carga al lado + cruce + tangente)',
+  aguja('r92/r99ter · el BUNDLE lleva el ARCO del golpe (carga al lado + cruce en los nudos de la curva)',
     bundle92.includes('cuerda/tangente del ARCO del golpe') &&
-    (bundle92.match(/tC\.normalize\(\)/g) || []).length >= 3);
+    bundle92.includes('r92 · carga al lado') &&
+    bundle92.includes('r92 · cruce al otro'));
   aguja('r92 · el BUNDLE lleva LA PALA ES LA CONTINUACIÓN DEL BRAZO (giro mínimo premultiply)',
     bundle92.includes('LA PALA ES LA CONTINUACIÓN DEL BRAZO') &&
     bundle92.includes('premultiply(_armQ)') &&
@@ -292,8 +293,8 @@ const C = DIMS.tableCenterZ;
   aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
     (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
     b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.195-SDK6 en el bundle',
-    b94.includes('3.6.195-SDK6'));
+  aguja('r94 · versión sella 3.6.196-SDK6 en el bundle',
+    b94.includes('3.6.196-SDK6'));
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,
@@ -314,9 +315,10 @@ const C = DIMS.tableCenterZ;
     b95.includes('_preparaDisparo') && b95.includes('_aplicaDisparo') &&
     b95.includes('this._retPend') && !b95.includes('ball.pos.set(cx, cy, cz);'));
   // r99bis · ACOMPAÑAMIENTO NATURAL: gestos progresivos, sin empujones
-  aguja('r99bis · gesto progresivo (strike ≥ 80 ms · tope 8 m/s · re-anclaje _enContacto)',
-    b95.includes('Math.max(TBola, d / 6)') && b95.includes('_enContacto') &&
-    b95.includes('addScaledVector(b.vel, T2 * 0.9)'));
+  aguja('r99ter · SIN teletransportes (tope de paso · bola jamás recolocada · follow propio)',
+    b95.includes('if (_cadP.length() > 0.13) {') &&
+    b95.includes('tCruce') && b95.includes('_armaFollow') &&
+    !b95.includes('b.pos.copy(d.pos)'));
   aguja('r95 · la zona dulce SOLO en strike (el follow ya no persigue la bola: látigo=0)',
     b95.includes('r95 · zona dulce SOLO en strike') &&
     b95.includes("const enStrike = !!(ch && ch.phase === 'strike')"));

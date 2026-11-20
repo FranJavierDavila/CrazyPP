@@ -7442,3 +7442,41 @@ juega SIN ningún error de página (detector window.onerror en el banco headless
 **Entorno**: el sandbox recicló node_modules y llenó el disco (/tmp/my-project huérfano: 14 GB;
 staging de kits viejos). three@0.186.0 reinstalado a mano desde el tarball oficial; kits 36194
 retirados de descargas (ya en GitHub Releases).
+
+## Ronda 99ter (el dueño: «la pala espera y se coloca en posiciones raras, no sigue la bola, parece que bola y pala se teletransportan; el golpe normal es una CURVA que golpea en el punto dulce e impulsa continuando la trayectoria — la pala forma parte de una cadena cinemática») · V3.6.196-SDK6 — 2026-11-20
+**DIAGNÓSTICO ESTRUCTURAL:** el modelo de «fases con segmentos quínticos» era el problema de
+raíz: la pala se APARCABA en la carga (posiciones raras), no seguía la bola (el plan se congelaba
+en la predicción inicial) y el golpe era una polilínea disfrazada de arco. Además _aplicaDisparo
+RECOLocaba la bola hasta 8 cm (teletransporte visible) y la atrapada saltaba chain.cur.
+**NUEVO NÚCLEO — EL JINETE SOBRE LA CURVA (c06 reescrito):**
+1. **UNA SOLA CURVA continua** Catmull-Rom [cuerpo → carga B → contacto C → cruce F] (tabla de
+   48 muestras con longitudes de arco, POR CADENA — hay 4 IAs vivas y una tabla módulo se pisa).
+2. **SEGUIMIENTO POR FRAME**: la curva se REGENERA cada frame de la aproximación — C persigue la
+   posición futura de la bola VIVA proyectada al reloj de cruce (tCruce): el rebote y el Magnus
+   (que desvían el vuelo lineal del barrido 10-25 cm) ya NO desincronizan el encuentro. La pala
+   jamás queda aparcada ni en posiciones raras: siempre está sobre el gesto que enmarca la bola.
+3. **VELOCIDAD TANGENTE cronometrada**: vC = dRem/tRem (+ recede si la bola se aleja) con ESPRINT
+   (a fondo 7,8 m/s si el arco no cabe en el tiempo) — la pala llega al punto dulce CUANDO llega
+   la bola; aceleración física a=(vC²−v²)/2dRem (techo 60).
+4. **CONTACTO POR PROXIMIDAD anticipada**: la bola sale cuando la pala está SOBRE ella o la bola
+   llega en ≤ 3 frames (la esfera de contacto se atravesaba entre dos frames) — NADA de saltos.
+5. **HOMING de caza**: a menos de 30 cm de la bola viva el paso se dirige a ella (el retraso del
+   re-anclaje dejaba 10-15 cm de error lateral que jamás cerraban).
+6. **EL ACOMPAÑAMIENTO = LA MISMA TRAYECTORIA**: tras el contacto el swing continúa hacia el
+   cruce F por curva propia [cur → F] con frenado exponencial (τ 0,22 s) y recupera fundiéndose
+   al cuerpo — el dueño: «impulsa continuando la trayectoria previa curva con el empuje».
+7. **SIN TELETRANSPORTES**: la bola JAMÁS se recoloca (borrado el snap de _aplicaDisparo); la
+   salida nace de donde está la bola y su dirección se sesga 35 % a la tangente del swing SOLO
+   en el golpe real (en la caza el jinete corre EN la dirección de la bola: mezclarla mandaba el
+   tiro a su propio campo). Tope de paso de la pala 13 cm/frame intacto.
+8. **LÍMITES DE JUEGO**: bola muerta (suelo/fuera de zona) → cero persecución de fantasmas: el
+   gesto se completa y el árbitro manda. Hallazgo de depuración: los nudos DOBLES del
+   Catmull-Rom (C,C) crean una CÚSPIDE que infla el arco de 0,3 m a 2,7 m y hunde la aceleración
+   — nudos colineales repartidos.
+**Verificación** (scripts/test_disparo_diferido_r99.mjs, 5× 15/0 — dos escenarios: rally normal
+y pala retrasada): seguimiento 100→10 cm · curvatura REAL del gesto 40-113 cm de desviación ·
+máx paso de pala 13 cm/frame (exacto, el tope) · sin teleport de bola (4-7 m/s = vuelo normal) ·
+contacto en el punto dulce (mínimo hueco del encuentro ≤ 8,5 cm) · nunca aparcada (0 tramos
+quietos) · acompañamiento 10/10 frames de flujo post-golpe con frenado progresivo · salida hacia
+el jugador. Batería: P0 59/0 (5 agujas reescritas al jinete) · r95 29/0 (3 nuevas) · r93 16/0 ·
+r94 12/0 · bloqueo 14/0 · física 12. En vivo: bundle 3.6.196 SIN errores de página.

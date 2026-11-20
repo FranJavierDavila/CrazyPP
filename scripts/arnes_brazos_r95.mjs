@@ -201,16 +201,16 @@ const V3 = THREE.Vector3, Q4 = THREE.Quaternion;
   aguja('r99 · DISPARO DIFERIDO: la IA guarda la salida hasta que la pala llega',
     b.includes('_preparaDisparo') && b.includes('_aplicaDisparo') &&
     b.includes('_tBolaDe') && b.includes('this._retPend'));
-  aguja('r99bis · ACOMPAÑAMIENTO NATURAL: strike ≥ 80 ms · T crece con la distancia (d/6)',
-    b.includes('Math.max(TBola, d / 6)') &&
-    b.includes('THREE.MathUtils.clamp(Math.max(TBola, d / 6), 0.08, 0.30)'));
-  aguja('r99bis · SIN atrapadas bruscas: _enContacto re-ancla con quínticos',
-    b.includes('_enContacto') &&
-    b.includes('addScaledVector(b.vel, T2 * 0.9)') &&
-    b.includes('d.t = Math.max(d.t, d.tMax - 0.15)'));
-  aguja("r99 · el fin del strike pasa por el árbitro de contacto",
-    b.includes("ch.phase === 'strike' && seg.phase !== 'strike'") &&
-    b.includes('this._enContacto();'));
+  aguja('r99ter · LA CURVA del gesto: Catmull-Rom por cadena con seguimiento por frame',
+    b.includes('_armaCurva') && b.includes('_crRellena(ch.curva)') &&
+    b.includes('ch.persec = huida;'));
+  aguja('r99ter · SIN atrapadas ni teleport (contacto por proximidad anticipada · homing de caza)',
+    b.includes('ch.cur.distanceTo(vivo.pos) < 0.085') &&
+    b.includes('addScaledVector(vivo.vel, anticipa)') &&
+    b.includes('HOMING final de la caza'));
+  aguja('r99ter · el contacto dispara el ACOMPAÑAMIENTO (curva propia [cur → cruce F])',
+    b.includes('this._armaFollow(ch.curva.pts[CR_N - 1].clone())') &&
+    b.includes("ch.phase = 'follow';"));
   aguja('r99 · NINGUNA teletransportación de la bola al barrido (la bola viva manda)',
     !b.includes('ball.pos.set(cx, cy, cz);'));
 }

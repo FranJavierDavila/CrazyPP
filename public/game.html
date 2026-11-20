@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.195-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.196-SDK6</span>
     </div>
   </main>
 
@@ -3642,7 +3642,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.195-SDK6';
+  const VERSION = '3.6.196-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -10432,6 +10432,77 @@ const _cadV = new THREE.Vector3();
 const _cadT = new THREE.Vector3();   // r92 · cuerda/tangente del ARCO del golpe
 const _cadP = new THREE.Vector3();   // r99bis · paso por frame del tope de gesto
 
+/* r99ter · SPLINE Catmull-Rom del GESTO COMPLETO — la pala es el extremo de
+ * una cadena cinemática y recorre UNA SOLA CURVA continua [cuerpo → carga B
+ * → contacto C → cruce F]. La tabla es POR CADENA (hay 4 IAs vivas: rival,
+ * compañero, rival 2 y demo — una tabla módulo se pisaría entre ellas). */
+const CR_N = 48;                              // muestras de la curva
+const _crK = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(),
+  new THREE.Vector3()];                       // nudos cur/B/C/F (rascadores)
+const _crPh = new THREE.Vector3();            // nudo fantasma (extensión)
+const _crA = new THREE.Vector3();
+const _crB = new THREE.Vector3();
+
+function _crTablaNueva() {
+  const pts = [];
+  for (let i = 0; i < CR_N; i++) pts.push(new THREE.Vector3());
+  return { pts, len: new Float32Array(CR_N), total: 0 };
+}
+
+/** evalúa el tramo CR del nudo i al i+1 en t∈[0,1] (fórmula estándar) */
+function _crSeg(i, t, out) {
+  const p0 = i === 0 ? _crPh.copy(_crK[0]).multiplyScalar(2).sub(_crK[1])
+    : _crK[i - 1];
+  const p1 = _crK[i], p2 = _crK[i + 1];
+  const p3 = i === 2 ? _crPh.copy(_crK[3]).multiplyScalar(2).sub(_crK[2])
+    : _crK[i + 2];
+  const t2 = t * t, t3 = t2 * t;
+  out.copy(p1).multiplyScalar(2)
+    .addScaledVector(_crA.copy(p2).sub(p0), t)
+    .addScaledVector(_crB.copy(p0).addScaledVector(p1, -5).addScaledVector(p2, 4)
+      .sub(p3), t2)
+    .addScaledVector(_crB.copy(p0).addScaledVector(p1, 3).addScaledVector(p2, -3)
+      .add(p3), t3)
+    .multiplyScalar(0.5);
+  return out;
+}
+
+/** rellena la tabla de la curva desde los nudos [cur, B, C, F]; devuelve la
+ *  longitud de arco en la que está el CONTACTO (nudo C, fracción 2/3) */
+function _crRellena(curva) {
+  let len = 0;
+  curva.len[0] = 0;
+  curva.pts[0].copy(_crK[0]);
+  for (let i = 0; i < CR_N - 1; i++) {
+    const u = (i + 1) / (CR_N - 1) * 3;
+    const seg = Math.min(2, Math.floor(u));
+    _crSeg(seg, u - seg, curva.pts[i + 1]);
+    len += curva.pts[i].distanceTo(curva.pts[i + 1]);
+    curva.len[i + 1] = len;
+  }
+  curva.total = len;
+  return curva.len[Math.round((CR_N - 1) * 2 / 3)];   // arco hasta el contacto
+}
+
+/** punto de la curva en la longitud de arco s (interp. lineal de la tabla) */
+function _crPunto(curva, s, out) {
+  const s2 = THREE.MathUtils.clamp(s, 0, curva.total);
+  let lo = 0, hi = CR_N - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1;
+    if (curva.len[mid] < s2) lo = mid; else hi = mid; }
+  const seg = curva.len[hi] - curva.len[lo];
+  const f = seg > 1e-9 ? (s2 - curva.len[lo]) / seg : 0;
+  return out.copy(curva.pts[lo]).lerp(curva.pts[hi], f);
+}
+
+/** tangente de la curva en la longitud de arco s (diferencia finita) */
+function _crTangente(curva, s, out) {
+  const h = Math.max(0.01, curva.total * 0.01);
+  _crPunto(curva, Math.max(0, s - h), _crA);
+  _crPunto(curva, Math.min(curva.total, s + h), _crB);
+  return out.copy(_crB).sub(_crA);
+}
+
 class OpponentAI {
   constructor(cfg, sign, home) {
     this.cfg = cfg;
@@ -10483,259 +10554,263 @@ class OpponentAI {
     return r + (Math.random() - 0.5) * 0.08;
   }
 
-  /** r91 · PLAN del golpe (nace con la primera predicción válida): fases
-   *  reacción→carga→golpeo (pico EN tBall)→acompañamiento→recuperación,
-   *  amplitudes de CADENA_GOLPE con variabilidad funcional ±12 %. */
+  /** r99ter · PLAN del golpe (nace con la primera predicción válida): ya no
+   *  hay fases con la pala aparcada («se coloca en posiciones muy raras») —
+   *  el gesto entero es UNA CURVA continua que updateCadena recorre con
+   *  velocidad tangente y regenera CADA FRAME para seguir a la bola.
+   *  kind/fh/roll conservan la firma de cada golpe. */
   planCadena(contact, tBall, kind, fh) {
-    const G = CADENA_GOLPE[kind] || CADENA_GOLPE.drive;
-    const jit = () => 0.88 + Math.random() * 0.24;
-    // estimación de salida (el impacto real la refina): hacia el campo del
-    // jugador con sesgo lateral aleatorio
-    const tz = DIMS.tableCenterZ - this.sign * DIMS.tableHalfLength * 0.7;
-    _cadD.set((Math.random() - 0.5) * 0.6 - contact.x,
-      DIMS.tableTopY + 0.30 - contact.y, tz - contact.z).normalize();
-    const vPeak = 6.5 * G.vPeakMul * (0.9 + Math.random() * 0.2);
-    const esc = (this.chain && this.chain.flat) ? 0.5 : 1;   // calabaza: carga corta
-    let T_react = THREE.MathUtils.clamp(tBall * 0.30, 0.12, 0.30);
-    let T_back = THREE.MathUtils.clamp((tBall - T_react) * 0.45, 0.10, 0.24);
-    let T_strike = tBall - T_react - T_back;
-    if (T_strike < 0.07) {          // bola rápida: comprime reacción y carga
-      T_back = Math.max(0.06, T_back - (0.07 - T_strike));
-      T_strike = Math.max(0.07, tBall - T_react - T_back);
-      if (T_react + T_back + T_strike > tBall)
-        T_react = Math.max(0.04, tBall - T_back - T_strike);
-    }
-    const cur = this.chain ? this.chain.cur.clone() : this.pos.clone();
-    const vel = this.chain ? this.chain.vel.clone() : new THREE.Vector3();
-    // r92 · ARCO REAL del golpe (informe del dueño: «la pala se posiciona y
-    // empuja de forma lineal» + video Gatien): la CARGA se abre al LADO del
-    // golpe y el ACOMPAÑAMIENTO CRUZA al lado contrario — B→C→F dejan de
-    // ser colineales y dibujan el arco que culmina en el impacto y lo
-    // prolonga con la continuidad del arco previo.
-    const B = _cadA.copy(contact).addScaledVector(_cadD, -G.dbs * jit() * esc);
-    B.x += fh * this.sign * G.dbs * 0.85 * jit() * esc;
-    B.y = Math.max(0.5, contact.y - G.hbs * jit() * esc);
-    const F = _cadB.copy(contact).addScaledVector(_cadD, G.dft * jit());
-    F.x -= fh * this.sign * G.dft * 0.62 * jit();
-    F.y = Math.max(0.5, contact.y + G.hft * jit());
-    // tangente del arco EN el contacto (suma de las cuerdas B→C y C→F, el
-    // criterio de paso-suave de splines): la velocidad pico atraviesa C
-    // DENTRO del arco — no a lo largo de la cuerda de salida.
-    const uC = _cadT.copy(contact).sub(B).normalize();   // cuerda carga→C
-    const uF = _cadC.copy(F).sub(contact).normalize();   // cuerda C→cruce
-    const tC = uC.clone().add(uF);
-    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);            // degenerado: cuerda
-    tC.normalize().multiplyScalar(vPeak);
+    const chVieja = this.chain;
     this.chain = {
-      phase: 'react', t: 0, tSeg: 0, u: 0, kind, fh, flat: !!(this.chain && this.chain.flat),
+      phase: 'back', t: 0, kind, fh, flat: !!(chVieja && chVieja.flat),
       contact: contact.clone(), tBall,
-      dir: _cadD.clone(), vdir: _cadD.clone(), roll: this._rollCadena(kind),
-      cur, vel, segIdx: 0,
-      segs: [
-        { phase: 'react', T: T_react, p0: cur.clone(), v0: vel.clone(),
-          p1: cur.clone().lerp(B, 0.25), v1: new THREE.Vector3() },
-        { phase: 'back', T: T_back, p0: cur.clone(), v0: new THREE.Vector3(),
-          p1: B.clone(), v1: uC.clone().multiplyScalar(0.32 * vPeak) },
-        { phase: 'strike', T: T_strike, p0: B.clone(), v0: new THREE.Vector3(),
-          p1: contact.clone(), v1: tC },
-        { phase: 'follow', T: 0.16 + Math.random() * 0.06,
-          p0: contact.clone(), v0: tC,
-          p1: F.clone(), v1: uF.clone().multiplyScalar(vPeak * 0.25) },
-        { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
-          v0: _cadD.clone().multiplyScalar(vPeak * 0.25), p1: this.pos.clone(),
-          v1: new THREE.Vector3() },
-      ],
+      dir: new THREE.Vector3(0, 0, -this.sign),
+      vdir: new THREE.Vector3(0, 0, -this.sign),
+      roll: this._rollCadena(kind),
+      cur: chVieja ? chVieja.cur.clone() : this.pos.clone(),
+      vel: chVieja ? chVieja.vel.clone() : new THREE.Vector3(),
+      u: 0, s: 0, speed: 0, contactoHecho: false, dRem0: 0, persec: false,
+      jit: 0.88 + Math.random() * 0.24,
+      curva: _crTablaNueva(),
     };
-    // continuidad exacta: cada segmento parte del extremo del anterior
-    // (p0/v0 de react ya son CLONES de cur/vel en el literal — nunca alias
-    // del estado vivo: el quíntico ESCRIBE en cur y no debe corromper su
-    // propio origen; con alias el plan moría en ~0,4 s por el guard NaN)
-    const sgs = this.chain.segs;
-    for (let i = 1; i < sgs.length; i++) { sgs[i].p0 = sgs[i - 1].p1; sgs[i].v0 = sgs[i - 1].v1; }
+    this._armaCurva(contact, tBall);
   }
 
-  /** r91 · RE-ANCLAJE con la predicción refinada: el plan restante se
-   *  reconstruye desde el estado ACTUAL (cur/vel) — empalme con continuidad
-   *  de velocidad, el submovimiento del modelo humano. */
-  _reanclaCadena(newContact, newT) {
+  /** r99ter · ARMA/REGENERA la curva del gesto [cur → carga B → contacto C
+   *  → cruce F] (Catmull-Rom, tabla de 48 muestras con longitudes de arco).
+   *  Se llama al planificar Y CADA FRAME de la aproximación: C persigue la
+   *  posición futura de la bola — el dueño: «la pala no realiza el
+   *  seguimiento de la bola». La pala siempre está SOBRE el gesto que
+   *  enmarca la bola real: nada de esperas ni posiciones raras. */
+  _armaCurva(contact, tBall) {
+    const ch = this.chain;
+    if (!ch || ch.contactoHecho) return;   // tras el contacto la curva ES sagrada
+    const G = CADENA_GOLPE[ch.kind] || CADENA_GOLPE.drive;
+    // dirección de SALIDA: la del disparo pendiente si ya se decidió (la
+    // tangente del gesto en C empuja hacia donde va la bola); si no, hacia
+    // el campo del jugador y el golpe la refinará al decidirse
+    const dv = this._disparo ? _cadV.copy(this._disparo.v)
+      : _cadV.set((Math.random() - 0.5) * 0.4 - contact.x * 0.5, 0.22,
+          DIMS.tableCenterZ - this.sign * DIMS.tableHalfLength * 0.7 - contact.z);
+    _cadD.copy(dv).normalize();
+    ch.dir.copy(_cadD);
+    ch.vdir.copy(dv).normalize();
+    ch.roll = this._rollCadena(ch.kind);
+    ch.contact.copy(contact);
+    ch.tBall = tBall;
+    // amplitudes con el TIEMPO: mucho tiempo → loop amplio y leído; poco →
+    // gesto compacto (la calabaza, mitad de amplitud: piel, no pirueta)
+    if (ch.persec) {
+      // PERSECUCIÓN (la bola pasó y se aleja): arco DIRECTO cur → contacto,
+      // sin coil — la caza no es un golpe, es llegar. Nudos repartidos por
+      // la recta (un nudo DOBLE crearía una cúspide del Catmull-Rom que
+      // infla el arco de 0,3 m a 2,7 m y hunde la aceleración).
+      _crK[0].copy(ch.cur);
+      _crK[1].copy(ch.cur).lerp(contact, 0.33);
+      _crK[2].copy(ch.cur).lerp(contact, 0.67);
+      _crK[3].copy(contact);
+      ch.sC = _crRellena(ch.curva);
+      ch.s = 0;
+      return;
+    }
+    const dil = THREE.MathUtils.clamp(tBall / 0.55, 0.35, 1) *
+      (ch.flat ? 0.5 : 1) * ch.jit;
+    const B = _cadA.copy(contact).addScaledVector(_cadD, -G.dbs * dil);
+    B.x += ch.fh * this.sign * G.dbs * 0.85 * dil;    // r92 · carga al lado
+    B.y = Math.max(0.5, contact.y - G.hbs * dil);
+    const F = _cadB.copy(contact).addScaledVector(_cadD, G.dft * ch.jit);
+    F.x -= ch.fh * this.sign * G.dft * 0.62 * ch.jit; // r92 · cruce al otro
+    F.y = Math.max(0.5, contact.y + G.hft * ch.jit);
+    _crK[0].copy(ch.cur); _crK[1].copy(B);
+    _crK[2].copy(contact); _crK[3].copy(F);
+    ch.sC = _crRellena(ch.curva);      // arco del nudo contacto C
+    ch.s = 0;                          // el jinete SIEMPRE nace en cur
+  }
+
+  /** r99ter · CURVA DEL ACOMPAÑAMIENTO: terminado el contacto, el gesto ya
+   *  no re-recorre la curva de aproximación (iba hacia atrás por la carga):
+   *  nace una curva corta [cur → cruce F] que CONTINÚA el movimiento — el
+   *  dueño: «impulsa continuando la trayectoria previa curva». */
+  _armaFollow(F) {
     const ch = this.chain;
     if (!ch) return;
-    const G = CADENA_GOLPE[ch.kind] || CADENA_GOLPE.drive;
-    const tRem = Math.max(0.10, newT);
-    const T_back = THREE.MathUtils.clamp(tRem * 0.45, 0.05, 0.16);
-    const T_strike = Math.max(0.05, tRem - T_back);
-    const vPeak = 6.5 * G.vPeakMul;
-    const B = _cadA.copy(newContact).addScaledVector(_cadD.copy(ch.dir), -G.dbs * 0.8);
-    B.x += ch.fh * this.sign * G.dbs * 0.68;   // r92 · arco: carga al lado
-    B.y = Math.max(0.5, newContact.y - G.hbs * 0.8);
-    const F = _cadB.copy(newContact).addScaledVector(_cadD, G.dft);
-    F.x -= ch.fh * this.sign * G.dft * 0.5;    // r92 · arco: cruce al otro
-    F.y = Math.max(0.5, newContact.y + G.hft);
-    // r92 · tangente del arco en el re-anclaje (mismo criterio que el plan)
-    const uC = _cadT.copy(newContact).sub(B).normalize();
-    const uF = _cadC.copy(F).sub(newContact).normalize();
-    const tC = uC.clone().add(uF);
-    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);
-    tC.normalize().multiplyScalar(vPeak);
-    ch.contact.copy(newContact);
-    ch.tBall = newT;
-    ch.segs = [
-      { phase: 'back', T: T_back, p0: ch.cur.clone(), v0: ch.vel.clone(),
-        p1: B.clone(), v1: uC.clone().multiplyScalar(0.32 * vPeak) },
-      { phase: 'strike', T: T_strike, p0: B.clone(), v0: new THREE.Vector3(),
-        p1: newContact.clone(), v1: tC },
-      { phase: 'follow', T: 0.15 + Math.random() * 0.06, p0: newContact.clone(),
-        v0: tC, p1: F.clone(),
-        v1: uF.clone().multiplyScalar(vPeak * 0.25) },
-      { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
-        v0: _cadD.clone().multiplyScalar(vPeak * 0.25), p1: this.pos.clone(),
-        v1: new THREE.Vector3() },
-    ];
-    const sgs = ch.segs;
-    for (let i = 1; i < sgs.length; i++) { sgs[i].p0 = sgs[i - 1].p1; sgs[i].v0 = sgs[i - 1].v1; }
-    ch.t = 0; ch.tSeg = 0; ch.segIdx = 0; ch.phase = 'back';
+    _crK[0].copy(ch.cur);
+    _crK[1].copy(ch.cur).lerp(F, 0.33);
+    _crK[2].copy(ch.cur).lerp(F, 0.67);
+    _crK[3].copy(F);
+    ch.sC = 0; ch.sContacto = 0; ch.s = 0;
+    _crRellena(ch.curva);
   }
 
-  /** r91 · IMPACTO REAL: en el frame del golpe (barrido de siempre) el plan
-   *  se afina al punto EXACTO del contacto con el pico de velocidad alineado
-   *  a la salida real de la bola — el golpe visible ES el golpe físico. */
+  /** r91/r99ter · IMPACTO REAL: al DECIDIRSE el golpe (barrido de siempre)
+   *  la curva se re-arma al intercepto exacto con la dirección de salida
+   *  REAL — el gesto apunta ya a donde va la bola (cadena cinemática). */
   cadenaContacto(cx, cy, cz, v, TBola) {
     const ch = this.chain;
-    if (!ch) return;   // r99: sin cadena el aplicador del disparo cubre
-    if (ch.phase === 'follow' || ch.phase === 'recover') {
-      // r99 · con disparo diferido SIEMPRE se re-ancla el plan: el golpe se
-      // decidió contra el punto de barrido FRESCO y la cadena debe llegar
-      // a él exactamente cuando la bola (sin TBola, guard clásico r91).
-      if (!TBola) return;
-    }
-    const G = CADENA_GOLPE[ch.kind] || CADENA_GOLPE.drive;
-    const vP = _cadV.copy(v).multiplyScalar(G.vPeakMul);
-    if (vP.lengthSq() < 0.25) vP.setLength(3.0);
-    _cadD.copy(vP).normalize();
-    const pC = _cadA.set(cx, cy, cz);
-    const d = ch.cur.distanceTo(pC);
-    // r99bis · ACOMPAÑAMIENTO NATURAL (el dueño: «movimientos progresivos,
-    // nada bruscos, ni empujones»): el strike JAMÁS dura menos de 80 ms y
-    // su T crece con la DISTANCIA (d/3.5): el pico del quíntico (~1.875×d/T)
-    // queda ≤ 7 m/s para cualquier distancia — un gesto humano que acelera,
-    // atraviesa el contacto y acompaña, sin látigos. Si la bola llega antes,
-    // la pala la ENCUENTRA en vuelo (_enContacto), no con un salto.
-    const T = TBola !== undefined
-      ? THREE.MathUtils.clamp(Math.max(TBola, d / 6), 0.08, 0.30)
-      : THREE.MathUtils.clamp(d / Math.max(3, vP.length()), 0.03, 0.09);
-    const F = _cadB.copy(pC).addScaledVector(_cadD, G.dft);
-    F.x -= ch.fh * this.sign * G.dft * 0.5;    // r92 · arco: cruce del gesto
-    F.y = Math.max(0.5, pC.y + G.hft);
-    // r92 · tangente del arco EN el impacto (bisectriz de las cuerdas):
-    // el pico atraviesa C DENTRO del gesto curvo que ya traía el brazo —
-    // la bola sale por su plan (aiHit), la pala golpea en arco (fin del
-    // «empujón» lineal: el empuje ahora continúa el arco previo).
-    const uC = _cadC.copy(pC).sub(ch.cur).normalize();
-    const uF = _cadT.copy(F).sub(pC).normalize();
-    const tC = uC.clone().add(uF);
-    if (tC.lengthSq() < 1e-6) tC.copy(_cadD);
-    tC.normalize().multiplyScalar(vP.length());
-    ch.contact.copy(pC);
-    ch.dir.copy(_cadD);
-    ch.vdir.copy(v).normalize();
+    if (!ch || ch.contactoHecho) return;
     ch.roll = this._rollCadena(ch.kind);
-    ch.segs = [
-      { phase: 'strike', T, p0: ch.cur.clone(), v0: ch.vel.clone(),
-        p1: pC.clone(), v1: tC },
-      { phase: 'follow', T: 0.15 + Math.random() * 0.06, p0: pC.clone(),
-        v0: tC, p1: F.clone(),
-        v1: uF.clone().multiplyScalar(vP.length() * 0.25) },
-      { phase: 'recover', T: 0.30 + Math.random() * 0.10, p0: F.clone(),
-        v0: vP.clone().multiplyScalar(0.25), p1: this.pos.clone(),
-        v1: new THREE.Vector3() },
-    ];
-    const sgs = ch.segs;
-    for (let i = 1; i < sgs.length; i++) { sgs[i].p0 = sgs[i - 1].p1; sgs[i].v0 = sgs[i - 1].v1; }
-    ch.t = 0; ch.tSeg = 0; ch.segIdx = 0; ch.phase = 'strike';
+    this._armaCurva(_cadA.set(cx, cy, cz),
+      TBola !== undefined ? TBola : Math.max(this.predictT, 0.15));
   }
 
-  /** r91 · frame de la cadena: fase activa, cur/vel por quíntico, re-anclaje
-   *  con la predicción refinada, recuperación viva sobre el cuerpo y guard
-   *  anti-NaN (una cifra rara no tumba la partida). */
-  updateCadena(dt) {
-    // r99 · VIGÍA DEL DISPARO DIFERIDO: sin cadena viva (NaN, agotamiento)
-    // o con espera excesiva, la salida se aplica igualmente — jamás se
-    // pierde un rallye por el mecanismo de sincronización.
+  /** r99ter · frame del JINETE SOBRE LA CURVA: regenera el gesto (seguimiento
+   *  de la bola), cronometra la velocidad tangente para llegar al punto
+   *  dulce CUANDO llega la bola, dispara el contacto POR PROXIMIDAD (nada
+   *  de teletransportes) y sigue la MISMA curva frenando suave — el
+   *  acompañamiento continuo que pide el dueño: «la pala forma parte de una
+   *  cadena cinemática; golpea en el punto dulce e impulsa continuando la
+   *  trayectoria previa curva con el empuje correspondiente». */
+  updateCadena(dt, ball) {
+    // r99 · VIGÍA DEL DISPARO DIFERIDO: sin cadena viva o con espera
+    // excesiva, la salida se aplica igualmente — jamás se pierde un rallye.
     if (this._disparo) {
       this._disparo.t += dt;
       if (!this.chain || this._disparo.t > this._disparo.tMax) this._aplicaDisparo();
     }
-    const ch0 = this.chain;
-    if (!ch0) return;
-    if ((ch0.phase === 'react' || ch0.phase === 'back') && this.predictValid &&
-        ch0.contact.distanceTo(this.predict) > 0.055) {
-      this._reanclaCadena(this.predict, Math.max(this.predictT, 0.12));
-      return;
-    }
-    let ch = ch0;
+    const ch = this.chain;
+    if (!ch) return;
     ch.t += dt;
-    ch.tSeg = (ch.tSeg || 0) + dt;          // tiempo LOCAL del segmento activo:
-    let seg = ch.segs[ch.segIdx];           // el global ch.t nunca se compara
-    while (seg && ch.tSeg > seg.T) {        // contra el T de un segmento (r91:
-      ch.tSeg -= seg.T;                     // agotaba el plan en cascada al
-      ch.segIdx++;                          // entrar en strike)
-      seg = ch.segs[ch.segIdx];
-      if (seg) {
-        // r99 · la pala ACABA DE LLEGAR al punto de barrido (fin del strike):
-        // contacto (la bola sale) o re-anclaje progresivo para encontrarla.
-        if (ch.phase === 'strike' && seg.phase !== 'strike') {
-          this._enContacto();               // r99bis: puede RE-ANCLAR los segs
-          break;                            // el plan nuevo integra el próximo dt
+    const vivo = ball || null;
+    if (!ch.contactoHecho) {
+      // ── 1 · SEGUIMIENTO: el contacto C = la posición FUTURA de la bola.
+      // Si la bola YA PASÓ y se aleja (huida), el intercepto predicho es un
+      // punto fijo que ella dejó atrás: persígase a ELLA (punto vivo). ──
+      let cx, cy, cz, tRem;
+      const recede = vivo ? Math.max(0,
+        vivo.vel.dot(_cadT.copy(vivo.pos).sub(ch.cur).normalize())) : 0;
+      const huida = recede > 0.5;
+      ch.persec = huida;
+      const disp = this._disparo;
+      if (disp && !huida) {
+        // CON DISPARO DECIDIDO el contacto ES el punto de barrido, pero
+        // RECONSTRUIDO cada frame con la bola VIVA proyectada al reloj de
+        // cruce (tCruce − t): el rebote y el Magnus desvían el vuelo lineal
+        // del barrido y la pala debe encontrarse con la bola REAL, no con
+        // la predicción del frame en que se decidió el golpe.
+        const tRest = Math.max(disp.tCruce - disp.t, 0.02);
+        cx = vivo.pos.x + vivo.vel.x * tRest * 0.9;
+        cy = vivo.pos.y + vivo.vel.y * tRest * 0.9;
+        cz = vivo.pos.z + vivo.vel.z * tRest * 0.9;
+        tRem = tRest;
+      } else if (this.predictValid && vivo && !huida) {
+        cx = this.predict.x; cy = this.predict.y; cz = this.predict.z;
+        tRem = Math.max(this.predictT, 0.05);
+      } else if (vivo) {
+        // PERSECUCIÓN VIVA al punto de encuentro estimado; el encuentro
+        // CONVERGE (t = arco / velocidad real del jinete — el punto de fuga
+        // no puede quedar eternamente a 15 cm) y la caza está ACOTADA a la
+        // zona de juego: ni tras la mesa ni hasta el suelo (la bola que se
+        // va, se fue — el punto ya está decidido; la pala no se lanza al
+        // vacío, se estira y completa su gesto).
+        tRem = THREE.MathUtils.clamp(ch.cur.distanceTo(vivo.pos) /
+          Math.max(ch.speed, 2), 0.03, 0.35);
+        cx = vivo.pos.x + vivo.vel.x * tRem * 0.9;
+        // el PISO (0,35 m) es el único límite duro de la caza: las bolas
+        // profundas son legítimas y la bola muerta (4c) termina el gesto
+        cy = Math.max(0.35, vivo.pos.y + vivo.vel.y * tRem * 0.9);
+        cz = vivo.pos.z + vivo.vel.z * tRem * 0.9;
+      } else {
+        cx = ch.contact.x; cy = ch.contact.y; cz = ch.contact.z;
+        tRem = Math.max(ch.tBall, 0.12);
+      }
+      this._armaCurva(_cadA.set(cx, cy, cz), tRem);
+      // ── 2 · CRONÓMETRO: vC para llegar al punto dulce CON la bola ──
+      const dRem = Math.max(0.02, ch.sC);            // arco restante cur→C
+      if (!ch.dRem0) ch.dRem0 = Math.max(dRem, 0.12);
+      // ESPRINT: si el horario ya es inviable (el arco no cabe en tRem al
+      // tope de gesto), el jinete va A FONDO (7,8 m/s) — persigue, no pasea.
+      // Y si la bola se ALEJA (fue más rápida), el cierre exige cubrir el
+      // arco MÁS lo que ella gana durante la persecución (término recede).
+      const vC = dRem > tRem * 7.8 ? 7.8
+        : THREE.MathUtils.clamp(dRem / Math.max(tRem, 0.06) + recede, 2.0, 7.8);
+      const a = THREE.MathUtils.clamp(
+        (vC * vC - ch.speed * ch.speed) / (2 * Math.max(dRem, 0.1)), 4, 60);
+      ch.speed = Math.min(vC, ch.speed + a * dt);
+      ch.phase = dRem > 0.30 ? 'back' : 'strike';
+      ch.u = 1 - THREE.MathUtils.clamp(dRem / ch.dRem0, 0, 1);
+      // ── 3 · AVANCE sobre la curva (velocidad tangente REAL) ──
+      ch.s = Math.min(ch.sC, ch.speed * dt);         // no se pasa de C sin bola
+      _crPunto(ch.curva, ch.s, ch.cur);
+      _crTangente(ch.curva, ch.s, ch.vel).normalize().multiplyScalar(ch.speed);
+      // HOMING final de la caza: a menos de 30 cm de la bola viva el paso se
+      // dirige a ELLA (su posición dentro de 2 frames) — el retraso natural
+      // del re-anclaje deja 10-15 cm de error lateral que jamás cierran.
+      if (ch.persec && vivo) {
+        const bf = _cadT.copy(vivo.pos).addScaledVector(vivo.vel, 2 / 60);
+        const dB = ch.cur.distanceTo(bf);
+        if (dB < 0.30 && dB > 1e-4) {
+          const pasoH = Math.min(ch.speed * dt, dB);
+          _cadP.copy(bf).sub(ch.cur).normalize().multiplyScalar(pasoH);
+          ch.cur.add(_cadP);
+          ch.vel.copy(_cadP).multiplyScalar(60);
         }
-        ch.phase = seg.phase;
+      }
+      // ── 4 · CONTACTO POR PROXIMIDAD: la pala ALCANZA a la bola real —
+      // la ventana incluye DÓNDE ESTARÁ dentro de 2 frames (una bola a 5 m/s
+      // recorre 8 cm/frame: sin anticipación la esfera de contacto se
+      // atraviesa entre dos frames y el golpe nunca dispara) ──
+      const anticipa = ch.persec ? 3 / 60 : 2 / 60;
+      const cerca = this._disparo && vivo &&
+        (ch.cur.distanceTo(vivo.pos) < 0.085 ||
+         ch.cur.distanceTo(_cadT.copy(vivo.pos)
+           .addScaledVector(vivo.vel, anticipa)) < 0.085);
+      if (cerca &&
+          ch.vel.dot(_cadP.copy(vivo.pos).sub(ch.cur)) > 0) {
+        ch.sContacto = ch.s;                          // donde la curva tocó la bola
+        this._aplicaDisparo();
+        ch.contactoHecho = true;
+        ch.phase = 'follow';
+        this._armaFollow(ch.curva.pts[CR_N - 1].clone());   // seguir hacia F
+        return;
+      }
+      // ── 4b · la bola escapó (pasó de largo y se aleja): soltar la cadena
+      // en vez de perseguir fantasmas detrás del cuerpo (el vigía aplicó) ──
+      if (this._disparo && vivo && this._disparo.t > 0.55 &&
+          ch.cur.distanceTo(vivo.pos) > 0.30 &&
+          ch.vel.dot(_cadP.copy(vivo.pos).sub(ch.cur)) < 0) {
+        this.chain = null;
+        return;
+      }
+      // ── 4c · bola MUERTA (al suelo o fuera de la zona): el árbitro ya
+      // cantó el punto — no se persigue un fantasma rebotando en el suelo
+      // (la pala no baja de 0,35 m: ese hueco vertical jamás se cierra).
+      // El gesto se completa con el disparo de reserva y el follow-through.
+      const muerta = vivo && (vivo.pos.y < 0.30 ||
+        Math.abs(vivo.pos.x) > 1.35 ||
+        (this.sign < 0 ? vivo.pos.z < -2.6 : vivo.pos.z > 2.6));
+      if (this._disparo && muerta) { this._aplicaDisparo(); return; }
+    } else {
+      // ── 5 · ACOMPAÑAMIENTO: la MISMA curva continúa, frenando suave ──
+      ch.speed *= Math.exp(-dt / 0.22);
+      ch.s = Math.min(ch.curva.total, ch.s + ch.speed * dt);
+      _crPunto(ch.curva, ch.s, ch.cur);
+      _crTangente(ch.curva, ch.s, ch.vel).normalize().multiplyScalar(ch.speed);
+      const finCurva = ch.s >= ch.curva.total - 0.02 || ch.speed < 0.45;
+      if (!finCurva) {
+        ch.phase = 'follow';
+        ch.u = THREE.MathUtils.clamp(
+          (ch.s - (ch.sContacto || ch.sC)) /
+          Math.max(0.05, ch.curva.total - (ch.sContacto || ch.sC)), 0, 1);
+      } else {
+        // ── 6 · RECUPERACIÓN: fusión exponencial al cuerpo (sin tirón) ──
+        ch.phase = 'recover';
+        ch.u = 0;
+        ch.vel.multiplyScalar(Math.exp(-dt / 0.15));
+        ch.cur.lerp(this.pos, Math.min(1, dt * 2.2));
+        if (ch.cur.distanceTo(this.pos) < 0.05) { this.chain = null; return; }
       }
     }
-    if (!this.chain) return;                // el re-anclaje o el vigía la cerraron
-    seg = this.chain.segs[this.chain.segIdx] || this.chain.segs[0];
-    ch = this.chain;                        // misma instancia, segs renovados
-    if (!seg) { this.chain = null; return; }
-    ch.u = THREE.MathUtils.clamp(ch.tSeg / seg.T, 0, 1);
-    mjQuintic(ch.u, seg.p0, seg.v0, seg.p1, seg.v1, seg.T, ch.cur);
-    mjQuinticVel(ch.u, seg.p0, seg.v0, seg.p1, seg.v1, seg.T, ch.vel);
-    // r99bis · TOPE DE PASO (garantía dura: «nada brusco, sin empujones»):
-    // el quíntico puede pedir picos antinaturales para cumplir sus empalmes
-    // de velocidad; la pala NUNCA supera 7,8 m/s (13 cm a 60 fps) — el gesto
-    // se ve siempre progresivo y el re-anclaje absorbe el ajuste de llegada.
+    // r99bis · TOPE DE PASO (garantía dura): ≤ 13 cm por frame pase lo que
+    // pase — el gesto se ve SIEMPRE progresivo, jamás brusco.
     if (!ch._curPrev) ch._curPrev = ch.cur.clone();
     _cadP.copy(ch.cur).sub(ch._curPrev);
     if (_cadP.length() > 0.13) {
       _cadP.setLength(0.13);
       ch.cur.copy(ch._curPrev).add(_cadP);
-      ch.vel.copy(_cadP).multiplyScalar(60);   // la velocidad REAL acotada
+      ch.vel.copy(_cadP).multiplyScalar(60);
     }
     ch._curPrev.copy(ch.cur);
-    if (ch.phase === 'recover') ch.cur.lerp(this.pos, Math.min(1, dt * 2.5));
     if (!Number.isFinite(ch.cur.x + ch.cur.y + ch.cur.z)) this.chain = null;
-  }
-
-  /** r99bis · ÁRBITRO DEL CONTACTO (fin del strike): si la bola está en el
-   *  punto de barrido (±5 cm) el golpe es REAL y sale aquí. Si quedó lejos
-   *  (llegó antes que la pala), NADA de saltos: la cadena se re-ancla con
-   *  un quíntico que vuela a ENCONTRAR la bola en su propio vuelo (predic-
-   *  ción lineal al tiempo de encuentro) y continúa con el arco de acompa-
-   *  ñamiento — el dueño ve un gesto que persigue y acompaña, no un empujón. */
-  _enContacto() {
-    const d = this._disparo;
-    if (!d) return;
-    const b = d.ball;
-    if (b.pos.distanceTo(d.pos) < 0.05) { this._aplicaDisparo(); return; }
-    const ch = this.chain;
-    if (!ch) { this._aplicaDisparo(); return; }
-    // T2 de PERSECUCIÓN (d/7): la pala corre cerca de su tope (7 m/s ≈ 11,7
-    // cm/frame, dentro del tope de gesto de 13 cm) — así GANA a la recesión
-    // de la bola y el encuentro converge en 1-2 re-anclajes, sin látigo.
-    const T2 = THREE.MathUtils.clamp(
-      Math.max(ch.cur.distanceTo(b.pos) / 6, 0.08), 0.08, 0.20);
-    const obj = b.pos.clone().addScaledVector(b.vel, T2 * 0.9);
-    this.cadenaContacto(obj.x, obj.y, obj.z, d.v, T2);
-    if (!this.chain) { this._aplicaDisparo(); return; }   // guard NaN
-    d.pos.copy(obj);                       // el nuevo punto de encuentro
-    d.t = Math.max(d.t, d.tMax - 0.15);    // el tope global sigue mandando
   }
 
   reset() {
@@ -10758,7 +10833,7 @@ class OpponentAI {
       if (this.swing.t > this.swing.dur) this.swing = null;
     }
     // r91 · el plan de golpe avanza (fases, re-anclaje con la predicción)
-    this.updateCadena(dt);
+    this.updateCadena(dt, ball);
     // r99 · la cadena acaba de LLEGAR al contacto → la salida de la bola
     // viaja AQUÍ (el frame en que el dueño ve el golpe: ni antes, ni después)
     if (this._retPend) {
@@ -11192,6 +11267,7 @@ class OpponentAI {
    *  de la pala llegue al punto de barrido (payload completo: bola, vel,
    *  spin, intercepto, blanco del solver, T y tope para el recálculo). */
   _preparaDisparo(ball, v, cx, cy, cz, spin, target, T, maxV) {
+    const dx = cx - ball.pos.x, dy = cy - ball.pos.y, dz = cz - ball.pos.z;
     this._disparo = {
       ball,
       v: v.clone(),
@@ -11202,25 +11278,38 @@ class OpponentAI {
       maxV: maxV || 10,
       t: 0,
       tMax: 0.75,
+      // r99ter · TIEMPO DE CRUCE: cuándo la bola llega al punto de barrido —
+      // el jinete reconstruye C cada frame con la bola VIVA y este reloj,
+      // así el rebote y el Magnus (que desvían el vuelo lineal del barrido
+      // 10-25 cm) NO desincronizan el encuentro.
+      tCruce: THREE.MathUtils.clamp(
+        Math.sqrt(dx * dx + dy * dy + dz * dz) /
+        Math.max(2, ball.vel.length()), 0.03, 0.6),
     };
   }
 
-  /** r99 · APLICADOR DEL DISPARO: la pala GOLPEA la bola donde esté —
-   *  si la bola está en el punto de barrido (±8 cm) se ajusta (deriva de
-   *  predicción invisible); si pasó de largo (la pala llegó tarde), la
-   *  PALA la atrapa: chain.cur salta a la bola (toque de muñeca real) y
-   *  el follow-through arranca de ahí. El tiro se RECALCULA desde la
-   *  posición real de la bola hacia el MISMO blanco: bota donde apunta,
-   *  con contacto visible, sonido y árbitro sincronizados. */
+  /** r99ter · APLICADOR DEL DISPARO: NADA de teletransportes (el dueño vio
+   *  «la bola y la pala teletransportándose»): la bola JAMÁS se recoloca —
+   *  el tiro nace de DONDE ESTÁ, recalculado hacia el mismo blanco. Y su
+   *  dirección se SESGA a la tangente del swing en el contacto (35 %): la
+   *  cadena cinemática EMPUJA — la bola continúa la trayectoria curva de la
+   *  pala con el empuje correspondiente. Contacto, sonido y árbitro aquí. */
   _aplicaDisparo() {
     const d = this._disparo;
     if (!d) return;
     this._disparo = null;
     const b = d.ball;
-    if (b.pos.distanceTo(d.pos) < 0.08) b.pos.copy(d.pos);
     const vReal = d.target
       ? computeShotVelocityReal(b.pos, d.target, d.T, d.maxV, d.spin)
       : d.v;
+    const chX = this.chain;
+    if (chX && chX.vel && chX.vel.lengthSq() > 1 && !chX.persec) {
+      const tan = _cadT.copy(chX.vel).normalize();
+      const mag = vReal.length();
+      _cadD.copy(vReal).normalize().lerp(tan, 0.35).normalize()
+        .multiplyScalar(mag);
+      vReal.copy(_cadD);
+    }
     b.vel.copy(vReal);
     b.spin.copy(d.spin);
     b.ppEfecto = false;      // la devolución de la IA LIMPIA la marca
@@ -11229,11 +11318,14 @@ class OpponentAI {
     b.ppPortal = false;      // la devolución de la IA LIMPIA el portal
     b.ppImanTocada = false;
     if (b.ppIman) b.ppIman.dv = 0;
-    // la pala ATRAPA: su cur (y el arranque del follow) quedan EN la bola
-    if (this.chain) {
-      this.chain.cur.copy(b.pos);
-      const s0 = this.chain.segs[this.chain.segIdx];
-      if (s0) s0.p0.copy(b.pos);
+    // r99ter · si el contacto llegó por reserva (el vigía), la cadena vive
+    // AÚN: márcala como tocada para que el swing COMPLETE su arco (el
+    // follow-through es la misma curva frenando) en vez de perseguir un
+    // fantasma detrás de la bola ya devuelta.
+    if (this.chain && !this.chain.contactoHecho) {
+      this.chain.contactoHecho = true;
+      this.chain.sContacto = this.chain.s;
+      this._armaFollow(this.chain.curva.pts[CR_N - 1].clone());
     }
     this._retPend = vReal;
   }

@@ -23,7 +23,8 @@ const aguja = (n, c) => { if (c) { ok++; console.log('  ✓ ' + n); }
   else { mal++; console.log('  ✗ ' + n); } };
 
 const cfg = { missBase: 0.0, errStd: 0.05, minT: 0.5, maxT: 1.1,
-  smash: 0.3, maxShotSpeed: 10, predictInterval: 0.05 };
+  smash: 0.3, maxShotSpeed: 10, predictInterval: 0.05,
+  maxSpeed: 2.6, accel: 6.0 };   // piernas completas (el cfg real las trae)
 const sign = -1;                     // la IA en -Z (campo CPU: devuelve hacia +Z)
 
 /** corre un rally sintético y devuelve las métricas del gesto completo */

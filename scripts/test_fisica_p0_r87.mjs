@@ -243,7 +243,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.196-SDK6', c00s.includes('3.6.196-SDK6'));
+  aguja('versión · c00 sella 3.6.197-SDK6', c00s.includes('3.6.197-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
@@ -293,8 +293,8 @@ const C = DIMS.tableCenterZ;
   aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
     (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
     b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.196-SDK6 en el bundle',
-    b94.includes('3.6.196-SDK6'));
+  aguja('r94 · versión sella 3.6.197-SDK6 en el bundle',
+    b94.includes('3.6.197-SDK6'));
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,

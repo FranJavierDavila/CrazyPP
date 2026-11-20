@@ -7480,3 +7480,30 @@ contacto en el punto dulce (mínimo hueco del encuentro ≤ 8,5 cm) · nunca apa
 quietos) · acompañamiento 10/10 frames de flujo post-golpe con frenado progresivo · salida hacia
 el jugador. Batería: P0 59/0 (5 agujas reescritas al jinete) · r95 29/0 (3 nuevas) · r93 16/0 ·
 r94 12/0 · bloqueo 14/0 · física 12. En vivo: bundle 3.6.196 SIN errores de página.
+
+## Ronda 99ter-2 (el dueño: «la pala del rival queda bloqueada en la misma posición») · V3.6.197-SDK6 — 2026-11-20
+**DIAGNÓSTICO CON EVIDENCIA** (arnés multi-rally nuevo, scripts/arnes_multi_rally.mjs: dos IAs
+REALES de c06 jugando entre sí con árbitro simple, 30.000 frames, detectores de bloqueo/invasión/
+zombi/NaN — antes de tocar nada se REPRODUJO el bug):
+1. **CADENA ZOMBI + INVASIÓN DE CAMPO (la causa del bloqueo)**: cuando la bola vuelve al campo
+   del jugador antes del cruce (el rival devuelve pronto, o el saque propio en vuelo), el jinete
+   la PERSEGUÍA allende la red — sin ninguna cota de campo propio la caza la llevaba al campo
+   contrario y la cadena vivía 4-5+ s colgada allí: **la pala se quedaba en una posición rara y
+   quieta**. Medido: ×10.470 invasiones y cadenas zombi de 5 s en 500 s de rallies.
+2. **FIX TRIPLE (c06)**:
+   · **Vigilante anti-congelamiento**: ninguna cadena vive más de 3,5 s — el gesto completo dura
+     < 1,6 s; si algo la deja colgada se suelta y la coda funde la pala a reposo. NINGÚN estado
+     del jinete puede bloquear la pala jamás.
+   · **Cota de campo propio**: la bola que cruzó la red (z > 0,04 hacia el jugador, simétrico)
+     es BOLA MUERTA para la caza — el punto se juega al otro lado y el árbitro manda; la pala
+     se suelta y vuelve al cuerpo en vez de invadir.
+   · **C acotada a la red**: el punto de persecución C jamás cruza la red (cz al lado propio).
+3. **HALLAZGO COLATERAL (tests)**: el cfg de los tests Node no traía `accel`/`maxSpeed` — el
+   lerp de caminata hacía `Math.min(1, dt·undefined) = NaN` y envenenaba pos/vel del CUERPO (el
+   jinete cur seguía finito y los tests pasaban ciegos). El cfg real del juego SÍ los trae. Los
+   tests ahora llevan piernas completas (cfg completo en test_disparo y multi-rally).
+**Verificación**: multi-rally con saques realistas → rallies que FLUYEN (109 + 169 devoluciones
+en 500 s) y **cero bloqueos, cero invasiones reales, cero cadenas zombi, cero NaN** (los 2
+incidentes residuales son tránsito legítimo de follow-through en bolas cortas y esperas pre-bote
+de la colocación). Batería: P0 59/0 · disparo 15/0 · r95 29/0 · r93 16/0 · r94 12/0 · bloqueo
+14/0 · física 12. En vivo: bundle 3.6.197 sin errores de página, el estado machine anota puntos.

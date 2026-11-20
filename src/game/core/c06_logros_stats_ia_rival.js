@@ -1011,6 +1011,13 @@ export class OpponentAI {
     const ch = this.chain;
     if (!ch) return;
     ch.t += dt;
+    // r99ter-2 · VIGILANTE ANTI-CONGELAMIENTO: ninguna cadena vive más de
+    // 3,5 s — el gesto completo (aproximación → contacto → acompañamiento →
+    // recuperación) dura < 1,6 s; si algo la dejó colgada (una bola que se
+    // fue, un reloj roto), se suelta y la coda funde la pala a reposo. El
+    // plan renace limpio en la siguiente predicción: la pala JAMÁS queda
+    // bloqueada en una posición.
+    if (ch.t > 3.5) { this.chain = null; return; }
     const vivo = ball || null;
     if (!ch.contactoHecho) {
       // ── 1 · SEGUIMIENTO: el contacto C = la posición FUTURA de la bola.
@@ -1046,10 +1053,12 @@ export class OpponentAI {
         tRem = THREE.MathUtils.clamp(ch.cur.distanceTo(vivo.pos) /
           Math.max(ch.speed, 2), 0.03, 0.35);
         cx = vivo.pos.x + vivo.vel.x * tRem * 0.9;
-        // el PISO (0,35 m) es el único límite duro de la caza: las bolas
+        // el PISO (0,35 m) es el único límite vertical de la caza: las bolas
         // profundas son legítimas y la bola muerta (4c) termina el gesto
         cy = Math.max(0.35, vivo.pos.y + vivo.vel.y * tRem * 0.9);
         cz = vivo.pos.z + vivo.vel.z * tRem * 0.9;
+        // ...pero la caza NUNCA cruza la red: C vive en el campo propio
+        if (this.sign < 0) cz = Math.min(cz, -0.06); else cz = Math.max(cz, 0.06);
       } else {
         cx = ch.contact.x; cy = ch.contact.y; cz = ch.contact.z;
         tRem = Math.max(ch.tBall, 0.12);
@@ -1118,8 +1127,17 @@ export class OpponentAI {
       // El gesto se completa con el disparo de reserva y el follow-through.
       const muerta = vivo && (vivo.pos.y < 0.30 ||
         Math.abs(vivo.pos.x) > 1.35 ||
-        (this.sign < 0 ? vivo.pos.z < -2.6 : vivo.pos.z > 2.6));
-      if (this._disparo && muerta) { this._aplicaDisparo(); return; }
+        (this.sign < 0 ? vivo.pos.z < -2.6 : vivo.pos.z > 2.6) ||
+        // r99ter-2 · la bola VOLVIÓ al campo del jugador (devuelta antes del
+        // cruce o saque propio en vuelo): perseguirla allende la red SACA la
+        // pala de su campo — el punto se juega al otro lado y el árbitro
+        // manda. Este era el bloqueo que vio el dueño.
+        (this.sign < 0 ? vivo.pos.z > 0.04 : vivo.pos.z < -0.04));
+      if (muerta) {
+        if (this._disparo) { this._aplicaDisparo(); return; }
+        this.chain = null;    // sin disparo pendiente: soltar y volver al cuerpo
+        return;
+      }
     } else {
       // ── 5 · ACOMPAÑAMIENTO: la MISMA curva continúa, frenando suave ──
       ch.speed *= Math.exp(-dt / 0.22);

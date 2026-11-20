@@ -81,7 +81,7 @@ const aguja = (nombre, cond) => {
     sw.includes('5 * 60 * 1000') &&
     sw.indexOf('clients.claim') < sw.indexOf('5 * 60 * 1000'));
   aguja('sw · el sello de caché viaja con la versión 3.6.188',
-    sw.includes("const CACHE = 'crazypp-v3.6.196-SDK6'"));
+    sw.includes("const CACHE = 'crazypp-v3.6.197-SDK6'"));
   aguja('r98 · sw · game.html en RED-PRIMERO con límite (adiós al «una visita por detrás»)',
     sw.includes("endsWith('/game.html')") && sw.includes('function redPrimero(') &&
     sw.includes("cache: 'no-store'") && sw.includes('Promise.race'));

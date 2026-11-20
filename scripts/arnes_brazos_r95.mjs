@@ -189,5 +189,24 @@ const V3 = THREE.Vector3, Q4 = THREE.Quaternion;
     b.includes("getDependency('texture', 0)") && b.includes('_gRigInvQ'));
 }
 
+/* — 7 · r99 · RETIRO DE BRAZOS + DISPARO DIFERIDO (decisión del dueño) — */
+{
+  const b = readFileSync(RAIZ + '/public/game.html', 'utf-8');
+  aguja('r99 · el GLB de brazos NO se carga (la llamada queda comentada)',
+    b.includes('// this._cargarArmasGLB();') &&
+    !b.includes('\n    this._cargarArmasGLB();'));
+  aguja('r99 · NI GLB NI cápsulas se pintan (puerta única de ocultación)',
+    b.includes('if (this.aiArm && this.aiArm.visible) this.aiArm.visible = false;') &&
+    !b.includes('if (armVis && glbListo) this.updateAIArmGlb(this.ai, dt);'));
+  aguja('r99 · DISPARO DIFERIDO: la IA guarda la salida hasta que la pala llega',
+    b.includes('_preparaDisparo') && b.includes('_aplicaDisparo') &&
+    b.includes('_tBolaDe') && b.includes('this._retPend'));
+  aguja('r99 · el strike de la cadena dura LO QUE TARDA LA BOLA (TBola)',
+    b.includes('Math.max(TBola, d / 12)') &&
+    b.includes("ch.phase === 'strike' && seg.phase !== 'strike'"));
+  aguja('r99 · NINGUNA teletransportación de la bola al barrido (la bola viva manda)',
+    !b.includes('ball.pos.set(cx, cy, cz);'));
+}
+
 console.log(`\nARNÉS BRAZOS NATURALES r95 · ${ok} OK · ${fails} FALLOS`);
 process.exit(fails ? 1 : 0);

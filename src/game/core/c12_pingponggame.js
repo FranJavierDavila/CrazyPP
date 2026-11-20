@@ -734,7 +734,10 @@ export class PingPongGame {
     // adiós al efecto enano). El rig de cápsulas de arriba queda como
     // respaldo si el GLB no llega.
     this.aiArmGlb = null;
-    this._cargarArmasGLB();
+    // r99 · RETIRO DE LOS BRAZOS: vr_arm.glb ya NO se carga (2,3 MB menos
+    // de red y de memoria, cero rigging por frame). La llamada queda aquí
+    // documentada para revertir la decisión con un solo cambio.
+    // this._cargarArmasGLB();
 
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
@@ -18864,21 +18867,15 @@ export class PingPongGame {
     } else {
       // v2.40: congelado — la pala IA conserva su última pose
       if (!frozen) this.updateAIPaddlePose(this.aiPaddleMesh, this.ai, 'ai', dt);
-      // r91 · el brazo visible va con la pala del rival local (online: la
-      // pala remota llega por red y no hay cuerpo que pintar)
-      const glbListo = !!(this.aiArmGlb && this.aiArmGlb.listo);
-      if (this.aiArmGlb) {
-        const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;
-        if (this.aiArmGlb.root.visible !== armVis) this.aiArmGlb.root.visible = armVis;
-        if (this.aiArm && this.aiArm.visible !== (!glbListo && armVis))
-          this.aiArm.visible = !glbListo && armVis;   // cápsulas ocultas si GLB
-        if (armVis && glbListo) this.updateAIArmGlb(this.ai, dt);
-      }
-      if (this.aiArm && !glbListo) {
-        const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;
-        if (this.aiArm.visible !== armVis) this.aiArm.visible = armVis;
-        if (armVis) this.updateAIArm(this.ai);   // respaldo r91/r92
-      }
+      // r99 · RETIRO DE LOS BRAZOS (decisión del dueño: «prefiero eliminar
+      // los brazos y dejar solo un movimiento de pala correcto, que ahora
+      // tampoco está correcto, no golpea la bola»): NI el GLB ni las cápsu-
+      // las se pintan ya — el rival es SOLO la pala, y el golpe bola-pala
+      // es CONTACTO REAL (disparo diferido en c06: la cadena llega al punto
+      // de barrido en el MISMO instante que la bola). Todo el sistema r91-
+      // r99 de brazos queda inactivo en el bundle para revertir en un línea.
+      if (this.aiArmGlb && this.aiArmGlb.root.visible) this.aiArmGlb.root.visible = false;
+      if (this.aiArm && this.aiArm.visible) this.aiArm.visible = false;
     }
     // M7c (r119) · DOBLES 2v2: poses y visibilidad de las DOS palas extra.
     // who='partner'/'ai2' jamás coincide con rules.server → nunca entran

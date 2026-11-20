@@ -7390,3 +7390,26 @@ vs árbol 3.6.192 sin commitear) — el guardia anti-«me olvidé de committar»
 - INCIDENCIA RESUELTA: la recuperación del linaje con add -A había borrado 301 rutas trackeadas (assets partido/hall/halloween + fósiles) — restauradas desde 0fe863b; el repo vuelve a ser r98+r99 sin eliminaciones (103ec9a).
 - Kit release-v36192 (clone del v36190): guards re-anclados (manifest v16 ASTRO vivo) · 4 ZIPs construidos.
 - EN VIVO: PAGES-VERSION.txt = 3.6.192-SDK6 · game.html VERSION = 3.6.192-SDK6 · vr_arm.glb HTTP 200 (2.297.976 B) — el dueño ya puede actualizar desde el casco (banner rojo → actualizar.html).
+
+## Ronda 99bis (decisión del dueño: ADIÓS BRAZOS · la pala GOLPEA la bola) · V3.6.194-SDK6 — 2026-11-20
+**El dueño:** «prefiero eliminar los brazos y dejar solo un movimiento de pala correcto, que ahora
+tampoco está correcto, no golpea la bola». Dos frentes:
+1. **RETIRO DE LOS BRAZOS**: vr_arm.glb ya NO se carga (2,3 MB menos; la llamada queda comentada
+   para revertir en un línea), las cápsulas r91 quedan ocultas para siempre, la puerta completa
+   de brazos (GLB/cápsulas/IK/dedos/poses) eliminada del frame. El rival es SOLO la pala flotante.
+2. **CAUSA RAÍZ DEL «NO GOLPEA» MEDIDA Y MUERTA**: al decidir el golpe, la IA TELETRANSPORTABA la
+   bola al punto de barrido y le cambiaba la velocidad AL INSTANTE, mientras la cadena de la pala
+   tardaba 30-90 ms en llegar → la bola despegaba ANTES del toque (el «empujón invisible»). El
+   dueño veía la bola salir de donde la pala NO estaba. **DISPARO DIFERIDO (c06)**: la salida se
+   GUARDA en _disparo y se aplica cuando la cadena COMPLETA el strike; el strike dura LO QUE LA
+   BOLA tarda al contacto (TBola); si la pala llega tarde, ATRAPA a la bola donde esté (chain.cur
+   salta a la bola, follow desde el agarre) y el tiro se RECALCULA desde la posición real hacia
+   el MISMO blanco (bota donde apunta). Árbitro, sonido y superpoderes suenan CON el contacto.
+**Verificación**: test Node con la IA REAL (scripts/test_disparo_diferido_r99.mjs · 6/0): decisión
+en el vuelo → salida diferida +6 frames → la pala SOBRE la bola a **2,6 cm** (antes 107 cm en la
+decisión; el hueco se reduce ×40). Batería: P0 58/0 · r95 27/0 (5 agujas nuevas r99) · r93 16/0 ·
+r94 12/0 · bloqueo 14/0 · física 12. En vivo (headless): partido completo con saques, árbitro
+(«¡Punto para ti · saque fuera») y marcador — y la captura scripts/capturas_r99/live_rally_3.png
+muestra al rival REDUCIDO A LA PALA FLOTANTE (roja, junto a la vitrina), cero brazos.
+**Lección r98 re-validada ×2**: el gate del deploy abortó con HEAD desalineado (180a575 = 3.6.192
+vs árbol 3.6.194) — commit primero, deploy después.

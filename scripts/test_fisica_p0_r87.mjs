@@ -203,13 +203,13 @@ const C = DIMS.tableCenterZ;
     c06s.includes('export function adivinaKind'));
   aguja('r91 · plan de fases vivo (reacción→carga→golpeo→acompañamiento→recuperación)',
     c06s.includes('planCadena(contact, tBall, kind, fh)') &&
-    c06s.includes('cadenaContacto(cx, cy, cz, v)') &&
+    c06s.includes('cadenaContacto(cx, cy, cz, v, TBola)') &&
     c06s.includes('updateCadena(dt)') &&
     c06s.includes("phase: 'react'") && c06s.includes("phase: 'strike'") &&
     c06s.includes("phase: 'follow'") && c06s.includes("phase: 'recover'"));
-  aguja('r91 · anclajes: plan con la predicción, impacto real afina, swing solo sin plan',
+  aguja('r91 · anclajes: plan con la predicción, impacto real afina (r99: con TBola), swing solo sin plan',
     c06s.includes('this.predictT = strike.t;') &&
-    c06s.includes('this.cadenaContacto(cx, cy, cz, v);') &&
+    c06s.includes('this.cadenaContacto(cx, cy, cz, v, this._tBolaDe(ball, cx, cy, cz));') &&
     c06s.includes("if (!this.chain || this.chain.phase === 'follow' ||") &&
     c06s.includes('this.updateCadena(dt);'));
   aguja('r91 · tiempo LOCAL de segmento (el global nunca agota el plan en cascada)',
@@ -219,12 +219,14 @@ const C = DIMS.tableCenterZ;
     c12s.includes("if (who === 'ai' && ai.chain && ai.chain.phase)") &&
     c12s.includes('mesh.position.copy(ch.cur);') &&
     c12s.includes('AIM_FACE.copy(ch.vdir || AIM_FWD);'));
-  aguja('r91 · brazo visible (hombro→codo→muñeca, IK desde la pala REAL)',
+  // r99 · RETIRO DE BRAZOS: el método y las cápsulas quedan MUERTOS en el
+  // bundle (revertible) pero la puerta que los pintaba está eliminada.
+  aguja('r99 · brazo retirado (método muerto en bundle, gate eliminado, pala sola)',
     c12s.includes('updateAIArm(ai) {') &&
     c12s.includes('solveArmIK(_armS, _armW, 0.26, 0.24, _armP, _armE)') &&
     c12s.includes('new THREE.CapsuleGeometry(0.030, 1, 5, 10)') &&
     c12s.includes('_armW.addScaledVector(_armA, 0.105);') &&
-    c12s.includes('const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;'));
+    !c12s.includes('const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;'));
   // lección del bloqueo del dueño (hotfix r91): el ensamblado RECONSTRUYE los
   // bloques DEPS-FASE2 — cualquier const dentro de ellos DESAPARECE del
   // bundle y el escudo del bucle traga el ReferenceError cada frame (menú
@@ -241,7 +243,7 @@ const C = DIMS.tableCenterZ;
 
 /* — identidad del build ————————————————————————————————————————————————— */
 {
-  aguja('versión · c00 sella 3.6.192-SDK6', c00s.includes('3.6.192-SDK6'));
+  aguja('versión · c00 sella 3.6.194-SDK6', c00s.includes('3.6.194-SDK6'));
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
@@ -290,8 +292,8 @@ const C = DIMS.tableCenterZ;
   aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
     (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
     b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.192-SDK6 en el bundle',
-    b94.includes('3.6.192-SDK6'));
+  aguja('r94 · versión sella 3.6.194-SDK6 en el bundle',
+    b94.includes('3.6.194-SDK6'));
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,
@@ -303,6 +305,14 @@ const C = DIMS.tableCenterZ;
     b95.includes('R99_POSE_AGARRE') &&
     b95.includes('multiply(dd.bindQ)') &&
     b95.includes("pulgarY: (c.lado === 'B') ? 1 : -1"));
+  // r99 · RETIRO DE BRAZOS: el rival es SOLO la pala flotante
+  aguja('r99 · el rival es SOLO pala (GLB de brazos sin cargar, cápsulas ocultas)',
+    b95.includes('// this._cargarArmasGLB();') &&
+    b95.includes('if (this.aiArm && this.aiArm.visible) this.aiArm.visible = false;'));
+  // r99 · DISPARO DIFERIDO: la bola sale SOLO cuando la pala llega al contacto
+  aguja('r99 · DISPARO DIFERIDO (contacto real bola-pala visible)',
+    b95.includes('_preparaDisparo') && b95.includes('_aplicaDisparo') &&
+    b95.includes('this._retPend') && !b95.includes('ball.pos.set(cx, cy, cz);'));
   aguja('r95 · la zona dulce SOLO en strike (el follow ya no persigue la bola: látigo=0)',
     b95.includes('r95 · zona dulce SOLO en strike') &&
     b95.includes("const enStrike = !!(ch && ch.phase === 'strike')"));

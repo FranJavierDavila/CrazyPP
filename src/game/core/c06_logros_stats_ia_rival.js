@@ -802,6 +802,12 @@ export class OpponentAI {
     // golpeo→acompañamiento→recuperación) + tiempo de vuelo predicho
     this.chain = null;
     this.predictT = 0;
+    // r99 · DISPARO DIFERIDO: el golpe de la IA ya NO sale el frame en que
+    // se decide — se guarda aquí y se aplica cuando la cadena de la pala
+    // LLEGA al punto de barrido (el dueño VE cómo la pala golpea la bola:
+    // adiós al «empujón invisible» que despegaba la bola antes del toque).
+    this._disparo = null;
+    this._retPend = null;
   }
 
   setConfig(cfg) { this.cfg = cfg; }
@@ -933,16 +939,28 @@ export class OpponentAI {
   /** r91 · IMPACTO REAL: en el frame del golpe (barrido de siempre) el plan
    *  se afina al punto EXACTO del contacto con el pico de velocidad alineado
    *  a la salida real de la bola — el golpe visible ES el golpe físico. */
-  cadenaContacto(cx, cy, cz, v) {
+  cadenaContacto(cx, cy, cz, v, TBola) {
     const ch = this.chain;
-    if (!ch || ch.phase === 'follow' || ch.phase === 'recover') return;
+    if (!ch) return;   // r99: sin cadena el aplicador del disparo cubre
+    if (ch.phase === 'follow' || ch.phase === 'recover') {
+      // r99 · con disparo diferido SIEMPRE se re-ancla el plan: el golpe se
+      // decidió contra el punto de barrido FRESCO y la cadena debe llegar
+      // a él exactamente cuando la bola (sin TBola, guard clásico r91).
+      if (!TBola) return;
+    }
     const G = CADENA_GOLPE[ch.kind] || CADENA_GOLPE.drive;
     const vP = _cadV.copy(v).multiplyScalar(G.vPeakMul);
     if (vP.lengthSq() < 0.25) vP.setLength(3.0);
     _cadD.copy(vP).normalize();
     const pC = _cadA.set(cx, cy, cz);
     const d = ch.cur.distanceTo(pC);
-    const T = THREE.MathUtils.clamp(d / Math.max(3, vP.length()), 0.03, 0.09);
+    // r99 · el strike dura LO QUE TARDA LA BOLA en llegar al punto de
+    // barrido (vuela a |v| desde ball.pos) — la pala y la bola llegan
+    // JUNTAS al contacto. Piso de velocidad de pala 12 m/s: si el plan
+    // pide más, el ajuste fino del aplicador cubre el resto.
+    const T = TBola !== undefined
+      ? THREE.MathUtils.clamp(Math.max(TBola, d / 12), 0.035, 0.30)
+      : THREE.MathUtils.clamp(d / Math.max(3, vP.length()), 0.03, 0.09);
     const F = _cadB.copy(pC).addScaledVector(_cadD, G.dft);
     F.x -= ch.fh * this.sign * G.dft * 0.5;    // r92 · arco: cruce del gesto
     F.y = Math.max(0.5, pC.y + G.hft);
@@ -978,6 +996,13 @@ export class OpponentAI {
    *  con la predicción refinada, recuperación viva sobre el cuerpo y guard
    *  anti-NaN (una cifra rara no tumba la partida). */
   updateCadena(dt) {
+    // r99 · VIGÍA DEL DISPARO DIFERIDO: sin cadena viva (NaN, agotamiento)
+    // o con espera excesiva, la salida se aplica igualmente — jamás se
+    // pierde un rallye por el mecanismo de sincronización.
+    if (this._disparo) {
+      this._disparo.t += dt;
+      if (!this.chain || this._disparo.t > this._disparo.tMax) this._aplicaDisparo();
+    }
     const ch = this.chain;
     if (!ch) return;
     if ((ch.phase === 'react' || ch.phase === 'back') && this.predictValid &&
@@ -992,7 +1017,12 @@ export class OpponentAI {
       ch.tSeg -= seg.T;                     // agotaba el plan en cascada al
       ch.segIdx++;                          // entrar en strike)
       seg = ch.segs[ch.segIdx];
-      if (seg) ch.phase = seg.phase;
+      if (seg) {
+        // r99 · la pala ACABA DE LLEGAR al punto de barrido (fin del strike):
+        // la bola sale AQUÍ — el dueño ve el golpe, no un empujón fantasma.
+        if (ch.phase === 'strike' && seg.phase !== 'strike') this._aplicaDisparo();
+        ch.phase = seg.phase;
+      }
     }
     if (!seg) { this.chain = null; return; }
     ch.u = THREE.MathUtils.clamp(ch.tSeg / seg.T, 0, 1);
@@ -1009,6 +1039,8 @@ export class OpponentAI {
     this.hitCooldown = 0;
     this._ppPortalVisto = false;   // v3.6.42: el flanco del portal a limpio
     this.chain = null;          // r91: sin plan de golpe colgado
+    this._disparo = null;       // r99: sin salida pendiente entre puntos
+    this._retPend = null;
     this.predictT = 0;
   }
 
@@ -1021,6 +1053,13 @@ export class OpponentAI {
     }
     // r91 · el plan de golpe avanza (fases, re-anclaje con la predicción)
     this.updateCadena(dt);
+    // r99 · la cadena acaba de LLEGAR al contacto → la salida de la bola
+    // viaja AQUÍ (el frame en que el dueño ve el golpe: ni antes, ni después)
+    if (this._retPend) {
+      const r = this._retPend;
+      this._retPend = null;
+      return r;
+    }
     const C = DIMS.tableCenterZ;
     const sign = this.sign;
     const toward = ball.vel.z * sign > 0;
@@ -1282,23 +1321,22 @@ export class OpponentAI {
     // se marcha larga/fuera o cruza floja y alta — el punto se pierde igual
     // pero con contacto, sonido y pose creíbles en lugar del cruce fantasma.
     if (Math.random() < pMiss) {
+      // r99 · GOLPE TORPE DIFERIDO: la bola NO se recoloca ni sale este
+      // frame — vuela a su punto de barrido y la cadena llega al contacto
+      // cuando ella llega (el toque flojo SE VE: la pala roza la bola).
       // r97: la calabaza NUNCA se recoloca (la bola viva manda — ver arriba)
-      if (!ball.ppCalabaza &&
-          (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z)) {
-        ball.pos.set(cx, cy, cz);   // recolocar en el punto del barrido
-      }
-      // r91 · el golpe torpe TAMBIÉN se ve por el brazo (contacto sincronizado)
       const _mv = this.mishit(ball, toca);
-      this.cadenaContacto(cx, cy, cz, _mv);
-      return _mv;   // r93: el swing también toca la piel
+      this._preparaDisparo(ball, _mv, cx, cy, cz);
+      this.cadenaContacto(cx, cy, cz, _mv, this._tBolaDe(ball, cx, cy, cz));
+      return null;
     }
     // v2.84: golpe LIMPIO con contacto barrido — la salida parte del punto
     // real donde la pala alcanzó la bola (no del punto ya pasado).
     // r97: con la calabaza la bola VIVA manda (cero saltos visibles).
-    if (!ball.ppCalabaza &&
-        (cx !== ball.pos.x || cy !== ball.pos.y || cz !== ball.pos.z)) {
-      ball.pos.set(cx, cy, cz);
-    }
+    // r99 · la bola ya NO se teletransporta al punto del barrido: el
+    // disparo nace del intercepto PREDICHO (cx,cy,cz) cuando la pala y la
+    // bola están juntas — el vuelo de la bola NUNCA se toca hasta el toque.
+    _aiInt.set(cx, cy, cz);
 
     // ---------- SELECCIÓN DE GOLPE (v2.11 · IA lista) ----------
     // Cuatro golpes según la situación: remate a bolas altas, dejada corta
@@ -1308,8 +1346,8 @@ export class OpponentAI {
     const oppDeep = ctx.oppPadZ !== undefined
       ? ((ctx.oppPadZ - DIMS.tableCenterZ) * -sign > DIMS.tableHalfLength * 0.3)
       : (Math.random() < 0.35);
-    const high = ball.pos.y > 1.15;
-    const low = ball.pos.y < DIMS.tableTopY + 0.16;
+    const high = _aiInt.y > 1.15;
+    const low = _aiInt.y < DIMS.tableTopY + 0.16;
     let kind = 'drive';
     const rShot = Math.random();
     if (high && rShot < this.cfg.smash) {
@@ -1379,20 +1417,16 @@ export class OpponentAI {
     const spinY = (Math.random() - 0.5) * 6;
     const shotSpin = _aiSpin.set(spinX, spinY, 0);
     // FÍSICA REAL (v2.17): tiro corregido por simulación (arrastre + Magnus):
-    // bota donde apunta en vez de 15-27 cm corto
-    const v = computeShotVelocityReal(ball.pos, tmpTarget, T, maxV, shotSpin);
-    ball.spin.copy(shotSpin);
-    ball.ppEfecto = false;   // v3.6.36: la devolución de la IA LIMPIA la marca
-    ball.ppEfectoTipo = '';  // v3.6.46: fuera también el tipo de spin
-    ball.ppEfectoLado = 0;
-    ball.ppPortal = false;   // v3.6.41: la devolución de la IA LIMPIA el portal
-    ball.ppImanTocada = false;             // v3.6.37: aproximación nueva
-    if (ball.ppIman) ball.ppIman.dv = 0;   // v3.6.37: Δv del imán a cero
+    // bota donde apunta en vez de 15-27 cm corto. r99: el origen del disparo
+    // es el INTERCEPTO (donde pala y bola se encontrarán), no la bola viva.
+    const v = computeShotVelocityReal(_aiInt, tmpTarget, T, maxV, shotSpin);
 
-    // r91 · CADENA: el impacto REAL afina el plan (la pala llega al punto
-    // de barrido EXACTO con el pico de velocidad sincronizado a la salida
-    // de la bola — el empujón invisible se convierte en golpe visible).
-    this.cadenaContacto(cx, cy, cz, v);
+    // r91/r99 · CADENA: el plan se re-ancla al punto de barrido con el
+    // strike durando EXACTAMENTE lo que la bola tarda en llegar a él —
+    // y la salida se aplica cuando la pala LLEGA (contacto real, sonido
+    // y árbitro en el instante visual del golpe).
+    this._preparaDisparo(ball, v, cx, cy, cz, shotSpin, tmpTarget, T, maxV);
+    this.cadenaContacto(cx, cy, cz, v, this._tBolaDe(ball, cx, cy, cz));
 
     // swing visual: follow-through del golpe en la dirección del tiro.
     // v2.23: lleva TAMBIÉN el tipo de golpe, el lado (derecha/revés) y la
@@ -1433,7 +1467,69 @@ export class OpponentAI {
       kind,                       // drive/smash/push/dejada/bloqueo
       fh: this.fhSide || 1,       // +1 derecha · -1 revés
     };
-    return v;
+    // r99 · DISPARO DIFERIDO: update() devuelve null este frame — la salida
+    // viaja en _disparo y update() la devuelve el frame en que la pala
+    // llega al contacto (el juego aplica v, árbitro y sonido AQUÍ).
+    return null;
+  }
+
+  /** r99 · TIEMPO DE LA BOLA AL CONTACTO: cuánto tarda la bola viva en
+   *  alcanzar el punto de barrido (d/|v| con piso 2 m/s). Es la T del
+   *  strike: la pala y la bola llegan juntas. */
+  _tBolaDe(ball, cx, cy, cz) {
+    const dx = cx - ball.pos.x, dy = cy - ball.pos.y, dz = cz - ball.pos.z;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    return THREE.MathUtils.clamp(d / Math.max(2.0, ball.vel.length()), 0.03, 0.32);
+  }
+
+  /** r99 · GUARDA DEL DISPARO: la salida calculada espera a que la cadena
+   *  de la pala llegue al punto de barrido (payload completo: bola, vel,
+   *  spin, intercepto, blanco del solver, T y tope para el recálculo). */
+  _preparaDisparo(ball, v, cx, cy, cz, spin, target, T, maxV) {
+    this._disparo = {
+      ball,
+      v: v.clone(),
+      spin: spin ? spin.clone() : new THREE.Vector3(),
+      pos: new THREE.Vector3(cx, cy, cz),
+      target: target ? target.clone() : null,
+      T: T || 0.7,
+      maxV: maxV || 10,
+      t: 0,
+      tMax: 0.45,
+    };
+  }
+
+  /** r99 · APLICADOR DEL DISPARO: la pala GOLPEA la bola donde esté —
+   *  si la bola está en el punto de barrido (±8 cm) se ajusta (deriva de
+   *  predicción invisible); si pasó de largo (la pala llegó tarde), la
+   *  PALA la atrapa: chain.cur salta a la bola (toque de muñeca real) y
+   *  el follow-through arranca de ahí. El tiro se RECALCULA desde la
+   *  posición real de la bola hacia el MISMO blanco: bota donde apunta,
+   *  con contacto visible, sonido y árbitro sincronizados. */
+  _aplicaDisparo() {
+    const d = this._disparo;
+    if (!d) return;
+    this._disparo = null;
+    const b = d.ball;
+    if (b.pos.distanceTo(d.pos) < 0.08) b.pos.copy(d.pos);
+    const vReal = d.target
+      ? computeShotVelocityReal(b.pos, d.target, d.T, d.maxV, d.spin)
+      : d.v;
+    b.vel.copy(vReal);
+    b.spin.copy(d.spin);
+    b.ppEfecto = false;      // la devolución de la IA LIMPIA la marca
+    b.ppEfectoTipo = '';
+    b.ppEfectoLado = 0;
+    b.ppPortal = false;      // la devolución de la IA LIMPIA el portal
+    b.ppImanTocada = false;
+    if (b.ppIman) b.ppIman.dv = 0;
+    // la pala ATRAPA: su cur (y el arranque del follow) quedan EN la bola
+    if (this.chain) {
+      this.chain.cur.copy(b.pos);
+      const s0 = this.chain.segs[this.chain.segIdx];
+      if (s0) s0.p0.copy(b.pos);
+    }
+    this._retPend = vReal;
   }
 
   /** v2.84 · GOLPE MALO — contacto torpe cuando la IA falla a propósito.
@@ -1493,6 +1589,9 @@ const _segAP = new THREE.Vector3();
 const _segC = new THREE.Vector3();
 const _miV = new THREE.Vector3();
 const _miD = new THREE.Vector3();
+/* r99 · intercepto del golpe (la bola ya NO se recoloca: el disparo nace
+ * del punto de barrido sin tocar la bola viva) */
+const _aiInt = new THREE.Vector3();
 
 /* =====================================================================
  *  ESCENA · sala, mesa reglamentaria, bola con estela, rival con cuerpo,

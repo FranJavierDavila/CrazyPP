@@ -45,8 +45,8 @@ const evs = [];
 let rally = 0, frame = 0, boteEste = false;
 let devolucionesR = 0, devolucionesJ = 0;
 const quejas = [];
-const estadoR = { quieta: 0, ult: new THREE.Vector3() };
-const estadoJ = { quieta: 0, ult: new THREE.Vector3() };
+const estadoR = { quieta: 0, ult: new THREE.Vector3(), park: 0, parkF: 0 };
+const estadoJ = { quieta: 0, ult: new THREE.Vector3(), park: 0, parkF: 0 };
 const DT = 1 / 60;
 
 function vigia(estado, ai, sign, nombre) {
@@ -59,6 +59,18 @@ function vigia(estado, ai, sign, nombre) {
   if (estado.quieta === 60) quejas.push(
     `${nombre}: pala QUIETA 1 s con bola acercándose (f${frame}, ` +
     `bola z=${ball.pos.z.toFixed(2)}, pala z=${mesh.z.toFixed(2)})`);
+  // PARQUE: cadena viva en aproximación (back/strike) que recorre < 0,15 m
+  // en 0,5 s con la bola acercándose — el jinete aparcado en la carga
+  if (ai.chain && (ai.chain.phase === 'back' || ai.chain.phase === 'strike')) {
+    estado.park += mesh.distanceTo(estado.ult);
+    estado.parkF++;
+    if (estado.parkF >= 30) {
+      if (estado.park < 0.15 && bolaCerca) quejas.push(
+        `${nombre}: PARQUE ${estado.park.toFixed(2)} m en 0,5 s (f${frame}, ` +
+        `dRem=${(ai.chain.sC - ai.chain.s).toFixed(2)})`);
+      estado.park = 0; estado.parkF = 0;
+    }
+  } else { estado.park = 0; estado.parkF = 0; }
   // invasión REAL: en APROXIMACIÓN (back/strike) la pala > 30 cm allende
   // la red con la bola en su campo. El follow-through de una bola corta
   // CRUZA la red por diseño (el gesto continúa hacia el tiro) y los

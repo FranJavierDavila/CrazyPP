@@ -7507,3 +7507,42 @@ en 500 s) y **cero bloqueos, cero invasiones reales, cero cadenas zombi, cero Na
 incidentes residuales son tránsito legítimo de follow-through en bolas cortas y esperas pre-bote
 de la colocación). Batería: P0 59/0 · disparo 15/0 · r95 29/0 · r93 16/0 · r94 12/0 · bloqueo
 14/0 · física 12. En vivo: bundle 3.6.197 sin errores de página, el estado machine anota puntos.
+
+## Ronda 100 · EL HOMBRO MANDA (el dueño: «se sigue bloqueando · el golpeo debe ser la continuación de la aproximación en trayectoria curva desde el hombro hasta la mano, prolongarse tras el golpeo y recuperar la defensiva») · V3.6.198-SDK6 — 2026-11-20
+**TRES BUGS DE RAÍZ encontrados midiendo el arco** (sonda f20: la curva del gesto medía 5,0 m
+para un gesto de 1 m y LOOPABA: la mano se balanceaba 1,8 m detrás del cuerpo y llegaba tarde):
+1. **_crSeg (Catmull-Rom) llevaba la fórmula MAL desde r91**: el término t² era `p0 − 5p1 +
+   4p2 − p3` (el estándar es `2p0 − …`) y el t³ era `+p0 − …` (el estándar `−p0 + …`). Cada
+   segmento acababa `K0/2` más allá de su nudo: de ahí la «cúspide», los arcos de 2,7 m y los
+   saltos que venimos persiguiendo desde r91. FIX: fórmula estándar exacta.
+2. **ALIAS del contacto**: el parámetro `contact` llega aliasado a `_cadA` (el caller hace
+   `_cadA.set(...)`) y `B = _cadA` lo pisaba → K1 = K2 (el nudo doble que «creaba cúspide» en
+   r99ter ERA ESTO). FIX: copia privada `deltaC`.
+3. **El cuerpo no acompañaba al brazo**: la caminata limitaba el repliegue a 0,45 m tras la
+   línea mientras el intercepto profundo caía a 1,4 m — el brazo encadenado al hombro jamás
+   llegaba (el modelo vieo lo escondía estirando el brazo imposible: el «teletransporte»).
+   FIX: repliegue hasta 1,5 m — un jugador real RETROCEDE con el golpe.
+
+**EL HOMBRO MANDA (el gesto que pide el dueño)**:
+· UNA SOLA CURVA de rotación del brazo alrededor del HOMBRO: [reposo en guardia → carga
+  cockeada al lado fh → contacto → prolongación al otro lado], los cuatro nudos a radio de
+  brazo (0,45-0,68 m, el alcance real del IK 0,26+0,24) — el arco mide 0,9-1,3 m y NO tiene
+  pliegues.
+· El jinete conserva su posición en el arco (s PERSISTENTE — adiós al re-anclaje s=0 que lo
+  hacía oscilar en la carga y APARCAR: el bloqueo persistente del dueño).
+· EL GOLPEO ACELERA: en la zona dulce (últimos 35 cm) la mano cruza a velocidad de GOLPE
+  (4,5-7,8 m/s × vPeakMul del kind — el bloqueo acompaña, el smash late); el paso de paseo
+  convertía el golpeo en un empujón lento.
+· LA PROLONGACIÓN sigue la MISMA curva (sin curva nueva de acompañamiento): 0,85 rad ≈ 49°
+  de barrido tras el contacto, 4-6 frames visibles frenando exp(−dt/0.22).
+· LA RECUPERACIÓN funde la mano a la posición defensiva (el cuerpo ya caminó allí).
+· EL BRAZO VISIBLE comparte hombro: la cadena aporta ch.hombro con la MISMA fórmula del IK
+  de c12 — un solo ancla, el brazo y la pala nunca se despegan.
+· TOPE DE PASO 13 cm/frame intacto (medido: 13,0-13,1 ✓).
+
+**Verificación**: contacto en el punto dulce 2,7-3,7 cm (antes 101 cm) · seguimiento 100→3 cm ·
+curva real 41-54 cm · sin saltos (13,0-13,1 ≤ 13,1) · sin parque (la espera EN el punto de
+encuentro es anticipación: el test ahora distingue parque real de espera correcta) · batería
+completa verde: jinete 15/0 · P0 59/0 · anti-bloqueo 14/0 · brazos 29/16/12 · física 12 ·
+multi-rally fluyendo (80+96 devoluciones). En vivo: bundle anota puntos, el rival RETROCEDE
+con la bola profunda (z −3.22), sin NaN ni errores de página.

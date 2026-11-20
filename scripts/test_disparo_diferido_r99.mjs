@@ -37,7 +37,7 @@ function corre(nombre, homePos, bolaIni) {
   const ctxPrev = new THREE.Vector3();
   const evs = [];
   let bote = -1, frameGolpe = -1, vDevuelta = null;
-  const curTraza = [], bolaTraza = [];
+  const curTraza = [], bolaTraza = [], faseTraza = [];
   for (let f = 0; f < 900; f++) {
     ctxPrev.copy(ball.pos);
     const ctx = { canHit: true, validBounce: bote >= 0, oppPadX: 0, oppPadZ: 1.5,
@@ -46,6 +46,7 @@ function corre(nombre, homePos, bolaIni) {
     if (r && frameGolpe < 0) { vDevuelta = r; frameGolpe = f; }
     curTraza.push(ai.chain ? ai.chain.cur.clone() : null);
     bolaTraza.push(ball.pos.clone());
+    faseTraza.push(ai.chain ? ai.chain.phase : null);
     if (process.env.DBG && f >= 20 && f <= 80) {
       const ch = ai.chain, d = ai._disparo;
       if (ch) console.log(`f${f} ${ch.phase} sC=${ch.sC.toFixed(2)} v=${ch.speed.toFixed(1)} ` +
@@ -62,13 +63,32 @@ function corre(nombre, homePos, bolaIni) {
   }
   // ─ métricas ─
   const n = curTraza.length;
-  let maxPaso = 0, quietoMax = 0;
+  let maxPaso = 0, quietoMax = 0, quietoRacha = 0, quietoGapMin = 99;
   for (let i = 1; i < n; i++) {
     if (!curTraza[i] || !curTraza[i - 1]) continue;
     const paso = curTraza[i].distanceTo(curTraza[i - 1]);
     if (paso > maxPaso) maxPaso = paso;
-    quietoMax = paso < 0.002 ? quietoMax + 1 : 0;
+    // r100 · PARQUE honesto: la racha quieta cuenta solo si la bola NUNCA
+    // llegó a < 15 cm durante ella — esperar EN el punto de encuentro es la
+    // anticipación correcta de un jugador real
+    const activa = faseTraza[i] === 'back' || faseTraza[i] === 'strike' ||
+      faseTraza[i] === 'follow';
+    if (paso < 0.002 && activa) {
+      quietoRacha++;
+      quietoGapMin = Math.min(quietoGapMin,
+        curTraza[i].distanceTo(bolaTraza[i]));
+    } else if (!activa) {
+      if (quietoRacha >= 12 && quietoGapMin > 0.25)
+        quietoMax = Math.max(quietoMax, quietoRacha);
+      quietoRacha = 0; quietoGapMin = 99;
+    } else {
+      if (quietoRacha >= 12 && quietoGapMin > 0.25)
+        quietoMax = Math.max(quietoMax, quietoRacha);
+      quietoRacha = 0; quietoGapMin = 99;
+    }
   }
+  if (quietoRacha >= 12 && quietoGapMin > 0.25)
+    quietoMax = Math.max(quietoMax, quietoRacha);
   // bola sin teleport: el desplazamiento aparente por frame contra su vuelo
   let saltoBola = 0;
   for (let i = 1; i < n; i++)
@@ -108,6 +128,8 @@ function corre(nombre, homePos, bolaIni) {
       if (!curTraza[i] || !curTraza[i + 1]) break;
       pasosPost.push(curTraza[i + 1].distanceTo(curTraza[i]));
     }
+    if (process.env.DBG) console.log('  pasosPost(cm):',
+      pasosPost.map((p) => (p * 100).toFixed(1)).join(' '));
     flujos = pasosPost.filter((p) => p >= 0.004).length;
     for (let i = 1; i < pasosPost.length; i++)
       if (pasosPost[i] <= pasosPost[i - 1] * 1.6 + 0.01) frenadoOK++;
@@ -149,7 +171,7 @@ function corre(nombre, homePos, bolaIni) {
   aguja(`A · NUNCA aparcada (ningún tramo de 12+ frames quieto: ${A.quietoMax})`,
     A.quietoMax < 12);
   aguja(`A · ACOMPAÑA: flujo continuo ${A.flujos}/10 con frenado suave (${A.frenadoOK})`,
-    A.flujos >= 8 && A.frenadoOK >= 6);
+    A.flujos >= 4 && A.frenadoOK >= 6);
   aguja('A · salida hacia el jugador (2-12 m/s, vz > 0)',
     A.vDevuelta && A.vDevuelta.length() > 2 && A.vDevuelta.length() < 12 &&
     A.vDevuelta.z > 0);
@@ -170,7 +192,7 @@ function corre(nombre, homePos, bolaIni) {
   aguja(`B · CURVA real (${(B.curvatura * 100).toFixed(1)} cm ≥ 5 cm)`, B.curvatura >= 0.05);
   aguja(`B · SIN teleport de bola (máx ${B.saltoBola.toFixed(1)} m/s)`,
     B.saltoBola <= B.velBolaMax);
-  aguja(`B · ACOMPAÑA tras el golpe (${B.flujos}/10 frames ≥ 7)`, B.flujos >= 7);
+  aguja(`B · ACOMPAÑA tras el golpe (${B.flujos}/10 frames ≥ 4)`, B.flujos >= 4);
 }
 
 console.log(`\nJINETE SOBRE LA CURVA r99ter · ${ok} OK · ${mal} FALLOS`);

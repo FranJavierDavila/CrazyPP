@@ -19583,11 +19583,17 @@ export class PingPongGame {
     const u = this.aiArm.userData;
     const s = ai.sign || -1;
     const fh = (ai.chain && ai.chain.fh) || ai.fhSide || 1;
-    // hombro: detrás-bajo de la pala, al lado del brazo (sigue al cuerpo)
-    _armS.copy(ai.pos);
-    _armS.x += fh * s * 0.09;
-    _armS.y += 0.16;
-    _armS.z += s * 0.17;
+    // hombro: r100 · la CADENA lo aporta (misma fórmula, un solo ancla —
+    // el brazo visible y el gesto de la pala comparten hombro); sin cadena,
+    // la estimación clásica sobre el cuerpo
+    if (ai.chain && ai.chain.hombro) {
+      _armS.copy(ai.chain.hombro);
+    } else {
+      _armS.copy(ai.pos);
+      _armS.x += fh * s * 0.09;
+      _armS.y += 0.16;
+      _armS.z += s * 0.17;
+    }
     // muñeca: extremo del mango (10,5 cm desde el centro de la hoja por la
     // dirección REAL del mango en el mundo)
     _armW.copy(this.aiPaddleMesh.position);

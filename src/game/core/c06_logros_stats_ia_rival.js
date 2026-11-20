@@ -783,6 +783,16 @@ const _crK = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(),
 const _crPh = new THREE.Vector3();            // nudo fantasma (extensión)
 const _crA = new THREE.Vector3();
 const _crB = new THREE.Vector3();
+// r100 · NUDOS EFECTIVOS (ajuste centrípeta): las patas largas vecinas al
+// tramo actual se ACHICAN al escalado de ese tramo — sin esto, la tangente
+// interna hereda la pata larga (reposo→carga ≈ 0,7 m frente a un tramo
+// carga→contacto de 0,19 m) y el arco del CR LOOPEA (3,2 m medidos: la
+// pala se balanceaba 1,8 m detrás del cuerpo y llegaba tarde). Con patas
+// parejas el ajuste no toca nada: el CR uniforme de siempre.
+const _crE0 = new THREE.Vector3();
+const _crE1 = new THREE.Vector3();
+const _crE2 = new THREE.Vector3();
+const _crE3 = new THREE.Vector3();
 
 function _crTablaNueva() {
   const pts = [];
@@ -792,18 +802,37 @@ function _crTablaNueva() {
 
 /** evalúa el tramo CR del nudo i al i+1 en t∈[0,1] (fórmula estándar) */
 function _crSeg(i, t, out) {
-  const p0 = i === 0 ? _crPh.copy(_crK[0]).multiplyScalar(2).sub(_crK[1])
-    : _crK[i - 1];
   const p1 = _crK[i], p2 = _crK[i + 1];
-  const p3 = i === 2 ? _crPh.copy(_crK[3]).multiplyScalar(2).sub(_crK[2])
+  const dSeg = Math.max(1e-4, p1.distanceTo(p2));
+  // r100 · CENTRÍPETA PER-SEGMENTO: el vecino cuya pata supera 1,3× el
+  // tramo propio se acerca a esa escala — la tangente nunca hereda una
+  // pata 5× más larga (el loop de 5 m medido). Con patas parejas no toca
+  // nada: el CR uniforme de siempre.
+  let p0 = i === 0 ? _crPh.copy(_crK[0]).multiplyScalar(2).sub(_crK[1])
+    : _crK[i - 1];
+  let p3 = i === 2 ? _crPh.copy(_crK[3]).multiplyScalar(2).sub(_crK[2])
     : _crK[i + 2];
+  const dL = p1.distanceTo(p0);
+  if (dL > dSeg * 1.3) p0 = _crE0.copy(p1).addScaledVector(
+    _crE1.copy(p1).sub(p0), dSeg / dL * 1.05);
+  const dR = p2.distanceTo(p3);
+  if (dR > dSeg * 1.3) p3 = _crE2.copy(p2).addScaledVector(
+    _crE3.copy(p2).sub(p3), dSeg / dR * 1.05);
   const t2 = t * t, t3 = t2 * t;
   out.copy(p1).multiplyScalar(2)
     .addScaledVector(_crA.copy(p2).sub(p0), t)
-    .addScaledVector(_crB.copy(p0).addScaledVector(p1, -5).addScaledVector(p2, 4)
-      .sub(p3), t2)
-    .addScaledVector(_crB.copy(p0).addScaledVector(p1, 3).addScaledVector(p2, -3)
-      .add(p3), t3)
+    // r100 · el término t² del CR estándar es (2p0 − 5p1 + 4p2 − p3) —
+    // llevaba p0 a secas desde r91 (igual que el signo del t³): cada
+    // segmento acababa K0/2 más allá de su nudo y el arco loopeaba.
+    .addScaledVector(_crB.copy(p0).multiplyScalar(2).addScaledVector(p1, -5)
+      .addScaledVector(p2, 4).sub(p3), t2)
+    // r100 · FIX DE RAÍZ: el término t³ del CR estándar es (−p0 + 3p1 −
+    // 3p2 + p3) — llevaba +p0 desde r91 y cada segmento acababa en
+    // K2 + p0/2 (medio fantasma más allá del nudo): de ahí la «cúspide»,
+    // los arcos de 2,7 m y los saltos del jinete. Con patas de longitud
+    // pareja el resto de la fórmula es idéntica a la de siempre.
+    .addScaledVector(_crB.copy(p0).multiplyScalar(-1).addScaledVector(p1, 3)
+      .addScaledVector(p2, -3).add(p3), t3)
     .multiplyScalar(0.5);
   return out;
 }
@@ -910,11 +939,13 @@ export class OpponentAI {
       roll: this._rollCadena(kind),
       cur: chVieja ? chVieja.cur.clone() : this.pos.clone(),
       vel: chVieja ? chVieja.vel.clone() : new THREE.Vector3(),
+      hombro: new THREE.Vector3(),   // r100 · el ancla del brazo (IK de c12)
+      restP: new THREE.Vector3(),    // r100 · reposo defensivo de la mano
       u: 0, s: 0, speed: 0, contactoHecho: false, dRem0: 0, persec: false,
       jit: 0.88 + Math.random() * 0.24,
       curva: _crTablaNueva(),
     };
-    this._armaCurva(contact, tBall);
+    this._armaCurva(contact, tBall, true);
   }
 
   /** r99ter · ARMA/REGENERA la curva del gesto [cur → carga B → contacto C
@@ -923,7 +954,7 @@ export class OpponentAI {
    *  posición futura de la bola — el dueño: «la pala no realiza el
    *  seguimiento de la bola». La pala siempre está SOBRE el gesto que
    *  enmarca la bola real: nada de esperas ni posiciones raras. */
-  _armaCurva(contact, tBall) {
+  _armaCurva(contact, tBall, nace) {
     const ch = this.chain;
     if (!ch || ch.contactoHecho) return;   // tras el contacto la curva ES sagrada
     const G = CADENA_GOLPE[ch.kind] || CADENA_GOLPE.drive;
@@ -939,6 +970,12 @@ export class OpponentAI {
     ch.roll = this._rollCadena(ch.kind);
     ch.contact.copy(contact);
     ch.tBall = tBall;
+    // r100 · EL HOMBRO MANDA: el hombro de la cadena usa la MISMA fórmula
+    // que el brazo visible (IK de c12) — pala y brazo comparten UN solo
+    // ancla y el gesto entero se lee como un brazo que rota desde el
+    // hombro del jugador hasta la mano.
+    ch.hombro.set(this.pos.x + ch.fh * this.sign * 0.09,
+      this.pos.y + 0.16, this.pos.z + this.sign * 0.17);
     // amplitudes con el TIEMPO: mucho tiempo → loop amplio y leído; poco →
     // gesto compacto (la calabaza, mitad de amplitud: piel, no pirueta)
     if (ch.persec) {
@@ -956,31 +993,57 @@ export class OpponentAI {
     }
     const dil = THREE.MathUtils.clamp(tBall / 0.55, 0.35, 1) *
       (ch.flat ? 0.5 : 1) * ch.jit;
-    const B = _cadA.copy(contact).addScaledVector(_cadD, -G.dbs * dil);
-    B.x += ch.fh * this.sign * G.dbs * 0.85 * dil;    // r92 · carga al lado
-    B.y = Math.max(0.5, contact.y - G.hbs * dil);
-    const F = _cadB.copy(contact).addScaledVector(_cadD, G.dft * ch.jit);
-    F.x -= ch.fh * this.sign * G.dft * 0.62 * ch.jit; // r92 · cruce al otro
-    F.y = Math.max(0.5, contact.y + G.hft * ch.jit);
-    _crK[0].copy(ch.cur); _crK[1].copy(B);
-    _crK[2].copy(contact); _crK[3].copy(F);
+    // r100 · EL HOMBRO MANDA — el gesto entero es UN ARCO DE ROTACIÓN DEL
+    // BRAZO alrededor del HOMBRO (el ancla del IK del brazo visible). Los
+    // cuatro nudos viven a radio de brazo del hombro: reposo en guardia →
+    // carga cockeada al lado fh → contacto → prolongación al otro lado.
+    // El Catmull-Rom por nudos de un mismo círculo NO crea pliegues ni
+    // sobre-tiros: el arco queda ajustado (0,6-1,0 m) y la mano lo recorre
+    // de un tirón — la aproximación ES el golpeo.
+    // copia PRIVADA del vector hombro→contacto: el parámetro `contact`
+    // viene ALIASADO a _cadA del caller y B/F viven en _cadA/_cadB — sin la
+    // copia, B pisaba el contacto y K1=K2 (el nudo doble, la cúspide de
+    // r99ter: el arco se plegaba sobre la carga)
+    const deltaC = _crE2.copy(contact).sub(ch.hombro);
+    const rBrazo = THREE.MathUtils.clamp(deltaC.length(), 0.45, 0.68);
+    _cadD.copy(deltaC).normalize();
+    const angC = 0.55 * (G.dbs / 0.24) * dil * ch.fh * this.sign;
+    // 0.85 rad ≈ 49° de barrido tras el contacto: la prolongación del
+    // golpeo real acompaña 4-6 frames visibles antes de recuperar
+    const angF = -0.85 * (G.dft / 0.30) * ch.jit * ch.fh * this.sign;
+    const B = _cadA;   // carga: la rotación hacia atrás (lado fh), un pelín baja
+    B.set(_cadD.x * Math.cos(angC) + _cadD.z * Math.sin(angC), _cadD.y,
+      -_cadD.x * Math.sin(angC) + _cadD.z * Math.cos(angC))
+      .multiplyScalar(rBrazo).add(ch.hombro);
+    B.y = Math.max(0.45, B.y - 0.26 * dil);
+    const F = _cadB;   // prolongación: la rotación SIGUE pasado el contacto
+    F.set(_cadD.x * Math.cos(angF) + _cadD.z * Math.sin(angF), _cadD.y,
+      -_cadD.x * Math.sin(angF) + _cadD.z * Math.cos(angF))
+      .multiplyScalar(rBrazo * 1.06).add(ch.hombro);
+    F.y = Math.max(0.50, F.y + 0.10 * ch.jit);
+    ch.restP.copy(this.pos).add(this.prep).sub(ch.hombro);
+    if (ch.restP.lengthSq() < 0.0025) ch.restP.copy(B).sub(ch.hombro);
+    ch.restP.normalize().multiplyScalar(rBrazo * 0.85).add(ch.hombro);
+    _crK[0].copy(ch.restP);
+    _crK[1].copy(B);
+    _crK[2].copy(ch.contact); _crK[3].copy(F);
     ch.sC = _crRellena(ch.curva);      // arco del nudo contacto C
-    ch.s = 0;                          // el jinete SIEMPRE nace en cur
-  }
-
-  /** r99ter · CURVA DEL ACOMPAÑAMIENTO: terminado el contacto, el gesto ya
-   *  no re-recorre la curva de aproximación (iba hacia atrás por la carga):
-   *  nace una curva corta [cur → cruce F] que CONTINÚA el movimiento — el
-   *  dueño: «impulsa continuando la trayectoria previa curva». */
-  _armaFollow(F) {
-    const ch = this.chain;
-    if (!ch) return;
-    _crK[0].copy(ch.cur);
-    _crK[1].copy(ch.cur).lerp(F, 0.33);
-    _crK[2].copy(ch.cur).lerp(F, 0.67);
-    _crK[3].copy(F);
-    ch.sC = 0; ch.sContacto = 0; ch.s = 0;
-    _crRellena(ch.curva);
+    // velocidad de GOLPE del kind (el bloqueo acompaña suave, el smash late)
+    ch.vSwing = (4.5 + 3.3 * ch.jit) * G.vPeakMul;
+    if (nace) {
+      // el jinete NACE donde está la mano: proyección al arco de la curva
+      // nueva — continuidad perfecta al nacer (jamás un salto)
+      let mejor = 0, dMin = Infinity;
+      for (let i = 0; i < CR_N; i++) {
+        const dd = ch.cur.distanceToSquared(ch.curva.pts[i]);
+        if (dd < dMin) { dMin = dd; mejor = i; }
+      }
+      ch.s = ch.curva.len[mejor];
+    }
+    // en la regeneración ch.s NO se toca: la curva muda bajo el jinete y él
+    // conserva su marcha. El re-anclaje (s=0 cada frame con la carga detrás
+    // del contacto) lo hacía OSCILAR alrededor de la carga y APARCAR allí:
+    // ese era el «bloqueo en la misma posición» del dueño.
   }
 
   /** r91/r99ter · IMPACTO REAL: al DECIDIRSE el golpe (barrido de siempre)
@@ -1065,22 +1128,39 @@ export class OpponentAI {
       }
       this._armaCurva(_cadA.set(cx, cy, cz), tRem);
       // ── 2 · CRONÓMETRO: vC para llegar al punto dulce CON la bola ──
-      const dRem = Math.max(0.02, ch.sC);            // arco restante cur→C
+      const dRem = Math.max(0.02, ch.sC - ch.s);     // arco RESTANTE hasta C
       if (!ch.dRem0) ch.dRem0 = Math.max(dRem, 0.12);
       // ESPRINT: si el horario ya es inviable (el arco no cabe en tRem al
       // tope de gesto), el jinete va A FONDO (7,8 m/s) — persigue, no pasea.
       // Y si la bola se ALEJA (fue más rápida), el cierre exige cubrir el
       // arco MÁS lo que ella gana durante la persecución (término recede).
-      const vC = dRem > tRem * 7.8 ? 7.8
-        : THREE.MathUtils.clamp(dRem / Math.max(tRem, 0.06) + recede, 2.0, 7.8);
+      const vPaced = dRem > tRem * 7.8 ? 7.8
+        : THREE.MathUtils.clamp(dRem / Math.max(tRem, 0.06) + recede * 0.5,
+          1.8, 7.8);
+      // r100 · EL GOLPEO ACELERA: en la zona de golpeo (últimos 35 cm) la
+      // mano cruza el punto dulce a velocidad de GOLPE (con el sabor del
+      // kind: el bloqueo acompaña, el smash late) — el paso de paseo del
+      // re-anclaje convertía el golpeo en un empujón lento
+      const vC = dRem < 0.35 && ch.vSwing
+        ? Math.max(vPaced, ch.vSwing) : vPaced;
       const a = THREE.MathUtils.clamp(
         (vC * vC - ch.speed * ch.speed) / (2 * Math.max(dRem, 0.1)), 4, 60);
       ch.speed = Math.min(vC, ch.speed + a * dt);
       ch.phase = dRem > 0.30 ? 'back' : 'strike';
       ch.u = 1 - THREE.MathUtils.clamp(dRem / ch.dRem0, 0, 1);
-      // ── 3 · AVANCE sobre la curva (velocidad tangente REAL) ──
-      ch.s = Math.min(ch.sC, ch.speed * dt);         // no se pasa de C sin bola
+      // ── 3 · AVANCE PERSISTENTE sobre la curva (velocidad tangente REAL):
+      // el jinete conserva su posición en el arco — la aproximación es ya el
+      // primer tramo del golpeo, no un camino que se reinicia cada frame
+      _cadP.copy(ch.cur);
+      ch.s = Math.min(ch.sC, ch.s + ch.speed * dt);  // no se pasa de C sin bola
       _crPunto(ch.curva, ch.s, ch.cur);
+      // TOPE DE PASO (13 cm/frame, la garantía r99bis intacta): ni el
+      // morphing de la curva ni el swing lo superan jamás
+      const paso = _cadT.copy(ch.cur).sub(_cadP).length();
+      if (paso > 0.1305) {
+        _cadT.multiplyScalar(1 / paso);
+        ch.cur.copy(_cadP).addScaledVector(_cadT, 0.1305);
+      }
       _crTangente(ch.curva, ch.s, ch.vel).normalize().multiplyScalar(ch.speed);
       // HOMING final de la caza: a menos de 30 cm de la bola viva el paso se
       // dirige a ELLA (su posición dentro de 2 frames) — el retraso natural
@@ -1110,7 +1190,9 @@ export class OpponentAI {
         this._aplicaDisparo();
         ch.contactoHecho = true;
         ch.phase = 'follow';
-        this._armaFollow(ch.curva.pts[CR_N - 1].clone());   // seguir hacia F
+        // r100 · la MISMA curva continúa hacia F (sin curva nueva): el
+        // acompañamiento ES la continuación natural del golpeo — la mano
+        // sigue su marcha por el arco que ya traía, frenando suave
         return;
       }
       // ── 4b · la bola escapó (pasó de largo y se aleja): soltar la cadena
@@ -1304,7 +1386,12 @@ export class OpponentAI {
       // cerca de la mesa), el defensivo espera más atrás. bias en metros,
       // simétrico para los dos lados (inDist es normalizada por sign).
       inDist -= (this.style ? (this.style.bias || 0) : 0);
-      inDist = THREE.MathUtils.clamp(inDist, -0.45, DIMS.tableHalfLength + 0.15);
+      // r100 · el repliegue llega hasta 1,5 m tras la línea: con el brazo
+      // encadenado al hombro (radio ≤ 0,68 m) el CUERPO debe acercarse al
+      // intercepto profundo — el modelo vieo lo escondía estirando el brazo
+      // imposible (el «teletransporte» que veía el dueño). Un jugador real
+      // RETROCEDE con el golpe y golpea a alcance de brazo.
+      inDist = THREE.MathUtils.clamp(inDist, -1.5, DIMS.tableHalfLength + 0.15);
       const zClamp = baseline + inDist * -sign;
       let yClamp = THREE.MathUtils.clamp(this.predict.y + this.errY, 0.55, 1.55);
       const overTable =
@@ -1682,9 +1769,10 @@ export class OpponentAI {
     // follow-through es la misma curva frenando) en vez de perseguir un
     // fantasma detrás de la bola ya devuelta.
     if (this.chain && !this.chain.contactoHecho) {
+      // r100 · la MISMA curva continúa (contactoHecho congela la regenera-
+      // ción y el follow recorre su cola hasta F frenando): sin curva nueva
       this.chain.contactoHecho = true;
       this.chain.sContacto = this.chain.s;
-      this._armaFollow(this.chain.curva.pts[CR_N - 1].clone());
     }
     this._retPend = vReal;
   }

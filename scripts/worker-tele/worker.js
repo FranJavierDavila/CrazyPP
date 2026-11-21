@@ -103,6 +103,38 @@ async function init(env) {
   listo = true;
 }
 
+/* r111-b · CUPO D1 (7500→1101): el free tier de D1 limita las LECTURAS por
+ * día y el panel refresca el LED cada pocos segundos — cada refresco
+ * quemaba un COUNT(*) completo de «eventos» y cada latido de presencia
+ * barría «presencia» e «invitas» con dos DELETE. Ahora:
+ *   · el total del latido/salud va en CACHÉ perezosa por isolate (60 s):
+ *     sigue siendo público y honesto, pero deja de escanear la tabla
+ *     entera en cada petición;
+ *   · la purga de presencia/invitas corre 1 de cada 20 peticiones y el
+ *     recuento de presencia FILTRA POR TTL en SQL, así que sigue siendo
+ *     exacto aunque queden filas viejas sin purgar.
+ * El POST de eventos y el resumen con clave quedan INTACTOS (contrato
+ * del juego sin cambios). */
+let cacheTotal = { n: 0, ultimo: null, expira: 0 };
+const TOTAL_TTL = 60_000;
+async function totalEventos(env) {
+  if (Date.now() < cacheTotal.expira) return cacheTotal;
+  const fila = await env.DB.prepare(
+    "SELECT COUNT(*) n, MAX(rec) ultimo FROM eventos"
+  ).first();
+  cacheTotal = {
+    n: fila ? fila.n : 0,
+    ultimo: fila ? fila.ultimo : null,
+    expira: Date.now() + TOTAL_TTL,
+  };
+  return cacheTotal;
+}
+
+// purga de presencia/invitas: 1 de cada PURGA_CADA peticiones (r111-b)
+let purgaN = 0;
+const PURGA_CADA = 20;
+const tocaPurgar = () => purgaN++ % PURGA_CADA === 0;
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -437,10 +469,15 @@ async function social(request, env, url, metodo) {
   /* ------------------------------- PRESENCIA ------------------------- */
   if (url.pathname === "/api/presencia") {
     // purga perezosa: fuera los latidos muertos y las invitaciones viejas
-    await env.DB.batch([
-      env.DB.prepare("DELETE FROM presencia WHERE t < ?").bind(ahora - PRESENCIA_TTL),
-      env.DB.prepare("DELETE FROM invitas WHERE t < ?").bind(ahora - INVITA_TTL),
-    ]);
+    // (r111-b · 1 de cada 20 peticiones: cada DELETE barría la tabla;
+    // el recuento de abajo FILTRA POR TTL en SQL, así que el «n» sigue
+    // siendo exacto aunque queden filas viejas sin purgar)
+    if (tocaPurgar()) {
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM presencia WHERE t < ?").bind(ahora - PRESENCIA_TTL),
+        env.DB.prepare("DELETE FROM invitas WHERE t < ?").bind(ahora - INVITA_TTL),
+      ]);
+    }
 
     if (metodo === "POST") {
       const pid = cuerpo.pid;
@@ -464,12 +501,18 @@ async function social(request, env, url, metodo) {
            st=excluded.st, code=excluded.code, mj=excluded.mj, vis=excluded.vis, t=excluded.t`
       ).bind(pid, n, v, st, st === "sala" ? code : "",
         st === "sala" ? mj : "normal", st === "sala" ? vis : "pri", ahora).run();
-      const { n: total } = await env.DB.prepare("SELECT COUNT(*) n FROM presencia").first();
+      const { n: total } = await env.DB
+        .prepare("SELECT COUNT(*) n FROM presencia WHERE t >= ?")
+        .bind(ahora - PRESENCIA_TTL)
+        .first();
       return json({ ok: true, n: total, ts: ahora });
     }
 
     if (metodo === "GET") {
-      const { n: total } = await env.DB.prepare("SELECT COUNT(*) n FROM presencia").first();
+      const { n: total } = await env.DB
+        .prepare("SELECT COUNT(*) n FROM presencia WHERE t >= ?")
+        .bind(ahora - PRESENCIA_TTL)
+        .first();
       if (url.searchParams.get("lista") == null) {
         return json({ ok: true, n: total, ts: ahora });
       }
@@ -488,10 +531,13 @@ async function social(request, env, url, metodo) {
 
   /* ------------------------------- INVITAS --------------------------- */
   if (url.pathname === "/api/invita") {
-    await env.DB.batch([
-      env.DB.prepare("DELETE FROM presencia WHERE t < ?").bind(ahora - PRESENCIA_TTL),
-      env.DB.prepare("DELETE FROM invitas WHERE t < ?").bind(ahora - INVITA_TTL),
-    ]);
+    // r111-b · purga 1 de cada 20 (igual que /api/presencia)
+    if (tocaPurgar()) {
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM presencia WHERE t < ?").bind(ahora - PRESENCIA_TTL),
+        env.DB.prepare("DELETE FROM invitas WHERE t < ?").bind(ahora - INVITA_TTL),
+      ]);
+    }
 
     if (metodo === "POST") {
       const de = cuerpo.de, para = cuerpo.para, code = texto(cuerpo.code, 12).toUpperCase();
@@ -643,16 +689,14 @@ export default {
       // ronda 42 · SALUD pública (sin detalle): LED del panel. total y la
       // frescura del último lote recibido (MAX(rec)) — nada sensible.
       if (url.searchParams.get("salud") !== null) {
-        const filaS = await env.DB
-          .prepare("SELECT COUNT(*) n, MAX(rec) ultimo FROM eventos")
-          .first();
+        const t = await totalEventos(env); // r111-b · caché 60 s
         return json({
           ok: true,
           ts: Date.now(),
-          total: filaS ? filaS.n : 0,
-          ultimoRec: filaS ? filaS.ultimo : null,
-          haceSeg: filaS && filaS.ultimo
-            ? Math.round((Date.now() - filaS.ultimo) / 1000)
+          total: t.n,
+          ultimoRec: t.ultimo,
+          haceSeg: t.ultimo
+            ? Math.round((Date.now() - t.ultimo) / 1000)
             : null,
         });
       }
@@ -665,6 +709,8 @@ export default {
         url.searchParams.get("rank") === null   // r45 · el rank va detrás
       ) {
         const sid = url.searchParams.get("sid");
+        // r111-b · sin filtro sid → caché 60 s (el LED del panel); con sid
+        // sigue directo (uso puntual del dueño)
         const total = sid
           ? (
               await env.DB
@@ -672,7 +718,7 @@ export default {
                 .bind(sid)
                 .first()
             ).n
-          : (await env.DB.prepare("SELECT COUNT(*) n FROM eventos").first()).n;
+          : (await totalEventos(env)).n;
         return json({ ok: true, total, ts: Date.now() });
       }
 

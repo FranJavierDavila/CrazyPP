@@ -30,7 +30,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-RAIZ = Path(os.environ.get('CPP_RAIZ') or '/home/z/my-project/upload')   # r127: el mount vivo del repo (higiene) · r76: CPP_RAIZ para clones limpios
+RAIZ = Path(os.environ.get('CPP_RAIZ') or '/home/z/my-project')   # r109-b: el default vuelve al REPO VIVO (el fósil upload/ de la era r127 está eliminado) · CPP_RAIZ para clones
 SRC = RAIZ / 'src' / 'game'
 C00 = SRC / 'core' / 'c00_pre_three.js'
 BODY = SRC / '03_body.html'

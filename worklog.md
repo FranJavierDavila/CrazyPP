@@ -7585,3 +7585,100 @@ los «PARQUE» con dRem=0,00 son la espera EN el punto de encuentro, anticipaci�
 sellos de versión DINÁMICOS (VERSION.json); geometría de los arneses actualizada a la red
 real (la cuna asumía z=0). Nota r101 en VERSION.json · golden 58bb2597 (12.376.675 B) ·
 fase 183 «LA PALA HONESTA — CONTACTO REAL Y MESA INTACTA».
+
+---
+
+## Ronda 109 · SUPER CRIPTONITA — VOZ EN DOS SALAS Y CANDADO HONESTO (+ rescate del linaje y LIMPIEZA del repositorio) · V3.6.207-SDK6 — 2026-11-21
+
+**Lo que pidió el dueño**: «El Superpoder de criptonita le falta el audio tanto en el juego
+como en la sala Arcano (en ambos lugares debe estar en castellano e inglés y con la
+entonación propia de cada lugar). El Superpoder debe aparecer bloqueado (salvo con la regla
+del administrador que es el nombre de usuario: FORO3D, para el que TODO está
+desbloqueado).» Más: cristales que se ROMPEN al terminar el poder, y una ronda de limpieza
+del repositorio de GitHub (fuera lo no imprescindible >1 semana; solo ramas main y pages).
+
+**RESCATE PRIMERO (el linaje estaba en la cuerda floja)**: el árbol del juego quedó SIN
+COMMITEAR tras el reciclado del sandbox — los commits r101-r108 solo sobrevivían como
+respaldos «backup rX» en la rama `proyecto`, origin/main paraba en r100 (V3.6.198) y el
+árbol local era byte-idéntico al respaldo r108 MENOS 1.044 ficheros perdidos en el apagón
+de las 00:26 (entre ellos c09b/c09c — el build se habría roto — y 114 assets de
+championships que producción SÍ sirve). Restaurados desde `origin/proyecto` (diff 0). El
+rescate + la r109 van en el commit C1 (0eb662c) sobre r100. Push pendiente de GIT_TOKEN
+(murió con el reciclado, como en la ronda 31).
+
+**1 · LA VOZ** (petición literal): banco ES/EN Piper de la casa — davefx (ES) / lessac (EN),
+receta r44/r50 (silenceremove + loudnorm I=-16 → mp3 48 kHz mono 64k: 8.492 B ES · 7.340 B
+EN), generado LOCAL con el piper de siempre. Embebido como las voces de concesión
+(VOZ_PODER_CRIPTO / _EN). La entonación propia de cada lugar YA vivía en la arquitectura y
+la criptonita la hereda entera: en el JUEGO la voz ágil del selector (r58) al ciclar el
+joystick + la voz de concesión (_megaVoz → _poderVoz); en la sala ARCANO la voz SOLEMNE del
+oráculo (r47: cinta ×0,82 + paso-bajo 2,8 kHz + sala ceremonial por convolución) sobre el
+MISMO banco — cero bytes duplicados. Data-driven como los otros 15 poderes: la entry de
+PODERES_PALA recibe voz/vozEn y el caso cripto entra en _vozSelFuente (patrón r33/r58).
+
+**2 · EL CANDADO HONESTO** («debe aparecer bloqueado»): la r108 lo había dejado nacer
+DESBLOQUEADO y lo SEMBRABA en el almacenamiento del dueño (localStorage). r109 revierte la
+apertura de fábrica, sanea el fallback del catch a ['bolaloca'] y añade MIGRACIÓN: retira
+la cripto sembrada una vez para que el candado sea honesto. Se abre por la vía de siempre:
+la coronación de un campeonato libera AL AZAR uno de los cerrados. La BOLA LOCA conserva su
+siembra de serie (regla FASE 160 del dueño).
+
+**3 · LA REGLA DEL ADMINISTRADOR**: FORO3D — el ppDebugMode de la casa (c00,
+window.__PP_DEBUG) — devuelve TODO el registro en poderesDesbloqueados(): todos los
+superpoderes, siempre, para el admin. El resto del mundo respeta los candados.
+
+**4 · LOS CRISTALES, VERIFICADOS contra la fábrica REAL** («para desaparecer se rompen
+todos»): el arnés carga createCristalesCripto() de c07 en Node: nacen 8 → crecen → fin() los
+marca → animación de rotura (giro + encogido 0,3 s) → vivos()=0; y el rompe(i) individual
+del bote intacto. Ventana de 12 s intacta (c02 cripto: 12).
+
+**5 · ARNÉS r109 40/40** (scripts/arnes_cripto_r109.mjs): voz · conducto · candado · admin ·
+cristales REALES · sellos · bundle.
+
+**6 · BUMP 3.6.207-SDK6** (fase 184 «SUPER CRIPTONITA — VOZ EN DOS SALAS Y CANDADO
+HONESTO», nota r109): sellos c00/badge/hub/sw.js · game.html 12.502.469 B · golden 7c645570
+byte-exacto.
+
+**7 · KIT DE RELEASE v36207** (scripts/release-v36207, derivado del v36198 con guardas
+alineadas a las versiones REALES de los manifests del árbol — magia v32, locura v23, orbital
+v16 — y nota de versión r109): los 4 ZIPs construidos y verificados — COMPLETO 193.369.985
+B · ligera 58.910.171 B · CLOUDFLARE 193.354.581 B · SOLO 6.221 B — copiados a
+public/descargas/ y download/, listos para deploy_pages.py --release.
+
+**8 · LIMPIEZA DEL REPOSITORIO (r109-b: «todo el material NO IMPRESCINDIBLE con antigüedad
+superior a 1 semana se elimine definitivamente; temporales, copias, cache TODO»)**:
+  · HALLAZGO MAYOR: el árbol trackeaba la COPIA ÍNTEGRA del repo de la era r127 DENTRO de
+    upload/ (upload/scripts 2.971 ficheros, upload/public 473… — herencia del «mount vivo»):
+    ~4.600 ficheros del índice y 8,7 GB de disco, FUERA. El default CPP_RAIZ de
+    build/bump/deploy_pages apuntaba a ese fósil (peligro silencioso) → defaults corregidos
+    al repo vivo. En upload/ queda solo SuperPala_Criptonita.png (icono del dueño).
+  · toolchain TTS a su sitio canónico scripts/voice/ (piper + davefx + lessac, GITIGNORED):
+    fuera _r29_voice y voice_r65 — 1.024 ficheros trackeados menos.
+  · kits de release agotados: 2.055 ficheros (run principal) + 27 kits de la vieja
+    numeración (v304-v364, octubre) — se conservan los 39 kits con tag ≥ 2026-11-14
+    (v36156-v36198) + el v36207 nuevo. El camino vivo: deploy_pages.py --release.
+  · one-shots de voz/insertado/sonda (gen_voice/insertar_voz r65-78, _poder35-160,
+    _r26b/_r28/_r29/_r33/_r34/_r37, verify_r28, xr_*_r71, verifica_r52/53, _bq_p1_r121,
+    _probe_c05, _checkglobal_capturas, _qa_*.png) · servidos ×7 (75 MB) · guia-preview/
+    capturas_r99/tmp_check/_rescate/_recuperados_reciclado/editor_src/launch_assets/
+    __pycache__/staging-*.
+  · fósiles y copias rotatorias: _fosil_recuperacion (68 MB, trackeado), backup_rodado_r48,
+    backup_snapshot_v3627_r71, upload_backup_20261023, burla_extract, hallcabana_extract,
+    _ext, _junk_reciclaje, tmp_assets, tmp_frames.
+  · node_modules + .next (regenerables con bun install / next dev).
+  · RAW duplicados de la raíz (el juego usa las copias canónicas de public/).
+  · TOTAL: 5.486 ficheros fuera del índice · árbol 8.246 → ~2.900 trackeados · disco
+    11 GB → ~2 GB. TODO lo eliminado sigue en la HISTORIA de git (recuperable).
+  · .gitignore dura: /upload/, scripts/r109_voces/, tmp_owner_backup/. docs/ y mockups/ del
+    dueño ENTRAN al repo. tmp_owner_backup/ se CONSERVA (1 día, del dueño).
+
+**9 · LIMPIEZA DE GITHUB (r109-c, PENDIENTE DE GIT_TOKEN)**: scripts/limpieza_github_r109.py
+listo (simulación por defecto, --ejecutar para el real) — fuera las releases anteriores a
+2026-11-14 (~264 MB de ZIPs cada una), los 138 tags antiguos y las ramas proyecto /
+exp/live-tv / archive/main-web-1510 / archive/linea-b-v3627 / archive/overlay-r23-20261107
+(las dos archive con commits únicos se amarran antes a tags rescate/*). Quedan main y
+pages, como manda el dueño.
+
+**Pendiente de GIT_TOKEN**: push de main (FF desde r100) · `GIT_TOKEN=… python3
+scripts/deploy_pages.py --push --release` · `GIT_TOKEN=… python3
+scripts/limpieza_github_r109.py --ejecutar`.

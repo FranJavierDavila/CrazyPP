@@ -1,3 +1,0 @@
-# SHA256 del game.html que produjo esta división (3.6.166-SDK6, fase 171 · LA RED EN SERIO; sello actualizado
-# por bump_version.py desde 3.6.165-SDK6)
-6929c4902eca0ca154a3d70a2ae239bce888af8c59ee5932363962446f897603

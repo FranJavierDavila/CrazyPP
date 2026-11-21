@@ -31,7 +31,7 @@ import re
 import sys
 from pathlib import Path
 
-RAIZ = Path(os.environ.get('CPP_RAIZ') or '/home/z/my-project/upload')   # r127: el mount vivo del repo (higiene, como deploy_pages.py) · r76: CPP_RAIZ para clones limpios
+RAIZ = Path(os.environ.get('CPP_RAIZ') or '/home/z/my-project')   # r109-b: el default vuelve al REPO VIVO (el fósil upload/ de la era r127 está eliminado) · CPP_RAIZ para clones
 SRC = RAIZ / 'src' / 'game'
 GAME = RAIZ / 'public' / 'game.html'
 GOLDEN = SRC / 'GOLDEN_SHA256.txt'

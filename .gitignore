@@ -60,7 +60,9 @@ tool-results/
 public/descargas/
 scripts/staging-*/
 scripts/voice/
-upload/*.zip
+scripts/r109_voces/
+tmp_owner_backup/
+upload/
 /telemetria/
 # clave de lectura del worker de telemetría (NUNCA commitear)
 scripts/worker-tele/.clave-produccion

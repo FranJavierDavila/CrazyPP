@@ -39,7 +39,7 @@ import sys
 import threading
 import glob
 
-REPO = os.environ.get('CPP_RAIZ') or '/home/z/my-project/upload'   # r126: mount vivo · r76: CPP_RAIZ para clones limpios
+REPO = os.environ.get('CPP_RAIZ') or '/home/z/my-project'   # r109-b: el default vuelve al REPO VIVO (el fósil upload/ de la era r127 está eliminado)
 SITE = os.path.join(REPO, 'pages-site')
 OWNER_REPO = 'FranJavierDavila/CrazyPP'
 PAGES_URL = 'https://franjavierdavila.github.io/CrazyPP/'

@@ -7779,3 +7779,42 @@ trabajo» — push, release, limpieza y reintento del E2E del worker)**:
     de credencial CF) · el PAT entregado por chat DEBE ROTARSE (quedó en el
     historial de la conversación).
 
+
+**12 · INVENTARIO Y PROPUESTA DE LIMPIEZA DEL REPOSITORIO (r113 — SOLO ANÁLISIS, nada ejecutado)**:
+  · Petición del dueño: eliminar copias, carpetas temporales y ficheros innecesarios de las ramas
+    main y pages, organizando el árbol «sin romper nada, 100 % blindado». Respuesta entregada como
+    propuesta formal: download/Propuesta_limpieza_repositorio_r113.docx (10 págs., R1+GO-1, TOC,
+    hoja de aprobación por fases con placeholders 【Aprobar / No aprobar】). Postcheck 0 errores;
+    render verificado página a página.
+  · MÉTODO (scripts persistidos: inventario_limpieza_r113.py + analisis_fino_r113.py + JSON en
+    scripts/_inventario_r113.json): git ls-tree -r -l (tamaños exactos) · una pasada de git log
+    --name-only (fechas por fichero) · SHA-256 de todo lo trackeado <8 MB (105 grupos de duplicados
+    byte-exactos) · escaneo de referencias de los 27 candidatos de raíz contra 2.621 ficheros de
+    texto activos · verificación de secretos trackeados.
+  · DIAGNÓSTICO: main 2.837 ficheros / 537,2 MB. La rama pages (507 ficheros) está YA limpia (sitio
+    regenerado, historia aplastada — nada que hacer). El desorden está en: (a) RAÍZ — 6 pasted_* sin
+    ninguna referencia (2,45 MB), 14 medios byte-duplicados del asset vivo en public/ (11,9 MB),
+    6 variantes fuente que solo existen en tmp_owner_backup (4,4 MB), 5 ZIPs de eras antiguas
+    (9,3 MB) — las «referencias» del código de juego a la raíz resultaron ser comentarios históricos
+    (c02/c08/c11/c12) y cargas vía vbase que resuelven en public/assets/hall/; en producción los
+    ficheros de raíz ni se sirven; (b) tmp_owner_backup/ 104 ficheros 87,7 MB — 33,3 MB duplicados
+    + 37 únicos (~54 MB: _ext/paredes/, Melodia, burla.zip, Mando.glb); (c) scripts/ 2.029 ficheros
+    187 MB — vivos solo ~40 (arneses r93-r109 con fecha 21-11, baterías r60-r62, deploy, checks,
+    kit release-v36209, worker-tele, render_brazos) frente a ~1.500 one-off + ~31 MB de capturas de
+    eras (qa_shots_r104-r110, _r85_arte, _r30_assets, tmp_pala…); (d) menores: three-pkg/ huérfano
+    (el importmap carga three de CDN), examples/ huérfano (falso positivo de las URLs del CDN),
+    tests/ duplicado de .zscripts — los tres archivables; db/custom.db y .env están VIVOS
+    (DATABASE_URL → SQLite local) y mockups/ + docs/ son recientes del dueño.
+  · SEGURIDAD verificada: .clave-produccion del worker NO trackeada ✓ · .env trackeado pero solo
+    lleva DATABASE_URL local (recomendado .gitignore a futuro) ✓.
+  · PLAN PROPUESTO (F1-F6, cada fase = commit reversible + batería antes de continuar): F1 borrar 21
+    residuos seguros de raíz (−14,4 MB) · F2 crear fuentes/ (ZIPs + variantes + tmp_owner_backup,
+    opciones A/B) · F3 scripts/archivo/<era>/ para ~1.580 legacy (opción C: −40 MB de capturas/logs)
+    · F4 archivar three-pkg/examples/tests · F5 housekeeping local (137 tags locales muertos, git
+    gc, staging regenerables) · F6 verificación integral (batería 9/9, golden byte-exacto, smoke) +
+    push. Sin tocar public/ ni src/ → sin release necesaria.
+  · NOTA HONESTA incorporada a la propuesta: el borrado NO reduce el peso del REMOTO (los blobs viven
+    en la historia); la reducción física exigiría reescritura de historia (BFG/filter-repo) — ALTO
+    riesgo, expresamente NO propuesta; su paso previo sería el bundle de backup_completo.py.
+  · PENDIENTE DEL DUEÑO: aprobar fases (tabla 6 del documento) y opciones B/C. La ejecución no ha
+    empezado — así queda blindado todo hasta su confirmación por escrito.

@@ -106,20 +106,25 @@ def exigir(status, j, contexto):
 def multipart(worker_js, database_id, clave, extra_bindings=None):
     """Construye el multipart del PUT del script módulo.
 
-    extra_bindings: bindings adicionales que PRESERVAN valores ya en la
-    nube (secret_text sin "text": Cloudflare conserva el valor existente)
-    o los añaden nuevos (plain_text/secret_text con "text"). Así los
-    redeploys nunca borran TURN_API_TOKEN / METERED_* del dashboard.
+    extra_bindings: bindings adicionales con valor fresco del entorno
+    (plain_text/secret_text con "text").
+
+    keep_bindings por TIPO: todo secret_text ya existente en la nube que
+    NO venga en «bindings» conserva su valor (TURN_API_TOKEN, METERED_*)
+    — la API ya no acepta secret_text sin "text" (error 10021), así que
+    los redeploys nunca pierden secrets cuyo valor no se puede leer.
     """
     limite = "----cpp" + secrets.token_hex(12)
-    meta = json.dumps({
+    meta_dic = {
         "main_module": "worker.js",
         "compatibility_date": COMPAT_DATE,
+        "keep_bindings": ["secret_text"],
         "bindings": [
             {"type": "d1", "name": BINDING_D1, "id": database_id},
             {"type": "secret_text", "name": VAR_CLAVE, "text": clave},
         ] + list(extra_bindings or []),
-    }).encode()
+    }
+    meta = json.dumps(meta_dic).encode()
     mod = worker_js.encode()
     trozos = []
     for nombre, ctype, datos in (
@@ -245,6 +250,7 @@ def main():
     # ── 6 · bindings extra (preservar secrets del dashboard + variables ICE)
     paso(6, "bindings ICE existentes (preservar secrets, nunca se leen)")
     extras = []
+    preservar = []   # secret_text existentes → metadata.keep_bindings
     nombres_conocidos = {BINDING_D1, VAR_CLAVE}
     st, j = req("GET", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/settings", token)
     if st == 200 and isinstance((j.get("result") or {}).get("bindings"), list):
@@ -254,16 +260,18 @@ def main():
                 continue
             if b.get("type") == "secret_text":
                 if os.environ.get(nombre, "").strip():
-                    # el entorno aporta valor fresco con «text»; la API ya no
-                    # acepta secret_text sin text (error 10021)
+                    # el entorno aporta valor fresco con «text»: el segundo
+                    # bucle lo añade (la API ya no acepta secret_text sin
+                    # text — error 10021)
                     continue
-                # sin "text" → Cloudflare conserva el valor que ya había
-                extras.append({"type": "secret_text", "name": nombre})
+                # sin valor en el entorno → keep_bindings conserva el
+                # valor que ya hay en la nube (por nombre, sin leerlo)
+                preservar.append(nombre)
                 nombres_conocidos.add(nombre)
             elif b.get("type") == "plain_text":
                 extras.append({"type": "plain_text", "name": nombre, "text": b.get("text", "")})
                 nombres_conocidos.add(nombre)
-        ok(f"{len(extras)} binding(s) existente(s) preservado(s)")
+        ok(f"{len(preservar)} secret(s) → keep_bindings · {len(extras)} variable(s) copiada(s)")
     else:
         print("   aviso: settings no disponibles (HTTP {st}); continúo sin preservar")
     for nombre, tipo in (("TURN_API_TOKEN", "secret_text"),

@@ -1,0 +1,181 @@
+1 · SELLOS · v3.6.157-SDK6 · FASE 160 · EL APARTADO ARCANO
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6
+  ✗ FALLO: FASE 160
+  ✗ FALLO: faseNombre = EL APARTADO ARCANO
+  ✗ FALLO: tamaño del build: 11.504.235 B
+  ✗ FALLO: VERSION.json golden 1836d13f…
+  ✓ golden = sha256 real del build (byte-exacto)
+  ✗ FALLO: bundle con sello vigente
+  ✗ FALLO: sello c00 = 3.6.157-SDK6
+  ✗ FALLO: sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)
+  ✗ FALLO: badge V3.6.157-SDK6 en 03_body
+  ✗ FALLO: hub /descargas sellado a v36154-sdk6
+2 · ARTE · Arcano.png del dueño → public/assets/hall/arcano.png
+  ✓ assets/hall/arcano.png · sha256 6baa1288d99189c9… (byte-exacto)
+3 · EL BÚHO DEL ARCANO EN EL HALL · placa + destello en los ojos
+  ✓ fallback vectorial del búho pintado
+  ✓ arte REAL del dueño cargado por URL (assets/hall/arcano.png)
+  ✓ re-anclada r55: búho DATA-DRIVEN — c08 lee ARCANO_CFG.ui.buho (c02), esquina sup. dcha
+  ✗ FALLO: re-anclada r55/r58/r60: c12 importa ARCANO_CFG/CONFIG_MENU/CONFIG_DIFICULTAD de la capa de datos (c02)
+  ✓ destellos en los centros de los OJOS medidos del arte
+  ✓ destellos/cometas/motas ADITIVOS (glow azul)
+  ✓ LIGERO DESTELLO latiente en updateHallFx (dos fases)
+  ✓ el búho viaja en el userData del hall (raycast de c12)
+4 · EL ESPACIO INFINITO · bóveda con Vía Láctea · motas · cometas
+  ✓ montarArcano exportado
+  ✓ updateArcanoFx exportado
+  ✓ bóveda celeste pintada en canvas
+  ✓ re-anclada r40: cielo azul oscuro LISO (sin Vía Láctea ni estrellas)
+  ✓ gran bóveda esférica (BackSide, r=58)
+  ✓ montaMotas (nube de puntos)
+  ✓ 240 motas azules
+  ✓ motas que SERPENTEAN (base + fase por punto)
+  ✓ pool de cometas
+  ✓ cometas con HALO AZUL tras la cabeza
+  ✓ cometas OCASIONALES (prox aleatorio)
+  ✓ el búho SIGUE PRESENTE en el espacio
+  ✓ c12 monta el espacio arcano una vez (constructor)
+  ✓ el espacio nace OCULTO
+  ✓ cortina NEGRA renderOrder máximo
+  ✓ cortina que SIGUE a la cabeza en VR (0,42 m del ojo)
+  ✓ el espacio respira SÓLO encendido (coste cero fuera)
+  ✓ el gatillo del espacio manda PRIMERO en onSelectStart
+5 · LA GALERÍA · uno a uno · descripción · tipo · métricas · ‹ ›
+  ✓ drawArcanoPanel (panel de ficha)
+  ✓ drawArcanoFlecha (chevron con glow)
+  ✓ TIPO en la ficha (ataque/defensa/distracción)
+  ✓ MÉTRICAS en la ficha
+  ✓ candado: línea de estado BLOQUEADO
+  ✓ CANDADO dibujado (cuerpo + arco) sobre el icono
+  ✓ candado en TONOS AZULES (estética del búho)
+  ✓ índice AUTOMÁTICO contra el registro (un poder nuevo hereda galería)
+  ✓ SIN flecha izquierda en el 0 · SIN flecha derecha en el último
+  ✓ materialización uno a uno (pop elástico por ficha)
+  ✓ navegación ‹ › con bordes (nunca envuelve)
+  ✓ el candado lee el estado REAL de desbloqueo
+  ✓ ficha = nombre + descripción + métricas DEL REGISTRO (automático)
+  ✓ textos envueltos con measureText (nunca se cortan)
+6 · DOS VÍAS · hall→arcano→hall con desvanecimiento
+  ✓ gatillo del búho del salón (_arconoPulsa)
+  ✓ el búho manda antes que la placa de música
+  ✓ el búho responde TAMBIÉN con el menú abierto (rayo libre)
+  ✓ canje de estancias EN NEGRO (fundido)
+  ✓ entrada: hall fuera, espacio dentro
+  ✓ salida: espacio fuera, hall tal cual quedó
+  ✓ el búho del espacio DEVUELVE al salón
+  ✓ mensaje de vuelta al salón
+  ✓ seguridad: exitHall cierra el Arcano
+  ✓ hover del búho en el lazo del láser (como el icono de la música)
+7 · DESBLOQUEO · campeonato ganado → un poder al azar NUEVO
+  ✓ persistencia pp_poderes_v1
+  ✓ persistencia SANEADA contra el registro (id desconocido jamás sale)
+  ✓ azar que COMPRUEBA: todo desbloqueado → nada que repetir
+  ✓ superpoder AL AZAR entre los que aún tienen candado
+  ✓ hook SOLO en la CORONACIÓN (showChampConseguido)
+  ✓ coronación → _arconoCampeonGanado
+  ✓ megafonía de la revelación
+  ✓ la revelación viaja en el panel ¡CONSEGUIDO!
+  ✓ línea azul de revelación pintada bajo el título
+  ✗ FALLO: coronacion:true marcada en locura
+  ✗ FALLO: coronacion:true marcada en estacion_orbital
+  ✗ FALLO: coronacion:true marcada en magia
+  ✓ coronacion:true marcada en oeste
+  ✓ coronacion:true marcada en halloween
+  ✗ FALLO: coronacion:true marcada en _plantilla
+  ✓ oeste: la medalla LEYENDA NO desbloquea (solo 1 coronación marcada)
+  ✓ halloween: LEYENDA sin desbloqueo
+  ✗ FALLO: plantilla: LEYENDA sin desbloqueo (los campeonatos nuevos heredan)
+8 · i18n · arcono_* · descripciones y métricas de los 14 · ES/EN
+  ✓ i18n arcono_titulo ES/EN (×2)
+  ✓ i18n arcono_sub ES/EN (×2)
+  ✓ i18n arcono_pie ES/EN (×2)
+  ✓ i18n arcono_candado ES/EN (×2)
+  ✓ i18n arcono_desbloq ES/EN (×2)
+  ✓ i18n arcono_tipo_ataque ES/EN (×2)
+  ✓ i18n arcono_tipo_defensa ES/EN (×2)
+  ✓ i18n arcono_tipo_distraccion ES/EN (×2)
+  ✓ i18n arcono_metricas ES/EN (×2)
+  ✓ i18n arcono_indice ES/EN (×2)
+  ✓ i18n arcono_gana ES/EN (×2)
+  ✓ i18n arcono_todos ES/EN (×2)
+  ✓ i18n arcono_hint ES/EN (×2)
+  ✓ i18n arcono_salir ES/EN (×2)
+  ✓ i18n arcono_nuevo ES/EN (×2)
+  ✓ i18n arcono_ninguno ES/EN (×2)
+  ✓ i18n arc_desc_mega ES/EN
+  ✓ i18n arc_met_mega ES/EN
+  ✓ i18n dl_mega ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_efecto ES/EN
+  ✓ i18n arc_met_efecto ES/EN
+  ✓ i18n dl_efecto ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_iman ES/EN
+  ✓ i18n arc_met_iman ES/EN
+  ✓ i18n dl_iman ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_portal ES/EN
+  ✓ i18n arc_met_portal ES/EN
+  ✓ i18n dl_portal ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_clon ES/EN
+  ✓ i18n arc_met_clon ES/EN
+  ✓ i18n dl_clon ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_red ES/EN
+  ✓ i18n arc_met_red ES/EN
+  ✓ i18n dl_red ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_elec ES/EN
+  ✓ i18n arc_met_elec ES/EN
+  ✓ i18n dl_elec ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_fenix ES/EN
+  ✓ i18n arc_met_fenix ES/EN
+  ✓ i18n dl_fenix ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_crono ES/EN
+  ✓ i18n arc_met_crono ES/EN
+  ✓ i18n dl_crono ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_oscuridad ES/EN
+  ✓ i18n arc_met_oscuridad ES/EN
+  ✓ i18n dl_oscuridad ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_prisma ES/EN
+  ✓ i18n arc_met_prisma ES/EN
+  ✓ i18n dl_prisma ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_onda ES/EN
+  ✓ i18n arc_met_onda ES/EN
+  ✓ i18n dl_onda ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_salva ES/EN
+  ✓ i18n arc_met_salva ES/EN
+  ✓ i18n dl_salva ES/EN (Duelos Locos)
+  ✓ i18n arc_desc_ancla ES/EN
+  ✓ i18n arc_met_ancla ES/EN
+  ✓ i18n dl_ancla ES/EN (Duelos Locos)
+9 · DUELOS LOCOS · surto con desbloqueados · formas de receptor
+  ✓ DL_BASE: los tres NETCODE-SAFE de r84 siguen
+  ✓ DL_DUR: ventana por poder (mega 15, portal 8, oscuridad 20)
+  ✓ DL_SURTIDO: base + TUS desbloqueados
+  ✓ el surto lee el desbloqueo REAL
+  ✓ _dlArma: trigger de la casa con ent SINTÉTICO
+  ✓ armado por triggers (FX/marcas/tintes idénticos al campeonato)
+  ✓ _dlVentana: reloj de duelos (r54: el tick ya no la exige)
+  ✗ FALLO: re-anclada r55: 13 compuertas tick LEEN la puerta ÚNICA pwViva (cero patrones copiados)
+  ✓ re-anclada r55: la REGLA de la ventana vive en UN sitio (definición única)
+  ✓ recogida con FIN NATURAL al morir duelos
+  ✗ FALLO: re-anclada r54: 9 apagados cuando el contexto muere (sin on ni duelos)
+  ✓ re-anclada r55 · EFECTO del Arcano: spin ×3 en duelos (canal de la LOCA)
+  ✓ re-anclada r55 · IMÁN del Arcano: guía al punto dulce en duelos
+  ✓ MEGA del Arcano: pala ×1,30/radio ×1,38 en duelos (mecánica GIGANTE)
+  ✓ RECEPTOR: red alta y ritmo lento COMPARTIDOS, niebla en MI golpeo
+  ✓ RECEPTOR: la ONDA flojea MI próxima devolución (×0,75)
+  ✓ devolución floja aplicada en el cliente que la sufre
+  ✓ ANCLA: ESTRELLA los poderes entrantes (bloqueo)
+  ✓ bloqueo del Ancla con destello metálico
+  ✓ ONDA: el smash avisa al rival por cable fiable
+  ✓ PORTAL: el invitado portaliza en duelos (owner = quien golpea)
+  ✓ POSE bit 16 compartido por MEGA y GIGANTE (31 B intacto)
+  ✓ cable 'pow' tolerante: un id desconocido NUNCA rompe (builds viejos)
+10 · FÍSICA · c04/c05 byte-exacto (garantía de la casa)
+  ✗ FALLO: c04_fisica_ccd.js · sha256 d792b5e7… (INTACTO)
+  ✗ FALLO: c05_colisiones_ia_golpeo.js · sha256 b195a0db… (INTACTO)
+11 · BUNDLE · el juego en vivo lleva el apartado arcano
+  ✓ bundle: montarArcano embebido
+  ✓ bundle: sección arcano embebida
+  ✓ bundle: persistencia de desbloqueos embebida
+  ✓ bundle: surto extendido de Duelos Locos embebido
+
+=== r39 · v3.6.157-SDK6 · EL APARTADO ARCANO ===
+  147 comprobaciones verdes · 20 fallos

@@ -1,0 +1,8 @@
+{
+  "name": "gen-docx-auditoria",
+  "private": true,
+  "dependencies": {
+    "docx": "^9.16.0",
+    "image-size": "^2.1.0"
+  }
+}

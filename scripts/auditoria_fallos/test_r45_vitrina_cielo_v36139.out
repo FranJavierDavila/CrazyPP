@@ -1,0 +1,64 @@
+1 · CANDADO · la imagen del dueño, arriba a la izquierda
+  ✓ c08: carga perezosa de assets/hall/candado.png (la imagen manda)
+  ✓ c08: la textura del dueño sustituye al glifo vectorial (respaldo conservado)
+  ✓ c08: el glifo vectorial de la casa sigue pintado como FALLBACK
+  ✓ c08: el candado vive en la ZONA SUPERIOR IZQUIERDA (r47: un paso más cerca — jamás coplanar)
+  ✓ c08: HALO ROJO mayor (la silueta negra recorta contra él)
+  ✓ c08: el halo sigue siendo EL ROJO de siempre (bloqueo vivo)
+  ✓ asset: candado.png presente en public/assets/hall/ (14661 B)
+  ✓ c12: la sincronía de visibilidad con el estado REAL se conserva
+2 · CONSTELACIÓN · el contorno de palas.png trazado a bolígrafo
+  ✓ c08: los 16 trazos del contorno VIAJAN EN EL BUNDLE (sin descargas)
+  ✓ c08: el const lleva los puntos del arte (línea de ~4 KB · 231 puntos)
+  ✓ c08: montaConstelacion() — plano tangente + lienzo + estado
+  ✓ c08: el lienzo cuelga de un plano de 15 × 11,25 m
+  ✓ c08: la constelación brilla ADITIVA (luz sobre el cielo)
+  ✓ c08: TRES PASADAS de glow (halo→cuerpo→alma — la firma del búho)
+  ✓ c08: ciclo completo trazo→sostén→fundido (el trazo SE DESVANECE)
+  ✓ c08: renace en «unos segundos» (~10 s de cadencia con el dibujo)
+  ✓ c08: lugar aleatorio del cielo (azimut+altura) + giro y escala al azar
+  ✓ c08: SIEMPRE en el cielo (18°..47° sobre el horizonte)
+  ✓ c08: la textura vive SÓLO durante el trazado (sostén/fundido = opacity)
+  ✓ c08: la constelación viaja en userData.arcono (gobierno c12/ r45)
+  ✓ asset: palas.png servida también como archivo (referencia del dueño)
+3 · SKIN DE PALA EN RED · la personalización del invitado SE VE
+  ✓ c09: el HELLO v2 lleva `sp` (skin de pala propia)
+  ✓ c09: el receptor la sanea y la entrega al juego (JSON tolerante)
+  ✓ c12: onPeerPala recoge la skin del peer
+  ✓ c12: la pala REMOTA (aiPaddleMesh) se viste con la skin del peer
+  ✓ c12: la skin PROPIA sale del Pro Training real (incl. pieles de racha)
+  ✓ c13: el puente de pintura queda expuesto al juego
+  ✓ c13: pintaPalaExterna usa la MISMA caché de pieles (sin sangrado)
+  ✓ c13: el Pro Carbon sustituye la hoja (modelo alternativo) también en red
+  ✓ c12: al irse el rival, la pala remota vuelve a la clásica
+  ✓ c12: el estado nace limpio en el constructor
+4 · TELEMETRÍA · rankings mundiales en el panel
+  ✓ c00: cada evento firma el pid anónimo PERSISTENTE (pp_pid)
+  ✓ c00: y el NOMBRE elegido (pp_player_name, ≤12, ya público en presencia)
+  ✓ c12: RESULTADO del partido (modo, marcador, victoria) → rankings
+  ✓ c12: cada LOGRO nuevo deja huella (celebrate)
+  ✓ c12: PERFIL al entrar en VR
+  ✓ c12: PERFIL al entrar Y al cerrar la sesión VR (definido)
+  ✓ c12: el perfil lleva ELO, victorias, racha, estrellas, puntos y logros
+  ✓ worker: ?rank=1 NO lo devora el latido público
+  ✓ worker: el rank agrega perfil+resultado+logro (ventana ?dias, defecto 90)
+  ✓ worker: 4 tablas top-20 (ELO · victorias · puntos · logros)
+  ✓ worker: builds sin pid quedan fuera (compatibilidad limpia)
+  ✓ re-anclada r53: dashboard vivo (LOS JUGADORES fusiona sesiones+eventos)
+  ✓ re-anclada r53: la clave sigue por localStorage (jamás en la URL)
+  ✓ re-anclada r53: gráficas SVG propias (área por día, donuts, barras)
+  ✓ re-anclada r53: LED de salud público sondeando ?salud=1
+5 · CONSERVADO · nada del contrato se movió
+  ✓ c09: el campo sk de la bola (r21) INTACTO
+  ✓ c09: el campo hp del hall (r23) INTACTO
+  ✓ c09b: PROTO 3 intacto (cable compatible con 3.6.138)
+  ✓ c12: la fluidez r43 intacta (dtFis ×2 integraciones · forma PASO_TUNE r57)
+  ✓ c08: el Arcano r43 conservado (destellos + Salir/Exit)
+  ✓ c08: rig sin cambios (asunto c12)
+  ✓ c12: la esfera del rival en el RIG (fix r43 intacto)
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6 · FASE 160 (la vitrina del cielo)
+  ✓ game.html: la build lleva la r45 dentro
+
+=== r45 · v3.6.157-SDK6 · LA VITRINA DEL CIELO ===
+  54 comprobaciones verdes · 1 fallos
+FALLOS: revisar arriba

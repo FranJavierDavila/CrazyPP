@@ -1,0 +1,102 @@
+=== A · SINTAXIS POR FICHERO (node --check como .mjs) ===
+  ✓ c00_pre_three.js
+  ✓ c01_modelos_3d.js
+  ✓ c02_cfg_escena.js
+  ✓ c03_audio_voz.js
+  ✓ c04_fisica_ccd.js
+  ✓ c05_colisiones_ia_golpeo.js
+  ✓ c06_logros_stats_ia_rival.js
+  ✓ c07_escena_sala.js
+  ✓ c08_hall_hud.js
+  ✓ c09_red_netlink.js
+  ✓ c09b_red_nucleo.js
+  ✓ c09c_red_social.js
+  ✓ c10_menu_saque.js
+  ✓ c11_champloader.js
+  ✓ c12_pingponggame.js
+  ✓ c13_ui_arranque.js
+
+=== B · IMPORTS CROSS-FILE (nombre importado ∈ declaraciones del exportador) ===
+  imports cross-file revisados — problemas: 0
+
+=== C · COLISIONES DE DECLARACIONES TOP-LEVEL (ámbito compartido único) ===
+  ✓ sin duplicados
+
+=== D · EXTERNALES que el bundle debe proveer ===
+  ✗ THREE: importado por ['c01_modelos_3d.js'] · NO declarado top-level en core/
+
+=== E · ASSETS REFERENCIADOS vs public/ (case-sensitive) ===
+  ✗ c00_pre_three.js: /assets/insignia.png no existe
+  ✗ c01_modelos_3d.js: three/addons/loaders/GLTFLoader.js no existe
+  ✗ c01_modelos_3d.js: three/addons/environments/RoomEnvironment.js no existe
+  ✗ c02_cfg_escena.js: cabana.mp3 no existe
+  ✗ c02_cfg_escena.js: rascacielos.mp3 no existe
+  ✗ c03_audio_voz.js: ./c00_pre_three.js no existe
+  ✗ c03_audio_voz.js: ./c02_cfg_escena.js no existe
+  ✗ c05_colisiones_ia_golpeo.js: ./c04_fisica_ccd.js no existe
+  ✗ c06_logros_stats_ia_rival.js: ./c05_colisiones_ia_golpeo.js no existe
+  ✗ c07_escena_sala.js: assets/room/suelo.jpg no existe
+  ✗ c07_escena_sala.js: assets/room/techo.jpg no existe
+  ✗ c07_escena_sala.js: assets/room/fondo.jpg no existe
+  ✗ c07_escena_sala.js: assets/room/frente.jpg no existe
+  ✗ c07_escena_sala.js: assets/room/izquierda.jpg no existe
+  ✗ c07_escena_sala.js: assets/room/derecha.jpg no existe
+  ✗ c08_hall_hud.js: frente.jpg no existe
+  ✗ c08_hall_hud.js: fondo.jpg no existe
+  ✗ c08_hall_hud.js: izquierda.jpg no existe
+  ✗ c08_hall_hud.js: derecha.jpg no existe
+  ✗ c08_hall_hud.js: suelo.jpg no existe
+  ✗ c08_hall_hud.js: techo.jpg no existe
+  ✗ c08_hall_hud.js: arcano.png no existe
+  ✗ c08_hall_hud.js: candado.png no existe
+  ✗ c09_red_netlink.js: ./c01_modelos_3d.js no existe
+  ✗ c09_red_netlink.js: ./c09b_red_nucleo.js no existe
+  ✗ c11_champloader.js: ./c10_menu_saque.js no existe
+  ✗ c12_pingponggame.js: ./c03_audio_voz.js no existe
+  ✗ c12_pingponggame.js: ./c06_logros_stats_ia_rival.js no existe
+  ✗ c12_pingponggame.js: ./c07_escena_sala.js no existe
+  ✗ c12_pingponggame.js: ./c08_hall_hud.js no existe
+  ✗ c12_pingponggame.js: ./c09_red_netlink.js no existe
+  ✗ c12_pingponggame.js: ./c09c_red_social.js no existe
+  ✗ c12_pingponggame.js: ./c11_champloader.js no existe
+  ✗ c12_pingponggame.js: ./c13_ui_arranque.js no existe
+  ✗ c13_ui_arranque.js: ./c12_pingponggame.js no existe
+  rutas únicas revisadas: 52
+
+=== PROBLEMAS (36) ===
+[ALTO] externo sin proveedor: THREE importado por c01_modelos_3d.js y NO declarado top-level en ningún core/*.js
+[ALTO] asset c00_pre_three.js: NO EXISTE en public/: /assets/insignia.png
+[ALTO] asset c01_modelos_3d.js: NO EXISTE en public/: three/addons/loaders/GLTFLoader.js
+[ALTO] asset c01_modelos_3d.js: NO EXISTE en public/: three/addons/environments/RoomEnvironment.js
+[ALTO] asset c02_cfg_escena.js: NO EXISTE en public/: cabana.mp3
+[ALTO] asset c02_cfg_escena.js: NO EXISTE en public/: rascacielos.mp3
+[ALTO] asset c03_audio_voz.js: NO EXISTE en public/: ./c00_pre_three.js
+[ALTO] asset c03_audio_voz.js: NO EXISTE en public/: ./c02_cfg_escena.js
+[ALTO] asset c05_colisiones_ia_golpeo.js: NO EXISTE en public/: ./c04_fisica_ccd.js
+[ALTO] asset c06_logros_stats_ia_rival.js: NO EXISTE en public/: ./c05_colisiones_ia_golpeo.js
+[ALTO] asset c07_escena_sala.js: NO EXISTE en public/: assets/room/suelo.jpg
+[ALTO] asset c07_escena_sala.js: NO EXISTE en public/: assets/room/techo.jpg
+[ALTO] asset c07_escena_sala.js: NO EXISTE en public/: assets/room/fondo.jpg
+[ALTO] asset c07_escena_sala.js: NO EXISTE en public/: assets/room/frente.jpg
+[ALTO] asset c07_escena_sala.js: NO EXISTE en public/: assets/room/izquierda.jpg
+[ALTO] asset c07_escena_sala.js: NO EXISTE en public/: assets/room/derecha.jpg
+[ALTO] asset c08_hall_hud.js: NO EXISTE en public/: frente.jpg
+[ALTO] asset c08_hall_hud.js: NO EXISTE en public/: fondo.jpg
+[ALTO] asset c08_hall_hud.js: NO EXISTE en public/: izquierda.jpg
+[ALTO] asset c08_hall_hud.js: NO EXISTE en public/: derecha.jpg
+[ALTO] asset c08_hall_hud.js: NO EXISTE en public/: suelo.jpg
+[ALTO] asset c08_hall_hud.js: NO EXISTE en public/: techo.jpg
+[ALTO] asset c08_hall_hud.js: NO EXISTE en public/: arcano.png
+[ALTO] asset c08_hall_hud.js: NO EXISTE en public/: candado.png
+[ALTO] asset c09_red_netlink.js: NO EXISTE en public/: ./c01_modelos_3d.js
+[ALTO] asset c09_red_netlink.js: NO EXISTE en public/: ./c09b_red_nucleo.js
+[ALTO] asset c11_champloader.js: NO EXISTE en public/: ./c10_menu_saque.js
+[ALTO] asset c12_pingponggame.js: NO EXISTE en public/: ./c03_audio_voz.js
+[ALTO] asset c12_pingponggame.js: NO EXISTE en public/: ./c06_logros_stats_ia_rival.js
+[ALTO] asset c12_pingponggame.js: NO EXISTE en public/: ./c07_escena_sala.js
+[ALTO] asset c12_pingponggame.js: NO EXISTE en public/: ./c08_hall_hud.js
+[ALTO] asset c12_pingponggame.js: NO EXISTE en public/: ./c09_red_netlink.js
+[ALTO] asset c12_pingponggame.js: NO EXISTE en public/: ./c09c_red_social.js
+[ALTO] asset c12_pingponggame.js: NO EXISTE en public/: ./c11_champloader.js
+[ALTO] asset c12_pingponggame.js: NO EXISTE en public/: ./c13_ui_arranque.js
+[ALTO] asset c13_ui_arranque.js: NO EXISTE en public/: ./c12_pingponggame.js

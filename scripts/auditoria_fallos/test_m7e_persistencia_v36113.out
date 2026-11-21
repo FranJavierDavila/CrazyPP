@@ -1,0 +1,6 @@
+1 | export class ChampLoader {
+           ^
+ReferenceError: CONFIG_TORNEOS is not defined
+      at /tmp/c11_m7e_under_test.mjs:1:8
+
+Bun v1.3.14 (Linux x64 baseline)

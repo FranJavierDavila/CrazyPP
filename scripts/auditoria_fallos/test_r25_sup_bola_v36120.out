@@ -1,0 +1,161 @@
+1 · CORTINA · etapas 2/4 (pruebas de habilidad)
+  ✓ detector _poderesEnPrueba (testActive de los 5 módulos)
+  ✓ usa el gancho testActive del ChampLoader
+  ✓ megaEnabled corta el GATILLO en pruebas
+  ✓ _megaCharge no concede cargas en pruebas
+  ✓ updateMega cuelga la CORTINA cada frame en pruebas
+  ✓ la cortina existe
+  ✓ la cortina se llama desde updateMega
+  ✓ cortina: radio de golpeo restaurado + icono fuera
+  ✓ cortina apaga la ventana _megaT
+  ✓ cortina apaga la ventana _efectoT
+  ✓ cortina apaga la ventana _imanT
+  ✓ cortina apaga la ventana _portalT
+  ✓ cortina apaga la ventana _clonT
+  ✓ cortina apaga la ventana _redT
+  ✓ cortina apaga la ventana _elecT
+2 · REGISTRO · PODERES_PALA con 7 entradas
+  ✓ poder 'mega' en el registro
+  ✓ poder 'efecto' en el registro
+  ✓ poder 'iman' en el registro
+  ✓ poder 'portal' en el registro
+  ✓ poder 'clon' en el registro
+  ✓ poder 'red' en el registro
+  ✓ poder 'elec' en el registro
+  ✓ SÚPER RED lleva el PNG del dueño
+  ✓ SÚPER RED lleva voz ES/EN
+  ✓ SÚPER ELECTRICIDAD lleva el PNG del dueño
+  ✓ SÚPER ELECTRICIDAD lleva voz ES/EN
+  ✓ tope ×3 por poder intacto (máx 3 almacenados)
+  ✗ FALLO: concesión cada 20 toques intacta (bolsa aleatoria)
+  ✓ sorteo ALEATORIO sobre TODO el registro (red y elec entran)
+3 · SÚPER RED · la red crece al doble (10 s)
+  ✗ FALLO: RED_DUR = 10 s (regla de la casa)
+  ✓ RED_MUL = 2 («el doble del valor actual»)
+  ✓ DIMS.netTopY muta ×2 EN VIVO (física/IA/saque la leen — r95)
+  ✓ restauración EXACTA de la altura reglamentaria
+  ✓ _redTrigger (refresco honesto + gasto + arranque)
+  ✓ sin carga no arranca
+  ✓ re-acomodado visual (patrón relayoutMesa r95)
+  ✓ plano de la red estirado
+  ✓ cinta reposicionada arriba
+  ✓ postes crecidos
+  ✓ altura de nacimiento registrada UNA vez (idempotente)
+  ✓ fin con aviso
+  ✓ gatillo despacha red
+  ✓ modo ACTIVO del icono para red
+  ✓ anillo de tiempo para red
+  ✓ estela teñida de azul red
+  ✓ TRAIL_PODER.red
+  ✗ FALLO: red de seguridad: sin «on» la red se recoge YA
+  ✓ startMatch recoge la red (patrón _megaNormReset)
+  ✓ mensaje de activación
+  ✓ firma sonora propia (red tensada)
+  ✓ reserva del icono sin PNG
+4 · SÚPER ELECTRICIDAD · tormenta (nubes, rayos, noche, estallido)
+  ✗ FALLO: ELEC_DUR = 10 s
+  ✓ cadencia de descargas (ráfagas ≈35 rayos/ventana — r26)
+  ✓ radio de interceptación rayo↔bola
+  ✓ nubes a 1,5 m (spec literal)
+  ✓ posición Y de las nubes = mesa + 1,5 m
+  ✓ nubes SOBRE LA MITAD DEL RIVAL
+  ✓ _elecTrigger
+  ✓ tormenta pre-construida (pool reutilizable)
+  ✓ pool de 3 rayos de 9 puntos (cero asignaciones por rayo)
+  ✓ posiciones recicladas (needsUpdate)
+  ✓ descarga: nube → punto aleatorio del campo rival
+  ✓ objetivo dentro de la mesa rival
+  ✓ destello de 0,25 s por rayo
+  ✓ truenos alternos (2 muestras MP3)
+  ✓ escena casi nocturna (0,18)
+  ✓ destello CLAVA las luces (×3,4 pico)
+  ✓ fondo/niebla a noche (respetando passthrough)
+  ✓ passthrough respetado
+  ✓ CERO PointLight en la tormenta (lección v2.92: no recompila shaders) — el único del juego nació en la sala base
+  ✓ luces capturadas al activar
+  ✓ luces y fondo EXACTOS de vuelta al disiparse
+  ✓ colisión RÁPIDA punto-segmento (un hipot)
+  ✗ FALLO: si el rayo intercepta la bola → ESTALLA
+  ✓ _elecRompe
+  ✓ pedacitos: tetraedros negros
+  ✓ pedacitos NEGROS
+  ✓ hasta 10 pedacitos por estallido (pool de 12)
+  ✓ PUNTO por el cauce del árbitro (causa elec)
+  ✗ FALLO: bola rota oculta 0,9 s (nunca se toca el integrador)
+  ✓ chispas del impacto (re-anclada r26b: violetas si el rayo es atractor)
+  ✓ frame de la tormenta (nubes/rayos/pedacitos/cadencia)
+  ✗ FALLO: red de seguridad: sin «on» la tormenta se disipa YA
+  ✓ startMatch disipa la tormenta
+  ✓ tormenta en el precaliente (gatillo sin lag)
+  ✓ truenos precalentados sin sonar
+  ✓ voz de concesión precalentada
+5 · ASSETS · PNG + voces ES/EN + truenos (data-URI, cero red)
+  ✓ PNG_RED embebido (24.4 KB base64)
+  ✓ PNG_ELEC embebido (33.6 KB base64)
+  ✓ PNG_RED con cabecera PNG real
+  ✓ PNG_ELEC con cabecera PNG real
+  ✓ VOZ_PODER_RED embebido (6.6 KB)
+  ✓ VOZ_PODER_RED_EN embebido (6.3 KB)
+  ✓ VOZ_PODER_ELEC embebido (10.8 KB)
+  ✓ VOZ_PODER_ELEC_EN embebido (11.6 KB)
+  ✓ AUDIO_TRUENO_A embebido (14.8 KB)
+  ✓ AUDIO_TRUENO_B embebido (17.3 KB)
+  ✓ voz del selector reutiliza la de concesión (red)
+  ✓ voz del selector reutiliza la de concesión (elec)
+  ✗ FALLO: precaliente del selector cubre los 8 ids
+6 · CONTROL TOTAL · _bolaGuard (propiedad re-afirmada cada frame)
+  ✓ guardián _bolaGuard
+  ✓ llamado en animate (tras updateMega/_dlUpdate, antes de sync visual)
+  ✓ el brillo de bola sujetada también lo da la guardia
+  ✓ solo con red v2 (local y v1 intactos)
+  ✓ exenciones honestas: portal, bola estallada, calibración
+  ✓ hall y dispose fuera del guardián
+  ✓ mi saque: bola en MI mano
+  ✗ FALLO: anclada a la mano libre real
+  ✓ escritorio: punto de saque reglamentario (antes quedaba congelada)
+  ✓ saque del rival: mano si hay pose
+  ✓ pose de red con frescura <500 ms
+  ✗ FALLO: sin pose >0,6 s o bola oculta → punto reglamentario
+  ✓ punto de saque REGLAMENTARIO del rival (jamás invisible)
+  ✓ FSM idle en saque → HELD re-armado (nadie sin bola)
+  ✓ rallye: guardia anti-NaN
+  ✓ rallye: guardia anti-mundo (bola perdida)
+  ✓ bola perdida vuelve jugable a mi mitad
+  ✓ telemetría del guardián 1/5 s
+  ✓ evento bola_guard (mi_saque/rival_saque/rally_vis/rally_loca)
+  ✓ el guardián nunca tumba el frame
+  ✓ bandera _bgHold se renueva cada frame
+7 · I18N · 7 claves nuevas ES y EN
+  ✓ poder_red existe en ES y EN (2 idiomas)
+  ✓ poder_red con contenido
+  ✓ arc_red_go existe en ES y EN (2 idiomas)
+  ✓ arc_red_go con contenido
+  ✓ arc_red_fin existe en ES y EN (2 idiomas)
+  ✓ arc_red_fin con contenido
+  ✓ poder_elec existe en ES y EN (2 idiomas)
+  ✓ poder_elec con contenido
+  ✓ arc_elec_go existe en ES y EN (2 idiomas)
+  ✓ arc_elec_go con contenido
+  ✓ arc_elec_fin existe en ES y EN (2 idiomas)
+  ✓ arc_elec_fin con contenido
+  ✓ cause_elec existe en ES y EN (2 idiomas)
+  ✓ cause_elec con contenido
+  ✓ ES: red al doble
+  ✓ ES: tormenta sobre tu rival
+  ✓ ES: causa del punto eléctrico
+  ✓ EN: super net
+  ✓ EN: struck down by super electricity
+8 · GARANTÍAS · c04/c05/c09 sin una línea nueva (diff vs r24)
+  ✗ FALLO: c04_fisica_ccd.js: diff vacío contra la r24 (garantía intacta)
+  ✗ FALLO: c05_colisiones_ia_golpeo.js: diff vacío contra la r24 (garantía intacta)
+  ✗ FALLO: c09_red_netlink.js: diff vacío contra la r24 (garantía intacta)
+  ✓ SÚPER RED no toca el integrador (solo DIMS + visual)
+  ✓ SÚPER ELECTRICIDAD sin marcas nuevas en la bola (solo ocultación)
+  ✓ c07 sin r25 (la tormenta vive en c12)
+9 · SELLOS de la ronda
+  ✓ comentarios r25 (v3.6.120) por todo c12
+  ✓ spec literal del dueño citada (red)
+  ✓ spec literal del dueño citada (electricidad)
+  ✓ informe del dueño citado (bola online)
+
+R25 · 137 ok · 13 fallos

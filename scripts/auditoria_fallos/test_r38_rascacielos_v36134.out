@@ -1,0 +1,59 @@
+1 · SELLOS · v3.6.157-SDK6 · FASE 160 · EL SALÓN DE LA PARTIDA
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6
+  ✗ FALLO: FASE 160
+  ✗ FALLO: faseNombre = EL SALÓN DE LA PARTIDA
+  ✗ FALLO: tamaño del build: 11.504.235 B
+  ✗ FALLO: VERSION.json golden 1836d13f…
+  ✗ FALLO: golden 1836d13f… (build byte-exacto)
+  ✗ FALLO: bundle con sello vigente
+  ✗ FALLO: sello c00 = 3.6.157-SDK6
+  ✗ FALLO: sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)
+  ✗ FALLO: badge V3.6.157-SDK6 en 03_body
+  ✗ FALLO: hub /descargas sellado a v36154-sdk6
+2 · ARTE RASCACIELOS · sha256 byte-exacto (ZIP del dueño → public/assets/hall/rascacielos)
+  ✓ assets/hall/rascacielos/frente.jpg · sha256 96d7f5c7ff26f6cc…
+  ✓ assets/hall/rascacielos/fondo.jpg · sha256 2bcaca3ce10b45e6…
+  ✓ assets/hall/rascacielos/izquierda.jpg · sha256 8ee8655015704c20…
+  ✓ assets/hall/rascacielos/derecha.jpg · sha256 46955c95636a7107…
+  ✓ assets/hall/rascacielos/suelo.jpg · sha256 19a894e85061684e…
+  ✓ assets/hall/rascacielos/techo.jpg · sha256 d8d7a647d04fc5ac…
+  ✓ assets/hall/rascacielos/rascacielos.mp3 · sha256 81d284acb52cdee6…
+3 · CATÁLOGO · variante rascacielos · hito_won25 · i18n ES/EN
+  ✓ HALL_VARIANTES: entrada rascacielos con hito_won25
+  ✓ base = assets/hall/rascacielos/
+  ✓ musica = rascacielos.mp3 (pista del salón, canal c03 + icono c08)
+  ✓ 6 variantes en el catálogo (anfitrion, cabana, neon, observatorio, dojo, rascacielos)
+  ✓ _mesaLibre: hito_won25 = 25 victorias
+  ✓ _mesaLockTxt: hito_won25 → mesa_lock_won25
+  ✓ i18n hall_var_rascacielos ES/EN
+  ✓ i18n hint_hall_var_rascacielos ES/EN
+  ✓ i18n mesa_lock_won25 ES/EN
+  ✓ montarProps: mobiliario 3D del RASCACIELOS
+  ✓ mobiliario rascacielos: baliza VIVA (flicker en updateHallFx)
+  ✗ FALLO: selector del menú: rejilla dinámica (6 → 2 filas)
+4 · SALÓN DE LA PARTIDA · cadena campeonato→salón→por defecto
+  ✓ c08: buildHallFor (carga perezosa del vestido del salón)
+  ✓ c08: HALL_FICHAS — los 6 nombres exactos de la casa
+  ✓ c08: cadena EFECTIVA por cara — champ → hall → por defecto
+  ✓ c08: el salón calla en campeonato (mesaOcupada gana su decorado)
+  ✓ c08: carga a prueba de carreras (set sustituido → tex huérfano se libera)
+  ✓ c12: hallBasePartido (la base que lee champRoom)
+  ✓ c12: _hallVariantePartido (resolución local/anfitrión)
+  ✓ c12: invitado sin hp (build viejo) → cancha clásica (JSON tolerante)
+  ✓ c12: id del anfitrión SANEADO contra catálogo (sin candado — el dueño ya lo abrió)
+  ✓ c12: PUNTO ÚNICO onMatchStart → la pista del salón nace en TODA partida
+  ✓ c12: en la estancia del hall manda enterHall (sin pisar la visita)
+  ✓ c12: en campeonato la pista del salón CALLA (BSO del torneo)
+5 · SALÓN EN VIVO · evento fiable hallv (host→invitado)
+  ✓ c09: hallv en la lista de eventos FIABLES (_onRel)
+  ✓ c09: despacho hallv → game.onPeerHallVar
+  ✓ c12: el anfitrión anuncia el salón nuevo EN VIVO (sendRel fiable)
+  ✓ c12: sólo el anfitrión publica hallv
+  ✓ c12: onPeerHallVar (re-viste estancia/cancha + pista)
+  ✓ c12: id desconocido NO viste (saneo estricto, sin caer a museo por accidente)
+  ✓ c12: hp recibido con el invitado EN LA CANCHA re-arma la pista (onPeerHall)
+6 · GARANTÍA · física c04/c05 INTACTA (byte-exacto r26b)
+  ✗ FALLO: c04_fisica_ccd.js byte-exacto (d792b5e7…)
+  ✗ FALLO: c05_colisiones_ia_golpeo.js byte-exacto (b195a0db…)
+
+RESULTADO: 37 ✓ · 14 ✗

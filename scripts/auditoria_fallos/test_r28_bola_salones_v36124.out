@@ -1,0 +1,48 @@
+1 · ESTALLIDO · bola quieta (saque) JAMÁS se oculta
+  ✗ FALLO: guard de velocidad presente en _elecRompe
+  ✗ FALLO: umbral de vuelo |vel| > 0,5
+  ✗ FALLO: sólo se oculta si VOLANDO
+  ✗ FALLO: bola quieta: sin ventana de ocultación
+2 · CADUCIDAD · reaparición sin condición de estado
+  ✓ el guard viejo (state !== rally) está FUERA
+  ✓ caducidad re-enciende respetando sólo el tránsito de portal
+  ✓ la cura documenta el informe del dueño (r28)
+3 · FIN DE TORMENTA · red de seguridad sin estado
+  ✗ FALLO: _elecFin apaga _elecRotoT y re-enciende SIEMPRE con bola rota
+  ✓ comentario de la cura presente
+  ✓ el guard viejo de _elecFin está fuera
+4 · ESTELA · restaurada con el showTrail del dueño
+  ✓ estela restaurada en caducidad Y en _elecFin (2 sitios)
+5 · FÍSICA INTACTA · c04/c05 sha256
+  ✗ FALLO: c04 BYTE-EXACTO
+  ✗ FALLO: c05 BYTE-EXACTO
+6 · SALONES · 18 imágenes con SOF exacto
+  ✓ 18/18 imágenes con proporciones EXACTAS (hay 18)
+  ✓ neon/frente con detalle (más de 100 KB)
+  ✓ dojo/suelo con trama (más de 140 KB)
+7 · PROPS 3D · c08 monta y anima el mobiliario
+  ✓ bloque r28 documentado
+  ✓ neón: recreativas 3D
+  ✓ observatorio: globo + anillo
+  ✓ dojo: tōrō + bambúes
+  ✓ props montados al crear el hall
+  ✓ vestir() re-monta los props al cambiar de salón
+  ✓ props expuestos en ud.fx
+  ✓ flicker CRT en updateHallFx
+  ✓ globo/anillo giran en updateHallFx
+  ✓ cero PointLights nuevos (lección v2.92)
+8 · BUILD · sello vigente (re-anclada r33: 3.6.129-SDK6)
+  ✗ FALLO: VERSION.json = 3.6.129-SDK6 (re-anclada r33)
+  ✗ FALLO: FASE 131 (re-anclada r33)
+  ✗ FALLO: bundle con sello vigente (re-anclada r33)
+  ✓ golden coherente
+  ✓ tamaño coherente
+  ✗ FALLO: el bundle lleva las dos curas (bug + salones)
+9 · SANIDAD · sin regresiones
+  ✓ r27: bypass FORO3D vive
+  ✓ r26b: bola atractora vive
+  ✓ r26b: Súper Crono vive
+  ✓ r26: niebla densa vive
+  ✓ r26: barrera eléctrica vive
+
+R28 · 26 ok · 11 fallos

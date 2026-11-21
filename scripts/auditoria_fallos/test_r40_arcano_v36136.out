@@ -1,0 +1,71 @@
+1 · SELLOS · v3.6.157-SDK6 · FASE 160 · EL ARCANO A LA VISTA
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6
+  ✗ FALLO: FASE 160
+  ✗ FALLO: faseNombre = EL ARCANO A LA VISTA
+  ✓ SDK de la casa intacto (1.6.0)
+  ✗ FALLO: tamaño del build: 11.507.255 B (re-anclado r46)
+  ✗ FALLO: VERSION.json golden 42d07e64… (re-anclado r46)
+  ✓ golden = sha256 real del build (byte-exacto)
+  ✗ FALLO: bundle con sello vigente
+  ✗ FALLO: sello c00 = 3.6.157-SDK6
+  ✗ FALLO: sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)
+  ✗ FALLO: badge V3.6.157-SDK6 en 03_body
+  ✗ FALLO: hub /descargas sellado a v36154-sdk6
+2 · BÚHO · 0,78×0,52 → 0,585×0,39 (25 % más pequeño)
+  ✓ c08: la placa del hall mide 0,585×0,39 (×0,75 exacto)
+  ✓ c08: la petición del dueño vive en el comentario
+  ✓ c08: el tamaño viejo 0,78 ha desaparecido
+  ✓ bundle: el búho pequeño viaja al build
+  ✓ el ARTE del dueño sigue byte-exacto (arcano.png)
+  ✓ los destellos de los ojos escalan CON la placa (ARC_W/ARC_H)
+3 · CIELO LISO · SUELO INFINITO · losetas que mutan
+  ✓ c08: petición literal del dueño en la bóveda
+  ✓ c08: la Vía Láctea de la r39 RETIRADA
+  ✓ c08: el campo de 610 estrellas RETIRADO
+  ✓ c08: bóveda = degradado azul noche sutil (#03061a → #0a1a36)
+  ✓ c08: el SUELO INFINITO existe
+  ✓ re-anclada r41: plano 72 m con losetas PEQUEÑAS de 1,5 m (48×48)
+  ✓ c08: la banda azulada del dueño (#10284e → #1a3868, más clara que el cielo)
+  ✓ c08: la viñeta funde al color del horizonte (#0a1a36) — suelo sin costura
+  ✓ re-anclada r43: destellos en ambos ejes (90°) y ambos sentidos
+  ✓ c08: el suelo tumbado bajo los pies
+  ✓ re-anclada r43: tope de destellos (~9) y rellenos (~70) vivos
+  ✓ re-anclada r43: los rellenos nacen EN las celdas que el destello cruza
+  ✓ re-anclada r41: envolvente nace→aguanta→muere (apagado aleatorio)
+  ✓ re-anclada r43: lienzo vivo de trazos+rellenos repintado por frame
+  ✓ re-anclada r41: la BASE NEGRA del suelo sin niebla
+  ✓ c08: fog:false en TODAS las piezas del Arcano (bóveda+motas+2 cometas+búho+glints+panel+suelo)
+  ✓ c08: el suelo viaja en userData.arcono (updateArcanoFx lo anima)
+4 · ESCENARIO DELANTE · el grupo se planta sobre el anfitrión
+  ✓ c12: el diagnóstico del bug vive en el comentario
+  ✓ c12: el grupo arcano se PLANTA sobre los pies del jugador (XZ del rig)
+  ✓ c12: el escenario gira al YAW de la cabeza (−Z = donde mira el anfitrión)
+  ✓ c12: forward de la cabeza proyectado al suelo
+  ✓ c12: fallback honesto al centro del salón si algo falla
+  ✓ c12: ENTRAR lanza arcano.mp3 por el canal del salón
+  ✓ c12: el restaurador del aire del salón existe
+  ✓ c12: SALIR devuelve la pista del salón (SU variante / la del anfitrión)
+  ✓ arcano.mp3 del dueño BYTE-EXACTO en assets/hall/ (3,9 MB)
+  ✓ c08: la galería conserva su materialización (pop)
+5 · PULSABLES SIN MENÚ · el haz vive en las estancias
+  ✓ c12: updateMenu corre TAMBIÉN sin menú en salón y Arcano
+  ✓ c12: el panel del menú SÓLO es objetivo con el menú abierto
+  ✓ c12: el HAZ vive en las estancias aunque el menú duerma
+  ✓ c12: mirilla honesta de 3 m cuando el rayo no pisa el menú
+  ✓ c12: el gatillo del BÚHO vive en el salón SIN menú (r39, conservado)
+  ✓ c12: DENTRO del Arcano B no abre nada (el búho es la única puerta)
+  ✓ c12: el búho del espacio devuelve al salón (conservado r39)
+  ✓ c12: exitHall apaga la pista (también la del Arcano) al salir a la cancha
+6 · CONSERVADO · galería ‹ › candados desbloqueo duelos
+  ✓ flechas ‹ › SIN flecha en los extremos (0 y último del registro)
+  ✓ descripción + MÉTRICAS reales del registro i18n
+  ✓ tipo ataque/defensa/distracción con su color
+  ✓ candado azul translúcido en los bloqueados (descripciones legibles)
+  ✓ desbloqueo por coronación (azar sin repetición, pp_poderes_v1)
+  ✓ Duelos Locos con los desbloqueados (conservado)
+  ✓ el bundle lleva el suelo y el búho nuevo al build
+7 · GARANTÍA · física c04/c05 INTACTA (byte-exacto r26b)
+  ✗ FALLO: c04_fisica_ccd.js byte-exacto (d792b5e7…)
+  ✗ FALLO: c05_colisiones_ia_golpeo.js byte-exacto (b195a0db…)
+
+RESULTADO: 50 ✓ · 12 ✗

@@ -1,0 +1,101 @@
+1 · SPIN REALISTA · ganancia ×3.2 (c12)
+  ✓ ganancia 0.45 (|ω|=110 → ~7,9 rev/s · |ω|=25 → ~1,8 rev/s) — r56: dato en BOLA_TUNE
+  ✓ no queda rastro de la 0.14
+  ✓ rotateOnWorldAxis sobre el ω real (sin tocar)
+  ✓ reposo honesto intacto
+  ✓ comentario de la ronda junto al tick
+2 · SPIN LEGIBLE · costura + marca CRAZY en las 4 planas
+  ✓ c02 · skin 'blanca' lleva tex propia (ya no color liso)
+  ✓ c07 · bolaTex pinta 'blanca'
+  ✓ c02 · skin 'naranja' lleva tex propia (ya no color liso)
+  ✓ c07 · bolaTex pinta 'naranja'
+  ✓ c02 · skin 'menta' lleva tex propia (ya no color liso)
+  ✓ c07 · bolaTex pinta 'menta'
+  ✓ c02 · skin 'neon' lleva tex propia (ya no color liso)
+  ✓ c07 · bolaTex pinta 'neon'
+  ✓ c07 · marca de fábrica CRAZY (como las bolas reales)
+  ✓ c07 · costura ecuatorial (poliplástico)
+  ✓ ninguna skin de bola queda sin textura
+  ✓ la oficial sigue siendo blanca (regla del dueño intacta)
+3 · FÍSICA INTACTA · c04/c05 sin render ni hall
+  ✓ c04: no conoce ballMesh
+  ✓ c04: no rota meshes
+  ✓ c04: no conoce el hall variant
+  ✓ c04: no re-viste nada
+  ✓ c05: no conoce ballMesh
+  ✓ c05: no rota meshes
+  ✓ c05: no conoce el hall variant
+  ✓ c05: no re-viste nada
+4 · HALL CABAÑA · catálogo HALL_VARIANTES (c02)
+  ✓ 6 variantes (re-anclada r38: museo + cabaña + neón + orbital + dojo + rascacielos)
+  ✓ 'anfitrion': museo clásico, sin candado, arte base
+  ✓ 'cabana' se libera con el logro wins10 (10 victorias — o 6★)
+  ✓ 'cabana' apunta a su carpeta de arte
+  ✓ hallVariantePorId: fallback honesto al museo
+  ✓ comentario de la ronda en c02
+5 · HALL CABAÑA · createHall(base) + applyHallVariant (c08)
+  ✓ createHall admite la base de arte
+  ✓ base con respaldo honesto al museo
+  ✓ las 6 rutas nacen de la base
+  ✓ vestir(): re-vestido sin reconstruir el grupo
+  ✓ vestir() repinta las 6 claves
+  ✓ el arte anterior se libera (dispose, sin fugas)
+  ✓ userData.hall lleva base + vestir
+  ✓ applyHallVariant exportada
+  ✓ no-op seguro (cadena inválida o igual)
+6 · HALL CABAÑA · LS, candado y entrada (c12)
+  ✓ LS 'pp_hallvar' con guardia
+  ✓ _hallVarDef: variante validada
+  ✓ candado _mesaLibre: sin 10 victorias → museo (patrón skin de bola)
+  ✓ el constructor nace ya vestido con TU variante
+  ✓ enterHall elige arte: local → tuyo · visita → el del anfitrión
+  ✓ re-vestido en enterHall (a prueba de fallos)
+  ✓ case 'hall_var' en el dispatcher
+  ✓ elección persistente
+  ✓ al elegir se re-viste EN VIVO
+  ✓ candado en el handler (mensaje de _mesaLockTxt)
+  ✗ FALLO: rejilla de variantes en salahall (3 col — re-anclada r26b: 5 halls)
+  ✗ FALLO: candado visible en la UI
+  ✗ FALLO: selector oculto de visita (el arte manda el anfitrión)
+  ✓ hints de las dos variantes
+7 · HALL CABAÑA · hv viaja en hp (saneado)
+  ✓ hallProfile() envía hv (id de catálogo)
+  ✓ c09 sigue pasando hp entero (cero cambios de códec)
+  ✓ saneo: H_OK contra catálogo
+  ✓ hv saneado (string de catálogo o vacío)
+  ✓ de visita dentro del hall: el arte cambia AL VUELO con el hello
+8 · ASSETS · public/assets/hall/cabana/
+  ✓ frente.jpg presente y comprimido (158 KB)
+  ✓ frente.jpg es JPEG real
+  ✓ frente.jpg mantiene 1849×864 (mapeo 1:1 del plano)
+  ✓ fondo.jpg presente y comprimido (122 KB)
+  ✓ fondo.jpg es JPEG real
+  ✓ fondo.jpg mantiene 1849×864 (mapeo 1:1 del plano)
+  ✓ izquierda.jpg presente y comprimido (156 KB)
+  ✓ izquierda.jpg es JPEG real
+  ✓ izquierda.jpg mantiene 2395×864 (mapeo 1:1 del plano)
+  ✓ derecha.jpg presente y comprimido (186 KB)
+  ✓ derecha.jpg es JPEG real
+  ✓ derecha.jpg mantiene 2395×864 (mapeo 1:1 del plano)
+  ✓ suelo.jpg presente y comprimido (256 KB)
+  ✓ suelo.jpg es JPEG real
+  ✓ suelo.jpg mantiene 1296×1678 (mapeo 1:1 del plano)
+  ✓ techo.jpg presente y comprimido (180 KB)
+  ✓ techo.jpg es JPEG real
+  ✓ techo.jpg mantiene 1296×1678 (mapeo 1:1 del plano)
+  ✓ el bundle NO hardcodea arte (toda carga va por texPaths/catálogo)
+  ✓ c12 no hardcodea rutas de arte (fuente única: c02)
+9 · I18N · ES/EN (c00)
+  ✓ hall_var_lbl existe en ES y EN (2/2)
+  ✓ hall_var_anfitrion existe en ES y EN (2/2)
+  ✓ hall_var_cabana existe en ES y EN (2/2)
+  ✓ msg_hall_var existe en ES y EN (2/2)
+  ✓ hint_hall_var_a existe en ES y EN (2/2)
+  ✓ hint_hall_var_c existe en ES y EN (2/2)
+  ✓ ES: 'LA CABAÑA'
+  ✓ EN: 'THE CABIN'
+  ✓ ES: el hint cuenta el logro que la libera
+10 · SELLOS
+  ✓ c12 sellado a la ronda
+
+R24 · 86 ok · 3 fallos

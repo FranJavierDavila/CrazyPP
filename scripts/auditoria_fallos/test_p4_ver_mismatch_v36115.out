@@ -1,0 +1,34 @@
+1 · PPNET.verCompara
+  ✓ verCompara exportada por PPNET
+  ✓ builds idénticos → igual
+  ✓ builds distintos → aviso
+  ✓ versión corta del rival (últimos 6)
+  ✓ versión corta propia
+  ✓ rival sin build → aviso con ?
+  ✓ propio sin build → aviso con ?
+  ✓ entradas basura → aviso sin petar
+  ✓ no-cadenas → aviso sin petar
+  ✓ cadenas cortas sin recorte roto
+2 · c09_red_netlink.js · hello2
+  ✓ hello2 decide con verCompara
+  ✓ avisa EN LA SALA (y limpia pareja nueva)
+  ✓ telemetría ver_mismatch (una vez por sesión)
+  ✓ emisor de telemetría con guardia opcional
+  ✓ accesorio vivo buildMismatch()
+  ✓ flag de telemetría se resetea por sesión
+3 · c12_pingponggame.js · sala
+  ✓ onBuildMismatch en el juego
+  ✓ mensaje de pista (rules.message)
+  ✓ voz de megáfono
+  ✓ panel online consulta el estado vivo
+  ✗ FALLO: fila roja del panel con wrapText
+4 · c00_pre_three.js · i18n
+  ✓ net_build_voice ES
+  ✓ net_build_voice EN
+  ✓ net_build_warn sin la referencia muerta v3674
+  ✓ net_build_warn presente en ES y EN
+5 · deploy_pages.py · landing
+  ✓ JUGAR enlaza game.html?v=VERSION
+  ✓ único enlace game.html del landing, ya busteado
+
+26 ok · 1 fallos

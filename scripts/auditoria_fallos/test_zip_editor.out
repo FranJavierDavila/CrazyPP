@@ -1,0 +1,14 @@
+1 | // test_zip_editor.mjs — valida el generador ZIP del editor (crc32 + zipDeArchivos)
+2 | import { readFileSync, writeFileSync } from "node:fs";
+3 | 
+4 | const src = readFileSync("/home/z/my-project/scripts/editor_src/app3.js", "utf8");
+                ^
+ENOENT: no such file or directory, open '/home/z/my-project/scripts/editor_src/app3.js'
+    path: "/home/z/my-project/scripts/editor_src/app3.js",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at /home/z/my-project/scripts/test_zip_editor.mjs:4:13
+
+Bun v1.3.14 (Linux x64 baseline)

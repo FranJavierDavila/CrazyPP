@@ -1,0 +1,16 @@
+38 |   if (cond) { ok++; console.log('  ✓ ' + label); }
+39 |   else { fails++; console.log('  ✗ FALLO: ' + label); }
+40 | };
+41 | const cuenta = (pajaro, aguja) => pajaro.split(aguja).length - 1;
+42 | 
+43 | const c09 = readFileSync(`${RAIZ}/src/game/core/c09_red_netlink.js`, 'utf8');
+                 ^
+ENOENT: no such file or directory, open '/home/z/my-project/upload/src/game/core/c09_red_netlink.js'
+    path: "/home/z/my-project/upload/src/game/core/c09_red_netlink.js",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at /home/z/my-project/scripts/test_r37_red_v36133.mjs:43:13
+
+Bun v1.3.14 (Linux x64 baseline)

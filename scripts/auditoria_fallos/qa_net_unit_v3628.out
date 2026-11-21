@@ -1,0 +1,25 @@
+== 1 · INVOLUCIÓN DE POSICIÓN (posToNet ∘ posFromNet = id) ==
+  ✗ FALLO: 300 puntos aleatorios van y vuelven (err 1.25e+1)
+  ✓ la Y de red está anclada AL TAPETE (y-T)
+  ✓ el Z de red cruza el espejo (-3.2-z)
+== 2 · INVOLUCIÓN DE VECTOR Y SPIN ==
+  ✓ vectores (velocidad) van y vuelven
+  ✓ spin espeja DOS veces = original (Magnus coherente)
+== 3 · CUATERNIÓN: doble espejo R·q·R⁻¹ ≡ identidad ==
+  ✓ la pala rival NO llega rodada (doble conjugación = q)
+  ✓ identidad conjugada por el espejo sigue siendo un giro válido de 180°Y
+== 4 · PUREZA (los helpers no mutan la entrada) ==
+  ✓ quatFromNet no toca el paquete de red
+  ✓ posToNet no toca la posición local
+== 5 · REMAPEO DE CAUSAS (perspectiva) ==
+  ✓ own_you → own_opp en el invitado
+  ✓ own_opp → own_you (idempotente por pares)
+  ✓ causa neutra (LET) intacta
+  ✓ sin forGuest, sin cambio (host)
+== 6 · CÓDIGO DE SALA (alfabeto legible en el casco) ==
+  ✓ 200 códigos de 5 caracteres sin 0/O/1/I/L
+== 7 · ESPEJO DE UN BOTE REMOTO (drainNetwork) ==
+  ✓ el bote del rival cae al fondo de MI campo (z -2.0 < centro -1.6)
+  ✓ la altura del bote se re-ancla a MI tapa (sin mesa fantasma)
+
+RESULTADO: 15 OK · 1 fallos

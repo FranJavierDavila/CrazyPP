@@ -1,0 +1,85 @@
+1 · SELLOS · v3.6.129-SDK6 · FASE 131 (re-anclada r33)
+  ✗ FALLO: VERSION.json: 3.6.129-SDK6
+  ✗ FALLO: FASE 131 (re-anclada r33)
+  ✗ FALLO: faseNombre (re-anclada r33)
+  ✗ FALLO: sello c00 = 3.6.129-SDK6
+  ✗ FALLO: tamaño del build: 11.365.004 B
+  ✓ golden de 64 hex en VERSION.json
+  ✓ GOLDEN_SHA256.txt casa con VERSION.json
+  ✓ public/game.html es BYTE-EXACTO al golden
+2 · FÍSICA INTACTA · c04/c05 sin una línea nueva
+  ✗ FALLO: c04 sha256 = d792b5e7… (ancla r26b)
+  ✗ FALLO: c05 sha256 = b195a0db… (ancla r26b)
+3 · FÉNIX · fuego de magia v2.120 + estela + ascuas
+  ✓ tinta brasa 0xff5a12 (la del Wizard)
+  ✓ emisivo de brasa 0xff3608
+  ✓ tinta restaurada al acabar
+  ✓ bocanadas ~35/s con vida 0,34-0,54 s (receta magia)
+  ✓ las bocanadas SUBEN desde la bola
+  ✓ pool del fuego EN EL RIG (causa raíz del «no se ve»)
+  ✓ textura en SRGB (colores fieles)
+  ✓ _fenixEstallido: explosión radial de ascuas
+  ✓ 14 ascuas por estallido
+  ✓ chasquido de fuego en cada estallido
+  ✓ gancho TABLE (bote en mesa → ascuas)
+  ✓ gancho PADDLE (golpe de pala → ascuas)
+  ✓ las ascuas CAEN con gravedad
+  ✓ estela NARANJA (TRAIL_PODER.fenix)
+  ✓ re-anclada r33: boost ANULADO por el dueño — dinámica normal + falta 15 %
+  ✓ SIN halo en this.scene (el bug del desplazamiento, eliminado)
+4 · CRONO · anillos HIJOS de la bola (centrado exacto)
+  ✓ grupo de anillos = hijo de ballMesh
+  ✓ build idempotente (no duplica anillos)
+  ✓ re-anclaje en el trigger
+  ✓ sin position manual por frame (fuera el lag)
+  ✓ los anillos siguen ORBITANDO
+  ✓ 3 anillos RingGeometry intactos
+  ✓ 62 % con rampa 0,4 s y restauración EXACTA intactos
+5 · OSCURIDAD · bola negra + niebla 5s+2s + IA 35 % fuera
+  ✗ FALLO: ventana 20 s (spec literal)
+  ✓ IA: 35 % de bolas fuera (spec literal)
+  ✓ niebla 5 s + disipación ~2 s (spec literal)
+  ✓ radio 0,25 m ≈ medio metro / tres palas
+  ✓ 6 zonas simultáneas (varias durante la partida)
+  ✓ bola NEGRA con emisivo rojo fuego
+  ✓ HALO rojo fuego que respira pegado a la bola
+  ✓ gatillo con ventana propia de 20 s
+  ✓ niebla en la zona de golpeo · recicla la más vieja
+  ✓ zonas de niebla EN EL RIG
+  ✓ humo denso OSCURO (NormalBlending → tapa, -75 % visibilidad)
+  ✓ destellos rojos PARPADEAN (ojos en la oscuridad)
+  ✓ disipación expandiéndose 2 s
+  ✓ el frame corre con zonas vivas aunque la ventana muera
+  ✓ sólo rally (el saque de la IA no se sabotea)
+  ✓ sorteo del 35 % con el solucionador de la casa
+  ✓ el objetivo queda MÁS ALLÁ de la línea de fondo (fuera)
+  ✓ dispatch del gatillo
+  ✓ voz precalentada
+  ✓ estela roja oscuridad
+  ✓ HIELO ANULADO: cero rastros en c12
+  ✓ HIELO fuera de los textos de c00
+6 · REGISTRO · 10 poderes · iconos del dueño · voz Piper
+  ✗ FALLO: oscuridad en PODERES_PALA
+  ✓ hielo fuera del registro
+  ✓ icono del dueño SuperPala_Oscuridad embebido
+  ✓ iconos del dueño Fénix/Cronos embebidos (sustituyen a los generados)
+  ✓ voz ES+EN de FENIX embebida
+  ✓ voz ES+EN de CRONO embebida
+  ✓ voz ES+EN de OSCURIDAD embebida
+  ✓ voz ES+EN de RED embebida
+  ✓ voz ES+EN de ELEC embebida
+  ✓ cero assets del Hielo en el bundle
+7 · I18N · claves del nuevo poder
+  ✓ clave 'poder_oscuridad' en ES y EN (2/2)
+  ✓ clave 'arc_oscuridad_go' en ES y EN (2/2)
+  ✓ clave 'arc_oscuridad_fin' en ES y EN (2/2)
+  ✓ mensaje de activación con 20 s
+  ✓ nombre «SuperPoder de Oscuridad»
+8 · DOBLES · rival 2 con niebla y 35 %
+  ✓ niebla del rival 2 (dobles)
+  ✓ penalización del 35 % para el rival 2
+  ✓ sin candado de congelación en el rival 2
+9 · LECCIÓN R29 · fx de poderes SIEMPRE en el rig
+  ✓ cero fx de poderes añadidos a this.scene
+  ✓ recuento de scene.add estable (sin fugas nuevas)
+RESULTADO: 66 ok · 9 fallos

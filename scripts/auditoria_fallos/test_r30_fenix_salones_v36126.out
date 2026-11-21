@@ -1,0 +1,62 @@
+1 · SELLOS · v3.6.157-SDK6 · FASE 160
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6
+  ✗ FALLO: FASE 160
+  ✗ FALLO: faseNombre
+  ✗ FALLO: bundle con sello vigente
+  ✗ FALLO: sello c00 = 3.6.157-SDK6
+  ✗ FALLO: sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)
+  ✗ FALLO: tamaño del build: 11.504.235 B
+  ✗ FALLO: golden 10a24300… (build byte-exacto)
+  ✗ FALLO: game.html REAL casan con golden
+2 · FÉNIX · dinámica NORMAL — cero boost de rapidez
+  ✓ constante FENIX_MUL retirada
+  ✓ constante FENIX_CAP retirada
+  ✓ ningún multiplyScalar del poder
+  ✓ ningún tope de velocidad del poder
+  ✓ bloque 5.55b del boost desaparecido
+  ✓ re-anclada r55: ventana Fénix DATA-DRIVEN (ARCANO_CFG.ventanas.fenix = 10 s)
+  ✓ crónica del veto en el código
+3 · FÉNIX · efectos de fuego INTACTOS
+  ✓ fuego real del Wizard (_buildFenixFx)
+  ✓ explosión de ascuas (_fenixEstallido)
+  ✓ ascuas en los DOS eventos (table y paddle)
+  ✓ llamas por frame (_fenixFrame)
+  ✓ tinta brasa de la bola
+  ✓ estela naranja
+  ✓ tinta brasa del fuego de magia v2.120
+4 · FÉNIX · pequeña penalización IA (15 %, saques normales)
+  ✓ FENIX_OUT_P = 0.15
+  ✓ sorteo de falta en las DOS palas rivales (rival 1 + rival 2 dobles)
+  ✓ guard de rally en la penalización
+  ✓ helper _oscuridadFalla reutilizado (2 llamadas Fénix)
+  ✓ el saque de la IA no se toca
+  ✓ dobles: rival 2 incluido
+5 · SALONES IA · 18 planos, spec EXACTA
+  ✓ neon/frente.jpg 1849×864 exacto
+  ✓ neon/fondo.jpg 1849×864 exacto
+  ✓ neon/izquierda.jpg 2395×864 exacto
+  ✓ neon/derecha.jpg 2395×864 exacto
+  ✓ neon/suelo.jpg 1296×1678 exacto
+  ✓ neon/techo.jpg 1296×1678 exacto
+  ✓ neon: riqueza 3.74 MB > arte plano r28
+  ✓ observatorio/frente.jpg 1849×864 exacto
+  ✓ observatorio/fondo.jpg 1849×864 exacto
+  ✓ observatorio/izquierda.jpg 2395×864 exacto
+  ✓ observatorio/derecha.jpg 2395×864 exacto
+  ✓ observatorio/suelo.jpg 1296×1678 exacto
+  ✓ observatorio/techo.jpg 1296×1678 exacto
+  ✓ observatorio: riqueza 2.66 MB > arte plano r28
+  ✓ dojo/frente.jpg 1849×864 exacto
+  ✓ dojo/fondo.jpg 1849×864 exacto
+  ✓ dojo/izquierda.jpg 2395×864 exacto
+  ✓ dojo/derecha.jpg 2395×864 exacto
+  ✓ dojo/suelo.jpg 1296×1678 exacto
+  ✓ dojo/techo.jpg 1296×1678 exacto
+  ✓ dojo: riqueza 3.17 MB > arte plano r28
+6 · GENERADORES r30 (IA + postproceso)
+  ✓ _r30_gen_halls.mjs (18 prompts IA con estilo Locura/Magia)
+  ✓ _r30_postproceso_halls.py (recorte EXACTO + realce)
+7 · FÍSICA · c04/c05 byte-exacto contra la r26b
+  ✗ FALLO: c04_fisica_ccd.js = d792b5e7…
+  ✗ FALLO: c05_colisiones_ia_golpeo.js = b195a0db…
+RESULTADO: 43 ok · 11 fallos

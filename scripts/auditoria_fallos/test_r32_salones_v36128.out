@@ -1,0 +1,58 @@
+1 · SELLOS · v3.6.157-SDK6 · FASE 160 · SALONES DEL DUEÑO
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6
+  ✗ FALLO: FASE 160
+  ✗ FALLO: faseNombre = SALONES DEL DUEÑO
+  ✗ FALLO: tamaño del build: 11.526.764 B
+  ✗ FALLO: VERSION.json golden 1836d13f…
+  ✗ FALLO: golden 10a24300… (build byte-exacto)
+  ✗ FALLO: bundle con sello vigente
+  ✗ FALLO: sello c00 = 3.6.157-SDK6
+  ✗ FALLO: sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)
+  ✗ FALLO: badge V3.6.157-SDK6 en 03_body
+  ✗ FALLO: hub /descargas sellado a v36154-sdk6
+2 · ARTE DEL DUEÑO · sha256 byte-exacto (ZIPs → public/assets/hall)
+  ✓ los 18 planos visten el ARTE DEL DUEÑO (18/18)
+3 · MÚSICA DEL SALÓN · pistas + canal hall en c03
+  ✓ las 3 pistas del dueño instaladas (3/3)
+  ✓ c02 · NEÓN lleva arcade.mp3
+  ✓ c02 · OBSERVATORIO lleva observatorio.mp3
+  ✓ c02 · DOJO lleva dojo.mp3
+  ✓ c02 · anfitrion y cabana SIN pista (el museo y la Cabaña callan)
+  ✓ c03 · setHallWanted(wanted, url)
+  ✓ c03 · startHallMusic/stopHallMusic
+  ✓ c03 · setHallMute (icono de la pared)
+  ✓ c03 · caché de buffers por URL (_hallBufs)
+  ✓ c03 · silencio del salón PERSISTENTE (pp_hallmus)
+  ✓ c03 · volumen del salón escala por el canal MÚSICA (musicVol, r95 · forma CONFIG_AUDIO r59)
+  ✓ c03 · log de la pista lista (familia de la casa)
+4 · PRIORIDAD · la música del salón manda sobre la del menú
+  ✓ startMusic: el menú NO nace con la pista del salón viva (guard r32)
+  ✓ startHallMusic: RETIRA la música del menú si estaba sonando
+  ✓ tryFreshRunning: la pista del salón rearranca ANTES que la del menú
+  ✓ startHallMusic: guard completo (hallWanted sin mute)
+5 · ICONO DE LA PARED · placa vectorial + gatillo VR
+  ✓ c08 · drawHallMusica (pintor vectorial exportado)
+  ✓ c08 · userData.hall registra `musica` (mesh+cv+tex+repinta)
+  ✓ c08 · placa en la pared FRONTAL, sobre la de insignias
+  ✓ c08 · repinta(mute, visible): estado + visibilidad
+  ✓ c08 · hover del rayo agranda la placa con suavizado (updateHallFx)
+  ✓ c12 · raycast PROPIO al icono (no pisa el far=2,5 del menú)
+  ✓ c12 · gatillo en los DOS sitios de onSelectStart (menú abierto + hall)
+  ✓ c12 · con menú abierto, la placa manda SOLO si no hay botón (hov<0)
+  ✓ c12 · repintado del icono en drawHall + hall_var + pulsa (+def)
+  ✓ c12 · enterHall: la variante ACTIVA pide su pista
+  ✓ c12 · exitHall: la pista muere con la estancia
+  ✓ c12 · hall_var: cambio de salón EN VIVO
+  ✓ c12 · visita online: el salón del ANFITRIÓN suena como el suyo
+  ✓ c12 · mensaje i18n al conmutar
+  ✓ i18n · msg_hallmus en ES y EN
+6 · ROBUSTEZ · todo a prueba de fallos
+  ✓ c02 · el registro documenta la música del salón
+  ✓ c03 · el invariante UNA MELODÍA documentado en el nuevo sentido
+  ✓ fallos suaves: icono y pista JAMÁS rompen el salón
+  ✓ exitHall limpia el hover del icono (no queda congelado)
+7 · FÍSICA INTACTA · c04/c05 byte-exacto contra la r26b
+  ✗ FALLO: c04_fisica_ccd.js = d792b5e7… (r26b)
+  ✗ FALLO: c05_colisiones_ia_golpeo.js = b195a0db… (r26b)
+
+R32 · SALONES DEL DUEÑO · 36 OK / 13 FALLOS

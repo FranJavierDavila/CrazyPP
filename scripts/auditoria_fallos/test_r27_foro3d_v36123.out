@@ -1,0 +1,52 @@
+1 · NÚCLEO · clave foro3d → window.__PP_DEBUG
+  ✓ ppDebugMode() compara en minúsculas (FORO3D vale)
+  ✓ el núcleo publica window.__PP_DEBUG al arrancar
+  ✓ re-evaluación en vivo al guardar el nombre (ppDebugRefresh)
+  ✓ la clave está en el BUNDLE generado
+2 · SALONES + ASPECTOS · _mesaLibre() consulta __PP_DEBUG
+  ✓ el bypass vive ARRIBA del todo en _mesaLibre() (cubre 14 llamadas)
+  ✓ con __PP_DEBUG devuelve true ANTES de mirar hitos
+  ✓ los 3 hitos r26b siguen en el candado (regresión)
+  ✓ hito_elo1100 + hito_aces5 intactos
+  ✓ aspectos mesa Oro/Carbono intactos
+  ✓ orden correcto: bypass → hitos (el debug GANA)
+3 · HALLOWEEN · maxIdx debug-aware
+  ✓ halloween documenta el parche r27
+  ✓ con __PP_DEBUG el mapa muestra TODAS las etapas
+  ✓ el criterio clásico (sin debug) queda INTACTO
+  ✓ rejugar() sigue guardado para jugadores normales
+4 · ESTACIÓN ORBITAL · replayData maxIdx debug-aware
+  ✗ FALLO: estacion_orbital documenta el parche r27
+  ✗ FALLO: con __PP_DEBUG maxIdx = 4 (mapa completo)
+  ✓ el criterio clásico (sin debug) queda INTACTO
+  ✓ el salto de etapa sigue anclado al progreso (regresión)
+5 · OESTE/LOCURA/MAGIA · patrón ppDbg sin tocar
+  ✓ oeste conserva su helper ppDbg()
+  ✓ oeste mantiene maxIdx: ppDbg() ? 4 (v2.108)
+  ✓ locura conserva su helper ppDbg()
+  ✓ locura mantiene maxIdx: ppDbg() ? 4 (v2.108)
+  ✓ magia conserva su helper ppDbg()
+  ✓ magia mantiene maxIdx: ppDbg() ? 4 (v2.108)
+6 · C11 · candado de campeonatos (Estación Orbital)
+  ✗ FALLO: LOCKED intacto (regresión)
+  ✓ isLocked() consulta ppDebugMode (foro3d entra)
+  ✓ rótulo «MODO DEPURACIÓN» en el visor sigue vivo
+7 · INTERCEPTOR · nada se persiste con foro3d
+  ✓ descarta pp_champ_* (cubre halloween y estacion_orbital) y pp_arcade_*
+  ✓ descarta ranking mundial y stats reales
+8 · FÍSICA INTACTA · c04/c05 sha256 = r26b (9ba1d4a)
+  ✗ FALLO: c04_fisica_ccd.js BYTE-EXACTO r26b
+  ✗ FALLO: c05_colisiones_ia_golpeo.js BYTE-EXACTO r26b
+9 · BUILD · sello vigente (re-anclada r33: 3.6.125)
+  ✗ FALLO: VERSION.json = 3.6.129-SDK6 (re-anclada r33)
+  ✗ FALLO: FASE 131 (re-anclada r33)
+  ✗ FALLO: el bundle lleva el sello vigente (re-anclada r33)
+  ✓ golden refrescado y coherente con VERSION.json
+  ✓ tamaño del bundle coherente
+10 · SANIDAD · sin regresiones de ronda
+  ✓ r26b: bola atractora sigue en el bundle
+  ✓ r26b: Súper Fénix sigue en el bundle
+  ✓ r26b: Súper Crono sigue en el bundle
+  ✓ r26b: Salón Neón Arcade sigue en el bundle
+
+R27 · 32 ok · 8 fallos

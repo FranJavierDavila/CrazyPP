@@ -1,0 +1,183 @@
+1 · BOLA ATRACTORA · +25 % de los rayos la buscan
+  ✓ ELEC_ATRAE_P = 0.25 (un rayo de cada cuatro)
+  ✓ tinte violeta del rayo cazador
+  ✓ bandera de modo ATRACTORA por rayo
+  ✓ sólo busca bolas sobre la MITAD del rival
+  ✓ y dentro del ancho de pista
+  ✓ sorteo del 25 % por rayo
+  ✓ la bola en tránsito de portal no se caza
+  ✓ el rayo cazador TERMINA EN LA BOLA
+  ✓ objetivo = posición VIVA de la bola
+  ✓ tinte violeta por rayo (material individual)
+  ✓ jitter mínimo: el cazador va RECTO (se ve curvarse)
+  ✓ chispas violetas en el blanco cazado
+  ✓ docstring del rayo actualizada
+  ✓ colisión y ESTALLIDO intactos (patrón r25)
+2 · REGISTRO · PODERES_PALA llega a 10 entradas
+  ✓ poder 'mega' en el registro
+  ✓ poder 'efecto' en el registro
+  ✓ poder 'iman' en el registro
+  ✓ poder 'portal' en el registro
+  ✓ poder 'clon' en el registro
+  ✓ poder 'red' en el registro
+  ✓ poder 'elec' en el registro
+  ✓ poder 'fenix' en el registro
+  ✓ poder 'crono' en el registro
+  ✓ poder 'oscuridad' en el registro
+  ✓ insignia circular PNG_PODER_FENIX embebida (PNG) 
+  ✓ voz ES de FENIX embebida (MP3)
+  ✓ voz EN de FENIX embebida (MP3)
+  ✓ insignia circular PNG_PODER_CRONO embebida (PNG) 
+  ✓ voz ES de CRONO embebida (MP3)
+  ✓ voz EN de CRONO embebida (MP3)
+  ✓ insignia circular PNG_PODER_OSCURIDAD embebida (PNG) 
+  ✓ voz ES de OSCURIDAD embebida (MP3)
+  ✓ voz EN de OSCURIDAD embebida (MP3)
+  ✓ re-anclada r55: ventanas DATA-DRIVEN — fénix/crono 10 s · oscuridad 20 s (ARCANO_CFG)
+  ✓ FÉNIX re-anclada r30: boost +18 % ANULADO (dinámica normal)
+  ✓ CRONO: bola al 62 % (38 % más lenta)
+  ✓ CRONO: rampa suave de entrada/salida
+  ✓ OSCURIDAD: IA manda fuera el 35 % (spec literal)
+  ✓ OSCURIDAD: niebla 5 s plena + ~2 s de disipación
+3 · SÚPER FÉNIX · fuego REAL del Wizard (+18 %, bocanadas, ascuas)
+  ✓ _fenixTrigger (refresco honesto + gasto)
+  ✓ sin carga no arranca
+  ✓ _buildFenixFx: pool de fuego de la bola
+  ✓ núcleo blanco-caliente de la textura de fuego (magia v2.120)
+  ✓ borde que se funde (fuego real, no cartón)
+  ✓ fuego ADITIVO
+  ✓ pool en el RIG (lección r29: this.scene desplazaba la llama)
+  ✓ tinta brasa de la bola (patrón magia _startFuego)
+  ✓ color brasa 0xff5a12 (el del Wizard)
+  ✓ tinta original restaurada al acabar
+  ✓ _fenixFrame: bocanadas nacen en la bola y suben
+  ✓ ~35 bocanadas/s (cadencia del Wizard)
+  ✓ _fenixEstallido: EXPLOSIÓN de ascuas al golpear
+  ✓ gancho TABLE: ascuas al botar en la mesa
+  ✓ gancho PADDLE: ascuas al golpear la pala
+  ✓ gravedad de las ascuas (caen como chispas de hoguera)
+  ✓ fin con aviso
+  ✓ re-anclada r30: cero multiplicación por frame (bola normal)
+  ✓ re-anclada r30: la ventaja es la falta PEQUEÑA de la IA (15 %)
+  ✓ re-anclada r39: el invitado no enciende fuera de duelos (allí portaliza SU golpe)
+  ✓ re-anclada r30: crónica del veto del boost (dinámica normal)
+  ✓ gatillo despacha fénix
+  ✓ modo ACTIVO del icono para fénix
+  ✓ anillo de tiempo para fénix
+  ✓ estela teñida de naranja fuego
+  ✓ TRAIL_PODER.fenix
+4 · SÚPER CRONO · bola al 62 % con restauración EXACTA
+  ✓ _cronoTrigger (refresco honesto + gasto)
+  ✓ _buildCronoFx: anillos de reloj
+  ✓ 3 anillos RingGeometry
+  ✓ radios escalonados alrededor de la bola
+  ✓ _cronoFrame: multiplicador por delta
+  ✓ rampa 1→0.62→1 (entrada y salida suaves)
+  ✓ delta relativo al frame anterior
+  ✓ _cronoFin: RESTAURACIÓN EXACTA (cortina incluida)
+  ✓ idempotente tras restaurar
+  ✓ sin escala en online (nadie desincroniza)
+  ✓ anillos ORBITANDO la bola
+  ✓ gatillo despacha crono
+  ✓ estela plata-cian
+  ✓ TRAIL_PODER.crono
+  ✓ _buildCronoFx idempotente por parent
+  ✓ anillos HIJOS DE LA BOLA (centrado SIEMPRE, cero lag)
+  ✓ re-anclaje en el trigger por si la malla viva cambió
+  ✓ SIN posición manual por frame (era la fuente del desplazamiento)
+5 · SÚPER OSCURIDAD · bola negra + niebla (r29: sustituye al Hielo)
+  ✓ _oscuridadTrigger (refresco honesto + gasto)
+  ✓ sin carga no arranca
+  ✓ bola NEGRA (tinta guardada, patrón fénix/magia)
+  ✓ carbón apagado 0x0d0b0e
+  ✓ emisivo rojo fuego
+  ✓ _buildOscuridadFx: pool de zonas de niebla
+  ✓ humo OSCURO (tapa la escena, no ilumina)
+  ✓ destellos rojos (los «pequeños ojos» del dueño)
+  ✓ zonas en el RIG (lección r29)
+  ✓ pool de 6 zonas simultáneas
+  ✓ _oscuridadNiebla: nace en la zona de golpeo
+  ✓ reciclado de la zona MÁS VIEJA (nunca crece sin tope)
+  ✓ sorteo del 35 % por golpeo de la IA
+  ✓ _oscuridadFalla: la IA manda LARGO (fuera de mesa)
+  ✓ el solucionador de la casa (c05) apunta fuera — c04/c05 INTACTOS
+  ✓ ciclo natural 5 s + 2 s en el frame
+  ✓ la niebla vive SU ciclo aunque la ventana muera (patrón clon)
+  ✓ fin con aviso
+  ✓ gatillo despacha oscuridad
+  ✓ TRAIL_PODER.oscuridad (rojo fuego)
+  ✓ HIELO ANULADO: cero rastros del congelador (orden del dueño)
+  ✓ HIELO fuera del registro PODERES_PALA
+6 · PLANTILLA COMÚN · ventanas 3·2·1, cortina, precaliente
+  ✓ re-anclada r55: puertas pwViva — ventanas de campeonato Y duelos (regla única)
+  ✓ apagado garantizado si «on» desaparece
+  ✓ frames con try (nunca tumban el tick)
+  ✓ _poderesCortina: etapas 2/4 cortan las 3 ventanas
+  ✓ voces precalentadas (anti-lag)
+  ✓ FX preconstruidos
+7 · I18N · 9 claves de poderes + 12 de halls (ES/EN)
+  ✓ clave 'poder_fenix' presente en ES y EN (2/2)
+  ✓ clave 'arc_fenix_go' presente en ES y EN (2/2)
+  ✓ clave 'arc_fenix_fin' presente en ES y EN (2/2)
+  ✓ clave 'poder_crono' presente en ES y EN (2/2)
+  ✓ clave 'arc_crono_go' presente en ES y EN (2/2)
+  ✓ clave 'arc_crono_fin' presente en ES y EN (2/2)
+  ✓ clave 'poder_oscuridad' presente en ES y EN (2/2)
+  ✓ clave 'arc_oscuridad_go' presente en ES y EN (2/2)
+  ✓ clave 'arc_oscuridad_fin' presente en ES y EN (2/2)
+  ✓ clave 'hall_var_neon' presente en ES y EN (2/2)
+  ✓ clave 'hall_var_observatorio' presente en ES y EN (2/2)
+  ✓ clave 'hall_var_dojo' presente en ES y EN (2/2)
+  ✓ clave 'hint_hall_var_neon' presente en ES y EN (2/2)
+  ✓ clave 'hint_hall_var_observatorio' presente en ES y EN (2/2)
+  ✓ clave 'hint_hall_var_dojo' presente en ES y EN (2/2)
+  ✓ clave 'mesa_lock_rally20' presente en ES y EN (2/2)
+  ✓ clave 'mesa_lock_elo1100' presente en ES y EN (2/2)
+  ✓ clave 'mesa_lock_aces5' presente en ES y EN (2/2)
+  ✓ nombre pedido por el dueño: SuperPoder de Fénix
+  ✓ nombre pedido por el dueño: SuperPoder de Crono
+  ✓ nombre del 10.º poder: SuperPoder de Oscuridad (r29, sustituye a Hielo)
+8 · HALLS · neón/orbital/dojo con candados por HITOS
+  ✓ SALÓN NEÓN ARCADE (hito: rally de 20)
+  ✓ OBSERVATORIO ESTELAR (hito: ELO 1100 — nombre libre: Estación Orbital ya era campeonato)
+  ✓ DOJO ZEN (hito: 5 saques directos)
+  ✓ carpetas de arte (patrón cabana, cero bytes en el bundle)
+  ✓ _mesaLibre: bestRally ≥ 20
+  ✓ _mesaLibre: ELO ≥ 1100
+  ✓ _mesaLibre: aces ≥ 5
+  ✓ _mesaLockTxt de los 3 hitos
+  ✗ FALLO: salahall en rejilla de 3 columnas (5 variantes)
+  ✗ FALLO: altura de rejilla dinámica
+  ✓ hints de los 3 halls en el catálogo
+  ✓ neon/frente.jpg 1849×864 exactas (1849×864, 410 KB)
+  ✓ neon/fondo.jpg 1849×864 exactas (1849×864, 520 KB)
+  ✓ neon/izquierda.jpg 2395×864 exactas (2395×864, 554 KB)
+  ✓ neon/derecha.jpg 2395×864 exactas (2395×864, 578 KB)
+  ✓ neon/suelo.jpg 1296×1678 exactas (1296×1678, 1050 KB)
+  ✓ neon/techo.jpg 1296×1678 exactas (1296×1678, 718 KB)
+  ✓ observatorio/frente.jpg 1849×864 exactas (1849×864, 372 KB)
+  ✓ observatorio/fondo.jpg 1849×864 exactas (1849×864, 404 KB)
+  ✓ observatorio/izquierda.jpg 2395×864 exactas (2395×864, 485 KB)
+  ✓ observatorio/derecha.jpg 2395×864 exactas (2395×864, 373 KB)
+  ✓ observatorio/suelo.jpg 1296×1678 exactas (1296×1678, 557 KB)
+  ✓ observatorio/techo.jpg 1296×1678 exactas (1296×1678, 532 KB)
+  ✓ dojo/frente.jpg 1849×864 exactas (1849×864, 494 KB)
+  ✓ dojo/fondo.jpg 1849×864 exactas (1849×864, 490 KB)
+  ✓ dojo/izquierda.jpg 2395×864 exactas (2395×864, 603 KB)
+  ✓ dojo/derecha.jpg 2395×864 exactas (2395×864, 588 KB)
+  ✓ dojo/suelo.jpg 1296×1678 exactas (1296×1678, 520 KB)
+  ✓ dojo/techo.jpg 1296×1678 exactas (1296×1678, 553 KB)
+9 · GARANTÍA · física y códec sin una línea nueva
+  ✓ c04_fisica_ccd.js SIN cambios (diff vacío contra la r26)
+  ✓ c05_colisiones_ia_golpeo.js SIN cambios (diff vacío contra la r26)
+  ✓ c07_escena_sala.js SIN cambios (diff vacío contra la r26)
+  ✓ c08_hall_hud.js SIN cambios (diff vacío contra la r26)
+  ✓ c09_red_netlink.js SIN cambios (diff vacío contra la r26)
+  ✓ c10_menu_saque.js SIN cambios (diff vacío contra la r26)
+10 · SINERGIA · la tormenta y la barrera de la r26 intactas
+  ✓ niebla densa y pool de rayos de la r26 intactos
+  ✓ cadencia de ráfagas de la r26 intacta
+  ✓ barrera eléctrica de la red intacta
+  ✓ estallido y punto del árbitro intactos
+
+RESULTADO: 169 ok · 2 fallos

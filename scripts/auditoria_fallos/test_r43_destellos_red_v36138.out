@@ -1,0 +1,91 @@
+1 · SELLOS · v3.6.157-SDK6 · FASE 160 · EL SUELO DE DESTELLOS
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6
+  ✗ FALLO: FASE 160
+  ✗ FALLO: faseNombre = BOLA LOCA + SOLO 1 SUPERPODER EN MARCHA R66: LA BOLA LOCA ORIGINAL DEL WIZARD DE MAGIA ENTRA COMO 15.º PODER — PRIMERO DEL REGISTRO Y SIEMPRE DESBLOQUEADO (SALA ARCANA SIN CANDADO · DUELOS LOCOS DE INICIO · EXCLUIDA DEL SORTEO DE CORONACIÓN · LA VIEJA LOCA DE SPIN SALE DEL SURTO) — BOLA ×1,65 CON RADIO FÍSICO, CICLO ARCOÍRIS 0,30 VUELTAS/S Y DERIVA ALEATORIA DEL MAGO (VAIVÉN 4 M/S² A 8,5 RAD/S + RÁFAGAS 2,5 M/S² CADA 0,22 S) EN VENTANA DE 10 S, ICONO DEL DUEÑO Y VOCES PIPER NATIVAS — Y LA REGLA DEL DUEÑO: SOLO 1 SUPERPODER DE PALA PUEDE ESTAR EJECUTÁNDOSE AL MISMO TIEMPO (_PODERVIVOALGUNO GOBIERNA LOS DOS GATILLOS; RELANZAR EL MISMO PODER SIGUE PERMITIDO)
+  ✓ SDK de la casa intacto (1.6.0)
+  ✗ FALLO: tamaño del build: 11.507.255 B (re-anclado r46)
+  ✗ FALLO: VERSION.json golden 42d07e64… (re-anclado r46)
+  ✓ golden = sha256 real del build (byte-exacto)
+  ✗ FALLO: bundle con sello vigente
+  ✗ FALLO: sello c00 = 3.6.157-SDK6
+  ✗ FALLO: sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)
+  ✗ FALLO: badge V3.6.157-SDK6 en 03_body
+  ✗ FALLO: hub /descargas sellado a v36154-sdk6
+2 · SUELO DE DESTELLOS · la trama fina SÓLO existe donde un destello la dibuja
+  ✓ c08: la línea dibujada aguanta ~5 s (petición literal del dueño)
+  ✓ c08: la MATRIZ ESTÁTICA de la r41 desapareció (el tramado fijo, fuera)
+  ✓ c08: los nodos cada 8 losetas, fuera (nadie queda siempre visible)
+  ✓ c08: destellos en AMBOS ejes (cruces de 90°)
+  ✓ c08: destellos en AMBOS sentidos (idavuelta y vuelta)
+  ✓ c08: la línea nace en UN FONDO («partiendo de un fondo y llegando al otro»)
+  ✓ c08: corredores-destello vivos (trazos[])
+  ✓ c08: tope de ~9 destellos simultáneos (coste acotado)
+  ✓ c08: la cabeza del destello AVANZA por la retícula
+  ✓ c08: la estela es la LÍNEA FINA de la trama (0,8 px ≈ 5 cm — mucho más delgada que la r41)
+  ✓ c08: la línea dibujada MUERE a los ~5 s (desaparece)
+  ✓ c08: fundido final de 0,9 s (desvanecimiento, no parpadeo seco)
+  ✓ c08: la CABEZA es un destello brillante aditivo (blanco-azul)
+  ✓ c08: los RELLENOS nacen EN las celdas que el destello atraviesa («los rellenos igual»)
+  ✓ c08: envolvente viva del relleno (nace → aguanta → muere)
+  ✓ c08: el relleno respeta los bordes de SU celda («cuadrículas sutiles y bien definidas»)
+  ✓ c08: lienzo vivo repintado por frame (sólo existen los trazos y rellenos vivos)
+  ✓ c08: el estado vivo (trazos + lit) viaja en el userData del grupo
+  ✓ c08: cada trazo recuerda su eje, línea, sentido y última celda cruzada
+  ✓ bundle: el suelo de destellos viaja al build
+3 · LETRERO DE SALIDA · «Salir/Exit» azul con halo azulón sobre el búho
+  ✓ c08: drawArcanoSalir EXPORTADO (el glifo en SU lienzo)
+  ✓ c08: el HALO AZULÓN en tres pasadas crecientes (la técnica del neón del Hall)
+  ✓ c08: cuerpo azul claro + alma casi blanca (la firma del búho)
+  ✓ c08: montarArcano cuelga el letrero (fallback «Salir» antes del idioma vivo)
+  ✓ c08: el letrero ENCIMA del búho (búho en y 2,28 ± 0,44)
+  ✓ c08: sprite de HALO azul aditivo detrás del texto (la misma estética del búho)
+  ✓ c08: el letrero viaja en userData.arcono.salir
+  ✓ c08: el letrero se FUNDE con el hover del búho (aparece al apuntar, muere al apartar)
+  ✓ c08: leve ascenso al aparecer (respuesta viva, como las flechas)
+  ✓ c12: el texto se repinta con el IDIOMA vivo en _arconoRepinta
+  ✓ c00: i18n ES/EN del letrero («"Salir" o "Exit" en inglés»)
+  ✓ bundle: el letrero con idioma vivo viaja al build
+4 · ESFERA DEL CASCO · HIJO DEL RIG (comparte marco con la pala rival)
+  ✓ c12: la esfera YA NO cuelga de la escena raíz
+  ✓ c12: la esfera cuelga del RIG (misma matriz mundo que pala/bola/mesa)
+  ✓ c12: la RAÍZ documentada (recenter → rig girado → deriva de lo que no cuelga del rig)
+  ✓ c12: el pintado de la cabeza del rival intacto (misma posFromNetPose que la pala)
+  ✓ c12: la muestra de cabeza intacta (mismo sample que la pala — consistencia interna)
+5 · SAQUES · la bola JAMÁS invisible (toss rival con caducidad y re-encendido)
+  ✓ c12: rama del guardián PARA el lanzamiento del rival en vuelo
+  ✓ c12: el re-encendido de la malla queda telemetrizado (rival_toss)
+  ✓ c12: el flag del toss CADUCA a los 2,5 s (el saque jamás se congela)
+  ✓ c12: _netTossAt sellado al lanzar y a cero en MATCH_START
+  ✓ c09: los DOS caminos del toss del rival (SNAP de rescate + HIT kind 2) sellan el instante
+  ✓ c12: el fallback del rival entra YA si la malla está oculta (sin los 0,6 s ciegos)
+  ✓ c12: el arranque MATCH_START conservado (la bola oculta del rival la enciende el guardián)
+6 · DUELO HONESTO · el fantasma converge donde se juzga el bote
+  ✓ c09: la ZONA DE JUICIO = rectángulo de mesa + 30 cm
+  ✓ c09: y bajo la altura de juicio (tapete + 42 cm)
+  ✓ c09: convergencia DURA en la zona (0,62/0,38) · suave de siempre fuera (0,25/0,12)
+  ✓ c09: el POR QUÉ documentado (percepción = juicio del árbitro del emisor)
+  ✓ c09: el lerp ciego viejo desapareció
+7 · FLUIDEZ · la bola en tiempo REAL · el GC en dieta
+  ✓ c12: dt REAL del frame separado del capado
+  ✓ c12: timers a uiMax 1/30 (spec A intacta, dato) · bola y PALA a fisMax 1/12 (capo dato, R1 r57)
+  ✓ c12: las DOS integraciones de bola (fantasma + propia) en tiempo real
+  ✓ c12: el POR QUÉ documentado («la bola flota y va lenta» = dt clampeado)
+  ✓ c12: dilatación CRONOS intacta (_dilF se aplica sobre dtFis)
+  ✓ c09: búfer de TX REUTILIZADO (uno por enlace, no uno por paquete)
+  ✓ c09: los TRES puntos de envío (SNAP + pose + flush) escriben en el búfer
+  ✓ c09: salida por VISTA al DataChannel (send() copia los bytes: reutilizar es seguro)
+  ✓ c09: el túnel PeerJS conserva el slice (serializa su copia)
+  ✓ c09: los spreads {...pk} por paquete, fuera (yAnchor viaja en pk)
+  ✓ c09: UN solo new ArrayBuffer en el camino fast (el del constructor)
+  ✓ c09b: PROTO 3 intacto (el contrato del cable no cambia — compatible con 3.6.137)
+8 · CONSERVADO · c04/c05 byte-exacto · telemetría r42 · arcano r41
+  ✓ c04_fisica_ccd.js presente
+  ✗ FALLO: c04 byte-exacto (d792b5e7… — física intocada, re-ancla r56 BOTE_TUNE)
+  ✗ FALLO: c05 byte-exacto (b195a0db… — física intocada)
+  ✓ re-anclada r53: dashboard de telemetría vivo (sustituye al panel r42)
+  ✓ el Arcano holográfico r41 conservado (holo + candado)
+  ✓ la galería con voz conservada
+
+=== r43 · v3.6.157-SDK6 · EL SUELO DE DESTELLOS ===
+  67 comprobaciones verdes · 12 fallos
+FALLOS: revisar arriba

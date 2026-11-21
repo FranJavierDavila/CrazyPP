@@ -1,0 +1,71 @@
+1 · BOLA_ASPECTOS (c02, fuente viva)
+  ✓ catálogo: 16 skins (16)
+  ✓ la OFICIAL (blanca) es la primera
+  ✓ ids únicos
+  ✓ clásicas + locura + planetas presentes (saturno/ocho/tierra)
+  ✓ candados del vocabulario de casa (null/wins10/streak5 — mismo sistema que las mesas)
+  ✓ nameKeys bola_asp_*
+  ✓ trail RGB válido (3 canales 0..1)
+  ✓ ring booleano
+  ✓ aro SOLO en Saturno
+  ✓ tex ids conocidos por el pintor (r24: TODAS llevan textura)
+  ✓ material completo (rough/metal/emis/emisInt)
+  ✓ id basura → blanca (respaldo)
+  ✓ entradas basura → blanca sin petar
+  ✓ porId devuelve la skin completa
+2 · c07_escena_sala.js · pintores + chispas
+  ✓ applyBallSkin exportado (malla viva, sin reconstruir)
+  ✓ createBall acepta skin (compat: sin skin → blanca)
+  ✓ createChispas exportado
+  ✓ chispas: pool fijo 5×8 (40 puntos, Quest 3 lo ni nota)
+  ✓ texturas procedurales con caché
+  ✓ canvas 2D → CanvasTexture (cero bytes en el bundle)
+  ✓ RNG con semilla fija (determinista: Marte igual en los 2 cascos)
+  ✓ el mapa anterior se LIBERA (sin fuga de GPU)
+  ✓ aro de Saturno con nombre (toggle visible)
+  ✓ estela acepta BASE de skin
+  ✓ base de skin sin tint ni efecto → color de la skin
+  ✓ skin sin tex → material plano
+3 · c12_pingponggame.js · integración
+  ✓ c12 importa el catálogo
+  ✓ c12 importa applyBallSkin + createChispas
+  ✓ constructor lee pp_bolaskin
+  ✓ skin del dueño aplicada al arranque
+  ✓ _bolaSkinDef con candado (espejo de _mesaSkinDef)
+  ✗ FALLO: candado reutiliza _mesaLibre (misma economía de desbloqueo)
+  ✓ _bolaSkinLS para reaplicar sin tocar lo guardado
+  ✓ REGLA DEL DUEÑO: champ → oficial
+  ✓ _mesaNativo también pone la bola oficial
+  ✓ _mesaSkinReapply recobra la skin al salir del champ
+  ✓ salida del hall: restauración consciente de skin (adiós blanco seco) — r23: efectiva (invitado viste la del host)
+  ✓ estela de reposo = RGB de la skin
+  ✓ trailUpdate recibe la base de skin
+  ✓ chispas en flashMarker (bote)
+  ✓ chispas del COLOR de la skin
+  ✓ chispas.update(dt) en el tick
+  ✓ subpágina salabola
+  ✓ tarjeta BOLA en SALA
+  ✓ navegación permite optsSalaBola
+  ✓ dispatcher bola_skin
+  ✓ elección persistida
+  ✓ candado avisado con el texto de casa
+  ✓ onPeerSkin para la red
+  ✓ sólo el INVITADO viste la skin del host (y el champ manda)
+  ✓ skin del rival sin candado (el host ya la desbloqueó)
+4 · c09_red_netlink.js · HELLO v2 con sk
+  ✓ hello2 envía sk (con respaldo blanca)
+  ✓ recepción saneada (corte 24)
+  ✓ entrega al juego con guardia opcional
+  ✓ skin envuelta en try (jamás rompe el enlace)
+  ✓ PROTO/PHYS/BUILD intactos (verCompara sigue mandando)
+5 · c00_pre_three.js · i18n ES/EN
+  ✓ las 21 claves nuevas están en ES y EN
+  ✓ aviso cosmético ES
+  ✓ aviso cosmético EN
+  ✓ Saturno ES/EN
+6 · GARANTÍA · skins 100 % cosméticas
+  ✓ c04 (física CCD/Magnus) NO conoce las skins
+  ✓ c05 (golpeo/colisión) NO conoce las skins
+  ✓ ninguna clave de skin en la física
+
+62 ok · 1 fallos

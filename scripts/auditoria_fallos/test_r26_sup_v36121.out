@@ -1,0 +1,119 @@
+1 · NIEBLA DENSA · banco de puffs que hierve
+  ✓ ELEC_NIEBLA_N = 14 puffs (antes 2 borrones)
+  ✓ ELEC_RAYOS_N = 10 rayos en el pool (antes 3)
+  ✓ fuera el pintor de BORRONES (nubes cutres)
+  ✓ textura suave: gradiente radial (bordes que se funden)
+  ✓ núcleo opaco del puff
+  ✓ borde transparente del puff (niebla, no cartón)
+  ✓ lienzo del puff 128×128
+  ✓ banco de niebla
+  ✓ LCG semillado (misma niebla en cada build/QA — patrón casa)
+  ✓ paleta pizarra de tormenta
+  ✓ color de niebla ILUMINADA por la descarga
+  ✓ opacidades solapadas = DENSIDAD
+  ✓ hierve: radio orbital por puff
+  ✓ hierve: velocidad propia por puff
+  ✓ fase propia (nada de movimiento de bloque)
+  ✓ el pool lleva la niebla
+  ✓ visibilidad del banco en _elecFxVis
+2 · FRAME · la niebla hierve y se ilumina con cada rayo
+  ✓ flash normalizado del destello
+  ✓ hervido X (fase + velocidad propias)
+  ✓ hervido Z (masa tridimensional)
+  ✓ respiración de escala (niebla viva)
+  ✓ escala respirando
+  ✓ el destello GANA densidad de niebla
+  ✓ la niebla se ILUMINA con el rayo (setRGB, cero Color nuevos)
+  ✓ userData directo (cero asignaciones por frame)
+3 · MÁS RAYOS · cadencia 0,42 s + ráfagas de hasta 3
+  ✓ cadencia 1.15 → 0.42 s
+  ✓ bloque de ráfagas r26
+  ✓ ráfaga: 2.º rayo (38 %)
+  ✓ ráfaga: 3.er rayo (16 %)
+  ✓ emisora = puff más cercano (coherencia niebla↔rayo)
+  ✓ búsqueda del emisor sin asignaciones
+  ✓ trueno con volumen variable (35 rayos sin fatiga)
+  ✓ rayos siguen siendo polilíneas recicladas de 9 puntos
+  ✓ pool de rayos por constante
+4 · BARRERA ELÉCTRICA · la red crecida es un campo de energía
+  ✓ RED_ARC_N = 7 arcos
+  ✓ RED_ARC_PTS = 12 puntos
+  ✓ regeneración cada 0,085 s (parpadeo eléctrico)
+  ✓ cuerpo del campo al 0,13
+  ✓ zumbido periódico
+  ✓ chispas del riel periódicas
+  ✓ _buildRedFx (pool reutilizable, una vez)
+  ✓ _redFxVis
+  ✓ _redFrame
+  ✓ cuerpo: plano unidad (se ajusta en vivo)
+  ✓ cuerpo cian eléctrico
+  ✓ cuerpo aditivo doble cara (visible desde ambos campos)
+  ✓ arcos alternando dos azules
+  ✓ riel superior más brillante
+  ✓ geometrías recicladas (cero asignaciones por frame)
+  ✓ build idempotente
+  ✓ cuerpo pegado a la red VIVA (ancho)
+  ✓ cuerpo pegado a la red VIVA (posición)
+  ✓ lee DIMS cada frame (una sola verdad)
+  ✓ pulso del campo
+  ✓ destello de energizado sobre el cuerpo
+  ✓ arcos aleatorios por ciclo (nervio eléctrico)
+  ✓ arcos a TODAS las alturas del campo
+  ✓ arcos a ambas caras de la red
+  ✓ vida corta de arco = parpadeo
+  ✓ flicker rápido de arco
+  ✓ riel regenerado cada 0,11 s
+  ✓ riel en la coronación ACTUAL de la red
+  ✓ riel con parpadeo + energizado (clamp ≤1)
+  ✓ chispas sobre el riel (Vector3 de reuso)
+  ✓ chispas cian del pool de la casa
+  ✓ zumbido eléctrico suave
+  ✓ zumbido con jitter (no metrónomo)
+5 · CICLO DE VIDA · la barrera nace y muere con la SÚPER RED
+  ✓ _redCrecer monta y enciende la barrera
+  ✓ energizado al crecer (0,3 s)
+  ✓ zap de energizado
+  ✓ _redRestaurar apaga la barrera SIEMPRE (fin/salida/startMatch)
+  ✓ gancho en el tick
+  ✓ frame blindado con try
+  ✓ red de seguridad: sin ventana, barrera fuera
+  ✓ barrera en el precaliente (gatillo sin lag)
+  ✓ estado _redFx inicializado
+  ✓ estado _redFxOn inicializado
+  ✓ estado _redFlashT inicializado
+  ✓ Vector3 de chispa de reuso (cero asignaciones)
+6 · PRESERVACIÓN r25 · la tormenta sigue siendo la de la r25
+  ✗ FALLO: ELEC_DUR = 10 s intacto
+  ✓ radio de interceptación intacto
+  ✓ niebla a 1,5 m (spec literal intacta)
+  ✓ centro Y del banco intacto
+  ✓ banco SOBRE LA MITAD DEL RIVAL intacto
+  ✓ destello de 0,25 s intacto
+  ✓ PUNTO por el árbitro intacto
+  ✗ FALLO: bola rota oculta 0,9 s intacto
+  ✓ chispas del impacto (re-anclada r26b: color por modo del rayo)
+  ✗ FALLO: colisión rápida intacta
+  ✗ FALLO: SÚPER RED: 10 s ×2 intactos
+  ✓ mutación de DIMS.netTopY intacta
+  ✓ restauración exacta intacta
+  ✓ megaEnabled intacto
+  ✓ cortina de etapas 2/4 intacta
+  ✓ noche de la tormenta intacta
+7 · GARANTÍA · c04/c05/c09/c02/c07 sin una línea nueva
+  ✓ src/game/core/c04_fisica_ccd.js: diff vacío contra la r25 (garantía intacta)
+  ✓ src/game/core/c05_colisiones_ia_golpeo.js: diff vacío contra la r25 (garantía intacta)
+  ✓ src/game/core/c09_red_netlink.js: diff vacío contra la r25 (garantía intacta)
+  ✓ src/game/core/c02_cfg_escena.js: diff vacío contra la r25 (garantía intacta — c02 re-anclada r26b: 3 halls nuevos)
+  ✓ src/game/core/c07_escena_sala.js: diff vacío contra la r25 (garantía intacta)
+  ✓ la barrera no toca el integrador (solo render)
+  ✓ la barrera no marca la bola
+  ✓ c07 sin r26 (todo vive en c12)
+8 · SELLOS de la ronda
+  ✓ comentarios r26 (v3.6.121) por todo c12
+  ✓ spec literal del dueño citada (barrera)
+  ✓ spec literal del dueño citada (niebla densa)
+  ✓ spec literal del dueño citada (más rayos)
+  ✓ I18N de los poderes intacto
+  ✓ fin de la SÚPER RED con aviso intacto
+
+R26 · 105 ok · 4 fallos

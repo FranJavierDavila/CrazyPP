@@ -1,0 +1,56 @@
+1 · SELLOS · v3.6.157-SDK6 · FASE 160
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6
+  ✗ FALLO: FASE 160
+  ✗ FALLO: tamaño del build: 11.504.235 B
+  ✗ FALLO: VERSION.json golden 10a24300…
+  ✗ FALLO: golden 10a24300… (build byte-exacto)
+  ✗ FALLO: bundle con sello vigente
+  ✗ FALLO: sello c00 = 3.6.157-SDK6
+  ✗ FALLO: sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)
+  ✗ FALLO: badge V3.6.157-SDK6 en 03_body
+  ✗ FALLO: hub /descargas sellado a v36154-sdk6
+2 · HIGIENE FÉNIX · el registro ya no presume el «+18 %»
+  ✓ registro Fénix: nota r31 del veto presente
+  ✓ registro Fénix: causa del veto documentada
+  ✓ registro Fénix: la ventaja real es la falta de la IA (15 %)
+  ✓ «+18 % de rapidez» solo en la cita del veto (1 línea)
+  ✓ FENIX_MUL/FENIX_CAP solo en la anotación histórica (retiradas)
+  ✓ cero multiplyScalar en cualquier línea que hable de fenix
+  ✓ FENIX_OUT_P = 0.15
+  ✓ FENIX_OUT_P usado en los bloqueos de la IA (rival 1 y rival 2)
+3 · ÚNICO ×1,18 · FUEGO de DUELOS LOCOS (r84), no Fénix
+  ✓ exactamente 1 multiplyScalar(1.18) en c12 (1)
+  ✓ el ×1,18 vive bajo el guard _dlOn('fuego') (DUELOS LOCOS online)
+  ✓ …en el bloque de anuncio de MI golpeo (por golpeo, no por frame)
+4 · VENTANAS · código↔i18n casan
+  ✓ re-anclada r55: FENIX_DUR = ARCANO_CFG (10 s)
+  ✓ re-anclada r55: CRONO_DUR = ARCANO_CFG (10 s)
+  ✓ re-anclada r55: OSCURIDAD_DUR = ARCANO_CFG (20 s)
+  ✓ ES arc_fenix_go anuncia 10 s
+  ✓ ES+EN arc_fenix_go anuncia 10 s
+  ✓ ES arc_crono_go anuncia 10 s
+  ✓ ES+EN arc_crono_go anuncia 10 s
+  ✓ ES arc_oscuridad_go anuncia 20 s
+  ✓ ES+EN arc_oscuridad_go anuncia 20 s
+5 · HIELO · sigue anulado desde r29
+  ✓ PODERES_PALA sin entrada hielo
+  ✓ cero identificadores vivos de superHielo
+  ✓ solo queda la anotación histórica «sustituye a hielo»
+6 · FÍSICA · c04/c05 byte-exacto
+  ✗ FALLO: c04_fisica_ccd.js = d792b5e7…
+  ✗ FALLO: c05_colisiones_ia_golpeo.js = b195a0db…
+7 · REGISTRO · 10 poderes con voz e icono
+  ✓ poder mega en PODERES_PALA
+  ✓ poder efecto en PODERES_PALA
+  ✓ poder iman en PODERES_PALA
+  ✓ poder portal en PODERES_PALA
+  ✓ poder clon en PODERES_PALA
+  ✓ poder red en PODERES_PALA
+  ✓ poder elec en PODERES_PALA
+  ✓ poder fenix en PODERES_PALA
+  ✓ poder crono en PODERES_PALA
+  ✓ poder oscuridad en PODERES_PALA
+  ✓ iconos base64 embebidos (≥11)
+  ✓ voces MP3 embebidas (≥34)
+
+RESULTADO: 35 ok · 12 fallos

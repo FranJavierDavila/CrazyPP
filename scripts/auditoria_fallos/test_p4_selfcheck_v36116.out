@@ -1,0 +1,49 @@
+1 · PPNET.verSelf
+  ✓ verSelf exportada por PPNET
+  ✓ build == web → igual
+  ✓ build viejo → aviso
+  ✓ versión corta propia (últimos 6)
+  ✓ versión corta de la web
+  ✓ build desconocido → aviso con ?
+  ✓ web sin sello → aviso con ?
+  ✓ entradas basura → aviso sin petar
+  ✓ no-cadenas → aviso sin petar
+  ✓ cadenas cortas sin recorte roto
+2 · PPNET.selfcheckVersion
+  ✓ selfcheckVersion exportada por PPNET
+  ✓ build viejo + web nueva → onSelfcheckOutdated
+  ✓ aviso verSelf con corte a 6 y ? en build vacío
+  ✓ URL relativa PAGES-VERSION.txt con cache-buster now=
+  ✓ fetch con cache no-store
+  ✓ tope de 4 s vía AbortSignal
+  ✓ telemetría ver_selfcheck emitida (censo)
+  ✓ censo con la versión de la web
+  ✓ la segunda llamada sigue avisando
+  ✓ censo ver_selfcheck UNA sola vez por sesión
+  ✓ fichero sin sello version= → silencio
+  ✓ resp no ok → silencio
+  ✓ fetch que revienta → silencio (offline reina)
+  ✓ sin juego (null) → no peta y no duplica censo
+3 · c12_pingponggame.js
+  ✓ estado del aviso propio inicializado
+  ✓ constructor dispara el self-check (fire-and-forget)
+  ✓ el self-check se dispara justo tras crear el enlace
+  ✓ onSelfcheckOutdated en el juego
+  ✓ mensaje de pista (rules.message)
+  ✓ voz de megáfono
+  ✓ panel consulta el estado del self-check
+  ✗ FALLO: la fila del self-check tiene PRIORIDAD sobre la del rival
+4 · c00_pre_three.js · i18n
+  ✓ net_selfcheck_warn en ES y EN
+  ✓ net_selfcheck_voice en ES y EN
+  ✓ texto ES con las dos versiones vivas
+  ✓ voz ES
+  ✓ texto EN
+  ✓ voz EN
+5 · public/sw.js
+  ✓ PAGES-VERSION.txt en VIVAS (red primero)
+  ✓ game.html en SWR con ignoreSearch — el residuo que este self-check cubre
+6 · sellos coherentes
+  ✓ const VERSION de c00 == VERSION.json (3.6.207-SDK6)
+
+40 ok · 1 fallos

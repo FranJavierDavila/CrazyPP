@@ -1,0 +1,16 @@
+19 |   if (cond) { ok++; console.log('  ✓ ' + label); }
+20 |   else { fails++; console.log('  ✗ FALLO: ' + label); }
+21 | };
+22 | const cuenta = (pajaro, aguja) => pajaro.split(aguja).length - 1;
+23 | 
+24 | const c12 = readFileSync(`${RAIZ}/src/game/core/c12_pingponggame.js`, 'utf8');
+                 ^
+ENOENT: no such file or directory, open '/home/z/my-project/upload/src/game/core/c12_pingponggame.js'
+    path: "/home/z/my-project/upload/src/game/core/c12_pingponggame.js",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at /home/z/my-project/scripts/test_r35_prisma_v36131.mjs:24:13
+
+Bun v1.3.14 (Linux x64 baseline)

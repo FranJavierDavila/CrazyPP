@@ -1,0 +1,16 @@
+11 | const chk = (cond, label) => {
+12 |   if (cond) { ok++; console.log('  ✓ ' + label); }
+13 |   else { fails++; console.log('  ✗ FALLO: ' + label); }
+14 | };
+15 | 
+16 | const c12 = readFileSync(`${RAIZ}/src/game/core/c12_pingponggame.js`, 'utf8');
+                 ^
+ENOENT: no such file or directory, open '/home/z/my-project/upload/src/game/core/c12_pingponggame.js'
+    path: "/home/z/my-project/upload/src/game/core/c12_pingponggame.js",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at /home/z/my-project/scripts/test_r33_poderes_v36129.mjs:16:13
+
+Bun v1.3.14 (Linux x64 baseline)

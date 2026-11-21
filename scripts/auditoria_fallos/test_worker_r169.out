@@ -1,0 +1,16 @@
+12 | 
+13 | /* — copia del worker real a /tmp como .mjs (sólo para importar) — */
+14 | const FUENTE = '/home/z/my-project/upload/scripts/worker-tele/worker.js';
+15 | mkdirSync('/tmp/worker_test_r169', { recursive: true });
+16 | const DESTINO = '/tmp/worker_test_r169/worker.mjs';
+17 | writeFileSync(DESTINO, readFileSync(FUENTE));
+                            ^
+ENOENT: no such file or directory, open '/home/z/my-project/upload/scripts/worker-tele/worker.js'
+    path: "/home/z/my-project/upload/scripts/worker-tele/worker.js",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at /home/z/my-project/scripts/test_worker_r169.mjs:17:24
+
+Bun v1.3.14 (Linux x64 baseline)

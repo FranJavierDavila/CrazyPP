@@ -1,0 +1,105 @@
+1 · SELLOS · v3.6.157-SDK6 · FASE 160 · BOLA LOCA + SOLO 1 SUPERPODER EN MARCHA r66: la BOLA LOCA original del Wizard de magia entra como 15.º poder — PRIMERO del registro y SIEMPRE desbloqueado (sala Arcana sin candado · Duelos Locos de inicio · excluida del sorteo de coronación · la vieja loca de spin sale del surto) — bola ×1,65 con radio físico, ciclo arcoíris 0,30 vueltas/s y deriva aleatoria del mago (vaivén 4 m/s² a 8,5 rad/s + ráfagas 2,5 m/s² cada 0,22 s) en ventana de 10 s, icono del dueño y voces Piper nativas — Y la regla del dueño: solo 1 superpoder de pala puede estar ejecutándose al mismo tiempo (_poderVivoAlguno gobierna los dos gatillos; relanzar el MISMO poder sigue permitido)
+  ✗ FALLO: VERSION.json: 3.6.157-SDK6
+  ✗ FALLO: FASE 160
+  ✗ FALLO: faseNombre = BOLA LOCA + SOLO 1 SUPERPODER EN MARCHA r66: la BOLA LOCA original del Wizard de magia entra como 15.º poder — PRIMERO del registro y SIEMPRE desbloqueado (sala Arcana sin candado · Duelos Locos de inicio · excluida del sorteo de coronación · la vieja loca de spin sale del surto) — bola ×1,65 con radio físico, ciclo arcoíris 0,30 vueltas/s y deriva aleatoria del mago (vaivén 4 m/s² a 8,5 rad/s + ráfagas 2,5 m/s² cada 0,22 s) en ventana de 10 s, icono del dueño y voces Piper nativas — Y la regla del dueño: solo 1 superpoder de pala puede estar ejecutándose al mismo tiempo (_poderVivoAlguno gobierna los dos gatillos; relanzar el MISMO poder sigue permitido)
+  ✓ SDK de la casa intacto (1.6.0)
+  ✗ FALLO: tamaño del build: 11.507.255 B (re-anclado r46)
+  ✗ FALLO: VERSION.json golden 42d07e64… (re-anclado r46)
+  ✓ golden = sha256 real del build (byte-exacto)
+  ✗ FALLO: bundle con sello vigente
+  ✗ FALLO: sello c00 = 3.6.157-SDK6
+  ✗ FALLO: sw.js CACHE v3.6.157-SDK6 (purga de cachés viejas)
+  ✗ FALLO: badge V3.6.157-SDK6 en 03_body
+  ✗ FALLO: hub /descargas sellado a v36154-sdk6
+2 · MOTAS DE POLVO · circulares (textura radial) y la mitad de tamaño
+  ✓ c08: textura radial de la mota (punto REDONDO)
+  ✓ c08: la MITAD de tamaño (0,055 → 0,026)
+  ✓ c08: el tamaño cuadrado viejo 0,055 desapareció
+  ✓ c08: la mota lleva SU textura (map: dot)
+  ✓ bundle: las motas de polvo viajan al build
+3 · SUELO NEGRO · matriz fija de 48×48 · rellenos que nacen y mueren
+  ✓ c08: montaSueloArcano (rediseñada r41)
+  ✓ c08: losetas PEQUEÑAS de 1,5 m (48×48 — la r40 eran 9×9 de 8 m)
+  ✓ c08: la BASE es NEGRA bajo los pies
+  ✓ c08: la base funde al color del horizonte (#0a1a36 — costura imposible)
+  ✓ c08 [r43]: el trazado de DESTELLOS sustituye a la matriz estática (re-anclado)
+  ✓ c08 [r43]: la línea dibujada aguanta ~5 s (re-anclado)
+  ✓ c08: el RELLENO usa la banda azul del dueño (#10284e → #1a3868)
+  ✓ c08 [r43]: rellenos vivos LIGADOS a las celdas que los destellos cruzan (re-anclado)
+  ✓ c08 [r43]: los rellenos nacen EN el recorrido del destello (re-anclado)
+  ✓ c08 [r43]: vida aleatoria del relleno (nace → aguanta → muere) (re-anclado)
+  ✓ c08: las losetas SE APAGAN solas (unas aparecen, otras desaparecen)
+  ✓ c08: el relleno se disuelve hacia el horizonte (viñeta)
+  ✓ c08: base/malla/rellenos con fog:false (la niebla jamás toca el suelo)
+  ✓ c08 [r43]: el trazado vivo flota sobre la base (un solo plano de líneas+rellenos — sin z-fighting) (re-anclado)
+  ✓ c08 [r43]: el estado vivo del suelo (trazos + lit) viaja en el userData (re-anclado)
+4 · FLECHAS · ‹ a la IZQUIERDA · › a la DERECHA (icono = lado = acción)
+  ✓ c08: glifos DESCruzados — dir L dibuja ‹ (antes dibujaba ›)
+  ✓ c08: el cruce viejo de glifos desapareció
+  ✓ c08: el ‹ vive a la IZQUIERDA (−0,93) y el › a la DERECHA (+0,93)
+  ✓ c08: la petición del dueño vive en el comentario
+  ✓ c12: SIN ‹ en el 0 y SIN › en el último (el icono coincide con la acción)
+  ✓ c12: ‹ retrocede · › avanza (icono = acción, intacto)
+5 · ICONOS · TODO el medallón (1,96R recortado al círculo)
+  ✓ c08: escala 1,96R (ocupa TODO el círculo; antes 1,28R)
+  ✓ c08: el margen viejo 1,28R desapareció
+  ✓ c08: recortado al PROPIO círculo (sin letterbox)
+  ✓ c08: bloqueado → icono ATENUADO (el candado destaca, nada lo tapa)
+  ✓ bundle: el icono grande viaja al build
+6 · HOLOGRAMA · la ficha se FORMA (bandas, disolución, barrido)
+  ✓ c08: arconoHoloFrame (la composición del holograma)
+  ✓ c08: DOS lienzos — cv (ficha completa) + holo (lienzo vivo)
+  ✓ c08: el panel viaja con cv+holo en el userData
+  ✓ c08: frente de condensación (el barrido que baja FORMANDO)
+  ✓ c08: DISOLUCIÓN real (motas que se re-componen)
+  ✓ c08: banda de barrido aditiva (futurista, con glow)
+  ✓ c08: bandas horizontales que viajan y se asientan
+  ✓ c08: updateArcanoFx compone cv→holo mientras pop < 1
+  ✓ c08: ~1,1 s de formación (llamativo pero no eterno)
+  ✓ c08: condensada → copia EXACTA y la textura duerme (coste cero)
+  ✓ c12: cada poder ENTRA materializándose (conservado)
+  ✓ c12: pinta la ficha COMPLETA en cv (el holograma la compone)
+  ✓ bundle: el holograma viaja al build
+7 · VOZ · cada poder se OYE (nombre corto embebido ES/EN)
+  ✓ c12: repinta con control de voz
+  ✓ c12: la voz SOLEMNE r47 suena al materializarse (flechas ‹ ›)
+  ✓ c12: en la ENTRADA el hint habla primero
+  ✓ c12: la voz del poder entra 2,3 s después (UNA voz viva)
+  ✓ c12: el poder del índice vivo se presenta SOLEMNE
+  ✓ c12: las 14 voces embebidas ES/EN intactas
+8 · BÚHO · halo en los ojos OSCILANDO azul ↔ rojo
+  ✓ c08: los dos polos del halo (azul búho ↔ rojo bloqueo)
+  ✓ c08: seno lento (oscila y VUELVE, jamás un salto)
+  ✓ c08: el COLOR de los destellos viaja la banda azul↔rojo
+  ✓ c08: el HALO respira con la misma fase (escala del sprite)
+  ✓ c08: raspador de módulo (cero basura por frame)
+9 · CANDADO · DELANTE del icono · halo rojo pulsante · no tapa
+  ✓ c08: drawArcanoCandado (glifo en SU lienzo, exportado)
+  ✓ c08: el candado azul de siempre (cuerpo + arco) en su lienzo
+  ✓ c08: candado en TONOS AZULES (la estética del búho, conservada)
+  ✓ c08: el aro del discoscape AVISA en rojo (bloqueo)
+  ✓ c08: DELANTE del medallón — r47: un paso MÁS (z −2,20 vs panel −2,35, jamás coplanar: se ve SIEMPRE) con renderOrder fijo 6/7
+  ✓ c08: nace oculto (sólo los bloqueados lo enseñan)
+  ✓ c08: sprite del HALO ROJO (aditivo, fog:false)
+  ✓ c08: el candado viaja en userData.arcono
+  ✓ c08: HALO PULSANTE animado (escala + opacidad por seno)
+  ✓ c08: el halo RESPIRA (0,24 → 0,37)
+  ✓ c12: visibilidad sincronizada con el estado REAL de desbloqueo
+  ✓ c08: el glifo centrado en SU lienzo 128×128 (independiente del panel)
+10 · CONSERVADO · galería automática · desbloqueo · arcano.mp3
+  ✓ 240 motas (conservadas, ahora de polvo)
+  ✓ TIPO en la ficha (conservado)
+  ✓ MÉTRICAS en la ficha (conservado)
+  ✓ descripción + métricas reales del registro (conservado)
+  ✓ desbloqueo por coronación (conservado)
+  ✓ Duelos Locos con los desbloqueados (conservado)
+  ✓ arcano.mp3 suena en el espacio (conservado r40)
+  ✓ salir restaura la pista del salón (conservado r40)
+  ✓ el escenario nace DELANTE (conservado r40)
+  ✓ pulsables SIN menú (conservado r40)
+  ✓ fog:false en TODAS las piezas del Arcano (+base/malla/rellenos/candado)
+11 · GARANTÍA · física c04/c05 INTACTA (byte-exacto r26b)
+  ✗ FALLO: c04_fisica_ccd.js byte-exacto (d792b5e7…)
+  ✗ FALLO: c05_colisiones_ia_golpeo.js byte-exacto (b195a0db…)
+
+RESULTADO: 80 ✓ · 12 ✗

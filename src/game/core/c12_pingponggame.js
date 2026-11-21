@@ -9865,8 +9865,13 @@ export class PingPongGame {
     // NÚCLEO y se comía el gatillo del tee antes de llegar a la ruta del
     // módulo (el propio comentario de abajo ya avisaba: «esta rama debe
     // correr ANTES», pero esta guardia vivía MÁS ARRIBA aún).
+    // r112 (H12 de la auditoría r111): durante el countdown del MATCH_START
+    // online (_netStart) el gatillo NO lanza el toss — igual que la ruta del
+    // grip (r79): lanzar en cuenta atrás dejaba tossed=true y un netLocalToss
+    // que vuela en el rival mientras MI bola queda congelada en la mano.
     if (this.rules.state === 'serve' &&
         this.rules.server === 'player' && !this.tossed &&
+        !this._netStart &&
         !(this.calib && this.trainV3)) {
       this.tossFromHand(this.ballHand, true);
       return;
@@ -9959,8 +9964,10 @@ export class PingPongGame {
     }
     // gatillo en CUALQUIER mando = saque asistido (v2.18: la gente buscaba el
     // gatillo en la mano de la pala y no pasaba nada). El lanzamiento usa
-    // siempre la mano que SUJETA la bola.
-    if (this.rules.state === 'serve' && this.rules.server === 'player' && !this.tossed) {
+    // siempre la mano que SUJETA la bola. r112 (H12): guardia del countdown
+    // online — sin ella el rival recibía un toss fantasma durante el MATCH_START.
+    if (this.rules.state === 'serve' && this.rules.server === 'player' && !this.tossed &&
+        !this._netStart) {
       this.tossFromHand(this.ballHand, true);
     }
   }
@@ -19058,6 +19065,23 @@ export class PingPongGame {
     //      ya enderezada por el asistente del 5.5)
     if (this.net.online && this._localHit) {
       this._localHit = false;
+      // r112 (H1 de la auditoría r111): HIT PORTALIZADO — el bloque 5.55
+      // corrió ANTES en este mismo frame y congeló ball.vel a cero (tránsito
+      // atómico, spec). El HIT debe viajar como un golpe real: se sustituye
+      // la velocidad congelada por la de SALIDA del solver (_portalSalVel)
+      // para que los potenciadores r39 (fuego/onda) actúen sobre ella y el
+      // rival reciba un fantasma con trayectoria real (antes viajaba parado
+      // y su árbitro podía cantar un punto fantasma). La posición se cambia
+      // SOLO para el envío (centro del portal de salida): los efectos
+      // cosméticos (niebla r39) siguen leyendo la bola local hundida.
+      const _hitPortalizado = this.ball.ppTransito && !!this._portalSalVel;
+      if (_hitPortalizado) {
+        if (!this._portalHitCongVel) this._portalHitCongVel = new THREE.Vector3();
+        if (!this._portalHitCongPos) this._portalHitCongPos = new THREE.Vector3();
+        this._portalHitCongVel.copy(this.ball.vel);
+        this._portalHitCongPos.copy(this.ball.pos);
+        this.ball.vel.copy(this._portalSalVel);
+      }
       // r84 · DUELOS LOCOS: carga por golpe propio + FUEGO acelera MI golpe
       // (tras el enderezado 5.5: la velocidad enviada es la FINAL; tope
       // interno 26 m/s < cap 30 del validador §12 — jamás se rechaza)
@@ -19089,7 +19113,18 @@ export class PingPongGame {
         this.ball.vel.multiplyScalar(ONDA_FLOJO);
         try { this.audio.playOsc(520, 300, 0.1, 'sine', 0.08, 0); } catch (eONf) { /* */ }
       }
+      // r112 (H1): el HIT viaja con posición y velocidad de SALIDA reales —
+      // y el boost r39 aplicado sobre la salida cuenta también para la
+      // reaparición local (_portalSalida), para que ambos lados vean igual.
+      if (_hitPortalizado) {
+        this.ball.pos.copy(this._portalSalPos);
+        this._portalSalVel.copy(this.ball.vel);
+      }
       this.net.sendHit(false);
+      if (_hitPortalizado) {
+        this.ball.pos.copy(this._portalHitCongPos);
+        this.ball.vel.copy(this._portalHitCongVel);   // sigue congelada en tránsito
+      }
     }
 
     // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido;
@@ -19125,6 +19160,14 @@ export class PingPongGame {
 
     // 7) Sincronizar visuales
     this.ballMesh.position.copy(this.ball.pos);
+    // r112 (H5 de la auditoría r111): visDelta por fin CON llamador — el
+    // salto del HANDOFF smooth (_visOff, decae en ~80 ms) y el catch-up del
+    // fantasma (_visOffMs) se absorben SOLO en lo visual (la física nunca
+    // se toca): la bola deja de teletransportar ante el rival (spec §8).
+    if (this.net && this.net.online) {
+      const _vd = this.net.visDelta(dt);
+      if (_vd) this.ballMesh.position.add(_vd);
+    }
     // r23 (v3.6.118) · SPIN VISIBLE (F1): la bola GIRA sobre el eje de su
     // ω real (antes: Euler X/Y con factor 0.05 — la textura parecía pintada
     // y estática). El latigazo del bote sale GRATIS: la fricción de la
@@ -20536,7 +20579,9 @@ export class PingPongGame {
             // y el techo de velocidad se resetea por punto (cruce honesto)
             try {
               this._retoVmaxOk = false;
-              if (it.winner === 'player' && (it.rallyHits || 0) === 1) this._retosEvento('aces', 1);
+              // r112 (H8 de la auditoría r111): espejo del umbral de ace de
+              // c06 — el saque no registra rallyHits, el ace verdadero es 0.
+              if (it.winner === 'player' && (it.rallyHits || 0) === 0) this._retosEvento('aces', 1);
               if ((it.rallyHits || 0) >= 12) this._retosEvento('rally', it.rallyHits);
             } catch (eR98) { /* */ }
             this.emitStats();

@@ -9426,9 +9426,18 @@ function stepPhysics(dt, ball, paddles, events, extra) {
       const gn = _rsG.dot(_rsN);                   // componente normal (negativa)
       const Fn = -gn;                              // fuerza normal por unidad de masa
       _rsG.addScaledVector(_rsN, -gn);             // gravedad tangencial (cuesta abajo)
-      // superficie de la pala bajo la bola: traslación + giro de muñeca
+      // superficie de la pala bajo la bola: traslación + giro de muñeca.
+      // r112 (H10 de la auditoría r111): el punto de apoyo vive sobre la
+      // HOJA (__ppRestLx/Dy se capturan respecto al centro de la hoja — la
+      // base de posición en 894 es pos + up·bladeCenterUp), pero rp.vel es
+      // la velocidad del GRIP: la velocidad real del punto de contacto es
+      // grip + ω×(right·rCx + up·(bladeCenterUp + rCy)). Sin el término
+      // up·bladeCenterUp la palanca de muñeca se medía desde el punto
+      // equivocado (~1,1 m/s de error a 8 rad/s) y girar la muñeca despacio
+      // NO arrastraba la bola, contrario a la promesa del bloque r103 §6.
       const rCx = ball.__ppRestLx || 0, rCy = ball.__ppRestDy || 0;
-      _rsOff.set(0, 0, 0).addScaledVector(rp.right, rCx).addScaledVector(rp.up, rCy);
+      _rsOff.set(0, 0, 0).addScaledVector(rp.right, rCx)
+        .addScaledVector(rp.up, DIMS.bladeCenterUp + rCy);
       _rsSurf.copy(rp.vel);
       if (rp.omega && rp.omega.lengthSq() > 1e-8) {
         _rsOm.copy(rp.omega).cross(_rsOff);
@@ -10049,8 +10058,11 @@ class GameStats {
     const out = [];
     if (winner === 'player') {
       this.data.pointsWon++;
-      // SAQUE DIRECTO (ace): solo tocó la bola el sacador
-      if (rallyHits === 1) {
+      // SAQUE DIRECTO (ace): solo tocó la bola el sacador. r112 (H8 de la
+      // auditoría r111): el golpe de saque NO pasa por registerPaddleHit,
+      // así que un ace verdadero deja rallyHits = 0 — la condición vieja
+      // (=== 1) nunca contaba el ace real y sí contaba un fallo tras 1 toque.
+      if (rallyHits === 0) {
         this.data.aces++;
         if (this.data.aces >= COND_LOGRO('aces10').valor && this.unlock('aces10')) out.push('aces10');   // r61: dato
       }
@@ -11476,7 +11488,11 @@ class OpponentAI {
       // cuando ella llega (el toque flojo SE VE: la pala roza la bola).
       // r97: la calabaza NUNCA se recoloca (la bola viva manda — ver arriba)
       const _mv = this.mishit(ball, toca);
-      this._preparaDisparo(ball, _mv, cx, cy, cz);
+      // r112 (H9 de la auditoría r111): pasar el spin del toque torpe —
+      // mishit fija el giro en el mismo frame, pero sin el 6º argumento el
+      // payload del disparo diferido nacía a cero y _aplicaDisparo (hasta
+      // 0,75 s después) borraba el giro de golpe. La vía limpia ya lo pasa.
+      this._preparaDisparo(ball, _mv, cx, cy, cz, ball.spin);
       this.cadenaContacto(cx, cy, cz, _mv, this._tBolaDe(ball, cx, cy, cz));
       return null;
     }
@@ -17540,6 +17556,30 @@ class NetLink {
         this.conn && this.conn.open) {
       this._enterTunnel();
     }
+    // r112 (H3 de la auditoría r111) · WATCHDOG DE SILENCIO UNIFICADO —
+    // antes del gate de v2: ahora también ampara a la v1. Tres regímenes:
+    //  · v1 / túnel: TODO el tráfico va por la DataConnection — la frescura
+    //    de CUALQUIERA de los dos caminos (reliable/fast) prueba vida y el
+    //    silencio de AMBOS mata. Antes el watchdog no corría aquí (el gate
+    //    de v1 salía antes) y un rival muerto sin cierre limpio (app
+    //    matada, SCTP sin FIN) dejaba online=true indefinidamente.
+    //  · pausa anunciada (r36): SILENCIO 60 s — régimen de la pausa.
+    //  · reinicio de ICE en vuelo (r37): SILENCIO 25 s — el apretón tarda.
+    //  · v2 sano: el canal FAST manda — si muere solo él (dc.onclose con
+    //    transporte vivo) la partida se corta igual: el AND antiguo
+    //    (reliable Y fast mudos a la vez) congelaba la partida para siempre.
+    const reinicioVivo = this._lastIceTry && (now - this._lastIceTry) < 15000;
+    const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);
+    if (this._tunnel || this.v2 !== 'ok') {
+      const ultVida = Math.max(this._lastRelAt || 0, this._lastFastAt || 0);
+      if (ultVida && now - ultVida > SILENCIO) {
+        this.onPeerGone(T('conn_lost'));
+        return;
+      }
+    } else if (this._lastFastAt && now - this._lastFastAt > SILENCIO) {
+      this.onPeerGone(T('conn_lost'));
+      return;
+    }
     if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
     // r77 · FASE 173 · SALIDA DEL TÚNEL: el ICE directo (hoy CON EL TURN de
     // Cloudflare el handshake puede tardar >11 s — hotspot, NAT simétrica)
@@ -17601,23 +17641,8 @@ class NetLink {
       this._lastIceTry = now;
       this._iceRestartIntento();
     }
-    // r36 (v3.6.132) · el rival que AVISÓ de pausa ('pause', visor quitado)
-    // está VIVO: su silencio no puede matar la partida a los 12 s — con
-    // pausa anunciada el corte tarda 60 s (y al volver, 'resume' restaura
-    // el estado exacto). Sin pausa anunciada: 12 s de siempre.
-    // r37 (v3.6.133) · con un reinicio de ICE EN VUELO (<15 s desde el
-    // intento) el silencio tolerado sube a 25 s: el apretón de manos real
-    // puede tardar 2-6 s y el corte a los 12 mataba la recuperación en el
-    // último tramo. Sin reinicio ni pausa: 12 s de siempre (el abandono
-    // real se corta igual — el rival que se va cierra el PeerJS y cae por
-    // conn.on('close'), no por silencio).
-    const reinicioVivo = this._lastIceTry && (now - this._lastIceTry) < 15000;
-    const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);
-    if (this._lastRelAt && now - this._lastRelAt > SILENCIO && this._lastFastAt &&
-        now - this._lastFastAt > SILENCIO) {
-      this.onPeerGone(T('conn_lost'));
-      return;
-    }
+    // r112 (H3): el watchdog de silencio VIVÍA AQUÍ (tras el gate de v2, con
+    // el AND reliable+fast) — se movió ANTES del gate unificado con la v1.
     this._sendFast(dt, now);
     this._drainFast();
   }
@@ -17651,6 +17676,11 @@ class NetLink {
           sendTime: now, echoTime: this._echoTime, echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
           pose: null, evs, yAnchor: DIMS.tableTopY };
         this._seq = pk.seq;
+        // r112 (H6 de la auditoría r111): sellar el SNAP en el reloj — sin
+        // markSent el eco del rival no produce muestra NTP (el paquete viaja
+        // con sendTime pero el reloj no conoce su salida) y hasta un tercio
+        // de las llegadas no refinaban el NTP con bola propia en vuelo.
+        this._clock.markSent(now);
         const n = PPNET.encodePacket(this._txBuf, pk);   // r43: búfer reutilizado
         if (n) this._fastSend(this._txOut(n), now);
         evs = null;
@@ -17707,7 +17737,13 @@ class NetLink {
   }
 
   _flushEvents(now) {
-    if (!this._pend.length || !this._fast || !this._fastOpen) return;
+    // r112 (H7 de la auditoría r111): MISMO criterio de salida que _sendFast
+    // (1477) — en túnel _fast/_fastOpen no abren por construcción, así que la
+    // guardia vieja volvía los flushes inmediatos de HIT/HANDOFF/cruce no-ops
+    // y los eventos críticos esperaban al tick de pose (~33 ms extra cada uno).
+    // En túnel sigue el camino normal: _fastSend ya encapsula por conn.
+    if (!this._pend.length ||
+        (!this._tunnel && (!this._fast || !this._fastOpen))) return;
     const pk = {
       seq: (this._seq + 1) & 0xffff, ack: this._ackP, ackBits: this._myAckBits(),
       sendTime: now, echoTime: this._echoTime,
@@ -18171,9 +18207,14 @@ class NetLink {
       }
       return;
     }
-    // reclamo en perspectiva YA espejada (wMapped): imponer el punto
+    // reclamo en perspectiva YA espejada (wMapped): imponer el punto.
+    // r112 (H4 de la auditoría r111): el claim SIEMPRE procede del otro
+    // extremo — la causa se remapea siempre a mi perspectiva, también
+    // cuando el anfitrión aplica el claim de un invitado (antes solo se
+    // invertía si el receptor era invitado y el host leía «culpa tuya»
+    // la culpa real del rival).
     g.processIntents(g.rules.forcePoint(wMapped, NetLink.remapCause(m.c,
-      this.role === 'guest'), m.r));
+      true), m.r));
   }
 
   _sendResync() {
@@ -18449,6 +18490,11 @@ class NetLink {
       return;
     }
     if (ev.t === PPNET.VP.EV.HANDOFF) {
+      // r112 (H2 de la auditoría r111): guardia de estado como la rama HIT
+      // (2225) — un HANDOFF atrasado que llegue fuera del rallye vivo
+      // (punto cantado o saque retenido) no debe teleportar g.ball ni
+      // robar la autoridad del lanzamiento del rival (spec §8).
+      if (g.rules.state !== 'rally') return;
       // mi fantasma ya voló hasta ahora: comparar y corregir (spec §8)
       const mineNet = this._stateNet(g.ball.pos);
       const corr = this._ball.onHandoff(ev, mineNet, nowH);
@@ -31101,8 +31147,13 @@ class PingPongGame {
     // NÚCLEO y se comía el gatillo del tee antes de llegar a la ruta del
     // módulo (el propio comentario de abajo ya avisaba: «esta rama debe
     // correr ANTES», pero esta guardia vivía MÁS ARRIBA aún).
+    // r112 (H12 de la auditoría r111): durante el countdown del MATCH_START
+    // online (_netStart) el gatillo NO lanza el toss — igual que la ruta del
+    // grip (r79): lanzar en cuenta atrás dejaba tossed=true y un netLocalToss
+    // que vuela en el rival mientras MI bola queda congelada en la mano.
     if (this.rules.state === 'serve' &&
         this.rules.server === 'player' && !this.tossed &&
+        !this._netStart &&
         !(this.calib && this.trainV3)) {
       this.tossFromHand(this.ballHand, true);
       return;
@@ -31195,8 +31246,10 @@ class PingPongGame {
     }
     // gatillo en CUALQUIER mando = saque asistido (v2.18: la gente buscaba el
     // gatillo en la mano de la pala y no pasaba nada). El lanzamiento usa
-    // siempre la mano que SUJETA la bola.
-    if (this.rules.state === 'serve' && this.rules.server === 'player' && !this.tossed) {
+    // siempre la mano que SUJETA la bola. r112 (H12): guardia del countdown
+    // online — sin ella el rival recibía un toss fantasma durante el MATCH_START.
+    if (this.rules.state === 'serve' && this.rules.server === 'player' && !this.tossed &&
+        !this._netStart) {
       this.tossFromHand(this.ballHand, true);
     }
   }
@@ -40294,6 +40347,23 @@ class PingPongGame {
     //      ya enderezada por el asistente del 5.5)
     if (this.net.online && this._localHit) {
       this._localHit = false;
+      // r112 (H1 de la auditoría r111): HIT PORTALIZADO — el bloque 5.55
+      // corrió ANTES en este mismo frame y congeló ball.vel a cero (tránsito
+      // atómico, spec). El HIT debe viajar como un golpe real: se sustituye
+      // la velocidad congelada por la de SALIDA del solver (_portalSalVel)
+      // para que los potenciadores r39 (fuego/onda) actúen sobre ella y el
+      // rival reciba un fantasma con trayectoria real (antes viajaba parado
+      // y su árbitro podía cantar un punto fantasma). La posición se cambia
+      // SOLO para el envío (centro del portal de salida): los efectos
+      // cosméticos (niebla r39) siguen leyendo la bola local hundida.
+      const _hitPortalizado = this.ball.ppTransito && !!this._portalSalVel;
+      if (_hitPortalizado) {
+        if (!this._portalHitCongVel) this._portalHitCongVel = new THREE.Vector3();
+        if (!this._portalHitCongPos) this._portalHitCongPos = new THREE.Vector3();
+        this._portalHitCongVel.copy(this.ball.vel);
+        this._portalHitCongPos.copy(this.ball.pos);
+        this.ball.vel.copy(this._portalSalVel);
+      }
       // r84 · DUELOS LOCOS: carga por golpe propio + FUEGO acelera MI golpe
       // (tras el enderezado 5.5: la velocidad enviada es la FINAL; tope
       // interno 26 m/s < cap 30 del validador §12 — jamás se rechaza)
@@ -40325,7 +40395,18 @@ class PingPongGame {
         this.ball.vel.multiplyScalar(ONDA_FLOJO);
         try { this.audio.playOsc(520, 300, 0.1, 'sine', 0.08, 0); } catch (eONf) { /* */ }
       }
+      // r112 (H1): el HIT viaja con posición y velocidad de SALIDA reales —
+      // y el boost r39 aplicado sobre la salida cuenta también para la
+      // reaparición local (_portalSalida), para que ambos lados vean igual.
+      if (_hitPortalizado) {
+        this.ball.pos.copy(this._portalSalPos);
+        this._portalSalVel.copy(this.ball.vel);
+      }
       this.net.sendHit(false);
+      if (_hitPortalizado) {
+        this.ball.pos.copy(this._portalHitCongPos);
+        this.ball.vel.copy(this._portalHitCongVel);   // sigue congelada en tránsito
+      }
     }
 
     // 6) Reglas y eventos (en modo ajuste: sin marcador, solo físicas y sonido;
@@ -40361,6 +40442,14 @@ class PingPongGame {
 
     // 7) Sincronizar visuales
     this.ballMesh.position.copy(this.ball.pos);
+    // r112 (H5 de la auditoría r111): visDelta por fin CON llamador — el
+    // salto del HANDOFF smooth (_visOff, decae en ~80 ms) y el catch-up del
+    // fantasma (_visOffMs) se absorben SOLO en lo visual (la física nunca
+    // se toca): la bola deja de teletransportar ante el rival (spec §8).
+    if (this.net && this.net.online) {
+      const _vd = this.net.visDelta(dt);
+      if (_vd) this.ballMesh.position.add(_vd);
+    }
     // r23 (v3.6.118) · SPIN VISIBLE (F1): la bola GIRA sobre el eje de su
     // ω real (antes: Euler X/Y con factor 0.05 — la textura parecía pintada
     // y estática). El latigazo del bote sale GRATIS: la fricción de la
@@ -41772,7 +41861,9 @@ class PingPongGame {
             // y el techo de velocidad se resetea por punto (cruce honesto)
             try {
               this._retoVmaxOk = false;
-              if (it.winner === 'player' && (it.rallyHits || 0) === 1) this._retosEvento('aces', 1);
+              // r112 (H8 de la auditoría r111): espejo del umbral de ace de
+              // c06 — el saque no registra rallyHits, el ace verdadero es 0.
+              if (it.winner === 'player' && (it.rallyHits || 0) === 0) this._retosEvento('aces', 1);
               if ((it.rallyHits || 0) >= 12) this._retosEvento('rally', it.rallyHits);
             } catch (eR98) { /* */ }
             this.emitStats();

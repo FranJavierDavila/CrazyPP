@@ -1391,6 +1391,30 @@ export class NetLink {
         this.conn && this.conn.open) {
       this._enterTunnel();
     }
+    // r112 (H3 de la auditoría r111) · WATCHDOG DE SILENCIO UNIFICADO —
+    // antes del gate de v2: ahora también ampara a la v1. Tres regímenes:
+    //  · v1 / túnel: TODO el tráfico va por la DataConnection — la frescura
+    //    de CUALQUIERA de los dos caminos (reliable/fast) prueba vida y el
+    //    silencio de AMBOS mata. Antes el watchdog no corría aquí (el gate
+    //    de v1 salía antes) y un rival muerto sin cierre limpio (app
+    //    matada, SCTP sin FIN) dejaba online=true indefinidamente.
+    //  · pausa anunciada (r36): SILENCIO 60 s — régimen de la pausa.
+    //  · reinicio de ICE en vuelo (r37): SILENCIO 25 s — el apretón tarda.
+    //  · v2 sano: el canal FAST manda — si muere solo él (dc.onclose con
+    //    transporte vivo) la partida se corta igual: el AND antiguo
+    //    (reliable Y fast mudos a la vez) congelaba la partida para siempre.
+    const reinicioVivo = this._lastIceTry && (now - this._lastIceTry) < 15000;
+    const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);
+    if (this._tunnel || this.v2 !== 'ok') {
+      const ultVida = Math.max(this._lastRelAt || 0, this._lastFastAt || 0);
+      if (ultVida && now - ultVida > SILENCIO) {
+        this.onPeerGone(T('conn_lost'));
+        return;
+      }
+    } else if (this._lastFastAt && now - this._lastFastAt > SILENCIO) {
+      this.onPeerGone(T('conn_lost'));
+      return;
+    }
     if (this.v2 !== 'ok') { this.tick(dt); return; }   // v1 honesto
     // r77 · FASE 173 · SALIDA DEL TÚNEL: el ICE directo (hoy CON EL TURN de
     // Cloudflare el handshake puede tardar >11 s — hotspot, NAT simétrica)
@@ -1452,23 +1476,8 @@ export class NetLink {
       this._lastIceTry = now;
       this._iceRestartIntento();
     }
-    // r36 (v3.6.132) · el rival que AVISÓ de pausa ('pause', visor quitado)
-    // está VIVO: su silencio no puede matar la partida a los 12 s — con
-    // pausa anunciada el corte tarda 60 s (y al volver, 'resume' restaura
-    // el estado exacto). Sin pausa anunciada: 12 s de siempre.
-    // r37 (v3.6.133) · con un reinicio de ICE EN VUELO (<15 s desde el
-    // intento) el silencio tolerado sube a 25 s: el apretón de manos real
-    // puede tardar 2-6 s y el corte a los 12 mataba la recuperación en el
-    // último tramo. Sin reinicio ni pausa: 12 s de siempre (el abandono
-    // real se corta igual — el rival que se va cierra el PeerJS y cae por
-    // conn.on('close'), no por silencio).
-    const reinicioVivo = this._lastIceTry && (now - this._lastIceTry) < 15000;
-    const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);
-    if (this._lastRelAt && now - this._lastRelAt > SILENCIO && this._lastFastAt &&
-        now - this._lastFastAt > SILENCIO) {
-      this.onPeerGone(T('conn_lost'));
-      return;
-    }
+    // r112 (H3): el watchdog de silencio VIVÍA AQUÍ (tras el gate de v2, con
+    // el AND reliable+fast) — se movió ANTES del gate unificado con la v1.
     this._sendFast(dt, now);
     this._drainFast();
   }
@@ -1502,6 +1511,11 @@ export class NetLink {
           sendTime: now, echoTime: this._echoTime, echoDelay: this._echoAt ? Math.min(65535, now - this._echoAt) : 0,
           pose: null, evs, yAnchor: DIMS.tableTopY };
         this._seq = pk.seq;
+        // r112 (H6 de la auditoría r111): sellar el SNAP en el reloj — sin
+        // markSent el eco del rival no produce muestra NTP (el paquete viaja
+        // con sendTime pero el reloj no conoce su salida) y hasta un tercio
+        // de las llegadas no refinaban el NTP con bola propia en vuelo.
+        this._clock.markSent(now);
         const n = PPNET.encodePacket(this._txBuf, pk);   // r43: búfer reutilizado
         if (n) this._fastSend(this._txOut(n), now);
         evs = null;
@@ -1558,7 +1572,13 @@ export class NetLink {
   }
 
   _flushEvents(now) {
-    if (!this._pend.length || !this._fast || !this._fastOpen) return;
+    // r112 (H7 de la auditoría r111): MISMO criterio de salida que _sendFast
+    // (1477) — en túnel _fast/_fastOpen no abren por construcción, así que la
+    // guardia vieja volvía los flushes inmediatos de HIT/HANDOFF/cruce no-ops
+    // y los eventos críticos esperaban al tick de pose (~33 ms extra cada uno).
+    // En túnel sigue el camino normal: _fastSend ya encapsula por conn.
+    if (!this._pend.length ||
+        (!this._tunnel && (!this._fast || !this._fastOpen))) return;
     const pk = {
       seq: (this._seq + 1) & 0xffff, ack: this._ackP, ackBits: this._myAckBits(),
       sendTime: now, echoTime: this._echoTime,
@@ -2022,9 +2042,14 @@ export class NetLink {
       }
       return;
     }
-    // reclamo en perspectiva YA espejada (wMapped): imponer el punto
+    // reclamo en perspectiva YA espejada (wMapped): imponer el punto.
+    // r112 (H4 de la auditoría r111): el claim SIEMPRE procede del otro
+    // extremo — la causa se remapea siempre a mi perspectiva, también
+    // cuando el anfitrión aplica el claim de un invitado (antes solo se
+    // invertía si el receptor era invitado y el host leía «culpa tuya»
+    // la culpa real del rival).
     g.processIntents(g.rules.forcePoint(wMapped, NetLink.remapCause(m.c,
-      this.role === 'guest'), m.r));
+      true), m.r));
   }
 
   _sendResync() {
@@ -2300,6 +2325,11 @@ export class NetLink {
       return;
     }
     if (ev.t === PPNET.VP.EV.HANDOFF) {
+      // r112 (H2 de la auditoría r111): guardia de estado como la rama HIT
+      // (2225) — un HANDOFF atrasado que llegue fuera del rallye vivo
+      // (punto cantado o saque retenido) no debe teleportar g.ball ni
+      // robar la autoridad del lanzamiento del rival (spec §8).
+      if (g.rules.state !== 'rally') return;
       // mi fantasma ya voló hasta ahora: comparar y corregir (spec §8)
       const mineNet = this._stateNet(g.ball.pos);
       const corr = this._ball.onHandoff(ev, mineNet, nowH);

@@ -47,7 +47,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "json" }, { status: 400 });
   }
   const pid = String(b.pid ?? "").replace(/[^A-Za-z0-9-]/g, "");
-  if (pid.length < 6) {
+  // r112 (higiene H16 de la auditoría r111): tope superior de 32 — igual
+  // que el worker de producción (pidOk 4-32). Antes solo había mínimo.
+  if (pid.length < 6 || pid.length > 32) {
     return NextResponse.json({ ok: false, error: "pid" }, { status: 400 });
   }
   const st = ["menu", "sala", "partida", "off"].includes(String(b.st))

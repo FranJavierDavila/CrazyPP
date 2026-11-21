@@ -368,6 +368,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  // r112 (higiene H18 de la auditoría r111): purga CON token — igual que el
+  // worker de producción (claveOk → 403 sin ella). Sin TELE_CLAVE en el
+  // entorno la ruta queda CERRADA (403 siempre): receptor de desarrollo
+  // apagado por defecto, sin secretos en el código.
+  const clave = req.nextUrl.searchParams.get("clave");
+  if (!process.env.TELE_CLAVE || clave !== process.env.TELE_CLAVE) {
+    return NextResponse.json(
+      { ok: false, error: "clave" },
+      { status: 403, headers: CORS }
+    );
+  }
   const sid = req.nextUrl.searchParams.get("sid");
   const todos = await leer();
   // quedan = los que NO casan con el filtro (sin ?sid= → purga total)

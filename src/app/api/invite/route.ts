@@ -31,7 +31,10 @@ export async function POST(req: NextRequest) {
   const sala = String(b.sala ?? "")
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "");
-  if (de.length < 6 || para.length < 6 || sala.length !== 5 || de === para) {
+  // r112 (higiene H17 de la auditoría r111): tope superior de 32 — igual
+  // que el worker de producción. Antes solo había mínimos.
+  if (de.length < 6 || para.length < 6 || de.length > 32 || para.length > 32 ||
+      sala.length !== 5 || de === para) {
     return NextResponse.json({ ok: false, error: "datos" }, { status: 400 });
   }
   const ahora = Date.now();

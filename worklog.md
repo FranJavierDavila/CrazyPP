@@ -7682,3 +7682,49 @@ pages, como manda el dueño.
 **Pendiente de GIT_TOKEN**: push de main (FF desde r100) · `GIT_TOKEN=… python3
 scripts/deploy_pages.py --push --release` · `GIT_TOKEN=… python3
 scripts/limpieza_github_r109.py --ejecutar`.
+
+**10 · CORRECCIONES DE LA AUDITORÍA (r112: «podemos solucionar lo pendiente para buscar
+el 100% de salud?» — el dueño aprueba el plan de acción de la re-auditoría r111)**:
+  · LOS 14 HALLAZGOS ABIERTOS, ARREGLADOS. Juego (11): **H1** portal — el HIT
+    portalizado ahora viaja con la velocidad y posición de SALIDA del solver
+    (_portalSalVel/_portalSalPos sobre el envío en el bloque 5.6, con swap congelado
+    y restitución; el boost r39 fuego/onda actúa sobre la salida y cuenta también en
+    la reaparición local); **H2** guardia de estado `rally` en la rama HANDOFF (c09);
+    **H3** watchdog de silencio UNIFICADO antes del gate de v2 — v1/túnel con
+    frescura de cualquiera de los dos caminos, v2 sano dispara con el silencio del
+    fast a secas (r36/r37 SILENCIO intacto); **H4** remapCause del claim SIEMPRE
+    true; **H5** visDelta por fin con llamador en el render de la bola (c12 §7,
+    offset solo visual); **H6** markSent en el SNAP de _sendFast (ecos → muestra NTP);
+    **H7** _flushEvents con el MISMO criterio de salida que _sendFast (túnel incluido);
+    **H8** aces con rallyHits === 0 en c06 + espejo c12 retos; **H9** mishit pasa
+    ball.spin al disparo diferido; **H10** término up·bladeCenterUp en la velocidad
+    de superficie del apoyo (c05 _rsOff); **H12** guardia _netStart en las DOS rutas
+    del gatillo de saque (c12 9868/9963). Live-service (3): **H13** propiedad
+    owner=socket.id en el canal + verificación en state/event + anti-secuestro en
+    publish; **H14** leaveWatch antes de watch y sin re-incremento del mismo canal;
+    **H15** matchId con whitelist /^[A-Za-z0-9_-]{6,64}$/ y meta saneada/recortada
+    (24/24/24/16). Higiene gemelas QA: topes de 32 en pid/de/para (route.ts) y
+    DELETE de telemetría con TELE_CLAVE (cerrada sin env). N1: UNA fuente de verdad
+    del relay (mini-services/) + scripts/check_live_service_igualdad.py en la batería.
+  · E2E REAL DEL RELAY: scripts/test_r112_live_service.mjs — servidor real en :3004
+    con 4 clientes socket.io, 10 pruebas (secuestro, estado ajeno, match-end ajeno,
+    watch doble, cambio de canal, recortes, desconexión) → **10✓ / 0✗**. Nota: el
+    relay admite UN canal por socket (re-publish dropea el anterior — diseño
+    original); el arnés usa un segundo host para ejercitar el cambio de canal.
+  · BATERÍA: núcleo **9/9 en verde** con el código arreglado (física 12/0 · c05 17/0 ·
+    ITTF 8/0 · P0 r86 21/0 · P0 r87 50/0 · red_nucleo 60/0 · disparo 15/0 · F1 6/0 ·
+    ICE 21/0). Incidencias de la ronda, ambas del propio arnés y corregidas al
+    momento: el primer edit de H6 se comió _fastSend/evs=null (restaurado antes de
+    compilar) y el de H10 se comió el const rCx/rCy (detectado por la batería —
+    c05 y p0_r86 crashearon — y restaurado; lección: nunca agrupar la línea de
+    const en el old_string). Los arneses CADUCADOS r26-r29/r39-r41 suben 1-2 fallos
+    por sus aserciones «diff vacío contra la rXX» (garantías congeladas de era) —
+    sin valor conductual, se re-anclan en la ronda de higiene pendiente.
+  · BUILD: regenerado por build_game.py --escribir → 12.512.462 B · golden
+    RE-ANCLADO a e8a6975c… (comentario con el sha anterior). BYTE-EXACTO verificado.
+    pages-site/game.html queda en la era anterior hasta el próximo release
+    (deploy_pages.py lo regenera con sus 2 rewrites).
+  · SIN CAMBIOS en el worker de producción (ya sano tras r111-b) · el cupo D1 se
+    recupera solo a las 00:00 UTC · push a GitHub sigue pendiente de GIT_TOKEN
+    (ahora 7 commits locales). El dueño queda con: jugar un duelo online con portal
+    (H1) y un saque durante la cuenta atrás (H12) para confirmar en Quest.

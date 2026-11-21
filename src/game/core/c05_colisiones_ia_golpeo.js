@@ -848,9 +848,18 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
       const gn = _rsG.dot(_rsN);                   // componente normal (negativa)
       const Fn = -gn;                              // fuerza normal por unidad de masa
       _rsG.addScaledVector(_rsN, -gn);             // gravedad tangencial (cuesta abajo)
-      // superficie de la pala bajo la bola: traslación + giro de muñeca
+      // superficie de la pala bajo la bola: traslación + giro de muñeca.
+      // r112 (H10 de la auditoría r111): el punto de apoyo vive sobre la
+      // HOJA (__ppRestLx/Dy se capturan respecto al centro de la hoja — la
+      // base de posición en 894 es pos + up·bladeCenterUp), pero rp.vel es
+      // la velocidad del GRIP: la velocidad real del punto de contacto es
+      // grip + ω×(right·rCx + up·(bladeCenterUp + rCy)). Sin el término
+      // up·bladeCenterUp la palanca de muñeca se medía desde el punto
+      // equivocado (~1,1 m/s de error a 8 rad/s) y girar la muñeca despacio
+      // NO arrastraba la bola, contrario a la promesa del bloque r103 §6.
       const rCx = ball.__ppRestLx || 0, rCy = ball.__ppRestDy || 0;
-      _rsOff.set(0, 0, 0).addScaledVector(rp.right, rCx).addScaledVector(rp.up, rCy);
+      _rsOff.set(0, 0, 0).addScaledVector(rp.right, rCx)
+        .addScaledVector(rp.up, DIMS.bladeCenterUp + rCy);
       _rsSurf.copy(rp.vel);
       if (rp.omega && rp.omega.lengthSq() > 1e-8) {
         _rsOm.copy(rp.omega).cross(_rsOff);

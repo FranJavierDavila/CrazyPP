@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.209-SDK6, fase 186 · FLUIDEZ PRIMERO — LA CABEZA MANDA; sello actualizado
-# por bump_version.py desde 3.6.208-SDK6)
-a627bed1efcac80bd53bb95b3020bfe5aec7382745d81995e11ab893a17e7a4b
+# SHA256 del game.html que produjo esta división (3.6.209-SDK6, fase 186 · r112 CORRECCIONES DE LA AUDITORÍA r111: 14 hallazgos arreglados — H1-H10/H12 juego · H13-H15 live-service · higiene gemelas QA; golden anterior r110/r111: a627bed1efcac80b…)
+# generado por build_game.py --escribir el 21-11-2026 · batería núcleo 9/9 verde
+8f1b20b760498d158faeaf7743ae9958d01e096d50079476b1f37570b3c5f54b

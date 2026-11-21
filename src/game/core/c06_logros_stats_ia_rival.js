@@ -79,8 +79,11 @@ export class GameStats {
     const out = [];
     if (winner === 'player') {
       this.data.pointsWon++;
-      // SAQUE DIRECTO (ace): solo tocó la bola el sacador
-      if (rallyHits === 1) {
+      // SAQUE DIRECTO (ace): solo tocó la bola el sacador. r112 (H8 de la
+      // auditoría r111): el golpe de saque NO pasa por registerPaddleHit,
+      // así que un ace verdadero deja rallyHits = 0 — la condición vieja
+      // (=== 1) nunca contaba el ace real y sí contaba un fallo tras 1 toque.
+      if (rallyHits === 0) {
         this.data.aces++;
         if (this.data.aces >= COND_LOGRO('aces10').valor && this.unlock('aces10')) out.push('aces10');   // r61: dato
       }
@@ -1506,7 +1509,11 @@ export class OpponentAI {
       // cuando ella llega (el toque flojo SE VE: la pala roza la bola).
       // r97: la calabaza NUNCA se recoloca (la bola viva manda — ver arriba)
       const _mv = this.mishit(ball, toca);
-      this._preparaDisparo(ball, _mv, cx, cy, cz);
+      // r112 (H9 de la auditoría r111): pasar el spin del toque torpe —
+      // mishit fija el giro en el mismo frame, pero sin el 6º argumento el
+      // payload del disparo diferido nacía a cero y _aplicaDisparo (hasta
+      // 0,75 s después) borraba el giro de golpe. La vía limpia ya lo pasa.
+      this._preparaDisparo(ball, _mv, cx, cy, cz, ball.spin);
       this.cadenaContacto(cx, cy, cz, _mv, this._tBolaDe(ball, cx, cy, cz));
       return null;
     }

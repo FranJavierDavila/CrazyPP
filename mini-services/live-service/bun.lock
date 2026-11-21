@@ -6,7 +6,7 @@
       "name": "live-service",
       "dependencies": {
         "socket.io": "^4.7.5",
-        "socket.io-client": "4.8.4",
+        "socket.io-client": "4",
       },
     },
   },

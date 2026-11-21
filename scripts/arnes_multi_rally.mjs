@@ -14,14 +14,16 @@ try { globalThis.navigator = { userAgent: 'node-r99' }; } catch (e) { /* getter 
 
 import * as THREE from 'three';
 const { OpponentAI } = await import('/home/z/my-project/src/game/core/c06_logros_stats_ia_rival.js');
+const { DIMS } = await import('/home/z/my-project/src/game/core/c02_cfg_escena.js');
+const C_RED = DIMS.tableCenterZ;   // r101 · la RED REAL (la cuna del arnés asumía z=0)
 const { stepPhysics } = await import('/home/z/my-project/src/game/core/c05_colisiones_ia_golpeo.js');
 
 const cfg = { missBase: 0.0, errStd: 0.05, minT: 0.5, maxT: 1.1,
   smash: 0.3, maxShotSpeed: 9, predictInterval: 0.05,
   maxSpeed: 2.6, accel: 6.0 };   // piernas: como el cfg real del juego
 
-const rival = new OpponentAI(cfg, -1, new THREE.Vector3(0, 1.0, -1.55));
-const jug = new OpponentAI(cfg, 1, new THREE.Vector3(0, 1.0, 1.55));
+const rival = new OpponentAI(cfg, -1, new THREE.Vector3(0, 1.0, C_RED - 1.55));
+const jug = new OpponentAI(cfg, 1, new THREE.Vector3(0, 1.0, C_RED + 1.55));
 rival.style = null; jug.style = null;
 
 const ball = { pos: new THREE.Vector3(), vel: new THREE.Vector3(),
@@ -29,16 +31,16 @@ const ball = { pos: new THREE.Vector3(), vel: new THREE.Vector3(),
   ppEfecto: false, ppEfectoTipo: '', ppEfectoLado: 0, ppPortal: false };
 
 function saca(sign) {
-  ball.pos.set((Math.random() - 0.5) * 0.3, 1.02, sign * 1.2);
+  ball.pos.set((Math.random() - 0.5) * 0.3, 1.02, C_RED + sign * 1.2);
   ball.vel.set((Math.random() - 0.5) * 0.5, 1.15 + Math.random() * 0.4,
     -sign * (1.9 + Math.random() * 0.5));
   ball.spin.set(0, 0, 0);
   ball.ppPortal = false; ball.ppEfecto = false;
 }
 
-const ctxR = { canHit: true, validBounce: false, oppPadX: 0, oppPadZ: 1.55,
+const ctxR = { canHit: true, validBounce: false, oppPadX: 0, oppPadZ: C_RED + 1.55,
   rallyHits: 1, holdTarget: null, prevBall: new THREE.Vector3() };
-const ctxJ = { canHit: true, validBounce: false, oppPadX: 0, oppPadZ: -1.55,
+const ctxJ = { canHit: true, validBounce: false, oppPadX: 0, oppPadZ: C_RED - 1.55,
   rallyHits: 1, holdTarget: null, prevBall: new THREE.Vector3() };
 
 const evs = [];
@@ -54,7 +56,8 @@ function vigia(estado, ai, sign, nombre) {
   const movio = mesh.distanceTo(estado.ult) > 0.015;
   estado.ult.copy(mesh);
   const bolaCerca = ball.vel.z * sign > 0.4 &&           // la bola viene hacia él
-    ball.pos.z * sign < 0 && Math.abs(ball.pos.z) < 2.2 && boteEste;
+    (ball.pos.z - C_RED) * sign < 0 &&
+    Math.abs(ball.pos.z - C_RED) < 2.2 && boteEste;
   if (!movio && bolaCerca) estado.quieta++; else estado.quieta = 0;
   if (estado.quieta === 60) quejas.push(
     `${nombre}: pala QUIETA 1 s con bola acercándose (f${frame}, ` +
@@ -77,8 +80,8 @@ function vigia(estado, ai, sign, nombre) {
   // tránsitos de vuelta a casa son legítimos: no se flaggean.
   const enAproximacion = ai.chain &&
     (ai.chain.phase === 'back' || ai.chain.phase === 'strike');
-  if (enAproximacion && mesh.z * sign < -0.30 &&
-      ball.pos.z * sign > 0.04) quejas.push(
+  if (enAproximacion && (mesh.z - C_RED) * sign < -0.30 &&
+      (ball.pos.z - C_RED) * sign > 0.04) quejas.push(
     `${nombre}: pala INVADE el campo contrario (f${frame}, pala z=${mesh.z.toFixed(2)})`);
   if (ai.chain && ai.chain.t > 4.0) quejas.push(
     `${nombre}: cadena ZOMBI ${ai.chain.t.toFixed(1)} s (f${frame})`);
@@ -112,7 +115,7 @@ for (frame = 0; frame < FRAME_TOTAL; frame++) {
       break;
     }
   }
-  if (Math.abs(ball.pos.z) > 3.2 || Math.abs(ball.pos.x) > 2.4 || rally > 900) {
+  if (Math.abs(ball.pos.z - C_RED) > 3.2 || Math.abs(ball.pos.x) > 2.4 || rally > 900) {
     if (rally > 900) quejas.push(`rally interminable en f${frame}`);
     rally = 0;
   }

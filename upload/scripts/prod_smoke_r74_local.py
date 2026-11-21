@@ -21,7 +21,7 @@
     exacto por panela, silueta redondeada, arco recalculado por página,
     lados condicionales, banda ATRÁS sobre la C, landings formato Ajustes,
     «Volver al Hall» fuera de Entrenar) + ancla r69 íntegra + sw a 3.6.162
-    + PAGES-VERSION.txt con fuente_commit=05f91cc23ff49823e5ffd855cc183bb042215764.
+    + PAGES-VERSION.txt con fuente_commit=83b2c469925c2d308efe4ad7b8fbca9302a7792c.
   · FUNCIONAL: el juego VIVO — aspecto texel==rodaja, central ~1 m, yaw por
     fórmula, colocación en mundo, congela/sigue, lados condicionales en 26
     páginas, barrido en bounds, banda ATRÁS flotante, 5 landings nuevas,
@@ -322,8 +322,8 @@ async def main():
         chk(False, f'sw.js servido ({e})')
     try:
         pv = get(BASE + '/PAGES-VERSION.txt')
-        chk('version=3.6.165-SDK6' in pv and 'fuente_commit=05f91cc23ff49823e5ffd855cc183bb042215764' in pv,
-            'PAGES-VERSION.txt: 3.6.165 desde 05f91cc23ff49823e5ffd855cc183bb042215764')
+        chk('version=3.6.165-SDK6' in pv and 'fuente_commit=83b2c469925c2d308efe4ad7b8fbca9302a7792c' in pv,
+            'PAGES-VERSION.txt: 3.6.165 desde 83b2c469925c2d308efe4ad7b8fbca9302a7792c')
     except Exception as e:
         chk(False, f'PAGES-VERSION.txt ({e})')
 

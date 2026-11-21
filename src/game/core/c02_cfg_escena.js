@@ -66,6 +66,10 @@ export const DIMS = {
   paddleRestSpeed: 0.25,    // vRelN <= esto al llegar = APOYO (no golpe, sin rebote)
   paddleRestFric: 0.38,     // fricción tangencial por re-contacto (deslizar/rodar)
   paddleRestMuS: 0.18,      // r86 P0-4: baja de 0,35 → la bola rueda desde ~10° (antes 19°)
+  paddleRestFricK: 0.12,    // r103 · §6 REAL: fricción CINÉTICA del apoyo en el mundo
+                            // (Coulomb del deslizamiento continuo) — MENOR que la
+                            // estática (0,18): una vez que resbala, resbala fácil
+                            // (antes 0,38 de cap frenaba el slide por debajo de 21°)
   paddleRestDrop: 0.09,     // s de edad del apoyo sin re-confirmar antes de soltar
   paddleRestCarry: 0.30,    // r86 P0-4: baja de 0,5 → el swing suave ya arrastra y suelta
   // r86 · P0-4 · DESPEGUE ANALÓGICO por EMPUJE SOSTENIDO: con la bola apoyada,
@@ -859,6 +863,7 @@ export const ARCANO_CFG = {
     bolaloca: 10,   // FASE 160 · BOLA LOCA (la original del Wizard de magia:
                     // crece ×1,65, ciclo arcoíris y deriva aleatoria — nace
                     // SIEMPRE desbloqueada, primer puesto del Arcano)
+    cripto: 12,     // r108 · SUPER CRIPTONITA (12 s — spec del dueño)
     dlGigante: 12,  // DUELOS LOCOS · GIGANTE (r84)
     dlFuego: 10,    // DUELOS LOCOS · FUEGO
     dlLoca: 10,     // DUELOS LOCOS · LOCA (retirada del surto en FASE 160:

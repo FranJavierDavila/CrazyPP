@@ -4,7 +4,7 @@ export function collidePaddle(ball, pad, k, events) {
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
 import { T } from './c00_pre_three.js';
 import { DIMS, SERVE_TUNE } from './c02_cfg_escena.js';
-import { CCD_TUNE, MAX_SUBSTEP_DT, applyAerodynamics, applyBounceSpin, bladeNormalLocal, bounceOnTable, ccdC0, ccdC1, ccdNL, ccdNrmA, ccdNrmB, ccdP, ccdPosA, ccdPosB, ccdRgtA, ccdRgtB, ccdUpA, ccdUpB, crossPoint, ipNormal, ipRight, ipUp, padPos, paddlePerkFor, relVel, sweepBallVsBlade, sweepBallVsCapsuleY, tmpD, tmpM, tmpN, tmpPrev, tmpR, tmpS, tmpSurf, tmpT } from './c04_fisica_ccd.js';
+import { BOTE_TUNE, CCD_TUNE, MAX_SUBSTEP_DT, SOLVER_TUNE, applyAerodynamics, applyBounceSpin, bladeNormalLocal, bounceOnTable, ccdC0, ccdC1, ccdNL, ccdNrmA, ccdNrmB, ccdP, ccdPosA, ccdPosB, ccdRgtA, ccdRgtB, ccdUpA, ccdUpB, crossPoint, integraVuelo, ipNormal, ipRight, ipUp, padPos, paddlePerkFor, relVel, sweepBallVsBlade, sweepBallVsCapsuleY, tmpD, tmpM, tmpN, tmpPrev, tmpR, tmpS, tmpSurf, tmpT } from './c04_fisica_ccd.js';
 import * as THREE from 'three';
 /* DEPS-FASE2-FIN */
 
@@ -436,6 +436,61 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   return true;
 }
 
+/* ================================================================
+ * r102 · §6 DEL ESTUDIO · APOYO PERSISTENTE EN MESA (micro-solver
+ * compliant). Consume SOLVER_TUNE. La bola en apoyo NO rebota por
+ * impulso: contacto continuo muelle-amortiguador en la vertical
+ * (F = k·δ + c·δ̇, F ≥ 0, gravitación incluida UNA vez: el vuelo
+ * RK4 ya aplicó la suya y aquí se compensa) y fricción de Coulomb
+ * REGULARIZADA sobre el deslizamiento del cascarón con el MISMO
+ * convenio de bounceOnTable (ux = vx + r·ωz, uz = vz − r·ωx, acoplo
+ * Δω = (3/2r)·Δv). La bola se posa, RUEDA con su efecto real
+ * (topspin acelera y rueda, backspin frena), responde al empuje en
+ * continuo y sale rodando por el borde. El árbitro ve UN bote (el
+ * de la entrada) — ningún evento mientras dura el apoyo.
+ * Cero asignaciones; ~40 escalares por subpaso (presupuesto 20 µs).
+ * ================================================================ */
+function apoyoMesa(ball, h) {
+  const topR = DIMS.tableTopY + DIMS.ballRadius;
+  const { pos, vel, spin } = ball;
+  // despegues: voló (golpe de pala), rodó fuera del tablero o quedó en vuelo
+  if (pos.y > topR + SOLVER_TUNE.mesaDespega ||
+      Math.abs(pos.x) > DIMS.tableHalfWidth + DIMS.ballRadius * 0.5 ||
+      Math.abs(pos.z - DIMS.tableCenterZ) > DIMS.tableHalfLength) {
+    ball.__ppMesa = 0;
+    return;
+  }
+  const delta = topR - pos.y;                        // penetración (≥0 en contacto)
+  if (delta < -0.012) { ball.__ppMesa = 0; return; } // teletransporte/reset: fuera
+  // vertical: el RK4 ya metió la gravedad — se compensa y aquí manda el muelle
+  vel.y -= DIMS.gravity * h;
+  const dDot = -vel.y;                               // velocidad de compresión
+  let Fn = SOLVER_TUNE.mesaK * delta;
+  if (delta > 0 && dDot > 0) Fn += SOLVER_TUNE.mesaC * dDot;
+  if (Fn < 0) Fn = 0;
+  vel.y += (DIMS.gravity + Fn) * h;
+  // tangencial: Coulomb regularizado sobre el deslizamiento del cascarón
+  const r = DIMS.ballRadius;
+  const ux = vel.x + r * spin.z;
+  const uz = vel.z - r * spin.x;
+  const uLen = Math.hypot(ux, uz);
+  if (uLen > 1e-6) {
+    const Ft = Math.min(SOLVER_TUNE.mesaMu * Fn, SOLVER_TUNE.mesaKT * uLen);
+    const dvx = -Ft * (ux / uLen) * h;
+    const dvz = -Ft * (uz / uLen) * h;
+    vel.x += dvx;
+    vel.z += dvz;
+    const kAc = (BOTE_TUNE.cascaronAcoplo / r);
+    spin.x += -kAc * dvz;
+    spin.z += +kAc * dvx;
+  }
+  // rodadura: resistencia lineal al deslizamiento residual (se posa sin vibrar)
+  const rr = Math.max(0, 1 - SOLVER_TUNE.mesaRueda * h);
+  vel.x *= rr;
+  vel.z *= rr;
+  ball.__ppMesa += h;
+}
+
 function collideTable(ball, prevY, events) {
   // v2.98: el ASEDIO juega SIN mesa (sólo la mesita de madera del
   // módulo): la bola puede DESACTIVAR la mesa del núcleo igual que
@@ -447,7 +502,7 @@ function collideTable(ball, prevY, events) {
   const inX = Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5;
   const inZ = Math.abs(pos.z - C) <= DIMS.tableHalfLength;
 
-  if (vel.y < 0 && prevY >= topR && pos.y < topR && inX && inZ) {
+  if (vel.y < 0 && prevY >= topR && pos.y < topR && inX && inZ && !ball.__ppMesa) {
     pos.y = topR;
     const impact = -vel.y;
     // v3.6.46 · con TIPO claro (top/back/side) el bote lleva la FIRMA
@@ -463,7 +518,15 @@ function collideTable(ball, prevY, events) {
     // TODO el Súper Efecto vive SOLO en la mitad del rival (z < C); un
     // bote en NUESTRA mitad (mishit, bola loca) es juego normal.
     const boteRival = pos.z < C;
-    if (DIMS.physicsRealism >= 0.5) {
+    // r102 · §6 · impacto FLOJO ⇒ APOYO PERSISTENTE (micro-solver compliant):
+    // el impulso rebotaría hasta el infinito (rest 0,935 → micro-bote zombi
+    // que además goteaba pocks r66); el apoyo muelle-amortiguador lo POSA,
+    // lo hace RODAR con su efecto real y responde al empuje en continuo.
+    // El evento de bote sale igual abajo (el árbitro cuenta el contacto).
+    if (impact < SOLVER_TUNE.mesaEnter) {
+      ball.__ppMesa = 1e-6;
+      vel.y = 0;
+    } else if (DIMS.physicsRealism >= 0.5) {
       // v3.0.5-FIS1 · P2: bote físico con deslizamiento (slip-coupled)
       bounceOnTable(vel, spin, impact);
     } else {
@@ -518,7 +581,9 @@ function collideTable(ball, prevY, events) {
     Math.abs(pos.z - C) < DIMS.tableHalfLength + DIMS.ballRadius &&
     pos.y > DIMS.tableTopY - DIMS.tableThickness - DIMS.ballRadius &&
     pos.y < topR;
-  if (insideSlab) {
+  if (insideSlab && !ball.__ppMesa) {
+    // r102 §6 · una bola EN APOYO descansa a topR−δ (dentro de la banda por
+    // definición): no es «dentro de la losa» — el micro-solver la gobierna.
     // r86 · P0-5 · resolución por MÍNIMA PENETRACIÓN en los TRES ejes (x, z
     // e y-arriba/y-abajo): una bola golpeada desde debajo del tablero (o
     // soltada dentro de la banda) sale por la cara más CERCANA — antes sólo
@@ -683,6 +748,10 @@ const _rsN = new THREE.Vector3();
 const _rsG = new THREE.Vector3();
 const _rsSlip = new THREE.Vector3();
 const _rsOm = new THREE.Vector3();
+// r103 · §6 REAL · tmps del apoyo en el MUNDO (superficie de la pala bajo la bola)
+const _rsSurf = new THREE.Vector3();
+const _rsU = new THREE.Vector3();
+const _rsOff = new THREE.Vector3();
 
 export function stepPhysics(dt, ball, paddles, events, extra) {
   /* ================================================================
@@ -701,11 +770,39 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
     for (const p of paddles) if (p && p.index === ball.__ppRestIdx) { rp = p; break; }
     ball.__ppRestT = (ball.__ppRestT || 0) + dt;
     if (!rp || !rp.active || rp.who !== 'player' ||
-        ball.__ppRestT > DIMS.paddleRestDrop ||
-        rp.vel.lengthSq() > DIMS.paddleRestCarry * DIMS.paddleRestCarry) {
-      ball.__ppRestIdx = -1;                       // despegue: física normal
+        ball.__ppRestT > DIMS.paddleRestDrop) {
+      ball.__ppRestIdx = -1;                       // despegue PASIVO: física normal
       ball.__ppRestPush = 0;                       // r86 P0-4: compresión fuera
+    } else if (rp.vel.lengthSq() > DIMS.paddleRestCarry * DIMS.paddleRestCarry) {
+      /* ==============================================================
+       * r103 · GOLPE DESDE EL APOYO (bug del dueño: «con la bola parada
+       * en la pala, un impulso rápido no la lanza — la atraviesa»). El
+       * swing supera el carry ⇒ el contacto YA ES UN GOLPE. Antes el
+       * despegue rápido soltaba la bola DONDE ESTABA: con la pose del
+       * swing ya adelantada, la hoja la cruzaba sin registrar nada y el
+       * barrido la veía detrás, en fuga. Ahora la bola se RE-PROYECTA
+       * al frente de la cara ACTUAL (viaja pegada a ella, como venía
+       * haciendo el glue) y se LANZA EN LA DIRECCIÓN DEL IMPULSO:
+       * velocidad de la pala (KF §7.2, sin lag) + empuje normal de la
+       * cara — el mismo formato del despegue por empuje. Con evento
+       * 'paddle' el árbitro CUENTA el golpe y el cooldown evita dobles. */
+      _rsN.copy(rp.normal).multiplyScalar(ball.__ppRestSide || 1);
+      ball.pos.copy(rp.pos).addScaledVector(rp.up, DIMS.bladeCenterUp)
+        .addScaledVector(rp.right, ball.__ppRestLx || 0)
+        .addScaledVector(rp.up, ball.__ppRestDy || 0)
+        .addScaledVector(_rsN, DIMS.ballRadius + 0.001);
+      const pushV = Math.max(0, rp.velInst.dot(_rsN));
+      const exit = Math.min(
+        Math.max(pushV * DIMS.paddleRestPushOut, DIMS.paddleRestPushMin),
+        DIMS.minExitSpeed * 0.8);
+      ball.vel.copy(rp.vel).addScaledVector(_rsN, exit);
+      ball.__ppRestIdx = -1;
+      ball.__ppRestPush = 0;
+      rp.cooldown = DIMS.paddleHitCooldown;
+      events.push({ type: 'paddle', who: rp.who, speed: ball.vel.length(),
+        pos: ball.pos.clone(), paddleIndex: rp.index, imanAim: false });
     } else {
+      ball.__ppMesa = 0;                           // bola en la pala: sin apoyo de mesa
       _rsN.copy(rp.normal).multiplyScalar(ball.__ppRestSide || 1);  // normal hacia la bola
       // r86 · P0-4 · EMPUJE SOSTENIDO → DESPEGUE ANALÓGICO: la pala que avanza
       // hacia la bola apoyada (velInst·normal > 0) acumula COMPRESIÓN con fuga
@@ -733,44 +830,73 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
         }
       }
       if (_restPin) {
-      // 1) deslizamiento propio: gravedad proyectada en el plano de la hoja
+      /* ============================================================
+       * r103 · §6 REAL · EL APOYO VIVE EN EL MUNDO (bug del dueño:
+       * «inclino la pala y la bola gira pero siempre sobre el mismo
+       * sitio»). Antes el deslizamiento era un vector LOCAL de la pala
+       * que sólo integraba gravedad, y el punto de apoyo (Lx, Dy) via-
+       * jaba pegado a la cara — girar o inclinar la pala rotaba TODO el
+       * conjunto: la bola daba vueltas sin deslizar jamás. Ahora la
+       * bola tiene VELOCIDAD PROPIA (ball.vel persiste) y la cara se
+       * mueve DEBAJO con su velocidad de superficie real: v_pala +
+       * ω_muñeca × r_contacto. El deslizamiento es la DIFERENCIA en el
+       * mundo, con fricción de Coulomb (estática si está pegada, ciné-
+       * tica regularizada si resbala): inclinar desliza cuesta abajo,
+       * girar la muñeca despacio ARRASTRA la bola y rápido la deja
+       * REZAGADA — nunca más soldada al punto local.                */
       _rsG.set(0, DIMS.gravity, 0);
       const gn = _rsG.dot(_rsN);                   // componente normal (negativa)
-      _rsG.addScaledVector(_rsN, -gn);             // tangencial (cuesta abajo)
-      const ax = _rsG.dot(rp.right), ay = _rsG.dot(rp.up);
-      const amax = DIMS.paddleRestFric * Math.abs(gn);
-      let sx = ball.__ppRestSx || 0, sy = ball.__ppRestSy || 0;
-      const quieta = (sx * sx + sy * sy) < 1e-6 &&
-        Math.hypot(ax, ay) <= DIMS.paddleRestMuS * Math.abs(gn);
-      if (quieta) { sx = 0; sy = 0; }              // fricción estática: no rueda
-      else {
-        sx += ax * dt; sy += ay * dt;
-        const sLen = Math.hypot(sx, sy);
-        if (sLen > 1e-9) {
-          const sNew = Math.max(0, sLen - amax * dt * 2.2);
-          const sK = sNew / sLen; sx *= sK; sy *= sK;
-        }
+      const Fn = -gn;                              // fuerza normal por unidad de masa
+      _rsG.addScaledVector(_rsN, -gn);             // gravedad tangencial (cuesta abajo)
+      // superficie de la pala bajo la bola: traslación + giro de muñeca
+      const rCx = ball.__ppRestLx || 0, rCy = ball.__ppRestDy || 0;
+      _rsOff.set(0, 0, 0).addScaledVector(rp.right, rCx).addScaledVector(rp.up, rCy);
+      _rsSurf.copy(rp.vel);
+      if (rp.omega && rp.omega.lengthSq() > 1e-8) {
+        _rsOm.copy(rp.omega).cross(_rsOff);
+        _rsSurf.add(_rsOm);
       }
-      // 2) punto de apoyo actualizado y clamped al disco de la hoja
-      const lx2 = ball.__ppRestLx + sx * dt, dy2 = ball.__ppRestDy + sy * dt;
+      // deslizamiento MUNDO tangencial: bola − superficie de la cara
+      _rsU.copy(ball.vel);
+      _rsU.addScaledVector(_rsN, -_rsU.dot(_rsN));
+      _rsU.sub(_rsSurf);
+      _rsU.addScaledVector(_rsN, -_rsU.dot(_rsN));
+      const uLen = _rsU.length();
+      const gtLen = _rsG.length();
+      if (uLen < 0.02 && gtLen <= DIMS.paddleRestMuS * Fn) {
+        // fricción ESTÁTICA: pegada a la cara — pero el contacto es en el
+        // mundo: girar la muñeca LENTO arrastra la bola con la cara (u≈0)
+        ball.vel.copy(_rsSurf);
+        _rsSlip.set(0, 0, 0);
+      } else {
+        // fricción CINÉTICA regularizada (Coulomb): se opone a u, tope μk·Fn
+        // (μk 0,12 < μs 0,18 — física real: resbalar es más fácil que soltar;
+        // suelo de Fn 0,5: pala vertical casi sin apoyo — la bola cae)
+        const amax = DIMS.paddleRestFricK * Math.max(Fn, 0.5);
+        if (uLen > 1e-9) {
+          const fMag = Math.min(amax, 40 * uLen);
+          ball.vel.addScaledVector(_rsU, -fMag / uLen * dt);
+        }
+        ball.vel.addScaledVector(_rsG, dt);        // gravedad tangencial propia
+        // la cara la sigue sosteniendo en la normal: v_n = superficie_n
+        ball.vel.addScaledVector(_rsN, _rsSurf.dot(_rsN) - ball.vel.dot(_rsN));
+        _rsSlip.copy(_rsU);                        // slip real para la rodadura
+      }
+      // el punto de apoyo AVANZA con el deslizamiento relativo (mundo → local)
+      const lx2 = rCx + _rsU.dot(rp.right) * dt, dy2 = rCy + _rsU.dot(rp.up) * dt;
       const rIn = DIMS.bladeRadius - DIMS.ballRadius * 0.35;
       if (lx2 * lx2 + dy2 * dy2 > rIn * rIn) {
         ball.__ppRestIdx = -1;                     // rodó fuera del borde
         ball.__ppRestPush = 0;                     // r86 P0-4: compresión fuera
       } else {
         ball.__ppRestLx = lx2; ball.__ppRestDy = dy2;
-        ball.__ppRestSx = sx; ball.__ppRestSy = sy;
-        // 3) posición pegada a la cara con la pose del frame nuevo
+        // posición pegada a la cara con la pose del frame nuevo
         _rsBase.copy(rp.pos).addScaledVector(rp.up, DIMS.bladeCenterUp);
         ball.pos.copy(_rsBase)
           .addScaledVector(rp.right, lx2)
           .addScaledVector(rp.up, dy2)
           .addScaledVector(_rsN, DIMS.ballRadius + 0.001);
-        // 4) velocidad: la de la pala + el deslizamiento propio (al soltar
-        //    la bola hereda ambos — botes y deslices naturales)
-        _rsSlip.set(0, 0, 0).addScaledVector(rp.right, sx).addScaledVector(rp.up, sy);
-        ball.vel.copy(rp.vel).add(_rsSlip);
-        // 5) rodadura del cascarón (ω ideal = (N × v)/r, aproximada suave)
+        // rodadura del cascarón (ω ideal = (N × slip)/r, aproximada suave)
         _rsOm.copy(_rsN).cross(_rsSlip).divideScalar(DIMS.ballRadius);
         ball.spin.lerp(_rsOm, 0.15);
       }
@@ -788,13 +914,18 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
     const prevY = ball.pos.y;
     const prevZ = ball.pos.z;
 
-    ball.vel.y += DIMS.gravity * h;
-    applyAerodynamics(ball.vel, ball.spin, h, ball.dragMul,
+    // r102 · §7.5 · VUELO RK4 (el estudio): gravedad + arrastre + Magnus con
+    // orden 4 — MISMA ecuación que consumen el predictor de la IA y el solver
+    // de saque (simulateBounceUntilTable): doctrina v3.0.5-FIS1 intacta.
+    integraVuelo(ball.pos, ball.vel, ball.spin, h, ball.dragMul,
       ball.ppEfecto ? (DIMS.efectoMagnusMul || 1.5) : 1);   // v3.6.36: bola marcada
+    // r102 · §6 · APOYO PERSISTENTE EN MESA: impactos flojos y rodadura con
+    // el micro-solver compliant (muelle + Coulomb del cascarón). Cero coste
+    // en vuelo libre (el flag __ppMesa solo vive en apoyos).
+    if (ball.__ppMesa) apoyoMesa(ball, h);
     // v3.6.49 (r57): FUERA el campo por subpaso del imán — la guía de tiro
     // del Súper Imán vive ahora EN EL GOLPE (collidePaddleSweep, bloque
     // r57) y el golden de física no ve nada nuevo aquí.
-    ball.pos.addScaledVector(ball.vel, h);
 
     // v2.29: si la pala golpea en este subpaso, la bola se RECOLOCA sobre la
     // cara de la pala: evaluar mesa/red/suelo EN ESTE MISMO subpaso producía
@@ -812,7 +943,10 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
       // v3.1.2-CCD1 · barrido SDF del subpaso: las poses de la pala se
       // interpolan EXACTAMENTE entre los extremos del subpaso (spec D:
       // subpasos alineados con P0→P1 del frame XR).
-      if (collidePaddleSweep(ball, pad, i / n, (i + 1) / n, events)) padHit = true;
+      if (collidePaddleSweep(ball, pad, i / n, (i + 1) / n, events)) {
+        padHit = true;
+        ball.__ppMesa = 0;   // r102 §6: la pala la lanza — el apoyo se suelta
+      }
     }
     if (padHit) continue;
     // v3.1.1-FEEL1 · la gracia del saque caduca con el tiempo físico
@@ -870,9 +1004,8 @@ export function predictStrike(ball, sign, bounced) {
   while (t < 2.2) {
     const prevY = pos.y;
     const prevZ = pos.z;
-    vel.y += DIMS.gravity * h;
-    applyAerodynamics(vel, spin, h);
-    pos.addScaledVector(vel, h);
+    // r102 · §7.5 · RK4 compartido: la IA predice con la ecuación del motor
+    integraVuelo(pos, vel, spin, h);
     t += h;
 
     if (vel.y < 0 && prevY >= topR && pos.y < topR &&
@@ -974,9 +1107,10 @@ function simulateBounceUntilTable(from, vel, spin, maxT, out) {
   while (t < maxT) {
     const prevY = pos.y;
     const prevZ = pos.z;
-    v.y += DIMS.gravity * h;
-    applyAerodynamics(v, s, h);
-    pos.addScaledVector(v, h);
+    // r102 · §7.5 · RK4 compartido: el simulador predice con la MISMA
+    // ecuación de vuelo del motor (doctrina v3.0.5-FIS1, ahora también
+    // en el integrador — Euler ✗, RK4 ✓).
+    integraVuelo(pos, v, s, h);
     t += h;
     if (!crossed && (prevZ - C) * (pos.z - C) <= 0 && prevZ !== pos.z) {
       const f = (C - prevZ) / (pos.z - prevZ);
@@ -1092,9 +1226,9 @@ export function simulateServePath(from, v0, spin, ownSign) {
   while (t < 3.2) {
     const prevY = pos.y;
     const prevZ = pos.z;
-    vel.y += DIMS.gravity * h;
-    applyAerodynamics(vel, sp, h);
-    pos.addScaledVector(vel, h);
+    // r102 · §7.5 · RK4 compartido: el solver de saque predice con la
+    // ecuación del motor (mismo integrador que el vuelo real)
+    integraVuelo(pos, vel, sp, h);
     t += h;
 
     // bote en la mesa

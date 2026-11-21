@@ -606,6 +606,584 @@ export function createChispas() {
   };
 }
 
+/* =====================================================================
+ *  r108 (v3.6.206) · COMETA DEL PODER — segunda reconstrucción (el dueño
+ *  tras la r107: «las estelas siguen muy cutres, deben parecer pequeñas
+ *  partículas de chispas que salen como si fuesen la cola de un cometa
+ *  dejando una estela de humo azulado; debe ser partículas densas y
+ *  pequeñas»). TRES capas en pools FIJOS (cero asignaciones por frame):
+ *   · CHISPAS (220): MÁS PEQUEÑAS (0,0095) y MÁS DENSAS (~170/s) —
+ *     nacen en la bola y SALEN HACIA ATRÁS (30 % del vuelo + jitter
+ *     corto), aditivas, vida 0,5 s: la cola de chispas del cometa.
+ *   · RASTRO (140): micro-polvo (0,0065) que marca la línea del vuelo
+ *     y se disipa en ~1,1 s.
+ *   · HUMO (110): burbujas AZULADAS grandes y lentas (0,055, 12 % de
+ *     opacidad) que quedan flotando tras la bola y SE DISIPAN — la
+ *     estela de humo del encargo.
+ *  El color de chispas/rastro lo pone el NÚCLEO (firma del poder,
+ *  _trailFirmaPoder r61 — el verde cripto incluido); el humo es SIEMPRE
+ *  azulado (el dueño lo pidió literal). La emisión la manda emitir(pos,
+ *  vel, dt, rgb) con deuda interna — el núcleo solo decide SI.
+ *  ===================================================================== */
+export function createEstelaPoder() {
+  const mk = (N, size, opacity) => {
+    const pos = new Float32Array(N * 3);
+    const vel = new Float32Array(N * 3);
+    const col = new Float32Array(N * 3);
+    const base = new Float32Array(N * 3);
+    const ages = new Float32Array(N).fill(99);      // nacidas muertas
+    for (let i = 0; i < N; i++) pos[i * 3 + 1] = -10;   // fuera de vista
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const mat = new THREE.PointsMaterial({
+      size, vertexColors: true, transparent: true, opacity,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const pts = new THREE.Points(geo, mat);
+    pts.visible = false;
+    pts.frustumCulled = false;
+    pts.renderOrder = 67;
+    return { pos, vel, col, base, ages, geo, mat, pts, N, prox: 0, VIDA: 0 };
+  };
+  const chispa = mk(220, 0.0095, 0.95);
+  chispa.VIDA = 0.5;                                // chispa viva y breve
+  const rastro = mk(140, 0.0065, 0.45);
+  rastro.VIDA = 1.1;                                // polvo fino que linger
+  const humo = mk(110, 0.055, 0.12);
+  humo.VIDA = 1.45;                                 // burbuja azulada lenta
+  const HUMO_AZUL = [0.5, 0.68, 0.95];              // el «humo azulado» literal
+  const grp = new THREE.Group();
+  grp.add(chispa.pts);
+  grp.add(rastro.pts);
+  grp.add(humo.pts);
+  const _c = new THREE.Color();
+  const naceEn = (L, px, py, pz, dx, dy, dz, rgb, mezclaAzul) => {
+    const i = L.prox;
+    L.prox = (L.prox + 1) % L.N;
+    L.pos[i * 3] = px; L.pos[i * 3 + 1] = py; L.pos[i * 3 + 2] = pz;
+    L.vel[i * 3] = dx; L.vel[i * 3 + 1] = dy; L.vel[i * 3 + 2] = dz;
+    L.ages[i] = 0;
+    if (rgb === 'arcoiris') {
+      _c.setHSL(Math.random(), 0.95, 0.6);
+      L.base[i * 3] = _c.r; L.base[i * 3 + 1] = _c.g; L.base[i * 3 + 2] = _c.b;
+    } else if (mezclaAzul) {
+      // el humo tira SIEMPRE al azul con un eco del color del poder
+      L.base[i * 3] = HUMO_AZUL[0] * 0.75 + rgb[0] * 0.25;
+      L.base[i * 3 + 1] = HUMO_AZUL[1] * 0.75 + rgb[1] * 0.25;
+      L.base[i * 3 + 2] = HUMO_AZUL[2] * 0.75 + rgb[2] * 0.25;
+    } else {
+      L.base[i * 3] = rgb[0]; L.base[i * 3 + 1] = rgb[1]; L.base[i * 3 + 2] = rgb[2];
+    }
+    L.col[i * 3] = L.base[i * 3];
+    L.col[i * 3 + 1] = L.base[i * 3 + 1];
+    L.col[i * 3 + 2] = L.base[i * 3 + 2];
+    L.pts.visible = true;
+    L.geo.attributes.position.needsUpdate = true;
+    L.geo.attributes.color.needsUpdate = true;
+  };
+  const paso = (L, dt, grav, freno) => {
+    let vivo = false;
+    const pa = L.geo.attributes.position.array;
+    const ca = L.geo.attributes.color.array;
+    for (let i = 0; i < L.N; i++) {
+      if (L.ages[i] >= L.VIDA) continue;
+      vivo = true;
+      L.ages[i] += dt;
+      if (L.ages[i] >= L.VIDA) { pa[i * 3 + 1] = -10; continue; }
+      L.vel[i * 3 + 1] -= dt * grav;
+      const f = Math.max(0, 1 - dt * freno);
+      L.vel[i * 3] *= f;
+      L.vel[i * 3 + 1] *= f;
+      L.vel[i * 3 + 2] *= f;
+      pa[i * 3] += L.vel[i * 3] * dt;
+      pa[i * 3 + 1] += L.vel[i * 3 + 1] * dt;
+      pa[i * 3 + 2] += L.vel[i * 3 + 2] * dt;
+      const k = Math.max(0, 1 - L.ages[i] / L.VIDA);
+      ca[i * 3] = L.base[i * 3] * k;
+      ca[i * 3 + 1] = L.base[i * 3 + 1] * k;
+      ca[i * 3 + 2] = L.base[i * 3 + 2] * k;
+    }
+    if (vivo) {
+      L.geo.attributes.position.needsUpdate = true;
+      L.geo.attributes.color.needsUpdate = true;
+    } else if (L.pts.visible) L.pts.visible = false;
+  };
+  let accC = 0, accR = 0, accH = 0;
+  return {
+    group: grp,
+    /** Emisión de cometa: chispas DETRÁS de la bola (contra el vuelo) +
+     *  rastro fino + humo azulado. rgb: firma [r,g,b] — o 'arcoiris'. */
+    emitir(pos, vel, dt, rgb) {
+      accC += dt * 170;                       // DENSAS: ~170 chispas/s
+      let n = Math.min(6, Math.floor(accC));
+      accC -= n;
+      while (n-- > 0) {
+        naceEn(chispa,
+          pos.x + (Math.random() - 0.5) * 0.016,
+          pos.y + (Math.random() - 0.5) * 0.016,
+          pos.z + (Math.random() - 0.5) * 0.016,
+          -vel.x * 0.30 + (Math.random() - 0.5) * 0.14,
+          -vel.y * 0.30 + (Math.random() - 0.5) * 0.14,
+          -vel.z * 0.30 + (Math.random() - 0.5) * 0.14,
+          rgb, false);
+      }
+      accR += dt * 70;
+      let m = Math.min(3, Math.floor(accR));
+      accR -= m;
+      while (m-- > 0) {
+        naceEn(rastro,
+          pos.x + (Math.random() - 0.5) * 0.012,
+          pos.y + (Math.random() - 0.5) * 0.012,
+          pos.z + (Math.random() - 0.5) * 0.012,
+          -vel.x * 0.08 + (Math.random() - 0.5) * 0.05,
+          -vel.y * 0.08 + (Math.random() - 0.5) * 0.05,
+          -vel.z * 0.08 + (Math.random() - 0.5) * 0.05,
+          rgb, false);
+      }
+      accH += dt * 30;
+      let h = Math.min(2, Math.floor(accH));
+      accH -= h;
+      while (h-- > 0) {
+        naceEn(humo,
+          pos.x + (Math.random() - 0.5) * 0.05,
+          pos.y + (Math.random() - 0.5) * 0.05,
+          pos.z + (Math.random() - 0.5) * 0.05,
+          -vel.x * 0.05 + (Math.random() - 0.5) * 0.06,
+          0.04 + Math.random() * 0.06,               // el humo SUBE despacio
+          -vel.z * 0.05 + (Math.random() - 0.5) * 0.06,
+          rgb, true);
+      }
+    },
+    /** Paso por frame de las tres capas. */
+    update(dt) {
+      paso(chispa, dt, 0.5, 3.5);       // chispas: caen y frenan fuerte
+      paso(rastro, dt, 0.1, 2.0);       // polvo: casi flota, se disipa
+      paso(humo, dt, -0.02, 1.1);       // humo: asciende y se disipa lento
+    },
+    dispose() {
+      try {
+        chispa.geo.dispose(); chispa.mat.dispose();
+        rastro.geo.dispose(); rastro.mat.dispose();
+        humo.geo.dispose(); humo.mat.dispose();
+      } catch { /* */ }
+    },
+  };
+}
+
+/* =====================================================================
+ *  r107 (v3.6.205) · NUBE DE PRISMAS — RECONSTRUIDA (el dueño: «que
+ *  parezcan prismas 3d con caras brillantes o de diferentes tonos para
+ *  apreciarlos en 3d, no quiero efecto planos»). El sombreado de
+ *  facetas va HORNEADO en los VÉRTICES (dos luces fijas por normal +
+ *  tono frío en los flancos y cálido en las tapas): cada cara de cada
+ *  prisma refleja distinto aunque la sala no tenga luz — gema facetada
+ *  siempre brillante, y el instanceColor arcoíris multiplica por
+ *  encima. Pool fijo de 36 instancias (r106 intacto: nace/anillo/vida
+ *  4,5-5,5 s/flotación/encogido).
+ *  ===================================================================== */
+export function createNubePrismas() {
+  const N = 36, VIDA = 5.0, FADE = 0.8;
+  let geo = new THREE.CylinderGeometry(0.024, 0.024, 0.06, 3);
+  geo = geo.toNonIndexed();                  // caras planas: vértices propios
+  {
+    // SOMBREADO DE FACETAS HORNEADO (el anti-plano del dueño)
+    const posA = geo.attributes.position;
+    const nV = posA.count;
+    const colArr = new Float32Array(nV * 3);
+    const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3();
+    const AB = new THREE.Vector3(), AC = new THREE.Vector3(), NR = new THREE.Vector3();
+    const L1 = new THREE.Vector3(0.42, 0.78, 0.46).normalize();
+    const L2 = new THREE.Vector3(-0.5, 0.25, -0.65).normalize();
+    for (let f = 0; f < nV; f += 3) {
+      A.fromBufferAttribute(posA, f);
+      B.fromBufferAttribute(posA, f + 1);
+      C.fromBufferAttribute(posA, f + 2);
+      AB.copy(B).sub(A);
+      AC.copy(C).sub(A);
+      NR.copy(AB).cross(AC).normalize();
+      if (NR.lengthSq() < 0.5) NR.set(0, 1, 0);
+      let brillo = 0.55 + 0.45 * Math.max(0, NR.dot(L1)) +
+        0.18 * Math.max(0, NR.dot(L2));
+      // tono por cara: flancos fríos, tapas cálidas (se aprecia el 3D)
+      let tr, tg, tb;
+      if (Math.abs(NR.y) > 0.7) { tr = 1.06; tg = 1.0; tb = 0.9; }
+      else { tr = 0.88; tg = 0.98; tb = 1.1; }
+      const k = Math.min(1.15, brillo);
+      for (let v = 0; v < 3; v++) {
+        colArr[(f + v) * 3] = tr * k;
+        colArr[(f + v) * 3 + 1] = tg * k;
+        colArr[(f + v) * 3 + 2] = tb * k;
+      }
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+  }
+  const mat = new THREE.MeshBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.96,
+    side: THREE.DoubleSide, depthWrite: false,
+  });
+  const mesh = new THREE.InstancedMesh(geo, mat, N);
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 68;
+  mesh.visible = false;
+  const P = [];
+  const _m = new THREE.Matrix4(), _q = new THREE.Quaternion();
+  const _p = new THREE.Vector3(), _s = new THREE.Vector3();
+  const _ax = new THREE.Vector3(), _c = new THREE.Color();
+  for (let i = 0; i < N; i++) {
+    P.push({ t: -1, vida: VIDA, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0,
+      ax: 0, ay: 1, az: 0, w: 3, ang: 0, esc: 1 });
+    _c.setHSL(i / N, 0.95, 0.55);
+    mesh.setColorAt(i, _c);                    // instanceColor desde el build
+    _m.makeScale(0, 0, 0);
+    mesh.setMatrixAt(i, _m);                   // muertas: invisibles
+  }
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  mesh.instanceMatrix.needsUpdate = true;
+  let prox = 0;
+  return {
+    group: mesh,
+    /** Nace la nube en p (30 prismas por defecto, anillo de instancias —
+     *  dos nubes seguidas re-usan las más viejas, jamás asigna). */
+    nace(p, n) {
+      const cuantos = Math.min(n || 30, N);
+      for (let k = 0; k < cuantos; k++) {
+        const i = prox;
+        const s = P[i];
+        prox = (prox + 1) % N;
+        s.t = 0;
+        s.vida = VIDA + (Math.random() - 0.5) * 1.0;   // 4,5-5,5 s
+        s.x = p.x + (Math.random() - 0.5) * 0.10;
+        s.y = p.y + 0.12 + (Math.random() - 0.5) * 0.10;
+        s.z = p.z + (Math.random() - 0.5) * 0.10;
+        const a = Math.random() * Math.PI * 2;
+        const sp = 0.22 + Math.random() * 0.5;
+        s.vx = Math.cos(a) * sp;
+        s.vy = 0.35 + Math.random() * 0.55;             // brotan hacia arriba
+        s.vz = Math.sin(a) * sp;
+        const b = Math.random() * Math.PI * 2;
+        s.ax = Math.cos(b); s.ay = Math.sin(b); s.az = (Math.random() - 0.5) * 2;
+        s.w = 2.2 + Math.random() * 2.6;
+        s.ang = Math.random() * Math.PI * 2;
+        s.esc = 0.8 + Math.random() * 0.6;
+        _c.setHSL(Math.random(), 0.95, 0.55);           // «todos los colores»
+        mesh.setColorAt(i, _c);
+      }
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.visible = true;
+    },
+    /** Paso por frame: flotar (deriva amortiguada + casi sin gravedad),
+     *  girar y encogerse en el último 0,8 s hasta desaparecer. */
+    update(dt) {
+      let vivo = false;
+      for (let i = 0; i < N; i++) {
+        const s = P[i];
+        if (s.t < 0) continue;
+        vivo = true;
+        s.t += dt;
+        if (s.t >= s.vida) {
+          s.t = -1;
+          _m.makeScale(0, 0, 0);
+          mesh.setMatrixAt(i, _m);
+          continue;
+        }
+        const d = Math.max(0, 1 - dt * 1.5);            // freno del esparcir
+        s.vx *= d; s.vz *= d;
+        s.vy += (-0.06 + Math.sin(s.t * 2.1 + i * 1.7) * 0.05) * dt;  // flota
+        s.x += s.vx * dt; s.y += s.vy * dt; s.z += s.vz * dt;
+        s.ang += s.w * dt;
+        let esc = s.esc;
+        const rest = s.vida - s.t;
+        if (rest < FADE) esc *= Math.max(0.001, rest / FADE);
+        _p.set(s.x, s.y, s.z);
+        _ax.set(s.ax, s.ay, s.az).normalize();
+        _q.setFromAxisAngle(_ax, s.ang);
+        _s.setScalar(esc);
+        _m.compose(_p, _q, _s);
+        mesh.setMatrixAt(i, _m);
+      }
+      if (vivo) mesh.instanceMatrix.needsUpdate = true;
+      else if (mesh.visible) mesh.visible = false;
+    },
+    dispose() {
+      try { geo.dispose(); mat.dispose(); } catch { /* */ }
+    },
+  };
+}
+
+/* =====================================================================
+ *  r107 (v3.6.205) · ESFERA-ESCUDO DE LA ONDA DE CHOQUE — el encargo del
+ *  dueño: «emite una onda en forma de esfera azulona semitransparente
+ *  con dibujos de pentágonos en su superficie (que simulan una especie
+ *  de escudo) desde la pala del jugador empujando la bola cuando este la
+ *  golpea; la esfera se centra en la pala en el momento del impacto y
+ *  crece empujando la bola con la propia superficie de la esfera». Textura
+ *  de pentágonos PROCEDURAL (lienzo, sin assets), aditiva y translúcida;
+ *  la superficie PERSIGUE a la bola (radio = distancia al centro + margen,
+ *  con crecimiento propio mínimo) — la bola viaja pegada al frente de la
+ *  burbuja que la empuja. Muere encogiéndose (el núcleo la corta cuando
+ *  la bola toca el suelo o la pala del rival; tope de vida 1,6 s).
+ *  ===================================================================== */
+export function createOndaEsfera() {
+  const MAXR = 1.5, VIDA = 1.6, MUERTE = 0.18, OP = 0.34;
+  // — textura de pentágonos (escudo) dibujada en un lienzo —
+  const cv = document.createElement('canvas');
+  cv.width = 1024;
+  cv.height = 512;
+  const g = cv.getContext('2d');
+  const penta = (x, y, r, rot) => {
+    g.beginPath();
+    for (let k = 0; k < 5; k++) {
+      const a = rot + k * Math.PI * 2 / 5;
+      const px = x + Math.cos(a) * r;
+      const py = y + Math.sin(a) * r;
+      if (k === 0) g.moveTo(px, py); else g.lineTo(px, py);
+    }
+    g.closePath();
+  };
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 12; col++) {
+      const x = (col + (row % 2 ? 0.5 : 0)) * (1024 / 12);
+      const y = (row + 0.5) * (512 / 6);
+      const r = 30 + ((row * 7 + col * 13) % 3) * 7;
+      penta(x, y, r, (row + col) * 0.7);
+      g.fillStyle = 'rgba(150, 205, 255, 0.13)';
+      g.fill();
+      g.strokeStyle = 'rgba(212, 238, 255, 0.9)';
+      g.lineWidth = 3.5;
+      g.shadowColor = '#8fd2ff';
+      g.shadowBlur = 10;
+      g.stroke();
+      g.shadowBlur = 0;
+    }
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = THREE.RepeatWrapping;
+  const geo = new THREE.SphereGeometry(1, 30, 22);
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 63;
+  mesh.visible = false;
+  mesh.frustumCulled = false;
+  let t = -1, radio = 0.1, muriendo = -1;
+  const centro = new THREE.Vector3();
+  const _v = new THREE.Vector3();
+  return {
+    group: mesh,
+    viva() { return t >= 0 && muriendo < 0; },
+    /** Nace centrada en el punto del impacto (la pala en el golpeo). */
+    nace(pos) {
+      centro.copy(pos);
+      t = 0;
+      radio = 0.1;
+      muriendo = -1;
+      mesh.position.copy(centro);
+      mesh.scale.setScalar(radio);
+      mat.opacity = 0;
+      mesh.visible = true;
+    },
+    /** Crece empujando: persigue la bola (bola = pos actual o null). */
+    update(dt, bola) {
+      if (t < 0) return;
+      if (muriendo >= 0) {
+        muriendo += dt;
+        const k = Math.max(0, 1 - muriendo / MUERTE);
+        mesh.scale.setScalar(Math.max(0.001, radio * k));
+        mat.opacity = OP * k;
+        if (muriendo >= MUERTE) { t = -1; mesh.visible = false; }
+        return;
+      }
+      t += dt;
+      if (t >= VIDA) { this.muere(); return; }
+      let objetivo = radio + dt * 1.4;            // crecimiento propio mínimo
+      if (bola) {
+        _v.copy(bola).sub(centro);
+        const d = _v.length() + 0.06;             // la superficie la alcanza
+        if (d > objetivo) objetivo = d;
+      }
+      radio = Math.min(MAXR, objetivo);
+      mesh.scale.setScalar(radio);
+      mat.opacity = Math.min(OP, OP * t * 6);     // fade-in rápido
+    },
+    /** Muere encogiéndose rápido (el núcleo corta con golpe sonoro). */
+    muere() {
+      if (t < 0) return;
+      muriendo = 0;
+    },
+    dispose() {
+      try { geo.dispose(); mat.dispose(); tex.dispose(); } catch { /* */ }
+    },
+  };
+}
+
+/* =====================================================================
+ *  r108 (v3.6.206) · CRISTALES DE CRIPTONITA — SUPER CRIPTONITA (el
+ *  dueño: «cuando la bola en este estado golpea la mesa hace crecer de
+ *  uno a hasta 5 prismas de verde fosforito que simulan cristales de
+ *  cuarzo verdosos (deberían parecer cristales veteados verdosos
+ *  realistas) que pueden crecer desde 20 hasta 50 cm, aleatorio, sobre
+ *  la superficie de la mesa del rival»). Cuarzo HEXAGONAL (prisma +
+ *  punta piramidal) con textura de VETAS procedural (venas claras y
+ *  oscuras onduladas) y emisivo fosforito que pulsa; crecen con
+ *  rebote suave desde la superficie de la mesa. Si la bola los golpea
+ *  se ROMPEN (encogido + giro) — el freno y la dirección aleatoria los
+ *  aplica el núcleo. Pool fijo de 24 (las viejas se deshacen solas).
+ *  ===================================================================== */
+export function createCristalesCripto() {
+  const N = 24, CRECE = 0.45, MUERTE = 0.3, VIDA = 11.0;
+  // — textura de VETAS (cuarzo verdoso realista), lienzo procedural —
+  const cv = document.createElement('canvas');
+  cv.width = 128;
+  cv.height = 256;
+  const g = cv.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 128, 256);
+  grad.addColorStop(0, '#0d2f16');
+  grad.addColorStop(0.45, '#2f8f4a');
+  grad.addColorStop(1, '#1a5c2e');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 256);
+  for (let v = 0; v < 16; v++) {
+    const x0 = (v / 16) * 128 + Math.random() * 6;
+    const claro = v % 2 === 0;
+    g.strokeStyle = claro ? 'rgba(206, 255, 214, 0.5)' : 'rgba(4, 22, 10, 0.62)';
+    g.lineWidth = claro ? 1.6 + Math.random() * 1.6 : 2.4 + Math.random() * 2.6;
+    g.beginPath();
+    let x = x0;
+    g.moveTo(x, -6);
+    for (let y = 0; y <= 256; y += 16) {
+      x = x0 + Math.sin(y * 0.06 + v * 1.7) * 5 + (Math.random() - 0.5) * 2.4;
+      g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+  for (let b = 0; b < 6; b++) {                   // bandas horizontales sutiles
+    g.fillStyle = 'rgba(11, 46, 22, 0.16)';
+    g.fillRect(0, 24 + b * 42 + Math.random() * 8, 128, 5 + Math.random() * 7);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex, emissiveMap: tex, emissive: new THREE.Color(0x39ff6e),
+    emissiveIntensity: 0.55, roughness: 0.28, metalness: 0.08,
+  });
+  const geoC = new THREE.CylinderGeometry(0.55, 1.0, 3.0, 6, 1);  // prisma hex.
+  const geoP = new THREE.ConeGeometry(0.55, 1.1, 6);               // punta
+  const grupo = new THREE.Group();
+  grupo.visible = true;
+  const P = [];
+  for (let i = 0; i < N; i++) {
+    const prism = new THREE.Mesh(geoC, mat);
+    prism.position.y = 1.5;
+    const tip = new THREE.Mesh(geoP, mat);
+    tip.position.y = 3.0 + 0.55;
+    const g2 = new THREE.Group();
+    g2.add(prism);
+    g2.add(tip);
+    g2.visible = false;
+    grupo.add(g2);
+    P.push({ grp: g2, t: -1, crece: 0, roto: -1, h: 0.3, r: 0.05,
+      x: 0, y: 0, z: 0, vida: VIDA });
+  }
+  let prox = 0;
+  const GEO_ALTO = 4.1;   // prisma 3,0 + punta 1,1 (unidades de la geometría)
+  return {
+    group: grupo,
+    /** Nace UNA cosecha de 1-5 cristales cerca de p (el punto del bote en
+     *  la mesa del rival). Alturas 20-50 cm y radios aleatorios. */
+    nace(p, topY) {
+      const ty = topY || 0.76;
+      const cuantos = 1 + Math.floor(Math.random() * 5);   // 1..5 (spec)
+      for (let k = 0; k < cuantos; k++) {
+        const s = P[prox];
+        prox = (prox + 1) % N;
+        s.t = 0;
+        s.crece = 0;
+        s.roto = -1;
+        s.vida = VIDA;
+        s.h = 0.20 + Math.random() * 0.30;                 // 20-50 cm (spec)
+        s.r = s.h * (0.14 + Math.random() * 0.07);
+        s.x = p.x + (Math.random() - 0.5) * 0.18;
+        s.z = p.z + (Math.random() - 0.5) * 0.18;
+        s.y = ty;
+        s.grp.position.set(s.x, s.y, s.z);
+        s.grp.rotation.set((Math.random() - 0.5) * 0.24, Math.random() * Math.PI * 2,
+          (Math.random() - 0.5) * 0.24);
+        s.grp.scale.set(0.001, 0.001, 0.001);              // nace del suelo
+        s.grp.visible = true;
+      }
+      return cuantos;
+    },
+    /** Crecimiento (con rebote suave) + pulso fosforito + muertes. */
+    update(dt) {
+      const ph = performance.now() * 0.001;
+      mat.emissiveIntensity = 0.42 + 0.3 * (0.5 + 0.5 * Math.sin(ph * 5.2));
+      for (let i = 0; i < N; i++) {
+        const s = P[i];
+        if (s.t < 0) continue;
+        s.t += dt;
+        if (s.roto >= 0) {
+          s.roto += dt;
+          const k = Math.max(0.001, 1 - s.roto / MUERTE);
+          s.grp.scale.set(s.r * (1 + s.roto * 3), (s.h / GEO_ALTO) * k,
+            s.r * (1 + s.roto * 3));
+          s.grp.rotation.y += dt * 18;
+          if (s.roto >= MUERTE) { s.t = -1; s.grp.visible = false; }
+          continue;
+        }
+        s.vida -= dt;
+        if (s.vida <= 0) { s.t = -1; s.grp.visible = false; continue; }
+        if (s.crece < 1) {
+          s.crece = Math.min(1, s.crece + dt / CRECE);
+          // rebote suave al crecer (ease-out con overshoot corto)
+          const e = s.crece;
+          const reb = 1 + Math.sin(Math.min(1, e) * Math.PI) * 0.18;
+          s.grp.scale.set(s.r * Math.min(1, e * 2.2), (s.h / GEO_ALTO) * e * reb,
+            s.r * Math.min(1, e * 2.2));
+        }
+      }
+    },
+    /** ¿La bola choca con un cristal? Devuelve su índice o -1. */
+    colisiona(pos, rBola) {
+      for (let i = 0; i < N; i++) {
+        const s = P[i];
+        if (s.t < 0 || s.roto >= 0 || s.crece < 0.5) continue;
+        const dx = pos.x - s.x;
+        const dz = pos.z - s.z;
+        const rr = s.r * 0.92 + rBola;
+        const crecido = s.h * Math.min(1, s.crece * 1.18);
+        if (dx * dx + dz * dz <= rr * rr &&
+            pos.y >= s.y - 0.02 && pos.y <= s.y + crecido + 0.08) {
+          return i;
+        }
+      }
+      return -1;
+    },
+    /** Rompe el cristal i (el núcleo aplica el freno/dirección). */
+    rompe(i) {
+      if (i < 0 || i >= N) return;
+      P[i].roto = 0;
+    },
+    /** Fin de la ventana: todos los cristales vivos se deshacen. */
+    fin() {
+      for (let i = 0; i < N; i++) {
+        if (P[i].t >= 0 && P[i].roto < 0) P[i].roto = 0;
+      }
+    },
+    vivos() {
+      let n = 0;
+      for (let i = 0; i < N; i++) if (P[i].t >= 0 && P[i].roto < 0) n++;
+      return n;
+    },
+    dispose() {
+      try { geoC.dispose(); geoP.dispose(); mat.dispose(); tex.dispose(); } catch { /* */ }
+    },
+  };
+}
+
 export function createBlobShadow() {
   const m = new THREE.Mesh(
     new THREE.CircleGeometry(0.05, 20),

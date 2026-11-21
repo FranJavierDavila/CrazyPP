@@ -609,150 +609,6 @@ export const CADENA_GOLPE = {
   mala:    { dbs: 0.07, hbs: 0.02, dft: 0.10, hft: 0.02, vPeakMul: 0.35 },
 };
 
-/* r91 · quíntico de Hermite con velocidades en los extremos (v0=v1=0 ⇒
- * MÍNIMO JERK exacto — Flash & Hogan 1985). Generador de TODAS las
- * trayectorias del brazo: acelera suave, pico en el punto planificado,
- * frena suave. */
-export function mjQuintic(u, p0, v0, p1, v1, T, out) {
-  u = THREE.MathUtils.clamp(u, 0, 1);
-  const u2 = u * u, u3 = u2 * u, u4 = u3 * u, u5 = u4 * u;
-  const h0 = 10 * u3 - 15 * u4 + 6 * u5;
-  const h10 = u - 6 * u3 + 8 * u4 - 3 * u5;
-  const h11 = -4 * u3 + 7 * u4 - 3 * u5;
-  out.set(
-    p0.x + (p1.x - p0.x) * h0 + T * (v0.x * h10 + v1.x * h11),
-    p0.y + (p1.y - p0.y) * h0 + T * (v0.y * h10 + v1.y * h11),
-    p0.z + (p1.z - p0.z) * h0 + T * (v0.z * h10 + v1.z * h11));
-  return out;
-}
-
-/* derivada del quíntico (velocidad exacta de la trayectoria) */
-export function mjQuinticVel(u, p0, v0, p1, v1, T, out) {
-  u = THREE.MathUtils.clamp(u, 0, 1);
-  const u2 = u * u, u3 = u2 * u, u4 = u3 * u;
-  const d0 = (30 * u2 - 60 * u3 + 30 * u4) / T;
-  const d10 = 1 - 18 * u2 + 32 * u3 - 15 * u4;
-  const d11 = -12 * u2 + 28 * u3 - 15 * u4;
-  out.set(
-    (p1.x - p0.x) * d0 + v0.x * d10 + v1.x * d11,
-    (p1.y - p0.y) * d0 + v0.y * d10 + v1.y * d11,
-    (p1.z - p0.z) * d0 + v0.z * d10 + v1.z * d11);
-  return out;
-}
-
-/* r91 · IK ANALÍTICA de 2 huesos (ley de cosenos) con polo anatómico del
- * codo: el codo CAE en el drive y sube en el revés, como un brazo real
- * (rango humano 25-145°). Objetivo imposible ⇒ brazo estirado al 94 % del
- * alcance — nunca NaN, nunca desarticulado. Devuelve { dist, flex }. */
-export function solveArmIK(S, W, L1, L2, pole, outE) {
-  const dx = W.x - S.x, dy = W.y - S.y, dz = W.z - S.z;
-  const raw = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
-  const dist = THREE.MathUtils.clamp(raw, 0.30, 0.94 * (L1 + L2));
-  const nx = dx / raw, ny = dy / raw, nz = dz / raw;
-  const a1 = (L1 * L1 - L2 * L2 + dist * dist) / (2 * dist);
-  const h = Math.sqrt(Math.max(L1 * L1 - a1 * a1, 1e-6));
-  const dp = pole.x * nx + pole.y * ny + pole.z * nz;
-  let px = pole.x - nx * dp, py = pole.y - ny * dp, pz = pole.z - nz * dp;
-  const pl = Math.sqrt(px * px + py * py + pz * pz) || 1e-6;
-  px /= pl; py /= pl; pz /= pl;
-  outE.set(S.x + nx * a1 + px * h, S.y + ny * a1 + py * h, S.z + nz * a1 + pz * h);
-  const cosE = THREE.MathUtils.clamp((L1 * L1 + L2 * L2 - dist * dist) / (2 * L1 * L2), -1, 1);
-  return { dist, flex: 180 - Math.acos(cosE) * 180 / Math.PI };
-}
-
-/* r93 · IK de 2 huesos RÍGIDA para el esqueleto GLB (informe del dueño:
- * «los huesos no son elásticos… NUNCA se pueden estirar o escalar los
- * huesos»): las LONGITUDES son invariables — el objetivo se clampar al
- * anillo de alcance ANTES de resolver y la MUÑECA RESUELTA sale por outW
- * (puede quedar corta respecto al deseo: el cuerpo cubre la diferencia,
- * el hueso jamás estira). Devuelve { dist, flex, alcanzado }. */
-export function solveArmIKRigido(S, W, L1, L2, pole, outE, outW) {
-  const dx = W.x - S.x, dy = W.y - S.y, dz = W.z - S.z;
-  const raw = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
-  const maxR = 0.999 * (L1 + L2), minR = 0.28 * (L1 + L2);
-  const dist = THREE.MathUtils.clamp(raw, minR, maxR);
-  const nx = dx / raw, ny = dy / raw, nz = dz / raw;
-  const a1 = (L1 * L1 - L2 * L2 + dist * dist) / (2 * dist);
-  const h = Math.sqrt(Math.max(L1 * L1 - a1 * a1, 1e-6));
-  const dp = pole.x * nx + pole.y * ny + pole.z * nz;
-  let px = pole.x - nx * dp, py = pole.y - ny * dp, pz = pole.z - nz * dp;
-  const pl = Math.sqrt(px * px + py * py + pz * pz) || 1e-6;
-  px /= pl; py /= pl; pz /= pl;
-  outE.set(S.x + nx * a1 + px * h, S.y + ny * a1 + py * h, S.z + nz * a1 + pz * h);
-  outW.set(S.x + nx * dist, S.y + ny * dist, S.z + nz * dist);
-  const cosE = THREE.MathUtils.clamp((L1 * L1 + L2 * L2 - dist * dist) / (2 * L1 * L2), -1, 1);
-  return { dist, flex: 180 - Math.acos(cosE) * 180 / Math.PI,
-    alcanzado: raw <= maxR && raw >= minR };
-}
-
-/* r93 · ZONA DULCE: nudge del AGARRE (≤ 4 cm) para que el CENTRO de la
- * hoja cubra la bola en el impacto — informe del dueño: «en vez de hacerlo
- * sobre la zona dulce de la pala parece que la golpea desde un canto».
- * Puro cálculo (testeable en Node): si la bola cae fuera del disco
- * central (62 % del radio), el agarre se corre hacia ella lo justo. */
-export function zonaDulceNudge(grip, ballPos, bladeCenter, bladeR, out) {
-  const dx = ballPos.x - bladeCenter.x;
-  const dy = ballPos.y - bladeCenter.y;
-  const dz = ballPos.z - bladeCenter.z;
-  const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  const exceso = d - bladeR * 0.62;
-  if (exceso <= 0) return out.copy(grip);
-  const k = Math.min(exceso, 0.04) / (d || 1e-6);
-  return out.set(grip.x + dx * k, grip.y + dy * k, grip.z + dz * k);
-}
-
-/* r93 · ONE EURO (Casiez et al. 2012) para VECTORES — anti-temblor del
- * informe del dueño («articulaciones con mucho ruido… movimientos
- * temblorosos y caóticos»): forma canónica — derivada con corte
- * adaptativo (fc_d = fcMin + β·|ẋ|) y estado integrado. Casi parado
- * filtra fuerte, movimiento rápido apenas retrasa. Cero allocs. */
-export class OneEuroV3 {
-  constructor(fcMin = 1.2, beta = 0.045) {
-    this.fcMin = fcMin; this.beta = beta;
-    this.init = false;
-    this.prev = new THREE.Vector3();     // x̂ (estado)
-    this.dPrev = new THREE.Vector3();    // ẋ filtrada (por segundo)
-    this.tmp = new THREE.Vector3();
-  }
-  reset() { this.init = false; this.dPrev.set(0, 0, 0); }
-  _alfa(dt, fc) {
-    const tau = 1 / (2 * Math.PI * Math.max(fc, 0.01));
-    return 1 / (1 + tau / Math.max(dt, 1e-4));
-  }
-  filtrar(v, dt) {
-    if (!this.init) { this.init = true; this.prev.copy(v); this.dPrev.set(0, 0, 0); return this.tmp.copy(v); }
-    this.tmp.copy(v).sub(this.prev).divideScalar(Math.max(dt, 1e-4));   // ẋ bruta
-    const ad = this._alfa(dt, this.fcMin + this.beta * this.tmp.length());
-    this.dPrev.lerp(this.tmp, ad);                       // ẋ filtrada
-    this.prev.addScaledVector(this.dPrev, dt);           // integra
-    return this.tmp.copy(this.prev);
-  }
-}
-
-/* r93 · ONE EURO para CUATERNIONES (articulaciones): la «velocidad» es el
- * ángulo de la diferencia q_prev⁻¹·q_deseado por dt; el mezclado slerp
- * usa la misma familia de corte adaptativo. FC_MIN por contexto: nítido en
- * golpeo/acompañamiento (dt·20 en r92), suave en el resto. */
-export class OneEuroQ {
-  constructor(fcMin = 2.2, beta = 0.09) {
-    this.fcMin = fcMin; this.beta = beta;
-    this.init = false;
-    this.prev = new THREE.Quaternion();
-  }
-  reset() { this.init = false; }
-  filtrar(q, dt) {
-    if (!this.init) { this.init = true; this.prev.copy(q); return this.prev; }
-    const qd = _oeqA.copy(q);
-    const dif = Math.abs(2 * Math.acos(THREE.MathUtils.clamp(
-      Math.abs(this.prev.dot(qd)), 0, 1))) / Math.max(dt, 1e-4);   // rad/s
-    const fc = this.fcMin + this.beta * dif;
-    const tau = 1 / (2 * Math.PI * fc);
-    const a = 1 / (1 + tau / Math.max(dt, 1e-4));
-    this.prev.slerp(qd, THREE.MathUtils.clamp(a, 0.05, 1));
-    return this.prev;
-  }
-}
-const _oeqA = new THREE.Quaternion();
 
 /* r91 · adivinanza temprana del golpe (para la CARGA visual, antes de que
  * la bola llegue): el golpe REAL lo decide el cerebro en el contacto de
@@ -772,6 +628,25 @@ const _cadD = new THREE.Vector3();
 const _cadV = new THREE.Vector3();
 const _cadT = new THREE.Vector3();   // r92 · cuerda/tangente del ARCO del golpe
 const _cadP = new THREE.Vector3();   // r99bis · paso por frame del tope de gesto
+
+/* r101 · ESPACIO DE TRABAJO de la mano del rival: la pala JAMÁS atraviesa
+ * la mesa, la red, el suelo ni el techo. Regla dura aplicada a los NUDOS de
+ * la curva (el gesto nunca se planifica atravesando la losa) y al jinete
+ * cada frame (por si la bola viva tira de él). Margen de 6 cm sobre la
+ * superficie — el espacio razonable de un jugador adulto de pie. */
+function _clampPalaMesa(v, sign) {
+  // sobre la losa de la mesa: la mano no baja de la superficie + margen
+  if (Math.abs(v.x) < DIMS.tableHalfWidth + 0.10 &&
+      Math.abs(v.z - DIMS.tableCenterZ) < DIMS.tableHalfLength + 0.10) {
+    v.y = Math.max(v.y, DIMS.tableTopY + 0.06);
+  }
+  // la red: cada mano vive en SU campo (margen 5 cm del plano de la red)
+  if (sign < 0) { if (v.z > DIMS.tableCenterZ - 0.05) v.z = DIMS.tableCenterZ - 0.05; }
+  else if (v.z < DIMS.tableCenterZ + 0.05) v.z = DIMS.tableCenterZ + 0.05;
+  if (v.y < 0.18) v.y = 0.18;                          // nunca bajo el suelo
+  if (v.y > 2.20) v.y = 2.20;                          // nunca al techo
+  return v;
+}
 
 /* r99ter · SPLINE Catmull-Rom del GESTO COMPLETO — la pala es el extremo de
  * una cadena cinemática y recorre UNA SOLA CURVA continua [cuerpo → carga B
@@ -909,6 +784,9 @@ export class OpponentAI {
     // adiós al «empujón invisible» que despegaba la bola antes del toque).
     this._disparo = null;
     this._retPend = null;
+    // r101 · ÚLTIMO PUNTO VISIBLE de la pala (referencia del vigía honesto
+    // cuando la cadena murió): nace en el cuerpo y updateCadena lo mantiene
+    this._palaVis = this.pos.clone();
   }
 
   setConfig(cfg) { this.cfg = cfg; }
@@ -984,9 +862,19 @@ export class OpponentAI {
       // la recta (un nudo DOBLE crearía una cúspide del Catmull-Rom que
       // infla el arco de 0,3 m a 2,7 m y hunde la aceleración).
       _crK[0].copy(ch.cur);
-      _crK[1].copy(ch.cur).lerp(contact, 0.33);
-      _crK[2].copy(ch.cur).lerp(contact, 0.67);
-      _crK[3].copy(contact);
+      _crK[1].copy(ch.cur).lerp(contact, 0.30);
+      _crK[2].copy(contact);
+      // r101 · la PROLONGACIÓN de la caza: el arco directo acababa EN la
+      // bola — el contacto disparaba al final del arco y el follow-through
+      // no tenía cola («acompaña 1/10»). K3 sigue 35 cm más allá del
+      // contacto en la dirección de la caza: el gesto de caza termina con
+      // su acompañamiento natural, como un golpe que se cierra.
+      _cadD.copy(contact).sub(ch.cur);
+      if (_cadD.lengthSq() < 1e-6) _cadD.set(0, 0, -this.sign);
+      _crK[3].copy(contact).addScaledVector(_cadD.normalize(), 0.35);
+      // r101 · espacio de trabajo en TODOS los nudos: la caza nunca se
+      // planifica atravesando la mesa ni cruzando la red
+      for (let _nk = 0; _nk < 4; _nk++) _clampPalaMesa(_crK[_nk], this.sign);
       ch.sC = _crRellena(ch.curva);
       ch.s = 0;
       return;
@@ -1027,6 +915,10 @@ export class OpponentAI {
     _crK[0].copy(ch.restP);
     _crK[1].copy(B);
     _crK[2].copy(ch.contact); _crK[3].copy(F);
+    // r101 · espacio de trabajo en TODOS los nudos: la carga y la prolonga-
+    // ción nacen dentro del espacio humano — el backswing ya no se hunde
+    // bajo la losa de la mesa ni la prolongación cruza la red
+    for (let _nk = 0; _nk < 4; _nk++) _clampPalaMesa(_crK[_nk], this.sign);
     ch.sC = _crRellena(ch.curva);      // arco del nudo contacto C
     // velocidad de GOLPE del kind (el bloqueo acompaña suave, el smash late)
     ch.vSwing = (4.5 + 3.3 * ch.jit) * G.vPeakMul;
@@ -1065,11 +957,27 @@ export class OpponentAI {
    *  cadena cinemática; golpea en el punto dulce e impulsa continuando la
    *  trayectoria previa curva con el empuje correspondiente». */
   updateCadena(dt, ball) {
-    // r99 · VIGÍA DEL DISPARO DIFERIDO: sin cadena viva o con espera
-    // excesiva, la salida se aplica igualmente — jamás se pierde un rallye.
+    // r101 · VIGÍA DEL DISPARO DIFERIDO, HONESTO: la salida solo se aplica
+    // si la pala VISIBLE está en la bola (contacto real, ≤ 13 cm) — con la
+    // cadena muerta o el reloj vencido y la pala lejos, el rival FALLA a la
+    // vista: la bola sigue su vuelo y el árbitro manda. Adiós al golpe que
+    // «nace desde otro sitio donde la pala no se ve» (queja del dueño r101).
     if (this._disparo) {
       this._disparo.t += dt;
-      if (!this.chain || this._disparo.t > this._disparo.tMax) this._aplicaDisparo();
+      if (!this.chain || this._disparo.t > this._disparo.tMax) {
+        // la referencia es el punto visible de la pala: cur de la cadena
+        // viva o el ÚLTIMO punto visible (_palaVis) si ya murió
+        const pv = this.chain ? this.chain.cur : this._palaVis;
+        if (pv && pv.distanceTo(this._disparo.ball.pos) < 0.13) {
+          this._aplicaDisparo();
+        } else {
+          // la pala no llegó: fallo A LA VISTA — se suelta todo y el punto
+          // se resuelve solo con la física (nunca un golpe fantasma)
+          this._disparo = null;
+          this.chain = null;
+          this._retPend = null;
+        }
+      }
     }
     const ch = this.chain;
     if (!ch) return;
@@ -1082,6 +990,10 @@ export class OpponentAI {
     // bloqueada en una posición.
     if (ch.t > 3.5) { this.chain = null; return; }
     const vivo = ball || null;
+    // r101 · FRONTERA REAL DE LA RED: la pista se mide desde tableCenterZ
+    // (−1,6) — antes la cadena usaba z=0 y la pala cruzaba la red 1,5 m
+    // (la queja «la pala atraviesa la mesa»).
+    const C_RED = DIMS.tableCenterZ;
     if (!ch.contactoHecho) {
       // ── 1 · SEGUIMIENTO: el contacto C = la posición FUTURA de la bola.
       // Si la bola YA PASÓ y se aleja (huida), el intercepto predicho es un
@@ -1089,7 +1001,13 @@ export class OpponentAI {
       let cx, cy, cz, tRem;
       const recede = vivo ? Math.max(0,
         vivo.vel.dot(_cadT.copy(vivo.pos).sub(ch.cur).normalize())) : 0;
-      const huida = recede > 0.5;
+      // r101 · HISTÉRESIS de la caza: el vaivén frame a frame (la bola entra
+      // y sale del cono de huida al oscilar la pala) regeneraba arcos DISTIN-
+      // TOS cada 2 frames (back↔strike, sC 0,04↔0,93) y el jinete cruzaba la
+      // ventana de contacto sin poder disparar — el gesto tembloroso que vio
+      // el dueño. Una vez cazando se sigue cazando hasta que la bola de
+      // verdad vuelve hacia la pala (recede < −0,2).
+      const huida = ch.persec ? recede > -0.2 : recede > 0.5;
       ch.persec = huida;
       const disp = this._disparo;
       if (disp && !huida) {
@@ -1120,8 +1038,10 @@ export class OpponentAI {
         // profundas son legítimas y la bola muerta (4c) termina el gesto
         cy = Math.max(0.35, vivo.pos.y + vivo.vel.y * tRem * 0.9);
         cz = vivo.pos.z + vivo.vel.z * tRem * 0.9;
-        // ...pero la caza NUNCA cruza la red: C vive en el campo propio
-        if (this.sign < 0) cz = Math.min(cz, -0.06); else cz = Math.max(cz, 0.06);
+        // ...pero la caza NUNCA cruza la red (r101 · la frontera es la RED
+        // REAL en C_RED, no z=0): C vive en el campo propio
+        if (this.sign < 0) cz = Math.min(cz, C_RED - 0.06);
+        else cz = Math.max(cz, C_RED + 0.06);
       } else {
         cx = ch.contact.x; cy = ch.contact.y; cz = ch.contact.z;
         tRem = Math.max(ch.tBall, 0.12);
@@ -1184,8 +1104,8 @@ export class OpponentAI {
         (ch.cur.distanceTo(vivo.pos) < 0.085 ||
          ch.cur.distanceTo(_cadT.copy(vivo.pos)
            .addScaledVector(vivo.vel, anticipa)) < 0.085);
-      if (cerca &&
-          ch.vel.dot(_cadP.copy(vivo.pos).sub(ch.cur)) > 0) {
+      if (cerca && (ch.persec ||
+          ch.vel.dot(_cadP.copy(vivo.pos).sub(ch.cur)) > 0)) {
         ch.sContacto = ch.s;                          // donde la curva tocó la bola
         this._aplicaDisparo();
         ch.contactoHecho = true;
@@ -1209,15 +1129,26 @@ export class OpponentAI {
       // El gesto se completa con el disparo de reserva y el follow-through.
       const muerta = vivo && (vivo.pos.y < 0.30 ||
         Math.abs(vivo.pos.x) > 1.35 ||
-        (this.sign < 0 ? vivo.pos.z < -2.6 : vivo.pos.z > 2.6) ||
-        // r99ter-2 · la bola VOLVIÓ al campo del jugador (devuelta antes del
-        // cruce o saque propio en vuelo): perseguirla allende la red SACA la
-        // pala de su campo — el punto se juega al otro lado y el árbitro
-        // manda. Este era el bloqueo que vio el dueño.
-        (this.sign < 0 ? vivo.pos.z > 0.04 : vivo.pos.z < -0.04));
+        // r101 · fronteras relativas a la RED real (C_RED = −1,6): antes
+        // z=0 daba la bola por muerta aún SOBRE la mesa (z<−2,6 era dentro
+        // del tablero) y la «vuelta al campo del jugador» se detectaba
+        // 1,6 m tarde — de ahí persecuciones allende la red
+        (this.sign < 0 ? vivo.pos.z < C_RED - 2.6 : vivo.pos.z > C_RED + 2.6) ||
+        // la bola VOLVIÓ al campo del jugador Y SE ALEJA de nosotros (r101 ·
+        // la DIRECCIÓN es obligatoria: en un vuelo normal la bola entra aún
+        // sin haber cruzado la red — matar el plan por posición sola cortaba
+        // la reacción a mitad del vuelo entrante). Perseguirla allende la red
+        // SACA la pala de su campo: el punto se juega al otro lado.
+        (this.sign < 0
+          ? (vivo.pos.z > C_RED + 0.04 && vivo.vel.z > 0.3)
+          : (vivo.pos.z < C_RED - 0.04 && vivo.vel.z < -0.3)));
       if (muerta) {
-        if (this._disparo) { this._aplicaDisparo(); return; }
-        this.chain = null;    // sin disparo pendiente: soltar y volver al cuerpo
+        // r101 · la bola MUERTA JAMÁS se devuelve: antes el disparo de
+        // reserva salía desde donde estuviera (golpes «desde el suelo» y
+        // desde puntos donde no hay pala — informe del dueño). El punto ya
+        // lo cantó el árbitro: la pala suelta y vuelve al cuerpo a la vista.
+        this._disparo = null;
+        this.chain = null;
         return;
       }
     } else {
@@ -1233,12 +1164,22 @@ export class OpponentAI {
           (ch.s - (ch.sContacto || ch.sC)) /
           Math.max(0.05, ch.curva.total - (ch.sContacto || ch.sC)), 0, 1);
       } else {
-        // ── 6 · RECUPERACIÓN: fusión exponencial al cuerpo (sin tirón) ──
-        ch.phase = 'recover';
-        ch.u = 0;
-        ch.vel.multiplyScalar(Math.exp(-dt / 0.15));
-        ch.cur.lerp(this.pos, Math.min(1, dt * 2.2));
-        if (ch.cur.distanceTo(this.pos) < 0.05) { this.chain = null; return; }
+      // ── 6 · RECUPERACIÓN: fusión exponencial al cuerpo (sin tirón) ──
+      // r102 · ACOTADA EN TIEMPO (el dueño: «la pala se queda bloqueada a
+      // partir del segundo toque»): la fusión perseguía this.pos MIENTRAS
+      // el cuerpo caminaba al siguiente intercepto — cur jamás cerraba los
+      // 5 cm y la cadena colgaba en recover hasta el vigilante de 3,5 s,
+      // con la bola nueva ya entrando (el plan nuevo exige !this.chain).
+      // Ahora muere en ≤ 0,45 s: la coda r95 funde el último cur a reposo
+      // en 0,3 s (cero teleport) y el plan de la bola siguiente nace libre.
+      ch.phase = 'recover';
+      ch.u = 0;
+      ch.vel.multiplyScalar(Math.exp(-dt / 0.15));
+      ch.cur.lerp(this.pos, Math.min(1, dt * 2.2));
+      ch.tRec = (ch.tRec || 0) + dt;
+      if (ch.cur.distanceTo(this.pos) < 0.05 || ch.tRec > 0.45) {
+        this.chain = null; return;
+      }
       }
     }
     // r99bis · TOPE DE PASO (garantía dura): ≤ 13 cm por frame pase lo que
@@ -1250,6 +1191,14 @@ export class OpponentAI {
       ch.cur.copy(ch._curPrev).add(_cadP);
       ch.vel.copy(_cadP).multiplyScalar(60);
     }
+    // r101 · ESPACIO DE TRABAJO (garantía dura, todos los caminos): el
+    // punto de la pala jamás bajo la losa de la mesa, en la red, bajo el
+    // suelo ni fuera del espacio humano — ni siquiera un frame
+    // («la pala atraviesa la mesa», informe del dueño).
+    _clampPalaMesa(ch.cur, this.sign);
+    // r101 · ÚLTIMO PUNTO VISIBLE de la pala: lo consulta el vigía honesto
+    // cuando la cadena ya murió (referencia del contacto real).
+    this._palaVis.copy(ch.cur);
     ch._curPrev.copy(ch.cur);
     if (!Number.isFinite(ch.cur.x + ch.cur.y + ch.cur.z)) this.chain = null;
   }
@@ -1347,7 +1296,11 @@ export class OpponentAI {
           // r91 · CADENA: el plan de golpe nace con la PRIMERA predicción
           // válida de la bola (reacción humana ANTES de que llegue) y se
           // re-ancla en cada refinamiento; el impacto real lo afina.
-          if (!this.chain && this.predictT < 1.15) {
+          // r102 · una cadena en RECOVER no bloquea el plan nuevo: la bola
+          // entrante manda. planCadena hereda cur/vel de la vieja (continui-
+          // dad, cero teleport) y el gesto arranca desde donde esté la pala.
+          if ((!this.chain || this.chain.phase === 'recover') &&
+              this.predictT < 1.15) {
             this.planCadena(this.predict, this.predictT,
               adivinaKind(ball, strike.point), this.fhSide);
           }
@@ -1748,13 +1701,22 @@ export class OpponentAI {
     const vReal = d.target
       ? computeShotVelocityReal(b.pos, d.target, d.T, d.maxV, d.spin)
       : d.v;
+    // r101 · EL EMPUJE DEL SWING, ACOTADO: la tangente del gesto solo sesga
+    // la salida si ACOMPAÑA al tiro (afinidad > 0.45) y con fuerza mínima
+    // (12 % × afinidad) — antes un 35 % CIEGO desviaba el blanco del solver
+    // y mandaba la bola fuera de la mesa «de manera ridícula» (informe del
+    // dueño r101). Se excluyen además las picos de velocidad del homing
+    // (> 10 m/s: no son swing, son el paso de caza a 60 m/s aparentes).
     const chX = this.chain;
-    if (chX && chX.vel && chX.vel.lengthSq() > 1 && !chX.persec) {
+    if (chX && chX.vel && chX.vel.lengthSq() > 1 && chX.vel.lengthSq() < 100 &&
+        !chX.persec) {
       const tan = _cadT.copy(chX.vel).normalize();
       const mag = vReal.length();
-      _cadD.copy(vReal).normalize().lerp(tan, 0.35).normalize()
-        .multiplyScalar(mag);
-      vReal.copy(_cadD);
+      const afinidad = tan.dot(_cadD.copy(vReal).normalize());
+      if (afinidad > 0.45) {
+        _cadD.lerp(tan, 0.12 * afinidad).normalize().multiplyScalar(mag);
+        vReal.copy(_cadD);
+      }
     }
     b.vel.copy(vReal);
     b.spin.copy(d.spin);

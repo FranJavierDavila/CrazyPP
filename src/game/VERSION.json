@@ -1,10 +1,10 @@
 {
-  "version": "3.6.198-SDK6",
-  "fase": 182,
-  "faseNombre": "FÍSICA P0: CONTACTO Y SAQUE",
+  "version": "3.6.207-SDK6",
+  "fase": 184,
+  "faseNombre": "SUPER CRIPTONITA — VOZ EN DOS SALAS Y CANDADO HONESTO",
   "sdk": "1.6.0",
-  "fecha": "2026-11-20",
-  "hub": "v36198-sdk6",
+  "fecha": "2026-11-21",
+  "hub": "v36207-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r86",
-  "tamano": 12412791,
-  "golden": "4080280b47302ce5318e3c3d49784d3dfd57babfd0b6e2d97351d7bad76a2084"
+  "nota": "r109",
+  "tamano": 12502469,
+  "golden": "7c6455703d43489f5acd5566aa69f9b3682f2600398ad2edd3945497dc3f689a"
 }

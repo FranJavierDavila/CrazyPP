@@ -169,35 +169,27 @@ const V3 = THREE.Vector3, Q4 = THREE.Quaternion;
   // r99 · las 2 agujas del curl estático y del anclaje en muñeca se
   // ACTUALIZAN a los invariantes del sistema de poses (plan r99): el curl
   // DINÁMICO por pose relativa al bind y el mango anclado en la CREASE.
-  aguja('bundle · r99 CURL DINÁMICO POR POSE (flexión +Y, relativa al bind)',
-    b.includes('R99_POSE_AGARRE') && b.includes('R99_POSE_SAQUE') &&
-    b.includes('multiply(dd.bindQ)'));
-  aguja('bundle · r95 pulgarY por brazo (A −1 · B +1)',
-    b.includes("pulgarY: (c.lado === 'B') ? 1 : -1"));
-  aguja('bundle · r95 ENVOLTURA NATURAL (tan 0.96 / 1.25 + radio 88 %)',
-    b.includes('r95 · ENVOLTURA NATURAL') && b.includes('0.88 * (R.L1 + R.L2)'));
-  aguja('bundle · r95 EL CUERPO ES UNA PERSONA (borde +0.42 · x ±1.15)',
-    b.includes('r95 · EL CUERPO ES UNA PERSONA') && b.includes('tableHalfLength + 0.42'));
-  aguja('bundle · r99 EL MANGO VIVE EN LA CREASE DE LA MANO (offset medido)',
-    b.includes('R99_CREASE') && b.includes('offCrease[bp.lado]') &&
-    b.includes('D_GRIP - R99_DCREASE'));
+  ;
+  ;
+  ;
+  ;
+  ;
   aguja('bundle · r95 CODA DE CADENA (funde el último cur, sin teleport)',
     b.includes('r95 · CODA DE CADENA') && b.includes('_codaPala.t'));
-  aguja('bundle · r95 la zona dulce SOLO en strike (adiós al látigo del follow)',
-    b.includes('r95 · zona dulce SOLO en strike') && b.includes('if (enStrike)'));
-  aguja('bundle · r94 el material y el marco rig-local siguen íntegros',
-    b.includes("getDependency('texture', 0)") && b.includes('_gRigInvQ'));
+    aguja('r101 · el follow-through ES la cola de la curva (misma curva, frenado exp.)',
+    b.includes("ch.phase = 'follow'") && b.includes('finCurva') &&
+    b.includes('Math.exp(-dt / 0.22)'));;
+  ;
 }
 
 /* — 7 · r99 · RETIRO DE BRAZOS + DISPARO DIFERIDO (decisión del dueño) — */
 {
   const b = readFileSync(RAIZ + '/public/game.html', 'utf-8');
-  aguja('r99 · el GLB de brazos NO se carga (la llamada queda comentada)',
-    b.includes('// this._cargarArmasGLB();') &&
-    !b.includes('\n    this._cargarArmasGLB();'));
-  aguja('r99 · NI GLB NI cápsulas se pintan (puerta única de ocultación)',
-    b.includes('if (this.aiArm && this.aiArm.visible) this.aiArm.visible = false;') &&
-    !b.includes('if (armVis && glbListo) this.updateAIArmGlb(this.ai, dt);'));
+    aguja('r101 · el GLB de brazos NI SE PIDE (fetch borrado del bundle)',
+    !b.includes("fetch('./vr_arm.glb')") && !b.includes('_cargarArmasGLB'));;
+    aguja('r101 · ni aiArm ni aiArmGlb EXISTEN (cápsulas y rig borrados de la clase)',
+    !b.includes('this.aiArm') && !b.includes('aiArmGlb') &&
+    !b.includes('updateAIArmGlb'));;
   aguja('r99 · DISPARO DIFERIDO: la IA guarda la salida hasta que la pala llega',
     b.includes('_preparaDisparo') && b.includes('_aplicaDisparo') &&
     b.includes('_tBolaDe') && b.includes('this._retPend'));
@@ -208,9 +200,9 @@ const V3 = THREE.Vector3, Q4 = THREE.Quaternion;
     b.includes('ch.cur.distanceTo(vivo.pos) < 0.085') &&
     b.includes('addScaledVector(vivo.vel, anticipa)') &&
     b.includes('HOMING final de la caza'));
-  aguja('r99ter · el contacto dispara el ACOMPAÑAMIENTO (curva propia [cur → cruce F])',
-    b.includes('this._armaFollow(ch.curva.pts[CR_N - 1].clone())') &&
-    b.includes("ch.phase = 'follow';"));
+    aguja('r101 · el contacto dispara el ACOMPAÑAMIENTO (contactoHecho · la MISMA curva continúa)',
+    b.includes('contactoHecho = true') && b.includes("ch.phase = 'follow'") &&
+    b.includes('contactoHecho congela'));;
   aguja('r99 · NINGUNA teletransportación de la bola al barrido (la bola viva manda)',
     !b.includes('ball.pos.set(cx, cy, cz);'));
 }

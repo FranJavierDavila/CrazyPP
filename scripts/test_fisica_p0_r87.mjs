@@ -37,6 +37,8 @@ const { c05, c04, c06, DIMS } = await (async () => {
 
 const RAIZ = new URL('..', import.meta.url).pathname;
 const src = (f) => readFileSync(RAIZ + f, 'utf-8');
+// r101 · el bundle, disponible para TODAS las agujas (antes cada bloque lo leía)
+const b95 = readFileSync(RAIZ + 'public/game.html', 'utf-8');   // r101 · el bundle, disponible para TODAS las agujas
 const c00s = src('src/game/core/c00_pre_three.js');
 const c02s = src('src/game/core/c02_cfg_escena.js');
 const c04s = src('src/game/core/c04_fisica_ccd.js');
@@ -195,12 +197,9 @@ const C = DIMS.tableCenterZ;
 
 /* — r91 · cadena cinemática del rival (golpe humano creíble) ——————————— */
 {
-  aguja('r91 · cadena en el cerebro (quíntico + IK + tabla por golpe exportados)',
-    c06s.includes('export const CADENA_GOLPE') &&
-    c06s.includes('export function mjQuintic') &&
-    c06s.includes('export function mjQuinticVel') &&
-    c06s.includes('export function solveArmIK') &&
-    c06s.includes('export function adivinaKind'));
+    aguja('r101 · el cerebro de la cadena SIN helpers de brazo (mjQuintic/IK/OneEuro borrados)',
+    !c06s.includes('mjQuintic') && !c06s.includes('solveArmIK') &&
+    !c06s.includes('OneEuro') && c06s.includes('_clampPalaMesa'));;
   aguja('r91/r99ter · la cadena vive (plan → curva del gesto → jinete con fases)',
     c06s.includes('planCadena(contact, tBall, kind, fh)') &&
     c06s.includes('cadenaContacto(cx, cy, cz, v, TBola)') &&
@@ -219,57 +218,48 @@ const C = DIMS.tableCenterZ;
     c12s.includes("if (who === 'ai' && ai.chain && ai.chain.phase)") &&
     c12s.includes('mesh.position.copy(ch.cur);') &&
     c12s.includes('AIM_FACE.copy(ch.vdir || AIM_FWD);'));
-  // r99 · RETIRO DE BRAZOS: el método y las cápsulas quedan MUERTOS en el
-  // bundle (revertible) pero la puerta que los pintaba está eliminada.
-  aguja('r99 · brazo retirado (método muerto en bundle, gate eliminado, pala sola)',
-    c12s.includes('updateAIArm(ai) {') &&
-    c12s.includes('solveArmIK(_armS, _armW, 0.26, 0.24, _armP, _armE)') &&
-    c12s.includes('new THREE.CapsuleGeometry(0.030, 1, 5, 10)') &&
-    c12s.includes('_armW.addScaledVector(_armA, 0.105);') &&
-    !c12s.includes('const armVis = this.aiPaddleMesh.visible && !this.net.online && !this.calib;'));
+  // r101 · RETIRO DEFINITIVO: el método, las cápsulas y TODOS los drivers
+  // están BORRADOS del bundle (decisión del dueño tras r100).
+  const bundle101 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
+  aguja('r101 · RETIRO DEFINITIVO: ni cápsulas ni GLB ni drivers en el bundle',
+    !bundle101.includes('updateAIArm') && !bundle101.includes('_cargarArmasGLB') &&
+    !bundle101.includes('aiArmGlb') && !bundle101.includes('OneEuro') &&
+    bundle101.includes('EL RIVAL ES SOLO LA PALA'));
   // lección del bloqueo del dueño (hotfix r91): el ensamblado RECONSTRUYE los
   // bloques DEPS-FASE2 — cualquier const dentro de ellos DESAPARECE del
   // bundle y el escudo del bucle traga el ReferenceError cada frame (menú
   // vivo, gatillos muertos). Prohibido declarar dentro del bloque.
   const span12 = c12s.slice(c12s.indexOf('DEPS-FASE2-INICIO'), c12s.indexOf('DEPS-FASE2-FIN'));
-  aguja('r91-hotfix · arañas _arm* FUERA del bloque DEPS (sobreviven al ensamblado)',
-    span12.length > 0 && !span12.includes('const _arm') &&
-    c12s.slice(c12s.indexOf('DEPS-FASE2-FIN')).includes('const _armS = new THREE.Vector3()'));
+  ;
   const construido = readFileSync(RAIZ + 'public/game.html', 'utf-8');
-  aguja('r91-hotfix · el BUNDLE lleva la declaración _armS y ≥8 referencias',
-    construido.includes('const _armS = new THREE.Vector3()') &&
-    (construido.match(/_armS/g) || []).length >= 8);
+  aguja('r101 · cero arañas de brazo (_armS/_gRig) en bundle y fuentes',
+    !bundle101.includes('_armS') && !bundle101.includes('_gRigP') &&
+    !c12s.includes('_armS') && !c12s.includes('R99_POSE_AGARRE'));
 }
 
 /* — identidad del build ————————————————————————————————————————————————— */
+const VER_DIN = JSON.parse(readFileSync(RAIZ + 'src/game/VERSION.json', 'utf-8')).version;
 {
-  aguja('versión · c00 sella 3.6.198-SDK6', c00s.includes('3.6.198-SDK6'));
+    aguja('versión · c00 sella ' + VER_DIN, c00s.includes(VER_DIN));;
   aguja('guard · c02 lleva los parámetros del glitch en datos',
     c02s.includes('paddleGlitchSpeed: 30') && c02s.includes('paddleGlitchT: 0.10'));
   // r92 · el BUNDLE lleva el arco del golpe (c06) y la alineación
   // pala-brazo (c12) — los dos fixes del informe del dueño
   const bundle92 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
-  aguja('r92/r99ter · el BUNDLE lleva el ARCO del golpe (carga al lado + cruce en los nudos de la curva)',
-    bundle92.includes('cuerda/tangente del ARCO del golpe') &&
-    bundle92.includes('r92 · carga al lado') &&
-    bundle92.includes('r92 · cruce al otro'));
-  aguja('r92 · el BUNDLE lleva LA PALA ES LA CONTINUACIÓN DEL BRAZO (giro mínimo premultiply)',
-    bundle92.includes('LA PALA ES LA CONTINUACIÓN DEL BRAZO') &&
-    bundle92.includes('premultiply(_armQ)') &&
-    bundle92.includes('const _armBx = new THREE.Vector3()'));
+    aguja('r101 · el BUNDLE lleva el ARCO DEL HOMBRO (nudos a radio de brazo + histéresis de caza)',
+    b95.includes('EL HOMBRO MANDA') && b95.includes('HISTÉRESIS de la caza') &&
+    b95.includes('_clampPalaMesa'));;
+    aguja('r101 · la pala la mueve la cadena (updateAIPaddlePose copia ch.cur y clampPaddlePose cierra)',
+    b95.includes('mesh.position.copy(ch.cur)') &&
+    b95.includes('clampPaddlePose(mesh.position, mesh.quaternion, false)'));;
 }
 
 /* — r93 · brazos GLB ————————————————————————————————————————————— */
 {
   // r93 · los BRAZOS GLB van en el bundle (los dos brazos reales del dueño)
   const b93 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
-  aguja('r93 · el BUNDLE lleva los brazos GLB (carga + driver rígido)',
-    b93.includes("fetch('./vr_arm.glb')") &&
-    b93.includes('LOS BRAZOS REALES') &&
-    b93.includes('solveArmIKRigido') &&
-    b93.includes('zonaDulceNudge') &&
-    b93.includes('LA PALA ES LA CONTINUACIÓN DEL BRAZO') &&
-    b93.includes('OneEuroV3'));
+    aguja('r101 · sin driver de brazos GLB (updateAIArmGlb fuera del bundle)',
+    !b95.includes('updateAIArmGlb') && !b95.includes('R99_CREASE'));;
   aguja('r93 · el GLB del rival viaja como fichero público',
     readFileSync(RAIZ + 'public/vr_arm.glb').length > 2_000_000);
 }
@@ -282,80 +272,52 @@ const C = DIMS.tableCenterZ;
   // MUNDO mientras el juego vive en MARCO RIG — el recentrado XR horneara
   // su giro en los brazos)
   const b94 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
-  aguja('r94 · el BUNDLE reconstruye el MATERIAL del GLB (textura difusa embebida + respaldo piel)',
-    b94.includes("getDependency('texture', 0)") &&
-    b94.includes('SRGBColorSpace') &&
-    b94.includes('0xb08a70'));
-  aguja('r94 · la CAPTURA del rig es RIG-LOCAL (adiós al giro hornedado del recentrado)',
-    b94.includes('CAPTURA EN MARCO DEL RIG') &&
-    b94.includes('_rigQinv') &&
-    b94.includes('_alRig(body.getWorldPosition'));
-  aguja('r94 · el DRIVER convierte rig-local ⇄ mundo (quats deseadas premultiply _gRigQ)',
-    (b94.match(/premultiply\(_gRigQ\)/g) || []).length >= 6 &&
-    b94.includes('_gRigP.setFromMatrixPosition(this.rig.matrixWorld)'));
-  aguja('r94 · versión sella 3.6.198-SDK6 en el bundle',
-    b94.includes('3.6.198-SDK6'));
+    aguja('r101 · la pose del rival es SOLO la cadena (rama chain en updateAIPaddlePose)',
+    b95.includes("ai.chain && ai.chain.phase") &&
+    b95.includes("ch.phase === 'strike' || ch.phase === 'follow'"));;
+  ;
+  ;
+    aguja('versión · el bundle sella ' + VER_DIN, b95.includes(VER_DIN));;
 }
 
 /* — r95 · BRAZOS NATURALES (video mal.mp4 del dueño: dedos retorcidos,
  * temblor tipo descarga, pala no agarrada, bola sin sostener) ——————— */
 {
-  const b95 = readFileSync(RAIZ + 'public/game.html', 'utf-8');
   // r99 · el curl estático r95 pasa al sistema DINÁMICO por pose (plan r99)
-  aguja('r99 · el BUNDLE lleva el CURL DINÁMICO por pose (+Y local, relativa al bind)',
-    b95.includes('R99_POSE_AGARRE') &&
-    b95.includes('multiply(dd.bindQ)') &&
-    b95.includes("pulgarY: (c.lado === 'B') ? 1 : -1"));
+    aguja('r101 · el contacto ES la pala: ventana por proximidad con anticipación de frames',
+    b95.includes('const cerca = this._disparo && vivo') &&
+    b95.includes('anticipa'));;
   // r99 · RETIRO DE BRAZOS: el rival es SOLO la pala flotante
-  aguja('r99 · el rival es SOLO pala (GLB de brazos sin cargar, cápsulas ocultas)',
-    b95.includes('// this._cargarArmasGLB();') &&
-    b95.includes('if (this.aiArm && this.aiArm.visible) this.aiArm.visible = false;'));
+    aguja('r101 · el rival es SOLO pala: ni vr_arm.glb se pide ni cápsulas existen',
+    !b95.includes("fetch('./vr_arm.glb')") && !b95.includes('this.aiArm ='));;
   // r99 · DISPARO DIFERIDO: la bola sale SOLO cuando la pala llega al contacto
   aguja('r99 · DISPARO DIFERIDO (contacto real bola-pala visible)',
     b95.includes('_preparaDisparo') && b95.includes('_aplicaDisparo') &&
     b95.includes('this._retPend') && !b95.includes('ball.pos.set(cx, cy, cz);'));
   // r99bis · ACOMPAÑAMIENTO NATURAL: gestos progresivos, sin empujones
-  aguja('r99ter · SIN teletransportes (tope de paso · bola jamás recolocada · follow propio)',
+    aguja('r101 · SIN teletransportes (tope de paso 13 cm · bola jamás recolocada · misma curva continúa)',
     b95.includes('if (_cadP.length() > 0.13) {') &&
-    b95.includes('tCruce') && b95.includes('_armaFollow') &&
-    !b95.includes('b.pos.copy(d.pos)'));
-  aguja('r95 · la zona dulce SOLO en strike (el follow ya no persigue la bola: látigo=0)',
-    b95.includes('r95 · zona dulce SOLO en strike') &&
-    b95.includes("const enStrike = !!(ch && ch.phase === 'strike')"));
-  aguja('r95 · ENVOLTURA NATURAL del alcance (tan 0.96/1.25 · radio 88 % con la mano alta)',
-    b95.includes('r95 · ENVOLTURA NATURAL') &&
-    b95.includes('Math.tan(bolaAlta ? 1.25 : 0.96)') &&
-    b95.includes('0.88 * (R.L1 + R.L2)'));
-  aguja('r95 · EL CUERPO ES UNA PERSONA (pecho 0.42 m detrás del borde · x ±1.15 · yaw suave)',
-    b95.includes('r95 · EL CUERPO ES UNA PERSONA') &&
-    b95.includes('tableHalfLength + 0.42') &&
-    b95.includes('R.yaw += (yawDeseado - R.yaw)'));
+    b95.includes('tCruce') && b95.includes('contactoHecho') &&
+    !b95.includes('b.pos.copy(d.pos)'));;
+    aguja('r101 · el follow-through ES la cola de la curva (frenado exp. · fin por arco o velocidad)',
+    b95.includes("ch.phase = 'follow'") && b95.includes('finCurva'));;
+  ;
+  ;
   // r99 · el mango vive en la CREASE de los nudillos (offset medido del GLB)
-  aguja('r99 · EL MANGO VIVE EN LA CREASE DE LA MANO (pala anclada a los nudillos)',
-    b95.includes('R99_CREASE') &&
-    b95.includes('offCrease[bp.lado]') &&
-    b95.includes('D_GRIP - R99_DCREASE'));
+  ;
   aguja('r95 · CODA DE CADENA (la espera funde el último cur: sin tirón de 24 cm)',
     b95.includes('r95 · CODA DE CADENA') &&
     b95.includes('this._codaPala.t') &&
     b95.includes('_ppUltCur.copy(ai.chain.cur'));
-  aguja('r95 · la bola del saque descansa SOBRE la palma (mano −4,5 cm bajo la bola)',
-    b95.includes('r95 · la mano DEBAJO de la'));
+  ;
   aguja('r96 · el VIGILANTE DE BLOQUEO viaja en el bundle (beacon js_error + freeze_report + latido VR)',
     b95.includes('r96 · VIGILANTE DE BLOQUEO') &&
     b95.includes("e: 'freeze_report'") &&
     b95.includes("e: 'js_error'") &&
     b95.includes('navigator.sendBeacon(EP') &&
     b95.includes("document.visibilityState !== 'visible'"));
-  aguja('r96 · la muñeca anatómica tiene perpendicular GARANTIZADA (adiós al NaN de la cruz cero)',
-    b95.includes('r96 · perpendicular GARANTIZADA') &&
-    b95.includes('Math.abs(_gHandY.x) < 0.9') &&
-    b95.includes('_gVz.crossVectors(_gHandZ, _gHandY)') &&
-    b95.includes('const _gVz = new THREE.Vector3()'));
-  aguja('r97 · FIX BLOQUEO: la cruz hand-Z es Vector3 (JAMÁS sobre un Quaternion)',
-    b95.includes('r97 · FIX DEL BLOQUEO DEL CASCO') &&
-    !/const _gQe = new THREE\.Quaternion\(\)[\s\S]{0,400}_gQe\.crossVectors/.test(b95) &&
-    b95.includes('_gMx.makeBasis(_gHandZ, _gHandY, _gVz)'));
+  ;
+  ;
   aguja('r97 · el ESCUDO DEL BUCLE habla con el vigía (beacon anim_shield: el try/catch no emite window.onerror)',
     b95.includes("window.__PP_VIGIA = { suelta }") &&
     b95.includes("window.__PP_VIGIA.suelta({ e: 'anim_shield'") &&

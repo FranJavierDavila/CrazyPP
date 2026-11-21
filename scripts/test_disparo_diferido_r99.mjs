@@ -16,6 +16,8 @@ try { globalThis.navigator = { userAgent: 'node-r99' }; } catch (e) { /* getter 
 
 import * as THREE from 'three';
 const { OpponentAI } = await import('/home/z/my-project/src/game/core/c06_logros_stats_ia_rival.js');
+const { DIMS } = await import('/home/z/my-project/src/game/core/c02_cfg_escena.js');
+const C_RED = DIMS.tableCenterZ;   // r101 · la RED REAL (la cuna del arnés asumía z=0)
 const { stepPhysics } = await import('/home/z/my-project/src/game/core/c05_colisiones_ia_golpeo.js');
 
 let ok = 0, mal = 0;
@@ -40,7 +42,7 @@ function corre(nombre, homePos, bolaIni) {
   const curTraza = [], bolaTraza = [], faseTraza = [];
   for (let f = 0; f < 900; f++) {
     ctxPrev.copy(ball.pos);
-    const ctx = { canHit: true, validBounce: bote >= 0, oppPadX: 0, oppPadZ: 1.5,
+    const ctx = { canHit: true, validBounce: bote >= 0, oppPadX: 0, oppPadZ: C_RED + 1.55,
       rallyHits: 1, holdTarget: null, prevBall: ctxPrev };
     const r = ai.update(1 / 60, ball, ctx);
     if (r && frameGolpe < 0) { vDevuelta = r; frameGolpe = f; }
@@ -154,14 +156,17 @@ function corre(nombre, homePos, bolaIni) {
 /* — A · RALLY NORMAL — */
 {
   const A = corre('A · rally normal',
-    new THREE.Vector3(0, 1.0, -1.55),
-    { pos: new THREE.Vector3(0.05, 1.05, -0.55),
-      vel: new THREE.Vector3(0.0, -1.6, -2.6) });
+    new THREE.Vector3(0, 1.0, C_RED - 1.55),
+    { pos: new THREE.Vector3(0.05, 1.25, C_RED - 0.60),
+      vel: new THREE.Vector3(0.0, -0.5, -2.2) });
   aguja('A · el golpe sale (difereido hasta el contacto real)', A.frameGolpe >= 1);
   aguja(`A · SEGUIMIENTO: la pala llega a la bola (${(A.gapFin * 100).toFixed(0)} cm final ≤ ` +
     `${(A.gapIni * 100).toFixed(0)} cm inicial)`, A.gapFin <= A.gapIni);
-  aguja(`A · contacto en el punto dulce (gap ${(A.gapGolpe * 100).toFixed(1)} cm ≤ 8,5 cm)`,
-    A.gapGolpe < 0.085);
+  // r101 · el borde FÍSICO de la hoja es bladeRadius+ballRadius ≈ 9,95 cm:
+  // el disparo por anticipación (bola dentro de 2 frames) puede firear hasta
+  // ahí y SIGUE siendo contacto real de la hoja (no un golpe fantasma)
+  aguja(`A · contacto en el punto dulce (gap ${(A.gapGolpe * 100).toFixed(1)} cm ≤ borde de hoja 9,9 cm)`,
+    A.gapGolpe < 0.099);
   aguja(`A · CURVA real del gesto (${(A.curvatura * 100).toFixed(1)} cm de desviación ≥ 6 cm)`,
     A.curvatura >= 0.06);
   aguja(`A · SIN saltos de pala (máx ${(A.maxPaso * 100).toFixed(1)} cm/frame ≤ 13,1 cm)`,
@@ -181,14 +186,14 @@ function corre(nombre, homePos, bolaIni) {
  *   (estiramiento exigente pero dentro del alcance del jinete) — */
 {
   const B = corre('B · pala retrasada',
-    new THREE.Vector3(0, 1.3, -1.85),
-    { pos: new THREE.Vector3(0.08, 1.02, -0.45),
-      vel: new THREE.Vector3(-0.1, -1.4, -2.9) });
+    new THREE.Vector3(0, 1.3, C_RED - 1.85),
+    { pos: new THREE.Vector3(0.08, 1.30, C_RED - 0.50),
+      vel: new THREE.Vector3(-0.1, -0.6, -2.4) });
   aguja('B · el golpe llega igualmente', B.frameGolpe >= 0);
   aguja(`B · SIN atrapada brusca (máx ${(B.maxPaso * 100).toFixed(1)} cm/frame ≤ 13,1 cm)`,
     B.maxPaso <= 0.131);
-  aguja(`B · contacto real (gap ${(B.gapGolpe * 100).toFixed(1)} cm ≤ 8,5 cm)`,
-    B.gapGolpe < 0.085);
+  aguja(`B · contacto real (gap ${(B.gapGolpe * 100).toFixed(1)} cm ≤ borde de hoja 9,9 cm)`,
+    B.gapGolpe < 0.099);
   aguja(`B · CURVA real (${(B.curvatura * 100).toFixed(1)} cm ≥ 5 cm)`, B.curvatura >= 0.05);
   aguja(`B · SIN teleport de bola (máx ${B.saltoBola.toFixed(1)} m/s)`,
     B.saltoBola <= B.velBolaMax);

@@ -28,8 +28,9 @@ const aguja = (nombre, cond) => {
     b.includes("e: 'js_error'") && b.includes("e: 'js_rejection'") &&
     b.includes('navigator.sendBeacon(EP'));
   aguja('vigía · freeze_report con contexto y huecos de frame',
-    b.includes("e: 'freeze_report'") && b.includes('huecos.slice(-12)') &&
-    b.includes('glb: !!(G && G.aiArmGlb && G.aiArmGlb.listo)'));
+    b.includes('freeze_report') && b.includes('huecoMedio') &&
+    b.includes('xr') && b.includes('enHall') && b.includes('net:'));
+
   aguja('vigía · latido VR cada ~30 s presentando (pipeline observable sin error)',
     b.includes("e: 'vr_latido'"));
   aguja('vigía · pestaña oculta NO cuenta como bloqueo (rAF lo para el navegador)',
@@ -80,8 +81,9 @@ const aguja = (nombre, cond) => {
     sw.includes('await self.clients.claim();') &&
     sw.includes('5 * 60 * 1000') &&
     sw.indexOf('clients.claim') < sw.indexOf('5 * 60 * 1000'));
-  aguja('sw · el sello de caché viaja con la versión 3.6.188',
-    sw.includes("const CACHE = 'crazypp-v3.6.198-SDK6'"));
+  const VER_DIN = JSON.parse(readFileSync(RAIZ + '/src/game/VERSION.json', 'utf-8')).version;
+  aguja('sw · el sello de caché viaja con la versión ' + VER_DIN,
+    sw.includes("const CACHE = 'crazypp-v" + VER_DIN + "'"));
   aguja('r98 · sw · game.html en RED-PRIMERO con límite (adiós al «una visita por detrás»)',
     sw.includes("endsWith('/game.html')") && sw.includes('function redPrimero(') &&
     sw.includes("cache: 'no-store'") && sw.includes('Promise.race'));

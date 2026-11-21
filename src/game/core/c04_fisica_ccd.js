@@ -11,6 +11,11 @@ export const crossPoint = new THREE.Vector3();
 export const relVel = new THREE.Vector3();
 export const tmpN = new THREE.Vector3();
 export const tmpM = new THREE.Vector3();
+// r102 · §7.5 · tmps del integrador RK4 de vuelo (cero asignaciones por paso)
+const _rkA1 = new THREE.Vector3(), _rkA2 = new THREE.Vector3(),
+  _rkA3 = new THREE.Vector3(), _rkA4 = new THREE.Vector3(),
+  _rkV = new THREE.Vector3(), _rkSum = new THREE.Vector3();
+const _rkMag = new THREE.Vector3();
 export const tmpS = new THREE.Vector3();
 export const tmpT = new THREE.Vector3();
 export const tmpD = new THREE.Vector3();
@@ -79,6 +84,59 @@ export const BOTE_TUNE = {
   cascaronAcoplo: 1.5,    // 3/2: acoplo cascarón Δω = (3/2r)·Δv (topspin patea y conserva)
   omegaLerp: 0.5,         // updatePaddleSim: suavizado del giro de muñeca (media con el anterior)
   omegaDecay: 8,          // updatePaddleSim: decaimiento del giro sin movimiento (por segundo)
+};
+
+/* =====================================================================
+ *  r102 · §6 DEL ESTUDIO — SOLVER_TUNE · MICRO-SOLVER COMPLIANT
+ *  ---------------------------------------------------------------------
+ *  La pieza que quedaba en cola del estudio de simulación (R87: «Hunt–
+ *  Crossley/Cundall–Strack ✗ impulso + parches»): APOYO PERSISTENTE EN
+ *  MESA. Un impacto flojo (< mesaEnter) no rebota por impulso: entra en
+ *  contacto continuo muelle-amortiguador (penetración δ, F = k·δ + c·δ̇,
+ *  F ≥ 0) con fricción de Coulomb REGULARIZADA sobre el deslizamiento del
+ *  cascarón (misma convención de bounceOnTable: ux = vx + r·ωz, uz =
+ *  vz − r·ωx, acoplo Δω = (3/2r)·Δv) — la bola se POSA, rueda con su
+ *  topspin/backspin real y responde al empuje en continuo. Adiós al
+ *  micro-bote zombi de restitución 0,935 (que además goteaba pocks r66).
+ *  El bote REAL (impacto ≥ mesaEnter) sigue siendo impulso slip-coupled:
+ *  el arnés ITTF (rebote 240,7 mm · terminal 8,8 m/s · túnel 10k) manda.
+ *  Presupuesto del estudio: 20 µs/frame — aquí son ~40 escalares por
+ *  subpaso, cero asignaciones.
+ *  ===================================================================== */
+export const SOLVER_TUNE = {
+  mesaEnter: 1.0,       // impacto (m/s) bajo el cual el bote es APOYO, no impulso
+  mesaK: 40000,         // rigidez del apoyo (1/s² · unidad de masa): δ_eq ≈ 0,25 mm
+  mesaC: 200,           // amortiguación (1/s): ζ ≈ 0,5 — se posa en 1-2 micro-botes
+  mesaMu: 0.28,         // Coulomb de la mesa en apoyo (tapa la fricción tangencial)
+  mesaKT: 600,          // regularización tangencial (1/s²): rigidez del deslizamiento
+  mesaRueda: 0.40,      // resistencia a la rodadura (1/s) sobre el deslizamiento residual
+  mesaDespega: 0.006,   // altura (m) sobre topR a la que el apoyo se suelta —
+                        // ≥ δ_max de la entrada (1,0 m/s → 5 mm): el amorti-
+                        // guador come el rebote DENTRO del apoyo (r102)
+};
+
+/* =====================================================================
+ *  r102 · §7.2 DEL ESTUDIO — KF_TUNE · KALMAN POR EJE DE LA PALA
+ *  ---------------------------------------------------------------------
+ *  Segunda pieza en cola (R87: «Kalman §7.2 ✗ diferencias finitas»):
+ *  la velocidad suavizada de la pala (ps.vel, la que decide el impulso
+ *  del golpe y el transporte del apoyo) deja de ser media-móvil de
+ *  diferencias finitas y pasa a un FILTRO DE KALMAN constante-velocidad
+ *  por eje (forma escalar cerrada, cero matrices, cero asignaciones):
+ *  estado (p, v), medida = pose del tracking, R = jitter del casco,
+ *  Q = aceleración humana. GATING DE INNOVACIÓN: una medida fuera de
+ *  puerta (re-centrado, re-contacto) RE-NACE el filtro — convivencia con
+ *  el §7.5-LITE (cuarentena de glitch) que sigue mandando primero.
+ *  La media-móvil de 70 ms queda como arranque en frío (3 ticks).
+ *  ===================================================================== */
+export const KF_TUNE = {
+  r: 6.25e-6,           // varianza de la medida (2,5 mm de jitter de tracking)²
+  qa: 225,              // varianza de aceleración humana ((15 m/s²)²) — sigue
+                        // el vaivén real sin dejar pasar el jitter (r102)
+  gateBase: 0.10,       // puerta mínima de innovación (m)
+  gateVelMul: 1.0,      // × paddleVelClamp × dt: un desplazamiento al tope
+                        // de velocidad (smash real O re-centrado) re-nace
+  warmN: 3,             // ticks hasta que el KF manda sobre la media-móvil
 };
 
 /* SDF del disco con grosor (pala), en espacio LOCAL (origen = centro de la
@@ -212,6 +270,44 @@ export function applyAerodynamics(vel, spin, h, dragMul, magnusMul) {
   }
 }
 
+/** r102 · §7.5 DEL ESTUDIO · INTEGRADOR DE VUELO RK4 (verificación R87:
+ *  «integrador Euler a dt de frame, RK4 ✗» — adoptado). Derivada del vuelo:
+ *  dx/dt = v · dv/dt = g + a_aero(v, spin) con el spin CONGELADO en el paso
+ *  (su decaimiento es lento y sigue aplicándose UNA vez por paso, igual que
+ *  hacía applyAerodynamics — mismo contrato, mejor orden). Consumida por
+ *  stepPhysics Y por los simuladores (predictor IA + solver de saque):
+ *  UNA sola ecuación compartida — doctrina v3.0.5-FIS1. Cero asignaciones. */
+function _aeroAccel(v, spin, dm, mm, out) {
+  out.set(0, DIMS.gravity, 0);
+  const sp = v.length();
+  if (sp > 1e-6) out.addScaledVector(v, -DIMS.airDragK * dm * sp);
+  if (spin.lengthSq() > 1e-4) {
+    _rkMag.crossVectors(spin, v).multiplyScalar(DIMS.magnus * mm);
+    out.add(_rkMag);
+  }
+}
+export function integraVuelo(pos, vel, spin, h, dragMul, magnusMul) {
+  const dm = (dragMul === undefined) ? 1 : dragMul;
+  const mm = (magnusMul === undefined) ? 1 : magnusMul;
+  _aeroAccel(vel, spin, dm, mm, _rkA1);                       // k1v = a(v)
+  _rkV.copy(vel).addScaledVector(_rkA1, h * 0.5);
+  _aeroAccel(_rkV, spin, dm, mm, _rkA2);                      // k2v = a(v+h/2·k1v)
+  _rkV.copy(vel).addScaledVector(_rkA2, h * 0.5);
+  _aeroAccel(_rkV, spin, dm, mm, _rkA3);                      // k3v = a(v+h/2·k2v)
+  _rkV.copy(vel).addScaledVector(_rkA3, h);
+  _aeroAccel(_rkV, spin, dm, mm, _rkA4);                      // k4v = a(v+h·k3v)
+  // x += h·v + h²/6·(k1v+k2v+k3v)  (RK4 exacto con k1x=v, k2x=v+h/2·k1v…)
+  _rkSum.copy(_rkA1).add(_rkA2).add(_rkA3);
+  pos.addScaledVector(vel, h).addScaledVector(_rkSum, h * h / 6);
+  // v += h/6·(k1v + 2k2v + 2k3v + k4v)
+  _rkSum.copy(_rkA1).addScaledVector(_rkA2, 2).addScaledVector(_rkA3, 2).add(_rkA4);
+  vel.addScaledVector(_rkSum, h / 6);
+  // decaimiento del giro: UNA vez por paso (contrato applyAerodynamics)
+  if (spin.lengthSq() > 1e-4) {
+    spin.multiplyScalar(Math.max(0, 1 - DIMS.spinDecayAir * h));
+  }
+}
+
 /**
  * Seguimiento de precisión del mando:
  *  - velocidad lineal = media móvil en una ventana de 70 ms (estable ante
@@ -224,6 +320,39 @@ export function applyAerodynamics(vel, spin, h, dragMul, magnusMul) {
  * 33-83 ms dividir el Δpos real por 1/30 infla el swing y el golpe pasa a
  * depender del lag del casco. Llamador: c12, tick de mandos.
  */
+// r102 · §7.2 · UN EJE del Kalman: estado [p, v, P11, P12, P22] en a[o..o+4],
+// medida z, arranque en frío compartido a[15]. Forma escalar cerrada.
+const _kfEje = function (a, o, z, vInst, dt) {
+  const dt2 = dt * dt;
+  // predict: p⁻ = p + v·dt · P⁻ con ruido de aceleración humana (QA)
+  const p = a[o] + a[o + 1] * dt;
+  const P11 = a[o + 2] + 2 * a[o + 3] * dt + a[o + 4] * dt2 +
+    KF_TUNE.qa * dt2 * dt2 * 0.25;
+  const P12 = a[o + 3] + a[o + 4] * dt + KF_TUNE.qa * dt2 * dt * 0.5;
+  const P22 = a[o + 4] + KF_TUNE.qa * dt2;
+  const y = z - p;
+  const gate = Math.max(KF_TUNE.gateBase,
+    DIMS.paddleVelClamp * KF_TUNE.gateVelMul * dt);
+  if (Math.abs(y) > gate) {
+    // RE-NACE: la medida manda, la incertidumbre vuelve a nacer ancha
+    a[o] = z;
+    a[o + 1] = vInst;
+    a[o + 2] = KF_TUNE.r * 10;
+    a[o + 3] = 0;
+    a[o + 4] = DIMS.paddleVelClamp * DIMS.paddleVelClamp;
+    a[15] = 0;
+  } else {
+    const S = P11 + KF_TUNE.r;
+    const K1 = P11 / S, K2 = P12 / S;
+    a[o] = p + K1 * y;
+    a[o + 1] += K2 * y;
+    a[o + 2] = P11 - K1 * P11;
+    a[o + 3] = P12 - K1 * P12;
+    a[o + 4] = P22 - K2 * P12;
+    if (a[15] < KF_TUNE.warmN) a[15]++;
+  }
+};
+
 export function updatePaddleSim(ps, pos, quat, now, dt) {
   ps.prev.copy(ps.pos);
   // v2.29: conservar la base ORIENTADA del frame anterior (barrido con giro)
@@ -263,6 +392,26 @@ export function updatePaddleSim(ps, pos, quat, now, dt) {
       tmpV.x += s.x; tmpV.y += s.y; tmpV.z += s.z;
     }
     tmpV.divideScalar(ps.velBuf.length);
+    // r102 · §7.2 · KALMAN POR EJE (el estudio: «diferencias finitas ✗»):
+    // filtro constante-velocidad por eje, forma escalar cerrada, cero matri-
+    // ces y cero asignaciones por frame (el estado nace UNA vez por pala).
+    // La media-móvil de 70 ms queda como ARRANQUE EN FRÍO (warmN ticks);
+    // con el filtro templado el POSTERIOR de velocidad manda: cero lag de
+    // ventana, cero jitter de tracking — el impulso del golpe y el trans-
+    // porte del apoyo deciden con la velocidad BIEN estimada.
+    // GATING DE INNOVACIÓN: medida fuera de puerta ⇒ el filtro RE-NACE con
+    // la medida (re-centrado, re-contacto, re-agarre) — convive con el
+    // §7.5-LITE, que sigue mandando primero (cuarentena de glitch).
+    const kfArr = ps.kfArr || (ps.kfArr = new Float64Array(16));
+    const dtp = (_gDt > 0 && !_gGlitch) ? _gDt : 0;
+    if (dtp > 0) {
+      _kfEje(kfArr, 0, ps.pos.x, ps.velInst.x, dtp);
+      _kfEje(kfArr, 5, ps.pos.y, ps.velInst.y, dtp);
+      _kfEje(kfArr, 10, ps.pos.z, ps.velInst.z, dtp);
+    }
+    if (kfArr[15] >= KF_TUNE.warmN) {
+      tmpV.set(kfArr[1], kfArr[6], kfArr[11]);
+    }
     // v2.29: respuesta más ágil (lerp configurable v3.1.0-SRV2) y techo de
     // velocidad: el impulso deja de llegar "esponja" en swings rápidos sin
     // meter jitter de tracking

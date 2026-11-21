@@ -228,6 +228,14 @@ export class PingPongGame {
     this._dlT = 0;                    // s restantes del poder activo
     this._dlWarn = false;             // aviso «se agota» ya disparado
     this._dlRemotoT = 0;              // aviso del poder del rival (solo UX)
+    // r106 · ventana de PRISMA del RIVAL en duelos: mientras corre, cada
+    // golpeo MÍO cria la nube de prismas EN MI MITAD (me estorba a mí —
+    // el espejo exacto del efecto local con la IA).
+    this._dlPrismaRemotoT = 0;
+    // r107 · ¿la ventana ACTIVA la armé YO? (false = la armó el relay
+    // del rival: SU cometa jamás se dibuja en mi pantalla — el cometa
+    // es solo del jugador que lanza el poder).
+    this._megaActivaMia = true;
     this._megaTickN = 0;              // v3.6.43: cuenta sonora 3·2·1
     // r25 (v3.6.120) · SÚPER RED: ventana de 10 s con la red AL DOBLE.
     this._redT = 0;
@@ -397,6 +405,17 @@ export class PingPongGame {
     this._clonTickN = 0;              // cuenta sonora 3·2·1 (uniforme r43)
     this._clonFx = null;              // [clonIzq, clonDer] grupos fantasma
     this._clonFxOn = false;
+    // r108 · SUPER CRIPTONITA (12 s): bola verde fosforito pulsante +
+    // cristales de cuarzo veteados que brotan en la mesa del rival.
+    this._criptoT = 0;                // s restantes de ventana cripto
+    this._criptoWarn = false;
+    this._criptoTickN = 0;
+    this._criptoTint = null;          // tinta original de la bola (restaurar)
+    this.cristalesCripto = null;      // pool de cristales (c07)
+    // r108 · los ASISTENTES del clon: predicción compartida + pose propia
+    this._clonPredicT = 0;
+    this._clonPredicP = null;
+    this._clonPoseQ = null;
     this._clonCd = 0;                 // antirrebote de captura por bola (s)
     this._clonFallada = false;        // este vuelo ya falló su tirada (10 %)
     this._clonChaseIx = -1;           // blanco actual del clon IZQ (globos)
@@ -698,6 +717,17 @@ export class PingPongGame {
     /* r21 · chispas de bote: pool fijo (5×8 puntos), color de la skin. */
     this.chispas = createChispas();
     this.rig.add(this.chispas.group);
+    // r106 · FX DE PODERES: estela de partículas del poder activo y
+    // nube de prismas del arcoíris (ambas en el espacio del rig/mesa,
+    // pools fijos de c07 — cero asignaciones por frame).
+    this.estelaPoder = createEstelaPoder();
+    this.rig.add(this.estelaPoder.group);
+    this.nubePrisma = createNubePrismas();
+    this.rig.add(this.nubePrisma.group);
+    // r107 · la ESFERA-ESCUDO de la onda de choque (pentágonos, nace en
+    // la pala al golpeo, crece empujando la bola al doble de velocidad)
+    this.ondaEsfera = createOndaEsfera();
+    this.rig.add(this.ondaEsfera.group);
 
     this.blob = createBlobShadow();
     this.rig.add(this.blob);
@@ -712,32 +742,9 @@ export class PingPongGame {
     // pala (cadena, saque o espera). El demo sigue sin cuerpo.
     this.aiPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.aiPaddleMesh);
-    {
-      const _am = new THREE.MeshStandardMaterial({ color: 0x2b2e34, roughness: 0.55, metalness: 0.18 });
-      const _arm = new THREE.Group();
-      const hombro = new THREE.Mesh(new THREE.SphereGeometry(0.048, 14, 10), _am);
-      const brazo = new THREE.Mesh(new THREE.CapsuleGeometry(0.030, 1, 5, 10), _am);
-      const antebrazo = new THREE.Mesh(new THREE.CapsuleGeometry(0.025, 1, 5, 10), _am);
-      const muneca = new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 9), _am);
-      _arm.add(hombro, brazo, antebrazo, muneca);
-      _arm.visible = false;
-      _arm.userData = { hombro, brazo, antebrazo, muneca };
-      this.aiArm = _arm;
-      this.rig.add(_arm);
-    }
-    // r93 · LOS BRAZOS REALES del rival: vr_arm.glb (subido por el dueño) —
-    // DOS brazos skinneados con manos y dedos (42 huesos). El derecho
-    // agarra la pala POR EL MANDO (la hoja sigue como continuación del
-    // brazo, r92); el izquierdo sostiene la bola en el saque y equilibra
-    // en el rally. IK rígida (huesos que jamás estiran), One Euro contra
-    // el temblor, piso duro de mesa y altura adulta (hombro ≈ 1,37 m —
-    // adiós al efecto enano). El rig de cápsulas de arriba queda como
-    // respaldo si el GLB no llega.
-    this.aiArmGlb = null;
-    // r99 · RETIRO DE LOS BRAZOS: vr_arm.glb ya NO se carga (2,3 MB menos
-    // de red y de memoria, cero rigging por frame). La llamada queda aquí
-    // documentada para revertir la decisión con un solo cambio.
-    // this._cargarArmasGLB();
+    // r101 · RETIRO DEFINITIVO DE LOS BRAZOS: las cápsulas r91, el GLB
+    // r93 y TODOS sus drivers (IK, One Euro, dedos) están BORRADOS del
+    // bundle — el rival es SOLO la pala y su golpe nace SIEMPRE de ella.
 
     this.demoPaddleMesh = makePaddleVisual(paddleModel, 'center');
     this.rig.add(this.demoPaddleMesh);
@@ -7990,6 +7997,13 @@ export class PingPongGame {
         this.drawMenu();
         break;
       }
+      case 'hallv':
+        // r108 · EL PANEL 3D «PICK A HALL» VUELVE A LA VIDA: sus rects
+        // hallv:<id> caían al vacío (sin caso en el dispatcher) — por
+        // eso los salones se VEÍAN disponibles pero NO se podían
+        // seleccionar (informe del dueño). El arg ya trae el id de la
+        // variante: cae al MISMO cauce del menú de ajustes (hall_var),
+        // que ya sabe negarse con candado y mensaje del hito.
       case 'hall_var': {
         // r24 · ARTE DEL HALL: museo clásico o LA CABAÑA (10 victorias,
         // candado wins10 — el mismo de las skins de gala). Se guarda en
@@ -8827,6 +8841,26 @@ export class PingPongGame {
       // «con candado») y el surto de duelos la recibe siempre.
       if (ok.indexOf('bolaloca') >= 0 && lista.indexOf('bolaloca') < 0) {
         lista.unshift('bolaloca');
+        try {
+          localStorage.setItem('pp_poderes_v1', JSON.stringify(lista));
+        } catch { /* la sesión la lleva en memoria */ }
+      }
+      // r109 · REGLA DEL ADMINISTRADOR (petición del dueño): el usuario
+      // FORO3D — el ppDebugMode de la casa (c00) — juega con TODO
+      // desbloqueado; el resto del mundo respeta los candados.
+      try {
+        if (typeof window !== 'undefined' && window.__PP_DEBUG) return ok.slice();
+      } catch { /* sin window: vía normal */ }
+      // r109 · SUPER CRIPTONITA vuelve al CANDADO (orden del dueño: «el
+      // Superpoder debe aparecer bloqueado»): se abre por la vía de
+      // siempre — la coronación de un campeonato libera uno AL AZAR entre
+      // los que sigan cerrados. La r108 la sembró abierto EN EL
+      // ALMACENAMIENTO: se retira UNA vez para que el candado sea
+      // honesto. La BOLA LOCA conserva su siembra de serie (regla FASE
+      // 160 del dueño, arriba).
+      const iCripto = lista.indexOf('cripto');
+      if (iCripto >= 0) {
+        lista.splice(iCripto, 1);
         try {
           localStorage.setItem('pp_poderes_v1', JSON.stringify(lista));
         } catch { /* la sesión la lleva en memoria */ }
@@ -9680,6 +9714,11 @@ export class PingPongGame {
   resetToss() {
     this.tossed = false;
     this.tossTimer = 0;
+    // r105 · la bola de vuelta a la mano es un LIENZO LIMPIO para el apoyo:
+    // una captura STALE del carry (bola cazada por la pala justo antes del
+    // re-tee) re-proyectaría el lanzamiento sobre la cara y el saque se lo
+    // comería el carry — en TODAS las modalidades por igual.
+    if (this.ball) this.ball.__ppRestIdx = -1;
     this._srvReanclaAviso = false;   // r86 · P0-1: el aviso de reanclaje vive por INTENTO
     this.apexSignaled = false;
     this.gripDown[0] = false;
@@ -9787,7 +9826,11 @@ export class PingPongGame {
     }
 
     // en modo ajuste, el gatillo lanza una bola de entrenamiento
-    if (this.calib) {
+    // r105 · trainV3 NO entra aquí: su gatillo es el del soporte de saque
+    // (rama propia más abajo, antes del residuo 'serve'). La guardia genérica
+    // comía el gatillo en el entrenamiento y el dueño no podía soltar la bola
+    // del tee («en el entrenamiento no se puede pulsar el gatillo»).
+    if (this.calib && !this.trainV3) {
       const now = performance.now() / 1000;
       if (now - this.lastFeedTap > 0.3) {
         this.lastFeedTap = now;
@@ -9816,8 +9859,15 @@ export class PingPongGame {
     // cero cambio de comportamiento en el camino feliz): con el jugador por
     // sacar y bola en mano, el gatillo LANZA SIEMPRE. El mapa/replay siguen
     // vivos en 'over'/'arkanoid'/CHAMPS_STATE y el megaTrigger en 'rally'.
+    // r105 · FÍSICA/CONTROL IDÉNTICOS EN TODAS LAS MODALIDADES (informe del
+    // dueño): en el entrenamiento (calib+trainV3) el state 'serve' del árbitro
+    // es RESIDUO del modo anterior — esta guardia r65 disparaba el saque del
+    // NÚCLEO y se comía el gatillo del tee antes de llegar a la ruta del
+    // módulo (el propio comentario de abajo ya avisaba: «esta rama debe
+    // correr ANTES», pero esta guardia vivía MÁS ARRIBA aún).
     if (this.rules.state === 'serve' &&
-        this.rules.server === 'player' && !this.tossed) {
+        this.rules.server === 'player' && !this.tossed &&
+        !(this.calib && this.trainV3)) {
       this.tossFromHand(this.ballHand, true);
       return;
     }
@@ -10161,6 +10211,8 @@ export class PingPongGame {
       }
       return true;
     }
+    this._megaActivaMia = true;   // r107: esta ventana la arma YO
+    if (ent.id === 'cripto') return this._criptoTrigger(ent);   // r108
     if (ent.id === 'bolaloca') return this._bolalocaTrigger(ent); // FASE 160
     if (ent.id === 'efecto') return this._efectoTrigger(ent);
     if (ent.id === 'iman') return this._imanTrigger(ent);
@@ -10221,7 +10273,8 @@ export class PingPongGame {
       ['clon', '_clonT'], ['red', '_redT'], ['elec', '_elecT'],
       ['fenix', '_fenixT'], ['crono', '_cronoT'],
       ['oscuridad', '_oscuridadT'], ['prisma', '_prismaT'],
-      ['onda', '_ondaT'], ['salva', '_salvaT'], ['ancla', '_anclaT']];
+      ['onda', '_ondaT'], ['salva', '_salvaT'], ['ancla', '_anclaT'],
+      ['cripto', '_criptoT']];
     for (const [id, reloj] of pares) {
       if (this[reloj] > 0) return id;
     }
@@ -10237,6 +10290,7 @@ export class PingPongGame {
     if (!ent) return false;
     if (ent.id === 'mega') return this._megaT > 0;
     if (ent.id === 'bolaloca') return this._bolalocaT > 0;   // FASE 160
+    if (ent.id === 'cripto') return this._criptoT > 0;       // r108
     if (ent.id === 'efecto') return this._efectoT > 0;
     if (ent.id === 'iman') return this._imanT > 0;
     if (ent.id === 'portal') return this._portalT > 0;
@@ -12894,6 +12948,8 @@ export class PingPongGame {
     this._ondaFlojoT = 0;
     this._ondaShakeT = 0;
     this._ondaFxVis(false);
+    // r107 · la ventana cerró: la esfera se disipa (encogido suave)
+    try { if (this.ondaEsfera) this.ondaEsfera.muere(); } catch (eOEfin) { /* */ }
     if (this._megaActivaId === 'onda') this._megaActivaId = null;
   }
 
@@ -12966,6 +13022,179 @@ export class PingPongGame {
     if (this.renderer.xr && this.renderer.xr.isPresenting) {
       try { this.haptic(this.paddleHand, 0.6, 90); } catch (e3) { /* */ }
     }
+  }
+
+  /** r107 · LA ESFERA-ESCUDO DE LA ONDA DE CHOQUE (petición literal del
+   *  dueño): nace centrada en la PALA en el momento del impacto y crece
+   *  empujando la bola con la propia superficie de la esfera — la bola
+   *  viaja AL DOBLE de la velocidad del golpe. Desaparece cuando la bola
+   *  impacta en el suelo o en la pala del rival (ganchos r107). El
+   *  «en pleno swing» (devolución IA floja) y el temblor del rig se
+   *  conservan del anillo r33. Sustituye a _ondaNace en el gancho. */
+  _ondaEsferaNace(pos, vel) {
+    if (!this.ondaEsfera) {
+      try {
+        this.ondaEsfera = createOndaEsfera();
+        this.rig.add(this.ondaEsfera.group);
+      } catch (eOB2) { return; }
+    }
+    const vOn = this.ball.vel;
+    if (vOn && vOn.lengthSq() > 0.01) vOn.multiplyScalar(2);   // AL DOBLE
+    try { this.ondaEsfera.nace(pos); } catch (eON2) { /* */ }
+    // «en pleno swing»: la próxima devolución de la IA sale al 75 %
+    this._ondaFlojoT = ONDA_FLOJO_T;
+    // temblor breve del rig (comodidad VR: 0,35 s, ±9 mm, restauración exacta)
+    this._ondaShakeT = 0.35;
+    if (!this._ondaRigBase && this.rig) this._ondaRigBase = this.rig.position.clone();
+    // ENERGÍA GRAVE QUE CRECE hasta el impacto (sub + sierra, barrido 2 s)
+    try { this.audio.playOsc(52, 118, 0.5, 'sawtooth', 0.2, 0); } catch (eOEs1) { /* */ }
+    try { this.audio.playOsc(36, 82, 0.5, 'sine', 0.24, 0); } catch (eOEs2) { /* */ }
+    if (this.renderer.xr && this.renderer.xr.isPresenting) {
+      try { this.haptic(this.paddleHand, 0.7, 90); } catch (eOEs3) { /* */ }
+    }
+  }
+
+  /** r107 · muerte de la esfera (suelo / pala rival / fin de ventana): la
+   *  energía grave CORTA con un golpe seco — «crece hasta desaparecer con
+   *  el impacto». */
+  _ondaEsferaMuere() {
+    try { this.ondaEsfera.muere(); } catch (eOM1) { /* */ }
+    try { this.audio.playOsc(110, 40, 0.18, 'sawtooth', 0.16, 0); } catch (eOM2) { /* */ }
+    try { this.audio.playNoise(0.14, 210, 0.3, 0.12, 0, 'lowpass'); } catch (eOM3) { /* */ }
+  }
+
+  /* ==================================================================
+   *  r108 · SUPER CRIPTONITA (petición literal del dueño, 12 s): «La
+   *  bola se convierte en un verde fosforito pulsante de luz verde. Su
+   *  estela es verde (anula la estela por defecto) dejando un rastro
+   *  de luz verde en su recorrido que se desvanece a ~50 cm. Cuando la
+   *  bola golpea la mesa en la zona rival hace crecer de uno a hasta 5
+   *  cristales de cuarzo verdosos veteados (20-50 cm, aleatorio) sobre
+   *  la superficie de la mesa del rival. Si la bola golpea los
+   *  cristales los rompe en pedacitos pero se frena a 1/3 de su
+   *  velocidad y sale en una dirección completamente aleatoria».
+   *  La estela verde la da la FIRMA (TRAIL_PODER.cripto) — el cometa
+   *  r107/r108 y la estela-línea la leen solas.
+   *  ================================================================== */
+  _criptoTrigger(ent) {
+    if (this._criptoT > 0) {
+      // refresco honesto (patrón clon/onda): la ventana vuelve a 12 s
+      this._criptoT = CRIPTO_DUR;
+      this._criptoWarn = false;
+      this._criptoTickN = 0;
+      this._megaActivaId = 'cripto';
+      this._megaActivaDur = CRIPTO_DUR;
+      this._megaTexDirty = true;
+      this.rules.message = T('arc_cripto_go');
+      return true;
+    }
+    if (!this._megaMatriz.find((x) => x.id === 'cripto')) return false;
+    this._megaGasta(ent);
+    this._criptoT = CRIPTO_DUR;
+    this._criptoWarn = false;
+    this._criptoTickN = 0;
+    this._megaActivaId = 'cripto';
+    this._megaActivaDur = CRIPTO_DUR;
+    this._megaTexDirty = true;
+    if (!this.cristalesCripto) {
+      try {
+        this.cristalesCripto = createCristalesCripto();
+        this.rig.add(this.cristalesCripto.group);
+      } catch (eCC2) { this.cristalesCripto = null; }
+    }
+    try { this._criptoTintAplicar(); } catch (eCT2) { /* */ }
+    // firma: el cristal despierta (dos voces ascendentes)
+    try { this.audio.playOsc(220, 880, 0.25, 'triangle', 0.14, 0); } catch (e) { /* */ }
+    try { this.audio.playOsc(440, 1320, 0.3, 'sine', 0.1, 0.08); } catch (e2) { /* */ }
+    this.rules.message = T('arc_cripto_go');
+    if (this.renderer.xr && this.renderer.xr.isPresenting) {
+      try { this.haptic(this.paddleHand, 0.7, 120); } catch (e3) { /* */ }
+    }
+    return true;
+  }
+
+  /** r108 · LA BOLA KRYPTONITA: verde fosforito con emisivo verde que
+   *  PULSA (el frame lo modula). Guarda la tinta original y la restaura
+   *  al acabar — mismo patrón de la oscuridad (r29) y la brasa del
+   *  fénix; cede la bola si otro poder la viste. */
+  _criptoTintAplicar() {
+    const m = this.ballMesh;
+    if (!m || !m.material || this._criptoTint) return;
+    try { if (this._oscuridadTint) this._oscuridadTintRestaurar(); } catch (eC0) { /* */ }
+    try { if (this._prismaBolaTint) this._prismaBolaTintRestaurar(); } catch (eC1) { /* */ }
+    this._criptoTint = {
+      col: m.material.color.getHex(),
+      em: m.material.emissive ? m.material.emissive.getHex() : null,
+      ei: m.material.emissiveIntensity != null ? m.material.emissiveIntensity : null,
+    };
+    m.material.color.setHex(0x53ff6e);          // verde fosforito
+    if (m.material.emissive) m.material.emissive.setHex(0x1fd94e);
+    if (m.material.emissiveIntensity != null) m.material.emissiveIntensity = 1.1;
+  }
+
+  _criptoTintRestaurar() {
+    if (!this._criptoTint) return;
+    const f = this._criptoTint;
+    this._criptoTint = null;
+    const m = this.ballMesh;
+    if (!m || !m.material) return;
+    m.material.color.setHex(f.col);
+    if (m.material.emissive && f.em != null) m.material.emissive.setHex(f.em);
+    if (m.material.emissiveIntensity != null && f.ei != null) {
+      m.material.emissiveIntensity = f.ei;
+    }
+  }
+
+  /** r108 · FRAME de la criptonita: pulso de la bola + cristales vivos
+   *  (crecen, pulsan) + COLISIÓN: la bola que choca con un cristal lo
+   *  ROMPE en pedacitos, se frena a 1/3 y sale en dirección totalmente
+   *  aleatoria e impredecible (spec literal del dueño). */
+  _criptoFrame(dt) {
+    const m = this.ballMesh;
+    if (m && m.material && this._criptoTint &&
+        m.material.emissiveIntensity != null) {
+      const ph = performance.now() * 0.001;
+      m.material.emissiveIntensity =
+        0.75 + 0.55 * (0.5 + 0.5 * Math.sin(ph * 9.4));   // pulso vivo
+    }
+    if (!this.cristalesCripto) return;
+    try { this.cristalesCripto.update(dt); } catch (eCrU) { /* */ }
+    const b = this.ball;
+    if (!(b && b.pos && b.vel && this.rules &&
+          this.rules.state === 'rally' && b.pos.z < DIMS.tableCenterZ)) return;
+    let iCol = -1;
+    try { iCol = this.cristalesCripto.colisiona(b.pos, DIMS.ballRadius); }
+    catch (eCrC) { iCol = -1; }
+    if (iCol < 0) return;
+    const pR = b.pos.clone();
+    try { this.cristalesCripto.rompe(iCol); } catch (eCrR) { /* */ }
+    try { this.chispas.burst(pR, TRAIL_PODER.cripto); } catch (eCrB) { /* */ }
+    try { this.chispas.burst(pR, TRAIL_PODER.cripto); } catch (eCrB2) { /* */ }
+    // freno a 1/3 + dirección COMPLETAMENTE ALEATORIA (azimut y
+    // elevación al azar — ni la IA ni el dueño pueden preleerla)
+    const sp3 = Math.max(1.2, b.vel.length() / 3);
+    const az = Math.random() * Math.PI * 2;
+    const el = 0.18 + Math.random() * 0.55;
+    b.vel.set(Math.cos(az) * Math.cos(el) * sp3, Math.sin(el) * sp3,
+      Math.sin(az) * Math.cos(el) * sp3);
+    try { this.audio.playOsc(1400, 300, 0.2, 'square', 0.14, 0); } catch (eCrS) { /* */ }
+    try { this.audio.playNoise(0.18, 2400, 0.5, 0.12, 0, 'highpass'); } catch (eCrS2) { /* */ }
+    this.rules.message = T('cripto_rompe');
+    if (this.renderer.xr && this.renderer.xr.isPresenting) {
+      try { this.haptic(this.paddleHand, 0.5, 70); } catch (eCrH) { /* */ }
+    }
+  }
+
+  /** r108 · Fin de la ventana: la bola vuelve a su tinta y los
+   *  cristales vivos se deshacen (la mesa queda limpia). */
+  _criptoFin() {
+    this._criptoT = 0;
+    this._criptoTintRestaurar();
+    if (this.cristalesCripto) {
+      try { this.cristalesCripto.fin(); } catch (eCrF) { /* */ }
+    }
+    this.rules.message = T('arc_cripto_fin');
+    try { this.audio.playOsc(880, 220, 0.2, 'triangle', 0.12, 0); } catch (e) { /* */ }
   }
 
   _ondaFrame(dt) {
@@ -13405,6 +13634,10 @@ export class PingPongGame {
       this._ondaFlojoT = 0; this._ondaShakeT = 0;
       try { this._ondaFin(); } catch (eO33) { /* */ }
     }
+    if (this._criptoT > 0) {
+      this._criptoT = 0; this._criptoWarn = false; this._criptoTickN = 0;
+      try { this._criptoFin(); } catch (eCr33) { /* */ }
+    }
     if (this._salvaT > 0) {
       this._salvaT = 0; this._salvaWarn = false; this._salvaTickN = 0;
       try { this._salvaFin(); } catch (eS33) { /* */ }
@@ -13464,6 +13697,18 @@ export class PingPongGame {
     this._megaActivaDur = CLON_DUR;
     this._megaTexDirty = true;
     try { this._buildClonFx(); } catch (e) { this._clonFx = null; }
+    // r108 · cada asistente nace con SU pose de guardia (la del dueño
+    // en el instante de armar, congelada — jamás la copia en vivo)
+    try {
+      const psQ = this.controllerPaddles
+        ? this.controllerPaddles[this.paddleHand | 0] : null;
+      if (psQ && psQ.right && psQ.up && psQ.normal) {
+        _clonM.makeBasis(psQ.right, psQ.up, psQ.normal);
+        this._clonPoseQ = _clonQ.setFromRotationMatrix(_clonM).clone();
+      }
+    } catch (eCQ) { this._clonPoseQ = null; }
+    this._clonPredicT = 0;
+    this._clonPredicP = null;
     this._clonVis(true);
     // firma sonora «fantasma»: shimmer ascendente azulado en dos voces
     try { this.audio.playOsc(320, 860, 0.2, 'sine', 0.12, 0); } catch (e) { /* */ }
@@ -13579,7 +13824,8 @@ export class PingPongGame {
     return mejor >= 0 ? blancos[mejor] : null;
   }
 
-  /** v3.6.50 · DEVOLUCIÓN del clon (el 90 % de acierto): solver de la
+  /** r108 · DEVOLUCIÓN del ASISTENTE (CAMPEÓN: acierta SIEMPRE, antes
+   *  era el 90 % de v3.6.50): solver de la
    *  casa computeShotVelocityReal hacia un punto honesto de la mesa
    *  rival, cero spin (bote seguro), árbitro POR golpe de jugador
    *  (registerPaddleHit — el clon juega LEGAL: sólo bolas ya botadas en
@@ -13612,16 +13858,43 @@ export class PingPongGame {
   /** v3.6.50 · FRAME del clon (corre con la ventana VIVA, aunque el punto
    *  muera — patrón portal): 1) pose de guardia a ±50 cm de la pala del
    *  jugador, 2) CAZA de blancos de visión (globos) volando hacia ellos,
-   *  3) BARRE el confeti en patrulla, 4) CAZA la bola que se escapa por
-   *  SU lado si el jugador no puede llegar (90 % de éxito). */
+   *  3) BARRE el confeti en patrulla, 4) INTERCEPTA y devuelve SIEMPRE
+   *  la bola que se le escapa al jugador (asistentes campeones r108). */
   _clonFrame(dt) {
     if (!this._clonFx) return;
     const ps = this.controllerPaddles ? this.controllerPaddles[this.paddleHand | 0] : null;
     const r = this.rules;
     const now = performance.now() * 0.001;
+    const b0 = this.ball;
     const blancos = this._clonBlancos(_clonBlancosBuf);
     const confetiVivo = !!(this.confetti && this.confetti.points.visible &&
       this.confettiBurst > 0 && this.confetti.kill);
+    // r108 · PREDICCIÓN compartida (una por frame, cada 0,12 s, sólo
+    // con bola entrante legal): el predictor REAL de la casa
+    // (predictStrike, RK4 c05) señala el punto de golpeo en NUESTRO
+    // campo y SU lado — el asistente campeón corre ANTES de que llegue
+    // la bola (los clones ya no esperan quietos su 0,32 m de suerte).
+    let _pred = null;
+    if (this._clonCd <= 0 && b0 && b0.pos && b0.vel && r &&
+        r.state === 'rally' && r.lastHitter === 'ai' && b0.vel.z > 0.25) {
+      this._clonPredicT -= dt;
+      if (this._clonPredicT <= 0) {
+        this._clonPredicT = 0.12;
+        try {
+          const pr = predictStrike(b0, 1, !!r.validBounce);
+          this._clonPredicP = pr && pr.point ? pr.point : null;
+        } catch (eCP) { this._clonPredicP = null; }
+      }
+      if (this._clonPredicP) {
+        const lx = this._clonPredicP.x;
+        _pred = {
+          x: lx,
+          y: this._clonPredicP.y,
+          z: this._clonPredicP.z,
+          lado: lx < -0.18 ? -1 : (lx > 0.18 ? 1 : 0),   // el centro es del dueño
+        };
+      }
+    }
     for (let k = 0; k < 2; k++) {
       const grp = this._clonFx[k];
       if (!grp) continue;
@@ -13639,23 +13912,29 @@ export class PingPongGame {
         tx = Math.sin(now * 0.9 + ph) * 0.85;
         ty = 1.35 + Math.sin(now * 1.3 + ph) * 0.28;
         tz = -0.35 + Math.cos(now * 0.7 + ph) * 0.5;
+      } else if (_pred && _pred.lado === lado) {
+        // r108 · INTERCEPCIÓN: el asistente CORRE al punto de golpeo
+        // que el predictor real señala en SU lado — verdadero campeón:
+        // llega antes de que la bola lo haga y la devuelve siempre.
+        tx = THREE.MathUtils.clamp(_pred.x, -1.25, 1.25);
+        ty = THREE.MathUtils.clamp(_pred.y, 0.75, 1.5);
+        tz = THREE.MathUtils.clamp(_pred.z, CLON_Z - 0.25, CLON_Z + 0.3);
       } else {
-        // GUARDIA: flanquea la pala del jugador a ±CLON_DIST (50 cm)
-        if (!ps || !ps.pos) continue;
-        tx = ps.pos.x + lado * CLON_DIST;
-        ty = ps.pos.y;
-        tz = ps.pos.z;
+        // r108 · PUESTO PROPIO (ya no ESPEJA la pala del dueño — el
+        // encargo: «no repiten nuestros movimientos, son dos
+        // asistentes»): cada uno custodia SU mitad con balanceo suave.
+        tx = lado * CLON_POSTE_X;
+        ty = CLON_ALTURA + Math.sin(now * 1.1 + (lado > 0 ? 0 : Math.PI)) * 0.06;
+        tz = CLON_Z;
       }
-      const kk = 1 - Math.exp(-dt * (blanco ? 3.4 : 10));   // el fantasma va con lag
+      const kk = 1 - Math.exp(-dt * (blanco ? 3.4
+        : (_pred && _pred.lado === lado ? 14 : 8)));   // el campeón SPRINTA
       grp.position.x += (tx - grp.position.x) * kk;
       grp.position.y += (ty - grp.position.y) * kk;
       grp.position.z += (tz - grp.position.z) * kk;
-      // orientación: la base de la pala del jugador (misma pose de hoja)
-      if (ps && ps.right && ps.up && ps.normal) {
-        _clonM.makeBasis(ps.right, ps.up, ps.normal);
-        _clonQ.setFromRotationMatrix(_clonM);
-        grp.quaternion.copy(_clonQ);
-      }
+      // r108 · orientación PROPIA: pose de guardia capturada al armar
+      // el poder — los asistentes ya no copian la pose viva del dueño
+      if (this._clonPoseQ) grp.quaternion.copy(this._clonPoseQ);
       // pulso pop (activación / caza lograda)
       if (grp.userData.popT > 0) {
         grp.userData.popT -= dt;
@@ -13720,7 +13999,7 @@ export class PingPongGame {
           const grp = this._clonFx[k];
           if (!grp || !grp.visible) continue;
           if (b.pos.distanceTo(grp.position) <= CLON_CATCH) {
-            this._clonFallada = true;      // UNA tirada por vuelo (el 10 % es real)
+            this._clonFallada = true;      // UNA tirada por vuelo (acierta SIEMPRE)
             this._clonCd = 0.4;
             if (Math.random() < CLON_EXITO) {
               this._clonDevuelve(b, grp);
@@ -13774,6 +14053,9 @@ export class PingPongGame {
     else if (id === 'ancla') par = [VOZ_PODER_ANCLA, VOZ_PODER_ANCLA_EN];
     // FASE 160 · la BOLA LOCA reutiliza su voz de concesión (patrón r33)
     else if (id === 'bolaloca') par = [VOZ_PODER_BOLALOCA, VOZ_PODER_BOLALOCA_EN];
+    // r109 · SUPER CRIPTONITA reutiliza su voz de concesión (patrón
+    // r33/r58): voz ágil en el juego, voz solemne del oráculo en Arcano.
+    else if (id === 'cripto') par = [VOZ_PODER_CRIPTO, VOZ_PODER_CRIPTO_EN];
     return par ? (en ? par[1] : par[0]) : null;
   }
 
@@ -15201,6 +15483,7 @@ export class PingPongGame {
     this._dlT = 0;
     this._dlWarn = false;
     this._dlRemotoT = 0;
+    this._dlPrismaRemotoT = 0;   // r106 · la nube del rival muere con la sesión
   }
   /** un golpe propio (saque o rally) cuenta para la carga: cada 5, poder.
    *  r39 · el surto crece con LOS DESBLOQUEADOS DEL ARCANO: gigante/fuego/
@@ -15244,6 +15527,7 @@ export class PingPongGame {
     this._dlWarn = false;
     try {
       this._dlArma(id);
+      this._megaActivaMia = true;      // r107: lanzamiento PROPIO en duelos
       this.net.sendDueloPower(id);       // aviso fiable al rival ('pow')
       const nombre = T('dl_' + id);
       this.rules.message = nombre;
@@ -15339,10 +15623,17 @@ export class PingPongGame {
         this._dlT = DL_DUR[id] || 10;
         this._dlWarn = false;
         this._dlArma(id);              // …y el trigger de la casa arma TODO
+        this._megaActivaMia = false;   // r107: la armó EL RIVAL — su cometa no es mío
       } else if (id === 'onda') {
         this._dlOndaFlojoT = ONDA_FLOJO_T + 0.4;   // mi próxima devolución, floja
       }
     }
+    // r106 · LA NUBE DEL ARCOÍRIS VIVE EN MI GOLPEO: el rival lanzó
+    // prisma — durante SU ventana, cada golpeo MÍO cria la nube de
+    // prismas en MI mitad, delante de mí (su efecto: dificultarme la
+    // visión — el espejo del efecto local con la IA). El ANCLA propia
+    // ya devolvió arriba: si bloqueó, nunca llego aquí.
+    if (id === 'prisma') this._dlPrismaRemotoT = DL_DUR.prisma || 10;
     this._dlRemotoT = 12;
     try {
       this.rules.message = T('dl_' + id) + ' · ' + T('dl_rival');
@@ -15372,6 +15663,7 @@ export class PingPongGame {
     }
     if (this._dlOndaFlojoT > 0) this._dlOndaFlojoT -= dt;
     if (this._dlRemotoT > 0) this._dlRemotoT -= dt;
+    if (this._dlPrismaRemotoT > 0) this._dlPrismaRemotoT -= dt;   // r106
     if (this._dlT > 0) {
       this._dlT -= dt;
       if (this._dlT < 2 && !this._dlWarn) {
@@ -15524,6 +15816,22 @@ export class PingPongGame {
         this._poderTickBlip(1);
       } else if (this._clonT < 1 && (this._clonTickN || 0) < 3) {
         this._clonTickN = 3;
+        this._poderTickBlip(3);
+      }
+    }
+    // r108 · SUPER CRIPTONITA: ventana PROPIA de 12 s (spec del dueño).
+    if (pwViva(this._criptoT)) {
+      this._criptoT -= dt;
+      if (this._criptoT <= 0) {
+        this._criptoFin();               // fin natural (12 s agotados)
+      } else if (this._criptoT < 2 && !this._criptoWarn) {
+        this._criptoWarn = true;
+        this._poderTickBlip(2);          // v3.6.43: cuenta sonora uniforme
+      } else if (this._criptoT < 3 && (this._criptoTickN || 0) < 1) {
+        this._criptoTickN = 1;
+        this._poderTickBlip(1);
+      } else if (this._criptoT < 1 && (this._criptoTickN || 0) < 3) {
+        this._criptoTickN = 3;
         this._poderTickBlip(3);
       }
     }
@@ -15771,6 +16079,13 @@ export class PingPongGame {
       try { this._clonFrame(dt); } catch (eCF) { /* el clon nunca tumba el frame */ }
     } else if (this._clonFxOn) {
       this._clonVis(false);
+    }
+    // r108 · SUPER CRIPTONITA: pulso fosforito de la bola + cristales
+    // vivos (crecen, brillan y chocan con la bola — romperlos la frena
+    // a 1/3 y la despide en dirección aleatoria, spec del dueño).
+    if (this._criptoT > 0) {
+      try { this._criptoFrame(dt); }
+      catch (eCrFr) { /* la criptonita nunca tumba el frame */ }
     }
     // v3.6.42 · VIAJE del portal (corre SIEMPRE, con o sin ventana y con
     // o sin Pala Mejorada: la bola fue golpeada y el punto está vivo — el
@@ -17973,6 +18288,10 @@ export class PingPongGame {
     });
     if (aiHit) {
       this.ball.vel.copy(aiHit);
+      // r107 · la esfera-escudo MUERE al impactar la bola en la pala
+      // del rival (spec literal del dueño) con su golpe seco final.
+      try { if (this.ondaEsfera && this.ondaEsfera.viva()) this._ondaEsferaMuere(); }
+      catch (eOEa) { /* */ }
       // r29 · SÚPER OSCURIDAD: cada golpeo de la IA cria NIEBLA densa en
       // su zona de golpeo y, cegada, manda LARGO el 35 % de sus
       // devoluciones (sorteo por golpeo; el saque de la IA es guiado y NO
@@ -17997,6 +18316,14 @@ export class PingPongGame {
       // LARGO el 10 % de sus devoluciones (la misma falta pequeña del
       // Fénix; el saque de la IA — estado 'serve' guiado — jamás se toca).
       if (this._prismaT > 0 && this.rules.state === 'rally') {
+        // r106 · LA NUBE DE PRISMAS (petición literal del dueño): cada
+        // golpeo del rival con el arcoíris activo esparce 30 prismas 3d
+        // brillantes de todos los colores en SU punto de golpeo — nube
+        // que flota ~5 s (vida 4,5-5,5 s) y le estorba la visión. Local
+        // es espectáculo ante la IA; en duelos el espejo remoto la cria
+        // en la pantalla del propio rival (ventana _dlPrismaRemotoT).
+        try { this.nubePrisma.nace(this.ball.pos); } catch (ePNb1) { /* */ }
+        try { this.audio.playOsc(900, 1900, 0.22, 'sine', 0.07, 0); } catch (ePNs1) { /* */ }
         if (Math.random() < PRISMA_OUT_P) {
           try { this._oscuridadFalla(this.ball.pos); } catch (ePrF) { /* */ }
         }
@@ -18052,6 +18379,9 @@ export class PingPongGame {
         });
         if (compHit) {
           this.ball.vel.copy(compHit);
+          // r107 · el golpe del COMPAÑERO también dispersa la esfera
+          try { if (this.ondaEsfera && this.ondaEsfera.viva()) this._ondaEsferaMuere(); }
+          catch (eOEc) { /* */ }
           this.processIntents(this.rules.registerPaddleHit('player'));
           this.audio.paddle(
             THREE.MathUtils.clamp(this.ball.pos.x / 2.5, -1, 1),
@@ -18074,6 +18404,9 @@ export class PingPongGame {
         });
         if (r2Hit) {
           this.ball.vel.copy(r2Hit);
+          // r107 · la pala del rival 2 también corta la esfera (spec)
+          try { if (this.ondaEsfera && this.ondaEsfera.viva()) this._ondaEsferaMuere(); }
+          catch (eOEr2) { /* */ }
           // r29 · el rival 2 (dobles) también golpea a ciegas: niebla + 35 %
           if (this._oscuridadT > 0 && this.rules.state === 'rally') {
             try { this._oscuridadNiebla(this.ball.pos); } catch (eOsN2) { /* */ }
@@ -18089,6 +18422,9 @@ export class PingPongGame {
           }
           // r33 · PRISMA y ONDA también alcanzan al rival 2 (dobles)
           if (this._prismaT > 0 && this.rules.state === 'rally') {
+            // r106 · la nube también nace en el golpeo del rival 2
+            try { this.nubePrisma.nace(this.ball.pos); } catch (ePNb2) { /* */ }
+            try { this.audio.playOsc(900, 1900, 0.22, 'sine', 0.07, 0); } catch (ePNs2) { /* */ }
             if (Math.random() < PRISMA_OUT_P) {
               try { this._oscuridadFalla(this.ball.pos); } catch (ePrF2) { /* */ }
             }
@@ -18388,8 +18724,18 @@ export class PingPongGame {
     // v2.91: durante el SAQUE la bola la simula quien saca — el invitado
     // YA PUEDE SACAR (antes su toss era pisado por la emisión del anfitrión)
     if (this.net.online) this.net.syncServeOwner();
+    // r105 · FÍSICA IDÉNTICA EN TODAS LAS MODALIDADES (informe del dueño):
+    // la bola del soporte de saque del entrenamiento estaba VIVA para la
+    // física mientras PP_TRAIN la clavaba a la mano libre — el apoyo de c05
+    // la capturaba al rozar la pala y el carry peleaba con el pinning: la
+    // bola seguía a la MANO (no deslizaba en la cara al inclinar) y el golpe
+    // desde el apoyo emitía un evento que trainTick ignoraba en 'tee'. Ahora
+    // el tee es holdLock REAL, la MISMA cinemática de la bola en mano del
+    // saque en partido: sin física, sin captura, sin peleas de amos.
+    const _teeHeld = this.calib && this.trainV3 && window.__PP_TRAIN &&
+      window.__PP_TRAIN.ballHeld && window.__PP_TRAIN.ballHeld() === true;
     if (active && !holdLock && !frozen && !netFrozen && !this.inHall &&
-        !(this.champs && this.champs.testActive)) {   // prueba con la bola tomada
+        !(this.champs && this.champs.testActive) && !_teeHeld) {   // prueba con la bola tomada
       const pads = [];
       if (presenting) {
         const ps = this.controllerPaddles[this.paddleHand];
@@ -18498,11 +18844,61 @@ export class PingPongGame {
                   this._prismaGuiaNace(this.ball.pos, this.ball.vel);
                 } catch (ePG33) { /* */ }
               }
-              if (this._ondaT > 0 && this.ball.vel && this.ball.vel.z < -0.5 &&
-                  this.ball.vel.length() >= ONDA_SMASH_V) {
-                try { this._ondaNace(this.ball.pos); } catch (eON33) { /* */ }
+              // r106 · ESPEJO ONLINE DEL ARCOÍRIS: el RIVAL lanzó prisma
+              // (_dlPrismaRemotoT corriendo) y este golpeo es MÍO — la
+              // nube de prismas nace AQUÍ, en MI pantalla y MI mitad:
+              // su efecto es dificultarme la visión (petición del dueño).
+              if (this._dlPrismaRemotoT > 0) {
+                try { this.nubePrisma.nace(this.ball.pos); } catch (ePN33) { /* */ }
+                try { this.audio.playOsc(900, 1900, 0.22, 'sine', 0.07, 0); } catch (ePNs33) { /* */ }
+              }
+              if (this._ondaT > 0 && this.ball.vel) {
+                // r107 · LA ESFERA-ESCUDO (petición del dueño): CADA
+                // golpeo propio en rally (ya no solo el smash) nace
+                // centrado en la pala y crece empujando la bola con su
+                // superficie — la bola viaja AL DOBLE de la velocidad del
+                // golpe (ver _ondaEsferaNace). El SAQUE queda fuera (este
+                // bloque ya exige rally).
+                try { this._ondaEsferaNace(this.ball.pos, this.ball.vel); }
+                catch (eON33) { /* */ }
               }
               break;   // un golpe propio por frame basta
+            }
+          }
+          // r107 · SÚPER EFECTO — EL BOTE INESPERADO (petición del dueño:
+          // «que la pelota al botar en la mesa del rival genere un bote
+          // inesperado y sorpresivo»): cada bote en la mesa del RIVAL
+          // (mi envío ya cayó en su campo) recibe una patada lateral
+          // IMPREVISIBLE + variación de profundidad y un hop ocasional —
+          // la IA no puede preleerlo y el rival humano tampoco. El SAQUE
+          // queda fuera (este bloque exige rally) y los cantos (edge)
+          // no se patean.
+          if (this._efectoT > 0) {
+            for (const eE of this.events) {
+              if (eE.type !== 'table' || eE.side !== 'ai' || eE.edge) continue;
+              const vEf = this.ball.vel;
+              vEf.x += (Math.random() - 0.5) * 2 * EFECTO_SORPRESA_X;
+              vEf.z += (Math.random() - 0.5) * EFECTO_SORPRESA_Z;
+              if (Math.random() < 0.3) vEf.y += EFECTO_SORPRESA_HOP;
+              try { this.chispas.burst(eE.pos, TRAIL_PODER.efecto); }
+              catch (eCE1) { /* */ }
+              try { this.audio.playOsc(680, 180, 0.16, 'square', 0.12, 0); }
+              catch (eCE2) { /* */ }
+              break;             // un bote sorpresivo por frame basta
+            }
+          }
+          // r108 · SUPER CRIPTONITA: la bola verde que BOTA en la mesa
+          // del rival hace crecer 1-5 cristales de cuarzo veteados
+          // (20-50 cm, aleatorio) en el punto del bote — obstáculos
+          // REALES que luego la bola puede romper (spec del dueño).
+          if (this._criptoT > 0 && this.cristalesCripto) {
+            for (const eC of this.events) {
+              if (eC.type !== 'table' || eC.side !== 'ai' || eC.edge) continue;
+              try { this.cristalesCripto.nace(eC.pos, DIMS.tableTopY); }
+              catch (eCrN) { /* */ }
+              try { this.audio.playOsc(620, 1240, 0.22, 'triangle', 0.12, 0); }
+              catch (eCrN2) { /* */ }
+              break;             // una cosecha de cristales por frame
             }
           }
         }
@@ -18764,6 +19160,50 @@ export class PingPongGame {
     if (this.chispas) {
       try { this.chispas.update(dt); } catch { /* */ }
     }
+    // r107 · EL COMETA DEL PODER (reconstrucción del encargo r106: «un
+    // efecto más chulo de cometa, una cola de color como chispas que
+    // salen detrás de la bola dejando un rastro tenue que se acaba
+    // disipando»). TRES verjas del dueño, literales:
+    //  · SOLO EL LANZADOR lo ve (_megaActivaMia: las ventanas que el
+    //    relay remoto arma en mi cliente no emiten jamás).
+    //  · SOLO ENVÍOS PROPIOS: la bola viajando HACIA EL RIVAL
+    //    (vel.z < 0 — convención «mi mitad = z > centro» en ambos
+    //    clientes, r84/r43); en las devoluciones del rival, nada.
+    //  · SIN DUPLICAR ESTELAS: poderes con vestido propio (fénix que
+    //    arde, prisma arcoíris, crono con anillos, elec con rayos,
+    //    oscuridad que tinta, salva con estela warp, bolaloca) NO lo
+    //    llevan — solo los que no tienen estela.
+    if (this.estelaPoder) {
+      try { this.estelaPoder.update(dt); } catch (eEPu) { /* */ }
+      try { this.nubePrisma.update(dt); } catch (eNPu) { /* */ }
+      const bE = this.ball;
+      if (bE && !this.inHall && !frozen && !(bE.ppTransito) &&
+          bE.vel && bE.vel.lengthSq() > 1.4 && bE.vel.z < -0.05 &&
+          this._megaActivaMia && this._megaActivaRest() > 0 &&
+          !R107_SIN_COMETA[this._megaActivaId]) {
+        const firmaE = this._trailFirmaPoder();
+        if (firmaE) {
+          this.estelaPoder.emitir(bE.pos, bE.vel, dt, firmaE);
+        }
+      }
+    }
+    // r107 · LA ESFERA-ESCUDO de la onda: crece empujando la bola con su
+    // superficie; MUERE cuando la bola toca el suelo (cayó fuera) o el
+    // punto ya no está en rally — la pala rival la corta en su gancho.
+    if (this.ondaEsfera) {
+      try {
+        if (this.ondaEsfera.viva()) {
+          if (!this.rules || this.rules.state !== 'rally' ||
+              (this.ball && this.ball.pos.y < DIMS.tableTopY - 0.35)) {
+            this._ondaEsferaMuere();            // el suelo / punto muerto
+          } else {
+            this.ondaEsfera.update(dt, this.ball ? this.ball.pos : null);
+          }
+        } else {
+          this.ondaEsfera.update(dt, null);     // drena el encogido final
+        }
+      } catch (eOEf) { /* la esfera nunca tumba el frame */ }
+    }
 
     // poses de las palas IA: postura natural, saque con toss y swing real
     this.aiStrikeT = Math.max(0, this.aiStrikeT - dt);
@@ -18874,8 +19314,7 @@ export class PingPongGame {
       // es CONTACTO REAL (disparo diferido en c06: la cadena llega al punto
       // de barrido en el MISMO instante que la bola). Todo el sistema r91-
       // r99 de brazos queda inactivo en el bundle para revertir en un línea.
-      if (this.aiArmGlb && this.aiArmGlb.root.visible) this.aiArmGlb.root.visible = false;
-      if (this.aiArm && this.aiArm.visible) this.aiArm.visible = false;
+      // r101 · brazos retirados del bundle: nada que apagar aquí.
     }
     // M7c (r119) · DOBLES 2v2: poses y visibilidad de las DOS palas extra.
     // who='partner'/'ai2' jamás coincide con rules.server → nunca entran
@@ -19573,544 +20012,13 @@ export class PingPongGame {
    *    golpes de izquierda y de derecha creíbles, hoja vertical u horizontal
    *    según el golpe.
    */
-  /** r91 · BRAZO VISIBLE del rival: articulaciones hombro→codo→muñeca
-   *  resueltas por IK analítica desde el hombro anclado al cuerpo del rival,
-   *  SIEMPRE a partir de la posición real de la pala (cadena, saque o espera)
-   *  — el antebrazo nunca se despega del mango. Cápsulas orientadas entre
-   *  articulaciones; polo del codo anatómico (cae en drive, sube en revés). */
-  updateAIArm(ai) {
-    if (!this.aiArm || !ai || !this.aiPaddleMesh) return;
-    const u = this.aiArm.userData;
-    const s = ai.sign || -1;
-    const fh = (ai.chain && ai.chain.fh) || ai.fhSide || 1;
-    // hombro: r100 · la CADENA lo aporta (misma fórmula, un solo ancla —
-    // el brazo visible y el gesto de la pala comparten hombro); sin cadena,
-    // la estimación clásica sobre el cuerpo
-    if (ai.chain && ai.chain.hombro) {
-      _armS.copy(ai.chain.hombro);
-    } else {
-      _armS.copy(ai.pos);
-      _armS.x += fh * s * 0.09;
-      _armS.y += 0.16;
-      _armS.z += s * 0.17;
-    }
-    // muñeca: extremo del mango (10,5 cm desde el centro de la hoja por la
-    // dirección REAL del mango en el mundo)
-    _armW.copy(this.aiPaddleMesh.position);
-    _armA.set(0, -1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
-    _armW.addScaledVector(_armA, 0.105);
-    // polo del codo: por debajo-detrás en drive, alzado en revés (±jitter vivo)
-    _armP.set(0, -1, 0).addScaledVector(_armX, fh * s * 0.8);
-    const ik = solveArmIK(_armS, _armW, 0.26, 0.24, _armP, _armE);
-    u.hombro.position.copy(_armS);
-    _armD.copy(_armE).sub(_armS);
-    const l1 = Math.max(0.05, _armD.length());
-    u.brazo.position.copy(_armS).addScaledVector(_armD, 0.5);
-    u.brazo.quaternion.setFromUnitVectors(_armY, _armD.normalize());
-    u.brazo.scale.set(1, l1, 1);
-    _armD.copy(_armW).sub(_armE);
-    const l2 = Math.max(0.05, _armD.length());
-    u.antebrazo.position.copy(_armE).addScaledVector(_armD, 0.5);
-    u.antebrazo.quaternion.setFromUnitVectors(_armY, _armD.normalize());
-    u.antebrazo.scale.set(1, l2, 1);
-    // r92 · LA PALA ES LA CONTINUACIÓN DEL BRAZO (informe del dueño: «un
-    // eje que recorre el brazo atravesaría la pala desde el mango hasta el
-    // extremo de la pala, siendo este su eje longitudinal»): giro MÍNIMO
-    // que lleva el eje mango→punta (+Y local) EXACTO al antebrazo resuelto
-    // (codo→muñeca, ya normalizado en _armD por el setFromUnitVectors de
-    // arriba). La cara viaja con el giro conservando la firma de cierre/
-    // topspin alrededor del eje; el golpe físico sale del plan (ball.vel ←
-    // aiHit), la cara es visual — cero impacto en la física. _armD queda
-    // tras el normalize como (elbow→wrist) unitario: el objetivo EXACTO.
-    _armA.set(0, 1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
-    const cosA = THREE.MathUtils.clamp(_armA.dot(_armD), -1, 1);
-    _armBx.crossVectors(_armA, _armD);
-    const sinA = _armBx.length();
-    if (sinA > 1e-4) {
-      if (Math.abs(cosA) < 0.99999) {
-        _armQ.setFromAxisAngle(_armBx.divideScalar(sinA), Math.acos(cosA));
-        this.aiPaddleMesh.quaternion.premultiply(_armQ);
-      }
-    } else if (cosA < 0) {
-      // antiparalelo degenerado (no ocurre con las poses de la casa): giro
-      // medio por un eje lateral en vez de NaN
-      _armQ.setFromAxisAngle(_armX, Math.PI);
-      this.aiPaddleMesh.quaternion.premultiply(_armQ);
-    }
-    u.muneca.position.copy(_armW);
-  }
-
-  /* r93 · LOS BRAZOS REALES (vr_arm.glb): carga, identificación de huesos,
-   * escala adulta (brazo 0,27 m + antebrazo proporcional del propio GLB),
-   * captura de quats de reposo (la base del driver rígido) y curl de dedos
-   * para el agarre shakehand. Fallo tolerado: quedan las cápsulas r91. */
-  async _cargarArmasGLB() {
-    if (typeof GLTFLoader === 'undefined') return;
-    try {
-      const resp = await fetch('./vr_arm.glb');
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const buf = await resp.arrayBuffer();
-      const gltf = await new Promise((res, rej) =>
-        new GLTFLoader().parse(buf, '', res, rej));
-      const nom = (b) => gltf.scene.getObjectByName(b);
-      const body = nom('Body_01');
-      const capas = [
-        { lado: 'A', bra: nom('U_arm_021'), ant: nom('L_arm_022'), mano: nom('hand_023') },
-        { lado: 'B', bra: nom('U_arm(mirrored)_02'), ant: nom('L_arm(mirrored)_03'),
-          mano: nom('hand(mirrored)_04') },
-      ];
-      if (!body || !capas[0].bra || !capas[0].ant || !capas[0].mano ||
-          !capas[1].bra || !capas[1].ant || !capas[1].mano) return;
-      // r94 · EL MATERIAL DE LOS BRAZOS (informe del dueño: «el material de
-      // los brazos no aparece»): vr_arm.glb exige KHR_materials_pbrSpecular
-      // Glossiness (export Sketchfab/FBX) y three r163+ ya no lo trae — el
-      // parse SIGUE (sólo avisa en consola) pero el material cae al PBR por
-      // defecto: blanco METÁLICO sin mapa. Reconstruimos el material con la
-      // textura difusa embebida del propio GLB; sin textura, tono piel.
-      try {
-        const texDifusa = await gltf.parser.getDependency('texture', 0);
-        if (texDifusa) texDifusa.colorSpace = THREE.SRGBColorSpace;
-        gltf.scene.traverse((oM) => {
-          if (oM.isMesh) oM.material = new THREE.MeshStandardMaterial({
-            map: texDifusa || null,
-            color: texDifusa ? 0xffffff : 0xb08a70,   // respaldo tono piel
-            roughness: 0.75, metalness: 0.02,
-            side: THREE.DoubleSide });
-        });
-      } catch (eMat) {
-        gltf.scene.traverse((oM) => {
-          if (oM.isMesh) oM.material = new THREE.MeshStandardMaterial({
-            color: 0xb08a70, roughness: 0.75, metalness: 0.02,
-            side: THREE.DoubleSide });
-        });
-      }
-      // longitudes de hueso desde las TRASLACIONES de reposo (cm del FBX) —
-      // escala adulta: brazo 0,27 m, antebrazo en la proporción del GLB
-      const L1u = capas[0].ant.position.length();
-      const L2u = capas[0].mano.position.length();
-      const esc = 0.27 / L1u;
-      gltf.scene.scale.setScalar(esc);          // uniforme: huesos rígidos
-      const L1 = L1u * esc, L2 = L2u * esc;
-      // r95 · CURL DE DEDOS MEDIDO (video del dueño: «esos dedos están
-      // retorcidos»): r93 curlaba alrededor de la Z local — el plano LATE-
-      // RAL de la mano — y con el MISMO eje en el brazo espejado (al revés).
-      // Medido del GLB (scripts/r95_dedos_glb.mjs): los dedos EXTENDEN en
-      // +X local de la mano, la PALMA mira a −Z local y el pulgar vive en
-      // −Y (brazo A) o +Y (brazo espejado B). La flexión real es alrededor
-      // de +Y local (los tips van hacia −Z, la palma) y es RELATIVA al bind
-      // del hueso — el GLB trae flexiones pre-horneadas que r93 destruía.
-      // r99 · DEDOS POR NOMBRE (plan del rigging, scripts/plan_brazos_r99.md):
-      // el bucle children[0] de r95 dejaba el MEÑIQUE EN BIND (pinky__031 es
-      // el hijo 2 de hand__027, que tiene 2 hijos) y no curleaba las RAÍCES
-      // de los dedos — dedos retorcidos con huecos en los nudillos («dos
-      // longanizas»). Ahora: 15 huesos por brazo (5 dedos × 3 falanges, raíz
-      // incluida), bind capturado SIN tocar y el CURL pasa a ser DINÁMICO por
-      // pose en updateAIArmGlb. El pulgar conserva su oposición HORNEADA del
-      // bind (1.75 rad): flexionarlo en +Y lo giraba de lado (eje medido a
-      // 86° del +Y — H4 del plan); en bind ya «presiona el mango».
-      const _ejeFlex = new THREE.Vector3(0, 1, 0);   // flexión de los 4 dedos
-      const _r99Nombres = ['thumb', 'mid', 'index', 'ring', 'pinky'];
-      const dedos = [];
-      for (const capa of capas) {
-        const dc = [];
-        for (const nombreD of _r99Nombres) {
-          let raiz = null;
-          capa.mano.traverse((o) => {
-            if (!raiz && o !== capa.mano && o.name.indexOf(nombreD) === 0) raiz = o;
-          });
-          if (!raiz) continue;
-          const fal = [raiz];
-          let h = raiz;
-          while (fal.length < 3 && h.children.length) {
-            h = h.children[0];
-            fal.push(h);
-          }
-          fal.forEach((hueso, iF) => dc.push({
-            hueso, dedo: nombreD, falange: iF,
-            bindQ: hueso.quaternion.clone(), ejeFlex: _ejeFlex,
-          }));
-        }
-        dedos.push(dc);
-      }
-      // montaje y captura de reposo (matrices al día ANTES de leer mundo)
-      const root = new THREE.Group();
-      root.name = 'aiArmGlb';
-      root.add(gltf.scene);
-      root.visible = false;
-      this.rig.add(root);
-      this.rig.updateWorldMatrix(true, false);
-      root.updateMatrixWorld(true);
-      // r94 · CAPTURA EN MARCO DEL RIG (video del dueño: «brazos mal colo-
-      // cados, huesos mal posicionados, pala no agarrada»): antes se captu-
-      // raba en MARCO MUNDO — si el rig está movido (hall z+2,3 / menú
-      // z+1,15) o GIRADO (recentrado XR con el yaw del casco) cuando llega
-      // el GLB, ese transform queda HORNEADO en rootToBody/ejes/quats y el
-      // driver nace desplazado y diagonal. Todo el estado se captura rela-
-      // tivo al rig: el driver lo consume en rig-local (ai.pos, pala, bola
-      // y DIMS ya viven ahí) y sobra cualquier transform posterior.
-      const _rigInv = this.rig.matrixWorld.clone().invert();
-      const _rigQinv = new THREE.Quaternion()
-        .setFromRotationMatrix(this.rig.matrixWorld).invert();
-      const _alRig = (v) => v.applyMatrix4(_rigInv);
-      const _qlRig = (q) => q.premultiply(_rigQinv);
-      const inst = { root, body, L1, L2, listo: true, yaw: 0, esc,
-        rootToBody: _alRig(body.getWorldPosition(new THREE.Vector3())),
-        // r99 · anclaje del mango en la CREASE de los nudillos (medido del
-        // GLB, marco mano, unidades GLB → ×esc al usar): el centro de crease
-        // (4 nudillos, sin pulgar) vive a (0.0868, ±0.024, −0.0022) m adulto
-        // del hueso mano — anclar en la muñeca dejaba los dedos sin envolver.
-        offCrease: {
-          A: new THREE.Vector3(0.0868 / esc, 0.0240 / esc, -0.0022 / esc),
-          B: new THREE.Vector3(0.0868 / esc, -0.0240 / esc, -0.0022 / esc),
-        },
-        wSaque: 0,                 // r99 · peso del saque de la mano libre (0=balance)
-        brazos: capas.map((c, i) => {
-          const S = _alRig(c.bra.getWorldPosition(new THREE.Vector3()));
-          const E = _alRig(c.ant.getWorldPosition(new THREE.Vector3()));
-          const W = _alRig(c.mano.getWorldPosition(new THREE.Vector3()));
-          const bra = { lado: c.lado, bra: c.bra, ant: c.ant, mano: c.mano,
-            dedos: dedos[i],
-            pulgarY: (c.lado === 'B') ? 1 : -1,   // r95 · lado del pulgar en el
-              // marco mano, medido del GLB: A −Y · B espejado +Y — el agarre
-              // cruza la palma con hand-Y = pulgarY·ejeHoja (pulgar a la hoja)
-            Srest: S.clone(), axisRestU: E.clone().sub(S).normalize(),
-            axisRestL: W.clone().sub(E).normalize(),
-            restQbra: _qlRig(c.bra.getWorldQuaternion(new THREE.Quaternion())),
-            restQant: _qlRig(c.ant.getWorldQuaternion(new THREE.Quaternion())),
-            restQmano: _qlRig(c.mano.getWorldQuaternion(new THREE.Quaternion())),
-            poleSide: 0,
-            fG: new OneEuroV3(1.2, 0.045),
-            fqU: new OneEuroQ(2.2, 0.09),
-            fqL: new OneEuroQ(2.2, 0.09),
-            fqH: new OneEuroQ(2.6, 0.11) };
-          return bra;
-        }),
-        _t: 0 };
-      this.aiArmGlb = inst;
-    } catch (e) {
-      this.aiArmGlb = null;                    // respaldo: cápsulas r91
-    }
-  }
-
-  /* r93 · driver de los brazos GLB: cuerpo adulto (pecho 1,33 m + vaivén),
-   * agarre POR EL MANDO (muñeca = centro de hoja − continuación·0,1303),
-   * zona dulce (la hoja cubre la bola en el impacto), IK RÍGIDA (huesos
-   * que jamás estiran — el objetivo se clampar al anillo de alcance),
-   * One Euro en agarre y articulaciones, polo del codo con histéresis,
-   * piso duro de mesa para codo/muñeca/hoja y brazo izquierdo que sostiene
-   * la bola en el saque y equilibra en el rally. Cero allocs por frame. */
-  updateAIArmGlb(ai, dt) {
-    const R = this.aiArmGlb;
-    if (!R || !R.listo || !this.aiPaddleMesh) return;
-    // r94 · marco del rig al día (cero allocs): el cuerpo, la pala y la bola
-    // viven en RIG-LOCAL; los huesos se leen en MUNDO — convierto las lectu-
-    // ras al marco del rig y las quats deseadas de vuelta a mundo. Con el
-    // recentrado XR girando el rig, los brazos ya no heredan ese giro.
-    this.rig.updateWorldMatrix(true, false);
-    _gRigQ.setFromRotationMatrix(this.rig.matrixWorld);
-    _gRigInvQ.copy(_gRigQ).invert();
-    _gRigP.setFromMatrixPosition(this.rig.matrixWorld);
-    const s = ai.sign || -1;
-    const D_GRIP = 0.1303;                     // mango → centro de hoja (r54)
-    const mesaY = DIMS.tableTopY + 0.02;
-    const ch = ai.chain;
-    const golpeando = !!(ch && (ch.phase === 'strike' || ch.phase === 'follow'));
-    // r95 · zona dulce SOLO en strike (video del dueño: «los brazos tiemblan
-    // como una descarga eléctrica»): el follow perseguía con el nudge a una
-    // bola que ya vuela a 6-30 m/s — látigo puro. El follow conserva filtros
-    // intermedios; el resto, reposo suave.
-    const enStrike = !!(ch && ch.phase === 'strike');
-    // — cuerpo: pecho adulto + respiración sutil (vaivén 5 mm)
-    R._t += dt;
-    _gA.set(ai.pos.x, Math.max(ai.pos.y + 0.33, 1.325) + 0.005 * Math.sin(R._t * 2.1),
-      ai.pos.z);
-    // r95 · EL CUERPO ES UNA PERSONA (video del dueño: brazos flotando SOBRE
-    // la mesa y hasta en el sofá): el pecho se queda ~0,42 m DETRÁS del borde
-    // de la mesa (de pie, como un jugador real) y no sale de la pista — el
-    // alcance largo sobre la mesa lo hace el BRAZO (clampado a su anillo),
-    // no el cuerpo flotando.
-    const zCuerpo = DIMS.tableCenterZ + s * (DIMS.tableHalfLength + 0.42);
-    if (s < 0 ? _gA.z > zCuerpo : _gA.z < zCuerpo) _gA.z = zCuerpo;
-    if (_gA.x > 1.15) _gA.x = 1.15; else if (_gA.x < -1.15) _gA.x = -1.15;
-    // r95 · el cuerpo se ORIENTA al juego (un jugador gira el tronco a la
-    // bola): yaw suave con límite ±0,5 rad y_follow perezoso (6 Hz)
-    const yawDeseado = THREE.MathUtils.clamp((this.ball.pos.x - _gA.x) * 0.22,
-      -0.5, 0.5);
-    R.yaw += (yawDeseado - R.yaw) * Math.min(1, dt * 6);
-    _gQa.setFromAxisAngle(_gUp, R.yaw);
-    R.root.position.copy(_gA).sub(_gB.copy(R.rootToBody).applyQuaternion(_gQa));
-    R.root.quaternion.copy(_gQa);
-    R.root.updateMatrixWorld(true);
-    // — brazo de la PALA: el lado del hombro según la mano del rival
-    const bp = (R.brazos[0].Srest.x * s > 0) ? R.brazos[0] : R.brazos[1];
-    const bl = (bp === R.brazos[0]) ? R.brazos[1] : R.brazos[0];
-    // hombro mundo actual
-    bp.bra.parent.updateWorldMatrix(true, false);
-    bp.bra.parent.getWorldPosition(_gB);       // ancla del cuerpo
-    bp.bra.getWorldPosition(_gS);              // hombro = hueso en el mundo
-    _gS.sub(_gRigP).applyQuaternion(_gRigInvQ);   // r94 · al marco del rig
-    // — dirección de continuación del brazo (r92): plan en golpeo, si no
-    //   el antebrazo que ya tiene la mano
-    _gD.set(0, 1, 0).applyQuaternion(this.aiPaddleMesh.quaternion);
-    if (_gD.lengthSq() < 1e-8) _gD.set(0, 0, s < 0 ? 1 : -1);
-    _gD.normalize();
-    // — agarre POR EL MANDO: mando = centro de hoja − continuación·D
-    _gC.copy(this.aiPaddleMesh.position);      // centro deseado (plan r92)
-    // r99 · el objetivo del IK nace COHERENTE con la crease: el mango cruza
-    // la mano en los nudillos (no en la muñeca) ⇒ muñeca = crease − dirDedos
-    // ·R99_CREASE, con dirDedos ≈ (hombro→pala) proyectado ⟂ al eje hoja.
-    _gE.copy(_gC).addScaledVector(_gD, -(D_GRIP - R99_DCREASE));
-    _gHandY.copy(_gD).multiplyScalar(bp.pulgarY);
-    _gF.copy(_gC).sub(_gS);
-    _gF.addScaledVector(_gHandY, -_gF.dot(_gHandY));
-    if (_gF.lengthSq() < 1e-6) _gF.set(0, 1, 0); else _gF.normalize();
-    _gE.addScaledVector(_gF, -R99_CREASE);
-    // — zona dulce: SOLO en strike el CENTRO de la hoja cubre la bola (r95)
-    if (enStrike)
-      _gE.copy(zonaDulceNudge(_gE, this.ball.pos, _gC, DIMS.bladeRadius, _gF));
-    // — anillo de alcance RÍGIDO alrededor del hombro
-    _gF.copy(_gE).sub(_gS);
-    const dG = Math.max(_gF.length(), 1e-6);
-    const maxR = 0.999 * (R.L1 + R.L2), minR = 0.28 * (R.L1 + R.L2);
-    if (dG > maxR) _gE.copy(_gS).addScaledVector(_gF, maxR / dG);
-    else if (dG < minR) _gE.copy(_gS).addScaledVector(_gF.divideScalar(dG), minR);
-    if (_gE.y < mesaY) _gE.y = mesaY;          // el mando JAMÁS baja de la mesa
-    // r95 · ENVOLTURA NATURAL del alcance (video del dueño: brazos-antena
-    // por encima de la cabeza): el mando no sube más de ~55° sobre el
-    // horizonte del hombro (bola alta: 72°) y, con la mano alta, el brazo
-    // NO se estira a tope (radio ≤ 88 % del anillo → codo doblado, como se
-    // levanta el brazo una persona de verdad).
-    {
-      const dyE = _gE.y - _gS.y;
-      if (dyE > 0) {
-        const hE = Math.sqrt((_gE.x - _gS.x) * (_gE.x - _gS.x) +
-          (_gE.z - _gS.z) * (_gE.z - _gS.z));
-        const bolaAlta = this.ball.pos.y > DIMS.tableTopY + 0.62;
-        const maxDy = Math.tan(bolaAlta ? 1.25 : 0.96) * Math.max(hE, 0.12);
-        if (dyE > maxDy) _gE.y = _gS.y + maxDy;
-        if (dyE > 0.72) {                        // mano claramente en alto
-          _gF.copy(_gE).sub(_gS);
-          const rE = Math.max(_gF.length(), 1e-6);
-          const rMax2 = 0.88 * (R.L1 + R.L2);
-          if (rE > rMax2) _gE.copy(_gS).addScaledVector(_gF, rMax2 / rE);
-        }
-      }
-    }
-    // — One Euro del agarre (nítido en strike, medio en follow, suave en espera)
-    bp.fG.fcMin = enStrike ? 6.5 : (golpeando ? 3.0 : 1.1);
-    _gE.copy(bp.fG.filtrar(_gE, dt));
-    // r99 · TOPE DE VELOCIDAD ANGULAR (ω máx 14/8/5 rad/s): mata los saltos
-    // del re-solve del piso duro y de la histéresis del polo — el brazo
-    // fluye sin tirones («parece que están recibiendo una descarga»).
-    const wMax99 = enStrike ? 14 : (golpeando ? 8 : 5);
-    // — polo del codo con HISTÉRESIS (adiós a los volteos de IK: el temblor
-    //   caótico del informe venía también de estos saltos de solución)
-    // r99 · CONGELADO en strike: la histéresis puede voltear el codo a mitad
-    //   de swing — durante el golpeo el polo no se re-evalúa.
-    if (!enStrike) {
-      const ladoDeseado = THREE.MathUtils.clamp((_gE.x - _gS.x) * s * 4, -1, 1);
-      if (Math.abs(ladoDeseado) > 0.2 && Math.sign(ladoDeseado) !== bp.poleSide)
-        bp.poleSide = Math.sign(ladoDeseado);
-    }
-    _gG.set(0, -1, 0).addScaledVector(_gNeg, s * bp.poleSide * -0.8);
-    // — IK RÍGIDA: el objetivo ya clampa; el hueso JAMÁS estira
-    solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH /*codo*/, _gA /*muñeca*/);
-    if (_gH.y < mesaY + 0.045) {               // piso duro del CODO
-      _gG.y = 0.9;                             // pole hacia arriba, re-solver
-      solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
-      if (_gH.y < mesaY + 0.045) {             // aún bajo: sube la MUÑECA
-        _gE.y = mesaY + 0.045;
-        solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
-      }
-    }
-    if (_gA.y < mesaY) _gA.y = mesaY;          // piso duro de la MUÑECA
-    // — huesos: quat mundo deseado (continuación del eje) → local
-    bp.fqU.fcMin = enStrike ? 6.5 : (golpeando ? 3.0 : 1.5);
-    bp.fqL.fcMin = enStrike ? 6.5 : (golpeando ? 3.0 : 1.5);
-    bp.fqH.fcMin = enStrike ? 7 : (golpeando ? 3.4 : 1.8);
-    _gF.copy(_gH).sub(_gS).normalize();   // d1: eje del brazo (marco rig)
-    _gQb.setFromUnitVectors(bp.axisRestU, _gF).multiply(bp.restQbra);
-    _r99TopeQ(bp.fqU, _gQb, dt, wMax99);           // r99 · tope angular
-    bp.fqU.filtrar(_gQb, dt);
-    _gQc.copy(bp.fqU.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
-    bp.bra.parent.getWorldQuaternion(_gQd);
-    bp.bra.quaternion.copy(_gQd).invert().multiply(_gQc);
-    bp.bra.updateWorldMatrix(false, false);
-    bp.bra.getWorldQuaternion(_gQd);
-    _gF.copy(_gA).sub(_gH).normalize();        // d2: eje del antebrazo
-    _gQb.setFromUnitVectors(bp.axisRestL, _gF).multiply(bp.restQant);
-    _r99TopeQ(bp.fqL, _gQb, dt, wMax99);           // r99 · tope angular
-    bp.fqL.filtrar(_gQb, dt);
-    _gQc.copy(bp.fqL.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
-    bp.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
-    bp.ant.updateWorldMatrix(false, false);
-    // mano: r95 · MUÑECA ANATÓMICA (medida del GLB, scripts/r95_dedos_glb.mjs):
-    // el mango CRUZA la palma — hand-Y = pulgarY·ejeHoja (el pulgar cabalga
-    // hacia la hoja), hand-X ≈ antebrazo ortogonalizado (dedos a lo largo
-    // del brazo), hand-Z = X×Y (la palma es −Z, ⟂ al mango). Los dedos con
-    // el curl r95 (+Y local) cierran envolviendo el mango. El r92-r93 for-
-    // zaba hoja ∥ antebrazo («pala chupachups») y un rollo fijo −0,9·s que
-    // desviaba la palma del mango.
-    _gHandY.copy(_gD).multiplyScalar(bp.pulgarY);
-    _gHandZ.copy(_gF);                             // candidato a hand-X
-    _gHandZ.addScaledVector(_gHandY, -_gHandZ.dot(_gHandY));
-    // r96 · perpendicular GARANTIZADA: el fallback fijo (0,0,1) de r95 podía
-    // ser ∥ al eje hoja a su vez (orientaciones exóticas del recentrado XR)
-    // → cruz cero → NaN en la quat de la mano. Se elige el eje mundial con
-    // la menor componente sobre Y: JAMÁS paralelo al eje hoja.
-    if (_gHandZ.lengthSq() < 1e-6) {
-      _gHandZ.set(0, 0, 0);
-      if (Math.abs(_gHandY.x) < 0.9) _gHandZ.x = 1;
-      else if (Math.abs(_gHandY.y) < 0.9) _gHandZ.y = 1;
-      else _gHandZ.z = 1;
-      _gHandZ.addScaledVector(_gHandY, -_gHandZ.dot(_gHandY));
-    }
-    if (_gHandZ.lengthSq() < 1e-6) _gHandZ.set(0, 1, 0);
-    else _gHandZ.normalize();
-    // r97 · FIX DEL BLOQUEO DEL CASCO: la cruz hand-Z = handX × handY es un
-    // VECTOR (Vector3.crossVectors) — desde r95 se llamaba sobre _gQe (Qua-
-    // ternion: NO tiene crossVectors) → TypeError CADA FRAME desde el boot,
-    // tragado por el escudo del bucle (menú vivo, gatillos muertos: el pro-
-    // cesado del gatillo XR vive DENTRO del frame). El ensamblado y la D1
-    // eran inocentes: el arnés de agujas no EJECUTABA el driver.
-    _gVz.crossVectors(_gHandZ, _gHandY);           // hand-Z (palma = −Z)
-    if (_gVz.lengthSq() < 1e-6) _gVz.set(0, 1, 0); else _gVz.normalize();
-    _gMx.makeBasis(_gHandZ, _gHandY, _gVz);
-    _gQb.setFromRotationMatrix(_gMx);
-    _r99TopeQ(bp.fqH, _gQb, dt, wMax99);           // r99 · tope angular
-    bp.fqH.filtrar(_gQb, dt);
-    _gQc.copy(bp.fqH.prev).premultiply(_gRigQ);
-    bp.mano.parent.getWorldQuaternion(_gQd);
-    bp.mano.quaternion.copy(_gQd).invert().multiply(_gQc);
-    bp.mano.updateWorldMatrix(false, false);
-    // r99 · CURL DE DEDOS DINÁMICO — el brazo de la pala vive SIEMPRE en
-    // POSE_A (shakehand: medio/anular/meñique envuelven, índice en el borde,
-    // pulgar bind) + micro-sway de vida (cero en strike: «los dedos NO
-    // cambian», lámina del dueño). Cero allocs: escalares + setFromAxisAngle.
-    for (let iD = 0; iD < bp.dedos.length; iD++) {
-      const dd = bp.dedos[iD];
-      let curl = R99_POSE_AGARRE[dd.dedo][dd.falange];
-      if (!enStrike) curl += 0.02 * Math.sin(R._t * 1.7 + iD * 0.9) +
-        0.015 * Math.sin(R._t * 2.9 + 1.3 * iD);
-      _gQe.setFromAxisAngle(dd.ejeFlex, curl);
-      dd.hueso.quaternion.copy(_gQe).multiply(dd.bindQ);
-    }
-    // — pala: r99 · EL MANGO CRUZA LA CREASE DE LA MANO (medido, plan §5.2):
-    //   centro = muñeca + handQ_rig·offCrease + ejeHoja·(D_GRIP − dCrease).
-    //   Anclar en la muñeca (r95) dejaba el mango 3,4 cm GLB detrás de los
-    //   dedos — la queja «no la coge bien».
-    this.aiPaddleMesh.position.copy(_gA)
-      .add(_r99v1.copy(R.offCrease[bp.lado]).applyQuaternion(_r99q1.copy(_gRigInvQ)
-        .multiply(bp.mano.getWorldQuaternion(_r99q2))).multiplyScalar(R.esc))
-      .addScaledVector(_gD, D_GRIP - R99_DCREASE);
-    this.clampPaddlePose(this.aiPaddleMesh.position, this.aiPaddleMesh.quaternion, false);
-    // — brazo IZQUIERDO (r99 · NUNCA CRUZA la línea media, targets medidos
-    //   del plan §3): balance abajo-lado pegado al cuerpo en rally; bola en
-    //   la palma durante el saque (como hoy). La mano libre vive en el lado
-    //   propio: x = x_ai − s·0.21 · y 0.98 · z pegado al cuerpo.
-    _gC.set(_gA.x - s * 0.21, 0.98 + 0.02 * Math.sin(R._t * 2.3),
-      zCuerpo + s * 0.05);
-    const serviendo = !this.calib && this.rules.state === 'serve' &&
-      this.rules.server === 'ai';
-    if (serviendo) {
-      if (!this.aiToss) {
-        _gC.copy(this.ball.pos);
-        _gC.y -= 0.045;                         // r95 · la mano DEBAJO de la
-      }                                         //   bola: la bola reposa SOBRE la palma
-      else _gC.set(this.ball.pos.x, Math.min(this.ball.pos.y, _gB.y + 0.45),
-        this.ball.pos.z);                                 // acompaña el bote
-    } else if (_gC.x * (-s) < 0.05) _gC.x = -s * 0.05;   // r99 · jamás cruza
-    // r99 · peso del saque de la mano libre: funde balance↔saque (τ≈125 ms)
-    R.wSaque += ((serviendo ? 1 : 0) - R.wSaque) * Math.min(1, dt * 8);
-    bl.bra.parent.getWorldPosition(_gB);
-    _gB.sub(_gRigP).applyQuaternion(_gRigInvQ);   // r94 · al marco del rig
-    bl.bra.getWorldPosition(_gS);              // hombro L = hueso en el mundo
-    _gS.sub(_gRigP).applyQuaternion(_gRigInvQ);   // r94 · al marco del rig
-    _gE.copy(_gC).sub(_gS);
-    const dGL = Math.max(_gE.length(), 1e-6);
-    if (dGL > maxR) _gE.multiplyScalar(maxR / dGL);
-    else if (dGL < minR) _gE.multiplyScalar(minR / dGL);
-    _gE.add(_gS);
-    if (_gE.y < mesaY) _gE.y = mesaY;
-    // r95 · envoltura natural TAMBIÉN en el brazo libre (el saque alto deja
-    // subir hasta 72° con codo doblado — el resto, ≤55°)
-    {
-      const dyL = _gE.y - _gS.y;
-      if (dyL > 0) {
-        const hL = Math.sqrt((_gE.x - _gS.x) * (_gE.x - _gS.x) +
-          (_gE.z - _gS.z) * (_gE.z - _gS.z));
-        const bolaAltaL = this.ball.pos.y > DIMS.tableTopY + 0.62;
-        const maxDyL = Math.tan(bolaAltaL ? 1.25 : 0.96) * Math.max(hL, 0.12);
-        if (dyL > maxDyL) _gE.y = _gS.y + maxDyL;
-        if (dyL > 0.72) {
-          _gF.copy(_gE).sub(_gS);
-          const rL = Math.max(_gF.length(), 1e-6);
-          const rMaxL = 0.88 * (R.L1 + R.L2);
-          if (rL > rMaxL) _gE.copy(_gS).addScaledVector(_gF, rMaxL / rL);
-        }
-      }
-    }
-    bl.fG.fcMin = serviendo ? 3.5 : 1.0;
-    _gE.copy(bl.fG.filtrar(_gE, dt));
-    _gG.set(0, -1, 0).addScaledVector(_gNeg, s * -0.5);
-    solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
-    if (_gH.y < mesaY + 0.045) { _gG.y = 0.9; solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA);
-      if (_gH.y < mesaY + 0.045) { _gE.y = mesaY + 0.045; solveArmIKRigido(_gS, _gE, R.L1, R.L2, _gG, _gH, _gA); } }
-    if (_gA.y < mesaY) _gA.y = mesaY;
-    _gF.copy(_gH).sub(_gS).normalize();
-    _gQb.setFromUnitVectors(bl.axisRestU, _gF).multiply(bl.restQbra);
-    _r99TopeQ(bl.fqU, _gQb, dt, wMax99);           // r99 · tope angular
-    bl.fqU.filtrar(_gQb, dt);
-    _gQc.copy(bl.fqU.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
-    bl.bra.parent.getWorldQuaternion(_gQd);
-    bl.bra.quaternion.copy(_gQd).invert().multiply(_gQc);
-    bl.bra.updateWorldMatrix(false, false);
-    bl.bra.getWorldQuaternion(_gQd);
-    _gF.copy(_gA).sub(_gH).normalize();
-    _gQb.setFromUnitVectors(bl.axisRestL, _gF).multiply(bl.restQant);
-    _r99TopeQ(bl.fqL, _gQb, dt, wMax99);           // r99 · tope angular
-    bl.fqL.filtrar(_gQb, dt);
-    _gQc.copy(bl.fqL.prev).premultiply(_gRigQ);   // r94 · rig-local → mundo
-    bl.ant.quaternion.copy(_gQd).invert().multiply(_gQc);
-    bl.ant.updateWorldMatrix(false, false);
-    // r99 · MUÑECA LIBRE POR POSE (plan §2.1/§5.3): palma ARRIBA en el
-    // saque (bola en la palma — basis rig-local: X=antebrazo, Z=−up ort,
-    // Y=Z×X), neutra en rally; funde con el peso del saque + micro-sway.
-    _r99v1.copy(_gF);                             // eje antebrazo (rig-local)
-    _gQb.copy(bl.fqL.prev);
-    if (R.wSaque > 0.001) {
-      _gHandZ.set(0, -1, 0).addScaledVector(_r99v1, _r99v1.y);   // Z=−up ort
-      if (_gHandZ.lengthSq() < 1e-6) _gHandZ.set(0, 0, 1);
-      else _gHandZ.normalize();
-      _gVz.crossVectors(_gHandZ, _r99v1).normalize();            // Y=Z×X
-      _gMx.makeBasis(_r99v1, _gVz, _gHandZ);
-      _r99q1.setFromRotationMatrix(_gMx);
-      _gQb.slerp(_r99q1, R.wSaque);
-    } else {
-      _gQe.setFromAxisAngle(_r99v1, 0.3 * s + 0.03 * Math.sin(R._t * 0.9));
-      _gQb.multiply(_gQe);
-    }
-    _r99TopeQ(bl.fqH, _gQb, dt, wMax99);           // r99 · tope angular
-    bl.fqH.filtrar(_gQb, dt);
-    _gQc.copy(bl.fqH.prev).premultiply(_gRigQ);
-    bl.mano.parent.getWorldQuaternion(_gQd);
-    bl.mano.quaternion.copy(_gQd).invert().multiply(_gQc);
-    bl.mano.updateWorldMatrix(false, false);
-    // r99 · dedos de la mano libre: funde balance↔saque con el mismo peso
-    // (+ micro-sway de vida fuera del saque — la palma que sostiene la bola
-    // queda quieta, como una mano real).
-    for (let iD = 0; iD < bl.dedos.length; iD++) {
-      const dd = bl.dedos[iD];
-      const cC = R99_POSE_BALANCE[dd.dedo][dd.falange];
-      const cB = R99_POSE_SAQUE[dd.dedo][dd.falange];
-      let curl = cC + (cB - cC) * R.wSaque;
-      if (!serviendo) curl += 0.02 * Math.sin(R._t * 1.7 + iD * 0.9) +
-        0.015 * Math.sin(R._t * 2.9 + 1.3 * iD);
-      _gQe.setFromAxisAngle(dd.ejeFlex, curl);
-      dd.hueso.quaternion.copy(_gQe).multiply(dd.bindQ);
-    }
-  }
-
+  /* r101 · EL RIVAL ES SOLO LA PALA (decisión del dueño tras r100: el
+   * movimiento de brazos degradó el juego — pala congelada, golpes desde
+   * puntos invisibles, tiros fuera, la pala atravesando la mesa). Todo
+   * el sistema r91-r99 de brazos (cápsulas, GLB, IK, One Euro, dedos)
+   * está borrado; la pala se mueve SOLO con la cadena cinemática r91/
+   * r99ter-r101: curva continua hombro→mano→contacto→prolongación→
+   * recuperación, contacto honesto y espacio de trabajo sin mesa. */
   updateAIPaddlePose(mesh, ai, who, dt) {
     const s = ai.sign;                       // -1 = CPU, +1 = demo
     AIM_FWD.set(0, 0, s < 0 ? 1 : -1);       // hacia el campo contrario
@@ -20981,9 +20889,8 @@ import { AI_PRESETS, ARCANO_CFG, BOLA_ASPECTOS, CARRERA_DIVISIONES, CONFIG_DIFIC
 import { GameAudio } from './c03_audio_voz.js';
 import { CCD_TUNE, applyAerodynamics, createPaddleSim, sweepBallVsBlade, sweepBallVsCapsuleY, tmpMountQ, tmpTarget, tmpV, updatePaddleSim } from './c04_fisica_ccd.js';
 import { __ppServeTelemetry, applyServeProgressiveAssist, collidePaddle, collidePaddleSweep, computeShotVelocity, computeShotVelocityReal, findServeVelocity, predictStrike, simulateServePath, stepPhysics, testPaddleContact } from './c05_colisiones_ia_golpeo.js';
-import { ACHIEVEMENTS, GameStats, OneEuroQ, OneEuroV3, OpponentAI, Rules,
-  solveArmIK, solveArmIKRigido, zonaDulceNudge } from './c06_logros_stats_ia_rival.js';
-import { applyBallSkin, createBall, createBlobShadow, createChampDecor, createChispas, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
+import { ACHIEVEMENTS, GameStats, OpponentAI, Rules } from './c06_logros_stats_ia_rival.js';
+import { applyBallSkin, createBall, createBlobShadow, createChampDecor, createChispas, createEstelaPoder, createCristalesCripto, createNubePrismas, createOndaEsfera, createRoom, createTable, relayoutMesa } from './c07_escena_sala.js';
 import { HALL, applyHallVariant, createBounceMarkers, createCalibPanel, createChampRoom, createConfetti, createFanfareBanner, createHall, createScoreboard, drawArcanoPanel, drawArcanoSalir, drawHallGloria, drawHallSign, montarArcano, updateArcanoFx, updateHallFx } from './c08_hall_hud.js';
 import { NetLink } from './c09_red_netlink.js';
 import { PPNET } from './c09b_red_nucleo.js';
@@ -21069,7 +20976,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
       suelta({ e: 'freeze_report', gapo,
         estado: (G && G.rules) ? G.rules.state : '-',
         xr, enHall: !!(G && G.inHall), menu: !!(G && G.menuOpen),
-        glb: !!(G && G.aiArmGlb && G.aiArmGlb.listo),
         net: !!(G && G.net && G.net.online),
         huecos: huecos.slice(-12).map((h) => Math.round(h)) });
     } catch (e4) { /* jamás rompe */ }
@@ -21077,68 +20983,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
   // r97 · el ESCUDO del bucle necesita soltar sus firmas por el mismo canal
   window.__PP_VIGIA = { suelta };
 })();
-/* r91 · arañas del brazo visible del rival (cero allocs por frame). FUERA
- * del bloque DEPS: el ensamblado RECONSTRUYE ese bloque (importes) y se
- * comía las declaraciones — 8 usos huérfanos que el escudo del bucle
- * tragaba cada frame: menú vivo pero gatillos muertos (bloqueo del dueño). */
-const _armS = new THREE.Vector3(); const _armW = new THREE.Vector3();
-const _armE = new THREE.Vector3(); const _armP = new THREE.Vector3();
-const _armD = new THREE.Vector3(); const _armA = new THREE.Vector3();
-const _armY = new THREE.Vector3(0, 1, 0); const _armX = new THREE.Vector3(1, 0, 0);
-/* r92 · el eje mango→punta de la pala se ALINEA al antebrazo resuelto (la
- * pala es la continuación del brazo, informe del dueño): scratch del giro
- * mínimo. FUERA del bloque DEPS (lección r91: el ensamblado reconstruye
- * ese bloque y se comería las declaraciones). */
-const _armBx = new THREE.Vector3(); const _armQ = new THREE.Quaternion();
-/* r93 · brazos GLB (vr_arm.glb — los DOS brazos con manos y dedos del
- * dueño): scratch del driver. FUERA del bloque DEPS (lección r91). */
-const _gA = new THREE.Vector3(); const _gB = new THREE.Vector3();
-const _gC = new THREE.Vector3(); const _gD = new THREE.Vector3();
-const _gE = new THREE.Vector3(); const _gF = new THREE.Vector3();
-const _gG = new THREE.Vector3(); const _gH = new THREE.Vector3();
-const _gQa = new THREE.Quaternion(); const _gQb = new THREE.Quaternion();
-const _gQc = new THREE.Quaternion(); const _gQd = new THREE.Quaternion();
-const _gQe = new THREE.Quaternion();
-const _gS = new THREE.Vector3();
-const _gMx = new THREE.Matrix4(); const _gAx = new THREE.Vector3(1, 0, 0);
-const _gUp = new THREE.Vector3(0, 1, 0); const _gNeg = new THREE.Vector3(-1, 0, 0);
-// r95 · scratch de la muñeca anatómica (makeBasis) — cero allocs por frame
-// (_gMx ya existía en este módulo: se reutiliza)
-const _gHandY = new THREE.Vector3(); const _gHandZ = new THREE.Vector3();
-const _gVz = new THREE.Vector3();   // r97 · resultado VECTOR de la cruz hand-Z
-/* r99 · POSES DE DEDOS (rad por falange [MCP, PIP, DIP], RELATIVAS al bind —
- * scripts/plan_brazos_r99.md §2: medido del GLB + referencias del dueño).
- * AGARRE shakehand: medio/anular/meñique envuelven el mango, índice tumbado
- * en el borde inferior, pulgar EN BIND (oposición horneada). SAQUE: palma
- * con cuenco suave y uniforme para la bola. BALANCE: semicurva relajada. */
-const R99_POSE_AGARRE = { thumb: [0, 0, 0], index: [1.2, 0.4, 0.4],
-  mid: [1.45, 2.0, 1.3], ring: [0.5, 1.8, 1.3], pinky: [0.5, 2.0, 1.5] };
-const R99_POSE_SAQUE = { thumb: [0, 0, 0], index: [0, 0.22, 0.16],
-  mid: [0.2, 0.14, 0], ring: [0, 0.4, 0.24], pinky: [0.2, 0.22, 0.16] };
-const R99_POSE_BALANCE = { thumb: [0.18, 0.12, 0.08], index: [0.35, 0.55, 0.65],
-  mid: [0.35, 0.55, 0.65], ring: [0.36, 0.57, 0.67], pinky: [0.38, 0.59, 0.69] };
-const _r99q1 = new THREE.Quaternion(); const _r99q2 = new THREE.Quaternion();
-const _r99v1 = new THREE.Vector3();
-const R99_CREASE = 0.0868;    // muñeca → crease de nudillos (m adulto, medido)
-const R99_DCREASE = 0.04;     // mango → crease [HIPÓTESIS — aguja de render r99]
-/* r99 · TOPE DE VELOCIDAD ANGULAR: el re-solve del piso duro puede saltar la
- * quat deseada en un frame (tirones); el tope lo convierte en slerp acotado. */
-function _r99TopeQ(fq, qD, dt, wMax) {
-  const ang = qD.angleTo(fq.prev);
-  if (ang > 1e-6) {
-    const lim = wMax * dt;
-    if (ang > lim) {
-      _r99q2.copy(fq.prev).slerp(qD, lim / ang);
-      qD.copy(_r99q2);
-    }
-  }
-}
-/* r94 · marco del RIG por frame: el mundo del juego (ai.pos, pala, bola,
- * DIMS) vive en RIG-LOCAL pero el rig puede estar MOVIDO (hall, menú, onda)
- * o GIRADO (recentrado XR) — los huesos se leen en mundo y las quats dese-
- * adas se devuelven a mundo antes de componer locales. Cero allocs. */
-const _gRigQ = new THREE.Quaternion(); const _gRigInvQ = new THREE.Quaternion();
-const _gRigP = new THREE.Vector3();
 /* r23 (v3.6.118) · scratch del GIRO VISIBLE de la bola (F1): cero
  * asignaciones por frame — el eje se rellena cada tick desde ball.spin. */
 const BOLA_SPIN_AX = new THREE.Vector3();
@@ -21577,6 +21421,8 @@ const TRAIL_PODER = {
   onda: [0.62, 0.82, 1.0],      // Onda de Choque — azul claro del anillo
   salva: [1.0, 0.86, 0.45],     // Salvavidas — ámbar de la estela warp
   ancla: [1.0, 0.78, 0.25],     // Ancla — oro de las cadenas
+  // r108 (v3.6.206) · SUPER CRIPTONITA — verde fosforito del dueño
+  cripto: [0.42, 1.0, 0.45],
 };
 
 /* =====================================================================
@@ -21642,9 +21488,16 @@ const VOZ_PODER_PORTAL_EN = 'data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAAD
 // centímetros… cazar cualquier bola que se le escape… tasa de éxito de
 // devolución del 90 %… material Ghost, medio transparente azulado».
 const CLON_DUR = ARCANO_CFG.ventanas.clon;        // s de ventana por activación (regla del dueño)
+const CRIPTO_DUR = ARCANO_CFG.ventanas.cripto;    // r108 · SUPER CRIPTONITA (12 s)
 const CLON_DIST = 0.5;      // m del flanqueo (50 cm — petición literal)
-const CLON_EXITO = 0.9;     // tasa de acierto de la devolución (90 %)
+const CLON_EXITO = 1.0;     // r108 · ASISTENTES CAMPEONES: aciertan SIEMPRE
+                            // (el dueño: «acertando siempre su golpe»)
 const CLON_CATCH = 0.32;    // radio de caza alrededor de cada clon (m)
+// r108 · LOS ASISTENTES CAMPEONES: puestos PROPIOS (no espejan la pala
+// del dueño) y z propio — dos jugadores más que custodian su mitad.
+const CLON_POSTE_X = 0.62;  // x del puesto de cada asistente (±62 cm)
+const CLON_ALTURA = 1.02;   // altura de guardia de los asistentes (m)
+const CLON_Z = DIMS.tableCenterZ + DIMS.tableHalfLength + 0.3;  // su plano
 // v3.6.50 · VOZ DEL SELECTOR: nombres CORTOS embebidos (data-URI) que la
 // voz dice al mover el joystick — y «Sin poder» con la mano vacía.
 const VOZ_SEL_MEGA = 'data:audio/mpeg;base64,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';
@@ -21727,6 +21580,22 @@ const PNG_PODER_BOLALOCA = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAA
 const VOZ_PODER_BOLALOCA = 'data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYxLjcuMTAzAAAAAAAAAAAAAAD/+1TAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAABwAABXAABERERoaGhojIyMsLCwsNDQ0PT09PUZGRk9PT09YWFhYYWFhaWlpaXJycnt7e3uEhISNjY2NlpaWlp6enqenp6ewsLC5ubm5wsLCy8vLy9PT09Pc3Nzl5eXl7u7u9/f39////wAAAABMYXZjNjEuMTkAAAAAAAAAAAAAAAAkBYsAAAAAAAAVwI8Pl+IAAAAAAAAAAAAAAAAAAAD/+1TEAAAIRCM0VPGAAXUcrHcwsAMAGsIQThCIp/i3hqxczLiQFYhiGKBkeAmD4Pg+D4IBiUBMPwfD/+kEHYJg+//E4Pv5QBg+D4Pv9PygIBhInB99xDSAABW444SS3I1Y5WAABBbtyx3XSCq7j94NcexW9cT+uPinU3iqRIodg+9kwqI4Lw0h+n9lRoFBuX/vNo7zQ62ndMOQz+qZ7pmYY6mVosdzUaz3X/x/6Z9Z70OLTOEKAAO4CZPYCs2IoMT/+1TEBYAK1NlbXZWAAUsWbfT2GLLBAACEIuCpJ3GjpGQ06j/7iryVXPzs25xyokdqV1cG5WH4EIGQbHfodK3LFZRbHNtt7Hsn/+Ov3zMR8/7P982glJhU56ki4bOCehNCYBLbiAUkdAmGQI6fpZoQVAzHdSVx6DAeVTD7So8ZWtGCOU3gyI+fcYElRBfRbPH3sRxG1mTb60S1Vlds3oGiFdsabTTysObgkQY3gugAB8PvoRWpJpWVoSSzcSAZMxb/+1TEBgAKjLt5rDDJEV2hrbWEiTu26NXJz1/Rw1TFtB9DEY8uhRs4SQPwyRIaDoOjpB+ykVZ4/ifdwdYJutD7/jVlY+/xjsm7ZuXfhBsdM9zhtx7cRcEwmbe5iOKZAkBIgBFJTAJahE/L7xxpcOvIqCmGIggeiSGaXll5Eb3J7EvG788dpICQp9EcQctVd5pJFup2QPshKUDjAinPLZy7EYlN6tfb+gAxCOBhgh3K+0Xt9aSd0RQLcbDSTmBiAmD/+1TEBYAK1Kl1p7Br0VGfLrWEjTo0iwvSDHipihc2KxXJ+Qld1z4Ck9Ykjepd2EWITJshd9q0sMu6FTBloa1cgJ0CQlM0vfbBn0q3lhNqg+amAyltjNiRI8Njhczswg1WaQRcSQSTkoI1P3ON5EWENngd5tggLhoUIzgkejMK7PVn+0C5uDN1X6zaEgdqD9+E9NaEJElUyE//8kU0piyUN7FC0pCSbkK+9KGmyKXmtYEaJZ3ssThKaaCTbmAcx3n/+1TEBYAK8PNzp6RtUUwebjWDDhJyFZgEYJYN8MAn8E6VCtownC70AIGOxdoFTMkwowmjZr/IWVUc0xDogddkCv4ts0ILmLRCgCiTJgom/F2qeaf2RelJFhr5ayg3iL+u7wyESEkEpqcLdQCoMqgxC4xJDqN1db43863iTzjQxSv+/MRHLijJFDdxUJaHINw18yRemWtdPyc+N/GN2lXQeG7qfbP/PT/7l88UYNmBzd7um56F7EjBTBCSbmAsRdr/+1TEBYAKwPVtrDBr0U+fbv2Eld6UrizSIgYBepeGGX3behCH/xzeuK9Lh4mfmZ+w1P5DFnzLstJeQbXzPerXyq0vWdcy/Y7SLI2P1WHMzzPkKaHdpxu/OiYDt9N28+uVBTMzNEITTTgDkkrSwdnftDWosI/XIjAs/TMCht0LCQcsobkMv68CEDtu/jSD6DIOXvtoZKkq+LKzIhaMQ5VFnV6qVndzW5i31qtdMRXd2jB6PyrsNwBFEOSzACYgFYj/+1TEBgAKWPtrp6BxGWAfbfT0oa7hOoIRglKONa7YIzVI6yh91M+kKvW3gaIBe9Yz74KuwcDdRvKzKrhF+lyCFgiJ9KCgwfuySmKtKf/n5d65W/xjMWOodgzbW7FtZSRBbacCdElBDIywr4RpCyUPFYTHZBUPQgEbOEmLb1rpmCV2zlZ73ra54ex//9XLcPv0UK3iZplzUUx5mWuoVYdFpO2iI4IUS3KUrf4S062oiXia/6rMOMhpESSOYJ4XEnb/+1TEBgAJaL9tp5hwkXSerLT0ljJJbhmDcUJBWucsciSjVO1bZzPcsiJuoWmAGr7p8Sq2OIHL3DuiwgTnZUrtu545zpcKiC4cIjLB+5nRjxNeQ/rhBJQBIBSSdAPxbMGsEAiGaiyLePToeF+LczktBLPTAdNm8Ottg+WiTOrP0ukZwPSgel27XSw4ee2SSFGJL2oLIpWntbPdu8bSjJkOj1PoXSiVJRqNIkMxe5RSf7E17NTpSaVSgN1cH5bJIQH/+1TEBwAJUJt7h7EFuSWeLTz0ieBtCJ7A2WD2DHAcNmQ7rdXKd0FJGhPw29ccRXVwZobik0L1N7tw8XavSjrgRJCKOn2l7P3rzjO/ffffn1+oIDIQAAEBAt0BSyH9EwC6nJUQN+umjKLrUMJCC4wuRtaX3SlYIDbeWnNsiro0CRSGad3DV11aZ1Nm9G2R7JXX/9O823hcEQSXUMQFBjAQAAFR4Anzae8tByk4LeNvRbiIela7gk0YF2gNan8DenX/+1TEEoAJEPdt54RZAS+eLbzwiyHX4O7f41L7N0XXdeREitkS0xl6ySMkKChwTBPLUnLPHqvaJo5gAXMQAEEnJgDNHELqq4ZOoCTOqpyk1oT56vF/UKTWdNm/fEudnvJhP21F3LLrdK3ZGaxGZrtUKkImahk4aM0TZoBuReeCXVS1wr5V9KcZKKMaScGkgUCCwlanqs3Ol3k7Ymn4HY9Hlyu8pmI2W9u8aoltlxpRKpSv4DNIdW2K1ZtNTLddva3/+1TEHYAJRPt/p6RNsS4e7jz0Cbrrqp6czqWahkVrCoDQX/TCABmQAIANpuYE0KEXJTrx19IlOxmczQz2tQE0EzElQ/0sizHm88tkXjeRIMlFunRkmJuH4PIm7N1qGoqLjmR/0vqil19asl4Kr+1a8EjQLICaRUCcJwQV/HK85xaQQaRAVCVHkBxEjWRnQZQrxqqTVICt1ZEMODxgpVL9jszLQuOo5Fa1qPFRg60azoTF1p44DFp39bqOgIiAAD3/+1TEKAAJUKFzp6SpcTKLq3GHpKj4X3WWtA5IEHiOEok+sp92rXa4DygyVkkTiEIVWpE0OiUAEXQI8WksqiIwoRhlgsIMrcKkniU8LGhu4XtJDR7bCqHHaDj1StXIFsAkgJtuAINKjwJAGwn0g4sBbU8hUKOvK433aUVqyjLmRvqwRBv8befAjuBE4zP//OVS+5IsjNPLcrv1T5B2+d5ieig/cV+lvyl4xAKSACgkG/bgc9kmbgQMJtHyXPxIQp3/+1TEMYAJfLNlp5hxGTEdbHz0DiGVj6tdK1h0ZWc3ZWCogPJp0SWFw+LUtj6//4WXM9VpvqT2sbexv0uQly+l45xEic08vC7pEar0T12VouyOAZRI2zoX3aPMQvBBlSXdyuhqpeIYWGwWMcC/U00FhmvT98FFFMX/+e/C7DHZef09Dz/2q017CT+oi15qU/k8jkCOMkyCcMkJCccuB4JI0YRmnQ8Lm1maZCpOCw7D/LuDbsAy2KpttogmoZV+o+f/+1TEOoAJUPF7p5hu+SMaLfT0lcqo5f0u7/s6FRjT12+r9Fv6vZUFGhko54kLqGHT6PrqkgIxAVUgLLdgGgvxdoRZh5jh+irTKU5N6E+aNqSdXHnFUUrWsoLasduzonESkwUciI7w3XfTh7olXrZb4IDUh4ss7n4D2PbELDDMwEQSgA0m5gc4+glruCbWA+E43Go5i4uTcCdNtY1CnR4k6BvWiMcEKLGGsTE2F51VyHS8lHY7ORjk3CnV6XyUN7L/+1TERgAJUJ9n55hwwUOfLXT0lYojKpkLItmv1F4/HSSPlr017ASARQDUs4EvepTqXShTiqXvg6CLTwEKIRnB+6+MN8ZzHbUCHnPDNZQV1+VEGSdUlsx1erxB9SOVuGGtDWa+19Jfu6JsnqOBVI2vd2C2W0iEm3AAaZ1h/vFwgNgfC1I0xlmEPSkqbjnRVek6fZGAJQhUnv+7awTkdy4c+ruffM5TKRDa7G0Dks2L+eZ+Z/5j9busv/X220rMltv/+1TETYAJdO1nrBhPAS8Z7fTzDhuIp9OBvGSShPpsvLcmYRGC9EzAqE2P8dLYcUL1NslM5UzXVeicpRmpNVILDUb2t7xdmjmgYWJOBOfiTd/ndNiylZv+EClWGuolNByJfuw2iC8wUAhJIBiEnTzacp0wKsKliGEgHoyr/rM3M5VNBSZCUIAgpF+WUUsr/fXkU6apDKEGg9Q2ZYKYqdHjSWxQFO+mAECgBopwC6SEUXctuqODYI1Qw3G2fK3saY//+1TEVwAJVJ9zh6RseSSU7XDzDeYBpDT22B9NNioIVCIezyjd5wV9kJhbGGvGDD3jjF3r1L1cuiGaEe1rvWWBs0E3SLxMLuBTqHUityUDayh502sCv17n1hD0wBG4ca9UNkWuHPGHXpU4bZWazJ5CmJI9KuY8meuzpJND1/7ZFMvKRwhQUCJAUs5bMFgbuvOihB3naoCUgWQQ25KA2gAsJtjHKTQmux/I1PlzKAecxwr1SBUlt3jvkSFyOrfs5V//+1TEYoIJ2KdRTCRNkSoUKqmEjbKBUY2IRz+ZTOns7KZxNlK4O4cYokh1ciZET6/ee7TP6WkUBkunNYtSHZLQJUODga88DDnefaF4PUyF3Y3Rw3Q5DCY7M53bF2Fb3z1brTqui6NxikVhRrTVu8tWlVplDCk5b/YiMJJBgAKaNCSxkS/ZlNLwAxIsDJjcM23YgmzIqV3Kz3w9GqFa7lIOGfZ7KWvD6GSeZxxL0lrO8zeA8hPJXdqVvh/IrGTOKZH/+1TEawAJ+PdRp6RPESyZKqmDCeInDoO1BxDvONgTipIQoX2EBQ+XAIDMJCISzYAQDG2O1w4AcUL2qSw51KMLObPFhweHh42+ZrNxYeUoVAOGQ4EQ7AmdCItM1Dd8pC3JBmAIgAAOYCLLFX4/70Q/OtOvSSS5xqhlNVVFmKepyOsVS2FY0qyyI8IvDiMVFJl4i7o9kLc8JOEZthwBWDyq0kPg9TUashkrO+QmSyssZivdYo1fj737dnmlWmtQMLz/+1TEcwCRCQ1VTD2ReZ+fKbWDJln1JKDfVxVY/NGFKoAPGQADEGoAkQlYvDcejDH+tFvO4JD1wjjwwZ18XF1uDSWW0Jkz9Y4dxwQRsOVMzP7jCxLsff9mZz/+xl8PJ3mZYNjXr3y7lC7CK6IZnkYHUQJIgxMkhfZw97Y+/kvaUxhMcHrX5UwA+HATwFeIakAd1kcRPcIbjzpmeFvW1ltOGXtegwMQ65XkLzmucMSOjxVy9wCiEdnyY2yL/X+otBj/+1TEUAAKTOlXp7Bp4WsebPGGDT5Acc2XICYAogWFGrRKVYyK0gAHswJAy1IYytPZzNgR8gZ7oYqkSpRyDnThGyxO4+aEzG4HnevUGjoOXSjKis6FdyLdO4Nh5rs27vFqNvY3fp6KqMhwp14IyC2Kz9IksAAfgZQGgcLa0n+zmgXqAzYJanJKFom85peEh6y8BNS2gYOMf8HJfNdrDtzvlYGEAoEiDgAkMmsb4/cLDQEBQsJgq5/ScZTZRAUiiYH/+1TEToBJvPFph7BNORwR7XDzDZ6CiJqXkuKnUxNk60l6VQhCDbNhoaWHtuMYqHpScrdVEnY7KwwxqL9+6s8xgGNaKt7MKuVSLdWe22nmuiOJWLQJp2inIsAAzMGQJIN9kcUY4kyJWhCGLyuKtEStrGX1tymvU03C71sQhqLuknyGMrN/6I7sjqgJTnYd/ahzTX0+nKzUMSpAtiEkDtIgK/oqpIAAAACc14DWCqDeT1TpVIByLIxn+mTDin+YMYf/+1TEWYAJVOltp6SrOSqe6+TzCh4UROske1qwi3B0HYkhBkGRV/dYqMEmf/6ItjFQigEykROjBY5kCdT/9eqshglT1BFCOFxCa6aSAgNHtwF8hYtSqPIxi9BBizamCqkOk5JwCRVLJZPUVTFkcR+SlMFYrZnMYxnlMHjOb+tWcuUoiUrGOVerEe791/6PQz2Uo9Aq5QQK1qosAAAhqDJ6ilE7ydpMzUAEh4iOKhwEo2cHMMwGpro10JOPiELVLwH/+1TEZAEKWO9Vp5hUQTYb6vT2FSllVquK6lYphZn6fZch3KPBBQx1OmxRMqiLl//67uf7GSPEaJHoR+tAFUTBfLA2Owztv6ZuSpZyHqkNcitp67ZIQSbXpRgQOgnRR6MDmqaJI0GX9lTsrTJUGICslb9DKZhRUNUlv5kVru1iG8QPoSapnBQAGNS8DgRGJbQgVBC2ATlQtt6n1DT7mZBKywrF3OFqDCJkq3oUsikGsVmuQVUezpm6vYpVaJgg18v/+1TEaQAJlPNLJ7CpYSkdaqWDCedPKYyol//+plveVU0FuRulogAAChMtAnSZiKlcltOEQkD8nsoNFJJlXZShMKNTsN8stXJNl4RjEJQv+kXmJhzYo7vmPT9V8hgoUYxVl+zjkEslPjbEXPeeSNTNKmgEEDlAKYOodCErKwEghQSg3IFKKwmA4QI+dWIkjBoHyir29bL268z7M0Xrlle7Hs+afeXctarVWPivKOMpDaaHQv/Wtm0q3vD/oAAAAAD/+1TEcwAJaOtFRjylySuVJ6jzCpAAsjiJIAAAAAC7hAGzVAXWqxoCOHFCBA49kwkU7bwKqbmgjDXEwc618hQphSs6XdLauOpQnxAav3vmpLVsqUw7zCushzHLgiFVsu47sS+/cx5SQHQ0F6i1vfMtdzz//+3cy5Xu6/////9a1vXP5zPWXLYt/zAWDgXYz/zAWDgXIANn///lgHUB2qnIkcOJQSJWRCUTiSsKY6qrQokmAgqC0FYiLB3gqoOlcNL/+1TEfQAJTI9BNMYAOiwb5XczgACPCLriK3pU/7yvUeEXXEVvTf96TEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/+1TEZ4PG1ELSPGGAAAAANIAAAASqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo=';
 const VOZ_PODER_BOLALOCA_EN = 'data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYxLjcuMTAzAAAAAAAAAAAAAAD/+1TAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAAB8AABgAABAQEBgYGCAgICgoKDAwMDA4ODhAQEBISEhQUFBQWFhYYGBgaGhocHBweHh4eICAgIiIiJCQkJiYmJigoKCoqKiwsLC4uLjAwMDAyMjI0NDQ2NjY4ODg4Ojo6PDw8Pj4+P///wAAAABMYXZjNjEuMTkAAAAAAAAAAAAAAAAkBgQAAAAAAAAYAKMpVaIAAAAAAAAAAAAAAAAAAAD/+1TEAAAJZHs2YLxjgTcUaTT0mYMAAJyCSKA8eRKXU5Bxc0epDQOhQK9n3uHfqFERERHP+ufxELP3AwMXAAQJwQOf3KdL+7p4PggCAIAgAwfB8Hw+CAIAgCADB8Hz93TGUQAQkSEsACYBDDgSbSchJCzMtc3UBIC2J4KEjIQcT0EQa0EwQg6wSKkyMffH+6Zj/3ecyGstO8Hz812V92Ms9OxEh6Tn+TJ2aCmv9nSEAQAAKBADxQ1G3vXyjGk1i7//+1TECQELtLk/jCTWgU+WqK2GGlEAYQGAHHRIKJL7rcFPMKUsXxNuBLmaUk7EHDXW6VmgcWAw2dNQQzFyBcSK3yA4tUJUKSA2BoSyASeHIyWaICS3iIiIIHircRhI0FhfaDAISqHnJgRuuDxTLbQI/6lIyotemWHQUSQdZ2mQwB1WKyljljgOBoSiccsvRHkJtF624/aJInFMkeDG9md0gI3QbsyGkBRzmM9bO5eJFIUjUHxKgIIAADaTN+dBhkr/+1TEBYEKkKdAh6TWCVkQaHWsGPHENRKGDTPBFIot4UoA6Bwi+JAQpDh8n0T0nJAg+xYl2QtAPoj9INJybxBvXIiABCRsKsSPQliWmD5RLIBTZJuzFudn70rlsxkqPAAAAEwABYEyKY2GY90YwA0AmjlTgFUaIb4pJqpg4aVYEO1keeWjLkAqC6GQMsfhzGaRuLT0yAfZSSUuRmd5r/kCFSQapzu2nqYpLcoL4Kb2NBQmqA6eiCKABRJjQAAMEwb/+1TEBYAK5IdXreGHuU4W6/WnoP6GGA2hm4/XICY4epDgkcQh5GBU6VljJEmhYULPatDIYOfuuEUJon4iFRDVy3fqZLfzfcToK4KFHnnHreVfWNxudSNqavUnMt83dh+t0EBAgIkyOABvU+SqIRagELjCdHFjYCcQ0qia6alf5ANEyVMBKRGoySSnoJkjX607srPQ7yODdAMaQ+vKx/KkErCF444fFu0FQ50PfdTXELeIR65VoABYABAlvACPDYz/+1TEBYBK0LdbrRTWWUyXK7WmDluUYUD9jocpvQe8RQNirGk3bMib+/BdLm3QLiaKaV3PVEubNYMATlSJ/kHGtu7iuCJLYCXUXFBD2owLdtY5G9K1CoeofWZ9hGB5Y/naAAykACHFjBQOh8LH6xVOlLeD9r9jayk2b8dWVLW6pxTrWlgtS8cDAMWgSRQBULOgmX3JTOdV+U30yKc+AnODtof0yOqZNE8ZyMPCpBtgjG+PHKJgAyJAABy8AQ83r/j/+1TEBgAK8MVdrL0NGVGUK2mnoPvYb/EEpylSWMqFFARMYXob9wRZZqjtmg1QExAggbS3lZZ6SFV4trJ9h3nwIQhvBfnXZWiOjvYyUS9VvB86IDyyEpT7hEWuOMZhg9/MB7gAKc4AiKDBKLARKXjAcXEPkth+gvoQU0ao7VAytaEQdJ+r4dwv4JMk/AlM5krBTDk/askG5xQAweSl81DPdFSw+KRObhLDk+oP/mFDgDeij/l7xEWAAFOgBMEFBi3/+1TEBYAKvLlTTSTWUVCW6RW2FsnJ9BxMBWUbE/Yl6HBzqZfTT+4trlxgc77deXoaGgUtkgXGM0oVUWO4dPeyDKlnVH9sz/X5efrqj2Y7O6HcvXkO6QicrttzIRgUfyUAAwgJHUkTjKIkcBFzga4GhOkJA5Z8M2kYrenK5i3WfzeFPikj5QGwzHwqEiyQ36lIYYSG6JeSV0C/GtNApy4OjymNtnM5xRkVZ9HnBncX11ckRZoMJcwQwaEzpYmHhMj/+1TEBgDKwLVGLmSrwUQW6VGzCwgoZJMQkAHLJQUzaGHxYZv2e45vXIsogqWcsAkR+ndGaRcl3VOh0eBIZVxrOJybdy3+Mbop1ukZu5i6xagMLxV0QZVfictG2qPSECEAgoA7KaQWRTlFgOBU+zBE1bt8sADvNvSMl5deq1TNRb7j0NC+IIOz1sKCqkaZsSXVadXHzCI2dVLTOR1wveaOe89Jd305FnvLqIxLeryCaUAHoyAAUATrzBQMfZKrxNP/+1TECAALPLdPjTErSVSWqq2DPakw5J54YTOUixUfiI6Vx9cwnWbJzyGIRkdDgB55wrLjAhhpVaXqW+F6xMTpaTx89ogIIBQDZGA7bM0GJBtJkLk75o3rzRz85yYSE4AHewgYH2SFGVFCepLoi3piHYceO7x0wlAeFH34fJoDRqZ+nJKpnne+M4ox4ZXJYb9tRypKC+OFLIg9npKC4nEEgNQ7HE6IByGQ9VfX2fsH213x4IihWbappAA8ACTAzU//+1TEBgAKfLlfp5kvkWOXK3j3sAiR05OQJVgPJ6c5e1o7C6StRvqFG4zMKgaiutiSgkZlMnTf5uw/8Ydk50xZIOTgDAlSHo8GxC2jTQNEQQBMSGiPoFxWRnWalTUjMW0NLMoAAEiD/HaTUkAmwQKVgLrfJx7WiXFh/etmg7MU0Nl/7nUhi/ptsx6xvv89Ayx30XRIQ5A+ZEkLiMAUDhUaEcdBcDQRD44gLKw4PCIcargSld9Aafbttq5IAANKWGH/+1TEBQBJoLFnjDEm2SqWbHzBppEQ261GUMxYYEJsSxQJI4nQhojCkyb7E6wRPYKVlVW7Wf+o+fvyivPN9Qw4gQJErw0TEgEC8DKiJHbLcU0laQaxiicOx4q8p3RYwAfgIIZfB4QArNBoDcSFggNC2X6O5StG8aEhIS1TyOB4rePO6TyCBARhTYTsmIVkCIZc0JSUlFJgq5Fu6uqrH/LgtI7S9L/9pEAOCwIE4n/qn3QQI7Dvvq68zAcdnlhNAxP/+1TEDoBJzLlVbJktQTKUqbm2DXid/AqByQezMsjYICatnmfadRQXbIAkOrIq/ACgbTRmFLcIkZxRtRE1BOJmCsVYxr0rhgwQJogAAFMvNnBxBsYkTJ5rKSYhhW1dk6X1gVxRDdpkqtzR5dV8DaMepMqBeAcwWHFvl++0d06aZSqRM1nGoCwMTG4ecjRjIMh5A2hwMKFVUQM+AGuMqgM48XHgRnS2CsCVtUrLH2FuB71gCY1yZ7l8K3VD3QqIdAD/+1TEFoAKFLFPzb0JwTGWajWzFtHw4NY0yxIevQK5ZzyttDlBHFHBW1jqBzWvd293x7/9cxCKfNUMcV5gAOwACVOPHDighRi0vpAlG2yuR9ovoybfudOxppl/vG+7jCOT4oBIQvbNMUncBxsXXdpgWOSNByKPvmQjjm6RSspf/yojKBnxYYjUiABVQAEvYbLjxmRI0p6Nq0riYUDleQBInU5MxCni8GdfafQWKI5gdCLElZ4TPTCWq1+GhRFm1H3/+1TEHYBJtK9VrT0JkS8WKimnoTJtIdGLGlZCnSHUtU7C9f/JMFTcJrcAhVuKbyWp5nRet+RkSxV9E6xLObeTtYYy7ngjxXAVLaaQgBY3zFJthRJeWJ8tehFmovV4kaO7O/i1BUdK+kcmzSB7Lw6//rAs1YAAhfgANoJBYEqA3sMNBgKjmwAaF50kcj0NVw3SCqFlNgI6HTTdC/IU2zVxDTrQhxpKrkx2HtsakBGufGa8/jJTqcF+bnt3QUQruwH/+1TEJgAJYK867bxnySOJZNncMJEC1gAOB4wiDU0HNU/qGMwRBEyMBc2wAUhBYiqslkIoFZqeLj9cWnnfz+dZhWJmpe1a1U1XLugGeLhfGSjkMOLGWUKaD7QxQnYABWnADgNiEOcwa1zTMqEJMhOj11Yx0QWDXwyRt1LYi5Nkw1diZUw1QTlmgtsc8qaHjLVP6p6cxn+MV+VFYwh+cigruEkmTE4AKMWhGMPicCW4OcTnMORDHBmMEgGYaWUX08H/+1TEMYJI/H0fD2zDCSAUo5K6YAEtkUbk+Uqw7oAVokDrqT9ZqRt9uk6ePmQ7V597yt+70v8ny+1r3DZUpoSZ2a8wHoBjLNB+MN9vwybAnzF5IwM4wGwwhARUBBgjgbw4YU4EJgfgSw5H2gvEDQBi9Ebn5bDQcx5YjLrL/TFlQBNSA5Xcm5dHqRLyUO/BUvlctvzsTzg2BHqZRGocWJB0opL8guTjtxuch6B83HfuNQ5M3rW6kpy5Aut01WX9cB7/+1TEPwARZL8SGewAAjQXaH81kAGX4o71IH72uSurdZ03AAAASYMysimpWXx3UAAAAA0qBABiI5mloFcnuYGMAA42BjsOmvTmFEm7Pnjmg5KhUBgcaAdBmzmWcBogwNdR0mg4UFDtJs7uwqzD5ax5FeqWq2ySL3NLkXQ1tbjq22GyNpUUfJuVfoBJRLAw7lUrQJe+LgtdZFzL+Y/6lascfl8vx67zw2rsM3/u2bH1qgEATgDOUvhkmOmFwcQmLx7/+1TECAELNLdG3bWAGU0WaXW3jbF1U4RD4qHg78BwaYaymdlBEREAJF4yo8Oo2FMhseyHfUwgsk40H4HwCM3Use15DMaFwS81ZfUww57Jf1sqYl/fT5SNbhNvsrUgTQAAAGsAA+T4JNFGYz0x/vPoM1aDGBw0wBWHAs2gTaAOBRiq8wo2DprhYjds997s97cPAtrAmvdoxKqGVD1Az5cvzkNbdc308tAev8jKmrgYkx4dwAAIANQABkSKpgqOPPL/+1TEBwBKcK9NTbxryVoVqXW3lbFecw71MKC0TDBXh5nEMwVgV4sgBKsWHjhsWrNWtv3HDyNe2+2K5jL2sxGWr9WzHWUrI6crz6KTtIMTTKTrjBXn9//IbO2iAAARIwIpUSAI7Go6oNG2QhEfrKMSY1MwodGvELqjoQRFU7meOD2tHIPEgFbWBBok7QDAfMJCFpgi5b4DESBZmT0F46t6ud1MUeFrpkKKDDW7XaQXcZoAAGgCwCQtXNGFSZ7YSeb/+1TEB4JKXK1HLbytiUCV6SW3nbCksiMPIzuxxNUxbMT8YkAERDZFCkvVwWHxEdDdxZaVY7XhVgLu4+yTSq9ogm4ZTeLehqljxv/RLFsUwxJgKjkT7boKMBEA0pR0AM0gQJTM0JUQbFUcm3hkhA30HCBALGKCraDIpc63CM5WrukXUObN9eHCsUrevxXj2Q3C/IcyqrDzf8w+hVFRDaIE5YrZe592KE1pgAKsgJ8ADSyzLy2zPaA5qNhurA8SEQ3/+1TEC4AJQJFPTSRtiSuWaymMmKMTeqhFGTlQ8AeIJtJirVGpopXHIb9lBCHziIoiSaRkgJIEdzr/+1irD9TRgkbn1/NWZarAA60BHQAIaVVMDqdr4t2GjnJbAAV0LUlEAMgjz9MPeQwJ5n1Tk9g/szEcPyEXp7gmSia39+7MegYXJs5scHPatn/w74UWGZMvcRaAA6QA3AAJsdBFR61sG4SgiSJzxpLQDC0RUHGTAr3aKrBFEj/MYhibizM2bzj/+1TEFoAJAK1NTTBNgSOXKqmcINrtT8PS6r84eGhJU2if6Z/VDm3HdVCmVv9HIMoAAvwBHQALKR5xgOEEUpVmLmHEqOgrwX2icwh3JpnclosgJSyIQ46LT/61gaMpSz0dy6r7mXfhFHlONOPFHS0qv26vOKFSCfkdAALoARUADYztbwwqmEPRoxnqGJAObqQYcFgkWZPSw5ZhEuFlGjq8bteUhdHVejwoHalK3fU7JjEeFGAU6Jk9ciGgraeGogL/+1TEI4IIiIFVTAjQkSMV6emMoRtwACfMGRa5xGlKMWMuxOifgHMI5QgEuu5MFPNLZyllE0SKsPFUmG0hWuhGDRySzgtHHCGScLta6/8Wsw5JyNNV//+ox1KUAAHogN0ACAgRUxYDQJSg7UV/XqIBUTwdVGFrOLZM1FVAihLMVzzz58lHjSR+7VsU0aXezJjgggRPJVMgmCPmmhsNBkULUZATwAEtCNwYAAARC2HGmtItJKIFIItpdLSnIDcFtZT/+1TEMoIIiItRTKStkR2WKfWTHevqRVgMIe1U29v/PSC1Y7kAJCSyhW3gc5n6uclTW/z6IYVnECY4IFoAAAqOIE2gAUxyFlgooWMwsUQPQERDK3ky7OGnM5axDwZJEQ00OqVCKC5ZP39uNqLkndhYUClpdCiqjJD/8qqoKR2KxtrNUwmIj7C7YgHMABdO04kWKDzZCEegtAiCMjhwxEEyqYalKpiD5JDr8zYwNFWc8kf++G+kis7M5TadSSRwKBn/+1TEQgIJWK1NrKStkR0WKXWTFiPR/0NR3VX+hVyiyCxinQAAC5awJKABGQehFH0GiWQzJUiOEzsxBNfKtcFvw50ZciHpCBjdsADgI6UH7b7lvy0XxmMm//pvAKCd5X1v7O+Sl+fGEVxZjyTqm2ZUkAAhQ18vsXYSJBlVzq1ppQHC6Z6qOjl0xiUOPKHnJGlmpjP92p7c+9zGipa1Tp00MwuTDc0tk1Hy90TczXP9Pm9jEUwCM4IqQxMh7jOFQjP/+1TEToIJNK9FrRhvmSCV6jawsAdYpSwyjBmDDyK2My8QMwRwYDBpHJMowHUwxQqDDkALMAABVAcYPIBSEJgIgFK5bFXfmdg+mid6S0dLT0MxcuuulNJAsdj9MqqBkiNQY1FRDg5pFEfonkBwMTXMIQsrRMTO/eF/LGvK7fMsb9zLVapV/Pme/p6mNPe7810gOAwgAAAMlln0wHSyjEyA/Mk44kwkmQTQRP9Mxoj4x1wATLwBoAQ6RkjjEmOEGUb/+1TEWwAQ+LceGewACjOX49c9gAAKwDRfMhAjUcBQGo0AnDFiU2KSfj0OW6lyh7uvE23BCqdoqbsblpEsvSBEAmo8hm4WciqyUDdYOjmLcBKV9wBepcr01qlnaW1Wvx25dvWa9jO7ey/7uFnV/H7+edjK1QABQAWMAADFRGiMPEOoylCWzDTHUMr9BQ0QSlDIBAOMPoDEwuApDDnCfMOYLcxNQeASAMuIwYwEVJmDmAsHAHSnks2/1HdqV/ztQXH/+1TEJgARaLshGewACYwSajc1gAOqa0tBbTyIAkE9Mo+UYLzw6yEBJbVKsPw2hGmECA7HHTNQ3NrX8/t4XuYY18MaTPKvhcq41u6/Hl/+8/GvqmaAFb/122311ltAAAAAAFjEGmNDAQGGDGWGgrnRDmdSFqjLkIFHn6jx6ySZZQKfu3ylpJvV/CrekPNVZuXKrkzJVcTi1LYDYolnemI+rKteDU849AkYrubLc967zmOevw/+1fXVAAAisrAEoAD/+1TEBAAJdLM1vbQACSSVZaXMpBlgZYde5gBtDEQx8uMtCwwdcQRgg8Cs6cqIvlYpr+zyDI6GUgtMpzMT6vdFNQhnhUmS2LGGRN9//N3xUxWnKV0twqGtgAgfUB4AMk0x/AjpaPso2YjRsYdOOlBaMODqNkcYU7dVDZxzLqpeqv3hVklVX0UtlyUPEERMSa3WzhP/1LwSf7dD3/WxjlJTqCkDLIfxMaZnBwYQg6GCwYkgKYTASYWgKHAQVAFMDAH/+1TEDwAMbLEaFdeACWOT5/cxIAAZ6nzPMVh2dtQW9nrB1Fng2tS382NW8qTOoY7OfImKGGO2uBORpLZcRJHTazTQWqeHWFArq8C7208rlRy1msD0hPZKxlNACgQDMZDkciwNAEAAAA79PEXd/w4YAVGZr/kt+NRr/NiKENHNzQmxzyKmRe5JjmBzC8ijw/MC7iNxRBeF1aKvyAFQg5Pl8nGXRZX6DF9MSFh4KiL+WEoSBpVMQU1FMy4xMDBVVVX/+1TEBgPAAAGkHAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=';
 
+// r108 · SUPER CRIPTONITA — icono DEL DUEÑO (SuperPala_Criptonita.png,
+// cuantizado a 256 colores, mismo cauce que el resto de insignias).
+const PNG_PODER_CRIPTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAADAFBMVEUd31yY6mwt6J6n39IDK1UEKlVq7GFt1szV4Z1UZWWNo5IcWXEBDTCFplwABy0YY5AYYo42tYgHK1IbpzTJ3XvS9+MABSoILlUPTHgWl2RiqNEXYI5a9YiOrsEeXhwTTHYOS3ZTkzxlboAAFjsYV4Ijyjdvi3DIv8I1/8FBZDH////8/fwMKUxXo8IZZpMRR3EVWoVXqLoONFhZtq7n6OfV19VUncLIyMYLO2Q1eqRPl7YVUnu7vLs6hKdGiawwdZopaI9zlpcABCtWx5ICGDprtdEvh0wxlk9jqshOt20TZzEQWC5QuI0seExLplUzplVOxmxOp25axKhux3Bkt7BtyI9NmFEBHENui5c4hpsORytOp45rl6pQ1nBvt2uOxnJr1pNpuYszuGlwpZS3xctMmG1Nl5gVdTNnx69op68ViE6NuG9NtlgUd0gqdjhSiJwpVXhMiE1V1Y5vqGkztldt16pw1nBs5o2PprUkW4UpZzU0p2qDmpXP55Hz+8q6wrszxWzDwb0zl2mO2KtsplYTaEWw14wUllHZ49mO13MqhjlLeJWP2I0ATYKPyI7K2ZDu9bWsyIqQ5rAMOCaw6I5S5nPR6Kuru8Xh4tyUtsXQ97Bu5quQ54vb5OYUpVOt568ENxdNxliS+JCqyHdpmVSu6MeM6HUdcJRw+I0UhTgqaUgy122MmKYyh2gWZ5av13YVt2o6lphs6HSIqmzO+NMJVRkGRxZttVlu11YDKBNIVmxV5Yt4weJy+K4pOVQqSmmN+q2y+KwTqGfo66wwx1VreIrBvryP+stHimit2a+w9o+NuYrT3OEmWjKv+c5Ge0tP1VYAAyoTtlQzx4YAABtpmWdsx1kKJi4zQluv5nYy1ovL9I8t2FUz43BTZHikqrSnuXYwlTtbssJW16mPs7nh3dsSWog9po9LaoZCfaKOy6VU56pS9q1rjKMHJkwxeWk9latKhzww55Ry+sgBGAsUWkMIZhpsi1BFejpW9niN5loABCsbZ5QalzgRxVIWw3Si8hTlAAABAHRSTlP/////F+P//////+0a/19fnf9f////mZ0U//8p////a5n//8LQ//////8A//7//v7+//7///////7///7////////+//7////////////////////////+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////8J/////////////////////////////////////////////wr//////////////////////////wj/////////B////////////////8/P////ht/1PgAAW6hJREFUeNrtvQdAm9e9/43txCNp2qZJ2pvetvf2P9/XCAuJJT1YgyEJbQkhYTMkMQUSyGZjMJgwDSbYYIxtwAa86hk73o7jeCZesZ3EsbN32jSjzV7t7c37O+fZksA7ve//fU+LA0JIz+9zvr91nvM8Cpv5//ER9v8D+HHHnx6bNdF47P9cAH967Gezrnv8HwbgGrP+z1XDHQdwIxP/z4AQ9k8wPhKPR/HA30WS/42M/CcwuHMAHgtlObJ0lnKJnMgqLq5dzY7a4qwsuUJBP+NHhBD2I1mPDJulkGetzo9ZEz7uWBOTv7pYriCf/eMwuBMAHvt5oPGRSjA9Jjr8Okd0zOqsJcrIQC38vwTAvwYb/9sp1207h0J+rRxBuMMyCLuDYS/yUeEsMD78FgZAmMV3h//SALjaBzdWZuVHh9/yiF6ZpYznMnjsvyqAx3iTD9aH37aRn6V89NE7gyDsDrh+pDBSvvK6Jjc6es2aNdHXJZN8ObzsHUAQdttn/9F4Re01Ml0tJP0lCoVSqZyFygKlUqFQoNLgGjmyVhH56G1HEHZ7zUeTP5701+SvziJzPFX44afPQvNKl4aRVK0wHoZ8giODx/6rAHjsP1jzZ2WFPvYpq+WKEFVe5Orw8JWRQdXio5GK8bLHmizl7UVwywD+9HPWfGVtKHeO+S3kc+GjIQr9R2vR71cLQxTNKPfJa2NCMahlEfz8nw/gZ1zzQ+cwUG1k6F5PiOWyZpzf4iIqa2UIpr9lEfzsnwuAUT+YvzrY+tXyWSFnngGAZ3iKcPxn4FpqdfREKnjsnwiAmX5hZPDsr0TWT9ztP7oEPVEhnPhZIIQQWbU2UnhbRBB2G2K/UJgVOEfPQqx69NrrHY8qfvtbxfU8D6JrYDyIzhIKb4MIbhrAn1j1Lwk8tpXzuEXLhJZJ6CdGRl5LBksCZRAz7zb4wc0CYAo/oTLg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';
+
+// r109 · SUPER CRIPTONITA — LA VOZ (petición del dueño: «el Superpoder
+// de criptonita le falta el audio tanto en el juego como en la sala
+// Arcano; en ambos lugares en castellano e inglés y con la entonación
+// propia de cada lugar»). Banco ES/EN Piper de la casa (davefx/lessac +
+// loudnorm, receta r44/r50), embebido como las voces de concesión. La
+// entonación propia de cada lugar YA vive en la arquitectura: en el JUEGO
+// la nombra la voz ágil del selector (r58) / concesión (_megaVoz); en la
+// sala ARCANO la voz SOLEMNE del oráculo (r47: cinta lenta ×0,82 +
+// paso-bajo 2,8 kHz + sala ceremonial) sobre este mismo banco.
+const VOZ_PODER_CRIPTO = 'data:audio/mpeg;base64,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/1aMId1+V8Y/pVWOaZjs0zd/z7Rqq+KD1cRECPdV6YMYAAEt/wDwghjqRpQIVQZiFuJyn8wqp7qOoFM3yGmdAnCFhB9XjtT1bYuHkL/oGDsJHoypbZlTQo27GTbobM9tWjSFIqK8ElK+QkAAaclAUgnYsS5ZT7UJlHBFN5HLKqmepdCUYzK2rUceYCL/+1TEhQAKGGNh5mGEQSmeLjDzFeZyk7X9a42amjg2dv8tgVjA2QGJd/+zS0b/+zIpHM4YxJZ7hlQ4Ux55/XiQmJRIBeF1H4cQ4VJkvJ1yH6sgaOppKiBQVAy1NlKeRatAfTlK44+HmxpONmG8///tGgQusJgtP5f8IYJ6dMSsPz5/+dZysUHREQC5QCt9GoyqAtSygGEYZHMTCWE5msczChyHIlk25oSzKZyUoESNI1oURwPda/fGtFI3ihTf9Sr/+1TEjIAJUOljp5hQwS0erGjzChqUMSUMMo4Vypsju4Uq6I+l2t98tHoaVHQshgqCcxxVAIMcAfBTIjFSuTrUNKFkgQoCjeuB4lhpq02JNwBMjyLsNXSxdTCclYpkapWkNJVJeVlWY72LabHjCJy2/qdCjgx0CBxEYydq8ZRDGO7umn9t8x2XRTjEasg9HSBAHMBNhVoIJgcucIwz4fCwb9PK4KpVcxmllCGwqIoSo/VlMSrxuMPu1FH5UR0B5Vb/+1TElwAKLN9pR6Rr8UGea+jzChp5s7q/R2tVwGEHR/8gSFwsO1HGW/07LI6en5t0IY1XLQpVWwfHLUOiR2bxIgIFJQHJBkBK7MWIiEC9wfZ722rLDNyeirHwsNkQHuC3h7NhqNSTGAGDHqHPDfBtFAchIG8pqPnz59E0PHktSSvWcdFkEjGarNjz12d0rqc2RdNqSn/1IOvdJN06TLl4rBdAcAAABgEAgSK/oEAAARTCEyCj6CQQF3WGTokRNuH/+1TEm4MLbPdCbLywwXEe582WFoiGiBjXRnRoCMmtfo6BRm45hlR0RA0KCEq1QENaAwARFC06ThjhyOalwVBLIGQIACLKYPMr2dl4V0OZ3PK9EauVmAqK1lctYto/TzUU8zmCoCjmpmmcCS2eXfrf/P/u+fr941MDZ5woFjlMhGqO/OeHagAAAAKPKEAAAAYEIy3Sdb/JAwUcwGU/5eUlkise/wcRK25m/DWHQE++Yo//SojR2GiwuP/HgaCEk7P/+1TElQAMaOk6dYaACjAXJjM1oACk/oSuvC//5b0or0woFZK9gxWLH//8VXvWejmwWz81zr///xIFY9Y9I9vb/Nc////xKUrHrfE9AEWlSXwAC4LhkMBEHkyrTz/yoOVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+1TEcoAQlQUzOZeAAAAANIOAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=';
+const VOZ_PODER_CRIPTO_EN = 'data:audio/mpeg;base64,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';
+
 const PODERES_PALA = [
   { id: 'mega', dur: ARCANO_CFG.ventanas.mega, nombre: () => T('poder_mega'),
     voz: VOZ_PODER_MEGA, vozEn: VOZ_PODER_MEGA_EN, png: PNG_PODER_MEGA },
@@ -21807,12 +21676,21 @@ const PODERES_PALA = [
   // primer superpoder ya desbloqueado que el dueño ve sin candado.
   { id: 'bolaloca', dur: ARCANO_CFG.ventanas.bolaloca, nombre: () => T('poder_bolaloca'),
     voz: VOZ_PODER_BOLALOCA, vozEn: VOZ_PODER_BOLALOCA_EN, png: PNG_PODER_BOLALOCA },
+  // r108 (v3.6.206) · SUPER CRIPTONITA (16.º poder — ENTRA AL FINAL,
+  // patrón de la casa): 12 s de bola verde fosforito pulsante con
+  // estela verde (anula la estela por defecto) que se disipa a ~50 cm;
+  // cada bote en la mesa del RIVAL siembra 1-5 cristales de cuarzo
+  // veteados (20-50 cm) que la bola ROMPE al chocar: freno a 1/3 y
+  // dirección totalmente aleatoria. Icono DEL DUEÑO.
+  { id: 'cripto', dur: ARCANO_CFG.ventanas.cripto, nombre: () => T('poder_cripto'),
+    voz: VOZ_PODER_CRIPTO, vozEn: VOZ_PODER_CRIPTO_EN, png: PNG_PODER_CRIPTO },
 ];
 // r39 (v3.6.135) · LA GALERÍA DEL ARCANO — el TIPO de cada poder para la
 // ficha (ataque/defensa/distracción) y su color. Junto al registro a
 // propósito: un poder nuevo declara aquí SU tipo (si no, nace DEFENSA).
 const ARCONO_TIPOS = {
   bolaloca: ['arcono_tipo_distraccion', '#c39bff'],   // FASE 160: caos de bola
+  cripto: ['arcono_tipo_ataque', '#6cff8a'],          // r108: cristales de kryptonita
   mega: ['arcono_tipo_defensa', '#7fe08f'],
   efecto: ['arcono_tipo_ataque', '#ff8f5f'],
   iman: ['arcono_tipo_defensa', '#7fe08f'],
@@ -21858,6 +21736,22 @@ const DL_SURTIDO = (game) => {
 };
 // r33 · constantes de los 4 poderes nuevos (ventanas de 10 s, regla del dueño)
 const PRISMA_DUR = ARCANO_CFG.ventanas.prisma;      // s de ventana
+
+// r107 · EL COMETA DEL PODER: los poderes con estela o vestido PROPIO
+// jamás lo llevan (petición del dueño: «si el superpoder ya tiene
+// estela no se le coloca otra estela nueva») — fénix ARDE (bocanadas),
+// prisma tiene su estela arcoíris, crono sus anillos de reloj, elec sus
+// rayos, oscuridad tinta la bola, salva lleva la estela warp y bolaloca
+// muda el tamaño de la bola. Los demás (mega, efecto, imán, portal,
+// clon, red, onda, ancla) visten el cometa de su color.
+const R107_SIN_COMETA = {
+  fenix: 1, prisma: 1, crono: 1, elec: 1, oscuridad: 1, salva: 1, bolaloca: 1,
+};
+// r107 · SÚPER EFECTO: el BOTE INESPERADO en la mesa del rival (patada
+// lateral imprevisible + variación de profundidad + hop ocasional).
+const EFECTO_SORPRESA_X = 1.1;    // m/s de patada lateral (±)
+const EFECTO_SORPRESA_Z = 0.5;    // m/s de variación de profundidad
+const EFECTO_SORPRESA_HOP = 0.3;  // m/s del hop ocasional (30 %)
 const PRISMA_OUT_P = 0.10;  // falta PEQUEÑA de la IA ante la estela arcoíris
 const PRISMA_GUIA_T = ARCANO_CFG.ventanas.prismaGuia;  // s de guía de trayectoria tras cada golpeo
 const ONDA_DUR = ARCANO_CFG.ventanas.onda;        // s de ventana

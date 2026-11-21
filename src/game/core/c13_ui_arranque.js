@@ -3934,6 +3934,11 @@ loadPaddleModel().then((paddleModel) => {
       },
       serveTrigger: () => { try { serveTossFromTee(true); } catch (e) { /* nunca rompe */ } },
       serveRelease: (i) => { try { if (G && i === G.ballHand) serveTossFromTee(false); } catch (e) { /* nunca rompe */ } },
+      // r105 · FÍSICA IDÉNTICA (informe del dueño): el núcleo pregunta si el
+      // módulo tiene la bola EN CINEMÁTICA (fase tee: bola en la mano libre).
+      // Con true, c12 no integra la bola — la MISMA cinemática del saque en
+      // partido (holdLock): sin captura del carry, sin peleas de amos.
+      ballHeld: () => st.phase === 'tee',
       drawHub, drawArea,
       // r70 · puentes de la landing REJILLA de Entrenar: traductor local,
       // área por id, sub del reto semanal, sub del perfil y la página de

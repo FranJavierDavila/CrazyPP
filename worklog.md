@@ -7546,3 +7546,42 @@ encuentro es anticipación: el test ahora distingue parque real de espera correc
 completa verde: jinete 15/0 · P0 59/0 · anti-bloqueo 14/0 · brazos 29/16/12 · física 12 ·
 multi-rally fluyendo (80+96 devoluciones). En vivo: bundle anota puntos, el rival RETROCEDE
 con la bola profunda (z −3.22), sin NaN ni errores de página.
+
+---
+
+## Ronda 101 · LA PALA HONESTA (el dueño: «realiza golpes bruscos, a veces la pala se congela pero devuelve el golpe desde otro sitio donde la pala no se ve · lanza tiros fuera de la mesa de manera ridícula · la pala atraviesa la mesa · desde que se intentó meter los brazos la cosa ha ido a peor, antes de eso el movimiento funcionaba mejor · arréglalo de una manera consistente y realista») · V3.6.199-SDK6 — 2026-11-20
+**CUATRO BUGS DE RAÍZ** (todos en la cadena r91-r100, ya SIN brazos visibles: r99 los ocultó
+y r100 los dejó muertos en el bundle — 41 KB de cápsulas, GLB, IK, One Euro y dedos BORRADOS):
+1. **LA FRONTERA DE PISTA ERA z=0 Y LA RED REAL ESTÁ EN tableCenterZ=−1,6**: la caza clamaba
+   `cz ≤ −0,06` (1,5 m allende la red — la pala perseguía SOBRE la mesa del jugador) y la
+   bola se daba por muerta con z<−2,6 (DENTRO del tablero). FIX: `C_RED = tableCenterZ` en
+   caza y muerta; la «bola de vuelta en campo del jugador» exige ADEMÁS direción de salida
+   (vel·sign > 0,3) — matar el plan por posición sola cortaba la reacción en pleno vuelo
+   entrante (regresión detectada por el arnés al corregir la frontera).
+2. **GOLPES FANTASMA**: el vigía r99 aplicaba el disparo SIN cadena y con el reloj vencido
+   y la bola muerta recibía «disparo de reserva» desde donde estuviera — el golpe que «nace
+   desde otro sitio donde la pala no se ve». FIX: vigía HONESTO (solo dispara con la pala
+   visible a ≤13 cm de la bola; si no, FALLO A LA VISTA y el árbitro manda) y la bola
+   muerta JAMÁS se devuelve. Último punto visible = `ai._palaVis` (nuevo).
+3. **LA PALA ATRAVIESA LA MESA**: ni la curva ni el jinete conocían la losa. FIX r101:
+   `_clampPalaMesa` (espacio de trabajo duro: sobre la losa +6 cm, 5 cm del plano de la red,
+   suelo 0,18, techo 2,20) aplicado a los CUATRO NUDOS de la curva (backswing que se hundía
+   bajo la superficie incluido) y al jinete cada frame.
+4. **TIROS FUERA RIDÍCULOS**: el empuje del swing sesgaba la salida un 35 % CIEGO hacia la
+   tangente del gesto (incluidos los picos ×60 del homing) — el blanco del solver se perdía.
+   FIX: afinidad>0,45 y solo 12 %·afinidad; picos de homing excluidos.
+
+**HISTÉRESIS DE LA CAZA + CONTACTO EN PERSEC** (encontrado con el arnés sobre la RED REAL):
+el vaivén `huida` true/false frame a frame regeneraba arcos DISTINTOS (back↔strike,
+sC 0,04↔0,93) y el jinete cruzaba la ventana de contacto con el dot invertido — nunca
+disparaba (35 frames a 2-5 cm de la bola sin golpear). FIX: una vez cazando se sigue
+cazando (recede>−0,2) y en persec el contacto por proximidad ES el contacto (la hoja está
+en la bola, el homing ya apunta a ella). La caza gana follow-through: K3 = 35 cm más allá
+del contacto en la dirección de la caza (antes el arco directo acababa EN la bola).
+
+**Higiene del repo**: los arneses se re-ancan a r101 (P0 50/50 · brazos 23/23 · anti-bloqueo
+14/14 · jinete 15/15 ×6 · multi-rally fluyendo 133/132 devoluciones, 0 invasiones, 0 NaN —
+los «PARQUE» con dRem=0,00 son la espera EN el punto de encuentro, anticipación legítima);
+sellos de versión DINÁMICOS (VERSION.json); geometría de los arneses actualizada a la red
+real (la cuna asumía z=0). Nota r101 en VERSION.json · golden 58bb2597 (12.376.675 B) ·
+fase 183 «LA PALA HONESTA — CONTACTO REAL Y MESA INTACTA».

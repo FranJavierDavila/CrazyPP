@@ -16083,7 +16083,17 @@ export class PingPongGame {
     // r108 · SUPER CRIPTONITA: pulso fosforito de la bola + cristales
     // vivos (crecen, brillan y chocan con la bola — romperlos la frena
     // a 1/3 y la despide en dirección aleatoria, spec del dueño).
-    if (this._criptoT > 0) {
+    if (this._criptoT > 0 || (this.cristalesCripto &&
+        this.cristalesCripto.pendientes() > 0)) {
+      // r110 · BUG DE RAÍZ (cristales congelados toda la partida): el
+      // cerrojo viejo solo dejaba correr este frame con _criptoT > 0,
+      // pero _criptoFin() pone _criptoT = 0 ANTES de que la rotura
+      // marcada por fin() anime un solo paso — los cristales quedaban
+      // visibles y parados para siempre. Ahora el frame sigue mientras
+      // queden roturas en curso: la animación cierra (0,3 s) y el
+      // vigilante interno del pool (FIN_PLAZO) garantiza la destrucción
+      // dura. La colisión es inocua aquí: colisiona() solo ve cristales
+      // vivos y tras el fin() ya no queda ninguno.
       try { this._criptoFrame(dt); }
       catch (eCrFr) { /* la criptonita nunca tumba el frame */ }
     }

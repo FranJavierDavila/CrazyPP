@@ -344,7 +344,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.207-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.208-SDK6</span>
     </div>
   </main>
 
@@ -3665,7 +3665,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.207-SDK6';
+  const VERSION = '3.6.208-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -12808,6 +12808,7 @@ function createOndaEsfera() {
  *  ===================================================================== */
 function createCristalesCripto() {
   const N = 24, CRECE = 0.45, MUERTE = 0.3, VIDA = 11.0;
+  const FIN_PLAZO = MUERTE + 0.25;   // r110 · vigilante: plazo duro de destrucción
   // — textura de VETAS (cuarzo verdoso realista), lienzo procedural —
   const cv = document.createElement('canvas');
   cv.width = 128;
@@ -12861,12 +12862,14 @@ function createCristalesCripto() {
       x: 0, y: 0, z: 0, vida: VIDA });
   }
   let prox = 0;
+  let finPlazo = -1;   // r110 · s restantes para la destrucción dura tras fin()
   const GEO_ALTO = 4.1;   // prisma 3,0 + punta 1,1 (unidades de la geometría)
   return {
     group: grupo,
     /** Nace UNA cosecha de 1-5 cristales cerca de p (el punto del bote en
      *  la mesa del rival). Alturas 20-50 cm y radios aleatorios. */
     nace(p, topY) {
+      finPlazo = -1;                       // r110 · ventana nueva: el plazo viejo muere
       const ty = topY || 0.76;
       const cuantos = 1 + Math.floor(Math.random() * 5);   // 1..5 (spec)
       for (let k = 0; k < cuantos; k++) {
@@ -12893,6 +12896,17 @@ function createCristalesCripto() {
     update(dt) {
       const ph = performance.now() * 0.001;
       mat.emissiveIntensity = 0.42 + 0.3 * (0.5 + 0.5 * Math.sin(ph * 5.2));
+      if (finPlazo > 0) {
+        // r110 · VIGILANTE de destrucción: el fin() marca roturas que
+        // animan MUERTE segundos; si algo las atasca, al vencer el plazo
+        // se oculta TODO sin esperar más — la mesa queda limpia SIEMPRE
+        // (patrón del vigilante del portal, v3.6.42).
+        finPlazo -= dt;
+        if (finPlazo <= 0) {
+          for (let i = 0; i < N; i++) { P[i].t = -1; P[i].grp.visible = false; }
+          finPlazo = -1;
+        }
+      }
       for (let i = 0; i < N; i++) {
         const s = P[i];
         if (s.t < 0) continue;
@@ -12939,15 +12953,29 @@ function createCristalesCripto() {
       if (i < 0 || i >= N) return;
       P[i].roto = 0;
     },
-    /** Fin de la ventana: todos los cristales vivos se deshacen. */
+    /** Fin de la ventana: todos los cristales vivos se rompen (animación
+     *  de MUERTE segundos). r110 · antes quedaban CONGELADOS toda la
+     *  partida: el update() que completa la rotura dejaba de correr
+     *  (c12 cerraba el frame con _criptoT = 0). Ahora el plazo duro del
+     *  vigilante garantiza la destrucción de TODOS aunque algo atasque
+     *  la animación, y pendientes() le dice a c12 que siga animando. */
     fin() {
       for (let i = 0; i < N; i++) {
         if (P[i].t >= 0 && P[i].roto < 0) P[i].roto = 0;
       }
+      finPlazo = FIN_PLAZO;
     },
     vivos() {
       let n = 0;
       for (let i = 0; i < N; i++) if (P[i].t >= 0 && P[i].roto < 0) n++;
+      return n;
+    },
+    /** r110 · cristales con rotura EN CURSO (los que aún deben animarse
+     *  hasta ocultarse — el frame de c12 sigue llamando update() mientras
+     *  este contador sea mayor que cero). */
+    pendientes() {
+      let n = 0;
+      for (let i = 0; i < N; i++) if (P[i].t >= 0 && P[i].roto >= 0) n++;
       return n;
     },
     dispose() {
@@ -37291,7 +37319,17 @@ class PingPongGame {
     // r108 · SUPER CRIPTONITA: pulso fosforito de la bola + cristales
     // vivos (crecen, brillan y chocan con la bola — romperlos la frena
     // a 1/3 y la despide en dirección aleatoria, spec del dueño).
-    if (this._criptoT > 0) {
+    if (this._criptoT > 0 || (this.cristalesCripto &&
+        this.cristalesCripto.pendientes() > 0)) {
+      // r110 · BUG DE RAÍZ (cristales congelados toda la partida): el
+      // cerrojo viejo solo dejaba correr este frame con _criptoT > 0,
+      // pero _criptoFin() pone _criptoT = 0 ANTES de que la rotura
+      // marcada por fin() anime un solo paso — los cristales quedaban
+      // visibles y parados para siempre. Ahora el frame sigue mientras
+      // queden roturas en curso: la animación cierra (0,3 s) y el
+      // vigilante interno del pool (FIN_PLAZO) garantiza la destrucción
+      // dura. La colisión es inocua aquí: colisiona() solo ve cristales
+      // vivos y tras el fin() ya no queda ninguno.
       try { this._criptoFrame(dt); }
       catch (eCrFr) { /* la criptonita nunca tumba el frame */ }
     }

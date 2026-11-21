@@ -1036,6 +1036,7 @@ export function createOndaEsfera() {
  *  ===================================================================== */
 export function createCristalesCripto() {
   const N = 24, CRECE = 0.45, MUERTE = 0.3, VIDA = 11.0;
+  const FIN_PLAZO = MUERTE + 0.25;   // r110 · vigilante: plazo duro de destrucción
   // — textura de VETAS (cuarzo verdoso realista), lienzo procedural —
   const cv = document.createElement('canvas');
   cv.width = 128;
@@ -1089,12 +1090,14 @@ export function createCristalesCripto() {
       x: 0, y: 0, z: 0, vida: VIDA });
   }
   let prox = 0;
+  let finPlazo = -1;   // r110 · s restantes para la destrucción dura tras fin()
   const GEO_ALTO = 4.1;   // prisma 3,0 + punta 1,1 (unidades de la geometría)
   return {
     group: grupo,
     /** Nace UNA cosecha de 1-5 cristales cerca de p (el punto del bote en
      *  la mesa del rival). Alturas 20-50 cm y radios aleatorios. */
     nace(p, topY) {
+      finPlazo = -1;                       // r110 · ventana nueva: el plazo viejo muere
       const ty = topY || 0.76;
       const cuantos = 1 + Math.floor(Math.random() * 5);   // 1..5 (spec)
       for (let k = 0; k < cuantos; k++) {
@@ -1121,6 +1124,17 @@ export function createCristalesCripto() {
     update(dt) {
       const ph = performance.now() * 0.001;
       mat.emissiveIntensity = 0.42 + 0.3 * (0.5 + 0.5 * Math.sin(ph * 5.2));
+      if (finPlazo > 0) {
+        // r110 · VIGILANTE de destrucción: el fin() marca roturas que
+        // animan MUERTE segundos; si algo las atasca, al vencer el plazo
+        // se oculta TODO sin esperar más — la mesa queda limpia SIEMPRE
+        // (patrón del vigilante del portal, v3.6.42).
+        finPlazo -= dt;
+        if (finPlazo <= 0) {
+          for (let i = 0; i < N; i++) { P[i].t = -1; P[i].grp.visible = false; }
+          finPlazo = -1;
+        }
+      }
       for (let i = 0; i < N; i++) {
         const s = P[i];
         if (s.t < 0) continue;
@@ -1167,15 +1181,29 @@ export function createCristalesCripto() {
       if (i < 0 || i >= N) return;
       P[i].roto = 0;
     },
-    /** Fin de la ventana: todos los cristales vivos se deshacen. */
+    /** Fin de la ventana: todos los cristales vivos se rompen (animación
+     *  de MUERTE segundos). r110 · antes quedaban CONGELADOS toda la
+     *  partida: el update() que completa la rotura dejaba de correr
+     *  (c12 cerraba el frame con _criptoT = 0). Ahora el plazo duro del
+     *  vigilante garantiza la destrucción de TODOS aunque algo atasque
+     *  la animación, y pendientes() le dice a c12 que siga animando. */
     fin() {
       for (let i = 0; i < N; i++) {
         if (P[i].t >= 0 && P[i].roto < 0) P[i].roto = 0;
       }
+      finPlazo = FIN_PLAZO;
     },
     vivos() {
       let n = 0;
       for (let i = 0; i < N; i++) if (P[i].t >= 0 && P[i].roto < 0) n++;
+      return n;
+    },
+    /** r110 · cristales con rotura EN CURSO (los que aún deben animarse
+     *  hasta ocultarse — el frame de c12 sigue llamando update() mientras
+     *  este contador sea mayor que cero). */
+    pendientes() {
+      let n = 0;
+      for (let i = 0; i < N; i++) if (P[i].t >= 0 && P[i].roto >= 0) n++;
       return n;
     },
     dispose() {

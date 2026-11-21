@@ -1,10 +1,10 @@
 {
-  "version": "3.6.207-SDK6",
-  "fase": 184,
-  "faseNombre": "SUPER CRIPTONITA — VOZ EN DOS SALAS Y CANDADO HONESTO",
+  "version": "3.6.208-SDK6",
+  "fase": 185,
+  "faseNombre": "LA MESA QUEDA LIMPIA — LA CRIPTONITA SE DESTRUYE AL EXPIRAR",
   "sdk": "1.6.0",
   "fecha": "2026-11-21",
-  "hub": "v36207-sdk6",
+  "hub": "v36208-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 33,
@@ -12,7 +12,7 @@
     "estacion_orbital": 17,
     "halloween": 3
   },
-  "nota": "r109",
-  "tamano": 12502469,
-  "golden": "7c6455703d43489f5acd5566aa69f9b3682f2600398ad2edd3945497dc3f689a"
+  "nota": "r110",
+  "tamano": 12504636,
+  "golden": "8f1164c7928e1f51ba5d26eb16afc11def7634c0242b01df23a7f90fe1a98796"
 }

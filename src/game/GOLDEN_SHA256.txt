@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.207-SDK6, fase 184 · SUPER CRIPTONITA — VOZ EN DOS SALAS Y CANDADO HONESTO; sello actualizado
-# por bump_version.py desde 3.6.206-SDK6)
-7c6455703d43489f5acd5566aa69f9b3682f2600398ad2edd3945497dc3f689a
+# SHA256 del game.html que produjo esta división (3.6.208-SDK6, fase 185 · LA MESA QUEDA LIMPIA — LA CRIPTONITA SE DESTRUYE AL EXPIRAR; sello actualizado
+# por bump_version.py desde 3.6.207-SDK6)
+8f1164c7928e1f51ba5d26eb16afc11def7634c0242b01df23a7f90fe1a98796

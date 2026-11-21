@@ -357,8 +357,8 @@ ficheros = {
     '  tasa nunca se cambia en caliente) y registro ppxr_perf_v2 (el\n'
     '  casco nace recalibrado con la barra honesta; la preferencia\n'
     '  FFR del dueño sobrevive).\n'
-    '· Arnés r111 24/0 · batería núcleo 9/9 · smoke Chromium y Pages\n'
-    '  verdes · golden a627bed1 ·\n'
+    '· Arnés r112 live-service E2E 10/0 · batería núcleo 9/9 · smoke Chromium y\n'
+    '  Pages verdes · golden e8a6975c ·\n'
     '  sellada a 3.6.209\n''Hashes SHA256 (verificación de integridad):\n' +
     ''.join(f'  {k:64s} {v}\n' for k, v in ficheros.items()),
     encoding='utf-8')

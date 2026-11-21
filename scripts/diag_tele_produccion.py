@@ -15,7 +15,7 @@ import time
 import urllib.parse
 
 RAIZ = "/home/z/my-project/upload"
-F_CLAVE = RAIZ + "/scripts/worker-tele/.clave-produccion"
+F_CLAVE = "/home/z/my-project/scripts/worker-tele/.clave-produccion"
 URL = "https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele"
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/129.0 Safari/537.36")

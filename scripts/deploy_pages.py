@@ -418,7 +418,10 @@ def do_release(version):
                  ', '.join(os.path.basename(z) for z in zips))
     tag = f'v{version}'
     sh(['git', 'tag', '-f', tag, 'HEAD'])
-    git_push(f'refs/tags/{tag}')
+    # r112: el tag se re-crea FORZADO aquí arriba (tag -f), así que su push
+    # también debe serlo — la re-release de la MISMA versión (r112 sobre
+    # 3.6.209) rechazaba el push sin --force porque el tag ya existía.
+    git_push(f'refs/tags/{tag}', forzar=True)
     body = (f'CRAZY PING PONG **{version}**\n\n'
             f'- **Jugar sin descargar**: {PAGES_URL} (ábrela en el navegador del visor)\n'
             f'- **ZIPs**: COMPLETO (todo, ~125 MB) · ligera (~11 MB) · CLOUDFLARE · '
@@ -433,14 +436,29 @@ def do_release(version):
     r.raise_for_status()
     rel = r.json()
     rid = rel['id']
-    have = {a['name']: a['size'] for a in requests.get(
+    have = {a['name']: a for a in requests.get(
         f'{api}/releases/{rid}/assets?per_page=100', headers=H, timeout=(15, 60)).json()}
     for zp in zips:
         name = os.path.basename(zp)
         size = os.path.getsize(zp)
-        if have.get(name) == size:
+        if have.get(name, {}).get('size') == size:
             print(f'  · asset {name} ya está (mismo tamaño) — omitido')
             continue
+        # r112: asset con OTRO tamaño (re-release de la misma versión) — la API
+        # rechaza nombres duplicados al subir, y el PAT fine-grained del dueño
+        # NO puede borrar assets (404 en DELETE con Contents:write verificado
+        # r112: PATCH 200 / DELETE 404). Estrategia SIN borrado: el viejo se
+        # RENOMBRA con prefijo ANTIGUO- (queda a la vista, borrable a mano en
+        # la UI) y el nuevo entra con su nombre canónico.
+        if have.get(name, {}).get('size') == size:
+            print(f'  · asset {name} ya está (mismo tamaño) — omitido')
+            continue
+        if name in have:
+            rn = requests.patch(f'{api}/releases/assets/{have[name]["id"]}',
+                                headers=H, timeout=(15, 60),
+                                json={'name': 'ANTIGUO-' + name})
+            rn.raise_for_status()
+            print(f'  · asset viejo renombrado → ANTIGUO-{name}')
         print(f'  · subiendo {name} ({size/1e6:.1f} MB)…')
         with open(zp, 'rb') as fh:
             up = requests.post(f'https://uploads.github.com/repos/{OWNER_REPO}/releases/{rid}/assets?name={name}',

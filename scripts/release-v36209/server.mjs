@@ -7,25 +7,19 @@
  *     todos los espectadores interpolen sobre el mismo tiempo.
  *   · Los espectadores solo reciben; el fan-out por salas es barato.
  *
- * Socket.io en path '/live/socket.io' (deja libres /api/* para la guía REST).
+ * Socket.io en path '/live/socket.io' (Caddy lo enruta por XTransformPort=3004;
+ * el path propio deja libres /api/* para la guía REST).
  * REST: GET /api/channels (guía de TV) · GET /api/health.
- *
- * Portable: funciona con Node (>=18) o con Bun.
- *   node server.mjs                 (puerto 3004 por defecto)
- *   LIVE_PORT=8080 node server.mjs  (puerto alternativo)
- * CORS abierto: permite publicar desde el juego y ver desde cualquier origen.
  */
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-const PORT = parseInt(process.env.LIVE_PORT || process.env.PORT || '3004', 10);
-//   En Railway/Render/Fly detecta SOLO el puerto de la plataforma (PORT),
-//   no hace falta configurar nada. (mejora del dueño, subida web 15-oct,
-//   preservada en la reparación del Task 111)
+const PORT = 3004;
 const STALE_MS = 12000;   // sin estado 12 s → canal fantasma fuera
 const SWEEP_MS = 5000;
 
-/** matchId → canal { matchId, name, p1, p2, mode, viewers, startedAt, lastStateAt, lastState } */
+/** matchId → canal { matchId, owner, name, p1, p2, mode, viewers, startedAt, lastStateAt, lastState }
+ *  r112 (H13): owner = socket.id del publicador — propiedad verificada en state/event/publish. */
 const channels = new Map();
 
 const listChannels = () =>
@@ -84,17 +78,32 @@ io.on('connection', (socket) => {
 
   // ─── HOST: publica una partida como canal ───
   socket.on('publish', ({ matchId, meta } = {}) => {
-    if (!matchId || typeof matchId !== 'string') return;
+    // r112 (H15 de la auditoría r111): validación COMPLETA — tipo Y tope de
+    // longitud del matchId, y meta saneada a string con recorte (antes todo
+    // se guardaba crudo y se re-difundía en cada channels-updated, con el
+    // maxHttpBufferSize como único límite).
+    if (!matchId || typeof matchId !== 'string' ||
+        !/^[A-Za-z0-9_-]{6,64}$/.test(matchId)) return;
+    // r112 (H13 de la auditoría r111): anti-secuestro — un matchId ya
+    // publicado por OTRO socket no se sobrescribe (antes cualquiera podía
+    // apoderarse del canal ajeno re-publicando su matchId).
+    const prev0 = channels.get(matchId);
+    if (prev0 && prev0.owner !== socket.id) return;
     if (hosting && hosting !== matchId) dropChannel('re-publish');
     hosting = matchId;
     socket.join(`live:${matchId}`);
     const prev = channels.get(matchId);
+    const txt = (v, max, def) => {
+      const s = typeof v === 'string' ? v : (v == null ? '' : String(v));
+      return s.trim().slice(0, max) || def;
+    };
     channels.set(matchId, {
       matchId,
-      name: (meta && meta.name) || 'Partida en vivo',
-      p1: (meta && meta.p1) || 'Jugador VR',
-      p2: (meta && meta.p2) || 'Rival',
-      mode: (meta && meta.mode) || 'match',
+      owner: socket.id,               // r112 (H13): dueño del canal
+      name: txt(meta && meta.name, 24, 'Partida en vivo'),
+      p1: txt(meta && meta.p1, 24, 'Jugador VR'),
+      p2: txt(meta && meta.p2, 24, 'Rival'),
+      mode: txt(meta && meta.mode, 16, 'match'),
       viewers: prev ? prev.viewers : 0,
       startedAt: prev ? prev.startedAt : Date.now(),
       lastStateAt: Date.now(),
@@ -108,6 +117,9 @@ io.on('connection', (socket) => {
 
   // ─── HOST: estado continuo ~30 Hz (sellado con el reloj del SERVIDOR) ───
   socket.on('state', (matchId, state) => {
+    // r112 (H13 de la auditoría r111): solo el DUEÑO del canal inyecta
+    // estado — antes cualquier socket podía falsificar la partida ajena.
+    if (matchId !== hosting) return;
     const ch = channels.get(matchId);
     if (!ch) return;                       // canal ya cerrado: ignora
     ch.lastStateAt = Date.now();
@@ -120,6 +132,9 @@ io.on('connection', (socket) => {
 
   // ─── HOST: eventos discretos (hit/bounce/net/point/serve/match-end) ───
   socket.on('event', (matchId, evt) => {
+    // r112 (H13): solo el dueño emite eventos — un 'match-end' falso de un
+    // tercero cerraba el canal del rival en pleno directo.
+    if (matchId !== hosting) return;
     if (!evt || typeof evt !== 'object') return;
     socket.to(`live:${matchId}`).emit('event', evt);
     if (evt.type === 'match-end') {
@@ -132,13 +147,20 @@ io.on('connection', (socket) => {
   socket.on('watch', (matchId, ack) => {
     const ch = channels.get(matchId);
     if (!ch) { try { ack && ack({ error: 'canal-no-existe' }); } catch { /* */ } return; }
-    watching = matchId;
-    socket.join(`live:${matchId}`);
-    ch.viewers++;
-    io.to(`live:${matchId}`).emit('viewers', ch.viewers);
-    io.emit('channels-updated', listChannels());
+    // r112 (H14 de la auditoría r111): soltar el canal anterior ANTES de
+    // entrar al nuevo y NO re-incrementar si ya se mira este canal —
+    // watch(A)→watch(B) dejaba A hinchado para siempre (y el socket en la
+    // sala A recibiendo estados fantasma) y el watch doble inflaba viewers.
+    if (watching && watching !== matchId) leaveWatch();
+    if (watching !== matchId) {
+      watching = matchId;
+      socket.join(`live:${matchId}`);
+      ch.viewers++;
+      io.to(`live:${matchId}`).emit('viewers', ch.viewers);
+      io.emit('channels-updated', listChannels());
+      log(`espectador → ${matchId} (${ch.viewers} viendo)`);
+    }
     try { ack && ack({ ok: true, meta: listChannels().find(c => c.matchId === matchId), lastState: ch.lastState }); } catch { /* */ }
-    log(`espectador → ${matchId} (${ch.viewers} viendo)`);
   });
 
   const leaveWatch = () => {

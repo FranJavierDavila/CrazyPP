@@ -87,10 +87,33 @@ tags_fuera = [n for f, _, n in (l.partition(' ') for l in fuera.splitlines()) if
 print(f'== TAGS ==\n  FUERA (fecha < {CUTOFF}): {len(tags_fuera)} de '
       f'{len(fuera.splitlines())}')
 if EJECUTAR:
+    # r112 · borrado TOLERANTE: el listado sale del LOCAL (git for-each-ref),
+    # pero limpiezas anteriores ya quitaron del remoto tags que aquí siguen
+    # listados — un solo ref inexistente mataba el lote entero (push atómico).
+    # Lote de 25 y, si casca, tag a tag tolerando «remote ref does not exist».
+    borrados = ausentes = 0
     for i in range(0, len(tags_fuera), 25):
         lote = tags_fuera[i:i + 25]
-        git_push(*[f'--delete'] + lote)
-        print(f'  · lote {i // 25 + 1}: {len(lote)} tags borrados en el remoto')
+        p = subprocess.run(['git', '-c', 'credential.helper=!f() { echo '
+                           'username=FranJavierDavila; echo password=$GIT_TOKEN; }; f',
+                           'push', 'origin', '--delete'] + lote,
+                          capture_output=True, text=True)
+        if p.returncode == 0:
+            borrados += len(lote)
+            print(f'  · lote {i // 25 + 1}: {len(lote)} tags borrados')
+            continue
+        for tag in lote:
+            q = subprocess.run(['git', '-c', 'credential.helper=!f() { echo '
+                               'username=FranJavierDavila; echo password=$GIT_TOKEN; }; f',
+                               'push', 'origin', '--delete', tag],
+                              capture_output=True, text=True)
+            if q.returncode == 0:
+                borrados += 1
+            elif 'remote ref does not exist' in q.stderr:
+                ausentes += 1   # ya no estaba: nada que borrar
+            else:
+                print(f'  ✗ {tag}: {q.stderr.strip()[:150]}')
+    print(f'  · {borrados} tags borrados · {ausentes} ya ausentes en el remoto')
 
 # ── 3. ramas ────────────────────────────────────────────────────────
 print('== RAMAS ==')
@@ -107,8 +130,17 @@ FUERA_RAMAS = ['proyecto', 'exp/live-tv', 'archive/main-web-1510',
                'archive/linea-b-v3627', 'archive/overlay-r23-20261107']
 print(f'  FUERA: {", ".join(FUERA_RAMAS)} (quedan main + pages)')
 if EJECUTAR:
-    git_push(*['--delete'] + FUERA_RAMAS)
-    print('  · ramas borradas en el remoto')
+    for rama in FUERA_RAMAS:   # r112: una a una — misma tolerancia que los tags
+        q = subprocess.run(['git', '-c', 'credential.helper=!f() { echo '
+                           'username=FranJavierDavila; echo password=$GIT_TOKEN; }; f',
+                           'push', 'origin', '--delete', rama],
+                          capture_output=True, text=True)
+        if q.returncode == 0:
+            print(f'  · rama {rama} borrada en el remoto')
+        elif 'remote ref does not exist' in q.stderr:
+            print(f'  · rama {rama} ya no existía')
+        else:
+            print(f'  ✗ rama {rama}: {q.stderr.strip()[:150]}')
 
 # ── 4. informe ──────────────────────────────────────────────────────
 print('== RESTANTE ==')

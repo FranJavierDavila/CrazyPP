@@ -50,12 +50,19 @@ def main() -> int:
     print(f'✓ fuente de verdad OK: {CANON.relative_to(RAIZ)}')
 
     canon_bytes = CANON.read_bytes()
+    # r112: las copias de despliegue son server.mjs — el canónico es index.ts:
+    # se compara tras aplicar la MISMA conversión ts→mjs (despojo de tipos)
+    # que usa el kit (actualiza_kit_relay_r112.py). Comparar bytes crudos del
+    # .ts contra un .mjs siempre diría «diverge» aunque el código sea el mismo
+    # y taparía las derivas reales.
+    canon_mjs = re.sub(r'\(v: unknown, max: number, def: string\)',
+                       '(v, max, def)', canon_bytes.decode('utf-8')).encode('utf-8')
     for copia in CONGELADAS:
         if not copia.exists():
             print(f'  · copia congelada ausente (ok): {copia.relative_to(RAIZ)}')
             continue
-        if copia.read_bytes() == canon_bytes:
-            print(f'  · idéntica a la fuente: {copia.relative_to(RAIZ)}')
+        if copia.read_bytes() == canon_mjs:
+            print(f'  · idéntica a la fuente (tras ts→mjs): {copia.relative_to(RAIZ)}')
         else:
             print(f'  · DIVERGE (esperado: snapshot congelada de su release): '
                   f'{copia.relative_to(RAIZ)}')

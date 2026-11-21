@@ -7728,3 +7728,54 @@ el 100% de salud?» — el dueño aprueba el plan de acción de la re-auditoría
     recupera solo a las 00:00 UTC · push a GitHub sigue pendiente de GIT_TOKEN
     (ahora 7 commits locales). El dueño queda con: jugar un duelo online con portal
     (H1) y un saque durante la cuenta atrás (H12) para confirmar en Quest.
+
+**11 · OPERACIONES CON EL PAT (r112-ops: el dueño entrega el PAT y ordena «adelantar
+trabajo» — push, release, limpieza y reintento del E2E del worker)**:
+  · PUSH DE MAIN ✓: 0 detrás / 8 delante → FF limpio 669a08e..d706efa (toda la
+    ronda r112) y después el commit de ops 8b2e3d4. El token SOLO en env con
+    credential helper efímero (jamás en fichero ni en argv).
+  · RELEASE v3.6.209-SDK6 ✓ (re-release de la MISMA versión con los fixes r112):
+    deploy_pages.py --push --release — sitio 507 ficheros · 204,9 MB · smoke
+    Playwright bajo /CrazyPP/ verde (34 peticiones, 0 fallos de red) · rama pages
+    → 6bb62276f · tag v3.6.209-SDK6 FORZADO → d706efa (parche: el push del tag
+    necesitaba --force porque el tag ya existía de la release anterior).
+    Tres tropiezos del camino, todos resueltos y documentados: (1) los 4 ZIPs de
+    descargas eran de las 13:47 (build ANTERIOR a los arreglos) → regenerados con
+    build_zip.py tras actualizar el KIT de la versión (release-v36209/server.mjs
+    ← index.ts convertido; el kit es FUENTE de empaquetado, no artefacto congelado):
+    el COMPLETO lleva 26 marcas r112 y el SOLO-relay lleva H13/H14/H15 dentro
+    (verificado con unzip -p | grep); (2) el PAT fine-grained puede ESCRIBIR
+    releases (PATCH 200) pero NO borrar assets (DELETE 404 con Contents:write) →
+    estrategia sin borrado: los viejos se renombran ANTIGUO-* y los nuevos suben
+    con su nombre canónico (parcheado en deploy_pages.py y aplicado con
+    scripts/completa_assets_r112.py — 4 assets r112 en la release + 4 ANTIGUO
+    que el dueño puede borrar a mano en la UI); (3) el cuerpo de la release
+    actualizado con la nota de re-release r112.
+  · LIMPIEZA GITHUB ✓: limpieza_github_r109.py --ejecutar — el borrado por lotes
+    de tags fallaba (un ref inexistente mataba el lote atómico: 138 de los 140
+    tags «fuera» YA no estaban en el remoto por limpiezas anteriores) → parche
+    tolerante (lote de 25 y, si casca, tag a tag saltando los ausentes): 2 tags
+    borrados + tags rescate/* re-amarrados (main-web-1510 · overlay-r23) +
+    ramas: proyecto borrada, las 4 archive/exp ya ausentes. **RESTANTE: main y
+    pages** — exactamente el estado que ordenó el dueño en r109-b.
+  · E2E DEL WORKER (cupo D1): SIGUE EN ROJO pero con FIRMAS DIFERENTES —
+    antes: error de CUPO de D1; ahora: HTTP 500 «error code: 1101» (excepción
+    JavaScript del worker) en los 4 endpoints (GET eventos, POST lote, latido,
+    DELETE) tras corregir la ruta de la clave en diag_tele_produccion.py
+    (apuntaba al upload/ fósil). Sin credenciales de Cloudflare en el sandbox
+    no puedo distinguir si es el cupo re-agotado por el chorro de latidos (el
+    free tier se recupera cada 00:00 UTC y el volumen puede re-agotarlo en
+    horas) o una excepción de runtime → PENDIENTE DEL DUEÑO: API token de CF
+    (para leer la analítica de uso de D1 y/o wrangler tail) o mirar
+    dash.cloudflare.com → Workers → crazypp-tele → Logs.
+  · CHECK N1 refinado: la comparación canónico-vs-copias ahora aplica la MISMA
+    conversión ts→mjs (comparar bytes crudos del .ts contra un .mjs siempre
+    diría diverge): staging-v36209 y release-v36209 «idénticas (tras ts→mjs)»
+    — el empaquetador re-stagea desde el kit arreglado — y solo la congelada
+    de la era v36207 diverge, como debe.
+  · ESTADO FINAL DE SALUD: código del juego 9/9 batería + golden byte-exacto ·
+    release en GitHub con los ZIPs r112 · repo con 2 ramas (main, pages) ·
+    ÚNICO ROJO OPERATIVO: el worker crazypp-tele (1101, diagnóstico pendiente
+    de credencial CF) · el PAT entregado por chat DEBE ROTARSE (quedó en el
+    historial de la conversación).
+

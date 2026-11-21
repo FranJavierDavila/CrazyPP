@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.208-SDK6, fase 185 · LA MESA QUEDA LIMPIA — LA CRIPTONITA SE DESTRUYE AL EXPIRAR; sello actualizado
-# por bump_version.py desde 3.6.207-SDK6)
-8f1164c7928e1f51ba5d26eb16afc11def7634c0242b01df23a7f90fe1a98796
+# SHA256 del game.html que produjo esta división (3.6.209-SDK6, fase 186 · FLUIDEZ PRIMERO — LA CABEZA MANDA; sello actualizado
+# por bump_version.py desde 3.6.208-SDK6)
+a627bed1efcac80bd53bb95b3020bfe5aec7382745d81995e11ab893a17e7a4b

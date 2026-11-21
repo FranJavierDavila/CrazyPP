@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""smoke_r110_boot.py — arranque del bundle r110 (v3.6.208) en Chromium real.
+"""smoke_boot.py — arranque del bundle en Chromium real (agnóstico de ronda).
 Sirve public/ en local, carga game.html, espera al arranque completo y aserta:
 · sin errores de consola ni excepciones de página (las referencias nuevas —
-  pendientes(), FIN_PLAZO — se evalúan al cargar el módulo),
-· el badge de versión muestra 3.6.208,
+  pendientes(), FIN_PLAZO, judderRally — se evalúan al cargar el módulo),
+· el badge de versión muestra la de VERSION.json (única fuente),
 · el canvas WebGL del juego llega a existir.
 RC 0 = verde."""
 import http.server
+import json
 import socketserver
 import sys
 import threading
 from pathlib import Path
 
 RAIZ = Path('/home/z/my-project/public')
+ESPERADA = json.loads(
+    Path('/home/z/my-project/src/game/VERSION.json').read_text())['version']
 PUERTO = 3010
 
 
@@ -56,8 +59,8 @@ def main():
         httpd.shutdown()
 
     ok = True
-    print(f'· badge: {badge}')
-    ok &= ('3.6.208' in badge)
+    print(f'· badge: {badge} (esperado {ESPERADA})')
+    ok &= (ESPERADA in badge)
     print(f'· canvas en la página: {canvas}')
     ok &= (canvas >= 1)
     print(f'· errores de consola: {len(errores)}')
@@ -69,7 +72,7 @@ def main():
         print('   -', e[:150])
     ok &= (len(paginas) == 0)
     print(f'· página viva: {cripto_en_bundle}')
-    print('SMOKE r110: ' + ('VERDE — el arranque es limpio' if ok else 'ROJA'))
+    print('SMOKE BOOT: ' + ('VERDE — el arranque es limpio' if ok else 'ROJA'))
     sys.exit(0 if ok else 1)
 
 

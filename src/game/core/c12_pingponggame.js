@@ -21041,7 +21041,11 @@ const PASO_TUNE = { uiMax: 1 / 30, fisMax: 1 / 12 };
  *  partida y baja (con voz) si el promedio cae, y recupera si sobra
  *  margen. window.__PP_PERF expone el estado para AJUSTES y QA.
  *  ===================================================================== */
-const PERF_LS = 'ppxr_perf_v1';
+// r111 · v2: invalida las calibraciones guardadas de la era 1.40×/barra 68
+// (la clave v1 ya no se lee) — el casco nace recalibrado con la barra
+// honesta por tasa y el perfil con margen del tier. La preferencia FFR del
+// dueño sobrevive: _load() la lee del registro viejo si existe.
+const PERF_LS = 'ppxr_perf_v2';
 /* r96 · FFR (fixed foveated rendering): el dueño notó una «deformación en
  * medio de la pantalla» durante una partida de resistencia — el foveado
  * agresivo (0,7-0,8) dibuja los anillos de compresión bien dentro del
@@ -21051,8 +21055,18 @@ const PERF_LS = 'ppxr_perf_v1';
 const PERF_FFR_MODOS = {
   max: 0.0, alta: 0.25, normal: 0.5, rinde: 0.75,
 };
+/* r111 · FLUIDEZ PRIMERO: los datos de vr_end del propio juego delatan el
+ * judder del dueño («la línea central duplicada al girar la cabeza»): a
+ * 1.40× la Quest 3 midió 78 fps de media en sesión corta pero 55 en la
+ * larga (49 min, térmica) — por debajo del piso 72 la mayor parte del
+ * tiempo, y cada frame perdido lo repinta el compositor con la pose
+ * vieja: imagen duplicada/a saltos en el giro de la cabeza. El perfil
+ * del casco arranca CON MARGEN (1.25× ≈ 0,80× píxeles del 1.40×) y el
+ * gobernador SUBE cuando sobra (_stepUp vuelve al techo del tier con 20 s
+ * seguidos de margen): la nitidez se gana jugando; la fluidez se hereda
+ * de fábrica. */
 const PERF_TIERS = {
-  quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.35, rate: 90 },
+  quest3: { label: 'Quest 3', scale: 1.25, fovea: 0.45, rate: 90 },
   quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 },
   gen: { label: 'VR', scale: 1.20, fovea: 0.55, rate: 72 },
 };
@@ -21216,9 +21230,15 @@ class PerfManager {
   }
   _probeRound(fpsAvg, fpsMin) {
     const p = this.probe;
-    // r76 · barra del dueño: 72 sostenidos — 68 de media con peor segundo
-    // ≥55 es margen honesto sobre el piso 72 (antes: 63/55 para el 60)
-    const pasa = fpsAvg >= 68 && fpsMin >= 55;
+    // r76 · barra del dueño: 72 sostenidos. r111 · LA BARRA DEPENDE DE LA
+    // TASA: a 90 Hz objetivo, 68 de media es un 24% de frames perdidos
+    // (judder puro — el compositor repinta con la pose vieja y la línea
+    // central se dobla al girar). El piso de la sonda es el 93% de la
+    // tasa (72→67, 90→84) con peor segundo ≥83% (72→60, 90→75): margen
+    // térmico honesto para la sesión larga.
+    const pisoAvg = Math.round(this.rate * 0.93);
+    const pisoMin = Math.round(this.rate * 0.83);
+    const pasa = fpsAvg >= pisoAvg && fpsMin >= pisoMin;
     if (pasa) {
       this.lastCal = { fps: Math.round(fpsAvg), when: Date.now(), round: p.round };
       this.save();
@@ -21317,7 +21337,15 @@ class PerfManager {
         (avg < PERF_PISO * 0.92 || (avg < PERF_PISO - 4 && min < PERF_PISO * 0.7));
       const bajando = bajandoTasa || bajandoImg;
       if (bajando && this._coolDown <= 0) {
-        if (!rally || avg < 50) this._stepDown(bajandoTasa);
+        // r111 · EL RALLYE TAMBIÉN MANDA: antes el gobernador dormía en el
+        // rallye (solo avg<50) y un intercambio a 55-70 fps — judder puro,
+        // la línea central duplicada al girar la cabeza — seguía intacto
+        // hasta el fin del punto. En rallye se degrada SOLO imagen (la
+        // tasa no se cambia en caliente: el salto de refresco se nota),
+        // y cuando el judder es sostenido: media < 64 o peor segundo <45.
+        const judderRally = !bajandoTasa &&
+          (avg < PERF_PISO - 8 || min < 45);
+        if (!rally || avg < 50 || judderRally) this._stepDown(bajandoTasa);
       }
       const sobra = avg > Math.min(this.rate, 90) * 0.93 && min > this.rate * 0.8;
       this._upStreak = sobra ? this._upStreak + 1 : 0;

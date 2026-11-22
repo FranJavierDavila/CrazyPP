@@ -1,7 +1,11 @@
 #!/bin/bash
 # r61 · batería QA verde (patrón r60: node 20 + python 12 + re-ancla r23)
 # Log: /tmp/qa_r61_bateria.log
-cd /home/z/my-project/upload/scripts
+# r113: el espejo upload/scripts era una copia transitoria de la bandeja de
+# subidas y el bot la recicló (los tests rc=1/rc=2 por fichero ausente).
+# Los ficheros vivos de la batería están en scripts/ del repo, con el MISMO
+# layout relativo (../src, ../public) → se corre desde allí.
+cd /home/z/my-project/scripts
 L=/tmp/qa_r61_bateria.log
 : > "$L"
 

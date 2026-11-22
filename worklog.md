@@ -7818,3 +7818,42 @@ trabajo» — push, release, limpieza y reintento del E2E del worker)**:
     riesgo, expresamente NO propuesta; su paso previo sería el bundle de backup_completo.py.
   · PENDIENTE DEL DUEÑO: aprobar fases (tabla 6 del documento) y opciones B/C. La ejecución no ha
     empezado — así queda blindado todo hasta su confirmación por escrito.
+
+**13 · EJECUCIÓN DE LA LIMPIEZA APROBADA + DIAGNÓSTICO DE TELEMETRÍA (r113 — F1-F6 + Task B)**:
+  · El dueño aprobó con «continua» → ejecutadas las fases con opciones conservadoras (F2 opción A,
+    F3 sin borrados definitivos). Red de seguridad: tag `r113-pre-limpieza` (88a4967) en remoto.
+  · F1 (c113608): 21 residuos de raíz borrados — 14 con gemelo byte-exacto VERIFICADO por hash en
+    vivo, 6 pasted_image_*.png sin ninguna referencia, tmp_pages_version.txt vacío. −14,4 MB.
+  · F2 (f69f1d1): fuentes/dueno/{paquetes,variantes,backup_2026-11-17} — 5 ZIPs fuente + 6 variantes
+    + tmp_owner_backup entero (87,7 MB) movidos con git mv; 0 pérdida. Manifests sin editar (prosa
+    histórica de informes). LEEME-ASSETS de halloween no menciona los zips (verificado).
+  · F3-F3d (2b03877, 2b57fe7, b2f1b61, 6005361, aae146c): scripts/ organizado — 1.352 ficheros
+    sueltos → scripts/archivo/era_legacy/ y 66 carpetas → eras/ y capturas/ (kits release-v36156…
+    v36207, qa_shots_r104-r110, _r85_arte, poderes, sfx_r62, auditoria_fallos…). Protección dinámica
+    con corpus de vivos (dos correcciones: autocaptura de mis scripts de análisis y del archivo
+    destino). _r73 queda por referencia real de arnes_r73.py. F4: three-pkg/, examples/, tests/ →
+    archivo (huérfanos verificados; importmap carga three de CDN).
+  · F5: 138 tags locales muertos fuera (183→45, rescate/ intactos).
+  · F6 verificación: golden byte-exacto vs tag ✓ en los 11 commits · N1 igualdad del relay ✓
+    (staging-v36209 y release-v36209 idénticos a mini-services/) · batería r61 completa: núcleo verde
+    (física c05, red_núcleo, r54, dashboards r56/r118/r119, telemetría 122 OK con PII ✓, rendimiento
+    13 OK). Huecos de protección a un nivel detectados POR la batería y corregidos restaurando a
+    scripts/: F3e/F3f/F3g (fisica_golden+c05, test_fisica_perf, _r33_assets, presupuesto,
+    telemetria_catalogo, verify_pages_live). test_fisica pasa ✓ con su golden restaurado.
+  · Entorno reparado (causa preexistente de los primeros rc=1/2): node_modules no existía en el
+    sandbox (reciclado) → npm install; el bot recicló upload/ (3 imágenes nuevas) borrando el espejo
+    → reconstruido con symlinks (src, public, scripts, package.json) sin tocar las subidas; batería
+    r61 ahora corre desde scripts/ del repo (commit 129126f).
+  · Deuda preexistente documentada, NO de la limpieza: tests de era con pins congelados (VERSION
+    3.6.157/FASE 160, manifest magia v32/locura v23, perfil Quest 3 r96, crossVectors v3.6.188),
+    game.html +8 % sobre su presupuesto de era (13 OK/1), y ficheros que solo vivían en el espejo
+    perdido (fisica_golden regenerable con --update si hiciera falta).
+  · PUSH: 8b2e3d4..129126f → main en GitHub (11 commits). GitHub queda: main organizada (raíz solo
+    con configs vivas + fuentes/ + scripts/{vivos,archivo, _r73}) · pages sin cambios (507 generados).
+  · Task B telemetría (diag_tele_produccion + alerta_telemetria + qa_telemetria + probe): cadena de
+    producción ENVÍA y RECIBE ✓ — ingestión 204, latido 200 (859→884), sonda purgada (200), PII ✓ sin
+    IP/UA/referer, probe Playwright en el game de producción __PP_TELE on:true sent:1. ÚNICA alarma
+    AMARILLA: FPS medio VR 71,6 vs confort 72 (21 muestras) → vigilar. Detalle: download/
+    registro_limpieza_r113.md · propuesta: download/Propuesta_limpieza_repositorio_r113.docx.
+  · NO ejecutado (quedó para el dueño): opción B de F2 (borrar 33,3 MB duplicados del backup), opción
+    C de F3 (borrar capturas ~40 MB), reescritura de historia (alto riesgo, no propuesta).

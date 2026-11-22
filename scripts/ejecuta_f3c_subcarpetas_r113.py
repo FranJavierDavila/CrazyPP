@@ -65,7 +65,9 @@ def w(s):
 
 corpus = []
 rutas_corpus = []
-for d in KEEP_DIRS:
+# corpus SOLO de runtime: el archivo (era_legacy) es destino, no código vivo —
+# sus one-offs mencionan sus carpetas de era y provocaban autocaptura
+for d in ('_r60', 'render_brazos', 'release-v36209', 'worker-tele'):
     base = RAIZ / 'scripts' / d
     if base.exists():
         for f in base.rglob('*'):
@@ -90,7 +92,7 @@ for sf in (RAIZ / '.zscripts').glob('*.sh'):
     corpus.append(sf.read_text(encoding='utf-8', errors='replace'))
 CORPUS = '\n'.join(corpus)
 
-w('\n## F3c · carpetas legacy → archivo (corpus limpio, sin autocaptura)\n')
+w('\n## F3d · carpetas legacy → archivo (corpus sin autocaptura ni archivo)\n')
 track = git('ls-files', 'scripts').splitlines()
 subs = sorted({p.split('/')[1] for p in track if p.count('/') >= 2})
 movid, proteg, detalle = [], [], []
@@ -122,11 +124,11 @@ b = sh(['git', 'show', f'{TAG}:public/game.html'], text=False)
 if real != hashlib.sha256(b.stdout).hexdigest():
     sys.exit('✗ F3c: game.html difiere del tag — aborto')
 g = hash_en_texto(GOLDEN.read_text())
-w('- golden F3c: vs tag ✓ · golden casa: ' + ('coincide ✓' if g == real else 'NO coincide (preexistente)'))
+w('- golden F3d: vs tag ✓ · golden casa: ' + ('coincide ✓' if g == real else 'NO coincide (preexistente)'))
 git('add', '-A')
-r = sh(['git', 'commit', '-m', f'r113-F3c · scripts/archivo/: {len(movid)} carpetas '
-        'legacy más (kits release-v36156…v36207, capturas qa_shots, assets de era, '
-        'poderes); protegidos reales intactos'])
+r = sh(['git', 'commit', '-m', f'r113-F3d · scripts/archivo/: {len(movid)} carpetas '
+        'legacy restantes (kits de release antiguos, capturas, poderes, sfx) '
+        'archivadas; protegidos reales intactos'])
 if r.returncode:
     sys.exit('✗ commit F3c: ' + r.stderr[:300])
 w(f'- commit F3c · HEAD: `{git("log","-1","--format=%h")}`')

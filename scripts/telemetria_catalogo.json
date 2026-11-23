@@ -1,7 +1,7 @@
 {
   "catalogo": "telemetria-crazypp",
-  "version": "v12",
-  "actualizado": "r46 · rankings mundiales: +perfil +resultado +logro (identidad mínima pid/n, worker v3 ?rank=1, retención D1/D7/D30 y desbloqueos en el panel)",
+  "version": "v14",
+  "actualizado": "r128 · +net_qos (deriva r82) +storage_lleno (E2) +boot_timeout (E1) — catálogo y código en igualdad de conjuntos",
   "ronda": 126,
   "r42_infra": {
     "resumen": "CONTROL ABSOLUTO desde el repo: worker v2 (endpoints nuevos sin tocar el contrato del juego), panel v2 (public/telemetria.html) y consola SQL directa contra D1 (scripts/d1_sql.py).",
@@ -560,6 +560,58 @@
         }
       ],
       "desde": "v3.6.139 (r45)"
+    },
+    {
+      "nombre": "storage_lleno",
+      "origen": "src/game/core/c00_pre_three.js (guardia de Storage.setItem, r128)",
+      "momento": "un setItem lanza QuotaExceededError y es el primero de la sesión",
+      "campos": [
+        {
+          "nombre": "k",
+          "tipo": "string",
+          "desc": "clave de localStorage que disparó el aviso (recortada a 24 car.)"
+        }
+      ],
+      "desde": "v3.6.210-SDK6",
+      "notas": "r128 · E2 (auditoría r120): antes 939 catch silenciosos tragaban la pérdida de progreso; ahora avisa una vez por sesión (toast) y registra el evento"
+    },
+    {
+      "nombre": "boot_timeout",
+      "origen": "src/game/04_boot.html (watchdog de arranque, r128)",
+      "momento": "15 s tras la carga sin window.__PP_GAME (grafo de módulos muerto)",
+      "campos": [
+        {
+          "nombre": "m",
+          "tipo": "string",
+          "desc": "mensaje del primer error temprano capturado (vacío si no hubo)"
+        }
+      ],
+      "desde": "v3.6.210-SDK6",
+      "notas": "r128 · E1 (auditoría r120): visibilidad de arranques fallidos (CDN/red); el panel visible ofrece RECARGAR"
+    },
+    {
+      "nombre": "net_qos",
+      "origen": "src/game/core/c09_red_netlink.js (_teleQos, r82)",
+      "momento": "informe periódico de calidad de red en partida online (fin de rally o cada N s)",
+      "campos": [
+        {
+          "nombre": "rtt",
+          "tipo": "number",
+          "desc": "ping estimado ms (reloj compartido)"
+        },
+        {
+          "nombre": "loss",
+          "tipo": "number",
+          "desc": "pérdida estimada del canal rápido 0..1"
+        },
+        {
+          "nombre": "modo",
+          "tipo": "string",
+          "desc": "v2 | tunnel | local — transporte activo"
+        }
+      ],
+      "desde": "v3.6.74",
+      "notas": "r128 · deriva de catálogo cazada por la auditoría r120: el evento se emite desde r82 pero nunca entró en el catálogo (el QA lo llevaba en rojo)"
     }
   ],
   "hallazgos_ronda6": [

@@ -10,11 +10,13 @@ sellos derivados cuentan la misma historia:
 Uso: python3 scripts/qa_version.py"""
 import hashlib
 import json
+import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project/upload')
+RAIZ = Path(os.environ.get('CPP_RAIZ') or '/home/z/my-project')   # r128 · re-ancla al repo vivo (D1 de la auditoría r120): era upload/, el espejo reciclado del bot
 SRC = RAIZ / 'src' / 'game'
 ok = fails = 0
 
@@ -49,8 +51,15 @@ hub = (RAIZ / 'src/app/descargas/page.tsx').read_text(encoding='utf-8')
 # coherencia de la página consigo misma (sello de release presente), no
 # que anuncie la versión en desarrollo. Re-anclado en r66 (el deploy de
 # r65 había dejado el check mirando a v36154 — lección del re-ancla r66).
-_hub_ver = 'V3.6.157-SDK6'
-chk(hub.count(_hub_ver) >= 3, f'hub: menciones del release vivo {_hub_ver} ({hub.count(_hub_ver)})')
+# r128 · el release que anuncia el hub se EXTRAE de la propia página (antes
+# estaba fijado a V3.6.157-SDK6 desde el re-ancla r66 y cada release nueva
+# rompía el check). La coherencia exigida es la del diseño original: la página
+# repite ≥3 veces UN sello de release; bump_version.py lo reescribe en cada
+# bump, así que el sello vivo siempre sale como el más frecuente.
+_sellos_hub = re.findall(r'V\d+\.\d+\.\d+-[A-Z0-9]+[0-9]*', hub)
+_hub_ver = max(_sellos_hub, key=_sellos_hub.count) if _sellos_hub else ''
+chk(bool(_hub_ver) and hub.count(_hub_ver) >= 3,
+    f'hub: sello de release coherente {_hub_ver} ({hub.count(_hub_ver)})')
 chk(hub.count(V['hub']) >= 3, f'hub: menciones del sello {V["hub"]} ({hub.count(V["hub"])})')
 
 # 2b · r109 · M3 PWA: sello del service worker + manifest + iconos

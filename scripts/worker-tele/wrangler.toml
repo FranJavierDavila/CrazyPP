@@ -10,6 +10,13 @@ name = "crazypp-tele"
 main = "worker.js"
 compatibility_date = "2024-09-01"
 
+# r128 · F2 (auditoría r120): RETENCIÓN AUTOMÁTICA — cron diario (04:37 UTC)
+# que ejecuta el scheduled() del worker: purga lo ANTERIOR a 30 días para que
+# la cuota D1 no se agote por descuido (incidente «error 1101» del worklog).
+# El borrado manual ?dias=N sigue igual (requiere clave).
+[triggers]
+crons = ["37 4 * * *"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "crazypp-tele"

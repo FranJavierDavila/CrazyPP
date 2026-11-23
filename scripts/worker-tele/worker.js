@@ -81,6 +81,12 @@ const MAX_BODY = 256 * 1024;
 const MAX_EVENTO = 2000;
 const MAX_LOTE = 500;
 
+// r128 · F2 (auditoría r120): estado del throttle del POST (en memoria del
+// isolate, sin persistencia y SIN cabeceras cf-*: la política PII del
+// worker prohíbe tocar IP/geo — lo audita el QA). Dos capas: global y por sid.
+let _rlGlob = null;
+let _rlSid = null;
+
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS eventos (
      id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -637,6 +643,17 @@ export default {
 
     // ------------------------------------------------------------- POST
     if (metodo === "POST") {
+      // r128 · F2 (auditoría r120): THROTTLE GLOBAL en la memoria del
+      // isolate (best-effort). El juego real emite ~1 lote/min por sesión;
+      // 2000/min corta ráfagas de envenenamiento a escala sin tocar a una
+      // base legítima. El límite POR SID (300/min, tras el parse) acota el
+      // abuso por sesión; el sid viaja en los propios eventos, así que no
+      // hace falta leer NINGUNA cabecera (política PII sin excepciones).
+      if (!_rlGlob || Date.now() - _rlGlob.t0 > 60000) {
+        _rlGlob = { t0: Date.now(), n: 0 };
+      }
+      _rlGlob.n++;
+      if (_rlGlob.n > 2000) return json({ ok: false, error: "rate" }, 429);
       let crudo;
       try {
         crudo = await request.text();
@@ -663,6 +680,24 @@ export default {
           { ok: false, error: "se espera un array de eventos o {app,events}" },
           400
         );
+      }
+      // r128 · F2: límite POR SID (300/min) — el sid llega en los eventos
+      // mismos, así que no se lee ninguna cabecera. Map acotado a 5000.
+      if (!_rlSid) _rlSid = new Map();
+      if (_rlSid.size > 5000) _rlSid.clear();
+      let sidRl = "anon";
+      for (const e of evs) {
+        if (e && typeof e === "object" && typeof e.sid === "string" && e.sid) {
+          sidRl = e.sid.slice(0, 40);
+          break;
+        }
+      }
+      const rlS = _rlSid.get(sidRl);
+      if (!rlS || Date.now() - rlS.t0 > 60000) {
+        _rlSid.set(sidRl, { t0: Date.now(), n: 1 });
+      } else {
+        rlS.n++;
+        if (rlS.n > 300) return json({ ok: false, error: "rate" }, 429);
       }
       const filas = [];
       for (const e of evs.slice(0, MAX_LOTE)) {
@@ -1336,5 +1371,25 @@ export default {
     }
 
     return json({ ok: false, error: "ruta o método desconocido — usa /api/tele" }, 404);
+  },
+
+  // r128 · F2 (auditoría r120): RETENCIÓN AUTOMÁTICA — Cron Trigger diario
+  // (wrangler.toml [triggers]) que purga lo ANTERIOR a 30 días. El borrado
+  // manual ?dias=N ya existía; esto evita que la cuota D1 se agote sola
+  // (el incidente «HTTP 500 error code 1101» documentado en el worklog).
+  // Requiere `wrangler deploy` del dueño para activarse en producción.
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil((async () => {
+      try {
+        await init(env);
+        const r = await env.DB
+          .prepare("DELETE FROM eventos WHERE rec < ?")
+          .bind(Date.now() - 30 * 86400000)
+          .run();
+        console.log("[tele] cron retención: borrados", r.meta ? r.meta.changes : 0);
+      } catch (e) {
+        console.log("[tele] cron retención falló:", String(e).slice(0, 200));
+      }
+    })());
   },
 };

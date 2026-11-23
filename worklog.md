@@ -7878,3 +7878,53 @@ trabajo» — push, release, limpieza y reintento del E2E del worker)**:
     patch_pie_r113.py). La propuesta regenerada es el documento histórico del plan; el estado
     vivo de la ejecución vive en download/registro_limpieza_r113.md y en las secciones 13-14.
   · Pendiente sin aprobar: reescritura de historia del remoto (alto riesgo; requiere bundle previo).
+
+**15 · r128 · CORRECCIONES DE LA AUDITORÍA r120 — OLA 1 + OLA 2** (análisis completo: download/analisis_crazypp_r120.pdf;
+  aplicación en modo directo sobre el árbol vivo, SIN commit aún — el dueño revisa, commitea y despliega):
+  · D1 · puertas al repo vivo: qa_version.py y qa_rendimiento.py con CPP_RAIZ (era upload/, el espejo reciclado);
+    la aguja del hub pasa a DINÁMICA (el sello de release se extrae de la propia página — el pin V3.6.157 de r66
+    daba rojo falso desde la r67). bump_version.py y mod_fase2_analizar/generar.mjs restaurados a scripts/ (sobrevivían
+    en era_legacy). VERSION.json alineada al árbol vivo: golden nuevo 7640cb6e… · 12.523.280 B · manifests vivos
+    (magia 32 · locura 23 · estacion_orbital 16 — los pins 33/27/17 describían un árbol del bot que el repo no tiene).
+  · A1 (CRÍTICO): el CLAIM forjado ya no gana puntos. Ventana de verificación de 600 ms en el receptor
+    (NetLink._holdClaim/_resolverHeld): el árbitro local tiene la primera oportunidad; al confirmarse el punto local
+    se confronta el ganador (ack + resync si difieren) y al vencer la ventana se aplica el claim (cruces ghost, r122).
+    claimPlausible() PURA en c09b (rallyId dentro de applied+1..+2, ganador válido, cadencia 250 ms): lo imposible no
+    se aplica nunca y el host responde con resync. Claims legacy sin rallyId (pre-r82) y duplicados siguen por el
+    camino clásico; el resync y teardown limpian los claims en espera (_limpiaHeld). Verificado en Node: 22 OK
+    (scripts/test_r128_claims.mjs, NUEVO).
+  · A3: genCode() con crypto.getRandomValues (se mantienen 5 símbolos: la UI valida ^[A-Z0-9]{5}$).
+  · B1: el PUT del ranking mundial comprueba res.ok — un 429/404/5xx ya no se informa al jugador como «publicado».
+  · E1: watchdog de arranque en 04_boot.html (a los 15 s sin __PP_GAME muestra panel con causa y RECARGAR, ES/EN)
+    + three.js VENDADO a public/vendor/three (three.module.js + GLTFLoader + RoomEnvironment + BufferGeometryUtils,
+    4 ficheros · 1,46 MB, imports relativos verificados) + importmap relativo ./vendor/three/… (adiós al CDN único
+    sin red de seguridad) + build_zip.py lleva el vendor COMPLETO en los 4 ZIPs.
+  · E2: Storage.setItem detecta QuotaExceededError → toast una vez por sesión (window.__ppPwaToast) + evento
+    storage_lleno (catálogo v14) y RE-LANZA: los saves que tragaban el error siguen igual, el jugador deja de
+    perder progreso en silencio. Claves i18n storage_lleno en es/en.
+  · E6: valle_neon fuera de championships.json (v30) — adiós al 404 doble de cada arranque.
+  · F1: receptor local (/api/telemetria) exige ?clave= en ?resumen y ?eventos CUANDO TELE_CLAVE está en el entorno
+    (paridad con DELETE r112/H18 y con el worker). qa_telemetria y el panel /telemetria (nueva caja «TELE_CLAVE
+    local») envían la clave; sin env, lectura abierta de desarrollo documentada.
+  · F2: worker-tele: throttle de POST en memoria del isolate (global 2000/min + por sid 300/min, SIN leer cabeceras
+    cf-* — la política PII no admite excepciones) + [triggers] cron diario 04:37 UTC con scheduled() que purga
+    >30 días (adiós a la cuota D1 agotable, incidente «error 1101»). ACTIVAR con wrangler deploy (dueño).
+  · F3: ChampLoader valida el manifest en runtime: id coherente con la carpeta + version numérica; un manifest roto
+    queda VISIBLE como «incompatible» (contrato ya existente) sin romper el núcleo.
+  · F4: Caddyfile con lista blanca (XTransformPort=3004) — adiós al reverse_proxy a cualquier puerto local (SSRF).
+  · D3: mini-services/live-service/index.ts tipado (hosting/watching: string|null) — tsc sin errores reales
+    (solo quedan los 3 del andamio muerto src/lib/game, pendiente ola 3).
+  · Puertas tras r128: qa_version 31 OK · 0 FALLOS (antes 26/5) · qa_rendimiento 14 OK · 0 FALLOS (presupuesto.json
+    refrescado tras cambio intencional) · test_fisica 12 · 0 · c05 17 OK · test_red_nucleo 60 OK · test_r128_claims
+    22 OK · 0 FALLOS · qa_telemetria 129 OK · 3 FALLOS AMBIENTALES (DELETE ×2 y harness E2E TURN piden
+    TELE_CLAVE/credenciales en el entorno del servidor — no son código) · regresión en vivo del juego real: boot
+    9,5 s SwiftShader, 0 pageerrors, 40 draw calls, heap 91,7 MB estable, partido jugado.
+  · Agujas del QA re-ancladas a la realidad del código (deriva PRE-EXISTENTE, cazada por la auditoría): catálogo
+    dinámico — +net_qos (se emitía desde r82 sin estar en el catálogo), +storage_lleno, +boot_timeout (v14) y el
+    escaneo cubre 04_boot.html; vr_ping por d2 (el pin exigía el formato inline viejo); perfil Quest 3 al valor
+    vivo del dueño (1.25×/0.45 — el pin r96 1.40×/0.35 daba rojo falso); sid del bloque B del QA FRESCO por
+    ejecución (el residuo acumulado con DELETE cerrada hacía fallar agregación en la 2ª corrida; limpieza de 54
+    eventos sintéticos en el almacén local).
+  · Pendiente de esta ronda (documentado, no tocado): PAGES-VERSION.txt no existe (2×404 cosméticos del selfcheck,
+    tolerados por diseño); el harness TURN local necesita credenciales; ola 3 del plan (payload separado, broker
+    propio, sandbox UGC, poda de dependencias/andamio) espera decisión del dueño.

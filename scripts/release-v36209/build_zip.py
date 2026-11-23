@@ -243,8 +243,12 @@ shutil.copy2(PUB / 'game.html', STAGE / 'index.html')
 shutil.copy2(PUB / 'tv.html', STAGE / 'tv.html')
 shutil.copytree(PUB / 'assets', STAGE / 'assets')
 shutil.copytree(PUB / 'championships', STAGE / 'championships')
-(STAGE / 'vendor').mkdir()
-shutil.copy2(PUB / 'vendor' / 'socket.io.min.js', STAGE / 'vendor' / 'socket.io.min.js')
+# r128 · E1 (auditoría r120): el vendor va COMPLETO (socket.io + three.js
+# vendado) — el importmap del juego apunta ahora a ./vendor/three/… y un
+# ZIP sin three rompería el arranque autohospedado.
+if (STAGE / 'vendor').exists():
+    shutil.rmtree(STAGE / 'vendor')
+shutil.copytree(PUB / 'vendor', STAGE / 'vendor')
 
 # r109 · M3 PWA: la app instalable VIAJA EN LOS 4 PAQUETES (manifest +
 # service worker + iconos de la casa) — el autohospedado también instala.

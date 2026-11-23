@@ -109,6 +109,28 @@ export class ChampLoader {
       if (!/^[a-z0-9_-]+$/i.test(id)) return false;
       if (this.entries.some((x) => x.id === id)) return true;   // ya está
       if (!man) return false;
+      // r128 · F3 (auditoría r120): validación MÍNIMA del manifest en
+      // runtime (antes el esquema sólo lo revisaban scripts de build): id
+      // coherente con la carpeta y version numérica. Un manifest roto o
+      // suplantado queda VISIBLE como incompatible, no rompe el núcleo.
+      if (man.id && man.id !== id) {
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: (man.title && man.title.es) || id, storage: '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: `manifest.id ${man.id} ≠ carpeta ${id}`,
+        });
+        return true;
+      }
+      if (typeof man.version !== 'number' || man.version < 1) {
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: (man.title && man.title.es) || id, storage: '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: 'manifest sin version numérica',
+        });
+        return true;
+      }
       // v2.125 · CONTRATO: un manifest de un contrato futuro no se
       // integra (y queda VISIBLE, no mudo).
       const contrato = man.contract || 1;

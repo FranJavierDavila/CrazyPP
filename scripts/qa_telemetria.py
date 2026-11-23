@@ -29,6 +29,7 @@ Uso: python3 scripts/qa_telemetria.py   (requiere dev :3000 y gateway :81)
 import asyncio
 import glob
 import json
+import os
 import re
 import sys
 import time
@@ -54,6 +55,16 @@ def chk(cond, label):
 
 
 def peticion(metodo, cuerpo=None, ctype='text/plain;charset=UTF-8', url=API):
+    # r128 · F1 (auditoría r120): las lecturas protegidas (?resumen/?eventos)
+    # y la purga (DELETE, cerrada desde r112/H18) llevan la clave del entorno,
+    # igual que el panel del dueño. Si el servidor de desarrollo no tiene
+    # TELE_CLAVE, la URL va tal cual (el receptor de desarrollo queda abierto
+    # en lectura y DELETE sigue cerrado — paridad con producción).
+    if isinstance(url, str) and ('resumen=1' in url or 'eventos=' in url
+                                 or metodo == 'DELETE') and 'clave=' not in url:
+        _clv = os.environ.get('TELE_CLAVE', '')
+        if _clv:
+            url = url + ('&' if '?' in url else '?') + 'clave=' + _clv
     req = urllib.request.Request(url, method=metodo)
     req.add_header('User-Agent', UA)
     if cuerpo is not None:
@@ -92,7 +103,8 @@ def bloque_catalogo():
     found = set()
     patrones = []
     for f in glob.glob(str(RAIZ / 'src/game/core/*.js')) + \
-             glob.glob(str(RAIZ / 'public/championships/*/index.js')):
+             glob.glob(str(RAIZ / 'public/championships/*/index.js')) + \
+             glob.glob(str(RAIZ / 'src/game/04_boot.html')):
         txt = Path(f).read_text(encoding='utf-8', errors='replace')
         for m in re.finditer(r"__PP_TELE\.ev\('([a-zA-Z_0-9]+)'", txt):
             found.add(m.group(1))
@@ -113,7 +125,11 @@ def bloque_catalogo():
     # r115 · re-ancla honesta: el catálogo vive en 18 (carrera entró con la
     # escalera de carrera y la aguja se quedó en 17 — deriva pre-existente)
     # FASE 144 · catálogo v13: 25 eventos (+anim_shield — escudo del bucle)
-    chk(len(nombres_cat) == 25, f'el catálogo documenta 25 eventos ({len(nombres_cat)}) — FASE 144: +anim_shield')
+    # r128 · la aguja pasa a DINÁMICA (auditoría r120 · D1): el recuento se
+    # ancla a lo que emite el CÓDIGO (la igualdad de conjuntos de abajo ya
+    # lo garantiza) — fijarlo a mano era lo que derivaba en cada ronda.
+    chk(len(nombres_cat) == len(found),
+        f'el catálogo documenta {len(found)} eventos ({len(nombres_cat)})')
     # r46 · catálogo v12: 24 eventos (+perfil +resultado +logro — rankings
     # mundiales con identidad mínima pid/n de la 3.6.139)
     chk(found == nombres_cat,
@@ -147,7 +163,11 @@ def bloque_catalogo():
 # ---------------------------------------------------------------- BLOQUE B
 def bloque_contrato():
     print('== B · CONTRATO DEL RECEPTOR (HTTP) ==')
-    sb = 'qa-b'  # sid del bloque B (se purga al final)
+    # r128 · sid FRESCO por ejecución (auditoría r120): el sid fijo 'qa-b'
+    # acumulaba residuo entre ejecuciones cuando DELETE queda cerrada sin
+    # TELE_CLAVE en el entorno — la 2ª corrida fallaba agregación siempre.
+    # La purga final se conserva: funciona cuando el servidor tiene la clave.
+    sb = 'qa-b-' + os.urandom(4).hex()
     ev = lambda n, **kw: dict(e=n, t=int(time.time() * 1000), v='qa', sid=sb, **kw)
 
     st, j = peticion('POST', {'app': 'crazy-pingpong', 'events': [ev('qa_http1'), ev('qa_http2')]})
@@ -551,8 +571,12 @@ def bloque_ronda12():
 
     # ── latido en VR: intervalo 5 min con dur + fps del momento ──
     chk('function vrPing(on)' in c00, 'c00: vrPing definido')
-    chk('ev(\'vr_ping\', { dur:' in c00.replace('ev("vr_ping", { dur:', "ev('vr_ping', { dur:"),
-        'c00: vr_ping lleva dur')
+    # r128 · aguja re-anclada a la fuente (auditoría r120 · D1): el payload
+    # vive en d2 (lleva dur + fps Y el estado del gobernador); el pin exigía
+    # el formato inline de hace rondas y daba rojo falso.
+    chk('var d2 = { dur: Math.round((Date.now() - tvr) / 1000), fps: fpsAvg() };' in c00
+        and "ev('vr_ping', d2);" in c00,
+        'c00: vr_ping lleva dur + fps (d2) y estado del gobernador')
     chk('300000' in c00, 'c00: intervalo del latido = 5 min (300000 ms)')
     chk('fps: fpsAvg()' in c00, 'c00: vr_ping lleva fps del momento')
     chk('vrPing, partida, get on()' in c00, 'c00: vrPing exportado en __PP_TELE (r46 añade partida)')
@@ -599,8 +623,11 @@ def bloque_ronda14():
     # el único punto de aplicación.
     chk('this.perf = new PerfManager(this)' in c12, 'c12: el PERF GOVERNOR decide nitidez y foveation (r81)')
     chk('this.perf.applyToRenderer()' in c12, 'c12: applyToRenderer único punto de aplicación')
-    chk("quest3: { label: 'Quest 3', scale: 1.40, fovea: 0.35, rate: 90 }" in c12,
-        'c12: el perfil Quest 3 nace NÍTIDO (1.40×/0.35 — r96, anti-FFR)')
+    # r128 · aguja re-anclada al valor VIGENTE del dueño (auditoría r120 ·
+    # D1): el perfil vivo es 1.25×/0.45 (afinado por el dueño tras el r96,
+    # que dejó el pin en 1.40×/0.35 — rojo falso). El techo 0,65 no cambia.
+    chk("quest3: { label: 'Quest 3', scale: 1.25, fovea: 0.45, rate: 90 }" in c12,
+        'c12: el perfil Quest 3 nace NÍTIDO (1.25×/0.45 — valor vivo del dueño)')
     chk("quest2: { label: 'Quest 2', scale: 1.05, fovea: 0.65, rate: 72 }" in c12,
         'c12: el perfil Quest 2 nace fluido (1.05×/0.65/72 Hz — ≥60 seguros)')
     chk('return 0.65;' in c12, 'c12: techo del gobernador 0,65 (r96, adiós a la fovea 0,8)')

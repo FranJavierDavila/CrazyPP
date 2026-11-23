@@ -868,6 +868,23 @@ export const PPNET = (() => {
     };
   }
 
+  /* r128 · A1 (auditoría r120): plausibilidad de un CLAIM entrante —
+   * función PURA y testable en Node (test_r128_claims.mjs). Un claim sólo
+   * entra a verificación si su rallyId es el siguiente (máx +2 de sesgo de
+   * red), el ganador es válido y respeta la cadencia de 250 ms: bloquea
+   * ráfagas forjadas y saltos imposibles. Los duplicados (r ≤ aplicado) NO
+   * son «implausible»: siguen por el camino clásico de confrontación. */
+  function claimPlausible(cl, lastApplied, nowMs, lastClaimMs) {
+    if (!cl || typeof cl.r !== 'number' || !Number.isFinite(cl.r) ||
+        cl.r < 0) return false;
+    if (cl.r <= lastApplied) return false;               // duplicado/antiguo
+    if (cl.r > lastApplied + 2) return false;            // salto imposible
+    if (cl.w !== 'player' && cl.w !== 'ai' && cl.w !== 'let') return false;
+    if (typeof nowMs === 'number' && typeof lastClaimMs === 'number' &&
+        nowMs - lastClaimMs < 250) return false;         // ráfaga forjada
+    return true;
+  }
+
   /* ---------- r127 · P4.2 · autodiagnóstico contra la web -----------
    * verCompara sólo ve al RIVAL. Si los DOS cascos retoman pestañas
    * viejas de la MISMA versión, el enlace queda limpio y el desajuste
@@ -932,6 +949,6 @@ export const PPNET = (() => {
     Writer, Reader, quatPack, quatUnpack, encodePacket, decodePacket,
     F_POSE, F_EV,
     NetClock, JitterBuf, BallAuth, Validator, NetSim, NetStats, MatchSync,
-    verCompara, verSelf, selfcheckVersion,
+    verCompara, verSelf, selfcheckVersion, claimPlausible,
   };
 })();

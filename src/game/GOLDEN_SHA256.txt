@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.209-SDK6, fase 186 · r112 CORRECCIONES DE LA AUDITORÍA r111: 14 hallazgos arreglados — H1-H10/H12 juego · H13-H15 live-service · higiene gemelas QA; golden anterior r110/r111: a627bed1efcac80b…)
-# generado por build_game.py --escribir el 21-11-2026 · batería núcleo 9/9 verde
-8f1b20b760498d158faeaf7743ae9958d01e096d50079476b1f37570b3c5f54b
+# SHA256 del game.html que produjo esta división (3.6.210-SDK6, fase 187 · CORRECCIONES DE LA AUDITORÍA r120 (OLA 1+2); sello actualizado
+# por bump_version.py desde 3.6.209-SDK6)
+7640cb6e0c6d0fb2e7f4e4df5d18a25bde7b273204ac638e80777e1ee36c9d42

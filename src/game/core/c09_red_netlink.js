@@ -36,6 +36,11 @@ export class NetLink {
     // (el anfitrión lo captura en processIntents; send-once)
     this.lastPoint = null;   // { w:'player'|'ai', c:causa, rh:n }
     this.lastRetry = null;   // causa del LET (texto neutro)
+    // r128 · A1 (auditoría r120): claims remotos EN VERIFICACIÓN — el punto
+    // no se aplica hasta que mi árbitro local lo confirma o vence la ventana
+    // (cruces ghost: el rival puede ser el único que vio el punto, r122).
+    this._held = null;        // Map rallyId → { m, wMapped, timer }
+    this._lastClaimMs = 0;    // cadencia: anti-ráfaga de claims forjados
   }
 
   available() { return typeof Peer !== 'undefined'; }
@@ -50,9 +55,20 @@ export class NetLink {
   ]);
 
   genCode() {
+    // r128 · A3 (auditoría r120): crypto.getRandomValues en vez de
+    // Math.random (xorshift128+ es reconstruible a partir de sus salidas).
+    // Se mantienen 5 símbolos: la UI de unión valida /^[A-Z0-9]{5}$/ y el
+    // código se dicta por voz; el salto real de seguridad es el broker
+    // propio (A2, ola 3 del plan).
+    const buf = new Uint32Array(5);
+    try {
+      (typeof crypto !== 'undefined' ? crypto : window.crypto).getRandomValues(buf);
+    } catch (e) {
+      for (let i = 0; i < 5; i++) buf[i] = (Math.random() * 0x100000000) >>> 0;
+    }
     let s = '';
     for (let i = 0; i < 5; i++) {
-      s += NetLink.CODE_CHARS[Math.floor(Math.random() * NetLink.CODE_CHARS.length)];
+      s += NetLink.CODE_CHARS[buf[i] % NetLink.CODE_CHARS.length];
     }
     return s;
   }
@@ -1306,6 +1322,28 @@ export class NetLink {
         // al revés (punto al revés y desacuerdos enmascarados).
         const wMapped = m.w === 'let' ? 'let'
           : (m.w === 'player' ? 'ai' : 'player');
+        // r128 · A1 (auditoría r120): un CLAIM forjado ({r, w}) se aplicaba
+        // SIN confrontar — onClaim marcaba aplicado y agree:true al primero
+        // que llegaba (verificado en Node: 11 de 11 claims aplicados). Ahora
+        // un claim aplicable al estado local pasa por VERIFICACIÓN: el
+        // árbitro local tiene 600 ms de ventaja antes de aplicarlo y un
+        // claim IMPOSIBLE (rallyId que salta, ganador inválido o ráfaga)
+        // no se aplica nunca — el host responde con su verdad (resync).
+        // Claims antiguos sin rallyId (r < r82) y duplicados siguen por el
+        // camino clásico, y el invitado mantiene al host como autoridad.
+        const legacy = (typeof m.r !== 'number');
+        const duplicado = !legacy && this._sync && m.r <= this._sync.applied;
+        if (!legacy && !duplicado && g && this._sync && this.v2 === 'ok') {
+          if (PPNET.claimPlausible(m, this._sync.applied, performance.now(),
+              this._lastClaimMs || 0)) {
+            this._lastClaimMs = performance.now();
+            this._holdClaim(m, wMapped);
+            break;
+          }
+          this._stats.disputes++;                       // implausible: rechazo
+          if (this.role === 'host') this._sendResync();
+          break;
+        }
         const r = this._sync.onClaim(m, wMapped);
         this.sendRel(r.ack);
         if (r.apply && g) this._applyRemoteClaim(m, wMapped);
@@ -1319,6 +1357,9 @@ export class NetLink {
       }
       case 'resync': {
         if (this.role === 'guest') this._applyResync(m);
+        // r128 · A1: el estado se reinció — ningún claim en espera puede
+        // aplicarse ya (aplicarían un punto sobre una partida reinciada).
+        this._limpiaHeld();
         break;
       }
       case 'resync-req': {
@@ -2032,6 +2073,46 @@ export class NetLink {
     return { apply: true, send: null };
   }
 
+  /* r128 · A1 (auditoría r120): VERIFICACIÓN DE CLAIMS. El claim remoto
+   * queda EN ESPERA 600 ms para dar al árbitro local la primera oportunidad;
+   * se resuelve por (a) punto local del mismo rally (confronta ganadores:
+   * ack y, si difieren, resync del host) o (b) timeout — en cruces ghost el
+   * rival puede ser el único que vio el punto (r122) y se aplica tal cual.
+   * El ack se envía al RESOLVER, no al recibir. */
+  _holdClaim(m, wMapped) {
+    if (!this._held) this._held = new Map();
+    if (this._held.has(m.r)) return;                 // dedup del mismo rally
+    const timer = window.setTimeout(() => {
+      const h = this._held && this._held.get(m.r);
+      if (!h) return;
+      this._held.delete(m.r);
+      const resp = this._sync.onClaim(m, wMapped);   // aplicará (r > applied)
+      this.sendRel(resp.ack);
+      if (resp.apply && this.game) this._applyRemoteClaim(m, wMapped);
+      if (!resp.agree && this.role === 'host') this._sendResync();
+    }, 600);
+    this._held.set(m.r, { m, wMapped, timer });
+  }
+
+  _resolverHeld(r, winnerLocal) {
+    if (!this._held) return;
+    const h = this._held.get(r);
+    if (!h) return;
+    this._held.delete(r);
+    window.clearTimeout(h.timer);
+    const agree = (h.m.w === 'let') || (winnerLocal === h.wMapped);
+    this.sendRel({ k: 'ack', r, agree });
+    if (!agree && this.role === 'host') this._sendResync();
+  }
+
+  _limpiaHeld() {
+    if (!this._held) return;
+    for (const h of this._held.values()) {
+      try { window.clearTimeout(h.timer); } catch { /* */ }
+    }
+    this._held.clear();
+  }
+
   _applyRemoteClaim(m, wMapped) {
     const g = this.game;
     if (!g) return;
@@ -2148,6 +2229,11 @@ export class NetLink {
       this.sendRel(dec.send);
       // r82: rallyId NO existía (undefined) — la identidad real es rallySeq
       this._claimFallback = { r: g.rules.rallySeq, t: performance.now() };
+    }
+    // r128 · A1: si había un claim remoto EN ESPERA para este rally, se
+    // resuelve con mi veredicto local (ack al rival + resync si difieren).
+    if (dec.apply && this._held && this._held.size) {
+      this._resolverHeld(g.rules.rallySeq, it.winner);
     }
     return dec.apply;
   }
@@ -2560,6 +2646,9 @@ export class NetLink {
     this._pend = []; this._fastIn = []; this._seenEv = null;
     this._recvHist = null; this._mstart = null;
     this._pausedSelf = this._pausedRemote = false;
+    // r128 · A1: sin claims en espera al desmontar la sesión
+    this._limpiaHeld();
+    this._held = null; this._lastClaimMs = 0;
     try { this.conn?.close(); } catch { /* */ }
     try { this.call?.close(); } catch { /* */ }
     try { this.peer?.destroy(); } catch { /* */ }

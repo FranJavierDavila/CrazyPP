@@ -122,6 +122,9 @@ export default function Telemetria() {
   const [fuente, setFuente] = useState<"local" | "prod">("local");
   const [prodUrl, setProdUrl] = useState(WORKER_DEF);
   const [prodClave, setProdClave] = useState("");
+  // r128 · F1 (auditoría r120): el receptor LOCAL también protege sus
+  // lecturas cuando el servidor de desarrollo tiene TELE_CLAVE en el entorno
+  const [localClave, setLocalClave] = useState("");
 
   // preferencias persistidas (solo en el cliente: el SSR arranca en local)
   useEffect(() => {
@@ -132,6 +135,8 @@ export default function Telemetria() {
       if (u) setProdUrl(u);
       const c = localStorage.getItem("pp_tele_prod_clave");
       if (c) setProdClave(c);
+      const cl = localStorage.getItem("pp_tele_local_clave");
+      if (cl) setLocalClave(cl);
     } catch {}
   }, []);
   useEffect(() => {
@@ -139,6 +144,7 @@ export default function Telemetria() {
       localStorage.setItem("pp_tele_fuente", fuente);
       localStorage.setItem("pp_tele_prod_url", prodUrl);
       localStorage.setItem("pp_tele_prod_clave", prodClave);
+      localStorage.setItem("pp_tele_local_clave", localClave);
     } catch {}
   }, [fuente, prodUrl, prodClave]);
 
@@ -154,6 +160,7 @@ export default function Telemetria() {
       const p = new URLSearchParams({ resumen: "1" });
       if (filtro.trim()) p.set("sid", filtro.trim());
       if (esProd) p.set("clave", prodClave.trim());
+      else if (localClave.trim()) p.set("clave", localClave.trim());
       const res = await fetch(`${base}?${p}`, { cache: "no-store" });
       const texto = await res.text();
       if (!res.ok) {
@@ -172,6 +179,7 @@ export default function Telemetria() {
           const p2 = new URLSearchParams({ eventos: "500" });
           if (filtro.trim()) p2.set("sid", filtro.trim());
           if (esProd) p2.set("clave", prodClave.trim());
+          else if (localClave.trim()) p2.set("clave", localClave.trim());
           const r2 = await fetch(`${esProd ? prodUrl.trim() : "/api/telemetria"}?${p2}`);
           if (r2.ok) {
             const j2 = await r2.json();
@@ -184,7 +192,7 @@ export default function Telemetria() {
     } catch (e) {
       setErr(String((e as Error).message || e));
     }
-  }, [filtro, fuente, prodUrl, prodClave]);
+  }, [filtro, fuente, prodUrl, prodClave, localClave]);
 
   useEffect(() => {
     carga();
@@ -301,6 +309,15 @@ export default function Telemetria() {
                 className="w-40 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 outline-none focus:border-orange-400"
               />
             </>
+          )}
+          {fuente === "local" && (
+            <input
+              value={localClave}
+              onChange={(e) => setLocalClave(e.target.value)}
+              type="password"
+              placeholder="TELE_CLAVE local (si el servidor la pide)…"
+              className="w-56 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 outline-none focus:border-orange-400"
+            />
           )}
           <input
             value={filtro}

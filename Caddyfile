@@ -1,6 +1,9 @@
 :81 {
+	# r128 · F4 de la auditoría r120: el proxy por query sólo admite el
+	# live-service (:3004). Antes ANY port via ?XTransformPort=… servía de
+	# SSRF interno hacia cualquier puerto local.
 	@transform_port_query {
-		query XTransformPort=*
+		query XTransformPort=3004
 	}
 
 	handle @transform_port_query {

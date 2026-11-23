@@ -167,10 +167,25 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
+  // r128 · F1 (auditoría r120): las lecturas de eventos crudos (?eventos=N)
+  // y del resumen completo (?resumen=1) exigen la clave del dueño, igual
+  // que DELETE (y que el worker de producción desde la ronda 8). Con
+  // TELE_CLAVE en el entorno la clave es OBLIGATORIA; sin env, el receptor
+  // de desarrollo queda abierto (no hay secretos en el código — el
+  // despliegue real es Pages y este servidor no sale a producción).
+  const nEventos0 = sp.get("eventos");
+  if ((nEventos0 !== null || sp.get("resumen") !== null) &&
+      process.env.TELE_CLAVE &&
+      sp.get("clave") !== process.env.TELE_CLAVE) {
+    return NextResponse.json(
+      { ok: false, error: "clave" },
+      { status: 403, headers: CORS }
+    );
+  }
   const sid = sp.get("sid");
   const todos = filtrarSid(await leer(), sid);
 
-  const nEventos = sp.get("eventos");
+  const nEventos = nEventos0;
   if (nEventos !== null) {
     const n = Math.max(0, Math.min(500, parseInt(nEventos, 10) || 0));
     return NextResponse.json(

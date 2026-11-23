@@ -680,6 +680,53 @@ try {
     "R46 · sin pid: retención vacía tolerante (jugadores 0, d1 null)");
   chk(Array.isArray(j.logrosTop) && j.logrosTop.length === 0,
     "R46 · sin pid: logrosTop vacío");
+
+  // ── A2 (r129 · ola 3) · /api/tele?salas=1 · registro vivo de salas ──
+  // Los tests de ICE ya activaron socialListo con SU simulador: en ESTE env
+  // la tabla no existe. La creamos con el DDL real de SOCIAL_SCHEMA + ALTERs
+  // (mismo patrón idempotente de socialInit).
+  await env.DB.batch([
+    "CREATE TABLE IF NOT EXISTS presencia (pid TEXT PRIMARY KEY, n TEXT, v TEXT, st TEXT, code TEXT, t INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS idx_pres_t ON presencia(t)",
+    "CREATE TABLE IF NOT EXISTS invitas (id INTEGER PRIMARY KEY AUTOINCREMENT, de TEXT NOT NULL, deN TEXT, para TEXT NOT NULL, code TEXT, t INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS idx_inv_para ON invitas(para)",
+    "CREATE INDEX IF NOT EXISTS idx_inv_t ON invitas(t)",
+    "CREATE TABLE IF NOT EXISTS cfg (k TEXT PRIMARY KEY, v TEXT)",
+  ].map((s) => env.DB.prepare(s)));
+  for (const ALT of [
+    "ALTER TABLE presencia ADD COLUMN mj TEXT",
+    "ALTER TABLE presencia ADD COLUMN vis TEXT",
+    "ALTER TABLE invitas ADD COLUMN mj TEXT",
+  ]) {
+    try { await env.DB.prepare(ALT).run(); } catch (e) { /* ya existe */ }
+  }
+  r = await worker.fetch(
+    new Request("https://worker.test/api/presencia", {
+      method: "POST",
+      body: JSON.stringify({ pid: "s-alas1", n: "Anfitrion", v: "qa", st: "sala", code: "ABC23", mj: "normal", vis: "pub" }),
+    }), env, {}
+  );
+  chk(r.status === 200, `A2 · latido de presencia (sala PÚBLICA) → 200 (${r.status})`);
+  await worker.fetch(
+    new Request("https://worker.test/api/presencia", {
+      method: "POST",
+      body: JSON.stringify({ pid: "s-alas2", n: "SinSala", v: "qa", st: "libre" }),
+    }), env, {}
+  );
+  // una sala PRIVADA no se anuncia + una sala CADUCADA (> TTL 90 s) tampoco:
+  await env.DB.prepare(
+    "INSERT OR REPLACE INTO presencia (pid, n, v, st, code, mj, vis, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind("s-priv", "Privada", "qa", "sala", "PRIV1", "normal", "pri", Date.now()).run();
+  await env.DB.prepare(
+    "INSERT OR REPLACE INTO presencia (pid, n, v, st, code, mj, vis, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind("s-viejo", "Viejo", "qa", "sala", "ZZZ99", "normal", "pub", Date.now() - 100000).run();
+  j = await cuerpo(await worker.fetch(req("/?salas=1"), env, {}));
+  chk(j.ok === true && j.total === 1,
+    `A2 · salas vivas: 1 — privadas, sin código y caducados fuera (${j.total})`);
+  chk(j.salas[0]?.code === "ABC23" && j.salas[0]?.pid === "s-alas1",
+    `A2 · la sala viva es ABC23 de s-alas1 (${JSON.stringify(j.salas[0])})`);
+  chk(typeof j.salas[0]?.haceSeg === "number" && j.salas[0].haceSeg >= 0,
+    `A2 · frescura de la sala en haceSeg (${j.salas[0]?.haceSeg} s)`);
 } catch (e) {
   chk(false, "excepción del harness: " + (e?.stack || String(e)));
 }

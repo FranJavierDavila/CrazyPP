@@ -109,7 +109,7 @@ for tk in ("const SDK_VERSION = '1.6.0'", 'export function createBucle', 'export
 # — FASE 4 (SDK2): los 4 campeonatos adoptantes ——————————————
 ADOPCION = {
     'oeste': (56, ("import { createSfx, createMusic, createBucle, createPowerSign, congela, getCore, assetURL } from '../sdk/champ_sdk.js'",
-                   '__sfxSDK', "precarga('risas_forajido.mp3')",
+                   '__sfxSDK', "precarga('risas.mp3')",
                    "eng.play('risas.mp3', vol || 0.8, { pan: 0.4 })",
                    'congela(g, DUELO_P.drawT + DUELO_P.window + 0.35)',
                    'congela(g, 0.10)',
@@ -220,11 +220,17 @@ for at in ('reactor_impulso/frente.jpg', 'reactor_impulso/fondo.jpg',
            'reactor_impulso/izquierda.png', 'reactor_impulso/derecha.png',
            'reactor_impulso/diana_quantica.png', 'reactor_impulso/base.png',
            'reactor_impulso/pantallainfo.png', 'nucleo_gravedad_lp.glb',
-           'pistol.glb', 'mapa.png', 'superpower.png', 'angry.webp',
+           'mapa.png', 'angry.webp',
            'risa_astro.mp3', 'enfado_astro.mp3'):
     p = PUB / 'championships/estacion_orbital/assets' / at
     if not p.exists() or p.stat().st_size < 1000:
         sys.exit(f'FALLO: falta el asset orbital {at}')
+# G6 (r129): pistol.glb y superpower.png son ahora COMPARTIDOS
+# (assets/championships/): byte-exactos ahí, una sola copia en Pages.
+for _sh, _sz in (('pistol.glb', 2942640), ('superpoder.webp', 75178), ('reloj.png', 28607)):
+    _p = PUB / 'assets/championships' / _sh
+    if not _p.exists() or _p.stat().st_size != _sz:
+        sys.exit(f'FALLO: asset compartido {_sh} ausente o no byte-exacto (G6)')
 if (PUB / 'championships/estacion_orbital/assets/reactor_impulso/diana_quantica.png').stat().st_size != 409356:
     sys.exit('FALLO: diana_quantica.png no es byte-exacta (409.356 B)')
 if (PUB / 'championships/estacion_orbital/assets/risa_astro.mp3').stat().st_size != 81408:
@@ -318,6 +324,12 @@ ficheros = {
         sha256(STAGE / 'championships/estacion_orbital/assets/enfado_astro.mp3'),
     'championships/sdk/champ_sdk.js':
         sha256(STAGE / 'championships/sdk/champ_sdk.js'),
+    'assets/championships/pistol.glb':
+        sha256(STAGE / 'assets/championships/pistol.glb'),
+    'assets/championships/superpoder.webp':
+        sha256(STAGE / 'assets/championships/superpoder.webp'),
+    'assets/championships/reloj.png':
+        sha256(STAGE / 'assets/championships/reloj.png'),
     'championships/oeste/index.js':
         sha256(STAGE / 'championships/oeste/index.js'),
     'championships/magia/index.js':
@@ -391,9 +403,19 @@ zip_l = DL / 'crazypp-v36209-sdk6-ligera.zip'
 if zip_l.exists():
     zip_l.unlink()
 print('· Comprimiendo paquete LIGERA (sin campeonatos, ~11 MB)...')
+# G6 (r129): los assets COMPARTIDOS de campeonatos tampoco viajan en la
+# ligera (el juego base nunca los pide; vuelven con el COMPLETO).
+sh_ac = STAGE / 'assets' / 'championships'
+tmp_ac = RAIZ / 'scripts' / 'staging-assets-champs-bak'
+if tmp_ac.exists():
+    shutil.rmtree(tmp_ac)
+if sh_ac.exists():
+    shutil.move(str(sh_ac), str(tmp_ac))
 run(f'cd "{STAGE}" && zip -r -q -X "{zip_l}" .')
 shutil.rmtree(champ_bak)
 shutil.move(str(tmp_champ), str(champ_bak))   # staging queda íntegro otra vez
+if tmp_ac.exists():
+    shutil.move(str(tmp_ac), str(sh_ac))
 
 # ── 4b. ZIP Cloudflare (estático puro, sin TS ni package.json) ───
 CF_STAGE = RAIZ / 'scripts' / 'staging-cloudflare'

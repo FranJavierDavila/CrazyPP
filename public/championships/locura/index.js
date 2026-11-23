@@ -4831,7 +4831,7 @@ export default {
       const data = Object.assign({}, LOCURA_CFG, cfg || {}, {
         urls,
         sounds: { laugh: A('risas.mp3'), crazy: A('risas.mp3') },
-        powerBannerUrl: A('superpoder.webp'),
+        powerBannerUrl: new URL('../../assets/championships/superpoder.webp', import.meta.url).href,
         musicUrl: A('bso.ogg'),
       });
       window.__PP_ARCADE_DATA = data;   // lo lee el NÚCLEO (BSO + voces)
@@ -4842,7 +4842,7 @@ export default {
       window.__PP_EXTRA_URL = A('extra.webp');
       window.__PP_MAPA_URL = A('mapa.webp');
       window.__PP_TAPA_URL = A('tapa.webp');
-      GUN_ART_URL = A('pistol.glb');   // v2.74: pistola REAL del artista
+      GUN_ART_URL = new URL('../../assets/championships/pistol.glb', import.meta.url).href;   // v2.74: pistola REAL del artista
       CTRL = new ArcadeController(GAME);
       try { window.__PP_LOCURA = { ctrl: () => CTRL, data }; } catch (e) { /* */ }
     };

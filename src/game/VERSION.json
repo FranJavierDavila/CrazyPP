@@ -1,6 +1,6 @@
 {
   "version": "3.6.210-SDK6",
-  "fase": 187,
+  "fase": 188,
   "faseNombre": "CORRECCIONES DE LA AUDITORÍA r120 (OLA 1+2)",
   "sdk": "1.6.0",
   "fecha": "2026-11-23",
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r128 · correcciones de la auditoría r120 (ola 1+2): A1 claims verificados, A3 código crypto, B1 res.ok en el PUT, D1 puertas al repo vivo, E1 watchdog + three vendado, E2 cuota, E6 valle_neon, F1 clave en lecturas locales, F2 throttle+cron worker, F3 manifest validado, F4 Caddy, D3 TS live-service",
-  "tamano": 12523280,
-  "golden": "7640cb6e0c6d0fb2e7f4e4df5d18a25bde7b273204ac638e80777e1ee36c9d42"
+  "tamano": 2632184,
+  "golden": "bb137639971edc55bca08293145d0eec1a0bd1cd80a361c880559386f998278b"
 }

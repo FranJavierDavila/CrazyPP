@@ -1148,7 +1148,39 @@ function simulateBounceUntilTable(from, vel, spin, maxT, out) {
   return out;
 }
 
+/* ======================================================================
+ * C1 (r129 · ola 3) · CACHÉ LRU DEL SOLVER DE TIROS
+ * computeShotVelocityReal es determinista (simulación con semilla fija,
+ * cero azar) y la IA repite consultas casi idénticas: el Súper Imán dentro
+ * del subpaso de física, rivales en posiciones que se repiten y el
+ * aplicador del disparo r99ter. Clave redondeada a 1 cm / 0,01 s / 0,1 de
+ * spin — el error del redondeo queda por debajo de la tolerancia del
+ * propio solver (bate a ±1,5 cm). LRU de 96 entradas: memoria acotada sin
+ * fugas en partidos largos. El vector devuelto SIEMPRE es un clon — los
+ * llamadores lo mutan (sesgo del swing r101) y la caché no se corrompe.
+ * ===================================================================== */
+const _solCache = new Map();
+const _SOL_CACHE_MAX = 96;
+
+function _solClave(from, target, tIn, maxSpeed, spin) {
+  return Math.round(from.x * 100) + ',' + Math.round(from.y * 100) + ',' +
+    Math.round(from.z * 100) + ',' + Math.round(target.x * 100) + ',' +
+    Math.round(target.y * 100) + ',' + Math.round(target.z * 100) + ',' +
+    Math.round(tIn * 100) + ',' + Math.round(maxSpeed * 10) + ',' +
+    Math.round((spin ? spin.x : 0) * 10) + ',' +
+    Math.round((spin ? spin.y : 0) * 10) + ',' +
+    Math.round((spin ? spin.z : 0) * 10);
+}
+
 export function computeShotVelocityReal(from, target, tIn, maxSpeed, spin) {
+  // C1 (r129): consulta a la caché LRU antes de simular (16+4 sims RK4).
+  const claveSol = _solClave(from, target, tIn, maxSpeed, spin);
+  const enCache = _solCache.get(claveSol);
+  if (enCache) {
+    _solCache.delete(claveSol);
+    _solCache.set(claveSol, enCache);   // refresco LRU (el Mapa conserva orden)
+    return enCache.clone();
+  }
   const T = Math.max(0.3, tIn);
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const v = new THREE.Vector3(
@@ -1212,6 +1244,12 @@ export function computeShotVelocityReal(from, target, tIn, maxSpeed, spin) {
   }
   const sp1 = out.length();
   if (sp1 > maxSpeed) out.multiplyScalar(maxSpeed / sp1);
+  // C1 (r129): guarda LRU — el clon de la caché vive aparte del out que se
+  // devuelve (los llamadores pueden mutarlo con el sesgo del swing).
+  if (_solCache.size >= _SOL_CACHE_MAX) {
+    _solCache.delete(_solCache.keys().next().value);
+  }
+  _solCache.set(claveSol, out.clone());
   return out;
 }
 

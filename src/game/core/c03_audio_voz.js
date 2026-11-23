@@ -115,6 +115,9 @@ export class GameAudio {
     this.ctx = null;
     this.master = null;
     this.noiseBuffer = null;
+    // C2 (r129): el banco de voz llega EXTERNO (assets/audio/voz_*.json);
+    // cuando aterrice, recarga en caliente la megafonía.
+    try { window.addEventListener('pp-voz-lista', () => this.reloadVoice()); } catch (e) { /* */ }
     // r62 · MUESTRAS SFX REALES: AudioBuffers decodificados de
     // PP_SFX_REALES_B64 (UNA sola vez — el buffer sirve para CUALQUIER
     // contexto, mismo invariante que _musicBuf). Hasta que estén, los

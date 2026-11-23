@@ -54,6 +54,31 @@ export class NetLink {
     'let', 'serve_net', 'serve_net_touch', 'serve_out', 'net_stay', 'wall', 'out',
   ]);
 
+  /** A2 (r129 · ola 3) · BROKER DE SEÑALIZACIÓN CONFIGURABLE: por defecto
+   *  el cloud público de PeerJS (0.peerjs.com, sin SLA — el hallazgo A2).
+   *  Si globalThis.PP_SIGNAL_ENDPOINT lleva una URL (p. ej.
+   *  «https://mi-dominio/peerjs»), las salas se registran en el PeerServer
+   *  PROPIO (mini-services/peer-server en el VPS del dueño, detrás de
+   *  Caddy) SIN tocar la lógica de juego: mismo protocolo, mismo cliente.
+   *  El valor se lee al abrir el peer: puede fijarse antes de host/join. */
+  static _signalOpts() {
+    const ep = (typeof globalThis !== 'undefined') ? globalThis.PP_SIGNAL_ENDPOINT : null;
+    if (!ep) return undefined;                       // cloud por defecto (como siempre)
+    try {
+      const u = new URL(String(ep));
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') return undefined;
+      return {
+        host: u.hostname,
+        port: Number(u.port) || (u.protocol === 'https:' ? 443 : 80),
+        path: (u.pathname || '/').replace(/\/+$/, '') + '/',
+        secure: u.protocol === 'https:',
+      };
+    } catch (e) {
+      console.warn('PP_SIGNAL_ENDPOINT inválido, se usa el cloud de PeerJS:', ep);
+      return undefined;
+    }
+  }
+
   genCode() {
     // r128 · A3 (auditoría r120): crypto.getRandomValues en vez de
     // Math.random (xorshift128+ es reconstruible a partir de sus salidas).
@@ -276,7 +301,11 @@ export class NetLink {
 
   openPeer(id, onReady) {
     try {
-      this.peer = id ? new Peer(id) : new Peer();
+      // A2 (r129): el broker lo elige PP_SIGNAL_ENDPOINT (PeerServer propio
+      // del dueño) o el cloud de PeerJS si no hay configuración — ver
+      // _signalOpts(). new Peer(id, undefined) ≡ new Peer(id).
+      const opts = NetLink._signalOpts();
+      this.peer = id ? new Peer(id, opts) : new Peer(undefined, opts);
     } catch (e) {
       this.setStatus('error', T('net_fail', { m: e.message }));
       return;

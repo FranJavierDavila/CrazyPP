@@ -1,3 +1,2 @@
-# SHA256 del game.html que produjo esta división (3.6.210-SDK6, fase 187 · CORRECCIONES DE LA AUDITORÍA r120 (OLA 1+2); sello actualizado
-# por bump_version.py desde 3.6.209-SDK6)
-7640cb6e0c6d0fb2e7f4e4df5d18a25bde7b273204ac638e80777e1ee36c9d42
+# SHA256 del game.html que produjo esta división (3.6.210-SDK6, fase 188 · OLA 3: C2 separa los recursos del HTML — el artefacto baja de 12,5 MB a 2632184 B)
+bb137639971edc55bca08293145d0eec1a0bd1cd80a361c880559386f998278b

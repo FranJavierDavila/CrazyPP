@@ -145,6 +145,28 @@ export class ChampLoader {
         });
         return true;
       }
+      // r129 · F3b (auditoría r120 · ola 3): el resto del CONTRATO
+      // OBLIGATORIO del championship.schema.json se valida aquí en runtime
+      // — un módulo de tercero con el manifest incompleto (sin rival, sin
+      // storage, sin assets, sin título) no entra: degrade elegante a
+      // «incompatible» con el motivo visible, igual que arriba. Los 7
+      // manifests del dueño cumplen el esquema completo (verificado al
+      // sellar esta ronda).
+      const faltan = [];
+      if (!man.title || !man.title.es) faltan.push('title.es');
+      if (!man.description || !man.description.es) faltan.push('description.es');
+      if (!man.rival || !man.rival.id || !man.rival.name || !man.rival.kind) faltan.push('rival{id,name,kind}');
+      if (typeof man.storage !== 'string' || !man.storage) faltan.push('storage');
+      if (typeof man.assets !== 'string' || !man.assets) faltan.push('assets');
+      if (faltan.length) {
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: (man.title && man.title.es) || id, storage: '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: 'manifest incompleto: falta ' + faltan.join(', '),
+        });
+        return true;
+      }
       // v2.125 · CICLO DE VIDA: sólo "publicado" sale en el menú;
       // borrador/validación/listo se cargan bajo demanda (previsualización
       // con ?champ=<id>); desactivado ni eso.

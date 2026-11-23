@@ -4996,12 +4996,12 @@ export default {
     const manifest = {
       stateUrls,
       giftUrl: A('regalo.webp'),
-      powerUrl: A('superpoder.webp'),
+      powerUrl: new URL('../../assets/championships/superpoder.webp', import.meta.url).href,
       mapUrl: A('mapa.webp'),
       tapaUrl: A('tapa.webp'),
       portalsUrl: A('portals.webp'),
-      relojUrl: A('reloj.png'),
-      gunUrl: A('pistol.glb'),
+      relojUrl: new URL('../../assets/championships/reloj.png', import.meta.url).href,
+      gunUrl: new URL('../../assets/championships/pistol.glb', import.meta.url).href,
       laughUrl: A('risas.mp3'),
       musicUrl: A('bso.mp3'),
     };

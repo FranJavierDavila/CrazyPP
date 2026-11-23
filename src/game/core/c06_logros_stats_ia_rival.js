@@ -1705,7 +1705,14 @@ export class OpponentAI {
     if (!d) return;
     this._disparo = null;
     const b = d.ball;
-    const vReal = d.target
+    // C1 (r129 · ola 3) · REUTILIZA LA VELOCIDAD DECIDIDA: el solver ya
+    // corrió al decidir desde el intercepto (d.pos). Si la bola VIVA llegó
+    // a ese punto (|desvío| ≤ 5 cm — la tolerancia del propio solver es
+    // 1,5 cm), el recálculo sería un solve equivalente: se reusa d.v y el
+    // golpeo deja de disparar un pico de ~100 pasos RK4 en el frame del
+    // contacto. Se recalcula SOLO si la bola se desvió (bote/Magnus):
+    // el tiro nace de donde está, hacia el mismo blanco (r99ter intacto).
+    const vReal = (d.target && b.pos.distanceTo(d.pos) > 0.05)
       ? computeShotVelocityReal(b.pos, d.target, d.T, d.maxV, d.spin)
       : d.v;
     // r101 · EL EMPUJE DEL SWING, ACOTADO: la tangente del gesto solo sesga

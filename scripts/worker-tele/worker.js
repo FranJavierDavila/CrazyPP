@@ -736,6 +736,33 @@ export default {
         });
       }
 
+      // A2 (r129 · ola 3) · REGISTRO VIVO DE SALAS: el código de sala ya
+      // viaja en el latido de presencia — aquí se agrega (TTL del latido,
+      // 90 s) para el panel y como descubrimiento de emergencia si el
+      // broker de señalización cae: la sala sigue visible mientras el
+      // anfitrión respire. Público (el code ya es público en presencia).
+      if (url.searchParams.get("salas") !== null) {
+        await socialInit(env);
+        const vivas = await env.DB.prepare(
+          "SELECT code, pid, n, v, MAX(t) t FROM presencia " +
+          "WHERE code IS NOT NULL AND code <> '' AND vis = 'pub' AND t > ? " +
+          "GROUP BY code ORDER BY t DESC LIMIT 30"
+        ).bind(Date.now() - PRESENCIA_TTL).all();
+        const ahora = Date.now();
+        return json({
+          ok: true,
+          ts: ahora,
+          total: (vivas.results || []).length,
+          salas: (vivas.results || []).map((s) => ({
+            code: s.code,
+            pid: s.pid,
+            n: s.n,
+            v: s.v,
+            haceSeg: Math.max(0, Math.round((ahora - s.t) / 1000)),
+          })),
+        });
+      }
+
       // latido público (sin detalle): {ok, total, ts} — filtro sid opcional
       if (
         url.searchParams.get("resumen") === null &&

@@ -7880,7 +7880,9 @@ trabajo» — push, release, limpieza y reintento del E2E del worker)**:
   · Pendiente sin aprobar: reescritura de historia del remoto (alto riesgo; requiere bundle previo).
 
 **15 · r128 · CORRECCIONES DE LA AUDITORÍA r120 — OLA 1 + OLA 2** (análisis completo: download/analisis_crazypp_r120.pdf;
-  aplicación en modo directo sobre el árbol vivo, SIN commit aún — el dueño revisa, commitea y despliega):
+  aplicación en modo directo sobre el árbol vivo. El dueño autorizó commit+push (PAT de GitHub, usado en memoria,
+  sin tocar ficheros) y el deploy del worker de telemetría con el token de Cloudflare: wrangler.toml queda con el
+  database_id real (24ee07a2…, D1 viva con 969 eventos) y la CLAVE se inyecta como SECRET — nunca en el repo.):
   · D1 · puertas al repo vivo: qa_version.py y qa_rendimiento.py con CPP_RAIZ (era upload/, el espejo reciclado);
     la aguja del hub pasa a DINÁMICA (el sello de release se extrae de la propia página — el pin V3.6.157 de r66
     daba rojo falso desde la r67). bump_version.py y mod_fase2_analizar/generar.mjs restaurados a scripts/ (sobrevivían

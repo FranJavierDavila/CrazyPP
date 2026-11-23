@@ -20,4 +20,4 @@ crons = ["37 4 * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "crazypp-tele"
-database_id = "PEGA_AQUI_EL_DATABASE_ID"
+database_id = "24ee07a2-c04b-475f-ba72-257d374c06e9"   # r128 · real, descubierto por API (la plantilla decía PEGA_AQUI)

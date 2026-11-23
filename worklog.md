@@ -7988,12 +7988,13 @@ cada pieza con sus puertas en verde antes de sellar la siguiente.
   byte-exacta de compartidos + ligera sin assets/championships + tokens risas.mp3 +
   hashes G6 en VERSION.txt. Validaciones completas del empaquetado en verde (adopción
   SDK2-5 · música · PowerSign · rival/cartel · identidad 3.6.210 · staging íntegro).
-· Worker: deploy_worker.py + paso 8 nuevo (cron 37 4 * * * por API con verificación GET
-  — el [triggers] de wrangler.toml ya no depende de wrangler). EL DEPLOY QUEDA PENDIENTE
-  DEL DUEÑO: el token de Cloudflare entregado en r128 devuelve 401 (caducado o rotado) (caducado o rotado). Comando
-  (30 s): CF_API_TOKEN=<token del dueño> python3 scripts/deploy_worker.py — generará
-  CLAVE nueva de lectura (el juego no la usa; queda en scripts/worker-tele/.clave-
-  produccion, gitignored).
+· Worker DESPLEGADO EN PRODUCCIÓN (el dueño dio token fresco en r129): deploy_worker.py con
+  paso 7b NUEVO — la CLAVE se fija por el endpoint de secrets porque keep_bindings
+  preservaba la CLAVE vieja pisando la nueva (cazado por el E2E del propio deploy: 403 con
+  clave). E2E completo en producción: latido · 403 sin clave · POST 204 · resumen con
+  clave · DELETE por sid · latido restaurado · cron 37 4 * * * activo y verificado por
+  GET · /api/salas vivo ({ok,total,salas}). CLAVE nueva de lectura en scripts/worker-tele/
+  .clave-produccion (600, gitignored — el juego no la usa).
 · Puertas tras r129: qa_version 31 OK · qa_rendimiento 16 OK (+solverFresh64/solverHot64
   en el presupuesto; game.html y boot_ms con baseline nueva tras --update) ·
   qa_ugc_guardia 135 OK · test_fisica 12 · c05 17 · red_nucleo 60 · r119_dirigida 26 ·
@@ -8005,10 +8006,12 @@ cada pieza con sus puertas en verde antes de sellar la siguiente.
   commit 0535f00 consolidó TODO (git add -A sobre árbol limpio). HEAD es completo y
   coherente; los stats de los commits intermedios no reflejan el paquete del mensaje —
   el histórico queda así, sin reescritura.
-· Nota de push (reemplaza a la de higiene anterior si hay confusión): la cadena local
-  actual es 849704e (snapshot de la plataforma del sandbox) → 0535f00 (r129 — contiene
-  consolidados TODOS los cambios de r128+r129) → 2cd1f9b (sellado). En GitHub ya vive el
-  histórico r128 (c2e6087/03e8a63, empujado en su ronda). Cuando el dueño tenga un token
-  fresco: `git fetch origin && git rebase origin/main && git push origin main` — el rebase
-  repliega los dos commits r129 sobre el histórico r128 (los árboles cuadran; NO hacer
-  force-push: no hay nada que reescribir en origin).
+· PUSH Y PAGES EN VIVO (con token fresco del dueño): rebase --onto origin/main limpio
+  (3 conflictos de identidad resueltos con el árbol verificado; el diff final vs el árbol
+  pre-rebase fue solo scripts/archivo/era_legacy que GitHub ya no tenía) → push
+  03e8a63..e619eb0 FAST-FORWARD, sin force en main. Pages: deploy_pages ensambla 609
+  ficheros · smoke verde · el push de la rama pages dispara la build (7f26015c) y el sitio
+  vivo sirve V3.6.210-SDK6 con 86 peticiones OK · 0 fallos de red · 0 pageerrors; chequeo
+  explícito de assets compartidos/externos en vivo byte-exacto (pistol.glb 2.942.640 B).
+  Respaldo anti-rollback al día (main → proyecto). Lección de flags: --backup NO empuja
+  la rama pages — el push de pages es --push (o manual, como aquí).

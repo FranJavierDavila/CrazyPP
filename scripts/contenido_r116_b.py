@@ -1,0 +1,130 @@
+# -*- coding: utf-8 -*-
+"""contenido_r116_b.py — capítulos 4-7 del análisis de modo espectador."""
+
+BLOQUES_B = [
+
+# ══════════════ CAPÍTULO 4 ══════════════
+('h1', '4 · ¿Lo dificulta? Coste de implementación y complejidad'),
+('p', 'La tercera lectura de la pregunta es la del desarrollador: ¿añadir el modo espectador complica el juego? La respuesta corta es que complica la capa de red de forma media y muy localizada, y no complica en absoluto la física ni la máquina de estados del duelo. La tabla por componente deja ver dónde cae cada pieza de trabajo y su tamaño relativo; la conclusión operativa es que la fase F1 (un espectador pasivo) concentra la mayor parte del valor con la menor parte del riesgo, y las fases siguientes son mecánicas añadidas sobre el mismo conducto, no reescrituras.'),
+('h2', '4.1 · Coste por componente'),
+('tabla', {
+    'title': 'Impacto del modo espectador por componente del código',
+    'head': ['Componente', 'Cambio requerido', 'Complejidad'],
+    'ratios': [0.26, 0.54, 0.20],
+    'size': 8.8,
+    'rows': [
+        ['c04 · física (CCD/RK4)', 'Ninguno: la física del duelo no se toca; el espectador la consume', 'Nula'],
+        ['FSM del duelo (c12)', 'Ninguno: claim/ack, handoff y resync intactos; la grada no existe para la FSM', 'Nula'],
+        ['c09b · códec binario', 'Ninguno: mismos paquetes de 52-54 B a frecuencias menores para el público', 'Nula'],
+        ['c09a · roles y guardia', 'Tercer rol spec, guardia de sala con lista de espectadores, fan-out en send/_fastSend/sendRel', 'Media'],
+        ['c09a · enganche y origen', 'Mensaje nuevo spec-snap (estado tipo resync + bola) y un byte de origen en la pose retransmitida', 'Media-baja'],
+        ['c12 · cámara y HUD', 'Cámara libre/director, HUD EN DIRECTO con retardo medido, paneles de estadísticas', 'Media'],
+        ['c08 · salón y ambiente', 'Ovómetro, cánticos sintéticos, luces y props emisivos reaccionando', 'Media'],
+        ['c09c · descubrimiento', 'Botón VER en el listado de salas públicas y en presencia', 'Baja'],
+    ],
+}),
+('h2', '4.2 · Riesgos técnicos y mitigaciones'),
+('tabla', {
+    'title': 'Riesgos técnicos del modo espectador y mitigación propuesta',
+    'head': ['Riesgo', 'Escenario', 'Mitigación'],
+    'ratios': [0.24, 0.32, 0.44],
+    'size': 8.8,
+    'rows': [
+        ['Saturación de subida del anfitrión', 'Público amplio o espectadores que no drenan su buffer', 'Cap 4-6, flujo reducido, contrapresión por conexión (patrón c09:1538-1541) y expulsión del espectador lento'],
+        ['CPU del anfitrión en Quest', 'Varias RTCPeerConnection y fan-out dentro del frame de render', 'Fan-out fuera del frame crítico, medición con netInfo (c09:2467) y cap como protección'],
+        ['Espejo por emisor', 'El espectador recibe dos flujos de pose (anfitrión e invitado retransmitido)', 'Byte de origen en la retransmisión y despeje de espejo por emisor; test específico con dos fuentes'],
+        ['Votos fraudulentos', 'Un cliente inunda de votos para torcer un casual', 'Rate-limit por espectador, agregación solo en el anfitrión y filtro de nivel por mstart.md'],
+        ['Espectadores zombis', 'Conexiones medio muertas consumiendo fan-out', 'Watchdog de silencio del duelo (12 s, c09:1394) aplicado a la lista de espectadores'],
+        ['Privacidad de la voz', 'Espectadores escuchando la voz del duelo', 'La voz es MediaConnection 1:1 y no se retransmite al público por defecto; retransmitirla sería una decisión explícita del anfitrión'],
+    ],
+}),
+('h2', '4.3 · Esfuerzo por fases'),
+('tabla', {
+    'title': 'Plan por fases con esfuerzo relativo (B/M/A)',
+    'head': ['Fase', 'Alcance', 'Esfuerzo'],
+    'ratios': [0.22, 0.58, 0.20],
+    'size': 8.8,
+    'rows': [
+        ['F1 · Espectador único', 'Rol spec, guardia con lista, fan-out completo, spec-snap, cámara libre y HUD EN DIRECTO', 'Media'],
+        ['F2 · Público y descubrimiento', 'Cap 4-6, flujo reducido, byte de origen, botón VER, estadísticas y predicciones', 'Media'],
+        ['F3 · Ambiente', 'Ovómetro, cánticos, luces y confeti (niveles 0-1 del catálogo)', 'Media'],
+        ['F4 · Ritmo', 'Voto de salón y tiempo muerto colectivo (nivel 2)', 'Baja-Media'],
+        ['F5 · Influencia y banquillo', 'Voto de poderes, empuje moral, banquillo y MVP de la grada (nivel 3, casuales)', 'Alta'],
+    ],
+}),
+('p', 'La métrica que gobierna el paso de fase no es el número de mecánicas terminadas sino la salud del duelo con público activo: retardo del invitado y pérdida de paquetes fast medidos por el eco NTP que ya viaja en cada cabecera (visibles hoy en netInfo). Si esas métricas no se mueven con la fase activada, la fase es gratis para el duelo; si se mueven, se corrige o se revierte antes de avanzar.'),
+
+# ══════════════ CAPÍTULO 5 ══════════════
+('h1', '5 · Diferenciación: por qué puede resultar novedoso'),
+('h2', '5.1 · El estado del género'),
+('p', 'El referente del género de ping-pong virtual, Eleven Table Tennis, ofrece la vista de espectador fundamentalmente como herramienta para hacer streaming y como espectación desde PC en 2D, y en su comunidad aparecen desde 2021 peticiones explícitas de poder espectar salas ajenas desde el propio visor (sentarse en el sofá del estudio a ver a jugadores hábiles). Es decir: la demanda existe y la oferta actual del género la cubre solo parcialmente, con herramientas externas. La combinación que propone este análisis — espectación nativa en el visor, público con influencia gradual e integridad competitiva declarada — no forma parte del estándar del género. Fuentes: los resultados de búsqueda consultados el 23 de noviembre de 2026 se listan en la nota final.'),
+('h2', '5.2 · Las tres palancas de novedad'),
+('p', 'La primera palanca es la espectación nativa por estado. Como el espectador recibe el estado del duelo y renderiza en el motor 3D local, la calidad es perfecta a cualquier zoom, el coste se mide en kilobytes por segundo en lugar de los decenas de megabits de una retransmisión de vídeo, y funciona dentro del visor sin captura externa ni PC intermedio. Es la diferencia entre ver un vídeo del partido y estar en la sala; y esa diferencia es exactamente la que la comunidad del género lleva años pidiendo.'),
+('p', 'La segunda palanca es la participación graduada. El recorrido ver, reaccionar, influir y jugar convierte la grada en un embudo de retención con progresión propia: el espectador que hoy aplaude mañana vota y pasado mañana puede sentarse por el banquillo. Cada nivel entrega valor sin exigir el siguiente, y el nivel de influencia queda siempre por detrás de la integridad competitiva. Pocos juegos de mesa virtual ofrecen al espectador un papel con progresión; la mayoría lo reduce a una cámara.'),
+('p', 'La tercera palanca es la integridad como declaración de diseño. El árbitro de puntos es intocable, el ELO se liquida fuera del alcance de la grada y la influencia real queda reservada a casuales por el filtro de modo. Eso convierte la frase la grada no decide en una propiedad verificable del protocolo, no en una promesa: es lo que permite anunciar torneos con público sin sospecha, y es raro en juegos sociales donde la interacción del público suele carecer de límites formales.'),
+('h2', '5.3 · Lo que se desbloquea'),
+('p', 'Con las tres palancas activas, el juego gana escenarios que hoy no puede ofrecer: torneos con grada en salas públicas (con el tiempo muerto y la ovación como parte del espectáculo), clip y streaming desde dentro del juego sin captura externa, aprendizaje al observar a rivales de nivel con estadísticas y repetición, y una razón social para volver: la sala pública con público deja de ser un duelo privado para convertirse en un pequeño escenario. Ninguno de estos escenarios exige servidor nuevo en las fases F1 a F5; todos derivan del mismo conducto de estado.'),
+('h2', '5.4 · Cuándo no conviene'),
+('p', 'La honestidad del análisis exige la contracara. Si la masa crítica es baja al inicio, la grada vacía es un momento socialmente más pobre que ninguna grada: se mitiga programando torneos con público y destacando salas abiertas al público en el listado, pero el riesgo de aterrizaje existe. Si el objetivo del proyecto fuese puramente el duelo competitivo 1 contra 1, el nivel 3 debe quedarse apagado por defecto y el diferenciador se apoya en los niveles 0 a 2, que no tocan el juego. Y si el esfuerzo disponible es limitado, F1 sola ya es lanzable: el resto del catálogo puede crecer cuando las métricas lo pidan.'),
+
+# ══════════════ CAPÍTULO 6 ══════════════
+('h1', '6 · Pros y contras'),
+('p', 'Este capítulo condensa el balance en los tres planos que interesan para decidir: arquitectura (coste y riesgo técnico), jugabilidad (lo que gana y lo que arriesga la experiencia) y producto (diferenciación y comunidad). Cada contra lleva su mitigación al lado, porque ninguno de los contras identificados es estructural: todos tienen respuesta de diseño ya mencionada en capítulos anteriores.'),
+('h2', '6.1 · Arquitectura'),
+('tabla', {
+    'title': 'Balance de arquitectura',
+    'head': ['Pros', 'Contras (con mitigación)'],
+    'ratios': [0.48, 0.52],
+    'size': 8.8,
+    'rows': [
+        ['Reutiliza al 100 % el estado y el códec existentes: mismos paquetes de 52-54 B, mismas rutas de entrada (_onFast/_onRel)',
+         'La malla es estrictamente 1:1 hoy: hay que construir la lista de espectadores y la guardia diferenciada (cambio localizado en c09:269-275)'],
+        ['Cero cambios en física (c04) y en la FSM del duelo; el árbitro y el ELO quedan fuera del alcance de la grada',
+         'N RTCPeerConnection extra en la Quest del anfitrión: cap 4-6 y fan-out fuera del frame crítico'],
+        ['Coste por espectador de ~2,5 KB/s con flujo reducido; contrapresión y watchdog ya presentes en el código',
+         'Escala limitada sin relay: gradas mayores exigen un WebSocket persistente en el worker, que hoy no existe'],
+        ['Descubrimiento ya existe (salas públicas e invitaciones): el botón VER es UI sobre c09c',
+         'El detalle del espejo por emisor exige un byte de origen y pruebas con dos fuentes de pose'],
+    ],
+}),
+('h2', '6.2 · Jugabilidad'),
+('tabla', {
+    'title': 'Balance de jugabilidad',
+    'head': ['Pros', 'Contras (con mitigación)'],
+    'ratios': [0.48, 0.52],
+    'size': 8.8,
+    'rows': [
+        ['Momentos sociales reales: grada, ovómetro, torneos con público; la sala pública se convierte en escenario',
+         'Ruido en XR para los jugadores: los efectos solo se aplican entre puntos y todo el ambiente es opt-in por jugador'],
+        ['Embudo de retención con progresión del espectador: ver, reaccionar, influir y jugar (banquillo incluido)',
+         'Votos mal calibrados roban agencia: umbrales altos, un voto por espectador cada 5 s y el anfitrión como filtro'],
+        ['Valor en solitario sin público: cámaras, repetición y estadísticas sirven para aprender de rivales buenos',
+         'Grada vacía al inicio: salas programadas y destacadas abiertas al público hasta formar masa crítica'],
+        ['El banquillo convierte los abandonos en oportunidad (el espectador mejor predicator se sienta)',
+         'Segundo modo de render que mantener: el espectador reutiliza el cliente, pero la cámara y el HUD son nuevos'],
+    ],
+}),
+('h2', '6.3 · Producto y matriz de decisión'),
+('tabla', {
+    'title': 'Balance de producto',
+    'head': ['Pros', 'Contras (con mitigación)'],
+    'ratios': [0.48, 0.52],
+    'size': 8.8,
+    'rows': [
+        ['Diferenciación clara frente al género: espectación nativa en visor más influencia gradual no es estándar',
+         'Coste total F1-F5 no despreciable: F1 es lanzable por sí sola y las fases siguientes se activan con métricas'],
+        ['Contenido compartible: clips y streaming desde dentro del juego sin captura externa',
+         'Riesgo de abandonar el modo si no despega: el plan mide adopción en F1-F2 antes de invertir en F3-F5'],
+        ['Integridad del ELO verificable como propiedad del protocolo: torneos con grada sin sospecha',
+         'El nivel 3 solo brilla en casuales: en clasificadas el diferenciador son los niveles 0-2'],
+    ],
+}),
+('p', 'La matriz de decisión resume el veredicto en cuatro líneas. ¿Es viable? Sí, con la arquitectura actual y sin servidor nuevo. ¿Degrada el duelo? No, bajo las dos condiciones de diseño (orden de fan-out y flujo reducido con cap). ¿Diferencia? Sí, crecientemente desde F2, y de forma singular con el nivel 3 en casuales. ¿Cuánto cuesta? Complejidad media y localizada, lanzable en F1 con esfuerzo medio y métrica de salida clara.'),
+
+# ══════════════ CAPÍTULO 7 ══════════════
+('h1', '7 · Recomendación'),
+('p', 'La recomendación es construir primero el MVP que concentra valor y riesgo mínimo: la fase F1 (espectador único pasivo con cámara libre, repetición y HUD EN DIRECTO) más el ovómetro de la fase F3 como primera dinámica de público. Con ese MVP el juego obtiene la espectación nativa en visor que el género no ofrece estándar, la primera sensación de grada sin tocar el resultado, y un conducto (fan-out, spec-snap, watchdog) sobre el que el resto del catálogo se añade sin reescrituras. Las fases F2 a F5 se activan según métricas: adopción de espectadores por sala pública, conversión de espectador a jugador (banquillo incluido cuando llegue F5) y, por encima de todo, la salud del duelo medida por netInfo y el eco NTP.'),
+('quote', 'Regla de oro que gobierna todo el catálogo: la grada cambia el ambiente, el ritmo y los poderes de un casual, pero jamás fabrica un punto en una partida clasificada. El árbitro es de los jugadores; el ambiente, de todos.'),
+('p', 'Con esa regla como frontera, el modo espectador deja de ser una cámara añadida y se convierte en lo que la comunidad del género pide desde hace años: una sala viva donde el público tiene un papel con progresión propia, a un coste de red que no hace mella en el duelo y con una integridad competitiva que se puede verificar en el protocolo.'),
+('nota', 'Notas metodológicas y fuentes. Las cifras de tráfico y frecuencias derivan de las constantes del código V3.6.209-SDK6: POSE_HZ 60 y POSE_HZ_LOW 30 (c09b:41-42), SNAP_HZ 20-30 (c09b:43 y c09:1493-1497), paquetes de 52-54 B (c09b:103-104 y 286-290), contrapresión (c09:1538-1541), jitter buffer 40-220 ms (c09b:504-511), watchdog de 12 s (c09:1394) y guardia 1:1 (c09:269-275). Para el estado del género (5.1) se consultaron resultados de búsqueda (23-11-2026) sobre vista de espectador y peticiones de espectar salas ajenas en la comunidad de Eleven Table Tennis (reddit.com/r/ElevenTableTennis, facebook.com/groups/elevenfaq); se citan como evidencia de demanda.'),
+]

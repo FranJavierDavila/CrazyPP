@@ -1,0 +1,52 @@
+{
+ "hero": {
+  "f": "thumb_hero.png",
+  "w": 420,
+  "h": 236
+ },
+ "arcano": {
+  "f": "thumb_arcano.png",
+  "w": 420,
+  "h": 280
+ },
+ "candado": {
+  "f": "thumb_candado.png",
+  "w": 420,
+  "h": 420
+ },
+ "palas": {
+  "f": "thumb_palas.png",
+  "w": 420,
+  "h": 315
+ },
+ "museo_frente": {
+  "f": "thumb_museo_frente.png",
+  "w": 420,
+  "h": 196
+ },
+ "museo_suelo": {
+  "f": "thumb_museo_suelo.png",
+  "w": 420,
+  "h": 544
+ },
+ "museo_techo": {
+  "f": "thumb_museo_techo.png",
+  "w": 420,
+  "h": 544
+ },
+ "neon_frente": {
+  "f": "thumb_neon_frente.png",
+  "w": 420,
+  "h": 196
+ },
+ "dojo_frente": {
+  "f": "thumb_dojo_frente.png",
+  "w": 420,
+  "h": 196
+ },
+ "poster_win": {
+  "f": "thumb_poster_win.png",
+  "w": 420,
+  "h": 420
+ }
+}

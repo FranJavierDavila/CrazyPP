@@ -7857,3 +7857,24 @@ trabajo» — push, release, limpieza y reintento del E2E del worker)**:
     registro_limpieza_r113.md · propuesta: download/Propuesta_limpieza_repositorio_r113.docx.
   · NO ejecutado (quedó para el dueño): opción B de F2 (borrar 33,3 MB duplicados del backup), opción
     C de F3 (borrar capturas ~40 MB), reescritura de historia (alto riesgo, no propuesta).
+
+**14 · OPCIONES B Y C EJECUTADAS (aprobación «adelante con las opciones B y C»)**:
+  · B (7457874): deduplicación de fuentes/dueno/backup_2026-11-17/ — 7 duplicados byte-exactos
+    fuera (5,5 MB) con gemelo verificado por hash: arcano.mp3/candado.png/suelo.jpg → public/assets/hall,
+    fondo.jpg/frente.jpg/techo.jpg → public/assets/partido, zombi_victory.mp3 → fuentes/dueno/variantes.
+    El índice de gemelos (635 hashes) incluía el CONTENIDO de los 5 ZIPs fuente vía zipfile y
+    EXCLUYÓ scripts/archivo/ a propósito: B corrió antes que C para que ninguna copia única del
+    dueño dependiera de una captura que C iba a borrar. ÚNICOS conservados (6,6 MB): Mando.glb,
+    Mapa.png, Melodia.mp3 y palas.png (render distinto al de hall — verificado).
+    Nota: el backup en disco son 11 ficheros (12 MB); los 93 trackeados restantes ya no estaban
+    en disco desde antes de r113 y siguen recuperables vía tag r113-pre-limpieza.
+  · C (c43f746): 274 ficheros (147,6 MB) fuera — scripts/archivo/capturas/ (82 f, 20,5 MB, 11
+    paquetes de captura/arte de era) y era_legacy visuales/logs (192 f, 127,1 MB: capturas QA,
+    mapas clown, renders, logs). TODO el código de era_legacy (.py/.mjs/.js/.json) intacto.
+  · Verificación: golden byte-exacto vs tag ✓ y golden de la casa coincide ✓ en ambos commits ·
+    smoke test_fisica rc=0 ✓ · push 2c158eb..c43f746 → main.
+  · Entorno: download/ fue reciclada entre turnos (se perdieron registro y propuesta) → ambos
+    regenerados desde los scripts persistidos (ejecuta_BC_r113.py, gen_propuesta_r113.js +
+    patch_pie_r113.py). La propuesta regenerada es el documento histórico del plan; el estado
+    vivo de la ejecución vive en download/registro_limpieza_r113.md y en las secciones 13-14.
+  · Pendiente sin aprobar: reescritura de historia del remoto (alto riesgo; requiere bundle previo).

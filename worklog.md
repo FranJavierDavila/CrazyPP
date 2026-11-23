@@ -7930,3 +7930,85 @@ trabajo» — push, release, limpieza y reintento del E2E del worker)**:
   · Pendiente de esta ronda (documentado, no tocado): PAGES-VERSION.txt no existe (2×404 cosméticos del selfcheck,
     tolerados por diseño); el harness TURN local necesita credenciales; ola 3 del plan (payload separado, broker
     propio, sandbox UGC, poda de dependencias/andamio) espera decisión del dueño.
+
+## 16 · r129 · ola 3 del plan (auditoría r120): C2 · C1 · A2 · F3b · G3-G4 · G6
+
+El dueño dio el «vamos» y la ola 3 completa entró en un rondo, en el orden del informe,
+cada pieza con sus puertas en verde antes de sellar la siguiente.
+
+· C2 · RECURSOS FUERA DEL HTML: los ~9,6 MB de base64 (GLB pala/pistola, voz es/en,
+  música, mandos del tutorial, 63 assets de poderes, 24 iconos de menú, carteles, logo,
+  portada, botones) salieron del artefacto a public/assets/externos/ + voz_*.json.
+  game.html: 12.523.280 → 2.626.578 B (−79%). Boot vivo ~1,7-2,1 s (el casco ya no
+  descarga 12,5 MB antes de pintar). Degradación elegante en cada loader: pala procedural,
+  voz/música mudas, tutorial sin GLB funcional; guardia de contexto (http/https) en el
+  banco de voz — en Node un fetch relativo colgaba el event loop de los arneses. ZIPs
+  autocontenidos intactos (build_zip copia public/assets) y SW cacheFirst para /assets/.
+  SFX r62 (58 KB) y vendor PeerJS se quedan embebidos a propósito. El banco de voz viaja
+  como JSON (mismo pipeline atob→decodeAudioData) y recarga en caliente (pp-voz-lista →
+  reloadVoice).
+· C1 · SOLVER ACOTADO: (1) _aplicaDisparo reutiliza la velocidad decidida (recálculo solo
+  si la bola viva se desvió > 5 cm del intercepto — la tolerancia del solver es 1,5 cm);
+  (3) caché LRU de 96 entradas en computeShotVelocityReal (clave 1 cm/0,01 s/0,1 spin,
+  SIEMPRE se devuelve un clon — los llamadores mutan). Bench +solverFresh64 (64 solves
+  11-18 ms) y +solverHot64 (6.400 hits ~7 ms, ~88×). DIFERIDOS con razón documentada:
+  (2) presupuesto por frame y (4) imán fuera del subpaso — el golden de física protege
+  ese orden y el informe los marca de mayor a menor. Golden intacto: test_fisica 12 +
+  c05 17 · 0 desviaciones · qa_r119_dirigida 26 OK.
+· A2 · BROKER DESMONTABLE: NetLink._signalOpts() lee globalThis.PP_SIGNAL_ENDPOINT
+  (URL → {host,port,path,secure}; sin ella, cloud de PeerJS como siempre). mini-services/
+  peer-server (peer ^1.5, mismo protocolo) + ruta Caddy fija /peerjs/* → :3005 + LEEME.
+  Registro vivo de salas en el worker (GET ?salas=1: presencia con código, sólo salas
+  vis='pub', TTL del latido 90 s). test_r129_signal 7 OK · test_local 100 OK (+4; los 6
+  fallos ICE/TURN son ambientales y preexisten en HEAD — creds Realtime ausentes).
+· F3b · UGC CON CONTRATO VERIFICADO: el champloader valida en runtime el contrato
+  completo del schema (title.es, description.es, rival{id,name,kind}, storage, assets) y
+  degrada a «incompatible» con el motivo visible; los 7 manifests del dueño lo cumplen.
+  Puerta nueva qa_ugc_guardia.py (135 OK): manifests completos + sin eval/new Function/
+  document.cookie/document.write/serviceWorker/indexedDB/XMLHttpRequest/WebAssembly +
+  sin fetch/import con URL absoluta (todo el UGC legítimo carga por URLs RELATIVAS). El
+  sandbox duro (iframe/postMessage) exige el contrato 2 del SDK — c11 ya rechaza
+  contract > 1 con aviso, la migración puede ser gradual.
+· G3-G4 · PODA: src/lib/game (1.818 líneas de segunda física/IA) + page.tsx +
+  PingPongCanvas.tsx fuera (inalcanzables: / reescribe a game.html); 46 de 48 ui fuera
+  (viven toast+toaster); 4 .pre_r83 fuera (G1-G2); package-lock.json fuera (toolchain
+  bun); .env y db/custom.db fuera del índice de git (siguen en disco); paquete renombrado
+  crazypp; 57 de 67 dependencias fuera (quedan next/react/react-dom/@radix-ui/react-toast/
+  cva/clsx/lucide-react/tailwind-merge + prisma/@prisma/client del hook db:push);
+  three → devDependencies (los arneses QA) · +acorn declarado. bun.lock regenerado.
+  next build OK con sólo las rutas vivas. Los 3 errores TS que D3 dejaba «pendiente ola
+  3» vivían en ese andamio — fuera, el árbol de tipos queda limpio.
+· G6 · ASSETS COMPARTIDOS: /assets/championships/ con pistol.glb (antes ×3 · −5,9 MB),
+  cartel superpoder (×4) y reloj.png (×2) byte-exactos; risas_forajido.mp3 (= risas.mp3,
+  7 refs reescritas) y el bso.wav huérfano provisional de halloween fuera (su música es
+  melodia.mp3 — el manifest lo documentaba). Call-sites a ../../assets/championships/
+  (module-relative, Pages base incluida). NO se toca _plantilla (autocontenida para
+  terceros), valle_neon (retirado) ni los dobles internos de estacion (estados de
+  expresión del rival). build_zip.py: lista orbital sin pistol/superpower + guardia
+  byte-exacta de compartidos + ligera sin assets/championships + tokens risas.mp3 +
+  hashes G6 en VERSION.txt. Validaciones completas del empaquetado en verde (adopción
+  SDK2-5 · música · PowerSign · rival/cartel · identidad 3.6.210 · staging íntegro).
+· Worker: deploy_worker.py + paso 8 nuevo (cron 37 4 * * * por API con verificación GET
+  — el [triggers] de wrangler.toml ya no depende de wrangler). EL DEPLOY QUEDA PENDIENTE
+  DEL DUEÑO: el token de Cloudflare entregado en r128 devuelve 401 (caducado o rotado) (caducado o rotado). Comando
+  (30 s): CF_API_TOKEN=<token del dueño> python3 scripts/deploy_worker.py — generará
+  CLAVE nueva de lectura (el juego no la usa; queda en scripts/worker-tele/.clave-
+  produccion, gitignored).
+· Puertas tras r129: qa_version 31 OK · qa_rendimiento 16 OK (+solverFresh64/solverHot64
+  en el presupuesto; game.html y boot_ms con baseline nueva tras --update) ·
+  qa_ugc_guardia 135 OK · test_fisica 12 · c05 17 · red_nucleo 60 · r119_dirigida 26 ·
+  r129_signal 7 · test_local 100 (6 ambientales preexistentes) · regresión viva ola 3
+  10 OK (boot 1,9 s · 24 iconos · voz · música · pala · portada · heap 69 MB · 0
+  pageerrors).
+· Nota de higiene del histórico: el reciclado del sandbox dejó los commits de paquete
+  (17d1f1f/f5014aa/0503742/4ce7c4e) con parte del contenido pendiente en el árbol; el
+  commit 0535f00 consolidó TODO (git add -A sobre árbol limpio). HEAD es completo y
+  coherente; los stats de los commits intermedios no reflejan el paquete del mensaje —
+  el histórico queda así, sin reescritura.
+· Nota de push (reemplaza a la de higiene anterior si hay confusión): la cadena local
+  actual es 849704e (snapshot de la plataforma del sandbox) → 0535f00 (r129 — contiene
+  consolidados TODOS los cambios de r128+r129) → 2cd1f9b (sellado). En GitHub ya vive el
+  histórico r128 (c2e6087/03e8a63, empujado en su ronda). Cuando el dueño tenga un token
+  fresco: `git fetch origin && git rebase origin/main && git push origin main` — el rebase
+  repliega los dos commits r129 sobre el histórico r128 (los árboles cuadran; NO hacer
+  force-push: no hay nada que reescribir en origin).

@@ -298,6 +298,17 @@ def main():
     exigir(st, j, "subida del worker")
     ok("worker desplegado")
 
+    # ── 7b · CLAVE por el endpoint de secrets: keep_bindings preserva los
+    # secret_text existentes (TURN_API_TOKEN, METERED_*) — y también una
+    # CLAVE vieja, que pisaría la nueva declarada en el bindings. El
+    # endpoint de secrets SOBREESCRIBE sin ambigüedad.
+    paso("7b", "fijando CLAVE por el endpoint de secrets (sobrescribe la vieja)")
+    st, j = req("PUT", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/secrets",
+                token, cuerpo={"name": VAR_CLAVE, "text": clave, "type": "secret_text"})
+    if st >= 400:
+        fallo("fijando la CLAVE (endpoint de secrets)", f"HTTP {st} · {json.dumps(j)[:300]}")
+    ok("CLAVE activa (valor nuevo, sobrescrito por API)")
+
     # ── 8 · subdomain activado
     paso(8, "asegurando workers.dev activado")
     st, j = req("POST", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/subdomain",
@@ -381,7 +392,7 @@ def main():
     # (el PUT del script sin schedules puede arrastrarse un cron previo — se
     # fija explícito y se verifica por GET; si la API cambiara de forma, queda
     # avisado sin bloquear el despliegue).
-    paso(8, "cron de purga (scheduled() · 04:37 UTC)")
+    paso(10, "cron de purga (scheduled() · 04:37 UTC)")
     cron_expr = "37 4 * * *"
     st, txt = req("PUT", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/schedules",
                   token, cuerpo={"cron": [cron_expr]})

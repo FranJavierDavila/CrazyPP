@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: 1000px 640px; margin: 0; }
+  html, body { margin: 0; padding: 0; width: 1000px; height: 640px; background: #f5f8fc; }
+  .canvas { position: relative; width: 1000px; height: 640px; background: #f5f8fc;
+    font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+  svg { position: absolute; inset: 0; z-index: 1; }
+  .lbl { position: absolute; font-size: 17px; color: #142840; white-space: nowrap; z-index: 2; }
+  .lbl.mut { color: #5a7a96; }
+  .lbl.ret { color: #6b5c2a; }
+  .leyenda { position: absolute; left: 40px; right: 40px; top: 572px; display: flex; gap: 26px; z-index: 2; }
+  .chip { font-size: 17px; color: #5a7a96; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .dot-a { width: 16px; height: 16px; border-radius: 50%; background: #b8a35a; }
+  .dot-j { width: 16px; height: 16px; border-radius: 50%; background: #1a4a7a; }
+  .zona { width: 34px; height: 0; border-top: 3px dashed #5a7a96; }
+  .cono { width: 34px; height: 0; border-top: 3px solid #2d7ab3; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <svg width="1000" height="640" viewBox="0 0 1000 640">
+    <defs>
+      <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="#2d7ab3"/>
+      </marker>
+      <marker id="m" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="#5a7a96"/>
+      </marker>
+    </defs>
+    <!-- límite de locomoción (alrededor de la mesa) -->
+    <rect x="250" y="180" width="500" height="320" rx="26" fill="none"
+          stroke="#5a7a96" stroke-width="2.5" stroke-dasharray="10,8"/>
+    <!-- mesa vista desde arriba -->
+    <rect x="290" y="270" width="420" height="140" rx="8" fill="#e4ecf5"
+          stroke="#1a4a7a" stroke-width="2.5"/>
+    <line x1="500" y1="270" x2="500" y2="410" stroke="#1a4a7a" stroke-width="3" stroke-dasharray="14,10"/>
+    <!-- conos de visión -->
+    <polygon points="830,340 640,300 640,390" fill="#b8a35a" fill-opacity="0.14" stroke="#b8a35a" stroke-width="2"/>
+    <line x1="168" y1="340" x2="268" y2="340" stroke="#2d7ab3" stroke-width="3" marker-end="url(#a)"/>
+    <line x1="592" y1="252" x2="540" y2="300" stroke="#2d7ab3" stroke-width="2.5" stroke-dasharray="6,6" marker-end="url(#a)"/>
+    <!-- avatares -->
+    <circle cx="500" cy="210" r="20" fill="#2d7ab3"/>
+    <circle cx="500" cy="470" r="20" fill="#1a4a7a"/>
+    <!-- C4 ojos del jugador -->
+    <circle cx="548" cy="452" r="9" fill="none" stroke="#2d7ab3" stroke-width="2.5"/>
+    <!-- grada: tres filas de asientos -->
+    <g fill="#c0d0e2">
+      <circle cx="780" cy="240" r="9"/><circle cx="780" cy="292" r="9"/><circle cx="780" cy="344" r="9"/><circle cx="780" cy="396" r="9"/><circle cx="780" cy="448" r="9"/>
+      <circle cx="832" cy="240" r="9"/><circle cx="832" cy="292" r="9"/><circle cx="832" cy="396" r="9"/><circle cx="832" cy="448" r="9"/>
+      <circle cx="884" cy="240" r="9"/><circle cx="884" cy="292" r="9"/><circle cx="884" cy="344" r="9"/><circle cx="884" cy="396" r="9"/><circle cx="884" cy="448" r="9"/>
+    </g>
+    <!-- espectador en primera persona -->
+    <circle cx="832" cy="344" r="13" fill="#b8a35a"/>
+    <!-- C2 trípode -->
+    <polygon points="168,322 156,358 180,358" fill="none" stroke="#2d7ab3" stroke-width="2.5"/>
+    <circle cx="168" cy="318" r="7" fill="#2d7ab3"/>
+    <!-- C3 bola-cam -->
+    <circle cx="592" cy="240" r="10" fill="#2d7ab3"/>
+    <!-- flecha de C1 hacia la mesa ya dibujada como cono -->
+    <line x1="770" y1="560" x2="770" y2="560" stroke="none"/>
+  </svg>
+
+  <div class="lbl" style="left:455px; top:168px;">INVITADO</div>
+  <div class="lbl" style="left:450px; top:505px;">ANFITRIÓN</div>
+  <div class="lbl ret" style="left:760px; top:500px;">C1 · grada · primera persona (tú)</div>
+  <div class="lbl" style="left:110px; top:385px;">C2 · TV lateral</div>
+  <div class="lbl" style="left:612px; top:222px;">C3 · bola-cam</div>
+  <div class="lbl" style="left:565px; top:438px;">C4 · ojos del jugador</div>
+  <div class="lbl mut" style="left:258px; top:528px;">límite de locomoción: rodear la mesa, nunca la superficie de juego</div>
+  <div class="lbl mut" style="left:742px; top:196px;">la grada se llena según el público conectado</div>
+
+  <div class="leyenda">
+    <div class="chip"><span class="dot-a"></span> espectador en primera persona</div>
+    <div class="chip"><span class="dot-j"></span> jugadores (el duelo)</div>
+    <div class="chip"><span class="zona"></span> límite de locomoción</div>
+    <div class="chip"><span class="cono"></span> presets de cámara conmutables</div>
+  </div>
+</div>
+</body>
+</html>
